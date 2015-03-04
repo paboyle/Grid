@@ -1,0 +1,2 @@
+AC_INIT([Grid], [1.0])
+AC_OUTPUT
