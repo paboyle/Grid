@@ -2,13 +2,13 @@
 /* Grid_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* AVX */
-#define AVX1 1
+/* #undef AVX1 */
 
 /* AVX2 */
 /* #undef AVX2 */
 
 /* AVX512 */
-/* #undef AVX512 */
+#define AVX512 1
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #define HAVE_GETTIMEOFDAY 1
@@ -17,10 +17,10 @@
 #define HAVE_INTTYPES_H 1
 
 /* Define to 1 if you have the <malloc.h> header file. */
-/* #undef HAVE_MALLOC_H */
+#define HAVE_MALLOC_H 1
 
 /* Define to 1 if you have the <malloc/malloc.h> header file. */
-#define HAVE_MALLOC_MALLOC_H 1
+/* #undef HAVE_MALLOC_MALLOC_H */
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -46,9 +46,6 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
 
-/* Define to 1 if the system has the `aligned' variable attribute */
-#define HAVE_VAR_ATTRIBUTE_ALIGNED 1
-
 /* Name of package */
 #define PACKAGE "grid"
 
@@ -63,9 +60,6 @@
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "grid"
-
-/* Define to the home page for this package. */
-#define PACKAGE_URL ""
 
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "1.0"
