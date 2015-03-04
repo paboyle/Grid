@@ -16,13 +16,15 @@
 #undef __X86_64
 namespace dpo {
 
-  void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr);
-  void Grid_debug_handler_init(void);
-
-  void Grid_init(void)
-  {
-    Grid_debug_handler_init();
-  }
+void Grid_init(void)
+{
+  Grid_debug_handler_init();
+}
+double usecond(void) {
+  struct timeval tv;
+  gettimeofday(&tv,NULL);
+  return 1.0*tv.tv_usec + 1.0e6*tv.tv_sec;
+}
 
 void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
 {
