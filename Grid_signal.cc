@@ -13,7 +13,7 @@
 
 #include "Grid.h"
 
-#define __X86_64
+#undef __X86_64
 namespace dpo {
 
   void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr);
@@ -27,15 +27,15 @@ namespace dpo {
 void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
 {
          ucontext_t * uc= (ucontext_t *)ptr;
-  struct sigcontext *sc = (struct sigcontext *)&uc->uc_mcontext;
 
   printf("Caught signal %d\n",si->si_signo);
-  printf("  mem address %lx\n",si->si_addr);
+  printf("  mem address %llx\n",(uint64_t)si->si_addr);
   printf("         code %d\n",si->si_code);
 
-  printf("  instruction %lx\n",sc->rip);
-
 #ifdef __X86_64
+  struct sigcontext *sc = (struct sigcontext *)&uc->uc_mcontext;
+  printf("  instruction %llx\n",(uint64_t)sc->rip);
+
 #define REG(A)  printf("  %s %lx\n",#A, sc-> A);
   REG(rdi);
   REG(rsi);

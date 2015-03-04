@@ -27,23 +27,31 @@ int main (int argc, char ** argv)
     std::vector<int> latt_size(4);
     std::vector<int> simd_layout(4);
 
- for(int omp=32;omp<237;omp*=2){
+ for(int omp=1;omp<2;omp*=2){
 
 #ifdef OMP
    omp_set_num_threads(omp);
 #endif 
 
-  for(int lat=16;lat<=32;lat+=8){
+  for(int lat=8;lat<=12;lat+=2){
     latt_size[0] = lat;
     latt_size[1] = lat;
     latt_size[2] = lat;
     latt_size[3] = lat;
     double volume = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
     
+#ifdef AVX512
     simd_layout[0] = 1;
     simd_layout[1] = 2;
     simd_layout[2] = 2;
     simd_layout[3] = 2;
+#endif
+#ifdef AVX1
+    simd_layout[0] = 1;
+    simd_layout[1] = 1;
+    simd_layout[2] = 2;
+    simd_layout[3] = 2;
+#endif
     
     GridCartesian Fine(latt_size,simd_layout);
     GridRedBlackCartesian rbFine(latt_size,simd_layout);
