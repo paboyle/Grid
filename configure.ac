@@ -1,5 +1,4 @@
 # Process this file with autoconf to produce a configure script.
-AC_PREREQ([2.69])
 AC_INIT([Grid], [1.0], [paboyle@ph.ed.ac.uk])
 AM_INIT_AUTOMAKE
 AC_CONFIG_MACRO_DIR([m4])
@@ -12,7 +11,7 @@ AC_OPENMP
 AC_PROG_RANLIB
 
 # Checks for libraries.
-AX_GCC_VAR_ATTRIBUTE(aligned)
+#AX_GCC_VAR_ATTRIBUTE(aligned)
 
 # Checks for header files.
 AC_CHECK_HEADERS(stdint.h)

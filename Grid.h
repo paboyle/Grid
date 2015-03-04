@@ -20,12 +20,14 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <stdio.h>
+#include <signal.h>
 
 #include <Grid_config.h>
 
 ////////////////////////////////////////////////////////////
 // Tunable header includes
 ////////////////////////////////////////////////////////////
+#define HAVE_OPENMP
 #ifdef HAVE_OPENMP
 #define OMP
 #include <omp.h>

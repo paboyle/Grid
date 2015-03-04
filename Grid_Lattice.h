@@ -69,7 +69,8 @@ public:
         return ret;
     };
 
-
+#if 0 
+    // Collapse doesn't appear to work the way I think it should in icpc
     friend Lattice<vobj> Cshift(Lattice<vobj> &rhs,int dimension,int shift)
     {
         Lattice<vobj> ret(rhs._grid);
@@ -131,25 +132,23 @@ public:
                 if ( x<shift%rd ) permute_slice = 1-permute_slice;
             }
 
+
+#if 0
             if ( permute_slice ) {
-
-	        int internal=sizeof(vobj)/sizeof(vComplex);
+                
+                int internal=sizeof(vobj)/sizeof(vComplex);
                 int num =rhs._grid->_slice_block[dimension]*internal;
-
-#pragma omp parallel for collapse(2)
+                
                 for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
+                    vComplex *optr = (vComplex *)&ret._odata[o];
+                    vComplex *iptr = (vComplex *)&rhs._odata[so];
                     for(int b=0;b<num;b++){
-		      vComplex *optr = (vComplex *)&ret._odata[o];
-		      vComplex *iptr = (vComplex *)&rhs._odata[so];
-                      permute(optr[b],iptr[b],permute_type);
+                        permute(optr[b],iptr[b],permute_type);
                     }
                     o+=rhs._grid->_slice_stride[dimension];
                     so+=rhs._grid->_slice_stride[dimension];
                 }
-
             } else {
-
-#pragma omp parallel for collapse(2)
                 for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
                     for(int i=0;i<rhs._grid->_slice_block[dimension];i++){
                         ret._odata[o+i]=rhs._odata[so+i];
@@ -159,9 +158,122 @@ public:
                 }
             
             }
+#else
+
+            if ( permute_slice ) {
+
+	        int internal=sizeof(vobj)/sizeof(vComplex);
+                int num =rhs._grid->_slice_block[dimension]*internal;
+
+
+#pragma omp parallel for collapse(2)
+                for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
+                    for(int b=0;b<num;b++){
+		      vComplex *optr = (vComplex *)&ret._odata[o +n*rhs._grid->_slice_stride[dimension]];
+		      vComplex *iptr = (vComplex *)&rhs._odata[so+n*rhs._grid->_slice_stride[dimension]];
+                      permute(optr[b],iptr[b],permute_type);
+                    }
+                }
+
+            } else {
+
+
+#pragma omp parallel for collapse(2)
+                for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
+                    for(int i=0;i<rhs._grid->_slice_block[dimension];i++){
+		      int oo = o+ n*rhs._grid->_slice_stride[dimension];
+		      int soo=so+ n*rhs._grid->_slice_stride[dimension];
+		      ret._odata[oo+i]=rhs._odata[soo+i];
+                    }
+                }
+            
+            }
+#endif
         }
         return ret;
     }
+#else
+    friend Lattice<vobj> Cshift(Lattice<vobj> &rhs,int dimension,int shift)
+    {
+        Lattice<vobj> ret(rhs._grid);
+        
+        ret.checkerboard = rhs._grid->CheckerBoardDestination(rhs.checkerboard,shift);
+        shift = rhs._grid->CheckerBoardShift(rhs.checkerboard,dimension,shift);
+        int rd = rhs._grid->_rdimensions[dimension];
+        int ld = rhs._grid->_dimensions[dimension];
+        
+        // Map to always positive shift.
+        shift = (shift+ld)%ld;
+        
+        // Work out whether to permute and the permute type
+        // ABCDEFGH ->   AE BF CG DH       permute
+        // Shift 0       AE BF CG DH       0 0 0 0    ABCDEFGH
+        // Shift 1       DH AE BF CG       1 0 0 0    HABCDEFG
+        // Shift 2       CG DH AE BF       1 1 0 0    GHABCDEF
+        // Shift 3       BF CG DH AE       1 1 1 0    FGHACBDE
+        // Shift 4       AE BF CG DH       1 1 1 1    EFGHABCD
+        // Shift 5       DH AE BF CG       0 1 1 1    DEFGHABC
+        // Shift 6       CG DH AE BF       0 0 1 1    CDEFGHAB
+        // Shift 7       BF CG DH AE       0 0 0 1    BCDEFGHA
+        int permute_dim =rhs._grid->_layout[dimension]>1 ;
+        int permute_type=0;
+        for(int d=0;d<dimension;d++)
+            if (rhs._grid->_layout[d]>1 ) permute_type++;
+        
+        
+        // loop over all work
+        int work =rd*rhs._grid->_slice_nblock[dimension]*rhs._grid->_slice_block[dimension];
+
+#pragma omp parallel for
+        for(int ww=0;ww<work;ww++){
+
+            
+            // can optimise this if know w moves congtiguously for a given thread.
+            // b=(b+1);
+            // if (b==_slice_block) {b=0; n=n+1;}
+            // if (n==_slice_nblock) { n=0; x=x+1}
+            //
+            // Perhaps a five cycle iterator, or so.
+            int w=ww;
+            int b = w%rhs._grid->_slice_block[dimension] ; w=w/rhs._grid->_slice_block[dimension];
+            int n = w%rhs._grid->_slice_nblock[dimension]; w=w/rhs._grid->_slice_nblock[dimension];
+            int x = w;
+
+	    int sx,so,o;
+            sx = (x-shift+ld)%rd;
+            o  = x*rhs._grid->_ostride[dimension]+n*rhs._grid->_slice_stride[dimension]; // common sub expression alert.
+            so =sx*rhs._grid->_ostride[dimension]+n*rhs._grid->_slice_stride[dimension];
+            
+            int permute_slice=0;
+            if ( permute_dim ) {
+                permute_slice = shift/rd;
+                if ( x<shift%rd ) permute_slice = 1-permute_slice;
+            }
+            
+            if ( permute_slice ) {
+                
+                int internal=sizeof(vobj)/sizeof(vComplex);
+                vComplex *optr = (vComplex *)&ret._odata[o+b];
+                vComplex *iptr = (vComplex *)&rhs._odata[so+b];
+		const char *pf = (const char *)iptr;
+		for(int i=0;i<sizeof(vobj);i+=64){
+		  _mm_prefetch(pf+i,_MM_HINT_T0);
+		}
+
+                for(int i=0;i<internal;i++){
+                    permute(optr[i],iptr[i],permute_type);
+                }
+            } else {
+	        const char *pf = (const char *) &rhs._odata[so+b];
+		for(int i=0;i<sizeof(vobj);i+=64){
+		  _mm_prefetch(pf+i,_MM_HINT_T0);
+		}
+                ret._odata[o+b]=rhs._odata[so+b];
+            }
+        }
+        return ret;
+    }
+#endif
 
     template<class sobj>
     inline Lattice<vobj> & operator = (const sobj & r){

@@ -27,13 +27,17 @@ int main (int argc, char ** argv)
     std::vector<int> latt_size(4);
     std::vector<int> simd_layout(4);
 
- for(int omp=1;omp<2;omp*=2){
+#ifdef AVX512
+ for(int omp=128;omp<236;omp+=16){
+#else
+ for(int omp=1;omp<8;omp*=2){
+#endif
 
 #ifdef OMP
    omp_set_num_threads(omp);
 #endif 
 
-  for(int lat=8;lat<=12;lat+=2){
+  for(int lat=16;lat<=20;lat+=4){
     latt_size[0] = lat;
     latt_size[1] = lat;
     latt_size[2] = lat;
@@ -191,6 +195,8 @@ int main (int argc, char ** argv)
 
     mult(FooBar,Foo,Bar);
     FooBar = Foo * Bar;
+
+    bytes = ncall*1.0*volume*Nc*Nc    *2*5*sizeof(dpo::Real);
     t0=usecond();
     for(int i=0;i<ncall;i++){
       mult(FooBar,Foo,Cshift(Bar,1,-2));
@@ -198,6 +204,8 @@ int main (int argc, char ** argv)
       //FooBar = Foo * Bar; // this is bad
     }
     t1=usecond();
+
+    FooBar = Foo * Bar;
     
     printf("Cshift Mult: NumThread %d , Lattice size %d , %f us per call\n",omp,lat,(t1-t0)/ncall);
     printf("Cshift Mult: NumThread %d , Lattice size %d , %f Mflop/s\n",omp,lat,flops/(t1-t0));
