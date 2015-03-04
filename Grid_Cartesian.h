@@ -108,9 +108,8 @@ public:
         for(int d=0;d<_ndimension;d++){
             _dimensions[d] = dimensions[d];
             _layout[d]     = layout[d];
-                
             // Use a reduced simd grid
-            _rdimensions[d]= _dimensions[d]/_layout[d];
+            _rdimensions[d]= _dimensions[d]/_layout[d]; //<-- _layout[d] is zero
             _osites *= _rdimensions[d];
             _isites *= _layout[d];
                 
