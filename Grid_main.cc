@@ -182,21 +182,19 @@ int main (int argc, char ** argv)
     printf("mult NumThread %d , Lattice size %d , %f Mflop/s\n",omp,lat,flops/(t1-t0));
     printf("mult NumThread %d , Lattice size %d , %f MB/s\n",omp,lat,bytes/(t1-t0));
 
-/*
-        mult(FooBar,Foo,Bar);
-	//        FooBar = Foo * Bar;
+    mult(FooBar,Foo,Bar);
+    FooBar = Foo * Bar;
     t0=usecond();
     for(int i=0;i<ncall;i++){
-      //      mult(FooBar,Foo,Cshift(Bar,1,-2));
-      mult(FooBar,Foo,Bar);
-	//        FooBar = Foo * Bar; // this is bad
+      mult(FooBar,Foo,Cshift(Bar,1,-2));
+      //mult(FooBar,Foo,Bar);
+      //FooBar = Foo * Bar; // this is bad
     }
     t1=usecond();
     
-    printf("A: NumThread %d , Lattice size %d , %f us per call\n",omp,lat,(t1-t0)/ncall);
-    printf("A: NumThread %d , Lattice size %d , %f Mflop/s\n",omp,lat,flops/(t1-t0));
-    printf("A: NumThread %d , Lattice size %d , %f MB/s\n",omp,lat,bytes/(t1-t0));
-*/
+    printf("Cshift Mult: NumThread %d , Lattice size %d , %f us per call\n",omp,lat,(t1-t0)/ncall);
+    printf("Cshift Mult: NumThread %d , Lattice size %d , %f Mflop/s\n",omp,lat,flops/(t1-t0));
+    printf("Cshift Mult: NumThread %d , Lattice size %d , %f MB/s\n",omp,lat,bytes/(t1-t0));
 
     pickCheckerboard(0,rFoo,FooBar);
     pickCheckerboard(1,bFoo,FooBar);
