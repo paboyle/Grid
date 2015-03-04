@@ -2,10 +2,10 @@
 /* Grid_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* AVX */
-/* #undef AVX1 */
+#define AVX1 1
 
 /* AVX2 */
-#define AVX2 1
+/* #undef AVX2 */
 
 /* AVX512 */
 /* #undef AVX512 */
