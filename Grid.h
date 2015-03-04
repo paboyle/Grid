@@ -18,43 +18,56 @@
 #include <random>
 #include <functional>
 #include <stdlib.h>
+#include <sys/time.h>
+#include <stdio.h>
 
-#ifdef OMP
+#include <Grid_config.h>
+
+////////////////////////////////////////////////////////////
+// Tunable header includes
+////////////////////////////////////////////////////////////
+#ifdef HAVE_OPENMP
+#define OMP
 #include <omp.h>
 #endif
 
-#ifdef MAC
+#ifdef HAVE_MALLOC_MALLOC_H
 #include <malloc/malloc.h>
-#else
+#endif
+
+#ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
 
-#ifndef POOH
+
+////////////////////////////////////////////////////////////
+// SIMD Alignment controls
+////////////////////////////////////////////////////////////
+#ifdef HAVE_VAR_ATTRIBUTE_ALIGNED
 #define ALIGN_DIRECTIVE(A) __attribute__ ((aligned(A)))
 #else
 #define ALIGN_DIRECTIVE(A) __declspec(align(A))
+#endif
+
+#ifdef SSE2
+#include <pmmintrin.h>
+#define SIMDalign ALIGN_DIRECTIVE(16)
 #endif
 
 #if defined(AVX1) || defined (AVX2)
 #include <immintrin.h>
 #define SIMDalign ALIGN_DIRECTIVE(32)
 #endif
-#ifdef SSE2
-#include <pmmintrin.h>
-#define SIMDalign ALIGN_DIRECTIVE(16)
-#endif
+
 #ifdef AVX512
 #include <immintrin.h>
 #define SIMDalign ALIGN_DIRECTIVE(64)
 #endif
 
-#include <sys/time.h>
-#include <stdio.h>
 
 namespace dpo {
 
   void Grid_init(void);
-
 
 inline double usecond(void)
 {
@@ -168,29 +181,16 @@ inline double usecond(void)
     typedef vector4double dvec;
     typedef vector4double zvec;
 #endif
-
 #if defined (AVX1) || defined (AVX2) || defined (AVX512)
     inline void v_prefetch0(int size, const char *ptr){
-          for(int i=0;i<size;i+=64){
+          for(int i=0;i<size;i+=64){ //  Define L1 linesize above// What about SSE?
             _mm_prefetch(ptr+i+4096,_MM_HINT_T1);
             _mm_prefetch(ptr+i+512,_MM_HINT_T0);
           }
     }
+#else 
+    inline void v_prefetch0(int size, const char *ptr){};
 #endif
-/*
-      typedef  vComplexF vFComplex;
-      typedef  vComplexD vDComplex;
-     typedef  vComplexF vComplex;
-    
-    void zeroit(vRealF &z){ vzero(z);}
-    void zeroit(vRealD &z){ vzero(z);}
-    void zeroit(vComplexF &z){ vzero(z);}
-    void zeroit(vComplexD &z){ vzero(z);}
-    inline void zeroit(float &z){ z=0;}
-    inline void zeroit(double &z){ z=0;}
-    inline void zeroit(ComplexF &z){ z=0;}
-    inline void zeroit(ComplexD &z){ z=0;}
-*/
 
 ///////////////////////////////////////////////////
 // Scalar, Vector, Matrix objects.
@@ -1157,15 +1157,6 @@ operator!=(const myallocator<_Tp>&, const myallocator<_Tp>&){ return false; }
 
     
 }; // namespace dpo
-    
-////////////////////////////////////////////////////////////////////////////////////////
-// Test code
-////////////////////////////////////////////////////////////////////////////////////////
-/*
-using namespace std;
-using namespace dpo;
-using namespace dpo::QCD;
-*/
 
 
 #endif
