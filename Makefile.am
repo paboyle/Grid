@@ -5,7 +5,7 @@ AM_CXXFLAGS = -I$(top_srcdir)/
 # Libraries
 #
 lib_LIBRARIES = libGrid.a
-libGrid_a_SOURCES = Grid_signal.cc
+libGrid_a_SOURCES = Grid_init.cc
 
 #
 # Include files

@@ -2,13 +2,13 @@
 /* Grid_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* AVX */
-/* #undef AVX1 */
+#define AVX1 1
 
 /* AVX2 */
 /* #undef AVX2 */
 
 /* AVX512 */
-#define AVX512 1
+/* #undef AVX512 */
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #define HAVE_GETTIMEOFDAY 1
@@ -17,10 +17,10 @@
 #define HAVE_INTTYPES_H 1
 
 /* Define to 1 if you have the <malloc.h> header file. */
-#define HAVE_MALLOC_H 1
+/* #undef HAVE_MALLOC_H */
 
 /* Define to 1 if you have the <malloc/malloc.h> header file. */
-/* #undef HAVE_MALLOC_MALLOC_H */
+#define HAVE_MALLOC_MALLOC_H 1
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
