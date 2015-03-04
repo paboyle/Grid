@@ -46,12 +46,19 @@ int main (int argc, char ** argv)
     simd_layout[2] = 2;
     simd_layout[3] = 2;
 #endif
-#ifdef AVX1
+#if defined (AVX1)|| defined (AVX2)
     simd_layout[0] = 1;
     simd_layout[1] = 1;
     simd_layout[2] = 2;
     simd_layout[3] = 2;
 #endif
+#if defined (SSE2)
+    simd_layout[0] = 1;
+    simd_layout[1] = 1;
+    simd_layout[2] = 1;
+    simd_layout[3] = 2;
+#endif
+
     
     GridCartesian Fine(latt_size,simd_layout);
     GridRedBlackCartesian rbFine(latt_size,simd_layout);
