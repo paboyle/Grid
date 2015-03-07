@@ -102,9 +102,13 @@ for details on some of the pertinent environment variables.
 
    You can give `configure' initial values for configuration parameters
 by setting variables in the command line or in the environment.  Here
-is an example:
+is are examples:
 
-     ./configure CC=c99 CFLAGS=-g LIBS=-lposix
+     ./configure CXX=clang++ CXXFLAGS="-std=c++11 -O3 -mavx" --enable-simd=AVX1
+
+     ./configure CXX=clang++ CXXFLAGS="-std=c++11 -O3 -mavx2" --enable-simd=AVX2
+
+     ./configure CXX=icpc CXXFLAGS="-std=c++11 -O3 -mmic" --enable-simd=AVX512 --host=none
 
    *Note Defining Variables::, for more details.
 
@@ -124,19 +128,6 @@ architecture at a time in the source code directory.  After you have
 installed the package for one architecture, use `make distclean' before
 reconfiguring for another architecture.
 
-   On MacOS X 10.5 and later systems, you can create libraries and
-executables that work on multiple system types--known as "fat" or
-"universal" binaries--by specifying multiple `-arch' options to the
-compiler but only a single `-arch' option to the preprocessor.  Like
-this:
-
-     ./configure CC="gcc -arch i386 -arch x86_64 -arch ppc -arch ppc64" \
-                 CXX="g++ -arch i386 -arch x86_64 -arch ppc -arch ppc64" \
-                 CPP="gcc -E" CXXCPP="g++ -E"
-
-   This is not guaranteed to produce working output in all cases, you
-may have to build one architecture at a time and combine the results
-using the `lipo' tool if you have problems.
 
 Installation Names
 ==================
@@ -218,70 +209,9 @@ overridden with `make V=0'.
 Particular systems
 ==================
 
-   On HP-UX, the default C compiler is not ANSI C compatible.  If GNU
-CC is not installed, it is recommended to use the following options in
-order to use an ANSI C compiler:
+Cross compiling for native execution on XeonPhi requires 
 
-     ./configure CC="cc -Ae -D_XOPEN_SOURCE=500"
-
-and if that doesn't work, install pre-built binaries of GCC for HP-UX.
-
-   HP-UX `make' updates targets which have the same time stamps as
-their prerequisites, which makes it generally unusable when shipped
-generated files such as `configure' are involved.  Use GNU `make'
-instead.
-
-   On OSF/1 a.k.a. Tru64, some versions of the default C compiler cannot
-parse its `<wchar.h>' header file.  The option `-nodtk' can be used as
-a workaround.  If GNU CC is not installed, it is therefore recommended
-to try
-
-     ./configure CC="cc"
-
-and if that doesn't work, try
-
-     ./configure CC="cc -nodtk"
-
-   On Solaris, don't put `/usr/ucb' early in your `PATH'.  This
-directory contains several dysfunctional programs; working variants of
-these programs are available in `/usr/bin'.  So, if you need `/usr/ucb'
-in your `PATH', put it _after_ `/usr/bin'.
-
-   On Haiku, software installed for all users goes in `/boot/common',
-not `/usr/local'.  It is recommended to use the following options:
-
-     ./configure --prefix=/boot/common
-
-Specifying the System Type
-==========================
-
-   There may be some features `configure' cannot figure out
-automatically, but needs to determine by the type of machine the package
-will run on.  Usually, assuming the package is built to be run on the
-_same_ architectures, `configure' can figure that out, but if it prints
-a message saying it cannot guess the machine type, give it the
-`--build=TYPE' option.  TYPE can either be a short name for the system
-type, such as `sun4', or a canonical name which has the form:
-
-     CPU-COMPANY-SYSTEM
-
-where SYSTEM can have one of these forms:
-
-     OS
-     KERNEL-OS
-
-   See the file `config.sub' for the possible values of each field.  If
-`config.sub' isn't included in this package, then this package doesn't
-need to know the machine type.
-
-   If you are _building_ compiler tools for cross-compiling, you should
-use the option `--target=TYPE' to select the type of system they will
-produce code for.
-
-   If you want to _use_ a cross compiler, that generates code for a
-platform different from the build platform, you should specify the
-"host" platform (i.e., that on which the generated programs will
-eventually be run) with `--host=TYPE'.
+   --build=none
 
 Sharing Defaults
 ================
