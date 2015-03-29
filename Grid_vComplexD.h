@@ -8,6 +8,9 @@ namespace dpo {
     protected:
         zvec v;
     public:
+	typedef zvec     vector_type;
+	typedef ComplexD scalar_type;
+
         vComplexD & operator = ( Zero & z){
             vzero(*this);
             return (*this);
@@ -145,14 +148,43 @@ namespace dpo {
             ymm0 =  _mm512_swizzle_pd(b.v, _MM_SWIZ_REG_CDAB); // OK
             ret.v=  _mm512_fmadd_pd(ymm0,imag,ymm1);
              /* Imag OK */
-            
-
 #endif
 #ifdef QPX
             ret.v = vec_mul(a.v,b.v);
 #endif
             return ret;
         };
+
+        /////////////////////////////////////////////////////////////////
+        // Extract
+        /////////////////////////////////////////////////////////////////
+        friend inline void extract(vComplexD &y,std::vector<ComplexD *> &extracted){
+	  // Bounce off stack is painful
+	  // temporary hack while I figure out the right interface
+	  const int Nsimd = vComplexD::Nsimd();
+	  std::vector<ComplexD> buf(Nsimd); 
+
+	  vstore(y,&buf[0]);
+
+	  for(int i=0;i<Nsimd;i++){
+	    *extracted[i] = buf[i];
+	    extracted[i]++;
+	  }
+        };
+
+        friend inline void merge(vComplexD &y,std::vector<ComplexD *> &extracted){
+	  // Bounce off stack is painful
+	  // temporary hack while I figure out the right interface
+	  const int Nsimd = vComplexD::Nsimd();
+	  std::vector<ComplexD> buf(Nsimd); 
+
+	  for(int i=0;i<Nsimd;i++){
+	    buf[i]=*extracted[i];
+	    extracted[i]++;
+	  }
+	  vset(y,&buf[0]); 
+        };
+        
         
         /////////////////////////////////////////////////////////////////
         // Permute
@@ -165,7 +197,7 @@ namespace dpo {
                 // AB => BA i.e. ab cd =>cd ab
 #endif
 #ifdef SSE2
-                    //No cases here
+		  break;
 #endif
 #ifdef AVX512
                     // 4 complex=>2 permute
@@ -205,7 +237,7 @@ namespace dpo {
 #endif
         }
 
-        friend inline void vset(vComplexD &ret, std::complex<double> *a){
+        friend inline void vset(vComplexD &ret,ComplexD *a){
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_set_pd(a[1].imag(),a[1].real(),a[0].imag(),a[0].real());
 #endif
@@ -221,7 +253,7 @@ namespace dpo {
 #endif
         }
 
-friend inline void vstore(vComplexD &ret, std::complex<double> *a){
+friend inline void vstore(vComplexD &ret, ComplexD *a){
 #if defined (AVX1)|| defined (AVX2)
        _mm256_store_pd((double *)a,ret.v);
 #endif
@@ -273,10 +305,10 @@ friend inline void vstore(vComplexD &ret, std::complex<double> *a){
 	 //            return std::complex<double>(_mm256_mask_reduce_add_pd(0x55, in.v),_mm256_mask_reduce_add_pd(0xAA, in.v));
 	 __attribute__ ((aligned(32))) double c_[4];
          _mm256_store_pd(c_,in.v);
-	 return std::complex<double>(c_[0]+c_[2],c_[1]+c_[3]);
+	 return ComplexD(c_[0]+c_[2],c_[1]+c_[3]);
 #endif 
 #ifdef AVX512
-            return std::complex<double>(_mm512_mask_reduce_add_pd(0x5555, in.v),_mm512_mask_reduce_add_pd(0xAAAA, in.v));
+            return ComplexD(_mm512_mask_reduce_add_pd(0x5555, in.v),_mm512_mask_reduce_add_pd(0xAAAA, in.v));
 #endif 
 #ifdef QPX
 #endif

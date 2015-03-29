@@ -1,10 +1,9 @@
 #ifndef GRID_CARTESIAN_H
 #define GRID_CARTESIAN_H
 
-#include "Grid.h"
-
+#include <Grid.h>
+#include <Grid_Communicator.h>
 namespace dpo{
-
     
 /////////////////////////////////////////////////////////////////////////////////////////
 // Grid Support. Following will go into Grid.h.
@@ -13,28 +12,47 @@ namespace dpo{
     // dpo::Grid
     // dpo::GridCartesian
     // dpo::GridCartesianRedBlack
-    
-class Grid {
+
+
+class SimdGrid : public CartesianCommunicator {
 public:
+
+  
+ SimdGrid(std::vector<int> & processor_grid) : CartesianCommunicator(processor_grid) {};
+
     // Give Lattice access
     template<class object> friend class Lattice;
-
         
 //protected:
         
-    // Lattice wide random support. not yet fully implemented. Need seed strategy
-    // and one generator per site.
-    //std::default_random_engine generator;
+  // Lattice wide random support. not yet fully implemented. Need seed strategy
+  // and one generator per site.
+  //std::default_random_engine generator;
   //    static std::mt19937  generator( 9 );
-
         
     // Grid information.
-    unsigned long _ndimension;
-    std::vector<int> _layout;     // Which dimensions get relayed out over simd lanes.
-    std::vector<int> _dimensions; // Dimensions of array
-    std::vector<int> _rdimensions;// Reduced dimensions with simd lane images removed
+
+    // Commicator provides
+    //    unsigned long _ndimension;
+    //    std::vector<int> _processors; // processor grid
+    //    int              _processor;  // linear processor rank
+    //    std::vector<int> _processor_coor;  // linear processor rank
+
+    std::vector<int> _simd_layout;     // Which dimensions get relayed out over simd lanes.
+
+
+    std::vector<int> _fdimensions;// Global dimensions of array with cb removed
+    std::vector<int> _gdimensions;// Global dimensions of array
+    std::vector<int> _ldimensions;// local dimensions of array with processor images removed
+    std::vector<int> _rdimensions;// Reduced local dimensions with simd lane images and processor images removed 
+
+    //    std::vector<int> _lstart;     // local start of array in gcoors. _processor_coor[d]*_ldimensions[d]
+    //    std::vector<int> _lend;       // local end of array in gcoors    _processor_coor[d]*_ldimensions[d]+_ldimensions_[d]-1
+
+ 
     std::vector<int> _ostride;    // Outer stride for each dimension
     std::vector<int> _istride;    // Inner stride i.e. within simd lane
+
     int _osites;                  // _isites*_osites = product(dimensions).
     int _isites;
         
@@ -70,15 +88,33 @@ public:
         for(int d=0;d<_ndimension;d++) idx+=_istride[d]*(rcoor[d]/_rdimensions[d]);
         return idx;
     }
-        
+    
     inline int oSites(void) { return _osites; };
     inline int iSites(void) { return _isites; };
+
+    inline int CheckerboardFromOsite (int Osite){
+      std::vector<int> ocoor;
+      CoordFromOsite(ocoor,Osite);
+      int ss=0;
+      for(int d=0;d<_ndimension;d++){
+	ss=ss+ocoor[d];
+      }      
+      return ss&0x1;
+    }
+    inline void CoordFromOsite (std::vector<int>& coor,int Osite){
+      coor.resize(_ndimension);
+      for(int d=0;d<_ndimension;d++){
+	coor[d] = Osite % _rdimensions[d];
+	Osite   = Osite / _rdimensions[d];
+      }
+    }
+
     virtual int CheckerBoard(std::vector<int> site)=0;
     virtual int CheckerBoardDestination(int source_cb,int shift)=0;
-    virtual int CheckerBoardShift(int source_cb,int dim,int shift)=0;
+    virtual int CheckerBoardShift(int source_cb,int dim,int shift,int osite)=0;
 };
 
-class GridCartesian: public Grid {
+class GridCartesian: public SimdGrid {
 public:
     virtual int CheckerBoard(std::vector<int> site){
         return 0;
@@ -86,19 +122,24 @@ public:
     virtual int CheckerBoardDestination(int cb,int shift){
         return 0;
     }
-    virtual int CheckerBoardShift(int source_cb,int dim,int shift){
+    virtual int CheckerBoardShift(int source_cb,int dim,int shift, int osite){
         return shift;
     }
-    GridCartesian(std::vector<int> &dimensions,std::vector<int> layout)
+    GridCartesian(std::vector<int> &dimensions,
+		  std::vector<int> &simd_layout,
+		  std::vector<int> &processor_grid
+		  ) : SimdGrid(processor_grid)
     {
         ///////////////////////
         // Grid information
         ///////////////////////
         _ndimension = dimensions.size();
             
-        _dimensions.resize(_ndimension);
+        _fdimensions.resize(_ndimension);
+        _gdimensions.resize(_ndimension);
+        _ldimensions.resize(_ndimension);
         _rdimensions.resize(_ndimension);
-        _layout.resize(_ndimension);
+        _simd_layout.resize(_ndimension);
             
         _ostride.resize(_ndimension);
         _istride.resize(_ndimension);
@@ -106,21 +147,26 @@ public:
         _osites = 1;
         _isites = 1;
         for(int d=0;d<_ndimension;d++){
-            _dimensions[d] = dimensions[d];
-            _layout[d]     = layout[d];
-            // Use a reduced simd grid
-            _rdimensions[d]= _dimensions[d]/_layout[d]; //<-- _layout[d] is zero
-            _osites *= _rdimensions[d];
-            _isites *= _layout[d];
+	  _fdimensions[d] = dimensions[d]; // Global dimensions
+	  _gdimensions[d] = _fdimensions[d]; // Global dimensions
+	  _simd_layout[d] = simd_layout[d];
+
+	  //FIXME check for exact division
+
+	  // Use a reduced simd grid
+	  _ldimensions[d]= _gdimensions[d]/_processors[d];  //local dimensions
+	  _rdimensions[d]= _ldimensions[d]/_simd_layout[d]; //overdecomposition
+	  _osites *= _rdimensions[d];
+	  _isites *= _simd_layout[d];
                 
-            // Addressing support
-            if ( d==0 ) {
-                _ostride[d] = 1;
-                _istride[d] = 1;
-            } else {
-                _ostride[d] = _ostride[d-1]*_rdimensions[d-1];
-                _istride[d] = _istride[d-1]*_layout[d-1];
-            }
+	  // Addressing support
+	  if ( d==0 ) {
+	    _ostride[d] = 1;
+	    _istride[d] = 1;
+	  } else {
+	    _ostride[d] = _ostride[d-1]*_rdimensions[d-1];
+	    _istride[d] = _istride[d-1]*_simd_layout[d-1];
+	  }
         }
         
         ///////////////////////
@@ -148,46 +194,57 @@ public:
         }
     };
 };
-
+ 
 // Specialise this for red black grids storing half the data like a chess board.
-class GridRedBlackCartesian : public Grid
+class GridRedBlackCartesian : public SimdGrid
 {
 public:
     virtual int CheckerBoard(std::vector<int> site){
-        return site[0]&0x1;
+      return (site[0]+site[1]+site[2]+site[3])&0x1;
     }
-    virtual int CheckerBoardShift(int source_cb,int dim,int shift){
-        if ( dim == 0 ){
-            int fulldim =2*_dimensions[0];
-            shift = (shift+fulldim)%fulldim;
-            if ( source_cb ) {
-                // Shift 0,1 -> 0
-                return (shift+1)/2;
-            } else {
-                // Shift 0->0, 1 -> 1, 2->1
-                return (shift)/2;
-            }
-        } else {
-            return shift;
-        }
+
+    // Depending on the cb of site, we toggle source cb.
+    // for block #b, element #e = (b, e)
+    // we need 
+    virtual int CheckerBoardShift(int source_cb,int dim,int shift,int osite){
+
+      if(dim != 0) return shift;
+
+      int fulldim =_fdimensions[0];
+      shift = (shift+fulldim)%fulldim;
+
+      // Probably faster with table lookup;
+      // or by looping over x,y,z and multiply rather than computing checkerboard.
+      int ocb=CheckerboardFromOsite(osite);
+	  
+      if ( (source_cb+ocb)&1 ) {
+	return (shift)/2;
+      } else {
+	return (shift+1)/2;
+      }
     }
+
     virtual int CheckerBoardDestination(int source_cb,int shift){
-        if ((shift+2*_dimensions[0])&0x1) {
+        if ((shift+_fdimensions[0])&0x1) {
             return 1-source_cb;
         } else {
             return source_cb;
         }
     };
-    GridRedBlackCartesian(std::vector<int> &dimensions,std::vector<int> layout)
+    GridRedBlackCartesian(std::vector<int> &dimensions,
+			  std::vector<int> &simd_layout,
+			  std::vector<int> &processor_grid) : SimdGrid(processor_grid)
     {
     ///////////////////////
     // Grid information
     ///////////////////////
         _ndimension = dimensions.size();
         
-        _dimensions.resize(_ndimension);
+        _fdimensions.resize(_ndimension);
+        _gdimensions.resize(_ndimension);
+        _ldimensions.resize(_ndimension);
         _rdimensions.resize(_ndimension);
-        _layout.resize(_ndimension);
+        _simd_layout.resize(_ndimension);
         
         _ostride.resize(_ndimension);
         _istride.resize(_ndimension);
@@ -195,14 +252,17 @@ public:
         _osites = 1;
         _isites = 1;
         for(int d=0;d<_ndimension;d++){
-            _dimensions[d] = dimensions[d];
-            _dimensions[0] = dimensions[0]/2;
-            _layout[d]     = layout[d];
+            _fdimensions[d] = dimensions[d];
+            _gdimensions[d] = _fdimensions[d];
+            if (d==0) _gdimensions[0] = _gdimensions[0]/2; // Remove a checkerboard
+            _ldimensions[d] = _gdimensions[d]/_processors[d];
                 
             // Use a reduced simd grid
-            _rdimensions[d]= _dimensions[d]/_layout[d];
+            _simd_layout[d] = simd_layout[d];
+            _rdimensions[d]= _ldimensions[d]/_simd_layout[d];
+
             _osites *= _rdimensions[d];
-            _isites *= _layout[d];
+            _isites *= _simd_layout[d];
                 
             // Addressing support
             if ( d==0 ) {
@@ -210,7 +270,7 @@ public:
                 _istride[d] = 1;
             } else {
                 _ostride[d] = _ostride[d-1]*_rdimensions[d-1];
-                _istride[d] = _istride[d-1]*_layout[d-1];
+                _istride[d] = _istride[d-1]*_simd_layout[d-1];
             }
         }
             

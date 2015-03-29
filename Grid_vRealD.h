@@ -7,7 +7,11 @@ namespace dpo{
     class vRealD  {
     protected:
         dvec v; // dvec is double precision vector
+
     public:
+	typedef dvec  vector_type;
+	typedef RealD scalar_type;
+
         vRealD(){};
 
         friend inline void mult(vRealD * __restrict__ y,const vRealD * __restrict__ l,const vRealD *__restrict__ r) {*y = (*l) * (*r);}
@@ -94,6 +98,37 @@ namespace dpo{
 #endif
             return ret;
         };
+
+        /////////////////////////////////////////////////////////////////
+        // Extract
+        /////////////////////////////////////////////////////////////////
+        friend inline void extract(vRealD &y,std::vector<RealD *> &extracted){
+	  // Bounce off stack is painful
+	  // temporary hack while I figure out the right interface
+	  const int Nsimd = vRealD::Nsimd();
+	  RealD buf[Nsimd]; 
+
+	  vstore(y,buf);
+
+	  for(int i=0;i<Nsimd;i++){
+	    *extracted[i] = buf[i];
+	    extracted[i]++;
+	  }
+        };
+
+        friend inline void merge(vRealD &y,std::vector<RealD *> &extracted){
+	  // Bounce off stack is painful
+	  // temporary hack while I figure out the right interface
+	  const int Nsimd = vRealD::Nsimd();
+	  RealD buf[Nsimd]; 
+
+	  for(int i=0;i<Nsimd;i++){
+	    buf[i]=*extracted[i];
+	    extracted[i]++;
+	  }
+	  vset(y,buf); 
+        };
+
         
         // Permute plans
         // Permute 0 every ABCDEFGH -> BA DC FE HG

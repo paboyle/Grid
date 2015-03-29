@@ -47,7 +47,7 @@ namespace dpo {
   typedef std::complex<RealF> ComplexF;
   typedef std::complex<RealD> ComplexD;
   typedef std::complex<Real>  Complex;
-  
+
 
   inline RealF adj(const RealF  & r){ return r; }
   inline RealF conj(const RealF  & r){ return r; }
@@ -130,7 +130,7 @@ namespace dpo {
 #if defined (AVX1) || defined (AVX2)
     typedef __m256 fvec;
     typedef __m256d dvec;
-    typedef __m256 cvec;
+    typedef __m256  cvec;
     typedef __m256d zvec;
 #endif
 #if defined (AVX512)

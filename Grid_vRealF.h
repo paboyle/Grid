@@ -7,7 +7,12 @@ namespace dpo {
     class vRealF  {
     protected:
         fvec v;
+
     public:
+
+	typedef fvec  vector_type;
+	typedef RealF scalar_type;
+
         vRealF(){};
         ////////////////////////////////////
         // Arithmetic operator overloads +,-,*
@@ -113,6 +118,37 @@ namespace dpo {
         //////////////////////////////////
         friend inline void vone (vRealF &ret){vsplat(ret,1.0);}
         friend inline void vzero(vRealF &ret){vsplat(ret,0.0);}
+
+
+        /////////////////////////////////////////////////////////////////
+        // Extract
+        /////////////////////////////////////////////////////////////////
+        friend inline void extract(vRealF &y,std::vector<RealF *> &extracted){
+	  // Bounce off stack is painful
+	  // temporary hack while I figure out the right interface
+	  const int Nsimd = vRealF::Nsimd();
+	  RealF buf[Nsimd]; 
+
+	  vstore(y,buf);
+
+	  for(int i=0;i<Nsimd;i++){
+	    *extracted[i] = buf[i];
+	    extracted[i]++;
+	  }
+        };
+
+        friend inline void merge(vRealF &y,std::vector<RealF *> &extracted){
+	  // Bounce off stack is painful
+	  // temporary hack while I figure out the right interface
+	  const int Nsimd = vRealF::Nsimd();
+	  RealF buf[Nsimd]; 
+
+	  for(int i=0;i<Nsimd;i++){
+	    buf[i]=*extracted[i];
+	    extracted[i]++;
+	  }
+	  vset(y,buf); 
+        };
         
         //////////////////////////////////////////////////////////
         // Permute
@@ -256,7 +292,7 @@ friend inline void vstore(vRealF &ret, float *a){
             return *this;
         }
     public:
-        static int Nsimd(void) { return sizeof(fvec)/sizeof(float);}
+        static inline int Nsimd(void) { return sizeof(fvec)/sizeof(float);}
     };
     inline vRealF localInnerProduct(const vRealF & l, const vRealF & r) { return conj(l)*r; }
     inline void  zeroit(vRealF &z){ vzero(z);}
