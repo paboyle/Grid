@@ -5,7 +5,6 @@ namespace QCD {
 
     static const int Nc=3;
     static const int Ns=4;
-
     static const int CbRed  =0;
     static const int CbBlack=1;
 

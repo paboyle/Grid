@@ -1,6 +1,63 @@
 #ifndef GRID_MATH_TYPES_H
 #define GRID_MATH_TYPES_H
 namespace dpo {
+
+
+
+//////////////////////////////////////////////////////////////////////////////////
+// Want to recurse: GridTypeMapper<Matrix<vComplexD> >::scalar_type == ComplexD.
+//////////////////////////////////////////////////////////////////////////////////
+
+  template <class T> class GridTypeMapper {
+  public:
+    typedef typename T::scalar_type scalar_type;
+    typedef typename T::vector_type vector_type;
+  };
+
+  template<> class GridTypeMapper<RealF> {
+  public:
+    typedef RealF scalar_type;
+    typedef RealF vector_type;
+  };
+  template<> class GridTypeMapper<RealD> {
+  public:
+    typedef RealD scalar_type;
+    typedef RealD vector_type;
+  };
+  template<> class GridTypeMapper<ComplexF> {
+  public:
+    typedef ComplexF scalar_type;
+    typedef ComplexF vector_type;
+  };
+  template<> class GridTypeMapper<ComplexD> {
+  public:
+    typedef ComplexD scalar_type;
+    typedef ComplexD vector_type;
+  };
+
+  template<> class GridTypeMapper<vRealF> {
+  public:
+    typedef RealF  scalar_type;
+    typedef vRealF vector_type;
+  };
+  template<> class GridTypeMapper<vRealD> {
+  public:
+    typedef RealD  scalar_type;
+    typedef vRealD vector_type;
+  };
+  template<> class GridTypeMapper<vComplexF> {
+  public:
+    typedef ComplexF  scalar_type;
+    typedef vComplexF vector_type;
+  };
+  template<> class GridTypeMapper<vComplexD> {
+  public:
+    typedef ComplexD  scalar_type;
+    typedef vComplexD vector_type;
+  };
+
+
+
 ///////////////////////////////////////////////////
 // Scalar, Vector, Matrix objects.
 // These can be composed to form tensor products of internal indices.
@@ -10,6 +67,10 @@ template<class vtype> class iScalar
 {
 public:
   SIMDalign vtype _internal;
+
+  typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
+  typedef typename GridTypeMapper<vtype>::vector_type vector_type;
+
     iScalar(){};
     iScalar(Zero &z){ *this = zero; };
     iScalar<vtype> & operator= (const Zero &hero){
@@ -18,6 +79,15 @@ public:
     }
     friend void zeroit(iScalar<vtype> &that){
         zeroit(that._internal);
+    }
+    friend void permute(iScalar<vtype> &out,iScalar<vtype> &in,int permutetype){
+      permute(out._internal,in._internal,permutetype);
+    }
+    friend void extract(iScalar<vtype> &in,std::vector<scalar_type *> &out){
+      extract(in._internal,out); // extract advances the pointers in out
+    }
+    friend void merge(iScalar<vtype> &in,std::vector<scalar_type *> &out){
+      merge(in._internal,out); // extract advances the pointers in out
     }
     // Unary negation
     friend inline iScalar<vtype> operator -(const iScalar<vtype> &r) {
@@ -38,14 +108,16 @@ public:
         *this = (*this)+r;
         return *this;
     }
-    
-
 };
     
 template<class vtype,int N> class iVector
 {
 public:
   SIMDalign vtype _internal[N];
+
+  typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
+  typedef typename GridTypeMapper<vtype>::vector_type vector_type;
+
     iVector(Zero &z){ *this = zero; };
     iVector() {};
     iVector<vtype,N> & operator= (Zero &hero){
@@ -56,6 +128,21 @@ public:
         for(int i=0;i<N;i++){
             zeroit(that._internal[i]);
         }
+    }
+    friend void permute(iVector<vtype,N> &out,iVector<vtype,N> &in,int permutetype){
+      for(int i=0;i<N;i++){
+	permute(out._internal[i],in._internal[i],permutetype);
+      }
+    }
+    friend void extract(iVector<vtype,N> &in,std::vector<scalar_type *> &out){
+      for(int i=0;i<N;i++){
+	extract(in._internal[i],out);// extract advances pointers in out
+      }
+    }
+    friend void merge(iVector<vtype,N> &in,std::vector<scalar_type *> &out){
+      for(int i=0;i<N;i++){
+	merge(in._internal[i],out);// extract advances pointers in out
+      }
     }
     // Unary negation
     friend inline iVector<vtype,N> operator -(const iVector<vtype,N> &r) {
@@ -84,6 +171,10 @@ template<class vtype,int N> class iMatrix
 {
 public:
   SIMDalign    vtype _internal[N][N];
+
+  typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
+  typedef typename GridTypeMapper<vtype>::vector_type vector_type;
+
     iMatrix(Zero &z){ *this = zero; };
     iMatrix() {};
     iMatrix<vtype,N> & operator= (Zero &hero){
@@ -95,6 +186,24 @@ public:
         for(int j=0;j<N;j++){
                 zeroit(that._internal[i][j]);
         }}
+    }
+    friend void permute(iMatrix<vtype,N> &out,iMatrix<vtype,N> &in,int permutetype){
+      for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+	permute(out._internal[i][j],in._internal[i][j],permutetype);
+      }}
+    }
+    friend void extract(iMatrix<vtype,N> &in,std::vector<scalar_type *> &out){
+      for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+	extract(in._internal[i][j],out);// extract advances pointers in out
+      }}
+    }
+    friend void merge(iMatrix<vtype,N> &in,std::vector<scalar_type *> &out){
+      for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+	merge(in._internal[i][j],out);// extract advances pointers in out
+      }}
     }
     // Unary negation
     friend inline iMatrix<vtype,N> operator -(const iMatrix<vtype,N> &r) {

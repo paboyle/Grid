@@ -8,6 +8,11 @@ namespace dpo {
         cvec v;
         
     public:
+        static inline int Nsimd(void) { return sizeof(cvec)/sizeof(float)/2;}
+    public:
+	typedef cvec     vector_type;
+	typedef ComplexF scalar_type;
+
         vComplexF & operator = ( Zero & z){
             vzero(*this);
             return (*this);
@@ -126,6 +131,39 @@ namespace dpo {
         };
 
         /////////////////////////////////////////////////////////////////
+        // Extract
+        /////////////////////////////////////////////////////////////////
+        friend inline void extract(vComplexF &y,std::vector<ComplexF *> &extracted){
+	  // Bounce off heap is painful
+	  // temporary hack while I figure out the right interface
+            vComplexF vbuf;
+            ComplexF *buf = (ComplexF *)&vbuf;
+            
+	  vstore(y,&buf[0]);
+	  for(int i=0;i<vComplexF::Nsimd();i++){
+	    *extracted[i] = buf[i];
+	    extracted[i]++;
+	  }
+
+        };
+
+        friend inline void merge(vComplexF &y,std::vector<ComplexF *> &extracted){
+	  // Bounce off stack is painful
+	  // temporary hack while I figure out the right interface
+	  const int Nsimd = vComplexF::Nsimd();
+            vComplexF vbuf;
+            ComplexF *buf = (ComplexF *)&vbuf;
+
+	  for(int i=0;i<Nsimd;i++){
+	    buf[i]=*extracted[i];
+	    extracted[i]++;
+	  }
+	  vset(y,&buf[0]); 
+        };
+        
+
+
+        /////////////////////////////////////////////////////////////////
         // Permute
         /////////////////////////////////////////////////////////////////
         friend inline void permute(vComplexF &y,vComplexF b,int perm){
@@ -185,7 +223,7 @@ namespace dpo {
             vsplat(ret,a,b);
         }
 
-friend inline void vstore(vComplexF &ret, std::complex<float> *a){
+friend inline void vstore(vComplexF &ret, ComplexF *a){
 #if defined (AVX1)|| defined (AVX2)
         _mm256_store_ps((float *)a,ret.v);
 #endif
@@ -225,11 +263,11 @@ exit(-1);
 #if defined (AVX1) || defined(AVX2)
          __attribute__ ((aligned(32))) float c_[8];
          _mm256_store_ps(c_,in.v);
-         return std::complex<float>(c_[0]+c_[2]+c_[4]+c_[6],c_[1]+c_[3]+c_[5]+c_[7]);
+         return ComplexF(c_[0]+c_[2]+c_[4]+c_[6],c_[1]+c_[3]+c_[5]+c_[7]);
 
 #endif
 #ifdef AVX512
-            return std::complex<float>(_mm512_mask_reduce_add_ps(0x5555, in.v),_mm512_mask_reduce_add_ps(0xAAAA, in.v));
+            return ComplexF(_mm512_mask_reduce_add_ps(0x5555, in.v),_mm512_mask_reduce_add_ps(0xAAAA, in.v));
 #endif
 #ifdef QPX
 #endif
@@ -321,9 +359,6 @@ exit(-1);
             return *this;
         }
 
-        
-    public:
-        static int Nsimd(void) { return sizeof(cvec)/sizeof(float)/2;}
     };
 
     inline vComplexF localInnerProduct(const vComplexF & l, const vComplexF & r) { return conj(l)*r; }

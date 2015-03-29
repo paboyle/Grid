@@ -28,13 +28,13 @@ double usecond(void) {
 
 void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
 {
-         ucontext_t * uc= (ucontext_t *)ptr;
-
   printf("Caught signal %d\n",si->si_signo);
   printf("  mem address %llx\n",(uint64_t)si->si_addr);
   printf("         code %d\n",si->si_code);
 
 #ifdef __X86_64
+    ucontext_t * uc= (ucontext_t *)ptr;
+
   struct sigcontext *sc = (struct sigcontext *)&uc->uc_mcontext;
   printf("  instruction %llx\n",(uint64_t)sc->rip);
 

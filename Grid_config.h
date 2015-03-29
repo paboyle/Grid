@@ -10,6 +10,15 @@
 /* AVX512 */
 /* #undef AVX512 */
 
+/* GRID_COMMS_FAKE */
+#define GRID_COMMS_FAKE 1
+
+/* GRID_COMMS_MPI */
+/* #undef GRID_COMMS_MPI */
+
+/* GRID_COMMS_NONE */
+/* #undef GRID_COMMS_NONE */
+
 /* Define to 1 if you have the `gettimeofday' function. */
 #define HAVE_GETTIMEOFDAY 1
 
@@ -60,6 +69,9 @@
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "grid"
+
+/* Define to the home page for this package. */
+#define PACKAGE_URL ""
 
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "1.0"

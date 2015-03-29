@@ -14,7 +14,7 @@ using namespace dpo::QCD;
 int main (int argc, char ** argv)
 {
 
-#ifdef KNL
+#if 0
   struct sigaction sa,osa;
   sigemptyset (&sa.sa_mask);
   sa.sa_sigaction= sa_action;
@@ -27,6 +27,9 @@ int main (int argc, char ** argv)
     std::vector<int> latt_size(4);
     std::vector<int> simd_layout(4);
 
+    std::vector<int> mpi_layout(4);
+    for(int d=0;d<4;d++) mpi_layout[d]=1;
+
 #ifdef AVX512
  for(int omp=128;omp<236;omp+=16){
 #else
@@ -37,7 +40,7 @@ int main (int argc, char ** argv)
    omp_set_num_threads(omp);
 #endif 
 
-  for(int lat=16;lat<=20;lat+=4){
+  for(int lat=4;lat<=16;lat+=40){
     latt_size[0] = lat;
     latt_size[1] = lat;
     latt_size[2] = lat;
@@ -62,11 +65,9 @@ int main (int argc, char ** argv)
     simd_layout[2] = 1;
     simd_layout[3] = 2;
 #endif
-
     
-    GridCartesian Fine(latt_size,simd_layout);
-    GridRedBlackCartesian rbFine(latt_size,simd_layout);
-
+    GridCartesian Fine(latt_size,simd_layout,mpi_layout);
+    GridRedBlackCartesian rbFine(latt_size,simd_layout,mpi_layout);
     
     LatticeColourMatrix Foo(&Fine);
     LatticeColourMatrix Bar(&Fine);
@@ -152,19 +153,23 @@ int main (int argc, char ** argv)
     trscMat = trace(scMat); // Trace
     
     FooBar = Bar;
-    int shift=1;
-    int dir=0;
  
+    /*
+    { 
+      std::vector<int> coor(4);
+      for(int d=0;d<4;d++) coor[d] = 0;
+      peekSite(cmat,Foo,coor);
+      Foo = zero;
+      pokeSite(cmat,Foo,coor);
+    }
     random(Foo);
-    pickCheckerboard(CbRed,rFoo,Foo);    // Pick out red or black checkerboards
-    pickCheckerboard(CbBlack,bFoo,Foo);
+    */
+    lex_sites(Foo);
 
-    Shifted  = Cshift(Foo,dir,shift);    // Shift everything
-    bShifted = Cshift(rFoo,dir,shift);   // Shift red
-    rShifted = Cshift(bFoo,dir,shift);   // Shift black
-    
-    setCheckerboard(ShiftedCheck,bShifted); // Put them all together
-    setCheckerboard(ShiftedCheck,rShifted); // and check the results (later)
+
+    //setCheckerboard(ShiftedCheck,rFoo); 
+    //setCheckerboard(ShiftedCheck,bFoo); 
+
 
     // Lattice SU(3) x SU(3)
     FooBar = Foo * Bar;
@@ -211,25 +216,69 @@ int main (int argc, char ** argv)
     printf("Cshift Mult: NumThread %d , Lattice size %d , %f Mflop/s\n",omp,lat,flops/(t1-t0));
     printf("Cshift Mult: NumThread %d , Lattice size %d , %f MB/s\n",omp,lat,bytes/(t1-t0));
 
-    pickCheckerboard(0,rFoo,FooBar);
-    pickCheckerboard(1,bFoo,FooBar);
-    
-    setCheckerboard(FooBar,rFoo);
-    setCheckerboard(FooBar,bFoo);
+    //    pickCheckerboard(0,rFoo,FooBar);
+    //    pickCheckerboard(1,bFoo,FooBar);
+    //    setCheckerboard(FooBar,rFoo);
+    //    setCheckerboard(FooBar,bFoo);
     
     double nrm=0;
+
+    for(int dir=0;dir<4;dir++){
+      for(int shift=0;shift<latt_size[dir];shift++){
+
+
+
+	pickCheckerboard(0,rFoo,Foo);    // Pick out red or black checkerboards
+	pickCheckerboard(1,bFoo,Foo);
     
-    std::vector<int> coor(4);
-    for(coor[0]=0;coor[0]<latt_size[0];coor[0]++){
-    for(coor[1]=0;coor[1]<latt_size[1];coor[1]++){
-    for(coor[2]=0;coor[2]<latt_size[2];coor[2]++){
-    for(coor[3]=0;coor[3]<latt_size[3];coor[3]++){
+	std::cout << "Shifting both parities by "<< shift <<" direction "<< dir <<std::endl;
+	Shifted  = Cshift(Foo,dir,shift);    // Shift everything
+
+	std::cout << "Shifting even parities"<<std::endl;
+	bShifted = Cshift(rFoo,dir,shift);   // Shift red->black
+	std::cout << "Shifting odd parities"<<std::endl;
+	rShifted = Cshift(bFoo,dir,shift);   // Shift black->red
+    
+	ShiftedCheck=zero;
+	setCheckerboard(ShiftedCheck,bShifted); // Put them all together
+	setCheckerboard(ShiftedCheck,rShifted); // and check the results (later)
+    
+	// Check results
+	std::vector<int> coor(4);
+	for(coor[3]=0;coor[3]<latt_size[3];coor[3]++){
+	for(coor[2]=0;coor[2]<latt_size[2];coor[2]++){
+	for(coor[1]=0;coor[1]<latt_size[1];coor[1]++){
+	for(coor[0]=0;coor[0]<latt_size[0];coor[0]++){
  
         std::complex<dpo::Real> diff;
                     
         std::vector<int> shiftcoor = coor;
-        shiftcoor[dir]=(shiftcoor[dir]-shift+latt_size[dir])%latt_size[dir];
-                    
+        shiftcoor[dir]=(shiftcoor[dir]+shift+latt_size[dir])%latt_size[dir];
+
+	std::vector<int> rl(4);
+	for(int dd=0;dd<4;dd++){
+	  rl[dd] = latt_size[dd]/simd_layout[dd];
+	}
+	int lex =  coor[0]%rl[0]
+	  + (coor[1]%rl[1])*rl[0]
+	  + (coor[2]%rl[2])*rl[0]*rl[1]
+	  + (coor[3]%rl[3])*rl[0]*rl[1]*rl[2];
+	lex += 
+	  +1000*(coor[0]/rl[0])
+	  +1000*(coor[1]/rl[1])*simd_layout[0]
+	  +1000*(coor[2]/rl[2])*simd_layout[0]*simd_layout[1]
+	  +1000*(coor[3]/rl[3])*simd_layout[0]*simd_layout[1]*simd_layout[2];
+
+	int lex_coor = shiftcoor[0]%rl[0]
+	  + (shiftcoor[1]%rl[1])*rl[0]
+	  + (shiftcoor[2]%rl[2])*rl[0]*rl[1]
+	  + (shiftcoor[3]%rl[3])*rl[0]*rl[1]*rl[2];
+	lex_coor += 
+	  +1000*(shiftcoor[0]/rl[0])
+	  +1000*(shiftcoor[1]/rl[1])*simd_layout[0]
+	  +1000*(shiftcoor[2]/rl[2])*simd_layout[0]*simd_layout[1]
+	  +1000*(shiftcoor[3]/rl[3])*simd_layout[0]*simd_layout[1]*simd_layout[2];
+
         ColourMatrix foo;
         ColourMatrix bar;
         ColourMatrix shifted1;
@@ -242,7 +291,6 @@ int main (int argc, char ** argv)
         peekSite(shifted1,Shifted,coor);
         peekSite(shifted2,Foo,shiftcoor);
         peekSite(shifted3,ShiftedCheck,coor);
-       
         peekSite(foo,Foo,coor);
         
         mdiff = shifted1-shifted2;
@@ -258,13 +306,13 @@ int main (int argc, char ** argv)
             diff =shifted1._internal._internal[r][c]-shifted2._internal._internal[r][c];
             nn=real(conj(diff)*diff);
             if ( nn > 0 )
-                cout<<"Shift fail "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "
+                cout<<"Shift fail (shifted1/shifted2-ref) "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "
                     <<shifted1._internal._internal[r][c]<<" "<<shifted2._internal._internal[r][c]
-                    << " "<< foo._internal._internal[r][c]<<endl;
+                    << " "<< foo._internal._internal[r][c]<< " lex expect " << lex_coor << " lex "<<lex<<endl;
             else if(0)
-                cout<<"Shift pass "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "
+                cout<<"Shift pass 1vs2 "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "
                     <<shifted1._internal._internal[r][c]<<" "<<shifted2._internal._internal[r][c]
-                    << " "<< foo._internal._internal[r][c]<<endl;
+                    << " "<< foo._internal._internal[r][c]<< " lex expect " << lex_coor << " lex "<<lex<<endl;
         }}
         
         for(int r=0;r<3;r++){
@@ -272,13 +320,13 @@ int main (int argc, char ** argv)
             diff =shifted3._internal._internal[r][c]-shifted2._internal._internal[r][c];
             nn=real(conj(diff)*diff);
             if ( nn > 0 )
-                cout<<"Shift rb fail "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "
+                cout<<"Shift rb fail (shifted3/shifted2-ref) "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "
                 <<shifted3._internal._internal[r][c]<<" "<<shifted2._internal._internal[r][c]
-                << " "<< foo._internal._internal[r][c]<<endl;
+                << " "<< foo._internal._internal[r][c]<< " lex expect " << lex_coor << " lex "<<lex<<endl;
             else if(0)
-                cout<<"Shift rb pass "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "
+                cout<<"Shift rb pass 3vs2 "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "
                 <<shifted3._internal._internal[r][c]<<" "<<shifted2._internal._internal[r][c]
-                << " "<< foo._internal._internal[r][c]<<endl;
+                << " "<< foo._internal._internal[r][c]<< " lex expect " << lex_coor << " lex "<<lex<<endl;
         }}
         peekSite(bar,Bar,coor);
                     
@@ -290,7 +338,7 @@ int main (int argc, char ** argv)
             nrm = nrm + real(conj(diff)*diff);
         }}
     }}}}
-
+      }}
     std::cout << "LatticeColorMatrix * LatticeColorMatrix nrm diff = "<<nrm<<std::endl;
 
    } // loop for lat
