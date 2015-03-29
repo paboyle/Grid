@@ -50,5 +50,27 @@ case ${ac_SIMD} in
      ;;
 esac
 
+
+AC_ARG_ENABLE([comms],[AC_HELP_STRING([--enable-comms=none|fake|mpi],[Select communications])],[ac_COMMS=${enable_comms}],[ac_COMMS=none])
+
+case ${ac_COMMS} in
+     fake)
+       echo Configuring for FAKE communications
+       AC_DEFINE([GRID_COMMS_FAKE],[1],[GRID_COMMS_FAKE] )
+     ;;
+     none)
+       echo Configuring for NO communications
+       AC_DEFINE([GRID_COMMS_NONE],[1],[GRID_COMMS_NONE] )
+     ;;
+     mpi)
+       echo Configuring for MPI communications
+       AC_DEFINE([GRID_COMMS_MPI],[1],[GRID_COMMS_MPI] )
+     ;;
+     *)
+     AC_MSG_ERROR([${ac_COMMS} unsupported --enable-comms option]); 
+     ;;
+esac
+
+
 AC_CONFIG_FILES(Makefile)
 AC_OUTPUT

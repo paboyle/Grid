@@ -23,5 +23,8 @@ include_HEADERS = Grid.h\
 # Test code
 #
 bin_PROGRAMS = Grid_main
-Grid_main_SOURCES = Grid_main.cc
+Grid_main_SOURCES = \
+	Grid_main.cc\
+	Grid_fake.cc
+
 Grid_main_LDADD = libGrid.a
