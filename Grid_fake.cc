@@ -27,7 +27,6 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
 		    int bytes)
 {
   exit(-1);
-  bcopy(xmit,recv,bytes);
 }
 
 }
