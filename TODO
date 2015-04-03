@@ -1,0 +1,28 @@
+* Make peekSite, pokeSite work in an MPI context.
+
+* Conditional execution Subset, where etc...
+* Coordinate information, integers etc...
+* Integer type padding/union to vector.
+
+* Optimise the extract/merge SIMD routines
+
+* Broadcast, reduction tests.
+
+* QDP++ regression suite and comparative benchmark
+
+* NERSC Lattice loading, plaquette test
+
+* Conformable test in Cshift routines.
+
+* Gamma/Dirac structures
+* Fourspin, two spin project
+
+* Stencil operator support
+
+* Check for missing functionality
+
+* I/O support
+  - MPI IO?
+  - BinaryWriter, TextWriter etc...
+  - protocol buffers?
+  - 
