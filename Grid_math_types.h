@@ -1,6 +1,6 @@
 #ifndef GRID_MATH_TYPES_H
 #define GRID_MATH_TYPES_H
-namespace dpo {
+namespace Grid {
 
 
 

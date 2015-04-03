@@ -14,7 +14,7 @@
 #include "Grid.h"
 
 #undef __X86_64
-namespace dpo {
+namespace Grid {
 
 void Grid_init(int *argc,char ***argv)
 {

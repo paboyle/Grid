@@ -3,7 +3,7 @@
 
 #include "Grid.h"
 
-namespace dpo {
+namespace Grid {
     class vRealF  {
     protected:
         fvec v;

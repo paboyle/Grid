@@ -1,6 +1,6 @@
 #ifndef GRID_ALIGNED_ALLOCATOR_H
 #define GRID_ALIGNED_ALLOCATOR_H
-namespace dpo {
+namespace Grid {
 
 ////////////////////////////////////////////////////////////////////
 // A lattice of something, but assume the something is SIMDized.
@@ -52,5 +52,5 @@ template<typename _Tp>  inline bool
 operator!=(const alignedAllocator<_Tp>&, const alignedAllocator<_Tp>&){ return false; }
 
     
-}; // namespace dpo
+}; // namespace Grid
 #endif

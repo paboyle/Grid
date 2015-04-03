@@ -2,7 +2,7 @@
 #define VCOMPLEXF
 #include "Grid.h"
 
-namespace dpo {
+namespace Grid {
     class vComplexF {
     protected:
         cvec v;

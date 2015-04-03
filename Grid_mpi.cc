@@ -1,7 +1,7 @@
 #include "Grid.h"
 #include <mpi.h>
 
-namespace dpo {
+namespace Grid {
 
   // Should error check all MPI calls.
 

@@ -6,7 +6,7 @@
 #ifdef GRID_COMMS_MPI
 #include <mpi.h>
 #endif
-namespace dpo {
+namespace Grid {
 class CartesianCommunicator {
   public:    
 
