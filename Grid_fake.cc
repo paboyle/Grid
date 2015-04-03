@@ -1,5 +1,5 @@
 #include "Grid.h"
-namespace dpo {
+namespace Grid {
 
 CartesianCommunicator::CartesianCommunicator(std::vector<int> &processors)
 {

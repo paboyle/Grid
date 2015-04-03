@@ -5,7 +5,7 @@
 
 
 
-namespace dpo {
+namespace Grid {
 
 // Permute the pointers 32bitx16 = 512
 static int permute_map[4][16] = { 
@@ -37,22 +37,9 @@ public:
     }
     
 
-#include <Grid_cshift_common.h>
-
-#ifdef GRID_COMMS_NONE
-#include <Grid_none_cshift.h>
-#endif
-
-#ifdef GRID_COMMS_FAKE
-#include <Grid_fake_cshift.h>
-#endif
-
-#ifdef GRID_COMMS_MPI
-#include <Grid_mpi_cshift.h>
-#endif 
-
+#include <Grid_cshift.h>
     
-    // overloading dpo::conformable but no conformable in dpo ...?:w
+    // overloading Grid::conformable but no conformable in Grid ...?:w
     template<class obj1,class obj2>
     friend void conformable(const Lattice<obj1> &lhs,const Lattice<obj2> &rhs);
 

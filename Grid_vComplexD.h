@@ -3,7 +3,7 @@
 #include "Grid.h"
 #include "Grid_vComplexF.h"
 
-namespace dpo {
+namespace Grid {
     class vComplexD {
     protected:
         zvec v;

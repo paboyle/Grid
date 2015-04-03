@@ -7,8 +7,8 @@
 #include "Grid_Lattice.h"
 
 using namespace std;
-using namespace dpo;
-using namespace dpo::QCD;
+using namespace Grid;
+using namespace Grid::QCD;
 
 
 int main (int argc, char ** argv)
@@ -175,10 +175,10 @@ int main (int argc, char ** argv)
     double t0,t1,flops;
     double bytes;
     int ncall=100;
-    int Nc = dpo::QCD::Nc;
+    int Nc = Grid::QCD::Nc;
 
     flops = ncall*1.0*volume*(8*Nc*Nc*Nc);
-    bytes = ncall*1.0*volume*Nc*Nc    *2*3*sizeof(dpo::Real);
+    bytes = ncall*1.0*volume*Nc*Nc    *2*3*sizeof(Grid::Real);
     printf("%f flop and %f bytes\n",flops,bytes/ncall);
         FooBar = Foo * Bar;
     t0=usecond();
@@ -195,7 +195,7 @@ int main (int argc, char ** argv)
     mult(FooBar,Foo,Bar);
     FooBar = Foo * Bar;
 
-    bytes = ncall*1.0*volume*Nc*Nc    *2*5*sizeof(dpo::Real);
+    bytes = ncall*1.0*volume*Nc*Nc    *2*5*sizeof(Grid::Real);
     t0=usecond();
     for(int i=0;i<ncall;i++){
       mult(FooBar,Foo,Cshift(Bar,1,-2));
@@ -244,7 +244,7 @@ int main (int argc, char ** argv)
 	for(coor[1]=0;coor[1]<latt_size[1]/mpi_layout[1];coor[1]++){
 	for(coor[0]=0;coor[0]<latt_size[0]/mpi_layout[0];coor[0]++){
  
-        std::complex<dpo::Real> diff;
+        std::complex<Grid::Real> diff;
                     
         std::vector<int> shiftcoor = coor;
         shiftcoor[dir]=(shiftcoor[dir]+shift+latt_size[dir])%(latt_size[dir]/mpi_layout[dir]);

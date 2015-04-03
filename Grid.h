@@ -50,7 +50,7 @@
 #include <Grid_Lattice.h>
 #include <Grid_QCD.h>
 
-namespace dpo {
+namespace Grid {
 
   void Grid_init(int *argc,char ***argv);
   double usecond(void);

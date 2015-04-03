@@ -3,15 +3,15 @@
 
 #include <Grid.h>
 #include <Grid_Communicator.h>
-namespace dpo{
+namespace Grid{
     
 /////////////////////////////////////////////////////////////////////////////////////////
 // Grid Support. Following will go into Grid.h.
 /////////////////////////////////////////////////////////////////////////////////////////
     // Cartesian grids
-    // dpo::Grid
-    // dpo::GridCartesian
-    // dpo::GridCartesianRedBlack
+    // Grid::Grid
+    // Grid::GridCartesian
+    // Grid::GridCartesianRedBlack
 
 
 class SimdGrid : public CartesianCommunicator {

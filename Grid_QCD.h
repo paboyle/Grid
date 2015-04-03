@@ -1,6 +1,6 @@
 #ifndef GRID_QCD_H
 #define GRID_QCD_H
-namespace dpo{
+namespace Grid{
 namespace QCD {
 
     static const int Nc=3;
@@ -89,5 +89,5 @@ namespace QCD {
         return ret;
      }
 }   //namespace QCD
-} // dpo
+} // Grid
 #endif

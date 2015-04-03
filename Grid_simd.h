@@ -38,7 +38,7 @@
     //
     
 
-namespace dpo {
+namespace Grid {
 
   typedef  float  RealF;
   typedef  double RealD;
@@ -57,7 +57,7 @@ namespace dpo {
   inline RealF localInnerProduct(const RealF & l, const RealF & r) { return l*r; }
 
     ////////////////////////////////////////////////////////////////////////////////
-    //Provide support functions for basic real and complex data types required by dpo
+    //Provide support functions for basic real and complex data types required by Grid
     //Single and double precision versions. Should be able to template this once only.
     ////////////////////////////////////////////////////////////////////////////////
     inline void mac (ComplexD * __restrict__ y,const ComplexD * __restrict__ a,const ComplexD *__restrict__ x){ *y = (*a) * (*x)+(*y); };

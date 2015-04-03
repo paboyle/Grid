@@ -3,7 +3,7 @@
 
 #include "Grid.h"
 
-namespace dpo{
+namespace Grid {
     class vRealD  {
     protected:
         dvec v; // dvec is double precision vector
