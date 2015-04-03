@@ -17,7 +17,7 @@
 #define GRID_COMMS_MPI 1
 
 /* GRID_COMMS_NONE */
-#define GRID_COMMS_NONE 1
+/* #undef GRID_COMMS_NONE */
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #define HAVE_GETTIMEOFDAY 1
