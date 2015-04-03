@@ -8,4 +8,4 @@ friend Lattice<vobj> Cshift(Lattice<vobj> &rhs,int dimension,int shift)
   Cshift_local(ret,rhs,dimension,shift);
 }
         
-
+#endif
