@@ -17,13 +17,15 @@ CartesianCommunicator::CartesianCommunicator(std::vector<int> &processors)
   MPI_Cart_create(MPI_COMM_WORLD, _ndimension,&_processors[0],&periodic[0],1,&communicator);
   MPI_Comm_rank(communicator,&_processor);
   MPI_Cart_coords(communicator,_processor,_ndimension,&_processor_coor[0]);
-  printf("Hello world from processor [");
+
   for(int i=0;i<_ndimension;i++){
-    printf("%d ",_processor_coor[i]);
     _Nprocessors*=_processors[i];
   }
-  printf("]\n");
-  fflush(stdout);
+  
+  int Size; 
+  MPI_Comm_size(communicator,&Size);
+  
+  assert(Size==_Nprocessors);
 }
 
 void CartesianCommunicator::GlobalSumF(float &f){
@@ -71,15 +73,3 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
 
 }
 
-#if 0
-
-// Could possibly do a direct block strided send?
-  int MPI_Type_vector(
-		      int count,
-		      int blocklength,
-		      int stride,
-		      MPI_Datatype old_type,
-  MPI_Datatype *newtype_p
-		      );
-
-#endif

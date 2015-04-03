@@ -30,9 +30,7 @@ public:
 
     Lattice(SimdGrid *grid) : _grid(grid) {
         _odata.reserve(_grid->oSites());
-        if ( ((uint64_t)&_odata[0])&0xF) {
-            exit(-1);
-        }
+        assert((((uint64_t)&_odata[0])&0xF) ==0);
         checkerboard=0;
     }
     
@@ -97,26 +95,25 @@ public:
     template<class sobj>
     friend void pokeSite(const sobj &s,Lattice<vobj> &l,std::vector<int> &site){
 
-        if ( l.checkerboard != l._grid->CheckerBoard(site)){
-	  printf("Poking wrong checkerboard\n");
-	  exit(EXIT_FAILURE);
-        }
+      typedef typename vobj::scalar_type stype;
+      typedef typename vobj::vector_type vtype;
 
-        int o_index = l._grid->oIndex(site);
-        int i_index = l._grid->iIndex(site);
+      assert( l.checkerboard == l._grid->CheckerBoard(site));
+
+      int o_index = l._grid->oIndex(site);
+      int i_index = l._grid->iIndex(site);
+      
+      stype *v_ptr = (stype *)&l._odata[o_index];
+      stype *s_ptr = (stype *)&s;
+      v_ptr = v_ptr + 2*i_index;
         
-	// BUGGY. This assumes complex real
-        Real *v_ptr = (Real *)&l._odata[o_index];
-        Real *s_ptr = (Real *)&s;
-        v_ptr = v_ptr + 2*i_index;
-        
-        for(int i=0;i<sizeof(sobj);i+=2*sizeof(Real)){
-            v_ptr[0] = s_ptr[0];
-            v_ptr[1] = s_ptr[1];
-            v_ptr+=2*vComplex::Nsimd();
-            s_ptr+=2;
-        }
-        return;
+      for(int i=0;i<sizeof(sobj);i+=2*sizeof(stype)){
+	v_ptr[0] = s_ptr[0];
+	v_ptr[1] = s_ptr[1];
+	v_ptr+=2*vtype::Nsimd();
+	s_ptr+=2;
+      }
+      return;
     };
     
     
@@ -124,25 +121,25 @@ public:
     template<class sobj>
     friend void peekSite(sobj &s,const Lattice<vobj> &l,std::vector<int> &site){
         
-        // FIXME : define exceptions set and throw up.
-        if ( l.checkerboard != l._grid->CheckerBoard(site)){
-            printf("Peeking wrong checkerboard\n");
-            exit(EXIT_FAILURE);
-        }
-        int o_index = l._grid->oIndex(site);
-        int i_index = l._grid->iIndex(site);
-        
-        Real *v_ptr = (Real *)&l._odata[o_index];
-        Real *s_ptr = (Real *)&s;
-        v_ptr = v_ptr + 2*i_index;
-        
-        for(int i=0;i<sizeof(sobj);i+=2*sizeof(Real)){
-            s_ptr[0] = v_ptr[0];
-            s_ptr[1] = v_ptr[1];
-            v_ptr+=2*vComplex::Nsimd();
-            s_ptr+=2;
-        }
-        return;
+      typedef typename vobj::scalar_type stype;
+      typedef typename vobj::vector_type vtype;
+
+      assert( l.checkerboard== l._grid->CheckerBoard(site));
+
+      int o_index = l._grid->oIndex(site);
+      int i_index = l._grid->iIndex(site);
+      
+      stype *v_ptr = (stype *)&l._odata[o_index];
+      stype *s_ptr = (stype *)&s;
+      v_ptr = v_ptr + 2*i_index;
+      
+      for(int i=0;i<sizeof(sobj);i+=2*sizeof(stype)){
+	s_ptr[0] = v_ptr[0];
+	s_ptr[1] = v_ptr[1];
+	v_ptr+=2*vtype::Nsimd();
+	s_ptr+=2;
+      }
+      return;
     };
     
     // Randomise
@@ -291,15 +288,6 @@ public:
     }
 }; // class Lattice
 
-    /* Need to implement the multiplication return type matching S S -> S, S M -> M, M S -> M through
-     all nested possibilities.
-     template<template<class> class lhs,template<class> class rhs>
-     class MultTypeSelector {
-     template<typename vtype> using ltype = lhs
-     typedef lhs type;
-     };
-     */
-    
     template<class obj1,class obj2>
     void conformable(const Lattice<obj1> &lhs,const Lattice<obj2> &rhs)
     {
@@ -313,28 +301,6 @@ public:
 	uint32_t vec_len = lhs._grid->oSites();
 #pragma omp parallel for
         for(int ss=0;ss<vec_len;ss++){
-
-	  const char * ptr =(const char*)&lhs._odata[ss];
-#ifdef PREFETCH
-          v_prefetch0(sizeof(obj2), ptr);
-#endif
-
-	  for(int i=0;i<sizeof(obj2);i+=64){
-	    _mm_prefetch(ptr+i+4096,_MM_HINT_T1);
-	    _mm_prefetch(ptr+i+256,_MM_HINT_T0);
-	  }
-
-	  ptr =(const char*)&rhs._odata[ss];
-#ifdef PREFETCH
-          v_prefetch0(sizeof(obj3), ptr);
-#endif
-
-	  for(int i=0;i<sizeof(obj3);i+=64){
-	    _mm_prefetch(ptr+i+4096,_MM_HINT_T1);
-	    _mm_prefetch(ptr+i+256,_MM_HINT_T0);
-	  }
-
-
 	  mult(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
         }
     }

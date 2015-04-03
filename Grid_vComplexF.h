@@ -193,7 +193,7 @@ namespace Grid {
 #ifdef QPX
 #error
 #endif
-                default: exit(EXIT_FAILURE); break;
+	        default: assert(0); break;
             }
         };
         
@@ -235,8 +235,7 @@ friend inline void vstore(vComplexF &ret, ComplexF *a){
 //Note v has a3 a2 a1 a0
 #endif
 #ifdef QPX
-	printf("%s Not implemented\n",__func__);
-exit(-1);
+	assert(0);
 #endif
 }
       friend inline void vprefetch(const vComplexF &v)
@@ -333,7 +332,7 @@ exit(-1);
             ret.v = _mm512_mask_sub_ps(in.v,0xaaaa,ret.v,in.v); // Zero out 0+real 0-imag 
 #endif
 #ifdef QPX
-            exit(0); // not implemented
+            assert(0);
 #endif
             return ret;
         }
