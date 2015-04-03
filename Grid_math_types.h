@@ -830,7 +830,7 @@ template<class vtype,int N> inline iMatrix<vtype,N> adj(const iMatrix<vtype,N> &
 
 /////////////////////////////////////////////////////////////////
 // Can only take the real/imag part of scalar objects, since
-// lattice objects of different complexity are non-conformable.
+// lattice objects of different complex nature are non-conformable.
 /////////////////////////////////////////////////////////////////
 template<class itype> inline auto real(const iScalar<itype> &z) -> iScalar<decltype(real(z._internal))>
 {

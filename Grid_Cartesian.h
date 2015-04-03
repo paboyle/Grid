@@ -201,10 +201,8 @@ public:
             block = block*_rdimensions[d];
         }
             
-        if ( _isites != vComplex::Nsimd()) {
-            printf("bad layout for grid isites %d Nsimd %d\n",_isites,vComplex::Nsimd());
-            exit(0);
-        }
+        assert( _isites == vComplex::Nsimd());
+
     };
 };
  
@@ -235,10 +233,8 @@ public:
       int ocb=CheckerBoardFromOsite(osite);
 	  
       if ( (source_cb+ocb)&1 ) {
-	printf("Checkerboard shift %d\n",(shift)/2);
 	return (shift)/2;
       } else {
-	printf("Checkerboard shift %d\n",(shift+1)/2);
 	return (shift+1)/2;
       }
     }
@@ -314,10 +310,7 @@ public:
             block = block*_rdimensions[d];
         }
             
-        if ( _isites != vComplex::Nsimd()) {
-            printf("bad layout for grid isites %d Nsimd %d\n",_isites,vComplex::Nsimd());
-            exit(0);
-        }
+        assert ( _isites == vComplex::Nsimd());
     };
 protected:
     virtual int oIndex(std::vector<int> &coor)

@@ -185,7 +185,7 @@ namespace Grid {
 #ifdef QPX
 #error not implemented
 #endif
-                default: exit(EXIT_FAILURE); break;
+	    default: assert(0); break;
             }
         };
         
@@ -236,8 +236,7 @@ friend inline void vstore(vRealF &ret, float *a){
 	// Note v has a7 a6 a5ba4 a3 a2 a1 a0
 #endif
 #ifdef QPX
-	printf("%s Not implemented\n",__func__);
-	exit(-1);
+	assert(0);
 #endif
         }
 

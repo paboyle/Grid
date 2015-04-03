@@ -161,7 +161,7 @@ namespace Grid {
 #ifdef QPX
 #error
 #endif
-                default: exit(EXIT_FAILURE); break;
+	    default: assert(0);break;
             }
         };
 // gona be bye bye
@@ -214,8 +214,7 @@ namespace Grid {
             // Note v has a7 a6 a5ba4 a3 a2 a1 a0
 #endif
 #ifdef QPX
-          printf("%s Not implemented\n",__func__); 
-          exit(-1);
+	    assert(0);
 #endif
 	}
         friend inline void vprefetch(const vRealD &v)

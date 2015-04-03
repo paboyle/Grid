@@ -48,7 +48,6 @@ namespace Grid {
 #endif
 #ifdef AVX512
             ret.v = _mm512_add_pd(a.v,b.v);
-            //printf("%s %f\n",__func__,_mm512_reduce_mul_pd(ret.v));
 #endif
 #ifdef QPX
             ret.v = vec_add(a.v,b.v);
@@ -210,7 +209,7 @@ namespace Grid {
 #ifdef QPX
 #error // Not implemented yet
 #endif
-                default: exit(EXIT_FAILURE); break;
+ 	        default: assert(0); break;
             }
         };
         void vload(zvec& a){
@@ -265,8 +264,7 @@ friend inline void vstore(vComplexD &ret, ComplexD *a){
    //Note v has a3 a2 a1 a0
 #endif
 #ifdef QPX
-	printf("%s Not implemented\n",__func__);
-	exit(-1);
+	assert(0);
 #endif
         }
       friend inline void vprefetch(const vComplexD &v)
@@ -294,7 +292,7 @@ friend inline void vstore(vComplexD &ret, ComplexD *a){
              
 #endif
 #ifdef QPX
-            exit(0); // not implemented
+	     assert(0);
 #endif
             return ret;
         }

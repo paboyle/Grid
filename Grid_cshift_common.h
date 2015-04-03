@@ -1,5 +1,17 @@
 #ifndef _GRID_CSHIFT_COMMON_H_
 #define _GRID_CSHIFT_COMMON_H_
+//////////////////////////////////////////////////////////////////////////////////////////
+// Must not lose sight that goal is to be able to construct really efficient
+// gather to a point stencil code. CSHIFT is not the best way, so probably need
+// additional stencil support.
+//
+// Stencil based code could pre-exchange haloes and use a table lookup for neighbours
+//
+// Lattice <foo> could also allocate haloes which get used for stencil code.
+//
+// Grid could create a neighbour index table for a given stencil.
+// Could also implement CovariantCshift.
+//////////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////
 // Gather for when there is no need to SIMD split
@@ -7,8 +19,6 @@
 friend void Gather_plane_simple (Lattice<vobj> &rhs,std::vector<vobj,alignedAllocator<vobj> > &buffer,             int dimension,int plane,int cbmask)
 {
   int rd = rhs._grid->_rdimensions[dimension];
-
-  //  printf("Gather plane _simple mask %d\n",cbmask);
 
   if ( !rhs._grid->CheckerBoarded(dimension) ) {
 
@@ -31,7 +41,6 @@ friend void Gather_plane_simple (Lattice<vobj> &rhs,std::vector<vobj,alignedAllo
     int o   = 0;                                      // relative offset to base within plane
     int bo  = 0;                                      // offset in buffer
 
-    //    int jjj=0;
 #pragma omp parallel for collapse(2)
     for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
       for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
@@ -39,11 +48,6 @@ friend void Gather_plane_simple (Lattice<vobj> &rhs,std::vector<vobj,alignedAllo
 	int ocb=1<<rhs._grid->CheckerBoardFromOsite(o+b);// Could easily be a table lookup
 	if ( ocb &cbmask ) {
 	  buffer[bo]=rhs._odata[so+o+b];
-	  //	  float * ptr = (float *)& rhs._odata[so+o+b];
-	  //	  if( (cbmask!=3)&&(jjj<8)){
-	  //	    printf("Gather_plane_simple %d %le bo %d\n",so+o+b,*ptr,bo);
-	  //	    jjj++;
-	  //	  }
 	  bo++;
 	}
 
@@ -215,7 +219,7 @@ friend void Copy_plane(Lattice<vobj>& lhs,Lattice<vobj> &rhs, int dimension,int 
     int ro  = rplane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
     int lo  = lplane*lhs._grid->_ostride[dimension]; // base offset for start of plane 
     int o   = 0;                                     // relative offset to base within plane
-    //    int jjj=0;    
+
 #pragma omp parallel for collapse(2)
     for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
       for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
@@ -224,11 +228,6 @@ friend void Copy_plane(Lattice<vobj>& lhs,Lattice<vobj> &rhs, int dimension,int 
 
 	if ( ocb&cbmask ) {
 	  lhs._odata[lo+o+b]=rhs._odata[ro+o+b];
-	  //	  float *ptr =(float *) &rhs._odata[ro+o+b];
-	  //	  if((cbmask!=0x3)&&jjj<8) {
-	    //	    printf("Copy_plane %d %le n,b=%d,%d mask %d ocb %d\n",ro+o+b,*ptr,n,b,cbmask,ocb);
-	    //	    jjj++;
-	    //	  }
 	}
 
       }
