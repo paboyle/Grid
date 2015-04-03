@@ -3,12 +3,16 @@
 ///////////////////////////////////
 // Processor layout information
 ///////////////////////////////////
+#ifdef GRID_COMMS_MPI
+#include <mpi.h>
+#endif
 namespace dpo {
 class CartesianCommunicator {
   public:    
 
   // Communicator should know nothing of the physics grid, only processor grid.
 
+    int              _Nprocessors;     // How many in all
     std::vector<int> _processors;      // Which dimensions get relayed out over processors lanes.
     int              _processor;       // linear processor rank
     std::vector<int> _processor_coor;  // linear processor coordinate
@@ -20,7 +24,9 @@ class CartesianCommunicator {
 
     CartesianCommunicator(std::vector<int> &pdimensions_in);
 
+    void ShiftedRanks(int dim,int shift,int & source, int & dest);
     int  Rank(std::vector<int> coor);
+    int  MyRank(void);
     void GlobalSumF(float &);
     void GlobalSumFVector(float *,int N);
 
@@ -28,9 +34,9 @@ class CartesianCommunicator {
     void GlobalSumFVector(double *,int N);
 
     void SendToRecvFrom(void *xmit,
-			std::vector<int> to_coordinate,
+			int xmit_to_rank,
 			void *recv,
-			std::vector<int> from_coordinate,
+			int recv_from_rank,
 			int bytes);
     
 }; 

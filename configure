@@ -626,6 +626,12 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+BUILD_COMMS_NONE_FALSE
+BUILD_COMMS_NONE_TRUE
+BUILD_COMMS_FAKE_FALSE
+BUILD_COMMS_FAKE_TRUE
+BUILD_COMMS_MPI_FALSE
+BUILD_COMMS_MPI_TRUE
 EGREP
 GREP
 CPP
@@ -5068,6 +5074,31 @@ $as_echo "#define GRID_COMMS_MPI 1" >>confdefs.h
      ;;
 esac
 
+ if  test "X${ac_COMMS}X" == "XmpiX" ; then
+  BUILD_COMMS_MPI_TRUE=
+  BUILD_COMMS_MPI_FALSE='#'
+else
+  BUILD_COMMS_MPI_TRUE='#'
+  BUILD_COMMS_MPI_FALSE=
+fi
+
+ if  test "X${ac_COMMS}X" == "XfakeX" ; then
+  BUILD_COMMS_FAKE_TRUE=
+  BUILD_COMMS_FAKE_FALSE='#'
+else
+  BUILD_COMMS_FAKE_TRUE='#'
+  BUILD_COMMS_FAKE_FALSE=
+fi
+
+ if  test "X${ac_COMMS}X" == "XnoneX" ; then
+  BUILD_COMMS_NONE_TRUE=
+  BUILD_COMMS_NONE_FALSE='#'
+else
+  BUILD_COMMS_NONE_TRUE='#'
+  BUILD_COMMS_NONE_FALSE=
+fi
+
+
 
 ac_config_files="$ac_config_files Makefile"
 
@@ -5206,6 +5237,18 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${am__fastdepCC_TRUE}" && test -z "${am__fastdepCC_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCC\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${BUILD_COMMS_MPI_TRUE}" && test -z "${BUILD_COMMS_MPI_FALSE}"; then
+  as_fn_error $? "conditional \"BUILD_COMMS_MPI\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${BUILD_COMMS_FAKE_TRUE}" && test -z "${BUILD_COMMS_FAKE_FALSE}"; then
+  as_fn_error $? "conditional \"BUILD_COMMS_FAKE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${BUILD_COMMS_NONE_TRUE}" && test -z "${BUILD_COMMS_NONE_FALSE}"; then
+  as_fn_error $? "conditional \"BUILD_COMMS_NONE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

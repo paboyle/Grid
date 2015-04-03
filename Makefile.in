@@ -89,6 +89,9 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = Grid_main$(EXEEXT)
+@BUILD_COMMS_MPI_TRUE@am__append_1 = Grid_mpi.cc
+@BUILD_COMMS_FAKE_TRUE@am__append_2 = Grid_fake.cc
+@BUILD_COMMS_NONE_TRUE@am__append_3 = Grid_fake.cc
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -143,7 +146,12 @@ libGrid_a_LIBADD =
 am_libGrid_a_OBJECTS = Grid_init.$(OBJEXT)
 libGrid_a_OBJECTS = $(am_libGrid_a_OBJECTS)
 PROGRAMS = $(bin_PROGRAMS)
-am_Grid_main_OBJECTS = Grid_main.$(OBJEXT) Grid_fake.$(OBJEXT)
+am__Grid_main_SOURCES_DIST = Grid_main.cc Grid_mpi.cc Grid_fake.cc
+@BUILD_COMMS_MPI_TRUE@am__objects_1 = Grid_mpi.$(OBJEXT)
+@BUILD_COMMS_FAKE_TRUE@am__objects_2 = Grid_fake.$(OBJEXT)
+@BUILD_COMMS_NONE_TRUE@am__objects_3 = Grid_fake.$(OBJEXT)
+am__objects_4 = $(am__objects_1) $(am__objects_2) $(am__objects_3)
+am_Grid_main_OBJECTS = Grid_main.$(OBJEXT) $(am__objects_4)
 Grid_main_OBJECTS = $(am_Grid_main_OBJECTS)
 Grid_main_DEPENDENCIES = libGrid.a
 AM_V_P = $(am__v_P_@AM_V@)
@@ -176,7 +184,7 @@ am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(libGrid_a_SOURCES) $(Grid_main_SOURCES)
-DIST_SOURCES = $(libGrid_a_SOURCES) $(Grid_main_SOURCES)
+DIST_SOURCES = $(libGrid_a_SOURCES) $(am__Grid_main_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -340,9 +348,10 @@ include_HEADERS = Grid.h\
 	Grid_Lattice.h\
 	Grid_config.h
 
+extra_sources = $(am__append_1) $(am__append_2) $(am__append_3)
 Grid_main_SOURCES = \
 	Grid_main.cc\
-	Grid_fake.cc
+	$(extra_sources)
 
 Grid_main_LDADD = libGrid.a
 all: Grid_config.h
@@ -490,6 +499,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Grid_fake.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Grid_init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Grid_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Grid_mpi.Po@am__quote@
 
 .cc.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

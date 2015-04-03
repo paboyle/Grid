@@ -71,6 +71,10 @@ case ${ac_COMMS} in
      ;;
 esac
 
+AM_CONDITIONAL(BUILD_COMMS_MPI,[ test "X${ac_COMMS}X" == "XmpiX" ])
+AM_CONDITIONAL(BUILD_COMMS_FAKE,[ test "X${ac_COMMS}X" == "XfakeX" ])
+AM_CONDITIONAL(BUILD_COMMS_NONE,[ test "X${ac_COMMS}X" == "XnoneX" ])
+
 
 AC_CONFIG_FILES(Makefile)
 AC_OUTPUT

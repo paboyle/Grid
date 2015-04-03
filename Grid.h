@@ -52,7 +52,7 @@
 
 namespace dpo {
 
-  void Grid_init(void);
+  void Grid_init(int *argc,char ***argv);
   double usecond(void);
   void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr);
   void Grid_debug_handler_init(void);

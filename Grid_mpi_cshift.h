@@ -1,26 +1,9 @@
 #ifndef _GRID_MPI_CSHIFT_H_
 #define _GRID_MPI_CSHIFT_H_
 
-      
-//////////////////////////////////////////////
-// Q. Split this into seperate sub functions?
-//////////////////////////////////////////////
-
-// CshiftCB_comms_splice
-// CshiftCB_comms
-// CshiftCB_local
-// CshiftCB_local_permute
-
-// Cshift_comms_splice
-// Cshift_comms
-// Cshift_local
-// Cshift_local_permute
-
-// Broadly I remain annoyed that the iteration is so painful
-// for red black data layout, when simple block strided descriptors suffice for non-cb. 
-//
-// The other option is to do it table driven, or perhaps store the CB of each site in a table.
-//
+#define MAX(x,y) ((x)>(y)?(x):(y))
+#define MIN(x,y) ((x)>(y)?(y):(x))
+//////////////////////////////////////////////////////////////////////////////////////////
 // Must not lose sight that goal is to be able to construct really efficient
 // gather to a point stencil code. CSHIFT is not the best way, so probably need
 // additional stencil support.
@@ -33,79 +16,31 @@
 //
 // Grid could create a neighbour index table for a given stencil.
 // Could also implement CovariantCshift.
+//////////////////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////////////////
-//Non checkerboarded support functions
-//////////////////////////////////////////////////////
+      
+/////////////////////////////////////////////////////////////
+// Q. Further split this into separate sub functions?
+/////////////////////////////////////////////////////////////
 
-friend void Gather_plane        (Lattice<vobj> &rhs,std::vector<vobj> &buffer,             int dimension,int plane)
-{
-  const int Nsimd = vector_type::Nsimd();
-  int rd = rhs._grid->_rdimensions[dimension];
+// CshiftCB_local
+// CshiftCB_local_permute
 
-  int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-  int o   = 0;                                    // relative offset to base within plane
-#pragma omp parallel for collapse(2)
-  for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-    for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
-	  
-	  int sshift = rhs._grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,o+b);
-	  int sx = (x+sshift)%rd;
-	  int so = sx*rhs._grid->_ostride[dimension];
-	  int permute_slice=0;
-	  int wrap = sshift/rd;
-	  int  num = sshift%rd;
-	  
-	  if ( x< rd-num ) permute_slice=wrap;
-	  else permute_slice = 1-wrap;
-	  
-	  if ( permute_slice ) {
-	    permute(ret._odata[ro+o+b],rhs._odata[so+o+b],permute_type);
-	  } else {
-	    ret._odata[ro+o+b]=rhs._odata[so+o+b];
-	  }
-	}
-	o +=rhs._grid->_slice_stride[dimension];
-      }
-  }
-  
-}
-//friend void Gather_plane_extract(Lattice<vobj> &rhs,std::vector<scalar_type *> pointers,int dimension,int plane);
-//
-//friend void Scatter_plane       (Lattice<vobj> &rhs,std::vector<vobj> face,             int dimension,int plane);
-//friend void Scatter_plane_merge (Lattice<vobj> &rhs,std::vector<scalar_type *> pointers,int dimension,int plane);
-//
-//template<int permute_type> friend void Copy_plane_permute(Lattice<vobj> &rhs,std::vector<vobj> face, int dimension,int plane);
-//                           friend void Copy_plane(Lattice<vobj> &rhs,std::vector<vobj> face, int dimension,int plane);
-//
-
-//////////////////////////////////////////////////////
-//Checkerboarded support functions
-//////////////////////////////////////////////////////
-
-//friend void GatherCB_plane        (Lattice<vobj> &rhs,std::vector<vobj> face,             int dimension,int plane);
-//friend void GatherCB_plane_extract(Lattice<vobj> &rhs,std::vector<scalar_type *> pointers,int dimension,int plane);
-//
-//friend void ScatterCB_plane       (Lattice<vobj> &rhs,std::vector<vobj> face,             int dimension,int plane);
-//friend void ScatterCB_plane_merge (Lattice<vobj> &rhs,std::vector<scalar_type *> pointers,int dimension,int plane);
-//
-//template<int permute_type> friend void CopyCB_plane_permute(Lattice<vobj> &rhs,std::vector<vobj> face, int dimension,int plane);
-//                           friend void Copy_plane(Lattice<vobj> &rhs,std::vector<vobj> face, int dimension,int plane);
+// Cshift_comms_splice
+// Cshift_comms
+// Cshift_local
+// Cshift_local_permute
 
 
 friend Lattice<vobj> Cshift(Lattice<vobj> &rhs,int dimension,int shift)
 {
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::scalar_type scalar_type;
-  const int Nsimd = vector_type::Nsimd();
 
   Lattice<vobj> ret(rhs._grid);
   
   int fd = rhs._grid->_fdimensions[dimension];
   int rd = rhs._grid->_rdimensions[dimension];
-  //int ld = rhs._grid->_ldimensions[dimension];
-  //int gd = rhs._grid->_gdimensions[dimension];
-  
 
   // Map to always positive shift modulo global full dimension.
   shift = (shift+fd)%fd;
@@ -115,270 +50,288 @@ friend Lattice<vobj> Cshift(Lattice<vobj> &rhs,int dimension,int shift)
   // the permute type
   int simd_layout     = rhs._grid->_simd_layout[dimension];
   int comm_dim        = rhs._grid->_processors[dimension] >1 ;
-  int permute_dim     = rhs._grid->_simd_layout[dimension]>1 && (!comm_dim);
   int splice_dim      = rhs._grid->_simd_layout[dimension]>1 && (comm_dim);
+
+
+  if ( !comm_dim ) {
+    Cshift_local(ret,rhs,dimension,shift); // Handles checkerboarding
+  } else if ( splice_dim ) {
+    Cshift_comms_simd(ret,rhs,dimension,shift);
+  } else {
+    Cshift_comms(ret,rhs,dimension,shift);
+  }
+  return ret;
+}
+
+friend void Cshift_comms(Lattice<vobj>& ret,Lattice<vobj> &rhs,int dimension,int shift)
+{
+  int sshift[2];
+
+  sshift[0] = rhs._grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,0);
+  sshift[1] = rhs._grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,1);
+
+  if ( sshift[0] == sshift[1] ) {
+    //    printf("Cshift_comms : single pass\n");
+    Cshift_comms(ret,rhs,dimension,shift,0x3);
+  } else {
+    //    printf("Cshift_comms : two pass\n");
+    //    printf("call1\n");
+    Cshift_comms(ret,rhs,dimension,shift,0x1);// if checkerboard is unfavourable take two passes
+    //    printf("call2\n");
+    Cshift_comms(ret,rhs,dimension,shift,0x2);// both with block stride loop iteration
+    //    printf("done\n");
+
+  }
+}
+
+friend void Cshift_comms_simd(Lattice<vobj>& ret,Lattice<vobj> &rhs,int dimension,int shift)
+{
+  int sshift[2];
+
+  sshift[0] = rhs._grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,0);
+  sshift[1] = rhs._grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,1);
+
+  if ( sshift[0] == sshift[1] ) {
+    Cshift_comms_simd(ret,rhs,dimension,shift,0x3);
+  } else {
+    //    printf("call1 0x1 cb=even\n");
+    Cshift_comms_simd(ret,rhs,dimension,shift,0x1);// if checkerboard is unfavourable take two passes
+    //    printf("call2 0x2 cb=odd\n");
+    Cshift_comms_simd(ret,rhs,dimension,shift,0x2);// both with block stride loop iteration
+    //    printf("done\n");
+  }
+}
+
+
+friend void Cshift_comms(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
+{
+  typedef typename vobj::vector_type vector_type;
+  typedef typename vobj::scalar_type scalar_type;
+
+  SimdGrid *grid=rhs._grid;
+  Lattice<vobj> temp(rhs._grid);
+
+  int fd              = rhs._grid->_fdimensions[dimension];
+  int rd              = rhs._grid->_rdimensions[dimension];
+  int simd_layout     = rhs._grid->_simd_layout[dimension];
+  int comm_dim        = rhs._grid->_processors[dimension] >1 ;
+  assert(simd_layout==1);
+  assert(comm_dim==1);
+  assert(shift>=0);
+  assert(shift<fd);
+  
+  // Packed gather sequence is clean
+  int buffer_size = rhs._grid->_slice_nblock[dimension]*rhs._grid->_slice_block[dimension];
+  std::vector<vobj,alignedAllocator<vobj> > send_buf(buffer_size);
+  std::vector<vobj,alignedAllocator<vobj> > recv_buf(buffer_size);
+
+  // This code could be simplified by multiple calls to single routine with extra params to
+  // encapsulate the difference in the code paths.
+  int cb= (cbmask==0x2)? 1 : 0;
+  int sshift= rhs._grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,cb);
+
+  for(int x=0;x<rd;x++){       
+
+    int offnode = ( x+sshift >= rd );
+    int sx        = (x+sshift)%rd;
+    int comm_proc = (x+sshift)/rd;
+    
+    if (!offnode) {
+      //      printf("local x %d sshift %d offnode %d rd %d cb %d\n",x,sshift,offnode,rd,cb);
+      Copy_plane(ret,rhs,dimension,x,sx,cbmask); 
+    } else {
+
+      int words = send_buf.size();
+      if (cbmask != 0x3) words=words>>1;
+
+      int bytes = words * sizeof(vobj);
+
+      //      printf("nonlocal x %d sx %d sshift %d offnode %d rd %d cb %d cbmask %d rhscb %d comm_proc %d\n",
+      //	     x,sx,sshift,offnode,rd,cb,cbmask,rhs.checkerboard,comm_proc);
+      //      Copy_plane(temp,rhs,dimension,x,sx,cbmask); 
+
+      // Bug found; cbmask may differ between sx plan and rx plane.
+      Gather_plane_simple (rhs,send_buf,dimension,sx,cbmask);
+      //      for(int i=0;i<MIN(words,8);i++){
+      //	float *ptr = (float *)&send_buf[i];
+      //	printf("send buf shift %d cbmask %d i %d %le\n",sshift,cbmask,i,*ptr);
+      //      }
+      //      Gather_plane_simple (rhs,send_buf,dimension,sx,cbmask^0x3);
+      //      for(int i=0;i<MIN(words,8);i++){
+      //	float *ptr = (float *)&send_buf[i];
+      //	printf("send buf shift %d cbmask %d i %d %le\n",sshift,cbmask,i,*ptr);
+      //      }
+      //      recv_buf=send_buf;
+
+      int rank           = grid->_processor;
+      int recv_from_rank;
+      int xmit_to_rank;
+      grid->ShiftedRanks(dimension,comm_proc,xmit_to_rank,recv_from_rank);
+
+      //      printf("bytes %d node %d sending to %d receiving from %d\n",bytes,rank,xmit_to_rank,recv_from_rank );
+      grid->SendToRecvFrom((void *)&send_buf[0],
+			   xmit_to_rank,
+			   (void *)&recv_buf[0],
+			   recv_from_rank,
+			   bytes);
+
+      Scatter_plane_simple (ret,recv_buf,dimension,x,cbmask);
+    }
+  }
+}
+
+
+friend void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
+{
+  const int Nsimd = vector_type::Nsimd();
+  SimdGrid *grid=rhs._grid;
+  typedef typename vobj::vector_type vector_type;
+  typedef typename vobj::scalar_type scalar_type;
+   
+  int fd = grid->_fdimensions[dimension];
+  int rd = grid->_rdimensions[dimension];
+  int ld = grid->_ldimensions[dimension];
+  int simd_layout     = grid->_simd_layout[dimension];
+  int comm_dim        = grid->_processors[dimension] >1 ;
+
+  assert(comm_dim==1);
+  assert(simd_layout==2);
+  assert(shift>=0);
+  assert(shift<fd);
 
   int permute_type=0;
   for(int d=0;d<dimension;d++){
-    if (rhs._grid->_simd_layout[d]>1 ) permute_type++;
+    if (grid->_simd_layout[d]>1 ) permute_type++;
   }
 
-  // Logic for non-distributed dimension	  
-  std::vector<int> comm_offnode(simd_layout);
-  std::vector<int> comm_to     (simd_layout);
-  std::vector<int> comm_from   (simd_layout);
-  std::vector<int> comm_rx     (simd_layout);  // reduced coordinate of neighbour plane
-  std::vector<int> comm_simd_lane(simd_layout);// simd lane of neigbour plane
-
   ///////////////////////////////////////////////
-  // Move via a fake comms buffer
   // Simd direction uses an extract/merge pair
   ///////////////////////////////////////////////
-  int buffer_size = rhs._grid->_slice_nblock[dimension]*rhs._grid->_slice_block[dimension];
+  int buffer_size = grid->_slice_nblock[dimension]*grid->_slice_block[dimension];
   int words = sizeof(vobj)/sizeof(vector_type);
 
-  std::vector<vobj,alignedAllocator<vobj> > comm_buf(buffer_size);
-  std::vector<std::vector<scalar_type> > comm_buf_extract(Nsimd,std::vector<scalar_type>(buffer_size*words) );
-  std::vector<scalar_type *> pointers(Nsimd);
+  std::vector<std::vector<scalar_type> > send_buf_extract(Nsimd,std::vector<scalar_type>(buffer_size*words) );
+  std::vector<std::vector<scalar_type> > recv_buf_extract(Nsimd,std::vector<scalar_type>(buffer_size*words) );
+  int bytes = buffer_size*words*sizeof(scalar_type);
 
+  std::vector<scalar_type *> pointers(Nsimd);  // 
+  std::vector<scalar_type *> rpointers(Nsimd); // received pointers
 
+  ///////////////////////////////////////////
+  // Work out what to send where
+  ///////////////////////////////////////////
 
-  if ( permute_dim ) {
-
-    for(int x=0;x<rd;x++){       
-      int ro  = x*rhs._grid->_ostride[dimension]; // base offset for result
-      int o   = 0;                                // relative offset to base
-      for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-	for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
-	  
-	  int sshift = rhs._grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,o+b);
-	  int sx = (x+sshift)%rd;
-	  int so = sx*rhs._grid->_ostride[dimension];
-	  int permute_slice=0;
-	  int wrap = sshift/rd;
-	  int  num = sshift%rd;
-	  
-	  if ( x< rd-num ) permute_slice=wrap;
-	  else permute_slice = 1-wrap;
-	  
-	  if ( permute_slice ) {
-	    permute(ret._odata[ro+o+b],rhs._odata[so+o+b],permute_type);
-	  } else {
-	    ret._odata[ro+o+b]=rhs._odata[so+o+b];
-	  }
-	}
-	o +=rhs._grid->_slice_stride[dimension];
-      }
-    }
-
-  } else if ( splice_dim ) {
-
-    if ( rhs._grid->_simd_layout[dimension] > 2 ) exit(-1); // use Cassert. Audit code for exit and replace
-    if ( rhs._grid->_simd_layout[dimension] < 1 ) exit(-1);
-	    
-
-    for(int i=0;i<vobj::vector_type::Nsimd();i++){
-      pointers[i] = (scalar_type *)&comm_buf_extract[i][0];
-    }
-
-    
-    for(int x=0;x<rd;x++){       
-
-
-      ///////////////////////////////////////////
-      // Extract one orthogonal slice at a time
-      ///////////////////////////////////////////
-      int ro  = x*rhs._grid->_ostride[dimension]; // base offset for result
-
-      o   = 0;                                    // relative offset to base      
-      for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-	for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
-	  
-	  int sshift = rhs._grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,o+b);
-	  int sx = (x+sshift)%rd;
-	  
-	  // base offset for source
-	  int so = sx*rhs._grid->_ostride[dimension];
-
-	  int permute_slice=0;
-	  int wrap = sshift/rd;
-	  int  num = sshift%rd;
-	    
-	  if ( x< rd-num ) permute_slice=wrap;
-	  else permute_slice = 1-wrap;
-
-	  if ( permute_slice ) {
-	    extract(rhs._odata[so+o+b],pointers);
-	  }
-	}
-	o +=rhs._grid->_slice_stride[dimension];
-      }
-
-    
-      ///////////////////////////////////////////
-      // Work out what to send where
-      ///////////////////////////////////////////
-
-      for(int s=0;s<simd_layout;s++) {
-
-
-	// shift to "neighbour" takes us off node
-	// coordinates (rx, simd_lane) of neighbour
-	// how many nodes away is this shift
-	// where we should send to
-	// where we should receive from
-	int shifted_x = x+s*rd+shift;
-	comm_offnode[s]           = shifted_x > ld; 
-	comm_send_rx[s]           = shifted_x%rd;     // which slice geton the other node
-	comm_send_simd_lane [s]   = shifted_x/rd;     // which slice on the other node
-	comm_from[s]    = shifted_x/ld;     
-	comm_to  [s] = (2*_processors[dimension]-comm_from[s]) % _processors[dimension];
-	comm_from[s] = (comm_from[s]+_processors[dimension])   % _processors[dimension];
-	      
-      }
-
-      ////////////////////////////////////////////////
-      // Insert communication phase
-      ////////////////////////////////////////////////
-#if 0
-	  } else if (comm_dim ) {
-	    
-	    // Packed gather sequence is clean
-	    int buffer_size = rhs._grid->_slice_nblock[dimension]*rhs._grid->_slice_nblock[dimension];
-	    std::vector<vobj,alignedAllocator<vobj> > send_buf(buffer_size);
-	    std::vector<vobj,alignedAllocator<vobj> > recv_buf(buffer_size);
-
-	    // off node; communcate slice (ld==rd)
-	    if ( x+shift > rd ) { 
-	      int sb=0;
-	      for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-		for(int i=0;i<rhs._grid->_slice_block[dimension];i++){
-		  send_buf[sb++]=rhs._odata[so+i];
-		}
-		so+=rhs._grid->_slice_stride[dimension];
-	      }	      
-
-	      // Make a comm_fake them mimics comms in periodic case.
-	      
-	      // scatter face
-	      int rb=0;
-	      for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-		for(int i=0;i<rhs._grid->_slice_block[dimension];i++){
-		  ret._odata[so+i]=recv_buf[rb++];
-		}
-		so+=rhs._grid->_slice_stride[dimension];
-	      }	      
-
-	    } else { 
-
-	      for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-		for(int i=0;i<rhs._grid->_slice_block[dimension];i++){
-		  ret._odata[o+i]=rhs._odata[so+i];
-		}
-		o+=rhs._grid->_slice_stride[dimension];
-		so+=rhs._grid->_slice_stride[dimension];
-	      }
-	    }
-
-#endif	
-    
-      ////////////////////////////////////////////////
-      // Pull receive buffers and permuted buffers in
-      ////////////////////////////////////////////////
-      for(int i=0;i<vobj::vector_type::Nsimd();i++){
-	pointers[i] = (scalar_type *)&comm_buf_extract[permute_map[permute_type][i]][0];
-      }
-
-      o   = 0;                                    // relative offset to base
-      int ro  = x*rhs._grid->_ostride[dimension]; // base offset for result
-      for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-	for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
-	  
-	  int sshift = rhs._grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,o+b);
-	  int sx = (x+sshift)%rd;
-	  
-	  // base offset for source
-	  int so = sx*rhs._grid->_ostride[dimension];
-	  
-	  int permute_slice=0;
-	  int wrap = sshift/rd;
-	  int  num = sshift%rd;
-	  
-	  if ( x< rd-num ) permute_slice=wrap;
-	  else permute_slice = 1-wrap;
-	  
-	  if ( permute_slice ) {
-	    merge(ret._odata[ro+o+b],pointers);
-	  }
-	}
-	o +=rhs._grid->_slice_stride[dimension];
-      }
-    }
+  int cb    = (cbmask==0x2)? 1 : 0;
+  int sshift= grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,cb);
   
+  //  printf("cshift-comms-simd: shift = %d ; sshift = %d ; cbmask %d ; simd_layout %d\n",shift,sshift,cbmask,simd_layout);
+  std::vector<int> comm_offnode(simd_layout);
+  std::vector<int> comm_proc   (simd_layout);  //relative processor coord in dim=dimension
 
-  } else if ( comm_dim ) { 
-	
+  // Strategy
+  //
+  //*  Loop over source planes
+  //*    if any communication needed extract and send
+  //*    if communication needed extract and send
 
-    int co; // comm offset
-    int o;
+  for(int x=0;x<rd;x++){       
+
+    int comm_any = 0;
+    for(int s=0;s<simd_layout;s++) {
+      // does shift to "neighbour" takes us off node?
+      // coordinates (reduce plane, simd_lane) of neighbour?
+      // how many nodes away is this shift?
+      // where we should send to?
+      // where we should receive from?
+      int shifted_x   = x+s*rd+sshift;
+      comm_offnode[s] = shifted_x >= ld; 
+      comm_any        = comm_any | comm_offnode[s];
+      comm_proc[s]    = shifted_x/ld;     
+      //      printf("rd %d x %d shifted %d s=%d comm_any %d\n",rd, x,shifted_x,s,comm_any);
+    }
     
-    co=0;
-    for(int x=0;x<rd;x++){       
-      o=0;
-      int ro  = x*rhs._grid->_ostride[dimension]; // base offset for result
-      for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-	for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
+    int o    = 0;
+    int bo   = x*grid->_ostride[dimension];
+    int sx   = (x+sshift)%rd;
 
-	  // This call in inner loop is annoying but necessary for dimension=0
-	  // in the case of RedBlack grids. Could optimise away with 
-	  // alternate code paths for all other cases.
-	  int sshift = rhs._grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,o+b);
-	  int sx = (x+sshift)%rd;
-	  int so = sx*rhs._grid->_ostride[dimension];
+    // Need Convenience function in _grid. Move this in
+    if ( comm_any ) {
 
-	  comm_buf[co++]=rhs._odata[so+o+b];
-
-	}
-	o +=rhs._grid->_slice_stride[dimension];
+      for(int i=0;i<Nsimd;i++){
+	pointers[i] = (scalar_type *)&send_buf_extract[i][0];
       }
+      Gather_plane_extract(rhs,pointers,dimension,sx,cbmask);
+      //      for(int i=0;i<Nsimd;i++){
+      //	printf("extracted %d %le\n",i,real(send_buf_extract[i][0]));
+      //      }
 
-      // Step through a copy into a comms buffer and pull back in.
-      // Genuine fake implementation could calculate if loops back
-      co=0; o=0;
-      for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-	for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
-	  ret._odata[ro+o+b]=comm_buf[co++];
-	}
-	o +=rhs._grid->_slice_stride[dimension];
-      }
-    }
+      for(int i=0;i<Nsimd;i++){
 
-  } else { // Local dimension, no permute required
+	int s = grid->iCoordFromIsite(i,dimension);
 
-    for(int x=0;x<rd;x++){       
-      int o=0;
-      int ro  = x*rhs._grid->_ostride[dimension]; // base offset for result
-      for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-	for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
+	if(comm_offnode[s]){
 
-	  // This call in inner loop is annoying but necessary for dimension=0
-	  // in the case of RedBlack grids. Could optimise away with 
-	  // alternate code paths for all other cases.
-	  int sshift = rhs._grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,o+b);
+	  int rank           = grid->_processor;
+	  int recv_from_rank;
+	  int xmit_to_rank;
+	  grid->ShiftedRanks(dimension,comm_proc[s],xmit_to_rank,recv_from_rank);
 	  
-	  int sx = (x+sshift)%rd;
-	  int so = sx*rhs._grid->_ostride[dimension];
-	  ret._odata[bo+o+b]=rhs._odata[so+o+b];
+
+	  grid->SendToRecvFrom((void *)&send_buf_extract[i][0],
+			    xmit_to_rank,
+			    (void *)&recv_buf_extract[i][0],
+			    recv_from_rank,
+			    bytes);
+
+	  //	  printf("Cshift_simd comms %d %le %le\n",i,real(recv_buf_extract[i][0]),real(send_buf_extract[i][0]));
+
+	  rpointers[i] = (scalar_type *)&recv_buf_extract[i][0];
+
+	} else { 
+
+	  rpointers[i] = (scalar_type *)&send_buf_extract[i][0];
+	  //	  printf("Cshift_simd local %d %le \n",i,real(send_buf_extract[i][0]));
 
 	}
-	o +=rhs._grid->_slice_stride[dimension];
+
       }
+
+      // Permute by swizzling pointers in merge
+      int permute_slice=0;
+      int lshift=sshift%ld;
+      int wrap  =lshift/rd;
+      int  num  =lshift%rd;
+
+      if ( x< rd-num ) permute_slice=wrap;
+      else permute_slice = 1-wrap;
+
+      for(int i=0;i<vobj::vector_type::Nsimd();i++){
+	if ( permute_slice ) {
+	  pointers[i] = rpointers[permute_map[permute_type][i]];
+	} else {
+	  pointers[i] = rpointers[i];
+	}
+	//	printf("Cshift_simd perm %d num %d wrap %d swiz %d %le unswiz %le\n",permute_slice,num,wrap,i,real(pointers[i][0]),real(rpointers[i][0]));
+      }
+
+      Scatter_plane_merge(ret,pointers,dimension,x,cbmask);
+
+    } else { 
+
+      int permute_slice=0;
+      int wrap = sshift/rd;
+      int  num = sshift%rd;
+      if ( x< rd-num ) permute_slice=wrap;
+      else permute_slice = 1-wrap;
+
+      if ( permute_slice ) Copy_plane_permute(ret,rhs,dimension,x,sx,cbmask,permute_type);
+      else                 Copy_plane(ret,rhs,dimension,x,sx,cbmask); 
+
     }
-
   }
-
-  return ret;
 }
+
+
 
 
 #endif

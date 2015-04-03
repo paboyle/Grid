@@ -13,34 +13,28 @@ using namespace dpo::QCD;
 
 int main (int argc, char ** argv)
 {
+  Grid_init(&argc,&argv);
 
-#if 0
-  struct sigaction sa,osa;
-  sigemptyset (&sa.sa_mask);
-  sa.sa_sigaction= sa_action;
-  sa.sa_flags    = SA_ONSTACK|SA_SIGINFO;
-
-  sigaction(SIGSEGV,&sa,NULL);
-  sigaction(SIGTRAP,&sa,NULL);
-#endif
-
-    std::vector<int> latt_size(4);
-    std::vector<int> simd_layout(4);
-
-    std::vector<int> mpi_layout(4);
-    for(int d=0;d<4;d++) mpi_layout[d]=1;
+  std::vector<int> latt_size(4);
+  std::vector<int> simd_layout(4);
+  
+  std::vector<int> mpi_layout(4);
+  mpi_layout[0]=4;
+  mpi_layout[1]=2;
+  mpi_layout[2]=4;
+  mpi_layout[3]=2;
 
 #ifdef AVX512
  for(int omp=128;omp<236;omp+=16){
 #else
- for(int omp=1;omp<8;omp*=2){
+ for(int omp=1;omp<8;omp*=20){
 #endif
 
 #ifdef OMP
    omp_set_num_threads(omp);
 #endif 
 
-  for(int lat=4;lat<=16;lat+=40){
+  for(int lat=16;lat<=16;lat+=40){
     latt_size[0] = lat;
     latt_size[1] = lat;
     latt_size[2] = lat;
@@ -234,9 +228,9 @@ int main (int argc, char ** argv)
 	std::cout << "Shifting both parities by "<< shift <<" direction "<< dir <<std::endl;
 	Shifted  = Cshift(Foo,dir,shift);    // Shift everything
 
-	std::cout << "Shifting even parities"<<std::endl;
+	std::cout << "Shifting even source parities to odd result"<<std::endl;
 	bShifted = Cshift(rFoo,dir,shift);   // Shift red->black
-	std::cout << "Shifting odd parities"<<std::endl;
+	std::cout << "Shifting odd parities to even result"<<std::endl;
 	rShifted = Cshift(bFoo,dir,shift);   // Shift black->red
     
 	ShiftedCheck=zero;
@@ -245,19 +239,19 @@ int main (int argc, char ** argv)
     
 	// Check results
 	std::vector<int> coor(4);
-	for(coor[3]=0;coor[3]<latt_size[3];coor[3]++){
-	for(coor[2]=0;coor[2]<latt_size[2];coor[2]++){
-	for(coor[1]=0;coor[1]<latt_size[1];coor[1]++){
-	for(coor[0]=0;coor[0]<latt_size[0];coor[0]++){
+	for(coor[3]=0;coor[3]<latt_size[3]/mpi_layout[3];coor[3]++){
+	for(coor[2]=0;coor[2]<latt_size[2]/mpi_layout[2];coor[2]++){
+	for(coor[1]=0;coor[1]<latt_size[1]/mpi_layout[1];coor[1]++){
+	for(coor[0]=0;coor[0]<latt_size[0]/mpi_layout[0];coor[0]++){
  
         std::complex<dpo::Real> diff;
                     
         std::vector<int> shiftcoor = coor;
-        shiftcoor[dir]=(shiftcoor[dir]+shift+latt_size[dir])%latt_size[dir];
+        shiftcoor[dir]=(shiftcoor[dir]+shift+latt_size[dir])%(latt_size[dir]/mpi_layout[dir]);
 
 	std::vector<int> rl(4);
 	for(int dd=0;dd<4;dd++){
-	  rl[dd] = latt_size[dd]/simd_layout[dd];
+	  rl[dd] = latt_size[dd]/simd_layout[dd]/mpi_layout[dd];
 	}
 	int lex =  coor[0]%rl[0]
 	  + (coor[1]%rl[1])*rl[0]
@@ -343,5 +337,7 @@ int main (int argc, char ** argv)
 
    } // loop for lat
  } // loop for omp
+
+ MPI_Finalize();
 
 }
