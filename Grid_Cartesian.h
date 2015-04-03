@@ -41,8 +41,8 @@ public:
     std::vector<int> _simd_layout;     // Which dimensions get relayed out over simd lanes.
 
 
-    std::vector<int> _fdimensions;// Global dimensions of array with cb removed
-    std::vector<int> _gdimensions;// Global dimensions of array
+    std::vector<int> _fdimensions;// Global dimensions of array prior to cb removal
+    std::vector<int> _gdimensions;// Global dimensions of array after cb removal
     std::vector<int> _ldimensions;// local dimensions of array with processor images removed
     std::vector<int> _rdimensions;// Reduced local dimensions with simd lane images and processor images removed 
 
@@ -88,11 +88,20 @@ public:
         for(int d=0;d<_ndimension;d++) idx+=_istride[d]*(rcoor[d]/_rdimensions[d]);
         return idx;
     }
+    inline int iCoordFromIsite(int lane,int mu)
+    {
+      std::vector<int> coor(_ndimension);
+      for(int d=0;d<_ndimension;d++){
+	coor[d] = lane % _simd_layout[d];
+	lane    = lane / _simd_layout[d];
+      }
+      return coor[mu];
+    }
     
     inline int oSites(void) { return _osites; };
     inline int iSites(void) { return _isites; };
 
-    inline int CheckerboardFromOsite (int Osite){
+    inline int CheckerBoardFromOsite (int Osite){
       std::vector<int> ocoor;
       CoordFromOsite(ocoor,Osite);
       int ss=0;
@@ -109,6 +118,7 @@ public:
       }
     }
 
+    virtual int CheckerBoarded(int dim)=0;
     virtual int CheckerBoard(std::vector<int> site)=0;
     virtual int CheckerBoardDestination(int source_cb,int shift)=0;
     virtual int CheckerBoardShift(int source_cb,int dim,int shift,int osite)=0;
@@ -116,6 +126,9 @@ public:
 
 class GridCartesian: public SimdGrid {
 public:
+    virtual int CheckerBoarded(int dim){
+      return 0;
+    }
     virtual int CheckerBoard(std::vector<int> site){
         return 0;
     }
@@ -199,6 +212,10 @@ public:
 class GridRedBlackCartesian : public SimdGrid
 {
 public:
+    virtual int CheckerBoarded(int dim){
+      if( dim==0) return 1;
+      else return 0;
+    }
     virtual int CheckerBoard(std::vector<int> site){
       return (site[0]+site[1]+site[2]+site[3])&0x1;
     }
@@ -215,11 +232,13 @@ public:
 
       // Probably faster with table lookup;
       // or by looping over x,y,z and multiply rather than computing checkerboard.
-      int ocb=CheckerboardFromOsite(osite);
+      int ocb=CheckerBoardFromOsite(osite);
 	  
       if ( (source_cb+ocb)&1 ) {
+	printf("Checkerboard shift %d\n",(shift)/2);
 	return (shift)/2;
       } else {
+	printf("Checkerboard shift %d\n",(shift+1)/2);
 	return (shift+1)/2;
       }
     }

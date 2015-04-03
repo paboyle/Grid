@@ -23,7 +23,8 @@ public:
     SimdGrid *_grid;
     int checkerboard;
     std::vector<vobj,alignedAllocator<vobj> > _odata;
-
+    typedef typename vobj::scalar_type scalar_type;
+    typedef typename vobj::vector_type vector_type;
 public:
 
 
@@ -35,6 +36,8 @@ public:
         checkerboard=0;
     }
     
+
+#include <Grid_cshift_common.h>
 
 #ifdef GRID_COMMS_NONE
 #include <Grid_none_cshift.h>

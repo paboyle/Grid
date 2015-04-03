@@ -16,8 +16,11 @@
 #undef __X86_64
 namespace dpo {
 
-void Grid_init(void)
+void Grid_init(int *argc,char ***argv)
 {
+#ifdef GRID_COMMS_MPI
+  MPI_Init(argc,argv);
+#endif
   Grid_debug_handler_init();
 }
 double usecond(void) {
