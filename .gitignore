@@ -31,6 +31,10 @@ errs
 # http://www.gnu.org/software/automake
 
 Makefile.in
+Makefile
+config.log
+config.status
+.deps
 
 # http://www.gnu.org/software/autoconf
 
