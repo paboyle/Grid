@@ -19,9 +19,9 @@ int main (int argc, char ** argv)
   std::vector<int> simd_layout(4);
   
   std::vector<int> mpi_layout(4);
-  mpi_layout[0]=4;
-  mpi_layout[1]=2;
-  mpi_layout[2]=4;
+  mpi_layout[0]=2;
+  mpi_layout[1]=1;
+  mpi_layout[2]=1;
   mpi_layout[3]=2;
 
 #ifdef AVX512
@@ -34,7 +34,7 @@ int main (int argc, char ** argv)
    omp_set_num_threads(omp);
 #endif 
 
-  for(int lat=16;lat<=16;lat+=40){
+  for(int lat=8;lat<=16;lat+=40){
     latt_size[0] = lat;
     latt_size[1] = lat;
     latt_size[2] = lat;
@@ -166,6 +166,7 @@ int main (int argc, char ** argv)
 
 
     // Lattice SU(3) x SU(3)
+    Fine.Barrier();
     FooBar = Foo * Bar;
     
     // Lattice 12x12 GEMM
@@ -179,37 +180,47 @@ int main (int argc, char ** argv)
 
     flops = ncall*1.0*volume*(8*Nc*Nc*Nc);
     bytes = ncall*1.0*volume*Nc*Nc    *2*3*sizeof(Grid::Real);
-    printf("%f flop and %f bytes\n",flops,bytes/ncall);
+    if ( Fine.IsBoss() ) {
+      printf("%f flop and %f bytes\n",flops,bytes/ncall);
+    }
         FooBar = Foo * Bar;
+    Fine.Barrier();
     t0=usecond();
     for(int i=0;i<ncall;i++){
-        mult(FooBar,Foo,Bar); // this is better
+      Fine.Barrier();
+      mult(FooBar,Foo,Bar); // this is better
     }
     t1=usecond();
+    Fine.Barrier();
+    if ( Fine.IsBoss() ) {
 #ifdef OMP
-    printf("mult NumThread %d , Lattice size %d , %f us per call\n",omp_get_max_threads(),lat,(t1-t0)/ncall);
+      printf("mult NumThread %d , Lattice size %d , %f us per call\n",omp_get_max_threads(),lat,(t1-t0)/ncall);
 #endif
-    printf("mult NumThread %d , Lattice size %d , %f Mflop/s\n",omp,lat,flops/(t1-t0));
-    printf("mult NumThread %d , Lattice size %d , %f MB/s\n",omp,lat,bytes/(t1-t0));
-
+      printf("mult NumThread %d , Lattice size %d , %f Mflop/s\n",omp,lat,flops/(t1-t0));
+      printf("mult NumThread %d , Lattice size %d , %f MB/s\n",omp,lat,bytes/(t1-t0));
+    }
     mult(FooBar,Foo,Bar);
     FooBar = Foo * Bar;
 
     bytes = ncall*1.0*volume*Nc*Nc    *2*5*sizeof(Grid::Real);
+    Fine.Barrier();
     t0=usecond();
     for(int i=0;i<ncall;i++){
-      mult(FooBar,Foo,Cshift(Bar,1,-2));
+      Fine.Barrier();
+      mult(FooBar,Foo,Cshift(Bar,1,-1));
       //mult(FooBar,Foo,Bar);
       //FooBar = Foo * Bar; // this is bad
     }
     t1=usecond();
+    Fine.Barrier();
 
     FooBar = Foo * Bar;
     
-    printf("Cshift Mult: NumThread %d , Lattice size %d , %f us per call\n",omp,lat,(t1-t0)/ncall);
-    printf("Cshift Mult: NumThread %d , Lattice size %d , %f Mflop/s\n",omp,lat,flops/(t1-t0));
-    printf("Cshift Mult: NumThread %d , Lattice size %d , %f MB/s\n",omp,lat,bytes/(t1-t0));
-
+    if ( Fine.IsBoss() ) {
+      printf("Cshift Mult: NumThread %d , Lattice size %d , %f us per call\n",omp,lat,(t1-t0)/ncall);
+      printf("Cshift Mult: NumThread %d , Lattice size %d , %f Mflop/s\n",omp,lat,flops/(t1-t0));
+      printf("Cshift Mult: NumThread %d , Lattice size %d , %f MB/s\n",omp,lat,bytes/(t1-t0));
+    }
     //    pickCheckerboard(0,rFoo,FooBar);
     //    pickCheckerboard(1,bFoo,FooBar);
     //    setCheckerboard(FooBar,rFoo);
@@ -225,12 +236,12 @@ int main (int argc, char ** argv)
 	pickCheckerboard(0,rFoo,Foo);    // Pick out red or black checkerboards
 	pickCheckerboard(1,bFoo,Foo);
     
-	std::cout << "Shifting both parities by "<< shift <<" direction "<< dir <<std::endl;
+	if ( Fine.IsBoss() ) {
+	  std::cout << "Shifting both parities by "<< shift <<" direction "<< dir <<std::endl;
+	}
 	Shifted  = Cshift(Foo,dir,shift);    // Shift everything
 
-	std::cout << "Shifting even source parities to odd result"<<std::endl;
 	bShifted = Cshift(rFoo,dir,shift);   // Shift red->black
-	std::cout << "Shifting odd parities to even result"<<std::endl;
 	rShifted = Cshift(bFoo,dir,shift);   // Shift black->red
     
 	ShiftedCheck=zero;
@@ -332,8 +343,10 @@ int main (int argc, char ** argv)
             nrm = nrm + real(conj(diff)*diff);
         }}
     }}}}
+	if( Fine.IsBoss() ){
+	  std::cout << "LatticeColorMatrix * LatticeColorMatrix nrm diff = "<<nrm<<std::endl;
+	}
       }}
-    std::cout << "LatticeColorMatrix * LatticeColorMatrix nrm diff = "<<nrm<<std::endl;
 
    } // loop for lat
  } // loop for omp

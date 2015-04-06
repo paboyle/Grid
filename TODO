@@ -1,8 +1,9 @@
-* Make peekSite, pokeSite work in an MPI context.
+* FIXME audit
 
 * Conditional execution Subset, where etc...
 * Coordinate information, integers etc...
 * Integer type padding/union to vector.
+* LatticeCoordinate[mu]
 
 * Optimise the extract/merge SIMD routines
 

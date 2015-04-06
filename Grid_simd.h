@@ -37,6 +37,29 @@
     // Fourier transform equivalent.
     //
     
+  ////////////////////////////////////////////////////////////
+  // SIMD Alignment controls
+  ////////////////////////////////////////////////////////////
+#ifdef HAVE_VAR_ATTRIBUTE_ALIGNED
+#define ALIGN_DIRECTIVE(A) __attribute__ ((aligned(A)))
+#else
+#define ALIGN_DIRECTIVE(A) __declspec(align(A))
+#endif
+
+#ifdef SSE2
+#include <pmmintrin.h>
+#define SIMDalign ALIGN_DIRECTIVE(16)
+#endif
+
+#if defined(AVX1) || defined (AVX2)
+#include <immintrin.h>
+#define SIMDalign ALIGN_DIRECTIVE(32)
+#endif
+
+#ifdef AVX512
+#include <immintrin.h>
+#define SIMDalign ALIGN_DIRECTIVE(64)
+#endif
 
 namespace Grid {
 
@@ -47,6 +70,8 @@ namespace Grid {
   typedef std::complex<RealF> ComplexF;
   typedef std::complex<RealD> ComplexD;
   typedef std::complex<Real>  Complex;
+
+
 
 
   inline RealF adj(const RealF  & r){ return r; }
@@ -97,47 +122,27 @@ namespace Grid {
   template<>            inline void ZeroIt(RealD &arg){ arg=0; };
 
 
-  ////////////////////////////////////////////////////////////
-  // SIMD Alignment controls
-  ////////////////////////////////////////////////////////////
-#ifdef HAVE_VAR_ATTRIBUTE_ALIGNED
-#define ALIGN_DIRECTIVE(A) __attribute__ ((aligned(A)))
-#else
-#define ALIGN_DIRECTIVE(A) __declspec(align(A))
-#endif
-
-#ifdef SSE2
-#include <pmmintrin.h>
-#define SIMDalign ALIGN_DIRECTIVE(16)
-#endif
-
-#if defined(AVX1) || defined (AVX2)
-#include <immintrin.h>
-#define SIMDalign ALIGN_DIRECTIVE(32)
-#endif
-
-#ifdef AVX512
-#include <immintrin.h>
-#define SIMDalign ALIGN_DIRECTIVE(64)
-#endif
 
 #if defined (SSE2)
     typedef __m128 fvec;
     typedef __m128d dvec;
     typedef __m128 cvec;
     typedef __m128d zvec;
+    typedef __m128i ivec;
 #endif
 #if defined (AVX1) || defined (AVX2)
     typedef __m256 fvec;
     typedef __m256d dvec;
     typedef __m256  cvec;
     typedef __m256d zvec;
+    typedef __m256i ivec;
 #endif
 #if defined (AVX512)
     typedef __m512  fvec;
     typedef __m512d dvec;
     typedef __m512  cvec;
     typedef __m512d zvec;
+    typedef __m512i ivec;
 #endif
 #if defined (QPX)
     typedef float  fvec __attribute__ ((vector_size (16))); // QPX has same SIMD width irrespective of precision
@@ -159,10 +164,76 @@ namespace Grid {
 
 };
 
+
+/////////////////////////////////////////////////////////////////
+// Generic extract/merge/permute
+/////////////////////////////////////////////////////////////////
+template<class vsimd,class scalar,int Nsimd>
+inline void Gextract(vsimd &y,std::vector<scalar *> &extracted){
+  // Bounce off stack is painful
+  // temporary hack while I figure out the right interface
+  scalar buf[Nsimd]; 
+  vstore(y,buf);
+  for(int i=0;i<Nsimd;i++){
+    *extracted[i] = buf[i];
+    extracted[i]++;
+  }
+};
+template<class vsimd,class scalar,int Nsimd>
+inline void Gmerge(vsimd &y,std::vector<scalar *> &extracted){
+  scalar buf[Nsimd]; 
+  for(int i=0;i<Nsimd;i++){
+    buf[i]=*extracted[i];
+    extracted[i]++;
+  }
+  vset(y,buf); 
+};
+
+//////////////////////////////////////////////////////////
+// Permute
+// Permute 0 every ABCDEFGH -> BA DC FE HG
+// Permute 1 every ABCDEFGH -> CD AB GH EF
+// Permute 2 every ABCDEFGH -> EFGH ABCD
+// Permute 3 possible on longer iVector lengths (512bit = 8 double = 16 single)
+// Permute 4 possible on half precision @512bit vectors.
+//////////////////////////////////////////////////////////
+// Should be able to make the permute/extract/merge independent of the
+// vector subtype and reduce the volume of code.
+template<class vsimd>
+inline void Gpermute(vsimd &y,vsimd b,int perm){
+      switch (perm){
+#if defined(AVX1)||defined(AVX2)
+      // 8x32 bits=>3 permutes
+      case 2: y.v = _mm256_shuffle_ps(b.v,b.v,_MM_SHUFFLE(2,3,0,1)); break;
+      case 1: y.v = _mm256_shuffle_ps(b.v,b.v,_MM_SHUFFLE(1,0,3,2)); break;
+      case 0: y.v = _mm256_permute2f128_ps(b.v,b.v,0x01); break;
+#endif
+#ifdef SSE2
+      case 1: y.v = _mm_shuffle_ps(b.v,b.v,_MM_SHUFFLE(2,3,0,1)); break;
+      case 0: y.v = _mm_shuffle_ps(b.v,b.v,_MM_SHUFFLE(1,0,3,2));break;
+#endif
+#ifdef AVX512
+	// 16 floats=> permutes
+        // Permute 0 every abcd efgh ijkl mnop -> badc fehg jilk nmpo 
+        // Permute 1 every abcd efgh ijkl mnop -> cdab ghef jkij opmn 
+        // Permute 2 every abcd efgh ijkl mnop -> efgh abcd mnop ijkl
+        // Permute 3 every abcd efgh ijkl mnop -> ijkl mnop abcd efgh
+      case 3: y.v = _mm512_swizzle_ps(b.v,_MM_SWIZ_REG_CDAB); break;
+      case 2: y.v = _mm512_swizzle_ps(b.v,_MM_SWIZ_REG_BADC); break;
+      case 1: y.v = _mm512_permute4f128_ps(b.v,(_MM_PERM_ENUM)_MM_SHUFFLE(2,3,0,1)); break;
+      case 0: y.v = _mm512_permute4f128_ps(b.v,(_MM_PERM_ENUM)_MM_SHUFFLE(1,0,3,2)); break;
+#endif
+#ifdef QPX
+#error not implemented
+#endif
+      default: assert(0); break;
+      }
+    };
+
 #include <Grid_vRealF.h>
 #include <Grid_vRealD.h>
 #include <Grid_vComplexF.h>
 #include <Grid_vComplexD.h>
-
+#include <Grid_vInteger.h>
 
 #endif

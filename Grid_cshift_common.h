@@ -45,7 +45,7 @@ friend void Gather_plane_simple (Lattice<vobj> &rhs,std::vector<vobj,alignedAllo
     for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
       for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
 
-	int ocb=1<<rhs._grid->CheckerBoardFromOsite(o+b);// Could easily be a table lookup
+	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
 	if ( ocb &cbmask ) {
 	  buffer[bo]=rhs._odata[so+o+b];
 	  bo++;
@@ -90,7 +90,7 @@ friend void Gather_plane_extract(Lattice<vobj> &rhs,std::vector<scalar_type *> p
     for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
       for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
 
-	int ocb=1<<rhs._grid->CheckerBoardFromOsite(o+b);
+	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
 	if ( ocb & cbmask ) {
 	  extract(rhs._odata[so+o+b],pointers);
 	}
@@ -135,7 +135,7 @@ friend void Scatter_plane_simple (Lattice<vobj> &rhs,std::vector<vobj,alignedAll
     for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
       for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
 
-	int ocb=1<<rhs._grid->CheckerBoardFromOsite(o+b);// Could easily be a table lookup
+	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
 	if ( ocb & cbmask ) {
 	  rhs._odata[so+o+b]=buffer[bo++];
 	}
@@ -179,7 +179,7 @@ friend void Scatter_plane_merge(Lattice<vobj> &rhs,std::vector<scalar_type *> po
     for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
       for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
 
-	int ocb=1<<rhs._grid->CheckerBoardFromOsite(o+b);
+	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
 	if ( ocb&cbmask ) {
 	  merge(rhs._odata[so+o+b],pointers);
 	}
@@ -224,7 +224,7 @@ friend void Copy_plane(Lattice<vobj>& lhs,Lattice<vobj> &rhs, int dimension,int 
     for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
       for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
 
-	int ocb=1<<lhs._grid->CheckerBoardFromOsite(o+b);
+	int ocb=1<<lhs._grid->CheckerBoardFromOindex(o+b);
 
 	if ( ocb&cbmask ) {
 	  lhs._odata[lo+o+b]=rhs._odata[ro+o+b];
@@ -267,7 +267,7 @@ friend void Copy_plane_permute(Lattice<vobj>& lhs,Lattice<vobj> &rhs, int dimens
     for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
       for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
 
-	int ocb=1<<lhs._grid->CheckerBoardFromOsite(o+b);
+	int ocb=1<<lhs._grid->CheckerBoardFromOindex(o+b);
 
 	if ( ocb&cbmask ) {
 	  permute(lhs._odata[lo+o+b],rhs._odata[ro+o+b],permute_type);

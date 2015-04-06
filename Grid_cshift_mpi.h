@@ -73,7 +73,7 @@ friend void Cshift_comms(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimension,int
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::scalar_type scalar_type;
 
-  SimdGrid *grid=rhs._grid;
+  GridBase *grid=rhs._grid;
   Lattice<vobj> temp(rhs._grid);
 
   int fd              = rhs._grid->_fdimensions[dimension];
@@ -130,8 +130,8 @@ friend void Cshift_comms(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimension,int
 
 friend void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
 {
-  const int Nsimd = vector_type::Nsimd();
-  SimdGrid *grid=rhs._grid;
+  GridBase *grid=rhs._grid;
+  const int Nsimd = grid->Nsimd();
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::scalar_type scalar_type;
    
@@ -173,6 +173,7 @@ friend void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimensi
   
   std::vector<int> comm_offnode(simd_layout);
   std::vector<int> comm_proc   (simd_layout);  //relative processor coord in dim=dimension
+  std::vector<int> icoor(grid->Nd());
 
   for(int x=0;x<rd;x++){       
 
@@ -197,7 +198,10 @@ friend void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimensi
 
       for(int i=0;i<Nsimd;i++){
 
-	int s = grid->iCoordFromIsite(i,dimension);
+
+	int s;
+	grid->iCoorFromIindex(icoor,i);
+	s = icoor[dimension];
 
 	if(comm_offnode[s]){
 
@@ -232,7 +236,7 @@ friend void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimensi
       if ( x< rd-num ) permute_slice=wrap;
       else permute_slice = 1-wrap;
 
-      for(int i=0;i<vobj::vector_type::Nsimd();i++){
+      for(int i=0;i<Nsimd;i++){
 	if ( permute_slice ) {
 	  pointers[i] = rpointers[permute_map[permute_type][i]];
 	} else {

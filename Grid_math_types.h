@@ -66,7 +66,7 @@ namespace Grid {
 template<class vtype> class iScalar
 {
 public:
-  SIMDalign vtype _internal;
+  vtype _internal;
 
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
@@ -113,7 +113,7 @@ public:
 template<class vtype,int N> class iVector
 {
 public:
-  SIMDalign vtype _internal[N];
+  vtype _internal[N];
 
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
@@ -170,7 +170,7 @@ public:
 template<class vtype,int N> class iMatrix
 {
 public:
-  SIMDalign    vtype _internal[N][N];
+  vtype _internal[N][N];
 
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
@@ -908,21 +908,5 @@ inline auto trace(const iScalar<vtype> &arg) -> iScalar<decltype(trace(arg._inte
     return ret;
 }
 };
-/////////////////////////////////////////////////////////////////////////
-// Generic routine to promote object<complex> -> object<vcomplex>
-// Supports the array reordering transformation that gives me SIMD utilisation
-/////////////////////////////////////////////////////////////////////////
-/*
-template<template<class> class object>
-inline object<vComplex> splat(object<Complex >s){
-    object<vComplex> ret;
-    vComplex * v_ptr = (vComplex *)& ret;
-    Complex * s_ptr = (Complex *) &s;
-    for(int i=0;i<sizeof(ret);i+=sizeof(vComplex)){
-        vsplat(*(v_ptr++),*(s_ptr++));
-    }
-    return ret;
-}
-*/
     
 #endif
