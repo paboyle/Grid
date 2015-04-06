@@ -89,9 +89,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = Grid_main$(EXEEXT)
-@BUILD_COMMS_MPI_TRUE@am__append_1 = Grid_mpi.cc
-@BUILD_COMMS_FAKE_TRUE@am__append_2 = Grid_fake.cc
-@BUILD_COMMS_NONE_TRUE@am__append_3 = Grid_fake.cc
+@BUILD_COMMS_MPI_TRUE@am__append_1 = Grid_communicator_mpi.cc
+@BUILD_COMMS_NONE_TRUE@am__append_2 = Grid_communicator_fake.cc
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -146,12 +145,13 @@ libGrid_a_LIBADD =
 am_libGrid_a_OBJECTS = Grid_init.$(OBJEXT)
 libGrid_a_OBJECTS = $(am_libGrid_a_OBJECTS)
 PROGRAMS = $(bin_PROGRAMS)
-am__Grid_main_SOURCES_DIST = Grid_main.cc Grid_mpi.cc Grid_fake.cc
-@BUILD_COMMS_MPI_TRUE@am__objects_1 = Grid_mpi.$(OBJEXT)
-@BUILD_COMMS_FAKE_TRUE@am__objects_2 = Grid_fake.$(OBJEXT)
-@BUILD_COMMS_NONE_TRUE@am__objects_3 = Grid_fake.$(OBJEXT)
-am__objects_4 = $(am__objects_1) $(am__objects_2) $(am__objects_3)
-am_Grid_main_OBJECTS = Grid_main.$(OBJEXT) $(am__objects_4)
+am__Grid_main_SOURCES_DIST = Grid_main.cc Grid_communicator_mpi.cc \
+	Grid_communicator_fake.cc
+@BUILD_COMMS_MPI_TRUE@am__objects_1 = Grid_communicator_mpi.$(OBJEXT)
+@BUILD_COMMS_NONE_TRUE@am__objects_2 =  \
+@BUILD_COMMS_NONE_TRUE@	Grid_communicator_fake.$(OBJEXT)
+am__objects_3 = $(am__objects_1) $(am__objects_2)
+am_Grid_main_OBJECTS = Grid_main.$(OBJEXT) $(am__objects_3)
 Grid_main_OBJECTS = $(am_Grid_main_OBJECTS)
 Grid_main_DEPENDENCIES = libGrid.a
 AM_V_P = $(am__v_P_@AM_V@)
@@ -214,8 +214,8 @@ CTAGS = ctags
 CSCOPE = cscope
 AM_RECURSIVE_TARGETS = cscope
 am__DIST_COMMON = $(srcdir)/Grid_config.h.in $(srcdir)/Makefile.in \
-	AUTHORS COPYING ChangeLog INSTALL NEWS README compile depcomp \
-	install-sh missing
+	AUTHORS COPYING ChangeLog INSTALL NEWS README TODO compile \
+	depcomp install-sh missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -353,12 +353,11 @@ include_HEADERS = Grid_config.h\
 	Grid_aligned_allocator.h\
 	Grid_cshift.h\
 	Grid_cshift_common.h\
-	Grid_cshift_fake.h\
 	Grid_cshift_mpi.h\
 	Grid_cshift_none.h\
 	Grid_math_types.h
 
-extra_sources = $(am__append_1) $(am__append_2) $(am__append_3)
+extra_sources = $(am__append_1) $(am__append_2)
 Grid_main_SOURCES = \
 	Grid_main.cc\
 	$(extra_sources)
@@ -506,10 +505,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Grid_fake.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Grid_communicator_fake.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Grid_communicator_mpi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Grid_init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Grid_main.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Grid_mpi.Po@am__quote@
 
 .cc.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

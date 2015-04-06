@@ -4,7 +4,9 @@
 
 namespace Grid {
     class vComplexF {
-    protected:
+      //    protected:
+
+    public:
         cvec v;
         
     public:
@@ -129,75 +131,11 @@ namespace Grid {
 #endif
             return ret;
         };
+      
 
-        /////////////////////////////////////////////////////////////////
-        // Extract
-        /////////////////////////////////////////////////////////////////
-        friend inline void extract(vComplexF &y,std::vector<ComplexF *> &extracted){
-	  // Bounce off heap is painful
-	  // temporary hack while I figure out the right interface
-            vComplexF vbuf;
-            ComplexF *buf = (ComplexF *)&vbuf;
-            
-	  vstore(y,&buf[0]);
-	  for(int i=0;i<vComplexF::Nsimd();i++){
-	    *extracted[i] = buf[i];
-	    extracted[i]++;
-	  }
-
-        };
-
-        friend inline void merge(vComplexF &y,std::vector<ComplexF *> &extracted){
-	  // Bounce off stack is painful
-	  // temporary hack while I figure out the right interface
-	  const int Nsimd = vComplexF::Nsimd();
-            vComplexF vbuf;
-            ComplexF *buf = (ComplexF *)&vbuf;
-
-	  for(int i=0;i<Nsimd;i++){
-	    buf[i]=*extracted[i];
-	    extracted[i]++;
-	  }
-	  vset(y,&buf[0]); 
-        };
-        
-
-
-        /////////////////////////////////////////////////////////////////
-        // Permute
-        /////////////////////////////////////////////////////////////////
-        friend inline void permute(vComplexF &y,vComplexF b,int perm){
-            switch (perm){
-#if defined(AVX1)||defined(AVX2)
-//HERE
-                    // 4 complex=>2 permutes
-                    // case 0 ABCD->BADC
-                    // case 1 ABCD->CDAB
-                case 0: y.v = _mm256_shuffle_ps(b.v,b.v,_MM_SHUFFLE(1,0,3,2)); break;
-                case 1: y.v = _mm256_permute2f128_ps(b.v,b.v,0x01); break;
-#endif
-#ifdef SSE2
-                case 0: y.v = _mm_shuffle_ps(b.v,b.v,_MM_SHUFFLE(1,0,3,2));break;
-#endif
-#ifdef AVX512
-//#error should permute for  512
-                    // 8 complex=>3 permutes
-                    // case 0 ABCD EFGH -> BADC FEHG
-                    // case 1 ABCD EFGH -> CDAB GHEF
-                    // case 2 ABCD EFGH -> EFGH ABCD
-                case 0: y.v = _mm512_swizzle_ps(b.v,_MM_SWIZ_REG_CDAB); break; // OK
-                case 1: y.v = _mm512_swizzle_ps(b.v,_MM_SWIZ_REG_BADC); break; // OK
-                case 2: y.v = _mm512_permute4f128_ps(b.v, (_MM_PERM_ENUM)_MM_SHUFFLE(2,3,0,1)); break; // OK
-
-#endif
-#ifdef QPX
-#error
-#endif
-	        default: assert(0); break;
-            }
-        };
-        
-
+	////////////////////////////////////////////////////////////////////////
+	// FIXME:  gonna remove these load/store, get, set, prefetch
+	////////////////////////////////////////////////////////////////////////
         friend inline void vset(vComplexF &ret, Complex *a){
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_set_ps(a[3].imag(),a[3].real(),a[2].imag(),a[2].real(),a[1].imag(),a[1].real(),a[0].imag(),a[0].real());
@@ -358,6 +296,20 @@ friend inline void vstore(vComplexF &ret, ComplexF *a){
             return *this;
         }
 
+      friend inline void permute(vComplexF &y,vComplexF b,int perm)
+      {
+	Gpermute<vComplexF>(y,b,perm);
+      }
+      friend inline void merge(vComplexF &y,std::vector<ComplexF *> &extracted)
+      {
+	Gmerge<vComplexF,ComplexF >(y,extracted);
+      }
+      friend inline void extract(vComplexF &y,std::vector<ComplexF *> &extracted)
+      {
+	Gextract<vComplexF,ComplexF>(y,extracted);
+      }
+
+
     };
 
     inline vComplexF localInnerProduct(const vComplexF & l, const vComplexF & r) { return conj(l)*r; }
@@ -370,8 +322,6 @@ friend inline void vstore(vComplexF &ret, ComplexF *a){
     {
         return l*r;
     }
-
-
 
 }
 #endif

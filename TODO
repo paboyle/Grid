@@ -1,4 +1,7 @@
 * FIXME audit
+* Remove vload/store etc..
+* Replace vset with a call to merge.
+* Replace vset with a call to merge.
 
 * Conditional execution Subset, where etc...
 * Coordinate information, integers etc...
@@ -27,3 +30,103 @@
   - BinaryWriter, TextWriter etc...
   - protocol buffers?
   - 
+// Cartesian grid inheritance
+//            Grid::GridBase
+//                     |
+//           __________|___________
+//          |                      |
+// Grid::GridCartesian   Grid::GridCartesianRedBlack
+//
+// TODO: document the following as an API guaranteed public interface
+
+    /* 
+     *       Rough map of functionality against QDP++ Layout
+     *
+     *       Param     |     Grid                     |     QDP++             
+     *       -----------------------------------------
+     *                 |                              |
+     *        void     |     oSites, iSites, lSites   |  sitesOnNode 
+     *        void     |     gSites                   |  vol
+     *                 |                              |
+     *        gcoor    |     oIndex, iIndex           |  linearSiteIndex // no virtual node in QDP
+     *        lcoor    |                              |
+     * 
+     *        void     |     CheckerBoarded           |  -        // No checkerboarded in QDP
+     *        void     |     FullDimensions           |  lattSize
+     *        void     |     GlobalDimensions         |  lattSize // No checkerboarded in QDP
+     *        void     |     LocalDimensions          |  subgridLattSize
+     *        void     |     VirtualLocalDimensions   |  subgridLattSize // no virtual node in QDP
+     *                 |                              |
+     *       int x 3   |     oiSiteRankToGlobal       |  siteCoords
+     *                 |     ProcessorCoorLocalCoorToGlobalCoor | 
+     *                 |                              |
+     *     vector<int> |     GlobalCoorToRankIndex   |  nodeNumber(coord)
+     *     vector<int> |     GlobalCoorToProcessorCoorLocalCoor|  nodeCoord(coord)
+     *                 |                              |
+     *     void        |     Processors               |  logicalSize    // returns cart array shape
+     *     void        |     ThisRank        |  nodeNumber();  // returns this node rank
+     *     void        |     ThisProcessorCoor        |    // returns this node coor
+     *     void        |     isBoss(void)             |  primaryNode();
+     *                 |                              |
+     *                 |     RankFromProcessorCoor    |  getLogicalCoorFrom(node)
+     *                 |     ProcessorCoorFromRank    |  getNodeNumberFrom(logical_coord)
+     */
+  // Work out whether to permute 
+  // ABCDEFGH ->   AE BF CG DH       permute              wrap num
+  //
+  // Shift 0       AE BF CG DH       0 0 0 0    ABCDEFGH   0   0
+  // Shift 1       BF CG DH AE       0 0 0 1    BCDEFGHA   0   1
+  // Shift 2       CG DH AE BF       0 0 1 1    CDEFGHAB   0   2
+  // Shift 3       DH AE BF CG       0 1 1 1    DEFGHABC   0   3
+  // Shift 4       AE BF CG DH       1 1 1 1    EFGHABCD   1   0 
+  // Shift 5       BF CG DH AE       1 1 1 0    FGHACBDE   1   1 
+  // Shift 6       CG DH AE BF       1 1 0 0    GHABCDEF   1   2
+  // Shift 7       DH AE BF CG       1 0 0 0    HABCDEFG   1   3
+
+  // Suppose 4way simd in one dim.
+  // ABCDEFGH ->   AECG BFDH      permute              wrap num
+
+  // Shift 0       AECG BFDH      0,00 0,00 ABCDEFGH         0     0
+  // Shift 1       BFDH CGEA      0,00 1,01 BCDEFGHA         0     1
+  // Shift 2       CGEA DHFB      1,01 1,01 CDEFGHAB         1     0
+  // Shift 3       DHFB EAGC      1,01 1,11 DEFGHABC         1     1
+  // Shift 4       EAGC FBHD      1,11 1,11 EFGHABCD         2     0 
+  // Shift 5       FBHD GCAE      1,11 1,10 FGHABCDE         2     1
+  // Shift 6       GCAE HDBF      1,10 1,10 GHABCDEF         3     0
+  // Shift 7       HDBF AECG      1,10 0,00 HABCDEFG         3     1
+
+  // Generalisation to 8 way simd, 16 way simd required.
+  //
+  // Need log2 Nway masks. consisting of 
+  //	    1 bit  256 bit granule
+  //	    2 bit  128 bit granule
+  //        4 bits 64  bit granule
+  //        8 bits 32  bit granules
+  //
+  //        15 bits....
+    // TODO
+    //
+    // Base class to share common code between vRealF, VComplexF etc...
+    //
+    // lattice Broad cast assignment
+    //
+    // where() support
+    // implement with masks, and/or? Type of the mask & boolean support?
+    //
+    // Unary functions
+    // cos,sin, tan, acos, asin, cosh, acosh, tanh, sinh, // Scalar<vReal> only arg
+    // exp, log, sqrt, fabs
+    //
+    // transposeColor, transposeSpin,
+    // adjColor, adjSpin,
+    // traceColor, traceSpin.
+    // peekColor, peekSpin + pokeColor PokeSpin
+    //
+    // copyMask.
+    //
+    // localMaxAbs
+    //
+    // norm2,
+    // sumMulti equivalent.
+    // Fourier transform equivalent.
+    //

@@ -51,13 +51,9 @@ case ${ac_SIMD} in
 esac
 
 
-AC_ARG_ENABLE([comms],[AC_HELP_STRING([--enable-comms=none|fake|mpi],[Select communications])],[ac_COMMS=${enable_comms}],[ac_COMMS=none])
+AC_ARG_ENABLE([comms],[AC_HELP_STRING([--enable-comms=none|mpi],[Select communications])],[ac_COMMS=${enable_comms}],[ac_COMMS=none])
 
 case ${ac_COMMS} in
-     fake)
-       echo Configuring for FAKE communications
-       AC_DEFINE([GRID_COMMS_FAKE],[1],[GRID_COMMS_FAKE] )
-     ;;
      none)
        echo Configuring for NO communications
        AC_DEFINE([GRID_COMMS_NONE],[1],[GRID_COMMS_NONE] )
@@ -72,7 +68,6 @@ case ${ac_COMMS} in
 esac
 
 AM_CONDITIONAL(BUILD_COMMS_MPI,[ test "X${ac_COMMS}X" == "XmpiX" ])
-AM_CONDITIONAL(BUILD_COMMS_FAKE,[ test "X${ac_COMMS}X" == "XfakeX" ])
 AM_CONDITIONAL(BUILD_COMMS_NONE,[ test "X${ac_COMMS}X" == "XnoneX" ])
 
 

@@ -24,7 +24,6 @@ include_HEADERS = Grid_config.h\
 	Grid_aligned_allocator.h\
 	Grid_cshift.h\
 	Grid_cshift_common.h\
-	Grid_cshift_fake.h\
 	Grid_cshift_mpi.h\
 	Grid_cshift_none.h\
 	Grid_math_types.h
@@ -37,13 +36,10 @@ bin_PROGRAMS = Grid_main
 
 extra_sources=
 if BUILD_COMMS_MPI
-  extra_sources+=Grid_mpi.cc
-endif
-if BUILD_COMMS_FAKE
-  extra_sources+=Grid_fake.cc
+  extra_sources+=Grid_communicator_mpi.cc
 endif
 if BUILD_COMMS_NONE
-  extra_sources+=Grid_fake.cc
+  extra_sources+=Grid_communicator_fake.cc
 endif
 
 Grid_main_SOURCES = \

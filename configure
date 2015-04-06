@@ -628,8 +628,6 @@ LTLIBOBJS
 LIBOBJS
 BUILD_COMMS_NONE_FALSE
 BUILD_COMMS_NONE_TRUE
-BUILD_COMMS_FAKE_FALSE
-BUILD_COMMS_FAKE_TRUE
 BUILD_COMMS_MPI_FALSE
 BUILD_COMMS_MPI_TRUE
 EGREP
@@ -1369,8 +1367,7 @@ Optional Features:
   --disable-openmp        do not use OpenMP
   --enable-simd=SSE|AVX|AVX2|AVX512
                           Select instructions
-  --enable-comms=none|fake|mpi
-                          Select communications
+  --enable-comms=none|mpi Select communications
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -5051,12 +5048,6 @@ fi
 
 
 case ${ac_COMMS} in
-     fake)
-       echo Configuring for FAKE communications
-
-$as_echo "#define GRID_COMMS_FAKE 1" >>confdefs.h
-
-     ;;
      none)
        echo Configuring for NO communications
 
@@ -5080,14 +5071,6 @@ esac
 else
   BUILD_COMMS_MPI_TRUE='#'
   BUILD_COMMS_MPI_FALSE=
-fi
-
- if  test "X${ac_COMMS}X" == "XfakeX" ; then
-  BUILD_COMMS_FAKE_TRUE=
-  BUILD_COMMS_FAKE_FALSE='#'
-else
-  BUILD_COMMS_FAKE_TRUE='#'
-  BUILD_COMMS_FAKE_FALSE=
 fi
 
  if  test "X${ac_COMMS}X" == "XnoneX" ; then
@@ -5241,10 +5224,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BUILD_COMMS_MPI_TRUE}" && test -z "${BUILD_COMMS_MPI_FALSE}"; then
   as_fn_error $? "conditional \"BUILD_COMMS_MPI\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${BUILD_COMMS_FAKE_TRUE}" && test -z "${BUILD_COMMS_FAKE_FALSE}"; then
-  as_fn_error $? "conditional \"BUILD_COMMS_FAKE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BUILD_COMMS_NONE_TRUE}" && test -z "${BUILD_COMMS_NONE_FALSE}"; then

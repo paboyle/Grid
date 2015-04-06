@@ -42,11 +42,10 @@
 #endif
 
 
+#include <Grid_aligned_allocator.h>
 #include <Grid_simd.h>
 #include <Grid_math_types.h>
 #include <Grid_Cartesian.h>
-#include <Grid_aligned_allocator.h>
-#include <Grid_aligned_allocator.h>
 #include <Grid_Lattice.h>
 #include <Grid_QCD.h>
 
