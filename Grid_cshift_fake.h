@@ -7,9 +7,11 @@ friend Lattice<vobj> Cshift(Lattice<vobj> &rhs,int dimension,int shift)
 {
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::scalar_type scalar_type;
-  const int Nsimd = vector_type::Nsimd();
 
   Lattice<vobj> ret(rhs._grid);
+
+  GridBase *grid=rhs._grid;
+  const int Nsimd = grid->Nsimd();
   
   int fd = rhs._grid->_fdimensions[dimension];
   int rd = rhs._grid->_rdimensions[dimension];
@@ -43,7 +45,7 @@ friend Lattice<vobj> Cshift(Lattice<vobj> &rhs,int dimension,int shift)
 
   for(int x=0;x<rd;x++){       
 
-    for(int i=0;i<vobj::vector_type::Nsimd();i++){
+    for(int i=0;i<Nsimd;i++){
       pointers[i] = (scalar_type *)&comm_buf_extract[i][0];
     }
 
@@ -79,7 +81,7 @@ friend Lattice<vobj> Cshift(Lattice<vobj> &rhs,int dimension,int shift)
 	o +=rhs._grid->_slice_stride[dimension];
       }
 
-      for(int i=0;i<vobj::vector_type::Nsimd();i++){
+      for(int i=0;i<Nsimd;i++){
 	pointers[i] = (scalar_type *)&comm_buf_extract[permute_map[permute_type][i]][0];
       }
 

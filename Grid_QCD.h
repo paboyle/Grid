@@ -21,7 +21,13 @@ namespace QCD {
 
     typedef iSinglet<Complex >          TComplex;    // This is painful. Tensor singlet complex type.
     typedef iSinglet<vComplex >         vTComplex;
-    typedef iSinglet<Real >          TReal;    // This is painful. Tensor singlet complex type.
+    typedef iSinglet<Real >             TReal;    // This is painful. Tensor singlet complex type.
+
+
+    typedef iSinglet<vIntegerF >         vTIntegerF;
+    typedef iSinglet<vIntegerD >         vTIntegerD;
+    typedef iSinglet<vIntegerC >         vTIntegerC;
+    typedef iSinglet<vIntegerZ >         vTIntegerZ;
 
     typedef iSpinMatrix<Complex >       SpinMatrix;
     typedef iColourMatrix<Complex >     ColourMatrix;
@@ -39,9 +45,13 @@ namespace QCD {
     typedef iSpinVector<vComplex >       vSpinVector;
     typedef iColourVector<vComplex >     vColourVector;
     typedef iSpinColourVector<vComplex > vSpinColourVector;
-
     
     typedef Lattice<vTComplex>         LatticeComplex;
+
+    typedef Lattice<vTIntegerF>            LatticeIntegerF; // Predicates for "where"
+    typedef Lattice<vTIntegerD>            LatticeIntegerD; 
+    typedef Lattice<vTIntegerC>            LatticeIntegerC;
+    typedef Lattice<vTIntegerZ>            LatticeIntegerZ;
     
     typedef Lattice<vColourMatrix>     LatticeColourMatrix;
     typedef Lattice<vSpinMatrix>       LatticeSpinMatrix;

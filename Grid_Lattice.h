@@ -20,7 +20,7 @@ template<class vobj>
 class Lattice
 {
 public:
-    SimdGrid *_grid;
+    GridBase *_grid;
     int checkerboard;
     std::vector<vobj,alignedAllocator<vobj> > _odata;
     typedef typename vobj::scalar_type scalar_type;
@@ -28,7 +28,7 @@ public:
 public:
 
 
-    Lattice(SimdGrid *grid) : _grid(grid) {
+    Lattice(GridBase *grid) : _grid(grid) {
         _odata.reserve(_grid->oSites());
         assert((((uint64_t)&_odata[0])&0xF) ==0);
         checkerboard=0;
@@ -95,56 +95,67 @@ public:
     template<class sobj>
     friend void pokeSite(const sobj &s,Lattice<vobj> &l,std::vector<int> &site){
 
-      typedef typename vobj::scalar_type stype;
-      typedef typename vobj::vector_type vtype;
+      GridBase *grid=l._grid;
 
-      assert( l.checkerboard == l._grid->CheckerBoard(site));
+      typedef typename vobj::scalar_type scalar_type;
+      typedef typename vobj::vector_type vector_type;
 
-      int o_index = l._grid->oIndex(site);
-      int i_index = l._grid->iIndex(site);
+      int Nsimd = grid->Nsimd();
+
+      assert( l.checkerboard== l._grid->CheckerBoard(site));
+      assert( sizeof(sobj)*Nsimd == sizeof(vobj));
+
+      int rank,odx,idx;
+      grid->GlobalCoorToRankIndex(rank,odx,idx,site);
+
+      // Optional to broadcast from node 0.
+      grid->Broadcast(0,s);
+
+      std::vector<sobj> buf(Nsimd);
+      std::vector<scalar_type *> pointers(Nsimd);  
+      for(int i=0;i<Nsimd;i++) pointers[i] = (scalar_type *)&buf[i];
+
+      // extract-modify-merge cycle is easiest way and this is not perf critical
+      extract(l._odata[odx],pointers);
       
-      stype *v_ptr = (stype *)&l._odata[o_index];
-      stype *s_ptr = (stype *)&s;
-      v_ptr = v_ptr + 2*i_index;
-        
-      for(int i=0;i<sizeof(sobj);i+=2*sizeof(stype)){
-	v_ptr[0] = s_ptr[0];
-	v_ptr[1] = s_ptr[1];
-	v_ptr+=2*vtype::Nsimd();
-	s_ptr+=2;
-      }
+      buf[idx] = s;
+
+      for(int i=0;i<Nsimd;i++) pointers[i] = (scalar_type *)&buf[i];
+      merge(l._odata[odx],pointers);
+
       return;
     };
-    
     
     // Peek a scalar object from the SIMD array
     template<class sobj>
-    friend void peekSite(sobj &s,const Lattice<vobj> &l,std::vector<int> &site){
+    friend void peekSite(sobj &s,Lattice<vobj> &l,std::vector<int> &site){
         
-      typedef typename vobj::scalar_type stype;
-      typedef typename vobj::vector_type vtype;
+      GridBase *grid=l._grid;
+
+      typedef typename vobj::scalar_type scalar_type;
+      typedef typename vobj::vector_type vector_type;
+
+      int Nsimd = grid->Nsimd();
 
       assert( l.checkerboard== l._grid->CheckerBoard(site));
+      assert( sizeof(sobj)*Nsimd == sizeof(vobj));
 
-      int o_index = l._grid->oIndex(site);
-      int i_index = l._grid->iIndex(site);
+      int rank,odx,idx;
+      grid->GlobalCoorToRankIndex(rank,odx,idx,site);
+      std::vector<sobj> buf(Nsimd);
+      std::vector<scalar_type *> pointers(Nsimd);  
+      for(int i=0;i<Nsimd;i++) pointers[i] = (scalar_type *)&buf[i];
+
+      extract(l._odata[odx],pointers);
       
-      stype *v_ptr = (stype *)&l._odata[o_index];
-      stype *s_ptr = (stype *)&s;
-      v_ptr = v_ptr + 2*i_index;
-      
-      for(int i=0;i<sizeof(sobj);i+=2*sizeof(stype)){
-	s_ptr[0] = v_ptr[0];
-	s_ptr[1] = v_ptr[1];
-	v_ptr+=2*vtype::Nsimd();
-	s_ptr+=2;
-      }
+      s = buf[idx];
+      grid->Broadcast(rank,s);
+
       return;
     };
     
-    // Randomise
+    // FIXME Randomise; deprecate this
     friend void random(Lattice<vobj> &l){
-
         Real *v_ptr = (Real *)&l._odata[0];
         size_t v_len = l._grid->oSites()*sizeof(vobj);
         size_t d_len = v_len/sizeof(Real);
@@ -154,9 +165,9 @@ public:
             v_ptr[i]=drand48();
         }
     };
-
+    
+    // FIXME for debug; deprecate this
     friend void lex_sites(Lattice<vobj> &l){
-
         Real *v_ptr = (Real *)&l._odata[0];
 	size_t o_len = l._grid->oSites();
         size_t v_len = sizeof(vobj)/sizeof(vRealF);
@@ -183,7 +194,6 @@ public:
         for(int i=0;i<d_len;i++){
 	  v_ptr[i]= drand48();
         }
-        
     };
 
 
@@ -241,6 +251,7 @@ public:
         }
         return ret;
     };
+
     inline friend Lattice<vobj> conj(const Lattice<vobj> &lhs){
         Lattice<vobj> ret(lhs._grid);
 #pragma omp parallel for
@@ -259,7 +270,7 @@ public:
 	std::vector<int> coor;
 	int cbos;
 	
-	full._grid->CoordFromOsite(coor,ss);
+	full._grid->oCoorFromOindex(coor,ss);
 	cbos=half._grid->CheckerBoard(coor);
 	
 	if (cbos==cb) {
@@ -277,7 +288,7 @@ public:
 	std::vector<int> coor;
 	int cbos;
 	
-	full._grid->CoordFromOsite(coor,ss);
+	full._grid->oCoorFromOindex(coor,ss);
 	cbos=half._grid->CheckerBoard(coor);
 
 	if (cbos==cb) {
@@ -351,7 +362,6 @@ public:
     template<class left,class right>
     inline auto operator * (const left &lhs,const Lattice<right> &rhs) -> Lattice<decltype(lhs*rhs._odata[0])>
     {
-	std::cerr <<"Oscalar * Lattice calling mult"<<std::endl;
         Lattice<decltype(lhs*rhs._odata[0])> ret(rhs._grid);
 
 #pragma omp parallel for
@@ -383,7 +393,6 @@ public:
     template<class left,class right>
     inline auto operator * (const Lattice<left> &lhs,const right &rhs) -> Lattice<decltype(lhs._odata[0]*rhs)>
     {
-	std::cerr <<"Lattice * Oscalar calling mult"<<std::endl;
         Lattice<decltype(lhs._odata[0]*rhs)> ret(lhs._grid);
 #pragma omp parallel for
         for(int ss=0;ss<rhs._grid->oSites(); ss++){

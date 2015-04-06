@@ -28,18 +28,18 @@ CartesianCommunicator::CartesianCommunicator(std::vector<int> &processors)
   assert(Size==_Nprocessors);
 }
 
-void CartesianCommunicator::GlobalSumF(float &f){
+void CartesianCommunicator::GlobalSum(float &f){
   MPI_Allreduce(&f,&f,1,MPI_FLOAT,MPI_SUM,communicator);
 }
-void CartesianCommunicator::GlobalSumFVector(float *f,int N)
+void CartesianCommunicator::GlobalSumVector(float *f,int N)
 {
   MPI_Allreduce(f,f,N,MPI_FLOAT,MPI_SUM,communicator);
 }
-void CartesianCommunicator::GlobalSumF(double &d)
+void CartesianCommunicator::GlobalSum(double &d)
 {
   MPI_Allreduce(&d,&d,1,MPI_DOUBLE,MPI_SUM,communicator);
 }
-void CartesianCommunicator::GlobalSumFVector(double *d,int N)
+void CartesianCommunicator::GlobalSumVector(double *d,int N)
 {
   MPI_Allreduce(d,d,N,MPI_DOUBLE,MPI_SUM,communicator);
 }
@@ -48,11 +48,16 @@ void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest
 {
   MPI_Cart_shift(communicator,dim,shift,&source,&dest);
 }
-int CartesianCommunicator::Rank(std::vector<int> coor)
+int CartesianCommunicator::RankFromProcessorCoor(std::vector<int> &coor)
 {
   int rank;
   MPI_Cart_rank  (communicator, &coor[0], &rank);
   return rank;
+}
+void  CartesianCommunicator::ProcessorCoorFromRank(int rank, std::vector<int> &coor)
+{
+  coor.resize(_ndimension);
+  MPI_Cart_coords  (communicator, rank, _ndimension,&coor[0]);
 }
 
 // Basic Halo comms primitive
@@ -69,6 +74,20 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
   MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator,&reqs[1]);
   MPI_Waitall(2,reqs,OkeyDokey);
 
+}
+
+void CartesianCommunicator::Barrier(void)
+{
+  MPI_Barrier(communicator);
+}
+
+void CartesianCommunicator::Broadcast(int root,void* data, int bytes)
+{
+  MPI_Bcast(data,
+	    bytes,
+	    MPI_BYTE,
+	    root,
+	    communicator);
 }
 
 }
