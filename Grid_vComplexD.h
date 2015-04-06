@@ -5,7 +5,7 @@
 
 namespace Grid {
     class vComplexD {
-    protected:
+    public:
         zvec v;
     public:
 	typedef zvec     vector_type;
@@ -154,64 +154,27 @@ namespace Grid {
             return ret;
         };
 
-        /////////////////////////////////////////////////////////////////
-        // Extract
-        /////////////////////////////////////////////////////////////////
-        friend inline void extract(vComplexD &y,std::vector<ComplexD *> &extracted){
-	  // Bounce off stack is painful
-	  // temporary hack while I figure out the right interface
-	  const int Nsimd = vComplexD::Nsimd();
-	  std::vector<ComplexD> buf(Nsimd); 
+	////////////////////////////////////////////////////////////////////
+	// General permute; assumes vector length is same across 
+	// all subtypes; may not be a good assumption, but could
+	// add the vector width as a template param for BG/Q for example
+	////////////////////////////////////////////////////////////////////
+	friend inline void permute(vComplexD &y,vComplexD b,int perm)
+	{
+	  Gpermute<vComplexD>(y,b,perm);
+	}
+	friend inline void merge(vComplexD &y,std::vector<ComplexD *> &extracted)
+	{
+	  Gmerge<vComplexD,ComplexD >(y,extracted);
+	}
+	friend inline void extract(vComplexD &y,std::vector<ComplexD *> &extracted)
+	{
+	  Gextract<vComplexD,ComplexD>(y,extracted);
+	}
 
-	  vstore(y,&buf[0]);
-
-	  for(int i=0;i<Nsimd;i++){
-	    *extracted[i] = buf[i];
-	    extracted[i]++;
-	  }
-        };
-
-        friend inline void merge(vComplexD &y,std::vector<ComplexD *> &extracted){
-	  // Bounce off stack is painful
-	  // temporary hack while I figure out the right interface
-	  const int Nsimd = vComplexD::Nsimd();
-	  std::vector<ComplexD> buf(Nsimd); 
-
-	  for(int i=0;i<Nsimd;i++){
-	    buf[i]=*extracted[i];
-	    extracted[i]++;
-	  }
-	  vset(y,&buf[0]); 
-        };
-        
-        
-        /////////////////////////////////////////////////////////////////
-        // Permute
-        /////////////////////////////////////////////////////////////////
-        friend inline void permute(vComplexD &y,vComplexD b,int perm){
-            switch (perm){
-                    // 2 complex=>1 permute
-#if defined(AVX1)||defined(AVX2)
-                case 0: y.v = _mm256_permute2f128_pd(b.v,b.v,0x01); break;
-                // AB => BA i.e. ab cd =>cd ab
-#endif
-#ifdef SSE2
-		  break;
-#endif
-#ifdef AVX512
-                    // 4 complex=>2 permute
-                // ABCD => BADC i.e. abcd efgh => cdab ghef
-                // ABCD => CDAB i.e. abcd efgh => efgh abcd
-                case 0: y.v = _mm512_swizzle_pd(b.v,_MM_SWIZ_REG_BADC); break;
-                case 1: y.v = _mm512_permute4f128_ps(b.v,(_MM_PERM_ENUM)_MM_SHUFFLE(1,0,3,2)); // permute for double is not implemented 
-
-#endif
-#ifdef QPX
-#error // Not implemented yet
-#endif
- 	        default: assert(0); break;
-            }
-        };
+	////////////////////////////////////////////////////////////////////////
+	// FIXME:  gonna remove these load/store, get, set, prefetch
+	////////////////////////////////////////////////////////////////////////
         void vload(zvec& a){
           this->v = a;
         }
@@ -296,7 +259,7 @@ friend inline void vstore(vComplexD &ret, ComplexD *a){
 #endif
             return ret;
         }
-// REDUCE
+// REDUCE FIXME must be a cleaner implementation
        friend inline ComplexD Reduce(const vComplexD & in)
        { 
 #if defined (AVX1) || defined(AVX2)

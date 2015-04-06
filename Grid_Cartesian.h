@@ -8,48 +8,6 @@ namespace Grid{
 /////////////////////////////////////////////////////////////////////////////////////////
 // Grid Support.
 /////////////////////////////////////////////////////////////////////////////////////////
-//
-// Cartesian grid inheritance
-//            Grid::GridBase
-//                     |
-//           __________|___________
-//          |                      |
-// Grid::GridCartesian   Grid::GridCartesianRedBlack
-//
-// TODO: document the following as an API guaranteed public interface
-
-    /* 
-     *       Rough map of functionality against QDP++ Layout
-     *
-     *       Param     |     Grid                     |     QDP++             
-     *       -----------------------------------------
-     *                 |                              |
-     *        void     |     oSites, iSites, lSites   |  sitesOnNode 
-     *        void     |     gSites                   |  vol
-     *                 |                              |
-     *        gcoor    |     oIndex, iIndex           |  linearSiteIndex // no virtual node in QDP
-     *        lcoor    |                              |
-     * 
-     *        void     |     CheckerBoarded           |  -        // No checkerboarded in QDP
-     *        void     |     FullDimensions           |  lattSize
-     *        void     |     GlobalDimensions         |  lattSize // No checkerboarded in QDP
-     *        void     |     LocalDimensions          |  subgridLattSize
-     *        void     |     VirtualLocalDimensions   |  subgridLattSize // no virtual node in QDP
-     *                 |                              |
-     *       int x 3   |     oiSiteRankToGlobal       |  siteCoords
-     *                 |     ProcessorCoorLocalCoorToGlobalCoor | 
-     *                 |                              |
-     *     vector<int> |     GlobalCoorToRankIndex   |  nodeNumber(coord)
-     *     vector<int> |     GlobalCoorToProcessorCoorLocalCoor|  nodeCoord(coord)
-     *                 |                              |
-     *     void        |     Processors               |  logicalSize    // returns cart array shape
-     *     void        |     ThisRank        |  nodeNumber();  // returns this node rank
-     *     void        |     ThisProcessorCoor        |    // returns this node coor
-     *     void        |     isBoss(void)             |  primaryNode();
-     *                 |                              |
-     *                 |     RankFromProcessorCoor    |  getLogicalCoorFrom(node)
-     *                 |     ProcessorCoorFromRank    |  getNodeNumberFrom(logical_coord)
-     */
 
 class GridBase : public CartesianCommunicator {
 public:
@@ -60,7 +18,8 @@ public:
  GridBase(std::vector<int> & processor_grid) : CartesianCommunicator(processor_grid) {};
 
         
- //protected:
+ //FIXME 
+ // protected:
  // Lattice wide random support. not yet fully implemented. Need seed strategy
  // and one generator per site.
  // std::default_random_engine generator;
@@ -165,7 +124,16 @@ public:
 	lane    = lane / _simd_layout[d];
       }
     }
-    
+    inline int PermuteDim(int dimension){
+      return _simd_layout[dimension]>1;
+    }
+    inline int PermuteType(int dimension){
+      int permute_type=0;
+      for(int d=_ndimension-1;d>dimension;d--){
+	if (_simd_layout[d]>1 ) permute_type++;
+      }
+      return permute_type;
+    }
     ////////////////////////////////////////////////////////////////
     // Array sizing queries
     ////////////////////////////////////////////////////////////////
@@ -399,8 +367,6 @@ public:
             
         ////////////////////////////////////////////////////////////////////////////////////////////
         // subplane information
-        // It may be worth the investment of generating a more general subplane "iterator",
-        // and providing support for threads grabbing a unit of allocation.
         ////////////////////////////////////////////////////////////////////////////////////////////
         _slice_block.resize(_ndimension);
         _slice_stride.resize(_ndimension);

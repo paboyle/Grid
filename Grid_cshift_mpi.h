@@ -146,10 +146,7 @@ friend void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimensi
   assert(shift>=0);
   assert(shift<fd);
 
-  int permute_type=0;
-  for(int d=0;d<dimension;d++){
-    if (grid->_simd_layout[d]>1 ) permute_type++;
-  }
+  int permute_type=grid->PermuteType(dimension);
 
   ///////////////////////////////////////////////
   // Simd direction uses an extract/merge pair
@@ -236,9 +233,12 @@ friend void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimensi
       if ( x< rd-num ) permute_slice=wrap;
       else permute_slice = 1-wrap;
 
+      int toggle_bit = (Nsimd>>(permute_type+1));
+      int PermuteMap;
       for(int i=0;i<Nsimd;i++){
 	if ( permute_slice ) {
-	  pointers[i] = rpointers[permute_map[permute_type][i]];
+	  PermuteMap=i^toggle_bit;
+	  pointers[i] = rpointers[PermuteMap];
 	} else {
 	  pointers[i] = rpointers[i];
 	}
@@ -260,8 +260,4 @@ friend void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimensi
     }
   }
 }
-
-
-
-
 #endif

@@ -9,9 +9,6 @@
 /* AVX512 */
 #undef AVX512
 
-/* GRID_COMMS_FAKE */
-#undef GRID_COMMS_FAKE
-
 /* GRID_COMMS_MPI */
 #undef GRID_COMMS_MPI
 

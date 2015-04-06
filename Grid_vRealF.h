@@ -5,7 +5,7 @@
 
 namespace Grid {
     class vRealF  {
-    protected:
+    public:
         fvec v;
 
     public:
@@ -120,74 +120,25 @@ namespace Grid {
         friend inline void vzero(vRealF &ret){vsplat(ret,0.0);}
 
 
-        /////////////////////////////////////////////////////////////////
-        // Extract
-        /////////////////////////////////////////////////////////////////
-        friend inline void extract(vRealF &y,std::vector<RealF *> &extracted){
-	  // Bounce off stack is painful
-	  // temporary hack while I figure out the right interface
-	  const int Nsimd = vRealF::Nsimd();
-	  RealF buf[Nsimd]; 
+	////////////////////////////////////////////////////////////////////
+	// General permute; assumes vector length is same across 
+	// all subtypes; may not be a good assumption, but could
+	// add the vector width as a template param for BG/Q for example
+	////////////////////////////////////////////////////////////////////
+	friend inline void permute(vRealF &y,vRealF b,int perm)
+	{
+	  Gpermute<vRealF>(y,b,perm);
+	}
+	friend inline void merge(vRealF &y,std::vector<RealF *> &extracted)
+	{
+	  Gmerge<vRealF,RealF >(y,extracted);
+	}
+	friend inline void extract(vRealF &y,std::vector<RealF *> &extracted)
+	{
+	  Gextract<vRealF,RealF>(y,extracted);
+	}
 
-	  vstore(y,buf);
 
-	  for(int i=0;i<Nsimd;i++){
-	    *extracted[i] = buf[i];
-	    extracted[i]++;
-	  }
-        };
-
-        friend inline void merge(vRealF &y,std::vector<RealF *> &extracted){
-	  // Bounce off stack is painful
-	  // temporary hack while I figure out the right interface
-	  const int Nsimd = vRealF::Nsimd();
-	  RealF buf[Nsimd]; 
-
-	  for(int i=0;i<Nsimd;i++){
-	    buf[i]=*extracted[i];
-	    extracted[i]++;
-	  }
-	  vset(y,buf); 
-        };
-        
-        //////////////////////////////////////////////////////////
-        // Permute
-        // Permute 0 every ABCDEFGH -> BA DC FE HG
-        // Permute 1 every ABCDEFGH -> CD AB GH EF
-        // Permute 2 every ABCDEFGH -> EFGH ABCD
-        // Permute 3 possible on longer iVector lengths (512bit = 8 double = 16 single)
-        // Permute 4 possible on half precision @512bit vectors.
-        //////////////////////////////////////////////////////////
-        friend inline void permute(vRealF &y,vRealF b,int perm){
-            switch (perm){
-                    // 8 floats=>3 permutes
-#if defined(AVX1)||defined(AVX2)
-                case 0: y.v = _mm256_shuffle_ps(b.v,b.v,_MM_SHUFFLE(2,3,0,1)); break;
-                case 1: y.v = _mm256_shuffle_ps(b.v,b.v,_MM_SHUFFLE(1,0,3,2)); break;
-                case 2: y.v = _mm256_permute2f128_ps(b.v,b.v,0x01); break;
-#endif
-#ifdef SSE2
-                case 0: y.v = _mm_shuffle_ps(b.v,b.v,_MM_SHUFFLE(2,3,0,1)); break;
-                case 1: y.v = _mm_shuffle_ps(b.v,b.v,_MM_SHUFFLE(1,0,3,2));break;
-#endif
-#ifdef AVX512
-                    // 16 floats=> permutes
-        // Permute 0 every abcd efgh ijkl mnop -> badc fehg jilk nmpo 
-        // Permute 1 every abcd efgh ijkl mnop -> cdab ghef jkij opmn 
-        // Permute 2 every abcd efgh ijkl mnop -> efgh abcd mnop ijkl
-        // Permute 3 every abcd efgh ijkl mnop -> ijkl mnop abcd efgh
-//#error not implemented should do something
-                case 0: y.v = _mm512_swizzle_ps(b.v,_MM_SWIZ_REG_CDAB); break;
-                case 1: y.v = _mm512_swizzle_ps(b.v,_MM_SWIZ_REG_BADC); break;
-                case 2: y.v = _mm512_permute4f128_ps(b.v,(_MM_PERM_ENUM)_MM_SHUFFLE(2,3,0,1)); break;
-                case 3: y.v = _mm512_permute4f128_ps(b.v,(_MM_PERM_ENUM)_MM_SHUFFLE(1,0,3,2)); break;
-#endif
-#ifdef QPX
-#error not implemented
-#endif
-	    default: assert(0); break;
-            }
-        };
         
         /////////////////////////////////////////////////////
         // Broadcast a value across Nsimd copies.
@@ -207,6 +158,8 @@ namespace Grid {
             ret.v = {a,a,a,a};
 #endif
         }
+
+
         friend inline void vset(vRealF &ret, float *a){
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_set_ps(a[7],a[6],a[5],a[4],a[3],a[2],a[1],a[0]);
@@ -224,6 +177,9 @@ namespace Grid {
 #endif
 	}
 
+	////////////////////////////////////////////////////////////////////////
+	// FIXME:  gonna remove these load/store, get, set, prefetch
+	////////////////////////////////////////////////////////////////////////
 friend inline void vstore(vRealF &ret, float *a){
 #if defined (AVX1)|| defined (AVX2)
 	_mm256_store_ps(a,ret.v);

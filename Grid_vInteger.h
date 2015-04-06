@@ -235,70 +235,11 @@ friend inline void vstore(vInteger &ret, Integer *a){
       }
       friend inline void merge(vIntegerF &y,std::vector<Integer *> &extracted)
       {
-	Gmerge<vIntegerF,Integer,sizeof(ivec)/sizeof(float) >(y,extracted);
+	Gmerge<vIntegerF,Integer>(y,extracted);
       }
       friend inline void extract(vIntegerF &y,std::vector<Integer *> &extracted)
       {
-	Gextract<vIntegerF,Integer,sizeof(ivec)/sizeof(float) >(y,extracted);
-      }
-    };
-
-
-    class vIntegerD : public vInteger
-    {
-    public:
-      static inline int Nsimd(void) { return sizeof(ivec)/sizeof(double);}
-      
-      friend inline void permute(vIntegerD &y,vIntegerD b,int perm)
-      {
-	Gpermute<vIntegerD>(y,b,perm);
-      }
-      friend inline void merge(vIntegerD &y,std::vector<Integer *> &extracted)
-      {
-	Gmerge<vIntegerD,Integer,sizeof(ivec)/sizeof(double) >(y,extracted);
-      }
-      friend inline void extract(vIntegerD &y,std::vector<Integer *> &extracted)
-      {
-	Gextract<vIntegerD,Integer,sizeof(ivec)/sizeof(double) >(y,extracted);
-      }
-    };
-
-
-    class vIntegerC : public vInteger
-    {
-    public:
-      static inline int Nsimd(void) { return sizeof(ivec)/sizeof(ComplexF);}
-      
-      friend inline void permute(vIntegerC &y,vIntegerC b,int perm)
-      {
-	Gpermute<vIntegerC>(y,b,perm);
-      }
-      friend inline void merge(vIntegerC &y,std::vector<Integer *> &extracted)
-      {
-	Gmerge<vIntegerC,Integer,sizeof(ivec)/sizeof(ComplexF) >(y,extracted);
-      }
-      friend inline void extract(vIntegerC &y,std::vector<Integer *> &extracted)
-      {
-	Gextract<vIntegerC,Integer,sizeof(ivec)/sizeof(ComplexF) >(y,extracted);
-      }
-    };
-
-    class vIntegerZ : public vInteger
-    {
-    public:
-      static inline int Nsimd(void) { return sizeof(ivec)/sizeof(ComplexD);}
-      
-      friend inline void permute(vIntegerZ &y,vIntegerZ b,int perm)
-      {
-	Gpermute<vIntegerZ>(y,b,perm);
-      }
-      friend inline void merge(vIntegerZ &y,std::vector<Integer *> &extracted)
-      {
-	Gmerge<vIntegerZ,Integer,sizeof(ivec)/sizeof(ComplexD) >(y,extracted);
-      }
-      friend inline void extract(vIntegerZ &y,std::vector<Integer *> &extracted)
-      {
-	Gextract<vIntegerZ,Integer,sizeof(ivec)/sizeof(ComplexD) >(y,extracted);
+	Gextract<vIntegerF,Integer>(y,extracted);
       }
     };
 

@@ -20,8 +20,8 @@ int main (int argc, char ** argv)
   
   std::vector<int> mpi_layout(4);
   mpi_layout[0]=2;
-  mpi_layout[1]=1;
-  mpi_layout[2]=1;
+  mpi_layout[1]=2;
+  mpi_layout[2]=2;
   mpi_layout[3]=2;
 
 #ifdef AVX512

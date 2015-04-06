@@ -10,32 +10,6 @@
 //
 // Vector types are arch dependent
 ////////////////////////////////////////////////////////////////////////
-    // TODO
-    //
-    // Base class to share common code between vRealF, VComplexF etc...
-    //
-    // lattice Broad cast assignment
-    //
-    // where() support
-    // implement with masks, and/or? Type of the mask & boolean support?
-    //
-    // Unary functions
-    // cos,sin, tan, acos, asin, cosh, acosh, tanh, sinh, // Scalar<vReal> only arg
-    // exp, log, sqrt, fabs
-    //
-    // transposeColor, transposeSpin,
-    // adjColor, adjSpin,
-    // traceColor, traceSpin.
-    // peekColor, peekSpin + pokeColor PokeSpin
-    //
-    // copyMask.
-    //
-    // localMaxAbs
-    //
-    // norm2,
-    // sumMulti equivalent.
-    // Fourier transform equivalent.
-    //
     
   ////////////////////////////////////////////////////////////
   // SIMD Alignment controls
@@ -70,9 +44,6 @@ namespace Grid {
   typedef std::complex<RealF> ComplexF;
   typedef std::complex<RealD> ComplexD;
   typedef std::complex<Real>  Complex;
-
-
-
 
   inline RealF adj(const RealF  & r){ return r; }
   inline RealF conj(const RealF  & r){ return r; }
@@ -122,7 +93,6 @@ namespace Grid {
   template<>            inline void ZeroIt(RealD &arg){ arg=0; };
 
 
-
 #if defined (SSE2)
     typedef __m128 fvec;
     typedef __m128d dvec;
@@ -162,31 +132,46 @@ namespace Grid {
     inline void v_prefetch0(int size, const char *ptr){};
 #endif
 
-};
-
 
 /////////////////////////////////////////////////////////////////
 // Generic extract/merge/permute
 /////////////////////////////////////////////////////////////////
-template<class vsimd,class scalar,int Nsimd>
+template<class vsimd,class scalar>
 inline void Gextract(vsimd &y,std::vector<scalar *> &extracted){
-  // Bounce off stack is painful
-  // temporary hack while I figure out the right interface
-  scalar buf[Nsimd]; 
-  vstore(y,buf);
-  for(int i=0;i<Nsimd;i++){
-    *extracted[i] = buf[i];
-    extracted[i]++;
+#if 1
+  // FIXME: bounce off stack is painful
+  // temporary hack while I figure out better way.
+  // There are intrinsics to do this work without the storage.
+  int Nsimd = extracted.size();
+  {
+    std::vector<scalar,alignedAllocator<scalar> > buf(Nsimd); 
+    vstore(y,&buf[0]);
+    for(int i=0;i<Nsimd;i++){
+      *extracted[i] = buf[i];
+      extracted[i]++;
+    }
   }
+#else 
+  int NSo   = extracted.size();
+  int NSv   = vsimd::Nsimd();
+  int sparse= NSv/NSo;
+  for(int i=0;i<NSv;i+=sparse){
+    
+  }
+#endif
 };
-template<class vsimd,class scalar,int Nsimd>
+template<class vsimd,class scalar>
 inline void Gmerge(vsimd &y,std::vector<scalar *> &extracted){
-  scalar buf[Nsimd]; 
+#if 1
+  int Nsimd = extracted.size();
+  std::vector<scalar> buf(Nsimd); 
   for(int i=0;i<Nsimd;i++){
     buf[i]=*extracted[i];
     extracted[i]++;
   }
-  vset(y,buf); 
+  vset(y,&buf[0]); 
+#else
+#endif
 };
 
 //////////////////////////////////////////////////////////
@@ -197,8 +182,6 @@ inline void Gmerge(vsimd &y,std::vector<scalar *> &extracted){
 // Permute 3 possible on longer iVector lengths (512bit = 8 double = 16 single)
 // Permute 4 possible on half precision @512bit vectors.
 //////////////////////////////////////////////////////////
-// Should be able to make the permute/extract/merge independent of the
-// vector subtype and reduce the volume of code.
 template<class vsimd>
 inline void Gpermute(vsimd &y,vsimd b,int perm){
       switch (perm){
@@ -229,6 +212,7 @@ inline void Gpermute(vsimd &y,vsimd b,int perm){
       default: assert(0); break;
       }
     };
+};
 
 #include <Grid_vRealF.h>
 #include <Grid_vRealD.h>

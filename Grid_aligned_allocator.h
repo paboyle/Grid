@@ -1,5 +1,8 @@
 #ifndef GRID_ALIGNED_ALLOCATOR_H
 #define GRID_ALIGNED_ALLOCATOR_H
+
+#include <immintrin.h>
+
 namespace Grid {
 
 ////////////////////////////////////////////////////////////////////

@@ -4,17 +4,9 @@
 #include "Grid.h"
 
 
-
 namespace Grid {
 
-// Permute the pointers 32bitx16 = 512
-static int permute_map[4][16] = { 
-  { 1,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14},
-  { 2,3,0,1,6,7,4,5,10,11,8,9,14,15,12,13},
-  { 4,5,6,7,0,1,2,3,12,13,14,15,8,9,10,11},
-  { 9,10,11,12,13,14,15,0,1,2,3,4,5,6,7,8}
-};
-
+  extern int GridCshiftPermuteMap[4][16];
 
 template<class vobj>
 class Lattice
@@ -37,11 +29,10 @@ public:
 
 #include <Grid_cshift.h>
     
-    // overloading Grid::conformable but no conformable in Grid ...?:w
     template<class obj1,class obj2>
     friend void conformable(const Lattice<obj1> &lhs,const Lattice<obj2> &rhs);
 
-    // Performance difference between operator * and mult is troubling.
+    // FIXME Performance difference between operator * and mult is troubling.
     // Auto move constructor seems to lose surprisingly much.
 
     // Site wise binary operations
@@ -182,23 +173,20 @@ public:
         }}
     };
 
+    // FIXME Implement a consistent seed management strategy
     friend void gaussian(Lattice<vobj> &l){
         // Zero mean, unit variance.
         std::normal_distribution<double> distribution(0.0,1.0);
         Real *v_ptr = (Real *)&l._odata[0];
         size_t v_len = l._grid->oSites()*sizeof(vobj);
         size_t d_len = v_len/sizeof(Real);
-        
-        // Not a parallel RNG. Could make up some seed per 4d site, seed
-        // per hypercube type scheme.
+
         for(int i=0;i<d_len;i++){
 	  v_ptr[i]= drand48();
         }
     };
 
-
     // Unary functions and Unops
-    // Unary negation
     friend inline Lattice<vobj> operator -(const Lattice<vobj> &r) {
         Lattice<vobj> ret(r._grid);
 #pragma omp parallel for
