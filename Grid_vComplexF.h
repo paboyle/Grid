@@ -20,6 +20,12 @@ namespace Grid {
             return (*this);
         }
         vComplexF(){};
+        vComplexF(ComplexF a){
+	  vsplat(*this,a);
+	};
+        vComplexF(double a){
+	  vsplat(*this,ComplexF(a));
+	};
        
         ///////////////////////////////////////////////
         // mac, mult, sub, add, adj
@@ -161,7 +167,7 @@ namespace Grid {
             vsplat(ret,a,b);
         }
 
-friend inline void vstore(vComplexF &ret, ComplexF *a){
+friend inline void vstore(const vComplexF &ret, ComplexF *a){
 #if defined (AVX1)|| defined (AVX2)
         _mm256_store_ps((float *)a,ret.v);
 #endif
@@ -210,27 +216,47 @@ friend inline void vstore(vComplexF &ret, ComplexF *a){
 #endif
         }
 
-
         friend inline vComplexF operator * (const Complex &a, vComplexF b){
             vComplexF va;
             vsplat(va,a);
             return va*b;
         }
         friend inline vComplexF operator * (vComplexF b,const Complex &a){
+	  return a*b;
+        }
+
+       /*
+	template<class real>
+        friend inline vComplexF operator * (vComplexF b,const real &a){
             vComplexF va;
-            vsplat(va,a);
+	    Complex ca(a,0);
+            vsplat(va,ca);
             return va*b;
         }
+	template<class real>
+	friend inline vComplexF operator * (const real &a,vComplexF b){
+	  return a*b;
+	}
+
         friend inline vComplexF operator + (const Complex &a, vComplexF b){
             vComplexF va;
             vsplat(va,a);
             return va+b;
         }
         friend inline vComplexF operator + (vComplexF b,const Complex &a){
-            vComplexF va;
-            vsplat(va,a);
-            return b+va;
+            return a+b;
         }
+	template<class real>
+        friend inline vComplexF operator + (vComplexF b,const real &a){
+            vComplexF va;
+	    Complex ca(a,0);
+            vsplat(va,ca);
+            return va+b;
+        }
+	template<class real>
+	friend inline vComplexF operator + (const real &a,vComplexF b){
+	  return a+b;
+	}
         friend inline vComplexF operator - (const Complex &a, vComplexF b){
             vComplexF va;
             vsplat(va,a);
@@ -241,7 +267,24 @@ friend inline void vstore(vComplexF &ret, ComplexF *a){
             vsplat(va,a);
             return b-va;
         }
-        // NB: Template the following on "type Complex" and then implement *,+,- for ComplexF, ComplexD, RealF, RealD above to
+	template<class real>
+        friend inline vComplexF operator - (vComplexF b,const real &a){
+            vComplexF va;
+	    Complex ca(a,0);
+            vsplat(va,ca);
+            return b-va;
+        }
+	template<class real>
+	friend inline vComplexF operator - (const real &a,vComplexF b){
+            vComplexF va;
+	    Complex ca(a,0);
+            vsplat(va,ca);
+            return va-b;
+	}
+       */
+       
+        // NB: Template the following on "type Complex" and then implement *,+,- for 
+	// ComplexF, ComplexD, RealF, RealD above to
         // get full generality of binops with scalars.
         friend inline void mac (vComplexF *__restrict__ y,const Complex *__restrict__ a,const vComplexF *__restrict__ x){ *y = (*a)*(*x)+(*y); };
         friend inline void mult(vComplexF *__restrict__ y,const Complex *__restrict__ l,const vComplexF *__restrict__ r){ *y = (*l) * (*r); }
@@ -304,7 +347,15 @@ friend inline void vstore(vComplexF &ret, ComplexF *a){
       {
 	Gmerge<vComplexF,ComplexF >(y,extracted);
       }
-      friend inline void extract(vComplexF &y,std::vector<ComplexF *> &extracted)
+      friend inline void extract(const vComplexF &y,std::vector<ComplexF *> &extracted)
+      {
+	Gextract<vComplexF,ComplexF>(y,extracted);
+      }
+      friend inline void merge(vComplexF &y,std::vector<ComplexF > &extracted)
+      {
+	Gmerge<vComplexF,ComplexF >(y,extracted);
+      }
+      friend inline void extract(const vComplexF &y,std::vector<ComplexF > &extracted)
       {
 	Gextract<vComplexF,ComplexF>(y,extracted);
       }

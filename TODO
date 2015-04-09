@@ -1,29 +1,68 @@
+
 * FIXME audit
 * Remove vload/store etc..
 * Replace vset with a call to merge.
 * Replace vset with a call to merge.
+* Const audit
+* extract / merge extra implementation removal
 
-* Conditional execution Subset, where etc...
-* Coordinate information, integers etc...
-* Integer type padding/union to vector.
-* LatticeCoordinate[mu]
+* Conditional execution, where etc...         -----DONE, simple test
+* Integer relational support                         -----DONE
+* Coordinate information, integers etc...            -----DONE
+* Integer type padding/union to vector.              -----DONE 
+* LatticeCoordinate[mu]                              -----DONE
 
-* Optimise the extract/merge SIMD routines
 
-* Broadcast, reduction tests.
+* Stencil operator support                           -----Initial thoughts
+
+* Subset support, slice sums etc...                  -----Only need slice sum?
+                                                     -----Generic cartesian subslicing?
+                                                     -----Array ranges / boost extents?
+                                                     -----Multigrid grid transferral.
+                                                     -----Suggests generalised cartesian subblocking
+                                                          sums, returning modified grid.
+
+    Two classes of subset;
+i) red black parit subsetting.
+   (pick checkerboard).
+
+ii) Need to be able to project one Grid to another Grid.
+    Generic concept is to subdivide (based on RD so applies to red/black or full).
+    Return a type on SUB-grid from CellSum TOP-grid
+    SUB-grid need not distribute but be replicated in some dims if that is how the
+    cartesian communicator works.
+
+iii) No general permutation map.
+
+
+* Consider switch std::vector to boost arrays.
+  boost::multi_array<type, 3> A()...    to replace multi1d, multi2d etc..
+
+*? Cell definition <-> sliceSum.
+ ? Replicated arrays.
+
+
+
+* Check for missing functionality                    - partially audited against QDP++ layout
+
+* Optimise the extract/merge SIMD routines; Azusa??
+
+ -- I have collated into single location at least.
+
+ -- Need to use _mm_*insert/extract routines.
+
+* Conformable test in Cshift routines.
+
+* Gamma/Dirac structures
+
+* Fourspin, two spin project
+
+* Broadcast, reduction tests. innerProduct, localInnerProduct
 
 * QDP++ regression suite and comparative benchmark
 
 * NERSC Lattice loading, plaquette test
 
-* Conformable test in Cshift routines.
-
-* Gamma/Dirac structures
-* Fourspin, two spin project
-
-* Stencil operator support
-
-* Check for missing functionality
 
 * I/O support
   - MPI IO?

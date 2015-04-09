@@ -265,7 +265,6 @@ friend void Copy_plane_permute(Lattice<vobj>& lhs,Lattice<vobj> &rhs, int dimens
 //////////////////////////////////////////////////////
 // Local to node Cshift
 //////////////////////////////////////////////////////
-
 friend void Cshift_local(Lattice<vobj>& ret,Lattice<vobj> &rhs,int dimension,int shift)
 {
   int sshift[2];

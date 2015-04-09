@@ -14,6 +14,9 @@ namespace Grid {
 	typedef RealF scalar_type;
 
         vRealF(){};
+        vRealF(RealF a){
+	  vsplat(*this,a);
+	};
         ////////////////////////////////////
         // Arithmetic operator overloads +,-,*
         ////////////////////////////////////
@@ -133,7 +136,15 @@ namespace Grid {
 	{
 	  Gmerge<vRealF,RealF >(y,extracted);
 	}
-	friend inline void extract(vRealF &y,std::vector<RealF *> &extracted)
+	friend inline void extract(const vRealF &y,std::vector<RealF *> &extracted)
+	{
+	  Gextract<vRealF,RealF>(y,extracted);
+	}
+	friend inline void merge(vRealF &y,std::vector<RealF> &extracted)
+	{
+	  Gmerge<vRealF,RealF >(y,extracted);
+	}
+	friend inline void extract(const vRealF &y,std::vector<RealF> &extracted)
 	{
 	  Gextract<vRealF,RealF>(y,extracted);
 	}
@@ -180,7 +191,7 @@ namespace Grid {
 	////////////////////////////////////////////////////////////////////////
 	// FIXME:  gonna remove these load/store, get, set, prefetch
 	////////////////////////////////////////////////////////////////////////
-friend inline void vstore(vRealF &ret, float *a){
+friend inline void vstore(const vRealF &ret, float *a){
 #if defined (AVX1)|| defined (AVX2)
 	_mm256_store_ps(a,ret.v);
 #endif

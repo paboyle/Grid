@@ -16,6 +16,12 @@ namespace Grid {
             return (*this);
         }
         vComplexD(){};
+        vComplexD(ComplexD a){
+	  vsplat(*this,a);
+	};
+        vComplexD(double a){
+	  vsplat(*this,ComplexD(a));
+	};
  
         ///////////////////////////////////////////////
         // mac, mult, sub, add, adj
@@ -167,7 +173,15 @@ namespace Grid {
 	{
 	  Gmerge<vComplexD,ComplexD >(y,extracted);
 	}
-	friend inline void extract(vComplexD &y,std::vector<ComplexD *> &extracted)
+	friend inline void extract(const vComplexD &y,std::vector<ComplexD *> &extracted)
+	{
+	  Gextract<vComplexD,ComplexD>(y,extracted);
+	}
+	friend inline void merge(vComplexD &y,std::vector<ComplexD > &extracted)
+	{
+	  Gmerge<vComplexD,ComplexD >(y,extracted);
+	}
+	friend inline void extract(const vComplexD &y,std::vector<ComplexD > &extracted)
 	{
 	  Gextract<vComplexD,ComplexD>(y,extracted);
 	}
@@ -184,6 +198,11 @@ namespace Grid {
         ///////////////////////
         // Splat
         ///////////////////////
+        friend inline void vsplat(vComplexD &ret,ComplexD c){
+            float a= real(c);
+            float b= imag(c);
+            vsplat(ret,a,b);
+        }
         friend inline void vsplat(vComplexD &ret,double rl,double ig){
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_set_pd(ig,rl,ig,rl);
@@ -215,7 +234,7 @@ namespace Grid {
 #endif
         }
 
-friend inline void vstore(vComplexD &ret, ComplexD *a){
+friend inline void vstore(const vComplexD &ret, ComplexD *a){
 #if defined (AVX1)|| defined (AVX2)
        _mm256_store_pd((double *)a,ret.v);
 #endif
