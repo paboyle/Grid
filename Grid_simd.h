@@ -11,28 +11,15 @@
 // Vector types are arch dependent
 ////////////////////////////////////////////////////////////////////////
     
-  ////////////////////////////////////////////////////////////
-  // SIMD Alignment controls
-  ////////////////////////////////////////////////////////////
-#ifdef HAVE_VAR_ATTRIBUTE_ALIGNED
-#define ALIGN_DIRECTIVE(A) __attribute__ ((aligned(A)))
-#else
-#define ALIGN_DIRECTIVE(A) __declspec(align(A))
-#endif
 
 #ifdef SSE2
 #include <pmmintrin.h>
-#define SIMDalign ALIGN_DIRECTIVE(16)
 #endif
-
 #if defined(AVX1) || defined (AVX2)
 #include <immintrin.h>
-#define SIMDalign ALIGN_DIRECTIVE(32)
 #endif
-
 #ifdef AVX512
 #include <immintrin.h>
-#define SIMDalign ALIGN_DIRECTIVE(64)
 #endif
 
 namespace Grid {
@@ -137,41 +124,66 @@ namespace Grid {
 // Generic extract/merge/permute
 /////////////////////////////////////////////////////////////////
 template<class vsimd,class scalar>
-inline void Gextract(vsimd &y,std::vector<scalar *> &extracted){
-#if 1
+inline void Gextract(const vsimd &y,std::vector<scalar *> &extracted){
   // FIXME: bounce off stack is painful
   // temporary hack while I figure out better way.
   // There are intrinsics to do this work without the storage.
-  int Nsimd = extracted.size();
-  {
-    std::vector<scalar,alignedAllocator<scalar> > buf(Nsimd); 
-    vstore(y,&buf[0]);
-    for(int i=0;i<Nsimd;i++){
-      *extracted[i] = buf[i];
-      extracted[i]++;
-    }
+  int Nextr=extracted.size();
+  int Nsimd=vsimd::Nsimd();
+  int s=Nsimd/Nextr;
+
+  std::vector<scalar,alignedAllocator<scalar> > buf(Nsimd); 
+  vstore(y,&buf[0]);
+  for(int i=0;i<Nextr;i++){
+    *extracted[i] = buf[i*s];
+    extracted[i]++;
   }
-#else 
-  int NSo   = extracted.size();
-  int NSv   = vsimd::Nsimd();
-  int sparse= NSv/NSo;
-  for(int i=0;i<NSv;i+=sparse){
-    
-  }
-#endif
 };
 template<class vsimd,class scalar>
 inline void Gmerge(vsimd &y,std::vector<scalar *> &extracted){
-#if 1
-  int Nsimd = extracted.size();
+  int Nextr=extracted.size();
+  int Nsimd=vsimd::Nsimd();
+  int s=Nsimd/Nextr;
+
   std::vector<scalar> buf(Nsimd); 
-  for(int i=0;i<Nsimd;i++){
-    buf[i]=*extracted[i];
+  for(int i=0;i<Nextr;i++){
+    for(int ii=0;ii<s;ii++){
+      buf[i*s+ii]=*extracted[i];
+    }
     extracted[i]++;
   }
   vset(y,&buf[0]); 
-#else
-#endif
+};
+template<class vsimd,class scalar>
+inline void Gextract(const vsimd &y,std::vector<scalar> &extracted){
+  // FIXME: bounce off stack is painful
+  // temporary hack while I figure out better way.
+  // There are intrinsics to do this work without the storage.
+  int Nextr=extracted.size();
+  int Nsimd=vsimd::Nsimd();
+  int s=Nsimd/Nextr;
+
+  std::vector<scalar,alignedAllocator<scalar> > buf(Nsimd); 
+
+  vstore(y,&buf[0]);
+
+  for(int i=0;i<Nextr;i++){
+    extracted[i] = buf[i*s];
+  }
+};
+template<class vsimd,class scalar>
+inline void Gmerge(vsimd &y,std::vector<scalar> &extracted){
+  int Nextr=extracted.size();
+  int Nsimd=vsimd::Nsimd();
+  int s=Nsimd/Nextr;
+
+  std::vector<scalar> buf(Nsimd); 
+  for(int i=0;i<Nextr;i++){
+    for(int ii=0;ii<s;ii++){
+      buf[i*s+ii]=extracted[i];
+    }
+  }
+  vset(y,&buf[0]); 
 };
 
 //////////////////////////////////////////////////////////
@@ -183,7 +195,7 @@ inline void Gmerge(vsimd &y,std::vector<scalar *> &extracted){
 // Permute 4 possible on half precision @512bit vectors.
 //////////////////////////////////////////////////////////
 template<class vsimd>
-inline void Gpermute(vsimd &y,vsimd b,int perm){
+inline void Gpermute(vsimd &y,const vsimd &b,int perm){
       switch (perm){
 #if defined(AVX1)||defined(AVX2)
       // 8x32 bits=>3 permutes
@@ -214,10 +226,10 @@ inline void Gpermute(vsimd &y,vsimd b,int perm){
     };
 };
 
+#include <Grid_vInteger.h>
 #include <Grid_vRealF.h>
 #include <Grid_vRealD.h>
 #include <Grid_vComplexF.h>
 #include <Grid_vComplexD.h>
-#include <Grid_vInteger.h>
 
 #endif

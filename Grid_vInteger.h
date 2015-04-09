@@ -10,7 +10,7 @@ namespace Grid {
 
   typedef uint32_t Integer;
 
-    class vInteger {
+  class vInteger {
     protected:
 
     public:
@@ -21,6 +21,13 @@ namespace Grid {
 	typedef Integer scalar_type;
 
         vInteger(){};
+        vInteger & operator = (const Zero & z){
+            vzero(*this);
+            return (*this);
+        }
+        vInteger(Integer a){
+	  vsplat(*this,a);
+	};
         ////////////////////////////////////
         // Arithmetic operator overloads +,-,*
         ////////////////////////////////////
@@ -166,18 +173,18 @@ namespace Grid {
 #endif
 	}
 
-friend inline void vstore(vInteger &ret, Integer *a){
+	friend inline void vstore(const vInteger &ret, Integer *a){
 #if defined (AVX1)|| defined (AVX2)
-        _mm256_store_si256((__m256i*)a,ret.v);
+	  _mm256_store_si256((__m256i*)a,ret.v);
 #endif
 #ifdef SSE2
-	_mm_store_si128(a,ret.v);
+	  _mm_store_si128(a,ret.v);
 #endif
 #ifdef AVX512
-	_mm512_store_si512(a,ret.v);
+	  _mm512_store_si512(a,ret.v);
 #endif
 #ifdef QPX
-	assert(0);
+	  assert(0);
 #endif
         }
 
@@ -185,6 +192,7 @@ friend inline void vstore(vInteger &ret, Integer *a){
         {
             _mm_prefetch((const char*)&v.v,_MM_HINT_T0);
         }
+
         // Unary negation
         friend inline vInteger operator -(const vInteger &r) {
             vInteger ret;
@@ -210,9 +218,32 @@ friend inline void vstore(vInteger &ret, Integer *a){
             *this = *this-r;
             return *this;
         }
+
+      friend inline void permute(vInteger &y,const vInteger b,int perm)
+      {
+	Gpermute<vInteger>(y,b,perm);
+      }
+      friend inline void merge(vInteger &y,std::vector<Integer *> &extracted)
+      {
+	Gmerge<vInteger,Integer>(y,extracted);
+      }
+      friend inline void extract(const vInteger &y,std::vector<Integer *> &extracted)
+      {
+	Gextract<vInteger,Integer>(y,extracted);
+      }
+      friend inline void merge(vInteger &y,std::vector<Integer> &extracted)
+      {
+	Gmerge<vInteger,Integer>(y,extracted);
+      }
+      friend inline void extract(const vInteger &y,std::vector<Integer> &extracted)
+      {
+	Gextract<vInteger,Integer>(y,extracted);
+      }
+
+
     public:
-        static inline int Nsimd(void) { return sizeof(fvec)/sizeof(float);}
-    };
+        static inline int Nsimd(void) { return sizeof(ivec)/sizeof(Integer);}
+  };
 
     inline vInteger localInnerProduct(const vInteger & l, const vInteger & r) { return l*r; }
 
@@ -222,27 +253,7 @@ friend inline void vstore(vInteger &ret, Integer *a){
     {
         return l*r;
     }
- 
-
-    class vIntegerF : public vInteger
-    {
-    public:
-      static inline int Nsimd(void) { return sizeof(ivec)/sizeof(float);}
-      
-      friend inline void permute(vIntegerF &y,vIntegerF b,int perm)
-      {
-	Gpermute<vIntegerF>(y,b,perm);
-      }
-      friend inline void merge(vIntegerF &y,std::vector<Integer *> &extracted)
-      {
-	Gmerge<vIntegerF,Integer>(y,extracted);
-      }
-      friend inline void extract(vIntegerF &y,std::vector<Integer *> &extracted)
-      {
-	Gextract<vIntegerF,Integer>(y,extracted);
-      }
-    };
-
+    
 }
 
 #endif

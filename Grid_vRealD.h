@@ -13,6 +13,9 @@ namespace Grid {
 	typedef RealD scalar_type;
 
         vRealD(){};
+        vRealD(RealD a){
+	  vsplat(*this,a);
+	};
 
         friend inline void mult(vRealD * __restrict__ y,const vRealD * __restrict__ l,const vRealD *__restrict__ r) {*y = (*l) * (*r);}
         friend inline void sub (vRealD * __restrict__ y,const vRealD * __restrict__ l,const vRealD *__restrict__ r) {*y = (*l) - (*r);}
@@ -112,7 +115,15 @@ namespace Grid {
 	{
 	  Gmerge<vRealD,RealD >(y,extracted);
 	}
-	friend inline void extract(vRealD &y,std::vector<RealD *> &extracted)
+	friend inline void extract(const vRealD &y,std::vector<RealD *> &extracted)
+	{
+	  Gextract<vRealD,RealD>(y,extracted);
+	}
+	friend inline void merge(vRealD &y,std::vector<RealD > &extracted)
+	{
+	  Gmerge<vRealD,RealD >(y,extracted);
+	}
+	friend inline void extract(const vRealD &y,std::vector<RealD > &extracted)
 	{
 	  Gextract<vRealD,RealD>(y,extracted);
 	}
@@ -157,7 +168,7 @@ namespace Grid {
 #endif
 	}
 
-	friend inline void vstore(vRealD &ret, double *a){
+	friend inline void vstore(const vRealD &ret, double *a){
 #if defined (AVX1)|| defined (AVX2)
             _mm256_store_pd(a,ret.v);
 #endif

@@ -45,7 +45,7 @@ namespace QCD {
     
     typedef Lattice<vTComplex>            LatticeComplex;
 
-    typedef Lattice<vTInteger>            LatticeInteger; // Predicates for "where"
+    typedef Lattice<vInteger>            LatticeInteger; // Predicates for "where"
     
     typedef Lattice<vColourMatrix>     LatticeColourMatrix;
     typedef Lattice<vSpinMatrix>       LatticeSpinMatrix;
@@ -92,6 +92,31 @@ namespace QCD {
         }
         return ret;
      }
+
+    // FIXME for debug; deprecate this
+   inline void LatticeCoordinate(LatticeInteger &l,int mu){
+      GridBase *grid = l._grid;
+      int Nsimd = grid->iSites();
+      std::vector<int> gcoor;
+      std::vector<Integer> mergebuf(Nsimd);
+      std::vector<Integer *> mergeptr(Nsimd);
+      for(int o=0;o<grid->oSites();o++){
+	for(int i=0;i<grid->iSites();i++){
+	  //	  RankIndexToGlobalCoor(grid->ThisRank(),o,i,gcoor);
+	  grid->RankIndexToGlobalCoor(0,o,i,gcoor);
+	  mergebuf[i]=gcoor[mu];
+	  mergeptr[i]=&mergebuf[i];
+	}
+	merge(l._odata[o],mergeptr);
+      }
+    };
+
+#include <Grid_predicated.h>
+
+#if 0
+
+#endif
+
 }   //namespace QCD
 } // Grid
 #endif

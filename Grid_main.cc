@@ -19,10 +19,10 @@ int main (int argc, char ** argv)
   std::vector<int> simd_layout(4);
   
   std::vector<int> mpi_layout(4);
-  mpi_layout[0]=2;
-  mpi_layout[1]=2;
-  mpi_layout[2]=2;
-  mpi_layout[3]=2;
+  mpi_layout[0]=1;
+  mpi_layout[1]=1;
+  mpi_layout[2]=1;
+  mpi_layout[3]=1;
 
 #ifdef AVX512
  for(int omp=128;omp<236;omp+=16){
@@ -121,12 +121,34 @@ int main (int argc, char ** argv)
     // Non-lattice (const objects) * Lattice
     ColourMatrix cm;
     SpinColourMatrix scm;
-    
+    vSpinColourMatrix vscm;
+    Complex cplx(1.0);
+    Integer myint=1;
+    double mydouble=1.0;
+
+    //    vSpinColourMatrix vscm;
     scMat = cMat*scMat;
     scm = cm * scm;         // SpinColourMatrix  = ColourMatrix     * SpinColourMatrix
     scm = scm *cm;          // SpinColourMatrix  = SpinColourMartix * ColourMatrix
     scm = GammaFive * scm ; // SpinColourMatrix  = SpinMatrix       * SpinColourMatrix
     scm = scm* GammaFive  ; // SpinColourMatrix  = SpinColourMatrix * SpinMatrix
+
+    scm = scm*cplx;
+    vscm = vscm*cplx;
+    scMat = scMat*cplx;
+
+    scm = cplx*scm;
+    vscm = cplx*vscm;
+    scMat = cplx*scMat;
+    scm = myint*scm;
+    vscm = myint*vscm;
+    scMat = scMat*myint;
+    
+    scm = scm*mydouble;
+    vscm = vscm*mydouble;
+    scMat = scMat*mydouble;
+    scMat = mydouble*scMat;
+    cMat = mydouble*cMat;
     
     sMat = adj(sMat);       // LatticeSpinMatrix adjoint
     sMat = iGammaFive*sMat; // SpinMatrix * LatticeSpinMatrix
@@ -160,7 +182,35 @@ int main (int argc, char ** argv)
     */
     lex_sites(Foo);
 
+    Integer mm[4];
+    mm[0]=1;
+    mm[1]=Fine._rdimensions[0];
+    mm[2]=Fine._ldimensions[0]*Fine._ldimensions[1];
+    mm[3]=Fine._ldimensions[0]*Fine._ldimensions[1]*Fine._ldimensions[2];
 
+    LatticeInteger lex(&Fine);
+    lex=zero;
+    for(int d=0;d<4;d++){
+      LatticeInteger coor(&Fine);
+      LatticeCoordinate(coor,d);
+      lex = lex + coor*mm[d];
+    }
+    Bar = zero;
+    Bar = where(lex<10,Foo,Bar);
+    {
+      std::vector<int> coor(4);
+      for(coor[3]=0;coor[3]<latt_size[3]/mpi_layout[3];coor[3]++){
+      for(coor[2]=0;coor[2]<latt_size[2]/mpi_layout[2];coor[2]++){
+      for(coor[1]=0;coor[1]<latt_size[1]/mpi_layout[1];coor[1]++){
+      for(coor[0]=0;coor[0]<latt_size[0]/mpi_layout[0];coor[0]++){
+        ColourMatrix bar;
+        peekSite(bar,Bar,coor);
+        for(int r=0;r<3;r++){
+        for(int c=0;c<3;c++){
+	  cout<<"bar "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "<<bar._internal._internal[r][c]<<std::endl;
+	}}
+      }}}}
+    }    
     //setCheckerboard(ShiftedCheck,rFoo); 
     //setCheckerboard(ShiftedCheck,bFoo); 
 
@@ -228,10 +278,14 @@ int main (int argc, char ** argv)
     
     double nrm=0;
 
+
+    LatticeColourMatrix deriv(&Fine);
+    double half=0.5;
+    deriv = 0.5*Cshift(Foo,0,1) - 0.5*Cshift(Foo,0,-1);
+
+
     for(int dir=0;dir<4;dir++){
       for(int shift=0;shift<latt_size[dir];shift++){
-
-
 
 	pickCheckerboard(0,rFoo,Foo);    // Pick out red or black checkerboards
 	pickCheckerboard(1,bFoo,Foo);
@@ -254,6 +308,8 @@ int main (int argc, char ** argv)
 	for(coor[2]=0;coor[2]<latt_size[2]/mpi_layout[2];coor[2]++){
 	for(coor[1]=0;coor[1]<latt_size[1]/mpi_layout[1];coor[1]++){
 	for(coor[0]=0;coor[0]<latt_size[0]/mpi_layout[0];coor[0]++){
+
+	 
  
         std::complex<Grid::Real> diff;
                     
@@ -305,7 +361,8 @@ int main (int argc, char ** argv)
         double nn=Ttr._internal._internal;
         if ( nn > 0 )
             cout<<"Shift real trace fail "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<endl;
-        
+     
+
         for(int r=0;r<3;r++){
         for(int c=0;c<3;c++){
             diff =shifted1._internal._internal[r][c]-shifted2._internal._internal[r][c];

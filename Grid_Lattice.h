@@ -19,16 +19,14 @@ public:
     typedef typename vobj::vector_type vector_type;
 public:
 
-
     Lattice(GridBase *grid) : _grid(grid) {
         _odata.reserve(_grid->oSites());
         assert((((uint64_t)&_odata[0])&0xF) ==0);
         checkerboard=0;
     }
-    
 
 #include <Grid_cshift.h>
-    
+   
     template<class obj1,class obj2>
     friend void conformable(const Lattice<obj1> &lhs,const Lattice<obj2> &rhs);
 
@@ -156,23 +154,23 @@ public:
             v_ptr[i]=drand48();
         }
     };
-    
+
     // FIXME for debug; deprecate this
     friend void lex_sites(Lattice<vobj> &l){
-        Real *v_ptr = (Real *)&l._odata[0];
-	size_t o_len = l._grid->oSites();
-        size_t v_len = sizeof(vobj)/sizeof(vRealF);
-	size_t vec_len = vRealF::Nsimd();
+      Real *v_ptr = (Real *)&l._odata[0];
+      size_t o_len = l._grid->oSites();
+      size_t v_len = sizeof(vobj)/sizeof(vRealF);
+      size_t vec_len = vRealF::Nsimd();
 
-        for(int i=0;i<o_len;i++){
-        for(int j=0;j<v_len;j++){
-	  for(int vv=0;vv<vec_len;vv+=2){
-            v_ptr[i*v_len*vec_len+j*vec_len+vv  ]= i+vv*500;
-            v_ptr[i*v_len*vec_len+j*vec_len+vv+1]= i+vv*500;
+      for(int i=0;i<o_len;i++){
+	for(int j=0;j<v_len;j++){
+          for(int vv=0;vv<vec_len;vv+=2){
+	    v_ptr[i*v_len*vec_len+j*vec_len+vv  ]= i+vv*500;
+	    v_ptr[i*v_len*vec_len+j*vec_len+vv+1]= i+vv*500;
 	  }
-        }}
-    };
-
+	}}
+    }
+    
     // FIXME Implement a consistent seed management strategy
     friend void gaussian(Lattice<vobj> &l){
         // Zero mean, unit variance.
@@ -195,7 +193,7 @@ public:
         }
         return ret;
     }
-    // *=,+=,-= operators
+    // *=,+=,-= operators inherit behvour from correspond */+/- operation
     template<class T>
     inline Lattice<vobj> &operator *=(const T &r) {
         *this = (*this)*r;
@@ -351,7 +349,6 @@ public:
     inline auto operator * (const left &lhs,const Lattice<right> &rhs) -> Lattice<decltype(lhs*rhs._odata[0])>
     {
         Lattice<decltype(lhs*rhs._odata[0])> ret(rhs._grid);
-
 #pragma omp parallel for
         for(int ss=0;ss<rhs._grid->oSites(); ss++){
             ret._odata[ss]=lhs*rhs._odata[ss];
@@ -383,7 +380,7 @@ public:
     {
         Lattice<decltype(lhs._odata[0]*rhs)> ret(lhs._grid);
 #pragma omp parallel for
-        for(int ss=0;ss<rhs._grid->oSites(); ss++){
+        for(int ss=0;ss<lhs._grid->oSites(); ss++){
             ret._odata[ss]=lhs._odata[ss]*rhs;
         }
         return ret;
@@ -408,6 +405,7 @@ public:
         }
         return ret;
     }
+
 
 }
 #endif
