@@ -195,7 +195,7 @@ int main (int argc, char ** argv)
       LatticeCoordinate(coor,d);
       lex = lex + coor*mm[d];
     }
-    /*
+
     Bar = zero;
     Bar = where(lex<10,Foo,Bar);
     {
@@ -212,7 +212,7 @@ int main (int argc, char ** argv)
 	}}
       }}}}
     } 
-    */   
+
     //setCheckerboard(ShiftedCheck,rFoo); 
     //setCheckerboard(ShiftedCheck,bFoo); 
 
