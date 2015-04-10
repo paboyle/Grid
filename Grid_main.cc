@@ -195,6 +195,7 @@ int main (int argc, char ** argv)
       LatticeCoordinate(coor,d);
       lex = lex + coor*mm[d];
     }
+    /*
     Bar = zero;
     Bar = where(lex<10,Foo,Bar);
     {
@@ -210,7 +211,8 @@ int main (int argc, char ** argv)
 	  cout<<"bar "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "<<bar._internal._internal[r][c]<<std::endl;
 	}}
       }}}}
-    }    
+    } 
+    */   
     //setCheckerboard(ShiftedCheck,rFoo); 
     //setCheckerboard(ShiftedCheck,bFoo); 
 

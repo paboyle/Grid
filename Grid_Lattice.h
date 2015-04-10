@@ -15,9 +15,10 @@ public:
     GridBase *_grid;
     int checkerboard;
     std::vector<vobj,alignedAllocator<vobj> > _odata;
+public:
+
     typedef typename vobj::scalar_type scalar_type;
     typedef typename vobj::vector_type vector_type;
-public:
 
     Lattice(GridBase *grid) : _grid(grid) {
         _odata.reserve(_grid->oSites());
