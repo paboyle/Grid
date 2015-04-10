@@ -1,3 +1,5 @@
+#ifndef GRID_STENCIL_H
+#define GRID_STENCIL_H
 //////////////////////////////////////////////////////////////////////////////////////////
 // Must not lose sight that goal is to be able to construct really efficient
 // gather to a point stencil code. CSHIFT is not the best way, so probably need
@@ -45,13 +47,11 @@ namespace Grid {
       void Stencil_local     (int dimension,int shift,int cbmask);
       void Stencil_comms     (int dimension,int shift,int cbmask);
       void Stencil_comms_simd(int dimension,int shift,int cbmask);
+
       // Will need to implement actions for
-      //
       Copy_plane;
       Copy_plane_permute;
       Gather_plane;
-
-
 
       // The offsets to all neibours in stencil in each direction
       int                               _checkerboard;
@@ -360,3 +360,4 @@ namespace Grid {
 
 
 };
+#endif

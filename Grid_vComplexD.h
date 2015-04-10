@@ -186,15 +186,6 @@ namespace Grid {
 	  Gextract<vComplexD,ComplexD>(y,extracted);
 	}
 
-	////////////////////////////////////////////////////////////////////////
-	// FIXME:  gonna remove these load/store, get, set, prefetch
-	////////////////////////////////////////////////////////////////////////
-        void vload(zvec& a){
-          this->v = a;
-        }
-        zvec vget(){
-          return this->v ;
-        }
         ///////////////////////
         // Splat
         ///////////////////////

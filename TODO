@@ -1,12 +1,12 @@
 
 * FIXME audit
-* Remove vload/store etc..
-* Replace vset with a call to merge.
-* Replace vset with a call to merge.
+* Replace vset with a call to merge.; 
+* care in Gmerge,Gextract over set.
 * Const audit
 * extract / merge extra implementation removal
 
-* Conditional execution, where etc...         -----DONE, simple test
+
+* Conditional execution, where etc...                -----DONE, simple test
 * Integer relational support                         -----DONE
 * Coordinate information, integers etc...            -----DONE
 * Integer type padding/union to vector.              -----DONE 
@@ -22,18 +22,32 @@
                                                      -----Suggests generalised cartesian subblocking
                                                           sums, returning modified grid.
 
-    Two classes of subset;
-i) red black parit subsetting.
-   (pick checkerboard).
+i)  Two classes of subset;   red black parity subsetting (pick checkerboard).
+                             cartesian sub-block subsetting
+
 
 ii) Need to be able to project one Grid to another Grid.
+
+Interface: (?)
+
+Lattice<vobj> coarse_data SubBlockSum (GridBase *CoarseGrid, Lattice<vobj> &fine_data)
+
+Operation ensure either:
+ rd[dim] divide rd[dim] fine_data
+
+This will give a distributed array over mpi ranks in a given dim IF coarse gd != 1 and _processors[d]>1
+Dimension can be *replicated* on all ranks in dimension. Need a "replicated" option on GridCartesian etc..
+
+This will give "slice" summation and fourier projection assistance.
+
     Generic concept is to subdivide (based on RD so applies to red/black or full).
     Return a type on SUB-grid from CellSum TOP-grid
     SUB-grid need not distribute but be replicated in some dims if that is how the
     cartesian communicator works.
 
-iii) No general permutation map.
+Instead of subsetting 
 
+iii) No general permutation map.
 
 * Consider switch std::vector to boost arrays.
   boost::multi_array<type, 3> A()...    to replace multi1d, multi2d etc..
@@ -41,15 +55,12 @@ iii) No general permutation map.
 *? Cell definition <-> sliceSum.
  ? Replicated arrays.
 
-
-
 * Check for missing functionality                    - partially audited against QDP++ layout
 
 * Optimise the extract/merge SIMD routines; Azusa??
 
- -- I have collated into single location at least.
-
- -- Need to use _mm_*insert/extract routines.
+ - I have collated into single location at least.
+ - Need to use _mm_*insert/extract routines.
 
 * Conformable test in Cshift routines.
 
