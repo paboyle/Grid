@@ -23,6 +23,12 @@ void Grid_init(int *argc,char ***argv)
 #endif
   Grid_debug_handler_init();
 }
+void Grid_finalize(void)
+{
+#ifdef GRID_COMMS_MPI
+  MPI_Finalize();
+#endif
+}
 double usecond(void) {
   struct timeval tv;
   gettimeofday(&tv,NULL);
