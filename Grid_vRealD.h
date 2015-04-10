@@ -128,15 +128,6 @@ namespace Grid {
 	  Gextract<vRealD,RealD>(y,extracted);
 	}
 
-	////////////////////////////////////////////////////////////////////////
-	// FIXME:  gonna remove these load/store, get, set, prefetch
-	////////////////////////////////////////////////////////////////////////
-        void vload(dvec& a){
-          this->v = a;
-        }
-        dvec vget(){
-          return this->v ;
-        }
         
         friend inline void vsplat(vRealD &ret,double a){
 #if defined (AVX1)|| defined (AVX2)

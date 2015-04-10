@@ -407,7 +407,5 @@ int main (int argc, char ** argv)
 
    } // loop for lat
  } // loop for omp
-
- MPI_Finalize();
-
+ Grid_finalize();
 }
