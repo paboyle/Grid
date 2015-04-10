@@ -14,20 +14,43 @@ CartesianCommunicator::CartesianCommunicator(std::vector<int> &processors)
   for(int d=0;d<_ndimension;d++) _processor_coor[d] = 0;
 }
 
-void CartesianCommunicator::GlobalSumF(float &){}
-void CartesianCommunicator::GlobalSumFVector(float *,int N){}
-void CartesianCommunicator::GlobalSumF(double &){}
-void CartesianCommunicator::GlobalSumFVector(double *,int N){}
+void CartesianCommunicator::GlobalSum(float &){}
+void CartesianCommunicator::GlobalSumVector(float *,int N){}
+void CartesianCommunicator::GlobalSum(double &){}
+void CartesianCommunicator::GlobalSumVector(double *,int N){}
 
 // Basic Halo comms primitive
 void CartesianCommunicator::SendToRecvFrom(void *xmit,
-		    std::vector<int> to_coordinate,
-		    void *recv,
-		    std::vector<int> from_coordinate,
-		    int bytes)
+					   int dest,
+					   void *recv,
+					   int from,
+					   int bytes)
 {
   exit(-1);
 }
+
+void CartesianCommunicator::Barrier(void)
+{
+}
+
+void CartesianCommunicator::Broadcast(int root,void* data, int bytes)
+{
+}
+
+
+void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest)
+{
+  source =1;
+  dest=1;
+}
+int CartesianCommunicator::RankFromProcessorCoor(std::vector<int> &coor)
+{
+  return 1;
+}
+void  CartesianCommunicator::ProcessorCoorFromRank(int rank, std::vector<int> &coor)
+{
+}
+
 
 }
 
