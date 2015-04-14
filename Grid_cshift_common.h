@@ -8,6 +8,7 @@ friend void Gather_plane_simple (Lattice<vobj> &rhs,std::vector<vobj,alignedAllo
 {
   int rd = rhs._grid->_rdimensions[dimension];
 
+  printf("Gather_plane_simple buf size %d rhs size %d \n",buffer.size(),rhs._odata.size());fflush(stdout);
   if ( !rhs._grid->CheckerBoarded(dimension) ) {
 
     int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
@@ -18,6 +19,7 @@ friend void Gather_plane_simple (Lattice<vobj> &rhs,std::vector<vobj,alignedAllo
 #pragma omp parallel for collapse(2)
     for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
       for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
+	printf("Gather_plane_simple %d ; %d %d %d\n",bo,so,o,b);fflush(stdout);
 	buffer[bo++]=rhs._odata[so+o+b];
       }
       o +=rhs._grid->_slice_stride[dimension];

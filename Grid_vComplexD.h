@@ -194,6 +194,8 @@ namespace Grid {
             float b= imag(c);
             vsplat(ret,a,b);
         }
+
+
         friend inline void vsplat(vComplexD &ret,double rl,double ig){
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_set_pd(ig,rl,ig,rl);
@@ -321,13 +323,14 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
     {
         return l*r;
     }
-    inline vComplex trace(const vComplex &arg){
+    inline vComplexD trace(const vComplexD &arg){
         return arg;
     }
 /////////////////////////////////////////////////////////////////////////
 //// Generic routine to promote object<complex> -> object<vcomplex>
 //// Supports the array reordering transformation that gives me SIMD utilisation
 ///////////////////////////////////////////////////////////////////////////
+/*
 template<template<class> class object>
 inline object<vComplex> splat(object<Complex >s){
       object<vComplex> ret;
@@ -338,6 +341,6 @@ inline object<vComplex> splat(object<Complex >s){
       }
       return ret;
     }
-
+*/
 }
 #endif

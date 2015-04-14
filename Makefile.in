@@ -88,9 +88,11 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-bin_PROGRAMS = Grid_main$(EXEEXT)
-@BUILD_COMMS_MPI_TRUE@am__append_1 = Grid_communicator_mpi.cc
-@BUILD_COMMS_NONE_TRUE@am__append_2 = Grid_communicator_fake.cc
+@BUILD_COMMS_MPI_TRUE@am__append_1 = Grid_communicator_mpi.cc \
+@BUILD_COMMS_MPI_TRUE@	Grid_stencil_common.cc
+@BUILD_COMMS_NONE_TRUE@am__append_2 = Grid_communicator_fake.cc \
+@BUILD_COMMS_NONE_TRUE@	Grid_stencil_common.cc
+bin_PROGRAMS = Grid_main$(EXEEXT) test_Grid_stencil$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -142,18 +144,23 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libGrid_a_AR = $(AR) $(ARFLAGS)
 libGrid_a_LIBADD =
-am_libGrid_a_OBJECTS = Grid_init.$(OBJEXT)
+am__libGrid_a_SOURCES_DIST = Grid_init.cc Grid_communicator_mpi.cc \
+	Grid_stencil_common.cc Grid_communicator_fake.cc
+@BUILD_COMMS_MPI_TRUE@am__objects_1 = Grid_communicator_mpi.$(OBJEXT) \
+@BUILD_COMMS_MPI_TRUE@	Grid_stencil_common.$(OBJEXT)
+@BUILD_COMMS_NONE_TRUE@am__objects_2 =  \
+@BUILD_COMMS_NONE_TRUE@	Grid_communicator_fake.$(OBJEXT) \
+@BUILD_COMMS_NONE_TRUE@	Grid_stencil_common.$(OBJEXT)
+am__objects_3 = $(am__objects_1) $(am__objects_2)
+am_libGrid_a_OBJECTS = Grid_init.$(OBJEXT) $(am__objects_3)
 libGrid_a_OBJECTS = $(am_libGrid_a_OBJECTS)
 PROGRAMS = $(bin_PROGRAMS)
-am__Grid_main_SOURCES_DIST = Grid_main.cc Grid_communicator_mpi.cc \
-	Grid_communicator_fake.cc
-@BUILD_COMMS_MPI_TRUE@am__objects_1 = Grid_communicator_mpi.$(OBJEXT)
-@BUILD_COMMS_NONE_TRUE@am__objects_2 =  \
-@BUILD_COMMS_NONE_TRUE@	Grid_communicator_fake.$(OBJEXT)
-am__objects_3 = $(am__objects_1) $(am__objects_2)
-am_Grid_main_OBJECTS = Grid_main.$(OBJEXT) $(am__objects_3)
+am_Grid_main_OBJECTS = Grid_main.$(OBJEXT)
 Grid_main_OBJECTS = $(am_Grid_main_OBJECTS)
 Grid_main_DEPENDENCIES = libGrid.a
+am_test_Grid_stencil_OBJECTS = test_Grid_Stencil.$(OBJEXT)
+test_Grid_stencil_OBJECTS = $(am_test_Grid_stencil_OBJECTS)
+test_Grid_stencil_DEPENDENCIES = libGrid.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -183,8 +190,10 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(libGrid_a_SOURCES) $(Grid_main_SOURCES)
-DIST_SOURCES = $(libGrid_a_SOURCES) $(am__Grid_main_SOURCES_DIST)
+SOURCES = $(libGrid_a_SOURCES) $(Grid_main_SOURCES) \
+	$(test_Grid_stencil_SOURCES)
+DIST_SOURCES = $(am__libGrid_a_SOURCES_DIST) $(Grid_main_SOURCES) \
+	$(test_Grid_stencil_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -329,12 +338,13 @@ top_srcdir = @top_srcdir@
 
 # additional include paths necessary to compile the C++ library
 AM_CXXFLAGS = -I$(top_srcdir)/
+extra_sources = $(am__append_1) $(am__append_2)
 
 #
 # Libraries
 #
 lib_LIBRARIES = libGrid.a
-libGrid_a_SOURCES = Grid_init.cc
+libGrid_a_SOURCES = Grid_init.cc $(extra_sources)
 
 #
 # Include files
@@ -355,14 +365,13 @@ include_HEADERS = Grid_config.h\
 	Grid_cshift_common.h\
 	Grid_cshift_mpi.h\
 	Grid_cshift_none.h\
+	Grid_stencil.h\
 	Grid_math_types.h
 
-extra_sources = $(am__append_1) $(am__append_2)
-Grid_main_SOURCES = \
-	Grid_main.cc\
-	$(extra_sources)
-
+Grid_main_SOURCES = Grid_main.cc
 Grid_main_LDADD = libGrid.a
+test_Grid_stencil_SOURCES = test_Grid_Stencil.cc
+test_Grid_stencil_LDADD = libGrid.a
 all: Grid_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -499,6 +508,10 @@ Grid_main$(EXEEXT): $(Grid_main_OBJECTS) $(Grid_main_DEPENDENCIES) $(EXTRA_Grid_
 	@rm -f Grid_main$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(Grid_main_OBJECTS) $(Grid_main_LDADD) $(LIBS)
 
+test_Grid_stencil$(EXEEXT): $(test_Grid_stencil_OBJECTS) $(test_Grid_stencil_DEPENDENCIES) $(EXTRA_test_Grid_stencil_DEPENDENCIES) 
+	@rm -f test_Grid_stencil$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(test_Grid_stencil_OBJECTS) $(test_Grid_stencil_LDADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -509,6 +522,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Grid_communicator_mpi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Grid_init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Grid_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Grid_stencil_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_Grid_Stencil.Po@am__quote@
 
 .cc.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

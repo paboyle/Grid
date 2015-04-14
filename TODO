@@ -3,7 +3,7 @@
 * Replace vset with a call to merge.; 
 * care in Gmerge,Gextract over set.
 * Const audit
-* extract / merge extra implementation removal
+* extract / merge extra implementation removal      
 
 
 * Conditional execution, where etc...                -----DONE, simple test

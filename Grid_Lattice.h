@@ -407,6 +407,18 @@ public:
         return ret;
     }
 
+    template<class vobj>
+    inline RealD norm2(const Lattice<vobj> &arg){
 
+      typedef typename vobj::scalar_type scalar;
+      decltype(localInnerProduct(arg._odata[0],arg._odata[0])) vnrm=zero;
+
+      scalar nrm;
+      for(int ss=0;ss<arg._grid->oSites(); ss++){
+	vnrm = vnrm + localInnerProduct(arg._odata[ss],arg._odata[ss]);
+      }
+      nrm = Reduce(TensorRemove(vnrm));
+      return real(nrm);
+    }
 }
 #endif

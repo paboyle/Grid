@@ -922,9 +922,10 @@ template<class l,int N> inline iMatrix<l,N> operator - (Integer lhs,const iMatri
     {
         typedef decltype(localInnerProduct(lhs._internal[0][0],rhs._internal[0][0])) ret_t;
         iScalar<ret_t> ret=zero;
+        iScalar<ret_t> tmp;
         for(int c1=0;c1<N;c1++){
         for(int c2=0;c2<N;c2++){
-            ret._internal += localInnerProduct(lhs._internal[c1][c2],rhs._internal[c1][c2]);
+	  ret._internal+=localInnerProduct(lhs._internal[c1][c2],rhs._internal[c1][c2]);
         }}
         return ret;
     }
