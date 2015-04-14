@@ -260,7 +260,7 @@ friend inline void vstore(const vRealF &ret, float *a){
     public:
         static inline int Nsimd(void) { return sizeof(fvec)/sizeof(float);}
     };
-    inline vRealF localInnerProduct(const vRealF & l, const vRealF & r) { return conj(l)*r; }
+    inline vRealF innerProduct(const vRealF & l, const vRealF & r) { return conj(l)*r; }
     inline void  zeroit(vRealF &z){ vzero(z);}
 
     inline vRealF outerProduct(const vRealF &l, const vRealF& r)

@@ -57,41 +57,6 @@ namespace QCD {
     typedef Lattice<vSpinVector>       LatticeSpinVector;
     typedef Lattice<vColourVector>     LatticeColourVector;
 
-    // localNorm2,
-    template<class tt>
-    inline LatticeComplex localNorm2 (const Lattice<tt> &rhs)
-    {
-        LatticeComplex ret(rhs._grid);
-#pragma omp parallel for
-        for(int ss=0;ss<rhs._grid->oSites(); ss++){
-            ret._odata[ss]=trace(adj(rhs)*rhs);
-        }
-        return ret;
-    }
-    // localInnerProduct
-    template<class tt>
-    inline LatticeComplex localInnerProduct (const Lattice<tt> &lhs,const Lattice<tt> &rhs)
-    {
-        LatticeComplex ret(rhs._grid);
-#pragma omp parallel for
-        for(int ss=0;ss<rhs._grid->oSites(); ss++){
-            ret._odata[ss]=localInnerProduct(lhs._odata[ss],rhs._odata[ss]);
-        }
-        return ret;
-    }
-    
-    // outerProduct Scalar x Scalar -> Scalar
-    //              Vector x Vector -> Matrix
-    template<class ll,class rr>
-    inline auto outerProduct (const Lattice<ll> &lhs,const Lattice<rr> &rhs) -> Lattice<decltype(outerProduct(lhs._odata[0],rhs._odata[0]))>
-    {
-        Lattice<decltype(outerProduct(lhs._odata[0],rhs._odata[0]))> ret(rhs._grid);
-#pragma omp parallel for
-        for(int ss=0;ss<rhs._grid->oSites(); ss++){
-            ret._odata[ss]=outerProduct(lhs._odata[ss],rhs._odata[ss]);
-        }
-        return ret;
-     }
 
     // FIXME for debug; deprecate this
    inline void LatticeCoordinate(LatticeInteger &l,int mu){
