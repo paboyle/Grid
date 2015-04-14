@@ -373,6 +373,8 @@ friend inline void vstore(const vComplexF &ret, ComplexF *a){
     {
         return l*r;
     }
-
+    inline vComplexF trace(const vComplexF &arg){
+        return arg;
+    }
 }
 #endif

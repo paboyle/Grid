@@ -273,10 +273,16 @@ namespace Grid {
    inline void add (vRealD *__restrict__ y,const vRealD *__restrict__ l,const RealD *__restrict__ r){ *y = (*l) + (*r); }
 
   // Default precision
-  typedef RealD  Real;
-  typedef std::complex<Real>  Complex;
-
+#ifdef GRID_DEFAULT_PRECISION_DOUBLE
+  typedef RealD   Real;
   typedef vRealD vReal;
   typedef vComplexD vComplex;
+  typedef std::complex<Real>  Complex;
+#else
+  typedef RealF  Real;
+  typedef vRealF vReal;
+  typedef vComplexF vComplex;
+  typedef std::complex<Real>  Complex;
+#endif
 }
 #endif

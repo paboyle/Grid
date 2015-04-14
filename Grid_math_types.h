@@ -19,6 +19,7 @@ public:
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
+  //enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
   typedef iScalar<tensor_reduced_v> tensor_reduced;
 
 
@@ -78,6 +79,7 @@ public:
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
+  //  enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
   typedef iScalar<tensor_reduced_v> tensor_reduced;
 
 
@@ -136,6 +138,7 @@ public:
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
+  //  enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
   typedef iScalar<tensor_reduced_v> tensor_reduced;
 
   iMatrix(Zero &z){ *this = zero; };

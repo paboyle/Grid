@@ -268,6 +268,9 @@ friend inline void vstore(const vRealF &ret, float *a){
         return l*r;
     }
 
+    inline vRealF trace(const vRealF &arg){
+        return arg;
+    }
 
     
 }
