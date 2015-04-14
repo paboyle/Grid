@@ -1,26 +1,35 @@
 
 * FIXME audit
+
 * Replace vset with a call to merge.; 
-* care in Gmerge,Gextract over set.
+
+* care in Gmerge,Gextract over vset .
+
 * Const audit
+
 * extract / merge extra implementation removal      
 
 
 * Conditional execution, where etc...                -----DONE, simple test
+
 * Integer relational support                         -----DONE
+
 * Coordinate information, integers etc...            -----DONE
+
 * Integer type padding/union to vector.              -----DONE 
+
 * LatticeCoordinate[mu]                              -----DONE
 
-
-* Stencil operator support                           -----Initial thoughts
+* Stencil operator support                           -----Initial thoughts, trial implementation DONE.
+                                                     -----some simple tests that Stencil matches Cshift.
 
 * Subset support, slice sums etc...                  -----Only need slice sum?
                                                      -----Generic cartesian subslicing?
                                                      -----Array ranges / boost extents?
-                                                     -----Multigrid grid transferral.
+                                                     -----Multigrid grid transferral?
                                                      -----Suggests generalised cartesian subblocking
-                                                          sums, returning modified grid.
+                                                          sums, returning modified grid?
+					             -----What should interface be?
 
 i)  Two classes of subset;   red black parity subsetting (pick checkerboard).
                              cartesian sub-block subsetting
@@ -74,12 +83,11 @@ iii) No general permutation map.
 
 * NERSC Lattice loading, plaquette test
 
-
 * I/O support
   - MPI IO?
   - BinaryWriter, TextWriter etc...
   - protocol buffers?
-  - 
+
 // Cartesian grid inheritance
 //            Grid::GridBase
 //                     |
