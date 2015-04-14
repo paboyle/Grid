@@ -10,6 +10,7 @@ namespace Grid {
     typedef typename T::scalar_type scalar_type;
     typedef typename T::vector_type vector_type;
     typedef typename T::tensor_reduced tensor_reduced;
+    //    enum { TensorLevel = T::TensorLevel };
   };
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -20,24 +21,28 @@ namespace Grid {
     typedef RealF scalar_type;
     typedef RealF vector_type;
     typedef RealF tensor_reduced ;
+    //    enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<RealD> {
   public:
     typedef RealD scalar_type;
     typedef RealD vector_type;
     typedef RealD tensor_reduced;
+    //    enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<ComplexF> {
   public:
     typedef ComplexF scalar_type;
     typedef ComplexF vector_type;
     typedef ComplexF tensor_reduced;
+    //    enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<ComplexD> {
   public:
     typedef ComplexD scalar_type;
     typedef ComplexD vector_type;
     typedef ComplexD tensor_reduced;
+    //    enum { TensorLevel = 0 };
   };
 
   template<> class GridTypeMapper<vRealF> {
@@ -45,30 +50,35 @@ namespace Grid {
     typedef RealF  scalar_type;
     typedef vRealF vector_type;
     typedef vRealF tensor_reduced;
+    //    enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<vRealD> {
   public:
     typedef RealD  scalar_type;
     typedef vRealD vector_type;
     typedef vRealD tensor_reduced;
+    //enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<vComplexF> {
   public:
     typedef ComplexF  scalar_type;
     typedef vComplexF vector_type;
     typedef vComplexF tensor_reduced;
+    //enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<vComplexD> {
   public:
     typedef ComplexD  scalar_type;
     typedef vComplexD vector_type;
     typedef vComplexD tensor_reduced;
+    //enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<vInteger> {
   public:
     typedef Integer  scalar_type;
     typedef vInteger vector_type;
     typedef vInteger tensor_reduced;
+    //enum { TensorLevel = 0 };
   };
 
   // Again terminate the recursion.

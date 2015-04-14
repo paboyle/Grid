@@ -247,6 +247,9 @@ namespace Grid {
     {
         return l*r;
     }
+    inline vRealD trace(const vRealD &arg){
+        return arg;
+    }
 
 
 }
