@@ -362,7 +362,7 @@ friend inline void vstore(const vComplexF &ret, ComplexF *a){
 
     };
 
-    inline vComplexF localInnerProduct(const vComplexF & l, const vComplexF & r) 
+    inline vComplexF innerProduct(const vComplexF & l, const vComplexF & r) 
     {
       return conj(l)*r; 
     }

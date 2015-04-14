@@ -42,13 +42,31 @@ class CartesianCommunicator {
     ////////////////////////////////////////////////////////////
     // Reduction
     ////////////////////////////////////////////////////////////
-    void GlobalSum(float &);
-    void GlobalSumVector(float *,int N);
+    void GlobalSum(RealF &);
+    void GlobalSumVector(RealF *,int N);
 
-    void GlobalSum(double &);
-    void GlobalSumVector(double *,int N);
+    void GlobalSum(RealD &);
+    void GlobalSumVector(RealD *,int N);
+
+    void GlobalSum(ComplexF &c)
+    {
+      GlobalSumVector((float *)&c,2);
+    }
+    void GlobalSumVector(ComplexF *c,int N)
+    {
+      GlobalSumVector((float *)c,2*N);
+    }
+
+    void GlobalSum(ComplexD &c)
+    {
+      GlobalSumVector((double *)&c,2);
+    }
+    void GlobalSumVector(ComplexD *c,int N)
+    {
+      GlobalSumVector((double *)c,2*N);
+    }
     
-    template<class obj> void GlobalSumObj(obj &o){
+    template<class obj> void GlobalSum(obj &o){
 
       typedef typename obj::scalar_type scalar_type;
       int words = sizeof(obj)/sizeof(scalar_type);

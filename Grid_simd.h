@@ -33,10 +33,10 @@ namespace Grid {
 
   inline RealF adj(const RealF  & r){ return r; }
   inline RealF conj(const RealF  & r){ return r; }
-  inline ComplexD localInnerProduct(const ComplexD & l, const ComplexD & r) { return conj(l)*r; }
-  inline ComplexF localInnerProduct(const ComplexF & l, const ComplexF & r) { return conj(l)*r; }
-  inline RealD localInnerProduct(const RealD & l, const RealD & r) { return l*r; }
-  inline RealF localInnerProduct(const RealF & l, const RealF & r) { return l*r; }
+  inline ComplexD innerProduct(const ComplexD & l, const ComplexD & r) { return conj(l)*r; }
+  inline ComplexF innerProduct(const ComplexF & l, const ComplexF & r) { return conj(l)*r; }
+  inline RealD innerProduct(const RealD & l, const RealD & r) { return l*r; }
+  inline RealF innerProduct(const RealF & l, const RealF & r) { return l*r; }
 
     ////////////////////////////////////////////////////////////////////////////////
     //Provide support functions for basic real and complex data types required by Grid

@@ -1,14 +1,13 @@
 
+AUDITS:
 * FIXME audit
-
+* const audit
 * Replace vset with a call to merge.; 
-
 * care in Gmerge,Gextract over vset .
-
-* Const audit
-
 * extract / merge extra implementation removal      
 
+
+FUNCTIONALITY:
 
 * Conditional execution, where etc...                -----DONE, simple test
 
@@ -22,6 +21,11 @@
 
 * Stencil operator support                           -----Initial thoughts, trial implementation DONE.
                                                      -----some simple tests that Stencil matches Cshift.
+                                                     -----do all permute in comms phase, so that copy permute
+						     -----cases move into a buffer.
+
+* CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
+
 
 * Subset support, slice sums etc...                  -----Only need slice sum?
                                                      -----Generic cartesian subslicing?

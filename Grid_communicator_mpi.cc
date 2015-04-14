@@ -29,21 +29,20 @@ CartesianCommunicator::CartesianCommunicator(std::vector<int> &processors)
 }
 
 void CartesianCommunicator::GlobalSum(float &f){
-  MPI_Allreduce(&f,&f,1,MPI_FLOAT,MPI_SUM,communicator);
+  MPI_Allreduce(MPI_IN_PLACE,&f,1,MPI_FLOAT,MPI_SUM,communicator);
 }
 void CartesianCommunicator::GlobalSumVector(float *f,int N)
 {
-  MPI_Allreduce(f,f,N,MPI_FLOAT,MPI_SUM,communicator);
+  MPI_Allreduce(MPI_IN_PLACE,f,N,MPI_FLOAT,MPI_SUM,communicator);
 }
 void CartesianCommunicator::GlobalSum(double &d)
 {
-  MPI_Allreduce(&d,&d,1,MPI_DOUBLE,MPI_SUM,communicator);
+  MPI_Allreduce(MPI_IN_PLACE,&d,1,MPI_DOUBLE,MPI_SUM,communicator);
 }
 void CartesianCommunicator::GlobalSumVector(double *d,int N)
 {
-  MPI_Allreduce(d,d,N,MPI_DOUBLE,MPI_SUM,communicator);
+  MPI_Allreduce(MPI_IN_PLACE,d,N,MPI_DOUBLE,MPI_SUM,communicator);
 }
-
 void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest)
 {
   MPI_Cart_shift(communicator,dim,shift,&source,&dest);
