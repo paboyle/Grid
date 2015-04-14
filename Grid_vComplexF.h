@@ -3,6 +3,16 @@
 #include "Grid.h"
 
 namespace Grid {
+
+  /*
+  inline void Print(const char *A,cvec c) { 
+	  float *fp=(float *)&c; 
+	  printf(A); 
+	  printf(" %le %le %le %le %le %le %le %le\n",
+		 fp[0],fp[1],fp[2],fp[3],fp[4],fp[5],fp[6],fp[7]);
+	}
+  */
+
     class vComplexF {
       //    protected:
 
@@ -108,7 +118,7 @@ namespace Grid {
             ymm1 = _mm256_shuffle_ps(b.v,b.v,_MM_SHUFFLE(2,3,0,1)); // ymm1 <- br,bi
             ymm2 = _mm256_shuffle_ps(a.v,a.v,_MM_SHUFFLE(3,3,1,1)); // ymm2 <- ai,ai
             ymm1 = _mm256_mul_ps(ymm1,ymm2);       // ymm1 <- br ai, ai bi
-            ret.v= _mm256_addsub_ps(ymm0,ymm1);    // FIXME -- AVX2 could MAC
+            ret.v= _mm256_addsub_ps(ymm0,ymm1);    
 #endif
 #ifdef SSE2
             cvec ymm0,ymm1,ymm2;
@@ -142,7 +152,7 @@ namespace Grid {
 	////////////////////////////////////////////////////////////////////////
 	// FIXME:  gonna remove these load/store, get, set, prefetch
 	////////////////////////////////////////////////////////////////////////
-        friend inline void vset(vComplexF &ret, Complex *a){
+        friend inline void vset(vComplexF &ret, ComplexF *a){
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_set_ps(a[3].imag(),a[3].real(),a[2].imag(),a[2].real(),a[1].imag(),a[1].real(),a[0].imag(),a[0].real());
 #endif
@@ -216,12 +226,12 @@ friend inline void vstore(const vComplexF &ret, ComplexF *a){
 #endif
         }
 
-        friend inline vComplexF operator * (const Complex &a, vComplexF b){
+        friend inline vComplexF operator * (const ComplexF &a, vComplexF b){
             vComplexF va;
             vsplat(va,a);
             return va*b;
         }
-        friend inline vComplexF operator * (vComplexF b,const Complex &a){
+        friend inline vComplexF operator * (vComplexF b,const ComplexF &a){
 	  return a*b;
         }
 
@@ -283,22 +293,11 @@ friend inline void vstore(const vComplexF &ret, ComplexF *a){
 	}
        */
        
-        // NB: Template the following on "type Complex" and then implement *,+,- for 
-	// ComplexF, ComplexD, RealF, RealD above to
-        // get full generality of binops with scalars.
-        friend inline void mac (vComplexF *__restrict__ y,const Complex *__restrict__ a,const vComplexF *__restrict__ x){ *y = (*a)*(*x)+(*y); };
-        friend inline void mult(vComplexF *__restrict__ y,const Complex *__restrict__ l,const vComplexF *__restrict__ r){ *y = (*l) * (*r); }
-        friend inline void sub (vComplexF *__restrict__ y,const Complex *__restrict__ l,const vComplexF *__restrict__ r){ *y = (*l) - (*r); }
-        friend inline void add (vComplexF *__restrict__ y,const Complex *__restrict__ l,const vComplexF *__restrict__ r){ *y = (*l) + (*r); }
-        friend inline void mac (vComplexF *__restrict__ y,const vComplexF *__restrict__ a,const Complex *__restrict__ x){ *y = (*a)*(*x)+(*y); };
-        friend inline void mult(vComplexF *__restrict__ y,const vComplexF *__restrict__ l,const Complex *__restrict__ r){ *y = (*l) * (*r); }
-        friend inline void sub (vComplexF *__restrict__ y,const vComplexF *__restrict__ l,const Complex *__restrict__ r){ *y = (*l) - (*r); }
-        friend inline void add (vComplexF *__restrict__ y,const vComplexF *__restrict__ l,const Complex *__restrict__ r){ *y = (*l) + (*r); }
-
 
         ///////////////////////
         // Conjugate
         ///////////////////////
+								     
         friend inline vComplexF conj(const vComplexF &in){
             vComplexF ret ; vzero(ret);
 #if defined (AVX1)|| defined (AVX2)
@@ -363,10 +362,11 @@ friend inline void vstore(const vComplexF &ret, ComplexF *a){
 
     };
 
-    inline vComplexF localInnerProduct(const vComplexF & l, const vComplexF & r) { return conj(l)*r; }
+    inline vComplexF localInnerProduct(const vComplexF & l, const vComplexF & r) 
+    {
+      return conj(l)*r; 
+    }
 
-    typedef  vComplexF vFComplex;
-    typedef  vComplexF vComplex;
     inline void zeroit(vComplexF &z){ vzero(z);}
 
     inline vComplexF outerProduct(const vComplexF &l, const vComplexF& r)

@@ -47,6 +47,7 @@
 #include <Grid_Cartesian.h>
 #include <Grid_Lattice.h>
 #include <Grid_comparison.h>
+#include <Grid_stencil.h>
 #include <Grid_QCD.h>
 
 namespace Grid {

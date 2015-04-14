@@ -1,11 +1,22 @@
 # additional include paths necessary to compile the C++ library
 AM_CXXFLAGS = -I$(top_srcdir)/
 
+
+extra_sources=
+if BUILD_COMMS_MPI
+  extra_sources+=Grid_communicator_mpi.cc
+  extra_sources+=Grid_stencil_common.cc
+endif
+if BUILD_COMMS_NONE
+  extra_sources+=Grid_communicator_fake.cc
+  extra_sources+=Grid_stencil_common.cc
+endif
+
 #
 # Libraries
 #
 lib_LIBRARIES = libGrid.a
-libGrid_a_SOURCES = Grid_init.cc
+libGrid_a_SOURCES = Grid_init.cc $(extra_sources)
 
 #
 # Include files
@@ -26,24 +37,18 @@ include_HEADERS = Grid_config.h\
 	Grid_cshift_common.h\
 	Grid_cshift_mpi.h\
 	Grid_cshift_none.h\
+	Grid_stencil.h\
 	Grid_math_types.h
 
 
 #
 # Test code
 #
-bin_PROGRAMS = Grid_main
+bin_PROGRAMS = Grid_main test_Grid_stencil
 
-extra_sources=
-if BUILD_COMMS_MPI
-  extra_sources+=Grid_communicator_mpi.cc
-endif
-if BUILD_COMMS_NONE
-  extra_sources+=Grid_communicator_fake.cc
-endif
-
-Grid_main_SOURCES = \
-	Grid_main.cc\
-	$(extra_sources)
-
+Grid_main_SOURCES = Grid_main.cc
 Grid_main_LDADD = libGrid.a
+
+test_Grid_stencil_SOURCES = test_Grid_Stencil.cc
+test_Grid_stencil_LDADD = libGrid.a
+
