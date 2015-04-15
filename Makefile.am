@@ -49,6 +49,6 @@ bin_PROGRAMS = Grid_main test_Grid_stencil
 Grid_main_SOURCES = Grid_main.cc
 Grid_main_LDADD = libGrid.a
 
-test_Grid_stencil_SOURCES = test_Grid_Stencil.cc
+test_Grid_stencil_SOURCES = test_Grid_stencil.cc
 test_Grid_stencil_LDADD = libGrid.a
 
