@@ -158,7 +158,7 @@ PROGRAMS = $(bin_PROGRAMS)
 am_Grid_main_OBJECTS = Grid_main.$(OBJEXT)
 Grid_main_OBJECTS = $(am_Grid_main_OBJECTS)
 Grid_main_DEPENDENCIES = libGrid.a
-am_test_Grid_stencil_OBJECTS = test_Grid_Stencil.$(OBJEXT)
+am_test_Grid_stencil_OBJECTS = test_Grid_stencil.$(OBJEXT)
 test_Grid_stencil_OBJECTS = $(am_test_Grid_stencil_OBJECTS)
 test_Grid_stencil_DEPENDENCIES = libGrid.a
 AM_V_P = $(am__v_P_@AM_V@)
@@ -370,7 +370,7 @@ include_HEADERS = Grid_config.h\
 
 Grid_main_SOURCES = Grid_main.cc
 Grid_main_LDADD = libGrid.a
-test_Grid_stencil_SOURCES = test_Grid_Stencil.cc
+test_Grid_stencil_SOURCES = test_Grid_stencil.cc
 test_Grid_stencil_LDADD = libGrid.a
 all: Grid_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
@@ -523,7 +523,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Grid_init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Grid_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Grid_stencil_common.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_Grid_Stencil.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_Grid_stencil.Po@am__quote@
 
 .cc.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

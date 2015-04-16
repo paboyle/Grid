@@ -29,9 +29,9 @@ AC_CHECK_FUNCS([gettimeofday])
 AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE|AVX|AVX2|AVX512],[Select instructions])],[ac_SIMD=${enable_simd}],[ac_SIMD=AVX2])
 
 case ${ac_SIMD} in
-     SSE2)
-       echo Configuring for SSE2
-       AC_DEFINE([SSE2],[1],[SSE2] )
+     SSE4)
+       echo Configuring for SSE4
+       AC_DEFINE([SSE4],[1],[SSE4] )
      ;;
      AVX)
        echo Configuring for AVX

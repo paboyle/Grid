@@ -5009,10 +5009,10 @@ fi
 
 
 case ${ac_SIMD} in
-     SSE2)
-       echo Configuring for SSE2
+     SSE4)
+       echo Configuring for SSE4
 
-$as_echo "#define SSE2 1" >>confdefs.h
+$as_echo "#define SSE4 1" >>confdefs.h
 
      ;;
      AVX)
