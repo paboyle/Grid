@@ -63,7 +63,7 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_add_ps(a.v,b.v);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_add_ps(a.v,b.v);
 #endif
 #ifdef AVX512
@@ -81,7 +81,7 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_sub_ps(a.v,b.v);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_sub_ps(a.v,b.v);
 #endif
 #ifdef AVX512
@@ -120,7 +120,7 @@ namespace Grid {
             ymm1 = _mm256_mul_ps(ymm1,ymm2);       // ymm1 <- br ai, ai bi
             ret.v= _mm256_addsub_ps(ymm0,ymm1);    
 #endif
-#ifdef SSE2
+#ifdef SSE4
             cvec ymm0,ymm1,ymm2;
             ymm0 = _mm_shuffle_ps(a.v,a.v,_MM_SHUFFLE(2,2,0,0)); // ymm0 <- ar ar,
             ymm0 = _mm_mul_ps(ymm0,b.v);        // ymm0 <- ar bi, ar br
@@ -156,8 +156,8 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_set_ps(a[3].imag(),a[3].real(),a[2].imag(),a[2].real(),a[1].imag(),a[1].real(),a[0].imag(),a[0].real());
 #endif
-#ifdef SSE2
-            ret.v = _mm_set_ps(a[1].imag, a[1].real(),a[0].imag(),a[0].real());
+#ifdef SSE4
+            ret.v = _mm_set_ps(a[1].imag(), a[1].real(),a[0].imag(),a[0].real());
 #endif
 #ifdef AVX512
             ret.v = _mm512_set_ps(a[7].imag(),a[7].real(),a[6].imag(),a[6].real(),a[5].imag(),a[5].real(),a[4].imag(),a[4].real(),a[3].imag(),a[3].real(),a[2].imag(),a[2].real(),a[1].imag(),a[1].real(),a[0].imag(),a[0].real());
@@ -181,7 +181,7 @@ friend inline void vstore(const vComplexF &ret, ComplexF *a){
 #if defined (AVX1)|| defined (AVX2)
         _mm256_store_ps((float *)a,ret.v);
 #endif
-#ifdef SSE2
+#ifdef SSE4
         _mm_store_ps((float *)a,ret.v);
 #endif
 #ifdef AVX512
@@ -201,7 +201,7 @@ friend inline void vstore(const vComplexF &ret, ComplexF *a){
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_set_ps(b,a,b,a,b,a,b,a);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_set_ps(a,b,a,b);
 #endif
 #ifdef AVX512
@@ -213,7 +213,11 @@ friend inline void vstore(const vComplexF &ret, ComplexF *a){
         }
        friend inline ComplexF Reduce(const vComplexF & in)
        {
+#ifdef SSE4
+#error
+#endif
 #if defined (AVX1) || defined(AVX2)
+	 // FIXME this is inefficient and use 
          __attribute__ ((aligned(32))) float c_[8];
          _mm256_store_ps(c_,in.v);
          return ComplexF(c_[0]+c_[2]+c_[4]+c_[6],c_[1]+c_[3]+c_[5]+c_[7]);
@@ -305,7 +309,7 @@ friend inline void vstore(const vComplexF &ret, ComplexF *a){
              tmp = _mm256_addsub_ps(ret.v,_mm256_shuffle_ps(in.v,in.v,_MM_SHUFFLE(2,3,0,1))); // ymm1 <- br,bi
              ret.v=_mm256_shuffle_ps(tmp,tmp,_MM_SHUFFLE(2,3,0,1));
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_addsub_ps(ret.v,in.v);
 #endif
 #ifdef AVX512

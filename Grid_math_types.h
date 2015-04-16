@@ -2,15 +2,76 @@
 #define GRID_MATH_TYPES_H
 
 #include <Grid_math_type_mapper.h>
+#include <type_traits>
 
 namespace Grid {
+
+  // First some of my own traits
+  template<typename T> struct isGridTensor {
+    static const bool value = true;
+    static const bool notvalue = false;
+  };
+
+  template<> struct isGridTensor<RealD > {
+    static const bool value = false;
+    static const bool notvalue = true;
+  };
+  template<> struct isGridTensor<RealF > {
+    static const bool value = false;
+    static const bool notvalue = true;
+  };
+  template<> struct isGridTensor<ComplexD > {
+    static const bool value = false;
+    static const bool notvalue = true;
+  };
+  template<> struct isGridTensor<ComplexF > {
+    static const bool value = false;
+    static const bool notvalue = true;
+  };
+  template<> struct isGridTensor<Integer > {
+    static const bool value = false;
+    static const bool notvalue = true;
+  };
+  template<> struct isGridTensor<vRealD > {
+    static const bool value = false;
+    static const bool notvalue = true;
+  };
+  template<> struct isGridTensor<vRealF > {
+    static const bool value = false;
+    static const bool notvalue = true;
+  };
+  template<> struct isGridTensor<vComplexD > {
+    static const bool value = false;
+    static const bool notvalue = true;
+  };
+  template<> struct isGridTensor<vComplexF > {
+    static const bool value = false;
+    static const bool notvalue = true;
+  };
+  template<> struct isGridTensor<vInteger > {
+    static const bool value = false;
+    static const bool notvalue = true;
+  };
+
+  // Match the index
+  template<typename T,int Level> struct matchGridTensorIndex {
+    static const bool value = (Level==T::TensorLevel);
+    static const bool notvalue = (Level!=T::TensorLevel);
+  };
 
 
 ///////////////////////////////////////////////////
 // Scalar, Vector, Matrix objects.
 // These can be composed to form tensor products of internal indices.
 ///////////////////////////////////////////////////
-    
+
+  // Terminates the recursion for temoval of all Grids tensors
+  inline vRealD    TensorRemove(vRealD    arg){ return arg;}
+  inline vRealF    TensorRemove(vRealF    arg){ return arg;}
+  inline vComplexF TensorRemove(vComplexF arg){ return arg;}
+  inline vComplexD TensorRemove(vComplexD arg){ return arg;}
+  inline vInteger  TensorRemove(vInteger  arg){ return arg;}
+
 template<class vtype> class iScalar
 {
 public:
@@ -19,9 +80,12 @@ public:
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
-  //enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
   typedef iScalar<tensor_reduced_v> tensor_reduced;
 
+  enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
+
+  // Scalar no action
+  //  template<int Level> using tensor_reduce_level = typename iScalar<GridTypeMapper<vtype>::tensor_reduce_level<Level> >;
 
     iScalar(){};
     
@@ -79,9 +143,9 @@ public:
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
-  //  enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
-  typedef iScalar<tensor_reduced_v> tensor_reduced;
 
+  enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
+  typedef iScalar<tensor_reduced_v> tensor_reduced;
 
     iVector(Zero &z){ *this = zero; };
     iVector() {};
@@ -137,8 +201,10 @@ public:
 
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
+
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
-  //  enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
+
+  enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
   typedef iScalar<tensor_reduced_v> tensor_reduced;
 
   iMatrix(Zero &z){ *this = zero; };
@@ -1018,6 +1084,137 @@ template<class vtype,int N> inline iMatrix<vtype,N> adj(const iMatrix<vtype,N> &
     }}
     return ret;
 }
+/////////////////////////////////////////////////////////////////
+// Transpose
+/////////////////////////////////////////////////////////////////
+template<class vtype,int N>
+  inline typename std::enable_if<isGridTensor<vtype>::value, iMatrix<vtype,N> >::type 
+  transpose(iMatrix<vtype,N> arg)
+  {
+    iMatrix<vtype,N> ret;
+    for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+	ret._internal[i][j] = transpose(arg._internal[j][i]); // NB recurses
+      }}
+    return ret;
+  }
+template<class vtype,int N>
+  inline typename std::enable_if<isGridTensor<vtype>::notvalue, iMatrix<vtype,N> >::type 
+  transpose(iMatrix<vtype,N> arg)
+  {
+    iMatrix<vtype,N> ret;
+    for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+	ret._internal[i][j] = arg._internal[j][i]; // Stop recursion if not a tensor type
+      }}
+    return ret;
+  }
+
+template<class vtype,int N>
+  inline typename std::enable_if<isGridTensor<vtype>::value, iScalar<vtype> >::type 
+  transpose(iScalar<vtype> arg)
+  {
+    iScalar<vtype> ret;
+    ret._internal = transpose(arg._internal); // NB recurses
+    return ret;
+  }
+
+template<class vtype,int N>
+  inline typename std::enable_if<isGridTensor<vtype>::notvalue, iScalar<vtype> >::type 
+  transpose(iScalar<vtype> arg)
+  {
+    iScalar<vtype> ret;
+    ret._internal = arg._internal; // NB recursion stops
+    return ret;
+  }
+
+
+
+/*
+ *  No need to implement transpose on the primitive types
+ *  Not sure that this idiom is any more elegant that the trace idiom below however!
+inline ComplexD transpose(ComplexD &rhs){  return rhs;}
+inline ComplexF transpose(ComplexF &rhs){  return rhs;}
+inline RealD transpose(RealD &rhs){  return rhs;}
+inline RealF transpose(RealF &rhs){  return rhs;}
+ */
+
+////////////////////////////////////////////////////////////////////////////////////////////
+// Transpose a specific index
+////////////////////////////////////////////////////////////////////////////////////////////
+template<int Level,class vtype,int N> inline 
+  typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,Level>::value, iMatrix<vtype,N> >::type 
+transposeIndex (const iMatrix<vtype,N> &arg)
+{
+  iMatrix<vtype,N> ret;
+  for(int i=0;i<N;i++){
+    for(int j=0;j<N;j++){
+      ret._internal[i][j] = arg._internal[j][i]; 
+  }}
+  return ret;
+}
+// or not
+template<int Level,class vtype,int N> inline 
+typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,Level>::notvalue, iMatrix<vtype,N> >::type 
+transposeIndex (const iMatrix<vtype,N> &arg)
+{
+  iMatrix<vtype,N> ret;
+  for(int i=0;i<N;i++){
+    for(int j=0;j<N;j++){
+      ret._internal[i][j] = transposeIndex<Level>(arg._internal[i][j]); 
+  }}
+  return ret;
+}
+template<int Level,class vtype> inline 
+typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::notvalue, iScalar<vtype> >::type 
+transposeIndex (const iScalar<vtype> &arg)
+{
+  return transposeIndex<Level>(arg._internal);
+}
+////////////////////////////////
+// Trace a specific index 
+////////////////////////////////
+
+template<int Level> inline ComplexF traceIndex(const ComplexF arg) { return arg;}
+template<int Level> inline ComplexD traceIndex(const ComplexD arg) { return arg;}
+template<int Level> inline RealF traceIndex(const RealF arg) { return arg;}
+template<int Level> inline RealD traceIndex(const RealD arg) { return arg;}
+
+template<int Level,class vtype> inline 
+auto traceIndex(const iScalar<vtype> &arg) -> iScalar<decltype(traceIndex<Level>(arg._internal)) >
+{
+  iScalar<decltype(traceIndex<Level>(arg._internal))> ret;
+  ret._internal = traceIndex<Level>(arg._internal);
+  return ret;
+}
+
+// If we hit the right index, return scalar and trace it with no further recursion
+template<int Level,class vtype,int N> inline 
+auto traceIndex(const iMatrix<vtype,N> &arg) ->
+  typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::value,  // Index matches
+                                                    iScalar<vtype> >::type                              // return scalar
+{
+  iScalar<vtype> ret;
+  zeroit(ret._internal);
+  for(int i=0;i<N;i++){
+    ret._internal = ret._internal + arg._internal[i][i];
+  }
+  return ret;
+}
+
+// not this level, so recurse
+template<int Level,class vtype,int N> inline 
+auto traceIndex(const iMatrix<vtype,N> &arg) ->
+  typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,Level>::notvalue,// No index match
+         iMatrix<decltype(traceIndex<Level>(arg._internal[0][0])),N> >::type     // return matrix
+{
+  iMatrix<decltype(traceIndex<Level>(arg._internal[0][0])),N> ret;
+  for(int i=0;i<N;i++){
+  for(int j=0;j<N;j++){
+    ret._internal[i][j] = traceIndex<Level>(arg._internal[i][j]);
+  }}
+  return ret;
+}
 
 /////////////////////////////////////////////////////////////////
 // Can only take the real/imag part of scalar objects, since
@@ -1075,17 +1272,24 @@ template<class itype,int N> inline auto imag(const iVector<itype,N> &z) -> iVect
     // Trace of scalar and matrix
     /////////////////////////////////
 
-inline Complex trace( const Complex &arg){
+inline ComplexF trace( const ComplexF &arg){
     return arg;
 }
-//inline vComplex trace(const vComplex &arg){
-//    return arg;
-//}
+inline ComplexD trace( const ComplexD &arg){
+    return arg;
+}
+inline RealF trace( const RealF &arg){
+    return arg;
+}
+inline RealD trace( const RealD &arg){
+    return arg;
+}
+
 template<class vtype,int N>
 inline auto trace(const iMatrix<vtype,N> &arg) -> iScalar<decltype(trace(arg._internal[0][0]))>
 {
     iScalar<decltype( trace(arg._internal[0][0] )) > ret;
-    ZeroIt(ret._internal);
+    zeroit(ret._internal);
     for(int i=0;i<N;i++){
         ret._internal=ret._internal+trace(arg._internal[i][i]);
     }

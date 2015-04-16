@@ -49,7 +49,7 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_add_pd(a.v,b.v);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_add_pd(a.v,b.v);
 #endif
 #ifdef AVX512
@@ -67,7 +67,7 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_sub_pd(a.v,b.v);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_sub_pd(a.v,b.v);
 #endif
 #ifdef AVX512
@@ -114,7 +114,7 @@ namespace Grid {
             ymm1 = _mm256_mul_pd(ymm1,ymm2);       // ymm1 <- br ai, ai bi
             ret.v= _mm256_addsub_pd(ymm0,ymm1);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             zvec ymm0,ymm1,ymm2;
             ymm0 = _mm_shuffle_pd(a.v,a.v,0x0); // ymm0 <- ar ar,
             ymm0 = _mm_mul_pd(ymm0,b.v);        // ymm0 <- ar bi, ar br
@@ -200,14 +200,14 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_set_pd(ig,rl,ig,rl);
 #endif
-#ifdef SSE2
-            ret.v = _mm_set_pd(a,b);
+#ifdef SSE4
+            ret.v = _mm_set_pd(ig,rl);
 #endif
 #ifdef AVX512
             ret.v = _mm512_set_pd(ig,rl,ig,rl,ig,rl,ig,rl);
 #endif
 #ifdef QPX
-            ret.v = {a,b,a,b};
+            ret.v = {ig,rl,ig,rl};
 #endif
         }
 
@@ -215,7 +215,7 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_set_pd(a[1].imag(),a[1].real(),a[0].imag(),a[0].real());
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_set_pd(a[0].imag(),a[0].real());
 #endif
 #ifdef AVX512
@@ -231,7 +231,7 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
 #if defined (AVX1)|| defined (AVX2)
        _mm256_store_pd((double *)a,ret.v);
 #endif
-#ifdef SSE2
+#ifdef SSE4
        _mm_store_pd((double *)a,ret.v);
 #endif
 #ifdef AVX512
@@ -257,7 +257,7 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
             __m256d tmp = _mm256_addsub_pd(ret.v,_mm256_shuffle_pd(in.v,in.v,0x5));
              ret.v=_mm256_shuffle_pd(tmp,tmp,0x5);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_addsub_pd(ret.v,in.v);
 #endif
 #ifdef AVX512

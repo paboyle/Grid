@@ -152,6 +152,8 @@ int main (int argc, char ** argv)
     cMat= adj(cMat);
     cm=adj(cm);
     scm=adj(scm);
+    scm=transpose(scm);
+    scm=transposeIndex<1>(scm);
     
 //    Foo = Foo+scalar; // LatticeColourMatrix+Scalar
 //    Foo = Foo*scalar; // LatticeColourMatrix*Scalar
@@ -162,6 +164,23 @@ int main (int argc, char ** argv)
     
     LatticeComplex trscMat(&Fine);
     trscMat = trace(scMat); // Trace
+
+    {
+      TComplex      c;
+      ColourMatrix c_m;   
+      SpinMatrix   s_m;   
+      SpinColourMatrix sc_m; 
+
+      s_m = traceIndex<1>(sc_m);
+      c_m = traceIndex<2>(sc_m);
+
+      c   = traceIndex<2>(s_m);
+      c   = traceIndex<1>(c_m);
+
+      printf("c. Level %d\n",c_m.TensorLevel);
+      printf("c. Level %d\n",c_m._internal.TensorLevel);
+
+    }
     
     FooBar = Bar;
  
@@ -203,7 +222,7 @@ int main (int argc, char ** argv)
         peekSite(bar,Bar,coor);
         for(int r=0;r<3;r++){
         for(int c=0;c<3;c++){
-	  cout<<"bar "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "<<bar._internal._internal[r][c]<<std::endl;
+	  //	  cout<<"bar "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "<<bar._internal._internal[r][c]<<std::endl;
 	}}
       }}}}
     } 

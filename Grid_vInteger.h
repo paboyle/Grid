@@ -48,7 +48,7 @@ namespace Grid {
 #if defined (AVX2)
             ret.v = _mm256_add_epi32(a.v,b.v);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_add_epi32(a.v,b.v);
 #endif
 #ifdef AVX512
@@ -78,7 +78,7 @@ namespace Grid {
 #if defined (AVX2)
             ret.v = _mm256_sub_epi32(a.v,b.v);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_sub_epi32(a.v,b.v);
 #endif
 #ifdef AVX512
@@ -108,7 +108,7 @@ namespace Grid {
 #if defined (AVX2)
             ret.v = _mm256_mul_epi32(a.v,b.v);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_mul_epi32(a.v,b.v);
 #endif
 #ifdef AVX512
@@ -147,7 +147,7 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_set1_epi32(a);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_set1_epi32(a);
 #endif
 #ifdef AVX512
@@ -161,7 +161,7 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
 	  ret.v = _mm256_set_epi32(a[7],a[6],a[5],a[4],a[3],a[2],a[1],a[0]);
 #endif
-#ifdef SSE2
+#ifdef SSE4
 	  ret.v = _mm_set_epi32(a[0],a[1],a[2],a[3]);
 #endif
 #ifdef AVX512
@@ -177,8 +177,8 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
 	  _mm256_store_si256((__m256i*)a,ret.v);
 #endif
-#ifdef SSE2
-	  _mm_store_si128(a,ret.v);
+#ifdef SSE4
+	  _mm_store_si128((__m128i *)a,ret.v);
 #endif
 #ifdef AVX512
 	  _mm512_store_si512(a,ret.v);
