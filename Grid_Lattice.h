@@ -156,7 +156,8 @@ public:
         }
     };
 
-    // FIXME for debug; deprecate this
+    // FIXME for debug; deprecate this; made obscelete by 
+    // LatticeCoordinate();
     friend void lex_sites(Lattice<vobj> &l){
       Real *v_ptr = (Real *)&l._odata[0];
       size_t o_len = l._grid->oSites();
@@ -211,6 +212,7 @@ public:
         return *this;
     }
     
+    // FIXME trace type structure is weird
     inline friend Lattice<iScalar<vComplex> > _trace(const Lattice<vobj> &lhs){
         Lattice<iScalar<vComplex> > ret(lhs._grid);
 #pragma omp parallel for
