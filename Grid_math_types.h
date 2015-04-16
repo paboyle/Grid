@@ -1059,6 +1059,23 @@ template<class vtype> inline iScalar<vtype> conj(const iScalar<vtype>&r)
     ret._internal = conj(r._internal);
     return ret;
 }
+template<class vtype,int N> inline iVector<vtype,N> conj(const iVector<vtype,N>&r)
+{
+  iVector<vtype,N> ret;
+  for(int i=0;i<N;i++){
+    ret._internal[i] = conj(r._internal[i]);
+  }
+  return ret;
+}
+template<class vtype,int N> inline iMatrix<vtype,N> conj(const iMatrix<vtype,N>&r)
+{
+  iMatrix<vtype,N> ret;
+  for(int i=0;i<N;i++){
+  for(int j=0;j<N;j++){
+    ret._internal[i][j] = conj(r._internal[i][j]);
+  }}
+  return ret;
+}
 
 // Adj function for scalar, vector, matrix
 template<class vtype> inline iScalar<vtype> adj(const iScalar<vtype>&r)
@@ -1085,8 +1102,14 @@ template<class vtype,int N> inline iMatrix<vtype,N> adj(const iMatrix<vtype,N> &
     return ret;
 }
 /////////////////////////////////////////////////////////////////
-// Transpose
+// Transpose all indices
 /////////////////////////////////////////////////////////////////
+
+inline ComplexD transpose(ComplexD &rhs){  return rhs;}
+inline ComplexF transpose(ComplexF &rhs){  return rhs;}
+inline RealD transpose(RealD &rhs){  return rhs;}
+inline RealF transpose(RealF &rhs){  return rhs;}
+
 template<class vtype,int N>
   inline typename std::enable_if<isGridTensor<vtype>::value, iMatrix<vtype,N> >::type 
   transpose(iMatrix<vtype,N> arg)
@@ -1128,19 +1151,9 @@ template<class vtype,int N>
     return ret;
   }
 
-
-
-/*
- *  No need to implement transpose on the primitive types
- *  Not sure that this idiom is any more elegant that the trace idiom below however!
-inline ComplexD transpose(ComplexD &rhs){  return rhs;}
-inline ComplexF transpose(ComplexF &rhs){  return rhs;}
-inline RealD transpose(RealD &rhs){  return rhs;}
-inline RealF transpose(RealF &rhs){  return rhs;}
- */
-
 ////////////////////////////////////////////////////////////////////////////////////////////
-// Transpose a specific index
+// Transpose a specific index; instructive to compare this style of recursion termination
+// to that of adj; which is easiers?
 ////////////////////////////////////////////////////////////////////////////////////////////
 template<int Level,class vtype,int N> inline 
   typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,Level>::value, iMatrix<vtype,N> >::type 
@@ -1171,15 +1184,40 @@ transposeIndex (const iScalar<vtype> &arg)
 {
   return transposeIndex<Level>(arg._internal);
 }
-////////////////////////////////
-// Trace a specific index 
-////////////////////////////////
+
+//////////////////////////////////////////////////////////////////
+// Traces: both all indices and a specific index 
+/////////////////////////////////////////////////////////////////
+
+inline ComplexF trace( const ComplexF &arg){    return arg;}
+inline ComplexD trace( const ComplexD &arg){    return arg;}
+inline RealF trace( const RealF &arg){    return arg;}
+inline RealD trace( const RealD &arg){    return arg;}
 
 template<int Level> inline ComplexF traceIndex(const ComplexF arg) { return arg;}
 template<int Level> inline ComplexD traceIndex(const ComplexD arg) { return arg;}
 template<int Level> inline RealF traceIndex(const RealF arg) { return arg;}
 template<int Level> inline RealD traceIndex(const RealD arg) { return arg;}
 
+template<class vtype,int N>
+inline auto trace(const iMatrix<vtype,N> &arg) -> iScalar<decltype(trace(arg._internal[0][0]))>
+{
+    iScalar<decltype( trace(arg._internal[0][0] )) > ret;
+    zeroit(ret._internal);
+    for(int i=0;i<N;i++){
+        ret._internal=ret._internal+trace(arg._internal[i][i]);
+    }
+    return ret;
+}
+template<class vtype>
+inline auto trace(const iScalar<vtype> &arg) -> iScalar<decltype(trace(arg._internal))>
+{
+    iScalar<decltype(trace(arg._internal))> ret;
+    ret._internal=trace(arg._internal);
+    return ret;
+}
+
+// Specific indices.
 template<int Level,class vtype> inline 
 auto traceIndex(const iScalar<vtype> &arg) -> iScalar<decltype(traceIndex<Level>(arg._internal)) >
 {
@@ -1265,41 +1303,6 @@ template<class itype,int N> inline auto imag(const iVector<itype,N> &z) -> iVect
     for(int c1=0;c1<N;c1++){
         ret._internal[c1] = imag(z._internal[c1]);
     }
-    return ret;
-}
-
-    /////////////////////////////////
-    // Trace of scalar and matrix
-    /////////////////////////////////
-
-inline ComplexF trace( const ComplexF &arg){
-    return arg;
-}
-inline ComplexD trace( const ComplexD &arg){
-    return arg;
-}
-inline RealF trace( const RealF &arg){
-    return arg;
-}
-inline RealD trace( const RealD &arg){
-    return arg;
-}
-
-template<class vtype,int N>
-inline auto trace(const iMatrix<vtype,N> &arg) -> iScalar<decltype(trace(arg._internal[0][0]))>
-{
-    iScalar<decltype( trace(arg._internal[0][0] )) > ret;
-    zeroit(ret._internal);
-    for(int i=0;i<N;i++){
-        ret._internal=ret._internal+trace(arg._internal[i][i]);
-    }
-    return ret;
-}
-template<class vtype>
-inline auto trace(const iScalar<vtype> &arg) -> iScalar<decltype(trace(arg._internal))>
-{
-    iScalar<decltype(trace(arg._internal))> ret;
-    ret._internal=trace(arg._internal);
     return ret;
 }
 
