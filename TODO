@@ -7,24 +7,28 @@ AUDITS:
 * extract / merge extra implementation removal      
 
 
+BUILD:
+* Test infrastructure
+* subdirs lib, tests ??
+
 FUNCTIONALITY:
-
 * Conditional execution, where etc...                -----DONE, simple test
-
 * Integer relational support                         -----DONE
-
 * Coordinate information, integers etc...            -----DONE
-
 * Integer type padding/union to vector.              -----DONE 
-
 * LatticeCoordinate[mu]                              -----DONE
-
 * Stencil operator support                           -----Initial thoughts, trial implementation DONE.
                                                      -----some simple tests that Stencil matches Cshift.
                                                      -----do all permute in comms phase, so that copy permute
 						     -----cases move into a buffer.
 
 * CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
+
+
+POST-SFW call:
+
+* TraceColor, TraceSpin.
+* How to define simple matrix operations, such as flavour matrices?
 
 
 * Subset support, slice sums etc...                  -----Only need slice sum?
@@ -34,7 +38,6 @@ FUNCTIONALITY:
                                                      -----Suggests generalised cartesian subblocking
                                                           sums, returning modified grid?
 					             -----What should interface be?
-
 i)  Two classes of subset;   red black parity subsetting (pick checkerboard).
                              cartesian sub-block subsetting
 
