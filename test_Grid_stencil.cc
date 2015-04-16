@@ -29,14 +29,14 @@ int main (int argc, char ** argv)
     
 #ifdef AVX512
     simd_layout[0] = 1;
-    simd_layout[1] = 1;
+    simd_layout[1] = 2;
     simd_layout[2] = 2;
     simd_layout[3] = 2;
 #endif
 #if defined (AVX1)|| defined (AVX2)
     simd_layout[0] = 1;
     simd_layout[1] = 1;
-    simd_layout[2] = 1;
+    simd_layout[2] = 2;
     simd_layout[3] = 2;
 #endif
 #if defined (SSE2)

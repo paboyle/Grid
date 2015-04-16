@@ -12,7 +12,7 @@
 ////////////////////////////////////////////////////////////////////////
     
 
-#ifdef SSE2
+#ifdef SSE4
 #include <pmmintrin.h>
 #endif
 #if defined(AVX1) || defined (AVX2)
@@ -33,6 +33,12 @@ namespace Grid {
 
   inline RealF adj(const RealF  & r){ return r; }
   inline RealF conj(const RealF  & r){ return r; }
+  inline RealF real(const RealF  & r){ return r; }
+
+  inline RealD adj(const RealD  & r){ return r; }
+  inline RealD conj(const RealD  & r){ return r; }
+  inline RealD real(const RealD  & r){ return r; }
+
   inline ComplexD innerProduct(const ComplexD & l, const ComplexD & r) { return conj(l)*r; }
   inline ComplexF innerProduct(const ComplexF & l, const ComplexF & r) { return conj(l)*r; }
   inline RealD innerProduct(const RealD & l, const RealD & r) { return l*r; }
@@ -60,8 +66,6 @@ namespace Grid {
     inline void mult(RealD * __restrict__ y,const RealD * __restrict__ l,const RealD *__restrict__ r){ *y = (*l) * (*r);}
     inline void sub (RealD * __restrict__ y,const RealD * __restrict__ l,const RealD *__restrict__ r){ *y = (*l) - (*r);}
     inline void add (RealD * __restrict__ y,const RealD * __restrict__ l,const RealD *__restrict__ r){ *y = (*l) + (*r);}
-    inline RealD adj(const RealD & r){ return r; }  // No-op for real
-    inline RealD conj(const RealD & r){ return r; }
     
     inline void mac (RealF * __restrict__ y,const RealF * __restrict__ a,const RealF *__restrict__ x){  *y = (*a) * (*x)+(*y); }
     inline void mult(RealF * __restrict__ y,const RealF * __restrict__ l,const RealF *__restrict__ r){ *y = (*l) * (*r); }
@@ -72,14 +76,14 @@ namespace Grid {
 
   class Zero{};
   static Zero zero;
-  template<class itype> inline void ZeroIt(itype &arg){ arg=zero;};
-  template<>            inline void ZeroIt(ComplexF &arg){ arg=0; };
-  template<>            inline void ZeroIt(ComplexD &arg){ arg=0; };
-  template<>            inline void ZeroIt(RealF &arg){ arg=0; };
-  template<>            inline void ZeroIt(RealD &arg){ arg=0; };
+  template<class itype> inline void zeroit(itype &arg){ arg=zero;};
+  template<>            inline void zeroit(ComplexF &arg){ arg=0; };
+  template<>            inline void zeroit(ComplexD &arg){ arg=0; };
+  template<>            inline void zeroit(RealF &arg){ arg=0; };
+  template<>            inline void zeroit(RealD &arg){ arg=0; };
 
 
-#if defined (SSE2)
+#if defined (SSE4)
     typedef __m128 fvec;
     typedef __m128d dvec;
     typedef __m128 cvec;
@@ -202,7 +206,7 @@ inline void Gpermute(vsimd &y,const vsimd &b,int perm){
       case 1: y.v = _mm256_shuffle_ps(b.v,b.v,_MM_SHUFFLE(1,0,3,2)); break;
       case 0: y.v = _mm256_permute2f128_ps(b.v,b.v,0x01); break;
 #endif
-#ifdef SSE2
+#ifdef SSE4
       case 1: y.v = _mm_shuffle_ps(b.v,b.v,_MM_SHUFFLE(2,3,0,1)); break;
       case 0: y.v = _mm_shuffle_ps(b.v,b.v,_MM_SHUFFLE(1,0,3,2));break;
 #endif

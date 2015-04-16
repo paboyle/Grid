@@ -7,12 +7,11 @@ namespace QCD {
     static const int Ns=4;
     static const int CbRed  =0;
     static const int CbBlack=1;
-
+    
     // QCD iMatrix types
     template<typename vtype> using iSinglet          = iScalar<iScalar<vtype> > ;
     template<typename vtype> using iSpinMatrix       = iMatrix<iScalar<vtype>, Ns>;
     template<typename vtype> using iSpinColourMatrix = iMatrix<iMatrix<vtype, Nc>, Ns>;
-
     template<typename vtype> using iColourMatrix     = iScalar<iMatrix<vtype, Nc>> ;
 
     template<typename vtype> using iSpinVector       = iVector<iScalar<vtype>, Ns>;
@@ -20,10 +19,8 @@ namespace QCD {
     template<typename vtype> using iSpinColourVector = iVector<iVector<vtype, Nc>, Ns>;
 
     typedef iSinglet<Complex >          TComplex;    // This is painful. Tensor singlet complex type.
-    typedef iSinglet<vComplex >         vTComplex;
-    typedef iSinglet<Real >             TReal;    // This is painful. Tensor singlet complex type.
-
-
+    typedef iSinglet<vComplex >         vTComplex;   // what if we don't know the tensor structure
+    typedef iSinglet<Real >             TReal;       // Shouldn't need these.
     typedef iSinglet<vInteger >         vTInteger;
 
     typedef iSpinMatrix<Complex >       SpinMatrix;
@@ -44,7 +41,6 @@ namespace QCD {
     typedef iSpinColourVector<vComplex > vSpinColourVector;
     
     typedef Lattice<vTComplex>            LatticeComplex;
-
     typedef Lattice<vInteger>            LatticeInteger; // Predicates for "where"
     
     typedef Lattice<vColourMatrix>     LatticeColourMatrix;

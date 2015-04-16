@@ -24,7 +24,7 @@ namespace Grid {
         friend inline vRealD conj(const vRealD &in){ return in; }
         
         friend inline void mac (vRealD &y,const vRealD a,const vRealD x){
-#if defined (AVX1) || defined (SSE2)
+#if defined (AVX1) || defined (SSE4)
             y = a*x+y;
 #endif
 #ifdef AVX2     // AVX 2 introduced FMA support. FMA4 eliminates a copy, but AVX only has FMA3
@@ -55,7 +55,7 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_add_pd(a.v,b.v);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_add_pd(a.v,b.v);
 #endif
 #ifdef AVX512
@@ -72,7 +72,7 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_sub_pd(a.v,b.v);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_sub_pd(a.v,b.v);
 #endif
 #ifdef AVX512
@@ -90,7 +90,7 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_mul_pd(a.v,b.v);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_mul_pd(a.v,b.v);
 #endif
 #ifdef AVX512
@@ -133,7 +133,7 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_set_pd(a,a,a,a);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_set_pd(a,a);
 #endif
 #ifdef AVX512
@@ -147,7 +147,7 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_set_pd(a[3],a[2],a[1],a[0]);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_set_pd(a[0],a[1]);
 #endif
 #ifdef AVX512
@@ -163,7 +163,7 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
             _mm256_store_pd(a,ret.v);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             _mm_store_pd(a,ret.v);
 #endif
 #ifdef AVX512

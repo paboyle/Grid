@@ -26,7 +26,7 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_add_ps(a.v,b.v);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_add_ps(a.v,b.v);
 #endif
 #ifdef AVX512
@@ -48,7 +48,7 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_sub_ps(a.v,b.v);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_sub_ps(a.v,b.v);
 #endif
 #ifdef AVX512
@@ -70,7 +70,7 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_mul_ps(a.v,b.v);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_mul_ps(a.v,b.v);
 #endif
 #ifdef AVX512
@@ -96,7 +96,7 @@ namespace Grid {
         friend inline vRealF conj(const vRealF &in){ return in; }
 
         friend inline void mac (vRealF &y,const vRealF a,const vRealF x){
-#if defined (AVX1) || defined (SSE2)
+#if defined (AVX1) || defined (SSE4)
             y = a*x+y;
 #endif
 #ifdef AVX2     // AVX 2 introduced FMA support. FMA4 eliminates a copy, but AVX only has FMA3
@@ -158,7 +158,7 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_set_ps(a,a,a,a,a,a,a,a);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_set_ps(a,a,a,a);
 #endif
 #ifdef AVX512
@@ -175,7 +175,7 @@ namespace Grid {
 #if defined (AVX1)|| defined (AVX2)
             ret.v = _mm256_set_ps(a[7],a[6],a[5],a[4],a[3],a[2],a[1],a[0]);
 #endif
-#ifdef SSE2
+#ifdef SSE4
             ret.v = _mm_set_ps(a[0],a[1],a[2],a[3]);
 #endif
 #ifdef AVX512
@@ -195,7 +195,7 @@ friend inline void vstore(const vRealF &ret, float *a){
 #if defined (AVX1)|| defined (AVX2)
 	_mm256_store_ps(a,ret.v);
 #endif
-#ifdef SSE2
+#ifdef SSE4
 	_mm_store_ps(a,ret.v);
 #endif
 #ifdef AVX512

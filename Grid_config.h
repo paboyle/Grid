@@ -73,8 +73,8 @@
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "1.0"
 
-/* SSE2 */
-/* #undef SSE2 */
+/* SSE4 */
+/* #undef SSE4 */
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
