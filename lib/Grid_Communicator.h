@@ -1,5 +1,6 @@
 #ifndef GRID_COMMUNICATOR_H
 #define GRID_COMMUNICATOR_H
+
 ///////////////////////////////////
 // Processor layout information
 ///////////////////////////////////

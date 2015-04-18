@@ -222,6 +222,7 @@ int main (int argc, char ** argv)
       
       s_m = peekIndex<1>(scm,0,0);
       c_m = peekIndex<2>(scm,1,2);
+      c_m = peekSpin(scm,1,2);
 
       printf("c. Level %d\n",c_m.TensorLevel);
       printf("c. Level %d\n",c_m().TensorLevel);
@@ -299,7 +300,7 @@ int main (int argc, char ** argv)
     int Nc = Grid::QCD::Nc;
 
     LatticeGaugeField U(&Fine);
-    //    LatticeColourMatrix Uy = U(yDir);
+    LatticeColourMatrix Uy = peekLorentz(U,1);
 
     flops = ncall*1.0*volume*(8*Nc*Nc*Nc);
     bytes = ncall*1.0*volume*Nc*Nc    *2*3*sizeof(Grid::Real);
