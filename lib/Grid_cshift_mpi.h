@@ -1,5 +1,5 @@
-#ifndef _GRID_MPI_CSHIFT_H_
-#define _GRID_MPI_CSHIFT_H_
+#ifndef _GRID_CSHIFT_MPI_H_
+#define _GRID_CSHIFT_MPI_H_
 
 #ifndef MAX
 #define MAX(x,y) ((x)>(y)?(x):(y))

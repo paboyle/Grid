@@ -1,7 +1,5 @@
-#ifndef VINTEGER_H
-#define VINTEGER_H
-
-#include "Grid.h"
+#ifndef GRID_VINTEGER_H
+#define GRID_VINTEGER_H
 
 namespace Grid {
 

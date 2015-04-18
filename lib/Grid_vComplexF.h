@@ -1,6 +1,5 @@
-#ifndef VCOMPLEXF
-#define VCOMPLEXF
-#include "Grid.h"
+#ifndef GRID_VCOMPLEXF
+#define GRID_VCOMPLEXF
 
 namespace Grid {
 
