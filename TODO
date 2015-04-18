@@ -16,12 +16,12 @@ FUNCTIONALITY:
   - lib/stencil
   - lib/communicator
   - lib/algorithms
-  - lib/fileio
-
   - lib/qcd
+
+  - lib/io/   -- GridLog, GridIn, GridErr, GridDebug, GridMessage
   - lib/qcd/actions
   - lib/qcd/measurements
-  - lib/qcd/
+
 
 Not done, or just incomplete
 
