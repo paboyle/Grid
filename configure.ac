@@ -2,8 +2,8 @@
 AC_INIT([Grid], [1.0], [paboyle@ph.ed.ac.uk])
 AM_INIT_AUTOMAKE
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SRCDIR([Grid.h])
-AC_CONFIG_HEADERS([Grid_config.h])
+AC_CONFIG_SRCDIR([lib/Grid.h])
+AC_CONFIG_HEADERS([lib/Grid_config.h])
 
 # Checks for programs.
 AC_PROG_CXX
@@ -72,4 +72,6 @@ AM_CONDITIONAL(BUILD_COMMS_NONE,[ test "X${ac_COMMS}X" == "XnoneX" ])
 
 
 AC_CONFIG_FILES(Makefile)
+AC_CONFIG_FILES(lib/Makefile)
+AC_CONFIG_FILES(tests/Makefile)
 AC_OUTPUT

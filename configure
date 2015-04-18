@@ -585,7 +585,7 @@ PACKAGE_STRING='Grid 1.0'
 PACKAGE_BUGREPORT='paboyle@ph.ed.ac.uk'
 PACKAGE_URL=''
 
-ac_unique_file="Grid.h"
+ac_unique_file="lib/Grid.h"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
@@ -2920,7 +2920,7 @@ fi
 
 
 
-ac_config_headers="$ac_config_headers Grid_config.h"
+ac_config_headers="$ac_config_headers lib/Grid_config.h"
 
 
 # Checks for programs.
@@ -5085,6 +5085,10 @@ fi
 
 ac_config_files="$ac_config_files Makefile"
 
+ac_config_files="$ac_config_files lib/Makefile"
+
+ac_config_files="$ac_config_files tests/Makefile"
+
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -5822,9 +5826,11 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "Grid_config.h") CONFIG_HEADERS="$CONFIG_HEADERS Grid_config.h" ;;
+    "lib/Grid_config.h") CONFIG_HEADERS="$CONFIG_HEADERS lib/Grid_config.h" ;;
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    "lib/Makefile") CONFIG_FILES="$CONFIG_FILES lib/Makefile" ;;
+    "tests/Makefile") CONFIG_FILES="$CONFIG_FILES tests/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac

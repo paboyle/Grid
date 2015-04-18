@@ -1,5 +1,5 @@
-/* Grid_config.h.  Generated from Grid_config.h.in by configure.  */
-/* Grid_config.h.in.  Generated from configure.ac by autoheader.  */
+/* lib/Grid_config.h.  Generated from Grid_config.h.in by configure.  */
+/* lib/Grid_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* AVX */
 #define AVX1 1
