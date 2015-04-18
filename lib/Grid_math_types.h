@@ -1,8 +1,9 @@
 #ifndef GRID_MATH_TYPES_H
 #define GRID_MATH_TYPES_H
 
-#include <Grid_math_type_mapper.h>
 #include <type_traits>
+
+#include <Grid_math_types_mapper.h>
 
 //
 // Indexing; want to be able to dereference and 
