@@ -277,7 +277,7 @@ int main (int argc, char ** argv)
         peekSite(bar,Bar,coor);
         for(int r=0;r<3;r++){
         for(int c=0;c<3;c++){
-	  //	  cout<<"bar "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "<<bar._internal._internal[r][c]<<std::endl;
+	  cout<<"bar "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "<<bar()()(r,c)<<std::endl;
 	}}
       }}}}
     } 
