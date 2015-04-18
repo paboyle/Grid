@@ -12,7 +12,8 @@ array indices to both MPI tasks and SIMD processing elements.
 The transformation is based on the observation that Cartesian array processing involves
 identical processing to be performed on different regions of the Cartesian array.
 
-The library will (eventually) both geometrically decompose into MPI tasks and across SIMD lanes.
+The library will both geometrically decompose into MPI tasks and across SIMD lanes.
+Local vector loops are parallelised with OpenMP pragmas.
 
 Data parallel array operations can then be specified with a SINGLE data parallel paradigm, but
 optimally use MPI, OpenMP and SIMD parallelism under the hood. This is a significant simplification
@@ -30,7 +31,7 @@ The corresponding scalar types are named
 
   RealF, RealD, ComplexF, ComplexD
 
-MPI parallelism is UNIMPLEMENTED and for now only OpenMP and SIMD parallelism is present in the library.
+MPI, OpenMP, and SIMD parallelism are present in the library.
 
    You can give `configure' initial values for configuration parameters
 by setting variables in the command line or in the environment.  Here
