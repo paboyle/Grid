@@ -12,4 +12,3 @@ Grid_main_LDADD = -lGrid
 
 test_Grid_stencil_SOURCES = test_Grid_stencil.cc
 test_Grid_stencil_LDADD = -lGrid
-
