@@ -77,19 +77,17 @@ public:
  }; // class Lattice
 }
 
-#include <Grid_lattice_conformable.h>
-#include <Grid_lattice_arith.h>
-#include <Grid_lattice_trace.h>
-#include <Grid_lattice_transpose.h>
-#include <Grid_lattice_local.h>
-#include <Grid_lattice_reduction.h>
-#include <Grid_lattice_peekpoke.h>
-#include <Grid_lattice_reality.h>
-#include <Grid_cshift.h>
-#include <Grid_where.h>
-#include <Grid_lattice_coordinate.h>
-#include <Grid_lattice_rng.h>
-#include <Grid_lattice_transfer.h>
+#include <lattice/Grid_lattice_conformable.h>
+#include <lattice/Grid_lattice_arith.h>
+#include <lattice/Grid_lattice_trace.h>
+#include <lattice/Grid_lattice_transpose.h>
+#include <lattice/Grid_lattice_local.h>
+#include <lattice/Grid_lattice_reduction.h>
+#include <lattice/Grid_lattice_peekpoke.h>
+#include <lattice/Grid_lattice_reality.h>
+#include <lattice/Grid_lattice_coordinate.h>
+#include <lattice/Grid_lattice_rng.h>
+#include <lattice/Grid_lattice_transfer.h>
 
 
 

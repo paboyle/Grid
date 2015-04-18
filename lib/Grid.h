@@ -47,8 +47,10 @@
 #include <Grid_cartesian.h>
 #include <Grid_lattice.h>
 #include <Grid_comparison.h>
+#include <Grid_cshift.h>
+#include <Grid_where.h>
 #include <Grid_stencil.h>
-#include <Grid_QCD.h>
+#include <qcd/Grid_QCD.h>
 
 namespace Grid {
 
