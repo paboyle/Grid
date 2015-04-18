@@ -1,6 +1,7 @@
 #ifndef GRID_QCD_H
 #define GRID_QCD_H
 namespace Grid{
+
 namespace QCD {
 
     static const int Nc=3;
@@ -13,12 +14,18 @@ namespace QCD {
     //////////////////////////////////////////////////////////////////////////////
     // QCD iMatrix types
     // Index conventions:                            Lorentz x Spin x Colour
-    //
+    //////////////////////////////////////////////////////////////////////////////
+    static const int ColourIndex = 1;
+    static const int SpinIndex   = 2;
+    static const int LorentzIndex= 3;
+
     // ChrisK very keen to add extra space for Gparity doubling.
     //
     // Also add domain wall index, in a way where Wilson operator 
     // naturally distributes across the 5th dimensions.
-    //////////////////////////////////////////////////////////////////////////////
+    //
+    // That probably makes for GridRedBlack4dCartesian grid.
+
     template<typename vtype> using iSinglet          = iScalar<iScalar<iScalar<vtype> > >;
     template<typename vtype> using iSpinMatrix       = iScalar<iMatrix<iScalar<vtype>, Ns> >;
     template<typename vtype> using iSpinColourMatrix = iScalar<iMatrix<iMatrix<vtype, Nc>, Ns> >;

@@ -506,6 +506,34 @@ public:
         return ret;
     };
     ////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Poke internal indices of a Lattice object
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    template<int Index,class vobj> inline
+    void pokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0]))> & rhs)
+    {
+#pragma omp parallel for
+        for(int ss=0;ss<lhs._grid->oSites();ss++){
+	  pokeIndex<Index>(lhs._odata[ss],rhs._odata[ss]);
+	}      
+    }
+    template<int Index,class vobj> inline
+    void pokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0],0))> & rhs,int i)
+    {
+#pragma omp parallel for
+        for(int ss=0;ss<lhs._grid->oSites();ss++){
+	  pokeIndex<Index>(lhs._odata[ss],rhs._odata[ss],i);
+	}      
+    }
+    template<int Index,class vobj> inline
+    void pokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0],0,0))> & rhs,int i,int j)
+    {
+#pragma omp parallel for
+        for(int ss=0;ss<lhs._grid->oSites();ss++){
+	  pokeIndex<Index>(lhs._odata[ss],rhs._odata[ss],i,j);
+	}      
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
     // Reduction operations
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     template<class vobj>
