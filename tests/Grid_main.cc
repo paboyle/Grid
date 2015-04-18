@@ -131,11 +131,14 @@ int main (int argc, char ** argv)
     //    rscalar=real(scalar);
     //    iscalar=imag(scalar);
     //    scalar =cmplx(rscalar,iscalar);
+    pokeIndex<1>(cVec,scalar,1);
+
 
     scalar=transpose(scalar);
     scalar=transposeIndex<1>(scalar);
     scalar=traceIndex<1>(scalar);
     scalar=peekIndex<1>(cVec,0);
+
     scalar=trace(scalar);
     scalar=localInnerProduct(cVec,cVec);
     scalar=localNorm2(cVec);
@@ -205,7 +208,7 @@ int main (int argc, char ** argv)
     LatticeComplex trscMat(&Fine);
     trscMat = trace(scMat); // Trace
 
-    {
+    { // Peek-ology and Poke-ology, with a little app-ology
       TComplex      c;
       ColourMatrix c_m;   
       SpinMatrix   s_m;   
@@ -224,9 +227,14 @@ int main (int argc, char ** argv)
       printf("c. Level %d\n",c_m().TensorLevel);
       printf("c. Level %d\n",c_m()().TensorLevel);
       
-      c_m()() = scm()(0,0); //ColourComponents of CM <= ColourComponents of SpinColourMatrix
+      c_m()()    = scm()(0,0); //ColourComponents of CM <= ColourComponents of SpinColourMatrix
       scm()(1,1) = cm()();  //ColourComponents of CM <= ColourComponents of SpinColourMatrix
+      c          = scm()(1,1)(1,2);
+      scm()(1,1)(2,1) = c;
+
+      pokeIndex<1> (c_m,c,0,0);
     }
+
     
     FooBar = Bar;
  
