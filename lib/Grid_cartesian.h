@@ -2,7 +2,8 @@
 #define GRID_CARTESIAN_H
 
 #include <Grid.h>
-#include <Grid_Communicator.h>
+#include <Grid_communicator.h>
+
 namespace Grid{
     
 /////////////////////////////////////////////////////////////////////////////////////////
