@@ -1,5 +1,5 @@
 //
-//  Grid.cpp
+//  Grid.h
 //  simd
 //
 //  Created by Peter Boyle on 09/05/2014.

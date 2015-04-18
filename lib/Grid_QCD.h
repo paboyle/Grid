@@ -139,30 +139,6 @@ namespace QCD {
       return peekIndex<LorentzIndex>(rhs,i,j);
     }
 
-    // FIXME this is rather generic and should find a way to place it earlier.
-     inline void LatticeCoordinate(LatticeInteger &l,int mu){
-      GridBase *grid = l._grid;
-      int Nsimd = grid->iSites();
-      std::vector<int> gcoor;
-      std::vector<Integer> mergebuf(Nsimd);
-      std::vector<Integer *> mergeptr(Nsimd);
-      for(int o=0;o<grid->oSites();o++){
-	for(int i=0;i<grid->iSites();i++){
-	  grid->RankIndexToGlobalCoor(grid->ThisRank(),o,i,gcoor);
-	  //	  grid->RankIndexToGlobalCoor(0,o,i,gcoor);
-	  mergebuf[i]=gcoor[mu];
-	  mergeptr[i]=&mergebuf[i];
-	}
-	merge(l._odata[o],mergeptr);
-      }
-    };
-
-#include <Grid_predicated.h>
-
-#if 0
-
-#endif
-
 }   //namespace QCD
 } // Grid
 #endif
