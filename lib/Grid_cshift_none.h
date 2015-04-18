@@ -1,5 +1,5 @@
-#ifndef _GRID_NONE_CSHIFT_H_
-#define _GRID_NONE_CSHIFT_H_
+#ifndef _GRID_CSHIFT_NONE_H_
+#define _GRID_CSHIFT_NONE_H_
 
 friend Lattice<vobj> Cshift(Lattice<vobj> &rhs,int dimension,int shift)
 {

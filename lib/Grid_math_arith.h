@@ -1,0 +1,745 @@
+#ifndef GRID_MATH_ARITH_H
+#define GRID_MATH_ARITH_H
+
+namespace Grid {
+
+    
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////// ADD         ///////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    
+
+// ADD is simple for now; cannot mix types and straightforward template
+// Scalar +/- Scalar
+// Vector +/- Vector
+// Matrix +/- Matrix
+  template<class vtype,class ltype,class rtype> inline void add(iScalar<vtype> * __restrict__ ret,
+								const iScalar<ltype> * __restrict__ lhs,
+								const iScalar<rtype> * __restrict__ rhs)
+  {
+    add(&ret->_internal,&lhs->_internal,&rhs->_internal);
+  }
+  template<class vtype,class ltype,class rtype,int N> inline void add(iVector<vtype,N> * __restrict__ ret,
+								      const iVector<ltype,N> * __restrict__ lhs,
+								      const iVector<rtype,N> * __restrict__ rhs)
+  {
+    for(int c=0;c<N;c++){
+      ret->_internal[c]=lhs->_internal[c]+rhs->_internal[c];
+    }
+    return;
+  }
+  
+  template<class vtype,class ltype,class rtype, int N> inline  void add(iMatrix<vtype,N> * __restrict__ ret,
+									const iMatrix<ltype,N> * __restrict__ lhs,
+									const iMatrix<rtype,N> * __restrict__ rhs)
+  {
+    for(int c2=0;c2<N;c2++){
+      for(int c1=0;c1<N;c1++){
+        add(&ret->_internal[c1][c2],&lhs->_internal[c1][c2],&rhs->_internal[c1][c2]);
+      }}
+    return;
+  }
+  template<class vtype,class ltype,class rtype, int N> inline  void add(iMatrix<vtype,N> * __restrict__ ret,
+									const iScalar<ltype>   * __restrict__ lhs,
+									const iMatrix<rtype,N> * __restrict__ rhs)
+  {
+    for(int c2=0;c2<N;c2++){
+      for(int c1=0;c1<N;c1++){
+        add(&ret->_internal[c1][c2],&lhs->_internal,&rhs->_internal[c1][c2]);
+      }}
+    return;
+  }
+  template<class vtype,class ltype,class rtype, int N> inline  void add(iMatrix<vtype,N> * __restrict__ ret,
+									const iMatrix<ltype,N> * __restrict__ lhs,
+									const iScalar<rtype>   * __restrict__ rhs)
+  {
+    for(int c2=0;c2<N;c2++){
+      for(int c1=0;c1<N;c1++){
+        if ( c1==c2)
+	  add(&ret->_internal[c1][c2],&lhs->_internal[c1][c2],&rhs->_internal);
+        else
+	  ret->_internal[c1][c2]=lhs->_internal[c1][c2];
+      }}
+    return;
+  }
+
+  // Need to figure multi-precision.
+  template<class Mytype>  Mytype timesI(Mytype &r)
+    {
+      iScalar<Complex> i;
+      i._internal = Complex(0,1);
+      return r*i;
+    }
+
+  // + operator for scalar, vector, matrix
+  template<class ltype,class rtype>
+    //inline auto operator + (iScalar<ltype>& lhs,iScalar<rtype>&& rhs) -> iScalar<decltype(lhs._internal + rhs._internal)>
+    inline auto operator + (const iScalar<ltype>& lhs,const iScalar<rtype>& rhs) -> iScalar<decltype(lhs._internal + rhs._internal)>
+  {
+    typedef iScalar<decltype(lhs._internal+rhs._internal)> ret_t;
+    ret_t ret;
+    add(&ret,&lhs,&rhs);
+    return ret;
+  }
+  template<class ltype,class rtype,int N>
+    inline auto operator + (const iVector<ltype,N>& lhs,const iVector<rtype,N>& rhs) ->iVector<decltype(lhs._internal[0]+rhs._internal[0]),N>
+    {
+      typedef iVector<decltype(lhs._internal[0]+rhs._internal[0]),N> ret_t;
+    ret_t ret;
+    add(&ret,&lhs,&rhs);
+    return ret;
+    }
+  template<class ltype,class rtype,int N>
+    inline auto operator + (const iMatrix<ltype,N>& lhs,const iMatrix<rtype,N>& rhs) ->iMatrix<decltype(lhs._internal[0][0]+rhs._internal[0][0]),N>
+    {
+      typedef iMatrix<decltype(lhs._internal[0][0]+rhs._internal[0][0]),N> ret_t;
+      ret_t ret;
+      add(&ret,&lhs,&rhs);
+      return ret;
+    }
+  template<class ltype,class rtype,int N>
+inline auto operator + (const iScalar<ltype>& lhs,const iMatrix<rtype,N>& rhs)->iMatrix<decltype(lhs._internal+rhs._internal[0][0]),N>
+    {
+      typedef iMatrix<decltype(lhs._internal+rhs._internal[0][0]),N> ret_t;
+      ret_t ret;
+      add(&ret,&lhs,&rhs);
+      return ret;
+    }
+
+  template<class ltype,class rtype,int N>
+    inline auto operator + (const iMatrix<ltype,N>& lhs,const iScalar<rtype>& rhs)->iMatrix<decltype(lhs._internal[0][0]+rhs._internal),N>
+    {
+      typedef iMatrix<decltype(lhs._internal[0][0]+rhs._internal),N> ret_t;
+      ret_t ret;
+      add(&ret,&lhs,&rhs);
+      return ret;
+    }
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////// SUB         ///////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    
+
+// SUB is simple for now; cannot mix types and straightforward template
+// Scalar +/- Scalar
+// Vector +/- Vector
+// Matrix +/- Matrix
+// Matrix /- scalar
+template<class vtype,class ltype,class rtype> inline void sub(iScalar<vtype> * __restrict__ ret,
+                                                              const iScalar<ltype> * __restrict__ lhs,
+                                                              const iScalar<rtype> * __restrict__ rhs)
+{
+    sub(&ret->_internal,&lhs->_internal,&rhs->_internal);
+}
+
+template<class vtype,class ltype,class rtype,int N> inline void sub(iVector<vtype,N> * __restrict__ ret,
+                                                                    const iVector<ltype,N> * __restrict__ lhs,
+                                                                    const iVector<rtype,N> * __restrict__ rhs)
+{
+    for(int c=0;c<N;c++){
+        ret->_internal[c]=lhs->_internal[c]-rhs->_internal[c];
+    }
+    return;
+}
+template<class vtype,class ltype,class rtype, int N> inline void sub(iMatrix<vtype,N> * __restrict__ ret,
+                                                                     const iMatrix<ltype,N> * __restrict__ lhs,
+                                                                     const iMatrix<rtype,N> * __restrict__ rhs){
+    for(int c2=0;c2<N;c2++){
+    for(int c1=0;c1<N;c1++){
+        sub(&ret->_internal[c1][c2],&lhs->_internal[c1][c2],&rhs->_internal[c1][c2]);
+    }}
+    return;
+}
+template<class vtype,class ltype,class rtype, int N> inline void sub(iMatrix<vtype,N> * __restrict__ ret,
+                                                                     const iScalar<ltype> * __restrict__ lhs,
+                                                                     const iMatrix<rtype,N> * __restrict__ rhs){
+    for(int c2=0;c2<N;c2++){
+    for(int c1=0;c1<N;c1++){
+        if ( c1!=c2) {
+            sub(&ret->_internal[c1][c2],&lhs->_internal,&rhs->_internal[c1][c2]);
+        } else {
+            // Fails -- need unary minus. Catalogue other unops?
+            ret->_internal[c1][c2]=zero;
+            ret->_internal[c1][c2]=ret->_internal[c1][c2]-rhs->_internal[c1][c2];
+
+        }
+    }}
+    return;
+}
+template<class vtype,class ltype,class rtype, int N> inline void sub(iMatrix<vtype,N> * __restrict__ ret,
+                                                                     const iMatrix<ltype,N> * __restrict__ lhs,
+                                                                     const iScalar<rtype> * __restrict__ rhs){
+    for(int c2=0;c2<N;c2++){
+    for(int c1=0;c1<N;c1++){
+        if ( c1!=c2)
+            sub(&ret->_internal[c1][c2],&lhs->_internal[c1][c2],&rhs->_internal);
+        else
+            ret->_internal[c1][c2]=lhs->_internal[c1][c2];
+    }}
+    return;
+}
+
+template<class v> void vprefetch(const iScalar<v> &vv)
+{
+  vprefetch(vv._internal);
+}
+template<class v,int N> void vprefetch(const iVector<v,N> &vv)
+{
+  for(int i=0;i<N;i++){
+    vprefetch(vv._internal[i]);
+  }
+}
+template<class v,int N> void vprefetch(const iMatrix<v,N> &vv)
+{
+  for(int i=0;i<N;i++){
+  for(int j=0;j<N;j++){
+    vprefetch(vv._internal[i][j]);
+  }}
+}
+
+    // - operator for scalar, vector, matrix
+template<class ltype,class rtype> inline auto
+operator - (const iScalar<ltype>& lhs, const iScalar<rtype>& rhs) -> iScalar<decltype(lhs._internal - rhs._internal)>
+{
+    typedef iScalar<decltype(lhs._internal-rhs._internal)> ret_t;
+    ret_t ret;
+    sub(&ret,&lhs,&rhs);
+    return ret;
+}
+template<class ltype,class rtype,int N>
+inline auto operator - (const iVector<ltype,N>& lhs,const iVector<rtype,N>& rhs) ->iVector<decltype(lhs._internal[0]-rhs._internal[0]),N>
+{
+    typedef iVector<decltype(lhs._internal[0]-rhs._internal[0]),N> ret_t;
+    ret_t ret;
+    sub(&ret,&lhs,&rhs);
+    return ret;
+}
+template<class ltype,class rtype,int N>
+inline auto operator - (const iMatrix<ltype,N>& lhs,const iMatrix<rtype,N>& rhs) ->iMatrix<decltype(lhs._internal[0][0]-rhs._internal[0][0]),N>
+{
+    typedef iMatrix<decltype(lhs._internal[0][0]-rhs._internal[0][0]),N> ret_t;
+    ret_t ret;
+    sub(&ret,&lhs,&rhs);
+    return ret;
+}
+template<class ltype,class rtype,int N>
+inline auto operator - (const iScalar<ltype>& lhs,const iMatrix<rtype,N>& rhs)->iMatrix<decltype(lhs._internal-rhs._internal[0][0]),N>
+{
+    typedef iMatrix<decltype(lhs._internal-rhs._internal[0][0]),N> ret_t;
+    ret_t ret;
+    sub(&ret,&lhs,&rhs);
+    return ret;
+}
+template<class ltype,class rtype,int N>
+inline auto operator - (const iMatrix<ltype,N>& lhs,const iScalar<rtype>& rhs)->iMatrix<decltype(lhs._internal[0][0]-rhs._internal),N>
+{
+    typedef iMatrix<decltype(lhs._internal[0][0]-rhs._internal),N> ret_t;
+    ret_t ret;
+    sub(&ret,&lhs,&rhs);
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////// MAC         ///////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+    ///////////////////////////
+    // Legal multiplication table
+    ///////////////////////////
+    // scal x scal = scal
+    // mat x  mat  = mat
+    // mat  x scal = mat
+    // scal x mat  = mat
+    // mat  x vec  = vec
+    // vec  x scal = vec
+    // scal x vec  = vec
+    ///////////////////////////
+template<class rtype,class vtype,class mtype>
+inline  void mac(iScalar<rtype> * __restrict__ ret,const iScalar<vtype> * __restrict__ lhs,const iScalar<mtype> * __restrict__ rhs)
+{
+    mac(&ret->_internal,&lhs->_internal,&rhs->_internal);
+}
+template<class rrtype,class ltype,class rtype,int N>
+inline void mac(iMatrix<rrtype,N> * __restrict__ ret,const iMatrix<ltype,N> * __restrict__ lhs,const iMatrix<rtype,N> * __restrict__ rhs){
+    for(int c2=0;c2<N;c2++){
+    for(int c1=0;c1<N;c1++){
+    for(int c3=0;c3<N;c3++){
+        mac(&ret->_internal[c1][c2],&lhs->_internal[c1][c3],&rhs->_internal[c3][c2]);
+    }}}
+    return;
+}
+template<class rrtype,class ltype,class rtype,int N>
+inline void mac(iMatrix<rrtype,N> * __restrict__ ret,const iMatrix<ltype,N> * __restrict__ lhs,const iScalar<rtype> * __restrict__ rhs){
+    for(int c1=0;c1<N;c1++){
+    for(int c2=0;c2<N;c2++){
+        mac(&ret->_internal[c1][c2],&lhs->_internal[c1][c2],&rhs->_internal);
+    }}
+    return;
+}
+template<class rrtype,class ltype,class rtype,int N>
+inline void mac(iMatrix<rrtype,N> * __restrict__ ret,const iScalar<ltype> * __restrict__ lhs,const iMatrix<rtype,N> * __restrict__ rhs){
+    for(int c1=0;c1<N;c1++){
+    for(int c2=0;c2<N;c2++){
+        mac(&ret->_internal[c1][c2],&lhs->_internal,&rhs->_internal[c1][c2]);
+    }}
+    return;
+}
+template<class rrtype,class ltype,class rtype,int N>
+inline void mac(iVector<rrtype,N> * __restrict__ ret,const iMatrix<ltype,N> * __restrict__ lhs,const iVector<rtype,N> * __restrict__ rhs)
+{
+    for(int c1=0;c1<N;c1++){
+    for(int c2=0;c2<N;c2++){
+        mac(&ret->_internal[c1],&lhs->_internal[c1][c2],&rhs->_internal[c2]);
+    }}
+    return;
+}
+template<class rrtype,class ltype,class rtype,int N>
+inline void mac(iVector<rrtype,N> * __restrict__ ret,const iScalar<ltype> * __restrict__ lhs,const iVector<rtype,N> * __restrict__ rhs)
+{
+    for(int c1=0;c1<N;c1++){
+        mac(&ret->_internal[c1],&lhs->_internal,&rhs->_internal[c1]);
+    }
+    return;
+}
+template<class rrtype,class ltype,class rtype,int N>
+inline void mac(iVector<rrtype,N> * __restrict__ ret,const iVector<ltype,N> * __restrict__ lhs,const iScalar<rtype> * __restrict__ rhs)
+{
+    for(int c1=0;c1<N;c1++){
+        mac(&ret->_internal[c1],&lhs->_internal[c1],&rhs->_internal);
+    }
+    return;
+}
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////// MUL         ///////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+
+    
+template<class rtype,class vtype,class mtype>
+inline void mult(iScalar<rtype> * __restrict__ ret,const iScalar<mtype> * __restrict__ lhs,const iScalar<vtype> * __restrict__ rhs){
+    mult(&ret->_internal,&lhs->_internal,&rhs->_internal);
+}
+
+template<class rrtype,class ltype,class rtype,int N>
+inline void mult(iMatrix<rrtype,N> * __restrict__ ret,const iMatrix<ltype,N> * __restrict__ lhs,const iMatrix<rtype,N> * __restrict__ rhs){
+    for(int c2=0;c2<N;c2++){
+    for(int c1=0;c1<N;c1++){
+        mult(&ret->_internal[c1][c2],&lhs->_internal[c1][0],&rhs->_internal[0][c2]);
+        for(int c3=1;c3<N;c3++){
+            mac(&ret->_internal[c1][c2],&lhs->_internal[c1][c3],&rhs->_internal[c3][c2]);
+        }
+    }}
+    return;
+}
+template<class rrtype,class ltype,class rtype,int N>
+inline void mult(iMatrix<rrtype,N> * __restrict__ ret,const iMatrix<ltype,N> * __restrict__ lhs,const iScalar<rtype> * __restrict__ rhs){
+    for(int c2=0;c2<N;c2++){
+    for(int c1=0;c1<N;c1++){
+        mult(&ret->_internal[c1][c2],&lhs->_internal[c1][c2],&rhs->_internal);
+    }}
+    return;
+}
+
+template<class rrtype,class ltype,class rtype, int N>
+inline void mult(iMatrix<rrtype,N> * __restrict__ ret,const iScalar<ltype>   * __restrict__ lhs,const iMatrix<rtype,N> * __restrict__ rhs){
+    for(int c2=0;c2<N;c2++){
+    for(int c1=0;c1<N;c1++){
+        mult(&ret->_internal[c1][c2],&lhs->_internal,&rhs->_internal[c1][c2]);
+    }}
+    return;
+}
+// Matrix left multiplies vector
+template<class rtype,class vtype,class mtype,int N>
+inline void mult(iVector<rtype,N> * __restrict__ ret,const iMatrix<mtype,N> * __restrict__ lhs,const iVector<vtype,N> * __restrict__ rhs)
+{
+    for(int c1=0;c1<N;c1++){
+        mult(&ret->_internal[c1],&lhs->_internal[c1][0],&rhs->_internal[0]);
+        for(int c2=1;c2<N;c2++){
+            mac(&ret->_internal[c1],&lhs->_internal[c1][c2],&rhs->_internal[c2]);
+        }
+    }
+    return;
+}
+template<class rtype,class vtype,class mtype,int N>
+inline void mult(iVector<rtype,N> * __restrict__ ret,
+                 const iScalar<mtype>   * __restrict__ lhs,
+                 const iVector<vtype,N> * __restrict__ rhs){
+    for(int c1=0;c1<N;c1++){
+        mult(&ret->_internal[c1],&lhs->_internal,&rhs->_internal[c1]);
+    }
+}
+template<class rtype,class vtype,class mtype,int N>
+inline void mult(iVector<rtype,N> * __restrict__ ret,
+                 const iVector<vtype,N> * __restrict__ rhs,
+                 const iScalar<mtype> * __restrict__ lhs){
+    mult(ret,lhs,rhs);
+}
+    
+
+
+template<class rtype,class vtype,class mtype,int N> inline
+iVector<rtype,N> operator * (const iMatrix<mtype,N>& lhs,const iVector<vtype,N>& rhs)
+{
+    iVector<rtype,N> ret;
+    mult(&ret,&lhs,&rhs);
+    return ret;
+}
+
+template<class rtype,class vtype,class mtype,int N> inline
+iVector<rtype,N> operator * (const iScalar<mtype>& lhs,const iVector<vtype,N>& rhs)
+{
+    iVector<rtype,N> ret;
+    mult(&ret,&lhs,&rhs);
+    return ret;
+}
+
+template<class rtype,class vtype,class mtype,int N> inline
+iVector<rtype,N> operator * (const iVector<mtype,N>& lhs,const iScalar<vtype>& rhs)
+{
+    iVector<rtype,N> ret;
+    mult(&ret,&lhs,&rhs);
+    return ret;
+}
+    
+    //////////////////////////////////////////////////////////////////
+    // Glue operators to mult routines. Must resolve return type cleverly from typeof(internal)
+    // since nesting matrix<scalar> x matrix<matrix>-> matrix<matrix>
+    // while         matrix<scalar> x matrix<scalar>-> matrix<scalar>
+    // so return type depends on argument types in nasty way.
+    //////////////////////////////////////////////////////////////////
+    // scal x scal = scal
+    // mat x  mat  = mat
+    // mat  x scal = mat
+    // scal x mat  = mat
+    // mat  x vec  = vec
+    // vec  x scal = vec
+    // scal x vec  = vec
+    //
+    // We can special case scalar_type ??
+template<class l,class r>
+inline auto operator * (const iScalar<l>& lhs,const iScalar<r>& rhs) -> iScalar<decltype(lhs._internal * rhs._internal)>
+{
+    typedef iScalar<decltype(lhs._internal*rhs._internal)> ret_t;
+    ret_t ret;
+    mult(&ret,&lhs,&rhs);
+    return ret;
+}
+template<class l,class r,int N> inline
+auto operator * (const iMatrix<l,N>& lhs,const iMatrix<r,N>& rhs) -> iMatrix<decltype(lhs._internal[0][0]*rhs._internal[0][0]),N>
+{
+    typedef decltype(lhs._internal[0][0]*rhs._internal[0][0]) ret_t;
+    iMatrix<ret_t,N> ret;
+    mult(&ret,&lhs,&rhs);
+    return ret;
+}
+template<class l,class r, int N> inline
+auto operator * (const iMatrix<r,N>& lhs,const iScalar<l>& rhs) -> iMatrix<decltype(lhs._internal[0][0]*rhs._internal),N>
+{
+    typedef decltype(lhs._internal[0][0]*rhs._internal) ret_t;
+        
+    iMatrix<ret_t,N> ret;
+    for(int c1=0;c1<N;c1++){
+    for(int c2=0;c2<N;c2++){
+        mult(&ret._internal[c1][c2],&lhs._internal[c1][c2],&rhs._internal);
+    }}
+    return ret;
+}
+template<class l,class r,int N> inline
+auto operator * (const iScalar<l>& lhs,const iMatrix<r,N>& rhs) -> iMatrix<decltype(lhs._internal*rhs._internal[0][0]),N>
+{
+    typedef decltype(lhs._internal*rhs._internal[0][0]) ret_t;
+    iMatrix<ret_t,N> ret;
+    for(int c1=0;c1<N;c1++){
+    for(int c2=0;c2<N;c2++){
+        mult(&ret._internal[c1][c2],&lhs._internal,&rhs._internal[c1][c2]);
+    }}
+    return ret;
+}
+template<class l,class r,int N> inline
+auto operator * (const iMatrix<l,N>& lhs,const iVector<r,N>& rhs) -> iVector<decltype(lhs._internal[0][0]*rhs._internal[0]),N>
+{
+    typedef decltype(lhs._internal[0][0]*rhs._internal[0]) ret_t;
+    iVector<ret_t,N> ret;
+    for(int c1=0;c1<N;c1++){
+        mult(&ret._internal[c1],&lhs._internal[c1][0],&rhs._internal[0]);
+        for(int c2=1;c2<N;c2++){
+            mac(&ret._internal[c1],&lhs._internal[c1][c2],&rhs._internal[c2]);
+        }
+    }
+    return ret;
+}
+template<class l,class r,int N> inline
+auto operator * (const iScalar<l>& lhs,const iVector<r,N>& rhs) -> iVector<decltype(lhs._internal*rhs._internal[0]),N>
+{
+    typedef decltype(lhs._internal*rhs._internal[0]) ret_t;
+    iVector<ret_t,N> ret;
+    for(int c1=0;c1<N;c1++){
+        mult(&ret._internal[c1],&lhs._internal,&rhs._internal[c1]);
+    }
+    return ret;
+}
+template<class l,class r,int N> inline
+auto operator * (const iVector<l,N>& lhs,const iScalar<r>& rhs) -> iVector<decltype(lhs._internal[0]*rhs._internal),N>
+{
+    typedef decltype(lhs._internal[0]*rhs._internal) ret_t;
+    iVector<ret_t,N> ret;
+    for(int c1=0;c1<N;c1++){
+        mult(&ret._internal[c1],&lhs._internal[c1],&rhs._internal);
+    }
+    return ret;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+// Must support native C++ types Integer, Complex, Real
+//////////////////////////////////////////////////////////////////////////////////////////
+
+// multiplication by fundamental scalar type
+template<class l,int N> inline iScalar<l> operator * (const iScalar<l>& lhs,const typename iScalar<l>::scalar_type rhs) 
+{
+  typename iScalar<l>::tensor_reduced srhs(rhs);
+  return lhs*srhs;
+}
+template<class l,int N> inline iScalar<l> operator * (const typename iScalar<l>::scalar_type lhs,const iScalar<l>& rhs) {  return rhs*lhs; }
+
+template<class l,int N> inline iVector<l,N> operator * (const iVector<l,N>& lhs,const typename iScalar<l>::scalar_type rhs) 
+{
+  typename iVector<l,N>::tensor_reduced srhs(rhs);
+  return lhs*srhs;
+}
+template<class l,int N> inline iVector<l,N> operator * (const typename iScalar<l>::scalar_type lhs,const iVector<l,N>& rhs) {  return rhs*lhs; }
+
+template<class l,int N> inline iMatrix<l,N> operator * (const iMatrix<l,N>& lhs,const typename iScalar<l>::scalar_type &rhs) 
+{
+  typename iMatrix<l,N>::tensor_reduced srhs(rhs);
+  return lhs*srhs;
+}
+template<class l,int N> inline iMatrix<l,N> operator * (const typename iScalar<l>::scalar_type & lhs,const iMatrix<l,N>& rhs) {  return rhs*lhs; }
+
+////////////////////////////////////////////////////////////////////
+// Double support; cast to "scalar_type" through constructor
+////////////////////////////////////////////////////////////////////
+template<class l> inline iScalar<l> operator * (const iScalar<l>& lhs,double rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs*srhs;
+}
+template<class l> inline iScalar<l> operator * (double lhs,const iScalar<l>& rhs) {  return rhs*lhs; }
+
+template<class l,int N> inline iVector<l,N> operator * (const iVector<l,N>& lhs,double rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs*srhs;
+}
+template<class l,int N> inline iVector<l,N> operator * (double lhs,const iVector<l,N>& rhs) {  return rhs*lhs; }
+
+template<class l,int N> inline iMatrix<l,N> operator * (const iMatrix<l,N>& lhs,double rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs*srhs;
+}
+template<class l,int N> inline iMatrix<l,N> operator * (double lhs,const iMatrix<l,N>& rhs) {  return rhs*lhs; }
+
+////////////////////////////////////////////////////////////////////
+// Complex support; cast to "scalar_type" through constructor
+////////////////////////////////////////////////////////////////////
+template<class l> inline iScalar<l> operator * (const iScalar<l>& lhs,ComplexD rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs*srhs;
+}
+template<class l> inline iScalar<l> operator * (ComplexD lhs,const iScalar<l>& rhs) {  return rhs*lhs; }
+
+template<class l,int N> inline iVector<l,N> operator * (const iVector<l,N>& lhs,ComplexD rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs*srhs;
+}
+template<class l,int N> inline iVector<l,N> operator * (ComplexD lhs,const iVector<l,N>& rhs) {  return rhs*lhs; }
+
+template<class l,int N> inline iMatrix<l,N> operator * (const iMatrix<l,N>& lhs,ComplexD rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs*srhs;
+}
+template<class l,int N> inline iMatrix<l,N> operator * (ComplexD lhs,const iMatrix<l,N>& rhs) {  return rhs*lhs; }
+
+////////////////////////////////////////////////////////////////////
+// Integer support; cast to "scalar_type" through constructor
+////////////////////////////////////////////////////////////////////
+template<class l> inline iScalar<l> operator * (const iScalar<l>& lhs,Integer rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs*srhs;
+}
+template<class l> inline iScalar<l> operator * (Integer lhs,const iScalar<l>& rhs) {  return rhs*lhs; }
+
+template<class l,int N> inline iVector<l,N> operator * (const iVector<l,N>& lhs,Integer rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs*srhs;
+}
+template<class l,int N> inline iVector<l,N> operator * (Integer lhs,const iVector<l,N>& rhs) {  return rhs*lhs; }
+
+template<class l,int N> inline iMatrix<l,N> operator * (const iMatrix<l,N>& lhs,Integer rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs*srhs;
+}
+template<class l,int N> inline iMatrix<l,N> operator * (Integer lhs,const iMatrix<l,N>& rhs) {  return rhs*lhs; }
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+// addition by fundamental scalar type applies to matrix(down diag) and scalar
+///////////////////////////////////////////////////////////////////////////////////////////////
+template<class l,int N> inline iScalar<l> operator + (const iScalar<l>& lhs,const typename iScalar<l>::scalar_type rhs) 
+{
+  typename iScalar<l>::tensor_reduced srhs(rhs);
+  return lhs+srhs;
+}
+template<class l,int N> inline iScalar<l> operator + (const typename iScalar<l>::scalar_type lhs,const iScalar<l>& rhs) {  return rhs+lhs; }
+
+template<class l,int N> inline iMatrix<l,N> operator + (const iMatrix<l,N>& lhs,const typename iScalar<l>::scalar_type rhs) 
+{
+  typename iMatrix<l,N>::tensor_reduced srhs(rhs);
+  return lhs+srhs;
+}
+template<class l,int N> inline iMatrix<l,N> operator + (const typename iScalar<l>::scalar_type lhs,const iMatrix<l,N>& rhs) {  return rhs+lhs; }
+
+////////////////////////////////////////////////////////////////////
+// Double support; cast to "scalar_type" through constructor
+////////////////////////////////////////////////////////////////////
+template<class l> inline iScalar<l> operator + (const iScalar<l>& lhs,double rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs+srhs;
+}
+template<class l> inline iScalar<l> operator + (double lhs,const iScalar<l>& rhs) {  return rhs+lhs; }
+
+template<class l,int N> inline iMatrix<l,N> operator + (const iMatrix<l,N>& lhs,double rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs+srhs;
+}
+template<class l,int N> inline iMatrix<l,N> operator + (double lhs,const iMatrix<l,N>& rhs) {  return rhs+lhs; }
+
+
+// Integer support cast to scalar type through constructor
+
+
+template<class l> inline iScalar<l> operator + (const iScalar<l>& lhs,Integer rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs+srhs;
+}
+
+template<class l> inline iScalar<l> operator + (Integer lhs,const iScalar<l>& rhs) {  return rhs+lhs; }
+
+template<class l,int N> inline iMatrix<l,N> operator + (const iMatrix<l,N>& lhs,Integer rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs+srhs;
+}
+template<class l,int N> inline iMatrix<l,N> operator + (Integer lhs,const iMatrix<l,N>& rhs) {  return rhs+lhs; }
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+// subtraction of fundamental scalar type applies to matrix(down diag) and scalar
+///////////////////////////////////////////////////////////////////////////////////////////////
+template<class l,int N> inline iScalar<l> operator - (const iScalar<l>& lhs,const typename iScalar<l>::scalar_type rhs) 
+{
+  typename iScalar<l>::tensor_reduced srhs(rhs);
+  return lhs-srhs;
+}
+template<class l,int N> inline iScalar<l> operator - (const typename iScalar<l>::scalar_type lhs,const iScalar<l>& rhs) 
+{
+  typename iScalar<l>::tensor_reduced slhs(lhs);
+  return slhs-rhs;
+}
+
+template<class l,int N> inline iMatrix<l,N> operator - (const iMatrix<l,N>& lhs,const typename iScalar<l>::scalar_type rhs) 
+{
+  typename iScalar<l>::tensor_reduced srhs(rhs);
+  return lhs-srhs;
+}
+template<class l,int N> inline iMatrix<l,N> operator - (const typename iScalar<l>::scalar_type lhs,const iMatrix<l,N>& rhs) 
+{
+  typename iScalar<l>::tensor_reduced slhs(lhs);
+  return slhs-rhs;
+}
+
+////////////////////////////////////////////////////////////////////
+// Double support; cast to "scalar_type" through constructor
+////////////////////////////////////////////////////////////////////
+template<class l> inline iScalar<l> operator - (const iScalar<l>& lhs,double rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs-srhs;
+}
+template<class l> inline iScalar<l> operator - (double lhs,const iScalar<l>& rhs) 
+{
+  typename iScalar<l>::scalar_type t(lhs);
+  typename iScalar<l>::tensor_reduced slhs(t);
+  return slhs-rhs;
+}
+
+template<class l,int N> inline iMatrix<l,N> operator - (const iMatrix<l,N>& lhs,double rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs-srhs;
+}
+template<class l,int N> inline iMatrix<l,N> operator - (double lhs,const iMatrix<l,N>& rhs) 
+{
+  typename iScalar<l>::scalar_type t(lhs);
+  typename iScalar<l>::tensor_reduced slhs(t);
+  return slhs-rhs;
+}
+
+////////////////////////////////////////////////////////////////////
+// Integer support; cast to "scalar_type" through constructor
+////////////////////////////////////////////////////////////////////
+template<class l> inline iScalar<l> operator - (const iScalar<l>& lhs,Integer rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs-srhs;
+}
+template<class l> inline iScalar<l> operator - (Integer lhs,const iScalar<l>& rhs) 
+{
+  typename iScalar<l>::scalar_type t(lhs);
+  typename iScalar<l>::tensor_reduced slhs(t);
+  return slhs-rhs;
+}
+template<class l,int N> inline iMatrix<l,N> operator - (const iMatrix<l,N>& lhs,Integer rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs-srhs;
+}
+template<class l,int N> inline iMatrix<l,N> operator - (Integer lhs,const iMatrix<l,N>& rhs) 
+{
+  typename iScalar<l>::scalar_type t(lhs);
+  typename iScalar<l>::tensor_reduced slhs(t);
+  return slhs-rhs;
+}
+
+}
+#endif
+

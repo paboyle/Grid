@@ -7,8 +7,8 @@
 //
 
 
-#ifndef GRID_V3_H
-#define GRID_V3_H
+#ifndef GRID_H
+#define GRID_H
 
 #include <stdio.h>
 #include <complex>
@@ -43,7 +43,7 @@
 
 #include <Grid_aligned_allocator.h>
 #include <Grid_simd.h>
-#include <Grid_math_types.h>
+#include <Grid_math.h>
 #include <Grid_cartesian.h>
 #include <Grid_lattice.h>
 #include <Grid_comparison.h>

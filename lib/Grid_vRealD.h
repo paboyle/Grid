@@ -1,7 +1,5 @@
-#ifndef VREALD_H
-#define VREALD_H
-
-#include "Grid.h"
+#ifndef GRID_VREALD_H
+#define GRID_VREALD_H
 
 namespace Grid {
     class vRealD  {

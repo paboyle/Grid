@@ -4,6 +4,70 @@ FUNCTIONALITY:
 * Coordinate information, integers etc...            -----DONE
 * Integer type padding/union to vector.              -----DONE 
 * LatticeCoordinate[mu]                              -----DONE
+* expose traceIndex, peekIndex, transposeIndex etc at the Lattice Level -- DONE
+* TraceColor, TraceSpin.                             ----- DONE (traceIndex<1>,traceIndex<2>, transposeIndex<1>,transposeIndex<2>)
+                                                     ----- Implement mapping between traceColour and traceSpin and traceIndex<1/2>.
+* How to do U[mu] ... lorentz part of type structure or not. more like chroma if not. -- DONE
+
+* subdirs lib, tests ??                              ----- DONE
+
+Not done, or just incomplete
+
+* Consider switch std::vector to boost arrays.
+  boost::multi_array<type, 3> A()...    to replace multi1d, multi2d etc..
+
+
+* How to define simple matrix operations, such as flavour matrices?
+
+* Dirac, Pauli, SU subgroup, etc.. * Gamma/Dirac structures
+* Fourspin, two spin project
+
+* su3 exponentiation, log etc.. [Jamie's code?]
+
+* Stencil operator support                           -----Initial thoughts, trial implementation DONE.
+                                                     -----some simple tests that Stencil matches Cshift.
+                                                     -----do all permute in comms phase, so that copy permute
+						     -----cases move into a buffer.
+						     -----allow transform in/out buffers spproj
+
+* CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
+
+* Subset support, slice sums etc...                  -----Only need slice sum?
+                                                     -----Generic cartesian subslicing?
+                                                     -----Array ranges / boost extents?
+                                                     -----Multigrid grid transferral?
+                                                     -----Suggests generalised cartesian subblocking
+                                                          sums, returning modified grid?
+					             -----What should interface be?
+
+* Grid transferral
+  * pickCheckerboard, pickSubPlane, pickSubBlock,
+  *                    sumSubPlane, sumSubBlocks
+
+* rb4d support.
+
+* Check for missing functionality                    - partially audited against QDP++ layout
+
+* Optimise the extract/merge SIMD routines; Azusa??
+
+ - I have collated into single location at least.
+ - Need to use _mm_*insert/extract routines.
+
+* Conformable test in Cshift routines.
+
+
+
+* Broadcast, reduction tests. innerProduct, localInnerProduct
+
+* QDP++ regression suite and comparative benchmark
+
+* I/O support
+
+* NERSC Lattice loading, plaquette test
+
+  - MPI IO?
+  - BinaryWriter, TextWriter etc...
+  - protocol buffers?
 
 AUDITS:
 // Lattice support audit                 Tested in Grid_main.cc
@@ -18,7 +82,7 @@ AUDITS:
 //
 //     transposeIndex                     Y
 //     traceIndex                         Y
-//     peekIndex                          N; #args
+//     peekIndex                          Y
 //
 //     real,imag                          missing, semantic thought needed on real/im support.
 //                                        perhaps I just keep everything complex?
@@ -29,46 +93,14 @@ AUDITS:
 * Replace vset with a call to merge.; 
 * care in Gmerge,Gextract over vset .
 * extract / merge extra implementation removal      
-
-BUILD:
 * Test infrastructure
-* subdirs lib, tests ??
 
-* How to do U[mu] ... lorentz part of type structure or not. more like chroma if not.
-* Passing a Grid into construct iVector<LatticeColourMatrix,4>??
-*
-
-* Stencil operator support                           -----Initial thoughts, trial implementation DONE.
-                                                     -----some simple tests that Stencil matches Cshift.
-                                                     -----do all permute in comms phase, so that copy permute
-						     -----cases move into a buffer.
-						     -----allow transform in/out buffers spproj
-
-* CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
-
-POST-SFW call April 16:
-
-* TraceColor, TraceSpin.                             ----- DONE (traceIndex<1>,traceIndex<2>, transposeIndex<1>,transposeIndex<2>)
-                                                     ----- Implement mapping between traceColour and traceSpin and traceIndex<1/2>.
-
-* expose traceIndex, peekIndex, transposeIndex etc at the Lattice Level -- DONE
-
-* How to define simple matrix operations, such as flavour matrices?
-
-* Subset support, slice sums etc...                  -----Only need slice sum?
-                                                     -----Generic cartesian subslicing?
-                                                     -----Array ranges / boost extents?
-                                                     -----Multigrid grid transferral?
-                                                     -----Suggests generalised cartesian subblocking
-                                                          sums, returning modified grid?
-					             -----What should interface be?
-
-i)  Two classes of subset;   red black parity subsetting (pick checkerboard).
+[ More on subsets and grid transfers ]
+i)  Three classes of subset;   red black parity subsetting (pick checkerboard).
                              cartesian sub-block subsetting
+                             rbNd 
 
 ii) Need to be able to project one Grid to another Grid.
-
-Interface: (?)
 
 Lattice<vobj> coarse_data SubBlockSum (GridBase *CoarseGrid, Lattice<vobj> &fine_data)
 
@@ -89,35 +121,12 @@ Instead of subsetting
 
 iii) No general permutation map.
 
-* Consider switch std::vector to boost arrays.
-  boost::multi_array<type, 3> A()...    to replace multi1d, multi2d etc..
 
-*? Cell definition <-> sliceSum.
+ ? Cell definition <-> sliceSum.
  ? Replicated arrays.
 
-* Check for missing functionality                    - partially audited against QDP++ layout
 
-* Optimise the extract/merge SIMD routines; Azusa??
 
- - I have collated into single location at least.
- - Need to use _mm_*insert/extract routines.
-
-* Conformable test in Cshift routines.
-
-* Gamma/Dirac structures
-
-* Fourspin, two spin project
-
-* Broadcast, reduction tests. innerProduct, localInnerProduct
-
-* QDP++ regression suite and comparative benchmark
-
-* NERSC Lattice loading, plaquette test
-
-* I/O support
-  - MPI IO?
-  - BinaryWriter, TextWriter etc...
-  - protocol buffers?
 
 // Cartesian grid inheritance
 //            Grid::GridBase

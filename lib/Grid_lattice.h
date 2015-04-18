@@ -1,9 +1,6 @@
 #ifndef GRID_LATTICE_H
 #define GRID_LATTICE_H
 
-#include "Grid.h"
-
-
 namespace Grid {
 
 // TODO: Indexing ()

@@ -1,7 +1,5 @@
-#ifndef VCOMPLEXD_H
-#define  VCOMPLEXD_H
-#include "Grid.h"
-#include "Grid_vComplexF.h"
+#ifndef GRID_VCOMPLEXD_H
+#define  GRID_VCOMPLEXD_H
 
 namespace Grid {
     class vComplexD {
