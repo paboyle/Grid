@@ -6,7 +6,9 @@
 #define MIN(x,y) ((x)>(y)?(y):(x))
 #endif
 
-friend Lattice<vobj> Cshift(Lattice<vobj> &rhs,int dimension,int shift)
+namespace Grid { 
+
+template<class vobj> Lattice<vobj> Cshift(Lattice<vobj> &rhs,int dimension,int shift)
 {
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::scalar_type scalar_type;
@@ -37,7 +39,7 @@ friend Lattice<vobj> Cshift(Lattice<vobj> &rhs,int dimension,int shift)
   return ret;
 }
 
-friend void Cshift_comms(Lattice<vobj>& ret,Lattice<vobj> &rhs,int dimension,int shift)
+template<class vobj> void Cshift_comms(Lattice<vobj>& ret,Lattice<vobj> &rhs,int dimension,int shift)
 {
   int sshift[2];
 
@@ -52,7 +54,7 @@ friend void Cshift_comms(Lattice<vobj>& ret,Lattice<vobj> &rhs,int dimension,int
   }
 }
 
-friend void Cshift_comms_simd(Lattice<vobj>& ret,Lattice<vobj> &rhs,int dimension,int shift)
+template<class vobj> void Cshift_comms_simd(Lattice<vobj>& ret,Lattice<vobj> &rhs,int dimension,int shift)
 {
   int sshift[2];
 
@@ -67,8 +69,7 @@ friend void Cshift_comms_simd(Lattice<vobj>& ret,Lattice<vobj> &rhs,int dimensio
   }
 }
 
-
-friend void Cshift_comms(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
+template<class vobj> void Cshift_comms(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
 {
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::scalar_type scalar_type;
@@ -127,8 +128,7 @@ friend void Cshift_comms(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimension,int
   }
 }
 
-
-friend void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
+template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
 {
   GridBase *grid=rhs._grid;
   const int Nsimd = grid->Nsimd();
@@ -259,5 +259,6 @@ friend void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimensi
 
     }
   }
+}
 }
 #endif

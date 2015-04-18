@@ -1,10 +1,11 @@
 #ifndef _GRID_CSHIFT_COMMON_H_
 #define _GRID_CSHIFT_COMMON_H_
 
+namespace Grid {
 //////////////////////////////////////////////////////
 // Gather for when there is no need to SIMD split
 //////////////////////////////////////////////////////
-friend void Gather_plane_simple (Lattice<vobj> &rhs,std::vector<vobj,alignedAllocator<vobj> > &buffer,             int dimension,int plane,int cbmask)
+template<class vobj> void Gather_plane_simple (Lattice<vobj> &rhs,std::vector<vobj,alignedAllocator<vobj> > &buffer,             int dimension,int plane,int cbmask)
 {
   int rd = rhs._grid->_rdimensions[dimension];
 
@@ -48,7 +49,7 @@ friend void Gather_plane_simple (Lattice<vobj> &rhs,std::vector<vobj,alignedAllo
 //////////////////////////////////////////////////////
 // Gather for when there *is* need to SIMD split
 //////////////////////////////////////////////////////
-friend void Gather_plane_extract(Lattice<vobj> &rhs,std::vector<scalar_type *> pointers,int dimension,int plane,int cbmask)
+ template<class vobj,class scalar_type> void Gather_plane_extract(Lattice<vobj> &rhs,std::vector<scalar_type *> pointers,int dimension,int plane,int cbmask)
 {
   int rd = rhs._grid->_rdimensions[dimension];
 
@@ -91,7 +92,7 @@ friend void Gather_plane_extract(Lattice<vobj> &rhs,std::vector<scalar_type *> p
 //////////////////////////////////////////////////////
 // Scatter for when there is no need to SIMD split
 //////////////////////////////////////////////////////
-friend void Scatter_plane_simple (Lattice<vobj> &rhs,std::vector<vobj,alignedAllocator<vobj> > &buffer,             int dimension,int plane,int cbmask)
+template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,std::vector<vobj,alignedAllocator<vobj> > &buffer,             int dimension,int plane,int cbmask)
 {
   int rd = rhs._grid->_rdimensions[dimension];
 
@@ -134,7 +135,7 @@ friend void Scatter_plane_simple (Lattice<vobj> &rhs,std::vector<vobj,alignedAll
 //////////////////////////////////////////////////////
 // Scatter for when there *is* need to SIMD split
 //////////////////////////////////////////////////////
-friend void Scatter_plane_merge(Lattice<vobj> &rhs,std::vector<scalar_type *> pointers,int dimension,int plane,int cbmask)
+ template<class vobj,class scalar_type> void Scatter_plane_merge(Lattice<vobj> &rhs,std::vector<scalar_type *> pointers,int dimension,int plane,int cbmask)
 {
   int rd = rhs._grid->_rdimensions[dimension];
 
@@ -177,7 +178,7 @@ friend void Scatter_plane_merge(Lattice<vobj> &rhs,std::vector<scalar_type *> po
 //////////////////////////////////////////////////////
 // local to node block strided copies
 //////////////////////////////////////////////////////
-friend void Copy_plane(Lattice<vobj>& lhs,Lattice<vobj> &rhs, int dimension,int lplane,int rplane,int cbmask)
+template<class vobj> void Copy_plane(Lattice<vobj>& lhs,Lattice<vobj> &rhs, int dimension,int lplane,int rplane,int cbmask)
 {
   int rd = rhs._grid->_rdimensions[dimension];
 
@@ -219,7 +220,7 @@ friend void Copy_plane(Lattice<vobj>& lhs,Lattice<vobj> &rhs, int dimension,int 
   }
 }
 
-friend void Copy_plane_permute(Lattice<vobj>& lhs,Lattice<vobj> &rhs, int dimension,int lplane,int rplane,int cbmask,int permute_type)
+template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,Lattice<vobj> &rhs, int dimension,int lplane,int rplane,int cbmask,int permute_type)
 {
   int rd = rhs._grid->_rdimensions[dimension];
 
@@ -265,7 +266,7 @@ friend void Copy_plane_permute(Lattice<vobj>& lhs,Lattice<vobj> &rhs, int dimens
 //////////////////////////////////////////////////////
 // Local to node Cshift
 //////////////////////////////////////////////////////
-friend void Cshift_local(Lattice<vobj>& ret,Lattice<vobj> &rhs,int dimension,int shift)
+template<class vobj> void Cshift_local(Lattice<vobj>& ret,Lattice<vobj> &rhs,int dimension,int shift)
 {
   int sshift[2];
 
@@ -280,7 +281,7 @@ friend void Cshift_local(Lattice<vobj>& ret,Lattice<vobj> &rhs,int dimension,int
   }
 }
 
-friend Lattice<vobj> Cshift_local(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
+template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
 {
   GridBase *grid = rhs._grid;
   int fd = grid->_fdimensions[dimension];
@@ -322,5 +323,5 @@ friend Lattice<vobj> Cshift_local(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dime
   }
   return ret;
 }
-
+}
 #endif
