@@ -4,6 +4,10 @@
 #include <Grid_math_type_mapper.h>
 #include <type_traits>
 
+//
+// Indexing; want to be able to dereference and 
+// obtain either an lvalue or an rvalue.
+//
 namespace Grid {
 
   // First some of my own traits
@@ -58,6 +62,16 @@ namespace Grid {
     static const bool value = (Level==T::TensorLevel);
     static const bool notvalue = (Level!=T::TensorLevel);
   };
+  // What is the vtype
+  template<typename T> struct isComplex {
+    static const bool value = false;
+  };
+  template<> struct isComplex<ComplexF> {
+    static const bool value = true;
+  };
+  template<> struct isComplex<ComplexD> {
+    static const bool value = true;
+  };
 
 
 ///////////////////////////////////////////////////
@@ -65,12 +79,7 @@ namespace Grid {
 // These can be composed to form tensor products of internal indices.
 ///////////////////////////////////////////////////
 
-  // Terminates the recursion for temoval of all Grids tensors
-  inline vRealD    TensorRemove(vRealD    arg){ return arg;}
-  inline vRealF    TensorRemove(vRealF    arg){ return arg;}
-  inline vComplexF TensorRemove(vComplexF arg){ return arg;}
-  inline vComplexD TensorRemove(vComplexD arg){ return arg;}
-  inline vInteger  TensorRemove(vInteger  arg){ return arg;}
+
 
 template<class vtype> class iScalar
 {
@@ -109,10 +118,6 @@ public:
     friend void merge(iScalar<vtype> &in,std::vector<scalar_type *> &out){
       merge(in._internal,out); // extract advances the pointers in out
     }
-    friend inline iScalar<vtype>::vector_type TensorRemove(iScalar<vtype> arg)
-    {
-      return TensorRemove(arg._internal);
-    }
 
     // Unary negation
     friend inline iScalar<vtype> operator -(const iScalar<vtype> &r) {
@@ -133,7 +138,23 @@ public:
         *this = (*this)+r;
         return *this;
     }
+    
+    inline vtype & operator ()(void) {
+      return _internal;
+    }
+
+    operator ComplexD () const { return(TensorRemove(_internal)); };
+    operator RealD () const { return(real(TensorRemove(_internal))); }
+
 };
+///////////////////////////////////////////////////////////
+// Allows to turn scalar<scalar<scalar<double>>>> back to double.
+///////////////////////////////////////////////////////////
+template<class T> inline typename std::enable_if<isGridTensor<T>::notvalue, T>::type TensorRemove(T arg) { return arg;}
+template<class vtype> inline auto TensorRemove(iScalar<vtype> arg) -> decltype(TensorRemove(arg._internal))
+{
+  return TensorRemove(arg._internal);
+}
     
 template<class vtype,int N> class iVector
 {
@@ -148,7 +169,8 @@ public:
   typedef iScalar<tensor_reduced_v> tensor_reduced;
 
     iVector(Zero &z){ *this = zero; };
-    iVector() {};
+    iVector() {};// Empty constructure
+
     iVector<vtype,N> & operator= (Zero &hero){
         zeroit(*this);
         return *this;
@@ -191,6 +213,9 @@ public:
     inline iVector<vtype,N> &operator +=(const iVector<vtype,N> &r) {
         *this = (*this)+r;
         return *this;
+    }
+    inline vtype & operator ()(int i) {
+      return _internal[i];
     }
 };
     
@@ -261,6 +286,9 @@ public:
   inline iMatrix<vtype,N> &operator +=(const T &r) {
     *this = (*this)+r;
     return *this;
+  }
+  inline vtype & operator ()(int i,int j) {
+    return _internal[i][j];
   }
 
 };
@@ -802,6 +830,33 @@ template<class l,int N> inline iMatrix<l,N> operator * (const iMatrix<l,N>& lhs,
 template<class l,int N> inline iMatrix<l,N> operator * (double lhs,const iMatrix<l,N>& rhs) {  return rhs*lhs; }
 
 ////////////////////////////////////////////////////////////////////
+// Complex support; cast to "scalar_type" through constructor
+////////////////////////////////////////////////////////////////////
+template<class l> inline iScalar<l> operator * (const iScalar<l>& lhs,ComplexD rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs*srhs;
+}
+template<class l> inline iScalar<l> operator * (ComplexD lhs,const iScalar<l>& rhs) {  return rhs*lhs; }
+
+template<class l,int N> inline iVector<l,N> operator * (const iVector<l,N>& lhs,ComplexD rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs*srhs;
+}
+template<class l,int N> inline iVector<l,N> operator * (ComplexD lhs,const iVector<l,N>& rhs) {  return rhs*lhs; }
+
+template<class l,int N> inline iMatrix<l,N> operator * (const iMatrix<l,N>& lhs,ComplexD rhs) 
+{
+  typename iScalar<l>::scalar_type t(rhs);
+  typename iScalar<l>::tensor_reduced srhs(t);
+  return lhs*srhs;
+}
+template<class l,int N> inline iMatrix<l,N> operator * (ComplexD lhs,const iMatrix<l,N>& rhs) {  return rhs*lhs; }
+
+////////////////////////////////////////////////////////////////////
 // Integer support; cast to "scalar_type" through constructor
 ////////////////////////////////////////////////////////////////////
 template<class l> inline iScalar<l> operator * (const iScalar<l>& lhs,Integer rhs) 
@@ -1101,6 +1156,9 @@ template<class vtype,int N> inline iMatrix<vtype,N> adj(const iMatrix<vtype,N> &
     }}
     return ret;
 }
+
+
+
 /////////////////////////////////////////////////////////////////
 // Transpose all indices
 /////////////////////////////////////////////////////////////////
@@ -1133,7 +1191,7 @@ template<class vtype,int N>
     return ret;
   }
 
-template<class vtype,int N>
+template<class vtype>
   inline typename std::enable_if<isGridTensor<vtype>::value, iScalar<vtype> >::type 
   transpose(iScalar<vtype> arg)
   {
@@ -1142,7 +1200,7 @@ template<class vtype,int N>
     return ret;
   }
 
-template<class vtype,int N>
+template<class vtype>
   inline typename std::enable_if<isGridTensor<vtype>::notvalue, iScalar<vtype> >::type 
   transpose(iScalar<vtype> arg)
   {
@@ -1150,6 +1208,7 @@ template<class vtype,int N>
     ret._internal = arg._internal; // NB recursion stops
     return ret;
   }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Transpose a specific index; instructive to compare this style of recursion termination
@@ -1182,7 +1241,15 @@ template<int Level,class vtype> inline
 typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::notvalue, iScalar<vtype> >::type 
 transposeIndex (const iScalar<vtype> &arg)
 {
-  return transposeIndex<Level>(arg._internal);
+  iScalar<vtype> ret;
+  ret._internal=transposeIndex<Level>(arg._internal);
+  return ret;
+}
+template<int Level,class vtype> inline 
+typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::value, iScalar<vtype> >::type 
+transposeIndex (const iScalar<vtype> &arg)
+{
+  return arg;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1216,14 +1283,35 @@ inline auto trace(const iScalar<vtype> &arg) -> iScalar<decltype(trace(arg._inte
     ret._internal=trace(arg._internal);
     return ret;
 }
-
-// Specific indices.
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Trace Specific indices.
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
 template<int Level,class vtype> inline 
 auto traceIndex(const iScalar<vtype> &arg) -> iScalar<decltype(traceIndex<Level>(arg._internal)) >
 {
   iScalar<decltype(traceIndex<Level>(arg._internal))> ret;
   ret._internal = traceIndex<Level>(arg._internal);
   return ret;
+}
+*/
+template<int Level,class vtype> inline auto 
+traceIndex (const iScalar<vtype> &arg) ->
+typename 
+std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::notvalue, 
+  iScalar<decltype(traceIndex<Level>(arg._internal))> >::type 
+
+{
+  iScalar<decltype(traceIndex<Level>(arg._internal))> ret;
+  ret._internal=traceIndex<Level>(arg._internal);
+  return ret;
+}
+template<int Level,class vtype> inline auto
+traceIndex (const iScalar<vtype> &arg) ->
+typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::value, 
+                        iScalar<vtype> >::type 
+{
+  return arg;
 }
 
 // If we hit the right index, return scalar and trace it with no further recursion
@@ -1253,6 +1341,149 @@ auto traceIndex(const iMatrix<vtype,N> &arg) ->
   }}
   return ret;
 }
+
+//////////////////////////////////////////////////////////////////////////////
+// Peek on a specific index; returns a scalar in that index, tensor inherits rest
+//////////////////////////////////////////////////////////////////////////////
+// If we hit the right index, return scalar with no further recursion
+
+//template<int Level> inline ComplexF peekIndex(const ComplexF arg) { return arg;}
+//template<int Level> inline ComplexD peekIndex(const ComplexD arg) { return arg;}
+//template<int Level> inline RealF peekIndex(const RealF arg) { return arg;}
+//template<int Level> inline RealD peekIndex(const RealD arg) { return arg;}
+
+// Scalar peek, no indices
+template<int Level,class vtype> inline 
+  auto peekIndex(const iScalar<vtype> &arg) -> 
+  typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::value,  // Index matches
+  iScalar<vtype> >::type                              // return scalar
+{
+  return arg;
+}
+// Vector peek, one index
+template<int Level,class vtype,int N> inline 
+  auto peekIndex(const iVector<vtype,N> &arg,int i) -> 
+  typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,Level>::value,  // Index matches
+  iScalar<vtype> >::type                              // return scalar
+{
+  iScalar<vtype> ret;                              // return scalar
+  ret._internal = arg._internal[i];
+  return ret;
+}
+// Matrix peek, two indices
+template<int Level,class vtype,int N> inline 
+  auto peekIndex(const iMatrix<vtype,N> &arg,int i,int j) -> 
+  typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,Level>::value,  // Index matches
+  iScalar<vtype> >::type                              // return scalar
+{
+  iScalar<vtype> ret;                              // return scalar
+  ret._internal = arg._internal[i][j];
+  return ret;
+}
+
+/////////////
+// No match peek for scalar,vector,matrix must forward on either 0,1,2 args. Must have 9 routines with notvalue
+/////////////
+// scalar
+template<int Level,class vtype> inline 
+  auto peekIndex(const iScalar<vtype> &arg) ->                                     // Scalar 0 index  
+  typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::notvalue,  // Index does NOT match
+  iScalar<decltype(peekIndex<Level>(arg._internal))> >::type                       
+{
+  iScalar<decltype(peekIndex<Level>(arg._internal))> ret;
+  ret._internal= peekIndex<Level>(arg._internal);
+  return ret;
+}
+template<int Level,class vtype> inline 
+  auto peekIndex(const iScalar<vtype> &arg,int i) ->                             // Scalar 1 index
+  typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::notvalue,  // Index does NOT match
+  iScalar<decltype(peekIndex<Level>(arg._internal,i))> >::type                       
+{
+  iScalar<decltype(peekIndex<Level>(arg._internal,i))> ret;
+  ret._internal=peekIndex<Level>(arg._internal,i);
+  return ret;
+}
+template<int Level,class vtype> inline 
+  auto peekIndex(const iScalar<vtype> &arg,int i,int j) ->                         // Scalar, 2 index
+  typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::notvalue,  // Index does NOT match
+  iScalar<decltype(peekIndex<Level>(arg._internal,i,j))> >::type                       
+{
+  iScalar<decltype(peekIndex<Level>(arg._internal,i,j))> ret;
+  ret._internal=peekIndex<Level>(arg._internal,i,j);
+  return ret;
+}
+// vector
+template<int Level,class vtype,int N> inline 
+auto peekIndex(const iVector<vtype,N> &arg) -> 
+  typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::notvalue,  // Index does not match
+  iVector<decltype(peekIndex<Level>(arg._internal[0])),N> >::type                       
+{
+  iVector<decltype(peekIndex<Level>(arg._internal[0])),N> ret;
+  for(int ii=0;ii<N;ii++){
+    ret._internal[ii]=peekIndex<Level>(arg._internal[ii]);
+  }
+  return ret;
+}
+template<int Level,class vtype,int N> inline 
+  auto peekIndex(const iVector<vtype,N> &arg,int i) -> 
+  typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,Level>::notvalue,  // Index does not match
+  iVector<decltype(peekIndex<Level>(arg._internal[0],i)),N> >::type                       
+{
+  iVector<decltype(peekIndex<Level>(arg._internal[0],i)),N> ret;
+  for(int ii=0;ii<N;ii++){
+    ret._internal[ii]=peekIndex<Level>(arg._internal[ii],i);
+  }
+  return ret;
+}
+template<int Level,class vtype,int N> inline 
+  auto peekIndex(const iVector<vtype,N> &arg,int i,int j) -> 
+  typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,Level>::notvalue,  // Index does not match
+  iVector<decltype(peekIndex<Level>(arg._internal[0],i,j)),N> >::type                       
+{
+  iVector<decltype(peekIndex<Level>(arg._internal[0],i,j)),N> ret;
+  for(int ii=0;ii<N;ii++){
+    ret._internal[ii]=peekIndex<Level>(arg._internal[ii],i,j);
+  }
+  return ret;
+}
+// matrix
+template<int Level,class vtype,int N> inline 
+auto peekIndex(const iMatrix<vtype,N> &arg) -> 
+  typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::notvalue,  // Index does not match
+  iMatrix<decltype(peekIndex<Level>(arg._internal[0][0])),N> >::type                       
+{
+  iMatrix<decltype(peekIndex<Level>(arg._internal[0][0])),N> ret;
+  for(int ii=0;ii<N;ii++){
+  for(int jj=0;jj<N;jj++){
+    ret._internal[ii][jj]=peekIndex<Level>(arg._internal[ii][jj]);// Could avoid this because peeking a scalar is dumb
+  }}
+  return ret;
+}
+template<int Level,class vtype,int N> inline 
+  auto peekIndex(const iMatrix<vtype,N> &arg,int i) -> 
+  typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,Level>::notvalue,  // Index does not match
+  iMatrix<decltype(peekIndex<Level>(arg._internal[0],i)),N> >::type                       
+{
+  iMatrix<decltype(peekIndex<Level>(arg._internal[0],i)),N> ret;
+  for(int ii=0;ii<N;ii++){
+  for(int jj=0;jj<N;jj++){
+    ret._internal[ii][jj]=peekIndex<Level>(arg._internal[ii][jj],i);
+  }}
+  return ret;
+}
+template<int Level,class vtype,int N> inline 
+  auto peekIndex(const iMatrix<vtype,N> &arg,int i,int j) -> 
+  typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,Level>::notvalue,  // Index does not match
+  iMatrix<decltype(peekIndex<Level>(arg._internal[0][0],i,j)),N> >::type                       
+{
+  iMatrix<decltype(peekIndex<Level>(arg._internal[0][0],i,j)),N> ret;
+  for(int ii=0;ii<N;ii++){
+  for(int jj=0;jj<N;jj++){
+    ret._internal[ii][jj]=peekIndex<Level>(arg._internal[ii][jj],i,j);
+  }}
+  return ret;
+}
+
 
 /////////////////////////////////////////////////////////////////
 // Can only take the real/imag part of scalar objects, since

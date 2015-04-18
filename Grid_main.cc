@@ -84,6 +84,8 @@ int main (int argc, char ** argv)
     LatticeSpinColourMatrix scMat(&Fine);
     
     LatticeComplex scalar(&Fine);
+    LatticeReal    rscalar(&Fine);
+    LatticeReal    iscalar(&Fine);
 
     SpinMatrix GammaFive;
     iSpinMatrix<vComplex> iGammaFive;
@@ -110,6 +112,44 @@ int main (int argc, char ** argv)
     
     cMat = outerProduct(cVec,cVec);
     scalar = localInnerProduct(cVec,cVec);
+
+    scalar += scalar;
+    scalar -= scalar;
+    scalar *= scalar;
+    add(scalar,scalar,scalar);
+    sub(scalar,scalar,scalar);
+    mult(scalar,scalar,scalar);
+    mac(scalar,scalar,scalar);
+    scalar = scalar+scalar;
+    scalar = scalar-scalar;
+    scalar = scalar*scalar;
+
+    scalar=outerProduct(scalar,scalar);
+
+    scalar=adj(scalar);
+
+    //    rscalar=real(scalar);
+    //    iscalar=imag(scalar);
+    //    scalar =cmplx(rscalar,iscalar);
+
+    scalar=transpose(scalar);
+    scalar=transposeIndex<1>(scalar);
+    scalar=traceIndex<1>(scalar);
+    scalar=peekIndex<1>(cVec,0);
+    scalar=trace(scalar);
+    scalar=localInnerProduct(cVec,cVec);
+    scalar=localNorm2(cVec);
+
+//     -=,+=,*=,()
+//     add,+,sub,-,mult,mac,*
+//     adj,conj
+//     real,imag
+//     transpose,transposeIndex  
+//     trace,traceIndex
+//     peekIndex
+//     innerProduct,outerProduct,
+//     localNorm2
+//     localInnerProduct
     
     scMat = sMat*scMat;  // LatticeSpinColourMatrix = LatticeSpinMatrix       * LatticeSpinColourMatrix
 
@@ -171,15 +211,21 @@ int main (int argc, char ** argv)
       SpinMatrix   s_m;   
       SpinColourMatrix sc_m; 
 
-      s_m = traceIndex<1>(sc_m);
-      c_m = traceIndex<2>(sc_m);
+      s_m = traceIndex<1>(sc_m); // Map to traceColour
+      c_m = traceIndex<2>(sc_m); // map to traceSpin
 
-      c   = traceIndex<2>(s_m);
+      c   = traceIndex<2>(s_m); 
       c   = traceIndex<1>(c_m);
+      
+      s_m = peekIndex<1>(scm,0,0);
+      c_m = peekIndex<2>(scm,1,2);
 
       printf("c. Level %d\n",c_m.TensorLevel);
-      printf("c. Level %d\n",c_m._internal.TensorLevel);
-
+      printf("c. Level %d\n",c_m().TensorLevel);
+      printf("c. Level %d\n",c_m()().TensorLevel);
+      
+      c_m()() = scm()(0,0); //ColourComponents of CM <= ColourComponents of SpinColourMatrix
+      scm()(1,1) = cm()();  //ColourComponents of CM <= ColourComponents of SpinColourMatrix
     }
     
     FooBar = Bar;
@@ -243,6 +289,9 @@ int main (int argc, char ** argv)
     double bytes;
     int ncall=100;
     int Nc = Grid::QCD::Nc;
+
+    LatticeGaugeField U(&Fine);
+    //    LatticeColourMatrix Uy = U(yDir);
 
     flops = ncall*1.0*volume*(8*Nc*Nc*Nc);
     bytes = ncall*1.0*volume*Nc*Nc    *2*3*sizeof(Grid::Real);
@@ -373,38 +422,38 @@ int main (int argc, char ** argv)
         mdiff = shifted1-shifted2;
         amdiff=adj(mdiff);
         ColourMatrix prod = amdiff*mdiff;
-        TReal Ttr=real(trace(prod));
-        double nn=Ttr._internal._internal;
+        Real Ttr=real(trace(prod));
+        double nn=Ttr;
         if ( nn > 0 )
             cout<<"Shift real trace fail "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<endl;
      
 
         for(int r=0;r<3;r++){
         for(int c=0;c<3;c++){
-            diff =shifted1._internal._internal[r][c]-shifted2._internal._internal[r][c];
+            diff =shifted1()()(r,c)-shifted2()()(r,c);
             nn=real(conj(diff)*diff);
             if ( nn > 0 )
                 cout<<"Shift fail (shifted1/shifted2-ref) "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "
-                    <<shifted1._internal._internal[r][c]<<" "<<shifted2._internal._internal[r][c]
-                    << " "<< foo._internal._internal[r][c]<< " lex expect " << lex_coor << " lex "<<lex<<endl;
+                    <<shifted1()()(r,c)<<" "<<shifted2()()(r,c)
+                    << " "<< foo()()(r,c)<< " lex expect " << lex_coor << " lex "<<lex<<endl;
             else if(0)
                 cout<<"Shift pass 1vs2 "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "
-                    <<shifted1._internal._internal[r][c]<<" "<<shifted2._internal._internal[r][c]
-                    << " "<< foo._internal._internal[r][c]<< " lex expect " << lex_coor << " lex "<<lex<<endl;
+                    <<shifted1()()(r,c)<<" "<<shifted2()()(r,c)
+                    << " "<< foo()()(r,c)<< " lex expect " << lex_coor << " lex "<<lex<<endl;
         }}
         
         for(int r=0;r<3;r++){
         for(int c=0;c<3;c++){
-            diff =shifted3._internal._internal[r][c]-shifted2._internal._internal[r][c];
+            diff =shifted3()()(r,c)-shifted2()()(r,c);
             nn=real(conj(diff)*diff);
             if ( nn > 0 )
                 cout<<"Shift rb fail (shifted3/shifted2-ref) "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "
-                <<shifted3._internal._internal[r][c]<<" "<<shifted2._internal._internal[r][c]
-                << " "<< foo._internal._internal[r][c]<< " lex expect " << lex_coor << " lex "<<lex<<endl;
+                <<shifted3()()(r,c)<<" "<<shifted2()()(r,c)
+                << " "<< foo()()(r,c)<< " lex expect " << lex_coor << " lex "<<lex<<endl;
             else if(0)
                 cout<<"Shift rb pass 3vs2 "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "
-                <<shifted3._internal._internal[r][c]<<" "<<shifted2._internal._internal[r][c]
-                << " "<< foo._internal._internal[r][c]<< " lex expect " << lex_coor << " lex "<<lex<<endl;
+                <<shifted3()()(r,c)<<" "<<shifted2()()(r,c)
+                << " "<< foo()()(r,c)<< " lex expect " << lex_coor << " lex "<<lex<<endl;
         }}
         peekSite(bar,Bar,coor);
                     
@@ -412,7 +461,7 @@ int main (int argc, char ** argv)
         foobar2 = foo*bar;
         for(int r=0;r<Nc;r++){
         for(int c=0;c<Nc;c++){
-            diff =foobar2._internal._internal[r][c]-foobar1._internal._internal[r][c];
+            diff =foobar2()()(r,c)-foobar1()()(r,c);
             nrm = nrm + real(conj(diff)*diff);
         }}
     }}}}
