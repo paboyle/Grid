@@ -35,7 +35,7 @@ MPI, OpenMP, and SIMD parallelism are present in the library.
 
    You can give `configure' initial values for configuration parameters
 by setting variables in the command line or in the environment.  Here
-is are examples:
+are examples:
 
      ./configure CXX=clang++ CXXFLAGS="-std=c++11 -O3 -mavx" --enable-simd=AVX1
 
