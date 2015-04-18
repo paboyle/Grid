@@ -235,6 +235,7 @@ inline void Gpermute(vsimd &y,const vsimd &b,int perm){
 #include <Grid_vComplexF.h>
 #include <Grid_vComplexD.h>
 
+
 namespace Grid {
 
   // NB: Template the following on "type Complex" and then implement *,+,- for 

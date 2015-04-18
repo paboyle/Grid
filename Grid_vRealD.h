@@ -240,7 +240,7 @@ namespace Grid {
         static int Nsimd(void) { return sizeof(dvec)/sizeof(double);}
     };
 
-   inline vRealD innerProduct(const vRealD & l, const vRealD & r) { return conj(l)*r; }
+    inline vRealD innerProduct(const vRealD & l, const vRealD & r) { return conj(l)*r; }
     inline void zeroit(vRealD &z){ vzero(z);}
 
     inline vRealD outerProduct(const vRealD &l, const vRealD& r)
@@ -248,6 +248,9 @@ namespace Grid {
         return l*r;
     }
     inline vRealD trace(const vRealD &arg){
+        return arg;
+    }
+    inline vRealD real(const vRealD &arg){
         return arg;
     }
 

@@ -6,7 +6,23 @@
 
 namespace Grid {
 
-  extern int GridCshiftPermuteMap[4][16];
+// TODO: Indexing ()
+//       mac,real,imag
+//
+// Functionality required:
+//     -=,+=,*=,()
+//     add,+,sub,-,mult,mac,*
+//     adj,conj
+//     real,imag
+//     transpose,transposeIndex  
+//     trace,traceIndex
+//     peekIndex
+//     innerProduct,outerProduct,
+//     localNorm2
+//     localInnerProduct
+//     
+
+extern int GridCshiftPermuteMap[4][16];
 
 template<class vobj>
 class Lattice
@@ -40,6 +56,9 @@ public:
     // vector copy back.
     template<class obj1,class obj2,class obj3>
     friend void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs);
+
+    template<class obj1,class obj2,class obj3>
+    friend void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs);
 
     template<class obj1,class obj2,class obj3>
     friend void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs);
@@ -212,26 +231,6 @@ public:
         return *this;
     }
     
-    // FIXME trace type structure is weird
-    inline friend Lattice<iScalar<vComplex> > _trace(const Lattice<vobj> &lhs){
-        Lattice<iScalar<vComplex> > ret(lhs._grid);
-#pragma omp parallel for
-        for(int ss=0;ss<lhs._grid->oSites();ss++){
-            ret._odata[ss] = trace(lhs._odata[ss]);
-        }
-        return ret;
-    };
-    
-    inline friend Lattice<iScalar<iScalar< vComplex > > > trace(const Lattice<vobj> &lhs){
-        Lattice<iScalar< iScalar<vComplex> >  > ret(lhs._grid);
-#pragma omp parallel for
-        for(int ss=0;ss<lhs._grid->oSites();ss++){
-            ret._odata[ss] = trace(lhs._odata[ss]);
-        }
-        return ret;
-    };
-
-    
     inline friend Lattice<vobj> adj(const Lattice<vobj> &lhs){
         Lattice<vobj> ret(lhs._grid);
 #pragma omp parallel for
@@ -240,6 +239,16 @@ public:
         }
         return ret;
     };
+
+    inline friend Lattice<vobj> transpose(const Lattice<vobj> &lhs){
+        Lattice<vobj> ret(lhs._grid);
+#pragma omp parallel for
+        for(int ss=0;ss<lhs._grid->oSites();ss++){
+            ret._odata[ss] = transpose(lhs._odata[ss]);
+        }
+        return ret;
+    };
+
 
     inline friend Lattice<vobj> conj(const Lattice<vobj> &lhs){
         Lattice<vobj> ret(lhs._grid);
@@ -304,6 +313,17 @@ public:
 	  mult(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
         }
     }
+
+    template<class obj1,class obj2,class obj3>
+    void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
+        conformable(lhs,rhs);
+	uint32_t vec_len = lhs._grid->oSites();
+#pragma omp parallel for
+        for(int ss=0;ss<vec_len;ss++){
+	  mac(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
+        }
+    }
+
     template<class obj1,class obj2,class obj3>
     void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
         conformable(lhs,rhs);
@@ -410,20 +430,98 @@ public:
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Trace
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    template<class vobj>
+    inline auto trace(const Lattice<vobj> &lhs)
+      -> Lattice<decltype(trace(lhs._odata[0]))>
+    {
+      Lattice<decltype(trace(lhs._odata[0]))> ret(lhs._grid);
+#pragma omp parallel for
+        for(int ss=0;ss<lhs._grid->oSites();ss++){
+            ret._odata[ss] = trace(lhs._odata[ss]);
+        }
+        return ret;
+    };
+    
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Index level dependent operations
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    template<int Index,class vobj>
+    inline auto traceIndex(const Lattice<vobj> &lhs)
+      -> Lattice<decltype(traceIndex<Index>(lhs._odata[0]))>
+    {
+      Lattice<decltype(traceIndex<Index>(lhs._odata[0]))> ret(lhs._grid);
+#pragma omp parallel for
+      for(int ss=0;ss<lhs._grid->oSites();ss++){
+	ret._odata[ss] = traceIndex<Index>(lhs._odata[ss]);
+      }
+      return ret;
+    };
+    template<int Index,class vobj>
+    inline auto transposeIndex(const Lattice<vobj> &lhs)
+      -> Lattice<decltype(transposeIndex<Index>(lhs._odata[0]))>
+    {
+      Lattice<decltype(transposeIndex<Index>(lhs._odata[0]))> ret(lhs._grid);
+#pragma omp parallel for
+        for(int ss=0;ss<lhs._grid->oSites();ss++){
+            ret._odata[ss] = transposeIndex<Index>(lhs._odata[ss]);
+        }
+        return ret;
+    };
+
+    // Fixme; this is problematic since the number of args is variable and 
+    // may mismatch...
+    template<int Index,class vobj>
+    inline auto peekIndex(const Lattice<vobj> &lhs)
+      -> Lattice<decltype(peekIndex<Index>(lhs._odata[0]))>
+    {
+      Lattice<decltype(peekIndex<Index>(lhs._odata[0]))> ret(lhs._grid);
+#pragma omp parallel for
+        for(int ss=0;ss<lhs._grid->oSites();ss++){
+            ret._odata[ss] = peekIndex<Index>(lhs._odata[ss]);
+        }
+        return ret;
+    };
+    template<int Index,class vobj>
+      inline auto peekIndex(const Lattice<vobj> &lhs,int i)
+      -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i))>
+    {
+      Lattice<decltype(peekIndex<Index>(lhs._odata[0],i))> ret(lhs._grid);
+#pragma omp parallel for
+        for(int ss=0;ss<lhs._grid->oSites();ss++){
+	  ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i);
+        }
+        return ret;
+    };
+    template<int Index,class vobj>
+      inline auto peekIndex(const Lattice<vobj> &lhs,int i,int j)
+      -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))>
+    {
+      Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))> ret(lhs._grid);
+#pragma omp parallel for
+        for(int ss=0;ss<lhs._grid->oSites();ss++){
+	  ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i,j);
+        }
+        return ret;
+    };
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
     // Reduction operations
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     template<class vobj>
     inline RealD norm2(const Lattice<vobj> &arg){
 
       typedef typename vobj::scalar_type scalar;
+      typedef typename vobj::vector_type vector;
       decltype(innerProduct(arg._odata[0],arg._odata[0])) vnrm=zero;
-
       scalar nrm;
       //FIXME make this loop parallelisable
+      vnrm=zero;
       for(int ss=0;ss<arg._grid->oSites(); ss++){
 	vnrm = vnrm + innerProduct(arg._odata[ss],arg._odata[ss]);
       }
-      nrm = Reduce(TensorRemove(vnrm));
+      vector vvnrm =TensorRemove(vnrm) ;
+      nrm = Reduce(vvnrm);
       arg._grid->GlobalSum(nrm);
       return real(nrm);
     }
@@ -439,7 +537,7 @@ public:
       for(int ss=0;ss<left._grid->oSites(); ss++){
 	vnrm = vnrm + innerProduct(left._odata[ss],right._odata[ss]);
       }
-      nrm = Reduce(TensorRemove(vnrm));
+      nrm = Reduce(vnrm);
       right._grid->GlobalSum(nrm);
       return nrm;
     }
@@ -455,9 +553,31 @@ public:
       Lattice<typename vobj::tensor_reduced> ret(rhs._grid);
 #pragma omp parallel for
         for(int ss=0;ss<rhs._grid->oSites(); ss++){
-	  ret._odata[ss]=innerProduct(rhs,rhs);
+	  ret._odata[ss]=innerProduct(rhs._odata[ss],rhs._odata[ss]);
         }
         return ret;
+    }
+    
+    template<class vobj>
+    inline auto real(const Lattice<vobj> &z) -> Lattice<decltype(real(z._odata[0]))>
+    {
+      Lattice<decltype(real(z._odata[0]))> ret(z._grid);
+#pragma omp parallel for
+        for(int ss=0;ss<z._grid->oSites();ss++){
+            ret._odata[ss] = real(z._odata[ss]);
+        }
+      return ret;
+    }
+
+    template<class vobj>
+    inline auto imag(const Lattice<vobj> &z) -> Lattice<decltype(imag(z._odata[0]))>
+    {
+      Lattice<decltype(imag(z._odata[0]))> ret(z._grid);
+#pragma omp parallel for
+        for(int ss=0;ss<z._grid->oSites();ss++){
+            ret._odata[ss] = imag(z._odata[ss]);
+        }
+      return ret;
     }
 
     // localInnerProduct

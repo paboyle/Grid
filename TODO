@@ -1,35 +1,59 @@
-
-AUDITS:
-* FIXME audit
-* const audit
-* Replace vset with a call to merge.; 
-* care in Gmerge,Gextract over vset .
-* extract / merge extra implementation removal      
-
-
-BUILD:
-* Test infrastructure
-* subdirs lib, tests ??
-
 FUNCTIONALITY:
 * Conditional execution, where etc...                -----DONE, simple test
 * Integer relational support                         -----DONE
 * Coordinate information, integers etc...            -----DONE
 * Integer type padding/union to vector.              -----DONE 
 * LatticeCoordinate[mu]                              -----DONE
+
+AUDITS:
+// Lattice support audit                 Tested in Grid_main.cc
+//
+//     -=,+=,*=                           Y
+//     add,+,sub,-,mult,mac,*             Y
+//     innerProduct,norm2                 Y
+//     localInnerProduct,outerProduct,    Y
+//     adj,conj                           Y
+//     transpose,                         Y
+//     trace                              Y
+//
+//     transposeIndex                     Y
+//     traceIndex                         Y
+//     peekIndex                          N; #args
+//
+//     real,imag                          missing, semantic thought needed on real/im support.
+//                                        perhaps I just keep everything complex?
+// 
+
+* FIXME audit
+* const audit
+* Replace vset with a call to merge.; 
+* care in Gmerge,Gextract over vset .
+* extract / merge extra implementation removal      
+
+BUILD:
+* Test infrastructure
+* subdirs lib, tests ??
+
+* How to do U[mu] ... lorentz part of type structure or not. more like chroma if not.
+* Passing a Grid into construct iVector<LatticeColourMatrix,4>??
+*
+
 * Stencil operator support                           -----Initial thoughts, trial implementation DONE.
                                                      -----some simple tests that Stencil matches Cshift.
                                                      -----do all permute in comms phase, so that copy permute
 						     -----cases move into a buffer.
+						     -----allow transform in/out buffers spproj
 
 * CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
 
+POST-SFW call April 16:
 
-POST-SFW call:
+* TraceColor, TraceSpin.                             ----- DONE (traceIndex<1>,traceIndex<2>, transposeIndex<1>,transposeIndex<2>)
+                                                     ----- Implement mapping between traceColour and traceSpin and traceIndex<1/2>.
 
-* TraceColor, TraceSpin.
+* expose traceIndex, peekIndex, transposeIndex etc at the Lattice Level -- DONE
+
 * How to define simple matrix operations, such as flavour matrices?
-
 
 * Subset support, slice sums etc...                  -----Only need slice sum?
                                                      -----Generic cartesian subslicing?
@@ -38,9 +62,9 @@ POST-SFW call:
                                                      -----Suggests generalised cartesian subblocking
                                                           sums, returning modified grid?
 					             -----What should interface be?
+
 i)  Two classes of subset;   red black parity subsetting (pick checkerboard).
                              cartesian sub-block subsetting
-
 
 ii) Need to be able to project one Grid to another Grid.
 

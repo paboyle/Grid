@@ -107,7 +107,7 @@ int main (int argc, char ** argv)
 
 	Real nrmC = norm2(Check);
 	Real nrmB = norm2(Bar);
-	Real nrm = norm2(Check-Bar);
+	Real nrm  = norm2(Check-Bar);
 	printf("N2diff = %le (%le, %le) \n",nrm,nrmC,nrmB);fflush(stdout);
 
 	Real snrmC =0;
@@ -127,18 +127,18 @@ int main (int argc, char ** argv)
 
 	  for(int r=0;r<3;r++){
 	  for(int c=0;c<3;c++){
-            diff =check._internal._internal[r][c]-bar._internal._internal[r][c];
+            diff =check()()(r,c)-bar()()(r,c);
             double nn=real(conj(diff)*diff);
             if ( nn > 0){
 	      printf("Coor (%d %d %d %d) \t rc %d%d \t %le %le %le\n",
 		     coor[0],coor[1],coor[2],coor[3],r,c,
 		     nn,
-		     real(check._internal._internal[r][c]),
-		     real(bar._internal._internal[r][c])
+		     real(check()()(r,c)),
+		     real(bar()()(r,c))
 		     );
 	    }
-	    snrmC=snrmC+real(conj(check._internal._internal[r][c])*check._internal._internal[r][c]);
-	    snrmB=snrmB+real(conj(bar._internal._internal[r][c])*bar._internal._internal[r][c]);
+	    snrmC=snrmC+real(conj(check()()(r,c))*check()()(r,c));
+	    snrmB=snrmB+real(conj(bar()()(r,c))*bar()()(r,c));
 	    snrm=snrm+nn;
 	  }}
 	 
