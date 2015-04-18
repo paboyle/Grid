@@ -18,6 +18,7 @@ namespace QCD {
     static const int ColourIndex = 1;
     static const int SpinIndex   = 2;
     static const int LorentzIndex= 3;
+    
 
     // ChrisK very keen to add extra space for Gparity doubling.
     //
@@ -83,8 +84,62 @@ namespace QCD {
     typedef Lattice<vLorentzColourMatrix> LatticeGaugeField;
 
 
-    
+    //////////////////////////////////////////////////////////////////////////////
+    // Peek and Poke named after physics attributes
+    //////////////////////////////////////////////////////////////////////////////
+    //spin
+    template<class vobj> auto peekSpin(const vobj &rhs,int i) -> decltype(peekIndex<SpinIndex>(rhs,0))
+    {
+      return peekIndex<SpinIndex>(rhs,i);
+    }
+    template<class vobj> auto peekSpin(const vobj &rhs,int i,int j) -> decltype(peekIndex<SpinIndex>(rhs,0,0))
+    {
+      return peekIndex<SpinIndex>(rhs,i,j);
+    }
+    template<class vobj> auto peekSpin(const Lattice<vobj> &rhs,int i) -> decltype(peekIndex<SpinIndex>(rhs,0))
+    {
+      return peekIndex<SpinIndex>(rhs,i);
+    }
+    template<class vobj> auto peekSpin(const Lattice<vobj> &rhs,int i,int j) -> decltype(peekIndex<SpinIndex>(rhs,0,0))
+    {
+      return peekIndex<SpinIndex>(rhs,i,j);
+    }
+    //colour
+    template<class vobj> auto peekColour(const vobj &rhs,int i) -> decltype(peekIndex<ColourIndex>(rhs,0))
+    {
+      return peekIndex<ColourIndex>(rhs,i);
+    }
+    template<class vobj> auto peekColour(const vobj &rhs,int i,int j) -> decltype(peekIndex<ColourIndex>(rhs,0,0))
+    {
+      return peekIndex<ColourIndex>(rhs,i,j);
+    }
+    template<class vobj> auto peekColour(const Lattice<vobj> &rhs,int i) -> decltype(peekIndex<ColourIndex>(rhs,0))
+    {
+      return peekIndex<ColourIndex>(rhs,i);
+    }
+    template<class vobj> auto peekColour(const Lattice<vobj> &rhs,int i,int j) -> decltype(peekIndex<ColourIndex>(rhs,0,0))
+    {
+      return peekIndex<ColourIndex>(rhs,i,j);
+    }
+    //lorentz
+    template<class vobj> auto peekLorentz(const vobj &rhs,int i) -> decltype(peekIndex<LorentzIndex>(rhs,0))
+    {
+      return peekIndex<LorentzIndex>(rhs,i);
+    }
+    template<class vobj> auto peekLorentz(const vobj &rhs,int i,int j) -> decltype(peekIndex<LorentzIndex>(rhs,0,0))
+    {
+      return peekIndex<LorentzIndex>(rhs,i,j);
+    }
+    template<class vobj> auto peekLorentz(const Lattice<vobj> &rhs,int i) -> decltype(peekIndex<LorentzIndex>(rhs,0))
+    {
+      return peekIndex<LorentzIndex>(rhs,i);
+    }
+    template<class vobj> auto peekLorentz(const Lattice<vobj> &rhs,int i,int j) -> decltype(peekIndex<LorentzIndex>(rhs,0,0))
+    {
+      return peekIndex<LorentzIndex>(rhs,i,j);
+    }
 
+    // FIXME this is rather generic and should find a way to place it earlier.
      inline void LatticeCoordinate(LatticeInteger &l,int mu){
       GridBase *grid = l._grid;
       int Nsimd = grid->iSites();
