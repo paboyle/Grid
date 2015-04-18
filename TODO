@@ -10,6 +10,18 @@ FUNCTIONALITY:
 * How to do U[mu] ... lorentz part of type structure or not. more like chroma if not. -- DONE
 
 * subdirs lib, tests ??                              ----- DONE
+  - lib/math
+  - lib/cartesian
+  - lib/cshift
+  - lib/stencil
+  - lib/communicator
+  - lib/algorithms
+  - lib/fileio
+
+  - lib/qcd
+  - lib/qcd/actions
+  - lib/qcd/measurements
+  - lib/qcd/
 
 Not done, or just incomplete
 
