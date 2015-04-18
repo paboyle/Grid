@@ -11,7 +11,7 @@
 #include <sys/time.h>
 #include <signal.h>
 
-#include "Grid.h"
+#include <Grid.h>
 
 #undef __X86_64
 namespace Grid {
