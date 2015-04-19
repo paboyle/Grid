@@ -62,14 +62,17 @@ public:
         _ostride.resize(_ndimension);
         _istride.resize(_ndimension);
         
-        _osites = 1;
-        _isites = 1;
+        _fsites = _gsites = _osites = _isites = 1;
+
         for(int d=0;d<_ndimension;d++){
             _fdimensions[d] = dimensions[d];
             _gdimensions[d] = _fdimensions[d];
+	    _fsites = _fsites * _fdimensions[d];
+	    _gsites = _gsites * _gdimensions[d];
+                
             if (d==0) _gdimensions[0] = _gdimensions[0]/2; // Remove a checkerboard
             _ldimensions[d] = _gdimensions[d]/_processors[d];
-                
+
             // Use a reduced simd grid
             _simd_layout[d] = simd_layout[d];
             _rdimensions[d]= _ldimensions[d]/_simd_layout[d];

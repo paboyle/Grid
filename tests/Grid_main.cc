@@ -57,7 +57,8 @@ int main (int argc, char ** argv)
     
     GridCartesian Fine(latt_size,simd_layout,mpi_layout);
     GridRedBlackCartesian rbFine(latt_size,simd_layout,mpi_layout);
-    
+    GridRNG       FineRNG(&Fine);
+
     LatticeColourMatrix Foo(&Fine);
     LatticeColourMatrix Bar(&Fine);
 
@@ -91,17 +92,17 @@ int main (int argc, char ** argv)
     iSpinMatrix<vComplex> iGammaFive;
     ColourMatrix cmat;
     
-    random(Foo);
-    gaussian(Bar);
-    random(scFoo);
-    random(scBar);
+    random(FineRNG,Foo);
+    gaussian(FineRNG,Bar);
+    random(FineRNG,scFoo);
+    random(FineRNG,scBar);
 
-    random(cMat);
-    random(sMat);
-    random(scMat);
-    random(cVec);
-    random(sVec);
-    random(scVec);
+    random(FineRNG,cMat);
+    random(FineRNG,sMat);
+    random(FineRNG,scMat);
+    random(FineRNG,cVec);
+    random(FineRNG,sVec);
+    random(FineRNG,scVec);
 
     fflush(stdout);
     cVec = cMat * cVec;  // LatticeColourVector     = LatticeColourMatrix     * LatticeColourVector
@@ -277,7 +278,7 @@ int main (int argc, char ** argv)
         peekSite(bar,Bar,coor);
         for(int r=0;r<3;r++){
         for(int c=0;c<3;c++){
-	  cout<<"bar "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "<<bar()()(r,c)<<std::endl;
+	  //	  cout<<"bar "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "<<bar()()(r,c)<<std::endl;
 	}}
       }}}}
     } 

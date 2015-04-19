@@ -43,12 +43,14 @@ public:
         _ostride.resize(_ndimension);
         _istride.resize(_ndimension);
             
-        _osites = 1;
-        _isites = 1;
+        _fsites = _gsites = _osites = _isites = 1;
+
         for(int d=0;d<_ndimension;d++){
 	  _fdimensions[d] = dimensions[d]; // Global dimensions
 	  _gdimensions[d] = _fdimensions[d]; // Global dimensions
 	  _simd_layout[d] = simd_layout[d];
+	  _fsites = _fsites * _fdimensions[d];
+	  _gsites = _gsites * _gdimensions[d];
 
 	  //FIXME check for exact division
 
