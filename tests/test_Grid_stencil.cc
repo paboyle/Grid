@@ -48,14 +48,15 @@ int main (int argc, char ** argv)
     
     GridCartesian Fine(latt_size,simd_layout,mpi_layout);
     GridRedBlackCartesian rbFine(latt_size,simd_layout,mpi_layout);
-    
+    GridRNG       fRNG(&Fine);
+
     LatticeColourMatrix Foo(&Fine);
     LatticeColourMatrix Bar(&Fine);
     LatticeColourMatrix Check(&Fine);
     LatticeColourMatrix Diff(&Fine);
     
-    random(Foo);
-    gaussian(Bar);
+    random(fRNG,Foo);
+    gaussian(fRNG,Bar);
 
 
     for(int dir=0;dir<4;dir++){

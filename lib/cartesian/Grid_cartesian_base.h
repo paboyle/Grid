@@ -6,22 +6,25 @@
 
 namespace Grid{
 
-class GridBase : public CartesianCommunicator {
+  class GridRNG ; // Forward declaration;
+
+  class GridBase : public CartesianCommunicator {
 public:
 
- // Give Lattice access
- template<class object> friend class Lattice;
-  
- GridBase(std::vector<int> & processor_grid) : CartesianCommunicator(processor_grid) {};
+    // Give Lattice access
+    template<class object> friend class Lattice;
 
-        
- //FIXME 
- // protected:
- // Lattice wide random support. not yet fully implemented. Need seed strategy
- // and one generator per site.
- // std::default_random_engine generator;
- //    static std::mt19937  generator( 9 );
- 
+    GridRNG *_rng;
+
+    GridBase(std::vector<int> & processor_grid) : CartesianCommunicator(processor_grid) {};
+            
+    //FIXME 
+    // protected:
+    // Lattice wide random support. not yet fully implemented. Need seed strategy
+    // and one generator per site.
+    // std::default_random_engine generator;
+    //    static std::mt19937  generator( 9 );
+    
     //////////////////////////////////////////////////////////////////////
     // Commicator provides information on the processor grid
     //////////////////////////////////////////////////////////////////////
@@ -32,7 +35,7 @@ public:
     //////////////////////////////////////////////////////////////////////
 
     // Physics Grid information.
-    std::vector<int> _simd_layout;     // Which dimensions get relayed out over simd lanes.
+    std::vector<int> _simd_layout;// Which dimensions get relayed out over simd lanes.
     std::vector<int> _fdimensions;// Global dimensions of array prior to cb removal
     std::vector<int> _gdimensions;// Global dimensions of array after cb removal
     std::vector<int> _ldimensions;// local dimensions of array with processor images removed
@@ -41,6 +44,8 @@ public:
     std::vector<int> _istride;    // Inner stride i.e. within simd lane
     int _osites;                  // _isites*_osites = product(dimensions).
     int _isites;
+    int _fsites;                  // _isites*_osites = product(dimensions).
+    int _gsites;
     std::vector<int> _slice_block;   // subslice information
     std::vector<int> _slice_stride;
     std::vector<int> _slice_nblock;
@@ -149,6 +154,21 @@ public:
     ////////////////////////////////////////////////////////////////
     // Global addressing
     ////////////////////////////////////////////////////////////////
+    void GlobalIndexToGlobalCoor(int gidx,std::vector<int> &gcoor){
+      gcoor.resize(_ndimension);
+      for(int d=0;d<_ndimension;d++){
+	gcoor[d] = gidx % _gdimensions[d];
+	gidx     = gidx / _gdimensions[d];
+      }
+    }
+    void GlobalCoorToGlobalIndex(const std::vector<int> & gcoor,int & gidx){
+      gidx=0;
+      int mult=1;
+      for(int mu=0;mu<_ndimension;mu++) {
+	gidx+=mult*gcoor[mu];
+	mult*=_gdimensions[mu];
+      }
+    }
     void RankIndexToGlobalCoor(int rank, int o_idx, int i_idx , std::vector<int> &gcoor)
     {
       gcoor.resize(_ndimension);
@@ -194,7 +214,8 @@ public:
       i_idx= iIndex(lcoor);
       o_idx= oIndex(lcoor);
     }
-
 };
+
+
 }
 #endif

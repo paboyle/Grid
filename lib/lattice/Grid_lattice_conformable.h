@@ -9,6 +9,10 @@ namespace Grid {
         assert(lhs._grid == rhs._grid);
         assert(lhs.checkerboard == rhs.checkerboard);
     }
+    void inline conformable(const GridBase *lhs,GridBase *rhs)
+    {
+        assert(lhs == rhs);
+    }
 
 }
 #endif
