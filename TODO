@@ -17,21 +17,22 @@ FUNCTIONALITY:
   - lib/communicator
   - lib/algorithms
   - lib/qcd
-
+ future
   - lib/io/   -- GridLog, GridIn, GridErr, GridDebug, GridMessage
   - lib/qcd/actions
   - lib/qcd/measurements
 
 
 Not done, or just incomplete
+* random number generation
 
 * Consider switch std::vector to boost arrays.
   boost::multi_array<type, 3> A()...    to replace multi1d, multi2d etc..
 
-
 * How to define simple matrix operations, such as flavour matrices?
 
 * Dirac, Pauli, SU subgroup, etc.. * Gamma/Dirac structures
+
 * Fourspin, two spin project
 
 * su3 exponentiation, log etc.. [Jamie's code?]
