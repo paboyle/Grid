@@ -40,6 +40,36 @@ namespace Grid {
       return nrm;
     }
 
+    template<class vobj>
+      inline typename vobj::scalar_object sum(const Lattice<vobj> &arg){
+
+      GridBase *grid=arg._grid;
+      int Nsimd = grid->Nsimd();
+
+      typedef typename vobj::scalar_object sobj;
+      typedef typename vobj::scalar_type   scalar_type;
+
+      vobj vsum;
+      sobj ssum;
+
+      vsum=zero;
+      ssum=zero;
+      for(int ss=0;ss<arg._grid->oSites(); ss++){
+	vsum = vsum + arg._odata[ss];
+      }
+      
+      std::vector<sobj>               buf(Nsimd);
+      std::vector<scalar_type *> pointers(Nsimd);  
+      for(int i=0;i<Nsimd;i++) pointers[i] = (scalar_type *)&buf[i];
+      extract(vsum,pointers);
+
+      for(int i=0;i<Nsimd;i++) ssum = ssum + buf[i];
+
+      arg._grid->GlobalSum(ssum);
+
+      return ssum;
+    }
+
 }
 #endif
 

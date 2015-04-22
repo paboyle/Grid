@@ -28,6 +28,9 @@ CartesianCommunicator::CartesianCommunicator(std::vector<int> &processors)
   assert(Size==_Nprocessors);
 }
 
+void CartesianCommunicator::GlobalSum(uint32_t &u){
+  MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_SUM,communicator);
+}
 void CartesianCommunicator::GlobalSum(float &f){
   MPI_Allreduce(MPI_IN_PLACE,&f,1,MPI_FLOAT,MPI_SUM,communicator);
 }

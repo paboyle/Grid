@@ -37,7 +37,8 @@ public:
     // what about a default grid?
     //////////////////////////////////////////////////////////////////
     Lattice(GridBase *grid) : _grid(grid) {
-        _odata.reserve(_grid->oSites());
+      //        _odata.reserve(_grid->oSites());
+        _odata.resize(_grid->oSites());
         assert((((uint64_t)&_odata[0])&0xF) ==0);
         checkerboard=0;
     }
@@ -46,6 +47,15 @@ public:
 #pragma omp parallel for
         for(int ss=0;ss<_grid->oSites();ss++){
             this->_odata[ss]=r;
+        }
+        return *this;
+    }
+    template<class robj> inline Lattice<vobj> & operator = (const Lattice<robj> & r){
+      conformable(*this,r);
+      std::cout<<"Lattice operator ="<<std::endl;
+
+        for(int ss=0;ss<_grid->oSites();ss++){
+            this->_odata[ss]=r._odata[ss];
         }
         return *this;
     }

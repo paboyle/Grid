@@ -35,6 +35,7 @@ class CartesianCommunicator {
     // Grid information queries
     /////////////////////////////////
     int                      IsBoss(void)            { return _processor==0; };
+    int                      BossRank(void)          { return 0; };
     int                      ThisRank(void)          { return _processor; };
     const std::vector<int> & ThisProcessorCoor(void) { return _processor_coor; };
     const std::vector<int> & ProcessorGrid(void)     { return _processors; };
@@ -48,6 +49,8 @@ class CartesianCommunicator {
 
     void GlobalSum(RealD &);
     void GlobalSumVector(RealD *,int N);
+
+    void GlobalSum(uint32_t &);
 
     void GlobalSum(ComplexF &c)
     {
@@ -68,12 +71,10 @@ class CartesianCommunicator {
     }
     
     template<class obj> void GlobalSum(obj &o){
-
       typedef typename obj::scalar_type scalar_type;
       int words = sizeof(obj)/sizeof(scalar_type);
-
       scalar_type * ptr = (scalar_type *)& o;
-      GlobalSum(ptr,words);
+      GlobalSumVector(ptr,words);
     }
     ////////////////////////////////////////////////////////////
     // Face exchange

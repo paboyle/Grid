@@ -6,34 +6,23 @@
 
 namespace Grid{
 
-  class GridRNG ; // Forward declaration;
-
+  //////////////////////////////////////////////////////////////////////
+  // Commicator provides information on the processor grid
+  //////////////////////////////////////////////////////////////////////
+  //    unsigned long _ndimension;
+  //    std::vector<int> _processors; // processor grid
+  //    int              _processor;  // linear processor rank
+  //    std::vector<int> _processor_coor;  // linear processor rank
+  //////////////////////////////////////////////////////////////////////
   class GridBase : public CartesianCommunicator {
+
 public:
 
     // Give Lattice access
     template<class object> friend class Lattice;
 
-    GridRNG *_rng;
-
     GridBase(std::vector<int> & processor_grid) : CartesianCommunicator(processor_grid) {};
             
-    //FIXME 
-    // protected:
-    // Lattice wide random support. not yet fully implemented. Need seed strategy
-    // and one generator per site.
-    // std::default_random_engine generator;
-    //    static std::mt19937  generator( 9 );
-    
-    //////////////////////////////////////////////////////////////////////
-    // Commicator provides information on the processor grid
-    //////////////////////////////////////////////////////////////////////
-    //    unsigned long _ndimension;
-    //    std::vector<int> _processors; // processor grid
-    //    int              _processor;  // linear processor rank
-    //    std::vector<int> _processor_coor;  // linear processor rank
-    //////////////////////////////////////////////////////////////////////
-
     // Physics Grid information.
     std::vector<int> _simd_layout;// Which dimensions get relayed out over simd lanes.
     std::vector<int> _fdimensions;// Global dimensions of array prior to cb removal
@@ -101,6 +90,13 @@ public:
       for(int d=0;d<_ndimension;d++) idx+=_ostride[d]*ocoor[d];
       return idx;
     }
+    inline void CoorFromIndex (std::vector<int>& coor,int index,std::vector<int> &dims){
+      coor.resize(_ndimension);
+      for(int d=0;d<_ndimension;d++){
+	coor[d] = index % dims[d];
+	index   = index / dims[d];
+      }
+    }
     inline void oCoorFromOindex (std::vector<int>& coor,int Oindex){
       coor.resize(_ndimension);
       for(int d=0;d<_ndimension;d++){
@@ -146,6 +142,7 @@ public:
     inline int lSites(void) { return _isites*_osites; }; 
     inline int gSites(void) { return _isites*_osites*_Nprocessors; }; 
     inline int Nd    (void) { return _ndimension;};
+
     inline const std::vector<int> &FullDimensions(void)         { return _fdimensions;};
     inline const std::vector<int> &GlobalDimensions(void)       { return _gdimensions;};
     inline const std::vector<int> &LocalDimensions(void)        { return _ldimensions;};
@@ -175,10 +172,10 @@ public:
       std::vector<int> coor(_ndimension);
 
       ProcessorCoorFromRank(rank,coor);
-      for(int mu=0;mu<_ndimension;mu++) gcoor[mu] = _ldimensions[mu]&coor[mu];
+      for(int mu=0;mu<_ndimension;mu++) gcoor[mu] = _ldimensions[mu]*coor[mu];
 
       iCoorFromIindex(coor,i_idx);
-      for(int mu=0;mu<_ndimension;mu++) gcoor[mu] += _rdimensions[mu]&coor[mu];
+      for(int mu=0;mu<_ndimension;mu++) gcoor[mu] += _rdimensions[mu]*coor[mu];
 
       oCoorFromOindex (coor,o_idx);
       for(int mu=0;mu<_ndimension;mu++) gcoor[mu] += coor[mu];

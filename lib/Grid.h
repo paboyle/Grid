@@ -51,6 +51,7 @@
 #include <Grid_where.h>
 #include <Grid_stencil.h>
 #include <qcd/Grid_QCD.h>
+#include <parallelIO/GridNerscIO.h>
 
 namespace Grid {
 

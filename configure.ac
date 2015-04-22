@@ -25,6 +25,8 @@ AC_TYPE_UINT64_T
 
 # Checks for library functions.
 AC_CHECK_FUNCS([gettimeofday])
+AC_CHECK_FUNCS([ntohll])
+AC_CHECK_FUNCS([be64toh])
 
 AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE|AVX|AVX2|AVX512],[Select instructions])],[ac_SIMD=${enable_simd}],[ac_SIMD=AVX2])
 

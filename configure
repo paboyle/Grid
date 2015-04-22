@@ -4999,6 +4999,28 @@ _ACEOF
 fi
 done
 
+for ac_func in ntohll
+do :
+  ac_fn_c_check_func "$LINENO" "ntohll" "ac_cv_func_ntohll"
+if test "x$ac_cv_func_ntohll" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_NTOHLL 1
+_ACEOF
+
+fi
+done
+
+for ac_func in be64toh
+do :
+  ac_fn_c_check_func "$LINENO" "be64toh" "ac_cv_func_be64toh"
+if test "x$ac_cv_func_be64toh" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_BE64TOH 1
+_ACEOF
+
+fi
+done
+
 
 # Check whether --enable-simd was given.
 if test "${enable_simd+set}" = set; then :

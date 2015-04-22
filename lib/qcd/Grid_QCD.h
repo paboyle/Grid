@@ -42,6 +42,8 @@ namespace QCD {
     typedef iColourMatrix<Complex >        ColourMatrix;
     typedef iSpinColourMatrix<Complex >    SpinColourMatrix;
     typedef iLorentzColourMatrix<Complex > LorentzColourMatrix;
+    typedef iLorentzColourMatrix<ComplexF > LorentzColourMatrixF;
+    typedef iLorentzColourMatrix<ComplexD > LorentzColourMatrixD;
 
     typedef iSpinVector<Complex >       SpinVector;
     typedef iColourVector<Complex >     ColourVector;
@@ -66,7 +68,7 @@ namespace QCD {
 
     typedef Lattice<vTReal>              LatticeReal;
     typedef Lattice<vTComplex>           LatticeComplex;
-    typedef Lattice<vInteger>            LatticeInteger; // Predicates for "where"
+    typedef Lattice<vTInteger>            LatticeInteger; // Predicates for "where"
     
     typedef Lattice<vColourMatrix>     LatticeColourMatrix;
     typedef Lattice<vSpinMatrix>       LatticeSpinMatrix;

@@ -8,42 +8,42 @@ namespace Grid {
     public:
       vInteger operator()(const lobj &lhs, const robj &rhs)
 	{ 
-	  return lhs == rhs;
+	  return TensorRemove(lhs) == TensorRemove(rhs);
 	}
     };
     template<class lobj,class robj> class vne {
     public:
       vInteger operator()(const lobj &lhs, const robj &rhs)
 	{ 
-	  return lhs != rhs;
+	  return TensorRemove(lhs) != TensorRemove(rhs);
 	}
     };
     template<class lobj,class robj> class vlt {
     public:
       vInteger operator()(const lobj &lhs, const robj &rhs)
 	{ 
-	  return lhs < rhs;
+	  return TensorRemove(lhs) < TensorRemove(rhs);
 	}
     };
     template<class lobj,class robj> class vle {
     public:
       vInteger operator()(const lobj &lhs, const robj &rhs)
 	{ 
-	  return lhs <= rhs;
+	  return TensorRemove(lhs) <= TensorRemove(rhs);
 	}
     };
     template<class lobj,class robj> class vgt {
     public:
       vInteger operator()(const lobj &lhs, const robj &rhs)
 	{ 
-	  return lhs > rhs;
+	  return TensorRemove(lhs) > TensorRemove(rhs);
 	}
     };
     template<class lobj,class robj> class vge {
     public:
       vInteger operator()(const lobj &lhs, const robj &rhs)
 	{ 
-	  return lhs >= rhs;
+	  return TensorRemove(lhs) >= TensorRemove(rhs);
 	}
     };
 
@@ -52,42 +52,42 @@ namespace Grid {
     public:
       Integer operator()(const lobj &lhs, const robj &rhs)
 	{ 
-	  return lhs == rhs;
+	  return TensorRemove(lhs) == TensorRemove(rhs);
 	}
     };
     template<class lobj,class robj> class sne {
     public:
       Integer operator()(const lobj &lhs, const robj &rhs)
 	{ 
-	  return lhs != rhs;
+	  return TensorRemove(lhs) != TensorRemove(rhs);
 	}
     };
     template<class lobj,class robj> class slt {
     public:
       Integer operator()(const lobj &lhs, const robj &rhs)
 	{ 
-	  return lhs < rhs;
+	  return TensorRemove(lhs) < TensorRemove(rhs);
 	}
     };
     template<class lobj,class robj> class sle {
     public:
       Integer operator()(const lobj &lhs, const robj &rhs)
 	{ 
-	  return lhs <= rhs;
+	  return TensorRemove(lhs) <= TensorRemove(rhs);
 	}
     };
     template<class lobj,class robj> class sgt {
     public:
       Integer operator()(const lobj &lhs, const robj &rhs)
 	{ 
-	  return lhs > rhs;
+	  return TensorRemove(lhs) > TensorRemove(rhs);
 	}
     };
     template<class lobj,class robj> class sge {
     public:
       Integer operator()(const lobj &lhs, const robj &rhs)
 	{ 
-	  return lhs >= rhs;
+	  return TensorRemove(lhs) >= TensorRemove(rhs);
 	}
     };
 

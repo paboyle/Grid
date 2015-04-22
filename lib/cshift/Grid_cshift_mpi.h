@@ -188,8 +188,8 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &r
 
     if ( comm_any ) {
 
-      for(int i=0;i<Nsimd;i++){
-	pointers[i] = (scalar_type *)&send_buf_extract[i][0];
+      for(int i=0;i<Nsimd;i++){         // there is a reversal in extract merge
+	pointers[i] = (scalar_type *)&send_buf_extract[Nsimd-1-i][0];
       }
       Gather_plane_extract(rhs,pointers,dimension,sx,cbmask);
 
@@ -238,9 +238,9 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &r
       for(int i=0;i<Nsimd;i++){
 	if ( permute_slice ) {
 	  PermuteMap=i^toggle_bit;
-	  pointers[i] = rpointers[PermuteMap];
+	  pointers[Nsimd-1-i] = rpointers[PermuteMap];
 	} else {
-	  pointers[i] = rpointers[i];
+	  pointers[Nsimd-1-i] = rpointers[i];
 	}
       }
 

@@ -17,6 +17,7 @@ CartesianCommunicator::CartesianCommunicator(std::vector<int> &processors)
 void CartesianCommunicator::GlobalSum(float &){}
 void CartesianCommunicator::GlobalSumVector(float *,int N){}
 void CartesianCommunicator::GlobalSum(double &){}
+void CartesianCommunicator::GlobalSum(uint32_t &){}
 void CartesianCommunicator::GlobalSumVector(double *,int N){}
 
 // Basic Halo comms primitive
