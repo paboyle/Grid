@@ -43,6 +43,7 @@ namespace Grid {
         }
         return ret;
     };
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     // Poke internal indices of a Lattice object
     ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -88,25 +89,25 @@ namespace Grid {
       assert( sizeof(sobj)*Nsimd == sizeof(vobj));
 
       int rank,odx,idx;
-      grid->GlobalCoorToRankIndex(rank,odx,idx,site);
-
       // Optional to broadcast from node 0.
-      grid->Broadcast(0,s);
+      grid->GlobalCoorToRankIndex(rank,odx,idx,site);
+      grid->Broadcast(grid->BossRank(),s);
 
       std::vector<sobj> buf(Nsimd);
       std::vector<scalar_type *> pointers(Nsimd);  
-      for(int i=0;i<Nsimd;i++) pointers[i] = (scalar_type *)&buf[i];
 
       // extract-modify-merge cycle is easiest way and this is not perf critical
-      extract(l._odata[odx],pointers);
-      
-      buf[idx] = s;
-
-      for(int i=0;i<Nsimd;i++) pointers[i] = (scalar_type *)&buf[i];
-      merge(l._odata[odx],pointers);
+      if ( rank == grid->ThisRank() ) {
+	for(int i=0;i<Nsimd;i++) pointers[i] = (scalar_type *)&buf[i];
+	extract(l._odata[odx],pointers);
+	buf[idx] = s;
+	for(int i=0;i<Nsimd;i++) pointers[i] = (scalar_type *)&buf[i];
+	merge(l._odata[odx],pointers);
+      }
 
       return;
     };
+
 
     //////////////////////////////////////////////////////////
     // Peek a scalar object from the SIMD array
@@ -134,6 +135,69 @@ namespace Grid {
       
       s = buf[idx];
       grid->Broadcast(rank,s);
+
+      return;
+    };
+
+    //////////////////////////////////////////////////////////
+    // Peek a scalar object from the SIMD array
+    //////////////////////////////////////////////////////////
+    template<class vobj,class sobj>
+    void peekLocalSite(sobj &s,Lattice<vobj> &l,std::vector<int> &site){
+        
+      GridBase *grid=l._grid;
+
+      typedef typename vobj::scalar_type scalar_type;
+      typedef typename vobj::vector_type vector_type;
+
+      int Nsimd = grid->Nsimd();
+
+      assert( l.checkerboard== l._grid->CheckerBoard(site));
+      assert( sizeof(sobj)*Nsimd == sizeof(vobj));
+
+      int odx,idx;
+      idx= grid->iIndex(site);
+      odx= grid->oIndex(site);
+
+      std::vector<sobj> buf(Nsimd);
+      std::vector<scalar_type *> pointers(Nsimd);  
+      for(int i=0;i<Nsimd;i++) pointers[i] = (scalar_type *)&buf[i];
+
+      extract(l._odata[odx],pointers);
+      
+      s = buf[idx];
+
+      return;
+    };
+
+    template<class vobj,class sobj>
+    void pokeLocalSite(const sobj &s,Lattice<vobj> &l,std::vector<int> &site){
+
+      GridBase *grid=l._grid;
+
+      typedef typename vobj::scalar_type scalar_type;
+      typedef typename vobj::vector_type vector_type;
+
+      int Nsimd = grid->Nsimd();
+
+      assert( l.checkerboard== l._grid->CheckerBoard(site));
+      assert( sizeof(sobj)*Nsimd == sizeof(vobj));
+
+      int odx,idx;
+      idx= grid->iIndex(site);
+      odx= grid->oIndex(site);
+
+      std::vector<sobj> buf(Nsimd);
+      std::vector<scalar_type *> pointers(Nsimd);  
+      for(int i=0;i<Nsimd;i++) pointers[i] = (scalar_type *)&buf[i];
+
+      // extract-modify-merge cycle is easiest way and this is not perf critical
+      extract(l._odata[odx],pointers);
+      
+      buf[idx] = s;
+
+      for(int i=0;i<Nsimd;i++) pointers[i] = (scalar_type *)&buf[i];
+      merge(l._odata[odx],pointers);
 
       return;
     };

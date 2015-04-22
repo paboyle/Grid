@@ -13,10 +13,12 @@ template<class vtype> class iScalar
 public:
   vtype _internal;
 
-  typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
+  typedef typename GridTypeMapper<vtype>::scalar_type   scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
   typedef iScalar<tensor_reduced_v> tensor_reduced;
+  typedef typename GridTypeMapper<vtype>::scalar_object recurse_scalar_object;
+  typedef iScalar<recurse_scalar_object> scalar_object;
 
   enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
 
@@ -27,7 +29,7 @@ public:
     
     iScalar(scalar_type s) : _internal(s) {};// recurse down and hit the constructor for vector_type
 
-    iScalar(Zero &z){ *this = zero; };
+    iScalar(const Zero &z){ *this = zero; };
 
     iScalar<vtype> & operator= (const Zero &hero){
         zeroit(*this);
@@ -73,11 +75,18 @@ public:
     operator ComplexD () const { return(TensorRemove(_internal)); };
     operator RealD () const { return(real(TensorRemove(_internal))); }
 
+
+    template<class T,typename std::enable_if<isGridTensor<T>::notvalue, T>::type* = nullptr > inline auto operator = (T arg) -> iScalar<vtype>
+    { 
+      _internal = arg;
+      return *this;
+    }
+
 };
 ///////////////////////////////////////////////////////////
 // Allows to turn scalar<scalar<scalar<double>>>> back to double.
 ///////////////////////////////////////////////////////////
-template<class T> inline typename std::enable_if<isGridTensor<T>::notvalue, T>::type TensorRemove(T arg) { return arg;}
+template<class T>     inline typename std::enable_if<isGridTensor<T>::notvalue, T>::type TensorRemove(T arg) { return arg;}
 template<class vtype> inline auto TensorRemove(iScalar<vtype> arg) -> decltype(TensorRemove(arg._internal))
 {
   return TensorRemove(arg._internal);
@@ -91,14 +100,17 @@ public:
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
+  typedef typename GridTypeMapper<vtype>::scalar_object recurse_scalar_object;
+  typedef iScalar<tensor_reduced_v> tensor_reduced;
+  typedef iVector<recurse_scalar_object,N> scalar_object;
+
 
   enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
-  typedef iScalar<tensor_reduced_v> tensor_reduced;
 
-    iVector(Zero &z){ *this = zero; };
+    iVector(const Zero &z){ *this = zero; };
     iVector() {};// Empty constructure
 
-    iVector<vtype,N> & operator= (Zero &hero){
+    iVector<vtype,N> & operator= (const Zero &hero){
         zeroit(*this);
         return *this;
     }
@@ -153,18 +165,27 @@ public:
 
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
-
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
+  typedef typename GridTypeMapper<vtype>::scalar_object recurse_scalar_object;
+  typedef iScalar<tensor_reduced_v> tensor_reduced;
+  typedef iMatrix<recurse_scalar_object,N> scalar_object;
 
   enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
-  typedef iScalar<tensor_reduced_v> tensor_reduced;
 
-  iMatrix(Zero &z){ *this = zero; };
+  iMatrix(const Zero &z){ *this = zero; };
   iMatrix() {};
-  iMatrix<vtype,N> & operator= (Zero &hero){
+  iMatrix<vtype,N> & operator= (const Zero &hero){
     zeroit(*this);
     return *this;
   }
+  template<class T,typename std::enable_if<isGridTensor<T>::notvalue, T>::type* = nullptr > inline auto operator = (T arg) -> iMatrix<vtype,N>
+    { 
+      zeroit(*this);
+      for(int i=0;i<N;i++)
+	_internal[i][i] = arg;
+      return *this;
+    }
+
   friend void zeroit(iMatrix<vtype,N> &that){
     for(int i=0;i<N;i++){
       for(int j=0;j<N;j++){
