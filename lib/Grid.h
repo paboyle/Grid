@@ -50,16 +50,21 @@
 #include <Grid_cshift.h>
 #include <Grid_where.h>
 #include <Grid_stencil.h>
-#include <qcd/Grid_QCD.h>
+#include <qcd/Grid_qcd.h>
 #include <parallelIO/GridNerscIO.h>
 
 namespace Grid {
 
   void Grid_init(int *argc,char ***argv);
   void Grid_finalize(void);
-  double usecond(void);
   void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr);
   void Grid_debug_handler_init(void);
+  void Grid_quiesce_nodes(void);
+  void Grid_unquiesce_nodes(void);
+
+  // C++11 time facilities better?
+  double usecond(void);
+
 
 };
 
