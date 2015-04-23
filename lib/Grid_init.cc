@@ -10,11 +10,49 @@
 #include <sys/stat.h> 
 #include <sys/time.h>
 #include <signal.h>
-
+#include <iostream>
 #include <Grid.h>
 
 #undef __X86_64
+#define MAC
+
+#ifdef MAC
+#include <execinfo.h>
+#endif
+
 namespace Grid {
+
+  std::streambuf *Grid_saved_stream_buf;
+#if 0
+  void Grid_quiesce_nodes(void)
+  {
+#ifdef GRID_COMMS_MPI
+    int me;
+    MPI_Comm_rank(MPI_COMM_WORLD,&me);
+    std::streambuf* Grid_saved_stream_buf = std::cout.rdbuf();
+    if ( me ) { 
+      std::ofstream file("log.node");
+      std::cout.rdbuf(file.rdbuf());
+    }
+#endif
+  }
+#endif
+  void Grid_quiesce_nodes(void)
+  {
+#ifdef GRID_COMMS_MPI
+    int me;
+    MPI_Comm_rank(MPI_COMM_WORLD,&me);
+    if ( me ) { 
+      std::cout.setstate(std::ios::badbit);
+    }
+#endif
+  }
+  void Grid_unquiesce_nodes(void)
+  {
+#ifdef GRID_COMMS_MPI
+    std::cout.clear();
+#endif
+  }
 
 void Grid_init(int *argc,char ***argv)
 {
@@ -22,6 +60,7 @@ void Grid_init(int *argc,char ***argv)
   MPI_Init(argc,argv);
 #endif
   Grid_debug_handler_init();
+  Grid_quiesce_nodes();
 }
 void Grid_finalize(void)
 {
@@ -35,6 +74,10 @@ double usecond(void) {
   return 1.0*tv.tv_usec + 1.0e6*tv.tv_sec;
 }
 
+
+#define _NBACKTRACE (256)
+void * Grid_backtrace_buffer[_NBACKTRACE];
+
 void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
 {
   printf("Caught signal %d\n",si->si_signo);
@@ -43,10 +86,8 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
 
 #ifdef __X86_64
     ucontext_t * uc= (ucontext_t *)ptr;
-
   struct sigcontext *sc = (struct sigcontext *)&uc->uc_mcontext;
   printf("  instruction %llx\n",(uint64_t)sc->rip);
-
 #define REG(A)  printf("  %s %lx\n",#A, sc-> A);
   REG(rdi);
   REG(rsi);
@@ -68,14 +109,14 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   REG(r14);
   REG(r15);
 #endif
-
-  fflush(stdout);
-
-  if ( si->si_signo == SIGSEGV ) {
-    printf("Grid_sa_signal_handler: Oops... this was a sigsegv you naughty naughty programmer. Goodbye\n");
-    fflush(stdout);
-    exit(-1);
+#ifdef MAC
+  int symbols    = backtrace        (Grid_backtrace_buffer,_NBACKTRACE);
+  char **strings = backtrace_symbols(Grid_backtrace_buffer,symbols);
+  for (int i = 0; i < symbols; i++){
+    printf ("%s\n", strings[i]);
   }
+#endif
+  exit(0);
   return;
 };
 

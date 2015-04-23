@@ -1,3 +1,77 @@
+* - BinaryWriter, TextWriter etc...
+  - protocol buffers? replace xml
+
+* Stencil operator support                           -----Initial thoughts, trial implementation DONE.
+                                                     -----some simple tests that Stencil matches Cshift.
+                                                     -----do all permute in comms phase, so that copy permute
+						     -----cases move into a buffer.
+						     -----allow transform in/out buffers spproj
+
+
+* CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
+
+* Consider switch std::vector to boost arrays or something lighter weight
+  boost::multi_array<type, 3> A()...    to replace multi1d, multi2d etc..
+
+* How to define simple matrix operations, such as flavour matrices?
+
+* Make the Tensor types and Complex etc... play more nicely.
+
+* Dirac, Pauli, SU subgroup, etc.. * Gamma/Dirac structures
+
+* Fourspin, two spin project
+
+* su3 exponentiation & log etc.. [Jamie's code?]
+  TaProj
+
+* Parallel MPI2 IO
+
+* rb4d support.
+
+* Check for missing functionality                    - partially audited against QDP++ layout
+
+* Optimise the extract/merge SIMD routines; Azusa??
+ - I have collated into single location at least.
+ - Need to use _mm_*insert/extract routines.
+
+* Conformable test in Cshift routines.
+
+* QDP++ regression suite and comparative benchmark
+
+AUDITS:
+
+* FIXME audit
+* const audit
+* Replace vset with a call to merge.; 
+* care in Gmerge,Gextract over vset .
+* extract / merge extra implementation removal      
+* Test infrastructure
+
+   // TODO
+   //
+   // Base class to share common code between vRealF, VComplexF etc...
+  //
+   // Unary functions
+   // cos,sin, tan, acos, asin, cosh, acosh, tanh, sinh, // Scalar<vReal> only arg
+   // exp, log, sqrt, fabs
+   //
+  // transposeColor, transposeSpin,
+   // adjColor, adjSpin,
+   //
+  // copyMask.
+   //
+   // localMaxAbs
+   //
+   // Fourier transform equivalent.
+
+* LinearOperator
+
+  LinearSolver
+
+  Polynomial etc...
+
+======================================================================================================
+
 FUNCTIONALITY:
 * Conditional execution, where etc...                -----DONE, simple test
 * Integer relational support                         -----DONE
@@ -22,222 +96,24 @@ FUNCTIONALITY:
   - lib/qcd/actions
   - lib/qcd/measurements
 
+* Subset support, slice sums etc...                  -----DONE
+  sliceSum(orthog)
+  sum
+  innerProduct
+  norm2
 
-Not done, or just incomplete
-* random number generation
+* Subgrid Transferral                                -----DONE
+  subBlock (coarseLattice,fineLattice)
+  projectBlockBasis  
+  promoteBlockBasis
 
-* Consider switch std::vector to boost arrays or something lighter weight
-  boost::multi_array<type, 3> A()...    to replace multi1d, multi2d etc..
+* random number generation                           ----- DONE
 
-* How to define simple matrix operations, such as flavour matrices?
-
-* Dirac, Pauli, SU subgroup, etc.. * Gamma/Dirac structures
-
-* Fourspin, two spin project
-
-* su3 exponentiation, log etc.. [Jamie's code?]
-
-* Stencil operator support                           -----Initial thoughts, trial implementation DONE.
-                                                     -----some simple tests that Stencil matches Cshift.
-                                                     -----do all permute in comms phase, so that copy permute
-						     -----cases move into a buffer.
-						     -----allow transform in/out buffers spproj
-
-* CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
-
-* Subset support, slice sums etc...                  -----Only need slice sum?
-                                                     -----Generic cartesian subslicing?
-                                                     -----Array ranges / boost extents?
-                                                     -----Multigrid grid transferral?
-                                                     -----Suggests generalised cartesian subblocking
-                                                          sums, returning modified grid?
-					             -----What should interface be?
-
-* Grid transferral
-  * pickCheckerboard, pickSubPlane, pickSubBlock,
-  *                    sumSubPlane, sumSubBlocks
-
-* rb4d support.
-
-* Check for missing functionality                    - partially audited against QDP++ layout
-
-* Optimise the extract/merge SIMD routines; Azusa??
-
- - I have collated into single location at least.
- - Need to use _mm_*insert/extract routines.
-
-* Conformable test in Cshift routines.
-
-
-
-* Broadcast, reduction tests. innerProduct, localInnerProduct
-
-* QDP++ regression suite and comparative benchmark
+* Broadcast, reduction tests. innerProduct, localInnerProduct --- DONE
 
 * I/O support
-
-* NERSC Lattice loading, plaquette test
-
-  - MPI IO?
-  - BinaryWriter, TextWriter etc...
-  - protocol buffers?
-
-AUDITS:
-// Lattice support audit                 Tested in Grid_main.cc
-//
-//     -=,+=,*=                           Y
-//     add,+,sub,-,mult,mac,*             Y
-//     innerProduct,norm2                 Y
-//     localInnerProduct,outerProduct,    Y
-//     adj,conj                           Y
-//     transpose,                         Y
-//     trace                              Y
-//
-//     transposeIndex                     Y
-//     traceIndex                         Y
-//     peekIndex                          Y
-//
-//     real,imag                          missing, semantic thought needed on real/im support.
-//                                        perhaps I just keep everything complex?
-// 
-
-* FIXME audit
-* const audit
-* Replace vset with a call to merge.; 
-* care in Gmerge,Gextract over vset .
-* extract / merge extra implementation removal      
-* Test infrastructure
-
-[ More on subsets and grid transfers ]
-i)  Three classes of subset;   red black parity subsetting (pick checkerboard).
-                             cartesian sub-block subsetting
-                             rbNd 
-
-ii) Need to be able to project one Grid to another Grid.
-
-Lattice<vobj> coarse_data SubBlockSum (GridBase *CoarseGrid, Lattice<vobj> &fine_data)
-
-Operation ensure either:
- rd[dim] divide rd[dim] fine_data
-
-This will give a distributed array over mpi ranks in a given dim IF coarse gd != 1 and _processors[d]>1
-Dimension can be *replicated* on all ranks in dimension. Need a "replicated" option on GridCartesian etc..
-
-This will give "slice" summation and fourier projection assistance.
-
-    Generic concept is to subdivide (based on RD so applies to red/black or full).
-    Return a type on SUB-grid from CellSum TOP-grid
-    SUB-grid need not distribute but be replicated in some dims if that is how the
-    cartesian communicator works.
-
-Instead of subsetting 
-
-iii) No general permutation map.
+* NERSC Lattice loading, plaquette test             ------- DONE single node 
 
 
- ? Cell definition <-> sliceSum.
- ? Replicated arrays.
+* Controling std::cout                              ------- DONE
 
-
-
-
-// Cartesian grid inheritance
-//            Grid::GridBase
-//                     |
-//           __________|___________
-//          |                      |
-// Grid::GridCartesian   Grid::GridCartesianRedBlack
-//
-// TODO: document the following as an API guaranteed public interface
-
-    /* 
-     *       Rough map of functionality against QDP++ Layout
-     *
-     *       Param     |     Grid                     |     QDP++             
-     *       -----------------------------------------
-     *                 |                              |
-     *        void     |     oSites, iSites, lSites   |  sitesOnNode 
-     *        void     |     gSites                   |  vol
-     *                 |                              |
-     *        gcoor    |     oIndex, iIndex           |  linearSiteIndex // no virtual node in QDP
-     *        lcoor    |                              |
-     * 
-     *        void     |     CheckerBoarded           |  -        // No checkerboarded in QDP
-     *        void     |     FullDimensions           |  lattSize
-     *        void     |     GlobalDimensions         |  lattSize // No checkerboarded in QDP
-     *        void     |     LocalDimensions          |  subgridLattSize
-     *        void     |     VirtualLocalDimensions   |  subgridLattSize // no virtual node in QDP
-     *                 |                              |
-     *       int x 3   |     oiSiteRankToGlobal       |  siteCoords
-     *                 |     ProcessorCoorLocalCoorToGlobalCoor | 
-     *                 |                              |
-     *     vector<int> |     GlobalCoorToRankIndex   |  nodeNumber(coord)
-     *     vector<int> |     GlobalCoorToProcessorCoorLocalCoor|  nodeCoord(coord)
-     *                 |                              |
-     *     void        |     Processors               |  logicalSize    // returns cart array shape
-     *     void        |     ThisRank        |  nodeNumber();  // returns this node rank
-     *     void        |     ThisProcessorCoor        |    // returns this node coor
-     *     void        |     isBoss(void)             |  primaryNode();
-     *                 |                              |
-     *                 |     RankFromProcessorCoor    |  getLogicalCoorFrom(node)
-     *                 |     ProcessorCoorFromRank    |  getNodeNumberFrom(logical_coord)
-     */
-  // Work out whether to permute 
-  // ABCDEFGH ->   AE BF CG DH       permute              wrap num
-  //
-  // Shift 0       AE BF CG DH       0 0 0 0    ABCDEFGH   0   0
-  // Shift 1       BF CG DH AE       0 0 0 1    BCDEFGHA   0   1
-  // Shift 2       CG DH AE BF       0 0 1 1    CDEFGHAB   0   2
-  // Shift 3       DH AE BF CG       0 1 1 1    DEFGHABC   0   3
-  // Shift 4       AE BF CG DH       1 1 1 1    EFGHABCD   1   0 
-  // Shift 5       BF CG DH AE       1 1 1 0    FGHACBDE   1   1 
-  // Shift 6       CG DH AE BF       1 1 0 0    GHABCDEF   1   2
-  // Shift 7       DH AE BF CG       1 0 0 0    HABCDEFG   1   3
-
-  // Suppose 4way simd in one dim.
-  // ABCDEFGH ->   AECG BFDH      permute              wrap num
-
-  // Shift 0       AECG BFDH      0,00 0,00 ABCDEFGH         0     0
-  // Shift 1       BFDH CGEA      0,00 1,01 BCDEFGHA         0     1
-  // Shift 2       CGEA DHFB      1,01 1,01 CDEFGHAB         1     0
-  // Shift 3       DHFB EAGC      1,01 1,11 DEFGHABC         1     1
-  // Shift 4       EAGC FBHD      1,11 1,11 EFGHABCD         2     0 
-  // Shift 5       FBHD GCAE      1,11 1,10 FGHABCDE         2     1
-  // Shift 6       GCAE HDBF      1,10 1,10 GHABCDEF         3     0
-  // Shift 7       HDBF AECG      1,10 0,00 HABCDEFG         3     1
-
-  // Generalisation to 8 way simd, 16 way simd required.
-  //
-  // Need log2 Nway masks. consisting of 
-  //	    1 bit  256 bit granule
-  //	    2 bit  128 bit granule
-  //        4 bits 64  bit granule
-  //        8 bits 32  bit granules
-  //
-  //        15 bits....
-    // TODO
-    //
-    // Base class to share common code between vRealF, VComplexF etc...
-    //
-    // lattice Broad cast assignment
-    //
-    // where() support
-    // implement with masks, and/or? Type of the mask & boolean support?
-    //
-    // Unary functions
-    // cos,sin, tan, acos, asin, cosh, acosh, tanh, sinh, // Scalar<vReal> only arg
-    // exp, log, sqrt, fabs
-    //
-    // transposeColor, transposeSpin,
-    // adjColor, adjSpin,
-    // traceColor, traceSpin.
-    // peekColor, peekSpin + pokeColor PokeSpin
-    //
-    // copyMask.
-    //
-    // localMaxAbs
-    //
-    // norm2,
-    // sumMulti equivalent.
-    // Fourier transform equivalent.
-    //

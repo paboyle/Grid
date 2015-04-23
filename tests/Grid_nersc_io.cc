@@ -11,12 +11,15 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   std::vector<int> simd_layout({1,1,2,2});
-  std::vector<int> mpi_layout ({1,1,1,1});
+  std::vector<int> mpi_layout ({2,2,2,2});
   std::vector<int> latt_size  ({16,16,16,32});
+  std::vector<int> clatt_size  ({4,4,4,8});
   int orthodir=3;
   int orthosz =latt_size[orthodir];
     
   GridCartesian     Fine(latt_size,simd_layout,mpi_layout);
+  GridCartesian     Coarse(clatt_size,simd_layout,mpi_layout);
+
   GridRNG           FineRNG(&Fine);
   LatticeGaugeField Umu(&Fine);
 
@@ -40,6 +43,7 @@ int main (int argc, char ** argv)
 
   // (1+2+3)=6 = N(N-1)/2 terms
   LatticeComplex Plaq(&Fine);
+  LatticeComplex cPlaq(&Coarse);
   Plaq = zero;
   for(int mu=1;mu<Nd;mu++){
     for(int nu=0;nu<mu;nu++){
@@ -47,6 +51,7 @@ int main (int argc, char ** argv)
     }
   }
 
+  
   double vol = Fine.gSites();
   Complex PlaqScale(1.0/vol/6.0/3.0);
 
@@ -66,7 +71,6 @@ int main (int argc, char ** argv)
     std::cout << "total " <<Pt*PlaqScale<<std::endl;
   }  
 
-
   TComplex Tp = sum(Plaq);
   Complex p  = TensorRemove(Tp);
   std::cout << "calculated plaquettes " <<p*PlaqScale<<std::endl;
@@ -77,5 +81,10 @@ int main (int argc, char ** argv)
   Complex l  = TensorRemove(Tl);
   std::cout << "calculated link trace " <<l*LinkTraceScale<<std::endl;
 
+  sumBlocks(cPlaq,Plaq);
+  TComplex TcP = sum(cPlaq);
+  Complex ll= TensorRemove(TcP);
+  std::cout << "coarsened plaquettes sum to " <<ll*PlaqScale<<std::endl;
+  
   Grid_finalize();
 }
