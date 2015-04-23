@@ -16,8 +16,8 @@
 /* GRID_COMMS_NONE */
 /* #undef GRID_COMMS_NONE */
 
-/* Define to 1 if you have the `be64toh' function. */
-/* #undef HAVE_BE64TOH */
+/* Define to 1 if you have the <endian.h> header file. */
+/* #undef HAVE_ENDIAN_H */
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #define HAVE_GETTIMEOFDAY 1
@@ -33,9 +33,6 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
-
-/* Define to 1 if you have the `ntohll' function. */
-/* #undef HAVE_NTOHLL */
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H 1
