@@ -10,7 +10,7 @@ FUNCTIONALITY:
 * How to do U[mu] ... lorentz part of type structure or not. more like chroma if not. -- DONE
 
 * subdirs lib, tests ??                              ----- DONE
-  - lib/math
+  - lib/math        
   - lib/cartesian
   - lib/cshift
   - lib/stencil
@@ -26,7 +26,7 @@ FUNCTIONALITY:
 Not done, or just incomplete
 * random number generation
 
-* Consider switch std::vector to boost arrays.
+* Consider switch std::vector to boost arrays or something lighter weight
   boost::multi_array<type, 3> A()...    to replace multi1d, multi2d etc..
 
 * How to define simple matrix operations, such as flavour matrices?

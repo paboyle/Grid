@@ -1365,8 +1365,9 @@ Optional Features:
   --disable-dependency-tracking
                           speeds up one-time build
   --disable-openmp        do not use OpenMP
-  --enable-simd=SSE|AVX|AVX2|AVX512
-                          Select instructions
+  --enable-simd=SSE|AVX|AVX2|AVX512|MIC
+                          Select instructions to be SSE4.0, AVX 1.0, AVX
+                          2.0+FMA, AVX 512, MIC
   --enable-comms=none|mpi Select communications
 
 Some influential environment variables:
@@ -4945,6 +4946,18 @@ fi
 
 done
 
+for ac_header in endian.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "endian.h" "ac_cv_header_endian_h" "$ac_includes_default"
+if test "x$ac_cv_header_endian_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_ENDIAN_H 1
+_ACEOF
+
+fi
+
+done
+
 
 # Checks for typedefs, structures, and compiler characteristics.
 ac_fn_c_check_type "$LINENO" "size_t" "ac_cv_type_size_t" "$ac_includes_default"
@@ -4999,32 +5012,11 @@ _ACEOF
 fi
 done
 
-for ac_func in ntohll
-do :
-  ac_fn_c_check_func "$LINENO" "ntohll" "ac_cv_func_ntohll"
-if test "x$ac_cv_func_ntohll" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_NTOHLL 1
-_ACEOF
-
-fi
-done
-
-for ac_func in be64toh
-do :
-  ac_fn_c_check_func "$LINENO" "be64toh" "ac_cv_func_be64toh"
-if test "x$ac_cv_func_be64toh" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_BE64TOH 1
-_ACEOF
-
-fi
-done
-
 
 # Check whether --enable-simd was given.
 if test "${enable_simd+set}" = set; then :
-  enableval=$enable_simd; ac_SIMD=${enable_simd}
+  enableval=$enable_simd; \
+	ac_SIMD=${enable_simd}
 else
   ac_SIMD=AVX2
 fi
@@ -5049,8 +5041,8 @@ $as_echo "#define AVX1 1" >>confdefs.h
 $as_echo "#define AVX2 1" >>confdefs.h
 
      ;;
-     AVX512)
-       echo Configuring for AVX512
+     AVX512|MIC)
+       echo Configuring for AVX512 and MIC
 
 $as_echo "#define AVX512 1" >>confdefs.h
 

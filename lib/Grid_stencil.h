@@ -283,7 +283,7 @@ namespace Grid {
 	    if ( comm_any ) {
 
 	      for(int i=0;i<Nsimd;i++){
-		pointers[i] = (scalar_type *)&send_buf_extract[i][0];
+		pointers[Nsimd-1-i] = (scalar_type *)&send_buf_extract[i][0];
 	      }
 	      Gather_plane_extract(rhs,pointers,dimension,sx,cbmask);
 	      
@@ -332,9 +332,9 @@ namespace Grid {
 	      for(int i=0;i<Nsimd;i++){
 		if ( permute_slice ) {
 		  PermuteMap=i^toggle_bit;
-		  pointers[i] = rpointers[PermuteMap];
+		  pointers[Nsimd-1-i] = rpointers[PermuteMap];
 		} else {
-		  pointers[i] = rpointers[i];
+		  pointers[Nsimd-1-i] = rpointers[i];
 		}
 	      }
 
