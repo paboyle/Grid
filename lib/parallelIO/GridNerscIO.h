@@ -6,7 +6,13 @@
 #include <iomanip>
 #include <fstream>
 
+#ifdef HAVE_ENDIAN_H
+#include <endian.h>
 #include <arpa/inet.h>
+#define ntohll be64toh
+#else 
+#include <arpa/inet.h>
+#endif
 
 namespace Grid {
 
@@ -177,14 +183,14 @@ inline void reconstruct3(LorentzColourMatrix & cm)
 }
 
 
- void inline be32toh(void *file_object,uint32_t bytes)
+ void inline be32toh_v(void *file_object,uint32_t bytes)
  {
    uint32_t * f = (uint32_t *)file_object;
    for(int i=0;i*sizeof(uint32_t)<bytes;i++){  
      f[i] = ntohl(f[i]);
    }
  }
- void inline le32toh(void *file_object,uint32_t bytes)
+ void inline le32toh_v(void *file_object,uint32_t bytes)
  {
    uint32_t *fp = (uint32_t *)file_object;
 
@@ -197,14 +203,14 @@ inline void reconstruct3(LorentzColourMatrix & cm)
      fp[i] = ntohl(f);
    }
  }
- void inline be64toh(void *file_object,uint32_t bytes)
+ void inline be64toh_v(void *file_object,uint32_t bytes)
  {
    uint64_t * f = (uint64_t *)file_object;
    for(int i=0;i*sizeof(uint64_t)<bytes;i++){  
      f[i] = ntohll(f[i]);
    }
  }
- void inline le64toh(void *file_object,uint32_t bytes)
+ void inline le64toh_v(void *file_object,uint32_t bytes)
  {
    uint64_t *fp = (uint64_t *)file_object;
    uint64_t f,g;
@@ -387,10 +393,10 @@ inline void readNerscObject(Lattice<vobj> &Umu,std::string file,munger munge,int
       if ( grid->IsBoss() ) {
 	fin.read((char *)&file_object,sizeof(file_object));
 
-	if(ieee32big) be32toh((void *)&file_object,sizeof(file_object));
-	if(ieee32)    le32toh((void *)&file_object,sizeof(file_object));
-	if(ieee64big) be64toh((void *)&file_object,sizeof(file_object));
-	if(ieee64)    le64toh((void *)&file_object,sizeof(file_object));
+	if(ieee32big) be32toh_v((void *)&file_object,sizeof(file_object));
+	if(ieee32)    le32toh_v((void *)&file_object,sizeof(file_object));
+	if(ieee64big) be64toh_v((void *)&file_object,sizeof(file_object));
+	if(ieee64)    le64toh_v((void *)&file_object,sizeof(file_object));
 
 	munge(file_object,munged,csum);
       }
