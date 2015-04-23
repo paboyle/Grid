@@ -11,8 +11,10 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   std::vector<int> simd_layout({1,1,2,2});
-  std::vector<int> mpi_layout ({2,1,1,2});
+  std::vector<int> mpi_layout ({1,1,1,1});
   std::vector<int> latt_size  ({16,16,16,32});
+  int orthodir=3;
+  int orthosz =latt_size[orthodir];
     
   GridCartesian     Fine(latt_size,simd_layout,mpi_layout);
   GridRNG           FineRNG(&Fine);
@@ -45,13 +47,30 @@ int main (int argc, char ** argv)
     }
   }
 
-
   double vol = Fine.gSites();
-
   Complex PlaqScale(1.0/vol/6.0/3.0);
+
+  std::vector<TComplex> Plaq_T(orthosz);
+  sliceSum(Plaq,Plaq_T,Nd-1);
+  int Nt = Plaq_T.size();
+
+  TComplex Plaq_T_sum=zero;
+  for(int t=0;t<Nt;t++){
+    Plaq_T_sum = Plaq_T_sum+Plaq_T[t];
+    Complex Pt=TensorRemove(Plaq_T[t]);
+    std::cout << "sliced ["<<t<<"]" <<Pt*PlaqScale*Real(Nt)<<std::endl;
+  }
+
+  {
+    Complex Pt = TensorRemove(Plaq_T_sum);
+    std::cout << "total " <<Pt*PlaqScale<<std::endl;
+  }  
+
+
   TComplex Tp = sum(Plaq);
   Complex p  = TensorRemove(Tp);
   std::cout << "calculated plaquettes " <<p*PlaqScale<<std::endl;
+
 
   Complex LinkTraceScale(1.0/vol/4.0/3.0);
   TComplex Tl = sum(LinkTrace);

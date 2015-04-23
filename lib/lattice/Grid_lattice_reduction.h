@@ -25,7 +25,9 @@ namespace Grid {
     }
 
     template<class vobj>
-    inline auto innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right) ->decltype(innerProduct(left._odata[0],right._odata[0]))
+    inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right) 
+      //    inline auto innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right) 
+      //->decltype(innerProduct(left._odata[0],right._odata[0]))
     {
       typedef typename vobj::scalar_type scalar;
       decltype(innerProduct(left._odata[0],right._odata[0])) vnrm=zero;
@@ -54,6 +56,7 @@ namespace Grid {
 
       vsum=zero;
       ssum=zero;
+      //FIXME make this loop parallelisable
       for(int ss=0;ss<arg._grid->oSites(); ss++){
 	vsum = vsum + arg._odata[ss];
       }

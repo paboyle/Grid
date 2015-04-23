@@ -93,7 +93,7 @@ public:
     static inline void CoorFromIndex (std::vector<int>& coor,int index,std::vector<int> &dims){
       int nd= dims.size();
       coor.resize(nd);
-      for(int d=0;d<_ndimension;d++){
+      for(int d=0;d<nd;d++){
 	coor[d] = index % dims[d];
 	index   = index / dims[d];
       }
@@ -102,7 +102,7 @@ public:
       int nd=dims.size();
       int stride=1;
       index=0;
-      for(int d=0;d<_ndimension;d++){
+      for(int d=0;d<nd;d++){
 	index = index+stride*coor[d];
 	stride=stride*dims[d];
       }
@@ -164,6 +164,25 @@ public:
 	mult*=_gdimensions[mu];
       }
     }
+    void GlobalCoorToProcessorCoorLocalCoor(std::vector<int> &pcoor,std::vector<int> &lcoor,const std::vector<int> &gcoor)
+    {
+      pcoor.resize(_ndimension);
+      lcoor.resize(_ndimension);
+      for(int mu=0;mu<_ndimension;mu++){
+	pcoor[mu] = gcoor[mu]/_ldimensions[mu];
+	lcoor[mu] = gcoor[mu]%_ldimensions[mu];
+      }
+    }
+    void GlobalCoorToRankIndex(int &rank, int &o_idx, int &i_idx ,const std::vector<int> &gcoor)
+    {
+      std::vector<int> pcoor;
+      std::vector<int> lcoor;
+      GlobalCoorToProcessorCoorLocalCoor(pcoor,lcoor,gcoor);
+      rank = RankFromProcessorCoor(pcoor);
+      i_idx= iIndex(lcoor);
+      o_idx= oIndex(lcoor);
+    }
+
     void RankIndexToGlobalCoor(int rank, int o_idx, int i_idx , std::vector<int> &gcoor)
     {
       gcoor.resize(_ndimension);
@@ -190,24 +209,6 @@ public:
     {
       gcoor.resize(_ndimension);
       for(int mu=0;mu<_ndimension;mu++) gcoor[mu] = Pcoor[mu]*_ldimensions[mu]+Lcoor[mu];
-    }
-    void GlobalCoorToProcessorCoorLocalCoor(std::vector<int> &pcoor,std::vector<int> &lcoor,const std::vector<int> &gcoor)
-    {
-      pcoor.resize(_ndimension);
-      lcoor.resize(_ndimension);
-      for(int mu=0;mu<_ndimension;mu++){
-	pcoor[mu] = gcoor[mu]/_ldimensions[mu];
-	lcoor[mu] = gcoor[mu]%_ldimensions[mu];
-      }
-    }
-    void GlobalCoorToRankIndex(int &rank, int &o_idx, int &i_idx ,const std::vector<int> &gcoor)
-    {
-      std::vector<int> pcoor;
-      std::vector<int> lcoor;
-      GlobalCoorToProcessorCoorLocalCoor(pcoor,lcoor,gcoor);
-      rank = RankFromProcessorCoor(pcoor);
-      i_idx= iIndex(lcoor);
-      o_idx= oIndex(lcoor);
     }
 };
 
