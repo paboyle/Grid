@@ -90,19 +90,25 @@ public:
       for(int d=0;d<_ndimension;d++) idx+=_ostride[d]*ocoor[d];
       return idx;
     }
-    inline void CoorFromIndex (std::vector<int>& coor,int index,std::vector<int> &dims){
-      coor.resize(_ndimension);
+    static inline void CoorFromIndex (std::vector<int>& coor,int index,std::vector<int> &dims){
+      int nd= dims.size();
+      coor.resize(nd);
       for(int d=0;d<_ndimension;d++){
 	coor[d] = index % dims[d];
 	index   = index / dims[d];
       }
     }
-    inline void oCoorFromOindex (std::vector<int>& coor,int Oindex){
-      coor.resize(_ndimension);
+    static inline void IndexFromCoor (std::vector<int>& coor,int &index,std::vector<int> &dims){
+      int nd=dims.size();
+      int stride=1;
+      index=0;
       for(int d=0;d<_ndimension;d++){
-	coor[d] = Oindex % _rdimensions[d];
-	Oindex  = Oindex / _rdimensions[d];
+	index = index+stride*coor[d];
+	stride=stride*dims[d];
       }
+    }
+    inline void oCoorFromOindex (std::vector<int>& coor,int Oindex){
+      CoorFromIndex(coor,Oindex,_rdimensions);
     }
 
     //////////////////////////////////////////////////////////
@@ -116,11 +122,7 @@ public:
     }
     inline void iCoorFromIindex(std::vector<int> &coor,int lane)
     {
-      coor.resize(_ndimension);
-      for(int d=0;d<_ndimension;d++){
-	coor[d] = lane % _simd_layout[d];
-	lane    = lane / _simd_layout[d];
-      }
+      CoorFromIndex(coor,lane,_simd_layout);
     }
     inline int PermuteDim(int dimension){
       return _simd_layout[dimension]>1;
@@ -152,11 +154,7 @@ public:
     // Global addressing
     ////////////////////////////////////////////////////////////////
     void GlobalIndexToGlobalCoor(int gidx,std::vector<int> &gcoor){
-      gcoor.resize(_ndimension);
-      for(int d=0;d<_ndimension;d++){
-	gcoor[d] = gidx % _gdimensions[d];
-	gidx     = gidx / _gdimensions[d];
-      }
+      CoorFromIndex(gcoor,gidx,_gdimensions);
     }
     void GlobalCoorToGlobalIndex(const std::vector<int> & gcoor,int & gidx){
       gidx=0;
