@@ -213,19 +213,44 @@ friend inline void vstore(const vComplexF &ret, ComplexF *a){
        friend inline ComplexF Reduce(const vComplexF & in)
        {
 #ifdef SSE4
-#error
+	   union {
+	     __m128 v1;    // SSE 4 x float vector
+	     float f[4];  // scalar array of 4 floats
+	   } u128;
+	   u128.v1= _mm_add_ps(v, _mm_shuffle_ps(v, v, 0b01001110)); // FIXME Prefer to use _MM_SHUFFLE macros
+	   return ComplexF(u128.f[0], u128.f[1]);
 #endif
-#if defined (AVX1) || defined(AVX2)
-	 // FIXME this is inefficient and use 
-         __attribute__ ((aligned(32))) float c_[8];
-         _mm256_store_ps(c_,in.v);
-         return ComplexF(c_[0]+c_[2]+c_[4]+c_[6],c_[1]+c_[3]+c_[5]+c_[7]);
-
+#ifdef AVX1
+	   //it would be better passing 2 arguments to saturate the vector lanes
+	   union {
+	     __m256 v1;    
+	     float f[8];  
+	   } u256;
+	   //SWAP lanes
+	   __m256 t0 = _mm256_permute2f128_ps(in.v, in.v, 1);
+	   __m256 t1 = _mm256_permute_ps(in.v  , 0b11011000);//real (0,2,1,3)
+	   __m256 t2 = _mm256_permute_ps(t0 , 0b10001101);//imag (1,3,0,2)
+	   t0 = _mm256_blend_ps(t1, t2, 0b0101000001010000);// (0,0,1,1,0,0,1,1)
+	   t1 = _mm256_hadd_ps(t0,t0);
+	   u256.v1 = _mm256_hadd_ps(t1, t1);
+	   return ComplexF(u256.f[0], u256.f[4]);
+#endif
+#ifdef AVX2
+	   union {
+	     __m256 v1;    
+	     float f[8];  
+	   } u256;
+	   const __m256i mask= _mm256_set_epi32( 7, 5, 3, 1, 6, 4, 2, 0);
+	   __m256 tmp1 = _mm256_permutevar8x32_ps(in.v, mask);
+	   __m256 tmp2 = _mm256_hadd_ps(tmp1, tmp1);
+	   u256.v1 = _mm256_hadd_ps(tmp2, tmp2);
+	   return ComplexF(u256.f[0], u256.f[4]);
 #endif
 #ifdef AVX512
             return ComplexF(_mm512_mask_reduce_add_ps(0x5555, in.v),_mm512_mask_reduce_add_ps(0xAAAA, in.v));
 #endif
 #ifdef QPX
+#error
 #endif
         }
 
