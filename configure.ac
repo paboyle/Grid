@@ -27,7 +27,9 @@ AC_TYPE_UINT64_T
 # Checks for library functions.
 AC_CHECK_FUNCS([gettimeofday])
 
-AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE|AVX|AVX2|AVX512],[Select instructions])],[ac_SIMD=${enable_simd}],[ac_SIMD=AVX2])
+AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE|AVX|AVX2|AVX512|MIC],\
+	[Select instructions to be SSE4.0, AVX 1.0, AVX 2.0+FMA, AVX 512, MIC])],\
+	[ac_SIMD=${enable_simd}],[ac_SIMD=AVX2])
 
 case ${ac_SIMD} in
      SSE4)
@@ -42,8 +44,8 @@ case ${ac_SIMD} in
        echo Configuring for AVX2
        AC_DEFINE([AVX2],[1],[AVX2] )
      ;;
-     AVX512)
-       echo Configuring for AVX512
+     AVX512|MIC)
+       echo Configuring for AVX512 and MIC
        AC_DEFINE([AVX512],[1],[AVX512] )
      ;;
      *)
