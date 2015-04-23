@@ -241,5 +241,37 @@ public:
 
 };
 
+template<class vobj> inline 
+void extract(const vobj &vec,std::vector<typename vobj::scalar_object> &extracted)
+{
+  typedef typename vobj::scalar_type scalar_type ;
+  typedef typename vobj::vector_type vector_type ;
+
+  int Nsimd=vobj::vector_type::Nsimd();
+  
+  extracted.resize(Nsimd);
+
+  std::vector<scalar_type *> pointers(Nsimd);
+  for(int i=0;i<Nsimd;i++) 
+    pointers[i] =(scalar_type *)& extracted[i];
+  
+  extract(vec,pointers);
+}
+template<class vobj> inline 
+void merge(vobj &vec,std::vector<typename vobj::scalar_object> &extracted)
+{
+  typedef typename vobj::scalar_type scalar_type ;
+  typedef typename vobj::vector_type vector_type ;
+  
+  int Nsimd=vobj::vector_type::Nsimd();
+  assert(extracted.size()==Nsimd);
+
+  std::vector<scalar_type *> pointers(Nsimd);
+  for(int i=0;i<Nsimd;i++) 
+    pointers[i] =(scalar_type *)& extracted[i];
+  
+  merge(vec,pointers);
+}
+
 }
 #endif

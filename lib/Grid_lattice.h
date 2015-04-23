@@ -98,6 +98,7 @@ public:
 #include <lattice/Grid_lattice_coordinate.h>
 #include <lattice/Grid_lattice_rng.h>
 #include <lattice/Grid_lattice_transfer.h>
+#include <Grid_summation.h>
 
 
 

@@ -126,20 +126,33 @@ namespace Grid {
 /////////////////////////////////////////////////////////////////
 // Generic extract/merge/permute
 /////////////////////////////////////////////////////////////////
+
 template<class vsimd,class scalar>
 inline void Gextract(const vsimd &y,std::vector<scalar *> &extracted){
-  // FIXME: bounce off stack is painful
-  // temporary hack while I figure out better way.
-  // There are intrinsics to do this work without the storage.
+  // FIXME: bounce off memory is painful
   int Nextr=extracted.size();
   int Nsimd=vsimd::Nsimd();
   int s=Nsimd/Nextr;
 
   std::vector<scalar,alignedAllocator<scalar> > buf(Nsimd); 
+
   vstore(y,&buf[0]);
   for(int i=0;i<Nextr;i++){
     *extracted[i] = buf[i*s];
     extracted[i]++;
+  }
+};
+template<class vsimd,class scalar>
+inline void Gextract(const vsimd &y,std::vector<scalar> &extracted){
+  int Nextr=extracted.size();
+  int Nsimd=vsimd::Nsimd();
+  int s=Nsimd/Nextr;
+
+  std::vector<scalar,alignedAllocator<scalar> > buf(Nsimd); 
+
+  vstore(y,&buf[0]);
+  for(int i=0;i<Nextr;i++){
+    extracted[i] = buf[i*s];
   }
 };
 template<class vsimd,class scalar>
@@ -156,23 +169,6 @@ inline void Gmerge(vsimd &y,std::vector<scalar *> &extracted){
     extracted[i]++;
   }
   vset(y,&buf[0]); 
-};
-template<class vsimd,class scalar>
-inline void Gextract(const vsimd &y,std::vector<scalar> &extracted){
-  // FIXME: bounce off stack is painful
-  // temporary hack while I figure out better way.
-  // There are intrinsics to do this work without the storage.
-  int Nextr=extracted.size();
-  int Nsimd=vsimd::Nsimd();
-  int s=Nsimd/Nextr;
-
-  std::vector<scalar,alignedAllocator<scalar> > buf(Nsimd); 
-
-  vstore(y,&buf[0]);
-
-  for(int i=0;i<Nextr;i++){
-    extracted[i] = buf[i*s];
-  }
 };
 template<class vsimd,class scalar>
 inline void Gmerge(vsimd &y,std::vector<scalar> &extracted){
