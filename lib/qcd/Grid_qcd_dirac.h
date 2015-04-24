@@ -76,15 +76,15 @@ namespace QCD {
 	ret(i,0) = timesMinusI(rhs(i,3));
 	ret(i,1) = timesMinusI(rhs(i,2));
 	ret(i,2) = timesI(rhs(i,1));
-	ret(i,3) = timesI(rhs(i,1));
+	ret(i,3) = timesI(rhs(i,0));
       }
     };
     template<class vtype> inline void multGammaX(iMatrix<vtype,Ns> &ret, const iMatrix<vtype,Ns> &rhs){
       for(int i=0;i<Ns;i++){
 	ret(0,i) = timesI(rhs(3,i));
-	ret(1,i) = timesI(rhs._internal[2][i]);
-	ret(2,i) = timesMinusI(rhs._internal[1][i]);
-	ret(3,i) = timesMinusI(rhs._internal[0][i]);
+	ret(1,i) = timesI(rhs(2,i));
+	ret(2,i) = timesMinusI(rhs(1,i));
+	ret(3,i) = timesMinusI(rhs(0,i));
       }
     };
     template<class vtype> inline void multMinusGammaX(iMatrix<vtype,Ns> &ret, const iMatrix<vtype,Ns> &rhs){

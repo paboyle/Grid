@@ -6,6 +6,13 @@ namespace Grid {
     // innerProduct Vector x Vector -> Scalar
     // innerProduct Matrix x Matrix -> Scalar
     ///////////////////////////////////////////////////////////////////////////////////////
+    template<class sobj> inline RealD norm2l(sobj &arg){
+      typedef typename sobj::scalar_type scalar;
+      decltype(innerProduct(arg,arg)) nrm;
+      nrm = innerProduct(arg,arg);
+      return real(nrm);
+    }
+
     template<class l,class r,int N> inline
     auto innerProduct (const iVector<l,N>& lhs,const iVector<r,N>& rhs) -> iScalar<decltype(innerProduct(lhs._internal[0],rhs._internal[0]))>
     {

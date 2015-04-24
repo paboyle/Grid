@@ -92,5 +92,14 @@ void CartesianCommunicator::Broadcast(int root,void* data, int bytes)
 	    communicator);
 }
 
+void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
+{
+  MPI_Bcast(data,
+	    bytes,
+	    MPI_BYTE,
+	    root,
+	    MPI_COMM_WORLD);
+}
+
 }
 

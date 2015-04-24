@@ -26,7 +26,70 @@ namespace Grid {
     }
 
   };
-  class GridRNG {
+  class GridRNGbase {
+
+  public:
+
+   GridRNGbase() : _uniform{0,1}, _gaussian(0.0,1.0) {};
+
+    int _seeded;
+    // One generator per site.
+    // Uniform and Gaussian distributions from these generators.
+    std::vector<std::ranlux48>             _generators;
+    std::uniform_real_distribution<double> _uniform;
+    std::normal_distribution<double>       _gaussian;
+
+
+  };
+
+  class GridSerialRNG : public GridRNGbase {
+  public:
+
+    // FIXME ... do we require lockstep draws of randoms 
+    // from all nodes keeping seeds consistent.
+    // place a barrier/broadcast in the fill routine
+    template<class source> void Seed(source &src)
+    {
+      typename source::result_type init = src();
+      CartesianCommunicator::BroadcastWorld(0,(void *)&init,sizeof(init));
+      _generators[0] = std::ranlux48(init);
+      _seeded=1;
+    }    
+
+    GridSerialRNG() : GridRNGbase() {
+      _generators.resize(1);
+      _seeded=0;
+    }
+
+
+    template <class sobj,class distribution> inline void fill(sobj &l,distribution &dist){
+
+      typedef typename sobj::scalar_type scalar_type;
+ 
+      int words = sizeof(sobj)/sizeof(scalar_type);
+
+      scalar_type *buf = (scalar_type *) & l;
+
+      for(int idx=0;idx<words;idx++){
+	buf[idx] = dist(_generators[0]);
+      }
+      
+      CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
+
+    };
+
+    void SeedRandomDevice(void){
+      std::random_device rd;
+      Seed(rd);
+    }
+    void SeedFixedIntegers(std::vector<int> &seeds){
+      fixedSeed src(seeds);
+      Seed(src);
+    }
+
+  };
+
+  class GridParallelRNG : public GridRNGbase {
   public:
     // One generator per site.
     std::vector<std::ranlux48>             _generators;
@@ -42,25 +105,13 @@ namespace Grid {
       return is*_grid->oSites()+os;
     }
 
-    GridRNG(GridBase *grid) : _uniform{0,1}, _gaussian(0.0,1.0) {
+    GridParallelRNG(GridBase *grid) : GridRNGbase() {
       _grid=grid;
       _vol =_grid->iSites()*_grid->oSites();
       _generators.resize(_vol);
-      //      SeedFixedIntegers(seeds);
-      // worst case we seed properly but non-deterministically
-      SeedRandomDevice();
+      _seeded=0;
     }
 
-    // FIXME: drive seeding from node zero and transmit to all
-    // to get unique randoms on each node
-    void SeedRandomDevice(void){
-      std::random_device rd;
-      Seed(rd);
-    }
-    void SeedFixedIntegers(std::vector<int> &seeds){
-      fixedSeed src(seeds);
-      Seed(src);
-    }
 
     // This loop could be made faster to avoid the Ahmdahl by
     // i)  seed generators on each timeslice, for x=y=z=0;
@@ -86,6 +137,7 @@ namespace Grid {
 	  _generators[l_idx] = std::ranlux48(init);
 	}
       }
+      _seeded=1;
     }    
 
     //FIXME implement generic IO and create state save/restore
@@ -122,15 +174,34 @@ namespace Grid {
 	merge(l._odata[ss],pointers);
       }
     };
+
+    void SeedRandomDevice(void){
+      std::random_device rd;
+      Seed(rd);
+    }
+    void SeedFixedIntegers(std::vector<int> &seeds){
+      fixedSeed src(seeds);
+      Seed(src);
+    }
+
   };
 
-  // FIXME Implement a consistent seed management strategy
-  template <class vobj> inline void random(GridRNG &rng,Lattice<vobj> &l){
+
+  template <class vobj> inline void random(GridParallelRNG &rng,Lattice<vobj> &l){
     rng.fill(l,rng._uniform);
   }
 
-  template <class vobj> inline void gaussian(GridRNG &rng,Lattice<vobj> &l){
+  template <class vobj> inline void gaussian(GridParallelRNG &rng,Lattice<vobj> &l){
     rng.fill(l,rng._gaussian);
   }
+
+
+  template <class sobj> inline void random(GridSerialRNG &rng,sobj &l){
+    rng.fill(l,rng._uniform);
+  }
+  template <class sobj> inline void gaussian(GridSerialRNG &rng,sobj &l){
+    rng.fill(l,rng._gaussian);
+  }
+
 }
 #endif

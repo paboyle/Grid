@@ -99,6 +99,8 @@ class CartesianCommunicator {
       Broadcast(root,(void *)&data,sizeof(data));
     };
 
+    static void BroadcastWorld(int root,void* data, int bytes);
+
 }; 
 }
 
