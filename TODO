@@ -17,7 +17,7 @@
 
 * Make the Tensor types and Complex etc... play more nicely.
 
-* Dirac, Pauli, SU subgroup, etc.. * Gamma/Dirac structures
+* Pauli, SU subgroup, etc.. 
 
 * Fourspin, two spin project
 
@@ -73,6 +73,7 @@ AUDITS:
 ======================================================================================================
 
 FUNCTIONALITY:
+* Dirac Gamma/Dirac structures ---- DONE
 * Conditional execution, where etc...                -----DONE, simple test
 * Integer relational support                         -----DONE
 * Coordinate information, integers etc...            -----DONE
