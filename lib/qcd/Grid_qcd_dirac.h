@@ -59,6 +59,8 @@ namespace QCD {
      *  0 -i 0  0
      * -i 0  0  0
      */
+  // right multiplication makes sense for matrix args, not for vector since there is 
+  // no concept of row versus columnar indices
     template<class vtype> inline void rmultMinusGammaX(iMatrix<vtype,Ns> &ret,const iMatrix<vtype,Ns> &rhs){
       for(int i=0;i<Ns;i++){
 	ret(i,0) = timesI(rhs(i,3));
@@ -74,19 +76,6 @@ namespace QCD {
 	ret(i,2) = timesI(rhs(i,1));
 	ret(i,3) = timesI(rhs(i,1));
       }
-    };
-
-    template<class vtype> inline void multGammaX(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
-      ret._internal[0] = timesI(rhs._internal[3]);
-      ret._internal[1] = timesI(rhs._internal[2]);
-      ret._internal[2] = timesMinusI(rhs._internal[1]);
-      ret._internal[3] = timesMinusI(rhs._internal[0]);
-    };
-    template<class vtype> inline void multMinusGammaX(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
-	ret(0) = timesMinusI(rhs(3));
-	ret(1) = timesMinusI(rhs(2));
-	ret(2) = timesI(rhs(1));
-	ret(3) = timesI(rhs(0));
     };
     template<class vtype> inline void multGammaX(iMatrix<vtype,Ns> &ret, const iMatrix<vtype,Ns> &rhs){
       for(int i=0;i<Ns;i++){
@@ -105,7 +94,18 @@ namespace QCD {
       }
     };
 
-
+    template<class vtype> inline void multGammaX(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
+      ret._internal[0] = timesI(rhs._internal[3]);
+      ret._internal[1] = timesI(rhs._internal[2]);
+      ret._internal[2] = timesMinusI(rhs._internal[1]);
+      ret._internal[3] = timesMinusI(rhs._internal[0]);
+    };
+    template<class vtype> inline void multMinusGammaX(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
+	ret(0) = timesMinusI(rhs(3));
+	ret(1) = timesMinusI(rhs(2));
+	ret(2) = timesI(rhs(1));
+	ret(3) = timesI(rhs(0));
+    };
 
 
     /*Gy
@@ -114,17 +114,21 @@ namespace QCD {
      *  0 1  0  0
      * -1 0  0  0
      */
-    template<class vtype> inline void multGammaY(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
-      ret(0) = -rhs(3);
-      ret(1) =  rhs(2);
-      ret(2) =  rhs(1);
-      ret(3) = -rhs(0);
+    template<class vtype> inline void rmultGammaY(iMatrix<vtype,Ns> &ret, const iMatrix<vtype,Ns> &rhs){
+      for(int i=0;i<Ns;i++){
+	ret(i,0) = -rhs(i,3);
+	ret(i,1) =  rhs(i,2);
+	ret(i,2) =  rhs(i,1);
+	ret(i,3) = -rhs(i,0);
+      }
     };
-    template<class vtype> inline void multMinusGammaY(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
-      ret(0) =  rhs(3);
-      ret(1) = -rhs(2);
-      ret(2) = -rhs(1);
-      ret(3) =  rhs(0);
+    template<class vtype> inline void rmultMinusGammaY(iMatrix<vtype,Ns> &ret, const iMatrix<vtype,Ns> &rhs){
+      for(int i=0;i<Ns;i++){
+	ret(i,0) =  rhs(i,3);
+	ret(i,1) = -rhs(i,2);
+	ret(i,2) = -rhs(i,1);
+	ret(i,3) =  rhs(i,0);
+      }
     };
     template<class vtype> inline void multGammaY(iMatrix<vtype,Ns> &ret, const iMatrix<vtype,Ns> &rhs){
       for(int i=0;i<Ns;i++){
@@ -142,23 +146,39 @@ namespace QCD {
 	ret(3,i) =  rhs(0,i);
       }
     };
+    template<class vtype> inline void multGammaY(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
+      ret(0) = -rhs(3);
+      ret(1) =  rhs(2);
+      ret(2) =  rhs(1);
+      ret(3) = -rhs(0);
+    };
+    template<class vtype> inline void multMinusGammaY(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
+      ret(0) =  rhs(3);
+      ret(1) = -rhs(2);
+      ret(2) = -rhs(1);
+      ret(3) =  rhs(0);
+    };
     /*Gz
      *  0 0  i  0   [0]+-i[2]
      *  0 0  0 -i   [1]-+i[3]
      * -i 0  0  0
      *  0 i  0  0
      */
-    template<class vtype> inline void multGammaZ(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
-      ret(0) = timesI(rhs(2));
-      ret(1) =timesMinusI(rhs(3));
-      ret(2) =timesMinusI(rhs(0));
-      ret(3) = timesI(rhs(1));
+    template<class vtype> inline void rmultGammaZ(iMatrix<vtype,Ns> &ret, const iMatrix<vtype,Ns> &rhs){
+      for(int i=0;i<Ns;i++){
+	ret(i,0) = timesMinusI(rhs(i,2));
+	ret(i,1) =      timesI(rhs(i,3));
+	ret(i,2) =      timesI(rhs(i,0));
+	ret(i,3) = timesMinusI(rhs(i,1));
+      }
     };
-    template<class vtype> inline void multMinusGammaZ(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
-      ret(0) = timesMinusI(rhs(2));
-      ret(1) = timesI(rhs(3));
-      ret(2) = timesI(rhs(0));
-      ret(3) = timesMinusI(rhs(1));
+    template<class vtype> inline void rmultMinusGammaZ(iMatrix<vtype,Ns> &ret, const iMatrix<vtype,Ns> &rhs){
+      for(int i=0;i<Ns;i++){
+	ret(i,0) =      timesI(rhs(i,2));
+	ret(i,1) = timesMinusI(rhs(i,3));
+	ret(i,2) = timesMinusI(rhs(i,0));
+	ret(i,3) =      timesI(rhs(i,1));
+      }
     };
     template<class vtype> inline void multGammaZ(iMatrix<vtype,Ns> &ret, const iMatrix<vtype,Ns> &rhs){
       for(int i=0;i<Ns;i++){
@@ -176,23 +196,39 @@ namespace QCD {
 	ret(3,i) = timesMinusI(rhs(1,i));
       }
     };
+    template<class vtype> inline void multGammaZ(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
+      ret(0) = timesI(rhs(2));
+      ret(1) =timesMinusI(rhs(3));
+      ret(2) =timesMinusI(rhs(0));
+      ret(3) = timesI(rhs(1));
+    };
+    template<class vtype> inline void multMinusGammaZ(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
+      ret(0) = timesMinusI(rhs(2));
+      ret(1) = timesI(rhs(3));
+      ret(2) = timesI(rhs(0));
+      ret(3) = timesMinusI(rhs(1));
+    };
     /*Gt
      *  0 0  1  0 [0]+-[2]
      *  0 0  0  1 [1]+-[3]
      *  1 0  0  0
      *  0 1  0  0
      */
-    template<class vtype> inline void multGammaT(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
-      ret(0) = rhs(2);
-      ret(1) = rhs(3);
-      ret(2) = rhs(0);
-      ret(3) = rhs(1);
+    template<class vtype> inline void rmultGammaT(iMatrix<vtype,Ns> &ret, const iMatrix<vtype,Ns> &rhs){
+      for(int i=0;i<Ns;i++){
+	ret(i,0) = rhs(i,2);
+	ret(i,1) = rhs(i,3);
+	ret(i,2) = rhs(i,0);
+	ret(i,3) = rhs(i,1);
+      }
     };
-    template<class vtype> inline void multMinusGammaT(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
-      ret(0) =-rhs(2);
-      ret(1) =-rhs(3);
-      ret(2) =-rhs(0);
-      ret(3) =-rhs(1);
+    template<class vtype> inline void rmultMinusGammaT(iMatrix<vtype,Ns> &ret, const iMatrix<vtype,Ns> &rhs){
+      for(int i=0;i<Ns;i++){
+	ret(i,0) =- rhs(i,2);
+	ret(i,1) =- rhs(i,3);
+	ret(i,2) =- rhs(i,0);
+	ret(i,3) =- rhs(i,1);
+      }
     };
     template<class vtype> inline void multGammaT(iMatrix<vtype,Ns> &ret, const iMatrix<vtype,Ns> &rhs){
       for(int i=0;i<Ns;i++){
@@ -210,24 +246,41 @@ namespace QCD {
 	ret(3,i) =-rhs(1,i);
       }
     };
+    template<class vtype> inline void multGammaT(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
+      ret(0) = rhs(2);
+      ret(1) = rhs(3);
+      ret(2) = rhs(0);
+      ret(3) = rhs(1);
+    };
+    template<class vtype> inline void multMinusGammaT(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
+      ret(0) =-rhs(2);
+      ret(1) =-rhs(3);
+      ret(2) =-rhs(0);
+      ret(3) =-rhs(1);
+    };
     /*G5
      *  1 0  0  0 [0]+-[2]
      *  0 1  0  0 [1]+-[3]
      *  0 0 -1  0
      *  0 0  0 -1
      */
-    template<class vtype> inline void multGamma5(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
-      ret(0) = rhs(0);
-      ret(1) = rhs(1);
-      ret(2) =-rhs(2);
-      ret(3) =-rhs(3);
+    template<class vtype> inline void rmultGamma5(iMatrix<vtype,Ns> &ret, const iMatrix<vtype,Ns> &rhs){
+      for(int i=0;i<Ns;i++){
+	ret(i,0) = rhs(i,0);
+	ret(i,1) = rhs(i,1);
+	ret(i,2) =-rhs(i,2);
+	ret(i,3) =-rhs(i,3);
+      }
     };
-    template<class vtype> inline void multMinusGamma5(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
-      ret(0) =-rhs(0);
-      ret(1) =-rhs(1);
-      ret(2) = rhs(2);
-      ret(3) = rhs(3);
+    template<class vtype> inline void rmultMinusGamma5(iMatrix<vtype,Ns> &ret, const iMatrix<vtype,Ns> &rhs){
+      for(int i=0;i<Ns;i++){
+	ret(i,0) =-rhs(i,0);
+	ret(i,1) =-rhs(i,1);
+	ret(i,2) = rhs(i,2);
+	ret(i,3) = rhs(i,3);
+      }
     };
+
     template<class vtype> inline void multGamma5(iMatrix<vtype,Ns> &ret, const iMatrix<vtype,Ns> &rhs){
       for(int i=0;i<Ns;i++){
 	ret(0,i) = rhs(0,i);
@@ -243,6 +296,19 @@ namespace QCD {
 	ret(2,i) = rhs(2,i);
 	ret(3,i) = rhs(3,i);
       }
+    };
+
+    template<class vtype> inline void multGamma5(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
+      ret(0) = rhs(0);
+      ret(1) = rhs(1);
+      ret(2) =-rhs(2);
+      ret(3) =-rhs(3);
+    };
+    template<class vtype> inline void multMinusGamma5(iVector<vtype,Ns> &ret, iVector<vtype,Ns> &rhs){
+      ret(0) =-rhs(0);
+      ret(1) =-rhs(1);
+      ret(2) = rhs(2);
+      ret(3) = rhs(3);
     };
 
 
