@@ -2,6 +2,9 @@
 #define GRID_LATTICE_REDUCTION_H
 
 namespace Grid {
+#ifdef GRID_WARN_SUBOPTIMAL
+#warning "Optimisation alert all these reduction loops are NOT threaded "
+#endif     
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     // Reduction operations
@@ -72,6 +75,79 @@ namespace Grid {
 
       return ssum;
     }
+
+
+
+
+template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<typename vobj::scalar_object> &result,int orthogdim)
+{
+  typedef typename vobj::scalar_object sobj;
+
+  GridBase  *grid = Data._grid;
+  const int    Nd = grid->_ndimension;
+  const int Nsimd = grid->Nsimd();
+
+  assert(orthogdim >= 0);
+  assert(orthogdim < Nd);
+
+  int fd=grid->_fdimensions[orthogdim];
+  int ld=grid->_ldimensions[orthogdim];
+  int rd=grid->_rdimensions[orthogdim];
+
+  std::vector<vobj,alignedAllocator<vobj> > lvSum(rd); // will locally sum vectors first
+  std::vector<sobj> lsSum(ld,sobj(zero)); // sum across these down to scalars
+  std::vector<sobj> extracted(Nsimd);     // splitting the SIMD
+
+  result.resize(fd); // And then global sum to return the same vector to every node for IO to file
+  for(int r=0;r<rd;r++){
+    lvSum[r]=zero;
+  }
+
+  std::vector<int>  coor(Nd);  
+
+  // sum over reduced dimension planes, breaking out orthog dir
+  for(int ss=0;ss<grid->oSites();ss++){
+    GridBase::CoorFromIndex(coor,ss,grid->_rdimensions);
+    int r = coor[orthogdim];
+    lvSum[r]=lvSum[r]+Data._odata[ss];
+  }  
+
+  // Sum across simd lanes in the plane, breaking out orthog dir.
+  std::vector<int> icoor(Nd);
+
+  for(int rt=0;rt<rd;rt++){
+
+    extract(lvSum[rt],extracted);
+
+    for(int idx=0;idx<Nsimd;idx++){
+
+      grid->iCoorFromIindex(icoor,idx);
+
+      int ldx =rt+icoor[orthogdim]*rd;
+
+      lsSum[ldx]=lsSum[ldx]+extracted[idx];
+
+    }
+  }
+  
+  // sum over nodes.
+  sobj gsum;
+  for(int t=0;t<fd;t++){
+    int pt = t/ld; // processor plane
+    int lt = t%ld;
+    if ( pt == grid->_processor_coor[orthogdim] ) {
+      gsum=lsSum[lt];
+    } else {
+      gsum=zero;
+    }
+
+    grid->GlobalSum(gsum);
+
+    result[t]=gsum;
+  }
+
+}
+
 
 }
 #endif
