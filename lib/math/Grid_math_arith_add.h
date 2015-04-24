@@ -63,13 +63,6 @@ namespace Grid {
     return;
   }
 
-  // Need to figure multi-precision.
-  template<class Mytype>  Mytype timesI(Mytype &r)
-    {
-      iScalar<Complex> i;
-      i._internal = Complex(0,1);
-      return r*i;
-    }
 
   // + operator for scalar, vector, matrix
   template<class ltype,class rtype>

@@ -101,13 +101,13 @@ namespace Grid {
              IF IMM0[2] = 0
              THEN DEST[191:128]=SRC1[191:128] ELSE DEST[191:128]=SRC1[255:192] FI;
              IF IMM0[3] = 0
-             THEN DEST[255:192]=SRC2[191:128] ELSE DEST[255:192]=SRC2[255:192] FI;
+             THEN DEST[255:192]=SRC2[191:128] ELSE DEST[255:192]=SRC2[255:192] FI; // Ox5 r<->i   ; 0xC unchanged
              */
 #if defined (AVX1)|| defined (AVX2)
             zvec ymm0,ymm1,ymm2;
             ymm0 = _mm256_shuffle_pd(a.v,a.v,0x0); // ymm0 <- ar ar, ar,ar b'00,00
             ymm0 = _mm256_mul_pd(ymm0,b.v);        // ymm0 <- ar bi, ar br
-            ymm1 = _mm256_shuffle_pd(b.v,b.v,0x5); // ymm1 <- br,bi  b'01,01
+            ymm1 = _mm256_shuffle_pd(b.v,b.v,0x5); // ymm1 <- br,bi  b'01,01 
             ymm2 = _mm256_shuffle_pd(a.v,a.v,0xF); // ymm2 <- ai,ai  b'11,11
             ymm1 = _mm256_mul_pd(ymm1,ymm2);       // ymm1 <- br ai, ai bi
             ret.v= _mm256_addsub_pd(ymm0,ymm1);
@@ -140,7 +140,7 @@ namespace Grid {
              * publisher = {ACM},
              * address = {New York, NY, USA},
              * keywords = {autovectorization, fourier transform, program generation, simd, super-optimization},
- *                } 
+	     *                } 
              */
             zvec vzero,ymm0,ymm1,real,imag;
             vzero =  _mm512_setzero();
@@ -252,23 +252,71 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
             vComplexD ret ; vzero(ret);
 #if defined (AVX1)|| defined (AVX2)
             // addsubps 0, inv=>0+in.v[3] 0-in.v[2], 0+in.v[1], 0-in.v[0], ...
-            __m256d tmp = _mm256_addsub_pd(ret.v,_mm256_shuffle_pd(in.v,in.v,0x5));
-             ret.v=_mm256_shuffle_pd(tmp,tmp,0x5);
+	    //            __m256d tmp = _mm256_addsub_pd(ret.v,_mm256_shuffle_pd(in.v,in.v,0x5));
+	    //             ret.v=_mm256_shuffle_pd(tmp,tmp,0x5);
+            ret.v = _mm256_addsub_pd(ret.v,in.v);
 #endif
 #ifdef SSE4
             ret.v = _mm_addsub_pd(ret.v,in.v);
 #endif
 #ifdef AVX512
-             // Xeon does not have fmaddsub or addsub 
-             // with mask 0xa (1010), v[0] -v[1] v[2] -v[3] ....
-             ret.v = _mm512_mask_sub_pd(in.v, 0xaaaa,ret.v, in.v);
-             
+	    ret.v = _mm512_mask_sub_pd(in.v, 0xaaaa,ret.v, in.v);             
 #endif
 #ifdef QPX
 	     assert(0);
 #endif
             return ret;
         }
+
+        friend inline vComplexD timesI(const vComplexD &in){
+	  vComplexD ret; vzero(ret);
+#if defined (AVX1)|| defined (AVX2)
+	  cvec tmp =_mm256_addsub_ps(ret.v,in.v); // r,-i
+	  /*
+             IF IMM0[0] = 0
+             THEN DEST[63:0]=SRC1[63:0] ELSE DEST[63:0]=SRC1[127:64] FI;
+             IF IMM0[1] = 0
+             THEN DEST[127:64]=SRC2[63:0] ELSE DEST[127:64]=SRC2[127:64] FI;
+             IF IMM0[2] = 0
+             THEN DEST[191:128]=SRC1[191:128] ELSE DEST[191:128]=SRC1[255:192] FI;
+             IF IMM0[3] = 0
+             THEN DEST[255:192]=SRC2[191:128] ELSE DEST[255:192]=SRC2[255:192] FI;
+	  */
+          ret.v    =_mm256_shuffle_ps(tmp,tmp,0x5);
+#endif
+#ifdef SSE4
+	  cvec tmp =_mm_addsub_ps(ret.v,in.v); // r,-i
+          ret.v    =_mm_shuffle_ps(tmp,tmp,0x5);
+#endif
+#ifdef AVX512
+          ret.v = _mm512_mask_sub_ps(in.v,0xaaaa,ret.v,in.v); // real -imag 
+	  ret.v = _mm512_swizzle_ps(ret.v, _MM_SWIZ_REG_CDAB);// OK
+#endif
+#ifdef QPX
+            assert(0);
+#endif
+	  return ret;
+	}
+        friend inline vComplexD timesMinusI(const vComplexD &in){
+	  vComplexD ret; vzero(ret);
+#if defined (AVX1)|| defined (AVX2)
+	  cvec tmp =_mm256_shuffle_ps(in.v,in.v,0x5);
+          ret.v    =_mm256_addsub_ps(ret.v,tmp); // i,-r
+#endif
+#ifdef SSE4
+	  cvec tmp =_mm_shuffle_ps(in.v,in.v,0x5);
+          ret.v    =_mm_addsub_ps(ret.v,tmp); // r,-i
+#endif
+#ifdef AVX512
+          cvec tmp = _mm512_swizzle_ps(in.v, _MM_SWIZ_REG_CDAB);// OK
+	  ret.v    = _mm512_mask_sub_ps(tmp,0xaaaa,ret.v,tmp); // real -imag 
+#endif
+#ifdef QPX
+            assert(0);
+#endif
+	  return ret;
+	}
+
 // REDUCE FIXME must be a cleaner implementation
        friend inline ComplexD Reduce(const vComplexD & in)
        { 

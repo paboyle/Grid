@@ -72,6 +72,13 @@ public:
       return _internal;
     }
 
+    inline const vtype & operator ()(void) const {
+      return _internal;
+    }
+    //    inline vtype && operator ()(void) {
+    //      return _internal;
+    //    }
+
     operator ComplexD () const { return(TensorRemove(_internal)); };
     operator RealD () const { return(real(TensorRemove(_internal))); }
 
@@ -156,6 +163,12 @@ public:
     inline vtype & operator ()(int i) {
       return _internal[i];
     }
+    inline const vtype & operator ()(int i) const {
+      return _internal[i];
+    }
+    //    inline vtype && operator ()(int i) {
+    //      return _internal[i];
+    //    }
 };
     
 template<class vtype,int N> class iMatrix
@@ -235,11 +248,21 @@ public:
     *this = (*this)+r;
     return *this;
   }
+
+  // returns an lvalue reference
   inline vtype & operator ()(int i,int j) {
     return _internal[i][j];
   }
+  inline const vtype & operator ()(int i,int j) const {
+    return _internal[i][j];
+  }
+
+  //  inline vtype && operator ()(int i,int j) {
+  //    return _internal[i][j];
+  //  }
 
 };
+
 
 template<class vobj> inline 
 void extract(const vobj &vec,std::vector<typename vobj::scalar_object> &extracted)

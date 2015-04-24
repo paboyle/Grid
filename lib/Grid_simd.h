@@ -61,7 +61,12 @@ namespace Grid {
     inline void add (ComplexF * __restrict__ y,const ComplexF * __restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) + (*r); }
     inline ComplexF  adj(const ComplexF& r ){ return(conj(r)); }
     //conj already supported for complex
-    
+
+    inline ComplexF timesI(const ComplexF r)     { return(r*ComplexF(0.0,1.0));}
+    inline ComplexF timesMinusI(const ComplexF r){ return(r*ComplexF(0.0,-1.0));}
+    inline ComplexD timesI(const ComplexD r)     { return(r*ComplexD(0.0,1.0));}
+    inline ComplexD timesMinusI(const ComplexD r){ return(r*ComplexD(0.0,-1.0));}
+
     inline void mac (RealD * __restrict__ y,const RealD * __restrict__ a,const RealD *__restrict__ x){  *y = (*a) * (*x)+(*y);}
     inline void mult(RealD * __restrict__ y,const RealD * __restrict__ l,const RealD *__restrict__ r){ *y = (*l) * (*r);}
     inline void sub (RealD * __restrict__ y,const RealD * __restrict__ l,const RealD *__restrict__ r){ *y = (*l) - (*r);}
