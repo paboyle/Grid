@@ -143,4 +143,7 @@ namespace QCD {
 
 }   //namespace QCD
 } // Grid
+
+#include <qcd/Grid_qcd_dirac.h>
+
 #endif

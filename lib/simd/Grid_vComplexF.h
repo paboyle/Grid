@@ -329,9 +329,10 @@ friend inline void vstore(const vComplexF &ret, ComplexF *a){
         friend inline vComplexF conj(const vComplexF &in){
             vComplexF ret ; vzero(ret);
 #if defined (AVX1)|| defined (AVX2)
-             cvec tmp;
-             tmp = _mm256_addsub_ps(ret.v,_mm256_shuffle_ps(in.v,in.v,_MM_SHUFFLE(2,3,0,1))); // ymm1 <- br,bi
-             ret.v=_mm256_shuffle_ps(tmp,tmp,_MM_SHUFFLE(2,3,0,1));
+	    //             cvec tmp;
+	    //             tmp = _mm256_addsub_ps(ret.v,_mm256_shuffle_ps(in.v,in.v,_MM_SHUFFLE(2,3,0,1))); // ymm1 <- br,bi
+	    //             ret.v=_mm256_shuffle_ps(tmp,tmp,_MM_SHUFFLE(2,3,0,1));
+	    ret.v = _mm256_addsub_ps(ret.v,in.v);
 #endif
 #ifdef SSE4
             ret.v = _mm_addsub_ps(ret.v,in.v);
@@ -344,6 +345,44 @@ friend inline void vstore(const vComplexF &ret, ComplexF *a){
 #endif
             return ret;
         }
+        friend inline vComplexF timesI(const vComplexF &in){
+	  vComplexF ret; vzero(ret);
+#if defined (AVX1)|| defined (AVX2)
+	  cvec tmp =_mm256_addsub_ps(ret.v,in.v); // r,-i
+          ret.v = _mm256_shuffle_ps(tmp,tmp,0x5);
+#endif
+#ifdef SSE4
+	  cvec tmp =_mm_addsub_ps(ret.v,in.v); // r,-i
+          ret.v = _mm_shuffle_ps(tmp,tmp,0x5);
+#endif
+#ifdef AVX512
+          ret.v = _mm512_mask_sub_ps(in.v,0xaaaa,ret.v,in.v); // real -imag 
+	  ret.v = _mm512_swizzle_ps(ret.v, _MM_SWIZ_REG_CDAB);// OK
+#endif
+#ifdef QPX
+            assert(0);
+#endif
+	  return ret;
+	}
+        friend inline vComplexF timesMinusI(const vComplexF &in){
+	  vComplexF ret; vzero(ret);
+#if defined (AVX1)|| defined (AVX2)
+	  cvec tmp =_mm256_shuffle_ps(in.v,in.v,0x5);
+          ret.v = _mm256_addsub_ps(ret.v,tmp); // i,-r
+#endif
+#ifdef SSE4
+	  cvec tmp =_mm_shuffle_ps(in.v,in.v,0x5);
+          ret.v = _mm_addsub_ps(ret.v,tmp); // r,-i
+#endif
+#ifdef AVX512
+          cvec tmp = _mm512_swizzle_ps(in.v, _MM_SWIZ_REG_CDAB);// OK
+	  ret.v    = _mm512_mask_sub_ps(tmp,0xaaaa,ret.v,tmp); // real -imag 
+#endif
+#ifdef QPX
+            assert(0);
+#endif
+	  return ret;
+	}
         
         // Unary negation
         friend inline vComplexF operator -(const vComplexF &r) {
