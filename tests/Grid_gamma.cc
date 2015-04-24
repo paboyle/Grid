@@ -23,6 +23,9 @@ int main (int argc, char ** argv)
   SpinMatrix rr=zero;
   SpinMatrix result;
 
+  SpinVector lv=zero;
+  SpinVector rv=zero;
+
   for(int a=0;a<Ns;a++){
     ident()(a,a) = 1.0;
   }
@@ -56,8 +59,9 @@ int main (int argc, char ** argv)
     "-Gamma5  ",
     "         "
   };
-  //  result == ll*Gamma(g[0])*rr;
-  //  result == ll*Gamma(g[0]);
+  result =ll*Gamma(g[0])*rr;
+  result =ll*Gamma(g[0]);
+  rv = Gamma(g[0])*lv;
 
   for(int mu=0;mu<12;mu++){
 

@@ -4,18 +4,21 @@ AM_CXXFLAGS = -I$(top_srcdir)/
 extra_sources=
 if BUILD_COMMS_MPI
   extra_sources+=communicator/Grid_communicator_mpi.cc
-  extra_sources+=stencil/Grid_stencil_common.cc
 endif
+
 if BUILD_COMMS_NONE
   extra_sources+=communicator/Grid_communicator_fake.cc
-  extra_sources+=stencil/Grid_stencil_common.cc
 endif
 
 #
 # Libraries
 #
 lib_LIBRARIES = libGrid.a
-libGrid_a_SOURCES = Grid_init.cc $(extra_sources)
+libGrid_a_SOURCES =\
+	 Grid_init.cc\
+	stencil/Grid_stencil_common.cc\
+	qcd/Grid_qcd_dirac.cc\
+	$(extra_sources)
 
 #
 # Include files
@@ -32,7 +35,6 @@ include_HEADERS =\
 	Grid_math.h\
 	Grid_simd.h\
 	Grid_stencil.h\
-	Grid_summation.h\
 	Grid_where.h
 
 nobase_include_HEADERS=\
@@ -68,7 +70,8 @@ nobase_include_HEADERS=\
 	math/Grid_math_trace.h\
 	math/Grid_math_traits.h\
 	math/Grid_math_transpose.h\
-	qcd/Grid_QCD.h\
+	qcd/Grid_qcd.h\
+	qcd/Grid_qcd_dirac.h\
 	simd/Grid_vComplexD.h\
 	simd/Grid_vComplexF.h\
 	simd/Grid_vInteger.h\
