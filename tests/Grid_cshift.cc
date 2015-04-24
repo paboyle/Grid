@@ -14,7 +14,8 @@ int main (int argc, char ** argv)
   std::vector<int> latt_size  ({8,8,8,16});
     
   GridCartesian     Fine(latt_size,simd_layout,mpi_layout);
-  GridRNG           FineRNG(&Fine);
+  GridParallelRNG           FineRNG(&Fine);
+  FineRNG.SeedRandomDevice();
 
   LatticeComplex U(&Fine);
   LatticeComplex ShiftU(&Fine);

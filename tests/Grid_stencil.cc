@@ -48,7 +48,8 @@ int main (int argc, char ** argv)
     
     GridCartesian Fine(latt_size,simd_layout,mpi_layout);
     GridRedBlackCartesian rbFine(latt_size,simd_layout,mpi_layout);
-    GridRNG       fRNG(&Fine);
+    GridParallelRNG       fRNG(&Fine);
+    fRNG.SeedRandomDevice();
 
     LatticeColourMatrix Foo(&Fine);
     LatticeColourMatrix Bar(&Fine);

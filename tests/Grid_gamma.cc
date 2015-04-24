@@ -16,9 +16,15 @@ int main (int argc, char ** argv)
     
   GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
-  GridRNG           RNG(&Grid);
+  GridParallelRNG          pRNG(&Grid);
+  pRNG.SeedRandomDevice();
+
+  GridSerialRNG            sRNG;
+  sRNG.SeedRandomDevice();
 
   SpinMatrix ident=zero;
+  SpinMatrix rnd  ; random(sRNG,rnd);
+
   SpinMatrix ll=zero;
   SpinMatrix rr=zero;
   SpinMatrix result;
@@ -94,6 +100,29 @@ int main (int argc, char ** argv)
 
   }
 
-  
+  std::cout << "Testing Gamma^2 - 1 = 0"<<std::endl;
+  for(int mu=0;mu<6;mu++){
+    result =  Gamma(g[mu])* ident * Gamma(g[mu]);
+    result = result - ident;
+    double mag = TensorRemove(norm2l(result));
+    std::cout << list[mu]<<" " << mag<<std::endl;
+  }
+
+  std::cout << "Testing (MinusGamma + G )M = 0"<<std::endl;
+  for(int mu=0;mu<6;mu++){
+    result =          rnd * Gamma(g[mu]);
+    result = result + rnd * Gamma(g[mu+6]);
+    double mag = TensorRemove(norm2l(result));
+    std::cout << list[mu]<<" " << mag<<std::endl;
+  }
+
+  std::cout << "Testing M(MinusGamma + G )  = 0"<<std::endl;
+  for(int mu=0;mu<6;mu++){
+    result =           Gamma(g[mu])  *rnd;
+    result = result +  Gamma(g[mu+6])*rnd;
+    double mag = TensorRemove(norm2l(result));
+    std::cout << list[mu]<<" " << mag<<std::endl;
+  }
+
   Grid_finalize();
 }

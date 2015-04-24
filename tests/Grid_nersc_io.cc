@@ -20,7 +20,6 @@ int main (int argc, char ** argv)
   GridCartesian     Fine(latt_size,simd_layout,mpi_layout);
   GridCartesian     Coarse(clatt_size,simd_layout,mpi_layout);
 
-  GridRNG           FineRNG(&Fine);
   LatticeGaugeField Umu(&Fine);
 
   std::vector<LatticeColourMatrix> U(4,&Fine);
