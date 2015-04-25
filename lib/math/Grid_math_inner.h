@@ -6,7 +6,7 @@ namespace Grid {
     // innerProduct Vector x Vector -> Scalar
     // innerProduct Matrix x Matrix -> Scalar
     ///////////////////////////////////////////////////////////////////////////////////////
-    template<class sobj> inline RealD norm2l(sobj &arg){
+    template<class sobj> inline RealD norm2l(const sobj &arg){
       typedef typename sobj::scalar_type scalar;
       decltype(innerProduct(arg,arg)) nrm;
       nrm = innerProduct(arg,arg);
