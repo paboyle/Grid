@@ -13,7 +13,26 @@
 * Consider switch std::vector to boost arrays or something lighter weight
   boost::multi_array<type, 3> A()...    to replace multi1d, multi2d etc..
 
-* How to define simple matrix operations, such as flavour matrices?
+* TensorRemove is a hack, come up with a long term rationalised approach to Complex vs. Scalar<Scalar<Scalar<Complex > > >
+  QDP forces use of "toDouble" to get back to non tensor scalar. This role is presently taken TensorRemove, but I
+  want to introduce a syntax that does not require this.
+
+* norm2l is a hack. figure out syntax error and make this norm2. c.f. tests/Grid_gamma.cc
+
+*  std::vector replacement;
+
+  Had to change "reserve" back to "resize" on std::vector in Lattice class.
+
+  This forces the constructor call on EVERY element of the array with negative
+  performance effects on temporaries.
+  
+  The reversion was required because copy constructur has to work.
+
+  CONCLUSION: I must implement a similar to vector without construction/fill on
+  resize. Find out if valarray or alternative works differently prior to 
+  doing this since there may still be something I can use..
+
+* Flavour matrices?
 
 * Make the Tensor types and Complex etc... play more nicely.
 
@@ -36,7 +55,6 @@
 
 * Conformable test in Cshift routines.
 
-* QDP++ regression suite and comparative benchmark
 
 AUDITS:
 

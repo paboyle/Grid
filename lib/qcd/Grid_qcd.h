@@ -7,6 +7,7 @@ namespace QCD {
     static const int Nc=3;
     static const int Ns=4;
     static const int Nd=4;
+    static const int Nhs=2; // half spinor
 
     static const int CbRed  =0;
     static const int CbBlack=1;
@@ -38,16 +39,21 @@ namespace QCD {
     template<typename vtype> using iColourVector     = iScalar<iScalar<iVector<vtype, Nc> > >;
     template<typename vtype> using iSpinColourVector = iScalar<iVector<iVector<vtype, Nc>, Ns> >;
 
-    typedef iSpinMatrix<Complex >          SpinMatrix;
-    typedef iColourMatrix<Complex >        ColourMatrix;
-    typedef iSpinColourMatrix<Complex >    SpinColourMatrix;
-    typedef iLorentzColourMatrix<Complex > LorentzColourMatrix;
+    template<typename vtype> using iHalfSpinVector       = iScalar<iVector<iScalar<vtype>, Nhs> >;
+    template<typename vtype> using iHalfSpinColourVector = iScalar<iVector<iVector<vtype, Nc>, Nhs> >;
+
+    typedef iSpinMatrix<Complex >           SpinMatrix;
+    typedef iColourMatrix<Complex >         ColourMatrix;
+    typedef iSpinColourMatrix<Complex >     SpinColourMatrix;
+    typedef iLorentzColourMatrix<Complex >  LorentzColourMatrix;
     typedef iLorentzColourMatrix<ComplexF > LorentzColourMatrixF;
     typedef iLorentzColourMatrix<ComplexD > LorentzColourMatrixD;
 
-    typedef iSpinVector<Complex >       SpinVector;
-    typedef iColourVector<Complex >     ColourVector;
-    typedef iSpinColourVector<Complex > SpinColourVector;
+    typedef iSpinVector<Complex >           SpinVector;
+    typedef iColourVector<Complex >         ColourVector;
+    typedef iSpinColourVector<Complex >     SpinColourVector;
+    typedef iHalfSpinVector<Complex >       HalfSpinVector;
+    typedef iHalfSpinColourVector<Complex > HalfSpinColourVector;
 
     
     typedef iSpinMatrix<vComplex >          vSpinMatrix;
@@ -55,36 +61,46 @@ namespace QCD {
     typedef iSpinColourMatrix<vComplex >    vSpinColourMatrix;
     typedef iLorentzColourMatrix<vComplex > vLorentzColourMatrix;
     
-    typedef iSpinVector<vComplex >       vSpinVector;
-    typedef iColourVector<vComplex >     vColourVector;
-    typedef iSpinColourVector<vComplex > vSpinColourVector;
+    typedef iSpinVector<vComplex >           vSpinVector;
+    typedef iColourVector<vComplex >         vColourVector;
+    typedef iSpinColourVector<vComplex >     vSpinColourVector;
+    typedef iHalfSpinVector<vComplex >       vHalfSpinVector;
+    typedef iHalfSpinColourVector<vComplex > vHalfSpinColourVector;
     
-    typedef iSinglet<Complex >          TComplex;    // This is painful. Tensor singlet complex type.
-    typedef iSinglet<vComplex >         vTComplex;   // what if we don't know the tensor structure
-    typedef iSinglet<Real >             TReal;       // Shouldn't need these; can I make it work without?
-    typedef iSinglet<vReal >            vTReal;      
-    typedef iSinglet<vInteger >         vTInteger;
-    typedef iSinglet<Integer >          TInteger;
+    typedef iSinglet<Complex >         TComplex;    // FIXME This is painful. Tensor singlet complex type.
+    typedef iSinglet<vComplex >        vTComplex;   // what if we don't know the tensor structure
+    typedef iSinglet<Real >            TReal;       // Shouldn't need these; can I make it work without?
+    typedef iSinglet<vReal >           vTReal;      
+    typedef iSinglet<vInteger >        vTInteger;
+    typedef iSinglet<Integer >         TInteger;
 
-    typedef Lattice<vTReal>              LatticeReal;
-    typedef Lattice<vTComplex>           LatticeComplex;
-    typedef Lattice<vTInteger>            LatticeInteger; // Predicates for "where"
+    typedef Lattice<vTReal>            LatticeReal;
+    typedef Lattice<vTComplex>         LatticeComplex;
+    typedef Lattice<vTInteger>         LatticeInteger; // Predicates for "where"
     
     typedef Lattice<vColourMatrix>     LatticeColourMatrix;
     typedef Lattice<vSpinMatrix>       LatticeSpinMatrix;
     typedef Lattice<vSpinColourMatrix> LatticeSpinColourMatrix;
 
-    typedef Lattice<vSpinColourVector> LatticeSpinColourVector;
-    typedef Lattice<vSpinVector>       LatticeSpinVector;
-    typedef Lattice<vColourVector>     LatticeColourVector;
+    typedef Lattice<vSpinVector>           LatticeSpinVector;
+    typedef Lattice<vColourVector>         LatticeColourVector;
+    typedef Lattice<vSpinColourVector>     LatticeSpinColourVector;
+    typedef Lattice<vHalfSpinVector>       LatticeHalfSpinVector;
+    typedef Lattice<vHalfSpinColourVector> LatticeHalfSpinColourVector;
 
     ///////////////////////////////////////////
     // Physical names for things
     ///////////////////////////////////////////
-    typedef Lattice<vSpinColourVector> LatticeFermion;
-    typedef Lattice<vSpinColourMatrix> LatticePropagator;
-    typedef Lattice<vLorentzColourMatrix> LatticeGaugeField;
+    typedef Lattice<vHalfSpinColourVector> LatticeHalfFermion;
+    typedef Lattice<vSpinColourVector>     LatticeFermion;
 
+    typedef Lattice<vSpinColourMatrix>     LatticePropagator;
+    typedef Lattice<vLorentzColourMatrix>  LatticeGaugeField;
+
+    // Uhgg... typing this hurt  ;)
+    // (my keyboard got burning hot when I typed this, must be the anti-Fermion)
+    typedef Lattice<vColourVector>         LatticeStaggeredFermion;    
+    typedef Lattice<vColourMatrix>         LatticeStaggeredPropagator; 
 
     //////////////////////////////////////////////////////////////////////////////
     // Peek and Poke named after physics attributes
@@ -145,5 +161,7 @@ namespace QCD {
 } // Grid
 
 #include <qcd/Grid_qcd_dirac.h>
+#include <qcd/Grid_qcd_2spinor.h>
+//#include <qcd/Grid_qcd_pauli.h>
 
 #endif
