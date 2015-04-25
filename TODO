@@ -1,5 +1,6 @@
 * - BinaryWriter, TextWriter etc...
-  - protocol buffers? replace xmlReader/Writer ec..
+  - use protocol buffers? replace xmlReader/Writer ec..
+  - Binary use htonll, htonl
 
 * Stencil operator support                           -----Initial thoughts, trial implementation DONE.
                                                      -----some simple tests that Stencil matches Cshift.
@@ -15,10 +16,9 @@
   boost::multi_array<type, 3> A()...    to replace multi1d, multi2d etc..
 
 
-* norm2l is a hack. figure out syntax error and make this norm2. c.f. tests/Grid_gamma.cc
+* norm2l is a hack. figure out syntax error and make this norm2 c.f. tests/Grid_gamma.cc
 
-
-*  std::vector replacement;
+****  std::vector replacement;
 
   Had to change "reserve" back to "resize" on std::vector in Lattice class.
 
@@ -59,7 +59,6 @@
 
 * rb4d support for 5th dimension in Mobius.
 
-
 * Check for missing functionality                    - partially audited against QDP++ layout
 
 Algorithms
@@ -70,6 +69,7 @@ Algorithms
 * Pcg
 * fPcg
 * MCR
+* HDCG
 * etc..
 
 AUDITS:
