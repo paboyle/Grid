@@ -5,6 +5,11 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
+template<class d>
+struct scal {
+  d internal;
+};
+
 
 int main (int argc, char ** argv)
 {
@@ -22,22 +27,33 @@ int main (int argc, char ** argv)
   GridSerialRNG            sRNG;
   sRNG.SeedRandomDevice();
 
-  SpinMatrix ident=zero;
+  SpinMatrix ident; ident=zero;
   SpinMatrix rnd  ; random(sRNG,rnd);
 
-  SpinMatrix ll=zero;
-  SpinMatrix rr=zero;
+  SpinMatrix ll; ll=zero;
+  SpinMatrix rr; rr=zero;
   SpinMatrix result;
 
   SpinVector lv; random(sRNG,lv);
   SpinVector rv; random(sRNG,rv);
+
+  std::cout << " Is pod " << std::is_pod<SpinVector>::value  << std::endl;
+  std::cout << " Is pod double   " << std::is_pod<double>::value  << std::endl;
+  std::cout << " Is pod ComplexF " << std::is_pod<ComplexF>::value  << std::endl;
+  std::cout << " Is pod scal<double> " << std::is_pod<scal<double> >::value  << std::endl;
+  std::cout << " Is pod Scalar<double> " << std::is_pod<iScalar<double> >::value  << std::endl;
+  std::cout << " Is pod Scalar<ComplexF> " << std::is_pod<iScalar<ComplexF> >::value  << std::endl;
+  std::cout << " Is pod Scalar<vComplexF> " << std::is_pod<iScalar<vComplexF> >::value  << std::endl;
+  std::cout << " Is pod Scalar<vComplexD> " << std::is_pod<iScalar<vComplexD> >::value  << std::endl;
+  std::cout << " Is pod Scalar<vRealF> " << std::is_pod<iScalar<vRealF> >::value  << std::endl;
+  std::cout << " Is pod Scalar<vRealD> " << std::is_pod<iScalar<vRealD> >::value  << std::endl;
 
   for(int a=0;a<Ns;a++){
     ident()(a,a) = 1.0;
   }
 
   const Gamma::GammaMatrix *g = Gamma::GammaMatrices;
-  const char **list          = Gamma::GammaMatrixNames;
+  const char **list           = Gamma::GammaMatrixNames;
 
   result =ll*Gamma(g[0])*rr;
   result =ll*Gamma(g[0]);

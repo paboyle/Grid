@@ -26,6 +26,8 @@ namespace Grid {
     }
 
   };
+  
+
   class GridRNGbase {
 
   public:
@@ -62,6 +64,21 @@ namespace Grid {
     }
 
 
+    // real scalars are one component
+    template<class scalar,class distribution> void fillScalar(scalar &s,distribution &dist)
+    {
+      s=dist(_generators[0]);
+    }
+    template<class distribution> void fillScalar(ComplexF &s,distribution &dist)
+    {
+      s=ComplexF(dist(_generators[0]),dist(_generators[0]));
+    }
+    template<class distribution> void fillScalar(ComplexD &s,distribution &dist)
+    {
+      s=ComplexD(dist(_generators[0]),dist(_generators[0]));
+    }
+
+
     template <class sobj,class distribution> inline void fill(sobj &l,distribution &dist){
 
       typedef typename sobj::scalar_type scalar_type;
@@ -71,12 +88,59 @@ namespace Grid {
       scalar_type *buf = (scalar_type *) & l;
 
       for(int idx=0;idx<words;idx++){
-	buf[idx] = dist(_generators[0]);
+	fillScalar(buf[idx],dist);
       }
       
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
 
     };
+
+    template <class distribution>  inline void fill(ComplexF &l,distribution &dist){
+      fillScalar(l,dist);
+      CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
+    }
+    template <class distribution>  inline void fill(ComplexD &l,distribution &dist){
+      fillScalar(l,dist);
+      CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
+    }
+    template <class distribution>  inline void fill(RealF &l,distribution &dist){
+      fillScalar(l,dist);
+      CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
+    }
+    template <class distribution>  inline void fill(RealD &l,distribution &dist){
+      fillScalar(l,dist);
+      CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
+    }
+    // vector fill
+    template <class distribution>  inline void fill(vComplexF &l,distribution &dist){
+      RealF *pointer=(RealF *)&l;
+      for(int i=0;i<2*vComplexF::Nsimd();i++){
+	fillScalar(pointer[i],dist);
+      }
+      CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
+    }
+    template <class distribution>  inline void fill(vComplexD &l,distribution &dist){
+      RealD *pointer=(RealD *)&l;
+      for(int i=0;i<2*vComplexD::Nsimd();i++){
+	fillScalar(pointer[i],dist);
+      }
+      CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
+    }
+    template <class distribution>  inline void fill(vRealF &l,distribution &dist){
+      RealF *pointer=(RealF *)&l;
+      for(int i=0;i<vRealF::Nsimd();i++){
+	fillScalar(pointer[i],dist);
+      }
+      CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
+    }
+    template <class distribution>  inline void fill(vRealD &l,distribution &dist){
+      RealD *pointer=(RealD *)&l;
+      for(int i=0;i<vRealD::Nsimd();i++){
+	fillScalar(pointer[i],dist);
+      }
+      CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
+    }
+
 
     void SeedRandomDevice(void){
       std::random_device rd;
@@ -185,7 +249,6 @@ namespace Grid {
     }
 
   };
-
 
   template <class vobj> inline void random(GridParallelRNG &rng,Lattice<vobj> &l){
     rng.fill(l,rng._uniform);

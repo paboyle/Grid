@@ -17,8 +17,14 @@ namespace QCD {
       GammaZ, 
       GammaT,  
       Gamma5,
-      //      GammaXGamma5, 
-      //      GammaYGamma5, 
+      MinusIdentity,                        
+      MinusGammaX, 
+      MinusGammaY, 
+      MinusGammaZ, 
+      MinusGammaT,  
+      MinusGamma5
+      //      GammaXGamma5, // Rest are composite (willing to take hit for two calls sequentially)
+      //      GammaYGamma5, // as they are less commonly used.
       //      GammaZGamma5, 
       //      GammaTGamma5,  
       //      SigmaXY,
@@ -27,12 +33,6 @@ namespace QCD {
       //      SigmaXT,
       //      SigmaYT,
       //      SigmaZT,
-      MinusIdentity,                        
-      MinusGammaX, 
-      MinusGammaY, 
-      MinusGammaZ, 
-      MinusGammaT,  
-      MinusGamma5
       //      MinusGammaXGamma5, easiest to form by composition
       //      MinusGammaYGamma5, as performance is not critical for these
       //      MinusGammaZGamma5, 
@@ -53,7 +53,6 @@ namespace QCD {
     GammaMatrix _g;
 
   };
-
 
     /* Gx
      *  0 0  0  i    

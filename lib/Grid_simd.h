@@ -26,10 +26,15 @@ namespace Grid {
 
   typedef  float  RealF;
   typedef  double RealD;
-  
+#ifdef GRID_DEFAULT_PRECISION_DOUBLE
+  typedef RealD   Real;
+#else
+  typedef RealF  Real;
+#endif
+
   typedef std::complex<RealF> ComplexF;
   typedef std::complex<RealD> ComplexD;
-
+  typedef std::complex<Real>  Complex;
 
   inline RealF adj(const RealF  & r){ return r; }
   inline RealF conj(const RealF  & r){ return r; }
@@ -63,8 +68,8 @@ namespace Grid {
     //conj already supported for complex
 
     inline ComplexF timesI(const ComplexF r)     { return(r*ComplexF(0.0,1.0));}
-    inline ComplexF timesMinusI(const ComplexF r){ return(r*ComplexF(0.0,-1.0));}
     inline ComplexD timesI(const ComplexD r)     { return(r*ComplexD(0.0,1.0));}
+    inline ComplexF timesMinusI(const ComplexF r){ return(r*ComplexF(0.0,-1.0));}
     inline ComplexD timesMinusI(const ComplexD r){ return(r*ComplexD(0.0,-1.0));}
 
     inline void mac (RealD * __restrict__ y,const RealD * __restrict__ a,const RealD *__restrict__ x){  *y = (*a) * (*x)+(*y);}
@@ -280,15 +285,11 @@ namespace Grid {
 
   // Default precision
 #ifdef GRID_DEFAULT_PRECISION_DOUBLE
-  typedef RealD   Real;
   typedef vRealD vReal;
   typedef vComplexD vComplex;
-  typedef std::complex<Real>  Complex;
 #else
-  typedef RealF  Real;
   typedef vRealF vReal;
   typedef vComplexF vComplex;
-  typedef std::complex<Real>  Complex;
 #endif
 }
 #endif

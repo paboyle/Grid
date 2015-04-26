@@ -11,21 +11,21 @@ namespace Grid {
 // multiplication by fundamental scalar type
 template<class l,int N> inline iScalar<l> operator * (const iScalar<l>& lhs,const typename iScalar<l>::scalar_type rhs) 
 {
-  typename iScalar<l>::tensor_reduced srhs(rhs);
+  typename iScalar<l>::tensor_reduced srhs; srhs=rhs;
   return lhs*srhs;
 }
 template<class l,int N> inline iScalar<l> operator * (const typename iScalar<l>::scalar_type lhs,const iScalar<l>& rhs) {  return rhs*lhs; }
 
 template<class l,int N> inline iVector<l,N> operator * (const iVector<l,N>& lhs,const typename iScalar<l>::scalar_type rhs) 
 {
-  typename iVector<l,N>::tensor_reduced srhs(rhs);
+  typename iVector<l,N>::tensor_reduced srhs; srhs=rhs;
   return lhs*srhs;
 }
 template<class l,int N> inline iVector<l,N> operator * (const typename iScalar<l>::scalar_type lhs,const iVector<l,N>& rhs) {  return rhs*lhs; }
 
 template<class l,int N> inline iMatrix<l,N> operator * (const iMatrix<l,N>& lhs,const typename iScalar<l>::scalar_type &rhs) 
 {
-  typename iMatrix<l,N>::tensor_reduced srhs(rhs);
+  typename iMatrix<l,N>::tensor_reduced srhs; srhs=rhs;
   return lhs*srhs;
 }
 template<class l,int N> inline iMatrix<l,N> operator * (const typename iScalar<l>::scalar_type & lhs,const iMatrix<l,N>& rhs) {  return rhs*lhs; }
@@ -35,24 +35,24 @@ template<class l,int N> inline iMatrix<l,N> operator * (const typename iScalar<l
 ////////////////////////////////////////////////////////////////////
 template<class l> inline iScalar<l> operator * (const iScalar<l>& lhs,double rhs) 
 {
-  typename iScalar<l>::scalar_type t(rhs);
-  typename iScalar<l>::tensor_reduced srhs(t);
+  typename iScalar<l>::scalar_type t; t=rhs;
+  typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs*srhs;
 }
 template<class l> inline iScalar<l> operator * (double lhs,const iScalar<l>& rhs) {  return rhs*lhs; }
 
 template<class l,int N> inline iVector<l,N> operator * (const iVector<l,N>& lhs,double rhs) 
 {
-  typename iScalar<l>::scalar_type t(rhs);
-  typename iScalar<l>::tensor_reduced srhs(t);
+  typename iScalar<l>::scalar_type t;t=rhs;
+  typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs*srhs;
 }
 template<class l,int N> inline iVector<l,N> operator * (double lhs,const iVector<l,N>& rhs) {  return rhs*lhs; }
 
 template<class l,int N> inline iMatrix<l,N> operator * (const iMatrix<l,N>& lhs,double rhs) 
 {
-  typename iScalar<l>::scalar_type t(rhs);
-  typename iScalar<l>::tensor_reduced srhs(t);
+  typename iScalar<l>::scalar_type t;t=rhs;
+  typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs*srhs;
 }
 template<class l,int N> inline iMatrix<l,N> operator * (double lhs,const iMatrix<l,N>& rhs) {  return rhs*lhs; }
@@ -62,24 +62,26 @@ template<class l,int N> inline iMatrix<l,N> operator * (double lhs,const iMatrix
 ////////////////////////////////////////////////////////////////////
 template<class l> inline iScalar<l> operator * (const iScalar<l>& lhs,ComplexD rhs) 
 {
-  typename iScalar<l>::scalar_type t(rhs);
-  typename iScalar<l>::tensor_reduced srhs(t);
+  typename iScalar<l>::scalar_type t;t=rhs;
+  typename iScalar<l>::tensor_reduced srhs;srhs=t;
+  
+  
   return lhs*srhs;
 }
 template<class l> inline iScalar<l> operator * (ComplexD lhs,const iScalar<l>& rhs) {  return rhs*lhs; }
 
 template<class l,int N> inline iVector<l,N> operator * (const iVector<l,N>& lhs,ComplexD rhs) 
 {
-  typename iScalar<l>::scalar_type t(rhs);
-  typename iScalar<l>::tensor_reduced srhs(t);
+  typename iScalar<l>::scalar_type t;t=rhs;
+  typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs*srhs;
 }
 template<class l,int N> inline iVector<l,N> operator * (ComplexD lhs,const iVector<l,N>& rhs) {  return rhs*lhs; }
 
 template<class l,int N> inline iMatrix<l,N> operator * (const iMatrix<l,N>& lhs,ComplexD rhs) 
 {
-  typename iScalar<l>::scalar_type t(rhs);
-  typename iScalar<l>::tensor_reduced srhs(t);
+  typename iScalar<l>::scalar_type t;t=rhs;
+  typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs*srhs;
 }
 template<class l,int N> inline iMatrix<l,N> operator * (ComplexD lhs,const iMatrix<l,N>& rhs) {  return rhs*lhs; }
@@ -89,24 +91,24 @@ template<class l,int N> inline iMatrix<l,N> operator * (ComplexD lhs,const iMatr
 ////////////////////////////////////////////////////////////////////
 template<class l> inline iScalar<l> operator * (const iScalar<l>& lhs,Integer rhs) 
 {
-  typename iScalar<l>::scalar_type t(rhs);
-  typename iScalar<l>::tensor_reduced srhs(t);
+  typename iScalar<l>::scalar_type t;  t=rhs;
+  typename iScalar<l>::tensor_reduced srhs; srhs=t;
   return lhs*srhs;
 }
 template<class l> inline iScalar<l> operator * (Integer lhs,const iScalar<l>& rhs) {  return rhs*lhs; }
 
 template<class l,int N> inline iVector<l,N> operator * (const iVector<l,N>& lhs,Integer rhs) 
 {
-  typename iScalar<l>::scalar_type t(rhs);
-  typename iScalar<l>::tensor_reduced srhs(t);
+  typename iScalar<l>::scalar_type t;t=rhs;
+  typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs*srhs;
 }
 template<class l,int N> inline iVector<l,N> operator * (Integer lhs,const iVector<l,N>& rhs) {  return rhs*lhs; }
 
 template<class l,int N> inline iMatrix<l,N> operator * (const iMatrix<l,N>& lhs,Integer rhs) 
 {
-  typename iScalar<l>::scalar_type t(rhs);
-  typename iScalar<l>::tensor_reduced srhs(t);
+  typename iScalar<l>::scalar_type t;t=rhs;
+  typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs*srhs;
 }
 template<class l,int N> inline iMatrix<l,N> operator * (Integer lhs,const iMatrix<l,N>& rhs) {  return rhs*lhs; }
@@ -118,14 +120,14 @@ template<class l,int N> inline iMatrix<l,N> operator * (Integer lhs,const iMatri
 ///////////////////////////////////////////////////////////////////////////////////////////////
 template<class l,int N> inline iScalar<l> operator + (const iScalar<l>& lhs,const typename iScalar<l>::scalar_type rhs) 
 {
-  typename iScalar<l>::tensor_reduced srhs(rhs);
+  typename iScalar<l>::tensor_reduced srhs; srhs=rhs;
   return lhs+srhs;
 }
 template<class l,int N> inline iScalar<l> operator + (const typename iScalar<l>::scalar_type lhs,const iScalar<l>& rhs) {  return rhs+lhs; }
 
 template<class l,int N> inline iMatrix<l,N> operator + (const iMatrix<l,N>& lhs,const typename iScalar<l>::scalar_type rhs) 
 {
-  typename iMatrix<l,N>::tensor_reduced srhs(rhs);
+  typename iMatrix<l,N>::tensor_reduced srhs; srhs=rhs;
   return lhs+srhs;
 }
 template<class l,int N> inline iMatrix<l,N> operator + (const typename iScalar<l>::scalar_type lhs,const iMatrix<l,N>& rhs) {  return rhs+lhs; }
@@ -135,16 +137,16 @@ template<class l,int N> inline iMatrix<l,N> operator + (const typename iScalar<l
 ////////////////////////////////////////////////////////////////////
 template<class l> inline iScalar<l> operator + (const iScalar<l>& lhs,double rhs) 
 {
-  typename iScalar<l>::scalar_type t(rhs);
-  typename iScalar<l>::tensor_reduced srhs(t);
+  typename iScalar<l>::scalar_type t; t=rhs;
+  typename iScalar<l>::tensor_reduced srhs; srhs=t;
   return lhs+srhs;
 }
 template<class l> inline iScalar<l> operator + (double lhs,const iScalar<l>& rhs) {  return rhs+lhs; }
 
 template<class l,int N> inline iMatrix<l,N> operator + (const iMatrix<l,N>& lhs,double rhs) 
 {
-  typename iScalar<l>::scalar_type t(rhs);
-  typename iScalar<l>::tensor_reduced srhs(t);
+  typename iScalar<l>::scalar_type t;t=rhs;
+  typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs+srhs;
 }
 template<class l,int N> inline iMatrix<l,N> operator + (double lhs,const iMatrix<l,N>& rhs) {  return rhs+lhs; }
@@ -155,8 +157,8 @@ template<class l,int N> inline iMatrix<l,N> operator + (double lhs,const iMatrix
 
 template<class l> inline iScalar<l> operator + (const iScalar<l>& lhs,Integer rhs) 
 {
-  typename iScalar<l>::scalar_type t(rhs);
-  typename iScalar<l>::tensor_reduced srhs(t);
+  typename iScalar<l>::scalar_type t; t=rhs;
+  typename iScalar<l>::tensor_reduced srhs; srhs=t;
   return lhs+srhs;
 }
 
@@ -164,8 +166,8 @@ template<class l> inline iScalar<l> operator + (Integer lhs,const iScalar<l>& rh
 
 template<class l,int N> inline iMatrix<l,N> operator + (const iMatrix<l,N>& lhs,Integer rhs) 
 {
-  typename iScalar<l>::scalar_type t(rhs);
-  typename iScalar<l>::tensor_reduced srhs(t);
+  typename iScalar<l>::scalar_type t;t=rhs;
+  typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs+srhs;
 }
 template<class l,int N> inline iMatrix<l,N> operator + (Integer lhs,const iMatrix<l,N>& rhs) {  return rhs+lhs; }
@@ -176,23 +178,23 @@ template<class l,int N> inline iMatrix<l,N> operator + (Integer lhs,const iMatri
 ///////////////////////////////////////////////////////////////////////////////////////////////
 template<class l,int N> inline iScalar<l> operator - (const iScalar<l>& lhs,const typename iScalar<l>::scalar_type rhs) 
 {
-  typename iScalar<l>::tensor_reduced srhs(rhs);
+  typename iScalar<l>::tensor_reduced srhs; srhs=rhs;
   return lhs-srhs;
 }
 template<class l,int N> inline iScalar<l> operator - (const typename iScalar<l>::scalar_type lhs,const iScalar<l>& rhs) 
 {
-  typename iScalar<l>::tensor_reduced slhs(lhs);
+  typename iScalar<l>::tensor_reduced slhs;slhs=lhs;
   return slhs-rhs;
 }
 
 template<class l,int N> inline iMatrix<l,N> operator - (const iMatrix<l,N>& lhs,const typename iScalar<l>::scalar_type rhs) 
 {
-  typename iScalar<l>::tensor_reduced srhs(rhs);
+  typename iScalar<l>::tensor_reduced srhs; srhs=rhs;
   return lhs-srhs;
 }
 template<class l,int N> inline iMatrix<l,N> operator - (const typename iScalar<l>::scalar_type lhs,const iMatrix<l,N>& rhs) 
 {
-  typename iScalar<l>::tensor_reduced slhs(lhs);
+  typename iScalar<l>::tensor_reduced slhs;slhs=lhs;
   return slhs-rhs;
 }
 
@@ -201,27 +203,27 @@ template<class l,int N> inline iMatrix<l,N> operator - (const typename iScalar<l
 ////////////////////////////////////////////////////////////////////
 template<class l> inline iScalar<l> operator - (const iScalar<l>& lhs,double rhs) 
 {
-  typename iScalar<l>::scalar_type t(rhs);
-  typename iScalar<l>::tensor_reduced srhs(t);
+  typename iScalar<l>::scalar_type t; t=rhs;
+  typename iScalar<l>::tensor_reduced srhs; srhs=t;
   return lhs-srhs;
 }
 template<class l> inline iScalar<l> operator - (double lhs,const iScalar<l>& rhs) 
 {
   typename iScalar<l>::scalar_type t(lhs);
-  typename iScalar<l>::tensor_reduced slhs(t);
+  typename iScalar<l>::tensor_reduced slhs;slhs=t;
   return slhs-rhs;
 }
 
 template<class l,int N> inline iMatrix<l,N> operator - (const iMatrix<l,N>& lhs,double rhs) 
 {
-  typename iScalar<l>::scalar_type t(rhs);
-  typename iScalar<l>::tensor_reduced srhs(t);
+  typename iScalar<l>::scalar_type t;t=rhs;
+  typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs-srhs;
 }
 template<class l,int N> inline iMatrix<l,N> operator - (double lhs,const iMatrix<l,N>& rhs) 
 {
   typename iScalar<l>::scalar_type t(lhs);
-  typename iScalar<l>::tensor_reduced slhs(t);
+  typename iScalar<l>::tensor_reduced slhs;slhs=t;
   return slhs-rhs;
 }
 
@@ -230,26 +232,26 @@ template<class l,int N> inline iMatrix<l,N> operator - (double lhs,const iMatrix
 ////////////////////////////////////////////////////////////////////
 template<class l> inline iScalar<l> operator - (const iScalar<l>& lhs,Integer rhs) 
 {
-  typename iScalar<l>::scalar_type t(rhs);
-  typename iScalar<l>::tensor_reduced srhs(t);
+  typename iScalar<l>::scalar_type t; t=rhs;
+  typename iScalar<l>::tensor_reduced srhs; srhs=t;
   return lhs-srhs;
 }
 template<class l> inline iScalar<l> operator - (Integer lhs,const iScalar<l>& rhs) 
 {
-  typename iScalar<l>::scalar_type t(lhs);
-  typename iScalar<l>::tensor_reduced slhs(t);
+  typename iScalar<l>::scalar_type t;t=lhs;
+  typename iScalar<l>::tensor_reduced slhs;slhs=t;
   return slhs-rhs;
 }
 template<class l,int N> inline iMatrix<l,N> operator - (const iMatrix<l,N>& lhs,Integer rhs) 
 {
-  typename iScalar<l>::scalar_type t(rhs);
-  typename iScalar<l>::tensor_reduced srhs(t);
+  typename iScalar<l>::scalar_type t;t=rhs;
+  typename iScalar<l>::tensor_reduced srhs;srhs=t;
   return lhs-srhs;
 }
 template<class l,int N> inline iMatrix<l,N> operator - (Integer lhs,const iMatrix<l,N>& rhs) 
 {
-  typename iScalar<l>::scalar_type t(lhs);
-  typename iScalar<l>::tensor_reduced slhs(t);
+  typename iScalar<l>::scalar_type t;t=lhs;
+  typename iScalar<l>::tensor_reduced slhs;slhs=t;
   return slhs-rhs;
 }
 

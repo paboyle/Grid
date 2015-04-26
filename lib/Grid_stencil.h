@@ -47,6 +47,101 @@ namespace Grid {
     int from_rank;
   } ;
 
+
+///////////////////////////////////////////////////////////////////
+// Gather for when there is no need to SIMD split with compression
+///////////////////////////////////////////////////////////////////
+template<class vobj,class cobj,class compressor> void 
+Gather_plane_simple (Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<cobj> > &buffer,int dimension,int plane,int cbmask,compressor &compress)
+{
+  int rd = rhs._grid->_rdimensions[dimension];
+
+  if ( !rhs._grid->CheckerBoarded(dimension) ) {
+
+    int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+    int o   = 0;                                    // relative offset to base within plane
+    int bo  = 0;                                    // offset in buffer
+
+    // Simple block stride gather of SIMD objects
+#pragma omp parallel for collapse(2)
+    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
+      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
+	buffer[bo++]=compress(rhs._odata[so+o+b]);
+      }
+      o +=rhs._grid->_slice_stride[dimension];
+    }
+
+  } else { 
+
+    int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+    int o   = 0;                                      // relative offset to base within plane
+    int bo  = 0;                                      // offset in buffer
+
+#pragma omp parallel for collapse(2)
+    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
+      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
+
+	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
+	if ( ocb &cbmask ) {
+	  buffer[bo]=compress(rhs._odata[so+o+b]);
+	  bo++;
+	}
+
+      }
+      o +=rhs._grid->_slice_stride[dimension];
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////
+// Gather for when there *is* need to SIMD split with compression
+///////////////////////////////////////////////////////////////////
+template<class cobj,class vobj,class compressor> void 
+  Gather_plane_extract(Lattice<vobj> &rhs,std::vector<typename cobj::scalar_type *> pointers,int dimension,int plane,int cbmask,compressor &compress)
+{
+  int rd = rhs._grid->_rdimensions[dimension];
+
+  if ( !rhs._grid->CheckerBoarded(dimension) ) {
+
+    int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+    int o   = 0;                                    // relative offset to base within plane
+    int bo  = 0;                                    // offset in buffer
+
+    // Simple block stride gather of SIMD objects
+#pragma omp parallel for collapse(2)
+    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
+      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
+	cobj temp;
+	temp=compress(rhs._odata[so+o+b]);
+	extract(temp,pointers);
+      }
+      o +=rhs._grid->_slice_stride[dimension];
+    }
+
+  } else { 
+
+    int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+    int o   = 0;                                      // relative offset to base within plane
+    int bo  = 0;                                      // offset in buffer
+    
+#pragma omp parallel for collapse(2)
+    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
+      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
+
+	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
+	if ( ocb & cbmask ) {
+	  cobj temp; 
+	  temp =compress(rhs._odata[so+o+b]);
+	  extract(temp,pointers);
+	}
+
+      }
+      o +=rhs._grid->_slice_stride[dimension];
+    }
+  }
+}
+
+
   class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal fill in.
   public:
 
@@ -86,8 +181,8 @@ namespace Grid {
 
       // Could allow a functional munging of the halo to another type during the comms.
       // this could implement the 16bit/32bit/64bit compression.
-      template<class vobj> void HaloExchange(Lattice<vobj> &source,
-					     std::vector<vobj,alignedAllocator<vobj> > &u_comm_buf)
+      template<class vobj,class cobj, class compressor> void 
+	HaloExchange(Lattice<vobj> &source,std::vector<cobj,alignedAllocator<cobj> > &u_comm_buf,compressor &compress)
       {
 	// conformable(source._grid,_grid);
 	assert(source._grid==_grid);
@@ -95,12 +190,10 @@ namespace Grid {
 	int u_comm_offset=0;
 
 	// Gather all comms buffers
-	typedef typename vobj::vector_type vector_type;
-	typedef typename vobj::scalar_type scalar_type;
-
 	for(int point = 0 ; point < _npoints; point++) {
 
-	  printf("Point %d \n",point);fflush(stdout);
+	  compress.Point(point);
+
 	  int dimension    = _directions[point];
 	  int displacement = _distances[point];
 	  
@@ -126,33 +219,30 @@ namespace Grid {
 	    sshift[1] = _grid->CheckerBoardShift(_checkerboard,dimension,shift,1);
 	    if ( sshift[0] == sshift[1] ) {
 	      if (splice_dim) {
-		printf("splice 0x3 \n");fflush(stdout);
-		GatherStartCommsSimd(source,dimension,shift,0x3,u_comm_buf,u_comm_offset);
+		GatherStartCommsSimd(source,dimension,shift,0x3,u_comm_buf,u_comm_offset,compress);
 	      } else { 
-		printf("NO splice 0x3 \n");fflush(stdout);
-		GatherStartComms(source,dimension,shift,0x3,u_comm_buf,u_comm_offset);
+		GatherStartComms(source,dimension,shift,0x3,u_comm_buf,u_comm_offset,compress);
 	      }
 	    } else {
 	      if(splice_dim){
-		printf("splice 0x1,2 \n");fflush(stdout);
-		GatherStartCommsSimd(source,dimension,shift,0x1,u_comm_buf,u_comm_offset);// if checkerboard is unfavourable take two passes
-		GatherStartCommsSimd(source,dimension,shift,0x2,u_comm_buf,u_comm_offset);// both with block stride loop iteration
+		GatherStartCommsSimd(source,dimension,shift,0x1,u_comm_buf,u_comm_offset,compress);// if checkerboard is unfavourable take two passes
+		GatherStartCommsSimd(source,dimension,shift,0x2,u_comm_buf,u_comm_offset,compress);// both with block stride loop iteration
 	      } else {
-		printf("NO splice 0x1,2 \n");fflush(stdout);
-		GatherStartComms(source,dimension,shift,0x1,u_comm_buf,u_comm_offset);
-		GatherStartComms(source,dimension,shift,0x2,u_comm_buf,u_comm_offset);
+		GatherStartComms(source,dimension,shift,0x1,u_comm_buf,u_comm_offset,compress);
+		GatherStartComms(source,dimension,shift,0x2,u_comm_buf,u_comm_offset,compress);
 	      }
 	    }
 	  }
 	}
       }
 
-      template<class vobj> void GatherStartComms(Lattice<vobj> &rhs,int dimension,int shift,int cbmask,
-						 std::vector<vobj,alignedAllocator<vobj> > &u_comm_buf,
-						 int &u_comm_offset)
+      template<class vobj,class cobj, class compressor> 
+        void GatherStartComms(Lattice<vobj> &rhs,int dimension,int shift,int cbmask,
+			      std::vector<cobj,alignedAllocator<cobj> > &u_comm_buf,
+			      int &u_comm_offset,compressor & compress)
 	{
-	  typedef typename vobj::vector_type vector_type;
-	  typedef typename vobj::scalar_type scalar_type;
+	  typedef typename cobj::vector_type vector_type;
+	  typedef typename cobj::scalar_type scalar_type;
 	  
 	  GridBase *grid=_grid;
 	  assert(rhs._grid==_grid);
@@ -169,31 +259,26 @@ namespace Grid {
 	  
 	  int buffer_size = _grid->_slice_nblock[dimension]*_grid->_slice_block[dimension];
 	  
-	  std::vector<vobj,alignedAllocator<vobj> > send_buf(buffer_size); // hmm...
-	  std::vector<vobj,alignedAllocator<vobj> > recv_buf(buffer_size);
+	  std::vector<cobj,alignedAllocator<cobj> > send_buf(buffer_size); // hmm...
+	  std::vector<cobj,alignedAllocator<cobj> > recv_buf(buffer_size);
 	  
 	  int cb= (cbmask==0x2)? 1 : 0;
 	  int sshift= _grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,cb);
 	  
 	  for(int x=0;x<rd;x++){       
 	    
-	    printf("GatherStartComms x %d/%d\n",x,rd);fflush(stdout);
 	    int offnode = ( x+sshift >= rd );
 	    int sx        = (x+sshift)%rd;
 	    int comm_proc = (x+sshift)/rd;
 	    
 	    if (offnode) {
 	      
-	      printf("GatherStartComms offnode x %d\n",x);fflush(stdout);
 	      int words = send_buf.size();
 	      if (cbmask != 0x3) words=words>>1;
 	    
-	      int bytes = words * sizeof(vobj);
+	      int bytes = words * sizeof(cobj);
 
-	      printf("Gather_plane_simple dimension %d sx %d cbmask %d\n",dimension,sx,cbmask);fflush(stdout);
-	      Gather_plane_simple (rhs,send_buf,dimension,sx,cbmask);
-
-	      printf("GatherStartComms gathered offnode x %d\n",x);fflush(stdout);
+	      Gather_plane_simple (rhs,send_buf,dimension,sx,cbmask,compress);
 
 	      int rank           = _grid->_processor;
 	      int recv_from_rank;
@@ -219,14 +304,14 @@ namespace Grid {
 	}
 
 
-      template<class vobj>
+      template<class vobj,class cobj, class compressor> 
 	void  GatherStartCommsSimd(Lattice<vobj> &rhs,int dimension,int shift,int cbmask,
-				   std::vector<vobj,alignedAllocator<vobj> > &u_comm_buf,
-				   int &u_comm_offset)
+				   std::vector<cobj,alignedAllocator<cobj> > &u_comm_buf,
+				   int &u_comm_offset,compressor &compress)
 	{
 	  const int Nsimd = _grid->Nsimd();
-	  typedef typename vobj::vector_type vector_type;
-	  typedef typename vobj::scalar_type scalar_type;
+	  typedef typename cobj::vector_type vector_type;
+	  typedef typename cobj::scalar_type scalar_type;
 	  
 	  int fd = _grid->_fdimensions[dimension];
 	  int rd = _grid->_rdimensions[dimension];
@@ -245,7 +330,7 @@ namespace Grid {
 	  // Simd direction uses an extract/merge pair
 	  ///////////////////////////////////////////////
 	  int buffer_size = _grid->_slice_nblock[dimension]*_grid->_slice_block[dimension];
-	  int words = sizeof(vobj)/sizeof(vector_type);
+	  int words = sizeof(cobj)/sizeof(vector_type);
 
 	  /*   FIXME ALTERNATE BUFFER DETERMINATION */
 	  std::vector<std::vector<scalar_type> > send_buf_extract(Nsimd,std::vector<scalar_type>(buffer_size*words) ); 
@@ -285,7 +370,7 @@ namespace Grid {
 	      for(int i=0;i<Nsimd;i++){
 		pointers[Nsimd-1-i] = (scalar_type *)&send_buf_extract[i][0];
 	      }
-	      Gather_plane_extract(rhs,pointers,dimension,sx,cbmask);
+	      Gather_plane_extract<cobj>(rhs,pointers,dimension,sx,cbmask,compress);
 	      
 	      for(int i=0;i<Nsimd;i++){
 		

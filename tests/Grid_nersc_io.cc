@@ -49,7 +49,6 @@ int main (int argc, char ** argv)
       Plaq = Plaq + trace(U[mu]*Cshift(U[nu],mu,1)*adj(Cshift(U[mu],nu,1))*adj(U[nu]));
     }
   }
-
   
   double vol = Fine.gSites();
   Complex PlaqScale(1.0/vol/6.0/3.0);
@@ -58,7 +57,8 @@ int main (int argc, char ** argv)
   sliceSum(Plaq,Plaq_T,Nd-1);
   int Nt = Plaq_T.size();
 
-  TComplex Plaq_T_sum=zero;
+  TComplex Plaq_T_sum; 
+  Plaq_T_sum=zero;
   for(int t=0;t<Nt;t++){
     Plaq_T_sum = Plaq_T_sum+Plaq_T[t];
     Complex Pt=TensorRemove(Plaq_T[t]);

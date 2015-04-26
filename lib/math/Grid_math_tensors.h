@@ -8,6 +8,16 @@ namespace Grid {
 // These can be composed to form tensor products of internal indices.
 ///////////////////////////////////////////////////
 
+// It is useful to NOT have any constructors
+// so that these classes assert "is_pod<class> == true"
+// because then the standard C++ valarray container eliminates fill overhead on new allocation and 
+// non-move copying.
+//
+// However note that doing this eliminates some syntactical sugar such as 
+// calling the constructor explicitly or implicitly
+//
+#define TENSOR_IS_POD
+
 template<class vtype> class iScalar
 {
 public:
@@ -25,16 +35,22 @@ public:
   // Scalar no action
   //  template<int Level> using tensor_reduce_level = typename iScalar<GridTypeMapper<vtype>::tensor_reduce_level<Level> >;
 
-    iScalar(){};
-    
-    iScalar(scalar_type s) : _internal(s) {};// recurse down and hit the constructor for vector_type
-
-    iScalar(const Zero &z){ *this = zero; };
+#ifndef TENSOR_IS_POD
+  iScalar(){;};
+  iScalar(scalar_type s) : _internal(s) {};// recurse down and hit the constructor for vector_type
+  iScalar(const Zero &z){ *this = zero; };
+#endif
 
     iScalar<vtype> & operator= (const Zero &hero){
-        zeroit(*this);
-        return *this;
+      zeroit(*this);
+      return *this;
     }
+    iScalar<vtype> & operator= (const scalar_type s){
+      _internal=s;
+      return *this;
+    }
+
+
     friend void zeroit(iScalar<vtype> &that){
         zeroit(that._internal);
     }
@@ -114,8 +130,10 @@ public:
 
   enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
 
-    iVector(const Zero &z){ *this = zero; };
-    iVector() {};// Empty constructure
+#ifndef TENSOR_IS_POD
+  iVector(const Zero &z){ *this = zero; };
+  iVector() {};// Empty constructure
+#endif
 
     iVector<vtype,N> & operator= (const Zero &hero){
         zeroit(*this);
@@ -185,8 +203,11 @@ public:
 
   enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
 
+#ifndef TENSOR_IS_POD
   iMatrix(const Zero &z){ *this = zero; };
   iMatrix() {};
+#endif
+
   iMatrix<vtype,N> & operator= (const Zero &hero){
     zeroit(*this);
     return *this;
