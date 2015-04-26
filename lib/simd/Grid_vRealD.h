@@ -146,7 +146,7 @@ namespace Grid {
             ret.v = _mm256_set_pd(a[3],a[2],a[1],a[0]);
 #endif
 #ifdef SSE4
-            ret.v = _mm_set_pd(a[0],a[1]);
+            ret.v = _mm_set_pd(a[1],a[0]);
 #endif
 #ifdef AVX512
             ret.v = _mm512_set_pd(a[7],a[6],a[5],a[4],a[3],a[2],a[1],a[0]);
@@ -186,6 +186,15 @@ namespace Grid {
 
        friend inline RealD Reduce(const vRealD & in)
        {
+#if defined (SSE4)
+	 // FIXME Hack
+	 const RealD * ptr =(const RealD *)  &in;
+	 RealD ret = 0; 
+	 for(int i=0;i<vRealD::Nsimd();i++){
+	   ret = ret+ptr[i];
+	 }
+	 return ret;
+#endif
 #if defined (AVX1) || defined(AVX2)
 	 typedef union  {
 	   uint64_t l;

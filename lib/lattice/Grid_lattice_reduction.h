@@ -14,7 +14,7 @@ namespace Grid {
 
       typedef typename vobj::scalar_type scalar;
       typedef typename vobj::vector_type vector;
-      decltype(innerProduct(arg._odata[0],arg._odata[0])) vnrm=zero;
+      decltype(innerProduct(arg._odata[0],arg._odata[0])) vnrm; 
       scalar nrm;
       //FIXME make this loop parallelisable
       vnrm=zero;
@@ -33,10 +33,11 @@ namespace Grid {
       //->decltype(innerProduct(left._odata[0],right._odata[0]))
     {
       typedef typename vobj::scalar_type scalar;
-      decltype(innerProduct(left._odata[0],right._odata[0])) vnrm=zero;
+      decltype(innerProduct(left._odata[0],right._odata[0])) vnrm; 
 
       scalar nrm;
       //FIXME make this loop parallelisable
+      vnrm=zero;
       for(int ss=0;ss<left._grid->oSites(); ss++){
 	vnrm = vnrm + innerProduct(left._odata[ss],right._odata[ss]);
       }
@@ -94,8 +95,10 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
   int ld=grid->_ldimensions[orthogdim];
   int rd=grid->_rdimensions[orthogdim];
 
+  sobj szero; szero=zero;
+
   std::vector<vobj,alignedAllocator<vobj> > lvSum(rd); // will locally sum vectors first
-  std::vector<sobj> lsSum(ld,sobj(zero)); // sum across these down to scalars
+  std::vector<sobj> lsSum(ld,szero); // sum across these down to scalars
   std::vector<sobj> extracted(Nsimd);     // splitting the SIMD
 
   result.resize(fd); // And then global sum to return the same vector to every node for IO to file

@@ -175,7 +175,7 @@ namespace Grid {
             ret.v = _mm256_set_ps(a[7],a[6],a[5],a[4],a[3],a[2],a[1],a[0]);
 #endif
 #ifdef SSE4
-            ret.v = _mm_set_ps(a[0],a[1],a[2],a[3]);
+            ret.v = _mm_set_ps(a[3],a[2],a[1],a[0]);
 #endif
 #ifdef AVX512
             ret.v = _mm512_set_ps( a[15],a[14],a[13],a[12],a[11],a[10],a[9],a[8],
@@ -220,6 +220,15 @@ friend inline void vstore(const vRealF &ret, float *a){
         }
        friend inline RealF Reduce(const vRealF & in)
        {
+#if defined (SSE4)
+	 // FIXME Hack
+	 const RealF * ptr = (const RealF *) &in;
+	 RealF ret = 0; 
+	 for(int i=0;i<vRealF::Nsimd();i++){
+	   ret = ret+ptr[i];
+	 }
+	 return ret;
+#endif
 #if defined (AVX1) || defined(AVX2)
             __attribute__ ((aligned(32))) float c_[16];
             __m256 tmp = _mm256_permute2f128_ps(in.v,in.v,0x01);

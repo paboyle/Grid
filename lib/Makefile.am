@@ -18,6 +18,7 @@ libGrid_a_SOURCES =\
 	 Grid_init.cc\
 	stencil/Grid_stencil_common.cc\
 	qcd/Grid_qcd_dirac.cc\
+	qcd/Grid_qcd_wilson_dop.cc\
 	$(extra_sources)
 
 #

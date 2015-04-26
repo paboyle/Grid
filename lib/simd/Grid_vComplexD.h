@@ -251,13 +251,13 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
         friend inline vComplexD conj(const vComplexD &in){
             vComplexD ret ; vzero(ret);
 #if defined (AVX1)|| defined (AVX2)
-            // addsubps 0, inv=>0+in.v[3] 0-in.v[2], 0+in.v[1], 0-in.v[0], ...
-	    //            __m256d tmp = _mm256_addsub_pd(ret.v,_mm256_shuffle_pd(in.v,in.v,0x5));
-	    //             ret.v=_mm256_shuffle_pd(tmp,tmp,0x5);
-            ret.v = _mm256_addsub_pd(ret.v,in.v);
+	    //	    addsubps 0, inv=>0+in.v[3] 0-in.v[2], 0+in.v[1], 0-in.v[0], ...
+	    zvec tmp = _mm256_addsub_pd(ret.v,_mm256_shuffle_pd(in.v,in.v,0x5));
+	    ret.v    =_mm256_shuffle_pd(tmp,tmp,0x5);
 #endif
 #ifdef SSE4
-            ret.v = _mm_addsub_pd(ret.v,in.v);
+	    zvec tmp = _mm_addsub_pd(ret.v,_mm_shuffle_pd(in.v,in.v,0x1));
+	    ret.v    = _mm_shuffle_pd(tmp,tmp,0x1);
 #endif
 #ifdef AVX512
 	    ret.v = _mm512_mask_sub_pd(in.v, 0xaaaa,ret.v, in.v);             
@@ -268,48 +268,41 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
             return ret;
         }
 
-        friend inline vComplexD timesI(const vComplexD &in){
+        friend inline vComplexD timesMinusI(const vComplexD &in){
 	  vComplexD ret; vzero(ret);
+	  vComplexD tmp;
 #if defined (AVX1)|| defined (AVX2)
-	  cvec tmp =_mm256_addsub_ps(ret.v,in.v); // r,-i
-	  /*
-             IF IMM0[0] = 0
-             THEN DEST[63:0]=SRC1[63:0] ELSE DEST[63:0]=SRC1[127:64] FI;
-             IF IMM0[1] = 0
-             THEN DEST[127:64]=SRC2[63:0] ELSE DEST[127:64]=SRC2[127:64] FI;
-             IF IMM0[2] = 0
-             THEN DEST[191:128]=SRC1[191:128] ELSE DEST[191:128]=SRC1[255:192] FI;
-             IF IMM0[3] = 0
-             THEN DEST[255:192]=SRC2[191:128] ELSE DEST[255:192]=SRC2[255:192] FI;
-	  */
-          ret.v    =_mm256_shuffle_ps(tmp,tmp,0x5);
+	  tmp.v    =_mm256_addsub_pd(ret.v,in.v); // r,-i
+          ret.v    =_mm256_shuffle_pd(tmp.v,tmp.v,0x5);
 #endif
 #ifdef SSE4
-	  cvec tmp =_mm_addsub_ps(ret.v,in.v); // r,-i
-          ret.v    =_mm_shuffle_ps(tmp,tmp,0x5);
+	  tmp.v    =_mm_addsub_pd(ret.v,in.v); // r,-i
+          ret.v    =_mm_shuffle_pd(tmp.v,tmp.v,0x1);
 #endif
 #ifdef AVX512
-          ret.v = _mm512_mask_sub_ps(in.v,0xaaaa,ret.v,in.v); // real -imag 
-	  ret.v = _mm512_swizzle_ps(ret.v, _MM_SWIZ_REG_CDAB);// OK
+          ret.v = _mm512_mask_sub_pd(in.v,0xaaaa,ret.v,in.v); // real -imag 
+	  ret.v = _mm512_swizzle_pd(ret.v, _MM_SWIZ_REG_CDAB);// OK
 #endif
 #ifdef QPX
             assert(0);
 #endif
 	  return ret;
 	}
-        friend inline vComplexD timesMinusI(const vComplexD &in){
+
+        friend inline vComplexD timesI(const vComplexD &in){
 	  vComplexD ret; vzero(ret);
+	  vComplexD tmp;
 #if defined (AVX1)|| defined (AVX2)
-	  cvec tmp =_mm256_shuffle_ps(in.v,in.v,0x5);
-          ret.v    =_mm256_addsub_ps(ret.v,tmp); // i,-r
+	  tmp.v    =_mm256_shuffle_pd(in.v,in.v,0x5);
+          ret.v    =_mm256_addsub_pd(ret.v,tmp.v); // i,-r
 #endif
 #ifdef SSE4
-	  cvec tmp =_mm_shuffle_ps(in.v,in.v,0x5);
-          ret.v    =_mm_addsub_ps(ret.v,tmp); // r,-i
+	  tmp.v    =_mm_shuffle_pd(in.v,in.v,0x1);
+          ret.v    =_mm_addsub_pd(ret.v,tmp.v); // r,-i
 #endif
 #ifdef AVX512
-          cvec tmp = _mm512_swizzle_ps(in.v, _MM_SWIZ_REG_CDAB);// OK
-	  ret.v    = _mm512_mask_sub_ps(tmp,0xaaaa,ret.v,tmp); // real -imag 
+          tmp.v    = _mm512_swizzle_pd(in.v, _MM_SWIZ_REG_CDAB);// OK
+	  ret.v    = _mm512_mask_sub_pd(tmp.v,0xaaaa,ret.v,tmp.v); // real -imag 
 #endif
 #ifdef QPX
             assert(0);

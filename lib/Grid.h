@@ -11,6 +11,7 @@
 #define GRID_H
 
 #include <stdio.h>
+
 #include <complex>
 #include <vector>
 #include <iostream>

@@ -2,6 +2,10 @@
   - use protocol buffers? replace xmlReader/Writer ec..
   - Binary use htonll, htonl
 
+* Reduce implemention is poor
+* Bug in SeedFixedIntegers gives same output on each site.
+* Bug in RNG with complex numbers ; only filling real values; need helper function -- DONE
+
 * Stencil operator support                           -----Initial thoughts, trial implementation DONE.
                                                      -----some simple tests that Stencil matches Cshift.
                                                      -----do all permute in comms phase, so that copy permute
@@ -11,6 +15,7 @@
 
 * CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
 
+* Strong test for norm2, conj and all primitive types.
 
 * Consider switch std::vector to boost arrays or something lighter weight
   boost::multi_array<type, 3> A()...    to replace multi1d, multi2d etc..
@@ -33,10 +38,21 @@
 
 
 * Make the Tensor types and Complex etc... play more nicely.
-* TensorRemove is a hack, come up with a long term rationalised approach to Complex vs. Scalar<Scalar<Scalar<Complex > > >
+
+  - TensorRemove is a hack, come up with a long term rationalised approach to Complex vs. Scalar<Scalar<Scalar<Complex > > >
   QDP forces use of "toDouble" to get back to non tensor scalar. This role is presently taken TensorRemove, but I
   want to introduce a syntax that does not require this.
 
+  - Reductions that contract indices on a site should always demote the tensor structure.
+    norm2(), innerProduct.
+
+  - Result of Sum(), SliceSum // spatial sums
+              trace, traceIndex etc.. do not.
+
+  - problem arises because "trace" returns Lattice<TComplex> moving everything down to Scalar,
+    and then Sum and SliceSum to not remove the Scalars. This would be fixed if we 
+    template specialize the scalar scalar scalar sum and SliceSum,  on the basis of being
+    pure scalar.
 
 * Optimise the extract/merge SIMD routines; Azusa??
  - I have collated into single location at least.

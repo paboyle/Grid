@@ -1,4 +1,4 @@
-#ifnfdef GRID_QCD_WILSON_DOP_H
+#ifndef  GRID_QCD_WILSON_DOP_H
 #define  GRID_QCD_WILSON_DOP_H
 
 #include <Grid.h>
@@ -21,21 +21,23 @@ namespace Grid {
       GridBase                     *grid;
 
       // Copy of the gauge field 
-      LatticeGaugeField             Umu;
+      LatticeDoubledGaugeField             Umu;
 
       //Defines the stencil
       CartesianStencil              Stencil; 
       static const int npoint=9;
       static const std::vector<int> directions   ;
       static const std::vector<int> displacements;
-
       static const int Xp,Xm,Yp,Ym,Zp,Zm,Tp,Tm;
 
       // Comms buffer
-      std::vector<vSpinColourVector,alignedAllocator<vSpinColourVector> >  comm_buf;
+      std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  comm_buf;
 
       // Constructor
-      WilsonMatrix(LatticeGaugeField &Umu,int mass);
+      WilsonMatrix(LatticeGaugeField &Umu,double mass);
+
+      // DoubleStore
+      void DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGaugeField &Umu);
 
       // override multiply
       void multiply(const LatticeFermion &in, LatticeFermion &out);

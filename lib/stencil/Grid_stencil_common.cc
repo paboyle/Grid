@@ -121,8 +121,9 @@ namespace Grid {
       int simd_layout     = _grid->_simd_layout[dimension];
       int comm_dim        = _grid->_processors[dimension] >1 ;
       
-      assert(simd_layout==1);
+      //      assert(simd_layout==1); // Why?
       assert(comm_dim==1);
+      shift = (shift + fd) %fd;
       assert(shift>=0);
       assert(shift<fd);
       

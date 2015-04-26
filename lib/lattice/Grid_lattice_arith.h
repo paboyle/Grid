@@ -79,18 +79,18 @@ namespace Grid {
     return ret;
   }
   template<class left,class right>
-    inline auto operator + (const Lattice<left> &lhs,const Lattice<right> &rhs)-> Lattice<decltype(lhs._odata[0]*rhs._odata[0])>
+    inline auto operator + (const Lattice<left> &lhs,const Lattice<right> &rhs)-> Lattice<decltype(lhs._odata[0]+rhs._odata[0])>
   {
     //NB mult performs conformable check. Do not reapply here for performance.
-    Lattice<decltype(lhs._odata[0]*rhs._odata[0])> ret(rhs._grid);
+    Lattice<decltype(lhs._odata[0]+rhs._odata[0])> ret(rhs._grid);
     add(ret,lhs,rhs);
     return ret;
   }
   template<class left,class right>
-    inline auto operator - (const Lattice<left> &lhs,const Lattice<right> &rhs)-> Lattice<decltype(lhs._odata[0]*rhs._odata[0])>
+    inline auto operator - (const Lattice<left> &lhs,const Lattice<right> &rhs)-> Lattice<decltype(lhs._odata[0]-rhs._odata[0])>
   {
     //NB mult performs conformable check. Do not reapply here for performance.
-    Lattice<decltype(lhs._odata[0]*rhs._odata[0])> ret(rhs._grid);
+    Lattice<decltype(lhs._odata[0]-rhs._odata[0])> ret(rhs._grid);
     sub(ret,lhs,rhs);
     return ret;
   }
@@ -107,9 +107,9 @@ namespace Grid {
         return ret;
   }
   template<class left,class right>
-    inline auto operator + (const left &lhs,const Lattice<right> &rhs) -> Lattice<decltype(lhs*rhs._odata[0])>
+    inline auto operator + (const left &lhs,const Lattice<right> &rhs) -> Lattice<decltype(lhs+rhs._odata[0])>
     {
-      Lattice<decltype(lhs*rhs._odata[0])> ret(rhs._grid);
+      Lattice<decltype(lhs+rhs._odata[0])> ret(rhs._grid);
 #pragma omp parallel for
       for(int ss=0;ss<rhs._grid->oSites(); ss++){
 	ret._odata[ss]=lhs+rhs._odata[ss];
@@ -117,9 +117,9 @@ namespace Grid {
         return ret;
     }
   template<class left,class right>
-    inline auto operator - (const left &lhs,const Lattice<right> &rhs) -> Lattice<decltype(lhs*rhs._odata[0])>
+    inline auto operator - (const left &lhs,const Lattice<right> &rhs) -> Lattice<decltype(lhs-rhs._odata[0])>
   {
-    Lattice<decltype(lhs*rhs._odata[0])> ret(rhs._grid);
+    Lattice<decltype(lhs-rhs._odata[0])> ret(rhs._grid);
 #pragma omp parallel for
     for(int ss=0;ss<rhs._grid->oSites(); ss++){
       ret._odata[ss]=lhs-rhs._odata[ss];
@@ -137,9 +137,9 @@ namespace Grid {
       return ret;
     }
     template<class left,class right>
-      inline auto operator + (const Lattice<left> &lhs,const right &rhs) -> Lattice<decltype(lhs._odata[0]*rhs)>
+      inline auto operator + (const Lattice<left> &lhs,const right &rhs) -> Lattice<decltype(lhs._odata[0]+rhs)>
     {
-        Lattice<decltype(lhs._odata[0]*rhs)> ret(lhs._grid);
+        Lattice<decltype(lhs._odata[0]+rhs)> ret(lhs._grid);
 #pragma omp parallel for
         for(int ss=0;ss<rhs._grid->oSites(); ss++){
 	  ret._odata[ss]=lhs._odata[ss]+rhs;
@@ -147,9 +147,9 @@ namespace Grid {
         return ret;
     }
     template<class left,class right>
-      inline auto operator - (const Lattice<left> &lhs,const right &rhs) -> Lattice<decltype(lhs._odata[0]*rhs)>
+      inline auto operator - (const Lattice<left> &lhs,const right &rhs) -> Lattice<decltype(lhs._odata[0]-rhs)>
     {
-      Lattice<decltype(lhs._odata[0]*rhs)> ret(lhs._grid);
+      Lattice<decltype(lhs._odata[0]-rhs)> ret(lhs._grid);
 #pragma omp parallel for
       for(int ss=0;ss<rhs._grid->oSites(); ss++){
 	ret._odata[ss]=lhs._odata[ss]-rhs;

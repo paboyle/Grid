@@ -214,10 +214,10 @@ friend inline void vstore(const vComplexF &ret, ComplexF *a){
        {
 #ifdef SSE4
 	   union {
-	     __m128 v1;    // SSE 4 x float vector
+	     cvec v1;    // SSE 4 x float vector
 	     float f[4];  // scalar array of 4 floats
 	   } u128;
-	   u128.v1= _mm_add_ps(v, _mm_shuffle_ps(v, v, 0b01001110)); // FIXME Prefer to use _MM_SHUFFLE macros
+	   u128.v1= _mm_add_ps(in.v, _mm_shuffle_ps(in.v,in.v, 0b01001110)); // FIXME Prefer to use _MM_SHUFFLE macros
 	   return ComplexF(u128.f[0], u128.f[1]);
 #endif
 #ifdef AVX1
@@ -329,13 +329,15 @@ friend inline void vstore(const vComplexF &ret, ComplexF *a){
         friend inline vComplexF conj(const vComplexF &in){
             vComplexF ret ; vzero(ret);
 #if defined (AVX1)|| defined (AVX2)
-	    //             cvec tmp;
-	    //             tmp = _mm256_addsub_ps(ret.v,_mm256_shuffle_ps(in.v,in.v,_MM_SHUFFLE(2,3,0,1))); // ymm1 <- br,bi
-	    //             ret.v=_mm256_shuffle_ps(tmp,tmp,_MM_SHUFFLE(2,3,0,1));
-	    ret.v = _mm256_addsub_ps(ret.v,in.v);
+	    cvec tmp;
+	    tmp = _mm256_addsub_ps(ret.v,_mm256_shuffle_ps(in.v,in.v,_MM_SHUFFLE(2,3,0,1))); // ymm1 <- br,bi
+	    ret.v=_mm256_shuffle_ps(tmp,tmp,_MM_SHUFFLE(2,3,0,1));
+
 #endif
 #ifdef SSE4
-            ret.v = _mm_addsub_ps(ret.v,in.v);
+	    cvec tmp;
+	    tmp = _mm_addsub_ps(ret.v,_mm_shuffle_ps(in.v,in.v,_MM_SHUFFLE(2,3,0,1))); // ymm1 <- br,bi
+	    ret.v=_mm_shuffle_ps(tmp,tmp,_MM_SHUFFLE(2,3,0,1));
 #endif
 #ifdef AVX512
             ret.v = _mm512_mask_sub_ps(in.v,0xaaaa,ret.v,in.v); // Zero out 0+real 0-imag 
@@ -345,15 +347,16 @@ friend inline void vstore(const vComplexF &ret, ComplexF *a){
 #endif
             return ret;
         }
-        friend inline vComplexF timesI(const vComplexF &in){
-	  vComplexF ret; vzero(ret);
+        friend inline vComplexF timesMinusI(const vComplexF &in){
+	  vComplexF ret; 
+	  vzero(ret);
 #if defined (AVX1)|| defined (AVX2)
 	  cvec tmp =_mm256_addsub_ps(ret.v,in.v); // r,-i
-          ret.v = _mm256_shuffle_ps(tmp,tmp,0x5);
+          ret.v = _mm256_shuffle_ps(tmp,tmp,_MM_SHUFFLE(2,3,0,1)); //-i,r
 #endif
 #ifdef SSE4
 	  cvec tmp =_mm_addsub_ps(ret.v,in.v); // r,-i
-          ret.v = _mm_shuffle_ps(tmp,tmp,0x5);
+          ret.v = _mm_shuffle_ps(tmp,tmp,_MM_SHUFFLE(2,3,0,1));
 #endif
 #ifdef AVX512
           ret.v = _mm512_mask_sub_ps(in.v,0xaaaa,ret.v,in.v); // real -imag 
@@ -364,14 +367,14 @@ friend inline void vstore(const vComplexF &ret, ComplexF *a){
 #endif
 	  return ret;
 	}
-        friend inline vComplexF timesMinusI(const vComplexF &in){
+        friend inline vComplexF timesI(const vComplexF &in){
 	  vComplexF ret; vzero(ret);
 #if defined (AVX1)|| defined (AVX2)
-	  cvec tmp =_mm256_shuffle_ps(in.v,in.v,0x5);
-          ret.v = _mm256_addsub_ps(ret.v,tmp); // i,-r
+	  cvec tmp =_mm256_shuffle_ps(in.v,in.v,_MM_SHUFFLE(2,3,0,1));//i,r
+          ret.v    =_mm256_addsub_ps(ret.v,tmp);     //i,-r
 #endif
 #ifdef SSE4
-	  cvec tmp =_mm_shuffle_ps(in.v,in.v,0x5);
+	  cvec tmp =_mm_shuffle_ps(in.v,in.v,_MM_SHUFFLE(2,3,0,1));
           ret.v = _mm_addsub_ps(ret.v,tmp); // r,-i
 #endif
 #ifdef AVX512
@@ -443,5 +446,8 @@ friend inline void vstore(const vComplexF &ret, ComplexF *a){
     inline vComplexF trace(const vComplexF &arg){
         return arg;
     }
+
+
 }
+
 #endif
