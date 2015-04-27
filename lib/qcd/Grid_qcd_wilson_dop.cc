@@ -22,8 +22,12 @@ const int WilsonMatrix::Tm = 7;
   public:
     int mu;
     
-    void Point(int p) { mu=p;};
-    vHalfSpinColourVector operator () (vSpinColourVector &in)
+    void Point(int p) { 
+      mu=p;
+      std::cout << "WilsonCompressor.Point " << mu<<std::endl;
+    };
+
+    vHalfSpinColourVector operator () (const vSpinColourVector &in)
     {
       vHalfSpinColourVector ret;
       switch(mu) {
@@ -90,7 +94,8 @@ void WilsonMatrix::multiply(const LatticeFermion &in, LatticeFermion &out)
 
 void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
 {
-  //  Stencil.HaloExchange(in,comm_buf);
+  WilsonCompressor compressor;
+  Stencil.HaloExchange<vSpinColourVector,vHalfSpinColourVector,WilsonCompressor>(in,comm_buf,compressor);
 
   for(int ss=0;ss<grid->oSites();ss++){
 
@@ -100,10 +105,13 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     vHalfSpinColourVector  chi;    
     vHalfSpinColourVector Uchi;
     vHalfSpinColourVector *chi_p;
+
+    result=zero;
+
+#if 0
     // Xp
     offset = Stencil._offsets [Xp][ss];
     local  = Stencil._is_local[Xp][ss];
-
     chi_p  = &comm_buf[offset];
     if ( local ) {
       spProjXp(chi,in._odata[offset]);
@@ -112,7 +120,6 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     mult(&(Uchi()),&(Umu._odata[ss](Xp)),&(*chi_p)());
     spReconXp(result,Uchi);
 
-#if 0
     // Yp
     offset = Stencil._offsets [Yp][ss];
     local  = Stencil._is_local[Yp][ss];
@@ -145,6 +152,7 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     } 
     mult(&(Uchi()),&(Umu._odata[ss](Tp)),&(*chi_p)());
     accumReconTp(result,Uchi);
+#endif
 
     // Xm
     offset = Stencil._offsets [Xm][ss];
@@ -156,6 +164,7 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     } 
     mult(&(Uchi()),&(Umu._odata[ss](Xm)),&(*chi_p)());
     accumReconXm(result,Uchi);
+#if 0
 
     // Ym
     offset = Stencil._offsets [Ym][ss];
@@ -190,6 +199,7 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     mult(&(Uchi()),&(Umu._odata[ss](Tm)),&(*chi_p)());
     accumReconTm(result,Uchi);
 #endif
+
     out._odata[ss] = result;
   }
 

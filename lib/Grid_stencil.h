@@ -52,7 +52,7 @@ namespace Grid {
 // Gather for when there is no need to SIMD split with compression
 ///////////////////////////////////////////////////////////////////
 template<class vobj,class cobj,class compressor> void 
-Gather_plane_simple (Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<cobj> > &buffer,int dimension,int plane,int cbmask,compressor &compress)
+Gather_plane_simple (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<cobj> > &buffer,int dimension,int plane,int cbmask,compressor &compress)
 {
   int rd = rhs._grid->_rdimensions[dimension];
 
@@ -97,7 +97,7 @@ Gather_plane_simple (Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<cobj> 
 // Gather for when there *is* need to SIMD split with compression
 ///////////////////////////////////////////////////////////////////
 template<class cobj,class vobj,class compressor> void 
-  Gather_plane_extract(Lattice<vobj> &rhs,std::vector<typename cobj::scalar_type *> pointers,int dimension,int plane,int cbmask,compressor &compress)
+Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename cobj::scalar_type *> pointers,int dimension,int plane,int cbmask,compressor &compress)
 {
   int rd = rhs._grid->_rdimensions[dimension];
 
@@ -182,7 +182,7 @@ template<class cobj,class vobj,class compressor> void
       // Could allow a functional munging of the halo to another type during the comms.
       // this could implement the 16bit/32bit/64bit compression.
       template<class vobj,class cobj, class compressor> void 
-	HaloExchange(Lattice<vobj> &source,std::vector<cobj,alignedAllocator<cobj> > &u_comm_buf,compressor &compress)
+	HaloExchange(const Lattice<vobj> &source,std::vector<cobj,alignedAllocator<cobj> > &u_comm_buf,compressor &compress)
       {
 	// conformable(source._grid,_grid);
 	assert(source._grid==_grid);
@@ -237,7 +237,7 @@ template<class cobj,class vobj,class compressor> void
       }
 
       template<class vobj,class cobj, class compressor> 
-        void GatherStartComms(Lattice<vobj> &rhs,int dimension,int shift,int cbmask,
+        void GatherStartComms(const Lattice<vobj> &rhs,int dimension,int shift,int cbmask,
 			      std::vector<cobj,alignedAllocator<cobj> > &u_comm_buf,
 			      int &u_comm_offset,compressor & compress)
 	{
@@ -250,6 +250,7 @@ template<class cobj,class vobj,class compressor> void
 
 	  int fd              = _grid->_fdimensions[dimension];
 	  int rd              = _grid->_rdimensions[dimension];
+	  int pd              = _grid->_processors[dimension];
 	  int simd_layout     = _grid->_simd_layout[dimension];
 	  int comm_dim        = _grid->_processors[dimension] >1 ;
 	  assert(simd_layout==1);
@@ -267,11 +268,10 @@ template<class cobj,class vobj,class compressor> void
 	  
 	  for(int x=0;x<rd;x++){       
 	    
-	    int offnode = ( x+sshift >= rd );
 	    int sx        = (x+sshift)%rd;
-	    int comm_proc = (x+sshift)/rd;
-	    
-	    if (offnode) {
+	    int comm_proc = ((x+sshift)/rd)%pd;
+
+	    if (comm_proc) {
 	      
 	      int words = send_buf.size();
 	      if (cbmask != 0x3) words=words>>1;
@@ -284,7 +284,8 @@ template<class cobj,class vobj,class compressor> void
 	      int recv_from_rank;
 	      int xmit_to_rank;
 	      _grid->ShiftedRanks(dimension,comm_proc,xmit_to_rank,recv_from_rank);
-	      
+	      assert (xmit_to_rank != _grid->ThisRank());
+	      assert (recv_from_rank != _grid->ThisRank());
 	      //      FIXME Implement asynchronous send & also avoid buffer copy
 	      _grid->SendToRecvFrom((void *)&send_buf[0],
 				   xmit_to_rank,
@@ -293,7 +294,11 @@ template<class cobj,class vobj,class compressor> void
 				   bytes);
 	      printf("GatherStartComms communicated offnode x %d\n",x);fflush(stdout);
 
-	      printf("GatherStartComms inserting %d buf size %d\n",u_comm_offset,buffer_size);fflush(stdout);
+	      printf("GatherStartComms inserting %le to u_comm_offset %d buf size %d for dim %d shift %d\n",
+		     *( (RealF *) &recv_buf[0]),
+		     u_comm_offset,buffer_size,
+		     dimension,shift
+		     ); fflush(stdout);
 	      for(int i=0;i<buffer_size;i++){
 		u_comm_buf[u_comm_offset+i]=recv_buf[i];
 	      }
@@ -305,17 +310,19 @@ template<class cobj,class vobj,class compressor> void
 
 
       template<class vobj,class cobj, class compressor> 
-	void  GatherStartCommsSimd(Lattice<vobj> &rhs,int dimension,int shift,int cbmask,
+	void  GatherStartCommsSimd(const Lattice<vobj> &rhs,int dimension,int shift,int cbmask,
 				   std::vector<cobj,alignedAllocator<cobj> > &u_comm_buf,
 				   int &u_comm_offset,compressor &compress)
 	{
 	  const int Nsimd = _grid->Nsimd();
+
 	  typedef typename cobj::vector_type vector_type;
 	  typedef typename cobj::scalar_type scalar_type;
 	  
 	  int fd = _grid->_fdimensions[dimension];
 	  int rd = _grid->_rdimensions[dimension];
 	  int ld = _grid->_ldimensions[dimension];
+	  int pd              = _grid->_processors[dimension];
 	  int simd_layout     = _grid->_simd_layout[dimension];
 	  int comm_dim        = _grid->_processors[dimension] >1 ;
 
@@ -346,89 +353,62 @@ template<class cobj,class vobj,class compressor> void
 
 	  int cb    = (cbmask==0x2)? 1 : 0;
 	  int sshift= _grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,cb);
-	  
-	  std::vector<int> comm_offnode(simd_layout);
-	  std::vector<int> comm_proc   (simd_layout);  //relative processor coord in dim=dimension
-	  std::vector<int> icoor(_grid->Nd());
-	  
-	  for(int x=0;x<rd;x++){
+
+	  // loop over outer coord planes orthog to dim
+	  for(int x=0;x<rd;x++){       
 	    
-	    int comm_any = 0;
-	    for(int s=0;s<simd_layout;s++) {
-	      int shifted_x   = x+s*rd+sshift;
-	      comm_offnode[s] = shifted_x >= ld;
-	      comm_any        = comm_any | comm_offnode[s];
-	      comm_proc[s]    = shifted_x/ld;
+	    // FIXME call local permute copy if none are offnode.
+	    for(int i=0;i<Nsimd;i++){       
+	      pointers[i] = (scalar_type *)&send_buf_extract[i][0];
 	    }
-    
-	    int o    = 0;
-	    int bo   = x*_grid->_ostride[dimension];
 	    int sx   = (x+sshift)%rd;
-	    
-	    if ( comm_any ) {
 
-	      for(int i=0;i<Nsimd;i++){
-		pointers[Nsimd-1-i] = (scalar_type *)&send_buf_extract[i][0];
+	    std::cout<< "Gathering "<< x <<std::endl;
+	    Gather_plane_extract<cobj>(rhs,pointers,dimension,sx,cbmask,compress);
+	    std::cout<< "Gathered "<<std::endl;
+	    for(int i=0;i<Nsimd;i++){
+      
+	      int inner_bit = (Nsimd>>(permute_type+1));
+	      int ic= (i&inner_bit)? 1:0;
+
+	      int my_coor          = rd*ic + x;
+	      int nbr_coor         = my_coor+sshift;
+	      int nbr_proc = ((nbr_coor)/ld) % pd;// relative shift in processors
+
+	      int nbr_ic   = (nbr_coor%ld)/rd;    // inner coord of peer
+	      int nbr_ox   = (nbr_coor%rd);       // outer coord of peer
+	      int nbr_lane = (i&(~inner_bit));
+
+	      int recv_from_rank;
+	      int xmit_to_rank;
+
+	      if (nbr_ic) nbr_lane|=inner_bit;
+	      assert (sx == nbr_ox);
+
+	      if(nbr_proc){
+
+		std::cout<< "MPI sending "<<std::endl;
+		_grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank); 
+
+		_grid->SendToRecvFrom((void *)&send_buf_extract[nbr_lane][0],
+				     xmit_to_rank,
+				     (void *)&recv_buf_extract[i][0],
+				     recv_from_rank,
+				     bytes);
+		std::cout<< "MPI complete "<<std::endl;
+
+		rpointers[i] = (scalar_type *)&recv_buf_extract[i][0];
+	      } else { 
+		rpointers[i] = (scalar_type *)&send_buf_extract[nbr_lane][0];
 	      }
-	      Gather_plane_extract<cobj>(rhs,pointers,dimension,sx,cbmask,compress);
-	      
-	      for(int i=0;i<Nsimd;i++){
-		
-		int s;
-		_grid->iCoorFromIindex(icoor,i);
-		s = icoor[dimension];
-		
-		if(comm_offnode[s]){
-		  
-		  int rank           = _grid->_processor;
-		  int recv_from_rank;
-		  int xmit_to_rank;
-
-		  _grid->ShiftedRanks(dimension,comm_proc[s],xmit_to_rank,recv_from_rank);
-	  
-
-		  _grid->SendToRecvFrom((void *)&send_buf_extract[i][0],
-					xmit_to_rank,
-					(void *)&recv_buf_extract[i][0],
-					recv_from_rank,
-					bytes);
-
-		  rpointers[i] = (scalar_type *)&recv_buf_extract[i][0];
-		  
-		} else { 
-		  
-		  rpointers[i] = (scalar_type *)&send_buf_extract[i][0];
-
-		}
-		
-	      }
-
-	      // Permute by swizzling pointers in merge
-	      int permute_slice=0;
-	      int lshift=sshift%ld;
-	      int wrap  =lshift/rd;
-	      int  num  =lshift%rd;
-
-	      if ( x< rd-num ) permute_slice=wrap;
-	      else permute_slice = 1-wrap;
-
-	      int toggle_bit = (Nsimd>>(permute_type+1));
-	      int PermuteMap;
-	      for(int i=0;i<Nsimd;i++){
-		if ( permute_slice ) {
-		  PermuteMap=i^toggle_bit;
-		  pointers[Nsimd-1-i] = rpointers[PermuteMap];
-		} else {
-		  pointers[Nsimd-1-i] = rpointers[i];
-		}
-	      }
-
-	      // Here we don't want to scatter, just place into a buffer.
-	      for(int i=0;i<buffer_size;i++){
-		merge(u_comm_buf[u_comm_offset+i],pointers);
-	      }
-
 	    }
+
+	    // Here we don't want to scatter, just place into a buffer.
+	    std::cout<< "merging "<<std::endl;
+	    for(int i=0;i<buffer_size;i++){
+	      merge(u_comm_buf[u_comm_offset+i],rpointers);
+	    }
+
 	  }
 	}
   };

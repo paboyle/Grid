@@ -116,8 +116,6 @@ int main (int argc, char ** argv)
   // Insist that operations on random scalars gives
   // identical results to on vectors.
 
-  Tester<RealD,vRealD>(funcPlus());
-
   std::cout << "==================================="<<  std::endl;
   std::cout << "Testing vComplexF "<<std::endl;
   std::cout << "==================================="<<  std::endl;

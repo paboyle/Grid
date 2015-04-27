@@ -5,7 +5,7 @@ namespace Grid {
 //////////////////////////////////////////////////////
 // Gather for when there is no need to SIMD split
 //////////////////////////////////////////////////////
-template<class vobj> void Gather_plane_simple (Lattice<vobj> &rhs,std::vector<vobj,alignedAllocator<vobj> > &buffer,             int dimension,int plane,int cbmask)
+template<class vobj> void Gather_plane_simple (const Lattice<vobj> &rhs,std::vector<vobj,alignedAllocator<vobj> > &buffer,             int dimension,int plane,int cbmask)
 {
   int rd = rhs._grid->_rdimensions[dimension];
 
@@ -49,7 +49,7 @@ template<class vobj> void Gather_plane_simple (Lattice<vobj> &rhs,std::vector<vo
 //////////////////////////////////////////////////////
 // Gather for when there *is* need to SIMD split
 //////////////////////////////////////////////////////
- template<class vobj,class scalar_type> void Gather_plane_extract(Lattice<vobj> &rhs,std::vector<scalar_type *> pointers,int dimension,int plane,int cbmask)
+ template<class vobj,class scalar_type> void Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<scalar_type *> pointers,int dimension,int plane,int cbmask)
 {
   int rd = rhs._grid->_rdimensions[dimension];
 

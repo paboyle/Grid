@@ -98,6 +98,9 @@ public:
 	index   = index / dims[d];
       }
     }
+    inline void oCoorFromOindex (std::vector<int>& coor,int Oindex){
+      CoorFromIndex(coor,Oindex,_rdimensions);
+    }
     static inline void IndexFromCoor (std::vector<int>& coor,int &index,std::vector<int> &dims){
       int nd=dims.size();
       int stride=1;
@@ -106,9 +109,6 @@ public:
 	index = index+stride*coor[d];
 	stride=stride*dims[d];
       }
-    }
-    inline void oCoorFromOindex (std::vector<int>& coor,int Oindex){
-      CoorFromIndex(coor,Oindex,_rdimensions);
     }
 
     //////////////////////////////////////////////////////////

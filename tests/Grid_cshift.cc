@@ -1,7 +1,6 @@
 #include <Grid.h>
 #include <parallelIO/GridNerscIO.h>
 
-using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
@@ -10,7 +9,7 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   std::vector<int> simd_layout({1,1,2,2});
-  std::vector<int> mpi_layout ({2,2,2,2});
+  std::vector<int> mpi_layout ({2,2,1,4});
   std::vector<int> latt_size  ({8,8,8,16});
     
   GridCartesian     Fine(latt_size,simd_layout,mpi_layout);
@@ -71,11 +70,11 @@ int main (int argc, char ** argv)
 	  Fine.CoorFromIndex(peer,index,latt_size);
 
 	  if (nrm > 0){
-	    cout<<"FAIL shift "<< shift<<" in dir "<< dir<<" ["<<coor[0]<<","<<coor[1]<<","<<coor[2]<<","<<coor[3]<<"] = "<< cm()()()<<" expect "<<scm<<"  "<<nrm<<endl;
-	    cout<<"Got    "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
+	    std::cerr<<"FAIL shift "<< shift<<" in dir "<< dir<<" ["<<coor[0]<<","<<coor[1]<<","<<coor[2]<<","<<coor[3]<<"] = "<< cm()()()<<" expect "<<scm<<"  "<<nrm<<std::endl;
+	    std::cerr<<"Got    "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	    index=real(scm);
 	    Fine.CoorFromIndex(peer,index,latt_size);
-	    cout<<"Expect "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
+	    std::cerr<<"Expect "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	  }
 	}}}}
     }

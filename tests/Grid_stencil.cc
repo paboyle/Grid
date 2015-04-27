@@ -9,7 +9,7 @@ class SimpleCompressor {
 public:
   void Point(int) {};
 
-  vobj operator() (vobj &arg) {
+  vobj operator() (const vobj &arg) {
     return arg;
   }
 };
