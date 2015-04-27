@@ -79,6 +79,7 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,Lattice<vobj> &rhs,int
 
   int fd              = rhs._grid->_fdimensions[dimension];
   int rd              = rhs._grid->_rdimensions[dimension];
+  int pd              = rhs._grid->_processors[dimension];
   int simd_layout     = rhs._grid->_simd_layout[dimension];
   int comm_dim        = rhs._grid->_processors[dimension] >1 ;
   assert(simd_layout==1);
@@ -95,11 +96,10 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,Lattice<vobj> &rhs,int
 
   for(int x=0;x<rd;x++){       
 
-    int offnode = ( x+sshift >= rd );
-    int sx        = (x+sshift)%rd;
-    int comm_proc = (x+sshift)/rd;
+    int sx        =  (x+sshift)%rd;
+    int comm_proc = ((x+sshift)/rd)%pd;
     
-    if (!offnode) {
+    if (comm_proc==0) {
 
       Copy_plane(ret,rhs,dimension,x,sx,cbmask); 
 
@@ -138,6 +138,7 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &r
   int fd = grid->_fdimensions[dimension];
   int rd = grid->_rdimensions[dimension];
   int ld = grid->_ldimensions[dimension];
+  int pd = grid->_processors[dimension];
   int simd_layout     = grid->_simd_layout[dimension];
   int comm_dim        = grid->_processors[dimension] >1 ;
 
@@ -164,101 +165,58 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &r
   ///////////////////////////////////////////
   // Work out what to send where
   ///////////////////////////////////////////
-
   int cb    = (cbmask==0x2)? 1 : 0;
   int sshift= grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,cb);
-  
-  std::vector<int> comm_offnode(simd_layout);
-  std::vector<int> comm_proc   (simd_layout);  //relative processor coord in dim=dimension
-  std::vector<int> icoor(grid->Nd());
 
+  // loop over outer coord planes orthog to dim
   for(int x=0;x<rd;x++){       
 
-    int comm_any = 0;
-    for(int s=0;s<simd_layout;s++) {
-      int shifted_x   = x+s*rd+sshift;
-      comm_offnode[s] = shifted_x >= ld; 
-      comm_any        = comm_any | comm_offnode[s];
-      comm_proc[s]    = shifted_x/ld;     
+  // FIXME call local permute copy if none are offnode.
+
+    for(int i=0;i<Nsimd;i++){       
+      pointers[i] = (scalar_type *)&send_buf_extract[i][0];
     }
-    
-    int o    = 0;
-    int bo   = x*grid->_ostride[dimension];
     int sx   = (x+sshift)%rd;
+    Gather_plane_extract(rhs,pointers,dimension,sx,cbmask);
 
-    if ( comm_any ) {
+    for(int i=0;i<Nsimd;i++){
+      
+      int inner_bit = (Nsimd>>(permute_type+1));
+      int ic= (i&inner_bit)? 1:0;
 
-      for(int i=0;i<Nsimd;i++){         // there is a reversal in extract merge
-	pointers[i] = (scalar_type *)&send_buf_extract[Nsimd-1-i][0];
+      int my_coor          = rd*ic + x;
+      int nbr_coor         = my_coor+sshift;
+      int nbr_proc = ((nbr_coor)/ld) % pd;// relative shift in processors
+
+      int nbr_ic   = (nbr_coor%ld)/rd;    // inner coord of peer
+      int nbr_ox   = (nbr_coor%rd);       // outer coord of peer
+      int nbr_lane = (i&(~inner_bit));
+
+      int recv_from_rank;
+      int xmit_to_rank;
+
+      if (nbr_ic) nbr_lane|=inner_bit;
+
+      assert (sx == nbr_ox);
+
+      if(nbr_proc){
+	grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank); 
+
+	grid->SendToRecvFrom((void *)&send_buf_extract[nbr_lane][0],
+			     xmit_to_rank,
+			     (void *)&recv_buf_extract[i][0],
+			     recv_from_rank,
+			     bytes);
+
+	rpointers[i] = (scalar_type *)&recv_buf_extract[i][0];
+      } else { 
+	rpointers[i] = (scalar_type *)&send_buf_extract[nbr_lane][0];
       }
-      Gather_plane_extract(rhs,pointers,dimension,sx,cbmask);
-
-      for(int i=0;i<Nsimd;i++){
-
-
-	int s;
-	grid->iCoorFromIindex(icoor,i);
-	s = icoor[dimension];
-
-	if(comm_offnode[s]){
-
-	  int rank           = grid->_processor;
-	  int recv_from_rank;
-	  int xmit_to_rank;
-	  grid->ShiftedRanks(dimension,comm_proc[s],xmit_to_rank,recv_from_rank);
-	  
-
-	  grid->SendToRecvFrom((void *)&send_buf_extract[i][0],
-			    xmit_to_rank,
-			    (void *)&recv_buf_extract[i][0],
-			    recv_from_rank,
-			    bytes);
-
-	  rpointers[i] = (scalar_type *)&recv_buf_extract[i][0];
-
-	} else { 
-
-	  rpointers[i] = (scalar_type *)&send_buf_extract[i][0];
-
-	}
-
-      }
-
-      // Permute by swizzling pointers in merge
-      int permute_slice=0;
-      int lshift=sshift%ld;
-      int wrap  =lshift/rd;
-      int  num  =lshift%rd;
-
-      if ( x< rd-num ) permute_slice=wrap;
-      else permute_slice = 1-wrap;
-
-      int toggle_bit = (Nsimd>>(permute_type+1));
-      int PermuteMap;
-      for(int i=0;i<Nsimd;i++){
-	if ( permute_slice ) {
-	  PermuteMap=i^toggle_bit;
-	  pointers[Nsimd-1-i] = rpointers[PermuteMap];
-	} else {
-	  pointers[Nsimd-1-i] = rpointers[i];
-	}
-      }
-
-      Scatter_plane_merge(ret,pointers,dimension,x,cbmask);
-
-    } else { 
-
-      int permute_slice=0;
-      int wrap = sshift/rd;
-      int  num = sshift%rd;
-      if ( x< rd-num ) permute_slice=wrap;
-      else permute_slice = 1-wrap;
-
-      if ( permute_slice ) Copy_plane_permute(ret,rhs,dimension,x,sx,cbmask,permute_type);
-      else                 Copy_plane(ret,rhs,dimension,x,sx,cbmask); 
 
     }
+    Scatter_plane_merge(ret,rpointers,dimension,x,cbmask);
   }
-}
+
+ }
 }
 #endif
