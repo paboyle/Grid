@@ -48,100 +48,6 @@ namespace Grid {
   } ;
 
 
-///////////////////////////////////////////////////////////////////
-// Gather for when there is no need to SIMD split with compression
-///////////////////////////////////////////////////////////////////
-template<class vobj,class cobj,class compressor> void 
-Gather_plane_simple (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<cobj> > &buffer,int dimension,int plane,int cbmask,compressor &compress)
-{
-  int rd = rhs._grid->_rdimensions[dimension];
-
-  if ( !rhs._grid->CheckerBoarded(dimension) ) {
-
-    int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-    int o   = 0;                                    // relative offset to base within plane
-    int bo  = 0;                                    // offset in buffer
-
-    // Simple block stride gather of SIMD objects
-#pragma omp parallel for collapse(2)
-    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
-	buffer[bo++]=compress(rhs._odata[so+o+b]);
-      }
-      o +=rhs._grid->_slice_stride[dimension];
-    }
-
-  } else { 
-
-    int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-    int o   = 0;                                      // relative offset to base within plane
-    int bo  = 0;                                      // offset in buffer
-
-#pragma omp parallel for collapse(2)
-    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
-
-	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
-	if ( ocb &cbmask ) {
-	  buffer[bo]=compress(rhs._odata[so+o+b]);
-	  bo++;
-	}
-
-      }
-      o +=rhs._grid->_slice_stride[dimension];
-    }
-  }
-}
-
-///////////////////////////////////////////////////////////////////
-// Gather for when there *is* need to SIMD split with compression
-///////////////////////////////////////////////////////////////////
-template<class cobj,class vobj,class compressor> void 
-Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename cobj::scalar_type *> pointers,int dimension,int plane,int cbmask,compressor &compress)
-{
-  int rd = rhs._grid->_rdimensions[dimension];
-
-  if ( !rhs._grid->CheckerBoarded(dimension) ) {
-
-    int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-    int o   = 0;                                    // relative offset to base within plane
-    int bo  = 0;                                    // offset in buffer
-
-    // Simple block stride gather of SIMD objects
-#pragma omp parallel for collapse(2)
-    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
-	cobj temp;
-	temp=compress(rhs._odata[so+o+b]);
-	extract(temp,pointers);
-      }
-      o +=rhs._grid->_slice_stride[dimension];
-    }
-
-  } else { 
-
-    int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-    int o   = 0;                                      // relative offset to base within plane
-    int bo  = 0;                                      // offset in buffer
-    
-#pragma omp parallel for collapse(2)
-    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
-
-	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
-	if ( ocb & cbmask ) {
-	  cobj temp; 
-	  temp =compress(rhs._odata[so+o+b]);
-	  extract(temp,pointers);
-	}
-
-      }
-      o +=rhs._grid->_slice_stride[dimension];
-    }
-  }
-}
-
-
   class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal fill in.
   public:
 
@@ -184,6 +90,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename cobj::scalar_
       template<class vobj,class cobj, class compressor> void 
 	HaloExchange(const Lattice<vobj> &source,std::vector<cobj,alignedAllocator<cobj> > &u_comm_buf,compressor &compress)
       {
+	std::cout<< "HaloExchange comm_buf.size()="<< u_comm_buf.size()<<" unified_buffer_size"<< _unified_buffer_size<< std::endl;
 	// conformable(source._grid,_grid);
 	assert(source._grid==_grid);
 	if (u_comm_buf.size() != _unified_buffer_size ) u_comm_buf.resize(_unified_buffer_size);
@@ -234,6 +141,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename cobj::scalar_
 	    }
 	  }
 	}
+	std::cout<< "HaloExchange complete"<< std::endl;
       }
 
       template<class vobj,class cobj, class compressor> 
@@ -318,6 +226,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename cobj::scalar_
 
 	  typedef typename cobj::vector_type vector_type;
 	  typedef typename cobj::scalar_type scalar_type;
+	  typedef typename cobj::scalar_object scalar_object;
 	  
 	  int fd = _grid->_fdimensions[dimension];
 	  int rd = _grid->_rdimensions[dimension];
@@ -340,12 +249,12 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename cobj::scalar_
 	  int words = sizeof(cobj)/sizeof(vector_type);
 
 	  /*   FIXME ALTERNATE BUFFER DETERMINATION */
-	  std::vector<std::vector<scalar_type> > send_buf_extract(Nsimd,std::vector<scalar_type>(buffer_size*words) ); 
-	  std::vector<std::vector<scalar_type> > recv_buf_extract(Nsimd,std::vector<scalar_type>(buffer_size*words) );
-	  int bytes = buffer_size*words*sizeof(scalar_type);
+	  std::vector<std::vector<scalar_object> > send_buf_extract(Nsimd,std::vector<scalar_object>(buffer_size) ); 
+	  std::vector<std::vector<scalar_object> > recv_buf_extract(Nsimd,std::vector<scalar_object>(buffer_size) );
+	  int bytes = buffer_size*sizeof(scalar_object);
 
-	  std::vector<scalar_type *> pointers(Nsimd);  //
-	  std::vector<scalar_type *> rpointers(Nsimd); // received pointers
+	  std::vector<scalar_object *> pointers(Nsimd);  //
+	  std::vector<scalar_object *> rpointers(Nsimd); // received pointers
 	  
 	  ///////////////////////////////////////////
 	  // Work out what to send where
@@ -353,62 +262,77 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename cobj::scalar_
 
 	  int cb    = (cbmask==0x2)? 1 : 0;
 	  int sshift= _grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,cb);
-
+	  
 	  // loop over outer coord planes orthog to dim
 	  for(int x=0;x<rd;x++){       
-	    
-	    // FIXME call local permute copy if none are offnode.
-	    for(int i=0;i<Nsimd;i++){       
-	      pointers[i] = (scalar_type *)&send_buf_extract[i][0];
-	    }
-	    int sx   = (x+sshift)%rd;
 
-	    std::cout<< "Gathering "<< x <<std::endl;
-	    Gather_plane_extract<cobj>(rhs,pointers,dimension,sx,cbmask,compress);
-	    std::cout<< "Gathered "<<std::endl;
-	    for(int i=0;i<Nsimd;i++){
-      
-	      int inner_bit = (Nsimd>>(permute_type+1));
-	      int ic= (i&inner_bit)? 1:0;
-
-	      int my_coor          = rd*ic + x;
-	      int nbr_coor         = my_coor+sshift;
-	      int nbr_proc = ((nbr_coor)/ld) % pd;// relative shift in processors
-
-	      int nbr_ic   = (nbr_coor%ld)/rd;    // inner coord of peer
-	      int nbr_ox   = (nbr_coor%rd);       // outer coord of peer
-	      int nbr_lane = (i&(~inner_bit));
-
-	      int recv_from_rank;
-	      int xmit_to_rank;
-
-	      if (nbr_ic) nbr_lane|=inner_bit;
-	      assert (sx == nbr_ox);
-
-	      if(nbr_proc){
-
-		std::cout<< "MPI sending "<<std::endl;
-		_grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank); 
-
-		_grid->SendToRecvFrom((void *)&send_buf_extract[nbr_lane][0],
-				     xmit_to_rank,
-				     (void *)&recv_buf_extract[i][0],
-				     recv_from_rank,
-				     bytes);
-		std::cout<< "MPI complete "<<std::endl;
-
-		rpointers[i] = (scalar_type *)&recv_buf_extract[i][0];
-	      } else { 
-		rpointers[i] = (scalar_type *)&send_buf_extract[nbr_lane][0];
+	    int any_offnode = ( ((x+sshift)%fd) >= rd );
+	    std::cout<<"any_offnode ="<<any_offnode<<std::endl;
+	    if ( any_offnode ) {
+	      // FIXME call local permute copy if none are offnode.
+	      for(int i=0;i<Nsimd;i++){       
+		pointers[i] = &send_buf_extract[i][0];
 	      }
-	    }
+	      int sx   = (x+sshift)%rd;
+	      
+	      std::cout<< "Gathering "<< x <<std::endl;
+	      Gather_plane_extract<cobj>(rhs,pointers,dimension,sx,cbmask,compress);
+	      std::cout<< "Gathered "<<std::endl;
+	      for(int i=0;i<Nsimd;i++){
+		
+		std::vector<int> icoor;
+		_grid->iCoorFromIindex(icoor,i);
 
-	    // Here we don't want to scatter, just place into a buffer.
-	    std::cout<< "merging "<<std::endl;
-	    for(int i=0;i<buffer_size;i++){
-	      merge(u_comm_buf[u_comm_offset+i],rpointers);
-	    }
+		int inner_bit = (Nsimd>>(permute_type+1));
+		int ic= (i&inner_bit)? 1:0;
+		assert(ic==icoor[dimension]);
 
+		int my_coor          = rd*ic + x;
+		int nbr_coor         = my_coor+sshift;
+		int nbr_proc = ((nbr_coor)/ld) % pd;// relative shift in processors
+		int nbr_lcoor= (nbr_coor%ld);
+		int nbr_ic   = (nbr_lcoor)/rd;    // inner coord of peer
+		int nbr_ox   = (nbr_lcoor%rd);    // outer coord of peer
+		int nbr_lane = (i&(~inner_bit));
+		
+		int recv_from_rank;
+		int xmit_to_rank;
+		
+		if (nbr_ic) nbr_lane|=inner_bit;
+		assert (sx == nbr_ox);
+
+   std::cout<<"nbr_proc "<<nbr_proc<< " x "<<x<<" nbr_x "<<nbr_ox << " lane "<<i << " nbr_lane "<<nbr_lane
+	    << " nbr_ic "<<nbr_ic  << " mycoor "<< my_coor<< " nbr_coor "<<nbr_coor<<std::endl;
+		
+		if(nbr_proc){
+		  
+		  std::cout<< "MPI sending "<<std::endl;
+		  _grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank); 
+		  
+		  _grid->SendToRecvFrom((void *)&send_buf_extract[nbr_lane][0],
+					xmit_to_rank,
+					(void *)&recv_buf_extract[i][0],
+					recv_from_rank,
+					bytes);
+		  std::cout<< "MPI complete "<<std::endl;
+		  
+		  rpointers[i] = &recv_buf_extract[i][0];
+		  std::cout<<"lane "<<i<<" data "<<*( (Real *) rpointers[i])<<std::endl;
+		} else { 
+		  rpointers[i] = &send_buf_extract[nbr_lane][0];
+		  std::cout<<"lane "<<i<<" data "<<*( (Real *) rpointers[i])<<std::endl;
+		}
+	      }
+
+	      // Here we don't want to scatter, just place into a buffer.
+	      std::cout<< "merging u_comm_offset "<< u_comm_offset<<" comm_buf_size" << u_comm_buf.size() <<std::endl;
+
+	      for(int i=0;i<buffer_size;i++){
+		assert(u_comm_offset+i<_unified_buffer_size);
+		merge(u_comm_buf[u_comm_offset+i],rpointers,i);
+	      }
+	      u_comm_offset+=buffer_size;
+	    }
 	  }
 	}
   };

@@ -94,15 +94,12 @@ namespace Grid {
       grid->Broadcast(grid->BossRank(),s);
 
       std::vector<sobj> buf(Nsimd);
-      std::vector<scalar_type *> pointers(Nsimd);  
 
       // extract-modify-merge cycle is easiest way and this is not perf critical
       if ( rank == grid->ThisRank() ) {
-	for(int i=0;i<Nsimd;i++) pointers[i] = (scalar_type *)&buf[i];
-	extract(l._odata[odx],pointers);
+	extract(l._odata[odx],buf);
 	buf[idx] = s;
-	for(int i=0;i<Nsimd;i++) pointers[i] = (scalar_type *)&buf[i];
-	merge(l._odata[odx],pointers);
+	merge(l._odata[odx],buf);
       }
 
       return;
@@ -127,13 +124,12 @@ namespace Grid {
 
       int rank,odx,idx;
       grid->GlobalCoorToRankIndex(rank,odx,idx,site);
-      std::vector<sobj> buf(Nsimd);
-      std::vector<scalar_type *> pointers(Nsimd);  
-      for(int i=0;i<Nsimd;i++) pointers[i] = (scalar_type *)&buf[i];
 
-      extract(l._odata[odx],pointers);
-      
+      std::vector<sobj> buf(Nsimd);
+      extract(l._odata[odx],buf);
+
       s = buf[idx];
+
       grid->Broadcast(rank,s);
 
       return;
@@ -160,10 +156,8 @@ namespace Grid {
       odx= grid->oIndex(site);
 
       std::vector<sobj> buf(Nsimd);
-      std::vector<scalar_type *> pointers(Nsimd);  
-      for(int i=0;i<Nsimd;i++) pointers[i] = (scalar_type *)&buf[i];
 
-      extract(l._odata[odx],pointers);
+      extract(l._odata[odx],buf);
       
       s = buf[idx];
 
@@ -188,16 +182,13 @@ namespace Grid {
       odx= grid->oIndex(site);
 
       std::vector<sobj> buf(Nsimd);
-      std::vector<scalar_type *> pointers(Nsimd);  
-      for(int i=0;i<Nsimd;i++) pointers[i] = (scalar_type *)&buf[i];
 
       // extract-modify-merge cycle is easiest way and this is not perf critical
-      extract(l._odata[odx],pointers);
+      extract(l._odata[odx],buf);
       
       buf[idx] = s;
 
-      for(int i=0;i<Nsimd;i++) pointers[i] = (scalar_type *)&buf[i];
-      merge(l._odata[odx],pointers);
+      merge(l._odata[odx],buf);
 
       return;
     };

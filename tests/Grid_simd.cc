@@ -75,9 +75,9 @@ void Tester(const functor &func)
     random(sRNG,result[i]);
   }
 
-  Gmerge(v_input1,input1);
-  Gmerge(v_input2,input2);
-  Gmerge(v_result,result);
+  merge<vec,scal>(v_input1,input1);
+  merge<vec,scal>(v_input2,input2);
+  merge<vec,scal>(v_result,result);
 
   func(v_result,v_input1,v_input2);
 
@@ -85,7 +85,7 @@ void Tester(const functor &func)
     func(reference[i],input1[i],input2[i]);
   }
 
-  Gextract(v_result,result);
+  extract<vec,scal>(v_result,result);
   std::cout << " " << func.name()<<std::endl;
 
   int ok=0;

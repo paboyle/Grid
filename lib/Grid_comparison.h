@@ -101,12 +101,12 @@ namespace Grid {
       std::vector<Integer> vlhs(vInteger::Nsimd());   // Use functors to reduce this to single implementation
       std::vector<Integer> vrhs(vInteger::Nsimd());
       vInteger ret;
-      extract(lhs,vlhs);
-      extract(rhs,vrhs);
+      extract<vInteger,Integer>(lhs,vlhs);
+      extract<vInteger,Integer>(rhs,vrhs);
       for(int s=0;s<vInteger::Nsimd();s++){
 	vlhs[s] = sop(vlhs[s],vrhs[s]);
       }
-      merge(ret,vlhs);
+      merge<vInteger,Integer>(ret,vlhs);
       return ret;
     }
     inline vInteger operator < (const vInteger & lhs, const vInteger & rhs)

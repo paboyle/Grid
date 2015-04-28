@@ -133,6 +133,7 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &r
   GridBase *grid=rhs._grid;
   const int Nsimd = grid->Nsimd();
   typedef typename vobj::vector_type vector_type;
+  typedef typename vobj::scalar_object scalar_object;
   typedef typename vobj::scalar_type scalar_type;
    
   int fd = grid->_fdimensions[dimension];
@@ -155,12 +156,12 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &r
   int buffer_size = grid->_slice_nblock[dimension]*grid->_slice_block[dimension];
   int words = sizeof(vobj)/sizeof(vector_type);
 
-  std::vector<std::vector<scalar_type> > send_buf_extract(Nsimd,std::vector<scalar_type>(buffer_size*words) );
-  std::vector<std::vector<scalar_type> > recv_buf_extract(Nsimd,std::vector<scalar_type>(buffer_size*words) );
-  int bytes = buffer_size*words*sizeof(scalar_type);
+  std::vector<std::vector<scalar_object> > send_buf_extract(Nsimd,std::vector<scalar_object>(buffer_size) );
+  std::vector<std::vector<scalar_object> > recv_buf_extract(Nsimd,std::vector<scalar_object>(buffer_size) );
+  int bytes = buffer_size*sizeof(scalar_object);
 
-  std::vector<scalar_type *> pointers(Nsimd);  // 
-  std::vector<scalar_type *> rpointers(Nsimd); // received pointers
+  std::vector<scalar_object *>  pointers(Nsimd);  // 
+  std::vector<scalar_object *> rpointers(Nsimd); // received pointers
 
   ///////////////////////////////////////////
   // Work out what to send where
@@ -171,10 +172,9 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &r
   // loop over outer coord planes orthog to dim
   for(int x=0;x<rd;x++){       
 
-  // FIXME call local permute copy if none are offnode.
-
+    // FIXME call local permute copy if none are offnode.
     for(int i=0;i<Nsimd;i++){       
-      pointers[i] = (scalar_type *)&send_buf_extract[i][0];
+      pointers[i] = &send_buf_extract[i][0];
     }
     int sx   = (x+sshift)%rd;
     Gather_plane_extract(rhs,pointers,dimension,sx,cbmask);
@@ -208,9 +208,9 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &r
 			     recv_from_rank,
 			     bytes);
 
-	rpointers[i] = (scalar_type *)&recv_buf_extract[i][0];
+	rpointers[i] = &recv_buf_extract[i][0];
       } else { 
-	rpointers[i] = (scalar_type *)&send_buf_extract[nbr_lane][0];
+	rpointers[i] = &send_buf_extract[nbr_lane][0];
       }
 
     }

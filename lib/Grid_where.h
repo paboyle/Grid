@@ -15,6 +15,7 @@ inline void where(Lattice<vobj> &ret,const Lattice<iobj> &predicate,Lattice<vobj
   conformable(iftrue,ret);
 
   GridBase *grid=iftrue._grid;
+  typedef typename vobj::scalar_object scalar_object;
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
   typedef typename iobj::vector_type mask_type;
@@ -23,27 +24,21 @@ inline void where(Lattice<vobj> &ret,const Lattice<iobj> &predicate,Lattice<vobj
   const int words = sizeof(vobj)/sizeof(vector_type);
 
   std::vector<Integer> mask(Nsimd);
-  std::vector<std::vector<scalar_type> > truevals (Nsimd,std::vector<scalar_type>(words) );
-  std::vector<std::vector<scalar_type> > falsevals(Nsimd,std::vector<scalar_type>(words) );
-  std::vector<scalar_type *> pointers(Nsimd);
+  std::vector<scalar_object> truevals (Nsimd);
+  std::vector<scalar_object> falsevals(Nsimd);
 
 #pragma omp parallel for
   for(int ss=0;ss<iftrue._grid->oSites(); ss++){
 
-    for(int s=0;s<Nsimd;s++) pointers[s] = & truevals[s][0];
-    extract(iftrue._odata[ss]   ,pointers);
-
-    for(int s=0;s<Nsimd;s++) pointers[s] = & falsevals[s][0];
-    extract(iffalse._odata[ss]  ,pointers);
-
-    extract(TensorRemove(predicate._odata[ss]),mask);
+    extract(iftrue._odata[ss]   ,truevals);
+    extract(iffalse._odata[ss]  ,falsevals);
+    extract<vInteger,Integer>(TensorRemove(predicate._odata[ss]),mask);
 
     for(int s=0;s<Nsimd;s++){
-      if (mask[s]) pointers[s]=&truevals[s][0];
-      else         pointers[s]=&falsevals[s][0];
+      if (mask[s]) falsevals[s]=truevals[s];
     }
 
-    merge(ret._odata[ss],pointers);
+    merge(ret._odata[ss],falsevals);
   }
 }
 

@@ -105,6 +105,7 @@ namespace Grid {
 	// all subtypes; may not be a good assumption, but could
 	// add the vector width as a template param for BG/Q for example
 	////////////////////////////////////////////////////////////////////
+	/*
 	friend inline void permute(vRealD &y,vRealD b,int perm)
 	{
 	  Gpermute<vRealD>(y,b,perm);
@@ -125,7 +126,7 @@ namespace Grid {
 	{
 	  Gextract<vRealD,RealD>(y,extracted);
 	}
-
+	*/
         
         friend inline void vsplat(vRealD &ret,double a){
 #if defined (AVX1)|| defined (AVX2)

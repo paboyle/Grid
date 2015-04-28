@@ -95,6 +95,7 @@ public:
 #include <lattice/Grid_lattice_reduction.h>
 #include <lattice/Grid_lattice_peekpoke.h>
 #include <lattice/Grid_lattice_reality.h>
+#include <Grid_extract.h>
 #include <lattice/Grid_lattice_coordinate.h>
 #include <lattice/Grid_lattice_rng.h>
 #include <lattice/Grid_lattice_transfer.h>

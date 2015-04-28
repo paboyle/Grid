@@ -127,6 +127,7 @@ namespace Grid {
 	// all subtypes; may not be a good assumption, but could
 	// add the vector width as a template param for BG/Q for example
 	////////////////////////////////////////////////////////////////////
+	/*
 	friend inline void permute(vRealF &y,vRealF b,int perm)
 	{
 	  Gpermute<vRealF>(y,b,perm);
@@ -147,7 +148,7 @@ namespace Grid {
 	{
 	  Gextract<vRealF,RealF>(y,extracted);
 	}
-
+	*/
 
         
         /////////////////////////////////////////////////////

@@ -57,12 +57,6 @@ public:
     friend void permute(iScalar<vtype> &out,const iScalar<vtype> &in,int permutetype){
       permute(out._internal,in._internal,permutetype);
     }
-    friend void extract(const iScalar<vtype> &in,std::vector<scalar_type *> &out){
-      extract(in._internal,out); // extract advances the pointers in out
-    }
-    friend void merge(iScalar<vtype> &in,std::vector<scalar_type *> &out){
-      merge(in._internal,out); // extract advances the pointers in out
-    }
 
     // Unary negation
     friend inline iScalar<vtype> operator -(const iScalar<vtype> &r) {
@@ -149,16 +143,6 @@ public:
 	permute(out._internal[i],in._internal[i],permutetype);
       }
     }
-    friend void extract(const iVector<vtype,N> &in,std::vector<scalar_type *> &out){
-      for(int i=0;i<N;i++){
-	extract(in._internal[i],out);// extract advances pointers in out
-      }
-    }
-    friend void merge(iVector<vtype,N> &in,std::vector<scalar_type *> &out){
-      for(int i=0;i<N;i++){
-	merge(in._internal[i],out);// extract advances pointers in out
-      }
-    }
     // Unary negation
     friend inline iVector<vtype,N> operator -(const iVector<vtype,N> &r) {
         iVector<vtype,N> ret;
@@ -232,18 +216,6 @@ public:
 	permute(out._internal[i][j],in._internal[i][j],permutetype);
     }}
   }
-  friend void extract(const iMatrix<vtype,N> &in,std::vector<scalar_type *> &out){
-    for(int i=0;i<N;i++){
-      for(int j=0;j<N;j++){
-	extract(in._internal[i][j],out);// extract advances pointers in out
-    }}
-  }
-  friend void merge(iMatrix<vtype,N> &in,std::vector<scalar_type *> &out){
-    for(int i=0;i<N;i++){
-      for(int j=0;j<N;j++){
-	merge(in._internal[i][j],out);// extract advances pointers in out
-    }}
-  }
   // Unary negation
   friend inline iMatrix<vtype,N> operator -(const iMatrix<vtype,N> &r) {
     iMatrix<vtype,N> ret;
@@ -285,37 +257,6 @@ public:
 };
 
 
-template<class vobj> inline 
-void extract(const vobj &vec,std::vector<typename vobj::scalar_object> &extracted)
-{
-  typedef typename vobj::scalar_type scalar_type ;
-  typedef typename vobj::vector_type vector_type ;
-
-  int Nsimd=vobj::vector_type::Nsimd();
-  
-  extracted.resize(Nsimd);
-
-  std::vector<scalar_type *> pointers(Nsimd);
-  for(int i=0;i<Nsimd;i++) 
-    pointers[i] =(scalar_type *)& extracted[i];
-  
-  extract(vec,pointers);
-}
-template<class vobj> inline 
-void merge(vobj &vec,std::vector<typename vobj::scalar_object> &extracted)
-{
-  typedef typename vobj::scalar_type scalar_type ;
-  typedef typename vobj::vector_type vector_type ;
-  
-  int Nsimd=vobj::vector_type::Nsimd();
-  assert(extracted.size()==Nsimd);
-
-  std::vector<scalar_type *> pointers(Nsimd);
-  for(int i=0;i<Nsimd;i++) 
-    pointers[i] =(scalar_type *)& extracted[i];
-  
-  merge(vec,pointers);
-}
 
 }
 #endif

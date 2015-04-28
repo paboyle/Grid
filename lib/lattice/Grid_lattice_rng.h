@@ -26,8 +26,21 @@ namespace Grid {
     }
 
   };
-  
 
+  // real scalars are one component
+  template<class scalar,class distribution,class generator> void fillScalar(scalar &s,distribution &dist,generator & gen)
+  {
+    s=dist(gen);
+  }
+  template<class distribution,class generator> void fillScalar(ComplexF &s,distribution &dist, generator &gen)
+  {
+    s=ComplexF(dist(gen),dist(gen));
+  }
+  template<class distribution,class generator> void fillScalar(ComplexD &s,distribution &dist,generator &gen)
+  {
+    s=ComplexD(dist(gen),dist(gen));
+  }
+  
   class GridRNGbase {
 
   public:
@@ -64,20 +77,6 @@ namespace Grid {
     }
 
 
-    // real scalars are one component
-    template<class scalar,class distribution> void fillScalar(scalar &s,distribution &dist)
-    {
-      s=dist(_generators[0]);
-    }
-    template<class distribution> void fillScalar(ComplexF &s,distribution &dist)
-    {
-      s=ComplexF(dist(_generators[0]),dist(_generators[0]));
-    }
-    template<class distribution> void fillScalar(ComplexD &s,distribution &dist)
-    {
-      s=ComplexD(dist(_generators[0]),dist(_generators[0]));
-    }
-
 
     template <class sobj,class distribution> inline void fill(sobj &l,distribution &dist){
 
@@ -88,7 +87,7 @@ namespace Grid {
       scalar_type *buf = (scalar_type *) & l;
 
       for(int idx=0;idx<words;idx++){
-	fillScalar(buf[idx],dist);
+	fillScalar(buf[idx],dist,_generators[0]);
       }
       
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
@@ -96,47 +95,47 @@ namespace Grid {
     };
 
     template <class distribution>  inline void fill(ComplexF &l,distribution &dist){
-      fillScalar(l,dist);
+      fillScalar(l,dist,_generators[0]);
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
     template <class distribution>  inline void fill(ComplexD &l,distribution &dist){
-      fillScalar(l,dist);
+      fillScalar(l,dist,_generators[0]);
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
     template <class distribution>  inline void fill(RealF &l,distribution &dist){
-      fillScalar(l,dist);
+      fillScalar(l,dist,_generators[0]);
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
     template <class distribution>  inline void fill(RealD &l,distribution &dist){
-      fillScalar(l,dist);
+      fillScalar(l,dist,_generators[0]);
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
     // vector fill
     template <class distribution>  inline void fill(vComplexF &l,distribution &dist){
       RealF *pointer=(RealF *)&l;
       for(int i=0;i<2*vComplexF::Nsimd();i++){
-	fillScalar(pointer[i],dist);
+	fillScalar(pointer[i],dist,_generators[0]);
       }
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
     template <class distribution>  inline void fill(vComplexD &l,distribution &dist){
       RealD *pointer=(RealD *)&l;
       for(int i=0;i<2*vComplexD::Nsimd();i++){
-	fillScalar(pointer[i],dist);
+	fillScalar(pointer[i],dist,_generators[0]);
       }
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
     template <class distribution>  inline void fill(vRealF &l,distribution &dist){
       RealF *pointer=(RealF *)&l;
       for(int i=0;i<vRealF::Nsimd();i++){
-	fillScalar(pointer[i],dist);
+	fillScalar(pointer[i],dist,_generators[0]);
       }
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
     template <class distribution>  inline void fill(vRealD &l,distribution &dist){
       RealD *pointer=(RealD *)&l;
       for(int i=0;i<vRealD::Nsimd();i++){
-	fillScalar(pointer[i],dist);
+	fillScalar(pointer[i],dist,_generators[0]);
       }
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
@@ -187,18 +186,31 @@ namespace Grid {
     {
       std::vector<int> gcoor;
 
-      for(int gidx=0;gidx<_grid->_gsites;gidx++){
+      int gsites = _grid->_gsites;
+
+      typename source::result_type init = src();
+      std::ranlux48 pseeder(init);
+      std::uniform_int_distribution<uint64_t> ui;
+
+      for(int gidx=0;gidx<gsites;gidx++){
+
 	int rank,o_idx,i_idx;
 	_grid->GlobalIndexToGlobalCoor(gidx,gcoor);
 	_grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
 
 	int l_idx=generator_idx(o_idx,i_idx);
+	
+	std::vector<int> site_seeds(4);
+	for(int i=0;i<4;i++){
+	  site_seeds[i]= ui(pseeder);
+	}
 
-	typename source::result_type init = src();
+	_grid->Broadcast(0,(void *)&site_seeds[0],sizeof(int)*site_seeds.size());
 
-	_grid->Broadcast(0,(void *)&init,sizeof(init));
 	if( rank == _grid->ThisRank() ){
-	  _generators[l_idx] = std::ranlux48(init);
+	  fixedSeed ssrc(site_seeds);
+	  typename source::result_type sinit = ssrc();
+	  _generators[l_idx] = std::ranlux48(sinit);
 	}
       }
       _seeded=1;
@@ -210,6 +222,7 @@ namespace Grid {
 
     template <class vobj,class distribution> inline void fill(Lattice<vobj> &l,distribution &dist){
 
+      typedef typename vobj::scalar_object scalar_object;
       typedef typename vobj::scalar_type scalar_type;
       typedef typename vobj::vector_type vector_type;
       
@@ -217,25 +230,22 @@ namespace Grid {
 
       int     Nsimd =_grid->Nsimd();
       int     osites=_grid->oSites();
+      int words=sizeof(scalar_object)/sizeof(scalar_type);
 
-      int words = sizeof(vobj)/sizeof(vector_type);
-      std::vector<std::vector<scalar_type> > buf(Nsimd,std::vector<scalar_type>(words));
-      std::vector<scalar_type *> pointers(Nsimd);  
+      std::vector<scalar_object> buf(Nsimd);
       
       for(int ss=0;ss<osites;ss++){
-
 	for(int si=0;si<Nsimd;si++){
 
 	  int gdx = generator_idx(ss,si); // index of generator state
-
-	  pointers[si] = (scalar_type *)&buf[si][0];
+	  scalar_type *pointer = (scalar_type *)&buf[si];
 	  for(int idx=0;idx<words;idx++){
-	    pointers[si][idx] = dist(_generators[gdx]);
+	    fillScalar(pointer[idx],dist,_generators[gdx]);
 	  }
 
 	}
 	// merge into SIMD lanes
-	merge(l._odata[ss],pointers);
+	merge(l._odata[ss],buf);
       }
     };
 

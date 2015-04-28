@@ -5,21 +5,23 @@ namespace Grid {
 
     template<class iobj> inline void LatticeCoordinate(Lattice<iobj> &l,int mu)
     {
+      typedef typename iobj::scalar_object scalar_object;
       typedef typename iobj::scalar_type scalar_type;
       typedef typename iobj::vector_type vector_type;
+
       GridBase *grid = l._grid;
       int Nsimd = grid->iSites();
+
       std::vector<int> gcoor;
       std::vector<scalar_type> mergebuf(Nsimd);
-      std::vector<scalar_type *> mergeptr(Nsimd);
+
       vector_type vI;
       for(int o=0;o<grid->oSites();o++){
 	for(int i=0;i<grid->iSites();i++){
 	  grid->RankIndexToGlobalCoor(grid->ThisRank(),o,i,gcoor);
-	  mergebuf[i]=gcoor[mu];
-	  mergeptr[i]=&mergebuf[i];
+	  mergebuf[i]=(Integer)gcoor[mu];
 	}
-	merge(vI,mergeptr);
+	AmergeA<vector_type,scalar_type>(vI,mergebuf);
 	l._odata[o]=vI;
       }
     };

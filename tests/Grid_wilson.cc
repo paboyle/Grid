@@ -28,6 +28,7 @@ int main (int argc, char ** argv)
   std::vector<int> seeds({1,2,3,4});
 
   GridParallelRNG          pRNG(&Grid);
+  //  std::vector<int> seeds({1,2,3,4});
   //  pRNG.SeedFixedIntegers(seeds);
   pRNG.SeedRandomDevice();
 
@@ -44,7 +45,7 @@ int main (int argc, char ** argv)
     U[mu] = peekIndex<3>(Umu,mu);
   }
   
-  std::vector<int> mask({0,0,0,0,1,0,0,0});
+  std::vector<int> mask({1,1,1,1,1,1,1,1});
   { // Naive wilson implementation
     ref = zero;
     for(int mu=0;mu<Nd;mu++){

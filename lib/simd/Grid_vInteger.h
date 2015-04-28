@@ -221,6 +221,7 @@ namespace Grid {
       {
 	Gpermute<vInteger>(y,b,perm);
       }
+      /*
       friend inline void merge(vInteger &y,std::vector<Integer *> &extracted)
       {
 	Gmerge<vInteger,Integer>(y,extracted);
@@ -237,7 +238,7 @@ namespace Grid {
       {
 	Gextract<vInteger,Integer>(y,extracted);
       }
-
+      */
 
     public:
         static inline int Nsimd(void) { return sizeof(ivec)/sizeof(Integer);}

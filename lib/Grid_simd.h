@@ -133,68 +133,6 @@ namespace Grid {
 #endif
 
 
-/////////////////////////////////////////////////////////////////
-// Generic extract/merge/permute
-/////////////////////////////////////////////////////////////////
-
-template<class vsimd,class scalar>
-inline void Gextract(const vsimd &y,std::vector<scalar *> &extracted){
-  // FIXME: bounce off memory is painful
-  int Nextr=extracted.size();
-  int Nsimd=vsimd::Nsimd();
-  int s=Nsimd/Nextr;
-
-  std::vector<scalar,alignedAllocator<scalar> > buf(Nsimd); 
-
-  vstore(y,&buf[0]);
-  for(int i=0;i<Nextr;i++){
-    *extracted[i] = buf[i*s];
-    extracted[i]++;
-  }
-};
-template<class vsimd,class scalar>
-inline void Gextract(const vsimd &y,std::vector<scalar> &extracted){
-  int Nextr=extracted.size();
-  int Nsimd=vsimd::Nsimd();
-  int s=Nsimd/Nextr;
-
-  std::vector<scalar,alignedAllocator<scalar> > buf(Nsimd); 
-
-  vstore(y,&buf[0]);
-  for(int i=0;i<Nextr;i++){
-    extracted[i] = buf[i*s];
-  }
-};
-template<class vsimd,class scalar>
-inline void Gmerge(vsimd &y,std::vector<scalar *> &extracted){
-  int Nextr=extracted.size();
-  int Nsimd=vsimd::Nsimd();
-  int s=Nsimd/Nextr;
-
-  std::vector<scalar> buf(Nsimd); 
-  for(int i=0;i<Nextr;i++){
-    for(int ii=0;ii<s;ii++){
-      buf[i*s+ii]=*extracted[i];
-    }
-    extracted[i]++;
-  }
-  vset(y,&buf[0]); 
-};
-template<class vsimd,class scalar>
-inline void Gmerge(vsimd &y,std::vector<scalar> &extracted){
-  int Nextr=extracted.size();
-  int Nsimd=vsimd::Nsimd();
-  int s=Nsimd/Nextr;
-
-  std::vector<scalar> buf(Nsimd); 
-  for(int i=0;i<Nextr;i++){
-    for(int ii=0;ii<s;ii++){
-      buf[i*s+ii]=extracted[i];
-    }
-  }
-  vset(y,&buf[0]); 
-};
-
 //////////////////////////////////////////////////////////
 // Permute
 // Permute 0 every ABCDEFGH -> BA DC FE HG
