@@ -163,6 +163,7 @@ namespace Grid {
 	// all subtypes; may not be a good assumption, but could
 	// add the vector width as a template param for BG/Q for example
 	////////////////////////////////////////////////////////////////////
+	/*
 	friend inline void permute(vComplexD &y,vComplexD b,int perm)
 	{
 	  Gpermute<vComplexD>(y,b,perm);
@@ -183,6 +184,7 @@ namespace Grid {
 	{
 	  Gextract<vComplexD,ComplexD>(y,extracted);
 	}
+	*/
 
         ///////////////////////
         // Splat

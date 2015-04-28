@@ -4,21 +4,12 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-template<class vobj>
-class SimpleCompressor {
-public:
-  void Point(int) {};
-
-  vobj operator() (const vobj &arg) {
-    return arg;
-  }
-};
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
   std::vector<int> simd_layout({1,1,2,2});
-  std::vector<int> mpi_layout ({2,2,2,2});
+  std::vector<int> mpi_layout ({2,2,1,2});
   std::vector<int> latt_size  ({8,8,8,8});
 
   double volume = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
@@ -26,7 +17,9 @@ int main (int argc, char ** argv)
   GridCartesian Fine(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian rbFine(latt_size,simd_layout,mpi_layout);
   GridParallelRNG       fRNG(&Fine);
-  fRNG.SeedRandomDevice();
+  //  fRNG.SeedRandomDevice();
+  std::vector<int> seeds({1,2,3,4});
+  fRNG.SeedFixedIntegers(seeds);
   
   LatticeColourMatrix Foo(&Fine);
   LatticeColourMatrix Bar(&Fine);
@@ -38,8 +31,9 @@ int main (int argc, char ** argv)
 
 
     for(int dir=0;dir<4;dir++){
-      for(int disp=0;disp<Fine._rdimensions[dir];disp++){
+      for(int disp=0;disp<Fine._fdimensions[dir];disp++){
 
+	std::cout << "Using stencil to shift dim "<<dir<< " by "<<disp<<std::endl;
 	// start to test the Cartesian npoint stencil infrastructure
 	int npoint=1;
 	std::vector<int> directions(npoint,dir);
@@ -47,22 +41,13 @@ int main (int argc, char ** argv)
 
 	CartesianStencil myStencil(&Fine,npoint,0,directions,displacements);
 
-	printf("STENCIL: osites %d %d dir %d disp %d\n",Fine.oSites(),(int)myStencil._offsets[0].size(),dir,disp);
 	std::vector<int> ocoor(4);
 	for(int o=0;o<Fine.oSites();o++){
 	  Fine.oCoorFromOindex(ocoor,o);
 	  ocoor[dir]=(ocoor[dir]+disp)%Fine._rdimensions[dir];
-	  int nbr = Fine.oIndexReduced(ocoor);
-	  int stcl= myStencil._offsets[0][o];
-	  if(nbr!=stcl){
-	    printf("STENCIL: nbr %d stencil._offset %d\n",nbr,stcl);
-	  }
 	}
 	
-	printf("allocating %d buffers\n",myStencil._unified_buffer_size);
-	fflush(stdout);
 	std::vector<vColourMatrix,alignedAllocator<vColourMatrix> >  comm_buf(myStencil._unified_buffer_size);
-	printf("calling halo exchange\n");fflush(stdout);
 	SimpleCompressor<vColourMatrix> compress;
 	myStencil.HaloExchange(Foo,comm_buf,compress);
 
@@ -81,14 +66,12 @@ int main (int argc, char ** argv)
 	    Check._odata[i] = Foo._odata[offset];
 	  else 
 	    Check._odata[i] = comm_buf[offset];
-	  
-
 	}
 
 	Real nrmC = norm2(Check);
 	Real nrmB = norm2(Bar);
 	Real nrm  = norm2(Check-Bar);
-	printf("N2diff = %le (%le, %le) \n",nrm,nrmC,nrmB);fflush(stdout);
+	std::cout<<"N2diff ="<<nrm<<" "<<nrmC<<" " <<nrmB<<std::endl;
 
 	Real snrmC =0;
 	Real snrmB =0;
@@ -110,10 +93,11 @@ int main (int argc, char ** argv)
             diff =check()()(r,c)-bar()()(r,c);
             double nn=real(conj(diff)*diff);
             if ( nn > 0){
-	      printf("Coor (%d %d %d %d) \t rc %d%d \t %le %le %le\n",
+	      printf("Coor (%d %d %d %d) \t rc %d%d \t %le (%le,%le) %le\n",
 		     coor[0],coor[1],coor[2],coor[3],r,c,
 		     nn,
 		     real(check()()(r,c)),
+		     imag(check()()(r,c)),
 		     real(bar()()(r,c))
 		     );
 	    }
@@ -124,7 +108,7 @@ int main (int argc, char ** argv)
 	 
 	}}}}
 
-	printf("scalar N2diff = %le (%le, %le) \n",snrm,snrmC,snrmB);fflush(stdout);
+	std::cout<<"scalar N2diff = "<<snrm<<" " <<snrmC<<" "<<snrmB<<std::endl;
 
 
       }

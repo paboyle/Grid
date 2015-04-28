@@ -99,106 +99,159 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
 
   for(int ss=0;ss<grid->oSites();ss++){
 
-    int offset,local;
+    int offset,local,perm, ptype;
 
     vSpinColourVector result;
     vHalfSpinColourVector  chi;    
+    vHalfSpinColourVector  tmp;    
     vHalfSpinColourVector Uchi;
     vHalfSpinColourVector *chi_p;
 
     result=zero;
 
-#if 0
     // Xp
     offset = Stencil._offsets [Xp][ss];
     local  = Stencil._is_local[Xp][ss];
+    perm   = Stencil._permute[Xp][ss];
+    ptype  = Stencil._permute_type[Xp];
     chi_p  = &comm_buf[offset];
     if ( local ) {
-      spProjXp(chi,in._odata[offset]);
       chi_p = &chi;
-    } 
+      spProjXp(chi,in._odata[offset]);
+      if ( perm ) {
+	permute(tmp,chi,ptype);
+	chi_p = &tmp;
+      }
+    }
     mult(&(Uchi()),&(Umu._odata[ss](Xp)),&(*chi_p)());
     spReconXp(result,Uchi);
 
     // Yp
     offset = Stencil._offsets [Yp][ss];
     local  = Stencil._is_local[Yp][ss];
+    perm   = Stencil._permute[Yp][ss];
+    ptype  = Stencil._permute_type[Yp];
     chi_p  = &comm_buf[offset];
     if ( local ) {
-      spProjYp(chi,in._odata[offset]);
       chi_p = &chi;
-    } 
+      spProjYp(chi,in._odata[offset]);
+      if ( perm ) {
+	permute(tmp,chi,ptype);
+	chi_p = &tmp;
+      }
+    }
     mult(&(Uchi()),&(Umu._odata[ss](Yp)),&(*chi_p)());
     accumReconYp(result,Uchi);
 
     // Zp
     offset = Stencil._offsets [Zp][ss];
     local  = Stencil._is_local[Zp][ss];
+    perm   = Stencil._permute[Zp][ss];
+    ptype  = Stencil._permute_type[Zp];
     chi_p  = &comm_buf[offset];
+
     if ( local ) {
-      spProjZp(chi,in._odata[offset]);
       chi_p = &chi;
-    } 
-    mult(&(Uchi()),&(Umu._odata[ss](Zp)),&(*chi_p)() );
+      spProjZp(chi,in._odata[offset]);
+      if ( perm ) {
+	permute(tmp,chi,ptype);
+	chi_p = &tmp;
+      }
+    }
+    mult(&(Uchi()),&(Umu._odata[ss](Zp)),&(*chi_p)());
     accumReconZp(result,Uchi);
 
     // Tp
     offset = Stencil._offsets [Tp][ss];
     local  = Stencil._is_local[Tp][ss];
+    perm   = Stencil._permute[Tp][ss];
+    ptype  = Stencil._permute_type[Tp];
     chi_p  = &comm_buf[offset];
+
     if ( local ) {
-      spProjTp(chi,in._odata[offset]);
       chi_p = &chi;
-    } 
+      spProjTp(chi,in._odata[offset]);
+      if ( perm ) {
+	permute(tmp,chi,ptype);
+	chi_p = &tmp;
+      }
+    }
     mult(&(Uchi()),&(Umu._odata[ss](Tp)),&(*chi_p)());
     accumReconTp(result,Uchi);
-#endif
 
     // Xm
     offset = Stencil._offsets [Xm][ss];
     local  = Stencil._is_local[Xm][ss];
+    perm   = Stencil._permute[Xm][ss];
+    ptype  = Stencil._permute_type[Xm];
     chi_p  = &comm_buf[offset];
     if ( local ) {
-      spProjXm(chi,in._odata[offset]);
       chi_p = &chi;
-    } 
+      spProjXm(chi,in._odata[offset]);
+      if ( perm ) {
+	permute(tmp,chi,ptype);
+	chi_p = &tmp;
+      }
+    }
+    std::cout<<"Xm for site  "<<ss<<" l "<<local<<" p "<<perm<<" chi "<<Reduce(TensorRemove(innerProduct(*chi_p,*chi_p)))<<std::endl;
     mult(&(Uchi()),&(Umu._odata[ss](Xm)),&(*chi_p)());
     accumReconXm(result,Uchi);
-#if 0
+
 
     // Ym
     offset = Stencil._offsets [Ym][ss];
     local  = Stencil._is_local[Ym][ss];
+    perm   = Stencil._permute[Ym][ss];
+    ptype  = Stencil._permute_type[Ym];
     chi_p  = &comm_buf[offset];
+
     if ( local ) {
-      spProjYm(chi,in._odata[offset]);
       chi_p = &chi;
-    } 
+      spProjYm(chi,in._odata[offset]);
+      if ( perm ) {
+	permute(tmp,chi,ptype);
+	chi_p = &tmp;
+      }
+    }
     mult(&(Uchi()),&(Umu._odata[ss](Ym)),&(*chi_p)());
     accumReconYm(result,Uchi);
 
     // Zm
     offset = Stencil._offsets [Zm][ss];
     local  = Stencil._is_local[Zm][ss];
+    perm   = Stencil._permute[Zm][ss];
+    ptype  = Stencil._permute_type[Zm];
     chi_p  = &comm_buf[offset];
+
     if ( local ) {
-      spProjZm(chi,in._odata[offset]);
       chi_p = &chi;
-    } 
+      spProjZm(chi,in._odata[offset]);
+      if ( perm ) {
+	permute(tmp,chi,ptype);
+	chi_p = &tmp;
+      }
+    }
     mult(&(Uchi()),&(Umu._odata[ss](Zm)),&(*chi_p)());
     accumReconZm(result,Uchi);
 
     // Tm
     offset = Stencil._offsets [Tm][ss];
     local  = Stencil._is_local[Tm][ss];
+    perm   = Stencil._permute[Tm][ss];
+    ptype  = Stencil._permute_type[Tm];
     chi_p  = &comm_buf[offset];
+
     if ( local ) {
-      spProjTm(chi,in._odata[offset]);
       chi_p = &chi;
-    } 
+      spProjTm(chi,in._odata[offset]);
+      if ( perm ) {
+	permute(tmp,chi,ptype);
+	chi_p = &tmp;
+      }
+    }
     mult(&(Uchi()),&(Umu._odata[ss](Tm)),&(*chi_p)());
     accumReconTm(result,Uchi);
-#endif
+
 
     out._odata[ss] = result;
   }

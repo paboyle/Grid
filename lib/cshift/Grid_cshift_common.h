@@ -2,176 +2,155 @@
 #define _GRID_CSHIFT_COMMON_H_
 
 namespace Grid {
+
+template<class vobj>
+class SimpleCompressor {
+public:
+  void Point(int) {};
+
+  vobj operator() (const vobj &arg) {
+    return arg;
+  }
+};
+
+///////////////////////////////////////////////////////////////////
+// Gather for when there is no need to SIMD split with compression
+///////////////////////////////////////////////////////////////////
+template<class vobj,class cobj,class compressor> void 
+Gather_plane_simple (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<cobj> > &buffer,int dimension,int plane,int cbmask,compressor &compress)
+{
+  int rd = rhs._grid->_rdimensions[dimension];
+
+  if ( !rhs._grid->CheckerBoarded(dimension) ) {
+    cbmask = 0x3;
+  }
+
+  int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+  int o   = 0;                                      // relative offset to base within plane
+  int bo  = 0;                                      // offset in buffer
+  
+#pragma omp parallel for collapse(2)
+  for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
+    for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
+      int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
+      if ( ocb &cbmask ) {
+	buffer[bo]=compress(rhs._odata[so+o+b]);
+	bo++;
+      }
+    }
+    o +=rhs._grid->_slice_stride[dimension];
+  }
+}
+
+
+///////////////////////////////////////////////////////////////////
+// Gather for when there *is* need to SIMD split with compression
+///////////////////////////////////////////////////////////////////
+template<class cobj,class vobj,class compressor> void 
+Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename cobj::scalar_object *> pointers,int dimension,int plane,int cbmask,compressor &compress)
+{
+  int rd = rhs._grid->_rdimensions[dimension];
+
+  if ( !rhs._grid->CheckerBoarded(dimension) ) {
+    cbmask = 0x3;
+  }
+
+  int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+  int o   = 0;                                      // relative offset to base within plane
+  int bo  = 0;                                      // offset in buffer
+    
+#pragma omp parallel for collapse(2)
+  for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
+    for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
+
+      int offset = b+n*rhs._grid->_slice_block[dimension];
+
+      int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
+      if ( ocb & cbmask ) {
+	cobj temp; 
+	temp =compress(rhs._odata[so+o+b]);
+	extract<cobj>(temp,pointers,offset);
+      }
+      
+    }
+    o +=rhs._grid->_slice_stride[dimension];
+  }
+}
+
 //////////////////////////////////////////////////////
 // Gather for when there is no need to SIMD split
 //////////////////////////////////////////////////////
 template<class vobj> void Gather_plane_simple (const Lattice<vobj> &rhs,std::vector<vobj,alignedAllocator<vobj> > &buffer,             int dimension,int plane,int cbmask)
 {
-  int rd = rhs._grid->_rdimensions[dimension];
-
-  if ( !rhs._grid->CheckerBoarded(dimension) ) {
-
-    int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-    int o   = 0;                                    // relative offset to base within plane
-    int bo  = 0;                                    // offset in buffer
-
-    // Simple block stride gather of SIMD objects
-#pragma omp parallel for collapse(2)
-    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
-	buffer[bo++]=rhs._odata[so+o+b];
-      }
-      o +=rhs._grid->_slice_stride[dimension];
-    }
-
-  } else { 
-
-    int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-    int o   = 0;                                      // relative offset to base within plane
-    int bo  = 0;                                      // offset in buffer
-
-#pragma omp parallel for collapse(2)
-    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
-
-	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
-	if ( ocb &cbmask ) {
-	  buffer[bo]=rhs._odata[so+o+b];
-	  bo++;
-	}
-
-      }
-      o +=rhs._grid->_slice_stride[dimension];
-    }
-  }
+  SimpleCompressor<vobj> dontcompress;
+  Gather_plane_simple (rhs,buffer,dimension,plane,cbmask,dontcompress);
 }
 
 //////////////////////////////////////////////////////
 // Gather for when there *is* need to SIMD split
 //////////////////////////////////////////////////////
- template<class vobj,class scalar_type> void Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<scalar_type *> pointers,int dimension,int plane,int cbmask)
+template<class vobj> void Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename vobj::scalar_object *> pointers,int dimension,int plane,int cbmask)
 {
-  int rd = rhs._grid->_rdimensions[dimension];
-
-  if ( !rhs._grid->CheckerBoarded(dimension) ) {
-
-    int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-    int o   = 0;                                    // relative offset to base within plane
-    int bo  = 0;                                    // offset in buffer
-
-    // Simple block stride gather of SIMD objects
-#pragma omp parallel for collapse(2)
-    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
-	extract(rhs._odata[so+o+b],pointers);
-      }
-      o +=rhs._grid->_slice_stride[dimension];
-    }
-
-  } else { 
-
-    int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-    int o   = 0;                                      // relative offset to base within plane
-    int bo  = 0;                                      // offset in buffer
-    
-#pragma omp parallel for collapse(2)
-    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
-
-	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
-	if ( ocb & cbmask ) {
-	  extract(rhs._odata[so+o+b],pointers);
-	}
-
-      }
-      o +=rhs._grid->_slice_stride[dimension];
-    }
-  }
+  SimpleCompressor<vobj> dontcompress;
+  Gather_plane_extract<vobj,vobj,decltype(dontcompress)>(rhs,pointers,dimension,plane,cbmask,dontcompress);
 }
 
 //////////////////////////////////////////////////////
 // Scatter for when there is no need to SIMD split
 //////////////////////////////////////////////////////
-template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,std::vector<vobj,alignedAllocator<vobj> > &buffer,             int dimension,int plane,int cbmask)
+template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,std::vector<vobj,alignedAllocator<vobj> > &buffer, int dimension,int plane,int cbmask)
 {
   int rd = rhs._grid->_rdimensions[dimension];
 
   if ( !rhs._grid->CheckerBoarded(dimension) ) {
+    cbmask=0x3;
+  }
 
-    int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-    int o   = 0;                                    // relative offset to base within plane
-    int bo  = 0;                                    // offset in buffer
-
-    // Simple block stride gather of SIMD objects
-#pragma omp parallel for collapse(2)
-    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
-	rhs._odata[so+o+b]=buffer[bo++];
-      }
-      o +=rhs._grid->_slice_stride[dimension];
-    }
-
-  } else { 
-
-    int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-    int o   = 0;                                      // relative offset to base within plane
-    int bo  = 0;                                      // offset in buffer
+  int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+  int o   = 0;                                      // relative offset to base within plane
+  int bo  = 0;                                      // offset in buffer
     
 #pragma omp parallel for collapse(2)
-    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
+  for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
+    for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
 
-	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
-	if ( ocb & cbmask ) {
-	  rhs._odata[so+o+b]=buffer[bo++];
-	}
-
+      int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
+      if ( ocb & cbmask ) {
+	rhs._odata[so+o+b]=buffer[bo++];
       }
-      o +=rhs._grid->_slice_stride[dimension];
+
     }
+    o +=rhs._grid->_slice_stride[dimension];
   }
 }
 
 //////////////////////////////////////////////////////
 // Scatter for when there *is* need to SIMD split
 //////////////////////////////////////////////////////
- template<class vobj,class scalar_type> void Scatter_plane_merge(Lattice<vobj> &rhs,std::vector<scalar_type *> pointers,int dimension,int plane,int cbmask)
+ template<class vobj,class cobj> void Scatter_plane_merge(Lattice<vobj> &rhs,std::vector<cobj *> pointers,int dimension,int plane,int cbmask)
 {
   int rd = rhs._grid->_rdimensions[dimension];
 
   if ( !rhs._grid->CheckerBoarded(dimension) ) {
+    cbmask=0x3;
+  }
 
-    int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-    int o   = 0;                                    // relative offset to base within plane
-    int bo  = 0;                                    // offset in buffer
-
-    // Simple block stride gather of SIMD objects
-#pragma omp parallel for collapse(2)
-    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
-	merge(rhs._odata[so+o+b],pointers);
-      }
-      o +=rhs._grid->_slice_stride[dimension];
-    }
-
-  } else { 
-
-    int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-    int o   = 0;                                      // relative offset to base within plane
-    int bo  = 0;                                      // offset in buffer
+  int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+  int o   = 0;                                      // relative offset to base within plane
+  int bo  = 0;                                      // offset in buffer
     
 #pragma omp parallel for collapse(2)
-    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
+  for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
+    for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
 
-	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
-	if ( ocb&cbmask ) {
-	  merge(rhs._odata[so+o+b],pointers);
-	}
-
+      int offset = b+n*rhs._grid->_slice_block[dimension];
+      int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
+      if ( ocb&cbmask ) {
+	merge(rhs._odata[so+o+b],pointers,offset);
       }
-      o +=rhs._grid->_slice_stride[dimension];
+      
     }
+    o +=rhs._grid->_slice_stride[dimension];
   }
 }
 
@@ -183,40 +162,26 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,Lattice<vobj> &rhs, int 
   int rd = rhs._grid->_rdimensions[dimension];
 
   if ( !rhs._grid->CheckerBoarded(dimension) ) {
+    cbmask=0x3;
+  }
 
-    int o   = 0;                                     // relative offset to base within plane
-    int ro  = rplane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-    int lo  = lplane*lhs._grid->_ostride[dimension]; // offset in buffer
 
-  // Simple block stride gather of SIMD objects
+  int ro  = rplane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+  int lo  = lplane*lhs._grid->_ostride[dimension]; // base offset for start of plane 
+  int o   = 0;                                     // relative offset to base within plane
+  
 #pragma omp parallel for collapse(2)
-    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
+  for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
+    for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
+      
+      int ocb=1<<lhs._grid->CheckerBoardFromOindex(o+b);
+      
+      if ( ocb&cbmask ) {
 	lhs._odata[lo+o+b]=rhs._odata[ro+o+b];
       }
-      o +=rhs._grid->_slice_stride[dimension];
+      
     }
-
-  } else {
-
-    int ro  = rplane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-    int lo  = lplane*lhs._grid->_ostride[dimension]; // base offset for start of plane 
-    int o   = 0;                                     // relative offset to base within plane
-
-#pragma omp parallel for collapse(2)
-    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
-
-	int ocb=1<<lhs._grid->CheckerBoardFromOindex(o+b);
-
-	if ( ocb&cbmask ) {
-	  lhs._odata[lo+o+b]=rhs._odata[ro+o+b];
-	}
-
-      }
-      o +=rhs._grid->_slice_stride[dimension];
-    }
-
+    o +=rhs._grid->_slice_stride[dimension];
   }
 }
 
@@ -224,42 +189,25 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,Lattice<vobj> &r
 {
   int rd = rhs._grid->_rdimensions[dimension];
 
-
   if ( !rhs._grid->CheckerBoarded(dimension) ) {
+    cbmask=0x3;
+  }
 
-    int o   = 0;                                     // relative offset to base within plane
-    int ro  = rplane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-    int lo  = lplane*rhs._grid->_ostride[dimension]; // offset in buffer
-
-  // Simple block stride gather of SIMD objects
+  int ro  = rplane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+  int lo  = lplane*lhs._grid->_ostride[dimension]; // base offset for start of plane 
+  int o   = 0;                                     // relative offset to base within plane
+  
 #pragma omp parallel for collapse(2)
-    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
+  for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
+    for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
+      
+      int ocb=1<<lhs._grid->CheckerBoardFromOindex(o+b);
+      if ( ocb&cbmask ) {
 	permute(lhs._odata[lo+o+b],rhs._odata[ro+o+b],permute_type);
       }
-      o +=rhs._grid->_slice_stride[dimension];
+      
     }
-
-  } else {
-
-    int ro  = rplane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-    int lo  = lplane*lhs._grid->_ostride[dimension]; // base offset for start of plane 
-    int o   = 0;                                     // relative offset to base within plane
-    
-#pragma omp parallel for collapse(2)
-    for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-      for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
-
-	int ocb=1<<lhs._grid->CheckerBoardFromOindex(o+b);
-
-	if ( ocb&cbmask ) {
-	  permute(lhs._odata[lo+o+b],rhs._odata[ro+o+b],permute_type);
-	}
-
-      }
-      o +=rhs._grid->_slice_stride[dimension];
-    }
-
+    o +=rhs._grid->_slice_stride[dimension];
   }
 }
 

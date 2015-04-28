@@ -66,9 +66,7 @@ namespace Grid {
       }
       
       std::vector<sobj>               buf(Nsimd);
-      std::vector<scalar_type *> pointers(Nsimd);  
-      for(int i=0;i<Nsimd;i++) pointers[i] = (scalar_type *)&buf[i];
-      extract(vsum,pointers);
+      extract(vsum,buf);
 
       for(int i=0;i<Nsimd;i++) ssum = ssum + buf[i];
 

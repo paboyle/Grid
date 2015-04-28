@@ -412,6 +412,7 @@ friend inline void vstore(const vComplexF &ret, ComplexF *a){
       {
 	Gpermute<vComplexF>(y,b,perm);
       }
+      /*
       friend inline void merge(vComplexF &y,std::vector<ComplexF *> &extracted)
       {
 	Gmerge<vComplexF,ComplexF >(y,extracted);
@@ -428,7 +429,7 @@ friend inline void vstore(const vComplexF &ret, ComplexF *a){
       {
 	Gextract<vComplexF,ComplexF>(y,extracted);
       }
-
+      */
 
     };
 

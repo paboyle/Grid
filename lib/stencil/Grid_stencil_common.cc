@@ -118,6 +118,7 @@ namespace Grid {
       
       int fd              = _grid->_fdimensions[dimension];
       int rd              = _grid->_rdimensions[dimension];
+      int pd              = _grid->_processors[dimension];
       int simd_layout     = _grid->_simd_layout[dimension];
       int comm_dim        = _grid->_processors[dimension] >1 ;
       
@@ -136,10 +137,10 @@ namespace Grid {
       
       for(int x=0;x<rd;x++){       
 	
-	int offnode = ( x+sshift >= rd );
+	int comm_proc = ((x+sshift)/rd)%pd;
+	int offnode =   (comm_proc!=0);
 	int sx        = (x+sshift)%rd;
-	int comm_proc = (x+sshift)/rd;
-	  
+
 	if (!offnode) {
 	  
 	  int permute_slice=0;

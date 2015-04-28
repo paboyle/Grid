@@ -64,6 +64,14 @@ namespace Grid {
     typedef ComplexD scalar_object;
     enum { TensorLevel = 0 };
   };
+  template<> class GridTypeMapper<Integer> {
+  public:
+    typedef Integer scalar_type;
+    typedef Integer vector_type;
+    typedef Integer tensor_reduced;
+    typedef Integer scalar_object;
+    enum { TensorLevel = 0 };
+  };
 
   template<> class GridTypeMapper<vRealF> {
   public:
@@ -99,10 +107,10 @@ namespace Grid {
   };
   template<> class GridTypeMapper<vInteger> {
   public:
-    typedef Integer  scalar_type;
+    typedef  Integer scalar_type;
     typedef vInteger vector_type;
     typedef vInteger tensor_reduced;
-    typedef Integer  scalar_object;
+    typedef  Integer scalar_object;
     enum { TensorLevel = 0 };
   };
 
