@@ -24,7 +24,6 @@ const int WilsonMatrix::Tm = 7;
     
     void Point(int p) { 
       mu=p;
-      std::cout << "WilsonCompressor.Point " << mu<<std::endl;
     };
 
     vHalfSpinColourVector operator () (const vSpinColourVector &in)
@@ -193,7 +192,6 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
 	chi_p = &tmp;
       }
     }
-    std::cout<<"Xm for site  "<<ss<<" l "<<local<<" p "<<perm<<" chi "<<Reduce(TensorRemove(innerProduct(*chi_p,*chi_p)))<<std::endl;
     mult(&(Uchi()),&(Umu._odata[ss](Xm)),&(*chi_p)());
     accumReconXm(result,Uchi);
 

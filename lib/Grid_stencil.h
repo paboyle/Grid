@@ -39,13 +39,6 @@
 
 namespace Grid {
 
-  struct CommsRequest { 
-    int words;
-    int unified_buffer_offset;
-    int tag;
-    int to_rank;
-    int from_rank;
-  } ;
 
 
   class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal fill in.
@@ -69,7 +62,6 @@ namespace Grid {
       int _unified_buffer_size;
       int _request_count;
 
-      std::vector<CommsRequest>  CommsRequests;
 
       CartesianStencil(GridBase *grid,
 		       int npoints,
@@ -90,7 +82,6 @@ namespace Grid {
       template<class vobj,class cobj, class compressor> void 
 	HaloExchange(const Lattice<vobj> &source,std::vector<cobj,alignedAllocator<cobj> > &u_comm_buf,compressor &compress)
       {
-	std::cout<< "HaloExchange comm_buf.size()="<< u_comm_buf.size()<<" unified_buffer_size"<< _unified_buffer_size<< std::endl;
 	// conformable(source._grid,_grid);
 	assert(source._grid==_grid);
 	if (u_comm_buf.size() != _unified_buffer_size ) u_comm_buf.resize(_unified_buffer_size);
@@ -141,7 +132,6 @@ namespace Grid {
 	    }
 	  }
 	}
-	std::cout<< "HaloExchange complete"<< std::endl;
       }
 
       template<class vobj,class cobj, class compressor> 
@@ -194,24 +184,18 @@ namespace Grid {
 	      _grid->ShiftedRanks(dimension,comm_proc,xmit_to_rank,recv_from_rank);
 	      assert (xmit_to_rank != _grid->ThisRank());
 	      assert (recv_from_rank != _grid->ThisRank());
+
 	      //      FIXME Implement asynchronous send & also avoid buffer copy
 	      _grid->SendToRecvFrom((void *)&send_buf[0],
 				   xmit_to_rank,
 				   (void *)&recv_buf[0],
 				   recv_from_rank,
 				   bytes);
-	      printf("GatherStartComms communicated offnode x %d\n",x);fflush(stdout);
 
-	      printf("GatherStartComms inserting %le to u_comm_offset %d buf size %d for dim %d shift %d\n",
-		     *( (RealF *) &recv_buf[0]),
-		     u_comm_offset,buffer_size,
-		     dimension,shift
-		     ); fflush(stdout);
 	      for(int i=0;i<buffer_size;i++){
 		u_comm_buf[u_comm_offset+i]=recv_buf[i];
 	      }
 	      u_comm_offset+=buffer_size;
-	      printf("GatherStartComms inserted x %d\n",x);fflush(stdout);
 	    }
 	  }
 	}
@@ -248,7 +232,7 @@ namespace Grid {
 	  int buffer_size = _grid->_slice_nblock[dimension]*_grid->_slice_block[dimension];
 	  int words = sizeof(cobj)/sizeof(vector_type);
 
-	  /*   FIXME ALTERNATE BUFFER DETERMINATION */
+	  /* FIXME ALTERNATE BUFFER DETERMINATION ; possibly slow to allocate*/
 	  std::vector<std::vector<scalar_object> > send_buf_extract(Nsimd,std::vector<scalar_object>(buffer_size) ); 
 	  std::vector<std::vector<scalar_object> > recv_buf_extract(Nsimd,std::vector<scalar_object>(buffer_size) );
 	  int bytes = buffer_size*sizeof(scalar_object);
@@ -267,25 +251,21 @@ namespace Grid {
 	  for(int x=0;x<rd;x++){       
 
 	    int any_offnode = ( ((x+sshift)%fd) >= rd );
-	    std::cout<<"any_offnode ="<<any_offnode<<std::endl;
+
 	    if ( any_offnode ) {
-	      // FIXME call local permute copy if none are offnode.
+
 	      for(int i=0;i<Nsimd;i++){       
 		pointers[i] = &send_buf_extract[i][0];
 	      }
 	      int sx   = (x+sshift)%rd;
 	      
-	      std::cout<< "Gathering "<< x <<std::endl;
 	      Gather_plane_extract<cobj>(rhs,pointers,dimension,sx,cbmask,compress);
-	      std::cout<< "Gathered "<<std::endl;
+
 	      for(int i=0;i<Nsimd;i++){
 		
-		std::vector<int> icoor;
-		_grid->iCoorFromIindex(icoor,i);
 
 		int inner_bit = (Nsimd>>(permute_type+1));
 		int ic= (i&inner_bit)? 1:0;
-		assert(ic==icoor[dimension]);
 
 		int my_coor          = rd*ic + x;
 		int nbr_coor         = my_coor+sshift;
@@ -301,12 +281,9 @@ namespace Grid {
 		if (nbr_ic) nbr_lane|=inner_bit;
 		assert (sx == nbr_ox);
 
-   std::cout<<"nbr_proc "<<nbr_proc<< " x "<<x<<" nbr_x "<<nbr_ox << " lane "<<i << " nbr_lane "<<nbr_lane
-	    << " nbr_ic "<<nbr_ic  << " mycoor "<< my_coor<< " nbr_coor "<<nbr_coor<<std::endl;
 		
 		if(nbr_proc){
 		  
-		  std::cout<< "MPI sending "<<std::endl;
 		  _grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank); 
 		  
 		  _grid->SendToRecvFrom((void *)&send_buf_extract[nbr_lane][0],
@@ -314,23 +291,20 @@ namespace Grid {
 					(void *)&recv_buf_extract[i][0],
 					recv_from_rank,
 					bytes);
-		  std::cout<< "MPI complete "<<std::endl;
 		  
 		  rpointers[i] = &recv_buf_extract[i][0];
-		  std::cout<<"lane "<<i<<" data "<<*( (Real *) rpointers[i])<<std::endl;
+
 		} else { 
 		  rpointers[i] = &send_buf_extract[nbr_lane][0];
-		  std::cout<<"lane "<<i<<" data "<<*( (Real *) rpointers[i])<<std::endl;
 		}
 	      }
 
 	      // Here we don't want to scatter, just place into a buffer.
-	      std::cout<< "merging u_comm_offset "<< u_comm_offset<<" comm_buf_size" << u_comm_buf.size() <<std::endl;
-
 	      for(int i=0;i<buffer_size;i++){
 		assert(u_comm_offset+i<_unified_buffer_size);
 		merge(u_comm_buf[u_comm_offset+i],rpointers,i);
 	      }
+
 	      u_comm_offset+=buffer_size;
 	    }
 	  }
