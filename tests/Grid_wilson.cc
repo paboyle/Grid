@@ -21,7 +21,7 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   std::vector<int> simd_layout({1,1,2,2});
-  std::vector<int> mpi_layout ({2,1,1,2});
+  std::vector<int> mpi_layout ({2,2,2,2});
   std::vector<int> latt_size  ({8,8,8,8});
     
   GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
@@ -76,7 +76,8 @@ int main (int argc, char ** argv)
   std::cout << "norm result "<< norm2(result)<<std::endl;
   std::cout << "norm ref    "<< norm2(ref)<<std::endl;
 
-  for(int ss=0;ss<10;ss++ ){
+  //  for(int ss=0;ss<10;ss++ ){
+  for(int ss=0;ss<0;ss++ ){
     for(int i=0;i<Ns;i++){
       for(int j=0;j<Nc;j++){
 	ComplexF * ref_p = (ComplexF *)&ref._odata[ss]()(i)(j);

@@ -19,7 +19,6 @@ namespace Grid {
       _distances  = distances;
       _unified_buffer_size=0;
       _request_count =0;
-      CommsRequests.resize(0);
 
       int osites  = _grid->oSites();
 
@@ -117,6 +116,7 @@ namespace Grid {
       GridBase *grid=_grid;
       
       int fd              = _grid->_fdimensions[dimension];
+      int ld              = _grid->_ldimensions[dimension];
       int rd              = _grid->_rdimensions[dimension];
       int pd              = _grid->_processors[dimension];
       int simd_layout     = _grid->_simd_layout[dimension];
@@ -137,9 +137,10 @@ namespace Grid {
       
       for(int x=0;x<rd;x++){       
 	
-	int comm_proc = ((x+sshift)/rd)%pd;
-	int offnode =   (comm_proc!=0);
-	int sx        = (x+sshift)%rd;
+	int offnode = (((x+sshift)%fd) >= rd ); 
+	//	int comm_proc   = ((x+sshift)/ld)%pd;        
+	//	int offnode     = (comm_proc!=0);
+	int sx          = (x+sshift)%rd;
 
 	if (!offnode) {
 	  
@@ -157,17 +158,9 @@ namespace Grid {
 	  int recv_from_rank;
 	  int xmit_to_rank;
 
-	  CommsRequest cr;
-
-	  cr.tag                   = _request_count++;
-	  cr.words                 = words;
-	  cr.unified_buffer_offset = _unified_buffer_size;
+	  int unified_buffer_offset = _unified_buffer_size;
 	  _unified_buffer_size    += words;
-	  grid->ShiftedRanks(dimension,comm_proc,cr.to_rank,cr.from_rank);
-
-	  CommsRequests.push_back(cr);
-
-	  ScatterPlane(point,dimension,x,cbmask,cr.unified_buffer_offset); // permute/extract/merge is done in comms phase
+	  ScatterPlane(point,dimension,x,cbmask,unified_buffer_offset); // permute/extract/merge is done in comms phase
 	  
 	}
       }
