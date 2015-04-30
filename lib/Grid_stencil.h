@@ -44,6 +44,24 @@ namespace Grid {
   class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal fill in.
   public:
 
+      typedef uint32_t StencilInteger;
+      
+
+
+      StencilInteger alignup(StencilInteger n){
+	n--;           // 1000 0011 --> 1000 0010
+	n |= n >> 1;   // 1000 0010 | 0100 0001 = 1100 0011
+	n |= n >> 2;   // 1100 0011 | 0011 0000 = 1111 0011
+	n |= n >> 4;   // 1111 0011 | 0000 1111 = 1111 1111
+	n |= n >> 8;   // ... (At this point all bits are 1, so further bitwise-or
+	n |= n >> 16;  //      operations produce no effect.)
+	n++;           // 1111 1111 --> 1 0000 0000
+	return n;
+      };
+      void LebesgueOrder(void);
+
+      std::vector<StencilInteger> _LebesgueReorder;
+
       int                               _checkerboard;
       int                               _npoints; // Move to template param?
       GridBase *                        _grid;

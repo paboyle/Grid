@@ -96,17 +96,17 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
   WilsonCompressor compressor;
   Stencil.HaloExchange<vSpinColourVector,vHalfSpinColourVector,WilsonCompressor>(in,comm_buf,compressor);
 
-  for(int ss=0;ss<grid->oSites();ss++){
+  vHalfSpinColourVector  tmp;    
+  vHalfSpinColourVector  chi;    
+  vSpinColourVector result;
+  vHalfSpinColourVector Uchi;
+  vHalfSpinColourVector *chi_p;
+  int offset,local,perm, ptype;
 
-    int offset,local,perm, ptype;
+  for(int sss=0;sss<grid->oSites();sss++){
 
-    vSpinColourVector result;
-    vHalfSpinColourVector  chi;    
-    vHalfSpinColourVector  tmp;    
-    vHalfSpinColourVector Uchi;
-    vHalfSpinColourVector *chi_p;
-
-    result=zero;
+    int ss = sss;
+	//int ss = Stencil._LebesgueReorder[sss];
 
     // Xp
     offset = Stencil._offsets [Xp][ss];
@@ -114,15 +114,16 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     perm   = Stencil._permute[Xp][ss];
     ptype  = Stencil._permute_type[Xp];
     chi_p  = &comm_buf[offset];
-    if ( local ) {
-      chi_p = &chi;
+    if ( local && perm ) 
+    {
+      spProjXp(tmp,in._odata[offset]);
+      permute(chi,tmp,ptype);
+    } else if ( local ) {
       spProjXp(chi,in._odata[offset]);
-      if ( perm ) {
-	permute(tmp,chi,ptype);
-	chi_p = &tmp;
-      }
+    } else { 
+      chi=comm_buf[offset];
     }
-    mult(&(Uchi()),&(Umu._odata[ss](Xp)),&(*chi_p)());
+    mult(&Uchi(),&Umu._odata[ss](Xp),&chi());
     spReconXp(result,Uchi);
 
     // Yp
@@ -130,16 +131,17 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     local  = Stencil._is_local[Yp][ss];
     perm   = Stencil._permute[Yp][ss];
     ptype  = Stencil._permute_type[Yp];
-    chi_p  = &comm_buf[offset];
-    if ( local ) {
-      chi_p = &chi;
+
+    if ( local && perm ) 
+    {
+      spProjYp(tmp,in._odata[offset]);
+      permute(chi,tmp,ptype);
+    } else if ( local ) {
       spProjYp(chi,in._odata[offset]);
-      if ( perm ) {
-	permute(tmp,chi,ptype);
-	chi_p = &tmp;
-      }
+    } else { 
+      chi=comm_buf[offset];
     }
-    mult(&(Uchi()),&(Umu._odata[ss](Yp)),&(*chi_p)());
+    mult(&Uchi(),&Umu._odata[ss](Yp),&chi());
     accumReconYp(result,Uchi);
 
     // Zp
@@ -147,17 +149,17 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     local  = Stencil._is_local[Zp][ss];
     perm   = Stencil._permute[Zp][ss];
     ptype  = Stencil._permute_type[Zp];
-    chi_p  = &comm_buf[offset];
 
-    if ( local ) {
-      chi_p = &chi;
+    if ( local && perm ) 
+    {
+      spProjZp(tmp,in._odata[offset]);
+      permute(chi,tmp,ptype);
+    } else if ( local ) {
       spProjZp(chi,in._odata[offset]);
-      if ( perm ) {
-	permute(tmp,chi,ptype);
-	chi_p = &tmp;
-      }
+    } else { 
+      chi=comm_buf[offset];
     }
-    mult(&(Uchi()),&(Umu._odata[ss](Zp)),&(*chi_p)());
+    mult(&Uchi(),&Umu._odata[ss](Zp),&chi());
     accumReconZp(result,Uchi);
 
     // Tp
@@ -165,17 +167,17 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     local  = Stencil._is_local[Tp][ss];
     perm   = Stencil._permute[Tp][ss];
     ptype  = Stencil._permute_type[Tp];
-    chi_p  = &comm_buf[offset];
 
-    if ( local ) {
-      chi_p = &chi;
+    if ( local && perm ) 
+    {
+      spProjTp(tmp,in._odata[offset]);
+      permute(chi,tmp,ptype);
+    } else if ( local ) {
       spProjTp(chi,in._odata[offset]);
-      if ( perm ) {
-	permute(tmp,chi,ptype);
-	chi_p = &tmp;
-      }
+    } else { 
+      chi=comm_buf[offset];
     }
-    mult(&(Uchi()),&(Umu._odata[ss](Tp)),&(*chi_p)());
+    mult(&Uchi(),&Umu._odata[ss](Tp),&chi());
     accumReconTp(result,Uchi);
 
     // Xm
@@ -183,16 +185,17 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     local  = Stencil._is_local[Xm][ss];
     perm   = Stencil._permute[Xm][ss];
     ptype  = Stencil._permute_type[Xm];
-    chi_p  = &comm_buf[offset];
-    if ( local ) {
-      chi_p = &chi;
+
+    if ( local && perm ) 
+    {
+      spProjXm(tmp,in._odata[offset]);
+      permute(chi,tmp,ptype);
+    } else if ( local ) {
       spProjXm(chi,in._odata[offset]);
-      if ( perm ) {
-	permute(tmp,chi,ptype);
-	chi_p = &tmp;
-      }
+    } else { 
+      chi=comm_buf[offset];
     }
-    mult(&(Uchi()),&(Umu._odata[ss](Xm)),&(*chi_p)());
+    mult(&Uchi(),&Umu._odata[ss](Xm),&chi());
     accumReconXm(result,Uchi);
 
 
@@ -201,17 +204,17 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     local  = Stencil._is_local[Ym][ss];
     perm   = Stencil._permute[Ym][ss];
     ptype  = Stencil._permute_type[Ym];
-    chi_p  = &comm_buf[offset];
 
-    if ( local ) {
-      chi_p = &chi;
+    if ( local && perm ) 
+    {
+      spProjYm(tmp,in._odata[offset]);
+      permute(chi,tmp,ptype);
+    } else if ( local ) {
       spProjYm(chi,in._odata[offset]);
-      if ( perm ) {
-	permute(tmp,chi,ptype);
-	chi_p = &tmp;
-      }
+    } else { 
+      chi=comm_buf[offset];
     }
-    mult(&(Uchi()),&(Umu._odata[ss](Ym)),&(*chi_p)());
+    mult(&Uchi(),&Umu._odata[ss](Ym),&chi());
     accumReconYm(result,Uchi);
 
     // Zm
@@ -219,17 +222,17 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     local  = Stencil._is_local[Zm][ss];
     perm   = Stencil._permute[Zm][ss];
     ptype  = Stencil._permute_type[Zm];
-    chi_p  = &comm_buf[offset];
 
-    if ( local ) {
-      chi_p = &chi;
+    if ( local && perm ) 
+    {
+      spProjZm(tmp,in._odata[offset]);
+      permute(chi,tmp,ptype);
+    } else if ( local ) {
       spProjZm(chi,in._odata[offset]);
-      if ( perm ) {
-	permute(tmp,chi,ptype);
-	chi_p = &tmp;
-      }
+    } else { 
+      chi=comm_buf[offset];
     }
-    mult(&(Uchi()),&(Umu._odata[ss](Zm)),&(*chi_p)());
+    mult(&Uchi(),&Umu._odata[ss](Zm),&chi());
     accumReconZm(result,Uchi);
 
     // Tm
@@ -237,24 +240,25 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     local  = Stencil._is_local[Tm][ss];
     perm   = Stencil._permute[Tm][ss];
     ptype  = Stencil._permute_type[Tm];
-    chi_p  = &comm_buf[offset];
 
-    if ( local ) {
-      chi_p = &chi;
+    if ( local && perm ) 
+    {
+      spProjTm(tmp,in._odata[offset]);
+      permute(chi,tmp,ptype);
+    } else if ( local ) {
       spProjTm(chi,in._odata[offset]);
-      if ( perm ) {
-	permute(tmp,chi,ptype);
-	chi_p = &tmp;
-      }
+    } else { 
+      chi=comm_buf[offset];
     }
-    mult(&(Uchi()),&(Umu._odata[ss](Tm)),&(*chi_p)());
+    mult(&Uchi(),&Umu._odata[ss](Tm),&chi());
     accumReconTm(result,Uchi);
-
 
     out._odata[ss] = result;
   }
 
 }
+
+
 void WilsonMatrix::Dw(const LatticeFermion &in, LatticeFermion &out)
 {
   return;
