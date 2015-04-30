@@ -22,7 +22,7 @@ int main (int argc, char ** argv)
 
   std::vector<int> simd_layout({1,1,2,2});
   std::vector<int> mpi_layout ({1,1,1,1});
-  std::vector<int> latt_size  ({4,4,8,8});
+  std::vector<int> latt_size  ({8,8,8,8});
     
   GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
   std::vector<int> seeds({1,2,3,4});
@@ -45,9 +45,7 @@ int main (int argc, char ** argv)
   }  
 
   for(int mu=0;mu<Nd;mu++){
-    //    U[mu] = 1.0;
-    //    pokeIndex<3>(Umu,U[mu],mu);
-    U[mu] = peekIndex<3>(Umu,mu);
+    U[mu] = peekIndex<LorentzIndex>(Umu,mu);
   }
   
   std::vector<int> mask({1,1,1,1,1,1,1,1});

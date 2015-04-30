@@ -34,6 +34,10 @@ namespace Grid {
       "         "
     };
 
-
+    //    void sprojMul( vHalfSpinColourVector &out,vColourMatrix &u, vSpinColourVector &in){
+    //      vHalfSpinColourVector hspin;
+    //      spProjXp(hspin,in);
+    //      mult(&out,&u,&hspin);
+    //    }
   }
 }

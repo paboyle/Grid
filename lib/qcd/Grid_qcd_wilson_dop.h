@@ -48,6 +48,8 @@ namespace Grid {
       // m+4r -1/2 Dhop; both cb's
       void Dw(const LatticeFermion &in, LatticeFermion &out);
 
+      typedef iScalar<iMatrix<vComplex, Nc> > matrix;
+
       // half checkerboard operaions
       void MpcDag   (const LatticeFermion &in, LatticeFermion &out);
       void Mpc      (const LatticeFermion &in, LatticeFermion &out);
