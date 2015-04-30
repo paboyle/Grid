@@ -5,6 +5,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <map>
 
 #ifdef HAVE_ENDIAN_H
 #include <endian.h>
