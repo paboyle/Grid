@@ -16,6 +16,14 @@
 /* GRID_COMMS_NONE */
 /* #undef GRID_COMMS_NONE */
 
+/* Define to 1 if you have the declaration of `be64toh', and to 0 if you
+   don't. */
+#define HAVE_DECL_BE64TOH 0
+
+/* Define to 1 if you have the declaration of `ntohll', and to 0 if you don't.
+   */
+#define HAVE_DECL_NTOHLL 1
+
 /* Define to 1 if you have the <endian.h> header file. */
 /* #undef HAVE_ENDIAN_H */
 

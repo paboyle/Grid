@@ -18,6 +18,9 @@ AC_CHECK_HEADERS(stdint.h)
 AC_CHECK_HEADERS(malloc/malloc.h)
 AC_CHECK_HEADERS(malloc.h)
 AC_CHECK_HEADERS(endian.h)
+#AC_CHECK_HEADERS(machine/endian.h)
+AC_CHECK_DECLS([ntohll],[], [], [[#include <arpa/inet.h>]])
+AC_CHECK_DECLS([be64toh],[], [], [[#include <arpa/inet.h>]])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T
