@@ -9,10 +9,42 @@
 
 #ifdef HAVE_ENDIAN_H
 #include <endian.h>
+#endif
+
+
 #include <arpa/inet.h>
-#define ntohll be64toh
+
+// 64bit endian swap is a portability pain
+#ifndef __has_builtin         // Optional of course.
+#define __has_builtin(x) 0  // Compatibility with non-clang compilers.
+#endif
+
+#if HAVE_DECL_BE64TOH 
+#undef Grid_ntohll
+#define Grid_ntohll be64toh
+#endif
+
+#if HAVE_DECL_NTOHLL
+#undef  Grid_ntohll
+#define Grid_ntohll ntohll
+#endif
+
+#ifndef Grid_ntohll
+
+#if BYTE_ORDER == BIG_ENDIAN 
+
+#define Grid_ntohll(A) (A)
+
 #else 
-#include <arpa/inet.h>
+
+#if __has_builtin(__builtin_bswap64)
+#define Grid_ntohll(A) __builtin_bswap64(A)
+#else
+#error
+#endif
+
+#endif
+
 #endif
 
 namespace Grid {
@@ -208,7 +240,7 @@ inline void reconstruct3(LorentzColourMatrix & cm)
  {
    uint64_t * f = (uint64_t *)file_object;
    for(int i=0;i*sizeof(uint64_t)<bytes;i++){  
-     f[i] = ntohll(f[i]);
+     f[i] = Grid_ntohll(f[i]);
    }
  }
  void inline le64toh_v(void *file_object,uint32_t bytes)
