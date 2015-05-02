@@ -80,4 +80,5 @@ AM_CONDITIONAL(BUILD_COMMS_NONE,[ test "X${ac_COMMS}X" == "XnoneX" ])
 AC_CONFIG_FILES(Makefile)
 AC_CONFIG_FILES(lib/Makefile)
 AC_CONFIG_FILES(tests/Makefile)
+AC_CONFIG_FILES(benchmarks/Makefile)
 AC_OUTPUT
