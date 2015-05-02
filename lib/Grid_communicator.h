@@ -21,6 +21,9 @@ class CartesianCommunicator {
 
 #ifdef GRID_COMMS_MPI
     MPI_Comm communicator;
+    typedef MPI_Request CommsRequest_t;
+#else 
+    typedef int CommsRequest_t;
 #endif
 
     // Constructor
@@ -77,13 +80,20 @@ class CartesianCommunicator {
       GlobalSumVector(ptr,words);
     }
     ////////////////////////////////////////////////////////////
-    // Face exchange
+    // Face exchange, buffer swap in translational invariant way
     ////////////////////////////////////////////////////////////
     void SendToRecvFrom(void *xmit,
 			int xmit_to_rank,
 			void *recv,
 			int recv_from_rank,
 			int bytes);
+    void SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
+			 void *xmit,
+			 int xmit_to_rank,
+			 void *recv,
+			 int recv_from_rank,
+			 int bytes);
+    void SendToRecvFromComplete(std::vector<CommsRequest_t> &waitall);
 
     ////////////////////////////////////////////////////////////
     // Barrier

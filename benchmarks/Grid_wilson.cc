@@ -35,6 +35,7 @@ int main (int argc, char ** argv)
   LatticeFermion src(&Grid); random(pRNG,src);
   LatticeFermion result(&Grid); result=zero;
   LatticeFermion    ref(&Grid);    ref=zero;
+  LatticeFermion    err(&Grid);    
   LatticeFermion    tmp(&Grid);    tmp=zero;
   LatticeGaugeField Umu(&Grid); random(pRNG,Umu);
   std::vector<LatticeColourMatrix> U(4,&Grid);
@@ -82,12 +83,14 @@ int main (int argc, char ** argv)
   }
   double t1=usecond();
   double flops=1320*volume*ncall;
-
   
   std::cout << "Called Dw"<<std::endl;
   std::cout << "norm result "<< norm2(result)<<std::endl;
   std::cout << "norm ref    "<< norm2(ref)<<std::endl;
-  std::cout << "mflop/s = "<< flops/(t1-t0)<<std::endl;
+  std::cout << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
+  err = ref -result;
+  std::cout << "norm diff   "<< norm2(err)<<std::endl;
+
 
   //  for(int ss=0;ss<10;ss++ ){
   for(int ss=0;ss<0;ss++ ){
@@ -99,9 +102,6 @@ int main (int argc, char ** argv)
       }
     }
   }
-
-  ref = ref -result;
-  std::cout << "norm diff   "<< norm2(ref)<<std::endl;
 
   Grid_finalize();
 }

@@ -20,12 +20,25 @@ void CartesianCommunicator::GlobalSum(double &){}
 void CartesianCommunicator::GlobalSum(uint32_t &){}
 void CartesianCommunicator::GlobalSumVector(double *,int N){}
 
-// Basic Halo comms primitive
+// Basic Halo comms primitive -- should never call in single node
 void CartesianCommunicator::SendToRecvFrom(void *xmit,
 					   int dest,
 					   void *recv,
 					   int from,
 					   int bytes)
+{
+  exit(-1);
+}
+void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
+						void *xmit,
+						int dest,
+						void *recv,
+						int from,
+						int bytes)
+{
+  exit(-1);
+}
+void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
 {
   exit(-1);
 }
