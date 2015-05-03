@@ -25,17 +25,19 @@ int main (int argc, char ** argv)
   for(int lat=4;lat<=16;lat+=4){
     for(int Ls=1;Ls<=16;Ls*=2){
 
+      std::vector<int> latt_size  ({lat,lat,lat,lat});
+
+      GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
+
+      std::vector<std::vector<HalfSpinColourVectorD> > xbuf(8,std::vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
+      std::vector<std::vector<HalfSpinColourVectorD> > rbuf(8,std::vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
+
+      int ncomm;
       int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
+
       double start=usecond();
-      int ncomm=0;
       for(int i=0;i<Nloop;i++){
-	std::vector<int> latt_size  ({lat,lat,lat,lat});
-    
-	GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
-
-	std::vector<std::vector<HalfSpinColourVectorD> > xbuf(8,std::vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
-	std::vector<std::vector<HalfSpinColourVectorD> > rbuf(8,std::vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
 	std::vector<CartesianCommunicator::CommsRequest_t> requests;
 
 	ncomm=0;
@@ -68,11 +70,10 @@ int main (int argc, char ** argv)
 	  
 	  }
 	}
-
 	Grid.SendToRecvFromComplete(requests);
 	Grid.Barrier();
-      }
 
+      }
       double stop=usecond();
 
       double xbytes    = Nloop*bytes*2*ncomm;
@@ -96,18 +97,20 @@ int main (int argc, char ** argv)
   for(int lat=4;lat<=16;lat+=4){
     for(int Ls=1;Ls<=16;Ls*=2){
 
+      std::vector<int> latt_size  ({lat,lat,lat,lat});
+
+      GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
+
+      std::vector<std::vector<HalfSpinColourVectorD> > xbuf(8,std::vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
+      std::vector<std::vector<HalfSpinColourVectorD> > rbuf(8,std::vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
+
+
+      int ncomm;
       int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
+
       double start=usecond();
-      int ncomm=0;
       for(int i=0;i<Nloop;i++){
-	std::vector<int> latt_size  ({lat,lat,lat,lat});
     
-	GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
-
-
-	std::vector<std::vector<HalfSpinColourVectorD> > xbuf(8,std::vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
-	std::vector<std::vector<HalfSpinColourVectorD> > rbuf(8,std::vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
-
 	ncomm=0;
 	for(int mu=0;mu<4;mu++){
 	
@@ -131,7 +134,6 @@ int main (int argc, char ** argv)
 	    }
 
 	    comm_proc = mpi_layout[mu]-1;
-	  
 	    {
 	      std::vector<CartesianCommunicator::CommsRequest_t> requests;
 	      Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);

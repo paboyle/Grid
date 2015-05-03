@@ -16,7 +16,7 @@ namespace Grid {
 // However note that doing this eliminates some syntactical sugar such as 
 // calling the constructor explicitly or implicitly
 //
-#define TENSOR_IS_POD
+#undef TENSOR_IS_POD
 
 template<class vtype> class iScalar
 {
@@ -36,7 +36,7 @@ public:
   //  template<int Level> using tensor_reduce_level = typename iScalar<GridTypeMapper<vtype>::tensor_reduce_level<Level> >;
 
 #ifndef TENSOR_IS_POD
-  iScalar(){;};
+  iScalar()=default;
   iScalar(scalar_type s) : _internal(s) {};// recurse down and hit the constructor for vector_type
   iScalar(const Zero &z){ *this = zero; };
 #endif
@@ -126,7 +126,7 @@ public:
 
 #ifndef TENSOR_IS_POD
   iVector(const Zero &z){ *this = zero; };
-  iVector() {};// Empty constructure
+  iVector() =default;
 #endif
 
     iVector<vtype,N> & operator= (const Zero &hero){
@@ -189,7 +189,7 @@ public:
 
 #ifndef TENSOR_IS_POD
   iMatrix(const Zero &z){ *this = zero; };
-  iMatrix() {};
+  iMatrix() =default;
 #endif
 
   iMatrix<vtype,N> & operator= (const Zero &hero){

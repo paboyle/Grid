@@ -3,6 +3,9 @@
 
 namespace Grid {
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  // unary negation
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
   template<class vobj>
   inline Lattice<vobj> operator -(const Lattice<vobj> &r)
   {
@@ -13,25 +16,10 @@ namespace Grid {
     }
     return ret;
   }
-  
-  template<class vobj>
-  inline void axpy(Lattice<vobj> &ret,double a,const Lattice<vobj> &lhs,const Lattice<vobj> &rhs){
-    conformable(lhs,rhs);
-#pragma omp parallel for
-    for(int ss=0;ss<lhs._grid->oSites();ss++){
-      axpy(&ret._odata[ss],a,&lhs._odata[ss],&rhs._odata[ss]);
-    }
-  }
-  template<class vobj>
-  inline void axpy(Lattice<vobj> &ret,std::complex<double> a,const Lattice<vobj> &lhs,const Lattice<vobj> &rhs){
-    conformable(lhs,rhs);
-#pragma omp parallel for
-    for(int ss=0;ss<lhs._grid->oSites();ss++){
-      axpy(&ret._odata[ss],a,&lhs._odata[ss],&rhs._odata[ss]);
-    }
-  }
-  
-  
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  //  avoid copy back routines for mult, mac, sub, add
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
   template<class obj1,class obj2,class obj3>
     void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
     conformable(lhs,rhs);
@@ -69,7 +57,89 @@ namespace Grid {
     }
   }
   
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  //  avoid copy back routines for mult, mac, sub, add
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  template<class obj1,class obj2,class obj3>
+    void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
+    conformable(lhs,rhs);
+    uint32_t vec_len = lhs._grid->oSites();
+#pragma omp parallel for
+    for(int ss=0;ss<vec_len;ss++){
+      mult(&ret._odata[ss],&lhs._odata[ss],&rhs);
+    }
+  }
+  
+  template<class obj1,class obj2,class obj3>
+    void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
+    conformable(lhs,rhs);
+    uint32_t vec_len = lhs._grid->oSites();
+#pragma omp parallel for
+    for(int ss=0;ss<vec_len;ss++){
+      mac(&ret._odata[ss],&lhs._odata[ss],&rhs);
+    }
+  }
+  
+  template<class obj1,class obj2,class obj3>
+    void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
+    conformable(lhs,rhs);
+#pragma omp parallel for
+    for(int ss=0;ss<lhs._grid->oSites();ss++){
+      sub(&ret._odata[ss],&lhs._odata[ss],&rhs);
+    }
+  }
+  template<class obj1,class obj2,class obj3>
+    void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
+    conformable(lhs,rhs);
+#pragma omp parallel for
+    for(int ss=0;ss<lhs._grid->oSites();ss++){
+      add(&ret._odata[ss],&lhs._odata[ss],&rhs);
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  //  avoid copy back routines for mult, mac, sub, add
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  template<class obj1,class obj2,class obj3>
+    void mult(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
+    conformable(lhs,rhs);
+    uint32_t vec_len = lhs._grid->oSites();
+#pragma omp parallel for
+    for(int ss=0;ss<vec_len;ss++){
+      mult(&ret._odata[ss],&lhs,&rhs._odata[ss]);
+    }
+  }
+  
+  template<class obj1,class obj2,class obj3>
+    void mac(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
+    conformable(lhs,rhs);
+    uint32_t vec_len = lhs._grid->oSites();
+#pragma omp parallel for
+    for(int ss=0;ss<vec_len;ss++){
+      mac(&ret._odata[ss],&lhs,&rhs._odata[ss]);
+    }
+  }
+  
+  template<class obj1,class obj2,class obj3>
+    void sub(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
+    conformable(lhs,rhs);
+#pragma omp parallel for
+    for(int ss=0;ss<lhs._grid->oSites();ss++){
+      sub(&ret._odata[ss],&lhs,&rhs._odata[ss]);
+    }
+  }
+  template<class obj1,class obj2,class obj3>
+    void add(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
+    conformable(lhs,rhs);
+#pragma omp parallel for
+    for(int ss=0;ss<lhs._grid->oSites();ss++){
+      add(&ret._odata[ss],&lhs,&rhs._odata[ss]);
+    }
+  }
+  
+  /////////////////////////////////////////////////////////////////////////////////////
   // Lattice BinOp Lattice,
+  /////////////////////////////////////////////////////////////////////////////////////
   template<class left,class right>
     inline auto operator * (const Lattice<left> &lhs,const Lattice<right> &rhs)-> Lattice<decltype(lhs._odata[0]*rhs._odata[0])>
   {
@@ -156,5 +226,17 @@ namespace Grid {
       }
       return ret;
     }
+
+  template<class sobj,class vobj>
+  inline void axpy(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &lhs,const Lattice<vobj> &rhs){
+    conformable(lhs,rhs);
+    vobj tmp;
+#pragma omp parallel for
+    for(int ss=0;ss<lhs._grid->oSites();ss++){
+      tmp = a*lhs._odata[ss];
+      ret._odata[ss]= tmp+rhs._odata[ss];
+    }
+  }
+
 }
 #endif

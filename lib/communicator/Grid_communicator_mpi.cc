@@ -93,7 +93,7 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
   MPI_Request rrq;
   int rank = _processor;
   int ierr;
-  ierr=MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator,&xrq);
+  ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator,&xrq);
   ierr|=MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator,&rrq);
   
   assert(ierr==0);

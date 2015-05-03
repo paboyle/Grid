@@ -26,7 +26,8 @@ class Lattice
 public:
     GridBase *_grid;
     int checkerboard;
-    std::vector<vobj,alignedAllocator<vobj> > _odata;
+    //std::vector<vobj,alignedAllocator<vobj> > _odata;
+    std::valarray<vobj> _odata;
 public:
 
     typedef typename vobj::scalar_type scalar_type;
@@ -36,9 +37,9 @@ public:
     // Constructor requires "grid" passed.
     // what about a default grid?
     //////////////////////////////////////////////////////////////////
-    Lattice(GridBase *grid) : _grid(grid) {
+ Lattice(GridBase *grid) : _grid(grid), _odata(_grid->oSites()) {
       //        _odata.reserve(_grid->oSites());
-        _odata.resize(_grid->oSites());
+      //        _odata.resize(_grid->oSites());
         assert((((uint64_t)&_odata[0])&0xF) ==0);
         checkerboard=0;
     }

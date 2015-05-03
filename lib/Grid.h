@@ -14,6 +14,7 @@
 
 #include <complex>
 #include <vector>
+#include <valarray>
 #include <iostream>
 #include <cassert>
 #include <random>
