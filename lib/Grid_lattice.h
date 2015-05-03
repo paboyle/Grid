@@ -26,8 +26,8 @@ class Lattice
 public:
     GridBase *_grid;
     int checkerboard;
-    //std::vector<vobj,alignedAllocator<vobj> > _odata;
-    std::valarray<vobj> _odata;
+    std::vector<vobj,alignedAllocator<vobj> > _odata;
+    //std::valarray<vobj> _odata;
 public:
 
     typedef typename vobj::scalar_type scalar_type;
