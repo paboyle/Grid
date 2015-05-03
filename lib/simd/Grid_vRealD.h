@@ -10,10 +10,13 @@ namespace Grid {
 	typedef dvec  vector_type;
 	typedef RealD scalar_type;
 
-        vRealD(){};
+        vRealD()=default;
         vRealD(RealD a){
 	  vsplat(*this,a);
 	};
+        vRealD(Zero &zero){
+	  zeroit(*this);
+	}
 
         friend inline void mult(vRealD * __restrict__ y,const vRealD * __restrict__ l,const vRealD *__restrict__ r) {*y = (*l) * (*r);}
         friend inline void sub (vRealD * __restrict__ y,const vRealD * __restrict__ l,const vRealD *__restrict__ r) {*y = (*l) - (*r);}

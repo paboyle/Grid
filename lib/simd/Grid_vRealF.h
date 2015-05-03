@@ -8,14 +8,16 @@ namespace Grid {
         fvec v;
 
     public:
-
 	typedef fvec  vector_type;
 	typedef RealF scalar_type;
 
-        vRealF(){};
+        vRealF()=default;
         vRealF(RealF a){
 	  vsplat(*this,a);
 	};
+        vRealF(Zero &zero){
+	  zeroit(*this);
+	}
         ////////////////////////////////////
         // Arithmetic operator overloads +,-,*
         ////////////////////////////////////

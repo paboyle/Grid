@@ -5,11 +5,10 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-template<class d>
-struct scal {
-  d internal;
-};
-
+//template<class vobj> class is_pod< iScalar<vobj> >
+//{
+//
+//};
 
 int main (int argc, char ** argv)
 {
@@ -40,13 +39,16 @@ int main (int argc, char ** argv)
   std::cout << " Is pod " << std::is_pod<SpinVector>::value  << std::endl;
   std::cout << " Is pod double   " << std::is_pod<double>::value  << std::endl;
   std::cout << " Is pod ComplexF " << std::is_pod<ComplexF>::value  << std::endl;
-  std::cout << " Is pod scal<double> " << std::is_pod<scal<double> >::value  << std::endl;
+  std::cout << " Is triv double " << std::is_trivially_default_constructible<double>::value  << std::endl;
+  std::cout << " Is triv ComplexF " << std::is_trivially_default_constructible<ComplexF>::value  << std::endl;
   std::cout << " Is pod Scalar<double> " << std::is_pod<iScalar<double> >::value  << std::endl;
   std::cout << " Is pod Scalar<ComplexF> " << std::is_pod<iScalar<ComplexF> >::value  << std::endl;
   std::cout << " Is pod Scalar<vComplexF> " << std::is_pod<iScalar<vComplexF> >::value  << std::endl;
   std::cout << " Is pod Scalar<vComplexD> " << std::is_pod<iScalar<vComplexD> >::value  << std::endl;
   std::cout << " Is pod Scalar<vRealF> " << std::is_pod<iScalar<vRealF> >::value  << std::endl;
   std::cout << " Is pod Scalar<vRealD> " << std::is_pod<iScalar<vRealD> >::value  << std::endl;
+  std::cout << " Is triv Scalar<double> " <<std::is_trivially_default_constructible<iScalar<double> >::value << std::endl;
+  std::cout << " Is triv Scalar<vComplexD> "<<std::is_trivially_default_constructible<iScalar<vComplexD> >::value  << std::endl;
 
   for(int a=0;a<Ns;a++){
     ident()(a,a) = 1.0;

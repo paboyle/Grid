@@ -13,7 +13,7 @@ namespace Grid {
             vzero(*this);
             return (*this);
         }
-        vComplexD(){};
+        vComplexD()=default;
         vComplexD(ComplexD a){
 	  vsplat(*this,a);
 	};
