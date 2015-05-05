@@ -14,26 +14,26 @@ int main (int argc, char ** argv)
   const int Nvec=8;
   typedef Lattice< iVector< vReal,Nvec> > LatticeVec;
 
-  int Nloop=100;
+  int Nloop=1000;
 
   std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "= Benchmarking AXPY bandwidth"<<std::endl;
+  std::cout << "= Benchmarking fused AXPY bandwidth"<<std::endl;
   std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s"<<std::endl;
+  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t"<<"GB/s"<<std::endl;
+  std::cout << "----------------------------------------------------------"<<std::endl;
 
-  
-  for(int lat=4;lat<=32;lat+=4){
+  for(int lat=4;lat<=24;lat+=4){
 
       std::vector<int> latt_size  ({lat,lat,lat,lat});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
-      GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
+      //GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
 
-      LatticeVec z(&Grid); random(pRNG,z);
-      LatticeVec x(&Grid); random(pRNG,x);
-      LatticeVec y(&Grid); random(pRNG,y);
-      double a=1.0;
+      LatticeVec z(&Grid); //random(pRNG,z);
+      LatticeVec x(&Grid); //random(pRNG,x);
+      LatticeVec y(&Grid); //random(pRNG,y);
+      double a=2.0;
 
 
       double start=usecond();
@@ -43,31 +43,32 @@ int main (int argc, char ** argv)
 	axpy(z,a,x,y);
       }
       double stop=usecond();
-      double time = stop-start;
+      double time = (stop-start)/Nloop/1000;
       
-      double bytes=3*lat*lat*lat*lat*Nvec*sizeof(Real)*Nloop;
-      std::cout << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<std::endl;
+      double bytes=3*lat*lat*lat*lat*Nvec*sizeof(Real);
+      std::cout<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<std::endl;
 
     }
 
   std::cout << "===================================================================================================="<<std::endl;
   std::cout << "= Benchmarking a*x + y bandwidth"<<std::endl;
   std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s"<<std::endl;
+  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t"<<"GB/s"<<"\t\tGB/s (eff)"<<std::endl;
+  std::cout << "----------------------------------------------------------"<<std::endl;
 
   
-  for(int lat=4;lat<=32;lat+=4){
+  for(int lat=4;lat<=24;lat+=4){
 
       std::vector<int> latt_size  ({lat,lat,lat,lat});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
-      GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
+      //GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
 
-      LatticeVec z(&Grid); random(pRNG,z);
-      LatticeVec x(&Grid); random(pRNG,x);
-      LatticeVec y(&Grid); random(pRNG,y);
-      double a=1.0;
+      LatticeVec z(&Grid); //random(pRNG,z);
+      LatticeVec x(&Grid); //random(pRNG,x);
+      LatticeVec y(&Grid); //random(pRNG,y);
+      double a=2.0;
 
 
       double start=usecond();
@@ -75,63 +76,63 @@ int main (int argc, char ** argv)
 	z=a*x+y;
       }
       double stop=usecond();
-      double time = stop-start;
+      double time = (stop-start)/Nloop/1000;
       
-      double bytes=3*lat*lat*lat*lat*Nvec*sizeof(Real)*Nloop;
-      std::cout << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<std::endl;
+      double effbytes=3*lat*lat*lat*lat*Nvec*sizeof(Real);
+      double bytes=5*lat*lat*lat*lat*Nvec*sizeof(Real);
+      std::cout<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<"\t\t"<<effbytes/time<<std::endl;
 
     }
 
   std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "= Benchmarking COPY bandwidth"<<std::endl;
+  std::cout << "= Benchmarking SCALE bandwidth"<<std::endl;
   std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s"<<std::endl;
+  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t"<<"GB/s"<<std::endl;
 
-
-  for(int lat=4;lat<=32;lat+=4){
+  for(int lat=4;lat<=24;lat+=4){
 
       std::vector<int> latt_size  ({lat,lat,lat,lat});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
-      GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
+      //GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
 
-      LatticeVec z(&Grid); random(pRNG,z);
-      LatticeVec x(&Grid); random(pRNG,x);
-      LatticeVec y(&Grid); random(pRNG,y);
-      RealD a=1.0;
+      LatticeVec z(&Grid); //random(pRNG,z);
+      LatticeVec x(&Grid); //random(pRNG,x);
+      LatticeVec y(&Grid); //random(pRNG,y);
+      RealD a=2.0;
 
 
       double start=usecond();
       for(int i=0;i<Nloop;i++){
-	x=z;
+	x=a*z;
       }
       double stop=usecond();
-      double time = stop-start;
+      double time = (stop-start)/Nloop/1000;
       
-      double bytes=2*lat*lat*lat*lat*Nvec*sizeof(Real)*Nloop;
-      std::cout << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<std::endl;
+      double bytes=2*lat*lat*lat*lat*Nvec*sizeof(Real);
+      std::cout <<std::setprecision(3) << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<std::endl;
 
   }
 
   std::cout << "===================================================================================================="<<std::endl;
   std::cout << "= Benchmarking READ bandwidth"<<std::endl;
   std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "  L  "<<"\t\t"<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s"<<std::endl;
+  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t"<<"GB/s"<<std::endl;
+  std::cout << "----------------------------------------------------------"<<std::endl;
 
-
-  for(int lat=4;lat<=32;lat+=4){
+  for(int lat=4;lat<=24;lat+=4){
 
       std::vector<int> latt_size  ({lat,lat,lat,lat});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
-      GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
+      //GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
 
-      LatticeVec z(&Grid); random(pRNG,z);
-      LatticeVec x(&Grid); random(pRNG,x);
-      LatticeVec y(&Grid); random(pRNG,y);
-      RealD a=1.0;
+      LatticeVec z(&Grid); //random(pRNG,z);
+      LatticeVec x(&Grid); //random(pRNG,x);
+      LatticeVec y(&Grid); //random(pRNG,y);
+      RealD a=2.0;
       ComplexD nn;
 
       double start=usecond();
@@ -139,10 +140,10 @@ int main (int argc, char ** argv)
 	nn=norm2(x);
       }
       double stop=usecond();
-      double time = stop-start;
+      double time = (stop-start)/Nloop/1000;
       
-      double bytes=lat*lat*lat*lat*Nvec*sizeof(Real)*Nloop;
-      std::cout << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<std::endl;
+      double bytes=lat*lat*lat*lat*Nvec*sizeof(Real);
+      std::cout<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<std::endl;
 
   }    
 
