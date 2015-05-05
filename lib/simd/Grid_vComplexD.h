@@ -242,6 +242,21 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
 	assert(0);
 #endif
         }
+        friend inline void vstream(vComplexD &out,const vComplexD &in){
+#if defined (AVX1)|| defined (AVX2)
+	  _mm256_stream_pd((double *)&out.v,in.v);
+#endif
+#ifdef SSE4
+	  _mm_stream_pd((double *)&out.v,in.v);
+#endif
+#ifdef AVX512
+	  _mm512_stream_pd((double *)&out.v,in.v);
+	  //Note v has a3 a2 a1 a0
+#endif
+#ifdef QPX
+	  assert(0);
+#endif
+	}
       friend inline void vprefetch(const vComplexD &v)
         {
             _mm_prefetch((const char*)&v.v,_MM_HINT_T0);

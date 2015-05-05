@@ -208,6 +208,21 @@ friend inline void vstore(const vRealF &ret, float *a){
 	assert(0);
 #endif
         }
+        friend inline void vstream(vRealF &out,const vRealF &in){
+#if defined (AVX1)|| defined (AVX2)
+	  _mm256_stream_ps((float *)&out.v,in.v);
+#endif
+#ifdef SSE4
+	  _mm_stream_ps((float *)&out.v,in.v);
+#endif
+#ifdef AVX512
+	  _mm512_stream_ps((float *)&out.v,in.v);
+	  //Note v has a3 a2 a1 a0
+#endif
+#ifdef QPX
+	  assert(0);
+#endif
+	}
 
 
         friend inline void vprefetch(const vRealF &v)

@@ -186,6 +186,10 @@ namespace Grid {
 #endif
         }
 
+	friend inline void vstream(vInteger & out,const vInteger &in){
+	  out=in;
+        }
+
         friend inline void vprefetch(const vInteger &v)
         {
             _mm_prefetch((const char*)&v.v,_MM_HINT_T0);
