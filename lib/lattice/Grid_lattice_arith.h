@@ -12,7 +12,7 @@ namespace Grid {
     Lattice<vobj> ret(r._grid);
 #pragma omp parallel for
     for(int ss=0;ss<r._grid->oSites();ss++){
-      ret._odata[ss]= -r._odata[ss];
+      vstream(ret._odata[ss], -r._odata[ss]);
     }
     return ret;
   }
@@ -23,20 +23,22 @@ namespace Grid {
   template<class obj1,class obj2,class obj3>
     void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
     conformable(lhs,rhs);
-    uint32_t vec_len = lhs._grid->oSites();
 #pragma omp parallel for
-    for(int ss=0;ss<vec_len;ss++){
-      mult(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
+    for(int ss=0;ss<lhs._grid->oSites();ss++){
+      obj1 tmp;
+      mult(&tmp,&lhs._odata[ss],&rhs._odata[ss]);
+      vstream(ret._odata[ss],tmp);
     }
   }
   
   template<class obj1,class obj2,class obj3>
     void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
     conformable(lhs,rhs);
-    uint32_t vec_len = lhs._grid->oSites();
 #pragma omp parallel for
-    for(int ss=0;ss<vec_len;ss++){
-      mac(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
+    for(int ss=0;ss<lhs._grid->oSites();ss++){
+      obj1 tmp;
+      mac(&tmp,&lhs._odata[ss],&rhs._odata[ss]);
+      vstream(ret._odata[ss],tmp);
     }
   }
   
@@ -45,7 +47,9 @@ namespace Grid {
     conformable(lhs,rhs);
 #pragma omp parallel for
     for(int ss=0;ss<lhs._grid->oSites();ss++){
-      sub(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
+      obj1 tmp;
+      sub(&tmp,&lhs._odata[ss],&rhs._odata[ss]);
+      vstream(ret._odata[ss],tmp);
     }
   }
   template<class obj1,class obj2,class obj3>
@@ -53,7 +57,9 @@ namespace Grid {
     conformable(lhs,rhs);
 #pragma omp parallel for
     for(int ss=0;ss<lhs._grid->oSites();ss++){
-      add(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
+      obj1 tmp;
+      add(&tmp,&lhs._odata[ss],&rhs._odata[ss]);
+      vstream(ret._odata[ss],tmp);
     }
   }
   
@@ -62,88 +68,100 @@ namespace Grid {
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   template<class obj1,class obj2,class obj3>
     void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
-    conformable(lhs,rhs);
-    uint32_t vec_len = lhs._grid->oSites();
+    conformable(lhs,ret);
 #pragma omp parallel for
-    for(int ss=0;ss<vec_len;ss++){
-      mult(&ret._odata[ss],&lhs._odata[ss],&rhs);
+    for(int ss=0;ss<lhs._grid->oSites();ss++){
+      obj1 tmp;
+      mult(&tmp,&lhs._odata[ss],&rhs);
+      vstream(ret._odata[ss],tmp);
     }
   }
   
   template<class obj1,class obj2,class obj3>
     void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
-    conformable(lhs,rhs);
-    uint32_t vec_len = lhs._grid->oSites();
+    conformable(lhs,ret);
 #pragma omp parallel for
-    for(int ss=0;ss<vec_len;ss++){
-      mac(&ret._odata[ss],&lhs._odata[ss],&rhs);
+    for(int ss=0;ss<lhs._grid->oSites();ss++){
+      obj1 tmp;
+      mac(&tmp,&lhs._odata[ss],&rhs);
+      vstream(ret._odata[ss],tmp);
     }
   }
   
   template<class obj1,class obj2,class obj3>
     void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
-    conformable(lhs,rhs);
+    conformable(lhs,ret);
 #pragma omp parallel for
     for(int ss=0;ss<lhs._grid->oSites();ss++){
-      sub(&ret._odata[ss],&lhs._odata[ss],&rhs);
+      obj1 tmp;
+      sub(&tmp,&lhs._odata[ss],&rhs);
+      vstream(ret._odata[ss],tmp);
     }
   }
   template<class obj1,class obj2,class obj3>
     void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
-    conformable(lhs,rhs);
+    conformable(lhs,ret);
 #pragma omp parallel for
     for(int ss=0;ss<lhs._grid->oSites();ss++){
-      add(&ret._odata[ss],&lhs._odata[ss],&rhs);
+      obj1 tmp;
+      add(&tmp,&lhs._odata[ss],&rhs);
+      vstream(ret._odata[ss],tmp);
     }
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   //  avoid copy back routines for mult, mac, sub, add
   //////////////////////////////////////////////////////////////////////////////////////////////////////
-  template<class obj1,class obj2,class obj3>
+    template<class obj1,class obj2,class obj3>
     void mult(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
-    conformable(lhs,rhs);
-    uint32_t vec_len = lhs._grid->oSites();
+    conformable(ret,rhs);
 #pragma omp parallel for
-    for(int ss=0;ss<vec_len;ss++){
-      mult(&ret._odata[ss],&lhs,&rhs._odata[ss]);
+    for(int ss=0;ss<rhs._grid->oSites();ss++){
+      obj1 tmp;
+      mult(&tmp,&lhs,&rhs._odata[ss]);
+      vstream(ret._odata[ss],tmp);
     }
   }
   
   template<class obj1,class obj2,class obj3>
     void mac(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
-    conformable(lhs,rhs);
-    uint32_t vec_len = lhs._grid->oSites();
+    conformable(ret,rhs);
 #pragma omp parallel for
-    for(int ss=0;ss<vec_len;ss++){
-      mac(&ret._odata[ss],&lhs,&rhs._odata[ss]);
+    for(int ss=0;ss<rhs._grid->oSites();ss++){
+      obj1 tmp;
+      mac(&tmp,&lhs,&rhs._odata[ss]);
+      vstream(ret._odata[ss],tmp);
     }
   }
   
   template<class obj1,class obj2,class obj3>
     void sub(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
-    conformable(lhs,rhs);
+    conformable(ret,rhs);
 #pragma omp parallel for
-    for(int ss=0;ss<lhs._grid->oSites();ss++){
-      sub(&ret._odata[ss],&lhs,&rhs._odata[ss]);
+    for(int ss=0;ss<rhs._grid->oSites();ss++){
+      obj1 tmp;
+      sub(&tmp,&lhs,&rhs._odata[ss]);
+      vstream(ret._odata[ss],tmp);
     }
   }
   template<class obj1,class obj2,class obj3>
     void add(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
-    conformable(lhs,rhs);
+    conformable(ret,rhs);
 #pragma omp parallel for
-    for(int ss=0;ss<lhs._grid->oSites();ss++){
-      add(&ret._odata[ss],&lhs,&rhs._odata[ss]);
+    for(int ss=0;ss<rhs._grid->oSites();ss++){
+      obj1 tmp;
+      add(&tmp,&lhs,&rhs._odata[ss]);
+      vstream(ret._odata[ss],tmp);
     }
   }
   
   /////////////////////////////////////////////////////////////////////////////////////
   // Lattice BinOp Lattice,
+  //NB mult performs conformable check. Do not reapply here for performance.
   /////////////////////////////////////////////////////////////////////////////////////
   template<class left,class right>
     inline auto operator * (const Lattice<left> &lhs,const Lattice<right> &rhs)-> Lattice<decltype(lhs._odata[0]*rhs._odata[0])>
   {
-    //NB mult performs conformable check. Do not reapply here for performance.
     Lattice<decltype(lhs._odata[0]*rhs._odata[0])> ret(rhs._grid);
     mult(ret,lhs,rhs);
     return ret;
@@ -151,7 +169,6 @@ namespace Grid {
   template<class left,class right>
     inline auto operator + (const Lattice<left> &lhs,const Lattice<right> &rhs)-> Lattice<decltype(lhs._odata[0]+rhs._odata[0])>
   {
-    //NB mult performs conformable check. Do not reapply here for performance.
     Lattice<decltype(lhs._odata[0]+rhs._odata[0])> ret(rhs._grid);
     add(ret,lhs,rhs);
     return ret;
@@ -159,7 +176,6 @@ namespace Grid {
   template<class left,class right>
     inline auto operator - (const Lattice<left> &lhs,const Lattice<right> &rhs)-> Lattice<decltype(lhs._odata[0]-rhs._odata[0])>
   {
-    //NB mult performs conformable check. Do not reapply here for performance.
     Lattice<decltype(lhs._odata[0]-rhs._odata[0])> ret(rhs._grid);
     sub(ret,lhs,rhs);
     return ret;
@@ -172,9 +188,11 @@ namespace Grid {
     Lattice<decltype(lhs*rhs._odata[0])> ret(rhs._grid);
 #pragma omp parallel for
     for(int ss=0;ss<rhs._grid->oSites(); ss++){
-      ret._odata[ss]=lhs*rhs._odata[ss];
+      decltype(lhs*rhs._odata[0]) tmp=lhs*rhs._odata[ss]; 
+      vstream(ret._odata[ss],tmp);
+	   //      ret._odata[ss]=lhs*rhs._odata[ss];
     }
-        return ret;
+    return ret;
   }
   template<class left,class right>
     inline auto operator + (const left &lhs,const Lattice<right> &rhs) -> Lattice<decltype(lhs+rhs._odata[0])>
@@ -182,7 +200,9 @@ namespace Grid {
       Lattice<decltype(lhs+rhs._odata[0])> ret(rhs._grid);
 #pragma omp parallel for
       for(int ss=0;ss<rhs._grid->oSites(); ss++){
-	ret._odata[ss]=lhs+rhs._odata[ss];
+	decltype(lhs+rhs._odata[0]) tmp =lhs-rhs._odata[ss];  
+	vstream(ret._odata[ss],tmp);
+	//	ret._odata[ss]=lhs+rhs._odata[ss];
       }
         return ret;
     }
@@ -192,7 +212,9 @@ namespace Grid {
     Lattice<decltype(lhs-rhs._odata[0])> ret(rhs._grid);
 #pragma omp parallel for
     for(int ss=0;ss<rhs._grid->oSites(); ss++){
-      ret._odata[ss]=lhs-rhs._odata[ss];
+      decltype(lhs-rhs._odata[0]) tmp=lhs-rhs._odata[ss];  
+      vstream(ret._odata[ss],tmp);
+      //      ret._odata[ss]=lhs-rhs._odata[ss];
     }
     return ret;
   }
@@ -202,7 +224,9 @@ namespace Grid {
       Lattice<decltype(lhs._odata[0]*rhs)> ret(lhs._grid);
 #pragma omp parallel for
       for(int ss=0;ss<lhs._grid->oSites(); ss++){
-            ret._odata[ss]=lhs._odata[ss]*rhs;
+	decltype(lhs._odata[0]*rhs) tmp =lhs._odata[ss]*rhs;
+	vstream(ret._odata[ss],tmp);
+	//            ret._odata[ss]=lhs._odata[ss]*rhs;
       }
       return ret;
     }
@@ -212,7 +236,9 @@ namespace Grid {
         Lattice<decltype(lhs._odata[0]+rhs)> ret(lhs._grid);
 #pragma omp parallel for
         for(int ss=0;ss<rhs._grid->oSites(); ss++){
-	  ret._odata[ss]=lhs._odata[ss]+rhs;
+	  decltype(lhs._odata[0]+rhs) tmp=lhs._odata[ss]+rhs; 
+	  vstream(ret._odata[ss],tmp);
+	  //	  ret._odata[ss]=lhs._odata[ss]+rhs;
         }
         return ret;
     }
@@ -222,7 +248,9 @@ namespace Grid {
       Lattice<decltype(lhs._odata[0]-rhs)> ret(lhs._grid);
 #pragma omp parallel for
       for(int ss=0;ss<rhs._grid->oSites(); ss++){
-	ret._odata[ss]=lhs._odata[ss]-rhs;
+	  decltype(lhs._odata[0]-rhs) tmp=lhs._odata[ss]-rhs;
+	  vstream(ret._odata[ss],tmp);
+	  //	ret._odata[ss]=lhs._odata[ss]-rhs;
       }
       return ret;
     }
@@ -230,11 +258,10 @@ namespace Grid {
   template<class sobj,class vobj>
   inline void axpy(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &lhs,const Lattice<vobj> &rhs){
     conformable(lhs,rhs);
-    vobj tmp;
 #pragma omp parallel for
     for(int ss=0;ss<lhs._grid->oSites();ss++){
-      tmp = a*lhs._odata[ss];
-      ret._odata[ss]= tmp+rhs._odata[ss];
+      vobj tmp = a*lhs._odata[ss];
+      vstream(ret._odata[ss],tmp+rhs._odata[ss]);
     }
   }
 
