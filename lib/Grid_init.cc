@@ -81,7 +81,7 @@ void * Grid_backtrace_buffer[_NBACKTRACE];
 void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
 {
   printf("Caught signal %d\n",si->si_signo);
-  printf("  mem address %llx\n",(uint64_t)si->si_addr);
+  printf("  mem address %lx\n",(uint64_t)si->si_addr);
   printf("         code %d\n",si->si_code);
 
 #ifdef __X86_64

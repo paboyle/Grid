@@ -2,9 +2,7 @@
   - use protocol buffers? replace xmlReader/Writer ec..
   - Binary use htonll, htonl
 
-* Stencil -- do the permute for locally permuted in halo exchange.
-  - BUG cshift mpi; the "s" indexing is weird in the Cshift_comms_simd
-    as simd_layout or not is confusing
+* Stencil -- DONE
 
 * Reduce implemention is poor
 * Bug in SeedFixedIntegers gives same output on each site.
