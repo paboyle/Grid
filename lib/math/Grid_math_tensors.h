@@ -49,6 +49,9 @@ public:
       _internal=s;
       return *this;
     }
+    friend void vstream(iScalar<vtype> &out,const iScalar<vtype> &in){
+      vstream(out._internal,in._internal);
+    }
 
 
     friend void zeroit(iScalar<vtype> &that){
@@ -138,6 +141,12 @@ public:
             zeroit(that._internal[i]);
         }
     }
+    friend void vstream(iVector<vtype,N> &out,const iVector<vtype,N> &in){
+      for(int i=0;i<N;i++){
+	vstream(out._internal[i],in._internal[i]);
+      }
+    }
+
     friend void permute(iVector<vtype,N> &out,const iVector<vtype,N> &in,int permutetype){
       for(int i=0;i<N;i++){
 	permute(out._internal[i],in._internal[i],permutetype);
@@ -210,6 +219,12 @@ public:
 	zeroit(that._internal[i][j]);
     }}
   }
+  friend void vstream(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in){
+      for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+	vstream(out._internal[i][j],in._internal[i][j]);
+      }}
+    }
   friend void permute(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in,int permutetype){
     for(int i=0;i<N;i++){
       for(int j=0;j<N;j++){
