@@ -253,7 +253,7 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     mult(&Uchi(),&Umu._odata[ss](Tm),&chi());
     accumReconTm(result,Uchi);
 
-    out._odata[ss] = result;
+    vstream(out._odata[ss],result);
   }
 
 }

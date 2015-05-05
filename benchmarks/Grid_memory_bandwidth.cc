@@ -22,7 +22,7 @@ int main (int argc, char ** argv)
   std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t"<<"GB/s"<<std::endl;
   std::cout << "----------------------------------------------------------"<<std::endl;
 
-  for(int lat=4;lat<=24;lat+=4){
+  for(int lat=4;lat<=32;lat+=4){
 
       std::vector<int> latt_size  ({lat,lat,lat,lat});
 
@@ -43,10 +43,10 @@ int main (int argc, char ** argv)
 	axpy(z,a,x,y);
       }
       double stop=usecond();
-      double time = (stop-start)/Nloop/1000;
+      double time = (stop-start)/Nloop*1000;
       
       double bytes=3*lat*lat*lat*lat*Nvec*sizeof(Real);
-      std::cout<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<std::endl;
+      std::cout<<std::setprecision(2) << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<std::endl;
 
     }
 
@@ -57,7 +57,7 @@ int main (int argc, char ** argv)
   std::cout << "----------------------------------------------------------"<<std::endl;
 
   
-  for(int lat=4;lat<=24;lat+=4){
+  for(int lat=4;lat<=32;lat+=4){
 
       std::vector<int> latt_size  ({lat,lat,lat,lat});
 
@@ -76,11 +76,11 @@ int main (int argc, char ** argv)
 	z=a*x+y;
       }
       double stop=usecond();
-      double time = (stop-start)/Nloop/1000;
+      double time = (stop-start)/Nloop*1000;
       
       double effbytes=3*lat*lat*lat*lat*Nvec*sizeof(Real);
       double bytes=5*lat*lat*lat*lat*Nvec*sizeof(Real);
-      std::cout<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<"\t\t"<<effbytes/time<<std::endl;
+      std::cout<<std::setprecision(2) << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<"\t\t"<<effbytes/time<<std::endl;
 
     }
 
@@ -89,7 +89,7 @@ int main (int argc, char ** argv)
   std::cout << "===================================================================================================="<<std::endl;
   std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t"<<"GB/s"<<std::endl;
 
-  for(int lat=4;lat<=24;lat+=4){
+  for(int lat=4;lat<=32;lat+=4){
 
       std::vector<int> latt_size  ({lat,lat,lat,lat});
 
@@ -108,10 +108,10 @@ int main (int argc, char ** argv)
 	x=a*z;
       }
       double stop=usecond();
-      double time = (stop-start)/Nloop/1000;
+      double time = (stop-start)/Nloop*1000;
       
       double bytes=2*lat*lat*lat*lat*Nvec*sizeof(Real);
-      std::cout <<std::setprecision(3) << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<std::endl;
+      std::cout <<std::setprecision(2) << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<std::endl;
 
   }
 
@@ -121,7 +121,7 @@ int main (int argc, char ** argv)
   std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t"<<"GB/s"<<std::endl;
   std::cout << "----------------------------------------------------------"<<std::endl;
 
-  for(int lat=4;lat<=24;lat+=4){
+  for(int lat=4;lat<=32;lat+=4){
 
       std::vector<int> latt_size  ({lat,lat,lat,lat});
 
@@ -140,10 +140,10 @@ int main (int argc, char ** argv)
 	nn=norm2(x);
       }
       double stop=usecond();
-      double time = (stop-start)/Nloop/1000;
+      double time = (stop-start)/Nloop*1000;
       
       double bytes=lat*lat*lat*lat*Nvec*sizeof(Real);
-      std::cout<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<std::endl;
+      std::cout<<std::setprecision(2) << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<std::endl;
 
   }    
 
