@@ -176,21 +176,36 @@ namespace Grid {
             vsplat(ret,a,b);
         }
 
-friend inline void vstore(const vComplexF &ret, ComplexF *a){
+	friend inline void vstore(const vComplexF &ret, ComplexF *a){
 #if defined (AVX1)|| defined (AVX2)
-        _mm256_store_ps((float *)a,ret.v);
+	  _mm256_store_ps((float *)a,ret.v);
 #endif
 #ifdef SSE4
-        _mm_store_ps((float *)a,ret.v);
+	  _mm_store_ps((float *)a,ret.v);
 #endif
 #ifdef AVX512
-	_mm512_store_ps((float *)a,ret.v);
-//Note v has a3 a2 a1 a0
+	  _mm512_store_ps((float *)a,ret.v);
+	  //Note v has a3 a2 a1 a0
 #endif
 #ifdef QPX
-	assert(0);
+	  assert(0);
 #endif
-}
+	}
+        friend inline void vstream(vComplexF &out,const vComplexF &in){
+#if defined (AVX1)|| defined (AVX2)
+	  _mm256_stream_ps((float *)&out.v,in.v);
+#endif
+#ifdef SSE4
+	  _mm_stream_ps((float *)&out.v,in.v);
+#endif
+#ifdef AVX512
+	  _mm512_stream_ps((float *)&out.v,in.v);
+	  //Note v has a3 a2 a1 a0
+#endif
+#ifdef QPX
+	  assert(0);
+#endif
+	}
       friend inline void vprefetch(const vComplexF &v)
         {
             _mm_prefetch((const char*)&v.v,_MM_HINT_T0);
