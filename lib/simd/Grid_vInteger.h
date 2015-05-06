@@ -190,7 +190,7 @@ namespace Grid {
 	  out=in;
         }
 
-        friend inline void vprefetch(const vInteger &v)
+        friend inline void prefetch(const vInteger &v)
         {
             _mm_prefetch((const char*)&v.v,_MM_HINT_T0);
         }
