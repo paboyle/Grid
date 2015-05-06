@@ -257,7 +257,7 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
 	  assert(0);
 #endif
 	}
-      friend inline void vprefetch(const vComplexD &v)
+      friend inline void prefetch(const vComplexD &v)
         {
             _mm_prefetch((const char*)&v.v,_MM_HINT_T0);
         }

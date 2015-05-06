@@ -11,21 +11,21 @@
 /* #undef AVX512 */
 
 /* GRID_COMMS_MPI */
-/* #undef GRID_COMMS_MPI */
+#define GRID_COMMS_MPI 1
 
 /* GRID_COMMS_NONE */
-#define GRID_COMMS_NONE 1
+/* #undef GRID_COMMS_NONE */
 
 /* Define to 1 if you have the declaration of `be64toh', and to 0 if you
    don't. */
-#define HAVE_DECL_BE64TOH 1
+#define HAVE_DECL_BE64TOH 0
 
 /* Define to 1 if you have the declaration of `ntohll', and to 0 if you don't.
    */
-#define HAVE_DECL_NTOHLL 0
+#define HAVE_DECL_NTOHLL 1
 
 /* Define to 1 if you have the <endian.h> header file. */
-#define HAVE_ENDIAN_H 1
+/* #undef HAVE_ENDIAN_H */
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #define HAVE_GETTIMEOFDAY 1
@@ -34,10 +34,10 @@
 #define HAVE_INTTYPES_H 1
 
 /* Define to 1 if you have the <malloc.h> header file. */
-#define HAVE_MALLOC_H 1
+/* #undef HAVE_MALLOC_H */
 
 /* Define to 1 if you have the <malloc/malloc.h> header file. */
-/* #undef HAVE_MALLOC_MALLOC_H */
+#define HAVE_MALLOC_MALLOC_H 1
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -77,6 +77,9 @@
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "grid"
+
+/* Define to the home page for this package. */
+#define PACKAGE_URL ""
 
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "1.0"
