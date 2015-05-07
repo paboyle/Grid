@@ -1,29 +1,168 @@
-* FIXME audit
+* - BinaryWriter, TextWriter etc...
+  - use protocol buffers? replace xmlReader/Writer ec..
+  - Binary use htonll, htonl
 
-* Conditional execution Subset, where etc...
-* Coordinate information, integers etc...
-* Integer type padding/union to vector.
-* LatticeCoordinate[mu]
+* Stencil -- DONE
 
-* Optimise the extract/merge SIMD routines
+* Reduce implemention is poor
+* Bug in SeedFixedIntegers gives same output on each site.
+* Bug in RNG with complex numbers ; only filling real values; need helper function -- DONE
 
-* Broadcast, reduction tests.
+* Stencil operator support                           -----Initial thoughts, trial implementation DONE.
+                                                     -----some simple tests that Stencil matches Cshift.
+                                                     -----do all permute in comms phase, so that copy permute
+						     -----cases move into a buffer.
+						     -----allow transform in/out buffers spproj
 
-* QDP++ regression suite and comparative benchmark
 
-* NERSC Lattice loading, plaquette test
+* CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
+
+* Strong test for norm2, conj and all primitive types.
+
+* Consider switch std::vector to boost arrays or something lighter weight
+  boost::multi_array<type, 3> A()...    to replace multi1d, multi2d etc..
+
+
+* norm2l is a hack. figure out syntax error and make this norm2 c.f. tests/Grid_gamma.cc
+
+****  std::vector replacement;
+
+  Had to change "reserve" back to "resize" on std::vector in Lattice class.
+
+  This forces the constructor call on EVERY element of the array with negative
+  performance effects on temporaries.
+  
+  The reversion was required because copy constructur has to work.
+
+  CONCLUSION: I must implement a similar to vector without construction/fill on
+  resize. Find out if valarray or alternative works differently prior to 
+  doing this since there may still be something I can use..
+
+
+* Make the Tensor types and Complex etc... play more nicely.
+
+  - TensorRemove is a hack, come up with a long term rationalised approach to Complex vs. Scalar<Scalar<Scalar<Complex > > >
+  QDP forces use of "toDouble" to get back to non tensor scalar. This role is presently taken TensorRemove, but I
+  want to introduce a syntax that does not require this.
+
+  - Reductions that contract indices on a site should always demote the tensor structure.
+    norm2(), innerProduct.
+
+  - Result of Sum(), SliceSum // spatial sums
+              trace, traceIndex etc.. do not.
+
+  - problem arises because "trace" returns Lattice<TComplex> moving everything down to Scalar,
+    and then Sum and SliceSum to not remove the Scalars. This would be fixed if we 
+    template specialize the scalar scalar scalar sum and SliceSum,  on the basis of being
+    pure scalar.
+
+* Optimise the extract/merge SIMD routines; Azusa??
+ - I have collated into single location at least.
+ - Need to use _mm_*insert/extract routines.
+
 
 * Conformable test in Cshift routines.
 
-* Gamma/Dirac structures
-* Fourspin, two spin project
 
-* Stencil operator support
+* Flavour matrices?
+* Pauli, SU subgroup, etc.. 
+* su3 exponentiation & log etc.. [Jamie's code?]
+* TaProj
 
-* Check for missing functionality
+
+* Fourspin, two spin project --- DONE
+
+
+* Parallel MPI2 IO
+
+* rb4d support for 5th dimension in Mobius.
+
+* Check for missing functionality                    - partially audited against QDP++ layout
+
+Algorithms
+* LinearOperator
+* LinearSolver
+* Polynomial 
+* Eigen
+* Pcg
+* fPcg
+* MCR
+* HDCG
+* etc..
+
+AUDITS:
+
+* FIXME audit
+* const audit
+* Replace vset with a call to merge.; 
+* care in Gmerge,Gextract over vset .
+* extract / merge extra implementation removal      
+* Test infrastructure
+
+   // TODO
+   //
+   // Base class to share common code between vRealF, VComplexF etc...
+   //
+   // Unary functions
+   // cos,sin, tan, acos, asin, cosh, acosh, tanh, sinh, // Scalar<vReal> only arg
+   // exp, log, sqrt, fabs
+   //
+   // transposeColor, transposeSpin,
+   // adjColor, adjSpin,
+   //
+   // copyMask.
+   //
+   // localMaxAbs
+   //
+   // Fourier transform equivalent.
+
+
+======================================================================================================
+
+FUNCTIONALITY:
+* Dirac Gamma/Dirac structures ---- DONE
+* Conditional execution, where etc...                -----DONE, simple test
+* Integer relational support                         -----DONE
+* Coordinate information, integers etc...            -----DONE
+* Integer type padding/union to vector.              -----DONE 
+* LatticeCoordinate[mu]                              -----DONE
+* expose traceIndex, peekIndex, transposeIndex etc at the Lattice Level -- DONE
+* TraceColor, TraceSpin.                             ----- DONE (traceIndex<1>,traceIndex<2>, transposeIndex<1>,transposeIndex<2>)
+                                                     ----- Implement mapping between traceColour and traceSpin and traceIndex<1/2>.
+* How to do U[mu] ... lorentz part of type structure or not. more like chroma if not. -- DONE
+
+* Twospin/Fourspin/Gamma/Proj/Recon                  ----- DONE
+
+* subdirs lib, tests ??                              ----- DONE
+  - lib/math        
+  - lib/cartesian
+  - lib/cshift
+  - lib/stencil
+  - lib/communicator
+  - lib/algorithms
+  - lib/qcd
+ future
+  - lib/io/   -- GridLog, GridIn, GridErr, GridDebug, GridMessage
+  - lib/qcd/actions
+  - lib/qcd/measurements
+
+* Subset support, slice sums etc...                  -----DONE
+  sliceSum(orthog)
+  sum
+  innerProduct
+  norm2
+
+* Subgrid Transferral                                -----DONE
+  subBlock (coarseLattice,fineLattice)
+  projectBlockBasis  
+  promoteBlockBasis
+
+* random number generation                           ----- DONE
+
+* Broadcast, reduction tests. innerProduct, localInnerProduct --- DONE
 
 * I/O support
-  - MPI IO?
-  - BinaryWriter, TextWriter etc...
-  - protocol buffers?
-  - 
+* NERSC Lattice loading, plaquette test             ------- DONE single node 
+
+* Controling std::cout                              ------- DONE
+

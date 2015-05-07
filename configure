@@ -585,7 +585,7 @@ PACKAGE_STRING='Grid 1.0'
 PACKAGE_BUGREPORT='paboyle@ph.ed.ac.uk'
 PACKAGE_URL=''
 
-ac_unique_file="Grid.h"
+ac_unique_file="lib/Grid.h"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
@@ -628,8 +628,6 @@ LTLIBOBJS
 LIBOBJS
 BUILD_COMMS_NONE_FALSE
 BUILD_COMMS_NONE_TRUE
-BUILD_COMMS_FAKE_FALSE
-BUILD_COMMS_FAKE_TRUE
 BUILD_COMMS_MPI_FALSE
 BUILD_COMMS_MPI_TRUE
 EGREP
@@ -1367,10 +1365,10 @@ Optional Features:
   --disable-dependency-tracking
                           speeds up one-time build
   --disable-openmp        do not use OpenMP
-  --enable-simd=SSE|AVX|AVX2|AVX512
-                          Select instructions
-  --enable-comms=none|fake|mpi
-                          Select communications
+  --enable-simd=SSE|AVX|AVX2|AVX512|MIC
+                          Select instructions to be SSE4.0, AVX 1.0, AVX
+                          2.0+FMA, AVX 512, MIC
+  --enable-comms=none|mpi Select communications
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -1786,6 +1784,52 @@ $as_echo "$ac_res" >&6; }
   eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
 
 } # ac_fn_c_check_header_compile
+
+# ac_fn_c_check_decl LINENO SYMBOL VAR INCLUDES
+# ---------------------------------------------
+# Tests whether SYMBOL is declared in INCLUDES, setting cache variable VAR
+# accordingly.
+ac_fn_c_check_decl ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  as_decl_name=`echo $2|sed 's/ *(.*//'`
+  as_decl_use=`echo $2|sed -e 's/(/((/' -e 's/)/) 0&/' -e 's/,/) 0& (/g'`
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $as_decl_name is declared" >&5
+$as_echo_n "checking whether $as_decl_name is declared... " >&6; }
+if eval \${$3+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main ()
+{
+#ifndef $as_decl_name
+#ifdef __cplusplus
+  (void) $as_decl_use;
+#else
+  (void) $as_decl_name;
+#endif
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  eval "$3=yes"
+else
+  eval "$3=no"
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+eval ac_res=\$$3
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
+
+} # ac_fn_c_check_decl
 
 # ac_fn_c_check_type LINENO TYPE VAR INCLUDES
 # -------------------------------------------
@@ -2923,7 +2967,7 @@ fi
 
 
 
-ac_config_headers="$ac_config_headers Grid_config.h"
+ac_config_headers="$ac_config_headers lib/Grid_config.h"
 
 
 # Checks for programs.
@@ -4948,6 +4992,43 @@ fi
 
 done
 
+for ac_header in endian.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "endian.h" "ac_cv_header_endian_h" "$ac_includes_default"
+if test "x$ac_cv_header_endian_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_ENDIAN_H 1
+_ACEOF
+
+fi
+
+done
+
+#AC_CHECK_HEADERS(machine/endian.h)
+ac_fn_c_check_decl "$LINENO" "ntohll" "ac_cv_have_decl_ntohll" "#include <arpa/inet.h>
+"
+if test "x$ac_cv_have_decl_ntohll" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_NTOHLL $ac_have_decl
+_ACEOF
+
+ac_fn_c_check_decl "$LINENO" "be64toh" "ac_cv_have_decl_be64toh" "#include <arpa/inet.h>
+"
+if test "x$ac_cv_have_decl_be64toh" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_BE64TOH $ac_have_decl
+_ACEOF
+
 
 # Checks for typedefs, structures, and compiler characteristics.
 ac_fn_c_check_type "$LINENO" "size_t" "ac_cv_type_size_t" "$ac_includes_default"
@@ -5005,17 +5086,18 @@ done
 
 # Check whether --enable-simd was given.
 if test "${enable_simd+set}" = set; then :
-  enableval=$enable_simd; ac_SIMD=${enable_simd}
+  enableval=$enable_simd; \
+	ac_SIMD=${enable_simd}
 else
   ac_SIMD=AVX2
 fi
 
 
 case ${ac_SIMD} in
-     SSE2)
-       echo Configuring for SSE2
+     SSE4)
+       echo Configuring for SSE4
 
-$as_echo "#define SSE2 1" >>confdefs.h
+$as_echo "#define SSE4 1" >>confdefs.h
 
      ;;
      AVX)
@@ -5030,8 +5112,8 @@ $as_echo "#define AVX1 1" >>confdefs.h
 $as_echo "#define AVX2 1" >>confdefs.h
 
      ;;
-     AVX512)
-       echo Configuring for AVX512
+     AVX512|MIC)
+       echo Configuring for AVX512 and MIC
 
 $as_echo "#define AVX512 1" >>confdefs.h
 
@@ -5051,12 +5133,6 @@ fi
 
 
 case ${ac_COMMS} in
-     fake)
-       echo Configuring for FAKE communications
-
-$as_echo "#define GRID_COMMS_FAKE 1" >>confdefs.h
-
-     ;;
      none)
        echo Configuring for NO communications
 
@@ -5082,14 +5158,6 @@ else
   BUILD_COMMS_MPI_FALSE=
 fi
 
- if  test "X${ac_COMMS}X" == "XfakeX" ; then
-  BUILD_COMMS_FAKE_TRUE=
-  BUILD_COMMS_FAKE_FALSE='#'
-else
-  BUILD_COMMS_FAKE_TRUE='#'
-  BUILD_COMMS_FAKE_FALSE=
-fi
-
  if  test "X${ac_COMMS}X" == "XnoneX" ; then
   BUILD_COMMS_NONE_TRUE=
   BUILD_COMMS_NONE_FALSE='#'
@@ -5101,6 +5169,12 @@ fi
 
 
 ac_config_files="$ac_config_files Makefile"
+
+ac_config_files="$ac_config_files lib/Makefile"
+
+ac_config_files="$ac_config_files tests/Makefile"
+
+ac_config_files="$ac_config_files benchmarks/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -5241,10 +5315,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BUILD_COMMS_MPI_TRUE}" && test -z "${BUILD_COMMS_MPI_FALSE}"; then
   as_fn_error $? "conditional \"BUILD_COMMS_MPI\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${BUILD_COMMS_FAKE_TRUE}" && test -z "${BUILD_COMMS_FAKE_FALSE}"; then
-  as_fn_error $? "conditional \"BUILD_COMMS_FAKE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BUILD_COMMS_NONE_TRUE}" && test -z "${BUILD_COMMS_NONE_FALSE}"; then
@@ -5843,9 +5913,12 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "Grid_config.h") CONFIG_HEADERS="$CONFIG_HEADERS Grid_config.h" ;;
+    "lib/Grid_config.h") CONFIG_HEADERS="$CONFIG_HEADERS lib/Grid_config.h" ;;
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    "lib/Makefile") CONFIG_FILES="$CONFIG_FILES lib/Makefile" ;;
+    "tests/Makefile") CONFIG_FILES="$CONFIG_FILES tests/Makefile" ;;
+    "benchmarks/Makefile") CONFIG_FILES="$CONFIG_FILES benchmarks/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
