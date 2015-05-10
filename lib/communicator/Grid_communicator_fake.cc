@@ -3,15 +3,17 @@ namespace Grid {
 
 CartesianCommunicator::CartesianCommunicator(std::vector<int> &processors)
 {
-  _ndimension = _processors.size();
-  _processor_coor.resize(_ndimension);
   _processors = processors;
+  _ndimension = processors.size();
+  _processor_coor.resize(_ndimension);
   
   // Require 1^N processor grid for fake
-  for(int d=0;d<_ndimension;d++) if(_processors[d]!=1) exit(-1);
-
-  _processor = 0;// I am the one. The only one..
-  for(int d=0;d<_ndimension;d++) _processor_coor[d] = 0;
+  _Nprocessors=1;
+  _processor = 0;
+  for(int d=0;d<_ndimension;d++) {
+    assert(_processors[d]==1);
+    _processor_coor[d] = 0;
+  }
 }
 
 void CartesianCommunicator::GlobalSum(float &){}
@@ -57,12 +59,12 @@ void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
 
 void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest)
 {
-  source =1;
-  dest=1;
+  source =0;
+  dest=0;
 }
 int CartesianCommunicator::RankFromProcessorCoor(std::vector<int> &coor)
 {
-  return 1;
+  return 0;
 }
 void  CartesianCommunicator::ProcessorCoorFromRank(int rank, std::vector<int> &coor)
 {
