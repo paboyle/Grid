@@ -3,8 +3,10 @@
 
 namespace Grid {
 
-#define _mm256_set_m128i(hi,lo) _mm256_insertf128_si256(_mm256_castsi128_si256(lo),(hi),1)
 // _mm256_set_m128i(hi,lo); // not defined in all versions of immintrin.h
+#ifndef _mm256_set_m128i
+#define _mm256_set_m128i(hi,lo) _mm256_insertf128_si256(_mm256_castsi128_si256(lo),(hi),1)
+#endif
 
   typedef uint32_t Integer;
 
@@ -110,7 +112,8 @@ namespace Grid {
             ret.v = _mm_mul_epi32(a.v,b.v);
 #endif
 #ifdef AVX512
-            ret.v = _mm512_mul_epi32(a.v,b.v);
+	    //            ret.v = _mm512_mul_epi32(a.v,b.v);
+	    ret.v = _mm512_mullo_epi32(a.v,b.v);
 #endif
 #ifdef QPX
             // Implement as array of ints is only option

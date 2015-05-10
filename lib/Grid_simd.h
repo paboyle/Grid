@@ -20,6 +20,7 @@
 #endif
 #ifdef AVX512
 #include <immintrin.h>
+#include <zmmintrin.h>
 #endif
 
 namespace Grid {
@@ -160,10 +161,10 @@ inline void Gpermute(vsimd &y,const vsimd &b,int perm){
         // Permute 1 every abcd efgh ijkl mnop -> cdab ghef jkij opmn 
         // Permute 2 every abcd efgh ijkl mnop -> efgh abcd mnop ijkl
         // Permute 3 every abcd efgh ijkl mnop -> ijkl mnop abcd efgh
-      case 3: y.v = _mm512_swizzle_ps(b.v,_MM_SWIZ_REG_CDAB); break;
-      case 2: y.v = _mm512_swizzle_ps(b.v,_MM_SWIZ_REG_BADC); break;
-      case 1: y.v = _mm512_permute4f128_ps(b.v,(_MM_PERM_ENUM)_MM_SHUFFLE(2,3,0,1)); break;
-      case 0: y.v = _mm512_permute4f128_ps(b.v,(_MM_PERM_ENUM)_MM_SHUFFLE(1,0,3,2)); break;
+      case 3: y.v =(decltype(y.v)) _mm512_swizzle_ps((__m512)b.v,_MM_SWIZ_REG_CDAB); break;
+      case 2: y.v =(decltype(y.v)) _mm512_swizzle_ps((__m512)b.v,_MM_SWIZ_REG_BADC); break;
+      case 1: y.v =(decltype(y.v)) _mm512_permute4f128_ps((__m512)b.v,(_MM_PERM_ENUM)_MM_SHUFFLE(2,3,0,1)); break;
+      case 0: y.v =(decltype(y.v)) _mm512_permute4f128_ps((__m512)b.v,(_MM_PERM_ENUM)_MM_SHUFFLE(1,0,3,2)); break;
 #endif
 #ifdef QPX
 #error not implemented

@@ -3,6 +3,17 @@
 
 namespace Grid {
 
+  /*
+  depbase=`echo Grid_main.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+        icpc -DHAVE_CONFIG_H -I. -I../lib    -I../lib -mmic -O3 -std=c++11 -fopenmp -MT Grid_main.o -MD -MP -MF $depbase.Tpo -c -o Grid_main.o Grid_main.cc &&\
+        mv -f $depbase.Tpo $depbase.Po
+	  ../lib/lattice/Grid_lattice_coordinate.h(25): error: no suitable user-defined conversion from "vector_type" to "const Grid::iScalar<Grid::iScalar<Grid::iScalar<Grid::vInteger>>>" exists
+    l._odata[o]=vI;
+                    ^
+          detected during instantiation of "void Grid::LatticeCoordinate(Grid::Lattice<iobj> &, int) [with iobj=Grid::QCD::vTInteger]" at line 283 of "Grid_main.cc"
+
+	    compilation aborted for Grid_main.cc (code 2)
+*/
     template<class iobj> inline void LatticeCoordinate(Lattice<iobj> &l,int mu)
     {
       typedef typename iobj::scalar_object scalar_object;
@@ -21,8 +32,8 @@ namespace Grid {
 	  grid->RankIndexToGlobalCoor(grid->ThisRank(),o,i,gcoor);
 	  mergebuf[i]=(Integer)gcoor[mu];
 	}
-	AmergeA<vector_type,scalar_type>(vI,mergebuf);
-	l._odata[o]=vI;
+	merge<vector_type,scalar_type>(vI,mergebuf);
+	l._odata[o]._internal._internal._internal=vI;
       }
     };
 

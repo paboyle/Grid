@@ -2,6 +2,8 @@
   - use protocol buffers? replace xmlReader/Writer ec..
   - Binary use htonll, htonl
 
+* Had to hack assignment to 1.0 in the tests/Grid_gamma test
+y
 * Expression template engine:
 
    - Audit
