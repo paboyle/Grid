@@ -83,6 +83,7 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
   typedef typename vobj::scalar_object sobj;
 
   GridBase  *grid = Data._grid;
+  assert(grid!=NULL);
   const int    Nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();
 
