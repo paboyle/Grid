@@ -206,7 +206,7 @@ namespace Grid {
 	  assert(0);
 #endif
 	}
-      friend inline void vprefetch(const vComplexF &v)
+      friend inline void prefetch(const vComplexF &v)
         {
             _mm_prefetch((const char*)&v.v,_MM_HINT_T0);
         }
