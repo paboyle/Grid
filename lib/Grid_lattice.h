@@ -176,7 +176,7 @@ public:
  }; // class Lattice
 }
 
-#define GRID_LATTICE_EXPRESSION_TEMPLATES
+#undef GRID_LATTICE_EXPRESSION_TEMPLATES
 
 #include <lattice/Grid_lattice_conformable.h>
 

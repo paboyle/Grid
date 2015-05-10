@@ -4,6 +4,22 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
+/*
+ Grid_main.cc(232): error: no suitable user-defined conversion from "Grid::iScalar<Grid::iMatrix<Grid::iScalar<Grid::Complex>, 4>>" to "const Grid::iScalar<Grid::iScalar<Grid::iMatrix<Grid::Complex, 3>>>" exists
+c_m = peekIdiot<SpinColourMatrix>(scm,1,2);
+*/
+template<class vobj> auto peekIdiot(const vobj &rhs,int i,int j) -> decltype(peekIndex<2>(rhs,0,0))
+{
+  return peekIndex<2>(rhs,i,j);
+}
+template<class vobj> auto peekDumKopf(const vobj &rhs,int i,int j) -> decltype(peekIndex<3>(rhs,0,0))
+{
+  return peekIndex<3>(rhs,i,j);
+}
+template<class vobj> auto peekDumKopf(const vobj &rhs,int i) -> decltype(peekIndex<3>(rhs,0))
+{
+  return peekIndex<3>(rhs,i);
+}
 
 int main (int argc, char ** argv)
 {
@@ -224,7 +240,8 @@ int main (int argc, char ** argv)
       
       s_m = peekIndex<1>(scm,0,0);
       c_m = peekIndex<2>(scm,1,2);
-      c_m = peekSpin(scm,1,2);
+      //      c_m = peekSpin<SpinColourMatrix>(scm,1,2);
+      c_m = peekIdiot<SpinColourMatrix>(scm,1,2);
 
       printf("c. Level %d\n",c_m.TensorLevel);
       printf("c. Level %d\n",c_m().TensorLevel);
@@ -302,7 +319,8 @@ int main (int argc, char ** argv)
     int Nc = Grid::QCD::Nc;
 
     LatticeGaugeField U(&Fine);
-    LatticeColourMatrix Uy = peekLorentz(U,1);
+    //    LatticeColourMatrix Uy = peekLorentz(U,1);
+    LatticeColourMatrix Uy = peekDumKopf(U,1);
 
     flops = ncall*1.0*volume*(8*Nc*Nc*Nc);
     bytes = ncall*1.0*volume*Nc*Nc    *2*3*sizeof(Grid::Real);

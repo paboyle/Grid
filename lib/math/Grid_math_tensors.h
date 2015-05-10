@@ -45,10 +45,6 @@ public:
       zeroit(*this);
       return *this;
     }
-    iScalar<vtype> & operator= (const scalar_type s){
-      _internal=s;
-      return *this;
-    }
     friend void vstream(iScalar<vtype> &out,const iScalar<vtype> &in){
       vstream(out._internal,in._internal);
     }
@@ -98,10 +94,10 @@ public:
     operator ComplexD () const { return(TensorRemove(_internal)); };
     operator RealD () const { return(real(TensorRemove(_internal))); }
 
-
+    // convert from a something to a scalar
     template<class T,typename std::enable_if<isGridTensor<T>::notvalue, T>::type* = nullptr > inline auto operator = (T arg) -> iScalar<vtype>
     { 
-      _internal = arg;
+      _internal = vtype(arg);
       return *this;
     }
 

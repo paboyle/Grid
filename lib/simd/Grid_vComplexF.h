@@ -133,7 +133,7 @@ namespace Grid {
             cvec vzero,ymm0,ymm1,real, imag;
             vzero = _mm512_setzero();
             ymm0  = _mm512_swizzle_ps(a.v, _MM_SWIZ_REG_CDAB); // 
-            real  = _mm512_mask_or_epi32(a.v, 0xAAAA,vzero, ymm0);
+            real  = (__m512)_mm512_mask_or_epi32((__m512i)a.v, 0xAAAA,(__m512i)vzero,(__m512i)ymm0);
             imag  = _mm512_mask_sub_ps(a.v, 0x5555,vzero, ymm0);
             ymm1  = _mm512_mul_ps(real, b.v);
             ymm0  = _mm512_swizzle_ps(b.v, _MM_SWIZ_REG_CDAB); // OK
@@ -199,7 +199,8 @@ namespace Grid {
 	  _mm_stream_ps((float *)&out.v,in.v);
 #endif
 #ifdef AVX512
-	  _mm512_stream_ps((float *)&out.v,in.v);
+	  _mm512_storenrngo_ps((float *)&out.v,in.v);
+  //	  _mm512_stream_ps((float *)&out.v,in.v);
 	  //Note v has a3 a2 a1 a0
 #endif
 #ifdef QPX

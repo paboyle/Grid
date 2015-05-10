@@ -143,10 +143,10 @@ namespace Grid {
 	     *                } 
              */
             zvec vzero,ymm0,ymm1,real,imag;
-            vzero =  _mm512_setzero();
+            vzero =(zvec)_mm512_setzero();
             ymm0 =  _mm512_swizzle_pd(a.v, _MM_SWIZ_REG_CDAB); // 
-            real =  _mm512_mask_or_epi64(a.v, 0xAAAA,vzero, ymm0);
-            imag =  _mm512_mask_sub_pd(a.v, 0x5555,vzero, ymm0);
+            real =(zvec)_mm512_mask_or_epi64((__m512i)a.v, 0xAA,(__m512i)vzero,(__m512i) ymm0);
+            imag =  _mm512_mask_sub_pd(a.v, 0x55,vzero, ymm0);
             ymm1 =  _mm512_mul_pd(real, b.v);
             ymm0 =  _mm512_swizzle_pd(b.v, _MM_SWIZ_REG_CDAB); // OK
             ret.v=  _mm512_fmadd_pd(ymm0,imag,ymm1);
@@ -250,7 +250,8 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
 	  _mm_stream_pd((double *)&out.v,in.v);
 #endif
 #ifdef AVX512
-	  _mm512_stream_pd((double *)&out.v,in.v);
+	  _mm512_storenrngo_pd((double *)&out.v,in.v);
+	  //	  _mm512_stream_pd((double *)&out.v,in.v);
 	  //Note v has a3 a2 a1 a0
 #endif
 #ifdef QPX
@@ -277,7 +278,7 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
 	    ret.v    = _mm_shuffle_pd(tmp,tmp,0x1);
 #endif
 #ifdef AVX512
-	    ret.v = _mm512_mask_sub_pd(in.v, 0xaaaa,ret.v, in.v);             
+	    ret.v = _mm512_mask_sub_pd(in.v, 0xaa,ret.v, in.v);             
 #endif
 #ifdef QPX
 	     assert(0);
@@ -297,7 +298,7 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
           ret.v    =_mm_shuffle_pd(tmp.v,tmp.v,0x1);
 #endif
 #ifdef AVX512
-          ret.v = _mm512_mask_sub_pd(in.v,0xaaaa,ret.v,in.v); // real -imag 
+          ret.v = _mm512_mask_sub_pd(in.v,0xaa,ret.v,in.v); // real -imag 
 	  ret.v = _mm512_swizzle_pd(ret.v, _MM_SWIZ_REG_CDAB);// OK
 #endif
 #ifdef QPX
@@ -319,7 +320,7 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
 #endif
 #ifdef AVX512
           tmp.v    = _mm512_swizzle_pd(in.v, _MM_SWIZ_REG_CDAB);// OK
-	  ret.v    = _mm512_mask_sub_pd(tmp.v,0xaaaa,ret.v,tmp.v); // real -imag 
+	  ret.v    = _mm512_mask_sub_pd(tmp.v,0xaa,ret.v,tmp.v); // real -imag 
 #endif
 #ifdef QPX
             assert(0);
@@ -337,7 +338,7 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
 	 return ComplexD(c_[0]+c_[2],c_[1]+c_[3]);
 #endif 
 #ifdef AVX512
-            return ComplexD(_mm512_mask_reduce_add_pd(0x5555, in.v),_mm512_mask_reduce_add_pd(0xAAAA, in.v));
+            return ComplexD(_mm512_mask_reduce_add_pd(0x55, in.v),_mm512_mask_reduce_add_pd(0xAA, in.v));
 #endif 
 #ifdef QPX
 #endif
