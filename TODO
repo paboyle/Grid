@@ -2,6 +2,17 @@
   - use protocol buffers? replace xmlReader/Writer ec..
   - Binary use htonll, htonl
 
+* Expression template engine:
+
+   - Audit
+   - Introduce base clase for Grid Tensors.
+   - Introduce norm2 unary op.
+   - Introduce conversion automatic from expression to Lattice<vobj>
+   -
+
+* Command line args for geometry, simd, etc. layout. Is it necessary to have
+  user pass these? Is this a QCD specific?
+
 * CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
 
 * Strong test for norm2, conj and all primitive types. -- Grid_simd test is almost there
