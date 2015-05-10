@@ -70,7 +70,8 @@ int main (int argc, char ** argv)
 
 	Real nrmC = norm2(Check);
 	Real nrmB = norm2(Bar);
-	Real nrm  = norm2(Check-Bar);
+	Diff = Check-Bar;
+	Real nrm  = norm2(Diff);
 	std::cout<<"N2diff ="<<nrm<<" "<<nrmC<<" " <<nrmB<<std::endl;
 
 	Real snrmC =0;
