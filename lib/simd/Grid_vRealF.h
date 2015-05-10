@@ -225,7 +225,7 @@ friend inline void vstore(const vRealF &ret, float *a){
 	}
 
 
-        friend inline void vprefetch(const vRealF &v)
+        friend inline void prefetch(const vRealF &v)
         {
             _mm_prefetch((const char*)&v.v,_MM_HINT_T0);
         }
