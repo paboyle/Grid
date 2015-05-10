@@ -57,6 +57,9 @@ public:
     friend void zeroit(iScalar<vtype> &that){
         zeroit(that._internal);
     }
+    friend void prefetch(iScalar<vtype> &that){
+      prefetch(that._internal);
+    }
     friend void permute(iScalar<vtype> &out,const iScalar<vtype> &in,int permutetype){
       permute(out._internal,in._internal,permutetype);
     }
@@ -141,6 +144,9 @@ public:
             zeroit(that._internal[i]);
         }
     }
+    friend void prefetch(iVector<vtype,N> &that){
+      for(int i=0;i<N;i++) prefetch(that._internal[i]);
+    }
     friend void vstream(iVector<vtype,N> &out,const iVector<vtype,N> &in){
       for(int i=0;i<N;i++){
 	vstream(out._internal[i],in._internal[i]);
@@ -218,6 +224,11 @@ public:
       for(int j=0;j<N;j++){
 	zeroit(that._internal[i][j]);
     }}
+  }
+  friend void prefetch(iMatrix<vtype,N> &that){
+    for(int i=0;i<N;i++) 
+    for(int j=0;j<N;j++) 
+      prefetch(that._internal[i][j]);
   }
   friend void vstream(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in){
       for(int i=0;i<N;i++){
