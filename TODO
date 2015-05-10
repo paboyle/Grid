@@ -2,44 +2,17 @@
   - use protocol buffers? replace xmlReader/Writer ec..
   - Binary use htonll, htonl
 
-* Stencil -- DONE
+* CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
+
+* Strong test for norm2, conj and all primitive types. -- Grid_simd test is almost there
 
 * Reduce implemention is poor
 * Bug in SeedFixedIntegers gives same output on each site.
 * Bug in RNG with complex numbers ; only filling real values; need helper function -- DONE
 
-* Stencil operator support                           -----Initial thoughts, trial implementation DONE.
-                                                     -----some simple tests that Stencil matches Cshift.
-                                                     -----do all permute in comms phase, so that copy permute
-						     -----cases move into a buffer.
-						     -----allow transform in/out buffers spproj
-
-
-* CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
-
-* Strong test for norm2, conj and all primitive types.
-
-* Consider switch std::vector to boost arrays or something lighter weight
-  boost::multi_array<type, 3> A()...    to replace multi1d, multi2d etc..
-
-
 * norm2l is a hack. figure out syntax error and make this norm2 c.f. tests/Grid_gamma.cc
 
-****  std::vector replacement;
-
-  Had to change "reserve" back to "resize" on std::vector in Lattice class.
-
-  This forces the constructor call on EVERY element of the array with negative
-  performance effects on temporaries.
-  
-  The reversion was required because copy constructur has to work.
-
-  CONCLUSION: I must implement a similar to vector without construction/fill on
-  resize. Find out if valarray or alternative works differently prior to 
-  doing this since there may still be something I can use..
-
-
-* Make the Tensor types and Complex etc... play more nicely.
+** Make the Tensor types and Complex etc... play more nicely.
 
   - TensorRemove is a hack, come up with a long term rationalised approach to Complex vs. Scalar<Scalar<Scalar<Complex > > >
   QDP forces use of "toDouble" to get back to non tensor scalar. This role is presently taken TensorRemove, but I
@@ -60,24 +33,35 @@
  - I have collated into single location at least.
  - Need to use _mm_*insert/extract routines.
 
-
 * Conformable test in Cshift routines.
-
 
 * Flavour matrices?
 * Pauli, SU subgroup, etc.. 
 * su3 exponentiation & log etc.. [Jamie's code?]
 * TaProj
 
-
-* Fourspin, two spin project --- DONE
-
+* FFTnD ?
 
 * Parallel MPI2 IO
+  Plaquette checks into nersc reader.
 
 * rb4d support for 5th dimension in Mobius.
 
 * Check for missing functionality                    - partially audited against QDP++ layout
+   // Base class to share common code between vRealF, VComplexF etc...
+   //
+   // Unary functions
+   // cos,sin, tan, acos, asin, cosh, acosh, tanh, sinh, // Scalar<vReal> only arg
+   // exp, log, sqrt, fabs
+   //
+   // transposeColor, transposeSpin,
+   // adjColor, adjSpin,
+   //
+   // copyMask.
+   //
+   // localMaxAbs
+   //
+   // Fourier transform equivalent.
 
 Algorithms
 * LinearOperator
@@ -97,29 +81,14 @@ AUDITS:
 * Replace vset with a call to merge.; 
 * care in Gmerge,Gextract over vset .
 * extract / merge extra implementation removal      
-* Test infrastructure
-
-   // TODO
-   //
-   // Base class to share common code between vRealF, VComplexF etc...
-   //
-   // Unary functions
-   // cos,sin, tan, acos, asin, cosh, acosh, tanh, sinh, // Scalar<vReal> only arg
-   // exp, log, sqrt, fabs
-   //
-   // transposeColor, transposeSpin,
-   // adjColor, adjSpin,
-   //
-   // copyMask.
-   //
-   // localMaxAbs
-   //
-   // Fourier transform equivalent.
 
 
 ======================================================================================================
 
 FUNCTIONALITY:
+* Stencil -- DONE
+* Test infrastructure -- DONE
+* Fourspin, two spin project --- DONE
 * Dirac Gamma/Dirac structures ---- DONE
 * Conditional execution, where etc...                -----DONE, simple test
 * Integer relational support                         -----DONE
