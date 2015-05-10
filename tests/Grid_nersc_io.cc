@@ -11,7 +11,7 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   std::vector<int> simd_layout({1,1,2,2});
-  std::vector<int> mpi_layout ({2,2,2,2});
+  std::vector<int> mpi_layout ({1,1,1,1});
   std::vector<int> latt_size  ({16,16,16,32});
   std::vector<int> clatt_size  ({4,4,4,8});
   int orthodir=3;
@@ -52,6 +52,7 @@ int main (int argc, char ** argv)
   
   double vol = Fine.gSites();
   Complex PlaqScale(1.0/vol/6.0/3.0);
+  std::cout <<"PlaqScale" << PlaqScale<<std::endl;
 
   std::vector<TComplex> Plaq_T(orthosz);
   sliceSum(Plaq,Plaq_T,Nd-1);
