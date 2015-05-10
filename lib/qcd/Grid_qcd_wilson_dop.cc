@@ -106,6 +106,7 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
   for(int sss=0;sss<grid->oSites();sss++){
 
     int ss = sss;
+    int ssu= sss;
 	//int ss = Stencil._LebesgueReorder[sss];
 
     // Xp
@@ -123,7 +124,7 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     } else { 
       chi=comm_buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ss](Xp),&chi());
+    mult(&Uchi(),&Umu._odata[ssu](Xp),&chi());
     spReconXp(result,Uchi);
 
     // Yp
@@ -141,7 +142,7 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     } else { 
       chi=comm_buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ss](Yp),&chi());
+    mult(&Uchi(),&Umu._odata[ssu](Yp),&chi());
     accumReconYp(result,Uchi);
 
     // Zp
@@ -159,7 +160,7 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     } else { 
       chi=comm_buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ss](Zp),&chi());
+    mult(&Uchi(),&Umu._odata[ssu](Zp),&chi());
     accumReconZp(result,Uchi);
 
     // Tp
@@ -177,7 +178,7 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     } else { 
       chi=comm_buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ss](Tp),&chi());
+    mult(&Uchi(),&Umu._odata[ssu](Tp),&chi());
     accumReconTp(result,Uchi);
 
     // Xm
@@ -195,7 +196,7 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     } else { 
       chi=comm_buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ss](Xm),&chi());
+    mult(&Uchi(),&Umu._odata[ssu](Xm),&chi());
     accumReconXm(result,Uchi);
 
 
@@ -214,7 +215,7 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     } else { 
       chi=comm_buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ss](Ym),&chi());
+    mult(&Uchi(),&Umu._odata[ssu](Ym),&chi());
     accumReconYm(result,Uchi);
 
     // Zm
@@ -232,7 +233,7 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     } else { 
       chi=comm_buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ss](Zm),&chi());
+    mult(&Uchi(),&Umu._odata[ssu](Zm),&chi());
     accumReconZm(result,Uchi);
 
     // Tm
@@ -250,7 +251,7 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
     } else { 
       chi=comm_buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ss](Tm),&chi());
+    mult(&Uchi(),&Umu._odata[ssu](Tm),&chi());
     accumReconTm(result,Uchi);
 
     vstream(out._odata[ss],result);
