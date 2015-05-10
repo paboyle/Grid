@@ -38,7 +38,6 @@ int main (int argc, char ** argv)
 
       double start=usecond();
       for(int i=0;i<Nloop;i++){
-	//	z=a*x+y;
 	//   inline void axpy(Lattice<vobj> &ret,double a,const Lattice<vobj> &lhs,const Lattice<vobj> &rhs){
 	axpy(z,a,x,y);
       }
@@ -53,7 +52,7 @@ int main (int argc, char ** argv)
   std::cout << "===================================================================================================="<<std::endl;
   std::cout << "= Benchmarking a*x + y bandwidth"<<std::endl;
   std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t"<<"GB/s"<<"\t\tGB/s (eff)"<<std::endl;
+  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t"<<"GB/s"<<std::endl;
   std::cout << "----------------------------------------------------------"<<std::endl;
 
   
@@ -73,14 +72,13 @@ int main (int argc, char ** argv)
 
       double start=usecond();
       for(int i=0;i<Nloop;i++){
-	z=a*x+y;
+	z=a*x-y;
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
-      
-      double effbytes=3*lat*lat*lat*lat*Nvec*sizeof(Real);
-      double bytes=5*lat*lat*lat*lat*Nvec*sizeof(Real);
-      std::cout<<std::setprecision(2) << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<"\t\t"<<effbytes/time<<std::endl;
+     
+      double bytes=3*lat*lat*lat*lat*Nvec*sizeof(Real);
+      std::cout<<std::setprecision(2) << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<std::endl;
 
     }
 
@@ -105,7 +103,7 @@ int main (int argc, char ** argv)
 
       double start=usecond();
       for(int i=0;i<Nloop;i++){
-	x=a*z;
+	z=a*x;
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
