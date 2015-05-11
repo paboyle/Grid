@@ -97,7 +97,7 @@ int main (int argc, char ** argv)
   for(int mu=0;mu<6;mu++){
     result =  Gamma(g[mu])* ident * Gamma(g[mu]);
     result = result - ident;
-    double mag = TensorRemove(norm2l(result));
+    double mag = TensorRemove(norm2(result));
     std::cout << list[mu]<<" " << mag<<std::endl;
   }
 
@@ -105,7 +105,7 @@ int main (int argc, char ** argv)
   for(int mu=0;mu<6;mu++){
     result =          rnd * Gamma(g[mu]);
     result = result + rnd * Gamma(g[mu+6]);
-    double mag = TensorRemove(norm2l(result));
+    double mag = TensorRemove(norm2(result));
     std::cout << list[mu]<<" " << mag<<std::endl;
   }
 
@@ -113,7 +113,7 @@ int main (int argc, char ** argv)
   for(int mu=0;mu<6;mu++){
     result =           Gamma(g[mu])  *rnd;
     result = result +  Gamma(g[mu+6])*rnd;
-    double mag = TensorRemove(norm2l(result));
+    double mag = TensorRemove(norm2(result));
     std::cout << list[mu]<<" " << mag<<std::endl;
   }
 
@@ -127,70 +127,70 @@ int main (int argc, char ** argv)
   spProjXp(hsm,rv);
   spReconXp(recon,hsm);
   full = rv + Gamma(Gamma::GammaX) *rv;
-  mag = TensorRemove(norm2l(full-recon));
+  mag = TensorRemove(norm2(full-recon));
   std::cout << "Xp "<< mag<<std::endl;
 
   // Xm
   spProjXm(hsm,rv);
   spReconXm(recon,hsm);
   full = rv - Gamma(Gamma::GammaX) *rv;
-  mag = TensorRemove(norm2l(full-recon));
+  mag = TensorRemove(norm2(full-recon));
   std::cout << "Xm "<< mag<<std::endl;
 
   // Yp
   spProjYp(hsm,rv);
   spReconYp(recon,hsm);
   full = rv + Gamma(Gamma::GammaY) *rv;
-  mag = TensorRemove(norm2l(full-recon));
+  mag = TensorRemove(norm2(full-recon));
   std::cout << "Yp "<< mag<<std::endl;
 
   // Ym
   spProjYm(hsm,rv);
   spReconYm(recon,hsm);
   full = rv - Gamma(Gamma::GammaY) *rv;
-  mag = TensorRemove(norm2l(full-recon));
+  mag = TensorRemove(norm2(full-recon));
   std::cout << "Ym "<< mag<<std::endl;
 
   // Zp
   spProjZp(hsm,rv);
   spReconZp(recon,hsm);
   full = rv + Gamma(Gamma::GammaZ) *rv;
-  mag = TensorRemove(norm2l(full-recon));
+  mag = TensorRemove(norm2(full-recon));
   std::cout << "Zp "<< mag<<std::endl;
 
   // Zm
   spProjZm(hsm,rv);
   spReconZm(recon,hsm);
   full = rv - Gamma(Gamma::GammaZ) *rv;
-  mag = TensorRemove(norm2l(full-recon));
+  mag = TensorRemove(norm2(full-recon));
   std::cout << "Zm "<< mag<<std::endl;
 
   // Tp
   spProjTp(hsm,rv);
   spReconTp(recon,hsm);
   full = rv + Gamma(Gamma::GammaT) *rv;
-  mag = TensorRemove(norm2l(full-recon));
+  mag = TensorRemove(norm2(full-recon));
   std::cout << "Tp "<< mag<<std::endl;
 
   // Tm
   spProjTm(hsm,rv);
   spReconTm(recon,hsm);
   full = rv - Gamma(Gamma::GammaT) *rv;
-  mag = TensorRemove(norm2l(full-recon));
+  mag = TensorRemove(norm2(full-recon));
   std::cout << "Tm "<< mag<<std::endl;
 
   // 5p
   spProj5p(hsm,rv);
   spRecon5p(recon,hsm);
   full = rv + Gamma(Gamma::Gamma5) *rv;
-  mag = TensorRemove(norm2l(full-recon));
+  mag = TensorRemove(norm2(full-recon));
   std::cout << "5p "<< mag<<std::endl;
 
   // 5m
   spProj5m(hsm,rv);
   spRecon5m(recon,hsm);
   full = rv - Gamma(Gamma::Gamma5) *rv;
-  mag = TensorRemove(norm2l(full-recon));
+  mag = TensorRemove(norm2(full-recon));
   std::cout << "5m "<< mag<<std::endl;
 
   Grid_finalize();
