@@ -8,8 +8,11 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> simd_layout({1,2,2,2});
-  std::vector<int> mpi_layout ({1,1,1,1});
+  std::vector<int> tmp_latt_size;
+  std::vector<int> simd_layout;
+  std::vector<int> mpi_layout;
+
+  GridParseLayout(argv,argc,mpi_layout,simd_layout,tmp_latt_size);
 
   const int Nvec=8;
   typedef Lattice< iVector< vReal,Nvec> > LatticeVec;

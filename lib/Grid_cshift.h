@@ -7,10 +7,6 @@
 #include <cshift/Grid_cshift_none.h>
 #endif
 
-#ifdef GRID_COMMS_FAKE
-#include <cshift/Grid_cshift_fake.h>
-#endif
-
 #ifdef GRID_COMMS_MPI
 #include <cshift/Grid_cshift_mpi.h>
 #endif 

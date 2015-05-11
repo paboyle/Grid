@@ -12,6 +12,7 @@
 #include <signal.h>
 #include <iostream>
 #include <Grid.h>
+#include <algorithm>
 
 #undef __X86_64
 #define MAC
@@ -22,21 +23,6 @@
 
 namespace Grid {
 
-  std::streambuf *Grid_saved_stream_buf;
-#if 0
-  void Grid_quiesce_nodes(void)
-  {
-#ifdef GRID_COMMS_MPI
-    int me;
-    MPI_Comm_rank(MPI_COMM_WORLD,&me);
-    std::streambuf* Grid_saved_stream_buf = std::cout.rdbuf();
-    if ( me ) { 
-      std::ofstream file("log.node");
-      std::cout.rdbuf(file.rdbuf());
-    }
-#endif
-  }
-#endif
   void Grid_quiesce_nodes(void)
   {
 #ifdef GRID_COMMS_MPI
@@ -54,18 +40,95 @@ namespace Grid {
 #endif
   }
 
+std::string GridCmdOptionPayload(char ** begin, char ** end, const std::string & option)
+{
+  char ** itr = std::find(begin, end, option);
+  if (itr != end && ++itr != end) {
+    std::string payload(*itr);
+    return payload;
+  }
+  return std::string("");
+}
+bool GridCmdOptionExists(char** begin, char** end, const std::string& option)
+{
+  return std::find(begin, end, option) != end;
+}
 void Grid_init(int *argc,char ***argv)
 {
 #ifdef GRID_COMMS_MPI
   MPI_Init(argc,argv);
 #endif
-  Grid_debug_handler_init();
+  // Parse command line args.
   Grid_quiesce_nodes();
+
 }
+
+void GridCmdOptionIntVector(std::string &str,std::vector<int> & vec)
+{
+  vec.resize(0);
+  std::stringstream ss(str);
+  int i;
+  while (ss >> i){
+    vec.push_back(i);
+    if (ss.peek() == ',')
+      ss.ignore();
+  }    
+  return;
+}
+
+void GridParseLayout(char **argv,int argc,std::vector<int> &mpi,std::vector<int> &simd,std::vector<int> &latt)
+{
+  mpi =std::vector<int>({1,1,1,1});
+#if defined(AVX) || defined (AVX2)
+  simd=std::vector<int>({1,1,2,2});
+#endif
+#if defined(SSE4)
+  simd=std::vector<int>({1,1,1,2});
+#endif
+#if defined(AVX512)
+  simd=std::vector<int>({1,2,2,2});
+#endif
+  latt=std::vector<int>({8,8,8,8});
+  
+  std::string arg;
+  if( GridCmdOptionExists(argv,argv+argc,"--mpi-layout") ){
+    arg = GridCmdOptionPayload(argv,argv+argc,"--mpi-layout");
+    GridCmdOptionIntVector(arg,mpi);
+  }
+  if( GridCmdOptionExists(argv,argv+argc,"--simd-layout") ){
+    arg= GridCmdOptionPayload(argv,argv+argc,"--simd-layout");
+    GridCmdOptionIntVector(arg,simd);
+  }
+  if( GridCmdOptionExists(argv,argv+argc,"--lattice") ){
+    arg= GridCmdOptionPayload(argv,argv+argc,"--lattice");
+    GridCmdOptionIntVector(arg,latt);
+  }
+  std::cout<<"MPI layout";
+  for(int i=0;i<mpi.size();i++){
+    std::cout<<mpi[i]<<" ";
+  }
+  std::cout<<std::endl;
+  
+  std::cout<<"SIMD layout";
+  for(int i=0;i<simd.size();i++){
+    std::cout<<simd[i]<<" ";
+  }
+  std::cout<<std::endl;
+  
+  std::cout<<"Grid ";
+  for(int i=0;i<latt.size();i++){
+    std::cout<<latt[i]<<" ";
+  }
+  std::cout<<std::endl;
+  
+}
+
+
 void Grid_finalize(void)
 {
 #ifdef GRID_COMMS_MPI
   MPI_Finalize();
+  Grid_unquiesce_nodes();
 #endif
 }
 double usecond(void) {
@@ -73,7 +136,6 @@ double usecond(void) {
   gettimeofday(&tv,NULL);
   return 1.0*tv.tv_usec + 1.0e6*tv.tv_sec;
 }
-
 
 #define _NBACKTRACE (256)
 void * Grid_backtrace_buffer[_NBACKTRACE];

@@ -3,6 +3,12 @@
 
 namespace Grid {
 
+  /////////////////////////////////////////
+  // This implementation is a bit poor.
+  // Only support logical operations (== etc)
+  // on scalar objects. Strip any tensor structures.
+  // Should guard this with isGridTensor<> enable if?
+  /////////////////////////////////////////
     // Generic list of functors
     template<class lobj,class robj> class veq {
     public:
