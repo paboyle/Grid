@@ -16,9 +16,9 @@ namespace Grid {
 // However note that doing this eliminates some syntactical sugar such as 
 // calling the constructor explicitly or implicitly
 //
-#undef TENSOR_IS_POD
+class GridTensorBase {};
 
-template<class vtype> class iScalar
+template<class vtype> class iScalar :public GridTensorBase
 {
 public:
   vtype _internal;
@@ -34,12 +34,9 @@ public:
 
   // Scalar no action
   //  template<int Level> using tensor_reduce_level = typename iScalar<GridTypeMapper<vtype>::tensor_reduce_level<Level> >;
-
-#ifndef TENSOR_IS_POD
   iScalar()=default;
   iScalar(scalar_type s) : _internal(s) {};// recurse down and hit the constructor for vector_type
   iScalar(const Zero &z){ *this = zero; };
-#endif
 
     iScalar<vtype> & operator= (const Zero &hero){
       zeroit(*this);
@@ -87,15 +84,12 @@ public:
     inline const vtype & operator ()(void) const {
       return _internal;
     }
-    //    inline vtype && operator ()(void) {
-    //      return _internal;
-    //    }
 
     operator ComplexD () const { return(TensorRemove(_internal)); };
     operator RealD () const { return(real(TensorRemove(_internal))); }
 
     // convert from a something to a scalar
-    template<class T,typename std::enable_if<isGridTensor<T>::notvalue, T>::type* = nullptr > inline auto operator = (T arg) -> iScalar<vtype>
+    template<class T,typename std::enable_if<!isGridTensor<T>::value, T>::type* = nullptr > inline auto operator = (T arg) -> iScalar<vtype>
     { 
       _internal = vtype(arg);
       return *this;
@@ -105,13 +99,13 @@ public:
 ///////////////////////////////////////////////////////////
 // Allows to turn scalar<scalar<scalar<double>>>> back to double.
 ///////////////////////////////////////////////////////////
-template<class T>     inline typename std::enable_if<isGridTensor<T>::notvalue, T>::type TensorRemove(T arg) { return arg;}
+template<class T>     inline typename std::enable_if<!isGridTensor<T>::value, T>::type TensorRemove(T arg) { return arg;}
 template<class vtype> inline auto TensorRemove(iScalar<vtype> arg) -> decltype(TensorRemove(arg._internal))
 {
   return TensorRemove(arg._internal);
 }
     
-template<class vtype,int N> class iVector
+template<class vtype,int N> class iVector :public GridTensorBase
 {
 public:
   vtype _internal[N];
@@ -125,11 +119,8 @@ public:
 
 
   enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
-
-#ifndef TENSOR_IS_POD
   iVector(const Zero &z){ *this = zero; };
   iVector() =default;
-#endif
 
     iVector<vtype,N> & operator= (const Zero &hero){
         zeroit(*this);
@@ -184,7 +175,7 @@ public:
     //    }
 };
     
-template<class vtype,int N> class iMatrix
+template<class vtype,int N> class iMatrix :public GridTensorBase
 {
 public:
   vtype _internal[N][N];
@@ -198,16 +189,16 @@ public:
 
   enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
 
-#ifndef TENSOR_IS_POD
+
   iMatrix(const Zero &z){ *this = zero; };
   iMatrix() =default;
-#endif
+
 
   iMatrix<vtype,N> & operator= (const Zero &hero){
     zeroit(*this);
     return *this;
   }
-  template<class T,typename std::enable_if<isGridTensor<T>::notvalue, T>::type* = nullptr > inline auto operator = (T arg) -> iMatrix<vtype,N>
+  template<class T,typename std::enable_if<!isGridTensor<T>::value, T>::type* = nullptr > inline auto operator = (T arg) -> iMatrix<vtype,N>
     { 
       zeroit(*this);
       for(int i=0;i<N;i++)
@@ -278,6 +269,23 @@ public:
 
 };
 
+template<class v> void vprefetch(const iScalar<v> &vv)
+{
+  vprefetch(vv._internal);
+}
+template<class v,int N> void vprefetch(const iVector<v,N> &vv)
+{
+  for(int i=0;i<N;i++){
+    vprefetch(vv._internal[i]);
+  }
+}
+template<class v,int N> void vprefetch(const iMatrix<v,N> &vv)
+{
+  for(int i=0;i<N;i++){
+  for(int j=0;j<N;j++){
+    vprefetch(vv._internal[i][j]);
+  }}
+}
 
 
 }

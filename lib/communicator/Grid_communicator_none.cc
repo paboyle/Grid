@@ -29,7 +29,7 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
 					   int from,
 					   int bytes)
 {
-  exit(-1);
+  assert(0);
 }
 void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 						void *xmit,
@@ -38,11 +38,11 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 						int from,
 						int bytes)
 {
-  exit(-1);
+  assert(0);
 }
 void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
 {
-  exit(-1);
+  assert(0);
 }
 
 void CartesianCommunicator::Barrier(void)

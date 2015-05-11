@@ -5,12 +5,16 @@
 *** Hacks and bug fixes to clean up
 * Had to hack assignment to 1.0 in the tests/Grid_gamma test
 * norm2l is a hack. figure out syntax error and make this norm2 c.f. tests/Grid_gamma.cc
-* Reduce implemention is poor
+
+* Reduce implemention is poor ; need threaded reductions; OMP isn't able to do it for generic objects.
+  
 * Bug in SeedFixedIntegers gives same output on each site.
 * Bug in RNG with complex numbers ; only filling real values; need helper function -- DONE
 * Conformable test in Cshift routines.
 
 *** Functionality
+
+* Implement where to take template scheme.
 
 * Command line args for geometry, simd, etc. layout. Is it necessary to have
   user pass these? Is this a QCD specific?

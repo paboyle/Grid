@@ -68,24 +68,6 @@ template<class vtype,class ltype,class rtype, int N> inline void sub(iMatrix<vty
     return;
 }
 
-template<class v> void vprefetch(const iScalar<v> &vv)
-{
-  vprefetch(vv._internal);
-}
-template<class v,int N> void vprefetch(const iVector<v,N> &vv)
-{
-  for(int i=0;i<N;i++){
-    vprefetch(vv._internal[i]);
-  }
-}
-template<class v,int N> void vprefetch(const iMatrix<v,N> &vv)
-{
-  for(int i=0;i<N;i++){
-  for(int j=0;j<N;j++){
-    vprefetch(vv._internal[i][j]);
-  }}
-}
-
     // - operator for scalar, vector, matrix
 template<class ltype,class rtype> inline auto
 operator - (const iScalar<ltype>& lhs, const iScalar<rtype>& rhs) -> iScalar<decltype(lhs._internal - rhs._internal)>
