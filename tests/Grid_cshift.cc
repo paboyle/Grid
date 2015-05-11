@@ -11,11 +11,11 @@ int main (int argc, char ** argv)
   std::vector<int> simd_layout;
   std::vector<int> mpi_layout;
   std::vector<int> latt_size;
-  GridParseLayout(argv,argc,mpi_layout,simd_layout,latt_size);
-    
-  GridCartesian     Fine(latt_size,simd_layout,mpi_layout);
-  GridParallelRNG           FineRNG(&Fine);
-  FineRNG.SeedRandomDevice();
+
+  GridParseLayout(argv,argc,latt_size,simd_layout,mpi_layout);
+  GridCartesian        Fine(latt_size,simd_layout,mpi_layout);
+
+  GridParallelRNG      FineRNG(&Fine);  FineRNG.SeedRandomDevice();
 
   LatticeComplex U(&Fine);
   LatticeComplex ShiftU(&Fine);
