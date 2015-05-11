@@ -29,7 +29,7 @@ int main (int argc, char ** argv)
   std::vector<int> simd_layout;
   std::vector<int> mpi_layout;
 
-  GridParseLayout(argv,argc,mpi_layout,simd_layout,latt_size);
+  GridParseLayout(argv,argc,latt_size,simd_layout,mpi_layout);
   latt_size.resize(4);
 
 #ifdef AVX512

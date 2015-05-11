@@ -73,7 +73,11 @@ namespace Grid {
   std::string GridCmdOptionPayload(char ** begin, char ** end, const std::string & option);
   bool        GridCmdOptionExists(char** begin, char** end, const std::string& option);
   void        GridParseIntVector(std::string &str,std::vector<int> & vec);
-  void        GridParseLayout(char **argv,int argc,std::vector<int> &mpi,std::vector<int> &simd,std::vector<int> &latt);
+
+  void GridParseLayout(char **argv,int argc,
+		       std::vector<int> &simd,
+		       std::vector<int> &latt,
+		       std::vector<int> &mpi);
 
 
 };

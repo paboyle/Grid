@@ -76,54 +76,57 @@ void GridCmdOptionIntVector(std::string &str,std::vector<int> & vec)
   return;
 }
 
-void GridParseLayout(char **argv,int argc,std::vector<int> &mpi,std::vector<int> &simd,std::vector<int> &latt)
+void GridParseLayout(char **argv,int argc,
+		     std::vector<int> &latt,
+		     std::vector<int> &simd,
+		     std::vector<int> &mpi)
 {
   mpi =std::vector<int>({1,1,1,1});
-#if defined(AVX) || defined (AVX2)
-  simd=std::vector<int>({1,1,2,2});
-#endif
+  latt=std::vector<int>({8,8,8,8});
+
 #if defined(SSE4)
   simd=std::vector<int>({1,1,1,2});
+#endif
+#if defined(AVX1) || defined (AVX2)
+  simd=std::vector<int>({1,1,2,2});
 #endif
 #if defined(AVX512)
   simd=std::vector<int>({1,2,2,2});
 #endif
-  latt=std::vector<int>({8,8,8,8});
+
   
   std::string arg;
-  if( GridCmdOptionExists(argv,argv+argc,"--mpi-layout") ){
-    arg = GridCmdOptionPayload(argv,argv+argc,"--mpi-layout");
+  if( GridCmdOptionExists(argv,argv+argc,"--mpi") ){
+    arg = GridCmdOptionPayload(argv,argv+argc,"--mpi");
     GridCmdOptionIntVector(arg,mpi);
+    std::cout<<"MPI  ";
+    for(int i=0;i<mpi.size();i++){
+      std::cout<<mpi[i]<<" ";
+    }
+    std::cout<<std::endl;
   }
-  if( GridCmdOptionExists(argv,argv+argc,"--simd-layout") ){
-    arg= GridCmdOptionPayload(argv,argv+argc,"--simd-layout");
+  if( GridCmdOptionExists(argv,argv+argc,"--simd") ){
+    arg= GridCmdOptionPayload(argv,argv+argc,"--simd");
     GridCmdOptionIntVector(arg,simd);
+    std::cout<<"SIMD ";
+    for(int i=0;i<simd.size();i++){
+      std::cout<<simd[i]<<" ";
+    }
+    std::cout<<std::endl;
   }
-  if( GridCmdOptionExists(argv,argv+argc,"--lattice") ){
-    arg= GridCmdOptionPayload(argv,argv+argc,"--lattice");
+  if( GridCmdOptionExists(argv,argv+argc,"--grid") ){
+    arg= GridCmdOptionPayload(argv,argv+argc,"--grid");
     GridCmdOptionIntVector(arg,latt);
+    std::cout<<"Grid ";
+    for(int i=0;i<latt.size();i++){
+      std::cout<<latt[i]<<" ";
+    }
+    std::cout<<std::endl;
   }
-  std::cout<<"MPI layout";
-  for(int i=0;i<mpi.size();i++){
-    std::cout<<mpi[i]<<" ";
-  }
-  std::cout<<std::endl;
   
-  std::cout<<"SIMD layout";
-  for(int i=0;i<simd.size();i++){
-    std::cout<<simd[i]<<" ";
-  }
-  std::cout<<std::endl;
-  
-  std::cout<<"Grid ";
-  for(int i=0;i<latt.size();i++){
-    std::cout<<latt[i]<<" ";
-  }
-  std::cout<<std::endl;
   
 }
-
-
+  
 void Grid_finalize(void)
 {
 #ifdef GRID_COMMS_MPI

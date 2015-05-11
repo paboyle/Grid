@@ -12,7 +12,7 @@ int main (int argc, char ** argv)
   std::vector<int> simd_layout;
   std::vector<int> mpi_layout;
 
-  GridParseLayout(argv,argc,mpi_layout,simd_layout,tmp_latt_size);
+  GridParseLayout(argv,argc,tmp_latt_size,simd_layout,mpi_layout);
 
   const int Nvec=8;
   typedef Lattice< iVector< vReal,Nvec> > LatticeVec;
