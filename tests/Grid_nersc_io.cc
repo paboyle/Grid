@@ -14,7 +14,7 @@ int main (int argc, char ** argv)
   std::vector<int> simd_layout;
   std::vector<int> mpi_layout;
 
-  GridParseLayout(argv,argc,mpi_layout,simd_layout,tmp_latt_size);
+  GridParseLayout(argv,argc,tmp_latt_size,simd_layout,mpi_layout);
 
   std::vector<int> latt_size  ({16,16,16,32});
   std::vector<int> clatt_size  ({4,4,4,8});

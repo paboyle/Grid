@@ -18,7 +18,7 @@ namespace Grid {
 //
 class GridTensorBase {};
 
-template<class vtype> class iScalar :public GridTensorBase
+template<class vtype> class iScalar 
 {
 public:
   vtype _internal;
@@ -105,7 +105,7 @@ template<class vtype> inline auto TensorRemove(iScalar<vtype> arg) -> decltype(T
   return TensorRemove(arg._internal);
 }
     
-template<class vtype,int N> class iVector :public GridTensorBase
+template<class vtype,int N> class iVector 
 {
 public:
   vtype _internal[N];
@@ -175,7 +175,7 @@ public:
     //    }
 };
     
-template<class vtype,int N> class iMatrix :public GridTensorBase
+template<class vtype,int N> class iMatrix 
 {
 public:
   vtype _internal[N][N];
