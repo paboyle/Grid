@@ -8,9 +8,10 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> simd_layout({1,1,2,2});
-  std::vector<int> mpi_layout ({1,1,1,1});
-  std::vector<int> latt_size  ({8,8,8,16});
+  std::vector<int> simd_layout;
+  std::vector<int> mpi_layout;
+  std::vector<int> latt_size;
+  GridParseLayout(argv,argc,mpi_layout,simd_layout,latt_size);
     
   GridCartesian     Fine(latt_size,simd_layout,mpi_layout);
   GridParallelRNG           FineRNG(&Fine);
