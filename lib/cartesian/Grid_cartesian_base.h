@@ -14,7 +14,7 @@ namespace Grid{
   //    int              _processor;  // linear processor rank
   //    std::vector<int> _processor_coor;  // linear processor rank
   //////////////////////////////////////////////////////////////////////
-  class GridBase : public CartesianCommunicator {
+  class GridBase : public CartesianCommunicator , public GridThread {
 
 public:
 
@@ -22,7 +22,8 @@ public:
     template<class object> friend class Lattice;
 
     GridBase(std::vector<int> & processor_grid) : CartesianCommunicator(processor_grid) {};
-            
+
+
     // Physics Grid information.
     std::vector<int> _simd_layout;// Which dimensions get relayed out over simd lanes.
     std::vector<int> _fdimensions;// Global dimensions of array prior to cb removal

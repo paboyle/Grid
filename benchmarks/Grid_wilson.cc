@@ -20,13 +20,12 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size;
-  std::vector<int> simd_layout;
-  std::vector<int> mpi_layout;
 
-  GridParseLayout(argv,argc,latt_size,simd_layout,mpi_layout);
-    
+  std::vector<int> latt_size   = GridDefaultLatt();
+  std::vector<int> simd_layout = GridDefaultSimd();
+  std::vector<int> mpi_layout  = GridDefaultMpi();
   GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
+
   std::vector<int> seeds({1,2,3,4});
 
   GridParallelRNG          pRNG(&Grid);
