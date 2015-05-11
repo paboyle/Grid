@@ -46,7 +46,7 @@ public:
     };
     GridRedBlackCartesian(std::vector<int> &dimensions,
 			  std::vector<int> &simd_layout,
-			  std::vector<int> &processor_grid) : GridBase(processor_grid)
+			  std::vector<int> &processor_grid ) : GridBase(processor_grid)
     {
     ///////////////////////
     // Grid information

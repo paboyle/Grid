@@ -8,11 +8,8 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size;
-  std::vector<int> simd_layout;
-  std::vector<int> mpi_layout;
-
-  GridParseLayout(argv,argc,latt_size,simd_layout,mpi_layout);
+  std::vector<int> simd_layout = GridDefaultSimd();
+  std::vector<int> mpi_layout  = GridDefaultMpi();
 
   int Nloop=10;
   int nmu=0;

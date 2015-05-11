@@ -8,16 +8,13 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> tmp_latt_size;
-  std::vector<int> simd_layout;
-  std::vector<int> mpi_layout;
-
-  GridParseLayout(argv,argc,tmp_latt_size,simd_layout,mpi_layout);
-
   const int Nvec=8;
   typedef Lattice< iVector< vReal,Nvec> > LatticeVec;
 
   int Nloop=1000;
+
+  std::vector<int> simd_layout = GridDefaultSimd();
+  std::vector<int> mpi_layout  = GridDefaultMpi();
 
   std::cout << "===================================================================================================="<<std::endl;
   std::cout << "= Benchmarking fused AXPY bandwidth"<<std::endl;
