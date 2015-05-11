@@ -2,41 +2,39 @@
   - use protocol buffers? replace xmlReader/Writer ec..
   - Binary use htonll, htonl
 
+*** Hacks and bug fixes to clean up
 * Had to hack assignment to 1.0 in the tests/Grid_gamma test
-y
+* norm2l is a hack. figure out syntax error and make this norm2 c.f. tests/Grid_gamma.cc
+* Reduce implemention is poor
+* Bug in SeedFixedIntegers gives same output on each site.
+* Bug in RNG with complex numbers ; only filling real values; need helper function -- DONE
+* Conformable test in Cshift routines.
+
+*** Functionality
+
+* Command line args for geometry, simd, etc. layout. Is it necessary to have
+  user pass these? Is this a QCD specific?
+
+* Strong test for norm2, conj and all primitive types. -- Grid_simd test is almost there
+
 * Expression template engine:
 
    - Audit
    - Introduce base clase for Grid Tensors.
    - Introduce norm2 unary op.
    - Introduce conversion automatic from expression to Lattice<vobj>
-   -
 
-* Command line args for geometry, simd, etc. layout. Is it necessary to have
-  user pass these? Is this a QCD specific?
 
 * CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
 
-* Strong test for norm2, conj and all primitive types. -- Grid_simd test is almost there
-
-* Reduce implemention is poor
-* Bug in SeedFixedIntegers gives same output on each site.
-* Bug in RNG with complex numbers ; only filling real values; need helper function -- DONE
-
-* norm2l is a hack. figure out syntax error and make this norm2 c.f. tests/Grid_gamma.cc
-
 ** Make the Tensor types and Complex etc... play more nicely.
-
   - TensorRemove is a hack, come up with a long term rationalised approach to Complex vs. Scalar<Scalar<Scalar<Complex > > >
   QDP forces use of "toDouble" to get back to non tensor scalar. This role is presently taken TensorRemove, but I
   want to introduce a syntax that does not require this.
-
   - Reductions that contract indices on a site should always demote the tensor structure.
     norm2(), innerProduct.
-
   - Result of Sum(), SliceSum // spatial sums
               trace, traceIndex etc.. do not.
-
   - problem arises because "trace" returns Lattice<TComplex> moving everything down to Scalar,
     and then Sum and SliceSum to not remove the Scalars. This would be fixed if we 
     template specialize the scalar scalar scalar sum and SliceSum,  on the basis of being
@@ -46,7 +44,6 @@ y
  - I have collated into single location at least.
  - Need to use _mm_*insert/extract routines.
 
-* Conformable test in Cshift routines.
 
 * Flavour matrices?
 * Pauli, SU subgroup, etc.. 
