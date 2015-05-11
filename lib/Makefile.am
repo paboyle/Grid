@@ -7,7 +7,7 @@ if BUILD_COMMS_MPI
 endif
 
 if BUILD_COMMS_NONE
-  extra_sources+=communicator/Grid_communicator_fake.cc
+  extra_sources+=communicator/Grid_communicator_none.cc
 endif
 
 #

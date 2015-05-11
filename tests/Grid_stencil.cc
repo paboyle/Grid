@@ -8,9 +8,11 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> simd_layout({1,1,2,2});
-  std::vector<int> mpi_layout ({2,2,1,2});
-  std::vector<int> latt_size  ({8,8,8,8});
+  std::vector<int> latt_size;
+  std::vector<int> simd_layout;
+  std::vector<int> mpi_layout;
+
+  GridParseLayout(argv,argc,mpi_layout,simd_layout,latt_size);
 
   double volume = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
     

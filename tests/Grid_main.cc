@@ -25,15 +25,12 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size(4);
+  std::vector<int> latt_size;
+  std::vector<int> simd_layout;
+  std::vector<int> mpi_layout;
 
-  std::vector<int> simd_layout(4);
-  
-  std::vector<int> mpi_layout(4);
-  mpi_layout[0]=1;
-  mpi_layout[1]=1;
-  mpi_layout[2]=1;
-  mpi_layout[3]=1;
+  GridParseLayout(argv,argc,mpi_layout,simd_layout,latt_size);
+  latt_size.resize(4);
 
 #ifdef AVX512
  for(int omp=128;omp<236;omp+=16){
@@ -51,25 +48,6 @@ int main (int argc, char ** argv)
     latt_size[2] = lat;
     latt_size[3] = lat;
     double volume = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
-    
-#ifdef AVX512
-    simd_layout[0] = 1;
-    simd_layout[1] = 2;
-    simd_layout[2] = 2;
-    simd_layout[3] = 2;
-#endif
-#if defined (AVX1)|| defined (AVX2)
-    simd_layout[0] = 1;
-    simd_layout[1] = 1;
-    simd_layout[2] = 2;
-    simd_layout[3] = 2;
-#endif
-#if defined (SSE4)
-    simd_layout[0] = 1;
-    simd_layout[1] = 1;
-    simd_layout[2] = 1;
-    simd_layout[3] = 2;
-#endif
     
     GridCartesian Fine(latt_size,simd_layout,mpi_layout);
     GridRedBlackCartesian rbFine(latt_size,simd_layout,mpi_layout);
