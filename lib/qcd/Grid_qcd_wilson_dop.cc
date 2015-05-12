@@ -100,22 +100,21 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
   vHalfSpinColourVector  chi;    
   vSpinColourVector result;
   vHalfSpinColourVector Uchi;
-  vHalfSpinColourVector *chi_p;
   int offset,local,perm, ptype;
 
 PARALLEL_FOR_LOOP
   for(int sss=0;sss<grid->oSites();sss++){
 
     int ss = sss;
-    int ssu= sss;
-    //int ss = Stencil._LebesgueReorder[sss];
+    int ssu= ss;
+    //    int ss = Stencil._LebesgueReorder[sss];
 
     // Xp
     offset = Stencil._offsets [Xp][ss];
     local  = Stencil._is_local[Xp][ss];
     perm   = Stencil._permute[Xp][ss];
     ptype  = Stencil._permute_type[Xp];
-    chi_p  = &comm_buf[offset];
+
     if ( local && perm ) 
     {
       spProjXp(tmp,in._odata[offset]);
