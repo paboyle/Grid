@@ -250,7 +250,11 @@ namespace Grid {
 	  int buffer_size = _grid->_slice_nblock[dimension]*_grid->_slice_block[dimension];
 	  int words = sizeof(cobj)/sizeof(vector_type);
 
-	  /* FIXME ALTERNATE BUFFER DETERMINATION ; possibly slow to allocate*/
+	  /*
+	   * possibly slow to allocate
+	   * Doesn't matter in this test, but may want to preallocate in the 
+	   * dirac operators
+	   */
 	  std::vector<std::vector<scalar_object> > send_buf_extract(Nsimd,std::vector<scalar_object>(buffer_size) ); 
 	  std::vector<std::vector<scalar_object> > recv_buf_extract(Nsimd,std::vector<scalar_object>(buffer_size) );
 	  int bytes = buffer_size*sizeof(scalar_object);

@@ -77,7 +77,7 @@ int main (int argc, char ** argv)
   WilsonMatrix Dw(Umu,mass);
   
   std::cout << "Calling Dw"<<std::endl;
-  int ncall=10000;
+  int ncall=1000;
   double t0=usecond();
   for(int i=0;i<ncall;i++){
     Dw.multiply(src,result);

@@ -6,6 +6,7 @@ AC_CONFIG_SRCDIR([lib/Grid.h])
 AC_CONFIG_HEADERS([lib/Grid_config.h])
 
 # Checks for programs.
+AC_LANG(C++)
 AC_PROG_CXX
 AC_OPENMP
 AC_PROG_RANLIB

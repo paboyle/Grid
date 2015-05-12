@@ -2,10 +2,7 @@
 *** Hacks and bug fixes to clean up and Audits
 ================================================================
 * Base class to share common code between vRealF, VComplexF etc... 
-
-* Performance check on Guido's reimplementation strategy
-
-* Bug in SeedFixedIntegers gives same output on each site. -- Think I fixed but NOT checked for sure
+  - Performance check on Guido's reimplementation strategy
 
 * FIXME audit
 * const audit
@@ -20,15 +17,16 @@
 *** New Functionality
 ================================================================
 
-* Implement where to take template scheme.
+* Implement where within expression template scheme.
 
 * - BinaryWriter, TextWriter etc...
   - use protocol buffers? replace xmlReader/Writer ec..
   - Binary use htonll, htonl
 
-* Expression template engine:
+* Bug in SeedFixedIntegers gave same output on each site. -- Think I fixed but NOT checked for sure
+  Implement and use lattice IO to verify this.
 
-   -- Audit
+* Expression template engine: -- DONE
    -- Norm2(expression) problem: introduce norm2 unary op, or Introduce conversion automatic from expression to Lattice<vobj>
 
 * CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
@@ -56,9 +54,10 @@
 * TaProj
 * FFTnD ?
 
-* Parallel MPI2 IO
-  Plaquette checks into nersc reader.
-
+* Parallel io improvements
+  - optional parallel MPI2 IO
+  - move Plaquette and link trace checks into nersc reader from the Grid_nersc_io.cc test.
+  
 * rb4d support for 5th dimension in Mobius.
 
 * Check for missing functionality                    - partially audited against QDP++ layout
@@ -70,13 +69,15 @@
    // copyMask.
    // localMaxAbs
    // Fourier transform equivalent.
-Actions
+
+Actions -- coherent framework for implementing actions and their forces.
 * Fermion
   - Wilson
   - Clover
   - DomainWall
   - Mobius
   - z-Mobius
+
 * Gauge
   - Wilson, symanzik, iwasaki
 

@@ -1,13 +1,17 @@
 #ifndef GRID_THREADS_H
 #define GRID_THREADS_H
 
-#ifdef HAVE_OPENMP
+#ifdef _OPENMP
+#define GRID_OMP
+#endif
+
+#ifdef GRID_OMP
 #include <omp.h>
 #define PARALLEL_FOR_LOOP _Pragma("omp parallel for")
-#define PARALLEL_NESTED_LOOP(n) _Pragma("omp parallel for collapse(" #n ")")
+#define PARALLEL_NESTED_LOOP2 _Pragma("omp parallel for collapse(2)")
 #else
 #define PARALLEL_FOR_LOOP 
-#define PARALLEL_NESTED_LOOP(n) 
+#define PARALLEL_NESTED_LOOP2
 #endif
 
 namespace Grid {
@@ -20,7 +24,7 @@ class GridThread {
   static int _threads;
 
   static void SetThreads(int thr) { 
-#ifdef HAVE_OPENMP
+#ifdef GRID_OMP
     _threads = MIN(thr,omp_get_max_threads()) ;
     omp_set_num_threads(_threads);
 #else 
@@ -28,7 +32,7 @@ class GridThread {
 #endif
   };
   static void SetMaxThreads(void) { 
-#ifdef HAVE_OPENMP
+#ifdef GRID_OMP
     _threads = omp_get_max_threads();
     omp_set_num_threads(_threads);
 #else 
@@ -58,7 +62,7 @@ class GridThread {
   };
 
   static int  ThreadBarrier(void) {
-#ifdef HAVE_OPENMP
+#ifdef GRID_OMP
 #pragma omp barrier
     return omp_get_thread_num();
 #else
