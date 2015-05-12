@@ -145,7 +145,7 @@ PARALLEL_FOR_LOOP
   template<class sobj,class vobj>
   inline void axpy(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &lhs,const Lattice<vobj> &rhs){
     conformable(lhs,rhs);
-PARALLEL_FOR_LOOP
+#pragma omp parallel for
     for(int ss=0;ss<lhs._grid->oSites();ss++){
       vobj tmp = a*lhs._odata[ss];
       vstream(ret._odata[ss],tmp+rhs._odata[ss]);

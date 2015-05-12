@@ -71,7 +71,7 @@ namespace Grid {
   // C++11 time facilities better?
   double usecond(void);
 
-  const std::vector<int> &GridDefaultSimd(void);
+  const std::vector<int> GridDefaultSimd(int dims,int nsimd);
   const std::vector<int> &GridDefaultLatt(void);
   const std::vector<int> &GridDefaultMpi(void);
   const int              &GridThreads(void)  ;

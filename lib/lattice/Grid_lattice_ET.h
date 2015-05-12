@@ -67,6 +67,10 @@ inline void GridFromExpression(GridBase * &grid,const T1& lat)   // Lattice leaf
   } 
   grid=lat._grid;
 }
+template<class T1,typename std::enable_if<!is_lattice<T1>::value, T1>::type * = nullptr >
+inline void GridFromExpression(GridBase * &grid,const T1& notlat)   // non-lattice leaf
+{
+}
 template <typename Op, typename T1>
 inline void GridFromExpression(GridBase * &grid,const LatticeUnaryExpression<Op,T1 > &expr)
 {
@@ -85,10 +89,6 @@ inline void GridFromExpression( GridBase * &grid,const LatticeTrinaryExpression<
   GridFromExpression(grid,std::get<0>(expr.second));// recurse
   GridFromExpression(grid,std::get<1>(expr.second));
   GridFromExpression(grid,std::get<2>(expr.second));
-}
-template<class T1,typename std::enable_if<!is_lattice<T1>::value, T1>::type * = nullptr >
-inline void GridFromExpression(GridBase * &grid,const T1& notlat)   // non-lattice leaf
-{
 }
 
 ////////////////////////////////////////////
