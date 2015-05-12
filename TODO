@@ -1,33 +1,35 @@
+================================================================
+*** Hacks and bug fixes to clean up and Audits
+================================================================
+* Base class to share common code between vRealF, VComplexF etc... 
+
+* Performance check on Guido's reimplementation strategy
+
+* Bug in SeedFixedIntegers gives same output on each site. -- Think I fixed but NOT checked for sure
+
+* FIXME audit
+* const audit
+
+* Replace vset with a call to merge.; 
+* care in Gmerge,Gextract over vset .
+* extract / merge extra implementation removal      
+
+* Strong test for norm2, conj and all primitive types. -- tests/Grid_simd.cc is almost there
+
+================================================================
+*** New Functionality
+================================================================
+
+* Implement where to take template scheme.
+
 * - BinaryWriter, TextWriter etc...
   - use protocol buffers? replace xmlReader/Writer ec..
   - Binary use htonll, htonl
 
-*** Hacks and bug fixes to clean up
-* Had to hack assignment to 1.0 in the tests/Grid_gamma test
-* norm2l is a hack. figure out syntax error and make this norm2 c.f. tests/Grid_gamma.cc
-
-* Reduce implemention is poor ; need threaded reductions; OMP isn't able to do it for generic objects.
-  
-* Bug in SeedFixedIntegers gives same output on each site.
-* Bug in RNG with complex numbers ; only filling real values; need helper function -- DONE
-* Conformable test in Cshift routines.
-
-*** Functionality
-
-* Implement where to take template scheme.
-
-* Command line args for geometry, simd, etc. layout. Is it necessary to have
-  user pass these? Is this a QCD specific?
-
-* Strong test for norm2, conj and all primitive types. -- Grid_simd test is almost there
-
 * Expression template engine:
 
-   - Audit
-   - Introduce base clase for Grid Tensors.
-   - Introduce norm2 unary op.
-   - Introduce conversion automatic from expression to Lattice<vobj>
-
+   -- Audit
+   -- Norm2(expression) problem: introduce norm2 unary op, or Introduce conversion automatic from expression to Lattice<vobj>
 
 * CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
 
@@ -48,12 +50,10 @@
  - I have collated into single location at least.
  - Need to use _mm_*insert/extract routines.
 
-
 * Flavour matrices?
 * Pauli, SU subgroup, etc.. 
 * su3 exponentiation & log etc.. [Jamie's code?]
 * TaProj
-
 * FFTnD ?
 
 * Parallel MPI2 IO
@@ -62,20 +62,23 @@
 * rb4d support for 5th dimension in Mobius.
 
 * Check for missing functionality                    - partially audited against QDP++ layout
-   // Base class to share common code between vRealF, VComplexF etc...
-   //
    // Unary functions
    // cos,sin, tan, acos, asin, cosh, acosh, tanh, sinh, // Scalar<vReal> only arg
    // exp, log, sqrt, fabs
-   //
    // transposeColor, transposeSpin,
    // adjColor, adjSpin,
-   //
    // copyMask.
-   //
    // localMaxAbs
-   //
    // Fourier transform equivalent.
+Actions
+* Fermion
+  - Wilson
+  - Clover
+  - DomainWall
+  - Mobius
+  - z-Mobius
+* Gauge
+  - Wilson, symanzik, iwasaki
 
 Algorithms
 * LinearOperator
@@ -83,23 +86,21 @@ Algorithms
 * Polynomial 
 * Eigen
 * Pcg
+* Adef2
+* DeflCG
 * fPcg
 * MCR
 * HDCG
+* HMC, Heatbath
 * etc..
 
-AUDITS:
-
-* FIXME audit
-* const audit
-* Replace vset with a call to merge.; 
-* care in Gmerge,Gextract over vset .
-* extract / merge extra implementation removal      
-
-
+======================================================================================================
+FUNCTIONALITY: it pleases me to keep track of things I have done (keeps sane)
 ======================================================================================================
 
-FUNCTIONALITY:
+* Command line args for geometry, simd, etc. layout. Is it necessary to have -- DONE
+  user pass these? Is this a QCD specific?
+
 * Stencil -- DONE
 * Test infrastructure -- DONE
 * Fourspin, two spin project --- DONE
@@ -115,6 +116,7 @@ FUNCTIONALITY:
 * How to do U[mu] ... lorentz part of type structure or not. more like chroma if not. -- DONE
 
 * Twospin/Fourspin/Gamma/Proj/Recon                  ----- DONE
+* norm2l is a hack. figure out syntax error and make this norm2 c.f. tests/Grid_gamma.cc -- DONE
 
 * subdirs lib, tests ??                              ----- DONE
   - lib/math        
@@ -148,4 +150,11 @@ FUNCTIONALITY:
 * NERSC Lattice loading, plaquette test             ------- DONE single node 
 
 * Controling std::cout                              ------- DONE
+
+* Had to hack assignment to 1.0 in the tests/Grid_gamma test -- DONE
+* Reduce implemention is poor ; need threaded reductions; OMP isn't able to do it for generic objects. -- DONE
+* Bug in RNG with complex numbers ; only filling real values; need helper function -- DONE
+* Conformable test in Cshift routines. -- none needed ; there is only one 
+* Conformable testing in expression templates -- DONE (recursive)
+
 

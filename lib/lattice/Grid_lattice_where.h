@@ -1,5 +1,5 @@
-#ifndef GRID_WHERE_H
-#define GRID_WHERE_H
+#ifndef GRID_LATTICE_WHERE_H
+#define GRID_LATTICE_WHERE_H
 namespace Grid {
 // Must implement the predicate gating the 
 // Must be able to reduce the predicate down to a single vInteger per site.
@@ -27,7 +27,7 @@ inline void where(Lattice<vobj> &ret,const Lattice<iobj> &predicate,Lattice<vobj
   std::vector<scalar_object> truevals (Nsimd);
   std::vector<scalar_object> falsevals(Nsimd);
 
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
   for(int ss=0;ss<iftrue._grid->oSites(); ss++){
 
     extract(iftrue._odata[ss]   ,truevals);

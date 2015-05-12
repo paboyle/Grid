@@ -23,7 +23,7 @@ inline void subdivides(GridBase *coarse,GridBase *fine)
   template<class vobj> inline void pickCheckerboard(int cb,Lattice<vobj> &half,const Lattice<vobj> &full){
     half.checkerboard = cb;
     int ssh=0;
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
     for(int ss=0;ss<full._grid->oSites();ss++){
       std::vector<int> coor;
       int cbos;
@@ -41,7 +41,7 @@ inline void subdivides(GridBase *coarse,GridBase *fine)
   template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Lattice<vobj> &half){
     int cb = half.checkerboard;
     int ssh=0;
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
     for(int ss=0;ss<full._grid->oSites();ss++){
       std::vector<int> coor;
       int cbos;

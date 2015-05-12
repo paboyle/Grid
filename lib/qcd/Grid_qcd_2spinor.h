@@ -1,9 +1,7 @@
 #ifndef GRID_QCD_TWOSPIN_H
 #define GRID_QCD_TWOSPIN_H
 namespace Grid{
-
 namespace QCD {
-  
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   // Normalisation alert; the g5   project is 1/2(1+-G5) 
@@ -1073,10 +1071,6 @@ namespace QCD {
       spProj5m(hspin._internal[i][j],fspin._internal[i][j]);
     }}
   }
-
-
-
-
 }   //namespace QCD
 } // Grid
 #endif
