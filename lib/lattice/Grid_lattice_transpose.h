@@ -13,7 +13,7 @@ namespace Grid {
   template<class vobj>
     inline Lattice<vobj> transpose(const Lattice<vobj> &lhs){
         Lattice<vobj> ret(lhs._grid);
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
         for(int ss=0;ss<lhs._grid->oSites();ss++){
             ret._odata[ss] = transpose(lhs._odata[ss]);
         }
@@ -28,7 +28,7 @@ namespace Grid {
       -> Lattice<decltype(transposeIndex<Index>(lhs._odata[0]))>
     {
       Lattice<decltype(transposeIndex<Index>(lhs._odata[0]))> ret(lhs._grid);
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
         for(int ss=0;ss<lhs._grid->oSites();ss++){
             ret._odata[ss] = transposeIndex<Index>(lhs._odata[ss]);
         }

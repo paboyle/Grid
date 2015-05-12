@@ -53,7 +53,6 @@
 #include <Grid_lattice.h>
 #include <Grid_comparison.h>
 #include <Grid_cshift.h>
-#include <Grid_where.h>
 #include <Grid_stencil.h>
 #include <qcd/Grid_qcd.h>
 #include <parallelIO/GridNerscIO.h>

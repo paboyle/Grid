@@ -50,9 +50,8 @@ int main (int argc, char ** argv)
   //  std::cout << " Is triv Scalar<double> " <<std::has_trivial_default_constructor<iScalar<double> >::value << std::endl;
   //  std::cout << " Is triv Scalar<vComplexD> "<<std::has_trivial_default_constructor<iScalar<vComplexD> >::value  << std::endl;
 
-  std::complex<float> c(1.0);
   for(int a=0;a<Ns;a++){
-    ident()(a,a) = c;
+    ident()(a,a) = ComplexF(1.0);
   }
 
   const Gamma::GammaMatrix *g = Gamma::GammaMatrices;

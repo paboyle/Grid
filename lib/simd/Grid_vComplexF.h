@@ -28,6 +28,9 @@ namespace Grid {
             vzero(*this);
             return (*this);
         }
+        vComplexF( Zero & z){
+            vzero(*this);
+        }
         vComplexF()=default;
         vComplexF(ComplexF a){
 	  vsplat(*this,a);
@@ -363,8 +366,7 @@ namespace Grid {
 #endif
             return ret;
         }
-        friend inline vComplexF timesMinusI(const vComplexF &in){
-	  vComplexF ret; 
+        friend inline void timesMinusI( vComplexF &ret,const vComplexF &in){
 	  vzero(ret);
 #if defined (AVX1)|| defined (AVX2)
 	  cvec tmp =_mm256_addsub_ps(ret.v,in.v); // r,-i
@@ -381,10 +383,9 @@ namespace Grid {
 #ifdef QPX
             assert(0);
 #endif
-	  return ret;
 	}
-        friend inline vComplexF timesI(const vComplexF &in){
-	  vComplexF ret; vzero(ret);
+        friend inline void timesI(vComplexF &ret,const vComplexF &in){
+	  vzero(ret);
 #if defined (AVX1)|| defined (AVX2)
 	  cvec tmp =_mm256_shuffle_ps(in.v,in.v,_MM_SHUFFLE(2,3,0,1));//i,r
           ret.v    =_mm256_addsub_ps(ret.v,tmp);     //i,-r
@@ -400,8 +401,18 @@ namespace Grid {
 #ifdef QPX
             assert(0);
 #endif
+	}
+        friend inline vComplexF timesMinusI(const vComplexF &in){
+	  vComplexF ret; 
+	  timesMinusI(ret,in);
 	  return ret;
 	}
+        friend inline vComplexF timesI(const vComplexF &in){
+	  vComplexF ret; 
+	  timesI(ret,in);
+	  return ret;
+	}
+
         
         // Unary negation
         friend inline vComplexF operator -(const vComplexF &r) {

@@ -35,8 +35,7 @@ include_HEADERS =\
 	Grid_lattice.h\
 	Grid_math.h\
 	Grid_simd.h\
-	Grid_stencil.h\
-	Grid_where.h
+	Grid_stencil.h
 
 nobase_include_HEADERS=\
 	cartesian/Grid_cartesian_base.h\
@@ -56,6 +55,7 @@ nobase_include_HEADERS=\
 	lattice/Grid_lattice_trace.h\
 	lattice/Grid_lattice_transfer.h\
 	lattice/Grid_lattice_transpose.h\
+	lattice/Grid_lattice_where.h\
 	math/Grid_math_arith.h\
 	math/Grid_math_arith_add.h\
 	math/Grid_math_arith_mac.h\

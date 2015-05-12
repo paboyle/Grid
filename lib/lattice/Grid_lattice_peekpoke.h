@@ -15,7 +15,7 @@ namespace Grid {
       -> Lattice<decltype(peekIndex<Index>(lhs._odata[0]))>
     {
       Lattice<decltype(peekIndex<Index>(lhs._odata[0]))> ret(lhs._grid);
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
         for(int ss=0;ss<lhs._grid->oSites();ss++){
             ret._odata[ss] = peekIndex<Index>(lhs._odata[ss]);
         }
@@ -26,7 +26,7 @@ namespace Grid {
       -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i))>
     {
       Lattice<decltype(peekIndex<Index>(lhs._odata[0],i))> ret(lhs._grid);
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
         for(int ss=0;ss<lhs._grid->oSites();ss++){
 	  ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i);
         }
@@ -37,7 +37,7 @@ namespace Grid {
       -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))>
     {
       Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))> ret(lhs._grid);
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
         for(int ss=0;ss<lhs._grid->oSites();ss++){
 	  ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i,j);
         }
@@ -50,7 +50,7 @@ namespace Grid {
     template<int Index,class vobj> inline
     void pokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0]))> & rhs)
     {
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
         for(int ss=0;ss<lhs._grid->oSites();ss++){
 	  pokeIndex<Index>(lhs._odata[ss],rhs._odata[ss]);
 	}      
@@ -58,7 +58,7 @@ namespace Grid {
     template<int Index,class vobj> inline
     void pokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0],0))> & rhs,int i)
     {
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
         for(int ss=0;ss<lhs._grid->oSites();ss++){
 	  pokeIndex<Index>(lhs._odata[ss],rhs._odata[ss],i);
 	}      
@@ -66,7 +66,7 @@ namespace Grid {
     template<int Index,class vobj> inline
     void pokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0],0,0))> & rhs,int i,int j)
     {
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
         for(int ss=0;ss<lhs._grid->oSites();ss++){
 	  pokeIndex<Index>(lhs._odata[ss],rhs._odata[ss],i,j);
 	}      

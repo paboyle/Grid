@@ -64,7 +64,7 @@ public:
   ////////////////////////////////////////////////////////////////////////////////
   template <typename Op, typename T1>                         inline Lattice<vobj> & operator=(const LatticeUnaryExpression<Op,T1> &expr)
   {
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
       vobj tmp= eval(ss,expr);
       vstream(_odata[ss] ,tmp);
@@ -73,7 +73,7 @@ public:
   }
   template <typename Op, typename T1,typename T2>             inline Lattice<vobj> & operator=(const LatticeBinaryExpression<Op,T1,T2> &expr)
   {
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
       vobj tmp= eval(ss,expr);
       vstream(_odata[ss] ,tmp);
@@ -82,7 +82,7 @@ public:
   }
   template <typename Op, typename T1,typename T2,typename T3> inline Lattice<vobj> & operator=(const LatticeTrinaryExpression<Op,T1,T2,T3> &expr)
   {
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
       vobj tmp= eval(ss,expr);
       vstream(_odata[ss] ,tmp);
@@ -95,7 +95,7 @@ public:
     GridFromExpression(_grid,expr);
     assert(_grid!=nullptr);
     _odata.resize(_grid->oSites());
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
       _odata[ss] = eval(ss,expr);
     }
@@ -105,7 +105,7 @@ public:
     GridFromExpression(_grid,expr);
     assert(_grid!=nullptr);
     _odata.resize(_grid->oSites());
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
       _odata[ss] = eval(ss,expr);
     }
@@ -115,7 +115,7 @@ public:
     GridFromExpression(_grid,expr);
     assert(_grid!=nullptr);
     _odata.resize(_grid->oSites());
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
       _odata[ss] = eval(ss,expr);
     }
@@ -133,7 +133,7 @@ public:
     }
 
     template<class sobj> inline Lattice<vobj> & operator = (const sobj & r){
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
         for(int ss=0;ss<_grid->oSites();ss++){
             this->_odata[ss]=r;
         }
@@ -142,7 +142,7 @@ public:
     template<class robj> inline Lattice<vobj> & operator = (const Lattice<robj> & r){
       conformable(*this,r);
       std::cout<<"Lattice operator ="<<std::endl;
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
         for(int ss=0;ss<_grid->oSites();ss++){
             this->_odata[ss]=r._odata[ss];
         }
@@ -167,7 +167,7 @@ public:
     inline friend Lattice<vobj> operator / (const Lattice<vobj> &lhs,const Lattice<vobj> &rhs){
         conformable(lhs,rhs);
         Lattice<vobj> ret(lhs._grid);
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
         for(int ss=0;ss<lhs._grid->oSites();ss++){
             ret._odata[ss] = lhs._odata[ss]/rhs._odata[ss];
         }

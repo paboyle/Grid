@@ -17,6 +17,10 @@ namespace Grid {
         vRealD(Zero &zero){
 	  zeroit(*this);
 	}
+        vRealD & operator = ( Zero & z){
+	  vzero(*this);
+	  return (*this);
+        }
 
         friend inline void mult(vRealD * __restrict__ y,const vRealD * __restrict__ l,const vRealD *__restrict__ r) {*y = (*l) * (*r);}
         friend inline void sub (vRealD * __restrict__ y,const vRealD * __restrict__ l,const vRealD *__restrict__ r) {*y = (*l) - (*r);}
