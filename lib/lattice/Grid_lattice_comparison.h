@@ -15,7 +15,7 @@ namespace Grid {
     inline Lattice<vInteger> LLComparison(vfunctor op,const Lattice<lobj> &lhs,const Lattice<robj> &rhs)
     {
       Lattice<vInteger> ret(rhs._grid);
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
         for(int ss=0;ss<rhs._grid->oSites(); ss++){
 	  ret._odata[ss]=op(lhs._odata[ss],rhs._odata[ss]);
         }
@@ -25,7 +25,7 @@ namespace Grid {
     inline Lattice<vInteger> LSComparison(vfunctor op,const Lattice<lobj> &lhs,const robj &rhs)
     {
       Lattice<vInteger> ret(lhs._grid);
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
         for(int ss=0;ss<lhs._grid->oSites(); ss++){
 	  ret._odata[ss]=op(lhs._odata[ss],rhs);
         }
@@ -35,7 +35,7 @@ namespace Grid {
     inline Lattice<vInteger> SLComparison(vfunctor op,const lobj &lhs,const Lattice<robj> &rhs)
     {
       Lattice<vInteger> ret(rhs._grid);
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
         for(int ss=0;ss<rhs._grid->oSites(); ss++){
 	  ret._odata[ss]=op(lhs._odata[ss],rhs);
         }

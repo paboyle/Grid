@@ -103,7 +103,7 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
   vHalfSpinColourVector *chi_p;
   int offset,local,perm, ptype;
 
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
   for(int sss=0;sss<grid->oSites();sss++){
 
     int ss = sss;

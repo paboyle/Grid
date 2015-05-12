@@ -13,6 +13,9 @@ namespace Grid {
             vzero(*this);
             return (*this);
         }
+        vComplexD( Zero & z){
+            vzero(*this);
+        }
         vComplexD()=default;
         vComplexD(ComplexD a){
 	  vsplat(*this,a);
@@ -286,8 +289,8 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
             return ret;
         }
 
-        friend inline vComplexD timesMinusI(const vComplexD &in){
-	  vComplexD ret; vzero(ret);
+        friend inline void timesMinusI(vComplexD &ret,const vComplexD &in){
+	  vzero(ret);
 	  vComplexD tmp;
 #if defined (AVX1)|| defined (AVX2)
 	  tmp.v    =_mm256_addsub_pd(ret.v,in.v); // r,-i
@@ -304,11 +307,10 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
 #ifdef QPX
             assert(0);
 #endif
-	  return ret;
 	}
 
-        friend inline vComplexD timesI(const vComplexD &in){
-	  vComplexD ret; vzero(ret);
+        friend inline void timesI(vComplexD &ret, const vComplexD &in){
+	  vzero(ret);
 	  vComplexD tmp;
 #if defined (AVX1)|| defined (AVX2)
 	  tmp.v    =_mm256_shuffle_pd(in.v,in.v,0x5);
@@ -325,8 +327,20 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
 #ifdef QPX
             assert(0);
 #endif
+	}
+
+        friend inline vComplexD timesMinusI(const vComplexD &in){
+	  vComplexD ret; 
+	  timesMinusI(ret,in);
 	  return ret;
 	}
+
+        friend inline vComplexD timesI(const vComplexD &in){
+	  vComplexD ret; 
+	  timesI(ret,in);
+	  return ret;
+	}
+
 
 // REDUCE FIXME must be a cleaner implementation
        friend inline ComplexD Reduce(const vComplexD & in)

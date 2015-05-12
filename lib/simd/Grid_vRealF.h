@@ -18,6 +18,10 @@ namespace Grid {
         vRealF(Zero &zero){
 	  zeroit(*this);
 	}
+        vRealF & operator = ( Zero & z){
+	  vzero(*this);
+	  return (*this);
+        }
         ////////////////////////////////////
         // Arithmetic operator overloads +,-,*
         ////////////////////////////////////

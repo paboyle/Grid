@@ -6,23 +6,20 @@ namespace Grid {
     /////////////////////////////////////////// CONJ         ///////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef GRID_WARN_SUBOPTIMAL
-#warning "Optimisation alert switch over to two argument form to avoid copy back in perf critical timesI "
-#endif     
 /////////////////////////////////////////////// 
 // multiply by I; make recursive.
 /////////////////////////////////////////////// 
 template<class vtype> inline iScalar<vtype> timesI(const iScalar<vtype>&r) 
 {
     iScalar<vtype> ret;
-    ret._internal = timesI(r._internal);
+    timesI(ret._internal,r._internal);
     return ret;
 }
 template<class vtype,int N> inline iVector<vtype,N> timesI(const iVector<vtype,N>&r) 
 {
   iVector<vtype,N> ret;
   for(int i=0;i<N;i++){
-    ret._internal[i] = timesI(r._internal[i]);
+    timesI(ret._internal[i],r._internal[i]);
   }
   return ret;
 }
@@ -31,22 +28,41 @@ template<class vtype,int N> inline iMatrix<vtype,N> timesI(const iMatrix<vtype,N
   iMatrix<vtype,N> ret;
   for(int i=0;i<N;i++){
   for(int j=0;j<N;j++){
-    ret._internal[i][j] = timesI(r._internal[i][j]);
+    timesI(ret._internal[i][j],r._internal[i][j]);
   }}
   return ret;
 }
 
+template<class vtype> inline void timesI(iScalar<vtype> &ret,const iScalar<vtype>&r) 
+{
+  timesI(ret._internal,r._internal);
+}
+template<class vtype,int N> inline void timesI(iVector<vtype,N> &ret,const iVector<vtype,N>&r) 
+{
+  for(int i=0;i<N;i++){
+    timesI(ret._internal[i],r._internal[i]);
+  }
+}
+template<class vtype,int N> inline void  timesI(iMatrix<vtype,N> &ret,const iMatrix<vtype,N>&r)
+{
+  for(int i=0;i<N;i++){
+  for(int j=0;j<N;j++){
+    timesI(ret._internal[i][j],r._internal[i][j]);
+  }}
+}
+
+
 template<class vtype> inline iScalar<vtype> timesMinusI(const iScalar<vtype>&r) 
 {
     iScalar<vtype> ret;
-    ret._internal = timesMinusI(r._internal);
+    timesMinusI(ret._internal,r._internal);
     return ret;
 }
 template<class vtype,int N> inline iVector<vtype,N> timesMinusI(const iVector<vtype,N>&r) 
 {
   iVector<vtype,N> ret;
   for(int i=0;i<N;i++){
-    ret._internal[i] = timesMinusI(r._internal[i]);
+    timesMinusI(ret._internal[i],r._internal[i]);
   }
   return ret;
 }
@@ -55,10 +71,30 @@ template<class vtype,int N> inline iMatrix<vtype,N> timesMinusI(const iMatrix<vt
   iMatrix<vtype,N> ret;
   for(int i=0;i<N;i++){
   for(int j=0;j<N;j++){
-    ret._internal[i][j] = timesMinusI(r._internal[i][j]);
+    timesMinusI(ret._internal[i][j],r._internal[i][j]);
   }}
   return ret;
 }
+
+template<class vtype>  inline void timesMinusI(iScalar<vtype> &ret,const iScalar<vtype>&r) 
+{
+  timesMinusI(ret._internal,r._internal);
+}
+template<class vtype,int N> inline void timesMinusI(iVector<vtype,N> &ret,const iVector<vtype,N>&r) 
+{
+  for(int i=0;i<N;i++){
+    timesMinusI(ret._internal[i],r._internal[i]);
+  }
+}
+template<class vtype,int N> inline void  timesMinusI(iMatrix<vtype,N> &ret,const iMatrix<vtype,N>&r)
+{
+  for(int i=0;i<N;i++){
+  for(int j=0;j<N;j++){
+    timesMinusI(ret._internal[i][j],r._internal[i][j]);
+  }}
+}
+
+
 /////////////////////////////////////////////// 
 // Conj function for scalar, vector, matrix
 /////////////////////////////////////////////// 
