@@ -27,14 +27,28 @@ namespace Grid {
   // Convenience functions to access stadard command line arg
   // driven parallelism controls
   //////////////////////////////////////////////////////
-  static std::vector<int> Grid_default_simd;
   static std::vector<int> Grid_default_latt;
   static std::vector<int> Grid_default_mpi;
 
   int GridThread::_threads;
 
+  const std::vector<int> GridDefaultSimd(int dims,int nsimd)
+  {
+    std::vector<int> layout(dims);
+    int nn=nsimd;
+    for(int d=dims-1;d>=0;d--){
+      if ( nn>=2) {
+	layout[d]=2;
+	nn/=2;
+      } else { 
+	layout[d]=1;
+      }
+    }
+    assert(nn==1);
+    return layout;
+  }
 
-  const std::vector<int> &GridDefaultSimd(void)     {return Grid_default_simd;};
+  
   const std::vector<int> &GridDefaultLatt(void)     {return Grid_default_latt;};
   const std::vector<int> &GridDefaultMpi(void)      {return Grid_default_mpi;};
 
@@ -71,21 +85,10 @@ void GridCmdOptionIntVector(std::string &str,std::vector<int> & vec)
 
 void GridParseLayout(char **argv,int argc,
 		     std::vector<int> &latt,
-		     std::vector<int> &simd,
 		     std::vector<int> &mpi)
 {
   mpi =std::vector<int>({1,1,1,1});
   latt=std::vector<int>({8,8,8,8});
-
-#if defined(SSE4)
-  simd=std::vector<int>({1,1,1,2});
-#endif
-#if defined(AVX1) || defined (AVX2)
-  simd=std::vector<int>({1,1,2,2});
-#endif
-#if defined(AVX512)
-  simd=std::vector<int>({1,2,2,2});
-#endif
 
   GridThread::SetMaxThreads();
 
@@ -93,10 +96,6 @@ void GridParseLayout(char **argv,int argc,
   if( GridCmdOptionExists(argv,argv+argc,"--mpi") ){
     arg = GridCmdOptionPayload(argv,argv+argc,"--mpi");
     GridCmdOptionIntVector(arg,mpi);
-  }
-  if( GridCmdOptionExists(argv,argv+argc,"--simd") ){
-    arg= GridCmdOptionPayload(argv,argv+argc,"--simd");
-    GridCmdOptionIntVector(arg,simd);
   }
   if( GridCmdOptionExists(argv,argv+argc,"--grid") ){
     arg= GridCmdOptionPayload(argv,argv+argc,"--grid");
@@ -129,7 +128,6 @@ void Grid_init(int *argc,char ***argv)
   }
   GridParseLayout(*argv,*argc,
 		  Grid_default_latt,
-		  Grid_default_simd,
 		  Grid_default_mpi);
 
 }

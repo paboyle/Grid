@@ -8,7 +8,7 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> simd_layout = GridDefaultSimd();
+  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplexD::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
 
   int Nloop=10;

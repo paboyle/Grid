@@ -64,7 +64,8 @@ public:
   ////////////////////////////////////////////////////////////////////////////////
   template <typename Op, typename T1>                         inline Lattice<vobj> & operator=(const LatticeUnaryExpression<Op,T1> &expr)
   {
-PARALLEL_FOR_LOOP
+    //PARALLEL_FOR_LOOP
+#pragma omp parallel for
     for(int ss=0;ss<_grid->oSites();ss++){
       vobj tmp= eval(ss,expr);
       vstream(_odata[ss] ,tmp);
@@ -73,7 +74,8 @@ PARALLEL_FOR_LOOP
   }
   template <typename Op, typename T1,typename T2>             inline Lattice<vobj> & operator=(const LatticeBinaryExpression<Op,T1,T2> &expr)
   {
-PARALLEL_FOR_LOOP
+    // PARALLEL_FOR_LOOP
+#pragma omp parallel for
     for(int ss=0;ss<_grid->oSites();ss++){
       vobj tmp= eval(ss,expr);
       vstream(_odata[ss] ,tmp);
@@ -82,7 +84,8 @@ PARALLEL_FOR_LOOP
   }
   template <typename Op, typename T1,typename T2,typename T3> inline Lattice<vobj> & operator=(const LatticeTrinaryExpression<Op,T1,T2,T3> &expr)
   {
-PARALLEL_FOR_LOOP
+    //PARALLEL_FOR_LOOP
+#pragma omp parallel for
     for(int ss=0;ss<_grid->oSites();ss++){
       vobj tmp= eval(ss,expr);
       vstream(_odata[ss] ,tmp);
@@ -176,15 +179,16 @@ PARALLEL_FOR_LOOP
  }; // class Lattice
 }
 
-#undef GRID_LATTICE_EXPRESSION_TEMPLATES
 
 #include <lattice/Grid_lattice_conformable.h>
 
-#ifdef GRID_LATTICE_EXPRESSION_TEMPLATES
+#define GRID_LATTICE_EXPRESSION_TEMPLATES
+#ifdef  GRID_LATTICE_EXPRESSION_TEMPLATES
 #include <lattice/Grid_lattice_ET.h>
 #else 
 #include <lattice/Grid_lattice_overload.h>
 #endif
+
 #include <lattice/Grid_lattice_arith.h>
 
 #include <lattice/Grid_lattice_trace.h>

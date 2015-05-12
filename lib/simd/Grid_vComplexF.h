@@ -28,9 +28,9 @@ namespace Grid {
             vzero(*this);
             return (*this);
         }
-        vComplexF( Zero & z){
-            vzero(*this);
-        }
+	//        vComplexF( Zero & z){
+	//            vzero(*this);
+	//        }
         vComplexF()=default;
         vComplexF(ComplexF a){
 	  vsplat(*this,a);

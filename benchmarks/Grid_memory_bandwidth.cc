@@ -13,7 +13,7 @@ int main (int argc, char ** argv)
 
   int Nloop=1000;
 
-  std::vector<int> simd_layout = GridDefaultSimd();
+  std::vector<int> simd_layout = GridDefaultSimd(Nd,vReal::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
 
   std::cout << "===================================================================================================="<<std::endl;
@@ -54,7 +54,6 @@ int main (int argc, char ** argv)
   std::cout << "===================================================================================================="<<std::endl;
   std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t"<<"GB/s"<<std::endl;
   std::cout << "----------------------------------------------------------"<<std::endl;
-
   
   for(int lat=4;lat<=32;lat+=4){
 
@@ -68,7 +67,6 @@ int main (int argc, char ** argv)
       LatticeVec x(&Grid); //random(pRNG,x);
       LatticeVec y(&Grid); //random(pRNG,y);
       double a=2.0;
-
 
       double start=usecond();
       for(int i=0;i<Nloop;i++){
