@@ -1,10 +1,6 @@
 #ifndef _GRID_CSHIFT_MPI_H_
 #define _GRID_CSHIFT_MPI_H_
 
-#ifndef MAX
-#define MAX(x,y) ((x)>(y)?(x):(y))
-#define MIN(x,y) ((x)>(y)?(y):(x))
-#endif
 
 namespace Grid { 
 

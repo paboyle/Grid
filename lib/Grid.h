@@ -24,21 +24,21 @@
 #include <stdio.h>
 #include <signal.h>
 
+#ifndef MAX
+#define MAX(x,y) ((x)>(y)?(x):(y))
+#define MIN(x,y) ((x)>(y)?(y):(x))
+#endif
+
 #include <Grid_config.h>
 
 ////////////////////////////////////////////////////////////
 // Tunable header includes
 ////////////////////////////////////////////////////////////
 
-#ifdef HAVE_OPENMP
-#define OMP
-#include <omp.h>
-#endif
 
 #ifdef HAVE_MALLOC_MALLOC_H
 #include <malloc/malloc.h>
 #endif
-
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
