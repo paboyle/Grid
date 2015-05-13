@@ -95,6 +95,10 @@ public:
       return *this;
     }
 
+    friend std::ostream& operator<< (std::ostream& stream, const iScalar<vtype> &o){
+      stream<< "S {"<<o._internal<<"}";
+      return stream;
+    };
 };
 ///////////////////////////////////////////////////////////
 // Allows to turn scalar<scalar<scalar<double>>>> back to double.
@@ -170,6 +174,15 @@ public:
     inline const vtype & operator ()(int i) const {
       return _internal[i];
     }
+    friend std::ostream& operator<< (std::ostream& stream, const iVector<vtype,N> &o){
+      stream<< "V<"<<N<<">{";
+      for(int i=0;i<N;i++) {
+	stream<<o._internal[i];
+	if (i<N-1)	stream<<",";
+      }
+      stream<<"}";
+      return stream;
+    };
     //    inline vtype && operator ()(int i) {
     //      return _internal[i];
     //    }
@@ -262,6 +275,19 @@ public:
   inline const vtype & operator ()(int i,int j) const {
     return _internal[i][j];
   }
+  friend std::ostream& operator<< (std::ostream& stream, const iMatrix<vtype,N> &o){
+    stream<< "M<"<<N<<">{";
+    for(int i=0;i<N;i++) {
+      stream<< "{";
+      for(int j=0;j<N;j++) {
+	stream<<o._internal[i][j];
+	if (i<N-1)	stream<<",";
+      }
+      stream<<"}\n\t\t";
+    }
+    stream<<"}";
+    return stream;
+  };
 
   //  inline vtype && operator ()(int i,int j) {
   //    return _internal[i][j];
