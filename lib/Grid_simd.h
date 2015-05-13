@@ -234,5 +234,60 @@ namespace Grid {
   typedef vRealF vReal;
   typedef vComplexF vComplex;
 #endif
+
+ 
+  inline std::ostream& operator<< (std::ostream& stream, const vComplexF &o){
+    int nn=vComplexF::Nsimd();
+    std::vector<ComplexF,alignedAllocator<ComplexF> > buf(nn);
+    vstore(o,&buf[0]);
+    stream<<"<";
+    for(int i=0;i<nn;i++){
+      stream<<buf[i];
+      if(i<nn-1) stream<<",";
+    }
+    stream<<">";
+    return stream;
+  }
+ 
+  inline std::ostream& operator<< (std::ostream& stream, const vComplexD &o){
+    int nn=vComplexD::Nsimd();
+    std::vector<ComplexD,alignedAllocator<ComplexD> > buf(nn);
+    vstore(o,&buf[0]);
+    stream<<"<";
+    for(int i=0;i<nn;i++){
+      stream<<buf[i];
+      if(i<nn-1) stream<<",";
+    }
+    stream<<">";
+    return stream;
+  }
+
+  inline std::ostream& operator<< (std::ostream& stream, const vRealF &o){
+    int nn=vRealF::Nsimd();
+    std::vector<RealF,alignedAllocator<RealF> > buf(nn);
+    vstore(o,&buf[0]);
+    stream<<"<";
+    for(int i=0;i<nn;i++){
+      stream<<buf[i];
+      if(i<nn-1) stream<<",";
+    }
+    stream<<">";
+    return stream;
+  }
+
+  inline std::ostream& operator<< (std::ostream& stream, const vRealD &o){
+    int nn=vRealD::Nsimd();
+    std::vector<RealD,alignedAllocator<RealD> > buf(nn);
+    vstore(o,&buf[0]);
+    stream<<"<";
+    for(int i=0;i<nn;i++){
+      stream<<buf[i];
+      if(i<nn-1) stream<<",";
+    }
+    stream<<">";
+    return stream;
+  }
+
+
 }
 #endif

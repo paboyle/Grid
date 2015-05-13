@@ -5,6 +5,7 @@
   - Performance check on Guido's reimplementation strategy
 
 * FIXME audit
+
 * const audit
 
 * Replace vset with a call to merge.; 
@@ -12,6 +13,8 @@
 * extract / merge extra implementation removal      
 
 * Strong test for norm2, conj and all primitive types. -- tests/Grid_simd.cc is almost there
+
+* Thread scaling tests Xeon, XeonPhi
 
 ================================================================
 *** New Functionality
@@ -23,9 +26,6 @@
   - use protocol buffers? replace xmlReader/Writer ec..
   - Binary use htonll, htonl
 
-* Bug in SeedFixedIntegers gave same output on each site. -- Think I fixed but NOT checked for sure
-  Implement and use lattice IO to verify this.
-
 * Expression template engine: -- DONE
    -- Norm2(expression) problem: introduce norm2 unary op, or Introduce conversion automatic from expression to Lattice<vobj>
 
@@ -33,6 +33,7 @@
 
 ** Make the Tensor types and Complex etc... play more nicely.
   - TensorRemove is a hack, come up with a long term rationalised approach to Complex vs. Scalar<Scalar<Scalar<Complex > > >
+
   QDP forces use of "toDouble" to get back to non tensor scalar. This role is presently taken TensorRemove, but I
   want to introduce a syntax that does not require this.
   - Reductions that contract indices on a site should always demote the tensor structure.
@@ -71,6 +72,7 @@
    // Fourier transform equivalent.
 
 Actions -- coherent framework for implementing actions and their forces.
+
 * Fermion
   - Wilson
   - Clover
@@ -81,22 +83,24 @@ Actions -- coherent framework for implementing actions and their forces.
 * Gauge
   - Wilson, symanzik, iwasaki
 
-Algorithms
+Algorithms (lots of reuse/port from BFM)
 * LinearOperator
 * LinearSolver
 * Polynomial 
 * Eigen
+* CG
 * Pcg
 * Adef2
 * DeflCG
 * fPcg
 * MCR
 * HDCG
-* HMC, Heatbath
+* HMC, 
+* Heatbath
 * etc..
 
 ======================================================================================================
-FUNCTIONALITY: it pleases me to keep track of things I have done (keeps sane)
+FUNCTIONALITY: it pleases me to keep track of things I have done (keeps me arguably sane)
 ======================================================================================================
 
 * Command line args for geometry, simd, etc. layout. Is it necessary to have -- DONE
@@ -158,4 +162,6 @@ FUNCTIONALITY: it pleases me to keep track of things I have done (keeps sane)
 * Conformable test in Cshift routines. -- none needed ; there is only one 
 * Conformable testing in expression templates -- DONE (recursive)
 
+* Bug in SeedFixedIntegers gave same output on each site. -- DONE
+  Implement and use lattice IO to verify this.            -- cout for lattice types DONE
 
