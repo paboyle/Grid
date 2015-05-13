@@ -3,15 +3,11 @@
 
 #include <Grid.h>
 
+#include <algorithms/LinearOperator.h>
+
 namespace Grid {
 
   namespace QCD {
-
-
-    template<class vtype> class LinearOperatorBase {
-    public:
-      void multiply(const Lattice<vtype> &in, Lattice<vtype> &out){ assert(0);}
-    };
 
     class WilsonMatrix : public LinearOperatorBase<LatticeFermion>
     {
@@ -40,7 +36,9 @@ namespace Grid {
       void DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGaugeField &Umu);
 
       // override multiply
-      void multiply(const LatticeFermion &in, LatticeFermion &out);
+      virtual void M    (const LatticeFermion &in, LatticeFermion &out);
+      virtual void Mdag (const LatticeFermion &in, LatticeFermion &out);
+      virtual void MdagM(const LatticeFermion &in, LatticeFermion &out);
 
       // non-hermitian hopping term; half cb or both
       void Dhop(const LatticeFermion &in, LatticeFermion &out);
