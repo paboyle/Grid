@@ -85,7 +85,17 @@ void WilsonMatrix::DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGaugeF
   }
 }
 
-void WilsonMatrix::multiply(const LatticeFermion &in, LatticeFermion &out)
+void WilsonMatrix::M(const LatticeFermion &in, LatticeFermion &out)
+{
+  Dhop(in,out);
+  return;
+}
+void WilsonMatrix::Mdag(const LatticeFermion &in, LatticeFermion &out)
+{
+  Dhop(in,out);
+  return;
+}
+void WilsonMatrix::MdagM(const LatticeFermion &in, LatticeFermion &out)
 {
   Dhop(in,out);
   return;
@@ -96,18 +106,18 @@ void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
   WilsonCompressor compressor;
   Stencil.HaloExchange<vSpinColourVector,vHalfSpinColourVector,WilsonCompressor>(in,comm_buf,compressor);
 
-  vHalfSpinColourVector  tmp;    
-  vHalfSpinColourVector  chi;    
-  vSpinColourVector result;
-  vHalfSpinColourVector Uchi;
-  int offset,local,perm, ptype;
-
 PARALLEL_FOR_LOOP
   for(int sss=0;sss<grid->oSites();sss++){
 
+    vHalfSpinColourVector  tmp;    
+    vHalfSpinColourVector  chi;    
+    vSpinColourVector result;
+    vHalfSpinColourVector Uchi;
+    int offset,local,perm, ptype;
+
+    //    int ss = Stencil._LebesgueReorder[sss];
     int ss = sss;
     int ssu= ss;
-    //    int ss = Stencil._LebesgueReorder[sss];
 
     // Xp
     offset = Stencil._offsets [Xp][ss];

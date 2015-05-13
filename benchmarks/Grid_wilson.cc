@@ -80,7 +80,7 @@ int main (int argc, char ** argv)
   int ncall=1000;
   double t0=usecond();
   for(int i=0;i<ncall;i++){
-    Dw.multiply(src,result);
+    Dw.M(src,result);
   }
   double t1=usecond();
   double flops=1320*volume*ncall;
