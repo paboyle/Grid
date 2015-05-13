@@ -8,60 +8,39 @@
 
 * const audit
 
+Insert/Extract
 * Replace vset with a call to merge.; 
 * care in Gmerge,Gextract over vset .
 * extract / merge extra implementation removal      
-
-* Strong test for norm2, conj and all primitive types. -- tests/Grid_simd.cc is almost there
+* Optimise the extract/merge SIMD routines; Azusa??
+ - I have collated into single location at least.
+ - Need to use _mm_*insert/extract routines.
 
 * Thread scaling tests Xeon, XeonPhi
 
-================================================================
-*** New Functionality
-================================================================
-
-* Implement where within expression template scheme.
-
-* - BinaryWriter, TextWriter etc...
-  - use protocol buffers? replace xmlReader/Writer ec..
-  - Binary use htonll, htonl
-
-* Expression template engine: -- DONE
-   -- Norm2(expression) problem: introduce norm2 unary op, or Introduce conversion automatic from expression to Lattice<vobj>
-
-* CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
-
 ** Make the Tensor types and Complex etc... play more nicely.
   - TensorRemove is a hack, come up with a long term rationalised approach to Complex vs. Scalar<Scalar<Scalar<Complex > > >
-
   QDP forces use of "toDouble" to get back to non tensor scalar. This role is presently taken TensorRemove, but I
   want to introduce a syntax that does not require this.
+
   - Reductions that contract indices on a site should always demote the tensor structure.
     norm2(), innerProduct.
+
   - Result of Sum(), SliceSum // spatial sums
               trace, traceIndex etc.. do not.
+
   - problem arises because "trace" returns Lattice<TComplex> moving everything down to Scalar,
     and then Sum and SliceSum to not remove the Scalars. This would be fixed if we 
     template specialize the scalar scalar scalar sum and SliceSum,  on the basis of being
     pure scalar.
 
-* Optimise the extract/merge SIMD routines; Azusa??
- - I have collated into single location at least.
- - Need to use _mm_*insert/extract routines.
+*** Expression template engine: -- DONE
 
-* Flavour matrices?
-* Pauli, SU subgroup, etc.. 
-* su3 exponentiation & log etc.. [Jamie's code?]
-* TaProj
-* FFTnD ?
-
-* Parallel io improvements
-  - optional parallel MPI2 IO
-  - move Plaquette and link trace checks into nersc reader from the Grid_nersc_io.cc test.
-  
-* rb4d support for 5th dimension in Mobius.
-
+[   -- Norm2(expression) problem: introduce norm2 unary op, or Introduce conversion automatic from expression to Lattice<vobj>
+* Strong test for norm2, conj and all primitive types. -- tests/Grid_simd.cc is almost there
+* Implement where within expression template scheme.
 * Check for missing functionality                    - partially audited against QDP++ layout
+
    // Unary functions
    // cos,sin, tan, acos, asin, cosh, acosh, tanh, sinh, // Scalar<vReal> only arg
    // exp, log, sqrt, fabs
@@ -69,7 +48,21 @@
    // adjColor, adjSpin,
    // copyMask.
    // localMaxAbs
-   // Fourier transform equivalent.
+   // Fourier transform equivalent.]
+
+================================================================
+*** New Functionality
+================================================================
+
+* - BinaryWriter, TextWriter etc...
+  - use protocol buffers? replace xmlReader/Writer ec..
+  - Binary use htonll, htonl
+
+* CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
+
+* Parallel io improvements
+  - optional parallel MPI2 IO
+  - move Plaquette and link trace checks into nersc reader from the Grid_nersc_io.cc test.
 
 Actions -- coherent framework for implementing actions and their forces.
 
@@ -79,9 +72,6 @@ Actions -- coherent framework for implementing actions and their forces.
   - DomainWall
   - Mobius
   - z-Mobius
-
-* Gauge
-  - Wilson, symanzik, iwasaki
 
 Algorithms (lots of reuse/port from BFM)
 * LinearOperator
@@ -97,7 +87,20 @@ Algorithms (lots of reuse/port from BFM)
 * HDCG
 * HMC, 
 * Heatbath
+* Integrators, leapfrog, omelyan, force gradient etc...
 * etc..
+
+* Gauge
+  - Wilson, symanzik, iwasaki
+
+* rb4d support for 5th dimension in Mobius.
+
+* Flavour matrices?
+* Pauli, SU subgroup, etc.. 
+* su3 exponentiation & log etc.. [Jamie's code?]
+* TaProj
+* FFTnD ?
+
 
 ======================================================================================================
 FUNCTIONALITY: it pleases me to keep track of things I have done (keeps me arguably sane)
