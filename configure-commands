@@ -1,5 +1,8 @@
+CXX=icpc ./configure --enable-simd=AVX CXXFLAGS="-mavx -fopenmp -O3 -I/opt/local/include/openmpi-mp/ -std=c++11" LDFLAGS=-L/opt/local/lib/openmpi-mp/ LIBS="-lmpi -lmpi_cxx -fopenmp" --enable-comms=mpi
+
 CXX=clang-omp++ ./configure --enable-simd=AVX CXXFLAGS="-mavx -fopenmp -O3 -I/opt/local/include/openmpi-mp/ -std=c++11" LDFLAGS=-L/opt/local/lib/openmpi-mp/ LIBS="-lmpi -lmpi_cxx -fopenmp"  --enable-comms=mpi
 CXX=clang++ ./configure --enable-simd=AVX CXXFLAGS="-mavx -O3 -I/opt/local/include/openmpi-mp/ -std=c++11" LDFLAGS=-L/opt/local/lib/openmpi-mp/ LIBS="-lmpi -lmpi_cxx"  --enable-comms=mpi
 CXX=clang++ ./configure --enable-simd=AVX CXXFLAGS="-mavx -g -I/opt/local/include/openmpi-mp/ -std=c++11" LDFLAGS=-L/opt/local/lib/openmpi-mp/ LIBS="-lmpi -lmpi_cxx"  --enable-comms=mpi
 CXX=clang++ ./configure --enable-simd=AVX CXXFLAGS="-mavx -g  -std=c++11" LDFLAGS= LIBS=-lmpi  --enable-comms=fake
 CXX=clang++ ./configure --enable-simd=AVX CXXFLAGS="-mavx -g  -std=c++11" LDFLAGS= LIBS=-lmpi  --enable-comms=none
+CXX=/usr/local/clang-3.7/bin/clang++ ./configure --enable-simd=AVX512 CXXFLAGS="-mavx512f -O3  -std=c++11" LDFLAGS= LIBS= --enable-comms=none

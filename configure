@@ -4196,6 +4196,18 @@ fi
 
 done
 
+for ac_header in mm_malloc.h
+do :
+  ac_fn_cxx_check_header_mongrel "$LINENO" "mm_malloc.h" "ac_cv_header_mm_malloc_h" "$ac_includes_default"
+if test "x$ac_cv_header_mm_malloc_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_MM_MALLOC_H 1
+_ACEOF
+
+fi
+
+done
+
 for ac_header in malloc/malloc.h
 do :
   ac_fn_cxx_check_header_mongrel "$LINENO" "malloc/malloc.h" "ac_cv_header_malloc_malloc_h" "$ac_includes_default"
