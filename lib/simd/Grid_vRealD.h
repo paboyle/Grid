@@ -237,7 +237,7 @@ namespace Grid {
 	    __m256d tmp  = _mm256_permute2f128_pd(in.v,in.v,0x01); // tmp 1032; in= 3210
             __m256d hadd = _mm256_hadd_pd(in.v,tmp);              // hadd = 1+0,3+2,3+2,1+0
                     hadd = _mm256_hadd_pd(hadd,hadd);             // hadd = 1+0+3+2...
-	    converter.l = _mm256_extract_epi64(hadd,0);
+		    converter.l = _mm256_extract_epi64((ivec)hadd,0);
             return converter.d;
 #endif
 #ifdef AVX512
