@@ -2,6 +2,9 @@
 #define GRID_ALIGNED_ALLOCATOR_H
 
 #include <immintrin.h>
+#ifdef HAVE_MM_MALLOC_H
+#include <mm_malloc.h>
+#endif
 
 namespace Grid {
 
@@ -36,16 +39,20 @@ public:
 
   pointer allocate(size_type __n, const void* = 0)
   { 
-#ifdef AVX512
-    _Tp * ptr = (_Tp *) memalign(128,__n*sizeof(_Tp));
-#else
+#ifdef HAVE_MM_MALLOC_H
     _Tp * ptr = (_Tp *) _mm_malloc(__n*sizeof(_Tp),128);
+#else
+    _Tp * ptr = (_Tp *) memalign(128,__n*sizeof(_Tp));
 #endif
     return ptr;
   }
 
   void deallocate(pointer __p, size_type) { 
-    free(__p); 
+#ifdef HAVE_MM_MALLOC_H
+    _mm_free(__p); 
+#else
+    free(__p);
+#endif
   }
   void construct(pointer __p, const _Tp& __val) { };
   void construct(pointer __p) { };
