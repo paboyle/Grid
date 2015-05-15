@@ -64,8 +64,7 @@ public:
   ////////////////////////////////////////////////////////////////////////////////
   template <typename Op, typename T1>                         inline Lattice<vobj> & operator=(const LatticeUnaryExpression<Op,T1> &expr)
   {
-    //PARALLEL_FOR_LOOP
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
       vobj tmp= eval(ss,expr);
       vstream(_odata[ss] ,tmp);
@@ -74,8 +73,7 @@ public:
   }
   template <typename Op, typename T1,typename T2>             inline Lattice<vobj> & operator=(const LatticeBinaryExpression<Op,T1,T2> &expr)
   {
-    // PARALLEL_FOR_LOOP
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
       vobj tmp= eval(ss,expr);
       vstream(_odata[ss] ,tmp);
@@ -84,8 +82,7 @@ public:
   }
   template <typename Op, typename T1,typename T2,typename T3> inline Lattice<vobj> & operator=(const LatticeTrinaryExpression<Op,T1,T2,T3> &expr)
   {
-    //PARALLEL_FOR_LOOP
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
       vobj tmp= eval(ss,expr);
       vstream(_odata[ss] ,tmp);
