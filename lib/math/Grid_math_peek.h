@@ -13,28 +13,22 @@ namespace Grid {
 //template<int Level> inline RealD peekIndex(const RealD arg) { return arg;}
 
 // Scalar peek, no indices
-template<int Level,class vtype> inline 
-  auto peekIndex(const iScalar<vtype> &arg) -> 
-  typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::value,  // Index matches
-  iScalar<vtype> >::type                              // return scalar
+template<int Level,class vtype,typename std::enable_if< iScalar<vtype>::TensorLevel == Level >::type * =nullptr> inline 
+  auto peekIndex(const iScalar<vtype> &arg) ->  iScalar<vtype> 
 {
   return arg;
 }
 // Vector peek, one index
-template<int Level,class vtype,int N> inline 
-  auto peekIndex(const iVector<vtype,N> &arg,int i) -> 
-  typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,Level>::value,  // Index matches
-  iScalar<vtype> >::type                              // return scalar
+template<int Level,class vtype,int N,typename std::enable_if< iScalar<vtype>::TensorLevel == Level >::type * =nullptr> inline 
+  auto peekIndex(const iVector<vtype,N> &arg,int i) -> iScalar<vtype> // Index matches
 {
   iScalar<vtype> ret;                              // return scalar
   ret._internal = arg._internal[i];
   return ret;
 }
 // Matrix peek, two indices
-template<int Level,class vtype,int N> inline 
-  auto peekIndex(const iMatrix<vtype,N> &arg,int i,int j) -> 
-  typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,Level>::value,  // Index matches
-  iScalar<vtype> >::type                              // return scalar
+template<int Level,class vtype,int N,typename std::enable_if< iScalar<vtype>::TensorLevel == Level >::type * =nullptr> inline 
+  auto peekIndex(const iMatrix<vtype,N> &arg,int i,int j) ->  iScalar<vtype>
 {
   iScalar<vtype> ret;                              // return scalar
   ret._internal = arg._internal[i][j];
@@ -45,38 +39,30 @@ template<int Level,class vtype,int N> inline
 // No match peek for scalar,vector,matrix must forward on either 0,1,2 args. Must have 9 routines with notvalue
 /////////////
 // scalar
-template<int Level,class vtype> inline 
-  auto peekIndex(const iScalar<vtype> &arg) ->                                     // Scalar 0 index  
-  typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::notvalue,  // Index does NOT match
-  iScalar<decltype(peekIndex<Level>(arg._internal))> >::type                       
+template<int Level,class vtype,typename std::enable_if< iScalar<vtype>::TensorLevel != Level >::type * =nullptr> inline 
+  auto peekIndex(const iScalar<vtype> &arg) -> iScalar<decltype(peekIndex<Level>(arg._internal))>
 {
   iScalar<decltype(peekIndex<Level>(arg._internal))> ret;
   ret._internal= peekIndex<Level>(arg._internal);
   return ret;
 }
-template<int Level,class vtype> inline 
-  auto peekIndex(const iScalar<vtype> &arg,int i) ->                             // Scalar 1 index
-  typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::notvalue,  // Index does NOT match
-  iScalar<decltype(peekIndex<Level>(arg._internal,i))> >::type                       
+template<int Level,class vtype, typename std::enable_if< iScalar<vtype>::TensorLevel != Level >::type * =nullptr> inline 
+  auto peekIndex(const iScalar<vtype> &arg,int i) ->  iScalar<decltype(peekIndex<Level>(arg._internal,i))> 
 {
   iScalar<decltype(peekIndex<Level>(arg._internal,i))> ret;
   ret._internal=peekIndex<Level>(arg._internal,i);
   return ret;
 }
-template<int Level,class vtype> inline 
-  auto peekIndex(const iScalar<vtype> &arg,int i,int j) ->                         // Scalar, 2 index
-  typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::notvalue,  // Index does NOT match
-  iScalar<decltype(peekIndex<Level>(arg._internal,i,j))> >::type                       
+template<int Level,class vtype, typename std::enable_if< iScalar<vtype>::TensorLevel != Level >::type * =nullptr> inline 
+  auto peekIndex(const iScalar<vtype> &arg,int i,int j) ->  iScalar<decltype(peekIndex<Level>(arg._internal,i,j))>
 {
   iScalar<decltype(peekIndex<Level>(arg._internal,i,j))> ret;
   ret._internal=peekIndex<Level>(arg._internal,i,j);
   return ret;
 }
 // vector
-template<int Level,class vtype,int N> inline 
-auto peekIndex(const iVector<vtype,N> &arg) -> 
-  typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::notvalue,  // Index does not match
-  iVector<decltype(peekIndex<Level>(arg._internal[0])),N> >::type                       
+template<int Level,class vtype,int N, typename std::enable_if< iScalar<vtype>::TensorLevel != Level >::type * =nullptr> inline 
+auto peekIndex(const iVector<vtype,N> &arg) ->   iVector<decltype(peekIndex<Level>(arg._internal[0])),N>
 {
   iVector<decltype(peekIndex<Level>(arg._internal[0])),N> ret;
   for(int ii=0;ii<N;ii++){
@@ -84,10 +70,8 @@ auto peekIndex(const iVector<vtype,N> &arg) ->
   }
   return ret;
 }
-template<int Level,class vtype,int N> inline 
-  auto peekIndex(const iVector<vtype,N> &arg,int i) -> 
-  typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,Level>::notvalue,  // Index does not match
-  iVector<decltype(peekIndex<Level>(arg._internal[0],i)),N> >::type                       
+template<int Level,class vtype,int N, typename std::enable_if< iScalar<vtype>::TensorLevel != Level >::type * =nullptr> inline 
+  auto peekIndex(const iVector<vtype,N> &arg,int i) ->  iVector<decltype(peekIndex<Level>(arg._internal[0],i)),N>
 {
   iVector<decltype(peekIndex<Level>(arg._internal[0],i)),N> ret;
   for(int ii=0;ii<N;ii++){
@@ -95,10 +79,8 @@ template<int Level,class vtype,int N> inline
   }
   return ret;
 }
-template<int Level,class vtype,int N> inline 
-  auto peekIndex(const iVector<vtype,N> &arg,int i,int j) -> 
-  typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,Level>::notvalue,  // Index does not match
-  iVector<decltype(peekIndex<Level>(arg._internal[0],i,j)),N> >::type                       
+template<int Level,class vtype,int N, typename std::enable_if< iScalar<vtype>::TensorLevel != Level >::type * =nullptr> inline 
+  auto peekIndex(const iVector<vtype,N> &arg,int i,int j) ->  iVector<decltype(peekIndex<Level>(arg._internal[0],i,j)),N> 
 {
   iVector<decltype(peekIndex<Level>(arg._internal[0],i,j)),N> ret;
   for(int ii=0;ii<N;ii++){
@@ -107,10 +89,8 @@ template<int Level,class vtype,int N> inline
   return ret;
 }
 // matrix
-template<int Level,class vtype,int N> inline 
-auto peekIndex(const iMatrix<vtype,N> &arg) -> 
-  typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::notvalue,  // Index does not match
-  iMatrix<decltype(peekIndex<Level>(arg._internal[0][0])),N> >::type                       
+template<int Level,class vtype,int N, typename std::enable_if< iScalar<vtype>::TensorLevel != Level >::type * =nullptr> inline 
+auto peekIndex(const iMatrix<vtype,N> &arg) ->   iMatrix<decltype(peekIndex<Level>(arg._internal[0][0])),N> 
 {
   iMatrix<decltype(peekIndex<Level>(arg._internal[0][0])),N> ret;
   for(int ii=0;ii<N;ii++){
@@ -119,22 +99,18 @@ auto peekIndex(const iMatrix<vtype,N> &arg) ->
   }}
   return ret;
 }
-template<int Level,class vtype,int N> inline 
-  auto peekIndex(const iMatrix<vtype,N> &arg,int i) -> 
-  typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,Level>::notvalue,  // Index does not match
-  iMatrix<decltype(peekIndex<Level>(arg._internal[0],i)),N> >::type                       
+template<int Level,class vtype,int N, typename std::enable_if< iScalar<vtype>::TensorLevel != Level >::type * =nullptr> inline 
+  auto peekIndex(const iMatrix<vtype,N> &arg,int i) ->   iMatrix<decltype(peekIndex<Level>(arg._internal[0][0],i)),N>
 {
-  iMatrix<decltype(peekIndex<Level>(arg._internal[0],i)),N> ret;
+  iMatrix<decltype(peekIndex<Level>(arg._internal[0][0],i)),N> ret;
   for(int ii=0;ii<N;ii++){
   for(int jj=0;jj<N;jj++){
     ret._internal[ii][jj]=peekIndex<Level>(arg._internal[ii][jj],i);
   }}
   return ret;
 }
-template<int Level,class vtype,int N> inline 
-  auto peekIndex(const iMatrix<vtype,N> &arg,int i,int j) -> 
-  typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,Level>::notvalue,  // Index does not match
-  iMatrix<decltype(peekIndex<Level>(arg._internal[0][0],i,j)),N> >::type                       
+template<int Level,class vtype,int N, typename std::enable_if< iScalar<vtype>::TensorLevel != Level >::type * =nullptr> inline 
+  auto peekIndex(const iMatrix<vtype,N> &arg,int i,int j) ->   iMatrix<decltype(peekIndex<Level>(arg._internal[0][0],i,j)),N>
 {
   iMatrix<decltype(peekIndex<Level>(arg._internal[0][0],i,j)),N> ret;
   for(int ii=0;ii<N;ii++){
