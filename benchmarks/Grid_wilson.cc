@@ -50,25 +50,20 @@ int main (int argc, char ** argv)
     U[mu] = peekIndex<LorentzIndex>(Umu,mu);
   }
   
-  std::vector<int> mask({1,1,1,1,1,1,1,1});
   { // Naive wilson implementation
     ref = zero;
     for(int mu=0;mu<Nd;mu++){
 
       //    ref =  src + Gamma(Gamma::GammaX)* src ; // 1-gamma_x
-      if( mask[mu] ) {
-	tmp = U[mu]*Cshift(src,mu,1);
-	for(int i=0;i<ref._odata.size();i++){
-	  ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
-	}
+      tmp = U[mu]*Cshift(src,mu,1);
+      for(int i=0;i<ref._odata.size();i++){
+	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
       }
 
-      if( mask[mu+4] ){
-	tmp =adj(U[mu])*src;
-	tmp =Cshift(tmp,mu,-1);
-	for(int i=0;i<ref._odata.size();i++){
-	  ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
-	}
+      tmp =adj(U[mu])*src;
+      tmp =Cshift(tmp,mu,-1);
+      for(int i=0;i<ref._odata.size();i++){
+	ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
       }
     }
   }
