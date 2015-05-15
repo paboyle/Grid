@@ -1,0 +1,10 @@
+#!/bin/bash
+DIRS="build-icpc-mic"
+
+for D in $DIRS
+do
+  mkdir -p $D
+ cd $D
+  ../configure-commands
+  cd ..
+done
