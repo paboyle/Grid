@@ -11,7 +11,7 @@ namespace Grid{
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class vsimd,class scalar>
-inline void extract(typename std::enable_if<isGridTensor<vsimd>::notvalue, const vsimd >::type * y, 
+inline void extract(typename std::enable_if<!isGridTensor<vsimd>::value, const vsimd >::type * y, 
 		    std::vector<scalar *> &extracted,int offset){
   // FIXME: bounce off memory is painful
   int Nextr=extracted.size();
@@ -27,7 +27,7 @@ inline void extract(typename std::enable_if<isGridTensor<vsimd>::notvalue, const
 // Merge simd vector from array of scalars to pointer array with offset
 ////////////////////////////////////////////////////////////////////////
 template<class vsimd,class scalar>
-inline void merge(typename std::enable_if<isGridTensor<vsimd>::notvalue, vsimd >::type * y, 
+inline void merge(typename std::enable_if<!isGridTensor<vsimd>::value, vsimd >::type * y, 
 		  std::vector<scalar *> &extracted,int offset){
   int Nextr=extracted.size();
   int Nsimd=vsimd::Nsimd();
@@ -47,7 +47,7 @@ inline void merge(typename std::enable_if<isGridTensor<vsimd>::notvalue, vsimd >
 // Extract a fundamental vector type to scalar array 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 template<class vsimd,class scalar>
-inline void extract(typename std::enable_if<isGridTensor<vsimd>::notvalue, const vsimd >::type  &y,std::vector<scalar> &extracted){
+inline void extract(typename std::enable_if<!isGridTensor<vsimd>::value, const vsimd >::type  &y,std::vector<scalar> &extracted){
 
   int Nextr=extracted.size();
   int Nsimd=vsimd::Nsimd();
@@ -66,7 +66,7 @@ inline void extract(typename std::enable_if<isGridTensor<vsimd>::notvalue, const
 // Merge simd vector from array of scalars
 ////////////////////////////////////////////////////////////////////////
 template<class vsimd,class scalar>
-inline void merge(typename std::enable_if<isGridTensor<vsimd>::notvalue, vsimd >::type  &y,std::vector<scalar> &extracted){
+inline void merge(typename std::enable_if<!isGridTensor<vsimd>::value, vsimd >::type  &y,std::vector<scalar> &extracted){
   int Nextr=extracted.size();
   int Nsimd=vsimd::Nsimd();
   int s=Nsimd/Nextr;
@@ -80,7 +80,7 @@ inline void merge(typename std::enable_if<isGridTensor<vsimd>::notvalue, vsimd >
 
 };
 template<class vsimd,class scalar>
-inline void AmergeA(typename std::enable_if<isGridTensor<vsimd>::notvalue, vsimd >::type  &y,std::vector<scalar> &extracted){
+inline void AmergeA(typename std::enable_if<!isGridTensor<vsimd>::value, vsimd >::type  &y,std::vector<scalar> &extracted){
   int Nextr=extracted.size();
   int Nsimd=vsimd::Nsimd();
   int s=Nsimd/Nextr;
