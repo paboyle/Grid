@@ -42,46 +42,46 @@ public:
       zeroit(*this);
       return *this;
     }
-    friend void vstream(iScalar<vtype> &out,const iScalar<vtype> &in){
+    friend strong_inline void vstream(iScalar<vtype> &out,const iScalar<vtype> &in){
       vstream(out._internal,in._internal);
     }
 
 
-    friend void zeroit(iScalar<vtype> &that){
+    friend strong_inline void zeroit(iScalar<vtype> &that){
         zeroit(that._internal);
     }
-    friend void prefetch(iScalar<vtype> &that){
+    friend strong_inline void prefetch(iScalar<vtype> &that){
       prefetch(that._internal);
     }
-    friend void permute(iScalar<vtype> &out,const iScalar<vtype> &in,int permutetype){
+    friend strong_inline void permute(iScalar<vtype> &out,const iScalar<vtype> &in,int permutetype){
       permute(out._internal,in._internal,permutetype);
     }
 
     // Unary negation
-    friend inline iScalar<vtype> operator -(const iScalar<vtype> &r) {
+    friend strong_inline iScalar<vtype> operator -(const iScalar<vtype> &r) {
         iScalar<vtype> ret;
         ret._internal= -r._internal;
         return ret;
     }
     // *=,+=,-= operators inherit from corresponding "*,-,+" behaviour
-    inline iScalar<vtype> &operator *=(const iScalar<vtype> &r) {
+    strong_inline iScalar<vtype> &operator *=(const iScalar<vtype> &r) {
         *this = (*this)*r;
         return *this;
     }
-    inline iScalar<vtype> &operator -=(const iScalar<vtype> &r) {
+    strong_inline iScalar<vtype> &operator -=(const iScalar<vtype> &r) {
         *this = (*this)-r;
         return *this;
     }
-    inline iScalar<vtype> &operator +=(const iScalar<vtype> &r) {
+    strong_inline iScalar<vtype> &operator +=(const iScalar<vtype> &r) {
         *this = (*this)+r;
         return *this;
     }
     
-    inline vtype & operator ()(void) {
+    strong_inline vtype & operator ()(void) {
       return _internal;
     }
 
-    inline const vtype & operator ()(void) const {
+    strong_inline const vtype & operator ()(void) const {
       return _internal;
     }
 
@@ -89,7 +89,7 @@ public:
     operator RealD () const { return(real(TensorRemove(_internal))); }
 
     // convert from a something to a scalar
-    template<class T,typename std::enable_if<!isGridTensor<T>::value, T>::type* = nullptr > inline auto operator = (T arg) -> iScalar<vtype>
+    template<class T,typename std::enable_if<!isGridTensor<T>::value, T>::type* = nullptr > strong_inline auto operator = (T arg) -> iScalar<vtype>
     { 
       _internal = vtype(arg);
       return *this;
@@ -103,8 +103,8 @@ public:
 ///////////////////////////////////////////////////////////
 // Allows to turn scalar<scalar<scalar<double>>>> back to double.
 ///////////////////////////////////////////////////////////
-template<class T>     inline typename std::enable_if<!isGridTensor<T>::value, T>::type TensorRemove(T arg) { return arg;}
-template<class vtype> inline auto TensorRemove(iScalar<vtype> arg) -> decltype(TensorRemove(arg._internal))
+template<class T>     strong_inline typename std::enable_if<!isGridTensor<T>::value, T>::type TensorRemove(T arg) { return arg;}
+template<class vtype> strong_inline auto TensorRemove(iScalar<vtype> arg) -> decltype(TensorRemove(arg._internal))
 {
   return TensorRemove(arg._internal);
 }
@@ -130,48 +130,48 @@ public:
         zeroit(*this);
         return *this;
     }
-    friend void zeroit(iVector<vtype,N> &that){
+    friend strong_inline void zeroit(iVector<vtype,N> &that){
         for(int i=0;i<N;i++){
             zeroit(that._internal[i]);
         }
     }
-    friend void prefetch(iVector<vtype,N> &that){
+    friend strong_inline void prefetch(iVector<vtype,N> &that){
       for(int i=0;i<N;i++) prefetch(that._internal[i]);
     }
-    friend void vstream(iVector<vtype,N> &out,const iVector<vtype,N> &in){
+    friend strong_inline void vstream(iVector<vtype,N> &out,const iVector<vtype,N> &in){
       for(int i=0;i<N;i++){
 	vstream(out._internal[i],in._internal[i]);
       }
     }
 
-    friend void permute(iVector<vtype,N> &out,const iVector<vtype,N> &in,int permutetype){
+    friend strong_inline void permute(iVector<vtype,N> &out,const iVector<vtype,N> &in,int permutetype){
       for(int i=0;i<N;i++){
 	permute(out._internal[i],in._internal[i],permutetype);
       }
     }
     // Unary negation
-    friend inline iVector<vtype,N> operator -(const iVector<vtype,N> &r) {
+    friend strong_inline iVector<vtype,N> operator -(const iVector<vtype,N> &r) {
         iVector<vtype,N> ret;
         for(int i=0;i<N;i++) ret._internal[i]= -r._internal[i];
         return ret;
     }
     // *=,+=,-= operators inherit from corresponding "*,-,+" behaviour
-    inline iVector<vtype,N> &operator *=(const iScalar<vtype> &r) {
+    strong_inline iVector<vtype,N> &operator *=(const iScalar<vtype> &r) {
         *this = (*this)*r;
         return *this;
     }
-    inline iVector<vtype,N> &operator -=(const iVector<vtype,N> &r) {
+    strong_inline iVector<vtype,N> &operator -=(const iVector<vtype,N> &r) {
         *this = (*this)-r;
         return *this;
     }
-    inline iVector<vtype,N> &operator +=(const iVector<vtype,N> &r) {
+    strong_inline iVector<vtype,N> &operator +=(const iVector<vtype,N> &r) {
         *this = (*this)+r;
         return *this;
     }
-    inline vtype & operator ()(int i) {
+    strong_inline vtype & operator ()(int i) {
       return _internal[i];
     }
-    inline const vtype & operator ()(int i) const {
+    strong_inline const vtype & operator ()(int i) const {
       return _internal[i];
     }
     friend std::ostream& operator<< (std::ostream& stream, const iVector<vtype,N> &o){
@@ -183,7 +183,7 @@ public:
       stream<<"}";
       return stream;
     };
-    //    inline vtype && operator ()(int i) {
+    //    strong_inline vtype && operator ()(int i) {
     //      return _internal[i];
     //    }
 };
@@ -211,7 +211,7 @@ public:
     zeroit(*this);
     return *this;
   }
-  template<class T,typename std::enable_if<!isGridTensor<T>::value, T>::type* = nullptr > inline auto operator = (T arg) -> iMatrix<vtype,N>
+  template<class T,typename std::enable_if<!isGridTensor<T>::value, T>::type* = nullptr > strong_inline auto operator = (T arg) -> iMatrix<vtype,N>
     { 
       zeroit(*this);
       for(int i=0;i<N;i++)
@@ -219,31 +219,31 @@ public:
       return *this;
     }
 
-  friend void zeroit(iMatrix<vtype,N> &that){
+  friend strong_inline void zeroit(iMatrix<vtype,N> &that){
     for(int i=0;i<N;i++){
       for(int j=0;j<N;j++){
 	zeroit(that._internal[i][j]);
     }}
   }
-  friend void prefetch(iMatrix<vtype,N> &that){
+  friend strong_inline void prefetch(iMatrix<vtype,N> &that){
     for(int i=0;i<N;i++) 
     for(int j=0;j<N;j++) 
       prefetch(that._internal[i][j]);
   }
-  friend void vstream(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in){
+  friend strong_inline void vstream(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in){
       for(int i=0;i<N;i++){
       for(int j=0;j<N;j++){
 	vstream(out._internal[i][j],in._internal[i][j]);
       }}
     }
-  friend void permute(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in,int permutetype){
+  friend strong_inline void permute(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in,int permutetype){
     for(int i=0;i<N;i++){
       for(int j=0;j<N;j++){
 	permute(out._internal[i][j],in._internal[i][j],permutetype);
     }}
   }
   // Unary negation
-  friend inline iMatrix<vtype,N> operator -(const iMatrix<vtype,N> &r) {
+  friend strong_inline iMatrix<vtype,N> operator -(const iMatrix<vtype,N> &r) {
     iMatrix<vtype,N> ret;
     for(int i=0;i<N;i++){
       for(int j=0;j<N;j++){
@@ -253,26 +253,26 @@ public:
   }
   // *=,+=,-= operators inherit from corresponding "*,-,+" behaviour
   template<class T>
-  inline iMatrix<vtype,N> &operator *=(const T &r) {
+  strong_inline iMatrix<vtype,N> &operator *=(const T &r) {
     *this = (*this)*r;
     return *this;
   }
   template<class T>
-  inline iMatrix<vtype,N> &operator -=(const T &r) {
+  strong_inline iMatrix<vtype,N> &operator -=(const T &r) {
     *this = (*this)-r;
     return *this;
   }
   template<class T>
-  inline iMatrix<vtype,N> &operator +=(const T &r) {
+  strong_inline iMatrix<vtype,N> &operator +=(const T &r) {
     *this = (*this)+r;
     return *this;
   }
 
   // returns an lvalue reference
-  inline vtype & operator ()(int i,int j) {
+  strong_inline vtype & operator ()(int i,int j) {
     return _internal[i][j];
   }
-  inline const vtype & operator ()(int i,int j) const {
+  strong_inline const vtype & operator ()(int i,int j) const {
     return _internal[i][j];
   }
   friend std::ostream& operator<< (std::ostream& stream, const iMatrix<vtype,N> &o){
@@ -289,7 +289,7 @@ public:
     return stream;
   };
 
-  //  inline vtype && operator ()(int i,int j) {
+  //  strong_inline vtype && operator ()(int i,int j) {
   //    return _internal[i][j];
   //  }
 
