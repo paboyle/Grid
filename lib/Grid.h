@@ -29,12 +29,13 @@
 #define MIN(x,y) ((x)>(y)?(y):(x))
 #endif
 
+#define strong_inline __attribute__((always_inline)) inline
+
 #include <Grid_config.h>
 
 ////////////////////////////////////////////////////////////
 // Tunable header includes
 ////////////////////////////////////////////////////////////
-
 
 #ifdef HAVE_MALLOC_MALLOC_H
 #include <malloc/malloc.h>
