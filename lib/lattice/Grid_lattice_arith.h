@@ -7,7 +7,7 @@ namespace Grid {
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   //  avoid copy back routines for mult, mac, sub, add
   //////////////////////////////////////////////////////////////////////////////////////////////////////
-  template<class obj1,class obj2,class obj3>
+  template<class obj1,class obj2,class obj3> 
     void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
     conformable(lhs,rhs);
 PARALLEL_FOR_LOOP
