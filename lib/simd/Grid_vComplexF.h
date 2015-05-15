@@ -245,6 +245,7 @@ namespace Grid {
 	     float f[8];  
 	   } u256;
 	   //SWAP lanes
+	   // FIXME .. icc complains with lib/lattice/Grid_lattice_reduction.h (49): (col. 20) warning #13211: Immediate parameter to intrinsic call too large
 	   __m256 t0 = _mm256_permute2f128_ps(in.v, in.v, 1);
 	   __m256 t1 = _mm256_permute_ps(in.v  , 0b11011000);//real (0,2,1,3)
 	   __m256 t2 = _mm256_permute_ps(t0 , 0b10001101);//imag (1,3,0,2)
