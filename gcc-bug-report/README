@@ -1,0 +1,23 @@
+https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66153
+
+Grid code breaks on GCC4.8, 4.9, 5.0 due to the 
+peekIndex<n> operating on lattice.
+
+It erroneously recurses back into the Lattice<obj> variant, even though
+the lattice container is dropped.
+
+Work around is possible; if the Lattice routine is given a disambiguating 
+name prefix, such as 
+
+latPeekIndex<n> 
+
+GCC5 works. 
+
+However this is ugly and for now I have submitted a bug report to see the reaction and
+speed of fixing. 
+
+The simple testcase in this directory is the submitted bug report that encapsulates the
+problem. The test case works with icpc and with clang++, but fails consistently on g++
+current variants.
+
+Peter
