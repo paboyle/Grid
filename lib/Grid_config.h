@@ -2,19 +2,19 @@
 /* lib/Grid_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* AVX */
-#define AVX1 1
+/* #undef AVX1 */
 
 /* AVX2 */
 /* #undef AVX2 */
 
 /* AVX512 */
-/* #undef AVX512 */
+#define AVX512 1
 
 /* GRID_COMMS_MPI */
-#define GRID_COMMS_MPI 1
+/* #undef GRID_COMMS_MPI */
 
 /* GRID_COMMS_NONE */
-/* #undef GRID_COMMS_NONE */
+#define GRID_COMMS_NONE 1
 
 /* Define to 1 if you have the declaration of `be64toh', and to 0 if you
    don't. */
@@ -41,6 +41,9 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
+
+/* Define to 1 if you have the <mm_malloc.h> header file. */
+#define HAVE_MM_MALLOC_H 1
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H 1
