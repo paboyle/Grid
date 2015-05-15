@@ -2,6 +2,9 @@
 WD=$1
 echo $WD
 case $WD in
+build-g++-sse4)
+  CXX=g++-5 ../configure --enable-simd=SSE4 CXXFLAGS="-msse4 -O3 -std=c++11" --enable-comms=none
+  ;;
 build-icpc-avx)
   CXX=icpc ../configure --enable-simd=AVX CXXFLAGS="-mavx -O3 -std=c++11" --enable-comms=none
   ;;
