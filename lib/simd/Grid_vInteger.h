@@ -3,12 +3,6 @@
 
 namespace Grid {
 
-// _mm256_set_m128i(hi,lo); // not defined in all versions of immintrin.h
-#ifndef _mm256_set_m128i
-#define _mm256_set_m128i(hi,lo) _mm256_insertf128_si256(_mm256_castsi128_si256(lo),(hi),1)
-#endif
-
-  typedef uint32_t Integer;
 
   class vInteger {
     protected:
