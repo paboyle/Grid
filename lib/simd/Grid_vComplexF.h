@@ -203,7 +203,6 @@ namespace Grid {
 #endif
 #ifdef AVX512
 	  _mm512_storenrngo_ps((float *)&out.v,in.v);
-  //	  _mm512_stream_ps((float *)&out.v,in.v);
 	  //Note v has a3 a2 a1 a0
 #endif
 #ifdef QPX
