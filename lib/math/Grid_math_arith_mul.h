@@ -9,12 +9,12 @@ namespace Grid {
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     
 template<class rtype,class vtype,class mtype>
-inline void mult(iScalar<rtype> * __restrict__ ret,const iScalar<mtype> * __restrict__ lhs,const iScalar<vtype> * __restrict__ rhs){
+strong_inline void mult(iScalar<rtype> * __restrict__ ret,const iScalar<mtype> * __restrict__ lhs,const iScalar<vtype> * __restrict__ rhs){
     mult(&ret->_internal,&lhs->_internal,&rhs->_internal);
 }
 
 template<class rrtype,class ltype,class rtype,int N>
-inline void mult(iMatrix<rrtype,N> * __restrict__ ret,const iMatrix<ltype,N> * __restrict__ lhs,const iMatrix<rtype,N> * __restrict__ rhs){
+strong_inline void mult(iMatrix<rrtype,N> * __restrict__ ret,const iMatrix<ltype,N> * __restrict__ lhs,const iMatrix<rtype,N> * __restrict__ rhs){
     for(int c2=0;c2<N;c2++){
     for(int c1=0;c1<N;c1++){
         mult(&ret->_internal[c1][c2],&lhs->_internal[c1][0],&rhs->_internal[0][c2]);
@@ -25,7 +25,7 @@ inline void mult(iMatrix<rrtype,N> * __restrict__ ret,const iMatrix<ltype,N> * _
     return;
 }
 template<class rrtype,class ltype,class rtype,int N>
-inline void mult(iMatrix<rrtype,N> * __restrict__ ret,const iMatrix<ltype,N> * __restrict__ lhs,const iScalar<rtype> * __restrict__ rhs){
+strong_inline void mult(iMatrix<rrtype,N> * __restrict__ ret,const iMatrix<ltype,N> * __restrict__ lhs,const iScalar<rtype> * __restrict__ rhs){
     for(int c2=0;c2<N;c2++){
     for(int c1=0;c1<N;c1++){
         mult(&ret->_internal[c1][c2],&lhs->_internal[c1][c2],&rhs->_internal);
@@ -34,7 +34,7 @@ inline void mult(iMatrix<rrtype,N> * __restrict__ ret,const iMatrix<ltype,N> * _
 }
 
 template<class rrtype,class ltype,class rtype, int N>
-inline void mult(iMatrix<rrtype,N> * __restrict__ ret,const iScalar<ltype>   * __restrict__ lhs,const iMatrix<rtype,N> * __restrict__ rhs){
+strong_inline void mult(iMatrix<rrtype,N> * __restrict__ ret,const iScalar<ltype>   * __restrict__ lhs,const iMatrix<rtype,N> * __restrict__ rhs){
     for(int c2=0;c2<N;c2++){
     for(int c1=0;c1<N;c1++){
         mult(&ret->_internal[c1][c2],&lhs->_internal,&rhs->_internal[c1][c2]);
@@ -43,7 +43,7 @@ inline void mult(iMatrix<rrtype,N> * __restrict__ ret,const iScalar<ltype>   * _
 }
 // Matrix left multiplies vector
 template<class rtype,class vtype,class mtype,int N>
-inline void mult(iVector<rtype,N> * __restrict__ ret,const iMatrix<mtype,N> * __restrict__ lhs,const iVector<vtype,N> * __restrict__ rhs)
+strong_inline void mult(iVector<rtype,N> * __restrict__ ret,const iMatrix<mtype,N> * __restrict__ lhs,const iVector<vtype,N> * __restrict__ rhs)
 {
     for(int c1=0;c1<N;c1++){
         mult(&ret->_internal[c1],&lhs->_internal[c1][0],&rhs->_internal[0]);
@@ -54,7 +54,7 @@ inline void mult(iVector<rtype,N> * __restrict__ ret,const iMatrix<mtype,N> * __
     return;
 }
 template<class rtype,class vtype,class mtype,int N>
-inline void mult(iVector<rtype,N> * __restrict__ ret,
+strong_inline void mult(iVector<rtype,N> * __restrict__ ret,
                  const iScalar<mtype>   * __restrict__ lhs,
                  const iVector<vtype,N> * __restrict__ rhs){
     for(int c1=0;c1<N;c1++){
@@ -62,7 +62,7 @@ inline void mult(iVector<rtype,N> * __restrict__ ret,
     }
 }
 template<class rtype,class vtype,class mtype,int N>
-inline void mult(iVector<rtype,N> * __restrict__ ret,
+strong_inline void mult(iVector<rtype,N> * __restrict__ ret,
                  const iVector<vtype,N> * __restrict__ rhs,
                  const iScalar<mtype> * __restrict__ lhs){
     mult(ret,lhs,rhs);
@@ -70,7 +70,7 @@ inline void mult(iVector<rtype,N> * __restrict__ ret,
     
 
 
-template<class rtype,class vtype,class mtype,int N> inline
+template<class rtype,class vtype,class mtype,int N> strong_inline
 iVector<rtype,N> operator * (const iMatrix<mtype,N>& lhs,const iVector<vtype,N>& rhs)
 {
     iVector<rtype,N> ret;
@@ -78,7 +78,7 @@ iVector<rtype,N> operator * (const iMatrix<mtype,N>& lhs,const iVector<vtype,N>&
     return ret;
 }
 
-template<class rtype,class vtype,class mtype,int N> inline
+template<class rtype,class vtype,class mtype,int N> strong_inline
 iVector<rtype,N> operator * (const iScalar<mtype>& lhs,const iVector<vtype,N>& rhs)
 {
     iVector<rtype,N> ret;
@@ -86,7 +86,7 @@ iVector<rtype,N> operator * (const iScalar<mtype>& lhs,const iVector<vtype,N>& r
     return ret;
 }
 
-template<class rtype,class vtype,class mtype,int N> inline
+template<class rtype,class vtype,class mtype,int N> strong_inline
 iVector<rtype,N> operator * (const iVector<mtype,N>& lhs,const iScalar<vtype>& rhs)
 {
     iVector<rtype,N> ret;
@@ -110,14 +110,14 @@ iVector<rtype,N> operator * (const iVector<mtype,N>& lhs,const iScalar<vtype>& r
     //
     // We can special case scalar_type ??
 template<class l,class r>
-inline auto operator * (const iScalar<l>& lhs,const iScalar<r>& rhs) -> iScalar<decltype(lhs._internal * rhs._internal)>
+strong_inline auto operator * (const iScalar<l>& lhs,const iScalar<r>& rhs) -> iScalar<decltype(lhs._internal * rhs._internal)>
 {
     typedef iScalar<decltype(lhs._internal*rhs._internal)> ret_t;
     ret_t ret;
     mult(&ret,&lhs,&rhs);
     return ret;
 }
-template<class l,class r,int N> inline
+template<class l,class r,int N> strong_inline
 auto operator * (const iMatrix<l,N>& lhs,const iMatrix<r,N>& rhs) -> iMatrix<decltype(lhs._internal[0][0]*rhs._internal[0][0]),N>
 {
     typedef decltype(lhs._internal[0][0]*rhs._internal[0][0]) ret_t;
@@ -125,7 +125,7 @@ auto operator * (const iMatrix<l,N>& lhs,const iMatrix<r,N>& rhs) -> iMatrix<dec
     mult(&ret,&lhs,&rhs);
     return ret;
 }
-template<class l,class r, int N> inline
+template<class l,class r, int N> strong_inline
 auto operator * (const iMatrix<r,N>& lhs,const iScalar<l>& rhs) -> iMatrix<decltype(lhs._internal[0][0]*rhs._internal),N>
 {
     typedef decltype(lhs._internal[0][0]*rhs._internal) ret_t;
@@ -137,7 +137,7 @@ auto operator * (const iMatrix<r,N>& lhs,const iScalar<l>& rhs) -> iMatrix<declt
     }}
     return ret;
 }
-template<class l,class r,int N> inline
+template<class l,class r,int N> strong_inline
 auto operator * (const iScalar<l>& lhs,const iMatrix<r,N>& rhs) -> iMatrix<decltype(lhs._internal*rhs._internal[0][0]),N>
 {
     typedef decltype(lhs._internal*rhs._internal[0][0]) ret_t;
@@ -148,7 +148,7 @@ auto operator * (const iScalar<l>& lhs,const iMatrix<r,N>& rhs) -> iMatrix<declt
     }}
     return ret;
 }
-template<class l,class r,int N> inline
+template<class l,class r,int N> strong_inline
 auto operator * (const iMatrix<l,N>& lhs,const iVector<r,N>& rhs) -> iVector<decltype(lhs._internal[0][0]*rhs._internal[0]),N>
 {
     typedef decltype(lhs._internal[0][0]*rhs._internal[0]) ret_t;
@@ -161,7 +161,7 @@ auto operator * (const iMatrix<l,N>& lhs,const iVector<r,N>& rhs) -> iVector<dec
     }
     return ret;
 }
-template<class l,class r,int N> inline
+template<class l,class r,int N> strong_inline
 auto operator * (const iScalar<l>& lhs,const iVector<r,N>& rhs) -> iVector<decltype(lhs._internal*rhs._internal[0]),N>
 {
     typedef decltype(lhs._internal*rhs._internal[0]) ret_t;
@@ -171,7 +171,7 @@ auto operator * (const iScalar<l>& lhs,const iVector<r,N>& rhs) -> iVector<declt
     }
     return ret;
 }
-template<class l,class r,int N> inline
+template<class l,class r,int N> strong_inline
 auto operator * (const iVector<l,N>& lhs,const iScalar<r>& rhs) -> iVector<decltype(lhs._internal[0]*rhs._internal),N>
 {
     typedef decltype(lhs._internal[0]*rhs._internal) ret_t;
