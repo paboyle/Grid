@@ -35,39 +35,22 @@ inline auto trace(const iScalar<vtype> &arg) -> iScalar<decltype(trace(arg._inte
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Trace Specific indices.
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*
-template<int Level,class vtype> inline 
-auto traceIndex(const iScalar<vtype> &arg) -> iScalar<decltype(traceIndex<Level>(arg._internal)) >
-{
-  iScalar<decltype(traceIndex<Level>(arg._internal))> ret;
-  ret._internal = traceIndex<Level>(arg._internal);
-  return ret;
-}
-*/
-template<int Level,class vtype> inline auto 
-traceIndex (const iScalar<vtype> &arg) ->
-typename 
-std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::notvalue, 
-  iScalar<decltype(traceIndex<Level>(arg._internal))> >::type 
-
+template<int Level,class vtype,typename std::enable_if< iScalar<vtype>::TensorLevel != Level >::type * =nullptr> inline auto 
+traceIndex (const iScalar<vtype> &arg) -> iScalar<decltype(traceIndex<Level>(arg._internal))>
 {
   iScalar<decltype(traceIndex<Level>(arg._internal))> ret;
   ret._internal=traceIndex<Level>(arg._internal);
   return ret;
 }
-template<int Level,class vtype> inline auto
-traceIndex (const iScalar<vtype> &arg) ->
-typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::value, 
-                        iScalar<vtype> >::type 
+template<int Level,class vtype,typename std::enable_if< iScalar<vtype>::TensorLevel == Level >::type * =nullptr> inline auto
+traceIndex (const iScalar<vtype> &arg) -> iScalar<vtype>
 {
   return arg;
 }
 
 // If we hit the right index, return scalar and trace it with no further recursion
-template<int Level,class vtype,int N> inline 
-auto traceIndex(const iMatrix<vtype,N> &arg) ->
-  typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::value,  // Index matches
-                                                    iScalar<vtype> >::type                              // return scalar
+template<int Level,class vtype,int N,typename std::enable_if< iScalar<vtype>::TensorLevel == Level >::type * =nullptr> inline 
+auto traceIndex(const iMatrix<vtype,N> &arg) ->  iScalar<vtype> 
 {
   iScalar<vtype> ret;
   zeroit(ret._internal);
@@ -78,10 +61,8 @@ auto traceIndex(const iMatrix<vtype,N> &arg) ->
 }
 
 // not this level, so recurse
-template<int Level,class vtype,int N> inline 
-auto traceIndex(const iMatrix<vtype,N> &arg) ->
-  typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,Level>::notvalue,// No index match
-         iMatrix<decltype(traceIndex<Level>(arg._internal[0][0])),N> >::type     // return matrix
+template<int Level,class vtype,int N,typename std::enable_if< iScalar<vtype>::TensorLevel != Level >::type * =nullptr> inline 
+auto traceIndex(const iMatrix<vtype,N> &arg) ->  iMatrix<decltype(traceIndex<Level>(arg._internal[0][0])),N> 
 {
   iMatrix<decltype(traceIndex<Level>(arg._internal[0][0])),N> ret;
   for(int i=0;i<N;i++){
