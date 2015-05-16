@@ -56,4 +56,5 @@ int main(int argc,char **argv)
   Container<Recursive<Recursive<ComplexD> > > ret(10);
   
   ret = function<1>(array);
+  ret = function<2>(array);
 }
