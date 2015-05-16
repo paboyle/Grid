@@ -62,7 +62,7 @@ public:
   ////////////////////////////////////////////////////////////////////////////////
   // Expression Template closure support
   ////////////////////////////////////////////////////////////////////////////////
-  template <typename Op, typename T1>                         inline Lattice<vobj> & operator=(const LatticeUnaryExpression<Op,T1> &expr)
+  template <typename Op, typename T1>                         strong_inline Lattice<vobj> & operator=(const LatticeUnaryExpression<Op,T1> &expr)
   {
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
@@ -71,7 +71,7 @@ PARALLEL_FOR_LOOP
     }
     return *this;
   }
-  template <typename Op, typename T1,typename T2>             inline Lattice<vobj> & operator=(const LatticeBinaryExpression<Op,T1,T2> &expr)
+  template <typename Op, typename T1,typename T2>             strong_inline Lattice<vobj> & operator=(const LatticeBinaryExpression<Op,T1,T2> &expr)
   {
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
@@ -80,7 +80,7 @@ PARALLEL_FOR_LOOP
     }
     return *this;
   }
-  template <typename Op, typename T1,typename T2,typename T3> inline Lattice<vobj> & operator=(const LatticeTrinaryExpression<Op,T1,T2,T3> &expr)
+  template <typename Op, typename T1,typename T2,typename T3> strong_inline Lattice<vobj> & operator=(const LatticeTrinaryExpression<Op,T1,T2,T3> &expr)
   {
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
@@ -132,14 +132,14 @@ PARALLEL_FOR_LOOP
         checkerboard=0;
     }
 
-    template<class sobj> inline Lattice<vobj> & operator = (const sobj & r){
+    template<class sobj> strong_inline Lattice<vobj> & operator = (const sobj & r){
 PARALLEL_FOR_LOOP
         for(int ss=0;ss<_grid->oSites();ss++){
             this->_odata[ss]=r;
         }
         return *this;
     }
-    template<class robj> inline Lattice<vobj> & operator = (const Lattice<robj> & r){
+    template<class robj> strong_inline Lattice<vobj> & operator = (const Lattice<robj> & r){
       conformable(*this,r);
       std::cout<<"Lattice operator ="<<std::endl;
 PARALLEL_FOR_LOOP
@@ -150,21 +150,21 @@ PARALLEL_FOR_LOOP
     }
 
     // *=,+=,-= operators inherit behvour from correspond */+/- operation
-    template<class T> inline Lattice<vobj> &operator *=(const T &r) {
+    template<class T> strong_inline Lattice<vobj> &operator *=(const T &r) {
         *this = (*this)*r;
         return *this;
     }
 
-    template<class T> inline Lattice<vobj> &operator -=(const T &r) {
+    template<class T> strong_inline Lattice<vobj> &operator -=(const T &r) {
         *this = (*this)-r;
         return *this;
     }
-    template<class T> inline Lattice<vobj> &operator +=(const T &r) {
+    template<class T> strong_inline Lattice<vobj> &operator +=(const T &r) {
         *this = (*this)+r;
         return *this;
     }
     
-    inline friend Lattice<vobj> operator / (const Lattice<vobj> &lhs,const Lattice<vobj> &rhs){
+    strong_inline friend Lattice<vobj> operator / (const Lattice<vobj> &lhs,const Lattice<vobj> &rhs){
         conformable(lhs,rhs);
         Lattice<vobj> ret(lhs._grid);
 PARALLEL_FOR_LOOP
@@ -176,7 +176,7 @@ PARALLEL_FOR_LOOP
 
  }; // class Lattice
 
-  template<class vobj> inline std::ostream& operator<< (std::ostream& stream, const Lattice<vobj> &o){
+  template<class vobj> std::ostream& operator<< (std::ostream& stream, const Lattice<vobj> &o){
     std::vector<int> gcoor;
     typedef typename vobj::scalar_object sobj;
     sobj ss;
