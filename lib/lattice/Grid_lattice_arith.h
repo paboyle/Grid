@@ -7,7 +7,7 @@ namespace Grid {
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   //  avoid copy back routines for mult, mac, sub, add
   //////////////////////////////////////////////////////////////////////////////////////////////////////
-  template<class obj1,class obj2,class obj3> 
+  template<class obj1,class obj2,class obj3> strong_inline
     void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
     conformable(lhs,rhs);
 PARALLEL_FOR_LOOP
@@ -15,10 +15,11 @@ PARALLEL_FOR_LOOP
       obj1 tmp;
       mult(&tmp,&lhs._odata[ss],&rhs._odata[ss]);
       vstream(ret._odata[ss],tmp);
+      //      mult(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
     }
   }
   
-  template<class obj1,class obj2,class obj3>
+  template<class obj1,class obj2,class obj3> strong_inline
     void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
     conformable(lhs,rhs);
 PARALLEL_FOR_LOOP
@@ -29,7 +30,7 @@ PARALLEL_FOR_LOOP
     }
   }
   
-  template<class obj1,class obj2,class obj3>
+  template<class obj1,class obj2,class obj3> strong_inline
     void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
     conformable(lhs,rhs);
 PARALLEL_FOR_LOOP
@@ -39,7 +40,7 @@ PARALLEL_FOR_LOOP
       vstream(ret._odata[ss],tmp);
     }
   }
-  template<class obj1,class obj2,class obj3>
+  template<class obj1,class obj2,class obj3> strong_inline
     void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
     conformable(lhs,rhs);
 PARALLEL_FOR_LOOP
@@ -53,7 +54,7 @@ PARALLEL_FOR_LOOP
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   //  avoid copy back routines for mult, mac, sub, add
   //////////////////////////////////////////////////////////////////////////////////////////////////////
-  template<class obj1,class obj2,class obj3>
+  template<class obj1,class obj2,class obj3> strong_inline
     void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
     conformable(lhs,ret);
 PARALLEL_FOR_LOOP
@@ -64,7 +65,7 @@ PARALLEL_FOR_LOOP
     }
   }
   
-  template<class obj1,class obj2,class obj3>
+  template<class obj1,class obj2,class obj3> strong_inline
     void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
     conformable(lhs,ret);
 PARALLEL_FOR_LOOP
@@ -75,7 +76,7 @@ PARALLEL_FOR_LOOP
     }
   }
   
-  template<class obj1,class obj2,class obj3>
+  template<class obj1,class obj2,class obj3> strong_inline
     void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
     conformable(lhs,ret);
 PARALLEL_FOR_LOOP
@@ -85,7 +86,7 @@ PARALLEL_FOR_LOOP
       vstream(ret._odata[ss],tmp);
     }
   }
-  template<class obj1,class obj2,class obj3>
+  template<class obj1,class obj2,class obj3> strong_inline
     void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
     conformable(lhs,ret);
 PARALLEL_FOR_LOOP
@@ -99,7 +100,7 @@ PARALLEL_FOR_LOOP
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   //  avoid copy back routines for mult, mac, sub, add
   //////////////////////////////////////////////////////////////////////////////////////////////////////
-    template<class obj1,class obj2,class obj3>
+    template<class obj1,class obj2,class obj3> strong_inline
     void mult(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
     conformable(ret,rhs);
 PARALLEL_FOR_LOOP
@@ -110,7 +111,7 @@ PARALLEL_FOR_LOOP
     }
   }
   
-  template<class obj1,class obj2,class obj3>
+  template<class obj1,class obj2,class obj3> strong_inline
     void mac(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
     conformable(ret,rhs);
 PARALLEL_FOR_LOOP
@@ -121,7 +122,7 @@ PARALLEL_FOR_LOOP
     }
   }
   
-  template<class obj1,class obj2,class obj3>
+  template<class obj1,class obj2,class obj3> strong_inline
     void sub(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
     conformable(ret,rhs);
 PARALLEL_FOR_LOOP
@@ -131,7 +132,7 @@ PARALLEL_FOR_LOOP
       vstream(ret._odata[ss],tmp);
     }
   }
-  template<class obj1,class obj2,class obj3>
+  template<class obj1,class obj2,class obj3> strong_inline
     void add(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
     conformable(ret,rhs);
 PARALLEL_FOR_LOOP
@@ -142,8 +143,8 @@ PARALLEL_FOR_LOOP
     }
   }
   
-  template<class sobj,class vobj>
-  inline void axpy(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &lhs,const Lattice<vobj> &rhs){
+  template<class sobj,class vobj> strong_inline
+  void axpy(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &lhs,const Lattice<vobj> &rhs){
     conformable(lhs,rhs);
 #pragma omp parallel for
     for(int ss=0;ss<lhs._grid->oSites();ss++){
