@@ -4,9 +4,8 @@ DIRS="clang-avx clang-avx-openmp clang-avx-openmp-mpi clang-avx-mpi clang-avx2 c
 
 for D in $DIRS
 do
-  echo $D
   mkdir -p builds/$D
   cd builds/$D
-  ../../configure-commands $D
+  ../../scripts/configure-commands $D
   cd ../..
 done
