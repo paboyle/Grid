@@ -290,10 +290,7 @@ void WilsonMatrix::MpcDagMpc(const LatticeFermion &in, LatticeFermion &out)
 {
   return;
 }
-void WilsonMatrix::MDagM    (const LatticeFermion &in, LatticeFermion &out)
-{
-  return;
-}
+
 
 
 }}
