@@ -9,7 +9,7 @@ namespace Grid {
 
   namespace QCD {
 
-    class WilsonMatrix : public LinearOperatorBase<LatticeFermion>
+    class WilsonMatrix : public SparseMatrixBase<LatticeFermion>
     {
       //NB r=1;
     public:
@@ -40,6 +40,11 @@ namespace Grid {
       virtual void Mdag (const LatticeFermion &in, LatticeFermion &out);
       virtual void MdagM(const LatticeFermion &in, LatticeFermion &out);
 
+      // half checkerboard operaions
+      void Mpc      (const LatticeFermion &in, LatticeFermion &out);
+      void MpcDag   (const LatticeFermion &in, LatticeFermion &out);
+      void MpcDagMpc(const LatticeFermion &in, LatticeFermion &out);
+
       // non-hermitian hopping term; half cb or both
       void Dhop(const LatticeFermion &in, LatticeFermion &out);
 
@@ -48,16 +53,9 @@ namespace Grid {
 
       typedef iScalar<iMatrix<vComplex, Nc> > matrix;
 
-      // half checkerboard operaions
-      void MpcDag   (const LatticeFermion &in, LatticeFermion &out);
-      void Mpc      (const LatticeFermion &in, LatticeFermion &out);
-      void MpcDagMpc(const LatticeFermion &in, LatticeFermion &out);
-
-      // full checkerboard hermitian
-      void MDagM    (const LatticeFermion &in, LatticeFermion &out);
-
       
     };
+
 
   }
 }
