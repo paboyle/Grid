@@ -1,6 +1,9 @@
 #ifndef GRID_POLYNOMIAL_APPROX_H
 #define GRID_POLYNOMIAL_APPROX_H
 
+#include<Grid.h>
+#include<algorithms/LinearOperator.h>
+
 namespace Grid {
 
   ////////////////////////////////////////////////////////////////////////////////////////////
