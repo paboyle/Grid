@@ -19,7 +19,7 @@ int main (int argc, char ** argv)
   std::cout << "===================================================================================================="<<std::endl;
   std::cout << "= Benchmarking fused AXPY bandwidth"<<std::endl;
   std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t"<<"GB/s"<<std::endl;
+  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<std::endl;
   std::cout << "----------------------------------------------------------"<<std::endl;
 
   for(int lat=4;lat<=32;lat+=4){
@@ -44,15 +44,16 @@ int main (int argc, char ** argv)
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
       
+      double flops=lat*lat*lat*lat*Nvec*2;// mul,add
       double bytes=3*lat*lat*lat*lat*Nvec*sizeof(Real);
-      std::cout<<std::setprecision(2) << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<std::endl;
+      std::cout<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<std::endl;
 
     }
 
   std::cout << "===================================================================================================="<<std::endl;
   std::cout << "= Benchmarking a*x + y bandwidth"<<std::endl;
   std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t"<<"GB/s"<<std::endl;
+  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<std::endl;
   std::cout << "----------------------------------------------------------"<<std::endl;
   
   for(int lat=4;lat<=32;lat+=4){
@@ -75,15 +76,16 @@ int main (int argc, char ** argv)
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
      
+      double flops=lat*lat*lat*lat*Nvec*2;// mul,add
       double bytes=3*lat*lat*lat*lat*Nvec*sizeof(Real);
-      std::cout<<std::setprecision(2) << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<std::endl;
+      std::cout<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<std::endl;
 
     }
 
   std::cout << "===================================================================================================="<<std::endl;
   std::cout << "= Benchmarking SCALE bandwidth"<<std::endl;
   std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t"<<"GB/s"<<std::endl;
+  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<std::endl;
 
   for(int lat=4;lat<=32;lat+=4){
 
@@ -107,14 +109,15 @@ int main (int argc, char ** argv)
       double time = (stop-start)/Nloop*1000;
       
       double bytes=2*lat*lat*lat*lat*Nvec*sizeof(Real);
-      std::cout <<std::setprecision(2) << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<std::endl;
+      double flops=lat*lat*lat*lat*Nvec*1;// mul
+      std::cout <<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<std::endl;
 
   }
 
   std::cout << "===================================================================================================="<<std::endl;
   std::cout << "= Benchmarking READ bandwidth"<<std::endl;
   std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t"<<"GB/s"<<std::endl;
+  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<std::endl;
   std::cout << "----------------------------------------------------------"<<std::endl;
 
   for(int lat=4;lat<=32;lat+=4){
@@ -139,7 +142,8 @@ int main (int argc, char ** argv)
       double time = (stop-start)/Nloop*1000;
       
       double bytes=lat*lat*lat*lat*Nvec*sizeof(Real);
-      std::cout<<std::setprecision(2) << lat<<"\t\t"<<bytes<<"\t\t"<<bytes/time<<std::endl;
+      double flops=lat*lat*lat*lat*Nvec*2;// mul,add
+      std::cout<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"  \t\t"<<bytes/time<<"\t\t"<<flops/time<<std::endl;
 
   }    
 
