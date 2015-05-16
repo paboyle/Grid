@@ -1,11 +1,11 @@
 #!/bin/bash 
+
 DIRS="build-clang-avx build-clang-avx-openmp build-clang-avx-openmp-mpi build-clang-avx-mpi build-icpc-avx512 build-icpc-avx "
 
 for D in $DIRS
 do
   echo $D
-  mkdir -p $D
-  cd $D
+  cd builds/$D
   make clean all -j 8
-  cd ..
+  cd ../../
 done
