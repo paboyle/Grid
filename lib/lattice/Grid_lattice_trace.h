@@ -26,7 +26,7 @@ PARALLEL_FOR_LOOP
     // Trace Index level dependent operation
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     template<int Index,class vobj>
-    inline auto latTraceIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(traceIndex<Index>(lhs._odata[0]))>
+    inline auto TraceIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(traceIndex<Index>(lhs._odata[0]))>
     {
       Lattice<decltype(traceIndex<Index>(lhs._odata[0]))> ret(lhs._grid);
 PARALLEL_FOR_LOOP
