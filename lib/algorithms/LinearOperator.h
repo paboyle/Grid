@@ -6,6 +6,22 @@
 namespace Grid {
 
   /////////////////////////////////////////////////////////////////////////////////////////////
+  // Interface defining what I expect of a general sparse matrix, such as a Fermion action
+  /////////////////////////////////////////////////////////////////////////////////////////////
+    template<class Field> class SparseMatrixBase {
+    public:
+      // Full checkerboar operations
+      virtual void M    (const Field &in, Field &out);
+      virtual void Mdag (const Field &in, Field &out);
+      virtual RealD MdagM(const Field &in, Field &out);
+      
+      // half checkerboard operaions
+      virtual void Mpc      (const Field &in, Field &out);
+      virtual void MpcDag   (const Field &in, Field &out);
+      virtual RealD MpcDagMpc(const Field &in, Field &out);
+    };
+
+  /////////////////////////////////////////////////////////////////////////////////////////////
   // LinearOperators Take a something and return a something.
   /////////////////////////////////////////////////////////////////////////////////////////////
   //
@@ -27,25 +43,13 @@ namespace Grid {
   /////////////////////////////////////////////////////////////////////////////////////////////
     template<class Field> class HermitianOperatorBase : public LinearOperatorBase<Field> {
     public:
+      virtual RealD OpAndNorm(const Field &in, Field &out);
       void AdjOp(const Field &in, Field &out) {
-	return Op(in,out);
+	Op(in,out);
       };
-    };
-
-  /////////////////////////////////////////////////////////////////////////////////////////////
-  // Interface defining what I expect of a general sparse matrix
-  /////////////////////////////////////////////////////////////////////////////////////////////
-    template<class Field> class SparseMatrixBase {
-    public:
-      // Full checkerboar operations
-      virtual void M    (const Field &in, Field &out);
-      virtual void Mdag (const Field &in, Field &out);
-      virtual void MdagM(const Field &in, Field &out);
-      
-      // half checkerboard operaions
-      virtual void Mpc      (const Field &in, Field &out);
-      virtual void MpcDag   (const Field &in, Field &out);
-      virtual void MpcDagMpc(const Field &in, Field &out);
+      void Op(const Field &in, Field &out) {
+	OpAndNorm(in,out);
+      };
     };
 
   /////////////////////////////////////////////////////////////////////////////////////////////
@@ -79,10 +83,10 @@ namespace Grid {
     public:
       NonHermitianRedBlackOperator(SparseMatrix &Mat): _Mat(Mat){};
       void Op     (const Field &in, Field &out){
-	this->Mpc(in,out);
+	_Mat.Mpc(in,out);
       }
       void AdjOp     (const Field &in, Field &out){ //
-	this->MpcDag(in,out);
+	_Mat.MpcDag(in,out);
       }
     };
 
@@ -94,12 +98,8 @@ namespace Grid {
       SparseMatrix &_Mat;
     public:
       HermitianOperator(SparseMatrix &Mat): _Mat(Mat) {};
-
-      void Op     (const Field &in, Field &out){
-	this->Mpc(in,out);
-      }
-      void AdjOp     (const Field &in, Field &out){ //
-	this->MpcDag(in,out);
+      RealD OpAndNorm(const Field &in, Field &out){
+	return _Mat.MdagM(in,out);
       }
     };
 
@@ -111,8 +111,8 @@ namespace Grid {
       SparseMatrix &_Mat;
     public:
       HermitianRedBlackOperator(SparseMatrix &Mat): _Mat(Mat) {};
-      void Op     (const Field &in, Field &out){
-	this->MpcDagMpc(in,out);
+      RealD OpAndNorm(const Field &in, Field &out){
+	return _Mat.MpcDagMpc(in,out);
       }
     };
 
@@ -141,6 +141,7 @@ namespace Grid {
     public:
       RealD   Tolerance;
       Integer MaxIterations;
+      IterativeProcess(RealD tol,Integer maxit) : Tolerance(tol),MaxIterations(maxit) {};
       virtual void operator() (LinearOperatorBase<Field> *Linop,const Field &in, Field &out) = 0;
     };
 
