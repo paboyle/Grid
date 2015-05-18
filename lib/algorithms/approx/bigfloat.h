@@ -322,7 +322,7 @@ public:
 
   friend bigfloat abs_bf(const bigfloat& x){
     bigfloat a;
-    a.x=abs(x.x);
+    a.x=fabs(x.x);
     return a;
   }
 
