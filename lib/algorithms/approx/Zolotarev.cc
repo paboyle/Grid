@@ -1,5 +1,5 @@
 /* -*- Mode: C; comment-column: 22; fill-column: 79; compile-command: "gcc -o zolotarev zolotarev.c -ansi -pedantic -lm -DTEST"; -*- */
-#define VERSION Source Time-stamp: <19-OCT-2004 09:33:22.00 adk@MISSCONTRARY>
+#define VERSION Source Time-stamp: <2015-05-18 16:32:08 neo>
 
 /* These C routines evalute the optimal rational approximation to the signum
  * function for epsilon < |x| < 1 using Zolotarev's theorem.
@@ -26,13 +26,13 @@
 #define INTERNAL_PRECISION double
 #endif
 
-#include "zolotarev.h"
+#include "Zolotarev.h"
 #define ZOLOTAREV_INTERNAL
 #undef ZOLOTAREV_DATA
 #define ZOLOTAREV_DATA izd
 #undef ZPRECISION
 #define ZPRECISION INTERNAL_PRECISION
-#include "zolotarev.h"
+#include "Zolotarev.h"
 #undef ZOLOTAREV_INTERNAL
 
 /* The ANSI standard appears not to know what pi is */
