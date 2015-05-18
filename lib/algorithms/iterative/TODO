@@ -1,0 +1,15 @@
+- ConjugateGradientMultiShift
+- MCR
+
+- Potentially Useful Boost libraries
+
+- MultiArray
+- Aligned allocator; memory pool
+- Remez -- Mike or Boost?
+- Multiprecision
+- quaternians
+- Tokenize
+- Serialization
+- Regex
+- Proto (ET)
+- uBlas
