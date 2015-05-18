@@ -116,7 +116,7 @@ double AlgRemez::generateApprox(int num_degree, int den_degree,
 				int a_len, double *a_param, int *a_pow)
 {
   std::cout<<"Degree of the approximation is ("<<num_degree<<","<<den_degree<<")\n";
-  std::cout<<"Approximating the function x^("<<pnum<<"/"<<pden<<"\n";
+  std::cout<<"Approximating the function x^("<<pnum<<"/"<<pden<<")\n";
 
   // Reallocate arrays, since degree has changed
   if (num_degree != n || den_degree != d) allocate(num_degree,den_degree);
@@ -149,6 +149,10 @@ double AlgRemez::generateApprox(int num_degree, int den_degree,
       std::cout<<"Iteration " <<iter-1<<" spread "<<(double)spread<<" delta "<<(double)delta<<std::endl; 
 
     equations();
+    if (delta < tolerance) {
+      std::cout<<"Delta too small, try increasing precision\n";
+      assert(0);
+    };    
     assert( delta>= tolerance);
 
     search(step);

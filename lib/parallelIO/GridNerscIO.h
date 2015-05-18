@@ -481,7 +481,7 @@ inline void writeNerscObject(Lattice<vobj> &Umu,std::string file,munger munge,in
   // Now write the body
   //////////////////////////////////////////////////
   {
-    std::ofstream fout(file,std::ios::binary|std::ios::in);
+    std::ofstream fout(file,std::ios::binary|std::ios::out);
     fout.seekp(offset);
 
     Umu = zero;
