@@ -1,9 +1,25 @@
+#                         -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
+#
+# Project Grid package  
+# 
+# Time-stamp: <2015-05-18 17:14:20 neo>
+
+AC_PREREQ([2.69])
 AC_INIT([Grid], [1.0], [paboyle@ph.ed.ac.uk])
+AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE(subdir-objects)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([lib/Grid.h])
 AC_CONFIG_HEADERS([lib/Grid_config.h])
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+
+AC_MSG_NOTICE([
+
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+Configuring $PACKAGE v$VERSION  for $host
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+])
 
 # Checks for programs.
 AC_LANG(C++)
@@ -31,6 +47,11 @@ AC_TYPE_UINT64_T
 
 # Checks for library functions.
 AC_CHECK_FUNCS([gettimeofday])
+
+
+
+
+
 
 AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE|AVX|AVX2|AVX512|MIC],\
 	[Select instructions to be SSE4.0, AVX 1.0, AVX 2.0+FMA, AVX 512, MIC])],\
@@ -84,3 +105,22 @@ AC_CONFIG_FILES(lib/Makefile)
 AC_CONFIG_FILES(tests/Makefile)
 AC_CONFIG_FILES(benchmarks/Makefile)
 AC_OUTPUT
+
+
+echo "
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Summary of configuration for $PACKAGE v$VERSION
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following features are enabled:
+
+- architecture (build)          : $build_cpu
+- os (build)                    : $build_os
+- architecture (target)         : $target_cpu
+- os (target)                   : $target_os
+----------------------------------------------------------
+- enabled simd support          : ${ac_SIMD}
+- communications type           : ${ac_COMMS}
+
+
+"

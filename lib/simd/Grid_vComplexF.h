@@ -219,7 +219,7 @@ namespace Grid {
             ret.v = _mm256_set_ps(b,a,b,a,b,a,b,a);
 #endif
 #ifdef SSE4
-            ret.v = _mm_set_ps(a,b,a,b);
+            ret.v = _mm_set_ps(b,a,b,a);
 #endif
 #ifdef AVX512
             ret.v = _mm512_set_ps(b,a,b,a,b,a,b,a,b,a,b,a,b,a,b,a);
@@ -354,9 +354,7 @@ namespace Grid {
 
 #endif
 #ifdef SSE4
-	    cvec tmp;
-	    tmp = _mm_addsub_ps(ret.v,_mm_shuffle_ps(in.v,in.v,_MM_SHUFFLE(2,3,0,1))); // ymm1 <- br,bi
-	    ret.v=_mm_shuffle_ps(tmp,tmp,_MM_SHUFFLE(2,3,0,1));
+	    ret.v = _mm_xor_ps(_mm_addsub_ps(ret.v,in.v), _mm_set1_ps(-0.f));
 #endif
 #ifdef AVX512
             ret.v = _mm512_mask_sub_ps(in.v,0xaaaa,ret.v,in.v); // Zero out 0+real 0-imag 
