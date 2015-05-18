@@ -1,25 +1,7 @@
 #ifndef  GRID_ALGORITHM_LINEAR_OP_H
 #define  GRID_ALGORITHM_LINEAR_OP_H
 
-#include <Grid.h>
-
 namespace Grid {
-
-  /////////////////////////////////////////////////////////////////////////////////////////////
-  // Interface defining what I expect of a general sparse matrix, such as a Fermion action
-  /////////////////////////////////////////////////////////////////////////////////////////////
-    template<class Field> class SparseMatrixBase {
-    public:
-      // Full checkerboar operations
-      virtual void M    (const Field &in, Field &out);
-      virtual void Mdag (const Field &in, Field &out);
-      virtual RealD MdagM(const Field &in, Field &out);
-      
-      // half checkerboard operaions
-      virtual void Mpc      (const Field &in, Field &out);
-      virtual void MpcDag   (const Field &in, Field &out);
-      virtual RealD MpcDagMpc(const Field &in, Field &out);
-    };
 
   /////////////////////////////////////////////////////////////////////////////////////////////
   // LinearOperators Take a something and return a something.
@@ -61,11 +43,11 @@ namespace Grid {
   // the wrappers implement the specialisation of "Op" and "AdjOp" to the cases minimising
   // replication of code.
   /////////////////////////////////////////////////////////////////////////////////////////////
-    template<class SparseMatrix,class Field>
+    template<class Matrix,class Field>
     class NonHermitianOperator : public LinearOperatorBase<Field> {
-      SparseMatrix &_Mat;
+      Matrix &_Mat;
     public:
-      NonHermitianOperator(SparseMatrix &Mat): _Mat(Mat){};
+      NonHermitianOperator(Matrix &Mat): _Mat(Mat){};
       void Op     (const Field &in, Field &out){
 	_Mat.M(in,out);
       }
@@ -77,11 +59,11 @@ namespace Grid {
     ////////////////////////////////////////////////////////////////////////////////////
     // Redblack Non hermitian wrapper
     ////////////////////////////////////////////////////////////////////////////////////
-    template<class SparseMatrix,class Field>
-    class NonHermitianRedBlackOperator : public LinearOperatorBase<Field> {
-      SparseMatrix &_Mat;
+    template<class Matrix,class Field>
+    class NonHermitianCheckerBoardedOperator : public LinearOperatorBase<Field> {
+      Matrix &_Mat;
     public:
-      NonHermitianRedBlackOperator(SparseMatrix &Mat): _Mat(Mat){};
+      NonHermitianCheckerBoardedOperator(Matrix &Mat): _Mat(Mat){};
       void Op     (const Field &in, Field &out){
 	_Mat.Mpc(in,out);
       }
@@ -93,75 +75,35 @@ namespace Grid {
     ////////////////////////////////////////////////////////////////////////////////////
     // Hermitian wrapper
     ////////////////////////////////////////////////////////////////////////////////////
-    template<class SparseMatrix,class Field>
+    template<class Matrix,class Field>
     class HermitianOperator : public HermitianOperatorBase<Field> {
-      SparseMatrix &_Mat;
+      Matrix &_Mat;
     public:
-      HermitianOperator(SparseMatrix &Mat): _Mat(Mat) {};
+      HermitianOperator(Matrix &Mat): _Mat(Mat) {};
       RealD OpAndNorm(const Field &in, Field &out){
 	return _Mat.MdagM(in,out);
       }
     };
 
     ////////////////////////////////////////////////////////////////////////////////////
-    // Hermitian RedBlack wrapper
+    // Hermitian CheckerBoarded wrapper
     ////////////////////////////////////////////////////////////////////////////////////
-    template<class SparseMatrix,class Field>
-    class HermitianRedBlackOperator : public HermitianOperatorBase<Field> {
-      SparseMatrix &_Mat;
+    template<class Matrix,class Field>
+    class HermitianCheckerBoardedOperator : public HermitianOperatorBase<Field> {
+      Matrix &_Mat;
     public:
-      HermitianRedBlackOperator(SparseMatrix &Mat): _Mat(Mat) {};
-      RealD OpAndNorm(const Field &in, Field &out){
-	return _Mat.MpcDagMpc(in,out);
+      HermitianCheckerBoardedOperator(Matrix &Mat): _Mat(Mat) {};
+      void OpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
+	_Mat.MpcDagMpc(in,out,n1,n2);
       }
     };
-
 
     /////////////////////////////////////////////////////////////
     // Base classes for functions of operators
     /////////////////////////////////////////////////////////////
     template<class Field> class OperatorFunction {
     public:
-      virtual void operator() (LinearOperatorBase<Field> *Linop, const Field &in, Field &out) = 0;
-    };
-
-    /////////////////////////////////////////////////////////////
-    // Base classes for polynomial functions of operators ? needed?
-    /////////////////////////////////////////////////////////////
-    template<class Field> class OperatorPolynomial : public OperatorFunction<Field> {
-    public:
-      virtual void operator() (LinearOperatorBase<Field> *Linop,const Field &in, Field &out) = 0;
-    };
-
-    /////////////////////////////////////////////////////////////
-    // Base classes for iterative processes based on operators
-    // single input vec, single output vec.
-    /////////////////////////////////////////////////////////////
-    template<class Field> class IterativeProcess : public OperatorFunction<Field> {
-    public:
-      RealD   Tolerance;
-      Integer MaxIterations;
-      IterativeProcess(RealD tol,Integer maxit) : Tolerance(tol),MaxIterations(maxit) {};
-      virtual void operator() (LinearOperatorBase<Field> *Linop,const Field &in, Field &out) = 0;
-    };
-
-    /////////////////////////////////////////////////////////////
-    // Grand daddy iterative method
-    /////////////////////////////////////////////////////////////
-    template<class Field> class ConjugateGradient : public IterativeProcess<Field> {
-    public:
-      virtual void operator() (HermitianOperatorBase<Field> *Linop,const Field &in, Field &out) = 0;
-    };
-
-    /////////////////////////////////////////////////////////////
-    // A little more modern
-    /////////////////////////////////////////////////////////////
-    template<class Field> class PreconditionedConjugateGradient : public  IterativeProcess<Field>  {
-    public:
-      void operator() (HermitianOperatorBase<Field> *Linop,
-		       OperatorFunction<Field> *Preconditioner,
-		       const Field &in, 
-		       Field &out) = 0;
+      virtual void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) = 0;
     };
 
     // FIXME : To think about

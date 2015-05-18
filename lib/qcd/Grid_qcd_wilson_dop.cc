@@ -85,20 +85,40 @@ void WilsonMatrix::DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGaugeF
   }
 }
 
-void WilsonMatrix::M(const LatticeFermion &in, LatticeFermion &out)
+RealD WilsonMatrix::M(const LatticeFermion &in, LatticeFermion &out)
 {
   Dhop(in,out);
-  return;
+  return 0.0;
 }
-void WilsonMatrix::Mdag(const LatticeFermion &in, LatticeFermion &out)
+RealD WilsonMatrix::Mdag(const LatticeFermion &in, LatticeFermion &out)
 {
   Dhop(in,out);
-  return;
+  return 0.0;
 }
-void WilsonMatrix::MdagM(const LatticeFermion &in, LatticeFermion &out)
+
+void WilsonMatrix::Meooe(const LatticeFermion &in, LatticeFermion &out)
 {
   Dhop(in,out);
-  return;
+}
+void WilsonMatrix::MeooeDag(const LatticeFermion &in, LatticeFermion &out)
+{
+  Dhop(in,out);
+}
+void WilsonMatrix::Mooee(const LatticeFermion &in, LatticeFermion &out)
+{
+  return ;
+}
+void WilsonMatrix::MooeeInv(const LatticeFermion &in, LatticeFermion &out)
+{
+  return ;
+}
+void WilsonMatrix::MooeeDag(const LatticeFermion &in, LatticeFermion &out)
+{
+  return ;
+}
+void WilsonMatrix::MooeeInvDag(const LatticeFermion &in, LatticeFermion &out)
+{
+  return ;
 }
 
 void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out)
@@ -275,18 +295,6 @@ PARALLEL_FOR_LOOP
 
 
 void WilsonMatrix::Dw(const LatticeFermion &in, LatticeFermion &out)
-{
-  return;
-}
-void WilsonMatrix::MpcDag   (const LatticeFermion &in, LatticeFermion &out)
-{
-  return;
-}
-void WilsonMatrix::Mpc      (const LatticeFermion &in, LatticeFermion &out)
-{
-  return;
-}
-void WilsonMatrix::MpcDagMpc(const LatticeFermion &in, LatticeFermion &out)
 {
   return;
 }
