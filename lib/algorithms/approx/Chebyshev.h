@@ -1,5 +1,5 @@
-#ifndef GRID_POLYNOMIAL_APPROX_H
-#define GRID_POLYNOMIAL_APPROX_H
+#ifndef GRID_CHEBYSHEV_H
+#define GRID_CHEBYSHEV_H
 
 #include<Grid.h>
 #include<algorithms/LinearOperator.h>
@@ -12,7 +12,7 @@ namespace Grid {
   template<class Field>
   class Polynomial : public OperatorFunction<Field> {
   private:
-    std::vector<double> _oeffs;
+    std::vector<double> Coeffs;
   public:
     Polynomial(std::vector<double> &_Coeffs) : Coeffs(_Coeffs) {};
 
@@ -111,17 +111,13 @@ namespace Grid {
       double xscale = 2.0/(hi-lo);
       double mscale = -(hi+lo)/(hi-lo);
 
-      Field *T0=Tnm;
-      Field *T1=Tn;
-      
-
       // Tn=T1 = (xscale M + mscale)in
       Linop.Op(T0,y);
 
       T1=y*xscale+in*mscale;
 
       // sum = .5 c[0] T0 + c[1] T1
-      out = (0.5*coeffs[0])*T0 + coeffs[1]*T1;
+      out = (0.5*Coeffs[0])*T0 + Coeffs[1]*T1;
 
       for(int n=2;n<order;n++){
 	
@@ -131,7 +127,7 @@ namespace Grid {
 
 	*Tnp=2.0*y-(*Tnm);
 	
-	out=out+coeffs[n]* (*Tnp);
+	out=out+Coeffs[n]* (*Tnp);
 
 	// Cycle pointers to avoid copies
 	Field *swizzle = Tnm;

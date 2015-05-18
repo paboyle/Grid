@@ -4244,7 +4244,18 @@ fi
 
 done
 
-#AC_CHECK_HEADERS(machine/endian.h)
+for ac_header in gmp.h
+do :
+  ac_fn_cxx_check_header_mongrel "$LINENO" "gmp.h" "ac_cv_header_gmp_h" "$ac_includes_default"
+if test "x$ac_cv_header_gmp_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_GMP_H 1
+_ACEOF
+
+fi
+
+done
+
 ac_fn_cxx_check_decl "$LINENO" "ntohll" "ac_cv_have_decl_ntohll" "#include <arpa/inet.h>
 "
 if test "x$ac_cv_have_decl_ntohll" = xyes; then :

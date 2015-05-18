@@ -10,15 +10,17 @@
 #ifndef GRID_H
 #define GRID_H
 
-#include <stdio.h>
+#include <cassert>
 
 #include <complex>
 #include <vector>
-#include <valarray>
+
 #include <iostream>
-#include <cassert>
+#include <iomanip>
 #include <random>
 #include <functional>
+
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
 #include <stdio.h>
@@ -45,16 +47,19 @@
 #endif
 
 #include <Grid_aligned_allocator.h>
+
 #include <Grid_simd.h>
 #include <Grid_threads.h>
 
-#include <Grid_cartesian.h>
-
-#include <Grid_math.h>
-#include <Grid_lattice.h>
+#include <Grid_cartesian.h> // subdir aggregate
+#include <Grid_math.h>      // subdir aggregate
+#include <Grid_lattice.h>   // subdir aggregate
 #include <Grid_comparison.h>
-#include <Grid_cshift.h>
-#include <Grid_stencil.h>
+#include <Grid_cshift.h>    // subdir aggregate
+#include <Grid_stencil.h>   // subdir aggregate
+
+#include <Grid_algorithms.h>// subdir aggregate
+
 #include <qcd/Grid_qcd.h>
 #include <parallelIO/GridNerscIO.h>
 

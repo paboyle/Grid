@@ -1,15 +1,12 @@
 #ifndef  GRID_QCD_WILSON_DOP_H
 #define  GRID_QCD_WILSON_DOP_H
 
-#include <Grid.h>
-
-#include <algorithms/LinearOperator.h>
 
 namespace Grid {
 
   namespace QCD {
 
-    class WilsonMatrix : public SparseMatrixBase<LatticeFermion>
+    class WilsonMatrix : public CheckerBoardedSparseMatrixBase<LatticeFermion>
     {
       //NB r=1;
     public:
@@ -36,14 +33,16 @@ namespace Grid {
       void DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGaugeField &Umu);
 
       // override multiply
-      virtual void M    (const LatticeFermion &in, LatticeFermion &out);
-      virtual void Mdag (const LatticeFermion &in, LatticeFermion &out);
-      virtual void MdagM(const LatticeFermion &in, LatticeFermion &out);
+      virtual RealD  M    (const LatticeFermion &in, LatticeFermion &out);
+      virtual RealD  Mdag (const LatticeFermion &in, LatticeFermion &out);
 
       // half checkerboard operaions
-      void Mpc      (const LatticeFermion &in, LatticeFermion &out);
-      void MpcDag   (const LatticeFermion &in, LatticeFermion &out);
-      void MpcDagMpc(const LatticeFermion &in, LatticeFermion &out);
+      virtual void   Meooe       (const LatticeFermion &in, LatticeFermion &out);
+      virtual void   MeooeDag    (const LatticeFermion &in, LatticeFermion &out);
+      virtual void   Mooee       (const LatticeFermion &in, LatticeFermion &out);
+      virtual void   MooeeDag    (const LatticeFermion &in, LatticeFermion &out);
+      virtual void   MooeeInv    (const LatticeFermion &in, LatticeFermion &out);
+      virtual void   MooeeInvDag (const LatticeFermion &in, LatticeFermion &out);
 
       // non-hermitian hopping term; half cb or both
       void Dhop(const LatticeFermion &in, LatticeFermion &out);
