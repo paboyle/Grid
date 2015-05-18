@@ -345,6 +345,9 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
 // REDUCE FIXME must be a cleaner implementation
        friend inline ComplexD Reduce(const vComplexD & in)
        { 
+#if defined SSE4
+         return ComplexD(in.v[0], in.v[1]); // inefficient
+#endif
 #if defined (AVX1) || defined(AVX2)
 	 //            return std::complex<double>(_mm256_mask_reduce_add_pd(0x55, in.v),_mm256_mask_reduce_add_pd(0xAA, in.v));
 	 __attribute__ ((aligned(32))) double c_[4];
