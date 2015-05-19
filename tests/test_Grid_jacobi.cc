@@ -186,7 +186,7 @@ int main (int argc, char ** argv)
 	  for(int r=0;r<3;r++){
 	  for(int c=0;c<3;c++){
             diff =check._internal._internal[r][c]-bar._internal._internal[r][c];
-            double nn=real(conj(diff)*diff);
+            double nn=real(conjugate(diff)*diff);
             if ( nn > 0 ){
 	      printf("Coor (%d %d %d %d) \t rc %d%d \t %le %le %le\n",
 		     coor[0],coor[1],coor[2],coor[3],r,c,
