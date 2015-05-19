@@ -117,7 +117,7 @@ namespace Grid {
         };
         
         ///////////////////////////////////////////////
-        // mult, sub, add, adj,conj, mac functions
+        // mult, sub, add, adj,conjugate, mac functions
         ///////////////////////////////////////////////
         friend inline void mult(vInteger * __restrict__ y,const vInteger * __restrict__ l,const vInteger *__restrict__ r) {*y = (*l) * (*r);}
         friend inline void sub (vInteger * __restrict__ y,const vInteger * __restrict__ l,const vInteger *__restrict__ r) {*y = (*l) - (*r);}

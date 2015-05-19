@@ -32,7 +32,7 @@ namespace Grid {
         friend inline void mult(vComplexD * __restrict__ y,const vComplexD * __restrict__ l,const vComplexD *__restrict__ r) {*y = (*l) * (*r);}
         friend inline void sub (vComplexD * __restrict__ y,const vComplexD * __restrict__ l,const vComplexD *__restrict__ r) {*y = (*l) - (*r);}
         friend inline void add (vComplexD * __restrict__ y,const vComplexD * __restrict__ l,const vComplexD *__restrict__ r) {*y = (*l) + (*r);}
-        friend inline vComplexD adj(const vComplexD &in){ return conj(in); }
+        friend inline vComplexD adj(const vComplexD &in){ return conjugate(in); }
 
         //////////////////////////////////
         // Initialise to 1,0,i
@@ -166,11 +166,11 @@ namespace Grid {
 	// all subtypes; may not be a good assumption, but could
 	// add the vector width as a template param for BG/Q for example
 	////////////////////////////////////////////////////////////////////
-	/*
 	friend inline void permute(vComplexD &y,vComplexD b,int perm)
 	{
 	  Gpermute<vComplexD>(y,b,perm);
 	}
+	/*
 	friend inline void merge(vComplexD &y,std::vector<ComplexD *> &extracted)
 	{
 	  Gmerge<vComplexD,ComplexD >(y,extracted);
@@ -269,7 +269,7 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
         ////////////////////////
         // Conjugate
         ////////////////////////
-        friend inline vComplexD conj(const vComplexD &in){
+        friend inline vComplexD conjugate(const vComplexD &in){
             vComplexD ret ; vzero(ret);
 #if defined (AVX1)|| defined (AVX2)
 	    //	    addsubps 0, inv=>0+in.v[3] 0-in.v[2], 0+in.v[1], 0-in.v[0], ...
@@ -345,17 +345,17 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
 // REDUCE FIXME must be a cleaner implementation
        friend inline ComplexD Reduce(const vComplexD & in)
        { 
-#if defined SSE4
-         return ComplexD(in.v[0], in.v[1]); // inefficient
+#ifdef SSE4
+	 return ComplexD(in.v[0],in.v[1]);
 #endif
-#if defined (AVX1) || defined(AVX2)
-	 //            return std::complex<double>(_mm256_mask_reduce_add_pd(0x55, in.v),_mm256_mask_reduce_add_pd(0xAA, in.v));
-	 __attribute__ ((aligned(32))) double c_[4];
-         _mm256_store_pd(c_,in.v);
-	 return ComplexD(c_[0]+c_[2],c_[1]+c_[3]);
-#endif 
+#if defined(AVX1) || defined (AVX2)
+	 vComplexD v1;
+	 permute(v1,in,0); // sse 128; paired complex single
+	 v1=v1+in;
+	 return ComplexD(v1.v[0],v1.v[1]);
+#endif
 #ifdef AVX512
-            return ComplexD(_mm512_mask_reduce_add_pd(0x55, in.v),_mm512_mask_reduce_add_pd(0xAA, in.v));
+	 return ComplexD(_mm512_mask_reduce_add_pd(0x55, in.v),_mm512_mask_reduce_add_pd(0xAA, in.v));
 #endif 
 #ifdef QPX
 #endif
@@ -387,7 +387,7 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
     };
 
 
-    inline vComplexD innerProduct(const vComplexD & l, const vComplexD & r) { return conj(l)*r; }
+    inline vComplexD innerProduct(const vComplexD & l, const vComplexD & r) { return conjugate(l)*r; }
 
 
     typedef  vComplexD vDComplex;
