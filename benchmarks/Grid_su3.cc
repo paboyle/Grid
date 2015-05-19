@@ -13,6 +13,9 @@ int main (int argc, char ** argv)
   std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
 
+  int threads = GridThread::GetThreads();
+  std::cout << "Grid is setup to use "<<threads<<" threads"<<std::endl;
+
   std::cout << "===================================================================================================="<<std::endl;
   std::cout << "= Benchmarking SU3xSU3  x= x*y"<<std::endl;
   std::cout << "===================================================================================================="<<std::endl;
