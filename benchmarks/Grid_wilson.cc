@@ -49,6 +49,13 @@ int main (int argc, char ** argv)
     volume=volume*latt_size[mu];
   }  
 
+  // Only one non-zero (y)
+  Umu=zero;
+  for(int nn=0;nn<Nd;nn++){
+    random(pRNG,U[nn]);
+    pokeIndex<LorentzIndex>(Umu,U[nn],nn);
+  }
+
   for(int mu=0;mu<Nd;mu++){
     U[mu] = peekIndex<LorentzIndex>(Umu,mu);
   }
@@ -56,7 +63,6 @@ int main (int argc, char ** argv)
   { // Naive wilson implementation
     ref = zero;
     for(int mu=0;mu<Nd;mu++){
-
       //    ref =  src + Gamma(Gamma::GammaX)* src ; // 1-gamma_x
       tmp = U[mu]*Cshift(src,mu,1);
       for(int i=0;i<ref._odata.size();i++){
@@ -78,7 +84,7 @@ int main (int argc, char ** argv)
   int ncall=1000;
   double t0=usecond();
   for(int i=0;i<ncall;i++){
-    Dw.M(src,result);
+    Dw.Dhop(src,result,0);
   }
   double t1=usecond();
   double flops=1320*volume*ncall;
@@ -101,6 +107,31 @@ int main (int argc, char ** argv)
       }
     }
   }
+
+  { // Naive wilson dag implementation
+    ref = zero;
+    for(int mu=0;mu<Nd;mu++){
+
+      //    ref =  src - Gamma(Gamma::GammaX)* src ; // 1+gamma_x
+      tmp = U[mu]*Cshift(src,mu,1);
+      for(int i=0;i<ref._odata.size();i++){
+	ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
+      }
+
+      tmp =adj(U[mu])*src;
+      tmp =Cshift(tmp,mu,-1);
+      for(int i=0;i<ref._odata.size();i++){
+	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
+      }
+    }
+  }
+  Dw.Dhop(src,result,1);
+  std::cout << "Called DwDag"<<std::endl;
+  std::cout << "norm result "<< norm2(result)<<std::endl;
+  std::cout << "norm ref    "<< norm2(ref)<<std::endl;
+  err = ref -result;
+  std::cout << "norm diff   "<< norm2(err)<<std::endl;
+
 
   Grid_finalize();
 }

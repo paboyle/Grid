@@ -9,7 +9,7 @@ namespace Grid {
 // Functionality:
 //     -=,+=,*=,()
 //     add,+,sub,-,mult,mac,*
-//     adj,conj
+//     adj,conjugate
 //     real,imag
 //     transpose,transposeIndex  
 //     trace,traceIndex

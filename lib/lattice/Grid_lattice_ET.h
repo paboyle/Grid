@@ -102,7 +102,7 @@ template <class arg> struct name\
 
 GridUnopClass(UnarySub,-a);
 GridUnopClass(UnaryAdj,adj(a));
-GridUnopClass(UnaryConj,conj(a));
+GridUnopClass(UnaryConj,conjugate(a));
 GridUnopClass(UnaryTrace,trace(a));
 GridUnopClass(UnaryTranspose,transpose(a));
 
@@ -178,7 +178,7 @@ template <typename T1,typename T2,typename T3> inline auto op(const T1 &pred,con
 
 GRID_DEF_UNOP(operator -,UnarySub);
 GRID_DEF_UNOP(adj,UnaryAdj);
-GRID_DEF_UNOP(conj,UnaryConj);
+GRID_DEF_UNOP(conjugate,UnaryConj);
 GRID_DEF_UNOP(trace,UnaryTrace);
 GRID_DEF_UNOP(transpose,UnaryTranspose);
 

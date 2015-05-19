@@ -140,7 +140,7 @@ int main (int argc, char ** argv)
 
 //     -=,+=,*=,()
 //     add,+,sub,-,mult,mac,*
-//     adj,conj
+//     adj,conjugate
 //     real,imag
 //     transpose,transposeIndex  
 //     trace,traceIndex
@@ -437,7 +437,7 @@ int main (int argc, char ** argv)
         for(int r=0;r<3;r++){
         for(int c=0;c<3;c++){
             diff =shifted1()()(r,c)-shifted2()()(r,c);
-            nn=real(conj(diff)*diff);
+            nn=real(conjugate(diff)*diff);
             if ( nn > 0 )
                 cout<<"Shift fail (shifted1/shifted2-ref) "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "
                     <<shifted1()()(r,c)<<" "<<shifted2()()(r,c)
@@ -451,7 +451,7 @@ int main (int argc, char ** argv)
         for(int r=0;r<3;r++){
         for(int c=0;c<3;c++){
             diff =shifted3()()(r,c)-shifted2()()(r,c);
-            nn=real(conj(diff)*diff);
+            nn=real(conjugate(diff)*diff);
             if ( nn > 0 )
                 cout<<"Shift rb fail (shifted3/shifted2-ref) "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<" "
                 <<shifted3()()(r,c)<<" "<<shifted2()()(r,c)
@@ -468,7 +468,7 @@ int main (int argc, char ** argv)
         for(int r=0;r<Nc;r++){
         for(int c=0;c<Nc;c++){
             diff =foobar2()()(r,c)-foobar1()()(r,c);
-            nrm = nrm + real(conj(diff)*diff);
+            nrm = nrm + real(conjugate(diff)*diff);
         }}
     }}}}
 	if( Fine.IsBoss() ){
