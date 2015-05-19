@@ -3,7 +3,7 @@
 #
 # Project Grid package  
 # 
-# Time-stamp: <2015-05-18 17:14:20 neo>
+# Time-stamp: <2015-05-19 13:51:08 neo>
 
 AC_PREREQ([2.69])
 AC_INIT([Grid], [1.0], [paboyle@ph.ed.ac.uk])
@@ -46,8 +46,22 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 
 # Checks for library functions.
+echo
+echo Checking libraries 
+echo :::::::::::::::::::::::::::::::::::::::::::
+
+
 AC_CHECK_FUNCS([gettimeofday])
 
+AC_CHECK_LIB([gmp],[__gmpf_init],,
+        [AC_MSG_ERROR(GNU Multiple Precision GMP library was not found in your system.
+Please install or provide the correct path to your installation
+Info at: http://www.gmplib.org)])
+
+AC_CHECK_LIB([mpfr],[mpfr_init],,
+        [AC_MSG_ERROR(GNU Multiple Precision MPFR library was not found in your system.
+Please install or provide the correct path to your installation
+Info at: http://www.mpfr.org/)])
 
 
 
