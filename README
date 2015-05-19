@@ -33,6 +33,8 @@ MPI parallelism is UNIMPLEMENTED and for now only OpenMP and SIMD parallelism is
 by setting variables in the command line or in the environment.  Here
 is are examples:
 
+     ./configure CXX=clang++ CXXFLAGS="-std=c++11 -O3 -msse4" --enable-simd=SSE4
+
      ./configure CXX=clang++ CXXFLAGS="-std=c++11 -O3 -mavx" --enable-simd=AVX1
 
      ./configure CXX=clang++ CXXFLAGS="-std=c++11 -O3 -mavx2" --enable-simd=AVX2
