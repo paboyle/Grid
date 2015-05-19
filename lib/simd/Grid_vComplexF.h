@@ -234,26 +234,34 @@ namespace Grid {
 	}
 	friend inline ComplexF Reduce(const vComplexF & in)
 	{
+	 vComplexF v1,v2;
+	 union { 
+	   cvec v;
+	   float f[sizeof(cvec)/sizeof(float)];
+	 } conv;
 #ifdef SSE4
-	 vComplexF v1;
 	 permute(v1,in,0); // sse 128; paired complex single
 	 v1=v1+in;
-	 return ComplexF(v1.v[0],v1.v[1]);
 #endif
 #if defined(AVX1) || defined (AVX2)
-	 vComplexF v1,v2;
 	 permute(v1,in,0); // sse 128; paired complex single
 	 v1=v1+in;
 	 permute(v2,v1,1); // avx 256; quad complex single
 	 v1=v1+v2;
-	 return ComplexF(v1.v[0],v1.v[1]);
 #endif
 #ifdef AVX512
-            return ComplexF(_mm512_mask_reduce_add_ps(0x5555, in.v),_mm512_mask_reduce_add_ps(0xAAAA, in.v));
+	 permute(v1,in,0); // avx512 octo-complex single
+	 v1=v1+in;
+	 permute(v2,v1,1); 
+	 v1=v1+v2;
+	 permute(v2,v1,2); 
+	 v1=v1+v2;
 #endif
 #ifdef QPX
 #error
 #endif
+	 conv.v = v1.v;
+	 return ComplexF(conv.f[0],conv.f[1]);
         }
 
         friend inline vComplexF operator * (const ComplexF &a, vComplexF b){

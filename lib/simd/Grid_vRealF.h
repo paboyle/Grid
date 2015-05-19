@@ -243,29 +243,39 @@ friend inline void vstore(const vRealF &ret, float *a){
         }
        friend inline RealF Reduce(const vRealF & in)
        {
-#ifdef SSE4
 	 vRealF v1,v2;
+	 union { 
+	   fvec v;
+	   float f[sizeof(fvec)/sizeof(double)];
+	 } conv;
+#ifdef SSE4
 	 permute(v1,in,0); // sse 128; quad single
 	 v1=v1+in;
 	 permute(v2,v1,1); 
 	 v1=v1+v2;
-	 return v1.v[0];
 #endif
 #if defined(AVX1) || defined (AVX2)
-	 vRealF v1,v2;
 	 permute(v1,in,0); // avx 256; octo-double
 	 v1=v1+in;
 	 permute(v2,v1,1); 
 	 v1=v1+v2;
 	 permute(v2,v1,2); 
 	 v1=v1+v2;
-	 return v1.v[0];
 #endif
 #ifdef AVX512
-            return _mm512_reduce_add_ps(in.v);
+	 permute(v1,in,0); // avx 256; octo-double
+	 v1=v1+in;
+	 permute(v2,v1,1); 
+	 v1=v1+v2;
+	 permute(v2,v1,2); 
+	 v1=v1+v2;
+	 permute(v2,v1,3); 
+	 v1=v1+v2;
 #endif
 #ifdef QPX
 #endif
+	 conv.v=v1.v;
+	 return conv.f[0];
         }
 
         // *=,+=,-= operators
