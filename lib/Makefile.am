@@ -95,5 +95,6 @@ nobase_include_HEADERS = algorithms/approx/bigfloat.h\
 	simd/Grid_vComplexF.h\
 	simd/Grid_vInteger.h\
 	simd/Grid_vRealD.h\
-	simd/Grid_vRealF.h
+	simd/Grid_vRealF.h\
+	simd/Grid_vector_types.h
 
