@@ -79,7 +79,7 @@ namespace Grid {
     friend inline void mult(Grid_simd * __restrict__ y,const Grid_simd * __restrict__ l,const Grid_simd *__restrict__ r){ *y = (*l) * (*r); }
     friend inline void sub (Grid_simd * __restrict__ y,const Grid_simd * __restrict__ l,const Grid_simd *__restrict__ r){ *y = (*l) - (*r); }
     friend inline void add (Grid_simd * __restrict__ y,const Grid_simd * __restrict__ l,const Grid_simd *__restrict__ r){ *y = (*l) + (*r); }
-    friend inline Grid_simd adj(const Grid_simd &in){ return conj(in); }
+    friend inline Grid_simd adj(const Grid_simd &in){ return conjugate(in); }
         
     //////////////////////////////////
     // Initialise to 1,0,i
@@ -193,7 +193,7 @@ namespace Grid {
     // Conjugate
     ///////////////////////
 								     
-    friend inline Grid_simd  conj(const Grid_simd  &in){
+    friend inline Grid_simd  conjugate(const Grid_simd  &in){
       Grid_simd  ret ; vzero(ret);
       // FIXME add operator
       return ret;
@@ -265,7 +265,7 @@ namespace Grid {
   template<class scalar_type, class vector_type > 
     inline Grid_simd< scalar_type, vector_type>  innerProduct(const Grid_simd< scalar_type, vector_type> & l, const Grid_simd< scalar_type, vector_type> & r) 
   {
-    return conj(l)*r; 
+    return conjugate(l)*r; 
   }
 
   template<class scalar_type, class vector_type >

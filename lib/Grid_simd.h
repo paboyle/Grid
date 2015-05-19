@@ -50,15 +50,20 @@ namespace Grid {
   typedef std::complex<Real>  Complex;
 
   inline RealF adj(const RealF  & r){ return r; }
-  inline RealF conj(const RealF  & r){ return r; }
+  inline RealF conjugate(const RealF  & r){ return r; }
   inline RealF real(const RealF  & r){ return r; }
 
   inline RealD adj(const RealD  & r){ return r; }
-  inline RealD conj(const RealD  & r){ return r; }
+  inline RealD conjugate(const RealD  & r){ return r; }
   inline RealD real(const RealD  & r){ return r; }
 
-  inline ComplexD innerProduct(const ComplexD & l, const ComplexD & r) { return conj(l)*r; }
-  inline ComplexF innerProduct(const ComplexF & l, const ComplexF & r) { return conj(l)*r; }
+  inline ComplexD conjugate(const ComplexD& r){ return(conj(r)); }
+  inline ComplexD adj(const ComplexD& r){ return(conjugate(r)); }
+  inline ComplexF conjugate(const ComplexF& r ){ return(conj(r)); }
+  inline ComplexF adj(const ComplexF& r ){ return(conjugate(r)); }
+
+  inline ComplexD innerProduct(const ComplexD & l, const ComplexD & r) { return conjugate(l)*r; }
+  inline ComplexF innerProduct(const ComplexF & l, const ComplexF & r) { return conjugate(l)*r; }
   inline RealD innerProduct(const RealD & l, const RealD & r) { return l*r; }
   inline RealF innerProduct(const RealF & l, const RealF & r) { return l*r; }
 
@@ -70,15 +75,14 @@ namespace Grid {
     inline void mult(ComplexD * __restrict__ y,const ComplexD * __restrict__ l,const ComplexD *__restrict__ r){ *y = (*l) * (*r);}
     inline void sub (ComplexD * __restrict__ y,const ComplexD * __restrict__ l,const ComplexD *__restrict__ r){ *y = (*l) - (*r);}
     inline void add (ComplexD * __restrict__ y,const ComplexD * __restrict__ l,const ComplexD *__restrict__ r){ *y = (*l) + (*r);}
-    inline ComplexD adj(const ComplexD& r){ return(conj(r)); }
-    // conj already supported for complex
+    // conjugate already supported for complex
     
     inline void mac (ComplexF * __restrict__ y,const ComplexF * __restrict__ a,const ComplexF *__restrict__ x){ *y = (*a) * (*x)+(*y); }
     inline void mult(ComplexF * __restrict__ y,const ComplexF * __restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) * (*r); }
     inline void sub (ComplexF * __restrict__ y,const ComplexF * __restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) - (*r); }
     inline void add (ComplexF * __restrict__ y,const ComplexF * __restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) + (*r); }
-    inline ComplexF  adj(const ComplexF& r ){ return(conj(r)); }
-    //conj already supported for complex
+
+    //conjugate already supported for complex
 
     inline ComplexF timesI(const ComplexF &r)     { return(r*ComplexF(0.0,1.0));}
     inline ComplexD timesI(const ComplexD &r)     { return(r*ComplexD(0.0,1.0));}
