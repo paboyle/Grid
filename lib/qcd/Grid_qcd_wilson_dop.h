@@ -46,6 +46,8 @@ namespace Grid {
 
       // non-hermitian hopping term; half cb or both
       void Dhop(const LatticeFermion &in, LatticeFermion &out,int dag);
+      void DhopSite   (int ss,const LatticeFermion &in, LatticeFermion &out);
+      void DhopSiteDag(int ss,const LatticeFermion &in, LatticeFermion &out);
 
       typedef iScalar<iMatrix<vComplex, Nc> > matrix;
 
