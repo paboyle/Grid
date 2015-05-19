@@ -37,7 +37,6 @@ namespace Grid {
 
   /*
     @brief Grid_simd class for the SIMD vector type operations
-
    */
   template < class Scalar_type, class Vector_type > 
     class Grid_simd {
@@ -100,14 +99,9 @@ namespace Grid {
     template <  class S = Scalar_type,typename std::enable_if < std::is_integral < S >::value, int >::type = 0 > 
     friend inline void vzero(Grid_simd &ret)      { vsplat(ret,0); }
 
-
-    
     // do not compile if real or integer, send an error message from the compiler
     template < class S = Scalar_type,typename std::enable_if < is_complex < S >::value, int >::type = 0 > 
     friend inline void vcomplex_i(Grid_simd &ret){ vsplat(ret,0.0,1.0);}
-       
-
-    
    
     ////////////////////////////////////
     // Arithmetic operator overloads +,-,*
