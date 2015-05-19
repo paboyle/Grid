@@ -345,20 +345,30 @@ friend inline void vstore(const vComplexD &ret, ComplexD *a){
 // REDUCE FIXME must be a cleaner implementation
        friend inline ComplexD Reduce(const vComplexD & in)
        { 
+	 vComplexD v1,v2;
+	 union { 
+	   zvec v;
+	   double f[sizeof(zvec)/sizeof(double)];
+	 } conv;
+	   
 #ifdef SSE4
-	 return ComplexD(in.v[0],in.v[1]);
+	 v1=in;
 #endif
 #if defined(AVX1) || defined (AVX2)
-	 vComplexD v1;
 	 permute(v1,in,0); // sse 128; paired complex single
 	 v1=v1+in;
-	 return ComplexD(v1.v[0],v1.v[1]);
 #endif
 #ifdef AVX512
-	 return ComplexD(_mm512_mask_reduce_add_pd(0x55, in.v),_mm512_mask_reduce_add_pd(0xAA, in.v));
+	 permute(v1,in,0); // sse 128; paired complex single
+	 v1=v1+in;
+	 permute(v2,v1,1); // avx 256; quad complex single
+	 v1=v1+v2;
 #endif 
 #ifdef QPX
+#error
 #endif
+	 conv.v = v1.v;
+	 return ComplexD(conv.f[0],conv.f[1]);
         }
         
         // Unary negation
