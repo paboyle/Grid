@@ -37,6 +37,8 @@ MPI, OpenMP, and SIMD parallelism are present in the library.
 by setting variables in the command line or in the environment.  Here
 are examples:
 
+     ./configure CXX=clang++ CXXFLAGS="-std=c++11 -O3 -msse4" --enable-simd=SSE4
+
      ./configure CXX=clang++ CXXFLAGS="-std=c++11 -O3 -mavx" --enable-simd=AVX1
 
      ./configure CXX=clang++ CXXFLAGS="-std=c++11 -O3 -mavx2" --enable-simd=AVX2
