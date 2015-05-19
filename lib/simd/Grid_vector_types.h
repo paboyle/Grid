@@ -1,3 +1,9 @@
+//----------------------------------------------------------------------
+/*! @file Grid_vector_types.h
+  @brief Defines templated class to deal with inner vector types
+*/
+// Time-stamp: <2015-05-19 13:41:47 neo>
+//----------------------------------------------------------------------
 #ifndef GRID_VECTOR_TYPES
 #define GRID_VECTOR_TYPES
 
@@ -13,8 +19,8 @@ namespace Grid {
     struct RealPart< std::complex<T> >{
     typedef T type;
   };
-  ////////////////////////////////////////////////////////
 
+  ////////////////////////////////////////////////////////
   // Check for complexity with type traits
   template <typename T> 
     struct is_complex : std::false_type {};
