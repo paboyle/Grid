@@ -26,6 +26,9 @@ int main (int argc, char ** argv)
   std::vector<int> mpi_layout  = GridDefaultMpi();
   GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
+  int threads = GridThread::GetThreads();
+  std::cout << "Grid is setup to use "<<threads<<" threads"<<std::endl;
+
   std::vector<int> seeds({1,2,3,4});
 
   GridParallelRNG          pRNG(&Grid);

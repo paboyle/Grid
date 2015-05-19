@@ -16,6 +16,9 @@ int main (int argc, char ** argv)
   std::vector<int> simd_layout = GridDefaultSimd(Nd,vReal::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
 
+  int threads = GridThread::GetThreads();
+  std::cout << "Grid is setup to use "<<threads<<" threads"<<std::endl;
+  
   std::cout << "===================================================================================================="<<std::endl;
   std::cout << "= Benchmarking fused AXPY bandwidth"<<std::endl;
   std::cout << "===================================================================================================="<<std::endl;
