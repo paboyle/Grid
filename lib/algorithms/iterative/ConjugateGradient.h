@@ -18,6 +18,7 @@ public:
       std::cout << Tolerance<<std::endl;
     };
 
+    void operator() (LinearOperatorBase<Field> &Linop,const Field &src, Field &psi) {assert(0);};
     void operator() (HermitianOperatorBase<Field> &Linop,const Field &src, Field &psi){
 
       RealD cp,c,a,d,b,ssq,qq,b_pred;
@@ -61,21 +62,27 @@ public:
 	
 	Linop.OpAndNorm(p,mmp,d,qq);
 	  
+	//	std::cout <<std::setprecision(4)<< "ConjugateGradient:  d,qq "<<d<< " "<<qq <<std::endl;
+      
 	a      = c/d;
 	b_pred = a*(a*qq-d)/c;
 	
-	cp = axpy_norm(r,mmp,r,-a);
+	//	std::cout <<std::setprecision(4)<< "ConjugateGradient:  a,bp "<<a<< " "<<b_pred <<std::endl;
+
+	cp = axpy_norm(r,-a,mmp,r);
 	b = cp/c;
+	//	std::cout <<std::setprecision(4)<< "ConjugateGradient:  cp,b "<<cp<< " "<<b <<std::endl;
 	
 	// Fuse these loops ; should be really easy
 	psi= a*p+psi;
 	p  = p*b+r;
 	  
-	std::cout << "Iteration " <<k<<" residual "<<cp<< " target"<< rsq<<std::endl;
+	std::cout<<"ConjugateGradient: Iteration " <<k<<" residual "<<cp<< " target"<< rsq<<std::endl;
+
 	// Stopping condition
 	if ( cp <= rsq ) { 
 	  
-	  Linop.Op(p,mmp);
+	  Linop.Op(psi,mmp);
 	  p=mmp-src;
 	  
 	  RealD mmpnorm = sqrt(norm2(mmp));
@@ -83,8 +90,11 @@ public:
 	  RealD srcnorm = sqrt(norm2(src));
 	  RealD resnorm = sqrt(norm2(p));
 	  RealD true_residual = resnorm/srcnorm;
+
+	  std::cout<<"ConjugateGradient: Converged on iteration " <<k<<" residual "<<cp<< " target"<< rsq<<std::endl;
 	  std::cout<<"ConjugateGradient: true   residual  is "<<true_residual<<" sol "<<psinorm<<" src "<<srcnorm<<std::endl;
 	  std::cout<<"ConjugateGradient: target residual was "<<Tolerance<<std::endl;
+	  return;
 	}
       }
       std::cout<<"ConjugateGradient did NOT converge"<<std::endl;
