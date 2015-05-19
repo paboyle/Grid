@@ -13,7 +13,7 @@ int main (int argc, char ** argv)
 
   std::vector<int> simd_layout = GridDefaultSimd(4,vComplexF::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
-  std::vector<int> latt_size  ({16,16,16,32});
+  std::vector<int> latt_size   = GridDefaultLatt();
   std::vector<int> clatt_size  ({4,4,4,8});
   int orthodir=3;
   int orthosz =latt_size[orthodir];
@@ -44,13 +44,15 @@ int main (int argc, char ** argv)
   // (1+2+3)=6 = N(N-1)/2 terms
   LatticeComplex Plaq(&Fine);
   LatticeComplex cPlaq(&Coarse);
+
   Plaq = zero;
+#if 1
   for(int mu=1;mu<Nd;mu++){
     for(int nu=0;nu<mu;nu++){
       Plaq = Plaq + trace(U[mu]*Cshift(U[nu],mu,1)*adj(Cshift(U[mu],nu,1))*adj(U[nu]));
     }
   }
-  
+#endif
   double vol = Fine.gSites();
   Complex PlaqScale(1.0/vol/6.0/3.0);
   std::cout <<"PlaqScale" << PlaqScale<<std::endl;

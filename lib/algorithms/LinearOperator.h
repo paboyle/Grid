@@ -25,7 +25,7 @@ namespace Grid {
   /////////////////////////////////////////////////////////////////////////////////////////////
     template<class Field> class HermitianOperatorBase : public LinearOperatorBase<Field> {
     public:
-      virtual void OpAndNorm(const Field &in, Field &out,double &n1,double &n2);
+      virtual void OpAndNorm(const Field &in, Field &out,double &n1,double &n2)=0;
       void AdjOp(const Field &in, Field &out) {
 	Op(in,out);
       };
