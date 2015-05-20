@@ -5,7 +5,7 @@ AM_LDFLAGS = -L$(top_builddir)/lib
 #
 # Test code
 #
-bin_PROGRAMS = Grid_main Grid_stencil Grid_nersc_io Grid_cshift Grid_gamma  Grid_simd Grid_rng Grid_remez
+bin_PROGRAMS = Grid_main Grid_stencil Grid_nersc_io Grid_cshift Grid_gamma  Grid_simd Grid_rng Grid_remez Grid_simd_new
 
 Grid_main_SOURCES = Grid_main.cc
 Grid_main_LDADD = -lGrid
@@ -30,3 +30,6 @@ Grid_stencil_LDADD = -lGrid
 
 Grid_simd_SOURCES = Grid_simd.cc
 Grid_simd_LDADD = -lGrid
+
+Grid_simd_new_SOURCES = Grid_simd_new.cc
+Grid_simd_new_LDADD = -lGrid
