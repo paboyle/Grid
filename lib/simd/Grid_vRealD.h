@@ -26,7 +26,7 @@ namespace Grid {
         friend inline void sub (vRealD * __restrict__ y,const vRealD * __restrict__ l,const vRealD *__restrict__ r) {*y = (*l) - (*r);}
         friend inline void add (vRealD * __restrict__ y,const vRealD * __restrict__ l,const vRealD *__restrict__ r) {*y = (*l) + (*r);}
         friend inline vRealD adj(const vRealD &in) { return in; }
-        friend inline vRealD conj(const vRealD &in){ return in; }
+        friend inline vRealD conjugate(const vRealD &in){ return in; }
         
         friend inline void mac (vRealD &y,const vRealD a,const vRealD x){
 #if defined (AVX1) || defined (SSE4)
@@ -112,11 +112,12 @@ namespace Grid {
 	// all subtypes; may not be a good assumption, but could
 	// add the vector width as a template param for BG/Q for example
 	////////////////////////////////////////////////////////////////////
-	/*
+
 	friend inline void permute(vRealD &y,vRealD b,int perm)
 	{
 	  Gpermute<vRealD>(y,b,perm);
 	}
+	/*
 	friend inline void merge(vRealD &y,std::vector<RealD *> &extracted)
 	{
 	  Gmerge<vRealD,RealD >(y,extracted);
@@ -209,48 +210,26 @@ namespace Grid {
 
        friend inline RealD Reduce(const vRealD & in)
        {
-#if defined (SSE4)
-	 // FIXME Hack
-	 const RealD * ptr =(const RealD *)  &in;
-	 RealD ret = 0; 
-	 for(int i=0;i<vRealD::Nsimd();i++){
-	   ret = ret+ptr[i];
-	 }
-	 return ret;
+#ifdef SSE4
+	 vRealD v1;
+	 permute(v1,in,0); // sse 128; paired real double
+	 v1=v1+in;
+	 return RealD(v1.v[0]);
 #endif
-#if defined (AVX1) || defined(AVX2)
-	 typedef union  {
-	   uint64_t l;
-	   double   d;
-	 } my_conv_t;
-	 my_conv_t converter;
-// more reduce_add
-/*
-            __attribute__ ((aligned(32))) double c_[16];
-	    __m256d tmp  = _mm256_permute2f128_pd(in.v,in.v,0x01); // tmp 1032; in= 3210
-            __m256d hadd = _mm256_hadd_pd(in.v,tmp);              // hadd = 1+0,3+2,3+2,1+0
-  	             tmp = _mm256_permute2f128_pd(hadd,hadd,0x01);// tmp  = 3+2,1+0,1+0,3+2
-                    hadd = _mm256_hadd_pd(tmp,tmp);               // tmp  = 3+2+1+0,3+2+1+0,1+0+3+2,1+0+3+2
-                    _mm256_store_pd(c_,hadd);ô
-             return c[0]
-*/
-	    __m256d tmp  = _mm256_permute2f128_pd(in.v,in.v,0x01); // tmp 1032; in= 3210
-            __m256d hadd = _mm256_hadd_pd(in.v,tmp);              // hadd = 1+0,3+2,3+2,1+0
-                    hadd = _mm256_hadd_pd(hadd,hadd);             // hadd = 1+0+3+2...
-		    converter.l = _mm256_extract_epi64((ivec)hadd,0);
-            return converter.d;
+#if defined(AVX1) || defined (AVX2)
+	 vRealD v1,v2;
+	 permute(v1,in,0); // avx 256; quad double
+	 v1=v1+in;
+	 permute(v2,v1,1); 
+	 v1=v1+v2;
+	 return v1.v[0];
 #endif
 #ifdef AVX512
             return _mm512_reduce_add_pd(in.v);
-/*
-            __attribute__ ((aligned(32))) double c_[8];
-           _mm512_store_pd(c_,in.v);
-            return c_[0]+c_[1]+c_[2]+c_[3]+c_[4]+c_[5]+c_[6]+c_[7];
-*/
 #endif
 #ifdef QPX
 #endif
-        }
+       }
 
         // *=,+=,-= operators
         inline vRealD &operator *=(const vRealD &r) {
@@ -270,7 +249,7 @@ namespace Grid {
         static int Nsimd(void) { return sizeof(dvec)/sizeof(double);}
     };
 
-    inline vRealD innerProduct(const vRealD & l, const vRealD & r) { return conj(l)*r; }
+    inline vRealD innerProduct(const vRealD & l, const vRealD & r) { return conjugate(l)*r; }
     inline void zeroit(vRealD &z){ vzero(z);}
 
     inline vRealD outerProduct(const vRealD &l, const vRealD& r)

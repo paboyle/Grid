@@ -7,8 +7,8 @@ namespace Grid {
   // LinearOperators Take a something and return a something.
   /////////////////////////////////////////////////////////////////////////////////////////////
   //
-  // Hopefully linearity is satisfied and the AdjOp is indeed the Hermitian conjugate (transpose if real):
-  //
+  // Hopefully linearity is satisfied and the AdjOp is indeed the Hermitian conjugateugate (transpose if real):
+  //SBase
   //   i)  F(a x + b y) = aF(x) + b F(y).
   //  ii)  <x|Op|y> = <y|AdjOp|x>^\ast
   //
@@ -25,12 +25,13 @@ namespace Grid {
   /////////////////////////////////////////////////////////////////////////////////////////////
     template<class Field> class HermitianOperatorBase : public LinearOperatorBase<Field> {
     public:
-      virtual RealD OpAndNorm(const Field &in, Field &out);
+      virtual void OpAndNorm(const Field &in, Field &out,double &n1,double &n2);
       void AdjOp(const Field &in, Field &out) {
 	Op(in,out);
       };
       void Op(const Field &in, Field &out) {
-	OpAndNorm(in,out);
+	double n1,n2;
+	OpAndNorm(in,out,n1,n2);
       };
     };
 
@@ -80,8 +81,8 @@ namespace Grid {
       Matrix &_Mat;
     public:
       HermitianOperator(Matrix &Mat): _Mat(Mat) {};
-      RealD OpAndNorm(const Field &in, Field &out){
-	return _Mat.MdagM(in,out);
+      void OpAndNorm(const Field &in, Field &out,double &n1,double &n2){
+	return _Mat.MdagM(in,out,n1,n2);
       }
     };
 

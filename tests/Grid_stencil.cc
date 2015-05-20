@@ -93,7 +93,7 @@ int main (int argc, char ** argv)
 	  for(int r=0;r<3;r++){
 	  for(int c=0;c<3;c++){
             diff =check()()(r,c)-bar()()(r,c);
-            double nn=real(conj(diff)*diff);
+            double nn=real(conjugate(diff)*diff);
             if ( nn > 0){
 	      printf("Coor (%d %d %d %d) \t rc %d%d \t %le (%le,%le) %le\n",
 		     coor[0],coor[1],coor[2],coor[3],r,c,
@@ -103,8 +103,8 @@ int main (int argc, char ** argv)
 		     real(bar()()(r,c))
 		     );
 	    }
-	    snrmC=snrmC+real(conj(check()()(r,c))*check()()(r,c));
-	    snrmB=snrmB+real(conj(bar()()(r,c))*bar()()(r,c));
+	    snrmC=snrmC+real(conjugate(check()()(r,c))*check()()(r,c));
+	    snrmB=snrmB+real(conjugate(bar()()(r,c))*bar()()(r,c));
 	    snrm=snrm+nn;
 	  }}
 	 

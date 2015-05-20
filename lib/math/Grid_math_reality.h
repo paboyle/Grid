@@ -98,26 +98,26 @@ template<class vtype,int N> inline void  timesMinusI(iMatrix<vtype,N> &ret,const
 /////////////////////////////////////////////// 
 // Conj function for scalar, vector, matrix
 /////////////////////////////////////////////// 
-template<class vtype> inline iScalar<vtype> conj(const iScalar<vtype>&r)
+template<class vtype> inline iScalar<vtype> conjugate(const iScalar<vtype>&r)
 {
     iScalar<vtype> ret;
-    ret._internal = conj(r._internal);
+    ret._internal = conjugate(r._internal);
     return ret;
 }
-template<class vtype,int N> inline iVector<vtype,N> conj(const iVector<vtype,N>&r)
+template<class vtype,int N> inline iVector<vtype,N> conjugate(const iVector<vtype,N>&r)
 {
   iVector<vtype,N> ret;
   for(int i=0;i<N;i++){
-    ret._internal[i] = conj(r._internal[i]);
+    ret._internal[i] = conjugate(r._internal[i]);
   }
   return ret;
 }
-template<class vtype,int N> inline iMatrix<vtype,N> conj(const iMatrix<vtype,N>&r)
+template<class vtype,int N> inline iMatrix<vtype,N> conjugate(const iMatrix<vtype,N>&r)
 {
   iMatrix<vtype,N> ret;
   for(int i=0;i<N;i++){
   for(int j=0;j<N;j++){
-    ret._internal[i][j] = conj(r._internal[i][j]);
+    ret._internal[i][j] = conjugate(r._internal[i][j]);
   }}
   return ret;
 }

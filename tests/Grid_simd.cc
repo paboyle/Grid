@@ -26,7 +26,7 @@ public:
 class funcConj {
 public:
   funcConj() {};
-  template<class vec> void operator()(vec &rr,vec &i1,vec &i2) const { rr = conj(i1);}
+  template<class vec> void operator()(vec &rr,vec &i1,vec &i2) const { rr = conjugate(i1);}
   std::string name(void) const { return std::string("Conj"); }
 };
 class funcAdj {
@@ -48,6 +48,34 @@ public:
   funcTimesMinusI() {};
   template<class vec> void operator()(vec &rr,vec &i1,vec &i2) const { rr = timesMinusI(i1);}
   std::string name(void) const { return std::string("timesMinusI"); }
+};
+class funcInnerProduct {
+public:
+  funcInnerProduct() {};
+  template<class vec> void operator()(vec &rr,vec &i1,vec &i2) const { rr = innerProduct(i1,i2);}
+  std::string name(void) const { return std::string("innerProduct"); }
+};
+
+// FIXME still to test:
+//
+//  innerProduct,
+//  norm2, 
+//  Reduce,
+//
+//  mac,mult,sub,add, vone,vzero,vcomplex_i, =zero,
+//  vset,vsplat,vstore,vstream,vload, scalar*vec, vec*scalar
+//  unary -,
+//  *= , -=, +=
+//  outerproduct, 
+//  zeroit
+//  permute
+
+class funcReduce {
+public:
+  funcReduce() {};
+template<class reduce,class vec>    void vfunc(reduce &rr,vec &i1,vec &i2)   const { rr = Reduce(i1);}
+template<class reduce,class scal>   void sfunc(reduce &rr,scal &i1,scal &i2) const { rr = i1;}
+  std::string name(void) const { return std::string("Reduce"); }
 };
 
 template<class scal, class vec,class functor > 
@@ -96,8 +124,59 @@ void Tester(const functor &func)
       ok++;
     }
   }
-  if ( ok==0 ) std::cout << " OK!" <<std::endl;
+  if ( ok==0 ) {
+    std::cout << " OK!" <<std::endl;
+  }
+  assert(ok==0);
+}
 
+
+template<class reduced,class scal, class vec,class functor > 
+void ReductionTester(const functor &func)
+{
+  GridSerialRNG          sRNG;
+  sRNG.SeedRandomDevice();
+  
+  int Nsimd = vec::Nsimd();
+
+  std::vector<scal> input1(Nsimd);
+  std::vector<scal> input2(Nsimd);
+  reduced result(0);
+  reduced reference(0);
+  reduced tmp;
+
+  std::vector<vec,alignedAllocator<vec> > buf(3);
+  vec & v_input1 = buf[0];
+  vec & v_input2 = buf[1];
+
+
+  for(int i=0;i<Nsimd;i++){
+    random(sRNG,input1[i]);
+    random(sRNG,input2[i]);
+  }
+
+  merge<vec,scal>(v_input1,input1);
+  merge<vec,scal>(v_input2,input2);
+
+  func.template vfunc<reduced,vec>(result,v_input1,v_input2);
+
+  for(int i=0;i<Nsimd;i++) {
+    func.template sfunc<reduced,scal>(tmp,input1[i],input2[i]);
+    reference+=tmp;
+  }
+
+  std::cout << " " << func.name()<<std::endl;
+
+  int ok=0;
+  if ( abs(reference-result)/abs(reference) > 1.0e-6 ){ // rounding is possible for reduce order
+    std::cout<< "*****" << std::endl;
+    std::cout<< abs(reference-result) << " " <<reference<< " " << result<<std::endl;
+    ok++;
+  }
+  if ( ok==0 ) {
+    std::cout << " OK!" <<std::endl;
+  }
+  assert(ok==0);
 }
 
 
@@ -127,6 +206,8 @@ int main (int argc, char ** argv)
   Tester<ComplexF,vComplexF>(funcTimes());
   Tester<ComplexF,vComplexF>(funcConj());
   Tester<ComplexF,vComplexF>(funcAdj());
+  Tester<ComplexF,vComplexF>(funcInnerProduct());
+  ReductionTester<ComplexF,ComplexF,vComplexF>(funcReduce());
 
   std::cout << "==================================="<<  std::endl;
   std::cout << "Testing vComplexD "<<std::endl;
@@ -140,6 +221,8 @@ int main (int argc, char ** argv)
   Tester<ComplexD,vComplexD>(funcTimes());
   Tester<ComplexD,vComplexD>(funcConj());
   Tester<ComplexD,vComplexD>(funcAdj());
+  Tester<ComplexD,vComplexD>(funcInnerProduct());
+  ReductionTester<ComplexD,ComplexD,vComplexD>(funcReduce());
 
   std::cout << "==================================="<<  std::endl;
   std::cout << "Testing vRealF "<<std::endl;
@@ -150,6 +233,9 @@ int main (int argc, char ** argv)
   Tester<RealF,vRealF>(funcMinus());
   Tester<RealF,vRealF>(funcTimes());
   Tester<RealF,vRealF>(funcAdj());
+  Tester<RealF,vRealF>(funcConj());
+  Tester<RealF,vRealF>(funcInnerProduct());
+  ReductionTester<RealF,RealF,vRealF>(funcReduce());
 
   std::cout << "==================================="<<  std::endl;
   std::cout << "Testing vRealD "<<std::endl;
@@ -159,6 +245,9 @@ int main (int argc, char ** argv)
   Tester<RealD,vRealD>(funcMinus());
   Tester<RealD,vRealD>(funcTimes());
   Tester<RealD,vRealD>(funcAdj());
+  Tester<RealD,vRealD>(funcConj());
+  Tester<RealD,vRealD>(funcInnerProduct());
+  ReductionTester<RealD,RealD,vRealD>(funcReduce());
 
   Grid_finalize();
 }
