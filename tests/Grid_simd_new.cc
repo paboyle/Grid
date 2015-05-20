@@ -27,7 +27,7 @@ public:
 class funcConj {
 public:
   funcConj() {};
-  template<class vec> void operator()(vec &rr,vec &i1,vec &i2) const { rr = conj(i1);}
+  template<class vec> void operator()(vec &rr,vec &i1,vec &i2) const { rr = conjugate(i1);}
   std::string name(void) const { return std::string("Conj"); }
 };
 class funcAdj {

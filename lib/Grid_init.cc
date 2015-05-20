@@ -13,6 +13,7 @@
 #include <iostream>
 #include <Grid.h>
 #include <algorithm>
+#include <iterator>
 
 #undef __X86_64
 #define MAC
@@ -111,6 +112,11 @@ void GridParseLayout(char **argv,int argc,
 
 }
 
+std::string GridCmdVectorIntToString(const std::vector<int> & vec){
+  std::ostringstream oss;
+  std::copy(vec.begin(), vec.end(),std::ostream_iterator<int>(oss, " "));
+  return oss.str();
+}
   /////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////
 void Grid_init(int *argc,char ***argv)
@@ -120,6 +126,15 @@ void Grid_init(int *argc,char ***argv)
 #endif
   // Parse command line args.
 
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--help") ){
+    std::cout<<"--help : this message"<<std::endl;
+    std::cout<<"--debug-signals : catch sigsegv and print a blame report"<<std::endl;
+    std::cout<<"--debug-stdout  : print stdout from EVERY node"<<std::endl;    
+    std::cout<<"--decomposition : report on default omp,mpi and simd decomposition"<<std::endl;    
+    std::cout<<"--mpi n.n.n.n   : default MPI decomposition"<<std::endl;    
+    std::cout<<"--omp n         : default number of OMP threads"<<std::endl;    
+    std::cout<<"--grid n.n.n.n  : default Grid size"<<std::endl;    
+  }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-signals") ){
     Grid_debug_handler_init();
   }
@@ -129,6 +144,15 @@ void Grid_init(int *argc,char ***argv)
   GridParseLayout(*argv,*argc,
 		  Grid_default_latt,
 		  Grid_default_mpi);
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--decomposition") ){
+    std::cout<<"Grid Decomposition\n";
+    std::cout<<"\tOpenMP threads : "<<GridThread::GetThreads()<<std::endl;
+    std::cout<<"\tMPI tasks      : "<<GridCmdVectorIntToString(GridDefaultMpi())<<std::endl;
+    std::cout<<"\tvRealF         : "<<sizeof(vRealF)*8    <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vRealF::Nsimd()))<<std::endl;
+    std::cout<<"\tvRealD         : "<<sizeof(vRealD)*8    <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vRealD::Nsimd()))<<std::endl;
+    std::cout<<"\tvComplexF      : "<<sizeof(vComplexF)*8 <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vComplexF::Nsimd()))<<std::endl;
+    std::cout<<"\tvComplexD      : "<<sizeof(vComplexD)*8 <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vComplexD::Nsimd()))<<std::endl;
+  }
 
 }
 

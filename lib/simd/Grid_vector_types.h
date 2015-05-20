@@ -2,7 +2,7 @@
 /*! @file Grid_vector_types.h
   @brief Defines templated class Grid_simd to deal with inner vector types
 */
-// Time-stamp: <2015-05-20 17:21:52 neo>
+// Time-stamp: <2015-05-20 17:31:55 neo>
 //---------------------------------------------------------------------------
 #ifndef GRID_VECTOR_TYPES
 #define GRID_VECTOR_TYPES
@@ -96,8 +96,9 @@ namespace Grid {
     friend inline void mult(Grid_simd * __restrict__ y,const Grid_simd * __restrict__ l,const Grid_simd *__restrict__ r){ *y = (*l) * (*r); }
     friend inline void sub (Grid_simd * __restrict__ y,const Grid_simd * __restrict__ l,const Grid_simd *__restrict__ r){ *y = (*l) - (*r); }
     friend inline void add (Grid_simd * __restrict__ y,const Grid_simd * __restrict__ l,const Grid_simd *__restrict__ r){ *y = (*l) + (*r); }
+
     //not for integer types... FIXME
-    friend inline Grid_simd adj(const Grid_simd &in){ return conj(in); }
+    friend inline Grid_simd adj(const Grid_simd &in){ return conjugate(in); }
         
     ///////////////////////////////////////////////
     // Initialise to 1,0,i for the correct types
@@ -247,13 +248,13 @@ namespace Grid {
     // Conjugate
     ///////////////////////
     template < class S = Scalar_type, EnableIf<is_complex < S >, int> = 0 > 							     
-    friend inline Grid_simd  conj(const Grid_simd  &in){
+    friend inline Grid_simd  conjugate(const Grid_simd  &in){
       Grid_simd  ret ; 
       ret.v = unary<Vector_type>(in.v, ConjSIMD());
       return ret;
     }
     template < class S = Scalar_type, NotEnableIf<is_complex < S >, int> = 0 > 
-    friend inline Grid_simd  conj(const Grid_simd  &in){
+    friend inline Grid_simd  conjugate(const Grid_simd  &in){
       return in; // for real objects
     }
 
@@ -345,7 +346,7 @@ namespace Grid {
   template<class scalar_type, class vector_type > 
     inline Grid_simd< scalar_type, vector_type>  innerProduct(const Grid_simd< scalar_type, vector_type> & l, const Grid_simd< scalar_type, vector_type> & r) 
   {
-    return conj(l)*r; 
+    return conjugate(l)*r; 
   }
 
   template<class scalar_type, class vector_type >
