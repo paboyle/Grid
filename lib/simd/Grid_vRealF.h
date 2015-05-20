@@ -92,13 +92,13 @@ namespace Grid {
         };
         
         ///////////////////////////////////////////////
-        // mult, sub, add, adj,conj, mac functions
+        // mult, sub, add, adj,conjugate, mac functions
         ///////////////////////////////////////////////
         friend inline void mult(vRealF * __restrict__ y,const vRealF * __restrict__ l,const vRealF *__restrict__ r) {*y = (*l) * (*r);}
         friend inline void sub (vRealF * __restrict__ y,const vRealF * __restrict__ l,const vRealF *__restrict__ r) {*y = (*l) - (*r);}
         friend inline void add (vRealF * __restrict__ y,const vRealF * __restrict__ l,const vRealF *__restrict__ r) {*y = (*l) + (*r);}
         friend inline vRealF adj(const vRealF &in) { return in; }
-        friend inline vRealF conj(const vRealF &in){ return in; }
+        friend inline vRealF conjugate(const vRealF &in){ return in; }
 
         friend inline void mac (vRealF &y,const vRealF a,const vRealF x){
 #if defined (AVX1) || defined (SSE4)
@@ -133,11 +133,12 @@ namespace Grid {
 	// all subtypes; may not be a good assumption, but could
 	// add the vector width as a template param for BG/Q for example
 	////////////////////////////////////////////////////////////////////
-	/*
+
 	friend inline void permute(vRealF &y,vRealF b,int perm)
 	{
 	  Gpermute<vRealF>(y,b,perm);
 	}
+	/*
 	friend inline void merge(vRealF &y,std::vector<RealF *> &extracted)
 	{
 	  Gmerge<vRealF,RealF >(y,extracted);
@@ -155,7 +156,6 @@ namespace Grid {
 	  Gextract<vRealF,RealF>(y,extracted);
 	}
 	*/
-
         
         /////////////////////////////////////////////////////
         // Broadcast a value across Nsimd copies.
@@ -243,33 +243,26 @@ friend inline void vstore(const vRealF &ret, float *a){
         }
        friend inline RealF Reduce(const vRealF & in)
        {
-#if defined (SSE4)
-	 // FIXME Hack
-	 const RealF * ptr = (const RealF *) &in;
-	 RealF ret = 0; 
-	 for(int i=0;i<vRealF::Nsimd();i++){
-	   ret = ret+ptr[i];
-	 }
-	 return ret;
+#ifdef SSE4
+	 vRealF v1,v2;
+	 permute(v1,in,0); // sse 128; quad single
+	 v1=v1+in;
+	 permute(v2,v1,1); 
+	 v1=v1+v2;
+	 return v1.v[0];
 #endif
-#if defined (AVX1) || defined(AVX2)
-            __attribute__ ((aligned(32))) float c_[16];
-            __m256 tmp = _mm256_permute2f128_ps(in.v,in.v,0x01);
-            __m256 hadd = _mm256_hadd_ps(in.v,tmp);
-                   tmp = _mm256_permute2f128_ps(hadd,hadd,0x01);
-                   hadd = _mm256_hadd_ps(tmp,tmp);
-                  _mm256_store_ps(c_,hadd);
-         return (float)c_[0];
-
+#if defined(AVX1) || defined (AVX2)
+	 vRealF v1,v2;
+	 permute(v1,in,0); // avx 256; octo-double
+	 v1=v1+in;
+	 permute(v2,v1,1); 
+	 v1=v1+v2;
+	 permute(v2,v1,2); 
+	 v1=v1+v2;
+	 return v1.v[0];
 #endif
 #ifdef AVX512
             return _mm512_reduce_add_ps(in.v);
-/*
-             __attribute__ ((aligned(64))) float c_[16];
-             _mm512_store_ps(c_,in.v);
-             return c_[0]+c_[1]+c_[2]+c_[3]+c_[4]+c_[5]+c_[6]+c_[7]
-                    +c_[8]+c_[9]+c_[10]+c_[11]+c_[12]+c_[13]+c_[14]+c_[15];
-*/
 #endif
 #ifdef QPX
 #endif
@@ -291,7 +284,7 @@ friend inline void vstore(const vRealF &ret, float *a){
     public:
         static inline int Nsimd(void) { return sizeof(fvec)/sizeof(float);}
     };
-    inline vRealF innerProduct(const vRealF & l, const vRealF & r) { return conj(l)*r; }
+    inline vRealF innerProduct(const vRealF & l, const vRealF & r) { return conjugate(l)*r; }
     inline void  zeroit(vRealF &z){ vzero(z);}
 
     inline vRealF outerProduct(const vRealF &l, const vRealF& r)

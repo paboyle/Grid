@@ -47,7 +47,7 @@ namespace Grid {
         friend inline void mult(vComplexF * __restrict__ y,const vComplexF * __restrict__ l,const vComplexF *__restrict__ r){ *y = (*l) * (*r); }
         friend inline void sub (vComplexF * __restrict__ y,const vComplexF * __restrict__ l,const vComplexF *__restrict__ r){ *y = (*l) - (*r); }
         friend inline void add (vComplexF * __restrict__ y,const vComplexF * __restrict__ l,const vComplexF *__restrict__ r){ *y = (*l) + (*r); }
-        friend inline vComplexF adj(const vComplexF &in){ return conj(in); }
+        friend inline vComplexF adj(const vComplexF &in){ return conjugate(in); }
         
         //////////////////////////////////
         // Initialise to 1,0,i
@@ -228,42 +228,25 @@ namespace Grid {
             ret.v = {a,b,a,b};
 #endif
         }
-       friend inline ComplexF Reduce(const vComplexF & in)
-       {
+	friend inline void permute(vComplexF &y,vComplexF b,int perm)
+	{
+	  Gpermute<vComplexF>(y,b,perm);
+	}
+	friend inline ComplexF Reduce(const vComplexF & in)
+	{
 #ifdef SSE4
-	   union {
-	     cvec v1;    // SSE 4 x float vector
-	     float f[4];  // scalar array of 4 floats
-	   } u128;
-	   u128.v1= _mm_add_ps(in.v, _mm_shuffle_ps(in.v,in.v, 0b01001110)); // FIXME Prefer to use _MM_SHUFFLE macros
-	   return ComplexF(u128.f[0], u128.f[1]);
+	 vComplexF v1;
+	 permute(v1,in,0); // sse 128; paired complex single
+	 v1=v1+in;
+	 return ComplexF(v1.v[0],v1.v[1]);
 #endif
-#ifdef AVX1
-	   //it would be better passing 2 arguments to saturate the vector lanes
-	   union {
-	     __m256 v1;    
-	     float f[8];  
-	   } u256;
-	   //SWAP lanes
-	   // FIXME .. icc complains with lib/lattice/Grid_lattice_reduction.h (49): (col. 20) warning #13211: Immediate parameter to intrinsic call too large
-	   __m256 t0 = _mm256_permute2f128_ps(in.v, in.v, 1);
-	   __m256 t1 = _mm256_permute_ps(in.v  , 0b11011000);//real (0,2,1,3)
-	   __m256 t2 = _mm256_permute_ps(t0 , 0b10001101);//imag (1,3,0,2)
-	   t0 = _mm256_blend_ps(t1, t2, 0b0101000001010000);// (0,0,1,1,0,0,1,1)
-	   t1 = _mm256_hadd_ps(t0,t0);
-	   u256.v1 = _mm256_hadd_ps(t1, t1);
-	   return ComplexF(u256.f[0], u256.f[4]);
-#endif
-#ifdef AVX2
-	   union {
-	     __m256 v1;    
-	     float f[8];  
-	   } u256;
-	   const __m256i mask= _mm256_set_epi32( 7, 5, 3, 1, 6, 4, 2, 0);
-	   __m256 tmp1 = _mm256_permutevar8x32_ps(in.v, mask);
-	   __m256 tmp2 = _mm256_hadd_ps(tmp1, tmp1);
-	   u256.v1 = _mm256_hadd_ps(tmp2, tmp2);
-	   return ComplexF(u256.f[0], u256.f[4]);
+#if defined(AVX1) || defined (AVX2)
+	 vComplexF v1,v2;
+	 permute(v1,in,0); // sse 128; paired complex single
+	 v1=v1+in;
+	 permute(v2,v1,1); // avx 256; quad complex single
+	 v1=v1+v2;
+	 return ComplexF(v1.v[0],v1.v[1]);
 #endif
 #ifdef AVX512
             return ComplexF(_mm512_mask_reduce_add_ps(0x5555, in.v),_mm512_mask_reduce_add_ps(0xAAAA, in.v));
@@ -345,13 +328,10 @@ namespace Grid {
         // Conjugate
         ///////////////////////
 								     
-        friend inline vComplexF conj(const vComplexF &in){
+        friend inline vComplexF conjugate(const vComplexF &in){
             vComplexF ret ; vzero(ret);
 #if defined (AVX1)|| defined (AVX2)
-	    cvec tmp;
-	    tmp = _mm256_addsub_ps(ret.v,_mm256_shuffle_ps(in.v,in.v,_MM_SHUFFLE(2,3,0,1))); // ymm1 <- br,bi
-	    ret.v=_mm256_shuffle_ps(tmp,tmp,_MM_SHUFFLE(2,3,0,1));
-
+	    ret.v = _mm256_xor_ps(_mm256_addsub_ps(ret.v,in.v), _mm256_set1_ps(-0.f));
 #endif
 #ifdef SSE4
 	    ret.v = _mm_xor_ps(_mm_addsub_ps(ret.v,in.v), _mm_set1_ps(-0.f));
@@ -433,10 +413,6 @@ namespace Grid {
             return *this;
         }
 
-      friend inline void permute(vComplexF &y,vComplexF b,int perm)
-      {
-	Gpermute<vComplexF>(y,b,perm);
-      }
       /*
       friend inline void merge(vComplexF &y,std::vector<ComplexF *> &extracted)
       {
@@ -460,7 +436,7 @@ namespace Grid {
 
     inline vComplexF innerProduct(const vComplexF & l, const vComplexF & r) 
     {
-      return conj(l)*r; 
+      return conjugate(l)*r; 
     }
 
     inline void zeroit(vComplexF &z){ vzero(z);}

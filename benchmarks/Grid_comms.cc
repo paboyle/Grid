@@ -10,6 +10,8 @@ int main (int argc, char ** argv)
 
   std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplexD::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
+  int threads = GridThread::GetThreads();
+  std::cout << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   int Nloop=10;
   int nmu=0;

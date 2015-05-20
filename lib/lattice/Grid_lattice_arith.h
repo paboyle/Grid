@@ -144,13 +144,43 @@ PARALLEL_FOR_LOOP
   }
   
   template<class sobj,class vobj> strong_inline
-  void axpy(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &lhs,const Lattice<vobj> &rhs){
-    conformable(lhs,rhs);
+  void axpy(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &y){
+    conformable(x,y);
 #pragma omp parallel for
-    for(int ss=0;ss<lhs._grid->oSites();ss++){
-      vobj tmp = a*lhs._odata[ss];
-      vstream(ret._odata[ss],tmp+rhs._odata[ss]);
+    for(int ss=0;ss<x._grid->oSites();ss++){
+      vobj tmp = a*x._odata[ss]+y._odata[ss];
+      vstream(ret._odata[ss],tmp);
     }
+  }
+  template<class sobj,class vobj> strong_inline
+  void axpby(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y){
+    conformable(x,y);
+#pragma omp parallel for
+    for(int ss=0;ss<x._grid->oSites();ss++){
+      vobj tmp = a*x._odata[ss]+b*y._odata[ss];
+      vstream(ret._odata[ss],tmp);
+    }
+  }
+
+  template<class sobj,class vobj> strong_inline
+  RealD axpy_norm(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &y){
+    conformable(x,y);
+#pragma omp parallel for
+    for(int ss=0;ss<x._grid->oSites();ss++){
+      vobj tmp = a*x._odata[ss]+y._odata[ss];
+      vstream(ret._odata[ss],tmp);
+    }
+    return norm2(ret);
+  }
+  template<class sobj,class vobj> strong_inline
+  RealD axpby_norm(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y){
+    conformable(x,y);
+#pragma omp parallel for
+    for(int ss=0;ss<x._grid->oSites();ss++){
+      vobj tmp = a*x._odata[ss]+b*y._odata[ss];
+      vstream(ret._odata[ss],tmp);
+    }
+    return norm2(ret); // FIXME implement parallel norm in ss loop
   }
 
 }
