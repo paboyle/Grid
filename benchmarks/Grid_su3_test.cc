@@ -4,7 +4,8 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-void su3_test_mult(LatticeColourMatrix &z, LatticeColourMatrix &x,LatticeColourMatrix &y)
+
+void su3_test_mult_routine(LatticeColourMatrix &z, LatticeColourMatrix &x,LatticeColourMatrix &y)
 {
-  z=x*y;
+  mult(z,x,y);
 }
