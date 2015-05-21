@@ -30,7 +30,7 @@ int main (int argc, char ** argv)
   GridParallelRNG          pRNG(&Grid);  pRNG.SeedFixedIntegers(seeds);
 
   LatticeFermion src(&Grid); random(pRNG,src);
-  std::cout << "src norm" << norm2(src)<<std::endl;
+  RealD nrm = norm2(src);
   LatticeFermion result(&Grid); result=zero;
   LatticeGaugeField Umu(&Grid); random(pRNG,Umu);
 
