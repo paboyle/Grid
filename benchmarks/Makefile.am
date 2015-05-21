@@ -16,7 +16,7 @@ Grid_wilson_cg_unprec_LDADD = -lGrid
 Grid_comms_SOURCES = Grid_comms.cc
 Grid_comms_LDADD = -lGrid
 
-Grid_su3_SOURCES = Grid_su3.cc Grid_su3_test.cc
+Grid_su3_SOURCES = Grid_su3.cc Grid_su3_test.cc Grid_su3_expr.cc
 Grid_su3_LDADD = -lGrid
 
 Grid_memory_bandwidth_SOURCES = Grid_memory_bandwidth.cc
