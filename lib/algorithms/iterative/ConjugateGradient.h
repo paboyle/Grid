@@ -15,7 +15,6 @@ public:
     Integer MaxIterations;
 
     ConjugateGradient(RealD tol,Integer maxit) : Tolerance(tol), MaxIterations(maxit) { 
-      std::cout << Tolerance<<std::endl;
     };
 
     void operator() (LinearOperatorBase<Field> &Linop,const Field &src, Field &psi) {assert(0);};
