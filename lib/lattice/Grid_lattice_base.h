@@ -1,6 +1,8 @@
 #ifndef GRID_LATTICE_BASE_H
 #define GRID_LATTICE_BASE_H
 
+#define STREAMING_STORES
+
 namespace Grid {
 
 // TODO: 
@@ -66,8 +68,12 @@ public:
   {
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
-      vobj tmp= eval(ss,expr);
+#ifdef STREAMING_STORES
+      vobj tmp = eval(ss,expr);
       vstream(_odata[ss] ,tmp);
+#else
+      _odata[ss]=eval(ss,expr);
+#endif
     }
     return *this;
   }
@@ -75,8 +81,12 @@ PARALLEL_FOR_LOOP
   {
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
-      vobj tmp= eval(ss,expr);
+#ifdef STREAMING_STORES
+      vobj tmp = eval(ss,expr);
       vstream(_odata[ss] ,tmp);
+#else
+      _odata[ss]=eval(ss,expr);
+#endif
     }
     return *this;
   }
@@ -84,8 +94,12 @@ PARALLEL_FOR_LOOP
   {
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
-      vobj tmp= eval(ss,expr);
+#ifdef STREAMING_STORES
+      vobj tmp = eval(ss,expr);
       vstream(_odata[ss] ,tmp);
+#else
+      _odata[ss] = eval(ss,expr);
+#endif
     }
     return *this;
   }
@@ -97,7 +111,12 @@ PARALLEL_FOR_LOOP
     _odata.resize(_grid->oSites());
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
-      _odata[ss] = eval(ss,expr);
+#ifdef STREAMING_STORES
+      vobj tmp = eval(ss,expr);
+      vstream(_odata[ss] ,tmp);
+#else
+      _odata[ss]=_eval(ss,expr);
+#endif
     }
   };
   template<class Op,class T1, class T2>
@@ -107,7 +126,12 @@ PARALLEL_FOR_LOOP
     _odata.resize(_grid->oSites());
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
-      _odata[ss] = eval(ss,expr);
+#ifdef STREAMING_STORES
+      vobj tmp = eval(tmp,ss,expr);
+      vstream(_odata[ss] ,tmp);
+#else
+      _odata[ss]=eval(ss,expr);
+#endif
     }
   };
   template<class Op,class T1, class T2, class T3>
@@ -117,7 +141,12 @@ PARALLEL_FOR_LOOP
     _odata.resize(_grid->oSites());
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
-      _odata[ss] = eval(ss,expr);
+#ifdef STREAMING_STORES
+      vobj tmp = eval(ss,expr);
+      vstream(_odata[ss] ,tmp);
+#else
+      _odata[ss]=eval(ss,expr);
+#endif
     }
   };
 
