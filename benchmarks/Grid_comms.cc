@@ -23,7 +23,7 @@ int main (int argc, char ** argv)
 
 
 
-  for(int lat=4;lat<=16;lat+=4){
+  for(int lat=4;lat<=32;lat+=2){
     for(int Ls=1;Ls<=16;Ls*=2){
 
       std::vector<int> latt_size  ({lat,lat,lat,lat});
@@ -94,8 +94,7 @@ int main (int argc, char ** argv)
   std::cout << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
 
 
-
-  for(int lat=4;lat<=16;lat+=4){
+  for(int lat=4;lat<=32;lat+=2){
     for(int Ls=1;Ls<=16;Ls*=2){
 
       std::vector<int> latt_size  ({lat,lat,lat,lat});
