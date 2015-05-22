@@ -154,7 +154,6 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,Lattice<vobj> &rhs, int 
     cbmask=0x3;
   }
 
-
   int ro  = rplane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
   int lo  = lplane*lhs._grid->_ostride[dimension]; // base offset for start of plane 
   
@@ -170,10 +169,12 @@ PARALLEL_NESTED_LOOP2
       
     }
   }
+  
 }
 
 template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,Lattice<vobj> &rhs, int dimension,int lplane,int rplane,int cbmask,int permute_type)
 {
+ 
   int rd = rhs._grid->_rdimensions[dimension];
 
   if ( !rhs._grid->CheckerBoarded(dimension) ) {

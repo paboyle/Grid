@@ -203,11 +203,7 @@ inline void Gpermute(vsimd &y,const vsimd &b,int perm){
     };
 };
 
-#include <simd/Grid_vInteger.h>
-#include <simd/Grid_vRealF.h>
-#include <simd/Grid_vRealD.h>
-#include <simd/Grid_vComplexF.h>
-#include <simd/Grid_vComplexD.h>
+#include <simd/Grid_vector_types.h>
 
 
 namespace Grid {

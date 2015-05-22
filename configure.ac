@@ -3,9 +3,9 @@
 #
 # Project Grid package  
 # 
-# Time-stamp: <2015-05-19 13:51:08 neo>
+# Time-stamp: <2015-05-22 15:46:09 neo>
 
-AC_PREREQ([2.69])
+AC_PREREQ([2.63])
 AC_INIT([Grid], [1.0], [paboyle@ph.ed.ac.uk])
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE(subdir-objects)
