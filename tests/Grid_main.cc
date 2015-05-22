@@ -161,30 +161,40 @@ int main (int argc, char ** argv)
     ///////// Tests the new class Grid_simd 
     std::complex<double> ctest(3.0,2.0);
     std::complex<float> ctestf(3.0,2.0);
-    MyComplexF TestMe1(1.0); // fill real part
+    MyComplexF TestMe1(1.0); // fills only real part
     MyComplexD TestMe2(ctest);
     MyComplexD TestMe3(ctest);// compiler generate conversion of basic types
     //MyRealF TestMe5(ctest);// Must generate compiler error
-    MyRealD TestMe4(2.0); 
+    MyRealD TestRe1(2.0); 
+    MyRealF TestRe2(3.0); 
  
+    vone(TestRe2);
+
     MyComplexF TestMe6(ctestf);
     MyComplexF TestMe7(ctestf);  
     
     MyComplexD TheSum= TestMe2*TestMe3;
     MyComplexF TheSumF= TestMe6*TestMe7;
 
+    
+
     double dsum[2];
     _mm_store_pd(dsum, TheSum.v);
     for (int i =0; i< 2; i++)
       printf("%f\n", dsum[i]);
+    MyComplexD TheSumI = timesMinusI(TheSum);
+    MyComplexF TheSumIF = timesMinusI(TheSumF);
 
     float fsum[4];
     _mm_store_ps(fsum, TheSumF.v);
     for (int i =0; i< 4; i++)
       printf("%f\n", fsum[i]);
 
-    vstore(TheSum, &ctest);
+    vstore(TheSumI, &ctest);
+    std::complex<float> sum = Reduce(TheSumF);
     std::cout << ctest<< std::endl;
+    std::cout << sum<< std::endl;
+
 #endif
     ///////////////////////
 
