@@ -103,6 +103,9 @@ int main (int argc, char ** argv)
     random(FineRNG,scVec);
 
     fflush(stdout);
+    
+
+    /* 
     cVec = cMat * cVec;  // LatticeColourVector     = LatticeColourMatrix     * LatticeColourVector
     sVec = sMat * sVec;  // LatticeSpinVector       = LatticeSpinMatrix       * LatticeSpinVector
     scVec= scMat * scVec;// LatticeSpinColourVector = LatticeSpinColourMatrix * LatticeSpinColourVector
@@ -112,12 +115,14 @@ int main (int argc, char ** argv)
     cMat = outerProduct(cVec,cVec);
     scalar = localInnerProduct(cVec,cVec);
 
+ 
     scalar += scalar;
     scalar -= scalar;
     scalar *= scalar;
     add(scalar,scalar,scalar);
     sub(scalar,scalar,scalar);
     mult(scalar,scalar,scalar);
+
     mac(scalar,scalar,scalar);
     scalar = scalar+scalar;
     scalar = scalar-scalar;
@@ -141,7 +146,7 @@ int main (int argc, char ** argv)
     scalar=trace(scalar);
     scalar=localInnerProduct(cVec,cVec);
     scalar=localNorm2(cVec);
-
+    */
 //     -=,+=,*=,()
 //     add,+,sub,-,mult,mac,*
 //     adj,conjugate
@@ -153,10 +158,11 @@ int main (int argc, char ** argv)
 //     localNorm2
 //     localInnerProduct
     
+  
     scMat = sMat*scMat;  // LatticeSpinColourMatrix = LatticeSpinMatrix       * LatticeSpinColourMatrix
 
-
-
+    
+    /*
 #ifdef SSE4
     ///////// Tests the new class Grid_simd 
     std::complex<double> ctest(3.0,2.0);
@@ -196,8 +202,10 @@ int main (int argc, char ** argv)
     std::cout << sum<< std::endl;
 
 #endif
+    */
     ///////////////////////
-
+    /*
+    printf("DEBUG: calling 3.5 \n");
     // Non-lattice (const objects) * Lattice
     ColourMatrix cm;
     SpinColourMatrix scm;
@@ -217,6 +225,7 @@ int main (int argc, char ** argv)
     vscm = vscm*cplx;
     scMat = scMat*cplx;
 
+    printf("DEBUG: calling 3.7 \n");
     scm = cplx*scm;
     vscm = cplx*vscm;
     scMat = cplx*scMat;
@@ -224,12 +233,14 @@ int main (int argc, char ** argv)
     vscm = myint*vscm;
     scMat = scMat*myint;
     
+    printf("DEBUG: calling 3.9 \n");
     scm = scm*mydouble;
     vscm = vscm*mydouble;
     scMat = scMat*mydouble;
     scMat = mydouble*scMat;
     cMat = mydouble*cMat;
-    
+  
+    printf("DEBUG: calling 4 \n");
     sMat = adj(sMat);       // LatticeSpinMatrix adjoint
     sMat = iGammaFive*sMat; // SpinMatrix * LatticeSpinMatrix
     sMat = GammaFive*sMat;  // SpinMatrix * LatticeSpinMatrix
@@ -240,6 +251,9 @@ int main (int argc, char ** argv)
     scm=transpose(scm);
     scm=transposeIndex<1>(scm);
     
+
+
+
 //    Foo = Foo+scalar; // LatticeColourMatrix+Scalar
 //    Foo = Foo*scalar; // LatticeColourMatrix*Scalar
 //    Foo = Foo-scalar; // LatticeColourMatrix-Scalar
@@ -279,7 +293,8 @@ int main (int argc, char ** argv)
       pokeIndex<1> (c_m,c,0,0);
     }
 
-    
+    */
+
     FooBar = Bar;
  
     /*
@@ -332,14 +347,14 @@ int main (int argc, char ** argv)
     // Lattice SU(3) x SU(3)
     Fine.Barrier();
     FooBar = Foo * Bar;
-    
+
     // Lattice 12x12 GEMM
     scFooBar = scFoo * scBar;
-    
+
     // Benchmark some simple operations LatticeSU3 * Lattice SU3.
     double t0,t1,flops;
     double bytes;
-    int ncall=100;
+    int ncall=5000;
     int Nc = Grid::QCD::Nc;
 
     LatticeGaugeField U(&Fine);
@@ -351,19 +366,21 @@ int main (int argc, char ** argv)
     if ( Fine.IsBoss() ) {
       printf("%f flop and %f bytes\n",flops,bytes/ncall);
     }
-        FooBar = Foo * Bar;
+    FooBar = Foo * Bar;
     Fine.Barrier();
     t0=usecond();
     for(int i=0;i<ncall;i++){
       Fine.Barrier();
       mult(FooBar,Foo,Bar); // this is better
     }
+
     t1=usecond();
     Fine.Barrier();
     if ( Fine.IsBoss() ) {
 #ifdef OMP
       printf("mult NumThread %d , Lattice size %d , %f us per call\n",omp_get_max_threads(),lat,(t1-t0)/ncall);
 #endif
+      printf("mult NumThread %d , Lattice size %d , %f us per call\n",omp,lat,(t1-t0)/ncall);
       printf("mult NumThread %d , Lattice size %d , %f Mflop/s\n",omp,lat,flops/(t1-t0));
       printf("mult NumThread %d , Lattice size %d , %f MB/s\n",omp,lat,bytes/(t1-t0));
     }
@@ -375,6 +392,7 @@ int main (int argc, char ** argv)
     t0=usecond();
     for(int i=0;i<ncall;i++){
       Fine.Barrier();
+      //Cshift(Bar,1,-1);
       mult(FooBar,Foo,Cshift(Bar,1,-1));
       //mult(FooBar,Foo,Bar);
       //FooBar = Foo * Bar; // this is bad
@@ -525,5 +543,9 @@ int main (int argc, char ** argv)
 
    } // loop for lat
  } // loop for omp
+
+
+ std::cout << sizeof(vComplexF) << std::endl;
+ 
  Grid_finalize();
 }
