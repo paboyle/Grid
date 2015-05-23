@@ -2,7 +2,7 @@
 /*! @file Grid_vector_types.h
   @brief Defines templated class Grid_simd to deal with inner vector types
 */
-// Time-stamp: <2015-05-19 17:20:36 neo>
+// Time-stamp: <2015-05-20 17:31:55 neo>
 //---------------------------------------------------------------------------
 #ifndef GRID_VECTOR_TYPES
 #define GRID_VECTOR_TYPES
@@ -21,6 +21,16 @@ namespace Grid {
     struct RealPart< std::complex<T> >{
     typedef T type;
   };
+
+  // type alias used to simplify the syntax of std::enable_if
+  template <typename T> using Invoke =
+    typename T::type;
+  template <typename Condition, typename ReturnType> using EnableIf =
+    Invoke<std::enable_if<Condition::value, ReturnType>>;
+  template <typename Condition, typename ReturnType> using NotEnableIf =
+    Invoke<std::enable_if<!Condition::value, ReturnType>>;
+  
+
 
   ////////////////////////////////////////////////////////
   // Check for complexity with type traits
@@ -94,31 +104,32 @@ namespace Grid {
     // Initialise to 1,0,i for the correct types
     ///////////////////////////////////////////////
     // if not complex overload here 
-    template <  class S = Scalar_type,typename std::enable_if < !is_complex < S >::value, int >::type = 0 > 
+    template <  class S = Scalar_type, NotEnableIf<is_complex < S >,int> = 0 > 
       friend inline void vone(Grid_simd &ret)      { vsplat(ret,1.0); }
-    template <  class S = Scalar_type,typename std::enable_if < !is_complex < S >::value, int >::type = 0 > 
+    template <  class S = Scalar_type, NotEnableIf<is_complex < S >,int> = 0 > 
       friend inline void vzero(Grid_simd &ret)     { vsplat(ret,0.0); }
     
-    // overload for complex type
-    template <  class S = Scalar_type,typename std::enable_if < is_complex < S >::value, int >::type = 0 > 
+    // For complex types
+    template <  class S = Scalar_type, EnableIf<is_complex < S >, int> = 0 > 
       friend inline void vone(Grid_simd &ret)      { vsplat(ret,1.0,0.0); }
-    template < class S = Scalar_type,typename std::enable_if < is_complex < S >::value, int >::type = 0 > 
+    template < class S = Scalar_type, EnableIf<is_complex < S >, int> = 0 > 
       friend inline void vzero(Grid_simd &ret)     { vsplat(ret,0.0,0.0); }// use xor?
-    
-    // For integral type
-    template <  class S = Scalar_type,typename std::enable_if < std::is_integral < S >::value, int >::type = 0 > 
+    template < class S = Scalar_type, EnableIf<is_complex < S >, int> = 0 > 
+      friend inline void vcomplex_i(Grid_simd &ret){ vsplat(ret,0.0,1.0);} 
+   
+    // For integral types
+    template <  class S = Scalar_type, EnableIf<std::is_integral < S >, int> = 0 > 
       friend inline void vone(Grid_simd &ret)      { vsplat(ret,1); }
-    template <  class S = Scalar_type,typename std::enable_if < std::is_integral < S >::value, int >::type = 0 > 
+    template <  class S = Scalar_type, EnableIf<std::is_integral < S >, int> = 0 > 
       friend inline void vzero(Grid_simd &ret)      { vsplat(ret,0); }
-    template <  class S = Scalar_type,typename std::enable_if < std::is_integral < S >::value, int >::type = 0 > 
+    template <  class S = Scalar_type, EnableIf<std::is_integral < S >, int> = 0 > 
       friend inline void vtrue (Grid_simd &ret){vsplat(ret,0xFFFFFFFF);}
-    template <  class S = Scalar_type,typename std::enable_if < std::is_integral < S >::value, int >::type = 0 > 
+    template <  class S = Scalar_type, EnableIf<std::is_integral < S >, int> = 0 > 
       friend inline void vfalse(vInteger &ret){vsplat(ret,0);}
 
 
-    // do not compile if real or integer, send an error message from the compiler
-    template < class S = Scalar_type,typename std::enable_if < is_complex < S >::value, int >::type = 0 > 
-    friend inline void vcomplex_i(Grid_simd &ret){ vsplat(ret,0.0,1.0);}
+   
+ 
    
     ////////////////////////////////////
     // Arithmetic operator overloads +,-,*
@@ -138,7 +149,7 @@ namespace Grid {
     };
         
     // Distinguish between complex types and others
-    template < class S = Scalar_type, typename std::enable_if < is_complex < S >::value, int >::type = 0 >
+    template < class S = Scalar_type, EnableIf<is_complex < S >, int> = 0 >
       friend inline Grid_simd operator * (Grid_simd a, Grid_simd b)
       {
 	Grid_simd ret;
@@ -147,7 +158,7 @@ namespace Grid {
       };
 
     // Real/Integer types
-    template <  class S = Scalar_type,typename std::enable_if < !is_complex < S >::value, int >::type = 0 > 
+    template <  class S = Scalar_type, NotEnableIf<is_complex < S >, int> = 0 > 
     friend inline Grid_simd operator * (Grid_simd a, Grid_simd b)
       {
 	Grid_simd ret;
@@ -155,8 +166,6 @@ namespace Grid {
 	return ret;
       };
     
-
-
 
     ////////////////////////////////////////////////////////////////////////
     // FIXME:  gonna remove these load/store, get, set, prefetch
@@ -170,14 +179,14 @@ namespace Grid {
     ///////////////////////
     // overload if complex
     template < class S = Scalar_type > 
-    friend inline void vsplat(Grid_simd &ret, typename std::enable_if< is_complex < S >::value, S>::type c){
+    friend inline void vsplat(Grid_simd &ret, EnableIf<is_complex < S >, S> c){
       Real a = real(c);
       Real b = imag(c);
       vsplat(ret,a,b);
     }
 
-    // this only for the complex version
-    template < class S = Scalar_type, typename std::enable_if < is_complex < S >::value, int >::type = 0 > 
+    // this is only for the complex version
+    template < class S = Scalar_type, EnableIf<is_complex < S >, int> = 0 > 
     friend inline void vsplat(Grid_simd &ret,Real a, Real b){
       ret.v = binary<Vector_type>(a, b, VsplatSIMD());
     }    
@@ -187,22 +196,45 @@ namespace Grid {
       ret.v = unary<Vector_type>(a, VsplatSIMD());
     }    
 
-
+    ///////////////////////
+    // Vstore
+    ///////////////////////
     friend inline void vstore(const Grid_simd &ret, Scalar_type *a){
       binary<void>(ret.v, (Real*)a, VstoreSIMD());
     }
 
+    ///////////////////////
+    // Vstream
+    ///////////////////////
+    friend inline void vstream(Grid_simd &out,const Grid_simd &in){
+      binary<void>(out.v, in.v, VstreamSIMD());
+    }
+
+    template <  class S = Scalar_type, EnableIf<std::is_integral < S >, int> = 0 > 
+      friend inline void vstream(Grid_simd &out,const Grid_simd &in){
+      out=in;
+    }
+    
+    ///////////////////////
+    // Vprefetch
+    ///////////////////////
     friend inline void vprefetch(const Grid_simd &v)
     {
       _mm_prefetch((const char*)&v.v,_MM_HINT_T0);
     }
 
 
+    ///////////////////////
+    // Reduce
+    ///////////////////////
     friend inline Scalar_type Reduce(const Grid_simd & in)
     {
-      // FIXME add operator
+      return unary<Scalar_type>(in.v, ReduceSIMD<Scalar_type, Vector_type>());
     }
 
+    ////////////////////////////
+    // opreator scalar * simd
+    ////////////////////////////
     friend inline Grid_simd operator * (const Scalar_type &a, Grid_simd b){
       Grid_simd va;
       vsplat(va,a);
@@ -215,25 +247,63 @@ namespace Grid {
     ///////////////////////
     // Conjugate
     ///////////////////////
-								     
+    template < class S = Scalar_type, EnableIf<is_complex < S >, int> = 0 > 							     
     friend inline Grid_simd  conjugate(const Grid_simd  &in){
-      Grid_simd  ret ; vzero(ret);
-      // FIXME add operator
+      Grid_simd  ret ; 
+      ret.v = unary<Vector_type>(in.v, ConjSIMD());
       return ret;
     }
+    template < class S = Scalar_type, NotEnableIf<is_complex < S >, int> = 0 > 
+    friend inline Grid_simd  conjugate(const Grid_simd  &in){
+      return in; // for real objects
+    }
+
+
+    ///////////////////////
+    // timesMinusI
+    ///////////////////////
+    template < class S = Scalar_type, EnableIf<is_complex < S >, int> = 0 > 
+    friend inline void timesMinusI( Grid_simd &ret,const Grid_simd &in){
+      ret.v = binary<Vector_type>(in.v, ret.v, TimesMinusISIMD());
+    }
+
+    template < class S = Scalar_type, EnableIf<is_complex < S >, int> = 0 > 
     friend inline Grid_simd timesMinusI(const Grid_simd &in){
       Grid_simd ret; 
-      vzero(ret);
-      // FIXME add operator
+      timesMinusI(ret,in);
       return ret;
     }
-    friend inline Grid_simd timesI(const Grid_simd &in){
-      Grid_simd ret; vzero(ret);
-      // FIXME add operator
-      return ret;
+
+    template < class S = Scalar_type, NotEnableIf<is_complex < S >, int> = 0 > 
+    friend inline Grid_simd timesMinusI(const Grid_simd &in){
+      return in;
+    }
+
+
+    ///////////////////////
+    // timesI
+    ///////////////////////
+    template < class S = Scalar_type, EnableIf<is_complex < S >, int> = 0 > 
+    friend inline void timesI(Grid_simd &ret,const Grid_simd &in){
+      ret.v =   binary<Vector_type>(in.v, ret.v, TimesISIMD());     
     }
         
+    template < class S = Scalar_type, EnableIf<is_complex < S >, int> = 0 > 
+    friend inline Grid_simd timesI(const Grid_simd &in){
+      Grid_simd ret; 
+      timesI(ret,in);
+      return ret;
+    }
+
+    template < class S = Scalar_type, NotEnableIf<is_complex < S >, int> = 0 > 
+    friend inline Grid_simd timesI(const Grid_simd &in){
+      return in;
+    }
+
+
+    ///////////////////////
     // Unary negation
+    ///////////////////////
     friend inline Grid_simd operator -(const Grid_simd &r) {
       vComplexF ret;
       vzero(ret);
@@ -257,38 +327,19 @@ namespace Grid {
 
 
 
-     friend inline void permute(Grid_simd &y,Grid_simd b,int perm)
-      {
-        Gpermute<Grid_simd>(y,b,perm);
-      }
 
-     /*
+    ////////////////////////////////////////////////////////////////////
+    // General permute; assumes vector length is same across 
+    // all subtypes; may not be a good assumption, but could
+    // add the vector width as a template param for BG/Q for example
+    ////////////////////////////////////////////////////////////////////
     friend inline void permute(Grid_simd &y,Grid_simd b,int perm)
     {
       Gpermute<Grid_simd>(y,b,perm);
     }
-    friend inline void merge(Grid_simd &y,std::vector<Scalar_type *> &extracted)
-    {
-      Gmerge<Grid_simd,Scalar_type >(y,extracted);
-    }
-    friend inline void extract(const Grid_simd &y,std::vector<Scalar_type *> &extracted)
-    {
-      Gextract<Grid_simd,Scalar_type>(y,extracted);
-    }
-    friend inline void merge(Grid_simd &y,std::vector<Scalar_type > &extracted)
-    {
-      Gmerge<Grid_simd,Scalar_type >(y,extracted);
-    }
-    friend inline void extract(const Grid_simd &y,std::vector<Scalar_type > &extracted)
-    {
-      Gextract<Grid_simd,Scalar_type>(y,extracted);
-    }
-     */
-
+    
+    
   };// end of Grid_simd class definition 
-
-
-
 
 
 
@@ -315,12 +366,35 @@ namespace Grid {
   }
 
 
-  // Define available types (now change names to avoid clashing)
+  // Define available types (now change names to avoid clashing with the rest of the code)
 
   typedef Grid_simd< float                 , SIMD_Ftype > MyRealF;
   typedef Grid_simd< double                , SIMD_Dtype > MyRealD;
   typedef Grid_simd< std::complex< float > , SIMD_Ftype > MyComplexF;
   typedef Grid_simd< std::complex< double >, SIMD_Dtype > MyComplexD;
+
+
+
+
+  ////////////////////////////////////////////////////////////////////
+  // Temporary hack to keep independent from the rest of the code
+  template<> struct isGridTensor<MyRealD > {
+    static const bool value = false;
+    static const bool notvalue = true;
+  };
+  template<> struct isGridTensor<MyRealF > {
+    static const bool value = false;
+    static const bool notvalue = true;
+  };
+  template<> struct isGridTensor<MyComplexD > {
+    static const bool value = false;
+    static const bool notvalue = true;
+  };
+  template<> struct isGridTensor<MyComplexF > {
+    static const bool value = false;
+    static const bool notvalue = true;
+  };
+
 
 
 
