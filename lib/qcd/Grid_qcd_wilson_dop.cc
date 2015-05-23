@@ -97,45 +97,44 @@ void WilsonMatrix::DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGaugeF
 
 RealD WilsonMatrix::M(const LatticeFermion &in, LatticeFermion &out)
 {
-  Dhop(in,out,0);
+  this->Dhop(in,out,0);
   out = (4+mass)*in - 0.5*out  ; // FIXME : axpby_norm! fusion fun
   return norm2(out);
 }
 RealD WilsonMatrix::Mdag(const LatticeFermion &in, LatticeFermion &out)
 {
-  Dhop(in,out,1);
+  this->Dhop(in,out,1);
   out = (4+mass)*in - 0.5*out  ; // FIXME : axpby_norm! fusion fun
   return norm2(out);
 }
 
 void WilsonMatrix::Meooe(const LatticeFermion &in, LatticeFermion &out)
 {
-  Dhop(in,out,0);
+  this->Dhop(in,out,0);
   out = 0.5*out; // FIXME : scale factor in Dhop
 }
 void WilsonMatrix::MeooeDag(const LatticeFermion &in, LatticeFermion &out)
 {
-  Dhop(in,out,1);
+  this->Dhop(in,out,1);
+  out = 0.5*out; // FIXME : scale factor in Dhop
 }
 void WilsonMatrix::Mooee(const LatticeFermion &in, LatticeFermion &out)
 {
   out = (4.0+mass)*in;
   return ;
 }
-void WilsonMatrix::MooeeInv(const LatticeFermion &in, LatticeFermion &out)
-{
-  out = (1.0/(4.0+mass))*in;
-  return ;
-}
 void WilsonMatrix::MooeeDag(const LatticeFermion &in, LatticeFermion &out)
+{
+  this->Mooee(in,out);
+}
+void WilsonMatrix::MooeeInv(const LatticeFermion &in, LatticeFermion &out)
 {
   out = (1.0/(4.0+mass))*in;
   return ;
 }
 void WilsonMatrix::MooeeInvDag(const LatticeFermion &in, LatticeFermion &out)
 {
-  out = (1.0/(4.0+mass))*in;
-  return ;
+  this->MooeeInv(in,out);
 }
 
 void WilsonMatrix::DhopSite(int ss,const LatticeFermion &in, LatticeFermion &out)
@@ -451,8 +450,6 @@ PARALLEL_FOR_LOOP
 }
 
 
-
-
-
-}}
+}
+}
 
