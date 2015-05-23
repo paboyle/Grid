@@ -34,62 +34,64 @@ public:
 
   // Scalar no action
   //  template<int Level> using tensor_reduce_level = typename iScalar<GridTypeMapper<vtype>::tensor_reduce_level<Level> >;
-  iScalar()=default;
+  iScalar() = default;
+  /*
+  iScalar(const iScalar<vtype> &copyme)=default;
+  iScalar(iScalar<vtype> &&copyme)=default;
+  iScalar<vtype> & operator= (const iScalar<vtype> &copyme) = default;
+  iScalar<vtype> & operator= (iScalar<vtype> &&copyme) = default;
+  */
   iScalar(scalar_type s) : _internal(s) {};// recurse down and hit the constructor for vector_type
   iScalar(const Zero &z){ *this = zero; };
 
-    iScalar<vtype> & operator= (const Zero &hero){
-      zeroit(*this);
-      return *this;
-    }
-    friend strong_inline void vstream(iScalar<vtype> &out,const iScalar<vtype> &in){
-      vstream(out._internal,in._internal);
-    }
+  iScalar<vtype> & operator= (const Zero &hero){
+    zeroit(*this);
+    return *this;
+  }
+  friend strong_inline void vstream(iScalar<vtype> &out,const iScalar<vtype> &in){
+    vstream(out._internal,in._internal);
+  }
+  friend strong_inline void zeroit(iScalar<vtype> &that){
+    zeroit(that._internal);
+  }
+  friend strong_inline void prefetch(iScalar<vtype> &that){
+    prefetch(that._internal);
+  }
+  friend strong_inline void permute(iScalar<vtype> &out,const iScalar<vtype> &in,int permutetype){
+    permute(out._internal,in._internal,permutetype);
+  }
 
-
-    friend strong_inline void zeroit(iScalar<vtype> &that){
-        zeroit(that._internal);
-    }
-    friend strong_inline void prefetch(iScalar<vtype> &that){
-      prefetch(that._internal);
-    }
-    friend strong_inline void permute(iScalar<vtype> &out,const iScalar<vtype> &in,int permutetype){
-      permute(out._internal,in._internal,permutetype);
-    }
-
-    // Unary negation
-    friend strong_inline iScalar<vtype> operator -(const iScalar<vtype> &r) {
-        iScalar<vtype> ret;
-        ret._internal= -r._internal;
-        return ret;
-    }
-    // *=,+=,-= operators inherit from corresponding "*,-,+" behaviour
-    strong_inline iScalar<vtype> &operator *=(const iScalar<vtype> &r) {
-        *this = (*this)*r;
-        return *this;
-    }
-    strong_inline iScalar<vtype> &operator -=(const iScalar<vtype> &r) {
-        *this = (*this)-r;
-        return *this;
-    }
-    strong_inline iScalar<vtype> &operator +=(const iScalar<vtype> &r) {
-        *this = (*this)+r;
-        return *this;
-    }
-    
-    strong_inline vtype & operator ()(void) {
-      return _internal;
-    }
-
-    strong_inline const vtype & operator ()(void) const {
-      return _internal;
-    }
-
-    operator ComplexD () const { return(TensorRemove(_internal)); };
-    operator RealD () const { return(real(TensorRemove(_internal))); }
-
-    // convert from a something to a scalar
-    template<class T,typename std::enable_if<!isGridTensor<T>::value, T>::type* = nullptr > strong_inline auto operator = (T arg) -> iScalar<vtype>
+  // Unary negation
+  friend strong_inline iScalar<vtype> operator -(const iScalar<vtype> &r) {
+    iScalar<vtype> ret;
+    ret._internal= -r._internal;
+    return ret;
+  }
+  // *=,+=,-= operators inherit from corresponding "*,-,+" behaviour
+  strong_inline iScalar<vtype> &operator *=(const iScalar<vtype> &r) {
+    *this = (*this)*r;
+    return *this;
+  }
+  strong_inline iScalar<vtype> &operator -=(const iScalar<vtype> &r) {
+    *this = (*this)-r;
+    return *this;
+  }
+  strong_inline iScalar<vtype> &operator +=(const iScalar<vtype> &r) {
+    *this = (*this)+r;
+    return *this;
+  }
+  strong_inline vtype & operator ()(void) {
+    return _internal;
+  }
+  strong_inline const vtype & operator ()(void) const {
+    return _internal;
+  }
+  
+  operator ComplexD () const { return(TensorRemove(_internal)); };
+  operator RealD () const { return(real(TensorRemove(_internal))); }
+  
+  // convert from a something to a scalar
+  template<class T,typename std::enable_if<!isGridTensor<T>::value, T>::type* = nullptr > strong_inline auto operator = (T arg) -> iScalar<vtype>
     { 
       _internal = vtype(arg);
       return *this;
@@ -125,6 +127,12 @@ public:
   enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
   iVector(const Zero &z){ *this = zero; };
   iVector() =default;
+  /*
+  iVector(const iVector<vtype,N> &copyme)=default;
+  iVector(iVector<vtype,N> &&copyme)=default;
+  iVector<vtype,N> & operator= (const iVector<vtype,N> &copyme) = default;
+  iVector<vtype,N> & operator= (iVector<vtype,N> &&copyme) = default;
+  */
 
     iVector<vtype,N> & operator= (const Zero &hero){
         zeroit(*this);
@@ -205,8 +213,12 @@ public:
 
   iMatrix(const Zero &z){ *this = zero; };
   iMatrix() =default;
-
-
+  /*
+  iMatrix(const iMatrix<vtype,N> &copyme)=default;
+  iMatrix(iMatrix<vtype,N> &&copyme)=default;
+  iMatrix<vtype,N> & operator= (const iMatrix<vtype,N> &copyme) = default;
+  iMatrix<vtype,N> & operator= (iMatrix<vtype,N> &&copyme) = default;
+  */
   iMatrix<vtype,N> & operator= (const Zero &hero){
     zeroit(*this);
     return *this;
