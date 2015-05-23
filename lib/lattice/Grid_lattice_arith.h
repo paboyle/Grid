@@ -185,7 +185,7 @@ PARALLEL_FOR_LOOP
   template<class sobj,class vobj> strong_inline
   void axpy(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &y){
     conformable(x,y);
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
     for(int ss=0;ss<x._grid->oSites();ss++){
 #ifdef STREAMING_STORES
       vobj tmp = a*x._odata[ss]+y._odata[ss];
@@ -198,7 +198,7 @@ PARALLEL_FOR_LOOP
   template<class sobj,class vobj> strong_inline
   void axpby(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y){
     conformable(x,y);
-#pragma omp parallel for
+PARALLEL_FOR_LOOP
     for(int ss=0;ss<x._grid->oSites();ss++){
 #ifdef STREAMING_STORES
       vobj tmp = a*x._odata[ss]+b*y._odata[ss];
