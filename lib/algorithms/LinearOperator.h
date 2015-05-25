@@ -106,6 +106,10 @@ namespace Grid {
     public:
       virtual void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) = 0;
     };
+    template<class Field> class HermitianOperatorFunction {
+    public:
+      virtual void operator() (HermitianOperatorBase<Field> &Linop, const Field &in, Field &out) = 0;
+    };
 
     // FIXME : To think about
 
