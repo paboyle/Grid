@@ -4,8 +4,8 @@
 namespace Grid {
 namespace QCD {
 
-const std::vector<int> WilsonMatrix::directions   ({0,1,2,3, 0, 1, 2, 3,0});
-const std::vector<int> WilsonMatrix::displacements({1,1,1,1,-1,-1,-1,-1,0});
+const std::vector<int> WilsonMatrix::directions   ({0,1,2,3, 0, 1, 2, 3});
+const std::vector<int> WilsonMatrix::displacements({1,1,1,1,-1,-1,-1,-1});
 
   // Should be in header?
 const int WilsonMatrix::Xp = 0;
@@ -16,7 +16,6 @@ const int WilsonMatrix::Xm = 4;
 const int WilsonMatrix::Ym = 5;
 const int WilsonMatrix::Zm = 6;
 const int WilsonMatrix::Tm = 7;
-  //const int WilsonMatrix::X0 = 8;
 
   class WilsonCompressor {
   public:
@@ -72,20 +71,27 @@ const int WilsonMatrix::Tm = 7;
     }
   };
 
-  WilsonMatrix::WilsonMatrix(LatticeGaugeField &_Umu,double _mass)
-  : Stencil(Umu._grid,npoint,0,directions,displacements),
+  WilsonMatrix::WilsonMatrix(LatticeGaugeField &_Umu,GridCartesian &Fgrid,GridRedBlackCartesian &Hgrid, double _mass)  : 
+    CheckerBoardedSparseMatrixBase<LatticeFermion>(&Fgrid,&Hgrid),
+    Stencil    (  _grid,npoint,Even,directions,displacements),
+    StencilEven(_cbgrid,npoint,Even,directions,displacements), // source is Even
+    StencilOdd (_cbgrid,npoint,Odd ,directions,displacements), // source is Odd
     mass(_mass),
-    Umu(_Umu._grid)
-{
-  // Allocate the required comms buffer
-  grid = _Umu._grid;
-  comm_buf.resize(Stencil._unified_buffer_size);
-  DoubleStore(Umu,_Umu);
-}
+    Umu(_grid),
+    UmuEven(_cbgrid),
+    UmuOdd (_cbgrid)
+  {
+    // Allocate the required comms buffer
+    comm_buf.resize(Stencil._unified_buffer_size); // this is always big enough to contain EO
+    
+    DoubleStore(Umu,_Umu);
+    pickCheckerboard(Even,UmuEven,Umu);
+    pickCheckerboard(Odd ,UmuOdd,Umu);
+  }
       
 void WilsonMatrix::DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGaugeField &Umu)
 {
-  LatticeColourMatrix U(grid);
+  LatticeColourMatrix U(_grid);
 
   for(int mu=0;mu<Nd;mu++){
     U = peekIndex<LorentzIndex>(Umu,mu);
@@ -97,47 +103,63 @@ void WilsonMatrix::DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGaugeF
 
 RealD WilsonMatrix::M(const LatticeFermion &in, LatticeFermion &out)
 {
-  this->Dhop(in,out,0);
+  out.checkerboard=in.checkerboard;
+  Dhop(in,out,DaggerNo);
   out = (4+mass)*in - 0.5*out  ; // FIXME : axpby_norm! fusion fun
   return norm2(out);
 }
 RealD WilsonMatrix::Mdag(const LatticeFermion &in, LatticeFermion &out)
 {
-  this->Dhop(in,out,1);
+  out.checkerboard=in.checkerboard;
+  Dhop(in,out,DaggerYes);
   out = (4+mass)*in - 0.5*out  ; // FIXME : axpby_norm! fusion fun
   return norm2(out);
 }
 
 void WilsonMatrix::Meooe(const LatticeFermion &in, LatticeFermion &out)
 {
-  this->Dhop(in,out,0);
-  out = 0.5*out; // FIXME : scale factor in Dhop
+  if ( in.checkerboard == Odd ) {
+    DhopEO(in,out,DaggerNo);
+  } else {
+    DhopOE(in,out,DaggerNo);
+  }
+  out = (-0.5)*out; // FIXME : scale factor in Dhop
 }
 void WilsonMatrix::MeooeDag(const LatticeFermion &in, LatticeFermion &out)
 {
-  this->Dhop(in,out,1);
-  out = 0.5*out; // FIXME : scale factor in Dhop
+  if ( in.checkerboard == Odd ) {
+    DhopEO(in,out,DaggerYes);
+  } else {
+    DhopOE(in,out,DaggerYes);
+  }
+  out = (-0.5)*out; // FIXME : scale factor in Dhop
 }
 void WilsonMatrix::Mooee(const LatticeFermion &in, LatticeFermion &out)
 {
+  out.checkerboard = in.checkerboard;
   out = (4.0+mass)*in;
   return ;
 }
 void WilsonMatrix::MooeeDag(const LatticeFermion &in, LatticeFermion &out)
 {
-  this->Mooee(in,out);
+  out.checkerboard = in.checkerboard;
+  Mooee(in,out);
 }
 void WilsonMatrix::MooeeInv(const LatticeFermion &in, LatticeFermion &out)
 {
+  out.checkerboard = in.checkerboard;
   out = (1.0/(4.0+mass))*in;
   return ;
 }
 void WilsonMatrix::MooeeInvDag(const LatticeFermion &in, LatticeFermion &out)
 {
-  this->MooeeInv(in,out);
+  out.checkerboard = in.checkerboard;
+  MooeeInv(in,out);
 }
 
-void WilsonMatrix::DhopSite(int ss,const LatticeFermion &in, LatticeFermion &out)
+void WilsonMatrix::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
+			    std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
+			    int ss,const LatticeFermion &in, LatticeFermion &out)
 {
     vHalfSpinColourVector  tmp;    
     vHalfSpinColourVector  chi;    
@@ -145,79 +167,78 @@ void WilsonMatrix::DhopSite(int ss,const LatticeFermion &in, LatticeFermion &out
     vHalfSpinColourVector Uchi;
     int offset,local,perm, ptype;
 
-    //    int ss = Stencil._LebesgueReorder[sss];
-    int ssu= ss;
+    //#define VERBOSE( A)  if ( ss<10 ) { std::cout << "site " <<ss << " " #A " neigh " << offset << " perm "<< perm <<std::endl;}    
 
     // Xp
-    offset = Stencil._offsets [Xp][ss];
-    local  = Stencil._is_local[Xp][ss];
-    perm   = Stencil._permute[Xp][ss];
+    offset = st._offsets [Xp][ss];
+    local  = st._is_local[Xp][ss];
+    perm   = st._permute[Xp][ss];
 
-    ptype  = Stencil._permute_type[Xp];
+    ptype  = st._permute_type[Xp];
     if ( local && perm ) {
       spProjXp(tmp,in._odata[offset]);
       permute(chi,tmp,ptype);
     } else if ( local ) {
       spProjXp(chi,in._odata[offset]);
     } else { 
-      chi=comm_buf[offset];
+      chi=buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ssu](Xp),&chi());
+    mult(&Uchi(),&U._odata[ss](Xp),&chi());
     spReconXp(result,Uchi);
 
     // Yp
-    offset = Stencil._offsets [Yp][ss];
-    local  = Stencil._is_local[Yp][ss];
-    perm   = Stencil._permute[Yp][ss];
-    ptype  = Stencil._permute_type[Yp];
+    offset = st._offsets [Yp][ss];
+    local  = st._is_local[Yp][ss];
+    perm   = st._permute[Yp][ss];
+    ptype  = st._permute_type[Yp];
     if ( local && perm ) {
       spProjYp(tmp,in._odata[offset]);
       permute(chi,tmp,ptype);
     } else if ( local ) {
       spProjYp(chi,in._odata[offset]);
     } else { 
-      chi=comm_buf[offset];
+      chi=buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ssu](Yp),&chi());
+    mult(&Uchi(),&U._odata[ss](Yp),&chi());
     accumReconYp(result,Uchi);
 
     // Zp
-    offset = Stencil._offsets [Zp][ss];
-    local  = Stencil._is_local[Zp][ss];
-    perm   = Stencil._permute[Zp][ss];
-    ptype  = Stencil._permute_type[Zp];
+    offset = st._offsets [Zp][ss];
+    local  = st._is_local[Zp][ss];
+    perm   = st._permute[Zp][ss];
+    ptype  = st._permute_type[Zp];
     if ( local && perm ) {
       spProjZp(tmp,in._odata[offset]);
       permute(chi,tmp,ptype);
     } else if ( local ) {
       spProjZp(chi,in._odata[offset]);
     } else { 
-      chi=comm_buf[offset];
+      chi=buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ssu](Zp),&chi());
+    mult(&Uchi(),&U._odata[ss](Zp),&chi());
     accumReconZp(result,Uchi);
 
     // Tp
-    offset = Stencil._offsets [Tp][ss];
-    local  = Stencil._is_local[Tp][ss];
-    perm   = Stencil._permute[Tp][ss];
-    ptype  = Stencil._permute_type[Tp];
+    offset = st._offsets [Tp][ss];
+    local  = st._is_local[Tp][ss];
+    perm   = st._permute[Tp][ss];
+    ptype  = st._permute_type[Tp];
     if ( local && perm ) {
       spProjTp(tmp,in._odata[offset]);
       permute(chi,tmp,ptype);
     } else if ( local ) {
       spProjTp(chi,in._odata[offset]);
     } else { 
-      chi=comm_buf[offset];
+      chi=buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ssu](Tp),&chi());
+    mult(&Uchi(),&U._odata[ss](Tp),&chi());
     accumReconTp(result,Uchi);
 
     // Xm
-    offset = Stencil._offsets [Xm][ss];
-    local  = Stencil._is_local[Xm][ss];
-    perm   = Stencil._permute[Xm][ss];
-    ptype  = Stencil._permute_type[Xm];
+    offset = st._offsets [Xm][ss];
+    local  = st._is_local[Xm][ss];
+    perm   = st._permute[Xm][ss];
+    ptype  = st._permute_type[Xm];
 
     if ( local && perm ) 
     {
@@ -226,17 +247,17 @@ void WilsonMatrix::DhopSite(int ss,const LatticeFermion &in, LatticeFermion &out
     } else if ( local ) {
       spProjXm(chi,in._odata[offset]);
     } else { 
-      chi=comm_buf[offset];
+      chi=buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ssu](Xm),&chi());
+    mult(&Uchi(),&U._odata[ss](Xm),&chi());
     accumReconXm(result,Uchi);
 
 
     // Ym
-    offset = Stencil._offsets [Ym][ss];
-    local  = Stencil._is_local[Ym][ss];
-    perm   = Stencil._permute[Ym][ss];
-    ptype  = Stencil._permute_type[Ym];
+    offset = st._offsets [Ym][ss];
+    local  = st._is_local[Ym][ss];
+    perm   = st._permute[Ym][ss];
+    ptype  = st._permute_type[Ym];
 
     if ( local && perm ) {
       spProjYm(tmp,in._odata[offset]);
@@ -244,46 +265,49 @@ void WilsonMatrix::DhopSite(int ss,const LatticeFermion &in, LatticeFermion &out
     } else if ( local ) {
       spProjYm(chi,in._odata[offset]);
     } else { 
-      chi=comm_buf[offset];
+      chi=buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ssu](Ym),&chi());
+    mult(&Uchi(),&U._odata[ss](Ym),&chi());
     accumReconYm(result,Uchi);
 
     // Zm
-    offset = Stencil._offsets [Zm][ss];
-    local  = Stencil._is_local[Zm][ss];
-    perm   = Stencil._permute[Zm][ss];
-    ptype  = Stencil._permute_type[Zm];
+    offset = st._offsets [Zm][ss];
+    local  = st._is_local[Zm][ss];
+    perm   = st._permute[Zm][ss];
+    ptype  = st._permute_type[Zm];
     if ( local && perm ) {
       spProjZm(tmp,in._odata[offset]);
       permute(chi,tmp,ptype);
     } else if ( local ) {
       spProjZm(chi,in._odata[offset]);
     } else { 
-      chi=comm_buf[offset];
+      chi=buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ssu](Zm),&chi());
+    mult(&Uchi(),&U._odata[ss](Zm),&chi());
     accumReconZm(result,Uchi);
 
     // Tm
-    offset = Stencil._offsets [Tm][ss];
-    local  = Stencil._is_local[Tm][ss];
-    perm   = Stencil._permute[Tm][ss];
-    ptype  = Stencil._permute_type[Tm];
+    offset = st._offsets [Tm][ss];
+    local  = st._is_local[Tm][ss];
+    perm   = st._permute[Tm][ss];
+    ptype  = st._permute_type[Tm];
     if ( local && perm ) {
       spProjTm(tmp,in._odata[offset]);
       permute(chi,tmp,ptype);
     } else if ( local ) {
       spProjTm(chi,in._odata[offset]);
     } else { 
-      chi=comm_buf[offset];
+      chi=buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ssu](Tm),&chi());
+    mult(&Uchi(),&U._odata[ss](Tm),&chi());
     accumReconTm(result,Uchi);
 
     vstream(out._odata[ss],result);
 }
-void WilsonMatrix::DhopSiteDag(int ss,const LatticeFermion &in, LatticeFermion &out)
+
+void WilsonMatrix::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
+			       std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
+			       int ss,const LatticeFermion &in, LatticeFermion &out)
 {
     vHalfSpinColourVector  tmp;    
     vHalfSpinColourVector  chi;    
@@ -291,78 +315,76 @@ void WilsonMatrix::DhopSiteDag(int ss,const LatticeFermion &in, LatticeFermion &
     vHalfSpinColourVector Uchi;
     int offset,local,perm, ptype;
 
-    int ssu= ss;
-
     // Xp
-    offset = Stencil._offsets [Xm][ss];
-    local  = Stencil._is_local[Xm][ss];
-    perm   = Stencil._permute[Xm][ss];
+    offset = st._offsets [Xm][ss];
+    local  = st._is_local[Xm][ss];
+    perm   = st._permute[Xm][ss];
 
-    ptype  = Stencil._permute_type[Xm];
+    ptype  = st._permute_type[Xm];
     if ( local && perm ) {
       spProjXp(tmp,in._odata[offset]);
       permute(chi,tmp,ptype);
     } else if ( local ) {
       spProjXp(chi,in._odata[offset]);
     } else { 
-      chi=comm_buf[offset];
+      chi=buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ssu](Xm),&chi());
+    mult(&Uchi(),&U._odata[ss](Xm),&chi());
     spReconXp(result,Uchi);
 
     // Yp
-    offset = Stencil._offsets [Ym][ss];
-    local  = Stencil._is_local[Ym][ss];
-    perm   = Stencil._permute[Ym][ss];
-    ptype  = Stencil._permute_type[Ym];
+    offset = st._offsets [Ym][ss];
+    local  = st._is_local[Ym][ss];
+    perm   = st._permute[Ym][ss];
+    ptype  = st._permute_type[Ym];
     if ( local && perm ) {
       spProjYp(tmp,in._odata[offset]);
       permute(chi,tmp,ptype);
     } else if ( local ) {
       spProjYp(chi,in._odata[offset]);
     } else { 
-      chi=comm_buf[offset];
+      chi=buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ssu](Ym),&chi());
+    mult(&Uchi(),&U._odata[ss](Ym),&chi());
     accumReconYp(result,Uchi);
 
     // Zp
-    offset = Stencil._offsets [Zm][ss];
-    local  = Stencil._is_local[Zm][ss];
-    perm   = Stencil._permute[Zm][ss];
-    ptype  = Stencil._permute_type[Zm];
+    offset = st._offsets [Zm][ss];
+    local  = st._is_local[Zm][ss];
+    perm   = st._permute[Zm][ss];
+    ptype  = st._permute_type[Zm];
     if ( local && perm ) {
       spProjZp(tmp,in._odata[offset]);
       permute(chi,tmp,ptype);
     } else if ( local ) {
       spProjZp(chi,in._odata[offset]);
     } else { 
-      chi=comm_buf[offset];
+      chi=buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ssu](Zm),&chi());
+    mult(&Uchi(),&U._odata[ss](Zm),&chi());
     accumReconZp(result,Uchi);
 
     // Tp
-    offset = Stencil._offsets [Tm][ss];
-    local  = Stencil._is_local[Tm][ss];
-    perm   = Stencil._permute[Tm][ss];
-    ptype  = Stencil._permute_type[Tm];
+    offset = st._offsets [Tm][ss];
+    local  = st._is_local[Tm][ss];
+    perm   = st._permute[Tm][ss];
+    ptype  = st._permute_type[Tm];
     if ( local && perm ) {
       spProjTp(tmp,in._odata[offset]);
       permute(chi,tmp,ptype);
     } else if ( local ) {
       spProjTp(chi,in._odata[offset]);
     } else { 
-      chi=comm_buf[offset];
+      chi=buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ssu](Tm),&chi());
+    mult(&Uchi(),&U._odata[ss](Tm),&chi());
     accumReconTp(result,Uchi);
 
     // Xm
-    offset = Stencil._offsets [Xp][ss];
-    local  = Stencil._is_local[Xp][ss];
-    perm   = Stencil._permute[Xp][ss];
-    ptype  = Stencil._permute_type[Xp];
+    offset = st._offsets [Xp][ss];
+    local  = st._is_local[Xp][ss];
+    perm   = st._permute[Xp][ss];
+    ptype  = st._permute_type[Xp];
 
     if ( local && perm ) 
     {
@@ -371,17 +393,16 @@ void WilsonMatrix::DhopSiteDag(int ss,const LatticeFermion &in, LatticeFermion &
     } else if ( local ) {
       spProjXm(chi,in._odata[offset]);
     } else { 
-      chi=comm_buf[offset];
+      chi=buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ssu](Xp),&chi());
+    mult(&Uchi(),&U._odata[ss](Xp),&chi());
     accumReconXm(result,Uchi);
 
-
     // Ym
-    offset = Stencil._offsets [Yp][ss];
-    local  = Stencil._is_local[Yp][ss];
-    perm   = Stencil._permute[Yp][ss];
-    ptype  = Stencil._permute_type[Yp];
+    offset = st._offsets [Yp][ss];
+    local  = st._is_local[Yp][ss];
+    perm   = st._permute[Yp][ss];
+    ptype  = st._permute_type[Yp];
 
     if ( local && perm ) {
       spProjYm(tmp,in._odata[offset]);
@@ -389,67 +410,97 @@ void WilsonMatrix::DhopSiteDag(int ss,const LatticeFermion &in, LatticeFermion &
     } else if ( local ) {
       spProjYm(chi,in._odata[offset]);
     } else { 
-      chi=comm_buf[offset];
+      chi=buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ssu](Yp),&chi());
+    mult(&Uchi(),&U._odata[ss](Yp),&chi());
     accumReconYm(result,Uchi);
 
     // Zm
-    offset = Stencil._offsets [Zp][ss];
-    local  = Stencil._is_local[Zp][ss];
-    perm   = Stencil._permute[Zp][ss];
-    ptype  = Stencil._permute_type[Zp];
+    offset = st._offsets [Zp][ss];
+    local  = st._is_local[Zp][ss];
+    perm   = st._permute[Zp][ss];
+    ptype  = st._permute_type[Zp];
     if ( local && perm ) {
       spProjZm(tmp,in._odata[offset]);
       permute(chi,tmp,ptype);
     } else if ( local ) {
       spProjZm(chi,in._odata[offset]);
     } else { 
-      chi=comm_buf[offset];
+      chi=buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ssu](Zp),&chi());
+    mult(&Uchi(),&U._odata[ss](Zp),&chi());
     accumReconZm(result,Uchi);
 
     // Tm
-    offset = Stencil._offsets [Tp][ss];
-    local  = Stencil._is_local[Tp][ss];
-    perm   = Stencil._permute[Tp][ss];
-    ptype  = Stencil._permute_type[Tp];
+    offset = st._offsets [Tp][ss];
+    local  = st._is_local[Tp][ss];
+    perm   = st._permute[Tp][ss];
+    ptype  = st._permute_type[Tp];
     if ( local && perm ) {
       spProjTm(tmp,in._odata[offset]);
       permute(chi,tmp,ptype);
     } else if ( local ) {
       spProjTm(chi,in._odata[offset]);
     } else { 
-      chi=comm_buf[offset];
+      chi=buf[offset];
     }
-    mult(&Uchi(),&Umu._odata[ssu](Tp),&chi());
+    mult(&Uchi(),&U._odata[ss](Tp),&chi());
     accumReconTm(result,Uchi);
 
     vstream(out._odata[ss],result);
 }
 
-void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out,int dag)
+void WilsonMatrix::DhopInternal(CartesianStencil & st,LatticeDoubledGaugeField & U,
+				const LatticeFermion &in, LatticeFermion &out,int dag)
 {
-  assert((dag==0) ||(dag==1));
-
+  assert((dag==DaggerNo) ||(dag==DaggerYes));
   WilsonCompressor compressor(dag);
-  Stencil.HaloExchange<vSpinColourVector,vHalfSpinColourVector,WilsonCompressor>(in,comm_buf,compressor);
 
-  if ( dag ) {
+  st.HaloExchange<vSpinColourVector,vHalfSpinColourVector,WilsonCompressor>(in,comm_buf,compressor);
+
+  if ( dag == DaggerYes ) {
 PARALLEL_FOR_LOOP
-    for(int sss=0;sss<grid->oSites();sss++){
-      DhopSiteDag(sss,in,out);
+    for(int sss=0;sss<in._grid->oSites();sss++){
+      DhopSiteDag(st,U,comm_buf,sss,in,out);
     }
   } else {
 PARALLEL_FOR_LOOP
-    for(int sss=0;sss<grid->oSites();sss++){
-      DhopSite(sss,in,out);
+    for(int sss=0;sss<in._grid->oSites();sss++){
+      DhopSite(st,U,comm_buf,sss,in,out);
     }
   }
 }
+void WilsonMatrix::DhopOE(const LatticeFermion &in, LatticeFermion &out,int dag)
+{
+  conformable(in._grid,_cbgrid);    // verifies half grid
+  conformable(in._grid,out._grid); // drops the cb check
+
+  assert(in.checkerboard==Even);
+  out.checkerboard = Odd;
+
+  DhopInternal(StencilEven,UmuOdd,in,out,dag);
+}
+void WilsonMatrix::DhopEO(const LatticeFermion &in, LatticeFermion &out,int dag)
+{
+  conformable(in._grid,_cbgrid);    // verifies half grid
+  conformable(in._grid,out._grid); // drops the cb check
+
+  assert(in.checkerboard==Odd);
+  out.checkerboard = Even;
+
+  DhopInternal(StencilOdd,UmuEven,in,out,dag);
+}
+void WilsonMatrix::Dhop(const LatticeFermion &in, LatticeFermion &out,int dag)
+{
+  conformable(in._grid,_grid); // verifies full grid
+  conformable(in._grid,out._grid);
+
+  out.checkerboard = in.checkerboard;
+
+  DhopInternal(Stencil,Umu,in,out,dag);
+}
+
+}}
 
 
-}
-}
 
