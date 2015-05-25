@@ -134,66 +134,65 @@ public:
   iVector<vtype,N> & operator= (iVector<vtype,N> &&copyme) = default;
   */
 
-    iVector<vtype,N> & operator= (const Zero &hero){
-        zeroit(*this);
-        return *this;
+  iVector<vtype,N> & operator= (const Zero &hero){
+    zeroit(*this);
+    return *this;
+  }
+  friend strong_inline void zeroit(iVector<vtype,N> &that){
+    for(int i=0;i<N;i++){
+      zeroit(that._internal[i]);
     }
-    friend strong_inline void zeroit(iVector<vtype,N> &that){
-        for(int i=0;i<N;i++){
-            zeroit(that._internal[i]);
-        }
+  }
+  friend strong_inline void prefetch(iVector<vtype,N> &that){
+    for(int i=0;i<N;i++) prefetch(that._internal[i]);
+  }
+  friend strong_inline void vstream(iVector<vtype,N> &out,const iVector<vtype,N> &in){
+    for(int i=0;i<N;i++){
+      vstream(out._internal[i],in._internal[i]);
     }
-    friend strong_inline void prefetch(iVector<vtype,N> &that){
-      for(int i=0;i<N;i++) prefetch(that._internal[i]);
+  }
+  friend strong_inline void permute(iVector<vtype,N> &out,const iVector<vtype,N> &in,int permutetype){
+    for(int i=0;i<N;i++){
+      permute(out._internal[i],in._internal[i],permutetype);
     }
-    friend strong_inline void vstream(iVector<vtype,N> &out,const iVector<vtype,N> &in){
-      for(int i=0;i<N;i++){
-	vstream(out._internal[i],in._internal[i]);
-      }
+  }
+  // Unary negation
+  friend strong_inline iVector<vtype,N> operator -(const iVector<vtype,N> &r) {
+    iVector<vtype,N> ret;
+    for(int i=0;i<N;i++) ret._internal[i]= -r._internal[i];
+    return ret;
+  }
+  // *=,+=,-= operators inherit from corresponding "*,-,+" behaviour
+  strong_inline iVector<vtype,N> &operator *=(const iScalar<vtype> &r) {
+    *this = (*this)*r;
+    return *this;
+  }
+  strong_inline iVector<vtype,N> &operator -=(const iVector<vtype,N> &r) {
+    *this = (*this)-r;
+    return *this;
+  }
+  strong_inline iVector<vtype,N> &operator +=(const iVector<vtype,N> &r) {
+    *this = (*this)+r;
+    return *this;
+  }
+  strong_inline vtype & operator ()(int i) {
+    return _internal[i];
+  }
+  strong_inline const vtype & operator ()(int i) const {
+    return _internal[i];
+  }
+  friend std::ostream& operator<< (std::ostream& stream, const iVector<vtype,N> &o){
+    stream<< "V<"<<N<<">{";
+    for(int i=0;i<N;i++) {
+      stream<<o._internal[i];
+      if (i<N-1)	stream<<",";
     }
-
-    friend strong_inline void permute(iVector<vtype,N> &out,const iVector<vtype,N> &in,int permutetype){
-      for(int i=0;i<N;i++){
-	permute(out._internal[i],in._internal[i],permutetype);
-      }
-    }
-    // Unary negation
-    friend strong_inline iVector<vtype,N> operator -(const iVector<vtype,N> &r) {
-        iVector<vtype,N> ret;
-        for(int i=0;i<N;i++) ret._internal[i]= -r._internal[i];
-        return ret;
-    }
-    // *=,+=,-= operators inherit from corresponding "*,-,+" behaviour
-    strong_inline iVector<vtype,N> &operator *=(const iScalar<vtype> &r) {
-        *this = (*this)*r;
-        return *this;
-    }
-    strong_inline iVector<vtype,N> &operator -=(const iVector<vtype,N> &r) {
-        *this = (*this)-r;
-        return *this;
-    }
-    strong_inline iVector<vtype,N> &operator +=(const iVector<vtype,N> &r) {
-        *this = (*this)+r;
-        return *this;
-    }
-    strong_inline vtype & operator ()(int i) {
-      return _internal[i];
-    }
-    strong_inline const vtype & operator ()(int i) const {
-      return _internal[i];
-    }
-    friend std::ostream& operator<< (std::ostream& stream, const iVector<vtype,N> &o){
-      stream<< "V<"<<N<<">{";
-      for(int i=0;i<N;i++) {
-	stream<<o._internal[i];
-	if (i<N-1)	stream<<",";
-      }
-      stream<<"}";
-      return stream;
-    };
-    //    strong_inline vtype && operator ()(int i) {
-    //      return _internal[i];
-    //    }
+    stream<<"}";
+    return stream;
+  };
+  //    strong_inline vtype && operator ()(int i) {
+  //      return _internal[i];
+  //    }
 };
     
 template<class vtype,int N> class iMatrix 
@@ -213,6 +212,8 @@ public:
 
   iMatrix(const Zero &z){ *this = zero; };
   iMatrix() =default;
+  iMatrix(scalar_type s)  { (*this) = s ;};// recurse down and hit the constructor for vector_type
+
   /*
   iMatrix(const iMatrix<vtype,N> &copyme)=default;
   iMatrix(iMatrix<vtype,N> &&copyme)=default;
