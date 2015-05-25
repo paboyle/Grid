@@ -37,11 +37,6 @@ int main (int argc, char ** argv)
 
   std::vector<LatticeColourMatrix> U(4,&Grid);
 
-  double volume=1;
-  for(int mu=0;mu<Nd;mu++){
-    volume=volume*latt_size[mu];
-  }  
-
   for(int mu=0;mu<Nd;mu++){
     U[mu] = peekIndex<LorentzIndex>(Umu,mu);
   }
@@ -49,9 +44,18 @@ int main (int argc, char ** argv)
   RealD mass=0.5;
   WilsonMatrix Dw(Umu,Grid,RBGrid,mass);
 
-  HermitianOperator<WilsonMatrix,LatticeFermion> HermOp(Dw);
+  //  HermitianOperator<WilsonMatrix,LatticeFermion> HermOp(Dw);
+  //  ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
+  //  CG(HermOp,src,result);
+  
+  LatticeFermion    src_o(&RBGrid);
+  LatticeFermion result_o(&RBGrid);
+  pickCheckerboard(Odd,src_o,src);
+  result_o=zero;
+
+  HermitianCheckerBoardedOperator<WilsonMatrix,LatticeFermion> HermOpEO(Dw);
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
-  CG(HermOp,src,result);
+  CG(HermOpEO,src_o,result_o);
 
   Grid_finalize();
 }
