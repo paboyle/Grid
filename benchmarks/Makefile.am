@@ -5,13 +5,22 @@ AM_LDFLAGS = -L$(top_builddir)/lib
 #
 # Test code
 #
-bin_PROGRAMS = Grid_wilson Grid_comms Grid_memory_bandwidth Grid_su3 Grid_wilson_cg_unprec
+bin_PROGRAMS = Grid_wilson Grid_comms Grid_memory_bandwidth Grid_su3 Grid_wilson_cg_unprec Grid_wilson_evenodd  Grid_wilson_cg_prec Grid_wilson_cg_schur
 
 Grid_wilson_SOURCES = Grid_wilson.cc
 Grid_wilson_LDADD = -lGrid
 
+Grid_wilson_evenodd_SOURCES = Grid_wilson_evenodd.cc
+Grid_wilson_evenodd_LDADD = -lGrid
+
 Grid_wilson_cg_unprec_SOURCES = Grid_wilson_cg_unprec.cc
 Grid_wilson_cg_unprec_LDADD = -lGrid
+
+Grid_wilson_cg_prec_SOURCES = Grid_wilson_cg_prec.cc
+Grid_wilson_cg_prec_LDADD = -lGrid
+
+Grid_wilson_cg_schur_SOURCES = Grid_wilson_cg_schur.cc
+Grid_wilson_cg_schur_LDADD = -lGrid
 
 Grid_comms_SOURCES = Grid_comms.cc
 Grid_comms_LDADD = -lGrid
