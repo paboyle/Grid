@@ -10,9 +10,6 @@ namespace QCD {
     static const int Nhs=2; // half spinor
     static const int Nds=8; // double stored gauge field
 
-    static const int CbRed  =0;
-    static const int CbBlack=1;
-    
     //////////////////////////////////////////////////////////////////////////////
     // QCD iMatrix types
     // Index conventions:                            Lorentz x Spin x Colour
