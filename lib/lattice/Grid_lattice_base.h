@@ -66,6 +66,16 @@ public:
   ////////////////////////////////////////////////////////////////////////////////
   template <typename Op, typename T1>                         strong_inline Lattice<vobj> & operator=(const LatticeUnaryExpression<Op,T1> &expr)
   {
+    GridBase *egrid(nullptr);
+    GridFromExpression(egrid,expr);
+    assert(egrid!=nullptr);
+    conformable(_grid,egrid);
+
+    int cb=-1;
+    CBFromExpression(cb,expr);
+    assert( (cb==Odd) || (cb==Even));
+    checkerboard=cb;
+
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
 #ifdef STREAMING_STORES
@@ -79,6 +89,16 @@ PARALLEL_FOR_LOOP
   }
   template <typename Op, typename T1,typename T2>             strong_inline Lattice<vobj> & operator=(const LatticeBinaryExpression<Op,T1,T2> &expr)
   {
+    GridBase *egrid(nullptr);
+    GridFromExpression(egrid,expr);
+    assert(egrid!=nullptr);
+    conformable(_grid,egrid);
+
+    int cb=-1;
+    CBFromExpression(cb,expr);
+    assert( (cb==Odd) || (cb==Even));
+    checkerboard=cb;
+
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
 #ifdef STREAMING_STORES
@@ -92,6 +112,16 @@ PARALLEL_FOR_LOOP
   }
   template <typename Op, typename T1,typename T2,typename T3> strong_inline Lattice<vobj> & operator=(const LatticeTrinaryExpression<Op,T1,T2,T3> &expr)
   {
+    GridBase *egrid(nullptr);
+    GridFromExpression(egrid,expr);
+    assert(egrid!=nullptr);
+    conformable(_grid,egrid);
+
+    int cb=-1;
+    CBFromExpression(cb,expr);
+    assert( (cb==Odd) || (cb==Even));
+    checkerboard=cb;
+
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
 #ifdef STREAMING_STORES
@@ -106,8 +136,15 @@ PARALLEL_FOR_LOOP
   //GridFromExpression is tricky to do
   template<class Op,class T1>
     Lattice(const LatticeUnaryExpression<Op,T1> & expr):    _grid(nullptr){
+
     GridFromExpression(_grid,expr);
     assert(_grid!=nullptr);
+
+    int cb=-1;
+    CBFromExpression(cb,expr);
+    assert( (cb==Odd) || (cb==Even));
+    checkerboard=cb;
+
     _odata.resize(_grid->oSites());
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
@@ -123,6 +160,12 @@ PARALLEL_FOR_LOOP
   Lattice(const LatticeBinaryExpression<Op,T1,T2> & expr):    _grid(nullptr){
     GridFromExpression(_grid,expr);
     assert(_grid!=nullptr);
+
+    int cb=-1;
+    CBFromExpression(cb,expr);
+    assert( (cb==Odd) || (cb==Even));
+    checkerboard=cb;
+
     _odata.resize(_grid->oSites());
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
@@ -138,6 +181,12 @@ PARALLEL_FOR_LOOP
   Lattice(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr):    _grid(nullptr){
     GridFromExpression(_grid,expr);
     assert(_grid!=nullptr);
+
+    int cb=-1;
+    CBFromExpression(cb,expr);
+    assert( (cb==Odd) || (cb==Even));
+    checkerboard=cb;
+
     _odata.resize(_grid->oSites());
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
@@ -169,6 +218,7 @@ PARALLEL_FOR_LOOP
         return *this;
     }
     template<class robj> strong_inline Lattice<vobj> & operator = (const Lattice<robj> & r){
+      this->checkerboard = r.checkerboard;
       conformable(*this,r);
       std::cout<<"Lattice operator ="<<std::endl;
 PARALLEL_FOR_LOOP

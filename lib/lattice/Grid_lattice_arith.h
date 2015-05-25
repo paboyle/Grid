@@ -9,6 +9,8 @@ namespace Grid {
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   template<class obj1,class obj2,class obj3> strong_inline
     void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
+    ret.checkerboard = lhs.checkerboard;
+    conformable(ret,rhs);
     conformable(lhs,rhs);
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<lhs._grid->oSites();ss++){
@@ -24,6 +26,8 @@ PARALLEL_FOR_LOOP
   
   template<class obj1,class obj2,class obj3> strong_inline
     void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
+    ret.checkerboard = lhs.checkerboard;
+    conformable(ret,rhs);
     conformable(lhs,rhs);
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<lhs._grid->oSites();ss++){
@@ -39,6 +43,8 @@ PARALLEL_FOR_LOOP
   
   template<class obj1,class obj2,class obj3> strong_inline
     void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
+    ret.checkerboard = lhs.checkerboard;
+    conformable(ret,rhs);
     conformable(lhs,rhs);
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<lhs._grid->oSites();ss++){
@@ -53,6 +59,8 @@ PARALLEL_FOR_LOOP
   }
   template<class obj1,class obj2,class obj3> strong_inline
     void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
+    ret.checkerboard = lhs.checkerboard;
+    conformable(ret,rhs);
     conformable(lhs,rhs);
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<lhs._grid->oSites();ss++){
@@ -71,6 +79,7 @@ PARALLEL_FOR_LOOP
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   template<class obj1,class obj2,class obj3> strong_inline
     void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
+    ret.checkerboard = lhs.checkerboard;
     conformable(lhs,ret);
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<lhs._grid->oSites();ss++){
@@ -82,7 +91,8 @@ PARALLEL_FOR_LOOP
   
   template<class obj1,class obj2,class obj3> strong_inline
     void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
-    conformable(lhs,ret);
+    ret.checkerboard = lhs.checkerboard;
+    conformable(ret,lhs);
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<lhs._grid->oSites();ss++){
       obj1 tmp;
@@ -93,7 +103,8 @@ PARALLEL_FOR_LOOP
   
   template<class obj1,class obj2,class obj3> strong_inline
     void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
-    conformable(lhs,ret);
+    ret.checkerboard = lhs.checkerboard;
+    conformable(ret,lhs);
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<lhs._grid->oSites();ss++){
 #ifdef STREAMING_STORES
@@ -107,6 +118,7 @@ PARALLEL_FOR_LOOP
   }
   template<class obj1,class obj2,class obj3> strong_inline
     void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
+    ret.checkerboard = lhs.checkerboard;
     conformable(lhs,ret);
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<lhs._grid->oSites();ss++){
@@ -125,6 +137,7 @@ PARALLEL_FOR_LOOP
   //////////////////////////////////////////////////////////////////////////////////////////////////////
     template<class obj1,class obj2,class obj3> strong_inline
     void mult(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
+    ret.checkerboard = rhs.checkerboard;
     conformable(ret,rhs);
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<rhs._grid->oSites();ss++){
@@ -140,6 +153,7 @@ PARALLEL_FOR_LOOP
   
   template<class obj1,class obj2,class obj3> strong_inline
     void mac(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
+    ret.checkerboard = rhs.checkerboard;
     conformable(ret,rhs);
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<rhs._grid->oSites();ss++){
@@ -155,6 +169,7 @@ PARALLEL_FOR_LOOP
   
   template<class obj1,class obj2,class obj3> strong_inline
     void sub(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
+    ret.checkerboard = rhs.checkerboard;
     conformable(ret,rhs);
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<rhs._grid->oSites();ss++){
@@ -169,6 +184,7 @@ PARALLEL_FOR_LOOP
   }
   template<class obj1,class obj2,class obj3> strong_inline
     void add(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
+    ret.checkerboard = rhs.checkerboard;
     conformable(ret,rhs);
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<rhs._grid->oSites();ss++){
@@ -184,6 +200,8 @@ PARALLEL_FOR_LOOP
   
   template<class sobj,class vobj> strong_inline
   void axpy(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &y){
+    ret.checkerboard = x.checkerboard;
+    conformable(ret,x);
     conformable(x,y);
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<x._grid->oSites();ss++){
@@ -197,6 +215,8 @@ PARALLEL_FOR_LOOP
   }
   template<class sobj,class vobj> strong_inline
   void axpby(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y){
+    ret.checkerboard = x.checkerboard;
+    conformable(ret,x);
     conformable(x,y);
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<x._grid->oSites();ss++){
@@ -211,12 +231,16 @@ PARALLEL_FOR_LOOP
 
   template<class sobj,class vobj> strong_inline
   RealD axpy_norm(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &y){
+    ret.checkerboard = x.checkerboard;
+    conformable(ret,x);
     conformable(x,y);
     axpy(ret,a,x,y);
     return norm2(ret);
   }
   template<class sobj,class vobj> strong_inline
   RealD axpby_norm(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y){
+    ret.checkerboard = x.checkerboard;
+    conformable(ret,x);
     conformable(x,y);
     axpby(ret,a,b,x,y);
     return norm2(ret); // FIXME implement parallel norm in ss loop
