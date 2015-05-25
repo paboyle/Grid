@@ -13,31 +13,24 @@
 namespace Grid {
 
   // To take the floating point type of real/complex type
-  template <typename T> 
-    struct RealPart {
-      typedef T type;
-    };
-  template <typename T> 
-    struct RealPart< std::complex<T> >{
+  template <typename T> struct RealPart {
+    typedef T type;
+  };
+  template <typename T> struct RealPart< std::complex<T> >{
     typedef T type;
   };
 
   // type alias used to simplify the syntax of std::enable_if
-  template <typename T> using Invoke =
-    typename T::type;
-  template <typename Condition, typename ReturnType> using EnableIf =
-    Invoke<std::enable_if<Condition::value, ReturnType>>;
-  template <typename Condition, typename ReturnType> using NotEnableIf =
-    Invoke<std::enable_if<!Condition::value, ReturnType>>;
+  template <typename T> using Invoke                                  =  typename T::type;
+  template <typename Condition, typename ReturnType> using EnableIf   =    Invoke<std::enable_if<Condition::value, ReturnType>>;
+  template <typename Condition, typename ReturnType> using NotEnableIf=    Invoke<std::enable_if<!Condition::value, ReturnType>>;
   
 
 
   ////////////////////////////////////////////////////////
   // Check for complexity with type traits
-  template <typename T> 
-    struct is_complex : std::false_type {};
-  template < typename T > 
-    struct is_complex< std::complex<T> >: std::true_type {};
+  template <typename T>     struct is_complex : std::false_type {};
+  template < typename T >   struct is_complex< std::complex<T> >: std::true_type {};
   ////////////////////////////////////////////////////////
   // Define the operation templates functors
   // general forms to allow for vsplat syntax
@@ -86,8 +79,6 @@ namespace Grid {
     Grid_simd(Real a){
       vsplat(*this,Scalar_type(a));
     };
-
-
        
     ///////////////////////////////////////////////
     // mac, mult, sub, add, adj
@@ -126,10 +117,6 @@ namespace Grid {
       friend inline void vtrue (Grid_simd &ret){vsplat(ret,0xFFFFFFFF);}
     template <  class S = Scalar_type, EnableIf<std::is_integral < S >, int> = 0 > 
       friend inline void vfalse(vInteger &ret){vsplat(ret,0);}
-
-
-   
- 
    
     ////////////////////////////////////
     // Arithmetic operator overloads +,-,*
@@ -165,7 +152,6 @@ namespace Grid {
 	ret.v = binary<Vector_type>(a.v,b.v, MultSIMD());
 	return ret;
       };
-    
 
     ////////////////////////////////////////////////////////////////////////
     // FIXME:  gonna remove these load/store, get, set, prefetch
