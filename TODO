@@ -1,8 +1,8 @@
 ================================================================
 *** Hacks and bug fixes to clean up and Audits
 ================================================================
-* Base class to share common code between vRealF, VComplexF etc... 
-  - Performance check on Guido's reimplementation strategy
+* Base class to share common code between vRealF, VComplexF etc... done
+  - Performance check on Guido's reimplementation strategy  - (GUIDO) tested and no difference was found, merged
 
 * FIXME audit
 

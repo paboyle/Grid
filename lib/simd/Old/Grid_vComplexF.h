@@ -54,7 +54,7 @@ namespace Grid {
         //////////////////////////////////
         friend inline void vone(vComplexF &ret)      { vsplat(ret,1.0,0.0); }
         friend inline void vzero(vComplexF &ret)     { vsplat(ret,0.0,0.0); }
-        friend inline void vcomplex_i(vComplexF &ret){ vsplat(ret,0.0,1.0);}
+        friend inline void vcomplex_i(vComplexF &ret){ vsplat(ret,0.0,1.0); }
           
         ////////////////////////////////////
         // Arithmetic operator overloads +,-,*
