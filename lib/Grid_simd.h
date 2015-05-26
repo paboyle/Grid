@@ -103,6 +103,10 @@ namespace Grid {
     inline void sub (RealF * __restrict__ y,const RealF * __restrict__ l,const RealF *__restrict__ r){ *y = (*l) - (*r); }
     inline void add (RealF * __restrict__ y,const RealF * __restrict__ l,const RealF *__restrict__ r){ *y = (*l) + (*r); }
     
+    inline void vstream(ComplexF &l, const ComplexF &r){ l=r;}
+    inline void vstream(ComplexD &l, const ComplexD &r){ l=r;}
+    inline void vstream(RealF &l, const RealF &r){ l=r;}
+    inline void vstream(RealD &l, const RealD &r){ l=r;}
 
 
   class Zero{};

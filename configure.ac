@@ -3,7 +3,7 @@
 #
 # Project Grid package  
 # 
-# Time-stamp: <2015-05-22 15:46:09 neo>
+# Time-stamp: <2015-05-25 14:54:34 neo>
 
 AC_PREREQ([2.63])
 AC_INIT([Grid], [1.0], [paboyle@ph.ed.ac.uk])
@@ -26,6 +26,8 @@ AC_LANG(C++)
 AC_PROG_CXX
 AC_OPENMP
 AC_PROG_RANLIB
+AX_CXX_COMPILE_STDCXX_11(noext, mandatory)
+
 
 # Checks for libraries.
 #AX_GCC_VAR_ATTRIBUTE(aligned)
