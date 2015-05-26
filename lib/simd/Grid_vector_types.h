@@ -2,7 +2,7 @@
 /*! @file Grid_vector_types.h
   @brief Defines templated class Grid_simd to deal with inner vector types
 */
-// Time-stamp: <2015-05-26 13:22:36 neo>
+// Time-stamp: <2015-05-26 13:44:54 neo>
 //---------------------------------------------------------------------------
 #ifndef GRID_VECTOR_TYPES
 #define GRID_VECTOR_TYPES
@@ -155,6 +155,18 @@ inline void Gpermute(vsimd &y,const vsimd &b,int perm){
     friend inline void mult(Grid_simd * __restrict__ y,const Grid_simd * __restrict__ l,const Grid_simd *__restrict__ r){ *y = (*l) * (*r); }
     friend inline void sub (Grid_simd * __restrict__ y,const Grid_simd * __restrict__ l,const Grid_simd *__restrict__ r){ *y = (*l) - (*r); }
     friend inline void add (Grid_simd * __restrict__ y,const Grid_simd * __restrict__ l,const Grid_simd *__restrict__ r){ *y = (*l) + (*r); }
+
+
+    friend inline void mac (Grid_simd *__restrict__ y,const Scalar_type *__restrict__ a,const Grid_simd   *__restrict__ x){ *y = (*a)*(*x)+(*y); };
+    friend inline void mult(Grid_simd *__restrict__ y,const Scalar_type *__restrict__ l,const Grid_simd   *__restrict__ r){ *y = (*l) * (*r); }
+    friend inline void sub (Grid_simd *__restrict__ y,const Scalar_type *__restrict__ l,const Grid_simd   *__restrict__ r){ *y = (*l) - (*r); }
+    friend inline void add (Grid_simd *__restrict__ y,const Scalar_type *__restrict__ l,const Grid_simd   *__restrict__ r){ *y = (*l) + (*r); }
+    friend inline void mac (Grid_simd *__restrict__ y,const Grid_simd   *__restrict__ a,const Scalar_type *__restrict__ x){ *y = (*a)*(*x)+(*y); };
+    friend inline void mult(Grid_simd *__restrict__ y,const Grid_simd   *__restrict__ l,const Scalar_type *__restrict__ r){ *y = (*l) * (*r); }
+    friend inline void sub (Grid_simd *__restrict__ y,const Grid_simd   *__restrict__ l,const Scalar_type *__restrict__ r){ *y = (*l) - (*r); }
+    friend inline void add (Grid_simd *__restrict__ y,const Grid_simd   *__restrict__ l,const Scalar_type *__restrict__ r){ *y = (*l) + (*r); }
+
+
 
     //not for integer types... 
     template <  class S = Scalar_type, NotEnableIf<std::is_integral < S >, int> = 0 > 
