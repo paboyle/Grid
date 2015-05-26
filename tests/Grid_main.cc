@@ -1,8 +1,9 @@
 #include "Grid.h"
 
 //DEBUG
+#ifdef SSE4
 #include "simd/Grid_vector_types.h"
-
+#endif
 
 using namespace std;
 using namespace Grid;

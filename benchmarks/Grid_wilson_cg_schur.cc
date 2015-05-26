@@ -30,28 +30,19 @@ int main (int argc, char ** argv)
   std::vector<int> seeds({1,2,3,4});
   GridParallelRNG          pRNG(&Grid);  pRNG.SeedFixedIntegers(seeds);
 
-  LatticeFermion src(&Grid); random(pRNG,src);
-  RealD nrm = norm2(src);
-  LatticeFermion result(&Grid); result=zero;
   LatticeGaugeField Umu(&Grid); random(pRNG,Umu);
 
-  std::vector<LatticeColourMatrix> U(4,&Grid);
+  LatticeFermion    src(&Grid); random(pRNG,src);
+  LatticeFermion result(&Grid); result=zero;
+  LatticeFermion resid(&Grid); 
 
-  double volume=1;
-  for(int mu=0;mu<Nd;mu++){
-    volume=volume*latt_size[mu];
-  }  
-
-  for(int mu=0;mu<Nd;mu++){
-    U[mu] = peekIndex<LorentzIndex>(Umu,mu);
-  }
-  
   RealD mass=0.5;
   WilsonMatrix Dw(Umu,Grid,RBGrid,mass);
 
-  HermitianOperator<WilsonMatrix,LatticeFermion> HermOp(Dw);
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
-  CG(HermOp,src,result);
+  SchurRedBlackSolve<LatticeFermion> SchurSolver(CG);
 
+  SchurSolver(Dw,src,result);
+  
   Grid_finalize();
 }

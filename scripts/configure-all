@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DIRS="clang-avx clang-avx-openmp clang-avx-openmp-mpi clang-avx-mpi clang-avx2 clang-avx2-openmp clang-avx2-openmp-mpi clang-avx2-mpi icpc-avx icpc-avx2 icpc-avx512 g++-sse4 g++-avx clang-sse"
+DIRS="clang-avx clang-avx-openmp clang-avx-openmp-mpi clang-avx-mpi clang-avx2 clang-avx2-openmp clang-avx2-openmp-mpi clang-avx2-mpi icpc-avx icpc-avx2 icpc-avx512 g++-sse4 g++-avx clang-sse icpc-avx-openmp-mpi icpc-avx-openmp"
 
 for D in $DIRS
 do

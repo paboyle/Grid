@@ -11,6 +11,7 @@
 #include <sys/time.h>
 #include <signal.h>
 #include <iostream>
+#include <iterator>
 #include <Grid.h>
 #include <algorithm>
 #include <iterator>
