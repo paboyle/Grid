@@ -65,7 +65,6 @@
 
 namespace Grid {
 
-
   void Grid_init(int *argc,char ***argv);
   void Grid_finalize(void);
   // internal, controled with --handle
