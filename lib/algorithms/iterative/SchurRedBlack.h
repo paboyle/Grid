@@ -1,6 +1,7 @@
 #ifndef GRID_SCHUR_RED_BLACK_H
 #define GRID_SCHUR_RED_BLACK_H
 
+
   /*
    * Red black Schur decomposition
    *
@@ -25,80 +26,86 @@
    *     M psi = eta
    ***********************
    *Odd
-   * i)   (D_oo)^{\dag} D_oo psi_o = (D_oo)^\dag L^{-1}  eta_o
-   *                        eta_o' = D_oo (eta_o - Moe Mee^{-1} eta_e)
+   * i)   (D_oo)^{\dag} D_oo psi_o = (D_oo)^dag L^{-1}  eta_o
+   *                        eta_o' = (D_oo)^dag (eta_o - Moe Mee^{-1} eta_e)
    *Even
    * ii)  Mee psi_e + Meo psi_o = src_e
    *
    *   => sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
    *
    */
-
 namespace Grid {
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   // Take a matrix and form a Red Black solver calling a Herm solver
   // Use of RB info prevents making SchurRedBlackSolve conform to standard interface
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
-  template<class Field> class SchurRedBlackSolve : public OperatorFunction<Field>{
+  template<class Field> class SchurRedBlackSolve {
   private:
-    SparseMatrixBase<Field> & _Matrix;
-    OperatorFunction<Field> & _HermitianRBSolver;
+    HermitianOperatorFunction<Field> & _HermitianRBSolver;
     int CBfactorise;
   public:
 
     /////////////////////////////////////////////////////
     // Wrap the usual normal equations Schur trick
     /////////////////////////////////////////////////////
-  SchurRedBlackSolve(SparseMatrixBase<Field> &Matrix, OperatorFunction<Field> &HermitianRBSolver) 
-    :  _Matrix(Matrix), _HermitianRBSolver(HermitianRBSolver) { 
+  SchurRedBlackSolve(HermitianOperatorFunction<Field> &HermitianRBSolver)  :
+     _HermitianRBSolver(HermitianRBSolver) 
+    { 
       CBfactorise=0;
     };
 
-    void operator() (const Field &in, Field &out){
+    template<class Matrix>
+      void operator() (Matrix & _Matrix,const Field &in, Field &out){
 
       // FIXME CGdiagonalMee not implemented virtual function
-      // FIXME need to make eo grid from full grid.
       // FIXME use CBfactorise to control schur decomp
-      const int Even=0;
-      const int Odd =1;
-
-      // Make a cartesianRedBlack from full Grid
-      GridRedBlackCartesian grid(in._grid);
+      GridBase *grid = _Matrix._cbgrid;
+      GridBase *fgrid= _Matrix._grid;
  
-      Field src_e(&grid);
-      Field src_o(&grid);
-      Field sol_e(&grid);
-      Field sol_o(&grid);
-      Field   tmp(&grid);
-      Field  Mtmp(&grid);
-      
+      Field src_e(grid);
+      Field src_o(grid);
+      Field sol_e(grid);
+      Field sol_o(grid);
+      Field   tmp(grid);
+      Field  Mtmp(grid);
+      Field resid(fgrid);
+
       pickCheckerboard(Even,src_e,in);
       pickCheckerboard(Odd ,src_o,in);
 
       /////////////////////////////////////////////////////
       // src_o = Mdag * (source_o - Moe MeeInv source_e)
       /////////////////////////////////////////////////////
-      _Matrix.MooeeInv(src_e,tmp);     //    MooeeInv(source[Even],tmp,DaggerNo,Even);
-      _Matrix.Meooe   (tmp,Mtmp);      //    Meo     (tmp,src,Odd,DaggerNo);
-      tmp=src_o-Mtmp;                  //    axpy    (tmp,src,source[Odd],-1.0);
-      _Matrix.MpcDag(tmp,src_o);       //    Mprec(tmp,src,Mtmp,DaggerYes);  
+      _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.checkerboard ==Even);
+      _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.checkerboard ==Odd);     
+      tmp=src_o-Mtmp;                  assert(  tmp.checkerboard ==Odd);     
+      _Matrix.MpcDag(tmp,src_o);       assert(src_o.checkerboard ==Odd);       
 
       //////////////////////////////////////////////////////////////
       // Call the red-black solver
       //////////////////////////////////////////////////////////////
-      _HermitianRBSolver(src_o,sol_o); //  CGNE_prec_MdagM(solution[Odd],src);
+      HermitianCheckerBoardedOperator<Matrix,Field> _HermOpEO(_Matrix);
+      std::cout << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
+      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
 
       ///////////////////////////////////////////////////
       // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
       ///////////////////////////////////////////////////
-      _Matrix.Meooe(sol_o,tmp);        // Meo(solution[Odd],tmp,Even,DaggerNo);
-      src_e = src_e-tmp;               // axpy(src,tmp,source[Even],-1.0);
-      _Matrix.MooeeInv(src_e,sol_e);   // MooeeInv(src,solution[Even],DaggerNo,Even);
+      _Matrix.Meooe(sol_o,tmp);        assert(  tmp.checkerboard   ==Even);
+      src_e = src_e-tmp;               assert(  src_e.checkerboard ==Even);
+      _Matrix.MooeeInv(src_e,sol_e);   assert(  sol_e.checkerboard ==Even);
      
-      setCheckerboard(out,sol_e);
-      setCheckerboard(out,sol_o);
- 
+      setCheckerboard(out,sol_e); assert(  sol_e.checkerboard ==Even);
+      setCheckerboard(out,sol_o); assert(  sol_o.checkerboard ==Odd );
+
+      // Verify the unprec residual
+      _Matrix.M(out,resid); 
+      resid = resid-in;
+      RealD ns = norm2(in);
+      RealD nr = norm2(resid);
+
+      std::cout << "SchurRedBlack solver true unprec resid "<< sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
     }     
   };
 

@@ -13,28 +13,6 @@
 
 typedef uint32_t Integer;
 
-#ifdef SSE4
-#include <pmmintrin.h>
-#endif
-#if defined(AVX1) || defined (AVX2)
-#include <immintrin.h>
-    
-// _mm256_set_m128i(hi,lo); // not defined in all versions of immintrin.h
-#ifndef _mm256_set_m128i
-#define _mm256_set_m128i(hi,lo) _mm256_insertf128_si256(_mm256_castsi128_si256(lo),(hi),1)
-#endif
-
-#endif
-
-#ifdef AVX512
-#include <immintrin.h>
-#ifndef KNC_ONLY_STORES
-#define  _mm512_storenrngo_ps _mm512_store_ps  // not present in AVX512
-#define  _mm512_storenrngo_pd _mm512_store_pd  // not present in AVX512
-#endif
-
-#endif
-
 namespace Grid {
 
   typedef  float  RealF;
@@ -117,7 +95,7 @@ namespace Grid {
   template<>            inline void zeroit(RealF &arg){ arg=0; };
   template<>            inline void zeroit(RealD &arg){ arg=0; };
 
-
+  // Eventually delete this part
 #if defined (SSE4)
     typedef __m128 fvec;
     typedef __m128d dvec;
@@ -146,6 +124,7 @@ namespace Grid {
     typedef vector4double dvec;
     typedef vector4double zvec;
 #endif
+  
 #if defined (AVX1) || defined (AVX2) || defined (AVX512)
     inline void v_prefetch0(int size, const char *ptr){
           for(int i=0;i<size;i+=64){ //  Define L1 linesize above// What about SSE?

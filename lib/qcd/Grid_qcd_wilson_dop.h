@@ -11,14 +11,20 @@ namespace Grid {
       //NB r=1;
     public:
       double                        mass;
-      GridBase                     *grid;
+      //      GridBase                     *    grid; // Inherited
+      //      GridBase                     *  cbgrid;
 
-      // Copy of the gauge field 
-      LatticeDoubledGaugeField             Umu;
+      //Defines the stencils for even and odd
+      CartesianStencil Stencil; 
+      CartesianStencil StencilEven; 
+      CartesianStencil StencilOdd; 
 
-      //Defines the stencil
-      CartesianStencil              Stencil; 
-      static const int npoint=9;
+      // Copy of the gauge field , with even and odd subsets
+      LatticeDoubledGaugeField Umu;
+      LatticeDoubledGaugeField UmuEven;
+      LatticeDoubledGaugeField UmuOdd;
+
+      static const int npoint=8;
       static const std::vector<int> directions   ;
       static const std::vector<int> displacements;
       static const int Xp,Xm,Yp,Ym,Zp,Zm,Tp,Tm;
@@ -27,7 +33,7 @@ namespace Grid {
       std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  comm_buf;
 
       // Constructor
-      WilsonMatrix(LatticeGaugeField &Umu,double mass);
+      WilsonMatrix(LatticeGaugeField &_Umu,GridCartesian &Fgrid,GridRedBlackCartesian &Hgrid,double _mass);
 
       // DoubleStore
       void DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGaugeField &Umu);
@@ -45,9 +51,19 @@ namespace Grid {
       virtual void   MooeeInvDag (const LatticeFermion &in, LatticeFermion &out);
 
       // non-hermitian hopping term; half cb or both
-      void Dhop(const LatticeFermion &in, LatticeFermion &out,int dag);
-      void DhopSite   (int ss,const LatticeFermion &in, LatticeFermion &out);
-      void DhopSiteDag(int ss,const LatticeFermion &in, LatticeFermion &out);
+      void Dhop  (const LatticeFermion &in, LatticeFermion &out,int dag);
+      void DhopOE(const LatticeFermion &in, LatticeFermion &out,int dag);
+      void DhopEO(const LatticeFermion &in, LatticeFermion &out,int dag);
+      void DhopInternal(CartesianStencil & st,LatticeDoubledGaugeField &U,
+			const LatticeFermion &in, LatticeFermion &out,int dag);
+      // These ones will need to be package intelligently. WilsonType base class
+      // for use by DWF etc..
+      void DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
+		    std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
+		    int ss,const LatticeFermion &in, LatticeFermion &out);
+      void DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
+		       std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
+		       int ss,const LatticeFermion &in, LatticeFermion &out);
 
       typedef iScalar<iMatrix<vComplex, Nc> > matrix;
 

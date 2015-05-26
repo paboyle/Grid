@@ -16,19 +16,18 @@ strong_inline void mult(iScalar<rtype> * __restrict__ ret,const iScalar<mtype> *
 template<class rrtype,class ltype,class rtype,int N>
 strong_inline void mult(iMatrix<rrtype,N> * __restrict__ ret,const iMatrix<ltype,N> * __restrict__ lhs,const iMatrix<rtype,N> * __restrict__ rhs){
   for(int c1=0;c1<N;c1++){
-    int c3=0;
     for(int c2=0;c2<N;c2++){
-      mult(&ret->_internal[c1][c2],&lhs->_internal[c1][c3],&rhs->_internal[c3][c2]);
+      mult(&ret->_internal[c1][c2],&lhs->_internal[c1][0],&rhs->_internal[0][c2]);
     }
   }
-  for(int c3=1;c3<N;c3++){
-    for(int c1=0;c1<N;c1++){
+  for(int c1=0;c1<N;c1++){
+    for(int c3=1;c3<N;c3++){
       for(int c2=0;c2<N;c2++){
 	mac(&ret->_internal[c1][c2],&lhs->_internal[c1][c3],&rhs->_internal[c3][c2]);
       }
     }
   }
-    return;
+  return;
 }
 
 template<class rrtype,class ltype,class rtype,int N>

@@ -24,7 +24,8 @@ int main (int argc, char ** argv)
   std::vector<int> latt_size   = GridDefaultLatt();
   std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplexF::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
-  GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
+  GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
+  GridRedBlackCartesian     RBGrid(latt_size,simd_layout,mpi_layout);
 
   int threads = GridThread::GetThreads();
   std::cout << "Grid is setup to use "<<threads<<" threads"<<std::endl;
@@ -36,11 +37,11 @@ int main (int argc, char ** argv)
   //  pRNG.SeedFixedIntegers(seeds);
   pRNG.SeedRandomDevice();
 
-  LatticeFermion src(&Grid); random(pRNG,src);
+  LatticeFermion src   (&Grid); random(pRNG,src);
   LatticeFermion result(&Grid); result=zero;
   LatticeFermion    ref(&Grid);    ref=zero;
-  LatticeFermion    err(&Grid);    
   LatticeFermion    tmp(&Grid);    tmp=zero;
+  LatticeFermion    err(&Grid);    tmp=zero;
   LatticeGaugeField Umu(&Grid); random(pRNG,Umu);
   std::vector<LatticeColourMatrix> U(4,&Grid);
 
@@ -51,8 +52,11 @@ int main (int argc, char ** argv)
 
   // Only one non-zero (y)
   Umu=zero;
+  Complex cone(1.0,0.0);
   for(int nn=0;nn<Nd;nn++){
     random(pRNG,U[nn]);
+    if (nn!=0) U[nn]=zero;
+    else U[nn] = cone;
     pokeIndex<LorentzIndex>(Umu,U[nn],nn);
   }
 
@@ -78,7 +82,7 @@ int main (int argc, char ** argv)
   }
 
   RealD mass=0.1;
-  WilsonMatrix Dw(Umu,mass);
+  WilsonMatrix Dw(Umu,Grid,RBGrid,mass);
   
   std::cout << "Calling Dw"<<std::endl;
   int ncall=1000;
@@ -93,7 +97,7 @@ int main (int argc, char ** argv)
   std::cout << "norm result "<< norm2(result)<<std::endl;
   std::cout << "norm ref    "<< norm2(ref)<<std::endl;
   std::cout << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
-  err = ref -result;
+  err = ref-result; 
   std::cout << "norm diff   "<< norm2(err)<<std::endl;
 
 
@@ -129,9 +133,8 @@ int main (int argc, char ** argv)
   std::cout << "Called DwDag"<<std::endl;
   std::cout << "norm result "<< norm2(result)<<std::endl;
   std::cout << "norm ref    "<< norm2(ref)<<std::endl;
-  err = ref -result;
+  err = ref-result; 
   std::cout << "norm diff   "<< norm2(err)<<std::endl;
-
 
   Grid_finalize();
 }

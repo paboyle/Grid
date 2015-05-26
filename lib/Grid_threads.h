@@ -5,6 +5,8 @@
 #define GRID_OMP
 #endif
 
+#define UNROLL  _Pragma("unroll")
+
 #ifdef GRID_OMP
 #include <omp.h>
 #define PARALLEL_FOR_LOOP _Pragma("omp parallel for")

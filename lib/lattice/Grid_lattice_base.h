@@ -1,6 +1,8 @@
 #ifndef GRID_LATTICE_BASE_H
 #define GRID_LATTICE_BASE_H
 
+#define STREAMING_STORES
+
 namespace Grid {
 
 // TODO: 
@@ -64,60 +66,136 @@ public:
   ////////////////////////////////////////////////////////////////////////////////
   template <typename Op, typename T1>                         strong_inline Lattice<vobj> & operator=(const LatticeUnaryExpression<Op,T1> &expr)
   {
+    GridBase *egrid(nullptr);
+    GridFromExpression(egrid,expr);
+    assert(egrid!=nullptr);
+    conformable(_grid,egrid);
+
+    int cb=-1;
+    CBFromExpression(cb,expr);
+    assert( (cb==Odd) || (cb==Even));
+    checkerboard=cb;
+
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
-      vobj tmp= eval(ss,expr);
+#ifdef STREAMING_STORES
+      vobj tmp = eval(ss,expr);
       vstream(_odata[ss] ,tmp);
+#else
+      _odata[ss]=eval(ss,expr);
+#endif
     }
     return *this;
   }
   template <typename Op, typename T1,typename T2>             strong_inline Lattice<vobj> & operator=(const LatticeBinaryExpression<Op,T1,T2> &expr)
   {
+    GridBase *egrid(nullptr);
+    GridFromExpression(egrid,expr);
+    assert(egrid!=nullptr);
+    conformable(_grid,egrid);
+
+    int cb=-1;
+    CBFromExpression(cb,expr);
+    assert( (cb==Odd) || (cb==Even));
+    checkerboard=cb;
+
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
-      vobj tmp= eval(ss,expr);
+#ifdef STREAMING_STORES
+      vobj tmp = eval(ss,expr);
       vstream(_odata[ss] ,tmp);
+#else
+      _odata[ss]=eval(ss,expr);
+#endif
     }
     return *this;
   }
   template <typename Op, typename T1,typename T2,typename T3> strong_inline Lattice<vobj> & operator=(const LatticeTrinaryExpression<Op,T1,T2,T3> &expr)
   {
+    GridBase *egrid(nullptr);
+    GridFromExpression(egrid,expr);
+    assert(egrid!=nullptr);
+    conformable(_grid,egrid);
+
+    int cb=-1;
+    CBFromExpression(cb,expr);
+    assert( (cb==Odd) || (cb==Even));
+    checkerboard=cb;
+
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
-      vobj tmp= eval(ss,expr);
+#ifdef STREAMING_STORES
+      vobj tmp = eval(ss,expr);
       vstream(_odata[ss] ,tmp);
+#else
+      _odata[ss] = eval(ss,expr);
+#endif
     }
     return *this;
   }
   //GridFromExpression is tricky to do
   template<class Op,class T1>
     Lattice(const LatticeUnaryExpression<Op,T1> & expr):    _grid(nullptr){
+
     GridFromExpression(_grid,expr);
     assert(_grid!=nullptr);
+
+    int cb=-1;
+    CBFromExpression(cb,expr);
+    assert( (cb==Odd) || (cb==Even));
+    checkerboard=cb;
+
     _odata.resize(_grid->oSites());
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
-      _odata[ss] = eval(ss,expr);
+#ifdef STREAMING_STORES
+      vobj tmp = eval(ss,expr);
+      vstream(_odata[ss] ,tmp);
+#else
+      _odata[ss]=_eval(ss,expr);
+#endif
     }
   };
   template<class Op,class T1, class T2>
   Lattice(const LatticeBinaryExpression<Op,T1,T2> & expr):    _grid(nullptr){
     GridFromExpression(_grid,expr);
     assert(_grid!=nullptr);
+
+    int cb=-1;
+    CBFromExpression(cb,expr);
+    assert( (cb==Odd) || (cb==Even));
+    checkerboard=cb;
+
     _odata.resize(_grid->oSites());
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
-      _odata[ss] = eval(ss,expr);
+#ifdef STREAMING_STORES
+      vobj tmp = eval(tmp,ss,expr);
+      vstream(_odata[ss] ,tmp);
+#else
+      _odata[ss]=eval(ss,expr);
+#endif
     }
   };
   template<class Op,class T1, class T2, class T3>
   Lattice(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr):    _grid(nullptr){
     GridFromExpression(_grid,expr);
     assert(_grid!=nullptr);
+
+    int cb=-1;
+    CBFromExpression(cb,expr);
+    assert( (cb==Odd) || (cb==Even));
+    checkerboard=cb;
+
     _odata.resize(_grid->oSites());
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
-      _odata[ss] = eval(ss,expr);
+#ifdef STREAMING_STORES
+      vobj tmp = eval(ss,expr);
+      vstream(_odata[ss] ,tmp);
+#else
+      _odata[ss]=eval(ss,expr);
+#endif
     }
   };
 
@@ -140,6 +218,7 @@ PARALLEL_FOR_LOOP
         return *this;
     }
     template<class robj> strong_inline Lattice<vobj> & operator = (const Lattice<robj> & r){
+      this->checkerboard = r.checkerboard;
       conformable(*this,r);
       std::cout<<"Lattice operator ="<<std::endl;
 PARALLEL_FOR_LOOP

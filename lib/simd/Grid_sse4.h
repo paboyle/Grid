@@ -283,6 +283,7 @@ namespace Optimization {
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types 
 namespace Grid {
+
   typedef __m128 SIMD_Ftype;  // Single precision type
   typedef __m128d SIMD_Dtype; // Double precision type
   typedef __m128i SIMD_Itype; // Integer type

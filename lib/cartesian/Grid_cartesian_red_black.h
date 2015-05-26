@@ -4,6 +4,13 @@
 
 namespace Grid {
 
+    static const int CbRed  =0;
+    static const int CbBlack=1;
+    static const int Even   =CbRed;
+    static const int Odd    =CbBlack;
+    static const int DaggerNo=0;
+    static const int DaggerYes=1;
+
 // Specialise this for red black grids storing half the data like a chess board.
 class GridRedBlackCartesian : public GridBase
 {
@@ -44,6 +51,9 @@ public:
             return source_cb;
         }
     };
+
+    GridRedBlackCartesian(GridBase *base) : GridRedBlackCartesian(base->_fdimensions,base->_simd_layout,base->_processors)  {};
+
     GridRedBlackCartesian(std::vector<int> &dimensions,
 			  std::vector<int> &simd_layout,
 			  std::vector<int> &processor_grid ) : GridBase(processor_grid)

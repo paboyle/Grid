@@ -25,6 +25,12 @@ g++-avx)
 icpc-avx)
   CXX=icpc ../../configure --enable-simd=AVX CXXFLAGS="-mavx -O3 -std=c++11" LIBS="-lgmp -lmpfr" --enable-comms=none
   ;;
+icpc-avx-openmp-mpi)
+CXX=icpc ../../configure --enable-simd=AVX CXXFLAGS="-mavx -fopenmp -O3 -I/opt/local/include/openmpi-mp/ -std=c++11" LDFLAGS=-L/opt/local/lib/openmpi-mp/ LIBS="-lmpi -lmpi_cxx -fopenmp -lgmp -lmpfr" --enable-comms=mpi
+;;
+icpc-avx-openmp)
+CXX=icpc ../../configure --enable-simd=AVX CXXFLAGS="-mavx -fopenmp -O3 -std=c++11" LIBS="-fopenmp -lgmp -lmpfr" --enable-comms=mpi
+;;
 icpc-avx2)
   CXX=icpc ../../configure --enable-simd=AVX2 CXXFLAGS="-mavx2 -mfma -O3 -std=c++11" LIBS="-lgmp -lmpfr" --enable-comms=none
   ;;
