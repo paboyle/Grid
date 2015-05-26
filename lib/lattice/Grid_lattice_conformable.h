@@ -3,15 +3,10 @@
 
 namespace Grid {
 
-    template<class obj1,class obj2>
-    void conformable(const Lattice<obj1> &lhs,const Lattice<obj2> &rhs)
+    template<class obj1,class obj2> void conformable(const Lattice<obj1> &lhs,const Lattice<obj2> &rhs)
     {
         assert(lhs._grid == rhs._grid);
         assert(lhs.checkerboard == rhs.checkerboard);
-    }
-    void inline conformable(const GridBase *lhs,GridBase *rhs)
-    {
-        assert(lhs == rhs);
     }
 
 }
