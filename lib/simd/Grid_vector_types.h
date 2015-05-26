@@ -2,7 +2,7 @@
 /*! @file Grid_vector_types.h
   @brief Defines templated class Grid_simd to deal with inner vector types
 */
-// Time-stamp: <2015-05-26 12:05:39 neo>
+// Time-stamp: <2015-05-26 13:22:36 neo>
 //---------------------------------------------------------------------------
 #ifndef GRID_VECTOR_TYPES
 #define GRID_VECTOR_TYPES
@@ -16,7 +16,9 @@
 #if defined AVX512
 #include "Grid_knc.h"
 #endif
-
+#if defined QPX
+#include "Grid_qpx.h"
+#endif
 
 namespace Grid {
 
@@ -33,8 +35,6 @@ namespace Grid {
   template <typename Condition, typename ReturnType> using EnableIf   =    Invoke<std::enable_if<Condition::value, ReturnType>>;
   template <typename Condition, typename ReturnType> using NotEnableIf=    Invoke<std::enable_if<!Condition::value, ReturnType>>;
   
-
-
   ////////////////////////////////////////////////////////
   // Check for complexity with type traits
   template <typename T>     struct is_complex : std::false_type {};
@@ -56,6 +56,58 @@ namespace Grid {
   } 
 
   ///////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////
+// Permute
+// Permute 0 every ABCDEFGH -> BA DC FE HG
+// Permute 1 every ABCDEFGH -> CD AB GH EF
+// Permute 2 every ABCDEFGH -> EFGH ABCD
+// Permute 3 possible on longer iVector lengths (512bit = 8 double = 16 single)
+// Permute 4 possible on half precision @512bit vectors.
+//////////////////////////////////////////////////////////
+template<class vsimd>
+inline void Gpermute(vsimd &y,const vsimd &b,int perm){
+	union { 
+	  SIMD_Ftype f;
+	  decltype(vsimd::v) v;
+	} conv;
+	conv.v = b.v;
+      switch (perm){
+#if defined(AVX1)||defined(AVX2)
+      // 8x32 bits=>3 permutes
+      case 2: 
+	conv.f = _mm256_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(2,3,0,1)); 
+	break;
+      case 1: conv.f = _mm256_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(1,0,3,2)); break;
+      case 0: conv.f = _mm256_permute2f128_ps(conv.f,conv.f,0x01); break;
+#endif
+#ifdef SSE4
+      case 1: conv.f = _mm_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(2,3,0,1)); break;
+      case 0: conv.f = _mm_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(1,0,3,2));break;
+#endif
+#ifdef AVX512
+	// 16 floats=> permutes
+        // Permute 0 every abcd efgh ijkl mnop -> badc fehg jilk nmpo 
+        // Permute 1 every abcd efgh ijkl mnop -> cdab ghef jkij opmn 
+        // Permute 2 every abcd efgh ijkl mnop -> efgh abcd mnop ijkl
+        // Permute 3 every abcd efgh ijkl mnop -> ijkl mnop abcd efgh
+      case 3: conv.f = _mm512_swizzle_ps(conv.f,_MM_SWIZ_REG_CDAB); break;
+      case 2: conv.f = _mm512_swizzle_ps(conv.f,_MM_SWIZ_REG_BADC); break;
+      case 1: conv.f = _mm512_permute4f128_ps(conv.f,(_MM_PERM_ENUM)_MM_SHUFFLE(2,3,0,1)); break;
+      case 0: conv.f = _mm512_permute4f128_ps(conv.f,(_MM_PERM_ENUM)_MM_SHUFFLE(1,0,3,2)); break;
+#endif
+#ifdef QPX
+#error not implemented
+#endif
+      default: assert(0); break;
+      }
+      y.v=conv.v;
+
+ };
+
+///////////////////////////////////////
+
+
 
   /*
     @brief Grid_simd class for the SIMD vector type operations
@@ -379,6 +431,12 @@ namespace Grid {
   typedef Grid_simd< std::complex< float > , SIMD_Ftype > vComplexF;
   typedef Grid_simd< std::complex< double >, SIMD_Dtype > vComplexD;
   typedef Grid_simd< Integer               , SIMD_Itype > vInteger;
+
+
+
+
+
+
 
 }
 
