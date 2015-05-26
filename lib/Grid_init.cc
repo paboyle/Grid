@@ -142,6 +142,9 @@ void Grid_init(int *argc,char ***argv)
   if( !GridCmdOptionExists(*argv,*argv+*argc,"--debug-stdout") ){
     Grid_quiesce_nodes();
   }
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-opt") ){
+    WilsonMatrix::HandOptDslash=1;
+  }
   GridParseLayout(*argv,*argc,
 		  Grid_default_latt,
 		  Grid_default_mpi);

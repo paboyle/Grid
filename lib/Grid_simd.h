@@ -163,6 +163,74 @@ namespace Grid {
 // Permute 4 possible on half precision @512bit vectors.
 //////////////////////////////////////////////////////////
 template<class vsimd>
+inline void Gpermute0(vsimd &y,const vsimd &b) {
+  union { 
+    fvec f;
+    decltype(vsimd::v) v;
+  } conv;
+  conv.v = b.v;
+#ifdef SSE4
+  conv.f = _mm_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(1,0,3,2));
+#endif
+#if defined(AVX1)||defined(AVX2)
+  conv.f = _mm256_permute2f128_ps(conv.f,conv.f,0x01); 
+#endif  
+#ifdef AVX512
+ conv.f = _mm512_permute4f128_ps(conv.f,(_MM_PERM_ENUM)_MM_SHUFFLE(1,0,3,2)); 
+#endif
+ y.v=conv.v;
+};
+template<class vsimd>
+inline void Gpermute1(vsimd &y,const vsimd &b) {
+  union { 
+    fvec f;
+    decltype(vsimd::v) v;
+  } conv;
+  conv.v = b.v;
+#ifdef SSE4
+  conv.f = _mm_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(2,3,0,1)); 
+#endif
+#if defined(AVX1)||defined(AVX2)
+  conv.f = _mm256_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(1,0,3,2)); 
+#endif  
+#ifdef AVX512
+ conv.f = _mm512_permute4f128_ps(conv.f,(_MM_PERM_ENUM)_MM_SHUFFLE(2,3,0,1)); 
+#endif  
+  y.v=conv.v;
+};
+template<class vsimd>
+inline void Gpermute2(vsimd &y,const vsimd &b) {
+  union { 
+    fvec f;
+    decltype(vsimd::v) v;
+  } conv;
+  conv.v = b.v;
+#ifdef SSE4
+#endif
+#if defined(AVX1)||defined(AVX2)
+  conv.f = _mm256_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(2,3,0,1)); 
+#endif  
+#ifdef AVX512
+  conv.f = _mm512_swizzle_ps(conv.f,_MM_SWIZ_REG_BADC); 
+#endif  
+  y.v=conv.v;
+
+};
+template<class vsimd>
+inline void Gpermute3(vsimd &y,const vsimd &b) {
+  union { 
+    fvec f;
+    decltype(vsimd::v) v;
+  } conv;
+  conv.v = b.v;
+#ifdef AVX512
+  conv.f = _mm512_swizzle_ps(conv.f,_MM_SWIZ_REG_CDAB); 
+#endif  
+  y.v=conv.v;
+
+};
+
+template<class vsimd>
 inline void Gpermute(vsimd &y,const vsimd &b,int perm){
 	union { 
 	  fvec f;
@@ -170,36 +238,12 @@ inline void Gpermute(vsimd &y,const vsimd &b,int perm){
 	} conv;
 	conv.v = b.v;
       switch (perm){
-#if defined(AVX1)||defined(AVX2)
-      // 8x32 bits=>3 permutes
-      case 2: 
-	conv.f = _mm256_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(2,3,0,1)); 
-	break;
-      case 1: conv.f = _mm256_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(1,0,3,2)); break;
-      case 0: conv.f = _mm256_permute2f128_ps(conv.f,conv.f,0x01); break;
-#endif
-#ifdef SSE4
-      case 1: conv.f = _mm_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(2,3,0,1)); break;
-      case 0: conv.f = _mm_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(1,0,3,2));break;
-#endif
-#ifdef AVX512
-	// 16 floats=> permutes
-        // Permute 0 every abcd efgh ijkl mnop -> badc fehg jilk nmpo 
-        // Permute 1 every abcd efgh ijkl mnop -> cdab ghef jkij opmn 
-        // Permute 2 every abcd efgh ijkl mnop -> efgh abcd mnop ijkl
-        // Permute 3 every abcd efgh ijkl mnop -> ijkl mnop abcd efgh
-      case 3: conv.f = _mm512_swizzle_ps(conv.f,_MM_SWIZ_REG_CDAB); break;
-      case 2: conv.f = _mm512_swizzle_ps(conv.f,_MM_SWIZ_REG_BADC); break;
-      case 1: conv.f = _mm512_permute4f128_ps(conv.f,(_MM_PERM_ENUM)_MM_SHUFFLE(2,3,0,1)); break;
-      case 0: conv.f = _mm512_permute4f128_ps(conv.f,(_MM_PERM_ENUM)_MM_SHUFFLE(1,0,3,2)); break;
-#endif
-#ifdef QPX
-#error not implemented
-#endif
+      case 3: Gpermute3(y,b); break;
+      case 2: Gpermute2(y,b); break;
+      case 1: Gpermute1(y,b); break;
+      case 0: Gpermute0(y,b); break;
       default: assert(0); break;
       }
-      y.v=conv.v;
-
     };
 };
 
