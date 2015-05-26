@@ -105,7 +105,7 @@ int main (int argc, char ** argv)
     fflush(stdout);
     
 
-    /* 
+     
     cVec = cMat * cVec;  // LatticeColourVector     = LatticeColourMatrix     * LatticeColourVector
     sVec = sMat * sVec;  // LatticeSpinVector       = LatticeSpinMatrix       * LatticeSpinVector
     scVec= scMat * scVec;// LatticeSpinColourVector = LatticeSpinColourMatrix * LatticeSpinColourVector
@@ -146,7 +146,7 @@ int main (int argc, char ** argv)
     scalar=trace(scalar);
     scalar=localInnerProduct(cVec,cVec);
     scalar=localNorm2(cVec);
-    */
+    
 //     -=,+=,*=,()
 //     add,+,sub,-,mult,mac,*
 //     adj,conjugate
@@ -162,50 +162,7 @@ int main (int argc, char ** argv)
     scMat = sMat*scMat;  // LatticeSpinColourMatrix = LatticeSpinMatrix       * LatticeSpinColourMatrix
 
     
-    /*
-#ifdef SSE4
-    ///////// Tests the new class Grid_simd 
-    std::complex<double> ctest(3.0,2.0);
-    std::complex<float> ctestf(3.0,2.0);
-    MyComplexF TestMe1(1.0); // fills only real part
-    MyComplexD TestMe2(ctest);
-    MyComplexD TestMe3(ctest);// compiler generate conversion of basic types
-    //MyRealF TestMe5(ctest);// Must generate compiler error
-    MyRealD TestRe1(2.0); 
-    MyRealF TestRe2(3.0); 
- 
-    vone(TestRe2);
-
-    MyComplexF TestMe6(ctestf);
-    MyComplexF TestMe7(ctestf);  
-    
-    MyComplexD TheSum= TestMe2*TestMe3;
-    MyComplexF TheSumF= TestMe6*TestMe7;
-
-    
-
-    double dsum[2];
-    _mm_store_pd(dsum, TheSum.v);
-    for (int i =0; i< 2; i++)
-      printf("%f\n", dsum[i]);
-    MyComplexD TheSumI = timesMinusI(TheSum);
-    MyComplexF TheSumIF = timesMinusI(TheSumF);
-
-    float fsum[4];
-    _mm_store_ps(fsum, TheSumF.v);
-    for (int i =0; i< 4; i++)
-      printf("%f\n", fsum[i]);
-
-    vstore(TheSumI, &ctest);
-    std::complex<float> sum = Reduce(TheSumF);
-    std::cout << ctest<< std::endl;
-    std::cout << sum<< std::endl;
-
-#endif
-    */
     ///////////////////////
-    /*
-    printf("DEBUG: calling 3.5 \n");
     // Non-lattice (const objects) * Lattice
     ColourMatrix cm;
     SpinColourMatrix scm;
@@ -225,7 +182,6 @@ int main (int argc, char ** argv)
     vscm = vscm*cplx;
     scMat = scMat*cplx;
 
-    printf("DEBUG: calling 3.7 \n");
     scm = cplx*scm;
     vscm = cplx*vscm;
     scMat = cplx*scMat;
@@ -233,14 +189,12 @@ int main (int argc, char ** argv)
     vscm = myint*vscm;
     scMat = scMat*myint;
     
-    printf("DEBUG: calling 3.9 \n");
     scm = scm*mydouble;
     vscm = vscm*mydouble;
     scMat = scMat*mydouble;
     scMat = mydouble*scMat;
     cMat = mydouble*cMat;
   
-    printf("DEBUG: calling 4 \n");
     sMat = adj(sMat);       // LatticeSpinMatrix adjoint
     sMat = iGammaFive*sMat; // SpinMatrix * LatticeSpinMatrix
     sMat = GammaFive*sMat;  // SpinMatrix * LatticeSpinMatrix
@@ -292,8 +246,6 @@ int main (int argc, char ** argv)
 
       pokeIndex<1> (c_m,c,0,0);
     }
-
-    */
 
     FooBar = Bar;
  
@@ -392,7 +344,6 @@ int main (int argc, char ** argv)
     t0=usecond();
     for(int i=0;i<ncall;i++){
       Fine.Barrier();
-      //Cshift(Bar,1,-1);
       mult(FooBar,Foo,Cshift(Bar,1,-1));
       //mult(FooBar,Foo,Bar);
       //FooBar = Foo * Bar; // this is bad

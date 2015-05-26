@@ -16,6 +16,9 @@
 /* GRID_COMMS_NONE */
 #define GRID_COMMS_NONE 1
 
+/* define if the compiler supports basic C++11 syntax */
+/* #undef HAVE_CXX11 */
+
 /* Define to 1 if you have the declaration of `be64toh', and to 0 if you
    don't. */
 #define HAVE_DECL_BE64TOH 1
