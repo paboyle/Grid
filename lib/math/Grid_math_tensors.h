@@ -38,6 +38,10 @@ public:
   iScalar(scalar_type s) : _internal(s) {};// recurse down and hit the constructor for vector_type
   iScalar(const Zero &z){ *this = zero; };
 
+
+
+
+
     iScalar<vtype> & operator= (const Zero &hero){
       zeroit(*this);
       return *this;
@@ -206,6 +210,16 @@ public:
   iMatrix(const Zero &z){ *this = zero; };
   iMatrix() =default;
 
+  // No copy constructor...
+  
+  iMatrix& operator=(const iMatrix& rhs){
+    for(int i=0;i<N;i++)
+      for(int j=0;j<N;j++)
+	vstream(_internal[i][j],rhs._internal[i][j]);
+    return *this;
+  }; 
+  
+ 
 
   iMatrix<vtype,N> & operator= (const Zero &hero){
     zeroit(*this);
