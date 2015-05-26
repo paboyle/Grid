@@ -4,7 +4,7 @@
 
   Using intrinsics
 */
-// Time-stamp: <2015-05-20 16:45:39 neo>
+// Time-stamp: <2015-05-21 18:06:30 neo>
 //----------------------------------------------------------------------
 
 #include <pmmintrin.h>
@@ -53,12 +53,12 @@ namespace Optimization {
 
   struct Vstream{
     //Float
-    inline void operator()(__m128 a, __m128 b){
-      _mm_stream_ps((float *)&a,b);
+    inline void operator()(float * a, __m128 b){
+      _mm_stream_ps(a,b);
     }
     //Double
-    inline void operator()(__m128d a, __m128d b){
-      _mm_stream_pd((double *)&a,b);
+    inline void operator()(double * a, __m128d b){
+      _mm_stream_pd(a,b);
     }
 
 

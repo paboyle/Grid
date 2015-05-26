@@ -104,6 +104,9 @@ int main (int argc, char ** argv)
     random(FineRNG,scVec);
 
     fflush(stdout);
+    
+
+     
     cVec = cMat * cVec;  // LatticeColourVector     = LatticeColourMatrix     * LatticeColourVector
     sVec = sMat * sVec;  // LatticeSpinVector       = LatticeSpinMatrix       * LatticeSpinVector
     scVec= scMat * scVec;// LatticeSpinColourVector = LatticeSpinColourMatrix * LatticeSpinColourVector
@@ -113,12 +116,14 @@ int main (int argc, char ** argv)
     cMat = outerProduct(cVec,cVec);
     scalar = localInnerProduct(cVec,cVec);
 
+ 
     scalar += scalar;
     scalar -= scalar;
     scalar *= scalar;
     add(scalar,scalar,scalar);
     sub(scalar,scalar,scalar);
     mult(scalar,scalar,scalar);
+
     mac(scalar,scalar,scalar);
     scalar = scalar+scalar;
     scalar = scalar-scalar;
@@ -142,7 +147,7 @@ int main (int argc, char ** argv)
     scalar=trace(scalar);
     scalar=localInnerProduct(cVec,cVec);
     scalar=localNorm2(cVec);
-
+    
 //     -=,+=,*=,()
 //     add,+,sub,-,mult,mac,*
 //     adj,conjugate
@@ -154,51 +159,11 @@ int main (int argc, char ** argv)
 //     localNorm2
 //     localInnerProduct
     
+  
     scMat = sMat*scMat;  // LatticeSpinColourMatrix = LatticeSpinMatrix       * LatticeSpinColourMatrix
 
-
-
-#ifdef SSE4
-    ///////// Tests the new class Grid_simd 
-    std::complex<double> ctest(3.0,2.0);
-    std::complex<float> ctestf(3.0,2.0);
-    MyComplexF TestMe1(1.0); // fills only real part
-    MyComplexD TestMe2(ctest);
-    MyComplexD TestMe3(ctest);// compiler generate conversion of basic types
-    //MyRealF TestMe5(ctest);// Must generate compiler error
-    MyRealD TestRe1(2.0); 
-    MyRealF TestRe2(3.0); 
- 
-    vone(TestRe2);
-
-    MyComplexF TestMe6(ctestf);
-    MyComplexF TestMe7(ctestf);  
     
-    MyComplexD TheSum= TestMe2*TestMe3;
-    MyComplexF TheSumF= TestMe6*TestMe7;
-
-    
-
-    double dsum[2];
-    _mm_store_pd(dsum, TheSum.v);
-    for (int i =0; i< 2; i++)
-      printf("%f\n", dsum[i]);
-    MyComplexD TheSumI = timesMinusI(TheSum);
-    MyComplexF TheSumIF = timesMinusI(TheSumF);
-
-    float fsum[4];
-    _mm_store_ps(fsum, TheSumF.v);
-    for (int i =0; i< 4; i++)
-      printf("%f\n", fsum[i]);
-
-    vstore(TheSumI, &ctest);
-    std::complex<float> sum = Reduce(TheSumF);
-    std::cout << ctest<< std::endl;
-    std::cout << sum<< std::endl;
-
-#endif
     ///////////////////////
-
     // Non-lattice (const objects) * Lattice
     ColourMatrix cm;
     SpinColourMatrix scm;
@@ -230,7 +195,7 @@ int main (int argc, char ** argv)
     scMat = scMat*mydouble;
     scMat = mydouble*scMat;
     cMat = mydouble*cMat;
-    
+  
     sMat = adj(sMat);       // LatticeSpinMatrix adjoint
     sMat = iGammaFive*sMat; // SpinMatrix * LatticeSpinMatrix
     sMat = GammaFive*sMat;  // SpinMatrix * LatticeSpinMatrix
@@ -241,6 +206,9 @@ int main (int argc, char ** argv)
     scm=transpose(scm);
     scm=transposeIndex<1>(scm);
     
+
+
+
 //    Foo = Foo+scalar; // LatticeColourMatrix+Scalar
 //    Foo = Foo*scalar; // LatticeColourMatrix*Scalar
 //    Foo = Foo-scalar; // LatticeColourMatrix-Scalar
@@ -280,7 +248,6 @@ int main (int argc, char ** argv)
       pokeIndex<1> (c_m,c,0,0);
     }
 
-    
     FooBar = Bar;
  
     /*
@@ -333,14 +300,14 @@ int main (int argc, char ** argv)
     // Lattice SU(3) x SU(3)
     Fine.Barrier();
     FooBar = Foo * Bar;
-    
+
     // Lattice 12x12 GEMM
     scFooBar = scFoo * scBar;
-    
+
     // Benchmark some simple operations LatticeSU3 * Lattice SU3.
     double t0,t1,flops;
     double bytes;
-    int ncall=100;
+    int ncall=5000;
     int Nc = Grid::QCD::Nc;
 
     LatticeGaugeField U(&Fine);
@@ -352,19 +319,21 @@ int main (int argc, char ** argv)
     if ( Fine.IsBoss() ) {
       printf("%f flop and %f bytes\n",flops,bytes/ncall);
     }
-        FooBar = Foo * Bar;
+    FooBar = Foo * Bar;
     Fine.Barrier();
     t0=usecond();
     for(int i=0;i<ncall;i++){
       Fine.Barrier();
       mult(FooBar,Foo,Bar); // this is better
     }
+
     t1=usecond();
     Fine.Barrier();
     if ( Fine.IsBoss() ) {
 #ifdef OMP
       printf("mult NumThread %d , Lattice size %d , %f us per call\n",omp_get_max_threads(),lat,(t1-t0)/ncall);
 #endif
+      printf("mult NumThread %d , Lattice size %d , %f us per call\n",omp,lat,(t1-t0)/ncall);
       printf("mult NumThread %d , Lattice size %d , %f Mflop/s\n",omp,lat,flops/(t1-t0));
       printf("mult NumThread %d , Lattice size %d , %f MB/s\n",omp,lat,bytes/(t1-t0));
     }
@@ -526,5 +495,9 @@ int main (int argc, char ** argv)
 
    } // loop for lat
  } // loop for omp
+
+
+ std::cout << sizeof(vComplexF) << std::endl;
+ 
  Grid_finalize();
 }

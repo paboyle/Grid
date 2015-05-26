@@ -93,12 +93,10 @@ nobase_include_HEADERS = algorithms/approx/bigfloat.h		\
 	qcd/Grid_qcd_2spinor.h					\
 	qcd/Grid_qcd_dirac.h					\
 	qcd/Grid_qcd_wilson_dop.h				\
-	simd/Grid_vComplexD.h					\
-	simd/Grid_vComplexF.h					\
-	simd/Grid_vInteger.h					\
-	simd/Grid_vRealD.h					\
-	simd/Grid_vRealF.h					\
 	simd/Grid_vector_types.h				\
-	simd/Grid_sse4.h					
+	simd/Grid_sse4.h					\
+	simd/Grid_avx.h						\
+	simd/Grid_knc.h					
+
 
 
