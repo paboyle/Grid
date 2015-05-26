@@ -13,28 +13,6 @@
 
 typedef uint32_t Integer;
 
-#ifdef SSE4
-#include <pmmintrin.h>
-#endif
-#if defined(AVX1) || defined (AVX2)
-#include <immintrin.h>
-    
-// _mm256_set_m128i(hi,lo); // not defined in all versions of immintrin.h
-#ifndef _mm256_set_m128i
-#define _mm256_set_m128i(hi,lo) _mm256_insertf128_si256(_mm256_castsi128_si256(lo),(hi),1)
-#endif
-
-#endif
-
-#ifdef AVX512
-#include <immintrin.h>
-#ifndef KNC_ONLY_STORES
-#define  _mm512_storenrngo_ps _mm512_store_ps  // not present in AVX512
-#define  _mm512_storenrngo_pd _mm512_store_pd  // not present in AVX512
-#endif
-
-#endif
-
 namespace Grid {
 
   typedef  float  RealF;
@@ -66,45 +44,49 @@ namespace Grid {
   inline ComplexF innerProduct(const ComplexF & l, const ComplexF & r) { return conjugate(l)*r; }
   inline RealD innerProduct(const RealD & l, const RealD & r) { return l*r; }
   inline RealF innerProduct(const RealF & l, const RealF & r) { return l*r; }
-
-    ////////////////////////////////////////////////////////////////////////////////
-    //Provide support functions for basic real and complex data types required by Grid
-    //Single and double precision versions. Should be able to template this once only.
-    ////////////////////////////////////////////////////////////////////////////////
-    inline void mac (ComplexD * __restrict__ y,const ComplexD * __restrict__ a,const ComplexD *__restrict__ x){ *y = (*a) * (*x)+(*y); };
-    inline void mult(ComplexD * __restrict__ y,const ComplexD * __restrict__ l,const ComplexD *__restrict__ r){ *y = (*l) * (*r);}
-    inline void sub (ComplexD * __restrict__ y,const ComplexD * __restrict__ l,const ComplexD *__restrict__ r){ *y = (*l) - (*r);}
-    inline void add (ComplexD * __restrict__ y,const ComplexD * __restrict__ l,const ComplexD *__restrict__ r){ *y = (*l) + (*r);}
-    // conjugate already supported for complex
-    
-    inline void mac (ComplexF * __restrict__ y,const ComplexF * __restrict__ a,const ComplexF *__restrict__ x){ *y = (*a) * (*x)+(*y); }
-    inline void mult(ComplexF * __restrict__ y,const ComplexF * __restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) * (*r); }
-    inline void sub (ComplexF * __restrict__ y,const ComplexF * __restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) - (*r); }
-    inline void add (ComplexF * __restrict__ y,const ComplexF * __restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) + (*r); }
-
-    //conjugate already supported for complex
-
-    inline ComplexF timesI(const ComplexF &r)     { return(r*ComplexF(0.0,1.0));}
-    inline ComplexD timesI(const ComplexD &r)     { return(r*ComplexD(0.0,1.0));}
-    inline ComplexF timesMinusI(const ComplexF &r){ return(r*ComplexF(0.0,-1.0));}
-    inline ComplexD timesMinusI(const ComplexD &r){ return(r*ComplexD(0.0,-1.0));}
-    inline void timesI(ComplexF &ret,const ComplexF &r)     { ret = timesI(r);}
-    inline void timesI(ComplexD &ret,const ComplexD &r)     { ret = timesI(r);}
-    inline void timesMinusI(ComplexF &ret,const ComplexF &r){ ret = timesMinusI(r);}
-    inline void timesMinusI(ComplexD &ret,const ComplexD &r){ ret = timesMinusI(r);}
-
-    inline void mac (RealD * __restrict__ y,const RealD * __restrict__ a,const RealD *__restrict__ x){  *y = (*a) * (*x)+(*y);}
-    inline void mult(RealD * __restrict__ y,const RealD * __restrict__ l,const RealD *__restrict__ r){ *y = (*l) * (*r);}
-    inline void sub (RealD * __restrict__ y,const RealD * __restrict__ l,const RealD *__restrict__ r){ *y = (*l) - (*r);}
-    inline void add (RealD * __restrict__ y,const RealD * __restrict__ l,const RealD *__restrict__ r){ *y = (*l) + (*r);}
-    
-    inline void mac (RealF * __restrict__ y,const RealF * __restrict__ a,const RealF *__restrict__ x){  *y = (*a) * (*x)+(*y); }
-    inline void mult(RealF * __restrict__ y,const RealF * __restrict__ l,const RealF *__restrict__ r){ *y = (*l) * (*r); }
-    inline void sub (RealF * __restrict__ y,const RealF * __restrict__ l,const RealF *__restrict__ r){ *y = (*l) - (*r); }
-    inline void add (RealF * __restrict__ y,const RealF * __restrict__ l,const RealF *__restrict__ r){ *y = (*l) + (*r); }
-    
-
-
+  
+  ////////////////////////////////////////////////////////////////////////////////
+  //Provide support functions for basic real and complex data types required by Grid
+  //Single and double precision versions. Should be able to template this once only.
+  ////////////////////////////////////////////////////////////////////////////////
+  inline void mac (ComplexD * __restrict__ y,const ComplexD * __restrict__ a,const ComplexD *__restrict__ x){ *y = (*a) * (*x)+(*y); };
+  inline void mult(ComplexD * __restrict__ y,const ComplexD * __restrict__ l,const ComplexD *__restrict__ r){ *y = (*l) * (*r);}
+  inline void sub (ComplexD * __restrict__ y,const ComplexD * __restrict__ l,const ComplexD *__restrict__ r){ *y = (*l) - (*r);}
+  inline void add (ComplexD * __restrict__ y,const ComplexD * __restrict__ l,const ComplexD *__restrict__ r){ *y = (*l) + (*r);}
+  // conjugate already supported for complex
+  
+  inline void mac (ComplexF * __restrict__ y,const ComplexF * __restrict__ a,const ComplexF *__restrict__ x){ *y = (*a) * (*x)+(*y); }
+  inline void mult(ComplexF * __restrict__ y,const ComplexF * __restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) * (*r); }
+  inline void sub (ComplexF * __restrict__ y,const ComplexF * __restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) - (*r); }
+  inline void add (ComplexF * __restrict__ y,const ComplexF * __restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) + (*r); }
+  
+  //conjugate already supported for complex
+  
+  inline ComplexF timesI(const ComplexF &r)     { return(r*ComplexF(0.0,1.0));}
+  inline ComplexD timesI(const ComplexD &r)     { return(r*ComplexD(0.0,1.0));}
+  inline ComplexF timesMinusI(const ComplexF &r){ return(r*ComplexF(0.0,-1.0));}
+  inline ComplexD timesMinusI(const ComplexD &r){ return(r*ComplexD(0.0,-1.0));}
+  inline void timesI(ComplexF &ret,const ComplexF &r)     { ret = timesI(r);}
+  inline void timesI(ComplexD &ret,const ComplexD &r)     { ret = timesI(r);}
+  inline void timesMinusI(ComplexF &ret,const ComplexF &r){ ret = timesMinusI(r);}
+  inline void timesMinusI(ComplexD &ret,const ComplexD &r){ ret = timesMinusI(r);}
+  
+  inline void mac (RealD * __restrict__ y,const RealD * __restrict__ a,const RealD *__restrict__ x){  *y = (*a) * (*x)+(*y);}
+  inline void mult(RealD * __restrict__ y,const RealD * __restrict__ l,const RealD *__restrict__ r){ *y = (*l) * (*r);}
+  inline void sub (RealD * __restrict__ y,const RealD * __restrict__ l,const RealD *__restrict__ r){ *y = (*l) - (*r);}
+  inline void add (RealD * __restrict__ y,const RealD * __restrict__ l,const RealD *__restrict__ r){ *y = (*l) + (*r);}
+  
+  inline void mac (RealF * __restrict__ y,const RealF * __restrict__ a,const RealF *__restrict__ x){  *y = (*a) * (*x)+(*y); }
+  inline void mult(RealF * __restrict__ y,const RealF * __restrict__ l,const RealF *__restrict__ r){ *y = (*l) * (*r); }
+  inline void sub (RealF * __restrict__ y,const RealF * __restrict__ l,const RealF *__restrict__ r){ *y = (*l) - (*r); }
+  inline void add (RealF * __restrict__ y,const RealF * __restrict__ l,const RealF *__restrict__ r){ *y = (*l) + (*r); }
+  
+  inline void vstream(ComplexF &l, const ComplexF &r){ l=r;}
+  inline void vstream(ComplexD &l, const ComplexD &r){ l=r;}
+  inline void vstream(RealF &l, const RealF &r){ l=r;}
+  inline void vstream(RealD &l, const RealD &r){ l=r;}
+  
+  
   class Zero{};
   static Zero zero;
   template<class itype> inline void zeroit(itype &arg){ arg=zero;};
@@ -112,7 +94,6 @@ namespace Grid {
   template<>            inline void zeroit(ComplexD &arg){ arg=0; };
   template<>            inline void zeroit(RealF &arg){ arg=0; };
   template<>            inline void zeroit(RealD &arg){ arg=0; };
-
 
 #if defined (SSE4)
     typedef __m128 fvec;
@@ -245,56 +226,12 @@ inline void Gpermute(vsimd &y,const vsimd &b,int perm){
       default: assert(0); break;
       }
     };
+
 };
 
-#include <simd/Grid_vInteger.h>
-#include <simd/Grid_vRealF.h>
-#include <simd/Grid_vRealD.h>
-#include <simd/Grid_vComplexF.h>
-#include <simd/Grid_vComplexD.h>
-
+#include <simd/Grid_vector_types.h>
 
 namespace Grid {
-
-  // NB: Template the following on "type Complex" and then implement *,+,- for 
-  // ComplexF, ComplexD, RealF, RealD above to
-  // get full generality of binops with scalars.
-   inline void mac (vComplexF *__restrict__ y,const ComplexF *__restrict__ a,const vComplexF *__restrict__ x){ *y = (*a)*(*x)+(*y); };
-   inline void mult(vComplexF *__restrict__ y,const ComplexF *__restrict__ l,const vComplexF *__restrict__ r){ *y = (*l) * (*r); }
-   inline void sub (vComplexF *__restrict__ y,const ComplexF *__restrict__ l,const vComplexF *__restrict__ r){ *y = (*l) - (*r); }
-   inline void add (vComplexF *__restrict__ y,const ComplexF *__restrict__ l,const vComplexF *__restrict__ r){ *y = (*l) + (*r); }
-   inline void mac (vComplexF *__restrict__ y,const vComplexF *__restrict__ a,const ComplexF *__restrict__ x){ *y = (*a)*(*x)+(*y); };
-   inline void mult(vComplexF *__restrict__ y,const vComplexF *__restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) * (*r); }
-   inline void sub (vComplexF *__restrict__ y,const vComplexF *__restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) - (*r); }
-   inline void add (vComplexF *__restrict__ y,const vComplexF *__restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) + (*r); }
-
-   inline void mac (vComplexD *__restrict__ y,const ComplexD *__restrict__ a,const vComplexD *__restrict__ x){ *y = (*a)*(*x)+(*y); };
-   inline void mult(vComplexD *__restrict__ y,const ComplexD *__restrict__ l,const vComplexD *__restrict__ r){ *y = (*l) * (*r); }
-   inline void sub (vComplexD *__restrict__ y,const ComplexD *__restrict__ l,const vComplexD *__restrict__ r){ *y = (*l) - (*r); }
-   inline void add (vComplexD *__restrict__ y,const ComplexD *__restrict__ l,const vComplexD *__restrict__ r){ *y = (*l) + (*r); }
-   inline void mac (vComplexD *__restrict__ y,const vComplexD *__restrict__ a,const ComplexD *__restrict__ x){ *y = (*a)*(*x)+(*y); };
-   inline void mult(vComplexD *__restrict__ y,const vComplexD *__restrict__ l,const ComplexD *__restrict__ r){ *y = (*l) * (*r); }
-   inline void sub (vComplexD *__restrict__ y,const vComplexD *__restrict__ l,const ComplexD *__restrict__ r){ *y = (*l) - (*r); }
-   inline void add (vComplexD *__restrict__ y,const vComplexD *__restrict__ l,const ComplexD *__restrict__ r){ *y = (*l) + (*r); }
-
-   inline void mac (vRealF *__restrict__ y,const RealF *__restrict__ a,const vRealF *__restrict__ x){ *y = (*a)*(*x)+(*y); };
-   inline void mult(vRealF *__restrict__ y,const RealF *__restrict__ l,const vRealF *__restrict__ r){ *y = (*l) * (*r); }
-   inline void sub (vRealF *__restrict__ y,const RealF *__restrict__ l,const vRealF *__restrict__ r){ *y = (*l) - (*r); }
-   inline void add (vRealF *__restrict__ y,const RealF *__restrict__ l,const vRealF *__restrict__ r){ *y = (*l) + (*r); }
-   inline void mac (vRealF *__restrict__ y,const vRealF *__restrict__ a,const RealF *__restrict__ x){ *y = (*a)*(*x)+(*y); };
-   inline void mult(vRealF *__restrict__ y,const vRealF *__restrict__ l,const RealF *__restrict__ r){ *y = (*l) * (*r); }
-   inline void sub (vRealF *__restrict__ y,const vRealF *__restrict__ l,const RealF *__restrict__ r){ *y = (*l) - (*r); }
-   inline void add (vRealF *__restrict__ y,const vRealF *__restrict__ l,const RealF *__restrict__ r){ *y = (*l) + (*r); }
-
-   inline void mac (vRealD *__restrict__ y,const RealD *__restrict__ a,const vRealD *__restrict__ x){ *y = (*a)*(*x)+(*y); };
-   inline void mult(vRealD *__restrict__ y,const RealD *__restrict__ l,const vRealD *__restrict__ r){ *y = (*l) * (*r); }
-   inline void sub (vRealD *__restrict__ y,const RealD *__restrict__ l,const vRealD *__restrict__ r){ *y = (*l) - (*r); }
-   inline void add (vRealD *__restrict__ y,const RealD *__restrict__ l,const vRealD *__restrict__ r){ *y = (*l) + (*r); }
-   inline void mac (vRealD *__restrict__ y,const vRealD *__restrict__ a,const RealD *__restrict__ x){ *y = (*a)*(*x)+(*y); };
-   inline void mult(vRealD *__restrict__ y,const vRealD *__restrict__ l,const RealD *__restrict__ r){ *y = (*l) * (*r); }
-   inline void sub (vRealD *__restrict__ y,const vRealD *__restrict__ l,const RealD *__restrict__ r){ *y = (*l) - (*r); }
-   inline void add (vRealD *__restrict__ y,const vRealD *__restrict__ l,const RealD *__restrict__ r){ *y = (*l) + (*r); }
-
   // Default precision
 #ifdef GRID_DEFAULT_PRECISION_DOUBLE
   typedef vRealD vReal;

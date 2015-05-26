@@ -212,6 +212,16 @@ public:
 
   iMatrix(const Zero &z){ *this = zero; };
   iMatrix() =default;
+  
+  iMatrix& operator=(const iMatrix& rhs){
+    for(int i=0;i<N;i++)
+      for(int j=0;j<N;j++)
+	vstream(_internal[i][j],rhs._internal[i][j]);
+    return *this;
+  }; 
+  
+ 
+
   iMatrix(scalar_type s)  { (*this) = s ;};// recurse down and hit the constructor for vector_type
 
   /*
@@ -220,6 +230,9 @@ public:
   iMatrix<vtype,N> & operator= (const iMatrix<vtype,N> &copyme) = default;
   iMatrix<vtype,N> & operator= (iMatrix<vtype,N> &&copyme) = default;
   */
+
+
+
   iMatrix<vtype,N> & operator= (const Zero &hero){
     zeroit(*this);
     return *this;
