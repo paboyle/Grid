@@ -10,6 +10,7 @@ namespace Grid {
   /////////////////////////////////////////////////////////////////////////////////////////////
     template<class Field> class SparseMatrixBase {
     public:
+      GridBase *_grid;
       // Full checkerboar operations
       virtual RealD M    (const Field &in, Field &out)=0;
       virtual RealD Mdag (const Field &in, Field &out)=0;
@@ -18,6 +19,7 @@ namespace Grid {
 	ni=M(in,tmp);
 	no=Mdag(tmp,out);
       }
+      SparseMatrixBase(GridBase *grid) : _grid(grid) {};
     };
 
   /////////////////////////////////////////////////////////////////////////////////////////////
@@ -25,7 +27,7 @@ namespace Grid {
   /////////////////////////////////////////////////////////////////////////////////////////////
     template<class Field> class CheckerBoardedSparseMatrixBase : public SparseMatrixBase<Field> {
     public:
-      
+      GridBase *_cbgrid;
       // half checkerboard operaions
       virtual  void Meooe    (const Field &in, Field &out)=0;
       virtual  void Mooee    (const Field &in, Field &out)=0;
@@ -44,9 +46,7 @@ namespace Grid {
 	Meooe(out,tmp);
 
 	Mooee(in,out);
-	out=out-tmp; // axpy_norm
-	RealD n=norm2(out);
-	return n;
+	return axpy_norm(out,-1.0,tmp,out);
       }
       virtual  RealD MpcDag   (const Field &in, Field &out){
 	Field tmp(in._grid);
@@ -56,15 +56,15 @@ namespace Grid {
 	MeooeDag(out,tmp);
 
 	MooeeDag(in,out);
-	out=out-tmp; // axpy_norm
-	RealD n=norm2(out);
-	return n;
+	return axpy_norm(out,-1.0,tmp,out);
       }
-      virtual void MpcDagMpc(const Field &in, Field &out,RealD ni,RealD no) {
+      virtual void MpcDagMpc(const Field &in, Field &out,RealD &ni,RealD &no) {
 	Field tmp(in._grid);
 	ni=Mpc(in,tmp);
-	no=Mpc(tmp,out);
+	no=MpcDag(tmp,out);
+	//	std::cout<<"MpcDagMpc "<<ni<<" "<<no<<std::endl;
       }
+      CheckerBoardedSparseMatrixBase(GridBase *grid,GridBase *cbgrid) : SparseMatrixBase<Field>(grid), _cbgrid(cbgrid) {};
     };
 
 }

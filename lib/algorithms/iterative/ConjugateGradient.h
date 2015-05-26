@@ -9,17 +9,20 @@ namespace Grid {
     /////////////////////////////////////////////////////////////
 
   template<class Field> 
-    class ConjugateGradient :  public OperatorFunction<Field> {
+    class ConjugateGradient : public HermitianOperatorFunction<Field> {
 public:                                                
     RealD   Tolerance;
     Integer MaxIterations;
-
+    int verbose;
     ConjugateGradient(RealD tol,Integer maxit) : Tolerance(tol), MaxIterations(maxit) { 
-      std::cout << Tolerance<<std::endl;
+      verbose=0;
     };
 
-    void operator() (LinearOperatorBase<Field> &Linop,const Field &src, Field &psi) {assert(0);};
+
     void operator() (HermitianOperatorBase<Field> &Linop,const Field &src, Field &psi){
+
+      psi.checkerboard = src.checkerboard;
+      conformable(psi,src);
 
       RealD cp,c,a,d,b,ssq,qq,b_pred;
       
@@ -38,14 +41,16 @@ public:
       a  =norm2(p);
       cp =a;
       ssq=norm2(src);
-      
-      std::cout <<std::setprecision(4)<< "ConjugateGradient: guess "<<guess<<std::endl;
-      std::cout <<std::setprecision(4)<< "ConjugateGradient:   src "<<ssq  <<std::endl;
-      std::cout <<std::setprecision(4)<< "ConjugateGradient:    mp "<<d    <<std::endl;
-      std::cout <<std::setprecision(4)<< "ConjugateGradient:   mmp "<<b    <<std::endl;
-      std::cout <<std::setprecision(4)<< "ConjugateGradient:     r "<<cp   <<std::endl;
-      std::cout <<std::setprecision(4)<< "ConjugateGradient:     p "<<a    <<std::endl;
-      
+
+      if ( verbose ) {
+	std::cout <<std::setprecision(4)<< "ConjugateGradient: guess "<<guess<<std::endl;
+	std::cout <<std::setprecision(4)<< "ConjugateGradient:   src "<<ssq  <<std::endl;
+	std::cout <<std::setprecision(4)<< "ConjugateGradient:    mp "<<d    <<std::endl;
+	std::cout <<std::setprecision(4)<< "ConjugateGradient:   mmp "<<b    <<std::endl;
+	std::cout <<std::setprecision(4)<< "ConjugateGradient:  cp,r "<<cp   <<std::endl;
+	std::cout <<std::setprecision(4)<< "ConjugateGradient:     p "<<a    <<std::endl;
+      }
+
       RealD rsq =  Tolerance* Tolerance*ssq;
       
       //Check if guess is really REALLY good :)
@@ -61,14 +66,16 @@ public:
 	c=cp;
 	
 	Linop.OpAndNorm(p,mmp,d,qq);
-	  
-	//	std::cout <<std::setprecision(4)<< "ConjugateGradient:  d,qq "<<d<< " "<<qq <<std::endl;
+
+	RealD    qqck = norm2(mmp);
+	ComplexD dck  = innerProduct(p,mmp);
+	//	if (verbose) std::cout <<std::setprecision(4)<< "ConjugateGradient:  d,qq "<<d<< " "<<qq <<" qqcheck "<< qqck<< " dck "<< dck<<std::endl;
       
 	a      = c/d;
 	b_pred = a*(a*qq-d)/c;
-	
-	//	std::cout <<std::setprecision(4)<< "ConjugateGradient:  a,bp "<<a<< " "<<b_pred <<std::endl;
 
+
+	//	if (verbose) std::cout <<std::setprecision(4)<< "ConjugateGradient:  a,bp "<<a<< " "<<b_pred <<std::endl;
 	cp = axpy_norm(r,-a,mmp,r);
 	b = cp/c;
 	//	std::cout <<std::setprecision(4)<< "ConjugateGradient:  cp,b "<<cp<< " "<<b <<std::endl;
@@ -77,7 +84,16 @@ public:
 	psi= a*p+psi;
 	p  = p*b+r;
 	  
-	std::cout<<"ConjugateGradient: Iteration " <<k<<" residual "<<cp<< " target"<< rsq<<std::endl;
+	if (verbose) std::cout<<"ConjugateGradient: Iteration " <<k<<" residual "<<cp<< " target"<< rsq<<std::endl;
+
+	// Hack
+	if (0) {
+	  Field   tt(src);
+      	  Linop.Op(psi,mmp);
+	  tt=mmp-src;
+	  RealD resnorm = norm2(tt);
+	  std::cout<<"ConjugateGradient: Iteration " <<k<<" true residual "<<resnorm << " computed " << cp <<std::endl;
+	}
 
 	// Stopping condition
 	if ( cp <= rsq ) { 

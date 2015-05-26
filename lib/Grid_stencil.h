@@ -120,8 +120,8 @@ namespace Grid {
 	  // Map to always positive shift modulo global full dimension.
 	  int shift = (displacement+fd)%fd;
 	  
-     	  int checkerboard = _grid->CheckerBoardDestination(source.checkerboard,shift);
-	  assert (checkerboard== _checkerboard);
+	  //     	  int checkerboard = _grid->CheckerBoardDestination(source.checkerboard,shift);
+	  assert (source.checkerboard== _checkerboard);
 
 	  // the permute type
 	  int simd_layout     = _grid->_simd_layout[dimension];

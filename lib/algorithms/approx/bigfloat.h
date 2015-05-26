@@ -31,7 +31,7 @@ public:
   bigfloat(const double d) { mpf_init_set_d(x, d); }  
   bigfloat(const char *str) { mpf_init_set_str(x, (char*)str, 10); }
   ~bigfloat(void) { mpf_clear(x); }
-  operator const double (void) const { return (double)mpf_get_d(x); }
+  operator double (void) const { return (double)mpf_get_d(x); }
   static void setDefaultPrecision(unsigned long dprec) {
     unsigned long bprec =  (unsigned long)(3.321928094 * (double)dprec);
     mpf_set_default_prec(bprec);
