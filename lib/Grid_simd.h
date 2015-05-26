@@ -95,99 +95,9 @@ namespace Grid {
   template<>            inline void zeroit(RealF &arg){ arg=0; };
   template<>            inline void zeroit(RealD &arg){ arg=0; };
 
-  // Eventually delete this part
-#if defined (SSE4)
-    typedef __m128 fvec;
-    typedef __m128d dvec;
-    typedef __m128 cvec;
-    typedef __m128d zvec;
-    typedef __m128i ivec;
-#endif
-#if defined (AVX1) || defined (AVX2)
-    typedef __m256 fvec;
-    typedef __m256d dvec;
-    typedef __m256  cvec;
-    typedef __m256d zvec;
-    typedef __m256i ivec;
-#endif
-#if defined (AVX512)
-    typedef __m512  fvec;
-    typedef __m512d dvec;
-    typedef __m512  cvec;
-    typedef __m512d zvec;
-    typedef __m512i ivec;
-#endif
-#if defined (QPX)
-    typedef float  fvec __attribute__ ((vector_size (16))); // QPX has same SIMD width irrespective of precision
-    typedef float  cvec __attribute__ ((vector_size (16)));
-    
-    typedef vector4double dvec;
-    typedef vector4double zvec;
-#endif
-  
-#if defined (AVX1) || defined (AVX2) || defined (AVX512)
-    inline void v_prefetch0(int size, const char *ptr){
-          for(int i=0;i<size;i+=64){ //  Define L1 linesize above// What about SSE?
-            _mm_prefetch(ptr+i+4096,_MM_HINT_T1);
-            _mm_prefetch(ptr+i+512,_MM_HINT_T0);
-          }
-    }
-#else 
-    inline void v_prefetch0(int size, const char *ptr){};
-#endif
-
-
-//////////////////////////////////////////////////////////
-// Permute
-// Permute 0 every ABCDEFGH -> BA DC FE HG
-// Permute 1 every ABCDEFGH -> CD AB GH EF
-// Permute 2 every ABCDEFGH -> EFGH ABCD
-// Permute 3 possible on longer iVector lengths (512bit = 8 double = 16 single)
-// Permute 4 possible on half precision @512bit vectors.
-//////////////////////////////////////////////////////////
-template<class vsimd>
-inline void Gpermute(vsimd &y,const vsimd &b,int perm){
-	union { 
-	  fvec f;
-	  decltype(vsimd::v) v;
-	} conv;
-	conv.v = b.v;
-      switch (perm){
-#if defined(AVX1)||defined(AVX2)
-      // 8x32 bits=>3 permutes
-      case 2: 
-	conv.f = _mm256_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(2,3,0,1)); 
-	break;
-      case 1: conv.f = _mm256_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(1,0,3,2)); break;
-      case 0: conv.f = _mm256_permute2f128_ps(conv.f,conv.f,0x01); break;
-#endif
-#ifdef SSE4
-      case 1: conv.f = _mm_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(2,3,0,1)); break;
-      case 0: conv.f = _mm_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(1,0,3,2));break;
-#endif
-#ifdef AVX512
-	// 16 floats=> permutes
-        // Permute 0 every abcd efgh ijkl mnop -> badc fehg jilk nmpo 
-        // Permute 1 every abcd efgh ijkl mnop -> cdab ghef jkij opmn 
-        // Permute 2 every abcd efgh ijkl mnop -> efgh abcd mnop ijkl
-        // Permute 3 every abcd efgh ijkl mnop -> ijkl mnop abcd efgh
-      case 3: conv.f = _mm512_swizzle_ps(conv.f,_MM_SWIZ_REG_CDAB); break;
-      case 2: conv.f = _mm512_swizzle_ps(conv.f,_MM_SWIZ_REG_BADC); break;
-      case 1: conv.f = _mm512_permute4f128_ps(conv.f,(_MM_PERM_ENUM)_MM_SHUFFLE(2,3,0,1)); break;
-      case 0: conv.f = _mm512_permute4f128_ps(conv.f,(_MM_PERM_ENUM)_MM_SHUFFLE(1,0,3,2)); break;
-#endif
-#ifdef QPX
-#error not implemented
-#endif
-      default: assert(0); break;
-      }
-      y.v=conv.v;
-
-    };
 };
 
 #include <simd/Grid_vector_types.h>
-
 
 namespace Grid {
 
