@@ -81,10 +81,12 @@ target_triplet = @target@
 subdir = .
 DIST_COMMON = INSTALL NEWS README AUTHORS ChangeLog \
 	$(srcdir)/Makefile.in $(srcdir)/Makefile.am \
-	$(top_srcdir)/configure $(am__configure_deps) COPYING TODO \
-	compile config.guess config.sub depcomp install-sh missing
+	$(top_srcdir)/configure $(am__configure_deps) \
+	$(top_srcdir)/docs/doxy.cfg.in COPYING TODO compile \
+	config.guess config.sub depcomp install-sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/ax_cxx_compile_stdcxx_11.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ac_prog_doxygen.m4 \
+	$(top_srcdir)/m4/ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -92,7 +94,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/lib/Grid_config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = docs/doxy.cfg
 CONFIG_CLEAN_VPATH_FILES =
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -207,6 +209,8 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DOT = @DOT@
+DOXYGEN = @DOXYGEN@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -261,6 +265,9 @@ datadir = @datadir@
 datarootdir = @datarootdir@
 docdir = @docdir@
 dvidir = @dvidir@
+enable_dot = @enable_dot@
+enable_html_docs = @enable_html_docs@
+enable_latex_docs = @enable_latex_docs@
 exec_prefix = @exec_prefix@
 host = @host@
 host_alias = @host_alias@
@@ -297,7 +304,8 @@ top_srcdir = @top_srcdir@
 
 # additional include paths necessary to compile the C++ library
 AM_CXXFLAGS = -I$(top_srcdir)/
-SUBDIRS = lib tests benchmarks
+SUBDIRS = lib tests benchmarks docs
+@DOXYGEN_DOC_TRUE@directory = $(top_srcdir)/docs/
 all: all-recursive
 
 .SUFFIXES:
@@ -335,6 +343,8 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	$(am__cd) $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 $(am__aclocal_m4_deps):
+docs/doxy.cfg: $(top_builddir)/config.status $(top_srcdir)/docs/doxy.cfg.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run 'make' without going through this Makefile.
@@ -751,6 +761,9 @@ uninstall-am:
 	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
 	pdf-am ps ps-am tags tags-am uninstall uninstall-am
 
+
+@DOXYGEN_DOC_TRUE@doxyfile:
+@DOXYGEN_DOC_TRUE@        (cd $(directory) && $(MAKE) $(AM_MAKEFLAGS) $@) || exit 1; 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

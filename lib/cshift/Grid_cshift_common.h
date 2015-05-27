@@ -160,19 +160,13 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,Lattice<vobj> &rhs, int 
 PARALLEL_NESTED_LOOP2
   for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
     for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
-      /*
-      int o =n*rhs._grid->_slice_stride[dimension];
-      int ocb=1<<lhs._grid->CheckerBoardFromOindex(o+b);
-      if ( ocb&cbmask ) {
-	lhs._odata[lo+o+b]=rhs._odata[ro+o+b];
-      }
-      */
-
+ 
       int o =n*rhs._grid->_slice_stride[dimension]+b;
       int ocb=1<<lhs._grid->CheckerBoardFromOindex(o);
       if ( ocb&cbmask ) {
 	//lhs._odata[lo+o]=rhs._odata[ro+o];
 	vstream(lhs._odata[lo+o],rhs._odata[ro+o]);
+	
       }
 
     }
