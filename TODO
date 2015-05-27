@@ -64,6 +64,9 @@ Insert/Extract
   - optional parallel MPI2 IO
   - move Plaquette and link trace checks into nersc reader from the Grid_nersc_io.cc test.
 
+* Support for ILDG
+
+
 Actions -- coherent framework for implementing actions and their forces.
 
 * Fermion
