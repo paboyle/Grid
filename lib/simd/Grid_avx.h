@@ -14,7 +14,23 @@
 #endif
 
 namespace Optimization {
-  
+
+  template<class vtype>
+  union uconv {
+    __m256 f;
+    vtype v;
+  };
+
+  union u256f {
+    __m256 v;
+    float f[8];
+  };
+
+  union u256d {
+    __m256d v;
+    double f[4];
+  };
+
   struct Vsplat{
     //Complex float
     inline __m256 operator()(float a, float b){
@@ -54,7 +70,6 @@ namespace Optimization {
 
   };
 
-
   struct Vstream{
     //Float
     inline void operator()(float * a, __m256 b){
@@ -67,8 +82,6 @@ namespace Optimization {
 
 
   };
-
-
 
   struct Vset{
     // Complex float 
@@ -92,7 +105,6 @@ namespace Optimization {
       return _mm256_set_epi32(a[7],a[6],a[5],a[4],a[3],a[2],a[1],a[0]);
     }
 
-
   };
 
   template <typename Out_type, typename In_type>
@@ -105,9 +117,6 @@ namespace Optimization {
       return 0;
     }
   };
-
-
- 
 
   /////////////////////////////////////////////////////
   // Arithmetic operations
@@ -170,7 +179,6 @@ namespace Optimization {
     }
   };
 
-
   struct MultComplex{
     // Complex float
     inline __m256 operator()(__m256 a, __m256 b){
@@ -207,7 +215,6 @@ namespace Optimization {
 	IF IMM0[3] = 0
 	THEN DEST[255:192]=SRC2[191:128] ELSE DEST[255:192]=SRC2[255:192] FI; // Ox5 r<->i   ; 0xC unchanged
       */
-      
       __m256d ymm0,ymm1,ymm2;
       ymm0 = _mm256_shuffle_pd(a,a,0x0); // ymm0 <- ar ar, ar,ar b'00,00
       ymm0 = _mm256_mul_pd(ymm0,b);      // ymm0 <- ar bi, ar br
@@ -246,7 +253,6 @@ namespace Optimization {
 
     }
   };
-
 
   struct Conj{
     // Complex single
@@ -292,18 +298,13 @@ namespace Optimization {
     }
   };
 
-
-  
-
-
   //////////////////////////////////////////////
   // Some Template specialization
+  //////////////////////////////////////////////
+
   template < typename vtype > 
-    void permute(vtype &a, vtype &b, int perm) {
-    union { 
-      __m256 f;
-      vtype v;
-    } conv;
+    void permute(vtype &a,vtype b, int perm) {
+    uconv<vtype> conv;
     conv.v = b;
     switch (perm){
       // 8x32 bits=>3 permutes
@@ -313,24 +314,20 @@ namespace Optimization {
     default: assert(0); break;
     }
     a = conv.v;
-    
   }
-  
+
   //Complex float Reduce
   template<>
     inline Grid::ComplexF Reduce<Grid::ComplexF, __m256>::operator()(__m256 in){
     __m256 v1,v2;
-    union { 
-      __m256 v;
-      float f[8];
-    } conv;
     Optimization::permute(v1,in,0); // sse 128; paired complex single
     v1 = _mm256_add_ps(v1,in);
     Optimization::permute(v2,v1,1); // avx 256; quad complex single
     v1 = _mm256_add_ps(v1,v2);
-    conv.v = v1;
+    u256f conv; conv.v = v1;
     return Grid::ComplexF(conv.f[0],conv.f[1]);
   }
+
   //Real float Reduce
   template<>
   inline Grid::RealF Reduce<Grid::RealF, __m256>::operator()(__m256 in){
@@ -341,7 +338,8 @@ namespace Optimization {
     v1 = _mm256_add_ps(v1,v2);
     Optimization::permute(v2,v1,2); 
     v1 = _mm256_add_ps(v1,v2);
-    return v1[0];
+    u256f conv; conv.v=v1;
+    return conv.f[0];
   }
   
   
@@ -351,7 +349,8 @@ namespace Optimization {
     __m256d v1;
     Optimization::permute(v1,in,0); // sse 128; paired complex single
     v1 = _mm256_add_pd(v1,in);
-    return Grid::ComplexD(v1[0],v1[1]);
+    u256d conv; conv.v = v1;
+    return Grid::ComplexD(conv.f[0],conv.f[1]);
   }
   
   //Real double Reduce
@@ -362,7 +361,8 @@ namespace Optimization {
     v1 = _mm256_add_pd(v1,in);
     Optimization::permute(v2,v1,1); 
     v1 = _mm256_add_pd(v1,v2);
-    return v1[0];
+    u256d conv; conv.v = v1;
+    return conv.f[0];
   }
 
   //Integer Reduce
@@ -390,22 +390,9 @@ namespace Grid {
       _mm_prefetch(ptr+i+512,_MM_HINT_T0);
     }
   }
-  
   template < typename VectorSIMD > 
     inline void Gpermute(VectorSIMD &y,const VectorSIMD &b, int perm ) {
-    union { 
-      __m256 f;
-      decltype(VectorSIMD::v) v;
-    } conv;
-    conv.v = b.v;
-    switch(perm){
-    case 3: break; //empty for AVX1/2
-    case 2: conv.f = _mm256_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(2,3,0,1)); break;
-    case 1: conv.f = _mm256_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(1,0,3,2));  break; 
-    case 0: conv.f = _mm256_permute2f128_ps(conv.f,conv.f,0x01); break;
-    default: assert(0); break;
-    }
-    y.v=conv.v;
+    Optimization::permute(y.v,b.v,perm);
   };
 
   // Function name aliases
