@@ -4,7 +4,7 @@
 
   Using intrinsics
 */
-// Time-stamp: <2015-05-21 18:06:30 neo>
+// Time-stamp: <2015-05-27 12:02:07 neo>
 //----------------------------------------------------------------------
 
 #include <pmmintrin.h>
@@ -221,7 +221,7 @@ namespace Optimization {
   };
 
 
-  
+
 
 
   //////////////////////////////////////////////
@@ -277,6 +277,10 @@ namespace Optimization {
     assert(0);
   }
   
+
+
+
+
   
 }
 
@@ -289,12 +293,36 @@ namespace Grid {
   typedef __m128i SIMD_Itype; // Integer type
 
 
+  inline void v_prefetch0(int size, const char *ptr){};  // prefetch utilities
+
+  // Gpermute function
+  template < typename VectorSIMD > 
+    inline void Gpermute(VectorSIMD &y,const VectorSIMD &b, int perm ) {
+    union { 
+      __m128 f;
+      decltype(VectorSIMD::v) v;
+    } conv;
+    conv.v = b.v;
+    switch(perm){
+    case 3: break; //empty for SSE4
+    case 2: break; //empty for SSE4
+    case 1: conv.f = _mm_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(2,3,0,1)); break;
+    case 0: conv.f = _mm_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(1,0,3,2)); break;
+    default: assert(0); break;
+    }
+    y.v=conv.v;
+  }; 
+  
+
+
   // Function name aliases
   typedef Optimization::Vsplat   VsplatSIMD;
   typedef Optimization::Vstore   VstoreSIMD;
   typedef Optimization::Vset     VsetSIMD;
   typedef Optimization::Vstream  VstreamSIMD;
   template <typename S, typename T> using ReduceSIMD = Optimization::Reduce<S,T>;
+
+ 
 
 
   // Arithmetic operations

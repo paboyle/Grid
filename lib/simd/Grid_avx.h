@@ -4,7 +4,7 @@
 
   Using intrinsics
 */
-// Time-stamp: <2015-05-22 18:58:27 neo>
+// Time-stamp: <2015-05-27 12:07:15 neo>
 //----------------------------------------------------------------------
 
 #include <immintrin.h>
@@ -383,6 +383,30 @@ namespace Grid {
   typedef __m256d SIMD_Dtype; // Double precision type
   typedef __m256i SIMD_Itype; // Integer type
 
+  // prefecthing 
+  inline void v_prefetch0(int size, const char *ptr){
+    for(int i=0;i<size;i+=64){ //  Define L1 linesize above
+      _mm_prefetch(ptr+i+4096,_MM_HINT_T1);
+      _mm_prefetch(ptr+i+512,_MM_HINT_T0);
+    }
+  }
+  
+  template < typename VectorSIMD > 
+    inline void Gpermute(VectorSIMD &y,const VectorSIMD &b, int perm ) {
+    union { 
+      __m256 f;
+      decltype(VectorSIMD::v) v;
+    } conv;
+    conv.v = b.v;
+    switch(perm){
+    case 3: break; //empty for AVX1/2
+    case 2: conv.f = _mm256_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(2,3,0,1)); break;
+    case 1: conv.f = _mm256_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(1,0,3,2));  break; 
+    case 0: conv.f = _mm256_permute2f128_ps(conv.f,conv.f,0x01); break;
+    default: assert(0); break;
+    }
+    y.v=conv.v;
+  };
 
   // Function name aliases
   typedef Optimization::Vsplat   VsplatSIMD;

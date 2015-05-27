@@ -95,6 +95,20 @@ namespace Grid {
   template<>            inline void zeroit(RealF &arg){ arg=0; };
   template<>            inline void zeroit(RealD &arg){ arg=0; };
   
+
+  //////////////////////////////////////////////////////////
+  // Permute
+  // Permute 0 every ABCDEFGH -> BA DC FE HG
+  // Permute 1 every ABCDEFGH -> CD AB GH EF
+  // Permute 2 every ABCDEFGH -> EFGH ABCD
+  // Permute 3 possible on longer iVector lengths (512bit = 8 double = 16 single)
+  // Permute 4 possible on half precision @512bit vectors.
+  //
+  // Defined inside SIMD specialization files
+  //////////////////////////////////////////////////////////
+  template<class VectorSIMD>
+    inline void Gpermute(VectorSIMD &y,const VectorSIMD &b,int perm);
+
 };
 
 #include <simd/Grid_vector_types.h>

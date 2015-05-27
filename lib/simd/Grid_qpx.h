@@ -4,7 +4,7 @@
 
   Using intrinsics
 */
-// Time-stamp: <2015-05-22 17:29:26 neo>
+// Time-stamp: <2015-05-27 11:30:21 neo>
 //----------------------------------------------------------------------
 
 // lot of undefined functions
@@ -251,6 +251,7 @@ namespace Grid {
   typedef vector4double SIMD_Dtype; // Double precision type
   typedef int SIMD_Itype;           // Integer type
 
+  inline void v_prefetch0(int size, const char *ptr){};
 
   // Function name aliases
   typedef Optimization::Vsplat   VsplatSIMD;
