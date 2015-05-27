@@ -77,9 +77,7 @@ inline void Gpermute(vsimd &y,const vsimd &b,int perm){
       switch (perm){
 #if defined(AVX1)||defined(AVX2)
       // 8x32 bits=>3 permutes
-      case 2: 
-	conv.f = _mm256_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(2,3,0,1)); 
-	break;
+      case 2: conv.f = _mm256_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(2,3,0,1)); break;
       case 1: conv.f = _mm256_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(1,0,3,2)); break;
       case 0: conv.f = _mm256_permute2f128_ps(conv.f,conv.f,0x01); break;
 #endif

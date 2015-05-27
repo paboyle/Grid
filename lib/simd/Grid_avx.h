@@ -299,7 +299,7 @@ namespace Optimization {
   //////////////////////////////////////////////
   // Some Template specialization
   template < typename vtype > 
-    void permute(vtype a, vtype b, int perm) {
+    void permute(vtype &a, vtype &b, int perm) {
     union { 
       __m256 f;
       vtype v;
@@ -320,11 +320,16 @@ namespace Optimization {
   template<>
     inline Grid::ComplexF Reduce<Grid::ComplexF, __m256>::operator()(__m256 in){
     __m256 v1,v2;
+    union { 
+      __m256 v;
+      float f[8];
+    } conv;
     Optimization::permute(v1,in,0); // sse 128; paired complex single
     v1 = _mm256_add_ps(v1,in);
     Optimization::permute(v2,v1,1); // avx 256; quad complex single
     v1 = _mm256_add_ps(v1,v2);
-    return Grid::ComplexF(v1[0],v1[1]);
+    conv.v = v1;
+    return Grid::ComplexF(conv.f[0],conv.f[1]);
   }
   //Real float Reduce
   template<>
