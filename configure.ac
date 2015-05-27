@@ -3,7 +3,7 @@
 #
 # Project Grid package  
 # 
-# Time-stamp: <2015-05-25 14:54:34 neo>
+# Time-stamp: <2015-05-26 17:18:54 neo>
 
 AC_PREREQ([2.63])
 AC_INIT([Grid], [1.0], [paboyle@ph.ed.ac.uk])
@@ -116,6 +116,20 @@ AM_CONDITIONAL(BUILD_COMMS_MPI,[ test "X${ac_COMMS}X" == "XmpiX" ])
 AM_CONDITIONAL(BUILD_COMMS_NONE,[ test "X${ac_COMMS}X" == "XnoneX" ])
 
 
+###################################################################
+# Checks for doxygen support
+# if present enables the "make doxyfile" command
+echo
+echo Checking doxygen support 
+echo :::::::::::::::::::::::::::::::::::::::::::
+AC_PROG_DOXYGEN
+
+if test -n "$DOXYGEN"
+then
+AC_CONFIG_FILES([docs/doxy.cfg])
+fi
+
+
 AC_CONFIG_FILES(Makefile)
 AC_CONFIG_FILES(lib/Makefile)
 AC_CONFIG_FILES(tests/Makefile)
@@ -134,6 +148,9 @@ The following features are enabled:
 - os (build)                    : $build_os
 - architecture (target)         : $target_cpu
 - os (target)                   : $target_os
+- build DOXYGEN documentation   : `if test "x$enable_doc" = xyes; then echo yes; else echo no; fi`
+- graphs and diagrams           : `if test "x$enable_dot" = xyes; then echo yes; else echo no; fi`
+
 ----------------------------------------------------------
 - enabled simd support          : ${ac_SIMD}
 - communications type           : ${ac_COMMS}

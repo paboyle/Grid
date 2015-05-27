@@ -2,7 +2,7 @@
 /*! @file Grid_vector_types.h
   @brief Defines templated class Grid_simd to deal with inner vector types
 */
-// Time-stamp: <2015-05-26 13:44:54 neo>
+// Time-stamp: <2015-05-26 14:08:13 neo>
 //---------------------------------------------------------------------------
 #ifndef GRID_VECTOR_TYPES
 #define GRID_VECTOR_TYPES
@@ -57,6 +57,8 @@ namespace Grid {
 
   ///////////////////////////////////////////////
 
+
+  // Move to the simd files
 //////////////////////////////////////////////////////////
 // Permute
 // Permute 0 every ABCDEFGH -> BA DC FE HG
@@ -436,7 +438,7 @@ inline void Gpermute(vsimd &y,const vsimd &b,int perm){
   }
 
 
-  // Define available types (now change names to avoid clashing with the rest of the code)
+  // Define available types
 
   typedef Grid_simd< float                 , SIMD_Ftype > vRealF;
   typedef Grid_simd< double                , SIMD_Dtype > vRealD;
