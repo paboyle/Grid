@@ -2,7 +2,7 @@
 /* lib/Grid_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* AVX */
-#define AVX1 1
+/* #undef AVX1 */
 
 /* AVX2 */
 /* #undef AVX2 */
@@ -93,11 +93,14 @@
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "grid"
 
+/* Define to the home page for this package. */
+#define PACKAGE_URL ""
+
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "1.0"
 
 /* SSE4 */
-/* #undef SSE4 */
+#define SSE4 1
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
