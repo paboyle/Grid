@@ -6,10 +6,22 @@ namespace Grid {
 
   namespace QCD {
 
+  // Should be in header?
+    const int Xp = 0;
+    const int Yp = 1;
+    const int Zp = 2;
+    const int Tp = 3;
+    const int Xm = 4;
+    const int Ym = 5;
+    const int Zm = 6;
+    const int Tm = 7;
+
     class WilsonMatrix : public CheckerBoardedSparseMatrixBase<LatticeFermion>
     {
       //NB r=1;
     public:
+      static int HandOptDslash;
+
       double                        mass;
       //      GridBase                     *    grid; // Inherited
       //      GridBase                     *  cbgrid;
@@ -56,20 +68,37 @@ namespace Grid {
       void DhopEO(const LatticeFermion &in, LatticeFermion &out,int dag);
       void DhopInternal(CartesianStencil & st,LatticeDoubledGaugeField &U,
 			const LatticeFermion &in, LatticeFermion &out,int dag);
-      // These ones will need to be package intelligently. WilsonType base class
-      // for use by DWF etc..
-      void DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
-		    std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-		    int ss,const LatticeFermion &in, LatticeFermion &out);
-      void DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
-		       std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-		       int ss,const LatticeFermion &in, LatticeFermion &out);
 
       typedef iScalar<iMatrix<vComplex, Nc> > matrix;
 
       
     };
 
+
+    class DiracOpt {
+    public:
+      // These ones will need to be package intelligently. WilsonType base class
+      // for use by DWF etc..
+      static void DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
+		    std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
+		    int ss,const LatticeFermion &in, LatticeFermion &out);
+      static void DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
+		       std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
+		       int ss,const LatticeFermion &in, LatticeFermion &out);
+
+    };
+    class DiracOptHand {
+    public:
+      // These ones will need to be package intelligently. WilsonType base class
+      // for use by DWF etc..
+      static void DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
+		    std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
+		    int ss,const LatticeFermion &in, LatticeFermion &out);
+      static void DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
+		       std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
+		       int ss,const LatticeFermion &in, LatticeFermion &out);
+
+    };
 
   }
 }

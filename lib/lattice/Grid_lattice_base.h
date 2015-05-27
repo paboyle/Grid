@@ -47,6 +47,11 @@ class LatticeTrinaryExpression :public std::pair<Op,std::tuple<T1,T2,T3> >, publ
  LatticeTrinaryExpression(const std::pair<Op,std::tuple<T1,T2,T3> > &arg): std::pair<Op,std::tuple<T1,T2,T3> >(arg) {};
 };
 
+void inline conformable(GridBase *lhs,GridBase *rhs)
+{
+  assert(lhs == rhs);
+}
+
 template<class vobj>
 class Lattice : public LatticeBase
 {
@@ -60,7 +65,8 @@ public:
     typedef typename vobj::scalar_type scalar_type;
     typedef typename vobj::vector_type vector_type;
     typedef vobj vector_object;
-    
+ 
+   
   ////////////////////////////////////////////////////////////////////////////////
   // Expression Template closure support
   ////////////////////////////////////////////////////////////////////////////////
@@ -276,17 +282,15 @@ PARALLEL_FOR_LOOP
 }
 
 
-#include <lattice/Grid_lattice_conformable.h>
 
+#include <lattice/Grid_lattice_conformable.h>
 #define GRID_LATTICE_EXPRESSION_TEMPLATES
 #ifdef  GRID_LATTICE_EXPRESSION_TEMPLATES
 #include <lattice/Grid_lattice_ET.h>
 #else 
 #include <lattice/Grid_lattice_overload.h>
 #endif
-
 #include <lattice/Grid_lattice_arith.h>
-
 #include <lattice/Grid_lattice_trace.h>
 #include <lattice/Grid_lattice_transpose.h>
 #include <lattice/Grid_lattice_local.h>

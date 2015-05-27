@@ -304,8 +304,7 @@ top_srcdir = @top_srcdir@
 
 # additional include paths necessary to compile the C++ library
 AM_CXXFLAGS = -I$(top_srcdir)/
-SUBDIRS = lib tests benchmarks docs
-@DOXYGEN_DOC_TRUE@directory = $(top_srcdir)/docs/
+SUBDIRS = lib tests benchmarks
 all: all-recursive
 
 .SUFFIXES:
@@ -761,9 +760,6 @@ uninstall-am:
 	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
 	pdf-am ps ps-am tags tags-am uninstall uninstall-am
 
-
-@DOXYGEN_DOC_TRUE@doxyfile:
-@DOXYGEN_DOC_TRUE@        (cd $(directory) && $(MAKE) $(AM_MAKEFLAGS) $@) || exit 1; 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
