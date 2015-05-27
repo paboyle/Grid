@@ -31,11 +31,9 @@ int main (int argc, char ** argv)
   std::cout << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   std::vector<int> seeds({1,2,3,4});
-
   GridParallelRNG          pRNG(&Grid);
-  //  std::vector<int> seeds({1,2,3,4});
-  //  pRNG.SeedFixedIntegers(seeds);
-  pRNG.SeedRandomDevice();
+  pRNG.SeedFixedIntegers(seeds);
+  //  pRNG.SeedRandomDevice();
 
   LatticeFermion src   (&Grid); random(pRNG,src);
   LatticeFermion result(&Grid); result=zero;
@@ -55,8 +53,10 @@ int main (int argc, char ** argv)
   Complex cone(1.0,0.0);
   for(int nn=0;nn<Nd;nn++){
     random(pRNG,U[nn]);
-    if (nn!=0) U[nn]=zero;
-    else U[nn] = cone;
+    if(0) {
+      if (nn==-1) { U[nn]=zero; std::cout << "zeroing gauge field in dir "<<nn<<std::endl; }
+      else       { U[nn] = cone;std::cout << "unit gauge field in dir "<<nn<<std::endl; }
+    }
     pokeIndex<LorentzIndex>(Umu,U[nn],nn);
   }
 
@@ -85,7 +85,7 @@ int main (int argc, char ** argv)
   WilsonMatrix Dw(Umu,Grid,RBGrid,mass);
   
   std::cout << "Calling Dw"<<std::endl;
-  int ncall=1000;
+  int ncall=10000;
   double t0=usecond();
   for(int i=0;i<ncall;i++){
     Dw.Dhop(src,result,0);

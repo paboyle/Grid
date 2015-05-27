@@ -18,6 +18,8 @@ libGrid_a_SOURCES =				\
 	Grid_init.cc				\
 	stencil/Grid_stencil_common.cc		\
 	qcd/Grid_qcd_dirac.cc			\
+	qcd/Grid_qcd_dhop.cc			\
+	qcd/Grid_qcd_dhop_hand.cc		\
 	qcd/Grid_qcd_wilson_dop.cc		\
 	algorithms/approx/Zolotarev.cc		\
 	algorithms/approx/Remez.cc		\
