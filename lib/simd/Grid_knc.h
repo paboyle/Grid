@@ -4,7 +4,7 @@
 
   Using intrinsics
 */
-// Time-stamp: <2015-05-22 17:12:44 neo>
+// Time-stamp: <2015-05-27 12:08:50 neo>
 //----------------------------------------------------------------------
 
 #include <immintrin.h>
@@ -302,7 +302,32 @@ namespace Grid {
   typedef __m512d SIMD_Dtype; // Double precision type
   typedef __m512i SIMD_Itype; // Integer type
 
+  // prefecth
+  inline void v_prefetch0(int size, const char *ptr){
+    for(int i=0;i<size;i+=64){ //  Define L1 linesize above
+      _mm_prefetch(ptr+i+4096,_MM_HINT_T1);
+      _mm_prefetch(ptr+i+512,_MM_HINT_T0);
+    }
+  }
 
+  // Gpermute utilities consider coalescing into 1 Gpermute
+  template < typename VectorSIMD > 
+    inline void Gpermute(VectorSIMD &y,const VectorSIMD &b, int perm ) {
+    union { 
+      __m512 f;
+      decltype(VectorSIMD::v) v;
+    } conv;
+    conv.v = b.v;
+    switch(perm){
+    case 3:  conv.f = _mm512_swizzle_ps(conv.f,_MM_SWIZ_REG_CDAB); break;
+    case 2:  conv.f = _mm512_swizzle_ps(conv.f,_MM_SWIZ_REG_BADC); break; 
+    case 1 : conv.f = _mm512_permute4f128_ps(conv.f,(_MM_PERM_ENUM)_MM_SHUFFLE(2,3,0,1)); break;
+    case 0 : conv.f = _mm512_permute4f128_ps(conv.f,(_MM_PERM_ENUM)_MM_SHUFFLE(1,0,3,2)); break;
+    default: assert(0); break;
+    }
+    y=conv.v;
+  };
+  
   // Function name aliases
   typedef Optimization::Vsplat   VsplatSIMD;
   typedef Optimization::Vstore   VstoreSIMD;
