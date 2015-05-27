@@ -46,3 +46,5 @@ config.status
 /install-sh
 /missing
 /stamp-h1
+/config.sub
+/config.guess
