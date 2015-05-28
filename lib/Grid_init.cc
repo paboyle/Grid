@@ -54,7 +54,6 @@ namespace Grid {
   const std::vector<int> &GridDefaultLatt(void)     {return Grid_default_latt;};
   const std::vector<int> &GridDefaultMpi(void)      {return Grid_default_mpi;};
 
-
   ////////////////////////////////////////////////////////////
   // Command line parsing assist for stock controls
   ////////////////////////////////////////////////////////////
