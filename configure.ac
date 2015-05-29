@@ -3,7 +3,7 @@
 #
 # Project Grid package  
 # 
-# Time-stamp: <2015-05-27 18:29:04 neo>
+# Time-stamp: <2015-05-27 18:51:47 neo>
 
 AC_PREREQ([2.63])
 AC_INIT([Grid], [1.0], [paboyle@ph.ed.ac.uk])
@@ -106,7 +106,7 @@ case ${ac_SIMD} in
      AVX512|MIC)
        echo Configuring for AVX512 and MIC
        AC_DEFINE([AVX512],[1],[AVX512] )
-       supported=yes
+       supported="cross compilation"
      ;;
      *)
      AC_MSG_ERROR([${ac_SIMD} unsupported --enable-simd option]); 
