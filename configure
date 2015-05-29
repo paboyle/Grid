@@ -6709,7 +6709,7 @@ $as_echo "$as_me: WARNING: Your processor does not support AVX2 instructions" >&
 
 $as_echo "#define AVX512 1" >>confdefs.h
 
-       supported=yes
+       supported="cross compilation"
      ;;
      *)
      as_fn_error $? "${ac_SIMD} unsupported --enable-simd option" "$LINENO" 5;
