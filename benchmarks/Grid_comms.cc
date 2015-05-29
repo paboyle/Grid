@@ -77,7 +77,8 @@ int main (int argc, char ** argv)
       }
       double stop=usecond();
 
-      double xbytes    = Nloop*bytes*2*ncomm;
+      double dbytes    = bytes;
+      double xbytes    = Nloop*dbytes*2.0*ncomm;
       double rbytes    = xbytes;
       double bidibytes = xbytes+rbytes;
 
@@ -151,8 +152,9 @@ int main (int argc, char ** argv)
       }
 
       double stop=usecond();
-
-      double xbytes    = Nloop*bytes*2*ncomm;
+      
+      double dbytes    = bytes;
+      double xbytes    = Nloop*dbytes*2.0*ncomm;
       double rbytes    = xbytes;
       double bidibytes = xbytes+rbytes;
 
