@@ -27,9 +27,11 @@ Gather_plane_simple (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<
 
   int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
   
+  int e1=rhs._grid->_slice_nblock[dimension];
+  int e2=rhs._grid->_slice_block[dimension];
 PARALLEL_NESTED_LOOP2
-  for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-    for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
+  for(int n=0;n<e1;n++){
+    for(int b=0;b<e2;b++){
       int o  = n*rhs._grid->_slice_stride[dimension];
       int bo = n*rhs._grid->_slice_block[dimension];
       int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
@@ -54,10 +56,12 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename cobj::scalar_
   }
 
   int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-    
+
+  int e1=rhs._grid->_slice_nblock[dimension];
+  int e2=rhs._grid->_slice_block[dimension];
 PARALLEL_NESTED_LOOP2
-  for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-    for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
+  for(int n=0;n<e1;n++){
+    for(int b=0;b<e2;b++){
 
       int o=n*rhs._grid->_slice_stride[dimension];
       int offset = b+n*rhs._grid->_slice_block[dimension];
@@ -103,9 +107,11 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,std::vector<v
 
   int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
     
+  int e1=rhs._grid->_slice_nblock[dimension];
+  int e2=rhs._grid->_slice_block[dimension];
 PARALLEL_NESTED_LOOP2
-  for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-    for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
+  for(int n=0;n<e1;n++){
+    for(int b=0;b<e2;b++){
       int o   =n*rhs._grid->_slice_stride[dimension];
       int bo  =n*rhs._grid->_slice_block[dimension];
       int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
@@ -129,10 +135,11 @@ PARALLEL_NESTED_LOOP2
 
   int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
     
+  int e1=rhs._grid->_slice_nblock[dimension];
+  int e2=rhs._grid->_slice_block[dimension];
 PARALLEL_NESTED_LOOP2
-  for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-    for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
-
+  for(int n=0;n<e1;n++){
+    for(int b=0;b<e2;b++){
       int o      = n*rhs._grid->_slice_stride[dimension];
       int offset = b+n*rhs._grid->_slice_block[dimension];
       int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
@@ -156,10 +163,12 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,Lattice<vobj> &rhs, int 
 
   int ro  = rplane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
   int lo  = lplane*lhs._grid->_ostride[dimension]; // base offset for start of plane 
-  
+
+  int e1=rhs._grid->_slice_nblock[dimension]; // clearly loop invariant for icpc
+  int e2=rhs._grid->_slice_block[dimension];
 PARALLEL_NESTED_LOOP2
-  for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-    for(int b=0;b<rhs._grid->_slice_block[dimension];b++){
+  for(int n=0;n<e1;n++){
+    for(int b=0;b<e2;b++){
  
       int o =n*rhs._grid->_slice_stride[dimension]+b;
       int ocb=1<<lhs._grid->CheckerBoardFromOindex(o);
@@ -185,10 +194,12 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,Lattice<vobj> &r
 
   int ro  = rplane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
   int lo  = lplane*lhs._grid->_ostride[dimension]; // base offset for start of plane 
-  
+
+  int e1=rhs._grid->_slice_nblock[dimension];
+  int e2=rhs._grid->_slice_block [dimension];
 PARALLEL_NESTED_LOOP2
-  for(int n=0;n<rhs._grid->_slice_nblock[dimension];n++){
-  for(int b=0;b<rhs._grid->_slice_block [dimension];b++){
+  for(int n=0;n<e1;n++){
+  for(int b=0;b<e2;b++){
 
       int o  =n*rhs._grid->_slice_stride[dimension];
       int ocb=1<<lhs._grid->CheckerBoardFromOindex(o+b);
