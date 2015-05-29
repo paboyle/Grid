@@ -10,6 +10,21 @@
 #include <pmmintrin.h>
 
 namespace Optimization {
+
+  template<class vtype>
+  union uconv {
+    __m128 f;
+    vtype v;
+  };
+
+  union u128f {
+    __m128 v;
+    float f[4];
+  };
+  union u128d {
+    __m128d v;
+    double f[2];
+  };
   
   struct Vsplat{
     //Complex float
@@ -50,7 +65,6 @@ namespace Optimization {
 
   };
 
-
   struct Vstream{
     //Float
     inline void operator()(float * a, __m128 b){
@@ -63,8 +77,6 @@ namespace Optimization {
 
 
   };
-
-
 
   struct Vset{
     // Complex float 
@@ -102,9 +114,6 @@ namespace Optimization {
     }
   };
 
-
- 
-
   /////////////////////////////////////////////////////
   // Arithmetic operations
   /////////////////////////////////////////////////////
@@ -137,7 +146,6 @@ namespace Optimization {
       return _mm_sub_epi32(a,b);
     }
   };
-
 
   struct MultComplex{
     // Complex float
@@ -177,7 +185,6 @@ namespace Optimization {
     }
   };
 
-
   struct Conj{
     // Complex single
     inline __m128 operator()(__m128 in){
@@ -216,57 +223,61 @@ namespace Optimization {
       __m128d tmp = _mm_shuffle_pd(in,in,0x1);
       return _mm_addsub_pd(_mm_setzero_pd(),tmp); // r,-i
     }
-
-
   };
-
-
-
-
 
   //////////////////////////////////////////////
   // Some Template specialization
-  
+  template < typename vtype > 
+    void permute(vtype &a, vtype b, int perm) {
+    uconv<vtype> conv; 
+    conv.v = b;
+    switch(perm){
+    case 3: break; //empty for SSE4
+    case 2: break; //empty for SSE4
+    case 1: conv.f = _mm_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(2,3,0,1)); break;
+    case 0: conv.f = _mm_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(1,0,3,2)); break;
+    default: assert(0); break;
+    }
+    a=conv.v;
+  }; 
+
   //Complex float Reduce
   template<>
   inline Grid::ComplexF Reduce<Grid::ComplexF, __m128>::operator()(__m128 in){
-    union {
-      __m128 v1;  
-      float f[4]; 
-    } u128;
-    u128.v1 = _mm_add_ps(in, _mm_shuffle_ps(in,in, 0b01001110)); // FIXME Prefer to use _MM_SHUFFLE macros
-    return Grid::ComplexF(u128.f[0], u128.f[1]);   
+    __m128 v1; // two complex
+    Optimization::permute(v1,in,0); 
+    v1= _mm_add_ps(v1,in);
+    u128f conv;    conv.v=v1;
+    return Grid::ComplexF(conv.f[0],conv.f[1]);
   }
   //Real float Reduce
   template<>
   inline Grid::RealF Reduce<Grid::RealF, __m128>::operator()(__m128 in){
-    // FIXME Hack
-    const Grid::RealF * ptr = (const Grid::RealF *) &in;
-    Grid::RealF ret = 0; 
-    for(int i=0;i< 4 ;i++){ // 4 number of simd lanes for float
-      ret = ret+ptr[i];
-    }
-    return ret;
+    __m128 v1,v2; // quad single
+    Optimization::permute(v1,in,0); 
+    v1= _mm_add_ps(v1,in);
+    Optimization::permute(v2,v1,1); 
+    v1 = _mm_add_ps(v1,v2);
+    u128f conv; conv.v=v1;
+    return conv.f[0];
   }
   
   
   //Complex double Reduce
   template<>
   inline Grid::ComplexD Reduce<Grid::ComplexD, __m128d>::operator()(__m128d in){
-    printf("Reduce : Missing good complex double implementation -> FIX\n");
-    return Grid::ComplexD(in[0], in[1]); // inefficient
+    u128d conv; conv.v = in;
+    return Grid::ComplexD(conv.f[0],conv.f[1]);
   }
   
   //Real double Reduce
   template<>
   inline Grid::RealD Reduce<Grid::RealD, __m128d>::operator()(__m128d in){
-    // FIXME Hack
-    const Grid::RealD * ptr =(const Grid::RealD *)  &in;
-    Grid::RealD ret = 0; 
-    for(int i=0;i< 2 ;i++){// 2 number of simd lanes for float
-      ret = ret+ptr[i];
-    }
-    return ret;
+    __m128d v1;
+    Optimization::permute(v1,in,0); // avx 256; quad double
+    v1 = _mm_add_pd(v1,in);
+    u128d conv; conv.v = v1;
+    return conv.f[0];
   }
 
   //Integer Reduce
@@ -276,12 +287,6 @@ namespace Optimization {
    printf("Reduce : Missing integer implementation -> FIX\n");
     assert(0);
   }
-  
-
-
-
-
-  
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -292,27 +297,13 @@ namespace Grid {
   typedef __m128d SIMD_Dtype; // Double precision type
   typedef __m128i SIMD_Itype; // Integer type
 
-
   inline void v_prefetch0(int size, const char *ptr){};  // prefetch utilities
 
   // Gpermute function
   template < typename VectorSIMD > 
     inline void Gpermute(VectorSIMD &y,const VectorSIMD &b, int perm ) {
-    union { 
-      __m128 f;
-      decltype(VectorSIMD::v) v;
-    } conv;
-    conv.v = b.v;
-    switch(perm){
-    case 3: break; //empty for SSE4
-    case 2: break; //empty for SSE4
-    case 1: conv.f = _mm_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(2,3,0,1)); break;
-    case 0: conv.f = _mm_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(1,0,3,2)); break;
-    default: assert(0); break;
-    }
-    y.v=conv.v;
-  }; 
-  
+    Optimization::permute(y.v,b.v,perm);
+  }
 
 
   // Function name aliases

@@ -27,8 +27,8 @@ int main (int argc, char ** argv)
 
   for(int lat=4;lat<=32;lat+=4){
 
-      std::vector<int> latt_size  ({lat,lat,lat,lat});
-
+      std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
+      int vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
       //GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
@@ -47,8 +47,8 @@ int main (int argc, char ** argv)
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
       
-      double flops=lat*lat*lat*lat*Nvec*2;// mul,add
-      double bytes=3*lat*lat*lat*lat*Nvec*sizeof(Real);
+      double flops=vol*Nvec*2;// mul,add
+      double bytes=3*vol*Nvec*sizeof(Real);
       std::cout<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<std::endl;
 
     }
@@ -61,8 +61,8 @@ int main (int argc, char ** argv)
   
   for(int lat=4;lat<=32;lat+=4){
 
-      std::vector<int> latt_size  ({lat,lat,lat,lat});
-
+      std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
+      int vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
       //GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
@@ -79,8 +79,8 @@ int main (int argc, char ** argv)
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
      
-      double flops=lat*lat*lat*lat*Nvec*2;// mul,add
-      double bytes=3*lat*lat*lat*lat*Nvec*sizeof(Real);
+      double flops=vol*Nvec*2;// mul,add
+      double bytes=3*vol*Nvec*sizeof(Real);
       std::cout<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<std::endl;
 
     }
@@ -92,7 +92,8 @@ int main (int argc, char ** argv)
 
   for(int lat=4;lat<=32;lat+=4){
 
-      std::vector<int> latt_size  ({lat,lat,lat,lat});
+      std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
+      int vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
@@ -111,8 +112,8 @@ int main (int argc, char ** argv)
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
       
-      double bytes=2*lat*lat*lat*lat*Nvec*sizeof(Real);
-      double flops=lat*lat*lat*lat*Nvec*1;// mul
+      double bytes=2*vol*Nvec*sizeof(Real);
+      double flops=vol*Nvec*1;// mul
       std::cout <<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<std::endl;
 
   }
@@ -125,8 +126,8 @@ int main (int argc, char ** argv)
 
   for(int lat=4;lat<=32;lat+=4){
 
-      std::vector<int> latt_size  ({lat,lat,lat,lat});
-
+      std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
+      int vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
       //GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
@@ -144,8 +145,8 @@ int main (int argc, char ** argv)
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
       
-      double bytes=lat*lat*lat*lat*Nvec*sizeof(Real);
-      double flops=lat*lat*lat*lat*Nvec*2;// mul,add
+      double bytes=vol*Nvec*sizeof(Real);
+      double flops=vol*Nvec*2;// mul,add
       std::cout<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"  \t\t"<<bytes/time<<"\t\t"<<flops/time<<std::endl;
 
   }    
