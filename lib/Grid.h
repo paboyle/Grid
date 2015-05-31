@@ -60,7 +60,7 @@
 
 #include <Grid_algorithms.h>// subdir aggregate
 
-#include <qcd/Grid_qcd.h>
+#include <qcd/QCD.h>
 #include <parallelIO/GridNerscIO.h>
 
 namespace Grid {

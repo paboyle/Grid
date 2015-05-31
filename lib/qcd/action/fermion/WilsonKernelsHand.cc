@@ -27,7 +27,7 @@
     Chi_12 = ref()(1)(2);
 
 #define MULT_2SPIN(A)\
-   auto & ref(U._odata[ss](A));	\
+   auto & ref(U._odata[sU](A));	\
     U_00 = ref()(0,0);\
     U_10 = ref()(1,0);\
     U_20 = ref()(2,0);\
@@ -282,7 +282,7 @@ namespace QCD {
 
 void DiracOptHand::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
 			    std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-			    int ss,const LatticeFermion &in, LatticeFermion &out)
+			    int sF,int sU,const LatticeFermion &in, LatticeFermion &out)
 {
   REGISTER vComplex result_00; // 12 regs on knc
   REGISTER vComplex result_01;
@@ -338,7 +338,8 @@ void DiracOptHand::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
 
 
   int offset,local,perm, ptype;
-
+  int ss=sF;
+  
   // Xp
   offset = st._offsets [Xp][ss];
   local  = st._is_local[Xp][ss];
@@ -514,24 +515,24 @@ void DiracOptHand::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
 
   {
     vSpinColourVector & ref (out._odata[ss]);
-    vstream(ref()(0)(0),result_00);
-    vstream(ref()(0)(1),result_01);
-    vstream(ref()(0)(2),result_02);
-    vstream(ref()(1)(0),result_10);
-    vstream(ref()(1)(1),result_11);
-    vstream(ref()(1)(2),result_12);
-    vstream(ref()(2)(0),result_20);
-    vstream(ref()(2)(1),result_21);
-    vstream(ref()(2)(2),result_22);
-    vstream(ref()(3)(0),result_30);
-    vstream(ref()(3)(1),result_31);
-    vstream(ref()(3)(2),result_32);
+    vstream(ref()(0)(0),result_00*(-0.5));
+    vstream(ref()(0)(1),result_01*(-0.5));
+    vstream(ref()(0)(2),result_02*(-0.5));
+    vstream(ref()(1)(0),result_10*(-0.5));
+    vstream(ref()(1)(1),result_11*(-0.5));
+    vstream(ref()(1)(2),result_12*(-0.5));
+    vstream(ref()(2)(0),result_20*(-0.5));
+    vstream(ref()(2)(1),result_21*(-0.5));
+    vstream(ref()(2)(2),result_22*(-0.5));
+    vstream(ref()(3)(0),result_30*(-0.5));
+    vstream(ref()(3)(1),result_31*(-0.5));
+    vstream(ref()(3)(2),result_32*(-0.5));
   }
 }
 
 void DiracOptHand::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
 			       std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-			       int ss,const LatticeFermion &in, LatticeFermion &out)
+			       int ss,int sU,const LatticeFermion &in, LatticeFermion &out)
 {
   REGISTER vComplex result_00; // 12 regs on knc
   REGISTER vComplex result_01;
@@ -752,18 +753,18 @@ void DiracOptHand::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
 
   {
     vSpinColourVector & ref (out._odata[ss]);
-    vstream(ref()(0)(0),result_00);
-    vstream(ref()(0)(1),result_01);
-    vstream(ref()(0)(2),result_02);
-    vstream(ref()(1)(0),result_10);
-    vstream(ref()(1)(1),result_11);
-    vstream(ref()(1)(2),result_12);
-    vstream(ref()(2)(0),result_20);
-    vstream(ref()(2)(1),result_21);
-    vstream(ref()(2)(2),result_22);
-    vstream(ref()(3)(0),result_30);
-    vstream(ref()(3)(1),result_31);
-    vstream(ref()(3)(2),result_32);
+    vstream(ref()(0)(0),result_00*(-0.5));
+    vstream(ref()(0)(1),result_01*(-0.5));
+    vstream(ref()(0)(2),result_02*(-0.5));
+    vstream(ref()(1)(0),result_10*(-0.5));
+    vstream(ref()(1)(1),result_11*(-0.5));
+    vstream(ref()(1)(2),result_12*(-0.5));
+    vstream(ref()(2)(0),result_20*(-0.5));
+    vstream(ref()(2)(1),result_21*(-0.5));
+    vstream(ref()(2)(2),result_22*(-0.5));
+    vstream(ref()(3)(0),result_30*(-0.5));
+    vstream(ref()(3)(1),result_31*(-0.5));
+    vstream(ref()(3)(2),result_32*(-0.5));
   }
 }
 }}

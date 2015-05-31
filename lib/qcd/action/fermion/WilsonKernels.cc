@@ -4,8 +4,8 @@ namespace Grid {
 namespace QCD {
 
 void DiracOpt::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
-			    std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-			    int ss,const LatticeFermion &in, LatticeFermion &out)
+			std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
+			int sF,int sU,const LatticeFermion &in, LatticeFermion &out)
 {
     vHalfSpinColourVector  tmp;    
     vHalfSpinColourVector  chi;    
@@ -16,6 +16,7 @@ void DiracOpt::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     //#define VERBOSE( A)  if ( ss<10 ) { std::cout << "site " <<ss << " " #A " neigh " << offset << " perm "<< perm <<std::endl;}    
 
     // Xp
+    int ss = sF;
     offset = st._offsets [Xp][ss];
     local  = st._is_local[Xp][ss];
     perm   = st._permute[Xp][ss];
@@ -29,7 +30,7 @@ void DiracOpt::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     } else { 
       chi=buf[offset];
     }
-    mult(&Uchi(),&U._odata[ss](Xp),&chi());
+    mult(&Uchi(),&U._odata[sU](Xp),&chi());
     spReconXp(result,Uchi);
 
     //    std::cout << "XP_RECON"<<std::endl;
@@ -51,7 +52,7 @@ void DiracOpt::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     } else { 
       chi=buf[offset];
     }
-    mult(&Uchi(),&U._odata[ss](Yp),&chi());
+    mult(&Uchi(),&U._odata[sU](Yp),&chi());
     accumReconYp(result,Uchi);
 
     // Zp
@@ -67,7 +68,7 @@ void DiracOpt::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     } else { 
       chi=buf[offset];
     }
-    mult(&Uchi(),&U._odata[ss](Zp),&chi());
+    mult(&Uchi(),&U._odata[sU](Zp),&chi());
     accumReconZp(result,Uchi);
 
     // Tp
@@ -83,7 +84,7 @@ void DiracOpt::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     } else { 
       chi=buf[offset];
     }
-    mult(&Uchi(),&U._odata[ss](Tp),&chi());
+    mult(&Uchi(),&U._odata[sU](Tp),&chi());
     accumReconTp(result,Uchi);
 
     // Xm
@@ -101,7 +102,7 @@ void DiracOpt::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     } else { 
       chi=buf[offset];
     }
-    mult(&Uchi(),&U._odata[ss](Xm),&chi());
+    mult(&Uchi(),&U._odata[sU](Xm),&chi());
     accumReconXm(result,Uchi);
     //  std::cout << "XM_RECON_ACCUM"<<std::endl;
     //    std::cout << result()(0)(0) <<" "<<result()(0)(1) <<" "<<result()(0)(2) <<std::endl;
@@ -124,7 +125,7 @@ void DiracOpt::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     } else { 
       chi=buf[offset];
     }
-    mult(&Uchi(),&U._odata[ss](Ym),&chi());
+    mult(&Uchi(),&U._odata[sU](Ym),&chi());
     accumReconYm(result,Uchi);
 
     // Zm
@@ -140,7 +141,7 @@ void DiracOpt::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     } else { 
       chi=buf[offset];
     }
-    mult(&Uchi(),&U._odata[ss](Zm),&chi());
+    mult(&Uchi(),&U._odata[sU](Zm),&chi());
     accumReconZm(result,Uchi);
 
     // Tm
@@ -156,15 +157,15 @@ void DiracOpt::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     } else { 
       chi=buf[offset];
     }
-    mult(&Uchi(),&U._odata[ss](Tm),&chi());
+    mult(&Uchi(),&U._odata[sU](Tm),&chi());
     accumReconTm(result,Uchi);
 
-    vstream(out._odata[ss],result);
+    vstream(out._odata[ss],result*(-0.5));
 }
 
 void DiracOpt::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
-			       std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-			       int ss,const LatticeFermion &in, LatticeFermion &out)
+			   std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
+			   int sF,int sU,const LatticeFermion &in, LatticeFermion &out)
 {
     vHalfSpinColourVector  tmp;    
     vHalfSpinColourVector  chi;    
@@ -173,6 +174,7 @@ void DiracOpt::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
     int offset,local,perm, ptype;
 
     // Xp
+    int ss=sF;
     offset = st._offsets [Xm][ss];
     local  = st._is_local[Xm][ss];
     perm   = st._permute[Xm][ss];
@@ -186,7 +188,7 @@ void DiracOpt::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
     } else { 
       chi=buf[offset];
     }
-    mult(&Uchi(),&U._odata[ss](Xm),&chi());
+    mult(&Uchi(),&U._odata[sU](Xm),&chi());
     spReconXp(result,Uchi);
 
     // Yp
@@ -202,7 +204,7 @@ void DiracOpt::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
     } else { 
       chi=buf[offset];
     }
-    mult(&Uchi(),&U._odata[ss](Ym),&chi());
+    mult(&Uchi(),&U._odata[sU](Ym),&chi());
     accumReconYp(result,Uchi);
 
     // Zp
@@ -218,7 +220,7 @@ void DiracOpt::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
     } else { 
       chi=buf[offset];
     }
-    mult(&Uchi(),&U._odata[ss](Zm),&chi());
+    mult(&Uchi(),&U._odata[sU](Zm),&chi());
     accumReconZp(result,Uchi);
 
     // Tp
@@ -234,7 +236,7 @@ void DiracOpt::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
     } else { 
       chi=buf[offset];
     }
-    mult(&Uchi(),&U._odata[ss](Tm),&chi());
+    mult(&Uchi(),&U._odata[sU](Tm),&chi());
     accumReconTp(result,Uchi);
 
     // Xm
@@ -252,7 +254,7 @@ void DiracOpt::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
     } else { 
       chi=buf[offset];
     }
-    mult(&Uchi(),&U._odata[ss](Xp),&chi());
+    mult(&Uchi(),&U._odata[sU](Xp),&chi());
     accumReconXm(result,Uchi);
 
     // Ym
@@ -269,7 +271,7 @@ void DiracOpt::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
     } else { 
       chi=buf[offset];
     }
-    mult(&Uchi(),&U._odata[ss](Yp),&chi());
+    mult(&Uchi(),&U._odata[sU](Yp),&chi());
     accumReconYm(result,Uchi);
 
     // Zm
@@ -285,7 +287,7 @@ void DiracOpt::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
     } else { 
       chi=buf[offset];
     }
-    mult(&Uchi(),&U._odata[ss](Zp),&chi());
+    mult(&Uchi(),&U._odata[sU](Zp),&chi());
     accumReconZm(result,Uchi);
 
     // Tm
@@ -301,9 +303,9 @@ void DiracOpt::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
     } else { 
       chi=buf[offset];
     }
-    mult(&Uchi(),&U._odata[ss](Tp),&chi());
+    mult(&Uchi(),&U._odata[sU](Tp),&chi());
     accumReconTm(result,Uchi);
 
-    vstream(out._odata[ss],result);
+    vstream(out._odata[ss],result*(-0.5));
 }
 }}

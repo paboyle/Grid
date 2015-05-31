@@ -82,7 +82,7 @@ int main (int argc, char ** argv)
       double rbytes    = xbytes;
       double bidibytes = xbytes+rbytes;
 
-      double time = stop-start;
+      double time = stop-start; // microseconds
 
       std::cout << lat<<"\t\t"<<Ls<<"\t\t"<<bytes<<"\t\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
     }
