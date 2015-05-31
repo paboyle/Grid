@@ -52,16 +52,13 @@ public:
     ////////////////////////////////////////////////////////////////
     virtual int CheckerBoarded(int dim)=0;
     virtual int CheckerBoard(std::vector<int> site)=0;
-    virtual int CheckerBoardDestination(int source_cb,int shift)=0;
+    virtual int CheckerBoardDestination(int source_cb,int shift,int dim)=0;
     virtual int CheckerBoardShift(int source_cb,int dim,int shift,int osite)=0;
-    inline int  CheckerBoardFromOindex (int Oindex){
+    virtual int CheckerBoardShiftForCB(int source_cb,int dim,int shift,int cb)=0;
+    int  CheckerBoardFromOindex (int Oindex){
       std::vector<int> ocoor;
       oCoorFromOindex(ocoor,Oindex); 
-      int ss=0;
-      for(int d=0;d<_ndimension;d++){
-	ss=ss+ocoor[d];
-      }      
-      return ss&0x1;
+      return CheckerBoard(ocoor);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////

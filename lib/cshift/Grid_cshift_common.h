@@ -175,7 +175,6 @@ PARALLEL_NESTED_LOOP2
       if ( ocb&cbmask ) {
 	//lhs._odata[lo+o]=rhs._odata[ro+o];
 	vstream(lhs._odata[lo+o],rhs._odata[ro+o]);
-	
       }
 
     }
@@ -217,8 +216,8 @@ template<class vobj> void Cshift_local(Lattice<vobj>& ret,Lattice<vobj> &rhs,int
 {
   int sshift[2];
 
-  sshift[0] = rhs._grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,0);
-  sshift[1] = rhs._grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,1);
+  sshift[0] = rhs._grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,Even);
+  sshift[1] = rhs._grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,Odd);
 
   if ( sshift[0] == sshift[1] ) {
     Cshift_local(ret,rhs,dimension,shift,0x3);
@@ -239,8 +238,7 @@ template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,Lattice<vobj>
   // Map to always positive shift modulo global full dimension.
   shift = (shift+fd)%fd;
 
-  ret.checkerboard = grid->CheckerBoardDestination(rhs.checkerboard,shift);
-        
+  ret.checkerboard = grid->CheckerBoardDestination(rhs.checkerboard,shift,dimension);
   // the permute type
   int permute_dim =grid->PermuteDim(dimension);
   int permute_type=grid->PermuteType(dimension);
@@ -250,11 +248,11 @@ template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,Lattice<vobj>
     int o   = 0;
     int bo  = x * grid->_ostride[dimension];
     
-    int cb= (cbmask==0x2)? 1 : 0;
+    int cb= (cbmask==0x2)? Odd : Even;
 
-    int sshift = grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,cb);
+    int sshift = grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,cb);
     int sx     = (x+sshift)%rd;
-	
+
     int permute_slice=0;
     if(permute_dim){
       int wrap = sshift/rd;

@@ -116,7 +116,7 @@ PARALLEL_FOR_LOOP
 
       int Nsimd = grid->Nsimd();
 
-      assert( l.checkerboard== l._grid->CheckerBoard(site));
+      assert( l.checkerboard == l._grid->CheckerBoard(site));
       assert( sizeof(sobj)*Nsimd == sizeof(vobj));
 
       int rank,odx,idx;

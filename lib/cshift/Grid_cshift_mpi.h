@@ -39,8 +39,8 @@ template<class vobj> void Cshift_comms(Lattice<vobj>& ret,Lattice<vobj> &rhs,int
 {
   int sshift[2];
 
-  sshift[0] = rhs._grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,0);
-  sshift[1] = rhs._grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,1);
+  sshift[0] = rhs._grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,Even);
+  sshift[1] = rhs._grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,Odd);
 
   if ( sshift[0] == sshift[1] ) {
     Cshift_comms(ret,rhs,dimension,shift,0x3);
@@ -54,8 +54,8 @@ template<class vobj> void Cshift_comms_simd(Lattice<vobj>& ret,Lattice<vobj> &rh
 {
   int sshift[2];
 
-  sshift[0] = rhs._grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,0);
-  sshift[1] = rhs._grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,1);
+  sshift[0] = rhs._grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,Even);
+  sshift[1] = rhs._grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,Odd);
 
   if ( sshift[0] == sshift[1] ) {
     Cshift_comms_simd(ret,rhs,dimension,shift,0x3);
@@ -87,8 +87,8 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,Lattice<vobj> &rhs,int
   std::vector<vobj,alignedAllocator<vobj> > send_buf(buffer_size);
   std::vector<vobj,alignedAllocator<vobj> > recv_buf(buffer_size);
 
-  int cb= (cbmask==0x2)? 1 : 0;
-  int sshift= rhs._grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,cb);
+  int cb= (cbmask==0x2)? Odd : Even;
+  int sshift= rhs._grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,cb);
 
   for(int x=0;x<rd;x++){       
 
@@ -162,8 +162,8 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &r
   ///////////////////////////////////////////
   // Work out what to send where
   ///////////////////////////////////////////
-  int cb    = (cbmask==0x2)? 1 : 0;
-  int sshift= grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,cb);
+  int cb    = (cbmask==0x2)? Odd : Even;
+  int sshift= grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,cb);
 
   // loop over outer coord planes orthog to dim
   for(int x=0;x<rd;x++){       

@@ -60,7 +60,7 @@ int main (int argc, char ** argv)
 
   RealD mass=0.1;
 
-  WilsonMatrix Dw(Umu,Grid,RBGrid,mass);
+  WilsonFermion Dw(Umu,Grid,RBGrid,mass);
 
   LatticeFermion src_e   (&RBGrid);
   LatticeFermion src_o   (&RBGrid);
