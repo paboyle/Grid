@@ -60,8 +60,8 @@ namespace Grid {
 
       // FIXME CGdiagonalMee not implemented virtual function
       // FIXME use CBfactorise to control schur decomp
-      GridBase *grid = _Matrix._cbgrid;
-      GridBase *fgrid= _Matrix._grid;
+      GridBase *grid = _Matrix.RedBlackGrid();
+      GridBase *fgrid= _Matrix.Grid();
  
       Field src_e(grid);
       Field src_o(grid);

@@ -1,6 +1,8 @@
 #ifndef GRID_STENCIL_H
 #define GRID_STENCIL_H
 
+#include <stencil/Grid_lebesgue.h>   // subdir aggregate
+
 //////////////////////////////////////////////////////////////////////////////////////////
 // Must not lose sight that goal is to be able to construct really efficient
 // gather to a point stencil code. CSHIFT is not the best way, so need
@@ -38,29 +40,12 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 
 namespace Grid {
-
-
+  
 
   class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal fill in.
   public:
 
       typedef uint32_t StencilInteger;
-      
-
-
-      StencilInteger alignup(StencilInteger n){
-	n--;           // 1000 0011 --> 1000 0010
-	n |= n >> 1;   // 1000 0010 | 0100 0001 = 1100 0011
-	n |= n >> 2;   // 1100 0011 | 0011 0000 = 1111 0011
-	n |= n >> 4;   // 1111 0011 | 0000 1111 = 1111 1111
-	n |= n >> 8;   // ... (At this point all bits are 1, so further bitwise-or
-	n |= n >> 16;  //      operations produce no effect.)
-	n++;           // 1111 1111 --> 1 0000 0000
-	return n;
-      };
-      void LebesgueOrder(void);
-
-      std::vector<StencilInteger> _LebesgueReorder;
 
       int                               _checkerboard;
       int                               _npoints; // Move to template param?
@@ -131,8 +116,8 @@ namespace Grid {
 	  // Gather phase
 	  int sshift [2];
 	  if ( comm_dim ) {
-	    sshift[0] = _grid->CheckerBoardShift(_checkerboard,dimension,shift,0);
-	    sshift[1] = _grid->CheckerBoardShift(_checkerboard,dimension,shift,1);
+	    sshift[0] = _grid->CheckerBoardShiftForCB(_checkerboard,dimension,shift,Even);
+	    sshift[1] = _grid->CheckerBoardShiftForCB(_checkerboard,dimension,shift,Odd);
 	    if ( sshift[0] == sshift[1] ) {
 	      if (splice_dim) {
 		GatherStartCommsSimd(source,dimension,shift,0x3,u_comm_buf,u_comm_offset,compress);
@@ -179,8 +164,8 @@ namespace Grid {
 	  std::vector<cobj,alignedAllocator<cobj> > send_buf(buffer_size); // hmm...
 	  std::vector<cobj,alignedAllocator<cobj> > recv_buf(buffer_size);
 	  
-	  int cb= (cbmask==0x2)? 1 : 0;
-	  int sshift= _grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,cb);
+	  int cb= (cbmask==0x2)? Odd : Even;
+	  int sshift= _grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,cb);
 	  
 	  for(int x=0;x<rd;x++){       
 	    
@@ -266,8 +251,8 @@ namespace Grid {
 	  // Work out what to send where
 	  ///////////////////////////////////////////
 
-	  int cb    = (cbmask==0x2)? 1 : 0;
-	  int sshift= _grid->CheckerBoardShift(rhs.checkerboard,dimension,shift,cb);
+	  int cb    = (cbmask==0x2)? Odd : Even;
+	  int sshift= _grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,cb);
 	  
 	  // loop over outer coord planes orthog to dim
 	  for(int x=0;x<rd;x++){       

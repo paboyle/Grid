@@ -49,6 +49,7 @@ int main (int argc, char ** argv)
   }  
 
   // Only one non-zero (y)
+#if 0
   Umu=zero;
   Complex cone(1.0,0.0);
   for(int nn=0;nn<Nd;nn++){
@@ -59,6 +60,7 @@ int main (int argc, char ** argv)
     }
     pokeIndex<LorentzIndex>(Umu,U[nn],nn);
   }
+#endif
 
   for(int mu=0;mu<Nd;mu++){
     U[mu] = peekIndex<LorentzIndex>(Umu,mu);
@@ -80,9 +82,9 @@ int main (int argc, char ** argv)
       }
     }
   }
-
+  ref = -0.5*ref;
   RealD mass=0.1;
-  WilsonMatrix Dw(Umu,Grid,RBGrid,mass);
+  WilsonFermion Dw(Umu,Grid,RBGrid,mass);
   
   std::cout << "Calling Dw"<<std::endl;
   int ncall=10000;
@@ -91,7 +93,7 @@ int main (int argc, char ** argv)
     Dw.Dhop(src,result,0);
   }
   double t1=usecond();
-  double flops=1320*volume*ncall;
+  double flops=1344*volume*ncall;
   
   std::cout << "Called Dw"<<std::endl;
   std::cout << "norm result "<< norm2(result)<<std::endl;
@@ -129,6 +131,7 @@ int main (int argc, char ** argv)
       }
     }
   }
+  ref = -0.5*ref;
   Dw.Dhop(src,result,1);
   std::cout << "Called DwDag"<<std::endl;
   std::cout << "norm result "<< norm2(result)<<std::endl;

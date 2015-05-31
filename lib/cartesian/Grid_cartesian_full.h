@@ -18,11 +18,14 @@ public:
     virtual int CheckerBoard(std::vector<int> site){
         return 0;
     }
-    virtual int CheckerBoardDestination(int cb,int shift){
+    virtual int CheckerBoardDestination(int cb,int shift,int dim){
         return 0;
     }
+    virtual int CheckerBoardShiftForCB(int source_cb,int dim,int shift, int ocb){
+      return shift;
+    }
     virtual int CheckerBoardShift(int source_cb,int dim,int shift, int osite){
-        return shift;
+      return shift;
     }
     GridCartesian(std::vector<int> &dimensions,
 		  std::vector<int> &simd_layout,

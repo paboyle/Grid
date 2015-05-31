@@ -32,7 +32,6 @@ PARALLEL_FOR_LOOP
       cbos=half._grid->CheckerBoard(coor);
       
       if (cbos==cb) {
-	
 	half._odata[ssh] = full._odata[ss];
 	ssh++;
       }
@@ -45,7 +44,7 @@ PARALLEL_FOR_LOOP
     for(int ss=0;ss<full._grid->oSites();ss++){
       std::vector<int> coor;
       int cbos;
-      
+
       full._grid->oCoorFromOindex(coor,ss);
       cbos=half._grid->CheckerBoard(coor);
       

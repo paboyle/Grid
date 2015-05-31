@@ -9,7 +9,7 @@
 
 #ifdef GRID_OMP
 #include <omp.h>
-#define PARALLEL_FOR_LOOP _Pragma("omp parallel for")
+#define PARALLEL_FOR_LOOP _Pragma("omp parallel for ")
 #define PARALLEL_NESTED_LOOP2 _Pragma("omp parallel for collapse(2)")
 #else
 #define PARALLEL_FOR_LOOP 

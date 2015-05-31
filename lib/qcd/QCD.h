@@ -4,6 +4,16 @@ namespace Grid{
 
 namespace QCD {
 
+
+    static const int Xp = 0;
+    static const int Yp = 1;
+    static const int Zp = 2;
+    static const int Tp = 3;
+    static const int Xm = 4;
+    static const int Ym = 5;
+    static const int Zm = 6;
+    static const int Tm = 7;
+
     static const int Nc=3;
     static const int Ns=4;
     static const int Nd=4;
@@ -297,9 +307,8 @@ namespace QCD {
 }   //namespace QCD
 } // Grid
 
-#include <qcd/Grid_qcd_dirac.h>
-#include <qcd/Grid_qcd_2spinor.h>
-//#include <qcd/Grid_qcd_pauli.h>
-#include <qcd/Grid_qcd_wilson_dop.h>
+#include <qcd/Dirac.h>
+#include <qcd/TwoSpinor.h>
+#include <qcd/action/Actions.h>
 
 #endif
