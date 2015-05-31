@@ -17,7 +17,7 @@ template<class vobj> Lattice<vobj> Cshift(Lattice<vobj> &rhs,int dimension,int s
   // Map to always positive shift modulo global full dimension.
   shift = (shift+fd)%fd;
 
-  ret.checkerboard = rhs._grid->CheckerBoardDestination(rhs.checkerboard,shift);
+  ret.checkerboard = rhs._grid->CheckerBoardDestination(rhs.checkerboard,shift,dimension);
         
   // the permute type
   int simd_layout     = rhs._grid->_simd_layout[dimension];
