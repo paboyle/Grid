@@ -103,7 +103,6 @@ nobase_include_HEADERS=\
 		./qcd/Dirac.h\
 		./qcd/QCD.h\
 		./qcd/TwoSpinor.h\
-		./qcd/FermionAction.h\
 		./simd/Grid_avx.h\
 		./simd/Grid_avx512.h\
 		./simd/Grid_qpx.h\
