@@ -4,7 +4,7 @@
 
 namespace Grid { 
 
-template<class vobj> Lattice<vobj> Cshift(Lattice<vobj> &rhs,int dimension,int shift)
+template<class vobj> Lattice<vobj> Cshift(const Lattice<vobj> &rhs,int dimension,int shift)
 {
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::scalar_type scalar_type;
@@ -35,7 +35,7 @@ template<class vobj> Lattice<vobj> Cshift(Lattice<vobj> &rhs,int dimension,int s
   return ret;
 }
 
-template<class vobj> void Cshift_comms(Lattice<vobj>& ret,Lattice<vobj> &rhs,int dimension,int shift)
+template<class vobj> void Cshift_comms(Lattice<vobj>& ret,const Lattice<vobj> &rhs,int dimension,int shift)
 {
   int sshift[2];
 
@@ -50,7 +50,7 @@ template<class vobj> void Cshift_comms(Lattice<vobj>& ret,Lattice<vobj> &rhs,int
   }
 }
 
-template<class vobj> void Cshift_comms_simd(Lattice<vobj>& ret,Lattice<vobj> &rhs,int dimension,int shift)
+template<class vobj> void Cshift_comms_simd(Lattice<vobj>& ret,const Lattice<vobj> &rhs,int dimension,int shift)
 {
   int sshift[2];
 
@@ -65,7 +65,7 @@ template<class vobj> void Cshift_comms_simd(Lattice<vobj>& ret,Lattice<vobj> &rh
   }
 }
 
-template<class vobj> void Cshift_comms(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
+template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
 {
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::scalar_type scalar_type;
@@ -124,7 +124,7 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,Lattice<vobj> &rhs,int
   }
 }
 
-template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
+template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
 {
   GridBase *grid=rhs._grid;
   const int Nsimd = grid->Nsimd();

@@ -153,7 +153,7 @@ PARALLEL_NESTED_LOOP2
 //////////////////////////////////////////////////////
 // local to node block strided copies
 //////////////////////////////////////////////////////
-template<class vobj> void Copy_plane(Lattice<vobj>& lhs,Lattice<vobj> &rhs, int dimension,int lplane,int rplane,int cbmask)
+template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs, int dimension,int lplane,int rplane,int cbmask)
 {
   int rd = rhs._grid->_rdimensions[dimension];
 
@@ -182,7 +182,7 @@ PARALLEL_NESTED_LOOP2
   
 }
 
-template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,Lattice<vobj> &rhs, int dimension,int lplane,int rplane,int cbmask,int permute_type)
+template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vobj> &rhs, int dimension,int lplane,int rplane,int cbmask,int permute_type)
 {
  
   int rd = rhs._grid->_rdimensions[dimension];
@@ -212,7 +212,7 @@ PARALLEL_NESTED_LOOP2
 //////////////////////////////////////////////////////
 // Local to node Cshift
 //////////////////////////////////////////////////////
-template<class vobj> void Cshift_local(Lattice<vobj>& ret,Lattice<vobj> &rhs,int dimension,int shift)
+template<class vobj> void Cshift_local(Lattice<vobj>& ret,const Lattice<vobj> &rhs,int dimension,int shift)
 {
   int sshift[2];
 
@@ -227,7 +227,7 @@ template<class vobj> void Cshift_local(Lattice<vobj>& ret,Lattice<vobj> &rhs,int
   }
 }
 
-template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
+template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice<vobj> &rhs,int dimension,int shift,int cbmask)
 {
   GridBase *grid = rhs._grid;
   int fd = grid->_fdimensions[dimension];
