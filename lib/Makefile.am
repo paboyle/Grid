@@ -20,13 +20,17 @@ libGrid_a_SOURCES =				\
 	stencil/Grid_stencil_common.cc		\
 	algorithms/approx/Zolotarev.cc		\
 	algorithms/approx/Remez.cc		\
-	qcd/action/fermion/FiveDimWilsonFermion.cc\
-	qcd/action/fermion/WilsonFermion.cc\
+	qcd/SpaceTimeGrid.cc\
+	qcd/Dirac.cc\
 	qcd/action/fermion/WilsonKernels.cc\
 	qcd/action/fermion/WilsonKernelsHand.cc\
-	qcd/Dirac.cc\
+	qcd/action/fermion/WilsonFermion.cc\
+	qcd/action/fermion/WilsonFermion5D.cc\
+	qcd/action/fermion/CayleyFermion5D.cc \
+	qcd/action/fermion/ContinuedFractionFermion5D.cc	\
 	$(extra_sources)
 
+#	qcd/action/fermion/PartialFractionFermion5D.cc	\
 #
 # Include files
 #
@@ -95,11 +99,11 @@ nobase_include_HEADERS=\
 		./math/Grid_math_transpose.h\
 		./parallelIO/GridNerscIO.h\
 		./qcd/action/Actions.h\
-		./qcd/action/fermion/FermionAction.h\
-		./qcd/action/fermion/FiveDimWilsonFermion.h\
+		./qcd/action/fermion/FermionOperator.h\
 		./qcd/action/fermion/WilsonCompressor.h\
-		./qcd/action/fermion/WilsonFermion.h\
 		./qcd/action/fermion/WilsonKernels.h\
+		./qcd/action/fermion/WilsonFermion.h\
+		./qcd/action/fermion/WilsonFermion5D.h\
 		./qcd/Dirac.h\
 		./qcd/QCD.h\
 		./qcd/TwoSpinor.h\

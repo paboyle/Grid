@@ -5,7 +5,7 @@ namespace Grid {
 
   // Should error check all MPI calls.
 
-CartesianCommunicator::CartesianCommunicator(std::vector<int> &processors)
+CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {
   _ndimension = processors.size();
   std::vector<int> periodic(_ndimension,1);
