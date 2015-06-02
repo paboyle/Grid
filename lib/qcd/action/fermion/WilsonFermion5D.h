@@ -15,7 +15,7 @@ namespace Grid {
     //
     // [DIFFERS from original CPS red black implementation parity = (x+y+z+t+s)|2 ]
     ////////////////////////////////////////////////////////////////////////////////
-    class FiveDimWilsonFermion : public FermionAction<LatticeFermion,LatticeGaugeField>
+    class WilsonFermion5D : public FermionOperator<LatticeFermion,LatticeGaugeField>
     {
     public:
       ///////////////////////////////////////////////////////////////
@@ -26,19 +26,21 @@ namespace Grid {
       GridBase *FermionGrid(void)            { return _FiveDimGrid;}
       GridBase *FermionRedBlackGrid(void)    { return _FiveDimRedBlackGrid;}
 
-      // override multiply
-      virtual RealD  M    (const LatticeFermion &in, LatticeFermion &out);
-      virtual RealD  Mdag (const LatticeFermion &in, LatticeFermion &out);
+      // full checkerboard operations; leave unimplemented as abstract for now
+      //virtual RealD  M    (const LatticeFermion &in, LatticeFermion &out)=0;
+      //virtual RealD  Mdag (const LatticeFermion &in, LatticeFermion &out)=0;
 
-      // half checkerboard operaions
-      virtual void   Meooe       (const LatticeFermion &in, LatticeFermion &out);
-      virtual void   MeooeDag    (const LatticeFermion &in, LatticeFermion &out);
-      virtual void   Mooee       (const LatticeFermion &in, LatticeFermion &out);
-      virtual void   MooeeDag    (const LatticeFermion &in, LatticeFermion &out);
-      virtual void   MooeeInv    (const LatticeFermion &in, LatticeFermion &out);
-      virtual void   MooeeInvDag (const LatticeFermion &in, LatticeFermion &out);
+      // half checkerboard operations; leave unimplemented as abstract for now
+      //      virtual void   Meooe       (const LatticeFermion &in, LatticeFermion &out)=0;
+      //      virtual void   MeooeDag    (const LatticeFermion &in, LatticeFermion &out)=0;
+      //      virtual void   Mooee       (const LatticeFermion &in, LatticeFermion &out)=0;
+      //      virtual void   MooeeDag    (const LatticeFermion &in, LatticeFermion &out)=0;
+      //      virtual void   MooeeInv    (const LatticeFermion &in, LatticeFermion &out)=0;
+      //      virtual void   MooeeInvDag (const LatticeFermion &in, LatticeFermion &out)=0;
 
-      // non-hermitian hopping term; half cb or both
+      // Implement hopping term non-hermitian hopping term; half cb or both
+      // Implement s-diagonal DW
+      void DW    (const LatticeFermion &in, LatticeFermion &out,int dag);
       void Dhop  (const LatticeFermion &in, LatticeFermion &out,int dag);
       void DhopOE(const LatticeFermion &in, LatticeFermion &out,int dag);
       void DhopEO(const LatticeFermion &in, LatticeFermion &out,int dag);
@@ -54,12 +56,12 @@ namespace Grid {
 			int dag);
 
       // Constructors
-      FiveDimWilsonFermion(LatticeGaugeField &_Umu,
+      WilsonFermion5D(LatticeGaugeField &_Umu,
 			  GridCartesian         &FiveDimGrid,
 			  GridRedBlackCartesian &FiveDimRedBlackGrid,
 			  GridCartesian         &FourDimGrid,
 			  GridRedBlackCartesian &FourDimRedBlackGrid,
-			  double _mass);
+			  double _M5);
 
       // DoubleStore
       void DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGaugeField &Umu);
@@ -82,7 +84,6 @@ namespace Grid {
       static const std::vector<int> displacements;
 
       double                        M5;
-      double                        mass;
       int Ls;
 
       //Defines the stencils for even and odd

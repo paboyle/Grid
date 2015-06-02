@@ -5,7 +5,7 @@ namespace Grid {
 
   namespace QCD {
 
-    class WilsonFermion : public FermionAction<LatticeFermion,LatticeGaugeField>
+    class WilsonFermion : public FermionOperator<LatticeFermion,LatticeGaugeField>
     {
     public:
 
@@ -44,7 +44,7 @@ namespace Grid {
 			int dag);
 
       // Constructor
-      WilsonFermion(LatticeGaugeField &_Umu,GridCartesian &Fgrid,GridRedBlackCartesian &Hgrid,double _mass);
+      WilsonFermion(LatticeGaugeField &_Umu,GridCartesian &Fgrid,GridRedBlackCartesian &Hgrid,RealD _mass);
 
       // DoubleStore
       void DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGaugeField &Umu);
@@ -57,7 +57,7 @@ namespace Grid {
 
     protected:
 
-      double                        mass;
+      RealD                        mass;
 
       GridBase                     *    _grid; 
       GridBase                     *  _cbgrid;

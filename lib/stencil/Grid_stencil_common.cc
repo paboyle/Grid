@@ -52,8 +52,8 @@ namespace Grid {
 	// up a table containing the npoint "neighbours" and whether they 
 	// live in lattice or a comms buffer.
 	if ( !comm_dim ) {
-	  sshift[0] = _grid->CheckerBoardShift(_checkerboard,dimension,shift,Even);
-	  sshift[1] = _grid->CheckerBoardShift(_checkerboard,dimension,shift,Odd);
+	  sshift[0] = _grid->CheckerBoardShiftForCB(_checkerboard,dimension,shift,Even);
+	  sshift[1] = _grid->CheckerBoardShiftForCB(_checkerboard,dimension,shift,Odd);
 
 	  if ( sshift[0] == sshift[1] ) {
 	    Local(point,dimension,shift,0x3);
@@ -63,8 +63,8 @@ namespace Grid {
 	  }
 	} else { // All permute extract done in comms phase prior to Stencil application
 	  //        So tables are the same whether comm_dim or splice_dim
-	  sshift[0] = _grid->CheckerBoardShift(_checkerboard,dimension,shift,Even);
-	  sshift[1] = _grid->CheckerBoardShift(_checkerboard,dimension,shift,Odd);
+	  sshift[0] = _grid->CheckerBoardShiftForCB(_checkerboard,dimension,shift,Even);
+	  sshift[1] = _grid->CheckerBoardShiftForCB(_checkerboard,dimension,shift,Odd);
 	  if ( sshift[0] == sshift[1] ) {
 	    Comms(point,dimension,shift,0x3);
 	  } else {
@@ -96,7 +96,7 @@ namespace Grid {
 	
 	int cb= (cbmask==0x2)? Odd : Even;
 	  
-	int sshift = _grid->CheckerBoardShift(_checkerboard,dimension,shift,cb);
+	int sshift = _grid->CheckerBoardShiftForCB(_checkerboard,dimension,shift,cb);
 	int sx     = (x+sshift)%rd;
 	  
 	int permute_slice=0;
@@ -134,7 +134,7 @@ namespace Grid {
                                            // send to one or more remote nodes.
 
       int cb= (cbmask==0x2)? Odd : Even;
-      int sshift= _grid->CheckerBoardShift(_checkerboard,dimension,shift,cb);
+      int sshift= _grid->CheckerBoardShiftForCB(_checkerboard,dimension,shift,cb);
       
       for(int x=0;x<rd;x++){       
 	
