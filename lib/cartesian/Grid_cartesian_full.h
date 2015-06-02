@@ -27,9 +27,9 @@ public:
     virtual int CheckerBoardShift(int source_cb,int dim,int shift, int osite){
       return shift;
     }
-    GridCartesian(std::vector<int> &dimensions,
-		  std::vector<int> &simd_layout,
-		  std::vector<int> &processor_grid
+    GridCartesian(const std::vector<int> &dimensions,
+		  const std::vector<int> &simd_layout,
+		  const std::vector<int> &processor_grid
 		  ) : GridBase(processor_grid)
     {
         ///////////////////////

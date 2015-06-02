@@ -1,7 +1,7 @@
 #include "Grid.h"
 namespace Grid {
 
-CartesianCommunicator::CartesianCommunicator(std::vector<int> &processors)
+CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {
   _processors = processors;
   _ndimension = processors.size();

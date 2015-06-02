@@ -27,7 +27,7 @@ class CartesianCommunicator {
 #endif
 
     // Constructor
-    CartesianCommunicator(std::vector<int> &pdimensions_in);
+    CartesianCommunicator(const std::vector<int> &pdimensions_in);
 
     // Wraps MPI_Cart routines
     void ShiftedRanks(int dim,int shift,int & source, int & dest);

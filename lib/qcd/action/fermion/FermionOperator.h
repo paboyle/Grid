@@ -1,5 +1,5 @@
-#ifndef  GRID_QCD_WILSON_DOP_H
-#define  GRID_QCD_WILSON_DOP_H
+#ifndef  GRID_QCD_FERMION_OPERATOR_H
+#define  GRID_QCD_FERMION_OPERATOR_H
 
 namespace Grid {
 
@@ -11,7 +11,7 @@ namespace Grid {
     // Think about multiple representations
     //////////////////////////////////////////////////////////////////////////////
     template<class FermionField,class GaugeField>
-    class FermionAction : public CheckerBoardedSparseMatrixBase<FermionField>
+    class FermionOperator : public CheckerBoardedSparseMatrixBase<FermionField>
     {
     public:
 
@@ -39,6 +39,7 @@ namespace Grid {
       virtual void Dhop  (const FermionField &in, FermionField &out,int dag)=0;
       virtual void DhopOE(const FermionField &in, FermionField &out,int dag)=0;
       virtual void DhopEO(const FermionField &in, FermionField &out,int dag)=0;
+
 
     };
 

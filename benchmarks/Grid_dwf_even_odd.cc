@@ -16,94 +16,103 @@ struct scal {
     Gamma::GammaT
   };
 
+
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplexF::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
-  GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
-  GridRedBlackCartesian     RBGrid(latt_size,simd_layout,mpi_layout);
-
   int threads = GridThread::GetThreads();
   std::cout << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
-  std::vector<int> seeds({1,2,3,4});
 
-  GridParallelRNG          pRNG(&Grid);
-  //  std::vector<int> seeds({1,2,3,4});
-  //  pRNG.SeedFixedIntegers(seeds);
-  pRNG.SeedRandomDevice();
+  const int Ls=8;
+  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());
+  GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
+  GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
+  GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
-  LatticeFermion src   (&Grid); random(pRNG,src);
-  LatticeFermion phi   (&Grid); random(pRNG,phi);
-  LatticeFermion chi   (&Grid); random(pRNG,chi);
-  LatticeFermion result(&Grid); result=zero;
-  LatticeFermion    ref(&Grid);    ref=zero;
-  LatticeFermion    tmp(&Grid);    tmp=zero;
-  LatticeFermion    err(&Grid);    tmp=zero;
-  LatticeGaugeField Umu(&Grid); random(pRNG,Umu);
-  std::vector<LatticeColourMatrix> U(4,&Grid);
+  std::vector<int> seeds4({1,2,3,4});
+  std::vector<int> seeds5({5,6,7,8});
 
-  double volume=1;
-  for(int mu=0;mu<Nd;mu++){
-    volume=volume*latt_size[mu];
-  }  
+  GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
+  GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
+
+  LatticeFermion src   (FGrid); random(RNG5,src);
+  LatticeFermion phi   (FGrid); random(RNG5,phi);
+  LatticeFermion chi   (FGrid); random(RNG5,chi);
+  LatticeFermion result(FGrid); result=zero;
+  LatticeFermion    ref(FGrid);    ref=zero;
+  LatticeFermion    tmp(FGrid);    tmp=zero;
+  LatticeFermion    err(FGrid);    tmp=zero;
+  LatticeGaugeField Umu(UGrid); random(RNG4,Umu);
+  std::vector<LatticeColourMatrix> U(4,UGrid);
 
   // Only one non-zero (y)
   Umu=zero;
   for(int nn=0;nn<Nd;nn++){
-    random(pRNG,U[nn]);
+    random(RNG4,U[nn]);
+    if ( nn>0 ) 
+      U[nn]=zero;
     pokeIndex<LorentzIndex>(Umu,U[nn],nn);
   }
 
   RealD mass=0.1;
+  RealD M5  =1.8;
+  DomainWallFermion Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
-  WilsonFermion Dw(Umu,Grid,RBGrid,mass);
-
-  LatticeFermion src_e   (&RBGrid);
-  LatticeFermion src_o   (&RBGrid);
-  LatticeFermion r_e   (&RBGrid);
-  LatticeFermion r_o   (&RBGrid);
-  LatticeFermion r_eo  (&Grid);
+  LatticeFermion src_e (FrbGrid);
+  LatticeFermion src_o (FrbGrid);
+  LatticeFermion r_e   (FrbGrid);
+  LatticeFermion r_o   (FrbGrid);
+  LatticeFermion r_eo  (FGrid);
+  LatticeFermion r_eeoo(FGrid);
 
   std::cout<<"=========================================================="<<std::endl;
-  std::cout<<"= Testing that Deo + Doe = Dunprec "<<std::endl;
+  std::cout<<"= Testing that Meo + Moe + Moo + Mee = Munprec "<<std::endl;
   std::cout<<"=========================================================="<<std::endl;
 
   pickCheckerboard(Even,src_e,src);
   pickCheckerboard(Odd,src_o,src);
 
-  Dw.Meooe(src_e,r_o);  std::cout<<"Applied Meo"<<std::endl;
-  Dw.Meooe(src_o,r_e);  std::cout<<"Applied Moe"<<std::endl;
-  Dw.Dhop (src,ref,DaggerNo);
-
+  Ddwf.Meooe(src_e,r_o);  std::cout<<"Applied Meo"<<std::endl;
+  Ddwf.Meooe(src_o,r_e);  std::cout<<"Applied Moe"<<std::endl;
   setCheckerboard(r_eo,r_o);
   setCheckerboard(r_eo,r_e);
 
+  Ddwf.Mooee(src_e,r_e);  std::cout<<"Applied Mee"<<std::endl;
+  Ddwf.Mooee(src_o,r_o);  std::cout<<"Applied Moo"<<std::endl;
+  setCheckerboard(r_eeoo,r_e);
+  setCheckerboard(r_eeoo,r_o);
+
+  r_eo=r_eo+r_eeoo;
+  Ddwf.M(src,ref);  
+
+  //  std::cout << r_eo<<std::endl;
+  //  std::cout << ref <<std::endl;
+
   err= ref - r_eo;
   std::cout << "EO norm diff   "<< norm2(err)<< " "<<norm2(ref)<< " " << norm2(r_eo) <<std::endl;
-
-  LatticeComplex cerr(&Grid);
+    
+  LatticeComplex cerr(FGrid);
   cerr = localInnerProduct(err,err);
+  //  std::cout << cerr<<std::endl;
 
   std::cout<<"=============================================================="<<std::endl;
   std::cout<<"= Test Ddagger is the dagger of D by requiring                "<<std::endl;
   std::cout<<"=  < phi | Deo | chi > * = < chi | Deo^dag| phi>  "<<std::endl;
   std::cout<<"=============================================================="<<std::endl;
   
-  LatticeFermion chi_e   (&RBGrid);
-  LatticeFermion chi_o   (&RBGrid);
+  LatticeFermion chi_e   (FrbGrid);
+  LatticeFermion chi_o   (FrbGrid);
 
-  LatticeFermion dchi_e  (&RBGrid);
-  LatticeFermion dchi_o  (&RBGrid);
+  LatticeFermion dchi_e  (FrbGrid);
+  LatticeFermion dchi_o  (FrbGrid);
 
-  LatticeFermion phi_e   (&RBGrid);
-  LatticeFermion phi_o   (&RBGrid);
+  LatticeFermion phi_e   (FrbGrid);
+  LatticeFermion phi_o   (FrbGrid);
 
-  LatticeFermion dphi_e  (&RBGrid);
-  LatticeFermion dphi_o  (&RBGrid);
+  LatticeFermion dphi_e  (FrbGrid);
+  LatticeFermion dphi_o  (FrbGrid);
 
 
   pickCheckerboard(Even,chi_e,chi);
@@ -111,10 +120,10 @@ int main (int argc, char ** argv)
   pickCheckerboard(Even,phi_e,phi);
   pickCheckerboard(Odd ,phi_o,phi);
 
-  Dw.Meooe(chi_e,dchi_o);
-  Dw.Meooe(chi_o,dchi_e);
-  Dw.MeooeDag(phi_e,dphi_o);
-  Dw.MeooeDag(phi_o,dphi_e);
+  Ddwf.Meooe(chi_e,dchi_o);
+  Ddwf.Meooe(chi_o,dchi_e);
+  Ddwf.MeooeDag(phi_e,dphi_o);
+  Ddwf.MeooeDag(phi_o,dphi_e);
 
   ComplexD pDce = innerProduct(phi_e,dchi_e);
   ComplexD pDco = innerProduct(phi_o,dchi_o);
@@ -134,11 +143,11 @@ int main (int argc, char ** argv)
   pickCheckerboard(Even,chi_e,chi);
   pickCheckerboard(Odd ,chi_o,chi);
 
-  Dw.Mooee(chi_e,src_e);
-  Dw.MooeeInv(src_e,phi_e);
+  Ddwf.Mooee(chi_e,src_e);
+  Ddwf.MooeeInv(src_e,phi_e);
 
-  Dw.Mooee(chi_o,src_o);
-  Dw.MooeeInv(src_o,phi_o);
+  Ddwf.Mooee(chi_o,src_o);
+  Ddwf.MooeeInv(src_o,phi_o);
   
   setCheckerboard(phi,phi_e);
   setCheckerboard(phi,phi_o);
@@ -153,11 +162,11 @@ int main (int argc, char ** argv)
   pickCheckerboard(Even,chi_e,chi);
   pickCheckerboard(Odd ,chi_o,chi);
 
-  Dw.MooeeDag(chi_e,src_e);
-  Dw.MooeeInvDag(src_e,phi_e);
+  Ddwf.MooeeDag(chi_e,src_e);
+  Ddwf.MooeeInvDag(src_e,phi_e);
 
-  Dw.MooeeDag(chi_o,src_o);
-  Dw.MooeeInvDag(src_o,phi_o);
+  Ddwf.MooeeDag(chi_o,src_o);
+  Ddwf.MooeeInvDag(src_o,phi_o);
   
   setCheckerboard(phi,phi_e);
   setCheckerboard(phi,phi_o);
@@ -169,19 +178,19 @@ int main (int argc, char ** argv)
   std::cout<<"= Test MpcDagMpc is Hermitian              "<<std::endl;
   std::cout<<"=============================================================="<<std::endl;
   
-  random(pRNG,phi);
-  random(pRNG,chi);
+  random(RNG5,phi);
+  random(RNG5,chi);
   pickCheckerboard(Even,chi_e,chi);
   pickCheckerboard(Odd ,chi_o,chi);
   pickCheckerboard(Even,phi_e,phi);
   pickCheckerboard(Odd ,phi_o,phi);
   RealD t1,t2;
 
-  Dw.MpcDagMpc(chi_e,dchi_e,t1,t2);
-  Dw.MpcDagMpc(chi_o,dchi_o,t1,t2);
+  Ddwf.MpcDagMpc(chi_e,dchi_e,t1,t2);
+  Ddwf.MpcDagMpc(chi_o,dchi_o,t1,t2);
 
-  Dw.MpcDagMpc(phi_e,dphi_e,t1,t2);
-  Dw.MpcDagMpc(phi_o,dphi_o,t1,t2);
+  Ddwf.MpcDagMpc(phi_e,dphi_e,t1,t2);
+  Ddwf.MpcDagMpc(phi_o,dphi_o,t1,t2);
 
   pDce = innerProduct(phi_e,dchi_e);
   pDco = innerProduct(phi_o,dchi_o);

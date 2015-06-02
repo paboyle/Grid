@@ -21,7 +21,7 @@ public:
     // Give Lattice access
     template<class object> friend class Lattice;
 
-    GridBase(std::vector<int> & processor_grid) : CartesianCommunicator(processor_grid) {};
+    GridBase(const std::vector<int> & processor_grid) : CartesianCommunicator(processor_grid) {};
 
 
     // Physics Grid information.

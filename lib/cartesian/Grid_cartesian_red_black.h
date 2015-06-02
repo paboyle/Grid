@@ -81,28 +81,28 @@ public:
       }
     };
 
-    GridRedBlackCartesian(GridBase *base) : GridRedBlackCartesian(base->_fdimensions,base->_simd_layout,base->_processors)  {};
+    GridRedBlackCartesian(const GridBase *base) : GridRedBlackCartesian(base->_fdimensions,base->_simd_layout,base->_processors)  {};
 
-    GridRedBlackCartesian(std::vector<int> &dimensions,
-			  std::vector<int> &simd_layout,
-			  std::vector<int> &processor_grid,
-			  std::vector<int> &checker_dim_mask,
+    GridRedBlackCartesian(const std::vector<int> &dimensions,
+			  const std::vector<int> &simd_layout,
+			  const std::vector<int> &processor_grid,
+			  const std::vector<int> &checker_dim_mask,
 			  int checker_dim
 			  ) :  GridBase(processor_grid) 
     {
       Init(dimensions,simd_layout,processor_grid,checker_dim_mask,checker_dim);
     }
-    GridRedBlackCartesian(std::vector<int> &dimensions,
-			  std::vector<int> &simd_layout,
-			  std::vector<int> &processor_grid) : GridBase(processor_grid) 
+    GridRedBlackCartesian(const std::vector<int> &dimensions,
+			  const std::vector<int> &simd_layout,
+			  const std::vector<int> &processor_grid) : GridBase(processor_grid) 
     {
       std::vector<int> checker_dim_mask(dimensions.size(),1);
       Init(dimensions,simd_layout,processor_grid,checker_dim_mask,0);
     }
-    void Init(std::vector<int> &dimensions,
-	      std::vector<int> &simd_layout,
-	      std::vector<int> &processor_grid,
-	      std::vector<int> &checker_dim_mask,
+    void Init(const std::vector<int> &dimensions,
+	      const std::vector<int> &simd_layout,
+	      const std::vector<int> &processor_grid,
+	      const std::vector<int> &checker_dim_mask,
 	      int checker_dim)
     {
     ///////////////////////
