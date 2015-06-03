@@ -48,23 +48,36 @@ int main (int argc, char ** argv)
 
   RealD mass=0.1;
   RealD M5  =1.8;
+  std::cout <<"DomainWallFermion test"<<std::endl;
   DomainWallFermion Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   TestWhat<DomainWallFermion>(Ddwf,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   RealD b=1.5;// Scale factor b+c=2, b-c=1
   RealD c=0.5;
+  std::cout <<"MobiusFermion test"<<std::endl;
   MobiusFermion Dmob(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c);
   TestWhat<MobiusFermion>(Dmob,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
+  std::cout <<"MobiusZolotarevFermion test"<<std::endl;
   MobiusZolotarevFermion Dzolo(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c,0.1,2.0);
   TestWhat<MobiusZolotarevFermion>(Dzolo,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
+  std::cout <<"ScaledShamirFermion test"<<std::endl;
   ScaledShamirFermion Dsham(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,2.0);
   TestWhat<ScaledShamirFermion>(Dsham,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
-  ScaledShamirZolotarevFermion Dshamz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,2.0,0.1,2.0);
-  TestWhat<ScaledShamirZolotarevFermion>(Dshamz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
+  std::cout <<"ShamirZolotarevFermion test"<<std::endl;
+  ShamirZolotarevFermion Dshamz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,2.0);
+  TestWhat<ShamirZolotarevFermion>(Dshamz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+
+  std::cout <<"OverlapWilsonCayleyTanhFermion test"<<std::endl;
+  OverlapWilsonCayleyTanhFermion Dov(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
+  TestWhat<OverlapWilsonCayleyTanhFermion>(Dov,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+
+  std::cout <<"OverlapWilsonCayleyZolotarevFermion test"<<std::endl;
+  OverlapWilsonCayleyZolotarevFermion Dovz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,2.0);
+  TestWhat<OverlapWilsonCayleyZolotarevFermion>(Dovz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   Grid_finalize();
 }

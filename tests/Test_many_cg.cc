@@ -89,9 +89,17 @@ int main (int argc, char ** argv)
   ScaledShamirFermion Dsham(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,2.0);
   TestCGinversions<ScaledShamirFermion>(Dsham,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
-  std::cout <<"ScaledShamirZolotarevFermion test"<<std::endl;
-  ScaledShamirZolotarevFermion Dshamz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,2.0,0.1,2.0);
-  TestCGinversions<ScaledShamirZolotarevFermion>(Dshamz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  std::cout <<"ShamirZolotarevFermion test"<<std::endl;
+  ShamirZolotarevFermion Dshamz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,2.0);
+  TestCGinversions<ShamirZolotarevFermion>(Dshamz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+
+  std::cout <<"OverlapWilsonCayleyTanhFermion test"<<std::endl;
+  OverlapWilsonCayleyTanhFermion Dov(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
+  TestCGinversions<OverlapWilsonCayleyTanhFermion>(Dov,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+
+  std::cout <<"OverlapWilsonCayleyZolotarevFermion test"<<std::endl;
+  OverlapWilsonCayleyZolotarevFermion Dovz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,2.0);
+  TestCGinversions<OverlapWilsonCayleyZolotarevFermion>(Dovz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   Grid_finalize();
 }
