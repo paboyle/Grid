@@ -22,13 +22,10 @@ bin_PROGRAMS = Grid_main \
 	Grid_dwf_even_odd\
 	Grid_dwf_cg_unprec\
 	Grid_dwf_cg_prec\
-	Grid_dwf_cg_schur
+	Grid_dwf_cg_schur\
+	Grid_any_evenodd
 
-test: 
-	for f in $bin_PROGRAMS
-	do
-	./$f > $f.log
-	done
+
 
 Grid_main_SOURCES = Grid_main.cc
 Grid_main_LDADD = -lGrid
@@ -65,6 +62,9 @@ Grid_simd_LDADD = -lGrid
 
 Grid_wilson_evenodd_SOURCES = Grid_wilson_evenodd.cc
 Grid_wilson_evenodd_LDADD = -lGrid
+
+Grid_any_evenodd_SOURCES = Grid_any_evenodd.cc
+Grid_any_evenodd_LDADD = -lGrid
 
 Grid_wilson_cg_unprec_SOURCES = Grid_wilson_cg_unprec.cc
 Grid_wilson_cg_unprec_LDADD = -lGrid

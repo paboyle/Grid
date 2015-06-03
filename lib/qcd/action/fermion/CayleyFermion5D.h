@@ -22,10 +22,8 @@ namespace Grid {
       virtual void   MooeeInvDag (const LatticeFermion &in, LatticeFermion &out);
 
       //    protected:
-
-      Approx::zolotarev_data *zdata;
-
       RealD mass;
+
       // Cayley form Moebius (tanh and zolotarev)
       std::vector<RealD> omega; 
       std::vector<RealD> bs;    // S dependent coeffs
@@ -53,6 +51,8 @@ namespace Grid {
 		      GridRedBlackCartesian &FourDimRedBlackGrid,
 		      RealD _mass,RealD _M5);
 
+    protected:
+      void SetCoefficients(RealD scale,Approx::zolotarev_data *zdata,RealD b,RealD c);
     };
 
   }

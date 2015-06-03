@@ -15,7 +15,6 @@ namespace QCD {
 		   FourDimRedBlackGrid,_M5),
    mass(_mass)
  {
-   std::cout << "Constructing a CayleyFermion5D"<<std::endl;
  }
 
   // override multiply
@@ -229,7 +228,112 @@ namespace QCD {
       axpby_ssp_pplus (chi,1.0,chi,-lee[s],chi,s,s+1);  // chi[Ls]
     }
   }
+  
+  void CayleyFermion5D::SetCoefficients(RealD scale,Approx::zolotarev_data *zdata,RealD b,RealD c)
+  {
 
-}
-}
+    ///////////////////////////////////////////////////////////
+    // The Cayley coeffs (unprec)
+    ///////////////////////////////////////////////////////////
+    omega.resize(Ls);
+    bs.resize(Ls);
+    cs.resize(Ls);
+    as.resize(Ls);
+    
+    // 
+    // Ts = (    [bs+cs]Dw        )^-1 (    (bs+cs) Dw         )
+    //     -(g5  -------       -1 )    ( g5 ---------     + 1  )
+    //      (   {2+(bs-cs)Dw}     )    (    2+(bs-cs) Dw       )
+    //
+    //  bs = 1/2( (1/omega_s + 1)*b + (1/omega - 1)*c ) = 1/2(  1/omega(b+c) + (b-c) )
+    //  cs = 1/2( (1/omega_s - 1)*b + (1/omega + 1)*c ) = 1/2(  1/omega(b+c) - (b-c) )
+    //
+    // bs+cs = 0.5*( 1/omega(b+c) + (b-c) + 1/omega(b+c) - (b-c) ) = 1/omega(b+c)
+    // bs-cs = 0.5*( 1/omega(b+c) + (b-c) - 1/omega(b+c) + (b-c) ) = b-c
+    //
+    // So 
+    //
+    // Ts = (    [b+c]Dw/omega_s    )^-1 (    (b+c) Dw /omega_s        )
+    //     -(g5  -------         -1 )    ( g5 ---------           + 1  )
+    //      (   {2+(b-c)Dw}         )    (    2+(b-c) Dw               )
+    //
+    // Ts = (    [b+c]Dw            )^-1 (    (b+c) Dw                 )
+    //     -(g5  -------    -omega_s)    ( g5 ---------      + omega_s )
+    //      (   {2+(b-c)Dw}         )    (    2+(b-c) Dw               )
+    // 
+    
+    double bpc = b+c;
+    double bmc = b-c;
+    for(int i=0; i < Ls; i++){
+      as[i] = 1.0;
+      omega[i] = ((double)zdata->gamma[i]); //NB reciprocal relative to Chroma NEF code
+      bs[i] = 0.5*(bpc/omega[i] + bmc);
+      cs[i] = 0.5*(bpc/omega[i] - bmc);
+    }
+
+    ////////////////////////////////////////////////////////
+    // Constants for the preconditioned matrix Cayley form
+    ////////////////////////////////////////////////////////
+    bee.resize(Ls);
+    cee.resize(Ls);
+    beo.resize(Ls);
+    ceo.resize(Ls);
+    
+    for(int i=0;i<Ls;i++){
+      bee[i]=as[i]*(bs[i]*(4.0-M5) +1.0);
+      cee[i]=as[i]*(1.0-cs[i]*(4.0-M5));
+      beo[i]=as[i]*bs[i];
+      ceo[i]=-as[i]*cs[i];
+    }
+
+    aee.resize(Ls);
+    aeo.resize(Ls);
+    for(int i=0;i<Ls;i++){
+      aee[i]=cee[i];
+      aeo[i]=ceo[i];
+    }
+
+    //////////////////////////////////////////
+    // LDU decomposition of eeoo
+    //////////////////////////////////////////
+    dee.resize(Ls);
+    lee.resize(Ls);
+    leem.resize(Ls);
+    uee.resize(Ls);
+    ueem.resize(Ls);
+    
+    for(int i=0;i<Ls;i++){
+      
+      dee[i] = bee[i];
+      
+      if ( i < Ls-1 ) {
+	
+	lee[i] =-cee[i+1]/bee[i]; // sub-diag entry on the ith column
+	    
+	leem[i]=mass*cee[Ls-1]/bee[0];
+	for(int j=0;j<i;j++)  leem[i]*= aee[j]/bee[j+1];
+	
+	uee[i] =-aee[i]/bee[i];   // up-diag entry on the ith row
+	
+	ueem[i]=mass;
+	for(int j=1;j<=i;j++) ueem[i]*= cee[j]/bee[j];
+	ueem[i]*= aee[0]/bee[0];
+	    
+      } else { 
+	lee[i] =0.0;
+	leem[i]=0.0;
+	uee[i] =0.0;
+	ueem[i]=0.0;
+      }
+    }
+	
+    { 
+      double delta_d=mass*cee[Ls-1];
+      for(int j=0;j<Ls-1;j++) delta_d *= cee[j]/bee[j];
+      dee[Ls-1] += delta_d;
+    }
+  }
+
+}}
+
 
