@@ -1,0 +1,9 @@
+#!/bin/bash
+
+cd lib
+HFILES=`find . -type f -name '*.h'`
+CCFILES=`find . -type f -name '*.cc' -not  -name '*ommunicator*.cc'`
+echo HFILES=$HFILES > Make.inc
+echo >> Make.inc
+echo CCFILES=$CCFILES >> Make.inc
+cd ..
