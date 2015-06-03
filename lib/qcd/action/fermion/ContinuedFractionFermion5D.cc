@@ -3,11 +3,11 @@
 namespace Grid {
   namespace QCD {
 
-    void ContinuedFractionFermion5D::SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD b,RealD c)
+    void ContinuedFractionFermion5D::SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD scale)
     {
-      SetCoefficientsZolotarev(1.0,zdata,b,c);
+      SetCoefficientsZolotarev(1.0/scale,zdata);
     }
-    void ContinuedFractionFermion5D::SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata,RealD b,RealD c)
+    void ContinuedFractionFermion5D::SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata)
     {
       R=(1+this->mass)/(1-this->mass);
 
@@ -164,9 +164,6 @@ namespace Grid {
       mass(_mass)
     {
       assert((Ls&0x1)==1); // Odd Ls required
-      int nrational=Ls-1;// Even rational order
-      zdata = Approx::grid_higham(1.0,nrational);// eps is ignored for higham
-      SetCoefficientsTanh(zdata,1.0,0.0);
     }
 
   }
