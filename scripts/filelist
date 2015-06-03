@@ -1,9 +1,56 @@
 #!/bin/bash
 
 cd lib
+
 HFILES=`find . -type f -name '*.h'`
 CCFILES=`find . -type f -name '*.cc' -not  -name '*ommunicator*.cc'`
-echo HFILES=$HFILES > Make.inc
+echo> Make.inc
+echo HFILES=$HFILES >> Make.inc
 echo >> Make.inc
 echo CCFILES=$CCFILES >> Make.inc
+
 cd ..
+
+
+
+cd tests
+
+echo> Make.inc
+TESTS=`ls T*.cc`
+TESTLIST=`echo ${TESTS} | sed s/.cc//g `
+
+echo > Make.inc
+echo bin_PROGRAMS = ${TESTLIST} >> Make.inc
+echo >> Make.inc
+
+for f in $TESTS
+do
+BNAME=`basename $f .cc`
+echo >> Make.inc
+echo ${BNAME}_SOURCES=$f  >> Make.inc
+echo ${BNAME}_LDADD=-lGrid>> Make.inc
+echo >> Make.inc
+done
+
+cd ..
+
+
+cd benchmarks
+
+
+echo> Make.inc
+TESTS=`ls B*.cc`
+TESTLIST=`echo ${TESTS} | sed s/.cc//g `
+
+echo > Make.inc
+echo bin_PROGRAMS = ${TESTLIST} >> Make.inc
+echo >> Make.inc
+
+for f in $TESTS
+do
+BNAME=`basename $f .cc`
+echo >> Make.inc
+echo ${BNAME}_SOURCES=$f  >> Make.inc
+echo ${BNAME}_LDADD=-lGrid>> Make.inc
+echo >> Make.inc
+done
