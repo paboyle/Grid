@@ -283,24 +283,23 @@ PARALLEL_FOR_LOOP
 
 
 
-#include <lattice/Grid_lattice_conformable.h>
+#include <lattice/Lattice_conformable.h>
 #define GRID_LATTICE_EXPRESSION_TEMPLATES
 #ifdef  GRID_LATTICE_EXPRESSION_TEMPLATES
-#include <lattice/Grid_lattice_ET.h>
+#include <lattice/Lattice_ET.h>
 #else 
-#include <lattice/Grid_lattice_overload.h>
+#include <lattice/Lattice_overload.h>
 #endif
-#include <lattice/Grid_lattice_arith.h>
-#include <lattice/Grid_lattice_trace.h>
-#include <lattice/Grid_lattice_transpose.h>
-#include <lattice/Grid_lattice_local.h>
-#include <lattice/Grid_lattice_reduction.h>
-#include <lattice/Grid_lattice_peekpoke.h>
-#include <lattice/Grid_lattice_reality.h>
-#include <Grid_extract.h>
-#include <lattice/Grid_lattice_coordinate.h>
-#include <lattice/Grid_lattice_rng.h>
-#include <lattice/Grid_lattice_transfer.h>
+#include <lattice/Lattice_arith.h>
+#include <lattice/Lattice_trace.h>
+#include <lattice/Lattice_transpose.h>
+#include <lattice/Lattice_local.h>
+#include <lattice/Lattice_reduction.h>
+#include <lattice/Lattice_peekpoke.h>
+#include <lattice/Lattice_reality.h>
+#include <lattice/Lattice_coordinate.h>
+#include <lattice/Lattice_rng.h>
+#include <lattice/Lattice_transfer.h>
 
 
 

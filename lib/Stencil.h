@@ -1,7 +1,7 @@
 #ifndef GRID_STENCIL_H
 #define GRID_STENCIL_H
 
-#include <stencil/Grid_lebesgue.h>   // subdir aggregate
+#include <stencil/Lebesgue.h>   // subdir aggregate
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Must not lose sight that goal is to be able to construct really efficient
