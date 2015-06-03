@@ -25,10 +25,10 @@ namespace Grid {
 
       virtual void PartialFractionCoefficients(void);
 
-      zolotarev_data *zdata;
+      Approx::zolotarev_data *zdata;
 
       // Part frac
-      double R=(1+this->mass)/(1-this->mass);
+      double R;
       std::vector<double> p; 
       std::vector<double> q;
 
