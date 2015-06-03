@@ -1,5 +1,4 @@
 #include <Grid.h>
-#include <parallelIO/GridNerscIO.h>
 
 using namespace std;
 using namespace Grid;

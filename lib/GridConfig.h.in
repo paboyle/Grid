@@ -1,4 +1,4 @@
-/* lib/Grid_config.h.in.  Generated from configure.ac by autoheader.  */
+/* lib/GridConfig.h.in.  Generated from configure.ac by autoheader.  */
 
 /* AVX */
 #undef AVX1
