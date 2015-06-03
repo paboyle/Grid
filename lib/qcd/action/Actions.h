@@ -38,6 +38,9 @@
 //#include <qcd/action/fermion/PartialFraction.h>
 
 #include <qcd/action/fermion/DomainWallFermion.h>
+#include <qcd/action/fermion/DomainWallFermion.h>
+#include <qcd/action/fermion/MobiusFermion.h>
+#include <qcd/action/fermion/MobiusZolotarevFermion.h>
 //#include <qcd/action/fermion/ScaledShamirCayleyTanh.h>
 
 
@@ -70,11 +73,6 @@
 
   class LinearGaugeAction : public GaugeAction< multi1d<LatticeColorMatrix>, multi1d<LatticeColorMatrix> >
   typedef multi1d<LatticeColorMatrix>  P;
-  typedef multi1d<LatticeColorMatrix>  Q;
-  virtual void staple(LatticeColorMatrix& result,
-		      const Handle< GaugeState<P,Q> >& state,
-		      int mu, int cb) const = 0;
     */
-
 
 #endif
