@@ -11,6 +11,7 @@ namespace Grid {
     {
     public:
 
+      virtual void   Instantiatable(void) {};
       // Constructors
       DomainWallFermion(LatticeGaugeField &_Umu,
 			GridCartesian         &FiveDimGrid,
@@ -33,7 +34,7 @@ namespace Grid {
 	
 	std::cout << "DomainWallFermion with Ls="<<Ls<<std::endl;
 	// Call base setter
-	this->CayleyFermion5D::SetCoefficients(1.0,zdata,1.0,0.0);
+	this->CayleyFermion5D::SetCoefficientsTanh(zdata,1.0,0.0);
  
       }
 
