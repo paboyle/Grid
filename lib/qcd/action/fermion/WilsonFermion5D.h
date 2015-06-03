@@ -14,6 +14,18 @@ namespace Grid {
     // i.e. even even contains fifth dim hopping term.
     //
     // [DIFFERS from original CPS red black implementation parity = (x+y+z+t+s)|2 ]
+    ////////////////////////////
+    //ContFrac:
+    //  Ls always odd. Rational poly deg is either Ls or Ls-1
+    //PartFrac 
+    //  Ls always odd. Rational poly deg is either Ls or Ls-1
+    //
+    //Cayley: Ls always even, Rational poly deg is Ls
+    // 
+    // Just set nrational as Ls. Forget about Ls-1 cases.
+    //
+    // Require odd Ls for cont and part frac
+    ////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////
     class WilsonFermion5D : public FermionOperator<LatticeFermion,LatticeGaugeField>
     {
