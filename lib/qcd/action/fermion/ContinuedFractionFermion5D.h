@@ -21,20 +21,8 @@ namespace Grid {
       virtual void   MooeeInv    (const LatticeFermion &in, LatticeFermion &out);
       virtual void   MooeeInvDag (const LatticeFermion &in, LatticeFermion &out);
 
-    private:
-
-      Approx::zolotarev_data *zdata;
-
-      // Cont frac
-      RealD mass;
-      RealD R;
-      RealD scale;
-      std::vector<double> Beta;
-      std::vector<double> cc;;
-      std::vector<double> cc_d;;
-      std::vector<double> sqrt_cc;
-      std::vector<double> See;
-      std::vector<double> Aee;
+      //      virtual void   Instantiatable(void)=0;
+      virtual void   Instantiatable(void) {};
 
       // Constructors
       ContinuedFractionFermion5D(LatticeGaugeField &_Umu,
@@ -43,6 +31,24 @@ namespace Grid {
 				 GridCartesian         &FourDimGrid,
 				 GridRedBlackCartesian &FourDimRedBlackGrid,
 				 RealD _mass,RealD M5);
+
+    protected:
+
+      void SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD b,RealD c);
+      void SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata,RealD b,RealD c);
+
+      Approx::zolotarev_data *zdata;
+
+      // Cont frac
+      RealD mass;
+      RealD R;
+      RealD ZoloHiInv;
+      std::vector<double> Beta;
+      std::vector<double> cc;;
+      std::vector<double> cc_d;;
+      std::vector<double> sqrt_cc;
+      std::vector<double> See;
+      std::vector<double> Aee;
 
     };
 

@@ -1,8 +1,55 @@
 #include <Grid.h>
 
 namespace Grid {
-
   namespace QCD {
+
+    void ContinuedFractionFermion5D::SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD b,RealD c)
+    {
+      SetCoefficientsZolotarev(1.0,zdata,b,c);
+    }
+    void ContinuedFractionFermion5D::SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata,RealD b,RealD c)
+    {
+      R=(1+this->mass)/(1-this->mass);
+
+      Beta.resize(Ls);
+      cc.resize(Ls);
+      cc_d.resize(Ls);
+      sqrt_cc.resize(Ls);
+      for(int i=0; i < Ls ; i++){
+	Beta[i] = zdata -> beta[i];
+	cc[i] = 1.0/Beta[i];
+	cc_d[i]=sqrt(cc[i]);
+      }
+    
+      cc_d[Ls-1]=1.0;
+      for(int i=0; i < Ls-1 ; i++){
+	sqrt_cc[i]= sqrt(cc[i]*cc[i+1]);
+      }    
+      sqrt_cc[Ls-2]=sqrt(cc[Ls-2]);
+
+
+      ZoloHiInv =1.0/zolo_hi;
+      double dw_diag = (4.0-M5)*ZoloHiInv;
+    
+      See.resize(Ls);
+      Aee.resize(Ls);
+      int sign=1;
+      for(int s=0;s<Ls;s++){
+	Aee[s] = sign * Beta[s] * dw_diag;
+	sign   = - sign;
+      }
+      Aee[Ls-1] += R;
+    
+      See[0] = Aee[0];
+      for(int s=1;s<Ls;s++){
+	See[s] = Aee[s] - 1.0/See[s-1];
+      }
+      for(int s=0;s<Ls;s++){
+	std::cout <<"s = "<<s<<" Beta "<<Beta[s]<<" Aee "<<Aee[s] <<" See "<<See[s] <<std::endl;
+      }
+    }
+
+
 
     RealD  ContinuedFractionFermion5D::M           (const LatticeFermion &psi, LatticeFermion &chi)
     {
@@ -13,13 +60,13 @@ namespace Grid {
       int sign=1;
       for(int s=0;s<Ls;s++){
 	if ( s==0 ) {
-	  ag5xpby_ssp(chi,cc[0]*Beta[0]*sign*scale,D,sqrt_cc[0],psi,s,s+1); // Multiplies Dw by G5 so Hw
+	  ag5xpby_ssp(chi,cc[0]*Beta[0]*sign*ZoloHiInv,D,sqrt_cc[0],psi,s,s+1); // Multiplies Dw by G5 so Hw
 	} else if ( s==(Ls-1) ){
 	  RealD R=(1.0+mass)/(1.0-mass);
-	  ag5xpby_ssp(chi,Beta[s]*scale,D,sqrt_cc[s-1],psi,s,s-1);
+	  ag5xpby_ssp(chi,Beta[s]*ZoloHiInv,D,sqrt_cc[s-1],psi,s,s-1);
 	  ag5xpby_ssp(chi,R,psi,1.0,chi,s,s);
 	} else {
-	  ag5xpby_ssp(chi,cc[s]*Beta[s]*sign*scale,D,sqrt_cc[s],psi,s,s+1);
+	  ag5xpby_ssp(chi,cc[s]*Beta[s]*sign*ZoloHiInv,D,sqrt_cc[s],psi,s,s+1);
   	  axpby_ssp(chi,1.0,chi,sqrt_cc[s-1],psi,s,s-1);
 	}
 	sign=-sign; 
@@ -35,18 +82,22 @@ namespace Grid {
     }
     void   ContinuedFractionFermion5D::Meooe       (const LatticeFermion &psi, LatticeFermion &chi)
     {
-      Dhop(psi,chi,DaggerNo); // Dslash on diagonal. g5 Dslash is hermitian
+      // Apply 4d dslash
+      if ( psi.checkerboard == Odd ) {
+	DhopEO(psi,chi,DaggerNo); // Dslash on diagonal. g5 Dslash is hermitian
+      } else {
+	DhopOE(psi,chi,DaggerNo); // Dslash on diagonal. g5 Dslash is hermitian
+      }
       
       int sign=1;
       for(int s=0;s<Ls;s++){
 	if ( s==(Ls-1) ){
-	  ag5xpby_ssp(chi,Beta[s]*scale,chi,0.0,chi,s,s);
+	  ag5xpby_ssp(chi,Beta[s]*ZoloHiInv,chi,0.0,chi,s,s);
 	} else {
-	  ag5xpby_ssp(chi,cc[s]*Beta[s]*sign*scale,chi,0.0,chi,s,s);
+	  ag5xpby_ssp(chi,cc[s]*Beta[s]*sign*ZoloHiInv,chi,0.0,chi,s,s);
 	}
 	sign=-sign; 
-    }
-
+      }
     }
     void   ContinuedFractionFermion5D::MeooeDag    (const LatticeFermion &psi, LatticeFermion &chi)
     {
@@ -54,7 +105,7 @@ namespace Grid {
     }
     void   ContinuedFractionFermion5D::Mooee       (const LatticeFermion &psi, LatticeFermion &chi)
     {
-      double dw_diag = (4.0-this->M5)*scale;
+      double dw_diag = (4.0-M5)*ZoloHiInv;
     
       int sign=1;
       for(int s=0;s<Ls;s++){
@@ -62,7 +113,7 @@ namespace Grid {
 	  ag5xpby_ssp(chi,cc[0]*Beta[0]*sign*dw_diag,psi,sqrt_cc[0],psi,s,s+1); // Multiplies Dw by G5 so Hw
 	} else if ( s==(Ls-1) ){
 	  // Drop the CC here.
-	  double R=(1+this->mass)/(1-this->mass);
+	  double R=(1+mass)/(1-mass);
 	  ag5xpby_ssp(chi,Beta[s]*dw_diag,psi,sqrt_cc[s-1],psi,s,s-1);
 	  ag5xpby_ssp(chi,R,psi,1.0,chi,s,s);
 	} else {
@@ -80,7 +131,7 @@ namespace Grid {
     void   ContinuedFractionFermion5D::MooeeInv    (const LatticeFermion &psi, LatticeFermion &chi)
     {
       // Apply Linv
-      axpby_ssp(chi,1.0/cc_d[0],psi,0.0,psi,0,0);
+      axpby_ssp(chi,1.0/cc_d[0],psi,0.0,psi,0,0); 
       for(int s=1;s<Ls;s++){
 	axpbg5y_ssp(chi,1.0/cc_d[s],psi,-1.0/See[s-1],chi,s,s-1);
       }
@@ -89,7 +140,7 @@ namespace Grid {
 	ag5xpby_ssp(chi,1.0/See[s],chi,0.0,chi,s,s); //only appearance of See[0]
       }
       // Apply Uinv = (Linv)^T
-      axpby_ssp(chi,1.0/cc_d[Ls-1],chi,0.0,chi,this->Ls-1,this->Ls-1);
+      axpby_ssp(chi,1.0/cc_d[Ls-1],chi,0.0,chi,Ls-1,Ls-1);
       for(int s=Ls-2;s>=0;s--){
 	axpbg5y_ssp(chi,1.0/cc_d[s],chi,-1.0*cc_d[s+1]/See[s]/cc_d[s],chi,s,s+1);
       }
@@ -112,6 +163,10 @@ namespace Grid {
 		      FourDimGrid, FourDimRedBlackGrid,M5),
       mass(_mass)
     {
+      assert((Ls&0x1)==1); // Odd Ls required
+      int nrational=Ls-1;// Even rational order
+      zdata = Approx::grid_higham(1.0,nrational);// eps is ignored for higham
+      SetCoefficientsTanh(zdata,1.0,0.0);
     }
 
   }
