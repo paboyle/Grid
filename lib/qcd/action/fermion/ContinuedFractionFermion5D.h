@@ -22,7 +22,7 @@ namespace Grid {
       virtual void   MooeeInvDag (const LatticeFermion &in, LatticeFermion &out);
 
       //      virtual void   Instantiatable(void)=0;
-      virtual void   Instantiatable(void) {};
+      virtual void   Instantiatable(void) =0;
 
       // Constructors
       ContinuedFractionFermion5D(LatticeGaugeField &_Umu,
@@ -34,8 +34,8 @@ namespace Grid {
 
     protected:
 
-      void SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD b,RealD c);
-      void SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata,RealD b,RealD c);
+      void SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD scale);
+      void SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata);;
 
       Approx::zolotarev_data *zdata;
 
