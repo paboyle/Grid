@@ -30,19 +30,36 @@
 //#include <qcd/action/fermion/CloverFermion.h>
 
 ////////////////////////////////////////////
-// 5D formulations
+// 5D formulations...
 ////////////////////////////////////////////
+
 #include <qcd/action/fermion/WilsonFermion5D.h> // used by all 5d overlap types
+
+//////////
+// Cayley
+//////////
 #include <qcd/action/fermion/CayleyFermion5D.h>
-#include <qcd/action/fermion/ContinuedFractionFermion5D.h>
-//#include <qcd/action/fermion/PartialFraction.h>
 
 #include <qcd/action/fermion/DomainWallFermion.h>
 #include <qcd/action/fermion/DomainWallFermion.h>
+
 #include <qcd/action/fermion/MobiusFermion.h>
-#include <qcd/action/fermion/MobiusZolotarevFermion.h>
 #include <qcd/action/fermion/ScaledShamirFermion.h>
-#include <qcd/action/fermion/ScaledShamirZolotarevFermion.h>
+#include <qcd/action/fermion/OverlapWilsonCayleyTanhFermion.h>
+
+#include <qcd/action/fermion/MobiusZolotarevFermion.h>
+#include <qcd/action/fermion/ShamirZolotarevFermion.h>
+#include <qcd/action/fermion/OverlapWilsonCayleyZolotarevFermion.h>
+
+//////////////////////
+// Continued fraction
+//////////////////////
+#include <qcd/action/fermion/ContinuedFractionFermion5D.h>
+
+//////////////////////
+// Partial fraction
+//////////////////////
+#include <qcd/action/fermion/PartialFractionFermion5D.h>
 
 
     // Chroma interface defining FermionAction
