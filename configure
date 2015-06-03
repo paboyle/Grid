@@ -3064,7 +3064,7 @@ fi
 
 
 
-ac_config_headers="$ac_config_headers lib/Grid_config.h"
+ac_config_headers="$ac_config_headers lib/GridConfig.h"
 
 # Check whether --enable-silent-rules was given.
 if test "${enable_silent_rules+set}" = set; then :
@@ -5814,7 +5814,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "lib/Grid_config.h") CONFIG_HEADERS="$CONFIG_HEADERS lib/Grid_config.h" ;;
+    "lib/GridConfig.h") CONFIG_HEADERS="$CONFIG_HEADERS lib/GridConfig.h" ;;
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "docs/doxy.cfg") CONFIG_FILES="$CONFIG_FILES docs/doxy.cfg" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
