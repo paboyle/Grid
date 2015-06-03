@@ -229,7 +229,14 @@ namespace QCD {
     }
   }
   
-  void CayleyFermion5D::SetCoefficients(RealD scale,Approx::zolotarev_data *zdata,RealD b,RealD c)
+  // Tanh
+  void CayleyFermion5D::SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD b,RealD c)
+  {
+    SetCoefficientsZolotarev(1.0,zdata,b,c);
+
+  }
+  //Zolo
+  void CayleyFermion5D::SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata,RealD b,RealD c)
   {
 
     ///////////////////////////////////////////////////////////
@@ -266,7 +273,7 @@ namespace QCD {
     double bmc = b-c;
     for(int i=0; i < Ls; i++){
       as[i] = 1.0;
-      omega[i] = ((double)zdata->gamma[i]); //NB reciprocal relative to Chroma NEF code
+      omega[i] = ((double)zdata->gamma[i])*zolo_hi; //NB reciprocal relative to Chroma NEF code
       bs[i] = 0.5*(bpc/omega[i] + bmc);
       cs[i] = 0.5*(bpc/omega[i] - bmc);
     }

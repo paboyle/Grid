@@ -11,6 +11,7 @@ namespace Grid {
     {
     public:
 
+      virtual void   Instantiatable(void) {};
       // Constructors
        MobiusZolotarevFermion(LatticeGaugeField &_Umu,
 			      GridCartesian         &FiveDimGrid,
@@ -34,10 +35,9 @@ namespace Grid {
 	assert(zdata->n==this->Ls);
 
 	std::cout << "MobiusZolotarevFermion (b="<<b<<",c="<<c<<") with Ls= "<<Ls<<" Zolotarev range ["<<lo<<","<<hi<<"]"<<std::endl;
-	std::cout << "MobiusZolotarevFermion : note there is a degeneracy between (b+c) and Zolo param hi"<<std::endl;
 	
 	// Call base setter
-	this->CayleyFermion5D::SetCoefficients(1.0,zdata,b,c);
+	this->CayleyFermion5D::SetCoefficientsZolotarev(hi,zdata,b,c);
  
       }
 

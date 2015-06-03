@@ -11,6 +11,7 @@ namespace Grid {
     {
     public:
 
+      virtual void   Instantiatable(void) {};
       // Constructors
       MobiusFermion(LatticeGaugeField &_Umu,
 		    GridCartesian         &FiveDimGrid,
@@ -34,7 +35,7 @@ namespace Grid {
 	assert(zdata->n==this->Ls);
 	
 	// Call base setter
-	this->CayleyFermion5D::SetCoefficients(1.0,zdata,b,c);
+	this->CayleyFermion5D::SetCoefficientsTanh(zdata,b,c);
  
       }
 

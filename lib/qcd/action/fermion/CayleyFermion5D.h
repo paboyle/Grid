@@ -20,7 +20,7 @@ namespace Grid {
       virtual void   MooeeDag    (const LatticeFermion &in, LatticeFermion &out);
       virtual void   MooeeInv    (const LatticeFermion &in, LatticeFermion &out);
       virtual void   MooeeInvDag (const LatticeFermion &in, LatticeFermion &out);
-
+      virtual void   Instantiatable(void)=0;
       //    protected:
       RealD mass;
 
@@ -52,7 +52,8 @@ namespace Grid {
 		      RealD _mass,RealD _M5);
 
     protected:
-      void SetCoefficients(RealD scale,Approx::zolotarev_data *zdata,RealD b,RealD c);
+      void SetCoefficientsZolotarev(RealD zolohi,Approx::zolotarev_data *zdata,RealD b,RealD c);
+      void SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD b,RealD c);
     };
 
   }
