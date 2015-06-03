@@ -55,6 +55,8 @@
 // Continued fraction
 //////////////////////
 #include <qcd/action/fermion/ContinuedFractionFermion5D.h>
+#include <qcd/action/fermion/OverlapWilsonContfracTanhFermion.h>
+#include <qcd/action/fermion/OverlapWilsonContfracZolotarevFermion.h>
 
 //////////////////////
 // Partial fraction
