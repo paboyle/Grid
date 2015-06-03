@@ -41,7 +41,8 @@
 #include <qcd/action/fermion/DomainWallFermion.h>
 #include <qcd/action/fermion/MobiusFermion.h>
 #include <qcd/action/fermion/MobiusZolotarevFermion.h>
-//#include <qcd/action/fermion/ScaledShamirCayleyTanh.h>
+#include <qcd/action/fermion/ScaledShamirFermion.h>
+#include <qcd/action/fermion/ScaledShamirZolotarevFermion.h>
 
 
     // Chroma interface defining FermionAction
