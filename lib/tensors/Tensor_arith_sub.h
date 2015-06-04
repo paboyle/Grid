@@ -44,7 +44,7 @@ template<class vtype,class ltype,class rtype, int N> strong_inline void sub(iMat
                                                                      const iMatrix<rtype,N> * __restrict__ rhs){
     for(int c2=0;c2<N;c2++){
     for(int c1=0;c1<N;c1++){
-        if ( c1!=c2) {
+        if ( c1==c2) {
             sub(&ret->_internal[c1][c2],&lhs->_internal,&rhs->_internal[c1][c2]);
         } else {
             // Fails -- need unary minus. Catalogue other unops?
@@ -60,7 +60,7 @@ template<class vtype,class ltype,class rtype, int N> strong_inline void sub(iMat
                                                                      const iScalar<rtype> * __restrict__ rhs){
     for(int c2=0;c2<N;c2++){
     for(int c1=0;c1<N;c1++){
-        if ( c1!=c2)
+        if ( c1==c2)
             sub(&ret->_internal[c1][c2],&lhs->_internal[c1][c2],&rhs->_internal);
         else
             ret->_internal[c1][c2]=lhs->_internal[c1][c2];
