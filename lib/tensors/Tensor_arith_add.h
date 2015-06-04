@@ -45,7 +45,10 @@ namespace Grid {
   {
     for(int c2=0;c2<N;c2++){
       for(int c1=0;c1<N;c1++){
-        add(&ret->_internal[c1][c2],&lhs->_internal,&rhs->_internal[c1][c2]);
+	if ( c1==c2)
+	  add(&ret->_internal[c1][c2],&lhs->_internal,&rhs->_internal[c1][c2]);
+	else
+	  ret->_internal[c1][c2]=lhs->_internal[c1][c2];
       }}
     return;
   }

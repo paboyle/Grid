@@ -54,3 +54,5 @@ echo ${BNAME}_SOURCES=$f  >> Make.inc
 echo ${BNAME}_LDADD=-lGrid>> Make.inc
 echo >> Make.inc
 done
+
+cd ..

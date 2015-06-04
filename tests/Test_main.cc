@@ -56,6 +56,7 @@ int main (int argc, char ** argv)
     GridCartesian           Fine(latt_size,simd_layout,mpi_layout);
     GridRedBlackCartesian rbFine(latt_size,simd_layout,mpi_layout);
     GridParallelRNG       FineRNG(&Fine);
+    GridSerialRNG       SerialRNG;
     FineRNG.SeedRandomDevice();
 
     LatticeColourMatrix Foo(&Fine);
@@ -83,6 +84,9 @@ int main (int argc, char ** argv)
     LatticeSpinMatrix       sMat(&Fine);
     LatticeSpinColourMatrix scMat(&Fine);
     
+    LatticeLorentzColourMatrix lcMat(&Fine);
+
+
     LatticeComplex scalar(&Fine);
     LatticeReal    rscalar(&Fine);
     LatticeReal    iscalar(&Fine);
@@ -99,12 +103,15 @@ int main (int argc, char ** argv)
     random(FineRNG,cMat);
     random(FineRNG,sMat);
     random(FineRNG,scMat);
+    random(FineRNG,lcMat);
     random(FineRNG,cVec);
     random(FineRNG,sVec);
     random(FineRNG,scVec);
 
+
     fflush(stdout);
     
+    TComplex tr = trace(cmat);
 
      
     cVec = cMat * cVec;  // LatticeColourVector     = LatticeColourMatrix     * LatticeColourVector
@@ -116,7 +123,9 @@ int main (int argc, char ** argv)
     cMat = outerProduct(cVec,cVec);
     scalar = localInnerProduct(cVec,cVec);
 
- 
+    cMat = Ta(cMat);  //traceless antihermitian
+
+
     scalar += scalar;
     scalar -= scalar;
     scalar *= scalar;
@@ -206,7 +215,13 @@ int main (int argc, char ** argv)
     scm=transpose(scm);
     scm=transposeIndex<1>(scm);
     
+   
+    //random(SerialRNG, cm);
+    //std::cout << cm << std::endl;
 
+    cm = Ta(cm);
+    //TComplex tracecm= trace(cm);      
+    //std::cout << cm << "  "<< tracecm << std::endl;
 
 
 //    Foo = Foo+scalar; // LatticeColourMatrix+Scalar
@@ -218,6 +233,10 @@ int main (int argc, char ** argv)
     
     LatticeComplex trscMat(&Fine);
     trscMat = trace(scMat); // Trace
+
+    // LatticeComplex trlcMat(&Fine);
+    // trlcMat = trace(lcMat); // Trace involving iVector - now generates error
+    
 
     { // Peek-ology and Poke-ology, with a little app-ology
       TComplex      c;
