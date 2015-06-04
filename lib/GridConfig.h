@@ -1,5 +1,5 @@
-/* lib/Grid_config.h.  Generated from Grid_config.h.in by configure.  */
-/* lib/Grid_config.h.in.  Generated from configure.ac by autoheader.  */
+/* lib/GridConfig.h.  Generated from GridConfig.h.in by configure.  */
+/* lib/GridConfig.h.in.  Generated from configure.ac by autoheader.  */
 
 /* AVX */
 /* #undef AVX1 */
@@ -16,6 +16,15 @@
 /* GRID_COMMS_NONE */
 #define GRID_COMMS_NONE 1
 
+/* Support Altivec instructions */
+/* #undef HAVE_ALTIVEC */
+
+/* Support AVX (Advanced Vector Extensions) instructions */
+/* #undef HAVE_AVX */
+
+/* Support AVX2 (Advanced Vector Extensions 2) instructions */
+/* #undef HAVE_AVX2 */
+
 /* define if the compiler supports basic C++11 syntax */
 /* #undef HAVE_CXX11 */
 
@@ -29,6 +38,9 @@
 
 /* Define to 1 if you have the <endian.h> header file. */
 #define HAVE_ENDIAN_H 1
+
+/* Support FMA3 (Fused Multiply-Add) instructions */
+/* #undef HAVE_FMA */
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #define HAVE_GETTIMEOFDAY 1
@@ -54,8 +66,29 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
 
+/* Support mmx instructions */
+#define HAVE_MMX /**/
+
 /* Define to 1 if you have the <mm_malloc.h> header file. */
 #define HAVE_MM_MALLOC_H 1
+
+/* Support SSE (Streaming SIMD Extensions) instructions */
+#define HAVE_SSE /**/
+
+/* Support SSE2 (Streaming SIMD Extensions 2) instructions */
+#define HAVE_SSE2 /**/
+
+/* Support SSE3 (Streaming SIMD Extensions 3) instructions */
+#define HAVE_SSE3 /**/
+
+/* Support SSSE4.1 (Streaming SIMD Extensions 4.1) instructions */
+#define HAVE_SSE4_1 /**/
+
+/* Support SSSE4.2 (Streaming SIMD Extensions 4.2) instructions */
+#define HAVE_SSE4_2 /**/
+
+/* Support SSSE3 (Supplemental Streaming SIMD Extensions 3) instructions */
+#define HAVE_SSSE3 /**/
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H 1
