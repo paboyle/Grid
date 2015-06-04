@@ -1,5 +1,5 @@
-#ifndef OVERLAP_WILSON_CAYLEY_TANH_FERMION_H
-#define OVERLAP_WILSON_CAYLEY_TANH_FERMION_H
+#ifndef OVERLAP_WILSON_CONTFRAC_ZOLOTAREV_FERMION_H
+#define OVERLAP_WILSON_CONTFRAC_ZOLOTAREV_FERMION_H
 
 #include <Grid.h>
 
@@ -26,7 +26,7 @@ namespace Grid {
 				 FiveDimGrid,
 				 FiveDimRedBlackGrid,
 				 FourDimGrid,
-				 FourDimRedBlackGrid,_mass)
+				 FourDimRedBlackGrid,_mass,_M5)
 	{
 	  assert((Ls&0x1)==1); // Odd Ls required
 

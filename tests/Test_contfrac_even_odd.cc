@@ -48,9 +48,14 @@ int main (int argc, char ** argv)
 
   RealD mass=0.1;
   RealD M5  =1.8;
-  std::cout <<"ContinuedFractionFermion test"<<std::endl;
-  ContinuedFractionFermion5D Dcf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  TestWhat<ContinuedFractionFermion5D>(Dcf,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+
+  std::cout <<"OverlapWilsonContFracTanhFermion  test"<<std::endl;
+  OverlapWilsonContFracTanhFermion Dcf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
+  TestWhat<OverlapWilsonContFracTanhFermion>(Dcf,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+
+  std::cout <<"OverlapWilsonContFracZolotarevFermion  test"<<std::endl;
+  OverlapWilsonContFracZolotarevFermion Dcfz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,6.0);
+  TestWhat<OverlapWilsonContFracZolotarevFermion>(Dcfz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   Grid_finalize();
 }
