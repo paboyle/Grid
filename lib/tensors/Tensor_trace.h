@@ -72,5 +72,18 @@ auto traceIndex(const iMatrix<vtype,N> &arg) ->  iMatrix<decltype(traceIndex<Lev
   return ret;
 }
 
+// Allow to recurse if vector, but never terminate on a vector
+// trace of a different index can distribute across the vector index in a replicated way
+// but we do not trace a vector index.
+template<int Level,class vtype,int N,typename std::enable_if< iVector<vtype>::TensorLevel != Level >::type * =nullptr> inline 
+auto traceIndex(const iVector<vtype,N> &arg) ->  iVector<decltype(traceIndex<Level>(arg._internal[0])),N> 
+{
+  iVector<decltype(traceIndex<Level>(arg._internal[0])),N> ret;
+  for(int i=0;i<N;i++){
+    ret._internal[i] = traceIndex<Level>(arg._internal[i]);
+  }
+  return ret;
+}
+
 }
 #endif
