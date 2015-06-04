@@ -48,5 +48,16 @@ PARALLEL_FOR_LOOP
     }
 
 
+    template<class vobj> inline auto Ta(const Lattice<vobj> &z) -> Lattice<decltype(Ta(z._odata[0]))>
+    {
+      Lattice<decltype(Ta(z._odata[0]))> ret(z._grid);
+PARALLEL_FOR_LOOP
+        for(int ss=0;ss<z._grid->oSites();ss++){
+            ret._odata[ss] = Ta(z._odata[ss]);
+        }
+      return ret;
+    }
+
+
 }
 #endif

@@ -123,7 +123,9 @@ int main (int argc, char ** argv)
     cMat = outerProduct(cVec,cVec);
     scalar = localInnerProduct(cVec,cVec);
 
- 
+    cMat = Ta(cMat);  //traceless antihermitian
+
+
     scalar += scalar;
     scalar -= scalar;
     scalar *= scalar;
@@ -214,13 +216,12 @@ int main (int argc, char ** argv)
     scm=transposeIndex<1>(scm);
     
    
-    random(SerialRNG, cm);
-    std::cout << cm << std::endl;
+    //random(SerialRNG, cm);
+    //std::cout << cm << std::endl;
 
     cm = Ta(cm);
-    //cm = adj(cm);
-    TComplex tracecm= trace(cm);      
-    std::cout << cm << "  "<< tracecm << std::endl;
+    //TComplex tracecm= trace(cm);      
+    //std::cout << cm << "  "<< tracecm << std::endl;
 
 
 //    Foo = Foo+scalar; // LatticeColourMatrix+Scalar
