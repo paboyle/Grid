@@ -57,6 +57,14 @@ int main (int argc, char ** argv)
   OverlapWilsonContFracZolotarevFermion Dcfz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,6.0);
   TestWhat<OverlapWilsonContFracZolotarevFermion>(Dcfz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
+  std::cout <<"OverlapWilsonPartialFractionTanhFermion  test"<<std::endl;
+  OverlapWilsonPartialFractionTanhFermion Dpf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
+  TestWhat<OverlapWilsonPartialFractionTanhFermion>(Dpf,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+
+  std::cout <<"OverlapWilsonPartialFractionZolotarevFermion  test"<<std::endl;
+  OverlapWilsonPartialFractionZolotarevFermion Dpfz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,6.0);
+  TestWhat<OverlapWilsonPartialFractionZolotarevFermion>(Dpfz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+
   Grid_finalize();
 }
 

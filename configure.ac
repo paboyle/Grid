@@ -66,9 +66,6 @@ Please install or provide the correct path to your installation
 Info at: http://www.mpfr.org/)])
 
 
-
-
-
 AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE4|AVX|AVX2|AVX512|MIC],\
 	[Select instructions to be SSE4.0, AVX 1.0, AVX 2.0+FMA, AVX 512, MIC])],\
 	[ac_SIMD=${enable_simd}],[ac_SIMD=AVX2])
@@ -78,17 +75,17 @@ supported=no
 case ${ac_SIMD} in
      SSE4)
        echo Configuring for SSE4
-       if test x"$ax_cv_support_ssse3_ext" = x"yes"; then  dnl minimal support for SSE4
        AC_DEFINE([SSE4],[1],[SSE4] )
-       supported=yes
+       if test x"$ax_cv_support_ssse3_ext" = x"yes"; then  dnl minimal support for SSE4
+         supported=yes
        else
-	AC_MSG_WARN([Your processor does not support SSE4 instructions])
+  	AC_MSG_WARN([Your processor does not support SSE4 instructions])
        fi
      ;;
      AVX)
        echo Configuring for AVX
-       if test x"$ax_cv_support_avx_ext" = x"yes"; then  dnl minimal support for AVX
        AC_DEFINE([AVX1],[1],[AVX] )
+       if test x"$ax_cv_support_avx_ext" = x"yes"; then  dnl minimal support for AVX
        supported=yes			  
        else
        	AC_MSG_WARN([Your processor does not support AVX instructions])
@@ -96,8 +93,8 @@ case ${ac_SIMD} in
      ;;
      AVX2)
        echo Configuring for AVX2
-       if test x"$ax_cv_support_avx2_ext" = x"yes"; then  dnl minimal support for AVX2
        AC_DEFINE([AVX2],[1],[AVX2] )
+       if test x"$ax_cv_support_avx2_ext" = x"yes"; then  dnl minimal support for AVX2
        supported=yes
        else
        AC_MSG_WARN([Your processor does not support AVX2 instructions])

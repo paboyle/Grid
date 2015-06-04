@@ -30,8 +30,9 @@ namespace Grid {
 	{
 	  assert((Ls&0x1)==1); // Odd Ls required
 	  int nrational=Ls-1;// Even rational order
-	  zdata = Approx::grid_higham(1.0,nrational);// eps is ignored for higham
+	  Approx::zolotarev_data *zdata = Approx::higham(1.0,nrational);// eps is ignored for higham
 	  SetCoefficientsTanh(zdata,scale);
+	  Approx::zolotarev_free(zdata);
 	}
     };
   }

@@ -293,7 +293,7 @@ static void sncndnFK(INTERNAL_PRECISION u, INTERNAL_PRECISION k,
  * Set type = 0 for the Zolotarev approximation, which is zero at x = 0, and
  * type = 1 for the approximation which is infinite at x = 0. */
 
-zolotarev_data* grid_zolotarev(PRECISION epsilon, int n, int type) {
+zolotarev_data* zolotarev(PRECISION epsilon, int n, int type) {
   INTERNAL_PRECISION A, c, cp, kp, ksq, sn, cn, dn, Kp, Kj, z, z0, t, M, F,
     l, invlambda, xi, xisq, *tv, s, opl;
   int m, czero, ts;
@@ -414,7 +414,19 @@ zolotarev_data* grid_zolotarev(PRECISION epsilon, int n, int type) {
   return zd;
 }
 
-zolotarev_data* grid_higham(PRECISION epsilon, int n) {
+
+void zolotarev_free(zolotarev_data *zdata)
+{
+    free(zdata -> a);
+    free(zdata -> ap);
+    free(zdata -> alpha);
+    free(zdata -> beta);
+    free(zdata -> gamma);
+    free(zdata);
+}
+
+
+zolotarev_data* higham(PRECISION epsilon, int n) {
   INTERNAL_PRECISION A, M, c, cp, z, z0, t, epssq;
   int m, czero;
   zolotarev_data *zd;
