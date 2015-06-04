@@ -37,9 +37,8 @@ namespace Grid {
       void SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD scale);
       void SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata);;
 
-      Approx::zolotarev_data *zdata;
-
       // Cont frac
+      RealD dw_diag;
       RealD mass;
       RealD R;
       RealD ZoloHiInv;

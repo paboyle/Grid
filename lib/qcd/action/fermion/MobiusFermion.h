@@ -31,11 +31,13 @@ namespace Grid {
 	RealD eps = 1.0;
 
 	std::cout << "MobiusFermion (b="<<b<<",c="<<c<<") with Ls= "<<Ls<<" Tanh approx"<<std::endl;
-	Approx::zolotarev_data *zdata = Approx::grid_higham(eps,this->Ls);// eps is ignored for higham
+	Approx::zolotarev_data *zdata = Approx::higham(eps,this->Ls);// eps is ignored for higham
 	assert(zdata->n==this->Ls);
 	
 	// Call base setter
 	this->CayleyFermion5D::SetCoefficientsTanh(zdata,b,c);
+
+	Approx::zolotarev_free(zdata);
  
       }
 

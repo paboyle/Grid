@@ -9,6 +9,16 @@ namespace Grid {
     }
     void ContinuedFractionFermion5D::SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata)
     {
+      // How to check Ls matches??
+      //      std::cout << Ls << " Ls"<<std::endl;
+      //      std::cout << zdata->n  << " - n"<<std::endl;
+      //      std::cout << zdata->da << " -da "<<std::endl;
+      //      std::cout << zdata->db << " -db"<<std::endl;
+      //      std::cout << zdata->dn << " -dn"<<std::endl;
+      //      std::cout << zdata->dd << " -dd"<<std::endl;
+
+      assert(zdata->db==Ls);// Beta has Ls coeffs
+
       R=(1+this->mass)/(1-this->mass);
 
       Beta.resize(Ls);
@@ -29,7 +39,7 @@ namespace Grid {
 
 
       ZoloHiInv =1.0/zolo_hi;
-      double dw_diag = (4.0-M5)*ZoloHiInv;
+      dw_diag = (4.0-M5)*ZoloHiInv;
     
       See.resize(Ls);
       Aee.resize(Ls);
@@ -105,8 +115,6 @@ namespace Grid {
     }
     void   ContinuedFractionFermion5D::Mooee       (const LatticeFermion &psi, LatticeFermion &chi)
     {
-      double dw_diag = (4.0-M5)*ZoloHiInv;
-    
       int sign=1;
       for(int s=0;s<Ls;s++){
 	if ( s==0 ) {
