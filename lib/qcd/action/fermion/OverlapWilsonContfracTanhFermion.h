@@ -1,5 +1,5 @@
-#ifndef OVERLAP_WILSON_CAYLEY_TANH_FERMION_H
-#define OVERLAP_WILSON_CAYLEY_TANH_FERMION_H
+#ifndef OVERLAP_WILSON_CONTFRAC_TANH_FERMION_H
+#define OVERLAP_WILSON_CONTFRAC_TANH_FERMION_H
 
 #include <Grid.h>
 
@@ -23,10 +23,10 @@ namespace Grid {
       
       // b+c=scale, b-c = 0 <=> b =c = scale/2
       ContinuedFractionFermion5D(_Umu,
-		    FiveDimGrid,
-		    FiveDimRedBlackGrid,
-		    FourDimGrid,
-		    FourDimRedBlackGrid,_mass)
+				 FiveDimGrid,
+				 FiveDimRedBlackGrid,
+				 FourDimGrid,
+				 FourDimRedBlackGrid,_mass,_M5)
 	{
 	  assert((Ls&0x1)==1); // Odd Ls required
 	  int nrational=Ls-1;// Even rational order
