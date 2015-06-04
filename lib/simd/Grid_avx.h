@@ -4,7 +4,7 @@
 
   Using intrinsics
 */
-// Time-stamp: <2015-05-27 12:07:15 neo>
+// Time-stamp: <2015-05-29 14:13:30 neo>
 //----------------------------------------------------------------------
 
 #include <immintrin.h>
@@ -261,13 +261,7 @@ namespace Optimization {
     }
     // Complex double
     inline __m256d operator()(__m256d in){
-      return _mm256_xor_pd(_mm256_addsub_pd(_mm256_setzero_pd(),in), _mm256_set1_pd(-0.f));//untested
-      /*
-	// original 
-	//      addsubps 0, inv=>0+in.v[3] 0-in.v[2], 0+in.v[1], 0-in.v[0], ...
-	__m256d tmp = _mm256_addsub_pd(_mm256_setzero_pd(),_mm256_shuffle_pd(in,in,0x5));
-	return _mm256_shuffle_pd(tmp,tmp,0x5);
-      */
+      return _mm256_xor_pd(_mm256_addsub_pd(_mm256_setzero_pd(),in), _mm256_set1_pd(-0.f));
     }
     // do not define for integer input
   };
