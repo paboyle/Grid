@@ -11,7 +11,7 @@ AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE(subdir-objects)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([lib/Grid.h])
-AC_CONFIG_HEADERS([lib/Grid_config.h])
+AC_CONFIG_HEADERS([lib/GridConfig.h])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 AC_MSG_NOTICE([

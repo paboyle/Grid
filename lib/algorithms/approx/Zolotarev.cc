@@ -58,6 +58,8 @@
 
 /* Compute the partial fraction expansion coefficients (alpha) from the
  * factored form */
+namespace Grid {
+namespace Approx {
 
 static void construct_partfrac(izd *z) {
   int dn = z -> dn, dd = z -> dd, type = z -> type;
@@ -291,7 +293,7 @@ static void sncndnFK(INTERNAL_PRECISION u, INTERNAL_PRECISION k,
  * Set type = 0 for the Zolotarev approximation, which is zero at x = 0, and
  * type = 1 for the approximation which is infinite at x = 0. */
 
-zolotarev_data* bfm_zolotarev(PRECISION epsilon, int n, int type) {
+zolotarev_data* grid_zolotarev(PRECISION epsilon, int n, int type) {
   INTERNAL_PRECISION A, c, cp, kp, ksq, sn, cn, dn, Kp, Kj, z, z0, t, M, F,
     l, invlambda, xi, xisq, *tv, s, opl;
   int m, czero, ts;
@@ -412,7 +414,7 @@ zolotarev_data* bfm_zolotarev(PRECISION epsilon, int n, int type) {
   return zd;
 }
 
-zolotarev_data* bfm_higham(PRECISION epsilon, int n) {
+zolotarev_data* grid_higham(PRECISION epsilon, int n) {
   INTERNAL_PRECISION A, M, c, cp, z, z0, t, epssq;
   int m, czero;
   zolotarev_data *zd;
@@ -502,6 +504,7 @@ zolotarev_data* bfm_higham(PRECISION epsilon, int n) {
   free(d);
   return zd;
 }
+}}
 
 #ifdef TEST
 
@@ -707,4 +710,6 @@ int main(int argc, char** argv) {
 
   return EXIT_SUCCESS;
 }
+
+
 #endif /* TEST */
