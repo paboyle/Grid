@@ -1,7 +1,8 @@
 /* -*- Mode: C; comment-column: 22; fill-column: 79; -*- */
 
 #ifdef __cplusplus
-extern "C" {
+namespace Grid {
+namespace Approx {
 #endif
 
 #define HVERSION Header Time-stamp: <14-OCT-2004 09:26:51.00 adk@MISSCONTRARY>
@@ -76,10 +77,10 @@ typedef struct {
  * zolotarev_data structure. The arguments must satisfy the constraints that
  * epsilon > 0, n > 0, and type = 0 or 1. */
 
-ZOLOTAREV_DATA* bfm_higham(PRECISION epsilon, int n) ;
-ZOLOTAREV_DATA* bfm_zolotarev(PRECISION epsilon, int n, int type);
+ZOLOTAREV_DATA* grid_higham(PRECISION epsilon, int n) ;
+ZOLOTAREV_DATA* grid_zolotarev(PRECISION epsilon, int n, int type);
 #endif
 
 #ifdef __cplusplus
-}
+}}
 #endif
