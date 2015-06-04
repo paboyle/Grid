@@ -10,7 +10,7 @@ namespace Grid {
   /////////////////////////////////////////////////////////////////////////////////////////////
     template<class Field> class SparseMatrixBase {
     public:
-      GridBase *_grid;
+      virtual GridBase *Grid(void) =0;
       // Full checkerboar operations
       virtual RealD M    (const Field &in, Field &out)=0;
       virtual RealD Mdag (const Field &in, Field &out)=0;
@@ -19,7 +19,6 @@ namespace Grid {
 	ni=M(in,tmp);
 	no=Mdag(tmp,out);
       }
-      SparseMatrixBase(GridBase *grid) : _grid(grid) {};
     };
 
   /////////////////////////////////////////////////////////////////////////////////////////////
@@ -27,7 +26,7 @@ namespace Grid {
   /////////////////////////////////////////////////////////////////////////////////////////////
     template<class Field> class CheckerBoardedSparseMatrixBase : public SparseMatrixBase<Field> {
     public:
-      GridBase *_cbgrid;
+      virtual GridBase *RedBlackGrid(void)=0;
       // half checkerboard operaions
       virtual  void Meooe    (const Field &in, Field &out)=0;
       virtual  void Mooee    (const Field &in, Field &out)=0;
@@ -62,9 +61,7 @@ namespace Grid {
 	Field tmp(in._grid);
 	ni=Mpc(in,tmp);
 	no=MpcDag(tmp,out);
-	//	std::cout<<"MpcDagMpc "<<ni<<" "<<no<<std::endl;
       }
-      CheckerBoardedSparseMatrixBase(GridBase *grid,GridBase *cbgrid) : SparseMatrixBase<Field>(grid), _cbgrid(cbgrid) {};
     };
 
 }
