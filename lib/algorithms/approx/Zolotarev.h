@@ -77,8 +77,9 @@ typedef struct {
  * zolotarev_data structure. The arguments must satisfy the constraints that
  * epsilon > 0, n > 0, and type = 0 or 1. */
 
-ZOLOTAREV_DATA* grid_higham(PRECISION epsilon, int n) ;
-ZOLOTAREV_DATA* grid_zolotarev(PRECISION epsilon, int n, int type);
+ZOLOTAREV_DATA* higham(PRECISION epsilon, int n) ;
+ZOLOTAREV_DATA* zolotarev(PRECISION epsilon, int n, int type);
+void zolotarev_free(zolotarev_data *zdata);
 #endif
 
 #ifdef __cplusplus

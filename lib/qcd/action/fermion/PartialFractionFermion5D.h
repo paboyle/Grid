@@ -9,6 +9,13 @@ namespace Grid {
     {
     public:
 
+      const int part_frac_chroma_convention=1;
+
+      void   Meooe_internal(const LatticeFermion &in, LatticeFermion &out,int dag);
+      void   Mooee_internal(const LatticeFermion &in, LatticeFermion &out,int dag);
+      void   MooeeInv_internal(const LatticeFermion &in, LatticeFermion &out,int dag);
+      void   M_internal(const LatticeFermion &in, LatticeFermion &out,int dag);
+
       // override multiply
       virtual RealD  M    (const LatticeFermion &in, LatticeFermion &out);
       virtual RealD  Mdag (const LatticeFermion &in, LatticeFermion &out);
@@ -21,16 +28,7 @@ namespace Grid {
       virtual void   MooeeInv    (const LatticeFermion &in, LatticeFermion &out);
       virtual void   MooeeInvDag (const LatticeFermion &in, LatticeFermion &out);
 
-    private:
-
-      virtual void PartialFractionCoefficients(void);
-
-      Approx::zolotarev_data *zdata;
-
-      // Part frac
-      double R;
-      std::vector<double> p; 
-      std::vector<double> q;
+      virtual void   Instantiatable(void) =0; // ensure no make-eee
 
       // Constructors
       PartialFractionFermion5D(LatticeGaugeField &_Umu,
@@ -39,6 +37,20 @@ namespace Grid {
 				    GridCartesian         &FourDimGrid,
 				    GridRedBlackCartesian &FourDimRedBlackGrid,
 				    RealD _mass,RealD M5);
+
+    protected:
+
+      virtual void SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD scale);
+      virtual void SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata);
+
+      // Part frac
+      RealD mass;
+      RealD dw_diag;
+      RealD R;
+      RealD amax;
+      RealD scale;
+      std::vector<double> p; 
+      std::vector<double> q;
 
     };
 

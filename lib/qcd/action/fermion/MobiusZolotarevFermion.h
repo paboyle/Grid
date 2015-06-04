@@ -31,7 +31,7 @@ namespace Grid {
       {
 	RealD eps = lo/hi;
 
-	Approx::zolotarev_data *zdata = Approx::grid_zolotarev(eps,this->Ls,0);// eps is ignored for higham
+	Approx::zolotarev_data *zdata = Approx::zolotarev(eps,this->Ls,0);
 	assert(zdata->n==this->Ls);
 
 	std::cout << "MobiusZolotarevFermion (b="<<b<<",c="<<c<<") with Ls= "<<Ls<<" Zolotarev range ["<<lo<<","<<hi<<"]"<<std::endl;
@@ -39,6 +39,7 @@ namespace Grid {
 	// Call base setter
 	this->CayleyFermion5D::SetCoefficientsZolotarev(hi,zdata,b,c);
  
+	Approx::zolotarev_free(zdata);
       }
 
     };

@@ -1,5 +1,5 @@
-#ifndef  GRID_QCD_DWF_H
-#define  GRID_QCD_DWF_H
+#ifndef  GRID_QCD_WILSON_FERMION_5D_H
+#define  GRID_QCD_WILSON_FERMION_5D_H
 
 namespace Grid {
 

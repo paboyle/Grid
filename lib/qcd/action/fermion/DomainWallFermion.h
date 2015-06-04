@@ -29,13 +29,14 @@ namespace Grid {
       {
 	RealD eps = 1.0;
 
-	Approx::zolotarev_data *zdata = Approx::grid_higham(eps,this->Ls);// eps is ignored for higham
+	Approx::zolotarev_data *zdata = Approx::higham(eps,this->Ls);// eps is ignored for higham
 	assert(zdata->n==this->Ls);
 	
 	std::cout << "DomainWallFermion with Ls="<<Ls<<std::endl;
 	// Call base setter
 	this->CayleyFermion5D::SetCoefficientsTanh(zdata,1.0,0.0);
- 
+
+	Approx::zolotarev_free(zdata);
       }
 
     };

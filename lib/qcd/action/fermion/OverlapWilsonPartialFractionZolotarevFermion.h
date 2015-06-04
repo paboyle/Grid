@@ -1,5 +1,5 @@
-#ifndef OVERLAP_WILSON_CONTFRAC_ZOLOTAREV_FERMION_H
-#define OVERLAP_WILSON_CONTFRAC_ZOLOTAREV_FERMION_H
+#ifndef OVERLAP_WILSON_PARTFRAC_ZOLOTAREV_FERMION_H
+#define OVERLAP_WILSON_PARTFRAC_ZOLOTAREV_FERMION_H
 
 #include <Grid.h>
 
@@ -7,13 +7,13 @@ namespace Grid {
 
   namespace QCD {
 
-    class OverlapWilsonContFracZolotarevFermion : public ContinuedFractionFermion5D
+    class OverlapWilsonPartialFractionZolotarevFermion : public PartialFractionFermion5D
     {
     public:
 
       virtual void   Instantiatable(void){};
       // Constructors
-    OverlapWilsonContFracZolotarevFermion(LatticeGaugeField &_Umu,
+    OverlapWilsonPartialFractionZolotarevFermion(LatticeGaugeField &_Umu,
 					  GridCartesian         &FiveDimGrid,
 					  GridRedBlackCartesian &FiveDimRedBlackGrid,
 					  GridCartesian         &FourDimGrid,
@@ -22,11 +22,11 @@ namespace Grid {
 					  RealD lo,RealD hi):
       
       // b+c=scale, b-c = 0 <=> b =c = scale/2
-      ContinuedFractionFermion5D(_Umu,
-				 FiveDimGrid,
-				 FiveDimRedBlackGrid,
-				 FourDimGrid,
-				 FourDimRedBlackGrid,_mass,_M5)
+      PartialFractionFermion5D(_Umu,
+			       FiveDimGrid,
+			       FiveDimRedBlackGrid,
+			       FourDimGrid,
+			       FourDimRedBlackGrid,_mass,_M5)
 	{
 	  assert((Ls&0x1)==1); // Odd Ls required
 

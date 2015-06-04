@@ -62,6 +62,8 @@
 // Partial fraction
 //////////////////////
 #include <qcd/action/fermion/PartialFractionFermion5D.h>
+#include <qcd/action/fermion/OverlapWilsonPartialFractionTanhFermion.h>
+#include <qcd/action/fermion/OverlapWilsonPartialFractionZolotarevFermion.h>
 
 
     // Chroma interface defining FermionAction
