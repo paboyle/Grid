@@ -2,7 +2,7 @@
 /*! @file Grid_vector_types.h
   @brief Defines templated class Grid_simd to deal with inner vector types
 */
-// Time-stamp: <2015-05-27 12:04:06 neo>
+// Time-stamp: <2015-05-29 14:19:48 neo>
 //---------------------------------------------------------------------------
 #ifndef GRID_VECTOR_TYPES
 #define GRID_VECTOR_TYPES
@@ -55,7 +55,6 @@ namespace Grid {
   // general forms to allow for vsplat syntax
   // need explicit declaration of types when used since
   // clang cannot automatically determine the output type sometimes
-  // use decltype?
   template < class Out, class Input1, class Input2, class Operation > 
     Out binary(Input1 src_1, Input2 src_2, Operation op){
     return op(src_1, src_2);

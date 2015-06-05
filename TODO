@@ -66,6 +66,9 @@ Insert/Extract
 
 * Support for ILDG
 
+* Support different boundary conditions (finite temp, chem. potential ... )
+
+* Support different fermion representations? 
 
 Actions -- coherent framework for implementing actions and their forces.
 
