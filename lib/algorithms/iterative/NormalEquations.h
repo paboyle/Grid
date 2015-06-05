@@ -4,8 +4,7 @@
 namespace Grid {
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Take a matrix and form a Red Black solver calling a Herm solver
-  // Use of RB info prevents making SchurRedBlackSolve conform to standard interface
+  // Take a matrix and form an NE solver calling a Herm solver
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   template<class Field> class NormalEquations : public OperatorFunction<Field>{
   private:
@@ -15,7 +14,7 @@ namespace Grid {
   public:
 
     /////////////////////////////////////////////////////
-    // Wrap the usual normal equations Schur trick
+    // Wrap the usual normal equations trick
     /////////////////////////////////////////////////////
   NormalEquations(SparseMatrixBase<Field> &Matrix, OperatorFunction<Field> &HermitianSolver) 
     :  _Matrix(Matrix), _HermitianSolver(HermitianSolver) {}; 

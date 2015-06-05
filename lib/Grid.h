@@ -33,7 +33,7 @@
 
 #define strong_inline __attribute__((always_inline)) inline
 
-#include <Grid_config.h>
+#include <GridConfig.h>
 
 ////////////////////////////////////////////////////////////
 // Tunable header includes
@@ -46,22 +46,22 @@
 #include <malloc.h>
 #endif
 
-#include <Grid_aligned_allocator.h>
+#include <AlignedAllocator.h>
 
-#include <Grid_simd.h>
-#include <Grid_threads.h>
+#include <Simd.h>
+#include <Threads.h>
 
-#include <Grid_cartesian.h> // subdir aggregate
-#include <Grid_math.h>      // subdir aggregate
-#include <Grid_lattice.h>   // subdir aggregate
-#include <Grid_comparison.h>
-#include <Grid_cshift.h>    // subdir aggregate
-#include <Grid_stencil.h>   // subdir aggregate
-
-#include <Grid_algorithms.h>// subdir aggregate
+#include <Communicator.h> // subdir aggregate
+#include <Cartesian.h> // subdir aggregate
+#include <Tensors.h>   // subdir aggregate
+#include <Lattice.h>   // subdir aggregate
+#include <Comparison.h>
+#include <Cshift.h>    // subdir aggregate
+#include <Stencil.h>   // subdir aggregate
+#include <Algorithms.h>// subdir aggregate
 
 #include <qcd/QCD.h>
-#include <parallelIO/GridNerscIO.h>
+#include <parallelIO/NerscIO.h>
 
 namespace Grid {
 

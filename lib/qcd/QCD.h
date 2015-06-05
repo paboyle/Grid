@@ -307,8 +307,10 @@ namespace QCD {
 }   //namespace QCD
 } // Grid
 
+#include <qcd/SpaceTimeGrid.h>
 #include <qcd/Dirac.h>
 #include <qcd/TwoSpinor.h>
+#include <qcd/LinalgUtils.h>
 #include <qcd/action/Actions.h>
 
 #endif

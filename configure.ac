@@ -3,7 +3,7 @@
 #
 # Project Grid package  
 # 
-# Time-stamp: <2015-05-26 17:18:54 neo>
+# Time-stamp: <2015-05-27 18:51:47 neo>
 
 AC_PREREQ([2.63])
 AC_INIT([Grid], [1.0], [paboyle@ph.ed.ac.uk])
@@ -11,7 +11,7 @@ AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE(subdir-objects)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([lib/Grid.h])
-AC_CONFIG_HEADERS([lib/Grid_config.h])
+AC_CONFIG_HEADERS([lib/GridConfig.h])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 AC_MSG_NOTICE([
@@ -27,7 +27,7 @@ AC_PROG_CXX
 AC_OPENMP
 AC_PROG_RANLIB
 AX_CXX_COMPILE_STDCXX_11(noext, mandatory)
-
+AX_EXT
 
 # Checks for libraries.
 #AX_GCC_VAR_ATTRIBUTE(aligned)
@@ -66,29 +66,44 @@ Please install or provide the correct path to your installation
 Info at: http://www.mpfr.org/)])
 
 
-
-
-
-AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE|AVX|AVX2|AVX512|MIC],\
+AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE4|AVX|AVX2|AVX512|MIC],\
 	[Select instructions to be SSE4.0, AVX 1.0, AVX 2.0+FMA, AVX 512, MIC])],\
 	[ac_SIMD=${enable_simd}],[ac_SIMD=AVX2])
+
+supported=no
 
 case ${ac_SIMD} in
      SSE4)
        echo Configuring for SSE4
        AC_DEFINE([SSE4],[1],[SSE4] )
+       if test x"$ax_cv_support_ssse3_ext" = x"yes"; then  dnl minimal support for SSE4
+         supported=yes
+       else
+  	AC_MSG_WARN([Your processor does not support SSE4 instructions])
+       fi
      ;;
      AVX)
        echo Configuring for AVX
        AC_DEFINE([AVX1],[1],[AVX] )
+       if test x"$ax_cv_support_avx_ext" = x"yes"; then  dnl minimal support for AVX
+       supported=yes			  
+       else
+       	AC_MSG_WARN([Your processor does not support AVX instructions])
+       fi
      ;;
      AVX2)
        echo Configuring for AVX2
        AC_DEFINE([AVX2],[1],[AVX2] )
+       if test x"$ax_cv_support_avx2_ext" = x"yes"; then  dnl minimal support for AVX2
+       supported=yes
+       else
+       AC_MSG_WARN([Your processor does not support AVX2 instructions])
+       fi
      ;;
      AVX512|MIC)
        echo Configuring for AVX512 and MIC
        AC_DEFINE([AVX512],[1],[AVX512] )
+       supported="cross compilation"
      ;;
      *)
      AC_MSG_ERROR([${ac_SIMD} unsupported --enable-simd option]); 
@@ -129,7 +144,9 @@ then
 AC_CONFIG_FILES([docs/doxy.cfg])
 fi
 
-
+echo
+echo Creating configuration files
+echo :::::::::::::::::::::::::::::::::::::::::::
 AC_CONFIG_FILES(Makefile)
 AC_CONFIG_FILES(lib/Makefile)
 AC_CONFIG_FILES(tests/Makefile)
@@ -150,9 +167,9 @@ The following features are enabled:
 - os (target)                   : $target_os
 - build DOXYGEN documentation   : `if test "x$enable_doc" = xyes; then echo yes; else echo no; fi`
 - graphs and diagrams           : `if test "x$enable_dot" = xyes; then echo yes; else echo no; fi`
-
+- Supported SIMD flags          : $SIMD_FLAGS
 ----------------------------------------------------------
-- enabled simd support          : ${ac_SIMD}
+- enabled simd support          : ${ac_SIMD}   (supported: $supported )
 - communications type           : ${ac_COMMS}
 
 
