@@ -211,11 +211,12 @@ void  TestWhat(What & Ddwf,
   pickCheckerboard(Odd ,phi_o,phi);
   RealD t1,t2;
 
-  Ddwf.MpcDagMpc(chi_e,dchi_e,t1,t2);
-  Ddwf.MpcDagMpc(chi_o,dchi_o,t1,t2);
-
-  Ddwf.MpcDagMpc(phi_e,dphi_e,t1,t2);
-  Ddwf.MpcDagMpc(phi_o,dphi_o,t1,t2);
+  SchurDiagMooeeOperator<What,LatticeFermion> HermOpEO(Ddwf);
+  HermOpEO.MpcDagMpc(chi_e,dchi_e,t1,t2);
+  HermOpEO.MpcDagMpc(chi_o,dchi_o,t1,t2);
+  
+  HermOpEO.MpcDagMpc(phi_e,dphi_e,t1,t2);
+  HermOpEO.MpcDagMpc(phi_o,dphi_o,t1,t2);
 
   pDce = innerProduct(phi_e,dchi_e);
   pDco = innerProduct(phi_o,dchi_o);
