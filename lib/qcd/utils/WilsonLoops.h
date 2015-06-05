@@ -120,6 +120,10 @@ void siteRectangle(GaugeMat &plaq,const std::vector<GaugeMat> &U, const int mu, 
   */
 
 };
+
+
+ typedef WilsonLoops<LatticeColourMatrix,LatticeGaugeField> ColourWilsonLoops;
+
 }}
 
 
