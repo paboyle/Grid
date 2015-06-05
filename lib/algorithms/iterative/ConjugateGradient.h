@@ -9,17 +9,17 @@ namespace Grid {
     /////////////////////////////////////////////////////////////
 
   template<class Field> 
-    class ConjugateGradient : public HermitianOperatorFunction<Field> {
+    class ConjugateGradient : public OperatorFunction<Field> {
 public:                                                
     RealD   Tolerance;
     Integer MaxIterations;
     int verbose;
     ConjugateGradient(RealD tol,Integer maxit) : Tolerance(tol), MaxIterations(maxit) { 
-      verbose=0;
+      verbose=1;
     };
 
 
-    void operator() (HermitianOperatorBase<Field> &Linop,const Field &src, Field &psi){
+    void operator() (LinearOperatorBase<Field> &Linop,const Field &src, Field &psi){
 
       psi.checkerboard = src.checkerboard;
       conformable(psi,src);
@@ -33,7 +33,7 @@ public:
       //Initial residual computation & set up
       RealD guess = norm2(psi);
       
-      Linop.OpAndNorm(psi,mmp,d,b);
+      Linop.HermOpAndNorm(psi,mmp,d,b);
       
       r= src-mmp;
       p= r;
@@ -65,7 +65,7 @@ public:
 	
 	c=cp;
 	
-	Linop.OpAndNorm(p,mmp,d,qq);
+	Linop.HermOpAndNorm(p,mmp,d,qq);
 
 	RealD    qqck = norm2(mmp);
 	ComplexD dck  = innerProduct(p,mmp);
@@ -86,19 +86,10 @@ public:
 	  
 	if (verbose) std::cout<<"ConjugateGradient: Iteration " <<k<<" residual "<<cp<< " target"<< rsq<<std::endl;
 
-	// Hack
-	if (0) {
-	  Field   tt(src);
-      	  Linop.Op(psi,mmp);
-	  tt=mmp-src;
-	  RealD resnorm = norm2(tt);
-	  std::cout<<"ConjugateGradient: Iteration " <<k<<" true residual "<<resnorm << " computed " << cp <<std::endl;
-	}
-
 	// Stopping condition
 	if ( cp <= rsq ) { 
 	  
-	  Linop.Op(psi,mmp);
+	  Linop.HermOpAndNorm(psi,mmp,d,qq);
 	  p=mmp-src;
 	  
 	  RealD mmpnorm = sqrt(norm2(mmp));

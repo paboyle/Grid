@@ -49,7 +49,7 @@ int main (int argc, char ** argv)
   RealD mass=0.5;
   WilsonFermion Dw(Umu,Grid,RBGrid,mass);
 
-  HermitianOperator<WilsonFermion,LatticeFermion> HermOp(Dw);
+  MdagMLinearOperator<WilsonFermion,LatticeFermion> HermOp(Dw);
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
   CG(HermOp,src,result);
 

@@ -40,7 +40,7 @@ int main (int argc, char ** argv)
   WilsonFermion Dw(Umu,Grid,RBGrid,mass);
 
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
-  SchurRedBlackSolve<LatticeFermion> SchurSolver(CG);
+  SchurRedBlackDiagMooeeSolve<LatticeFermion> SchurSolver(CG);
 
   SchurSolver(Dw,src,result);
   
