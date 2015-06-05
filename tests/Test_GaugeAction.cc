@@ -1,11 +1,11 @@
 #include <Grid.h>
 
+#include <qcd/utils/CovariantCshift.h>
+#include <qcd/utils/WilsonLoops.h>
+
 using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
-
-
-
 
 int main (int argc, char ** argv)
 {
@@ -96,14 +96,14 @@ int main (int argc, char ** argv)
   Complex p  = TensorRemove(Tp);
   std::cout << "calculated plaquettes " <<p*PlaqScale<<std::endl;
 
-  RealD avg_plaq =  WilsonLoops::avgPlaquette(Umu);
+  RealD avg_plaq = ColourWilsonLoops::avgPlaquette(Umu);
   std::cout << "NEW : calculated real plaquettes " <<avg_plaq<<std::endl;
 
   RealD stap_plaq=0.0;
   LatticeColourMatrix stap(&Fine);
   LatticeComplex stap_tr(&Fine);
   for(int mu=0;mu<Nd;mu++){
-    WilsonLoops::Staple(stap,Umu,mu);
+    ColourWilsonLoops::Staple(stap,Umu,mu);
     stap_tr = trace(stap*adj(U[mu]));
     TComplex Ts = sum(stap_tr);
     Complex s  = TensorRemove(Ts);
