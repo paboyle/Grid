@@ -109,5 +109,24 @@ PARALLEL_FOR_LOOP
     vstream(z._odata[ss+s],tmp);
   }
 }
+
+template<class vobj> 
+void G5R5(Lattice<vobj> &z,const Lattice<vobj> &x)
+{
+  GridBase *grid=x._grid;
+  z.checkerboard = x.checkerboard;
+  conformable(x,z);
+  int Ls = grid->_rdimensions[0];
+PARALLEL_FOR_LOOP
+  for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
+    vobj tmp;
+    for(int s=0;s<Ls;s++){
+      int sp = Ls-1-s;
+      multGamma5(tmp(),x._odata[ss+s]());
+      vstream(z._odata[ss+sp],tmp);
+    }
+  }
+}
+
 }}
 #endif 

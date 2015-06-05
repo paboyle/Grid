@@ -5,6 +5,7 @@
 #include <algorithms/LinearOperator.h>
 
 #include <algorithms/iterative/ConjugateGradient.h>
+#include <algorithms/iterative/ConjugateResidual.h>
 #include <algorithms/iterative/NormalEquations.h>
 #include <algorithms/iterative/SchurRedBlack.h>
 

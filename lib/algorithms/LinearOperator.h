@@ -18,7 +18,8 @@ namespace Grid {
     public:
       virtual void Op     (const Field &in, Field &out) = 0; // Abstract base
       virtual void AdjOp  (const Field &in, Field &out) = 0; // Abstract base
-      virtual void HermOpAndNorm(const Field &in, Field &out,double &n1,double &n2)=0;
+      virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2)=0;
+      virtual void HermOp(const Field &in, Field &out)=0;
     };
 
 
@@ -48,8 +49,12 @@ namespace Grid {
       void AdjOp     (const Field &in, Field &out){
 	_Mat.Mdag(in,out);
       }
-      void HermOpAndNorm(const Field &in, Field &out,double &n1,double &n2){
+      void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
 	_Mat.MdagM(in,out,n1,n2);
+      }
+      void HermOp(const Field &in, Field &out){
+	RealD n1,n2;
+	HermOpAndNorm(in,out,n1,n2);
       }
     };
 
@@ -67,7 +72,7 @@ namespace Grid {
       void AdjOp     (const Field &in, Field &out){
 	_Mat.M(in,out);
       }
-      void HermOpAndNorm(const Field &in, Field &out,double &n1,double &n2){
+      void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
 	ComplexD dot;
 
 	_Mat.M(in,out);
@@ -77,6 +82,9 @@ namespace Grid {
 
 	dot = innerProduct(out,out);
 	n2=real(dot);
+      }
+      void HermOp(const Field &in, Field &out){
+	_Mat.M(in,out);
       }
     };
 
@@ -97,6 +105,10 @@ namespace Grid {
       }
       void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
 	MpcDagMpc(in,out,n1,n2);
+      }
+      void HermOp(const Field &in, Field &out){
+	RealD n1,n2;
+	HermOpAndNorm(in,out,n1,n2);
       }
       void Op     (const Field &in, Field &out){
 	Mpc(in,out);
