@@ -311,6 +311,8 @@ namespace QCD {
 #include <qcd/Dirac.h>
 #include <qcd/TwoSpinor.h>
 #include <qcd/LinalgUtils.h>
+#include <qcd/utils/CovariantCshift.h>
+#include <qcd/utils/WilsonLoops.h>
 #include <qcd/action/Actions.h>
 
 #endif
