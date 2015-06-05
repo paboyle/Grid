@@ -18,6 +18,7 @@ namespace Grid {
 	Field tmp (in._grid);
 	ni=M(in,tmp);
 	no=Mdag(tmp,out);
+	std::cout << "MdagM "<< ni<<" "<<no<<std::endl;
       }
     };
 
