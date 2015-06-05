@@ -9,9 +9,9 @@ const std::vector<int> WilsonFermion::displacements({1,1,1,1,-1,-1,-1,-1});
 int WilsonFermion::HandOptDslash;
 
 WilsonFermion::WilsonFermion(LatticeGaugeField &_Umu,
-			   GridCartesian         &Fgrid,
-			   GridRedBlackCartesian &Hgrid, 
-			   double _mass) :
+			     GridCartesian         &Fgrid,
+			     GridRedBlackCartesian &Hgrid, 
+			     RealD _mass) :
   _grid(&Fgrid),
   _cbgrid(&Hgrid),
   Stencil    (&Fgrid,npoint,Even,directions,displacements),
