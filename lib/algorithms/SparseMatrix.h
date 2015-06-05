@@ -36,32 +36,6 @@ namespace Grid {
       virtual  void MooeeDag    (const Field &in, Field &out)=0;
       virtual  void MooeeInvDag (const Field &in, Field &out)=0;
 
-      // Schur decomp operators
-      virtual  RealD Mpc      (const Field &in, Field &out) {
-	Field tmp(in._grid);
-
-	Meooe(in,tmp);
-	MooeeInv(tmp,out);
-	Meooe(out,tmp);
-
-	Mooee(in,out);
-	return axpy_norm(out,-1.0,tmp,out);
-      }
-      virtual  RealD MpcDag   (const Field &in, Field &out){
-	Field tmp(in._grid);
-
-	MeooeDag(in,tmp);
-	MooeeInvDag(tmp,out);
-	MeooeDag(out,tmp);
-
-	MooeeDag(in,out);
-	return axpy_norm(out,-1.0,tmp,out);
-      }
-      virtual void MpcDagMpc(const Field &in, Field &out,RealD &ni,RealD &no) {
-	Field tmp(in._grid);
-	ni=Mpc(in,tmp);
-	no=MpcDag(tmp,out);
-      }
     };
 
 }

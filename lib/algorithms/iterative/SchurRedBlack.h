@@ -40,16 +40,16 @@ namespace Grid {
   // Take a matrix and form a Red Black solver calling a Herm solver
   // Use of RB info prevents making SchurRedBlackSolve conform to standard interface
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
-  template<class Field> class SchurRedBlackSolve {
+  template<class Field> class SchurRedBlackDiagMooeeSolve {
   private:
-    HermitianOperatorFunction<Field> & _HermitianRBSolver;
+    OperatorFunction<Field> & _HermitianRBSolver;
     int CBfactorise;
   public:
 
     /////////////////////////////////////////////////////
     // Wrap the usual normal equations Schur trick
     /////////////////////////////////////////////////////
-  SchurRedBlackSolve(HermitianOperatorFunction<Field> &HermitianRBSolver)  :
+  SchurRedBlackDiagMooeeSolve(OperatorFunction<Field> &HermitianRBSolver)  :
      _HermitianRBSolver(HermitianRBSolver) 
     { 
       CBfactorise=0;
@@ -62,6 +62,8 @@ namespace Grid {
       // FIXME use CBfactorise to control schur decomp
       GridBase *grid = _Matrix.RedBlackGrid();
       GridBase *fgrid= _Matrix.Grid();
+
+      SchurDiagMooeeOperator<Matrix,Field> _HermOpEO(_Matrix);
  
       Field src_e(grid);
       Field src_o(grid);
@@ -80,12 +82,13 @@ namespace Grid {
       _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.checkerboard ==Even);
       _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.checkerboard ==Odd);     
       tmp=src_o-Mtmp;                  assert(  tmp.checkerboard ==Odd);     
-      _Matrix.MpcDag(tmp,src_o);       assert(src_o.checkerboard ==Odd);       
+
+      // get the right MpcDag
+      _HermOpEO.MpcDag(tmp,src_o);     assert(src_o.checkerboard ==Odd);       
 
       //////////////////////////////////////////////////////////////
       // Call the red-black solver
       //////////////////////////////////////////////////////////////
-      HermitianCheckerBoardedOperator<Matrix,Field> _HermOpEO(_Matrix);
       std::cout << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
       _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
 
@@ -105,7 +108,7 @@ namespace Grid {
       RealD ns = norm2(in);
       RealD nr = norm2(resid);
 
-      std::cout << "SchurRedBlack solver true unprec resid "<< sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
+      std::cout << "SchurRedBlackDiagMooee solver true unprec resid "<< sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
     }     
   };
 

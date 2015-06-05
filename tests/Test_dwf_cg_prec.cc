@@ -50,7 +50,7 @@ int main (int argc, char ** argv)
   pickCheckerboard(Odd,src_o,src);
   result_o=zero;
 
-  HermitianCheckerBoardedOperator<DomainWallFermion,LatticeFermion> HermOpEO(Ddwf);
+  SchurDiagMooeeOperator<DomainWallFermion,LatticeFermion> HermOpEO(Ddwf);
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
   CG(HermOpEO,src_o,result_o);
 
