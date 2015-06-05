@@ -20,3 +20,4 @@ template<class covariant,class gauge> Lattice<covariant> CovShiftBackward(const 
   return Cshift(tmp,mu,-1);// moves towards positive mu
 }
 }}
+#endif
