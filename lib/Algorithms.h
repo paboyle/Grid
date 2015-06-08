@@ -3,6 +3,7 @@
 
 #include <algorithms/SparseMatrix.h>
 #include <algorithms/LinearOperator.h>
+#include <algorithms/CoarsenedMatrix.h>
 
 #include <algorithms/iterative/ConjugateGradient.h>
 #include <algorithms/iterative/ConjugateResidual.h>
