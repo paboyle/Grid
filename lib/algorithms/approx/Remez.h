@@ -125,8 +125,17 @@ class AlgRemez
   // Destructor
   virtual ~AlgRemez();
 
+  int getDegree(void){ 
+    assert(n==d);
+    return n;
+  }
   // Reset the bounds of the approximation
   void setBounds(double lower, double upper);
+  // Reset the bounds of the approximation
+  void getBounds(double &lower, double &upper) { 
+    lower=(double)apstrt;
+    upper=(double)apend;
+  }
 
   // Generate the rational approximation x^(pnum/pden)
   double generateApprox(int num_degree, int den_degree, 
