@@ -207,6 +207,14 @@ namespace Grid {
       virtual void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) = 0;
     };
 
+    /////////////////////////////////////////////////////////////
+    // Base classes for Multishift solvers for operators
+    /////////////////////////////////////////////////////////////
+    template<class Field> class OperatorMultiFunction {
+    public:
+      virtual void operator() (LinearOperatorBase<Field> &Linop, const Field &in, std::vector<Field> &out) = 0;
+    };
+
     // FIXME : To think about
 
     // Chroma functionality list defining LinearOperator
