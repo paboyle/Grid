@@ -4,13 +4,16 @@
 #include <algorithms/SparseMatrix.h>
 #include <algorithms/LinearOperator.h>
 
+#include <algorithms/approx/Zolotarev.h>
+#include <algorithms/approx/Chebyshev.h>
+#include <algorithms/approx/Remez.h>
+#include <algorithms/approx/MultiShiftFunction.h>
+
 #include <algorithms/iterative/ConjugateGradient.h>
 #include <algorithms/iterative/NormalEquations.h>
 #include <algorithms/iterative/SchurRedBlack.h>
 
-#include <algorithms/approx/Zolotarev.h>
-#include <algorithms/approx/Chebyshev.h>
-#include <algorithms/approx/Remez.h>
+#include <algorithms/iterative/ConjugateGradientMultiShift.h>
 
 // Eigen/lanczos
 // EigCg
