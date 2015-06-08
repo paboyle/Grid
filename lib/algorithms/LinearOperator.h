@@ -16,6 +16,11 @@ namespace Grid {
   /////////////////////////////////////////////////////////////////////////////////////////////
     template<class Field> class LinearOperatorBase {
     public:
+
+      // Support for coarsening to a multigrid
+      virtual void OpDiag (const Field &in, Field &out) = 0; // Abstract base
+      virtual void OpDir  (const Field &in, Field &out,int dir,int disp) = 0; // Abstract base
+
       virtual void Op     (const Field &in, Field &out) = 0; // Abstract base
       virtual void AdjOp  (const Field &in, Field &out) = 0; // Abstract base
       virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2)=0;
@@ -43,6 +48,14 @@ namespace Grid {
       Matrix &_Mat;
     public:
     MdagMLinearOperator(Matrix &Mat): _Mat(Mat){};
+
+      // Support for coarsening to a multigrid
+      void OpDiag (const Field &in, Field &out) {
+	_Mat.Mdiag(in,out);
+      }
+      void OpDir  (const Field &in, Field &out,int dir,int disp) {
+	_Mat.Mdir(in,out,dir,disp);
+      }
       void Op     (const Field &in, Field &out){
 	_Mat.M(in,out);
       }
@@ -66,6 +79,13 @@ namespace Grid {
       Matrix &_Mat;
     public:
     HermitianLinearOperator(Matrix &Mat): _Mat(Mat){};
+      // Support for coarsening to a multigrid
+      void OpDiag (const Field &in, Field &out) {
+	_Mat.Mdiag(in,out);
+      }
+      void OpDir  (const Field &in, Field &out,int dir,int disp) {
+	_Mat.Mdir(in,out,dir,disp);
+      }
       void Op     (const Field &in, Field &out){
 	_Mat.M(in,out);
       }
@@ -116,6 +136,14 @@ namespace Grid {
       void AdjOp     (const Field &in, Field &out){ 
 	MpcDag(in,out);
       }
+      // Support for coarsening to a multigrid
+      void OpDiag (const Field &in, Field &out) {
+	assert(0); // must coarsen the unpreconditioned system
+      }
+      void OpDir  (const Field &in, Field &out,int dir,int disp) {
+	assert(0);
+      }
+
     };
     template<class Matrix,class Field>
       class SchurDiagMooeeOperator :  public SchurOperatorBase<Field> {
