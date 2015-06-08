@@ -35,7 +35,7 @@ void MultiShiftFunction::csv(std::ostream &out)
 {
   for (double x=lo; x<hi; x*=1.05) {
     double f = approx(x);
-    double r = sqrt(x);
+    double r = std::sqrt(x);
     out<< x<<","<<r<<","<<f<<","<<r-f<<std::endl;
   }
   return;
@@ -80,8 +80,8 @@ int main (int argc, char ** argv)
   InvSqrt.gnuplot(gnuplot);
 
   double x=0.6789;
-  double sx=sqrt(x);
-  double ssx=sqrt(sx);
+  double sx=std::sqrt(x);
+  double ssx=std::sqrt(sx);
   double isx=1.0/sx;
   double issx=1.0/ssx;
 
