@@ -4,43 +4,6 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-class MultiShiftFunction {
-public:
-  std::vector<double> poles;
-  std::vector<double> residues;
-  double norm;
-  double lo,hi;
-  MultiShiftFunction(int n,double _lo,double _hi): poles(n), residues(n), lo(_lo), hi(_hi) {;};
-  double approx(double x);
-  void csv(std::ostream &out);
-  void gnuplot(std::ostream &out);
-};
-double MultiShiftFunction::approx(double x)
-{
-  double a = norm;
-  for(int n=0;n<poles.size();n++){
-    a = a + residues[n]/(x+poles[n]);
-  }
-  return a;
-}
-void MultiShiftFunction::gnuplot(std::ostream &out)
-{
-  out<<"f(x) = "<<norm<<"";
-  for(int n=0;n<poles.size();n++){
-    out<<"+("<<residues[n]<<"/(x+"<<poles[n]<<"))";
-  }
-  out<<";"<<std::endl;
-}
-void MultiShiftFunction::csv(std::ostream &out)
-{
-  for (double x=lo; x<hi; x*=1.05) {
-    double f = approx(x);
-    double r = sqrt(x);
-    out<< x<<","<<r<<","<<f<<","<<r-f<<std::endl;
-  }
-  return;
-}
-
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
@@ -56,22 +19,18 @@ int main (int argc, char ** argv)
   ////////////////////////////////////////
   // sqrt and inverse sqrt
   ////////////////////////////////////////
-  MultiShiftFunction Sqrt(degree,lo,hi);
-  MultiShiftFunction InvSqrt(degree,lo,hi);
-
-  MultiShiftFunction SqrtSqrt(degree,lo,hi);
-  MultiShiftFunction InvSqrtSqrt(degree,lo,hi);
-
 
   std::cout << "Generating degree "<<degree<<" for x^(1/2)"<<std::endl;
   remez.generateApprox(degree,1,2);
-  remez.getPFE (&   Sqrt.residues[0],&   Sqrt.poles[0],&   Sqrt.norm);
-  remez.getIPFE(&InvSqrt.residues[0],&InvSqrt.poles[0],&InvSqrt.norm);
+  MultiShiftFunction Sqrt(remez,1.0,false);
+  MultiShiftFunction InvSqrt(remez,1.0,true);
+
 
   std::cout << "Generating degree "<<degree<<" for x^(1/4)"<<std::endl;
   remez.generateApprox(degree,1,4);
-  remez.getPFE (&SqrtSqrt.residues[0],&SqrtSqrt.poles[0],&SqrtSqrt.norm);
-  remez.getIPFE(&InvSqrtSqrt.residues[0],&InvSqrtSqrt.poles[0],&InvSqrtSqrt.norm);
+  MultiShiftFunction SqrtSqrt(remez,1.0,false);
+  MultiShiftFunction InvSqrtSqrt(remez,1.0,true);
+
   
   ofstream gnuplot(std::string("Sqrt.gnu"),std::ios::out|std::ios::trunc);
   Sqrt.gnuplot(gnuplot);
