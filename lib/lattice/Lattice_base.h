@@ -299,6 +299,7 @@ PARALLEL_FOR_LOOP
 #include <lattice/Lattice_reality.h>
 #include <lattice/Lattice_coordinate.h>
 #include <lattice/Lattice_rng.h>
+#include <lattice/Lattice_unary.h>
 #include <lattice/Lattice_transfer.h>
 
 

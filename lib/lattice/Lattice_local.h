@@ -25,8 +25,7 @@ PARALLEL_FOR_LOOP
     
     // localInnerProduct
     template<class vobj>
-    inline auto localInnerProduct (const Lattice<vobj> &lhs,const Lattice<vobj> &rhs)
-      -> Lattice<typename vobj::tensor_reduced>
+    inline auto localInnerProduct (const Lattice<vobj> &lhs,const Lattice<vobj> &rhs) -> Lattice<typename vobj::tensor_reduced>
     {
       Lattice<typename vobj::tensor_reduced> ret(rhs._grid);
 PARALLEL_FOR_LOOP

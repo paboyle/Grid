@@ -82,6 +82,28 @@ void WilsonFermion5D::DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGau
     pokeIndex<LorentzIndex>(Uds,U,mu+4);
   }
 }
+void WilsonFermion5D::DhopDir(const LatticeFermion &in, LatticeFermion &out,int dir,int disp)
+{
+  assert( (disp==1)||(disp==-1) );
+
+  WilsonCompressor compressor(DaggerNo);
+  Stencil.HaloExchange<vSpinColourVector,vHalfSpinColourVector,WilsonCompressor>(in,comm_buf,compressor);
+  
+  int skip = (disp==1) ? 0 : 1;
+
+  int dirdisp = dir+skip*4;
+
+PARALLEL_FOR_LOOP
+  for(int ss=0;ss<Umu._grid->oSites();ss++){
+    for(int s=0;s<Ls;s++){
+      int sU=ss;
+      int sF = s+Ls*sU; 
+      DiracOpt::DhopDir(Stencil,Umu,comm_buf,sF,sU,in,out,dirdisp);
+    }
+  }
+
+};
+
 void WilsonFermion5D::DhopInternal(CartesianStencil & st, LebesgueOrder &lo,
 				   LatticeDoubledGaugeField & U,
 				   const LatticeFermion &in, LatticeFermion &out,int dag)

@@ -90,6 +90,18 @@ namespace Grid {
       // Can ignore "dag"
       return M(psi,chi);
     }
+    void  ContinuedFractionFermion5D::Mdir (const LatticeFermion &psi, LatticeFermion &chi,int dir,int disp){
+      DhopDir(psi,chi,dir,disp); // Dslash on diagonal. g5 Dslash is hermitian
+      int sign=1;
+      for(int s=0;s<Ls;s++){
+	if ( s==(Ls-1) ){
+	  ag5xpby_ssp(chi,Beta[s]*ZoloHiInv,chi,0.0,chi,s,s);
+	} else {
+	  ag5xpby_ssp(chi,cc[s]*Beta[s]*sign*ZoloHiInv,chi,0.0,chi,s,s);
+	}
+	sign=-sign; 
+      }
+    }
     void   ContinuedFractionFermion5D::Meooe       (const LatticeFermion &psi, LatticeFermion &chi)
     {
       // Apply 4d dslash
