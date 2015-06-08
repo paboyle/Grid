@@ -40,6 +40,9 @@ namespace Grid {
       virtual void DhopOE(const FermionField &in, FermionField &out,int dag)=0;
       virtual void DhopEO(const FermionField &in, FermionField &out,int dag)=0;
 
+      virtual void  Mdiag(const FermionField &in, FermionField &out) { Mooee(in,out);};   // Same as Mooee applied to both CB's
+      virtual void  Mdir (const FermionField &in, FermionField &out,int dir,int disp)=0;   // case by case Wilson, Clover, Cayley, ContFrac, PartFrac
+      virtual void  DhopDir(const FermionField &in, FermionField &out,int dir,int disp)=0; // implemented by WilsonFermion and WilsonFermion5D
 
     };
 

@@ -20,6 +20,9 @@ namespace Grid {
       static void DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
 			      std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
 			      int sF,int sU,const LatticeFermion &in, LatticeFermion &out);
+      static void DhopDir(CartesianStencil &st,LatticeDoubledGaugeField &U,
+			   std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
+			  int sF,int sU,const LatticeFermion &in, LatticeFermion &out,int dirdisp);
 
     };
 

@@ -123,6 +123,13 @@ public:
   typedef iScalar<tensor_reduced_v> tensor_reduced;
   typedef iVector<recurse_scalar_object,N> scalar_object;
 
+  template<class T,typename std::enable_if<!isGridTensor<T>::value, T>::type* = nullptr > strong_inline auto operator = (T arg) -> iVector<vtype,N>
+    { 
+      zeroit(*this);
+      for(int i=0;i<N;i++)
+	_internal[i] = arg;
+      return *this;
+    }
 
   enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
   iVector(const Zero &z){ *this = zero; };
