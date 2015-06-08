@@ -78,11 +78,18 @@ namespace Grid {
     typedef typename RealPart < Scalar_type >::type Real; 
     typedef Vector_type     vector_type;
     typedef Scalar_type     scalar_type;
+
+
+    typedef union conv_t_union {
+	Vector_type v;
+	Scalar_type s[sizeof(Vector_type)/sizeof(Scalar_type)];
+      conv_t_union(){};
+      } conv_t;
+    
    
     Vector_type v;
     
     static inline int Nsimd(void) { return sizeof(Vector_type)/sizeof(Scalar_type);}
-
     
     Grid_simd& operator=(const Grid_simd&& rhs){v=rhs.v;return *this;};
     Grid_simd& operator=(const Grid_simd& rhs){v=rhs.v;return *this;}; //faster than not declaring it and leaving to the compiler
@@ -190,6 +197,27 @@ namespace Grid {
     inline Grid_simd &operator -=(const Grid_simd &r) {
       *this = *this-r;
       return *this;
+    }
+
+
+    ///////////////////////////////////////
+    // Not all functions are supported
+    // through SIMD and must breakout to 
+    // scalar type and back again. This
+    // provides support
+    ///////////////////////////////////////
+
+    template<class functor> friend inline Grid_simd SimdApply (const functor &func,const Grid_simd &v) {
+
+      Grid_simd ret;
+      Grid_simd::conv_t conv;
+
+      conv.v = v.v;
+      for(int i=0;i<Nsimd();i++){
+	conv.s[i]=func(conv.s[i]);
+      }
+      ret.v = conv.v;
+      return ret;
     }
 
     ////////////////////////////////////////////////////////////////////

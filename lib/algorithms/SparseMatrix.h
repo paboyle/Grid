@@ -18,8 +18,9 @@ namespace Grid {
 	Field tmp (in._grid);
 	ni=M(in,tmp);
 	no=Mdag(tmp,out);
-	std::cout << "MdagM "<< ni<<" "<<no<<std::endl;
       }
+      virtual  void Mdiag    (const Field &in, Field &out)=0;
+      virtual  void Mdir     (const Field &in, Field &out,int dir, int disp)=0;
     };
 
   /////////////////////////////////////////////////////////////////////////////////////////////

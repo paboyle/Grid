@@ -11,11 +11,22 @@ class Gamma5HermitianLinearOperator : public LinearOperatorBase<Field> {
 public:
   Gamma5HermitianLinearOperator(Matrix &Mat): _Mat(Mat){};
   void Op     (const Field &in, Field &out){
-    _Mat.M(in,out);
+    HermOp(in,out);
   }
   void AdjOp     (const Field &in, Field &out){
-    _Mat.M(in,out);
+    HermOp(in,out);
   }
+  void OpDiag (const Field &in, Field &out) {
+    Field tmp(in._grid);
+    _Mat.Mdiag(in,tmp);
+    G5R5(out,tmp);
+  }
+  void OpDir  (const Field &in, Field &out,int dir,int disp) {
+    Field tmp(in._grid);
+    _Mat.Mdir(in,tmp,dir,disp);
+    G5R5(out,tmp);
+  }
+
   void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
 
     HermOp(in,out);

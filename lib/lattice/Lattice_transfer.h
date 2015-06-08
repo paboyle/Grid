@@ -56,10 +56,10 @@ PARALLEL_FOR_LOOP
   }
   
 
-template<class vobj,int nbasis>
-inline void projectBlockBasis(Lattice<iVector<vComplex,nbasis > > &coarseData,
-			      const             Lattice<vobj>   &fineData,
-			      const std::vector<Lattice<vobj> > &Basis)
+template<class vobj,class CComplex,int nbasis>
+inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
+			 const             Lattice<vobj>   &fineData,
+			 const std::vector<Lattice<vobj> > &Basis)
 {
   GridBase * fine  = fineData._grid;
   GridBase * coarse= coarseData._grid;
@@ -69,13 +69,14 @@ inline void projectBlockBasis(Lattice<iVector<vComplex,nbasis > > &coarseData,
   assert( nbasis == Basis.size() );
   subdivides(coarse,fine); 
   for(int i=0;i<nbasis;i++){
-    conformable(Basis,fineData);
+    conformable(Basis[i],fineData);
   }
 
   std::vector<int>  block_r      (_ndimension);
   
   for(int d=0 ; d<_ndimension;d++){
     block_r[d] = fine->_rdimensions[d] / coarse->_rdimensions[d];
+    assert(block_r[d]*coarse->_rdimensions[d] == fine->_rdimensions[d]);
   }
 
   coarseData=zero;
@@ -92,20 +93,149 @@ inline void projectBlockBasis(Lattice<iVector<vComplex,nbasis > > &coarseData,
 
     for(int i=0;i<nbasis;i++) {
       
-      coarseData._odata[sc][i]=coarseData._odata[sc][i]
-	+ innerProduct(Basis[i]._odata[sf],fineData._odata[sf]);
+      coarseData._odata[sc](i)=coarseData._odata[sc](i)
+	+ TensorRemove( innerProduct(Basis[i]._odata[sf],fineData._odata[sf]));
 
     }
   }
   return;
+}
+
+template<class vobj,class CComplex>
+inline void blockZAXPY(Lattice<vobj> &fineZ,
+		       const Lattice<CComplex> &coarseA,
+		       const Lattice<vobj> &fineX,
+		       const Lattice<vobj> &fineY)
+{
+  GridBase * fine  = fineZ._grid;
+  GridBase * coarse= coarseA._grid;
+
+  fineZ.checkerboard=fineX.checkerboard;
+  subdivides(coarse,fine); // require they map
+  conformable(fineX,fineY);
+  conformable(fineX,fineZ);
+
+  int _ndimension = coarse->_ndimension;
   
+  std::vector<int>  block_r      (_ndimension);
+
+  // FIXME merge with subdivide checking routine as this is redundant
+  for(int d=0 ; d<_ndimension;d++){
+    block_r[d] = fine->_rdimensions[d] / coarse->_rdimensions[d];
+    assert(block_r[d]*coarse->_rdimensions[d]==fine->_rdimensions[d]);
+  }
+
+PARALLEL_FOR_LOOP
+  for(int sf=0;sf<fine->oSites();sf++){
+    
+    int sc;
+    std::vector<int> coor_c(_ndimension);
+    std::vector<int> coor_f(_ndimension);
+
+    GridBase::CoorFromIndex(coor_f,sf,fine->_rdimensions);
+    for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
+    GridBase::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+
+    // z = A x + y
+    fineZ._odata[sf]=coarseA._odata[sc]*fineX._odata[sf]+fineY._odata[sf];
+
+  }
+
+  return;
+}
+template<class vobj,class CComplex>
+  inline void blockInnerProduct(Lattice<CComplex> &CoarseInner,
+				const Lattice<vobj> &fineX,
+				const Lattice<vobj> &fineY)
+{
+  typedef decltype(innerProduct(fineX._odata[0],fineY._odata[0])) dotp;
+
+  GridBase *coarse(CoarseInner._grid);
+  GridBase *fine  (fineX._grid);
+
+  Lattice<dotp> fine_inner(fine);
+  Lattice<dotp> coarse_inner(coarse);
+
+  fine_inner = localInnerProduct(fineX,fineY);
+  blockSum(coarse_inner,fine_inner);
+  for(int ss=0;ss<coarse->oSites();ss++){
+    CoarseInner._odata[ss] = coarse_inner._odata[ss];
+  }
+}
+template<class vobj,class CComplex>
+inline void blockNormalise(Lattice<CComplex> &ip,Lattice<vobj> &fineX)
+{
+  GridBase *coarse = ip._grid;
+  blockInnerProduct(ip,fineX,fineX);
+  ip = rsqrt(ip);
+  blockZAXPY(fineX,ip,fineX,fineX);
+}
+// useful in multigrid project;
+// Generic name : Coarsen?
+template<class vobj>
+inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
+{
+  GridBase * fine  = fineData._grid;
+  GridBase * coarse= coarseData._grid;
+
+  subdivides(coarse,fine); // require they map
+
+  int _ndimension = coarse->_ndimension;
+  
+  std::vector<int>  block_r      (_ndimension);
+  
+  for(int d=0 ; d<_ndimension;d++){
+    block_r[d] = fine->_rdimensions[d] / coarse->_rdimensions[d];
+  }
+
+  coarseData=zero;
+  for(int sf=0;sf<fine->oSites();sf++){
+    
+    int sc;
+    std::vector<int> coor_c(_ndimension);
+    std::vector<int> coor_f(_ndimension);
+
+    GridBase::CoorFromIndex(coor_f,sf,fine->_rdimensions);
+    for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
+    GridBase::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+
+    coarseData._odata[sc]=coarseData._odata[sc]+fineData._odata[sf];
+
+  }
+  return;
 }
 
 
-template<class vobj,int nbasis>
-inline void promoteBlockBasis(const Lattice<iVector<vComplex,nbasis > > &coarseData,
-			                        Lattice<vobj>   &fineData,
-			      const std::vector<Lattice<vobj> > &Basis)
+template<class vobj,class CComplex>
+inline void blockOrthogonalise(Lattice<CComplex> &ip,std::vector<Lattice<vobj> > &Basis)
+{
+  GridBase *coarse = ip._grid;
+  GridBase *fine   = Basis[0]._grid;
+
+  int       nbasis = Basis.size() ;
+  int  _ndimension = coarse->_ndimension;
+
+  // checks
+  subdivides(coarse,fine); 
+  for(int i=0;i<nbasis;i++){
+    conformable(Basis[i]._grid,fine);
+  }
+
+  for(int v=0;v<nbasis;v++) {
+    for(int u=0;u<v;u++) {
+      //Inner product & remove component 
+      blockInnerProduct(ip,Basis[u],Basis[v]);
+      ip = -ip;
+      blockZAXPY<vobj,CComplex> (Basis[v],ip,Basis[u],Basis[v]);
+    }
+    blockNormalise(ip,Basis[v]);
+  }
+}
+
+template<class vobj,class CComplex,int nbasis>
+inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
+			 Lattice<vobj>   &fineData,
+			 const std::vector<Lattice<vobj> > &Basis)
 {
   GridBase * fine  = fineData._grid;
   GridBase * coarse= coarseData._grid;
@@ -146,40 +276,6 @@ inline void promoteBlockBasis(const Lattice<iVector<vComplex,nbasis > > &coarseD
   
 }
 
-// useful in multigrid project;
-// Generic name : Coarsen?
-template<class vobj>
-inline void sumBlocks(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
-{
-  GridBase * fine  = fineData._grid;
-  GridBase * coarse= coarseData._grid;
-
-  subdivides(coarse,fine); // require they map
-
-  int _ndimension = coarse->_ndimension;
-  
-  std::vector<int>  block_r      (_ndimension);
-  
-  for(int d=0 ; d<_ndimension;d++){
-    block_r[d] = fine->_rdimensions[d] / coarse->_rdimensions[d];
-  }
-
-  coarseData=zero;
-  for(int sf=0;sf<fine->oSites();sf++){
-    
-    int sc;
-    std::vector<int> coor_c(_ndimension);
-    std::vector<int> coor_f(_ndimension);
-
-    GridBase::CoorFromIndex(coor_f,sf,fine->_rdimensions);
-    for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-    GridBase::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
-
-    coarseData._odata[sc]=coarseData._odata[sc]+fineData._odata[sf];
-
-  }
-  return;
-}
 
 }
 #endif

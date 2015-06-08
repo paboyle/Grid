@@ -314,9 +314,9 @@ namespace Optimization {
   template<>
     inline Grid::ComplexF Reduce<Grid::ComplexF, __m256>::operator()(__m256 in){
     __m256 v1,v2;
-    Optimization::permute(v1,in,0); // sse 128; paired complex single
+    Optimization::permute(v1,in,0); // avx 256; quad complex single
     v1 = _mm256_add_ps(v1,in);
-    Optimization::permute(v2,v1,1); // avx 256; quad complex single
+    Optimization::permute(v2,v1,1); 
     v1 = _mm256_add_ps(v1,v2);
     u256f conv; conv.v = v1;
     return Grid::ComplexF(conv.f[0],conv.f[1]);
@@ -366,7 +366,6 @@ namespace Optimization {
     printf("Reduce : Missing integer implementation -> FIX\n");
     assert(0);
   }
-  
   
 }
 

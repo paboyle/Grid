@@ -57,6 +57,10 @@ namespace Grid {
       void DhopOE(const LatticeFermion &in, LatticeFermion &out,int dag);
       void DhopEO(const LatticeFermion &in, LatticeFermion &out,int dag);
 
+      // add a DhopComm
+      // -- suboptimal interface will presently trigger multiple comms.
+      void DhopDir(const LatticeFermion &in, LatticeFermion &out,int dir,int disp);
+
       ///////////////////////////////////////////////////////////////
       // New methods added 
       ///////////////////////////////////////////////////////////////

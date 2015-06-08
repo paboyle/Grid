@@ -21,6 +21,10 @@ namespace Grid {
       virtual void   MooeeInv    (const LatticeFermion &in, LatticeFermion &out);
       virtual void   MooeeInvDag (const LatticeFermion &in, LatticeFermion &out);
       virtual void   Instantiatable(void)=0;
+
+      // Efficient support for multigrid coarsening
+      virtual void  Mdir (const LatticeFermion &in, LatticeFermion &out,int dir,int disp);
+
       //    protected:
       RealD mass;
 
