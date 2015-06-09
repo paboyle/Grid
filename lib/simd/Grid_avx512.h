@@ -4,7 +4,7 @@
 
   Using intrinsics
 */
-// Time-stamp: <2015-05-27 12:08:50 neo>
+// Time-stamp: <2015-06-09 14:27:28 neo>
 //----------------------------------------------------------------------
 
 #include <immintrin.h>
@@ -309,6 +309,12 @@ namespace Grid {
       _mm_prefetch(ptr+i+512,_MM_HINT_T0);
     }
   }
+  inline void prefetch_HINT_T0(const char *ptr){
+    _mm_prefetch(ptr,_MM_HINT_T0);
+  }
+
+
+
 
   // Gpermute utilities consider coalescing into 1 Gpermute
   template < typename VectorSIMD > 

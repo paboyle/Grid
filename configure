@@ -2574,7 +2574,7 @@ test -n "$target_alias" &&
     NONENONEs,x,x, &&
   program_prefix=${target_alias}-
 
-am__api_version='1.15'
+am__api_version='1.14'
 
 # Find a good install program.  We prefer a C program (faster),
 # so one script is as good as another.  But avoid the broken or
@@ -2746,8 +2746,8 @@ test "$program_suffix" != NONE &&
 ac_script='s/[\\$]/&&/g;s/;s,x,x,$//'
 program_transform_name=`$as_echo "$program_transform_name" | sed "$ac_script"`
 
-# Expand $ac_aux_dir to an absolute path.
-am_aux_dir=`cd "$ac_aux_dir" && pwd`
+# expand $ac_aux_dir to an absolute path
+am_aux_dir=`cd $ac_aux_dir && pwd`
 
 if test x"${MISSING+set}" != xset; then
   case $am_aux_dir in
@@ -2766,7 +2766,7 @@ else
 $as_echo "$as_me: WARNING: 'missing' script is too old or missing" >&2;}
 fi
 
-if test x"${install_sh+set}" != xset; then
+if test x"${install_sh}" != xset; then
   case $am_aux_dir in
   *\ * | *\	*)
     install_sh="\${SHELL} '$am_aux_dir/install-sh'" ;;
@@ -3094,8 +3094,8 @@ MAKEINFO=${MAKEINFO-"${am_missing_run}makeinfo"}
 # <http://lists.gnu.org/archive/html/automake/2012-07/msg00014.html>
 mkdir_p='$(MKDIR_P)'
 
-# We need awk for the "check" target (and possibly the TAP driver).  The
-# system "awk" is bad on some platforms.
+# We need awk for the "check" target.  The system "awk" is bad on
+# some platforms.
 # Always define AMTAR for backward compatibility.  Yes, it's still used
 # in the wild :-(  We should find a proper way to deprecate it ...
 AMTAR='$${TAR-tar}'
@@ -3152,7 +3152,6 @@ END
     as_fn_error $? "Your 'rm' program is bad, sorry." "$LINENO" 5
   fi
 fi
-
 
 
 ac_config_headers="$ac_config_headers lib/GridConfig.h"
@@ -6003,6 +6002,7 @@ $as_echo "$as_me: WARNING: Your processor supports fma instructions but not your
 
 
 
+
 # Checks for libraries.
 #AX_GCC_VAR_ATTRIBUTE(aligned)
 
@@ -6709,8 +6709,21 @@ $as_echo "#define AVX512 1" >>confdefs.h
 
        supported="cross compilation"
      ;;
+     NEONv7)
+       echo Configuring for experimental ARMv7 support
+
+$as_echo "#define NEONv7 1" >>confdefs.h
+
+       supported="cross compilation"
+     ;;
+     DEBUG)
+       echo Configuring without SIMD support - only for compiler DEBUGGING!
+
+$as_echo "#define EMPTY_SIMD 1" >>confdefs.h
+
+      ;;
      *)
-     as_fn_error $? "${ac_SIMD} unsupported --enable-simd option" "$LINENO" 5;
+     as_fn_error $? "${ac_SIMD} flag unsupported as --enable-simd option\nRun ./configure --help for the list of options" "$LINENO" 5;
      ;;
 esac
 
