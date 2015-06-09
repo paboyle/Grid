@@ -11,7 +11,6 @@ namespace Grid {
     int npoint;
     std::vector<int> directions   ;
     std::vector<int> displacements;
-    std::vector<int> opdirs;
 
     // FIXME -- don't like xposing the operator directions
     // as different to the geometrical dirs
@@ -26,18 +25,22 @@ namespace Grid {
       npoint = 2*_d+1;
       directions.resize(npoint);
       displacements.resize(npoint);
-      opdirs.resize(npoint);
       for(int d=0;d<_d;d++){
 	directions[2*d  ] = d+base;
 	directions[2*d+1] = d+base;
-	opdirs[2*d  ] = d;
-	opdirs[2*d+1] = d;
 	displacements[2*d  ] = +1;
 	displacements[2*d+1] = -1;
       }
       directions   [2*_d]=0;
       displacements[2*_d]=0;
-      opdirs       [2*_d]=0;
+      
+      //// report back
+      std::cout<<"directions    :";
+      for(int d=0;d<npoint;d++) std::cout<< directions[d]<< " ";
+      std::cout <<std::endl;
+      std::cout<<"displacements :";
+      for(int d=0;d<npoint;d++) std::cout<< displacements[d]<< " ";
+      std::cout <<std::endl;
     }
   
     /*
@@ -64,12 +67,12 @@ namespace Grid {
   // Fine Object == (per site) type of fine field
   // nbasis      == number of deflation vectors
   template<class Fobj,class CComplex,int nbasis>
-  class CoarsenedMatrix : public SparseMatrixBase<Lattice<iVector<vComplex,nbasis > > >  {
+  class CoarsenedMatrix : public SparseMatrixBase<Lattice<iVector<CComplex,nbasis > > >  {
   public:
     
-    typedef iVector<vComplex,nbasis > siteVector;
-    typedef Lattice<iVector<vComplex,nbasis > > CoarseVector;
-    typedef Lattice<iMatrix<vComplex,nbasis > > CoarseMatrix;
+    typedef iVector<CComplex,nbasis >             siteVector;
+    typedef Lattice<siteVector>                 CoarseVector;
+    typedef Lattice<iMatrix<CComplex,nbasis > > CoarseMatrix;
 
     typedef Lattice< CComplex >   CoarseScalar; // used for inner products on fine field
     typedef Lattice<Fobj >        FineField;
@@ -82,7 +85,6 @@ namespace Grid {
     CartesianStencil Stencil; 
 
     std::vector<CoarseMatrix> A;
-    std::vector<CoarseMatrix> Aslow;
 
     std::vector<siteVector,alignedAllocator<siteVector> >   comm_buf;
       
@@ -91,25 +93,28 @@ namespace Grid {
     ///////////////////////
     GridBase * Grid(void)         { return _grid; };   // this is all the linalg routines need to know
 
-    RealD M    (const CoarseVector &in, CoarseVector &out){
-      
+    RealD M (const CoarseVector &in, CoarseVector &out){
+
+      conformable(_grid,in._grid);
+      conformable(in._grid,out._grid);
+
       SimpleCompressor<siteVector> compressor;
       Stencil.HaloExchange(in,comm_buf,compressor);
 
-PARALLEL_FOR_LOOP
+      //PARALLEL_FOR_LOOP
       for(int ss=0;ss<Grid()->oSites();ss++){
         siteVector res = zero;
-	siteVector tmp;
 	siteVector nbr;
+	int offset,local,perm,ptype;
 
-	int offset,local,perm;
 	for(int point=0;point<geom.npoint;point++){
 	  offset = Stencil._offsets [point][ss];
 	  local  = Stencil._is_local[point][ss];
-	  perm   = Stencil._permute[point][ss];
+	  perm   = Stencil._permute [point][ss];
+	  ptype  = Stencil._permute_type[point];
 	  
 	  if(local&&perm) { 
-	    permute(nbr,in._odata[offset],perm);
+	    permute(nbr,in._odata[offset],ptype);
 	  } else if(local) { 
 	    nbr = in._odata[offset];
 	  } else {
@@ -125,6 +130,7 @@ PARALLEL_FOR_LOOP
     RealD Mdag (const CoarseVector &in, CoarseVector &out){ 
       return M(in,out);
     };
+
     // Defer support for further coarsening for now
     void Mdiag    (const CoarseVector &in,  CoarseVector &out){};
     void Mdir     (const CoarseVector &in,  CoarseVector &out,int dir, int disp){};
@@ -134,8 +140,7 @@ PARALLEL_FOR_LOOP
       _grid(&CoarseGrid),
       geom(CoarseGrid._ndimension),
       Stencil(&CoarseGrid,geom.npoint,Even,geom.directions,geom.displacements),
-	A(geom.npoint,&CoarseGrid),
-	Aslow(geom.npoint,&CoarseGrid)
+      A(geom.npoint,&CoarseGrid)
     {
       comm_buf.resize(Stencil._unified_buffer_size);
     };
@@ -176,8 +181,7 @@ PARALLEL_FOR_LOOP
 	for(int p=0;p<geom.npoint;p++){ 
 
 	  int dir   = geom.directions[p];
-	  int opdir = geom.opdirs[p];
-	  int disp= geom.displacements[p];
+	  int disp  = geom.displacements[p];
 
 	  int block=(FineGrid->_rdimensions[dir])/(Grid()->_rdimensions[dir]);
 
@@ -187,7 +191,7 @@ PARALLEL_FOR_LOOP
 	    linop.OpDiag(phi,Mphi);
 	  }
 	  else  {
-	    linop.OpDir(phi,Mphi,opdir,disp); 
+	    linop.OpDir(phi,Mphi,dir,disp); 
 	  }
 
 	  ////////////////////////////////////////////////////////////////////////
@@ -240,6 +244,62 @@ PARALLEL_FOR_LOOP
       std::cout<< iProj <<std::endl;
       std::cout<<"Computed Coarse Operator"<<std::endl;
 #endif
+      AssertHermitian();
+      //      ForceHermitian();
+      //      ForceDiagonal();
+    }
+    void ForceDiagonal(void) {
+
+
+      std::cout<<"**************************************************"<<std::endl;
+      std::cout<<"****   Forcing coarse operator to be diagonal ****"<<std::endl;
+      std::cout<<"**************************************************"<<std::endl;
+      for(int p=0;p<8;p++){
+	A[p]=zero;
+      }
+
+      GridParallelRNG  RNG(Grid()); RNG.SeedRandomDevice();
+      Lattice<iScalar<CComplex> > val(Grid()); random(RNG,val);
+
+      Complex one(1.0);
+
+      iMatrix<Complex,nbasis> ident;  ident=one;
+
+      val = val*adj(val);
+      val = val + 1.0;
+
+      A[8] = val*ident;
+
+      //      for(int s=0;s<Grid()->oSites();s++) {
+      //	A[8]._odata[s]=val._odata[s];
+      //      }
+    }
+    void ForceHermitian(void) {
+      for(int d=0;d<4;d++){
+	int dd=d+1;
+	A[2*d] = adj(Cshift(A[2*d+1],dd,1));
+      }
+      A[8] = 0.5*(A[8] + adj(A[8]));
+    }
+    void AssertHermitian(void) {
+      CoarseMatrix AA    (Grid());
+      CoarseMatrix AAc   (Grid());
+      CoarseMatrix Diff  (Grid());
+      for(int d=0;d<4;d++){
+	
+	int dd=d+1;
+	AAc = Cshift(A[2*d+1],dd,1);
+	AA  = A[2*d];
+	
+	Diff = AA - adj(AAc);
+
+	std::cout<<"Norm diff dim "<<d<<" "<< norm2(Diff)<<std::endl;
+	std::cout<<"Norm dim "<<d<<" "<< norm2(AA)<<std::endl;
+	  
+      }
+      Diff = A[8] - adj(A[8]);
+      std::cout<<"Norm diff local "<< norm2(Diff)<<std::endl;
+      std::cout<<"Norm local "<< norm2(A[8])<<std::endl;
     }
     
   };
