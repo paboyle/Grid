@@ -244,7 +244,7 @@ namespace Grid {
       std::cout<< iProj <<std::endl;
       std::cout<<"Computed Coarse Operator"<<std::endl;
 #endif
-      AssertHermitian();
+      //      AssertHermitian();
       //      ForceHermitian();
       //      ForceDiagonal();
     }
