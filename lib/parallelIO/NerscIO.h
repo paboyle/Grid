@@ -164,37 +164,37 @@ inline int readNerscHeader(std::string file,GridBase *grid,  NerscField &field)
   // chomp the values
   //////////////////////////////////////////////////
 
-  field.hdr_version    = header[std::string("HDR_VERSION")];
-  field.data_type      = header[std::string("DATATYPE")];
-  field.storage_format = header[std::string("STORAGE_FORMAT")];
+  field.hdr_version    = header["HDR_VERSION"];
+  field.data_type      = header["DATATYPE"];
+  field.storage_format = header["STORAGE_FORMAT"];
   
-  field.dimension[0] = std::stol(header[std::string("DIMENSION_1")]);
-  field.dimension[1] = std::stol(header[std::string("DIMENSION_2")]);
-  field.dimension[2] = std::stol(header[std::string("DIMENSION_3")]);
-  field.dimension[3] = std::stol(header[std::string("DIMENSION_4")]);
+  field.dimension[0] = std::stol(header["DIMENSION_1"]);
+  field.dimension[1] = std::stol(header["DIMENSION_2"]);
+  field.dimension[2] = std::stol(header["DIMENSION_3"]);
+  field.dimension[3] = std::stol(header["DIMENSION_4"]);
 
   assert(grid->_ndimension == 4);
   for(int d=0;d<4;d++){
     assert(grid->_fdimensions[d]==field.dimension[d]);
   }
 
-  field.link_trace = std::stod(header[std::string("LINK_TRACE")]);
-  field.plaquette  = std::stod(header[std::string("PLAQUETTE")]);
+  field.link_trace = std::stod(header["LINK_TRACE"]);
+  field.plaquette  = std::stod(header["PLAQUETTE"]);
 
-  field.boundary[0] = header[std::string("BOUNDARY_1")];
-  field.boundary[1] = header[std::string("BOUNDARY_2")];
-  field.boundary[2] = header[std::string("BOUNDARY_3")];
-  field.boundary[3] = header[std::string("BOUNDARY_4")];
+  field.boundary[0] = header["BOUNDARY_1"];
+  field.boundary[1] = header["BOUNDARY_2"];
+  field.boundary[2] = header["BOUNDARY_3"];
+  field.boundary[3] = header["BOUNDARY_4"];
 
-  field.checksum = std::stoul(header[std::string("CHECKSUM")],0,16);
-  field.ensemble_id      = header[std::string("ENSEMBLE_ID")];
-  field.ensemble_label   = header[std::string("ENSEMBLE_LABEL")];
-  field.sequence_number  = std::stol(header[std::string("SEQUENCE_NUMBER")]);
-  field.creator          = header[std::string("CREATOR")];
-  field.creator_hardware = header[std::string("CREATOR_HARDWARE")];
-  field.creation_date    = header[std::string("CREATION_DATE")];
-  field.archive_date     = header[std::string("ARCHIVE_DATE")];
-  field.floating_point   = header[std::string("FLOATING_POINT")];
+  field.checksum = std::stoul(header["CHECKSUM"],0,16);
+  field.ensemble_id      = header["ENSEMBLE_ID"];
+  field.ensemble_label   = header["ENSEMBLE_LABEL"];
+  field.sequence_number  = std::stol(header["SEQUENCE_NUMBER"]);
+  field.creator          = header["CREATOR"];
+  field.creator_hardware = header["CREATOR_HARDWARE"];
+  field.creation_date    = header["CREATION_DATE"];
+  field.archive_date     = header["ARCHIVE_DATE"];
+  field.floating_point   = header["FLOATING_POINT"];
 
   return field.data_start;
 }
