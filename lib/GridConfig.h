@@ -1,14 +1,17 @@
 /* lib/GridConfig.h.  Generated from GridConfig.h.in by configure.  */
 /* lib/GridConfig.h.in.  Generated from configure.ac by autoheader.  */
 
-/* AVX */
+/* AVX Intrinsics */
 /* #undef AVX1 */
 
-/* AVX2 */
+/* AVX2 Intrinsics */
 /* #undef AVX2 */
 
-/* AVX512 */
+/* AVX512 Intrinsics for Knights Corner */
 /* #undef AVX512 */
+
+/* EMPTY_SIMD only for DEBUGGING */
+/* #undef EMPTY_SIMD */
 
 /* GRID_COMMS_MPI */
 /* #undef GRID_COMMS_MPI */
@@ -111,6 +114,9 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
 
+/* NEON ARMv7 Experimental support */
+/* #undef NEONv7 */
+
 /* Name of package */
 #define PACKAGE "grid"
 
@@ -132,7 +138,7 @@
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "1.0"
 
-/* SSE4 */
+/* SSE4 Intrinsics */
 #define SSE4 1
 
 /* Define to 1 if you have the ANSI C header files. */
