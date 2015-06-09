@@ -34,7 +34,6 @@ int main (int argc, char ** argv)
   }
 
 
-
   TComplex cm;
   
   for(int dir=0;dir<4;dir++){

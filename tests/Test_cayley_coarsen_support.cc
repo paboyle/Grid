@@ -23,7 +23,7 @@ int main (int argc, char ** argv)
 
 
 
-  const int Ls=8;
+  const int Ls=4;
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
@@ -50,13 +50,18 @@ int main (int argc, char ** argv)
   LatticeFermion    tmp(FGrid);
   LatticeFermion    err(FGrid);
   LatticeGaugeField Umu(UGrid); random(RNG4,Umu);
-
+#if 0
   std::vector<LatticeColourMatrix> U(4,UGrid);
-
-  for(int mu=0;mu<Nd;mu++){
-    U[mu] = peekIndex<LorentzIndex>(Umu,mu);
+  Umu=zero;
+  Complex cone(1.0,0.0);
+  for(int nn=0;nn<Nd;nn++){
+    if(1) {
+      if (nn!=0) { U[nn]=zero; std::cout << "zeroing gauge field in dir "<<nn<<std::endl; }
+      else       { U[nn] = cone;std::cout << "unit gauge field in dir "<<nn<<std::endl; }
+    }
+    pokeIndex<LorentzIndex>(Umu,U[nn],nn);
   }
-  
+#endif  
   RealD mass=0.5;
   RealD M5=1.8;
 
@@ -75,7 +80,7 @@ int main (int argc, char ** argv)
   err = result-ref;
   std::cout<<"Error "<<norm2(err)<<std::endl;
 
-  const int nbasis = 8;
+  const int nbasis = 2;
   std::vector<LatticeFermion> subspace(nbasis,FGrid);
   
   for(int b=0;b<nbasis;b++){
