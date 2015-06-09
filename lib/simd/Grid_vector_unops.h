@@ -35,6 +35,14 @@ namespace Grid {
     }
   };
 
+  template<class scalar> struct ModIntFunctor {
+    Integer y;
+  ModIntFunctor(Integer _y) : y(_y) {};
+    scalar operator()(const scalar &a)  const {
+      return Integer(a)%y;
+    }
+  };
+
   template < class S, class V > 
   inline Grid_simd<S,V> sqrt(const Grid_simd<S,V> &r) {
     return SimdApply(SqrtRealFunctor<S>(),r);
@@ -54,6 +62,10 @@ namespace Grid {
   template < class S, class V > 
   inline Grid_simd<S,V> pow(const Grid_simd<S,V> &r,double y) {
     return SimdApply(PowRealFunctor<S>(y),r);
+  }
+  template < class S, class V > 
+  inline Grid_simd<S,V> mod(const Grid_simd<S,V> &r,Integer y) {
+    return SimdApply(ModIntFunctor<S>(y),r);
   }
 
 }
