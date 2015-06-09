@@ -72,6 +72,7 @@ namespace QCD {
 }
 void WilsonFermion5D::DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGaugeField &Umu)
 {
+  assert(GaugeGrid()->_ndimension==4);
   conformable(Uds._grid,GaugeGrid());
   conformable(Umu._grid,GaugeGrid());
   LatticeColourMatrix U(GaugeGrid());
@@ -82,8 +83,10 @@ void WilsonFermion5D::DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGau
     pokeIndex<LorentzIndex>(Uds,U,mu+4);
   }
 }
-void WilsonFermion5D::DhopDir(const LatticeFermion &in, LatticeFermion &out,int dir,int disp)
+void WilsonFermion5D::DhopDir(const LatticeFermion &in, LatticeFermion &out,int dir5,int disp)
 {
+  int dir = dir5-1; // Maps to the ordering above in "directions" that is passed to stencil
+                    // we drop off the innermost fifth dimension
   assert( (disp==1)||(disp==-1) );
   assert( (dir>=0)&&(dir<4) ); //must do x,y,z or t;
 
