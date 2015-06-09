@@ -1,12 +1,30 @@
 #!/bin/sh 
+if [ $# -eq 1 ]
+then
+  wc -l lib/*.h lib/*/*.h lib/*/*/*.h lib/*.cc lib/*/*.cc lib/*/*/*.cc tests/*.cc benchmarks/*.cc lib/*/*/*/*.cc lib/*/*/*/*.h >& tmp.fil
+  count=`grep total tmp.fil`
+  echo $count " in Grid library"
+else 
+  wc -l lib/*.h lib/*/*.h lib/*/*/*.h lib/*.cc lib/*/*.cc lib/*/*/*.cc tests/*.cc benchmarks/*.cc lib/*/*/*/*.cc lib/*/*/*/*.h 
+fi
 
-wc -l lib/*.h lib/*/*.h lib/*/*/*.h lib/*.cc lib/*/*.cc lib/*/*/*.cc tests/*.cc benchmarks/*.cc lib/*/*/*/*.cc lib/*/*/*/*.h
+wc -l lib/*.h lib/*/*.h lib/*/*/*.h lib/*.cc lib/*/*.cc lib/*/*/*.cc lib/*/*/*/*.cc lib/*/*/*/*.h >& tmp.fil
+count=`grep total tmp.fil`
+echo  $count " in lib"
 
-echo "lib"
-wc -l lib/*.h lib/*/*.h lib/*/*/*.h lib/*.cc lib/*/*.cc lib/*/*/*.cc lib/*/*/*/*.cc lib/*/*/*/*.h | grep total
+for sdir in `ls -F lib/| grep /`
+do
+wc -l lib/${sdir}/*.h lib/${sdir}/*/*.h lib/${sdir}/*.cc lib/${sdir}/*/*.cc lib/${sdir}/*/*/*.cc lib/${sdir}/*/*/*.h >& tmp.fil
+count=`grep total tmp.fil`
+echo $count " in lib/${sdir}" 
+done
 
-echo "tests"
-wc -l tests/*.cc | grep total
+wc -l tests/*.cc | grep total >& tmp.fil
+count=`grep total tmp.fil`
+echo  $count " in tests"
 
-echo "benchmarks"
-wc -l benchmarks/*.cc | grep total
+wc -l benchmarks/*.cc | grep total >& tmp.fil
+count=`grep total tmp.fil`
+echo  $count " in benchmarks"
+
+rm tmp.fil
