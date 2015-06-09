@@ -166,9 +166,10 @@ template<class vobj,class CComplex>
 inline void blockNormalise(Lattice<CComplex> &ip,Lattice<vobj> &fineX)
 {
   GridBase *coarse = ip._grid;
+  Lattice<vobj> zz(fineX._grid); zz=zero;
   blockInnerProduct(ip,fineX,fineX);
   ip = rsqrt(ip);
-  blockZAXPY(fineX,ip,fineX,fineX);
+  blockZAXPY(fineX,ip,fineX,zz);
 }
 // useful in multigrid project;
 // Generic name : Coarsen?
@@ -205,6 +206,26 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
   return;
 }
 
+template<class vobj>
+inline void blockPick(GridBase *coarse,const Lattice<vobj> &unpicked,Lattice<vobj> &picked,std::vector<int> coor)
+{
+  GridBase * fine = unpicked._grid;
+
+  Lattice<vobj> zz(fine);
+  Lattice<iScalar<vInteger> > fcoor(fine);
+
+  zz = zero;
+
+  picked = unpicked;
+  for(int d=0;d<fine->_ndimension;d++){
+    LatticeCoordinate(fcoor,d);
+    int block= fine->_rdimensions[d] / coarse->_rdimensions[d];
+    int lo   = (coor[d])*block;
+    int hi   = (coor[d]+1)*block;
+    picked = where( (fcoor<hi) , picked, zz);
+    picked = where( (fcoor>=lo), picked, zz);
+  }
+}
 
 template<class vobj,class CComplex>
 inline void blockOrthogonalise(Lattice<CComplex> &ip,std::vector<Lattice<vobj> > &Basis)
