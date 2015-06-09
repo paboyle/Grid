@@ -49,7 +49,7 @@ config.status
 /stamp-h1
 /config.sub
 /config.guess
-
+/INSTALL
 
 # Packages #
 ############

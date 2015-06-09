@@ -4,7 +4,7 @@
 
   Using intrinsics
 */
-// Time-stamp: <2015-05-27 12:02:07 neo>
+// Time-stamp: <2015-06-09 14:24:01 neo>
 //----------------------------------------------------------------------
 
 #include <pmmintrin.h>
@@ -297,7 +297,12 @@ namespace Grid {
   typedef __m128d SIMD_Dtype; // Double precision type
   typedef __m128i SIMD_Itype; // Integer type
 
-  inline void v_prefetch0(int size, const char *ptr){};  // prefetch utilities
+  // prefetch utilities
+  inline void v_prefetch0(int size, const char *ptr){};
+  inline void prefetch_HINT_T0(const char *ptr){
+    _mm_prefetch(ptr,_MM_HINT_T0);
+  }
+  
 
   // Gpermute function
   template < typename VectorSIMD > 

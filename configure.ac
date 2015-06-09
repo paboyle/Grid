@@ -3,7 +3,7 @@
 #
 # Project Grid package  
 # 
-# Time-stamp: <2015-05-27 18:51:47 neo>
+# Time-stamp: <2015-06-09 15:26:39 neo>
 
 AC_PREREQ([2.63])
 AC_INIT([Grid], [1.0], [paboyle@ph.ed.ac.uk])
@@ -28,6 +28,7 @@ AC_OPENMP
 AC_PROG_RANLIB
 AX_CXX_COMPILE_STDCXX_11(noext, mandatory)
 AX_EXT
+
 
 # Checks for libraries.
 #AX_GCC_VAR_ATTRIBUTE(aligned)
@@ -75,7 +76,7 @@ supported=no
 case ${ac_SIMD} in
      SSE4)
        echo Configuring for SSE4
-       AC_DEFINE([SSE4],[1],[SSE4] )
+       AC_DEFINE([SSE4],[1],[SSE4 Intrinsics] )
        if test x"$ax_cv_support_ssse3_ext" = x"yes"; then  dnl minimal support for SSE4
          supported=yes
        else
@@ -84,7 +85,7 @@ case ${ac_SIMD} in
      ;;
      AVX)
        echo Configuring for AVX
-       AC_DEFINE([AVX1],[1],[AVX] )
+       AC_DEFINE([AVX1],[1],[AVX Intrinsics] )
        if test x"$ax_cv_support_avx_ext" = x"yes"; then  dnl minimal support for AVX
        supported=yes			  
        else
@@ -93,7 +94,7 @@ case ${ac_SIMD} in
      ;;
      AVX2)
        echo Configuring for AVX2
-       AC_DEFINE([AVX2],[1],[AVX2] )
+       AC_DEFINE([AVX2],[1],[AVX2 Intrinsics] )
        if test x"$ax_cv_support_avx2_ext" = x"yes"; then  dnl minimal support for AVX2
        supported=yes
        else
@@ -102,11 +103,20 @@ case ${ac_SIMD} in
      ;;
      AVX512|MIC)
        echo Configuring for AVX512 and MIC
-       AC_DEFINE([AVX512],[1],[AVX512] )
+       AC_DEFINE([AVX512],[1],[AVX512 Intrinsics for Knights Corner] )
        supported="cross compilation"
      ;;
+     NEONv7)
+       echo Configuring for experimental ARMv7 support 
+       AC_DEFINE([NEONv7],[1],[NEON ARMv7 Experimental support ] )
+       supported="cross compilation"
+     ;;
+     DEBUG)
+       echo Configuring without SIMD support - only for compiler DEBUGGING!
+       AC_DEFINE([EMPTY_SIMD],[1],[EMPTY_SIMD only for DEBUGGING] )
+      ;;     
      *)
-     AC_MSG_ERROR([${ac_SIMD} unsupported --enable-simd option]); 
+     AC_MSG_ERROR([${ac_SIMD} flag unsupported as --enable-simd option\nRun ./configure --help for the list of options]); 
      ;;
 esac
 
