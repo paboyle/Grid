@@ -55,7 +55,7 @@ int main (int argc, char ** argv)
   MdagMLinearOperator<DomainWallFermion,LatticeFermion> HermOp(Ddwf);
   MCR(HermOp,src,result);
 
-  Gamma5HermitianLinearOperator<DomainWallFermion,LatticeFermion> g5HermOp(Ddwf);
+  Gamma5R5HermitianLinearOperator<DomainWallFermion,LatticeFermion> g5HermOp(Ddwf);
   MCR(g5HermOp,src,result);
 
 
