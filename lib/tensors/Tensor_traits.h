@@ -119,7 +119,6 @@ namespace Grid {
     static const bool value = true;
     static const bool notvalue = false;
   };
-
   template<> struct isGridTensor<int > {
     static const bool value = false;
     static const bool notvalue = true;
