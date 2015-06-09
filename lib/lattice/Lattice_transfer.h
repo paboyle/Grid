@@ -94,7 +94,7 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
     for(int i=0;i<nbasis;i++) {
       
       coarseData._odata[sc](i)=coarseData._odata[sc](i)
-	+ TensorRemove( innerProduct(Basis[i]._odata[sf],fineData._odata[sf]));
+	+ innerProduct(Basis[i]._odata[sf],fineData._odata[sf]);
 
     }
   }
@@ -266,7 +266,7 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
   assert( nbasis == Basis.size() );
   subdivides(coarse,fine); 
   for(int i=0;i<nbasis;i++){
-    conformable(Basis,fineData);
+    conformable(Basis[i]._grid,fine);
   }
 
   std::vector<int>  block_r      (_ndimension);
@@ -287,9 +287,8 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
     GridBase::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
 
     for(int i=0;i<nbasis;i++) {
-
-      if(i==0) fineData._odata[sf]=                    coarseData._odata[sc][i]*Basis[i]._odata[sf];
-      else     fineData._odata[sf]=fineData._odata[sf]+coarseData._odata[sc][i]*Basis[i]._odata[sf];
+      if(i==0) fineData._odata[sf]=coarseData._odata[sc](i) * Basis[i]._odata[sf];
+      else     fineData._odata[sf]=fineData._odata[sf]+coarseData._odata[sc](i)*Basis[i]._odata[sf];
 
     }
   }
