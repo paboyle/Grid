@@ -42,6 +42,14 @@ namespace Grid {
     double lo;
 
   public:
+    void csv(std::ostream &out){
+      for (double x=lo; x<hi; x+=(hi-lo)/1000) {
+	double f = approx(x);
+	out<< x<<" "<<f<<std::endl;
+      }
+      return;
+    }
+
     Chebyshev(double _lo,double _hi,int _order, double (* func)(double) ){
       lo=_lo;
       hi=_hi;
@@ -52,16 +60,16 @@ namespace Grid {
       for(int j=0;j<order;j++){
 	double s=0;
 	for(int k=0;k<order;k++){
-	  double y=cos(M_PI*(k+0.5)/order);
+	  double y=std::cos(M_PI*(k+0.5)/order);
 	  double x=0.5*(y*(hi-lo)+(hi+lo));
 	  double f=func(x);
-	  s=s+f*cos( j*M_PI*(k+0.5)/order );
+	  s=s+f*std::cos( j*M_PI*(k+0.5)/order );
 	}
 	Coeffs[j] = s * 2.0/order;
       }
     };
 
-    double Evaluate(double x) // Convenience for plotting the approximation
+    double approx(double x) // Convenience for plotting the approximation
     {
       double Tn;
       double Tnm;
@@ -91,7 +99,7 @@ namespace Grid {
     void   PlotApprox(std::ostream &out) {
       out<<"Polynomial approx ["<<lo<<","<<hi<<"]"<<std::endl;
       for(double x=lo;x<hi;x+=(hi-lo)/50.0){
-	out <<x<<"\t"<<Evaluate(x)<<std::endl;
+	out <<x<<"\t"<<approx(x)<<std::endl;
       }
     };
 
