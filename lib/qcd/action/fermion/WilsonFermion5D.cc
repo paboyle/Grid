@@ -85,6 +85,7 @@ void WilsonFermion5D::DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGau
 void WilsonFermion5D::DhopDir(const LatticeFermion &in, LatticeFermion &out,int dir,int disp)
 {
   assert( (disp==1)||(disp==-1) );
+  assert( (dir>=0)&&(dir<4) ); //must do x,y,z or t;
 
   WilsonCompressor compressor(DaggerNo);
   Stencil.HaloExchange<vSpinColourVector,vHalfSpinColourVector,WilsonCompressor>(in,comm_buf,compressor);
@@ -92,6 +93,9 @@ void WilsonFermion5D::DhopDir(const LatticeFermion &in, LatticeFermion &out,int 
   int skip = (disp==1) ? 0 : 1;
 
   int dirdisp = dir+skip*4;
+
+  assert(dirdisp<=7);
+  assert(dirdisp>=0);
 
 PARALLEL_FOR_LOOP
   for(int ss=0;ss<Umu._grid->oSites();ss++){

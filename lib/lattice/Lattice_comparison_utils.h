@@ -141,7 +141,5 @@ namespace Grid {
     }
 }
 
-#include <lattice/Lattice_comparison.h>
-#include <lattice/Lattice_where.h>
 
 #endif
