@@ -223,6 +223,9 @@ int main (int argc, char ** argv)
     //TComplex tracecm= trace(cm);      
     //std::cout << cm << "  "<< tracecm << std::endl;
 
+    cm = ProjectOnGroup(cm);
+
+    cm = Exponentiate(cm, 1.0, 10);
 
 //    Foo = Foo+scalar; // LatticeColourMatrix+Scalar
 //    Foo = Foo*scalar; // LatticeColourMatrix*Scalar
