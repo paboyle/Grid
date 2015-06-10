@@ -10,23 +10,23 @@ struct scal {
   d internal;
 };
 
-  Gamma::GammaMatrix Gmu [] = {
+Gamma::GammaMatrix Gmu [] = {
     Gamma::GammaX,
     Gamma::GammaY,
     Gamma::GammaZ,
     Gamma::GammaT
-  };
+};
 
 double lowpass(double x)
 {
-  return pow(x*x+1.0,-2);
+  return pow(x*x,-2);
 }
 
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  Chebyshev<LatticeFermion> filter(-150.0, 150.0,16, lowpass);
+  Chebyshev<LatticeFermion> filter(-120.0, 120.0,256, lowpass);
   ofstream csv(std::string("filter.dat"),std::ios::out|std::ios::trunc);
   filter.csv(csv);
   csv.close();
@@ -64,10 +64,21 @@ int main (int argc, char ** argv)
 
   //random(RNG4,Umu);
   NerscField header;
-  std::string file("./ckpoint_lat.4000");
+  std::string file("./ckpoint_lat.400");
   readNerscConfiguration(Umu,header,file);
 
-  RealD mass=0.01;
+#if 0
+  LatticeColourMatrix U(UGrid);
+  Complex cone(1.0,0.0);
+  for(int nn=0;nn<Nd;nn++){
+    if (nn==3) { 
+      U=zero; std::cout << "zeroing gauge field in dir "<<nn<<std::endl;
+    //    else       { U[nn]= cone;std::cout << "unit gauge field in dir "<<nn<<std::endl; }
+      pokeIndex<LorentzIndex>(Umu,U,nn);
+    }
+  }
+#endif  
+  RealD mass=0.5;
   RealD M5=1.8;
 
   DomainWallFermion Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
@@ -85,23 +96,9 @@ int main (int argc, char ** argv)
 
     HermIndefOp.HermOp(noise,ms); std::cout << "Noise    "<<b<<" Ms "<<norm2(ms)<< " "<< norm2(noise)<<std::endl;
 
-
-    //    filter(HermIndefOp,noise,subspace[b]);
-    // inverse iteration
-    MdagMLinearOperator<DomainWallFermion,LatticeFermion> HermDefOp(Ddwf);
-    ConjugateGradient<LatticeFermion> CG(1.0e-4,10000);
-
-    for(int i=0;i<4;i++){
-
-      CG(HermDefOp,noise,subspace[b]);
-      noise = subspace[b];
-
-      scale = pow(norm2(noise),-0.5); 
-      noise=noise*scale;
-      HermDefOp.HermOp(noise,ms); std::cout << "filt    "<<b<<" <u|H|u> "<<norm2(ms)<< " "<< norm2(noise)<<std::endl;
-    }
-
-    subspace[b] = noise;
+    filter(HermIndefOp,noise,subspace[b]);
+    scale = pow(norm2(subspace[b]),-0.5); 
+    subspace[b]=subspace[b]*scale;
     HermIndefOp.HermOp(subspace[b],ms); std::cout << "Filtered "<<b<<" Ms "<<norm2(ms)<< " "<<norm2(subspace[b]) <<std::endl;
   }
   std::cout << "Computed randoms"<< std::endl;
