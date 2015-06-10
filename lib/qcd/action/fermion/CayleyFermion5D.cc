@@ -165,6 +165,27 @@ namespace QCD {
     }
   }
 
+  void  CayleyFermion5D::Mdir (const LatticeFermion &psi, LatticeFermion &chi,int dir,int disp){
+    LatticeFermion tmp(psi._grid);
+    // Assemble the 5d matrix
+    for(int s=0;s<Ls;s++){
+      if ( s==0 ) {
+	//	tmp = bs psi[s] + cs[s] psi[s+1}
+	//      tmp+= -mass*cs[s] psi[s+1}
+	axpby_ssp_pminus(tmp,beo[s],psi,-ceo[s],psi ,s, s+1);
+	axpby_ssp_pplus(tmp,1.0,tmp,mass*ceo[s],psi,s,Ls-1);
+      } else if ( s==(Ls-1)) { 
+	axpby_ssp_pminus(tmp,beo[s],psi,mass*ceo[s],psi,s,0);
+	axpby_ssp_pplus(tmp,1.0,tmp,-ceo[s],psi,s,s-1);
+      } else {
+	axpby_ssp_pminus(tmp,beo[s],psi,-ceo[s],psi,s,s+1);
+	axpby_ssp_pplus (tmp,1.0,tmp,-ceo[s],psi,s,s-1);
+      }
+    }
+    // Apply 4d dslash fragment
+    DhopDir(tmp,chi,dir,disp);
+  }
+
   void CayleyFermion5D::MooeeDag    (const LatticeFermion &psi, LatticeFermion &chi)
   {
     for (int s=0;s<Ls;s++){

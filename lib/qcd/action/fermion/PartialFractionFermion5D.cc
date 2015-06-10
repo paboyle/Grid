@@ -2,6 +2,22 @@
 namespace Grid {
   namespace QCD {
 
+    void  PartialFractionFermion5D::Mdir (const LatticeFermion &psi, LatticeFermion &chi,int dir,int disp){
+      // this does both dag and undag but is trivial; make a common helper routing
+
+      int sign = 1;
+
+      DhopDir(psi,chi,dir,disp);
+
+      int nblock=(Ls-1)/2;
+      for(int b=0;b<nblock;b++){
+	int s = 2*b;
+	ag5xpby_ssp(chi,-scale,chi,0.0,chi,s,s); 
+	ag5xpby_ssp(chi, scale,chi,0.0,chi,s+1,s+1); 
+      }
+      ag5xpby_ssp(chi,p[nblock]*scale/amax,chi,0.0,chi,Ls-1,Ls-1);
+
+    }
     void   PartialFractionFermion5D::Meooe_internal(const LatticeFermion &psi, LatticeFermion &chi,int dag)
     {
       // this does both dag and undag but is trivial; make a common helper routing

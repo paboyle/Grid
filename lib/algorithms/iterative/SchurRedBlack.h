@@ -108,7 +108,7 @@ namespace Grid {
       RealD ns = norm2(in);
       RealD nr = norm2(resid);
 
-      std::cout << "SchurRedBlackDiagMooee solver true unprec resid "<< sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
+      std::cout << "SchurRedBlackDiagMooee solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
     }     
   };
 

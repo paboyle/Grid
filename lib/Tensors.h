@@ -12,6 +12,7 @@
 #include <tensors/Tensor_peek.h>
 #include <tensors/Tensor_poke.h>
 #include <tensors/Tensor_reality.h>
+#include <tensors/Tensor_unary.h>
 #include <tensors/Tensor_extract_merge.h>
     
 #endif

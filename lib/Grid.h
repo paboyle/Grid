@@ -55,7 +55,6 @@
 #include <Cartesian.h> // subdir aggregate
 #include <Tensors.h>   // subdir aggregate
 #include <Lattice.h>   // subdir aggregate
-#include <Comparison.h>
 #include <Cshift.h>    // subdir aggregate
 #include <Stencil.h>   // subdir aggregate
 #include <Algorithms.h>// subdir aggregate

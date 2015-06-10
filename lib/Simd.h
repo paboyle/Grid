@@ -35,6 +35,8 @@ namespace Grid {
   inline RealD conjugate(const RealD  & r){ return r; }
   inline RealD real(const RealD  & r){ return r; }
 
+  inline RealD sqrt(const RealD  & r){ return std::sqrt(r); }
+
   inline ComplexD conjugate(const ComplexD& r){ return(conj(r)); }
   inline ComplexD adj(const ComplexD& r){ return(conjugate(r)); }
   inline ComplexF conjugate(const ComplexF& r ){ return(conj(r)); }
@@ -112,6 +114,7 @@ namespace Grid {
 };
 
 #include <simd/Grid_vector_types.h>
+#include <simd/Grid_vector_unops.h>
 
 namespace Grid {
   // Default precision

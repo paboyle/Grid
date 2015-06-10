@@ -13,7 +13,6 @@ void DiracOpt::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     vHalfSpinColourVector Uchi;
     int offset,local,perm, ptype;
 
-    //#define VERBOSE( A)  if ( ss<10 ) { std::cout << "site " <<ss << " " #A " neigh " << offset << " perm "<< perm <<std::endl;}    
 
     // Xp
     int ss = sF;
@@ -32,12 +31,6 @@ void DiracOpt::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     }
     mult(&Uchi(),&U._odata[sU](Xp),&chi());
     spReconXp(result,Uchi);
-
-    //    std::cout << "XP_RECON"<<std::endl;
-    //    std::cout << result()(0)(0) <<" "<<result()(0)(1) <<" "<<result()(0)(2) <<std::endl;
-    //    std::cout << result()(1)(0) <<" "<<result()(1)(1) <<" "<<result()(1)(2) <<std::endl;
-    //    std::cout << result()(2)(0) <<" "<<result()(2)(1) <<" "<<result()(2)(2) <<std::endl;
-    //    std::cout << result()(3)(0) <<" "<<result()(3)(1) <<" "<<result()(3)(2) <<std::endl;
 
     // Yp
     offset = st._offsets [Yp][ss];
@@ -93,8 +86,7 @@ void DiracOpt::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     perm   = st._permute[Xm][ss];
     ptype  = st._permute_type[Xm];
 
-    if ( local && perm ) 
-    {
+    if ( local && perm ) {
       spProjXm(tmp,in._odata[offset]);
       permute(chi,tmp,ptype);
     } else if ( local ) {
@@ -104,12 +96,6 @@ void DiracOpt::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     }
     mult(&Uchi(),&U._odata[sU](Xm),&chi());
     accumReconXm(result,Uchi);
-    //  std::cout << "XM_RECON_ACCUM"<<std::endl;
-    //    std::cout << result()(0)(0) <<" "<<result()(0)(1) <<" "<<result()(0)(2) <<std::endl;
-    //    std::cout << result()(1)(0) <<" "<<result()(1)(1) <<" "<<result()(1)(2) <<std::endl;
-    //    std::cout << result()(2)(0) <<" "<<result()(2)(1) <<" "<<result()(2)(2) <<std::endl;
-    //    std::cout << result()(3)(0) <<" "<<result()(3)(1) <<" "<<result()(3)(2) <<std::endl;
-
 
     // Ym
     offset = st._offsets [Ym][ss];
@@ -308,4 +294,136 @@ void DiracOpt::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
 
     vstream(out._odata[ss],result*(-0.5));
 }
+
+void DiracOpt::DhopDir(CartesianStencil &st,LatticeDoubledGaugeField &U,
+			std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
+		       int sF,int sU,const LatticeFermion &in, LatticeFermion &out,int dirdisp)
+{
+    vHalfSpinColourVector  tmp;    
+    vHalfSpinColourVector  chi;    
+    vSpinColourVector result;
+    vHalfSpinColourVector Uchi;
+    int offset,local,perm, ptype;
+    int ss=sF;
+    
+    offset = st._offsets [dirdisp][ss];
+    local  = st._is_local[dirdisp][ss];
+    perm   = st._permute[dirdisp][ss];
+    ptype  = st._permute_type[dirdisp];
+
+    // Xp
+    if(dirdisp==Xp){
+      if ( local && perm ) {
+	spProjXp(tmp,in._odata[offset]);
+	permute(chi,tmp,ptype);
+      } else if ( local ) {
+	spProjXp(chi,in._odata[offset]);
+      } else { 
+	chi=buf[offset];
+      }
+      mult(&Uchi(),&U._odata[sU](Xp),&chi());
+      spReconXp(result,Uchi);
+    }
+
+    // Yp
+    if ( dirdisp==Yp ){
+      if ( local && perm ) {
+	spProjYp(tmp,in._odata[offset]);
+	permute(chi,tmp,ptype);
+      } else if ( local ) {
+	spProjYp(chi,in._odata[offset]);
+      } else { 
+	chi=buf[offset];
+      }
+      mult(&Uchi(),&U._odata[sU](Yp),&chi());
+      spReconYp(result,Uchi);
+    }
+
+    // Zp
+    if ( dirdisp ==Zp ){
+      if ( local && perm ) {
+	spProjZp(tmp,in._odata[offset]);
+	permute(chi,tmp,ptype);
+      } else if ( local ) {
+	spProjZp(chi,in._odata[offset]);
+      } else { 
+	chi=buf[offset];
+      }
+      mult(&Uchi(),&U._odata[sU](Zp),&chi());
+      spReconZp(result,Uchi);
+    }
+
+    // Tp
+    if ( dirdisp ==Tp ){
+      if ( local && perm ) {
+	spProjTp(tmp,in._odata[offset]);
+	permute(chi,tmp,ptype);
+      } else if ( local ) {
+	spProjTp(chi,in._odata[offset]);
+      } else { 
+	chi=buf[offset];
+      }
+      mult(&Uchi(),&U._odata[sU](Tp),&chi());
+      spReconTp(result,Uchi);
+    }
+
+    // Xm
+    if ( dirdisp==Xm ){
+      if ( local && perm ) {
+	spProjXm(tmp,in._odata[offset]);
+	permute(chi,tmp,ptype);
+      } else if ( local ) {
+	spProjXm(chi,in._odata[offset]);
+      } else { 
+	chi=buf[offset];
+      }
+      mult(&Uchi(),&U._odata[sU](Xm),&chi());
+      spReconXm(result,Uchi);
+    }
+
+    // Ym
+    if ( dirdisp == Ym ){
+      if ( local && perm ) {
+	spProjYm(tmp,in._odata[offset]);
+	permute(chi,tmp,ptype);
+      } else if ( local ) {
+	spProjYm(chi,in._odata[offset]);
+      } else { 
+	chi=buf[offset];
+      }
+      mult(&Uchi(),&U._odata[sU](Ym),&chi());
+      spReconYm(result,Uchi);
+    }
+
+    // Zm
+    if ( dirdisp == Zm ){
+      if ( local && perm ) {
+	spProjZm(tmp,in._odata[offset]);
+	permute(chi,tmp,ptype);
+      } else if ( local ) {
+	spProjZm(chi,in._odata[offset]);
+      } else { 
+	chi=buf[offset];
+      }
+      mult(&Uchi(),&U._odata[sU](Zm),&chi());
+      spReconZm(result,Uchi);
+    }
+
+    // Tm
+    if ( dirdisp==Tm ) {
+      if ( local && perm ) {
+	spProjTm(tmp,in._odata[offset]);
+	permute(chi,tmp,ptype);
+      } else if ( local ) {
+	spProjTm(chi,in._odata[offset]);
+      } else { 
+	chi=buf[offset];
+      }
+      mult(&Uchi(),&U._odata[sU](Tm),&chi());
+      spReconTm(result,Uchi);
+    }
+
+    vstream(out._odata[ss],result*(-0.5));
+}
+
 }}
