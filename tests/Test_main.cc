@@ -216,16 +216,22 @@ int main (int argc, char ** argv)
     scm=transposeIndex<1>(scm);
     
    
-    //random(SerialRNG, cm);
+    random(SerialRNG, cm);
+    std::cout << cm << std::endl;
+
+    //cm = Ta(cm);
+    //TComplex tracecm= trace(cm);      
     //std::cout << cm << std::endl;
 
-    cm = Ta(cm);
-    //TComplex tracecm= trace(cm);      
-    //std::cout << cm << "  "<< tracecm << std::endl;
-
     cm = ProjectOnGroup(cm);
+    std::cout << cm << "  " << std::endl;
 
+    TComplex det = Determinant(cm);
+    
+    std::cout << "determinant: " << det <<  std::endl;
     cm = Exponentiate(cm, 1.0, 10);
+    std::cout << cm << "  " << std::endl;
+
 
 //    Foo = Foo+scalar; // LatticeColourMatrix+Scalar
 //    Foo = Foo*scalar; // LatticeColourMatrix*Scalar
