@@ -39,8 +39,8 @@ int main (int argc, char ** argv)
   InvSqrt.gnuplot(gnuplot);
 
   double x=0.6789;
-  double sx=sqrt(x);
-  double ssx=sqrt(sx);
+  double sx=std::sqrt(x);
+  double ssx=std::sqrt(sx);
   double isx=1.0/sx;
   double issx=1.0/ssx;
 

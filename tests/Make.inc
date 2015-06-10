@@ -1,5 +1,5 @@
 
-bin_PROGRAMS = Test_GaugeAction Test_cayley_cg Test_cayley_even_odd Test_contfrac_cg Test_contfrac_even_odd Test_cshift Test_cshift_red_black Test_dwf_cg_prec Test_dwf_cg_schur Test_dwf_cg_unprec Test_dwf_even_odd Test_gamma Test_main Test_multishift_sqrt Test_nersc_io Test_remez Test_rng Test_rng_fixed Test_simd Test_stencil Test_wilson_cg_prec Test_wilson_cg_schur Test_wilson_cg_unprec Test_wilson_even_odd
+bin_PROGRAMS = Test_GaugeAction Test_cayley_cg Test_cayley_coarsen_support Test_cayley_even_odd Test_cayley_ldop_cg Test_cayley_ldop_cr Test_cf_coarsen_support Test_cf_cr_unprec Test_contfrac_cg Test_contfrac_even_odd Test_cshift Test_cshift_red_black Test_dwf_cg_prec Test_dwf_cg_schur Test_dwf_cg_unprec Test_dwf_cr_unprec Test_dwf_even_odd Test_gamma Test_main Test_multishift_sqrt Test_nersc_io Test_remez Test_rng Test_rng_fixed Test_simd Test_stencil Test_wilson_cg_prec Test_wilson_cg_schur Test_wilson_cg_unprec Test_wilson_cr_unprec Test_wilson_even_odd
 
 
 Test_GaugeAction_SOURCES=Test_GaugeAction.cc
@@ -10,8 +10,28 @@ Test_cayley_cg_SOURCES=Test_cayley_cg.cc
 Test_cayley_cg_LDADD=-lGrid
 
 
+Test_cayley_coarsen_support_SOURCES=Test_cayley_coarsen_support.cc
+Test_cayley_coarsen_support_LDADD=-lGrid
+
+
 Test_cayley_even_odd_SOURCES=Test_cayley_even_odd.cc
 Test_cayley_even_odd_LDADD=-lGrid
+
+
+Test_cayley_ldop_cg_SOURCES=Test_cayley_ldop_cg.cc
+Test_cayley_ldop_cg_LDADD=-lGrid
+
+
+Test_cayley_ldop_cr_SOURCES=Test_cayley_ldop_cr.cc
+Test_cayley_ldop_cr_LDADD=-lGrid
+
+
+Test_cf_coarsen_support_SOURCES=Test_cf_coarsen_support.cc
+Test_cf_coarsen_support_LDADD=-lGrid
+
+
+Test_cf_cr_unprec_SOURCES=Test_cf_cr_unprec.cc
+Test_cf_cr_unprec_LDADD=-lGrid
 
 
 Test_contfrac_cg_SOURCES=Test_contfrac_cg.cc
@@ -40,6 +60,10 @@ Test_dwf_cg_schur_LDADD=-lGrid
 
 Test_dwf_cg_unprec_SOURCES=Test_dwf_cg_unprec.cc
 Test_dwf_cg_unprec_LDADD=-lGrid
+
+
+Test_dwf_cr_unprec_SOURCES=Test_dwf_cr_unprec.cc
+Test_dwf_cr_unprec_LDADD=-lGrid
 
 
 Test_dwf_even_odd_SOURCES=Test_dwf_even_odd.cc
@@ -92,6 +116,10 @@ Test_wilson_cg_schur_LDADD=-lGrid
 
 Test_wilson_cg_unprec_SOURCES=Test_wilson_cg_unprec.cc
 Test_wilson_cg_unprec_LDADD=-lGrid
+
+
+Test_wilson_cr_unprec_SOURCES=Test_wilson_cr_unprec.cc
+Test_wilson_cr_unprec_LDADD=-lGrid
 
 
 Test_wilson_even_odd_SOURCES=Test_wilson_even_odd.cc

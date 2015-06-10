@@ -30,6 +30,9 @@ namespace Grid {
 
       virtual void   Instantiatable(void) =0; // ensure no make-eee
 
+      // Efficient support for multigrid coarsening
+      virtual void  Mdir (const LatticeFermion &in, LatticeFermion &out,int dir,int disp);
+
       // Constructors
       PartialFractionFermion5D(LatticeGaugeField &_Umu,
 				    GridCartesian         &FiveDimGrid,

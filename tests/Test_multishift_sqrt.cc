@@ -20,11 +20,19 @@ public:
     sqrtscale = sqrtscale * adj(sqrtscale);// force real pos def
     scale = sqrtscale * sqrtscale; 
   }
+  // Support for coarsening to a multigrid
+  void OpDiag (const Field &in, Field &out) {};
+  void OpDir  (const Field &in, Field &out,int dir,int disp){};
+
   void Op     (const Field &in, Field &out){
     out = scale * in;
   }
   void AdjOp  (const Field &in, Field &out){
     out = scale * in;
+  }
+  void HermOp(const Field &in, Field &out){
+    double n1, n2;
+    HermOpAndNorm(in,out,n1,n2);
   }
   void HermOpAndNorm(const Field &in, Field &out,double &n1,double &n2){
     ComplexD dot;

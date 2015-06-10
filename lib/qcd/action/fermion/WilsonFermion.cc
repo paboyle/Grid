@@ -93,6 +93,26 @@ void WilsonFermion::MooeeInvDag(const LatticeFermion &in, LatticeFermion &out)
   out.checkerboard = in.checkerboard;
   MooeeInv(in,out);
 }
+void WilsonFermion::Mdir (const LatticeFermion &in, LatticeFermion &out,int dir,int disp)
+{
+  DhopDir(in,out,dir,disp);
+}
+void WilsonFermion::DhopDir(const LatticeFermion &in, LatticeFermion &out,int dir,int disp){
+  WilsonCompressor compressor(DaggerNo);
+  Stencil.HaloExchange<vSpinColourVector,vHalfSpinColourVector,WilsonCompressor>(in,comm_buf,compressor);
+  
+  assert( (disp==1)||(disp==-1) );
+
+  int skip = (disp==1) ? 0 : 1;
+
+  int dirdisp = dir+skip*4;
+
+PARALLEL_FOR_LOOP
+  for(int sss=0;sss<in._grid->oSites();sss++){
+    DiracOpt::DhopDir(Stencil,Umu,comm_buf,sss,sss,in,out,dirdisp);
+  }
+
+};
 
 void WilsonFermion::DhopInternal(CartesianStencil & st,LatticeDoubledGaugeField & U,
 				const LatticeFermion &in, LatticeFermion &out,int dag)

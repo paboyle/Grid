@@ -2,11 +2,14 @@
 /*! @file Grid_vector_types.h
   @brief Defines templated class Grid_simd to deal with inner vector types
 */
-// Time-stamp: <2015-05-29 14:19:48 neo>
+// Time-stamp: <2015-06-09 15:00:47 neo>
 //---------------------------------------------------------------------------
 #ifndef GRID_VECTOR_TYPES
 #define GRID_VECTOR_TYPES
 
+#ifdef EMPTY_SIMD
+#include "Grid_empty.h"
+#endif
 #ifdef SSE4
 #include "Grid_sse4.h"
 #endif
@@ -18,6 +21,9 @@
 #endif
 #if defined QPX
 #include "Grid_qpx.h"
+#endif
+#ifdef NEONv7
+#include "Grid_neon.h"
 #endif
 
 namespace Grid {
@@ -78,11 +84,18 @@ namespace Grid {
     typedef typename RealPart < Scalar_type >::type Real; 
     typedef Vector_type     vector_type;
     typedef Scalar_type     scalar_type;
+
+
+    typedef union conv_t_union {
+	Vector_type v;
+	Scalar_type s[sizeof(Vector_type)/sizeof(Scalar_type)];
+      conv_t_union(){};
+      } conv_t;
+    
    
     Vector_type v;
     
     static inline int Nsimd(void) { return sizeof(Vector_type)/sizeof(Scalar_type);}
-
     
     Grid_simd& operator=(const Grid_simd&& rhs){v=rhs.v;return *this;};
     Grid_simd& operator=(const Grid_simd& rhs){v=rhs.v;return *this;}; //faster than not declaring it and leaving to the compiler
@@ -145,7 +158,7 @@ namespace Grid {
     ///////////////////////
     friend inline void vprefetch(const Grid_simd &v)
     {
-      _mm_prefetch((const char*)&v.v,_MM_HINT_T0);
+      prefetch_HINT_T0((const char*)&v.v);
     }
 
     ///////////////////////
@@ -190,6 +203,27 @@ namespace Grid {
     inline Grid_simd &operator -=(const Grid_simd &r) {
       *this = *this-r;
       return *this;
+    }
+
+
+    ///////////////////////////////////////
+    // Not all functions are supported
+    // through SIMD and must breakout to 
+    // scalar type and back again. This
+    // provides support
+    ///////////////////////////////////////
+
+    template<class functor> friend inline Grid_simd SimdApply (const functor &func,const Grid_simd &v) {
+
+      Grid_simd ret;
+      Grid_simd::conv_t conv;
+
+      conv.v = v.v;
+      for(int i=0;i<Nsimd();i++){
+	conv.s[i]=func(conv.s[i]);
+      }
+      ret.v = conv.v;
+      return ret;
     }
 
     ////////////////////////////////////////////////////////////////////
