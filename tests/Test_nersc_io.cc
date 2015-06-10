@@ -25,7 +25,6 @@ int main (int argc, char ** argv)
   std::vector<LatticeColourMatrix> U(4,&Fine);
   
   NerscField header;
-  
   std::string file("./ckpoint_lat.4000");
   readNerscConfiguration(Umu,header,file);
 
@@ -83,7 +82,7 @@ int main (int argc, char ** argv)
   Complex l  = TensorRemove(Tl);
   std::cout << "calculated link trace " <<l*LinkTraceScale<<std::endl;
 
-  sumBlocks(cPlaq,Plaq);
+  blockSum(cPlaq,Plaq);
   TComplex TcP = sum(cPlaq);
   Complex ll= TensorRemove(TcP);
   std::cout << "coarsened plaquettes sum to " <<ll*PlaqScale<<std::endl;

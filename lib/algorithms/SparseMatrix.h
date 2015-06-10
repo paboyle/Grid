@@ -19,6 +19,8 @@ namespace Grid {
 	ni=M(in,tmp);
 	no=Mdag(tmp,out);
       }
+      virtual  void Mdiag    (const Field &in, Field &out)=0;
+      virtual  void Mdir     (const Field &in, Field &out,int dir, int disp)=0;
     };
 
   /////////////////////////////////////////////////////////////////////////////////////////////

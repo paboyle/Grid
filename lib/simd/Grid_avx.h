@@ -4,7 +4,7 @@
 
   Using intrinsics
 */
-// Time-stamp: <2015-05-29 14:13:30 neo>
+// Time-stamp: <2015-06-09 14:26:59 neo>
 //----------------------------------------------------------------------
 
 #include <immintrin.h>
@@ -314,9 +314,9 @@ namespace Optimization {
   template<>
     inline Grid::ComplexF Reduce<Grid::ComplexF, __m256>::operator()(__m256 in){
     __m256 v1,v2;
-    Optimization::permute(v1,in,0); // sse 128; paired complex single
+    Optimization::permute(v1,in,0); // avx 256; quad complex single
     v1 = _mm256_add_ps(v1,in);
-    Optimization::permute(v2,v1,1); // avx 256; quad complex single
+    Optimization::permute(v2,v1,1); 
     v1 = _mm256_add_ps(v1,v2);
     u256f conv; conv.v = v1;
     return Grid::ComplexF(conv.f[0],conv.f[1]);
@@ -367,7 +367,6 @@ namespace Optimization {
     assert(0);
   }
   
-  
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -384,6 +383,12 @@ namespace Grid {
       _mm_prefetch(ptr+i+512,_MM_HINT_T0);
     }
   }
+  inline void prefetch_HINT_T0(const char *ptr){
+    _mm_prefetch(ptr,_MM_HINT_T0);
+  }
+
+
+
   template < typename VectorSIMD > 
     inline void Gpermute(VectorSIMD &y,const VectorSIMD &b, int perm ) {
     Optimization::permute(y.v,b.v,perm);

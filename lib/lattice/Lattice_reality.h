@@ -27,9 +27,9 @@ PARALLEL_FOR_LOOP
         return ret;
     };
 
-    template<class vobj> inline auto real(const Lattice<vobj> &z) -> Lattice<decltype(real(z._odata[0]))>
+    template<class vobj> inline auto real(const Lattice<vobj> &z) -> Lattice<vobj>
     {
-      Lattice<decltype(real(z._odata[0]))> ret(z._grid);
+      Lattice<vobj> ret(z._grid);
 PARALLEL_FOR_LOOP
         for(int ss=0;ss<z._grid->oSites();ss++){
             ret._odata[ss] = real(z._odata[ss]);
@@ -37,9 +37,9 @@ PARALLEL_FOR_LOOP
       return ret;
     }
 
-    template<class vobj> inline auto imag(const Lattice<vobj> &z) -> Lattice<decltype(imag(z._odata[0]))>
+    template<class vobj> inline auto imag(const Lattice<vobj> &z) -> Lattice<vobj>
     {
-      Lattice<decltype(imag(z._odata[0]))> ret(z._grid);
+      Lattice<vobj> ret(z._grid);
 PARALLEL_FOR_LOOP
         for(int ss=0;ss<z._grid->oSites();ss++){
             ret._odata[ss] = imag(z._odata[ss]);

@@ -26,13 +26,17 @@ namespace Grid {
       void   MeooeDag    (const LatticeFermion &in, LatticeFermion &out);
       virtual void   Mooee       (const LatticeFermion &in, LatticeFermion &out); // remain virtual so we 
       virtual void   MooeeDag    (const LatticeFermion &in, LatticeFermion &out); // can derive Clover
-      virtual void   MooeeInv    (const LatticeFermion &in, LatticeFermion &out); // from Wilson bas
+      virtual void   MooeeInv    (const LatticeFermion &in, LatticeFermion &out); // from Wilson base
       virtual void   MooeeInvDag (const LatticeFermion &in, LatticeFermion &out);
 
       // non-hermitian hopping term; half cb or both
       void Dhop  (const LatticeFermion &in, LatticeFermion &out,int dag);
       void DhopOE(const LatticeFermion &in, LatticeFermion &out,int dag);
       void DhopEO(const LatticeFermion &in, LatticeFermion &out,int dag);
+
+      // Multigrid assistance
+      void   Mdir (const LatticeFermion &in, LatticeFermion &out,int dir,int disp);
+      void DhopDir(const LatticeFermion &in, LatticeFermion &out,int dir,int disp);
 
       ///////////////////////////////////////////////////////////////
       // Extra methods added by derived

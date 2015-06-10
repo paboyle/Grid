@@ -3,6 +3,7 @@
 
 #include <algorithms/SparseMatrix.h>
 #include <algorithms/LinearOperator.h>
+#include <algorithms/CoarsenedMatrix.h>
 
 #include <algorithms/approx/Zolotarev.h>
 #include <algorithms/approx/Chebyshev.h>
@@ -10,6 +11,7 @@
 #include <algorithms/approx/MultiShiftFunction.h>
 
 #include <algorithms/iterative/ConjugateGradient.h>
+#include <algorithms/iterative/ConjugateResidual.h>
 #include <algorithms/iterative/NormalEquations.h>
 #include <algorithms/iterative/SchurRedBlack.h>
 

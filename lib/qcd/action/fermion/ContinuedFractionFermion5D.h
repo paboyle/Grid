@@ -24,6 +24,9 @@ namespace Grid {
       //      virtual void   Instantiatable(void)=0;
       virtual void   Instantiatable(void) =0;
 
+      // Efficient support for multigrid coarsening
+      virtual void  Mdir (const LatticeFermion &in, LatticeFermion &out,int dir,int disp);
+
       // Constructors
       ContinuedFractionFermion5D(LatticeGaugeField &_Umu,
 				 GridCartesian         &FiveDimGrid,

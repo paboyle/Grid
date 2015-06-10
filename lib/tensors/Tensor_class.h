@@ -90,10 +90,10 @@ public:
   operator ComplexD () const { return(TensorRemove(_internal)); };
   operator RealD () const { return(real(TensorRemove(_internal))); }
   
-  // convert from a something to a scalar
-  template<class T,typename std::enable_if<!isGridTensor<T>::value, T>::type* = nullptr > strong_inline auto operator = (T arg) -> iScalar<vtype>
+  // convert from a something to a scalar via constructor of something arg
+  template<class T,typename std::enable_if<!isGridTensor<T>::value, T>::type* = nullptr > strong_inline iScalar<vtype> operator = (T arg)
     { 
-      _internal = vtype(arg);
+      _internal = arg;
       return *this;
     }
 
@@ -123,6 +123,13 @@ public:
   typedef iScalar<tensor_reduced_v> tensor_reduced;
   typedef iVector<recurse_scalar_object,N> scalar_object;
 
+  template<class T,typename std::enable_if<!isGridTensor<T>::value, T>::type* = nullptr > strong_inline auto operator = (T arg) -> iVector<vtype,N>
+    { 
+      zeroit(*this);
+      for(int i=0;i<N;i++)
+	_internal[i] = arg;
+      return *this;
+    }
 
   enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
   iVector(const Zero &z){ *this = zero; };
@@ -309,7 +316,8 @@ public:
 	stream<<o._internal[i][j];
 	if (i<N-1)	stream<<",";
       }
-      stream<<"}\n\t\t";
+      stream<<"}";
+      if(i!=N-1) stream<<"\n\t\t";
     }
     stream<<"}";
     return stream;
