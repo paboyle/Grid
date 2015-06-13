@@ -9,12 +9,12 @@ namespace Grid {
 //////////////////////////////////////////////////////////////////////////////////////////
 
 // multiplication by fundamental scalar type
-template<class l,int N> strong_inline iScalar<l> operator * (const iScalar<l>& lhs,const typename iScalar<l>::scalar_type rhs) 
+template<class l> strong_inline iScalar<l> operator * (const iScalar<l>& lhs,const typename iScalar<l>::scalar_type rhs) 
 {
   typename iScalar<l>::tensor_reduced srhs; srhs=rhs;
   return lhs*srhs;
 }
-template<class l,int N> strong_inline iScalar<l> operator * (const typename iScalar<l>::scalar_type lhs,const iScalar<l>& rhs) {  return rhs*lhs; }
+template<class l> strong_inline iScalar<l> operator * (const typename iScalar<l>::scalar_type lhs,const iScalar<l>& rhs) {  return rhs*lhs; }
 
 template<class l,int N> strong_inline iVector<l,N> operator * (const iVector<l,N>& lhs,const typename iScalar<l>::scalar_type rhs) 
 {
@@ -118,12 +118,12 @@ template<class l,int N> strong_inline iMatrix<l,N> operator * (Integer lhs,const
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // addition by fundamental scalar type applies to matrix(down diag) and scalar
 ///////////////////////////////////////////////////////////////////////////////////////////////
-template<class l,int N> strong_inline iScalar<l> operator + (const iScalar<l>& lhs,const typename iScalar<l>::scalar_type rhs) 
+template<class l> strong_inline iScalar<l> operator + (const iScalar<l>& lhs,const typename iScalar<l>::scalar_type rhs) 
 {
   typename iScalar<l>::tensor_reduced srhs; srhs=rhs;
   return lhs+srhs;
 }
-template<class l,int N> strong_inline iScalar<l> operator + (const typename iScalar<l>::scalar_type lhs,const iScalar<l>& rhs) {  return rhs+lhs; }
+template<class l> strong_inline iScalar<l> operator + (const typename iScalar<l>::scalar_type lhs,const iScalar<l>& rhs) {  return rhs+lhs; }
 
 template<class l,int N> strong_inline iMatrix<l,N> operator + (const iMatrix<l,N>& lhs,const typename iScalar<l>::scalar_type rhs) 
 {
@@ -176,12 +176,12 @@ template<class l,int N> strong_inline iMatrix<l,N> operator + (Integer lhs,const
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // subtraction of fundamental scalar type applies to matrix(down diag) and scalar
 ///////////////////////////////////////////////////////////////////////////////////////////////
-template<class l,int N> strong_inline iScalar<l> operator - (const iScalar<l>& lhs,const typename iScalar<l>::scalar_type rhs) 
+template<class l> strong_inline iScalar<l> operator - (const iScalar<l>& lhs,const typename iScalar<l>::scalar_type rhs) 
 {
   typename iScalar<l>::tensor_reduced srhs; srhs=rhs;
   return lhs-srhs;
 }
-template<class l,int N> strong_inline iScalar<l> operator - (const typename iScalar<l>::scalar_type lhs,const iScalar<l>& rhs) 
+template<class l> strong_inline iScalar<l> operator - (const typename iScalar<l>::scalar_type lhs,const iScalar<l>& rhs) 
 {
   typename iScalar<l>::tensor_reduced slhs;slhs=lhs;
   return slhs-rhs;
