@@ -66,7 +66,8 @@ int main (int argc, char ** argv)
 	  
 	  nrm = abs(scm-cm()()());
 	  std::vector<int> peer(4);
-	  int index=real(cm);
+	  Complex tmp  =cm;
+	  Integer index=real(tmp);
 	  Fine.CoorFromIndex(peer,index,latt_size);
 
 	  if (nrm > 0){
