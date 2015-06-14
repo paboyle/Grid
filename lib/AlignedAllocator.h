@@ -33,7 +33,7 @@ public:
   ~alignedAllocator() throw() { }
 
   pointer       address(reference __x)       const { return &__x; }
-  const_pointer address(const_reference __x) const { return &__x; }
+  //  const_pointer address(const_reference __x) const { return &__x; }
 
   size_type  max_size() const throw() { return size_t(-1) / sizeof(_Tp); }
 

@@ -28,13 +28,19 @@
 
 namespace Grid {
 
+  //////////////////////////////////////
   // To take the floating point type of real/complex type
+  //////////////////////////////////////
   template <typename T> struct RealPart {
     typedef T type;
   };
   template <typename T> struct RealPart< std::complex<T> >{
     typedef T type;
   };
+  
+  //////////////////////////////////////
+  // demote a vector to real type
+  //////////////////////////////////////
 
   // type alias used to simplify the syntax of std::enable_if
   template <typename T> using Invoke                                  =  typename T::type;
@@ -90,7 +96,7 @@ namespace Grid {
 	Vector_type v;
 	Scalar_type s[sizeof(Vector_type)/sizeof(Scalar_type)];
       conv_t_union(){};
-      } conv_t;
+    } conv_t;
     
    
     Vector_type v;
@@ -205,7 +211,6 @@ namespace Grid {
       return *this;
     }
 
-
     ///////////////////////////////////////
     // Not all functions are supported
     // through SIMD and must breakout to 
@@ -214,7 +219,6 @@ namespace Grid {
     ///////////////////////////////////////
 
     template<class functor> friend inline Grid_simd SimdApply (const functor &func,const Grid_simd &v) {
-
       Grid_simd ret;
       Grid_simd::conv_t conv;
 
@@ -223,6 +227,19 @@ namespace Grid {
 	conv.s[i]=func(conv.s[i]);
       }
       ret.v = conv.v;
+      return ret;
+    }
+    template<class functor> friend inline Grid_simd SimdApplyBinop (const functor &func,const Grid_simd &x,const Grid_simd &y) {
+      Grid_simd ret;
+      Grid_simd::conv_t cx;
+      Grid_simd::conv_t cy;
+
+      cx.v = x.v;
+      cy.v = y.v;
+      for(int i=0;i<Nsimd();i++){
+	cx.s[i]=func(cx.s[i],cy.s[i]);
+      }
+      ret.v = cx.v;
       return ret;
     }
 
@@ -235,6 +252,7 @@ namespace Grid {
     {
       Gpermute<Grid_simd>(y,b,perm);
     }
+
     
   };// end of Grid_simd class definition 
 
@@ -383,7 +401,6 @@ namespace Grid {
     return in;
   }
 
-
   /////////////////////
   // Inner, outer
   /////////////////////
@@ -405,6 +422,46 @@ namespace Grid {
     return arg;
   }
 
+
+  ////////////////////////////////////////////////////////////
+  // copy/splat complex real parts into real;
+  // insert real into complex and zero imag;
+  ////////////////////////////////////////////////////////////
+
+  //real = toReal( complex )
+  template<class S,class V,IfReal<S>  = 0>	
+  inline Grid_simd<S,V> toReal(const Grid_simd<std::complex<S>,V> &in)
+  {
+    typedef Grid_simd<S,V> simd;
+    simd ret;
+    typename simd::conv_t conv;
+    conv.v = in.v;
+    for(int i=0;i<simd::Nsimd();i+=2){
+      conv.s[i+1]=conv.s[i];    // duplicate (r,r);(r,r);(r,r); etc...
+    }
+    ret.v = conv.v;
+    return ret;
+  }
+  
+  //complex = toComplex( real )
+  template<class R,class V,IfReal<R> = 0 >	// must be a real arg
+  inline Grid_simd<std::complex<R>,V> toComplex (const Grid_simd<R,V> &in)
+  {
+    typedef Grid_simd<R,V> Rsimd;
+    typedef Grid_simd<std::complex<R>,V> Csimd;
+    typename Rsimd::conv_t conv;// address as real
+    
+    conv.v = in.v;
+    for(int i=0;i<Rsimd::Nsimd();i+=2){
+      assert(conv.s[i+1]==conv.s[i]); // trap any cases where real was not duplicated 
+      // indicating the SIMD grids of real and imag assignment did not correctly match
+      conv.s[i+1]=0.0;                // zero imaginary parts
+    }
+    Csimd ret;
+    ret.v = conv.v;
+    return ret;
+  }
+
   ///////////////////////////////
   // Define available types
   ///////////////////////////////
@@ -413,6 +470,20 @@ namespace Grid {
   typedef Grid_simd< std::complex< float > , SIMD_Ftype > vComplexF;
   typedef Grid_simd< std::complex< double >, SIMD_Dtype > vComplexD;
   typedef Grid_simd< Integer               , SIMD_Itype > vInteger;
+
+  /////////////////////////////////////////
+  // Some traits to recognise the types
+  /////////////////////////////////////////
+  template <typename T> struct is_simd : public std::false_type{};
+  template <> struct is_simd<vRealF>   : public std::true_type {};
+  template <> struct is_simd<vRealD>   : public std::true_type {};
+  template <> struct is_simd<vComplexF>: public std::true_type {};
+  template <> struct is_simd<vComplexD>: public std::true_type {};
+  template <> struct is_simd<vInteger> : public std::true_type {};
+
+  template <typename T> using IfSimd     = Invoke<std::enable_if< is_simd<T>::value,int> > ;
+  template <typename T> using IfNotSimd  = Invoke<std::enable_if<!is_simd<T>::value,unsigned> > ;
+
 }
 
 #endif

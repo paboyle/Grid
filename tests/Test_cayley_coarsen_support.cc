@@ -102,15 +102,10 @@ int main (int argc, char ** argv)
   CoarseVector c_res (Coarse5d);
   CoarseVector c_proj(Coarse5d);
   
-  //  TODO
-  // -- promote from subspace, check we get the vector we wanted
-  // -- apply ldop; check we get the same as inner product of M times big vec
-  // -- pick blocks one by one. Evaluate matrix elements.
   Complex one(1.0);
   c_src = one;  // 1 in every element for vector 1.
   
   blockPromote(c_src,err,subspace);
-
 
   prom=zero;
   for(int b=0;b<nbasis;b++){
