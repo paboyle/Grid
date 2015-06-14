@@ -70,7 +70,7 @@ public:
   //////////////////////////////////////////////////
   // the sum over all staples on each site
   //////////////////////////////////////////////////
-  static void Staple(GaugeMat &staple,GaugeLorentz &Umu,int mu){
+  static void Staple(GaugeMat &staple,const GaugeLorentz &Umu,int mu){
 
     std::vector<GaugeMat> U(4,Umu._grid);
     for(int d=0;d<Nd;d++){
@@ -123,12 +123,10 @@ void siteRectangle(GaugeMat &plaq,const std::vector<GaugeMat> &U, const int mu, 
 
 
  typedef WilsonLoops<LatticeColourMatrix,LatticeGaugeField> ColourWilsonLoops;
+ typedef WilsonLoops<LatticeColourMatrix,LatticeGaugeField> U1WilsonLoops;
+ typedef WilsonLoops<LatticeColourMatrix,LatticeGaugeField> SU2WilsonLoops;
+ typedef WilsonLoops<LatticeColourMatrix,LatticeGaugeField> SU3WilsonLoops;
 
 }}
-
-
-
-
-
 
 #endif
