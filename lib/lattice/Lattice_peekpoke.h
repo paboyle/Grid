@@ -117,7 +117,9 @@ PARALLEL_FOR_LOOP
       int Nsimd = grid->Nsimd();
 
       assert( l.checkerboard == l._grid->CheckerBoard(site));
-      assert( sizeof(sobj)*Nsimd == sizeof(vobj));
+
+      // FIXME
+      //      assert( sizeof(sobj)*Nsimd == sizeof(vobj));
 
       int rank,odx,idx;
       grid->GlobalCoorToRankIndex(rank,odx,idx,site);
@@ -131,6 +133,7 @@ PARALLEL_FOR_LOOP
 
       return;
     };
+
 
     //////////////////////////////////////////////////////////
     // Peek a scalar object from the SIMD array
