@@ -1,11 +1,15 @@
 ================================================================
 *** Hacks and bug fixes to clean up and Audits
 ================================================================
-* Base class to share common code between vRealF, VComplexF etc... done
-  - Performance check on Guido's reimplementation strategy  - (GUIDO) tested and no difference was found, merged
+
+*  Extract/merge/set cleanup ; too many variants; rationalise and call simpler ones
+*  Used #define repetitive sequences to minimise code.
+*  Rewrite core tensor arithmetic support to be more systematic
+*  Ensure we ET as much as possible; move unop functions into ET framework.
+   - tests with expression args to all functions
+
 
 * FIXME audit
-
 * const audit
 
 Insert/Extract

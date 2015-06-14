@@ -9,6 +9,37 @@
 
 namespace Grid {
 
+  ////////////////////////////////////////////////////
+  // Predicated where support
+  ////////////////////////////////////////////////////
+  template<class iobj,class vobj,class robj>
+    inline vobj predicatedWhere(const iobj &predicate,const vobj &iftrue,const robj &iffalse) {
+
+    typename std::remove_const<vobj>::type ret;
+
+    typedef typename vobj::scalar_object scalar_object;
+    typedef typename vobj::scalar_type scalar_type;
+    typedef typename vobj::vector_type vector_type;
+
+    const int Nsimd = vobj::vector_type::Nsimd();
+    const int words = sizeof(vobj)/sizeof(vector_type);
+
+    std::vector<Integer> mask(Nsimd);
+    std::vector<scalar_object> truevals (Nsimd);
+    std::vector<scalar_object> falsevals(Nsimd);
+
+    extract(iftrue   ,truevals);
+    extract(iffalse  ,falsevals);
+    extract<vInteger,Integer>(TensorRemove(predicate),mask);
+
+    for(int s=0;s<Nsimd;s++){
+      if (mask[s]) falsevals[s]=truevals[s];
+    }
+
+    merge(ret,falsevals);
+    return ret;
+  }
+
 ////////////////////////////////////////////
 // recursive evaluation of expressions; Could
 // switch to generic approach with variadics, a la
@@ -142,10 +173,23 @@ template <class arg> struct name\
 };
 
 GridUnopClass(UnarySub,-a);
+GridUnopClass(UnaryNot,Not(a));
 GridUnopClass(UnaryAdj,adj(a));
 GridUnopClass(UnaryConj,conjugate(a));
 GridUnopClass(UnaryTrace,trace(a));
 GridUnopClass(UnaryTranspose,transpose(a));
+GridUnopClass(UnaryTa,Ta(a));
+GridUnopClass(UnaryReal,real(a));
+GridUnopClass(UnaryImag,imag(a));
+GridUnopClass(UnaryToReal,toReal(a));
+GridUnopClass(UnaryToComplex,toComplex(a));
+GridUnopClass(UnaryAbs,abs(a));
+GridUnopClass(UnarySqrt,sqrt(a));
+GridUnopClass(UnaryRsqrt,rsqrt(a));
+GridUnopClass(UnarySin,sin(a));
+GridUnopClass(UnaryCos,cos(a));
+GridUnopClass(UnaryLog,log(a));
+GridUnopClass(UnaryExp,exp(a));
 
 ////////////////////////////////////////////
 // Binary operators
@@ -162,6 +206,28 @@ struct name\
 GridBinOpClass(BinaryAdd,lhs+rhs);
 GridBinOpClass(BinarySub,lhs-rhs);
 GridBinOpClass(BinaryMul,lhs*rhs);
+
+GridBinOpClass(BinaryAnd   ,lhs&rhs);
+GridBinOpClass(BinaryOr    ,lhs|rhs);
+GridBinOpClass(BinaryAndAnd,lhs&&rhs);
+GridBinOpClass(BinaryOrOr  ,lhs||rhs);
+
+////////////////////////////////////////////////////
+// Trinary conditional op
+////////////////////////////////////////////////////
+#define GridTrinOpClass(name,combination)\
+template <class predicate,class left, class right>	\
+struct name\
+{\
+  static auto inline func(const predicate &pred,const left &lhs,const right &rhs)-> decltype(combination) const \
+    {\
+      return combination;\
+    }\
+}
+
+GridTrinOpClass(TrinaryWhere,(predicatedWhere<predicate, \
+			       typename std::remove_reference<left>::type, \
+			       typename std::remove_reference<right>::type> (pred,lhs,rhs)));
 
 ////////////////////////////////////////////
 // Operator syntactical glue
@@ -218,14 +284,66 @@ template <typename T1,typename T2,typename T3> inline auto op(const T1 &pred,con
 ////////////////////////
 
 GRID_DEF_UNOP(operator -,UnarySub);
+GRID_DEF_UNOP(Not,UnaryNot);
+GRID_DEF_UNOP(operator !,UnaryNot);
 GRID_DEF_UNOP(adj,UnaryAdj);
 GRID_DEF_UNOP(conjugate,UnaryConj);
 GRID_DEF_UNOP(trace,UnaryTrace);
 GRID_DEF_UNOP(transpose,UnaryTranspose);
+GRID_DEF_UNOP(Ta,UnaryTa);
+GRID_DEF_UNOP(real,UnaryReal);
+GRID_DEF_UNOP(imag,UnaryImag);
+GRID_DEF_UNOP(toReal,UnaryToReal);
+GRID_DEF_UNOP(toComplex,UnaryToComplex);
+GRID_DEF_UNOP(abs  ,UnaryAbs); //abs overloaded in cmath C++98; DON'T do the abs-fabs-dabs-labs thing
+GRID_DEF_UNOP(sqrt ,UnarySqrt);
+GRID_DEF_UNOP(rsqrt,UnarySqrt);
+GRID_DEF_UNOP(sin  ,UnarySin);
+GRID_DEF_UNOP(cos  ,UnaryCos);
+GRID_DEF_UNOP(log  ,UnaryLog);
+GRID_DEF_UNOP(exp  ,UnaryExp);
 
 GRID_DEF_BINOP(operator+,BinaryAdd);
 GRID_DEF_BINOP(operator-,BinarySub);
 GRID_DEF_BINOP(operator*,BinaryMul);
+
+GRID_DEF_BINOP(operator&,BinaryAnd);
+GRID_DEF_BINOP(operator|,BinaryOr);
+GRID_DEF_BINOP(operator&&,BinaryAndAnd);
+GRID_DEF_BINOP(operator||,BinaryOrOr);
+
+GRID_DEF_TRINOP(where,TrinaryWhere);
+
+/////////////////////////////////////////////////////////////
+// Closure convenience to force expression to evaluate
+/////////////////////////////////////////////////////////////
+template<class Op,class T1>
+  auto closure(const LatticeUnaryExpression<Op,T1> & expr)
+  -> Lattice<decltype(expr.first.func(eval(0,std::get<0>(expr.second))))>
+{
+  Lattice<decltype(expr.first.func(eval(0,std::get<0>(expr.second))))> ret(expr);
+  return ret;
+}
+template<class Op,class T1, class T2>
+  auto closure(const LatticeBinaryExpression<Op,T1,T2> & expr)
+  -> Lattice<decltype(expr.first.func(eval(0,std::get<0>(expr.second)),
+				      eval(0,std::get<1>(expr.second))))>
+{
+  Lattice<decltype(expr.first.func(eval(0,std::get<0>(expr.second)),
+				   eval(0,std::get<1>(expr.second))))> ret(expr);
+  return ret;
+}
+template<class Op,class T1, class T2, class T3>
+  auto closure(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr)
+  -> Lattice<decltype(expr.first.func(eval(0,std::get<0>(expr.second)),
+				      eval(0,std::get<1>(expr.second)),
+				      eval(0,std::get<2>(expr.second))))>
+{
+  Lattice<decltype(expr.first.func(eval(0,std::get<0>(expr.second)),
+				   eval(0,std::get<1>(expr.second)),
+				   eval(0,std::get<2>(expr.second))))> ret(expr);
+  return ret;
+}
 
 #undef GRID_UNOP
 #undef GRID_BINOP

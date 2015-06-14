@@ -11,7 +11,11 @@ namespace Grid {
     //Query supporting bitwise &, |, ^, !
     //Query supporting logical &&, ||, 
     //////////////////////////////////////////////////////////////////////////
-    template<class vfunctor,class lobj,class robj> 
+
+  //////////////////////////////////////////////////////////////////////////
+  // compare lattice to lattice
+  //////////////////////////////////////////////////////////////////////////
+  template<class vfunctor,class lobj,class robj>  
     inline Lattice<vInteger> LLComparison(vfunctor op,const Lattice<lobj> &lhs,const Lattice<robj> &rhs)
     {
       Lattice<vInteger> ret(rhs._grid);
@@ -21,6 +25,9 @@ PARALLEL_FOR_LOOP
         }
         return ret;
     }
+  //////////////////////////////////////////////////////////////////////////
+  // compare lattice to scalar
+  //////////////////////////////////////////////////////////////////////////
     template<class vfunctor,class lobj,class robj> 
     inline Lattice<vInteger> LSComparison(vfunctor op,const Lattice<lobj> &lhs,const robj &rhs)
     {
@@ -31,6 +38,9 @@ PARALLEL_FOR_LOOP
         }
         return ret;
     }
+  //////////////////////////////////////////////////////////////////////////
+  // compare scalar to lattice
+  //////////////////////////////////////////////////////////////////////////
     template<class vfunctor,class lobj,class robj> 
     inline Lattice<vInteger> SLComparison(vfunctor op,const lobj &lhs,const Lattice<robj> &rhs)
     {
@@ -42,6 +52,9 @@ PARALLEL_FOR_LOOP
         return ret;
     }
 
+  //////////////////////////////////////////////////////////////////////////
+  // Map to functors
+  //////////////////////////////////////////////////////////////////////////
     // Less than
    template<class lobj,class robj>
    inline Lattice<vInteger> operator < (const Lattice<lobj> & lhs, const Lattice<robj> & rhs) {
@@ -98,7 +111,6 @@ PARALLEL_FOR_LOOP
    inline Lattice<vInteger> operator >= (const lobj & lhs, const Lattice<robj> & rhs) {
      return SLComparison(vge<lobj,robj>(),lhs,rhs);
    }
-
 
    // equal
    template<class lobj,class robj>
