@@ -183,7 +183,7 @@ namespace Grid {
 	  int dir   = geom.directions[p];
 	  int disp  = geom.displacements[p];
 
-	  int block=(FineGrid->_rdimensions[dir])/(Grid()->_rdimensions[dir]);
+	  Integer block=(FineGrid->_rdimensions[dir])/(Grid()->_rdimensions[dir]);
 
 	  LatticeCoordinate(coor,dir);
 
@@ -204,8 +204,8 @@ namespace Grid {
 	    oblock = where(mod(coor,block)==(block-1),Mphi,zz);
 	    iblock = where(mod(coor,block)!=(block-1),Mphi,zz);
 	  } else if ( disp==-1 ) {
-	    oblock = where(mod(coor,block)==0,Mphi,zz);
-	    iblock = where(mod(coor,block)!=0,Mphi,zz);
+	    oblock = where(mod(coor,block)==(Integer)0,Mphi,zz);
+	    iblock = where(mod(coor,block)!=(Integer)0,Mphi,zz);
 	  } else {
 	    assert(0);
 	  }
