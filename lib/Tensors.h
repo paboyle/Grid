@@ -14,5 +14,6 @@
 #include <tensors/Tensor_reality.h>
 #include <tensors/Tensor_unary.h>
 #include <tensors/Tensor_extract_merge.h>
-    
+#include <tensors/Tensor_logical.h>
+
 #endif
