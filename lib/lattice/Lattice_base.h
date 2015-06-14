@@ -93,7 +93,7 @@ PARALLEL_FOR_LOOP
     }
     return *this;
   }
-  template <typename Op, typename T1,typename T2>             strong_inline Lattice<vobj> & operator=(const LatticeBinaryExpression<Op,T1,T2> &expr)
+  template <typename Op, typename T1,typename T2> strong_inline Lattice<vobj> & operator=(const LatticeBinaryExpression<Op,T1,T2> &expr)
   {
     GridBase *egrid(nullptr);
     GridFromExpression(egrid,expr);
@@ -131,8 +131,8 @@ PARALLEL_FOR_LOOP
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
 #ifdef STREAMING_STORES
-      vobj tmp = eval(ss,expr);
-      vstream(_odata[ss] ,tmp);
+      //vobj tmp = eval(ss,expr);
+      vstream(_odata[ss] ,eval(ss,expr));
 #else
       _odata[ss] = eval(ss,expr);
 #endif
@@ -196,12 +196,7 @@ PARALLEL_FOR_LOOP
     _odata.resize(_grid->oSites());
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
-#ifdef STREAMING_STORES
-      vobj tmp = eval(ss,expr);
-      vstream(_odata[ss] ,tmp);
-#else
       _odata[ss]=eval(ss,expr);
-#endif
     }
   };
 
@@ -254,7 +249,7 @@ PARALLEL_FOR_LOOP
         Lattice<vobj> ret(lhs._grid);
 PARALLEL_FOR_LOOP
         for(int ss=0;ss<lhs._grid->oSites();ss++){
-            ret._odata[ss] = lhs._odata[ss]/rhs._odata[ss];
+	  ret._odata[ss] = lhs._odata[ss]*pow(rhs._odata[ss],-1.0);
         }
         return ret;
     };
