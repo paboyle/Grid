@@ -24,8 +24,7 @@ PARALLEL_FOR_LOOP
     // Index level dependent transpose
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     template<int Index,class vobj>
-    inline auto transposeIndex(const Lattice<vobj> &lhs)
-      -> Lattice<decltype(transposeIndex<Index>(lhs._odata[0]))>
+    inline auto transposeIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(transposeIndex<Index>(lhs._odata[0]))>
     {
       Lattice<decltype(transposeIndex<Index>(lhs._odata[0]))> ret(lhs._grid);
 PARALLEL_FOR_LOOP
