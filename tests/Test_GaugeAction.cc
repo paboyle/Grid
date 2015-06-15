@@ -7,6 +7,26 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
+
+/* For Metropolis */
+class Metropolis {
+public:
+  GridSerialRNG & sRNG;
+  Metropolis(GridSerialRNG & _sRNG) : sRNG(_sRNG) {};
+  bool AcceptReject(const RealD Delta)
+  {
+    RealD rand;
+
+    if(Delta <=0.0) return true;
+
+    random(sRNG,rand);
+    if(rand <= exp(-Delta))
+      return true;
+    else 
+      return false;
+  }
+};
+
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
