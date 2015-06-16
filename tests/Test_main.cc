@@ -248,7 +248,7 @@ int main (int argc, char ** argv)
     
 
     { // Peek-ology and Poke-ology, with a little app-ology
-      TComplex      c;
+      Complex      c;
       ColourMatrix c_m;   
       SpinMatrix   s_m;   
       SpinColourMatrix sc_m; 
@@ -302,10 +302,12 @@ int main (int argc, char ** argv)
       LatticeInteger coor(&Fine);
       LatticeCoordinate(coor,d);
       lex = lex + coor*mm[d];
+      
     }
 
     Bar = zero;
-    Bar = where(lex<10,Foo,Bar);
+    Bar = where(lex<Integer(10),Foo,Bar);
+    cout << "peeking sites..\n";
     {
       std::vector<int> coor(4);
       for(coor[3]=0;coor[3]<latt_size[3]/mpi_layout[3];coor[3]++){
@@ -473,7 +475,8 @@ int main (int argc, char ** argv)
         mdiff = shifted1-shifted2;
         amdiff=adj(mdiff);
         ColourMatrix prod = amdiff*mdiff;
-        Real Ttr=real(trace(prod));
+	Complex trprod = trace(prod);
+        Real Ttr=real(trprod);
         double nn=Ttr;
         if ( nn > 0 )
             cout<<"Shift real trace fail "<<coor[0]<<coor[1]<<coor[2]<<coor[3] <<endl;

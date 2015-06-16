@@ -4,7 +4,7 @@
 
   Using intrinsics
 */
-// Time-stamp: <2015-06-09 14:24:01 neo>
+// Time-stamp: <2015-06-16 23:27:54 neo>
 //----------------------------------------------------------------------
 
 #include <pmmintrin.h>
@@ -97,7 +97,7 @@ namespace Optimization {
     }
     // Integer
     inline __m128i operator()(Integer *a){
-      return _mm_set_epi32(a[0],a[1],a[2],a[3]);
+      return _mm_set_epi32(a[3],a[2],a[1],a[0]);
     }
 
 
@@ -181,7 +181,7 @@ namespace Optimization {
     }
     // Integer
     inline __m128i operator()(__m128i a, __m128i b){
-      return _mm_mul_epi32(a,b);
+      return _mm_mullo_epi32(a,b);
     }
   };
 

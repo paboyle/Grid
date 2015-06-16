@@ -100,7 +100,8 @@ int main (int argc, char ** argv)
 	  
 	  double nrm = abs(scm-cm()()());
 	  std::vector<int> peer(4);
-	  int index=real(cm);
+	  Complex ctmp = cm;
+	  Integer index=real(ctmp);
 	  Fine.CoorFromIndex(peer,index,latt_size);
 
 	  if (nrm > 0){
@@ -138,7 +139,8 @@ int main (int argc, char ** argv)
 	  
 	  nrm = abs(scm-cm()()());
 	  std::vector<int> peer(4);
-	  int index=real(cm);
+	  Complex ctmp=cm;
+	  Integer index=real(ctmp);
 	  Fine.CoorFromIndex(peer,index,latt_size);
 
 	  if (nrm > 0){

@@ -8,13 +8,14 @@ namespace Grid {
 //                              and blow away the tensor structures.
 //
 template<class vobj,class iobj>
-inline void where(Lattice<vobj> &ret,const Lattice<iobj> &predicate,Lattice<vobj> &iftrue,Lattice<vobj> &iffalse)
+inline void whereWolf(Lattice<vobj> &ret,const Lattice<iobj> &predicate,Lattice<vobj> &iftrue,Lattice<vobj> &iffalse)
 {
   conformable(iftrue,iffalse);
   conformable(iftrue,predicate);
   conformable(iftrue,ret);
 
   GridBase *grid=iftrue._grid;
+
   typedef typename vobj::scalar_object scalar_object;
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
@@ -43,7 +44,7 @@ PARALLEL_FOR_LOOP
 }
 
 template<class vobj,class iobj>
-inline Lattice<vobj> where(const Lattice<iobj> &predicate,Lattice<vobj> &iftrue,Lattice<vobj> &iffalse)
+inline Lattice<vobj> whereWolf(const Lattice<iobj> &predicate,Lattice<vobj> &iftrue,Lattice<vobj> &iffalse)
 {
   conformable(iftrue,iffalse);
   conformable(iftrue,predicate);

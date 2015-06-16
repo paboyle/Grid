@@ -10,7 +10,8 @@ namespace Grid {
       typedef typename sobj::scalar_type scalar;
       decltype(innerProduct(arg,arg)) nrm;
       nrm = innerProduct(arg,arg);
-      return real(nrm);
+      RealD ret = real(nrm);
+      return ret;
     }
 
     template<class l,class r,int N> inline

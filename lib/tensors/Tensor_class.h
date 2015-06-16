@@ -23,12 +23,16 @@ template<class vtype> class iScalar
 public:
   vtype _internal;
 
-  typedef typename GridTypeMapper<vtype>::scalar_type   scalar_type;
+  typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
   typedef iScalar<tensor_reduced_v> tensor_reduced;
   typedef typename GridTypeMapper<vtype>::scalar_object recurse_scalar_object;
   typedef iScalar<recurse_scalar_object> scalar_object;
+
+  // substitutes a real or complex version with same tensor structure
+  typedef iScalar<typename GridTypeMapper<vtype>::Complexified > Complexified;
+  typedef iScalar<typename GridTypeMapper<vtype>::Realified >    Realified;
 
   enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1};
 
@@ -86,9 +90,19 @@ public:
   strong_inline const vtype & operator ()(void) const {
     return _internal;
   }
-  
-  operator ComplexD () const { return(TensorRemove(_internal)); };
-  operator RealD () const { return(real(TensorRemove(_internal))); }
+
+  // Type casts meta programmed
+  template<class U=vtype,class V=scalar_type,IfComplex<V> = 0,IfNotSimd<U> = 0>  
+    operator ComplexF () const { return(TensorRemove(_internal)); };
+  template<class U=vtype,class V=scalar_type,IfComplex<V> = 0,IfNotSimd<U> = 0>  
+    operator ComplexD () const { return(TensorRemove(_internal)); };
+  template<class U=vtype,class V=scalar_type,IfComplex<V> = 0,IfNotSimd<U> = 0>  
+    operator RealD () const { return(real(TensorRemove(_internal))); }
+  template<class U=vtype,class V=scalar_type,IfReal<V>    = 0,IfNotSimd<U> = 0>  
+    operator RealD    () const { return TensorRemove(_internal); }
+  template<class U=vtype,class V=scalar_type,IfInteger<V> = 0,IfNotSimd<U> = 0>  
+    operator Integer  () const { return Integer(TensorRemove(_internal)); }
+
   
   // convert from a something to a scalar via constructor of something arg
   template<class T,typename std::enable_if<!isGridTensor<T>::value, T>::type* = nullptr > strong_inline iScalar<vtype> operator = (T arg)
@@ -122,6 +136,10 @@ public:
   typedef typename GridTypeMapper<vtype>::scalar_object recurse_scalar_object;
   typedef iScalar<tensor_reduced_v> tensor_reduced;
   typedef iVector<recurse_scalar_object,N> scalar_object;
+
+  // substitutes a real or complex version with same tensor structure
+  typedef iVector<typename GridTypeMapper<vtype>::Complexified,N > Complexified;
+  typedef iVector<typename GridTypeMapper<vtype>::Realified,N >    Realified;
 
   template<class T,typename std::enable_if<!isGridTensor<T>::value, T>::type* = nullptr > strong_inline auto operator = (T arg) -> iVector<vtype,N>
     { 
@@ -211,6 +229,12 @@ public:
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
   typedef typename GridTypeMapper<vtype>::scalar_object recurse_scalar_object;
+
+  // substitutes a real or complex version with same tensor structure
+  typedef iMatrix<typename GridTypeMapper<vtype>::Complexified,N > Complexified;
+  typedef iMatrix<typename GridTypeMapper<vtype>::Realified,N >    Realified;
+
+  // Tensure removal
   typedef iScalar<tensor_reduced_v> tensor_reduced;
   typedef iMatrix<recurse_scalar_object,N> scalar_object;
 
