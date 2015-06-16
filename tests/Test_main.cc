@@ -1,9 +1,5 @@
 #include "Grid.h"
 
-//DEBUG
-#ifdef SSE4
-#include "simd/Grid_vector_types.h"
-#endif
 
 using namespace std;
 using namespace Grid;
@@ -225,12 +221,17 @@ int main (int argc, char ** argv)
 
     cm = ProjectOnGroup(cm);
     std::cout << cm << "  " << std::endl;
+    cm = ProjectOnGroup(cm);
+    std::cout << cm << "  " << std::endl;
+
 
     TComplex det = Determinant(cm);
     
     std::cout << "determinant: " << det <<  std::endl;
     cm = Exponentiate(cm, 1.0, 10);
     std::cout << cm << "  " << std::endl;
+    det = Determinant(cm);
+    std::cout << "determinant: " << det <<  std::endl;
 
 
 //    Foo = Foo+scalar; // LatticeColourMatrix+Scalar
