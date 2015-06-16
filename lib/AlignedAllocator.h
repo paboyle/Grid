@@ -49,9 +49,9 @@ public:
 
   void deallocate(pointer __p, size_type) { 
 #ifdef HAVE_MM_MALLOC_H
-    _mm_free(__p); 
+    _mm_free((void *)__p); 
 #else
-    free(__p);
+    free((void *)__p);
 #endif
   }
   void construct(pointer __p, const _Tp& __val) { };
