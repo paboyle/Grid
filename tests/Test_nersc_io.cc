@@ -12,7 +12,7 @@ int main (int argc, char ** argv)
 
   std::vector<int> simd_layout = GridDefaultSimd(4,vComplexF::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
-  std::vector<int> latt_size   = GridDefaultLatt();
+  std::vector<int> latt_size  ({16,16,16,32});
   std::vector<int> clatt_size  ({4,4,4,8});
   int orthodir=3;
   int orthosz =latt_size[orthodir];
@@ -21,6 +21,8 @@ int main (int argc, char ** argv)
   GridCartesian     Coarse(clatt_size,simd_layout,mpi_layout);
 
   LatticeGaugeField Umu(&Fine);
+  LatticeGaugeField Umu_diff(&Fine);
+  LatticeGaugeField Umu_saved(&Fine);
 
   std::vector<LatticeColourMatrix> U(4,&Fine);
   
@@ -71,6 +73,7 @@ int main (int argc, char ** argv)
     Complex Pt = TensorRemove(Plaq_T_sum);
     std::cout << "total " <<Pt*PlaqScale<<std::endl;
   }  
+
 
   TComplex Tp = sum(Plaq);
   Complex p  = TensorRemove(Tp);
