@@ -250,6 +250,7 @@ namespace QCD {
     //////////////////////////////////////////////////////////////////////////////
     // Peek and Poke named after physics attributes
     //////////////////////////////////////////////////////////////////////////////
+
     //spin
     template<class vobj> auto peekSpin(const vobj &rhs,int i) -> decltype(peekIndex<SpinIndex>(rhs,0))
     {
@@ -289,20 +290,117 @@ namespace QCD {
     {
       return peekIndex<LorentzIndex>(rhs,i);
     }
-    template<class vobj> auto peekLorentz(const vobj &rhs,int i,int j) -> decltype(peekIndex<LorentzIndex>(rhs,0,0))
-    {
-      return peekIndex<LorentzIndex>(rhs,i,j);
-    }
     template<class vobj> auto peekLorentz(const Lattice<vobj> &rhs,int i) -> decltype(peekIndex<LorentzIndex>(rhs,0))
     {
       return peekIndex<LorentzIndex>(rhs,i);
     }
-    template<class vobj> auto peekLorentz(const Lattice<vobj> &rhs,int i,int j) -> decltype(peekIndex<LorentzIndex>(rhs,0,0))
+
+    //////////////////////////////////////////////
+    // Poke lattice
+    //////////////////////////////////////////////
+    template<class vobj> 
+      void pokeColour(Lattice<vobj> &lhs,
+		      const Lattice<decltype(peekIndex<ColourIndex>(lhs._odata[0],0))> & rhs,
+		      int i)
     {
-      return peekIndex<LorentzIndex>(rhs,i,j);
+      pokeIndex<ColourIndex>(lhs,rhs,i);
+    }
+    template<class vobj> 
+      void pokeColour(Lattice<vobj> &lhs,
+		      const Lattice<decltype(peekIndex<ColourIndex>(lhs._odata[0],0,0))> & rhs,
+		      int i,int j)
+    {
+      pokeIndex<ColourIndex>(lhs,rhs,i,j);
+    }
+    template<class vobj> 
+      void pokeSpin(Lattice<vobj> &lhs,
+		      const Lattice<decltype(peekIndex<SpinIndex>(lhs._odata[0],0))> & rhs,
+		      int i)
+    {
+      pokeIndex<SpinIndex>(lhs,rhs,i);
+    }
+    template<class vobj> 
+      void pokeSpin(Lattice<vobj> &lhs,
+		      const Lattice<decltype(peekIndex<SpinIndex>(lhs._odata[0],0,0))> & rhs,
+		      int i,int j)
+    {
+      pokeIndex<SpinIndex>(lhs,rhs,i,j);
+    }
+    template<class vobj> 
+      void pokeLorentz(Lattice<vobj> &lhs,
+		      const Lattice<decltype(peekIndex<LorentzIndex>(lhs._odata[0],0))> & rhs,
+		      int i)
+    {
+      pokeIndex<LorentzIndex>(lhs,rhs,i);
     }
 
-    // FIXME transpose Colour, transpose Spin, traceColour traceSpin
+    //////////////////////////////////////////////
+    // Poke scalars
+    //////////////////////////////////////////////
+
+    template<class vobj> void pokeSpin(vobj &lhs,const decltype(peekIndex<SpinIndex>(lhs,0)) & rhs,int i)
+    {
+      pokeIndex<SpinIndex>(lhs,rhs,i);
+    }
+    template<class vobj> void pokeSpin(vobj &lhs,const decltype(peekIndex<SpinIndex>(lhs,0,0)) & rhs,int i,int j)
+    {
+      pokeIndex<SpinIndex>(lhs,rhs,i,j);
+    }
+
+    template<class vobj> void pokeColour(vobj &lhs,const decltype(peekIndex<ColourIndex>(lhs,0)) & rhs,int i)
+    {
+      pokeIndex<ColourIndex>(lhs,rhs,i);
+    }
+    template<class vobj> void pokeColour(vobj &lhs,const decltype(peekIndex<ColourIndex>(lhs,0,0)) & rhs,int i,int j)
+    {
+      pokeIndex<ColourIndex>(lhs,rhs,i,j);
+    }
+
+    template<class vobj> void pokeLorentz(vobj &lhs,const decltype(peekIndex<LorentzIndex>(lhs,0)) & rhs,int i)
+    {
+      pokeIndex<LorentzIndex>(lhs,rhs,i);
+    }
+
+
+    //////////////////////////////////////////////
+    // transpose array and scalar
+    //////////////////////////////////////////////
+    template<int Index,class vobj> inline Lattice<vobj> transposeSpin(const Lattice<vobj> &lhs){
+      return transposeIndex<SpinIndex>(lhs);
+    }
+    template<int Index,class vobj> inline Lattice<vobj> transposeColour(const Lattice<vobj> &lhs){
+      return transposeIndex<ColourIndex>(lhs);
+    }
+    template<int Index,class vobj> inline vobj transposeSpin(const vobj &lhs){
+      return transposeIndex<SpinIndex>(lhs);
+    }
+    template<int Index,class vobj> inline vobj transposeColour(const vobj &lhs){
+      return transposeIndex<ColourIndex>(lhs);
+    }
+
+    //////////////////////////////////////////
+    // Trace lattice and non-lattice
+    //////////////////////////////////////////
+    template<int Index,class vobj>
+    inline auto traceSpin(const Lattice<vobj> &lhs) -> Lattice<decltype(traceIndex<SpinIndex>(lhs._odata[0]))>
+    {
+      return traceIndex<SpinIndex>(lhs);
+    }
+    template<int Index,class vobj>
+    inline auto traceColour(const Lattice<vobj> &lhs) -> Lattice<decltype(traceIndex<ColourIndex>(lhs._odata[0]))>
+    {
+      return traceIndex<ColourIndex>(lhs);
+    }
+    template<int Index,class vobj>
+    inline auto traceSpin(const vobj &lhs) -> Lattice<decltype(traceIndex<SpinIndex>(lhs))>
+    {
+      return traceIndex<SpinIndex>(lhs);
+    }
+    template<int Index,class vobj>
+    inline auto traceColour(const vobj &lhs) -> Lattice<decltype(traceIndex<ColourIndex>(lhs))>
+    {
+      return traceIndex<ColourIndex>(lhs);
+    }
 
 }   //namespace QCD
 } // Grid

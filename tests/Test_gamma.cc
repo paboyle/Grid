@@ -95,7 +95,7 @@ int main (int argc, char ** argv)
   for(int mu=0;mu<6;mu++){
     result =  Gamma(g[mu])* ident * Gamma(g[mu]);
     result = result - ident;
-    double mag = TensorRemove(norm2(result));
+    RealD mag = norm2(result);
     std::cout << list[mu]<<" " << mag<<std::endl;
   }
 
@@ -103,7 +103,7 @@ int main (int argc, char ** argv)
   for(int mu=0;mu<6;mu++){
     result =          rnd * Gamma(g[mu]);
     result = result + rnd * Gamma(g[mu+6]);
-    double mag = TensorRemove(norm2(result));
+    RealD mag = norm2(result);
     std::cout << list[mu]<<" " << mag<<std::endl;
   }
 
@@ -111,7 +111,7 @@ int main (int argc, char ** argv)
   for(int mu=0;mu<6;mu++){
     result =           Gamma(g[mu])  *rnd;
     result = result +  Gamma(g[mu+6])*rnd;
-    double mag = TensorRemove(norm2(result));
+    RealD mag = norm2(result);
     std::cout << list[mu]<<" " << mag<<std::endl;
   }
 
