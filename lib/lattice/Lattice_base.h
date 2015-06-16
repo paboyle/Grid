@@ -158,7 +158,7 @@ PARALLEL_FOR_LOOP
       vobj tmp = eval(ss,expr);
       vstream(_odata[ss] ,tmp);
 #else
-      _odata[ss]=_eval(ss,expr);
+      _odata[ss]=eval(ss,expr);
 #endif
     }
   };
@@ -196,7 +196,7 @@ PARALLEL_FOR_LOOP
     _odata.resize(_grid->oSites());
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<_grid->oSites();ss++){
-      _odata[ss]=eval(ss,expr);
+      vstream(_odata[ss] ,eval(ss,expr));
     }
   };
 
