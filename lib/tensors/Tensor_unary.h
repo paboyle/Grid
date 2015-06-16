@@ -2,7 +2,7 @@
 #define GRID_TENSOR_UNARY_H
 namespace Grid {
 
-#define UNARY_REAL(func)\
+#define UNARY(func)\
 template<class obj> inline auto func(const iScalar<obj> &z) -> iScalar<obj>\
 {\
     iScalar<obj> ret;\
@@ -53,13 +53,70 @@ template<class obj> inline iScalar<obj> func(const iScalar<obj> &z,scal y)	\
     return ret;\
 }
 
-UNARY_REAL(sqrt);
-UNARY_REAL(rsqrt);
-UNARY_REAL(sin);
-UNARY_REAL(cos);
+UNARY(sqrt);
+UNARY(rsqrt);
+UNARY(sin);
+UNARY(cos);
+UNARY(log);
+UNARY(exp);
+UNARY(abs);
+UNARY(Not);
+
+
+template<class obj> inline auto toReal(const iScalar<obj> &z) -> typename iScalar<obj>::Realified
+{
+  typename iScalar<obj>::Realified ret;
+  ret._internal = toReal(z._internal);
+  return ret;
+}
+ template<class obj,int N> inline auto toReal(const iVector<obj,N> &z) -> typename iVector<obj,N>::Realified
+{
+  typename iVector<obj,N>::Realified ret;
+  for(int c1=0;c1<N;c1++){  
+    ret._internal[c1] = toReal(z._internal[c1]); 
+  }
+  return ret;
+}
+template<class obj,int N> inline auto toReal(const iMatrix<obj,N> &z) -> typename iMatrix<obj,N>::Realified
+{
+  typename iMatrix<obj,N>::Realified ret;
+  for(int c1=0;c1<N;c1++){
+  for(int c2=0;c2<N;c2++){
+    ret._internal[c1][c2] = toReal(z._internal[c1][c2]);
+  }}
+  return ret;
+}
+
+template<class obj> inline auto toComplex(const iScalar<obj> &z) -> typename iScalar<obj>::Complexified
+{
+  typename iScalar<obj>::Complexified ret;
+  ret._internal = toComplex(z._internal);
+  return ret;
+}
+ template<class obj,int N> inline auto toComplex(const iVector<obj,N> &z) -> typename iVector<obj,N>::Complexified
+{
+  typename iVector<obj,N>::Complexified ret;
+  for(int c1=0;c1<N;c1++){  
+    ret._internal[c1] = toComplex(z._internal[c1]); 
+  }
+  return ret;
+}
+template<class obj,int N> inline auto toComplex(const iMatrix<obj,N> &z) -> typename iMatrix<obj,N>::Complexified
+{
+  typename iMatrix<obj,N>::Complexified ret;
+  for(int c1=0;c1<N;c1++){
+  for(int c2=0;c2<N;c2++){
+    ret._internal[c1][c2] = toComplex(z._internal[c1][c2]);
+  }}
+  return ret;
+}
+
 
 BINARY_RSCALAR(mod,Integer);
 BINARY_RSCALAR(pow,RealD);
+
+#undef UNARY
+#undef BINARY_RSCALAR
 
 
 }

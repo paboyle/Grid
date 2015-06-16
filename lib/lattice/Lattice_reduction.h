@@ -51,6 +51,31 @@ PARALLEL_FOR_LOOP
       return nrm;
     }
 
+    template<class Op,class T1>
+      inline auto sum(const LatticeUnaryExpression<Op,T1> & expr)
+      ->typename decltype(expr.first.func(eval(0,std::get<0>(expr.second))))::scalar_object
+    {
+      return sum(closure(expr));
+    }
+
+    template<class Op,class T1,class T2>
+      inline auto sum(const LatticeBinaryExpression<Op,T1,T2> & expr)
+      ->typename decltype(expr.first.func(eval(0,std::get<0>(expr.second)),eval(0,std::get<1>(expr.second))))::scalar_object
+    {
+      return sum(closure(expr));
+    }
+
+
+    template<class Op,class T1,class T2,class T3>
+      inline auto sum(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr)
+      ->typename decltype(expr.first.func(eval(0,std::get<0>(expr.second)),
+				 eval(0,std::get<1>(expr.second)),
+				 eval(0,std::get<2>(expr.second))
+				 ))::scalar_object
+    {
+      return sum(closure(expr));
+    }
+
     template<class vobj>
     inline typename vobj::scalar_object sum(const Lattice<vobj> &arg){
 

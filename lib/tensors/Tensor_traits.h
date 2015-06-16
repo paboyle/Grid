@@ -26,6 +26,8 @@ namespace Grid {
     typedef typename T::vector_type vector_type;
     typedef typename T::tensor_reduced tensor_reduced;
     typedef typename T::scalar_object scalar_object;
+    typedef typename T::Complexified Complexified;
+    typedef typename T::Realified Realified;
     enum { TensorLevel = T::TensorLevel };
   };
 
@@ -38,6 +40,8 @@ namespace Grid {
     typedef RealF vector_type;
     typedef RealF tensor_reduced ;
     typedef RealF scalar_object;
+    typedef ComplexF Complexified;
+    typedef RealF Realified;
     enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<RealD> {
@@ -46,6 +50,8 @@ namespace Grid {
     typedef RealD vector_type;
     typedef RealD tensor_reduced;
     typedef RealD scalar_object;
+    typedef ComplexD Complexified;
+    typedef RealD Realified;
     enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<ComplexF> {
@@ -54,6 +60,8 @@ namespace Grid {
     typedef ComplexF vector_type;
     typedef ComplexF tensor_reduced;
     typedef ComplexF scalar_object;
+    typedef ComplexF Complexified;
+    typedef RealF Realified;
     enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<ComplexD> {
@@ -62,6 +70,8 @@ namespace Grid {
     typedef ComplexD vector_type;
     typedef ComplexD tensor_reduced;
     typedef ComplexD scalar_object;
+    typedef ComplexD Complexified;
+    typedef RealD Realified;
     enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<Integer> {
@@ -70,6 +80,8 @@ namespace Grid {
     typedef Integer vector_type;
     typedef Integer tensor_reduced;
     typedef Integer scalar_object;
+    typedef void Complexified;
+    typedef void Realified;
     enum { TensorLevel = 0 };
   };
 
@@ -79,6 +91,8 @@ namespace Grid {
     typedef vRealF vector_type;
     typedef vRealF tensor_reduced;
     typedef RealF  scalar_object;
+    typedef vComplexF Complexified;
+    typedef vRealF Realified;
     enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<vRealD> {
@@ -87,6 +101,8 @@ namespace Grid {
     typedef vRealD vector_type;
     typedef vRealD tensor_reduced;
     typedef RealD  scalar_object;
+    typedef vComplexD Complexified;
+    typedef vRealD Realified;
     enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<vComplexF> {
@@ -95,6 +111,8 @@ namespace Grid {
     typedef vComplexF vector_type;
     typedef vComplexF tensor_reduced;
     typedef ComplexF  scalar_object;
+    typedef vComplexF Complexified;
+    typedef vRealF Realified;
     enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<vComplexD> {
@@ -103,6 +121,8 @@ namespace Grid {
     typedef vComplexD vector_type;
     typedef vComplexD tensor_reduced;
     typedef ComplexD  scalar_object;
+    typedef vComplexD Complexified;
+    typedef vRealD Realified;
     enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<vInteger> {
@@ -111,6 +131,8 @@ namespace Grid {
     typedef vInteger vector_type;
     typedef vInteger tensor_reduced;
     typedef  Integer scalar_object;
+    typedef void Complexified;
+    typedef void Realified;
     enum { TensorLevel = 0 };
   };
 

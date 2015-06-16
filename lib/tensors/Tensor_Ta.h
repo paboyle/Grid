@@ -102,10 +102,10 @@ namespace Grid {
     }
 
   template<class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr> 
-    inline auto Determinant(const iMatrix<vtype,N> &arg)-> iScalar<decltype(Determinant(arg._internal[0][0]))>
+    inline iScalar<vtype> Determinant(const iMatrix<vtype,N> &arg)
     {
       iMatrix<vtype,N> ret(arg);
-      iScalar<decltype(Determinant(arg._internal[0][0]))> det = 1.0;
+      iScalar<vtype> det = vtype(1.0);
       /* Conversion of matrix to upper triangular */
       for(int i = 0; i < N; i++){
         for(int j = 0; j < N; j++){
