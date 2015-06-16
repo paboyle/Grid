@@ -30,6 +30,7 @@ public:
   static void sitePlaquette(LatticeComplex &Plaq,const std::vector<GaugeMat> &U)
   {
     LatticeComplex sitePlaq(U[0]._grid);
+    Plaq=zero;
     for(int mu=1;mu<Nd;mu++){
       for(int nu=0;nu<mu;nu++){
 	traceDirPlaquette(sitePlaq,U,mu,nu);
@@ -42,6 +43,7 @@ public:
   //////////////////////////////////////////////////
   static RealD sumPlaquette(const GaugeLorentz &Umu){
     std::vector<GaugeMat> U(4,Umu._grid);
+
     for(int mu=0;mu<Nd;mu++){
       U[mu] = peekIndex<LorentzIndex>(Umu,mu);
     }
@@ -72,13 +74,15 @@ public:
   //////////////////////////////////////////////////
   static void Staple(GaugeMat &staple,const GaugeLorentz &Umu,int mu){
 
-    std::vector<GaugeMat> U(4,Umu._grid);
+    GridBase *grid = Umu._grid;
+
+    std::vector<GaugeMat> U(4,grid);
     for(int d=0;d<Nd;d++){
       U[d] = peekIndex<LorentzIndex>(Umu,d);
     }
 
     staple = zero;
-    GaugeMat tmp(U[0]._grid);
+    GaugeMat tmp(grid);
 
     for(int nu=0;nu<Nd;nu++){
 
