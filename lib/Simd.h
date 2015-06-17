@@ -46,6 +46,18 @@ namespace Grid {
   inline ComplexF innerProduct(const ComplexF & l, const ComplexF & r) { return conjugate(l)*r; }
   inline RealD innerProduct(const RealD & l, const RealD & r) { return l*r; }
   inline RealF innerProduct(const RealF & l, const RealF & r) { return l*r; }
+
+  inline ComplexD Reduce(const ComplexD& r){ return r; }
+  inline ComplexF Reduce(const ComplexF& r){ return r; }
+  inline RealD Reduce(const RealD& r){ return r; }
+  inline RealF Reduce(const RealF& r){ return r; }
+
+  inline RealD toReal(const ComplexD& r){ return real(r); }
+  inline RealF toReal(const ComplexF& r){ return real(r); }
+  inline RealD toReal(const RealD& r){ return r; }
+  inline RealF toReal(const RealF& r){ return r; }
+
+  
   
   ////////////////////////////////////////////////////////////////////////////////
   //Provide support functions for basic real and complex data types required by Grid
