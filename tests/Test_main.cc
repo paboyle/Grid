@@ -215,21 +215,21 @@ int main (int argc, char ** argv)
     random(SerialRNG, cm);
     std::cout << cm << std::endl;
 
-    //cm = Ta(cm);
-    //TComplex tracecm= trace(cm);      
-    //std::cout << cm << std::endl;
+    cm = Ta(cm);
+    TComplex tracecm= trace(cm);      
+    std::cout << cm << std::endl;
 
-    cm = ProjectOnGroup(cm);
+
+    cm = Exponentiate(cm, 1.0, 12);
     std::cout << cm << "  " << std::endl;
-    cm = ProjectOnGroup(cm);
-    std::cout << cm << "  " << std::endl;
-
-
-    TComplex det = Determinant(cm);
-    
+    Complex det = Determinant(cm);
     std::cout << "determinant: " << det <<  std::endl;
-    cm = Exponentiate(cm, 1.0, 10);
+
+    cm = ProjectOnGroup(cm);
     std::cout << cm << "  " << std::endl;
+    cm = ProjectOnGroup(cm);
+    std::cout << cm << "  " << std::endl;
+
     det = Determinant(cm);
     std::cout << "determinant: " << det <<  std::endl;
 
@@ -243,6 +243,9 @@ int main (int argc, char ** argv)
     
     LatticeComplex trscMat(&Fine);
     trscMat = trace(scMat); // Trace
+
+    // Exponentiate test
+    cMat = expMat(cMat, ComplexD(1.0, 0.0));
 
     // LatticeComplex trlcMat(&Fine);
     // trlcMat = trace(lcMat); // Trace involving iVector - now generates error
