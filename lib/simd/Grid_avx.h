@@ -4,7 +4,7 @@
 
   Using intrinsics
 */
-// Time-stamp: <2015-06-09 14:26:59 neo>
+// Time-stamp: <2015-06-16 23:30:41 neo>
 //----------------------------------------------------------------------
 
 #include <immintrin.h>
@@ -248,7 +248,7 @@ namespace Optimization {
       return _mm256_set_m128i(a1,a0);
 #endif
 #if defined (AVX2)
-      return _mm256_mul_epi32(a,b);
+      return _mm256_mullo_epi32(a,b);
 #endif
 
     }
