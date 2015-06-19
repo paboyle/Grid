@@ -1,9 +1,5 @@
 #include "Grid.h"
 
-//DEBUG
-#ifdef SSE4
-#include "simd/Grid_vector_types.h"
-#endif
 
 using namespace std;
 using namespace Grid;
@@ -216,16 +212,27 @@ int main (int argc, char ** argv)
     scm=transposeIndex<1>(scm);
     
    
-    //random(SerialRNG, cm);
-    //std::cout << cm << std::endl;
+    random(SerialRNG, cm);
+    std::cout << cm << std::endl;
 
     cm = Ta(cm);
-    //TComplex tracecm= trace(cm);      
-    //std::cout << cm << "  "<< tracecm << std::endl;
+    TComplex tracecm= trace(cm);      
+    std::cout << cm << std::endl;
+
+
+    cm = Exponentiate(cm, 1.0, 12);
+    std::cout << cm << "  " << std::endl;
+    Complex det = Determinant(cm);
+    std::cout << "determinant: " << det <<  std::endl;
 
     cm = ProjectOnGroup(cm);
+    std::cout << cm << "  " << std::endl;
+    cm = ProjectOnGroup(cm);
+    std::cout << cm << "  " << std::endl;
 
-    cm = Exponentiate(cm, 1.0, 10);
+    det = Determinant(cm);
+    std::cout << "determinant: " << det <<  std::endl;
+
 
 //    Foo = Foo+scalar; // LatticeColourMatrix+Scalar
 //    Foo = Foo*scalar; // LatticeColourMatrix*Scalar
@@ -236,6 +243,9 @@ int main (int argc, char ** argv)
     
     LatticeComplex trscMat(&Fine);
     trscMat = trace(scMat); // Trace
+
+    // Exponentiate test
+    cMat = expMat(cMat, ComplexD(1.0, 0.0));
 
     // LatticeComplex trlcMat(&Fine);
     // trlcMat = trace(lcMat); // Trace involving iVector - now generates error
@@ -296,10 +306,12 @@ int main (int argc, char ** argv)
       LatticeInteger coor(&Fine);
       LatticeCoordinate(coor,d);
       lex = lex + coor*mm[d];
+      
     }
 
     Bar = zero;
     Bar = where(lex<Integer(10),Foo,Bar);
+    cout << "peeking sites..\n";
     {
       std::vector<int> coor(4);
       for(coor[3]=0;coor[3]<latt_size[3]/mpi_layout[3];coor[3]++){
