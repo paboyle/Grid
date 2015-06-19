@@ -100,7 +100,7 @@ namespace Grid {
   }
   template < class S, class V > 
   inline Grid_simd<S,V> sin(const Grid_simd<S,V> &r) {
-    return SimdApply(CosRealFunctor<S>(),r);
+    return SimdApply(SinRealFunctor<S>(),r);
   }
   template < class S, class V > 
   inline Grid_simd<S,V> log(const Grid_simd<S,V> &r) {

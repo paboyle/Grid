@@ -1,5 +1,7 @@
 #ifndef GRID_MATH_TA_H
 #define GRID_MATH_TA_H
+
+
 namespace Grid {
 
   /////////////////////////////////////////////// 
@@ -36,7 +38,8 @@ namespace Grid {
 
 
   /////////////////////////////////////////////// 
-  // ProjectOnGroup function for scalar, vector, matrix
+  // ProjectOnGroup function for scalar, vector, matrix 
+  // Projects on orthogonal, unitary group
   /////////////////////////////////////////////// 
 
 
@@ -59,19 +62,22 @@ namespace Grid {
     {
       // need a check for the group type?
       iMatrix<vtype,N> ret(arg);
-      double nrm;
+      RealD nrm;
+      vtype inner;
       for(int c1=0;c1<N;c1++){
-	nrm = 0.0; 
+	zeroit(inner);	
 	for(int c2=0;c2<N;c2++)
-	  nrm = real(innerProduct(ret._internal[c1][c2],ret._internal[c1][c2]));
-	nrm = 1.0/sqrt(nrm);
+	  inner += innerProduct(ret._internal[c1][c2],ret._internal[c1][c2]);
+
+	nrm = 1.0/sqrt(Reduce(toReal(inner)));
 	for(int c2=0;c2<N;c2++)
 	  ret._internal[c1][c2]*= nrm;
       
 	for (int b=c1+1; b<N; ++b){
-	  decltype(ret._internal[b][b]*ret._internal[b][b]) pr = 0.0;
+	  decltype(ret._internal[b][b]*ret._internal[b][b]) pr;
+	  zeroit(pr);
 	  for(int c=0; c<N; ++c)
-	    pr += ret._internal[c1][c]*ret._internal[b][c];
+	    pr += conjugate(ret._internal[c1][c])*ret._internal[b][c];
 	  
 	  for(int c=0; c<N; ++c){
 	    ret._internal[b][c] -= pr * ret._internal[c1][c];
@@ -79,34 +85,8 @@ namespace Grid {
 	}
 	  
       }
+      // assuming the determinant is ok
       return ret;
-    }
-
-
-  /////////////////////////////////////////////// 
-  // Exponentiate function for scalar, vector, matrix
-  /////////////////////////////////////////////// 
-
-
-  template<class vtype> inline iScalar<vtype> Exponentiate(const iScalar<vtype>&r, double alpha,  int Nexp)
-    {
-      iScalar<vtype> ret;
-      ret._internal = Exponentiate(r._internal, alpha, Nexp);
-      return ret;
-    }
-
-
-  template<class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr> 
-    inline iMatrix<vtype,N> Exponentiate(const iMatrix<vtype,N> &arg, double alpha, int Nexp)
-    {
-      iMatrix<vtype,N> unit(1.0);
-      iMatrix<vtype,N> temp(unit);
-      
-      for(int i=Nexp; i>=1;--i){
-	temp *= alpha/double(i);
-	temp = unit + temp*arg;
-      }
-      return ProjectOnGroup(temp);
     }
 
 

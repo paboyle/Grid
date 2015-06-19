@@ -9,6 +9,8 @@
 #include <tensors/Tensor_transpose.h>
 #include <tensors/Tensor_trace.h>
 #include <tensors/Tensor_Ta.h>
+#include <tensors/Tensor_determinant.h>
+#include <tensors/Tensor_exp.h>
 #include <tensors/Tensor_peek.h>
 #include <tensors/Tensor_poke.h>
 #include <tensors/Tensor_reality.h>

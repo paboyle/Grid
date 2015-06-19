@@ -1,4 +1,3 @@
-
 #ifndef GRID_LATTICE_ET_H
 #define GRID_LATTICE_ET_H
 
