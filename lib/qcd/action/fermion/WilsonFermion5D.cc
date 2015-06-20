@@ -108,12 +108,11 @@ PARALLEL_FOR_LOOP
       DiracOpt::DhopDir(Stencil,Umu,comm_buf,sF,sU,in,out,dirdisp);
     }
   }
-
 };
 
 void WilsonFermion5D::DhopInternal(CartesianStencil & st, LebesgueOrder &lo,
 				   LatticeDoubledGaugeField & U,
-				   const LatticeFermion &in, LatticeFermion &out,int dag)
+			   const LatticeFermion &in, LatticeFermion &out,int dag)
 {
   assert((dag==DaggerNo) ||(dag==DaggerYes));
 
@@ -208,8 +207,7 @@ void WilsonFermion5D::DW(const LatticeFermion &in, LatticeFermion &out,int dag)
   Dhop(in,out,dag); // -0.5 is included
   axpy(out,4.0-M5,in,out);
 }
-}
-}
+}}
 
 
 
