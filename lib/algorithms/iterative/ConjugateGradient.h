@@ -15,7 +15,7 @@ public:
     Integer MaxIterations;
     int verbose;
     ConjugateGradient(RealD tol,Integer maxit) : Tolerance(tol), MaxIterations(maxit) { 
-      verbose=1;
+      verbose=0;
     };
 
 
@@ -58,7 +58,7 @@ public:
 	return;
       }
       
-      std::cout << std::setprecision(4)<< "ConjugateGradient: k=0 residual "<<cp<<" rsq"<<rsq<<std::endl;
+      if(verbose) std::cout << std::setprecision(4)<< "ConjugateGradient: k=0 residual "<<cp<<" rsq"<<rsq<<std::endl;
       
       int k;
       for (k=1;k<=MaxIterations;k++){
@@ -69,23 +69,29 @@ public:
 
 	RealD    qqck = norm2(mmp);
 	ComplexD dck  = innerProduct(p,mmp);
-	//	if (verbose) std::cout <<std::setprecision(4)<< "ConjugateGradient:  d,qq "<<d<< " "<<qq <<" qqcheck "<< qqck<< " dck "<< dck<<std::endl;
+	if (verbose) std::cout <<std::setprecision(4)<< "ConjugateGradient:  d,qq "<<d<< " "<<qq <<" qqcheck "<< qqck<< " dck "<< dck<<std::endl;
       
 	a      = c/d;
 	b_pred = a*(a*qq-d)/c;
 
 
-	//	if (verbose) std::cout <<std::setprecision(4)<< "ConjugateGradient:  a,bp "<<a<< " "<<b_pred <<std::endl;
+	if (verbose) std::cout <<std::setprecision(4)<< "ConjugateGradient:  a,bp "<<a<< " "<<b_pred <<std::endl;
 	cp = axpy_norm(r,-a,mmp,r);
 	b = cp/c;
-	//	std::cout <<std::setprecision(4)<< "ConjugateGradient:  cp,b "<<cp<< " "<<b <<std::endl;
+	if (verbose) std::cout <<std::setprecision(4)<< "ConjugateGradient:  cp,b "<<cp<< " "<<b <<std::endl;
 	
 	// Fuse these loops ; should be really easy
 	psi= a*p+psi;
 	p  = p*b+r;
 	  
 	if (verbose) std::cout<<"ConjugateGradient: Iteration " <<k<<" residual "<<cp<< " target"<< rsq<<std::endl;
-
+	
+	if (0) { 
+	  Field tmp(src._grid);
+	  Linop.HermOpAndNorm(psi,tmp,qqck,qqck);
+	  tmp=tmp-src;
+	  std::cout<<"ConjugateGradient: true   residual  is "<< norm2(tmp);
+	}
 	// Stopping condition
 	if ( cp <= rsq ) { 
 	  
@@ -98,9 +104,10 @@ public:
 	  RealD resnorm = sqrt(norm2(p));
 	  RealD true_residual = resnorm/srcnorm;
 
-	  std::cout<<"ConjugateGradient: Converged on iteration " <<k<<" residual "<<cp<< " target"<< rsq<<std::endl;
-	  std::cout<<"ConjugateGradient: true   residual  is "<<true_residual<<" sol "<<psinorm<<" src "<<srcnorm<<std::endl;
-	  std::cout<<"ConjugateGradient: target residual was "<<Tolerance<<std::endl;
+	  std::cout<<"ConjugateGradient: Converged on iteration " <<k
+		   <<" computed residual "<<sqrt(cp/ssq)
+		   <<" true residual     "<<true_residual
+		   <<" target "<<Tolerance<<std::endl;
 	  return;
 	}
       }

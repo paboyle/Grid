@@ -522,22 +522,66 @@ Note that in step D setting B ~ X - A and using B in place of A in step E will g
   }
 
   // reunitarise??
+  static void LieRandomize(GridParallelRNG     &pRNG,LatticeMatrix &out,double scale=1.0){
+    GridBase *grid = out._grid;
+    LatticeComplex ca (grid);
+    LatticeMatrix  lie(grid);
+    LatticeMatrix  la (grid);
+    Complex ci(0.0,scale);
+    Matrix ta;
+
+    lie=zero;
+    for(int a=0;a<generators();a++){
+
+      random(pRNG,ca); ca=real(ca)-0.5;
+      generator(a,ta);
+
+      la=ci*ca*ta;
+
+      lie = lie+la; // e^{i la ta}
+    }
+    taExp(lie,out);
+  }
+
+  static void HotConfiguration(GridParallelRNG &pRNG,LatticeGaugeField &out){
+    LatticeMatrix Umu(out._grid);
+    for(int mu=0;mu<Nd;mu++){
+      LieRandomize(pRNG,Umu,1.0);
+      pokeLorentz(out,Umu,mu);
+    }
+  }
+  static void TepidConfiguration(GridParallelRNG &pRNG,LatticeGaugeField &out){
+    LatticeMatrix Umu(out._grid);
+    for(int mu=0;mu<Nd;mu++){
+      LieRandomize(pRNG,Umu,0.01);
+      pokeLorentz(out,Umu,mu);
+    }
+  }
+  static void ColdConfiguration(GridParallelRNG &pRNG,LatticeGaugeField &out){
+    LatticeMatrix Umu(out._grid);
+    Umu=1.0;
+    for(int mu=0;mu<Nd;mu++){
+      pokeLorentz(out,Umu,mu);
+    }
+  }
 
   static void taProj( const LatticeMatrix &in,  LatticeMatrix &out){
     out = Ta(in);
   }
   static void taExp( const LatticeMatrix &x,  LatticeMatrix &ex){ 
-    LatticeMatrix xn   = x;
 
+    LatticeMatrix xn(x._grid);
     RealD nfac = 1.0;
-    ex = 1+x; // 1+x
+
+    xn = x;
+    ex =xn+Complex(1.0); // 1+x
 
     // Do a 12th order exponentiation
-    for(int i= 2; i <= 12; ++i)
+    for(int i=2; i <= 12; ++i)
     {
-      nfac = nfac/i; 
+      nfac = nfac/RealD(i); //1/2, 1/2.3 ...
       xn   = xn * x; // x2, x3,x4....
-      ex  += xn*nfac;// x2/2!, x3/3!....
+      ex   = ex+ xn*nfac;// x2/2!, x3/3!....
     }
   }
 
