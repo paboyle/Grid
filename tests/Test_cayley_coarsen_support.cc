@@ -83,20 +83,27 @@ int main (int argc, char ** argv)
   std::cout<<"Error "<<norm2(err)<<std::endl;
 
   const int nbasis = 2;
-  std::vector<LatticeFermion> subspace(nbasis,FGrid);
   LatticeFermion prom(FGrid);
 
-  for(int b=0;b<nbasis;b++){
-    random(RNG5,subspace[b]);
-  }
-  std::cout << "Computed randoms"<< std::endl;
+  std::vector<LatticeFermion> subspace(nbasis,FGrid);
+
+  std::cout<<"Calling Aggregation class" <<std::endl;
+
+  MdagMLinearOperator<DomainWallFermion,LatticeFermion> HermDefOp(Ddwf);
+  typedef Aggregation<vSpinColourVector,vTComplex,nbasis> Subspace;
+  Subspace Aggregates(Coarse5d,FGrid);
+  Aggregates.CreateSubspaceRandom(RNG5);
+
+  subspace=Aggregates.subspace;
+
+  std::cout << "Called aggregation class"<< std::endl;
 
   typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector CoarseVector;
 
   LittleDiracOperator LittleDiracOp(*Coarse5d);
 
-  LittleDiracOp.CoarsenOperator(FGrid,HermIndefOp,subspace);
+  LittleDiracOp.CoarsenOperator(FGrid,HermIndefOp,Aggregates);
   
   CoarseVector c_src (Coarse5d);
   CoarseVector c_res (Coarse5d);

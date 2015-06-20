@@ -1,4 +1,6 @@
 #include <Grid.h>
+#include <qcd/utils/WilsonLoops.h>
+#include <qcd/utils/SUn.h>
 
 using namespace std;
 using namespace Grid;
@@ -59,67 +61,100 @@ int main (int argc, char ** argv)
   LatticeFermion    ref(FGrid); ref=zero;
   LatticeFermion    tmp(FGrid);
   LatticeFermion    err(FGrid);
-  LatticeGaugeField Umu(UGrid); gaussian(RNG4,Umu);
+  LatticeGaugeField Umu(UGrid); 
 
 
+
+  //gaussian(RNG4,Umu);
   //random(RNG4,Umu);
-  NerscField header;
-  std::string file("./ckpoint_lat.4000");
-  readNerscConfiguration(Umu,header,file);
 
-  RealD mass=0.01;
-  RealD M5=1.8;
+  NerscField header;
+  std::string file("./ckpoint_lat.400");
+  readNerscConfiguration(Umu,header,file);
+  //  SU3::ColdConfiguration(RNG4,Umu);
+  //  SU3::TepidConfiguration(RNG4,Umu);
+  //  SU3::HotConfiguration(RNG4,Umu);
+  //  Umu=zero;
+
+#if 0
+  LatticeColourMatrix U(UGrid);
+  for(int nn=0;nn<Nd;nn++){
+    U=peekIndex<LorentzIndex>(Umu,nn);
+    U=U*adj(U)-1.0;
+    std::cout<<"SU3 test "<<norm2(U)<<std::endl;
+  }
+#endif  
+  RealD mass=0.1;
+  RealD M5=1.5;
 
   DomainWallFermion Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   Gamma5R5HermitianLinearOperator<DomainWallFermion,LatticeFermion> HermIndefOp(Ddwf);
 
   const int nbasis = 8;
+
+#if 0
   std::vector<LatticeFermion> subspace(nbasis,FGrid);
   LatticeFermion noise(FGrid);
   LatticeFermion ms(FGrid);
   for(int b=0;b<nbasis;b++){
-    Gamma g5(Gamma::Gamma5);
+
     gaussian(RNG5,noise);
     RealD scale = pow(norm2(noise),-0.5); 
     noise=noise*scale;
 
-    HermIndefOp.HermOp(noise,ms); std::cout << "Noise    "<<b<<" Ms "<<norm2(ms)<< " "<< norm2(noise)<<std::endl;
-
+    HermIndefOp.Op(noise,ms); std::cout << "Noise    "<<b<<" Ms "<<norm2(ms)<< " "<< norm2(noise)<<std::endl;
 
     //    filter(HermIndefOp,noise,subspace[b]);
     // inverse iteration
     MdagMLinearOperator<DomainWallFermion,LatticeFermion> HermDefOp(Ddwf);
     ConjugateGradient<LatticeFermion> CG(1.0e-4,10000);
 
-    for(int i=0;i<4;i++){
+    for(int i=0;i<1;i++){
 
       CG(HermDefOp,noise,subspace[b]);
       noise = subspace[b];
 
       scale = pow(norm2(noise),-0.5); 
       noise=noise*scale;
-      HermDefOp.HermOp(noise,ms); std::cout << "filt    "<<b<<" <u|H|u> "<<norm2(ms)<< " "<< norm2(noise)<<std::endl;
+      HermDefOp.Op(noise,ms); std::cout << "filt    "<<b<<" <u|H|u> "<<norm2(ms)<< " "<< norm2(noise)<<std::endl;
     }
 
     subspace[b] = noise;
-    HermIndefOp.HermOp(subspace[b],ms); std::cout << "Filtered "<<b<<" Ms "<<norm2(ms)<< " "<<norm2(subspace[b]) <<std::endl;
+    HermIndefOp.Op(subspace[b],ms); std::cout << "Filtered "<<b<<" Ms "<<norm2(ms)<< " "<<norm2(subspace[b]) <<std::endl;
+
   }
   std::cout << "Computed randoms"<< std::endl;
+#else
+  std::cout<<"Calling Aggregation class" <<std::endl;
+  MdagMLinearOperator<DomainWallFermion,LatticeFermion> HermDefOp(Ddwf);
+  typedef Aggregation<vSpinColourVector,vTComplex,nbasis> Subspace;
+  Subspace Aggregates(Coarse5d,FGrid);
+  Aggregates.CreateSubspace(RNG5,HermDefOp);
+  std::cout << "Called aggregation class"<< std::endl;
+#endif
+
 
   typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector CoarseVector;
 
   LittleDiracOperator LittleDiracOp(*Coarse5d);
-  LittleDiracOp.CoarsenOperator(FGrid,HermIndefOp,subspace);
+  LittleDiracOp.CoarsenOperator(FGrid,HermIndefOp,Aggregates);
   
   CoarseVector c_src (Coarse5d);
   CoarseVector c_res (Coarse5d);
   gaussian(CRNG,c_src);
   c_res=zero;
 
+
+  std::cout << "Solving CG on coarse space "<< std::endl;
+  MdagMLinearOperator<LittleDiracOperator,CoarseVector> PosdefLdop(LittleDiracOp);
+  ConjugateGradient<CoarseVector> CG(1.0e-6,10000);
+  CG(PosdefLdop,c_src,c_res);
+
+
   std::cout << "Solving MCR on coarse space "<< std::endl;
   HermitianLinearOperator<LittleDiracOperator,CoarseVector> HermIndefLdop(LittleDiracOp);
-  ConjugateResidual<CoarseVector> MCR(1.0e-8,10000);
+  ConjugateResidual<CoarseVector> MCR(1.0e-6,10000);
   MCR(HermIndefLdop,c_src,c_res);
 
   std::cout << "Done "<< std::endl;
