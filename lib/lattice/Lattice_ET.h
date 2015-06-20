@@ -296,7 +296,7 @@ GRID_DEF_UNOP(toReal,UnaryToReal);
 GRID_DEF_UNOP(toComplex,UnaryToComplex);
 GRID_DEF_UNOP(abs  ,UnaryAbs); //abs overloaded in cmath C++98; DON'T do the abs-fabs-dabs-labs thing
 GRID_DEF_UNOP(sqrt ,UnarySqrt);
-GRID_DEF_UNOP(rsqrt,UnarySqrt);
+GRID_DEF_UNOP(rsqrt,UnaryRsqrt);
 GRID_DEF_UNOP(sin  ,UnarySin);
 GRID_DEF_UNOP(cos  ,UnaryCos);
 GRID_DEF_UNOP(log  ,UnaryLog);

@@ -168,7 +168,7 @@ inline void blockNormalise(Lattice<CComplex> &ip,Lattice<vobj> &fineX)
   GridBase *coarse = ip._grid;
   Lattice<vobj> zz(fineX._grid); zz=zero;
   blockInnerProduct(ip,fineX,fineX);
-  ip = rsqrt(ip);
+  ip = pow(ip,-0.5);
   blockZAXPY(fineX,ip,fineX,zz);
 }
 // useful in multigrid project;
