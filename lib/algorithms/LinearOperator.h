@@ -207,6 +207,11 @@ namespace Grid {
       virtual void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) = 0;
     };
 
+    template<class Field> class LinearFunction {
+    public:
+      virtual void operator() (const Field &in, Field &out) = 0;
+    };
+
     /////////////////////////////////////////////////////////////
     // Base classes for Multishift solvers for operators
     /////////////////////////////////////////////////////////////

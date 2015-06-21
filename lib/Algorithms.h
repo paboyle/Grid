@@ -3,6 +3,7 @@
 
 #include <algorithms/SparseMatrix.h>
 #include <algorithms/LinearOperator.h>
+#include <algorithms/Preconditioner.h>
 
 #include <algorithms/approx/Zolotarev.h>
 #include <algorithms/approx/Chebyshev.h>
