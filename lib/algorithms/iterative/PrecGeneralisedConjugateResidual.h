@@ -1,75 +1,55 @@
-#ifndef GRID_PGCR_H
-#define GRID_PGCR_H
+#ifndef GRID_PREC_GCR_H
+#define GRID_PREC_GCR_H
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+//VPGCR Abe and Zhang, 2005.
+//INTERNATIONAL JOURNAL OF NUMERICAL ANALYSIS AND MODELING
+//Computing and Information Volume 2, Number 2, Pages 147-161
+///////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace Grid {
 
-    /////////////////////////////////////////////////////////////
-    // Base classes for iterative processes based on operators
-    // single input vec, single output vec.
-    /////////////////////////////////////////////////////////////
-
-  template<class Field> 
-    class ConjugateResidual : public OperatorFunction<Field> {
+  template<class Field>
+    class PrecGeneralisedConjugateResidual : public OperatorFunction<Field> {
   public:                                                
     RealD   Tolerance;
     Integer MaxIterations;
     int verbose;
+    int mmax;
+    int nstep;
+    int steps;
+    LinearFunction<Field> &Preconditioner;
 
-    ConjugateResidual(RealD tol,Integer maxit) : Tolerance(tol), MaxIterations(maxit) { 
-      verbose=0;
+  PrecGeneralisedConjugateResidual(RealD tol,Integer maxit,LinearFunction<Field> &Prec,int _mmax,int _nstep) : 
+      Tolerance(tol), 
+      MaxIterations(maxit),
+      Preconditioner(Prec),
+      mmax(_mmax),
+      nstep(_nstep)
+    { 
+      verbose=1;
     };
 
     void operator() (LinearOperatorBase<Field> &Linop,const Field &src, Field &psi){
 
-      RealD a, b, c, d;
-      RealD cp, ssq,rsq;
-      
-      RealD rAr, rAAr, rArp;
-      RealD pAp, pAAp;
-
-      GridBase *grid = src._grid;
       psi=zero;
-      Field r(grid),  p(grid), Ap(grid), Ar(grid);
-      
-      r=src;
-      p=src;
-
-      Linop.HermOpAndNorm(p,Ap,pAp,pAAp);
-      Linop.HermOpAndNorm(r,Ar,rAr,rAAr);
-
-      if(verbose) std::cout << "pAp, pAAp"<< pAp<<" "<<pAAp<<std::endl;
-      if(verbose) std::cout << "rAr, rAAr"<< rAr<<" "<<rAAr<<std::endl;
-
-      cp =norm2(r);
+      RealD cp, ssq,rsq;
       ssq=norm2(src);
       rsq=Tolerance*Tolerance*ssq;
+      
+      Field r(src._grid);
 
-      std::cout<<"ConjugateResidual: iteration " <<0<<" residual "<<cp<< " target"<< rsq<<std::endl;
+      steps=0;
+      for(int k=0;k<MaxIterations;k++){
 
-      for(int k=1;k<MaxIterations;k++){
+	cp=GCRnStep(Linop,src,psi,rsq);
 
-	a = rAr/pAAp;
-
-	axpy(psi,a,p,psi);
-
-	cp = axpy_norm(r,-a,Ap,r);
-
-	rArp=rAr;
-
-	Linop.HermOpAndNorm(r,Ar,rAr,rAAr);
-
-	b   =rAr/rArp;
- 
-	axpy(p,b,p,r);
-	pAAp=axpy_norm(Ap,b,Ap,Ar);
-
-	if(verbose) std::cout<<"ConjugateResidual: iteration " <<k<<" residual "<<cp<< " target"<< rsq<<std::endl;
+	if ( verbose ) std::cout<<"VPGCR("<<mmax<<","<<nstep<<") "<< steps <<" steps cp = "<<cp<<std::endl;
 
 	if(cp<rsq) {
-	  Linop.HermOp(psi,Ap);
-	  axpy(r,-1.0,src,Ap);
+	  Linop.HermOp(psi,r);
+	  axpy(r,-1.0,src,r);
 	  RealD true_resid = norm2(r);
-	  std::cout<<"ConjugateResidual: Converged on iteration " <<k
+	  std::cout<<"PrecGeneralisedConjugateResidual: Converged on iteration " <<steps
 		   << " computed residual "<<sqrt(cp/ssq)
 	           << " true residual "<<true_resid
 	           << " target "       <<Tolerance <<std::endl;
@@ -77,9 +57,91 @@ namespace Grid {
 	}
 
       }
-
-      std::cout<<"ConjugateResidual did NOT converge"<<std::endl;
+      std::cout<<"Variable Preconditioned GCR did not converge"<<std::endl;
       assert(0);
+    }
+    RealD GCRnStep(LinearOperatorBase<Field> &Linop,const Field &src, Field &psi,RealD rsq){
+
+      RealD cp;
+      RealD a, b, c, d;
+      RealD zAz, zAAz;
+      RealD rAq, rq;
+
+      GridBase *grid = src._grid;
+
+      Field r(grid);
+      Field z(grid);
+      Field Az(grid);
+
+      ////////////////////////////////
+      // history for flexible orthog
+      ////////////////////////////////
+      std::vector<Field> q(mmax,grid);
+      std::vector<Field> p(mmax,grid);
+      std::vector<RealD> qq(mmax);
+      
+      //////////////////////////////////
+      // initial guess x0 is taken as nonzero.
+      // r0=src-A x0 = src
+      //////////////////////////////////
+      Linop.HermOpAndNorm(psi,Az,zAz,zAAz); 
+      r=src-Az;
+      
+      /////////////////////
+      // p = Prec(r)
+      /////////////////////
+      Preconditioner(r,z);
+      Linop.HermOpAndNorm(z,Az,zAz,zAAz); 
+
+      //p[0],q[0],qq[0] 
+      p[0]= z;
+      q[0]= Az;
+      qq[0]= zAAz;
+
+      cp =norm2(r);
+
+      for(int k=0;k<nstep;k++){
+
+	steps++;
+
+	int kp     = k+1;
+	int peri_k = k %mmax;
+	int peri_kp= kp%mmax;
+
+	rq= real(innerProduct(r,q[peri_k])); // what if rAr not real?
+	a = rq/qq[peri_k];
+
+	axpy(psi,a,p[peri_k],psi);         
+
+	cp = axpy_norm(r,-a,q[peri_k],r);  
+
+	if((k==nstep-1)||(cp<rsq)){
+	  return cp;
+	}
+
+	Preconditioner(r,z);// solve Az = r
+
+	Linop.HermOpAndNorm(z,Az,zAz,zAAz);
+
+	q[peri_kp]=Az;
+	p[peri_kp]=z;
+
+	int northog = ((kp)>(mmax-1))?(mmax-1):(kp);  // if more than mmax done, we orthog all mmax history.
+	for(int back=0;back<northog;back++){
+
+	  int peri_back=(k-back)%mmax;   	  assert((k-back)>=0);
+
+	  b=-real(innerProduct(q[peri_back],Az))/qq[peri_back];
+	  p[peri_kp]=p[peri_kp]+b*p[peri_back];
+	  q[peri_kp]=q[peri_kp]+b*q[peri_back];
+
+	}
+	qq[peri_kp]=norm2(q[peri_kp]); // could use axpy_norm
+
+
+      }
+      assert(0); // never reached
+      return cp;
     }
   };
 }

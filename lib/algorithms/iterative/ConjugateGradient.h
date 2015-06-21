@@ -69,16 +69,12 @@ public:
 
 	RealD    qqck = norm2(mmp);
 	ComplexD dck  = innerProduct(p,mmp);
-	if (verbose) std::cout <<std::setprecision(4)<< "ConjugateGradient:  d,qq "<<d<< " "<<qq <<" qqcheck "<< qqck<< " dck "<< dck<<std::endl;
       
 	a      = c/d;
 	b_pred = a*(a*qq-d)/c;
 
-
-	if (verbose) std::cout <<std::setprecision(4)<< "ConjugateGradient:  a,bp "<<a<< " "<<b_pred <<std::endl;
 	cp = axpy_norm(r,-a,mmp,r);
 	b = cp/c;
-	if (verbose) std::cout <<std::setprecision(4)<< "ConjugateGradient:  cp,b "<<cp<< " "<<b <<std::endl;
 	
 	// Fuse these loops ; should be really easy
 	psi= a*p+psi;
@@ -86,12 +82,6 @@ public:
 	  
 	if (verbose) std::cout<<"ConjugateGradient: Iteration " <<k<<" residual "<<cp<< " target"<< rsq<<std::endl;
 	
-	if (0) { 
-	  Field tmp(src._grid);
-	  Linop.HermOpAndNorm(psi,tmp,qqck,qqck);
-	  tmp=tmp-src;
-	  std::cout<<"ConjugateGradient: true   residual  is "<< norm2(tmp);
-	}
 	// Stopping condition
 	if ( cp <= rsq ) { 
 	  
