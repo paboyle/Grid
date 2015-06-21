@@ -411,6 +411,7 @@ namespace QCD {
 #include <qcd/utils/LinalgUtils.h>
 #include <qcd/utils/CovariantCshift.h>
 #include <qcd/utils/WilsonLoops.h>
+#include <qcd/utils/SUn.h>
 #include <qcd/action/Actions.h>
 
 #endif
