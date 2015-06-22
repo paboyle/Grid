@@ -87,8 +87,8 @@ void WilsonFermion5D::DhopDir(const LatticeFermion &in, LatticeFermion &out,int 
 {
   int dir = dir5-1; // Maps to the ordering above in "directions" that is passed to stencil
                     // we drop off the innermost fifth dimension
-  assert( (disp==1)||(disp==-1) );
-  assert( (dir>=0)&&(dir<4) ); //must do x,y,z or t;
+  //  assert( (disp==1)||(disp==-1) );
+  //  assert( (dir>=0)&&(dir<4) ); //must do x,y,z or t;
 
   WilsonCompressor compressor(DaggerNo);
   Stencil.HaloExchange<vSpinColourVector,vHalfSpinColourVector,WilsonCompressor>(in,comm_buf,compressor);
@@ -100,7 +100,7 @@ void WilsonFermion5D::DhopDir(const LatticeFermion &in, LatticeFermion &out,int 
   assert(dirdisp<=7);
   assert(dirdisp>=0);
 
-PARALLEL_FOR_LOOP
+//PARALLEL_FOR_LOOP
   for(int ss=0;ss<Umu._grid->oSites();ss++){
     for(int s=0;s<Ls;s++){
       int sU=ss;
@@ -114,7 +114,7 @@ void WilsonFermion5D::DhopInternal(CartesianStencil & st, LebesgueOrder &lo,
 				   LatticeDoubledGaugeField & U,
 			   const LatticeFermion &in, LatticeFermion &out,int dag)
 {
-  assert((dag==DaggerNo) ||(dag==DaggerYes));
+  //  assert((dag==DaggerNo) ||(dag==DaggerYes));
 
   WilsonCompressor compressor(dag);
 
@@ -127,29 +127,32 @@ void WilsonFermion5D::DhopInternal(CartesianStencil & st, LebesgueOrder &lo,
   // - 8 linear access unit stride streams per thread for Fermion for hw prefetchable.
   if ( dag == DaggerYes ) {
     if( HandOptDslash ) {
-PARALLEL_FOR_LOOP
+#pragma parallel for
       for(int ss=0;ss<U._grid->oSites();ss++){
-	for(int s=0;s<Ls;s++){
-	  //int sU=lo.Reorder(ss);
-	  int sU=ss;
-	  int sF = s+Ls*sU;
-	  DiracOptHand::DhopSiteDag(st,U,comm_buf,sF,sU,in,out);
+	{
+	  for(int s=0;s<Ls;s++){
+	    int sU=ss;
+	    int sF = s+Ls*sU;
+	    DiracOptHand::DhopSiteDag(st,U,comm_buf,sF,sU,in,out);
+	  }
 	}
       }
     } else { 
-PARALLEL_FOR_LOOP
+#pragma parallel for
       for(int ss=0;ss<U._grid->oSites();ss++){
-	for(int s=0;s<Ls;s++){
-	  //	  int sU=lo.Reorder(ss);
-	  int sU=ss;
-	  int sF = s+Ls*sU;
-	  DiracOpt::DhopSiteDag(st,U,comm_buf,sF,sU,in,out);
+	{
+	  int sd;
+	  for(sd=0;sd<Ls;sd++){
+	    int sU=ss;
+	    int sF = sd+Ls*sU;
+	    DiracOpt::DhopSiteDag(st,U,comm_buf,sF,sU,in,out);
+	  }
 	}
       }
     }
   } else {
     if( HandOptDslash ) {
-PARALLEL_FOR_LOOP
+#pragma parallel for
       for(int ss=0;ss<U._grid->oSites();ss++){
 	for(int s=0;s<Ls;s++){
 	  //	  int sU=lo.Reorder(ss);
@@ -160,7 +163,7 @@ PARALLEL_FOR_LOOP
       }
 
     } else { 
-PARALLEL_FOR_LOOP
+#pragma parallel for
       for(int ss=0;ss<U._grid->oSites();ss++){
 	for(int s=0;s<Ls;s++){
 	  //	  int sU=lo.Reorder(ss);

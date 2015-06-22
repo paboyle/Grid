@@ -48,11 +48,11 @@ namespace Grid {
 	if(cp<rsq) {
 	  Linop.HermOp(psi,r);
 	  axpy(r,-1.0,src,r);
-	  RealD true_resid = norm2(r);
+	  RealD tr = norm2(r);
 	  std::cout<<"PrecGeneralisedConjugateResidual: Converged on iteration " <<steps
 		   << " computed residual "<<sqrt(cp/ssq)
-	           << " true residual "<<true_resid
-	           << " target "       <<Tolerance <<std::endl;
+	           << " true residual "    <<sqrt(tr/ssq)
+	           << " target "           <<Tolerance <<std::endl;
 	  return;
 	}
 

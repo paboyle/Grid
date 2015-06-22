@@ -166,7 +166,7 @@ public:
     su2SubGroupIndex(i0,i1,su2_index);
 
 PARALLEL_FOR_LOOP
-    for(int ss=0;ss!=grid->oSites();ss++){
+    for(int ss=0;ss<grid->oSites();ss++){
       subgroup._odata[ss]()()(0,0) = source._odata[ss]()()(i0,i0);
       subgroup._odata[ss]()()(0,1) = source._odata[ss]()()(i0,i1);
       subgroup._odata[ss]()()(1,0) = source._odata[ss]()()(i1,i0);
@@ -201,7 +201,7 @@ PARALLEL_FOR_LOOP
 
     dest = 1.0; // start out with identity
 PARALLEL_FOR_LOOP
-    for(int ss=0;ss!=grid->oSites();ss++){
+    for(int ss=0;ss<grid->oSites();ss++){
       dest._odata[ss]()()(i0,i0) = subgroup._odata[ss]()()(0,0);
       dest._odata[ss]()()(i0,i1) = subgroup._odata[ss]()()(0,1);
       dest._odata[ss]()()(i1,i0) = subgroup._odata[ss]()()(1,0);

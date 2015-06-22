@@ -85,10 +85,6 @@ namespace Grid {
     void Orthogonalise(void){
       CoarseScalar InnerProd(CoarseGrid); 
       blockOrthogonalise(InnerProd,subspace);
-#if 1
-      //      CheckOrthogonal();
-#endif
-
     } 
     void CheckOrthogonal(void){
       CoarseVector iProj(CoarseGrid); 
@@ -125,7 +121,7 @@ namespace Grid {
 
       RealD scale;
 
-      ConjugateGradient<FineField> CG(1.0e-4,10000);
+      ConjugateGradient<FineField> CG(1.0e-3,10000);
       FineField noise(FineGrid);
       FineField Mn(FineGrid);
 
