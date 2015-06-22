@@ -1,13 +1,9 @@
 
-bin_PROGRAMS = Test_GaugeAction Test_Metropolis Test_cayley_cg Test_cayley_coarsen_support Test_cayley_even_odd Test_cayley_ldop_cg Test_cayley_ldop_cr Test_cf_coarsen_support Test_cf_cr_unprec Test_contfrac_cg Test_contfrac_even_odd Test_cshift Test_cshift_red_black Test_dwf_cg_prec Test_dwf_cg_schur Test_dwf_cg_unprec Test_dwf_cr_unprec Test_dwf_even_odd Test_dwf_fpgcr Test_gamma Test_lie_generators Test_main Test_multishift_sqrt Test_nersc_io Test_quenched_update Test_remez Test_rng Test_rng_fixed Test_simd Test_stencil Test_wilson_cg_prec Test_wilson_cg_schur Test_wilson_cg_unprec Test_wilson_cr_unprec Test_wilson_even_odd
+bin_PROGRAMS = Test_GaugeAction Test_cayley_cg Test_cayley_coarsen_support Test_cayley_even_odd Test_cayley_ldop_cr Test_cf_coarsen_support Test_cf_cr_unprec Test_contfrac_cg Test_contfrac_even_odd Test_cshift Test_cshift_red_black Test_dwf_cg_prec Test_dwf_cg_schur Test_dwf_cg_unprec Test_dwf_cr_unprec Test_dwf_even_odd Test_dwf_fpgcr Test_dwf_hdcr Test_gamma Test_lie_generators Test_main Test_multishift_sqrt Test_nersc_io Test_quenched_update Test_remez Test_rng Test_rng_fixed Test_simd Test_stencil Test_wilson_cg_prec Test_wilson_cg_schur Test_wilson_cg_unprec Test_wilson_cr_unprec Test_wilson_even_odd
 
 
 Test_GaugeAction_SOURCES=Test_GaugeAction.cc
 Test_GaugeAction_LDADD=-lGrid
-
-
-Test_Metropolis_SOURCES=Test_Metropolis.cc
-Test_Metropolis_LDADD=-lGrid
 
 
 Test_cayley_cg_SOURCES=Test_cayley_cg.cc
@@ -20,10 +16,6 @@ Test_cayley_coarsen_support_LDADD=-lGrid
 
 Test_cayley_even_odd_SOURCES=Test_cayley_even_odd.cc
 Test_cayley_even_odd_LDADD=-lGrid
-
-
-Test_cayley_ldop_cg_SOURCES=Test_cayley_ldop_cg.cc
-Test_cayley_ldop_cg_LDADD=-lGrid
 
 
 Test_cayley_ldop_cr_SOURCES=Test_cayley_ldop_cr.cc
@@ -76,6 +68,10 @@ Test_dwf_even_odd_LDADD=-lGrid
 
 Test_dwf_fpgcr_SOURCES=Test_dwf_fpgcr.cc
 Test_dwf_fpgcr_LDADD=-lGrid
+
+
+Test_dwf_hdcr_SOURCES=Test_dwf_hdcr.cc
+Test_dwf_hdcr_LDADD=-lGrid
 
 
 Test_gamma_SOURCES=Test_gamma.cc
