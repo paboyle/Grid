@@ -26,7 +26,10 @@ int main (int argc, char ** argv)
   for(int lat=4;lat<=32;lat+=2){
     for(int Ls=1;Ls<=16;Ls*=2){
 
-      std::vector<int> latt_size  ({lat,lat,lat,lat});
+      std::vector<int> latt_size  ({lat*mpi_layout[0],
+      				    lat*mpi_layout[1],
+      				    lat*mpi_layout[2],
+      				    lat*mpi_layout[3]});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
