@@ -59,7 +59,7 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   std::vector<LatticeColourMatrix> U(4,FGrid);
   for(int mu=0;mu<Nd;mu++){
-    U[mu] = peekIndex<LorentzIndex>(Umu5d,mu);
+    U[mu] = PeekIndex<LorentzIndex>(Umu5d,mu);
   }
 
   if (1)
