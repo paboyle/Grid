@@ -3,7 +3,7 @@
 namespace Grid {
 namespace QCD {
 
-void DiracOpt::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
+void DiracOptDhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
 			std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
 			int sF,int sU,const LatticeFermion &in, LatticeFermion &out)
 {
@@ -149,7 +149,7 @@ void DiracOpt::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     vstream(out._odata[ss],result*(-0.5));
 }
 
-void DiracOpt::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
+void DiracOptDhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
 			   std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
 			   int sF,int sU,const LatticeFermion &in, LatticeFermion &out)
 {
@@ -295,7 +295,7 @@ void DiracOpt::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
     vstream(out._odata[ss],result*(-0.5));
 }
 
-void DiracOpt::DhopDir(CartesianStencil &st,LatticeDoubledGaugeField &U,
+void DiracOptDhopDir(CartesianStencil &st,LatticeDoubledGaugeField &U,
 			std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
 		       int sF,int sU,const LatticeFermion &in, LatticeFermion &out,int dirdisp)
 {

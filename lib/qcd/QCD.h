@@ -24,9 +24,9 @@ namespace QCD {
     // QCD iMatrix types
     // Index conventions:                            Lorentz x Spin x Colour
     //////////////////////////////////////////////////////////////////////////////
-    static const int ColourIndex = 1;
-    static const int SpinIndex   = 2;
-    static const int LorentzIndex= 3;
+    static const int ColourIndex = 2;
+    static const int SpinIndex   = 1;
+    static const int LorentzIndex= 0;
     
 
     // ChrisK very keen to add extra space for Gparity doubling.

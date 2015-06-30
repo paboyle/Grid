@@ -39,16 +39,16 @@ namespace Grid {
       GridBase *FermionRedBlackGrid(void)    { return _FiveDimRedBlackGrid;}
 
       // full checkerboard operations; leave unimplemented as abstract for now
-      //virtual RealD  M    (const LatticeFermion &in, LatticeFermion &out)=0;
-      //virtual RealD  Mdag (const LatticeFermion &in, LatticeFermion &out)=0;
+      virtual RealD  M    (const LatticeFermion &in, LatticeFermion &out){assert(0); return 0.0;};
+      virtual RealD  Mdag (const LatticeFermion &in, LatticeFermion &out){assert(0); return 0.0;};
 
       // half checkerboard operations; leave unimplemented as abstract for now
-      //      virtual void   Meooe       (const LatticeFermion &in, LatticeFermion &out)=0;
-      //      virtual void   MeooeDag    (const LatticeFermion &in, LatticeFermion &out)=0;
-      //      virtual void   Mooee       (const LatticeFermion &in, LatticeFermion &out)=0;
-      //      virtual void   MooeeDag    (const LatticeFermion &in, LatticeFermion &out)=0;
-      //      virtual void   MooeeInv    (const LatticeFermion &in, LatticeFermion &out)=0;
-      //      virtual void   MooeeInvDag (const LatticeFermion &in, LatticeFermion &out)=0;
+      virtual void   Meooe       (const LatticeFermion &in, LatticeFermion &out){assert(0);};
+      virtual void   MeooeDag    (const LatticeFermion &in, LatticeFermion &out){assert(0);};
+      virtual void   Mooee       (const LatticeFermion &in, LatticeFermion &out){assert(0);};
+      virtual void   MooeeDag    (const LatticeFermion &in, LatticeFermion &out){assert(0);};
+      virtual void   MooeeInv    (const LatticeFermion &in, LatticeFermion &out){assert(0);};
+      virtual void   MooeeInvDag (const LatticeFermion &in, LatticeFermion &out){assert(0);};
 
       // Implement hopping term non-hermitian hopping term; half cb or both
       // Implement s-diagonal DW

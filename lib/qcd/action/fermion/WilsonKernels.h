@@ -10,35 +10,40 @@ namespace Grid {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     // Generic version works for any Nc and with extra flavour indices
-    class DiracOpt {
-    public:
+    //    namespace DiracOpt {
+
       // These ones will need to be package intelligently. WilsonType base class
       // for use by DWF etc..
-      static void DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
+      void DiracOptDhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
+			    std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
+			    int sF,int sU,const LatticeFermion &in, LatticeFermion &out);
+      void DiracOptDhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
+			       std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
+			       int sF,int sU,const LatticeFermion &in, LatticeFermion &out);
+      void DiracOptDhopDir(CartesianStencil &st,LatticeDoubledGaugeField &U,
 			   std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-			   int sF,int sU,const LatticeFermion &in, LatticeFermion &out);
-      static void DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
-			      std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-			      int sF,int sU,const LatticeFermion &in, LatticeFermion &out);
-      static void DhopDir(CartesianStencil &st,LatticeDoubledGaugeField &U,
-			   std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-			  int sF,int sU,const LatticeFermion &in, LatticeFermion &out,int dirdisp);
+			   int sF,int sU,const LatticeFermion &in, LatticeFermion &out,int dirdisp);
+      
+      //  };
 
-    };
-
-    // Hand unrolled for Nc=3, one flavour
-    class DiracOptHand {
-    public:
+      // Hand unrolled for Nc=3, one flavour
+      //    namespace DiracOptHand {
       // These ones will need to be package intelligently. WilsonType base class
       // for use by DWF etc..
-      static void DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
-			   std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-			   int sF,int sU,const LatticeFermion &in, LatticeFermion &out);
-      static void DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
-			      std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-			      int sF,int sU,const LatticeFermion &in, LatticeFermion &out);
 
-    };
+      void DiracOptHandDhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
+				std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
+				int sF,int sU,const LatticeFermion &in, LatticeFermion &out);
+      void DiracOptHandDhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
+				   std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
+				   int sF,int sU,const LatticeFermion &in, LatticeFermion &out);
+
+      //    };
+  
+
+    void DiracOptHandDhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
+				 std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
+				 int sF,int sU,const LatticeFermion &in, LatticeFermion &out);
 
   }
 }
