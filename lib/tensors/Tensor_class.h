@@ -91,18 +91,12 @@ public:
     return _internal;
   }
 
-  // Type casts meta programmed
-  template<class U=vtype,class V=scalar_type,IfComplex<V> = 0,IfNotSimd<U> = 0>  
-    operator ComplexF () const { return(TensorRemove(_internal)); };
-  template<class U=vtype,class V=scalar_type,IfComplex<V> = 0,IfNotSimd<U> = 0>  
-    operator ComplexD () const { return(TensorRemove(_internal)); };
-  template<class U=vtype,class V=scalar_type,IfComplex<V> = 0,IfNotSimd<U> = 0>  
-    operator RealD () const { return(real(TensorRemove(_internal))); }
-  template<class U=vtype,class V=scalar_type,IfReal<V>    = 0,IfNotSimd<U> = 0>  
-    operator RealD    () const { return TensorRemove(_internal); }
-  template<class U=vtype,class V=scalar_type,IfInteger<V> = 0,IfNotSimd<U> = 0>  
-    operator Integer  () const { return Integer(TensorRemove(_internal)); }
-
+  // Type casts meta programmed, must be pure scalar to match TensorRemove
+  template<class U=vtype,class V=scalar_type,IfComplex<V> = 0,IfNotSimd<U> = 0> operator ComplexF () const { return(TensorRemove(_internal)); };
+  template<class U=vtype,class V=scalar_type,IfComplex<V> = 0,IfNotSimd<U> = 0> operator ComplexD () const { return(TensorRemove(_internal)); };
+  //  template<class U=vtype,class V=scalar_type,IfComplex<V> = 0,IfNotSimd<U> = 0> operator RealD    () const { return(real(TensorRemove(_internal))); }
+  template<class U=vtype,class V=scalar_type,IfReal<V>    = 0,IfNotSimd<U> = 0> operator RealD    () const { return TensorRemove(_internal); }
+  template<class U=vtype,class V=scalar_type,IfInteger<V> = 0,IfNotSimd<U> = 0> operator Integer  () const { return Integer(TensorRemove(_internal)); }
   
   // convert from a something to a scalar via constructor of something arg
   template<class T,typename std::enable_if<!isGridTensor<T>::value, T>::type* = nullptr > strong_inline iScalar<vtype> operator = (T arg)

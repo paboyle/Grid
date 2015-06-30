@@ -141,7 +141,7 @@ int main (int argc, char ** argv)
     //    rscalar=real(scalar);
     //    iscalar=imag(scalar);
     //    scalar =cmplx(rscalar,iscalar);
-    pokeIndex<2>(cVec,scalar,1);
+    PokeIndex<ColourIndex>(cVec,scalar,1);
 
 
     scalar=transpose(scalar);
