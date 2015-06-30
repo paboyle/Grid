@@ -73,13 +73,13 @@ int main (int argc, char ** argv)
       for(int j=0;j<Ns;j++){
 	if ( abs(result()(i,j)())==0 ) {
 	  std::cout<< " 0";
-	} else if ( abs(result()(i,j)() - ComplexF(0,1))==0){
+	} else if ( abs(result()(i,j)() - Complex(0,1))==0){
 	  std::cout<< " i";
-	} else if ( abs(result()(i,j)() + ComplexF(0,1))==0){
+	} else if ( abs(result()(i,j)() + Complex(0,1))==0){
 	  std::cout<< "-i";
-	} else if ( abs(result()(i,j)() - ComplexF(1,0))==0){
+	} else if ( abs(result()(i,j)() - Complex(1,0))==0){
 	  std::cout<< " 1";
-	} else if ( abs(result()(i,j)() + ComplexF(1,0))==0){
+	} else if ( abs(result()(i,j)() + Complex(1,0))==0){
 	  std::cout<< "-1";
 	}
 	std::cout<< ((j==Ns-1) ? ")" : "," );

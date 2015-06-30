@@ -43,7 +43,7 @@ int main (int argc, char ** argv)
   std::vector<LatticeColourMatrix> U(4,UGrid);
 
   for(int mu=0;mu<Nd;mu++){
-    U[mu] = peekIndex<LorentzIndex>(Umu,mu);
+    U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
   }
 
   ConjugateResidual<LatticeFermion> MCR(1.0e-8,10000);

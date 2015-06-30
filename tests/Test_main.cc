@@ -141,13 +141,13 @@ int main (int argc, char ** argv)
     //    rscalar=real(scalar);
     //    iscalar=imag(scalar);
     //    scalar =cmplx(rscalar,iscalar);
-    pokeIndex<1>(cVec,scalar,1);
+    pokeIndex<2>(cVec,scalar,1);
 
 
     scalar=transpose(scalar);
-    scalar=transposeIndex<1>(scalar);
-    scalar=traceIndex<1>(scalar);
-    scalar=peekIndex<1>(cVec,0);
+    scalar=TransposeIndex<ColourIndex>(scalar);
+    scalar=TraceIndex<SpinIndex>(scalar);
+    scalar=PeekIndex<ColourIndex>(cVec,0);
 
     scalar=trace(scalar);
     scalar=localInnerProduct(cVec,cVec);
@@ -230,8 +230,8 @@ int main (int argc, char ** argv)
     cm = ProjectOnGroup(cm);
     std::cout << cm << "  " << std::endl;
 
-    det = Determinant(cm);
-    std::cout << "determinant: " << det <<  std::endl;
+    //    det = Determinant(cm);
+    //    std::cout << "determinant: " << det <<  std::endl;
 
 
 //    Foo = Foo+scalar; // LatticeColourMatrix+Scalar
@@ -257,16 +257,16 @@ int main (int argc, char ** argv)
       SpinMatrix   s_m;   
       SpinColourMatrix sc_m; 
 
-      s_m = traceIndex<1>(sc_m); // Map to traceColour
-      c_m = traceIndex<2>(sc_m); // map to traceSpin
+      s_m = TensorIndexRecursion<ColourIndex>::traceIndex(sc_m); // Map to traceColour
+      c_m = TensorIndexRecursion<SpinIndex>::traceIndex(sc_m); // map to traceSpin
 
-      c   = traceIndex<2>(s_m); 
-      c   = traceIndex<1>(c_m);
+      c   = TensorIndexRecursion<SpinIndex>::traceIndex(s_m); 
+      c   = TensorIndexRecursion<ColourIndex>::traceIndex(c_m);
       
-      s_m = peekIndex<1>(scm,0,0);
-      c_m = peekIndex<2>(scm,1,2);
+      s_m = TensorIndexRecursion<ColourIndex>::peekIndex(scm,0,0);
+      c_m = TensorIndexRecursion<SpinIndex>::peekIndex(scm,1,2);
       //      c_m = peekSpin<SpinColourMatrix>(scm,1,2);
-      c_m = peekIdiot<SpinColourMatrix>(scm,1,2);
+      //      c_m = peekIdiot<SpinColourMatrix>(scm,1,2);
 
       printf("c. Level %d\n",c_m.TensorLevel);
       printf("c. Level %d\n",c_m().TensorLevel);
@@ -277,7 +277,7 @@ int main (int argc, char ** argv)
       c          = scm()(1,1)(1,2);
       scm()(1,1)(2,1) = c;
 
-      pokeIndex<1> (c_m,c,0,0);
+      pokeIndex<ColourIndex> (c_m,c,0,0);
     }
 
     FooBar = Bar;
@@ -346,7 +346,7 @@ int main (int argc, char ** argv)
 
     LatticeGaugeField U(&Fine);
     //    LatticeColourMatrix Uy = peekLorentz(U,1);
-    LatticeColourMatrix Uy = peekDumKopf(U,1);
+    //    LatticeColourMatrix Uy = peekDumKopf(U,1);
 
     flops = ncall*1.0*volume*(8*Nc*Nc*Nc);
     bytes = ncall*1.0*volume*Nc*Nc    *2*3*sizeof(Grid::Real);
