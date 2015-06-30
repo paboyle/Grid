@@ -5,7 +5,7 @@ namespace Grid {
 //////////////////////////////////////////////////////////////////////////////
 // Poke a specific index; 
 //////////////////////////////////////////////////////////////////////////////
-
+#if 0
 // Scalar poke
 template<int Level,class vtype,typename std::enable_if< iScalar<vtype>::TensorLevel == Level >::type * =nullptr> inline 
   void pokeIndex(iScalar<vtype> &ret, const iScalar<vtype> &arg)
@@ -18,7 +18,7 @@ template<int Level,class vtype,int N,typename std::enable_if< iScalar<vtype>::Te
 {
   ret._internal[i] = arg._internal;
 }
-// Vector poke, two indices
+//Matrix poke, two indices
 template<int Level,class vtype,int N,typename std::enable_if< iScalar<vtype>::TensorLevel == Level >::type * =nullptr> inline 
   void pokeIndex(iMatrix<vtype,N> &ret, const iScalar<vtype> &arg,int i,int j)
 {
@@ -31,7 +31,6 @@ template<int Level,class vtype,int N,typename std::enable_if< iScalar<vtype>::Te
 // scalar
 template<int Level,class vtype,typename std::enable_if< iScalar<vtype>::TensorLevel != Level >::type * =nullptr> inline 
 void pokeIndex(iScalar<vtype> &ret, const iScalar<decltype(peekIndex<Level>(ret._internal))>  &arg)
-		 
 {
   pokeIndex<Level>(ret._internal,arg._internal);
 }
@@ -95,7 +94,7 @@ template<int Level,class vtype,int N,typename std::enable_if< iScalar<vtype>::Te
     pokeIndex<Level>(ret._internal[ii][jj],arg._internal[ii][jj],i,j);
   }}
 }
-
+#endif
 
 }
 #endif

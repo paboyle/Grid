@@ -17,6 +17,7 @@ namespace Grid {
 
   typedef  float  RealF;
   typedef  double RealD;
+#define GRID_DEFAULT_PRECISION_DOUBLE
 #ifdef GRID_DEFAULT_PRECISION_DOUBLE
   typedef RealD   Real;
 #else
