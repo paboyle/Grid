@@ -63,7 +63,7 @@ int main (int argc, char ** argv)
 	ColourWilsonLoops::Staple(staple,Umu,mu);
 	staple = adj(staple);
 
-	link = peekIndex<LorentzIndex>(Umu,mu);
+	link = PeekIndex<LorentzIndex>(Umu,mu);
 
 	for( int subgroup=0;subgroup<SU3::su2subgroups();subgroup++ ) {
 
