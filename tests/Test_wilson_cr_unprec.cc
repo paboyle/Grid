@@ -42,10 +42,6 @@ int main (int argc, char ** argv)
     volume=volume*latt_size[mu];
   }  
 
-  for(int mu=0;mu<Nd;mu++){
-    U[mu] = peekIndex<LorentzIndex>(Umu,mu);
-  }
-  
   RealD mass=0.5;
   WilsonFermion Dw(Umu,Grid,RBGrid,mass);
 

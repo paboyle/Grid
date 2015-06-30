@@ -10,7 +10,7 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
 
-  std::vector<int> simd_layout = GridDefaultSimd(4,vComplexF::Nsimd());
+  std::vector<int> simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
   std::vector<int> latt_size  ({16,16,16,32});
   std::vector<int> clatt_size  ({4,4,4,8});
@@ -31,7 +31,7 @@ int main (int argc, char ** argv)
   readNerscConfiguration(Umu,header,file);
 
   for(int mu=0;mu<Nd;mu++){
-    U[mu] = peekIndex<3>(Umu,mu);
+    U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
   }
 
   // Painful ; fix syntactical niceness

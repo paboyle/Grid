@@ -53,7 +53,7 @@ int main (int argc, char ** argv)
   readNerscConfiguration(Umu,header,file);
 
   for(int mu=0;mu<Nd;mu++){
-    U[mu] = peekIndex<3>(Umu,mu);
+    U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
   }
 
   // Painful ; fix syntactical niceness : to check reader
