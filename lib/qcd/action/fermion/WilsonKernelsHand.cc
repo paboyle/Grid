@@ -280,7 +280,7 @@
 namespace Grid {
 namespace QCD {
 
-void DiracOptHand::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
+void DiracOptHandDhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
 			    std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
 			    int sF,int sU,const LatticeFermion &in, LatticeFermion &out)
 {
@@ -530,7 +530,7 @@ void DiracOptHand::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
   }
 }
 
-void DiracOptHand::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
+void DiracOptHandDhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
 			       std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
 			       int ss,int sU,const LatticeFermion &in, LatticeFermion &out)
 {

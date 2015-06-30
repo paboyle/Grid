@@ -45,7 +45,7 @@ public:
     std::vector<GaugeMat> U(4,Umu._grid);
 
     for(int mu=0;mu<Nd;mu++){
-      U[mu] = peekIndex<LorentzIndex>(Umu,mu);
+      U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
     }
 
     LatticeComplex Plaq(Umu._grid);
@@ -78,7 +78,7 @@ public:
 
     std::vector<GaugeMat> U(4,grid);
     for(int d=0;d<Nd;d++){
-      U[d] = peekIndex<LorentzIndex>(Umu,d);
+      U[d] = PeekIndex<LorentzIndex>(Umu,d);
     }
 
     staple = zero;

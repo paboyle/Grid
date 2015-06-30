@@ -35,7 +35,7 @@ void WilsonFermion::DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGauge
   conformable(Umu._grid,GaugeGrid());
   LatticeColourMatrix U(GaugeGrid());
   for(int mu=0;mu<Nd;mu++){
-    U = peekIndex<LorentzIndex>(Umu,mu);
+    U = PeekIndex<LorentzIndex>(Umu,mu);
     pokeIndex<LorentzIndex>(Uds,U,mu);
     U = adj(Cshift(U,mu,-1));
     pokeIndex<LorentzIndex>(Uds,U,mu+4);
@@ -109,7 +109,7 @@ void WilsonFermion::DhopDir(const LatticeFermion &in, LatticeFermion &out,int di
 
 PARALLEL_FOR_LOOP
   for(int sss=0;sss<in._grid->oSites();sss++){
-    DiracOpt::DhopDir(Stencil,Umu,comm_buf,sss,sss,in,out,dirdisp);
+    DiracOptDhopDir(Stencil,Umu,comm_buf,sss,sss,in,out,dirdisp);
   }
 
 };
@@ -125,24 +125,24 @@ void WilsonFermion::DhopInternal(CartesianStencil & st,LatticeDoubledGaugeField 
     if( HandOptDslash ) {
 PARALLEL_FOR_LOOP
       for(int sss=0;sss<in._grid->oSites();sss++){
-        DiracOptHand::DhopSiteDag(st,U,comm_buf,sss,sss,in,out);
+        DiracOptHandDhopSiteDag(st,U,comm_buf,sss,sss,in,out);
       }
     } else { 
 PARALLEL_FOR_LOOP
       for(int sss=0;sss<in._grid->oSites();sss++){
-        DiracOpt::DhopSiteDag(st,U,comm_buf,sss,sss,in,out);
+        DiracOptDhopSiteDag(st,U,comm_buf,sss,sss,in,out);
       }
     }
   } else {
     if( HandOptDslash ) {
 PARALLEL_FOR_LOOP
       for(int sss=0;sss<in._grid->oSites();sss++){
-        DiracOptHand::DhopSite(st,U,comm_buf,sss,sss,in,out);
+        DiracOptHandDhopSite(st,U,comm_buf,sss,sss,in,out);
       }
     } else { 
 PARALLEL_FOR_LOOP
       for(int sss=0;sss<in._grid->oSites();sss++){
-        DiracOpt::DhopSite(st,U,comm_buf,sss,sss,in,out);
+        DiracOptDhopSite(st,U,comm_buf,sss,sss,in,out);
       }
     }
   }

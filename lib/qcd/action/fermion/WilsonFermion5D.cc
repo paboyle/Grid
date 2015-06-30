@@ -77,7 +77,7 @@ void WilsonFermion5D::DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGau
   conformable(Umu._grid,GaugeGrid());
   LatticeColourMatrix U(GaugeGrid());
   for(int mu=0;mu<Nd;mu++){
-    U = peekIndex<LorentzIndex>(Umu,mu);
+    U = PeekIndex<LorentzIndex>(Umu,mu);
     pokeIndex<LorentzIndex>(Uds,U,mu);
     U = adj(Cshift(U,mu,-1));
     pokeIndex<LorentzIndex>(Uds,U,mu+4);
@@ -105,7 +105,7 @@ void WilsonFermion5D::DhopDir(const LatticeFermion &in, LatticeFermion &out,int 
     for(int s=0;s<Ls;s++){
       int sU=ss;
       int sF = s+Ls*sU; 
-      DiracOpt::DhopDir(Stencil,Umu,comm_buf,sF,sU,in,out,dirdisp);
+      DiracOptDhopDir(Stencil,Umu,comm_buf,sF,sU,in,out,dirdisp);
     }
   }
 };
@@ -127,49 +127,47 @@ void WilsonFermion5D::DhopInternal(CartesianStencil & st, LebesgueOrder &lo,
   // - 8 linear access unit stride streams per thread for Fermion for hw prefetchable.
   if ( dag == DaggerYes ) {
     if( HandOptDslash ) {
-#pragma parallel for
+PARALLEL_FOR_LOOP
       for(int ss=0;ss<U._grid->oSites();ss++){
-	{
-	  for(int s=0;s<Ls;s++){
-	    int sU=ss;
-	    int sF = s+Ls*sU;
-	    DiracOptHand::DhopSiteDag(st,U,comm_buf,sF,sU,in,out);
+	for(int s=0;s<Ls;s++){
+	  int sU=ss;
+	  int sF = s+Ls*sU;
+	  DiracOptHandDhopSiteDag(st,U,comm_buf,sF,sU,in,out);
 	  }
-	}
       }
     } else { 
-#pragma parallel for
+PARALLEL_FOR_LOOP
       for(int ss=0;ss<U._grid->oSites();ss++){
 	{
 	  int sd;
 	  for(sd=0;sd<Ls;sd++){
 	    int sU=ss;
 	    int sF = sd+Ls*sU;
-	    DiracOpt::DhopSiteDag(st,U,comm_buf,sF,sU,in,out);
+	    DiracOptDhopSiteDag(st,U,comm_buf,sF,sU,in,out);
 	  }
 	}
       }
     }
   } else {
     if( HandOptDslash ) {
-#pragma parallel for
+PARALLEL_FOR_LOOP
       for(int ss=0;ss<U._grid->oSites();ss++){
 	for(int s=0;s<Ls;s++){
 	  //	  int sU=lo.Reorder(ss);
 	  int sU=ss;
 	  int sF = s+Ls*sU;
-	  DiracOptHand::DhopSite(st,U,comm_buf,sF,sU,in,out);
+	  DiracOptHandDhopSite(st,U,comm_buf,sF,sU,in,out);
 	}
       }
 
     } else { 
-#pragma parallel for
+PARALLEL_FOR_LOOP
       for(int ss=0;ss<U._grid->oSites();ss++){
 	for(int s=0;s<Ls;s++){
 	  //	  int sU=lo.Reorder(ss);
 	  int sU=ss;
 	  int sF = s+Ls*sU; 
-	  DiracOpt::DhopSite(st,U,comm_buf,sF,sU,in,out);
+	  DiracOptDhopSite(st,U,comm_buf,sF,sU,in,out);
 	}
       }
     }
