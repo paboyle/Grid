@@ -63,7 +63,7 @@ int main (int argc, char ** argv)
 #endif
 
   for(int mu=0;mu<Nd;mu++){
-    U[mu] = peekIndex<LorentzIndex>(Umu,mu);
+    U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
   }
   
   { // Naive wilson implementation
