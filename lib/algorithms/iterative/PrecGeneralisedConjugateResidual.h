@@ -5,6 +5,8 @@
 //VPGCR Abe and Zhang, 2005.
 //INTERNATIONAL JOURNAL OF NUMERICAL ANALYSIS AND MODELING
 //Computing and Information Volume 2, Number 2, Pages 147-161
+//NB. Likely not original reference since they are focussing on a preconditioner variant.
+//    but VPGCR was nicely written up in their paper
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace Grid {
 
@@ -19,7 +21,7 @@ namespace Grid {
     int steps;
     LinearFunction<Field> &Preconditioner;
 
-  PrecGeneralisedConjugateResidual(RealD tol,Integer maxit,LinearFunction<Field> &Prec,int _mmax,int _nstep) : 
+   PrecGeneralisedConjugateResidual(RealD tol,Integer maxit,LinearFunction<Field> &Prec,int _mmax,int _nstep) : 
       Tolerance(tol), 
       MaxIterations(maxit),
       Preconditioner(Prec),
@@ -71,6 +73,8 @@ namespace Grid {
 
       Field r(grid);
       Field z(grid);
+      Field tmp(grid);
+      Field ttmp(grid);
       Field Az(grid);
 
       ////////////////////////////////
@@ -91,6 +95,24 @@ namespace Grid {
       // p = Prec(r)
       /////////////////////
       Preconditioner(r,z);
+
+      std::cout<< " Preconditioner in " << norm2(r)<<std::endl; 
+      std::cout<< " Preconditioner out " << norm2(z)<<std::endl; 
+      
+      Linop.HermOp(z,tmp); 
+
+      std::cout<< " Preconditioner Aout " << norm2(tmp)<<std::endl; 
+      ttmp=tmp;
+      tmp=tmp-r;
+
+      std::cout<< " Preconditioner resid " << std::sqrt(norm2(tmp)/norm2(r))<<std::endl; 
+      /*
+      std::cout<<r<<std::endl;
+      std::cout<<z<<std::endl;
+      std::cout<<ttmp<<std::endl;
+      std::cout<<tmp<<std::endl;
+      */
+
       Linop.HermOpAndNorm(z,Az,zAz,zAAz); 
 
       //p[0],q[0],qq[0] 
@@ -115,13 +137,18 @@ namespace Grid {
 
 	cp = axpy_norm(r,-a,q[peri_k],r);  
 
+	std::cout<< " VPCG_step resid" <<sqrt(cp/rsq)<<std::endl; 
 	if((k==nstep-1)||(cp<rsq)){
 	  return cp;
 	}
 
 	Preconditioner(r,z);// solve Az = r
-
 	Linop.HermOpAndNorm(z,Az,zAz,zAAz);
+
+
+	Linop.HermOp(z,tmp);
+        tmp=tmp-r;
+	std::cout<< " Preconditioner resid" <<sqrt(norm2(tmp)/norm2(r))<<std::endl; 
 
 	q[peri_kp]=Az;
 	p[peri_kp]=z;
