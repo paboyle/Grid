@@ -55,7 +55,7 @@ int main (int argc, char ** argv)
   Umu=zero;
   for(int nn=0;nn<Nd;nn++){
     random(pRNG,U[nn]);
-    pokeIndex<LorentzIndex>(Umu,U[nn],nn);
+    PokeIndex<LorentzIndex>(Umu,U[nn],nn);
   }
 
   RealD mass=0.1;

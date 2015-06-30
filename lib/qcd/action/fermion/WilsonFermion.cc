@@ -36,9 +36,9 @@ void WilsonFermion::DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGauge
   LatticeColourMatrix U(GaugeGrid());
   for(int mu=0;mu<Nd;mu++){
     U = PeekIndex<LorentzIndex>(Umu,mu);
-    pokeIndex<LorentzIndex>(Uds,U,mu);
+    PokeIndex<LorentzIndex>(Uds,U,mu);
     U = adj(Cshift(U,mu,-1));
-    pokeIndex<LorentzIndex>(Uds,U,mu+4);
+    PokeIndex<LorentzIndex>(Uds,U,mu+4);
   }
 }
 

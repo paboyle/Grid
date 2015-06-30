@@ -547,21 +547,21 @@ Note that in step D setting B ~ X - A and using B in place of A in step E will g
     LatticeMatrix Umu(out._grid);
     for(int mu=0;mu<Nd;mu++){
       LieRandomize(pRNG,Umu,1.0);
-      pokeIndex<LorentzIndex>(out,Umu,mu);
+      PokeIndex<LorentzIndex>(out,Umu,mu);
     }
   }
   static void TepidConfiguration(GridParallelRNG &pRNG,LatticeGaugeField &out){
     LatticeMatrix Umu(out._grid);
     for(int mu=0;mu<Nd;mu++){
       LieRandomize(pRNG,Umu,0.01);
-      pokeLorentz(out,Umu,mu);
+      PokeLorentz(out,Umu,mu);
     }
   }
   static void ColdConfiguration(GridParallelRNG &pRNG,LatticeGaugeField &out){
     LatticeMatrix Umu(out._grid);
     Umu=1.0;
     for(int mu=0;mu<Nd;mu++){
-      pokeLorentz(out,Umu,mu);
+      PokeLorentz(out,Umu,mu);
     }
   }
 

@@ -53,7 +53,7 @@ int main (int argc, char ** argv)
     random(RNG4,U[nn]);
     if ( nn>0 ) 
       U[nn]=zero;
-    pokeIndex<LorentzIndex>(Umu,U[nn],nn);
+    PokeIndex<LorentzIndex>(Umu,U[nn],nn);
   }
 
   RealD mass=0.1;

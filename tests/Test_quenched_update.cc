@@ -72,7 +72,7 @@ int main (int argc, char ** argv)
 
 	}
 
-	pokeIndex<LorentzIndex>(Umu,link,mu);
+	PokeIndex<LorentzIndex>(Umu,link,mu);
 	//reunitarise link;
 	
       }

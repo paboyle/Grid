@@ -121,7 +121,7 @@ namespace Grid {
 
       RealD scale;
 
-      ConjugateGradient<FineField> CG(1.0e-3,10000);
+      ConjugateGradient<FineField> CG(1.0e-4,10000);
       FineField noise(FineGrid);
       FineField Mn(FineGrid);
 
@@ -131,7 +131,8 @@ namespace Grid {
 	scale = std::pow(norm2(noise),-0.5); 
 	noise=noise*scale;
 
-	hermop.Op(noise,Mn); std::cout << "Noise    "<<b<<" nMdagMn "<<norm2(Mn)<< " "<< norm2(noise)<<std::endl;
+	hermop.Op(noise,Mn); std::cout << "noise   ["<<b<<"] <n|MdagM|n> "<<norm2(Mn)<<std::endl;
+
 	for(int i=0;i<2;i++){
 
 	  CG(hermop,noise,subspace[b]);
@@ -142,7 +143,7 @@ namespace Grid {
 
 	}
 
-	hermop.Op(noise,Mn); std::cout << "filtered    "<<b<<" <s|MdagM|s> "<<norm2(Mn)<< " "<< norm2(noise)<<std::endl;
+	hermop.Op(noise,Mn); std::cout << "filtered["<<b<<"] <f|MdagM|f> "<<norm2(Mn)<<std::endl;
 	subspace[b] = noise;
       }
 
