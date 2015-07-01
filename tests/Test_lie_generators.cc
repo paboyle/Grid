@@ -15,7 +15,7 @@ int main (int argc, char ** argv)
 
   std::vector<int> latt({4,4,4,8});
   GridCartesian * grid = SpaceTimeGrid::makeFourDimGrid(latt, 
-							GridDefaultSimd(Nd,vComplexF::Nsimd()),
+							GridDefaultSimd(Nd,vComplex::Nsimd()),
 							GridDefaultMpi());
   
   GridRedBlackCartesian * rbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(grid);

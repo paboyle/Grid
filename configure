@@ -751,6 +751,7 @@ enable_silent_rules
 enable_dependency_tracking
 enable_openmp
 enable_simd
+enable_precision
 enable_comms
 enable_doxygen
 enable_dot
@@ -1398,6 +1399,8 @@ Optional Features:
   --enable-simd=SSE4|AVX|AVX2|AVX512|MIC
                           Select instructions to be SSE4.0, AVX 1.0, AVX
                           2.0+FMA, AVX 512, MIC
+  --enable-precision=single|double
+                          Select default word size of Real
   --enable-comms=none|mpi Select communications
   --enable-doxygen        enable documentation generation with doxygen (auto)
   --enable-dot            use 'dot' to generate graphs in doxygen (auto)
@@ -6728,6 +6731,27 @@ $as_echo "#define EMPTY_SIMD 1" >>confdefs.h
      ;;
 esac
 
+# Check whether --enable-precision was given.
+if test "${enable_precision+set}" = set; then :
+  enableval=$enable_precision; ac_PRECISION=${enable_precision}
+else
+  ac_PRECISION=single
+fi
+
+case ${ac_PRECISION} in
+     single)
+       echo default precision is single
+
+$as_echo "#define GRID_DEFAULT_PRECISION_SINGLE 1" >>confdefs.h
+
+     ;;
+     double)
+       echo default precision is double
+
+$as_echo "#define GRID_DEFAULT_PRECISION_DOUBLE 1" >>confdefs.h
+
+     ;;
+esac
 
 # Check whether --enable-comms was given.
 if test "${enable_comms+set}" = set; then :

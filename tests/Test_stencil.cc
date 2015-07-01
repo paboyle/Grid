@@ -10,7 +10,7 @@ int main (int argc, char ** argv)
 
 
   std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplexF::Nsimd());
+  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
 
   double volume = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
