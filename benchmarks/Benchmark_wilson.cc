@@ -22,13 +22,16 @@ int main (int argc, char ** argv)
 
 
   std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplexF::Nsimd());
+  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian     RBGrid(latt_size,simd_layout,mpi_layout);
 
   int threads = GridThread::GetThreads();
   std::cout << "Grid is setup to use "<<threads<<" threads"<<std::endl;
+  std::cout << "Grid floating point word size is REALF"<< sizeof(RealF)<<std::endl;
+  std::cout << "Grid floating point word size is REALD"<< sizeof(RealD)<<std::endl;
+  std::cout << "Grid floating point word size is REAL"<< sizeof(Real)<<std::endl;
 
   std::vector<int> seeds({1,2,3,4});
   GridParallelRNG          pRNG(&Grid);

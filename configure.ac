@@ -120,6 +120,17 @@ case ${ac_SIMD} in
      ;;
 esac
 
+AC_ARG_ENABLE([precision],[AC_HELP_STRING([--enable-precision=single|double],[Select default word size of Real])],[ac_PRECISION=${enable_precision}],[ac_PRECISION=single])
+case ${ac_PRECISION} in
+     single)
+       echo default precision is single
+       AC_DEFINE([GRID_DEFAULT_PRECISION_SINGLE],[1],[GRID_DEFAULT_PRECISION is SINGLE] )
+     ;;
+     double)
+       echo default precision is double
+       AC_DEFINE([GRID_DEFAULT_PRECISION_DOUBLE],[1],[GRID_DEFAULT_PRECISION is DOUBLE] )
+     ;;
+esac
 
 AC_ARG_ENABLE([comms],[AC_HELP_STRING([--enable-comms=none|mpi],[Select communications])],[ac_COMMS=${enable_comms}],[ac_COMMS=none])
 
