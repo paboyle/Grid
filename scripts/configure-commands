@@ -16,10 +16,16 @@ echo -e $RED ==============================
 echo -e $YELLOW
 
 case $WD in
-g++-sse4)
+g++-avx)
+  CXX=g++ ../../configure --enable-simd=AVX CXXFLAGS="-mavx -O3 -std=c++11" LIBS="-lgmp -lmpfr" --enable-comms=none
+  ;;
+g++-avx-openmp)
+  CXX=g++ ../../configure --enable-simd=AVX CXXFLAGS="-mavx -fopenmp -O3 -std=c++11" LIBS="-fopenmp -lgmp -lmpfr" --enable-comms=none
+  ;;
+g++5-sse4)
   CXX=g++-5 ../../configure --enable-simd=SSE4 CXXFLAGS="-msse4 -O3 -std=c++11" LIBS="-lgmp -lmpfr" --enable-comms=none
   ;;
-g++-avx)
+g++5-avx)
   CXX=g++-5 ../../configure --enable-simd=AVX CXXFLAGS="-mavx -O3 -std=c++11" LIBS="-lgmp -lmpfr" --enable-comms=none
   ;;
 icpc-avx)
@@ -51,6 +57,12 @@ CXX=clang++ ../../configure --enable-simd=AVX2 CXXFLAGS="-mavx2 -mfma -O3 -std=c
   ;;
 clang-avx-openmp)
 CXX=clang-omp++ ../../configure --enable-simd=AVX CXXFLAGS="-mavx -fopenmp -O3 -std=c++11" LDFLAGS="-fopenmp"  LIBS="-lgmp -lmpfr" --enable-comms=none
+  ;;
+clang-xc30)
+CXX=$HOME/Clang/install/bin/clang++ ../../configure --enable-simd=AVX CXXFLAGS="-mavx -O3 -std=c++11 -I/opt/gcc/4.9.2/snos/include/g++/x86_64-suse-linux/ -I/opt/gcc/4.9.2/snos/include/g++/ " LDFLAGS=""  LIBS="-lgmp -lmpfr" --enable-comms=none
+  ;;
+clang-xc30-openmp)
+CXX=$HOME/Clang/install/bin/clang++ ../../configure --enable-simd=AVX CXXFLAGS="-mavx -fopenmp -O3 -std=c++11 -I/opt/gcc/4.9.2/snos/include/g++/x86_64-suse-linux/ -I/opt/gcc/4.9.2/snos/include/g++/ " LDFLAGS="-fopenmp"  LIBS="-lgmp -lmpfr" --enable-comms=none
   ;;
 clang-avx2-openmp)
 CXX=clang-omp++ ../../configure --enable-simd=AVX2 CXXFLAGS="-mavx2 -mfma -fopenmp -O3 -std=c++11" LDFLAGS="-fopenmp"  LIBS="-lgmp -lmpfr" --enable-comms=none
