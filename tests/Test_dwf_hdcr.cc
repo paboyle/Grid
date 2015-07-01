@@ -1,6 +1,6 @@
 #include <Grid.h>
 #include <algorithms/iterative/PrecGeneralisedConjugateResidual.h>
-#include <algorithms/iterative/PrecConjugateResidual.h>
+//#include <algorithms/iterative/PrecConjugateResidual.h>
 
 using namespace std;
 using namespace Grid;
