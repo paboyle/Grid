@@ -20,7 +20,7 @@ int main (int argc, char ** argv)
   std::cout << "Grid is setup to use "<<threads<<" threads"<<std::endl;
   
   std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "= Benchmarking fused AXPY bandwidth"<<std::endl;
+  std::cout << "= Benchmarking fused AXPY bandwidth ; sizeof(Real) "<<sizeof(Real)<<std::endl;
   std::cout << "===================================================================================================="<<std::endl;
   std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<std::endl;
   std::cout << "----------------------------------------------------------"<<std::endl;
