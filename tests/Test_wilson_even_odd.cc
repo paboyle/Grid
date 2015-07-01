@@ -21,7 +21,7 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplexF::Nsimd());
+  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian     RBGrid(latt_size,simd_layout,mpi_layout);
@@ -55,7 +55,9 @@ int main (int argc, char ** argv)
   Umu=zero;
   for(int nn=0;nn<Nd;nn++){
     random(pRNG,U[nn]);
+    std::cout<<"U[nn]"<<norm2(U[nn])<<std::endl;
     PokeIndex<LorentzIndex>(Umu,U[nn],nn);
+    std::cout<<"Umu"<<norm2(Umu)<<std::endl;
   }
 
   RealD mass=0.1;

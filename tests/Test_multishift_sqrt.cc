@@ -56,7 +56,7 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   GridCartesian *grid = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), 
-						       GridDefaultSimd(Nd,vComplexF::Nsimd()),
+						       GridDefaultSimd(Nd,vComplex::Nsimd()),
 						       GridDefaultMpi());
 
   double     lo=0.001;
