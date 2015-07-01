@@ -59,6 +59,7 @@ template<class vtype>
 // Transpose a specific index; instructive to compare this style of recursion termination
 // to that of adj; which is easiers?
 ////////////////////////////////////////////////////////////////////////////////////////////
+#if 0
 template<int Level,class vtype,int N> inline 
   typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,Level>::value, iMatrix<vtype,N> >::type 
 transposeIndex (const iMatrix<vtype,N> &arg)
@@ -96,6 +97,7 @@ transposeIndex (const iScalar<vtype> &arg)
 {
   return arg;
 }
+#endif
 
 }
 #endif
