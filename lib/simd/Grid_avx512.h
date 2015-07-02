@@ -331,7 +331,7 @@ namespace Grid {
     case 0 : conv.f = _mm512_permute4f128_ps(conv.f,(_MM_PERM_ENUM)_MM_SHUFFLE(1,0,3,2)); break;
     default: assert(0); break;
     }
-    y=conv.v;
+    y.v=conv.v;
   };
   
   // Function name aliases
