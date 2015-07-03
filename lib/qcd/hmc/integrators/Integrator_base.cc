@@ -3,18 +3,22 @@
   @brief utilities for MD including funcs to generate initial HMC momentum
  */
 
-
 #include <Grid.h>
-
-static const double sq3i = 1.0/sqrt(3.0);
 
 namespace Grid{
   namespace QCD{
 
-    
+    void MDutils::generate_momenta(LatticeLorentzColourMatrix& P,GridParallelRNG& pRNG){
+      // for future support of different groups
+      MDutils::generate_momenta_su3(P, pRNG);
+    }
 
-    void MDutils::generate_momenta_su3(LatticeColourMatrix& P,GridParallelRNG& pRNG){
-      SU3::GaussianLieAlgebraMatrix(pRNG, P);
+    void MDutils::generate_momenta_su3(LatticeLorentzColourMatrix& P,GridParallelRNG& pRNG){
+      LatticeColourMatrix Pmu(P._grid);
+      for(int mu=0;mu<Nd;mu++){
+	SU3::GaussianLieAlgebraMatrix(pRNG, Pmu);
+	pokeLorentz(P, Pmu, mu);
+      }
     }
 
 

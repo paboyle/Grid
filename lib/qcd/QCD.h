@@ -303,35 +303,35 @@ namespace QCD {
 		      const Lattice<decltype(peekIndex<ColourIndex>(lhs._odata[0],0))> & rhs,
 		      int i)
     {
-      pokeIndex<ColourIndex>(lhs,rhs,i);
+      PokeIndex<ColourIndex>(lhs,rhs,i);
     }
     template<class vobj> 
       void pokeColour(Lattice<vobj> &lhs,
 		      const Lattice<decltype(peekIndex<ColourIndex>(lhs._odata[0],0,0))> & rhs,
 		      int i,int j)
     {
-      pokeIndex<ColourIndex>(lhs,rhs,i,j);
+      PokeIndex<ColourIndex>(lhs,rhs,i,j);
     }
     template<class vobj> 
       void pokeSpin(Lattice<vobj> &lhs,
 		      const Lattice<decltype(peekIndex<SpinIndex>(lhs._odata[0],0))> & rhs,
 		      int i)
     {
-      pokeIndex<SpinIndex>(lhs,rhs,i);
+      PokeIndex<SpinIndex>(lhs,rhs,i);
     }
     template<class vobj> 
       void pokeSpin(Lattice<vobj> &lhs,
 		      const Lattice<decltype(peekIndex<SpinIndex>(lhs._odata[0],0,0))> & rhs,
 		      int i,int j)
     {
-      pokeIndex<SpinIndex>(lhs,rhs,i,j);
+      PokeIndex<SpinIndex>(lhs,rhs,i,j);
     }
     template<class vobj> 
       void pokeLorentz(Lattice<vobj> &lhs,
 		      const Lattice<decltype(peekIndex<LorentzIndex>(lhs._odata[0],0))> & rhs,
 		      int i)
     {
-      pokeIndex<LorentzIndex>(lhs,rhs,i);
+      PokeIndex<LorentzIndex>(lhs,rhs,i);
     }
 
     //////////////////////////////////////////////
