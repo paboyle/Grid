@@ -19,6 +19,12 @@
 /* GRID_COMMS_NONE */
 #define GRID_COMMS_NONE 1
 
+/* GRID_DEFAULT_PRECISION is DOUBLE */
+/* #undef GRID_DEFAULT_PRECISION_DOUBLE */
+
+/* GRID_DEFAULT_PRECISION is SINGLE */
+#define GRID_DEFAULT_PRECISION_SINGLE 1
+
 /* Support Altivec instructions */
 /* #undef HAVE_ALTIVEC */
 
