@@ -9,40 +9,71 @@
 #ifndef INTEGRATOR_INCLUDED
 #define INTEGRATOR_INCLUDED
 
-class Action;
-class RandNum;
 class Observer;
 
-typedef std::vector<Action*> ActionLevel;
-typedef std::vector<ActionLevel> ActionSet;
-typedef std::vector<Observer*> ObserverList;
 
 /*! @brief Abstract base class for Molecular Dynamics management */
 
 namespace Grid{
   namespace QCD{
+
+    typedef Action<LatticeLorentzColourMatrix>*  ActPtr; // now force the same size as the rest of the code
+    typedef std::vector<ActPtr> ActionLevel;
+    typedef std::vector<ActionLevel> ActionSet;
+    typedef std::vector<Observer*> ObserverList;
     
+    
+    class Integrator2MN{
+      const double lambda = 0.1931833275037836;
+      void step (LatticeColourMatrix&, LatticeColourMatrix&, 
+		 int, std::vector<int>&);
+      
+    };
+    
+    class IntegratorLeapFrog{
+      void step (LatticeColourMatrix&, LatticeColourMatrix&,
+		 int, std::vector<int>&);
+    };
+    
+
+
+    template< class IntegratorPolicy >
     class Integrator{
     private:
-      virtual void update_P(int lv,double ep) = 0;
-      virtual void update_U(double ep) = 0;
+      int Nexp;
+      int MDsteps;  // number of outer steps
+      RealD trajL;  // trajectory length 
+      RealD stepsize;
+
+      const std::vector<int> Nrel; // relative steps per level
+      const ActionSet as;
+      ObserverList observers;
+      //      LatticeColourMatrix* const U;  // is shared among all actions - or use a singleton...
+      LatticeColourMatrix P;
       
-      virtual void register_observers() = 0;
-      virtual void notify_observers() = 0;
+      IntegratorPolicy TheIntegrator;// contains parameters too
+      void update_P(int lv,double ep);
+      void update_U(double ep);
+      
+      void register_observers();
+      void notify_observers();
+      void integrator_step(int level ,std::vector<Integer>& clock);
+
       
     public:
-      virtual ~Integrator(){}
-      virtual void init(const LatticeColourMatrix&,
-			const GridParallelRNG& RNG)=0;
-      virtual double S()const =0;
-      virtual void integrate(int level) =0;
-      virtual const LatticeColourMatrix get_U() const =0;
-      
-      void generate_momenta(LatticeColourMatrix& P,const RandNum& rand);
+      Integrator(int Nexp_, int MDsteps_, RealD trajL_,
+		 ActionSet& Aset, ObserverList obs):as(Aset), observers(obs){};
+      ~Integrator(){}
+      void init(LatticeLorentzColourMatrix&,
+		GridParallelRNG&);
+      double S();
+      void integrate(int level);
+      LatticeColourMatrix get_U();
     };
     
     namespace MDutils{
-      void generate_momenta_su3(LatticeColourMatrix& P,GridParallelRNG& RNG);
+      void generate_momenta(LatticeLorentzColourMatrix&,GridParallelRNG&);
+      void generate_momenta_su3(LatticeLorentzColourMatrix&,GridParallelRNG&);
     }
     
   }
