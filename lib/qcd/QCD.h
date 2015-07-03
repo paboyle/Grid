@@ -413,5 +413,8 @@ namespace QCD {
 #include <qcd/utils/WilsonLoops.h>
 #include <qcd/utils/SUn.h>
 #include <qcd/action/Actions.h>
+#include <qcd/hmc/integrators/Integrator_base.h>
+#include <qcd/hmc/HMC.h>
+
 
 #endif
