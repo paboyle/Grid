@@ -22,15 +22,23 @@ int main (int argc, char ** argv)
   double volume = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
   
   GridCartesian           Fine(latt_size,simd_layout,mpi_layout);
-  GridParallelRNG       FineRNG(&Fine);
-  GridSerialRNG       SerialRNG;
-  FineRNG.SeedRandomDevice();
   
+  // simplify template?
   WilsonGaugeAction<LatticeLorentzColourMatrix, LatticeColourMatrix> Waction(6.0);
-  //Collect actions
-  ActionLevel Level;
-  Level.push_back(&Waction);
-  
 
-  //Integrator<IntegratorLeapFrog(12,10,1.0);
+  //Collect actions
+  ActionLevel Level1;
+  Level1.push_back(&Waction);
+  ActionSet FullSet;
+  FullSet.push_back(Level1);
+
+  // Create integrator
+  IntegratorParameters MDpar(12,10,1.0);
+  std::vector<int> rel ={1};
+  Integrator<LeapFrog> MDleapfrog(MDpar, FullSet,rel);
+
+  // Create HMC
+  HMCparameters HMCpar;
+  HybridMonteCarlo<LeapFrog>  HMCrun(HMCpar, MDleapfrog, &Fine);
+
 }

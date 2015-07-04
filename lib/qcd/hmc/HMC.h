@@ -1,6 +1,6 @@
 //--------------------------------------------------------------------
 /*! @file HMC.h
- * @brief Declaration of classes for HybridMonteCarlo update
+ * @brief Declaration of classes for Hybrid Monte Carlo update
  *
  * @author Guido Cossu
  */
@@ -30,7 +30,7 @@ namespace Grid{
       const HMCparameters Params;
       GridSerialRNG sRNG;
       GridParallelRNG pRNG;
-      std::unique_ptr< Integrator<IntegType> > MD;
+      Integrator<IntegType>& MD;
       
 
       bool metropolis_test(const RealD DeltaH){
@@ -51,13 +51,13 @@ namespace Grid{
 	}
       }
 
-      RealD evolve_step(LatticeColourMatrix& Uin){
-     
-	MD->init(Uin,pRNG);     // set U and initialize P and phi's 
+      RealD evolve_step(LatticeLorentzColourMatrix& U){
+
+	MD->init(U,pRNG);     // set U and initialize P and phi's 
 	RealD H0 = MD->S();     // current state            
 	std::cout<<"Total H_before = "<< H0 << "\n";
       
-	MD->integrate(0);
+	MD->integrate(U,0);
       
 	RealD H1 = MD->S();     // updated state            
 	std::cout<<"Total H_after = "<< H1 << "\n";
@@ -68,7 +68,10 @@ namespace Grid{
       
       
     public:
-      HybridMonteCarlo(Integrator<IntegType>& MolDyn, GridBase* grid):MD(&MolDyn),pRNG(grid){
+    HybridMonteCarlo(HMCparameters Pms, 
+		     Integrator<IntegType>& MolDyn, 
+		     GridBase* grid):
+      Params(Pms),MD(MolDyn),pRNG(grid){
 	//FIXME
 
 	// initialize RNGs
@@ -79,7 +82,7 @@ namespace Grid{
 
 
 
-      void evolve(LatticeColourMatrix& Uin){
+      void evolve(LatticeLorentzColourMatrix& Uin){
 	Real DeltaH;
 	Real timer;
       
@@ -90,20 +93,21 @@ namespace Grid{
 	  DeltaH = evolve_step(Uin);
 	
 	  std::cout<< "[Timing] Trajectory time (s) : "<< timer/1000.0 << "\n";
-	  std::cout<< "dH = "<< DeltaH << "\n";
+	  std::cout<< " dH = "<< DeltaH << "\n";
 	
 	  // Update matrix
-	  Uin = MD->get_U();  //accept every time
+	  //Uin = MD->get_U();  //accept every time
 	}
 
-	// Actual updates
+	// Actual updates (evolve a copy Ucopy then copy back eventually)
+	LatticeLorentzColourMatrix Ucopy(Uin._grid);
 	for(int iter=Params.StartingConfig; 
 	    iter < Params.Nsweeps+Params.StartingConfig; ++iter){
 	  std::cout << "-- # Sweep = "<< iter <<  "\n";
+	  Ucopy = Uin;
+	  DeltaH = evolve_step(Ucopy);
 		
-	  DeltaH = evolve_step(Uin);
-		
-	  if(metropolis_test(DeltaH))  Uin = MD->get_U();
+	  if(metropolis_test(DeltaH))  Uin = Ucopy;
 	  // need sync?	
 	}
 

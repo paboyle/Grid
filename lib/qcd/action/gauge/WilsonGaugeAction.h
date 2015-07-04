@@ -14,8 +14,7 @@ namespace Grid{
     public:
     WilsonGaugeAction(RealD b):beta(b){};
       
-      virtual void init(const GaugeField &U) {//FIXME
-      };
+      virtual void init(const GaugeField &U, GridParallelRNG& pRNG) {};
       
       virtual RealD S(const GaugeField &U) {
 	return WilsonLoops<MatrixField,GaugeField>::sumPlaquette(U);
