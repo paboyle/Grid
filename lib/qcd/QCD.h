@@ -252,47 +252,47 @@ namespace QCD {
     //////////////////////////////////////////////////////////////////////////////
 
     //spin
-    template<class vobj> auto peekSpin(const vobj &rhs,int i) -> decltype(peekIndex<SpinIndex>(rhs,0))
+    template<class vobj> auto peekSpin(const vobj &rhs,int i) -> decltype(PeekIndex<SpinIndex>(rhs,0))
     {
-      return peekIndex<SpinIndex>(rhs,i);
+      return PeekIndex<SpinIndex>(rhs,i);
     }
-    template<class vobj> auto peekSpin(const vobj &rhs,int i,int j) -> decltype(peekIndex<SpinIndex>(rhs,0,0))
+    template<class vobj> auto peekSpin(const vobj &rhs,int i,int j) -> decltype(PeekIndex<SpinIndex>(rhs,0,0))
     {
-      return peekIndex<SpinIndex>(rhs,i,j);
+      return PeekIndex<SpinIndex>(rhs,i,j);
     }
-    template<class vobj> auto peekSpin(const Lattice<vobj> &rhs,int i) -> decltype(peekIndex<SpinIndex>(rhs,0))
+    template<class vobj> auto peekSpin(const Lattice<vobj> &rhs,int i) -> decltype(PeekIndex<SpinIndex>(rhs,0))
     {
-      return peekIndex<SpinIndex>(rhs,i);
+      return PeekIndex<SpinIndex>(rhs,i);
     }
-    template<class vobj> auto peekSpin(const Lattice<vobj> &rhs,int i,int j) -> decltype(peekIndex<SpinIndex>(rhs,0,0))
+    template<class vobj> auto peekSpin(const Lattice<vobj> &rhs,int i,int j) -> decltype(PeekIndex<SpinIndex>(rhs,0,0))
     {
-      return peekIndex<SpinIndex>(rhs,i,j);
+      return PeekIndex<SpinIndex>(rhs,i,j);
     }
     //colour
-    template<class vobj> auto peekColour(const vobj &rhs,int i) -> decltype(peekIndex<ColourIndex>(rhs,0))
+    template<class vobj> auto peekColour(const vobj &rhs,int i) -> decltype(PeekIndex<ColourIndex>(rhs,0))
     {
-      return peekIndex<ColourIndex>(rhs,i);
+      return PeekIndex<ColourIndex>(rhs,i);
     }
-    template<class vobj> auto peekColour(const vobj &rhs,int i,int j) -> decltype(peekIndex<ColourIndex>(rhs,0,0))
+    template<class vobj> auto peekColour(const vobj &rhs,int i,int j) -> decltype(PeekIndex<ColourIndex>(rhs,0,0))
     {
-      return peekIndex<ColourIndex>(rhs,i,j);
+      return PeekIndex<ColourIndex>(rhs,i,j);
     }
-    template<class vobj> auto peekColour(const Lattice<vobj> &rhs,int i) -> decltype(peekIndex<ColourIndex>(rhs,0))
+    template<class vobj> auto peekColour(const Lattice<vobj> &rhs,int i) -> decltype(PeekIndex<ColourIndex>(rhs,0))
     {
-      return peekIndex<ColourIndex>(rhs,i);
+      return PeekIndex<ColourIndex>(rhs,i);
     }
-    template<class vobj> auto peekColour(const Lattice<vobj> &rhs,int i,int j) -> decltype(peekIndex<ColourIndex>(rhs,0,0))
+    template<class vobj> auto peekColour(const Lattice<vobj> &rhs,int i,int j) -> decltype(PeekIndex<ColourIndex>(rhs,0,0))
     {
-      return peekIndex<ColourIndex>(rhs,i,j);
+      return PeekIndex<ColourIndex>(rhs,i,j);
     }
     //lorentz
-    template<class vobj> auto peekLorentz(const vobj &rhs,int i) -> decltype(peekIndex<LorentzIndex>(rhs,0))
+    template<class vobj> auto peekLorentz(const vobj &rhs,int i) -> decltype(PeekIndex<LorentzIndex>(rhs,0))
     {
-      return peekIndex<LorentzIndex>(rhs,i);
+      return PeekIndex<LorentzIndex>(rhs,i);
     }
-    template<class vobj> auto peekLorentz(const Lattice<vobj> &rhs,int i) -> decltype(peekIndex<LorentzIndex>(rhs,0))
+    template<class vobj> auto peekLorentz(const Lattice<vobj> &rhs,int i) -> decltype(PeekIndex<LorentzIndex>(rhs,0))
     {
-      return peekIndex<LorentzIndex>(rhs,i);
+      return PeekIndex<LorentzIndex>(rhs,i);
     }
 
     //////////////////////////////////////////////
