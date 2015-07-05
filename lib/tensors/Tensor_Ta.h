@@ -62,14 +62,16 @@ namespace Grid {
     {
       // need a check for the group type?
       iMatrix<vtype,N> ret(arg);
-      RealD nrm;
+      vtype nrm;
       vtype inner;
       for(int c1=0;c1<N;c1++){
 	zeroit(inner);	
 	for(int c2=0;c2<N;c2++)
 	  inner += innerProduct(ret._internal[c1][c2],ret._internal[c1][c2]);
 
-	nrm = 1.0/sqrt(Reduce(toReal(inner)));
+	//nrm = 1.0/sqrt(Reduce(toReal(inner)));
+	nrm = rsqrt(inner);
+
 	for(int c2=0;c2<N;c2++)
 	  ret._internal[c1][c2]*= nrm;
       

@@ -22,7 +22,13 @@ int main (int argc, char ** argv)
   double volume = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
   
   GridCartesian           Fine(latt_size,simd_layout,mpi_layout);
-  
+  GridParallelRNG  pRNG(&Fine);
+  pRNG.SeedRandomDevice();
+  LatticeLorentzColourMatrix     U(&Fine);
+
+  SU3::ColdConfiguration(pRNG, U);
+ 
+
   // simplify template?
   WilsonGaugeAction<LatticeLorentzColourMatrix, LatticeColourMatrix> Waction(6.0);
 
@@ -33,12 +39,14 @@ int main (int argc, char ** argv)
   FullSet.push_back(Level1);
 
   // Create integrator
-  IntegratorParameters MDpar(12,10,1.0);
+  IntegratorParameters MDpar(12,50,1.0);
   std::vector<int> rel ={1};
   Integrator<LeapFrog> MDleapfrog(MDpar, FullSet,rel);
 
   // Create HMC
   HMCparameters HMCpar;
-  HybridMonteCarlo<LeapFrog>  HMCrun(HMCpar, MDleapfrog, &Fine);
+  HybridMonteCarlo<LeapFrog>  HMC(HMCpar, MDleapfrog, &Fine);
+
+  HMC.evolve(U);
 
 }

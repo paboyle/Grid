@@ -220,15 +220,19 @@ int main (int argc, char ** argv)
     std::cout << cm << std::endl;
 
 
-    cm = Exponentiate(cm, 1.0, 12);
+    cm = Exponentiate(cm, 2.0, 12);
     std::cout << cm << "  " << std::endl;
     Complex det = Determinant(cm);
     std::cout << "determinant: " << det <<  std::endl;
+    std::cout << "norm: " << norm2(cm) <<  std::endl;
 
     cm = ProjectOnGroup(cm);
     std::cout << cm << "  " << std::endl;
+    std::cout << "norm: " << norm2(cm) <<  std::endl;
     cm = ProjectOnGroup(cm);
     std::cout << cm << "  " << std::endl;
+    std::cout << "norm: " << norm2(cm) <<  std::endl;
+
 
     //    det = Determinant(cm);
     //    std::cout << "determinant: " << det <<  std::endl;
@@ -245,7 +249,24 @@ int main (int argc, char ** argv)
     trscMat = trace(scMat); // Trace
 
     // Exponentiate test
+    std::vector<int> mysite {0,0,0,0};
+    random(FineRNG,cMat);
+    cMat = Ta(cMat);
+    peekSite(cm, cMat, mysite);
+    std::cout << cm << "  " << std::endl;
+    cm = Exponentiate(cm, 1.0, 12);
+    std::cout << cm << "  " << std::endl;
+    std::cout << "norm: " << norm2(cm) <<  std::endl;
+
+
+    std::cout << "norm cMmat : " << norm2(cMat) <<  std::endl;
     cMat = expMat(cMat, ComplexD(1.0, 0.0));
+    std::cout << "norm expMat: " << norm2(cMat) <<  std::endl;
+    peekSite(cm, cMat, mysite);
+    std::cout << cm << "  " << std::endl;
+    std::cout << "determinant: " << Determinant(cm) <<  std::endl;
+    std::cout << "norm: " << norm2(cm) <<  std::endl;
+
 
     // LatticeComplex trlcMat(&Fine);
     // trlcMat = trace(lcMat); // Trace involving iVector - now generates error

@@ -94,6 +94,11 @@ namespace Grid {
   inline Grid_simd<S,V> rsqrt(const Grid_simd<S,V> &r) {
     return SimdApply(RSqrtRealFunctor<S>(),r);
   }
+  template < class Scalar > 
+  inline Scalar rsqrt(const Scalar &r) {
+    return (RSqrtRealFunctor<Scalar>(),r);
+  }
+
   template < class S, class V > 
   inline Grid_simd<S,V> cos(const Grid_simd<S,V> &r) {
     return SimdApply(CosRealFunctor<S>(),r);

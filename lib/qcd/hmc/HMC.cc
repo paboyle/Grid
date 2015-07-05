@@ -9,7 +9,7 @@ namespace Grid{
 	////////////////////////////// Default values
 	Nsweeps             = 10;
 	TotalSweeps         = 10;
-	ThermalizationSteps = 0;
+	ThermalizationSteps = 1;
 	StartingConfig      = 0;
 	SaveInterval        = 1;
 	Filename_prefix     = "Conf_";
