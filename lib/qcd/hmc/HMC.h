@@ -53,13 +53,13 @@ namespace Grid{
 
       RealD evolve_step(LatticeLorentzColourMatrix& U){
 
-	MD->init(U,pRNG);     // set U and initialize P and phi's 
-	RealD H0 = MD->S();     // current state            
+	MD.init(U,pRNG);     // set U and initialize P and phi's 
+	RealD H0 = MD.S(U);     // current state            
 	std::cout<<"Total H_before = "<< H0 << "\n";
       
-	MD->integrate(U,0);
+	MD.integrate(U,0);
       
-	RealD H1 = MD->S();     // updated state            
+	RealD H1 = MD.S(U);     // updated state            
 	std::cout<<"Total H_after = "<< H1 << "\n";
       
 	return (H1-H0);
@@ -104,10 +104,11 @@ namespace Grid{
 	for(int iter=Params.StartingConfig; 
 	    iter < Params.Nsweeps+Params.StartingConfig; ++iter){
 	  std::cout << "-- # Sweep = "<< iter <<  "\n";
+	  
 	  Ucopy = Uin;
 	  DeltaH = evolve_step(Ucopy);
 		
-	  if(metropolis_test(DeltaH))  Uin = Ucopy;
+	  if(metropolis_test(DeltaH)) Uin = Ucopy;
 	  // need sync?	
 	}
 
