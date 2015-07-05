@@ -28,7 +28,9 @@ namespace Grid {
 	temp *= alpha/ComplexD(i);
 	temp = unit + temp*arg;
       }
+      
       return ProjectOnGroup(temp);//maybe not strictly necessary
+      
     }
 
 

@@ -25,7 +25,7 @@ namespace Grid{
     typedef std::vector<Observer*> ObserverList;
     
     class LeapFrog;
-
+   
 
     struct IntegratorParameters{
       int Nexp;
@@ -77,7 +77,9 @@ namespace Grid{
 	for (int mu = 0; mu < Nd; mu++){
 	  Umu=peekLorentz(U, mu);
 	  Pmu=peekLorentz(*P, mu);
+	  std::cout << "U norm ["<<mu<<"] = "<< norm2(Umu) << "  : Pmu "<< norm2(Pmu)<<"\n";
 	  Umu = expMat(Pmu, Complex(ep, 0.0))*Umu;
+	  pokeLorentz(U, Umu, mu);
 	}
 
       }
@@ -102,9 +104,14 @@ namespace Grid{
       void init(LatticeLorentzColourMatrix& U,
 		GridParallelRNG& pRNG){
 	std::cout<< "Integrator init\n";
-	if (!P)
-	  P = new LatticeLorentzColourMatrix(U._grid);
+	if (!P){
+	  std::unique_ptr<LatticeLorentzColourMatrix> Pnew(new LatticeLorentzColourMatrix(U._grid));
+	  P = std::move(Pnew);
+
+	}
 	MDutils::generate_momenta(*P,pRNG);
+	
+       
 	
 	for(int level=0; level< as.size(); ++level){
 	  for(int actionID=0; actionID<as.at(level).size(); ++actionID){
@@ -116,11 +123,18 @@ namespace Grid{
       
 
       RealD S(LatticeLorentzColourMatrix& U){
+	LatticeComplex Hloc(U._grid);
+	Hloc = zero;
 	// Momenta
-	LatticeComplex Hloc = - trace((*P)*adj(*P));
+	for (int mu=0; mu <Nd; mu++){
+	  LatticeColourMatrix Pmu = peekLorentz(*P, mu);
+	  Hloc -= trace(Pmu*adj(Pmu));
+	}
 	Complex Hsum = sum(Hloc);
 	
 	RealD H = Hsum.real();
+
+	std::cout << "H_p = "<< H << "\n";
 
 	// Actions
 	for(int level=0; level<as.size(); ++level)
@@ -136,7 +150,7 @@ namespace Grid{
 	std::vector<int> clock;
 	clock.resize(as.size(),0);
 	for(int step=0; step< Params.MDsteps; ++step)   // MD step
-	  TheIntegrator.step(U,0,clock, *(this));
+	  TheIntegrator.step(U,0,clock, (this));
       }
     };
     

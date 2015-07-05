@@ -10,7 +10,6 @@ class Action {
   virtual void  init(const GaugeField &U, GridParallelRNG& pRNG) = 0;
   virtual RealD S(const GaugeField &U)                           = 0;  // evaluate the action
   virtual void  deriv(const GaugeField &U,GaugeField & dSdU )    = 0;  // evaluate the action derivative
-  virtual void  staple(const GaugeField &U,GaugeField & dSdU )   = 0;  // evaluate the action derivative
   //virtual void  refresh(const GaugeField & ) {}                ; 
   // Boundary conditions?
   // Heatbath?

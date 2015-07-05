@@ -17,17 +17,28 @@ namespace Grid{
       virtual void init(const GaugeField &U, GridParallelRNG& pRNG) {};
       
       virtual RealD S(const GaugeField &U) {
-	return WilsonLoops<MatrixField,GaugeField>::sumPlaquette(U);
+	RealD plaq = WilsonLoops<MatrixField,GaugeField>::avgPlaquette(U);
+	std::cout << "Plaq : "<<plaq << "\n";
+	double vol = U._grid->gSites();
+	return beta*(1.0 -plaq)*(Nd*(Nd-1.0))*vol*0.5;
       };
       virtual void deriv(const GaugeField &U,GaugeField & dSdU) {
-	//FIXME loop on directions
+
+	//not optimal implementation FIXME
+	//extend Ta to include Lorentz indexes
+	RealD factor = 0.5*beta/RealD(Nc);
+	std::cout << "Debug force Wilson  "<< factor << "\n";
 	MatrixField dSdU_mu(U._grid);
-	WilsonLoops<MatrixField,GaugeField>::Staple(dSdU_mu,U,0);
-      };
-      virtual void  staple(const GaugeField &stap,GaugeField & U) {
-	//FIXME loop on directions
-	MatrixField stap_mu(U._grid);
-	WilsonLoops<MatrixField,GaugeField>::Staple(stap_mu,U,0);
+	MatrixField Umu(U._grid);
+	for (int mu=0; mu < Nd; mu++){
+	  Umu = PeekIndex<LorentzIndex>(U,mu);
+	  // Staple in direction mu
+	  WilsonLoops<MatrixField,GaugeField>::Staple(dSdU_mu,U,mu);
+	  std::cout << "Staple norm ["<<mu<<"] = "<< norm2(dSdU_mu) <<"\n";
+	  dSdU_mu = Ta(Umu*adj(dSdU_mu))*factor;
+	  std::cout << "Force norm ["<<mu<<"] = "<< norm2(dSdU_mu) << "  : Umu "<< norm2(Umu)<<"\n";
+	  pokeLorentz(dSdU, dSdU_mu, mu);
+	}
       };
     };
     
