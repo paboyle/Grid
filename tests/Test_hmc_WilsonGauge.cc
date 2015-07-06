@@ -39,10 +39,9 @@ int main (int argc, char ** argv)
   FullSet.push_back(Level1);
 
   // Create integrator
-  typedef MinimumNorm2  IntegratorAlgorithm;// change here to change the algorithm
+  typedef MinimumNorm2  IntegratorAlgorithm;// change here to modify the algorithm
   IntegratorParameters MDpar(12,5,1.0);
-  std::vector<int> rel ={1};
-  Integrator<IntegratorAlgorithm> MDynamics(&Fine,MDpar, FullSet,rel);
+  Integrator<IntegratorAlgorithm> MDynamics(&Fine,MDpar, FullSet);
 
   // Create HMC
   HMCparameters HMCpar;
