@@ -10,6 +10,7 @@
 
 #include <string>
 #include <memory>
+#include <unistd.h>
 
 namespace Grid{
   namespace QCD{
@@ -55,12 +56,12 @@ namespace Grid{
 
 	MD.init(U,pRNG);     // set U and initialize P and phi's 
 	RealD H0 = MD.S(U);     // current state            
-	std::cout<<"Total H_before = "<< H0 << "\n";
+	std::cout<<"Total H before = "<< H0 << "\n";
       
 	MD.integrate(U,0);
       
 	RealD H1 = MD.S(U);     // updated state            
-	std::cout<<"Total H_after = "<< H1 << "\n";
+	std::cout<<"Total H after = "<< H1 << "\n";
       
 	return (H1-H0);
       }
@@ -84,19 +85,14 @@ namespace Grid{
 
       void evolve(LatticeLorentzColourMatrix& Uin){
 	Real DeltaH;
-	Real timer;
       
 	// Thermalizations
 	for(int iter=1; iter <= Params.ThermalizationSteps; ++iter){
 	  std::cout << "-- # Thermalization step = "<< iter <<  "\n";
 	
 	  DeltaH = evolve_step(Uin);
-	
-	  std::cout<< "[Timing] Trajectory time (s) : "<< timer/1000.0 << "\n";
 	  std::cout<< " dH = "<< DeltaH << "\n";
 	
-	  // Update matrix
-	  //Uin = MD->get_U();  //accept every time
 	}
 
 	// Actual updates (evolve a copy Ucopy then copy back eventually)
@@ -109,13 +105,9 @@ namespace Grid{
 	  DeltaH = evolve_step(Ucopy);
 		
 	  if(metropolis_test(DeltaH)) Uin = Ucopy;
-	  // need sync?	
+	  //need sync?
 	}
-
-      
       }
-
-
     };
     
   }// QCD

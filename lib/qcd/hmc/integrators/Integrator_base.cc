@@ -15,10 +15,12 @@ namespace Grid{
 
     void MDutils::generate_momenta_su3(LatticeLorentzColourMatrix& P,GridParallelRNG& pRNG){
       LatticeColourMatrix Pmu(P._grid);
+      Pmu = zero;
       for(int mu=0;mu<Nd;mu++){
 	SU3::GaussianLieAlgebraMatrix(pRNG, Pmu);
 	pokeLorentz(P, Pmu, mu);
       }
+      
     }
 
 

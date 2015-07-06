@@ -26,7 +26,7 @@ int main (int argc, char ** argv)
   pRNG.SeedRandomDevice();
   LatticeLorentzColourMatrix     U(&Fine);
 
-  SU3::ColdConfiguration(pRNG, U);
+  SU3::HotConfiguration(pRNG, U);
  
 
   // simplify template?
@@ -39,7 +39,7 @@ int main (int argc, char ** argv)
   FullSet.push_back(Level1);
 
   // Create integrator
-  IntegratorParameters MDpar(12,50,1.0);
+  IntegratorParameters MDpar(12,30,1.0);
   std::vector<int> rel ={1};
   Integrator<LeapFrog> MDleapfrog(MDpar, FullSet,rel);
 
