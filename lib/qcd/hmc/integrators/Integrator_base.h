@@ -71,14 +71,13 @@ namespace Grid{
 
 
       void update_U(LatticeLorentzColourMatrix&U, double ep){
-	//rewrite exponential to deal with the lorentz index?
+	//rewrite exponential to deal automatically  with the lorentz index?
 	LatticeColourMatrix Umu(U._grid);
 	LatticeColourMatrix Pmu(U._grid);
 	for (int mu = 0; mu < Nd; mu++){
 	  Umu=peekLorentz(U, mu);
 	  Pmu=peekLorentz(*P, mu);
-	  std::cout << "U norm ["<<mu<<"] = "<< norm2(Umu) << "  : Pmu "<< norm2(Pmu)<<"\n";
-	  Umu = expMat(Pmu, Complex(ep, 0.0))*Umu;
+	  Umu = expMat(Pmu, ep)*Umu;
 	  pokeLorentz(U, Umu, mu);
 	}
 
@@ -105,14 +104,10 @@ namespace Grid{
 		GridParallelRNG& pRNG){
 	std::cout<< "Integrator init\n";
 	if (!P){
-	  std::unique_ptr<LatticeLorentzColourMatrix> Pnew(new LatticeLorentzColourMatrix(U._grid));
+	  std::unique_ptr<LatticeLorentzColourMatrix> Pnew(new LatticeLorentzColourMatrix(U._grid));	  
 	  P = std::move(Pnew);
-
 	}
 	MDutils::generate_momenta(*P,pRNG);
-	
-       
-	
 	for(int level=0; level< as.size(); ++level){
 	  for(int actionID=0; actionID<as.at(level).size(); ++actionID){
 	    as[level].at(actionID)->init(U, pRNG);
@@ -128,7 +123,7 @@ namespace Grid{
 	// Momenta
 	for (int mu=0; mu <Nd; mu++){
 	  LatticeColourMatrix Pmu = peekLorentz(*P, mu);
-	  Hloc -= trace(Pmu*adj(Pmu));
+	  Hloc -= trace(Pmu*Pmu);
 	}
 	Complex Hsum = sum(Hloc);
 	
