@@ -24,9 +24,6 @@ namespace Grid{
     typedef std::vector<ActionLevel> ActionSet;
     typedef std::vector<Observer*> ObserverList;
     
-    class LeapFrog;
-   
-
     struct IntegratorParameters{
       int Nexp;
       int MDsteps;  // number of outer steps
@@ -46,20 +43,20 @@ namespace Grid{
     }
 
     
-    
-
-
     template< class IntegratorPolicy >
     class Integrator{
     private:
       IntegratorParameters Params;
       const ActionSet as;
       const std::vector<int> Nrel; //relative step size per level
-      //ObserverList observers; // not yet
       std::unique_ptr<LatticeLorentzColourMatrix> P;
-      
-      IntegratorPolicy TheIntegrator;// contains parameters too
+      GridParallelRNG pRNG;
+      //ObserverList observers; // not yet
+     
+      IntegratorPolicy TheIntegrator;
 
+      void register_observers();
+      void notify_observers();
 
       void update_P(LatticeLorentzColourMatrix&U, int level,double ep){
 	for(int a=0; a<as[level].size(); ++a){
@@ -77,36 +74,32 @@ namespace Grid{
 	for (int mu = 0; mu < Nd; mu++){
 	  Umu=peekLorentz(U, mu);
 	  Pmu=peekLorentz(*P, mu);
-	  Umu = expMat(Pmu, ep)*Umu;
+	  Umu = expMat(Pmu, ep, Params.Nexp)*Umu;
 	  pokeLorentz(U, Umu, mu);
 	}
 
       }
       
-      void register_observers();
-      void notify_observers();
+
       
       friend void IntegratorPolicy::step (LatticeLorentzColourMatrix& U, 
 				     int level, std::vector<int>& clock,
-				     Integrator<LeapFrog>* Integ);
+				     Integrator<IntegratorPolicy>* Integ);
     public:
-      Integrator(IntegratorParameters Par,
+    Integrator(GridBase* grid, IntegratorParameters Par,
 		 ActionSet& Aset, std::vector<int> Nrel_):
-	Params(Par),as(Aset),Nrel(Nrel_){
+      Params(Par),as(Aset),Nrel(Nrel_),P(new LatticeLorentzColourMatrix(grid)),pRNG(grid){
 	assert(as.size() == Nrel.size());
+	pRNG.SeedRandomDevice();
       };
       
       ~Integrator(){}
 
 
       //Initialization of momenta and actions
-      void init(LatticeLorentzColourMatrix& U,
-		GridParallelRNG& pRNG){
+      void init(LatticeLorentzColourMatrix& U){
 	std::cout<< "Integrator init\n";
-	if (!P){
-	  std::unique_ptr<LatticeLorentzColourMatrix> Pnew(new LatticeLorentzColourMatrix(U._grid));	  
-	  P = std::move(Pnew);
-	}
+
 	MDutils::generate_momenta(*P,pRNG);
 	for(int level=0; level< as.size(); ++level){
 	  for(int actionID=0; actionID<as.at(level).size(); ++actionID){
@@ -116,7 +109,7 @@ namespace Grid{
       }
 
       
-
+      // Calculate action
       RealD S(LatticeLorentzColourMatrix& U){
 	LatticeComplex Hloc(U._grid);
 	Hloc = zero;
@@ -153,7 +146,74 @@ namespace Grid{
     class MinimumNorm2{
       const double lambda = 0.1931833275037836;
     public:
-      void step (LatticeLorentzColourMatrix& U, int level, std::vector<int>& clock);
+      void step (LatticeLorentzColourMatrix& U, 
+		 int level, std::vector<int>& clock,
+		 Integrator<MinimumNorm2>* Integ){
+	// level  : current level
+	// fl  : final level
+	// eps : current step size
+
+	int fl = Integ->as.size() -1;
+	double eps = Integ->Params.stepsize;
+	
+	for(int l=0; l<=level; ++l) eps/= 2.0*Integ->Nrel[l];
+	
+	int fin = Integ->Nrel[0];
+	for(int l=1; l<=level; ++l) fin*= 2.0*Integ->Nrel[l];
+	fin = 3*Integ->Params.MDsteps*fin -1;
+	
+	
+	for(int e=0; e<Integ->Nrel[level]; ++e){
+	  
+	  if(clock[level] == 0){    // initial half step 
+	    Integ->update_P(U,level,lambda*eps);
+	    ++clock[level];
+	    for(int l=0; l<level;++l) std::cout<<"   ";
+	    std::cout<<"P "<< clock[level] <<std::endl;
+	  }
+	  
+	  if(level == fl){          // lowest level 
+	    Integ->update_U(U,0.5*eps);
+	    
+	    for(int l=0; l<level;++l) std::cout<<"   ";
+	    std::cout<<"U "<< (clock[level]+1) <<std::endl;
+	  }else{                 // recursive function call 
+	    step(U,level+1,clock, Integ);
+	  }
+	  
+	  Integ->update_P(U,level,(1.0-2.0*lambda)*eps);
+	  ++clock[level];
+	  for(int l=0; l<level;++l) std::cout<<"   ";
+	  std::cout<<"P "<< (clock[level]) <<std::endl;
+	  
+	  if(level == fl){          // lowest level 
+	    Integ->update_U(U,0.5*eps);
+	    
+	    for(int l=0; l<level;++l) std::cout<<"   ";
+	    std::cout<<"U "<< (clock[level]+1) <<std::endl;
+	  }else{                 // recursive function call 
+	    step(U,level+1,clock, Integ);
+	  }    
+	  
+	  
+	  if(clock[level] == fin){  // final half step
+	    Integ->update_P(U,level,lambda*eps);
+	    
+	    ++clock[level];
+	    for(int l=0; l<level;++l) std::cout<<"   ";
+	    std::cout<<"P "<< clock[level] <<std::endl;
+	  }else{                  // bulk step
+	    Integ->update_P(U,level,lambda*2.0*eps);
+	    
+	    clock[level]+=2;
+	    for(int l=0; l<level;++l) std::cout<<"   ";
+	    std::cout<<"P "<< clock[level] <<std::endl;
+	  }
+	}
+	
+	
+	
+      }
       
     };
     
@@ -162,7 +222,6 @@ namespace Grid{
       void step (LatticeLorentzColourMatrix& U, 
 		 int level, std::vector<int>& clock,
 		 Integrator<LeapFrog>* Integ){
-	// cl  : current level
 	// fl  : final level
 	// eps : current step size
 	
@@ -179,7 +238,7 @@ namespace Grid{
 	for(int e=0; e<Integ->Nrel[level]; ++e){
 	  
 	  if(clock[level] == 0){    // initial half step
-	    Integ->update_P(U, level,eps/2);
+	    Integ->update_P(U, level,eps/2.0);
 	    ++clock[level];
 	    for(int l=0; l<level;++l) std::cout<<"   ";
 	    std::cout<<"P "<< 0.5*clock[level] <<std::endl;
@@ -192,7 +251,7 @@ namespace Grid{
 	    step(U, level+1,clock, Integ);
 	  }
 	  if(clock[level] == fin){  // final half step
-	    Integ->update_P(U, level,eps/2);
+	    Integ->update_P(U, level,eps/2.0);
 	    
 	    ++clock[level];
 	    for(int l=0; l<level;++l) std::cout<<"   ";

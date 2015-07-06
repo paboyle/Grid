@@ -29,7 +29,7 @@ int main (int argc, char ** argv)
   SU3::HotConfiguration(pRNG, U);
  
 
-  // simplify template?
+  // simplify template declaration? Strip the lorentz from the second template
   WilsonGaugeAction<LatticeLorentzColourMatrix, LatticeColourMatrix> Waction(6.0);
 
   //Collect actions
@@ -39,13 +39,14 @@ int main (int argc, char ** argv)
   FullSet.push_back(Level1);
 
   // Create integrator
+  typedef MinimumNorm2  IntegratorAlgorithm;// change here to change the algorithm
   IntegratorParameters MDpar(12,30,1.0);
   std::vector<int> rel ={1};
-  Integrator<LeapFrog> MDleapfrog(MDpar, FullSet,rel);
+  Integrator<IntegratorAlgorithm> MDynamics(&Fine,MDpar, FullSet,rel);
 
   // Create HMC
   HMCparameters HMCpar;
-  HybridMonteCarlo<LeapFrog>  HMC(HMCpar, MDleapfrog, &Fine);
+  HybridMonteCarlo<IntegratorAlgorithm>  HMC(HMCpar, MDynamics);
 
   HMC.evolve(U);
 

@@ -10,7 +10,6 @@
 
 #include <string>
 #include <memory>
-#include <unistd.h>
 
 namespace Grid{
   namespace QCD{
@@ -30,10 +29,8 @@ namespace Grid{
     class HybridMonteCarlo{
       const HMCparameters Params;
       GridSerialRNG sRNG;
-      GridParallelRNG pRNG;
       Integrator<IntegType>& MD;
       
-
       bool metropolis_test(const RealD DeltaH){
 	RealD rn_test;
 	RealD prob = std::exp(-DeltaH);
@@ -54,7 +51,7 @@ namespace Grid{
 
       RealD evolve_step(LatticeLorentzColourMatrix& U){
 
-	MD.init(U,pRNG);     // set U and initialize P and phi's 
+	MD.init(U);     // set U and initialize P and phi's 
 	RealD H0 = MD.S(U);     // current state            
 	std::cout<<"Total H before = "<< H0 << "\n";
       
@@ -70,14 +67,12 @@ namespace Grid{
       
     public:
     HybridMonteCarlo(HMCparameters Pms, 
-		     Integrator<IntegType>& MolDyn, 
-		     GridBase* grid):
-      Params(Pms),MD(MolDyn),pRNG(grid){
+		     Integrator<IntegType>& MolDyn):
+      Params(Pms),MD(MolDyn){
 	//FIXME
 
-	// initialize RNGs
+	// initialize RNGs also with seed
 	sRNG.SeedRandomDevice();
-	pRNG.SeedRandomDevice();
       }
       ~HybridMonteCarlo(){};
 
@@ -85,7 +80,7 @@ namespace Grid{
 
       void evolve(LatticeLorentzColourMatrix& Uin){
 	Real DeltaH;
-      
+	
 	// Thermalizations
 	for(int iter=1; iter <= Params.ThermalizationSteps; ++iter){
 	  std::cout << "-- # Thermalization step = "<< iter <<  "\n";
