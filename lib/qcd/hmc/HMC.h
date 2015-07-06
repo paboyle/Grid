@@ -25,11 +25,11 @@ namespace Grid{
       HMCparameters();
     };
     
-    template <class IntegType> 
+    template <class Algorithm> 
     class HybridMonteCarlo{
       const HMCparameters Params;
       GridSerialRNG sRNG;
-      Integrator<IntegType>& MD;
+      Integrator<Algorithm>& MD;
       
       bool metropolis_test(const RealD DeltaH){
 	RealD rn_test;
@@ -51,23 +51,21 @@ namespace Grid{
 
       RealD evolve_step(LatticeLorentzColourMatrix& U){
 
-	MD.init(U);     // set U and initialize P and phi's 
-	RealD H0 = MD.S(U);     // current state            
+	MD.init(U); // set U and initialize P and phi's 
+	RealD H0 = MD.S(U); // initial state action  
 	std::cout<<"Total H before = "<< H0 << "\n";
       
-	MD.integrate(U,0);
+	MD.integrate(U);
       
-	RealD H1 = MD.S(U);     // updated state            
+	RealD H1 = MD.S(U); // updated state action            
 	std::cout<<"Total H after = "<< H1 << "\n";
       
 	return (H1-H0);
       }
-
-      
       
     public:
     HybridMonteCarlo(HMCparameters Pms, 
-		     Integrator<IntegType>& MolDyn):
+		     Integrator<Algorithm>& MolDyn):
       Params(Pms),MD(MolDyn){
 	//FIXME
 
@@ -87,7 +85,6 @@ namespace Grid{
 	
 	  DeltaH = evolve_step(Uin);
 	  std::cout<< " dH = "<< DeltaH << "\n";
-	
 	}
 
 	// Actual updates (evolve a copy Ucopy then copy back eventually)

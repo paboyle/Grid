@@ -40,7 +40,7 @@ int main (int argc, char ** argv)
 
   // Create integrator
   typedef MinimumNorm2  IntegratorAlgorithm;// change here to change the algorithm
-  IntegratorParameters MDpar(12,30,1.0);
+  IntegratorParameters MDpar(12,5,1.0);
   std::vector<int> rel ={1};
   Integrator<IntegratorAlgorithm> MDynamics(&Fine,MDpar, FullSet,rel);
 
