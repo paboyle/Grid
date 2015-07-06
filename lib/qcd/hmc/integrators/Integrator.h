@@ -17,7 +17,15 @@ namespace Grid{
   namespace QCD{
 
     typedef Action<LatticeLorentzColourMatrix>*  ActPtr; // now force the same colours as the rest of the code
-    typedef std::vector<ActPtr> ActionLevel;
+    struct ActionLevel{
+      int multiplier;
+    public:
+      std::vector<ActPtr> actions;
+      explicit ActionLevel(int mul = 1):multiplier(mul){assert (mul > 0);};
+      void push_back(ActPtr ptr){
+	actions.push_back(ptr);
+      }
+    };
     typedef std::vector<ActionLevel> ActionSet;
     typedef std::vector<Observer*> ObserverList;
     
@@ -45,7 +53,6 @@ namespace Grid{
     private:
       IntegratorParameters Params;
       const ActionSet as;
-      const std::vector<int> Nrel; //relative step size per level
       std::unique_ptr<LatticeLorentzColourMatrix> P;
       GridParallelRNG pRNG;
       //ObserverList observers; // not yet
@@ -56,9 +63,9 @@ namespace Grid{
       void notify_observers();
 
       void update_P(LatticeLorentzColourMatrix&U, int level,double ep){
-	for(int a=0; a<as[level].size(); ++a){
+	for(int a=0; a<as[level].actions.size(); ++a){
 	  LatticeLorentzColourMatrix force(U._grid);
-	  as[level].at(a)->deriv(U,force);
+	  as[level].actions.at(a)->deriv(U,force);
 	  *P -= force*ep;
 	}
       }
@@ -84,9 +91,8 @@ namespace Grid{
 					     Integrator<IntegratorAlgorithm>* Integ);
     public:
     Integrator(GridBase* grid, IntegratorParameters Par,
-		 ActionSet& Aset, std::vector<int> Nrel_):
-      Params(Par),as(Aset),Nrel(Nrel_),P(new LatticeLorentzColourMatrix(grid)),pRNG(grid){
-	assert(as.size() == Nrel.size());
+		 ActionSet& Aset):
+      Params(Par),as(Aset),P(new LatticeLorentzColourMatrix(grid)),pRNG(grid){
 	pRNG.SeedRandomDevice();
       };
       
@@ -99,8 +105,8 @@ namespace Grid{
 
 	MDutils::generate_momenta(*P,pRNG);
 	for(int level=0; level< as.size(); ++level){
-	  for(int actionID=0; actionID<as.at(level).size(); ++actionID){
-	    as[level].at(actionID)->init(U, pRNG);
+	  for(int actionID=0; actionID<as[level].actions.size(); ++actionID){
+	    as[level].actions.at(actionID)->init(U, pRNG);
 	  }
 	}
       }
@@ -123,8 +129,8 @@ namespace Grid{
 
 	// Actions
 	for(int level=0; level<as.size(); ++level)
-	  for(int actionID=0; actionID<as.at(level).size(); ++actionID)
-	    H += as[level].at(actionID)->S(U);
+	  for(int actionID=0; actionID<as[level].actions.size(); ++actionID)
+	    H += as[level].actions.at(actionID)->S(U);
 	
 	return H;
       }

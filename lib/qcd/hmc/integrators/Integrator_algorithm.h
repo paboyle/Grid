@@ -27,14 +27,14 @@ namespace Grid{
 	int fl = Integ->as.size() -1;
 	double eps = Integ->Params.stepsize;
 	
-	for(int l=0; l<=level; ++l) eps/= 2.0*Integ->Nrel[l];
+	for(int l=0; l<=level; ++l) eps/= 2.0*Integ->as[l].multiplier;
 	
-	int fin = Integ->Nrel[0];
-	for(int l=1; l<=level; ++l) fin*= 2.0*Integ->Nrel[l];
+	int fin = Integ->as[0].multiplier;
+	for(int l=1; l<=level; ++l) fin*= 2.0*Integ->as[l].multiplier;
 	fin = 3*Integ->Params.MDsteps*fin -1;
 	
 	
-	for(int e=0; e<Integ->Nrel[level]; ++e){
+	for(int e=0; e<Integ->as[level].multiplier; ++e){
 	  
 	  if(clock[level] == 0){    // initial half step 
 	    Integ->update_P(U,level,lambda*eps);
@@ -101,13 +101,13 @@ namespace Grid{
 	double eps = Integ->Params.stepsize;
 	
 	// Get current level step size
-	for(int l=0; l<=level; ++l) eps/= Integ->Nrel[l];
+	for(int l=0; l<=level; ++l) eps/= Integ->as[l].multiplier;
 	
 	int fin = 1;
-	for(int l=0; l<=level; ++l) fin*= Integ->Nrel[l];
+	for(int l=0; l<=level; ++l) fin*= Integ->as[l].multiplier;
 	fin = 2*Integ->Params.MDsteps*fin - 1;
 	
-	for(int e=0; e<Integ->Nrel[level]; ++e){
+	for(int e=0; e<Integ->as[level].multiplier; ++e){
 	  
 	  if(clock[level] == 0){    // initial half step
 	    Integ->update_P(U, level,eps/2.0);
