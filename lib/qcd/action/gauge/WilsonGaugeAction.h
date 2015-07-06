@@ -27,16 +27,13 @@ namespace Grid{
 	//not optimal implementation FIXME
 	//extend Ta to include Lorentz indexes
 	RealD factor = 0.5*beta/RealD(Nc);
-	std::cout << "Debug force Wilson  "<< factor << "\n";
 	MatrixField dSdU_mu(U._grid);
 	MatrixField Umu(U._grid);
 	for (int mu=0; mu < Nd; mu++){
 	  Umu = PeekIndex<LorentzIndex>(U,mu);
 	  // Staple in direction mu
 	  WilsonLoops<MatrixField,GaugeField>::Staple(dSdU_mu,U,mu);
-	  std::cout << "Staple norm ["<<mu<<"] = "<< norm2(dSdU_mu) <<"\n";
 	  dSdU_mu = Ta(Umu*adj(dSdU_mu))*factor;
-	  std::cout << "Force norm ["<<mu<<"] = "<< norm2(dSdU_mu) << "  : Umu "<< norm2(Umu)<<"\n";
 	  pokeLorentz(dSdU, dSdU_mu, mu);
 	}
       };

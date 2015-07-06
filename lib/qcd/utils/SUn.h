@@ -545,21 +545,21 @@ Note that in step D setting B ~ X - A and using B in place of A in step E will g
 
   static void GaussianLieAlgebraMatrix(GridParallelRNG     &pRNG,LatticeMatrix &out,double scale=1.0){
     GridBase *grid = out._grid;
-    LatticeComplex ca (grid);
-    LatticeMatrix  lie(grid);
+    LatticeReal ca (grid);
     LatticeMatrix  la (grid);
     Complex ci(0.0,scale);
     Matrix ta;
 
     out=zero;
     for(int a=0;a<generators();a++){
-
       gaussian(pRNG,ca); 
       generator(a,ta);
-
-      la=ci*ca*ta;
-      out = lie+la; // e^{i la ta}
+      
+      la=toComplex(ca)*ci*ta;
+   
+      out += la; 
     }
+
   }
 
 

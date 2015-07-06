@@ -69,9 +69,7 @@ namespace Grid {
 	for(int c2=0;c2<N;c2++)
 	  inner += innerProduct(ret._internal[c1][c2],ret._internal[c1][c2]);
 
-	//nrm = 1.0/sqrt(Reduce(toReal(inner)));
 	nrm = rsqrt(inner);
-
 	for(int c2=0;c2<N;c2++)
 	  ret._internal[c1][c2]*= nrm;
       
