@@ -1,15 +1,16 @@
 //--------------------------------------------------------------------
 /*! @file HMC.h
- * @brief Declaration of classes for Hybrid Monte Carlo update
+ * @brief Classes for Hybrid Monte Carlo update
  *
  * @author Guido Cossu
+ * Time-stamp: <2015-07-07 14:58:13 neo>
  */
 //--------------------------------------------------------------------
 #ifndef HMC_INCLUDED
 #define HMC_INCLUDED
 
 #include <string>
-#include <memory>
+
 
 namespace Grid{
   namespace QCD{
@@ -20,7 +21,7 @@ namespace Grid{
       Integer ThermalizationSteps;
       Integer StartingConfig;
       Integer SaveInterval; //Setting to 0 does not save configurations
-      std::string Filename_prefix; // To save configurations
+      std::string Filename_prefix; // To save configurations and rng seed
       
       HMCparameters();
     };
@@ -49,8 +50,7 @@ namespace Grid{
 	}
       }
 
-      RealD evolve_step(LatticeLorentzColourMatrix& U){
-
+      RealD evolve_step(LatticeGaugeField& U){
 	MD.init(U); // set U and initialize P and phi's 
 	RealD H0 = MD.S(U); // initial state action  
 	std::cout<<"Total H before = "<< H0 << "\n";
@@ -74,9 +74,7 @@ namespace Grid{
       }
       ~HybridMonteCarlo(){};
 
-
-
-      void evolve(LatticeLorentzColourMatrix& Uin){
+      void evolve(LatticeGaugeField& Uin){
 	Real DeltaH;
 	
 	// Thermalizations
@@ -88,7 +86,7 @@ namespace Grid{
 	}
 
 	// Actual updates (evolve a copy Ucopy then copy back eventually)
-	LatticeLorentzColourMatrix Ucopy(Uin._grid);
+	LatticeGaugeField Ucopy(Uin._grid);
 	for(int iter=Params.StartingConfig; 
 	    iter < Params.Nsweeps+Params.StartingConfig; ++iter){
 	  std::cout << "-- # Sweep = "<< iter <<  "\n";
@@ -97,7 +95,8 @@ namespace Grid{
 	  DeltaH = evolve_step(Ucopy);
 		
 	  if(metropolis_test(DeltaH)) Uin = Ucopy;
-	  //need sync?
+	  
+	  // here save config and RNG seed
 	}
       }
     };
