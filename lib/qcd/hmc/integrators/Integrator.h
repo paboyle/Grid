@@ -1,8 +1,9 @@
 //--------------------------------------------------------------------
 /*! @file Integrator.h
- * @brief Declaration of classes for the Molecular Dynamics integrator
+ * @brief Classes for the Molecular Dynamics integrator
  *
  * @author Guido Cossu
+ * Time-stamp: <2015-07-07 14:58:40 neo>
  */
 //--------------------------------------------------------------------
 
@@ -16,7 +17,7 @@ class Observer;
 namespace Grid{
   namespace QCD{
 
-    typedef Action<LatticeLorentzColourMatrix>*  ActPtr; // now force the same colours as the rest of the code
+    typedef Action<LatticeGaugeField>*  ActPtr; // now force the same colours as the rest of the code
     struct ActionLevel{
       int multiplier;
     public:
@@ -43,8 +44,8 @@ namespace Grid{
 
 
     namespace MDutils{
-      void generate_momenta(LatticeLorentzColourMatrix&,GridParallelRNG&);
-      void generate_momenta_su3(LatticeLorentzColourMatrix&,GridParallelRNG&);
+      void generate_momenta(LatticeGaugeField&,GridParallelRNG&);
+      void generate_momenta_su3(LatticeGaugeField&,GridParallelRNG&);
     }
 
     /*! @brief Class for Molecular Dynamics management */   
@@ -53,7 +54,7 @@ namespace Grid{
     private:
       IntegratorParameters Params;
       const ActionSet as;
-      std::unique_ptr<LatticeLorentzColourMatrix> P;
+      std::unique_ptr<LatticeGaugeField> P;
       GridParallelRNG pRNG;
       //ObserverList observers; // not yet
      
@@ -62,16 +63,16 @@ namespace Grid{
       void register_observers();
       void notify_observers();
 
-      void update_P(LatticeLorentzColourMatrix&U, int level,double ep){
+      void update_P(LatticeGaugeField&U, int level,double ep){
 	for(int a=0; a<as[level].actions.size(); ++a){
-	  LatticeLorentzColourMatrix force(U._grid);
+	  LatticeGaugeField force(U._grid);
 	  as[level].actions.at(a)->deriv(U,force);
 	  *P -= force*ep;
 	}
       }
 
 
-      void update_U(LatticeLorentzColourMatrix&U, double ep){
+      void update_U(LatticeGaugeField&U, double ep){
 	//rewrite exponential to deal automatically  with the lorentz index?
 	LatticeColourMatrix Umu(U._grid);
 	LatticeColourMatrix Pmu(U._grid);
@@ -86,13 +87,13 @@ namespace Grid{
       
 
       
-      friend void IntegratorAlgorithm::step (LatticeLorentzColourMatrix& U, 
+      friend void IntegratorAlgorithm::step (LatticeGaugeField& U, 
 					     int level, std::vector<int>& clock,
 					     Integrator<IntegratorAlgorithm>* Integ);
     public:
     Integrator(GridBase* grid, IntegratorParameters Par,
 		 ActionSet& Aset):
-      Params(Par),as(Aset),P(new LatticeLorentzColourMatrix(grid)),pRNG(grid){
+      Params(Par),as(Aset),P(new LatticeGaugeField(grid)),pRNG(grid){
 	pRNG.SeedRandomDevice();
       };
       
@@ -100,7 +101,7 @@ namespace Grid{
 
 
       //Initialization of momenta and actions
-      void init(LatticeLorentzColourMatrix& U){
+      void init(LatticeGaugeField& U){
 	std::cout<< "Integrator init\n";
 
 	MDutils::generate_momenta(*P,pRNG);
@@ -113,7 +114,7 @@ namespace Grid{
 
       
       // Calculate action
-      RealD S(LatticeLorentzColourMatrix& U){
+      RealD S(LatticeGaugeField& U){
 	LatticeComplex Hloc(U._grid);
 	Hloc = zero;
 	// Momenta
@@ -135,7 +136,7 @@ namespace Grid{
 	return H;
       }
 
-      void integrate(LatticeLorentzColourMatrix& U){
+      void integrate(LatticeGaugeField& U){
 	std::vector<int> clock;
 	clock.resize(as.size(),0);
 	for(int step=0; step< Params.MDsteps; ++step)   // MD step
