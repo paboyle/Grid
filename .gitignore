@@ -1,56 +1,65 @@
-# Compiled Object files
+# Compiled Object files #
+#########################
 *.slo
 *.lo
 *.o
 *.obj
-*~
-errs
-*#
-INSTALL
 
-# Precompiled Headers
+
+# Editor files #
+################
+*~
+*#
+
+# Precompiled Headers #
+#######################
 *.gch
 *.pch
 
-# Compiled Dynamic libraries
+# Compiled Dynamic libraries #
+##############################
 *.so
 *.dylib
 *.dll
 
-# Fortran module files
+# Fortran module files #
+########################
 *.mod
 
-# Compiled Static libraries
+# Compiled Static libraries #
+#############################
 *.lai
 *.la
 *.a
 *.lib
 
-# Executables
+# Executables #
+###############
 *.exe
 *.out
 *.app
-# http://www.gnu.org/software/automake
 
+# http://www.gnu.org/software/automake #
+########################################
 Makefile.in
 Makefile
 config.log
 config.status
 .deps
 
-# http://www.gnu.org/software/autoconf
-
-/autom4te.cache
-/aclocal.m4
-/compile
-/configure
-/depcomp
-/install-sh
-/missing
-/stamp-h1
-/config.sub
-/config.guess
-/INSTALL
+# http://www.gnu.org/software/autoconf #
+########################################
+autom4te.cache
+aclocal.m4
+compile
+configure
+depcomp
+install-sh
+missing
+stamp-h1
+config.sub
+config.guess
+INSTALL
 
 # Packages #
 ############
@@ -80,3 +89,12 @@ config.status
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# build directory #
+###################
+build/*
+
+# IDE related files #
+#####################
+*.xcodeproj/*
+build.sh
