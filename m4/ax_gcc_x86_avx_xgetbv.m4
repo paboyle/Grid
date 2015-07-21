@@ -65,7 +65,7 @@ AC_CACHE_CHECK(for x86-AVX xgetbv $1 output, ax_cv_gcc_x86_avx_xgetbv_$1,
      FILE *f;
       /* Opcodes for xgetbv */
       __asm__(".byte 0x0f, 0x01, 0xd0"
-        : "=a" (eax), "=d" (edx), 
+        : "=a" (eax), "=d" (edx) 
         : "c" (op));
      f = fopen("conftest_xgetbv", "w"); if (!f) return 1;
      fprintf(f, "%x:%x\n", eax, edx);

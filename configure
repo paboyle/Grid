@@ -5068,7 +5068,7 @@ main ()
      FILE *f;
       /* Opcodes for xgetbv */
       __asm__(".byte 0x0f, 0x01, 0xd0"
-        : "=a" (eax), "=d" (edx),
+        : "=a" (eax), "=d" (edx)
         : "c" (op));
      f = fopen("conftest_xgetbv", "w"); if (!f) return 1;
      fprintf(f, "%x:%x\n", eax, edx);
@@ -5470,7 +5470,7 @@ main ()
      FILE *f;
       /* Opcodes for xgetbv */
       __asm__(".byte 0x0f, 0x01, 0xd0"
-        : "=a" (eax), "=d" (edx),
+        : "=a" (eax), "=d" (edx)
         : "c" (op));
      f = fopen("conftest_xgetbv", "w"); if (!f) return 1;
      fprintf(f, "%x:%x\n", eax, edx);
