@@ -18,7 +18,7 @@ namespace Grid{
       Pmu = zero;
       for(int mu=0;mu<Nd;mu++){
 	SU3::GaussianLieAlgebraMatrix(pRNG, Pmu);
-	pokeLorentz(P, Pmu, mu);
+	PokeIndex<LorentzIndex>(P, Pmu, mu);
       }
       
     }
