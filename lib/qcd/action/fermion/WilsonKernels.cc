@@ -1,5 +1,4 @@
 #include <Grid.h>
-
 namespace Grid {
 namespace QCD {
 
@@ -12,7 +11,6 @@ void DiracOptDhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     vSpinColourVector result;
     vHalfSpinColourVector Uchi;
     int offset,local,perm, ptype;
-
 
     // Xp
     int ss = sF;
