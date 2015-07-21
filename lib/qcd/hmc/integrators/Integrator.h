@@ -69,10 +69,10 @@ namespace Grid{
 	LatticeColourMatrix Umu(U._grid);
 	LatticeColourMatrix Pmu(U._grid);
 	for (int mu = 0; mu < Nd; mu++){
-	  Umu=peekLorentz(U, mu);
-	  Pmu=peekLorentz(*P, mu);
+	  Umu=PeekIndex<LorentzIndex>(U, mu);
+	  Pmu=PeekIndex<LorentzIndex>(*P, mu);
 	  Umu = expMat(Pmu, ep, Params.Nexp)*Umu;
-	  pokeLorentz(U, Umu, mu);
+	  PokeIndex<LorentzIndex>(U, Umu, mu);
 	}
 
       }
