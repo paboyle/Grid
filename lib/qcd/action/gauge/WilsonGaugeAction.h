@@ -7,7 +7,7 @@ namespace Grid{
     ////////////////////////////////////////////////////////////////////////
     // Wilson Gauge Action .. should I template the Nc etc..
     ////////////////////////////////////////////////////////////////////////
-    template<class GaugeField,class MatrixField>
+    template<class GaugeField, class MatrixField>
       class WilsonGaugeAction : public Action<GaugeField> {
     private:
       RealD beta;
@@ -23,7 +23,6 @@ namespace Grid{
 	return beta*(1.0 -plaq)*(Nd*(Nd-1.0))*vol*0.5;
       };
       virtual void deriv(const GaugeField &U,GaugeField & dSdU) {
-
 	//not optimal implementation FIXME
 	//extend Ta to include Lorentz indexes
 	RealD factor = 0.5*beta/RealD(Nc);
