@@ -117,15 +117,15 @@ namespace Grid {
       }
       Orthogonalise();
     }
-    virtual void CreateSubspace(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop) {
+    virtual void CreateSubspace(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,int nn=nbasis) {
 
       RealD scale;
 
-      ConjugateGradient<FineField> CG(1.0e-4,10000);
+      ConjugateGradient<FineField> CG(2.0e-3,10000);
       FineField noise(FineGrid);
       FineField Mn(FineGrid);
 
-      for(int b=0;b<nbasis;b++){
+      for(int b=0;b<nn;b++){
 	
 	gaussian(RNG,noise);
 	scale = std::pow(norm2(noise),-0.5); 
@@ -133,7 +133,7 @@ namespace Grid {
 
 	hermop.Op(noise,Mn); std::cout << "noise   ["<<b<<"] <n|MdagM|n> "<<norm2(Mn)<<std::endl;
 
-	for(int i=0;i<2;i++){
+	for(int i=0;i<1;i++){
 
 	  CG(hermop,noise,subspace[b]);
 
@@ -144,7 +144,8 @@ namespace Grid {
 	}
 
 	hermop.Op(noise,Mn); std::cout << "filtered["<<b<<"] <f|MdagM|f> "<<norm2(Mn)<<std::endl;
-	subspace[b] = noise;
+	subspace[b]   = noise;
+
       }
 
       Orthogonalise();
