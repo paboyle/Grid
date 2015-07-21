@@ -276,15 +276,15 @@ public:
     HermitianLinearOperator<CoarseOperator,CoarseVector>  HermOp(_CoarseOperator);
     MdagMLinearOperator<CoarseOperator,CoarseVector>     MdagMOp(_CoarseOperator);
     //    MdagMLinearOperator<Matrix,FineField>        fMdagMOp(_Matrix);
-    ShiftedMdagMLinearOperator<Matrix,FineField> fMdagMOp(_Matrix,0.5);
+    ShiftedMdagMLinearOperator<Matrix,FineField> fMdagMOp(_Matrix,1.0);
 
     FineField vec1(in._grid);
     FineField vec2(in._grid);
 
     //    Chebyshev<FineField> Cheby    (0.5,70.0,30,InverseApproximation);
     //    Chebyshev<FineField> ChebyAccu(0.5,70.0,30,InverseApproximation);
-    Chebyshev<FineField> Cheby    (1.0,70.0,20,InverseApproximation);
-    Chebyshev<FineField> ChebyAccu(1.0,70.0,20,InverseApproximation);
+    Chebyshev<FineField> Cheby    (2.0,70.0,10,InverseApproximation);
+    Chebyshev<FineField> ChebyAccu(2.0,70.0,10,InverseApproximation);
 
     _Aggregates.ProjectToSubspace  (Csrc,in);
     _Aggregates.PromoteFromSubspace(Csrc,out);
@@ -477,8 +477,8 @@ int main (int argc, char ** argv)
   std::cout << "Unprec CG "<< std::endl;
   std::cout << "**************************************************"<< std::endl;
   //  TrivialPrecon<LatticeFermion> simple;
-  ConjugateGradient<LatticeFermion> fCG(1.0e-8,100000);
-  fCG(HermDefOp,src,result);
+  //  ConjugateGradient<LatticeFermion> fCG(1.0e-8,100000);
+  //  fCG(HermDefOp,src,result);
   //  exit(0);
 
   std::cout << "**************************************************"<< std::endl;
