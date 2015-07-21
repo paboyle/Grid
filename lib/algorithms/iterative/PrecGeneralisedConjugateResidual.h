@@ -137,7 +137,7 @@ namespace Grid {
 
 	cp = axpy_norm(r,-a,q[peri_k],r);  
 
-	std::cout<< " VPCG_step resid" <<sqrt(cp/rsq)<<std::endl; 
+	std::cout<< " VPGCR_step resid" <<sqrt(cp/rsq)<<std::endl; 
 	if((k==nstep-1)||(cp<rsq)){
 	  return cp;
 	}
