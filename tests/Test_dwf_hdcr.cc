@@ -6,6 +6,10 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
+RealD InverseApproximation(RealD x){
+  return 1.0/x;
+}
+
 template<class Fobj,class CComplex,int nbasis, class Matrix>
 class MultiGridPreconditioner : public LinearFunction< Lattice<Fobj> > {
 public:
@@ -33,6 +37,27 @@ public:
       _Matrix(FineMatrix)
   {
   }
+
+  void PowerMethod(const FineField &in) {
+
+    FineField p1(in._grid);
+    FineField p2(in._grid);
+
+    MdagMLinearOperator<Matrix,FineField>   fMdagMOp(_Matrix);
+
+    p1=in;
+    RealD absp2;
+    for(int i=0;i<20;i++){
+      RealD absp1=std::sqrt(norm2(p1));
+      fMdagMOp.HermOp(p1,p2);// this is the G5 herm bit      
+      //      _FineOperator.Op(p1,p2);// this is the G5 herm bit      
+      RealD absp2=std::sqrt(norm2(p2));
+      if(i%10==9)
+	std::cout << "Power method on mdagm "<<i<<" " << absp2/absp1<<std::endl;
+      p1=p2*(1.0/std::sqrt(absp2));
+    }
+  }
+
 #if 0
   void operator()(const FineField &in, FineField & out) {
 
@@ -49,7 +74,7 @@ public:
     std::cout<<"Completeness: "<<std::sqrt(norm2(out)/norm2(in))<<std::endl;
 
     // Build some solvers
-    ConjugateGradient<FineField>    fCG(1.0e-1,1000);
+    ConjugateGradient<FineField>    fCG(1.0e-3,1000);
     ConjugateGradient<CoarseVector>  CG(1.0e-8,100000);
 
     ////////////////////////////////////////////////////////////////////////
@@ -164,6 +189,7 @@ public:
   }
 #endif
   // ADEF1: [MP+Q ] in =M [1 - A Q] in + Q in  
+#if 0
   void operator()(const FineField &in, FineField & out) {
 
     CoarseVector Csrc(_CoarseOperator.Grid());
@@ -171,11 +197,11 @@ public:
     CoarseVector Csol(_CoarseOperator.Grid()); Csol=zero;
 
     ConjugateGradient<CoarseVector>  CG(1.0e-10,100000);
-    ConjugateGradient<FineField>    fCG(1.0e-3,1000);
+    ConjugateGradient<FineField>    fCG(3.0e-2,1000);
 
     HermitianLinearOperator<CoarseOperator,CoarseVector>  HermOp(_CoarseOperator);
     MdagMLinearOperator<CoarseOperator,CoarseVector>     MdagMOp(_CoarseOperator);
-    MdagMLinearOperator<Matrix,FineField>               fMdagMOp(_Matrix);
+    ShiftedMdagMLinearOperator<Matrix,FineField>        fMdagMOp(_Matrix,0.1);
 
     FineField tmp(in._grid);
     FineField res(in._grid);
@@ -191,7 +217,7 @@ public:
     CG(MdagMOp,Ctmp,Csol);
     _Aggregates.PromoteFromSubspace(Csol,Qin);
 
-
+    //    Qin=0;
     _FineOperator.Op(Qin,tmp);// A Q in
     tmp = in - tmp;            // in - A Q in
 
@@ -204,6 +230,116 @@ public:
     tmp=tmp-in;         // tmp is new residual
 
     std::cout<<"preconditioner thinks residual is "<<std::sqrt(norm2(tmp)/norm2(in))<<std::endl;
+
+  }
+#endif
+
+  void SmootherTest (const FineField & in){
+    
+    FineField vec1(in._grid);
+    FineField vec2(in._grid);
+    RealD lo[3] = { 0.5, 1.0, 2.0};
+
+    //    MdagMLinearOperator<Matrix,FineField>        fMdagMOp(_Matrix);
+    ShiftedMdagMLinearOperator<Matrix,FineField> fMdagMOp(_Matrix,0.5);
+
+    RealD Ni,r;
+
+    Ni = norm2(in);
+
+    for(int ilo=0;ilo<4;ilo++){
+      for(int ord=10;ord<60;ord+=10){
+
+	_FineOperator.AdjOp(in,vec1);
+
+	Chebyshev<FineField> Cheby  (lo[ilo],70.0,ord,InverseApproximation);
+	Cheby(fMdagMOp,vec1,vec2);    // solves  MdagM = g5 M g5M
+
+	_FineOperator.Op(vec2,vec1);// this is the G5 herm bit
+	vec1  = in - vec1;   // tmp  = in - A Min
+	r=norm2(vec1);
+	std::cout << "Smoother resid "<<std::sqrt(r/Ni)<<std::endl;
+
+      }
+    }
+  }
+
+  void operator()(const FineField &in, FineField & out) {
+
+    CoarseVector Csrc(_CoarseOperator.Grid());
+    CoarseVector Ctmp(_CoarseOperator.Grid());
+    CoarseVector Csol(_CoarseOperator.Grid()); Csol=zero;
+
+    ConjugateGradient<CoarseVector>  CG(1.0e-5,100000);
+    ConjugateGradient<FineField>    fCG(3.0e-2,1000);
+
+    HermitianLinearOperator<CoarseOperator,CoarseVector>  HermOp(_CoarseOperator);
+    MdagMLinearOperator<CoarseOperator,CoarseVector>     MdagMOp(_CoarseOperator);
+    //    MdagMLinearOperator<Matrix,FineField>        fMdagMOp(_Matrix);
+    ShiftedMdagMLinearOperator<Matrix,FineField> fMdagMOp(_Matrix,0.5);
+
+    FineField vec1(in._grid);
+    FineField vec2(in._grid);
+
+    //    Chebyshev<FineField> Cheby    (0.5,70.0,30,InverseApproximation);
+    //    Chebyshev<FineField> ChebyAccu(0.5,70.0,30,InverseApproximation);
+    Chebyshev<FineField> Cheby    (1.0,70.0,20,InverseApproximation);
+    Chebyshev<FineField> ChebyAccu(1.0,70.0,20,InverseApproximation);
+
+    _Aggregates.ProjectToSubspace  (Csrc,in);
+    _Aggregates.PromoteFromSubspace(Csrc,out);
+    std::cout<<"Completeness: "<<std::sqrt(norm2(out)/norm2(in))<<std::endl;
+    
+    //    ofstream fout("smoother");
+    //    Cheby.csv(fout);
+
+    // V11 multigrid.
+    // Use a fixed chebyshev and hope hermiticity helps.
+
+    // To make a working smoother for indefinite operator
+    // must multiply by "Mdag" (ouch loses all low mode content)
+    // and apply to poly approx of (mdagm)^-1.
+    // so that we end up with an odd polynomial.
+
+    RealD Ni = norm2(in);
+
+    _FineOperator.AdjOp(in,vec1);// this is the G5 herm bit
+    ChebyAccu(fMdagMOp,vec1,out);    // solves  MdagM = g5 M g5M
+
+    std::cout << "Smoother norm "<<norm2(out)<<std::endl;
+
+    // Update with residual for out
+    _FineOperator.Op(out,vec1);// this is the G5 herm bit
+    vec1  = in - vec1;   // tmp  = in - A Min
+
+    RealD r = norm2(vec1);
+
+    std::cout << "Smoother resid "<<std::sqrt(r/Ni)<< " " << r << " " << Ni <<std::endl;
+    
+    _Aggregates.ProjectToSubspace  (Csrc,vec1);
+    HermOp.AdjOp(Csrc,Ctmp);// Normal equations
+    CG(MdagMOp,Ctmp,Csol);
+    _Aggregates.PromoteFromSubspace(Csol,vec1); // Ass^{-1} [in - A Min]_s
+                                             // Q = Q[in - A Min]  
+    out = out+vec1;
+
+    // Three preconditioner smoothing -- hermitian if C3 = C1
+    // Recompute error
+    _FineOperator.Op(out,vec1);// this is the G5 herm bit
+    vec1  = in - vec1;   // tmp  = in - A Min
+    r=norm2(vec1);
+
+    std::cout << "Coarse resid "<<std::sqrt(r/Ni)<<std::endl;
+
+    // Reapply smoother
+    _FineOperator.Op(vec1,vec2);  // this is the G5 herm bit
+    ChebyAccu(fMdagMOp,vec2,vec1);    // solves  MdagM = g5 M g5M
+
+    out =out+vec1;
+    _FineOperator.Op(out,vec1);// this is the G5 herm bit
+    vec1  = in - vec1;   // tmp  = in - A Min
+    r=norm2(vec1);
+    std::cout << "Smoother resid "<<std::sqrt(r/Ni)<<std::endl;
 
   }
 
@@ -224,7 +360,7 @@ int main (int argc, char ** argv)
   ///////////////////////////////////////////////////
   // Construct a coarsened grid; utility for this?
   ///////////////////////////////////////////////////
-  const int block=4;
+  const int block=2;
   std::vector<int> clatt = GridDefaultLatt();
   for(int d=0;d<clatt.size();d++){
     clatt[d] = clatt[d]/block;
@@ -265,7 +401,8 @@ int main (int argc, char ** argv)
   std::cout << "**************************************************"<< std::endl;
   DomainWallFermion Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
-  const int nbasis = 6;
+  const int nbasis = 32;
+  //  const int nbasis = 4;
 
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis>              Subspace;
   typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>          CoarseOperator;
@@ -276,7 +413,19 @@ int main (int argc, char ** argv)
   std::cout << "**************************************************"<< std::endl;
   MdagMLinearOperator<DomainWallFermion,LatticeFermion> HermDefOp(Ddwf);
   Subspace Aggregates(Coarse5d,FGrid);
-  Aggregates.CreateSubspace(RNG5,HermDefOp);
+  //  Aggregates.CreateSubspace(RNG5,HermDefOp,nbasis);
+  assert ( (nbasis & 0x1)==0);
+  int nb=nbasis/2;
+  std::cout << " nbasis/2 = "<<nb<<std::endl;
+  Aggregates.CreateSubspace(RNG5,HermDefOp,nb);
+  for(int n=0;n<nb;n++){
+    G5R5(Aggregates.subspace[n+nb],Aggregates.subspace[n]);
+    std::cout<<n<<" subspace "<<norm2(Aggregates.subspace[n+nb])<<" "<<norm2(Aggregates.subspace[n]) <<std::endl;
+  }
+  for(int n=0;n<nbasis;n++){
+    std::cout << "vec["<<n<<"] = "<<norm2(Aggregates.subspace[n])  <<std::endl;
+  }
+
 //  for(int i=0;i<nbasis;i++){
 //    result =     Aggregates.subspace[i];
 //    Aggregates.subspace[i]=result+g5*result;
@@ -320,17 +469,30 @@ int main (int argc, char ** argv)
   TrivialPrecon<LatticeFermion> simple;
 
   std::cout << "**************************************************"<< std::endl;
+  std::cout << "Testing smoother efficacy"<< std::endl;
+  std::cout << "**************************************************"<< std::endl;
+  Precon.SmootherTest(src);
+
+  std::cout << "**************************************************"<< std::endl;
   std::cout << "Unprec CG "<< std::endl;
   std::cout << "**************************************************"<< std::endl;
   //  TrivialPrecon<LatticeFermion> simple;
   ConjugateGradient<LatticeFermion> fCG(1.0e-8,100000);
   fCG(HermDefOp,src,result);
+  //  exit(0);
 
   std::cout << "**************************************************"<< std::endl;
   std::cout << "Testing GCR on indef matrix "<< std::endl;
   std::cout << "**************************************************"<< std::endl;
   //  PrecGeneralisedConjugateResidual<LatticeFermion> UPGCR(1.0e-8,100000,simple,8,128);
   //  UPGCR(HermIndefOp,src,result);
+
+  
+  /// Get themax eval
+  std::cout << "**************************************************"<< std::endl;
+  std::cout <<" Applying power method to find spectral range      "<<std::endl;
+  std::cout << "**************************************************"<< std::endl;
+  Precon.PowerMethod(src);
 
   std::cout << "**************************************************"<< std::endl;
   std::cout << "Building a two level PGCR "<< std::endl;
