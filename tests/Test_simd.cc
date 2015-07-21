@@ -195,6 +195,31 @@ int main (int argc, char ** argv)
   // identical results to on vectors.
 
   std::cout << "==================================="<<  std::endl;
+  std::cout << "Testing vRealF "<<std::endl;
+  std::cout << "==================================="<<  std::endl;
+
+
+  Tester<RealF,vRealF>(funcPlus());
+  Tester<RealF,vRealF>(funcMinus());
+  Tester<RealF,vRealF>(funcTimes());
+  Tester<RealF,vRealF>(funcAdj());
+  Tester<RealF,vRealF>(funcConj());
+  Tester<RealF,vRealF>(funcInnerProduct());
+  ReductionTester<RealF,RealF,vRealF>(funcReduce());
+
+  std::cout << "==================================="<<  std::endl;
+  std::cout << "Testing vRealD "<<std::endl;
+  std::cout << "==================================="<<  std::endl;
+
+  Tester<RealD,vRealD>(funcPlus());
+  Tester<RealD,vRealD>(funcMinus());
+  Tester<RealD,vRealD>(funcTimes());
+  Tester<RealD,vRealD>(funcAdj());
+  Tester<RealD,vRealD>(funcConj());
+  Tester<RealD,vRealD>(funcInnerProduct());
+  ReductionTester<RealD,RealD,vRealD>(funcReduce());
+
+  std::cout << "==================================="<<  std::endl;
   std::cout << "Testing vComplexF "<<std::endl;
   std::cout << "==================================="<<  std::endl;
 
@@ -223,30 +248,6 @@ int main (int argc, char ** argv)
   Tester<ComplexD,vComplexD>(funcInnerProduct());
   ReductionTester<ComplexD,ComplexD,vComplexD>(funcReduce());
 
-  std::cout << "==================================="<<  std::endl;
-  std::cout << "Testing vRealF "<<std::endl;
-  std::cout << "==================================="<<  std::endl;
-
-
-  Tester<RealF,vRealF>(funcPlus());
-  Tester<RealF,vRealF>(funcMinus());
-  Tester<RealF,vRealF>(funcTimes());
-  Tester<RealF,vRealF>(funcAdj());
-  Tester<RealF,vRealF>(funcConj());
-  Tester<RealF,vRealF>(funcInnerProduct());
-  ReductionTester<RealF,RealF,vRealF>(funcReduce());
-
-  std::cout << "==================================="<<  std::endl;
-  std::cout << "Testing vRealD "<<std::endl;
-  std::cout << "==================================="<<  std::endl;
-
-  Tester<RealD,vRealD>(funcPlus());
-  Tester<RealD,vRealD>(funcMinus());
-  Tester<RealD,vRealD>(funcTimes());
-  Tester<RealD,vRealD>(funcAdj());
-  Tester<RealD,vRealD>(funcConj());
-  Tester<RealD,vRealD>(funcInnerProduct());
-  ReductionTester<RealD,RealD,vRealD>(funcReduce());
 
   Grid_finalize();
 }
