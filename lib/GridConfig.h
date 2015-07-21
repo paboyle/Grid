@@ -20,10 +20,10 @@
 #define GRID_COMMS_NONE 1
 
 /* GRID_DEFAULT_PRECISION is DOUBLE */
-#define GRID_DEFAULT_PRECISION_DOUBLE 1
+/* #undef GRID_DEFAULT_PRECISION_DOUBLE */
 
 /* GRID_DEFAULT_PRECISION is SINGLE */
-/* #undef GRID_DEFAULT_PRECISION_SINGLE */
+#define GRID_DEFAULT_PRECISION_SINGLE 1
 
 /* Support Altivec instructions */
 /* #undef HAVE_ALTIVEC */
@@ -120,8 +120,8 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
 
-/* NEON ARMv7 Experimental support */
-/* #undef NEONv7 */
+/* NEON ARMv8 Experimental support */
+/* #undef NEONv8 */
 
 /* Name of package */
 #define PACKAGE "grid"
