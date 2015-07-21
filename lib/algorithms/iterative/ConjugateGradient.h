@@ -15,7 +15,7 @@ public:
     Integer MaxIterations;
     int verbose;
     ConjugateGradient(RealD tol,Integer maxit) : Tolerance(tol), MaxIterations(maxit) { 
-      verbose=1;
+      verbose=0;
     };
 
 
