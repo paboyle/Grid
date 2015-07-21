@@ -24,13 +24,13 @@ int main (int argc, char ** argv)
   GridCartesian           Fine(latt_size,simd_layout,mpi_layout);
   GridParallelRNG  pRNG(&Fine);
   pRNG.SeedRandomDevice();
-  LatticeLorentzColourMatrix     U(&Fine);
+  LatticeGaugeField U(&Fine);
 
   SU3::HotConfiguration(pRNG, U);
  
 
   // simplify template declaration? Strip the lorentz from the second template
-  WilsonGaugeAction<LatticeLorentzColourMatrix, LatticeColourMatrix> Waction(6.0);
+  WilsonGaugeAction<LatticeGaugeField, LatticeColourMatrix> Waction(6.0);
 
   //Collect actions
   ActionLevel Level1;

@@ -119,8 +119,8 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* NEON ARMv7 Experimental support */
-#undef NEONv7
+/* NEON ARMv8 Experimental support */
+#undef NEONv8
 
 /* Name of package */
 #undef PACKAGE
