@@ -72,6 +72,47 @@ namespace Grid {
     };
 
     ////////////////////////////////////////////////////////////////////
+    // Construct herm op and shift it for mgrid smoother
+    ////////////////////////////////////////////////////////////////////
+    template<class Matrix,class Field>
+    class ShiftedMdagMLinearOperator : public LinearOperatorBase<Field> {
+      Matrix &_Mat;
+      RealD _shift;
+    public:
+    ShiftedMdagMLinearOperator(Matrix &Mat,RealD shift): _Mat(Mat), _shift(shift){};
+      // Support for coarsening to a multigrid
+      void OpDiag (const Field &in, Field &out) {
+	_Mat.Mdiag(in,out);
+	assert(0);
+      }
+      void OpDir  (const Field &in, Field &out,int dir,int disp) {
+	_Mat.Mdir(in,out,dir,disp);
+	assert(0);
+      }
+      void Op     (const Field &in, Field &out){
+	_Mat.M(in,out);
+	assert(0);
+      }
+      void AdjOp     (const Field &in, Field &out){
+	_Mat.Mdag(in,out);
+	assert(0);
+      }
+      void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
+	_Mat.MdagM(in,out,n1,n2);
+	out = out + _shift*in;
+
+	ComplexD dot;	
+	dot= innerProduct(in,out);
+	n1=real(dot);
+	n2=norm2(out);
+      }
+      void HermOp(const Field &in, Field &out){
+	RealD n1,n2;
+	HermOpAndNorm(in,out,n1,n2);
+      }
+    };
+
+    ////////////////////////////////////////////////////////////////////
     // Wrap an already herm matrix
     ////////////////////////////////////////////////////////////////////
     template<class Matrix,class Field>
