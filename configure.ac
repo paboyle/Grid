@@ -26,9 +26,8 @@ AC_LANG(C++)
 AC_PROG_CXX
 AC_OPENMP
 AC_PROG_RANLIB
-AX_CXX_COMPILE_STDCXX_11(noext, mandatory)
+#AX_CXX_COMPILE_STDCXX_11(noext, mandatory)
 AX_EXT
-
 
 # Checks for libraries.
 #AX_GCC_VAR_ATTRIBUTE(aligned)
@@ -65,7 +64,6 @@ AC_CHECK_LIB([mpfr],[mpfr_init],,
         [AC_MSG_ERROR(GNU Multiple Precision MPFR library was not found in your system.
 Please install or provide the correct path to your installation
 Info at: http://www.mpfr.org/)])
-
 
 AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE4|AVX|AVX2|AVX512|MIC],\
 	[Select instructions to be SSE4.0, AVX 1.0, AVX 2.0+FMA, AVX 512, MIC])],\
@@ -155,15 +153,15 @@ AM_CONDITIONAL(BUILD_COMMS_NONE,[ test "X${ac_COMMS}X" == "XnoneX" ])
 ###################################################################
 # Checks for doxygen support
 # if present enables the "make doxyfile" command
-echo
-echo Checking doxygen support 
-echo :::::::::::::::::::::::::::::::::::::::::::
-AC_PROG_DOXYGEN
+#echo
+#echo Checking doxygen support 
+#echo :::::::::::::::::::::::::::::::::::::::::::
+#AC_PROG_DOXYGEN
 
-if test -n "$DOXYGEN"
-then
-AC_CONFIG_FILES([docs/doxy.cfg])
-fi
+#if test -n "$DOXYGEN"
+#then
+#AC_CONFIG_FILES([docs/doxy.cfg])
+#fi
 
 echo
 echo Creating configuration files
