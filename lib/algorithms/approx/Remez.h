@@ -15,6 +15,8 @@
 #ifndef INCLUDED_ALG_REMEZ_H
 #define INCLUDED_ALG_REMEZ_H
 
+#include <stddef.h>
+
 #include <algorithms/approx/bigfloat.h>
 
 #define JMAX 10000 //Maximum number of iterations of Newton's approximation
