@@ -20,27 +20,27 @@ int main (int argc, char ** argv)
   
   GridRedBlackCartesian * rbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(grid);
 
-  std::cout<<"*********************************************"<<std::endl;
-  std::cout<<"* Generators for SU(2)"<<std::endl;
-  std::cout<<"*********************************************"<<std::endl;
+  std::cout<<GridLogMessage<<"*********************************************"<<std::endl;
+  std::cout<<GridLogMessage<<"* Generators for SU(2)"<<std::endl;
+  std::cout<<GridLogMessage<<"*********************************************"<<std::endl;
   SU2::printGenerators();
   SU2::testGenerators();
 
-  std::cout<<"*********************************************"<<std::endl;
-  std::cout<<"* Generators for SU(3)"<<std::endl;
-  std::cout<<"*********************************************"<<std::endl;
+  std::cout<<GridLogMessage<<"*********************************************"<<std::endl;
+  std::cout<<GridLogMessage<<"* Generators for SU(3)"<<std::endl;
+  std::cout<<GridLogMessage<<"*********************************************"<<std::endl;
   SU3::printGenerators();
   SU3::testGenerators();
 
-  //  std::cout<<"*********************************************"<<std::endl;
-  //  std::cout<<"* Generators for SU(4)"<<std::endl;
-  //  std::cout<<"*********************************************"<<std::endl;
+  //  std::cout<<GridLogMessage<<"*********************************************"<<std::endl;
+  //  std::cout<<GridLogMessage<<"* Generators for SU(4)"<<std::endl;
+  //  std::cout<<GridLogMessage<<"*********************************************"<<std::endl;
   //  SU4::printGenerators();
   //  SU4::testGenerators();
 
-  //  std::cout<<"*********************************************"<<std::endl;
-  //  std::cout<<"* Generators for SU(5)"<<std::endl;
-  //  std::cout<<"*********************************************"<<std::endl;
+  //  std::cout<<GridLogMessage<<"*********************************************"<<std::endl;
+  //  std::cout<<GridLogMessage<<"* Generators for SU(5)"<<std::endl;
+  //  std::cout<<GridLogMessage<<"*********************************************"<<std::endl;
   //  SU5::printGenerators();
   //  SU5::testGenerators();
 

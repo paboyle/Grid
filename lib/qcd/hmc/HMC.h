@@ -36,15 +36,15 @@ namespace Grid{
 	RealD prob = std::exp(-DeltaH);
 	random(sRNG,rn_test);
       
-	std::cout<< "--------------------------------------------\n";
-	std::cout<< "dH = "<<DeltaH << "  Random = "<< rn_test 
+	std::cout<<GridLogMessage<< "--------------------------------------------\n";
+	std::cout<<GridLogMessage<< "dH = "<<DeltaH << "  Random = "<< rn_test 
 		 << "\nAcc. Probability = " << ((prob<1.0)? prob: 1.0)<< "   ";
       
 	if((prob >1.0) || (rn_test <= prob)){       // accepted
-	  std::cout <<"-- ACCEPTED\n";
+	  std::cout<<GridLogMessage <<"-- ACCEPTED\n";
 	  return true;
 	} else {                               // rejected
-	  std::cout <<"-- REJECTED\n";
+	  std::cout<<GridLogMessage <<"-- REJECTED\n";
 	  return false;
 	}
       }
@@ -53,12 +53,12 @@ namespace Grid{
 
 	MD.init(U); // set U and initialize P and phi's 
 	RealD H0 = MD.S(U); // initial state action  
-	std::cout<<"Total H before = "<< H0 << "\n";
+	std::cout<<GridLogMessage<<"Total H before = "<< H0 << "\n";
       
 	MD.integrate(U);
       
 	RealD H1 = MD.S(U); // updated state action            
-	std::cout<<"Total H after = "<< H1 << "\n";
+	std::cout<<GridLogMessage<<"Total H after = "<< H1 << "\n";
       
 	return (H1-H0);
       }
@@ -81,17 +81,17 @@ namespace Grid{
 	
 	// Thermalizations
 	for(int iter=1; iter <= Params.ThermalizationSteps; ++iter){
-	  std::cout << "-- # Thermalization step = "<< iter <<  "\n";
+	  std::cout<<GridLogMessage << "-- # Thermalization step = "<< iter <<  "\n";
 	
 	  DeltaH = evolve_step(Uin);
-	  std::cout<< " dH = "<< DeltaH << "\n";
+	  std::cout<<GridLogMessage<< " dH = "<< DeltaH << "\n";
 	}
 
 	// Actual updates (evolve a copy Ucopy then copy back eventually)
 	LatticeLorentzColourMatrix Ucopy(Uin._grid);
 	for(int iter=Params.StartingConfig; 
 	    iter < Params.Nsweeps+Params.StartingConfig; ++iter){
-	  std::cout << "-- # Sweep = "<< iter <<  "\n";
+	  std::cout<<GridLogMessage << "-- # Sweep = "<< iter <<  "\n";
 	  
 	  Ucopy = Uin;
 	  DeltaH = evolve_step(Ucopy);

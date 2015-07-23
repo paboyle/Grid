@@ -221,7 +221,7 @@ PARALLEL_FOR_LOOP
     template<class robj> strong_inline Lattice<vobj> & operator = (const Lattice<robj> & r){
       this->checkerboard = r.checkerboard;
       conformable(*this,r);
-      std::cout<<"Lattice operator ="<<std::endl;
+      std::cout<<GridLogMessage<<"Lattice operator ="<<std::endl;
 PARALLEL_FOR_LOOP
         for(int ss=0;ss<_grid->oSites();ss++){
             this->_odata[ss]=r._odata[ss];

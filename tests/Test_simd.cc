@@ -113,18 +113,18 @@ void Tester(const functor &func)
   }
 
   extract<vec,scal>(v_result,result);
-  std::cout << " " << func.name()<<std::endl;
+  std::cout<<GridLogMessage << " " << func.name()<<std::endl;
 
   int ok=0;
   for(int i=0;i<Nsimd;i++){
     if ( abs(reference[i]-result[i])>0){
-      std::cout<< "*****" << std::endl;
-      std::cout<< "["<<i<<"] "<< abs(reference[i]-result[i]) << " " <<reference[i]<< " " << result[i]<<std::endl;
+      std::cout<<GridLogMessage<< "*****" << std::endl;
+      std::cout<<GridLogMessage<< "["<<i<<"] "<< abs(reference[i]-result[i]) << " " <<reference[i]<< " " << result[i]<<std::endl;
       ok++;
     }
   }
   if ( ok==0 ) {
-    std::cout << " OK!" <<std::endl;
+    std::cout<<GridLogMessage << " OK!" <<std::endl;
   }
   assert(ok==0);
 }
@@ -164,16 +164,16 @@ void ReductionTester(const functor &func)
     reference+=tmp;
   }
 
-  std::cout << " " << func.name()<<std::endl;
+  std::cout<<GridLogMessage << " " << func.name()<<std::endl;
 
   int ok=0;
   if ( abs(reference-result)/abs(reference) > 1.0e-6 ){ // rounding is possible for reduce order
-    std::cout<< "*****" << std::endl;
-    std::cout<< abs(reference-result) << " " <<reference<< " " << result<<std::endl;
+    std::cout<<GridLogMessage<< "*****" << std::endl;
+    std::cout<<GridLogMessage<< abs(reference-result) << " " <<reference<< " " << result<<std::endl;
     ok++;
   }
   if ( ok==0 ) {
-    std::cout << " OK!" <<std::endl;
+    std::cout<<GridLogMessage << " OK!" <<std::endl;
   }
   assert(ok==0);
 }
@@ -194,9 +194,9 @@ int main (int argc, char ** argv)
   // Insist that operations on random scalars gives
   // identical results to on vectors.
 
-  std::cout << "==================================="<<  std::endl;
-  std::cout << "Testing vComplexF "<<std::endl;
-  std::cout << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "Testing vComplexF "<<std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
 
   Tester<ComplexF,vComplexF>(funcTimesI());
   Tester<ComplexF,vComplexF>(funcTimesMinusI());
@@ -208,9 +208,9 @@ int main (int argc, char ** argv)
   Tester<ComplexF,vComplexF>(funcInnerProduct());
   ReductionTester<ComplexF,ComplexF,vComplexF>(funcReduce());
 
-  std::cout << "==================================="<<  std::endl;
-  std::cout << "Testing vComplexD "<<std::endl;
-  std::cout << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "Testing vComplexD "<<std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
 
 
   Tester<ComplexD,vComplexD>(funcTimesI());
@@ -223,9 +223,9 @@ int main (int argc, char ** argv)
   Tester<ComplexD,vComplexD>(funcInnerProduct());
   ReductionTester<ComplexD,ComplexD,vComplexD>(funcReduce());
 
-  std::cout << "==================================="<<  std::endl;
-  std::cout << "Testing vRealF "<<std::endl;
-  std::cout << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "Testing vRealF "<<std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
 
 
   Tester<RealF,vRealF>(funcPlus());
@@ -236,9 +236,9 @@ int main (int argc, char ** argv)
   Tester<RealF,vRealF>(funcInnerProduct());
   ReductionTester<RealF,RealF,vRealF>(funcReduce());
 
-  std::cout << "==================================="<<  std::endl;
-  std::cout << "Testing vRealD "<<std::endl;
-  std::cout << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "Testing vRealD "<<std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
 
   Tester<RealD,vRealD>(funcPlus());
   Tester<RealD,vRealD>(funcMinus());

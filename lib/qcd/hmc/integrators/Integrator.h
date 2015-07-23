@@ -95,7 +95,7 @@ namespace Grid{
 
       //Initialization of momenta and actions
       void init(LatticeLorentzColourMatrix& U){
-	std::cout<< "Integrator init\n";
+	std::cout<<GridLogMessage<< "Integrator init\n";
 
 	MDutils::generate_momenta(*P,pRNG);
 	for(int level=0; level< as.size(); ++level){
@@ -119,7 +119,7 @@ namespace Grid{
 	
 	RealD H = Hsum.real();
 
-	std::cout << "H_p = "<< H << "\n";
+	std::cout<<GridLogMessage << "H_p = "<< H << "\n";
 
 	// Actions
 	for(int level=0; level<as.size(); ++level)

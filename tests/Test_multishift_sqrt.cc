@@ -82,7 +82,7 @@ int main (int argc, char ** argv)
   ////////////////////////////////////////
   // sqrt and inverse sqrt
   ////////////////////////////////////////
-  std::cout << "Generating degree "<<degree<<" for x^(1/2)"<<std::endl;
+  std::cout<<GridLogMessage << "Generating degree "<<degree<<" for x^(1/2)"<<std::endl;
   remez.generateApprox(degree,1,2);
 
   MultiShiftFunction Sqrt(remez,1.0e-6,false);
@@ -120,19 +120,19 @@ int main (int argc, char ** argv)
 
   error = reference - combined;
 
-  std::cout << " Reference "<<norm2(reference)<<std::endl;
-  std::cout << " combined  "<<norm2(combined) <<std::endl;
-  std::cout << " error     "<<norm2(error)    <<std::endl;
+  std::cout<<GridLogMessage << " Reference "<<norm2(reference)<<std::endl;
+  std::cout<<GridLogMessage << " combined  "<<norm2(combined) <<std::endl;
+  std::cout<<GridLogMessage << " error     "<<norm2(error)    <<std::endl;
 
   MSCG(Diagonal,src,summed);
   error = summed - combined;
-  std::cout << " summed-combined "<<norm2(error)    <<std::endl;
+  std::cout<<GridLogMessage << " summed-combined "<<norm2(error)    <<std::endl;
 
 
   src=1.0;
   Chebyshev<LatticeFermion> Cheby(0.1,40.0,200,InverseApproximation);
 
-  std::cout<<"Chebuy approx vector "<<std::endl;
+  std::cout<<GridLogMessage<<"Chebuy approx vector "<<std::endl;
   Cheby(Diagonal,src,combined);
   std::ofstream of("cheby");
   Cheby.csv(of);
@@ -140,10 +140,10 @@ int main (int argc, char ** argv)
   Diagonal.ApplyInverse(src,reference);
   error = reference - combined;
 
-  std::cout << "Chebyshev inverse test "<<std::endl;
-  std::cout << " Reference "<<norm2(reference)<<std::endl;
-  std::cout << " combined  "<<norm2(combined) <<std::endl;
-  std::cout << " error     "<<norm2(error)    <<std::endl;
+  std::cout<<GridLogMessage << "Chebyshev inverse test "<<std::endl;
+  std::cout<<GridLogMessage << " Reference "<<norm2(reference)<<std::endl;
+  std::cout<<GridLogMessage << " combined  "<<norm2(combined) <<std::endl;
+  std::cout<<GridLogMessage << " error     "<<norm2(error)    <<std::endl;
 
   Grid_finalize();
 }
