@@ -28,6 +28,7 @@
   remez.getIPFE(res,pole,&norm);
   remez.csv(ostream &os);
  */
+
 class AlgRemez
 {
  private:

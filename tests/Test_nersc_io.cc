@@ -55,7 +55,7 @@ int main (int argc, char ** argv)
 #endif
   double vol = Fine.gSites();
   Complex PlaqScale(1.0/vol/6.0/3.0);
-  std::cout <<"PlaqScale" << PlaqScale<<std::endl;
+  std::cout<<GridLogMessage <<"PlaqScale" << PlaqScale<<std::endl;
 
   std::vector<TComplex> Plaq_T(orthosz);
   sliceSum(Plaq,Plaq_T,Nd-1);
@@ -66,29 +66,29 @@ int main (int argc, char ** argv)
   for(int t=0;t<Nt;t++){
     Plaq_T_sum = Plaq_T_sum+Plaq_T[t];
     Complex Pt=TensorRemove(Plaq_T[t]);
-    std::cout << "sliced ["<<t<<"]" <<Pt*PlaqScale*Real(Nt)<<std::endl;
+    std::cout<<GridLogMessage << "sliced ["<<t<<"]" <<Pt*PlaqScale*Real(Nt)<<std::endl;
   }
 
   {
     Complex Pt = TensorRemove(Plaq_T_sum);
-    std::cout << "total " <<Pt*PlaqScale<<std::endl;
+    std::cout<<GridLogMessage << "total " <<Pt*PlaqScale<<std::endl;
   }  
 
 
   TComplex Tp = sum(Plaq);
   Complex p  = TensorRemove(Tp);
-  std::cout << "calculated plaquettes " <<p*PlaqScale<<std::endl;
+  std::cout<<GridLogMessage << "calculated plaquettes " <<p*PlaqScale<<std::endl;
 
 
   Complex LinkTraceScale(1.0/vol/4.0/3.0);
   TComplex Tl = sum(LinkTrace);
   Complex l  = TensorRemove(Tl);
-  std::cout << "calculated link trace " <<l*LinkTraceScale<<std::endl;
+  std::cout<<GridLogMessage << "calculated link trace " <<l*LinkTraceScale<<std::endl;
 
   blockSum(cPlaq,Plaq);
   TComplex TcP = sum(cPlaq);
   Complex ll= TensorRemove(TcP);
-  std::cout << "coarsened plaquettes sum to " <<ll*PlaqScale<<std::endl;
+  std::cout<<GridLogMessage << "coarsened plaquettes sum to " <<ll*PlaqScale<<std::endl;
   
   Grid_finalize();
 }

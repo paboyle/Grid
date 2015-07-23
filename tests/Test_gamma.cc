@@ -35,19 +35,19 @@ int main (int argc, char ** argv)
   SpinVector lv; random(sRNG,lv);
   SpinVector rv; random(sRNG,rv);
 
-  //  std::cout << " Is pod " << std::is_pod<SpinVector>::value  << std::endl;
-  //  std::cout << " Is pod double   " << std::is_pod<double>::value  << std::endl;
-  //  std::cout << " Is pod ComplexF " << std::is_pod<ComplexF>::value  << std::endl;
-  //  std::cout << " Is triv double " << std::has_trivial_default_constructor<double>::value  << std::endl;
-  //  std::cout << " Is triv ComplexF " << std::has_trivial_default_constructor<ComplexF>::value  << std::endl;
-  //  std::cout << " Is pod Scalar<double> " << std::is_pod<iScalar<double> >::value  << std::endl;
-  //  std::cout << " Is pod Scalar<ComplexF> " << std::is_pod<iScalar<ComplexF> >::value  << std::endl;
-  //  std::cout << " Is pod Scalar<vComplexF> " << std::is_pod<iScalar<vComplexF> >::value  << std::endl;
-  //  std::cout << " Is pod Scalar<vComplexD> " << std::is_pod<iScalar<vComplexD> >::value  << std::endl;
-  //  std::cout << " Is pod Scalar<vRealF> " << std::is_pod<iScalar<vRealF> >::value  << std::endl;
-  //  std::cout << " Is pod Scalar<vRealD> " << std::is_pod<iScalar<vRealD> >::value  << std::endl;
-  //  std::cout << " Is triv Scalar<double> " <<std::has_trivial_default_constructor<iScalar<double> >::value << std::endl;
-  //  std::cout << " Is triv Scalar<vComplexD> "<<std::has_trivial_default_constructor<iScalar<vComplexD> >::value  << std::endl;
+  //  std::cout<<GridLogMessage << " Is pod " << std::is_pod<SpinVector>::value  << std::endl;
+  //  std::cout<<GridLogMessage << " Is pod double   " << std::is_pod<double>::value  << std::endl;
+  //  std::cout<<GridLogMessage << " Is pod ComplexF " << std::is_pod<ComplexF>::value  << std::endl;
+  //  std::cout<<GridLogMessage << " Is triv double " << std::has_trivial_default_constructor<double>::value  << std::endl;
+  //  std::cout<<GridLogMessage << " Is triv ComplexF " << std::has_trivial_default_constructor<ComplexF>::value  << std::endl;
+  //  std::cout<<GridLogMessage << " Is pod Scalar<double> " << std::is_pod<iScalar<double> >::value  << std::endl;
+  //  std::cout<<GridLogMessage << " Is pod Scalar<ComplexF> " << std::is_pod<iScalar<ComplexF> >::value  << std::endl;
+  //  std::cout<<GridLogMessage << " Is pod Scalar<vComplexF> " << std::is_pod<iScalar<vComplexF> >::value  << std::endl;
+  //  std::cout<<GridLogMessage << " Is pod Scalar<vComplexD> " << std::is_pod<iScalar<vComplexD> >::value  << std::endl;
+  //  std::cout<<GridLogMessage << " Is pod Scalar<vRealF> " << std::is_pod<iScalar<vRealF> >::value  << std::endl;
+  //  std::cout<<GridLogMessage << " Is pod Scalar<vRealD> " << std::is_pod<iScalar<vRealD> >::value  << std::endl;
+  //  std::cout<<GridLogMessage << " Is triv Scalar<double> " <<std::has_trivial_default_constructor<iScalar<double> >::value << std::endl;
+  //  std::cout<<GridLogMessage << " Is triv Scalar<vComplexD> "<<std::has_trivial_default_constructor<iScalar<vComplexD> >::value  << std::endl;
 
   for(int a=0;a<Ns;a++){
     ident()(a,a) = ComplexF(1.0);
@@ -66,8 +66,8 @@ int main (int argc, char ** argv)
 
     for(int i=0;i<Ns;i++){
 
-      if(i==0) std::cout << list[mu];
-      else     std::cout << list[12];
+      if(i==0) std::cout<<GridLogMessage << list[mu];
+      else     std::cout<<GridLogMessage << list[12];
 
       std::cout<<"(";
       for(int j=0;j<Ns;j++){
@@ -82,7 +82,7 @@ int main (int argc, char ** argv)
 	} else if ( abs(result()(i,j)() + Complex(1,0))==0){
 	  std::cout<< "-1";
 	}
-	std::cout<< ((j==Ns-1) ? ")" : "," );
+	std::cout<<((j==Ns-1) ? ")" : "," );
       }
       std::cout << std::endl;
     }

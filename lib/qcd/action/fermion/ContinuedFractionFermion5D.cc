@@ -10,12 +10,12 @@ namespace Grid {
     void ContinuedFractionFermion5D::SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata)
     {
       // How to check Ls matches??
-      //      std::cout << Ls << " Ls"<<std::endl;
-      //      std::cout << zdata->n  << " - n"<<std::endl;
-      //      std::cout << zdata->da << " -da "<<std::endl;
-      //      std::cout << zdata->db << " -db"<<std::endl;
-      //      std::cout << zdata->dn << " -dn"<<std::endl;
-      //      std::cout << zdata->dd << " -dd"<<std::endl;
+      //      std::cout<<GridLogMessage << Ls << " Ls"<<std::endl;
+      //      std::cout<<GridLogMessage << zdata->n  << " - n"<<std::endl;
+      //      std::cout<<GridLogMessage << zdata->da << " -da "<<std::endl;
+      //      std::cout<<GridLogMessage << zdata->db << " -db"<<std::endl;
+      //      std::cout<<GridLogMessage << zdata->dn << " -dn"<<std::endl;
+      //      std::cout<<GridLogMessage << zdata->dd << " -dd"<<std::endl;
 
       assert(zdata->db==Ls);// Beta has Ls coeffs
 
@@ -55,7 +55,7 @@ namespace Grid {
 	See[s] = Aee[s] - 1.0/See[s-1];
       }
       for(int s=0;s<Ls;s++){
-	std::cout <<"s = "<<s<<" Beta "<<Beta[s]<<" Aee "<<Aee[s] <<" See "<<See[s] <<std::endl;
+	std::cout<<GridLogMessage <<"s = "<<s<<" Beta "<<Beta[s]<<" Aee "<<Aee[s] <<" See "<<See[s] <<std::endl;
       }
     }
 

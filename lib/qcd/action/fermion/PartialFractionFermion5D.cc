@@ -260,12 +260,12 @@ namespace Grid {
     void  PartialFractionFermion5D::SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata){
 
       // check on degree matching
-      //      std::cout << Ls << " Ls"<<std::endl;
-      //      std::cout << zdata->n  << " - n"<<std::endl;
-      //      std::cout << zdata->da << " -da "<<std::endl;
-      //      std::cout << zdata->db << " -db"<<std::endl;
-      //      std::cout << zdata->dn << " -dn"<<std::endl;
-      //      std::cout << zdata->dd << " -dd"<<std::endl;
+      //      std::cout<<GridLogMessage << Ls << " Ls"<<std::endl;
+      //      std::cout<<GridLogMessage << zdata->n  << " - n"<<std::endl;
+      //      std::cout<<GridLogMessage << zdata->da << " -da "<<std::endl;
+      //      std::cout<<GridLogMessage << zdata->db << " -db"<<std::endl;
+      //      std::cout<<GridLogMessage << zdata->dn << " -dn"<<std::endl;
+      //      std::cout<<GridLogMessage << zdata->dd << " -dd"<<std::endl;
       assert(Ls == (2*zdata->da -1) );
 
       // Part frac

@@ -120,7 +120,7 @@ namespace Grid {
       Field *Tn  = &T1;
       Field *Tnp = &T2;
 
-      std::cout << "Chebyshev ["<<lo<<","<<hi<<"]"<< " order "<<order <<std::endl;
+      std::cout<<GridLogMessage << "Chebyshev ["<<lo<<","<<hi<<"]"<< " order "<<order <<std::endl;
       // Tn=T1 = (xscale M + mscale)in
       double xscale = 2.0/(hi-lo);
       double mscale = -(hi+lo)/(hi-lo);

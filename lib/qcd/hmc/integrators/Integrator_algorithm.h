@@ -39,29 +39,29 @@ namespace Grid{
 	  if(clock[level] == 0){    // initial half step 
 	    Integ->update_P(U,level,lambda*eps);
 	    ++clock[level];
-	    for(int l=0; l<level;++l) std::cout<<"   ";
-	    std::cout<<"P "<< clock[level] <<std::endl;
+	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
+	    std::cout<<GridLogMessage<<"P "<< clock[level] <<std::endl;
 	  }
 	  
 	  if(level == fl){          // lowest level 
 	    Integ->update_U(U,0.5*eps);
 	    
-	    for(int l=0; l<level;++l) std::cout<<"   ";
-	    std::cout<<"U "<< (clock[level]+1) <<std::endl;
+	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
+	    std::cout<<GridLogMessage<<"U "<< (clock[level]+1) <<std::endl;
 	  }else{                 // recursive function call 
 	    step(U,level+1,clock, Integ);
 	  }
 	  
 	  Integ->update_P(U,level,(1.0-2.0*lambda)*eps);
 	  ++clock[level];
-	  for(int l=0; l<level;++l) std::cout<<"   ";
-	  std::cout<<"P "<< (clock[level]) <<std::endl;
+	  for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
+	  std::cout<<GridLogMessage<<"P "<< (clock[level]) <<std::endl;
 	  
 	  if(level == fl){          // lowest level 
 	    Integ->update_U(U,0.5*eps);
 	    
-	    for(int l=0; l<level;++l) std::cout<<"   ";
-	    std::cout<<"U "<< (clock[level]+1) <<std::endl;
+	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
+	    std::cout<<GridLogMessage<<"U "<< (clock[level]+1) <<std::endl;
 	  }else{                 // recursive function call 
 	    step(U,level+1,clock, Integ);
 	  }    
@@ -71,14 +71,14 @@ namespace Grid{
 	    Integ->update_P(U,level,lambda*eps);
 	    
 	    ++clock[level];
-	    for(int l=0; l<level;++l) std::cout<<"   ";
-	    std::cout<<"P "<< clock[level] <<std::endl;
+	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
+	    std::cout<<GridLogMessage<<"P "<< clock[level] <<std::endl;
 	  }else{                  // bulk step
 	    Integ->update_P(U,level,lambda*2.0*eps);
 	    
 	    clock[level]+=2;
-	    for(int l=0; l<level;++l) std::cout<<"   ";
-	    std::cout<<"P "<< clock[level] <<std::endl;
+	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
+	    std::cout<<GridLogMessage<<"P "<< clock[level] <<std::endl;
 	  }
 	}
 	
@@ -112,13 +112,13 @@ namespace Grid{
 	  if(clock[level] == 0){    // initial half step
 	    Integ->update_P(U, level,eps/2.0);
 	    ++clock[level];
-	    for(int l=0; l<level;++l) std::cout<<"   ";
-	    std::cout<<"P "<< 0.5*clock[level] <<std::endl;
+	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
+	    std::cout<<GridLogMessage<<"P "<< 0.5*clock[level] <<std::endl;
 	  }
 	  if(level == fl){          // lowest level
 	    Integ->update_U(U, eps);
-	    for(int l=0; l<level;++l) std::cout<<"   ";
-	    std::cout<<"U "<< 0.5*(clock[level]+1) <<std::endl;
+	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
+	    std::cout<<GridLogMessage<<"U "<< 0.5*(clock[level]+1) <<std::endl;
 	  }else{                 // recursive function call
 	    step(U, level+1,clock, Integ);
 	  }
@@ -126,14 +126,14 @@ namespace Grid{
 	    Integ->update_P(U, level,eps/2.0);
 	    
 	    ++clock[level];
-	    for(int l=0; l<level;++l) std::cout<<"   ";
-	    std::cout<<"P "<< 0.5*clock[level] <<std::endl;
+	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
+	    std::cout<<GridLogMessage<<"P "<< 0.5*clock[level] <<std::endl;
 	  }else{                  // bulk step
 	    Integ->update_P(U, level,eps);
 	    
 	    clock[level]+=2;
-	    for(int l=0; l<level;++l) std::cout<<"   ";
-	    std::cout<<"P "<< 0.5*clock[level] <<std::endl;
+	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
+	    std::cout<<GridLogMessage<<"P "<< 0.5*clock[level] <<std::endl;
 	  }
 	}
 
