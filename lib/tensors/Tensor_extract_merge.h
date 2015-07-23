@@ -57,11 +57,11 @@ inline void extract(typename std::enable_if<!isGridTensor<vsimd>::value, const v
     extracted[i]=buf[i*s];
     for(int ii=1;ii<s;ii++){
       if ( buf[i*s]!=buf[i*s+ii] ){
-	std::cout << " SIMD extract failure splat = "<<s<<" ii "<<ii<<" " <<Nextr<<" "<< Nsimd<<" "<<std::endl;
+	std::cout<<GridLogMessage << " SIMD extract failure splat = "<<s<<" ii "<<ii<<" " <<Nextr<<" "<< Nsimd<<" "<<std::endl;
 	for(int vv=0;vv<Nsimd;vv++) {
-	  std::cout<< buf[vv]<<" ";
+	  std::cout<<GridLogMessage<< buf[vv]<<" ";
 	}
-	std::cout<<std::endl;
+	std::cout<<GridLogMessage<<std::endl;
 	assert(0);
       }
       assert(buf[i*s]==buf[i*s+ii]);

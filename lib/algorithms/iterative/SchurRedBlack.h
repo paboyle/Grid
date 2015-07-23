@@ -89,7 +89,7 @@ namespace Grid {
       //////////////////////////////////////////////////////////////
       // Call the red-black solver
       //////////////////////////////////////////////////////////////
-      std::cout << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
+      std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
       _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
 
       ///////////////////////////////////////////////////
@@ -108,7 +108,7 @@ namespace Grid {
       RealD ns = norm2(in);
       RealD nr = norm2(resid);
 
-      std::cout << "SchurRedBlackDiagMooee solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
+      std::cout<<GridLogMessage << "SchurRedBlackDiagMooee solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
     }     
   };
 

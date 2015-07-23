@@ -52,9 +52,9 @@ int main (int argc, char ** argv)
   RealD mass=0.1;
   RealD M5=1.5;
 
-  std::cout << "**************************************************"<< std::endl;
-  std::cout << "Building g5R5 hermitian DWF operator" <<std::endl;
-  std::cout << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Building g5R5 hermitian DWF operator" <<std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   DomainWallFermion Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   Gamma5R5HermitianLinearOperator<DomainWallFermion,LatticeFermion> HermIndefOp(Ddwf);
 
@@ -64,9 +64,9 @@ int main (int argc, char ** argv)
   typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
   typedef LittleDiracOperator::CoarseVector                   CoarseVector;
 
-  std::cout << "**************************************************"<< std::endl;
-  std::cout << "Calling Aggregation class to build subspace" <<std::endl;
-  std::cout << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Calling Aggregation class to build subspace" <<std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   MdagMLinearOperator<DomainWallFermion,LatticeFermion> HermDefOp(Ddwf);
   Subspace Aggregates(Coarse5d,FGrid);
   Aggregates.CreateSubspace(RNG5,HermDefOp);
@@ -80,22 +80,22 @@ int main (int argc, char ** argv)
   gaussian(CRNG,c_src);
   c_res=zero;
 
-  std::cout << "**************************************************"<< std::endl;
-  std::cout << "Solving mdagm-CG on coarse space "<< std::endl;
-  std::cout << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Solving mdagm-CG on coarse space "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   MdagMLinearOperator<LittleDiracOperator,CoarseVector> PosdefLdop(LittleDiracOp);
   ConjugateGradient<CoarseVector> CG(1.0e-6,10000);
   CG(PosdefLdop,c_src,c_res);
 
-  std::cout << "**************************************************"<< std::endl;
-  std::cout << "Solving indef-MCR on coarse space "<< std::endl;
-  std::cout << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Solving indef-MCR on coarse space "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   HermitianLinearOperator<LittleDiracOperator,CoarseVector> HermIndefLdop(LittleDiracOp);
   ConjugateResidual<CoarseVector> MCR(1.0e-6,10000);
   MCR(HermIndefLdop,c_src,c_res);
 
-  std::cout << "**************************************************"<< std::endl;
-  std::cout << "Done "<< std::endl;
-  std::cout << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Done "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   Grid_finalize();
 }

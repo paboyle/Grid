@@ -100,7 +100,7 @@ void WilsonFermion5D::DhopDir(const LatticeFermion &in, LatticeFermion &out,int 
   assert(dirdisp<=7);
   assert(dirdisp>=0);
 
-//PARALLEL_FOR_LOOP
+PARALLEL_FOR_LOOP
   for(int ss=0;ss<Umu._grid->oSites();ss++){
     for(int s=0;s<Ls;s++){
       int sU=ss;

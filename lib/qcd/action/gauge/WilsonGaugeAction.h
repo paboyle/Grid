@@ -18,7 +18,7 @@ namespace Grid{
       
       virtual RealD S(const GaugeField &U) {
 	RealD plaq = WilsonLoops<MatrixField,GaugeField>::avgPlaquette(U);
-	std::cout << "Plaq : "<<plaq << "\n";
+	std::cout<<GridLogMessage << "Plaq : "<<plaq << "\n";
 	double vol = U._grid->gSites();
 	return beta*(1.0 -plaq)*(Nd*(Nd-1.0))*vol*0.5;
       };

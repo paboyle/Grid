@@ -17,13 +17,13 @@ int main (int argc, char ** argv)
   std::vector<int> mpi_layout  = GridDefaultMpi();
 
   int threads = GridThread::GetThreads();
-  std::cout << "Grid is setup to use "<<threads<<" threads"<<std::endl;
+  std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
   
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "= Benchmarking fused AXPY bandwidth ; sizeof(Real) "<<sizeof(Real)<<std::endl;
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<std::endl;
-  std::cout << "----------------------------------------------------------"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "= Benchmarking fused AXPY bandwidth ; sizeof(Real) "<<sizeof(Real)<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<std::endl;
+  std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
 
   for(int lat=4;lat<=32;lat+=4){
 
@@ -49,15 +49,15 @@ int main (int argc, char ** argv)
       
       double flops=vol*Nvec*2;// mul,add
       double bytes=3*vol*Nvec*sizeof(Real);
-      std::cout<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<std::endl;
+      std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<std::endl;
 
     }
 
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "= Benchmarking a*x + y bandwidth"<<std::endl;
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<std::endl;
-  std::cout << "----------------------------------------------------------"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "= Benchmarking a*x + y bandwidth"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<std::endl;
+  std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
   
   for(int lat=4;lat<=32;lat+=4){
 
@@ -81,14 +81,14 @@ int main (int argc, char ** argv)
      
       double flops=vol*Nvec*2;// mul,add
       double bytes=3*vol*Nvec*sizeof(Real);
-      std::cout<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<std::endl;
+      std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<std::endl;
 
     }
 
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "= Benchmarking SCALE bandwidth"<<std::endl;
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "= Benchmarking SCALE bandwidth"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<std::endl;
 
   for(int lat=4;lat<=32;lat+=4){
 
@@ -114,15 +114,15 @@ int main (int argc, char ** argv)
       
       double bytes=2*vol*Nvec*sizeof(Real);
       double flops=vol*Nvec*1;// mul
-      std::cout <<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<std::endl;
+      std::cout<<GridLogMessage <<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<std::endl;
 
   }
 
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "= Benchmarking READ bandwidth"<<std::endl;
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<std::endl;
-  std::cout << "----------------------------------------------------------"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "= Benchmarking READ bandwidth"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<std::endl;
+  std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
 
   for(int lat=4;lat<=32;lat+=4){
 
@@ -147,7 +147,7 @@ int main (int argc, char ** argv)
       
       double bytes=vol*Nvec*sizeof(Real);
       double flops=vol*Nvec*2;// mul,add
-      std::cout<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"  \t\t"<<bytes/time<<"\t\t"<<flops/time<<std::endl;
+      std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"  \t\t"<<bytes/time<<"\t\t"<<flops/time<<std::endl;
 
   }    
 
