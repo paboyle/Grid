@@ -68,12 +68,10 @@ namespace Grid{
 		     Integrator<Algorithm>& MolDyn):
       Params(Pms),MD(MolDyn){
 	//FIXME
-
 	// initialize RNGs also with seed
 	sRNG.SeedRandomDevice();
       }
       ~HybridMonteCarlo(){};
-
 
 
       void evolve(LatticeLorentzColourMatrix& Uin){

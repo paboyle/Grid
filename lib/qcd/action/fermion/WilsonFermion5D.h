@@ -44,11 +44,17 @@ namespace Grid {
 
       // half checkerboard operations; leave unimplemented as abstract for now
       virtual void   Meooe       (const LatticeFermion &in, LatticeFermion &out){assert(0);};
-      virtual void   MeooeDag    (const LatticeFermion &in, LatticeFermion &out){assert(0);};
       virtual void   Mooee       (const LatticeFermion &in, LatticeFermion &out){assert(0);};
-      virtual void   MooeeDag    (const LatticeFermion &in, LatticeFermion &out){assert(0);};
       virtual void   MooeeInv    (const LatticeFermion &in, LatticeFermion &out){assert(0);};
+
+      virtual void   MeooeDag    (const LatticeFermion &in, LatticeFermion &out){assert(0);};
+      virtual void   MooeeDag    (const LatticeFermion &in, LatticeFermion &out){assert(0);};
       virtual void   MooeeInvDag (const LatticeFermion &in, LatticeFermion &out){assert(0);};
+
+      // These can be overridden by fancy 5d chiral actions
+      virtual void DhopDeriv  (LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag);
+      virtual void DhopDerivEO(LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag);
+      virtual void DhopDerivOE(LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag);
 
       // Implement hopping term non-hermitian hopping term; half cb or both
       // Implement s-diagonal DW
@@ -64,6 +70,14 @@ namespace Grid {
       ///////////////////////////////////////////////////////////////
       // New methods added 
       ///////////////////////////////////////////////////////////////
+
+      void DerivInternal(CartesianStencil & st,
+			 LatticeDoubledGaugeField & U,
+			 LatticeGaugeField &mat,
+			 const LatticeFermion &A,
+			 const LatticeFermion &B,
+			 int dag);
+
       void DhopInternal(CartesianStencil & st,
 			LebesgueOrder &lo,
 			LatticeDoubledGaugeField &U,

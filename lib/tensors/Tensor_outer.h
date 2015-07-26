@@ -28,11 +28,13 @@ auto outerProduct (const iScalar<l>& lhs,const iScalar<r>& rhs) -> iScalar<declt
 
 inline ComplexF outerProduct(const ComplexF &l, const ComplexF& r)
 {
-  return l*r;
+  std::cout << "outer product taking conj "<<r<<" "<<conj(r)<<std::endl;
+  return l*conj(r);
 }
 inline ComplexD outerProduct(const ComplexD &l, const ComplexD& r)
 {
-  return l*r;
+  std::cout << "outer product taking conj "<<r<<" "<<conj(r)<<std::endl;
+  return l*conj(r);
 }
 inline RealF outerProduct(const RealF &l, const RealF& r)
 {

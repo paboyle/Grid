@@ -414,7 +414,7 @@ namespace Grid {
   template<class S, class V >
   inline Grid_simd< S, V> outerProduct(const Grid_simd< S, V> &l, const Grid_simd< S, V> & r)
   {
-    return l*r;
+    return l*conjugate(r);
   }
 
   template<class S, class V >
