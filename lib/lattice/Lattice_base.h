@@ -60,6 +60,11 @@ public:
     GridBase *_grid;
     int checkerboard;
     std::vector<vobj,alignedAllocator<vobj> > _odata;
+    
+    // to pthread need a computable loop where loop induction is not required
+    int begin(void) { return 0;};
+    int end(void)   { return _odata.size(); }
+    vobj & operator[](int i) { return _odata[i]; };
 
 public:
     typedef typename vobj::scalar_type scalar_type;
