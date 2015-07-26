@@ -39,10 +39,23 @@ namespace Grid {
       virtual void Dhop  (const FermionField &in, FermionField &out,int dag)=0;
       virtual void DhopOE(const FermionField &in, FermionField &out,int dag)=0;
       virtual void DhopEO(const FermionField &in, FermionField &out,int dag)=0;
+      virtual void DhopDir(const FermionField &in, FermionField &out,int dir,int disp)=0; // implemented by WilsonFermion and WilsonFermion5D
 
-      virtual void  Mdiag(const FermionField &in, FermionField &out) { Mooee(in,out);};   // Same as Mooee applied to both CB's
-      virtual void  Mdir (const FermionField &in, FermionField &out,int dir,int disp)=0;   // case by case Wilson, Clover, Cayley, ContFrac, PartFrac
-      virtual void  DhopDir(const FermionField &in, FermionField &out,int dir,int disp)=0; // implemented by WilsonFermion and WilsonFermion5D
+      // force terms; five routines; default to Dhop on diagonal
+      virtual void MDeriv  (LatticeGaugeField &mat,const FermionField &U,const FermionField &V,int dag){DhopDeriv(mat,U,V,dag);};
+      virtual void MoeDeriv(LatticeGaugeField &mat,const FermionField &U,const FermionField &V,int dag){DhopDerivOE(mat,U,V,dag);};
+      virtual void MeoDeriv(LatticeGaugeField &mat,const FermionField &U,const FermionField &V,int dag){DhopDerivEO(mat,U,V,dag);};
+      virtual void MooDeriv(LatticeGaugeField &mat,const FermionField &U,const FermionField &V,int dag){mat=zero;};
+      virtual void MeeDeriv(LatticeGaugeField &mat,const FermionField &U,const FermionField &V,int dag){mat=zero;};
+
+      virtual void DhopDeriv  (LatticeGaugeField &mat,const FermionField &U,const FermionField &V,int dag)=0;
+      virtual void DhopDerivEO(LatticeGaugeField &mat,const FermionField &U,const FermionField &V,int dag)=0;
+      virtual void DhopDerivOE(LatticeGaugeField &mat,const FermionField &U,const FermionField &V,int dag)=0;
+
+
+      virtual void  Mdiag  (const FermionField &in, FermionField &out) { Mooee(in,out);};   // Same as Mooee applied to both CB's
+      virtual void  Mdir   (const FermionField &in, FermionField &out,int dir,int disp)=0;   // case by case Wilson, Clover, Cayley, ContFrac, PartFrac
+
 
     };
 
