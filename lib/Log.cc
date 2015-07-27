@@ -40,7 +40,7 @@ void Grid_quiesce_nodes(void)
   int me;
   MPI_Comm_rank(MPI_COMM_WORLD,&me);
   if ( me ) { 
-    std::cout<<GridLogMessage.setstate(std::ios::badbit);
+    std::cout.setstate(std::ios::badbit);
   }
 #endif
 }
@@ -48,7 +48,7 @@ void Grid_quiesce_nodes(void)
 void Grid_unquiesce_nodes(void)
 {
 #ifdef GRID_COMMS_MPI
-    std::cout<<GridLogMessage.clear();
+    std::cout.clear();
 #endif
 }
 
