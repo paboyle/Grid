@@ -149,6 +149,7 @@ PARALLEL_FOR_LOOP
     ////////////////////////////
     // spin trace outer product
     ////////////////////////////
+// FIXME : need to sum over fifth direction.
     tmp = TraceIndex<SpinIndex>(outerProduct(Btilde,A)); // ordering here
     PokeIndex<LorentzIndex>(mat,tmp,mu);
 
