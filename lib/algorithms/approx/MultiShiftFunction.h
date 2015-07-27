@@ -1,6 +1,8 @@
 #ifndef MULTI_SHIFT_FUNCTION
 #define MULTI_SHIFT_FUNCTION
+
 namespace Grid {
+
 class MultiShiftFunction {
 public:
   int order;

@@ -1,9 +1,17 @@
 #ifndef GRID_TIME_H
 #define GRID_TIME_H
-namespace Grid {
-  // Dress the output; use std::chrono
-#include <chrono>
+
+#include <sys/time.h>
 #include <ctime>
+#include <chrono>
+
+namespace Grid {
+
+
+  // Dress the output; use std::chrono
+
+// C++11 time facilities better?
+double usecond(void);
 
 typedef  std::chrono::system_clock          GridClock;
 typedef  std::chrono::time_point<GridClock> GridTimePoint;
