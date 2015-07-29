@@ -144,6 +144,7 @@ namespace Grid{
 
 	gaussian(pRNG,eta);
 
+	FermOp.ImportGauge(U);
 	FermOp.Mdag(eta,Phi);
 
 	Phi=Phi*scale;

@@ -41,8 +41,9 @@ int main (int argc, char ** argv)
   FullSet.push_back(Level1);
 
   // Create integrator
-  typedef LeapFrog  IntegratorAlgorithm;// change here to change the algorithm
-  IntegratorParameters MDpar(12,40,1.0);
+  typedef MinimumNorm2  IntegratorAlgorithm;// change here to change the algorithm
+  //  typedef LeapFrog  IntegratorAlgorithm;// change here to change the algorithm
+  IntegratorParameters MDpar(12,20,1.0);
   std::vector<int> rel ={1};
   Integrator<IntegratorAlgorithm> MDynamics(&Fine,MDpar, FullSet,rel);
 
