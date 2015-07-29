@@ -136,6 +136,7 @@ namespace Grid {
       WilsonFermion(LatticeGaugeField &_Umu,GridCartesian &Fgrid,GridRedBlackCartesian &Hgrid,RealD _mass);
 
       // DoubleStore
+      virtual void ImportGauge(const LatticeGaugeField &_Umu);
       void DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGaugeField &Umu);
 
       ///////////////////////////////////////////////////////////////

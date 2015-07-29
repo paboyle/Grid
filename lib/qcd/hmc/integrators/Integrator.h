@@ -63,7 +63,6 @@ namespace Grid{
 	}
       }
 
-
       void update_U(LatticeLorentzColourMatrix&U, double ep){
 	//rewrite exponential to deal automatically  with the lorentz index?
 	LatticeColourMatrix Umu(U._grid);
@@ -77,7 +76,6 @@ namespace Grid{
 
       }
       
-
       
       friend void IntegratorAlgorithm::step (LatticeLorentzColourMatrix& U, 
 					     int level, std::vector<int>& clock,
@@ -92,9 +90,9 @@ namespace Grid{
       
       ~Integrator(){}
 
-
       //Initialization of momenta and actions
       void init(LatticeLorentzColourMatrix& U){
+
 	std::cout<<GridLogMessage<< "Integrator init\n";
 
 	MDutils::generate_momenta(*P,pRNG);
@@ -105,7 +103,6 @@ namespace Grid{
 	}
       }
 
-      
       // Calculate action
       RealD S(LatticeLorentzColourMatrix& U){
 	LatticeComplex Hloc(U._grid);
@@ -119,12 +116,14 @@ namespace Grid{
 	
 	RealD H = Hsum.real();
 
-	std::cout<<GridLogMessage << "H_p = "<< H << "\n";
+	std::cout<<GridLogMessage << "Momentum action H_p = "<< H << "\n";
 
 	// Actions
 	for(int level=0; level<as.size(); ++level)
 	  for(int actionID=0; actionID<as.at(level).size(); ++actionID)
 	    H += as[level].at(actionID)->S(U);
+
+	std::cout<<GridLogMessage << "Total action H = "<< H << "\n";
 	
 	return H;
       }

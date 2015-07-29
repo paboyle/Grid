@@ -554,9 +554,7 @@ Note that in step D setting B ~ X - A and using B in place of A in step E will g
     for(int a=0;a<generators();a++){
       gaussian(pRNG,ca); 
       generator(a,ta);
-      
       la=toComplex(ca)*ci*ta;
-   
       out += la; 
     }
 
