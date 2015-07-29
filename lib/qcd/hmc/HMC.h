@@ -94,6 +94,7 @@ namespace Grid{
 
 
       void evolve(LatticeLorentzColourMatrix& Uin){
+
 	Real DeltaH;
 	
 	// Thermalizations
@@ -106,14 +107,16 @@ namespace Grid{
 
 	// Actual updates (evolve a copy Ucopy then copy back eventually)
 	LatticeLorentzColourMatrix Ucopy(Uin._grid);
-	for(int iter=Params.StartingConfig; 
-	    iter < Params.Nsweeps+Params.StartingConfig; ++iter){
+	for(int iter=Params.StartingConfig; iter < Params.Nsweeps+Params.StartingConfig; ++iter){
+
 	  std::cout<<GridLogMessage << "-- # Sweep = "<< iter <<  "\n";
 	  
 	  Ucopy = Uin;
+
 	  DeltaH = evolve_step(Ucopy);
 		
 	  if(metropolis_test(DeltaH)) Uin = Ucopy;
+
 	  //need sync? // Query Guido on this comment
 
 	}

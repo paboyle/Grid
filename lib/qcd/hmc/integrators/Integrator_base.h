@@ -60,10 +60,10 @@ namespace Grid{
       
       IntegratorPolicy TheIntegrator;// contains parameters too
 
-
       void update_P(LatticeLorentzColourMatrix&U, int level,double ep){
 	for(int a=0; a<as[level].size(); ++a){
 	  LatticeLorentzColourMatrix force(U._grid);
+
 	  as[level].at(a)->deriv(U,force);
 
 	  Complex dSdt=0.0;
