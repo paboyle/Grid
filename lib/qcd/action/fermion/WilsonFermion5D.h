@@ -94,6 +94,7 @@ namespace Grid {
 			  double _M5);
 
       // DoubleStore
+      virtual void ImportGauge(const LatticeGaugeField &_Umu);
       void DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGaugeField &Umu);
 
       ///////////////////////////////////////////////////////////////

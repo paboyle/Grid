@@ -73,6 +73,7 @@ namespace Grid{
       
 	RealD H1 = MD.S(U); // updated state action            
 	std::cout<<GridLogMessage<<"Total H after = "<< H1 << "\n";
+	std::cout<<GridLogMessage<<"DeltaH is "<< H1-H0 << "\n";
       
 	return (H1-H0);
       }
