@@ -48,17 +48,19 @@ int main (int argc, char ** argv)
   LatticeGaugeField tmp(&Grid);
 
   Dw.MDeriv(tmp , Mphi,  phi,DaggerNo );  UdSdU=tmp;
-  Dw.MDeriv(tmp , phi,  Mphi,DaggerYes ); UdSdU=UdSdU+tmp;
-
-
+  Dw.MDeriv(tmp , phi,  Mphi,DaggerYes ); UdSdU=(UdSdU+tmp);
+  
   LatticeFermion Ftmp      (&Grid);
 
   ////////////////////////////////////
   // Modify the gauge field a little 
   ////////////////////////////////////
-  RealD dt = 1.0e-6;
-
+  RealD dt = 0.0001;
+  RealD Hmom = 0.0;
+  RealD Hmomprime = 0.0;
+  RealD Hmompp    = 0.0;
   LatticeColourMatrix mommu(&Grid); 
+  LatticeColourMatrix forcemu(&Grid); 
   LatticeGaugeField mom(&Grid); 
   LatticeGaugeField Uprime(&Grid); 
 
@@ -66,13 +68,26 @@ int main (int argc, char ** argv)
 
     SU3::GaussianLieAlgebraMatrix(pRNG, mommu); // Traceless antihermitian momentum; gaussian in lie alg
 
+    Hmom -= real(sum(trace(mommu*mommu)));
+
     PokeIndex<LorentzIndex>(mom,mommu,mu);
+
+    // fourth order exponential approx
     parallel_for(auto i=mom.begin();i<mom.end();i++){
-      Uprime[i](mu) =U[i](mu)+ mom[i](mu)*U[i](mu)*dt;
+      Uprime[i](mu) =
+	  U[i](mu)
+	+ mom[i](mu)*U[i](mu)*dt 
+	+ mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt/2.0)
+	+ mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt/6.0)
+	+ mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt/24.0)
+	+ mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt*dt/120.0)
+	+ mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt*dt*dt/720.0)
+	;
     }
 
   }
 
+  std::cout << GridLogMessage <<"Initial mom hamiltonian is "<< Hmom <<std::endl;
   Dw.DoubleStore(Dw.Umu,Uprime);
   Dw.M          (phi,MphiPrime);
 
@@ -81,21 +96,75 @@ int main (int argc, char ** argv)
   //////////////////////////////////////////////
   // Use derivative to estimate dS
   //////////////////////////////////////////////
-  LatticeComplex dS(&Grid); dS = zero;
 
-  parallel_for(auto i=mom.begin();i<mom.end();i++){
-    for(int mu=0;mu<Nd;mu++){
-      //      dS[i]() = dS[i]()+trace(mom[i](mu) * UdSdU[i](mu) - mom[i](mu)* adj( UdSdU[i](mu)) )*dt;
-      dS[i]() =    dS[i]()+trace(mom[i](mu) * (UdSdU[i](mu)))*dt;
-      dS[i]() =    dS[i]()-trace(mom[i](mu) * adj(UdSdU[i](mu)))*dt;
-    }
+
+  for(int mu=0;mu<Nd;mu++){
+    std::cout << "" <<std::endl;
+    mommu   = PeekIndex<LorentzIndex>(mom,mu);
+    std::cout << GridLogMessage<< " Mommu  " << norm2(mommu)<<std::endl;
+    mommu   = mommu+adj(mommu);
+    std::cout << GridLogMessage<< " Mommu + Mommudag " << norm2(mommu)<<std::endl;
+    mommu   = PeekIndex<LorentzIndex>(UdSdU,mu);
+    std::cout << GridLogMessage<< " dsdumu  " << norm2(mommu)<<std::endl;
+    mommu   = mommu+adj(mommu);
+    std::cout << GridLogMessage<< " dsdumu + dag  " << norm2(mommu)<<std::endl;
   }
+
+  LatticeComplex dS(&Grid); dS = zero;
+  LatticeComplex dSmom(&Grid); dSmom = zero;
+  LatticeComplex dSmom2(&Grid); dSmom2 = zero;
+  for(int mu=0;mu<Nd;mu++){
+    mommu   = PeekIndex<LorentzIndex>(UdSdU,mu);
+    mommu=Ta(mommu)*2.0;
+    PokeIndex<LorentzIndex>(UdSdU,mommu,mu);
+  }
+
+  for(int mu=0;mu<Nd;mu++){
+    mommu   = PeekIndex<LorentzIndex>(mom,mu);
+    std::cout << GridLogMessage<< " Mommu  " << norm2(mommu)<<std::endl;
+    mommu   = mommu+adj(mommu);
+    std::cout << GridLogMessage<< " Mommu + Mommudag " << norm2(mommu)<<std::endl;
+    mommu   = PeekIndex<LorentzIndex>(UdSdU,mu);
+    std::cout << GridLogMessage<< " dsdumu  " << norm2(mommu)<<std::endl;
+    mommu   = mommu+adj(mommu);
+    std::cout << GridLogMessage<< " dsdumu + dag  " << norm2(mommu)<<std::endl;
+  }
+
+  for(int mu=0;mu<Nd;mu++){
+    forcemu = PeekIndex<LorentzIndex>(UdSdU,mu);
+    mommu   = PeekIndex<LorentzIndex>(mom,mu);
+
+    // Update PF action density
+    dS = dS+trace(mommu*forcemu)*dt;
+
+    dSmom  = dSmom  - trace(mommu*forcemu) * dt;
+    dSmom2 = dSmom2 - trace(forcemu*forcemu) *(0.25* dt*dt);
+
+    // Update mom action density
+    mommu = mommu + forcemu*(dt*0.5);
+
+    Hmomprime -= real(sum(trace(mommu*mommu)));
+
+  }
+
   Complex dSpred    = sum(dS);
+  Complex dSm       = sum(dSmom);
+  Complex dSm2      = sum(dSmom2);
+
+
+  std::cout << GridLogMessage <<"Initial mom hamiltonian is "<< Hmom <<std::endl;
+  std::cout << GridLogMessage <<"Final   mom hamiltonian is "<< Hmomprime <<std::endl;
+  std::cout << GridLogMessage <<"Delta   mom hamiltonian is "<< Hmomprime-Hmom <<std::endl;
 
   std::cout << GridLogMessage << " S      "<<S<<std::endl;
   std::cout << GridLogMessage << " Sprime "<<Sprime<<std::endl;
   std::cout << GridLogMessage << "dS      "<<Sprime-S<<std::endl;
   std::cout << GridLogMessage << "predict dS    "<< dSpred <<std::endl;
+  std::cout << GridLogMessage <<"dSm "<< dSm<<std::endl;
+  std::cout << GridLogMessage <<"dSm2"<< dSm2<<std::endl;
+
+  std::cout << GridLogMessage << "Total dS    "<< Hmomprime - Hmom + Sprime - S <<std::endl;
+
 
   std::cout<< GridLogMessage << "Done" <<std::endl;
   Grid_finalize();

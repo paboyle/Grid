@@ -65,6 +65,18 @@ namespace Grid{
 	for(int a=0; a<as[level].size(); ++a){
 	  LatticeLorentzColourMatrix force(U._grid);
 	  as[level].at(a)->deriv(U,force);
+
+	  Complex dSdt=0.0;
+	  for(int mu=0;mu<Nd;mu++){
+	    LatticeColourMatrix forcemu(U._grid);
+	    LatticeColourMatrix mommu(U._grid);
+	    forcemu=PeekIndex<LorentzIndex>(force,mu);
+	    mommu=PeekIndex<LorentzIndex>(*P,mu);
+
+	    dSdt += sum(trace(forcemu*(*P)));
+
+	  }	  
+	  std::cout << GridLogMessage << " action "<<level<<","<<a<<" dSdt "<< dSdt << " dt "<<ep  <<std::endl;
 	  *P -= force*ep;
 	}
       }

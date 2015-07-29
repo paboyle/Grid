@@ -13,9 +13,7 @@ namespace Grid {
 public:                                                
     RealD   Tolerance;
     Integer MaxIterations;
-    int verbose;
     ConjugateGradient(RealD tol,Integer maxit) : Tolerance(tol), MaxIterations(maxit) { 
-      verbose=0;
     };
 
 
@@ -42,14 +40,12 @@ public:
       cp =a;
       ssq=norm2(src);
 
-      if ( verbose ) {
-	std::cout<<GridLogMessage <<std::setprecision(4)<< "ConjugateGradient: guess "<<guess<<std::endl;
-	std::cout<<GridLogMessage <<std::setprecision(4)<< "ConjugateGradient:   src "<<ssq  <<std::endl;
-	std::cout<<GridLogMessage <<std::setprecision(4)<< "ConjugateGradient:    mp "<<d    <<std::endl;
-	std::cout<<GridLogMessage <<std::setprecision(4)<< "ConjugateGradient:   mmp "<<b    <<std::endl;
-	std::cout<<GridLogMessage <<std::setprecision(4)<< "ConjugateGradient:  cp,r "<<cp   <<std::endl;
-	std::cout<<GridLogMessage <<std::setprecision(4)<< "ConjugateGradient:     p "<<a    <<std::endl;
-      }
+      std::cout<<GridLogIterative <<std::setprecision(4)<< "ConjugateGradient: guess "<<guess<<std::endl;
+      std::cout<<GridLogIterative <<std::setprecision(4)<< "ConjugateGradient:   src "<<ssq  <<std::endl;
+      std::cout<<GridLogIterative <<std::setprecision(4)<< "ConjugateGradient:    mp "<<d    <<std::endl;
+      std::cout<<GridLogIterative <<std::setprecision(4)<< "ConjugateGradient:   mmp "<<b    <<std::endl;
+      std::cout<<GridLogIterative <<std::setprecision(4)<< "ConjugateGradient:  cp,r "<<cp   <<std::endl;
+      std::cout<<GridLogIterative <<std::setprecision(4)<< "ConjugateGradient:     p "<<a    <<std::endl;
 
       RealD rsq =  Tolerance* Tolerance*ssq;
       
@@ -58,7 +54,7 @@ public:
 	return;
       }
       
-      if(verbose) std::cout<<GridLogMessage << std::setprecision(4)<< "ConjugateGradient: k=0 residual "<<cp<<" rsq"<<rsq<<std::endl;
+      std::cout<<GridLogIterative << std::setprecision(4)<< "ConjugateGradient: k=0 residual "<<cp<<" rsq"<<rsq<<std::endl;
       
       int k;
       for (k=1;k<=MaxIterations;k++){
@@ -80,7 +76,7 @@ public:
 	psi= a*p+psi;
 	p  = p*b+r;
 	  
-	if (verbose) std::cout<<GridLogMessage<<"ConjugateGradient: Iteration " <<k<<" residual "<<cp<< " target"<< rsq<<std::endl;
+	std::cout<<GridLogIterative<<"ConjugateGradient: Iteration " <<k<<" residual "<<cp<< " target"<< rsq<<std::endl;
 	
 	// Stopping condition
 	if ( cp <= rsq ) { 

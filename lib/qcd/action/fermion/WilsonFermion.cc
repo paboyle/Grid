@@ -24,6 +24,10 @@ WilsonFermion::WilsonFermion(LatticeGaugeField &_Umu,
 {
   // Allocate the required comms buffer
   comm_buf.resize(Stencil._unified_buffer_size); // this is always big enough to contain EO
+  ImportGauge(_Umu);
+}
+void WilsonFermion::ImportGauge(const LatticeGaugeField &_Umu)
+{
   DoubleStore(Umu,_Umu);
   pickCheckerboard(Even,UmuEven,Umu);
   pickCheckerboard(Odd ,UmuOdd,Umu);
