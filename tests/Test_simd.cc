@@ -194,9 +194,9 @@ int main (int argc, char ** argv)
   // Insist that operations on random scalars gives
   // identical results to on vectors.
 
-  std::cout << "==================================="<<  std::endl;
-  std::cout << "Testing vRealF "<<std::endl;
-  std::cout << "==================================="<<  std::endl;
+  std::cout << GridLogMessage <<"==================================="<<  std::endl;
+  std::cout << GridLogMessage <<"Testing vRealF "<<std::endl;
+  std::cout << GridLogMessage <<"==================================="<<  std::endl;
 
 
   Tester<RealF,vRealF>(funcPlus());
@@ -207,9 +207,9 @@ int main (int argc, char ** argv)
   Tester<RealF,vRealF>(funcInnerProduct());
   ReductionTester<RealF,RealF,vRealF>(funcReduce());
 
-  std::cout << "==================================="<<  std::endl;
-  std::cout << "Testing vRealD "<<std::endl;
-  std::cout << "==================================="<<  std::endl;
+  std::cout << GridLogMessage <<"==================================="<<  std::endl;
+  std::cout << GridLogMessage <<"Testing vRealD "<<std::endl;
+  std::cout << GridLogMessage <<"==================================="<<  std::endl;
 
   Tester<RealD,vRealD>(funcPlus());
   Tester<RealD,vRealD>(funcMinus());
@@ -219,9 +219,9 @@ int main (int argc, char ** argv)
   Tester<RealD,vRealD>(funcInnerProduct());
   ReductionTester<RealD,RealD,vRealD>(funcReduce());
 
-  std::cout << "==================================="<<  std::endl;
-  std::cout << "Testing vComplexF "<<std::endl;
-  std::cout << "==================================="<<  std::endl;
+  std::cout << GridLogMessage <<"==================================="<<  std::endl;
+  std::cout << GridLogMessage <<"Testing vComplexF "<<std::endl;
+  std::cout << GridLogMessage <<"==================================="<<  std::endl;
 
   Tester<ComplexF,vComplexF>(funcTimesI());
   Tester<ComplexF,vComplexF>(funcTimesMinusI());
