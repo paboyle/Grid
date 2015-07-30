@@ -65,6 +65,18 @@ namespace Grid{
 	for(int a=0; a<as[level].size(); ++a){
 	  LatticeLorentzColourMatrix force(U._grid);
 	  as[level].at(a)->deriv(U,force);
+
+	  Complex dSdt=0.0;
+	  for(int mu=0;mu<Nd;mu++){
+	    LatticeColourMatrix forcemu(U._grid);
+	    LatticeColourMatrix mommu(U._grid);
+	    forcemu=PeekIndex<LorentzIndex>(force,mu);
+	    mommu=PeekIndex<LorentzIndex>(*P,mu);
+
+	    dSdt += sum(trace(forcemu*(*P)));
+
+	  }	  
+	  std::cout << GridLogMessage << " action "<<level<<","<<a<<" dSdt "<< dSdt << " dt "<<ep  <<std::endl;
 	  *P -= force*ep;
 	}
       }
@@ -101,7 +113,7 @@ namespace Grid{
       //Initialization of momenta and actions
       void init(LatticeLorentzColourMatrix& U,
 		GridParallelRNG& pRNG){
-	std::cout<< "Integrator init\n";
+	std::cout<<GridLogMessage<< "Integrator init\n";
 	if (!P)
 	  P = new LatticeLorentzColourMatrix(U._grid);
 	MDutils::generate_momenta(*P,pRNG);
@@ -172,13 +184,13 @@ namespace Grid{
 	  if(clock[level] == 0){    // initial half step
 	    Integ->update_P(U, level,eps/2);
 	    ++clock[level];
-	    for(int l=0; l<level;++l) std::cout<<"   ";
-	    std::cout<<"P "<< 0.5*clock[level] <<std::endl;
+	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
+	    std::cout<<GridLogMessage<<"P "<< 0.5*clock[level] <<std::endl;
 	  }
 	  if(level == fl){          // lowest level
 	    Integ->update_U(U, eps);
-	    for(int l=0; l<level;++l) std::cout<<"   ";
-	    std::cout<<"U "<< 0.5*(clock[level]+1) <<std::endl;
+	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
+	    std::cout<<GridLogMessage<<"U "<< 0.5*(clock[level]+1) <<std::endl;
 	  }else{                 // recursive function call
 	    step(U, level+1,clock, Integ);
 	  }
@@ -186,14 +198,14 @@ namespace Grid{
 	    Integ->update_P(U, level,eps/2);
 	    
 	    ++clock[level];
-	    for(int l=0; l<level;++l) std::cout<<"   ";
-	    std::cout<<"P "<< 0.5*clock[level] <<std::endl;
+	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
+	    std::cout<<GridLogMessage<<"P "<< 0.5*clock[level] <<std::endl;
 	  }else{                  // bulk step
 	    Integ->update_P(U, level,eps);
 	    
 	    clock[level]+=2;
-	    for(int l=0; l<level;++l) std::cout<<"   ";
-	    std::cout<<"P "<< 0.5*clock[level] <<std::endl;
+	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
+	    std::cout<<GridLogMessage<<"P "<< 0.5*clock[level] <<std::endl;
 	  }
 	}
 

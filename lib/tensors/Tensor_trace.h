@@ -31,6 +31,16 @@ inline auto trace(const iScalar<vtype> &arg) -> iScalar<decltype(trace(arg._inte
     return ret;
 }
 
+template<class vtype,int N>
+  inline auto trace(const iVector<vtype,N> &arg) -> iVector<decltype(trace(arg._internal[0])),N>
+{
+  iVector<decltype(trace(arg._internal[0])),N> ret;
+  for(int i=0;i<N;i++){
+    ret._internal[i]=trace(arg._internal[i]);
+  }
+  return ret;
+}
+
 
 }
 #endif

@@ -22,7 +22,7 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   int threads = GridThread::GetThreads();
-  std::cout << "Grid is setup to use "<<threads<<" threads"<<std::endl;
+  std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
 
   const int Ls=8;
@@ -67,40 +67,40 @@ int main (int argc, char ** argv)
   LatticeFermion r_eo  (FGrid);
   LatticeFermion r_eeoo(FGrid);
 
-  std::cout<<"=========================================================="<<std::endl;
-  std::cout<<"= Testing that Meo + Moe + Moo + Mee = Munprec "<<std::endl;
-  std::cout<<"=========================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"= Testing that Meo + Moe + Moo + Mee = Munprec "<<std::endl;
+  std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
 
   pickCheckerboard(Even,src_e,src);
   pickCheckerboard(Odd,src_o,src);
 
-  Ddwf.Meooe(src_e,r_o);  std::cout<<"Applied Meo"<<std::endl;
-  Ddwf.Meooe(src_o,r_e);  std::cout<<"Applied Moe"<<std::endl;
+  Ddwf.Meooe(src_e,r_o);  std::cout<<GridLogMessage<<"Applied Meo"<<std::endl;
+  Ddwf.Meooe(src_o,r_e);  std::cout<<GridLogMessage<<"Applied Moe"<<std::endl;
   setCheckerboard(r_eo,r_o);
   setCheckerboard(r_eo,r_e);
 
-  Ddwf.Mooee(src_e,r_e);  std::cout<<"Applied Mee"<<std::endl;
-  Ddwf.Mooee(src_o,r_o);  std::cout<<"Applied Moo"<<std::endl;
+  Ddwf.Mooee(src_e,r_e);  std::cout<<GridLogMessage<<"Applied Mee"<<std::endl;
+  Ddwf.Mooee(src_o,r_o);  std::cout<<GridLogMessage<<"Applied Moo"<<std::endl;
   setCheckerboard(r_eeoo,r_e);
   setCheckerboard(r_eeoo,r_o);
 
   r_eo=r_eo+r_eeoo;
   Ddwf.M(src,ref);  
 
-  //  std::cout << r_eo<<std::endl;
-  //  std::cout << ref <<std::endl;
+  //  std::cout<<GridLogMessage << r_eo<<std::endl;
+  //  std::cout<<GridLogMessage << ref <<std::endl;
 
   err= ref - r_eo;
-  std::cout << "EO norm diff   "<< norm2(err)<< " "<<norm2(ref)<< " " << norm2(r_eo) <<std::endl;
+  std::cout<<GridLogMessage << "EO norm diff   "<< norm2(err)<< " "<<norm2(ref)<< " " << norm2(r_eo) <<std::endl;
     
   LatticeComplex cerr(FGrid);
   cerr = localInnerProduct(err,err);
-  //  std::cout << cerr<<std::endl;
+  //  std::cout<<GridLogMessage << cerr<<std::endl;
 
-  std::cout<<"=============================================================="<<std::endl;
-  std::cout<<"= Test Ddagger is the dagger of D by requiring                "<<std::endl;
-  std::cout<<"=  < phi | Deo | chi > * = < chi | Deo^dag| phi>  "<<std::endl;
-  std::cout<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"= Test Ddagger is the dagger of D by requiring                "<<std::endl;
+  std::cout<<GridLogMessage<<"=  < phi | Deo | chi > * = < chi | Deo^dag| phi>  "<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
   
   LatticeFermion chi_e   (FrbGrid);
   LatticeFermion chi_o   (FrbGrid);
@@ -130,15 +130,15 @@ int main (int argc, char ** argv)
   ComplexD cDpe = innerProduct(chi_e,dphi_e);
   ComplexD cDpo = innerProduct(chi_o,dphi_o);
 
-  std::cout <<"e "<<pDce<<" "<<cDpe <<std::endl;
-  std::cout <<"o "<<pDco<<" "<<cDpo <<std::endl;
+  std::cout<<GridLogMessage <<"e "<<pDce<<" "<<cDpe <<std::endl;
+  std::cout<<GridLogMessage <<"o "<<pDco<<" "<<cDpo <<std::endl;
 
-  std::cout <<"pDce - conj(cDpo) "<< pDce-conj(cDpo) <<std::endl;
-  std::cout <<"pDco - conj(cDpe) "<< pDco-conj(cDpe) <<std::endl;
+  std::cout<<GridLogMessage <<"pDce - conj(cDpo) "<< pDce-conj(cDpo) <<std::endl;
+  std::cout<<GridLogMessage <<"pDco - conj(cDpe) "<< pDco-conj(cDpe) <<std::endl;
 
-  std::cout<<"=============================================================="<<std::endl;
-  std::cout<<"= Test MeeInv Mee = 1                                         "<<std::endl;
-  std::cout<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"= Test MeeInv Mee = 1                                         "<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
 
   pickCheckerboard(Even,chi_e,chi);
   pickCheckerboard(Odd ,chi_o,chi);
@@ -153,11 +153,11 @@ int main (int argc, char ** argv)
   setCheckerboard(phi,phi_o);
 
   err = phi-chi;
-  std::cout << "norm diff   "<< norm2(err)<< std::endl;
+  std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<< std::endl;
 
-  std::cout<<"=============================================================="<<std::endl;
-  std::cout<<"= Test MeeInvDag MeeDag = 1                                   "<<std::endl;
-  std::cout<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"= Test MeeInvDag MeeDag = 1                                   "<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
 
   pickCheckerboard(Even,chi_e,chi);
   pickCheckerboard(Odd ,chi_o,chi);
@@ -172,11 +172,11 @@ int main (int argc, char ** argv)
   setCheckerboard(phi,phi_o);
 
   err = phi-chi;
-  std::cout << "norm diff   "<< norm2(err)<< std::endl;
+  std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<< std::endl;
 
-  std::cout<<"=============================================================="<<std::endl;
-  std::cout<<"= Test MpcDagMpc is Hermitian              "<<std::endl;
-  std::cout<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"= Test MpcDagMpc is Hermitian              "<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
   
   random(RNG5,phi);
   random(RNG5,chi);
@@ -199,11 +199,11 @@ int main (int argc, char ** argv)
   cDpe = innerProduct(chi_e,dphi_e);
   cDpo = innerProduct(chi_o,dphi_o);
 
-  std::cout <<"e "<<pDce<<" "<<cDpe <<std::endl;
-  std::cout <<"o "<<pDco<<" "<<cDpo <<std::endl;
+  std::cout<<GridLogMessage <<"e "<<pDce<<" "<<cDpe <<std::endl;
+  std::cout<<GridLogMessage <<"o "<<pDco<<" "<<cDpo <<std::endl;
 
-  std::cout <<"pDce - conj(cDpo) "<< pDco-conj(cDpo) <<std::endl;
-  std::cout <<"pDco - conj(cDpe) "<< pDce-conj(cDpe) <<std::endl;
+  std::cout<<GridLogMessage <<"pDce - conj(cDpo) "<< pDco-conj(cDpo) <<std::endl;
+  std::cout<<GridLogMessage <<"pDco - conj(cDpe) "<< pDce-conj(cDpe) <<std::endl;
   
   Grid_finalize();
 }

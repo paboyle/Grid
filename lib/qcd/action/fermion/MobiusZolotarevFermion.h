@@ -34,7 +34,7 @@ namespace Grid {
 	Approx::zolotarev_data *zdata = Approx::zolotarev(eps,this->Ls,0);
 	assert(zdata->n==this->Ls);
 
-	std::cout << "MobiusZolotarevFermion (b="<<b<<",c="<<c<<") with Ls= "<<Ls<<" Zolotarev range ["<<lo<<","<<hi<<"]"<<std::endl;
+	std::cout<<GridLogMessage << "MobiusZolotarevFermion (b="<<b<<",c="<<c<<") with Ls= "<<Ls<<" Zolotarev range ["<<lo<<","<<hi<<"]"<<std::endl;
 	
 	// Call base setter
 	this->CayleyFermion5D::SetCoefficientsZolotarev(hi,zdata,b,c);

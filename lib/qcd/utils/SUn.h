@@ -372,7 +372,7 @@ Note that in step D setting B ~ X - A and using B in place of A in step E will g
     LatticeReal d(grid); d=zero;
     LatticeReal alpha(grid);
 
-    //    std::cout<<"xi "<<xi <<std::endl;
+    //    std::cout<<GridLogMessage<<"xi "<<xi <<std::endl;
     alpha = toReal(2.0*xi);
 
     do { 
@@ -468,11 +468,11 @@ Note that in step D setting B ~ X - A and using B in place of A in step E will g
     LatticeMatrix Vcheck(grid);
     Vcheck = zero;
     Vcheck = where(Accepted,V*adj(V) - 1.0,Vcheck);
-    //    std::cout << "SU3 check " <<norm2(Vcheck)<<std::endl;
+    //    std::cout<<GridLogMessage << "SU3 check " <<norm2(Vcheck)<<std::endl;
     assert(norm2(Vcheck)<1.0e-4);
     
     // Verify the link stays in SU(3)
-    //    std::cout <<"Checking the modified link"<<std::endl;
+    //    std::cout<<GridLogMessage <<"Checking the modified link"<<std::endl;
     Vcheck = link*adj(link) - 1.0;
     assert(norm2(Vcheck)<1.0e-4);
     /////////////////////////////////
@@ -483,42 +483,42 @@ Note that in step D setting B ~ X - A and using B in place of A in step E will g
     for(int gen=0;gen<generators();gen++){
       Matrix ta;
       generator(gen,ta);
-      std::cout<< "Nc = "<<ncolour<<" t_"<<gen<<std::endl;
-      std::cout<<ta<<std::endl;
+      std::cout<<GridLogMessage<< "Nc = "<<ncolour<<" t_"<<gen<<std::endl;
+      std::cout<<GridLogMessage<<ta<<std::endl;
     }
   }
 
   static void testGenerators(void){
     Matrix ta;
     Matrix tb;
-    std::cout<<"Checking trace ta tb is 0.5 delta_ab"<<std::endl;
+    std::cout<<GridLogMessage<<"Checking trace ta tb is 0.5 delta_ab"<<std::endl;
     for(int a=0;a<generators();a++){
       for(int b=0;b<generators();b++){
 	generator(a,ta);
 	generator(b,tb);
 	Complex tr =TensorRemove(trace(ta*tb)); 
-	std::cout<<tr<<" ";
+	std::cout<<GridLogMessage<<tr<<" ";
 	if(a==b) assert(abs(tr-Complex(0.5))<1.0e-6);
 	if(a!=b) assert(abs(tr)<1.0e-6);
       }
-      std::cout<<std::endl;
+      std::cout<<GridLogMessage<<std::endl;
     }
-    std::cout<<"Checking hermitian"<<std::endl;
+    std::cout<<GridLogMessage<<"Checking hermitian"<<std::endl;
     for(int a=0;a<generators();a++){
       generator(a,ta);
-      std::cout<<a<<" ";
+      std::cout<<GridLogMessage<<a<<" ";
       assert(norm2(ta-adj(ta))<1.0e-6);
     }    
-    std::cout<<std::endl;
+    std::cout<<GridLogMessage<<std::endl;
 
-    std::cout<<"Checking traceless"<<std::endl;
+    std::cout<<GridLogMessage<<"Checking traceless"<<std::endl;
     for(int a=0;a<generators();a++){
       generator(a,ta);
       Complex tr =TensorRemove(trace(ta)); 
-      std::cout<<a<<" ";
+      std::cout<<GridLogMessage<<a<<" ";
       assert(abs(tr)<1.0e-6);
     }    
-    std::cout<<std::endl;
+    std::cout<<GridLogMessage<<std::endl;
   }
 
   // reunitarise??
@@ -554,9 +554,7 @@ Note that in step D setting B ~ X - A and using B in place of A in step E will g
     for(int a=0;a<generators();a++){
       gaussian(pRNG,ca); 
       generator(a,ta);
-      
       la=toComplex(ca)*ci*ta;
-   
       out += la; 
     }
 

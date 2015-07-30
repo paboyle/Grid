@@ -65,7 +65,10 @@ namespace QCD {
 
   // Allocate the required comms buffer
   comm_buf.resize(Stencil._unified_buffer_size); // this is always big enough to contain EO
-  
+  ImportGauge(_Umu);
+}  
+void WilsonFermion5D::ImportGauge(const LatticeGaugeField &_Umu)
+{
   DoubleStore(Umu,_Umu);
   pickCheckerboard(Even,UmuEven,Umu);
   pickCheckerboard(Odd ,UmuOdd,Umu);
@@ -100,19 +103,111 @@ void WilsonFermion5D::DhopDir(const LatticeFermion &in, LatticeFermion &out,int 
   assert(dirdisp<=7);
   assert(dirdisp>=0);
 
-//PARALLEL_FOR_LOOP
+PARALLEL_FOR_LOOP
   for(int ss=0;ss<Umu._grid->oSites();ss++){
     for(int s=0;s<Ls;s++){
       int sU=ss;
       int sF = s+Ls*sU; 
-      DiracOptDhopDir(Stencil,Umu,comm_buf,sF,sU,in,out,dirdisp);
+      DiracOptDhopDir(Stencil,Umu,comm_buf,sF,sU,in,out,dirdisp,dirdisp);
     }
   }
 };
 
+void WilsonFermion5D::DerivInternal(CartesianStencil & st,
+				    LatticeDoubledGaugeField & U,
+				    LatticeGaugeField &mat,
+				    const LatticeFermion &A,
+				    const LatticeFermion &B,
+				    int dag)
+{
+  assert((dag==DaggerNo) ||(dag==DaggerYes));
+
+  WilsonCompressor compressor(dag);
+  
+  LatticeColourMatrix tmp(B._grid);
+  LatticeFermion Btilde(B._grid);
+
+  st.HaloExchange<vSpinColourVector,vHalfSpinColourVector,WilsonCompressor>(B,comm_buf,compressor);
+  
+  for(int mu=0;mu<Nd;mu++){
+      
+    ////////////////////////////////////////////////////////////////////////
+    // Flip gamma if dag
+    ////////////////////////////////////////////////////////////////////////
+    int gamma = mu;
+    if ( dag ) gamma+= Nd;
+
+    ////////////////////////
+    // Call the single hop
+    ////////////////////////
+PARALLEL_FOR_LOOP
+    for(int sss=0;sss<B._grid->oSites();sss++){
+      for(int s=0;s<Ls;s++){
+	int sU=sss;
+	int sF = s+Ls*sU;
+	DiracOptDhopDir(st,U,comm_buf,sF,sU,B,Btilde,mu,gamma);
+      }
+    }
+
+    ////////////////////////////
+    // spin trace outer product
+    ////////////////////////////
+// FIXME : need to sum over fifth direction.
+    tmp = TraceIndex<SpinIndex>(outerProduct(Btilde,A)); // ordering here
+    PokeIndex<LorentzIndex>(mat,tmp,mu);
+
+  }
+}
+
+void WilsonFermion5D::DhopDeriv(      LatticeGaugeField &mat,
+				const LatticeFermion &A,
+				const LatticeFermion &B,
+				int dag)
+{
+  conformable(A._grid,FermionGrid());  
+  conformable(A._grid,B._grid);
+  conformable(GaugeGrid(),mat._grid);
+
+  mat.checkerboard = A.checkerboard;
+
+  DerivInternal(Stencil,Umu,mat,A,B,dag);
+}
+
+void WilsonFermion5D::DhopDerivEO(LatticeGaugeField &mat,
+				  const LatticeFermion &A,
+				  const LatticeFermion &B,
+				  int dag)
+{
+  conformable(A._grid,FermionRedBlackGrid());
+  conformable(GaugeRedBlackGrid(),mat._grid);
+  conformable(A._grid,B._grid);
+
+  assert(B.checkerboard==Odd);
+  assert(A.checkerboard==Even);
+  mat.checkerboard = Even;
+
+  DerivInternal(StencilOdd,UmuEven,mat,A,B,dag);
+}
+
+void WilsonFermion5D::DhopDerivOE(LatticeGaugeField &mat,
+				  const LatticeFermion &A,
+				  const LatticeFermion &B,
+				  int dag)
+{
+  conformable(A._grid,FermionRedBlackGrid());
+  conformable(GaugeRedBlackGrid(),mat._grid);
+  conformable(A._grid,B._grid);
+
+  assert(B.checkerboard==Even);
+  assert(A.checkerboard==Odd);
+  mat.checkerboard = Odd;
+
+  DerivInternal(StencilEven,UmuOdd,mat,A,B,dag);
+}
+
 void WilsonFermion5D::DhopInternal(CartesianStencil & st, LebesgueOrder &lo,
 				   LatticeDoubledGaugeField & U,
-			   const LatticeFermion &in, LatticeFermion &out,int dag)
+				   const LatticeFermion &in, LatticeFermion &out,int dag)
 {
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
 

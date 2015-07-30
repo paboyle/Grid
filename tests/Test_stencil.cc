@@ -34,7 +34,7 @@ int main (int argc, char ** argv)
     for(int dir=0;dir<4;dir++){
       for(int disp=0;disp<Fine._fdimensions[dir];disp++){
 
-	std::cout << "Using stencil to shift dim "<<dir<< " by "<<disp<<std::endl;
+	std::cout<<GridLogMessage << "Using stencil to shift dim "<<dir<< " by "<<disp<<std::endl;
 	// start to test the Cartesian npoint stencil infrastructure
 	int npoint=1;
 	std::vector<int> directions(npoint,dir);
@@ -73,7 +73,7 @@ int main (int argc, char ** argv)
 	Real nrmB = norm2(Bar);
 	Diff = Check-Bar;
 	Real nrm  = norm2(Diff);
-	std::cout<<"N2diff ="<<nrm<<" "<<nrmC<<" " <<nrmB<<std::endl;
+	std::cout<<GridLogMessage<<"N2diff ="<<nrm<<" "<<nrmC<<" " <<nrmB<<std::endl;
 
 	Real snrmC =0;
 	Real snrmB =0;
@@ -110,7 +110,7 @@ int main (int argc, char ** argv)
 	 
 	}}}}
 
-	std::cout<<"scalar N2diff = "<<snrm<<" " <<snrmC<<" "<<snrmB<<std::endl;
+	std::cout<<GridLogMessage<<"scalar N2diff = "<<snrm<<" " <<snrmC<<" "<<snrmB<<std::endl;
 
 
       }

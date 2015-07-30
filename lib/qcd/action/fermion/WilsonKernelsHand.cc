@@ -360,11 +360,11 @@ void DiracOptHandDhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     MULT_2SPIN(Xp);
   }
   XP_RECON;
-  //  std::cout << "XP_RECON"<<std::endl;
-  //  std::cout << result_00 <<" "<<result_01 <<" "<<result_02 <<std::endl;
-  //  std::cout << result_10 <<" "<<result_11 <<" "<<result_12 <<std::endl;
-  //  std::cout << result_20 <<" "<<result_21 <<" "<<result_22 <<std::endl;
-  //  std::cout << result_30 <<" "<<result_31 <<" "<<result_32 <<std::endl;
+  //  std::cout<<GridLogMessage << "XP_RECON"<<std::endl;
+  //  std::cout<<GridLogMessage << result_00 <<" "<<result_01 <<" "<<result_02 <<std::endl;
+  //  std::cout<<GridLogMessage << result_10 <<" "<<result_11 <<" "<<result_12 <<std::endl;
+  //  std::cout<<GridLogMessage << result_20 <<" "<<result_21 <<" "<<result_22 <<std::endl;
+  //  std::cout<<GridLogMessage << result_30 <<" "<<result_31 <<" "<<result_32 <<std::endl;
 
   // Yp
   offset = st._offsets [Yp][ss];
@@ -446,11 +446,11 @@ void DiracOptHandDhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     MULT_2SPIN(Xm);
   }
   XM_RECON_ACCUM;
-  //  std::cout << "XM_RECON_ACCUM"<<std::endl;
-  //  std::cout << result_00 <<" "<<result_01 <<" "<<result_02 <<std::endl;
-  //  std::cout << result_10 <<" "<<result_11 <<" "<<result_12 <<std::endl;
-  //  std::cout << result_20 <<" "<<result_21 <<" "<<result_22 <<std::endl;
-  //  std::cout << result_30 <<" "<<result_31 <<" "<<result_32 <<std::endl;
+  //  std::cout<<GridLogMessage << "XM_RECON_ACCUM"<<std::endl;
+  //  std::cout<<GridLogMessage << result_00 <<" "<<result_01 <<" "<<result_02 <<std::endl;
+  //  std::cout<<GridLogMessage << result_10 <<" "<<result_11 <<" "<<result_12 <<std::endl;
+  //  std::cout<<GridLogMessage << result_20 <<" "<<result_21 <<" "<<result_22 <<std::endl;
+  //  std::cout<<GridLogMessage << result_30 <<" "<<result_31 <<" "<<result_32 <<std::endl;
   
   
   // Ym
