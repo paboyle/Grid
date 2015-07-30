@@ -91,7 +91,7 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
   cp = norm2(src);
   for(int s=0;s<nshift;s++){
     rsq[s] = cp * mresidual[s] * mresidual[s];
-    std::cout<<"ConjugateGradientMultiShift: shift "<<s
+    std::cout<<GridLogMessage<<"ConjugateGradientMultiShift: shift "<<s
 	     <<" target resid "<<rsq[s]<<std::endl;
     ps[s] = src;
   }
@@ -109,7 +109,7 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
   // p and mmp is equal to d after this since
   // the d computation is tricky
   //  qq = real(innerProduct(p,mmp));
-  //  std::cout << "debug equal ?  qq "<<qq<<" d "<< d<<std::endl;
+  //  std::cout<<GridLogMessage << "debug equal ?  qq "<<qq<<" d "<< d<<std::endl;
   
   b = -cp /d;
   
@@ -214,7 +214,7 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
 	
 	if(css<rsq[s]){
 	  if ( ! converged[s] )
-	    std::cout<<"ConjugateGradientMultiShift k="<<k<<" Shift "<<s<<" has converged"<<std::endl;
+	    std::cout<<GridLogMessage<<"ConjugateGradientMultiShift k="<<k<<" Shift "<<s<<" has converged"<<std::endl;
 	      converged[s]=1;
 	} else {
 	  all_converged=0;
@@ -225,8 +225,8 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
     
     if ( all_converged ){
 
-      std::cout<< "CGMultiShift: All shifts have converged iteration "<<k<<std::endl;
-      std::cout<< "CGMultiShift: Checking solutions"<<std::endl;
+      std::cout<<GridLogMessage<< "CGMultiShift: All shifts have converged iteration "<<k<<std::endl;
+      std::cout<<GridLogMessage<< "CGMultiShift: Checking solutions"<<std::endl;
       
       // Check answers 
       for(int s=0; s < nshift; s++) { 
@@ -235,13 +235,13 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
 	axpy(r,-alpha[s],src,tmp);
 	RealD rn = norm2(r);
 	RealD cn = norm2(src);
-	std::cout<<"CGMultiShift: shift["<<s<<"] true residual "<<std::sqrt(rn/cn)<<std::endl;
+	std::cout<<GridLogMessage<<"CGMultiShift: shift["<<s<<"] true residual "<<std::sqrt(rn/cn)<<std::endl;
       }
       return;
     }
   }
   // ugly hack
-  std::cout<<"CG multi shift did not converge"<<std::endl;
+  std::cout<<GridLogMessage<<"CG multi shift did not converge"<<std::endl;
   assert(0);
 }
 

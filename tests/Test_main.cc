@@ -213,29 +213,29 @@ int main (int argc, char ** argv)
     
    
     random(SerialRNG, cm);
-    std::cout << cm << std::endl;
+    std::cout<<GridLogMessage << cm << std::endl;
 
     cm = Ta(cm);
     TComplex tracecm= trace(cm);      
-    std::cout << cm << std::endl;
+    std::cout<<GridLogMessage << cm << std::endl;
 
 
     cm = Exponentiate(cm, 2.0, 12);
-    std::cout << cm << "  " << std::endl;
+    std::cout<<GridLogMessage << cm << "  " << std::endl;
     Complex det = Determinant(cm);
-    std::cout << "determinant: " << det <<  std::endl;
-    std::cout << "norm: " << norm2(cm) <<  std::endl;
+    std::cout<<GridLogMessage << "determinant: " << det <<  std::endl;
+    std::cout<<GridLogMessage << "norm: " << norm2(cm) <<  std::endl;
 
     cm = ProjectOnGroup(cm);
-    std::cout << cm << "  " << std::endl;
-    std::cout << "norm: " << norm2(cm) <<  std::endl;
+    std::cout<<GridLogMessage << cm << "  " << std::endl;
+    std::cout<<GridLogMessage << "norm: " << norm2(cm) <<  std::endl;
     cm = ProjectOnGroup(cm);
-    std::cout << cm << "  " << std::endl;
-    std::cout << "norm: " << norm2(cm) <<  std::endl;
+    std::cout<<GridLogMessage << cm << "  " << std::endl;
+    std::cout<<GridLogMessage << "norm: " << norm2(cm) <<  std::endl;
 
 
     //    det = Determinant(cm);
-    //    std::cout << "determinant: " << det <<  std::endl;
+    //    std::cout<<GridLogMessage << "determinant: " << det <<  std::endl;
 
 
 //    Foo = Foo+scalar; // LatticeColourMatrix+Scalar
@@ -253,19 +253,19 @@ int main (int argc, char ** argv)
     random(FineRNG,cMat);
     cMat = Ta(cMat);
     peekSite(cm, cMat, mysite);
-    std::cout << cm << "  " << std::endl;
+    std::cout<<GridLogMessage << cm << "  " << std::endl;
     cm = Exponentiate(cm, 1.0, 12);
-    std::cout << cm << "  " << std::endl;
-    std::cout << "norm: " << norm2(cm) <<  std::endl;
+    std::cout<<GridLogMessage << cm << "  " << std::endl;
+    std::cout<<GridLogMessage << "norm: " << norm2(cm) <<  std::endl;
 
 
-    std::cout << "norm cMmat : " << norm2(cMat) <<  std::endl;
+    std::cout<<GridLogMessage << "norm cMmat : " << norm2(cMat) <<  std::endl;
     cMat = expMat(cMat, ComplexD(1.0, 0.0));
-    std::cout << "norm expMat: " << norm2(cMat) <<  std::endl;
+    std::cout<<GridLogMessage << "norm expMat: " << norm2(cMat) <<  std::endl;
     peekSite(cm, cMat, mysite);
-    std::cout << cm << "  " << std::endl;
-    std::cout << "determinant: " << Determinant(cm) <<  std::endl;
-    std::cout << "norm: " << norm2(cm) <<  std::endl;
+    std::cout<<GridLogMessage << cm << "  " << std::endl;
+    std::cout<<GridLogMessage << "determinant: " << Determinant(cm) <<  std::endl;
+    std::cout<<GridLogMessage << "norm: " << norm2(cm) <<  std::endl;
 
 
     // LatticeComplex trlcMat(&Fine);
@@ -434,7 +434,7 @@ int main (int argc, char ** argv)
 	pickCheckerboard(1,bFoo,Foo);
     
 	if ( Fine.IsBoss() ) {
-	  std::cout << "Shifting both parities by "<< shift <<" direction "<< dir <<std::endl;
+	  std::cout<<GridLogMessage << "Shifting both parities by "<< shift <<" direction "<< dir <<std::endl;
 	}
 	Shifted  = Cshift(Foo,dir,shift);    // Shift everything
 
@@ -545,7 +545,7 @@ int main (int argc, char ** argv)
         }}
     }}}}
 	if( Fine.IsBoss() ){
-	  std::cout << "LatticeColorMatrix * LatticeColorMatrix nrm diff = "<<nrm<<std::endl;
+	  std::cout<<GridLogMessage << "LatticeColorMatrix * LatticeColorMatrix nrm diff = "<<nrm<<std::endl;
 	}
       }}
 
@@ -553,7 +553,7 @@ int main (int argc, char ** argv)
  } // loop for omp
 
 
- std::cout << sizeof(vComplexF) << std::endl;
+ std::cout<<GridLogMessage << sizeof(vComplexF) << std::endl;
  
  Grid_finalize();
 }

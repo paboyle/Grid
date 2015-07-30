@@ -3,7 +3,7 @@
  * @brief Classes for the Molecular Dynamics integrator
  *
  * @author Guido Cossu
- * Time-stamp: <2015-07-07 14:58:40 neo>
+ * Time-stamp: <2015-07-30 16:21:29 neo>
  */
 //--------------------------------------------------------------------
 
@@ -71,7 +71,6 @@ namespace Grid{
 	}
       }
 
-
       void update_U(LatticeGaugeField&U, double ep){
 	//rewrite exponential to deal automatically  with the lorentz index?
 	LatticeColourMatrix Umu(U._grid);
@@ -85,7 +84,6 @@ namespace Grid{
 
       }
       
-
       
       friend void IntegratorAlgorithm::step (LatticeGaugeField& U, 
 					     int level, std::vector<int>& clock,
@@ -99,11 +97,9 @@ namespace Grid{
       
       ~Integrator(){}
 
-
       //Initialization of momenta and actions
       void init(LatticeGaugeField& U){
-	std::cout<< "Integrator init\n";
-
+	std::cout<<GridLogMessage<< "Integrator init\n";
 	MDutils::generate_momenta(*P,pRNG);
 	for(int level=0; level< as.size(); ++level){
 	  for(int actionID=0; actionID<as[level].actions.size(); ++actionID){
@@ -112,7 +108,6 @@ namespace Grid{
 	}
       }
 
-      
       // Calculate action
       RealD S(LatticeGaugeField& U){
 	LatticeComplex Hloc(U._grid);
@@ -126,12 +121,14 @@ namespace Grid{
 	
 	RealD H = Hsum.real();
 
-	std::cout << "H_p = "<< H << "\n";
+	std::cout<<GridLogMessage << "Momentum action H_p = "<< H << "\n";
 
 	// Actions
 	for(int level=0; level<as.size(); ++level)
 	  for(int actionID=0; actionID<as[level].actions.size(); ++actionID)
 	    H += as[level].actions.at(actionID)->S(U);
+
+	std::cout<<GridLogMessage << "Total action H = "<< H << "\n";
 	
 	return H;
       }

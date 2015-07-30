@@ -39,7 +39,7 @@ int main (int argc, char ** argv)
   for(int dir=0;dir<4;dir++){
     for(int shift=0;shift<latt_size[dir];shift++){
       if ( Fine.IsBoss() ) 
-	std::cout<<"Shifting by "<<shift<<" in direction"<<dir<<std::endl;
+	std::cout<<GridLogMessage<<"Shifting by "<<shift<<" in direction"<<dir<<std::endl;
 
 	ShiftU  = Cshift(U,dir,shift);    // Shift everything
 

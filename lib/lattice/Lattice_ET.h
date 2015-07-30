@@ -132,18 +132,18 @@ inline void CBFromExpression(int &cb,const T1& lat)   // Lattice leaf
     assert(cb==lat.checkerboard);
   } 
   cb=lat.checkerboard;
-  //  std::cout<<"Lattice leaf cb "<<cb<<std::endl;
+  //  std::cout<<GridLogMessage<<"Lattice leaf cb "<<cb<<std::endl;
 }
 template<class T1,typename std::enable_if<!is_lattice<T1>::value, T1>::type * = nullptr >
 inline void CBFromExpression(int &cb,const T1& notlat)   // non-lattice leaf
 {
-  //  std::cout<<"Non lattice leaf cb"<<cb<<std::endl;
+  //  std::cout<<GridLogMessage<<"Non lattice leaf cb"<<cb<<std::endl;
 }
 template <typename Op, typename T1>
 inline void CBFromExpression(int &cb,const LatticeUnaryExpression<Op,T1 > &expr)
 {
   CBFromExpression(cb,std::get<0>(expr.second));// recurse 
-  //  std::cout<<"Unary node cb "<<cb<<std::endl;
+  //  std::cout<<GridLogMessage<<"Unary node cb "<<cb<<std::endl;
 }
 
 template <typename Op, typename T1, typename T2>
@@ -151,7 +151,7 @@ inline void CBFromExpression(int &cb,const LatticeBinaryExpression<Op,T1,T2> &ex
 {
   CBFromExpression(cb,std::get<0>(expr.second));// recurse
   CBFromExpression(cb,std::get<1>(expr.second));
-  //  std::cout<<"Binary node cb "<<cb<<std::endl;
+  //  std::cout<<GridLogMessage<<"Binary node cb "<<cb<<std::endl;
 }
 template <typename Op, typename T1, typename T2, typename T3>
 inline void CBFromExpression( int &cb,const LatticeTrinaryExpression<Op,T1,T2,T3 > &expr) 
@@ -159,7 +159,7 @@ inline void CBFromExpression( int &cb,const LatticeTrinaryExpression<Op,T1,T2,T3
   CBFromExpression(cb,std::get<0>(expr.second));// recurse
   CBFromExpression(cb,std::get<1>(expr.second));
   CBFromExpression(cb,std::get<2>(expr.second));
-  //  std::cout<<"Trinary node cb "<<cb<<std::endl;
+  //  std::cout<<GridLogMessage<<"Trinary node cb "<<cb<<std::endl;
 }
 
 ////////////////////////////////////////////
@@ -370,7 +370,7 @@ using namespace Grid;
    tmp.func(eval(0,v1),eval(0,v2));
 
    auto var = v1+v2;
-   std::cout<<typeid(var).name()<<std::endl;
+   std::cout<<GridLogMessage<<typeid(var).name()<<std::endl;
 
    v3=v1+v2;
    v3=v1+v2+v1*v2;

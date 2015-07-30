@@ -56,12 +56,12 @@ int main (int argc, char ** argv)
     
     for(int d=0;d<4;d++){
       HermIndefOp.OpDir(src,tmp,d,+1); result=result+tmp; 
-      std::cout<<"dir "<<d<<" tmp "<<norm2(tmp)<<std::endl;
+      std::cout<<GridLogMessage<<"dir "<<d<<" tmp "<<norm2(tmp)<<std::endl;
       HermIndefOp.OpDir(src,tmp,d,-1); result=result+tmp;
-      std::cout<<"dir "<<d<<" tmp "<<norm2(tmp)<<std::endl;
+      std::cout<<GridLogMessage<<"dir "<<d<<" tmp "<<norm2(tmp)<<std::endl;
     }
     err = result-ref;
-    std::cout<<"Error "<<norm2(err)<<std::endl;
+    std::cout<<GridLogMessage<<"Error "<<norm2(err)<<std::endl;
   }
 
   {
@@ -73,13 +73,13 @@ int main (int argc, char ** argv)
     
     for(int d=0;d<4;d++){
       HermIndefOp.OpDir(src,tmp,d,+1); result=result+tmp; 
-      std::cout<<"dir "<<d<<" tmp "<<norm2(tmp)<<std::endl;
+      std::cout<<GridLogMessage<<"dir "<<d<<" tmp "<<norm2(tmp)<<std::endl;
       HermIndefOp.OpDir(src,tmp,d,-1); result=result+tmp;
-      std::cout<<"dir "<<d<<" tmp "<<norm2(tmp)<<std::endl;
+      std::cout<<GridLogMessage<<"dir "<<d<<" tmp "<<norm2(tmp)<<std::endl;
     }
 
     err = result-ref;
-    std::cout<<"Error "<<norm2(err)<<std::endl;
+    std::cout<<GridLogMessage<<"Error "<<norm2(err)<<std::endl;
   }
 
 

@@ -7,8 +7,8 @@ namespace Grid{
 	// FIXME fill this constructor  now just default values
 	  
 	////////////////////////////// Default values
-	Nsweeps             = 100;
-	TotalSweeps         = 20;
+	Nsweeps             = 200;
+	TotalSweeps         = 220;
 	ThermalizationSteps = 20;
 	StartingConfig      = 0;
 	SaveInterval        = 1;
@@ -16,9 +16,6 @@ namespace Grid{
 	/////////////////////////////////
 	  
       }
-
-
-   
 
   }
 }

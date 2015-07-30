@@ -22,7 +22,7 @@ namespace Grid {
 			       int sF,int sU,const LatticeFermion &in, LatticeFermion &out);
       void DiracOptDhopDir(CartesianStencil &st,LatticeDoubledGaugeField &U,
 			   std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-			   int sF,int sU,const LatticeFermion &in, LatticeFermion &out,int dirdisp);
+			   int sF,int sU,const LatticeFermion &in, LatticeFermion &out,int dirdisp,int gamma);
       
       //  };
 
