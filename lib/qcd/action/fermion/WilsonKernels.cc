@@ -294,8 +294,8 @@ void DiracOptDhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
 }
 
 void DiracOptDhopDir(CartesianStencil &st,LatticeDoubledGaugeField &U,
-			std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-		       int sF,int sU,const LatticeFermion &in, LatticeFermion &out,int dirdisp)
+		     std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
+		     int sF,int sU,const LatticeFermion &in, LatticeFermion &out,int dir,int gamma)
 {
     vHalfSpinColourVector  tmp;    
     vHalfSpinColourVector  chi;    
@@ -304,13 +304,13 @@ void DiracOptDhopDir(CartesianStencil &st,LatticeDoubledGaugeField &U,
     int offset,local,perm, ptype;
     int ss=sF;
     
-    offset = st._offsets [dirdisp][ss];
-    local  = st._is_local[dirdisp][ss];
-    perm   = st._permute[dirdisp][ss];
-    ptype  = st._permute_type[dirdisp];
+    offset = st._offsets [dir][ss];
+    local  = st._is_local[dir][ss];
+    perm   = st._permute[dir][ss];
+    ptype  = st._permute_type[dir];
 
     // Xp
-    if(dirdisp==Xp){
+    if(gamma==Xp){
       if ( local && perm ) {
 	spProjXp(tmp,in._odata[offset]);
 	permute(chi,tmp,ptype);
@@ -319,12 +319,12 @@ void DiracOptDhopDir(CartesianStencil &st,LatticeDoubledGaugeField &U,
       } else { 
 	chi=buf[offset];
       }
-      mult(&Uchi(),&U._odata[sU](Xp),&chi());
+      mult(&Uchi(),&U._odata[sU](dir),&chi());
       spReconXp(result,Uchi);
     }
 
     // Yp
-    if ( dirdisp==Yp ){
+    if ( gamma==Yp ){
       if ( local && perm ) {
 	spProjYp(tmp,in._odata[offset]);
 	permute(chi,tmp,ptype);
@@ -333,12 +333,12 @@ void DiracOptDhopDir(CartesianStencil &st,LatticeDoubledGaugeField &U,
       } else { 
 	chi=buf[offset];
       }
-      mult(&Uchi(),&U._odata[sU](Yp),&chi());
+      mult(&Uchi(),&U._odata[sU](dir),&chi());
       spReconYp(result,Uchi);
     }
 
     // Zp
-    if ( dirdisp ==Zp ){
+    if ( gamma ==Zp ){
       if ( local && perm ) {
 	spProjZp(tmp,in._odata[offset]);
 	permute(chi,tmp,ptype);
@@ -347,12 +347,12 @@ void DiracOptDhopDir(CartesianStencil &st,LatticeDoubledGaugeField &U,
       } else { 
 	chi=buf[offset];
       }
-      mult(&Uchi(),&U._odata[sU](Zp),&chi());
+      mult(&Uchi(),&U._odata[sU](dir),&chi());
       spReconZp(result,Uchi);
     }
 
     // Tp
-    if ( dirdisp ==Tp ){
+    if ( gamma ==Tp ){
       if ( local && perm ) {
 	spProjTp(tmp,in._odata[offset]);
 	permute(chi,tmp,ptype);
@@ -361,12 +361,12 @@ void DiracOptDhopDir(CartesianStencil &st,LatticeDoubledGaugeField &U,
       } else { 
 	chi=buf[offset];
       }
-      mult(&Uchi(),&U._odata[sU](Tp),&chi());
+      mult(&Uchi(),&U._odata[sU](dir),&chi());
       spReconTp(result,Uchi);
     }
 
     // Xm
-    if ( dirdisp==Xm ){
+    if ( gamma==Xm ){
       if ( local && perm ) {
 	spProjXm(tmp,in._odata[offset]);
 	permute(chi,tmp,ptype);
@@ -375,12 +375,12 @@ void DiracOptDhopDir(CartesianStencil &st,LatticeDoubledGaugeField &U,
       } else { 
 	chi=buf[offset];
       }
-      mult(&Uchi(),&U._odata[sU](Xm),&chi());
+      mult(&Uchi(),&U._odata[sU](dir),&chi());
       spReconXm(result,Uchi);
     }
 
     // Ym
-    if ( dirdisp == Ym ){
+    if ( gamma == Ym ){
       if ( local && perm ) {
 	spProjYm(tmp,in._odata[offset]);
 	permute(chi,tmp,ptype);
@@ -389,12 +389,12 @@ void DiracOptDhopDir(CartesianStencil &st,LatticeDoubledGaugeField &U,
       } else { 
 	chi=buf[offset];
       }
-      mult(&Uchi(),&U._odata[sU](Ym),&chi());
+      mult(&Uchi(),&U._odata[sU](dir),&chi());
       spReconYm(result,Uchi);
     }
 
     // Zm
-    if ( dirdisp == Zm ){
+    if ( gamma == Zm ){
       if ( local && perm ) {
 	spProjZm(tmp,in._odata[offset]);
 	permute(chi,tmp,ptype);
@@ -403,12 +403,12 @@ void DiracOptDhopDir(CartesianStencil &st,LatticeDoubledGaugeField &U,
       } else { 
 	chi=buf[offset];
       }
-      mult(&Uchi(),&U._odata[sU](Zm),&chi());
+      mult(&Uchi(),&U._odata[sU](dir),&chi());
       spReconZm(result,Uchi);
     }
 
     // Tm
-    if ( dirdisp==Tm ) {
+    if ( gamma==Tm ) {
       if ( local && perm ) {
 	spProjTm(tmp,in._odata[offset]);
 	permute(chi,tmp,ptype);
@@ -417,7 +417,7 @@ void DiracOptDhopDir(CartesianStencil &st,LatticeDoubledGaugeField &U,
       } else { 
 	chi=buf[offset];
       }
-      mult(&Uchi(),&U._odata[sU](Tm),&chi());
+      mult(&Uchi(),&U._odata[sU](dir),&chi());
       spReconTm(result,Uchi);
     }
 

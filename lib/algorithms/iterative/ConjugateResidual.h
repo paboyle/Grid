@@ -41,7 +41,7 @@ namespace Grid {
       ssq=norm2(src);
       rsq=Tolerance*Tolerance*ssq;
 
-      if (verbose) std::cout<<"ConjugateResidual: iteration " <<0<<" residual "<<cp<< " target"<< rsq<<std::endl;
+      if (verbose) std::cout<<GridLogMessage<<"ConjugateResidual: iteration " <<0<<" residual "<<cp<< " target"<< rsq<<std::endl;
 
       for(int k=1;k<MaxIterations;k++){
 
@@ -60,13 +60,13 @@ namespace Grid {
 	axpy(p,b,p,r);
 	pAAp=axpy_norm(Ap,b,Ap,Ar);
 	
-	if(verbose) std::cout<<"ConjugateResidual: iteration " <<k<<" residual "<<cp<< " target"<< rsq<<std::endl;
+	if(verbose) std::cout<<GridLogMessage<<"ConjugateResidual: iteration " <<k<<" residual "<<cp<< " target"<< rsq<<std::endl;
 
 	if(cp<rsq) {
 	  Linop.HermOp(psi,Ap);
 	  axpy(r,-1.0,src,Ap);
 	  RealD true_resid = norm2(r)/ssq;
-	  std::cout<<"ConjugateResidual: Converged on iteration " <<k
+	  std::cout<<GridLogMessage<<"ConjugateResidual: Converged on iteration " <<k
 		   << " computed residual "<<sqrt(cp/ssq)
 	           << " true residual "<<sqrt(true_resid)
 	           << " target "       <<Tolerance <<std::endl;
@@ -75,7 +75,7 @@ namespace Grid {
 
       }
 
-      std::cout<<"ConjugateResidual did NOT converge"<<std::endl;
+      std::cout<<GridLogMessage<<"ConjugateResidual did NOT converge"<<std::endl;
       assert(0);
     }
   };

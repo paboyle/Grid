@@ -14,13 +14,13 @@ int main (int argc, char ** argv)
   std::vector<int> mpi_layout  = GridDefaultMpi();
 
   int threads = GridThread::GetThreads();
-  std::cout << "Grid is setup to use "<<threads<<" threads"<<std::endl;
+  std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "= Benchmarking SU3xSU3  x= x*y"<<std::endl;
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s\t\t GFlop/s"<<std::endl;
-  std::cout << "----------------------------------------------------------"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "= Benchmarking SU3xSU3  x= x*y"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s\t\t GFlop/s"<<std::endl;
+  std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
 
   for(int lat=2;lat<=24;lat+=2){
 
@@ -43,16 +43,16 @@ int main (int argc, char ** argv)
       double bytes=3.0*vol*Nc*Nc*sizeof(Complex);
       double footprint=2.0*vol*Nc*Nc*sizeof(Complex);
       double flops=Nc*Nc*(6.0+8.0+8.0)*vol;
-      std::cout<<std::setprecision(3) << lat<<"\t\t"<<footprint<<"    \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
+      std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<footprint<<"    \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
 
     }
 
 
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "= Benchmarking SU3xSU3  z= x*y"<<std::endl;
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s\t\t GFlop/s"<<std::endl;
-  std::cout << "----------------------------------------------------------"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "= Benchmarking SU3xSU3  z= x*y"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s\t\t GFlop/s"<<std::endl;
+  std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
 
   for(int lat=2;lat<=24;lat+=2){
 
@@ -75,15 +75,15 @@ int main (int argc, char ** argv)
       
       double bytes=3*vol*Nc*Nc*sizeof(Complex);
       double flops=Nc*Nc*(6+8+8)*vol;
-      std::cout<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"    \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
+      std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"    \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
 
     }
 
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "= Benchmarking SU3xSU3  mult(z,x,y)"<<std::endl;
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s\t\t GFlop/s"<<std::endl;
-  std::cout << "----------------------------------------------------------"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "= Benchmarking SU3xSU3  mult(z,x,y)"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s\t\t GFlop/s"<<std::endl;
+  std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
 
   for(int lat=2;lat<=24;lat+=2){
 
@@ -106,15 +106,15 @@ int main (int argc, char ** argv)
       
       double bytes=3*vol*Nc*Nc*sizeof(Complex);
       double flops=Nc*Nc*(6+8+8)*vol;
-      std::cout<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"    \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
+      std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"    \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
 
     }
 
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "= Benchmarking SU3xSU3  mac(z,x,y)"<<std::endl;
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s\t\t GFlop/s"<<std::endl;
-  std::cout << "----------------------------------------------------------"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "= Benchmarking SU3xSU3  mac(z,x,y)"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s\t\t GFlop/s"<<std::endl;
+  std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
 
   for(int lat=2;lat<=24;lat+=2){
 
@@ -137,7 +137,7 @@ int main (int argc, char ** argv)
       
       double bytes=3*vol*Nc*Nc*sizeof(Complex);
       double flops=Nc*Nc*(8+8+8)*vol;
-      std::cout<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
+      std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t" << flops/time<<std::endl;
 
     }
 

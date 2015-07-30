@@ -1,6 +1,13 @@
 #ifndef GRID_ALIGNED_ALLOCATOR_H
 #define GRID_ALIGNED_ALLOCATOR_H
 
+#ifdef HAVE_MALLOC_MALLOC_H
+#include <malloc/malloc.h>
+#endif
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
+
 #include <immintrin.h>
 #ifdef HAVE_MM_MALLOC_H
 #include <mm_malloc.h>

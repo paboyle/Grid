@@ -23,7 +23,7 @@ inline void subdivides(GridBase *coarse,GridBase *fine)
   template<class vobj> inline void pickCheckerboard(int cb,Lattice<vobj> &half,const Lattice<vobj> &full){
     half.checkerboard = cb;
     int ssh=0;
-PARALLEL_FOR_LOOP
+    //PARALLEL_FOR_LOOP
     for(int ss=0;ss<full._grid->oSites();ss++){
       std::vector<int> coor;
       int cbos;
@@ -40,7 +40,7 @@ PARALLEL_FOR_LOOP
   template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Lattice<vobj> &half){
     int cb = half.checkerboard;
     int ssh=0;
-PARALLEL_FOR_LOOP
+    //PARALLEL_FOR_LOOP
     for(int ss=0;ss<full._grid->oSites();ss++){
       std::vector<int> coor;
       int cbos;
@@ -158,6 +158,7 @@ template<class vobj,class CComplex>
 
   fine_inner = localInnerProduct(fineX,fineY);
   blockSum(coarse_inner,fine_inner);
+PARALLEL_FOR_LOOP
   for(int ss=0;ss<coarse->oSites();ss++){
     CoarseInner._odata[ss] = coarse_inner._odata[ss];
   }

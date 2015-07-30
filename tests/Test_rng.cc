@@ -24,27 +24,27 @@ int main (int argc, char ** argv)
 
   SpinMatrix rnd  ; 
   random(sRNG,rnd);
-  std::cout<<"Random Spin Matrix (random_device)\n"<< rnd<<std::endl;
+  std::cout<<GridLogMessage<<"Random Spin Matrix (random_device)\n"<< rnd<<std::endl;
 
   random(fsRNG,rnd);
-  std::cout<<"Random Spin Matrix (fixed seed)\n"<< rnd<<std::endl;
+  std::cout<<GridLogMessage<<"Random Spin Matrix (fixed seed)\n"<< rnd<<std::endl;
 
   SpinVector rv; 
   random(sRNG,rv);
-  std::cout<<"Random Spin Vector (random device)\n"<< rv<<std::endl;
+  std::cout<<GridLogMessage<<"Random Spin Vector (random device)\n"<< rv<<std::endl;
 
   random(fsRNG,rv);
-  std::cout<<"Random Spin Vector (fixed seed)\n"<< rv<<std::endl;
+  std::cout<<GridLogMessage<<"Random Spin Vector (fixed seed)\n"<< rv<<std::endl;
 
   gaussian(fsRNG,rv);
-  std::cout<<"Gaussian Spin Vector (fixed seed)\n"<< rv<<std::endl;
+  std::cout<<GridLogMessage<<"Gaussian Spin Vector (fixed seed)\n"<< rv<<std::endl;
 
   LatticeColourVector lcv(&Grid);
   random(pRNG,lcv);
-  std::cout<<"Random Lattice Colour Vector (random device)\n"<< lcv<<std::endl;
+  std::cout<<GridLogMessage<<"Random Lattice Colour Vector (random device)\n"<< lcv<<std::endl;
 
   random(fpRNG,lcv);
-  std::cout<<"Random Lattice Colour Vector (fixed seed)\n"<< lcv<<std::endl;
+  std::cout<<GridLogMessage<<"Random Lattice Colour Vector (fixed seed)\n"<< lcv<<std::endl;
 
   Grid_finalize();
 }
