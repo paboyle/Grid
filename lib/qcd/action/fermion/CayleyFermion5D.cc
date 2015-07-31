@@ -17,11 +17,8 @@ namespace QCD {
  {
  }
 
-  // override multiply
-  RealD CayleyFermion5D::M    (const LatticeFermion &psi, LatticeFermion &chi)
+  void CayleyFermion5D::Meooe5D    (const LatticeFermion &psi, LatticeFermion &Din)
   {
-    LatticeFermion Din(psi._grid);
-
     // Assemble Din
     for(int s=0;s<Ls;s++){
       if ( s==0 ) {
@@ -37,11 +34,52 @@ namespace QCD {
 	axpby_ssp_pplus(Din,1.0,Din,cs[s],psi,s,s-1);
       }
     }
+  }
+  void CayleyFermion5D::MeooeDag5D    (const LatticeFermion &psi, LatticeFermion &Din)
+  {
+    for(int s=0;s<Ls;s++){
+      if ( s==0 ) {
+	axpby_ssp_pplus (Din,bs[s],psi,cs[s+1],psi,s,s+1);
+	axpby_ssp_pminus(Din,1.0,Din,-mass*cs[Ls-1],psi,s,Ls-1);
+      } else if ( s==(Ls-1)) { 
+	axpby_ssp_pplus (Din,bs[s],psi,-mass*cs[0],psi,s,0);
+	axpby_ssp_pminus(Din,1.0,Din,cs[s-1],psi,s,s-1);
+      } else {
+	axpby_ssp_pplus (Din,bs[s],psi,cs[s+1],psi,s,s+1);
+	axpby_ssp_pminus(Din,1.0,Din,cs[s-1],psi,s,s-1);
+      }
+    }
+  }
+
+  // override multiply
+  RealD CayleyFermion5D::M    (const LatticeFermion &psi, LatticeFermion &chi)
+  {
+    LatticeFermion Din(psi._grid);
+
+    // Assemble Din
+    /*
+    for(int s=0;s<Ls;s++){
+      if ( s==0 ) {
+	//	Din = bs psi[s] + cs[s] psi[s+1}
+	axpby_ssp_pminus(Din,bs[s],psi,cs[s],psi,s,s+1);
+	//      Din+= -mass*cs[s] psi[s+1}
+	axpby_ssp_pplus (Din,1.0,Din,-mass*cs[s],psi,s,Ls-1);
+      } else if ( s==(Ls-1)) { 
+	axpby_ssp_pminus(Din,bs[s],psi,-mass*cs[s],psi,s,0);
+	axpby_ssp_pplus (Din,1.0,Din,cs[s],psi,s,s-1);
+      } else {
+	axpby_ssp_pminus(Din,bs[s],psi,cs[s],psi,s,s+1);
+	axpby_ssp_pplus(Din,1.0,Din,cs[s],psi,s,s-1);
+      }
+    }
+    */
+    Meooe5D(psi,Din);
 
     DW(Din,chi,DaggerNo);
     // ((b D_W + D_w hop terms +1) on s-diag
     axpby(chi,1.0,1.0,chi,psi); 
 
+    // Call Mooee??
     for(int s=0;s<Ls;s++){
       if ( s==0 ){
 	axpby_ssp_pminus(chi,1.0,chi,-1.0,psi,s,s+1);
@@ -67,10 +105,14 @@ namespace QCD {
     // Apply Dw
     DW(psi,Din,DaggerYes); 
 
+    Meooe5D(Din,chi);
+
     for(int s=0;s<Ls;s++){
+
       // Collect the terms in DW
       //	Chi = bs Din[s] + cs[s] Din[s+1}
       //    Chi+= -mass*cs[s] psi[s+1}
+      /*
       if ( s==0 ) {
 	axpby_ssp_pplus (chi,bs[s],Din,cs[s+1],Din,s,s+1);
 	axpby_ssp_pminus(chi,1.0,chi,-mass*cs[Ls-1],Din,s,Ls-1);
@@ -81,6 +123,10 @@ namespace QCD {
 	axpby_ssp_pplus (chi,bs[s],Din,cs[s+1],Din,s,s+1);
 	axpby_ssp_pminus(chi,1.0,chi,cs[s-1],Din,s,s-1);
       }
+      */
+
+      // FIXME just call MooeeDag??
+
       // Collect the terms indept of DW
       if ( s==0 ){
 	axpby_ssp_pplus (chi,1.0,chi,-1.0,psi,s,s+1);
@@ -103,6 +149,9 @@ namespace QCD {
   {
     LatticeFermion tmp(psi._grid);
     // Assemble the 5d matrix
+    Meooe5D(psi,tmp); 
+    std::cout << "Meooe Test replacement norm2 tmp = " <<norm2(tmp)<<std::endl;
+
     for(int s=0;s<Ls;s++){
       if ( s==0 ) {
 	//	tmp = bs psi[s] + cs[s] psi[s+1}
@@ -117,6 +166,7 @@ namespace QCD {
 	axpby_ssp_pplus (tmp,1.0,tmp,-ceo[s],psi,s,s-1);
       }
     }
+    std::cout << "Meooe Test replacement norm2 tmp old = " <<norm2(tmp)<<std::endl;
     // Apply 4d dslash
     if ( psi.checkerboard == Odd ) {
       DhopEO(tmp,chi,DaggerNo);
@@ -134,6 +184,10 @@ namespace QCD {
     } else {
       DhopOE(psi,tmp,DaggerYes);
     }
+
+    Meooe5D(tmp,chi); 
+    std::cout << "Meooe Test replacement norm2 chi new = " <<norm2(chi)<<std::endl;
+
     // Assemble the 5d matrix
     for(int s=0;s<Ls;s++){
       if ( s==0 ) {
@@ -147,6 +201,8 @@ namespace QCD {
 	axpby_ssp_pminus(chi,1.0   ,chi,-ceo[s-1],tmp,s,s-1);
       }
     }
+    std::cout << "Meooe Test replacement norm2 chi old = " <<norm2(chi)<<std::endl;
+
   }
 
   void CayleyFermion5D::Mooee       (const LatticeFermion &psi, LatticeFermion &chi)
@@ -249,6 +305,50 @@ namespace QCD {
       axpby_ssp_pplus (chi,1.0,chi,-lee[s],chi,s,s+1);  // chi[Ls]
     }
   }
+
+  // force terms; five routines; default to Dhop on diagonal
+  void CayleyFermion5D::MDeriv  (LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag)
+  {
+    LatticeFermion Din(V._grid);
+
+    if ( dag == DaggerNo ) {
+      //      U d/du [D_w D5] V = U d/du DW D5 V
+      Meooe5D(V,Din);
+      DhopDeriv(mat,U,Din,dag);
+    } else {
+      //      U d/du [D_w D5]^dag V = U D5^dag d/du DW^dag Y // implicit adj on U in call
+      Meooe5D(U,Din);
+      DhopDeriv(mat,Din,V,dag);
+    }
+  };
+  void CayleyFermion5D::MoeDeriv(LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag)
+  {
+    LatticeFermion Din(V._grid);
+
+    if ( dag == DaggerNo ) {
+      //      U d/du [D_w D5] V = U d/du DW D5 V
+      Meooe5D(V,Din);
+      DhopDerivOE(mat,U,Din,dag);
+    } else {
+      //      U d/du [D_w D5]^dag V = U D5^dag d/du DW^dag Y // implicit adj on U in call
+      Meooe5D(U,Din);
+      DhopDerivOE(mat,Din,V,dag);
+    }
+  };
+  void CayleyFermion5D::MeoDeriv(LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag)
+  {
+    LatticeFermion Din(V._grid);
+
+    if ( dag == DaggerNo ) {
+      //      U d/du [D_w D5] V = U d/du DW D5 V
+      Meooe5D(V,Din);
+      DhopDerivEO(mat,U,Din,dag);
+    } else {
+      //      U d/du [D_w D5]^dag V = U D5^dag d/du DW^dag Y // implicit adj on U in call
+      Meooe5D(U,Din);
+      DhopDerivEO(mat,Din,V,dag);
+    }
+  };
   
   // Tanh
   void CayleyFermion5D::SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD b,RealD c)

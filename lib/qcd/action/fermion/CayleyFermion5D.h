@@ -22,8 +22,16 @@ namespace Grid {
       virtual void   MooeeInvDag (const LatticeFermion &in, LatticeFermion &out);
       virtual void   Instantiatable(void)=0;
 
+      // force terms; five routines; default to Dhop on diagonal
+      virtual void MDeriv  (LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag);
+      virtual void MoeDeriv(LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag);
+      virtual void MeoDeriv(LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag);
+
       // Efficient support for multigrid coarsening
       virtual void  Mdir (const LatticeFermion &in, LatticeFermion &out,int dir,int disp);
+      
+      void   Meooe5D       (const LatticeFermion &in, LatticeFermion &out);
+      void   MeooeDag5D    (const LatticeFermion &in, LatticeFermion &out);
 
       //    protected:
       RealD mass;
