@@ -124,11 +124,14 @@ void WilsonFermion5D::DerivInternal(CartesianStencil & st,
 
   WilsonCompressor compressor(dag);
   
-  LatticeColourMatrix tmp(B._grid);
+  LatticeColourMatrix tmp(mat._grid);
   LatticeFermion Btilde(B._grid);
+  LatticeFermion Atilde(B._grid);
 
   st.HaloExchange<vSpinColourVector,vHalfSpinColourVector,WilsonCompressor>(B,comm_buf,compressor);
-  
+
+  Atilde=A;
+
   for(int mu=0;mu<Nd;mu++){
       
     ////////////////////////////////////////////////////////////////////////
@@ -140,20 +143,28 @@ void WilsonFermion5D::DerivInternal(CartesianStencil & st,
     ////////////////////////
     // Call the single hop
     ////////////////////////
+    tmp = zero;
+
 PARALLEL_FOR_LOOP
     for(int sss=0;sss<B._grid->oSites();sss++){
       for(int s=0;s<Ls;s++){
 	int sU=sss;
 	int sF = s+Ls*sU;
 	DiracOptDhopDir(st,U,comm_buf,sF,sU,B,Btilde,mu,gamma);
-      }
-    }
 
     ////////////////////////////
     // spin trace outer product
     ////////////////////////////
-// FIXME : need to sum over fifth direction.
-    tmp = TraceIndex<SpinIndex>(outerProduct(Btilde,A)); // ordering here
+
+	tmp[sU] = tmp[sU]+ traceIndex<SpinIndex>(
+		   outerProduct(Btilde[sF],Atilde[sF])); // ordering here
+
+      }
+
+
+    }
+
+
     PokeIndex<LorentzIndex>(mat,tmp,mu);
 
   }

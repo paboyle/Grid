@@ -285,6 +285,8 @@ public:
     //    Chebyshev<FineField> ChebyAccu(0.5,70.0,30,InverseApproximation);
     Chebyshev<FineField> Cheby    (2.0,70.0,10,InverseApproximation);
     Chebyshev<FineField> ChebyAccu(2.0,70.0,10,InverseApproximation);
+    Cheby.JacksonSmooth();
+    ChebyAccu.JacksonSmooth();
 
     _Aggregates.ProjectToSubspace  (Csrc,in);
     _Aggregates.PromoteFromSubspace(Csrc,out);
@@ -385,7 +387,7 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu(UGrid); 
 
   NerscField header;
-  std::string file("./ckpoint_lat.400");
+  std::string file("./ckpoint_lat.4000");
   readNerscConfiguration(Umu,header,file);
 
   //  SU3::ColdConfiguration(RNG4,Umu);
