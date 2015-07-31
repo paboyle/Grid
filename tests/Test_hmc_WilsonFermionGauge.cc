@@ -24,13 +24,14 @@ int main (int argc, char ** argv)
   // simplify template declaration? Strip the lorentz from the second template
   WilsonGaugeAction<LatticeLorentzColourMatrix, LatticeColourMatrix> Waction(5.6);
 
-  Real mass=0.01;
+  Real mass=-0.77;
   WilsonFermion FermOp(U,Fine,RBFine,mass);
   
   ConjugateGradient<LatticeFermion>  CG(1.0e-8,10000);
+  ConjugateGradient<LatticeFermion>  CGmd(1.0e-6,10000);
   
   TwoFlavourPseudoFermionAction<LatticeLorentzColourMatrix, LatticeColourMatrix,LatticeFermion> 
-    Pseudofermion(FermOp,CG,CG,Fine);
+    Pseudofermion(FermOp,CGmd,CG,Fine);
 
   
   //Collect actions

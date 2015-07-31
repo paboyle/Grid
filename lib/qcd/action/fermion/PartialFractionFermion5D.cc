@@ -254,6 +254,51 @@ namespace Grid {
       MooeeInv_internal(in,out,DaggerYes);
     }
 
+
+  // force terms; five routines; default to Dhop on diagonal
+   void PartialFractionFermion5D::MDeriv  (LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag)
+  {
+    LatticeFermion D(V._grid);
+
+    int nblock=(Ls-1)/2;
+    for(int b=0;b<nblock;b++){
+      int s = 2*b;
+      ag5xpby_ssp(D,-scale,U,0.0,U,s,s); 
+      ag5xpby_ssp(D, scale,U,0.0,U,s+1,s+1); 
+    }
+    ag5xpby_ssp(D,p[nblock]*scale/amax,U,0.0,U,Ls-1,Ls-1);
+
+    DhopDeriv(mat,D,V,DaggerNo); 
+  };
+   void PartialFractionFermion5D::MoeDeriv(LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag)
+  {
+    LatticeFermion D(V._grid);
+
+    int nblock=(Ls-1)/2;
+    for(int b=0;b<nblock;b++){
+      int s = 2*b;
+      ag5xpby_ssp(D,-scale,U,0.0,U,s,s); 
+      ag5xpby_ssp(D, scale,U,0.0,U,s+1,s+1); 
+    }
+    ag5xpby_ssp(D,p[nblock]*scale/amax,U,0.0,U,Ls-1,Ls-1);
+
+    DhopDerivOE(mat,D,V,DaggerNo); 
+  };
+   void PartialFractionFermion5D::MeoDeriv(LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag)
+  {
+    LatticeFermion D(V._grid);
+
+    int nblock=(Ls-1)/2;
+    for(int b=0;b<nblock;b++){
+      int s = 2*b;
+      ag5xpby_ssp(D,-scale,U,0.0,U,s,s); 
+      ag5xpby_ssp(D, scale,U,0.0,U,s+1,s+1); 
+    }
+    ag5xpby_ssp(D,p[nblock]*scale/amax,U,0.0,U,Ls-1,Ls-1);
+
+    DhopDerivEO(mat,D,V,DaggerNo); 
+  };
+
     void  PartialFractionFermion5D::SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD scale){
       SetCoefficientsZolotarev(1.0/scale,zdata);
     }

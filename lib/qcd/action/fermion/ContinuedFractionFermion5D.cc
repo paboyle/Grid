@@ -169,6 +169,53 @@ namespace Grid {
     {
       MooeeInv(psi,chi);
     }
+
+  // force terms; five routines; default to Dhop on diagonal
+   void ContinuedFractionFermion5D::MDeriv  (LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag)
+  {
+    LatticeFermion D(V._grid);
+
+    int sign=1;
+    for(int s=0;s<Ls;s++){
+      if ( s==(Ls-1) ){
+	ag5xpby_ssp(D,Beta[s]*ZoloHiInv,U,0.0,U,s,s);
+      } else {
+	ag5xpby_ssp(D,cc[s]*Beta[s]*sign*ZoloHiInv,U,0.0,U,s,s);
+      }
+      sign=-sign; 
+    }
+    DhopDeriv(mat,D,V,DaggerNo); 
+  };
+   void ContinuedFractionFermion5D::MoeDeriv(LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag)
+  {
+    LatticeFermion D(V._grid);
+
+    int sign=1;
+    for(int s=0;s<Ls;s++){
+      if ( s==(Ls-1) ){
+	ag5xpby_ssp(D,Beta[s]*ZoloHiInv,U,0.0,U,s,s);
+      } else {
+	ag5xpby_ssp(D,cc[s]*Beta[s]*sign*ZoloHiInv,U,0.0,U,s,s);
+      }
+      sign=-sign; 
+    }
+    DhopDerivOE(mat,D,V,DaggerNo); 
+  };
+   void ContinuedFractionFermion5D::MeoDeriv(LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag)
+  {
+    LatticeFermion D(V._grid);
+
+    int sign=1;
+    for(int s=0;s<Ls;s++){
+      if ( s==(Ls-1) ){
+	ag5xpby_ssp(D,Beta[s]*ZoloHiInv,U,0.0,U,s,s);
+      } else {
+	ag5xpby_ssp(D,cc[s]*Beta[s]*sign*ZoloHiInv,U,0.0,U,s,s);
+      }
+      sign=-sign; 
+    }
+    DhopDerivEO(mat,D,V,DaggerNo); 
+  };
     
     // Constructors
     ContinuedFractionFermion5D::ContinuedFractionFermion5D(

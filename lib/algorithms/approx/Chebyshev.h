@@ -58,7 +58,9 @@ namespace Grid {
       }
     };
 
-
+    
+    // c.f. numerical recipes "chebft"/"chebev". This is sec 5.8 "Chebyshev approximation".
+    //
     Chebyshev(double _lo,double _hi,int _order, double (* func)(double) ){
       lo=_lo;
       hi=_hi;
@@ -77,7 +79,34 @@ namespace Grid {
 	Coeffs[j] = s * 2.0/order;
       }
     };
+    void JacksonSmooth(void){
+      double M=order;
+      double alpha = M_PI/(M+2);
+      double lmax = std::cos(alpha);
+      double sumUsq =0;
+      std::vector<double> U(M);
+      std::vector<double> a(M);
+      std::vector<double> g(M);
+      for(int n=0;n<=M;n++){
+	U[n] = std::sin((n+1)*std::acos(lmax))/std::sin(std::acos(lmax));
+	sumUsq += U[n]*U[n];
+      }      
+      sumUsq = std::sqrt(sumUsq);
 
+      for(int i=1;i<=M;i++){
+	a[i] = U[i]/sumUsq;
+      }
+      g[0] = 1.0;
+      for(int m=1;m<=M;m++){
+	g[m] = 0;
+	for(int i=0;i<=M-m;i++){
+	  g[m]+= a[i]*a[m+i];
+	}
+      }
+      for(int m=1;m<=M;m++){
+	Coeffs[m]*=g[m];
+      }
+    }
     double approx(double x) // Convenience for plotting the approximation
     {
       double Tn;
