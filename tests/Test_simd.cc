@@ -194,9 +194,34 @@ int main (int argc, char ** argv)
   // Insist that operations on random scalars gives
   // identical results to on vectors.
 
-  std::cout<<GridLogMessage << "==================================="<<  std::endl;
-  std::cout<<GridLogMessage << "Testing vComplexF "<<std::endl;
-  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout << GridLogMessage <<"==================================="<<  std::endl;
+  std::cout << GridLogMessage <<"Testing vRealF "<<std::endl;
+  std::cout << GridLogMessage <<"==================================="<<  std::endl;
+
+
+  Tester<RealF,vRealF>(funcPlus());
+  Tester<RealF,vRealF>(funcMinus());
+  Tester<RealF,vRealF>(funcTimes());
+  Tester<RealF,vRealF>(funcAdj());
+  Tester<RealF,vRealF>(funcConj());
+  Tester<RealF,vRealF>(funcInnerProduct());
+  ReductionTester<RealF,RealF,vRealF>(funcReduce());
+
+  std::cout << GridLogMessage <<"==================================="<<  std::endl;
+  std::cout << GridLogMessage <<"Testing vRealD "<<std::endl;
+  std::cout << GridLogMessage <<"==================================="<<  std::endl;
+
+  Tester<RealD,vRealD>(funcPlus());
+  Tester<RealD,vRealD>(funcMinus());
+  Tester<RealD,vRealD>(funcTimes());
+  Tester<RealD,vRealD>(funcAdj());
+  Tester<RealD,vRealD>(funcConj());
+  Tester<RealD,vRealD>(funcInnerProduct());
+  ReductionTester<RealD,RealD,vRealD>(funcReduce());
+
+  std::cout << GridLogMessage <<"==================================="<<  std::endl;
+  std::cout << GridLogMessage <<"Testing vComplexF "<<std::endl;
+  std::cout << GridLogMessage <<"==================================="<<  std::endl;
 
   Tester<ComplexF,vComplexF>(funcTimesI());
   Tester<ComplexF,vComplexF>(funcTimesMinusI());
@@ -222,31 +247,6 @@ int main (int argc, char ** argv)
   Tester<ComplexD,vComplexD>(funcAdj());
   Tester<ComplexD,vComplexD>(funcInnerProduct());
   ReductionTester<ComplexD,ComplexD,vComplexD>(funcReduce());
-
-  std::cout<<GridLogMessage << "==================================="<<  std::endl;
-  std::cout<<GridLogMessage << "Testing vRealF "<<std::endl;
-  std::cout<<GridLogMessage << "==================================="<<  std::endl;
-
-
-  Tester<RealF,vRealF>(funcPlus());
-  Tester<RealF,vRealF>(funcMinus());
-  Tester<RealF,vRealF>(funcTimes());
-  Tester<RealF,vRealF>(funcAdj());
-  Tester<RealF,vRealF>(funcConj());
-  Tester<RealF,vRealF>(funcInnerProduct());
-  ReductionTester<RealF,RealF,vRealF>(funcReduce());
-
-  std::cout<<GridLogMessage << "==================================="<<  std::endl;
-  std::cout<<GridLogMessage << "Testing vRealD "<<std::endl;
-  std::cout<<GridLogMessage << "==================================="<<  std::endl;
-
-  Tester<RealD,vRealD>(funcPlus());
-  Tester<RealD,vRealD>(funcMinus());
-  Tester<RealD,vRealD>(funcTimes());
-  Tester<RealD,vRealD>(funcAdj());
-  Tester<RealD,vRealD>(funcConj());
-  Tester<RealD,vRealD>(funcInnerProduct());
-  ReductionTester<RealD,RealD,vRealD>(funcReduce());
 
   Grid_finalize();
 }

@@ -31,15 +31,16 @@ int main (int argc, char ** argv)
   ConjugateGradient<LatticeFermion>  CGmd(1.0e-6,10000);
   
   TwoFlavourPseudoFermionAction<LatticeLorentzColourMatrix, LatticeColourMatrix,LatticeFermion> 
-    Pseudofermion(FermOp,CGmd,CG,Fine);
-
+    WilsonNf2(FermOp,CG,CG,Fine);
   
   //Collect actions
   ActionLevel Level1;
-  Level1.push_back(&Waction);
-  Level1.push_back(&Pseudofermion);
+  Level1.push_back(&WilsonNf2);
+  ActionLevel Level2(3);
+  Level2.push_back(&Waction);
   ActionSet FullSet;
   FullSet.push_back(Level1);
+  FullSet.push_back(Level2);
 
   // Create integrator
   typedef MinimumNorm2  IntegratorAlgorithm;// change here to change the algorithm

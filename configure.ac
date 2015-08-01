@@ -3,7 +3,7 @@
 #
 # Project Grid package  
 # 
-# Time-stamp: <2015-06-09 15:26:39 neo>
+# Time-stamp: <2015-07-10 17:46:21 neo>
 
 AC_PREREQ([2.63])
 AC_INIT([Grid], [1.0], [paboyle@ph.ed.ac.uk])
@@ -104,9 +104,9 @@ case ${ac_SIMD} in
        AC_DEFINE([AVX512],[1],[AVX512 Intrinsics for Knights Corner] )
        supported="cross compilation"
      ;;
-     NEONv7)
-       echo Configuring for experimental ARMv7 support 
-       AC_DEFINE([NEONv7],[1],[NEON ARMv7 Experimental support ] )
+     NEONv8)
+       echo Configuring for experimental ARMv8a support 
+       AC_DEFINE([NEONv8],[1],[NEON ARMv8 Experimental support ] )
        supported="cross compilation"
      ;;
      DEBUG)
