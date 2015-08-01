@@ -47,7 +47,7 @@ int main (int argc, char ** argv)
   //  typedef LeapFrog  IntegratorAlgorithm;// change here to change the algorithm
   IntegratorParameters MDpar(12,20,1.0);
   std::vector<int> rel ={1};
-  Integrator<IntegratorAlgorithm> MDynamics(&Fine,MDpar, FullSet,rel);
+  Integrator<IntegratorAlgorithm> MDynamics(&Fine,MDpar, FullSet);
 
   // Create HMC
   HMCparameters HMCpar;
