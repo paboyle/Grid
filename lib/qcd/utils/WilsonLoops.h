@@ -7,7 +7,6 @@ namespace QCD {
 template<class GaugeMat,class GaugeLorentz>
 class WilsonLoops {
 public:
-
   //////////////////////////////////////////////////
   // directed plaquette oriented in mu,nu plane
   //////////////////////////////////////////////////

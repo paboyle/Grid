@@ -1,5 +1,5 @@
-/* lib/GridConfig.h.  Generated from GridConfig.h.in by configure.  */
-/* lib/GridConfig.h.in.  Generated from configure.ac by autoheader.  */
+/* lib/Config.h.  Generated from Config.h.in by configure.  */
+/* lib/Config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* AVX Intrinsics */
 /* #undef AVX1 */
@@ -33,9 +33,6 @@
 
 /* Support AVX2 (Advanced Vector Extensions 2) instructions */
 /* #undef HAVE_AVX2 */
-
-/* define if the compiler supports basic C++11 syntax */
-/* #undef HAVE_CXX11 */
 
 /* Define to 1 if you have the declaration of `be64toh', and to 0 if you
    don't. */
@@ -120,8 +117,8 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
 
-/* NEON ARMv7 Experimental support */
-/* #undef NEONv7 */
+/* NEON ARMv8 Experimental support */
+/* #undef NEONv8 */
 
 /* Name of package */
 #define PACKAGE "grid"
