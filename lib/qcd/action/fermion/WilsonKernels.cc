@@ -303,7 +303,7 @@ void DiracOptDhopDir(CartesianStencil &st,LatticeDoubledGaugeField &U,
     vHalfSpinColourVector Uchi;
     int offset,local,perm, ptype;
     int ss=sF;
-    
+
     offset = st._offsets [dir][ss];
     local  = st._is_local[dir][ss];
     perm   = st._permute[dir][ss];

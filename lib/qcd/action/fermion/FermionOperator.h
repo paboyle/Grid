@@ -59,7 +59,7 @@ namespace Grid {
       ///////////////////////////////////////////////
       // Updates gauge field during HMC
       ///////////////////////////////////////////////
-      virtual void ImportGauge(const GaugeField & _U);
+      virtual void ImportGauge(const GaugeField & _U)=0;
 
     };
 

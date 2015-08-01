@@ -65,6 +65,7 @@ namespace QCD {
 
   // Allocate the required comms buffer
   comm_buf.resize(Stencil._unified_buffer_size); // this is always big enough to contain EO
+
   ImportGauge(_Umu);
 }  
 void WilsonFermion5D::ImportGauge(const LatticeGaugeField &_Umu)
@@ -122,6 +123,9 @@ void WilsonFermion5D::DerivInternal(CartesianStencil & st,
 {
   assert((dag==DaggerNo) ||(dag==DaggerYes));
 
+  conformable(st._grid,A._grid);
+  conformable(st._grid,B._grid);
+
   WilsonCompressor compressor(dag);
   
   LatticeColourMatrix tmp(mat._grid);
@@ -146,10 +150,14 @@ void WilsonFermion5D::DerivInternal(CartesianStencil & st,
     tmp = zero;
 
 PARALLEL_FOR_LOOP
-    for(int sss=0;sss<B._grid->oSites();sss++){
+    for(int sss=0;sss<U._grid->oSites();sss++){
       for(int s=0;s<Ls;s++){
 	int sU=sss;
 	int sF = s+Ls*sU;
+
+	assert ( sF< B._grid->oSites());
+	assert ( sU< U._grid->oSites());
+
 	DiracOptDhopDir(st,U,comm_buf,sF,sU,B,Btilde,mu,gamma);
 
     ////////////////////////////
@@ -161,9 +169,7 @@ PARALLEL_FOR_LOOP
 
       }
 
-
     }
-
 
     PokeIndex<LorentzIndex>(mat,tmp,mu);
 
