@@ -1,3 +1,38 @@
+- PseudoFermions
+TwoFlavour -- done. Fill in rest:
+
+  - TwoFlavourEvenOddConstEE
+  - TwoFlavourEvenOdd
+  - TwoFlavourRatioEvenOddConstEE
+  - TwoFlavourRatioEvenOdd
+  - TwoFlavourRatio
+
+  - OneFlavourRationalEvenOddConstEE
+  - OneFlavourRationalEvenOdd
+  - OneFlavourRationalRatioEvenOddConstEE
+  - OneFlavourRationalRatioEvenOdd
+  - OneFlavourRationalRatio
+
+- MacroMagic -> readers
+
+- Link smearing/boundary conds
+
+- Clean up HMC
+
+- Test Cayley, Partial , ContFrac force terms.
+
+- Test DWF HMC
+
+- Rectangle gauge actions.
+  Iwasaki,
+  Symanzik,
+  ... etc...
+
+- Prepare multigrid for HMC.
+  Alternate setup schemes.
+
+- RNG filling from sparser grid, lower dim grid.
+
 ================================================================
 *** Hacks and bug fixes to clean up and Audits
 ================================================================
