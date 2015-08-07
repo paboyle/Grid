@@ -30,7 +30,7 @@ int main (int argc, char ** argv)
   ConjugateGradient<LatticeFermion>  CG(1.0e-8,10000);
   ConjugateGradient<LatticeFermion>  CGmd(1.0e-6,10000);
   
-  TwoFlavourPseudoFermionAction<LatticeLorentzColourMatrix, LatticeColourMatrix,LatticeFermion> 
+  TwoFlavourEvenOddPseudoFermionAction<LatticeLorentzColourMatrix, LatticeColourMatrix,LatticeFermion> 
     WilsonNf2(FermOp,CG,CG);
   
   //Collect actions
