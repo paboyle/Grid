@@ -106,8 +106,6 @@ namespace Grid{
 
       OperatorFunction<FermionField> &ActionSolver;
 
-      GridBase &Grid;
-
       FermionField Phi; // the pseudo fermion field for this trajectory
 
     public:
@@ -116,9 +114,8 @@ namespace Grid{
       /////////////////////////////////////////////////
     TwoFlavourPseudoFermionAction(FermionOperator<FermionField,GaugeField>  &Op, 
 				  OperatorFunction<FermionField> & DS,
-				  OperatorFunction<FermionField> & AS,
-				  GridBase &_Grid
-				  ) : FermOp(Op), DerivativeSolver(DS), ActionSolver(AS), Phi(&_Grid), Grid(_Grid) {
+				  OperatorFunction<FermionField> & AS
+				  ) : FermOp(Op), DerivativeSolver(DS), ActionSolver(AS), Phi(Op.FermionGrid()) {
       };
       
       //////////////////////////////////////////////////////////////////////////////////////
@@ -140,7 +137,7 @@ namespace Grid{
 	//         in the Phi integral, and thus is only an irrelevant prefactor for the partition function.
 	//
 	RealD scale = std::sqrt(0.5);
-	FermionField eta(&Grid);
+	FermionField eta(FermOp.FermionGrid());
 
 	gaussian(pRNG,eta);
 
@@ -158,8 +155,8 @@ namespace Grid{
 
 	FermOp.ImportGauge(U);
 
-	FermionField X(&Grid);
-	FermionField Y(&Grid);
+	FermionField X(FermOp.FermionGrid());
+	FermionField Y(FermOp.FermionGrid());
 	
 	MdagMLinearOperator<FermionOperator<FermionField,GaugeField> ,FermionField> MdagMOp(FermOp);
 	X=zero;
@@ -182,9 +179,9 @@ namespace Grid{
 
 	FermOp.ImportGauge(U);
 
-	FermionField X(&Grid);
-	FermionField Y(&Grid);
-	GaugeField   tmp(&Grid);
+	FermionField X(FermOp.FermionGrid());
+	FermionField Y(FermOp.FermionGrid());
+	GaugeField   tmp(FermOp.GaugeGrid());
 
 	MdagMLinearOperator<FermionOperator<FermionField,GaugeField> ,FermionField> MdagMOp(FermOp);
 
