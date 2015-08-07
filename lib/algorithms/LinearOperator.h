@@ -188,6 +188,7 @@ namespace Grid {
     };
     template<class Matrix,class Field>
       class SchurDiagMooeeOperator :  public SchurOperatorBase<Field> {
+    protected:
       Matrix &_Mat;
     public:
       SchurDiagMooeeOperator (Matrix &Mat): _Mat(Mat){};
@@ -214,6 +215,7 @@ namespace Grid {
     };
     template<class Matrix,class Field>
       class SchurDiagOneOperator :  public SchurOperatorBase<Field> {
+    protected:
       Matrix &_Mat;
     public:
       SchurDiagOneOperator (Matrix &Mat): _Mat(Mat){};
@@ -239,6 +241,7 @@ namespace Grid {
 	return axpy_norm(out,-1.0,tmp,in);
       }
     };
+
 
     /////////////////////////////////////////////////////////////
     // Base classes for functions of operators

@@ -83,6 +83,7 @@
 // Pseudo fermion combinations
 ////////////////////////////////////////
 #include <qcd/action/pseudofermion/TwoFlavour.h>
+#include <qcd/action/pseudofermion/TwoFlavourEvenOdd.h>
 
 
 #endif
