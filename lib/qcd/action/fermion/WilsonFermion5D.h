@@ -14,21 +14,21 @@ namespace Grid {
     // i.e. even even contains fifth dim hopping term.
     //
     // [DIFFERS from original CPS red black implementation parity = (x+y+z+t+s)|2 ]
-    ////////////////////////////
-    //ContFrac:
-    //  Ls always odd. Rational poly deg is either Ls or Ls-1
-    //PartFrac 
-    //  Ls always odd. Rational poly deg is either Ls or Ls-1
-    //
-    //Cayley: Ls always even, Rational poly deg is Ls
-    // 
-    // Just set nrational as Ls. Forget about Ls-1 cases.
-    //
-    // Require odd Ls for cont and part frac
-    ////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////
-    class WilsonFermion5D : public FermionOperator<LatticeFermion,LatticeGaugeField>
+
+    class WilsonFermion5DStatic { 
+    public:
+      // S-direction is INNERMOST and takes no part in the parity.
+      static int HandOptDslash; // these are a temporary hack
+      static const std::vector<int> directions;
+      static const std::vector<int> displacements;
+      const int npoint = 8;
+    };
+
+    template<class Impl>
+    class WilsonFermion5D : public FermionOperator<Impl>, public WilsonFermion5DStatic
     {
+#include <qcd/action/fermion/FermionImplTypedefs.h>
     public:
       ///////////////////////////////////////////////////////////////
       // Implement the abstract base
@@ -39,69 +39,65 @@ namespace Grid {
       GridBase *FermionRedBlackGrid(void)    { return _FiveDimRedBlackGrid;}
 
       // full checkerboard operations; leave unimplemented as abstract for now
-      virtual RealD  M    (const LatticeFermion &in, LatticeFermion &out){assert(0); return 0.0;};
-      virtual RealD  Mdag (const LatticeFermion &in, LatticeFermion &out){assert(0); return 0.0;};
+      virtual RealD  M    (const FermionField &in, FermionField &out){assert(0); return 0.0;};
+      virtual RealD  Mdag (const FermionField &in, FermionField &out){assert(0); return 0.0;};
 
       // half checkerboard operations; leave unimplemented as abstract for now
-      virtual void   Meooe       (const LatticeFermion &in, LatticeFermion &out){assert(0);};
-      virtual void   Mooee       (const LatticeFermion &in, LatticeFermion &out){assert(0);};
-      virtual void   MooeeInv    (const LatticeFermion &in, LatticeFermion &out){assert(0);};
+      virtual void   Meooe       (const FermionField &in, FermionField &out){assert(0);};
+      virtual void   Mooee       (const FermionField &in, FermionField &out){assert(0);};
+      virtual void   MooeeInv    (const FermionField &in, FermionField &out){assert(0);};
 
-      virtual void   MeooeDag    (const LatticeFermion &in, LatticeFermion &out){assert(0);};
-      virtual void   MooeeDag    (const LatticeFermion &in, LatticeFermion &out){assert(0);};
-      virtual void   MooeeInvDag (const LatticeFermion &in, LatticeFermion &out){assert(0);};
+      virtual void   MeooeDag    (const FermionField &in, FermionField &out){assert(0);};
+      virtual void   MooeeDag    (const FermionField &in, FermionField &out){assert(0);};
+      virtual void   MooeeInvDag (const FermionField &in, FermionField &out){assert(0);};
 
-      // These can be overridden by fancy 5d chiral actions
-      virtual void DhopDeriv  (LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag);
-      virtual void DhopDerivEO(LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag);
-      virtual void DhopDerivOE(LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag);
+      // These can be overridden by fancy 5d chiral action
+      virtual void DhopDeriv  (GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
+      virtual void DhopDerivEO(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
+      virtual void DhopDerivOE(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
 
       // Implement hopping term non-hermitian hopping term; half cb or both
       // Implement s-diagonal DW
-      void DW    (const LatticeFermion &in, LatticeFermion &out,int dag);
-      void Dhop  (const LatticeFermion &in, LatticeFermion &out,int dag);
-      void DhopOE(const LatticeFermion &in, LatticeFermion &out,int dag);
-      void DhopEO(const LatticeFermion &in, LatticeFermion &out,int dag);
+      void DW    (const FermionField &in, FermionField &out,int dag);
+      void Dhop  (const FermionField &in, FermionField &out,int dag);
+      void DhopOE(const FermionField &in, FermionField &out,int dag);
+      void DhopEO(const FermionField &in, FermionField &out,int dag);
 
       // add a DhopComm
       // -- suboptimal interface will presently trigger multiple comms.
-      void DhopDir(const LatticeFermion &in, LatticeFermion &out,int dir,int disp);
+      void DhopDir(const FermionField &in, FermionField &out,int dir,int disp);
 
       ///////////////////////////////////////////////////////////////
       // New methods added 
       ///////////////////////////////////////////////////////////////
-
       void DerivInternal(CartesianStencil & st,
-			 LatticeDoubledGaugeField & U,
-			 LatticeGaugeField &mat,
-			 const LatticeFermion &A,
-			 const LatticeFermion &B,
+			 DoubledGaugeField & U,
+			 GaugeField &mat,
+			 const FermionField &A,
+			 const FermionField &B,
 			 int dag);
 
       void DhopInternal(CartesianStencil & st,
 			LebesgueOrder &lo,
-			LatticeDoubledGaugeField &U,
-			const LatticeFermion &in, 
-			LatticeFermion &out,
+			DoubledGaugeField &U,
+			const FermionField &in, 
+			FermionField &out,
 			int dag);
 
       // Constructors
-      WilsonFermion5D(LatticeGaugeField &_Umu,
-			  GridCartesian         &FiveDimGrid,
-			  GridRedBlackCartesian &FiveDimRedBlackGrid,
-			  GridCartesian         &FourDimGrid,
-			  GridRedBlackCartesian &FourDimRedBlackGrid,
-			  double _M5);
+      WilsonFermion5D(GaugeField &_Umu,
+		      GridCartesian         &FiveDimGrid,
+		      GridRedBlackCartesian &FiveDimRedBlackGrid,
+		      GridCartesian         &FourDimGrid,
+		      GridRedBlackCartesian &FourDimRedBlackGrid,
+		      double _M5);
 
       // DoubleStore
-      virtual void ImportGauge(const LatticeGaugeField &_Umu);
-      void DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGaugeField &Umu);
+      void ImportGauge(const GaugeField &_Umu);
 
       ///////////////////////////////////////////////////////////////
       // Data members require to support the functionality
       ///////////////////////////////////////////////////////////////
-      static int HandOptDslash; // these are a temporary hack
-
     protected:
 
       // Add these to the support from Wilson
@@ -109,10 +105,6 @@ namespace Grid {
       GridBase *_FourDimRedBlackGrid;
       GridBase *_FiveDimGrid;
       GridBase *_FiveDimRedBlackGrid;
-
-      static const int npoint=8;
-      static const std::vector<int> directions   ;
-      static const std::vector<int> displacements;
 
       double                        M5;
       int Ls;
@@ -123,15 +115,15 @@ namespace Grid {
       CartesianStencil StencilOdd; 
 
       // Copy of the gauge field , with even and odd subsets
-      LatticeDoubledGaugeField Umu;
-      LatticeDoubledGaugeField UmuEven;
-      LatticeDoubledGaugeField UmuOdd;
+      DoubledGaugeField Umu;
+      DoubledGaugeField UmuEven;
+      DoubledGaugeField UmuOdd;
 
       LebesgueOrder Lebesgue;
       LebesgueOrder LebesgueEvenOdd;
 
       // Comms buffer
-      std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  comm_buf;
+      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  comm_buf;
       
     };
   }

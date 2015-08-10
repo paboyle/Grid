@@ -50,20 +50,20 @@ int main (int argc, char ** argv)
   RealD M5  =1.8;
 
   std::cout<<GridLogMessage <<"OverlapWilsonContFracTanhFermion  test"<<std::endl;
-  OverlapWilsonContFracTanhFermion Dcf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
-  TestWhat<OverlapWilsonContFracTanhFermion>(Dcf,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  OverlapWilsonContFracTanhFermionR Dcf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
+  TestWhat<OverlapWilsonContFracTanhFermionR>(Dcf,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   std::cout<<GridLogMessage <<"OverlapWilsonContFracZolotarevFermion  test"<<std::endl;
-  OverlapWilsonContFracZolotarevFermion Dcfz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,6.0);
-  TestWhat<OverlapWilsonContFracZolotarevFermion>(Dcfz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  OverlapWilsonContFracZolotarevFermionR Dcfz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,6.0);
+  TestWhat<OverlapWilsonContFracZolotarevFermionR>(Dcfz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   std::cout<<GridLogMessage <<"OverlapWilsonPartialFractionTanhFermion  test"<<std::endl;
-  OverlapWilsonPartialFractionTanhFermion Dpf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
-  TestWhat<OverlapWilsonPartialFractionTanhFermion>(Dpf,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  OverlapWilsonPartialFractionTanhFermionR Dpf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
+  TestWhat<OverlapWilsonPartialFractionTanhFermionR>(Dpf,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   std::cout<<GridLogMessage <<"OverlapWilsonPartialFractionZolotarevFermion  test"<<std::endl;
-  OverlapWilsonPartialFractionZolotarevFermion Dpfz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,6.0);
-  TestWhat<OverlapWilsonPartialFractionZolotarevFermion>(Dpfz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  OverlapWilsonPartialFractionZolotarevFermionR Dpfz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,6.0);
+  TestWhat<OverlapWilsonPartialFractionZolotarevFermionR>(Dpfz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   Grid_finalize();
 }

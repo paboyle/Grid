@@ -4,7 +4,6 @@ namespace Grid{
 
 namespace QCD {
 
-  const int SpinorIndex = 2;
 
   class Gamma {
 

@@ -280,48 +280,50 @@
 namespace Grid {
 namespace QCD {
 
-void DiracOptHandDhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
-			    std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-			    int sF,int sU,const LatticeFermion &in, LatticeFermion &out)
+#if 0
+template<class Simd>
+void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSite(CartesianStencil &st,DoubledGaugeField &U,
+					       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+					       int sF,int sU,const FermionField &in, FermionField &out)
 {
-  REGISTER vComplex result_00; // 12 regs on knc
-  REGISTER vComplex result_01;
-  REGISTER vComplex result_02;
+  REGISTER Simd result_00; // 12 regs on knc
+  REGISTER Simd result_01;
+  REGISTER Simd result_02;
   
-  REGISTER vComplex result_10;
-  REGISTER vComplex result_11;
-  REGISTER vComplex result_12;
+  REGISTER Simd result_10;
+  REGISTER Simd result_11;
+  REGISTER Simd result_12;
 
-  REGISTER vComplex result_20;
-  REGISTER vComplex result_21;
-  REGISTER vComplex result_22;
+  REGISTER Simd result_20;
+  REGISTER Simd result_21;
+  REGISTER Simd result_22;
 
-  REGISTER vComplex result_30;
-  REGISTER vComplex result_31;
-  REGISTER vComplex result_32; // 20 left
+  REGISTER Simd result_30;
+  REGISTER Simd result_31;
+  REGISTER Simd result_32; // 20 left
 
-  REGISTER vComplex Chi_00;    // two spinor; 6 regs
-  REGISTER vComplex Chi_01;
-  REGISTER vComplex Chi_02;
+  REGISTER Simd Chi_00;    // two spinor; 6 regs
+  REGISTER Simd Chi_01;
+  REGISTER Simd Chi_02;
 
-  REGISTER vComplex Chi_10;
-  REGISTER vComplex Chi_11;
-  REGISTER vComplex Chi_12;   // 14 left
+  REGISTER Simd Chi_10;
+  REGISTER Simd Chi_11;
+  REGISTER Simd Chi_12;   // 14 left
 
-  REGISTER vComplex UChi_00;  // two spinor; 6 regs
-  REGISTER vComplex UChi_01;
-  REGISTER vComplex UChi_02;
+  REGISTER Simd UChi_00;  // two spinor; 6 regs
+  REGISTER Simd UChi_01;
+  REGISTER Simd UChi_02;
 
-  REGISTER vComplex UChi_10;
-  REGISTER vComplex UChi_11;
-  REGISTER vComplex UChi_12;  // 8 left
+  REGISTER Simd UChi_10;
+  REGISTER Simd UChi_11;
+  REGISTER Simd UChi_12;  // 8 left
 
-  REGISTER vComplex U_00;  // two rows of U matrix
-  REGISTER vComplex U_10;
-  REGISTER vComplex U_20;  
-  REGISTER vComplex U_01;
-  REGISTER vComplex U_11;
-  REGISTER vComplex U_21;  // 2 reg left.
+  REGISTER Simd U_00;  // two rows of U matrix
+  REGISTER Simd U_10;
+  REGISTER Simd U_20;  
+  REGISTER Simd U_01;
+  REGISTER Simd U_11;
+  REGISTER Simd U_21;  // 2 reg left.
 
 #define Chimu_00 Chi_00
 #define Chimu_01 Chi_01
@@ -360,11 +362,6 @@ void DiracOptHandDhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     MULT_2SPIN(Xp);
   }
   XP_RECON;
-  //  std::cout<<GridLogMessage << "XP_RECON"<<std::endl;
-  //  std::cout<<GridLogMessage << result_00 <<" "<<result_01 <<" "<<result_02 <<std::endl;
-  //  std::cout<<GridLogMessage << result_10 <<" "<<result_11 <<" "<<result_12 <<std::endl;
-  //  std::cout<<GridLogMessage << result_20 <<" "<<result_21 <<" "<<result_22 <<std::endl;
-  //  std::cout<<GridLogMessage << result_30 <<" "<<result_31 <<" "<<result_32 <<std::endl;
 
   // Yp
   offset = st._offsets [Yp][ss];
@@ -446,12 +443,6 @@ void DiracOptHandDhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     MULT_2SPIN(Xm);
   }
   XM_RECON_ACCUM;
-  //  std::cout<<GridLogMessage << "XM_RECON_ACCUM"<<std::endl;
-  //  std::cout<<GridLogMessage << result_00 <<" "<<result_01 <<" "<<result_02 <<std::endl;
-  //  std::cout<<GridLogMessage << result_10 <<" "<<result_11 <<" "<<result_12 <<std::endl;
-  //  std::cout<<GridLogMessage << result_20 <<" "<<result_21 <<" "<<result_22 <<std::endl;
-  //  std::cout<<GridLogMessage << result_30 <<" "<<result_31 <<" "<<result_32 <<std::endl;
-  
   
   // Ym
   offset = st._offsets [Ym][ss];
@@ -530,48 +521,49 @@ void DiracOptHandDhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
   }
 }
 
-void DiracOptHandDhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
-			       std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-			       int ss,int sU,const LatticeFermion &in, LatticeFermion &out)
+template<class Simd>
+void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSiteDag(CartesianStencil &st,DoubledGaugeField &U,
+							      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							      int ss,int sU,const FermionField &in, FermionField &out)
 {
-  REGISTER vComplex result_00; // 12 regs on knc
-  REGISTER vComplex result_01;
-  REGISTER vComplex result_02;
+  REGISTER Simd result_00; // 12 regs on knc
+  REGISTER Simd result_01;
+  REGISTER Simd result_02;
 
-  REGISTER vComplex result_10;
-  REGISTER vComplex result_11;
-  REGISTER vComplex result_12;
+  REGISTER Simd result_10;
+  REGISTER Simd result_11;
+  REGISTER Simd result_12;
 
-  REGISTER vComplex result_20;
-  REGISTER vComplex result_21;
-  REGISTER vComplex result_22;
+  REGISTER Simd result_20;
+  REGISTER Simd result_21;
+  REGISTER Simd result_22;
 
-  REGISTER vComplex result_30;
-  REGISTER vComplex result_31;
-  REGISTER vComplex result_32; // 20 left
+  REGISTER Simd result_30;
+  REGISTER Simd result_31;
+  REGISTER Simd result_32; // 20 left
 
-  REGISTER vComplex Chi_00;    // two spinor; 6 regs
-  REGISTER vComplex Chi_01;
-  REGISTER vComplex Chi_02;
+  REGISTER Simd Chi_00;    // two spinor; 6 regs
+  REGISTER Simd Chi_01;
+  REGISTER Simd Chi_02;
 
-  REGISTER vComplex Chi_10;
-  REGISTER vComplex Chi_11;
-  REGISTER vComplex Chi_12;   // 14 left
+  REGISTER Simd Chi_10;
+  REGISTER Simd Chi_11;
+  REGISTER Simd Chi_12;   // 14 left
 
-  REGISTER vComplex UChi_00;  // two spinor; 6 regs
-  REGISTER vComplex UChi_01;
-  REGISTER vComplex UChi_02;
+  REGISTER Simd UChi_00;  // two spinor; 6 regs
+  REGISTER Simd UChi_01;
+  REGISTER Simd UChi_02;
 
-  REGISTER vComplex UChi_10;
-  REGISTER vComplex UChi_11;
-  REGISTER vComplex UChi_12;  // 8 left
+  REGISTER Simd UChi_10;
+  REGISTER Simd UChi_11;
+  REGISTER Simd UChi_12;  // 8 left
 
-  REGISTER vComplex U_00;  // two rows of U matrix
-  REGISTER vComplex U_10;
-  REGISTER vComplex U_20;  
-  REGISTER vComplex U_01;
-  REGISTER vComplex U_11;
-  REGISTER vComplex U_21;  // 2 reg left.
+  REGISTER Simd U_00;  // two rows of U matrix
+  REGISTER Simd U_10;
+  REGISTER Simd U_20;  
+  REGISTER Simd U_01;
+  REGISTER Simd U_11;
+  REGISTER Simd U_21;  // 2 reg left.
 
 #define Chimu_00 Chi_00
 #define Chimu_01 Chi_01
@@ -752,7 +744,7 @@ void DiracOptHandDhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
   TP_RECON_ACCUM;
 
   {
-    vSpinColourVector & ref (out._odata[ss]);
+    SiteSpinor & ref (out._odata[ss]);
     vstream(ref()(0)(0),result_00*(-0.5));
     vstream(ref()(0)(1),result_01*(-0.5));
     vstream(ref()(0)(2),result_02*(-0.5));
@@ -767,4 +759,5 @@ void DiracOptHandDhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
     vstream(ref()(3)(2),result_32*(-0.5));
   }
 }
+#endif
 }}

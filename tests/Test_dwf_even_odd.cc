@@ -58,7 +58,7 @@ int main (int argc, char ** argv)
 
   RealD mass=0.1;
   RealD M5  =1.8;
-  DomainWallFermion Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
   LatticeFermion src_e (FrbGrid);
   LatticeFermion src_o (FrbGrid);
@@ -187,7 +187,7 @@ int main (int argc, char ** argv)
   RealD t1,t2;
 
 
-  SchurDiagMooeeOperator<DomainWallFermion,LatticeFermion> HermOpEO(Ddwf);
+  SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOpEO(Ddwf);
   HermOpEO.MpcDagMpc(chi_e,dchi_e,t1,t2);
   HermOpEO.MpcDagMpc(chi_o,dchi_o,t1,t2);
 

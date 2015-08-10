@@ -95,12 +95,13 @@ namespace Grid{
     ////////////////////////////////////////////////////////////////////////
     // Two flavour pseudofermion action for any dop
     ////////////////////////////////////////////////////////////////////////
-    template<class GaugeField,class MatrixField,class FermionField>
-      class TwoFlavourPseudoFermionAction : public Action<GaugeField> {
+    template<class Impl>
+    class TwoFlavourPseudoFermionAction : public Action<typename Impl::GaugeField> {
 
     private:
+#include <qcd/action/fermion/FermionImplTypedefs.h>
       
-      FermionOperator<FermionField,GaugeField> & FermOp;// the basic operator
+      FermionOperator<Impl> & FermOp;// the basic operator
 
       OperatorFunction<FermionField> &DerivativeSolver;
 
@@ -112,7 +113,7 @@ namespace Grid{
       /////////////////////////////////////////////////
       // Pass in required objects.
       /////////////////////////////////////////////////
-    TwoFlavourPseudoFermionAction(FermionOperator<FermionField,GaugeField>  &Op, 
+    TwoFlavourPseudoFermionAction(FermionOperator<Impl>  &Op, 
 				  OperatorFunction<FermionField> & DS,
 				  OperatorFunction<FermionField> & AS
 				  ) : FermOp(Op), DerivativeSolver(DS), ActionSolver(AS), Phi(Op.FermionGrid()) {
@@ -158,7 +159,7 @@ namespace Grid{
 	FermionField X(FermOp.FermionGrid());
 	FermionField Y(FermOp.FermionGrid());
 	
-	MdagMLinearOperator<FermionOperator<FermionField,GaugeField> ,FermionField> MdagMOp(FermOp);
+	MdagMLinearOperator<FermionOperator<Impl> ,FermionField> MdagMOp(FermOp);
 	X=zero;
 	ActionSolver(MdagMOp,Phi,X);
 	MdagMOp.Op(X,Y);
@@ -183,7 +184,7 @@ namespace Grid{
 	FermionField Y(FermOp.FermionGrid());
 	GaugeField   tmp(FermOp.GaugeGrid());
 
-	MdagMLinearOperator<FermionOperator<FermionField,GaugeField> ,FermionField> MdagMOp(FermOp);
+	MdagMLinearOperator<FermionOperator<Impl> ,FermionField> MdagMOp(FermOp);
 
 	X=zero;
 	DerivativeSolver(MdagMOp,Phi,X);

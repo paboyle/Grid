@@ -38,7 +38,7 @@ int main (int argc, char ** argv)
   // Unmodified matrix element
   ////////////////////////////////////
   RealD mass=-4.0; //kills the diagonal term
-  WilsonFermion Dw     (U,     Grid,RBGrid,mass);
+  WilsonFermionR Dw     (U,     Grid,RBGrid,mass);
   Dw.M   (phi,Mphi);
 
   ComplexD S    = innerProduct(Mphi,Mphi); // pdag MdagM p
@@ -88,7 +88,7 @@ int main (int argc, char ** argv)
   }
 
   std::cout << GridLogMessage <<"Initial mom hamiltonian is "<< Hmom <<std::endl;
-  Dw.DoubleStore(Dw.Umu,Uprime);
+  Dw.ImportGauge(Uprime);
   Dw.M          (phi,MphiPrime);
 
   ComplexD Sprime    = innerProduct(MphiPrime   ,MphiPrime);

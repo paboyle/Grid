@@ -62,7 +62,7 @@ int main (int argc, char ** argv)
 
   RealD mass=0.1;
 
-  WilsonFermion Dw(Umu,Grid,RBGrid,mass);
+  WilsonFermionR Dw(Umu,Grid,RBGrid,mass);
 
   LatticeFermion src_e   (&RBGrid);
   LatticeFermion src_o   (&RBGrid);
@@ -179,7 +179,7 @@ int main (int argc, char ** argv)
   pickCheckerboard(Odd ,phi_o,phi);
   RealD t1,t2;
 
-  SchurDiagMooeeOperator<WilsonFermion,LatticeFermion> HermOpEO(Dw);
+  SchurDiagMooeeOperator<WilsonFermionR,LatticeFermion> HermOpEO(Dw);
   HermOpEO.MpcDagMpc(chi_e,dchi_e,t1,t2);
   HermOpEO.MpcDagMpc(chi_o,dchi_o,t1,t2);
 

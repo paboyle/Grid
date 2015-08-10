@@ -87,7 +87,7 @@ int main (int argc, char ** argv)
   }
   ref = -0.5*ref;
   RealD mass=0.1;
-  WilsonFermion Dw(Umu,Grid,RBGrid,mass);
+  WilsonFermionR Dw(Umu,Grid,RBGrid,mass);
   
   std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
   int ncall=10000;

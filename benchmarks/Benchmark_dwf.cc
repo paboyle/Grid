@@ -79,7 +79,7 @@ int main (int argc, char ** argv)
 
   RealD mass=0.1;
   RealD M5  =1.8;
-  DomainWallFermion Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   
   std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
   int ncall=10;
