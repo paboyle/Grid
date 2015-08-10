@@ -43,9 +43,9 @@ int main (int argc, char ** argv)
   
   RealD mass=0.1;
   RealD M5=1.8;
-  DomainWallFermion Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
-  MdagMLinearOperator<DomainWallFermion,LatticeFermion> HermOp(Ddwf);
+  MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
   CG(HermOp,src,result);
 

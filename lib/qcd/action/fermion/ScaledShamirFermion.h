@@ -7,12 +7,15 @@ namespace Grid {
 
   namespace QCD {
 
-    class ScaledShamirFermion : public MobiusFermion
+    template<class Impl>
+    class ScaledShamirFermion : public MobiusFermion<Impl>
     {
+    public:
+#include <qcd/action/fermion/FermionImplTypedefs.h>
     public:
 
       // Constructors
-    ScaledShamirFermion(LatticeGaugeField &_Umu,
+    ScaledShamirFermion(GaugeField &_Umu,
 			GridCartesian         &FiveDimGrid,
 			GridRedBlackCartesian &FiveDimRedBlackGrid,
 			GridCartesian         &FourDimGrid,
@@ -21,7 +24,7 @@ namespace Grid {
 			RealD scale) :
       
       // b+c=scale, b-c = 1 <=> 2b = scale+1; 2c = scale-1
-      MobiusFermion(_Umu,
+      MobiusFermion<Impl>(_Umu,
 		    FiveDimGrid,
 		    FiveDimRedBlackGrid,
 		    FourDimGrid,

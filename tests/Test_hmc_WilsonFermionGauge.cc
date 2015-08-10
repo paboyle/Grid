@@ -25,13 +25,12 @@ int main (int argc, char ** argv)
   WilsonGaugeAction<LatticeLorentzColourMatrix, LatticeColourMatrix> Waction(5.6);
 
   Real mass=-0.77;
-  WilsonFermion FermOp(U,Fine,RBFine,mass);
+  WilsonFermionR FermOp(U,Fine,RBFine,mass);
   
   ConjugateGradient<LatticeFermion>  CG(1.0e-8,10000);
   ConjugateGradient<LatticeFermion>  CGmd(1.0e-6,10000);
   
-  TwoFlavourPseudoFermionAction<LatticeLorentzColourMatrix, LatticeColourMatrix,LatticeFermion> 
-    WilsonNf2(FermOp,CG,CG);
+  TwoFlavourPseudoFermionAction<WilsonImplR> WilsonNf2(FermOp,CG,CG);
   
   //Collect actions
   ActionLevel Level1;

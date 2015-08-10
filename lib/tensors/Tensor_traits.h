@@ -202,7 +202,6 @@ namespace Grid {
     static const bool value = true;
   };
 
-
 }
 
 #endif

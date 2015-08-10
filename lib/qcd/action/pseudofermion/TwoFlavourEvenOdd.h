@@ -4,13 +4,18 @@
 namespace Grid{
   namespace QCD{
 
-    template<class Matrix,class FermionField>
-      class SchurDifferentiableOperator :  public SchurDiagMooeeOperator<Matrix,FermionField> 
+    template<class Impl>
+    class SchurDifferentiableOperator :  public SchurDiagMooeeOperator<FermionOperator<Impl>,typename Impl::FermionField> 
       {
+      public:
+#include <qcd/action/fermion/FermionImplTypedefs.h>
+	
     public:
+	typedef FermionOperator<Impl> Matrix;
+
 	SchurDifferentiableOperator (Matrix &Mat) : SchurDiagMooeeOperator<Matrix,FermionField>(Mat) {};
 
-	void MpcDeriv(LatticeGaugeField &Force,const FermionField &U,const FermionField &V) {
+	void MpcDeriv(GaugeField &Force,const FermionField &U,const FermionField &V) {
 	
 	  GridBase *fgrid   = this->_Mat.FermionGrid();
 	  GridBase *fcbgrid = this->_Mat.FermionRedBlackGrid();
@@ -28,8 +33,8 @@ namespace Grid{
 	  assert(U.checkerboard==Odd);
 	  assert(V.checkerboard==V.checkerboard);
 
-	  LatticeGaugeField ForceO(ucbgrid);
-	  LatticeGaugeField ForceE(ucbgrid);
+	  GaugeField ForceO(ucbgrid);
+	  GaugeField ForceE(ucbgrid);
 
 	  //  X^dag Der_oe MeeInv Meo Y
 	  // Use Mooee as nontrivial but gauge field indept
@@ -48,7 +53,7 @@ namespace Grid{
 	}
 
 
-	void MpcDagDeriv(LatticeGaugeField &Force,const FermionField &U,const FermionField &V) {
+	void MpcDagDeriv(GaugeField &Force,const FermionField &U,const FermionField &V) {
 	
 	  GridBase *fgrid   = this->_Mat.FermionGrid();
 	  GridBase *fcbgrid = this->_Mat.FermionRedBlackGrid();
@@ -66,8 +71,8 @@ namespace Grid{
 	  assert(V.checkerboard==Odd);
 	  assert(V.checkerboard==V.checkerboard);
 
-	  LatticeGaugeField ForceO(ucbgrid);
-	  LatticeGaugeField ForceE(ucbgrid);
+	  GaugeField ForceO(ucbgrid);
+	  GaugeField ForceE(ucbgrid);
 
 	  //  X^dag Der_oe MeeInv Meo Y
 	  // Use Mooee as nontrivial but gauge field indept
@@ -91,12 +96,15 @@ namespace Grid{
     ////////////////////////////////////////////////////////////////////////
     // Two flavour pseudofermion action for any EO prec dop
     ////////////////////////////////////////////////////////////////////////
-    template<class GaugeField,class MatrixField,class FermionField>
-      class TwoFlavourEvenOddPseudoFermionAction : public Action<GaugeField> {
+    template<class Impl>
+    class TwoFlavourEvenOddPseudoFermionAction : public Action<typename Impl::GaugeField> {
+
+    public:
+#include <qcd/action/fermion/FermionImplTypedefs.h>
 
     private:
       
-      FermionOperator<FermionField,GaugeField> & FermOp;// the basic operator
+      FermionOperator<Impl> & FermOp;// the basic operator
 
       OperatorFunction<FermionField> &DerivativeSolver;
 
@@ -109,7 +117,7 @@ namespace Grid{
       /////////////////////////////////////////////////
       // Pass in required objects.
       /////////////////////////////////////////////////
-      TwoFlavourEvenOddPseudoFermionAction(FermionOperator<FermionField,GaugeField>  &Op, 
+      TwoFlavourEvenOddPseudoFermionAction(FermionOperator<Impl>  &Op, 
 					 OperatorFunction<FermionField> & DS,
 					 OperatorFunction<FermionField> & AS
 					   ) : 
@@ -140,7 +148,7 @@ namespace Grid{
 	pickCheckerboard(Even,etaEven,eta);
 	pickCheckerboard(Odd,etaOdd,eta);
 
-	SchurDifferentiableOperator<FermionOperator<FermionField,GaugeField>,FermionField> PCop(FermOp);
+	SchurDifferentiableOperator<Impl> PCop(FermOp);
 	
 	FermOp.ImportGauge(U);
 
@@ -163,7 +171,7 @@ namespace Grid{
 	FermionField X(FermOp.FermionRedBlackGrid());
 	FermionField Y(FermOp.FermionRedBlackGrid());
 	
-	SchurDifferentiableOperator<FermionOperator<FermionField,GaugeField>,FermionField> PCop(FermOp);
+	SchurDifferentiableOperator<Impl> PCop(FermOp);
 
 	X=zero;
 	ActionSolver(PCop,PhiOdd,X);
@@ -195,7 +203,7 @@ namespace Grid{
 	FermionField Y(FermOp.FermionRedBlackGrid());
 	GaugeField tmp(FermOp.GaugeGrid());
 
-	SchurDifferentiableOperator<FermionOperator<FermionField,GaugeField>,FermionField> PCop(FermOp);
+	SchurDifferentiableOperator<Impl> PCop(FermOp);
 
 	X=zero;
 	DerivativeSolver(PCop,PhiOdd,X);

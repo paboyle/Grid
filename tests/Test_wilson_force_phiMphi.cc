@@ -39,7 +39,7 @@ int main (int argc, char ** argv)
   // Unmodified matrix element
   ////////////////////////////////////
   RealD mass=-4.0; //kills the diagonal term
-  WilsonFermion Dw     (U,     Grid,RBGrid,mass);
+  WilsonFermionR Dw     (U,     Grid,RBGrid,mass);
   Dw.M(phi,Mphi);
 
   ComplexD S = innerProduct(phi,Mphi);
