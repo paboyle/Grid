@@ -42,7 +42,7 @@ int main (int argc, char ** argv)
   }
   
   RealD mass=0.5;
-  WilsonFermion Dw(Umu,Grid,RBGrid,mass);
+  WilsonFermionR Dw(Umu,Grid,RBGrid,mass);
 
   //  HermitianOperator<WilsonFermion,LatticeFermion> HermOp(Dw);
   //  ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
@@ -53,7 +53,7 @@ int main (int argc, char ** argv)
   pickCheckerboard(Odd,src_o,src);
   result_o=zero;
 
-  SchurDiagMooeeOperator<WilsonFermion,LatticeFermion> HermOpEO(Dw);
+  SchurDiagMooeeOperator<WilsonFermionR,LatticeFermion> HermOpEO(Dw);
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
   CG(HermOpEO,src_o,result_o);
 

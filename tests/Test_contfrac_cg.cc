@@ -75,21 +75,21 @@ int main (int argc, char ** argv)
 
 
   std::cout<<GridLogMessage <<"OverlapWilsonContFracTanhFermion  test"<<std::endl;
-  OverlapWilsonContFracTanhFermion Dcf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
-  TestCGinversions<OverlapWilsonContFracTanhFermion>(Dcf,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  OverlapWilsonContFracTanhFermionR Dcf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
+  TestCGinversions<OverlapWilsonContFracTanhFermionR>(Dcf,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   std::cout<<GridLogMessage <<"OverlapWilsonContFracZolotarevFermion  test"<<std::endl;
-  OverlapWilsonContFracZolotarevFermion Dcfz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,6.0);
-  TestCGinversions<OverlapWilsonContFracZolotarevFermion>(Dcfz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  OverlapWilsonContFracZolotarevFermionR Dcfz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,6.0);
+  TestCGinversions<OverlapWilsonContFracZolotarevFermionR>(Dcfz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
 
   std::cout<<GridLogMessage <<"OverlapWilsonPartialFractionTanhFermion  test"<<std::endl;
-  OverlapWilsonPartialFractionTanhFermion Dpf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
-  TestCGinversions<OverlapWilsonPartialFractionTanhFermion>(Dpf,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  OverlapWilsonPartialFractionTanhFermionR Dpf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
+  TestCGinversions<OverlapWilsonPartialFractionTanhFermionR>(Dpf,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   std::cout<<GridLogMessage <<"OverlapWilsonPartialFractionZolotarevFermion  test"<<std::endl;
-  OverlapWilsonPartialFractionZolotarevFermion Dpfz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,6.0);
-  TestCGinversions<OverlapWilsonPartialFractionZolotarevFermion>(Dpfz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  OverlapWilsonPartialFractionZolotarevFermionR Dpfz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,6.0);
+  TestCGinversions<OverlapWilsonPartialFractionZolotarevFermionR>(Dpfz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
 
   Grid_finalize();

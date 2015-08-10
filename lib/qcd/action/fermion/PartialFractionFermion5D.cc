@@ -2,12 +2,15 @@
 namespace Grid {
   namespace QCD {
 
-    void  PartialFractionFermion5D::Mdir (const LatticeFermion &psi, LatticeFermion &chi,int dir,int disp){
+
+    template<class Impl>
+    void  PartialFractionFermion5D<Impl>::Mdir (const FermionField &psi, FermionField &chi,int dir,int disp){
       // this does both dag and undag but is trivial; make a common helper routing
 
       int sign = 1;
+      int Ls = this->Ls;
 
-      DhopDir(psi,chi,dir,disp);
+      this->DhopDir(psi,chi,dir,disp);
 
       int nblock=(Ls-1)/2;
       for(int b=0;b<nblock;b++){
@@ -18,15 +21,16 @@ namespace Grid {
       ag5xpby_ssp(chi,p[nblock]*scale/amax,chi,0.0,chi,Ls-1,Ls-1);
 
     }
-    void   PartialFractionFermion5D::Meooe_internal(const LatticeFermion &psi, LatticeFermion &chi,int dag)
+    template<class Impl>
+    void   PartialFractionFermion5D<Impl>::Meooe_internal(const FermionField &psi, FermionField &chi,int dag)
     {
-      // this does both dag and undag but is trivial; make a common helper routing
+      int Ls = this->Ls;
       int sign = dag ? (-1) : 1;
 
       if ( psi.checkerboard == Odd ) {
-	DhopEO(psi,chi,DaggerNo);
+	this->DhopEO(psi,chi,DaggerNo);
       } else {
-	DhopOE(psi,chi,DaggerNo);
+	this->DhopOE(psi,chi,DaggerNo);
       }
 
       int nblock=(Ls-1)/2;
@@ -38,10 +42,12 @@ namespace Grid {
       ag5xpby_ssp(chi,p[nblock]*scale/amax,chi,0.0,chi,Ls-1,Ls-1);
     }
 
-    void   PartialFractionFermion5D::Mooee_internal(const LatticeFermion &psi, LatticeFermion &chi,int dag)
+    template<class Impl>
+    void   PartialFractionFermion5D<Impl>::Mooee_internal(const FermionField &psi, FermionField &chi,int dag)
     {
       // again dag and undag are trivially related
       int sign = dag ? (-1) : 1;
+      int Ls = this->Ls;
       
       int nblock=(Ls-1)/2;
       for(int b=0;b<nblock;b++){
@@ -69,11 +75,13 @@ namespace Grid {
       }
     }
 
-    void   PartialFractionFermion5D::MooeeInv_internal(const LatticeFermion &psi, LatticeFermion &chi,int dag)
+    template<class Impl>
+    void   PartialFractionFermion5D<Impl>::MooeeInv_internal(const FermionField &psi, FermionField &chi,int dag)
     {
       int sign = dag ? (-1) : 1;
+      int Ls = this->Ls;
 
-      LatticeFermion tmp(psi._grid);
+      FermionField tmp(psi._grid);
       
       ///////////////////////////////////////////////////////////////////////////////////////
       //Linv
@@ -129,10 +137,12 @@ namespace Grid {
       axpby_ssp  (chi, 1.0/scale,tmp,0.0,tmp,Ls-1,Ls-1);
     }
 
-    void   PartialFractionFermion5D::M_internal(const LatticeFermion &psi, LatticeFermion &chi,int dag)
+    template<class Impl>
+    void   PartialFractionFermion5D<Impl>::M_internal(const FermionField &psi, FermionField &chi,int dag)
     {
-      LatticeFermion D(psi._grid);
+      FermionField D(psi._grid);
   
+      int Ls = this->Ls;
       int sign = dag ? (-1) : 1;
 
       // For partial frac Hw case (b5=c5=1) chroma quirkily computes
@@ -186,7 +196,7 @@ namespace Grid {
       //           ( 0     -sqrt(p_i)*amax   |  2 R gamma_5 + p0/amax 2H
       //
 
-      DW(psi,D,DaggerNo); 
+      this->DW(psi,D,DaggerNo); 
 
       int nblock=(Ls-1)/2;
       for(int b=0;b<nblock;b++){
@@ -217,48 +227,59 @@ namespace Grid {
 
     }
 
-    RealD  PartialFractionFermion5D::M    (const LatticeFermion &in, LatticeFermion &out)
+    template<class Impl>
+    RealD  PartialFractionFermion5D<Impl>::M    (const FermionField &in, FermionField &out)
     {
       M_internal(in,out,DaggerNo);
       return norm2(out);
     }
-    RealD  PartialFractionFermion5D::Mdag (const LatticeFermion &in, LatticeFermion &out)
+    template<class Impl>
+    RealD  PartialFractionFermion5D<Impl>::Mdag (const FermionField &in, FermionField &out)
     {
       M_internal(in,out,DaggerYes);
       return norm2(out);
     }
 
-    void PartialFractionFermion5D::Meooe       (const LatticeFermion &in, LatticeFermion &out)
+    template<class Impl>
+    void PartialFractionFermion5D<Impl>::Meooe       (const FermionField &in, FermionField &out)
     {
       Meooe_internal(in,out,DaggerNo);
     }
-    void PartialFractionFermion5D::MeooeDag    (const LatticeFermion &in, LatticeFermion &out)
+    template<class Impl>
+    void PartialFractionFermion5D<Impl>::MeooeDag    (const FermionField &in, FermionField &out)
     {
       Meooe_internal(in,out,DaggerYes);
     }
-    void PartialFractionFermion5D::Mooee       (const LatticeFermion &in, LatticeFermion &out)
+    template<class Impl>
+    void PartialFractionFermion5D<Impl>::Mooee       (const FermionField &in, FermionField &out)
     {
       Mooee_internal(in,out,DaggerNo);
     }
-    void PartialFractionFermion5D::MooeeDag    (const LatticeFermion &in, LatticeFermion &out)
+    template<class Impl>
+    void PartialFractionFermion5D<Impl>::MooeeDag    (const FermionField &in, FermionField &out)
     {
       Mooee_internal(in,out,DaggerYes);
     }
 
-    void PartialFractionFermion5D::MooeeInv    (const LatticeFermion &in, LatticeFermion &out)
+    template<class Impl>
+    void PartialFractionFermion5D<Impl>::MooeeInv    (const FermionField &in, FermionField &out)
     {
       MooeeInv_internal(in,out,DaggerNo);
     }
-    void PartialFractionFermion5D::MooeeInvDag (const LatticeFermion &in, LatticeFermion &out)
+    template<class Impl>
+    void PartialFractionFermion5D<Impl>::MooeeInvDag (const FermionField &in, FermionField &out)
     {
       MooeeInv_internal(in,out,DaggerYes);
     }
 
 
   // force terms; five routines; default to Dhop on diagonal
-   void PartialFractionFermion5D::MDeriv  (LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag)
+    template<class Impl>
+   void PartialFractionFermion5D<Impl>::MDeriv  (GaugeField &mat,const FermionField &U,const FermionField &V,int dag)
   {
-    LatticeFermion D(V._grid);
+    int Ls = this->Ls;
+
+    FermionField D(V._grid);
 
     int nblock=(Ls-1)/2;
     for(int b=0;b<nblock;b++){
@@ -268,11 +289,14 @@ namespace Grid {
     }
     ag5xpby_ssp(D,p[nblock]*scale/amax,U,0.0,U,Ls-1,Ls-1);
 
-    DhopDeriv(mat,D,V,DaggerNo); 
+    this->DhopDeriv(mat,D,V,DaggerNo); 
   };
-   void PartialFractionFermion5D::MoeDeriv(LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag)
+    template<class Impl>
+   void PartialFractionFermion5D<Impl>::MoeDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag)
   {
-    LatticeFermion D(V._grid);
+    int Ls = this->Ls;
+
+    FermionField D(V._grid);
 
     int nblock=(Ls-1)/2;
     for(int b=0;b<nblock;b++){
@@ -282,11 +306,14 @@ namespace Grid {
     }
     ag5xpby_ssp(D,p[nblock]*scale/amax,U,0.0,U,Ls-1,Ls-1);
 
-    DhopDerivOE(mat,D,V,DaggerNo); 
+    this->DhopDerivOE(mat,D,V,DaggerNo); 
   };
-   void PartialFractionFermion5D::MeoDeriv(LatticeGaugeField &mat,const LatticeFermion &U,const LatticeFermion &V,int dag)
+    template<class Impl>
+   void PartialFractionFermion5D<Impl>::MeoDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag)
   {
-    LatticeFermion D(V._grid);
+    int Ls = this->Ls;
+
+    FermionField D(V._grid);
 
     int nblock=(Ls-1)/2;
     for(int b=0;b<nblock;b++){
@@ -296,13 +323,15 @@ namespace Grid {
     }
     ag5xpby_ssp(D,p[nblock]*scale/amax,U,0.0,U,Ls-1,Ls-1);
 
-    DhopDerivEO(mat,D,V,DaggerNo); 
+    this->DhopDerivEO(mat,D,V,DaggerNo); 
   };
 
-    void  PartialFractionFermion5D::SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD scale){
+    template<class Impl>
+    void  PartialFractionFermion5D<Impl>::SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD scale){
       SetCoefficientsZolotarev(1.0/scale,zdata);
     }
-    void  PartialFractionFermion5D::SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata){
+    template<class Impl>
+    void  PartialFractionFermion5D<Impl>::SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata){
 
       // check on degree matching
       //      std::cout<<GridLogMessage << Ls << " Ls"<<std::endl;
@@ -311,12 +340,14 @@ namespace Grid {
       //      std::cout<<GridLogMessage << zdata->db << " -db"<<std::endl;
       //      std::cout<<GridLogMessage << zdata->dn << " -dn"<<std::endl;
       //      std::cout<<GridLogMessage << zdata->dd << " -dd"<<std::endl;
+      int Ls = this->Ls;
+
       assert(Ls == (2*zdata->da -1) );
 
       // Part frac
       //      RealD R;
       R=(1+mass)/(1-mass);
-      dw_diag = (4.0-M5);
+      dw_diag = (4.0-this->M5);
 
       //      std::vector<RealD> p; 
       //      std::vector<RealD> q;
@@ -336,18 +367,21 @@ namespace Grid {
     }
 
       // Constructors
-    PartialFractionFermion5D::PartialFractionFermion5D(LatticeGaugeField &_Umu,
+    template<class Impl>
+    PartialFractionFermion5D<Impl>::PartialFractionFermion5D(GaugeField &_Umu,
 						       GridCartesian         &FiveDimGrid,
 						       GridRedBlackCartesian &FiveDimRedBlackGrid,
 						       GridCartesian         &FourDimGrid,
 						       GridRedBlackCartesian &FourDimRedBlackGrid,
 						       RealD _mass,RealD M5) :
-      WilsonFermion5D(_Umu,
+      WilsonFermion5D<Impl>(_Umu,
 		      FiveDimGrid, FiveDimRedBlackGrid,
 		      FourDimGrid, FourDimRedBlackGrid,M5),
       mass(_mass)
 
     {
+      int Ls = this->Ls;
+
       assert((Ls&0x1)==1); // Odd Ls required
       int nrational=Ls-1;
 
@@ -366,6 +400,8 @@ namespace Grid {
 
     }
  
+    FermOpTemplateInstantiate(PartialFractionFermion5D);
+
  }
 }
 

@@ -42,7 +42,7 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   RealD mass=0.01; 
   RealD M5=1.8; 
-  DomainWallFermion Ddwf(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionR Ddwf(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   Ddwf.M   (phi,Mphi);
 
   ComplexD S    = innerProduct(Mphi,Mphi); // pdag MdagM p

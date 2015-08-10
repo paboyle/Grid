@@ -52,19 +52,19 @@ int main (int argc, char ** argv)
   
   RealD mass=0.5;
   RealD M5=1.8;
-  DomainWallFermion Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
   std::cout<<GridLogMessage<<"* Solving with MdagM VPGCR "<<std::endl;
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
-  MdagMLinearOperator<DomainWallFermion,LatticeFermion> HermOp(Ddwf);
+  MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
   result=zero;
   PGCR(HermOp,src,result);
 
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
   std::cout<<GridLogMessage<<"* Solving with g5-VPGCR "<<std::endl;
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
-  Gamma5R5HermitianLinearOperator<DomainWallFermion,LatticeFermion> g5HermOp(Ddwf);
+  Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> g5HermOp(Ddwf);
   result=zero;
   PGCR(g5HermOp,src,result);
 

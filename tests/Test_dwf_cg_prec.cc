@@ -45,14 +45,14 @@ int main (int argc, char ** argv)
   
   RealD mass=0.1;
   RealD M5=1.8;
-  DomainWallFermion Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
   LatticeFermion    src_o(FrbGrid);
   LatticeFermion result_o(FrbGrid);
   pickCheckerboard(Odd,src_o,src);
   result_o=zero;
 
-  SchurDiagMooeeOperator<DomainWallFermion,LatticeFermion> HermOpEO(Ddwf);
+  SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOpEO(Ddwf);
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
   CG(HermOpEO,src_o,result_o);
 

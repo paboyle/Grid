@@ -401,7 +401,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Building g5R5 hermitian DWF operator" <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  DomainWallFermion Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
   const int nbasis = 32;
   //  const int nbasis = 4;
@@ -413,7 +413,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Calling Aggregation class to build subspace" <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  MdagMLinearOperator<DomainWallFermion,LatticeFermion> HermDefOp(Ddwf);
+  MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermDefOp(Ddwf);
   Subspace Aggregates(Coarse5d,FGrid);
   //  Aggregates.CreateSubspace(RNG5,HermDefOp,nbasis);
   assert ( (nbasis & 0x1)==0);
@@ -437,7 +437,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Building coarse representation of Indef operator" <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  Gamma5R5HermitianLinearOperator<DomainWallFermion,LatticeFermion> HermIndefOp(Ddwf);
+  Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> HermIndefOp(Ddwf);
   CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LDOp(*Coarse5d);
   LDOp.CoarsenOperator(FGrid,HermIndefOp,Aggregates);
 
@@ -467,7 +467,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Building deflation preconditioner "<< std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
 
-  MultiGridPreconditioner <vSpinColourVector,vTComplex,nbasis,DomainWallFermion> Precon(Aggregates, LDOp,HermIndefOp,Ddwf);
+  MultiGridPreconditioner <vSpinColourVector,vTComplex,nbasis,DomainWallFermionR> Precon(Aggregates, LDOp,HermIndefOp,Ddwf);
   TrivialPrecon<LatticeFermion> simple;
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
@@ -506,7 +506,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Red Black Prec CG "<< std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  SchurDiagMooeeOperator<DomainWallFermion,LatticeFermion> HermOpEO(Ddwf);
+  SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOpEO(Ddwf);
   ConjugateGradient<LatticeFermion> pCG(1.0e-8,10000);
 
   LatticeFermion    src_o(FrbGrid);
