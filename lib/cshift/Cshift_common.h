@@ -8,7 +8,7 @@ class SimpleCompressor {
 public:
   void Point(int) {};
 
-  vobj operator() (const vobj &arg) {
+  vobj operator() (const vobj &arg,int dimension,int plane,int osite,GridBase *grid) {
     return arg;
   }
 };
@@ -24,7 +24,7 @@ Gather_plane_simple (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<
   if ( !rhs._grid->CheckerBoarded(dimension) ) {
     cbmask = 0x3;
   }
-
+  
   int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
   
   int e1=rhs._grid->_slice_nblock[dimension];
@@ -36,7 +36,7 @@ PARALLEL_NESTED_LOOP2
       int bo = n*rhs._grid->_slice_block[dimension];
       int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
       if ( ocb &cbmask ) {
-	buffer[bo+b]=compress(rhs._odata[so+o+b]);
+	buffer[bo+b]=compress(rhs._odata[so+o+b],dimension,plane,so+o+b,rhs._grid);
       }
     }
   }
@@ -69,7 +69,7 @@ PARALLEL_NESTED_LOOP2
       int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
       if ( ocb & cbmask ) {
 	cobj temp; 
-	temp =compress(rhs._odata[so+o+b]);
+	temp =compress(rhs._odata[so+o+b],dimension,plane,so+o+b,rhs._grid);
 	extract<cobj>(temp,pointers,offset);
       }
     }

@@ -19,7 +19,7 @@ namespace QCD {
       mu=p;
     };
 
-    virtual SiteHalfSpinor operator () (const SiteSpinor &in) {
+    virtual SiteHalfSpinor operator () (const SiteSpinor &in,int dim,int plane,int osite,GridBase *grid) {
       return spinproject(in);
     }
 
@@ -67,13 +67,50 @@ namespace QCD {
   template<class SiteHalfSpinor,class SiteSpinor>
     class GparityWilsonCompressor : public WilsonCompressor<SiteHalfSpinor,SiteSpinor>{
   public:
-
     GparityWilsonCompressor(int _dag) : WilsonCompressor<SiteHalfSpinor,SiteSpinor> (_dag){};
 
-    SiteHalfSpinor operator () (const SiteSpinor &in)
+    SiteHalfSpinor operator () (const SiteSpinor &in,int dim,int plane,int osite,GridBase *grid)
     {
-      SiteHalfSpinor tmp = spinproject(in);
-      if( 0 ) tmp = flavourflip(tmp);
+      std::vector<int> Gbcs({1,0,0,0});
+
+      typedef typename SiteHalfSpinor::scalar_object scalar_object;
+
+      const int Nsimd = grid->Nsimd();
+
+      int ocb=grid->CheckerBoardFromOindex(osite);
+
+      SiteHalfSpinor tmp = spinproject(in); // spin projected
+
+      //////////////////////////////////////////////////////////////
+      // Check whether we must flavour flip
+      // do this if source is plane 0 on processor 0 in dimension dim
+      //////////////////////////////////////////////////////////////
+      if ( (this->mu==Xp)||(this->mu==Yp)||(this->mu==Zp)||(this->mu==Tp) ) {      
+
+	if ( Gbcs[this->mu] && (grid->_processor_coor[dim] == 0) && (plane==0) && (ocb==0) ) {
+
+	  std::vector<scalar_object>  flat(Nsimd);
+
+	  extract(tmp,flat);
+
+	  for(int i=0;i<Nsimd;i++) {
+	    std::vector<int> coor;
+
+	    grid->iCoorFromIindex(coor,i);
+
+	    if ( coor[dim]==0 ) {
+	      scalar_object stmp;
+	      stmp(0) = flat[i](1);
+	      stmp(1) = flat[i](0);
+	      flat[i] = stmp;
+	    }
+	  }
+
+	  merge(tmp,flat);
+
+	} // coor & bc guard
+      } // shift guard
+
       return tmp;
     }
 
