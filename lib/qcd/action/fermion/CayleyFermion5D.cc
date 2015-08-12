@@ -158,12 +158,14 @@ namespace QCD {
  template<class Impl>
   void CayleyFermion5D<Impl>::Meooe       (const FermionField &psi, FermionField &chi)
   {
+    int Ls=this->Ls;
+
     FermionField tmp(psi._grid);
     // Assemble the 5d matrix
     Meooe5D(psi,tmp); 
-    std::cout << "Meooe Test replacement norm2 tmp = " <<norm2(tmp)<<std::endl;
 
-    int Ls=this->Ls;
+#if 0
+    std::cout << "Meooe Test replacement norm2 tmp = " <<norm2(tmp)<<std::endl;
     for(int s=0;s<Ls;s++){
       if ( s==0 ) {
 	//	tmp = bs psi[s] + cs[s] psi[s+1}
@@ -179,6 +181,8 @@ namespace QCD {
       }
     }
     std::cout << "Meooe Test replacement norm2 tmp old = " <<norm2(tmp)<<std::endl;
+#endif
+
     // Apply 4d dslash
     if ( psi.checkerboard == Odd ) {
       this->DhopEO(tmp,chi,DaggerNo);
@@ -199,8 +203,8 @@ namespace QCD {
     }
 
     Meooe5D(tmp,chi); 
+#if 0
     std::cout << "Meooe Test replacement norm2 chi new = " <<norm2(chi)<<std::endl;
-
     // Assemble the 5d matrix
     int Ls=this->Ls;
     for(int s=0;s<Ls;s++){
@@ -216,6 +220,7 @@ namespace QCD {
       }
     }
     std::cout << "Meooe Test replacement norm2 chi old = " <<norm2(chi)<<std::endl;
+#endif
 
   }
 

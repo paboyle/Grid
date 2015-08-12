@@ -79,5 +79,8 @@ CXX=clang++ ../../configure --enable-simd=AVX CXXFLAGS="-mavx -O3 -I/opt/local/i
 clang-avx2-mpi)
 CXX=clang++ ../../configure --enable-simd=AVX2 CXXFLAGS="-mavx2 -mfma -O3 -I/opt/local/include/openmpi-mp/ -std=c++11" LDFLAGS=-L/opt/local/lib/openmpi-mp/ LIBS="-lmpi -lmpi_cxx -lgmp -lmpfr" --enable-comms=mpi
 ;;
+clang-avx2)
+CXX=clang++ ../../configure --enable-simd=AVX2 CXXFLAGS="-mavx2 -mfma -O3 -std=c++11" LDFLAGS="-L/usr/local/lib/" LIBS="-lgmp -lmpfr" --enable-comms=none
+;;
 esac
 echo -e $NORMAL
