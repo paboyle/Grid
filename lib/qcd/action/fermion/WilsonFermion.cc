@@ -117,7 +117,6 @@ namespace QCD {
     
     Compressor compressor(dag);
     
-    GaugeLinkField tmp(B._grid);
     FermionField Btilde(B._grid);
     
     st.HaloExchange<SiteSpinor,SiteHalfSpinor,Compressor>(B,comm_buf,compressor);
@@ -141,9 +140,8 @@ PARALLEL_FOR_LOOP
       //////////////////////////////////////////////////
       // spin trace outer product
       //////////////////////////////////////////////////
-      tmp = TraceIndex<SpinIndex>(outerProduct(Btilde,A)); 
-      PokeIndex<LorentzIndex>(mat,tmp,mu);
-      
+      Impl::InsertForce(mat,Btilde,A,mu);
+
     }
   }
   

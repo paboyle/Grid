@@ -14,6 +14,7 @@ namespace Grid {
        auto PeekIndex(const Lattice<vobj> &lhs,int i) -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i))>
     {
       Lattice<decltype(peekIndex<Index>(lhs._odata[0],i))> ret(lhs._grid);
+      ret.checkerboard=lhs.checkerboard;
 PARALLEL_FOR_LOOP
         for(int ss=0;ss<lhs._grid->oSites();ss++){
 	  ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i);
@@ -24,6 +25,7 @@ PARALLEL_FOR_LOOP
        auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))>
     {
       Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))> ret(lhs._grid);
+      ret.checkerboard=lhs.checkerboard;
 PARALLEL_FOR_LOOP
         for(int ss=0;ss<lhs._grid->oSites();ss++){
 	  ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i,j);

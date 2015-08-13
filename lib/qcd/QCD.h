@@ -36,7 +36,7 @@ namespace QCD {
     template<typename T> struct isSpinor {
       static const bool value = (SpinorIndex==T::TensorLevel);
     };
-    template <typename T> using IfSpinor    = Invoke<std::enable_if<isSpinor<T>::value,int> > ;
+    template <typename T> using IfSpinor    = Invoke<std::enable_if< isSpinor<T>::value,int> > ;
     template <typename T> using IfNotSpinor = Invoke<std::enable_if<!isSpinor<T>::value,int> > ;
 
     // ChrisK very keen to add extra space for Gparity doubling.
