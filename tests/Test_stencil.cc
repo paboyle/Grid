@@ -56,17 +56,17 @@ int main (int argc, char ** argv)
 
 	// Implement a stencil code that should agree with cshift!
 	for(int i=0;i<Check._grid->oSites();i++){
-
-	  int offset = myStencil._offsets [0][i];
-	  int  local = myStencil._is_local[0][i];
-	  int permute_type = myStencil._permute_type[0];
-	  int perm =myStencil._permute[0][i];
-	  if ( local && perm )
-	    permute(Check._odata[i],Foo._odata[offset],permute_type);
-	  else if (local)
-	    Check._odata[i] = Foo._odata[offset];
+	  
+	  int permute_type;
+	  StencilEntry *SE;
+	  SE = myStencil.GetEntry(permute_type,0,i);
+	  
+	  if ( SE->_is_local && SE->_permute )
+	    permute(Check._odata[i],Foo._odata[SE->_offset],permute_type);
+	  else if (SE->_is_local)
+	    Check._odata[i] = Foo._odata[SE->_offset];
 	  else 
-	    Check._odata[i] = comm_buf[offset];
+	    Check._odata[i] = comm_buf[SE->_offset];
 	}
 
 	Real nrmC = norm2(Check);

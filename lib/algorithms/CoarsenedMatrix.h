@@ -193,20 +193,18 @@ PARALLEL_FOR_LOOP
       for(int ss=0;ss<Grid()->oSites();ss++){
         siteVector res = zero;
 	siteVector nbr;
-	int offset,local,perm,ptype;
-
+	int ptype;
+	StencilEntry *SE;
 	for(int point=0;point<geom.npoint;point++){
-	  offset = Stencil._offsets [point][ss];
-	  local  = Stencil._is_local[point][ss];
-	  perm   = Stencil._permute [point][ss];
-	  ptype  = Stencil._permute_type[point];
+
+	  SE=Stencil.GetEntry(ptype,point,ss);
 	  
-	  if(local&&perm) { 
-	    permute(nbr,in._odata[offset],ptype);
-	  } else if(local) { 
-	    nbr = in._odata[offset];
+	  if(SE->_is_local&&SE->_permute) { 
+	    permute(nbr,in._odata[SE->_offset],ptype);
+	  } else if(SE->_is_local) { 
+	    nbr = in._odata[SE->_offset];
 	  } else {
-	    nbr = comm_buf[offset];
+	    nbr = comm_buf[SE->_offset];
 	  }
 	  res = res + A[point]._odata[ss]*nbr;
 	}

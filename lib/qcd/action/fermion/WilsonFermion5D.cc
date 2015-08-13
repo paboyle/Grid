@@ -137,7 +137,6 @@ void WilsonFermion5D<Impl>::DerivInternal(CartesianStencil & st,
     ////////////////////////
     // Call the single hop
     ////////////////////////
-    tmp = zero;
 
 PARALLEL_FOR_LOOP
     for(int sss=0;sss<U._grid->oSites();sss++){
@@ -154,14 +153,18 @@ PARALLEL_FOR_LOOP
     // spin trace outer product
     ////////////////////////////
 
-	tmp[sU] = tmp[sU]+ traceIndex<SpinIndex>(
-		   outerProduct(Btilde[sF],Atilde[sF])); // ordering here
-
       }
 
     }
 
+    Impl::InsertForce(mat,Btilde,A,mu);
+    /*
+    tmp = zero;
+    for(int sss=0;sss<U._grid->oSites();sss++){
+      tmp[sU] = tmp[sU]+ traceIndex<SpinIndex>(outerProduct(Btilde[sF],Atilde[sF])); // ordering here
+    }
     PokeIndex<LorentzIndex>(mat,tmp,mu);
+    */
 
   }
 }

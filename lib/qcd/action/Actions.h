@@ -46,6 +46,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define FermOpTemplateInstantiate(A) \
+  template class A<GparityWilsonImplF>;		\
+  template class A<GparityWilsonImplD>;		\
   template class A<WilsonImplF>;		\
   template class A<WilsonImplD>;
 
@@ -131,6 +133,15 @@ typedef OverlapWilsonPartialFractionTanhFermion<WilsonImplD> OverlapWilsonPartia
 typedef OverlapWilsonPartialFractionZolotarevFermion<WilsonImplR> OverlapWilsonPartialFractionZolotarevFermionR;
 typedef OverlapWilsonPartialFractionZolotarevFermion<WilsonImplF> OverlapWilsonPartialFractionZolotarevFermionF;
 typedef OverlapWilsonPartialFractionZolotarevFermion<WilsonImplD> OverlapWilsonPartialFractionZolotarevFermionD;
+
+// Gparity cases; partial list until tested
+typedef WilsonFermion<GparityWilsonImplR>     GparityWilsonFermionR;
+typedef WilsonFermion<GparityWilsonImplF>     GparityWilsonFermionF;
+typedef WilsonFermion<GparityWilsonImplD>     GparityWilsonFermionD;
+typedef DomainWallFermion<GparityWilsonImplR> GparityDomainWallFermionR;
+typedef DomainWallFermion<GparityWilsonImplF> GparityDomainWallFermionF;
+typedef DomainWallFermion<GparityWilsonImplD> GparityDomainWallFermionD;
+
   }}
 ///////////////////////////////////////////////////////////////////////////////
 // G5 herm -- this has to live in QCD since dirac matrix is not in the broader sector of code

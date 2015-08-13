@@ -8,11 +8,7 @@ namespace Grid {
 				     int checkerboard,
 				     const std::vector<int> &directions,
 				     const std::vector<int> &distances) 
-    :   _offsets(npoints), 
-	_is_local(npoints), 
-	_comm_buf_size(npoints), 
-	_permute_type(npoints),
-	_permute(npoints)
+    :   _entries(npoints), _permute_type(npoints)
     {
       _npoints = npoints;
       _grid    = grid;
@@ -27,9 +23,7 @@ namespace Grid {
 
 	int point = i;
 
-	_offsets[i].resize( osites);
-	_is_local[i].resize(osites);
-	_permute[i].resize( osites);
+	_entries[i].resize( osites);
 
 	int dimension    = directions[i];
 	int displacement = distances[i];
@@ -76,7 +70,7 @@ namespace Grid {
     }
 
 
-    void CartesianStencil::Local     (int point, int dimension,int shift,int cbmask)
+    void CartesianStencil::Local     (int point, int dimension,int shiftpm,int cbmask)
     {
       int fd = _grid->_fdimensions[dimension];
       int rd = _grid->_rdimensions[dimension];
@@ -84,7 +78,7 @@ namespace Grid {
       int gd = _grid->_gdimensions[dimension];
       
       // Map to always positive shift modulo global full dimension.
-      shift = (shift+fd)%fd;
+      int shift = (shiftpm+fd)%fd;
       
       // the permute type
       int permute_dim =_grid->PermuteDim(dimension);
@@ -98,6 +92,15 @@ namespace Grid {
 	  
 	int sshift = _grid->CheckerBoardShiftForCB(_checkerboard,dimension,shift,cb);
 	int sx     = (x+sshift)%rd;
+
+	int wraparound=0;
+	if ( (shiftpm==-1) && (sx>x)  ) {
+	  wraparound = 1;
+	}
+	if ( (shiftpm== 1) && (sx<x)  ) {
+	  wraparound = 1;
+	}
+
 	  
 	int permute_slice=0;
 	if(permute_dim){
@@ -107,12 +110,12 @@ namespace Grid {
 	  else permute_slice = 1-wrap;
 	}
 
-  	CopyPlane(point,dimension,x,sx,cbmask,permute_slice);
+  	CopyPlane(point,dimension,x,sx,cbmask,permute_slice,wraparound);
   
       }
     }
 
-    void CartesianStencil::Comms     (int point,int dimension,int shift,int cbmask)
+    void CartesianStencil::Comms     (int point,int dimension,int shiftpm,int cbmask)
     {
       GridBase *grid=_grid;
       
@@ -125,7 +128,7 @@ namespace Grid {
       
       //      assert(simd_layout==1); // Why?
       assert(comm_dim==1);
-      shift = (shift + fd) %fd;
+      int shift = (shiftpm + fd) %fd;
       assert(shift>=0);
       assert(shift<fd);
       
@@ -143,10 +146,17 @@ namespace Grid {
 	//	int offnode     = (comm_proc!=0);
 	int sx          = (x+sshift)%rd;
 
+	int wraparound=0;
+	if ( (shiftpm==-1) && (sx>x) && (grid->_processor_coor[dimension]==0) ) {
+	  wraparound = 1;
+	}
+	if ( (shiftpm== 1) && (sx<x) && (grid->_processor_coor[dimension]==grid->_processors[dimension]-1) ) {
+	  wraparound = 1;
+	}
 	if (!offnode) {
 	  
 	  int permute_slice=0;
-	  CopyPlane(point,dimension,x,sx,cbmask,permute_slice); 
+	  CopyPlane(point,dimension,x,sx,cbmask,permute_slice,wraparound); 
 	  
 	} else {
 	  
@@ -161,13 +171,13 @@ namespace Grid {
 
 	  int unified_buffer_offset = _unified_buffer_size;
 	  _unified_buffer_size    += words;
-	  ScatterPlane(point,dimension,x,cbmask,unified_buffer_offset); // permute/extract/merge is done in comms phase
+	  ScatterPlane(point,dimension,x,cbmask,unified_buffer_offset,wraparound); // permute/extract/merge is done in comms phase
 	  
 	}
       }
     }
   // Routine builds up integer table for each site in _offsets, _is_local, _permute
-  void CartesianStencil::CopyPlane(int point, int dimension,int lplane,int rplane,int cbmask,int permute)
+  void CartesianStencil::CopyPlane(int point, int dimension,int lplane,int rplane,int cbmask,int permute,int wrap)
     {
       int rd = _grid->_rdimensions[dimension];
       
@@ -180,9 +190,10 @@ namespace Grid {
 	// Simple block stride gather of SIMD objects
 	for(int n=0;n<_grid->_slice_nblock[dimension];n++){
 	  for(int b=0;b<_grid->_slice_block[dimension];b++){
-	    _offsets [point][lo+o+b]=ro+o+b;
-	    _is_local[point][lo+o+b]=1;
-	    _permute [point][lo+o+b]=permute;
+	    _entries[point][lo+o+b]._offset  =ro+o+b;
+	    _entries[point][lo+o+b]._is_local=1;
+	    _entries[point][lo+o+b]._permute=permute;
+	    _entries[point][lo+o+b]._around_the_world=wrap;
 	  }
 	  o +=_grid->_slice_stride[dimension];
 	}
@@ -199,9 +210,10 @@ namespace Grid {
 	    int ocb=1<<_grid->CheckerBoardFromOindex(o+b);
 	    
 	    if ( ocb&cbmask ) {
-	      _offsets [point][lo+o+b]=ro+o+b;
-	      _is_local[point][lo+o+b]=1;
-	      _permute [point][lo+o+b]=permute;
+	      _entries[point][lo+o+b]._offset =ro+o+b;
+	      _entries[point][lo+o+b]._is_local=1;
+	      _entries[point][lo+o+b]._permute=permute;
+	      _entries[point][lo+o+b]._around_the_world=wrap;
 	    }
 	    
 	    }
@@ -211,7 +223,7 @@ namespace Grid {
       }
     }
   // Routine builds up integer table for each site in _offsets, _is_local, _permute
-    void CartesianStencil::ScatterPlane (int point,int dimension,int plane,int cbmask,int offset)
+   void CartesianStencil::ScatterPlane (int point,int dimension,int plane,int cbmask,int offset, int wrap)
     {
       int rd = _grid->_rdimensions[dimension];
       
@@ -224,9 +236,10 @@ namespace Grid {
 	// Simple block stride gather of SIMD objects
 	for(int n=0;n<_grid->_slice_nblock[dimension];n++){
 	  for(int b=0;b<_grid->_slice_block[dimension];b++){
-	    _offsets [point][so+o+b]=offset+(bo++);
-	    _is_local[point][so+o+b]=0;
-	    _permute [point][so+o+b]=0;
+	    _entries[point][so+o+b]._offset  =offset+(bo++);
+	    _entries[point][so+o+b]._is_local=0;
+	    _entries[point][so+o+b]._permute=0;
+	    _entries[point][so+o+b]._around_the_world=wrap;
 	  }
 	  o +=_grid->_slice_stride[dimension];
 	}
@@ -242,9 +255,10 @@ namespace Grid {
 
 	    int ocb=1<<_grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
 	    if ( ocb & cbmask ) {
-	      _offsets [point][so+o+b]=offset+(bo++);
-	      _is_local[point][so+o+b]=0;
-	      _permute [point][so+o+b]=0;
+	      _entries[point][so+o+b]._offset  =offset+(bo++);
+	      _entries[point][so+o+b]._is_local=0;
+	      _entries[point][so+o+b]._permute =0;
+	      _entries[point][so+o+b]._around_the_world=wrap;
 	    }
 	  }
 	  o +=_grid->_slice_stride[dimension];

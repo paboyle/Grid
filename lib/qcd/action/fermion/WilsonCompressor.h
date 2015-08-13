@@ -63,6 +63,7 @@ namespace QCD {
     }
   };
 
+  /*
 
   template<class SiteHalfSpinor,class SiteSpinor>
     class GparityWilsonCompressor : public WilsonCompressor<SiteHalfSpinor,SiteSpinor>{
@@ -77,55 +78,65 @@ namespace QCD {
 
       const int Nsimd = grid->Nsimd();
 
-      int ocb=grid->CheckerBoardFromOindex(osite);
+      int checkered=grid->CheckerBoarded(dim);
+      int       ocb=grid->CheckerBoardFromOindex(osite);
 
-      SiteHalfSpinor tmp = spinproject(in); // spin projected
+      SiteHalfSpinor tmp = this->spinproject(in); // spin projected
 
       //////////////////////////////////////////////////////////////
       // Check whether we must flavour flip
       // do this if source is plane 0 on processor 0 in dimension dim
       //////////////////////////////////////////////////////////////
-      if ( (this->mu==Xp)||(this->mu==Yp)||(this->mu==Zp)||(this->mu==Tp) ) {      
+      int do_flip  = 0;
+      int flipicoor= 0;
+      if(Gbcs[this->mu]){
 
-	if ( Gbcs[this->mu] && (grid->_processor_coor[dim] == 0) && (plane==0) && (ocb==0) ) {
+	std::cout << "Applying Gparity BC's in direction "<<this->mu<<std::endl;
 
-	  std::vector<scalar_object>  flat(Nsimd);
-
-	  extract(tmp,flat);
-
-	  for(int i=0;i<Nsimd;i++) {
-	    std::vector<int> coor;
-
-	    grid->iCoorFromIindex(coor,i);
-
-	    if ( coor[dim]==0 ) {
-	      scalar_object stmp;
-	      stmp(0) = flat[i](1);
-	      stmp(1) = flat[i](0);
-	      flat[i] = stmp;
-	    }
+	if ( (this->mu==Xp)||(this->mu==Yp)||(this->mu==Zp)||(this->mu==Tp) ) {      
+	  if ( (grid->_processor_coor[dim] == 0) 
+	       && (plane==0) 
+	       && ( (!checkered)||(ocb==0) ) ) {
+	    do_flip=1;
+	    flipicoor=0;
 	  }
+	}
+	if ( (this->mu==Xm)||(this->mu==Ym)||(this->mu==Zm)||(this->mu==Tm) ) {      
+	  if ( (grid->_processor_coor[dim] == (grid->_processors[dim]-1) ) 
+	    && (plane==grid->_rdimensions[dim]-1) 
+            && ( (!checkered)||(ocb==1) ) ) {
+	    do_flip=1;
+	    flipicoor=grid->_simd_layout[dim]-1;
+	  }
+	}
+      }
+      if ( do_flip ) {
 
-	  merge(tmp,flat);
+	std::cout << "Applying Gparity BC's in direction "<<this->mu<< " osite " << osite << " plane "<<plane <<std::endl;
 
-	} // coor & bc guard
-      } // shift guard
+	std::vector<scalar_object>  flat(Nsimd);
+	std::vector<int> coor;
+
+	extract(tmp,flat);
+	for(int i=0;i<Nsimd;i++) {
+	  grid->iCoorFromIindex(coor,i);
+	  if ( coor[dim]==flipicoor ) {
+	    scalar_object stmp;
+	    stmp(0) = flat[i](1);
+	    stmp(1) = flat[i](0);
+	    flat[i] = stmp;
+	  }
+	}
+	merge(tmp,flat);
+
+      }
 
       return tmp;
     }
 
-    SiteHalfSpinor flavourflip(const SiteHalfSpinor &in) {
-
-      SiteHalfSpinor ret;
-      for(int f=0;f<Ngp;f++){
-	ret(0) = in(1);
-	ret(1) = in(0);
-      }
-      return ret;
-    }
-
   };
 
+  */
 
 }} // namespace close
 #endif

@@ -41,6 +41,12 @@
 
 namespace Grid {
   
+  struct StencilEntry { 
+    int _offset;
+    int _is_local;
+    int _permute;
+    int _around_the_world;
+  };
 
   class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal fill in.
   public:
@@ -58,9 +64,9 @@ namespace Grid {
       std::vector<int>                  _permute_type;
 
       // npoints x Osites() of these
-      std::vector<std::vector<int>    > _offsets;
-      std::vector<std::vector<int>    > _is_local;
-      std::vector<std::vector<int> >    _permute;
+      std::vector<std::vector<StencilEntry> > _entries;
+
+      inline StencilEntry * GetEntry(int &ptype,int point,int osite) { ptype = _permute_type[point]; return & _entries[point][osite]; }
 
       int _unified_buffer_size;
       int _request_count;
@@ -77,8 +83,8 @@ namespace Grid {
       // Can this be avoided with simpler coding of comms?
       void Local     (int point, int dimension,int shift,int cbmask);
       void Comms     (int point, int dimension,int shift,int cbmask);
-      void CopyPlane(int point, int dimension,int lplane,int rplane,int cbmask,int permute);
-      void ScatterPlane (int point,int dimension,int plane,int cbmask,int offset);
+      void CopyPlane(int point, int dimension,int lplane,int rplane,int cbmask,int permute,int wrap);
+      void ScatterPlane (int point,int dimension,int plane,int cbmask,int offset,int wrap);
 
       // Could allow a functional munging of the halo to another type during the comms.
       // this could implement the 16bit/32bit/64bit compression.
