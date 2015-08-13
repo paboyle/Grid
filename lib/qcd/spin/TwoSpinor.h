@@ -341,7 +341,7 @@ namespace QCD {
   //////////
   // Xp
   //////////
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spProjXp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spProjXp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -365,7 +365,7 @@ namespace QCD {
   {
     spReconXp(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spReconXp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spReconXp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     for(int i=0;i<N;i++) {
       spReconXp(hspin._internal[i],fspin._internal[i]);
@@ -383,7 +383,7 @@ namespace QCD {
   {
     accumReconXp(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void accumReconXp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void accumReconXp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     for(int i=0;i<N;i++) {
       accumReconXp(hspin._internal[i],fspin._internal[i]);
@@ -407,7 +407,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     spProjXm(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spProjXm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spProjXm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -429,7 +429,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     spReconXm(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spReconXm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spReconXm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -450,7 +450,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     accumReconXm(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void accumReconXm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void accumReconXm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -476,7 +476,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     spProjYp(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spProjYp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spProjYp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -498,7 +498,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     spReconYp(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spReconYp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spReconYp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -519,7 +519,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     accumReconYp(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void accumReconYp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void accumReconYp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -544,7 +544,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     spProjYm(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spProjYm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spProjYm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -566,7 +566,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     spReconYm(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spReconYm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spReconYm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,const iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -587,7 +587,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     accumReconYm(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void accumReconYm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void accumReconYm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -612,7 +612,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     spProjZp(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spProjZp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spProjZp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -634,7 +634,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     spReconZp(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spReconZp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spReconZp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -655,7 +655,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     accumReconZp(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void accumReconZp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void accumReconZp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -680,7 +680,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     spProjZm(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spProjZm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spProjZm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -702,7 +702,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     spReconZm(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spReconZm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spReconZm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -723,7 +723,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     accumReconZm(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void accumReconZm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void accumReconZm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -748,7 +748,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     spProjTp(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spProjTp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spProjTp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -770,7 +770,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     spReconTp(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spReconTp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spReconTp (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -791,7 +791,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     accumReconTp(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void accumReconTp (iVector<rtype,N> &hspin, const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void accumReconTp (iVector<rtype,N> &hspin, const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -816,7 +816,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     spProjTm(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spProjTm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spProjTm (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -838,7 +838,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     spReconTm(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spReconTm (iVector<rtype,N> &hspin, const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spReconTm (iVector<rtype,N> &hspin, const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -859,7 +859,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     accumReconTm(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void accumReconTm (iVector<rtype,N> &hspin, const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void accumReconTm (iVector<rtype,N> &hspin, const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -884,7 +884,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     spProj5p(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spProj5p (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spProj5p (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -905,7 +905,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     spRecon5p(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spRecon5p (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spRecon5p (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -926,7 +926,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     accumRecon5p(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void accumRecon5p (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void accumRecon5p (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -950,7 +950,7 @@ namespace QCD {
     spProj5p(hspin._internal,fspin._internal);
   }
   //  template<class vtype,int N> strong_inline void fspProj5p (iVector<vtype,N> &hspin,iVector<vtype,N> &fspin)
-  template<class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spProj5p (iVector<vtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spProj5p (iVector<vtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -976,7 +976,7 @@ namespace QCD {
   {
     spProj5m(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<rtype> = 0> strong_inline void spProj5m (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<rtype,N> > = 0> strong_inline void spProj5m (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     for(int i=0;i<N;i++) {
       spProj5m(hspin._internal[i],fspin._internal[i]);
@@ -995,7 +995,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     spRecon5m(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spRecon5m (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spRecon5m (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -1016,7 +1016,7 @@ namespace QCD {
     //typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type *temp;
     accumRecon5m(hspin._internal,fspin._internal);
   }
-  template<class rtype,class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void accumRecon5m (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class rtype,class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void accumRecon5m (iVector<rtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
@@ -1041,7 +1041,7 @@ namespace QCD {
     spProj5m(hspin._internal,fspin._internal);
   }
   //  template<class vtype,int N> strong_inline void fspProj5m (iVector<vtype,N> &hspin,iVector<vtype,N> &fspin)
-  template<class vtype,int N,IfNotSpinor<vtype> = 0> strong_inline void spProj5m (iVector<vtype,N> &hspin,const iVector<vtype,N> &fspin)
+  template<class vtype,int N,IfNotSpinor<iVector<vtype,N> > = 0> strong_inline void spProj5m (iVector<vtype,N> &hspin,const iVector<vtype,N> &fspin)
   {
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type *temp;
     for(int i=0;i<N;i++) {
