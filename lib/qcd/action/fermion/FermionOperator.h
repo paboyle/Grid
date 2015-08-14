@@ -7,7 +7,7 @@ namespace Grid {
 
     ////////////////////////////////////////////////////////////////
     // Hardwire to four spinors, allow to select 
-    // between gauge representation rank, and gparity/flavour index,
+    // between gauge representation rank bc's, flavours etc.
     // and single/double precision.
     ////////////////////////////////////////////////////////////////
 
@@ -37,8 +37,7 @@ namespace Grid {
 
       typedef WilsonCompressor<SiteHalfSpinor,SiteSpinor> Compressor;
 
-      // provide the multiply by link that is differentiated between Gparity (with flavour index) and non-Gparity
-      static inline void multLink(SiteHalfSpinor &phi,const SiteDoubledGaugeField &U,const SiteHalfSpinor &chi,int mu,StencilEntry *SE){
+      static inline void multLink(SiteHalfSpinor &phi,const SiteDoubledGaugeField &U,const SiteHalfSpinor &chi,int mu,StencilEntry *SE,CartesianStencil &St){
         mult(&phi(),&U(mu),&chi());
       }
       static inline void DoubleStore(GridBase *GaugeGrid,DoubledGaugeField &Uds,const GaugeField &Umu)
@@ -94,15 +93,73 @@ namespace Grid {
 
       // provide the multiply by link that is differentiated between Gparity (with flavour index) and 
       // non-Gparity
-    static inline void multLink(SiteHalfSpinor &phi,const SiteDoubledGaugeField &U,const SiteHalfSpinor &chi,int mu,StencilEntry *SE){
+    static inline void multLink(SiteHalfSpinor &phi,const SiteDoubledGaugeField &U,const SiteHalfSpinor &chi,int mu,StencilEntry *SE,CartesianStencil &St){
       // FIXME; need to be more careful. If this is a simd direction we are still stuffed
-      if ( SE->_around_the_world && ((mu==Xp)||(mu==Xm)) ) {
-	mult(&phi(0),&U(0)(mu),&chi(1));
-	mult(&phi(1),&U(1)(mu),&chi(0));
+      // Need access to _simd_layout[mu]. mu is not necessarily dim.
+      typedef SiteHalfSpinor vobj;
+      typedef typename SiteHalfSpinor::scalar_object sobj;
+
+      vobj vtmp;
+      sobj stmp;
+      std::vector<int> gpbc({0,0,0,1,0,0,0,1});
+
+      GridBase *grid = St._grid;
+
+      const int Nsimd = grid->Nsimd();
+
+      int direction    = St._directions[mu];
+      int distance     = St._distances[mu];
+      int ptype     = St._permute_type[mu]; 
+      int sl        = St._grid->_simd_layout[direction];
+
+      // assert our assumptions
+      assert((distance==1)||(distance==-1)); // nearest neighbour stencil hard code
+      assert((sl==1)||(sl==2));
+      
+      std::vector<int> icoor;
+
+      if ( SE->_around_the_world && gpbc[mu] ) {
+	if ( sl == 2 ) {
+
+	  //	  std::cout << "multLink for mu= "<<mu<<" simd length "<<sl<<std::endl;
+
+	  std::vector<sobj> vals(Nsimd);
+	  extract(chi,vals);
+
+	  for(int s=0;s<Nsimd;s++){
+
+	    grid->iCoorFromIindex(icoor,s);
+
+	    assert((icoor[direction]==0)||(icoor[direction]==1));
+
+	    int permute_lane;
+	    if ( distance == 1) {
+	      permute_lane = icoor[direction]?1:0;
+	    } else {
+	      permute_lane = icoor[direction]?0:1;
+	    }
+
+            if ( permute_lane ) { 
+	      stmp(0) = vals[s](1);
+	      stmp(1) = vals[s](0);
+	      vals[s] = stmp;
+	    }
+	  }
+	  
+	  merge(vtmp,vals);
+
+	} else { 
+	  vtmp(0) = chi(1);
+	  vtmp(1) = chi(0);
+	}
+	mult(&phi(0),&U(0)(mu),&vtmp(0));
+	mult(&phi(1),&U(1)(mu),&vtmp(1));
+	
       } else { 
 	mult(&phi(0),&U(0)(mu),&chi(0));
 	mult(&phi(1),&U(1)(mu),&chi(1));
       }
+
     }
 
       static inline void InsertForce(GaugeField &mat,const FermionField &Btilde,const FermionField &A,int mu){
@@ -120,7 +177,7 @@ namespace Grid {
 
 	Lattice<iScalar<vInteger> > coor(GaugeGrid);
 	
-	std::vector<int> gpdirs({1,0,0,0});
+	std::vector<int> gpdirs({0,0,0,1});
 
         for(int mu=0;mu<Nd;mu++){
 

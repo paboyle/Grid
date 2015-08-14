@@ -24,7 +24,7 @@ void WilsonKernels<Impl>::DiracOptDhopSite(CartesianStencil &st,DoubledGaugeFiel
   } else { 
     chi=buf[SE->_offset];
   }
-  Impl::multLink(Uchi,U._odata[sU],chi,Xp,SE);
+  Impl::multLink(Uchi,U._odata[sU],chi,Xp,SE,st);
   spReconXp(result,Uchi);
     
   // Yp
@@ -37,7 +37,7 @@ void WilsonKernels<Impl>::DiracOptDhopSite(CartesianStencil &st,DoubledGaugeFiel
   } else { 
     chi=buf[SE->_offset];
   }
-  Impl::multLink(Uchi,U._odata[sU],chi,Yp,SE);
+  Impl::multLink(Uchi,U._odata[sU],chi,Yp,SE,st);
   accumReconYp(result,Uchi);
 
   // Zp
@@ -50,7 +50,7 @@ void WilsonKernels<Impl>::DiracOptDhopSite(CartesianStencil &st,DoubledGaugeFiel
   } else { 
     chi=buf[SE->_offset];
   }
-  Impl::multLink(Uchi,U._odata[sU],chi,Zp,SE);
+  Impl::multLink(Uchi,U._odata[sU],chi,Zp,SE,st);
   accumReconZp(result,Uchi);
 
   // Tp
@@ -63,7 +63,7 @@ void WilsonKernels<Impl>::DiracOptDhopSite(CartesianStencil &st,DoubledGaugeFiel
   } else { 
     chi=buf[SE->_offset];
   }
-  Impl::multLink(Uchi,U._odata[sU],chi,Tp,SE);
+  Impl::multLink(Uchi,U._odata[sU],chi,Tp,SE,st);
   accumReconTp(result,Uchi);
 
   // Xm
@@ -76,7 +76,7 @@ void WilsonKernels<Impl>::DiracOptDhopSite(CartesianStencil &st,DoubledGaugeFiel
   } else { 
     chi=buf[SE->_offset];
   }
-  Impl::multLink(Uchi,U._odata[sU],chi,Xm,SE);
+  Impl::multLink(Uchi,U._odata[sU],chi,Xm,SE,st);
   accumReconXm(result,Uchi);
   
   // Ym
@@ -89,7 +89,7 @@ void WilsonKernels<Impl>::DiracOptDhopSite(CartesianStencil &st,DoubledGaugeFiel
   } else { 
     chi=buf[SE->_offset];
   }
-  Impl::multLink(Uchi,U._odata[sU],chi,Ym,SE);
+  Impl::multLink(Uchi,U._odata[sU],chi,Ym,SE,st);
   accumReconYm(result,Uchi);
   
   // Zm
@@ -102,7 +102,7 @@ void WilsonKernels<Impl>::DiracOptDhopSite(CartesianStencil &st,DoubledGaugeFiel
   } else { 
     chi=buf[SE->_offset];
   }
-  Impl::multLink(Uchi,U._odata[sU],chi,Zm,SE);
+  Impl::multLink(Uchi,U._odata[sU],chi,Zm,SE,st);
   accumReconZm(result,Uchi);
 
   // Tm
@@ -115,7 +115,7 @@ void WilsonKernels<Impl>::DiracOptDhopSite(CartesianStencil &st,DoubledGaugeFiel
   } else { 
     chi=buf[SE->_offset];
   }
-  Impl::multLink(Uchi,U._odata[sU],chi,Tm,SE);
+  Impl::multLink(Uchi,U._odata[sU],chi,Tm,SE,st);
   accumReconTm(result,Uchi);
 
   vstream(out._odata[sF],result*(-0.5));
@@ -143,7 +143,7 @@ void WilsonKernels<Impl>::DiracOptDhopSiteDag(CartesianStencil &st,DoubledGaugeF
   } else { 
     chi=buf[SE->_offset];
   }
-  Impl::multLink(Uchi,U._odata[sU],chi,Xm,SE);
+  Impl::multLink(Uchi,U._odata[sU],chi,Xm,SE,st);
   spReconXp(result,Uchi);
 
   // Yp
@@ -156,7 +156,7 @@ void WilsonKernels<Impl>::DiracOptDhopSiteDag(CartesianStencil &st,DoubledGaugeF
   } else { 
     chi=buf[SE->_offset];
   }
-  Impl::multLink(Uchi,U._odata[sU],chi,Ym,SE);
+  Impl::multLink(Uchi,U._odata[sU],chi,Ym,SE,st);
   accumReconYp(result,Uchi);
   
   // Zp
@@ -169,7 +169,7 @@ void WilsonKernels<Impl>::DiracOptDhopSiteDag(CartesianStencil &st,DoubledGaugeF
   } else { 
     chi=buf[SE->_offset];
   }
-  Impl::multLink(Uchi,U._odata[sU],chi,Zm,SE);
+  Impl::multLink(Uchi,U._odata[sU],chi,Zm,SE,st);
   accumReconZp(result,Uchi);
   
   // Tp
@@ -182,7 +182,7 @@ void WilsonKernels<Impl>::DiracOptDhopSiteDag(CartesianStencil &st,DoubledGaugeF
   } else { 
     chi=buf[SE->_offset];
   }
-  Impl::multLink(Uchi,U._odata[sU],chi,Tm,SE);
+  Impl::multLink(Uchi,U._odata[sU],chi,Tm,SE,st);
   accumReconTp(result,Uchi);
   
   // Xm
@@ -195,7 +195,7 @@ void WilsonKernels<Impl>::DiracOptDhopSiteDag(CartesianStencil &st,DoubledGaugeF
   } else { 
     chi=buf[SE->_offset];
   }
-  Impl::multLink(Uchi,U._odata[sU],chi,Xp,SE);
+  Impl::multLink(Uchi,U._odata[sU],chi,Xp,SE,st);
   accumReconXm(result,Uchi);
 
   // Ym
@@ -208,7 +208,7 @@ void WilsonKernels<Impl>::DiracOptDhopSiteDag(CartesianStencil &st,DoubledGaugeF
   } else { 
     chi=buf[SE->_offset];
   }
-  Impl::multLink(Uchi,U._odata[sU],chi,Yp,SE);
+  Impl::multLink(Uchi,U._odata[sU],chi,Yp,SE,st);
   accumReconYm(result,Uchi);
 
   // Zm
@@ -221,7 +221,7 @@ void WilsonKernels<Impl>::DiracOptDhopSiteDag(CartesianStencil &st,DoubledGaugeF
   } else { 
     chi=buf[SE->_offset];
   }
-  Impl::multLink(Uchi,U._odata[sU],chi,Zp,SE);
+  Impl::multLink(Uchi,U._odata[sU],chi,Zp,SE,st);
   accumReconZm(result,Uchi);
     
   // Tm
@@ -234,7 +234,7 @@ void WilsonKernels<Impl>::DiracOptDhopSiteDag(CartesianStencil &st,DoubledGaugeF
   } else { 
     chi=buf[SE->_offset];
   }
-  Impl::multLink(Uchi,U._odata[sU],chi,Tp,SE);
+  Impl::multLink(Uchi,U._odata[sU],chi,Tp,SE,st);
   accumReconTm(result,Uchi);
   
   vstream(out._odata[sF],result*(-0.5));
@@ -264,7 +264,7 @@ void WilsonKernels<Impl>::DiracOptDhopDir(CartesianStencil &st,DoubledGaugeField
     } else { 
       chi=buf[SE->_offset];
     }
-    Impl::multLink(Uchi,U._odata[sU],chi,dir,SE);
+    Impl::multLink(Uchi,U._odata[sU],chi,dir,SE,st);
     spReconXp(result,Uchi);
   }
 
@@ -278,7 +278,7 @@ void WilsonKernels<Impl>::DiracOptDhopDir(CartesianStencil &st,DoubledGaugeField
     } else { 
       chi=buf[SE->_offset];
     }
-    Impl::multLink(Uchi,U._odata[sU],chi,dir,SE);
+    Impl::multLink(Uchi,U._odata[sU],chi,dir,SE,st);
     spReconYp(result,Uchi);
   }
   
@@ -292,7 +292,7 @@ void WilsonKernels<Impl>::DiracOptDhopDir(CartesianStencil &st,DoubledGaugeField
     } else { 
       chi=buf[SE->_offset];
     }
-    Impl::multLink(Uchi,U._odata[sU],chi,dir,SE);
+    Impl::multLink(Uchi,U._odata[sU],chi,dir,SE,st);
     spReconZp(result,Uchi);
   }
   
@@ -306,7 +306,7 @@ void WilsonKernels<Impl>::DiracOptDhopDir(CartesianStencil &st,DoubledGaugeField
     } else { 
       chi=buf[SE->_offset];
     }
-    Impl::multLink(Uchi,U._odata[sU],chi,dir,SE);
+    Impl::multLink(Uchi,U._odata[sU],chi,dir,SE,st);
     spReconTp(result,Uchi);
   }
 
@@ -320,7 +320,7 @@ void WilsonKernels<Impl>::DiracOptDhopDir(CartesianStencil &st,DoubledGaugeField
     } else { 
       chi=buf[SE->_offset];
     }
-    Impl::multLink(Uchi,U._odata[sU],chi,dir,SE);
+    Impl::multLink(Uchi,U._odata[sU],chi,dir,SE,st);
     spReconXm(result,Uchi);
   }
 
@@ -334,7 +334,7 @@ void WilsonKernels<Impl>::DiracOptDhopDir(CartesianStencil &st,DoubledGaugeField
     } else { 
       chi=buf[SE->_offset];
     }
-    Impl::multLink(Uchi,U._odata[sU],chi,dir,SE);
+    Impl::multLink(Uchi,U._odata[sU],chi,dir,SE,st);
     spReconYm(result,Uchi);
   }
 
@@ -348,7 +348,7 @@ void WilsonKernels<Impl>::DiracOptDhopDir(CartesianStencil &st,DoubledGaugeField
     } else { 
       chi=buf[SE->_offset];
     }
-    Impl::multLink(Uchi,U._odata[sU],chi,dir,SE);
+    Impl::multLink(Uchi,U._odata[sU],chi,dir,SE,st);
     spReconZm(result,Uchi);
   }
   
@@ -362,7 +362,7 @@ void WilsonKernels<Impl>::DiracOptDhopDir(CartesianStencil &st,DoubledGaugeField
     } else { 
       chi=buf[SE->_offset];
     }
-    Impl::multLink(Uchi,U._odata[sU],chi,dir,SE);
+    Impl::multLink(Uchi,U._odata[sU],chi,dir,SE,st);
     spReconTm(result,Uchi);
   }
 
