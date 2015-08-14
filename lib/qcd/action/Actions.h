@@ -54,6 +54,7 @@
 ////////////////////////////////////////////
 // Fermion operators / actions
 ////////////////////////////////////////////
+#include <qcd/action/fermion/FermionOperatorImpl.h>
 #include <qcd/action/fermion/FermionOperator.h>
 
 #include <qcd/action/fermion/WilsonFermion.h>       // 4d wilson like

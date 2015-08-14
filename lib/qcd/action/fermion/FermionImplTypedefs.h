@@ -8,3 +8,4 @@
       typedef typename Impl::SiteHalfSpinor       SiteHalfSpinor;
       typedef typename Impl::Compressor               Compressor;
       typedef WilsonKernels<Impl> Kernels;
+
