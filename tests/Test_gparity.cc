@@ -44,7 +44,7 @@ void Replicate(Lattice<vobj> &coarse,Lattice<vobj> & fine)
 
 int main (int argc, char ** argv)
 {
-  const int nu = 0;
+  const int nu = 3;
 
   Grid_init(&argc,&argv);
 
