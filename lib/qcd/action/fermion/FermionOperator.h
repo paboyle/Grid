@@ -21,7 +21,10 @@ namespace Grid {
     class FermionOperator : public CheckerBoardedSparseMatrixBase<typename Impl::FermionField>, public Impl
     {
     public:
-#include <qcd/action/fermion/FermionImplTypedefs.h>
+
+      INHERIT_IMPL_TYPES(Impl);
+
+      FermionOperator(const ImplParams &p= ImplParams()) : Impl(p) {};
 
     public:
 

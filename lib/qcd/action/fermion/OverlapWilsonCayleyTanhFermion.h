@@ -11,7 +11,7 @@ namespace Grid {
     class OverlapWilsonCayleyTanhFermion : public MobiusFermion<Impl>
     {
     public:
-#include <qcd/action/fermion/FermionImplTypedefs.h>
+     INHERIT_IMPL_TYPES(Impl);
     public:
 
       // Constructors
@@ -21,14 +21,14 @@ namespace Grid {
 				   GridCartesian         &FourDimGrid,
 				   GridRedBlackCartesian &FourDimRedBlackGrid,
 				   RealD _mass,RealD _M5,
-				   RealD scale) :
+				   RealD scale,const ImplParams &p= ImplParams()) :
       
       // b+c=scale, b-c = 0 <=> b =c = scale/2
       MobiusFermion<Impl>(_Umu,
 			  FiveDimGrid,
 			  FiveDimRedBlackGrid,
 			  FourDimGrid,
-			  FourDimRedBlackGrid,_mass,_M5,0.5*scale,0.5*scale)
+			  FourDimRedBlackGrid,_mass,_M5,0.5*scale,0.5*scale,p)
 	{
 	}
     };

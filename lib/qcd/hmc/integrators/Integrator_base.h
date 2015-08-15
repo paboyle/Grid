@@ -20,7 +20,7 @@ namespace Grid{
   namespace QCD{
 
     typedef Action<LatticeLorentzColourMatrix>*  ActPtr; // now force the same size as the rest of the code
-    typedef std::vector<ActPtr> ActionLevel;
+    typedef std::vector<ActPtr>      ActionLevel;
     typedef std::vector<ActionLevel> ActionSet;
     typedef std::vector<Observer*> ObserverList;
     
@@ -44,10 +44,6 @@ namespace Grid{
       void generate_momenta(LatticeLorentzColourMatrix&,GridParallelRNG&);
       void generate_momenta_su3(LatticeLorentzColourMatrix&,GridParallelRNG&);
     }
-
-    
-    
-
 
     template< class IntegratorPolicy >
     class Integrator{

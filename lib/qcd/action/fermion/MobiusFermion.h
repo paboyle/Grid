@@ -11,7 +11,7 @@ namespace Grid {
     class MobiusFermion : public CayleyFermion5D<Impl>
     {
     public:
-#include <qcd/action/fermion/FermionImplTypedefs.h>
+     INHERIT_IMPL_TYPES(Impl);
     public:
 
       virtual void   Instantiatable(void) {};
@@ -22,13 +22,13 @@ namespace Grid {
 		    GridCartesian         &FourDimGrid,
 		    GridRedBlackCartesian &FourDimRedBlackGrid,
 		    RealD _mass,RealD _M5,
-		    RealD b, RealD c) : 
+		    RealD b, RealD c,const ImplParams &p= ImplParams()) : 
       
       CayleyFermion5D<Impl>(_Umu,
-		      FiveDimGrid,
-		      FiveDimRedBlackGrid,
-		      FourDimGrid,
-		      FourDimRedBlackGrid,_mass,_M5)
+			    FiveDimGrid,
+			    FiveDimRedBlackGrid,
+			    FourDimGrid,
+			    FourDimRedBlackGrid,_mass,_M5,p)
 
       {
 	RealD eps = 1.0;

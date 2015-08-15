@@ -26,9 +26,11 @@ namespace Grid {
     };
 
     template<class Impl>
-    class WilsonFermion5D : public FermionOperator<Impl>, public WilsonFermion5DStatic
+    class WilsonFermion5D : public WilsonKernels<Impl>, public WilsonFermion5DStatic
     {
-#include <qcd/action/fermion/FermionImplTypedefs.h>
+     INHERIT_IMPL_TYPES(Impl);
+     typedef WilsonKernels<Impl> Kernels;
+
     public:
       ///////////////////////////////////////////////////////////////
       // Implement the abstract base
@@ -90,7 +92,7 @@ namespace Grid {
 		      GridRedBlackCartesian &FiveDimRedBlackGrid,
 		      GridCartesian         &FourDimGrid,
 		      GridRedBlackCartesian &FourDimRedBlackGrid,
-		      double _M5);
+		      double _M5,const ImplParams &p= ImplParams());
 
       // DoubleStore
       void ImportGauge(const GaugeField &_Umu);

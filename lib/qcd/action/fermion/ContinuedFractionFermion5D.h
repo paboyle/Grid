@@ -9,7 +9,7 @@ namespace Grid {
     class ContinuedFractionFermion5D : public WilsonFermion5D<Impl>
     {
     public:
-#include <qcd/action/fermion/FermionImplTypedefs.h>
+     INHERIT_IMPL_TYPES(Impl);
     public:
 
       // override multiply
@@ -41,7 +41,7 @@ namespace Grid {
 				 GridRedBlackCartesian &FiveDimRedBlackGrid,
 				 GridCartesian         &FourDimGrid,
 				 GridRedBlackCartesian &FourDimRedBlackGrid,
-				 RealD _mass,RealD M5);
+				 RealD _mass,RealD M5,const ImplParams &p= ImplParams());
 
     protected:
 

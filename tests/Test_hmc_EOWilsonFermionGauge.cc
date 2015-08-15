@@ -35,16 +35,14 @@ int main (int argc, char ** argv)
   //Collect actions
   ActionLevel Level1;
   Level1.push_back(&WilsonNf2);
-  ActionLevel Level2(3);
-  Level2.push_back(&Waction);
+  Level1.push_back(&Waction);
   ActionSet FullSet;
   FullSet.push_back(Level1);
-  FullSet.push_back(Level2);
 
   // Create integrator
-  typedef MinimumNorm2  IntegratorAlgorithm;// change here to change the algorithm
-  //  typedef LeapFrog  IntegratorAlgorithm;// change here to change the algorithm
-  IntegratorParameters MDpar(12,20,1.0);
+  //  typedef MinimumNorm2  IntegratorAlgorithm;// change here to change the algorithm
+  typedef LeapFrog  IntegratorAlgorithm;// change here to change the algorithm
+  IntegratorParameters MDpar(12,40,1.0);
   std::vector<int> rel ={1};
   Integrator<IntegratorAlgorithm> MDynamics(&Fine,MDpar, FullSet);
 

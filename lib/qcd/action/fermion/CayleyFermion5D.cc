@@ -8,12 +8,12 @@ namespace QCD {
 					GridRedBlackCartesian &FiveDimRedBlackGrid,
 					GridCartesian         &FourDimGrid,
 					GridRedBlackCartesian &FourDimRedBlackGrid,
-					RealD _mass,RealD _M5) :
+					RealD _mass,RealD _M5,const ImplParams &p) :
    WilsonFermion5D<Impl>(_Umu,
 		   FiveDimGrid,
 		   FiveDimRedBlackGrid,
 		   FourDimGrid,
-		   FourDimRedBlackGrid,_M5),
+ 	 	   FourDimRedBlackGrid,_M5,p),
    mass(_mass)
  {
  }
