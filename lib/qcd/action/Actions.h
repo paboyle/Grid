@@ -27,6 +27,8 @@
 // Utility functions
 ////////////////////////////////////////////
 #include <qcd/action/fermion/WilsonCompressor.h>     //used by all wilson type fermions
+#include <qcd/action/fermion/FermionOperatorImpl.h>
+#include <qcd/action/fermion/FermionOperator.h>
 #include <qcd/action/fermion/WilsonKernels.h>        //used by all wilson type fermions
 
 
@@ -54,8 +56,6 @@
 ////////////////////////////////////////////
 // Fermion operators / actions
 ////////////////////////////////////////////
-#include <qcd/action/fermion/FermionOperatorImpl.h>
-#include <qcd/action/fermion/FermionOperator.h>
 
 #include <qcd/action/fermion/WilsonFermion.h>       // 4d wilson like
 //#include <qcd/action/fermion/CloverFermion.h>

@@ -97,9 +97,10 @@ namespace Grid{
     ////////////////////////////////////////////////////////////////////////
     template<class Impl>
     class TwoFlavourPseudoFermionAction : public Action<typename Impl::GaugeField> {
+    public:
+      INHERIT_IMPL_TYPES(Impl);
 
     private:
-#include <qcd/action/fermion/FermionImplTypedefs.h>
       
       FermionOperator<Impl> & FermOp;// the basic operator
 

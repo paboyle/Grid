@@ -4,14 +4,21 @@
 namespace Grid{
   namespace QCD{
 
+    // Base even odd HMC on the normal Mee based schur decomposition.
+    //
+    //     M = (Mee Meo) =  (1             0 )   (Mee   0               )  (1 Mee^{-1} Meo)
+    //         (Moe Moo)    (Moe Mee^-1    1 )   (0   Moo-Moe Mee^-1 Meo)  (0   1         )
+    //
+    // Determinant is det of middle factor
+    // This assumes Mee is indept of U.
+    //
     template<class Impl>
     class SchurDifferentiableOperator :  public SchurDiagMooeeOperator<FermionOperator<Impl>,typename Impl::FermionField> 
       {
       public:
-#include <qcd/action/fermion/FermionImplTypedefs.h>
-	
-    public:
-	typedef FermionOperator<Impl> Matrix;
+      INHERIT_IMPL_TYPES(Impl);
+
+ 	typedef FermionOperator<Impl> Matrix;
 
 	SchurDifferentiableOperator (Matrix &Mat) : SchurDiagMooeeOperator<Matrix,FermionField>(Mat) {};
 
@@ -19,10 +26,11 @@ namespace Grid{
 	
 	  GridBase *fgrid   = this->_Mat.FermionGrid();
 	  GridBase *fcbgrid = this->_Mat.FermionRedBlackGrid();
-	  GridBase *ugrid = this->_Mat.GaugeGrid();
+	  GridBase *ugrid   = this->_Mat.GaugeGrid();
 	  GridBase *ucbgrid = this->_Mat.GaugeRedBlackGrid();
 
 	  Real coeff = 1.0;
+
 	  FermionField tmp1(fcbgrid);
 	  FermionField tmp2(fcbgrid);
 
@@ -31,7 +39,7 @@ namespace Grid{
 
 	  // Assert the checkerboard?? or code for either
 	  assert(U.checkerboard==Odd);
-	  assert(V.checkerboard==V.checkerboard);
+	  assert(V.checkerboard==U.checkerboard);
 
 	  GaugeField ForceO(ucbgrid);
 	  GaugeField ForceE(ucbgrid);
@@ -47,6 +55,9 @@ namespace Grid{
 	  this->_Mat.MooeeInvDag(tmp1,tmp2); // even->even 
 	  this->_Mat.MeoDeriv(ForceE,tmp2,V,DaggerNo);
 	  
+	  assert(ForceE.checkerboard==Even);
+	  assert(ForceO.checkerboard==Odd);
+
 	  setCheckerboard(Force,ForceE); 
 	  setCheckerboard(Force,ForceO);
 	  Force=-Force;
@@ -61,6 +72,7 @@ namespace Grid{
 	  GridBase *ucbgrid = this->_Mat.GaugeRedBlackGrid();
 
 	  Real coeff = 1.0;
+
 	  FermionField tmp1(fcbgrid);
 	  FermionField tmp2(fcbgrid);
 
@@ -85,6 +97,9 @@ namespace Grid{
 	  this->_Mat.MooeeInv(tmp1,tmp2); // even->even 
 	  this->_Mat.MeoDeriv(ForceE,tmp2,V,DaggerYes);
 
+	  assert(ForceE.checkerboard==Even);
+	  assert(ForceO.checkerboard==Odd);
+
 	  setCheckerboard(Force,ForceE); 
 	  setCheckerboard(Force,ForceO);
 	  Force=-Force;
@@ -100,7 +115,7 @@ namespace Grid{
     class TwoFlavourEvenOddPseudoFermionAction : public Action<typename Impl::GaugeField> {
 
     public:
-#include <qcd/action/fermion/FermionImplTypedefs.h>
+      INHERIT_IMPL_TYPES(Impl);
 
     private:
       
@@ -180,8 +195,8 @@ namespace Grid{
 
 	// The EE factorised block; normally can replace with zero if det is constant (gauge field indept)
 	// Only really clover term that creates this.
-	FermOp.MooeeInvDag(PhiEven,Y);
-	action = action + norm2(Y);
+	//	FermOp.MooeeInvDag(PhiEven,Y);
+	//	action = action + norm2(Y);
 
 	std::cout << GridLogMessage << "Pseudofermion EO action "<<action<<std::endl;
 	return action;
@@ -217,10 +232,10 @@ namespace Grid{
 
 	// Treat the EE case. (MdagM)^-1 = Minv Minvdag
 	// Deriv defaults to zero.
-        FermOp.MooeeInvDag(PhiOdd,Y);
-        FermOp.MooeeInv(Y,X);
-  	FermOp.MeeDeriv(tmp , Y, X,DaggerNo );    dSdU=tmp;
-	FermOp.MeeDeriv(tmp , X, Y,DaggerYes);  dSdU=dSdU+tmp;
+	//        FermOp.MooeeInvDag(PhiOdd,Y);
+	//      FermOp.MooeeInv(Y,X);
+	//	FermOp.MeeDeriv(tmp , Y, X,DaggerNo );    dSdU=tmp;
+	//  FermOp.MeeDeriv(tmp , X, Y,DaggerYes);  dSdU=dSdU+tmp;
 	
 	dSdU = Ta(dSdU);
 

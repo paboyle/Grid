@@ -9,7 +9,7 @@ namespace Grid {
     class CayleyFermion5D : public WilsonFermion5D<Impl>
     {
     public:
-#include <qcd/action/fermion/FermionImplTypedefs.h>
+     INHERIT_IMPL_TYPES(Impl);
     public:
 
       // override multiply
@@ -64,7 +64,7 @@ namespace Grid {
 		      GridRedBlackCartesian &FiveDimRedBlackGrid,
 		      GridCartesian         &FourDimGrid,
 		      GridRedBlackCartesian &FourDimRedBlackGrid,
-		      RealD _mass,RealD _M5);
+		      RealD _mass,RealD _M5,const ImplParams &p= ImplParams());
 
     protected:
       void SetCoefficientsZolotarev(RealD zolohi,Approx::zolotarev_data *zdata,RealD b,RealD c);

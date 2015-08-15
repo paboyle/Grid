@@ -10,7 +10,7 @@ shift
 while (( "$#" )); do
 
 echo $1
-sed -e "s/${WAS}/${IS}/g" -i .bak $1
+sed -e "s:${WAS}:${IS}:g" -i .bak $1
 
 shift
 

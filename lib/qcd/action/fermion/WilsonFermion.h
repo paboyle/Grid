@@ -15,11 +15,11 @@ namespace Grid {
     };
 
     template<class Impl>
-    class WilsonFermion : public FermionOperator<Impl>, public WilsonFermionStatic
+    class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic
     {
-#include <qcd/action/fermion/FermionImplTypedefs.h>
-
     public:
+    INHERIT_IMPL_TYPES(Impl);
+    typedef WilsonKernels<Impl> Kernels;
 
       ///////////////////////////////////////////////////////////////
       // Implement the abstract base
@@ -88,7 +88,9 @@ namespace Grid {
       WilsonFermion(GaugeField &_Umu,
 		    GridCartesian         &Fgrid,
 		    GridRedBlackCartesian &Hgrid, 
-		    RealD _mass) ;
+		    RealD _mass,
+		    const ImplParams &p= ImplParams()
+		    ) ;
 
       // DoubleStore impl dependent
       void ImportGauge(const GaugeField &_Umu);

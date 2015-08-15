@@ -256,10 +256,10 @@ namespace Grid {
 							   GridRedBlackCartesian &FiveDimRedBlackGrid,
 							   GridCartesian         &FourDimGrid,
 							   GridRedBlackCartesian &FourDimRedBlackGrid,
-							   RealD _mass,RealD M5) :
+							   RealD _mass,RealD M5,const ImplParams &p) :
       WilsonFermion5D<Impl>(_Umu,
-		      FiveDimGrid, FiveDimRedBlackGrid,
-		      FourDimGrid, FourDimRedBlackGrid,M5),
+			    FiveDimGrid, FiveDimRedBlackGrid,
+			    FourDimGrid, FourDimRedBlackGrid,M5,p),
       mass(_mass)
     {
       int Ls = this->Ls;

@@ -15,7 +15,8 @@ namespace QCD {
   WilsonFermion<Impl>::WilsonFermion(GaugeField &_Umu,
 				     GridCartesian         &Fgrid,
 				     GridRedBlackCartesian &Hgrid, 
-				     RealD _mass) :
+				     RealD _mass,const ImplParams &p) :
+        Kernels(p),
         _grid(&Fgrid),
 	_cbgrid(&Hgrid),
 	Stencil    (&Fgrid,npoint,Even,directions,displacements),
@@ -118,7 +119,9 @@ namespace QCD {
     Compressor compressor(dag);
     
     FermionField Btilde(B._grid);
-    
+    FermionField Atilde(B._grid);
+    Atilde = A;
+
     st.HaloExchange<SiteSpinor,SiteHalfSpinor,Compressor>(B,comm_buf,compressor);
     
     for(int mu=0;mu<Nd;mu++){
@@ -140,7 +143,7 @@ PARALLEL_FOR_LOOP
       //////////////////////////////////////////////////
       // spin trace outer product
       //////////////////////////////////////////////////
-      Impl::InsertForce(mat,Btilde,A,mu);
+      Impl::InsertForce4D(mat,Btilde,Atilde,mu);
 
     }
   }
