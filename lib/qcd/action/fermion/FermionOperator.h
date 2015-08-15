@@ -6,17 +6,10 @@ namespace Grid {
   namespace QCD {
 
     ////////////////////////////////////////////////////////////////
-    // Hardwire to four spinors, allow to select 
-    // between gauge representation rank bc's, flavours etc.
+    // Allow to select  between gauge representation rank bc's, flavours etc.
     // and single/double precision.
     ////////////////////////////////////////////////////////////////
     
-    
-    //////////////////////////////////////////////////////////////////////////////
-    // Four component fermions
-    // Should type template the vector and gauge types
-    // Think about multiple representations
-    //////////////////////////////////////////////////////////////////////////////
     template<class Impl>
     class FermionOperator : public CheckerBoardedSparseMatrixBase<typename Impl::FermionField>, public Impl
     {
@@ -25,8 +18,6 @@ namespace Grid {
       INHERIT_IMPL_TYPES(Impl);
 
       FermionOperator(const ImplParams &p= ImplParams()) : Impl(p) {};
-
-    public:
 
       GridBase * Grid(void)   { return FermionGrid(); };   // this is all the linalg routines need to know
       GridBase * RedBlackGrid(void) { return FermionRedBlackGrid(); };
