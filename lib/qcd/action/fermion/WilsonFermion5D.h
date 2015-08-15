@@ -28,10 +28,10 @@ namespace Grid {
     template<class Impl>
     class WilsonFermion5D : public WilsonKernels<Impl>, public WilsonFermion5DStatic
     {
+    public:
      INHERIT_IMPL_TYPES(Impl);
      typedef WilsonKernels<Impl> Kernels;
 
-    public:
       ///////////////////////////////////////////////////////////////
       // Implement the abstract base
       ///////////////////////////////////////////////////////////////

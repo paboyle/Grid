@@ -12,7 +12,6 @@ namespace Grid {
     {
     public:
      INHERIT_IMPL_TYPES(Impl);
-    public:
 
       // Constructors
 
