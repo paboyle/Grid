@@ -6,11 +6,9 @@
 // are separating the concept of the operator from that of action.
 //
 // The FermAction contains methods to create 
-//
 // * Linear operators             (Hermitian and non-hermitian)  .. my LinearOperator
 // * System solvers               (Hermitian and non-hermitian)  .. my OperatorFunction
 // * MultiShift System solvers    (Hermitian and non-hermitian)  .. my OperatorFunction
-
 
 ////////////////////////////////////////////
 // Abstract base interface
