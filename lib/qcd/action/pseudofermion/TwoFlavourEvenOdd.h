@@ -115,6 +115,7 @@ namespace Grid{
     class TwoFlavourEvenOddPseudoFermionAction : public Action<typename Impl::GaugeField> {
 
     public:
+
       INHERIT_IMPL_TYPES(Impl);
 
     private:
@@ -236,6 +237,12 @@ namespace Grid{
 	//      FermOp.MooeeInv(Y,X);
 	//	FermOp.MeeDeriv(tmp , Y, X,DaggerNo );    dSdU=tmp;
 	//  FermOp.MeeDeriv(tmp , X, Y,DaggerYes);  dSdU=dSdU+tmp;
+	/*
+        FermOp.MooeeInvDag(PhiOdd,Y);
+        FermOp.MooeeInv(Y,X);
+  	FermOp.MeeDeriv(tmp , Y, X,DaggerNo );    dSdU=tmp;
+	FermOp.MeeDeriv(tmp , X, Y,DaggerYes);  dSdU=dSdU+tmp;
+	*/
 	
 	dSdU = Ta(dSdU);
 

@@ -58,9 +58,9 @@
 ////////////////////////////////////////////
 
 #include <qcd/action/fermion/WilsonFermion.h>       // 4d wilson like
-//#include <qcd/action/fermion/CloverFermion.h>
-
 #include <qcd/action/fermion/WilsonFermion5D.h>     // 5d base used by all 5d overlap types
+
+//#include <qcd/action/fermion/CloverFermion.h>
 
 #include <qcd/action/fermion/CayleyFermion5D.h>     // Cayley types
 #include <qcd/action/fermion/DomainWallFermion.h>

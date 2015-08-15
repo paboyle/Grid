@@ -10,7 +10,6 @@ namespace Grid {
     {
     public:
      INHERIT_IMPL_TYPES(Impl);
-    public:
 
       const int part_frac_chroma_convention=1;
 
