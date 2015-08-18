@@ -1,25 +1,30 @@
 - PseudoFermions
-TwoFlavour -- done. Fill in rest:
 
-  - TwoFlavourEvenOddConstEE
-  - TwoFlavourEvenOdd
-  - TwoFlavourRatioEvenOddConstEE
-  - TwoFlavourRatioEvenOdd
+Done: Cayley, Partial , ContFrac force terms.
+
+Done:
+  - TwoFlavour
+  - TwoFlavourEvenOdd        
   - TwoFlavourRatio
+  - TwoFlavourRatioEvenOdd
+  => generalise to non-const EE
 
+fill in:
   - OneFlavourRationalEvenOddConstEE
   - OneFlavourRationalEvenOdd
   - OneFlavourRationalRatioEvenOddConstEE
   - OneFlavourRationalRatioEvenOdd
   - OneFlavourRationalRatio
 
+- Clean up HMC
+- Integrators
+  - Force Gradient
+  - Multi-timescale looks broken and operating on single timescale for now.
+    Fix/debug/rewrite this 
+
 - MacroMagic -> readers
 
-- Link smearing/boundary conds
-
-- Clean up HMC
-
-- Test Cayley, Partial , ContFrac force terms.
+- Link smearing/boundary conds; Policy class based implementation
 
 - Test DWF HMC
 
@@ -38,13 +43,16 @@ TwoFlavour -- done. Fill in rest:
 ================================================================
 
 *  Extract/merge/set cleanup ; too many variants; rationalise and call simpler ones
-*  Used #define repetitive sequences to minimise code.
+
 *  Rewrite core tensor arithmetic support to be more systematic
+ =  Use #define repetitive sequences to minimise code, decrease line count by thousands possible,
+    with more robust and maintainable implementation.
+
 *  Ensure we ET as much as possible; move unop functions into ET framework.
    - tests with expression args to all functions
 
-
 * FIXME audit
+
 * const audit
 
 Insert/Extract
@@ -57,10 +65,10 @@ Insert/Extract
 
 * Thread scaling tests Xeon, XeonPhi
 
-** Make the Tensor types and Complex etc... play more nicely.
+* Make the Tensor types and Complex etc... play more nicely.
   - TensorRemove is a hack, come up with a long term rationalised approach to Complex vs. Scalar<Scalar<Scalar<Complex > > >
-  QDP forces use of "toDouble" to get back to non tensor scalar. This role is presently taken TensorRemove, but I
-  want to introduce a syntax that does not require this.
+    QDP forces use of "toDouble" to get back to non tensor scalar. This role is presently taken TensorRemove, but I
+    want to introduce a syntax that does not require this.
 
   - Reductions that contract indices on a site should always demote the tensor structure.
     norm2(), innerProduct.
@@ -92,10 +100,6 @@ Insert/Extract
 ================================================================
 *** New Functionality
 ================================================================
-
-* - BinaryWriter, TextWriter etc...
-  - use protocol buffers? replace xmlReader/Writer ec..
-  - Binary use htonll, htonl
 
 * CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
 
@@ -138,14 +142,15 @@ Algorithms (lots of reuse/port from BFM)
 * Gauge
   - Wilson, symanzik, iwasaki
 
-* rb4d support for 5th dimension in Mobius.
-
 * Flavour matrices?
-* Pauli, SU subgroup, etc.. 
-* su3 exponentiation & log etc.. [Jamie's code?]
-* TaProj
-* FFTnD ?
 
+* Pauli, SU subgroup, etc.. 
+
+* su3 exponentiation & log etc.. [Jamie's code?]
+
+* TaProj
+
+* FFTnD ?
 
 ======================================================================================================
 FUNCTIONALITY: it pleases me to keep track of things I have done (keeps me arguably sane)
