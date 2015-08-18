@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 #ifndef QCD_PSEUDOFERMION_TWO_FLAVOUR_RATIO_H
 #define QCD_PSEUDOFERMION_TWO_FLAVOUR_RATIO_H
-=======
-#ifndef QCD_PSEUDOFERMION_TWO_FLAVOUR_H
-#define QCD_PSEUDOFERMION_TWO_FLAVOUR_H
->>>>>>> ef6a9e6b07b80aea909c0a62f223fa3e66f53b3a
 
 namespace Grid{
   namespace QCD{
@@ -107,7 +102,6 @@ namespace Grid{
 
 	FermionField  X(NumOp.FermionGrid());
 	FermionField  Y(NumOp.FermionGrid());
-	FermionField f1(NumOp.FermionGrid());
 
 	GaugeField   force(NumOp.GaugeGrid());	
 
@@ -130,8 +124,8 @@ namespace Grid{
 	//    -    phi^dag V (Mdag M)^-1 dMdag M   (Mdag M)^-1 V^dag  phi
 	DenOp.MDeriv(force,Y,X,DaggerNo);   dSdU=dSdU-force;
 	DenOp.MDeriv(force,X,Y,DaggerYes);  dSdU=dSdU-force;
-	dSdU = - dSdU;
-	dSdU = Ta(dSdU);
+
+	dSdU = - Ta(dSdU);
 
       };
     };
