@@ -152,5 +152,6 @@ typedef DomainWallFermion<GparityWilsonImplD> GparityDomainWallFermionD;
 ////////////////////////////////////////
 #include <qcd/action/pseudofermion/TwoFlavour.h>
 #include <qcd/action/pseudofermion/TwoFlavourEvenOdd.h>
+#include <qcd/action/pseudofermion/TwoFlavourRatio.h>
 
 #endif

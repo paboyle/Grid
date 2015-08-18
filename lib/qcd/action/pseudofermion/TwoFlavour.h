@@ -4,15 +4,6 @@
 namespace Grid{
   namespace QCD{
 
-    // Placeholder comments:
-
-    ///////////////////////////////////////
-    // Two flavour ratio
-    ///////////////////////////////////////
-    // S = phi^dag V (Mdag M)^-1 V^dag  phi
-    // dS/du = phi^dag dV (Mdag M)^-1 V^dag  phi
-    //       - phi^dag V (Mdag M)^-1 [ Mdag dM + dMdag M ]  (Mdag M)^-1 V^dag  phi
-    //       + phi^dag V (Mdag M)^-1 dV^dag  phi
 
     ///////////////////////////////////////
     // One flavour rational

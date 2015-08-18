@@ -1,5 +1,5 @@
-#ifndef QCD_PSEUDOFERMION_TWO_FLAVOUR_H
-#define QCD_PSEUDOFERMION_TWO_FLAVOUR_H
+#ifndef QCD_PSEUDOFERMION_TWO_FLAVOUR_RATIO_H
+#define QCD_PSEUDOFERMION_TWO_FLAVOUR_RATIO_H
 
 namespace Grid{
   namespace QCD{
@@ -26,30 +26,35 @@ namespace Grid{
 					 FermionOperator<Impl>  &_DenOp, 
 					 OperatorFunction<FermionField> & DS,
 					 OperatorFunction<FermionField> & AS
-					 ) : NumOp(_NumOp), DenOp(_DenOp), DerivativeSolver(DS), ActionSolver(AS), Phi(Op.FermionGrid()) {};
+					 ) : NumOp(_NumOp), DenOp(_DenOp), DerivativeSolver(DS), ActionSolver(AS), Phi(_NumOp.FermionGrid()) {};
       
       virtual void init(const GaugeField &U, GridParallelRNG& pRNG) {
 
 	// P(phi) = e^{- phi^dag V (MdagM)^-1 Vdag phi}
 	//
-	// phi = Vdag^{-1} Mdag eta 
+	// NumOp == V
+	// DenOp == M
+	//
+	// Take phi = Vdag^{-1} Mdag eta  ; eta = Mdag^{-1} Vdag Phi
 	//
 	// P(eta) = e^{- eta^dag eta}
 	//
 	// e^{x^2/2 sig^2} => sig^2 = 0.5.
 	// 
-	// So eta should be of width sig = 1/sqrt(2).
-	// and must multiply by 0.707....
+	// So eta should be of width sig = 1/sqrt(2) and must multiply by 0.707....
 	//
 	RealD scale = std::sqrt(0.5);
 
 	FermionField eta(NumOp.FermionGrid());
+	FermionField tmp(NumOp.FermionGrid());
 
 	gaussian(pRNG,eta);
 
 	NumOp.ImportGauge(U);
 	DenOp.ImportGauge(U);
 
+	// Note: this hard codes normal equations type solvers; alternate implementation needed for 
+	// non-herm style solvers.
 	MdagMLinearOperator<FermionOperator<Impl> ,FermionField> MdagMOp(NumOp);
 
 	DenOp.Mdag(eta,Phi);            // Mdag eta
@@ -74,9 +79,9 @@ namespace Grid{
 	MdagMLinearOperator<FermionOperator<Impl> ,FermionField> MdagMOp(DenOp);
 
 	X=zero;
-	NumOp.Mdag(Phi,Y);              // Vdag phi
-	ActionSolver(MdagMOp,Y,X);      // MdagMinv Vdag phi
-	MdagMOp.Op(X,Y);                // Y=Mdaginv Vdag phi
+	NumOp.Mdag(Phi,Y);              // Y= Vdag phi
+	ActionSolver(MdagMOp,Y,X);      // X= (MdagM)^-1 Vdag phi
+	DenOp.M(X,Y);                  // Y=  Mdag^-1 Vdag phi
 
 	RealD action = norm2(Y);
 
@@ -99,18 +104,16 @@ namespace Grid{
 	FermionField  Y(NumOp.FermionGrid());
 	FermionField f1(NumOp.FermionGrid());
 
-	GaugeField   force(FermOp.GaugeGrid());	
+	GaugeField   force(NumOp.GaugeGrid());	
 
 	X=zero;
 
-	//f1=Vdag phi
-	NumOp.Mdag(phi,f1);   
-
+	//Y=Vdag phi
 	//X = (Mdag M)^-1 V^dag phi
-	DerivativeSolver(MdagMOp,f1,X);
-
 	//Y = (Mdag)^-1 V^dag  phi
-	DenOp.M(X,Y);
+	NumOp.Mdag(Phi,Y);              // Y= Vdag phi
+	DerivativeSolver(MdagMOp,Y,X);      // X= (MdagM)^-1 Vdag phi
+	DenOp.M(X,Y);                  // Y=  Mdag^-1 Vdag phi
 
 	// phi^dag V (Mdag M)^-1 dV^dag  phi
 	NumOp.MDeriv(force , X, Phi, DaggerYes );  dSdU=force;
@@ -122,7 +125,7 @@ namespace Grid{
 	//    -    phi^dag V (Mdag M)^-1 dMdag M   (Mdag M)^-1 V^dag  phi
 	DenOp.MDeriv(force,Y,X,DaggerNo);   dSdU=dSdU-force;
 	DenOp.MDeriv(force,X,Y,DaggerYes);  dSdU=dSdU-force;
-	
+	dSdU = - dSdU;
 	dSdU = Ta(dSdU);
 
       };
