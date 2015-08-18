@@ -32,6 +32,8 @@ namespace Grid {
       virtual RealD  Mdag (const FermionField &in, FermionField &out)=0;
 
       // half checkerboard operaions
+      virtual int    ConstEE(void) { return 1; }; // clover returns zero as EE depends on gauge field
+
       virtual void   Meooe       (const FermionField &in, FermionField &out)=0;
       virtual void   MeooeDag    (const FermionField &in, FermionField &out)=0;
       virtual void   Mooee       (const FermionField &in, FermionField &out)=0;
@@ -49,7 +51,7 @@ namespace Grid {
       virtual void MDeriv  (GaugeField &mat,const FermionField &U,const FermionField &V,int dag){DhopDeriv(mat,U,V,dag);};
       virtual void MoeDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag){DhopDerivOE(mat,U,V,dag);};
       virtual void MeoDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag){DhopDerivEO(mat,U,V,dag);};
-      virtual void MooDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag){mat=zero;};
+      virtual void MooDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag){mat=zero;}; // Clover can override these
       virtual void MeeDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag){mat=zero;};
 
       virtual void DhopDeriv  (GaugeField &mat,const FermionField &U,const FermionField &V,int dag)=0;

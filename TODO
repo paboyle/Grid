@@ -21,8 +21,11 @@ fill in:
   - Force Gradient
   - Multi-timescale looks broken and operating on single timescale for now.
     Fix/debug/rewrite this 
+  - Sign of force term.
+  - Prefer "RefreshInternal" or such like to "init" in naming
+  - Rename "Ta" as too unclear
 
-- MacroMagic -> readers
+- MacroMagic -> virtual reader class.
 
 - Link smearing/boundary conds; Policy class based implementation
 

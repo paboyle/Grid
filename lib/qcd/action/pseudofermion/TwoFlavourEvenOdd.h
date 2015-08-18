@@ -95,8 +95,8 @@ namespace Grid{
 
 	// The EE factorised block; normally can replace with zero if det is constant (gauge field indept)
 	// Only really clover term that creates this.
-	//	FermOp.MooeeInvDag(PhiEven,Y);
-	//	action = action + norm2(Y);
+	FermOp.MooeeInvDag(PhiEven,Y);
+	action = action + norm2(Y);
 
 	std::cout << GridLogMessage << "Pseudofermion EO action "<<action<<std::endl;
 	return action;
@@ -135,6 +135,9 @@ namespace Grid{
 	//      FermOp.MooeeInv(Y,X);
 	//	FermOp.MeeDeriv(tmp , Y, X,DaggerNo );    dSdU=tmp;
 	//  FermOp.MeeDeriv(tmp , X, Y,DaggerYes);  dSdU=dSdU+tmp;
+
+	assert(FermOp.ConstEE() == 1);
+
 	/*
         FermOp.MooeeInvDag(PhiOdd,Y);
         FermOp.MooeeInv(Y,X);

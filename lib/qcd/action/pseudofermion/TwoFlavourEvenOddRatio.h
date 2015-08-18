@@ -109,9 +109,9 @@ namespace Grid{
 	// Only really clover term that creates this. Leave the EE portion as a future to do to make most
 	// rapid progresss on DWF for now.
 	//
-	// Vpc.MooeeDag(PhiEven,X);
-	// Mpc.MooeeInvDag(X,Y);
-	// action = action + norm2(Y);
+	NumOp.MooeeDag(PhiEven,X);
+	DenOp.MooeeInvDag(X,Y);
+	action = action + norm2(Y);
 
 	return action;
       };
@@ -153,6 +153,11 @@ namespace Grid{
 	//    -    phi^dag V (Mdag M)^-1 dMdag M   (Mdag M)^-1 V^dag  phi
 	Mpc.MpcDeriv(force,Y,X);   dSdU=dSdU-force;
 	Mpc.MpcDagDeriv(force,X,Y);  dSdU=dSdU-force;
+
+	// FIXME No force contribution from EvenEven assumed here
+	// Needs a fix for clover.
+	assert(NumOp.ConstEE() == 1);
+	assert(DenOp.ConstEE() == 1);
 
 	dSdU = -Ta(dSdU);
 
