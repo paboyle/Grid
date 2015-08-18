@@ -14,6 +14,7 @@
 // Abstract base interface
 ////////////////////////////////////////////
 #include <qcd/action/ActionBase.h>
+#include <qcd/action/ActionParams.h>
 
 ////////////////////////////////////////////
 // Gauge Actions
@@ -157,9 +158,9 @@ typedef DomainWallFermion<GparityWilsonImplD> GparityDomainWallFermionD;
 #include <qcd/action/pseudofermion/TwoFlavourEvenOddRatio.h>
 
 //Todo: RHMC
-//#include <qcd/action/pseudofermion/OneFlavour.h>
-//#include <qcd/action/pseudofermion/OneFlavourRatio.h>
-//#include <qcd/action/pseudofermion/OneFlavourEvenOdd.h>
-//#include <qcd/action/pseudofermion/OneFlavourEvenOddRatio.h>
+#include <qcd/action/pseudofermion/OneFlavourRational.h>
+//#include <qcd/action/pseudofermion/OneFlavourRationalRatio.h>
+//#include <qcd/action/pseudofermion/OneFlavourEvenOddRational.h>
+//#include <qcd/action/pseudofermion/OneFlavourEvenOddRationalRatio.h>
 
 #endif

@@ -5,6 +5,7 @@ namespace Grid {
 
   namespace QCD {
 
+
     //////////////////////////////////////////////
     // Template parameter class constructs to package
     // externally control Fermion implementations
@@ -126,8 +127,7 @@ namespace Grid {
       typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
 
       typedef WilsonCompressor<SiteHalfSpinor,SiteSpinor> Compressor;
-
-      typedef struct WilsonImplParams { } ImplParams;
+      typedef WilsonImplParams ImplParams;
       ImplParams Params;
       WilsonImpl(const ImplParams &p= ImplParams()) : Params(p) {}; 
 
@@ -177,6 +177,7 @@ PARALLEL_FOR_LOOP
     ////////////////////////////////////////////////////////////////////////////////////////
     // Flavour doubled spinors; is Gparity the only? what about C*?
     ////////////////////////////////////////////////////////////////////////////////////////
+
     template<class S,int Nrepresentation>
     class GparityWilsonImpl : public ImplGauge<S,Nrepresentation> { 
     public:
@@ -198,7 +199,7 @@ PARALLEL_FOR_LOOP
 
       typedef WilsonCompressor<SiteHalfSpinor,SiteSpinor> Compressor;
 
-      typedef struct GparityWilsonImplParams {std::vector<int> twists; } ImplParams;
+      typedef GparityWilsonImplParams ImplParams;
       ImplParams Params;
       GparityWilsonImpl(const ImplParams &p= ImplParams()) : Params(p) {}; 
       
