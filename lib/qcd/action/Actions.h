@@ -150,8 +150,16 @@ typedef DomainWallFermion<GparityWilsonImplD> GparityDomainWallFermionD;
 ////////////////////////////////////////
 // Pseudo fermion combinations for HMC
 ////////////////////////////////////////
+#include <qcd/action/pseudofermion/EvenOddSchurDifferentiable.h>
 #include <qcd/action/pseudofermion/TwoFlavour.h>
-#include <qcd/action/pseudofermion/TwoFlavourEvenOdd.h>
 #include <qcd/action/pseudofermion/TwoFlavourRatio.h>
+#include <qcd/action/pseudofermion/TwoFlavourEvenOdd.h>
+#include <qcd/action/pseudofermion/TwoFlavourEvenOddRatio.h>
+
+//Todo: RHMC
+//#include <qcd/action/pseudofermion/OneFlavour.h>
+//#include <qcd/action/pseudofermion/OneFlavourRatio.h>
+//#include <qcd/action/pseudofermion/OneFlavourEvenOdd.h>
+//#include <qcd/action/pseudofermion/OneFlavourEvenOddRatio.h>
 
 #endif
