@@ -60,6 +60,7 @@
 				     )(                                 \
 				       /* Do nothing, just terminate */ \
 									)
+
 #define _GRID_MACRO_MAP() GRID_MACRO_MAP
 
 #define GRID_MACRO_MEMBER(A,B)        A B;
@@ -67,7 +68,11 @@
 #define GRID_MACRO_OS_WRITE_MEMBER(A,B) os<< #A <<" "#B <<" = "<< obj. B <<" ; " <<std::endl;
 
 #define GRID_DECL_CLASS_MEMBERS(cname,...)		\
+  \
+  \
   GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_MEMBER,__VA_ARGS__))		\
+  \
+  \
   friend std::ostream & operator << (std::ostream &os, const cname &obj ) {	\
     os<<"class "<<#cname<<" {"<<std::endl;\
     GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_OS_WRITE_MEMBER,__VA_ARGS__))	\

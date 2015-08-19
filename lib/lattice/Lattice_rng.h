@@ -263,11 +263,11 @@ namespace Grid {
       int     osites=_grid->oSites();
       int words=sizeof(scalar_object)/sizeof(scalar_type);
 
-      std::vector<scalar_object> buf(Nsimd);
 
 PARALLEL_FOR_LOOP
       for(int ss=0;ss<osites;ss++){
 
+	std::vector<scalar_object> buf(Nsimd);
 	for(int m=0;m<multiplicity;m++) {// Draw from same generator multiplicity times
 
 	  int sm=multiplicity*ss+m;      // Maps the generator site to the fine site
