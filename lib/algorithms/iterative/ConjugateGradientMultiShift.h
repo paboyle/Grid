@@ -27,10 +27,14 @@ public:
 
 void operator() (LinearOperatorBase<Field> &Linop, const Field &src, Field &psi)
 {
-
   GridBase *grid = src._grid;
   int nshift = shifts.order;
   std::vector<Field> results(nshift,grid);
+  (*this)(Linop,src,results,psi);
+}
+void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector<Field> &results, Field &psi)
+{
+  int nshift = shifts.order;
 
   (*this)(Linop,src,results);
   

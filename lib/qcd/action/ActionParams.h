@@ -14,11 +14,14 @@ namespace QCD {
     struct OneFlavourRationalParams { 
       RealD  lo;
       RealD  hi;
-      int precision=64;
-      int    degree=10;
+      int MaxIter;   // Vector?
       RealD tolerance; // Vector? 
-      RealD MaxIter;   // Vector?
-      OneFlavourRationalParams (RealD lo,RealD hi,int precision=64,int degree = 10);
+      int    degree=10;
+      int precision=64;
+
+      OneFlavourRationalParams (RealD _lo,RealD _hi,int _maxit,RealD tol=1.0e-8,int _degree = 10,int _precision=64) :
+        lo(_lo), hi(_hi), MaxIter(_maxit), tolerance(tol), degree(_degree), precision(_precision)
+      {};
     };
 
 }}
