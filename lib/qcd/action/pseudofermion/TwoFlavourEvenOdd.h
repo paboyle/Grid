@@ -62,9 +62,9 @@ namespace Grid{
 	pickCheckerboard(Even,etaEven,eta);
 	pickCheckerboard(Odd,etaOdd,eta);
 
+	FermOp.ImportGauge(U);
 	SchurDifferentiableOperator<Impl> PCop(FermOp);
 	
-	FermOp.ImportGauge(U);
 
 	PCop.MpcDag(etaOdd,PhiOdd);
 

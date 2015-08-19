@@ -159,8 +159,8 @@ typedef DomainWallFermion<GparityWilsonImplD> GparityDomainWallFermionD;
 
 //Todo: RHMC
 #include <qcd/action/pseudofermion/OneFlavourRational.h>
-//#include <qcd/action/pseudofermion/OneFlavourRationalRatio.h>
-//#include <qcd/action/pseudofermion/OneFlavourEvenOddRational.h>
+#include <qcd/action/pseudofermion/OneFlavourEvenOddRational.h>
+#include <qcd/action/pseudofermion/OneFlavourRationalRatio.h>
 //#include <qcd/action/pseudofermion/OneFlavourEvenOddRationalRatio.h>
 
 #endif

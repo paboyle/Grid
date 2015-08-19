@@ -27,6 +27,8 @@ public:
     if ( inverse ) remez.getIPFE (&residues[0],&poles[0],&norm);
     else           remez.getPFE (&residues[0],&poles[0],&norm);
   }
+  // Allow deferred initialisation
+  MultiShiftFunction(void){};
   MultiShiftFunction(AlgRemez & remez,double tol,bool inverse)
   {
     Init(remez,tol,inverse);
