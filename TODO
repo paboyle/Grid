@@ -7,19 +7,19 @@ Done:
   - TwoFlavourEvenOdd        
   - TwoFlavourRatio
   - TwoFlavourRatioEvenOdd
-  => generalise to non-const EE
 
-fill in:
-  - OneFlavourRationalEvenOddConstEE
+Done:
   - OneFlavourRationalEvenOdd
-  - OneFlavourRationalRatioEvenOddConstEE
   - OneFlavourRationalRatioEvenOdd
   - OneFlavourRationalRatio
 
-- Clean up HMC
-- Fix a threading bug that has been introduced and prevents HMC running hybrid OMP mode
+TODO:
+=> generalise to non-const EE
+=> Test DWF HMC
+=> Clean up HMC
+   - Fix a threading bug that has been introduced and prevents HMC running hybrid OMP mode
 
-- Integrators
+=> Integrators
   - Force Gradient
   - Multi-timescale looks broken and operating on single timescale for now.
     Fix/debug/rewrite this 
@@ -30,8 +30,6 @@ fill in:
 - MacroMagic -> virtual reader class.
 
 - Link smearing/boundary conds; Policy class based implementation
-
-- Test DWF HMC
 
 - Rectangle gauge actions.
   Iwasaki,
@@ -102,9 +100,6 @@ Insert/Extract
    // localMaxAbs
    // Fourier transform equivalent.]
 
-================================================================
-*** New Functionality
-================================================================
 
 * CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
 

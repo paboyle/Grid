@@ -6,41 +6,6 @@ using namespace Grid::QCD;
 
 typedef typename GparityDomainWallFermionR::FermionField FermionField;
 
-template<class vobj>
-void Replicate(Lattice<vobj> &coarse,Lattice<vobj> & fine)
-{
-  typedef typename vobj::scalar_object sobj;
-
-  GridBase *cg = coarse._grid;
-  GridBase *fg =   fine._grid;
-
-  int nd = cg->_ndimension;
-
-  subdivides(cg,fg); 
-
-  assert(cg->_ndimension==fg->_ndimension);
-
-  std::vector<int> ratio(cg->_ndimension);
-
-  for(int d=0;d<cg->_ndimension;d++){
-    ratio[d] = fg->_fdimensions[d]/cg->_fdimensions[d];
-  }
-
-  std::vector<int> fcoor(nd);
-  std::vector<int> ccoor(nd);
-  for(int g=0;g<fg->gSites();g++){
-
-    fg->GlobalIndexToGlobalCoor(g,fcoor);
-    for(int d=0;d<nd;d++){
-      ccoor[d] = fcoor[d]%cg->_gdimensions[d];
-    }
-    
-    sobj tmp;
-    peekSite(tmp,coarse,ccoor);
-    pokeSite(tmp,fine,fcoor);
-  }
-
-}
 
 int main (int argc, char ** argv)
 {
