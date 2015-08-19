@@ -17,6 +17,8 @@ fill in:
   - OneFlavourRationalRatio
 
 - Clean up HMC
+- Fix a threading bug that has been introduced and prevents HMC running hybrid OMP mode
+
 - Integrators
   - Force Gradient
   - Multi-timescale looks broken and operating on single timescale for now.

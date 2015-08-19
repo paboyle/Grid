@@ -152,15 +152,20 @@ typedef DomainWallFermion<GparityWilsonImplD> GparityDomainWallFermionD;
 // Pseudo fermion combinations for HMC
 ////////////////////////////////////////
 #include <qcd/action/pseudofermion/EvenOddSchurDifferentiable.h>
+
 #include <qcd/action/pseudofermion/TwoFlavour.h>
 #include <qcd/action/pseudofermion/TwoFlavourRatio.h>
 #include <qcd/action/pseudofermion/TwoFlavourEvenOdd.h>
 #include <qcd/action/pseudofermion/TwoFlavourEvenOddRatio.h>
 
-//Todo: RHMC
+//IroIro inserted general "Nf" param; could also be done,
+//but not clear why unless into large Nf BSM studies
+//Even there, don't want the explicit (2) on power denominator
+//if even number of flavours, so further generalised interface
+//would be required but easy.
 #include <qcd/action/pseudofermion/OneFlavourRational.h>
-#include <qcd/action/pseudofermion/OneFlavourEvenOddRational.h>
 #include <qcd/action/pseudofermion/OneFlavourRationalRatio.h>
-//#include <qcd/action/pseudofermion/OneFlavourEvenOddRationalRatio.h>
+#include <qcd/action/pseudofermion/OneFlavourEvenOddRational.h>
+#include <qcd/action/pseudofermion/OneFlavourEvenOddRationalRatio.h>
 
 #endif
