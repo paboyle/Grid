@@ -5,6 +5,37 @@
 
 namespace Grid {
 
+
+  //////////////////////////////////////////////////////////////
+  // Allow the RNG state to be less dense than the fine grid
+  //////////////////////////////////////////////////////////////
+  inline int RNGfillable(GridBase *coarse,GridBase *fine)
+  {
+
+    int rngdims = coarse->_ndimension;
+
+    // trivially extended in higher dims, with locality guaranteeing RNG state is local to node
+    int lowerdims   = fine->_ndimension - coarse->_ndimension;
+    assert(lowerdims >= 0);
+    for(int d=0;d<lowerdims;d++){
+      assert(fine->_simd_layout[d]==1);
+      assert(fine->_processors[d]==1);
+    }
+
+    // local and global volumes subdivide cleanly after SIMDization
+    int multiplicity=1;
+    for(int d=0;d<rngdims;d++){
+      int fd= d+lowerdims;
+      assert(coarse->_processors[d]  == fine->_processors[fd]);
+      assert(coarse->_simd_layout[d] == fine->_simd_layout[fd]);
+      assert((fine->_rdimensions[fd] / coarse->_rdimensions[d])* coarse->_rdimensions[d]==fine->_rdimensions[fd]); 
+
+      multiplicity = multiplicity *fine->_rdimensions[fd] / coarse->_rdimensions[d]; 
+    }
+
+    return multiplicity;
+  }
+
   // Wrap seed_seq to give common interface with random_device
   class fixedSeed {
   public:
@@ -226,26 +257,32 @@ namespace Grid {
       typedef typename vobj::scalar_type scalar_type;
       typedef typename vobj::vector_type vector_type;
       
-      conformable(_grid,l._grid);
+      int multiplicity = RNGfillable(_grid,l._grid);
 
       int     Nsimd =_grid->Nsimd();
       int     osites=_grid->oSites();
       int words=sizeof(scalar_object)/sizeof(scalar_type);
 
-      std::vector<scalar_object> buf(Nsimd);
-      
-      for(int ss=0;ss<osites;ss++){
-	for(int si=0;si<Nsimd;si++){
 
-	  int gdx = generator_idx(ss,si); // index of generator state
-	  scalar_type *pointer = (scalar_type *)&buf[si];
-	  for(int idx=0;idx<words;idx++){
-	    fillScalar(pointer[idx],dist,_generators[gdx]);
+PARALLEL_FOR_LOOP
+      for(int ss=0;ss<osites;ss++){
+
+	std::vector<scalar_object> buf(Nsimd);
+	for(int m=0;m<multiplicity;m++) {// Draw from same generator multiplicity times
+
+	  int sm=multiplicity*ss+m;      // Maps the generator site to the fine site
+
+	  for(int si=0;si<Nsimd;si++){
+	    int gdx = generator_idx(ss,si); // index of generator state
+	    scalar_type *pointer = (scalar_type *)&buf[si];
+	    for(int idx=0;idx<words;idx++){
+	      fillScalar(pointer[idx],dist,_generators[gdx]);
+	    }
 	  }
 
+	  // merge into SIMD lanes
+	  merge(l._odata[sm],buf);
 	}
-	// merge into SIMD lanes
-	merge(l._odata[ss],buf);
       }
     };
 

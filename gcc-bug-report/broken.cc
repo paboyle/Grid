@@ -29,12 +29,12 @@ public:
 
 template<int N,class obj,typename std::enable_if<N==obj::NestLevel >::type * = nullptr > auto function(const obj &arg)-> obj
 {
-  std::cout<<"Leaf "<<obj::NestLevel<<std::endl;
+  std::cout<<GridLogMessage<<"Leaf "<<obj::NestLevel<<std::endl;
   return arg;
 }
 template<int N,class obj,typename std::enable_if<N!=obj::NestLevel >::type * = nullptr > auto function(const obj &arg)-> obj
 {
-  std::cout<<"Node "<<obj::NestLevel<<std::endl;
+  std::cout<<GridLogMessage<<"Node "<<obj::NestLevel<<std::endl;
   obj ret;
   ret.internal=function<N>(arg.internal);
   return ret;

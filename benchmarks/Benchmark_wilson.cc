@@ -28,10 +28,10 @@ int main (int argc, char ** argv)
   GridRedBlackCartesian     RBGrid(latt_size,simd_layout,mpi_layout);
 
   int threads = GridThread::GetThreads();
-  std::cout << "Grid is setup to use "<<threads<<" threads"<<std::endl;
-  std::cout << "Grid floating point word size is REALF"<< sizeof(RealF)<<std::endl;
-  std::cout << "Grid floating point word size is REALD"<< sizeof(RealD)<<std::endl;
-  std::cout << "Grid floating point word size is REAL"<< sizeof(Real)<<std::endl;
+  std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
+  std::cout<<GridLogMessage << "Grid floating point word size is REALF"<< sizeof(RealF)<<std::endl;
+  std::cout<<GridLogMessage << "Grid floating point word size is REALD"<< sizeof(RealD)<<std::endl;
+  std::cout<<GridLogMessage << "Grid floating point word size is REAL"<< sizeof(Real)<<std::endl;
 
   std::vector<int> seeds({1,2,3,4});
   GridParallelRNG          pRNG(&Grid);
@@ -58,8 +58,8 @@ int main (int argc, char ** argv)
   for(int nn=0;nn<Nd;nn++){
     random(pRNG,U[nn]);
     if(0) {
-      if (nn==-1) { U[nn]=zero; std::cout << "zeroing gauge field in dir "<<nn<<std::endl; }
-      else       { U[nn] = cone;std::cout << "unit gauge field in dir "<<nn<<std::endl; }
+      if (nn==-1) { U[nn]=zero; std::cout<<GridLogMessage << "zeroing gauge field in dir "<<nn<<std::endl; }
+      else       { U[nn] = cone;std::cout<<GridLogMessage << "unit gauge field in dir "<<nn<<std::endl; }
     }
     pokeIndex<LorentzIndex>(Umu,U[nn],nn);
   }
@@ -87,9 +87,9 @@ int main (int argc, char ** argv)
   }
   ref = -0.5*ref;
   RealD mass=0.1;
-  WilsonFermion Dw(Umu,Grid,RBGrid,mass);
+  WilsonFermionR Dw(Umu,Grid,RBGrid,mass);
   
-  std::cout << "Calling Dw"<<std::endl;
+  std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
   int ncall=10000;
   double t0=usecond();
   for(int i=0;i<ncall;i++){
@@ -98,12 +98,12 @@ int main (int argc, char ** argv)
   double t1=usecond();
   double flops=1344*volume*ncall;
   
-  std::cout << "Called Dw"<<std::endl;
-  std::cout << "norm result "<< norm2(result)<<std::endl;
-  std::cout << "norm ref    "<< norm2(ref)<<std::endl;
-  std::cout << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
+  std::cout<<GridLogMessage << "Called Dw"<<std::endl;
+  std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
+  std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
+  std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
   err = ref-result; 
-  std::cout << "norm diff   "<< norm2(err)<<std::endl;
+  std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
 
 
   //  for(int ss=0;ss<10;ss++ ){
@@ -112,7 +112,7 @@ int main (int argc, char ** argv)
       for(int j=0;j<Nc;j++){
 	ComplexF * ref_p = (ComplexF *)&ref._odata[ss]()(i)(j);
 	ComplexF * res_p = (ComplexF *)&result._odata[ss]()(i)(j);
-	std::cout << ss<< " "<<i<<" "<<j<<" "<< (*ref_p)<<" " <<(*res_p)<<std::endl;
+	std::cout<<GridLogMessage << ss<< " "<<i<<" "<<j<<" "<< (*ref_p)<<" " <<(*res_p)<<std::endl;
       }
     }
   }
@@ -136,11 +136,11 @@ int main (int argc, char ** argv)
   }
   ref = -0.5*ref;
   Dw.Dhop(src,result,1);
-  std::cout << "Called DwDag"<<std::endl;
-  std::cout << "norm result "<< norm2(result)<<std::endl;
-  std::cout << "norm ref    "<< norm2(ref)<<std::endl;
+  std::cout<<GridLogMessage << "Called DwDag"<<std::endl;
+  std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
+  std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
   err = ref-result; 
-  std::cout << "norm diff   "<< norm2(err)<<std::endl;
+  std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
 
   Grid_finalize();
 }

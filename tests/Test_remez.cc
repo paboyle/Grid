@@ -8,7 +8,7 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::cout << "Testing Remez"<<std::endl;
+  std::cout<<GridLogMessage << "Testing Remez"<<std::endl;
 
   double     lo=0.01;
   double     hi=1.0;
@@ -20,13 +20,13 @@ int main (int argc, char ** argv)
   // sqrt and inverse sqrt
   ////////////////////////////////////////
 
-  std::cout << "Generating degree "<<degree<<" for x^(1/2)"<<std::endl;
+  std::cout<<GridLogMessage << "Generating degree "<<degree<<" for x^(1/2)"<<std::endl;
   remez.generateApprox(degree,1,2);
   MultiShiftFunction Sqrt(remez,1.0,false);
   MultiShiftFunction InvSqrt(remez,1.0,true);
 
 
-  std::cout << "Generating degree "<<degree<<" for x^(1/4)"<<std::endl;
+  std::cout<<GridLogMessage << "Generating degree "<<degree<<" for x^(1/4)"<<std::endl;
   remez.generateApprox(degree,1,4);
   MultiShiftFunction SqrtSqrt(remez,1.0,false);
   MultiShiftFunction InvSqrtSqrt(remez,1.0,true);
@@ -49,10 +49,10 @@ int main (int argc, char ** argv)
   double aisx =InvSqrt.approx(x);
   double aissx=InvSqrtSqrt.approx(x);
 
-  std::cout << "x^(1/2) : "<<sx<<" "<<asx<<std::endl;
-  std::cout << "x^(1/4) : "<<ssx<<" "<<assx<<std::endl;
-  std::cout << "x^(-1/2): "<<isx<<" "<<aisx<<std::endl;
-  std::cout << "x^(-1/4): "<<issx<<" "<<aissx<<std::endl;
+  std::cout<<GridLogMessage << "x^(1/2) : "<<sx<<" "<<asx<<std::endl;
+  std::cout<<GridLogMessage << "x^(1/4) : "<<ssx<<" "<<assx<<std::endl;
+  std::cout<<GridLogMessage << "x^(-1/2): "<<isx<<" "<<aisx<<std::endl;
+  std::cout<<GridLogMessage << "x^(-1/4): "<<issx<<" "<<aissx<<std::endl;
   assert(fabs(sx-asx)<1.0e-6);
   assert(fabs(ssx-assx)<1.0e-6);
   assert(fabs(isx-aisx)<1.0e-6);

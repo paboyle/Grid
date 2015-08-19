@@ -15,7 +15,9 @@
 #ifndef INCLUDED_ALG_REMEZ_H
 #define INCLUDED_ALG_REMEZ_H
 
-#include <algorithms/approx/bigfloat_double.h>
+#include <stddef.h>
+
+#include <algorithms/approx/bigfloat.h>
 
 #define JMAX 10000 //Maximum number of iterations of Newton's approximation
 #define SUM_MAX 10 // Maximum number of terms in exponential
@@ -28,6 +30,7 @@
   remez.getIPFE(res,pole,&norm);
   remez.csv(ostream &os);
  */
+
 class AlgRemez
 {
  private:

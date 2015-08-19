@@ -11,15 +11,15 @@ int main (int argc, char ** argv)
   std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplexD::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
   int threads = GridThread::GetThreads();
-  std::cout << "Grid is setup to use "<<threads<<" threads"<<std::endl;
+  std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   int Nloop=10;
   int nmu=0;
   for(int mu=0;mu<4;mu++) if (mpi_layout[mu]>1) nmu++;
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "= Benchmarking concurrent halo exchange in "<<nmu<<" dimensions"<<std::endl;
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "= Benchmarking concurrent halo exchange in "<<nmu<<" dimensions"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
 
 
 
@@ -87,15 +87,15 @@ int main (int argc, char ** argv)
 
       double time = stop-start; // microseconds
 
-      std::cout << lat<<"\t\t"<<Ls<<"\t\t"<<bytes<<"\t\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
+      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<<bytes<<"\t\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
     }
   }    
 
 
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "= Benchmarking sequential halo exchange in "<<nmu<<" dimensions"<<std::endl;
-  std::cout << "===================================================================================================="<<std::endl;
-  std::cout << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "= Benchmarking sequential halo exchange in "<<nmu<<" dimensions"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
 
 
   for(int lat=4;lat<=32;lat+=2){
@@ -163,7 +163,7 @@ int main (int argc, char ** argv)
 
       double time = stop-start;
 
-      std::cout << lat<<"\t\t"<<Ls<<"\t\t"<<bytes<<"\t\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
+      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<<bytes<<"\t\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
     }
   }  
 

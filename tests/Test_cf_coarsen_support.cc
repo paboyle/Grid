@@ -48,38 +48,38 @@ int main (int argc, char ** argv)
   RealD M5=1.8;
 
   {
-    OverlapWilsonContFracTanhFermion Dcf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
-    HermitianLinearOperator<OverlapWilsonContFracTanhFermion,LatticeFermion> HermIndefOp(Dcf);
+    OverlapWilsonContFracTanhFermionR Dcf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
+    HermitianLinearOperator<OverlapWilsonContFracTanhFermionR,LatticeFermion> HermIndefOp(Dcf);
 
     HermIndefOp.Op(src,ref);
     HermIndefOp.OpDiag(src,result);
     
     for(int d=0;d<4;d++){
       HermIndefOp.OpDir(src,tmp,d,+1); result=result+tmp; 
-      std::cout<<"dir "<<d<<" tmp "<<norm2(tmp)<<std::endl;
+      std::cout<<GridLogMessage<<"dir "<<d<<" tmp "<<norm2(tmp)<<std::endl;
       HermIndefOp.OpDir(src,tmp,d,-1); result=result+tmp;
-      std::cout<<"dir "<<d<<" tmp "<<norm2(tmp)<<std::endl;
+      std::cout<<GridLogMessage<<"dir "<<d<<" tmp "<<norm2(tmp)<<std::endl;
     }
     err = result-ref;
-    std::cout<<"Error "<<norm2(err)<<std::endl;
+    std::cout<<GridLogMessage<<"Error "<<norm2(err)<<std::endl;
   }
 
   {
-    OverlapWilsonPartialFractionTanhFermion Dpf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
-    HermitianLinearOperator<OverlapWilsonPartialFractionTanhFermion,LatticeFermion> HermIndefOp(Dpf);
+    OverlapWilsonPartialFractionTanhFermionR Dpf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
+    HermitianLinearOperator<OverlapWilsonPartialFractionTanhFermionR,LatticeFermion> HermIndefOp(Dpf);
     
     HermIndefOp.Op(src,ref);
     HermIndefOp.OpDiag(src,result);
     
     for(int d=0;d<4;d++){
       HermIndefOp.OpDir(src,tmp,d,+1); result=result+tmp; 
-      std::cout<<"dir "<<d<<" tmp "<<norm2(tmp)<<std::endl;
+      std::cout<<GridLogMessage<<"dir "<<d<<" tmp "<<norm2(tmp)<<std::endl;
       HermIndefOp.OpDir(src,tmp,d,-1); result=result+tmp;
-      std::cout<<"dir "<<d<<" tmp "<<norm2(tmp)<<std::endl;
+      std::cout<<GridLogMessage<<"dir "<<d<<" tmp "<<norm2(tmp)<<std::endl;
     }
 
     err = result-ref;
-    std::cout<<"Error "<<norm2(err)<<std::endl;
+    std::cout<<GridLogMessage<<"Error "<<norm2(err)<<std::endl;
   }
 
 

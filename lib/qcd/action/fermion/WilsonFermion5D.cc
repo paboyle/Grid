@@ -3,19 +3,20 @@
 namespace Grid {
 namespace QCD {
   
-  // S-direction is INNERMOST and takes no part in the parity.
-  const std::vector<int> WilsonFermion5D::directions   ({1,2,3,4, 1, 2, 3, 4});
-  const std::vector<int> WilsonFermion5D::displacements({1,1,1,1,-1,-1,-1,-1});
-
-  int WilsonFermion5D::HandOptDslash;
+// S-direction is INNERMOST and takes no part in the parity.
+const std::vector<int> WilsonFermion5DStatic::directions   ({1,2,3,4, 1, 2, 3, 4});
+const std::vector<int> WilsonFermion5DStatic::displacements({1,1,1,1,-1,-1,-1,-1});
+int WilsonFermion5DStatic::HandOptDslash;
 
   // 5d lattice for DWF.
-  WilsonFermion5D::WilsonFermion5D(LatticeGaugeField &_Umu,
-					   GridCartesian         &FiveDimGrid,
-					   GridRedBlackCartesian &FiveDimRedBlackGrid,
-					   GridCartesian         &FourDimGrid,
-					   GridRedBlackCartesian &FourDimRedBlackGrid,
-					   RealD _M5) :
+template<class Impl>
+WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
+				       GridCartesian         &FiveDimGrid,
+				       GridRedBlackCartesian &FiveDimRedBlackGrid,
+				       GridCartesian         &FourDimGrid,
+				       GridRedBlackCartesian &FourDimRedBlackGrid,
+				       RealD _M5,const ImplParams &p) :
+  Kernels(p),
   _FiveDimGrid(&FiveDimGrid),
   _FiveDimRedBlackGrid(&FiveDimRedBlackGrid),
   _FourDimGrid(&FourDimGrid),
@@ -65,33 +66,26 @@ namespace QCD {
 
   // Allocate the required comms buffer
   comm_buf.resize(Stencil._unified_buffer_size); // this is always big enough to contain EO
-  
-  DoubleStore(Umu,_Umu);
+
+  ImportGauge(_Umu);
+}  
+template<class Impl>
+void WilsonFermion5D<Impl>::ImportGauge(const GaugeField &_Umu)
+{
+  Impl::DoubleStore(GaugeGrid(),Umu,_Umu);
   pickCheckerboard(Even,UmuEven,Umu);
   pickCheckerboard(Odd ,UmuOdd,Umu);
 }
-void WilsonFermion5D::DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGaugeField &Umu)
-{
-  assert(GaugeGrid()->_ndimension==4);
-  conformable(Uds._grid,GaugeGrid());
-  conformable(Umu._grid,GaugeGrid());
-  LatticeColourMatrix U(GaugeGrid());
-  for(int mu=0;mu<Nd;mu++){
-    U = PeekIndex<LorentzIndex>(Umu,mu);
-    PokeIndex<LorentzIndex>(Uds,U,mu);
-    U = adj(Cshift(U,mu,-1));
-    PokeIndex<LorentzIndex>(Uds,U,mu+4);
-  }
-}
-void WilsonFermion5D::DhopDir(const LatticeFermion &in, LatticeFermion &out,int dir5,int disp)
+template<class Impl>
+void WilsonFermion5D<Impl>::DhopDir(const FermionField &in, FermionField &out,int dir5,int disp)
 {
   int dir = dir5-1; // Maps to the ordering above in "directions" that is passed to stencil
                     // we drop off the innermost fifth dimension
   //  assert( (disp==1)||(disp==-1) );
   //  assert( (dir>=0)&&(dir<4) ); //must do x,y,z or t;
 
-  WilsonCompressor compressor(DaggerNo);
-  Stencil.HaloExchange<vSpinColourVector,vHalfSpinColourVector,WilsonCompressor>(in,comm_buf,compressor);
+  Compressor compressor(DaggerNo);
+  Stencil.HaloExchange<SiteSpinor,SiteHalfSpinor,Compressor>(in,comm_buf,compressor);
   
   int skip = (disp==1) ? 0 : 1;
 
@@ -100,25 +94,133 @@ void WilsonFermion5D::DhopDir(const LatticeFermion &in, LatticeFermion &out,int 
   assert(dirdisp<=7);
   assert(dirdisp>=0);
 
-//PARALLEL_FOR_LOOP
+PARALLEL_FOR_LOOP
   for(int ss=0;ss<Umu._grid->oSites();ss++){
     for(int s=0;s<Ls;s++){
       int sU=ss;
       int sF = s+Ls*sU; 
-      DiracOptDhopDir(Stencil,Umu,comm_buf,sF,sU,in,out,dirdisp);
+      Kernels::DiracOptDhopDir(Stencil,Umu,comm_buf,sF,sU,in,out,dirdisp,dirdisp);
     }
   }
 };
 
-void WilsonFermion5D::DhopInternal(CartesianStencil & st, LebesgueOrder &lo,
-				   LatticeDoubledGaugeField & U,
-			   const LatticeFermion &in, LatticeFermion &out,int dag)
+template<class Impl>
+void WilsonFermion5D<Impl>::DerivInternal(CartesianStencil & st,
+					  DoubledGaugeField & U,
+					  GaugeField &mat,
+					  const FermionField &A,
+					  const FermionField &B,
+					  int dag)
+{
+  assert((dag==DaggerNo) ||(dag==DaggerYes));
+
+  conformable(st._grid,A._grid);
+  conformable(st._grid,B._grid);
+
+  Compressor compressor(dag);
+  
+  FermionField Btilde(B._grid);
+  FermionField Atilde(B._grid);
+
+  st.HaloExchange<SiteSpinor,SiteHalfSpinor,Compressor>(B,comm_buf,compressor);
+
+  Atilde=A;
+
+  for(int mu=0;mu<Nd;mu++){
+      
+    ////////////////////////////////////////////////////////////////////////
+    // Flip gamma if dag
+    ////////////////////////////////////////////////////////////////////////
+    int gamma = mu;
+    if ( dag ) gamma+= Nd;
+
+    ////////////////////////
+    // Call the single hop
+    ////////////////////////
+
+PARALLEL_FOR_LOOP
+    for(int sss=0;sss<U._grid->oSites();sss++){
+      for(int s=0;s<Ls;s++){
+	int sU=sss;
+	int sF = s+Ls*sU;
+
+	assert ( sF< B._grid->oSites());
+	assert ( sU< U._grid->oSites());
+
+	Kernels::DiracOptDhopDir(st,U,comm_buf,sF,sU,B,Btilde,mu,gamma);
+
+    ////////////////////////////
+    // spin trace outer product
+    ////////////////////////////
+
+      }
+
+    }
+
+    Impl::InsertForce5D(mat,Btilde,Atilde,mu);
+
+  }
+}
+
+template<class Impl>
+void WilsonFermion5D<Impl>::DhopDeriv(      GaugeField &mat,
+					    const FermionField &A,
+					    const FermionField &B,
+					    int dag)
+{
+  conformable(A._grid,FermionGrid());  
+  conformable(A._grid,B._grid);
+  conformable(GaugeGrid(),mat._grid);
+
+  mat.checkerboard = A.checkerboard;
+
+  DerivInternal(Stencil,Umu,mat,A,B,dag);
+}
+
+template<class Impl>
+void WilsonFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
+					const FermionField &A,
+					const FermionField &B,
+					int dag)
+{
+  conformable(A._grid,FermionRedBlackGrid());
+  conformable(GaugeRedBlackGrid(),mat._grid);
+  conformable(A._grid,B._grid);
+
+  assert(B.checkerboard==Odd);
+  assert(A.checkerboard==Even);
+  mat.checkerboard = Even;
+
+  DerivInternal(StencilOdd,UmuEven,mat,A,B,dag);
+}
+
+template<class Impl>
+void WilsonFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
+				  const FermionField &A,
+				  const FermionField &B,
+				  int dag)
+{
+  conformable(A._grid,FermionRedBlackGrid());
+  conformable(GaugeRedBlackGrid(),mat._grid);
+  conformable(A._grid,B._grid);
+
+  assert(B.checkerboard==Even);
+  assert(A.checkerboard==Odd);
+  mat.checkerboard = Odd;
+
+  DerivInternal(StencilEven,UmuOdd,mat,A,B,dag);
+}
+
+template<class Impl>
+void WilsonFermion5D<Impl>::DhopInternal(CartesianStencil & st, LebesgueOrder &lo,
+					 DoubledGaugeField & U,
+					 const FermionField &in, FermionField &out,int dag)
 {
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
 
-  WilsonCompressor compressor(dag);
+  Compressor compressor(dag);
 
-  st.HaloExchange<vSpinColourVector,vHalfSpinColourVector,WilsonCompressor>(in,comm_buf,compressor);
+  st.HaloExchange<SiteSpinor,SiteHalfSpinor,Compressor>(in,comm_buf,compressor);
   
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
   // Not loop ordering and data layout.
@@ -126,13 +228,13 @@ void WilsonFermion5D::DhopInternal(CartesianStencil & st, LebesgueOrder &lo,
   // - per thread reuse in L1 cache for U
   // - 8 linear access unit stride streams per thread for Fermion for hw prefetchable.
   if ( dag == DaggerYes ) {
-    if( HandOptDslash ) {
+    if( this->HandOptDslash ) {
 PARALLEL_FOR_LOOP
       for(int ss=0;ss<U._grid->oSites();ss++){
 	for(int s=0;s<Ls;s++){
 	  int sU=ss;
 	  int sF = s+Ls*sU;
-	  DiracOptHandDhopSiteDag(st,U,comm_buf,sF,sU,in,out);
+	  Kernels::DiracOptHandDhopSiteDag(st,U,comm_buf,sF,sU,in,out);
 	  }
       }
     } else { 
@@ -143,20 +245,20 @@ PARALLEL_FOR_LOOP
 	  for(sd=0;sd<Ls;sd++){
 	    int sU=ss;
 	    int sF = sd+Ls*sU;
-	    DiracOptDhopSiteDag(st,U,comm_buf,sF,sU,in,out);
+	    Kernels::DiracOptDhopSiteDag(st,U,comm_buf,sF,sU,in,out);
 	  }
 	}
       }
     }
   } else {
-    if( HandOptDslash ) {
+    if( this->HandOptDslash ) {
 PARALLEL_FOR_LOOP
       for(int ss=0;ss<U._grid->oSites();ss++){
 	for(int s=0;s<Ls;s++){
 	  //	  int sU=lo.Reorder(ss);
 	  int sU=ss;
 	  int sF = s+Ls*sU;
-	  DiracOptHandDhopSite(st,U,comm_buf,sF,sU,in,out);
+	  Kernels::DiracOptHandDhopSite(st,U,comm_buf,sF,sU,in,out);
 	}
       }
 
@@ -167,13 +269,14 @@ PARALLEL_FOR_LOOP
 	  //	  int sU=lo.Reorder(ss);
 	  int sU=ss;
 	  int sF = s+Ls*sU; 
-	  DiracOptDhopSite(st,U,comm_buf,sF,sU,in,out);
+	  Kernels::DiracOptDhopSite(st,U,comm_buf,sF,sU,in,out);
 	}
       }
     }
   }
 }
-void WilsonFermion5D::DhopOE(const LatticeFermion &in, LatticeFermion &out,int dag)
+template<class Impl>
+void WilsonFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int dag)
 {
   conformable(in._grid,FermionRedBlackGrid());    // verifies half grid
   conformable(in._grid,out._grid); // drops the cb check
@@ -183,7 +286,8 @@ void WilsonFermion5D::DhopOE(const LatticeFermion &in, LatticeFermion &out,int d
 
   DhopInternal(StencilEven,LebesgueEvenOdd,UmuOdd,in,out,dag);
 }
-void WilsonFermion5D::DhopEO(const LatticeFermion &in, LatticeFermion &out,int dag)
+template<class Impl>
+void WilsonFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag)
 {
   conformable(in._grid,FermionRedBlackGrid());    // verifies half grid
   conformable(in._grid,out._grid); // drops the cb check
@@ -193,7 +297,8 @@ void WilsonFermion5D::DhopEO(const LatticeFermion &in, LatticeFermion &out,int d
 
   DhopInternal(StencilOdd,LebesgueEvenOdd,UmuEven,in,out,dag);
 }
-void WilsonFermion5D::Dhop(const LatticeFermion &in, LatticeFermion &out,int dag)
+template<class Impl>
+void WilsonFermion5D<Impl>::Dhop(const FermionField &in, FermionField &out,int dag)
 {
   conformable(in._grid,FermionGrid()); // verifies full grid
   conformable(in._grid,out._grid);
@@ -202,12 +307,16 @@ void WilsonFermion5D::Dhop(const LatticeFermion &in, LatticeFermion &out,int dag
 
   DhopInternal(Stencil,Lebesgue,Umu,in,out,dag);
 }
-void WilsonFermion5D::DW(const LatticeFermion &in, LatticeFermion &out,int dag)
+template<class Impl>
+void WilsonFermion5D<Impl>::DW(const FermionField &in, FermionField &out,int dag)
 {
   out.checkerboard=in.checkerboard;
   Dhop(in,out,dag); // -0.5 is included
   axpy(out,4.0-M5,in,out);
 }
+
+FermOpTemplateInstantiate(WilsonFermion5D);
+
 }}
 
 

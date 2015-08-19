@@ -19,6 +19,7 @@ namespace QCD {
     static const int Nd=4;
     static const int Nhs=2; // half spinor
     static const int Nds=8; // double stored gauge field
+    static const int Ngp=2; // gparity index range
 
     //////////////////////////////////////////////////////////////////////////////
     // QCD iMatrix types
@@ -27,7 +28,16 @@ namespace QCD {
     static const int ColourIndex = 2;
     static const int SpinIndex   = 1;
     static const int LorentzIndex= 0;
-    
+
+    // Useful traits is this a spin index
+    //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
+
+    const int SpinorIndex = 2;
+    template<typename T> struct isSpinor {
+      static const bool value = (SpinorIndex==T::TensorLevel);
+    };
+    template <typename T> using IfSpinor    = Invoke<std::enable_if< isSpinor<T>::value,int> > ;
+    template <typename T> using IfNotSpinor = Invoke<std::enable_if<!isSpinor<T>::value,int> > ;
 
     // ChrisK very keen to add extra space for Gparity doubling.
     //
@@ -48,6 +58,10 @@ namespace QCD {
     template<typename vtype> using iSpinColourVector          = iScalar<iVector<iVector<vtype, Nc>, Ns> >;
     template<typename vtype> using iHalfSpinVector            = iScalar<iVector<iScalar<vtype>, Nhs> >;
     template<typename vtype> using iHalfSpinColourVector      = iScalar<iVector<iVector<vtype, Nc>, Nhs> >;
+
+    template<typename vtype> using iGparitySpinColourVector       = iVector<iVector<iVector<vtype, Nc>, Nhs>, Ngp >;
+    template<typename vtype> using iGparityHalfSpinColourVector   = iVector<iVector<iVector<vtype, Nc>, Nhs>, Ngp >;
+
 
     // Spin matrix
     typedef iSpinMatrix<Complex  >          SpinMatrix;

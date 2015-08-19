@@ -52,37 +52,37 @@ int main (int argc, char ** argv)
   
   RealD mass=0.5;
   RealD M5=1.8;
-  DomainWallFermion Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
-  std::cout<<"*********************************************************"<<std::endl;
-  std::cout<<"* Solving with MdagM VPGCR "<<std::endl;
-  std::cout<<"*********************************************************"<<std::endl;
-  MdagMLinearOperator<DomainWallFermion,LatticeFermion> HermOp(Ddwf);
+  std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
+  std::cout<<GridLogMessage<<"* Solving with MdagM VPGCR "<<std::endl;
+  std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
+  MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
   result=zero;
   PGCR(HermOp,src,result);
 
-  std::cout<<"*********************************************************"<<std::endl;
-  std::cout<<"* Solving with g5-VPGCR "<<std::endl;
-  std::cout<<"*********************************************************"<<std::endl;
-  Gamma5R5HermitianLinearOperator<DomainWallFermion,LatticeFermion> g5HermOp(Ddwf);
+  std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
+  std::cout<<GridLogMessage<<"* Solving with g5-VPGCR "<<std::endl;
+  std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
+  Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> g5HermOp(Ddwf);
   result=zero;
   PGCR(g5HermOp,src,result);
 
-  std::cout<<"*********************************************************"<<std::endl;
-  std::cout<<"* Solving with MdagM-CR "<<std::endl;
-  std::cout<<"*********************************************************"<<std::endl;
+  std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
+  std::cout<<GridLogMessage<<"* Solving with MdagM-CR "<<std::endl;
+  std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
   result=zero;
   CR(HermOp,src,result);
 
-  std::cout<<"*********************************************************"<<std::endl;
-  std::cout<<"* Solving with g5-CR "<<std::endl;
-  std::cout<<"*********************************************************"<<std::endl;
+  std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
+  std::cout<<GridLogMessage<<"* Solving with g5-CR "<<std::endl;
+  std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
   result=zero;
   CR(g5HermOp,src,result);
 
-  std::cout<<"*********************************************************"<<std::endl;
-  std::cout<<"* Solving with MdagM-CG "<<std::endl;
-  std::cout<<"*********************************************************"<<std::endl;
+  std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
+  std::cout<<GridLogMessage<<"* Solving with MdagM-CG "<<std::endl;
+  std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
   result=zero;
   CG(HermOp,src,result);
 

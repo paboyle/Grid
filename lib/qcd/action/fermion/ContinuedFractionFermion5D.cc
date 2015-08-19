@@ -3,20 +3,22 @@
 namespace Grid {
   namespace QCD {
 
-    void ContinuedFractionFermion5D::SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD scale)
+    template<class Impl>
+    void ContinuedFractionFermion5D<Impl>::SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD scale)
     {
       SetCoefficientsZolotarev(1.0/scale,zdata);
     }
-    void ContinuedFractionFermion5D::SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata)
+    template<class Impl>
+    void ContinuedFractionFermion5D<Impl>::SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata)
     {
       // How to check Ls matches??
-      //      std::cout << Ls << " Ls"<<std::endl;
-      //      std::cout << zdata->n  << " - n"<<std::endl;
-      //      std::cout << zdata->da << " -da "<<std::endl;
-      //      std::cout << zdata->db << " -db"<<std::endl;
-      //      std::cout << zdata->dn << " -dn"<<std::endl;
-      //      std::cout << zdata->dd << " -dd"<<std::endl;
-
+      //      std::cout<<GridLogMessage << Ls << " Ls"<<std::endl;
+      //      std::cout<<GridLogMessage << zdata->n  << " - n"<<std::endl;
+      //      std::cout<<GridLogMessage << zdata->da << " -da "<<std::endl;
+      //      std::cout<<GridLogMessage << zdata->db << " -db"<<std::endl;
+      //      std::cout<<GridLogMessage << zdata->dn << " -dn"<<std::endl;
+      //      std::cout<<GridLogMessage << zdata->dd << " -dd"<<std::endl;
+      int Ls = this->Ls;
       assert(zdata->db==Ls);// Beta has Ls coeffs
 
       R=(1+this->mass)/(1-this->mass);
@@ -39,7 +41,7 @@ namespace Grid {
 
 
       ZoloHiInv =1.0/zolo_hi;
-      dw_diag = (4.0-M5)*ZoloHiInv;
+      dw_diag = (4.0-this->M5)*ZoloHiInv;
     
       See.resize(Ls);
       Aee.resize(Ls);
@@ -55,17 +57,20 @@ namespace Grid {
 	See[s] = Aee[s] - 1.0/See[s-1];
       }
       for(int s=0;s<Ls;s++){
-	std::cout <<"s = "<<s<<" Beta "<<Beta[s]<<" Aee "<<Aee[s] <<" See "<<See[s] <<std::endl;
+	std::cout<<GridLogMessage <<"s = "<<s<<" Beta "<<Beta[s]<<" Aee "<<Aee[s] <<" See "<<See[s] <<std::endl;
       }
     }
 
 
 
-    RealD  ContinuedFractionFermion5D::M           (const LatticeFermion &psi, LatticeFermion &chi)
+    template<class Impl>
+    RealD  ContinuedFractionFermion5D<Impl>::M           (const FermionField &psi, FermionField &chi)
     {
-      LatticeFermion D(psi._grid);
+      int Ls = this->Ls;
 
-      DW(psi,D,DaggerNo); 
+      FermionField D(psi._grid);
+
+      this->DW(psi,D,DaggerNo); 
 
       int sign=1;
       for(int s=0;s<Ls;s++){
@@ -83,15 +88,20 @@ namespace Grid {
       }
       return norm2(chi);
     }
-    RealD  ContinuedFractionFermion5D::Mdag        (const LatticeFermion &psi, LatticeFermion &chi)
+    template<class Impl>
+    RealD  ContinuedFractionFermion5D<Impl>::Mdag        (const FermionField &psi, FermionField &chi)
     {
       // This matrix is already hermitian. (g5 Dw) = Dw dag g5 = (g5 Dw)dag
       // The rest of matrix is symmetric.
       // Can ignore "dag"
       return M(psi,chi);
     }
-    void  ContinuedFractionFermion5D::Mdir (const LatticeFermion &psi, LatticeFermion &chi,int dir,int disp){
-      DhopDir(psi,chi,dir,disp); // Dslash on diagonal. g5 Dslash is hermitian
+    template<class Impl>
+    void  ContinuedFractionFermion5D<Impl>::Mdir (const FermionField &psi, FermionField &chi,int dir,int disp){
+      int Ls = this->Ls;
+
+      this->DhopDir(psi,chi,dir,disp); // Dslash on diagonal. g5 Dslash is hermitian
+
       int sign=1;
       for(int s=0;s<Ls;s++){
 	if ( s==(Ls-1) ){
@@ -102,13 +112,16 @@ namespace Grid {
 	sign=-sign; 
       }
     }
-    void   ContinuedFractionFermion5D::Meooe       (const LatticeFermion &psi, LatticeFermion &chi)
+    template<class Impl>
+    void   ContinuedFractionFermion5D<Impl>::Meooe       (const FermionField &psi, FermionField &chi)
     {
+      int Ls = this->Ls;
+
       // Apply 4d dslash
       if ( psi.checkerboard == Odd ) {
-	DhopEO(psi,chi,DaggerNo); // Dslash on diagonal. g5 Dslash is hermitian
+	this->DhopEO(psi,chi,DaggerNo); // Dslash on diagonal. g5 Dslash is hermitian
       } else {
-	DhopOE(psi,chi,DaggerNo); // Dslash on diagonal. g5 Dslash is hermitian
+	this->DhopOE(psi,chi,DaggerNo); // Dslash on diagonal. g5 Dslash is hermitian
       }
       
       int sign=1;
@@ -121,12 +134,16 @@ namespace Grid {
 	sign=-sign; 
       }
     }
-    void   ContinuedFractionFermion5D::MeooeDag    (const LatticeFermion &psi, LatticeFermion &chi)
+    template<class Impl>
+    void   ContinuedFractionFermion5D<Impl>::MeooeDag    (const FermionField &psi, FermionField &chi)
     {
-      Meooe(psi,chi);
+      this->Meooe(psi,chi);
     }
-    void   ContinuedFractionFermion5D::Mooee       (const LatticeFermion &psi, LatticeFermion &chi)
+    template<class Impl>
+    void   ContinuedFractionFermion5D<Impl>::Mooee       (const FermionField &psi, FermionField &chi)
     {
+      int Ls = this->Ls;
+
       int sign=1;
       for(int s=0;s<Ls;s++){
 	if ( s==0 ) {
@@ -144,12 +161,16 @@ namespace Grid {
       }
     }
 
-    void   ContinuedFractionFermion5D::MooeeDag    (const LatticeFermion &psi, LatticeFermion &chi)
+    template<class Impl>
+    void   ContinuedFractionFermion5D<Impl>::MooeeDag    (const FermionField &psi, FermionField &chi)
     {
-      Mooee(psi,chi);
+      this->Mooee(psi,chi);
     }
-    void   ContinuedFractionFermion5D::MooeeInv    (const LatticeFermion &psi, LatticeFermion &chi)
+    template<class Impl>
+    void   ContinuedFractionFermion5D<Impl>::MooeeInv    (const FermionField &psi, FermionField &chi)
     {
+      int Ls = this->Ls;
+
       // Apply Linv
       axpby_ssp(chi,1.0/cc_d[0],psi,0.0,psi,0,0); 
       for(int s=1;s<Ls;s++){
@@ -165,26 +186,87 @@ namespace Grid {
 	axpbg5y_ssp(chi,1.0/cc_d[s],chi,-1.0*cc_d[s+1]/See[s]/cc_d[s],chi,s,s+1);
       }
     }
-    void   ContinuedFractionFermion5D::MooeeInvDag (const LatticeFermion &psi, LatticeFermion &chi)
+    template<class Impl>
+    void   ContinuedFractionFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &chi)
     {
-      MooeeInv(psi,chi);
+      this->MooeeInv(psi,chi);
     }
+
+  // force terms; five routines; default to Dhop on diagonal
+    template<class Impl>
+   void ContinuedFractionFermion5D<Impl>::MDeriv  (GaugeField &mat,const FermionField &U,const FermionField &V,int dag)
+  {
+    int Ls = this->Ls;
+
+    FermionField D(V._grid);
+
+    int sign=1;
+    for(int s=0;s<Ls;s++){
+      if ( s==(Ls-1) ){
+	ag5xpby_ssp(D,Beta[s]*ZoloHiInv,U,0.0,U,s,s);
+      } else {
+	ag5xpby_ssp(D,cc[s]*Beta[s]*sign*ZoloHiInv,U,0.0,U,s,s);
+      }
+      sign=-sign; 
+    }
+    this->DhopDeriv(mat,D,V,DaggerNo); 
+  };
+    template<class Impl>
+   void ContinuedFractionFermion5D<Impl>::MoeDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag)
+  {
+    int Ls = this->Ls;
+
+    FermionField D(V._grid);
+
+    int sign=1;
+    for(int s=0;s<Ls;s++){
+      if ( s==(Ls-1) ){
+	ag5xpby_ssp(D,Beta[s]*ZoloHiInv,U,0.0,U,s,s);
+      } else {
+	ag5xpby_ssp(D,cc[s]*Beta[s]*sign*ZoloHiInv,U,0.0,U,s,s);
+      }
+      sign=-sign; 
+    }
+    this->DhopDerivOE(mat,D,V,DaggerNo); 
+  };
+  template<class Impl>
+  void ContinuedFractionFermion5D<Impl>::MeoDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag)
+  {
+    int Ls = this->Ls;
+
+    FermionField D(V._grid);
+
+    int sign=1;
+    for(int s=0;s<Ls;s++){
+      if ( s==(Ls-1) ){
+	ag5xpby_ssp(D,Beta[s]*ZoloHiInv,U,0.0,U,s,s);
+      } else {
+	ag5xpby_ssp(D,cc[s]*Beta[s]*sign*ZoloHiInv,U,0.0,U,s,s);
+      }
+      sign=-sign; 
+    }
+    this->DhopDerivEO(mat,D,V,DaggerNo); 
+  };
     
     // Constructors
-    ContinuedFractionFermion5D::ContinuedFractionFermion5D(
-							   LatticeGaugeField &_Umu,
+    template<class Impl>
+    ContinuedFractionFermion5D<Impl>::ContinuedFractionFermion5D(
+							   GaugeField &_Umu,
 							   GridCartesian         &FiveDimGrid,
 							   GridRedBlackCartesian &FiveDimRedBlackGrid,
 							   GridCartesian         &FourDimGrid,
 							   GridRedBlackCartesian &FourDimRedBlackGrid,
-							   RealD _mass,RealD M5) :
-      WilsonFermion5D(_Umu,
-		      FiveDimGrid, FiveDimRedBlackGrid,
-		      FourDimGrid, FourDimRedBlackGrid,M5),
+							   RealD _mass,RealD M5,const ImplParams &p) :
+      WilsonFermion5D<Impl>(_Umu,
+			    FiveDimGrid, FiveDimRedBlackGrid,
+			    FourDimGrid, FourDimRedBlackGrid,M5,p),
       mass(_mass)
     {
+      int Ls = this->Ls;
       assert((Ls&0x1)==1); // Odd Ls required
     }
+
+    FermOpTemplateInstantiate(ContinuedFractionFermion5D);
 
   }
 }

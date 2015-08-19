@@ -45,13 +45,13 @@ namespace Grid {
 
 	cp=GCRnStep(Linop,src,psi,rsq);
 
-	if ( verbose ) std::cout<<"VPGCR("<<mmax<<","<<nstep<<") "<< steps <<" steps cp = "<<cp<<std::endl;
+	if ( verbose ) std::cout<<GridLogMessage<<"VPGCR("<<mmax<<","<<nstep<<") "<< steps <<" steps cp = "<<cp<<std::endl;
 
 	if(cp<rsq) {
 	  Linop.HermOp(psi,r);
 	  axpy(r,-1.0,src,r);
 	  RealD tr = norm2(r);
-	  std::cout<<"PrecGeneralisedConjugateResidual: Converged on iteration " <<steps
+	  std::cout<<GridLogMessage<<"PrecGeneralisedConjugateResidual: Converged on iteration " <<steps
 		   << " computed residual "<<sqrt(cp/ssq)
 	           << " true residual "    <<sqrt(tr/ssq)
 	           << " target "           <<Tolerance <<std::endl;
@@ -59,7 +59,7 @@ namespace Grid {
 	}
 
       }
-      std::cout<<"Variable Preconditioned GCR did not converge"<<std::endl;
+      std::cout<<GridLogMessage<<"Variable Preconditioned GCR did not converge"<<std::endl;
       assert(0);
     }
     RealD GCRnStep(LinearOperatorBase<Field> &Linop,const Field &src, Field &psi,RealD rsq){
@@ -96,21 +96,21 @@ namespace Grid {
       /////////////////////
       Preconditioner(r,z);
 
-      std::cout<< " Preconditioner in " << norm2(r)<<std::endl; 
-      std::cout<< " Preconditioner out " << norm2(z)<<std::endl; 
+      std::cout<<GridLogMessage<< " Preconditioner in " << norm2(r)<<std::endl; 
+      std::cout<<GridLogMessage<< " Preconditioner out " << norm2(z)<<std::endl; 
       
       Linop.HermOp(z,tmp); 
 
-      std::cout<< " Preconditioner Aout " << norm2(tmp)<<std::endl; 
+      std::cout<<GridLogMessage<< " Preconditioner Aout " << norm2(tmp)<<std::endl; 
       ttmp=tmp;
       tmp=tmp-r;
 
-      std::cout<< " Preconditioner resid " << std::sqrt(norm2(tmp)/norm2(r))<<std::endl; 
+      std::cout<<GridLogMessage<< " Preconditioner resid " << std::sqrt(norm2(tmp)/norm2(r))<<std::endl; 
       /*
-      std::cout<<r<<std::endl;
-      std::cout<<z<<std::endl;
-      std::cout<<ttmp<<std::endl;
-      std::cout<<tmp<<std::endl;
+      std::cout<<GridLogMessage<<r<<std::endl;
+      std::cout<<GridLogMessage<<z<<std::endl;
+      std::cout<<GridLogMessage<<ttmp<<std::endl;
+      std::cout<<GridLogMessage<<tmp<<std::endl;
       */
 
       Linop.HermOpAndNorm(z,Az,zAz,zAAz); 
@@ -137,7 +137,7 @@ namespace Grid {
 
 	cp = axpy_norm(r,-a,q[peri_k],r);  
 
-	std::cout<< " VPCG_step resid" <<sqrt(cp/rsq)<<std::endl; 
+	std::cout<<GridLogMessage<< " VPGCR_step resid" <<sqrt(cp/rsq)<<std::endl; 
 	if((k==nstep-1)||(cp<rsq)){
 	  return cp;
 	}
@@ -148,7 +148,7 @@ namespace Grid {
 
 	Linop.HermOp(z,tmp);
         tmp=tmp-r;
-	std::cout<< " Preconditioner resid" <<sqrt(norm2(tmp)/norm2(r))<<std::endl; 
+	std::cout<<GridLogMessage<< " Preconditioner resid" <<sqrt(norm2(tmp)/norm2(r))<<std::endl; 
 
 	q[peri_kp]=Az;
 	p[peri_kp]=z;

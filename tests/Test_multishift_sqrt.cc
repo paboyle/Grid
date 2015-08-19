@@ -17,8 +17,12 @@ public:
     pRNG.SeedFixedIntegers(seeds);
 
     random(pRNG,sqrtscale);
-    sqrtscale = sqrtscale * adj(sqrtscale);// force real pos def
-    scale = sqrtscale * sqrtscale; 
+    sqrtscale = real(sqrtscale)*3.0+0.5;// force real pos def
+    scale = sqrtscale *sqrtscale; //scale should be bounded by 12.25
+
+    // 
+    //    sqrtscale = 2.0;
+    //    scale = 4.0;
   }
   // Support for coarsening to a multigrid
   void OpDiag (const Field &in, Field &out) {};
@@ -48,7 +52,17 @@ public:
   void ApplySqrt(const Field &in, Field &out){
     out = sqrtscale * in;
   }
+  void ApplyInverse(const Field &in, Field &out){
+    out = pow(scale,-1.0) * in;
+  }
 };
+
+RealD InverseApproximation(RealD x){
+  return 1.0/x;
+}
+RealD SqrtApproximation(RealD x){
+  return std::sqrt(x);
+}
 
 
 int main (int argc, char ** argv)
@@ -68,7 +82,7 @@ int main (int argc, char ** argv)
   ////////////////////////////////////////
   // sqrt and inverse sqrt
   ////////////////////////////////////////
-  std::cout << "Generating degree "<<degree<<" for x^(1/2)"<<std::endl;
+  std::cout<<GridLogMessage << "Generating degree "<<degree<<" for x^(1/2)"<<std::endl;
   remez.generateApprox(degree,1,2);
 
   MultiShiftFunction Sqrt(remez,1.0e-6,false);
@@ -106,13 +120,30 @@ int main (int argc, char ** argv)
 
   error = reference - combined;
 
-  std::cout << " Reference "<<norm2(reference)<<std::endl;
-  std::cout << " combined  "<<norm2(combined) <<std::endl;
-  std::cout << " error     "<<norm2(error)    <<std::endl;
+  std::cout<<GridLogMessage << " Reference "<<norm2(reference)<<std::endl;
+  std::cout<<GridLogMessage << " combined  "<<norm2(combined) <<std::endl;
+  std::cout<<GridLogMessage << " error     "<<norm2(error)    <<std::endl;
 
   MSCG(Diagonal,src,summed);
   error = summed - combined;
-  std::cout << " summed-combined "<<norm2(error)    <<std::endl;
+  std::cout<<GridLogMessage << " summed-combined "<<norm2(error)    <<std::endl;
+
+
+  src=1.0;
+  Chebyshev<LatticeFermion> Cheby(0.1,40.0,200,InverseApproximation);
+
+  std::cout<<GridLogMessage<<"Chebuy approx vector "<<std::endl;
+  Cheby(Diagonal,src,combined);
+  std::ofstream of("cheby");
+  Cheby.csv(of);
+
+  Diagonal.ApplyInverse(src,reference);
+  error = reference - combined;
+
+  std::cout<<GridLogMessage << "Chebyshev inverse test "<<std::endl;
+  std::cout<<GridLogMessage << " Reference "<<norm2(reference)<<std::endl;
+  std::cout<<GridLogMessage << " combined  "<<norm2(combined) <<std::endl;
+  std::cout<<GridLogMessage << " error     "<<norm2(error)    <<std::endl;
 
   Grid_finalize();
 }

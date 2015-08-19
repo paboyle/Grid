@@ -29,7 +29,7 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   int threads = GridThread::GetThreads();
-  std::cout << "Grid is setup to use "<<threads<<" threads"<<std::endl;
+  std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   const int Ls=8;
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
@@ -48,36 +48,36 @@ int main (int argc, char ** argv)
 
   RealD mass=0.1;
   RealD M5  =1.8;
-  std::cout <<"DomainWallFermion test"<<std::endl;
-  DomainWallFermion Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  TestWhat<DomainWallFermion>(Ddwf,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  std::cout<<GridLogMessage <<"DomainWallFermion test"<<std::endl;
+  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  TestWhat<DomainWallFermionR>(Ddwf,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   RealD b=1.5;// Scale factor b+c=2, b-c=1
   RealD c=0.5;
-  std::cout <<"MobiusFermion test"<<std::endl;
-  MobiusFermion Dmob(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c);
-  TestWhat<MobiusFermion>(Dmob,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  std::cout<<GridLogMessage <<"MobiusFermion test"<<std::endl;
+  MobiusFermionR Dmob(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c);
+  TestWhat<MobiusFermionR>(Dmob,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
-  std::cout <<"MobiusZolotarevFermion test"<<std::endl;
-  MobiusZolotarevFermion Dzolo(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c,0.1,2.0);
-  TestWhat<MobiusZolotarevFermion>(Dzolo,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  std::cout<<GridLogMessage <<"MobiusZolotarevFermion test"<<std::endl;
+  MobiusZolotarevFermionR Dzolo(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c,0.1,2.0);
+  TestWhat<MobiusZolotarevFermionR>(Dzolo,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
-  std::cout <<"ScaledShamirFermion test"<<std::endl;
-  ScaledShamirFermion Dsham(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,2.0);
-  TestWhat<ScaledShamirFermion>(Dsham,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  std::cout<<GridLogMessage <<"ScaledShamirFermion test"<<std::endl;
+  ScaledShamirFermionR Dsham(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,2.0);
+  TestWhat<ScaledShamirFermionR>(Dsham,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
 
-  std::cout <<"ShamirZolotarevFermion test"<<std::endl;
-  ShamirZolotarevFermion Dshamz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,2.0);
-  TestWhat<ShamirZolotarevFermion>(Dshamz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  std::cout<<GridLogMessage <<"ShamirZolotarevFermion test"<<std::endl;
+  ShamirZolotarevFermionR Dshamz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,2.0);
+  TestWhat<ShamirZolotarevFermionR>(Dshamz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
-  std::cout <<"OverlapWilsonCayleyTanhFermion test"<<std::endl;
-  OverlapWilsonCayleyTanhFermion Dov(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
-  TestWhat<OverlapWilsonCayleyTanhFermion>(Dov,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  std::cout<<GridLogMessage <<"OverlapWilsonCayleyTanhFermion test"<<std::endl;
+  OverlapWilsonCayleyTanhFermionR Dov(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
+  TestWhat<OverlapWilsonCayleyTanhFermionR>(Dov,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
-  std::cout <<"OverlapWilsonCayleyZolotarevFermion test"<<std::endl;
-  OverlapWilsonCayleyZolotarevFermion Dovz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,2.0);
-  TestWhat<OverlapWilsonCayleyZolotarevFermion>(Dovz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+  std::cout<<GridLogMessage <<"OverlapWilsonCayleyZolotarevFermion test"<<std::endl;
+  OverlapWilsonCayleyZolotarevFermionR Dovz(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,0.1,2.0);
+  TestWhat<OverlapWilsonCayleyZolotarevFermionR>(Dovz,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   Grid_finalize();
 }
@@ -106,40 +106,40 @@ void  TestWhat(What & Ddwf,
   LatticeFermion r_eo  (FGrid);
   LatticeFermion r_eeoo(FGrid);
 
-  std::cout<<"=========================================================="<<std::endl;
-  std::cout<<"= Testing that Meo + Moe + Moo + Mee = Munprec "<<std::endl;
-  std::cout<<"=========================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"= Testing that Meo + Moe + Moo + Mee = Munprec "<<std::endl;
+  std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
 
   pickCheckerboard(Even,src_e,src);
   pickCheckerboard(Odd,src_o,src);
 
-  Ddwf.Meooe(src_e,r_o);  std::cout<<"Applied Meo"<<std::endl;
-  Ddwf.Meooe(src_o,r_e);  std::cout<<"Applied Moe"<<std::endl;
+  Ddwf.Meooe(src_e,r_o);  std::cout<<GridLogMessage<<"Applied Meo"<<std::endl;
+  Ddwf.Meooe(src_o,r_e);  std::cout<<GridLogMessage<<"Applied Moe"<<std::endl;
   setCheckerboard(r_eo,r_o);
   setCheckerboard(r_eo,r_e);
 
-  Ddwf.Mooee(src_e,r_e);  std::cout<<"Applied Mee"<<std::endl;
-  Ddwf.Mooee(src_o,r_o);  std::cout<<"Applied Moo"<<std::endl;
+  Ddwf.Mooee(src_e,r_e);  std::cout<<GridLogMessage<<"Applied Mee"<<std::endl;
+  Ddwf.Mooee(src_o,r_o);  std::cout<<GridLogMessage<<"Applied Moo"<<std::endl;
   setCheckerboard(r_eeoo,r_e);
   setCheckerboard(r_eeoo,r_o);
 
   r_eo=r_eo+r_eeoo;
   Ddwf.M(src,ref);  
 
-  //  std::cout << r_eo<<std::endl;
-  //  std::cout << ref <<std::endl;
+  //  std::cout<<GridLogMessage << r_eo<<std::endl;
+  //  std::cout<<GridLogMessage << ref <<std::endl;
 
   err= ref - r_eo;
-  std::cout << "EO norm diff   "<< norm2(err)<< " "<<norm2(ref)<< " " << norm2(r_eo) <<std::endl;
+  std::cout<<GridLogMessage << "EO norm diff   "<< norm2(err)<< " "<<norm2(ref)<< " " << norm2(r_eo) <<std::endl;
     
   LatticeComplex cerr(FGrid);
   cerr = localInnerProduct(err,err);
-  //  std::cout << cerr<<std::endl;
+  //  std::cout<<GridLogMessage << cerr<<std::endl;
 
-  std::cout<<"=============================================================="<<std::endl;
-  std::cout<<"= Test Ddagger is the dagger of D by requiring                "<<std::endl;
-  std::cout<<"=  < phi | Deo | chi > * = < chi | Deo^dag| phi>  "<<std::endl;
-  std::cout<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"= Test Ddagger is the dagger of D by requiring                "<<std::endl;
+  std::cout<<GridLogMessage<<"=  < phi | Deo | chi > * = < chi | Deo^dag| phi>  "<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
   
   LatticeFermion chi_e   (FrbGrid);
   LatticeFermion chi_o   (FrbGrid);
@@ -169,15 +169,15 @@ void  TestWhat(What & Ddwf,
   ComplexD cDpe = innerProduct(chi_e,dphi_e);
   ComplexD cDpo = innerProduct(chi_o,dphi_o);
 
-  std::cout <<"e "<<pDce<<" "<<cDpe <<std::endl;
-  std::cout <<"o "<<pDco<<" "<<cDpo <<std::endl;
+  std::cout<<GridLogMessage <<"e "<<pDce<<" "<<cDpe <<std::endl;
+  std::cout<<GridLogMessage <<"o "<<pDco<<" "<<cDpo <<std::endl;
 
-  std::cout <<"pDce - conj(cDpo) "<< pDce-conj(cDpo) <<std::endl;
-  std::cout <<"pDco - conj(cDpe) "<< pDco-conj(cDpe) <<std::endl;
+  std::cout<<GridLogMessage <<"pDce - conj(cDpo) "<< pDce-conj(cDpo) <<std::endl;
+  std::cout<<GridLogMessage <<"pDco - conj(cDpe) "<< pDco-conj(cDpe) <<std::endl;
 
-  std::cout<<"=============================================================="<<std::endl;
-  std::cout<<"= Test MeeInv Mee = 1                                         "<<std::endl;
-  std::cout<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"= Test MeeInv Mee = 1                                         "<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
 
   pickCheckerboard(Even,chi_e,chi);
   pickCheckerboard(Odd ,chi_o,chi);
@@ -192,11 +192,11 @@ void  TestWhat(What & Ddwf,
   setCheckerboard(phi,phi_o);
 
   err = phi-chi;
-  std::cout << "norm diff   "<< norm2(err)<< std::endl;
+  std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<< std::endl;
 
-  std::cout<<"=============================================================="<<std::endl;
-  std::cout<<"= Test MeeInvDag MeeDag = 1                                   "<<std::endl;
-  std::cout<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"= Test MeeInvDag MeeDag = 1                                   "<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
 
   pickCheckerboard(Even,chi_e,chi);
   pickCheckerboard(Odd ,chi_o,chi);
@@ -211,11 +211,11 @@ void  TestWhat(What & Ddwf,
   setCheckerboard(phi,phi_o);
 
   err = phi-chi;
-  std::cout << "norm diff   "<< norm2(err)<< std::endl;
+  std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<< std::endl;
 
-  std::cout<<"=============================================================="<<std::endl;
-  std::cout<<"= Test DiagMoo MpcDagMpc is Hermitian              "<<std::endl;
-  std::cout<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"= Test DiagMoo MpcDagMpc is Hermitian              "<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
   
   random(*RNG5,phi);
   random(*RNG5,chi);
@@ -237,10 +237,10 @@ void  TestWhat(What & Ddwf,
   cDpe = innerProduct(chi_e,dphi_e);
   cDpo = innerProduct(chi_o,dphi_o);
 
-  std::cout <<"e "<<pDce<<" "<<cDpe <<std::endl;
-  std::cout <<"o "<<pDco<<" "<<cDpo <<std::endl;
+  std::cout<<GridLogMessage <<"e "<<pDce<<" "<<cDpe <<std::endl;
+  std::cout<<GridLogMessage <<"o "<<pDco<<" "<<cDpo <<std::endl;
 
-  std::cout <<"pDce - conj(cDpo) "<< pDco-conj(cDpo) <<std::endl;
-  std::cout <<"pDco - conj(cDpe) "<< pDce-conj(cDpe) <<std::endl;
+  std::cout<<GridLogMessage <<"pDce - conj(cDpo) "<< pDco-conj(cDpo) <<std::endl;
+  std::cout<<GridLogMessage <<"pDco - conj(cDpe) "<< pDce-conj(cDpe) <<std::endl;
   
 }

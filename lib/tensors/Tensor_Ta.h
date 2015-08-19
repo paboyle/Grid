@@ -7,11 +7,12 @@ namespace Grid {
   /////////////////////////////////////////////// 
   // Ta function for scalar, vector, matrix
   /////////////////////////////////////////////// 
+  /*
   inline ComplexF Ta( const ComplexF &arg){    return arg;}
   inline ComplexD Ta( const ComplexD &arg){    return arg;}
   inline RealF Ta( const RealF &arg){    return arg;}
   inline RealD Ta( const RealD &arg){    return arg;}
-
+  */
 
   template<class vtype> inline iScalar<vtype> Ta(const iScalar<vtype>&r)
     {
@@ -29,10 +30,11 @@ namespace Grid {
     }
   template<class vtype,int N> inline iMatrix<vtype,N> Ta(const iMatrix<vtype,N> &arg)
     {
-      iMatrix<vtype,N> ret(arg);
-      double factor = (1/(double)N);
-      ret = (ret - adj(arg))*0.5;
-      ret -= trace(ret)*factor;
+      iMatrix<vtype,N> ret;
+
+      double factor = (1.0/(double)N);
+      ret= (arg - adj(arg))*0.5;
+      ret=ret - (trace(ret)*factor);
       return ret;
     }
 

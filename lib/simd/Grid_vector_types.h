@@ -2,7 +2,7 @@
 /*! @file Grid_vector_types.h
   @brief Defines templated class Grid_simd to deal with inner vector types
 */
-// Time-stamp: <2015-06-09 15:00:47 neo>
+// Time-stamp: <2015-07-10 17:45:33 neo>
 //---------------------------------------------------------------------------
 #ifndef GRID_VECTOR_TYPES
 #define GRID_VECTOR_TYPES
@@ -22,7 +22,7 @@
 #if defined QPX
 #include "Grid_qpx.h"
 #endif
-#ifdef NEONv7
+#ifdef NEONv8
 #include "Grid_neon.h"
 #endif
 
@@ -414,7 +414,7 @@ namespace Grid {
   template<class S, class V >
   inline Grid_simd< S, V> outerProduct(const Grid_simd< S, V> &l, const Grid_simd< S, V> & r)
   {
-    return l*r;
+    return l*conjugate(r);
   }
 
   template<class S, class V >

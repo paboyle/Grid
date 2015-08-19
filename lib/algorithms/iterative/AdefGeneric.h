@@ -149,7 +149,7 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
       }
 
       RealD rrn=sqrt(rn/ssq);
-      std::cout<<"TwoLevelfPcg: k= "<<k<<" residual = "<<rrn<<std::endl;
+      std::cout<<GridLogMessage<<"TwoLevelfPcg: k= "<<k<<" residual = "<<rrn<<std::endl;
 
       // Stopping condition
       if ( rn <= rsq ) { 
@@ -161,8 +161,8 @@ class TwoLevelFlexiblePcg : public LinearFunction<Field>
 	RealD srcnorm = sqrt(norm2(src));
 	RealD tmpnorm = sqrt(norm2(tmp));
 	RealD true_residual = tmpnorm/srcnorm;
-	std::cout<<"TwoLevelfPcg:   true residual is "<<true_residual<<std::endl;
-	std::cout<<"TwoLevelfPcg: target residual was"<<Tolerance<<std::endl;
+	std::cout<<GridLogMessage<<"TwoLevelfPcg:   true residual is "<<true_residual<<std::endl;
+	std::cout<<GridLogMessage<<"TwoLevelfPcg: target residual was"<<Tolerance<<std::endl;
 	return k;
       }
     }

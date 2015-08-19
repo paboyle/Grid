@@ -50,6 +50,17 @@ namespace Grid {
       return;
     }
 
+    // Convenience for plotting the approximation
+    void   PlotApprox(std::ostream &out) {
+      out<<"Polynomial approx ["<<lo<<","<<hi<<"]"<<std::endl;
+      for(double x=lo;x<hi;x+=(hi-lo)/50.0){
+	out <<x<<"\t"<<approx(x)<<std::endl;
+      }
+    };
+
+    
+    // c.f. numerical recipes "chebft"/"chebev". This is sec 5.8 "Chebyshev approximation".
+    //
     Chebyshev(double _lo,double _hi,int _order, double (* func)(double) ){
       lo=_lo;
       hi=_hi;
@@ -68,7 +79,34 @@ namespace Grid {
 	Coeffs[j] = s * 2.0/order;
       }
     };
+    void JacksonSmooth(void){
+      double M=order;
+      double alpha = M_PI/(M+2);
+      double lmax = std::cos(alpha);
+      double sumUsq =0;
+      std::vector<double> U(M);
+      std::vector<double> a(M);
+      std::vector<double> g(M);
+      for(int n=0;n<=M;n++){
+	U[n] = std::sin((n+1)*std::acos(lmax))/std::sin(std::acos(lmax));
+	sumUsq += U[n]*U[n];
+      }      
+      sumUsq = std::sqrt(sumUsq);
 
+      for(int i=1;i<=M;i++){
+	a[i] = U[i]/sumUsq;
+      }
+      g[0] = 1.0;
+      for(int m=1;m<=M;m++){
+	g[m] = 0;
+	for(int i=0;i<=M-m;i++){
+	  g[m]+= a[i]*a[m+i];
+	}
+      }
+      for(int m=1;m<=M;m++){
+	Coeffs[m]*=g[m];
+      }
+    }
     double approx(double x) // Convenience for plotting the approximation
     {
       double Tn;
@@ -95,46 +133,39 @@ namespace Grid {
       return sum;
     };
 
-    // Convenience for plotting the approximation
-    void   PlotApprox(std::ostream &out) {
-      out<<"Polynomial approx ["<<lo<<","<<hi<<"]"<<std::endl;
-      for(double x=lo;x<hi;x+=(hi-lo)/50.0){
-	out <<x<<"\t"<<approx(x)<<std::endl;
-      }
-    };
-
-    // Implement the required interface; could require Lattice base class
+    // Implement the required interface
     void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) {
 
-      Field T0 = in;
-      Field T1 = T0; // Field T1(T0._grid); more efficient but hardwires Lattice class
-      Field T2 = T1;
+      GridBase *grid=in._grid;
+
+      int vol=grid->gSites();
+
+      Field T0(grid); T0 = in;  
+      Field T1(grid); 
+      Field T2(grid);
+      Field y(grid);
       
-      // use a pointer trick to eliminate copies
       Field *Tnm = &T0;
       Field *Tn  = &T1;
       Field *Tnp = &T2;
-      Field y   = in;
-  
+
+      std::cout<<GridLogMessage << "Chebyshev ["<<lo<<","<<hi<<"]"<< " order "<<order <<std::endl;
+      // Tn=T1 = (xscale M + mscale)in
       double xscale = 2.0/(hi-lo);
       double mscale = -(hi+lo)/(hi-lo);
-
-      // Tn=T1 = (xscale M + mscale)in
-      Linop.Op(T0,y);
-
+      Linop.HermOp(T0,y);
       T1=y*xscale+in*mscale;
 
       // sum = .5 c[0] T0 + c[1] T1
       out = (0.5*Coeffs[0])*T0 + Coeffs[1]*T1;
-
       for(int n=2;n<order;n++){
 	
-	Linop.Op(*Tn,y);
+	Linop.HermOp(*Tn,y);
 
 	y=xscale*y+mscale*(*Tn);
 
 	*Tnp=2.0*y-(*Tnm);
-	
+
 	out=out+Coeffs[n]* (*Tnp);
 
 	// Cycle pointers to avoid copies

@@ -47,7 +47,7 @@ int main (int argc, char ** argv)
 
     RealD plaq = ColourWilsonLoops::avgPlaquette(Umu);
 
-    std::cout<<"sweep "<<sweep<<" PLAQUETTE "<<plaq<<std::endl;
+    std::cout<<GridLogMessage<<"sweep "<<sweep<<" PLAQUETTE "<<plaq<<std::endl;
 
     for( int cb=0;cb<2;cb++ ) {
 
@@ -55,7 +55,7 @@ int main (int argc, char ** argv)
       mask= zero;
       setCheckerboard(mask,one);
 
-      //      std::cout<<mask<<std::endl;
+      //      std::cout<<GridLogMessage<<mask<<std::endl;
       for(int mu=0;mu<Nd;mu++){
 	
 	// Get Link and Staple term in action; must contain Beta and 

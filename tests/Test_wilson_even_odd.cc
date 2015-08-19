@@ -27,7 +27,7 @@ int main (int argc, char ** argv)
   GridRedBlackCartesian     RBGrid(latt_size,simd_layout,mpi_layout);
 
   int threads = GridThread::GetThreads();
-  std::cout << "Grid is setup to use "<<threads<<" threads"<<std::endl;
+  std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   std::vector<int> seeds({1,2,3,4});
 
@@ -55,14 +55,14 @@ int main (int argc, char ** argv)
   Umu=zero;
   for(int nn=0;nn<Nd;nn++){
     random(pRNG,U[nn]);
-    std::cout<<"U[nn]"<<norm2(U[nn])<<std::endl;
+    std::cout<<GridLogMessage<<"U[nn]"<<norm2(U[nn])<<std::endl;
     PokeIndex<LorentzIndex>(Umu,U[nn],nn);
-    std::cout<<"Umu"<<norm2(Umu)<<std::endl;
+    std::cout<<GridLogMessage<<"Umu"<<norm2(Umu)<<std::endl;
   }
 
   RealD mass=0.1;
 
-  WilsonFermion Dw(Umu,Grid,RBGrid,mass);
+  WilsonFermionR Dw(Umu,Grid,RBGrid,mass);
 
   LatticeFermion src_e   (&RBGrid);
   LatticeFermion src_o   (&RBGrid);
@@ -70,30 +70,30 @@ int main (int argc, char ** argv)
   LatticeFermion r_o   (&RBGrid);
   LatticeFermion r_eo  (&Grid);
 
-  std::cout<<"=========================================================="<<std::endl;
-  std::cout<<"= Testing that Deo + Doe = Dunprec "<<std::endl;
-  std::cout<<"=========================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"= Testing that Deo + Doe = Dunprec "<<std::endl;
+  std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
 
   pickCheckerboard(Even,src_e,src);
   pickCheckerboard(Odd,src_o,src);
 
-  Dw.Meooe(src_e,r_o);  std::cout<<"Applied Meo"<<std::endl;
-  Dw.Meooe(src_o,r_e);  std::cout<<"Applied Moe"<<std::endl;
+  Dw.Meooe(src_e,r_o);  std::cout<<GridLogMessage<<"Applied Meo"<<std::endl;
+  Dw.Meooe(src_o,r_e);  std::cout<<GridLogMessage<<"Applied Moe"<<std::endl;
   Dw.Dhop (src,ref,DaggerNo);
 
   setCheckerboard(r_eo,r_o);
   setCheckerboard(r_eo,r_e);
 
   err= ref - r_eo;
-  std::cout << "EO norm diff   "<< norm2(err)<< " "<<norm2(ref)<< " " << norm2(r_eo) <<std::endl;
+  std::cout<<GridLogMessage << "EO norm diff   "<< norm2(err)<< " "<<norm2(ref)<< " " << norm2(r_eo) <<std::endl;
 
   LatticeComplex cerr(&Grid);
   cerr = localInnerProduct(err,err);
 
-  std::cout<<"=============================================================="<<std::endl;
-  std::cout<<"= Test Ddagger is the dagger of D by requiring                "<<std::endl;
-  std::cout<<"=  < phi | Deo | chi > * = < chi | Deo^dag| phi>  "<<std::endl;
-  std::cout<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"= Test Ddagger is the dagger of D by requiring                "<<std::endl;
+  std::cout<<GridLogMessage<<"=  < phi | Deo | chi > * = < chi | Deo^dag| phi>  "<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
   
   LatticeFermion chi_e   (&RBGrid);
   LatticeFermion chi_o   (&RBGrid);
@@ -123,15 +123,15 @@ int main (int argc, char ** argv)
   ComplexD cDpe = innerProduct(chi_e,dphi_e);
   ComplexD cDpo = innerProduct(chi_o,dphi_o);
 
-  std::cout <<"e "<<pDce<<" "<<cDpe <<std::endl;
-  std::cout <<"o "<<pDco<<" "<<cDpo <<std::endl;
+  std::cout<<GridLogMessage <<"e "<<pDce<<" "<<cDpe <<std::endl;
+  std::cout<<GridLogMessage <<"o "<<pDco<<" "<<cDpo <<std::endl;
 
-  std::cout <<"pDce - conj(cDpo) "<< pDce-conj(cDpo) <<std::endl;
-  std::cout <<"pDco - conj(cDpe) "<< pDco-conj(cDpe) <<std::endl;
+  std::cout<<GridLogMessage <<"pDce - conj(cDpo) "<< pDce-conj(cDpo) <<std::endl;
+  std::cout<<GridLogMessage <<"pDco - conj(cDpe) "<< pDco-conj(cDpe) <<std::endl;
 
-  std::cout<<"=============================================================="<<std::endl;
-  std::cout<<"= Test MeeInv Mee = 1                                         "<<std::endl;
-  std::cout<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"= Test MeeInv Mee = 1                                         "<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
 
   pickCheckerboard(Even,chi_e,chi);
   pickCheckerboard(Odd ,chi_o,chi);
@@ -146,11 +146,11 @@ int main (int argc, char ** argv)
   setCheckerboard(phi,phi_o);
 
   err = phi-chi;
-  std::cout << "norm diff   "<< norm2(err)<< std::endl;
+  std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<< std::endl;
 
-  std::cout<<"=============================================================="<<std::endl;
-  std::cout<<"= Test MeeInvDag MeeDag = 1                                   "<<std::endl;
-  std::cout<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"= Test MeeInvDag MeeDag = 1                                   "<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
 
   pickCheckerboard(Even,chi_e,chi);
   pickCheckerboard(Odd ,chi_o,chi);
@@ -165,11 +165,11 @@ int main (int argc, char ** argv)
   setCheckerboard(phi,phi_o);
 
   err = phi-chi;
-  std::cout << "norm diff   "<< norm2(err)<< std::endl;
+  std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<< std::endl;
 
-  std::cout<<"=============================================================="<<std::endl;
-  std::cout<<"= Test MpcDagMpc is Hermitian              "<<std::endl;
-  std::cout<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"= Test MpcDagMpc is Hermitian              "<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
   
   random(pRNG,phi);
   random(pRNG,chi);
@@ -179,7 +179,7 @@ int main (int argc, char ** argv)
   pickCheckerboard(Odd ,phi_o,phi);
   RealD t1,t2;
 
-  SchurDiagMooeeOperator<WilsonFermion,LatticeFermion> HermOpEO(Dw);
+  SchurDiagMooeeOperator<WilsonFermionR,LatticeFermion> HermOpEO(Dw);
   HermOpEO.MpcDagMpc(chi_e,dchi_e,t1,t2);
   HermOpEO.MpcDagMpc(chi_o,dchi_o,t1,t2);
 
@@ -191,11 +191,11 @@ int main (int argc, char ** argv)
   cDpe = innerProduct(chi_e,dphi_e);
   cDpo = innerProduct(chi_o,dphi_o);
 
-  std::cout <<"e "<<pDce<<" "<<cDpe <<std::endl;
-  std::cout <<"o "<<pDco<<" "<<cDpo <<std::endl;
+  std::cout<<GridLogMessage <<"e "<<pDce<<" "<<cDpe <<std::endl;
+  std::cout<<GridLogMessage <<"o "<<pDco<<" "<<cDpo <<std::endl;
 
-  std::cout <<"pDce - conj(cDpo) "<< pDco-conj(cDpo) <<std::endl;
-  std::cout <<"pDco - conj(cDpe) "<< pDce-conj(cDpe) <<std::endl;
+  std::cout<<GridLogMessage <<"pDce - conj(cDpo) "<< pDco-conj(cDpo) <<std::endl;
+  std::cout<<GridLogMessage <<"pDco - conj(cDpe) "<< pDce-conj(cDpe) <<std::endl;
   
   Grid_finalize();
 }
