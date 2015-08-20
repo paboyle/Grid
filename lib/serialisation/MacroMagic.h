@@ -66,6 +66,8 @@
 #define GRID_MACRO_MEMBER(A,B)        A B;
 
 #define GRID_MACRO_OS_WRITE_MEMBER(A,B) os<< #A <<" "#B <<" = "<< obj. B <<" ; " <<std::endl;
+#define GRID_MACRO_READ_MEMBER(A,B) read(RD,#B,obj. B);
+#define GRID_MACRO_WRITE_MEMBER(A,B) write(WR,#B,obj. B);
 
 #define GRID_DECL_CLASS_MEMBERS(cname,...)		\
   \
@@ -73,11 +75,26 @@
   GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_MEMBER,__VA_ARGS__))		\
   \
   \
-  friend std::ostream & operator << (std::ostream &os, const cname &obj ) {	\
+  template<class Writer> friend void write(Writer &WR,const std::string &s, const cname &obj){ \
+    push(WR,s);\
+    GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_WRITE_MEMBER,__VA_ARGS__))	\
+    pop(WR);\
+  } \
+  \
+  \
+  template<class Reader> friend void read(Reader &RD,const std::string &s, cname &obj){	\
+    push(RD,s);\
+    GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_READ_MEMBER,__VA_ARGS__))	\
+    pop(RD);\
+  } \
+  \
+  \
+  friend std::ostream & operator << (std::ostream &os, const cname &obj ) { \
     os<<"class "<<#cname<<" {"<<std::endl;\
     GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_OS_WRITE_MEMBER,__VA_ARGS__))	\
       os<<"}";								\
     return os;\
   };  
+
 
 #endif
