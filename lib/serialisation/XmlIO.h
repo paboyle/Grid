@@ -60,6 +60,7 @@ public:
   void iwrite( const std::string& s, bool        output      ) { writeInternal(s,output); };
 
 private:
+
   template<class T> void writeInternal( const std::string& s, T output ){
     std::ostringstream os;
     os << std::boolalpha << output;
@@ -95,9 +96,7 @@ public:
     node= doc.child("document");
   }
 
-  ~XMLReader()
-  {
-  }
+  ~XMLReader()  {  }
 
   void iread( const std::string& s,std::string &output      ) { 
     output=node.child(s.c_str()).first_child().value();
@@ -112,17 +111,25 @@ public:
 
   template<class T>
   void iread( const std::string& s, std::vector<T>  &output      ) { 
-    output.resize(0);
 
-    T tmp;
     push(s);
+
+    uint64_t n;
+
+    pugi::xml_node it=node.first_child();
+
+    // skip the vector length
+    T tmp;
     int i=0;
-    for(pugi::xml_node it=node.first_child(); it; it = it.next_sibling() ){
+    output.resize(0);
+    for(it = it.next_sibling(); it; it = it.next_sibling() ){
       std::ostringstream oss;      oss << "elem" << i;
       read(*this,oss.str(),tmp);
       output.push_back(tmp);
       i++;
     }
+
+    assert(i == n );
     pop();
 
   };
@@ -159,10 +166,5 @@ private:
   
 };
 
-namespace XMLPolicy 
-{
-  typedef XMLReader Reader;
-  typedef XMLWriter Writer;
-};
 }
 #endif

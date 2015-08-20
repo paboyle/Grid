@@ -35,9 +35,10 @@ namespace Grid {
   template< class Reader> void read(Reader& rd, const std::string& s, bool       &output      ) { rd.iread(s,output); };
 
 
-  template<class Writer, class T>
-    void write(Writer& wr, const std::string& s,const std::vector<T> output ) { 
+  template<class Writer, class T> void write(Writer& wr, const std::string& s,const std::vector<T> output ) { 
     push(wr,s);
+    uint64_t sz =output.size();
+    write(wr,"N",sz);
     for(int i=0;i<output.size();i++){
       std::ostringstream oss;      oss << "elem" << i;
       write(wr,oss.str(),output[i]);
@@ -66,21 +67,17 @@ namespace Grid {
 //////////////////////////////////////////
 // Todo:
 //////////////////////////////////////////
-//#include <serialisation/CoutReader.h>
-//#include <serialisation/TextReader.h>
-//#include <serialisation/JSONReader.h>
-//#include <serialisation/YAMLReader.h>
-
-#include <serialisation/XMLReader.h>
+#include <serialisation/BinaryIO.h>
+#include <serialisation/TextIO.h>
+//#include <serialisation/JsonIO.h>
+//#include <serialisation/YamlIO.h>
+#include <serialisation/XmlIO.h>
 
 //////////////////////////////////////////
-// Select the default serialiser
+// Select the default serialiser use ifdef's
 //////////////////////////////////////////
 namespace Grid {
-
-  using XMLPolicy::Reader;
-  using XMLPolicy::Writer;
-
+  typedef XMLReader Reader;
+  typedef XMLWriter Writer;
 }
-
 #endif

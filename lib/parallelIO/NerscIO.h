@@ -441,7 +441,7 @@ inline void readNerscObject(Lattice<vobj> &Umu,std::string file,munger munge,int
 
 template<class vobj,class sobj,class fobj,class munger>
 inline void writeNerscObject(Lattice<vobj> &Umu,std::string file,munger munge,int offset,
-                       int sequence,double lt,double pl)
+			     int sequence,double lt,double pl)
 {
   GridBase *grid = Umu._grid;
   NerscField header;

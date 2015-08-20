@@ -14,10 +14,11 @@ public:
 			  std::vector<std::vector<double> >, twodimarray,
 			  );
 
-  myclass() : array(4,5.0), twodimarray(3,std::vector<double>(2,2.0)) {
-    x=1;
-    y=2;
-    b=false;
+  myclass(){}
+  myclass(int i) : array(4,5.1), twodimarray(3,std::vector<double>(2,1.23456)) {
+    x=i;
+    y=2*i;
+    b=true;
     name="bother said pooh";
   }
 
@@ -51,15 +52,39 @@ int main(int argc,char **argv)
     write(WR,"b",b);
     pop(WR);
 
-    myclass obj;
+    myclass obj(1234); // non-trivial constructor
     write(WR,"obj",obj);
 
   };
 
-  Reader RD("bother2.xml");
+  Reader RD("bother.xml");
 
-  myclass copy;
+  myclass copy1;
+  myclass copy2;
+  myclass copy3;
 
-  read(RD,"obj",copy);
-  std::cout << "Loaded "  << copy<<std::endl;
+  read(RD,"obj",copy1);
+  std::cout << "Loaded "  << copy1<<std::endl;
+
+  {
+    BinaryWriter BWR("bother.bin");
+    write(BWR,"discard",copy1 );
+  }
+  { 
+    BinaryReader BRD("bother.bin");
+    read (BRD,"discard",copy2 );
+    std::cout<<copy2<<std::endl;
+  }
+
+
+  {
+    TextWriter TWR("bother.txt");
+    write(TWR,"discard",copy1 );
+  }
+  { 
+    TextReader TRD("bother.txt");
+    read (TRD,"discard",copy3 );
+    std::cout<<copy3<<std::endl;
+  }
+  
 }
