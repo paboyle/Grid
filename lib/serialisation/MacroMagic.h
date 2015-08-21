@@ -1,6 +1,25 @@
 #ifndef GRID_MACRO_MAGIC_H
 #define GRID_MACRO_MAGIC_H
 
+///////////////////////////////////////////
+// Strong credit to :
+//
+// http://jhnet.co.uk/articles/cpp_magic
+//
+// 
+// "The C Pre-Processor (CPP) is the somewhat basic macro system used by the C 
+// programming language to implement features such as #include and #define 
+// which allow very simple text-substitutions to be carried out at compile time.
+// In this article we abuse the humble #define to implement if-statements and iteration.
+//
+// Before we begin, a disclaimer: these tricks, while perfectly valid C, should not be 
+// considered good development practice and should almost certainly not be used for "real work".
+// That said it can totally be used for fun home-automation projects...
+//
+// https://github.com/18sg/uSHET/blob/master/lib/cpp_magic.h
+//
+///////////////////////////////////////////
+
 #define strong_inline __attribute__((always_inline)) inline
 
 #ifndef MAX
