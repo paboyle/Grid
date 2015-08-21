@@ -1,9 +1,9 @@
-- PseudoFermions
-
 TODO:
 
 => Clean up HMC
 - Link smearing/boundary conds; Policy class based implementation
+* Support different boundary conditions (finite temp, chem. potential ... )
+* Support different fermion representations? 
 - Integrators
   - Force Gradient
   - Multi-timescale looks broken and operating on single timescale for now.
@@ -14,8 +14,6 @@ TODO:
 
 => Lanczos
 
-=> generalise to non-const EE ; likely defer (??)
-
 - Rectangle gauge actions.
   Iwasaki,
   Symanzik,
@@ -23,10 +21,6 @@ TODO:
 
 - Prepare multigrid for HMC.
   Alternate setup schemes.
-
-* Support different boundary conditions (finite temp, chem. potential ... )
-
-* Support different fermion representations? 
 
 * Parallel io improvements
   - optional parallel MPI2 IO
@@ -85,6 +79,9 @@ Not sure of status of this -- reverify. Things are working nicely now though.
 
 Done: Cayley, Partial , ContFrac force terms.
 
+DONE
+- PseudoFermions
+=> generalise to non-const EE ; likely defer (??) (NOT DONE)
 Done:
   - TwoFlavour
   - TwoFlavourEvenOdd        

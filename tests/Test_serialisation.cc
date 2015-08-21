@@ -38,7 +38,7 @@ bool     b = false;
 int main(int argc,char **argv)
 {
   {
-    Writer WR("bother.xml");
+    XMLWriter WR("bother.xml");
 
     push(WR,"BasicTypes");
     write(WR,"i16",i16);
@@ -57,7 +57,7 @@ int main(int argc,char **argv)
 
   };
 
-  Reader RD("bother.xml");
+  XMLReader RD("bother.xml");
 
   myclass copy1;
   myclass copy2;

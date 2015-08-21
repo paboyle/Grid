@@ -11,7 +11,7 @@
 
 namespace Grid {
 
-class TextWriter  {
+class TextWriter  : public Writer {
 private:
 
   std::ofstream file;
@@ -32,26 +32,26 @@ public:
   void push(const std::string &s)
   {
     //    std::string tmp = s;
-    //    iwrite(s,tmp);
+    //    write(s,tmp);
     level++;
   }
   void pop(void) {
     level--;
   }
 
-  void iwrite( const std::string& s,const std::string &output      ) { 
+  void write( const std::string& s,const std::string &output      ) { 
     indent();
     file<<output<<std::endl;
   };
-  void iwrite( const std::string& s,  int16_t    output      ) { writeInternal(s,output); };
-  void iwrite( const std::string& s, uint16_t    output      ) { writeInternal(s,output); };
-  void iwrite( const std::string& s,  int32_t    output      ) { writeInternal(s,output); };
-  void iwrite( const std::string& s, uint32_t    output      ) { writeInternal(s,output); };
-  void iwrite( const std::string& s,  int64_t    output      ) { writeInternal(s,output); };
-  void iwrite( const std::string& s, uint64_t    output      ) { writeInternal(s,output); };
-  void iwrite( const std::string& s,  float      output      ) { writeInternal(s,output); };
-  void iwrite( const std::string& s, double      output      ) { writeInternal(s,output); };
-  void iwrite( const std::string& s, bool        output      ) { writeInternal(s,output); };
+  void write( const std::string& s,  int16_t    output      ) { writeInternal(s,output); };
+  void write( const std::string& s, uint16_t    output      ) { writeInternal(s,output); };
+  void write( const std::string& s,  int32_t    output      ) { writeInternal(s,output); };
+  void write( const std::string& s, uint32_t    output      ) { writeInternal(s,output); };
+  void write( const std::string& s,  int64_t    output      ) { writeInternal(s,output); };
+  void write( const std::string& s, uint64_t    output      ) { writeInternal(s,output); };
+  void write( const std::string& s,  float      output      ) { writeInternal(s,output); };
+  void write( const std::string& s, double      output      ) { writeInternal(s,output); };
+  void write( const std::string& s, bool        output      ) { writeInternal(s,output); };
 
 private:
 
@@ -62,7 +62,7 @@ private:
   
 };
 
-class TextReader {
+class TextReader : public Reader {
 private:
 
   std::ifstream file;
@@ -75,7 +75,7 @@ public:
 
   ~TextReader()  {  }
 
-  void iread( const std::string& s,std::string &output      ) { 
+  void read( const std::string& s,std::string &output      ) { 
     char c='a';
     for(int i=0;i<level;i++){
       file.get(c);
@@ -86,17 +86,17 @@ public:
     std::getline(file,output);
   };
   void push(const std::string &s)  { 
-    //  std::string tmp; iread(s,tmp); 
+    //  std::string tmp; read(s,tmp); 
     level++;
   }
   void pop(void) { level--; }
 
   template<class T>
-  void iread( const std::string& s, std::vector<T>  &output      ) { 
+  void read( const std::string& s, std::vector<T>  &output      ) { 
     
     push(s);
 
-    uint64_t n; iread("N",n);
+    uint64_t n; read("N",n);
 
     // skip the vector length
     T tmp;
@@ -111,22 +111,22 @@ public:
 
   };
 
-  void iread( const std::string& s,  int16_t  &output      ) { readInternal(s,output); };
-  void iread( const std::string& s, uint16_t  &output      ) { readInternal(s,output); };
-  void iread( const std::string& s,  int32_t  &output      ) { readInternal(s,output); };
-  void iread( const std::string& s, uint32_t  &output      ) { readInternal(s,output); };
-  void iread( const std::string& s,  int64_t  &output      ) { readInternal(s,output); };
-  void iread( const std::string& s, uint64_t  &output      ) { readInternal(s,output); };
-  void iread( const std::string& s,  float    &output      ) { readInternal(s,output); };
-  void iread( const std::string& s, double    &output      ) { readInternal(s,output); };
-  void iread( const std::string& s, bool      &output      ) { readInternal(s,output); };
+  void read( const std::string& s,  int16_t  &output      ) { readInternal(s,output); };
+  void read( const std::string& s, uint16_t  &output      ) { readInternal(s,output); };
+  void read( const std::string& s,  int32_t  &output      ) { readInternal(s,output); };
+  void read( const std::string& s, uint32_t  &output      ) { readInternal(s,output); };
+  void read( const std::string& s,  int64_t  &output      ) { readInternal(s,output); };
+  void read( const std::string& s, uint64_t  &output      ) { readInternal(s,output); };
+  void read( const std::string& s,  float    &output      ) { readInternal(s,output); };
+  void read( const std::string& s, double    &output      ) { readInternal(s,output); };
+  void read( const std::string& s, bool      &output      ) { readInternal(s,output); };
 
 
 private:
 
   template<class T> void readInternal( const std::string& path, T &output ){
     std::string asString;
-    iread(path,asString);
+    read(path,asString);
     convert(asString,output);
   }
 
@@ -145,3 +145,4 @@ private:
 
 }
 #endif
+
