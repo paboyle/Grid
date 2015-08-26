@@ -1,6 +1,7 @@
 TODO:
 
 => Clean up HMC
+- Reunitarise
 - Link smearing/boundary conds; Policy class based implementation
 * Support different boundary conditions (finite temp, chem. potential ... )
 * Support different fermion representations? 

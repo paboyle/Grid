@@ -68,6 +68,22 @@ public:
     
     return sumplaq/vol/faces/Nc; // Nd , Nc dependent... FIXME
   }
+  static RealD linkTrace(const GaugeLorentz &Umu){
+    std::vector<GaugeMat> U(4,Umu._grid);
+
+    LatticeComplex Tr(Umu._grid); Tr=zero;
+    for(int mu=0;mu<Nd;mu++){
+      U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
+      Tr = Tr+trace(U[mu]);
+    }
+    
+    TComplex Tp = sum(Tr);
+    Complex p  = TensorRemove(Tp);
+
+    double vol = Umu._grid->gSites();
+
+    return p.real()/vol/4.0/3.0;
+  };
   //////////////////////////////////////////////////
   // the sum over all staples on each site
   //////////////////////////////////////////////////
