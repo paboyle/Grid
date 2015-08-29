@@ -118,7 +118,7 @@ case ${ac_SIMD} in
      ;;
 esac
 
-AC_ARG_ENABLE([precision],[AC_HELP_STRING([--enable-precision=single|double],[Select default word size of Real])],[ac_PRECISION=${enable_precision}],[ac_PRECISION=single])
+AC_ARG_ENABLE([precision],[AC_HELP_STRING([--enable-precision=single|double],[Select default word size of Real])],[ac_PRECISION=${enable_precision}],[ac_PRECISION=double])
 case ${ac_PRECISION} in
      single)
        echo default precision is single

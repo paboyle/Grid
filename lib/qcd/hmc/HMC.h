@@ -103,8 +103,7 @@ namespace Grid{
 
 	// Actual updates (evolve a copy Ucopy then copy back eventually)
 	LatticeGaugeField Ucopy(Uin._grid);
-	for(int iter=Params.StartingConfig; 
-	    iter < Params.Nsweeps+Params.StartingConfig; ++iter){
+	for(int iter=Params.StartingConfig; iter < Params.Nsweeps+Params.StartingConfig; ++iter){
 	  std::cout<<GridLogMessage << "-- # Sweep = "<< iter <<  "\n";
 	  
 	  Ucopy = Uin;

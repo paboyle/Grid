@@ -16,7 +16,8 @@ int main (int argc, char ** argv)
   GridCartesian            Fine(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian  RBFine(latt_size,simd_layout,mpi_layout);
   GridParallelRNG  pRNG(&Fine);
-  pRNG.SeedRandomDevice();
+  std::vector<int> seeds({6,7,8,80});
+  pRNG.SeedFixedIntegers(seeds);
   LatticeLorentzColourMatrix     U(&Fine);
 
   SU3::HotConfiguration(pRNG, U);
@@ -28,22 +29,24 @@ int main (int argc, char ** argv)
   WilsonFermionR FermOp(U,Fine,RBFine,mass);
   
   ConjugateGradient<LatticeFermion>  CG(1.0e-8,10000);
-  ConjugateGradient<LatticeFermion>  CGmd(1.0e-6,10000);
   
   TwoFlavourEvenOddPseudoFermionAction<WilsonImplR> WilsonNf2(FermOp,CG,CG);
   
   //Collect actions
-  ActionLevel Level1;
+  ActionLevel Level1(1);
+  ActionLevel Level2(4);
   Level1.push_back(&WilsonNf2);
-  Level1.push_back(&Waction);
+  Level2.push_back(&Waction);
+
   ActionSet FullSet;
   FullSet.push_back(Level1);
+  FullSet.push_back(Level2);
 
   // Create integrator
-  //  typedef MinimumNorm2  IntegratorAlgorithm;// change here to change the algorithm
-  typedef LeapFrog  IntegratorAlgorithm;// change here to change the algorithm
-  IntegratorParameters MDpar(12,40,1.0);
-  std::vector<int> rel ={1};
+  //  typedef LeapFrog  IntegratorAlgorithm;// change here to change the algorithm
+  //  IntegratorParameters MDpar(12,40,1.0);
+  typedef MinimumNorm2  IntegratorAlgorithm;// change here to change the algorithm
+  IntegratorParameters MDpar(12,10,1.0);
   Integrator<IntegratorAlgorithm> MDynamics(&Fine,MDpar, FullSet);
 
   // Create HMC

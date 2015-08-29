@@ -23,7 +23,8 @@ int main (int argc, char ** argv)
   
   GridCartesian           Fine(latt_size,simd_layout,mpi_layout);
   GridParallelRNG  pRNG(&Fine);
-  pRNG.SeedRandomDevice();
+  std::vector<int> seeds({1,2,3,4,5,6,7,8});
+  pRNG.SeedFixedIntegers(seeds);
   LatticeGaugeField U(&Fine);
 
   SU3::HotConfiguration(pRNG, U);
@@ -40,7 +41,7 @@ int main (int argc, char ** argv)
 
   // Create integrator
   typedef MinimumNorm2  IntegratorAlgorithm;// change here to modify the algorithm
-  IntegratorParameters MDpar(12,5,1.0);
+  IntegratorParameters MDpar(12,20,1.0);
   Integrator<IntegratorAlgorithm> MDynamics(&Fine,MDpar, FullSet);
 
   // Create HMC

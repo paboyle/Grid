@@ -15,18 +15,17 @@ TODO:
 
 => Lanczos
 
-- Rectangle gauge actions.
+ - Rectangle gauge actions.
   Iwasaki,
   Symanzik,
   ... etc...
 
 - Prepare multigrid for HMC.
-  Alternate setup schemes.
+- Alternate setup schemes.
 
-* Parallel io improvements
-  - optional parallel MPI2 IO
-  - move Plaquette and link trace checks into nersc reader from the Grid_nersc_io.cc test.
-  * Support for ILDG
+* Parallel io improvements DONE
+  - move Plaquette and link trace checks into nersc reader from the Grid_nersc_io.cc test. DONE
+  * Support for ILDG --- ugly, not done
 
 * Flavour matrices?
 

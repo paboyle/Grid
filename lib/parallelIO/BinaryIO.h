@@ -108,11 +108,11 @@ class BinaryIO {
     }
   }
 
-  template<class vobj,class fobj,class munger> static inline void Uint32Checksum(Lattice<vobj> &lat,munger munge,uint32_t &csum)
+  template<class vobj,class fobj,class munger> static inline void Uint32Checksum(Lattice<vobj> lat,munger munge,uint32_t &csum)
   {
     typedef typename vobj::scalar_object sobj;
     GridBase *grid = lat._grid ;
-
+    std::cout <<GridLogMessage<< "Uint32Checksum "<<norm2(lat)<<std::endl;
     sobj siteObj;
     fobj fileObj;
 

@@ -16,7 +16,9 @@ int main (int argc, char ** argv)
   GridCartesian            Fine(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian  RBFine(latt_size,simd_layout,mpi_layout);
   GridParallelRNG  pRNG(&Fine);
-  pRNG.SeedRandomDevice();
+
+  std::vector<int> seeds({5,6,7,8});
+  pRNG.SeedFixedIntegers(seeds);
   LatticeLorentzColourMatrix     U(&Fine);
 
   SU3::HotConfiguration(pRNG, U);
@@ -28,14 +30,16 @@ int main (int argc, char ** argv)
   WilsonFermionR FermOp(U,Fine,RBFine,mass);
   
   ConjugateGradient<LatticeFermion>  CG(1.0e-8,10000);
-  ConjugateGradient<LatticeFermion>  CGmd(1.0e-6,10000);
   
   TwoFlavourPseudoFermionAction<WilsonImplR> WilsonNf2(FermOp,CG,CG);
   
   //Collect actions
-  ActionLevel Level1;
+  ActionLevel Level1(1);
+  ActionLevel Level2(4);
   Level1.push_back(&WilsonNf2);
   Level1.push_back(&Waction);
+  //  Level1.push_back(&Waction);
+
   ActionSet FullSet;
   FullSet.push_back(Level1);
   //  FullSet.push_back(Level2);

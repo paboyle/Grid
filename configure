@@ -6533,7 +6533,7 @@ esac
 if test "${enable_precision+set}" = set; then :
   enableval=$enable_precision; ac_PRECISION=${enable_precision}
 else
-  ac_PRECISION=single
+  ac_PRECISION=double
 fi
 
 case ${ac_PRECISION} in
