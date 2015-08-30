@@ -35,7 +35,7 @@ namespace Grid{
       //////////////////////////////////////////////////////////////////////////////////////
       // Push the gauge field in to the dops. Assume any BC's and smearing already applied
       //////////////////////////////////////////////////////////////////////////////////////
-      virtual void init(const GaugeField &U, GridParallelRNG& pRNG) {
+      virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG) {
 
 	// P(phi) = e^{- phi^dag (MdagM)^-1 phi}
 	// Phi = Mdag eta 

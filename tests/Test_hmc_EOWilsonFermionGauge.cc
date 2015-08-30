@@ -52,8 +52,8 @@ int main (int argc, char ** argv)
   //  typedef LeapFrog  IntegratorAlgorithm;// change here to change the algorithm
   //  IntegratorParameters MDpar(12,40,1.0);
   typedef MinimumNorm2<LatticeGaugeField>  IntegratorAlgorithm;// change here to change the algorithm
-  IntegratorParameters MDpar(12,10,1.0);
-  Integrator<LatticeGaugeField,IntegratorAlgorithm> MDynamics(&Fine,MDpar, FullSet);
+  IntegratorParameters MDpar(10);
+  IntegratorAlgorithm MDynamics(&Fine,MDpar, FullSet);
 
   // Create HMC
   HMCparameters HMCpar;

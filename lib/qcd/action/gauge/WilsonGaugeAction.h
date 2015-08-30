@@ -18,7 +18,7 @@ namespace Grid{
     public:
     WilsonGaugeAction(RealD b):beta(b){};
       
-      virtual void init(const GaugeField &U, GridParallelRNG& pRNG) {};
+      virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG) {}; // noop as no pseudoferms
       
       virtual RealD S(const GaugeField &U) {
 	RealD plaq = WilsonLoops<GaugeField>::avgPlaquette(U);

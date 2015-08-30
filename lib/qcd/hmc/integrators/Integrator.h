@@ -24,9 +24,9 @@ namespace Grid{
       RealD trajL;  // trajectory length 
       RealD stepsize;
 
-      IntegratorParameters(int Nexp_,
-			   int MDsteps_, 
-			   RealD trajL_):
+      IntegratorParameters(int MDsteps_, 
+			   RealD trajL_=1.0,
+			   int Nexp_=12):
         Nexp(Nexp_),
 	MDsteps(MDsteps_),
 	trajL(trajL_),
@@ -37,54 +37,36 @@ namespace Grid{
 
     };
 
-    // Should match any legal (SU(n)) gauge field
-    // Need to use this template to match Ncol to pass to SU<N> class
-    template<int Ncol,class vec> void generate_momenta(Lattice< iVector< iScalar< iMatrix<vec,Ncol> >, Nd> > & P,GridParallelRNG& pRNG){
-      typedef Lattice< iScalar< iScalar< iMatrix<vec,Ncol> > > > GaugeLinkField;
-      GaugeLinkField Pmu(P._grid);
-      Pmu = zero;
-      for(int mu=0;mu<Nd;mu++){
-	SU<Ncol>::GaussianLieAlgebraMatrix(pRNG, Pmu);
-	PokeIndex<LorentzIndex>(P, Pmu, mu);
-      }
-    }
-
-    template<class GaugeField> struct ActionLevel{
-      public:
-      
-	typedef Action<GaugeField>*  ActPtr; // now force the same colours as the rest of the code
-
-	int multiplier;
-
-	std::vector<ActPtr> actions;
-
-        ActionLevel(int mul = 1) : multiplier(mul) {
-	  assert (mul > 0);
-	};
-
-	void push_back(ActPtr ptr){
-	  actions.push_back(ptr);
-	}
-    };
-
-    template<class GaugeField> using ActionSet = std::vector<ActionLevel< GaugeField > >;
-
     /*! @brief Class for Molecular Dynamics management */   
-    template<class GaugeField, class Algorithm >
-    class Integrator : public Algorithm {
+    template<class GaugeField>
+    class Integrator {
 
-    private:
+    protected:
+
+      typedef IntegratorParameters ParameterType;
 
       IntegratorParameters Params;
 
-      GridParallelRNG pRNG;        // Store this somewhere more sensible and pass as reference
       const ActionSet<GaugeField> as;
 
       int levels;              //
       double t_U;              // Track time passing on each level and for U and for P
       std::vector<double> t_P; //
 
-      GaugeField P;  // is a pointer really necessary?
+      GaugeField P;
+
+      // Should match any legal (SU(n)) gauge field
+      // Need to use this template to match Ncol to pass to SU<N> class
+      template<int Ncol,class vec> void generate_momenta(Lattice< iVector< iScalar< iMatrix<vec,Ncol> >, Nd> > & P,GridParallelRNG& pRNG){
+	typedef Lattice< iScalar< iScalar< iMatrix<vec,Ncol> > > > GaugeLinkField;
+	GaugeLinkField Pmu(P._grid);
+	Pmu = zero;
+	for(int mu=0;mu<Nd;mu++){
+	  SU<Ncol>::GaussianLieAlgebraMatrix(pRNG, Pmu);
+	  PokeIndex<LorentzIndex>(P, Pmu, mu);
+	}
+      }
+
 
       //ObserverList observers; // not yet
       //      typedef std::vector<Observer*> ObserverList;
@@ -125,10 +107,14 @@ namespace Grid{
 
       }
       
-      friend void Algorithm::step (GaugeField& U, 
+      /*
+	friend void Algorithm::step (GaugeField& U, 
 				   int level, 
 				   std::vector<int>& clock,
 				   Integrator<GaugeField,Algorithm>* Integ);
+      */
+
+      virtual void step (GaugeField& U,int level, std::vector<int>& clock)=0;
 
     public:
 
@@ -138,25 +124,21 @@ namespace Grid{
           Params(Par),
     	  as(Aset),
 	  P(grid),
-	  pRNG(grid),
 	  levels(Aset.size())
       {
-	std::vector<int> seeds({1,2,3,4,5}); // Fixme; Pass it the RNG as a ref
-	pRNG.SeedFixedIntegers(seeds);
-
 	t_P.resize(levels,0.0);
 	t_U=0.0;
       };
       
-      ~Integrator(){}
+      virtual ~Integrator(){}
 
       //Initialization of momenta and actions
-      void init(GaugeField& U){
-	std::cout<<GridLogMessage<< "Integrator init\n";
+      void refresh(GaugeField& U,GridParallelRNG &pRNG){
+	std::cout<<GridLogMessage<< "Integrator refresh\n";
 	generate_momenta(P,pRNG);
 	for(int level=0; level< as.size(); ++level){
 	  for(int actionID=0; actionID<as[level].actions.size(); ++actionID){
-	    as[level].actions.at(actionID)->init(U, pRNG);
+	    as[level].actions.at(actionID)->refresh(U, pRNG);
 	  }
 	}
       }
@@ -197,12 +179,14 @@ namespace Grid{
 
 	// All the clock stuff is removed if we pass first, last to the step down the way
 	for(int step=0; step< Params.MDsteps; ++step){   // MD step
-	  Algorithm::step(U,0,clock, (this));
+	  int first_step = (step==0);
+	  int  last_step = (step==Params.MDsteps-1);
+	  this->step(U,0,clock);
 	}
 
 	// Check the clocks all match
 	for(int level=0; level<as.size(); ++level){
-	  assert(fabs(t_U - t_P[level])<1.0e-4);
+	  assert(fabs(t_U - t_P[level])<1.0e-6); // must be the same
 	  std::cout<<GridLogMessage<<" times["<<level<<"]= "<<t_P[level]<< " " << t_U <<std::endl;
 	}	
 

@@ -47,8 +47,8 @@ int main (int argc, char ** argv)
 
   // Create integrator
   typedef MinimumNorm2<LatticeGaugeField>  IntegratorAlgorithm;// change here to modify the algorithm
-  IntegratorParameters MDpar(12,20,1.0);
-  Integrator<LatticeGaugeField,IntegratorAlgorithm> MDynamics(&Fine,MDpar, FullSet);
+  IntegratorParameters MDpar(20);
+  IntegratorAlgorithm  MDynamics(&Fine,MDpar, FullSet);
 
   // Create HMC
   HMCparameters HMCpar;

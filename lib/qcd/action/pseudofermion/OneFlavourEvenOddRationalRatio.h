@@ -61,7 +61,7 @@ namespace Grid{
 	PowerNegQuarter.Init(remez,param.tolerance,true);
       };
       
-      virtual void init(const GaugeField &U, GridParallelRNG& pRNG) {
+      virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG) {
 
 	// S_f = chi^dag* P(V^dag*V)/Q(V^dag*V)* N(M^dag*M)/D(M^dag*M)* P(V^dag*V)/Q(V^dag*V)* chi       
 	//

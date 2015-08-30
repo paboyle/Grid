@@ -63,30 +63,32 @@ namespace Grid{
     *  P 1/2                            P 1/2
     */    
 
-    template<class GaugeField> class LeapFrog {
+    template<class GaugeField> class LeapFrog : public Integrator<GaugeField> {
     public:
 
       typedef LeapFrog<GaugeField> Algorithm;
 
-      void step (GaugeField& U, 
-		 int level, std::vector<int>& clock,
-		 Integrator<GaugeField,Algorithm> * Integ){
+    LeapFrog(GridBase* grid, 
+	     IntegratorParameters Par,
+	     ActionSet<GaugeField> & Aset): Integrator<GaugeField>(grid,Par,Aset) {};
 
+
+      void step (GaugeField& U, int level, std::vector<int>& clock){
+
+	int fl = this->as.size() -1;
 	// level  : current level
 	// fl     : final level
 	// eps    : current step size
 	
-	int fl = Integ->as.size() -1;
-	
 	// Get current level step size
-	int fin = 2*Integ->Params.MDsteps;
-	for(int l=0; l<=level; ++l) fin*= Integ->as[l].multiplier;
+	int fin = 2*this->Params.MDsteps;
+	for(int l=0; l<=level; ++l) fin*= this->as[l].multiplier;
 	fin = fin-1;
 
-	double eps = Integ->Params.stepsize;
-	for(int l=0; l<=level; ++l) eps/= Integ->as[l].multiplier;
+	double eps = this->Params.stepsize;
+	for(int l=0; l<=level; ++l) eps/= this->as[l].multiplier;
 	
-	int multiplier = Integ->as[level].multiplier;
+	int multiplier = this->as[level].multiplier;
 	for(int e=0; e<multiplier; ++e){
 
 	  int first_step,last_step;
@@ -94,52 +96,52 @@ namespace Grid{
 	  first_step = (clock[level]==0);
 
 	  if(first_step){    // initial half step
-	    Integ->update_P(U, level,eps/2.0);	    ++clock[level];
+	    this->update_P(U, level,eps/2.0);	    ++clock[level];
 	  }
 
 	  if(level == fl){          // lowest level
-	    Integ->update_U(U, eps);
+	    this->update_U(U, eps);
 	  }else{                 // recursive function call
-	    step(U, level+1,clock, Integ);
+	    this->step(U, level+1,clock);
 	  }
 
 	  last_step  = (clock[level]==fin);
 	  int mm = last_step ? 1 : 2;
-	  Integ->update_P(U, level,mm*eps/2.0);	    
+	  this->update_P(U, level,mm*eps/2.0);	    
 	  clock[level]+=mm;
 
 	}
       }
     };
 
-    template<class GaugeField> class MinimumNorm2 {
-    public:
-      typedef MinimumNorm2<GaugeField> Algorithm;
-
+    template<class GaugeField> class MinimumNorm2 : public Integrator<GaugeField> {
     private:
       const double lambda = 0.1931833275037836;
+
     public:
 
-      void step (GaugeField& U, 
-		 int level, std::vector<int>& clock,
-		 Integrator<GaugeField,Algorithm>* Integ){
+      MinimumNorm2(GridBase* grid, 
+		   IntegratorParameters Par,
+		   ActionSet<GaugeField> & Aset): Integrator<GaugeField>(grid,Par,Aset) {};
+
+      void step (GaugeField& U, int level, std::vector<int>& clock){
 
 	// level  : current level
 	// fl     : final level
 	// eps    : current step size
 
-	int fl = Integ->as.size() -1;
+	int fl = this->as.size() -1;
 
-	double eps = Integ->Params.stepsize;
+	double eps = this->Params.stepsize;
 	
-	for(int l=0; l<=level; ++l) eps/= 2.0*Integ->as[l].multiplier;
+	for(int l=0; l<=level; ++l) eps/= 2.0*this->as[l].multiplier;
 	
 	// which is final half step
-	int fin = Integ->as[0].multiplier;
-	for(int l=1; l<=level; ++l) fin*= 2.0*Integ->as[l].multiplier;
-	fin = 3*Integ->Params.MDsteps*fin -1;
+	int fin = this->as[0].multiplier;
+	for(int l=1; l<=level; ++l) fin*= 2.0*this->as[l].multiplier;
+	fin = 3*this->Params.MDsteps*fin -1;
 
-	int multiplier = Integ->as[level].multiplier;
+	int multiplier = this->as[level].multiplier;
 	for(int e=0; e<multiplier; ++e){       // steps per step
 
 	  int first_step,last_step;
@@ -147,26 +149,26 @@ namespace Grid{
 	  first_step = (clock[level]==0);
 
 	  if(first_step){    // initial half step 
-	    Integ->update_P(U,level,lambda*eps);   ++clock[level];
+	    this->update_P(U,level,lambda*eps);   ++clock[level];
 	  }
 	  
 	  if(level == fl){          // lowest level 
-	    Integ->update_U(U,0.5*eps);
+	    this->update_U(U,0.5*eps);
 	  }else{                 // recursive function call 
-	    step(U,level+1,clock, Integ);
+	    this->step(U,level+1,clock);
 	  }
 	  
-	  Integ->update_P(U,level,(1.0-2.0*lambda)*eps); ++clock[level];
+	  this->update_P(U,level,(1.0-2.0*lambda)*eps); ++clock[level];
 	  
 	  if(level == fl){          // lowest level 
-	    Integ->update_U(U,0.5*eps);
+	    this->update_U(U,0.5*eps);
 	  }else{                 // recursive function call 
-	    step(U,level+1,clock, Integ);
+	    this->step(U,level+1,clock);
 	  }    
 	  
 	  last_step  = (clock[level]==fin);
 	  int mm = (last_step) ? 1 : 2;
-	  Integ->update_P(U,level,lambda*eps*mm); clock[level]+=mm;
+	  this->update_P(U,level,lambda*eps*mm); clock[level]+=mm;
 
 	}
       }

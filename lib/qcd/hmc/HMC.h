@@ -28,7 +28,7 @@ namespace Grid{
     };
     
     //    template <class GaugeField, class Integrator, class Smearer, class Boundary> 
-    template <class GaugeField, class Algorithm>
+    template <class GaugeField, class IntegratorType>
     class HybridMonteCarlo {
     private:
 
@@ -36,7 +36,7 @@ namespace Grid{
       
       GridSerialRNG   &sRNG;   // Fixme: need a RNG management strategy.
       GridParallelRNG &pRNG; // Fixme: need a RNG management strategy.
-      typedef Integrator<GaugeField,Algorithm> IntegratorType;
+
       IntegratorType &TheIntegrator;
 
       /////////////////////////////////////////////////////////
@@ -69,7 +69,7 @@ namespace Grid{
       /////////////////////////////////////////////////////////
       RealD evolve_step(GaugeField& U){
 
-	TheIntegrator.init(U); // set U and initialize P and phi's 
+	TheIntegrator.refresh(U,pRNG); // set U and initialize P and phi's 
 
 	RealD H0 = TheIntegrator.S(U); // initial state action  
 

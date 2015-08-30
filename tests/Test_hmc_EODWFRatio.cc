@@ -47,14 +47,13 @@ int main (int argc, char ** argv)
   FullSet.push_back(Level1);
 
   // Create integrator
-  //  typedef LeapFrog  IntegratorAlgorithm;// change here to change the algorithm
-  typedef MinimumNorm2<LatticeGaugeField>  IntegratorAlgorithm;// change here to change the algorithm
-  IntegratorParameters MDpar(12,20,1.0);
-  Integrator<LatticeGaugeField,IntegratorAlgorithm> MDynamics(UGrid,MDpar, FullSet);
+  typedef MinimumNorm2<LatticeGaugeField>  IntegratorType;// change here to change the algorithm
+  IntegratorParameters MDpar(20);
+  IntegratorType MDynamics(UGrid,MDpar, FullSet);
 
   // Create HMC
   HMCparameters HMCpar;
-  HybridMonteCarlo<LatticeGaugeField,IntegratorAlgorithm>  HMC(HMCpar, MDynamics,sRNG,pRNG);
+  HybridMonteCarlo<LatticeGaugeField,IntegratorType>  HMC(HMCpar, MDynamics,sRNG,pRNG);
 
   // Run it
   HMC.evolve(U);
