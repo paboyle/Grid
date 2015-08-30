@@ -23,6 +23,7 @@ template<class vtype> class iScalar
 public:
   vtype _internal;
 
+  typedef vtype element;
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
@@ -124,6 +125,7 @@ template<class vtype,int N> class iVector
 public:
   vtype _internal[N];
 
+  typedef vtype element;
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
@@ -219,6 +221,7 @@ template<class vtype,int N> class iMatrix
 public:
   vtype _internal[N][N];
 
+  typedef vtype element;
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;

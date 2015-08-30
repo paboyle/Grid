@@ -66,11 +66,11 @@ inline void NerscGrid(GridBase *grid,NerscField &header)
     header.boundary[d] = std::string("PERIODIC");
   }
 }
-template<class GaugeMatrix,class GaugeField>
+template<class GaugeField>
 inline void NerscStatistics(GaugeField & data,NerscField &header)
 {
-  header.link_trace=Grid::QCD::WilsonLoops<GaugeMatrix,GaugeField>::linkTrace(data);
-  header.plaquette =Grid::QCD::WilsonLoops<GaugeMatrix,GaugeField>::avgPlaquette(data);
+  header.link_trace=Grid::QCD::WilsonLoops<GaugeField>::linkTrace(data);
+  header.plaquette =Grid::QCD::WilsonLoops<GaugeField>::avgPlaquette(data);
 }
 
 inline void NerscMachineCharacteristics(NerscField &header)
@@ -298,7 +298,6 @@ template<class vsimd>
 static inline void readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,NerscField& header,std::string file)
 {
   typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
-  typedef Lattice<iColourMatrix<vsimd> > GaugeMatrix;
 
   GridBase *grid = Umu._grid;
   int offset = readHeader(file,Umu._grid,header);
@@ -341,7 +340,7 @@ static inline void readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,
     assert(0);
   }
 
-  NerscStatistics<GaugeMatrix,GaugeField>(Umu,clone);
+  NerscStatistics<GaugeField>(Umu,clone);
 
   assert(fabs(clone.plaquette -header.plaquette ) < 1.0e-5 );
   assert(fabs(clone.link_trace-header.link_trace) < 1.0e-6 );
@@ -354,7 +353,7 @@ template<class vsimd>
 static inline void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,std::string file, int two_row,int bits32)
 {
   typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
-  typedef Lattice<iColourMatrix<vsimd> > GaugeMatrix;
+
   typedef iLorentzColourMatrix<vsimd> vobj;
   typedef typename vobj::scalar_object sobj;
 
@@ -372,7 +371,7 @@ static inline void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu
   GridBase *grid = Umu._grid;
 
   NerscGrid(grid,header);
-  NerscStatistics<GaugeMatrix,GaugeField>(Umu,header);
+  NerscStatistics<GaugeField>(Umu,header);
   NerscMachineCharacteristics(header);
 
   uint32_t csum;

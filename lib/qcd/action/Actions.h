@@ -16,10 +16,6 @@
 #include <qcd/action/ActionBase.h>
 #include <qcd/action/ActionParams.h>
 
-////////////////////////////////////////////
-// Gauge Actions
-////////////////////////////////////////////
-#include <qcd/action/gauge/WilsonGaugeAction.h>
 
 
 ////////////////////////////////////////////
@@ -30,6 +26,17 @@
 #include <qcd/action/fermion/FermionOperator.h>
 #include <qcd/action/fermion/WilsonKernels.h>        //used by all wilson type fermions
 
+
+////////////////////////////////////////////
+// Gauge Actions
+////////////////////////////////////////////
+#include <qcd/action/gauge/WilsonGaugeAction.h>
+namespace Grid {
+namespace QCD {
+typedef WilsonGaugeAction<LatticeGaugeField>     WilsonGaugeActionR;
+typedef WilsonGaugeAction<LatticeGaugeFieldF>    WilsonGaugeActionF;
+typedef WilsonGaugeAction<LatticeGaugeFieldD>    WilsonGaugeActionD;
+}}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Explicit explicit template instantiation is still required in the .cc files

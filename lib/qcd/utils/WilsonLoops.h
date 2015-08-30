@@ -4,9 +4,12 @@ namespace Grid {
 namespace QCD {
 
 // Common wilson loop observables
-template<class GaugeMat,class GaugeLorentz>
+template<class GaugeLorentz>
 class WilsonLoops {
 public:
+
+  typedef LorentzScalar<GaugeLorentz> GaugeMat;
+
   //////////////////////////////////////////////////
   // directed plaquette oriented in mu,nu plane
   //////////////////////////////////////////////////
@@ -141,10 +144,10 @@ void siteRectangle(GaugeMat &plaq,const std::vector<GaugeMat> &U, const int mu, 
 };
 
 
- typedef WilsonLoops<LatticeColourMatrix,LatticeGaugeField> ColourWilsonLoops;
- typedef WilsonLoops<LatticeColourMatrix,LatticeGaugeField> U1WilsonLoops;
- typedef WilsonLoops<LatticeColourMatrix,LatticeGaugeField> SU2WilsonLoops;
- typedef WilsonLoops<LatticeColourMatrix,LatticeGaugeField> SU3WilsonLoops;
+ typedef WilsonLoops<LatticeGaugeField> ColourWilsonLoops;
+ typedef WilsonLoops<LatticeGaugeField> U1WilsonLoops;
+ typedef WilsonLoops<LatticeGaugeField> SU2WilsonLoops;
+ typedef WilsonLoops<LatticeGaugeField> SU3WilsonLoops;
 
 }}
 

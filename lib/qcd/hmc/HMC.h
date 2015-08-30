@@ -15,6 +15,7 @@
 namespace Grid{
   namespace QCD{
     
+
     struct HMCparameters{
       Integer Nsweeps; /* @brief Number of sweeps in this run */
       Integer TotalSweeps; /* @brief If provided, the total number of sweeps */
@@ -26,14 +27,17 @@ namespace Grid{
       HMCparameters();
     };
     
-    template <class Algorithm> 
-    class HybridMonteCarlo{
+    //    template <class GaugeField, class Integrator, class Smearer, class Boundary> 
+    template <class GaugeField, class Algorithm>
+    class HybridMonteCarlo {
+    private:
 
       const HMCparameters Params;
-
-      GridSerialRNG sRNG; // Fixme: need a RNG management strategy.
-
-      Integrator<Algorithm>& MD;
+      
+      GridSerialRNG   &sRNG;   // Fixme: need a RNG management strategy.
+      GridParallelRNG &pRNG; // Fixme: need a RNG management strategy.
+      typedef Integrator<GaugeField,Algorithm> IntegratorType;
+      IntegratorType &TheIntegrator;
 
       /////////////////////////////////////////////////////////
       // Metropolis step
@@ -63,16 +67,20 @@ namespace Grid{
       /////////////////////////////////////////////////////////
       // Evolution
       /////////////////////////////////////////////////////////
-      RealD evolve_step(LatticeGaugeField& U){
-	MD.init(U); // set U and initialize P and phi's 
+      RealD evolve_step(GaugeField& U){
 
-	RealD H0 = MD.S(U); // initial state action  
+	TheIntegrator.init(U); // set U and initialize P and phi's 
+
+	RealD H0 = TheIntegrator.S(U); // initial state action  
+
 	std::cout<<GridLogMessage<<"Total H before = "<< H0 << "\n";
 
-	MD.integrate(U);
+	TheIntegrator.integrate(U);
       
-	RealD H1 = MD.S(U); // updated state action            
+	RealD H1 = TheIntegrator.S(U); // updated state action            
+
 	std::cout<<GridLogMessage<<"Total H after = "<< H1 << "\n";
+
 	return (H1-H0);
       }
       
@@ -81,16 +89,18 @@ namespace Grid{
       /////////////////////////////////////////
       // Constructor
       /////////////////////////////////////////
-      HybridMonteCarlo(HMCparameters Pms,  Integrator<Algorithm>& MolDyn): Params(Pms),MD(MolDyn) {
-
-	//FIXME...  initialize RNGs also with seed ; RNG management strategy
-	sRNG.SeedRandomDevice();
-
+     HybridMonteCarlo(HMCparameters Pms,  IntegratorType &_Int, GridSerialRNG &_sRNG, GridParallelRNG &_pRNG ) :
+        Params(Pms), 
+	TheIntegrator(_Int), 
+	sRNG(_sRNG),
+	pRNG(_pRNG)
+      {
       }
       ~HybridMonteCarlo(){};
 
 
-      void evolve(LatticeGaugeField& Uin){
+      void evolve(GaugeField& Uin){
+
 	Real DeltaH;
 	
 	// Thermalizations
@@ -102,7 +112,7 @@ namespace Grid{
 	}
 
 	// Actual updates (evolve a copy Ucopy then copy back eventually)
-	LatticeGaugeField Ucopy(Uin._grid);
+	GaugeField Ucopy(Uin._grid);
 	for(int iter=Params.StartingConfig; iter < Params.Nsweeps+Params.StartingConfig; ++iter){
 	  std::cout<<GridLogMessage << "-- # Sweep = "<< iter <<  "\n";
 	  
