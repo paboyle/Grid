@@ -3,15 +3,21 @@ TODO:
 => Clean up HMC
 - Reunitarise
 - Link smearing/boundary conds; Policy class based implementation
-* Support different boundary conditions (finite temp, chem. potential ... )
-* Support different fermion representations? 
+
 - Integrators
-  - Force Gradient
-  - Multi-timescale looks broken and operating on single timescale for now.
-    Fix/debug/rewrite this 
+  - Force Gradient              
   - Sign of force term.
   - Prefer "RefreshInternal" or such like to "init" in naming
   - Rename "Ta" as too unclear
+  DONE: -- pass GaugeField as template param.
+        -- LorentzScalar<GaugeField> gets Gauge link type (cleaner).
+        -- Simplified the integrators a bit.
+        - Multi-timescale looks broken and operating on single timescale for now.
+          FIXED
+
+* Support different boundary conditions (finite temp, chem. potential ... )
+* Support different fermion representations? 
+  - contained entirely within the integrator presently
 
 => Lanczos
 
