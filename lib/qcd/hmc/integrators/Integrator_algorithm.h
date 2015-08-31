@@ -171,6 +171,7 @@ namespace Grid{
       const RealD theta  = 0.0;
     public:
 
+      // Looks like dH scales as dt^4. tested wilson/wilson 2 level.
     ForceGradient(GridBase* grid, 
 		  IntegratorParameters Par,
 		  ActionSet<GaugeField> & Aset): Integrator<GaugeField>(grid,Par,Aset) {};
