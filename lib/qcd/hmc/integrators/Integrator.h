@@ -76,28 +76,22 @@ namespace Grid{
 
       void update_P(GaugeField&U, int level,double ep){
 	t_P[level]+=ep;
-	for(int a=0; a<as[level].actions.size(); ++a){
-	  GaugeField force(U._grid);
-	  as[level].actions.at(a)->deriv(U,force);
-	  P = P - force*ep;
-	}
+	update_P(P,U,level,ep);
 
 	std::cout<<GridLogMessage;
 	for(int l=0; l<level;++l) std::cout<<"   ";	    
 	std::cout<<"["<<level<<"] P " << " dt "<< ep <<" : t_P "<< t_P[level] <<std::endl;
-
+      }
+      void update_P(GaugeField &Mom,GaugeField&U, int level,double ep){
+	for(int a=0; a<as[level].actions.size(); ++a){
+	  GaugeField force(U._grid);
+	  as[level].actions.at(a)->deriv(U,force);
+	  Mom = Mom - force*ep;
+	}
       }
 
       void update_U(GaugeField&U, double ep){
-	//rewrite exponential to deal automatically  with the lorentz index?
-	//	GaugeLinkField Umu(U._grid);
-	//	GaugeLinkField Pmu(U._grid);
-	for (int mu = 0; mu < Nd; mu++){
-	  auto Umu=PeekIndex<LorentzIndex>(U, mu);
-	  auto Pmu=PeekIndex<LorentzIndex>(P, mu);
-	  Umu = expMat(Pmu, ep, Params.Nexp)*Umu;
-	  PokeIndex<LorentzIndex>(U, Umu, mu);
-	}
+	update_U(P,U,ep);
 
 	t_U+=ep;
 	int fl = levels-1;
@@ -105,6 +99,17 @@ namespace Grid{
 	for(int l=0; l<fl;++l) std::cout<<"   ";	    
 	std::cout<<"["<<fl<<"] U " << " dt "<< ep <<" : t_U "<< t_U <<std::endl;
 
+      }
+      void update_U(GaugeField &Mom, GaugeField&U, double ep){
+	//rewrite exponential to deal automatically  with the lorentz index?
+	//	GaugeLinkField Umu(U._grid);
+	//	GaugeLinkField Pmu(U._grid);
+	for (int mu = 0; mu < Nd; mu++){
+	  auto Umu=PeekIndex<LorentzIndex>(U, mu);
+	  auto Pmu=PeekIndex<LorentzIndex>(Mom, mu);
+	  Umu = expMat(Pmu, ep, Params.Nexp)*Umu;
+	  PokeIndex<LorentzIndex>(U, Umu, mu);
+	}
       }
       
       /*

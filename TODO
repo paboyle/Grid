@@ -2,6 +2,7 @@ TODO:
 
 => Clean up HMC
 - Reunitarise
+- Reversibility test.
 - Link smearing/boundary conds; Policy class based implementation
 
 - Integrators

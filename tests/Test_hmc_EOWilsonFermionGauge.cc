@@ -49,9 +49,10 @@ int main (int argc, char ** argv)
   FullSet.push_back(Level2);
 
   // Create integrator
-  //  typedef LeapFrog  IntegratorAlgorithm;// change here to change the algorithm
-  //  IntegratorParameters MDpar(12,40,1.0);
-  typedef MinimumNorm2<LatticeGaugeField>  IntegratorAlgorithm;// change here to change the algorithm
+  //typedef LeapFrog<LatticeGaugeField>  IntegratorAlgorithm;// change here to change the algorithm
+  //typedef MinimumNorm2<LatticeGaugeField>  IntegratorAlgorithm;// change here to change the algorithm
+  typedef ForceGradient<LatticeGaugeField>  IntegratorAlgorithm;// change here to change the algorithm
+
   IntegratorParameters MDpar(10);
   IntegratorAlgorithm MDynamics(&Fine,MDpar, FullSet);
 
