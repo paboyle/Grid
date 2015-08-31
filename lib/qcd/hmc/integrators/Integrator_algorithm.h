@@ -68,12 +68,12 @@ namespace Grid{
 
       typedef LeapFrog<GaugeField> Algorithm;
 
-    LeapFrog(GridBase* grid, 
-	     IntegratorParameters Par,
-	     ActionSet<GaugeField> & Aset): Integrator<GaugeField>(grid,Par,Aset) {};
+      LeapFrog(GridBase* grid, 
+	       IntegratorParameters Par,
+	       ActionSet<GaugeField> & Aset): Integrator<GaugeField>(grid,Par,Aset) {};
 
 
-      void step (GaugeField& U, int level, std::vector<int>& clock){
+      void step (GaugeField& U, int level,int _first, int _last){
 
 	int fl = this->as.size() -1;
 	// level  : current level
@@ -81,34 +81,27 @@ namespace Grid{
 	// eps    : current step size
 	
 	// Get current level step size
-	int fin = 2*this->Params.MDsteps;
-	for(int l=0; l<=level; ++l) fin*= this->as[l].multiplier;
-	fin = fin-1;
-
-	RealD eps = this->Params.stepsize;
+        RealD eps = this->Params.stepsize;
 	for(int l=0; l<=level; ++l) eps/= this->as[l].multiplier;
 	
 	int multiplier = this->as[level].multiplier;
 	for(int e=0; e<multiplier; ++e){
 
-	  int first_step,last_step;
-
-	  first_step = (clock[level]==0);
+	  int first_step = _first && (e==0);
+	  int last_step  = _last  && (e==multiplier-1);
 
 	  if(first_step){    // initial half step
-	    this->update_P(U, level,eps/2.0);	    ++clock[level];
+	    this->update_P(U, level,eps/2.0);
 	  }
 
 	  if(level == fl){          // lowest level
 	    this->update_U(U, eps);
 	  }else{                 // recursive function call
-	    this->step(U, level+1,clock);
+	    this->step(U, level+1,first_step,last_step);
 	  }
 
-	  last_step  = (clock[level]==fin);
 	  int mm = last_step ? 1 : 2;
 	  this->update_P(U, level,mm*eps/2.0);	    
-	  clock[level]+=mm;
 
 	}
       }
@@ -124,7 +117,7 @@ namespace Grid{
 		   IntegratorParameters Par,
 		   ActionSet<GaugeField> & Aset): Integrator<GaugeField>(grid,Par,Aset) {};
 
-      void step (GaugeField& U, int level, std::vector<int>& clock){
+      void step (GaugeField& U, int level, int _first,int _last){
 
 	// level  : current level
 	// fl     : final level
@@ -132,43 +125,38 @@ namespace Grid{
 
 	int fl = this->as.size() -1;
 
-	RealD eps = this->Params.stepsize;
-	
-	for(int l=0; l<=level; ++l) eps/= 2.0*this->as[l].multiplier;
-	
-	// which is final half step
-	int fin = this->as[0].multiplier;
-	for(int l=1; l<=level; ++l) fin*= 2.0*this->as[l].multiplier;
-	fin = 3*this->Params.MDsteps*fin -1;
+	RealD eps = this->Params.stepsize*2.0;                              
+	for(int l=0; l<=level; ++l) eps/= 2.0*this->as[l].multiplier;   
+
+	// Nesting:  2xupdate_U of size eps/2
+	// Next level is eps/2/multiplier
 
 	int multiplier = this->as[level].multiplier;
 	for(int e=0; e<multiplier; ++e){       // steps per step
 
-	  int first_step,last_step;
-
-	  first_step = (clock[level]==0);
+	  int first_step = _first && (e==0);
+	  int last_step  = _last  && (e==multiplier-1);
 
 	  if(first_step){    // initial half step 
-	    this->update_P(U,level,lambda*eps);   ++clock[level];
+	    this->update_P(U,level,lambda*eps);
 	  }
 	  
 	  if(level == fl){          // lowest level 
 	    this->update_U(U,0.5*eps);
 	  }else{                 // recursive function call 
-	    this->step(U,level+1,clock);
+	    this->step(U,level+1,first_step,0);
 	  }
 	  
-	  this->update_P(U,level,(1.0-2.0*lambda)*eps); ++clock[level];
+	  this->update_P(U,level,(1.0-2.0*lambda)*eps);
 	  
 	  if(level == fl){          // lowest level 
 	    this->update_U(U,0.5*eps);
 	  }else{                 // recursive function call 
-	    this->step(U,level+1,clock);
+	    this->step(U,level+1,0,last_step);
 	  }    
 	  
-	  last_step  = (clock[level]==fin);
 	  int mm = (last_step) ? 1 : 2;
-	  this->update_P(U,level,lambda*eps*mm); clock[level]+=mm;
+	  this->update_P(U,level,lambda*eps*mm);
 
 	}
       }
@@ -207,50 +195,43 @@ namespace Grid{
 	this->update_P(Ufg,level,ep);
       }
 
-      void step (GaugeField& U, int level, std::vector<int>& clock){
+      void step (GaugeField& U, int level, int _first,int _last){
 
-	RealD eps = this->Params.stepsize;
+	RealD eps = this->Params.stepsize*2.0;                              
 	for(int l=0; l<=level; ++l) eps/= 2.0*this->as[l].multiplier;
 
-	RealD Theta = theta*eps*eps*eps;
 	RealD Chi   = chi*eps*eps*eps;
 
 	int fl = this->as.size() -1;
 	
-	// which is final half step
-	int fin = this->as[0].multiplier;
-	for(int l=1; l<=level; ++l) fin*= 2.0*this->as[l].multiplier;
-	fin = 3*this->Params.MDsteps*fin -1;
-
 	int multiplier = this->as[level].multiplier;
 
 	for(int e=0; e<multiplier; ++e){       // steps per step
 
-	  int first_step,last_step;
 
-	  first_step = (clock[level]==0);
+	  int first_step = _first && (e==0);
+	  int last_step  = _last  && (e==multiplier-1);
 
 	  if(first_step){    // initial half step 
-	    this->update_P(U,level,lambda*eps);   ++clock[level];
+	    this->update_P(U,level,lambda*eps);
 	  }
 	  
 	  if(level == fl){          // lowest level 
 	    this->update_U(U,0.5*eps);
 	  }else{                 // recursive function call 
-	    this->step(U,level+1,clock);
+	    this->step(U,level+1,first_step,0);
 	  }
 	  
-	  this->FG_update_P(U,level,2*Chi/((1.0-2.0*lambda)*eps),(1.0-2.0*lambda)*eps); ++clock[level];
+	  this->FG_update_P(U,level,2*Chi/((1.0-2.0*lambda)*eps),(1.0-2.0*lambda)*eps);
 	  
 	  if(level == fl){          // lowest level 
 	    this->update_U(U,0.5*eps);
 	  }else{                 // recursive function call 
-	    this->step(U,level+1,clock);
+	    this->step(U,level+1,0,last_step);
 	  }    
 	  
-	  last_step  = (clock[level]==fin);
 	  int mm = (last_step) ? 1 : 2;
-	  this->update_P(U,level,lambda*eps*mm); clock[level]+=mm;
+	  this->update_P(U,level,lambda*eps*mm); 
 
 	}
       }

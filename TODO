@@ -1,45 +1,44 @@
+RECENT
+---------------
+
+  - Clean up HMC                                                             -- DONE
+  - LorentzScalar<GaugeField> gets Gauge link type (cleaner).                -- DONE
+  - Simplified the integrators a bit.                                        -- DONE
+  - Multi-timescale looks broken and operating on single timescale for now.  -- DONE
+  - pass GaugeField as template param.                        -- DONE
+  - Reunitarise                                               -- DONE
+  - Force Gradient                                            -- DONE
+  - Prefer "RefreshInternal" or such like to "init" in naming -- DONE
+  - Parallel io improvements                                  -- DONE
+  - Plaquette and link trace checks into nersc reader from the Grid_nersc_io.cc test. -- DONE
+
 TODO:
-
-=> Clean up HMC
-- Reunitarise
-- Reversibility test.
-- Link smearing/boundary conds; Policy class based implementation
-
-- Integrators
-  - Force Gradient              
-  - Sign of force term.
-  - Prefer "RefreshInternal" or such like to "init" in naming
-  - Rename "Ta" as too unclear
-  DONE: -- pass GaugeField as template param.
-        -- LorentzScalar<GaugeField> gets Gauge link type (cleaner).
-        -- Simplified the integrators a bit.
-        - Multi-timescale looks broken and operating on single timescale for now.
-          FIXED
-
+---------------
+Policies:
+* Link smearing/boundary conds; Policy class based implementation ; framework more in place
 * Support different boundary conditions (finite temp, chem. potential ... )
 * Support different fermion representations? 
   - contained entirely within the integrator presently
+  - Sign of force term.
+  - Rename "Ta" as too unclear
 
-=> Lanczos
+- Reversibility test.
 
- - Rectangle gauge actions.
+- Lanczos
+
+- Rectangle gauge actions.
   Iwasaki,
   Symanzik,
   ... etc...
 
 - Prepare multigrid for HMC.
 - Alternate setup schemes.
-
-* Parallel io improvements DONE
-  - move Plaquette and link trace checks into nersc reader from the Grid_nersc_io.cc test. DONE
-  * Support for ILDG --- ugly, not done
-
+* Support for ILDG --- ugly, not done
 * Flavour matrices?
-
 * FFTnD ?
 
 ================================================================
-*** Hacks and bug fixes to clean up and Audits
+* Hacks and bug fixes to clean up and Audits
 ================================================================
 
 *  Extract/merge/set cleanup ; too many variants; rationalise and call simpler ones
@@ -65,7 +64,6 @@ Insert/Extract
 
 * Thread scaling tests Xeon, XeonPhi
 
-
 Not sure of status of this -- reverify. Things are working nicely now though.
 
 * Make the Tensor types and Complex etc... play more nicely.
@@ -84,6 +82,10 @@ Not sure of status of this -- reverify. Things are working nicely now though.
     template specialize the scalar scalar scalar sum and SliceSum,  on the basis of being
     pure scalar.
 
+======================================================================
+======================================================================
+======================================================================
+======================================================================
 Done: Cayley, Partial , ContFrac force terms.
 
 DONE

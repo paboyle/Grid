@@ -73,7 +73,6 @@ namespace Grid{
       //      void register_observers();
       //      void notify_observers();
 
-
       void update_P(GaugeField&U, int level,double ep){
 	t_P[level]+=ep;
 	update_P(P,U,level,ep);
@@ -82,6 +81,7 @@ namespace Grid{
 	for(int l=0; l<level;++l) std::cout<<"   ";	    
 	std::cout<<"["<<level<<"] P " << " dt "<< ep <<" : t_P "<< t_P[level] <<std::endl;
       }
+
       void update_P(GaugeField &Mom,GaugeField&U, int level,double ep){
 	for(int a=0; a<as[level].actions.size(); ++a){
 	  GaugeField force(U._grid);
@@ -108,18 +108,12 @@ namespace Grid{
 	  auto Umu=PeekIndex<LorentzIndex>(U, mu);
 	  auto Pmu=PeekIndex<LorentzIndex>(Mom, mu);
 	  Umu = expMat(Pmu, ep, Params.Nexp)*Umu;
+	  ProjectOnGroup(Umu);
 	  PokeIndex<LorentzIndex>(U, Umu, mu);
 	}
       }
       
-      /*
-	friend void Algorithm::step (GaugeField& U, 
-				   int level, 
-				   std::vector<int>& clock,
-				   Integrator<GaugeField,Algorithm>* Integ);
-      */
-
-      virtual void step (GaugeField& U,int level, std::vector<int>& clock)=0;
+      virtual void step (GaugeField& U,int level, int first,int last)=0;
 
     public:
 
@@ -178,22 +172,27 @@ namespace Grid{
 
       void integrate(GaugeField& U){
 
-	std::vector<int> clock;
+	// reset the clocks
+	t_U=0;
+	for(int level=0; level<as.size(); ++level){
+	  t_P[level]=0;
+	}	
 
-	clock.resize(as.size(),0);
-
-	// All the clock stuff is removed if we pass first, last to the step down the way
 	for(int step=0; step< Params.MDsteps; ++step){   // MD step
 	  int first_step = (step==0);
 	  int  last_step = (step==Params.MDsteps-1);
-	  this->step(U,0,clock);
+	  this->step(U,0,first_step,last_step);
 	}
 
-	// Check the clocks all match
+	// Check the clocks all match on all levels
 	for(int level=0; level<as.size(); ++level){
 	  assert(fabs(t_U - t_P[level])<1.0e-6); // must be the same
 	  std::cout<<GridLogMessage<<" times["<<level<<"]= "<<t_P[level]<< " " << t_U <<std::endl;
 	}	
+
+	// and that we indeed got to the end of the trajectory
+	assert(fabs(t_U-Params.trajL) < 1.0e-6);
+
 
       }
     };

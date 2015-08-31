@@ -53,7 +53,7 @@ int main (int argc, char ** argv)
   //typedef MinimumNorm2<LatticeGaugeField>  IntegratorAlgorithm;// change here to change the algorithm
   typedef ForceGradient<LatticeGaugeField>  IntegratorAlgorithm;// change here to change the algorithm
 
-  IntegratorParameters MDpar(10);
+  IntegratorParameters MDpar(16);
   IntegratorAlgorithm MDynamics(&Fine,MDpar, FullSet);
 
   // Create HMC
