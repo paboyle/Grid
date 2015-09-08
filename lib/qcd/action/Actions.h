@@ -54,10 +54,10 @@ typedef WilsonGaugeAction<LatticeGaugeFieldD>    WilsonGaugeActionD;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define FermOpTemplateInstantiate(A) \
-  template class A<GparityWilsonImplF>;		\
-  template class A<GparityWilsonImplD>;		\
   template class A<WilsonImplF>;		\
-  template class A<WilsonImplD>;
+  template class A<WilsonImplD>; 
+  //  template class A<GparityWilsonImplF>;	\
+  //  template class A<GparityWilsonImplD>;		
 
 ////////////////////////////////////////////
 // Fermion operators / actions
@@ -79,8 +79,8 @@ typedef WilsonGaugeAction<LatticeGaugeFieldD>    WilsonGaugeActionD;
 #include <qcd/action/fermion/OverlapWilsonCayleyZolotarevFermion.h>
 
 #include <qcd/action/fermion/ContinuedFractionFermion5D.h>               // Continued fraction
-#include <qcd/action/fermion/OverlapWilsonContFracTanhFermion.h>
-#include <qcd/action/fermion/OverlapWilsonContFracZolotarevFermion.h>
+#include <qcd/action/fermion/OverlapWilsonContfracTanhFermion.h>
+#include <qcd/action/fermion/OverlapWilsonContfracZolotarevFermion.h>
 
 #include <qcd/action/fermion/PartialFractionFermion5D.h>                 // Partial fraction
 #include <qcd/action/fermion/OverlapWilsonPartialFractionTanhFermion.h>

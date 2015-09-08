@@ -3,7 +3,7 @@
 #define REGISTER
 
 #define LOAD_CHIMU \
-  const vSpinColourVector & ref (in._odata[offset]);	\
+  const SiteSpinor & ref (in._odata[offset]);	\
     Chimu_00=ref()(0)(0);\
     Chimu_01=ref()(0)(1);\
     Chimu_02=ref()(0)(2);\
@@ -18,7 +18,7 @@
     Chimu_32=ref()(3)(2);
 
 #define LOAD_CHI\
-  const vHalfSpinColourVector &ref(buf[offset]);	\
+  const SiteHalfSpinor &ref(buf[offset]);	\
     Chi_00 = ref()(0)(0);\
     Chi_01 = ref()(0)(1);\
     Chi_02 = ref()(0)(2);\
@@ -280,11 +280,11 @@
 namespace Grid {
 namespace QCD {
 
-#if 0
-template<class Simd>
-void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSite(CartesianStencil &st,DoubledGaugeField &U,
+#ifdef HANDOPT
+template<class Impl>
+void WilsonKernels<Impl >::DiracOptHandDhopSite(CartesianStencil &st,DoubledGaugeField &U,
 					       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-					       int sF,int sU,const FermionField &in, FermionField &out)
+					       int ss,int sU,const FermionField &in, FermionField &out)
 {
   REGISTER Simd result_00; // 12 regs on knc
   REGISTER Simd result_01;
@@ -339,14 +339,14 @@ void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSite(CartesianStencil &
 #define Chimu_32 UChi_12
 
 
+  StencilEntry *SE;
   int offset,local,perm, ptype;
-  int ss=sF;
   
   // Xp
-  offset = st._offsets [Xp][ss];
-  local  = st._is_local[Xp][ss];
-  perm   = st._permute[Xp][ss];
-  ptype  = st._permute_type[Xp];
+  SE=st.GetEntry(ptype,Xp,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
@@ -364,10 +364,10 @@ void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSite(CartesianStencil &
   XP_RECON;
 
   // Yp
-  offset = st._offsets [Yp][ss];
-  local  = st._is_local[Yp][ss];
-  perm   = st._permute[Yp][ss];
-  ptype  = st._permute_type[Yp];
+  SE=st.GetEntry(ptype,Yp,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
@@ -385,10 +385,10 @@ void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSite(CartesianStencil &
 
 
   // Zp
-  offset = st._offsets [Zp][ss];
-  local  = st._is_local[Zp][ss];
-  perm   = st._permute[Zp][ss];
-  ptype  = st._permute_type[Zp];
+  SE=st.GetEntry(ptype,Zp,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
@@ -405,10 +405,10 @@ void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSite(CartesianStencil &
   ZP_RECON_ACCUM;
 
   // Tp
-  offset = st._offsets [Tp][ss];
-  local  = st._is_local[Tp][ss];
-  perm   = st._permute[Tp][ss];
-  ptype  = st._permute_type[Tp];
+  SE=st.GetEntry(ptype,Tp,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
@@ -425,10 +425,10 @@ void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSite(CartesianStencil &
   TP_RECON_ACCUM;
   
   // Xm
-  offset = st._offsets [Xm][ss];
-  local  = st._is_local[Xm][ss];
-  perm   = st._permute[Xm][ss];
-  ptype  = st._permute_type[Xm];
+  SE=st.GetEntry(ptype,Xm,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
@@ -445,10 +445,10 @@ void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSite(CartesianStencil &
   XM_RECON_ACCUM;
   
   // Ym
-  offset = st._offsets [Ym][ss];
-  local  = st._is_local[Ym][ss];
-  perm   = st._permute[Ym][ss];
-  ptype  = st._permute_type[Ym];
+  SE=st.GetEntry(ptype,Ym,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
@@ -465,10 +465,10 @@ void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSite(CartesianStencil &
   YM_RECON_ACCUM;
 
   // Zm
-  offset = st._offsets [Zm][ss];
-  local  = st._is_local[Zm][ss];
-  perm   = st._permute[Zm][ss];
-  ptype  = st._permute_type[Zm];
+  SE=st.GetEntry(ptype,Zm,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
 
   if ( local ) {
     LOAD_CHIMU;
@@ -485,10 +485,10 @@ void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSite(CartesianStencil &
   ZM_RECON_ACCUM;
 
   // Tm
-  offset = st._offsets [Tm][ss];
-  local  = st._is_local[Tm][ss];
-  perm   = st._permute[Tm][ss];
-  ptype  = st._permute_type[Tm];
+  SE=st.GetEntry(ptype,Tm,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
 
   if ( local ) {
     LOAD_CHIMU;
@@ -505,7 +505,7 @@ void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSite(CartesianStencil &
   TM_RECON_ACCUM;
 
   {
-    vSpinColourVector & ref (out._odata[ss]);
+    SiteSpinor & ref (out._odata[ss]);
     vstream(ref()(0)(0),result_00*(-0.5));
     vstream(ref()(0)(1),result_01*(-0.5));
     vstream(ref()(0)(2),result_02*(-0.5));
@@ -521,10 +521,10 @@ void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSite(CartesianStencil &
   }
 }
 
-template<class Simd>
-void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSiteDag(CartesianStencil &st,DoubledGaugeField &U,
-							      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-							      int ss,int sU,const FermionField &in, FermionField &out)
+template<class Impl>
+void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(CartesianStencil &st,DoubledGaugeField &U,
+						   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+						   int ss,int sU,const FermionField &in, FermionField &out)
 {
   REGISTER Simd result_00; // 12 regs on knc
   REGISTER Simd result_01;
@@ -580,12 +580,13 @@ void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSiteDag(CartesianStenci
 
 
   int offset,local,perm, ptype;
+  StencilEntry *SE;
 
   // Xp
-  offset = st._offsets [Xp][ss];
-  local  = st._is_local[Xp][ss];
-  perm   = st._permute[Xp][ss];
-  ptype  = st._permute_type[Xp];
+  SE=st.GetEntry(ptype,Xp,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
@@ -602,10 +603,10 @@ void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSiteDag(CartesianStenci
   XM_RECON;
   
   // Yp
-  offset = st._offsets [Yp][ss];
-  local  = st._is_local[Yp][ss];
-  perm   = st._permute[Yp][ss];
-  ptype  = st._permute_type[Yp];
+  SE=st.GetEntry(ptype,Yp,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
@@ -623,10 +624,10 @@ void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSiteDag(CartesianStenci
 
 
   // Zp
-  offset = st._offsets [Zp][ss];
-  local  = st._is_local[Zp][ss];
-  perm   = st._permute[Zp][ss];
-  ptype  = st._permute_type[Zp];
+  SE=st.GetEntry(ptype,Zp,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
@@ -643,10 +644,10 @@ void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSiteDag(CartesianStenci
   ZM_RECON_ACCUM;
 
   // Tp
-  offset = st._offsets [Tp][ss];
-  local  = st._is_local[Tp][ss];
-  perm   = st._permute[Tp][ss];
-  ptype  = st._permute_type[Tp];
+  SE=st.GetEntry(ptype,Tp,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
@@ -663,10 +664,10 @@ void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSiteDag(CartesianStenci
   TM_RECON_ACCUM;
   
   // Xm
-  offset = st._offsets [Xm][ss];
-  local  = st._is_local[Xm][ss];
-  perm   = st._permute[Xm][ss];
-  ptype  = st._permute_type[Xm];
+  SE=st.GetEntry(ptype,Xm,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
@@ -684,10 +685,10 @@ void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSiteDag(CartesianStenci
   
   
   // Ym
-  offset = st._offsets [Ym][ss];
-  local  = st._is_local[Ym][ss];
-  perm   = st._permute[Ym][ss];
-  ptype  = st._permute_type[Ym];
+  SE=st.GetEntry(ptype,Ym,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
@@ -704,11 +705,11 @@ void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSiteDag(CartesianStenci
   YP_RECON_ACCUM;
 
   // Zm
-  offset = st._offsets [Zm][ss];
-  local  = st._is_local[Zm][ss];
-  perm   = st._permute[Zm][ss];
-  ptype  = st._permute_type[Zm];
-
+  SE=st.GetEntry(ptype,Zm,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
+  
   if ( local ) {
     LOAD_CHIMU;
     ZP_PROJ;
@@ -724,11 +725,11 @@ void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSiteDag(CartesianStenci
   ZP_RECON_ACCUM;
 
   // Tm
-  offset = st._offsets [Tm][ss];
-  local  = st._is_local[Tm][ss];
-  perm   = st._permute[Tm][ss];
-  ptype  = st._permute_type[Tm];
-
+  SE=st.GetEntry(ptype,Tm,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
+  
   if ( local ) {
     LOAD_CHIMU;
     TP_PROJ;
@@ -759,5 +760,6 @@ void WilsonKernels<WilsonImpl<Simd,3> >::DiracOptHandDhopSiteDag(CartesianStenci
     vstream(ref()(3)(2),result_32*(-0.5));
   }
 }
+  FermOpTemplateInstantiate(WilsonKernels);
 #endif
 }}

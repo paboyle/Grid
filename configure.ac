@@ -55,15 +55,15 @@ echo :::::::::::::::::::::::::::::::::::::::::::
 
 AC_CHECK_FUNCS([gettimeofday])
 
-AC_CHECK_LIB([gmp],[__gmpf_init],,
-        [AC_MSG_ERROR(GNU Multiple Precision GMP library was not found in your system.
-Please install or provide the correct path to your installation
-Info at: http://www.gmplib.org)])
+#AC_CHECK_LIB([gmp],[__gmpf_init],,
+#        [AC_MSG_ERROR(GNU Multiple Precision GMP library was not found in your system.
+#Please install or provide the correct path to your installation
+#Info at: http://www.gmplib.org)])
 
-AC_CHECK_LIB([mpfr],[mpfr_init],,
-        [AC_MSG_ERROR(GNU Multiple Precision MPFR library was not found in your system.
-Please install or provide the correct path to your installation
-Info at: http://www.mpfr.org/)])
+#AC_CHECK_LIB([mpfr],[mpfr_init],,
+#        [AC_MSG_ERROR(GNU Multiple Precision MPFR library was not found in your system.
+#Please install or provide the correct path to your installation
+#Info at: http://www.mpfr.org/)])
 
 AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE4|AVX|AVX2|AVX512|MIC],\
 	[Select instructions to be SSE4.0, AVX 1.0, AVX 2.0+FMA, AVX 512, MIC])],\

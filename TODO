@@ -19,10 +19,12 @@ Policies:
 * Support different boundary conditions (finite temp, chem. potential ... )
 * Support different fermion representations? 
   - contained entirely within the integrator presently
-  - Sign of force term.
-  - Rename "Ta" as too unclear
+
+- Sign of force term.
 
 - Reversibility test.
+
+- Rename "Ta" as too unclear
 
 - Lanczos
 
@@ -31,11 +33,13 @@ Policies:
   Symanzik,
   ... etc...
 
-- Prepare multigrid for HMC.
-- Alternate setup schemes.
-* Support for ILDG --- ugly, not done
-* Flavour matrices?
-* FFTnD ?
+- Prepare multigrid for HMC. - Alternate setup schemes.
+
+- Support for ILDG --- ugly, not done
+
+- Flavour matrices?
+
+- FFTnD ?
 
 ================================================================
 * Hacks and bug fixes to clean up and Audits
