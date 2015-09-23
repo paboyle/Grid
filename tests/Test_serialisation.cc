@@ -1,6 +1,6 @@
 #include <Grid.h>
 
-using namespace Grid;
+namespace Grid {
 
 class myclass {
 public:
@@ -24,16 +24,19 @@ public:
 
 };
 
+}
 
-uint16_t i16 = 1;
+ int16_t i16 = 1;
 uint16_t u16 = 2;
-uint32_t i32 = 3;
+ int32_t i32 = 3;
 uint32_t u32 = 4;
-uint64_t i64 = 5;
+ int64_t i64 = 5;
 uint64_t u64 = 6;
 float    f = M_PI;
 double   d = 2*M_PI;
 bool     b = false;
+
+using namespace Grid;
 
 int main(int argc,char **argv)
 {
@@ -41,12 +44,12 @@ int main(int argc,char **argv)
     XMLWriter WR("bother.xml");
 
     push(WR,"BasicTypes");
-    write(WR,"i16",i16);
+    write(WR,std::string("i16"),i16);
     write(WR,"u16",u16);
     write(WR,"i32",i32);
-    write(WR,"i32",u32);
+    write(WR,"u32",u32);
     write(WR,"i64",i64);
-    write(WR,"i64",u64);
+    write(WR,"u64",u64);
     write(WR,"f",f);
     write(WR,"d",d);
     write(WR,"b",b);

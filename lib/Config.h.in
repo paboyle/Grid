@@ -6,7 +6,7 @@
 /* AVX2 Intrinsics */
 #undef AVX2
 
-/* AVX512 Intrinsics for Knights Corner */
+/* AVX512 Intrinsics for Knights Landing */
 #undef AVX512
 
 /* EMPTY_SIMD only for DEBUGGING */
@@ -109,6 +109,9 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* IMCI Intrinsics for Knights Corner */
+#undef IMCI
 
 /* NEON ARMv8 Experimental support */
 #undef NEONv8

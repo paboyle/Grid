@@ -72,7 +72,6 @@ operator==(const alignedAllocator<_Tp>&, const alignedAllocator<_Tp>&){ return t
 
 template<typename _Tp>  inline bool
 operator!=(const alignedAllocator<_Tp>&, const alignedAllocator<_Tp>&){ return false; }
-
     
 }; // namespace Grid
 #endif

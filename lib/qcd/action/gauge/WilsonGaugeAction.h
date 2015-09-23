@@ -42,7 +42,7 @@ namespace Grid{
 	  // Staple in direction mu
 	  WilsonLoops<GaugeField>::Staple(dSdU_mu,U,mu);
 	  dSdU_mu = Ta(Umu*adj(dSdU_mu))*factor;
-	  pokeLorentz(dSdU, dSdU_mu, mu);
+	  PokeIndex<LorentzIndex>(dSdU, dSdU_mu, mu);
 	}
       };
     };

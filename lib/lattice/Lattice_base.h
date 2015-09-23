@@ -29,6 +29,9 @@ extern int GridCshiftPermuteMap[4][16];
 class LatticeBase {};
 class LatticeExpressionBase {};
 
+template<class T> using Vector = std::vector<T,alignedAllocator<T> >;               // Aligned allocator??
+template<class T> using Matrix = std::vector<std::vector<T,alignedAllocator<T> > >; // Aligned allocator??
+
 template <typename Op, typename T1>                           
 class LatticeUnaryExpression  : public std::pair<Op,std::tuple<T1> > , public LatticeExpressionBase {
  public:
@@ -59,7 +62,7 @@ public:
 
     GridBase *_grid;
     int checkerboard;
-    std::vector<vobj,alignedAllocator<vobj> > _odata;
+    Vector<vobj> _odata;
     
     // to pthread need a computable loop where loop induction is not required
     int begin(void) { return 0;};

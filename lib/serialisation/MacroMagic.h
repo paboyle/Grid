@@ -120,14 +120,14 @@ THE SOFTWARE.
   GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_MEMBER,__VA_ARGS__))		\
   \
   \
-  template<class Writer> friend void write(Writer &WR,const std::string &s, const cname &obj){ \
+  friend void write(Writer &WR,const std::string &s, const cname &obj){ \
     push(WR,s);\
     GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_WRITE_MEMBER,__VA_ARGS__))	\
     pop(WR);\
   } \
   \
   \
-  template<class Reader> friend void read(Reader &RD,const std::string &s, cname &obj){	\
+  friend void read(Reader &RD,const std::string &s, cname &obj){	\
     push(RD,s);\
     GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_READ_MEMBER,__VA_ARGS__))	\
     pop(RD);\

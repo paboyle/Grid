@@ -44,7 +44,10 @@ icpc-avx512)
   CXX=icpc ../../configure --enable-simd=AVX512 CXXFLAGS="-xCOMMON-AVX512 -O3  -std=c++11" --host=none  LIBS="-lgmp -lmpfr" --enable-comms=none
   ;;
 icpc-mic)
-  CXX=icpc ../../configure --host=none --enable-simd=AVX512 CXXFLAGS="-mmic -O3  -std=c++11" LDFLAGS=-mmic LIBS="-lgmp -lmpfr" --enable-comms=none
+  CXX=icpc ../../configure --host=none --enable-simd=IMCI CXXFLAGS="-mmic -O3  -std=c++11" LDFLAGS=-mmic LIBS="-lgmp -lmpfr" --enable-comms=none
+  ;;
+icpc-mic-avx512)
+  CXX=icpc ../../configure --host=none --enable-simd=IMCI CXXFLAGS="-xCOMMON_AVX512 -O3  -std=c++11" LDFLAGS=-xCOMMON_AVX512 LIBS="-lgmp -lmpfr" --enable-comms=none
   ;;
 clang-sse)
 CXX=clang++ ../../configure --enable-simd=SSE4 CXXFLAGS="-msse4 -O3 -std=c++11"  LIBS="-lgmp -lmpfr" --enable-comms=none

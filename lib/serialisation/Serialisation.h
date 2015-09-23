@@ -3,6 +3,7 @@
 
 #include <serialisation/MacroMagic.h>
 #include <serialisation/BaseIO.h>
+#include <stdint.h>
 
 namespace Grid {
 
@@ -12,17 +13,17 @@ namespace Grid {
   inline void push(Writer & WR,const char *s)        { WR.push(std::string(s));}
   inline void pop (Writer & WR)                      { WR.pop();}
 
-  inline void write(Writer& wr, const std::string& s,const char * output      ) { wr.write(s,std::string(output)); };
+  //  inline void write(Writer& wr, const std::string& s,const char * output      ) { wr.write(s,std::string(output)); };
   inline void write(Writer& wr, const std::string& s,const std::string &output) { wr.write(s,output); };
-  inline void write(Writer& wr, const std::string& s,  int16_t    output      ) { wr.write(s,output); };
-  inline void write(Writer& wr, const std::string& s, uint16_t    output      ) { wr.write(s,output); };
-  inline void write(Writer& wr, const std::string& s,  int32_t    output      ) { wr.write(s,output); };
-  inline void write(Writer& wr, const std::string& s, uint32_t    output      ) { wr.write(s,output); };
-  inline void write(Writer& wr, const std::string& s,  int64_t    output      ) { wr.write(s,output); };
-  inline void write(Writer& wr, const std::string& s, uint64_t    output      ) { wr.write(s,output); };
-  inline void write(Writer& wr, const std::string& s,  float      output      ) { wr.write(s,output); };
-  inline void write(Writer& wr, const std::string& s, double      output      ) { wr.write(s,output); };
-  inline void write(Writer& wr, const std::string& s, bool        output      ) { wr.write(s,output); };
+  inline void write(Writer& wr, const std::string& s,const  int16_t    output      ) { wr.write(s,output); };
+  inline void write(Writer& wr, const std::string& s,const uint16_t    output      ) { wr.write(s,output); };
+  inline void write(Writer& wr, const std::string& s,const  int32_t    output      ) { wr.write(s,output); };
+  inline void write(Writer& wr, const std::string& s,const uint32_t    output      ) { wr.write(s,output); };
+  inline void write(Writer& wr, const std::string& s,const  int64_t    output      ) { wr.write(s,output); };
+  inline void write(Writer& wr, const std::string& s,const uint64_t    output      ) { wr.write(s,output); };
+  inline void write(Writer& wr, const std::string& s,const  float      output      ) { wr.write(s,output); };
+  inline void write(Writer& wr, const std::string& s,const double      output      ) { wr.write(s,output); };
+  inline void write(Writer& wr, const std::string& s,const bool        output      ) { wr.write(s,output); };
   
   inline void push(Reader & WR,const std::string &s) { WR.push(s);}
   inline void push(Reader & WR,const char *s)        { WR.push(std::string(s));}

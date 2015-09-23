@@ -65,8 +65,8 @@ AC_CHECK_FUNCS([gettimeofday])
 #Please install or provide the correct path to your installation
 #Info at: http://www.mpfr.org/)])
 
-AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE4|AVX|AVX2|AVX512|MIC],\
-	[Select instructions to be SSE4.0, AVX 1.0, AVX 2.0+FMA, AVX 512, MIC])],\
+AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE4|AVX|AVX2|AVX512|IMCI],\
+	[Select instructions to be SSE4.0, AVX 1.0, AVX 2.0+FMA, AVX 512, IMCI])],\
 	[ac_SIMD=${enable_simd}],[ac_SIMD=AVX2])
 
 supported=no
@@ -99,9 +99,14 @@ case ${ac_SIMD} in
        AC_MSG_WARN([Your processor does not support AVX2 instructions])
        fi
      ;;
-     AVX512|MIC)
-       echo Configuring for AVX512 and MIC
-       AC_DEFINE([AVX512],[1],[AVX512 Intrinsics for Knights Corner] )
+     AVX512)
+       echo Configuring for AVX512 
+       AC_DEFINE([AVX512],[1],[AVX512 Intrinsics for Knights Landing] )
+       supported="cross compilation"
+     ;;
+     IMCI)
+       echo Configuring for IMCI
+       AC_DEFINE([IMCI],[1],[IMCI Intrinsics for Knights Corner] )
        supported="cross compilation"
      ;;
      NEONv8)

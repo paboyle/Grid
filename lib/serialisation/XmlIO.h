@@ -49,19 +49,20 @@ public:
     pugi::xml_node leaf=node.append_child(s.c_str());
     leaf.append_child(pugi::node_pcdata).set_value(output.c_str());
   };
-  void write( const std::string& s,  int16_t    output      ) { writeInternal(s,output); };
-  void write( const std::string& s, uint16_t    output      ) { writeInternal(s,output); };
-  void write( const std::string& s,  int32_t    output      ) { writeInternal(s,output); };
-  void write( const std::string& s, uint32_t    output      ) { writeInternal(s,output); };
-  void write( const std::string& s,  int64_t    output      ) { writeInternal(s,output); };
-  void write( const std::string& s, uint64_t    output      ) { writeInternal(s,output); };
-  void write( const std::string& s,  float      output      ) { writeInternal(s,output); };
-  void write( const std::string& s, double      output      ) { writeInternal(s,output); };
-  void write( const std::string& s, bool        output      ) { writeInternal(s,output); };
+
+  void write( const std::string& s,const  int16_t    output      ) { writeInternal(s,output); };
+  void write( const std::string& s,const uint16_t    output      ) { writeInternal(s,output); };
+  void write( const std::string& s,const  int32_t    output      ) { writeInternal(s,output); };
+  void write( const std::string& s,const uint32_t    output      ) { writeInternal(s,output); };
+  void write( const std::string& s,const  int64_t    output      ) { writeInternal(s,output); };
+  void write( const std::string& s,const uint64_t    output      ) { writeInternal(s,output); };
+  void write( const std::string& s,const  float      output      ) { writeInternal(s,output); };
+  void write( const std::string& s,const double      output      ) { writeInternal(s,output); };
+  void write( const std::string& s,const bool        output      ) { writeInternal(s,output); };
 
 private:
 
-  template<class T> void writeInternal( const std::string& s, T output ){
+  template<class T> void writeInternal( const std::string& s,const T output ){
     std::ostringstream os;
     os << std::boolalpha << output;
     write(s,os.str());

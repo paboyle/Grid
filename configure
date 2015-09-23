@@ -1384,9 +1384,9 @@ Optional Features:
   --disable-dependency-tracking
                           speeds up one-time build
   --disable-openmp        do not use OpenMP
-  --enable-simd=SSE4|AVX|AVX2|AVX512|MIC
+  --enable-simd=SSE4|AVX|AVX2|AVX512|IMCI
                           Select instructions to be SSE4.0, AVX 1.0, AVX
-                          2.0+FMA, AVX 512, MIC
+                          2.0+FMA, AVX 512, IMCI
   --enable-precision=single|double
                           Select default word size of Real
   --enable-comms=none|mpi Select communications
@@ -6414,10 +6414,17 @@ $as_echo "#define AVX2 1" >>confdefs.h
 $as_echo "$as_me: WARNING: Your processor does not support AVX2 instructions" >&2;}
        fi
      ;;
-     AVX512|MIC)
-       echo Configuring for AVX512 and MIC
+     AVX512)
+       echo Configuring for AVX512
 
 $as_echo "#define AVX512 1" >>confdefs.h
+
+       supported="cross compilation"
+     ;;
+     IMCI)
+       echo Configuring for IMCI
+
+$as_echo "#define IMCI 1" >>confdefs.h
 
        supported="cross compilation"
      ;;

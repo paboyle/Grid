@@ -43,19 +43,19 @@ public:
     indent();
     file<<output<<std::endl;
   };
-  void write( const std::string& s,  int16_t    output      ) { writeInternal(s,output); };
-  void write( const std::string& s, uint16_t    output      ) { writeInternal(s,output); };
-  void write( const std::string& s,  int32_t    output      ) { writeInternal(s,output); };
-  void write( const std::string& s, uint32_t    output      ) { writeInternal(s,output); };
-  void write( const std::string& s,  int64_t    output      ) { writeInternal(s,output); };
-  void write( const std::string& s, uint64_t    output      ) { writeInternal(s,output); };
-  void write( const std::string& s,  float      output      ) { writeInternal(s,output); };
-  void write( const std::string& s, double      output      ) { writeInternal(s,output); };
-  void write( const std::string& s, bool        output      ) { writeInternal(s,output); };
+  void write( const std::string& s,const  int16_t    output      ) { writeInternal(s,output); };
+  void write( const std::string& s,const uint16_t    output      ) { writeInternal(s,output); };
+  void write( const std::string& s,const  int32_t    output      ) { writeInternal(s,output); };
+  void write( const std::string& s,const uint32_t    output      ) { writeInternal(s,output); };
+  void write( const std::string& s,const  int64_t    output      ) { writeInternal(s,output); };
+  void write( const std::string& s,const uint64_t    output      ) { writeInternal(s,output); };
+  void write( const std::string& s,const  float      output      ) { writeInternal(s,output); };
+  void write( const std::string& s,const double      output      ) { writeInternal(s,output); };
+  void write( const std::string& s,const bool        output      ) { writeInternal(s,output); };
 
 private:
 
-  template<class T> void writeInternal( const std::string& s, T output ){
+  template<class T> void writeInternal( const std::string& s,const T output ){
     indent();
     file << std::boolalpha << output<<std::endl;
   }
