@@ -251,14 +251,29 @@ namespace Grid {
     // all subtypes; may not be a good assumption, but could
     // add the vector width as a template param for BG/Q for example
     ////////////////////////////////////////////////////////////////////
+    friend inline void permute0(Grid_simd &y,Grid_simd b){
+      y.v = Optimization::Permute::Permute0(b.v);
+    }
+    friend inline void permute1(Grid_simd &y,Grid_simd b){
+      y.v = Optimization::Permute::Permute1(b.v);
+    }
+    friend inline void permute2(Grid_simd &y,Grid_simd b){
+      y.v = Optimization::Permute::Permute2(b.v);
+    }
+    friend inline void permute3(Grid_simd &y,Grid_simd b){
+      y.v = Optimization::Permute::Permute3(b.v);
+    }
     friend inline void permute(Grid_simd &y,Grid_simd b,int perm)
     {
-      Gpermute<Grid_simd>(y,b,perm);
+      if      (perm==3) permute3(y,b);
+      else if (perm==2) permute2(y,b);
+      else if (perm==1) permute1(y,b);
+      else if (perm==0) permute0(y,b);
     }
+
 
     
   };// end of Grid_simd class definition 
-
 
   ///////////////////////
   // Splat

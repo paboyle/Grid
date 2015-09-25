@@ -183,11 +183,11 @@ namespace Optimization {
     // Complex float
     inline __m256 operator()(__m256 a, __m256 b){
       __m256 ymm0,ymm1,ymm2;
-      ymm0 = _mm256_shuffle_ps(a,a,_MM_SHUFFLE(2,2,0,0)); // ymm0 <- ar ar,
+      ymm0 = _mm256_shuffle_ps(a,a,_MM_SELECT_FOUR_FOUR(2,2,0,0)); // ymm0 <- ar ar,
       ymm0 = _mm256_mul_ps(ymm0,b);                       // ymm0 <- ar bi, ar br
       // FIXME AVX2 could MAC
-      ymm1 = _mm256_shuffle_ps(b,b,_MM_SHUFFLE(2,3,0,1)); // ymm1 <- br,bi
-      ymm2 = _mm256_shuffle_ps(a,a,_MM_SHUFFLE(3,3,1,1)); // ymm2 <- ai,ai
+      ymm1 = _mm256_shuffle_ps(b,b,_MM_SELECT_FOUR_FOUR(2,3,0,1)); // ymm1 <- br,bi
+      ymm2 = _mm256_shuffle_ps(a,a,_MM_SELECT_FOUR_FOUR(3,3,1,1)); // ymm2 <- ai,ai
       ymm1 = _mm256_mul_ps(ymm1,ymm2);                    // ymm1 <- br ai, ai bi
       return _mm256_addsub_ps(ymm0,ymm1);  
     }
@@ -270,7 +270,7 @@ namespace Optimization {
     //Complex single
     inline __m256 operator()(__m256 in, __m256 ret){
       __m256 tmp =_mm256_addsub_ps(_mm256_setzero_ps(),in);   // r,-i
-      return _mm256_shuffle_ps(tmp,tmp,_MM_SHUFFLE(2,3,0,1)); //-i,r
+      return _mm256_shuffle_ps(tmp,tmp,_MM_SELECT_FOUR_FOUR(2,3,0,1)); //-i,r
     }
     //Complex double
     inline __m256d operator()(__m256d in, __m256d ret){
@@ -282,7 +282,7 @@ namespace Optimization {
   struct TimesI{
     //Complex single
     inline __m256 operator()(__m256 in, __m256 ret){
-      __m256 tmp =_mm256_shuffle_ps(in,in,_MM_SHUFFLE(2,3,0,1)); // i,r
+      __m256 tmp =_mm256_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1)); // i,r
       return _mm256_addsub_ps(_mm256_setzero_ps(),tmp);          // i,-r
     }
     //Complex double
@@ -296,27 +296,44 @@ namespace Optimization {
   // Some Template specialization
   //////////////////////////////////////////////
 
-  template < typename vtype > 
-    void permute(vtype &a,vtype b, int perm) {
-    uconv<vtype> conv;
-    conv.v = b;
-    switch (perm){
-      // 8x32 bits=>3 permutes
-    case 2: conv.f = _mm256_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(2,3,0,1)); break;
-    case 1: conv.f = _mm256_shuffle_ps(conv.f,conv.f,_MM_SHUFFLE(1,0,3,2)); break;
-    case 0: conv.f = _mm256_permute2f128_ps(conv.f,conv.f,0x01); break;
-    default: assert(0); break;
-    }
-    a = conv.v;
-  }
+  struct Permute{
+
+    static inline __m256 Permute0(__m256 in){
+      return _mm256_permute2f128_ps(in,in,0x01);
+    };
+    static inline __m256 Permute1(__m256 in){
+      return _mm256_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2));
+    };
+    static inline __m256 Permute2(__m256 in){
+      return _mm256_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1));
+    };
+    static inline __m256 Permute3(__m256 in){
+      return in;
+    };
+
+    static inline __m256d Permute0(__m256d in){
+      return _mm256_permute2f128_pd(in,in,0x01);
+    };
+    static inline __m256d Permute1(__m256d in){
+      return _mm256_shuffle_pd(in,in,0x5);
+    };
+    static inline __m256d Permute2(__m256d in){
+      return in;
+    };
+    static inline __m256d Permute3(__m256d in){
+      return in;
+    };
+
+  };
+
 
   //Complex float Reduce
   template<>
     inline Grid::ComplexF Reduce<Grid::ComplexF, __m256>::operator()(__m256 in){
     __m256 v1,v2;
-    Optimization::permute(v1,in,0); // avx 256; quad complex single
-    v1 = _mm256_add_ps(v1,in);
-    Optimization::permute(v2,v1,1); 
+    v1=Optimization::Permute::Permute0(in); // avx 256; quad complex single
+    v1= _mm256_add_ps(v1,in);
+    v2=Optimization::Permute::Permute1(v1); 
     v1 = _mm256_add_ps(v1,v2);
     u256f conv; conv.v = v1;
     return Grid::ComplexF(conv.f[0],conv.f[1]);
@@ -326,11 +343,11 @@ namespace Optimization {
   template<>
   inline Grid::RealF Reduce<Grid::RealF, __m256>::operator()(__m256 in){
     __m256 v1,v2;
-    Optimization::permute(v1,in,0); // avx 256; octo-double
+    v1 = Optimization::Permute::Permute0(in); // avx 256; octo-double
     v1 = _mm256_add_ps(v1,in);
-    Optimization::permute(v2,v1,1); 
+    v2 = Optimization::Permute::Permute1(v1); 
     v1 = _mm256_add_ps(v1,v2);
-    Optimization::permute(v2,v1,2); 
+    v2 = Optimization::Permute::Permute2(v1); 
     v1 = _mm256_add_ps(v1,v2);
     u256f conv; conv.v=v1;
     return conv.f[0];
@@ -341,7 +358,7 @@ namespace Optimization {
   template<>
   inline Grid::ComplexD Reduce<Grid::ComplexD, __m256d>::operator()(__m256d in){
     __m256d v1;
-    Optimization::permute(v1,in,0); // sse 128; paired complex single
+    v1 = Optimization::Permute::Permute0(in); // sse 128; paired complex single
     v1 = _mm256_add_pd(v1,in);
     u256d conv; conv.v = v1;
     return Grid::ComplexD(conv.f[0],conv.f[1]);
@@ -351,9 +368,9 @@ namespace Optimization {
   template<>
   inline Grid::RealD Reduce<Grid::RealD, __m256d>::operator()(__m256d in){
     __m256d v1,v2;
-    Optimization::permute(v1,in,0); // avx 256; quad double
+    v1 = Optimization::Permute::Permute0(in); // avx 256; quad double
     v1 = _mm256_add_pd(v1,in);
-    Optimization::permute(v2,v1,1); 
+    v2 = Optimization::Permute::Permute1(v1); 
     v1 = _mm256_add_pd(v1,v2);
     u256d conv; conv.v = v1;
     return conv.f[0];
@@ -386,13 +403,6 @@ namespace Grid {
   inline void prefetch_HINT_T0(const char *ptr){
     _mm_prefetch(ptr,_MM_HINT_T0);
   }
-
-
-
-  template < typename VectorSIMD > 
-    inline void Gpermute(VectorSIMD &y,const VectorSIMD &b, int perm ) {
-    Optimization::permute(y.v,b.v,perm);
-  };
 
   // Function name aliases
   typedef Optimization::Vsplat   VsplatSIMD;

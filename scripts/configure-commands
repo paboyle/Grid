@@ -35,10 +35,10 @@ icpc-avx-openmp-mpi)
 CXX=icpc ../../configure --enable-simd=AVX CXXFLAGS="-mavx -fopenmp -O3 -I/opt/local/include/openmpi-mp/ -std=c++11" LDFLAGS=-L/opt/local/lib/openmpi-mp/ LIBS="-lmpi -lmpi_cxx -fopenmp -lgmp -lmpfr" --enable-comms=mpi
 ;;
 icpc-avx-openmp)
-CXX=icpc ../../configure --enable-simd=AVX CXXFLAGS="-mavx -fopenmp -O3 -std=c++11" LIBS="-fopenmp -lgmp -lmpfr" --enable-comms=mpi
+CXX=icpc ../../configure --enable-precision=single --enable-simd=AVX CXXFLAGS="-mavx -fopenmp -O3 -std=c++11" LIBS="-fopenmp -lgmp -lmpfr" --enable-comms=mpi
 ;;
 icpc-avx2)
-  CXX=icpc ../../configure --enable-simd=AVX2 CXXFLAGS="-mavx2 -mfma -O3 -std=c++11" LIBS="-lgmp -lmpfr" --enable-comms=none
+  CXX=icpc ../../configure --enable-simd=AVX2 CXXFLAGS="-march=core-avx2 -O3 -std=c++11" LIBS="-lgmp -lmpfr" --enable-comms=none
   ;;
 icpc-avx512)
   CXX=icpc ../../configure --enable-simd=AVX512 CXXFLAGS="-xCOMMON-AVX512 -O3  -std=c++11" --host=none  LIBS="-lgmp -lmpfr" --enable-comms=none
@@ -50,7 +50,7 @@ icpc-mic-avx512)
   CXX=icpc ../../configure --host=none --enable-simd=IMCI CXXFLAGS="-xCOMMON_AVX512 -O3  -std=c++11" LDFLAGS=-xCOMMON_AVX512 LIBS="-lgmp -lmpfr" --enable-comms=none
   ;;
 clang-sse)
-CXX=clang++ ../../configure --enable-simd=SSE4 CXXFLAGS="-msse4 -O3 -std=c++11"  LIBS="-lgmp -lmpfr" --enable-comms=none
+CXX=clang++ ../../configure --enable-precision=single --enable-simd=SSE4 CXXFLAGS="-msse4 -O3 -std=c++11"  LIBS="-lgmp -lmpfr" --enable-comms=none
   ;;
 clang-avx)
 CXX=clang++ ../../configure --enable-simd=AVX CXXFLAGS="-mavx -O3 -std=c++11"  LIBS="-lgmp -lmpfr" --enable-comms=none

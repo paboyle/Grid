@@ -177,6 +177,7 @@ public:
       permute(out._internal[i],in._internal[i],permutetype);
     }
   }
+
   // Unary negation
   friend strong_inline iVector<vtype,N> operator -(const iVector<vtype,N> &r) {
     iVector<vtype,N> ret;
@@ -290,12 +291,15 @@ public:
 	vstream(out._internal[i][j],in._internal[i][j]);
       }}
     }
+
   friend strong_inline void permute(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in,int permutetype){
     for(int i=0;i<N;i++){
       for(int j=0;j<N;j++){
 	permute(out._internal[i][j],in._internal[i][j],permutetype);
     }}
   }
+
+
   // Unary negation
   friend strong_inline iMatrix<vtype,N> operator -(const iMatrix<vtype,N> &r) {
     iMatrix<vtype,N> ret;

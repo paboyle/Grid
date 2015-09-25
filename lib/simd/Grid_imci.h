@@ -255,7 +255,36 @@ namespace Optimization {
   };
 
 
-  
+   struct Permute{
+    
+    static inline __m512 Permute0(__m512 in){
+      return _mm512_permute4f128_ps(in,(_MM_PERM_ENUM)_MM_SELECT_FOUR_FOUR(1,0,3,2));
+    };
+    static inline __m512 Permute1(__m512 in){
+      return _mm512_permute4f128_ps(in,(_MM_PERM_ENUM)_MM_SELECT_FOUR_FOUR(2,3,0,1));
+    };
+    static inline __m512 Permute2(__m512 in){
+      return _mm512_swizzle_ps(in,_MM_SWIZ_REG_BADC);
+    };
+    static inline __m512 Permute3(__m512 in){
+      return _mm512_swizzle_ps(in,_MM_SWIZ_REG_CDAB); 
+    };
+
+    static inline __m512d Permute0(__m512d in){// Hack no intrinsic for 256 swaps of __m512d
+      return (__m512d)_mm512_permute4f128_ps((__m512)in,(_MM_PERM_ENUM)_MM_SELECT_FOUR_FOUR(1,0,3,2));
+    };
+    static inline __m512d Permute1(__m512d in){
+      return _mm512_swizzle_pd(in,_MM_SWIZ_REG_BADC);
+    };
+    static inline __m512d Permute2(__m512d in){
+      return _mm512_swizzle_pd(in,_MM_SWIZ_REG_CDAB);
+    };
+    static inline __m512d Permute3(__m512d in){
+      return in;
+    };
+
+  };
+ 
 
 
   //////////////////////////////////////////////
@@ -315,25 +344,6 @@ namespace Grid {
   }
 
 
-
-
-  // Gpermute utilities consider coalescing into 1 Gpermute
-  template < typename VectorSIMD > 
-    inline void Gpermute(VectorSIMD &y,const VectorSIMD &b, int perm ) {
-    union { 
-      __m512 f;
-      decltype(VectorSIMD::v) v;
-    } conv;
-    conv.v = b.v;
-    switch(perm){
-    case 3:  conv.f = _mm512_swizzle_ps(conv.f,_MM_SWIZ_REG_CDAB); break;
-    case 2:  conv.f = _mm512_swizzle_ps(conv.f,_MM_SWIZ_REG_BADC); break; 
-    case 1 : conv.f = _mm512_permute4f128_ps(conv.f,(_MM_PERM_ENUM)_MM_SHUFFLE(2,3,0,1)); break;
-    case 0 : conv.f = _mm512_permute4f128_ps(conv.f,(_MM_PERM_ENUM)_MM_SHUFFLE(1,0,3,2)); break;
-    default: assert(0); break;
-    }
-    y.v=conv.v;
-  };
   
   // Function name aliases
   typedef Optimization::Vsplat   VsplatSIMD;

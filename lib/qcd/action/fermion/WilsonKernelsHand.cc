@@ -56,13 +56,13 @@
     UChi_02+= U_20*Chi_02;\
     UChi_12+= U_20*Chi_12;
 
-#define PERMUTE\
-      permute(Chi_00,Chi_00,ptype);\
-      permute(Chi_01,Chi_01,ptype);\
-      permute(Chi_02,Chi_02,ptype);\
-      permute(Chi_10,Chi_10,ptype);\
-      permute(Chi_11,Chi_11,ptype);\
-      permute(Chi_12,Chi_12,ptype);
+#define PERMUTE_DIR(dir)			\
+      permute##dir(Chi_00,Chi_00);\
+      permute##dir(Chi_01,Chi_01);\
+      permute##dir(Chi_02,Chi_02);\
+      permute##dir(Chi_10,Chi_10);\
+      permute##dir(Chi_11,Chi_11);\
+      permute##dir(Chi_12,Chi_12);
 
 //      hspin(0)=fspin(0)+timesI(fspin(3));
 //      hspin(1)=fspin(1)+timesI(fspin(2));
@@ -286,6 +286,10 @@ void WilsonKernels<Impl >::DiracOptHandDhopSite(CartesianStencil &st,DoubledGaug
 					       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 					       int ss,int sU,const FermionField &in, FermionField &out)
 {
+  //  std::cout << "Hand op Dhop "<<std::endl;
+  typedef typename Simd::scalar_type S;
+  typedef typename Simd::vector_type V;
+
   REGISTER Simd result_00; // 12 regs on knc
   REGISTER Simd result_01;
   REGISTER Simd result_02;
@@ -352,7 +356,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSite(CartesianStencil &st,DoubledGaug
     LOAD_CHIMU;
     XP_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(3); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -373,7 +377,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSite(CartesianStencil &st,DoubledGaug
     LOAD_CHIMU;
     YP_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(2); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -394,7 +398,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSite(CartesianStencil &st,DoubledGaug
     LOAD_CHIMU;
     ZP_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(1); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -414,7 +418,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSite(CartesianStencil &st,DoubledGaug
     LOAD_CHIMU;
     TP_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(0); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -434,7 +438,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSite(CartesianStencil &st,DoubledGaug
     LOAD_CHIMU;
     XM_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(3); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -454,7 +458,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSite(CartesianStencil &st,DoubledGaug
     LOAD_CHIMU;
     YM_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(2); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -474,7 +478,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSite(CartesianStencil &st,DoubledGaug
     LOAD_CHIMU;
     ZM_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(1); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -494,7 +498,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSite(CartesianStencil &st,DoubledGaug
     LOAD_CHIMU;
     TM_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(0); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -526,6 +530,9 @@ void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(CartesianStencil &st,DoubledG
 						   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 						   int ss,int sU,const FermionField &in, FermionField &out)
 {
+  typedef typename Simd::scalar_type S;
+  typedef typename Simd::vector_type V;
+
   REGISTER Simd result_00; // 12 regs on knc
   REGISTER Simd result_01;
   REGISTER Simd result_02;
@@ -592,7 +599,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(CartesianStencil &st,DoubledG
     LOAD_CHIMU;
     XM_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(3); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -612,7 +619,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(CartesianStencil &st,DoubledG
     LOAD_CHIMU;
     YM_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(2); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -633,7 +640,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(CartesianStencil &st,DoubledG
     LOAD_CHIMU;
     ZM_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(1); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -653,7 +660,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(CartesianStencil &st,DoubledG
     LOAD_CHIMU;
     TM_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(0); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -673,7 +680,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(CartesianStencil &st,DoubledG
     LOAD_CHIMU;
     XP_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(3); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -694,7 +701,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(CartesianStencil &st,DoubledG
     LOAD_CHIMU;
     YP_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(2); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -714,7 +721,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(CartesianStencil &st,DoubledG
     LOAD_CHIMU;
     ZP_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(1); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -734,7 +741,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(CartesianStencil &st,DoubledG
     LOAD_CHIMU;
     TP_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(0); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
