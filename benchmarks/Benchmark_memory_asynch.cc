@@ -25,9 +25,10 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t"<<"bytes/thread"<<"\t\t\t"<<"GB/s"<<"\t\t\t"<<"GB/s per thread"<<std::endl;
   std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
 
-  for(int lat=4;lat<=16536;lat*=2){
+  const int lmax = 16536*16;
+  for(int lat=4;lat<=lmax;lat*=2){
 
-    int Nloop=16536*1024*4/lat;
+    int Nloop=lmax*128*4/lat;
 
     std::vector<int> latt_size  ({2*mpi_layout[0],2*mpi_layout[1],4*mpi_layout[2],lat*mpi_layout[3]});
 
@@ -37,11 +38,15 @@ int main (int argc, char ** argv)
 
     Vec tsum; tsum = zero;
 
+    GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
+
     std::vector<double> stop(threads);
     Vector<Vec> sum(threads);
 
     std::vector<LatticeVec> x(threads,&Grid);
-
+    for(int t=0;t<threads;t++){
+      random(pRNG,x[t]);
+    }
 
     double start=usecond();
 PARALLEL_FOR_LOOP
@@ -64,6 +69,9 @@ PARALLEL_FOR_LOOP
       if ( stop[t]<min_stop ) min_stop=stop[t];
       if ( stop[t]>max_stop ) max_stop=stop[t];
     }
+
+    
+
     double max_time = (max_stop-start)/Nloop*1000;
     double min_time = (min_stop-start)/Nloop*1000;
       
