@@ -17,7 +17,8 @@ public:
     pRNG.SeedFixedIntegers(seeds);
 
     random(pRNG,sqrtscale);
-    sqrtscale = real(sqrtscale)*3.0+0.5;// force real pos def
+    sqrtscale = 0.5*(sqrtscale + conjugate(sqrtscale));
+    sqrtscale = sqrtscale*3.0+0.5;// force real pos def
     scale = sqrtscale *sqrtscale; //scale should be bounded by 12.25
 
     // 
