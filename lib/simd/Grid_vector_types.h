@@ -13,7 +13,7 @@
 #ifdef SSE4
 #include "Grid_sse4.h"
 #endif
-#if defined (AVX1)|| defined (AVX2)
+#if defined (AVX1)|| defined (AVX2) || defined (AVXFMA4)
 #include "Grid_avx.h"
 #endif
 #if defined AVX512
@@ -133,7 +133,11 @@ namespace Grid {
     ///////////////////////////////////////////////
     // mac, mult, sub, add, adj
     ///////////////////////////////////////////////
+
+    // FIXME -- alias this to an inline MAC struct.
     friend inline void mac (Grid_simd * __restrict__ y,const Grid_simd * __restrict__ a,const Grid_simd *__restrict__ x){ *y = (*a)*(*x)+(*y); };
+
+
     friend inline void mult(Grid_simd * __restrict__ y,const Grid_simd * __restrict__ l,const Grid_simd *__restrict__ r){ *y = (*l) * (*r); }
     friend inline void sub (Grid_simd * __restrict__ y,const Grid_simd * __restrict__ l,const Grid_simd *__restrict__ r){ *y = (*l) - (*r); }
     friend inline void add (Grid_simd * __restrict__ y,const Grid_simd * __restrict__ l,const Grid_simd *__restrict__ r){ *y = (*l) + (*r); }
