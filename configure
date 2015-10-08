@@ -1384,7 +1384,7 @@ Optional Features:
   --disable-dependency-tracking
                           speeds up one-time build
   --disable-openmp        do not use OpenMP
-  --enable-simd=SSE4|AVX|AVX2|AVX512|IMCI
+  --enable-simd=SSE4|AVX|AVXFMA4|AVX2|AVX512|IMCI
                           Select instructions to be SSE4.0, AVX 1.0, AVX
                           2.0+FMA, AVX 512, IMCI
   --enable-precision=single|double
@@ -6396,6 +6396,17 @@ $as_echo "$as_me: WARNING: Your processor does not support SSE4 instructions" >&
        echo Configuring for AVX
 
 $as_echo "#define AVX1 1" >>confdefs.h
+
+       if test x"$ax_cv_support_avx_ext" = x"yes"; then         supported=yes
+       else
+       	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Your processor does not support AVX instructions" >&5
+$as_echo "$as_me: WARNING: Your processor does not support AVX instructions" >&2;}
+       fi
+     ;;
+     AVXFMA4)
+       echo Configuring for AVX
+
+$as_echo "#define AVXFMA4 1" >>confdefs.h
 
        if test x"$ax_cv_support_avx_ext" = x"yes"; then         supported=yes
        else
