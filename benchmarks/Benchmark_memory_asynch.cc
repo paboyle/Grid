@@ -8,7 +8,7 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  const int Nvec=4;
+  const int Nvec=8;
   typedef Lattice< iVector< vReal,Nvec> > LatticeVec;
   typedef iVector<vReal,Nvec> Vec;
 
