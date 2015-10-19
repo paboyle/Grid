@@ -9,138 +9,236 @@
 #ifndef INTEGRATOR_ALG_INCLUDED
 #define INTEGRATOR_ALG_INCLUDED
 
-
 namespace Grid{
   namespace QCD{
 
+   /* PAB:
+    *
+    * Recursive leapfrog; explanation of nested stepping
+    *
+    * Nested 1:4; units in dt for top level integrator
+    *
+    * CHROMA                           IroIro
+    *   0        1                      0              
+    *  P 1/2                           P 1/2
+    *          P 1/16                                  P1/16
+    *                 U 1/8                                   U1/8
+    *          P 1/8                                   P1/8
+    *                 U 1/8                                   U1/8
+    *          P 1/8                                   P1/8
+    *                 U 1/8                                 U1/8
+    *          P 1/8                                   P1/8
+    *                 U 1/8                                 U1/8
+    *          P 1/16                                  P1/8
+    *  P 1                             P 1
+    *          P 1/16                    * skipped --- avoids revaluating force
+    *                 U 1/8                                 U1/8
+    *          P 1/8                                   P1/8
+    *                 U 1/8                                 U1/8
+    *          P 1/8                                   P1/8
+    *                 U 1/8                                 U1/8
+    *          P 1/8                                   P1/8
+    *                 U 1/8                                 U1/8
+    *          P 1/16                                  P1/8
+    *  P 1                             P 1
+    *          P 1/16                    * skipped
+    *                 U 1/8                                 U1/8
+    *          P 1/8                                   P1/8
+    *                 U 1/8                                 U1/8
+    *          P 1/8                                   P1/8
+    *                 U 1/8                                 U1/8
+    *          P 1/8                                   P1/8
+    *                 U 1/8                                 U1/8
+    *          P 1/16                    * skipped
+    *  P 1                             P 1
+    *          P 1/16                                  P1/8
+    *                 U 1/8                                 U1/8
+    *          P 1/8                                   P1/8
+    *                 U 1/8                                 U1/8
+    *          P 1/8                                   P1/8
+    *                 U 1/8                                 U1/8
+    *          P 1/8                                   P1/8
+    *                 U 1/8                                 U1/8
+    *          P 1/16                                  P1/16
+    *  P 1/2                            P 1/2
+    */    
 
-    class MinimumNorm2{
-      const double lambda = 0.1931833275037836;
+    template<class GaugeField> class LeapFrog : public Integrator<GaugeField> {
     public:
-      void step (LatticeLorentzColourMatrix& U, 
-		 int level, std::vector<int>& clock,
-		 Integrator<MinimumNorm2>* Integ){
+
+      typedef LeapFrog<GaugeField> Algorithm;
+
+      LeapFrog(GridBase* grid, 
+	       IntegratorParameters Par,
+	       ActionSet<GaugeField> & Aset): Integrator<GaugeField>(grid,Par,Aset) {};
+
+
+      void step (GaugeField& U, int level,int _first, int _last){
+
+	int fl = this->as.size() -1;
 	// level  : current level
 	// fl     : final level
 	// eps    : current step size
-
-	int fl = Integ->as.size() -1;
-	double eps = Integ->Params.stepsize;
-	
-	for(int l=0; l<=level; ++l) eps/= 2.0*Integ->as[l].multiplier;
-	
-	int fin = Integ->as[0].multiplier;
-	for(int l=1; l<=level; ++l) fin*= 2.0*Integ->as[l].multiplier;
-	fin = 3*Integ->Params.MDsteps*fin -1;
-	
-	for(int e=0; e<Integ->as[level].multiplier; ++e){
-	  if(clock[level] == 0){    // initial half step 
-	    Integ->update_P(U,level,lambda*eps);
-	    ++clock[level];
-	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
-	    std::cout<<GridLogMessage<<"P "<< clock[level] <<std::endl;
-	  }
-	  
-	  if(level == fl){          // lowest level 
-	    Integ->update_U(U,0.5*eps);
-	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
-	    std::cout<<GridLogMessage<<"U "<< (clock[level]+1) <<std::endl;
-	  }else{                 // recursive function call 
-	    step(U,level+1,clock, Integ);
-	  }
-	  
-	  Integ->update_P(U,level,(1.0-2.0*lambda)*eps);
-	  ++clock[level];
-	  for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
-	  std::cout<<GridLogMessage<<"P "<< (clock[level]) <<std::endl;
-	  
-	  if(level == fl){          // lowest level 
-	    Integ->update_U(U,0.5*eps);
-	    
-	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
-	    std::cout<<GridLogMessage<<"U "<< (clock[level]+1) <<std::endl;
-	  }else{                 // recursive function call 
-	    step(U,level+1,clock, Integ);
-	  }    
-	  
-	  
-	  if(clock[level] == fin){  // final half step
-	    Integ->update_P(U,level,lambda*eps);
-	    
-	    ++clock[level];
-	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
-	    std::cout<<GridLogMessage<<"P "<< clock[level] <<std::endl;
-	  }else{                  // bulk step
-	    Integ->update_P(U,level,lambda*2.0*eps);
-	    
-	    clock[level]+=2;
-	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
-	    std::cout<<GridLogMessage<<"P "<< clock[level] <<std::endl;
-	  }
-	}
-		
-      }
-      
-    };
-    
-    class LeapFrog{
-    public:
-      void step (LatticeLorentzColourMatrix& U, 
-		 int level, std::vector<int>& clock,
-		 Integrator<LeapFrog>* Integ){
-
-	// level  : current level
-	// fl     : final level
-	// eps    : current step size
-	
-	int fl = Integ->as.size() -1;
-	double eps = Integ->Params.stepsize;
 	
 	// Get current level step size
-	for(int l=0; l<=level; ++l) eps/= Integ->as[l].multiplier;
+        RealD eps = this->Params.stepsize;
+	for(int l=0; l<=level; ++l) eps/= this->as[l].multiplier;
 	
-	int fin = 1;
-	for(int l=0; l<=level; ++l) fin*= Integ->as[l].multiplier;
-	fin = 2*Integ->Params.MDsteps*fin - 1;
-	
-	for(int e=0; e<Integ->as[level].multiplier; ++e){
-	  
-	  if(clock[level] == 0){    // initial half step
-	    Integ->update_P(U, level,eps/2.0);
-	    ++clock[level];
-	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
-	    std::cout<<GridLogMessage<<"P "<< 0.5*clock[level] <<std::endl;
+	int multiplier = this->as[level].multiplier;
+	for(int e=0; e<multiplier; ++e){
+
+	  int first_step = _first && (e==0);
+	  int last_step  = _last  && (e==multiplier-1);
+
+	  if(first_step){    // initial half step
+	    this->update_P(U, level,eps/2.0);
 	  }
 
 	  if(level == fl){          // lowest level
-	    Integ->update_U(U, eps);
-	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
-	    std::cout<<GridLogMessage<<"U "<< 0.5*(clock[level]+1) <<std::endl;
+	    this->update_U(U, eps);
 	  }else{                 // recursive function call
-	    step(U, level+1,clock, Integ);
+	    this->step(U, level+1,first_step,last_step);
 	  }
 
-	  if(clock[level] == fin){  // final half step
-	    Integ->update_P(U, level,eps/2.0);
-	    ++clock[level];
-	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
-	    std::cout<<GridLogMessage<<"P "<< 0.5*clock[level] <<std::endl;
-	  }else{                  // bulk step
-	    Integ->update_P(U, level,eps);
-	    clock[level]+=2;
-	    for(int l=0; l<level;++l) std::cout<<GridLogMessage<<"   ";
-	    std::cout<<GridLogMessage<<"P "<< 0.5*clock[level] <<std::endl;
-	  }
+	  int mm = last_step ? 1 : 2;
+	  this->update_P(U, level,mm*eps/2.0);	    
 
 	}
+      }
+    };
 
+    template<class GaugeField> class MinimumNorm2 : public Integrator<GaugeField> {
+    private:
+      const RealD lambda = 0.1931833275037836;
+
+    public:
+
+      MinimumNorm2(GridBase* grid, 
+		   IntegratorParameters Par,
+		   ActionSet<GaugeField> & Aset): Integrator<GaugeField>(grid,Par,Aset) {};
+
+      void step (GaugeField& U, int level, int _first,int _last){
+
+	// level  : current level
+	// fl     : final level
+	// eps    : current step size
+
+	int fl = this->as.size() -1;
+
+	RealD eps = this->Params.stepsize*2.0;                              
+	for(int l=0; l<=level; ++l) eps/= 2.0*this->as[l].multiplier;   
+
+	// Nesting:  2xupdate_U of size eps/2
+	// Next level is eps/2/multiplier
+
+	int multiplier = this->as[level].multiplier;
+	for(int e=0; e<multiplier; ++e){       // steps per step
+
+	  int first_step = _first && (e==0);
+	  int last_step  = _last  && (e==multiplier-1);
+
+	  if(first_step){    // initial half step 
+	    this->update_P(U,level,lambda*eps);
+	  }
+	  
+	  if(level == fl){          // lowest level 
+	    this->update_U(U,0.5*eps);
+	  }else{                 // recursive function call 
+	    this->step(U,level+1,first_step,0);
+	  }
+	  
+	  this->update_P(U,level,(1.0-2.0*lambda)*eps);
+	  
+	  if(level == fl){          // lowest level 
+	    this->update_U(U,0.5*eps);
+	  }else{                 // recursive function call 
+	    this->step(U,level+1,0,last_step);
+	  }    
+	  
+	  int mm = (last_step) ? 1 : 2;
+	  this->update_P(U,level,lambda*eps*mm);
+
+	}
       }
     };
 
 
+    template<class GaugeField> class ForceGradient : public Integrator<GaugeField> {
+    private:
+      const RealD lambda = 1.0/6.0;;
+      const RealD chi    = 1.0/72.0;
+      const RealD xi     = 0.0;
+      const RealD theta  = 0.0;
+    public:
+
+      // Looks like dH scales as dt^4. tested wilson/wilson 2 level.
+    ForceGradient(GridBase* grid, 
+		  IntegratorParameters Par,
+		  ActionSet<GaugeField> & Aset): Integrator<GaugeField>(grid,Par,Aset) {};
+
+
+      void FG_update_P(GaugeField&U, int level,double fg_dt,double ep){
+	GaugeField Ufg(U._grid);
+	GaugeField Pfg(U._grid);
+	Ufg = U;
+	Pfg = zero;
+	std::cout << GridLogMessage << "FG update "<<fg_dt<<" "<<ep<<std::endl;
+	// prepare_fg; no prediction/result cache for now
+	// could relax CG stopping conditions for the 
+	// derivatives in the small step since the force gets multiplied by
+	// a tiny dt^2 term relative to main force.
+	//
+	// Presently 4 force evals, and should have 3, so 1.33x too expensive.
+	// could reduce this with sloppy CG to perhaps 1.15x too expensive
+	// even without prediction.
+	this->update_P(Pfg,Ufg,level,1.0); 
+	this->update_U(Pfg,Ufg,fg_dt);
+	this->update_P(Ufg,level,ep);
+      }
+
+      void step (GaugeField& U, int level, int _first,int _last){
+
+	RealD eps = this->Params.stepsize*2.0;                              
+	for(int l=0; l<=level; ++l) eps/= 2.0*this->as[l].multiplier;
+
+	RealD Chi   = chi*eps*eps*eps;
+
+	int fl = this->as.size() -1;
+	
+	int multiplier = this->as[level].multiplier;
+
+	for(int e=0; e<multiplier; ++e){       // steps per step
+
+
+	  int first_step = _first && (e==0);
+	  int last_step  = _last  && (e==multiplier-1);
+
+	  if(first_step){    // initial half step 
+	    this->update_P(U,level,lambda*eps);
+	  }
+	  
+	  if(level == fl){          // lowest level 
+	    this->update_U(U,0.5*eps);
+	  }else{                 // recursive function call 
+	    this->step(U,level+1,first_step,0);
+	  }
+	  
+	  this->FG_update_P(U,level,2*Chi/((1.0-2.0*lambda)*eps),(1.0-2.0*lambda)*eps);
+	  
+	  if(level == fl){          // lowest level 
+	    this->update_U(U,0.5*eps);
+	  }else{                 // recursive function call 
+	    this->step(U,level+1,0,last_step);
+	  }    
+	  
+	  int mm = (last_step) ? 1 : 2;
+	  this->update_P(U,level,lambda*eps*mm); 
+
+	}
+      }
+    };
+
   }
 }
-
-
 
 #endif//INTEGRATOR_INCLUDED

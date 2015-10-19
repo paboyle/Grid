@@ -524,16 +524,22 @@ Note that in step D setting B ~ X - A and using B in place of A in step E will g
   // reunitarise??
   static void LieRandomize(GridParallelRNG     &pRNG,LatticeMatrix &out,double scale=1.0){
     GridBase *grid = out._grid;
+
     LatticeComplex ca (grid);
     LatticeMatrix  lie(grid);
     LatticeMatrix  la (grid);
     Complex ci(0.0,scale);
+    Complex cone(1.0,0.0);
     Matrix ta;
 
     lie=zero;
     for(int a=0;a<generators();a++){
 
-      random(pRNG,ca); ca=real(ca)-0.5;
+      random(pRNG,ca); 
+
+      ca = (ca+conjugate(ca))*0.5;
+      ca = ca - 0.5;
+
       generator(a,ta);
 
       la=ci*ca*ta;

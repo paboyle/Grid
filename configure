@@ -1384,9 +1384,9 @@ Optional Features:
   --disable-dependency-tracking
                           speeds up one-time build
   --disable-openmp        do not use OpenMP
-  --enable-simd=SSE4|AVX|AVX2|AVX512|MIC
+  --enable-simd=SSE4|AVX|AVX2|AVX512|IMCI
                           Select instructions to be SSE4.0, AVX 1.0, AVX
-                          2.0+FMA, AVX 512, MIC
+                          2.0+FMA, AVX 512, IMCI
   --enable-precision=single|double
                           Select default word size of Real
   --enable-comms=none|mpi Select communications
@@ -6359,105 +6359,15 @@ fi
 done
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for __gmpf_init in -lgmp" >&5
-$as_echo_n "checking for __gmpf_init in -lgmp... " >&6; }
-if ${ac_cv_lib_gmp___gmpf_init+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lgmp  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
+#AC_CHECK_LIB([gmp],[__gmpf_init],,
+#        [AC_MSG_ERROR(GNU Multiple Precision GMP library was not found in your system.
+#Please install or provide the correct path to your installation
+#Info at: http://www.gmplib.org)])
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char __gmpf_init ();
-int
-main ()
-{
-return __gmpf_init ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_gmp___gmpf_init=yes
-else
-  ac_cv_lib_gmp___gmpf_init=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gmp___gmpf_init" >&5
-$as_echo "$ac_cv_lib_gmp___gmpf_init" >&6; }
-if test "x$ac_cv_lib_gmp___gmpf_init" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBGMP 1
-_ACEOF
-
-  LIBS="-lgmp $LIBS"
-
-else
-  as_fn_error $? "GNU Multiple Precision GMP library was not found in your system.
-Please install or provide the correct path to your installation
-Info at: http://www.gmplib.org" "$LINENO" 5
-fi
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for mpfr_init in -lmpfr" >&5
-$as_echo_n "checking for mpfr_init in -lmpfr... " >&6; }
-if ${ac_cv_lib_mpfr_mpfr_init+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmpfr  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char mpfr_init ();
-int
-main ()
-{
-return mpfr_init ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_mpfr_mpfr_init=yes
-else
-  ac_cv_lib_mpfr_mpfr_init=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpfr_mpfr_init" >&5
-$as_echo "$ac_cv_lib_mpfr_mpfr_init" >&6; }
-if test "x$ac_cv_lib_mpfr_mpfr_init" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBMPFR 1
-_ACEOF
-
-  LIBS="-lmpfr $LIBS"
-
-else
-  as_fn_error $? "GNU Multiple Precision MPFR library was not found in your system.
-Please install or provide the correct path to your installation
-Info at: http://www.mpfr.org/" "$LINENO" 5
-fi
-
+#AC_CHECK_LIB([mpfr],[mpfr_init],,
+#        [AC_MSG_ERROR(GNU Multiple Precision MPFR library was not found in your system.
+#Please install or provide the correct path to your installation
+#Info at: http://www.mpfr.org/)])
 
 # Check whether --enable-simd was given.
 if test "${enable_simd+set}" = set; then :
@@ -6504,10 +6414,17 @@ $as_echo "#define AVX2 1" >>confdefs.h
 $as_echo "$as_me: WARNING: Your processor does not support AVX2 instructions" >&2;}
        fi
      ;;
-     AVX512|MIC)
-       echo Configuring for AVX512 and MIC
+     AVX512)
+       echo Configuring for AVX512
 
 $as_echo "#define AVX512 1" >>confdefs.h
+
+       supported="cross compilation"
+     ;;
+     IMCI)
+       echo Configuring for IMCI
+
+$as_echo "#define IMCI 1" >>confdefs.h
 
        supported="cross compilation"
      ;;
@@ -6533,7 +6450,7 @@ esac
 if test "${enable_precision+set}" = set; then :
   enableval=$enable_precision; ac_PRECISION=${enable_precision}
 else
-  ac_PRECISION=single
+  ac_PRECISION=double
 fi
 
 case ${ac_PRECISION} in

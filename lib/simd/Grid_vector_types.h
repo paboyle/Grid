@@ -19,6 +19,9 @@
 #if defined AVX512
 #include "Grid_avx512.h"
 #endif
+#if defined IMCI
+#include "Grid_imci.h"
+#endif
 #if defined QPX
 #include "Grid_qpx.h"
 #endif
@@ -248,14 +251,29 @@ namespace Grid {
     // all subtypes; may not be a good assumption, but could
     // add the vector width as a template param for BG/Q for example
     ////////////////////////////////////////////////////////////////////
+    friend inline void permute0(Grid_simd &y,Grid_simd b){
+      y.v = Optimization::Permute::Permute0(b.v);
+    }
+    friend inline void permute1(Grid_simd &y,Grid_simd b){
+      y.v = Optimization::Permute::Permute1(b.v);
+    }
+    friend inline void permute2(Grid_simd &y,Grid_simd b){
+      y.v = Optimization::Permute::Permute2(b.v);
+    }
+    friend inline void permute3(Grid_simd &y,Grid_simd b){
+      y.v = Optimization::Permute::Permute3(b.v);
+    }
     friend inline void permute(Grid_simd &y,Grid_simd b,int perm)
     {
-      Gpermute<Grid_simd>(y,b,perm);
+      if      (perm==3) permute3(y,b);
+      else if (perm==2) permute2(y,b);
+      else if (perm==1) permute1(y,b);
+      else if (perm==0) permute0(y,b);
     }
+
 
     
   };// end of Grid_simd class definition 
-
 
   ///////////////////////
   // Splat
@@ -263,15 +281,13 @@ namespace Grid {
   
   // this is only for the complex version
   template <class S, class V, IfComplex<S> =0, class ABtype> 
-    inline void vsplat(Grid_simd<S,V> &ret,ABtype a, ABtype b){
+  inline void vsplat(Grid_simd<S,V> &ret,ABtype a, ABtype b){
     ret.v = binary<V>(a, b, VsplatSIMD());
   }    
 
   // overload if complex
   template <class S,class V> inline void vsplat(Grid_simd<S,V> &ret, EnableIf<is_complex < S >, S> c) {
-    Real a = real(c);
-    Real b = imag(c);
-    vsplat(ret,a,b);
+    vsplat(ret,real(c),imag(c));
   }
 
   //if real fill with a, if complex fill with a in the real part (first function above)
@@ -290,8 +306,8 @@ namespace Grid {
   template <class S,class V, IfComplex<S> = 0 > inline void vcomplex_i(Grid_simd<S,V> &ret){ vsplat(ret,S(0.0,1.0));} 
 
   // if not complex overload here 
-  template <class S,class V, IfReal<S> = 0 > inline void vone (Grid_simd<S,V> &ret){ vsplat(ret,1.0); }
-  template <class S,class V, IfReal<S> = 0 > inline void vzero(Grid_simd<S,V> &ret)     { vsplat(ret,0.0); }
+  template <class S,class V, IfReal<S> = 0 > inline void vone (Grid_simd<S,V> &ret){ vsplat(ret,S(1.0)); }
+  template <class S,class V, IfReal<S> = 0 > inline void vzero(Grid_simd<S,V> &ret){ vsplat(ret,S(0.0)); }
    
   // For integral types
   template <class S,class V,IfInteger<S> = 0 > inline void vone(Grid_simd<S,V> &ret)  {vsplat(ret,1); }
@@ -304,13 +320,18 @@ namespace Grid {
   ///////////////////////
   // Vstream
   ///////////////////////
-  template <class S,class V, IfNotInteger<S> = 0 > 
-    inline void vstream(Grid_simd<S,V> &out,const Grid_simd<S,V> &in){
-      binary<void>((Real*)&out.v, in.v, VstreamSIMD());
-    }
+  template <class S,class V, IfReal<S> = 0 > 
+  inline void vstream(Grid_simd<S,V> &out,const Grid_simd<S,V> &in){
+    binary<void>((S *)&out.v, in.v, VstreamSIMD());
+  }
+  template <class S,class V, IfComplex<S> = 0 > 
+  inline void vstream(Grid_simd<S,V> &out,const Grid_simd<S,V> &in){
+    typedef typename S::value_type T;
+    binary<void>((T *)&out.v, in.v, VstreamSIMD());
+  }
 
   template <class S,class V, IfInteger<S> = 0 > 
-    inline void vstream(Grid_simd<S,V> &out,const Grid_simd<S,V> &in){
+  inline void vstream(Grid_simd<S,V> &out,const Grid_simd<S,V> &in){
     out=in;
   }
 

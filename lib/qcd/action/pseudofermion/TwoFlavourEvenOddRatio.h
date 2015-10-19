@@ -40,7 +40,7 @@ namespace Grid{
 	  conformable(_NumOp.GaugeRedBlackGrid(), _DenOp.GaugeRedBlackGrid());
 	};
       
-      virtual void init(const GaugeField &U, GridParallelRNG& pRNG) {
+      virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG) {
 
 	// P(phi) = e^{- phi^dag Vpc (MpcdagMpc)^-1 Vpcdag phi}
 	//

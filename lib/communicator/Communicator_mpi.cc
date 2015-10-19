@@ -81,13 +81,30 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
   SendToRecvFromBegin(reqs,xmit,dest,recv,from,bytes);
   SendToRecvFromComplete(reqs);
 }
+void CartesianCommunicator::RecvFrom(void *recv,
+				     int from,
+				     int bytes) 
+{
+  MPI_Status stat;
+  int ierr=MPI_Recv(recv, bytes, MPI_CHAR,from,from,communicator,&stat);
+  assert(ierr==0);
+}
+void CartesianCommunicator::SendTo(void *xmit,
+				   int dest,
+				   int bytes)
+{
+  int rank = _processor; // used for tag; must know who it comes from
+  int ierr = MPI_Send(xmit, bytes, MPI_CHAR,dest,_processor,communicator);
+  assert(ierr==0);
+}
+
 // Basic Halo comms primitive
-  void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
-						  void *xmit,
-						  int dest,
-						  void *recv,
-						  int from,
-						  int bytes)
+void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
+						void *xmit,
+						int dest,
+						void *recv,
+						int from,
+						int bytes)
 {
   MPI_Request xrq;
   MPI_Request rrq;
@@ -100,7 +117,6 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
 
   list.push_back(xrq);
   list.push_back(rrq);
-
 }
 void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
 {

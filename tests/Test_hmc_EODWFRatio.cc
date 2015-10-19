@@ -17,7 +17,9 @@ int main (int argc, char ** argv)
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
+  GridSerialRNG    sRNG;
   GridParallelRNG  pRNG(UGrid);
+  sRNG.SeedRandomDevice();
   pRNG.SeedRandomDevice();
 
   LatticeLorentzColourMatrix     U(UGrid);
@@ -25,7 +27,7 @@ int main (int argc, char ** argv)
   SU3::HotConfiguration(pRNG, U);
 
   // simplify template declaration? Strip the lorentz from the second template
-  WilsonGaugeAction<LatticeLorentzColourMatrix, LatticeColourMatrix> Waction(5.6);
+  WilsonGaugeActionR Waction(5.6);
 
   Real mass=0.04;
   Real pv  =1.0;
@@ -38,21 +40,20 @@ int main (int argc, char ** argv)
   TwoFlavourEvenOddRatioPseudoFermionAction<WilsonImplR> Nf2(NumOp, DenOp,CG,CG);
   
   //Collect actions
-  ActionLevel Level1;
+  ActionLevel<LatticeGaugeField> Level1;
   Level1.push_back(&Nf2);
   Level1.push_back(&Waction);
-  ActionSet FullSet;
+  ActionSet<LatticeGaugeField> FullSet;
   FullSet.push_back(Level1);
 
   // Create integrator
-  //  typedef LeapFrog  IntegratorAlgorithm;// change here to change the algorithm
-  typedef MinimumNorm2  IntegratorAlgorithm;// change here to change the algorithm
-  IntegratorParameters MDpar(12,20,1.0);
-  Integrator<IntegratorAlgorithm> MDynamics(UGrid,MDpar, FullSet);
+  typedef MinimumNorm2<LatticeGaugeField>  IntegratorType;// change here to change the algorithm
+  IntegratorParameters MDpar(20);
+  IntegratorType MDynamics(UGrid,MDpar, FullSet);
 
   // Create HMC
   HMCparameters HMCpar;
-  HybridMonteCarlo<IntegratorAlgorithm>  HMC(HMCpar, MDynamics);
+  HybridMonteCarlo<LatticeGaugeField,IntegratorType>  HMC(HMCpar, MDynamics,sRNG,pRNG);
 
   // Run it
   HMC.evolve(U);

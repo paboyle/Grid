@@ -1,6 +1,47 @@
 #ifndef GRID_MACRO_MAGIC_H
 #define GRID_MACRO_MAGIC_H
 
+///////////////////////////////////////////
+// Strong credit to :
+//
+// http://jhnet.co.uk/articles/cpp_magic
+//
+// 
+// "The C Pre-Processor (CPP) is the somewhat basic macro system used by the C 
+// programming language to implement features such as #include and #define 
+// which allow very simple text-substitutions to be carried out at compile time.
+// In this article we abuse the humble #define to implement if-statements and iteration.
+//
+// Before we begin, a disclaimer: these tricks, while perfectly valid C, should not be 
+// considered good development practice and should almost certainly not be used for "real work".
+// That said it can totally be used for fun home-automation projects...
+//
+// https://github.com/18sg/uSHET/blob/master/lib/cpp_magic.h
+//
+// The cpp_magic.h license (prior to my modifications):
+/*
+Copyright (c) 2014 Thomas Nixon, Jonathan Heathcote
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+///////////////////////////////////////////
+
 #define strong_inline __attribute__((always_inline)) inline
 
 #ifndef MAX
@@ -63,9 +104,15 @@
 
 #define _GRID_MACRO_MAP() GRID_MACRO_MAP
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// These are the Grid extensions to serialisation (beyond popping first AND second)
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #define GRID_MACRO_MEMBER(A,B)        A B;
 
 #define GRID_MACRO_OS_WRITE_MEMBER(A,B) os<< #A <<" "#B <<" = "<< obj. B <<" ; " <<std::endl;
+#define GRID_MACRO_READ_MEMBER(A,B) read(RD,#B,obj. B);
+#define GRID_MACRO_WRITE_MEMBER(A,B) write(WR,#B,obj. B);
 
 #define GRID_DECL_CLASS_MEMBERS(cname,...)		\
   \
@@ -73,11 +120,26 @@
   GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_MEMBER,__VA_ARGS__))		\
   \
   \
-  friend std::ostream & operator << (std::ostream &os, const cname &obj ) {	\
+  friend void write(Writer &WR,const std::string &s, const cname &obj){ \
+    push(WR,s);\
+    GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_WRITE_MEMBER,__VA_ARGS__))	\
+    pop(WR);\
+  } \
+  \
+  \
+  friend void read(Reader &RD,const std::string &s, cname &obj){	\
+    push(RD,s);\
+    GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_READ_MEMBER,__VA_ARGS__))	\
+    pop(RD);\
+  } \
+  \
+  \
+  friend std::ostream & operator << (std::ostream &os, const cname &obj ) { \
     os<<"class "<<#cname<<" {"<<std::endl;\
     GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_OS_WRITE_MEMBER,__VA_ARGS__))	\
       os<<"}";								\
     return os;\
   };  
+
 
 #endif

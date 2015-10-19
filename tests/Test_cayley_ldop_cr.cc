@@ -42,7 +42,7 @@ int main (int argc, char ** argv)
 
   NerscField header;
   std::string file("./ckpoint_lat.400");
-  readNerscConfiguration(Umu,header,file);
+  NerscIO::readConfiguration(Umu,header,file);
 
   //  SU3::ColdConfiguration(RNG4,Umu);
   //  SU3::TepidConfiguration(RNG4,Umu);

@@ -62,7 +62,6 @@ namespace QCD {
     template<typename vtype> using iGparitySpinColourVector       = iVector<iVector<iVector<vtype, Nc>, Nhs>, Ngp >;
     template<typename vtype> using iGparityHalfSpinColourVector   = iVector<iVector<iVector<vtype, Nc>, Nhs>, Ngp >;
 
-
     // Spin matrix
     typedef iSpinMatrix<Complex  >          SpinMatrix;
     typedef iSpinMatrix<ComplexF >          SpinMatrixF;
@@ -154,7 +153,7 @@ namespace QCD {
     typedef iHalfSpinColourVector<vComplexD> vHalfSpinColourVectorD;
     
     // singlets
-    typedef iSinglet<Complex >         TComplex;    // FIXME This is painful. Tensor singlet complex type.
+    typedef iSinglet<Complex >         TComplex;     // FIXME This is painful. Tensor singlet complex type.
     typedef iSinglet<ComplexF>         TComplexF;    // FIXME This is painful. Tensor singlet complex type.
     typedef iSinglet<ComplexD>         TComplexD;    // FIXME This is painful. Tensor singlet complex type.
 
@@ -162,7 +161,7 @@ namespace QCD {
     typedef iSinglet<vComplexF>        vTComplexF;   // what if we don't know the tensor structure
     typedef iSinglet<vComplexD>        vTComplexD;   // what if we don't know the tensor structure
 
-    typedef iSinglet<Real >            TReal;       // Shouldn't need these; can I make it work without?
+    typedef iSinglet<Real >            TReal;        // Shouldn't need these; can I make it work without?
     typedef iSinglet<RealF>            TRealF;       // Shouldn't need these; can I make it work without?
     typedef iSinglet<RealD>            TRealD;       // Shouldn't need these; can I make it work without?
 
@@ -250,6 +249,8 @@ namespace QCD {
     typedef LatticeDoubleStoredColourMatrix        LatticeDoubledGaugeField;
     typedef LatticeDoubleStoredColourMatrixF       LatticeDoubledGaugeFieldF;
     typedef LatticeDoubleStoredColourMatrixD       LatticeDoubledGaugeFieldD;
+
+    template<class GF> using LorentzScalar = Lattice<iScalar<typename GF::vector_object::element> >;
 
     // Uhgg... typing this hurt  ;)
     // (my keyboard got burning hot when I typed this, must be the anti-Fermion)

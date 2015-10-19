@@ -73,8 +73,10 @@ int main (int argc, char ** argv)
 	}
 
 	PokeIndex<LorentzIndex>(Umu,link,mu);
-	//reunitarise link;
 	
+	//reunitarise link;
+	ProjectOnGroup(Umu);
+
       }
 
     }

@@ -87,6 +87,14 @@ class CartesianCommunicator {
 			void *recv,
 			int recv_from_rank,
 			int bytes);
+
+    void RecvFrom(void *recv,
+		  int recv_from_rank,
+		  int bytes);
+    void SendTo(void *xmit,
+		int xmit_to_rank,
+		int bytes);
+
     void SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 			 void *xmit,
 			 int xmit_to_rank,

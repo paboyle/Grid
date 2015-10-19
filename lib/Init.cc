@@ -177,7 +177,8 @@ void Grid_init(int *argc,char ***argv)
     Grid_quiesce_nodes();
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-opt") ){
-    WilsonFermionStatic::HandOptDslash=1;
+    QCD::WilsonFermionStatic::HandOptDslash=1;
+    QCD::WilsonFermion5DStatic::HandOptDslash=1;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--lebesgue") ){
     LebesgueOrder::UseLebesgueOrder=1;

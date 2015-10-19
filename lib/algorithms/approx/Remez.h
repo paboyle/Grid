@@ -17,7 +17,8 @@
 
 #include <stddef.h>
 
-#include <algorithms/approx/bigfloat.h>
+//#include <algorithms/approx/bigfloat.h>
+#include <algorithms/approx/bigfloat_double.h>
 
 #define JMAX 10000 //Maximum number of iterations of Newton's approximation
 #define SUM_MAX 10 // Maximum number of terms in exponential

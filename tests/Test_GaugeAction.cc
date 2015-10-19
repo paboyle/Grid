@@ -50,7 +50,7 @@ int main (int argc, char ** argv)
   NerscField header;
   
   std::string file("./ckpoint_lat.4000");
-  readNerscConfiguration(Umu,header,file);
+  NerscIO::readConfiguration(Umu,header,file);
 
   for(int mu=0;mu<Nd;mu++){
     U[mu] = PeekIndex<LorentzIndex>(Umu,mu);

@@ -8,10 +8,11 @@
 //----------------------------------------------------------------------
 
 #include <immintrin.h>
-#ifndef KNC_ONLY_STORES
-#define  _mm512_storenrngo_ps _mm512_store_ps  // not present in AVX512
-#define  _mm512_storenrngo_pd _mm512_store_pd  // not present in AVX512
-#endif
+
+//#ifndef KNC_ONLY_STORES
+//#define  _mm512_storenrngo_ps _mm512_store_ps  // not present in AVX512
+//#define  _mm512_storenrngo_pd _mm512_store_pd  // not present in AVX512
+//#endif
 
 
 namespace Optimization {
@@ -149,33 +150,49 @@ namespace Optimization {
     }
   };
 
-  // Note, we can beat the shuf overhead in chain with two temporaries
-  // Ar Ai , Br Bi,  Ai Ar  // one shuf
-  //tmpr Ar Br,  Ai Bi    // Mul/Mac/Mac
-  //tmpi Br Ai,  Bi Ar    // Mul/Mac/Mac
-  // add tmpi,shuf(tmpi)
-  // sub tmpr,shuf(tmpi)
-  // shuf(tmpr,tmpi).    // Could drop/trade for write mask
-
-  // Gives
-  //  2mul,4 mac +add+sub = 8 flop type insns
-  //  3shuf + 2 (+shuf)   = 5/6 simd perm and 1/2 the load.
 
   struct MultComplex{
     // Complex float
     inline __m512 operator()(__m512 a, __m512 b){
-      // dup, dup, perm, mul, madd
-      __m512 a_real = _mm512_moveldup_ps( a ); // Ar Ar
-      __m512 a_imag = _mm512_movehdup_ps( a ); // Ai Ai
-      a_imag = _mm512_mul_ps( a_imag, _mm512_permute_ps( b, 0xB1 ) );  // (Ai, Ai) * (Bi, Br) = Ai Bi, Ai Br
-      return _mm512_fmaddsub_ps( a_real, b, a_imag ); // Ar Br , Ar Bi   +- Ai Bi             = ArBr-AiBi , ArBi+AiBr
+      __m512 vzero,ymm0,ymm1,real, imag;
+      vzero = _mm512_setzero_ps();
+      ymm0  = _mm512_swizzle_ps(a, _MM_SWIZ_REG_CDAB); // 
+      real  = (__m512)_mm512_mask_or_epi32((__m512i)a, 0xAAAA,(__m512i)vzero,(__m512i)ymm0);
+      imag  = _mm512_mask_sub_ps(a, 0x5555,vzero, ymm0);
+      ymm1  = _mm512_mul_ps(real, b);
+      ymm0  = _mm512_swizzle_ps(b, _MM_SWIZ_REG_CDAB); // OK
+      return _mm512_fmadd_ps(ymm0,imag,ymm1);
     }
     // Complex double
     inline __m512d operator()(__m512d a, __m512d b){
-      __m512d a_real = _mm512_shuffle_pd( a, a, 0x00 );
-      __m512d a_imag = _mm512_shuffle_pd( a, a, 0xFF );
-      a_imag = _mm512_mul_pd( a_imag, _mm512_permute_pd( b, 0x55 ) ); 
-      return _mm512_fmaddsub_pd( a_real, b, a_imag );
+      /* This is from
+       * Automatic SIMD Vectorization of Fast Fourier Transforms for the Larrabee and AVX Instruction Sets 
+       * @inproceedings{McFarlin:2011:ASV:1995896.1995938,
+       * author = {McFarlin, Daniel S. and Arbatov, Volodymyr and Franchetti, Franz and P\"{u}schel, Markus},
+       * title = {Automatic SIMD Vectorization of Fast Fourier Transforms for the Larrabee and AVX Instruction Sets},
+       * booktitle = {Proceedings of the International Conference on Supercomputing},
+       * series = {ICS '11},
+       * year = {2011},
+       * isbn = {978-1-4503-0102-2},
+       * location = {Tucson, Arizona, USA},
+       * pages = {265--274},
+       * numpages = {10},
+       * url = {http://doi.acm.org/10.1145/1995896.1995938},
+       * doi = {10.1145/1995896.1995938},
+       * acmid = {1995938},
+       * publisher = {ACM},
+       * address = {New York, NY, USA},
+       * keywords = {autovectorization, fourier transform, program generation, simd, super-optimization},
+       *                } 
+       */
+      __m512d vzero,ymm0,ymm1,real,imag;
+      vzero =_mm512_setzero_pd();
+      ymm0 =  _mm512_swizzle_pd(a, _MM_SWIZ_REG_CDAB); // 
+      real =(__m512d)_mm512_mask_or_epi64((__m512i)a, 0xAA,(__m512i)vzero,(__m512i) ymm0);
+      imag =  _mm512_mask_sub_pd(a, 0x55,vzero, ymm0);
+      ymm1 =  _mm512_mul_pd(real, b);
+      ymm0 =  _mm512_swizzle_pd(b, _MM_SWIZ_REG_CDAB); // OK
+      return  _mm512_fmadd_pd(ymm0,imag,ymm1);
     }
   };
   
@@ -211,62 +228,63 @@ namespace Optimization {
     //Complex single
     inline __m512 operator()(__m512 in, __m512 ret){
       __m512 tmp = _mm512_mask_sub_ps(in,0xaaaa,_mm512_setzero_ps(),in); // real -imag 
-      return _mm512_shuffle_ps(tmp,tmp,_MM_SELECT_FOUR_FOUR(1,0,3,2));   // 0x4E??
+      return _mm512_swizzle_ps(tmp, _MM_SWIZ_REG_CDAB);// OK
     }
     //Complex double
     inline __m512d operator()(__m512d in, __m512d ret){
       __m512d tmp = _mm512_mask_sub_pd(in,0xaa,_mm512_setzero_pd(),in); // real -imag 
-      return _mm512_shuffle_pd(tmp,tmp,0x55);
-    } 
+      return  _mm512_swizzle_pd(tmp, _MM_SWIZ_REG_CDAB);// OK
+    }
+
+
   };
 
   struct TimesI{
     //Complex single
     inline __m512 operator()(__m512 in, __m512 ret){
-      __m512 tmp = _mm512_shuffle_ps(tmp,tmp,_MM_SELECT_FOUR_FOUR(1,0,3,2));
-      return _mm512_mask_sub_ps(tmp,0xaaaa,_mm512_setzero_ps(),tmp); 
+      __m512 tmp = _mm512_swizzle_ps(in, _MM_SWIZ_REG_CDAB);// OK
+      return _mm512_mask_sub_ps(tmp,0xaaaa,_mm512_setzero_ps(),tmp); // real -imag
     }
     //Complex double
     inline __m512d operator()(__m512d in, __m512d ret){
-      __m512d tmp = _mm512_shuffle_pd(tmp,tmp,0x55);
-      return _mm512_mask_sub_pd(tmp,0xaa,_mm512_setzero_pd(),tmp); 
+      __m512d tmp = _mm512_swizzle_pd(in, _MM_SWIZ_REG_CDAB);// OK
+      return _mm512_mask_sub_pd(tmp,0xaa,_mm512_setzero_pd(),tmp); // real -imag
     }
 
 
   };
 
 
-  
-  // Gpermute utilities consider coalescing into 1 Gpermute
-  struct Permute{
+   struct Permute{
     
     static inline __m512 Permute0(__m512 in){
-      return _mm512_shuffle_f32x4(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2));
+      return _mm512_permute4f128_ps(in,(_MM_PERM_ENUM)_MM_SELECT_FOUR_FOUR(1,0,3,2));
     };
     static inline __m512 Permute1(__m512 in){
-      return _mm512_shuffle_f32x4(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1));
+      return _mm512_permute4f128_ps(in,(_MM_PERM_ENUM)_MM_SELECT_FOUR_FOUR(2,3,0,1));
     };
     static inline __m512 Permute2(__m512 in){
-      return _mm512_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2));
+      return _mm512_swizzle_ps(in,_MM_SWIZ_REG_BADC);
     };
     static inline __m512 Permute3(__m512 in){
-      return _mm512_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1));
+      return _mm512_swizzle_ps(in,_MM_SWIZ_REG_CDAB); 
     };
 
-    static inline __m512d Permute0(__m512d in){
-      return _mm512_shuffle_f64x2(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2));
+    static inline __m512d Permute0(__m512d in){// Hack no intrinsic for 256 swaps of __m512d
+      return (__m512d)_mm512_permute4f128_ps((__m512)in,(_MM_PERM_ENUM)_MM_SELECT_FOUR_FOUR(1,0,3,2));
     };
     static inline __m512d Permute1(__m512d in){
-      return _mm512_shuffle_f64x2(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1));
+      return _mm512_swizzle_pd(in,_MM_SWIZ_REG_BADC);
     };
     static inline __m512d Permute2(__m512d in){
-      return _mm512_shuffle_pd(in,in,0x55);
+      return _mm512_swizzle_pd(in,_MM_SWIZ_REG_CDAB);
     };
     static inline __m512d Permute3(__m512d in){
       return in;
     };
 
   };
+ 
 
 
   //////////////////////////////////////////////

@@ -1,48 +1,48 @@
-- PseudoFermions
+RECENT
+---------------
 
-Done: Cayley, Partial , ContFrac force terms.
-
-Done:
-  - TwoFlavour
-  - TwoFlavourEvenOdd        
-  - TwoFlavourRatio
-  - TwoFlavourRatioEvenOdd
-
-Done:
-  - OneFlavourRationalEvenOdd
-  - OneFlavourRationalRatioEvenOdd
-  - OneFlavourRationalRatio
+  - Clean up HMC                                                             -- DONE
+  - LorentzScalar<GaugeField> gets Gauge link type (cleaner).                -- DONE
+  - Simplified the integrators a bit.                                        -- DONE
+  - Multi-timescale looks broken and operating on single timescale for now.  -- DONE
+  - pass GaugeField as template param.                        -- DONE
+  - Reunitarise                                               -- DONE
+  - Force Gradient                                            -- DONE
+  - Prefer "RefreshInternal" or such like to "init" in naming -- DONE
+  - Parallel io improvements                                  -- DONE
+  - Plaquette and link trace checks into nersc reader from the Grid_nersc_io.cc test. -- DONE
 
 TODO:
-=> generalise to non-const EE
-=> Test DWF HMC
-=> Clean up HMC
-   - Fix a threading bug that has been introduced and prevents HMC running hybrid OMP mode
+---------------
+Policies:
+* Link smearing/boundary conds; Policy class based implementation ; framework more in place
+* Support different boundary conditions (finite temp, chem. potential ... )
+* Support different fermion representations? 
+  - contained entirely within the integrator presently
 
-=> Integrators
-  - Force Gradient
-  - Multi-timescale looks broken and operating on single timescale for now.
-    Fix/debug/rewrite this 
-  - Sign of force term.
-  - Prefer "RefreshInternal" or such like to "init" in naming
-  - Rename "Ta" as too unclear
+- Sign of force term.
 
-- MacroMagic -> virtual reader class.
+- Reversibility test.
 
-- Link smearing/boundary conds; Policy class based implementation
+- Rename "Ta" as too unclear
+
+- Lanczos
 
 - Rectangle gauge actions.
   Iwasaki,
   Symanzik,
   ... etc...
 
-- Prepare multigrid for HMC.
-  Alternate setup schemes.
+- Prepare multigrid for HMC. - Alternate setup schemes.
 
-- RNG filling from sparser grid, lower dim grid.
+- Support for ILDG --- ugly, not done
+
+- Flavour matrices?
+
+- FFTnD ?
 
 ================================================================
-*** Hacks and bug fixes to clean up and Audits
+* Hacks and bug fixes to clean up and Audits
 ================================================================
 
 *  Extract/merge/set cleanup ; too many variants; rationalise and call simpler ones
@@ -68,6 +68,8 @@ Insert/Extract
 
 * Thread scaling tests Xeon, XeonPhi
 
+Not sure of status of this -- reverify. Things are working nicely now though.
+
 * Make the Tensor types and Complex etc... play more nicely.
   - TensorRemove is a hack, come up with a long term rationalised approach to Complex vs. Scalar<Scalar<Scalar<Complex > > >
     QDP forces use of "toDouble" to get back to non tensor scalar. This role is presently taken TensorRemove, but I
@@ -83,6 +85,37 @@ Insert/Extract
     and then Sum and SliceSum to not remove the Scalars. This would be fixed if we 
     template specialize the scalar scalar scalar sum and SliceSum,  on the basis of being
     pure scalar.
+
+======================================================================
+======================================================================
+======================================================================
+======================================================================
+Done: Cayley, Partial , ContFrac force terms.
+
+DONE
+- PseudoFermions
+=> generalise to non-const EE ; likely defer (??) (NOT DONE)
+Done:
+  - TwoFlavour
+  - TwoFlavourEvenOdd        
+  - TwoFlavourRatio
+  - TwoFlavourRatioEvenOdd
+
+Done:
+  - OneFlavourRationalEvenOdd
+  - OneFlavourRationalRatioEvenOdd
+  - OneFlavourRationalRatio
+
+Done
+=> Test DWF HMC
+   - Fix a threading bug that has been introduced and prevents HMC running hybrid OMP mode
+
+Done:
+- RNG filling from sparser grid, lower dim grid.
+
+
+DONE
+  - MacroMagic -> virtual reader class.
 
 *** Expression template engine: -- DONE
 
@@ -103,24 +136,17 @@ Insert/Extract
 
 * CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
 
-* Parallel io improvements
-  - optional parallel MPI2 IO
-  - move Plaquette and link trace checks into nersc reader from the Grid_nersc_io.cc test.
+-- coherent framework for implementing actions and their forces.
+Actions 
 
-* Support for ILDG
-
-* Support different boundary conditions (finite temp, chem. potential ... )
-
-* Support different fermion representations? 
-
-Actions -- coherent framework for implementing actions and their forces.
-
+DONE
 * Fermion
   - Wilson
   - Clover
   - DomainWall
   - Mobius
   - z-Mobius
+
 
 Algorithms (lots of reuse/port from BFM)
 * LinearOperator
@@ -139,18 +165,10 @@ Algorithms (lots of reuse/port from BFM)
 * Integrators, leapfrog, omelyan, force gradient etc...
 * etc..
 
-* Gauge
-  - Wilson, symanzik, iwasaki
-
-* Flavour matrices?
-
+Done
 * Pauli, SU subgroup, etc.. 
 
 * su3 exponentiation & log etc.. [Jamie's code?]
-
-* TaProj
-
-* FFTnD ?
 
 ======================================================================================================
 FUNCTIONALITY: it pleases me to keep track of things I have done (keeps me arguably sane)
@@ -184,7 +202,6 @@ FUNCTIONALITY: it pleases me to keep track of things I have done (keeps me argua
   - lib/communicator
   - lib/algorithms
   - lib/qcd
- future
   - lib/io/   -- GridLog, GridIn, GridErr, GridDebug, GridMessage
   - lib/qcd/actions
   - lib/qcd/measurements

@@ -30,7 +30,7 @@
 ///////////////////
 // Grid headers
 ///////////////////
-#include <MacroMagic.h>
+#include <serialisation/Serialisation.h>
 #include <Config.h>
 #include <Timer.h>
 #include <Log.h>
@@ -45,6 +45,7 @@
 #include <Stencil.h>      
 #include <Algorithms.h>   
 #include <qcd/QCD.h>
+#include <parallelIO/BinaryIO.h>
 #include <parallelIO/NerscIO.h>
 
 #include <Init.h>

@@ -28,7 +28,7 @@ int main (int argc, char ** argv)
   
   NerscField header;
   std::string file("./ckpoint_lat.4000");
-  readNerscConfiguration(Umu,header,file);
+  NerscIO::readConfiguration(Umu,header,file);
 
   for(int mu=0;mu<Nd;mu++){
     U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
@@ -89,6 +89,13 @@ int main (int argc, char ** argv)
   TComplex TcP = sum(cPlaq);
   Complex ll= TensorRemove(TcP);
   std::cout<<GridLogMessage << "coarsened plaquettes sum to " <<ll*PlaqScale<<std::endl;
+
+  std::string clone2x3("./ckpoint_clone2x3.4000");
+  std::string clone3x3("./ckpoint_clone3x3.4000");
+  int precision32 = 0;
+
+  NerscIO::writeConfiguration(Umu,clone3x3,0,precision32);
+  NerscIO::writeConfiguration(Umu,clone2x3,1,precision32);
   
   Grid_finalize();
 }

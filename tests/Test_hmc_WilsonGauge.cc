@@ -22,30 +22,37 @@ int main (int argc, char ** argv)
   double volume = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
   
   GridCartesian           Fine(latt_size,simd_layout,mpi_layout);
+
+
+  std::vector<int> seeds({6,7,8,80});
   GridParallelRNG  pRNG(&Fine);
-  pRNG.SeedRandomDevice();
+  pRNG.SeedFixedIntegers(seeds);
+
+  std::vector<int> seedsS({1,2,3,4});
+  GridSerialRNG    sRNG;
+  sRNG.SeedFixedIntegers(seedsS);
+
   LatticeGaugeField U(&Fine);
 
   SU3::HotConfiguration(pRNG, U);
- 
 
   // simplify template declaration? Strip the lorentz from the second template
-  WilsonGaugeAction<LatticeGaugeField, LatticeColourMatrix> Waction(6.0);
+  WilsonGaugeActionR Waction(6.0);
 
   //Collect actions
-  ActionLevel Level1;
+  ActionLevel<LatticeGaugeField> Level1;
   Level1.push_back(&Waction);
-  ActionSet FullSet;
+  ActionSet<LatticeGaugeField> FullSet;
   FullSet.push_back(Level1);
 
   // Create integrator
-  typedef MinimumNorm2  IntegratorAlgorithm;// change here to modify the algorithm
-  IntegratorParameters MDpar(12,5,1.0);
-  Integrator<IntegratorAlgorithm> MDynamics(&Fine,MDpar, FullSet);
+  typedef MinimumNorm2<LatticeGaugeField>  IntegratorAlgorithm;// change here to modify the algorithm
+  IntegratorParameters MDpar(20);
+  IntegratorAlgorithm  MDynamics(&Fine,MDpar, FullSet);
 
   // Create HMC
   HMCparameters HMCpar;
-  HybridMonteCarlo<IntegratorAlgorithm>  HMC(HMCpar, MDynamics);
+  HybridMonteCarlo<LatticeGaugeField,IntegratorAlgorithm>  HMC(HMCpar, MDynamics, sRNG, pRNG);
 
   HMC.evolve(U);
 

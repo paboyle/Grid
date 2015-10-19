@@ -15,14 +15,22 @@ int main (int argc, char ** argv)
   
   GridCartesian            Fine(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian  RBFine(latt_size,simd_layout,mpi_layout);
+
+
+  std::vector<int> seeds({6,7,8,80});
   GridParallelRNG  pRNG(&Fine);
-  pRNG.SeedRandomDevice();
+  pRNG.SeedFixedIntegers(seeds);
+
+  std::vector<int> seedsS({1,2,3,4});
+  GridSerialRNG    sRNG;
+  sRNG.SeedFixedIntegers(seedsS);
+
   LatticeLorentzColourMatrix     U(&Fine);
 
   SU3::HotConfiguration(pRNG, U);
 
   // simplify template declaration? Strip the lorentz from the second template
-  WilsonGaugeAction<LatticeLorentzColourMatrix, LatticeColourMatrix> Waction(5.6);
+  WilsonGaugeActionR Waction(5.6);
 
   Real mass=-0.77;
   WilsonFermionR FermOp(U,Fine,RBFine,mass);
@@ -33,23 +41,23 @@ int main (int argc, char ** argv)
   OneFlavourRationalPseudoFermionAction<WilsonImplR> WilsonNf1b(FermOp,Params);
   
   //Collect actions
-  ActionLevel Level1;
+  ActionLevel<LatticeGaugeField> Level1;
   Level1.push_back(&WilsonNf1a);
   Level1.push_back(&WilsonNf1b);
   Level1.push_back(&Waction);
 
-  ActionSet FullSet;
+  ActionSet<LatticeGaugeField> FullSet;
   FullSet.push_back(Level1);
 
   // Create integrator
-  typedef MinimumNorm2  IntegratorAlgorithm;// change here to change the algorithm
+  typedef MinimumNorm2<LatticeGaugeField>  IntegratorAlgorithm;// change here to change the algorithm
 
-  IntegratorParameters MDpar(12,20,1.0);
-  Integrator<IntegratorAlgorithm> MDynamics(&Fine,MDpar, FullSet);
+  IntegratorParameters MDpar(20);
+  IntegratorAlgorithm MDynamics(&Fine,MDpar, FullSet);
 
   // Create HMC
   HMCparameters HMCpar;
-  HybridMonteCarlo<IntegratorAlgorithm>  HMC(HMCpar, MDynamics);
+  HybridMonteCarlo<LatticeGaugeField,IntegratorAlgorithm>  HMC(HMCpar, MDynamics, sRNG, pRNG);
 
   HMC.evolve(U);
 

@@ -82,7 +82,8 @@ namespace QCD {
   template<class Impl>
   void WilsonFermion<Impl>::Mooee(const FermionField &in, FermionField &out) {
     out.checkerboard = in.checkerboard;
-    out = (4.0+mass)*in;
+    typename FermionField::scalar_type scal(4.0+mass);
+    out = scal*in;
   }
   
   template<class Impl>
