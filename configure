@@ -6536,6 +6536,10 @@ ac_config_files="$ac_config_files tests/Makefile"
 
 ac_config_files="$ac_config_files benchmarks/Makefile"
 
+ac_config_files="$ac_config_files programs/Makefile"
+
+ac_config_files="$ac_config_files programs/Hadrons/Makefile"
+
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -7279,6 +7283,8 @@ do
     "lib/Makefile") CONFIG_FILES="$CONFIG_FILES lib/Makefile" ;;
     "tests/Makefile") CONFIG_FILES="$CONFIG_FILES tests/Makefile" ;;
     "benchmarks/Makefile") CONFIG_FILES="$CONFIG_FILES benchmarks/Makefile" ;;
+    "programs/Makefile") CONFIG_FILES="$CONFIG_FILES programs/Makefile" ;;
+    "programs/Hadrons/Makefile") CONFIG_FILES="$CONFIG_FILES programs/Hadrons/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac

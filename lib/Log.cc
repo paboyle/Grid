@@ -2,8 +2,8 @@
 
 namespace Grid {
 
-GridStopWatch GridLogger::StopWatch;
-std::ostream  GridLogger::devnull(0);
+GridStopWatch Logger::StopWatch;
+std::ostream  Logger::devnull(0);
 
 GridLogger GridLogError      (1,"Error");
 GridLogger GridLogWarning    (1,"Warning");
