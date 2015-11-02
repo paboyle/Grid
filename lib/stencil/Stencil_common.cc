@@ -8,7 +8,7 @@ namespace Grid {
 				     int checkerboard,
 				     const std::vector<int> &directions,
 				     const std::vector<int> &distances) 
-    :   _entries(npoints), _permute_type(npoints)
+    :   _entries(npoints), _permute_type(npoints), _comm_buf_size(npoints)
     {
       _npoints = npoints;
       _grid    = grid;
