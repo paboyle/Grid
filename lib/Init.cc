@@ -1,7 +1,6 @@
 /****************************************************************************/
 /* pab: Signal magic. Processor state dump is x86-64 specific               */
 /****************************************************************************/
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -16,10 +15,9 @@
 #include <algorithm>
 #include <iterator>
 
-#undef __X86_64
-#define MAC
-
-#ifdef MAC
+#define __X86_64
+#define EXECINFO
+#ifdef EXECINFO
 #include <execinfo.h>
 #endif
 
@@ -183,6 +181,11 @@ void Grid_init(int *argc,char ***argv)
   if( GridCmdOptionExists(*argv,*argv+*argc,"--lebesgue") ){
     LebesgueOrder::UseLebesgueOrder=1;
   }
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--cacheblocking") ){
+    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--cacheblocking");
+    GridCmdOptionIntVector(arg,LebesgueOrder::Block);
+  }
   GridParseLayout(*argv,*argc,
 		  Grid_default_latt,
 		  Grid_default_mpi);
@@ -227,6 +230,7 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   struct sigcontext *sc = (struct sigcontext *)&uc->uc_mcontext;
   printf("  instruction %llx\n",(unsigned long long)sc->rip);
 #define REG(A)  printf("  %s %lx\n",#A,sc-> A);
+
   REG(rdi);
   REG(rsi);
   REG(rbp);
@@ -247,7 +251,7 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   REG(r14);
   REG(r15);
 #endif
-#ifdef MAC
+#ifdef EXECINFO
   int symbols    = backtrace        (Grid_backtrace_buffer,_NBACKTRACE);
   char **strings = backtrace_symbols(Grid_backtrace_buffer,symbols);
   for (int i = 0; i < symbols; i++){
