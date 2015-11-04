@@ -45,12 +45,15 @@ class GridThread {
   static int SumArraySize(void) {return _threads;};
 
   static void GetWork(int nwork, int me, int & mywork, int & myoff){
-    int basework = nwork/_threads;
-    int backfill = _threads-(nwork%_threads);
-    if ( me >= _threads ) { 
+    GetWork(nwork,me,mywork,myoff,_threads);
+  }
+  static void GetWork(int nwork, int me, int & mywork, int & myoff,int units){
+    int basework = nwork/units;
+    int backfill = units-(nwork%units);
+    if ( me >= units ) { 
       mywork = myoff = 0;
     } else { 
-      mywork = (nwork+me)/_threads;
+      mywork = (nwork+me)/units;
       myoff  = basework * me;
       if ( me > backfill ) 
 	myoff+= (me-backfill);
