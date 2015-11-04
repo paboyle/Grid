@@ -29,14 +29,15 @@ Gather_plane_simple (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<
   
   int e1=rhs._grid->_slice_nblock[dimension];
   int e2=rhs._grid->_slice_block[dimension];
-PARALLEL_NESTED_LOOP2
+  int bo=0;
+    //PARALLEL_NESTED_LOOP21
   for(int n=0;n<e1;n++){
     for(int b=0;b<e2;b++){
       int o  = n*rhs._grid->_slice_stride[dimension];
-      int bo = n*rhs._grid->_slice_block[dimension];
+      //      int bo = n*rhs._grid->_slice_block[dimension];
       int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
       if ( ocb &cbmask ) {
-	buffer[bo+b]=compress(rhs._odata[so+o+b],dimension,plane,so+o+b,rhs._grid);
+	buffer[bo++]=compress(rhs._odata[so+o+b],dimension,plane,so+o+b,rhs._grid);
       }
     }
   }
@@ -59,7 +60,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename cobj::scalar_
 
   int e1=rhs._grid->_slice_nblock[dimension];
   int e2=rhs._grid->_slice_block[dimension];
-PARALLEL_NESTED_LOOP2
+  //PARALLEL_NESTED_LOOP2
   for(int n=0;n<e1;n++){
     for(int b=0;b<e2;b++){
 
@@ -109,14 +110,15 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,std::vector<v
     
   int e1=rhs._grid->_slice_nblock[dimension];
   int e2=rhs._grid->_slice_block[dimension];
-PARALLEL_NESTED_LOOP2
+  int bo=0;
+  //PARALLEL_NESTED_LOOP2
   for(int n=0;n<e1;n++){
     for(int b=0;b<e2;b++){
       int o   =n*rhs._grid->_slice_stride[dimension];
-      int bo  =n*rhs._grid->_slice_block[dimension];
+      //      int bo  =n*rhs._grid->_slice_block[dimension];
       int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
       if ( ocb & cbmask ) {
-	rhs._odata[so+o+b]=buffer[bo+b];
+	rhs._odata[so+o+b]=buffer[bo++];
       }
     }
   }
