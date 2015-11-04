@@ -8,7 +8,7 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  const int Nvec=4;
+  const int Nvec=8;
   typedef Lattice< iVector< vReal,Nvec> > LatticeVec;
   typedef iVector<vReal,Nvec> Vec;
 
@@ -28,7 +28,7 @@ int main (int argc, char ** argv)
   const int lmax = 16536*16;
   for(int lat=4;lat<=lmax;lat*=2){
 
-    int Nloop=lmax*128*4/lat;
+    int Nloop=lmax*4/lat;
 
     std::vector<int> latt_size  ({2*mpi_layout[0],2*mpi_layout[1],4*mpi_layout[2],lat*mpi_layout[3]});
 
@@ -45,7 +45,7 @@ int main (int argc, char ** argv)
 
     std::vector<LatticeVec> x(threads,&Grid);
     for(int t=0;t<threads;t++){
-      random(pRNG,x[t]);
+      //      random(pRNG,x[t]);
     }
 
     double start=usecond();
