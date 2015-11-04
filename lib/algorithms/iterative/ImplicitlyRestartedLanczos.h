@@ -1,3 +1,4 @@
+#if 0
 #ifndef GRID_IRL_H
 #define GRID_IRL_H
 
@@ -1018,4 +1019,5 @@ static void Lock(DenseMatrix<T> &H, 	///Hess mtx
  };
 
 }
+#endif
 #endif
