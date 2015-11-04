@@ -212,9 +212,10 @@ PARALLEL_FOR_LOOP
     // Constructor requires "grid" passed.
     // what about a default grid?
     //////////////////////////////////////////////////////////////////
- Lattice(GridBase *grid) : _grid(grid), _odata(_grid->oSites()) {
+    Lattice(GridBase *grid) : _grid(grid), _odata(_grid->oSites()) {
       //        _odata.reserve(_grid->oSites());
       //        _odata.resize(_grid->oSites());
+    //      std::cout << "Constructing lattice object with Grid pointer "<<_grid<<std::endl;
         assert((((uint64_t)&_odata[0])&0xF) ==0);
         checkerboard=0;
     }

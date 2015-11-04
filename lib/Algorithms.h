@@ -18,8 +18,8 @@
 #include <algorithms/iterative/ConjugateGradientMultiShift.h>
 
 // Lanczos support
-//#include <algorithms/iterative/MatrixUtils.h>
-//#include <algorithms/iterative/ImplicitlyRestartedLanczos.h>
+#include <algorithms/iterative/MatrixUtils.h>
+#include <algorithms/iterative/ImplicitlyRestartedLanczos.h>
 
 #include <algorithms/CoarsenedMatrix.h>
 

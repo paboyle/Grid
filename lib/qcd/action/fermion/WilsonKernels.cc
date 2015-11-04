@@ -78,7 +78,7 @@ void WilsonKernels<Impl>::DiracOptDhopSite(CartesianStencil &st,DoubledGaugeFiel
   }
   Impl::multLink(Uchi,U._odata[sU],chi,Xm,SE,st);
   accumReconXm(result,Uchi);
-  
+
   // Ym
   SE=st.GetEntry(ptype,Ym,sF);
   if (  SE->_is_local && SE->_permute ) {

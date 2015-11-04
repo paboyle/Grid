@@ -35,21 +35,26 @@ int main (int argc, char ** argv)
 
   MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
 
-  const int Nk = 10;
-  const int Np = 1;
-  RealD enorm  = 1.0;
-  RealD vthrs  = 1;
-  const int Nit= 1000;
+  const int Nk = 30;
+  const int Np = 10;
+  const int Nm = Nk+Np;
+  const int MaxIt= 10000;
+  RealD resid = 1.0e-8;
 
-  ImplicitlyRestartedLanczos<LatticeFermion> IRL(HermOp,PolyX,
-						 Nk,Np,enorm,vthrs,Nit);
+  std::vector<double> Coeffs(1,1.0);
+  Polynomial<LatticeFermion> PolyX(Coeffs);
+  ImplicitlyRestartedLanczos<LatticeFermion> IRL(HermOp,PolyX,Nk,Nm,resid,MaxIt);
 
   
-  std::vector<RealD>          eval(Nk);
-  std::vector<LatticeFermion> evec(Nk,FGrid);
+  std::vector<RealD>          eval(Nm);
+  std::vector<LatticeFermion> evec(Nm,FGrid);
+  for(int i=0;i<Nm;i++){
+    std::cout << i<<" / "<< Nm<< " grid pointer "<<evec[i]._grid<<std::endl;
+  };
+
+  int Nconv;
   IRL.calc(eval,evec,
 	   src,
-	   Nsbt,
 	   Nconv);
 
 

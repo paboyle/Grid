@@ -9,6 +9,9 @@
 /* AVX512 Intrinsics for Knights Landing */
 #undef AVX512
 
+/* AVX Intrinsics with FMA4 */
+#undef AVXFMA4
+
 /* EMPTY_SIMD only for DEBUGGING */
 #undef EMPTY_SIMD
 

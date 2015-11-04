@@ -171,6 +171,15 @@ namespace Optimization {
   };
 
   struct Mult{
+
+    inline void mac(__m128 &a, __m128 b, __m128 c){
+      a= _mm128_add_ps(_mm128_mul_ps(b,c),a);
+    }
+
+    inline void mac(__m128d &a, __m128d b, __m128d c){
+      a= _mm128_add_pd(_mm128_mul_pd(b,c),a);
+    }
+
     // Real float
     inline __m128 operator()(__m128 a, __m128 b){
       return _mm_mul_ps(a,b);

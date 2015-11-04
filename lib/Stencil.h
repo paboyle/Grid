@@ -124,6 +124,7 @@ namespace Grid {
 	  if ( comm_dim ) {
 	    sshift[0] = _grid->CheckerBoardShiftForCB(_checkerboard,dimension,shift,Even);
 	    sshift[1] = _grid->CheckerBoardShiftForCB(_checkerboard,dimension,shift,Odd);
+	    //	    std::cout << "dim "<<dimension<<"cb "<<_checkerboard<<"shift "<<shift<<" sshift " << sshift[0]<<" "<<sshift[1]<<std::endl;
 	    if ( sshift[0] == sshift[1] ) {
 	      if (splice_dim) {
 		GatherStartCommsSimd(source,dimension,shift,0x3,u_comm_buf,u_comm_offset,compress);
@@ -164,23 +165,23 @@ namespace Grid {
 	  assert(comm_dim==1);
 	  assert(shift>=0);
 	  assert(shift<fd);
-	  
+
 	  int buffer_size = _grid->_slice_nblock[dimension]*_grid->_slice_block[dimension];
-	  
+
 	  std::vector<cobj,alignedAllocator<cobj> > send_buf(buffer_size); // hmm...
 	  std::vector<cobj,alignedAllocator<cobj> > recv_buf(buffer_size);
-	  
+
 	  int cb= (cbmask==0x2)? Odd : Even;
 	  int sshift= _grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,cb);
-	  
+
 	  for(int x=0;x<rd;x++){       
-	    
+
 	    int sx        = (x+sshift)%rd;
 	    int comm_proc = ((x+sshift)/rd)%pd;
 
 	    if (comm_proc) {
 	      
-	      int words = send_buf.size();
+	      int words = buffer_size;
 	      if (cbmask != 0x3) words=words>>1;
 	    
 	      int bytes = words * sizeof(cobj);
@@ -201,10 +202,11 @@ namespace Grid {
 				   recv_from_rank,
 				   bytes);
 
-	      for(int i=0;i<buffer_size;i++){
+	      for(int i=0;i<words;i++){
 		u_comm_buf[u_comm_offset+i]=recv_buf[i];
+		//		std::cout << " Halo["<<i<<"] snd "<<send_buf[i]<< " rcv "<<recv_buf[i]<<"  mask 0x"<<cbmask<<std::endl;
 	      }
-	      u_comm_offset+=buffer_size;
+	      u_comm_offset+=words;
 	    }
 	  }
 	}
@@ -241,6 +243,7 @@ namespace Grid {
 	  int buffer_size = _grid->_slice_nblock[dimension]*_grid->_slice_block[dimension];
 	  int words = sizeof(cobj)/sizeof(vector_type);
 
+	  assert(cbmask==0x3); // Fixme think there is a latent bug if not true
 	  /*
 	   * possibly slow to allocate
 	   * Doesn't matter in this test, but may want to preallocate in the 

@@ -171,6 +171,12 @@ namespace Optimization {
 
   struct Mult{
     // Real float
+    inline float32x4_t mac(float32x4_t a, float32x4_t b, float32x4_t c){
+      return vaddq_f32(vmulq_f32(b,c),a);
+    }
+    inline float64x2_t mac(float64x2_t a, float64x2_t b, float64x2_t c){
+      return vaddq_f64(vmulq_f64(b,c),a);
+    }
     inline float32x4_t operator()(float32x4_t a, float32x4_t b){
       return vmulq_f32(a,b);
     }
