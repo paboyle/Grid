@@ -1,13 +1,12 @@
 #ifndef GRID_BINARY_IO_H
 #define GRID_BINARY_IO_H
 
+
 #ifdef HAVE_ENDIAN_H
 #include <endian.h>
 #endif
-
-
 #include <arpa/inet.h>
-
+#include <algorithm>
 // 64bit endian swap is a portability pain
 #ifndef __has_builtin         // Optional of course.
 #define __has_builtin(x) 0  // Compatibility with non-clang compilers.
