@@ -8,6 +8,9 @@
 //----------------------------------------------------------------------
 
 #include <immintrin.h>
+#ifdef AVXFMA4
+#include <x86intrin.h>
+#endif
 // _mm256_set_m128i(hi,lo); // not defined in all versions of immintrin.h
 #ifndef _mm256_set_m128i
 #define _mm256_set_m128i(hi,lo) _mm256_insertf128_si256(_mm256_castsi128_si256(lo),(hi),1)
@@ -146,7 +149,6 @@ namespace Optimization {
 #if defined (AVX2)
             return _mm256_add_epi32(a,b);
 #endif
-
     }
   };
 
@@ -182,7 +184,7 @@ namespace Optimization {
   struct MultComplex{
     // Complex float
     inline __m256 operator()(__m256 a, __m256 b){
-#if defined (AVX1) || defined (AVXFMA4)
+#if defined (AVX1) 
       __m256 ymm0,ymm1,ymm2;
       ymm0 = _mm256_shuffle_ps(a,a,_MM_SELECT_FOUR_FOUR(2,2,0,0)); // ymm0 <- ar ar,
       ymm0 = _mm256_mul_ps(ymm0,b);                       // ymm0 <- ar bi, ar br
@@ -193,9 +195,10 @@ namespace Optimization {
       return _mm256_addsub_ps(ymm0,ymm1);  
 #endif
 #if defined (AVXFMA4)
-      __m256 a_real = _mm256_moveldup_ps( a ); // Ar Ar
-      __m256 a_imag = _mm256_movehdup_ps( a ); // Ai Ai
-      a_imag = _mm256_mul_ps( a_imag, _mm256_shuffle_ps( b,b, _MM_SELECT_FOUR_FOUR(2,3,0,1) );  // (Ai, Ai) * (Bi, Br) = Ai Bi, Ai Br
+      __m256 a_real = _mm256_shuffle_ps(a,a,_MM_SELECT_FOUR_FOUR(2,2,0,0)); // ar ar,
+      __m256 a_imag = _mm256_shuffle_ps(a,a,_MM_SELECT_FOUR_FOUR(3,3,1,1)); // ai ai
+      __m256 tmp = _mm256_shuffle_ps( b,b, _MM_SELECT_FOUR_FOUR(2,3,0,1));
+      a_imag = _mm256_mul_ps( a_imag,tmp  );  // (Ai, Ai) * (Bi, Br) = Ai Bi, Ai Br
       return _mm256_maddsub_ps( a_real, b, a_imag ); // Ar Br , Ar Bi   +- Ai Bi             = ArBr-AiBi , ArBi+AiBr
 #endif
 #if defined (AVX2)
@@ -229,7 +232,7 @@ namespace Optimization {
 	IF IMM0[3] = 0
 	THEN DEST[255:192]=SRC2[191:128] ELSE DEST[255:192]=SRC2[255:192] FI; // Ox5 r<->i   ; 0xC unchanged
       */
-#if defined (AVX1) || defined (AVXFMA4)
+#if defined (AVX1) 
       __m256d ymm0,ymm1,ymm2;
       ymm0 = _mm256_shuffle_pd(a,a,0x0); // ymm0 <- ar ar, ar,ar b'00,00
       ymm0 = _mm256_mul_pd(ymm0,b);      // ymm0 <- ar bi, ar br
@@ -239,8 +242,8 @@ namespace Optimization {
       return _mm256_addsub_pd(ymm0,ymm1);
 #endif
 #if defined (AVXFMA4)
-      __m256d a_real = _mm256_moveldup_pd( a ); // Ar Ar
-      __m256d a_imag = _mm256_movehdup_pd( a ); // Ai Ai
+      __m256d a_real = _mm256_shuffle_pd(a,a,0x0);//arar
+      __m256d a_imag = _mm256_shuffle_pd(a,a,0xF);//aiai
       a_imag = _mm256_mul_pd( a_imag, _mm256_permute_pd( b, 0x5 ) );  // (Ai, Ai) * (Bi, Br) = Ai Bi, Ai Br
       return _mm256_maddsub_pd( a_real, b, a_imag ); // Ar Br , Ar Bi   +- Ai Bi             = ArBr-AiBi , ArBi+AiBr
 #endif
@@ -251,7 +254,30 @@ namespace Optimization {
       return _mm256_fmaddsub_pd( a_real, b, a_imag ); // Ar Br , Ar Bi   +- Ai Bi             = ArBr-AiBi , ArBi+AiBr
 #endif
     }
+
+
   };
+
+#if 0
+  struct ComplexDot {
+
+    inline void Prep(__m256 ari,__m256 &air) {
+      cdotRIperm(ari,air);
+    }
+    inline void Mul(__m256 ari,__m256 air,__m256 b,__m256 &riir,__m256 &iirr) {
+      riir=air*b;
+      iirr=arr*b;
+    };
+    inline void Madd(__m256 ari,__m256 air,__m256 b,__m256 &riir,__m256 &iirr) {
+      mac(riir,air,b);
+      mac(iirr,ari,b);
+    }
+    inline void End(__m256 ari,__m256 &air) {
+      //      cdotRI
+    }
+
+  };
+#endif
 
   struct Mult{
 
