@@ -9,10 +9,10 @@
 
 #include <immintrin.h>
 
-#ifndef KNC_ONLY_STORES
-#define  _mm512_storenrngo_ps _mm512_store_ps  // not present in AVX512
-#define  _mm512_storenrngo_pd _mm512_store_pd  // not present in AVX512
-#endif
+//#ifndef KNC_ONLY_STORES
+//#define  _mm512_storenrngo_ps _mm512_store_ps  // not present in AVX512
+//#define  _mm512_storenrngo_pd _mm512_store_pd  // not present in AVX512
+//#endif
 
 
 namespace Optimization {
