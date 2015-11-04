@@ -61,11 +61,17 @@ namespace Grid {
 	  sshift[1] = _grid->CheckerBoardShiftForCB(_checkerboard,dimension,shift,Odd);
 	  if ( sshift[0] == sshift[1] ) {
 	    Comms(point,dimension,shift,0x3);
+	    //	    std::cout<<"Comms 0x3"<<std::endl;
 	  } else {
 	    Comms(point,dimension,shift,0x1);// if checkerboard is unfavourable take two passes
 	    Comms(point,dimension,shift,0x2);// both with block stride loop iteration
+	    //	    std::cout<<"Comms 0x1 ; 0x2"<<std::endl;
 	  }
 	}
+	//	for(int ss=0;ss<osites;ss++){
+	  //	  std::cout << "point["<<i<<"] "<<ss<<"-> o"<<_entries[i][ss]._offset<<"; l"<<
+	  //	    _entries[i][ss]._is_local<<"; p"<<_entries[i][ss]._permute<<std::endl;
+	//	}
       }
     }
 
@@ -139,13 +145,14 @@ namespace Grid {
       int cb= (cbmask==0x2)? Odd : Even;
       int sshift= _grid->CheckerBoardShiftForCB(_checkerboard,dimension,shift,cb);
       
-      for(int x=0;x<rd;x++){       
-	
-	int offnode = (((x+sshift)%fd) >= rd ); 
-	//	int comm_proc   = ((x+sshift)/ld)%pd;        
-	//	int offnode     = (comm_proc!=0);
-	int sx          = (x+sshift)%rd;
 
+      for(int x=0;x<rd;x++){       
+
+	int sx        =  (x+sshift)%rd;
+	int comm_proc = ((x+sshift)/rd)%pd;
+    	int offnode = (comm_proc!= 0);
+
+	//	std::cout << "Stencil shift "<<shift<<" sshift "<<sshift<<" fd "<<fd<<" rd " <<rd<<" offnode "<<offnode<<" sx "<<sx<<std::endl;
 	int wraparound=0;
 	if ( (shiftpm==-1) && (sx>x) && (grid->_processor_coor[dimension]==0) ) {
 	  wraparound = 1;
@@ -249,7 +256,7 @@ namespace Grid {
 	int so  = plane*_grid->_ostride[dimension]; // base offset for start of plane 
 	int o   = 0;                                      // relative offset to base within plane
 	int bo  = 0;                                      // offset in buffer
-    
+
 	for(int n=0;n<_grid->_slice_nblock[dimension];n++){
 	  for(int b=0;b<_grid->_slice_block[dimension];b++){
 
