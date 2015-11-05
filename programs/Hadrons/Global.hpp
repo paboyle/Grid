@@ -21,6 +21,7 @@
 #define Hadrons_Global_hpp_
 
 #include <Grid.h>
+#include <set>
 
 #define BEGIN_HADRONS_NAMESPACE \
 namespace Hadrons {\
@@ -36,6 +37,11 @@ public:
 };
 
 #define LOG(channel) std::cout << HadronsLog##channel
+#define HADRON_ERROR(msg)\
+LOG(Error) << msg << std::endl;\
+abort();
+
+#define DEBUG_VAR(var) LOG(Debug) << #var << "= " << (var) << std::endl;
 
 extern HadronsLogger HadronsLogError;
 extern HadronsLogger HadronsLogWarning;

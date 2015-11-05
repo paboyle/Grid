@@ -18,6 +18,7 @@
  */
 
 #include <Hadrons/Application.hpp>
+#include <Hadrons/Graph.hpp>
 
 using namespace std;
 using namespace Grid;
@@ -53,6 +54,36 @@ Application::~Application(void)
 
 // execute /////////////////////////////////////////////////////////////////////
 void Application::run(void)
+{
+    Graph<string> g;
+    
+    cout << g << endl;
+    g.addEdge("A", "B");
+    g.addEdge("B", "D");
+    g.addEdge("D", "E");
+    g.addEdge("E", "C");
+    g.addEdge("C", "A");
+    g.addEdge("Z", "Y");
+    g.addEdge("Z", "W");
+    g.addEdge("Z", "R");
+    g.addEdge("W", "R");
+    auto v = g.getAdjacentVertices("B");
+    for (auto &s: v)
+    {
+        cout << s << " ";
+    }
+    cout << endl;
+    cout << g << endl;
+    g.depthFirstSearch();
+    g.removedMarked();
+    cout << g << endl;
+    g.depthFirstSearch();
+    g.removedMarked();
+    cout << g << endl;
+}
+
+// parse parameter file ////////////////////////////////////////////////////////
+void Application::parseParameterFile(void)
 {
     
 }

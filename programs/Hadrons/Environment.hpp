@@ -1,5 +1,5 @@
 /*
- * Application.hpp, part of Grid
+ * Environment.hpp, part of Grid
  *
  * Copyright (C) 2015 Antonin Portelli
  *
@@ -17,32 +17,27 @@
  * along with Grid.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef Hadrons_Application_hpp_
-#define Hadrons_Application_hpp_
+#ifndef Hadrons_Environment_hpp_
+#define Hadrons_Environment_hpp_
 
 #include <Hadrons/Global.hpp>
+#include <Hadrons/Graph.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         Main program manager                               *
+ *                         Global environment                                 *
  ******************************************************************************/
-class Application
+// TODO: make it a singleton
+class Environment
 {
 public:
     // constructor
-    Application(int argc, char *argv[]);
+    Environment(void);
     // destructor
-    virtual ~Application(void);
-    // execute
-    void run(void);
-private:
-    // parse parameter file
-    void parseParameterFile(void);
-private:
-    std::string parameterFileName_;
+    virtual ~Environment(void) = default;
 };
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_Application_hpp_
+#endif // Hadrons_Environment_hpp_
