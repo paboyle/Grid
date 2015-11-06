@@ -16,8 +16,9 @@
 #include <iterator>
 
 #define __X86_64
-#define EXECINFO
-#ifdef EXECINFO
+
+
+#ifdef HAVE_EXECINFO_H
 #include <execinfo.h>
 #endif
 
@@ -225,7 +226,9 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   printf("  mem address %llx\n",(unsigned long long)si->si_addr);
   printf("         code %d\n",si->si_code);
 
-#ifdef __X86_64
+  // Linux/Posix
+#ifdef __linux__ 
+  // And x86 64bit
     ucontext_t * uc= (ucontext_t *)ptr;
   struct sigcontext *sc = (struct sigcontext *)&uc->uc_mcontext;
   printf("  instruction %llx\n",(unsigned long long)sc->rip);
@@ -251,7 +254,7 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   REG(r14);
   REG(r15);
 #endif
-#ifdef EXECINFO
+#ifdef HAVE_EXECINFO_H
   int symbols    = backtrace        (Grid_backtrace_buffer,_NBACKTRACE);
   char **strings = backtrace_symbols(Grid_backtrace_buffer,symbols);
   for (int i = 0; i < symbols; i++){
