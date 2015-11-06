@@ -1,4 +1,5 @@
 #include <Grid.h>
+#include <PerfCount.h>
 
 namespace Grid {
 namespace QCD {
@@ -7,6 +8,7 @@ namespace QCD {
 const std::vector<int> WilsonFermion5DStatic::directions   ({1,2,3,4, 1, 2, 3, 4});
 const std::vector<int> WilsonFermion5DStatic::displacements({1,1,1,1,-1,-1,-1,-1});
 int WilsonFermion5DStatic::HandOptDslash;
+int WilsonFermion5DStatic::AsmOptDslash;
 
   // 5d lattice for DWF.
 template<class Impl>
@@ -220,6 +222,13 @@ void WilsonFermion5D<Impl>::DhopInternal(CartesianStencil & st, LebesgueOrder &l
 
   Compressor compressor(dag);
 
+  // Assume balanced KMP_AFFINITY; this is forced in GridThread.h
+
+  int threads = GridThread::GetThreads();
+  int HT      = GridThread::GetHyperThreads();
+  int cores   = GridThread::GetCores();
+  int nwork = U._grid->oSites();
+  
   st.HaloExchange<SiteSpinor,SiteHalfSpinor,Compressor>(in,comm_buf,compressor);
   
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
@@ -229,10 +238,13 @@ void WilsonFermion5D<Impl>::DhopInternal(CartesianStencil & st, LebesgueOrder &l
   // - 8 linear access unit stride streams per thread for Fermion for hw prefetchable.
   if ( dag == DaggerYes ) {
     if( this->HandOptDslash ) {
-PARALLEL_FOR_LOOP
+#pragma omp parallel for schedule(static)
       for(int ss=0;ss<U._grid->oSites();ss++){
 	for(int s=0;s<Ls;s++){
 	  int sU=ss;
+	  if (    LebesgueOrder::UseLebesgueOrder ) {
+	    sU=lo.Reorder(ss);
+	  }
 	  int sF = s+Ls*sU;
 	  Kernels::DiracOptHandDhopSiteDag(st,U,comm_buf,sF,sU,in,out);
 	  }
@@ -251,16 +263,79 @@ PARALLEL_FOR_LOOP
       }
     }
   } else {
-    if( this->HandOptDslash ) {
-PARALLEL_FOR_LOOP
+    if( this->AsmOptDslash ) {
+      //      for(int i=0;i<1;i++){
+      //      for(int i=0;i< PerformanceCounter::NumTypes(); i++ ){
+      //	PerformanceCounter Counter(i);
+      //	Counter.Start();
+
+#pragma omp parallel for 
+      for(int t=0;t<threads;t++){
+
+	int hyperthread = t%HT;
+	int core        = t/HT;
+
+        int sswork, swork,soff,ssoff,  sU,sF;
+	
+	GridThread::GetWork(nwork,core,sswork,ssoff,cores);
+	GridThread::GetWork(Ls   , hyperthread, swork, soff,HT);
+
+	for(int ss=0;ss<sswork;ss++){
+	  for(int s=soff;s<soff+swork;s++){
+
+	    sU=ss+ ssoff;
+
+	    if ( LebesgueOrder::UseLebesgueOrder ) {
+	      sU = lo.Reorder(sU);
+	    }
+	    sF = s+Ls*sU;
+	    Kernels::DiracOptAsmDhopSite(st,U,comm_buf,sF,sU,in,out,(uint64_t *)0);// &buf[0]
+	  }
+	}
+      }
+      //      Counter.Stop();
+      //      Counter.Report();
+      //      }
+    } else if( this->HandOptDslash ) {
+
+#pragma omp parallel for 
+      for(int t=0;t<threads;t++){
+
+	int hyperthread = t%HT;
+	int core        = t/HT;
+
+        int sswork, swork,soff, sU,sF;
+
+	sswork = (nwork + cores-1)/cores;
+	GridThread::GetWork(Ls   , hyperthread, swork, soff,HT);
+
+	for(int ss=0;ss<sswork;ss++){
+	  sU=ss+core*sswork; // max locality within an L2 slice
+	  if ( LebesgueOrder::UseLebesgueOrder ) {
+	    sU = lo.Reorder(sU);
+	  }
+	  if ( sU < nwork ) {
+	    for(int s=soff;s<soff+swork;s++){
+	      sF = s+Ls*sU;
+	      Kernels::DiracOptHandDhopSite(st,U,comm_buf,sF,sU,in,out);
+	    }
+	  }
+	}
+      }
+
+      /*
+#pragma omp parallel for schedule(static)
       for(int ss=0;ss<U._grid->oSites();ss++){
 	for(int s=0;s<Ls;s++){
-	  //	  int sU=lo.Reorder(ss);
 	  int sU=ss;
+	  if (    LebesgueOrder::UseLebesgueOrder ) {
+	    sU=lo.Reorder(ss);
+	  }
 	  int sF = s+Ls*sU;
 	  Kernels::DiracOptHandDhopSite(st,U,comm_buf,sF,sU,in,out);
 	}
       }
+      */
 
     } else { 
 PARALLEL_FOR_LOOP
