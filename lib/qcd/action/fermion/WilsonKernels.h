@@ -28,6 +28,17 @@ namespace Grid {
      void DiracOptDhopDir(CartesianStencil &st,DoubledGaugeField &U,
 			  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 			  int sF,int sU,const FermionField &in, FermionField &out,int dirdisp,int gamma);
+#if defined(AVX512) || defined(IMCI)
+     void DiracOptAsmDhopSite(CartesianStencil &st,DoubledGaugeField &U,
+			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+			      int sF,int sU,const FermionField &in, FermionField &out,uint64_t *);
+#else
+     void DiracOptAsmDhopSite(CartesianStencil &st,DoubledGaugeField &U,
+			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+			      int sF,int sU,const FermionField &in, FermionField &out,uint64_t *p){
+       DiracOptDhopSite(st,U,buf,sF,sU,in,out); // will template override for Wilson Nc=3
+     }
+#endif
 #define HANDOPT
 #ifdef HANDOPT
      void DiracOptHandDhopSite(CartesianStencil &st,DoubledGaugeField &U,
