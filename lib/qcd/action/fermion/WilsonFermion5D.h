@@ -32,7 +32,8 @@ namespace Grid {
     public:
      INHERIT_IMPL_TYPES(Impl);
      typedef WilsonKernels<Impl> Kernels;
-
+     double commtime;
+     double dslashtime;
       ///////////////////////////////////////////////////////////////
       // Implement the abstract base
       ///////////////////////////////////////////////////////////////
@@ -73,14 +74,14 @@ namespace Grid {
       ///////////////////////////////////////////////////////////////
       // New methods added 
       ///////////////////////////////////////////////////////////////
-      void DerivInternal(CartesianStencil & st,
+      void DerivInternal(StencilImpl & st,
 			 DoubledGaugeField & U,
 			 GaugeField &mat,
 			 const FermionField &A,
 			 const FermionField &B,
 			 int dag);
 
-      void DhopInternal(CartesianStencil & st,
+      void DhopInternal(StencilImpl & st,
 			LebesgueOrder &lo,
 			DoubledGaugeField &U,
 			const FermionField &in, 
@@ -98,6 +99,7 @@ namespace Grid {
       // DoubleStore
       void ImportGauge(const GaugeField &_Umu);
 
+      void Report(void);
       ///////////////////////////////////////////////////////////////
       // Data members require to support the functionality
       ///////////////////////////////////////////////////////////////
@@ -113,9 +115,9 @@ namespace Grid {
       int Ls;
 
       //Defines the stencils for even and odd
-      CartesianStencil Stencil; 
-      CartesianStencil StencilEven; 
-      CartesianStencil StencilOdd; 
+      StencilImpl Stencil; 
+      StencilImpl StencilEven; 
+      StencilImpl StencilOdd; 
 
       // Copy of the gauge field , with even and odd subsets
       DoubledGaugeField Umu;

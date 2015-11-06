@@ -17,15 +17,15 @@ namespace Grid {
      typedef FermionOperator<Impl> Base;
      
     public:
-     void DiracOptDhopSite(CartesianStencil &st,DoubledGaugeField &U,
+     void DiracOptDhopSite(StencilImpl &st,DoubledGaugeField &U,
 			   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 			   int sF,int sU,const FermionField &in, FermionField &out);
       
-     void DiracOptDhopSiteDag(CartesianStencil &st,DoubledGaugeField &U,
+     void DiracOptDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 			      int sF,int sU,const FermionField &in,FermionField &out);
 
-     void DiracOptDhopDir(CartesianStencil &st,DoubledGaugeField &U,
+     void DiracOptDhopDir(StencilImpl &st,DoubledGaugeField &U,
 			  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 			  int sF,int sU,const FermionField &in, FermionField &out,int dirdisp,int gamma);
 #if defined(AVX512) || defined(IMCI)
@@ -41,23 +41,23 @@ namespace Grid {
 #endif
 #define HANDOPT
 #ifdef HANDOPT
-     void DiracOptHandDhopSite(CartesianStencil &st,DoubledGaugeField &U,
+     void DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
 			       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 			       int sF,int sU,const FermionField &in, FermionField &out);
 
-     void DiracOptHandDhopSiteDag(CartesianStencil &st,DoubledGaugeField &U,
+     void DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
 				  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 				  int sF,int sU,const FermionField &in, FermionField &out);
 #else
 
-     void DiracOptHandDhopSite(CartesianStencil &st,DoubledGaugeField &U,
+     void DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
 			       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 			       int sF,int sU,const FermionField &in, FermionField &out)
      {
        DiracOptDhopSite(st,U,buf,sF,sU,in,out); // will template override for Wilson Nc=3
      }
 
-     void DiracOptHandDhopSiteDag(CartesianStencil &st,DoubledGaugeField &U,
+     void DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
 				  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 				  int sF,int sU,const FermionField &in, FermionField &out)
      {

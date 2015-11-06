@@ -204,7 +204,7 @@ namespace Optimization {
 #if defined (AVX2)
       __m256 a_real = _mm256_moveldup_ps( a ); // Ar Ar
       __m256 a_imag = _mm256_movehdup_ps( a ); // Ai Ai
-      a_imag = _mm256_mul_ps( a_imag, _mm256_shuffle_ps( b,b, _MM_SELECT_FOUR_FOUR(2,3,0,1) );  // (Ai, Ai) * (Bi, Br) = Ai Bi, Ai Br
+      a_imag = _mm256_mul_ps( a_imag, _mm256_shuffle_ps( b,b, _MM_SELECT_FOUR_FOUR(2,3,0,1) ));  // (Ai, Ai) * (Bi, Br) = Ai Bi, Ai Br
       return _mm256_fmaddsub_ps( a_real, b, a_imag ); // Ar Br , Ar Bi   +- Ai Bi             = ArBr-AiBi , ArBi+AiBr
 #endif
     }
@@ -248,8 +248,8 @@ namespace Optimization {
       return _mm256_maddsub_pd( a_real, b, a_imag ); // Ar Br , Ar Bi   +- Ai Bi             = ArBr-AiBi , ArBi+AiBr
 #endif
 #if defined (AVX2)
-      __m256d a_real = _mm256_moveldup_pd( a ); // Ar Ar
-      __m256d a_imag = _mm256_movehdup_pd( a ); // Ai Ai
+      __m256d a_real = _mm256_movedup_pd( a ); // Ar Ar
+      __m256d a_imag = _mm256_shuffle_pd(a,a,0xF);//aiai
       a_imag = _mm256_mul_pd( a_imag, _mm256_permute_pd( b, 0x5 ) );  // (Ai, Ai) * (Bi, Br) = Ai Bi, Ai Br
       return _mm256_fmaddsub_pd( a_real, b, a_imag ); // Ar Br , Ar Bi   +- Ai Bi             = ArBr-AiBi , ArBi+AiBr
 #endif

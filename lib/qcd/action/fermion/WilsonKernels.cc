@@ -3,7 +3,7 @@ namespace Grid {
 namespace QCD {
 
 template<class Impl> 
-void WilsonKernels<Impl>::DiracOptDhopSite(CartesianStencil &st,DoubledGaugeField &U,
+void WilsonKernels<Impl>::DiracOptDhopSite(StencilImpl &st,DoubledGaugeField &U,
 						  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 						  int sF,int sU,const FermionField &in, FermionField &out)
 {
@@ -122,7 +122,7 @@ void WilsonKernels<Impl>::DiracOptDhopSite(CartesianStencil &st,DoubledGaugeFiel
 };
 
 template<class Impl> 
-void WilsonKernels<Impl>::DiracOptDhopSiteDag(CartesianStencil &st,DoubledGaugeField &U,
+void WilsonKernels<Impl>::DiracOptDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
 					      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 					      int sF,int sU,const FermionField &in, FermionField &out)
 {
@@ -241,7 +241,7 @@ void WilsonKernels<Impl>::DiracOptDhopSiteDag(CartesianStencil &st,DoubledGaugeF
 }
 
 template<class Impl> 
-void WilsonKernels<Impl>::DiracOptDhopDir(CartesianStencil &st,DoubledGaugeField &U,
+void WilsonKernels<Impl>::DiracOptDhopDir(StencilImpl &st,DoubledGaugeField &U,
 					  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 					  int sF,int sU,const FermionField &in, FermionField &out,int dir,int gamma)
 {

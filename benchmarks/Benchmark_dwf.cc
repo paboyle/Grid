@@ -93,12 +93,13 @@ int main (int argc, char ** argv)
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=1344*volume*ncall;
 
-    std::cout<<GridLogMessage << "Called Dw"<<std::endl;
+    std::cout<<GridLogMessage << "Called Dw "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
     std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
     std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
     err = ref-result; 
     std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
+    Dw.Report();
   }
 
 

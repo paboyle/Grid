@@ -73,14 +73,14 @@ namespace Grid {
       ///////////////////////////////////////////////////////////////
       // Extra methods added by derived
       ///////////////////////////////////////////////////////////////
-      void DerivInternal(CartesianStencil & st,
+      void DerivInternal(StencilImpl & st,
 			 DoubledGaugeField & U,
 			 GaugeField &mat,
 			 const FermionField &A,
 			 const FermionField &B,
 			 int dag);
 
-      void DhopInternal(CartesianStencil & st,DoubledGaugeField & U,
+      void DhopInternal(StencilImpl & st,DoubledGaugeField & U,
 			const FermionField &in, FermionField &out,int dag) ;
 
 
@@ -108,9 +108,9 @@ namespace Grid {
       GridBase                     *  _cbgrid;
 
       //Defines the stencils for even and odd
-      CartesianStencil Stencil; 
-      CartesianStencil StencilEven; 
-      CartesianStencil StencilOdd; 
+      StencilImpl Stencil; 
+      StencilImpl StencilEven; 
+      StencilImpl StencilOdd; 
 
       // Copy of the gauge field , with even and odd subsets
       DoubledGaugeField Umu;
