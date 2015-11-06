@@ -68,6 +68,8 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   comm_buf.resize(Stencil._unified_buffer_size); // this is always big enough to contain EO
 
   ImportGauge(_Umu);
+  commtime=0;
+  dslashtime=0;
 }  
 template<class Impl>
 void WilsonFermion5D<Impl>::ImportGauge(const GaugeField &_Umu)
@@ -85,7 +87,7 @@ void WilsonFermion5D<Impl>::DhopDir(const FermionField &in, FermionField &out,in
   //  assert( (dir>=0)&&(dir<4) ); //must do x,y,z or t;
 
   Compressor compressor(DaggerNo);
-  Stencil.HaloExchange<SiteSpinor,SiteHalfSpinor,Compressor>(in,comm_buf,compressor);
+  Stencil.HaloExchange(in,comm_buf,compressor);
   
   int skip = (disp==1) ? 0 : 1;
 
@@ -105,7 +107,7 @@ PARALLEL_FOR_LOOP
 };
 
 template<class Impl>
-void WilsonFermion5D<Impl>::DerivInternal(CartesianStencil & st,
+void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
 					  DoubledGaugeField & U,
 					  GaugeField &mat,
 					  const FermionField &A,
@@ -122,7 +124,7 @@ void WilsonFermion5D<Impl>::DerivInternal(CartesianStencil & st,
   FermionField Btilde(B._grid);
   FermionField Atilde(B._grid);
 
-  st.HaloExchange<SiteSpinor,SiteHalfSpinor,Compressor>(B,comm_buf,compressor);
+  st.HaloExchange(B,comm_buf,compressor);
 
   Atilde=A;
 
@@ -194,6 +196,27 @@ void WilsonFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
   DerivInternal(StencilOdd,UmuEven,mat,A,B,dag);
 }
 
+
+template<class Impl>
+void WilsonFermion5D<Impl>::Report(void)
+{
+  std::cout<<GridLogMessage << "********************"<<std::endl;
+  std::cout<<GridLogMessage << "Halo   time "<<commtime <<" us"<<std::endl;
+  std::cout<<GridLogMessage << "Dslash time "<<dslashtime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil All    time "<<Stencil.halotime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "********************"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil nosplice time "<<Stencil.nosplicetime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil gather time "<<Stencil.gathertime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil comm   time "<<Stencil.commtime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil scattertime "<<Stencil.scattertime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "********************"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil splice time "<<Stencil.splicetime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil comm   time "<<Stencil.commstime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil gathremtime "<<Stencil.gathermtime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil merge  time "<<Stencil.mergetime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil buf    time "<<Stencil.buftime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "********************"<<std::endl;
+}
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
 				  const FermionField &A,
@@ -212,7 +235,7 @@ void WilsonFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
 }
 
 template<class Impl>
-void WilsonFermion5D<Impl>::DhopInternal(CartesianStencil & st, LebesgueOrder &lo,
+void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
 					 DoubledGaugeField & U,
 					 const FermionField &in, FermionField &out,int dag)
 {
@@ -220,13 +243,16 @@ void WilsonFermion5D<Impl>::DhopInternal(CartesianStencil & st, LebesgueOrder &l
 
   Compressor compressor(dag);
 
-  st.HaloExchange<SiteSpinor,SiteHalfSpinor,Compressor>(in,comm_buf,compressor);
+  commtime -=usecond();
+  st.HaloExchange(in,comm_buf,compressor);
+  commtime +=usecond();
   
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
   // Not loop ordering and data layout.
   // Designed to create 
   // - per thread reuse in L1 cache for U
   // - 8 linear access unit stride streams per thread for Fermion for hw prefetchable.
+  dslashtime -=usecond();
   if ( dag == DaggerYes ) {
     if( this->HandOptDslash ) {
 PARALLEL_FOR_LOOP
@@ -274,6 +300,7 @@ PARALLEL_FOR_LOOP
       }
     }
   }
+  dslashtime +=usecond();
 }
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int dag)

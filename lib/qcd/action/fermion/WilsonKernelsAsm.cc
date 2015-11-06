@@ -73,7 +73,7 @@ namespace Grid {
 namespace QCD {
 
 template<class Impl>
-void WilsonKernels<Impl >::DiracOptAsmDhopSite(CartesianStencil &st,DoubledGaugeField &U,
+void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U,
 						   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 					       int ss,int sU,const FermionField &in, FermionField &out,uint64_t *timers)
 {

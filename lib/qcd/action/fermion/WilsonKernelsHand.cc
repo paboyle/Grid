@@ -282,7 +282,7 @@ namespace QCD {
 
 #ifdef HANDOPT
 template<class Impl>
-void WilsonKernels<Impl >::DiracOptHandDhopSite(CartesianStencil &st,DoubledGaugeField &U,
+void WilsonKernels<Impl >::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
 					       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 					       int ss,int sU,const FermionField &in, FermionField &out)
 {
@@ -526,7 +526,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSite(CartesianStencil &st,DoubledGaug
 }
 
 template<class Impl>
-void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(CartesianStencil &st,DoubledGaugeField &U,
+void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
 						   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 						   int ss,int sU,const FermionField &in, FermionField &out)
 {

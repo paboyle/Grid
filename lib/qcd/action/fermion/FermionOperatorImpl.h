@@ -26,7 +26,7 @@ namespace Grid {
     // and Methods:
     //    void ImportGauge(GridBase *GaugeGrid,DoubledGaugeField &Uds,const GaugeField &Umu)
     //    void DoubleStore(GridBase *GaugeGrid,DoubledGaugeField &Uds,const GaugeField &Umu)
-    //    void multLink(SiteHalfSpinor &phi,const SiteDoubledGaugeField &U,const SiteHalfSpinor &chi,int mu,StencilEntry *SE,CartesianStencil &St)
+    //    void multLink(SiteHalfSpinor &phi,const SiteDoubledGaugeField &U,const SiteHalfSpinor &chi,int mu,StencilEntry *SE,StencilImpl &St)
     //    void InsertForce4D(GaugeField &mat,const FermionField &Btilde,const FermionField &A,int mu)
     //    void InsertForce5D(GaugeField &mat,const FermionField &Btilde,const FermionField &A,int mu)
     //
@@ -101,6 +101,7 @@ namespace Grid {
     typedef typename Impl::SiteSpinor               SiteSpinor;		\
     typedef typename Impl::SiteHalfSpinor       SiteHalfSpinor;		\
     typedef typename Impl::Compressor               Compressor;		\
+    typedef typename Impl::StencilImpl              StencilImpl;	\
     typedef typename Impl::ImplParams ImplParams;
 
     ///////
@@ -111,7 +112,6 @@ namespace Grid {
     public:
 
       typedef ImplGauge<S,Nrepresentation> Gimpl;
-
 
       INHERIT_GIMPL_TYPES(Gimpl);
 
@@ -128,10 +128,11 @@ namespace Grid {
 
       typedef WilsonCompressor<SiteHalfSpinor,SiteSpinor> Compressor;
       typedef WilsonImplParams ImplParams;
+      typedef CartesianStencil<SiteSpinor,SiteHalfSpinor,Compressor> StencilImpl;
       ImplParams Params;
       WilsonImpl(const ImplParams &p= ImplParams()) : Params(p) {}; 
 
-      inline void multLink(SiteHalfSpinor &phi,const SiteDoubledGaugeField &U,const SiteHalfSpinor &chi,int mu,StencilEntry *SE,CartesianStencil &St){
+      inline void multLink(SiteHalfSpinor &phi,const SiteDoubledGaugeField &U,const SiteHalfSpinor &chi,int mu,StencilEntry *SE,StencilImpl &St){
         mult(&phi(),&U(mu),&chi());
       }
 
@@ -198,13 +199,15 @@ PARALLEL_FOR_LOOP
       typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
 
       typedef WilsonCompressor<SiteHalfSpinor,SiteSpinor> Compressor;
+      typedef CartesianStencil<SiteSpinor,SiteHalfSpinor,Compressor> StencilImpl;
 
       typedef GparityWilsonImplParams ImplParams;
       ImplParams Params;
       GparityWilsonImpl(const ImplParams &p= ImplParams()) : Params(p) {}; 
       
+
       // provide the multiply by link that is differentiated between Gparity (with flavour index) and non-Gparity
-      inline void multLink(SiteHalfSpinor &phi,const SiteDoubledGaugeField &U,const SiteHalfSpinor &chi,int mu,StencilEntry *SE,CartesianStencil &St){
+      inline void multLink(SiteHalfSpinor &phi,const SiteDoubledGaugeField &U,const SiteHalfSpinor &chi,int mu,StencilEntry *SE,StencilImpl &St){
 
 	typedef SiteHalfSpinor vobj;
 	typedef typename SiteHalfSpinor::scalar_object sobj;
