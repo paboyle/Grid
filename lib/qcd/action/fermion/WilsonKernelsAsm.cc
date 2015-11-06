@@ -1,4 +1,6 @@
 #include <Grid.h>
+#if defined(AVX512) || defined (IMCI)
+
 #include <simd/Avx512Asm.h>
 
 #undef VLOAD
@@ -312,3 +314,4 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(CartesianStencil &st,DoubledGauge
   template class WilsonKernels<WilsonImplD>; 
 
 }}
+#endif
