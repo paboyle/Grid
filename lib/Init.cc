@@ -29,8 +29,10 @@ namespace Grid {
 //////////////////////////////////////////////////////
 static std::vector<int> Grid_default_latt;
 static std::vector<int> Grid_default_mpi;
-int GridThread::_threads;
 
+int GridThread::_threads =1;
+int GridThread::_hyperthreads=1;
+int GridThread::_cores=1;
 
 const std::vector<int> &GridDefaultLatt(void)     {return Grid_default_latt;};
 const std::vector<int> &GridDefaultMpi(void)      {return Grid_default_mpi;};
@@ -116,12 +118,18 @@ void GridParseLayout(char **argv,int argc,
     arg= GridCmdOptionPayload(argv,argv+argc,"--grid");
     GridCmdOptionIntVector(arg,latt);
   }
-  if( GridCmdOptionExists(argv,argv+argc,"--omp") ){
+  if( GridCmdOptionExists(argv,argv+argc,"--threads") ){
     std::vector<int> ompthreads(0);
-    arg= GridCmdOptionPayload(argv,argv+argc,"--omp");
+    arg= GridCmdOptionPayload(argv,argv+argc,"--threads");
     GridCmdOptionIntVector(arg,ompthreads);
     assert(ompthreads.size()==1);
     GridThread::SetThreads(ompthreads[0]);
+  }
+  if( GridCmdOptionExists(argv,argv+argc,"--cores") ){
+    std::vector<int> cores(0);
+    arg= GridCmdOptionPayload(argv,argv+argc,"--cores");
+    GridCmdOptionIntVector(arg,cores);
+    GridThread::SetCores(cores[0]);
   }
 
 }
