@@ -19,6 +19,7 @@ namespace Grid {
     class WilsonFermion5DStatic { 
     public:
       // S-direction is INNERMOST and takes no part in the parity.
+      static int AsmOptDslash; // these are a temporary hack
       static int HandOptDslash; // these are a temporary hack
       static const std::vector<int> directions;
       static const std::vector<int> displacements;
