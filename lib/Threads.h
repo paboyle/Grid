@@ -24,7 +24,16 @@ namespace Grid {
 class GridThread {
  public:
   static int _threads;
+  static int _hyperthreads;
+  static int _cores;
 
+  static void SetCores(int cr) { 
+#ifdef GRID_OMP
+    _cores = cr;
+#else 
+    _cores = 1;
+#endif
+  }
   static void SetThreads(int thr) { 
 #ifdef GRID_OMP
     _threads = MIN(thr,omp_get_max_threads()) ;
@@ -35,12 +44,15 @@ class GridThread {
   };
   static void SetMaxThreads(void) { 
 #ifdef GRID_OMP
+    setenv("KMP_AFFINITY","balanced",1);
     _threads = omp_get_max_threads();
     omp_set_num_threads(_threads);
 #else 
     _threads = 1;
 #endif
   };
+  static int GetHyperThreads(void) { assert(_threads%_cores ==0); return _threads/_cores; };
+  static int GetCores(void)   { return _cores; };
   static int GetThreads(void) { return _threads; };
   static int SumArraySize(void) {return _threads;};
 
