@@ -324,45 +324,36 @@ PARALLEL_FOR_LOOP
       //      }
     } else if( this->HandOptDslash ) {
 
-#pragma omp parallel for 
+#pragma omp parallel for schedule(static)
       for(int t=0;t<threads;t++){
 
 	int hyperthread = t%HT;
 	int core        = t/HT;
 
-        int sswork, swork,soff, sU,sF;
-
-	sswork = (nwork + cores-1)/cores;
+        int sswork, swork,soff,ssoff,  sU,sF;
+	
+	GridThread::GetWork(nwork,core,sswork,ssoff,cores);
 	GridThread::GetWork(Ls   , hyperthread, swork, soff,HT);
 
 	for(int ss=0;ss<sswork;ss++){
-	  sU=ss+core*sswork; // max locality within an L2 slice
-	  if ( LebesgueOrder::UseLebesgueOrder ) {
-	    sU = lo.Reorder(sU);
-	  }
-	  if ( sU < nwork ) {
-	    for(int s=soff;s<soff+swork;s++){
-	      sF = s+Ls*sU;
-	      Kernels::DiracOptHandDhopSite(st,U,comm_buf,sF,sU,in,out);
-	    }
+	  sU=ss+ ssoff;
+	  for(int s=soff;s<soff+swork;s++){
+	    sF = s+Ls*sU;
+	    Kernels::DiracOptHandDhopSite(st,U,comm_buf,sF,sU,in,out);
 	  }
 	}
       }
-
       /*
+
 #pragma omp parallel for schedule(static)
       for(int ss=0;ss<U._grid->oSites();ss++){
+	int sU=ss;
 	for(int s=0;s<Ls;s++){
-	  int sU=ss;
-	  if (    LebesgueOrder::UseLebesgueOrder ) {
-	    sU=lo.Reorder(ss);
-	  }
 	  int sF = s+Ls*sU;
 	  Kernels::DiracOptHandDhopSite(st,U,comm_buf,sF,sU,in,out);
 	}
       }
       */
-
     } else { 
 PARALLEL_FOR_LOOP
       for(int ss=0;ss<U._grid->oSites();ss++){
