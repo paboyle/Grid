@@ -61,7 +61,7 @@ int main (int argc, char ** argv)
 	std::vector<int> directions(npoint,dir);
 	std::vector<int> displacements(npoint,disp);
 
-	CartesianStencil myStencil(&Fine,npoint,0,directions,displacements);
+	CartesianStencil<vobj,vobj,SimpleCompressor<vobj> > myStencil(&Fine,npoint,0,directions,displacements);
 
 	std::vector<int> ocoor(4);
 	for(int o=0;o<Fine.oSites();o++){
@@ -142,8 +142,8 @@ int main (int argc, char ** argv)
 	std::vector<int> directions(npoint,dir);
 	std::vector<int> displacements(npoint,disp);
 
-	CartesianStencil EStencil(&rbFine,npoint,Even,directions,displacements);
-	CartesianStencil OStencil(&rbFine,npoint,Odd,directions,displacements);
+	CartesianStencil<vobj,vobj,SimpleCompressor<vobj> > EStencil(&rbFine,npoint,Even,directions,displacements);
+	CartesianStencil<vobj,vobj,SimpleCompressor<vobj> > OStencil(&rbFine,npoint,Odd,directions,displacements);
 
 	std::vector<int> ocoor(4);
 	for(int o=0;o<Fine.oSites();o++){
