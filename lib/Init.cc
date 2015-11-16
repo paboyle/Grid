@@ -1,7 +1,6 @@
 /****************************************************************************/
 /* pab: Signal magic. Processor state dump is x86-64 specific               */
 /****************************************************************************/
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -16,10 +15,10 @@
 #include <algorithm>
 #include <iterator>
 
-#undef __X86_64
-#define MAC
+#define __X86_64
 
-#ifdef MAC
+
+#ifdef HAVE_EXECINFO_H
 #include <execinfo.h>
 #endif
 
@@ -31,8 +30,10 @@ namespace Grid {
 //////////////////////////////////////////////////////
 static std::vector<int> Grid_default_latt;
 static std::vector<int> Grid_default_mpi;
-int GridThread::_threads;
 
+int GridThread::_threads =1;
+int GridThread::_hyperthreads=1;
+int GridThread::_cores=1;
 
 const std::vector<int> &GridDefaultLatt(void)     {return Grid_default_latt;};
 const std::vector<int> &GridDefaultMpi(void)      {return Grid_default_mpi;};
@@ -118,12 +119,18 @@ void GridParseLayout(char **argv,int argc,
     arg= GridCmdOptionPayload(argv,argv+argc,"--grid");
     GridCmdOptionIntVector(arg,latt);
   }
-  if( GridCmdOptionExists(argv,argv+argc,"--omp") ){
+  if( GridCmdOptionExists(argv,argv+argc,"--threads") ){
     std::vector<int> ompthreads(0);
-    arg= GridCmdOptionPayload(argv,argv+argc,"--omp");
+    arg= GridCmdOptionPayload(argv,argv+argc,"--threads");
     GridCmdOptionIntVector(arg,ompthreads);
     assert(ompthreads.size()==1);
     GridThread::SetThreads(ompthreads[0]);
+  }
+  if( GridCmdOptionExists(argv,argv+argc,"--cores") ){
+    std::vector<int> cores(0);
+    arg= GridCmdOptionPayload(argv,argv+argc,"--cores");
+    GridCmdOptionIntVector(arg,cores);
+    GridThread::SetCores(cores[0]);
   }
 
 }
@@ -183,6 +190,11 @@ void Grid_init(int *argc,char ***argv)
   if( GridCmdOptionExists(*argv,*argv+*argc,"--lebesgue") ){
     LebesgueOrder::UseLebesgueOrder=1;
   }
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--cacheblocking") ){
+    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--cacheblocking");
+    GridCmdOptionIntVector(arg,LebesgueOrder::Block);
+  }
   GridParseLayout(*argv,*argc,
 		  Grid_default_latt,
 		  Grid_default_mpi);
@@ -222,11 +234,14 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   printf("  mem address %llx\n",(unsigned long long)si->si_addr);
   printf("         code %d\n",si->si_code);
 
-#ifdef __X86_64
+  // Linux/Posix
+#ifdef __linux__ 
+  // And x86 64bit
     ucontext_t * uc= (ucontext_t *)ptr;
   struct sigcontext *sc = (struct sigcontext *)&uc->uc_mcontext;
   printf("  instruction %llx\n",(unsigned long long)sc->rip);
 #define REG(A)  printf("  %s %lx\n",#A,sc-> A);
+
   REG(rdi);
   REG(rsi);
   REG(rbp);
@@ -247,7 +262,7 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   REG(r14);
   REG(r15);
 #endif
-#ifdef MAC
+#ifdef HAVE_EXECINFO_H
   int symbols    = backtrace        (Grid_backtrace_buffer,_NBACKTRACE);
   char **strings = backtrace_symbols(Grid_backtrace_buffer,symbols);
   for (int i = 0; i < symbols; i++){

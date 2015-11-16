@@ -298,7 +298,7 @@ int main (int argc, char ** argv)
       c          = scm()(1,1)(1,2);
       scm()(1,1)(2,1) = c;
 
-      pokeIndex<ColourIndex> (c_m,c,0,0);
+      //      pokeIndex<ColourIndex> (c_m,c,0,0);
     }
 
     FooBar = Bar;

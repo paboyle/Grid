@@ -86,16 +86,16 @@ Test_dwf_hdcr_SOURCES=Test_dwf_hdcr.cc
 Test_dwf_hdcr_LDADD=-lGrid
 
 
-#Test_dwf_lanczos_SOURCES=Test_dwf_lanczos.cc
-#Test_dwf_lanczos_LDADD=-lGrid
+Test_dwf_lanczos_SOURCES=Test_dwf_lanczos.cc
+Test_dwf_lanczos_LDADD=-lGrid
 
 
 Test_gamma_SOURCES=Test_gamma.cc
 Test_gamma_LDADD=-lGrid
 
 
-#Test_gparity_SOURCES=Test_gparity.cc
-#Test_gparity_LDADD=-lGrid
+Test_gparity_SOURCES=Test_gparity.cc
+Test_gparity_LDADD=-lGrid
 
 
 #Test_gpwilson_even_odd_SOURCES=Test_gpwilson_even_odd.cc
@@ -188,6 +188,10 @@ Test_simd_LDADD=-lGrid
 
 Test_stencil_SOURCES=Test_stencil.cc
 Test_stencil_LDADD=-lGrid
+
+
+Test_synthetic_lanczos_SOURCES=Test_synthetic_lanczos.cc
+Test_synthetic_lanczos_LDADD=-lGrid
 
 
 Test_wilson_cg_prec_SOURCES=Test_wilson_cg_prec.cc
