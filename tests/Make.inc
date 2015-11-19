@@ -98,8 +98,8 @@ Test_gparity_SOURCES=Test_gparity.cc
 Test_gparity_LDADD=-lGrid
 
 
-Test_gpwilson_even_odd_SOURCES=Test_gpwilson_even_odd.cc
-Test_gpwilson_even_odd_LDADD=-lGrid
+#Test_gpwilson_even_odd_SOURCES=Test_gpwilson_even_odd.cc
+#Test_gpwilson_even_odd_LDADD=-lGrid
 
 
 Test_hmc_EODWFRatio_SOURCES=Test_hmc_EODWFRatio.cc

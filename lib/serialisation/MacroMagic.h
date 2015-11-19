@@ -111,8 +111,8 @@ THE SOFTWARE.
 #define GRID_MACRO_MEMBER(A,B)        A B;
 
 #define GRID_MACRO_OS_WRITE_MEMBER(A,B) os<< #A <<" "#B <<" = "<< obj. B <<" ; " <<std::endl;
-#define GRID_MACRO_READ_MEMBER(A,B) read(RD,#B,obj. B);
-#define GRID_MACRO_WRITE_MEMBER(A,B) write(WR,#B,obj. B);
+#define GRID_MACRO_READ_MEMBER(A,B) Grid::read(RD,#B,obj. B);
+#define GRID_MACRO_WRITE_MEMBER(A,B) Grid::write(WR,#B,obj. B);
 
 #define GRID_DECL_CLASS_MEMBERS(cname,...)		\
   \
@@ -120,14 +120,16 @@ THE SOFTWARE.
   GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_MEMBER,__VA_ARGS__))		\
   \
   \
-  friend void write(Writer &WR,const std::string &s, const cname &obj){ \
+  template <typename T>\
+  static void write(Writer<T> &WR,const std::string &s, const cname &obj){ \
     push(WR,s);\
     GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_WRITE_MEMBER,__VA_ARGS__))	\
     pop(WR);\
   } \
   \
   \
-  friend void read(Reader &RD,const std::string &s, cname &obj){	\
+  template <typename T>\
+  static void read(Reader<T> &RD,const std::string &s, cname &obj){	\
     push(RD,s);\
     GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_READ_MEMBER,__VA_ARGS__))	\
     pop(RD);\
