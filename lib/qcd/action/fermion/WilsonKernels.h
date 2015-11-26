@@ -33,7 +33,8 @@ namespace Grid {
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 			      int sF,int sU,const FermionField &in, FermionField &out,uint64_t *);
 #else
-     void DiracOptAsmDhopSite(CartesianStencil &st,DoubledGaugeField &U,
+     //void DiracOptAsmDhopSite(CartesianStencil &st,DoubledGaugeField &U,
+     void DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U,
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 			      int sF,int sU,const FermionField &in, FermionField &out,uint64_t *p){
        DiracOptDhopSite(st,U,buf,sF,sU,in,out); // will template override for Wilson Nc=3

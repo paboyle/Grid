@@ -6,7 +6,7 @@
 #include <chrono>
 #include <string.h>
 #include <sys/ioctl.h>
-#include <syscall.h>
+#include <sys/syscall.h>
 #include <linux/perf_event.h>
 
 namespace Grid {
