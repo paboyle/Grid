@@ -649,7 +649,7 @@ until convergence
       int M=Nm;
 
       DenseMatrix<RealD> H; Resize(H,Nm,Nm);
-      Resize(evals,Nm,Nm);
+      Resize(evals,Nm);
       Resize(evecs,Nm);
 
       int ff = Lanczos_Factor(0, M, cont, bq,bf,H); // 0--M to begin with
@@ -765,11 +765,11 @@ until convergence
       RealD resid_nrm=  norm2(bf);
 
       if(!lock) converged = 0;
-
+#if 0
       for(int i = SS - lock_num - 1; i >= SS - Nk && i >= 0; --i){
 
 	RealD diff = 0;
-	diff = abs(tevecs[i][Nm - 1 - lock_num]) * resid_nrm;
+	diff = abs( tevecs[i][Nm - 1 - lock_num] ) * resid_nrm;
 
 	std::cout << "residual estimate " << SS-1-i << " " << diff << " of (" << tevals[i] << ")" << std::endl;
 
@@ -792,6 +792,7 @@ until convergence
 	  break;
 	}
       }
+#endif
       std::cout << "Got " << converged << " so far " <<std::endl;	
     }
 

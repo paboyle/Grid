@@ -8,6 +8,7 @@ using namespace Grid::QCD;
 static int
 FEenableexcept (unsigned int excepts)
 {
+#if 0
   static fenv_t fenv;
   unsigned int new_excepts = excepts & FE_ALL_EXCEPT,
     old_excepts;  // previous masks
@@ -20,6 +21,7 @@ FEenableexcept (unsigned int excepts)
   fenv.__mxcsr   &= ~(new_excepts << 7);
 
   return ( fesetenv (&fenv) ? -1 : old_excepts );
+#endif
 }
 
 
@@ -70,7 +72,7 @@ public:
 int main (int argc, char ** argv)
 {
 
-  FEenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT); 
+  //  FEenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT); 
 
   Grid_init(&argc,&argv);
 
