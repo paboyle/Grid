@@ -21,6 +21,8 @@ FEenableexcept (unsigned int excepts)
   fenv.__mxcsr   &= ~(new_excepts << 7);
 
   return ( fesetenv (&fenv) ? -1 : old_excepts );
+#else
+  return 0;
 #endif
 }
 
