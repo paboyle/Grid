@@ -264,6 +264,9 @@ PARALLEL_FOR_LOOP
 
       for(int i=0;i<nbasis;i++){
 	phi=Subspace.subspace[i];
+	
+	std::cout<<GridLogMessage<<"("<<i<<").."<<std::endl;
+
 	for(int p=0;p<geom.npoint;p++){ 
 
 	  int dir   = geom.directions[p];
