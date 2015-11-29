@@ -35,7 +35,7 @@ public:
 
     random(pRNG,scale);
 
-    scale = exp(-real(scale)*6.0);
+    scale = exp(-real(scale)*3.0);
     std::cout << " True matrix \n"<< scale <<std::endl;
   }
 
@@ -88,8 +88,7 @@ int main (int argc, char ** argv)
   RealD mu    = 0.0;
   int order = 11;
   ChebyshevLanczos<LatticeComplex> Cheby(alpha,beta,mu,order);
-
-  std::ofstream file("pooh.dat");
+  std::ofstream file("cheby.dat");
   Cheby.csv(file);
 
   HermOpOperatorFunction<LatticeComplex> X;
@@ -114,9 +113,9 @@ int main (int argc, char ** argv)
   }
   
   {
-    std::vector<RealD>          eval(Nm);
-    std::vector<LatticeComplex> evec(Nm,grid);
-    ChebyIRL.calc(eval,evec,src, Nconv);
+    //    std::vector<RealD>          eval(Nm);
+    //    std::vector<LatticeComplex> evec(Nm,grid);
+    //    ChebyIRL.calc(eval,evec,src, Nconv);
   }
 
   Grid_finalize();
