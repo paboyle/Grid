@@ -5,22 +5,27 @@
 #include <ctime>
 #include <chrono>
 #include <string.h>
+
 #include <sys/ioctl.h>
+
+#ifdef __linux__
 #include <syscall.h>
 #include <linux/perf_event.h>
-
+#endif
 namespace Grid {
 
 
+#ifdef __linux__
 static long perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
 			    int cpu, int group_fd, unsigned long flags)
 {
-  int ret;
+  int ret=0;
 
   ret = syscall(__NR_perf_event_open, hw_event, pid, cpu,
 		group_fd, flags);
   return ret;
 }
+#endif
 
 
 class PerformanceCounter {
@@ -63,7 +68,6 @@ public:
     
   int PCT;
 
-  struct perf_event_attr pe;
   long long count;
   int fd;
   uint64_t elapsed;
@@ -74,15 +78,19 @@ public:
   }
 
   PerformanceCounter(int _pct) {
+#ifdef __linux__
     assert(_pct>=0);
     assert(_pct<PERFORMANCE_COUNTER_NUM_TYPES);
     fd=-1;
     count=0;
     PCT =_pct;
     Open();
+#endif
   }
   void Open(void) 
   {
+#ifdef __linux__
+    struct perf_event_attr pe;
     memset(&pe, 0, sizeof(struct perf_event_attr));
     pe.size = sizeof(struct perf_event_attr);
 
@@ -99,32 +107,48 @@ public:
       fprintf(stderr, "Error opening leader %llx for event %s\n", pe.config,name);
       perror("Error is");
     }
+#endif
   }
 
   void Start(void)
   {
+#ifdef __linux__
     if ( fd!= -1) {
       ioctl(fd, PERF_EVENT_IOC_RESET, 0);
       ioctl(fd, PERF_EVENT_IOC_ENABLE, 0);
     }
     begin  =__rdtsc();
+#else
+    begin = 0;
+#endif
   }
 
   void Stop(void) {
     count=0;
+#ifdef __linux__
     if ( fd!= -1) {
       ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
       ::read(fd, &count, sizeof(long long));
     }
     elapsed = __rdtsc() - begin;
+#else
+    elapsed = 0;
+#endif
+
   }
   void Report(void) {
+#ifdef __linux__
     printf("%llu cycles %s = %20llu\n", elapsed , PerformanceCounterConfigs[PCT].name, count);
+#else
+    printf("%llu cycles \n", elapsed );
+#endif
   }
 
   ~PerformanceCounter()
   {
+#ifdef __linux__
     close(fd);
+#endif
   }
 
 };

@@ -59,7 +59,7 @@ clang-avx2)
 CXX=clang++ ../../configure --enable-simd=AVX2 CXXFLAGS="-mavx2 -mfma -O3 -std=c++11"  LIBS="-lgmp -lmpfr" --enable-comms=none
   ;;
 clang-avx-openmp)
-CXX=clang-omp++ ../../configure --enable-simd=AVX CXXFLAGS="-mavx -fopenmp -O3 -std=c++11" LDFLAGS="-fopenmp"  LIBS="-lgmp -lmpfr" --enable-comms=none
+CXX=clang-omp++ ../../configure --enable-precision=double --enable-simd=AVX CXXFLAGS="-mavx -fopenmp -O3 -std=c++11" LDFLAGS="-fopenmp"  LIBS="-lgmp -lmpfr" --enable-comms=none
   ;;
 clang-xc30)
 CXX=$HOME/Clang/install/bin/clang++ ../../configure --enable-simd=AVX CXXFLAGS="-mavx -O3 -std=c++11 -I/opt/gcc/4.9.2/snos/include/g++/x86_64-suse-linux/ -I/opt/gcc/4.9.2/snos/include/g++/ " LDFLAGS=""  LIBS="-lgmp -lmpfr" --enable-comms=none

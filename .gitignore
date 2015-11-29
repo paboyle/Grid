@@ -43,6 +43,7 @@
 ########################################
 Makefile.in
 Makefile
+Config.h
 config.log
 config.status
 .deps
