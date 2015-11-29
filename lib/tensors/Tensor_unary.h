@@ -111,7 +111,7 @@ template<class obj,int N> inline auto toComplex(const iMatrix<obj,N> &z) -> type
   return ret;
 }
 
-
+BINARY_RSCALAR(div,Integer);
 BINARY_RSCALAR(mod,Integer);
 BINARY_RSCALAR(pow,RealD);
 
