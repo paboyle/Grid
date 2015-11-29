@@ -137,7 +137,7 @@ private:
     } catch(std::istringstream::failure e) {
       std::cerr << "XML read failure on "<<" "<<asString<<" "<<typeid(T).name()<<std::endl;
     }
-    assert( is.tellg()==-1);
+    //    assert( is.tellg()==-1);
   }
   
 };
