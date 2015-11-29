@@ -266,11 +266,8 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
     if( this->HandOptDslash ) {
 #pragma omp parallel for schedule(static)
       for(int ss=0;ss<U._grid->oSites();ss++){
+	int sU=ss;
 	for(int s=0;s<Ls;s++){
-	  int sU=ss;
-	  if (    LebesgueOrder::UseLebesgueOrder ) {
-	    sU=lo.Reorder(ss);
-	  }
 	  int sF = s+Ls*sU;
 	  Kernels::DiracOptHandDhopSiteDag(st,U,comm_buf,sF,sU,in,out);
 	  }
@@ -323,6 +320,7 @@ PARALLEL_FOR_LOOP
       //      Counter.Report();
       //      }
     } else if( this->HandOptDslash ) {
+      /*
 
 #pragma omp parallel for schedule(static)
       for(int t=0;t<threads;t++){
@@ -343,7 +341,7 @@ PARALLEL_FOR_LOOP
 	  }
 	}
       }
-      /*
+      */
 
 #pragma omp parallel for schedule(static)
       for(int ss=0;ss<U._grid->oSites();ss++){
@@ -353,13 +351,11 @@ PARALLEL_FOR_LOOP
 	  Kernels::DiracOptHandDhopSite(st,U,comm_buf,sF,sU,in,out);
 	}
       }
-      */
     } else { 
 PARALLEL_FOR_LOOP
       for(int ss=0;ss<U._grid->oSites();ss++){
+	int sU=ss;
 	for(int s=0;s<Ls;s++){
-	  //	  int sU=lo.Reorder(ss);
-	  int sU=ss;
 	  int sF = s+Ls*sU; 
 	  Kernels::DiracOptDhopSite(st,U,comm_buf,sF,sU,in,out);
 	}
