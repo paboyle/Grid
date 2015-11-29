@@ -6,7 +6,7 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-class myclass {
+class myclass: Serializable {
 public:
 
   GRID_DECL_CLASS_MEMBERS(myclass,
@@ -446,7 +446,7 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  XMLReader RD("params.xml");
+  XmlReader RD("params.xml");
   read(RD,"params",params);
   std::cout<<"Params: Order "<<params.order<<"["<<params.lo<<","<<params.hi<<"]"<< " steps "<<params.steps<<std::endl;
 

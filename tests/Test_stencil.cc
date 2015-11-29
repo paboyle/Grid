@@ -62,11 +62,7 @@ int main (int argc, char ** argv)
 	std::vector<int> directions(npoint,dir);
 	std::vector<int> displacements(npoint,disp);
 
-<<<<<<< HEAD
-	CartesianStencil<vobj,vobj,SimpleCompressor<vobj> > myStencil(&Fine,npoint,0,directions,displacements);
-=======
 	Stencil myStencil(&Fine,npoint,0,directions,displacements);
->>>>>>> bc4b2528835e646fab1b186506b4740d97b02243
 
 	std::vector<int> ocoor(4);
 	for(int o=0;o<Fine.oSites();o++){
