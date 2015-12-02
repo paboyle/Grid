@@ -420,7 +420,7 @@ std::vector<Graph<T>> Graph<T>::getConnectedComponents(void) const
     return res;
 }
 
-// topological sort using Kahn's algorithm
+// topological sort using Tarjan's algorithm
 template <typename T>
 std::stack<T> Graph<T>::topoSort(void)
 {
