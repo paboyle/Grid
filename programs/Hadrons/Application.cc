@@ -57,29 +57,32 @@ void Application::run(void)
 {
     Graph<string> g;
     
-    cout << g << endl;
     g.addEdge("A", "B");
     g.addEdge("B", "D");
     g.addEdge("D", "E");
     g.addEdge("E", "C");
-    g.addEdge("C", "A");
     g.addEdge("Z", "Y");
     g.addEdge("Z", "W");
     g.addEdge("Z", "R");
     g.addEdge("W", "R");
-    auto v = g.getAdjacentVertices("B");
-    for (auto &s: v)
+    g.addEdge("U", "I");
+    
+    cout << g << endl;
+    auto vec = g.getConnectedComponents();
+    for (auto &h: vec)
     {
-        cout << s << " ";
+        cout << h << endl;
     }
-    cout << endl;
-    cout << g << endl;
-    g.depthFirstSearch();
-    g.removedMarked();
-    cout << g << endl;
-    g.depthFirstSearch();
-    g.removedMarked();
-    cout << g << endl;
+    for (auto &h: vec)
+    {
+        auto top = h.topoSort();
+        while (!top.empty())
+        {
+            cout << top.top() << " ";
+            top.pop();
+        }
+        cout << endl;
+    }
 }
 
 // parse parameter file ////////////////////////////////////////////////////////

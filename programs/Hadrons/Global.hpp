@@ -22,6 +22,7 @@
 
 #include <Grid.h>
 #include <set>
+#include <stack>
 
 #define BEGIN_HADRONS_NAMESPACE \
 namespace Hadrons {\

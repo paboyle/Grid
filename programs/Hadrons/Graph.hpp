@@ -48,17 +48,22 @@ public:
     // destructor
     virtual ~Graph(void) = default;
     // access
-    void addVertex(const T &value);
-    void addEdge(const Edge &e);
-    void addEdge(const T &start, const T &end);
-    void removeVertex(const T &value);
-    void removeEdge(const Edge &e);
-    void removeEdge(const T &start, const T &end);
+    void         addVertex(const T &value);
+    void         addEdge(const Edge &e);
+    void         addEdge(const T &start, const T &end);
+    void         removeVertex(const T &value);
+    void         removeEdge(const Edge &e);
+    void         removeEdge(const T &start, const T &end);
+    unsigned int size(void) const;
     // tests
     bool gotValue(const T &value) const;
     // graph topological manipulations
     std::vector<T>        getAdjacentVertices(const T &value) const;
+    std::vector<T>        getChildren(const T &value) const;
+    std::vector<T>        getParents(const T &value) const;
+    std::vector<T>        getRoots(void) const;
     std::vector<Graph<T>> getConnectedComponents(void) const;
+    std::stack<T>         topoSort(void);
     // I/O
     friend std::ostream & operator<<(std::ostream &out, const Graph<T> &g)
     {
@@ -75,14 +80,18 @@ public:
         
         return out;
     }
-public:
+private:
     // vertex marking
-    void mark(const T &value, const bool doMark = true);
-    void unmark(const T &value);
-    bool isMarked(const T &value) const;
+    void      mark(const T &value, const bool doMark = true);
+    void      markAll(const bool doMark = true);
+    void      unmark(const T &value);
+    void      unmarkAll(void);
+    bool      isMarked(const T &value) const;
+    const T * getFirstMarked(const bool isMarked = true) const;
+    const T * getFirstUnmarked(void) const;
     // prune marked/unmarked vertices
-    void removedMarked(const bool isMarked = true);
-    void removedUnmarked(void);
+    void removeMarked(const bool isMarked = true);
+    void removeUnmarked(void);
     // depth-first search marking
     void depthFirstSearch(void);
     void depthFirstSearch(const T &root);
@@ -165,6 +174,12 @@ void Graph<T>::removeEdge(const T &start, const T &end)
     removeEdge(Edge(start, end));
 }
 
+template <typename T>
+unsigned int Graph<T>::size(void) const
+{
+    return isMarked_.size();
+}
+
 // tests ///////////////////////////////////////////////////////////////////////
 template <typename T>
 bool Graph<T>::gotValue(const T &value) const
@@ -196,9 +211,24 @@ void Graph<T>::mark(const T &value, const bool doMark)
 }
 
 template <typename T>
+void Graph<T>::markAll(const bool doMark)
+{
+    for (auto &v: isMarked_)
+    {
+        mark(v.first, doMark);
+    }
+}
+
+template <typename T>
 void Graph<T>::unmark(const T &value)
 {
     mark(value, false);
+}
+
+template <typename T>
+void Graph<T>::unmarkAll(void)
+{
+    markAll(false);
 }
 
 template <typename T>
@@ -216,9 +246,34 @@ bool Graph<T>::isMarked(const T &value) const
     }
 }
 
+template <typename T>
+const T * Graph<T>::getFirstMarked(const bool isMarked) const
+{
+    auto pred = [&isMarked](const std::pair<T, bool> &v)
+    {
+        return (v.second == isMarked);
+    };
+    auto vIt = std::find_if(isMarked_.begin(), isMarked_.end(), pred);
+    
+    if (vIt != isMarked_.end())
+    {
+        return &(vIt->first);
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
+template <typename T>
+const T * Graph<T>::getFirstUnmarked(void) const
+{
+    return getFirstMarked(false);
+}
+
 // prune marked/unmarked vertices //////////////////////////////////////////////
 template <typename T>
-void Graph<T>::removedMarked(const bool isMarked)
+void Graph<T>::removeMarked(const bool isMarked)
 {
     auto isMarkedCopy = isMarked_;
     
@@ -232,9 +287,9 @@ void Graph<T>::removedMarked(const bool isMarked)
 }
 
 template <typename T>
-void Graph<T>::removedUnmarked(void)
+void Graph<T>::removeUnmarked(void)
 {
-    removedMarked(false);
+    removeMarked(false);
 }
 
 // depth-first search marking //////////////////////////////////////////////////
@@ -289,9 +344,127 @@ std::vector<T> Graph<T>::getAdjacentVertices(const T &value) const
 }
 
 template <typename T>
+std::vector<T> Graph<T>::getChildren(const T &value) const
+{
+    std::vector<T> child;
+    
+    auto pred = [&value](const Edge &e)
+    {
+        return (e.first == value);
+    };
+    auto eIt = find_if(edgeSet_.begin(), edgeSet_.end(), pred);
+    
+    while (eIt != edgeSet_.end())
+    {
+        child.push_back((*eIt).second);
+        eIt = find_if(++eIt, edgeSet_.end(), pred);
+    }
+    
+    return child;
+}
+
+template <typename T>
+std::vector<T> Graph<T>::getParents(const T &value) const
+{
+    std::vector<T> parent;
+    
+    auto pred = [&value](const Edge &e)
+    {
+        return (e.second == value);
+    };
+    auto eIt = find_if(edgeSet_.begin(), edgeSet_.end(), pred);
+    
+    while (eIt != edgeSet_.end())
+    {
+        parent.push_back((*eIt).first);
+        eIt = find_if(++eIt, edgeSet_.end(), pred);
+    }
+    
+    return parent;
+}
+
+template <typename T>
+std::vector<T> Graph<T>::getRoots(void) const
+{
+    std::vector<T> root;
+    
+    for (auto &v: isMarked_)
+    {
+        auto parent = getParents(v.first);
+        
+        if (parent.size() == 0)
+        {
+            root.push_back(v.first);
+        }
+    }
+    
+    return root;
+}
+
+template <typename T>
 std::vector<Graph<T>> Graph<T>::getConnectedComponents(void) const
 {
+    std::vector<Graph<T>> res;
+    Graph<T>              copy(*this);
     
+    while (copy.size() > 0)
+    {
+        copy.depthFirstSearch();
+        res.push_back(copy);
+        res.back().removeUnmarked();
+        res.back().unmarkAll();
+        copy.removeMarked();
+        copy.unmarkAll();
+    }
+    
+    return res;
+}
+
+// topological sort using Kahn's algorithm
+template <typename T>
+std::stack<T> Graph<T>::topoSort(void)
+{
+    std::stack<T>     res;
+    const T           *vPt;
+    std::map<T, bool> tmpMarked(isMarked_);
+    
+    // visit function
+    std::function<void(const T &)> visit = [&](const T &v)
+    {
+        if (tmpMarked.at(v))
+        {
+            HADRON_ERROR("cannot topologically sort a cyclic graph");
+        }
+        if (!this->isMarked(v))
+        {
+            std::vector<T> child = this->getChildren(v);
+            
+            tmpMarked[v] = true;
+            for (auto &c: child)
+            {
+                visit(c);
+            }
+            this->mark(v);
+            tmpMarked[v] = false;
+            res.push(v);
+        }
+    };
+    
+    // reset temporary marks
+    for (auto &v: tmpMarked)
+    {
+        tmpMarked.at(v.first) = false;
+    }
+    // loop on unmarked vertices
+    vPt = getFirstUnmarked();
+    while (vPt)
+    {
+        visit(*vPt);
+        vPt = getFirstUnmarked();
+    }
+    unmarkAll();
+    
+    return res;
 }
 
 END_HADRONS_NAMESPACE
