@@ -1,4 +1,3 @@
-#if 0
 #ifndef GRID_IRL_H
 #define GRID_IRL_H
 
@@ -18,8 +17,9 @@ template<class Field>
     const RealD small = 1.0e-16;
 public:       
     int lock;
-    int converged;
+    int get;
     int Niter;
+    int converged;
 
     int Nk;      // Number of converged sought
     int Np;      // Np -- Number of spare vecs in kryloc space
@@ -59,6 +59,7 @@ public:
     // Sanity checked this routine (step) against Saad.
     /////////////////////////
     void RitzMatrix(DenseVector<Field>& evec,int k){
+
       if(1) return;
 
       GridBase *grid = evec[0]._grid;
@@ -451,8 +452,9 @@ until convergence
 	std::cout << " -- Nconv       = "<< Nconv  << "\n";
       }
 
-
+    /////////////////////////////////////////////////
     // Adapted from Rudy's lanczos factor routine
+    /////////////////////////////////////////////////
     int Lanczos_Factor(int start, int end,  int cont,
 		       DenseVector<Field> & bq, 
 		       Field &bf,
@@ -546,9 +548,15 @@ until convergence
 	std::cout << "alpha = " << alpha << " fnorm = " << fnorm << '\n';
 
 	///Iterative refinement of orthogonality V = [ bq[0]  bq[1]  ...  bq[M] ]
-#if 0
 	int re = 0;
+	// FIXME undefined params; how set in Rudy's code
+	int ref =0;
+	Real rho = 1.0e-8;
+
 	while( re == ref || (sqbt < rho * bck && re < 5) ){
+
+	  Field tmp2(grid);
+	  Field tmp1(grid);
 
 	  //bex = V^dag bf
 	  DenseVector<ComplexD> bex(j+1);
@@ -566,14 +574,14 @@ until convergence
 
 	  //bf = bf - V V^dag bf.   Subtracting off any component in span { V[j] } 
 	  RealD btc = axpy_norm(bf,-1.0,tmp2,bf);
-	  alpha = alpha + bex[j];	      sqbt = sqrt(real(btc));	      
+	  alpha = alpha + real(bex[j]);	      sqbt = sqrt(real(btc));	      
+	  // FIXME is alpha real in RUDY's code?
 	  RealD nmbex = 0;for(int k=0;k<j+1;k++){nmbex = nmbex + real( conjugate(bex[k])*bex[k]  );}
 	  bck = sqrt( nmbex );
 	  re++;
 	}
 	std::cout << "Iteratively refined orthogonality, changes alpha\n";
 	if(re > 1) std::cout << "orthagonality refined " << re << " times" <<std::endl;
-#endif
 	H[j][j]=alpha;
       }
 
@@ -641,7 +649,7 @@ until convergence
       int M=Nm;
 
       DenseMatrix<RealD> H; Resize(H,Nm,Nm);
-      Resize(evals,Nm,Nm);
+      Resize(evals,Nm);
       Resize(evecs,Nm);
 
       int ff = Lanczos_Factor(0, M, cont, bq,bf,H); // 0--M to begin with
@@ -702,7 +710,6 @@ until convergence
 	RealD beta;
 
 	Householder_vector<RealD>(ck, 0, 2, v, beta);
-
 	Householder_mult<RealD>(H,v,beta,0,lock_num+0,lock_num+2,0);
 	Householder_mult<RealD>(H,v,beta,0,lock_num+0,lock_num+2,1);
 	///Accumulate eigenvector
@@ -758,11 +765,11 @@ until convergence
       RealD resid_nrm=  norm2(bf);
 
       if(!lock) converged = 0;
-
+#if 0
       for(int i = SS - lock_num - 1; i >= SS - Nk && i >= 0; --i){
 
 	RealD diff = 0;
-	diff = abs(tevecs[i][Nm - 1 - lock_num]) * resid_nrm;
+	diff = abs( tevecs[i][Nm - 1 - lock_num] ) * resid_nrm;
 
 	std::cout << "residual estimate " << SS-1-i << " " << diff << " of (" << tevals[i] << ")" << std::endl;
 
@@ -785,53 +792,29 @@ until convergence
 	  break;
 	}
       }
+#endif
       std::cout << "Got " << converged << " so far " <<std::endl;	
     }
-#if 0
-    ///Check
-    void Check(void) {
 
-      DenseVector<RealD> goodval(get);
+    ///Check
+    void Check(DenseVector<RealD> &evals,
+	       DenseVector<DenseVector<RealD> > &evecs) {
+
+      DenseVector<RealD> goodval(this->get);
+
       EigenSort(evals,evecs);
 
       int NM = Nm;
-      int Nget = this->get;
-      S **V;
-      V = new S* [NM];
 
-      RealD *QZ;
-      QZ = new RealD [NM*NM];
+      DenseVector< DenseVector<RealD> > V; Size(V,NM);
+      DenseVector<RealD> QZ(NM*NM);
+
       for(int i = 0; i < NM; i++){
 	for(int j = 0; j < NM; j++){
-
-	  QZ[i*NM+j] = this->evecs[i][j];
-      
-          int f_size_cb = 24*dop.cbLs*dop.node_cbvol;
-
-	  for(int cb = this->prec; cb < 2; cb++){
-	    for(int i = 0; i < NM; i++){
-	      V[i] = (S*)(this->bq[i][cb]);
-
-	      const int m0 = 4 * 4; // this is new code
-	      assert(m0 % 16 == 0); // see the reason in VtimesQ.C
-
-	      const int row_per_thread = f_size_cb / (bfmarg::threads);
-	      {
-
-		{
-		  DenseVector<RealD> vrow_tmp0(m0*NM);
-		  DenseVector<RealD> vrow_tmp1(m0*NM);
-		  RealD *row_tmp0 = vrow_tmp0.data();
-		  RealD *row_tmp1 = vrow_tmp1.data();
-		  VtimesQ(QZ, NM, V, row_tmp0, row_tmp1, id * row_per_thread, m0, (id + 1) * row_per_thread);
-		}
-	      }
-	    }
-	  }
+	  // evecs[i][j];
 	}
       }
     }
-#endif
 
 
 /**
@@ -1020,4 +1003,4 @@ static void Lock(DenseMatrix<T> &H, 	///Hess mtx
 
 }
 #endif
-#endif
+

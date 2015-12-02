@@ -96,6 +96,7 @@ namespace Grid
       node_.child("elem").set_name("elem-done");
       i++;
     }
+    //    assert( is.tellg()==-1);
     pop();
   }
   
