@@ -1,8 +1,10 @@
 #include <Grid.h>
+#include <algorithm>
 
 namespace Grid {
 
 int LebesgueOrder::UseLebesgueOrder;
+std::vector<int> LebesgueOrder::Block({2,2,2,2});
 
 LebesgueOrder::IndexInteger LebesgueOrder::alignup(IndexInteger n){
   n--;           // 1000 0011 --> 1000 0010
@@ -15,12 +17,79 @@ LebesgueOrder::IndexInteger LebesgueOrder::alignup(IndexInteger n){
   return n;
 };
 
-LebesgueOrder::LebesgueOrder(GridBase *grid) 
+LebesgueOrder::LebesgueOrder(GridBase *_grid) 
+{
+  grid = _grid;
+  if ( Block[0]==0) ZGraph();
+  else CartesianBlocking();
+}
+
+void LebesgueOrder::CartesianBlocking(void) 
+{
+  _LebesgueReorder.resize(0);
+
+  std::cout << GridLogMessage << " CartesianBlocking ";
+  for(int d=0;d<Block.size();d++) std::cout <<Block[d]<<" ";
+  std::cout<<std::endl; 
+
+  IndexInteger ND = grid->_ndimension;
+
+  assert(ND==4);
+  assert(ND==Block.size());
+
+  std::vector<IndexInteger> dims(ND);
+  std::vector<IndexInteger> xo(ND,0);
+  std::vector<IndexInteger> xi(ND,0);
+
+  for(IndexInteger mu=0;mu<ND;mu++){
+    dims[mu] = grid->_rdimensions[mu];
+  }
+
+  IterateO(ND,ND-1,xo,xi,dims);
+};
+
+void LebesgueOrder::IterateO(int ND,int dim,
+	      std::vector<IndexInteger> & xo,
+	      std::vector<IndexInteger> & xi,
+	      std::vector<IndexInteger> &dims)
+{
+  for(xo[dim]=0;xo[dim]<dims[dim];xo[dim]+=Block[dim]){
+    if ( dim > 0 ) {
+      IterateO(ND,dim-1,xo,xi,dims);
+    } else {
+      IterateI(ND,ND-1,xo,xi,dims);
+    }
+  }
+};
+
+void LebesgueOrder::IterateI(int ND,
+	      int dim,
+	      std::vector<IndexInteger> & xo,
+	      std::vector<IndexInteger> & xi,
+	      std::vector<IndexInteger> &dims)
+{
+  std::vector<IndexInteger> x(ND);
+  for(xi[dim]=0;xi[dim]<std::min(dims[dim]-xo[dim],Block[dim]);xi[dim]++){
+    if ( dim > 0 ) {
+      IterateI(ND,dim-1,xo,xi,dims);
+    } else {
+      for(int d=0;d<ND;d++){
+	x[d]=xi[d]+xo[d];
+      }
+      IndexInteger index;
+      grid->IndexFromCoor(x,index,grid->_rdimensions);
+      _LebesgueReorder.push_back(index);
+    }
+  }
+}
+
+void LebesgueOrder::ZGraph(void) 
 {
   _LebesgueReorder.resize(0);
   
   // Align up dimensions to power of two.
   const IndexInteger one=1;
+
   IndexInteger ND = grid->_ndimension;
   std::vector<IndexInteger> dims(ND);
   std::vector<IndexInteger> adims(ND);
@@ -36,17 +105,7 @@ LebesgueOrder::LebesgueOrder(GridBase *grid)
   // i) avoids recursion 
   // ii) has loop lengths at most the width of a 32 bit word.
   int sitebit=0;
-  int split=2;
-  for(int mu=0;mu<ND;mu++){   // mu 0 takes bit 0; mu 1 takes bit 1 etc...
-    for(int bit=0;bit<split;bit++){
-      IndexInteger mask = one<<bit;
-      if ( mask&(adims[mu]-1) ){
-	bitlist[mu].push_back(sitebit);
-	sitebit++;
-      }
-    }
-  }
-  for(int bit=split;bit<32;bit++){
+  for(int bit=0;bit<32;bit++){
     IndexInteger mask = one<<bit;
     for(int mu=0;mu<ND;mu++){   // mu 0 takes bit 0; mu 1 takes bit 1 etc...
       if ( mask&(adims[mu]-1) ){
@@ -94,10 +153,22 @@ LebesgueOrder::LebesgueOrder(GridBase *grid)
 	+        dims[0]*ax[1]
 	+dims[0]*dims[1]*ax[2]
 	+dims[0]*dims[1]*dims[2]*ax[3];
-      
+
+      assert(site < vol);
       _LebesgueReorder.push_back(site);
     }
-	}
+  }
   assert( _LebesgueReorder.size() == vol );
+
+  std::vector<int> coor(4);
+  for(IndexInteger asite=0;asite<vol;asite++){
+    grid->oCoorFromOindex (coor,_LebesgueReorder[asite]);
+      std::cout << " site "<<asite << "->" << _LebesgueReorder[asite]<< " = ["
+		<< coor[0]<<","
+		<< coor[1]<<","
+		<< coor[2]<<","
+		<< coor[3]<<"]"
+		<<std::endl;
+  }
 }
 }

@@ -157,6 +157,12 @@ namespace Optimization {
   };
 
   struct Mult{
+    inline float  mac(float a, float b,double c){
+      return 0;
+    }
+    inline double mac(double a, double b,double c){
+      return 0;
+    }
     // Real float
     inline float operator()(float a, float b){
       return 0;

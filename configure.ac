@@ -38,6 +38,7 @@ AC_CHECK_HEADERS(mm_malloc.h)
 AC_CHECK_HEADERS(malloc/malloc.h)
 AC_CHECK_HEADERS(malloc.h)
 AC_CHECK_HEADERS(endian.h)
+AC_CHECK_HEADERS(execinfo.h)
 AC_CHECK_HEADERS(gmp.h)
 AC_CHECK_DECLS([ntohll],[], [], [[#include <arpa/inet.h>]])
 AC_CHECK_DECLS([be64toh],[], [], [[#include <arpa/inet.h>]])
@@ -65,7 +66,7 @@ AC_CHECK_FUNCS([gettimeofday])
 #Please install or provide the correct path to your installation
 #Info at: http://www.mpfr.org/)])
 
-AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE4|AVX|AVX2|AVX512|IMCI],\
+AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE4|AVX|AVXFMA4|AVX2|AVX512|IMCI],\
 	[Select instructions to be SSE4.0, AVX 1.0, AVX 2.0+FMA, AVX 512, IMCI])],\
 	[ac_SIMD=${enable_simd}],[ac_SIMD=AVX2])
 
@@ -84,6 +85,15 @@ case ${ac_SIMD} in
      AVX)
        echo Configuring for AVX
        AC_DEFINE([AVX1],[1],[AVX Intrinsics] )
+       if test x"$ax_cv_support_avx_ext" = x"yes"; then  dnl minimal support for AVX
+       supported=yes			  
+       else
+       	AC_MSG_WARN([Your processor does not support AVX instructions])
+       fi
+     ;;
+     AVXFMA4)
+       echo Configuring for AVX
+       AC_DEFINE([AVXFMA4],[1],[AVX Intrinsics with FMA4] )
        if test x"$ax_cv_support_avx_ext" = x"yes"; then  dnl minimal support for AVX
        supported=yes			  
        else

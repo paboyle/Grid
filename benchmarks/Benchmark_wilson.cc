@@ -90,7 +90,7 @@ int main (int argc, char ** argv)
   WilsonFermionR Dw(Umu,Grid,RBGrid,mass);
   
   std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
-  int ncall=10000;
+  int ncall=1000;
   double t0=usecond();
   for(int i=0;i<ncall;i++){
     Dw.Dhop(src,result,0);

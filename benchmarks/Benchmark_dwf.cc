@@ -24,7 +24,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   std::vector<int> latt4 = GridDefaultLatt();
-  const int Ls=8;
+  const int Ls=16;
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
@@ -82,22 +82,25 @@ int main (int argc, char ** argv)
   DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   
   std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
-  int ncall=10;
-  double t0=usecond();
-  for(int i=0;i<ncall;i++){
-    Dw.Dhop(src,result,0);
-  }
-  double t1=usecond();
+  int ncall=100;
+  {
+    double t0=usecond();
+    for(int i=0;i<ncall;i++){
+      Dw.Dhop(src,result,0);
+    }
+    double t1=usecond();
+    
+    double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
+    double flops=1344*volume*ncall;
 
-  double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-  double flops=1344*volume*ncall;
-  
-  std::cout<<GridLogMessage << "Called Dw"<<std::endl;
-  std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
-  std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
-  std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
-  err = ref-result; 
-  std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
+    std::cout<<GridLogMessage << "Called Dw "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
+    std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
+    std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
+    err = ref-result; 
+    std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
+    Dw.Report();
+  }
 
 
   if (1)
@@ -140,6 +143,18 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "src_e"<<norm2(src_e)<<std::endl;
   std::cout<<GridLogMessage << "src_o"<<norm2(src_o)<<std::endl;
 
+  {
+    double t0=usecond();
+    for(int i=0;i<ncall;i++){
+      Dw.DhopEO(src_o,r_e,DaggerNo);
+    }
+    double t1=usecond();
+    
+    double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
+    double flops=(1344.0*volume*ncall)/2;
+
+    std::cout<<GridLogMessage << "Deo mflop/s =   "<< flops/(t1-t0)<<std::endl;
+  }
 
   Dw.DhopEO(src_o,r_e,DaggerNo);
   Dw.DhopOE(src_e,r_o,DaggerNo);

@@ -109,7 +109,7 @@ namespace QCD {
   ///////////////////////////////////
 
   template<class Impl>
-  void WilsonFermion<Impl>::DerivInternal(CartesianStencil & st,
+  void WilsonFermion<Impl>::DerivInternal(StencilImpl & st,
 					  DoubledGaugeField & U,
 					  GaugeField &mat,
 					  const FermionField &A,
@@ -123,7 +123,7 @@ namespace QCD {
     FermionField Atilde(B._grid);
     Atilde = A;
 
-    st.HaloExchange<SiteSpinor,SiteHalfSpinor,Compressor>(B,comm_buf,compressor);
+    st.HaloExchange(B,comm_buf,compressor);
     
     for(int mu=0;mu<Nd;mu++){
       
@@ -242,7 +242,7 @@ PARALLEL_FOR_LOOP
     
     Compressor compressor(dag);
     
-    Stencil.HaloExchange<SiteSpinor,SiteHalfSpinor,Compressor>(in,comm_buf,compressor);
+    Stencil.HaloExchange(in,comm_buf,compressor);
     
 PARALLEL_FOR_LOOP
       for(int sss=0;sss<in._grid->oSites();sss++){
@@ -253,13 +253,13 @@ PARALLEL_FOR_LOOP
 
 
   template<class Impl>
-  void WilsonFermion<Impl>::DhopInternal(CartesianStencil & st,DoubledGaugeField & U,
+  void WilsonFermion<Impl>::DhopInternal(StencilImpl & st,DoubledGaugeField & U,
 					 const FermionField &in, FermionField &out,int dag) {
 
     assert((dag==DaggerNo) ||(dag==DaggerYes));
 
     Compressor compressor(dag);
-    st.HaloExchange<SiteSpinor,SiteHalfSpinor,Compressor>(in,comm_buf,compressor);
+    st.HaloExchange(in,comm_buf,compressor);
     
     if ( dag == DaggerYes ) {
       if( HandOptDslash ) {
