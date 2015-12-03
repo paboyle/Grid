@@ -1,6 +1,17 @@
 #!/bin/bash
 
 export LANG=C
-find . -name "*.cc" -print -exec sed -e "s/${1}/${2}/g" -i .bak {} \;
-find . -name "*.h" -print -exec sed -e "s/${1}/${2}/g" -i .bak {} \;
-find . -name "*.bak" -exec rm -f {} \;
+
+WAS=$1
+shift
+IS=$1
+shift
+
+while (( "$#" )); do
+
+echo $1
+sed -e "s@${WAS}@${IS}@g" -i .bak $1
+
+shift
+
+done

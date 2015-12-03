@@ -9,7 +9,7 @@ template<class vobj> Lattice<vobj> Cshift(const Lattice<vobj> &rhs,int dimension
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::scalar_type scalar_type;
 
-  Lattice<vobj> ret(rhs._grid);
+  Lattice<vobj> ret(rhs._grid); 
   
   int fd = rhs._grid->_fdimensions[dimension];
   int rd = rhs._grid->_rdimensions[dimension];
@@ -26,10 +26,13 @@ template<class vobj> Lattice<vobj> Cshift(const Lattice<vobj> &rhs,int dimension
 
 
   if ( !comm_dim ) {
+    //    std::cout << "Cshift_local" <<std::endl;
     Cshift_local(ret,rhs,dimension,shift); // Handles checkerboarding
   } else if ( splice_dim ) {
+    //    std::cout << "Cshift_comms_simd" <<std::endl;
     Cshift_comms_simd(ret,rhs,dimension,shift);
   } else {
+    //    std::cout << "Cshift_comms" <<std::endl;
     Cshift_comms(ret,rhs,dimension,shift);
   }
   return ret;
@@ -42,9 +45,13 @@ template<class vobj> void Cshift_comms(Lattice<vobj>& ret,const Lattice<vobj> &r
   sshift[0] = rhs._grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,Even);
   sshift[1] = rhs._grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,Odd);
 
+  //  std::cout << "Cshift_comms dim "<<dimension<<"cb "<<rhs.checkerboard<<"shift "<<shift<<" sshift " << sshift[0]<<" "<<sshift[1]<<std::endl;
+
   if ( sshift[0] == sshift[1] ) {
+    //    std::cout << "Single pass Cshift_comms" <<std::endl;
     Cshift_comms(ret,rhs,dimension,shift,0x3);
   } else {
+    //    std::cout << "Two pass Cshift_comms" <<std::endl;
     Cshift_comms(ret,rhs,dimension,shift,0x1);// if checkerboard is unfavourable take two passes
     Cshift_comms(ret,rhs,dimension,shift,0x2);// both with block stride loop iteration
   }
@@ -113,12 +120,16 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
       int xmit_to_rank;
       grid->ShiftedRanks(dimension,comm_proc,xmit_to_rank,recv_from_rank);
 
+
       grid->SendToRecvFrom((void *)&send_buf[0],
 			   xmit_to_rank,
 			   (void *)&recv_buf[0],
 			   recv_from_rank,
 			   bytes);
 
+      //      for(int i=0;i<words;i++){
+      //	std::cout << "SendRecv ["<<i<<"] snd "<<send_buf[i]<<" rcv " << recv_buf[i] << "  0x" << cbmask<<std::endl;
+      //      }
       Scatter_plane_simple (ret,recv_buf,dimension,x,cbmask);
     }
   }

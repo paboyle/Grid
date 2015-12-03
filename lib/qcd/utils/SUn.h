@@ -166,7 +166,7 @@ public:
     su2SubGroupIndex(i0,i1,su2_index);
 
 PARALLEL_FOR_LOOP
-    for(int ss=0;ss!=grid->oSites();ss++){
+    for(int ss=0;ss<grid->oSites();ss++){
       subgroup._odata[ss]()()(0,0) = source._odata[ss]()()(i0,i0);
       subgroup._odata[ss]()()(0,1) = source._odata[ss]()()(i0,i1);
       subgroup._odata[ss]()()(1,0) = source._odata[ss]()()(i1,i0);
@@ -201,7 +201,7 @@ PARALLEL_FOR_LOOP
 
     dest = 1.0; // start out with identity
 PARALLEL_FOR_LOOP
-    for(int ss=0;ss!=grid->oSites();ss++){
+    for(int ss=0;ss<grid->oSites();ss++){
       dest._odata[ss]()()(i0,i0) = subgroup._odata[ss]()()(0,0);
       dest._odata[ss]()()(i0,i1) = subgroup._odata[ss]()()(0,1);
       dest._odata[ss]()()(i1,i0) = subgroup._odata[ss]()()(1,0);
@@ -372,7 +372,7 @@ Note that in step D setting B ~ X - A and using B in place of A in step E will g
     LatticeReal d(grid); d=zero;
     LatticeReal alpha(grid);
 
-    //    std::cout<<"xi "<<xi <<std::endl;
+    //    std::cout<<GridLogMessage<<"xi "<<xi <<std::endl;
     alpha = toReal(2.0*xi);
 
     do { 
@@ -468,11 +468,11 @@ Note that in step D setting B ~ X - A and using B in place of A in step E will g
     LatticeMatrix Vcheck(grid);
     Vcheck = zero;
     Vcheck = where(Accepted,V*adj(V) - 1.0,Vcheck);
-    //    std::cout << "SU3 check " <<norm2(Vcheck)<<std::endl;
+    //    std::cout<<GridLogMessage << "SU3 check " <<norm2(Vcheck)<<std::endl;
     assert(norm2(Vcheck)<1.0e-4);
     
     // Verify the link stays in SU(3)
-    //    std::cout <<"Checking the modified link"<<std::endl;
+    //    std::cout<<GridLogMessage <<"Checking the modified link"<<std::endl;
     Vcheck = link*adj(link) - 1.0;
     assert(norm2(Vcheck)<1.0e-4);
     /////////////////////////////////
@@ -483,61 +483,129 @@ Note that in step D setting B ~ X - A and using B in place of A in step E will g
     for(int gen=0;gen<generators();gen++){
       Matrix ta;
       generator(gen,ta);
-      std::cout<< "Nc = "<<ncolour<<" t_"<<gen<<std::endl;
-      std::cout<<ta<<std::endl;
+      std::cout<<GridLogMessage<< "Nc = "<<ncolour<<" t_"<<gen<<std::endl;
+      std::cout<<GridLogMessage<<ta<<std::endl;
     }
   }
 
   static void testGenerators(void){
     Matrix ta;
     Matrix tb;
-    std::cout<<"Checking trace ta tb is 0.5 delta_ab"<<std::endl;
+    std::cout<<GridLogMessage<<"Checking trace ta tb is 0.5 delta_ab"<<std::endl;
     for(int a=0;a<generators();a++){
       for(int b=0;b<generators();b++){
 	generator(a,ta);
 	generator(b,tb);
 	Complex tr =TensorRemove(trace(ta*tb)); 
-	std::cout<<tr<<" ";
+	std::cout<<GridLogMessage<<tr<<" ";
 	if(a==b) assert(abs(tr-Complex(0.5))<1.0e-6);
 	if(a!=b) assert(abs(tr)<1.0e-6);
       }
-      std::cout<<std::endl;
+      std::cout<<GridLogMessage<<std::endl;
     }
-    std::cout<<"Checking hermitian"<<std::endl;
+    std::cout<<GridLogMessage<<"Checking hermitian"<<std::endl;
     for(int a=0;a<generators();a++){
       generator(a,ta);
-      std::cout<<a<<" ";
+      std::cout<<GridLogMessage<<a<<" ";
       assert(norm2(ta-adj(ta))<1.0e-6);
     }    
-    std::cout<<std::endl;
+    std::cout<<GridLogMessage<<std::endl;
 
-    std::cout<<"Checking traceless"<<std::endl;
+    std::cout<<GridLogMessage<<"Checking traceless"<<std::endl;
     for(int a=0;a<generators();a++){
       generator(a,ta);
       Complex tr =TensorRemove(trace(ta)); 
-      std::cout<<a<<" ";
+      std::cout<<GridLogMessage<<a<<" ";
       assert(abs(tr)<1.0e-6);
     }    
-    std::cout<<std::endl;
+    std::cout<<GridLogMessage<<std::endl;
   }
 
   // reunitarise??
+  static void LieRandomize(GridParallelRNG     &pRNG,LatticeMatrix &out,double scale=1.0){
+    GridBase *grid = out._grid;
+
+    LatticeComplex ca (grid);
+    LatticeMatrix  lie(grid);
+    LatticeMatrix  la (grid);
+    Complex ci(0.0,scale);
+    Complex cone(1.0,0.0);
+    Matrix ta;
+
+    lie=zero;
+    for(int a=0;a<generators();a++){
+
+      random(pRNG,ca); 
+
+      ca = (ca+conjugate(ca))*0.5;
+      ca = ca - 0.5;
+
+      generator(a,ta);
+
+      la=ci*ca*ta;
+
+      lie = lie+la; // e^{i la ta}
+    }
+    taExp(lie,out);
+  }
+
+  static void GaussianLieAlgebraMatrix(GridParallelRNG     &pRNG,LatticeMatrix &out,double scale=1.0){
+    GridBase *grid = out._grid;
+    LatticeReal ca (grid);
+    LatticeMatrix  la (grid);
+    Complex ci(0.0,scale);
+    Matrix ta;
+
+    out=zero;
+    for(int a=0;a<generators();a++){
+      gaussian(pRNG,ca); 
+      generator(a,ta);
+      la=toComplex(ca)*ci*ta;
+      out += la; 
+    }
+
+  }
+
+
+  static void HotConfiguration(GridParallelRNG &pRNG,LatticeGaugeField &out){
+    LatticeMatrix Umu(out._grid);
+    for(int mu=0;mu<Nd;mu++){
+      LieRandomize(pRNG,Umu,1.0);
+      PokeIndex<LorentzIndex>(out,Umu,mu);
+    }
+  }
+  static void TepidConfiguration(GridParallelRNG &pRNG,LatticeGaugeField &out){
+    LatticeMatrix Umu(out._grid);
+    for(int mu=0;mu<Nd;mu++){
+      LieRandomize(pRNG,Umu,0.01);
+      pokeLorentz(out,Umu,mu);
+    }
+  }
+  static void ColdConfiguration(GridParallelRNG &pRNG,LatticeGaugeField &out){
+    LatticeMatrix Umu(out._grid);
+    Umu=1.0;
+    for(int mu=0;mu<Nd;mu++){
+      pokeLorentz(out,Umu,mu);
+    }
+  }
 
   static void taProj( const LatticeMatrix &in,  LatticeMatrix &out){
     out = Ta(in);
   }
   static void taExp( const LatticeMatrix &x,  LatticeMatrix &ex){ 
-    LatticeMatrix xn   = x;
 
+    LatticeMatrix xn(x._grid);
     RealD nfac = 1.0;
-    ex = 1+x; // 1+x
+
+    xn = x;
+    ex =xn+Complex(1.0); // 1+x
 
     // Do a 12th order exponentiation
-    for(int i= 2; i <= 12; ++i)
+    for(int i=2; i <= 12; ++i)
     {
-      nfac = nfac/i; 
+      nfac = nfac/RealD(i); //1/2, 1/2.3 ...
       xn   = xn * x; // x2, x3,x4....
-      ex  += xn*nfac;// x2/2!, x3/3!....
+      ex   = ex+ xn*nfac;// x2/2!, x3/3!....
     }
   }
 

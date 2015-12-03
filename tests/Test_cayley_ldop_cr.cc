@@ -4,47 +4,26 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-
-template<class d>
-struct scal {
-  d internal;
-};
-
-  Gamma::GammaMatrix Gmu [] = {
-    Gamma::GammaX,
-    Gamma::GammaY,
-    Gamma::GammaZ,
-    Gamma::GammaT
-  };
-
-double lowpass(double x)
-{
-  return pow(x*x+1.0,-2);
-}
-
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  Chebyshev<LatticeFermion> filter(-150.0, 150.0,16, lowpass);
-  ofstream csv(std::string("filter.dat"),std::ios::out|std::ios::trunc);
-  filter.csv(csv);
-  csv.close();
-
   const int Ls=8;
 
-  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());
+  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
 
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
-  // Construct a coarsened grid
+  ///////////////////////////////////////////////////
+  // Construct a coarsened grid; utility for this?
+  ///////////////////////////////////////////////////
   std::vector<int> clatt = GridDefaultLatt();
   for(int d=0;d<clatt.size();d++){
     clatt[d] = clatt[d]/2;
   }
-  GridCartesian *Coarse4d =  SpaceTimeGrid::makeFourDimGrid(clatt, GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());;
+  GridCartesian *Coarse4d =  SpaceTimeGrid::makeFourDimGrid(clatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());;
   GridCartesian *Coarse5d =  SpaceTimeGrid::makeFiveDimGrid(1,Coarse4d);
 
   std::vector<int> seeds4({1,2,3,4});
@@ -59,80 +38,64 @@ int main (int argc, char ** argv)
   LatticeFermion    ref(FGrid); ref=zero;
   LatticeFermion    tmp(FGrid);
   LatticeFermion    err(FGrid);
-  LatticeGaugeField Umu(UGrid); gaussian(RNG4,Umu);
+  LatticeGaugeField Umu(UGrid); 
 
-
-  //random(RNG4,Umu);
   NerscField header;
   std::string file("./ckpoint_lat.400");
-  readNerscConfiguration(Umu,header,file);
+  NerscIO::readConfiguration(Umu,header,file);
 
-#if 0
-  LatticeColourMatrix U(UGrid);
-  Complex cone(1.0,0.0);
-  for(int nn=0;nn<Nd;nn++){
-    if (nn==3) { 
-      U=zero; std::cout << "zeroing gauge field in dir "<<nn<<std::endl;
-    //    else       { U[nn]= cone;std::cout << "unit gauge field in dir "<<nn<<std::endl; }
-      pokeIndex<LorentzIndex>(Umu,U,nn);
-    }
-  }
-#endif  
-  RealD mass=0.5;
-  RealD M5=1.8;
+  //  SU3::ColdConfiguration(RNG4,Umu);
+  //  SU3::TepidConfiguration(RNG4,Umu);
+  //  SU3::HotConfiguration(RNG4,Umu);
+  //  Umu=zero;
 
-  DomainWallFermion Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  Gamma5R5HermitianLinearOperator<DomainWallFermion,LatticeFermion> HermIndefOp(Ddwf);
+  RealD mass=0.1;
+  RealD M5=1.5;
+
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Building g5R5 hermitian DWF operator" <<std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> HermIndefOp(Ddwf);
 
   const int nbasis = 8;
-  std::vector<LatticeFermion> subspace(nbasis,FGrid);
-  LatticeFermion noise(FGrid);
-  LatticeFermion ms(FGrid);
-  for(int b=0;b<nbasis;b++){
-    Gamma g5(Gamma::Gamma5);
-    gaussian(RNG5,noise);
-    RealD scale = pow(norm2(noise),-0.5); 
-    noise=noise*scale;
 
-    HermIndefOp.HermOp(noise,ms); std::cout << "Noise    "<<b<<" Ms "<<norm2(ms)<< " "<< norm2(noise)<<std::endl;
-
-
-    //    filter(HermIndefOp,noise,subspace[b]);
-    // inverse iteration
-    MdagMLinearOperator<DomainWallFermion,LatticeFermion> HermDefOp(Ddwf);
-    ConjugateGradient<LatticeFermion> CG(1.0e-5,10000);
-
-    for(int i=0;i<4;i++){
-
-      CG(HermDefOp,noise,subspace[b]);
-      noise = subspace[b];
-
-      scale = pow(norm2(noise),-0.5); 
-      noise=noise*scale;
-      HermDefOp.HermOp(noise,ms); std::cout << "filt    "<<b<<" <u|H|u> "<<norm2(ms)<< " "<< norm2(noise)<<std::endl;
-    }
-
-    subspace[b] = noise;
-    HermIndefOp.HermOp(subspace[b],ms); std::cout << "Filtered "<<b<<" Ms "<<norm2(ms)<< " "<<norm2(subspace[b]) <<std::endl;
-  }
-  std::cout << "Computed randoms"<< std::endl;
-
+  typedef Aggregation<vSpinColourVector,vTComplex,nbasis>     Subspace;
   typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LittleDiracOperator;
-  typedef LittleDiracOperator::CoarseVector CoarseVector;
+  typedef LittleDiracOperator::CoarseVector                   CoarseVector;
+
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Calling Aggregation class to build subspace" <<std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermDefOp(Ddwf);
+  Subspace Aggregates(Coarse5d,FGrid);
+  Aggregates.CreateSubspace(RNG5,HermDefOp);
+
 
   LittleDiracOperator LittleDiracOp(*Coarse5d);
-  LittleDiracOp.CoarsenOperator(FGrid,HermIndefOp,subspace);
+  LittleDiracOp.CoarsenOperator(FGrid,HermIndefOp,Aggregates);
   
   CoarseVector c_src (Coarse5d);
   CoarseVector c_res (Coarse5d);
   gaussian(CRNG,c_src);
   c_res=zero;
 
-  std::cout << "Solving MCR on coarse space "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Solving mdagm-CG on coarse space "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  MdagMLinearOperator<LittleDiracOperator,CoarseVector> PosdefLdop(LittleDiracOp);
+  ConjugateGradient<CoarseVector> CG(1.0e-6,10000);
+  CG(PosdefLdop,c_src,c_res);
+
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Solving indef-MCR on coarse space "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   HermitianLinearOperator<LittleDiracOperator,CoarseVector> HermIndefLdop(LittleDiracOp);
-  ConjugateResidual<CoarseVector> MCR(1.0e-8,10000);
+  ConjugateResidual<CoarseVector> MCR(1.0e-6,10000);
   MCR(HermIndefLdop,c_src,c_res);
 
-  std::cout << "Done "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Done "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   Grid_finalize();
 }

@@ -132,18 +132,18 @@ inline void CBFromExpression(int &cb,const T1& lat)   // Lattice leaf
     assert(cb==lat.checkerboard);
   } 
   cb=lat.checkerboard;
-  //  std::cout<<"Lattice leaf cb "<<cb<<std::endl;
+  //  std::cout<<GridLogMessage<<"Lattice leaf cb "<<cb<<std::endl;
 }
 template<class T1,typename std::enable_if<!is_lattice<T1>::value, T1>::type * = nullptr >
 inline void CBFromExpression(int &cb,const T1& notlat)   // non-lattice leaf
 {
-  //  std::cout<<"Non lattice leaf cb"<<cb<<std::endl;
+  //  std::cout<<GridLogMessage<<"Non lattice leaf cb"<<cb<<std::endl;
 }
 template <typename Op, typename T1>
 inline void CBFromExpression(int &cb,const LatticeUnaryExpression<Op,T1 > &expr)
 {
   CBFromExpression(cb,std::get<0>(expr.second));// recurse 
-  //  std::cout<<"Unary node cb "<<cb<<std::endl;
+  //  std::cout<<GridLogMessage<<"Unary node cb "<<cb<<std::endl;
 }
 
 template <typename Op, typename T1, typename T2>
@@ -151,7 +151,7 @@ inline void CBFromExpression(int &cb,const LatticeBinaryExpression<Op,T1,T2> &ex
 {
   CBFromExpression(cb,std::get<0>(expr.second));// recurse
   CBFromExpression(cb,std::get<1>(expr.second));
-  //  std::cout<<"Binary node cb "<<cb<<std::endl;
+  //  std::cout<<GridLogMessage<<"Binary node cb "<<cb<<std::endl;
 }
 template <typename Op, typename T1, typename T2, typename T3>
 inline void CBFromExpression( int &cb,const LatticeTrinaryExpression<Op,T1,T2,T3 > &expr) 
@@ -159,7 +159,7 @@ inline void CBFromExpression( int &cb,const LatticeTrinaryExpression<Op,T1,T2,T3
   CBFromExpression(cb,std::get<0>(expr.second));// recurse
   CBFromExpression(cb,std::get<1>(expr.second));
   CBFromExpression(cb,std::get<2>(expr.second));
-  //  std::cout<<"Trinary node cb "<<cb<<std::endl;
+  //  std::cout<<GridLogMessage<<"Trinary node cb "<<cb<<std::endl;
 }
 
 ////////////////////////////////////////////
@@ -178,6 +178,7 @@ GridUnopClass(UnaryConj,conjugate(a));
 GridUnopClass(UnaryTrace,trace(a));
 GridUnopClass(UnaryTranspose,transpose(a));
 GridUnopClass(UnaryTa,Ta(a));
+GridUnopClass(UnaryProjectOnGroup,ProjectOnGroup(a));
 GridUnopClass(UnaryReal,real(a));
 GridUnopClass(UnaryImag,imag(a));
 GridUnopClass(UnaryToReal,toReal(a));
@@ -290,13 +291,14 @@ GRID_DEF_UNOP(conjugate,UnaryConj);
 GRID_DEF_UNOP(trace,UnaryTrace);
 GRID_DEF_UNOP(transpose,UnaryTranspose);
 GRID_DEF_UNOP(Ta,UnaryTa);
+GRID_DEF_UNOP(ProjectOnGroup,UnaryProjectOnGroup);
 GRID_DEF_UNOP(real,UnaryReal);
 GRID_DEF_UNOP(imag,UnaryImag);
 GRID_DEF_UNOP(toReal,UnaryToReal);
 GRID_DEF_UNOP(toComplex,UnaryToComplex);
 GRID_DEF_UNOP(abs  ,UnaryAbs); //abs overloaded in cmath C++98; DON'T do the abs-fabs-dabs-labs thing
 GRID_DEF_UNOP(sqrt ,UnarySqrt);
-GRID_DEF_UNOP(rsqrt,UnarySqrt);
+GRID_DEF_UNOP(rsqrt,UnaryRsqrt);
 GRID_DEF_UNOP(sin  ,UnarySin);
 GRID_DEF_UNOP(cos  ,UnaryCos);
 GRID_DEF_UNOP(log  ,UnaryLog);
@@ -370,7 +372,7 @@ using namespace Grid;
    tmp.func(eval(0,v1),eval(0,v2));
 
    auto var = v1+v2;
-   std::cout<<typeid(var).name()<<std::endl;
+   std::cout<<GridLogMessage<<typeid(var).name()<<std::endl;
 
    v3=v1+v2;
    v3=v1+v2+v1*v2;

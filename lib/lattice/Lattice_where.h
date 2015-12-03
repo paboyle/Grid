@@ -22,7 +22,6 @@ inline void whereWolf(Lattice<vobj> &ret,const Lattice<iobj> &predicate,Lattice<
   typedef typename iobj::vector_type mask_type;
 
   const int Nsimd = grid->Nsimd();
-  const int words = sizeof(vobj)/sizeof(vector_type);
 
   std::vector<Integer> mask(Nsimd);
   std::vector<scalar_object> truevals (Nsimd);

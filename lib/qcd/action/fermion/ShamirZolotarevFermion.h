@@ -7,27 +7,29 @@ namespace Grid {
 
   namespace QCD {
 
-    class ShamirZolotarevFermion : public MobiusZolotarevFermion
+    template<class Impl>
+    class ShamirZolotarevFermion : public MobiusZolotarevFermion<Impl>
     {
     public:
+     INHERIT_IMPL_TYPES(Impl);
 
       // Constructors
 
 
-    ShamirZolotarevFermion(LatticeGaugeField &_Umu,
+    ShamirZolotarevFermion(GaugeField &_Umu,
 			   GridCartesian         &FiveDimGrid,
 			   GridRedBlackCartesian &FiveDimRedBlackGrid,
 			   GridCartesian         &FourDimGrid,
 			   GridRedBlackCartesian &FourDimRedBlackGrid,
 			   RealD _mass,RealD _M5,
-			   RealD lo, RealD hi) : 
+			   RealD lo, RealD hi,const ImplParams &p= ImplParams()) : 
       
       // b+c = 1; b-c = 1 => b=1, c=0
-      MobiusZolotarevFermion(_Umu,
-			     FiveDimGrid,
-			     FiveDimRedBlackGrid,
-			     FourDimGrid,
-			     FourDimRedBlackGrid,_mass,_M5,1.0,0.0,lo,hi)
+      MobiusZolotarevFermion<Impl>(_Umu,
+				   FiveDimGrid,
+				   FiveDimRedBlackGrid,
+				   FourDimGrid,
+				   FourDimRedBlackGrid,_mass,_M5,1.0,0.0,lo,hi,p)
       
       {}
 

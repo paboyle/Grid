@@ -9,17 +9,37 @@ namespace Grid {
   class LebesgueOrder { 
   public:
 
+    typedef int32_t IndexInteger;
+    
     static int UseLebesgueOrder;
+    GridBase *grid;
 
-    typedef uint32_t IndexInteger;
+  public:
+    LebesgueOrder(GridBase *_grid);
 
     inline IndexInteger Reorder(IndexInteger ss) { 
-      return UseLebesgueOrder ? _LebesgueReorder[ss] : ss; 
+      return _LebesgueReorder[ss] ;
     };
 
+    ////////////////////////////
+    // Space filling fractal for cache oblivious
+    ////////////////////////////
+    void ZGraph(void);
     IndexInteger alignup(IndexInteger n);
 
-    LebesgueOrder(GridBase *grid);
+    /////////////////////////////////
+    // Cartesian stencil blocking strategy
+    /////////////////////////////////
+    static std::vector<int> Block;
+    void CartesianBlocking(void);
+    void IterateO(int ND,int dim,
+		  std::vector<IndexInteger> & xo,
+		  std::vector<IndexInteger> & xi,
+		  std::vector<IndexInteger> &dims);
+    void IterateI(int ND,int dim,
+		  std::vector<IndexInteger> & xo,
+		  std::vector<IndexInteger> & xi,
+		  std::vector<IndexInteger> &dims);
 
   private:
     std::vector<IndexInteger> _LebesgueReorder;

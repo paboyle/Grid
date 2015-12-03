@@ -7,25 +7,28 @@ namespace Grid {
 
   namespace QCD {
 
-    class OverlapWilsonCayleyTanhFermion : public MobiusFermion
+    template<class Impl>
+    class OverlapWilsonCayleyTanhFermion : public MobiusFermion<Impl>
     {
+    public:
+     INHERIT_IMPL_TYPES(Impl);
     public:
 
       // Constructors
-    OverlapWilsonCayleyTanhFermion(LatticeGaugeField &_Umu,
+    OverlapWilsonCayleyTanhFermion(GaugeField &_Umu,
 				   GridCartesian         &FiveDimGrid,
 				   GridRedBlackCartesian &FiveDimRedBlackGrid,
 				   GridCartesian         &FourDimGrid,
 				   GridRedBlackCartesian &FourDimRedBlackGrid,
 				   RealD _mass,RealD _M5,
-				   RealD scale) :
+				   RealD scale,const ImplParams &p= ImplParams()) :
       
       // b+c=scale, b-c = 0 <=> b =c = scale/2
-      MobiusFermion(_Umu,
-		    FiveDimGrid,
-		    FiveDimRedBlackGrid,
-		    FourDimGrid,
-		    FourDimRedBlackGrid,_mass,_M5,0.5*scale,0.5*scale)
+      MobiusFermion<Impl>(_Umu,
+			  FiveDimGrid,
+			  FiveDimRedBlackGrid,
+			  FourDimGrid,
+			  FourDimRedBlackGrid,_mass,_M5,0.5*scale,0.5*scale,p)
 	{
 	}
     };

@@ -4,6 +4,7 @@
 namespace Grid {
 namespace QCD {
 
+  template<class SiteHalfSpinor,class SiteSpinor>
   class WilsonCompressor {
   public:
     int mu;
@@ -18,9 +19,13 @@ namespace QCD {
       mu=p;
     };
 
-    vHalfSpinColourVector operator () (const vSpinColourVector &in)
+    virtual SiteHalfSpinor operator () (const SiteSpinor &in,int dim,int plane,int osite,GridBase *grid) {
+      return spinproject(in);
+    }
+
+    SiteHalfSpinor spinproject(const SiteSpinor &in)
     {
-      vHalfSpinColourVector ret;
+      SiteHalfSpinor ret;
       int mudag=mu;
       if (dag) {
 	mudag=(mu+Nd)%(2*Nd);
@@ -57,5 +62,7 @@ namespace QCD {
       return ret;
     }
   };
+
+
 }} // namespace close
 #endif

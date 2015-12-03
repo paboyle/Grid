@@ -7,24 +7,27 @@ namespace Grid {
 
   namespace QCD {
 
-    class DomainWallFermion : public CayleyFermion5D
+    template<class Impl>
+    class DomainWallFermion : public CayleyFermion5D<Impl>
     {
+    public:
+     INHERIT_IMPL_TYPES(Impl);
     public:
 
       virtual void   Instantiatable(void) {};
       // Constructors
-      DomainWallFermion(LatticeGaugeField &_Umu,
+      DomainWallFermion(GaugeField &_Umu,
 			GridCartesian         &FiveDimGrid,
 			GridRedBlackCartesian &FiveDimRedBlackGrid,
 			GridCartesian         &FourDimGrid,
 			GridRedBlackCartesian &FourDimRedBlackGrid,
-			RealD _mass,RealD _M5) : 
+			RealD _mass,RealD _M5,const ImplParams &p= ImplParams()) : 
 
-      CayleyFermion5D(_Umu,
-		      FiveDimGrid,
-		      FiveDimRedBlackGrid,
-		      FourDimGrid,
-		      FourDimRedBlackGrid,_mass,_M5)
+      CayleyFermion5D<Impl>(_Umu,
+			    FiveDimGrid,
+			    FiveDimRedBlackGrid,
+			    FourDimGrid,
+			    FourDimRedBlackGrid,_mass,_M5,p)
 
       {
 	RealD eps = 1.0;
@@ -32,9 +35,9 @@ namespace Grid {
 	Approx::zolotarev_data *zdata = Approx::higham(eps,this->Ls);// eps is ignored for higham
 	assert(zdata->n==this->Ls);
 	
-	std::cout << "DomainWallFermion with Ls="<<Ls<<std::endl;
+	std::cout<<GridLogMessage << "DomainWallFermion with Ls="<<this->Ls<<std::endl;
 	// Call base setter
-	this->CayleyFermion5D::SetCoefficientsTanh(zdata,1.0,0.0);
+	this->SetCoefficientsTanh(zdata,1.0,0.0);
 
 	Approx::zolotarev_free(zdata);
       }

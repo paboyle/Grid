@@ -4,9 +4,11 @@ namespace Grid {
 namespace QCD {
 
 // Common wilson loop observables
-template<class GaugeMat,class GaugeLorentz>
+template<class GaugeLorentz>
 class WilsonLoops {
 public:
+
+  typedef LorentzScalar<GaugeLorentz> GaugeMat;
 
   //////////////////////////////////////////////////
   // directed plaquette oriented in mu,nu plane
@@ -45,7 +47,7 @@ public:
     std::vector<GaugeMat> U(4,Umu._grid);
 
     for(int mu=0;mu<Nd;mu++){
-      U[mu] = peekIndex<LorentzIndex>(Umu,mu);
+      U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
     }
 
     LatticeComplex Plaq(Umu._grid);
@@ -69,6 +71,22 @@ public:
     
     return sumplaq/vol/faces/Nc; // Nd , Nc dependent... FIXME
   }
+  static RealD linkTrace(const GaugeLorentz &Umu){
+    std::vector<GaugeMat> U(4,Umu._grid);
+
+    LatticeComplex Tr(Umu._grid); Tr=zero;
+    for(int mu=0;mu<Nd;mu++){
+      U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
+      Tr = Tr+trace(U[mu]);
+    }
+    
+    TComplex Tp = sum(Tr);
+    Complex p  = TensorRemove(Tp);
+
+    double vol = Umu._grid->gSites();
+
+    return p.real()/vol/4.0/3.0;
+  };
   //////////////////////////////////////////////////
   // the sum over all staples on each site
   //////////////////////////////////////////////////
@@ -78,7 +96,7 @@ public:
 
     std::vector<GaugeMat> U(4,grid);
     for(int d=0;d<Nd;d++){
-      U[d] = peekIndex<LorentzIndex>(Umu,d);
+      U[d] = PeekIndex<LorentzIndex>(Umu,d);
     }
 
     staple = zero;
@@ -126,10 +144,10 @@ void siteRectangle(GaugeMat &plaq,const std::vector<GaugeMat> &U, const int mu, 
 };
 
 
- typedef WilsonLoops<LatticeColourMatrix,LatticeGaugeField> ColourWilsonLoops;
- typedef WilsonLoops<LatticeColourMatrix,LatticeGaugeField> U1WilsonLoops;
- typedef WilsonLoops<LatticeColourMatrix,LatticeGaugeField> SU2WilsonLoops;
- typedef WilsonLoops<LatticeColourMatrix,LatticeGaugeField> SU3WilsonLoops;
+ typedef WilsonLoops<LatticeGaugeField> ColourWilsonLoops;
+ typedef WilsonLoops<LatticeGaugeField> U1WilsonLoops;
+ typedef WilsonLoops<LatticeGaugeField> SU2WilsonLoops;
+ typedef WilsonLoops<LatticeGaugeField> SU3WilsonLoops;
 
 }}
 

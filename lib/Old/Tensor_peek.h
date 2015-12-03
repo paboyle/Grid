@@ -11,7 +11,7 @@ namespace Grid {
 //template<int Level> inline ComplexD peekIndex(const ComplexD arg) { return arg;}
 //template<int Level> inline RealF peekIndex(const RealF arg) { return arg;}
 //template<int Level> inline RealD peekIndex(const RealD arg) { return arg;}
-
+#if 0
 // Scalar peek, no indices
 template<int Level,class vtype,typename std::enable_if< iScalar<vtype>::TensorLevel == Level >::type * =nullptr> inline 
   auto peekIndex(const iScalar<vtype> &arg) ->  iScalar<vtype> 
@@ -88,6 +88,7 @@ template<int Level,class vtype,int N, typename std::enable_if< iScalar<vtype>::T
   }
   return ret;
 }
+
 // matrix
 template<int Level,class vtype,int N, typename std::enable_if< iScalar<vtype>::TensorLevel != Level >::type * =nullptr> inline 
 auto peekIndex(const iMatrix<vtype,N> &arg) ->   iMatrix<decltype(peekIndex<Level>(arg._internal[0][0])),N> 
@@ -119,6 +120,7 @@ template<int Level,class vtype,int N, typename std::enable_if< iScalar<vtype>::T
   }}
   return ret;
 }
+#endif
 
 
 }

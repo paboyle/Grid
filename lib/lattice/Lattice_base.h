@@ -29,6 +29,9 @@ extern int GridCshiftPermuteMap[4][16];
 class LatticeBase {};
 class LatticeExpressionBase {};
 
+template<class T> using Vector = std::vector<T,alignedAllocator<T> >;               // Aligned allocator??
+template<class T> using Matrix = std::vector<std::vector<T,alignedAllocator<T> > >; // Aligned allocator??
+
 template <typename Op, typename T1>                           
 class LatticeUnaryExpression  : public std::pair<Op,std::tuple<T1> > , public LatticeExpressionBase {
  public:
@@ -59,7 +62,12 @@ public:
 
     GridBase *_grid;
     int checkerboard;
-    std::vector<vobj,alignedAllocator<vobj> > _odata;
+    Vector<vobj> _odata;
+    
+    // to pthread need a computable loop where loop induction is not required
+    int begin(void) { return 0;};
+    int end(void)   { return _odata.size(); }
+    vobj & operator[](int i) { return _odata[i]; };
 
 public:
     typedef typename vobj::scalar_type scalar_type;
@@ -204,9 +212,10 @@ PARALLEL_FOR_LOOP
     // Constructor requires "grid" passed.
     // what about a default grid?
     //////////////////////////////////////////////////////////////////
- Lattice(GridBase *grid) : _grid(grid), _odata(_grid->oSites()) {
+    Lattice(GridBase *grid) : _grid(grid), _odata(_grid->oSites()) {
       //        _odata.reserve(_grid->oSites());
       //        _odata.resize(_grid->oSites());
+    //      std::cout << "Constructing lattice object with Grid pointer "<<_grid<<std::endl;
         assert((((uint64_t)&_odata[0])&0xF) ==0);
         checkerboard=0;
     }
@@ -221,7 +230,7 @@ PARALLEL_FOR_LOOP
     template<class robj> strong_inline Lattice<vobj> & operator = (const Lattice<robj> & r){
       this->checkerboard = r.checkerboard;
       conformable(*this,r);
-      std::cout<<"Lattice operator ="<<std::endl;
+      std::cout<<GridLogMessage<<"Lattice operator ="<<std::endl;
 PARALLEL_FOR_LOOP
         for(int ss=0;ss<_grid->oSites();ss++){
             this->_odata[ss]=r._odata[ss];

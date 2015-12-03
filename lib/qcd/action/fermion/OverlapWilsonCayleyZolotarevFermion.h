@@ -7,25 +7,28 @@ namespace Grid {
 
   namespace QCD {
 
-    class OverlapWilsonCayleyZolotarevFermion : public MobiusZolotarevFermion
+    template<class Impl>
+    class OverlapWilsonCayleyZolotarevFermion : public MobiusZolotarevFermion<Impl>
     {
+    public:
+     INHERIT_IMPL_TYPES(Impl);
     public:
 
       // Constructors
 
-    OverlapWilsonCayleyZolotarevFermion(LatticeGaugeField &_Umu,
+    OverlapWilsonCayleyZolotarevFermion(GaugeField &_Umu,
 					GridCartesian         &FiveDimGrid,
 					GridRedBlackCartesian &FiveDimRedBlackGrid,
 					GridCartesian         &FourDimGrid,
 					GridRedBlackCartesian &FourDimRedBlackGrid,
 					RealD _mass,RealD _M5,
-					RealD lo, RealD hi) : 
+					RealD lo, RealD hi,const ImplParams &p= ImplParams()) : 
       // b+c=1.0, b-c = 0 <=> b =c = 1/2
-      MobiusZolotarevFermion(_Umu,
-			     FiveDimGrid,
-			     FiveDimRedBlackGrid,
-			     FourDimGrid,
-			     FourDimRedBlackGrid,_mass,_M5,0.5,0.5,lo,hi)
+      MobiusZolotarevFermion<Impl>(_Umu,
+				   FiveDimGrid,
+				   FiveDimRedBlackGrid,
+				   FourDimGrid,
+				   FourDimRedBlackGrid,_mass,_M5,0.5,0.5,lo,hi,p)
 
       {}
 

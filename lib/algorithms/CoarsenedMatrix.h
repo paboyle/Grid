@@ -12,9 +12,6 @@ namespace Grid {
     std::vector<int> directions   ;
     std::vector<int> displacements;
 
-    // FIXME -- don't like xposing the operator directions
-    // as different to the geometrical dirs
-    // Also don't like special casing five dim.. should pass an object in template
   Geometry(int _d)  {
   
       int base = (_d==5) ? 1:0;
@@ -35,12 +32,12 @@ namespace Grid {
       displacements[2*_d]=0;
       
       //// report back
-      std::cout<<"directions    :";
+      std::cout<<GridLogMessage<<"directions    :";
       for(int d=0;d<npoint;d++) std::cout<< directions[d]<< " ";
       std::cout <<std::endl;
-      std::cout<<"displacements :";
+      std::cout<<GridLogMessage<<"displacements :";
       for(int d=0;d<npoint;d++) std::cout<< displacements[d]<< " ";
-      std::cout <<std::endl;
+      std::cout<<std::endl;
     }
   
     /*
@@ -64,6 +61,97 @@ namespace Grid {
 
   };
   
+  template<class Fobj,class CComplex,int nbasis>
+  class Aggregation   {
+  public:
+    typedef iVector<CComplex,nbasis >             siteVector;
+    typedef Lattice<siteVector>                 CoarseVector;
+    typedef Lattice<iMatrix<CComplex,nbasis > > CoarseMatrix;
+
+    typedef Lattice< CComplex >   CoarseScalar; // used for inner products on fine field
+    typedef Lattice<Fobj >        FineField;
+
+    GridBase *CoarseGrid;
+    GridBase *FineGrid;
+    std::vector<Lattice<Fobj> > subspace;
+
+    Aggregation(GridBase *_CoarseGrid,GridBase *_FineGrid) : 
+      CoarseGrid(_CoarseGrid),
+      FineGrid(_FineGrid),
+      subspace(nbasis,_FineGrid)
+	{
+	};
+  
+    void Orthogonalise(void){
+      CoarseScalar InnerProd(CoarseGrid); 
+      blockOrthogonalise(InnerProd,subspace);
+    } 
+    void CheckOrthogonal(void){
+      CoarseVector iProj(CoarseGrid); 
+      CoarseVector eProj(CoarseGrid); 
+      Lattice<CComplex> pokey(CoarseGrid);
+
+      
+      for(int i=0;i<nbasis;i++){
+	blockProject(iProj,subspace[i],subspace);
+
+	eProj=zero; 
+	for(int ss=0;ss<CoarseGrid->oSites();ss++){
+	  eProj._odata[ss](i)=CComplex(1.0);
+	}
+	eProj=eProj - iProj;
+	std::cout<<GridLogMessage<<"Orthog check error "<<i<<" " << norm2(eProj)<<std::endl;
+      }
+      std::cout<<GridLogMessage <<"CheckOrthog done"<<std::endl;
+    }
+    void ProjectToSubspace(CoarseVector &CoarseVec,const FineField &FineVec){
+      blockProject(CoarseVec,FineVec,subspace);
+    }
+    void PromoteFromSubspace(const CoarseVector &CoarseVec,FineField &FineVec){
+      blockPromote(CoarseVec,FineVec,subspace);
+    }
+    void CreateSubspaceRandom(GridParallelRNG &RNG){
+      for(int i=0;i<nbasis;i++){
+	random(RNG,subspace[i]);
+	std::cout<<GridLogMessage<<" norm subspace["<<i<<"] "<<norm2(subspace[i])<<std::endl;
+      }
+      Orthogonalise();
+    }
+    virtual void CreateSubspace(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,int nn=nbasis) {
+
+      RealD scale;
+
+      ConjugateGradient<FineField> CG(1.0e-2,10000);
+      FineField noise(FineGrid);
+      FineField Mn(FineGrid);
+
+      for(int b=0;b<nn;b++){
+	
+	gaussian(RNG,noise);
+	scale = std::pow(norm2(noise),-0.5); 
+	noise=noise*scale;
+
+	hermop.Op(noise,Mn); std::cout<<GridLogMessage << "noise   ["<<b<<"] <n|MdagM|n> "<<norm2(Mn)<<std::endl;
+
+	for(int i=0;i<1;i++){
+
+	  CG(hermop,noise,subspace[b]);
+
+	  noise = subspace[b];
+	  scale = std::pow(norm2(noise),-0.5); 
+	  noise=noise*scale;
+
+	}
+
+	hermop.Op(noise,Mn); std::cout<<GridLogMessage << "filtered["<<b<<"] <f|MdagM|f> "<<norm2(Mn)<<std::endl;
+	subspace[b]   = noise;
+
+      }
+
+      Orthogonalise();
+
+    }
+  };
   // Fine Object == (per site) type of fine field
   // nbasis      == number of deflation vectors
   template<class Fobj,class CComplex,int nbasis>
@@ -82,7 +170,7 @@ namespace Grid {
     ////////////////////
     Geometry         geom;
     GridBase *       _grid; 
-    CartesianStencil Stencil; 
+    CartesianStencil<siteVector,siteVector,SimpleCompressor<siteVector> > Stencil; 
 
     std::vector<CoarseMatrix> A;
 
@@ -101,24 +189,22 @@ namespace Grid {
       SimpleCompressor<siteVector> compressor;
       Stencil.HaloExchange(in,comm_buf,compressor);
 
-      //PARALLEL_FOR_LOOP
+PARALLEL_FOR_LOOP
       for(int ss=0;ss<Grid()->oSites();ss++){
         siteVector res = zero;
 	siteVector nbr;
-	int offset,local,perm,ptype;
-
+	int ptype;
+	StencilEntry *SE;
 	for(int point=0;point<geom.npoint;point++){
-	  offset = Stencil._offsets [point][ss];
-	  local  = Stencil._is_local[point][ss];
-	  perm   = Stencil._permute [point][ss];
-	  ptype  = Stencil._permute_type[point];
+
+	  SE=Stencil.GetEntry(ptype,point,ss);
 	  
-	  if(local&&perm) { 
-	    permute(nbr,in._odata[offset],ptype);
-	  } else if(local) { 
-	    nbr = in._odata[offset];
+	  if(SE->_is_local&&SE->_permute) { 
+	    permute(nbr,in._odata[SE->_offset],ptype);
+	  } else if(SE->_is_local) { 
+	    nbr = in._odata[SE->_offset];
 	  } else {
-	    nbr = comm_buf[offset];
+	    nbr = comm_buf[SE->_offset];
 	  }
 	  res = res + A[point]._odata[ss]*nbr;
 	}
@@ -145,7 +231,8 @@ namespace Grid {
       comm_buf.resize(Stencil._unified_buffer_size);
     };
 
-    void CoarsenOperator(GridBase *FineGrid,LinearOperatorBase<Lattice<Fobj> > &linop,std::vector<Lattice<Fobj> > & subspace){
+    void CoarsenOperator(GridBase *FineGrid,LinearOperatorBase<Lattice<Fobj> > &linop,
+			 Aggregation<Fobj,CComplex,nbasis> & Subspace){
 
       FineField iblock(FineGrid); // contributions from within this block
       FineField oblock(FineGrid); // contributions from outwith this block
@@ -162,8 +249,7 @@ namespace Grid {
       CoarseScalar InnerProd(Grid()); 
 
       // Orthogonalise the subblocks over the basis
-      blockOrthogonalise(InnerProd,subspace);
-      blockProject(iProj,subspace[0],subspace);
+      blockOrthogonalise(InnerProd,Subspace.subspace);
 
       // Compute the matrix elements of linop between this orthonormal
       // set of vectors.
@@ -177,7 +263,10 @@ namespace Grid {
       assert(self_stencil!=-1);
 
       for(int i=0;i<nbasis;i++){
-	phi=subspace[i];
+	phi=Subspace.subspace[i];
+	
+	std::cout<<GridLogMessage<<"("<<i<<").."<<std::endl;
+
 	for(int p=0;p<geom.npoint;p++){ 
 
 	  int dir   = geom.directions[p];
@@ -210,8 +299,11 @@ namespace Grid {
 	    assert(0);
 	  }
 
-	  blockProject(iProj,iblock,subspace);
-	  blockProject(oProj,oblock,subspace);
+	  Subspace.ProjectToSubspace(iProj,iblock);
+	  Subspace.ProjectToSubspace(oProj,oblock);
+	  //	  blockProject(iProj,iblock,Subspace.subspace);
+	  //	  blockProject(oProj,oblock,Subspace.subspace);
+PARALLEL_FOR_LOOP
 	  for(int ss=0;ss<Grid()->oSites();ss++){
 	    for(int j=0;j<nbasis;j++){
 	      if( disp!= 0 ) {
@@ -227,33 +319,33 @@ namespace Grid {
       ///////////////////////////
       // test code worth preserving in if block
       ///////////////////////////
-      std::cout<< " Computed matrix elements "<< self_stencil <<std::endl;
+      std::cout<<GridLogMessage<< " Computed matrix elements "<< self_stencil <<std::endl;
       for(int p=0;p<geom.npoint;p++){
-	std::cout<< "A["<<p<<"]" << std::endl;
-	std::cout<< A[p] << std::endl;
+	std::cout<<GridLogMessage<< "A["<<p<<"]" << std::endl;
+	std::cout<<GridLogMessage<< A[p] << std::endl;
       }
-      std::cout<< " picking by block0 "<< self_stencil <<std::endl;
+      std::cout<<GridLogMessage<< " picking by block0 "<< self_stencil <<std::endl;
 
-      phi=subspace[0];
+      phi=Subspace.subspace[0];
       std::vector<int> bc(FineGrid->_ndimension,0);
 
       blockPick(Grid(),phi,tmp,bc);      // Pick out a block
       linop.Op(tmp,Mphi);                // Apply big dop
-      blockProject(iProj,Mphi,subspace); // project it and print it
-      std::cout<< " Computed matrix elements from block zero only "<<std::endl;
-      std::cout<< iProj <<std::endl;
-      std::cout<<"Computed Coarse Operator"<<std::endl;
+      blockProject(iProj,Mphi,Subspace.subspace); // project it and print it
+      std::cout<<GridLogMessage<< " Computed matrix elements from block zero only "<<std::endl;
+      std::cout<<GridLogMessage<< iProj <<std::endl;
+      std::cout<<GridLogMessage<<"Computed Coarse Operator"<<std::endl;
 #endif
-      //      AssertHermitian();
       //      ForceHermitian();
-      //      ForceDiagonal();
+      AssertHermitian();
+      // ForceDiagonal();
     }
     void ForceDiagonal(void) {
 
 
-      std::cout<<"**************************************************"<<std::endl;
-      std::cout<<"****   Forcing coarse operator to be diagonal ****"<<std::endl;
-      std::cout<<"**************************************************"<<std::endl;
+      std::cout<<GridLogMessage<<"**************************************************"<<std::endl;
+      std::cout<<GridLogMessage<<"****   Forcing coarse operator to be diagonal ****"<<std::endl;
+      std::cout<<GridLogMessage<<"**************************************************"<<std::endl;
       for(int p=0;p<8;p++){
 	A[p]=zero;
       }
@@ -263,7 +355,7 @@ namespace Grid {
 
       Complex one(1.0);
 
-      iMatrix<Complex,nbasis> ident;  ident=one;
+      iMatrix<CComplex,nbasis> ident;  ident=one;
 
       val = val*adj(val);
       val = val + 1.0;
@@ -279,7 +371,7 @@ namespace Grid {
 	int dd=d+1;
 	A[2*d] = adj(Cshift(A[2*d+1],dd,1));
       }
-      A[8] = 0.5*(A[8] + adj(A[8]));
+      //      A[8] = 0.5*(A[8] + adj(A[8]));
     }
     void AssertHermitian(void) {
       CoarseMatrix AA    (Grid());
@@ -293,13 +385,13 @@ namespace Grid {
 	
 	Diff = AA - adj(AAc);
 
-	std::cout<<"Norm diff dim "<<d<<" "<< norm2(Diff)<<std::endl;
-	std::cout<<"Norm dim "<<d<<" "<< norm2(AA)<<std::endl;
+	std::cout<<GridLogMessage<<"Norm diff dim "<<d<<" "<< norm2(Diff)<<std::endl;
+	std::cout<<GridLogMessage<<"Norm dim "<<d<<" "<< norm2(AA)<<std::endl;
 	  
       }
       Diff = A[8] - adj(A[8]);
-      std::cout<<"Norm diff local "<< norm2(Diff)<<std::endl;
-      std::cout<<"Norm local "<< norm2(A[8])<<std::endl;
+      std::cout<<GridLogMessage<<"Norm diff local "<< norm2(Diff)<<std::endl;
+      std::cout<<GridLogMessage<<"Norm local "<< norm2(A[8])<<std::endl;
     }
     
   };

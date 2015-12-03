@@ -33,7 +33,7 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
 
-  std::vector<int> simd_layout = GridDefaultSimd(4,vComplexF::Nsimd());
+  std::vector<int> simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
   std::vector<int> latt_size  ({16,16,16,32});
   std::vector<int> clatt_size  ({4,4,4,8});
@@ -50,10 +50,10 @@ int main (int argc, char ** argv)
   NerscField header;
   
   std::string file("./ckpoint_lat.4000");
-  readNerscConfiguration(Umu,header,file);
+  NerscIO::readConfiguration(Umu,header,file);
 
   for(int mu=0;mu<Nd;mu++){
-    U[mu] = peekIndex<3>(Umu,mu);
+    U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
   }
 
   // Painful ; fix syntactical niceness : to check reader
@@ -94,7 +94,7 @@ int main (int argc, char ** argv)
   double vol = Fine.gSites();
   Complex PlaqScale(1.0/vol/6.0/3.0);
   RealD   StapScale(1.0/vol/6.0/3.0);
-  std::cout <<"PlaqScale" << PlaqScale<<std::endl;
+  std::cout<<GridLogMessage <<"PlaqScale" << PlaqScale<<std::endl;
   std::vector<TComplex> Plaq_T(orthosz);
   sliceSum(Plaq,Plaq_T,Nd-1);
   int Nt = Plaq_T.size();
@@ -105,20 +105,20 @@ int main (int argc, char ** argv)
   for(int t=0;t<Nt;t++){
     Plaq_T_sum = Plaq_T_sum+Plaq_T[t];
     Complex Pt=TensorRemove(Plaq_T[t]);
-    std::cout << "sliced ["<<t<<"]" <<Pt*PlaqScale*Real(Nt) << std::endl;
+    std::cout<<GridLogMessage << "sliced ["<<t<<"]" <<Pt*PlaqScale*Real(Nt) << std::endl;
   }
 
   {
     Complex Pt = TensorRemove(Plaq_T_sum);
-    std::cout << "total " <<Pt*PlaqScale<<std::endl;
+    std::cout<<GridLogMessage << "total " <<Pt*PlaqScale<<std::endl;
   }  
 
   TComplex Tp = sum(Plaq);
   Complex p  = TensorRemove(Tp);
-  std::cout << "calculated plaquettes " <<p*PlaqScale<<std::endl;
+  std::cout<<GridLogMessage << "calculated plaquettes " <<p*PlaqScale<<std::endl;
 
   RealD avg_plaq = ColourWilsonLoops::avgPlaquette(Umu);
-  std::cout << "NEW : calculated real plaquettes " <<avg_plaq<<std::endl;
+  std::cout<<GridLogMessage << "NEW : calculated real plaquettes " <<avg_plaq<<std::endl;
 
   RealD stap_plaq=0.0;
   LatticeColourMatrix stap(&Fine);
@@ -130,16 +130,16 @@ int main (int argc, char ** argv)
     Complex s  = TensorRemove(Ts);
     stap_plaq+=real(s);
   }
-  std::cout << "NEW : plaquette via staples"<< stap_plaq*StapScale*0.25<< std::endl;
+  std::cout<<GridLogMessage << "NEW : plaquette via staples"<< stap_plaq*StapScale*0.25<< std::endl;
   Complex LinkTraceScale(1.0/vol/4.0/3.0);
   TComplex Tl = sum(LinkTrace);
   Complex l  = TensorRemove(Tl);
-  std::cout << "calculated link trace " <<l*LinkTraceScale<<std::endl;
+  std::cout<<GridLogMessage << "calculated link trace " <<l*LinkTraceScale<<std::endl;
 
   blockSum(cPlaq,Plaq);
   TComplex TcP = sum(cPlaq);
   Complex ll= TensorRemove(TcP);
-  std::cout << "coarsened plaquettes sum to " <<ll*PlaqScale<<std::endl;
+  std::cout<<GridLogMessage << "coarsened plaquettes sum to " <<ll*PlaqScale<<std::endl;
 
 
   Grid_finalize();

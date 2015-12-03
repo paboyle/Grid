@@ -10,20 +10,11 @@ namespace Grid {
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     // Peek internal indices of a Lattice object
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-  template<int Index,class vobj>
-     auto peekIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(peekIndex<Index>(lhs._odata[0]))>
-    {
-      Lattice<decltype(peekIndex<Index>(lhs._odata[0]))> ret(lhs._grid);
-PARALLEL_FOR_LOOP
-        for(int ss=0;ss<lhs._grid->oSites();ss++){
-            ret._odata[ss] = peekIndex<Index>(lhs._odata[ss]);
-        }
-        return ret;
-    };
     template<int Index,class vobj>
-       auto peekIndex(const Lattice<vobj> &lhs,int i) -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i))>
+       auto PeekIndex(const Lattice<vobj> &lhs,int i) -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i))>
     {
       Lattice<decltype(peekIndex<Index>(lhs._odata[0],i))> ret(lhs._grid);
+      ret.checkerboard=lhs.checkerboard;
 PARALLEL_FOR_LOOP
         for(int ss=0;ss<lhs._grid->oSites();ss++){
 	  ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i);
@@ -31,9 +22,10 @@ PARALLEL_FOR_LOOP
         return ret;
     };
     template<int Index,class vobj>
-       auto peekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))>
+       auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))>
     {
       Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))> ret(lhs._grid);
+      ret.checkerboard=lhs.checkerboard;
 PARALLEL_FOR_LOOP
         for(int ss=0;ss<lhs._grid->oSites();ss++){
 	  ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i,j);
@@ -44,16 +36,8 @@ PARALLEL_FOR_LOOP
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     // Poke internal indices of a Lattice object
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    template<int Index,class vobj>
-    void pokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0]))> & rhs)
-    {
-PARALLEL_FOR_LOOP
-        for(int ss=0;ss<lhs._grid->oSites();ss++){
-	  pokeIndex<Index>(lhs._odata[ss],rhs._odata[ss]);
-	}      
-    }
     template<int Index,class vobj> 
-    void pokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0],0))> & rhs,int i)
+    void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0],0))> & rhs,int i)
     {
 PARALLEL_FOR_LOOP
         for(int ss=0;ss<lhs._grid->oSites();ss++){
@@ -61,7 +45,7 @@ PARALLEL_FOR_LOOP
 	}      
     }
     template<int Index,class vobj>
-      void pokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0],0,0))> & rhs,int i,int j)
+      void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0],0,0))> & rhs,int i,int j)
     {
 PARALLEL_FOR_LOOP
         for(int ss=0;ss<lhs._grid->oSites();ss++){

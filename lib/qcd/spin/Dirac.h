@@ -4,6 +4,7 @@ namespace Grid{
 
 namespace QCD {
 
+
   class Gamma {
 
   public:
@@ -331,7 +332,7 @@ namespace QCD {
 
     //left multiply
     template<class vtype> inline auto operator * ( const Gamma &G,const iScalar<vtype> &arg) ->
-      typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinIndex>::notvalue,iScalar<vtype> >::type 
+      typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type 
 
 	{
 	  iScalar<vtype> ret;
@@ -339,24 +340,29 @@ namespace QCD {
 	  return ret;
 	}
     template<class vtype,int N> inline auto operator * ( const Gamma &G,const iVector<vtype,N> &arg) ->
-      typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinIndex>::notvalue,iVector<vtype,N> >::type 
+      typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type 
 	{
 	  iVector<vtype,N> ret;
-	  ret._internal=G*arg._internal;
+	  for(int i=0;i<N;i++){
+	    ret._internal[i]=G*arg._internal[i];
+	  }
 	  return ret;
 	}
     template<class vtype,int N> inline auto operator * ( const Gamma &G,const iMatrix<vtype,N> &arg) ->
-      typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinIndex>::notvalue,iMatrix<vtype,N> >::type 
+      typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type 
 	{
 	  iMatrix<vtype,N> ret;
-	  ret._internal=G*arg._internal;
+	  for(int i=0;i<N;i++){
+	  for(int j=0;j<N;j++){
+	    ret._internal[i][j]=G*arg._internal[i][j];
+	  }}
 	  return ret;
 	}
 
 
     //right multiply
     template<class vtype> inline auto operator * (const iScalar<vtype> &arg, const Gamma &G) ->
-      typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinIndex>::notvalue,iScalar<vtype> >::type 
+      typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,SpinorIndex>::notvalue,iScalar<vtype> >::type 
 
 	{
 	  iScalar<vtype> ret;
@@ -364,17 +370,22 @@ namespace QCD {
 	  return ret;
 	}
     template<class vtype,int N> inline auto operator * (const iVector<vtype,N> &arg, const Gamma &G) ->
-      typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinIndex>::notvalue,iVector<vtype,N> >::type 
+      typename std::enable_if<matchGridTensorIndex<iVector<vtype,N>,SpinorIndex>::notvalue,iVector<vtype,N> >::type 
 	{
 	  iVector<vtype,N> ret;
-	  ret._internal=arg._internal*G;
+	  for(int i=0;i<N;i++){
+	    ret._internal=arg._internal[i]*G;
+	  }
 	  return ret;
 	}
     template<class vtype,int N> inline auto operator * (const iMatrix<vtype,N> &arg, const Gamma &G) ->
-      typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinIndex>::notvalue,iMatrix<vtype,N> >::type 
+      typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,SpinorIndex>::notvalue,iMatrix<vtype,N> >::type 
 	{
 	  iMatrix<vtype,N> ret;
-	  ret._internal=arg._internal*G;
+	  for(int i=0;i<N;i++){
+	  for(int j=0;j<N;j++){
+	    ret._internal[i][j]=arg._internal[i][j]*G;
+	  }}
 	  return ret;
 	}
 
@@ -382,7 +393,7 @@ namespace QCD {
     // When we hit the spin index this matches and we stop
     ////////////////////////////////////////////////////////
     template<class vtype> inline auto operator * ( const Gamma &G,const iMatrix<vtype,Ns> &arg) ->
-      typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,Ns>,SpinIndex>::value,iMatrix<vtype,Ns> >::type 
+      typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,Ns>,SpinorIndex>::value,iMatrix<vtype,Ns> >::type 
       {
 	iMatrix<vtype,Ns> ret;
 	switch (G._g) {
@@ -430,7 +441,7 @@ namespace QCD {
       }
     // Could have used type trait for Matrix/vector and then an enable if to share code
     template<class vtype> inline auto operator * ( const Gamma &G,const iVector<vtype,Ns> &arg) ->
-      typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinIndex>::value,iVector<vtype,Ns> >::type 
+      typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type 
       {
 	iVector<vtype,Ns> ret;
 	switch (G._g) {
@@ -478,7 +489,7 @@ namespace QCD {
       }
 
     template<class vtype> inline auto operator * (const iMatrix<vtype,Ns> &arg, const Gamma &G) ->
-      typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,Ns>,SpinIndex>::value,iMatrix<vtype,Ns> >::type 
+      typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,Ns>,SpinorIndex>::value,iMatrix<vtype,Ns> >::type 
       {
 	iMatrix<vtype,Ns> ret;
 	switch (G._g) {

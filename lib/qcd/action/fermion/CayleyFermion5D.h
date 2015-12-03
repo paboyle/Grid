@@ -5,25 +5,36 @@ namespace Grid {
 
   namespace QCD {
 
-    class CayleyFermion5D : public WilsonFermion5D
+    template<class Impl>
+    class CayleyFermion5D : public WilsonFermion5D<Impl>
     {
+    public:
+     INHERIT_IMPL_TYPES(Impl);
     public:
 
       // override multiply
-      virtual RealD  M    (const LatticeFermion &in, LatticeFermion &out);
-      virtual RealD  Mdag (const LatticeFermion &in, LatticeFermion &out);
+      virtual RealD  M    (const FermionField &in, FermionField &out);
+      virtual RealD  Mdag (const FermionField &in, FermionField &out);
 
       // half checkerboard operations
-      virtual void   Meooe       (const LatticeFermion &in, LatticeFermion &out);
-      virtual void   MeooeDag    (const LatticeFermion &in, LatticeFermion &out);
-      virtual void   Mooee       (const LatticeFermion &in, LatticeFermion &out);
-      virtual void   MooeeDag    (const LatticeFermion &in, LatticeFermion &out);
-      virtual void   MooeeInv    (const LatticeFermion &in, LatticeFermion &out);
-      virtual void   MooeeInvDag (const LatticeFermion &in, LatticeFermion &out);
+      virtual void   Meooe       (const FermionField &in, FermionField &out);
+      virtual void   MeooeDag    (const FermionField &in, FermionField &out);
+      virtual void   Mooee       (const FermionField &in, FermionField &out);
+      virtual void   MooeeDag    (const FermionField &in, FermionField &out);
+      virtual void   MooeeInv    (const FermionField &in, FermionField &out);
+      virtual void   MooeeInvDag (const FermionField &in, FermionField &out);
       virtual void   Instantiatable(void)=0;
 
+      // force terms; five routines; default to Dhop on diagonal
+      virtual void MDeriv  (GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
+      virtual void MoeDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
+      virtual void MeoDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
+
       // Efficient support for multigrid coarsening
-      virtual void  Mdir (const LatticeFermion &in, LatticeFermion &out,int dir,int disp);
+      virtual void  Mdir (const FermionField &in, FermionField &out,int dir,int disp);
+      
+      void   Meooe5D       (const FermionField &in, FermionField &out);
+      void   MeooeDag5D    (const FermionField &in, FermionField &out);
 
       //    protected:
       RealD mass;
@@ -48,12 +59,12 @@ namespace Grid {
       std::vector<RealD> dee;    
 
       // Constructors
-      CayleyFermion5D(LatticeGaugeField &_Umu,
+      CayleyFermion5D(GaugeField &_Umu,
 		      GridCartesian         &FiveDimGrid,
 		      GridRedBlackCartesian &FiveDimRedBlackGrid,
 		      GridCartesian         &FourDimGrid,
 		      GridRedBlackCartesian &FourDimRedBlackGrid,
-		      RealD _mass,RealD _M5);
+		      RealD _mass,RealD _M5,const ImplParams &p= ImplParams());
 
     protected:
       void SetCoefficientsZolotarev(RealD zolohi,Approx::zolotarev_data *zdata,RealD b,RealD c);

@@ -2,27 +2,27 @@
 namespace Grid {
 namespace QCD {
 
- CayleyFermion5D::CayleyFermion5D(LatticeGaugeField &_Umu,
-				  GridCartesian         &FiveDimGrid,
-				  GridRedBlackCartesian &FiveDimRedBlackGrid,
-				  GridCartesian         &FourDimGrid,
-				  GridRedBlackCartesian &FourDimRedBlackGrid,
-				  RealD _mass,RealD _M5) :
-   WilsonFermion5D(_Umu,
+ template<class Impl>
+ CayleyFermion5D<Impl>::CayleyFermion5D(GaugeField &_Umu,
+					GridCartesian         &FiveDimGrid,
+					GridRedBlackCartesian &FiveDimRedBlackGrid,
+					GridCartesian         &FourDimGrid,
+					GridRedBlackCartesian &FourDimRedBlackGrid,
+					RealD _mass,RealD _M5,const ImplParams &p) :
+   WilsonFermion5D<Impl>(_Umu,
 		   FiveDimGrid,
 		   FiveDimRedBlackGrid,
 		   FourDimGrid,
-		   FourDimRedBlackGrid,_M5),
+ 	 	   FourDimRedBlackGrid,_M5,p),
    mass(_mass)
  {
  }
 
-  // override multiply
-  RealD CayleyFermion5D::M    (const LatticeFermion &psi, LatticeFermion &chi)
+ template<class Impl>
+  void CayleyFermion5D<Impl>::Meooe5D    (const FermionField &psi, FermionField &Din)
   {
-    LatticeFermion Din(psi._grid);
-
     // Assemble Din
+    int Ls=this->Ls;
     for(int s=0;s<Ls;s++){
       if ( s==0 ) {
 	//	Din = bs psi[s] + cs[s] psi[s+1}
@@ -37,11 +37,57 @@ namespace QCD {
 	axpby_ssp_pplus(Din,1.0,Din,cs[s],psi,s,s-1);
       }
     }
+  }
+ template<class Impl>
+  void CayleyFermion5D<Impl>::MeooeDag5D    (const FermionField &psi, FermionField &Din)
+  {
+    int Ls=this->Ls;
+    for(int s=0;s<Ls;s++){
+      if ( s==0 ) {
+	axpby_ssp_pplus (Din,bs[s],psi,cs[s+1],psi,s,s+1);
+	axpby_ssp_pminus(Din,1.0,Din,-mass*cs[Ls-1],psi,s,Ls-1);
+      } else if ( s==(Ls-1)) { 
+	axpby_ssp_pplus (Din,bs[s],psi,-mass*cs[0],psi,s,0);
+	axpby_ssp_pminus(Din,1.0,Din,cs[s-1],psi,s,s-1);
+      } else {
+	axpby_ssp_pplus (Din,bs[s],psi,cs[s+1],psi,s,s+1);
+	axpby_ssp_pminus(Din,1.0,Din,cs[s-1],psi,s,s-1);
+      }
+    }
+  }
 
-    DW(Din,chi,DaggerNo);
+  // override multiply
+ template<class Impl>
+  RealD CayleyFermion5D<Impl>::M    (const FermionField &psi, FermionField &chi)
+  {
+    int Ls=this->Ls;
+
+    FermionField Din(psi._grid);
+
+    // Assemble Din
+    /*
+    for(int s=0;s<Ls;s++){
+      if ( s==0 ) {
+	//	Din = bs psi[s] + cs[s] psi[s+1}
+	axpby_ssp_pminus(Din,bs[s],psi,cs[s],psi,s,s+1);
+	//      Din+= -mass*cs[s] psi[s+1}
+	axpby_ssp_pplus (Din,1.0,Din,-mass*cs[s],psi,s,Ls-1);
+      } else if ( s==(Ls-1)) { 
+	axpby_ssp_pminus(Din,bs[s],psi,-mass*cs[s],psi,s,0);
+	axpby_ssp_pplus (Din,1.0,Din,cs[s],psi,s,s-1);
+      } else {
+	axpby_ssp_pminus(Din,bs[s],psi,cs[s],psi,s,s+1);
+	axpby_ssp_pplus(Din,1.0,Din,cs[s],psi,s,s-1);
+      }
+    }
+    */
+    Meooe5D(psi,Din);
+
+    this->DW(Din,chi,DaggerNo);
     // ((b D_W + D_w hop terms +1) on s-diag
     axpby(chi,1.0,1.0,chi,psi); 
 
+    // Call Mooee??
     for(int s=0;s<Ls;s++){
       if ( s==0 ){
 	axpby_ssp_pminus(chi,1.0,chi,-1.0,psi,s,s+1);
@@ -57,20 +103,26 @@ namespace QCD {
     return norm2(chi);
   }
 
-  RealD CayleyFermion5D::Mdag (const LatticeFermion &psi, LatticeFermion &chi)
+ template<class Impl>
+  RealD CayleyFermion5D<Impl>::Mdag (const FermionField &psi, FermionField &chi)
   {
     // Under adjoint
     //D1+        D1- P-    ->   D1+^dag   P+ D2-^dag
     //D2- P+     D2+            P-D1-^dag D2+dag
 
-    LatticeFermion Din(psi._grid);
+    FermionField Din(psi._grid);
     // Apply Dw
-    DW(psi,Din,DaggerYes); 
+    this->DW(psi,Din,DaggerYes); 
 
+    Meooe5D(Din,chi);
+
+    int Ls=this->Ls;
     for(int s=0;s<Ls;s++){
+
       // Collect the terms in DW
       //	Chi = bs Din[s] + cs[s] Din[s+1}
       //    Chi+= -mass*cs[s] psi[s+1}
+      /*
       if ( s==0 ) {
 	axpby_ssp_pplus (chi,bs[s],Din,cs[s+1],Din,s,s+1);
 	axpby_ssp_pminus(chi,1.0,chi,-mass*cs[Ls-1],Din,s,Ls-1);
@@ -81,6 +133,10 @@ namespace QCD {
 	axpby_ssp_pplus (chi,bs[s],Din,cs[s+1],Din,s,s+1);
 	axpby_ssp_pminus(chi,1.0,chi,cs[s-1],Din,s,s-1);
       }
+      */
+
+      // FIXME just call MooeeDag??
+
       // Collect the terms indept of DW
       if ( s==0 ){
 	axpby_ssp_pplus (chi,1.0,chi,-1.0,psi,s,s+1);
@@ -99,10 +155,17 @@ namespace QCD {
   }
 
   // half checkerboard operations
-  void CayleyFermion5D::Meooe       (const LatticeFermion &psi, LatticeFermion &chi)
+ template<class Impl>
+  void CayleyFermion5D<Impl>::Meooe       (const FermionField &psi, FermionField &chi)
   {
-    LatticeFermion tmp(psi._grid);
+    int Ls=this->Ls;
+
+    FermionField tmp(psi._grid);
     // Assemble the 5d matrix
+    Meooe5D(psi,tmp); 
+
+#if 0
+    std::cout << "Meooe Test replacement norm2 tmp = " <<norm2(tmp)<<std::endl;
     for(int s=0;s<Ls;s++){
       if ( s==0 ) {
 	//	tmp = bs psi[s] + cs[s] psi[s+1}
@@ -117,24 +180,33 @@ namespace QCD {
 	axpby_ssp_pplus (tmp,1.0,tmp,-ceo[s],psi,s,s-1);
       }
     }
+    std::cout << "Meooe Test replacement norm2 tmp old = " <<norm2(tmp)<<std::endl;
+#endif
+
     // Apply 4d dslash
     if ( psi.checkerboard == Odd ) {
-      DhopEO(tmp,chi,DaggerNo);
+      this->DhopEO(tmp,chi,DaggerNo);
     } else {
-      DhopOE(tmp,chi,DaggerNo);
+      this->DhopOE(tmp,chi,DaggerNo);
     }
   }
 
-  void CayleyFermion5D::MeooeDag    (const LatticeFermion &psi, LatticeFermion &chi)
+  template<class Impl>
+  void CayleyFermion5D<Impl>::MeooeDag    (const FermionField &psi, FermionField &chi)
   {
-    LatticeFermion tmp(psi._grid);
+    FermionField tmp(psi._grid);
     // Apply 4d dslash
     if ( psi.checkerboard == Odd ) {
-      DhopEO(psi,tmp,DaggerYes);
+      this->DhopEO(psi,tmp,DaggerYes);
     } else {
-      DhopOE(psi,tmp,DaggerYes);
+      this->DhopOE(psi,tmp,DaggerYes);
     }
+
+    Meooe5D(tmp,chi); 
+#if 0
+    std::cout << "Meooe Test replacement norm2 chi new = " <<norm2(chi)<<std::endl;
     // Assemble the 5d matrix
+    int Ls=this->Ls;
     for(int s=0;s<Ls;s++){
       if ( s==0 ) {
 	axpby_ssp_pplus(chi,beo[s],tmp,   -ceo[s+1]  ,tmp,s,s+1);
@@ -147,10 +219,15 @@ namespace QCD {
 	axpby_ssp_pminus(chi,1.0   ,chi,-ceo[s-1],tmp,s,s-1);
       }
     }
+    std::cout << "Meooe Test replacement norm2 chi old = " <<norm2(chi)<<std::endl;
+#endif
+
   }
 
-  void CayleyFermion5D::Mooee       (const LatticeFermion &psi, LatticeFermion &chi)
+ template<class Impl>
+  void CayleyFermion5D<Impl>::Mooee       (const FermionField &psi, FermionField &chi)
   {
+    int Ls=this->Ls;
     for (int s=0;s<Ls;s++){
       if ( s==0 ) {
 	axpby_ssp_pminus(chi,bee[s],psi ,-cee[s],psi,s,s+1);
@@ -165,8 +242,10 @@ namespace QCD {
     }
   }
 
-  void  CayleyFermion5D::Mdir (const LatticeFermion &psi, LatticeFermion &chi,int dir,int disp){
-    LatticeFermion tmp(psi._grid);
+ template<class Impl>
+  void  CayleyFermion5D<Impl>::Mdir (const FermionField &psi, FermionField &chi,int dir,int disp){
+    int Ls=this->Ls;
+    FermionField tmp(psi._grid);
     // Assemble the 5d matrix
     for(int s=0;s<Ls;s++){
       if ( s==0 ) {
@@ -183,11 +262,13 @@ namespace QCD {
       }
     }
     // Apply 4d dslash fragment
-    DhopDir(tmp,chi,dir,disp);
+    this->DhopDir(tmp,chi,dir,disp);
   }
 
-  void CayleyFermion5D::MooeeDag    (const LatticeFermion &psi, LatticeFermion &chi)
+ template<class Impl>
+  void CayleyFermion5D<Impl>::MooeeDag    (const FermionField &psi, FermionField &chi)
   {
+    int Ls=this->Ls;
     for (int s=0;s<Ls;s++){
       // Assemble the 5d matrix
       if ( s==0 ) {
@@ -203,8 +284,10 @@ namespace QCD {
     }
   }
 
-  void CayleyFermion5D::MooeeInv    (const LatticeFermion &psi, LatticeFermion &chi)
+ template<class Impl>
+  void CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi, FermionField &chi)
   {
+    int Ls=this->Ls;
     // Apply (L^{\prime})^{-1}
     axpby_ssp (chi,1.0,psi,     0.0,psi,0,0);      // chi[0]=psi[0]
     for (int s=1;s<Ls;s++){
@@ -227,8 +310,10 @@ namespace QCD {
     }
   }
 
-  void CayleyFermion5D::MooeeInvDag (const LatticeFermion &psi, LatticeFermion &chi)
+ template<class Impl>
+  void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &chi)
   {
+    int Ls=this->Ls;
     // Apply (U^{\prime})^{-dagger}
     axpby_ssp (chi,1.0,psi,     0.0,psi,0,0);      // chi[0]=psi[0]
     for (int s=1;s<Ls;s++){
@@ -249,16 +334,66 @@ namespace QCD {
       axpby_ssp_pplus (chi,1.0,chi,-lee[s],chi,s,s+1);  // chi[Ls]
     }
   }
+
+  // force terms; five routines; default to Dhop on diagonal
+  template<class Impl>
+  void CayleyFermion5D<Impl>::MDeriv  (GaugeField &mat,const FermionField &U,const FermionField &V,int dag)
+  {
+    FermionField Din(V._grid);
+
+    if ( dag == DaggerNo ) {
+      //      U d/du [D_w D5] V = U d/du DW D5 V
+      Meooe5D(V,Din);
+      this->DhopDeriv(mat,U,Din,dag);
+    } else {
+      //      U d/du [D_w D5]^dag V = U D5^dag d/du DW^dag Y // implicit adj on U in call
+      Meooe5D(U,Din);
+      this->DhopDeriv(mat,Din,V,dag);
+    }
+  };
+ template<class Impl>
+  void CayleyFermion5D<Impl>::MoeDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag)
+  {
+    FermionField Din(V._grid);
+
+    if ( dag == DaggerNo ) {
+      //      U d/du [D_w D5] V = U d/du DW D5 V
+      Meooe5D(V,Din);
+      this->DhopDerivOE(mat,U,Din,dag);
+    } else {
+      //      U d/du [D_w D5]^dag V = U D5^dag d/du DW^dag Y // implicit adj on U in call
+      Meooe5D(U,Din);
+      this->DhopDerivOE(mat,Din,V,dag);
+    }
+  };
+ template<class Impl>
+  void CayleyFermion5D<Impl>::MeoDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag)
+  {
+    FermionField Din(V._grid);
+
+    if ( dag == DaggerNo ) {
+      //      U d/du [D_w D5] V = U d/du DW D5 V
+      Meooe5D(V,Din);
+      this->DhopDerivEO(mat,U,Din,dag);
+    } else {
+      //      U d/du [D_w D5]^dag V = U D5^dag d/du DW^dag Y // implicit adj on U in call
+      Meooe5D(U,Din);
+      this->DhopDerivEO(mat,Din,V,dag);
+    }
+  };
   
   // Tanh
-  void CayleyFermion5D::SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD b,RealD c)
+ template<class Impl>
+  void CayleyFermion5D<Impl>::SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD b,RealD c)
   {
     SetCoefficientsZolotarev(1.0,zdata,b,c);
 
   }
   //Zolo
-  void CayleyFermion5D::SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata,RealD b,RealD c)
+ template<class Impl>
+  void CayleyFermion5D<Impl>::SetCoefficientsZolotarev(RealD zolo_hi,Approx::zolotarev_data *zdata,RealD b,RealD c)
   {
+    int Ls=this->Ls;
 
     ///////////////////////////////////////////////////////////
     // The Cayley coeffs (unprec)
@@ -308,8 +443,8 @@ namespace QCD {
     ceo.resize(Ls);
     
     for(int i=0;i<Ls;i++){
-      bee[i]=as[i]*(bs[i]*(4.0-M5) +1.0);
-      cee[i]=as[i]*(1.0-cs[i]*(4.0-M5));
+      bee[i]=as[i]*(bs[i]*(4.0-this->M5) +1.0);
+      cee[i]=as[i]*(1.0-cs[i]*(4.0-this->M5));
       beo[i]=as[i]*bs[i];
       ceo[i]=-as[i]*cs[i];
     }
@@ -361,6 +496,8 @@ namespace QCD {
       dee[Ls-1] += delta_d;
     }
   }
+
+  FermOpTemplateInstantiate(CayleyFermion5D);
 
 }}
 

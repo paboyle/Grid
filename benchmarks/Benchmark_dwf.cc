@@ -21,11 +21,11 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   int threads = GridThread::GetThreads();
-  std::cout << "Grid is setup to use "<<threads<<" threads"<<std::endl;
+  std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   std::vector<int> latt4 = GridDefaultLatt();
-  const int Ls=8;
-  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());
+  const int Ls=16;
+  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
@@ -59,7 +59,7 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   std::vector<LatticeColourMatrix> U(4,FGrid);
   for(int mu=0;mu<Nd;mu++){
-    U[mu] = peekIndex<LorentzIndex>(Umu5d,mu);
+    U[mu] = PeekIndex<LorentzIndex>(Umu5d,mu);
   }
 
   if (1)
@@ -79,25 +79,28 @@ int main (int argc, char ** argv)
 
   RealD mass=0.1;
   RealD M5  =1.8;
-  DomainWallFermion Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   
-  std::cout << "Calling Dw"<<std::endl;
-  int ncall=10;
-  double t0=usecond();
-  for(int i=0;i<ncall;i++){
-    Dw.Dhop(src,result,0);
-  }
-  double t1=usecond();
+  std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
+  int ncall=10000;
+  {
+    double t0=usecond();
+    for(int i=0;i<ncall;i++){
+      Dw.Dhop(src,result,0);
+    }
+    double t1=usecond();
+    
+    double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
+    double flops=1344*volume*ncall;
 
-  double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-  double flops=1344*volume*ncall;
-  
-  std::cout << "Called Dw"<<std::endl;
-  std::cout << "norm result "<< norm2(result)<<std::endl;
-  std::cout << "norm ref    "<< norm2(ref)<<std::endl;
-  std::cout << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
-  err = ref-result; 
-  std::cout << "norm diff   "<< norm2(err)<<std::endl;
+    std::cout<<GridLogMessage << "Called Dw "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
+    std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
+    std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
+    err = ref-result; 
+    std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
+    Dw.Report();
+  }
 
 
   if (1)
@@ -120,11 +123,11 @@ int main (int argc, char ** argv)
     ref = -0.5*ref;
   }
   Dw.Dhop(src,result,1);
-  std::cout << "Called DwDag"<<std::endl;
-  std::cout << "norm result "<< norm2(result)<<std::endl;
-  std::cout << "norm ref    "<< norm2(ref)<<std::endl;
+  std::cout<<GridLogMessage << "Called DwDag"<<std::endl;
+  std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
+  std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
   err = ref-result; 
-  std::cout << "norm diff   "<< norm2(err)<<std::endl;
+  std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
 
   LatticeFermion src_e (FrbGrid);
   LatticeFermion src_o (FrbGrid);
@@ -133,24 +136,44 @@ int main (int argc, char ** argv)
   LatticeFermion r_eo  (FGrid);
 
 
-  std::cout << "Calling Deo and Doe"<<std::endl;
+  std::cout<<GridLogMessage << "Calling Deo and Doe"<<std::endl;
   pickCheckerboard(Even,src_e,src);
   pickCheckerboard(Odd,src_o,src);
 
+  std::cout<<GridLogMessage << "src_e"<<norm2(src_e)<<std::endl;
+  std::cout<<GridLogMessage << "src_o"<<norm2(src_o)<<std::endl;
+
+  {
+    double t0=usecond();
+    for(int i=0;i<ncall;i++){
+      Dw.DhopEO(src_o,r_e,DaggerNo);
+    }
+    double t1=usecond();
+    
+    double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
+    double flops=(1344.0*volume*ncall)/2;
+
+    std::cout<<GridLogMessage << "Deo mflop/s =   "<< flops/(t1-t0)<<std::endl;
+  }
+
   Dw.DhopEO(src_o,r_e,DaggerNo);
   Dw.DhopOE(src_e,r_o,DaggerNo);
-  Dw.Dhop(src,result,DaggerNo);
+  Dw.Dhop  (src  ,result,DaggerNo);
+
+  std::cout<<GridLogMessage << "r_e"<<norm2(r_e)<<std::endl;
+  std::cout<<GridLogMessage << "r_o"<<norm2(r_o)<<std::endl;
+  std::cout<<GridLogMessage << "res"<<norm2(result)<<std::endl;
 
   setCheckerboard(r_eo,r_o);
   setCheckerboard(r_eo,r_e);
 
   err = r_eo-result; 
-  std::cout << "norm diff   "<< norm2(err)<<std::endl;
+  std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
 
   pickCheckerboard(Even,src_e,err);
   pickCheckerboard(Odd,src_o,err);
-  std::cout << "norm diff even  "<< norm2(src_e)<<std::endl;
-  std::cout << "norm diff odd   "<< norm2(src_o)<<std::endl;
+  std::cout<<GridLogMessage << "norm diff even  "<< norm2(src_e)<<std::endl;
+  std::cout<<GridLogMessage << "norm diff odd   "<< norm2(src_o)<<std::endl;
 
   Grid_finalize();
 }

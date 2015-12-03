@@ -27,7 +27,7 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(4,vComplexF::Nsimd());
+  std::vector<int> simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
 
   latt_size.resize(4);
@@ -141,13 +141,13 @@ int main (int argc, char ** argv)
     //    rscalar=real(scalar);
     //    iscalar=imag(scalar);
     //    scalar =cmplx(rscalar,iscalar);
-    pokeIndex<1>(cVec,scalar,1);
+    PokeIndex<ColourIndex>(cVec,scalar,1);
 
 
     scalar=transpose(scalar);
-    scalar=transposeIndex<1>(scalar);
-    scalar=traceIndex<1>(scalar);
-    scalar=peekIndex<1>(cVec,0);
+    scalar=TransposeIndex<ColourIndex>(scalar);
+    scalar=TraceIndex<SpinIndex>(scalar);
+    scalar=PeekIndex<ColourIndex>(cVec,0);
 
     scalar=trace(scalar);
     scalar=localInnerProduct(cVec,cVec);
@@ -213,25 +213,29 @@ int main (int argc, char ** argv)
     
    
     random(SerialRNG, cm);
-    std::cout << cm << std::endl;
+    std::cout<<GridLogMessage << cm << std::endl;
 
     cm = Ta(cm);
     TComplex tracecm= trace(cm);      
-    std::cout << cm << std::endl;
+    std::cout<<GridLogMessage << cm << std::endl;
 
 
-    cm = Exponentiate(cm, 1.0, 12);
-    std::cout << cm << "  " << std::endl;
+    cm = Exponentiate(cm, 2.0, 12);
+    std::cout<<GridLogMessage << cm << "  " << std::endl;
     Complex det = Determinant(cm);
-    std::cout << "determinant: " << det <<  std::endl;
+    std::cout<<GridLogMessage << "determinant: " << det <<  std::endl;
+    std::cout<<GridLogMessage << "norm: " << norm2(cm) <<  std::endl;
 
     cm = ProjectOnGroup(cm);
-    std::cout << cm << "  " << std::endl;
+    std::cout<<GridLogMessage << cm << "  " << std::endl;
+    std::cout<<GridLogMessage << "norm: " << norm2(cm) <<  std::endl;
     cm = ProjectOnGroup(cm);
-    std::cout << cm << "  " << std::endl;
+    std::cout<<GridLogMessage << cm << "  " << std::endl;
+    std::cout<<GridLogMessage << "norm: " << norm2(cm) <<  std::endl;
 
-    det = Determinant(cm);
-    std::cout << "determinant: " << det <<  std::endl;
+
+    //    det = Determinant(cm);
+    //    std::cout<<GridLogMessage << "determinant: " << det <<  std::endl;
 
 
 //    Foo = Foo+scalar; // LatticeColourMatrix+Scalar
@@ -245,7 +249,24 @@ int main (int argc, char ** argv)
     trscMat = trace(scMat); // Trace
 
     // Exponentiate test
+    std::vector<int> mysite {0,0,0,0};
+    random(FineRNG,cMat);
+    cMat = Ta(cMat);
+    peekSite(cm, cMat, mysite);
+    std::cout<<GridLogMessage << cm << "  " << std::endl;
+    cm = Exponentiate(cm, 1.0, 12);
+    std::cout<<GridLogMessage << cm << "  " << std::endl;
+    std::cout<<GridLogMessage << "norm: " << norm2(cm) <<  std::endl;
+
+
+    std::cout<<GridLogMessage << "norm cMmat : " << norm2(cMat) <<  std::endl;
     cMat = expMat(cMat, ComplexD(1.0, 0.0));
+    std::cout<<GridLogMessage << "norm expMat: " << norm2(cMat) <<  std::endl;
+    peekSite(cm, cMat, mysite);
+    std::cout<<GridLogMessage << cm << "  " << std::endl;
+    std::cout<<GridLogMessage << "determinant: " << Determinant(cm) <<  std::endl;
+    std::cout<<GridLogMessage << "norm: " << norm2(cm) <<  std::endl;
+
 
     // LatticeComplex trlcMat(&Fine);
     // trlcMat = trace(lcMat); // Trace involving iVector - now generates error
@@ -257,16 +278,16 @@ int main (int argc, char ** argv)
       SpinMatrix   s_m;   
       SpinColourMatrix sc_m; 
 
-      s_m = traceIndex<1>(sc_m); // Map to traceColour
-      c_m = traceIndex<2>(sc_m); // map to traceSpin
+      s_m = TensorIndexRecursion<ColourIndex>::traceIndex(sc_m); // Map to traceColour
+      c_m = TensorIndexRecursion<SpinIndex>::traceIndex(sc_m); // map to traceSpin
 
-      c   = traceIndex<2>(s_m); 
-      c   = traceIndex<1>(c_m);
+      c   = TensorIndexRecursion<SpinIndex>::traceIndex(s_m); 
+      c   = TensorIndexRecursion<ColourIndex>::traceIndex(c_m);
       
-      s_m = peekIndex<1>(scm,0,0);
-      c_m = peekIndex<2>(scm,1,2);
+      s_m = TensorIndexRecursion<ColourIndex>::peekIndex(scm,0,0);
+      c_m = TensorIndexRecursion<SpinIndex>::peekIndex(scm,1,2);
       //      c_m = peekSpin<SpinColourMatrix>(scm,1,2);
-      c_m = peekIdiot<SpinColourMatrix>(scm,1,2);
+      //      c_m = peekIdiot<SpinColourMatrix>(scm,1,2);
 
       printf("c. Level %d\n",c_m.TensorLevel);
       printf("c. Level %d\n",c_m().TensorLevel);
@@ -277,7 +298,7 @@ int main (int argc, char ** argv)
       c          = scm()(1,1)(1,2);
       scm()(1,1)(2,1) = c;
 
-      pokeIndex<1> (c_m,c,0,0);
+      //      pokeIndex<ColourIndex> (c_m,c,0,0);
     }
 
     FooBar = Bar;
@@ -346,7 +367,7 @@ int main (int argc, char ** argv)
 
     LatticeGaugeField U(&Fine);
     //    LatticeColourMatrix Uy = peekLorentz(U,1);
-    LatticeColourMatrix Uy = peekDumKopf(U,1);
+    //    LatticeColourMatrix Uy = peekDumKopf(U,1);
 
     flops = ncall*1.0*volume*(8*Nc*Nc*Nc);
     bytes = ncall*1.0*volume*Nc*Nc    *2*3*sizeof(Grid::Real);
@@ -413,7 +434,7 @@ int main (int argc, char ** argv)
 	pickCheckerboard(1,bFoo,Foo);
     
 	if ( Fine.IsBoss() ) {
-	  std::cout << "Shifting both parities by "<< shift <<" direction "<< dir <<std::endl;
+	  std::cout<<GridLogMessage << "Shifting both parities by "<< shift <<" direction "<< dir <<std::endl;
 	}
 	Shifted  = Cshift(Foo,dir,shift);    // Shift everything
 
@@ -524,7 +545,7 @@ int main (int argc, char ** argv)
         }}
     }}}}
 	if( Fine.IsBoss() ){
-	  std::cout << "LatticeColorMatrix * LatticeColorMatrix nrm diff = "<<nrm<<std::endl;
+	  std::cout<<GridLogMessage << "LatticeColorMatrix * LatticeColorMatrix nrm diff = "<<nrm<<std::endl;
 	}
       }}
 
@@ -532,7 +553,7 @@ int main (int argc, char ** argv)
  } // loop for omp
 
 
- std::cout << sizeof(vComplexF) << std::endl;
+ std::cout<<GridLogMessage << sizeof(vComplexF) << std::endl;
  
  Grid_finalize();
 }

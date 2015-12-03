@@ -19,15 +19,25 @@ namespace QCD {
     static const int Nd=4;
     static const int Nhs=2; // half spinor
     static const int Nds=8; // double stored gauge field
+    static const int Ngp=2; // gparity index range
 
     //////////////////////////////////////////////////////////////////////////////
     // QCD iMatrix types
     // Index conventions:                            Lorentz x Spin x Colour
     //////////////////////////////////////////////////////////////////////////////
-    static const int ColourIndex = 1;
-    static const int SpinIndex   = 2;
-    static const int LorentzIndex= 3;
-    
+    static const int ColourIndex = 2;
+    static const int SpinIndex   = 1;
+    static const int LorentzIndex= 0;
+
+    // Useful traits is this a spin index
+    //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
+
+    const int SpinorIndex = 2;
+    template<typename T> struct isSpinor {
+      static const bool value = (SpinorIndex==T::TensorLevel);
+    };
+    template <typename T> using IfSpinor    = Invoke<std::enable_if< isSpinor<T>::value,int> > ;
+    template <typename T> using IfNotSpinor = Invoke<std::enable_if<!isSpinor<T>::value,int> > ;
 
     // ChrisK very keen to add extra space for Gparity doubling.
     //
@@ -48,6 +58,9 @@ namespace QCD {
     template<typename vtype> using iSpinColourVector          = iScalar<iVector<iVector<vtype, Nc>, Ns> >;
     template<typename vtype> using iHalfSpinVector            = iScalar<iVector<iScalar<vtype>, Nhs> >;
     template<typename vtype> using iHalfSpinColourVector      = iScalar<iVector<iVector<vtype, Nc>, Nhs> >;
+
+    template<typename vtype> using iGparitySpinColourVector       = iVector<iVector<iVector<vtype, Nc>, Nhs>, Ngp >;
+    template<typename vtype> using iGparityHalfSpinColourVector   = iVector<iVector<iVector<vtype, Nc>, Nhs>, Ngp >;
 
     // Spin matrix
     typedef iSpinMatrix<Complex  >          SpinMatrix;
@@ -140,7 +153,7 @@ namespace QCD {
     typedef iHalfSpinColourVector<vComplexD> vHalfSpinColourVectorD;
     
     // singlets
-    typedef iSinglet<Complex >         TComplex;    // FIXME This is painful. Tensor singlet complex type.
+    typedef iSinglet<Complex >         TComplex;     // FIXME This is painful. Tensor singlet complex type.
     typedef iSinglet<ComplexF>         TComplexF;    // FIXME This is painful. Tensor singlet complex type.
     typedef iSinglet<ComplexD>         TComplexD;    // FIXME This is painful. Tensor singlet complex type.
 
@@ -148,7 +161,7 @@ namespace QCD {
     typedef iSinglet<vComplexF>        vTComplexF;   // what if we don't know the tensor structure
     typedef iSinglet<vComplexD>        vTComplexD;   // what if we don't know the tensor structure
 
-    typedef iSinglet<Real >            TReal;       // Shouldn't need these; can I make it work without?
+    typedef iSinglet<Real >            TReal;        // Shouldn't need these; can I make it work without?
     typedef iSinglet<RealF>            TRealF;       // Shouldn't need these; can I make it work without?
     typedef iSinglet<RealD>            TRealD;       // Shouldn't need these; can I make it work without?
 
@@ -237,6 +250,8 @@ namespace QCD {
     typedef LatticeDoubleStoredColourMatrixF       LatticeDoubledGaugeFieldF;
     typedef LatticeDoubleStoredColourMatrixD       LatticeDoubledGaugeFieldD;
 
+    template<class GF> using LorentzScalar = Lattice<iScalar<typename GF::vector_object::element> >;
+
     // Uhgg... typing this hurt  ;)
     // (my keyboard got burning hot when I typed this, must be the anti-Fermion)
     typedef Lattice<vColourVector>          LatticeStaggeredFermion;    
@@ -252,47 +267,47 @@ namespace QCD {
     //////////////////////////////////////////////////////////////////////////////
 
     //spin
-    template<class vobj> auto peekSpin(const vobj &rhs,int i) -> decltype(peekIndex<SpinIndex>(rhs,0))
+    template<class vobj> auto peekSpin(const vobj &rhs,int i) -> decltype(PeekIndex<SpinIndex>(rhs,0))
     {
-      return peekIndex<SpinIndex>(rhs,i);
+      return PeekIndex<SpinIndex>(rhs,i);
     }
-    template<class vobj> auto peekSpin(const vobj &rhs,int i,int j) -> decltype(peekIndex<SpinIndex>(rhs,0,0))
+    template<class vobj> auto peekSpin(const vobj &rhs,int i,int j) -> decltype(PeekIndex<SpinIndex>(rhs,0,0))
     {
-      return peekIndex<SpinIndex>(rhs,i,j);
+      return PeekIndex<SpinIndex>(rhs,i,j);
     }
-    template<class vobj> auto peekSpin(const Lattice<vobj> &rhs,int i) -> decltype(peekIndex<SpinIndex>(rhs,0))
+    template<class vobj> auto peekSpin(const Lattice<vobj> &rhs,int i) -> decltype(PeekIndex<SpinIndex>(rhs,0))
     {
-      return peekIndex<SpinIndex>(rhs,i);
+      return PeekIndex<SpinIndex>(rhs,i);
     }
-    template<class vobj> auto peekSpin(const Lattice<vobj> &rhs,int i,int j) -> decltype(peekIndex<SpinIndex>(rhs,0,0))
+    template<class vobj> auto peekSpin(const Lattice<vobj> &rhs,int i,int j) -> decltype(PeekIndex<SpinIndex>(rhs,0,0))
     {
-      return peekIndex<SpinIndex>(rhs,i,j);
+      return PeekIndex<SpinIndex>(rhs,i,j);
     }
     //colour
-    template<class vobj> auto peekColour(const vobj &rhs,int i) -> decltype(peekIndex<ColourIndex>(rhs,0))
+    template<class vobj> auto peekColour(const vobj &rhs,int i) -> decltype(PeekIndex<ColourIndex>(rhs,0))
     {
-      return peekIndex<ColourIndex>(rhs,i);
+      return PeekIndex<ColourIndex>(rhs,i);
     }
-    template<class vobj> auto peekColour(const vobj &rhs,int i,int j) -> decltype(peekIndex<ColourIndex>(rhs,0,0))
+    template<class vobj> auto peekColour(const vobj &rhs,int i,int j) -> decltype(PeekIndex<ColourIndex>(rhs,0,0))
     {
-      return peekIndex<ColourIndex>(rhs,i,j);
+      return PeekIndex<ColourIndex>(rhs,i,j);
     }
-    template<class vobj> auto peekColour(const Lattice<vobj> &rhs,int i) -> decltype(peekIndex<ColourIndex>(rhs,0))
+    template<class vobj> auto peekColour(const Lattice<vobj> &rhs,int i) -> decltype(PeekIndex<ColourIndex>(rhs,0))
     {
-      return peekIndex<ColourIndex>(rhs,i);
+      return PeekIndex<ColourIndex>(rhs,i);
     }
-    template<class vobj> auto peekColour(const Lattice<vobj> &rhs,int i,int j) -> decltype(peekIndex<ColourIndex>(rhs,0,0))
+    template<class vobj> auto peekColour(const Lattice<vobj> &rhs,int i,int j) -> decltype(PeekIndex<ColourIndex>(rhs,0,0))
     {
-      return peekIndex<ColourIndex>(rhs,i,j);
+      return PeekIndex<ColourIndex>(rhs,i,j);
     }
     //lorentz
-    template<class vobj> auto peekLorentz(const vobj &rhs,int i) -> decltype(peekIndex<LorentzIndex>(rhs,0))
+    template<class vobj> auto peekLorentz(const vobj &rhs,int i) -> decltype(PeekIndex<LorentzIndex>(rhs,0))
     {
-      return peekIndex<LorentzIndex>(rhs,i);
+      return PeekIndex<LorentzIndex>(rhs,i);
     }
-    template<class vobj> auto peekLorentz(const Lattice<vobj> &rhs,int i) -> decltype(peekIndex<LorentzIndex>(rhs,0))
+    template<class vobj> auto peekLorentz(const Lattice<vobj> &rhs,int i) -> decltype(PeekIndex<LorentzIndex>(rhs,0))
     {
-      return peekIndex<LorentzIndex>(rhs,i);
+      return PeekIndex<LorentzIndex>(rhs,i);
     }
 
     //////////////////////////////////////////////
@@ -303,35 +318,35 @@ namespace QCD {
 		      const Lattice<decltype(peekIndex<ColourIndex>(lhs._odata[0],0))> & rhs,
 		      int i)
     {
-      pokeIndex<ColourIndex>(lhs,rhs,i);
+      PokeIndex<ColourIndex>(lhs,rhs,i);
     }
     template<class vobj> 
       void pokeColour(Lattice<vobj> &lhs,
 		      const Lattice<decltype(peekIndex<ColourIndex>(lhs._odata[0],0,0))> & rhs,
 		      int i,int j)
     {
-      pokeIndex<ColourIndex>(lhs,rhs,i,j);
+      PokeIndex<ColourIndex>(lhs,rhs,i,j);
     }
     template<class vobj> 
       void pokeSpin(Lattice<vobj> &lhs,
 		      const Lattice<decltype(peekIndex<SpinIndex>(lhs._odata[0],0))> & rhs,
 		      int i)
     {
-      pokeIndex<SpinIndex>(lhs,rhs,i);
+      PokeIndex<SpinIndex>(lhs,rhs,i);
     }
     template<class vobj> 
       void pokeSpin(Lattice<vobj> &lhs,
 		      const Lattice<decltype(peekIndex<SpinIndex>(lhs._odata[0],0,0))> & rhs,
 		      int i,int j)
     {
-      pokeIndex<SpinIndex>(lhs,rhs,i,j);
+      PokeIndex<SpinIndex>(lhs,rhs,i,j);
     }
     template<class vobj> 
       void pokeLorentz(Lattice<vobj> &lhs,
 		      const Lattice<decltype(peekIndex<LorentzIndex>(lhs._odata[0],0))> & rhs,
 		      int i)
     {
-      pokeIndex<LorentzIndex>(lhs,rhs,i);
+      PokeIndex<LorentzIndex>(lhs,rhs,i);
     }
 
     //////////////////////////////////////////////
@@ -411,6 +426,11 @@ namespace QCD {
 #include <qcd/utils/LinalgUtils.h>
 #include <qcd/utils/CovariantCshift.h>
 #include <qcd/utils/WilsonLoops.h>
+#include <qcd/utils/SUn.h>
 #include <qcd/action/Actions.h>
+#include <qcd/hmc/integrators/Integrator.h>
+#include <qcd/hmc/integrators/Integrator_algorithm.h>
+#include <qcd/hmc/HMC.h>
+
 
 #endif

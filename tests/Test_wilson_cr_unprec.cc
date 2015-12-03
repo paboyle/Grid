@@ -22,7 +22,7 @@ int main (int argc, char ** argv)
 
 
   std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplexF::Nsimd());
+  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian     RBGrid(latt_size,simd_layout,mpi_layout);
@@ -42,14 +42,10 @@ int main (int argc, char ** argv)
     volume=volume*latt_size[mu];
   }  
 
-  for(int mu=0;mu<Nd;mu++){
-    U[mu] = peekIndex<LorentzIndex>(Umu,mu);
-  }
-  
   RealD mass=0.5;
-  WilsonFermion Dw(Umu,Grid,RBGrid,mass);
+  WilsonFermionR Dw(Umu,Grid,RBGrid,mass);
 
-  MdagMLinearOperator<WilsonFermion,LatticeFermion> HermOp(Dw);
+  MdagMLinearOperator<WilsonFermionR,LatticeFermion> HermOp(Dw);
 
   ConjugateResidual<LatticeFermion> MCR(1.0e-8,10000);
 

@@ -22,7 +22,7 @@ int main (int argc, char ** argv)
 
   const int Ls=9;
 
-  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplexF::Nsimd()),GridDefaultMpi());
+  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
@@ -38,20 +38,20 @@ int main (int argc, char ** argv)
 
   std::vector<LatticeColourMatrix> U(4,UGrid);
   for(int mu=0;mu<Nd;mu++){
-    U[mu] = peekIndex<LorentzIndex>(Umu,mu);
+    U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
   }
   
   RealD mass=0.1;
   RealD M5=1.8;
 
-  OverlapWilsonContFracTanhFermion Dcf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
+  OverlapWilsonContFracTanhFermionR Dcf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,1.0);
 
   ConjugateResidual<LatticeFermion> MCR(1.0e-8,10000);
 
-  MdagMLinearOperator<OverlapWilsonContFracTanhFermion,LatticeFermion> HermPosDefOp(Dcf);
+  MdagMLinearOperator<OverlapWilsonContFracTanhFermionR,LatticeFermion> HermPosDefOp(Dcf);
   MCR(HermPosDefOp,src,result);
 
-  HermitianLinearOperator<OverlapWilsonContFracTanhFermion,LatticeFermion> HermIndefOp(Dcf);
+  HermitianLinearOperator<OverlapWilsonContFracTanhFermionR,LatticeFermion> HermIndefOp(Dcf);
   MCR(HermIndefOp,src,result);
 
   Grid_finalize();

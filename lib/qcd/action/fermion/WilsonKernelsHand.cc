@@ -3,7 +3,7 @@
 #define REGISTER
 
 #define LOAD_CHIMU \
-  const vSpinColourVector & ref (in._odata[offset]);	\
+  const SiteSpinor & ref (in._odata[offset]);	\
     Chimu_00=ref()(0)(0);\
     Chimu_01=ref()(0)(1);\
     Chimu_02=ref()(0)(2);\
@@ -18,7 +18,7 @@
     Chimu_32=ref()(3)(2);
 
 #define LOAD_CHI\
-  const vHalfSpinColourVector &ref(buf[offset]);	\
+  const SiteHalfSpinor &ref(buf[offset]);	\
     Chi_00 = ref()(0)(0);\
     Chi_01 = ref()(0)(1);\
     Chi_02 = ref()(0)(2);\
@@ -56,13 +56,13 @@
     UChi_02+= U_20*Chi_02;\
     UChi_12+= U_20*Chi_12;
 
-#define PERMUTE\
-      permute(Chi_00,Chi_00,ptype);\
-      permute(Chi_01,Chi_01,ptype);\
-      permute(Chi_02,Chi_02,ptype);\
-      permute(Chi_10,Chi_10,ptype);\
-      permute(Chi_11,Chi_11,ptype);\
-      permute(Chi_12,Chi_12,ptype);
+#define PERMUTE_DIR(dir)			\
+      permute##dir(Chi_00,Chi_00);\
+      permute##dir(Chi_01,Chi_01);\
+      permute##dir(Chi_02,Chi_02);\
+      permute##dir(Chi_10,Chi_10);\
+      permute##dir(Chi_11,Chi_11);\
+      permute##dir(Chi_12,Chi_12);
 
 //      hspin(0)=fspin(0)+timesI(fspin(3));
 //      hspin(1)=fspin(1)+timesI(fspin(2));
@@ -280,48 +280,54 @@
 namespace Grid {
 namespace QCD {
 
-void DiracOptHand::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
-			    std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-			    int sF,int sU,const LatticeFermion &in, LatticeFermion &out)
+#ifdef HANDOPT
+template<class Impl>
+void WilsonKernels<Impl >::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
+					       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+					       int ss,int sU,const FermionField &in, FermionField &out)
 {
-  REGISTER vComplex result_00; // 12 regs on knc
-  REGISTER vComplex result_01;
-  REGISTER vComplex result_02;
+  //  std::cout << "Hand op Dhop "<<std::endl;
+  typedef typename Simd::scalar_type S;
+  typedef typename Simd::vector_type V;
+
+  REGISTER Simd result_00; // 12 regs on knc
+  REGISTER Simd result_01;
+  REGISTER Simd result_02;
   
-  REGISTER vComplex result_10;
-  REGISTER vComplex result_11;
-  REGISTER vComplex result_12;
+  REGISTER Simd result_10;
+  REGISTER Simd result_11;
+  REGISTER Simd result_12;
 
-  REGISTER vComplex result_20;
-  REGISTER vComplex result_21;
-  REGISTER vComplex result_22;
+  REGISTER Simd result_20;
+  REGISTER Simd result_21;
+  REGISTER Simd result_22;
 
-  REGISTER vComplex result_30;
-  REGISTER vComplex result_31;
-  REGISTER vComplex result_32; // 20 left
+  REGISTER Simd result_30;
+  REGISTER Simd result_31;
+  REGISTER Simd result_32; // 20 left
 
-  REGISTER vComplex Chi_00;    // two spinor; 6 regs
-  REGISTER vComplex Chi_01;
-  REGISTER vComplex Chi_02;
+  REGISTER Simd Chi_00;    // two spinor; 6 regs
+  REGISTER Simd Chi_01;
+  REGISTER Simd Chi_02;
 
-  REGISTER vComplex Chi_10;
-  REGISTER vComplex Chi_11;
-  REGISTER vComplex Chi_12;   // 14 left
+  REGISTER Simd Chi_10;
+  REGISTER Simd Chi_11;
+  REGISTER Simd Chi_12;   // 14 left
 
-  REGISTER vComplex UChi_00;  // two spinor; 6 regs
-  REGISTER vComplex UChi_01;
-  REGISTER vComplex UChi_02;
+  REGISTER Simd UChi_00;  // two spinor; 6 regs
+  REGISTER Simd UChi_01;
+  REGISTER Simd UChi_02;
 
-  REGISTER vComplex UChi_10;
-  REGISTER vComplex UChi_11;
-  REGISTER vComplex UChi_12;  // 8 left
+  REGISTER Simd UChi_10;
+  REGISTER Simd UChi_11;
+  REGISTER Simd UChi_12;  // 8 left
 
-  REGISTER vComplex U_00;  // two rows of U matrix
-  REGISTER vComplex U_10;
-  REGISTER vComplex U_20;  
-  REGISTER vComplex U_01;
-  REGISTER vComplex U_11;
-  REGISTER vComplex U_21;  // 2 reg left.
+  REGISTER Simd U_00;  // two rows of U matrix
+  REGISTER Simd U_10;
+  REGISTER Simd U_20;  
+  REGISTER Simd U_01;
+  REGISTER Simd U_11;
+  REGISTER Simd U_21;  // 2 reg left.
 
 #define Chimu_00 Chi_00
 #define Chimu_01 Chi_01
@@ -337,20 +343,20 @@ void DiracOptHand::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
 #define Chimu_32 UChi_12
 
 
+  StencilEntry *SE;
   int offset,local,perm, ptype;
-  int ss=sF;
   
   // Xp
-  offset = st._offsets [Xp][ss];
-  local  = st._is_local[Xp][ss];
-  perm   = st._permute[Xp][ss];
-  ptype  = st._permute_type[Xp];
+  SE=st.GetEntry(ptype,Xp,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
     XP_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(3); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -360,23 +366,18 @@ void DiracOptHand::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     MULT_2SPIN(Xp);
   }
   XP_RECON;
-  //  std::cout << "XP_RECON"<<std::endl;
-  //  std::cout << result_00 <<" "<<result_01 <<" "<<result_02 <<std::endl;
-  //  std::cout << result_10 <<" "<<result_11 <<" "<<result_12 <<std::endl;
-  //  std::cout << result_20 <<" "<<result_21 <<" "<<result_22 <<std::endl;
-  //  std::cout << result_30 <<" "<<result_31 <<" "<<result_32 <<std::endl;
 
   // Yp
-  offset = st._offsets [Yp][ss];
-  local  = st._is_local[Yp][ss];
-  perm   = st._permute[Yp][ss];
-  ptype  = st._permute_type[Yp];
+  SE=st.GetEntry(ptype,Yp,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
     YP_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(2); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -388,16 +389,16 @@ void DiracOptHand::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
 
 
   // Zp
-  offset = st._offsets [Zp][ss];
-  local  = st._is_local[Zp][ss];
-  perm   = st._permute[Zp][ss];
-  ptype  = st._permute_type[Zp];
+  SE=st.GetEntry(ptype,Zp,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
     ZP_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(1); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -408,16 +409,16 @@ void DiracOptHand::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
   ZP_RECON_ACCUM;
 
   // Tp
-  offset = st._offsets [Tp][ss];
-  local  = st._is_local[Tp][ss];
-  perm   = st._permute[Tp][ss];
-  ptype  = st._permute_type[Tp];
+  SE=st.GetEntry(ptype,Tp,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
     TP_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(0); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -428,16 +429,16 @@ void DiracOptHand::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
   TP_RECON_ACCUM;
   
   // Xm
-  offset = st._offsets [Xm][ss];
-  local  = st._is_local[Xm][ss];
-  perm   = st._permute[Xm][ss];
-  ptype  = st._permute_type[Xm];
+  SE=st.GetEntry(ptype,Xm,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
     XM_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(3); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -446,24 +447,18 @@ void DiracOptHand::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
     MULT_2SPIN(Xm);
   }
   XM_RECON_ACCUM;
-  //  std::cout << "XM_RECON_ACCUM"<<std::endl;
-  //  std::cout << result_00 <<" "<<result_01 <<" "<<result_02 <<std::endl;
-  //  std::cout << result_10 <<" "<<result_11 <<" "<<result_12 <<std::endl;
-  //  std::cout << result_20 <<" "<<result_21 <<" "<<result_22 <<std::endl;
-  //  std::cout << result_30 <<" "<<result_31 <<" "<<result_32 <<std::endl;
-  
   
   // Ym
-  offset = st._offsets [Ym][ss];
-  local  = st._is_local[Ym][ss];
-  perm   = st._permute[Ym][ss];
-  ptype  = st._permute_type[Ym];
+  SE=st.GetEntry(ptype,Ym,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
     YM_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(2); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -474,16 +469,16 @@ void DiracOptHand::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
   YM_RECON_ACCUM;
 
   // Zm
-  offset = st._offsets [Zm][ss];
-  local  = st._is_local[Zm][ss];
-  perm   = st._permute[Zm][ss];
-  ptype  = st._permute_type[Zm];
+  SE=st.GetEntry(ptype,Zm,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
 
   if ( local ) {
     LOAD_CHIMU;
     ZM_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(1); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -494,16 +489,16 @@ void DiracOptHand::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
   ZM_RECON_ACCUM;
 
   // Tm
-  offset = st._offsets [Tm][ss];
-  local  = st._is_local[Tm][ss];
-  perm   = st._permute[Tm][ss];
-  ptype  = st._permute_type[Tm];
+  SE=st.GetEntry(ptype,Tm,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
 
   if ( local ) {
     LOAD_CHIMU;
     TM_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(0); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -514,7 +509,7 @@ void DiracOptHand::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
   TM_RECON_ACCUM;
 
   {
-    vSpinColourVector & ref (out._odata[ss]);
+    SiteSpinor & ref (out._odata[ss]);
     vstream(ref()(0)(0),result_00*(-0.5));
     vstream(ref()(0)(1),result_01*(-0.5));
     vstream(ref()(0)(2),result_02*(-0.5));
@@ -530,48 +525,52 @@ void DiracOptHand::DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
   }
 }
 
-void DiracOptHand::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
-			       std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-			       int ss,int sU,const LatticeFermion &in, LatticeFermion &out)
+template<class Impl>
+void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
+						   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+						   int ss,int sU,const FermionField &in, FermionField &out)
 {
-  REGISTER vComplex result_00; // 12 regs on knc
-  REGISTER vComplex result_01;
-  REGISTER vComplex result_02;
+  typedef typename Simd::scalar_type S;
+  typedef typename Simd::vector_type V;
 
-  REGISTER vComplex result_10;
-  REGISTER vComplex result_11;
-  REGISTER vComplex result_12;
+  REGISTER Simd result_00; // 12 regs on knc
+  REGISTER Simd result_01;
+  REGISTER Simd result_02;
 
-  REGISTER vComplex result_20;
-  REGISTER vComplex result_21;
-  REGISTER vComplex result_22;
+  REGISTER Simd result_10;
+  REGISTER Simd result_11;
+  REGISTER Simd result_12;
 
-  REGISTER vComplex result_30;
-  REGISTER vComplex result_31;
-  REGISTER vComplex result_32; // 20 left
+  REGISTER Simd result_20;
+  REGISTER Simd result_21;
+  REGISTER Simd result_22;
 
-  REGISTER vComplex Chi_00;    // two spinor; 6 regs
-  REGISTER vComplex Chi_01;
-  REGISTER vComplex Chi_02;
+  REGISTER Simd result_30;
+  REGISTER Simd result_31;
+  REGISTER Simd result_32; // 20 left
 
-  REGISTER vComplex Chi_10;
-  REGISTER vComplex Chi_11;
-  REGISTER vComplex Chi_12;   // 14 left
+  REGISTER Simd Chi_00;    // two spinor; 6 regs
+  REGISTER Simd Chi_01;
+  REGISTER Simd Chi_02;
 
-  REGISTER vComplex UChi_00;  // two spinor; 6 regs
-  REGISTER vComplex UChi_01;
-  REGISTER vComplex UChi_02;
+  REGISTER Simd Chi_10;
+  REGISTER Simd Chi_11;
+  REGISTER Simd Chi_12;   // 14 left
 
-  REGISTER vComplex UChi_10;
-  REGISTER vComplex UChi_11;
-  REGISTER vComplex UChi_12;  // 8 left
+  REGISTER Simd UChi_00;  // two spinor; 6 regs
+  REGISTER Simd UChi_01;
+  REGISTER Simd UChi_02;
 
-  REGISTER vComplex U_00;  // two rows of U matrix
-  REGISTER vComplex U_10;
-  REGISTER vComplex U_20;  
-  REGISTER vComplex U_01;
-  REGISTER vComplex U_11;
-  REGISTER vComplex U_21;  // 2 reg left.
+  REGISTER Simd UChi_10;
+  REGISTER Simd UChi_11;
+  REGISTER Simd UChi_12;  // 8 left
+
+  REGISTER Simd U_00;  // two rows of U matrix
+  REGISTER Simd U_10;
+  REGISTER Simd U_20;  
+  REGISTER Simd U_01;
+  REGISTER Simd U_11;
+  REGISTER Simd U_21;  // 2 reg left.
 
 #define Chimu_00 Chi_00
 #define Chimu_01 Chi_01
@@ -588,18 +587,19 @@ void DiracOptHand::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
 
 
   int offset,local,perm, ptype;
+  StencilEntry *SE;
 
   // Xp
-  offset = st._offsets [Xp][ss];
-  local  = st._is_local[Xp][ss];
-  perm   = st._permute[Xp][ss];
-  ptype  = st._permute_type[Xp];
+  SE=st.GetEntry(ptype,Xp,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
     XM_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(3); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -610,16 +610,16 @@ void DiracOptHand::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
   XM_RECON;
   
   // Yp
-  offset = st._offsets [Yp][ss];
-  local  = st._is_local[Yp][ss];
-  perm   = st._permute[Yp][ss];
-  ptype  = st._permute_type[Yp];
+  SE=st.GetEntry(ptype,Yp,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
     YM_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(2); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -631,16 +631,16 @@ void DiracOptHand::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
 
 
   // Zp
-  offset = st._offsets [Zp][ss];
-  local  = st._is_local[Zp][ss];
-  perm   = st._permute[Zp][ss];
-  ptype  = st._permute_type[Zp];
+  SE=st.GetEntry(ptype,Zp,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
     ZM_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(1); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -651,16 +651,16 @@ void DiracOptHand::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
   ZM_RECON_ACCUM;
 
   // Tp
-  offset = st._offsets [Tp][ss];
-  local  = st._is_local[Tp][ss];
-  perm   = st._permute[Tp][ss];
-  ptype  = st._permute_type[Tp];
+  SE=st.GetEntry(ptype,Tp,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
     TM_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(0); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -671,16 +671,16 @@ void DiracOptHand::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
   TM_RECON_ACCUM;
   
   // Xm
-  offset = st._offsets [Xm][ss];
-  local  = st._is_local[Xm][ss];
-  perm   = st._permute[Xm][ss];
-  ptype  = st._permute_type[Xm];
+  SE=st.GetEntry(ptype,Xm,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
     XP_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(3); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -692,16 +692,16 @@ void DiracOptHand::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
   
   
   // Ym
-  offset = st._offsets [Ym][ss];
-  local  = st._is_local[Ym][ss];
-  perm   = st._permute[Ym][ss];
-  ptype  = st._permute_type[Ym];
+  SE=st.GetEntry(ptype,Ym,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
   
   if ( local ) {
     LOAD_CHIMU;
     YP_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(2); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -712,16 +712,16 @@ void DiracOptHand::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
   YP_RECON_ACCUM;
 
   // Zm
-  offset = st._offsets [Zm][ss];
-  local  = st._is_local[Zm][ss];
-  perm   = st._permute[Zm][ss];
-  ptype  = st._permute_type[Zm];
-
+  SE=st.GetEntry(ptype,Zm,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
+  
   if ( local ) {
     LOAD_CHIMU;
     ZP_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(1); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -732,16 +732,16 @@ void DiracOptHand::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
   ZP_RECON_ACCUM;
 
   // Tm
-  offset = st._offsets [Tm][ss];
-  local  = st._is_local[Tm][ss];
-  perm   = st._permute[Tm][ss];
-  ptype  = st._permute_type[Tm];
-
+  SE=st.GetEntry(ptype,Tm,ss);
+  offset = SE->_offset;
+  local  = SE->_is_local;
+  perm   = SE->_permute;
+  
   if ( local ) {
     LOAD_CHIMU;
     TP_PROJ;
     if ( perm) {
-      PERMUTE;
+      PERMUTE_DIR(0); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
   } else { 
     LOAD_CHI;
@@ -752,7 +752,7 @@ void DiracOptHand::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
   TP_RECON_ACCUM;
 
   {
-    vSpinColourVector & ref (out._odata[ss]);
+    SiteSpinor & ref (out._odata[ss]);
     vstream(ref()(0)(0),result_00*(-0.5));
     vstream(ref()(0)(1),result_01*(-0.5));
     vstream(ref()(0)(2),result_02*(-0.5));
@@ -767,4 +767,6 @@ void DiracOptHand::DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
     vstream(ref()(3)(2),result_32*(-0.5));
   }
 }
+  FermOpTemplateInstantiate(WilsonKernels);
+#endif
 }}

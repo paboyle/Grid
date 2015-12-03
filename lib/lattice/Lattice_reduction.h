@@ -125,7 +125,7 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
   assert(grid!=NULL);
 
   // FIXME
-  std::cout<<"WARNING ! SliceSum is unthreaded "<<grid->SumArraySize()<<" threads "<<std::endl;
+  std::cout<<GridLogMessage<<"WARNING ! SliceSum is unthreaded "<<grid->SumArraySize()<<" threads "<<std::endl;
 
   const int    Nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();

@@ -1,15 +1,61 @@
+RECENT
+---------------
+
+  - Clean up HMC                                                             -- DONE
+  - LorentzScalar<GaugeField> gets Gauge link type (cleaner).                -- DONE
+  - Simplified the integrators a bit.                                        -- DONE
+  - Multi-timescale looks broken and operating on single timescale for now.  -- DONE
+  - pass GaugeField as template param.                        -- DONE
+  - Reunitarise                                               -- DONE
+  - Force Gradient                                            -- DONE
+  - Prefer "RefreshInternal" or such like to "init" in naming -- DONE
+  - Parallel io improvements                                  -- DONE
+  - Plaquette and link trace checks into nersc reader from the Grid_nersc_io.cc test. -- DONE
+
+TODO:
+---------------
+Policies:
+* Link smearing/boundary conds; Policy class based implementation ; framework more in place
+* Support different boundary conditions (finite temp, chem. potential ... )
+* Support different fermion representations? 
+  - contained entirely within the integrator presently
+
+- Sign of force term.
+
+- Reversibility test.
+
+- Rename "Ta" as too unclear
+
+- Lanczos
+
+- Rectangle gauge actions.
+  Iwasaki,
+  Symanzik,
+  ... etc...
+
+- Prepare multigrid for HMC. - Alternate setup schemes.
+
+- Support for ILDG --- ugly, not done
+
+- Flavour matrices?
+
+- FFTnD ?
+
 ================================================================
-*** Hacks and bug fixes to clean up and Audits
+* Hacks and bug fixes to clean up and Audits
 ================================================================
 
 *  Extract/merge/set cleanup ; too many variants; rationalise and call simpler ones
-*  Used #define repetitive sequences to minimise code.
+
 *  Rewrite core tensor arithmetic support to be more systematic
+ =  Use #define repetitive sequences to minimise code, decrease line count by thousands possible,
+    with more robust and maintainable implementation.
+
 *  Ensure we ET as much as possible; move unop functions into ET framework.
    - tests with expression args to all functions
 
-
 * FIXME audit
+
 * const audit
 
 Insert/Extract
@@ -22,10 +68,12 @@ Insert/Extract
 
 * Thread scaling tests Xeon, XeonPhi
 
-** Make the Tensor types and Complex etc... play more nicely.
+Not sure of status of this -- reverify. Things are working nicely now though.
+
+* Make the Tensor types and Complex etc... play more nicely.
   - TensorRemove is a hack, come up with a long term rationalised approach to Complex vs. Scalar<Scalar<Scalar<Complex > > >
-  QDP forces use of "toDouble" to get back to non tensor scalar. This role is presently taken TensorRemove, but I
-  want to introduce a syntax that does not require this.
+    QDP forces use of "toDouble" to get back to non tensor scalar. This role is presently taken TensorRemove, but I
+    want to introduce a syntax that does not require this.
 
   - Reductions that contract indices on a site should always demote the tensor structure.
     norm2(), innerProduct.
@@ -37,6 +85,37 @@ Insert/Extract
     and then Sum and SliceSum to not remove the Scalars. This would be fixed if we 
     template specialize the scalar scalar scalar sum and SliceSum,  on the basis of being
     pure scalar.
+
+======================================================================
+======================================================================
+======================================================================
+======================================================================
+Done: Cayley, Partial , ContFrac force terms.
+
+DONE
+- PseudoFermions
+=> generalise to non-const EE ; likely defer (??) (NOT DONE)
+Done:
+  - TwoFlavour
+  - TwoFlavourEvenOdd        
+  - TwoFlavourRatio
+  - TwoFlavourRatioEvenOdd
+
+Done:
+  - OneFlavourRationalEvenOdd
+  - OneFlavourRationalRatioEvenOdd
+  - OneFlavourRationalRatio
+
+Done
+=> Test DWF HMC
+   - Fix a threading bug that has been introduced and prevents HMC running hybrid OMP mode
+
+Done:
+- RNG filling from sparser grid, lower dim grid.
+
+
+DONE
+  - MacroMagic -> virtual reader class.
 
 *** Expression template engine: -- DONE
 
@@ -54,34 +133,20 @@ Insert/Extract
    // localMaxAbs
    // Fourier transform equivalent.]
 
-================================================================
-*** New Functionality
-================================================================
-
-* - BinaryWriter, TextWriter etc...
-  - use protocol buffers? replace xmlReader/Writer ec..
-  - Binary use htonll, htonl
 
 * CovariantShift support                             -----Use a class to store gauge field? (parallel transport?)
 
-* Parallel io improvements
-  - optional parallel MPI2 IO
-  - move Plaquette and link trace checks into nersc reader from the Grid_nersc_io.cc test.
+-- coherent framework for implementing actions and their forces.
+Actions 
 
-* Support for ILDG
-
-* Support different boundary conditions (finite temp, chem. potential ... )
-
-* Support different fermion representations? 
-
-Actions -- coherent framework for implementing actions and their forces.
-
+DONE
 * Fermion
   - Wilson
   - Clover
   - DomainWall
   - Mobius
   - z-Mobius
+
 
 Algorithms (lots of reuse/port from BFM)
 * LinearOperator
@@ -100,17 +165,10 @@ Algorithms (lots of reuse/port from BFM)
 * Integrators, leapfrog, omelyan, force gradient etc...
 * etc..
 
-* Gauge
-  - Wilson, symanzik, iwasaki
-
-* rb4d support for 5th dimension in Mobius.
-
-* Flavour matrices?
+Done
 * Pauli, SU subgroup, etc.. 
-* su3 exponentiation & log etc.. [Jamie's code?]
-* TaProj
-* FFTnD ?
 
+* su3 exponentiation & log etc.. [Jamie's code?]
 
 ======================================================================================================
 FUNCTIONALITY: it pleases me to keep track of things I have done (keeps me arguably sane)
@@ -144,7 +202,6 @@ FUNCTIONALITY: it pleases me to keep track of things I have done (keeps me argua
   - lib/communicator
   - lib/algorithms
   - lib/qcd
- future
   - lib/io/   -- GridLog, GridIn, GridErr, GridDebug, GridMessage
   - lib/qcd/actions
   - lib/qcd/measurements

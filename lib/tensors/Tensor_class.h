@@ -23,6 +23,7 @@ template<class vtype> class iScalar
 public:
   vtype _internal;
 
+  typedef vtype element;
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
@@ -91,18 +92,12 @@ public:
     return _internal;
   }
 
-  // Type casts meta programmed
-  template<class U=vtype,class V=scalar_type,IfComplex<V> = 0,IfNotSimd<U> = 0>  
-    operator ComplexF () const { return(TensorRemove(_internal)); };
-  template<class U=vtype,class V=scalar_type,IfComplex<V> = 0,IfNotSimd<U> = 0>  
-    operator ComplexD () const { return(TensorRemove(_internal)); };
-  template<class U=vtype,class V=scalar_type,IfComplex<V> = 0,IfNotSimd<U> = 0>  
-    operator RealD () const { return(real(TensorRemove(_internal))); }
-  template<class U=vtype,class V=scalar_type,IfReal<V>    = 0,IfNotSimd<U> = 0>  
-    operator RealD    () const { return TensorRemove(_internal); }
-  template<class U=vtype,class V=scalar_type,IfInteger<V> = 0,IfNotSimd<U> = 0>  
-    operator Integer  () const { return Integer(TensorRemove(_internal)); }
-
+  // Type casts meta programmed, must be pure scalar to match TensorRemove
+  template<class U=vtype,class V=scalar_type,IfComplex<V> = 0,IfNotSimd<U> = 0> operator ComplexF () const { return(TensorRemove(_internal)); };
+  template<class U=vtype,class V=scalar_type,IfComplex<V> = 0,IfNotSimd<U> = 0> operator ComplexD () const { return(TensorRemove(_internal)); };
+  //  template<class U=vtype,class V=scalar_type,IfComplex<V> = 0,IfNotSimd<U> = 0> operator RealD    () const { return(real(TensorRemove(_internal))); }
+  template<class U=vtype,class V=scalar_type,IfReal<V>    = 0,IfNotSimd<U> = 0> operator RealD    () const { return TensorRemove(_internal); }
+  template<class U=vtype,class V=scalar_type,IfInteger<V> = 0,IfNotSimd<U> = 0> operator Integer  () const { return Integer(TensorRemove(_internal)); }
   
   // convert from a something to a scalar via constructor of something arg
   template<class T,typename std::enable_if<!isGridTensor<T>::value, T>::type* = nullptr > strong_inline iScalar<vtype> operator = (T arg)
@@ -130,6 +125,7 @@ template<class vtype,int N> class iVector
 public:
   vtype _internal[N];
 
+  typedef vtype element;
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
@@ -181,6 +177,7 @@ public:
       permute(out._internal[i],in._internal[i],permutetype);
     }
   }
+
   // Unary negation
   friend strong_inline iVector<vtype,N> operator -(const iVector<vtype,N> &r) {
     iVector<vtype,N> ret;
@@ -225,6 +222,7 @@ template<class vtype,int N> class iMatrix
 public:
   vtype _internal[N][N];
 
+  typedef vtype element;
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
@@ -293,12 +291,15 @@ public:
 	vstream(out._internal[i][j],in._internal[i][j]);
       }}
     }
+
   friend strong_inline void permute(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in,int permutetype){
     for(int i=0;i<N;i++){
       for(int j=0;j<N;j++){
 	permute(out._internal[i][j],in._internal[i][j],permutetype);
     }}
   }
+
+
   // Unary negation
   friend strong_inline iMatrix<vtype,N> operator -(const iMatrix<vtype,N> &r) {
     iMatrix<vtype,N> ret;

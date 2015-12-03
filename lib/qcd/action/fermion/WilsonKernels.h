@@ -6,37 +6,66 @@ namespace Grid {
   namespace QCD {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Helper classes that implement Wilson stencil for a single site.
+    // Helper routines that implement Wilson stencil for a single site.
+    // Common to both the WilsonFermion and WilsonFermion5D
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    
-    // Generic version works for any Nc and with extra flavour indices
-    class DiracOpt {
-    public:
-      // These ones will need to be package intelligently. WilsonType base class
-      // for use by DWF etc..
-      static void DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
-			   std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-			   int sF,int sU,const LatticeFermion &in, LatticeFermion &out);
-      static void DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
-			      std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-			      int sF,int sU,const LatticeFermion &in, LatticeFermion &out);
-      static void DhopDir(CartesianStencil &st,LatticeDoubledGaugeField &U,
-			   std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-			  int sF,int sU,const LatticeFermion &in, LatticeFermion &out,int dirdisp);
 
-    };
-
-    // Hand unrolled for Nc=3, one flavour
-    class DiracOptHand {
+    template<class Impl> class WilsonKernels : public FermionOperator<Impl> { 
     public:
-      // These ones will need to be package intelligently. WilsonType base class
-      // for use by DWF etc..
-      static void DhopSite(CartesianStencil &st,LatticeDoubledGaugeField &U,
-			   std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-			   int sF,int sU,const LatticeFermion &in, LatticeFermion &out);
-      static void DhopSiteDag(CartesianStencil &st,LatticeDoubledGaugeField &U,
-			      std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  &buf,
-			      int sF,int sU,const LatticeFermion &in, LatticeFermion &out);
+
+     INHERIT_IMPL_TYPES(Impl);
+     typedef FermionOperator<Impl> Base;
+     
+    public:
+     void DiracOptDhopSite(StencilImpl &st,DoubledGaugeField &U,
+			   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+			   int sF,int sU,const FermionField &in, FermionField &out);
+      
+     void DiracOptDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
+			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+			      int sF,int sU,const FermionField &in,FermionField &out);
+
+     void DiracOptDhopDir(StencilImpl &st,DoubledGaugeField &U,
+			  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+			  int sF,int sU,const FermionField &in, FermionField &out,int dirdisp,int gamma);
+#if defined(AVX512) || defined(IMCI)
+     void DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U,
+			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+			      int sF,int sU,const FermionField &in, FermionField &out,uint64_t *);
+#else
+     void DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U,
+			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+			      int sF,int sU,const FermionField &in, FermionField &out,uint64_t *p){
+       DiracOptDhopSite(st,U,buf,sF,sU,in,out); // will template override for Wilson Nc=3
+     }
+#endif
+#define HANDOPT
+#ifdef HANDOPT
+     void DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
+			       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+			       int sF,int sU,const FermionField &in, FermionField &out);
+
+     void DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
+				  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+				  int sF,int sU,const FermionField &in, FermionField &out);
+#else
+
+     void DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
+			       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+			       int sF,int sU,const FermionField &in, FermionField &out)
+     {
+       DiracOptDhopSite(st,U,buf,sF,sU,in,out); // will template override for Wilson Nc=3
+     }
+
+     void DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
+				  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+				  int sF,int sU,const FermionField &in, FermionField &out)
+     {
+       DiracOptDhopSiteDag(st,U,buf,sF,sU,in,out); // will template override for Wilson Nc=3
+     }
+#endif
+
+     WilsonKernels(const ImplParams &p= ImplParams()) : Base(p) {};
 
     };
 

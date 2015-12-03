@@ -57,11 +57,11 @@ inline void extract(typename std::enable_if<!isGridTensor<vsimd>::value, const v
     extracted[i]=buf[i*s];
     for(int ii=1;ii<s;ii++){
       if ( buf[i*s]!=buf[i*s+ii] ){
-	std::cout << " SIMD extract failure splat = "<<s<<" ii "<<ii<<" " <<Nextr<<" "<< Nsimd<<" "<<std::endl;
+	std::cout<<GridLogMessage << " SIMD extract failure splat = "<<s<<" ii "<<ii<<" " <<Nextr<<" "<< Nsimd<<" "<<std::endl;
 	for(int vv=0;vv<Nsimd;vv++) {
-	  std::cout<< buf[vv]<<" ";
+	  std::cout<<GridLogMessage<< buf[vv]<<" ";
 	}
-	std::cout<<std::endl;
+	std::cout<<GridLogMessage<<std::endl;
 	assert(0);
       }
       assert(buf[i*s]==buf[i*s+ii]);
@@ -115,23 +115,21 @@ template<class vobj> inline void extract(const vobj &vec,std::vector<typename vo
 template<class vobj> inline 
 void extract(const vobj &vec,std::vector<typename vobj::scalar_object *> &extracted, int offset)
 {
-
   typedef typename vobj::scalar_type scalar_type ;
   typedef typename vobj::vector_type vector_type ;
 
   const int words=sizeof(vobj)/sizeof(vector_type);
   const int Nsimd=vobj::vector_type::Nsimd();
+
   int Nextr=extracted.size();
   int s = Nsimd/Nextr;
+  scalar_type * vp = (scalar_type *)&vec;
 
-  std::vector<scalar_type *> pointers(Nsimd);
-  for(int i=0;i<Nextr;i++) {
-    pointers[i] =(scalar_type *)& extracted[i][offset];
-  }
-
-  vector_type *vp = (vector_type *)&vec;
   for(int w=0;w<words;w++){
-    extract<vector_type,scalar_type>(&vp[w],pointers,w);
+    for(int i=0;i<Nextr;i++){
+      scalar_type * pointer = (scalar_type *)& extracted[i][offset];
+      pointer[w] = vp[i*s+w*Nsimd];
+    }
   }
 }
 
@@ -173,16 +171,19 @@ void merge(vobj &vec,std::vector<typename vobj::scalar_object *> &extracted,int 
   const int words=sizeof(vobj)/sizeof(vector_type);
 
   int Nextr=extracted.size();
+  int s=Nsimd/Nextr;
 
-  std::vector<scalar_type *> pointers(Nextr);
-  for(int i=0;i<Nextr;i++) 
-    pointers[i] =(scalar_type *)& extracted[i][offset];
-
-  vector_type *vp = (vector_type *)&vec;
+  scalar_type *pointer;
+  scalar_type *vp = (scalar_type *)&vec;
 
   for(int w=0;w<words;w++){
-    merge<vector_type,scalar_type>(&vp[w],pointers,w);
+    for(int i=0;i<Nextr;i++){
+      for(int ii=0;ii<s;ii++){
+	pointer=(scalar_type *)&extracted[i][offset];
+	vp[w*Nsimd+i*s+ii] = pointer[w];
+      }
+    }
   }
-}
+ }
 }
 #endif

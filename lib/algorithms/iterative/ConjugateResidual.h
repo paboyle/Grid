@@ -16,7 +16,7 @@ namespace Grid {
     int verbose;
 
     ConjugateResidual(RealD tol,Integer maxit) : Tolerance(tol), MaxIterations(maxit) { 
-      verbose=1;
+      verbose=0;
     };
 
     void operator() (LinearOperatorBase<Field> &Linop,const Field &src, Field &psi){
@@ -37,14 +37,11 @@ namespace Grid {
       Linop.HermOpAndNorm(p,Ap,pAp,pAAp);
       Linop.HermOpAndNorm(r,Ar,rAr,rAAr);
 
-      std::cout << "pAp, pAAp"<< pAp<<" "<<pAAp<<std::endl;
-      std::cout << "rAr, rAAr"<< rAr<<" "<<rAAr<<std::endl;
-
       cp =norm2(r);
       ssq=norm2(src);
       rsq=Tolerance*Tolerance*ssq;
 
-      std::cout<<"ConjugateResidual: iteration " <<0<<" residual "<<cp<< " target"<< rsq<<std::endl;
+      if (verbose) std::cout<<GridLogMessage<<"ConjugateResidual: iteration " <<0<<" residual "<<cp<< " target"<< rsq<<std::endl;
 
       for(int k=1;k<MaxIterations;k++){
 
@@ -62,22 +59,23 @@ namespace Grid {
  
 	axpy(p,b,p,r);
 	pAAp=axpy_norm(Ap,b,Ap,Ar);
-
-	std::cout<<"ConjugateResidual: iteration " <<k<<" residual "<<cp<< " target"<< rsq<<std::endl;
+	
+	if(verbose) std::cout<<GridLogMessage<<"ConjugateResidual: iteration " <<k<<" residual "<<cp<< " target"<< rsq<<std::endl;
 
 	if(cp<rsq) {
 	  Linop.HermOp(psi,Ap);
 	  axpy(r,-1.0,src,Ap);
-	  RealD true_resid = norm2(r);
-	  std::cout<<"ConjugateResidual: Converged on iteration " <<k<<" residual "<<cp<< " target"<< rsq<<std::endl;
-	  std::cout<<"ConjugateResidual: true   residual  is "<<true_resid<<std::endl;
-	  std::cout<<"ConjugateResidual: target residual was "<<Tolerance <<std::endl;
+	  RealD true_resid = norm2(r)/ssq;
+	  std::cout<<GridLogMessage<<"ConjugateResidual: Converged on iteration " <<k
+		   << " computed residual "<<sqrt(cp/ssq)
+	           << " true residual "<<sqrt(true_resid)
+	           << " target "       <<Tolerance <<std::endl;
 	  return;
 	}
 
       }
 
-      std::cout<<"ConjugateResidual did NOT converge"<<std::endl;
+      std::cout<<GridLogMessage<<"ConjugateResidual did NOT converge"<<std::endl;
       assert(0);
     }
   };

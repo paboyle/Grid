@@ -3,7 +3,7 @@
 
 #include <algorithms/SparseMatrix.h>
 #include <algorithms/LinearOperator.h>
-#include <algorithms/CoarsenedMatrix.h>
+#include <algorithms/Preconditioner.h>
 
 #include <algorithms/approx/Zolotarev.h>
 #include <algorithms/approx/Chebyshev.h>
@@ -16,6 +16,12 @@
 #include <algorithms/iterative/SchurRedBlack.h>
 
 #include <algorithms/iterative/ConjugateGradientMultiShift.h>
+
+// Lanczos support
+#include <algorithms/iterative/MatrixUtils.h>
+#include <algorithms/iterative/ImplicitlyRestartedLanczos.h>
+
+#include <algorithms/CoarsenedMatrix.h>
 
 // Eigen/lanczos
 // EigCg

@@ -5,9 +5,21 @@ namespace Grid {
 
   namespace QCD {
 
-    class WilsonFermion : public FermionOperator<LatticeFermion,LatticeGaugeField>
+    class WilsonFermionStatic {
+    public:
+      static int HandOptDslash; // these are a temporary hack
+      static int MortonOrder;
+      static const std::vector<int> directions   ;
+      static const std::vector<int> displacements;
+      static const int npoint=8;
+    };
+
+    template<class Impl>
+    class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic
     {
     public:
+    INHERIT_IMPL_TYPES(Impl);
+    typedef WilsonKernels<Impl> Kernels;
 
       ///////////////////////////////////////////////////////////////
       // Implement the abstract base
@@ -17,74 +29,101 @@ namespace Grid {
       GridBase *FermionGrid(void)            { return _grid;}
       GridBase *FermionRedBlackGrid(void)    { return _cbgrid;}
 
-      // override multiply
-      virtual RealD  M    (const LatticeFermion &in, LatticeFermion &out);
-      virtual RealD  Mdag (const LatticeFermion &in, LatticeFermion &out);
+      //////////////////////////////////////////////////////////////////
+      // override multiply; cut number routines if pass dagger argument
+      // and also make interface more uniformly consistent
+      //////////////////////////////////////////////////////////////////
+      RealD M(const FermionField &in, FermionField &out);
+      RealD Mdag(const FermionField &in, FermionField &out);
 
-      // half checkerboard operaions
-      void   Meooe       (const LatticeFermion &in, LatticeFermion &out);
-      void   MeooeDag    (const LatticeFermion &in, LatticeFermion &out);
-      virtual void   Mooee       (const LatticeFermion &in, LatticeFermion &out); // remain virtual so we 
-      virtual void   MooeeDag    (const LatticeFermion &in, LatticeFermion &out); // can derive Clover
-      virtual void   MooeeInv    (const LatticeFermion &in, LatticeFermion &out); // from Wilson base
-      virtual void   MooeeInvDag (const LatticeFermion &in, LatticeFermion &out);
+      /////////////////////////////////////////////////////////
+      // half checkerboard operations
+      // could remain virtual so we  can derive Clover from Wilson base
+      /////////////////////////////////////////////////////////
+      void Meooe(const FermionField &in, FermionField &out) ;
+      void MeooeDag(const FermionField &in, FermionField &out) ;
+      void Mooee(const FermionField &in, FermionField &out) ;
+      void MooeeDag(const FermionField &in, FermionField &out) ;
+      void MooeeInv(const FermionField &in, FermionField &out) ;
+      void MooeeInvDag(const FermionField &in, FermionField &out) ;
 
+      ////////////////////////
+      // Derivative interface
+      ////////////////////////
+      // Interface calls an internal routine
+      void DhopDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
+      void DhopDerivOE(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
+      void DhopDerivEO(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
+
+
+      ///////////////////////////////////////////////////////////////
       // non-hermitian hopping term; half cb or both
-      void Dhop  (const LatticeFermion &in, LatticeFermion &out,int dag);
-      void DhopOE(const LatticeFermion &in, LatticeFermion &out,int dag);
-      void DhopEO(const LatticeFermion &in, LatticeFermion &out,int dag);
+      ///////////////////////////////////////////////////////////////
+      void Dhop(const FermionField &in, FermionField &out,int dag) ;
+      void DhopOE(const FermionField &in, FermionField &out,int dag) ;
+      void DhopEO(const FermionField &in, FermionField &out,int dag) ;
 
-      // Multigrid assistance
-      void   Mdir (const LatticeFermion &in, LatticeFermion &out,int dir,int disp);
-      void DhopDir(const LatticeFermion &in, LatticeFermion &out,int dir,int disp);
+      ///////////////////////////////////////////////////////////////
+      // Multigrid assistance; force term uses too
+      ///////////////////////////////////////////////////////////////
+      void Mdir (const FermionField &in, FermionField &out,int dir,int disp) ;
+      void DhopDir(const FermionField &in, FermionField &out,int dir,int disp);
+      void DhopDirDisp(const FermionField &in, FermionField &out,int dirdisp,int gamma,int dag) ;
 
       ///////////////////////////////////////////////////////////////
       // Extra methods added by derived
       ///////////////////////////////////////////////////////////////
-      void DhopInternal(CartesianStencil & st,
-			LatticeDoubledGaugeField &U,
-			const LatticeFermion &in, 
-			LatticeFermion &out,
-			int dag);
+      void DerivInternal(StencilImpl & st,
+			 DoubledGaugeField & U,
+			 GaugeField &mat,
+			 const FermionField &A,
+			 const FermionField &B,
+			 int dag);
+
+      void DhopInternal(StencilImpl & st,DoubledGaugeField & U,
+			const FermionField &in, FermionField &out,int dag) ;
+
 
       // Constructor
-      WilsonFermion(LatticeGaugeField &_Umu,GridCartesian &Fgrid,GridRedBlackCartesian &Hgrid,RealD _mass);
+      WilsonFermion(GaugeField &_Umu,
+		    GridCartesian         &Fgrid,
+		    GridRedBlackCartesian &Hgrid, 
+		    RealD _mass,
+		    const ImplParams &p= ImplParams()
+		    ) ;
 
-      // DoubleStore
-      void DoubleStore(LatticeDoubledGaugeField &Uds,const LatticeGaugeField &Umu);
+      // DoubleStore impl dependent
+      void ImportGauge(const GaugeField &_Umu);
 
       ///////////////////////////////////////////////////////////////
       // Data members require to support the functionality
       ///////////////////////////////////////////////////////////////
-      static int HandOptDslash; // these are a temporary hack
-      static int MortonOrder;
 
-    protected:
+      //    protected:
+    public:
 
       RealD                        mass;
 
       GridBase                     *    _grid; 
       GridBase                     *  _cbgrid;
 
-      static const int npoint=8;
-      static const std::vector<int> directions   ;
-      static const std::vector<int> displacements;
-
       //Defines the stencils for even and odd
-      CartesianStencil Stencil; 
-      CartesianStencil StencilEven; 
-      CartesianStencil StencilOdd; 
+      StencilImpl Stencil; 
+      StencilImpl StencilEven; 
+      StencilImpl StencilOdd; 
 
       // Copy of the gauge field , with even and odd subsets
-      LatticeDoubledGaugeField Umu;
-      LatticeDoubledGaugeField UmuEven;
-      LatticeDoubledGaugeField UmuOdd;
+      DoubledGaugeField Umu;
+      DoubledGaugeField UmuEven;
+      DoubledGaugeField UmuOdd;
 
       // Comms buffer
-      std::vector<vHalfSpinColourVector,alignedAllocator<vHalfSpinColourVector> >  comm_buf;
-
+      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  comm_buf;
       
     };
+
+    typedef WilsonFermion<WilsonImplF> WilsonFermionF;
+    typedef WilsonFermion<WilsonImplD> WilsonFermionD;
 
   }
 }

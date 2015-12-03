@@ -22,7 +22,7 @@ int main (int argc, char ** argv)
 
 
   std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplexF::Nsimd());
+  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
   GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian     RBGrid(latt_size,simd_layout,mpi_layout);
@@ -38,11 +38,11 @@ int main (int argc, char ** argv)
   std::vector<LatticeColourMatrix> U(4,&Grid);
 
   for(int mu=0;mu<Nd;mu++){
-    U[mu] = peekIndex<LorentzIndex>(Umu,mu);
+    U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
   }
   
   RealD mass=0.5;
-  WilsonFermion Dw(Umu,Grid,RBGrid,mass);
+  WilsonFermionR Dw(Umu,Grid,RBGrid,mass);
 
   //  HermitianOperator<WilsonFermion,LatticeFermion> HermOp(Dw);
   //  ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
@@ -53,7 +53,7 @@ int main (int argc, char ** argv)
   pickCheckerboard(Odd,src_o,src);
   result_o=zero;
 
-  SchurDiagMooeeOperator<WilsonFermion,LatticeFermion> HermOpEO(Dw);
+  SchurDiagMooeeOperator<WilsonFermionR,LatticeFermion> HermOpEO(Dw);
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
   CG(HermOpEO,src_o,result_o);
 

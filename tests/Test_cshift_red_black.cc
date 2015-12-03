@@ -9,7 +9,7 @@ int main (int argc, char ** argv)
 
   std::vector<int> latt_size   = GridDefaultLatt();
   int Nd = latt_size.size();
-  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplexF::Nsimd());
+  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
 
   std::vector<int> mask(Nd,1);
@@ -47,38 +47,38 @@ int main (int argc, char ** argv)
   pickCheckerboard(Even,Ue,U);
   pickCheckerboard(Odd,Uo,U);
 
-  //  std::cout << U<<std::endl;
-  std::cout << "Ue " <<norm2(Ue)<<std::endl;
-  std::cout << "Uo " <<norm2(Uo)<<std::endl;
+  //  std::cout<<GridLogMessage << U<<std::endl;
+  std::cout<<GridLogMessage << "Ue " <<norm2(Ue)<<std::endl;
+  std::cout<<GridLogMessage << "Uo " <<norm2(Uo)<<std::endl;
 
 
   TComplex cm;
   for(int dir=0;dir<Nd;dir++){
-    if ( dir!=1 ) continue;
+    //    if ( dir!=1 ) continue;
     for(int shift=0;shift<latt_size[dir];shift++){
 
-	std::cout<<"Shifting by "<<shift<<" in direction"<<dir<<std::endl;
+	std::cout<<GridLogMessage<<"Shifting by "<<shift<<" in direction"<<dir<<std::endl;
 
-	//	std::cout<<"Even grid"<<std::endl;
+	std::cout<<GridLogMessage<<"Even grid"<<std::endl;
 	ShiftUe = Cshift(Ue,dir,shift);    // Shift everything cb by cb
-	//	std::cout << "\tShiftUe " <<norm2(ShiftUe)<<std::endl;
+	std::cout<<GridLogMessage << "\tShiftUe " <<norm2(ShiftUe)<<std::endl;
 
-	//	std::cout<<"Odd grid"<<std::endl;
+	std::cout<<GridLogMessage<<"Odd grid"<<std::endl;
 	ShiftUo = Cshift(Uo,dir,shift);    
-	//	std::cout << "\tShiftUo " <<norm2(ShiftUo)<<std::endl;
+	std::cout<<GridLogMessage << "\tShiftUo " <<norm2(ShiftUo)<<std::endl;
 
-	//	std::cout<<"Recombined Even/Odd grids"<<std::endl;
+	std::cout<<GridLogMessage<<"Recombined Even/Odd grids"<<std::endl;
 	setCheckerboard(rbShiftU,ShiftUe);
 	setCheckerboard(rbShiftU,ShiftUo);
-	//	std::cout << "\trbShiftU " <<norm2(rbShiftU)<<std::endl;
+	std::cout<<GridLogMessage << "\trbShiftU " <<norm2(rbShiftU)<<std::endl;
 
-	//	std::cout<<"Full grid shift"<<std::endl;
+	std::cout<<GridLogMessage<<"Full grid shift"<<std::endl;
 	ShiftU  = Cshift(U,dir,shift);    // Shift everything
-	//	std::cout << "\tShiftU " <<norm2(rbShiftU)<<std::endl;
+	std::cout<<GridLogMessage << "\tShiftU " <<norm2(rbShiftU)<<std::endl;
 
 	std::vector<int> coor(4);
 
-	std::cout << "Checking the non-checkerboard shift"<<std::endl;
+	std::cout<<GridLogMessage << "Checking the non-checkerboard shift"<<std::endl;
 	for(coor[3]=0;coor[3]<latt_size[3];coor[3]++){
 	for(coor[2]=0;coor[2]<latt_size[2];coor[2]++){
 	for(coor[1]=0;coor[1]<latt_size[1];coor[1]++){
@@ -105,19 +105,19 @@ int main (int argc, char ** argv)
 	  Fine.CoorFromIndex(peer,index,latt_size);
 
 	  if (nrm > 0){
-	    std::cerr<<"FAIL shift "<< shift<<" in dir "<< dir
+	    std::cout<<"FAIL shift "<< shift<<" in dir "<< dir
 		     <<" ["<<coor[0]<<","<<coor[1]<<","<<coor[2]<<","<<coor[3]<<"] = "
 		     << cm()()()<<" expect "<<scm<<"  "<<nrm<<std::endl;
-	    std::cerr<<"Got    "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
+	    std::cout<<"Got    "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	    index=real(scm);
 	    Fine.CoorFromIndex(peer,index,latt_size);
-	    std::cerr<<"Expect "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
+	    std::cout<<"Expect "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	    exit(-1);
 	  }
 	}}}}
 
-
-	std::cout << "Checking the checkerboard shift"<<std::endl;
+	int exx=0;
+	std::cout<<GridLogMessage << "Checking the checkerboard shift"<<std::endl;
 	for(coor[3]=0;coor[3]<latt_size[3];coor[3]++){
 	for(coor[2]=0;coor[2]<latt_size[2];coor[2]++){
 	for(coor[1]=0;coor[1]<latt_size[1];coor[1]++){
@@ -144,20 +144,21 @@ int main (int argc, char ** argv)
 	  Fine.CoorFromIndex(peer,index,latt_size);
 
 	  if (nrm > 0){
-	    std::cerr<<"FAIL shift "<< shift<<" in dir "<< dir
+	    std::cout<<"FAIL shift "<< shift<<" in dir "<< dir
 		     <<" ["<<coor[0]<<","<<coor[1]<<","<<coor[2]<<","<<coor[3]<<"] = "
 		     << cm()()()<<" expect "<<scm<<"  "<<nrm<<std::endl;
-	    std::cerr<<"Got    "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
+	    std::cout<<"Got    "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	    index=real(scm);
 	    Fine.CoorFromIndex(peer,index,latt_size);
-	    std::cerr<<"Expect "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
-	    exit(-1);
-	  } else if (0) { 
-	    std::cout<<"PASS shift "<< shift<<" in dir "<< dir
+	    std::cout<<"Expect "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
+	    exx=1;
+	  } else if (1) { 
+	    std::cout<<GridLogMessage<<"PASS shift "<< shift<<" in dir "<< dir
 		     <<" ["<<coor[0]<<","<<coor[1]<<","<<coor[2]<<","<<coor[3]<<"] = "
 		     << cm()()()<<" expect "<<scm<<"  "<<nrm<<std::endl;
 	  }
 	}}}}
+	if (exx) exit(-1);
 
     }
   }
