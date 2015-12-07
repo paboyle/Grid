@@ -59,6 +59,8 @@ void Application::run(void)
     
     g.addEdge("A", "B");
     g.addEdge("B", "D");
+    g.addEdge("B", "X1");
+    g.addEdge("X1", "X2");
     g.addEdge("D", "E");
     g.addEdge("E", "C");
     g.addEdge("Z", "Y");
@@ -75,13 +77,16 @@ void Application::run(void)
     }
     for (auto &h: vec)
     {
-        auto top = h.topoSort();
-        while (!top.empty())
+        auto top = h.allTopoSort();
+        for (auto &s: top)
         {
-            cout << top.top() << " ";
-            top.pop();
+            for (auto &v: s)
+            {
+                cout << v << " ";
+            }
+            cout << endl;
         }
-        cout << endl;
+        cout << "--------" << endl;
     }
 }
 

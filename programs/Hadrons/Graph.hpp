@@ -58,12 +58,13 @@ public:
     // tests
     bool gotValue(const T &value) const;
     // graph topological manipulations
-    std::vector<T>        getAdjacentVertices(const T &value) const;
-    std::vector<T>        getChildren(const T &value) const;
-    std::vector<T>        getParents(const T &value) const;
-    std::vector<T>        getRoots(void) const;
-    std::vector<Graph<T>> getConnectedComponents(void) const;
-    std::stack<T>         topoSort(void);
+    std::vector<T>              getAdjacentVertices(const T &value) const;
+    std::vector<T>              getChildren(const T &value) const;
+    std::vector<T>              getParents(const T &value) const;
+    std::vector<T>              getRoots(void) const;
+    std::vector<Graph<T>>       getConnectedComponents(void) const;
+    std::vector<T>              topoSort(void);
+    std::vector<std::vector<T>> allTopoSort(void);
     // I/O
     friend std::ostream & operator<<(std::ostream &out, const Graph<T> &g)
     {
@@ -96,8 +97,8 @@ private:
     void depthFirstSearch(void);
     void depthFirstSearch(const T &root);
 private:
-    std::map<T, bool> isMarked_;
-    std::set<Edge>    edgeSet_;
+    std::map<T, bool>              isMarked_;
+    std::set<Edge>                 edgeSet_;
 };
 
 /******************************************************************************
@@ -422,12 +423,13 @@ std::vector<Graph<T>> Graph<T>::getConnectedComponents(void) const
 
 // topological sort using Tarjan's algorithm
 template <typename T>
-std::stack<T> Graph<T>::topoSort(void)
+std::vector<T> Graph<T>::topoSort(void)
 {
-    std::stack<T>     res;
+    std::stack<T>     buf;
+    std::vector<T>    res;
     const T           *vPt;
     std::map<T, bool> tmpMarked(isMarked_);
-    
+
     // visit function
     std::function<void(const T &)> visit = [&](const T &v)
     {
@@ -446,7 +448,7 @@ std::stack<T> Graph<T>::topoSort(void)
             }
             this->mark(v);
             tmpMarked[v] = false;
-            res.push(v);
+            buf.push(v);
         }
     };
     
@@ -455,6 +457,7 @@ std::stack<T> Graph<T>::topoSort(void)
     {
         tmpMarked.at(v.first) = false;
     }
+    
     // loop on unmarked vertices
     vPt = getFirstUnmarked();
     while (vPt)
@@ -463,6 +466,92 @@ std::stack<T> Graph<T>::topoSort(void)
         vPt = getFirstUnmarked();
     }
     unmarkAll();
+    
+    // create result vector
+    while (!buf.empty())
+    {
+        res.push_back(buf.top());
+        buf.pop();
+    }
+    
+    return res;
+}
+
+// generate all possible topological sorts
+// Y. L. Varol & D. Rotem, Comput. J. 24(1), pp. 83–84, 1981
+// http://comjnl.oupjournals.org/cgi/doi/10.1093/comjnl/24.1.83
+template <typename T>
+std::vector<std::vector<T>> Graph<T>::allTopoSort(void)
+{
+    std::vector<std::vector<T>>    res;
+    std::map<T, std::map<T, bool>> iMat;
+    
+    // create incidence matrix
+    for (auto &v1: isMarked_)
+    for (auto &v2: isMarked_)
+    {
+        iMat[v1.first][v2.first] = false;
+    }
+    for (auto &v: isMarked_)
+    {
+        auto cVec = getChildren(v.first);
+        
+        for (auto &c: cVec)
+        {
+            iMat[v.first][c] = true;
+        }
+    }
+    
+    // generate initial topological sort
+    res.push_back(topoSort());
+    
+    // generate all other topological sorts by permutation
+    std::vector<T>            p = res[0];
+    const unsigned int        n = size();
+    std::vector<unsigned int> loc(n);
+    unsigned int              i, k, k1;
+    T                         obj_k, obj_k1;
+    bool                      isFinal;
+    
+    for (unsigned int j = 0; j < n; ++j)
+    {
+        loc[j] = j;
+    }
+    i = 0;
+    while (i < n-1)
+    {
+        k      = loc[i];
+        k1     = k + 1;
+        obj_k  = p[k];
+        if (k1 >= n)
+        {
+            isFinal = true;
+            obj_k1  = obj_k;
+        }
+        else
+        {
+            isFinal = false;
+            obj_k1  = p[k1];
+        }
+        if (iMat[res[0][i]][obj_k1] or isFinal)
+        {
+            for (unsigned int l = k; l >= i + 1; --l)
+            {
+                p[l]   = p[l-1];
+            }
+            p[i]   = obj_k;
+            loc[i] = i;
+            i++;
+        }
+        else
+        {
+            p[k]   = obj_k1;
+            p[k1]  = obj_k;
+            loc[i] = k1;
+            i      = 0;
+            res.push_back(p);
+        }
+    }
     
     return res;
 }
