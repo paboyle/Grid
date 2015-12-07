@@ -84,7 +84,6 @@ namespace Grid
   template <typename U>
   void XmlReader::readDefault(const std::string &s, std::vector<U> &output)
   {
-    pugi::xml_node nodeCpy;
     std::string    buf;
     unsigned int   i = 0;
     
@@ -96,7 +95,6 @@ namespace Grid
       node_.child("elem").set_name("elem-done");
       i++;
     }
-    //    assert( is.tellg()==-1);
     pop();
   }
   
