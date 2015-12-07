@@ -55,43 +55,56 @@ Application::~Application(void)
 // execute /////////////////////////////////////////////////////////////////////
 void Application::run(void)
 {
-    Graph<string> g;
-    
-    g.addEdge("A", "B");
-    g.addEdge("B", "D");
-    g.addEdge("B", "X1");
-    g.addEdge("X1", "X2");
-    g.addEdge("D", "E");
-    g.addEdge("E", "C");
-    g.addEdge("Z", "Y");
-    g.addEdge("Z", "W");
-    g.addEdge("Z", "R");
-    g.addEdge("W", "R");
-    g.addEdge("U", "I");
-    
-    cout << g << endl;
-    auto vec = g.getConnectedComponents();
-    for (auto &h: vec)
-    {
-        cout << h << endl;
-    }
-    for (auto &h: vec)
-    {
-        auto top = h.allTopoSort();
-        for (auto &s: top)
-        {
-            for (auto &v: s)
-            {
-                cout << v << " ";
-            }
-            cout << endl;
-        }
-        cout << "--------" << endl;
-    }
+    parseParameterFile();
+    schedule();
 }
 
 // parse parameter file ////////////////////////////////////////////////////////
 void Application::parseParameterFile(void)
 {
+    XmlReader reader(parameterFileName_);
     
+    LOG(Message) << "Reading '" << parameterFileName_ << "'..." << endl;
+    read(reader, "parameters", parameters_);
+}
+
+// schedule computation ////////////////////////////////////////////////////////
+void Application::schedule(void)
+{
+    Graph<string> moduleGraph;
+    
+    LOG(Message) << "Scheduling computation..." << endl;
+    for (auto &m: parameters_.modules)
+    {
+        for (auto &p: m.in)
+        {
+            moduleGraph.addEdge(p, m.name);
+        }
+    }
+    
+    vector<Graph<string>> con = moduleGraph.getConnectedComponents();
+    
+    LOG(Message) << "Program:" << endl;
+    LOG(Message) << "  #segments: " << con.size() << endl;
+    for (unsigned int i = 0; i < con.size(); ++i)
+    {
+        vector<vector<string>> t = con[i].allTopoSort();
+        auto                   m = makeDependencyMatrix(t);
+        
+        for (auto &v: t[0])
+        {
+            cout << v << " ";
+        }
+        cout << endl;
+        for (auto &v1: t[0])
+        {
+            for (auto &v2: t[0])
+            {
+                cout << m[v1][v2] << " ";
+            }
+            cout << endl;
+        }
+        
+        LOG(Message) << "  segment " << i << ":" << endl;
+    }
 }

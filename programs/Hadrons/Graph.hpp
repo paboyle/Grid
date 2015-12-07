@@ -101,6 +101,11 @@ private:
     std::set<Edge>                 edgeSet_;
 };
 
+// build depedency matrix from topological sorts
+template <typename T>
+std::map<T, std::map<T, bool>>
+makeDependencyMatrix(const std::vector<std::vector<T>> &topSort);
+
 /******************************************************************************
  *                       template implementation                              *
  ******************************************************************************/
@@ -554,6 +559,33 @@ std::vector<std::vector<T>> Graph<T>::allTopoSort(void)
     }
     
     return res;
+}
+
+// build depedency matrix from topological sorts ///////////////////////////////
+template <typename T>
+std::map<T, std::map<T, bool>>
+makeDependencyMatrix(const std::vector<std::vector<T>> &topSort)
+{
+    std::map<T, std::map<T, bool>> m;
+    const std::vector<T>           &vList = topSort[0];
+    
+    for (auto &v1: vList)
+    for (auto &v2: vList)
+    {
+        bool dep = true;
+        
+        for (auto &t: topSort)
+        {
+            auto i1 = std::find(t.begin(), t.end(), v1);
+            auto i2 = std::find(t.begin(), t.end(), v2);
+            
+            dep = dep and (i1 - i2 > 0);
+            if (!dep) break;
+        }
+        m[v1][v2] = dep;
+    }
+    
+    return m;
 }
 
 END_HADRONS_NAMESPACE

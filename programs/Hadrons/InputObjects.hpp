@@ -1,5 +1,5 @@
 /*
- * Application.hpp, part of Grid
+ * InputObjects.hpp, part of Grid
  *
  * Copyright (C) 2015 Antonin Portelli
  *
@@ -17,36 +17,44 @@
  * along with Grid.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef Hadrons_Application_hpp_
-#define Hadrons_Application_hpp_
+#ifndef Hadrons_InputObjects_hpp_
+#define Hadrons_InputObjects_hpp_
 
 #include <Hadrons/Global.hpp>
-#include <Hadrons/InputObjects.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         Main program manager                               *
+ *                       Serializable input classes                           *
  ******************************************************************************/
-class Application
+class Module: Serializable
 {
 public:
     // constructor
-    Application(int argc, char *argv[]);
+    Module(void) = default;
     // destructor
-    virtual ~Application(void);
-    // execute
-    void run(void);
-private:
-    // parse parameter file
-    void parseParameterFile(void);
-    // schedule computation
-    void schedule(void);
-private:
-    std::string parameterFileName_;
-    Parameters  parameters_;
+    virtual ~Module(void) = default;
+    // serializable members
+    GRID_DECL_CLASS_MEMBERS(Module,
+                            std::string             , name,
+                            std::vector<std::string>, in
+                            );
+};
+
+class Parameters: Serializable
+{
+public:
+    // constructor
+    Parameters(void) = default;
+    // destructor
+    virtual ~Parameters(void) = default;
+    // serializable members
+    GRID_DECL_CLASS_MEMBERS(Parameters,
+                            std::vector<unsigned int>, latticeSize,
+                            std::vector<Module>      , modules
+                            );
 };
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_Application_hpp_
+#endif // Hadrons_InputObjects_hpp_
