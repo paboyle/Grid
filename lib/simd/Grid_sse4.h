@@ -7,7 +7,7 @@
 // Time-stamp: <2015-06-16 23:27:54 neo>
 //----------------------------------------------------------------------
 
-#include <pmmintrin.h>
+#include <x86intrin.h>
 
 namespace Optimization {
 

@@ -370,5 +370,6 @@ void WilsonKernels<Impl>::DiracOptDhopDir(StencilImpl &st,DoubledGaugeField &U,
 }
 
   FermOpTemplateInstantiate(WilsonKernels);
+  GparityFermOpTemplateInstantiate(WilsonKernels);
 
 }}

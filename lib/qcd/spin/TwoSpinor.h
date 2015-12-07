@@ -45,13 +45,13 @@ namespace QCD {
   // To fail is not to err (Cryptic clue: suggest to Google SFINAE ;) )
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void spProjXp (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
     {
-      hspin(0)=fspin(0)+timesI(fspin(3));
-      hspin(1)=fspin(1)+timesI(fspin(2));
+      hspin(0)=fspin(0)-timesI(fspin(3));
+      hspin(1)=fspin(1)-timesI(fspin(2));
     }
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void spProjXm (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
     {
-      hspin(0)=fspin(0)-timesI(fspin(3));
-      hspin(1)=fspin(1)-timesI(fspin(2));
+      hspin(0)=fspin(0)+timesI(fspin(3));
+      hspin(1)=fspin(1)+timesI(fspin(2));
     }
 
       //  0 0  0  -1  [0] -+ [3]
@@ -60,13 +60,13 @@ namespace QCD {
       // -1 0  0  0
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void spProjYp (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
     {
-      hspin(0)=fspin(0)-fspin(3);
-      hspin(1)=fspin(1)+fspin(2);
+      hspin(0)=fspin(0)+fspin(3);
+      hspin(1)=fspin(1)-fspin(2);
     }
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void spProjYm (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
     {
-      hspin(0)=fspin(0)+fspin(3);
-      hspin(1)=fspin(1)-fspin(2);
+      hspin(0)=fspin(0)-fspin(3);
+      hspin(1)=fspin(1)+fspin(2);
     }
 	    /*Gz
 	     *  0 0  i  0   [0]+-i[2]
@@ -76,14 +76,14 @@ namespace QCD {
 	     */
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void spProjZp (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
     {
-      hspin(0)=fspin(0)+timesI(fspin(2));
-      hspin(1)=fspin(1)-timesI(fspin(3));
+      hspin(0)=fspin(0)-timesI(fspin(2));
+      hspin(1)=fspin(1)+timesI(fspin(3));
     }
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void spProjZm (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
     {
       //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
-      hspin(0)=fspin(0)-timesI(fspin(2));
-      hspin(1)=fspin(1)+timesI(fspin(3));
+      hspin(0)=fspin(0)+timesI(fspin(2));
+      hspin(1)=fspin(1)-timesI(fspin(3));
     }
 	    /*Gt
 	     *  0 0  1  0 [0]+-[2]
@@ -94,14 +94,14 @@ namespace QCD {
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void spProjTp (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
     {
       //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
-      hspin(0)=fspin(0)+fspin(2);
-      hspin(1)=fspin(1)+fspin(3);
+      hspin(0)=fspin(0)-fspin(2);
+      hspin(1)=fspin(1)-fspin(3);
     }
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void spProjTm (iVector<vtype,Nhs> &hspin,const iVector<vtype,Ns> &fspin)
     {
       //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
-      hspin(0)=fspin(0)-fspin(2);
-      hspin(1)=fspin(1)-fspin(3);
+      hspin(0)=fspin(0)+fspin(2);
+      hspin(1)=fspin(1)+fspin(3);
     }
 	    /*G5
 	     *  1 0  0  0 
@@ -157,32 +157,32 @@ namespace QCD {
       //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
       fspin(0)=hspin(0);
       fspin(1)=hspin(1);
-      fspin(2)=timesMinusI(hspin(1));
-      fspin(3)=timesMinusI(hspin(0));
+      fspin(2)=timesI(hspin(1));
+      fspin(3)=timesI(hspin(0));
     }
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void spReconXm (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
     {
       //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
       fspin(0)=hspin(0);
       fspin(1)=hspin(1);
-      fspin(2)=timesI(hspin(1));
-      fspin(3)=timesI(hspin(0));
+      fspin(2)=timesMinusI(hspin(1));
+      fspin(3)=timesMinusI(hspin(0));
     }
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void accumReconXp (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
     {
       //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
       fspin(0)+=hspin(0);
       fspin(1)+=hspin(1);
-      fspin(2)-=timesI(hspin(1));
-      fspin(3)-=timesI(hspin(0));
+      fspin(2)+=timesI(hspin(1));
+      fspin(3)+=timesI(hspin(0));
     }
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void accumReconXm (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
     {
       //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
       fspin(0)+=hspin(0);
       fspin(1)+=hspin(1);
-      fspin(2)+=timesI(hspin(1));
-      fspin(3)+=timesI(hspin(0));
+      fspin(2)-=timesI(hspin(1));
+      fspin(3)-=timesI(hspin(0));
     }
 
       //  0 0  0  -1  [0] -+ [3]
@@ -195,32 +195,32 @@ namespace QCD {
       //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
       fspin(0)=hspin(0);
       fspin(1)=hspin(1);
-      fspin(2)= hspin(1);
-      fspin(3)=-hspin(0);//Unary minus?
+      fspin(2)=-hspin(1);
+      fspin(3)= hspin(0);
     }
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void spReconYm (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
     {
       //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
       fspin(0)=hspin(0);
       fspin(1)=hspin(1);
-      fspin(2)=-hspin(1);
-      fspin(3)= hspin(0);
+      fspin(2)= hspin(1);
+      fspin(3)=-hspin(0);//Unary minus?
     }
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void accumReconYp (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
     {
       //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
       fspin(0)+=hspin(0);
       fspin(1)+=hspin(1);
-      fspin(2)+=hspin(1);
-      fspin(3)-=hspin(0);
+      fspin(2)-=hspin(1);
+      fspin(3)+=hspin(0);
     }
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void accumReconYm (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
     {
       //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
       fspin(0)+=hspin(0);
       fspin(1)+=hspin(1);
-      fspin(2)-=hspin(1);
-      fspin(3)+=hspin(0);
+      fspin(2)+=hspin(1);
+      fspin(3)-=hspin(0);
     }
 
 	    /*Gz
@@ -234,32 +234,32 @@ namespace QCD {
       //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
       fspin(0)=hspin(0);
       fspin(1)=hspin(1);
-      fspin(2)=timesMinusI(hspin(0));
-      fspin(3)=timesI(hspin(1));
+      fspin(2)=     timesI(hspin(0));
+      fspin(3)=timesMinusI(hspin(1));
     }
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void spReconZm (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
     {
       //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
       fspin(0)=hspin(0);
       fspin(1)=hspin(1);
-      fspin(2)=     timesI(hspin(0));
-      fspin(3)=timesMinusI(hspin(1));
+      fspin(2)=timesMinusI(hspin(0));
+      fspin(3)=timesI(hspin(1));
     }
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void accumReconZp (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
     {
       //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
       fspin(0)+=hspin(0);
       fspin(1)+=hspin(1);
-      fspin(2)-=timesI(hspin(0));
-      fspin(3)+=timesI(hspin(1));
+      fspin(2)+=timesI(hspin(0));
+      fspin(3)-=timesI(hspin(1));
     }
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void accumReconZm (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
     {
       //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
       fspin(0)+=hspin(0);
       fspin(1)+=hspin(1);
-      fspin(2)+=timesI(hspin(0));
-      fspin(3)-=timesI(hspin(1));
+      fspin(2)-=timesI(hspin(0));
+      fspin(3)+=timesI(hspin(1));
     }
 	    /*Gt
 	     *  0 0  1  0 [0]+-[2]
@@ -272,32 +272,32 @@ namespace QCD {
       //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
       fspin(0)=hspin(0);
       fspin(1)=hspin(1);
-      fspin(2)=hspin(0);
-      fspin(3)=hspin(1);
+      fspin(2)=-hspin(0);
+      fspin(3)=-hspin(1);
     }
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void spReconTm (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
     {
       //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
       fspin(0)=hspin(0);
       fspin(1)=hspin(1);
-      fspin(2)=-hspin(0);
-      fspin(3)=-hspin(1);
+      fspin(2)=hspin(0);
+      fspin(3)=hspin(1);
     }
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void accumReconTp (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
     {
       //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
       fspin(0)+=hspin(0);
       fspin(1)+=hspin(1);
-      fspin(2)+=hspin(0);
-      fspin(3)+=hspin(1);
+      fspin(2)-=hspin(0);
+      fspin(3)-=hspin(1);
     }
   template<class vtype,IfSpinor<iVector<vtype,Ns> > = 0> strong_inline void accumReconTm (iVector<vtype,Ns> &fspin,const iVector<vtype,Nhs> &hspin)
     {
       //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
       fspin(0)+=hspin(0);
       fspin(1)+=hspin(1);
-      fspin(2)-=hspin(0);
-      fspin(3)-=hspin(1);
+      fspin(2)+=hspin(0);
+      fspin(3)+=hspin(1);
     }
 	    /*G5
 	     *  1 0  0  0 

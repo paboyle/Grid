@@ -56,8 +56,10 @@ typedef WilsonGaugeAction<LatticeGaugeFieldD>    WilsonGaugeActionD;
 #define FermOpTemplateInstantiate(A) \
   template class A<WilsonImplF>;		\
   template class A<WilsonImplD>; 
-  //  template class A<GparityWilsonImplF>;	\
-  //  template class A<GparityWilsonImplD>;		
+
+#define GparityFermOpTemplateInstantiate(A) \
+  template class A<GparityWilsonImplF>;	\
+  template class A<GparityWilsonImplD>;		
 
 ////////////////////////////////////////////
 // Fermion operators / actions

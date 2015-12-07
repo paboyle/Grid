@@ -31,7 +31,7 @@
 // Grid headers
 ///////////////////
 #include <serialisation/Serialisation.h>
-#include <Config.h>
+#include <GridConfig.h>
 #include <Timer.h>
 #include <Log.h>
 #include <AlignedAllocator.h>

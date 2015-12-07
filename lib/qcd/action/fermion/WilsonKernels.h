@@ -39,7 +39,8 @@ namespace Grid {
        DiracOptDhopSite(st,U,buf,sF,sU,in,out); // will template override for Wilson Nc=3
      }
 #endif
-#define HANDOPT
+// doesn't seem to work with Gparity at the moment
+#undef HANDOPT
 #ifdef HANDOPT
      void DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
 			       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
