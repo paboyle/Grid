@@ -1,29 +1,38 @@
 #include <Grid.h>
 
 namespace Grid {
+  
+  GRID_SERIALIZABLE_ENUM(myenum, undef, red, 1, blue, 2, green, 3);
+    
   class myclass: Serializable {
   public:
     
-    GRID_DECL_CLASS_MEMBERS(myclass,
+    GRID_SERIALIZABLE_CLASS_MEMBERS(myclass,
+                            myenum, e,
+                            std::vector<myenum>, ve,
+                            std::string, name,
                             int, x,
                             double, y,
                             bool , b,
-                            std::string, name,
                             std::vector<double>, array,
                             std::vector<std::vector<double>>, twodimarray,
                             );
     
     myclass() {}
     myclass(int i)
-    : array(4,5.1), twodimarray(3,std::vector<double>(2,1.23456))
+    : array(4,5.1), twodimarray(3,std::vector<double>(2,1.23456)), ve(2, myenum::blue)
     {
+      e=myenum::red;
       x=i;
       y=2*i;
       b=true;
       name="bother said pooh";
     }
   };
+  
 }
+
+using namespace Grid;
 
 int16_t i16 = 1;
 uint16_t u16 = 2;
@@ -34,8 +43,6 @@ uint64_t u64 = 6;
 float    f = M_PI;
 double   d = 2*M_PI;
 bool     b = false;
-
-using namespace Grid;
 
 int main(int argc,char **argv)
 {
@@ -59,6 +66,7 @@ int main(int argc,char **argv)
     myclass obj(1234); // non-trivial constructor
     write(WR,"obj",obj);
     WR.write("obj2", obj);
+    std::cout << obj << std::endl;
     
     std::vector<myclass> vec;
     vec.push_back(myclass(1234));
