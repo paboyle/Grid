@@ -81,6 +81,9 @@ namespace Grid
     fromString(output, buf);
   }
   
+  template <>
+  void XmlReader::readDefault(const std::string &s, std::string &output);
+  
   template <typename U>
   void XmlReader::readDefault(const std::string &s, std::vector<U> &output)
   {
