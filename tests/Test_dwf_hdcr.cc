@@ -9,7 +9,7 @@ using namespace Grid::QCD;
 class myclass: Serializable {
 public:
 
-  GRID_DECL_CLASS_MEMBERS(myclass,
+  GRID_SERIALIZABLE_CLASS_MEMBERS(myclass,
 			  int, domaindecompose,
 			  int, domainsize,
 			  int, order,
