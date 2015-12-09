@@ -44,7 +44,7 @@ class GridThread {
   };
   static void SetMaxThreads(void) { 
 #ifdef GRID_OMP
-    setenv("KMP_AFFINITY","balanced",1);
+    //    setenv("KMP_AFFINITY","balanced",1);
     _threads = omp_get_max_threads();
     omp_set_num_threads(_threads);
 #else 

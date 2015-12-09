@@ -24,6 +24,17 @@ PARALLEL_FOR_LOOP
     return ret;
   }
 
+  template<class obj> Lattice<obj> div(const Lattice<obj> &rhs,Integer y){
+    Lattice<obj> ret(rhs._grid);
+    ret.checkerboard = rhs.checkerboard;
+    conformable(ret,rhs);
+PARALLEL_FOR_LOOP
+    for(int ss=0;ss<rhs._grid->oSites();ss++){
+      ret._odata[ss]=div(rhs._odata[ss],y);
+    }
+    return ret;
+  }
+
   template<class obj> Lattice<obj> expMat(const Lattice<obj> &rhs, ComplexD alpha, Integer Nexp = DEFAULT_MAT_EXP){
     Lattice<obj> ret(rhs._grid);
     ret.checkerboard = rhs.checkerboard;

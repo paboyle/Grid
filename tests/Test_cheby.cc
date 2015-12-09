@@ -57,5 +57,21 @@ int main (int argc, char ** argv)
     ChebyStep.csv(of);
   }
 
+  lo=-8;
+  hi=8;
+  Chebyshev<LatticeFermion> ChebyIndefInv(lo,hi,40,InverseApproximation);
+  {
+    std::ofstream of("chebyindefinv");
+    ChebyIndefInv.csv(of);
+  }
+
+  lo=0;
+  hi=64;
+  Chebyshev<LatticeFermion> ChebyNE(lo,hi,40,InverseApproximation);
+  {
+    std::ofstream of("chebyNE");
+    ChebyNE.csv(of);
+  }
+
   Grid_finalize();
 }

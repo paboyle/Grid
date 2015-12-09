@@ -52,6 +52,7 @@ int main (int argc, char ** argv)
   }
   */
 
+  typedef CartesianStencil<vobj,vobj,SimpleCompressor<vobj> > Stencil;
     for(int dir=0;dir<4;dir++){
       for(int disp=0;disp<Fine._fdimensions[dir];disp++){
 
@@ -61,7 +62,7 @@ int main (int argc, char ** argv)
 	std::vector<int> directions(npoint,dir);
 	std::vector<int> displacements(npoint,disp);
 
-	CartesianStencil myStencil(&Fine,npoint,0,directions,displacements);
+	Stencil myStencil(&Fine,npoint,0,directions,displacements);
 
 	std::vector<int> ocoor(4);
 	for(int o=0;o<Fine.oSites();o++){
@@ -142,8 +143,8 @@ int main (int argc, char ** argv)
 	std::vector<int> directions(npoint,dir);
 	std::vector<int> displacements(npoint,disp);
 
-	CartesianStencil EStencil(&rbFine,npoint,Even,directions,displacements);
-	CartesianStencil OStencil(&rbFine,npoint,Odd,directions,displacements);
+	Stencil EStencil(&rbFine,npoint,Even,directions,displacements);
+	Stencil OStencil(&rbFine,npoint,Odd,directions,displacements);
 
 	std::vector<int> ocoor(4);
 	for(int o=0;o<Fine.oSites();o++){

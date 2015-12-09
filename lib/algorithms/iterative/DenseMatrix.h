@@ -25,6 +25,9 @@ template<class T> void SizeSquare(DenseMatrix<T> & mat, int &N)
   assert(N==M);
 }
 
+template<class T> void Resize(DenseVector<T > & mat, int N) { 
+  mat.resize(N);
+}
 template<class T> void Resize(DenseMatrix<T > & mat, int N, int M) { 
   mat.resize(N);
   for(int i=0;i<N;i++){

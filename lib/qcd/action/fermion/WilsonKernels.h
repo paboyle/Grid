@@ -29,7 +29,7 @@ namespace Grid {
 			  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 			  int sF,int sU,const FermionField &in, FermionField &out,int dirdisp,int gamma);
 #if defined(AVX512) || defined(IMCI)
-     void DiracOptAsmDhopSite(CartesianStencil &st,DoubledGaugeField &U,
+     void DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U,
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 			      int sF,int sU,const FermionField &in, FermionField &out,uint64_t *);
 #else

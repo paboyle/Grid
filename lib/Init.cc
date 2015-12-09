@@ -17,7 +17,6 @@
 
 #define __X86_64
 
-
 #ifdef HAVE_EXECINFO_H
 #include <execinfo.h>
 #endif

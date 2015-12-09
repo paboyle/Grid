@@ -82,7 +82,7 @@ int main (int argc, char ** argv)
   DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   
   std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
-  int ncall=100;
+  int ncall=10000;
   {
     double t0=usecond();
     for(int i=0;i<ncall;i++){

@@ -166,7 +166,6 @@ namespace Grid {
       Field *Tn  = &T1;
       Field *Tnp = &T2;
 
-      std::cout<<GridLogMessage << "Chebyshev ["<<lo<<","<<hi<<"]"<< " order "<<order <<std::endl;
       // Tn=T1 = (xscale M + mscale)in
       RealD xscale = 2.0/(hi-lo);
       RealD mscale = -(hi+lo)/(hi-lo);

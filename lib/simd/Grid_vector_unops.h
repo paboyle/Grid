@@ -67,6 +67,14 @@ namespace Grid {
     }
   };
 
+  template<class scalar> struct DivIntFunctor {
+    Integer y;
+  DivIntFunctor(Integer _y) : y(_y) {};
+    scalar operator()(const scalar &a)  const {
+      return Integer(a)/y;
+    }
+  };
+
   template<class scalar> struct RealFunctor {
     scalar operator()(const scalar &a)  const {
       return real(a);
@@ -130,6 +138,10 @@ namespace Grid {
   template < class S, class V > 
   inline Grid_simd<S,V> mod(const Grid_simd<S,V> &r,Integer y) {
     return SimdApply(ModIntFunctor<S>(y),r);
+  }
+  template < class S, class V > 
+  inline Grid_simd<S,V> div(const Grid_simd<S,V> &r,Integer y) {
+    return SimdApply(DivIntFunctor<S>(y),r);
   }
   ////////////////////////////////////////////////////////////////////////////
   // Allows us to assign into **conformable** real vectors from complex
