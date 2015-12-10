@@ -1,22 +1,11 @@
-RECENT
----------------
-
-  - Clean up HMC                                                             -- DONE
-  - LorentzScalar<GaugeField> gets Gauge link type (cleaner).                -- DONE
-  - Simplified the integrators a bit.                                        -- DONE
-  - Multi-timescale looks broken and operating on single timescale for now.  -- DONE
-  - pass GaugeField as template param.                        -- DONE
-  - Reunitarise                                               -- DONE
-  - Force Gradient                                            -- DONE
-  - Prefer "RefreshInternal" or such like to "init" in naming -- DONE
-  - Parallel io improvements                                  -- DONE
-  - Plaquette and link trace checks into nersc reader from the Grid_nersc_io.cc test. -- DONE
-
 TODO:
 ---------------
 Policies:
+
 * Link smearing/boundary conds; Policy class based implementation ; framework more in place
+
 * Support different boundary conditions (finite temp, chem. potential ... )
+
 * Support different fermion representations? 
   - contained entirely within the integrator presently
 
@@ -40,6 +29,12 @@ Policies:
 - Flavour matrices?
 
 - FFTnD ?
+
+- Gparity; hand opt use template specialisation elegance to enable the optimised paths ?
+- Gparity force term; Gparity (R)HMC.
+- Random number state save restore
+- Mobius implementation clean up to rmove #if 0 stale code sequences
+- CG -- profile carefully, kernel fusion, whole CG performance measurements.
 
 ================================================================
 * Hacks and bug fixes to clean up and Audits
@@ -90,6 +85,20 @@ Not sure of status of this -- reverify. Things are working nicely now though.
 ======================================================================
 ======================================================================
 ======================================================================
+RECENT
+---------------
+
+  - Clean up HMC                                                             -- DONE
+  - LorentzScalar<GaugeField> gets Gauge link type (cleaner).                -- DONE
+  - Simplified the integrators a bit.                                        -- DONE
+  - Multi-timescale looks broken and operating on single timescale for now.  -- DONE
+  - pass GaugeField as template param.                        -- DONE
+  - Reunitarise                                               -- DONE
+  - Force Gradient                                            -- DONE
+  - Prefer "RefreshInternal" or such like to "init" in naming -- DONE
+  - Parallel io improvements                                  -- DONE
+  - Plaquette and link trace checks into nersc reader from the Grid_nersc_io.cc test. -- DONE
+
 Done: Cayley, Partial , ContFrac force terms.
 
 DONE
