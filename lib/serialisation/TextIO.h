@@ -20,9 +20,9 @@ namespace Grid
     void push(const std::string &s);
     void pop(void);
     template <typename U>
-    void writeDefault(const std::string &s, const U &output);
+    void writeDefault(const std::string &s, const U &x);
     template <typename U>
-    void writeDefault(const std::string &s, const std::vector<U> &output);
+    void writeDefault(const std::string &s, const std::vector<U> &x);
   private:
     void indent(void);
   private:
@@ -50,21 +50,21 @@ namespace Grid
   
   // Writer template implementation ////////////////////////////////////////////
   template <typename U>
-  void TextWriter::writeDefault(const std::string &s, const U &output)
+  void TextWriter::writeDefault(const std::string &s, const U &x)
   {
     indent();
-    file_ << std::boolalpha << output << std::endl;
+    file_ << std::boolalpha << x << std::endl;
   }
   
   template <typename U>
-  void TextWriter::writeDefault(const std::string &s, const std::vector<U> &output)
+  void TextWriter::writeDefault(const std::string &s, const std::vector<U> &x)
   {
-    uint64_t sz = output.size();
+    uint64_t sz = x.size();
     
     write(s, sz);
     for (uint64_t i = 0; i < sz; ++i)
     {
-      write(s, output[i]);
+      write(s, x[i]);
     }
   }
   
@@ -77,6 +77,9 @@ namespace Grid
     readDefault(s, buf);
     fromString(output, buf);
   }
+  
+  template <>
+  void TextReader::readDefault(const std::string &s, std::string &output);
   
   template <typename U>
   void TextReader::readDefault(const std::string &s, std::vector<U> &output)
