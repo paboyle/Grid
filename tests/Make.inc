@@ -225,7 +225,10 @@ Test_wilson_force_phiMdagMphi_LDADD=-lGrid
 Test_wilson_force_phiMphi_SOURCES=Test_wilson_force_phiMphi.cc
 Test_wilson_force_phiMphi_LDADD=-lGrid
 
-
 Test_zmm_SOURCES=Test_zmm.cc
 Test_zmm_LDADD=-lGrid
+
+Test_RectPlaq_SOURCES=Test_RectPlaq.cc
+Test_RectPlaq_LDADD=-lGrid
+
 

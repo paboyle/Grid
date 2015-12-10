@@ -11,6 +11,8 @@
 #ifdef __linux__
 #include <syscall.h>
 #include <linux/perf_event.h>
+#else
+#include <sys/syscall.h>
 #endif
 namespace Grid {
 
