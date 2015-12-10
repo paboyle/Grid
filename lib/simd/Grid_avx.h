@@ -16,6 +16,7 @@
 #define _mm256_set_m128i(hi,lo) _mm256_insertf128_si256(_mm256_castsi128_si256(lo),(hi),1)
 #endif
 
+namespace Grid {
 namespace Optimization {
 
   template<class vtype>
@@ -467,7 +468,7 @@ namespace Optimization {
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types 
-namespace Grid {
+
   typedef __m256  SIMD_Ftype; // Single precision type
   typedef __m256d SIMD_Dtype; // Double precision type
   typedef __m256i SIMD_Itype; // Integer type
@@ -488,8 +489,8 @@ namespace Grid {
   typedef Optimization::Vstore   VstoreSIMD;
   typedef Optimization::Vset     VsetSIMD;
   typedef Optimization::Vstream  VstreamSIMD;
-  template <typename S, typename T> using ReduceSIMD = Optimization::Reduce<S,T>;
 
+  template <typename S, typename T> using ReduceSIMD = Optimization::Reduce<S,T>;
 
   // Arithmetic operations
   typedef Optimization::Sum         SumSIMD;

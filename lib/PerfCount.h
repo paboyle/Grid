@@ -30,6 +30,7 @@ static long perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
 
 class PerformanceCounter {
 private:
+
   typedef struct { 
   public:
     uint32_t type;

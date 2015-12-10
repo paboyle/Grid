@@ -3,9 +3,12 @@ namespace Grid {
 namespace QCD {
 
 template<class Impl> 
-void WilsonKernels<Impl>::DiracOptDhopSite(StencilImpl &st,DoubledGaugeField &U,
-						  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-						  int sF,int sU,const FermionField &in, FermionField &out)
+WilsonKernels<Impl>::WilsonKernels(const ImplParams &p): Base(p) {};
+
+template<class Impl> 
+void WilsonKernels<Impl>::DiracOptDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
+					   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+					   int sF,int sU,const FermionField &in, FermionField &out)
 {
   SiteHalfSpinor  tmp;    
   SiteHalfSpinor  chi;    
@@ -122,7 +125,7 @@ void WilsonKernels<Impl>::DiracOptDhopSite(StencilImpl &st,DoubledGaugeField &U,
 };
 
 template<class Impl> 
-void WilsonKernels<Impl>::DiracOptDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
+void WilsonKernels<Impl>::DiracOptDhopSite(StencilImpl &st,DoubledGaugeField &U,
 					      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 					      int sF,int sU,const FermionField &in, FermionField &out)
 {
@@ -368,6 +371,16 @@ void WilsonKernels<Impl>::DiracOptDhopDir(StencilImpl &st,DoubledGaugeField &U,
 
   vstream(out._odata[sF],result*(-0.5));
 }
+
+#if ( ! defined(AVX512) ) && ( ! defined(IMCI) )
+template<class Impl> 
+void WilsonKernels<Impl>::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U,
+					      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+					      int sF,int sU,const FermionField &in, FermionField &out,uint64_t *p)
+{
+  DiracOptDhopSite(st,U,buf,sF,sU,in,out); // will template override for Wilson Nc=3
+}
+#endif
 
   FermOpTemplateInstantiate(WilsonKernels);
 

@@ -68,11 +68,11 @@ int main (int argc, char ** argv)
     for(int mu=0;mu<Nd;mu++){
 
       tmp = U[mu]*Cshift(src,mu+1,1);
-      ref=ref + tmp + Gamma(Gmu[mu])*tmp;
+      ref=ref + tmp - Gamma(Gmu[mu])*tmp;
 
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu+1,-1);
-      ref=ref + tmp - Gamma(Gmu[mu])*tmp;
+      ref=ref + tmp + Gamma(Gmu[mu])*tmp;
     }
     ref = -0.5*ref;
   }
@@ -111,13 +111,13 @@ int main (int argc, char ** argv)
       //    ref =  src - Gamma(Gamma::GammaX)* src ; // 1+gamma_x
       tmp = U[mu]*Cshift(src,mu+1,1);
       for(int i=0;i<ref._odata.size();i++){
-	ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
+	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
       }
 
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu+1,-1);
       for(int i=0;i<ref._odata.size();i++){
-	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
+	ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
       }
     }
     ref = -0.5*ref;

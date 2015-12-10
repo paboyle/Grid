@@ -11,7 +11,6 @@
 // Vector types are arch dependent
 ////////////////////////////////////////////////////////////////////////
 
-typedef uint32_t Integer;
 
 #define _MM_SELECT_FOUR_FOUR(A,B,C,D) ((A<<6)|(B<<4)|(C<<2)|(D))
 #define _MM_SELECT_EIGHT_TWO(A,B,C,D,E,F,G,H) ((A<<7)|(B<<6)|(C<<5)|(D<<4)|(E<<3)|(F<<2)|(G<<4)|(H))
@@ -19,6 +18,8 @@ typedef uint32_t Integer;
 #define _MM_SELECT_TWO_TWO  (A,B)     _MM_SELECT_FOUR_TWO(0,0,A,B)
 
 namespace Grid {
+
+  typedef uint32_t Integer;
 
   typedef  float  RealF;
   typedef  double RealD;
