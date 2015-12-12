@@ -17,6 +17,8 @@ Policies:
 
 - Lanczos
 
+- Audit oIndex usage for cb behaviour
+
 - Rectangle gauge actions.
   Iwasaki,
   Symanzik,

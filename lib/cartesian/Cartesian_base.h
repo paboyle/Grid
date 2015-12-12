@@ -166,8 +166,9 @@ public:
       pcoor.resize(_ndimension);
       lcoor.resize(_ndimension);
       for(int mu=0;mu<_ndimension;mu++){
-	pcoor[mu] = gcoor[mu]/_ldimensions[mu];
-	lcoor[mu] = gcoor[mu]%_ldimensions[mu];
+	int _fld  = _fdimensions[mu]/_processors[mu];
+	pcoor[mu] = gcoor[mu]/_fld;
+	lcoor[mu] = gcoor[mu]%_fld;
       }
     }
     void GlobalCoorToRankIndex(int &rank, int &o_idx, int &i_idx ,const std::vector<int> &gcoor)
@@ -176,8 +177,16 @@ public:
       std::vector<int> lcoor;
       GlobalCoorToProcessorCoorLocalCoor(pcoor,lcoor,gcoor);
       rank = RankFromProcessorCoor(pcoor);
-      i_idx= iIndex(lcoor);
-      o_idx= oIndex(lcoor);
+
+      std::vector<int> cblcoor(lcoor);
+      for(int d=0;d<cblcoor.size();d++){
+	if( this->CheckerBoarded(d) ) {
+	  cblcoor[d] = lcoor[d]/2;
+	}
+      }
+
+      i_idx= iIndex(cblcoor);// this does not imply divide by 2 on checker dim
+      o_idx= oIndex(lcoor);// this implies divide by 2 on checkerdim
     }
 
     void RankIndexToGlobalCoor(int rank, int o_idx, int i_idx , std::vector<int> &gcoor)
