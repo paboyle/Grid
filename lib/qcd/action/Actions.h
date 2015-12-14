@@ -150,6 +150,9 @@ typedef WilsonFermion<GparityWilsonImplD>     GparityWilsonFermionD;
 typedef DomainWallFermion<GparityWilsonImplR> GparityDomainWallFermionR;
 typedef DomainWallFermion<GparityWilsonImplF> GparityDomainWallFermionF;
 typedef DomainWallFermion<GparityWilsonImplD> GparityDomainWallFermionD;
+typedef MobiusFermion<GparityWilsonImplR> GparityMobiusFermionR;
+typedef MobiusFermion<GparityWilsonImplF> GparityMobiusFermionF;
+typedef MobiusFermion<GparityWilsonImplD> GparityMobiusFermionD;
 
   }}
 ///////////////////////////////////////////////////////////////////////////////
