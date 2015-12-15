@@ -114,7 +114,7 @@ namespace QCD {
     // Apply Dw
     this->DW(psi,Din,DaggerYes); 
 
-    Meooe5D(Din,chi);
+    MeooeDag5D(Din,chi);
 
     int Ls=this->Ls;
     for(int s=0;s<Ls;s++){
@@ -163,7 +163,6 @@ namespace QCD {
     FermionField tmp(psi._grid);
     // Assemble the 5d matrix
     Meooe5D(psi,tmp); 
-
 #if 0
     std::cout << "Meooe Test replacement norm2 tmp = " <<norm2(tmp)<<std::endl;
     for(int s=0;s<Ls;s++){
@@ -202,7 +201,7 @@ namespace QCD {
       this->DhopOE(psi,tmp,DaggerYes);
     }
 
-    Meooe5D(tmp,chi); 
+    MeooeDag5D(tmp,chi); 
 #if 0
     std::cout << "Meooe Test replacement norm2 chi new = " <<norm2(chi)<<std::endl;
     // Assemble the 5d matrix

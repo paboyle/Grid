@@ -53,6 +53,7 @@ int main (int argc, char ** argv)
 
 
   TComplex cm;
+  TComplex cmeo;
   for(int dir=0;dir<Nd;dir++){
     //    if ( dir!=1 ) continue;
     for(int shift=0;shift<latt_size[dir];shift++){
@@ -125,7 +126,17 @@ int main (int argc, char ** argv)
 	  
 	  peekSite(cm,rbShiftU,coor);
 
-	  double nrm=norm2(U);
+	  Integer checkerboard = RBFine.CheckerBoard(coor);
+
+	  //	  std::cout << " coor "<<" ["<<coor[0]<<","<<coor[1]<<","<<coor[2]<<","<<coor[3]<<"] \n ";
+	  //	  std::cout << "shift "<< shift <<" dir "<<dir<< " checker board "<< checkerboard << " ";
+	  //	  std::cout << "Uo "   << ShiftUo.checkerboard << " Ue "<<ShiftUe.checkerboard<<std::endl;
+	  if ( checkerboard == ShiftUo.checkerboard ) {
+	    peekSite(cmeo,ShiftUo,coor);
+	  } else { 
+	    peekSite(cmeo,ShiftUe,coor);
+	  }
+
 
 	  std::vector<int> scoor(coor);
 	  scoor[dir] = (scoor[dir]+shift)%latt_size[dir];
@@ -136,12 +147,28 @@ int main (int argc, char ** argv)
 	    + latt_size[0]*latt_size[1]*latt_size[2]*scoor[3];
 
 	  Complex scm(slex);
-	  
-	  nrm = abs(scm-cm()()());
+
 	  std::vector<int> peer(4);
-	  Complex ctmp=cm;
+	  Complex ctmp=cmeo;
 	  Integer index=real(ctmp);
 	  Fine.CoorFromIndex(peer,index,latt_size);
+
+	  double nrm = abs(cmeo()()()-scm);
+	  if (nrm != 0) {
+	    std::cout<<"EOFAIL shift "<< shift<<" in dir "<< dir
+		     <<" ["<<coor[0]<<","<<coor[1]<<","<<coor[2]<<","<<coor[3]<<"] = "
+		     << cmeo()()()<<" expect "<<scm<<"  "<<nrm<<std::endl;
+	    std::cout<<"Got    "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
+	    index=real(scm);
+	    Fine.CoorFromIndex(peer,index,latt_size);
+	    std::cout<<"Expect "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
+	    exx=1;
+
+	  }
+
+	  ctmp=cm;
+	  index=real(ctmp);
+	  nrm = abs(scm-cm()()());
 
 	  if (nrm > 0){
 	    std::cout<<"FAIL shift "<< shift<<" in dir "<< dir

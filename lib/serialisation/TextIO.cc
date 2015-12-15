@@ -1,12 +1,14 @@
 #include <Grid.h>
 
-namespace Grid {
+using namespace Grid;
+using namespace std;
+
 // Writer implementation ///////////////////////////////////////////////////////
-TextWriter::TextWriter(const std::string &fileName)
-: file_(fileName, std::ios::out)
+TextWriter::TextWriter(const string &fileName)
+: file_(fileName, ios::out)
 {}
 
-void TextWriter::push(const std::string &s)
+void TextWriter::push(const string &s)
 {
   level_++;
 };
@@ -25,11 +27,11 @@ void TextWriter::indent(void)
 };
 
 // Reader implementation ///////////////////////////////////////////////////////
-TextReader::TextReader(const std::string &fileName)
-: file_(fileName, std::ios::in)
+TextReader::TextReader(const string &fileName)
+: file_(fileName, ios::in)
 {}
 
-void TextReader::push(const std::string &s)
+void TextReader::push(const string &s)
 {
   level_++;
 };
@@ -48,9 +50,9 @@ void TextReader::checkIndent(void)
     file_.get(c);
     if (c != '\t')
     {
-      std::cerr << "mismatch on tab " << c << " level " << level_;
-      std::cerr << " i "<< i <<std::endl;
-      std::abort();
+      cerr << "mismatch on tab " << c << " level " << level_;
+      cerr << " i "<< i << endl;
+      abort();
     }
   }
 }
@@ -58,8 +60,7 @@ void TextReader::checkIndent(void)
 template <>
 void TextReader::readDefault(const std::string &s, std::string &output)
 {
-  checkIndent();
-  output.clear();
-  getline(file_, output);
-}
+    checkIndent();
+    output.clear();
+    getline(file_, output);
 }

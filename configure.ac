@@ -164,6 +164,21 @@ esac
 AM_CONDITIONAL(BUILD_COMMS_MPI,[ test "X${ac_COMMS}X" == "XmpiX" ])
 AM_CONDITIONAL(BUILD_COMMS_NONE,[ test "X${ac_COMMS}X" == "XnoneX" ])
 
+AC_ARG_ENABLE([chroma],[AC_HELP_STRING([--enable-chroma],[Expect chroma compiled under c++11 ])],ac_CHROMA=yes,ac_CHROMA=no)
+
+case ${ac_CHROMA} in
+     yes)
+       echo Enabling tests regressing to Chroma
+     ;;
+     no)
+       echo Disabling tests regressing to Chroma
+     ;;
+     *)
+     AC_MSG_ERROR([${ac_CHROMA} unsupported --enable-chroma option]); 
+     ;;
+esac
+
+AM_CONDITIONAL(BUILD_CHROMA_REGRESSION,[ test "X${ac_CHROMA}X" == "XyesX" ])
 
 ###################################################################
 # Checks for doxygen support
@@ -184,6 +199,7 @@ echo :::::::::::::::::::::::::::::::::::::::::::
 AC_CONFIG_FILES(Makefile)
 AC_CONFIG_FILES(lib/Makefile)
 AC_CONFIG_FILES(tests/Makefile)
+AC_CONFIG_FILES(tests/qdpxx/Makefile)
 AC_CONFIG_FILES(benchmarks/Makefile)
 AC_OUTPUT
 

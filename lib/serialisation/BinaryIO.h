@@ -22,6 +22,7 @@ namespace Grid {
     void writeDefault(const std::string &s, const U &x);
     template <typename U>
     void writeDefault(const std::string &s, const std::vector<U> &x);
+    void writeDefault(const std::string &s, const char *x);
   private:
     std::ofstream file_;
   };
@@ -48,6 +49,9 @@ namespace Grid {
     file_.write((char *)&x, sizeof(U));
   }
   
+  template <>
+  void BinaryWriter::writeDefault(const std::string &s, const std::string &x);
+  
   template <typename U>
   void BinaryWriter::writeDefault(const std::string &s, const std::vector<U> &x)
   {
@@ -66,6 +70,9 @@ namespace Grid {
   {
     file_.read((char *)&output, sizeof(U));
   }
+  
+  template <>
+  void BinaryReader::readDefault(const std::string &s, std::string &output);
   
   template <typename U>
   void BinaryReader::readDefault(const std::string &s, std::vector<U> &output)

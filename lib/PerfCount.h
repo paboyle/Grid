@@ -11,6 +11,8 @@
 #ifdef __linux__
 #include <syscall.h>
 #include <linux/perf_event.h>
+#else
+#include <sys/syscall.h>
 #endif
 namespace Grid {
 
@@ -30,6 +32,7 @@ static long perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
 
 class PerformanceCounter {
 private:
+
   typedef struct { 
   public:
     uint32_t type;
