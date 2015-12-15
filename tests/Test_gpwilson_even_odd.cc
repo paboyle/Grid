@@ -52,7 +52,10 @@ int main (int argc, char ** argv)
 
   RealD mass=0.1;
 
-  GparityWilsonFermionR Dw(Umu,Grid,RBGrid,mass);
+  GparityWilsonFermionR::ImplParams params;
+  std::vector<int> twists(Nd,0);  twists[1] = 1;
+  params.twists = twists;
+  GparityWilsonFermionR Dw(Umu,Grid,RBGrid,mass,params);
 
   FermionField src_e   (&RBGrid);
   FermionField src_o   (&RBGrid);

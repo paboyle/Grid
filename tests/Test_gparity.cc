@@ -13,8 +13,6 @@ int main (int argc, char ** argv)
 
   Grid_init(&argc,&argv);
 
-  std::vector<int> twists(Nd,0);
-  twists[nu] = 1;
 
   const int Ls=4;
   const int L =4;
@@ -99,6 +97,9 @@ int main (int argc, char ** argv)
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
   CG(HermOpEO,src_o_1f,result_o_1f);
   
+  //  const int nu = 3;
+  std::vector<int> twists(Nd,0);
+  twists[nu] = 1;
   GparityDomainWallFermionR::ImplParams params;
   params.twists = twists;
   GparityDomainWallFermionR GPDdwf(Umu_2f,*FGrid_2f,*FrbGrid_2f,*UGrid_2f,*UrbGrid_2f,mass,M5,params);

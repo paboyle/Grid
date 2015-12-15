@@ -72,6 +72,8 @@ AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE4|AVX|AVXFMA4|AVX2|AVX512
 
 supported=no
 
+ac_ZMM=no;
+
 case ${ac_SIMD} in
      SSE4)
        echo Configuring for SSE4
@@ -113,11 +115,13 @@ case ${ac_SIMD} in
        echo Configuring for AVX512 
        AC_DEFINE([AVX512],[1],[AVX512 Intrinsics for Knights Landing] )
        supported="cross compilation"
+       ac_ZMM=yes;
      ;;
      IMCI)
        echo Configuring for IMCI
        AC_DEFINE([IMCI],[1],[IMCI Intrinsics for Knights Corner] )
        supported="cross compilation"
+       ac_ZMM=yes;
      ;;
      NEONv8)
        echo Configuring for experimental ARMv8a support 
@@ -132,6 +136,17 @@ case ${ac_SIMD} in
      AC_MSG_ERROR([${ac_SIMD} flag unsupported as --enable-simd option\nRun ./configure --help for the list of options]); 
      ;;
 esac
+
+case ${ac_ZMM} in
+yes)
+	echo Enabling ZMM source code
+;;
+no)
+	echo Disabling ZMM source code
+;;
+esac
+
+AM_CONDITIONAL(BUILD_ZMM,[ test "X${ac_ZMM}X" == "XyesX" ])
 
 AC_ARG_ENABLE([precision],[AC_HELP_STRING([--enable-precision=single|double],[Select default word size of Real])],[ac_PRECISION=${enable_precision}],[ac_PRECISION=double])
 case ${ac_PRECISION} in

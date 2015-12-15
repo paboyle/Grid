@@ -626,10 +626,14 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+BUILD_CHROMA_REGRESSION_FALSE
+BUILD_CHROMA_REGRESSION_TRUE
 BUILD_COMMS_NONE_FALSE
 BUILD_COMMS_NONE_TRUE
 BUILD_COMMS_MPI_FALSE
 BUILD_COMMS_MPI_TRUE
+BUILD_ZMM_FALSE
+BUILD_ZMM_TRUE
 EGREP
 GREP
 CXXCPP
@@ -745,6 +749,7 @@ enable_openmp
 enable_simd
 enable_precision
 enable_comms
+enable_chroma
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1390,6 +1395,7 @@ Optional Features:
   --enable-precision=single|double
                           Select default word size of Real
   --enable-comms=none|mpi Select communications
+  --enable-chroma         Expect chroma compiled under c++11
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -6392,6 +6398,8 @@ fi
 
 supported=no
 
+ac_ZMM=no;
+
 case ${ac_SIMD} in
      SSE4)
        echo Configuring for SSE4
@@ -6443,6 +6451,7 @@ $as_echo "$as_me: WARNING: Your processor does not support AVX2 instructions" >&
 $as_echo "#define AVX512 1" >>confdefs.h
 
        supported="cross compilation"
+       ac_ZMM=yes;
      ;;
      IMCI)
        echo Configuring for IMCI
@@ -6450,6 +6459,7 @@ $as_echo "#define AVX512 1" >>confdefs.h
 $as_echo "#define IMCI 1" >>confdefs.h
 
        supported="cross compilation"
+       ac_ZMM=yes;
      ;;
      NEONv8)
        echo Configuring for experimental ARMv8a support
@@ -6468,6 +6478,24 @@ $as_echo "#define EMPTY_SIMD 1" >>confdefs.h
      as_fn_error $? "${ac_SIMD} flag unsupported as --enable-simd option\nRun ./configure --help for the list of options" "$LINENO" 5;
      ;;
 esac
+
+case ${ac_ZMM} in
+yes)
+	echo Enabling ZMM source code
+;;
+no)
+	echo Disabling ZMM source code
+;;
+esac
+
+ if  test "X${ac_ZMM}X" == "XyesX" ; then
+  BUILD_ZMM_TRUE=
+  BUILD_ZMM_FALSE='#'
+else
+  BUILD_ZMM_TRUE='#'
+  BUILD_ZMM_FALSE=
+fi
+
 
 # Check whether --enable-precision was given.
 if test "${enable_precision+set}" = set; then :
@@ -6534,6 +6562,34 @@ else
 fi
 
 
+# Check whether --enable-chroma was given.
+if test "${enable_chroma+set}" = set; then :
+  enableval=$enable_chroma; ac_CHROMA=yes
+else
+  ac_CHROMA=no
+fi
+
+
+case ${ac_CHROMA} in
+     yes)
+       echo Enabling tests regressing to Chroma
+     ;;
+     no)
+       echo Disabling tests regressing to Chroma
+     ;;
+     *)
+     as_fn_error $? "${ac_CHROMA} unsupported --enable-chroma option" "$LINENO" 5;
+     ;;
+esac
+
+ if  test "X${ac_CHROMA}X" == "XyesX" ; then
+  BUILD_CHROMA_REGRESSION_TRUE=
+  BUILD_CHROMA_REGRESSION_FALSE='#'
+else
+  BUILD_CHROMA_REGRESSION_TRUE='#'
+  BUILD_CHROMA_REGRESSION_FALSE=
+fi
+
 
 ###################################################################
 # Checks for doxygen support
@@ -6556,6 +6612,8 @@ ac_config_files="$ac_config_files Makefile"
 ac_config_files="$ac_config_files lib/Makefile"
 
 ac_config_files="$ac_config_files tests/Makefile"
+
+ac_config_files="$ac_config_files tests/qdpxx/Makefile"
 
 ac_config_files="$ac_config_files benchmarks/Makefile"
 
@@ -6696,12 +6754,20 @@ if test -z "${am__fastdepCC_TRUE}" && test -z "${am__fastdepCC_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCC\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${BUILD_ZMM_TRUE}" && test -z "${BUILD_ZMM_FALSE}"; then
+  as_fn_error $? "conditional \"BUILD_ZMM\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${BUILD_COMMS_MPI_TRUE}" && test -z "${BUILD_COMMS_MPI_FALSE}"; then
   as_fn_error $? "conditional \"BUILD_COMMS_MPI\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BUILD_COMMS_NONE_TRUE}" && test -z "${BUILD_COMMS_NONE_FALSE}"; then
   as_fn_error $? "conditional \"BUILD_COMMS_NONE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${BUILD_CHROMA_REGRESSION_TRUE}" && test -z "${BUILD_CHROMA_REGRESSION_FALSE}"; then
+  as_fn_error $? "conditional \"BUILD_CHROMA_REGRESSION\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
@@ -7301,6 +7367,7 @@ do
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "lib/Makefile") CONFIG_FILES="$CONFIG_FILES lib/Makefile" ;;
     "tests/Makefile") CONFIG_FILES="$CONFIG_FILES tests/Makefile" ;;
+    "tests/qdpxx/Makefile") CONFIG_FILES="$CONFIG_FILES tests/qdpxx/Makefile" ;;
     "benchmarks/Makefile") CONFIG_FILES="$CONFIG_FILES benchmarks/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
