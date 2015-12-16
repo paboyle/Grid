@@ -9,6 +9,7 @@
 
 #include <pmmintrin.h>
 
+namespace Grid {
 namespace Optimization {
 
   template<class vtype>
@@ -173,11 +174,11 @@ namespace Optimization {
   struct Mult{
 
     inline void mac(__m128 &a, __m128 b, __m128 c){
-      a= _mm128_add_ps(_mm128_mul_ps(b,c),a);
+      a= _mm_add_ps(_mm_mul_ps(b,c),a);
     }
 
     inline void mac(__m128d &a, __m128d b, __m128d c){
-      a= _mm128_add_pd(_mm128_mul_pd(b,c),a);
+      a= _mm_add_pd(_mm_mul_pd(b,c),a);
     }
 
     // Real float
@@ -318,7 +319,6 @@ namespace Optimization {
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types 
-namespace Grid {
 
   typedef __m128 SIMD_Ftype;  // Single precision type
   typedef __m128d SIMD_Dtype; // Double precision type
