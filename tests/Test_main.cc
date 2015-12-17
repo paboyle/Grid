@@ -35,7 +35,7 @@ int main (int argc, char ** argv)
 #ifdef AVX512
  for(int omp=128;omp<236;omp+=16){
 #else
- for(int omp=1;omp<8;omp*=20){
+ for(int omp=1;omp<2;omp*=20){
 #endif
 
 #ifdef OMP
@@ -43,6 +43,9 @@ int main (int argc, char ** argv)
 #endif 
 
   for(int lat=8;lat<=16;lat+=40){
+
+    std::cout << "Lat "<<lat<<std::endl;
+
     latt_size[0] = lat;
     latt_size[1] = lat;
     latt_size[2] = lat;
@@ -53,7 +56,18 @@ int main (int argc, char ** argv)
     GridRedBlackCartesian rbFine(latt_size,simd_layout,mpi_layout);
     GridParallelRNG       FineRNG(&Fine);
     GridSerialRNG       SerialRNG;
+
     FineRNG.SeedRandomDevice();
+
+    std::cout <<"SerialRNG" << SerialRNG._generators[0] <<std::endl;
+    std::stringstream output(std::stringstream::out|std::stringstream::binary);
+    output <<SerialRNG._generators[0]<<std::endl;
+    std::cout << output.str();
+
+    {
+      std::ofstream of("rngstate",std::ios::out|std::ios::binary);
+      of << SerialRNG._generators[0];
+    }
 
     LatticeColourMatrix Foo(&Fine);
     LatticeColourMatrix Bar(&Fine);
@@ -302,7 +316,6 @@ int main (int argc, char ** argv)
     }
 
     FooBar = Bar;
- 
     /*
     { 
       std::vector<int> coor(4);
@@ -314,6 +327,7 @@ int main (int argc, char ** argv)
     random(Foo);
     */
     lex_sites(Foo);
+
 
     Integer mm[4];
     mm[0]=1;
@@ -330,8 +344,12 @@ int main (int argc, char ** argv)
       
     }
 
-    Bar = zero;
-    Bar = where(lex<Integer(10),Foo,Bar);
+
+
+    //    Bar = zero;
+    //    Bar = where(lex<Integer(10),Foo,Bar);
+
+
     cout << "peeking sites..\n";
     {
       std::vector<int> coor(4);

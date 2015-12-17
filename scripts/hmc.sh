@@ -24,7 +24,7 @@ echo "Acceptance $PACC %  $ACC / $TRAJ "
 
 grep Plaq $LOG | awk '{ print $10 }' | uniq > plaq.dat
 grep dH $LOG | awk '{ print $10 }' > dH.dat
-echo set yrange [-0.1:0.6] > plot.gnu
+echo set yrange [-0.2:1.0] > plot.gnu
 echo set terminal 'pdf' >> plot.gnu
 echo "set output 'plaq.${LOG}.pdf'" >> plot.gnu
 echo "plot 'plaq.dat' w l, 'dH.dat' w l " >> plot.gnu

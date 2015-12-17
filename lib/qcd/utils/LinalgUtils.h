@@ -9,6 +9,25 @@ namespace QCD{
 //These routines support five-D chiral fermions and contain s-subslice indexing 
 //on the 5d (rb4d) checkerboarded lattices
 ////////////////////////////////////////////////////////////////////////
+
+template<class vobj> 
+void axibg5x(Lattice<vobj> &z,const Lattice<vobj> &x,RealD a,RealD b)
+{
+  z.checkerboard = x.checkerboard;
+  conformable(x,z);
+
+  GridBase *grid=x._grid;
+
+  Gamma G5(Gamma::Gamma5);
+PARALLEL_FOR_LOOP
+  for(int ss=0;ss<grid->oSites();ss++){
+    vobj tmp;
+    tmp = a*x._odata[ss];
+    tmp = tmp + G5*(b*timesI(x._odata[ss]));
+    vstream(z._odata[ss],tmp);
+  }
+}
+
 template<class vobj> 
 void axpby_ssp(Lattice<vobj> &z, RealD a,const Lattice<vobj> &x,RealD b,const Lattice<vobj> &y,int s,int sp)
 {

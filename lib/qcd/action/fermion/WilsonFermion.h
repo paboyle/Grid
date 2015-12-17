@@ -42,10 +42,12 @@ namespace Grid {
       /////////////////////////////////////////////////////////
       void Meooe(const FermionField &in, FermionField &out) ;
       void MeooeDag(const FermionField &in, FermionField &out) ;
-      void Mooee(const FermionField &in, FermionField &out) ;
-      void MooeeDag(const FermionField &in, FermionField &out) ;
-      void MooeeInv(const FermionField &in, FermionField &out) ;
-      void MooeeInvDag(const FermionField &in, FermionField &out) ;
+
+      // allow override for twisted mass and clover
+      virtual void Mooee(const FermionField &in, FermionField &out) ;
+      virtual void MooeeDag(const FermionField &in, FermionField &out) ;
+      virtual void MooeeInv(const FermionField &in, FermionField &out) ;
+      virtual void MooeeInvDag(const FermionField &in, FermionField &out) ;
 
       ////////////////////////
       // Derivative interface
