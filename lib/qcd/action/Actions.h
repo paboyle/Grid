@@ -61,6 +61,7 @@ typedef WilsonGaugeAction<LatticeGaugeFieldD>    WilsonGaugeActionD;
 ////////////////////////////////////////////
 
 #include <qcd/action/fermion/WilsonFermion.h>       // 4d wilson like
+#include <qcd/action/fermion/WilsonTMFermion.h>       // 4d wilson like
 #include <qcd/action/fermion/WilsonFermion5D.h>     // 5d base used by all 5d overlap types
 
 //#include <qcd/action/fermion/CloverFermion.h>
@@ -96,6 +97,10 @@ namespace Grid {
 typedef WilsonFermion<WilsonImplR> WilsonFermionR;
 typedef WilsonFermion<WilsonImplF> WilsonFermionF;
 typedef WilsonFermion<WilsonImplD> WilsonFermionD;
+
+typedef WilsonTMFermion<WilsonImplR> WilsonTMFermionR;
+typedef WilsonTMFermion<WilsonImplF> WilsonTMFermionF;
+typedef WilsonTMFermion<WilsonImplD> WilsonTMFermionD;
 
 typedef DomainWallFermion<WilsonImplR> DomainWallFermionR;
 typedef DomainWallFermion<WilsonImplF> DomainWallFermionF;

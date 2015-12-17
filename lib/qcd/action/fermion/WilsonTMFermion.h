@@ -11,9 +11,8 @@ namespace Grid {
     class WilsonTMFermion : public WilsonFermion<Impl>
     {
     public:
-     INHERIT_IMPL_TYPES(Impl);
+      INHERIT_IMPL_TYPES(Impl);
     public:
-     RealD mu; // TwistedMass parameter
 
       virtual void   Instantiatable(void) {};
       // Constructors
@@ -33,15 +32,18 @@ namespace Grid {
 	mu = _mu;
       }
 
-    };
+
     // allow override for twisted mass and clover
     virtual void Mooee(const FermionField &in, FermionField &out) ;
     virtual void MooeeDag(const FermionField &in, FermionField &out) ;
     virtual void MooeeInv(const FermionField &in, FermionField &out) ;
     virtual void MooeeInvDag(const FermionField &in, FermionField &out) ;
-    
 
-  }
-}
+  private:
+     RealD mu; // TwistedMass parameter
+
+  };
+
+}}
 
 #endif

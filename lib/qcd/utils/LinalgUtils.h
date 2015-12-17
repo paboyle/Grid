@@ -11,7 +11,7 @@ namespace QCD{
 ////////////////////////////////////////////////////////////////////////
 
 template<class vobj> 
-void axibg5x(Lattice<vobj> &z,const Lattice<vobj> &x,RealD a,RealD b)
+void axpibg5x(Lattice<vobj> &z,const Lattice<vobj> &x,RealD a,RealD b)
 {
   z.checkerboard = x.checkerboard;
   conformable(x,z);
