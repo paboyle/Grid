@@ -56,19 +56,25 @@ int main (int argc, char ** argv)
     GridRedBlackCartesian rbFine(latt_size,simd_layout,mpi_layout);
     GridParallelRNG       FineRNG(&Fine);
     GridSerialRNG       SerialRNG;
+    GridSerialRNG       SerialRNG1;
 
     FineRNG.SeedRandomDevice();
+    SerialRNG.SeedRandomDevice();
 
     std::cout <<"SerialRNG" << SerialRNG._generators[0] <<std::endl;
-    std::stringstream output(std::stringstream::out|std::stringstream::binary);
-    output <<SerialRNG._generators[0]<<std::endl;
-    std::cout << output.str();
 
-    {
-      std::ofstream of("rngstate",std::ios::out|std::ios::binary);
-      of << SerialRNG._generators[0];
+    std::vector<typename GridSerialRNG::RngStateType> saved;
+    SerialRNG.GetState(saved,0);
+    SerialRNG1.SetState(saved,0);
+
+    RealD dd1,dd2;
+
+    std::cout << "Testing RNG state save restore"<<std::endl;
+    for(int i=0;i<10;i++){
+      random(SerialRNG,dd1);
+      random(SerialRNG1,dd2);
+      std::cout << "i "<<i<<" "<<dd1<< " " <<dd2<<std::endl;
     }
-
     LatticeColourMatrix Foo(&Fine);
     LatticeColourMatrix Bar(&Fine);
 

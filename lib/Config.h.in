@@ -143,6 +143,12 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* RNG_MT19937 */
+#undef RNG_MT19937
+
+/* RNG_RANLUX */
+#undef RNG_RANLUX
+
 /* SSE4 Intrinsics */
 #undef SSE4
 

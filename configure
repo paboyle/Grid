@@ -749,6 +749,7 @@ enable_openmp
 enable_simd
 enable_precision
 enable_comms
+enable_rng
 enable_chroma
 '
       ac_precious_vars='build_alias
@@ -1395,6 +1396,8 @@ Optional Features:
   --enable-precision=single|double
                           Select default word size of Real
   --enable-comms=none|mpi Select communications
+  --enable-rng=ranlux48|mt19937
+                          Select Random Number Generator to be used
   --enable-chroma         Expect chroma compiled under c++11
 
 Some influential environment variables:
@@ -6387,6 +6390,10 @@ done
 #Please install or provide the correct path to your installation
 #Info at: http://www.mpfr.org/)])
 
+#
+# SIMD instructions selection
+#
+
 # Check whether --enable-simd was given.
 if test "${enable_simd+set}" = set; then :
   enableval=$enable_simd; \
@@ -6519,6 +6526,10 @@ $as_echo "#define GRID_DEFAULT_PRECISION_DOUBLE 1" >>confdefs.h
      ;;
 esac
 
+#
+# Comms selection
+#
+
 # Check whether --enable-comms was given.
 if test "${enable_comms+set}" = set; then :
   enableval=$enable_comms; ac_COMMS=${enable_comms}
@@ -6562,6 +6573,35 @@ else
 fi
 
 
+#
+# RNG selection
+#
+# Check whether --enable-rng was given.
+if test "${enable_rng+set}" = set; then :
+  enableval=$enable_rng; \
+	ac_RNG=${enable_rng}
+else
+  ac_RNG=ranlux48
+fi
+
+case ${ac_RNG} in
+     ranlux48)
+
+$as_echo "#define RNG_RANLUX 1" >>confdefs.h
+
+     ;;
+     mt19937)
+
+$as_echo "#define RNG_MT19937 1" >>confdefs.h
+
+     ;;
+     *)
+     as_fn_error $? "${ac_RNG} unsupported --enable-rng option" "$LINENO" 5;
+     ;;
+esac
+#
+# Chroma regression tests
+#
 # Check whether --enable-chroma was given.
 if test "${enable_chroma+set}" = set; then :
   enableval=$enable_chroma; ac_CHROMA=yes

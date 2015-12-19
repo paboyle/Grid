@@ -81,11 +81,39 @@ namespace Grid {
     int _seeded;
     // One generator per site.
     // Uniform and Gaussian distributions from these generators.
-    std::vector<std::ranlux48>             _generators;
+#ifdef RNG_RANLUX
+    typedef uint64_t      RngStateType;
+    typedef std::ranlux48 RngEngine;
+    static const int RngStateCount = 15;
+#else
+    typedef std::mt19937 RngEngine;
+    typedef uint32_t     RngStateType;
+    static const int     RngStateCount = std::mt19937::state_size;
+#endif
+    std::vector<RngEngine>             _generators;
     std::uniform_real_distribution<double> _uniform;
     std::normal_distribution<double>       _gaussian;
 
-
+    void GetState(std::vector<RngStateType> & saved,int gen) {
+      saved.resize(RngStateCount);
+      std::stringstream ss;
+      //      std::cout << _generators[gen]<<std::endl;
+      ss<<_generators[gen];
+      ss.seekg(0,ss.beg);
+      for(int i=0;i<RngStateCount;i++){
+	ss>>saved[i];
+      }
+    }
+    void SetState(std::vector<RngStateType> & saved,int gen){
+      assert(saved.size()==RngStateCount);
+      std::stringstream ss;
+      for(int i=0;i<RngStateCount;i++){
+	ss<< saved[i]<<" ";
+      }
+      ss.seekg(0,ss.beg);
+      ss>>_generators[gen];
+      //      std::cout << _generators[gen]<<std::endl;
+    }
   };
 
   class GridSerialRNG : public GridRNGbase {
@@ -98,7 +126,7 @@ namespace Grid {
     {
       typename source::result_type init = src();
       CartesianCommunicator::BroadcastWorld(0,(void *)&init,sizeof(init));
-      _generators[0] = std::ranlux48(init);
+      _generators[0] = RngEngine(init);
       _seeded=1;
     }    
 
@@ -185,8 +213,6 @@ namespace Grid {
 
   class GridParallelRNG : public GridRNGbase {
   public:
-    // One generator per site.
-    std::vector<std::ranlux48>             _generators;
     
     // Uniform and Gaussian distributions from these generators.
     std::uniform_real_distribution<double> _uniform;
@@ -220,7 +246,7 @@ namespace Grid {
       int gsites = _grid->_gsites;
 
       typename source::result_type init = src();
-      std::ranlux48 pseeder(init);
+      RngEngine pseeder(init);
       std::uniform_int_distribution<uint64_t> ui;
 
       for(int gidx=0;gidx<gsites;gidx++){
@@ -241,7 +267,7 @@ namespace Grid {
 	if( rank == _grid->ThisRank() ){
 	  fixedSeed ssrc(site_seeds);
 	  typename source::result_type sinit = ssrc();
-	  _generators[l_idx] = std::ranlux48(sinit);
+	  _generators[l_idx] = RngEngine(sinit);
 	}
       }
       _seeded=1;

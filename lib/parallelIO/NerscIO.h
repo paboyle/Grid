@@ -181,9 +181,12 @@ inline void NerscMachineCharacteristics(NerscField &header)
 class NerscIO : public BinaryIO { 
  public:
 
+  static inline void truncate(std::string file){
+    std::ofstream fout(file,std::ios::out);
+  }
   static inline unsigned int writeHeader(NerscField &field,std::string file)
   {
-    std::ofstream fout(file,std::ios::out);
+    std::ofstream fout(file,std::ios::out|std::ios::in);
   
     fout.seekp(0,std::ios::beg);
     fout << "BEGIN_HEADER"      << std::endl;
@@ -201,8 +204,7 @@ class NerscIO : public BinaryIO {
       fout << "BOUNDARY_"<<i+1<<" = " << field.boundary[i] << std::endl;
     }
 
-    fout << "CHECKSUM = "<< std::hex << std::setw(10) << field.checksum << std::endl;
-    fout << std::dec;
+    fout << "CHECKSUM = "<< std::hex << std::setw(10) << field.checksum << std::dec<<std::endl;
 
     fout << "ENSEMBLE_ID = "     << field.ensemble_id      << std::endl;
     fout << "ENSEMBLE_LABEL = "  << field.ensemble_label   << std::endl;
@@ -286,9 +288,6 @@ static inline int readHeader(std::string file,GridBase *grid,  NerscField &field
 
   return field.data_start;
 }
-
-
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Now the meat: the object readers
@@ -377,6 +376,8 @@ static inline void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu
   uint32_t csum;
   int offset;
   
+  truncate(file);
+
   if ( two_row ) { 
 
     header.floating_point = std::string("IEEE64BIG");
@@ -392,8 +393,7 @@ static inline void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu
 
     
     std::cout << GridLogMessage << " TESTING PARALLEL WRITE offsets " << offset1 << " "<< offset << std::endl;
-    std::cout << GridLogMessage <<std::hex<< " TESTING PARALLEL WRITE csums   " << csum1 << " "<< csum << std::endl;
-    std::cout << std::dec;
+    std::cout << GridLogMessage << " TESTING PARALLEL WRITE csums   " << csum1 << " "<<std::hex<< csum << std::dec<< std::endl;
 
     assert(offset1==offset);  
     assert(csum1==csum);  
@@ -410,7 +410,81 @@ static inline void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu
   std::cout<<GridLogMessage <<"Written NERSC Configuration "<<file<< " checksum "<<std::hex<<csum<< std::dec<<" plaq "<< header.plaquette <<std::endl;
 
  }
+
+
+    ///////////////////////////////
+    // RNG state
+    ///////////////////////////////
+static inline void writeRNGState(GridSerialRNG &serial,GridParallelRNG &parallel,std::string file)
+{
+  typedef typename GridParallelRNG::RngStateType RngStateType;
+
+  // Following should become arguments
+  NerscField header;
+  header.sequence_number = 1;
+  header.ensemble_id     = "UKQCD";
+  header.ensemble_label  = "DWF";
+
+  GridBase *grid = parallel._grid;
+
+  NerscGrid(grid,header);
+  header.link_trace=0.0;
+  header.plaquette=0.0;
+  NerscMachineCharacteristics(header);
+
+  uint32_t csum;
+  int offset;
+  
+#ifdef RNG_RANLUX
+    header.floating_point = std::string("UINT64");
+    header.data_type      = std::string("RANLUX48");
+#else
+    header.floating_point = std::string("UINT32");
+    header.data_type      = std::string("MT19937");
+#endif
+
+  truncate(file);
+  offset = writeHeader(header,file);
+  csum=BinaryIO::writeRNGSerial(serial,parallel,file,offset);
+  header.checksum = csum;
+  offset = writeHeader(header,file);
+
+  std::cout<<GridLogMessage <<"Written NERSC RNG STATE "<<file<< " checksum "<<std::hex<<csum<<std::dec<<std::endl;
+
+ }
+    
+static inline void readRNGState(GridSerialRNG &serial,GridParallelRNG & parallel,NerscField& header,std::string file)
+{
+  typedef typename GridParallelRNG::RngStateType RngStateType;
+
+  GridBase *grid = parallel._grid;
+
+  int offset = readHeader(file,grid,header);
+
+  NerscField clone(header);
+
+  std::string format(header.floating_point);
+  std::string data_type(header.data_type);
+
+#ifdef RNG_RANLUX
+  assert(format == std::string("UINT64"));
+  assert(data_type == std::string("RANLUX48"));
+#else
+  assert(format == std::string("UINT32"));
+  assert(data_type == std::string("MT19937"));
+#endif
+
+  // depending on datatype, set up munger;
+  // munger is a function of <floating point, Real, data_type>
+  uint32_t csum=BinaryIO::readRNGSerial(serial,parallel,file,offset);
+
+  assert(csum == header.checksum );
+
+  std::cout<<GridLogMessage <<"Read NERSC RNG file "<<file<< " format "<< data_type <<std::endl;
+}
+
 };
+
 
 }}
 #endif

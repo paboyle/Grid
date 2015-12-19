@@ -20,6 +20,30 @@ int main (int argc, char ** argv)
   GridCartesian     Fine(latt_size,simd_layout,mpi_layout);
   GridCartesian     Coarse(clatt_size,simd_layout,mpi_layout);
 
+  GridParallelRNG   pRNGa(&Fine);
+  GridParallelRNG   pRNGb(&Fine);
+  GridSerialRNG     sRNGa;
+  GridSerialRNG     sRNGb;
+
+  pRNGa.SeedRandomDevice();
+  sRNGa.SeedRandomDevice();
+  
+  std::string rfile("./ckpoint_rng.4000");
+  NerscIO::writeRNGState(sRNGa,pRNGa,rfile);
+  NerscField rngheader;
+  NerscIO::readRNGState (sRNGb,pRNGb,rngheader,rfile);
+
+  LatticeComplex tmpa(&Fine); random(pRNGa,tmpa);
+  LatticeComplex tmpb(&Fine); random(pRNGb,tmpb);
+  tmpa = tmpa - tmpb;
+  std::cout << " difference between restored randoms and orig "<<norm2( tmpa ) <<" / "<< norm2(tmpb)<<std::endl;
+
+  ComplexD a,b;
+
+  random(sRNGa,a);
+  random(sRNGb,b);
+  std::cout << " serial RNG numbers "<<a<<" "<<b<<std::endl;
+
   LatticeGaugeField Umu(&Fine);
   LatticeGaugeField Umu_diff(&Fine);
   LatticeGaugeField Umu_saved(&Fine);
