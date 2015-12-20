@@ -44,9 +44,10 @@
 #include <Cshift.h>       
 #include <Stencil.h>      
 #include <Algorithms.h>   
-#include <qcd/QCD.h>
 #include <parallelIO/BinaryIO.h>
+#include <qcd/QCD.h>
 #include <parallelIO/NerscIO.h>
+#include <qcd/hmc/NerscCheckpointer.h>
 
 #include <Init.h>
 

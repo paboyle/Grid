@@ -116,8 +116,9 @@ int main (int argc, char ** argv)
 
   std::string clone2x3("./ckpoint_clone2x3.4000");
   std::string clone3x3("./ckpoint_clone3x3.4000");
-  int precision32 = 0;
 
+  int precision32 = 1;
+  int tworow      = 1;
   NerscIO::writeConfiguration(Umu,clone3x3,0,precision32);
   NerscIO::writeConfiguration(Umu,clone2x3,1,precision32);
   

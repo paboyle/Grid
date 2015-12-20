@@ -73,7 +73,6 @@ public:
     typedef typename vobj::scalar_type scalar_type;
     typedef typename vobj::vector_type vector_type;
     typedef vobj vector_object;
- 
    
   ////////////////////////////////////////////////////////////////////////////////
   // Expression Template closure support
@@ -213,8 +212,8 @@ PARALLEL_FOR_LOOP
     // what about a default grid?
     //////////////////////////////////////////////////////////////////
     Lattice(GridBase *grid) : _grid(grid), _odata(_grid->oSites()) {
-      //        _odata.reserve(_grid->oSites());
-      //        _odata.resize(_grid->oSites());
+    //        _odata.reserve(_grid->oSites());
+    //        _odata.resize(_grid->oSites());
     //      std::cout << "Constructing lattice object with Grid pointer "<<_grid<<std::endl;
         assert((((uint64_t)&_odata[0])&0xF) ==0);
         checkerboard=0;

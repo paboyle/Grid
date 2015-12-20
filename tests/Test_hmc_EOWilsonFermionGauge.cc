@@ -56,10 +56,14 @@ int main (int argc, char ** argv)
   IntegratorParameters MDpar(16);
   IntegratorAlgorithm MDynamics(&Fine,MDpar, FullSet);
 
-  // Create HMC
-  HMCparameters HMCpar;
-  HybridMonteCarlo<LatticeGaugeField,IntegratorAlgorithm>  HMC(HMCpar, MDynamics,sRNG,pRNG);
 
-  HMC.evolve(U);
+  // Create HMC
+  NerscHmcCheckpointer<LatticeGaugeField> Checkpoint(std::string("ckpoint_lat"),std::string("ckpoint_rng"),1);
+  HMCparameters HMCpar;
+  HybridMonteCarlo<LatticeGaugeField,IntegratorAlgorithm>  HMC(HMCpar, MDynamics,sRNG,pRNG,U);
+  HMC.AddObservable(&Checkpoint);
+
+  // Run it
+  HMC.evolve();
 
 }
