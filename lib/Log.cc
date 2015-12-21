@@ -54,7 +54,7 @@ void Grid_unquiesce_nodes(void)
 
 std::ostream& operator<< (std::ostream& stream, const GridTime& time)
 {
-  stream << time.count()<<" ms";
+  //  stream << time.count()<<" ms";
   return stream;
 }
 
