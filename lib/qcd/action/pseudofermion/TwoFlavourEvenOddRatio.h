@@ -61,6 +61,7 @@ namespace Grid{
 	FermionField tmp    (NumOp.FermionRedBlackGrid());
 
 	gaussian(pRNG,eta);
+	
 	pickCheckerboard(Even,etaEven,eta);
 	pickCheckerboard(Odd,etaOdd,eta);
 
@@ -72,6 +73,7 @@ namespace Grid{
 
 	// Odd det factors
 	Mpc.MpcDag(etaOdd,PhiOdd);
+	tmp=zero;
 	ActionSolver(Vpc,PhiOdd,tmp);
 	Vpc.Mpc(tmp,PhiOdd);            
 
@@ -98,8 +100,8 @@ namespace Grid{
 	FermionField X(NumOp.FermionRedBlackGrid());
 	FermionField Y(NumOp.FermionRedBlackGrid());
 
-	X=zero;
 	Vpc.MpcDag(PhiOdd,Y);           // Y= Vdag phi
+	X=zero;
 	ActionSolver(Mpc,Y,X);          // X= (MdagM)^-1 Vdag phi
 	Mpc.Mpc(X,Y);                   // Y=  Mdag^-1 Vdag phi
 
@@ -134,12 +136,11 @@ namespace Grid{
 
 	GaugeField   force(NumOp.GaugeGrid());	
 
-	X=zero;
-
 	//Y=Vdag phi
 	//X = (Mdag M)^-1 V^dag phi
 	//Y = (Mdag)^-1 V^dag  phi
 	Vpc.MpcDag(PhiOdd,Y);          // Y= Vdag phi
+	X=zero;
 	DerivativeSolver(Mpc,Y,X);     // X= (MdagM)^-1 Vdag phi
 	Mpc.Mpc(X,Y);                  // Y=  Mdag^-1 Vdag phi
 
