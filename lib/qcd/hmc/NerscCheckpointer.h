@@ -26,8 +26,8 @@ namespace Grid{
       void TrajectoryComplete(int traj, GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG & pRNG )
       {
 	if ( (traj % SaveInterval)== 0 ) {
-	  std::string rng;   { std::ostringstream os; os << rngStem     << traj; rng = os.str(); }
-	  std::string config;{ std::ostringstream os; os << configStem  << traj; config = os.str();}
+	  std::string rng;   { std::ostringstream os; os << rngStem     <<"."<< traj; rng = os.str(); }
+	  std::string config;{ std::ostringstream os; os << configStem  <<"."<< traj; config = os.str();}
 
 	  int precision32=1;
 	  int tworow     =0;
@@ -37,8 +37,9 @@ namespace Grid{
       };
 
       void CheckpointRestore(int traj, GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG & pRNG ){
-	std::string rng;   { std::ostringstream os; os << rngStem << "rng." << traj; rng = os.str(); }
-	std::string config;{ std::ostringstream os; os << configStem << "rng." << traj; rng = os.str();}
+
+	std::string rng;   { std::ostringstream os; os << rngStem     <<"."<< traj; rng = os.str(); }
+	std::string config;{ std::ostringstream os; os << configStem  <<"."<< traj; config = os.str();}
 
 	NerscField header;
 	NerscIO::readRNGState(sRNG,pRNG,header,rng);
