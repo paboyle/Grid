@@ -30,7 +30,8 @@ public:
       
       //Initial residual computation & set up
       RealD guess = norm2(psi);
-      
+      assert(std::isnan(psi)==0);
+
       Linop.HermOpAndNorm(psi,mmp,d,b);
       
       r= src-mmp;
@@ -94,6 +95,9 @@ public:
 		   <<" computed residual "<<sqrt(cp/ssq)
 		   <<" true residual     "<<true_residual
 		   <<" target "<<Tolerance<<std::endl;
+	  
+	  assert(true_residual/Tolerance < 1000.0);
+
 	  return;
 	}
       }
