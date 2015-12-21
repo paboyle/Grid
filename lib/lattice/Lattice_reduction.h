@@ -19,7 +19,6 @@ namespace Grid {
     {
       typedef typename vobj::scalar_type scalar_type;
       typedef typename vobj::vector_type vector_type;
-      vector_type vnrm;
       scalar_type  nrm;
 
       GridBase *grid = left._grid;
@@ -31,7 +30,6 @@ namespace Grid {
 
 PARALLEL_FOR_LOOP
       for(int thr=0;thr<grid->SumArraySize();thr++){
-
 	int nwork, mywork, myoff;
 	GridThread::GetWork(left._grid->oSites(),thr,mywork,myoff);
 	
