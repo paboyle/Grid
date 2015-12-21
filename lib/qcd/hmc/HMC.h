@@ -128,7 +128,6 @@ namespace Grid{
 	for(int traj=Params.StartTrajectory; traj < Params.Trajectories+Params.StartTrajectory; ++traj){
 
 	  std::cout<<GridLogMessage << "-- # Trajectory = "<< traj <<  "\n";
-	  
 	  Ucopy = Ucur;
 
 	  DeltaH = evolve_step(Ucopy);
@@ -142,8 +141,11 @@ namespace Grid{
 	    Ucur = Ucopy;
 	  }
 
+	  plaq = WilsonLoops<GaugeField>::avgPlaquette(Ucur);
+	  std::cout << " Now gauge field has plaq = "<< plaq <<std::endl;
+
 	  for(int obs = 0;obs<Observables.size();obs++){
-	    Observables[obs]->TrajectoryComplete (traj,Ucur,sRNG,pRNG);
+	    Observables[obs]->TrajectoryComplete (traj+1,Ucur,sRNG,pRNG);
 	  }
 
 	}
