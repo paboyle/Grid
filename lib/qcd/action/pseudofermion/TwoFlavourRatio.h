@@ -58,6 +58,7 @@ namespace Grid{
 	MdagMLinearOperator<FermionOperator<Impl> ,FermionField> MdagMOp(NumOp);
 
 	DenOp.Mdag(eta,Phi);            // Mdag eta
+	tmp = zero;
 	ActionSolver(MdagMOp,Phi,tmp);  // (VdagV)^-1 Mdag eta = V^-1 Vdag^-1 Mdag eta
 	NumOp.M(tmp,Phi);               // Vdag^-1 Mdag eta
 
@@ -78,8 +79,8 @@ namespace Grid{
 	
 	MdagMLinearOperator<FermionOperator<Impl> ,FermionField> MdagMOp(DenOp);
 
-	X=zero;
 	NumOp.Mdag(Phi,Y);              // Y= Vdag phi
+	X=zero;
 	ActionSolver(MdagMOp,Y,X);      // X= (MdagM)^-1 Vdag phi
 	DenOp.M(X,Y);                  // Y=  Mdag^-1 Vdag phi
 
@@ -105,12 +106,12 @@ namespace Grid{
 
 	GaugeField   force(NumOp.GaugeGrid());	
 
-	X=zero;
 
 	//Y=Vdag phi
 	//X = (Mdag M)^-1 V^dag phi
 	//Y = (Mdag)^-1 V^dag  phi
 	NumOp.Mdag(Phi,Y);              // Y= Vdag phi
+	X=zero;
 	DerivativeSolver(MdagMOp,Y,X);      // X= (MdagM)^-1 Vdag phi
 	DenOp.M(X,Y);                  // Y=  Mdag^-1 Vdag phi
 
