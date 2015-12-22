@@ -61,7 +61,7 @@ namespace Grid{
 	FermionField tmp    (NumOp.FermionRedBlackGrid());
 
 	gaussian(pRNG,eta);
-	
+
 	pickCheckerboard(Even,etaEven,eta);
 	pickCheckerboard(Odd,etaOdd,eta);
 

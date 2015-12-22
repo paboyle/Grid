@@ -30,7 +30,7 @@ public:
       
       //Initial residual computation & set up
       RealD guess = norm2(psi);
-      assert(std::isnan(psi)==0);
+      assert(std::isnan(guess)==0);
 
       Linop.HermOpAndNorm(psi,mmp,d,b);
       

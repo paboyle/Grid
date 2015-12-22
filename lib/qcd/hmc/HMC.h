@@ -39,7 +39,25 @@ namespace Grid{
       virtual void TrajectoryComplete (int traj, GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG & pRNG )=0;
     };
 
-    
+    template<class GaugeField> 
+    class PlaquetteLogger : public HmcObservable<GaugeField> {
+    private:
+      std::string Stem;
+    public:
+      PlaquetteLogger(std::string cf) {
+        Stem  = cf;
+      };
+
+      void TrajectoryComplete(int traj, GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG & pRNG )
+      {
+	  std::string file;   { std::ostringstream os; os << Stem     <<"."<< traj; file = os.str(); }
+	  std::ofstream of(file);
+	  RealD plaq = WilsonLoops<GaugeField>::avgPlaquette(U);
+	  of << plaq <<std::endl;
+	  std::cout<< GridLogMessage<< "Plaquette for trajectory "<< traj << " is " << plaq <<std::endl;
+      }
+    };
+
     //    template <class GaugeField, class Integrator, class Smearer, class Boundary> 
     template <class GaugeField, class IntegratorType>
     class HybridMonteCarlo {
@@ -140,9 +158,6 @@ namespace Grid{
 	  if ( accept ) {
 	    Ucur = Ucopy;
 	  }
-
-	  plaq = WilsonLoops<GaugeField>::avgPlaquette(Ucur);
-	  std::cout << " Now gauge field has plaq = "<< plaq <<std::endl;
 
 	  for(int obs = 0;obs<Observables.size();obs++){
 	    Observables[obs]->TrajectoryComplete (traj+1,Ucur,sRNG,pRNG);

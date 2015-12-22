@@ -165,7 +165,6 @@ namespace Grid{
 	    H += Hterm;
 	  }
 	}
-	std::cout<<GridLogMessage << "Total action H = "<< H << "\n";
 	
 	return H;
       }
