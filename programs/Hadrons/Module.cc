@@ -1,5 +1,5 @@
 /*
- * Environment.hpp, part of Grid
+ * Module.cc, part of Grid
  *
  * Copyright (C) 2015 Antonin Portelli
  *
@@ -17,21 +17,22 @@
  * along with Grid.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef Hadrons_Environment_hpp_
-#define Hadrons_Environment_hpp_
+#include <Hadrons/Module.hpp>
 
-#include <Hadrons/Global.hpp>
-
-BEGIN_HADRONS_NAMESPACE
+using namespace std;
+using namespace Grid;
+using namespace Hadrons;
 
 /******************************************************************************
- *                         Global environment                                 *
+ *                           Module implementation                            *
  ******************************************************************************/
-class Environment
+// constructor /////////////////////////////////////////////////////////////////
+Module::Module(const string &name)
+: name_(name)
+{}
+
+// access //////////////////////////////////////////////////////////////////////
+string Module::getName(void) const
 {
-    SINGLETON(Environment);
-};
-
-END_HADRONS_NAMESPACE
-
-#endif // Hadrons_Environment_hpp_
+    return name_;
+}

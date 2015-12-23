@@ -21,15 +21,47 @@
 #define Hadrons_Application_hpp_
 
 #include <Hadrons/Global.hpp>
-#include <Hadrons/InputObjects.hpp>
+#include <Hadrons/Environment.hpp>
+#include <Hadrons/ModuleFactory.hpp>
+
+namespace Grid {
+    GRID_SERIALIZABLE_ENUM(ConfigType, undef, load, 1, unit, 2, gen, 3);
+}
 
 BEGIN_HADRONS_NAMESPACE
+
+class TrajRange: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(TrajRange,
+                                    unsigned int, start,
+                                    unsigned int, end,
+                                    unsigned int, step);
+};
+
+class ConfigPar: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(ConfigPar,
+                                    std::string, ioStem,
+                                    TrajRange,   range);
+};
+
+class GlobalPar: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(GlobalPar,
+                                    std::vector<double>, latticeSize,
+                                    ConfigPar,           configs);
+};
 
 /******************************************************************************
  *                         Main program manager                               *
  ******************************************************************************/
 class Application
 {
+public:
+
 public:
     // constructor
     Application(int argc, char *argv[]);
@@ -42,9 +74,17 @@ private:
     void parseParameterFile(void);
     // schedule computation
     void schedule(void);
+    // program execution
+    void configLoop(void);
+    void execute(void);
 private:
-    std::string parameterFileName_;
-    Parameters  parameters_;
+    std::string                                    parameterFileName_;
+    GlobalPar                                      par_;
+    Environment                                    &env_;
+    ModuleFactory                                  &modFactory_;
+    std::map<std::string, std::unique_ptr<Module>> module_;
+    std::map<std::string, std::string>             associatedModule_;
+    std::vector<std::string>                       program_;
 };
 
 END_HADRONS_NAMESPACE

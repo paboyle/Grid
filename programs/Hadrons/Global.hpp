@@ -49,6 +49,19 @@ extern HadronsLogger HadronsLogWarning;
 extern HadronsLogger HadronsLogMessage;
 extern HadronsLogger HadronsLogDebug;
 
+// singleton pattern
+#define SINGLETON(name)\
+public:\
+    name(const name &e) = delete;\
+    void operator=(const name &e) = delete;\
+    static name & getInstance(void)\
+    {\
+        static name e;\
+        return e;\
+    }\
+private:\
+    name(void);
+
 END_HADRONS_NAMESPACE
 
 #endif // Hadrons_Global_hpp_

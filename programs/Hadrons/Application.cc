@@ -29,6 +29,8 @@ using namespace Hadrons;
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 Application::Application(int argc, char *argv[])
+: env_(Environment::getInstance())
+, modFactory_(ModuleFactory::getInstance())
 {
     if (argc < 2)
     {
@@ -43,6 +45,12 @@ Application::Application(int argc, char *argv[])
     HadronsLogMessage.Active(GridLogMessage.isActive());
     HadronsLogDebug.Active(GridLogDebug.isActive());
     LOG(Message) << "Grid initialized" << endl;
+    LOG(Message) << "Modules available:" << endl;
+    auto list = modFactory_.getModuleList();
+    for (auto &m: list)
+    {
+        LOG(Message) << "  " << m << endl;
+    }
 }
 
 // destructor //////////////////////////////////////////////////////////////////
@@ -57,15 +65,40 @@ void Application::run(void)
 {
     parseParameterFile();
     schedule();
+    configLoop();
 }
 
 // parse parameter file ////////////////////////////////////////////////////////
+class ModuleId: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(ModuleId,
+                                    std::string, name,
+                                    std::string, type);
+};
+
 void Application::parseParameterFile(void)
 {
     XmlReader reader(parameterFileName_);
+    ModuleId  id;
     
     LOG(Message) << "Reading '" << parameterFileName_ << "'..." << endl;
-    read(reader, "parameters", parameters_);
+    read(reader, "parameters", par_);
+    push(reader, "modules");
+    push(reader, "module");
+    do
+    {
+        read(reader, "id", id);
+        module_[id.name] = modFactory_.create(id.type, id.name);
+        module_[id.name]->parseParameters(reader, "options");
+        vector<string> output = module_[id.name]->getOutput();
+        for (auto &n: output)
+        {
+            associatedModule_[n] = id.name;
+        }
+    } while (reader.nextElement("module"));
+    pop(reader);
+    pop(reader);
 }
 
 // schedule computation ////////////////////////////////////////////////////////
@@ -74,37 +107,63 @@ void Application::schedule(void)
     Graph<string> moduleGraph;
     
     LOG(Message) << "Scheduling computation..." << endl;
-    for (auto &m: parameters_.modules)
+    
+    // create dependency graph
+    for (auto &m: module_)
     {
-        for (auto &p: m.in)
+        vector<string> input = m.second->getInput();
+        for (auto &n: input)
         {
-            moduleGraph.addEdge(p, m.name);
+            try
+            {
+                moduleGraph.addEdge(associatedModule_.at(n), m.first);
+            }
+            catch (out_of_range &)
+            {
+                HADRON_ERROR("unknown object '" + n + "'");
+            }
         }
     }
     
-    vector<Graph<string>> con = moduleGraph.getConnectedComponents();
+    // topological sort
+    map<string, map<string, bool>> m;
+    unsigned int                   k = 0;
     
+    vector<Graph<string>> con = moduleGraph.getConnectedComponents();
     LOG(Message) << "Program:" << endl;
-    LOG(Message) << "  #segments: " << con.size() << endl;
     for (unsigned int i = 0; i < con.size(); ++i)
     {
         vector<vector<string>> t = con[i].allTopoSort();
-        auto                   m = makeDependencyMatrix(t);
-        
-        for (auto &v: t[0])
+
+        m = makeDependencyMatrix(t);
+        for (unsigned int j = 0; j < t[0].size(); ++j)
         {
-            cout << v << " ";
+            program_.push_back(t[0][j]);
+            LOG(Message) << setw(4) << right << k << ": "
+                         << program_[k] << endl;
+            k++;
         }
-        cout << endl;
-        for (auto &v1: t[0])
-        {
-            for (auto &v2: t[0])
-            {
-                cout << m[v1][v2] << " ";
-            }
-            cout << endl;
-        }
-        
-        LOG(Message) << "  segment " << i << ":" << endl;
+    }
+}
+
+// program execution ///////////////////////////////////////////////////////////
+void Application::configLoop(void)
+{
+    auto range = par_.configs.range;
+    
+    for (unsigned int t = range.start; t < range.end; t += range.step)
+    {
+        LOG(Message) << "Starting measurement for trajectory " << t << endl;
+        execute();
+    }
+}
+
+void Application::execute(void)
+{
+    for (unsigned int i = 0; i < program_.size(); ++i)
+    {
+        LOG(Message) << "Measurement step (" << i+1 << "/" << program_.size()
+                     << ")" << endl;
+        (*module_[program_[i]])(env_);
     }
 }

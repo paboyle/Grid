@@ -1,5 +1,5 @@
 /*
- * Environment.cc, part of Grid
+ * MQuark.cc, part of Grid
  *
  * Copyright (C) 2015 Antonin Portelli
  *
@@ -17,16 +17,47 @@
  * along with Grid.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Hadrons/Environment.hpp>
+#include <Hadrons/MQuark.hpp>
 
 using namespace std;
 using namespace Grid;
 using namespace Hadrons;
 
 /******************************************************************************
- *                       Environment implementation                           *
+ *                          MQuark implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-Environment::Environment(void)
+MQuark::MQuark(const std::string &name)
+: Module(name)
 {}
 
+// parse parameters
+void MQuark::parseParameters(XmlReader &reader, const std::string &name)
+{
+    read(reader, name, par_);
+}
+
+// dependency relation
+vector<string> MQuark::getInput(void)
+{
+    return vector<string>();
+}
+
+vector<string> MQuark::getOutput(void)
+{
+    vector<string> out = {getName(), getName() + "_5d"};
+    
+    return out;
+}
+
+// memory footprint
+double MQuark::nCreatedProp(void)
+{
+    return static_cast<double>((par_.Ls > 1) ? par_.Ls + 1 : 1);
+}
+
+// execution
+void MQuark::operator()(Environment &env)
+{
+    LOG(Message) << "computing quark propagator '" << getName() << "'" << endl;
+}

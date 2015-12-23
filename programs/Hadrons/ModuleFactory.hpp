@@ -1,5 +1,5 @@
 /*
- * InputObjects.hpp, part of Grid
+ * ModuleFactory.hpp, part of Grid
  *
  * Copyright (C) 2015 Antonin Portelli
  *
@@ -17,44 +17,35 @@
  * along with Grid.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef Hadrons_InputObjects_hpp_
-#define Hadrons_InputObjects_hpp_
+#ifndef Hadrons_ModuleFactory_hpp_
+#define Hadrons_ModuleFactory_hpp_
 
 #include <Hadrons/Global.hpp>
+#include <Hadrons/Module.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                       Serializable input classes                           *
+ *                            ModuleFactory                                   *
  ******************************************************************************/
-class Module: Serializable
+class ModuleFactory
 {
+    SINGLETON(ModuleFactory)
 public:
-    // constructor
-    Module(void) = default;
-    // destructor
-    virtual ~Module(void) = default;
-    // serializable members
-    GRID_DECL_CLASS_MEMBERS(Module,
-                            std::string             , name,
-                            std::vector<std::string>, in
-                            );
-};
-
-class Parameters: Serializable
-{
+    typedef std::function<std::unique_ptr<Module>(const std::string &)>
+        FactoryFunc;
 public:
-    // constructor
-    Parameters(void) = default;
-    // destructor
-    virtual ~Parameters(void) = default;
-    // serializable members
-    GRID_DECL_CLASS_MEMBERS(Parameters,
-                            std::vector<unsigned int>, latticeSize,
-                            std::vector<Module>      , modules
-                            );
+    // registration
+    void registerModule(const std::string &type, const FactoryFunc &f);
+    // get module list
+    std::vector<std::string> getModuleList(void) const;
+    // factory
+    std::unique_ptr<Module> create(const std::string &type,
+                                   const std::string &name) const;
+private:
+    std::map<std::string, FactoryFunc> factory_;
 };
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_InputObjects_hpp_
+#endif // Hadrons_ModuleFactory_hpp_

@@ -5,9 +5,16 @@ bin_PROGRAMS = Hadrons
 
 Hadrons_SOURCES =   \
     Application.cc  \
-    Application.hpp \
-    Global.hpp      \
+    Environment.cc  \
     Global.cc       \
-    Hadrons.cc
+    Hadrons.cc      \
+    Module.cc       \
+    ModuleFactory.cc
+
+Hadrons_SOURCES +=  \
+    MQuark.cc
+
+Hadrons_SOURCES +=  \
+    CMeson.cc
 
 Hadrons_LDADD   = -lGrid
