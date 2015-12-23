@@ -20,7 +20,6 @@
 #include <Hadrons/Application.hpp>
 #include <Hadrons/Graph.hpp>
 
-using namespace std;
 using namespace Grid;
 using namespace Hadrons;
 
@@ -34,9 +33,9 @@ Application::Application(int argc, char *argv[])
 {
     if (argc < 2)
     {
-        cerr << "usage: " << argv[0] << " <parameter file> [Grid options]";
-        cerr << endl;
-        exit(EXIT_FAILURE);
+        std::cerr << "usage: " << argv[0] << " <parameter file> [Grid options]";
+        std::cerr << std::endl;
+        std::exit(EXIT_FAILURE);
     }
     parameterFileName_ = argv[1];
     Grid_init(&argc, &argv);
@@ -44,19 +43,19 @@ Application::Application(int argc, char *argv[])
     HadronsLogWarning.Active(GridLogWarning.isActive());
     HadronsLogMessage.Active(GridLogMessage.isActive());
     HadronsLogDebug.Active(GridLogDebug.isActive());
-    LOG(Message) << "Grid initialized" << endl;
-    LOG(Message) << "Modules available:" << endl;
+    LOG(Message) << "Grid initialized" << std::endl;
+    LOG(Message) << "Modules available:" << std::endl;
     auto list = modFactory_.getModuleList();
     for (auto &m: list)
     {
-        LOG(Message) << "  " << m << endl;
+        LOG(Message) << "  " << m << std::endl;
     }
 }
 
 // destructor //////////////////////////////////////////////////////////////////
 Application::~Application(void)
 {
-    LOG(Message) << "Grid is finalizing now" << endl;
+    LOG(Message) << "Grid is finalizing now" << std::endl;
     Grid_finalize();
 }
 
@@ -82,7 +81,7 @@ void Application::parseParameterFile(void)
     XmlReader reader(parameterFileName_);
     ModuleId  id;
     
-    LOG(Message) << "Reading '" << parameterFileName_ << "'..." << endl;
+    LOG(Message) << "Reading '" << parameterFileName_ << "'..." << std::endl;
     read(reader, "parameters", par_);
     push(reader, "modules");
     push(reader, "module");
@@ -91,7 +90,7 @@ void Application::parseParameterFile(void)
         read(reader, "id", id);
         module_[id.name] = modFactory_.create(id.type, id.name);
         module_[id.name]->parseParameters(reader, "options");
-        vector<string> output = module_[id.name]->getOutput();
+        std::vector<std::string> output = module_[id.name]->getOutput();
         for (auto &n: output)
         {
             associatedModule_[n] = id.name;
@@ -104,21 +103,21 @@ void Application::parseParameterFile(void)
 // schedule computation ////////////////////////////////////////////////////////
 void Application::schedule(void)
 {
-    Graph<string> moduleGraph;
+    Graph<std::string> moduleGraph;
     
-    LOG(Message) << "Scheduling computation..." << endl;
+    LOG(Message) << "Scheduling computation..." << std::endl;
     
     // create dependency graph
     for (auto &m: module_)
     {
-        vector<string> input = m.second->getInput();
+        std::vector<std::string> input = m.second->getInput();
         for (auto &n: input)
         {
             try
             {
                 moduleGraph.addEdge(associatedModule_.at(n), m.first);
             }
-            catch (out_of_range &)
+            catch (std::out_of_range &)
             {
                 HADRON_ERROR("unknown object '" + n + "'");
             }
@@ -126,21 +125,21 @@ void Application::schedule(void)
     }
     
     // topological sort
-    map<string, map<string, bool>> m;
-    unsigned int                   k = 0;
+    std::map<std::string, std::map<std::string, bool>> m;
+    unsigned int                                       k = 0;
     
-    vector<Graph<string>> con = moduleGraph.getConnectedComponents();
-    LOG(Message) << "Program:" << endl;
+    std::vector<Graph<std::string>> con = moduleGraph.getConnectedComponents();
+    LOG(Message) << "Program:" << std::endl;
     for (unsigned int i = 0; i < con.size(); ++i)
     {
-        vector<vector<string>> t = con[i].allTopoSort();
+        std::vector<std::vector<std::string>> t = con[i].allTopoSort();
 
         m = makeDependencyMatrix(t);
         for (unsigned int j = 0; j < t[0].size(); ++j)
         {
             program_.push_back(t[0][j]);
-            LOG(Message) << setw(4) << right << k << ": "
-                         << program_[k] << endl;
+            LOG(Message) << std::setw(4) << std::right << k << ": "
+                         << program_[k] << std::endl;
             k++;
         }
     }
@@ -153,7 +152,8 @@ void Application::configLoop(void)
     
     for (unsigned int t = range.start; t < range.end; t += range.step)
     {
-        LOG(Message) << "Starting measurement for trajectory " << t << endl;
+        LOG(Message) << "Starting measurement for trajectory " << t
+                     << std::endl;
         execute();
     }
 }
@@ -163,7 +163,7 @@ void Application::execute(void)
     for (unsigned int i = 0; i < program_.size(); ++i)
     {
         LOG(Message) << "Measurement step (" << i+1 << "/" << program_.size()
-                     << ")" << endl;
+                     << ")" << std::endl;
         (*module_[program_[i]])(env_);
     }
 }

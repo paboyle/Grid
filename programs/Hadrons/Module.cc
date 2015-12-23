@@ -19,7 +19,6 @@
 
 #include <Hadrons/Module.hpp>
 
-using namespace std;
 using namespace Grid;
 using namespace Hadrons;
 
@@ -27,12 +26,12 @@ using namespace Hadrons;
  *                           Module implementation                            *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-Module::Module(const string &name)
+Module::Module(const std::string &name)
 : name_(name)
 {}
 
 // access //////////////////////////////////////////////////////////////////////
-string Module::getName(void) const
+std::string Module::getName(void) const
 {
     return name_;
 }

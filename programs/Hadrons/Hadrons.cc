@@ -19,7 +19,6 @@
 
 #include <Hadrons/Application.hpp>
 
-using namespace std;
 using namespace Hadrons;
 
 int main(int argc, char *argv[])

@@ -19,7 +19,6 @@
 
 #include <Hadrons/CMeson.hpp>
 
-using namespace std;
 using namespace Grid;
 using namespace Hadrons;
 
@@ -27,7 +26,7 @@ using namespace Hadrons;
  *                          CMeson implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-CMeson::CMeson(const string &name)
+CMeson::CMeson(const std::string &name)
 : Module(name)
 {}
 
@@ -38,16 +37,16 @@ void CMeson::parseParameters(XmlReader &reader, const std::string &name)
 }
 
 // dependency relation /////////////////////////////////////////////////////////
-vector<string> CMeson::getInput(void)
+std::vector<std::string> CMeson::getInput(void)
 {
-    vector<string> input = {par_.q1, par_.q2};
+    std::vector<std::string> input = {par_.q1, par_.q2};
     
     return input;
 }
 
-vector<string> CMeson::getOutput(void)
+std::vector<std::string> CMeson::getOutput(void)
 {
-    vector<string> output = {getName()};
+    std::vector<std::string> output = {getName()};
     
     return output;
 }
@@ -61,5 +60,6 @@ double CMeson::nCreatedProp(void)
 // execution ///////////////////////////////////////////////////////////////////
 void CMeson::operator()(Environment &env)
 {
-    LOG(Message) << "computing meson contraction '" << getName() << "'" << endl;
+    LOG(Message) << "computing meson contraction '" << getName() << "'"
+                 << std::endl;
 }

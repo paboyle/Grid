@@ -19,7 +19,6 @@
 
 #include <Hadrons/MQuark.hpp>
 
-using namespace std;
 using namespace Grid;
 using namespace Hadrons;
 
@@ -38,14 +37,14 @@ void MQuark::parseParameters(XmlReader &reader, const std::string &name)
 }
 
 // dependency relation
-vector<string> MQuark::getInput(void)
+std::vector<std::string> MQuark::getInput(void)
 {
-    return vector<string>();
+    return std::vector<std::string>();
 }
 
-vector<string> MQuark::getOutput(void)
+std::vector<std::string> MQuark::getOutput(void)
 {
-    vector<string> out = {getName(), getName() + "_5d"};
+    std::vector<std::string> out = {getName(), getName() + "_5d"};
     
     return out;
 }
@@ -59,5 +58,6 @@ double MQuark::nCreatedProp(void)
 // execution
 void MQuark::operator()(Environment &env)
 {
-    LOG(Message) << "computing quark propagator '" << getName() << "'" << endl;
+    LOG(Message) << "computing quark propagator '" << getName() << "'"
+                 << std::endl;
 }

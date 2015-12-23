@@ -19,7 +19,6 @@
 
 #include <Hadrons/ModuleFactory.hpp>
 
-using namespace std;
 using namespace Grid;
 using namespace Hadrons;
 
@@ -52,8 +51,8 @@ std::vector<std::string> ModuleFactory::getModuleList(void) const
 }
 
 // factory /////////////////////////////////////////////////////////////////////
-unique_ptr<Module> ModuleFactory::create(const string &type,
-                                         const string &name) const
+std::unique_ptr<Module> ModuleFactory::create(const std::string &type,
+                                              const std::string &name) const
 {
     FactoryFunc func;
     
@@ -61,7 +60,7 @@ unique_ptr<Module> ModuleFactory::create(const string &type,
     {
         func = factory_.at(type);
     }
-    catch (out_of_range)
+    catch (std::out_of_range)
     {
         HADRON_ERROR("module type '" + type + "' unknown");
     }

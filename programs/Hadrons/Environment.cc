@@ -19,7 +19,6 @@
 
 #include <Hadrons/Environment.hpp>
 
-using namespace std;
 using namespace Grid;
 using namespace Hadrons;
 
