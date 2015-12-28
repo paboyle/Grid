@@ -28,11 +28,21 @@
 // Gauge Actions
 ////////////////////////////////////////////
 #include <qcd/action/gauge/WilsonGaugeAction.h>
+#include <qcd/action/gauge/PlaqPlusRectangleAction.h>
 namespace Grid {
 namespace QCD {
 typedef WilsonGaugeAction<LatticeGaugeField>     WilsonGaugeActionR;
 typedef WilsonGaugeAction<LatticeGaugeFieldF>    WilsonGaugeActionF;
 typedef WilsonGaugeAction<LatticeGaugeFieldD>    WilsonGaugeActionD;
+typedef PlaqPlusRectangleAction<LatticeGaugeField>     PlaqPlusRectangleActionR;
+typedef PlaqPlusRectangleAction<LatticeGaugeFieldF>    PlaqPlusRectangleActionF;
+typedef PlaqPlusRectangleAction<LatticeGaugeFieldD>    PlaqPlusRectangleActionD;
+typedef IwasakiGaugeAction<LatticeGaugeField>     IwasakiGaugeActionR;
+typedef IwasakiGaugeAction<LatticeGaugeFieldF>    IwasakiGaugeActionF;
+typedef IwasakiGaugeAction<LatticeGaugeFieldD>    IwasakiGaugeActionD;
+typedef SymanzikGaugeAction<LatticeGaugeField>     SymanzikGaugeActionR;
+typedef SymanzikGaugeAction<LatticeGaugeFieldF>    SymanzikGaugeActionF;
+typedef SymanzikGaugeAction<LatticeGaugeFieldD>    SymanzikGaugeActionD;
 }}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

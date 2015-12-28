@@ -425,13 +425,6 @@ void calc_chroma(ChromaAction action,Grid::QCD::LatticeGaugeField & lat, Grid::Q
   //  Chroma::HotSt(u);
   Chroma::ChromaWrapper::ImportGauge(lat,u) ;
 
-  int lx = QDP::Layout::subgridLattSize()[0];
-  int ly = QDP::Layout::subgridLattSize()[1];
-  int lz = QDP::Layout::subgridLattSize()[2];
-  int lt = QDP::Layout::subgridLattSize()[3];
-
-  QDP::multi1d<int> procs = QDP::Layout::logicalSize();
-
   QDP::multi1d<QDP::LatticeFermion>  check(Ls);
   QDP::multi1d<QDP::LatticeFermion> result(Ls);
   QDP::multi1d<QDP::LatticeFermion>  psi(Ls);

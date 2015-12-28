@@ -61,7 +61,6 @@ int main (int argc, char ** argv)
 	// Get Link and Staple term in action; must contain Beta and 
 	// any other coeffs
 	ColourWilsonLoops::Staple(staple,Umu,mu);
-	staple = adj(staple);
 
 	link = PeekIndex<LorentzIndex>(Umu,mu);
 

@@ -17,6 +17,11 @@ typedef  std::chrono::system_clock          GridClock;
 typedef  std::chrono::time_point<GridClock> GridTimePoint;
 typedef  std::chrono::milliseconds          GridTime;
 
+inline std::ostream& operator<< (std::ostream & stream, const std::chrono::milliseconds & time)
+{
+  stream << time.count()<<" ms";
+  return stream;
+}
  
 class GridStopWatch {
 private:

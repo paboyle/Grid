@@ -53,8 +53,10 @@ namespace Grid{
 	  std::string file;   { std::ostringstream os; os << Stem     <<"."<< traj; file = os.str(); }
 	  std::ofstream of(file);
 	  RealD plaq = WilsonLoops<GaugeField>::avgPlaquette(U);
-	  of << plaq <<std::endl;
+	  RealD rect = WilsonLoops<GaugeField>::avgRectangle(U);
+	  of << plaq << " " << rect << std::endl;
 	  std::cout<< GridLogMessage<< "Plaquette for trajectory "<< traj << " is " << plaq <<std::endl;
+	  std::cout<< GridLogMessage<< "Rectangle for trajectory "<< traj << " is " << rect <<std::endl;
       }
     };
 

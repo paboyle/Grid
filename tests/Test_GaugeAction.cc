@@ -125,7 +125,7 @@ int main (int argc, char ** argv)
   LatticeComplex stap_tr(&Fine);
   for(int mu=0;mu<Nd;mu++){
     ColourWilsonLoops::Staple(stap,Umu,mu);
-    stap_tr = trace(stap*adj(U[mu]));
+    stap_tr = trace(stap*U[mu]);
     TComplex Ts = sum(stap_tr);
     Complex s  = TensorRemove(Ts);
     stap_plaq+=real(s);

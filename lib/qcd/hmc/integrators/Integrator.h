@@ -77,7 +77,7 @@ namespace Grid{
 	t_P[level]+=ep;
 	update_P(P,U,level,ep);
 
-	std::cout<<GridLogMessage;
+	std::cout<<GridLogIntegrator;
 	for(int l=0; l<level;++l) std::cout<<"   ";	    
 	std::cout<<"["<<level<<"] P " << " dt "<< ep <<" : t_P "<< t_P[level] <<std::endl;
       }
@@ -95,7 +95,7 @@ namespace Grid{
 
 	t_U+=ep;
 	int fl = levels-1;
-	std::cout<<GridLogMessage<<"   ";
+	std::cout<<GridLogIntegrator<<"   ";
 	for(int l=0; l<fl;++l) std::cout<<"   ";	    
 	std::cout<<"["<<fl<<"] U " << " dt "<< ep <<" : t_U "<< t_U <<std::endl;
 
@@ -133,7 +133,7 @@ namespace Grid{
 
       //Initialization of momenta and actions
       void refresh(GaugeField& U,GridParallelRNG &pRNG){
-	std::cout<<GridLogMessage<< "Integrator refresh\n";
+	std::cout<<GridLogIntegrator<< "Integrator refresh\n";
 	generate_momenta(P,pRNG);
 	for(int level=0; level< as.size(); ++level){
 	  for(int actionID=0; actionID<as[level].actions.size(); ++actionID){
@@ -186,7 +186,7 @@ namespace Grid{
 	// Check the clocks all match on all levels
 	for(int level=0; level<as.size(); ++level){
 	  assert(fabs(t_U - t_P[level])<1.0e-6); // must be the same
-	  std::cout<<GridLogMessage<<" times["<<level<<"]= "<<t_P[level]<< " " << t_U <<std::endl;
+	  std::cout<<GridLogIntegrator<<" times["<<level<<"]= "<<t_P[level]<< " " << t_U <<std::endl;
 	}	
 
 	// and that we indeed got to the end of the trajectory

@@ -22,17 +22,18 @@ namespace Grid{
       
       virtual RealD S(const GaugeField &U) {
 	RealD plaq = WilsonLoops<GaugeField>::avgPlaquette(U);
-	//	std::cout<<GridLogMessage << "Plaq : "<<plaq << "\n";
 	RealD vol = U._grid->gSites();
 	RealD action=beta*(1.0 -plaq)*(Nd*(Nd-1.0))*vol*0.5;
-	// std::cout << GridLogMessage << "WilsonGauge action "<<action<<std::endl;
 	return action;
       };
 
       virtual void deriv(const GaugeField &U,GaugeField & dSdU) {
 	//not optimal implementation FIXME
 	//extend Ta to include Lorentz indexes
+
+	//RealD factor = 0.5*beta/RealD(Nc);
 	RealD factor = 0.5*beta/RealD(Nc);
+
 	GaugeLinkField Umu(U._grid);
 	GaugeLinkField dSdU_mu(U._grid);
 	for (int mu=0; mu < Nd; mu++){
@@ -41,7 +42,7 @@ namespace Grid{
 
 	  // Staple in direction mu
 	  WilsonLoops<GaugeField>::Staple(dSdU_mu,U,mu);
-	  dSdU_mu = Ta(Umu*adj(dSdU_mu))*factor;
+	  dSdU_mu = Ta(Umu*dSdU_mu)*factor;
 	  PokeIndex<LorentzIndex>(dSdU, dSdU_mu, mu);
 	}
       };

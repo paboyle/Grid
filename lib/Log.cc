@@ -11,6 +11,7 @@ GridLogger GridLogMessage    (1,"Message");
 GridLogger GridLogDebug      (1,"Debug");
 GridLogger GridLogPerformance(1,"Performance");
 GridLogger GridLogIterative  (1,"Iterative");
+GridLogger GridLogIntegrator (1,"Integrator");
 
 void GridLogConfigure(std::vector<std::string> &logstreams)
 {
@@ -20,6 +21,7 @@ void GridLogConfigure(std::vector<std::string> &logstreams)
   GridLogIterative.Active(0);
   GridLogDebug.Active(0);
   GridLogPerformance.Active(0);
+  GridLogIntegrator.Active(0);
 
   for(int i=0;i<logstreams.size();i++){
     if ( logstreams[i]== std::string("Error")       ) GridLogError.Active(1);
@@ -28,6 +30,7 @@ void GridLogConfigure(std::vector<std::string> &logstreams)
     if ( logstreams[i]== std::string("Iterative")   ) GridLogIterative.Active(1);
     if ( logstreams[i]== std::string("Debug")       ) GridLogDebug.Active(1);
     if ( logstreams[i]== std::string("Performance") ) GridLogPerformance.Active(1);
+    if ( logstreams[i]== std::string("Integrator" ) ) GridLogIntegrator.Active(1);
   }
 }
 
@@ -52,11 +55,6 @@ void Grid_unquiesce_nodes(void)
 #endif
 }
 
-std::ostream& operator<< (std::ostream& stream, const GridTime& time)
-{
-  //  stream << time.count()<<" ms";
-  return stream;
-}
 
 }
 

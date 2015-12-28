@@ -4,7 +4,6 @@ namespace Grid {
 
 // Dress the output; use std::chrono for time stamping via the StopWatch class
 
-std::ostream& operator<< (std::ostream& stream, const GridTime& time);
 
 class Logger {
 protected:
@@ -49,6 +48,7 @@ extern GridLogger GridLogMessage;
 extern GridLogger GridLogDebug  ;
 extern GridLogger GridLogPerformance;
 extern GridLogger GridLogIterative  ;
+extern GridLogger GridLogIntegrator  ;
 
 }
 #endif
