@@ -34,29 +34,43 @@ namespace Grid{
 	return action;
       };
 
-      virtual void deriv(const GaugeField &U,GaugeField & dSdU) {
+      virtual void deriv(const GaugeField &Umu,GaugeField & dSdU) {
 	//extend Ta to include Lorentz indexes
 	RealD factor_p = c_plaq/RealD(Nc)*0.5;
 	RealD factor_r =   c_rect/RealD(Nc)*0.5;
 
-	GaugeLinkField Umu(U._grid);
-	GaugeLinkField dSdU_mu(U._grid);
-	GaugeLinkField staple(U._grid);
+	GridBase *grid = Umu._grid;
+
+	std::vector<GaugeLinkField> U (Nd,grid);
+	std::vector<GaugeLinkField> U2(Nd,grid);
+
+	for(int mu=0;mu<Nd;mu++){
+	  U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
+	  WilsonLoops<GaugeField>::RectStapleDouble(U2[mu],U[mu],mu);
+	}
+
+	GaugeLinkField dSdU_mu(grid);
+	GaugeLinkField staple(grid);
+
 	for (int mu=0; mu < Nd; mu++){
 
-	  Umu = PeekIndex<LorentzIndex>(U,mu);
-
 	  // Staple in direction mu
-	  WilsonLoops<GaugeField>::Staple(staple,U,mu);
-	  dSdU_mu = Ta(Umu*staple)*factor_p;
-	  
-	  WilsonLoops<GaugeField>::RectStaple(staple,U,mu);
-	  dSdU_mu = dSdU_mu + Ta(Umu*staple)*factor_r;
+
+	  WilsonLoops<GaugeField>::Staple(staple,Umu,mu);
+
+	  dSdU_mu = Ta(U[mu]*staple)*factor_p;
+
+	  //	  WilsonLoops<GaugeField>::RectStaple(staple,Umu,mu);
+
+	  WilsonLoops<GaugeField>::RectStapleOptimised(staple,U2,U,mu);
+
+	  dSdU_mu = dSdU_mu + Ta(U[mu]*staple)*factor_r;
 	  
 	  PokeIndex<LorentzIndex>(dSdU, dSdU_mu, mu);
-
 	}
+
       };
+
     };
 
     // Convenience for common physically defined cases.

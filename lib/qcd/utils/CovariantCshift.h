@@ -5,6 +5,7 @@ namespace QCD {
 ////////////////////////////////////////////////////////////////////////
 // Low performance implementation of CovariantCshift API
 ////////////////////////////////////////////////////////////////////////
+// Make these members of an Impl class for BC's.
 template<class covariant,class gauge> Lattice<covariant> CovShiftForward(const Lattice<gauge> &Link, 
 									    int mu,
 									    const Lattice<covariant> &field)
@@ -19,5 +20,6 @@ template<class covariant,class gauge> Lattice<covariant> CovShiftBackward(const 
   tmp = adj(Link)*field;
   return Cshift(tmp,mu,-1);// moves towards positive mu
 }
+
 }}
 #endif

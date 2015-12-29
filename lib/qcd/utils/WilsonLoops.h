@@ -206,8 +206,96 @@ public:
   //////////////////////////////////////////////////
   // the sum over all staples on each site
   //////////////////////////////////////////////////
+  static void RectStapleDouble(GaugeMat &U2,const GaugeMat & U,int mu){
+    U2 = U * Cshift(U,mu,1);
+  }
+  static void RectStapleOptimised(GaugeMat &Stap,std::vector<GaugeMat> &U2,std::vector<GaugeMat> &U,int mu){
+
+    Stap = zero;
+
+    GridBase *grid = U[0]._grid;
+
+    GaugeMat Staple2x1 (grid);
+    GaugeMat tmp (grid);
+
+    for(int nu=0;nu<Nd;nu++){
+      if ( nu!=mu) {
+
+	// Up staple    ___ ___ 
+	//             |       |
+	tmp = Cshift(adj(U[nu]),nu,-1); 
+	tmp = adj(U2[mu])*tmp;
+	tmp = Cshift(tmp,mu,-2);
+
+	Staple2x1 = CovShiftForward (U[nu],nu,tmp);
+
+
+	// Down staple
+	//             |___ ___|
+	//
+	tmp = adj(U2[mu])*U[nu];
+	Staple2x1+= CovShiftBackward(U[nu],nu,Cshift(tmp,mu,-2));
+
+
+	//              ___ ___
+	//             |    ___|
+	//             |___ ___|
+	//
+
+	Stap+= Cshift(CovShiftForward (U[mu],mu,Staple2x1),mu,1);
+
+	//              ___ ___
+	//             |___    |
+	//             |___ ___|
+	//
+
+	//	tmp= Staple2x1* Cshift(U[mu],mu,-2);
+	//	Stap+= Cshift(tmp,mu,1) ;
+	Stap+= Cshift(Staple2x1,mu,1)*Cshift(U[mu],mu,-1); ;
+
+	//       --    
+	//      |  |              
+	//          
+	//      |  | 
+	
+	tmp = Cshift(adj(U2[nu]),nu,-2);
+	tmp = CovShiftBackward(U[mu],mu,tmp);
+	tmp = U2[nu]*Cshift(tmp,nu,2);
+	Stap+= Cshift(tmp, mu, 1);
+
+	//      |  |              
+	//          
+	//      |  | 
+	//       -- 
+	
+	tmp = CovShiftBackward(U[mu],mu,U2[nu]);
+	tmp = adj(U2[nu])*tmp;
+	tmp = Cshift(tmp,nu,-2);
+	Stap+=Cshift(tmp, mu, 1);
+    }}
+
+
+  }
   static void RectStaple(GaugeMat &Stap,const GaugeLorentz &Umu,int mu){
 
+#if 1
+    RectStapleUnoptimised(Stap,Umu,mu);
+#else
+    GridBase *grid = Umu._grid;
+
+    std::vector<GaugeMat> U (Nd,grid);
+    std::vector<GaugeMat> U2(Nd,grid);
+
+    for(int mu=0;mu<Nd;mu++){
+      U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
+      RectStapleDouble(U2[mu],U[mu],mu);
+    }
+    
+    RectStapleOptimised(Stap,U2,U,mu);
+#endif
+  }
+
+  static void RectStapleUnoptimised(GaugeMat &Stap,const GaugeLorentz &Umu,int mu){
     GridBase *grid = Umu._grid;
 
     std::vector<GaugeMat> U(4,grid);
