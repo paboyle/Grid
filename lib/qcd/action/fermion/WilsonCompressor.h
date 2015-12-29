@@ -27,7 +27,7 @@ namespace QCD {
     {
       SiteHalfSpinor ret;
       int mudag=mu;
-      if (dag) {
+      if (!dag) {
 	mudag=(mu+Nd)%(2*Nd);
       }
       switch(mudag) {
