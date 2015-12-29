@@ -77,9 +77,7 @@ namespace Grid{
 	t_P[level]+=ep;
 	update_P(P,U,level,ep);
 
-	std::cout<<GridLogIntegrator;
-	for(int l=0; l<level;++l) std::cout<<"   ";	    
-	std::cout<<"["<<level<<"] P " << " dt "<< ep <<" : t_P "<< t_P[level] <<std::endl;
+	std::cout<<GridLogIntegrator<<"["<<level<<"] P " << " dt "<< ep <<" : t_P "<< t_P[level] <<std::endl;
       }
 
       void update_P(GaugeField &Mom,GaugeField&U, int level,double ep){
@@ -95,9 +93,7 @@ namespace Grid{
 
 	t_U+=ep;
 	int fl = levels-1;
-	std::cout<<GridLogIntegrator<<"   ";
-	for(int l=0; l<fl;++l) std::cout<<"   ";	    
-	std::cout<<"["<<fl<<"] U " << " dt "<< ep <<" : t_U "<< t_U <<std::endl;
+	std::cout<<GridLogIntegrator<<"   "<<"["<<fl<<"] U " << " dt "<< ep <<" : t_U "<< t_U <<std::endl;
 
       }
       void update_U(GaugeField &Mom, GaugeField&U, double ep){
