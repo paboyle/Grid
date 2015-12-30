@@ -176,6 +176,8 @@ void merge(vobj &vec,std::vector<typename vobj::scalar_object *> &extracted,int 
   scalar_type *pointer;
   scalar_type *vp = (scalar_type *)&vec;
 
+  //  assert( (((uint64_t)vp)&(sizeof(scalar_type)-1)) == 0);
+
   for(int w=0;w<words;w++){
     for(int i=0;i<Nextr;i++){
       for(int ii=0;ii<s;ii++){

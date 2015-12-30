@@ -167,7 +167,7 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
   std::vector<std::vector<scalar_object> > recv_buf_extract(Nsimd,std::vector<scalar_object>(buffer_size) );
   int bytes = buffer_size*sizeof(scalar_object);
 
-  std::vector<scalar_object *>  pointers(Nsimd);  // 
+  std::vector<scalar_object *>  pointers(Nsimd); // 
   std::vector<scalar_object *> rpointers(Nsimd); // received pointers
 
   ///////////////////////////////////////////

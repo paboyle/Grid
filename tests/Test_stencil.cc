@@ -169,12 +169,13 @@ int main (int argc, char ** argv)
 	  ECheck.checkerboard = Odd;
 	  OCheck.checkerboard = Even;
 	}
+
 	// Implement a stencil code that should agree with that darn cshift!
 	for(int i=0;i<OCheck._grid->oSites();i++){
 	  int permute_type;
 	  StencilEntry *SE;
 	  SE = EStencil.GetEntry(permute_type,0,i);
-	  std::cout << "Even source "<< i<<" -> " <<SE->_offset << " "<< SE->_is_local<<std::endl;
+	  //	  std::cout << "Even source "<< i<<" -> " <<SE->_offset << " "<< SE->_is_local<<std::endl;
 
 	  if ( SE->_is_local && SE->_permute )
 	    permute(OCheck._odata[i],EFoo._odata[SE->_offset],permute_type);
@@ -187,7 +188,7 @@ int main (int argc, char ** argv)
 	  int permute_type;
 	  StencilEntry *SE;
 	  SE = OStencil.GetEntry(permute_type,0,i);
-	  std::cout << "ODD source "<< i<<" -> " <<SE->_offset << " "<< SE->_is_local<<std::endl;
+	  //	  std::cout << "ODD source "<< i<<" -> " <<SE->_offset << " "<< SE->_is_local<<std::endl;
 	  
 	  if ( SE->_is_local && SE->_permute )
 	    permute(ECheck._odata[i],OFoo._odata[SE->_offset],permute_type);
