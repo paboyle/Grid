@@ -58,38 +58,6 @@ namespace Grid {
     //  }
     //////////////////////////////////////////////
 
-    
-    ////////////////////////////////////////////////////////////////////////
-    // Implementation dependent gauge types
-    ////////////////////////////////////////////////////////////////////////
-
-#define INHERIT_IMPL_TYPES(Base) \
-    INHERIT_GIMPL_TYPES(Base)\
-    INHERIT_FIMPL_TYPES(Base)
-
-#define INHERIT_GIMPL_TYPES(GImpl) \
-    typedef typename GImpl::Simd                           Simd;\
-    typedef typename GImpl::GaugeLinkField       GaugeLinkField;\
-    typedef typename GImpl::GaugeField               GaugeField;	
-    
-    // Composition with smeared link, bc's etc.. probably need multiple inheritance
-    // Variable precision "S" and variable Nc
-    template<class S,int Nrepresentation=Nc>
-    class ImplGauge { 
-    public:
-    
-      typedef S Simd;
-    
-      template<typename vtype> using iImplGaugeLink          = iScalar<iScalar<iMatrix<vtype, Nrepresentation> > >;
-      template<typename vtype> using iImplGaugeField         = iVector<iScalar<iMatrix<vtype, Nrepresentation> >, Nd  >;
-    
-      typedef iImplGaugeLink    <Simd>           SiteGaugeLink;
-      typedef iImplGaugeField   <Simd>           SiteGaugeField;
-    
-      typedef Lattice<SiteGaugeLink>                GaugeLinkField; // bit ugly naming; polarised gauge field, lorentz... all ugly
-      typedef Lattice<SiteGaugeField>                   GaugeField;
-
-    };
 
     ////////////////////////////////////////////////////////////////////////
     // Implementation dependent fermion types
@@ -104,14 +72,18 @@ namespace Grid {
     typedef typename Impl::StencilImpl              StencilImpl;	\
     typedef typename Impl::ImplParams ImplParams;
 
+#define INHERIT_IMPL_TYPES(Base) \
+    INHERIT_GIMPL_TYPES(Base)\
+    INHERIT_FIMPL_TYPES(Base)
+
     ///////
     // Single flavour four spinors with colour index
     ///////
     template<class S,int Nrepresentation=Nc>
-    class WilsonImpl :  public ImplGauge<S,Nrepresentation> { 
+    class WilsonImpl :  public PeriodicGaugeImpl<S,Nrepresentation> { 
     public:
 
-      typedef ImplGauge<S,Nrepresentation> Gimpl;
+      typedef PeriodicGaugeImpl<S,Nrepresentation> Gimpl;
 
       INHERIT_GIMPL_TYPES(Gimpl);
 
@@ -180,10 +152,10 @@ PARALLEL_FOR_LOOP
     ////////////////////////////////////////////////////////////////////////////////////////
 
     template<class S,int Nrepresentation>
-    class GparityWilsonImpl : public ImplGauge<S,Nrepresentation> { 
+    class GparityWilsonImpl : public ConjugateGaugeImpl<S,Nrepresentation> { 
     public:
 
-      typedef ImplGauge<S,Nrepresentation> Gimpl;
+      typedef ConjugateGaugeImpl<S,Nrepresentation> Gimpl;
 
       INHERIT_GIMPL_TYPES(Gimpl);
 

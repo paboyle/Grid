@@ -4,18 +4,27 @@ namespace Grid {
 namespace QCD {
 
 // Common wilson loop observables
-template<class GaugeLorentz>
-class WilsonLoops {
+template<class Gimpl>
+class WilsonLoops : public Gimpl {
 public:
+  
+  INHERIT_GIMPL_TYPES(Gimpl);
 
-  typedef LorentzScalar<GaugeLorentz> GaugeMat;
+  typedef typename Gimpl::GaugeLinkField GaugeMat;
+  typedef typename Gimpl::GaugeField     GaugeLorentz;
 
   //////////////////////////////////////////////////
   // directed plaquette oriented in mu,nu plane
   //////////////////////////////////////////////////
   static void dirPlaquette(GaugeMat &plaq,const std::vector<GaugeMat> &U, const int mu, const int nu)
   {
-    plaq=CovShiftForward(U[mu],mu,U[nu])*adj(CovShiftForward(U[nu],nu,U[mu]));
+    // Annoyingly, must use either scope resolution to find dependent base class, 
+    // or this-> ; there is no "this" in a static method. This forces explicit Gimpl scope
+    // resolution throughout the usage in this file, and rather defeats the purpose of deriving
+    // from Gimpl.
+    plaq= Gimpl::CovShiftBackward(U[mu],mu,
+	  Gimpl::CovShiftBackward(U[nu],nu,
+          Gimpl::CovShiftForward (U[mu],mu,U[nu])));
   }
   //////////////////////////////////////////////////
   // trace of directed plaquette oriented in mu,nu plane
@@ -98,10 +107,10 @@ public:
     for(int d=0;d<Nd;d++){
       U[d] = PeekIndex<LorentzIndex>(Umu,d);
     }
-
     staple = zero;
     GaugeMat tmp(grid);
 
+    
     for(int nu=0;nu<Nd;nu++){
 
       if(nu != mu) {
@@ -110,35 +119,24 @@ public:
       // ^
       // |__>  nu
 
-      //    __                                         __
-      //      |         |                          
-      //    __|  =    __|                         *
+      //    __ 
+      //      |
+      //    __|
       //
 
-	//	staple   += CovShiftForward(U[nu],nu,U[mu])*Cshift(adj(U[nu]),mu,+1);
-	staple   += 
-	  Cshift(CovShiftForward (U[nu],nu, 
-		 CovShiftBackward(U[mu],mu,Cshift(adj(U[nu]),nu,-1))),mu,1);
+	staple+=Gimpl::ShiftStaple(
+	        Gimpl::CovShiftForward (U[nu],nu, 
+		Gimpl::CovShiftBackward(U[mu],mu,
+		Gimpl::CovShiftIdentityBackward(U[nu],nu))),mu);
 
-
-	// Unu(x) Umu(x+nu) Unu^dag(x+mu) ; left mult by Umu^dag(x) to close ring
-
-      //
-      //  __        __                         
-      // |         |                          
-      // |__     = |                              *       __
+      //  __ 
+      // |   
+      // |__ 
       //
       //
-	staple   += 
-          Cshift(
-	  CovShiftBackward(U[nu],nu,		  		  
-	  CovShiftBackward(U[mu],mu,U[nu])),mu,1);
-
-      //	tmp    = CovShiftForward (U[mu],mu,U[nu]);
-      //	staple+= CovShiftBackward(U[nu],nu,tmp);
-
-	// Unu^dag(x-nu) Umu(x-nu) Unu(x+mu-nu) ; left mult by Umu^dag(x) to close ring.
-      
+	staple+=Gimpl::ShiftStaple(  
+                Gimpl::CovShiftBackward(U[nu],nu,		  		  
+		Gimpl::CovShiftBackward(U[mu],mu,U[nu])),mu);
       }
     }
   }
@@ -148,11 +146,11 @@ public:
   //////////////////////////////////////////////////////
   static void dirRectangle(GaugeMat &rect,const std::vector<GaugeMat> &U, const int mu, const int nu)
   {
-    rect = CovShiftForward(U[mu],mu,CovShiftForward(U[mu],mu,U[nu]))* // ->->|
-	adj(CovShiftForward(U[nu],nu,CovShiftForward(U[mu],mu,U[mu]))) ;
+    rect =  Gimpl::CovShiftForward(U[mu],mu,Gimpl::CovShiftForward(U[mu],mu,U[nu]))* // ->->|
+	adj(Gimpl::CovShiftForward(U[nu],nu,Gimpl::CovShiftForward(U[mu],mu,U[mu]))) ;
     rect = rect + 
-      CovShiftForward(U[mu],mu,CovShiftForward(U[nu],nu,U[nu]))* // ->||
-      adj(CovShiftForward(U[nu],nu,CovShiftForward(U[nu],nu,U[mu]))) ;
+          Gimpl::CovShiftForward(U[mu],mu,Gimpl::CovShiftForward(U[nu],nu,U[nu]))* // ->||
+      adj(Gimpl::CovShiftForward(U[nu],nu,Gimpl::CovShiftForward(U[nu],nu,U[mu]))) ;
   }
   static void traceDirRectangle(LatticeComplex &rect, const std::vector<GaugeMat> &U, const int mu, const int nu)
   {
@@ -209,6 +207,12 @@ public:
   static void RectStapleDouble(GaugeMat &U2,const GaugeMat & U,int mu){
     U2 = U * Cshift(U,mu,1);
   }
+
+  ////////////////////////////////////////////////////////////////////////////
+  // Hop by two optimisation strategy does not work nicely with Gparity. (could do,
+  // but need to track two deep where cross boundary and apply a conjugation).
+  // Must differentiate this in Gimpl, and use Gimpl::isPeriodicGaugeField to do so .
+  ////////////////////////////////////////////////////////////////////////////
   static void RectStapleOptimised(GaugeMat &Stap,std::vector<GaugeMat> &U2,std::vector<GaugeMat> &U,int mu){
 
     Stap = zero;
@@ -227,14 +231,14 @@ public:
 	tmp = adj(U2[mu])*tmp;
 	tmp = Cshift(tmp,mu,-2);
 
-	Staple2x1 = CovShiftForward (U[nu],nu,tmp);
+	Staple2x1 = Gimpl::CovShiftForward (U[nu],nu,tmp);
 
 
 	// Down staple
 	//             |___ ___|
 	//
 	tmp = adj(U2[mu])*U[nu];
-	Staple2x1+= CovShiftBackward(U[nu],nu,Cshift(tmp,mu,-2));
+	Staple2x1+= Gimpl::CovShiftBackward(U[nu],nu,Cshift(tmp,mu,-2));
 
 
 	//              ___ ___
@@ -242,7 +246,7 @@ public:
 	//             |___ ___|
 	//
 
-	Stap+= Cshift(CovShiftForward (U[mu],mu,Staple2x1),mu,1);
+	Stap+= Cshift(Gimpl::CovShiftForward (U[mu],mu,Staple2x1),mu,1);
 
 	//              ___ ___
 	//             |___    |
@@ -259,7 +263,7 @@ public:
 	//      |  | 
 	
 	tmp = Cshift(adj(U2[nu]),nu,-2);
-	tmp = CovShiftBackward(U[mu],mu,tmp);
+	tmp = Gimpl::CovShiftBackward(U[mu],mu,tmp);
 	tmp = U2[nu]*Cshift(tmp,nu,2);
 	Stap+= Cshift(tmp, mu, 1);
 
@@ -268,7 +272,7 @@ public:
 	//      |  | 
 	//       -- 
 	
-	tmp = CovShiftBackward(U[mu],mu,U2[nu]);
+	tmp = Gimpl::CovShiftBackward(U[mu],mu,U2[nu]);
 	tmp = adj(U2[nu])*tmp;
 	tmp = Cshift(tmp,nu,-2);
 	Stap+=Cshift(tmp, mu, 1);
@@ -276,23 +280,20 @@ public:
 
 
   }
-  static void RectStaple(GaugeMat &Stap,const GaugeLorentz &Umu,int mu){
 
-#if 1
+  static void RectStaple(GaugeMat &Stap,const GaugeLorentz & Umu,int mu)
+  {
     RectStapleUnoptimised(Stap,Umu,mu);
-#else
-    GridBase *grid = Umu._grid;
-
-    std::vector<GaugeMat> U (Nd,grid);
-    std::vector<GaugeMat> U2(Nd,grid);
-
-    for(int mu=0;mu<Nd;mu++){
-      U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
-      RectStapleDouble(U2[mu],U[mu],mu);
+  }
+  static void RectStaple(const GaugeLorentz & Umu,GaugeMat &Stap,
+			 std::vector<GaugeMat> &U2,
+			 std::vector<GaugeMat> &U, int mu)
+  {
+    if ( Gimpl::isPeriodicGaugeField() ){ 
+      RectStapleOptimised(Stap,U2,U,mu);
+    } else {
+      RectStapleUnoptimised(Stap,Umu,mu);
     }
-    
-    RectStapleOptimised(Stap,U2,U,mu);
-#endif
   }
 
   static void RectStapleUnoptimised(GaugeMat &Stap,const GaugeLorentz &Umu,int mu){
@@ -310,46 +311,51 @@ public:
     //           __ ___ 
     //          |    __ |
     //
-    Stap+= Cshift(CovShiftForward (U[mu],mu,
-		  CovShiftForward (U[nu],nu,
-		  CovShiftBackward(U[mu],mu,
-                  CovShiftBackward(U[mu],mu,
-	          Cshift(adj(U[nu]),nu,-1))))) , mu, 1);
+    Stap+= Gimpl::ShiftStaple(
+		  Gimpl::CovShiftForward (U[mu],mu,
+		  Gimpl::CovShiftForward (U[nu],nu,
+		  Gimpl::CovShiftBackward(U[mu],mu,
+                  Gimpl::CovShiftBackward(U[mu],mu,
+		  Gimpl::CovShiftIdentityBackward(U[nu],nu))))) , mu);
 
     //              __ 
     //          |__ __ |
 
-    Stap+= Cshift(CovShiftForward (U[mu],mu,
-		  CovShiftBackward(U[nu],nu,
-		  CovShiftBackward(U[mu],mu,
-                  CovShiftBackward(U[mu],mu, U[nu])))) , mu, 1);
+    Stap+= Gimpl::ShiftStaple(
+                  Gimpl::CovShiftForward (U[mu],mu,
+		  Gimpl::CovShiftBackward(U[nu],nu,
+		  Gimpl::CovShiftBackward(U[mu],mu,
+                  Gimpl::CovShiftBackward(U[mu],mu, U[nu])))) , mu);
 
     //           __ 
     //          |__ __ |
 
-    Stap+= Cshift(CovShiftBackward(U[nu],nu,
-		  CovShiftBackward(U[mu],mu,
-		  CovShiftBackward(U[mu],mu,
-		  CovShiftForward(U[nu],nu,U[mu])))) , mu, 1);
+    Stap+= Gimpl::ShiftStaple(
+		  Gimpl::CovShiftBackward(U[nu],nu,
+		  Gimpl::CovShiftBackward(U[mu],mu,
+		  Gimpl::CovShiftBackward(U[mu],mu,
+		  Gimpl::CovShiftForward(U[nu],nu,U[mu])))) , mu);
 
     //           __ ___ 
     //          |__    |
 
-     Stap+= Cshift(CovShiftForward (U[nu],nu,
-	           CovShiftBackward(U[mu],mu,
-                   CovShiftBackward(U[mu],mu,
-                   CovShiftBackward(U[nu],nu,U[mu])))) , mu, 1);
+    Stap+= Gimpl::ShiftStaple(
+		   Gimpl::CovShiftForward (U[nu],nu,
+	           Gimpl::CovShiftBackward(U[mu],mu,
+                   Gimpl::CovShiftBackward(U[mu],mu,
+                   Gimpl::CovShiftBackward(U[nu],nu,U[mu])))) , mu);
 
      //       --    
      //      |  |              
      //          
      //      |  | 
-
-     Stap+= Cshift(CovShiftForward(U[nu],nu,
-		   CovShiftForward(U[nu],nu,
-                   CovShiftBackward(U[mu],mu,
-                   CovShiftBackward(U[nu],nu,
-		   Cshift(adj(U[nu]),nu,-1))))) , mu, 1);
+     
+    Stap+= Gimpl::ShiftStaple(
+		   Gimpl::CovShiftForward(U[nu],nu,
+		   Gimpl::CovShiftForward(U[nu],nu,
+                   Gimpl::CovShiftBackward(U[mu],mu,
+                   Gimpl::CovShiftBackward(U[nu],nu,
+		   Gimpl::CovShiftIdentityBackward(U[nu],nu))))) , mu);
 
 
      //      |  |              
@@ -357,10 +363,11 @@ public:
      //      |  | 
      //       -- 
      
-     Stap+= Cshift(CovShiftBackward(U[nu],nu,
-		   CovShiftBackward(U[nu],nu,
-                   CovShiftBackward(U[mu],mu,
-                   CovShiftForward (U[nu],nu,U[nu])))) , mu, 1);
+    Stap+= Gimpl::ShiftStaple(
+		   Gimpl::CovShiftBackward(U[nu],nu,
+		   Gimpl::CovShiftBackward(U[nu],nu,
+                   Gimpl::CovShiftBackward(U[mu],mu,
+                   Gimpl::CovShiftForward (U[nu],nu,U[nu])))) , mu);
     }}
   }
 
@@ -368,10 +375,10 @@ public:
 };
 
 
- typedef WilsonLoops<LatticeGaugeField> ColourWilsonLoops;
- typedef WilsonLoops<LatticeGaugeField> U1WilsonLoops;
- typedef WilsonLoops<LatticeGaugeField> SU2WilsonLoops;
- typedef WilsonLoops<LatticeGaugeField> SU3WilsonLoops;
+ typedef WilsonLoops<PeriodicGimplR> ColourWilsonLoops;
+ typedef WilsonLoops<PeriodicGimplR> U1WilsonLoops;
+ typedef WilsonLoops<PeriodicGimplR> SU2WilsonLoops;
+ typedef WilsonLoops<PeriodicGimplR> SU3WilsonLoops;
 
 }}
 

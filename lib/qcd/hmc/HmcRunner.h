@@ -5,12 +5,15 @@ namespace Grid{
   namespace QCD{
 
 
-class NerscHmcRunner {
+template<class Gimpl>
+class NerscHmcRunnerTemplate {
 public:
+
+  INHERIT_GIMPL_TYPES(Gimpl);
 
   enum StartType_t { ColdStart, HotStart, TepidStart, CheckpointStart };
 
-  ActionSet<LatticeGaugeField> TheAction;
+  ActionSet<GaugeField> TheAction;
 
   GridCartesian         * UGrid   ;
   GridCartesian         * FGrid   ;
@@ -52,13 +55,13 @@ public:
     }
 
     // Create integrator
-    typedef MinimumNorm2<LatticeGaugeField>  IntegratorType;// change here to change the algorithm
+    typedef MinimumNorm2<GaugeField>  IntegratorType;// change here to change the algorithm
     IntegratorParameters MDpar(20);
     IntegratorType MDynamics(UGrid,MDpar, TheAction);
 
     // Checkpoint strategy
-    NerscHmcCheckpointer<LatticeGaugeField> Checkpoint(std::string("ckpoint_lat"),std::string("ckpoint_rng"),1);
-    PlaquetteLogger<LatticeGaugeField> PlaqLog(std::string("plaq"));
+    NerscHmcCheckpointer<Gimpl> Checkpoint(std::string("ckpoint_lat"),std::string("ckpoint_rng"),1);
+    PlaquetteLogger<Gimpl>      PlaqLog(std::string("plaq"));
 
     HMCparameters HMCpar;
     HMCpar.StartTrajectory = StartTraj;
@@ -99,7 +102,7 @@ public:
       Checkpoint.CheckpointRestore(StartTraj, U, sRNG, pRNG);
     }
 
-    HybridMonteCarlo<LatticeGaugeField,IntegratorType>  HMC(HMCpar, MDynamics,sRNG,pRNG,U);
+    HybridMonteCarlo<GaugeField,IntegratorType>  HMC(HMCpar, MDynamics,sRNG,pRNG,U);
     HMC.AddObservable(&Checkpoint);
     HMC.AddObservable(&PlaqLog);
     
@@ -109,5 +112,18 @@ public:
   }
   
 };
+
+ typedef NerscHmcRunnerTemplate<PeriodicGimplR> NerscHmcRunner;
+ typedef NerscHmcRunnerTemplate<PeriodicGimplF> NerscHmcRunnerF;
+ typedef NerscHmcRunnerTemplate<PeriodicGimplD> NerscHmcRunnerD;
+
+ typedef NerscHmcRunnerTemplate<PeriodicGimplR> PeriodicNerscHmcRunner;
+ typedef NerscHmcRunnerTemplate<PeriodicGimplF> PeriodicNerscHmcRunnerF;
+ typedef NerscHmcRunnerTemplate<PeriodicGimplD> PeriodicNerscHmcRunnerD;
+
+ typedef NerscHmcRunnerTemplate<ConjugateGimplR> ConjugateNerscHmcRunner;
+ typedef NerscHmcRunnerTemplate<ConjugateGimplF> ConjugateNerscHmcRunnerF;
+ typedef NerscHmcRunnerTemplate<ConjugateGimplD> ConjugateNerscHmcRunnerD;
+
 }}
 #endif

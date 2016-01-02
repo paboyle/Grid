@@ -7,11 +7,11 @@ namespace Grid{
     ////////////////////////////////////////////////////////////////////////
     // PlaqPlusRectangleActoin
     ////////////////////////////////////////////////////////////////////////
-    template<class GaugeField>
-    class PlaqPlusRectangleAction : public Action<GaugeField> {
+    template<class Gimpl>
+    class PlaqPlusRectangleAction : public Action<typename Gimpl::GaugeField> {
     public:
 
-      typedef LorentzScalar<GaugeField> GaugeLinkField;
+      INHERIT_GIMPL_TYPES(Gimpl);
 
     private:
       RealD c_plaq;
@@ -25,8 +25,8 @@ namespace Grid{
       virtual RealD S(const GaugeField &U) {
 	RealD vol = U._grid->gSites();
 
-	RealD plaq = WilsonLoops<GaugeField>::avgPlaquette(U);
-	RealD rect = WilsonLoops<GaugeField>::avgRectangle(U);
+	RealD plaq = WilsonLoops<Gimpl>::avgPlaquette(U);
+	RealD rect = WilsonLoops<Gimpl>::avgRectangle(U);
 
 	RealD action=c_plaq*(1.0 -plaq)*(Nd*(Nd-1.0))*vol*0.5
 	            +c_rect*(1.0 -rect)*(Nd*(Nd-1.0))*vol;
@@ -46,7 +46,7 @@ namespace Grid{
 
 	for(int mu=0;mu<Nd;mu++){
 	  U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
-	  WilsonLoops<GaugeField>::RectStapleDouble(U2[mu],U[mu],mu);
+	  WilsonLoops<Gimpl>::RectStapleDouble(U2[mu],U[mu],mu);
 	}
 
 	GaugeLinkField dSdU_mu(grid);
@@ -56,13 +56,11 @@ namespace Grid{
 
 	  // Staple in direction mu
 
-	  WilsonLoops<GaugeField>::Staple(staple,Umu,mu);
+	  WilsonLoops<Gimpl>::Staple(staple,Umu,mu);
 
 	  dSdU_mu = Ta(U[mu]*staple)*factor_p;
 
-	  //	  WilsonLoops<GaugeField>::RectStaple(staple,Umu,mu);
-
-	  WilsonLoops<GaugeField>::RectStapleOptimised(staple,U2,U,mu);
+	  WilsonLoops<Gimpl>::RectStaple(Umu,staple,U2,U,mu);
 
 	  dSdU_mu = dSdU_mu + Ta(U[mu]*staple)*factor_r;
 	  
@@ -78,31 +76,35 @@ namespace Grid{
     // RBC c1 parameterisation is not really RBC but don't have good
     // reference and we are happy to change name if prior use of this plaq coeff
     // parameterisation is made known to us. 
-    template<class GaugeField>
-    class RBCGaugeAction : public PlaqPlusRectangleAction<GaugeField> {
+    template<class Gimpl>
+    class RBCGaugeAction : public PlaqPlusRectangleAction<Gimpl> {
     public:
-      RBCGaugeAction(RealD beta,RealD c1) : PlaqPlusRectangleAction<GaugeField>(beta*(1.0-8.0*c1), beta*c1) {
+      INHERIT_GIMPL_TYPES(Gimpl);
+      RBCGaugeAction(RealD beta,RealD c1) : PlaqPlusRectangleAction<Gimpl>(beta*(1.0-8.0*c1), beta*c1) {
       };
     };
 
-    template<class GaugeField>
-    class IwasakiGaugeAction : public RBCGaugeAction<GaugeField> {
+    template<class Gimpl>
+    class IwasakiGaugeAction : public RBCGaugeAction<Gimpl> {
     public:
-      IwasakiGaugeAction(RealD beta) : RBCGaugeAction<GaugeField>(beta,-0.331) {
+      INHERIT_GIMPL_TYPES(Gimpl);
+      IwasakiGaugeAction(RealD beta) : RBCGaugeAction<Gimpl>(beta,-0.331) {
       };
     };
 
-    template<class GaugeField>
-    class SymanzikGaugeAction : public RBCGaugeAction<GaugeField> {
+    template<class Gimpl>
+    class SymanzikGaugeAction : public RBCGaugeAction<Gimpl> {
     public:
-      SymanzikGaugeAction(RealD beta) : RBCGaugeAction<GaugeField>(beta,-1.0/12.0) {
+      INHERIT_GIMPL_TYPES(Gimpl);
+      SymanzikGaugeAction(RealD beta) : RBCGaugeAction<Gimpl>(beta,-1.0/12.0) {
       };
     };
 
-    template<class GaugeField>
-    class DBW2GaugeAction : public RBCGaugeAction<GaugeField> {
+    template<class Gimpl>
+    class DBW2GaugeAction : public RBCGaugeAction<Gimpl> {
     public:
-      DBW2GaugeAction(RealD beta) : RBCGaugeAction<GaugeField>(beta,-1.4067) {
+      INHERIT_GIMPL_TYPES(Gimpl);
+      DBW2GaugeAction(RealD beta) : RBCGaugeAction<Gimpl>(beta,-1.4067) {
       };
     };
 

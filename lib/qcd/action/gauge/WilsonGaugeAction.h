@@ -7,11 +7,13 @@ namespace Grid{
     ////////////////////////////////////////////////////////////////////////
     // Wilson Gauge Action .. should I template the Nc etc..
     ////////////////////////////////////////////////////////////////////////
-    template<class GaugeField>
-    class WilsonGaugeAction : public Action<GaugeField> {
+    template<class Gimpl>
+    class WilsonGaugeAction : public Action<typename Gimpl::GaugeField> {
     public:
 
-      typedef LorentzScalar<GaugeField> GaugeLinkField;
+      INHERIT_GIMPL_TYPES(Gimpl);
+
+      //      typedef LorentzScalar<GaugeField> GaugeLinkField;
 
     private:
       RealD beta;
@@ -21,7 +23,7 @@ namespace Grid{
       virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG) {}; // noop as no pseudoferms
       
       virtual RealD S(const GaugeField &U) {
-	RealD plaq = WilsonLoops<GaugeField>::avgPlaquette(U);
+	RealD plaq = WilsonLoops<Gimpl>::avgPlaquette(U);
 	RealD vol = U._grid->gSites();
 	RealD action=beta*(1.0 -plaq)*(Nd*(Nd-1.0))*vol*0.5;
 	return action;
@@ -41,7 +43,7 @@ namespace Grid{
 	  Umu = PeekIndex<LorentzIndex>(U,mu);
 
 	  // Staple in direction mu
-	  WilsonLoops<GaugeField>::Staple(dSdU_mu,U,mu);
+	  WilsonLoops<Gimpl>::Staple(dSdU_mu,U,mu);
 	  dSdU_mu = Ta(Umu*dSdU_mu)*factor;
 	  PokeIndex<LorentzIndex>(dSdU, dSdU_mu, mu);
 	}

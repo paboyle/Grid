@@ -425,7 +425,6 @@ namespace QCD {
 #include <qcd/spin/TwoSpinor.h>
 #include <qcd/utils/LinalgUtils.h>
 #include <qcd/utils/CovariantCshift.h>
-#include <qcd/utils/WilsonLoops.h>
 #include <qcd/utils/SUn.h>
 #include <qcd/action/Actions.h>
 #include <qcd/hmc/integrators/Integrator.h>

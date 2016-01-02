@@ -51,7 +51,6 @@ class NerscField {
     std::string floating_point;
 };
 
-
 //////////////////////////////////////////////////////////////////////
 // Bit and Physical Checksumming and QA of data
 //////////////////////////////////////////////////////////////////////
@@ -69,8 +68,9 @@ inline void NerscGrid(GridBase *grid,NerscField &header)
 template<class GaugeField>
 inline void NerscStatistics(GaugeField & data,NerscField &header)
 {
-  header.link_trace=Grid::QCD::WilsonLoops<GaugeField>::linkTrace(data);
-  header.plaquette =Grid::QCD::WilsonLoops<GaugeField>::avgPlaquette(data);
+  // How to convert data precision etc...
+  header.link_trace=Grid::QCD::WilsonLoops<PeriodicGimplR>::linkTrace(data);
+  header.plaquette =Grid::QCD::WilsonLoops<PeriodicGimplR>::avgPlaquette(data);
 }
 
 inline void NerscMachineCharacteristics(NerscField &header)

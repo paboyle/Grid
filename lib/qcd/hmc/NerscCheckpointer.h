@@ -10,13 +10,15 @@ namespace Grid{
   namespace QCD{
     
 
-    template<class GaugeField> 
-    class NerscHmcCheckpointer : public HmcObservable<GaugeField> {
+    template<class Gimpl> 
+    class NerscHmcCheckpointer : public HmcObservable<typename Gimpl::GaugeField> {
     private:
       std::string configStem;
       std::string rngStem;
       int SaveInterval;
     public:
+      INHERIT_GIMPL_TYPES(Gimpl);
+
       NerscHmcCheckpointer(std::string cf, std::string rn,int savemodulo) {
         configStem  = cf;
         rngStem     = rn;

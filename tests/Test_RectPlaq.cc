@@ -34,11 +34,11 @@ void RectPlaq(const std::vector<LatticeColourMatrix> &U, LatticeComplex &RectPla
   for(int mu=1;mu<Nd;mu++){
     for(int nu=0;nu<mu;nu++){
       RectPlaqValue = RectPlaqValue + trace(
-             CovShiftForward(U[mu],mu,CovShiftForward(U[mu],mu,U[nu]))* // ->->|
-         adj(CovShiftForward(U[nu],nu,CovShiftForward(U[mu],mu,U[mu]))) );
+             PeriodicBC::CovShiftForward(U[mu],mu,PeriodicBC::CovShiftForward(U[mu],mu,U[nu]))* // ->->|
+         adj(PeriodicBC::CovShiftForward(U[nu],nu,PeriodicBC::CovShiftForward(U[mu],mu,U[mu]))) );
       RectPlaqValue = RectPlaqValue + trace(
-             CovShiftForward(U[mu],mu,CovShiftForward(U[nu],nu,U[nu]))* // ->||
-         adj(CovShiftForward(U[nu],nu,CovShiftForward(U[nu],nu,U[mu]))) );
+             PeriodicBC::CovShiftForward(U[mu],mu,PeriodicBC::CovShiftForward(U[nu],nu,U[nu]))* // ->||
+         adj(PeriodicBC::CovShiftForward(U[nu],nu,PeriodicBC::CovShiftForward(U[nu],nu,U[mu]))) );
     }
   }
 }
@@ -87,7 +87,7 @@ int main (int argc, char ** argv)
   Plaq = zero;
   for(int mu=1;mu<Nd;mu++){
     for(int nu=0;nu<mu;nu++){
-      Plaq = Plaq + trace(CovShiftForward(U[mu],mu,U[nu])*adj(CovShiftForward(U[nu],nu,U[mu])));
+      Plaq = Plaq + trace(PeriodicBC::CovShiftForward(U[mu],mu,U[nu])*adj(PeriodicBC::CovShiftForward(U[nu],nu,U[mu])));
     }
   }
 
@@ -134,7 +134,7 @@ int main (int argc, char ** argv)
 /*     
            (x)  ---> --->  : U(x,mu)*U(x+mu, mu)
 */
-           left_2=  CovShiftForward(U[mu],mu,U[mu]);
+           left_2=  PeriodicBC::CovShiftForward(U[mu],mu,U[mu]);
 /*
   upper_l =   <---- <---
                          ^
@@ -144,7 +144,7 @@ int main (int argc, char ** argv)
 */
 
           tmp=Cshift(U[nu],mu,2);
-          upper_l=  CovShiftForward(tmp,nu,adj(left_2)); // i.e. upper_l
+          upper_l=  PeriodicBC::CovShiftForward(tmp,nu,adj(left_2)); // i.e. upper_l
 /*
  upper_staple=               <---- <--- ^
                              |          |
@@ -170,7 +170,7 @@ int main (int argc, char ** argv)
                             |          |
                             <-----<--- V 
 */          
-          tmp=CovShiftBackward(U[mu],nu,down_staple);
+          tmp=PeriodicBC::CovShiftBackward(U[mu],nu,down_staple);
           ds_U+=Cshift(tmp,mu,-1); 
 /*
      ds_U+=                 <----<---- ^ 
@@ -193,7 +193,7 @@ int main (int argc, char ** argv)
                      | 
                    (x)
 */    
-     LatticeColourMatrix up2= CovShiftForward(U[nu],nu,U[nu]);
+     LatticeColourMatrix up2= PeriodicBC::CovShiftForward(U[nu],nu,U[nu]);
 /*
                   <----^
                        | 
@@ -202,7 +202,7 @@ int main (int argc, char ** argv)
                  (x)
 */
     // Unu(x+mu)Unu(x+mu+nu) UmuDag(x+nu+nu) lives at X
-    upper_l= CovShiftForward(Cshift(up2,mu,1),nu,Cshift(adj(U[mu]),nu,1));
+    upper_l= PeriodicBC::CovShiftForward(Cshift(up2,mu,1),nu,Cshift(adj(U[mu]),nu,1));
 /*
                      |<----^
    upper_staple =    V     | 
@@ -218,7 +218,7 @@ int main (int argc, char ** argv)
    downer_l=           |  
                (x)<----V                 
 */    
-    upper_l= adj(CovShiftForward(U[mu],mu,up2)); //downer_l
+    upper_l= adj(PeriodicBC::CovShiftForward(U[mu],mu,up2)); //downer_l
 /*
                      ^     |
    down_staple  =    |     V 

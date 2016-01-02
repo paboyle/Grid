@@ -87,7 +87,7 @@ int main (int argc, char ** argv)
   Plaq = zero;
   for(int mu=1;mu<Nd;mu++){
     for(int nu=0;nu<mu;nu++){
-      Plaq = Plaq + trace(CovShiftForward(U[mu],mu,U[nu])*adj(CovShiftForward(U[nu],nu,U[mu])));
+      Plaq = Plaq + trace(PeriodicBC::CovShiftForward(U[mu],mu,U[nu])*adj(PeriodicBC::CovShiftForward(U[nu],nu,U[mu])));
     }
   }
   

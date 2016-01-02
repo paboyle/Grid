@@ -39,11 +39,12 @@ namespace Grid{
       virtual void TrajectoryComplete (int traj, GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG & pRNG )=0;
     };
 
-    template<class GaugeField> 
-    class PlaquetteLogger : public HmcObservable<GaugeField> {
+    template<class Gimpl> 
+    class PlaquetteLogger : public HmcObservable<typename Gimpl::GaugeField> {
     private:
       std::string Stem;
     public:
+      INHERIT_GIMPL_TYPES(Gimpl);
       PlaquetteLogger(std::string cf) {
         Stem  = cf;
       };
@@ -52,11 +53,16 @@ namespace Grid{
       {
 	  std::string file;   { std::ostringstream os; os << Stem     <<"."<< traj; file = os.str(); }
 	  std::ofstream of(file);
-	  RealD plaq = WilsonLoops<GaugeField>::avgPlaquette(U);
-	  RealD rect = WilsonLoops<GaugeField>::avgRectangle(U);
-	  of << plaq << " " << rect << std::endl;
-	  std::cout<< GridLogMessage<< "Plaquette for trajectory "<< traj << " is " << plaq <<std::endl;
-	  std::cout<< GridLogMessage<< "Rectangle for trajectory "<< traj << " is " << rect <<std::endl;
+
+	  RealD peri_plaq = WilsonLoops<PeriodicGimplR>::avgPlaquette(U);
+	  RealD peri_rect = WilsonLoops<PeriodicGimplR>::avgRectangle(U);
+
+	  RealD impl_plaq = WilsonLoops<Gimpl>::avgPlaquette(U);
+	  RealD impl_rect = WilsonLoops<Gimpl>::avgRectangle(U);
+
+	  of << traj<<" "<< impl_plaq << " " << impl_rect << "  "<< peri_plaq<<" "<<peri_rect<<std::endl;
+	  std::cout<< GridLogMessage<< "traj"<<" "<< "plaq " << " " << " rect  " << "  "<< "peri_plaq" <<" "<<"peri_rect"<<std::endl;
+	  std::cout<< GridLogMessage<< traj<<" "<< impl_plaq << " " << impl_rect << "  "<< peri_plaq<<" "<<peri_rect<<std::endl;
       }
     };
 
