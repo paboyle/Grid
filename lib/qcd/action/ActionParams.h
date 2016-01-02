@@ -7,6 +7,8 @@ namespace QCD {
     // These can move into a params header and be given MacroMagic serialisation
     struct GparityWilsonImplParams {
       std::vector<int> twists; 
+      GparityWilsonImplParams () : twists(Nd,0) {};
+
     };
 
     struct WilsonImplParams { };
