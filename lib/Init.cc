@@ -237,25 +237,18 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"\tvComplexD      : "<<sizeof(vComplexD)*8 <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vComplexD::Nsimd()))<<std::endl;
   }
 
-  std::string BLACK("\033[30m");
-  std::string RED("\033[31m");
-  std::string GREEN("\033[32m");
-  std::string YELLOW("\033[33m");
-  std::string BLUE("\033[34m");
-  std::string PURPLE("\033[35m");
-  std::string CYAN("\033[36m");
-  std::string WHITE("\033[37m");
-  std::string NORMAL("\033[0;39m");
   std::cout <<std::endl;
-  std::cout <<GREEN<< "         GGG  "<<RED<<"  RRRR  "<<BLUE<<"  IIIII "<<PURPLE<<"  DDDD    "<<std::endl;
-  std::cout <<GREEN<< "        G   G "<<RED<<"  R   R "<<BLUE<<"    I   "<<PURPLE<<"  D   D   "<<std::endl;
-  std::cout <<GREEN<< "        G     "<<RED<<"  R   R "<<BLUE<<"    I   "<<PURPLE<<"  D    D  "<<std::endl;
-  std::cout <<GREEN<< "        G  GGG"<<RED<<"  RRRR  "<<BLUE<<"    I   "<<PURPLE<<"  D    D  "<<std::endl;
-  std::cout <<GREEN<< "        G   G "<<RED<<"  R  R  "<<BLUE<<"    I   "<<PURPLE<<"  D   D   "<<std::endl;
-  std::cout <<GREEN<< "         GGGG "<<RED<<"  R   R "<<BLUE<<"  IIIII "<<PURPLE<<"  DDDD    "<<std::endl;
+  std::cout <<Logger::GREEN<< "         GGG  "<<Logger::RED<<"  RRRR  "<<Logger::BLUE<<"  IIIII "<<Logger::PURPLE<<"  DDDD    "<<std::endl;
+  std::cout <<Logger::GREEN<< "        G   G "<<Logger::RED<<"  R   R "<<Logger::BLUE<<"    I   "<<Logger::PURPLE<<"  D   D   "<<std::endl;
+  std::cout <<Logger::GREEN<< "        G     "<<Logger::RED<<"  R   R "<<Logger::BLUE<<"    I   "<<Logger::PURPLE<<"  D    D  "<<std::endl;
+  std::cout <<Logger::GREEN<< "        G  GGG"<<Logger::RED<<"  RRRR  "<<Logger::BLUE<<"    I   "<<Logger::PURPLE<<"  D    D  "<<std::endl;
+  std::cout <<Logger::GREEN<< "        G   G "<<Logger::RED<<"  R  R  "<<Logger::BLUE<<"    I   "<<Logger::PURPLE<<"  D   D   "<<std::endl;
+  std::cout <<Logger::GREEN<< "         GGGG "<<Logger::RED<<"  R   R "<<Logger::BLUE<<"  IIIII "<<Logger::PURPLE<<"  DDDD    "<<std::endl;
   std::cout << std::endl;
-  std::cout <<RED<< std::endl;
+  std::cout << std::endl;
+  std::cout <<Logger::RED<< std::endl;
   std::cout << "Copyright (C) 2015 Peter Boyle, Azusa Yamaguchi, Guido Cossu, Antonin Portelli and other authors"<<std::endl;
+  std::cout << "Colours by Tadahito Boyle "<<std::endl;
   std::cout << std::endl;
   std::cout << "This program is free software; you can redistribute it and/or modify"<<std::endl;
   std::cout << "it under the terms of the GNU General Public License as published by"<<std::endl;
@@ -266,7 +259,7 @@ void Grid_init(int *argc,char ***argv)
   std::cout << "but WITHOUT ANY WARRANTY; without even the implied warranty of"<<std::endl;
   std::cout << "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"<<std::endl;
   std::cout << "GNU General Public License for more details."<<std::endl;
-  std::cout << BLACK <<std::endl;
+  std::cout << Logger::BLACK <<std::endl;
 }
 
   

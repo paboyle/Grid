@@ -37,13 +37,23 @@ namespace Grid {
 class Logger {
 protected:
     int active;
-    std::string name, topName;
+    std::string name, topName, COLOUR;
 public:
     static GridStopWatch StopWatch;
     static std::ostream devnull;
+
+    static std::string BLACK;
+    static std::string RED  ;
+    static std::string GREEN;
+    static std::string YELLOW;
+    static std::string BLUE  ;
+    static std::string PURPLE;
+    static std::string CYAN  ;
+    static std::string WHITE ;
+    static std::string NORMAL;
     
-    Logger(std::string topNm, int on, std::string nm)
-    : active(on), name(nm), topName(topNm) {};
+ Logger(std::string topNm, int on, std::string nm,std::string col)
+   : active(on), name(nm), topName(topNm), COLOUR(col) {};
     
     void Active(int on) {active = on;};
     int  isActive(void) {return active;};
@@ -53,9 +63,9 @@ public:
             StopWatch.Stop();
             GridTime now = StopWatch.Elapsed();
             StopWatch.Start();
-            stream << std::setw(8) << std::left << log.topName << " : ";
-            stream << std::setw(12) << std::left << log.name << " : ";
-            stream << now << " : ";
+            stream << BLACK<< log.topName << BLACK<< " : ";
+            stream << log.COLOUR <<std::setw(10) << std::left << log.name << BLACK << " : ";
+            stream << YELLOW<< now <<BLACK << " : " << log.COLOUR;
             return stream;
         } else { 
             return devnull;
@@ -66,7 +76,7 @@ public:
     
 class GridLogger: public Logger {
 public:
-  GridLogger(int on, std::string nm): Logger("Grid", on, nm){};
+ GridLogger(int on, std::string nm, std::string col = Logger::BLACK): Logger("Grid", on, nm, col){};
 };
 
 void GridLogConfigure(std::vector<std::string> &logstreams);

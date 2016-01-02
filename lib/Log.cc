@@ -34,14 +34,23 @@ namespace Grid {
 
 GridStopWatch Logger::StopWatch;
 std::ostream  Logger::devnull(0);
+std::string Logger::BLACK("\033[30m");
+std::string Logger::RED("\033[31m");
+std::string Logger::GREEN("\033[32m");
+std::string Logger::YELLOW("\033[33m");
+std::string Logger::BLUE("\033[34m");
+std::string Logger::PURPLE("\033[35m");
+std::string Logger::CYAN("\033[36m");
+std::string Logger::WHITE("\033[37m");
+std::string Logger::NORMAL("\033[0;39m");
 
-GridLogger GridLogError      (1,"Error");
-GridLogger GridLogWarning    (1,"Warning");
-GridLogger GridLogMessage    (1,"Message");
-GridLogger GridLogDebug      (1,"Debug");
-GridLogger GridLogPerformance(1,"Performance");
-GridLogger GridLogIterative  (1,"Iterative");
-GridLogger GridLogIntegrator (1,"Integrator");
+  GridLogger GridLogError      (1,"Error",Logger::RED);
+  GridLogger GridLogWarning    (1,"Warning",Logger::YELLOW);
+  GridLogger GridLogMessage    (1,"Message",Logger::BLACK);
+  GridLogger GridLogDebug      (1,"Debug",Logger::PURPLE);
+  GridLogger GridLogPerformance(1,"Performance",Logger::GREEN);
+  GridLogger GridLogIterative  (1,"Iterative",Logger::BLUE);
+  GridLogger GridLogIntegrator (1,"Integrator",Logger::BLUE);
 
 void GridLogConfigure(std::vector<std::string> &logstreams)
 {
