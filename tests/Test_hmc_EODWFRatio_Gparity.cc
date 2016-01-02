@@ -33,11 +33,17 @@ public:
     // Gauge action
     ConjugateWilsonGaugeActionR Waction(5.6);
 
+    // Fermion action
+    const int nu = 3;
+    std::vector<int> twists(Nd,0);
+    twists[nu] = 1;
+    FermionAction::ImplParams params;
+    params.twists = twists;
     Real mass=0.04;
     Real pv  =1.0;
     RealD M5=1.5;
-    FermionAction DenOp(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-    FermionAction NumOp(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,pv,M5);
+    FermionAction DenOp(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,params);
+    FermionAction NumOp(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,pv,M5,params);
   
     ConjugateGradient<FermionField>  CG(1.0e-8,10000);
     TwoFlavourEvenOddRatioPseudoFermionAction<ImplPolicy> Nf2(NumOp, DenOp,CG,CG);
