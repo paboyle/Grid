@@ -396,6 +396,137 @@ PARALLEL_FOR_LOOP
   }
   dslashtime +=usecond();
 }
+
+template<class Impl>
+void WilsonFermion5D<Impl>::DhopInternalCommsCompute(StencilImpl & st, LebesgueOrder &lo,
+						     DoubledGaugeField & U,
+						     const FermionField &in, FermionField &out,int dag)
+{
+  //  assert((dag==DaggerNo) ||(dag==DaggerYes));
+
+  Compressor compressor(dag);
+
+  // Assume balanced KMP_AFFINITY; this is forced in GridThread.h
+
+  int threads = GridThread::GetThreads();
+  int HT      = GridThread::GetHyperThreads();
+  int cores   = GridThread::GetCores();
+  int nwork = U._grid->oSites();
+  
+  commtime -=usecond();
+  std::thread thr = st.HaloExchangeBegin(in,comm_buf,compressor);
+  commtime +=usecond();
+  
+  // Dhop takes the 4d grid from U, and makes a 5d index for fermion
+  // Not loop ordering and data layout.
+  // Designed to create 
+  // - per thread reuse in L1 cache for U
+  // - 8 linear access unit stride streams per thread for Fermion for hw prefetchable.
+  bool local    = true;
+  bool nonlocal = false;
+  dslashtime -=usecond();
+  if ( dag == DaggerYes ) {
+    if( this->HandOptDslash ) {
+PARALLEL_FOR_LOOP
+      for(int ss=0;ss<U._grid->oSites();ss++){
+	int sU=ss;
+	for(int s=0;s<Ls;s++){
+	  int sF = s+Ls*sU;
+	  Kernels::DiracOptHandDhopSiteDag(st,U,comm_buf,sF,sU,in,out,local,nonlocal);
+	  }
+      }
+    } else { 
+PARALLEL_FOR_LOOP
+      for(int ss=0;ss<U._grid->oSites();ss++){
+	{
+	  int sd;
+	  for(sd=0;sd<Ls;sd++){
+	    int sU=ss;
+	    int sF = sd+Ls*sU;
+	    Kernels::DiracOptDhopSiteDag(st,U,comm_buf,sF,sU,in,out,local,nonlocal);
+	  }
+	}
+      }
+    }
+  } else {
+    if( this->HandOptDslash ) {
+PARALLEL_FOR_LOOP
+      for(int ss=0;ss<U._grid->oSites();ss++){
+	int sU=ss;
+	for(int s=0;s<Ls;s++){
+	  int sF = s+Ls*sU;
+	  Kernels::DiracOptHandDhopSite(st,U,comm_buf,sF,sU,in,out,local,nonlocal);
+	}
+      }
+    } else { 
+PARALLEL_FOR_LOOP
+      for(int ss=0;ss<U._grid->oSites();ss++){
+	int sU=ss;
+	for(int s=0;s<Ls;s++){
+	  int sF = s+Ls*sU; 
+	  Kernels::DiracOptDhopSite(st,U,comm_buf,sF,sU,in,out,local,nonlocal);
+	}
+      }
+    }
+  }
+  dslashtime +=usecond();
+
+  commtime -=usecond();
+  thr.join();
+  commtime +=usecond();
+
+  local    = false;
+  nonlocal = true;
+  dslashtime -=usecond();
+  if ( dag == DaggerYes ) {
+    if( this->HandOptDslash ) {
+PARALLEL_FOR_LOOP
+      for(int ss=0;ss<U._grid->oSites();ss++){
+	int sU=ss;
+	for(int s=0;s<Ls;s++){
+	  int sF = s+Ls*sU;
+	  Kernels::DiracOptHandDhopSiteDag(st,U,comm_buf,sF,sU,in,out,local,nonlocal);
+	  }
+      }
+    } else { 
+PARALLEL_FOR_LOOP
+      for(int ss=0;ss<U._grid->oSites();ss++){
+	{
+	  int sd;
+	  for(sd=0;sd<Ls;sd++){
+	    int sU=ss;
+	    int sF = sd+Ls*sU;
+	    Kernels::DiracOptDhopSiteDag(st,U,comm_buf,sF,sU,in,out,local,nonlocal);
+	  }
+	}
+      }
+    }
+  } else {
+    if( this->HandOptDslash ) {
+PARALLEL_FOR_LOOP
+      for(int ss=0;ss<U._grid->oSites();ss++){
+	int sU=ss;
+	for(int s=0;s<Ls;s++){
+	  int sF = s+Ls*sU;
+	  Kernels::DiracOptHandDhopSite(st,U,comm_buf,sF,sU,in,out,local,nonlocal);
+	}
+      }
+    } else { 
+PARALLEL_FOR_LOOP
+      for(int ss=0;ss<U._grid->oSites();ss++){
+	int sU=ss;
+	for(int s=0;s<Ls;s++){
+	  int sF = s+Ls*sU; 
+	  Kernels::DiracOptDhopSite(st,U,comm_buf,sF,sU,in,out,local,nonlocal);
+	}
+      }
+    }
+  }
+  dslashtime +=usecond();
+
+
+}
+
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int dag)
 {
@@ -405,7 +536,7 @@ void WilsonFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int
   assert(in.checkerboard==Even);
   out.checkerboard = Odd;
 
-  DhopInternal(StencilEven,LebesgueEvenOdd,UmuOdd,in,out,dag);
+  DhopInternalCommsCompute(StencilEven,LebesgueEvenOdd,UmuOdd,in,out,dag);
 }
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag)
@@ -416,7 +547,7 @@ void WilsonFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int
   assert(in.checkerboard==Odd);
   out.checkerboard = Even;
 
-  DhopInternal(StencilOdd,LebesgueEvenOdd,UmuEven,in,out,dag);
+  DhopInternalCommsCompute(StencilOdd,LebesgueEvenOdd,UmuEven,in,out,dag);
 }
 template<class Impl>
 void WilsonFermion5D<Impl>::Dhop(const FermionField &in, FermionField &out,int dag)
@@ -426,7 +557,7 @@ void WilsonFermion5D<Impl>::Dhop(const FermionField &in, FermionField &out,int d
 
   out.checkerboard = in.checkerboard;
 
-  DhopInternal(Stencil,Lebesgue,Umu,in,out,dag);
+  DhopInternalCommsCompute(Stencil,Lebesgue,Umu,in,out,dag);
 }
 template<class Impl>
 void WilsonFermion5D<Impl>::DW(const FermionField &in, FermionField &out,int dag)

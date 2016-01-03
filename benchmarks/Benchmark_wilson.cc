@@ -85,11 +85,12 @@ int main (int argc, char ** argv)
   Complex cone(1.0,0.0);
   for(int nn=0;nn<Nd;nn++){
     random(pRNG,U[nn]);
-    if(0) {
-      if (nn==-1) { U[nn]=zero; std::cout<<GridLogMessage << "zeroing gauge field in dir "<<nn<<std::endl; }
-      else       { U[nn] = cone;std::cout<<GridLogMessage << "unit gauge field in dir "<<nn<<std::endl; }
+    if(1) {
+      if (nn!=2) { U[nn]=zero; std::cout<<GridLogMessage << "zeroing gauge field in dir "<<nn<<std::endl; }
+      //      else       { U[nn]= cone;std::cout<<GridLogMessage << "unit gauge field in dir "<<nn<<std::endl; }
+      else       { std::cout<<GridLogMessage << "random gauge field in dir "<<nn<<std::endl; }
     }
-    pokeIndex<LorentzIndex>(Umu,U[nn],nn);
+    PokeIndex<LorentzIndex>(Umu,U[nn],nn);
   }
 #endif
 

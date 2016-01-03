@@ -55,7 +55,7 @@ namespace PeriodicBC {
 }
 
 
-namespace GparityBC { 
+namespace ConjugateBC { 
 
   // Must give right answers across boundary
   //     <----

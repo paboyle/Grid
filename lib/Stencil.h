@@ -30,6 +30,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_STENCIL_H
 #define GRID_STENCIL_H
 
+#include <thread>
+
 #include <stencil/Lebesgue.h>   // subdir aggregate
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -89,7 +91,8 @@ namespace Grid {
       int                               _checkerboard;
       int                               _npoints; // Move to template param?
       GridBase *                        _grid;
-      
+
+
       // npoints of these
       std::vector<int>                  _directions;
       std::vector<int>                  _distances;
@@ -454,7 +457,19 @@ namespace Grid {
 
       // Could allow a functional munging of the halo to another type during the comms.
       // this could implement the 16bit/32bit/64bit compression.
-      void HaloExchange(const Lattice<vobj> &source,std::vector<cobj,alignedAllocator<cobj> > &u_comm_buf,compressor &compress)
+      void HaloExchange(const Lattice<vobj> &source,std::vector<cobj,alignedAllocator<cobj> > &u_comm_buf,compressor &compress) 
+      {
+	std::thread thr = HaloExchangeBegin(source,u_comm_buf,compress);
+	thr.join();
+      }
+
+      std::thread HaloExchangeBegin(const Lattice<vobj> &source,std::vector<cobj,alignedAllocator<cobj> > & u_comm_buf,compressor &compress) {
+	return std::thread([&] { this->HaloExchangeBlocking(source,u_comm_buf,compress); });
+	//	std::thread t(&HaloExchangeBlocking,this,source,u_comm_buf,compress);
+	//	return t;
+      }
+
+      void HaloExchangeBlocking(const Lattice<vobj> &source,std::vector<cobj,alignedAllocator<cobj> > &u_comm_buf,compressor &compress)
       {
 	// conformable(source._grid,_grid);
 	assert(source._grid==_grid);

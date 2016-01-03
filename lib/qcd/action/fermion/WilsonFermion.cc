@@ -227,7 +227,7 @@ PARALLEL_FOR_LOOP
     
     out.checkerboard = in.checkerboard;
     
-    DhopInternal(Stencil,Umu,in,out,dag);
+    DhopInternalCommsCompute(Stencil,Umu,in,out,dag);
   }
   
   template<class Impl>
@@ -238,7 +238,7 @@ PARALLEL_FOR_LOOP
     assert(in.checkerboard==Even);
     out.checkerboard = Odd;
     
-    DhopInternal(StencilEven,UmuOdd,in,out,dag);
+    DhopInternalCommsCompute(StencilEven,UmuOdd,in,out,dag);
   }
   
   template<class Impl>
@@ -249,7 +249,7 @@ PARALLEL_FOR_LOOP
     assert(in.checkerboard==Odd);
     out.checkerboard = Even;
     
-    DhopInternal(StencilOdd,UmuEven,in,out,dag);
+    DhopInternalCommsCompute(StencilOdd,UmuEven,in,out,dag);
   }
   
   template<class Impl>
@@ -319,6 +319,78 @@ PARALLEL_FOR_LOOP
       }
     }
   };
+
+
+  template<class Impl>
+  void WilsonFermion<Impl>::DhopInternalCommsCompute(StencilImpl & st,DoubledGaugeField & U,
+						     const FermionField &in, FermionField &out,int dag) {
+
+    assert((dag==DaggerNo) ||(dag==DaggerYes));
+
+    Compressor compressor(dag);
+
+    std::thread comms_thread = st.HaloExchangeBegin(in,comm_buf,compressor);
+    comms_thread.join();
+
+    bool local    = true;
+    bool nonlocal = false;
+    if ( dag == DaggerYes ) {
+      if( HandOptDslash ) {
+PARALLEL_FOR_LOOP
+        for(int sss=0;sss<in._grid->oSites();sss++){
+	  Kernels::DiracOptHandDhopSiteDag(st,U,comm_buf,sss,sss,in,out,local,nonlocal);
+	}
+      } else { 
+PARALLEL_FOR_LOOP
+        for(int sss=0;sss<in._grid->oSites();sss++){
+	  Kernels::DiracOptDhopSiteDag(st,U,comm_buf,sss,sss,in,out,local,nonlocal);
+	}
+      }
+    } else {
+      if( HandOptDslash ) {
+PARALLEL_FOR_LOOP
+        for(int sss=0;sss<in._grid->oSites();sss++){
+	  Kernels::DiracOptHandDhopSite(st,U,comm_buf,sss,sss,in,out,local,nonlocal);
+	}
+      } else { 
+PARALLEL_FOR_LOOP
+        for(int sss=0;sss<in._grid->oSites();sss++){
+	  Kernels::DiracOptDhopSite(st,U,comm_buf,sss,sss,in,out,local,nonlocal);
+	}
+      }
+    }
+
+
+    local    = false;
+    nonlocal = true;
+    if ( dag == DaggerYes ) {
+      if( HandOptDslash ) {
+PARALLEL_FOR_LOOP
+        for(int sss=0;sss<in._grid->oSites();sss++){
+	  Kernels::DiracOptHandDhopSiteDag(st,U,comm_buf,sss,sss,in,out,local,nonlocal);
+	}
+      } else { 
+PARALLEL_FOR_LOOP
+        for(int sss=0;sss<in._grid->oSites();sss++){
+	  Kernels::DiracOptDhopSiteDag(st,U,comm_buf,sss,sss,in,out,local,nonlocal);
+	}
+      }
+    } else {
+      if( HandOptDslash ) {
+PARALLEL_FOR_LOOP
+        for(int sss=0;sss<in._grid->oSites();sss++){
+	  Kernels::DiracOptHandDhopSite(st,U,comm_buf,sss,sss,in,out,local,nonlocal);
+	}
+      } else { 
+PARALLEL_FOR_LOOP
+        for(int sss=0;sss<in._grid->oSites();sss++){
+	  Kernels::DiracOptDhopSite(st,U,comm_buf,sss,sss,in,out,local,nonlocal);
+	}
+      }
+    }
+
+  };
+
  
   FermOpTemplateInstantiate(WilsonFermion);
 

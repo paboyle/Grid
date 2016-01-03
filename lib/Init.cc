@@ -238,15 +238,23 @@ void Grid_init(int *argc,char ***argv)
   }
 
   std::cout <<std::endl;
-  std::cout <<Logger::GREEN<< "         GGG  "<<Logger::RED<<"  RRRR  "<<Logger::BLUE<<"  IIIII "<<Logger::PURPLE<<"  DDDD    "<<std::endl;
-  std::cout <<Logger::GREEN<< "        G   G "<<Logger::RED<<"  R   R "<<Logger::BLUE<<"    I   "<<Logger::PURPLE<<"  D   D   "<<std::endl;
-  std::cout <<Logger::GREEN<< "        G     "<<Logger::RED<<"  R   R "<<Logger::BLUE<<"    I   "<<Logger::PURPLE<<"  D    D  "<<std::endl;
-  std::cout <<Logger::GREEN<< "        G  GGG"<<Logger::RED<<"  RRRR  "<<Logger::BLUE<<"    I   "<<Logger::PURPLE<<"  D    D  "<<std::endl;
-  std::cout <<Logger::GREEN<< "        G   G "<<Logger::RED<<"  R  R  "<<Logger::BLUE<<"    I   "<<Logger::PURPLE<<"  D   D   "<<std::endl;
-  std::cout <<Logger::GREEN<< "         GGGG "<<Logger::RED<<"  R   R "<<Logger::BLUE<<"  IIIII "<<Logger::PURPLE<<"  DDDD    "<<std::endl;
+  std::cout <<Logger::RED  << "__|__|__|__|__"<<             "|__|__|_"<<              "_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
+  std::cout <<Logger::RED  << "__|__|__|__|__"<<             "|__|__|_"<<              "_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
+  std::cout <<Logger::RED  << "__|__|__|  |  "<<             "|  |  | "<<              " |  |  |"<<                "  |  |  | _|__"<<std::endl; 
+  std::cout <<Logger::RED  << "__|__         "<<             "        "<<              "        "<<                "          _|__"<<std::endl; 
+  std::cout <<Logger::GREEN<< "__|_   GGGG   "<<Logger::RED<<" RRRR   "<<Logger::BLUE<<" III    "<<Logger::PURPLE<<"DDDD      _|__"<<std::endl;
+  std::cout <<Logger::GREEN<< "__|_  G       "<<Logger::RED<<" R   R  "<<Logger::BLUE<<"  I     "<<Logger::PURPLE<<"D   D     _|__"<<std::endl;
+  std::cout <<Logger::GREEN<< "__|_  G       "<<Logger::RED<<" R   R  "<<Logger::BLUE<<"  I     "<<Logger::PURPLE<<"D    D    _|__"<<std::endl;
+  std::cout <<Logger::GREEN<< "__|_  G  GG   "<<Logger::RED<<" RRRR   "<<Logger::BLUE<<"  I     "<<Logger::PURPLE<<"D    D    _|__"<<std::endl;
+  std::cout <<Logger::GREEN<< "__|_  G   G   "<<Logger::RED<<" R  R   "<<Logger::BLUE<<"  I     "<<Logger::PURPLE<<"D   D     _|__"<<std::endl;
+  std::cout <<Logger::GREEN<< "__|_   GGGG   "<<Logger::RED<<" R   R  "<<Logger::BLUE<<" III    "<<Logger::PURPLE<<"DDDD      _|__"<<std::endl;
+  std::cout <<Logger::BLUE << "__|__         "<<             "        "<<              "        "<<                "          _|__"<<std::endl; 
+  std::cout <<Logger::BLUE << "__|__|__|__|__"<<             "|__|____"<<              "_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
+  std::cout <<Logger::BLUE << "__|__|__|__|__"<<             "|__|__|_"<<              "_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
+  std::cout <<Logger::BLUE << "  |  |  |  |  "<<             "|  |  | "<<              " |  |  |"<<                "  |  |  |  |  "<<std::endl; 
   std::cout << std::endl;
   std::cout << std::endl;
-  std::cout <<Logger::RED<< std::endl;
+  std::cout <<Logger::YELLOW<< std::endl;
   std::cout << "Copyright (C) 2015 Peter Boyle, Azusa Yamaguchi, Guido Cossu, Antonin Portelli and other authors"<<std::endl;
   std::cout << "Colours by Tadahito Boyle "<<std::endl;
   std::cout << std::endl;

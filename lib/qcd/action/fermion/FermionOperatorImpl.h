@@ -110,10 +110,10 @@ namespace Grid {
     // Single flavour four spinors with colour index
     ///////
     template<class S,int Nrepresentation=Nc>
-    class WilsonImpl :  public PeriodicGaugeImpl<S,Nrepresentation> { 
+    class WilsonImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepresentation> > { 
     public:
 
-      typedef PeriodicGaugeImpl<S,Nrepresentation> Gimpl;
+      typedef PeriodicGaugeImpl< GaugeImplTypes< S,Nrepresentation> > Gimpl;
 
       INHERIT_GIMPL_TYPES(Gimpl);
 
@@ -182,10 +182,10 @@ PARALLEL_FOR_LOOP
     ////////////////////////////////////////////////////////////////////////////////////////
 
     template<class S,int Nrepresentation>
-    class GparityWilsonImpl : public ConjugateGaugeImpl<S,Nrepresentation> { 
+    class GparityWilsonImpl : public ConjugateGaugeImpl< GaugeImplTypes<S,Nrepresentation> >{ 
     public:
 
-      typedef ConjugateGaugeImpl<S,Nrepresentation> Gimpl;
+      typedef ConjugateGaugeImpl< GaugeImplTypes<S,Nrepresentation> > Gimpl;
 
       INHERIT_GIMPL_TYPES(Gimpl);
 
