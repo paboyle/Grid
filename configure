@@ -6367,7 +6367,6 @@ echo
 echo Checking libraries
 echo :::::::::::::::::::::::::::::::::::::::::::
 
-
 for ac_func in gettimeofday
 do :
   ac_fn_cxx_check_func "$LINENO" "gettimeofday" "ac_cv_func_gettimeofday"
@@ -8152,8 +8151,10 @@ The following features are enabled:
 - graphs and diagrams           : `if test "x$enable_dot" = xyes; then echo yes; else echo no; fi`
 - Supported SIMD flags          : $SIMD_FLAGS
 ----------------------------------------------------------
-- enabled simd support          : ${ac_SIMD}   (supported: $supported )
+- enabled simd support          : ${ac_SIMD}   (config macro says supported: $supported )
 - communications type           : ${ac_COMMS}
+- default precision             : ${ac_PRECISION}
+- RNG choice                    : ${ac_RNG}
 
 
 "

@@ -44,9 +44,15 @@ struct scal {
     Gamma::GammaT
   };
 
+bool overlapComms = false;
+
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
+
+  if( GridCmdOptionExists(argv,argv+argc,"--asynch") ){
+    overlapComms = true;
+  }
 
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
@@ -107,10 +113,15 @@ int main (int argc, char ** argv)
 
   RealD mass=0.1;
   RealD M5  =1.8;
-  DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+
+  typename DomainWallFermionR::ImplParams params; 
+  params.overlapCommsCompute = overlapComms;
+
+
+  DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,params);
   
   std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
-  int ncall=10000;
+  int ncall=1000;
   {
     double t0=usecond();
     for(int i=0;i<ncall;i++){

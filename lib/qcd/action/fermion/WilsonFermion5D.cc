@@ -273,6 +273,18 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
 					 DoubledGaugeField & U,
 					 const FermionField &in, FermionField &out,int dag)
 {
+  if ( Impl::overlapCommsCompute () ) { 
+    DhopInternalCommsOverlapCompute(st,lo,U,in,out,dag);
+  } else { 
+    DhopInternalCommsThenCompute(st,lo,U,in,out,dag);
+  }
+}
+
+template<class Impl>
+void WilsonFermion5D<Impl>::DhopInternalCommsThenCompute(StencilImpl & st, LebesgueOrder &lo,
+					 DoubledGaugeField & U,
+					 const FermionField &in, FermionField &out,int dag)
+{
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
 
   Compressor compressor(dag);
@@ -398,7 +410,7 @@ PARALLEL_FOR_LOOP
 }
 
 template<class Impl>
-void WilsonFermion5D<Impl>::DhopInternalCommsCompute(StencilImpl & st, LebesgueOrder &lo,
+void WilsonFermion5D<Impl>::DhopInternalCommsOverlapCompute(StencilImpl & st, LebesgueOrder &lo,
 						     DoubledGaugeField & U,
 						     const FermionField &in, FermionField &out,int dag)
 {
@@ -536,7 +548,7 @@ void WilsonFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int
   assert(in.checkerboard==Even);
   out.checkerboard = Odd;
 
-  DhopInternalCommsCompute(StencilEven,LebesgueEvenOdd,UmuOdd,in,out,dag);
+  DhopInternal(StencilEven,LebesgueEvenOdd,UmuOdd,in,out,dag);
 }
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag)
@@ -547,7 +559,7 @@ void WilsonFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int
   assert(in.checkerboard==Odd);
   out.checkerboard = Even;
 
-  DhopInternalCommsCompute(StencilOdd,LebesgueEvenOdd,UmuEven,in,out,dag);
+  DhopInternal(StencilOdd,LebesgueEvenOdd,UmuEven,in,out,dag);
 }
 template<class Impl>
 void WilsonFermion5D<Impl>::Dhop(const FermionField &in, FermionField &out,int dag)
@@ -557,7 +569,7 @@ void WilsonFermion5D<Impl>::Dhop(const FermionField &in, FermionField &out,int d
 
   out.checkerboard = in.checkerboard;
 
-  DhopInternalCommsCompute(Stencil,Lebesgue,Umu,in,out,dag);
+  DhopInternal(Stencil,Lebesgue,Umu,in,out,dag);
 }
 template<class Impl>
 void WilsonFermion5D<Impl>::DW(const FermionField &in, FermionField &out,int dag)

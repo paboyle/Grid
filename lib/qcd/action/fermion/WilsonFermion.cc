@@ -227,7 +227,7 @@ PARALLEL_FOR_LOOP
     
     out.checkerboard = in.checkerboard;
     
-    DhopInternalCommsCompute(Stencil,Umu,in,out,dag);
+    DhopInternal(Stencil,Umu,in,out,dag);
   }
   
   template<class Impl>
@@ -238,7 +238,7 @@ PARALLEL_FOR_LOOP
     assert(in.checkerboard==Even);
     out.checkerboard = Odd;
     
-    DhopInternalCommsCompute(StencilEven,UmuOdd,in,out,dag);
+    DhopInternal(StencilEven,UmuOdd,in,out,dag);
   }
   
   template<class Impl>
@@ -249,7 +249,7 @@ PARALLEL_FOR_LOOP
     assert(in.checkerboard==Odd);
     out.checkerboard = Even;
     
-    DhopInternalCommsCompute(StencilOdd,UmuEven,in,out,dag);
+    DhopInternal(StencilOdd,UmuEven,in,out,dag);
   }
   
   template<class Impl>
@@ -283,10 +283,19 @@ PARALLEL_FOR_LOOP
     
   };
 
-
   template<class Impl>
   void WilsonFermion<Impl>::DhopInternal(StencilImpl & st,DoubledGaugeField & U,
-					 const FermionField &in, FermionField &out,int dag) {
+					 const FermionField &in, FermionField &out,int dag) 
+  {
+    if ( Impl::overlapCommsCompute () ) { 
+      DhopInternalCommsOverlapCompute(st,U,in,out,dag);
+    } else { 
+      DhopInternalCommsThenCompute(st,U,in,out,dag);
+    }
+  }
+  template<class Impl>
+  void WilsonFermion<Impl>::DhopInternalCommsThenCompute(StencilImpl & st,DoubledGaugeField & U,
+							 const FermionField &in, FermionField &out,int dag) {
 
     assert((dag==DaggerNo) ||(dag==DaggerYes));
 
@@ -322,7 +331,7 @@ PARALLEL_FOR_LOOP
 
 
   template<class Impl>
-  void WilsonFermion<Impl>::DhopInternalCommsCompute(StencilImpl & st,DoubledGaugeField & U,
+  void WilsonFermion<Impl>::DhopInternalCommsOverlapCompute(StencilImpl & st,DoubledGaugeField & U,
 						     const FermionField &in, FermionField &out,int dag) {
 
     assert((dag==DaggerNo) ||(dag==DaggerYes));

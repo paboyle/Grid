@@ -53,7 +53,6 @@ echo
 echo Checking libraries 
 echo :::::::::::::::::::::::::::::::::::::::::::
 
-
 AC_CHECK_FUNCS([gettimeofday])
 
 #AC_CHECK_LIB([gmp],[__gmpf_init],,
@@ -262,8 +261,10 @@ The following features are enabled:
 - graphs and diagrams           : `if test "x$enable_dot" = xyes; then echo yes; else echo no; fi`
 - Supported SIMD flags          : $SIMD_FLAGS
 ----------------------------------------------------------
-- enabled simd support          : ${ac_SIMD}   (supported: $supported )
+- enabled simd support          : ${ac_SIMD}   (config macro says supported: $supported )
 - communications type           : ${ac_COMMS}
+- default precision             : ${ac_PRECISION}
+- RNG choice                    : ${ac_RNG} 
 
 
 "

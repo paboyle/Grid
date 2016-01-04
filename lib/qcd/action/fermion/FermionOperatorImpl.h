@@ -131,9 +131,13 @@ namespace Grid {
       typedef WilsonCompressor<SiteHalfSpinor,SiteSpinor> Compressor;
       typedef WilsonImplParams ImplParams;
       typedef CartesianStencil<SiteSpinor,SiteHalfSpinor,Compressor> StencilImpl;
+
       ImplParams Params;
+
       WilsonImpl(const ImplParams &p= ImplParams()) : Params(p) {}; 
 
+      bool overlapCommsCompute(void) { return Params.overlapCommsCompute; };
+    
       inline void multLink(SiteHalfSpinor &phi,const SiteDoubledGaugeField &U,const SiteHalfSpinor &chi,int mu,StencilEntry *SE,StencilImpl &St){
         mult(&phi(),&U(mu),&chi());
       }
@@ -204,9 +208,12 @@ PARALLEL_FOR_LOOP
       typedef CartesianStencil<SiteSpinor,SiteHalfSpinor,Compressor> StencilImpl;
 
       typedef GparityWilsonImplParams ImplParams;
+
       ImplParams Params;
+
       GparityWilsonImpl(const ImplParams &p= ImplParams()) : Params(p) {}; 
       
+      bool overlapCommsCompute(void) { return Params.overlapCommsCompute; };
 
       // provide the multiply by link that is differentiated between Gparity (with flavour index) and non-Gparity
       inline void multLink(SiteHalfSpinor &phi,const SiteDoubledGaugeField &U,const SiteHalfSpinor &chi,int mu,StencilEntry *SE,StencilImpl &St){

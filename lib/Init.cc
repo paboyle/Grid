@@ -238,20 +238,20 @@ void Grid_init(int *argc,char ***argv)
   }
 
   std::cout <<std::endl;
-  std::cout <<Logger::RED  << "__|__|__|__|__"<<             "|__|__|_"<<              "_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
-  std::cout <<Logger::RED  << "__|__|__|__|__"<<             "|__|__|_"<<              "_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
-  std::cout <<Logger::RED  << "__|__|__|  |  "<<             "|  |  | "<<              " |  |  |"<<                "  |  |  | _|__"<<std::endl; 
-  std::cout <<Logger::RED  << "__|__         "<<             "        "<<              "        "<<                "          _|__"<<std::endl; 
-  std::cout <<Logger::GREEN<< "__|_   GGGG   "<<Logger::RED<<" RRRR   "<<Logger::BLUE<<" III    "<<Logger::PURPLE<<"DDDD      _|__"<<std::endl;
-  std::cout <<Logger::GREEN<< "__|_  G       "<<Logger::RED<<" R   R  "<<Logger::BLUE<<"  I     "<<Logger::PURPLE<<"D   D     _|__"<<std::endl;
-  std::cout <<Logger::GREEN<< "__|_  G       "<<Logger::RED<<" R   R  "<<Logger::BLUE<<"  I     "<<Logger::PURPLE<<"D    D    _|__"<<std::endl;
-  std::cout <<Logger::GREEN<< "__|_  G  GG   "<<Logger::RED<<" RRRR   "<<Logger::BLUE<<"  I     "<<Logger::PURPLE<<"D    D    _|__"<<std::endl;
-  std::cout <<Logger::GREEN<< "__|_  G   G   "<<Logger::RED<<" R  R   "<<Logger::BLUE<<"  I     "<<Logger::PURPLE<<"D   D     _|__"<<std::endl;
-  std::cout <<Logger::GREEN<< "__|_   GGGG   "<<Logger::RED<<" R   R  "<<Logger::BLUE<<" III    "<<Logger::PURPLE<<"DDDD      _|__"<<std::endl;
-  std::cout <<Logger::BLUE << "__|__         "<<             "        "<<              "        "<<                "          _|__"<<std::endl; 
-  std::cout <<Logger::BLUE << "__|__|__|__|__"<<             "|__|____"<<              "_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
-  std::cout <<Logger::BLUE << "__|__|__|__|__"<<             "|__|__|_"<<              "_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
-  std::cout <<Logger::BLUE << "  |  |  |  |  "<<             "|  |  | "<<              " |  |  |"<<                "  |  |  |  |  "<<std::endl; 
+  std::cout <<Logger::RED  << "__|__|__|__|__"<<             "|__|__|_"<<Logger::PURPLE<<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
+  std::cout <<Logger::RED  << "__|__|__|__|__"<<             "|__|__|_"<<Logger::PURPLE<<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
+  std::cout <<Logger::RED  << "__|__|  |  |  "<<             "|  |  | "<<Logger::PURPLE<<" |  |  |"<<                "  |  |  | _|__"<<std::endl; 
+  std::cout <<Logger::RED  << "__|__         "<<             "        "<<Logger::PURPLE<<"        "<<                "          _|__"<<std::endl; 
+  std::cout <<Logger::RED  << "__|_  "<<Logger::GREEN<<" GGGG   "<<Logger::RED<<" RRRR   "<<Logger::BLUE  <<" III    "<<Logger::PURPLE<<"DDDD  "<<Logger::PURPLE<<"    _|__"<<std::endl;
+  std::cout <<Logger::RED  << "__|_  "<<Logger::GREEN<<"G       "<<Logger::RED<<" R   R  "<<Logger::BLUE  <<"  I     "<<Logger::PURPLE<<"D   D "<<Logger::PURPLE<<"    _|__"<<std::endl;
+  std::cout <<Logger::RED  << "__|_  "<<Logger::GREEN<<"G       "<<Logger::RED<<" R   R  "<<Logger::BLUE  <<"  I     "<<Logger::PURPLE<<"D    D"<<Logger::PURPLE<<"    _|__"<<std::endl;
+  std::cout <<Logger::BLUE << "__|_  "<<Logger::GREEN<<"G  GG   "<<Logger::RED<<" RRRR   "<<Logger::BLUE  <<"  I     "<<Logger::PURPLE<<"D    D"<<Logger::GREEN <<"    _|__"<<std::endl;
+  std::cout <<Logger::BLUE << "__|_  "<<Logger::GREEN<<"G   G   "<<Logger::RED<<" R  R   "<<Logger::BLUE  <<"  I     "<<Logger::PURPLE<<"D   D "<<Logger::GREEN <<"    _|__"<<std::endl;
+  std::cout <<Logger::BLUE << "__|_  "<<Logger::GREEN<<" GGGG   "<<Logger::RED<<" R   R  "<<Logger::BLUE  <<" III    "<<Logger::PURPLE<<"DDDD  "<<Logger::GREEN <<"    _|__"<<std::endl;
+  std::cout <<Logger::BLUE << "__|__         "<<             "        "<<Logger::GREEN <<"        "<<                "          _|__"<<std::endl; 
+  std::cout <<Logger::BLUE << "__|__|__|__|__"<<             "|__|__|_"<<Logger::GREEN <<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
+  std::cout <<Logger::BLUE << "__|__|__|__|__"<<             "|__|__|_"<<Logger::GREEN <<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
+  std::cout <<Logger::BLUE << "  |  |  |  |  "<<             "|  |  | "<<Logger::GREEN <<" |  |  |"<<                "  |  |  |  |  "<<std::endl; 
   std::cout << std::endl;
   std::cout << std::endl;
   std::cout <<Logger::YELLOW<< std::endl;

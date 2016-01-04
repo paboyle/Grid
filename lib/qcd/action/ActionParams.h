@@ -34,12 +34,16 @@ namespace QCD {
 
     // These can move into a params header and be given MacroMagic serialisation
     struct GparityWilsonImplParams {
+      bool overlapCommsCompute;
       std::vector<int> twists; 
-      GparityWilsonImplParams () : twists(Nd,0) {};
+      GparityWilsonImplParams () : twists(Nd,0), overlapCommsCompute(false) {};
 
     };
 
-    struct WilsonImplParams { };
+    struct WilsonImplParams {
+      bool overlapCommsCompute;
+      WilsonImplParams() : overlapCommsCompute(false) {};
+    };
 
     struct OneFlavourRationalParams { 
       RealD  lo;

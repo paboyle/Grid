@@ -117,7 +117,13 @@ namespace Grid {
 			FermionField &out,
 			int dag);
 
-      void DhopInternalCommsCompute(StencilImpl & st,
+      void DhopInternalCommsThenCompute(StencilImpl & st,
+			LebesgueOrder &lo,
+			DoubledGaugeField &U,
+			const FermionField &in, 
+			FermionField &out,
+			int dag);
+      void DhopInternalCommsOverlapCompute(StencilImpl & st,
 			LebesgueOrder &lo,
 			DoubledGaugeField &U,
 			const FermionField &in, 
