@@ -102,6 +102,7 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
 
   ImportGauge(_Umu);
   commtime=0;
+  jointime=0;
   dslashtime=0;
 }  
 template<class Impl>
@@ -237,6 +238,7 @@ void WilsonFermion5D<Impl>::Report(void)
   std::cout<<GridLogMessage << "********************"<<std::endl;
   std::cout<<GridLogMessage << "Halo   time "<<commtime <<" us"<<std::endl;
   std::cout<<GridLogMessage << "Dslash time "<<dslashtime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "join   time "<<jointime<<" us"<<std::endl;
   std::cout<<GridLogMessage << "Stencil All    time "<<Stencil.halotime<<" us"<<std::endl;
   std::cout<<GridLogMessage << "********************"<<std::endl;
   std::cout<<GridLogMessage << "Stencil nosplice time "<<Stencil.nosplicetime<<" us"<<std::endl;
@@ -297,8 +299,12 @@ void WilsonFermion5D<Impl>::DhopInternalCommsThenCompute(StencilImpl & st, Lebes
   int nwork = U._grid->oSites();
   
   commtime -=usecond();
-  st.HaloExchange(in,comm_buf,compressor);
+  std::thread thr = st.HaloExchangeBegin(in,comm_buf,compressor);
   commtime +=usecond();
+
+  jointime -=usecond();
+  thr.join();
+  jointime +=usecond();
   
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
   // Not loop ordering and data layout.
@@ -483,9 +489,9 @@ PARALLEL_FOR_LOOP
   }
   dslashtime +=usecond();
 
-  commtime -=usecond();
+  jointime -=usecond();
   thr.join();
-  commtime +=usecond();
+  jointime +=usecond();
 
   local    = false;
   nonlocal = true;

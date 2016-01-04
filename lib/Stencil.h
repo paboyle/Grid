@@ -465,8 +465,6 @@ namespace Grid {
 
       std::thread HaloExchangeBegin(const Lattice<vobj> &source,std::vector<cobj,alignedAllocator<cobj> > & u_comm_buf,compressor &compress) {
 	return std::thread([&] { this->HaloExchangeBlocking(source,u_comm_buf,compress); });
-	//	std::thread t(&HaloExchangeBlocking,this,source,u_comm_buf,compress);
-	//	return t;
       }
 
       void HaloExchangeBlocking(const Lattice<vobj> &source,std::vector<cobj,alignedAllocator<cobj> > &u_comm_buf,compressor &compress)
