@@ -145,7 +145,12 @@ std::string GridCmdVectorIntToString(const std::vector<int> & vec){
 void Grid_init(int *argc,char ***argv)
 {
 #ifdef GRID_COMMS_MPI
-  MPI_Init(argc,argv);
+{ 
+  int flag=0,flag2=0;
+  flag = MPI_Initialized(&flag2);
+  std::cout << "Grid::flag= " << flag << " " <<flag2 <<std::endl;
+  if(!flag2) MPI_Init(argc,argv);
+}
 #endif
   // Parse command line args.
 

@@ -16,8 +16,6 @@
 #include <qcd/action/ActionBase.h>
 #include <qcd/action/ActionParams.h>
 
-
-
 ////////////////////////////////////////////
 // Utility functions
 ////////////////////////////////////////////
@@ -25,7 +23,6 @@
 #include <qcd/action/fermion/FermionOperatorImpl.h>
 #include <qcd/action/fermion/FermionOperator.h>
 #include <qcd/action/fermion/WilsonKernels.h>        //used by all wilson type fermions
-
 
 ////////////////////////////////////////////
 // Gauge Actions
@@ -55,11 +52,11 @@ typedef WilsonGaugeAction<LatticeGaugeFieldD>    WilsonGaugeActionD;
 
 #define FermOpTemplateInstantiate(A) \
   template class A<WilsonImplF>;		\
-  template class A<WilsonImplD>; 
-
-#define GparityFermOpTemplateInstantiate(A) \
-  template class A<GparityWilsonImplF>;	\
+  template class A<WilsonImplD>;		\
+  template class A<GparityWilsonImplF>;		\
   template class A<GparityWilsonImplD>;		
+
+#define GparityFermOpTemplateInstantiate(A) 
 
 ////////////////////////////////////////////
 // Fermion operators / actions

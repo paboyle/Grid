@@ -41,7 +41,7 @@ namespace Grid {
 #endif
 // doesn't seem to work with Gparity at the moment
 #undef HANDOPT
-//#define HANDOPT
+#if 1
      void DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
 			       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 			       int sF,int sU,const FermionField &in, FermionField &out);
@@ -49,6 +49,7 @@ namespace Grid {
      void DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
 				  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 				  int sF,int sU,const FermionField &in, FermionField &out);
+#endif
 
      WilsonKernels(const ImplParams &p= ImplParams());
      

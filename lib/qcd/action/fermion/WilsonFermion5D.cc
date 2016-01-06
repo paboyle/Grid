@@ -94,6 +94,7 @@ void WilsonFermion5D<Impl>::DhopDir(const FermionField &in, FermionField &out,in
   int skip = (disp==1) ? 0 : 1;
 
   int dirdisp = dir+skip*4;
+  int gamma   = dir+(1-skip)*4;
 
   assert(dirdisp<=7);
   assert(dirdisp>=0);
@@ -103,7 +104,7 @@ PARALLEL_FOR_LOOP
     for(int s=0;s<Ls;s++){
       int sU=ss;
       int sF = s+Ls*sU; 
-      Kernels::DiracOptDhopDir(Stencil,Umu,comm_buf,sF,sU,in,out,dirdisp,dirdisp);
+      Kernels::DiracOptDhopDir(Stencil,Umu,comm_buf,sF,sU,in,out,dirdisp,gamma);
     }
   }
 };
@@ -136,7 +137,7 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
     // Flip gamma if dag
     ////////////////////////////////////////////////////////////////////////
     int gamma = mu;
-    if ( dag ) gamma+= Nd;
+    if ( !dag ) gamma+= Nd;
 
     ////////////////////////
     // Call the single hop

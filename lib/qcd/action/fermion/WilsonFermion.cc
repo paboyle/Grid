@@ -131,7 +131,7 @@ namespace QCD {
       // Flip gamma (1+g)<->(1-g) if dag
       ////////////////////////////////////////////////////////////////////////
       int gamma = mu;
-      if ( dag ) gamma+= Nd;
+      if ( !dag ) gamma+= Nd;
       
       ////////////////////////
       // Call the single hop
@@ -227,13 +227,15 @@ PARALLEL_FOR_LOOP
     DhopDir(in,out,dir,disp);
   }
   
+
   template<class Impl>
   void WilsonFermion<Impl>::DhopDir(const FermionField &in, FermionField &out,int dir,int disp){
     
     int skip = (disp==1) ? 0 : 1;
-    int dirdisp = dir+skip*4;
+    int dirdisp  = dir+skip*4;
+    int gamma    = dir+(1-skip)*4;
     
-    DhopDirDisp(in,out,dirdisp,dirdisp,DaggerNo);
+    DhopDirDisp(in,out,dirdisp,gamma,DaggerNo);
     
   };
   

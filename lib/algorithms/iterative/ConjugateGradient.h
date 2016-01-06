@@ -98,7 +98,7 @@ public:
 	}
       }
       std::cout<<GridLogMessage<<"ConjugateGradient did NOT converge"<<std::endl;
-      assert(0);
+//      assert(0);
     }
   };
 }

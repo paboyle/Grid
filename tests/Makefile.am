@@ -8,5 +8,8 @@ endif
 AM_CXXFLAGS = -I$(top_srcdir)/lib
 AM_LDFLAGS = -L$(top_builddir)/lib
 
+if BUILD_ZMM
+  bin_PROGRAMS=Test_zmm
+endif
 
 include Make.inc

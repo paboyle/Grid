@@ -335,13 +335,33 @@ PARALLEL_FOR_LOOP
       }
 
       inline void InsertForce4D(GaugeField &mat, FermionField &Btilde, FermionField &A,int mu){
-	assert(0);
-	// Fixme
+	
+	// DhopDir provides U or Uconj depending on coor/flavour.
+	GaugeLinkField link(mat._grid);
+	// use lorentz for flavour as hack.
+	auto tmp = TraceIndex<SpinIndex>(outerProduct(Btilde,A));  
+PARALLEL_FOR_LOOP
+        for(auto ss=tmp.begin();ss<tmp.end();ss++){
+	  link[ss]() = tmp[ss](0,0) - conjugate(tmp[ss](1,1)) ;
+	}
+	PokeIndex<LorentzIndex>(mat,link,mu);
 	return;
       }
-      inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &A,int mu){
-	assert(0);
-	// Fixme
+      inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde,int mu){
+
+	int Ls=Btilde._grid->_fdimensions[0];
+
+	GaugeLinkField tmp(mat._grid);
+	tmp = zero;
+PARALLEL_FOR_LOOP
+	for(int ss=0;ss<tmp._grid->oSites();ss++){
+	  for(int s=0;s<Ls;s++){
+	    int sF = s+Ls*ss;
+	    auto ttmp = traceIndex<SpinIndex>(outerProduct(Btilde[sF],Atilde[sF]));
+	    tmp[ss]() = tmp[ss]()+ ttmp(0,0) + conjugate(ttmp(1,1));
+	  }
+	}
+	PokeIndex<LorentzIndex>(mat,tmp,mu);
 	return;
       }
     };

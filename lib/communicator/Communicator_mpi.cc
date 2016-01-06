@@ -13,8 +13,10 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
   _Nprocessors=1;
   _processors = processors;
   _processor_coor.resize(_ndimension);
+  std::cout << processors << std::endl;
   
   MPI_Cart_create(MPI_COMM_WORLD, _ndimension,&_processors[0],&periodic[0],1,&communicator);
+  printf("communicator=%p\n",communicator);
   MPI_Comm_rank(communicator,&_processor);
   MPI_Cart_coords(communicator,_processor,_ndimension,&_processor_coor[0]);
 
