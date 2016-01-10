@@ -58,7 +58,6 @@ namespace QCD {
 	UmuOdd (&Hgrid) 
   {
     // Allocate the required comms buffer
-    comm_buf.resize(Stencil._unified_buffer_size); // this is always big enough to contain EO
     ImportGauge(_Umu);
   }
 
@@ -153,7 +152,7 @@ namespace QCD {
     FermionField Atilde(B._grid);
     Atilde = A;
 
-    st.HaloExchange(B,comm_buf,compressor);
+    st.HaloExchange(B,compressor);
     
     for(int mu=0;mu<Nd;mu++){
       
@@ -168,7 +167,7 @@ namespace QCD {
       ////////////////////////
 PARALLEL_FOR_LOOP
 	for(int sss=0;sss<B._grid->oSites();sss++){
-	  Kernels::DiracOptDhopDir(st,U,comm_buf,sss,sss,B,Btilde,mu,gamma);
+	  Kernels::DiracOptDhopDir(st,U,st.comm_buf,sss,sss,B,Btilde,mu,gamma);
 	}
       
       //////////////////////////////////////////////////
@@ -274,11 +273,11 @@ PARALLEL_FOR_LOOP
     
     Compressor compressor(dag);
     
-    Stencil.HaloExchange(in,comm_buf,compressor);
+    Stencil.HaloExchange(in,compressor);
     
 PARALLEL_FOR_LOOP
       for(int sss=0;sss<in._grid->oSites();sss++){
-	Kernels::DiracOptDhopDir(Stencil,Umu,comm_buf,sss,sss,in,out,dirdisp,gamma);
+	Kernels::DiracOptDhopDir(Stencil,Umu,Stencil.comm_buf,sss,sss,in,out,dirdisp,gamma);
       }
     
   };
@@ -300,30 +299,30 @@ PARALLEL_FOR_LOOP
     assert((dag==DaggerNo) ||(dag==DaggerYes));
 
     Compressor compressor(dag);
-    st.HaloExchange(in,comm_buf,compressor);
+    st.HaloExchange(in,compressor);
     
     if ( dag == DaggerYes ) {
       if( HandOptDslash ) {
 PARALLEL_FOR_LOOP
         for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptHandDhopSiteDag(st,U,comm_buf,sss,sss,in,out);
+	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out);
 	}
       } else { 
 PARALLEL_FOR_LOOP
         for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptDhopSiteDag(st,U,comm_buf,sss,sss,in,out);
+	  Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out);
 	}
       }
     } else {
       if( HandOptDslash ) {
 PARALLEL_FOR_LOOP
         for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptHandDhopSite(st,U,comm_buf,sss,sss,in,out);
+	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sss,sss,in,out);
 	}
       } else { 
 PARALLEL_FOR_LOOP
         for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptDhopSite(st,U,comm_buf,sss,sss,in,out);
+	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sss,sss,in,out);
 	}
       }
     }
@@ -338,8 +337,7 @@ PARALLEL_FOR_LOOP
 
     Compressor compressor(dag);
 
-    std::thread comms_thread = st.HaloExchangeBegin(in,comm_buf,compressor);
-    comms_thread.join();
+    auto handle = st.HaloExchangeBegin(in,compressor);
 
     bool local    = true;
     bool nonlocal = false;
@@ -347,28 +345,29 @@ PARALLEL_FOR_LOOP
       if( HandOptDslash ) {
 PARALLEL_FOR_LOOP
         for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptHandDhopSiteDag(st,U,comm_buf,sss,sss,in,out,local,nonlocal);
+	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
 	}
       } else { 
 PARALLEL_FOR_LOOP
         for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptDhopSiteDag(st,U,comm_buf,sss,sss,in,out,local,nonlocal);
+	  Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
 	}
       }
     } else {
       if( HandOptDslash ) {
 PARALLEL_FOR_LOOP
         for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptHandDhopSite(st,U,comm_buf,sss,sss,in,out,local,nonlocal);
+	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
 	}
       } else { 
 PARALLEL_FOR_LOOP
         for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptDhopSite(st,U,comm_buf,sss,sss,in,out,local,nonlocal);
+	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
 	}
       }
     }
 
+    st.HaloExchangeComplete(handle);
 
     local    = false;
     nonlocal = true;
@@ -376,24 +375,24 @@ PARALLEL_FOR_LOOP
       if( HandOptDslash ) {
 PARALLEL_FOR_LOOP
         for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptHandDhopSiteDag(st,U,comm_buf,sss,sss,in,out,local,nonlocal);
+	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
 	}
       } else { 
 PARALLEL_FOR_LOOP
         for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptDhopSiteDag(st,U,comm_buf,sss,sss,in,out,local,nonlocal);
+	  Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
 	}
       }
     } else {
       if( HandOptDslash ) {
 PARALLEL_FOR_LOOP
         for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptHandDhopSite(st,U,comm_buf,sss,sss,in,out,local,nonlocal);
+	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
 	}
       } else { 
 PARALLEL_FOR_LOOP
         for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptDhopSite(st,U,comm_buf,sss,sss,in,out,local,nonlocal);
+	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
 	}
       }
     }

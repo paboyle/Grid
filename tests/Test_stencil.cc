@@ -99,9 +99,8 @@ int main (int argc, char ** argv)
 	  ocoor[dir]=(ocoor[dir]+disp)%Fine._rdimensions[dir];
 	}
 	
-	std::vector<vobj,alignedAllocator<vobj> >  comm_buf(myStencil._unified_buffer_size);
 	SimpleCompressor<vobj> compress;
-	myStencil.HaloExchange(Foo,comm_buf,compress);
+	myStencil.HaloExchange(Foo,compress);
 
 	Bar = Cshift(Foo,dir,disp);
 
@@ -117,7 +116,7 @@ int main (int argc, char ** argv)
 	  else if (SE->_is_local)
 	    Check._odata[i] = Foo._odata[SE->_offset];
 	  else 
-	    Check._odata[i] = comm_buf[SE->_offset];
+	    Check._odata[i] = myStencil.comm_buf[SE->_offset];
 	}
 
 	Real nrmC = norm2(Check);
@@ -181,13 +180,10 @@ int main (int argc, char ** argv)
 	  ocoor[dir]=(ocoor[dir]+disp)%Fine._rdimensions[dir];
 	}
 	
-	std::vector<vobj,alignedAllocator<vobj> >  Ecomm_buf(EStencil._unified_buffer_size);
-	std::vector<vobj,alignedAllocator<vobj> >  Ocomm_buf(OStencil._unified_buffer_size);
-
 	SimpleCompressor<vobj> compress;
 
-	EStencil.HaloExchange(EFoo,Ecomm_buf,compress);
-	OStencil.HaloExchange(OFoo,Ocomm_buf,compress);
+	EStencil.HaloExchange(EFoo,compress);
+	OStencil.HaloExchange(OFoo,compress);
 	
 	Bar = Cshift(Foo,dir,disp);
 
@@ -211,7 +207,7 @@ int main (int argc, char ** argv)
 	  else if (SE->_is_local)
 	    OCheck._odata[i] = EFoo._odata[SE->_offset];
 	  else 
-	    OCheck._odata[i] = Ecomm_buf[SE->_offset];
+	    OCheck._odata[i] = EStencil.comm_buf[SE->_offset];
 	}
 	for(int i=0;i<ECheck._grid->oSites();i++){
 	  int permute_type;
@@ -224,7 +220,7 @@ int main (int argc, char ** argv)
 	  else if (SE->_is_local)
 	    ECheck._odata[i] = OFoo._odata[SE->_offset];
 	  else 
-	    ECheck._odata[i] = Ocomm_buf[SE->_offset];
+	    ECheck._odata[i] = OStencil.comm_buf[SE->_offset];
 	}
 	
 	setCheckerboard(Check,ECheck);
