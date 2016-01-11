@@ -318,21 +318,21 @@ void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeF
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
 
-  REGISTER Simd result_00; // 12 regs on knc
-  REGISTER Simd result_01;
-  REGISTER Simd result_02;
+  REGISTER Simd result_00 ; zeroit(result_00); // 12 regs on knc
+  REGISTER Simd result_01 ; zeroit(result_01); // 12 regs on knc
+  REGISTER Simd result_02 ; zeroit(result_02); // 12 regs on knc
   
-  REGISTER Simd result_10;
-  REGISTER Simd result_11;
-  REGISTER Simd result_12;
+  REGISTER Simd result_10 ; zeroit(result_10); // 12 regs on knc
+  REGISTER Simd result_11 ; zeroit(result_11); // 12 regs on knc
+  REGISTER Simd result_12 ; zeroit(result_12); // 12 regs on knc
 
-  REGISTER Simd result_20;
-  REGISTER Simd result_21;
-  REGISTER Simd result_22;
+  REGISTER Simd result_20 ; zeroit(result_20); // 12 regs on knc
+  REGISTER Simd result_21 ; zeroit(result_21); // 12 regs on knc
+  REGISTER Simd result_22 ; zeroit(result_22); // 12 regs on knc
 
-  REGISTER Simd result_30;
-  REGISTER Simd result_31;
-  REGISTER Simd result_32; // 20 left
+  REGISTER Simd result_30 ; zeroit(result_30); // 12 regs on knc
+  REGISTER Simd result_31 ; zeroit(result_31); // 12 regs on knc
+  REGISTER Simd result_32 ; zeroit(result_32); // 12 regs on knc
 
   REGISTER Simd Chi_00;    // two spinor; 6 regs
   REGISTER Simd Chi_01;
@@ -372,172 +372,178 @@ void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeF
 
 
   StencilEntry *SE;
-  int offset,local,perm, ptype;
-  
+  int offset, ptype;
+  int num = 0;
+
   // Xp
   SE=st.GetEntry(ptype,Xp,ss);
   offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
   
-  if ( local ) {
+  if (Local && SE->_is_local ) { 
     LOAD_CHIMU;
     XP_PROJ;
-    if ( perm) {
+    if ( SE->_permute ) {
       PERMUTE_DIR(3); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
-  } else { 
+  }
+
+  if ( Nonlocal && (!SE->_is_local) ) { 
     LOAD_CHI;
   }
 
-  {
+  if ( (Local && SE->_is_local) || ( Nonlocal && (!SE->_is_local)) ) {
     MULT_2SPIN(Xp);
+    XP_RECON_ACCUM;
+    num++;  
   }
-  XP_RECON;
+
 
   // Yp
   SE=st.GetEntry(ptype,Yp,ss);
   offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
   
-  if ( local ) {
+  if (Local && SE->_is_local ) { 
     LOAD_CHIMU;
     YP_PROJ;
-    if ( perm) {
+    if ( SE->_permute ) {
       PERMUTE_DIR(2); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
-  } else { 
+  }
+
+  if ( Nonlocal && (!SE->_is_local) ) { 
     LOAD_CHI;
   }
-  {
+  if ( (Local && SE->_is_local) || ( Nonlocal && (!SE->_is_local)) ) {
     MULT_2SPIN(Yp);
+    YP_RECON_ACCUM;
+    num++;  
   }
-  YP_RECON_ACCUM;
 
 
   // Zp
   SE=st.GetEntry(ptype,Zp,ss);
   offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
   
-  if ( local ) {
+  if (Local && SE->_is_local ) { 
     LOAD_CHIMU;
     ZP_PROJ;
-    if ( perm) {
+    if ( SE->_permute ) {
       PERMUTE_DIR(1); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
-  } else { 
+  }  
+
+  if ( Nonlocal && (!SE->_is_local) ) { 
     LOAD_CHI;
   }
-  {
+
+  if ( (Local && SE->_is_local) || ( Nonlocal && (!SE->_is_local)) ) {
     MULT_2SPIN(Zp);
+    ZP_RECON_ACCUM;
+    num++;  
   }
-  ZP_RECON_ACCUM;
 
   // Tp
   SE=st.GetEntry(ptype,Tp,ss);
   offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
   
-  if ( local ) {
+  if (Local && SE->_is_local ) { 
     LOAD_CHIMU;
     TP_PROJ;
-    if ( perm) {
+    if ( SE->_permute ) {
       PERMUTE_DIR(0); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
-  } else { 
+  }
+  if ( Nonlocal && (!SE->_is_local) ) { 
     LOAD_CHI;
   }
-  {
+  if ( (Local && SE->_is_local) || ( Nonlocal && (!SE->_is_local)) ) {
     MULT_2SPIN(Tp);
+    TP_RECON_ACCUM;
+    num++;  
   }
-  TP_RECON_ACCUM;
   
   // Xm
   SE=st.GetEntry(ptype,Xm,ss);
   offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
   
-  if ( local ) {
+  if (Local && SE->_is_local ) { 
     LOAD_CHIMU;
     XM_PROJ;
-    if ( perm) {
+    if ( SE->_permute ) {
       PERMUTE_DIR(3); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
-  } else { 
+  }
+  if ( Nonlocal && (!SE->_is_local) ) { 
     LOAD_CHI;
   }
-  {
+  if ( (Local && SE->_is_local) || ( Nonlocal && (!SE->_is_local)) ) {
     MULT_2SPIN(Xm);
+    XM_RECON_ACCUM;
+    num++;  
   }
-  XM_RECON_ACCUM;
   
   // Ym
   SE=st.GetEntry(ptype,Ym,ss);
   offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
   
-  if ( local ) {
+  if (Local && SE->_is_local ) { 
     LOAD_CHIMU;
     YM_PROJ;
-    if ( perm) {
+    if ( SE->_permute ) {
       PERMUTE_DIR(2); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
-  } else { 
+  }
+  if ( Nonlocal && (!SE->_is_local) ) { 
     LOAD_CHI;
   }
-  {
+  if ( (Local && SE->_is_local) || ( Nonlocal && (!SE->_is_local)) ) {
     MULT_2SPIN(Ym);
+    YM_RECON_ACCUM;
+    num++;  
   }
-  YM_RECON_ACCUM;
 
   // Zm
   SE=st.GetEntry(ptype,Zm,ss);
   offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
 
-  if ( local ) {
+  if (Local && SE->_is_local ) { 
     LOAD_CHIMU;
     ZM_PROJ;
-    if ( perm) {
+    if ( SE->_permute ) {
       PERMUTE_DIR(1); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
-  } else { 
+  }
+  if ( Nonlocal && (!SE->_is_local) ) { 
     LOAD_CHI;
   }
-  {
+  if ( (Local && SE->_is_local) || ( Nonlocal && (!SE->_is_local)) ) {
     MULT_2SPIN(Zm);
+    ZM_RECON_ACCUM;
+    num++;  
   }
-  ZM_RECON_ACCUM;
 
   // Tm
   SE=st.GetEntry(ptype,Tm,ss);
   offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
 
-  if ( local ) {
+  if (Local && SE->_is_local ) { 
     LOAD_CHIMU;
     TM_PROJ;
-    if ( perm) {
+    if ( SE->_permute ) {
       PERMUTE_DIR(0); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
-  } else { 
+  }
+  if ( Nonlocal && (!SE->_is_local) ) { 
     LOAD_CHI;
   }
-  {
+  if ( (Local && SE->_is_local) || ( Nonlocal && (!SE->_is_local)) ) {
     MULT_2SPIN(Tm);
+    TM_RECON_ACCUM;
+    num++;  
   }
-  TM_RECON_ACCUM;
 
-  {
-    SiteSpinor & ref (out._odata[ss]);
+  SiteSpinor & ref (out._odata[ss]);
+  if ( Local ) {
     vstream(ref()(0)(0),result_00*(-0.5));
     vstream(ref()(0)(1),result_01*(-0.5));
     vstream(ref()(0)(2),result_02*(-0.5));
@@ -550,9 +556,289 @@ void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeF
     vstream(ref()(3)(0),result_30*(-0.5));
     vstream(ref()(3)(1),result_31*(-0.5));
     vstream(ref()(3)(2),result_32*(-0.5));
+  } else if ( num ) { 
+    vstream(ref()(0)(0),ref()(0)(0)+result_00*(-0.5));
+    vstream(ref()(0)(1),ref()(0)(1)+result_01*(-0.5));
+    vstream(ref()(0)(2),ref()(0)(2)+result_02*(-0.5));
+    vstream(ref()(1)(0),ref()(1)(0)+result_10*(-0.5));
+    vstream(ref()(1)(1),ref()(1)(1)+result_11*(-0.5));
+    vstream(ref()(1)(2),ref()(1)(2)+result_12*(-0.5));
+    vstream(ref()(2)(0),ref()(2)(0)+result_20*(-0.5));
+    vstream(ref()(2)(1),ref()(2)(1)+result_21*(-0.5));
+    vstream(ref()(2)(2),ref()(2)(2)+result_22*(-0.5));
+    vstream(ref()(3)(0),ref()(3)(0)+result_30*(-0.5));
+    vstream(ref()(3)(1),ref()(3)(1)+result_31*(-0.5));
+    vstream(ref()(3)(2),ref()(3)(2)+result_32*(-0.5));
   }
 }
 
+
+
+
+template<class Impl>
+void WilsonKernels<Impl >::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
+						std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+						int ss,int sU,const FermionField &in, FermionField &out, bool Local, bool Nonlocal)
+{
+  //  std::cout << "Hand op Dhop "<<std::endl;
+  typedef typename Simd::scalar_type S;
+  typedef typename Simd::vector_type V;
+
+  REGISTER Simd result_00 ; zeroit(result_00); // 12 regs on knc
+  REGISTER Simd result_01 ; zeroit(result_01); // 12 regs on knc
+  REGISTER Simd result_02 ; zeroit(result_02); // 12 regs on knc
+  
+  REGISTER Simd result_10 ; zeroit(result_10); // 12 regs on knc
+  REGISTER Simd result_11 ; zeroit(result_11); // 12 regs on knc
+  REGISTER Simd result_12 ; zeroit(result_12); // 12 regs on knc
+
+  REGISTER Simd result_20 ; zeroit(result_20); // 12 regs on knc
+  REGISTER Simd result_21 ; zeroit(result_21); // 12 regs on knc
+  REGISTER Simd result_22 ; zeroit(result_22); // 12 regs on knc
+
+  REGISTER Simd result_30 ; zeroit(result_30); // 12 regs on knc
+  REGISTER Simd result_31 ; zeroit(result_31); // 12 regs on knc
+  REGISTER Simd result_32 ; zeroit(result_32); // 12 regs on knc
+
+  REGISTER Simd Chi_00;    // two spinor; 6 regs
+  REGISTER Simd Chi_01;
+  REGISTER Simd Chi_02;
+
+  REGISTER Simd Chi_10;
+  REGISTER Simd Chi_11;
+  REGISTER Simd Chi_12;   // 14 left
+
+  REGISTER Simd UChi_00;  // two spinor; 6 regs
+  REGISTER Simd UChi_01;
+  REGISTER Simd UChi_02;
+
+  REGISTER Simd UChi_10;
+  REGISTER Simd UChi_11;
+  REGISTER Simd UChi_12;  // 8 left
+
+  REGISTER Simd U_00;  // two rows of U matrix
+  REGISTER Simd U_10;
+  REGISTER Simd U_20;  
+  REGISTER Simd U_01;
+  REGISTER Simd U_11;
+  REGISTER Simd U_21;  // 2 reg left.
+
+#define Chimu_00 Chi_00
+#define Chimu_01 Chi_01
+#define Chimu_02 Chi_02
+#define Chimu_10 Chi_10
+#define Chimu_11 Chi_11
+#define Chimu_12 Chi_12
+#define Chimu_20 UChi_00
+#define Chimu_21 UChi_01
+#define Chimu_22 UChi_02
+#define Chimu_30 UChi_10
+#define Chimu_31 UChi_11
+#define Chimu_32 UChi_12
+
+
+  StencilEntry *SE;
+  int offset, ptype;
+  int num = 0;
+
+  // Xp
+  SE=st.GetEntry(ptype,Xp,ss);
+  offset = SE->_offset;
+  
+  if (Local && SE->_is_local ) { 
+    LOAD_CHIMU;
+    XM_PROJ;
+    if ( SE->_permute ) {
+      PERMUTE_DIR(3); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
+    }
+  }
+
+  if ( Nonlocal && (!SE->_is_local) ) { 
+    LOAD_CHI;
+  }
+
+  if ( (Local && SE->_is_local) || ( Nonlocal && (!SE->_is_local)) ) {
+    MULT_2SPIN(Xp);
+    XM_RECON_ACCUM;
+    num++;  
+  }
+
+
+  // Yp
+  SE=st.GetEntry(ptype,Yp,ss);
+  offset = SE->_offset;
+  
+  if (Local && SE->_is_local ) { 
+    LOAD_CHIMU;
+    YM_PROJ;
+    if ( SE->_permute ) {
+      PERMUTE_DIR(2); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
+    }
+  }
+
+  if ( Nonlocal && (!SE->_is_local) ) { 
+    LOAD_CHI;
+  }
+  if ( (Local && SE->_is_local) || ( Nonlocal && (!SE->_is_local)) ) {
+    MULT_2SPIN(Yp);
+    YM_RECON_ACCUM;
+    num++;  
+  }
+
+
+  // Zp
+  SE=st.GetEntry(ptype,Zp,ss);
+  offset = SE->_offset;
+  
+  if (Local && SE->_is_local ) { 
+    LOAD_CHIMU;
+    ZM_PROJ;
+    if ( SE->_permute ) {
+      PERMUTE_DIR(1); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
+    }
+  }  
+
+  if ( Nonlocal && (!SE->_is_local) ) { 
+    LOAD_CHI;
+  }
+
+  if ( (Local && SE->_is_local) || ( Nonlocal && (!SE->_is_local)) ) {
+    MULT_2SPIN(Zp);
+    ZM_RECON_ACCUM;
+    num++;  
+  }
+
+  // Tp
+  SE=st.GetEntry(ptype,Tp,ss);
+  offset = SE->_offset;
+  
+  if (Local && SE->_is_local ) { 
+    LOAD_CHIMU;
+    TM_PROJ;
+    if ( SE->_permute ) {
+      PERMUTE_DIR(0); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
+    }
+  }
+  if ( Nonlocal && (!SE->_is_local) ) { 
+    LOAD_CHI;
+  }
+  if ( (Local && SE->_is_local) || ( Nonlocal && (!SE->_is_local)) ) {
+    MULT_2SPIN(Tp);
+    TM_RECON_ACCUM;
+    num++;  
+  }
+  
+  // Xm
+  SE=st.GetEntry(ptype,Xm,ss);
+  offset = SE->_offset;
+  
+  if (Local && SE->_is_local ) { 
+    LOAD_CHIMU;
+    XP_PROJ;
+    if ( SE->_permute ) {
+      PERMUTE_DIR(3); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
+    }
+  }
+  if ( Nonlocal && (!SE->_is_local) ) { 
+    LOAD_CHI;
+  }
+  if ( (Local && SE->_is_local) || ( Nonlocal && (!SE->_is_local)) ) {
+    MULT_2SPIN(Xm);
+    XP_RECON_ACCUM;
+    num++;  
+  }
+  
+  // Ym
+  SE=st.GetEntry(ptype,Ym,ss);
+  offset = SE->_offset;
+  
+  if (Local && SE->_is_local ) { 
+    LOAD_CHIMU;
+    YP_PROJ;
+    if ( SE->_permute ) {
+      PERMUTE_DIR(2); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
+    }
+  }
+  if ( Nonlocal && (!SE->_is_local) ) { 
+    LOAD_CHI;
+  }
+  if ( (Local && SE->_is_local) || ( Nonlocal && (!SE->_is_local)) ) {
+    MULT_2SPIN(Ym);
+    YP_RECON_ACCUM;
+    num++;  
+  }
+
+  // Zm
+  SE=st.GetEntry(ptype,Zm,ss);
+  offset = SE->_offset;
+
+  if (Local && SE->_is_local ) { 
+    LOAD_CHIMU;
+    ZP_PROJ;
+    if ( SE->_permute ) {
+      PERMUTE_DIR(1); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
+    }
+  }
+  if ( Nonlocal && (!SE->_is_local) ) { 
+    LOAD_CHI;
+  }
+  if ( (Local && SE->_is_local) || ( Nonlocal && (!SE->_is_local)) ) {
+    MULT_2SPIN(Zm);
+    ZP_RECON_ACCUM;
+    num++;  
+  }
+
+  // Tm
+  SE=st.GetEntry(ptype,Tm,ss);
+  offset = SE->_offset;
+
+  if (Local && SE->_is_local ) { 
+    LOAD_CHIMU;
+    TP_PROJ;
+    if ( SE->_permute ) {
+      PERMUTE_DIR(0); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
+    }
+  }
+  if ( Nonlocal && (!SE->_is_local) ) { 
+    LOAD_CHI;
+  }
+  if ( (Local && SE->_is_local) || ( Nonlocal && (!SE->_is_local)) ) {
+    MULT_2SPIN(Tm);
+    TP_RECON_ACCUM;
+    num++;  
+  }
+
+  SiteSpinor & ref (out._odata[ss]);
+  if ( Local ) {
+    vstream(ref()(0)(0),result_00*(-0.5));
+    vstream(ref()(0)(1),result_01*(-0.5));
+    vstream(ref()(0)(2),result_02*(-0.5));
+    vstream(ref()(1)(0),result_10*(-0.5));
+    vstream(ref()(1)(1),result_11*(-0.5));
+    vstream(ref()(1)(2),result_12*(-0.5));
+    vstream(ref()(2)(0),result_20*(-0.5));
+    vstream(ref()(2)(1),result_21*(-0.5));
+    vstream(ref()(2)(2),result_22*(-0.5));
+    vstream(ref()(3)(0),result_30*(-0.5));
+    vstream(ref()(3)(1),result_31*(-0.5));
+    vstream(ref()(3)(2),result_32*(-0.5));
+  } else if ( num ) { 
+    vstream(ref()(0)(0),ref()(0)(0)+result_00*(-0.5));
+    vstream(ref()(0)(1),ref()(0)(1)+result_01*(-0.5));
+    vstream(ref()(0)(2),ref()(0)(2)+result_02*(-0.5));
+    vstream(ref()(1)(0),ref()(1)(0)+result_10*(-0.5));
+    vstream(ref()(1)(1),ref()(1)(1)+result_11*(-0.5));
+    vstream(ref()(1)(2),ref()(1)(2)+result_12*(-0.5));
+    vstream(ref()(2)(0),ref()(2)(0)+result_20*(-0.5));
+    vstream(ref()(2)(1),ref()(2)(1)+result_21*(-0.5));
+    vstream(ref()(2)(2),ref()(2)(2)+result_22*(-0.5));
+    vstream(ref()(3)(0),ref()(3)(0)+result_30*(-0.5));
+    vstream(ref()(3)(1),ref()(3)(1)+result_31*(-0.5));
+    vstream(ref()(3)(2),ref()(3)(2)+result_32*(-0.5));
+  }
+}
+
+  /*
 template<class Impl>
 void WilsonKernels<Impl >::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
 						std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
@@ -795,7 +1081,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeFiel
     vstream(ref()(3)(2),result_32*(-0.5));
   }
 }
-
+*/
   ////////////////////////////////////////////////
   // Specialise Gparity to simple implementation
   ////////////////////////////////////////////////

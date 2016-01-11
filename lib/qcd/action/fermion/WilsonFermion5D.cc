@@ -99,6 +99,7 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
 
   // Allocate the required comms buffer
   ImportGauge(_Umu);
+  alltime=0;
   commtime=0;
   jointime=0;
   dslashtime=0;
@@ -234,23 +235,23 @@ void WilsonFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
 template<class Impl>
 void WilsonFermion5D<Impl>::Report(void)
 {
+  std::cout<<GridLogMessage << "******************** WilsonFermion"<<std::endl;
+  std::cout<<GridLogMessage << "Wilson5d      time "<<alltime <<" us"<<std::endl;
+  std::cout<<GridLogMessage << "HaloBegin     time "<<commtime <<" us"<<std::endl;
+  std::cout<<GridLogMessage << "Dslash        time "<<dslashtime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "Dslash1       time "<<dslash1time<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "HaloComplete  time "<<jointime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "******************** Stencil"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil all gather      time "<<Stencil.halogtime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil nosplice gather time "<<Stencil.nosplicetime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil splice   gather time "<<Stencil.splicetime<<" us"<<std::endl;
   std::cout<<GridLogMessage << "********************"<<std::endl;
-  std::cout<<GridLogMessage << "Halo    time "<<commtime <<" us"<<std::endl;
-  std::cout<<GridLogMessage << "Dslash  time "<<dslashtime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "Dslash1 time "<<dslash1time<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "join    time "<<jointime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "Stencil All    time "<<Stencil.halotime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil gather        "<<Stencil.gathertime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil gather simd   "<<Stencil.gathermtime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil merge  simd   "<<Stencil.mergetime<<" us"<<std::endl;
   std::cout<<GridLogMessage << "********************"<<std::endl;
-  std::cout<<GridLogMessage << "Stencil nosplice time "<<Stencil.nosplicetime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "Stencil gather time "<<Stencil.gathertime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "Stencil comm   time "<<Stencil.commtime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "Stencil scattertime "<<Stencil.scattertime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "********************"<<std::endl;
-  std::cout<<GridLogMessage << "Stencil splice time "<<Stencil.splicetime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "Stencil comm   time "<<Stencil.commstime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "Stencil gathremtime "<<Stencil.gathermtime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "Stencil merge  time "<<Stencil.mergetime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "Stencil buf    time "<<Stencil.buftime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil comm     time "<<Stencil.commtime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil join     time "<<Stencil.jointime<<" us"<<std::endl;
   std::cout<<GridLogMessage << "********************"<<std::endl;
 }
 template<class Impl>
@@ -288,7 +289,7 @@ void WilsonFermion5D<Impl>::DhopInternalCommsThenCompute(StencilImpl & st, Lebes
 					 const FermionField &in, FermionField &out,int dag)
 {
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
-
+  alltime-=usecond();
   Compressor compressor(dag);
 
   // Assume balanced KMP_AFFINITY; this is forced in GridThread.h
@@ -413,6 +414,7 @@ PARALLEL_FOR_LOOP
     }
   }
   dslashtime +=usecond();
+  alltime+=usecond();
 }
 
 template<class Impl>
@@ -421,6 +423,7 @@ void WilsonFermion5D<Impl>::DhopInternalCommsOverlapCompute(StencilImpl & st, Le
 						     const FermionField &in, FermionField &out,int dag)
 {
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
+  alltime-=usecond();
 
   Compressor compressor(dag);
 
@@ -541,6 +544,7 @@ PARALLEL_FOR_LOOP
     }
   }
   dslash1time +=usecond();
+  alltime+=usecond();
 
 }
 

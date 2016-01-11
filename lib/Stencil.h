@@ -111,6 +111,7 @@ namespace Grid {
       }
 
       void Communicate(void ) { 
+	commtime-=usecond();
 	for(int i=0;i<Packets.size();i++){
 	  _grid->SendToRecvFrom(Packets[i].send_buf,
 				Packets[i].to_rank,
@@ -118,6 +119,7 @@ namespace Grid {
 				Packets[i].from_rank,
 				Packets[i].bytes);
 	}
+	commtime+=usecond();
       }
 
       ///////////////////////////////////////////
@@ -181,12 +183,10 @@ PARALLEL_FOR_LOOP
       /////////////////////////////////////////
 #define TIMING_HACK
 #ifdef TIMING_HACK
-      double buftime;
+      double jointime;
       double gathertime;
       double commtime;
-      double commstime;
-      double halotime;
-      double scattertime;
+      double halogtime;
       double mergetime;
       double gathermtime;
       double splicetime;
@@ -202,13 +202,11 @@ PARALLEL_FOR_LOOP
     {
 #ifdef TIMING_HACK
       gathertime=0;
+      jointime=0;
       commtime=0;
-      commstime=0;
-      halotime=0;
-      scattertime=0;
+      halogtime=0;
       mergetime=0;
       gathermtime=0;
-      buftime=0;
       splicetime=0;
       nosplicetime=0;
 #endif
@@ -514,7 +512,9 @@ PARALLEL_FOR_LOOP
 
       void HaloExchangeComplete(std::thread &thr) 
       {
+	jointime-=usecond();
 	thr.join();
+	jointime+=usecond();
 	CommsMerge();
       }
 
@@ -522,7 +522,7 @@ PARALLEL_FOR_LOOP
       {
 	// conformable(source._grid,_grid);
 	assert(source._grid==_grid);
-	halotime-=usecond();
+	halogtime-=usecond();
 
 	assert (comm_buf.size() == _unified_buffer_size );
 	u_comm_offset=0;
@@ -582,7 +582,7 @@ PARALLEL_FOR_LOOP
 	}
 
 	assert(u_comm_offset==_unified_buffer_size);
-	halotime+=usecond();
+	halogtime+=usecond();
       }
 
         void Gather(const Lattice<vobj> &rhs,int dimension,int shift,int cbmask,compressor & compress)
@@ -633,7 +633,6 @@ PARALLEL_FOR_LOOP
 	      assert (recv_from_rank != _grid->ThisRank());
 
 	      //      FIXME Implement asynchronous send & also avoid buffer copy
-	      commtime-=usecond();
 	      /*
 	      _grid->SendToRecvFrom((void *)&send_buf[0],
 				   xmit_to_rank,
@@ -647,8 +646,6 @@ PARALLEL_FOR_LOOP
 			recv_from_rank,
 			bytes);
 			
-	      commtime+=usecond();
-
 	      u_comm_offset+=words;
 	    }
 	  }
@@ -657,7 +654,6 @@ PARALLEL_FOR_LOOP
 
 	void  GatherSimd(const Lattice<vobj> &rhs,int dimension,int shift,int cbmask,compressor &compress)
 	{
-	  buftime-=usecond();
 	  const int Nsimd = _grid->Nsimd();
 	  
 	  int fd = _grid->_fdimensions[dimension];
@@ -687,8 +683,6 @@ PARALLEL_FOR_LOOP
 	  std::vector<scalar_object *> rpointers(Nsimd);
 	  std::vector<scalar_object *> spointers(Nsimd);
 
-	  buftime+=usecond();
-	  
 	  ///////////////////////////////////////////
 	  // Work out what to send where
 	  ///////////////////////////////////////////
@@ -745,9 +739,7 @@ PARALLEL_FOR_LOOP
 
 		  _grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank); 
 		  
-		  commstime-=usecond();
 		  AddPacket( vsp,vrp,xmit_to_rank,recv_from_rank,bytes);
-		  commstime+=usecond();
 		  
 		  rpointers[i] = rp;
 
