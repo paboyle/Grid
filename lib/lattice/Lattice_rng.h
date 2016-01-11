@@ -1,3 +1,31 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/lattice/Lattice_rng.h
+
+    Copyright (C) 2015
+
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #ifndef GRID_LATTICE_RNG_H
 #define GRID_LATTICE_RNG_H
 
@@ -22,13 +50,16 @@ namespace Grid {
       assert(fine->_processors[d]==1);
     }
 
-    // local and global volumes subdivide cleanly after SIMDization
     int multiplicity=1;
+    for(int d=0;d<lowerdims;d++){
+      multiplicity=multiplicity*fine->_rdimensions[d];
+    }
+    // local and global volumes subdivide cleanly after SIMDization
     for(int d=0;d<rngdims;d++){
       int fd= d+lowerdims;
       assert(coarse->_processors[d]  == fine->_processors[fd]);
       assert(coarse->_simd_layout[d] == fine->_simd_layout[fd]);
-      assert((fine->_rdimensions[fd] / coarse->_rdimensions[d])* coarse->_rdimensions[d]==fine->_rdimensions[fd]); 
+      assert(((fine->_rdimensions[fd] / coarse->_rdimensions[d])* coarse->_rdimensions[d])==fine->_rdimensions[fd]); 
 
       multiplicity = multiplicity *fine->_rdimensions[fd] / coarse->_rdimensions[d]; 
     }
@@ -76,16 +107,40 @@ namespace Grid {
 
   public:
 
-   GridRNGbase() : _uniform{0,1}, _gaussian(0.0,1.0) {};
-
     int _seeded;
     // One generator per site.
     // Uniform and Gaussian distributions from these generators.
-    std::vector<std::ranlux48>             _generators;
-    std::uniform_real_distribution<double> _uniform;
-    std::normal_distribution<double>       _gaussian;
+#ifdef RNG_RANLUX
+    typedef uint64_t      RngStateType;
+    typedef std::ranlux48 RngEngine;
+    static const int RngStateCount = 15;
+#else
+    typedef std::mt19937 RngEngine;
+    typedef uint32_t     RngStateType;
+    static const int     RngStateCount = std::mt19937::state_size;
+#endif
+    std::vector<RngEngine>             _generators;
+    std::vector<std::uniform_real_distribution<RealD> > _uniform;
+    std::vector<std::normal_distribution<RealD> >       _gaussian;
 
-
+    void GetState(std::vector<RngStateType> & saved,int gen) {
+      saved.resize(RngStateCount);
+      std::stringstream ss;
+      ss<<_generators[gen];
+      ss.seekg(0,ss.beg);
+      for(int i=0;i<RngStateCount;i++){
+	ss>>saved[i];
+      }
+    }
+    void SetState(std::vector<RngStateType> & saved,int gen){
+      assert(saved.size()==RngStateCount);
+      std::stringstream ss;
+      for(int i=0;i<RngStateCount;i++){
+	ss<< saved[i]<<" ";
+      }
+      ss.seekg(0,ss.beg);
+      ss>>_generators[gen];
+    }
   };
 
   class GridSerialRNG : public GridRNGbase {
@@ -98,18 +153,20 @@ namespace Grid {
     {
       typename source::result_type init = src();
       CartesianCommunicator::BroadcastWorld(0,(void *)&init,sizeof(init));
-      _generators[0] = std::ranlux48(init);
+      _generators[0] = RngEngine(init);
       _seeded=1;
     }    
 
     GridSerialRNG() : GridRNGbase() {
       _generators.resize(1);
+      _uniform.resize(1,std::uniform_real_distribution<RealD>{0,1});
+      _gaussian.resize(1,std::normal_distribution<RealD>(0.0,1.0) );
       _seeded=0;
     }
 
 
 
-    template <class sobj,class distribution> inline void fill(sobj &l,distribution &dist){
+    template <class sobj,class distribution> inline void fill(sobj &l,std::vector<distribution> &dist){
 
       typedef typename sobj::scalar_type scalar_type;
  
@@ -117,56 +174,65 @@ namespace Grid {
 
       scalar_type *buf = (scalar_type *) & l;
 
+      dist[0].reset();
       for(int idx=0;idx<words;idx++){
-	fillScalar(buf[idx],dist,_generators[0]);
+	fillScalar(buf[idx],dist[0],_generators[0]);
       }
       
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
 
     };
 
-    template <class distribution>  inline void fill(ComplexF &l,distribution &dist){
-      fillScalar(l,dist,_generators[0]);
+    template <class distribution>  inline void fill(ComplexF &l,std::vector<distribution> &dist){
+      dist[0].reset();
+      fillScalar(l,dist[0],_generators[0]);
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
-    template <class distribution>  inline void fill(ComplexD &l,distribution &dist){
-      fillScalar(l,dist,_generators[0]);
+    template <class distribution>  inline void fill(ComplexD &l,std::vector<distribution> &dist){
+      dist[0].reset();
+      fillScalar(l,dist[0],_generators[0]);
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
-    template <class distribution>  inline void fill(RealF &l,distribution &dist){
-      fillScalar(l,dist,_generators[0]);
+    template <class distribution>  inline void fill(RealF &l,std::vector<distribution> &dist){
+      dist[0].reset();
+      fillScalar(l,dist[0],_generators[0]);
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
-    template <class distribution>  inline void fill(RealD &l,distribution &dist){
-      fillScalar(l,dist,_generators[0]);
+    template <class distribution>  inline void fill(RealD &l,std::vector<distribution> &dist){
+      dist[0].reset();
+      fillScalar(l,dist[0],_generators[0]);
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
     // vector fill
-    template <class distribution>  inline void fill(vComplexF &l,distribution &dist){
+    template <class distribution>  inline void fill(vComplexF &l,std::vector<distribution> &dist){
       RealF *pointer=(RealF *)&l;
+      dist[0].reset();
       for(int i=0;i<2*vComplexF::Nsimd();i++){
-	fillScalar(pointer[i],dist,_generators[0]);
+	fillScalar(pointer[i],dist[0],_generators[0]);
       }
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
-    template <class distribution>  inline void fill(vComplexD &l,distribution &dist){
+    template <class distribution>  inline void fill(vComplexD &l,std::vector<distribution> &dist){
       RealD *pointer=(RealD *)&l;
+      dist[0].reset();
       for(int i=0;i<2*vComplexD::Nsimd();i++){
-	fillScalar(pointer[i],dist,_generators[0]);
+	fillScalar(pointer[i],dist[0],_generators[0]);
       }
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
-    template <class distribution>  inline void fill(vRealF &l,distribution &dist){
+    template <class distribution>  inline void fill(vRealF &l,std::vector<distribution> &dist){
       RealF *pointer=(RealF *)&l;
+      dist[0].reset();
       for(int i=0;i<vRealF::Nsimd();i++){
-	fillScalar(pointer[i],dist,_generators[0]);
+	fillScalar(pointer[i],dist[0],_generators[0]);
       }
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
-    template <class distribution>  inline void fill(vRealD &l,distribution &dist){
+    template <class distribution>  inline void fill(vRealD &l,std::vector<distribution> &dist){
       RealD *pointer=(RealD *)&l;
+      dist[0].reset();
       for(int i=0;i<vRealD::Nsimd();i++){
-	fillScalar(pointer[i],dist,_generators[0]);
+	fillScalar(pointer[i],dist[0],_generators[0]);
       }
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
@@ -185,12 +251,6 @@ namespace Grid {
 
   class GridParallelRNG : public GridRNGbase {
   public:
-    // One generator per site.
-    std::vector<std::ranlux48>             _generators;
-    
-    // Uniform and Gaussian distributions from these generators.
-    std::uniform_real_distribution<double> _uniform;
-    std::normal_distribution<double>       _gaussian;
 
     GridBase *_grid;
     int _vol;
@@ -202,7 +262,10 @@ namespace Grid {
     GridParallelRNG(GridBase *grid) : GridRNGbase() {
       _grid=grid;
       _vol =_grid->iSites()*_grid->oSites();
+
       _generators.resize(_vol);
+      _uniform.resize(_vol,std::uniform_real_distribution<RealD>{0,1});
+      _gaussian.resize(_vol,std::normal_distribution<RealD>(0.0,1.0) );
       _seeded=0;
     }
 
@@ -220,7 +283,7 @@ namespace Grid {
       int gsites = _grid->_gsites;
 
       typename source::result_type init = src();
-      std::ranlux48 pseeder(init);
+      RngEngine pseeder(init);
       std::uniform_int_distribution<uint64_t> ui;
 
       for(int gidx=0;gidx<gsites;gidx++){
@@ -241,7 +304,7 @@ namespace Grid {
 	if( rank == _grid->ThisRank() ){
 	  fixedSeed ssrc(site_seeds);
 	  typename source::result_type sinit = ssrc();
-	  _generators[l_idx] = std::ranlux48(sinit);
+	  _generators[l_idx] = RngEngine(sinit);
 	}
       }
       _seeded=1;
@@ -251,7 +314,7 @@ namespace Grid {
     //void SaveState(const std::string<char> &file);
     //void LoadState(const std::string<char> &file);
 
-    template <class vobj,class distribution> inline void fill(Lattice<vobj> &l,distribution &dist){
+    template <class vobj,class distribution> inline void fill(Lattice<vobj> &l,std::vector<distribution> &dist){
 
       typedef typename vobj::scalar_object scalar_object;
       typedef typename vobj::scalar_type scalar_type;
@@ -275,8 +338,9 @@ PARALLEL_FOR_LOOP
 	  for(int si=0;si<Nsimd;si++){
 	    int gdx = generator_idx(ss,si); // index of generator state
 	    scalar_type *pointer = (scalar_type *)&buf[si];
+	    dist[gdx].reset();
 	    for(int idx=0;idx<words;idx++){
-	      fillScalar(pointer[idx],dist,_generators[gdx]);
+	      fillScalar(pointer[idx],dist[gdx],_generators[gdx]);
 	    }
 	  }
 

@@ -1,3 +1,31 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/qcd/action/fermion/WilsonKernelsHand.cc
+
+    Copyright (C) 2015
+
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #include <Grid.h>
 
 #define REGISTER
@@ -283,8 +311,8 @@ namespace QCD {
 
 template<class Impl>
 void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
-					       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-					       int ss,int sU,const FermionField &in, FermionField &out)
+						   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+						   int ss,int sU,const FermionField &in, FermionField &out, bool Local, bool Nonlocal)
 {
   //  std::cout << "Hand op Dhop "<<std::endl;
   typedef typename Simd::scalar_type S;
@@ -527,8 +555,8 @@ void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeF
 
 template<class Impl>
 void WilsonKernels<Impl >::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
-						   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-						   int ss,int sU,const FermionField &in, FermionField &out)
+						std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+						int ss,int sU,const FermionField &in, FermionField &out, bool Local, bool Nonlocal)
 {
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -773,32 +801,32 @@ void WilsonKernels<Impl >::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeFiel
   ////////////////////////////////////////////////
 template<>
 void WilsonKernels<GparityWilsonImplF>::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
-					       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-					       int sF,int sU,const FermionField &in, FermionField &out)
+							     std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							     int sF,int sU,const FermionField &in, FermionField &out, bool Local, bool Nonlocal)
 {
   DiracOptDhopSite(st,U,buf,sF,sU,in,out); // will template override for Wilson Nc=3
 }
 
 template<>
 void WilsonKernels<GparityWilsonImplF>::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
-						   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-						   int sF,int sU,const FermionField &in, FermionField &out)
+								std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+								int sF,int sU,const FermionField &in, FermionField &out, bool Local, bool Nonlocal)
 {
   DiracOptDhopSiteDag(st,U,buf,sF,sU,in,out); // will template override for Wilson Nc=3
 }
 
 template<>
 void WilsonKernels<GparityWilsonImplD>::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
-					       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-					       int sF,int sU,const FermionField &in, FermionField &out)
+							     std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							     int sF,int sU,const FermionField &in, FermionField &out, bool Local, bool Nonlocal)
 {
   DiracOptDhopSite(st,U,buf,sF,sU,in,out); // will template override for Wilson Nc=3
 }
 
 template<>
 void WilsonKernels<GparityWilsonImplD>::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
-						   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-						   int sF,int sU,const FermionField &in, FermionField &out)
+								std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+								int sF,int sU,const FermionField &in, FermionField &out, bool Local, bool Nonlocal)
 {
   DiracOptDhopSiteDag(st,U,buf,sF,sU,in,out); // will template override for Wilson Nc=3
 }
@@ -806,30 +834,30 @@ void WilsonKernels<GparityWilsonImplD>::DiracOptHandDhopSiteDag(StencilImpl &st,
 
 
 template void WilsonKernels<WilsonImplF>::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
-							  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-							  int ss,int sU,const FermionField &in, FermionField &out);
+							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							       int ss,int sU,const FermionField &in, FermionField &out,bool l,bool n);
 template void WilsonKernels<WilsonImplD>::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
-							  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-							  int ss,int sU,const FermionField &in, FermionField &out);
+							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							       int ss,int sU,const FermionField &in, FermionField &out, bool l, bool n);
 template void WilsonKernels<WilsonImplF>::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
-							  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-							  int ss,int sU,const FermionField &in, FermionField &out);
+								  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+								  int ss,int sU,const FermionField &in, FermionField &out, bool l, bool n);
 template void WilsonKernels<WilsonImplD>::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
-							  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-							  int ss,int sU,const FermionField &in, FermionField &out);
+								  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+								  int ss,int sU,const FermionField &in, FermionField &out, bool l, bool n);
 
 
 template void WilsonKernels<GparityWilsonImplF>::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
-							  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-							  int ss,int sU,const FermionField &in, FermionField &out);
+								      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+								      int ss,int sU,const FermionField &in, FermionField &out, bool l, bool nl);
 template void WilsonKernels<GparityWilsonImplD>::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
-							  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-							  int ss,int sU,const FermionField &in, FermionField &out);
+								      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+								      int ss,int sU,const FermionField &in, FermionField &out, bool l, bool nl);
 template void WilsonKernels<GparityWilsonImplF>::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
-							  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-							  int ss,int sU,const FermionField &in, FermionField &out);
+									 std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+									 int ss,int sU,const FermionField &in, FermionField &out, bool l, bool nl);
 template void WilsonKernels<GparityWilsonImplD>::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
-							  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-							  int ss,int sU,const FermionField &in, FermionField &out);
+									 std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+									 int ss,int sU,const FermionField &in, FermionField &out, bool l, bool nl);
 
 }}

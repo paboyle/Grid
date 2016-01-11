@@ -1,3 +1,33 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/Init.cc
+
+    Copyright (C) 2015
+
+Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Peter Boyle <peterboyle@MacBook-Pro.local>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 /****************************************************************************/
 /* pab: Signal magic. Processor state dump is x86-64 specific               */
 /****************************************************************************/
@@ -171,7 +201,7 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"--mpi n.n.n.n   : default MPI decomposition"<<std::endl;    
     std::cout<<GridLogMessage<<"--omp n         : default number of OMP threads"<<std::endl;    
     std::cout<<GridLogMessage<<"--grid n.n.n.n  : default Grid size"<<std::endl;    
-    std::cout<<GridLogMessage<<"--log list      : comma separted list of streams from Error,Warning,Message,Performance,Iterative,Debug"<<std::endl;    
+    std::cout<<GridLogMessage<<"--log list      : comma separted list of streams from Error,Warning,Message,Performance,Iterative,Integrator,Debug"<<std::endl;    
   }
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--log") ){
@@ -212,7 +242,37 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"\tvComplexD      : "<<sizeof(vComplexD)*8 <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vComplexD::Nsimd()))<<std::endl;
   }
 
-
+  std::cout <<std::endl;
+  std::cout <<Logger::RED  << "__|__|__|__|__"<<             "|__|__|_"<<Logger::PURPLE<<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
+  std::cout <<Logger::RED  << "__|__|__|__|__"<<             "|__|__|_"<<Logger::PURPLE<<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
+  std::cout <<Logger::RED  << "__|__|  |  |  "<<             "|  |  | "<<Logger::PURPLE<<" |  |  |"<<                "  |  |  | _|__"<<std::endl; 
+  std::cout <<Logger::RED  << "__|__         "<<             "        "<<Logger::PURPLE<<"        "<<                "          _|__"<<std::endl; 
+  std::cout <<Logger::RED  << "__|_  "<<Logger::GREEN<<" GGGG   "<<Logger::RED<<" RRRR   "<<Logger::BLUE  <<" III    "<<Logger::PURPLE<<"DDDD  "<<Logger::PURPLE<<"    _|__"<<std::endl;
+  std::cout <<Logger::RED  << "__|_  "<<Logger::GREEN<<"G       "<<Logger::RED<<" R   R  "<<Logger::BLUE  <<"  I     "<<Logger::PURPLE<<"D   D "<<Logger::PURPLE<<"    _|__"<<std::endl;
+  std::cout <<Logger::RED  << "__|_  "<<Logger::GREEN<<"G       "<<Logger::RED<<" R   R  "<<Logger::BLUE  <<"  I     "<<Logger::PURPLE<<"D    D"<<Logger::PURPLE<<"    _|__"<<std::endl;
+  std::cout <<Logger::BLUE << "__|_  "<<Logger::GREEN<<"G  GG   "<<Logger::RED<<" RRRR   "<<Logger::BLUE  <<"  I     "<<Logger::PURPLE<<"D    D"<<Logger::GREEN <<"    _|__"<<std::endl;
+  std::cout <<Logger::BLUE << "__|_  "<<Logger::GREEN<<"G   G   "<<Logger::RED<<" R  R   "<<Logger::BLUE  <<"  I     "<<Logger::PURPLE<<"D   D "<<Logger::GREEN <<"    _|__"<<std::endl;
+  std::cout <<Logger::BLUE << "__|_  "<<Logger::GREEN<<" GGGG   "<<Logger::RED<<" R   R  "<<Logger::BLUE  <<" III    "<<Logger::PURPLE<<"DDDD  "<<Logger::GREEN <<"    _|__"<<std::endl;
+  std::cout <<Logger::BLUE << "__|__         "<<             "        "<<Logger::GREEN <<"        "<<                "          _|__"<<std::endl; 
+  std::cout <<Logger::BLUE << "__|__|__|__|__"<<             "|__|__|_"<<Logger::GREEN <<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
+  std::cout <<Logger::BLUE << "__|__|__|__|__"<<             "|__|__|_"<<Logger::GREEN <<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
+  std::cout <<Logger::BLUE << "  |  |  |  |  "<<             "|  |  | "<<Logger::GREEN <<" |  |  |"<<                "  |  |  |  |  "<<std::endl; 
+  std::cout << std::endl;
+  std::cout << std::endl;
+  std::cout <<Logger::YELLOW<< std::endl;
+  std::cout << "Copyright (C) 2015 Peter Boyle, Azusa Yamaguchi, Guido Cossu, Antonin Portelli and other authors"<<std::endl;
+  std::cout << "Colours by Tadahito Boyle "<<std::endl;
+  std::cout << std::endl;
+  std::cout << "This program is free software; you can redistribute it and/or modify"<<std::endl;
+  std::cout << "it under the terms of the GNU General Public License as published by"<<std::endl;
+  std::cout << "the Free Software Foundation; either version 2 of the License, or"<<std::endl;
+  std::cout << "(at your option) any later version."<<std::endl;
+  std::cout << std::endl;
+  std::cout << "This program is distributed in the hope that it will be useful,"<<std::endl;
+  std::cout << "but WITHOUT ANY WARRANTY; without even the implied warranty of"<<std::endl;
+  std::cout << "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"<<std::endl;
+  std::cout << "GNU General Public License for more details."<<std::endl;
+  std::cout << Logger::BLACK <<std::endl;
 }
 
   

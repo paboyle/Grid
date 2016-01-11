@@ -1,5 +1,9 @@
 
-bin_PROGRAMS = Test_qdpxx_munprec
+bin_PROGRAMS = Test_qdpxx_loops_staples Test_qdpxx_munprec
+
+
+Test_qdpxx_loops_staples_SOURCES=Test_qdpxx_loops_staples.cc
+Test_qdpxx_loops_staples_LDADD=-lGrid
 
 
 Test_qdpxx_munprec_SOURCES=Test_qdpxx_munprec.cc

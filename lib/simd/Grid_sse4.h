@@ -1,3 +1,32 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/simd/Grid_sse4.h
+
+    Copyright (C) 2015
+
+Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: neo <cossu@post.kek.jp>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 //----------------------------------------------------------------------
 /*! @file Grid_sse4.h
   @brief Optimization libraries for SSE4 instructions set
@@ -9,6 +38,7 @@
 
 #include <x86intrin.h>
 
+namespace Grid {
 namespace Optimization {
 
   template<class vtype>
@@ -173,11 +203,11 @@ namespace Optimization {
   struct Mult{
 
     inline void mac(__m128 &a, __m128 b, __m128 c){
-      a= _mm128_add_ps(_mm128_mul_ps(b,c),a);
+      a= _mm_add_ps(_mm_mul_ps(b,c),a);
     }
 
     inline void mac(__m128d &a, __m128d b, __m128d c){
-      a= _mm128_add_pd(_mm128_mul_pd(b,c),a);
+      a= _mm_add_pd(_mm_mul_pd(b,c),a);
     }
 
     // Real float
@@ -318,7 +348,6 @@ namespace Optimization {
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types 
-namespace Grid {
 
   typedef __m128 SIMD_Ftype;  // Single precision type
   typedef __m128d SIMD_Dtype; // Double precision type

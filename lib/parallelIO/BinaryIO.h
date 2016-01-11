@@ -1,3 +1,31 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/parallelIO/BinaryIO.h
+
+    Copyright (C) 2015
+
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #ifndef GRID_BINARY_IO_H
 #define GRID_BINARY_IO_H
 
@@ -107,7 +135,7 @@ class BinaryIO {
     }
   }
 
-  template<class vobj,class fobj,class munger> static inline void Uint32Checksum(Lattice<vobj> lat,munger munge,uint32_t &csum)
+  template<class vobj,class fobj,class munger> static inline void Uint32Checksum(Lattice<vobj> &lat,munger munge,uint32_t &csum)
   {
     typedef typename vobj::scalar_object sobj;
     GridBase *grid = lat._grid ;
@@ -232,6 +260,110 @@ class BinaryIO {
     return csum;
   }
 
+  static inline uint32_t writeRNGSerial(GridSerialRNG &serial,GridParallelRNG &parallel,std::string file,int offset)
+  {
+    typedef typename GridSerialRNG::RngStateType RngStateType;
+    const int RngStateCount = GridSerialRNG::RngStateCount;
+
+    GridBase *grid = parallel._grid;
+    int gsites = grid->_gsites;
+
+    //////////////////////////////////////////////////
+    // Serialise through node zero
+    //////////////////////////////////////////////////
+    std::cout<< GridLogMessage<< "Serial RNG write I/O "<< file<<std::endl;
+
+    std::ofstream fout;
+    if ( grid->IsBoss() ) {
+      fout.open(file,std::ios::binary|std::ios::out|std::ios::in);
+      fout.seekp(offset);
+    }
+    
+    uint32_t csum=0;
+    std::vector<RngStateType> saved(RngStateCount);
+    int bytes = sizeof(RngStateType)*saved.size();
+    std::vector<int> gcoor;
+
+    for(int gidx=0;gidx<gsites;gidx++){
+
+      int rank,o_idx,i_idx;
+      grid->GlobalIndexToGlobalCoor(gidx,gcoor);
+      grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
+      int l_idx=parallel.generator_idx(o_idx,i_idx);
+
+      if( rank == grid->ThisRank() ){
+	//	std::cout << "rank" << rank<<" Getting state for index "<<l_idx<<std::endl;
+	parallel.GetState(saved,l_idx);
+      }
+
+      grid->Broadcast(rank,(void *)&saved[0],bytes);
+
+      if ( grid->IsBoss() ) {
+	Uint32Checksum((uint32_t *)&saved[0],bytes,csum);
+	fout.write((char *)&saved[0],bytes);
+      }
+
+    }
+
+    if ( grid->IsBoss() ) {
+      serial.GetState(saved,0);
+      Uint32Checksum((uint32_t *)&saved[0],bytes,csum);
+      fout.write((char *)&saved[0],bytes);
+    }
+
+    return csum;
+  }
+  static inline uint32_t readRNGSerial(GridSerialRNG &serial,GridParallelRNG &parallel,std::string file,int offset)
+  {
+    typedef typename GridSerialRNG::RngStateType RngStateType;
+    const int RngStateCount = GridSerialRNG::RngStateCount;
+
+    GridBase *grid = parallel._grid;
+    int gsites = grid->_gsites;
+
+    //////////////////////////////////////////////////
+    // Serialise through node zero
+    //////////////////////////////////////////////////
+    std::cout<< GridLogMessage<< "Serial RNG read I/O "<< file<<std::endl;
+
+    std::ifstream fin(file,std::ios::binary|std::ios::in);
+    fin.seekg(offset);
+    
+    uint32_t csum=0;
+    std::vector<RngStateType> saved(RngStateCount);
+    int bytes = sizeof(RngStateType)*saved.size();
+    std::vector<int> gcoor;
+
+    for(int gidx=0;gidx<gsites;gidx++){
+
+      int rank,o_idx,i_idx;
+      grid->GlobalIndexToGlobalCoor(gidx,gcoor);
+      grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
+      int l_idx=parallel.generator_idx(o_idx,i_idx);
+
+      if ( grid->IsBoss() ) {
+	fin.read((char *)&saved[0],bytes);
+	Uint32Checksum((uint32_t *)&saved[0],bytes,csum);
+      }
+
+      grid->Broadcast(0,(void *)&saved[0],bytes);
+
+      if( rank == grid->ThisRank() ){
+	parallel.SetState(saved,l_idx);
+      }
+
+    }
+
+    if ( grid->IsBoss() ) {
+      fin.read((char *)&saved[0],bytes);
+      serial.SetState(saved,0);
+      Uint32Checksum((uint32_t *)&saved[0],bytes,csum);
+    }
+
+    return csum;
+  }
+
+
   template<class vobj,class fobj,class munger>
   static inline uint32_t readObjectParallel(Lattice<vobj> &Umu,std::string file,munger munge,int offset,const std::string &format)
   {
@@ -284,6 +416,7 @@ class BinaryIO {
     {
       uint32_t tmp = IOnode;
       grid->GlobalSum(tmp);
+      std::cout<< std::dec ;
       std::cout<< GridLogMessage<< "Parallel read I/O to "<< file << " with " <<tmp<< " IOnodes for subslice ";
       for(int d=0;d<grid->_ndimension;d++){
 	std::cout<< range[d];

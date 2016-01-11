@@ -53,7 +53,6 @@ echo
 echo Checking libraries 
 echo :::::::::::::::::::::::::::::::::::::::::::
 
-
 AC_CHECK_FUNCS([gettimeofday])
 
 #AC_CHECK_LIB([gmp],[__gmpf_init],,
@@ -65,6 +64,10 @@ AC_CHECK_FUNCS([gettimeofday])
 #        [AC_MSG_ERROR(GNU Multiple Precision MPFR library was not found in your system.
 #Please install or provide the correct path to your installation
 #Info at: http://www.mpfr.org/)])
+
+#
+# SIMD instructions selection
+#
 
 AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE4|AVX|AVXFMA4|AVX2|AVX512|IMCI],\
 	[Select instructions to be SSE4.0, AVX 1.0, AVX 2.0+FMA, AVX 512, IMCI])],\
@@ -160,6 +163,10 @@ case ${ac_PRECISION} in
      ;;
 esac
 
+#
+# Comms selection
+#
+
 AC_ARG_ENABLE([comms],[AC_HELP_STRING([--enable-comms=none|mpi],[Select communications])],[ac_COMMS=${enable_comms}],[ac_COMMS=none])
 
 case ${ac_COMMS} in
@@ -179,6 +186,26 @@ esac
 AM_CONDITIONAL(BUILD_COMMS_MPI,[ test "X${ac_COMMS}X" == "XmpiX" ])
 AM_CONDITIONAL(BUILD_COMMS_NONE,[ test "X${ac_COMMS}X" == "XnoneX" ])
 
+#
+# RNG selection
+#
+AC_ARG_ENABLE([rng],[AC_HELP_STRING([--enable-rng=ranlux48|mt19937],\
+	[Select Random Number Generator to be used])],\
+	[ac_RNG=${enable_rng}],[ac_RNG=ranlux48])
+case ${ac_RNG} in
+     ranlux48)
+     AC_DEFINE([RNG_RANLUX],[1],[RNG_RANLUX] )
+     ;;
+     mt19937)
+     AC_DEFINE([RNG_MT19937],[1],[RNG_MT19937] )
+     ;;
+     *)
+     AC_MSG_ERROR([${ac_RNG} unsupported --enable-rng option]); 
+     ;;
+esac
+#
+# Chroma regression tests
+#
 AC_ARG_ENABLE([chroma],[AC_HELP_STRING([--enable-chroma],[Expect chroma compiled under c++11 ])],ac_CHROMA=yes,ac_CHROMA=no)
 
 case ${ac_CHROMA} in
@@ -234,8 +261,10 @@ The following features are enabled:
 - graphs and diagrams           : `if test "x$enable_dot" = xyes; then echo yes; else echo no; fi`
 - Supported SIMD flags          : $SIMD_FLAGS
 ----------------------------------------------------------
-- enabled simd support          : ${ac_SIMD}   (supported: $supported )
+- enabled simd support          : ${ac_SIMD}   (config macro says supported: $supported )
 - communications type           : ${ac_COMMS}
+- default precision             : ${ac_PRECISION}
+- RNG choice                    : ${ac_RNG} 
 
 
 "

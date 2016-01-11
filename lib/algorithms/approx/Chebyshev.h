@@ -1,3 +1,31 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/algorithms/approx/Chebyshev.h
+
+    Copyright (C) 2015
+
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #ifndef GRID_CHEBYSHEV_H
 #define GRID_CHEBYSHEV_H
 
@@ -30,13 +58,14 @@ namespace Grid {
       Field Mtmp(in._grid);
       AtoN = in;
       out = AtoN*Coeffs[0];
-      //      std::cout <<"Poly in " <<norm2(in)<<std::endl;
-      //      std::cout <<"0 " <<norm2(out)<<std::endl;
+//            std::cout <<"Poly in " <<norm2(in)<<" size "<< Coeffs.size()<<std::endl;
+//            std::cout <<"Coeffs[0]= "<<Coeffs[0]<< " 0 " <<norm2(out)<<std::endl;
       for(int n=1;n<Coeffs.size();n++){
 	Mtmp = AtoN;
 	Linop.HermOp(Mtmp,AtoN);
 	out=out+AtoN*Coeffs[n];
-	//	std::cout << n<<" " <<norm2(out)<<std::endl;
+//            std::cout <<"Coeffs "<<n<<"= "<< Coeffs[n]<< " 0 " <<std::endl;
+//		std::cout << n<<" " <<norm2(out)<<std::endl;
       }
     };
   };

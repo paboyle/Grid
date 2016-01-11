@@ -1,6 +1,36 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/algorithms/iterative/ImplicitlyRestartedLanczos.h
+
+    Copyright (C) 2015
+
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #ifndef GRID_IRL_H
 #define GRID_IRL_H
 
+#include <string.h> //memset
+#include <lapacke.h> //memset
 #include <algorithms/iterative/DenseMatrix.h>
 #include <algorithms/iterative/EigenSort.h>
 
@@ -21,6 +51,7 @@ public:
     int Niter;
     int converged;
 
+    int Nstop;   // Number of evecs checked for convergence
     int Nk;      // Number of converged sought
     int Np;      // Np -- Number of spare vecs in kryloc space
     int Nm;      // Nm -- total number of vectors
@@ -28,6 +59,8 @@ public:
     RealD eresid;
 
     SortEigen<Field> _sort;
+
+    GridCartesian &_fgrid;
 
     LinearOperatorBase<Field> &_Linop;
 
@@ -39,14 +72,17 @@ public:
     void init(void){};
     void Abort(int ff, DenseVector<RealD> &evals,  DenseVector<DenseVector<RealD> > &evecs);
 
-    ImplicitlyRestartedLanczos(LinearOperatorBase<Field> &Linop, // op
+    ImplicitlyRestartedLanczos(GridCartesian &fgrid, LinearOperatorBase<Field> &Linop, // op
 			       OperatorFunction<Field> & poly,   // polynmial
+			       int _Nstop, // sought vecs
 			       int _Nk, // sought vecs
 			       int _Nm, // spare vecs
 			       RealD _eresid, // resid in lmdue deficit 
 			       int _Niter) : // Max iterations
+      _fgrid(fgrid),
       _Linop(Linop),
       _poly(poly),
+      Nstop(_Nstop),
       Nk(_Nk),
       Nm(_Nm),
       eresid(_eresid),
@@ -114,10 +150,11 @@ public:
       RealD beta = normalise(w); // 6. βk+1 := ∥wk∥2. If βk+1 = 0 then Stop
                                  // 7. vk+1 := wk/βk+1
 
+//	std::cout << "alpha = " << zalph << " beta "<<beta<<std::endl;
       const RealD tiny = 1.0e-20;
       if ( beta < tiny ) { 
 	std::cout << " beta is tiny "<<beta<<std::endl;
-      }
+     }
       lmd[k] = alph;
       lme[k]  = beta;
 
@@ -191,12 +228,113 @@ public:
       }
     }
 
+//int lapackcj_Wilkinson(Matrix<T> &AH, vector<T> &tevals, vector<vector<T> > &tevecs, double small) {
+    void diagonalize_lapack(DenseVector<RealD>& lmd,
+		     DenseVector<RealD>& lme, 
+		     int Nm2,
+		     int Nm,
+		     DenseVector<RealD>& Qt){
+  const int size = Nm;
+//  tevals.resize(size);
+//  tevecs.resize(size);
+  int NN = Nm;
+  double evals_tmp[NN];
+  double evec_tmp[NN][NN];
+  memset(evec_tmp[0],0,sizeof(double)*NN*NN);
+  double AA[NN][NN];
+  double DD[NN];
+  double EE[NN];
+  memset(AA, 0, sizeof(double)*NN*NN);
+  //    memset(ZZ, 0, sizeof(double)*NN*NN);
+  for (int i = 0; i< NN; i++)
+    for (int j = i - 1; j <= i + 1; j++)
+      if ( j < NN && j >= 0 ) {
+//        AA[i][j] = AH(i,j);
+        if (i==j) DD[i] = lmd[i];
+        if (i==j) evals_tmp[i] = lmd[i];
+        if (j==(i-1)) EE[j] = lme[j];
+        //        if (i<20 && j<20)
+//        std:: cout << "AA["<<i<<"]["<<j<<"]="<<AA[i][j]<<endl;
+      }
+  int evals_found;
+  int lwork = ( (18*NN) > (1+4*NN+NN*NN)? (18*NN):(1+4*NN+NN*NN)) ;
+  int liwork =  3+NN*10 ;
+  int iwork[liwork];
+  double work[lwork];
+  int isuppz[2*NN];
+  char jobz = 'V'; // calculate evals & evecs
+  char range = 'I'; // calculate all evals
+  //    char range = 'A'; // calculate all evals
+  char uplo = 'U'; // refer to upper half of original matrix
+  char compz = 'I'; // Compute eigenvectors of tridiagonal matrix
+  int ifail[NN];
+  int info;
+//  int total = QMP_get_number_of_nodes();
+//  int node = QMP_get_node_number();
+  int total = _fgrid._Nprocessors;
+  int node = _fgrid._processor;
+  int interval = (NN/total)+1;
+  double vl = 0.0, vu = 0.0;
+  int il = interval*node+1 , iu = interval*(node+1);
+  if (iu > NN)  iu=NN;
+  double tol = 0.0;
+    if (1) {
+      memset(evals_tmp,0,sizeof(double)*NN);
+      if ( il <= NN){
+        printf("total=%d node=%d il=%d iu=%d\n",total,node,il,iu);
+        LAPACK_dstegr(&jobz, &range, &NN,
+            (double*)DD, (double*)EE,
+            &vl, &vu, &il, &iu, // these four are ignored if second parameteris 'A'
+            &tol, // tolerance
+            &evals_found, evals_tmp, (double*)evec_tmp, &NN,
+            isuppz,
+            work, &lwork, iwork, &liwork,
+            &info);
+        for (int i = iu-1; i>= il-1; i--){
+          printf("node=%d evals_found=%d evals_tmp[%d] = %g\n",node,evals_found, i - (il-1),evals_tmp[i - (il-1)]);
+          evals_tmp[i] = evals_tmp[i - (il-1)];
+          if (il>1) evals_tmp[i-(il-1)]=0.;
+          for (int j = 0; j< NN; j++){
+            evec_tmp[i][j] = evec_tmp[i - (il-1)][j];
+            if (il>1) evec_tmp[i-(il-1)][j]=0.;
+          }
+        }
+      }
+      {
+//        TIMER("QMP_sum_double_array");
+//        QMP_sum_double_array(evals_tmp,NN);
+//        QMP_sum_double_array((double *)evec_tmp,NN*NN);
+         _fgrid.GlobalSumVector(evals_tmp,NN);
+         _fgrid.GlobalSumVector((double*)evec_tmp,NN*NN);
+      }
+    } 
+  for(int i=0;i<NN;i++){
+    for(int j=0;j<NN;j++)
+      Qt[i*NN+j]=evec_tmp[i][j];
+      lmd [i]=evals_tmp[i];
+  }
+}
+
+
     void diagonalize(DenseVector<RealD>& lmd,
 		     DenseVector<RealD>& lme, 
 		     int Nm2,
 		     int Nm,
 		     DenseVector<RealD>& Qt)
     {
+
+if(1)
+{
+	DenseVector <RealD> lmd2(Nm);
+	DenseVector <RealD> lme2(Nm);
+         for(int k=0; k<Nm; ++k){
+	    lmd2[k] = lmd[k];
+	    lme2[k] = lme[k];
+	  }
+
+	return diagonalize_lapack(lmd,lme,Nm2,Nm,Qt);
+}
+
       int Niter = 100*Nm;
       int kmin = 1;
       int kmax = Nk;
@@ -328,11 +466,19 @@ until convergence
 	// (uniform vector) Why not src??
 	//	evec[0] = 1.0;
 	evec[0] = src;
+	std:: cout <<"norm2(src)= " << norm2(src) << std::endl;
 	normalise(evec[0]);
+	std:: cout <<"norm2(evec[0])= " << norm2(evec[0]) << std::endl;
 	
 	// Initial Nk steps
 	for(int k=0; k<Nk; ++k) step(eval,lme,evec,f,Nm,k);
+//	std:: cout <<"norm2(evec[1])= " << norm2(evec[1]) << std::endl;
+//	std:: cout <<"norm2(evec[2])= " << norm2(evec[2]) << std::endl;
 	RitzMatrix(evec,Nk);
+	for(int k=0; k<Nk; ++k){
+//	std:: cout <<"eval " << k << " " <<eval[k] << std::endl;
+//	std:: cout <<"lme " << k << " " << lme[k] << std::endl;
+	}
 
 	// Restarting loop begins
 	for(int iter = 0; iter<Niter; ++iter){
@@ -361,8 +507,11 @@ until convergence
 	  
 	  // Implicitly shifted QR transformations
 	  setUnit_Qt(Nm,Qt);
-	  for(int ip=k2; ip<Nm; ++ip) 
+	  for(int ip=k2; ip<Nm; ++ip){ 
+	std::cout << "qr_decomp "<< ip << " "<< eval2[ip] << std::endl;
 	    qr_decomp(eval,lme,Nm,Nm,Qt,eval2[ip],k1,Nm);
+		
+	}
     
 	  for(int i=0; i<(Nk+1); ++i) B[i] = 0.0;
 	  
@@ -427,7 +576,7 @@ until convergence
 
 	  std::cout<<" #modes converged: "<<Nconv<<std::endl;
 
-	  if( Nconv>=Nk ){
+	  if( Nconv>=Nstop ){
 	    goto converged;
 	  }
 	} // end of iter loop
