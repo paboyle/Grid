@@ -249,7 +249,9 @@ void WilsonFermion5D<Impl>::Report(void)
   std::cout<<GridLogMessage << "Stencil gather        "<<Stencil.gathertime<<" us"<<std::endl;
   std::cout<<GridLogMessage << "Stencil gather simd   "<<Stencil.gathermtime<<" us"<<std::endl;
   std::cout<<GridLogMessage << "Stencil merge  simd   "<<Stencil.mergetime<<" us"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil spin   simd   "<<Stencil.spintime<<" us"<<std::endl;
   std::cout<<GridLogMessage << "********************"<<std::endl;
+  std::cout<<GridLogMessage << "Stencil MB/s          "<<(double)Stencil.comms_bytes/Stencil.commtime<<std::endl;
   std::cout<<GridLogMessage << "Stencil comm     time "<<Stencil.commtime<<" us"<<std::endl;
   std::cout<<GridLogMessage << "Stencil join     time "<<Stencil.jointime<<" us"<<std::endl;
   std::cout<<GridLogMessage << "********************"<<std::endl;
@@ -425,6 +427,8 @@ void WilsonFermion5D<Impl>::DhopInternalCommsOverlapCompute(StencilImpl & st, Le
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
   alltime-=usecond();
 
+  int calls;
+  int updates;
   Compressor compressor(dag);
 
   // Assume balanced KMP_AFFINITY; this is forced in GridThread.h

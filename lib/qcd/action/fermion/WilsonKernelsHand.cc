@@ -310,7 +310,7 @@ namespace QCD {
 
 
 template<class Impl>
-void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
+int WilsonKernels<Impl >::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
 						   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 						   int ss,int sU,const FermionField &in, FermionField &out, bool Local, bool Nonlocal)
 {
@@ -385,6 +385,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeF
     if ( SE->_permute ) {
       PERMUTE_DIR(3); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
+
   }
 
   if ( Nonlocal && (!SE->_is_local) ) { 
@@ -396,7 +397,6 @@ void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeF
     XP_RECON_ACCUM;
     num++;  
   }
-
 
   // Yp
   SE=st.GetEntry(ptype,Yp,ss);
@@ -556,6 +556,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeF
     vstream(ref()(3)(0),result_30*(-0.5));
     vstream(ref()(3)(1),result_31*(-0.5));
     vstream(ref()(3)(2),result_32*(-0.5));
+    return 1;
   } else if ( num ) { 
     vstream(ref()(0)(0),ref()(0)(0)+result_00*(-0.5));
     vstream(ref()(0)(1),ref()(0)(1)+result_01*(-0.5));
@@ -569,14 +570,16 @@ void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeF
     vstream(ref()(3)(0),ref()(3)(0)+result_30*(-0.5));
     vstream(ref()(3)(1),ref()(3)(1)+result_31*(-0.5));
     vstream(ref()(3)(2),ref()(3)(2)+result_32*(-0.5));
+    return 1;
   }
+  return 0;
 }
 
 
 
 
 template<class Impl>
-void WilsonKernels<Impl >::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
+int WilsonKernels<Impl >::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
 						std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 						int ss,int sU,const FermionField &in, FermionField &out, bool Local, bool Nonlocal)
 {
@@ -822,6 +825,7 @@ void WilsonKernels<Impl >::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeFiel
     vstream(ref()(3)(0),result_30*(-0.5));
     vstream(ref()(3)(1),result_31*(-0.5));
     vstream(ref()(3)(2),result_32*(-0.5));
+    return 1;
   } else if ( num ) { 
     vstream(ref()(0)(0),ref()(0)(0)+result_00*(-0.5));
     vstream(ref()(0)(1),ref()(0)(1)+result_01*(-0.5));
@@ -835,7 +839,9 @@ void WilsonKernels<Impl >::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeFiel
     vstream(ref()(3)(0),ref()(3)(0)+result_30*(-0.5));
     vstream(ref()(3)(1),ref()(3)(1)+result_31*(-0.5));
     vstream(ref()(3)(2),ref()(3)(2)+result_32*(-0.5));
+    return 1;
   }
+  return 0;
 }
 
   /*

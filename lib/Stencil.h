@@ -96,6 +96,7 @@ namespace Grid {
 	Integer to_rank;
 	Integer from_rank;
 	Integer bytes;
+	volatile Integer done;
       };
 
       std::vector<Packet> Packets;
@@ -107,6 +108,8 @@ namespace Grid {
 	p.to_rank  = to;
 	p.from_rank= from;
 	p.bytes    = bytes;
+	p.done     = 0;
+	comms_bytes+=2.0*bytes;
 	Packets.push_back(p);
       }
 
@@ -118,6 +121,7 @@ namespace Grid {
 				Packets[i].recv_buf,
 				Packets[i].from_rank,
 				Packets[i].bytes);
+	  Packets[i].done = 1;
 	}
 	commtime+=usecond();
       }
@@ -129,27 +133,38 @@ namespace Grid {
         cobj * mpointer;
 	std::vector<scalar_object *> rpointers;
 	Integer buffer_size;
+	Integer packet_id;
       };
 
       std::vector<Merge> Mergers;
 
-      void AddMerge(cobj *merge_p,std::vector<scalar_object *> &rpointers,Integer buffer_size) {
+      void AddMerge(cobj *merge_p,std::vector<scalar_object *> &rpointers,Integer buffer_size,Integer packet_id) {
 	Merge m;
 	m.mpointer = merge_p;
 	m.rpointers= rpointers;
 	m.buffer_size = buffer_size;
+	m.packet_id   = packet_id;
 	Mergers.push_back(m);
       }
 
       void CommsMerge(void ) { 
-	mergetime-=usecond();
+	//PARALLEL_NESTED_LOOP2 
 	for(int i=0;i<Mergers.size();i++){	
+
+	  
+	spintime-=usecond();
+	int packet_id = Mergers[i].packet_id;
+	while(! Packets[packet_id].done ); // spin for completion
+	spintime+=usecond();
+
+	mergetime-=usecond();
 PARALLEL_FOR_LOOP
 	  for(int o=0;o<Mergers[i].buffer_size;o++){
-	    merge(Mergers[i].mpointer[o],Mergers[i].rpointers,o);
+	    merge1(Mergers[i].mpointer[o],Mergers[i].rpointers,o);
 	  }
-	}
 	mergetime+=usecond();
+
+	}
       }
 
       ////////////////////////////////////////
@@ -188,6 +203,8 @@ PARALLEL_FOR_LOOP
       double commtime;
       double halogtime;
       double mergetime;
+      double spintime;
+      double comms_bytes;
       double gathermtime;
       double splicetime;
       double nosplicetime;
@@ -206,9 +223,11 @@ PARALLEL_FOR_LOOP
       commtime=0;
       halogtime=0;
       mergetime=0;
+      spintime=0;
       gathermtime=0;
       splicetime=0;
       nosplicetime=0;
+      comms_bytes=0;
 #endif
       _npoints = npoints;
       _grid    = grid;
@@ -218,8 +237,9 @@ PARALLEL_FOR_LOOP
 
       int osites  = _grid->oSites();
 
-      for(int i=0;i<npoints;i++){
+      for(int ii=0;ii<npoints;ii++){
 
+	int i = ii; // reverse direction to get SIMD comms done first
 	int point = i;
 
 	_entries[i].resize( osites);
@@ -512,10 +532,10 @@ PARALLEL_FOR_LOOP
 
       void HaloExchangeComplete(std::thread &thr) 
       {
+	CommsMerge(); // spins
 	jointime-=usecond();
 	thr.join();
 	jointime+=usecond();
-	CommsMerge();
       }
 
       void HaloGather(const Lattice<vobj> &source,compressor &compress)
@@ -750,7 +770,7 @@ PARALLEL_FOR_LOOP
 		}
 	      }
 
-	      AddMerge(&comm_buf[u_comm_offset],rpointers,buffer_size);
+	      AddMerge(&comm_buf[u_comm_offset],rpointers,buffer_size,Packets.size()-1);
 
 	      u_comm_offset     +=buffer_size;
 	    }

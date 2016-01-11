@@ -62,13 +62,13 @@ namespace Grid {
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 			      int sF,int sU,const FermionField &in, FermionField &out,bool local= true, bool nonlocal=true);
 
-     void DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
-			       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-			       int sF,int sU,const FermionField &in, FermionField &out,bool local= true, bool nonlocal=true);
-
-     void DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
-				  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-				  int sF,int sU,const FermionField &in, FermionField &out,bool local= true, bool nonlocal=true);
+     int DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
+			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+			      int sF,int sU,const FermionField &in, FermionField &out,bool local= true, bool nonlocal=true);
+     
+     int DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
+				 std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+				 int sF,int sU,const FermionField &in, FermionField &out,bool local= true, bool nonlocal=true);
 
      WilsonKernels(const ImplParams &p= ImplParams());
      
