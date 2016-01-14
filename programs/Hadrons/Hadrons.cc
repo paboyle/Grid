@@ -23,7 +23,25 @@ using namespace Hadrons;
 
 int main(int argc, char *argv[])
 {
-    Application application(argc, argv);
+    // parse command line
+    std::string parameterFileName;
+    
+    if (argc < 2)
+    {
+        std::cerr << "usage: " << argv[0] << " <parameter file> [Grid options]";
+        std::cerr << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+    parameterFileName = argv[1];
+    Grid_init(&argc, &argv);
+    HadronsLogError.Active(GridLogError.isActive());
+    HadronsLogWarning.Active(GridLogWarning.isActive());
+    HadronsLogMessage.Active(GridLogMessage.isActive());
+    HadronsLogDebug.Active(GridLogDebug.isActive());
+    LOG(Message) << "Grid initialized" << std::endl;
+    
+    // execution
+    Application application(parameterFileName);
     
     application.run();
     

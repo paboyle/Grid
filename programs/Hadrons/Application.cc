@@ -27,23 +27,11 @@ using namespace Hadrons;
  *                       Application implementation                           *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-Application::Application(int argc, char *argv[])
-: env_(Environment::getInstance())
+Application::Application(const std::string parameterFileName)
+: parameterFileName_(parameterFileName)
+, env_(Environment::getInstance())
 , modFactory_(ModuleFactory::getInstance())
 {
-    if (argc < 2)
-    {
-        std::cerr << "usage: " << argv[0] << " <parameter file> [Grid options]";
-        std::cerr << std::endl;
-        std::exit(EXIT_FAILURE);
-    }
-    parameterFileName_ = argv[1];
-    Grid_init(&argc, &argv);
-    HadronsLogError.Active(GridLogError.isActive());
-    HadronsLogWarning.Active(GridLogWarning.isActive());
-    HadronsLogMessage.Active(GridLogMessage.isActive());
-    HadronsLogDebug.Active(GridLogDebug.isActive());
-    LOG(Message) << "Grid initialized" << std::endl;
     LOG(Message) << "Modules available:" << std::endl;
     auto list = modFactory_.getModuleList();
     for (auto &m: list)

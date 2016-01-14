@@ -64,7 +64,7 @@ public:
 
 public:
     // constructor
-    Application(int argc, char *argv[]);
+    Application(const std::string parameterFileName);
     // destructor
     virtual ~Application(void);
     // execute
