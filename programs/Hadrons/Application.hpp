@@ -51,8 +51,7 @@ class GlobalPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(GlobalPar,
-                                    std::vector<double>, latticeSize,
-                                    ConfigPar,           configs);
+                                    ConfigPar, configs);
 };
 
 /******************************************************************************
@@ -75,16 +74,17 @@ private:
     // schedule computation
     void schedule(void);
     // program execution
-    void configLoop(void);
-    void execute(void);
+    void         configLoop(void);
+    unsigned int execute(const std::vector<std::string> &program);
 private:
-    std::string                                    parameterFileName_;
-    GlobalPar                                      par_;
-    Environment                                    &env_;
-    ModuleFactory                                  &modFactory_;
-    std::map<std::string, std::unique_ptr<Module>> module_;
-    std::map<std::string, std::string>             associatedModule_;
-    std::vector<std::string>                       program_;
+    std::string                                     parameterFileName_;
+    GlobalPar                                       par_;
+    Environment                                     &env_;
+    ModuleFactory                                   &modFactory_;
+    std::map<std::string, std::unique_ptr<Module>>  module_;
+    std::map<std::string, std::string>              associatedModule_;
+    std::map<std::string, std::vector<std::string>> input_;
+    std::vector<std::string>                        program_;
 };
 
 END_HADRONS_NAMESPACE

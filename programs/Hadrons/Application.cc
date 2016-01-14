@@ -83,6 +83,7 @@ void Application::parseParameterFile(void)
         {
             associatedModule_[n] = id.name;
         }
+        input_[id.name] = module_[id.name]->getInput();
     } while (reader.nextElement("module"));
     pop(reader);
     pop(reader);
@@ -113,19 +114,35 @@ void Application::schedule(void)
     }
     
     // topological sort
-    std::map<std::string, std::map<std::string, bool>> m;
-    unsigned int                                       k = 0;
+    unsigned int k = 0;
     
     std::vector<Graph<std::string>> con = moduleGraph.getConnectedComponents();
     LOG(Message) << "Program:" << std::endl;
     for (unsigned int i = 0; i < con.size(); ++i)
     {
         std::vector<std::vector<std::string>> t = con[i].allTopoSort();
+        int                                   memPeak, minMemPeak = -1;
+        unsigned int                          bestInd;
+        bool                                  msg;
 
-        m = makeDependencyMatrix(t);
-        for (unsigned int j = 0; j < t[0].size(); ++j)
+        env_.dryRun(true);
+        for (unsigned int p = 0; p < t.size(); ++p)
         {
-            program_.push_back(t[0][j]);
+            msg = HadronsLogMessage.isActive();
+            HadronsLogMessage.Active(false);
+            memPeak = execute(t[p]);
+            if ((memPeak < minMemPeak) or (minMemPeak < 0))
+            {
+                minMemPeak = memPeak;
+                bestInd = p;
+            }
+            HadronsLogMessage.Active(msg);
+            env_.freeAll();
+        }
+        env_.dryRun(false);
+        for (unsigned int j = 0; j < t[bestInd].size(); ++j)
+        {
+            program_.push_back(t[bestInd][j]);
             LOG(Message) << std::setw(4) << std::right << k << ": "
                          << program_[k] << std::endl;
             k++;
@@ -142,16 +159,42 @@ void Application::configLoop(void)
     {
         LOG(Message) << "Starting measurement for trajectory " << t
                      << std::endl;
-        execute();
+        execute(program_);
+        env_.freeAll();
     }
 }
 
-void Application::execute(void)
+unsigned int Application::execute(const std::vector<std::string> &program)
 {
-    for (unsigned int i = 0; i < program_.size(); ++i)
+    unsigned int memPeak = 0;
+    
+    for (unsigned int i = 0; i < program.size(); ++i)
     {
-        LOG(Message) << "Measurement step (" << i+1 << "/" << program_.size()
+        LOG(Message) << "Measurement step (" << i+1 << "/" << program.size()
                      << ")" << std::endl;
-        (*module_[program_[i]])(env_);
+        (*module_[program[i]])(env_);
+        LOG(Message) << "allocated propagators: " << env_.nProp() << std::endl;
+        if (env_.nProp() > memPeak)
+        {
+            memPeak = env_.nProp();
+        }
+        for (auto &n: associatedModule_)
+        {
+            bool canFree = true;
+            
+            for (unsigned int j = i + 1; j < program.size(); ++j)
+            {
+                auto &in = input_[program[j]];
+                auto it  = std::find(in.begin(), in.end(), n.first);
+                canFree  = canFree and (it == in.end());
+            }
+            if (canFree and env_.propExists(n.first))
+            {
+                LOG(Message) << "freeing '" << n.first << "'" << std::endl;
+                env_.free(n.first);
+            }
+        }
     }
+    
+    return memPeak;
 }

@@ -30,6 +30,29 @@ BEGIN_HADRONS_NAMESPACE
 class Environment
 {
     SINGLETON(Environment);
+public:
+    typedef std::unique_ptr<GridCartesian>     GridPt;
+    typedef std::unique_ptr<LatticePropagator> PropPt;
+public:
+    // dry run
+    void                dryRun(const bool isDry);
+    bool                isDryRun(void);
+    // quark propagators
+    void                addProp(const std::string name,
+                                const unsigned int Ls = 1);
+    void                freeProp(const std::string name);
+    LatticePropagator * getProp(const std::string name);
+    bool                propExists(const std::string name);
+    unsigned int        nProp(void);
+    // general free
+    void                free(const std::string name);
+    void                freeAll(void);
+private:
+    bool                                dryRun_{false};
+    GridPt                              grid4d_;
+    std::map<unsigned int, GridPt>      grid5d_;
+    std::map<std::string, PropPt>       prop_;
+    std::map<std::string, unsigned int> propSize_;
 };
 
 END_HADRONS_NAMESPACE

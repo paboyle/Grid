@@ -49,14 +49,20 @@ std::vector<std::string> MQuark::getOutput(void)
     return out;
 }
 
-// memory footprint
-double MQuark::nCreatedProp(void)
+// allocation //////////////////////////////////////////////////////////////////
+void MQuark::allocate(Environment &env)
 {
-    return static_cast<double>((par_.Ls > 1) ? par_.Ls + 1 : 1);
+    env.addProp(getName());
+    quark_ = env.getProp(getName());
+    if (par_.Ls > 1)
+    {
+        env.addProp(getName() + "_5d", par_.Ls);
+        quark5d_ = env.getProp(getName() + "_5d");
+    }
 }
 
 // execution
-void MQuark::operator()(Environment &env)
+void MQuark::execute(Environment &env)
 {
     LOG(Message) << "computing quark propagator '" << getName() << "'"
                  << std::endl;

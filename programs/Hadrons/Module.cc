@@ -35,3 +35,12 @@ std::string Module::getName(void) const
 {
     return name_;
 }
+
+void Module::operator()(Environment &env)
+{
+    allocate(env);
+    if (!env.isDryRun())
+    {
+        execute(env);
+    }
+}

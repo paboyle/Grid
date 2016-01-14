@@ -21,6 +21,7 @@
 #define Hadrons_Module_hpp_
 
 #include <Hadrons/Global.hpp>
+#include <Hadrons/Environment.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -43,8 +44,6 @@ static mod##Registrar mod##RegistrarInstance;
 /******************************************************************************
  *                                 Module                                     *
  ******************************************************************************/
-class Environment;
-
 class Module
 {
 public:
@@ -59,10 +58,11 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void) = 0;
     virtual std::vector<std::string> getOutput(void) = 0;
-    // memory footprint
-    virtual double nCreatedProp(void) = 0;
+    // allocation
+    virtual void allocate(Environment &env) = 0;
     // execution
-    virtual void operator()(Environment &env) = 0;
+    void operator()(Environment &env);
+    virtual void execute(Environment &env) = 0;
 private:
     std::string name_;
 };

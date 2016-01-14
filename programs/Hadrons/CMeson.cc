@@ -52,13 +52,11 @@ std::vector<std::string> CMeson::getOutput(void)
 }
 
 // memory footprint ////////////////////////////////////////////////////////////
-double CMeson::nCreatedProp(void)
-{
-    return 0.;
-}
+void CMeson::allocate(Environment &env)
+{}
 
 // execution ///////////////////////////////////////////////////////////////////
-void CMeson::operator()(Environment &env)
+void CMeson::execute(Environment &env)
 {
     LOG(Message) << "computing meson contraction '" << getName() << "'"
                  << std::endl;

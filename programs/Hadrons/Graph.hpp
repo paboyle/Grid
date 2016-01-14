@@ -190,27 +190,27 @@ unsigned int Graph<T>::size(void) const
 template <typename T>
 bool Graph<T>::gotValue(const T &value) const
 {
-    try
-    {
-        isMarked_.at(value);
-    }
-    catch (std::out_of_range &)
+    auto it = isMarked_.find(value);
+    
+    if (it == isMarked_.end())
     {
         return false;
     }
-
-    return true;
+    else
+    {
+        return true;
+    }
 }
 
 // vertex marking //////////////////////////////////////////////////////////////
 template <typename T>
 void Graph<T>::mark(const T &value, const bool doMark)
 {
-    try
+    if (gotValue(value))
     {
-        isMarked_.at(value) = doMark;
+        isMarked_[value] = doMark;
     }
-    catch (std::out_of_range &)
+    else
     {
         HADRON_ERROR("vertex " << value << " does not exists");
     }
@@ -240,11 +240,11 @@ void Graph<T>::unmarkAll(void)
 template <typename T>
 bool Graph<T>::isMarked(const T &value) const
 {
-    try
+    if (gotValue(value))
     {
         return isMarked_.at(value);
     }
-    catch (std::out_of_range &)
+    else
     {
         HADRON_ERROR("vertex " << value << " does not exists");
         

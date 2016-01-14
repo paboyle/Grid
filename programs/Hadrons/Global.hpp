@@ -26,7 +26,8 @@
 
 #define BEGIN_HADRONS_NAMESPACE \
 namespace Hadrons {\
-using namespace Grid;
+using namespace Grid;\
+using namespace QCD;
 #define END_HADRONS_NAMESPACE }
 
 BEGIN_HADRONS_NAMESPACE
