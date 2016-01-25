@@ -60,8 +60,8 @@ namespace Grid {
 
      void DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U,
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-#if 0
-<<<<<<< HEAD
+#if 1
+//<<<<<<< HEAD
 				int sF,int sU,const FermionField &in, FermionField &out,bool local= true, bool nonlocal=true);
 //			      int sF,int sU,const FermionField &in, FermionField &out,uint64_t *);
 // doesn't seem to work with Gparity at the moment
