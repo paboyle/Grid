@@ -1091,12 +1091,17 @@ void WilsonKernels<Impl >::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeFiel
   ////////////////////////////////////////////////
   // Specialise Gparity to simple implementation
   ////////////////////////////////////////////////
-template<>
+//template<class Impl>
+//int WilsonKernels<Impl >::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
+//						   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+//						   int ss,int sU,const FermionField &in, FermionField &out, bool Local, bool Nonlocal)
+#if 0
+template
 void WilsonKernels<GparityWilsonImplF>::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
 							     std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 							     int sF,int sU,const FermionField &in, FermionField &out, bool Local, bool Nonlocal)
 {
-  DiracOptDhopSite(st,U,buf,sF,sU,in,out); // will template override for Wilson Nc=3
+  DiracOptDhopSite(st,U,buf,sF,sU,in,out,Local,Nonlocal); // will template override for Wilson Nc=3
 }
 
 template<>
@@ -1104,7 +1109,7 @@ void WilsonKernels<GparityWilsonImplF>::DiracOptHandDhopSiteDag(StencilImpl &st,
 								std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 								int sF,int sU,const FermionField &in, FermionField &out, bool Local, bool Nonlocal)
 {
-  DiracOptDhopSiteDag(st,U,buf,sF,sU,in,out); // will template override for Wilson Nc=3
+  DiracOptDhopSiteDag(st,U,buf,sF,sU,in,out,Local,Nonlocal); // will template override for Wilson Nc=3
 }
 
 template<>
@@ -1112,7 +1117,7 @@ void WilsonKernels<GparityWilsonImplD>::DiracOptHandDhopSite(StencilImpl &st,Dou
 							     std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 							     int sF,int sU,const FermionField &in, FermionField &out, bool Local, bool Nonlocal)
 {
-  DiracOptDhopSite(st,U,buf,sF,sU,in,out); // will template override for Wilson Nc=3
+  DiracOptDhopSite(st,U,buf,sF,sU,in,out,Local,Nonlocal); // will template override for Wilson Nc=3
 }
 
 template<>
@@ -1120,8 +1125,9 @@ void WilsonKernels<GparityWilsonImplD>::DiracOptHandDhopSiteDag(StencilImpl &st,
 								std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 								int sF,int sU,const FermionField &in, FermionField &out, bool Local, bool Nonlocal)
 {
-  DiracOptDhopSiteDag(st,U,buf,sF,sU,in,out); // will template override for Wilson Nc=3
+  DiracOptDhopSiteDag(st,U,buf,sF,sU,in,out,Local,Nonlocal); // will template override for Wilson Nc=3
 }
+#endif
 
 
 
