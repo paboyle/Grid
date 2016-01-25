@@ -44,7 +44,7 @@ public:
 // Gather for when there is no need to SIMD split with compression
 ///////////////////////////////////////////////////////////////////
 template<class vobj,class cobj,class compressor> void 
-Gather_plane_simple (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<cobj> > &buffer,int dimension,int plane,int cbmask,compressor &compress)
+Gather_plane_simple (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<cobj> > &buffer,int dimension,int plane,int cbmask,compressor &compress, int off=0)
 {
   int rd = rhs._grid->_rdimensions[dimension];
 
@@ -63,7 +63,7 @@ PARALLEL_NESTED_LOOP2
       for(int b=0;b<e2;b++){
 	int o  = n*rhs._grid->_slice_stride[dimension];
 	int bo = n*rhs._grid->_slice_block[dimension];
-	buffer[bo+b]=compress(rhs._odata[so+o+b],dimension,plane,so+o+b,rhs._grid);
+	buffer[off+bo+b]=compress(rhs._odata[so+o+b],dimension,plane,so+o+b,rhs._grid);
       }
     }
   } else { 
@@ -73,7 +73,7 @@ PARALLEL_NESTED_LOOP2
 	 int o  = n*rhs._grid->_slice_stride[dimension];
 	 int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
 	 if ( ocb &cbmask ) {
-	   buffer[bo++]=compress(rhs._odata[so+o+b],dimension,plane,so+o+b,rhs._grid);
+	   buffer[off+bo++]=compress(rhs._odata[so+o+b],dimension,plane,so+o+b,rhs._grid);
 	 }
        }
      }

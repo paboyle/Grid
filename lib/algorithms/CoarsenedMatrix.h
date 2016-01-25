@@ -204,7 +204,6 @@ namespace Grid {
 
     std::vector<CoarseMatrix> A;
 
-    std::vector<siteVector,alignedAllocator<siteVector> >   comm_buf;
       
     ///////////////////////
     // Interface
@@ -217,7 +216,7 @@ namespace Grid {
       conformable(in._grid,out._grid);
 
       SimpleCompressor<siteVector> compressor;
-      Stencil.HaloExchange(in,comm_buf,compressor);
+      Stencil.HaloExchange(in,compressor);
 
 PARALLEL_FOR_LOOP
       for(int ss=0;ss<Grid()->oSites();ss++){
@@ -234,7 +233,7 @@ PARALLEL_FOR_LOOP
 	  } else if(SE->_is_local) { 
 	    nbr = in._odata[SE->_offset];
 	  } else {
-	    nbr = comm_buf[SE->_offset];
+	    nbr = Stencil.comm_buf[SE->_offset];
 	  }
 	  res = res + A[point]._odata[ss]*nbr;
 	}
@@ -258,7 +257,6 @@ PARALLEL_FOR_LOOP
       Stencil(&CoarseGrid,geom.npoint,Even,geom.directions,geom.displacements),
       A(geom.npoint,&CoarseGrid)
     {
-      comm_buf.resize(Stencil._unified_buffer_size);
     };
 
     void CoarsenOperator(GridBase *FineGrid,LinearOperatorBase<Lattice<Fobj> > &linop,

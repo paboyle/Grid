@@ -206,6 +206,9 @@ typedef OverlapWilsonPartialFractionZolotarevFermion<WilsonImplD> OverlapWilsonP
 typedef WilsonFermion<GparityWilsonImplR>     GparityWilsonFermionR;
 typedef WilsonFermion<GparityWilsonImplF>     GparityWilsonFermionF;
 typedef WilsonFermion<GparityWilsonImplD>     GparityWilsonFermionD;
+typedef WilsonTMFermion<GparityWilsonImplR> GparityWilsonTMFermionR;
+typedef WilsonTMFermion<GparityWilsonImplF> GparityWilsonTMFermionF;
+typedef WilsonTMFermion<GparityWilsonImplD> GparityWilsonTMFermionD;
 typedef DomainWallFermion<GparityWilsonImplR> GparityDomainWallFermionR;
 typedef DomainWallFermion<GparityWilsonImplF> GparityDomainWallFermionF;
 typedef DomainWallFermion<GparityWilsonImplD> GparityDomainWallFermionD;

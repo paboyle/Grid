@@ -152,9 +152,6 @@ namespace Grid {
       DoubledGaugeField Umu;
       DoubledGaugeField UmuEven;
       DoubledGaugeField UmuOdd;
-
-      // Comms buffer
-      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  comm_buf;
       
     };
 
