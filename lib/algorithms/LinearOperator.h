@@ -270,6 +270,35 @@ namespace Grid {
       }
     };
 
+    template<class Matrix,class Field>
+      class SchurDiagTwoOperator :  public SchurOperatorBase<Field> {
+    protected:
+      Matrix &_Mat;
+    public:
+      SchurDiagTwoOperator (Matrix &Mat): _Mat(Mat){};
+
+      virtual  RealD Mpc      (const Field &in, Field &out) {
+	Field tmp(in._grid);
+
+	_Mat.MooeeInv(in,out);
+	_Mat.Meooe(out,tmp);
+	_Mat.MooeeInv(tmp,out);
+	_Mat.Meooe(out,tmp);
+
+	return axpy_norm(out,-1.0,tmp,in);
+      }
+      virtual  RealD MpcDag   (const Field &in, Field &out){
+	Field tmp(in._grid);
+
+	_Mat.MeooeDag(in,out);
+	_Mat.MooeeInvDag(out,tmp);
+	_Mat.MeooeDag(tmp,out);
+	_Mat.MooeeInvDag(out,tmp);
+
+	return axpy_norm(out,-1.0,tmp,in);
+      }
+    };
+
 
     /////////////////////////////////////////////////////////////
     // Base classes for functions of operators

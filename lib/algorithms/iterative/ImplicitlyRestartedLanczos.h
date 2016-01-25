@@ -241,20 +241,15 @@ public:
   double evals_tmp[NN];
   double evec_tmp[NN][NN];
   memset(evec_tmp[0],0,sizeof(double)*NN*NN);
-  double AA[NN][NN];
+//  double AA[NN][NN];
   double DD[NN];
   double EE[NN];
-  memset(AA, 0, sizeof(double)*NN*NN);
-  //    memset(ZZ, 0, sizeof(double)*NN*NN);
   for (int i = 0; i< NN; i++)
     for (int j = i - 1; j <= i + 1; j++)
       if ( j < NN && j >= 0 ) {
-//        AA[i][j] = AH(i,j);
         if (i==j) DD[i] = lmd[i];
         if (i==j) evals_tmp[i] = lmd[i];
         if (j==(i-1)) EE[j] = lme[j];
-        //        if (i<20 && j<20)
-//        std:: cout << "AA["<<i<<"]["<<j<<"]="<<AA[i][j]<<endl;
       }
   int evals_found;
   int lwork = ( (18*NN) > (1+4*NN+NN*NN)? (18*NN):(1+4*NN+NN*NN)) ;
@@ -301,7 +296,6 @@ public:
         }
       }
       {
-//        TIMER("QMP_sum_double_array");
 //        QMP_sum_double_array(evals_tmp,NN);
 //        QMP_sum_double_array((double *)evec_tmp,NN*NN);
          _fgrid.GlobalSumVector(evals_tmp,NN);

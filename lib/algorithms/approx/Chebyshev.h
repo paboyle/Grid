@@ -83,7 +83,8 @@ namespace Grid {
 
   public:
     void csv(std::ostream &out){
-      for (RealD x=lo; x<hi; x+=(hi-lo)/1000) {
+	RealD diff = hi-lo;
+      for (RealD x=lo-0.2*diff; x<hi+0.2*diff; x+=(hi-lo)/1000) {
 	RealD f = approx(x);
 	out<< x<<" "<<f<<std::endl;
       }
@@ -100,10 +101,24 @@ namespace Grid {
 
     Chebyshev(){};
     Chebyshev(RealD _lo,RealD _hi,int _order, RealD (* func)(RealD) ) {Init(_lo,_hi,_order,func);};
-    
+    Chebyshev(RealD _lo,RealD _hi,int _order) {Init(_lo,_hi,_order);};
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     // c.f. numerical recipes "chebft"/"chebev". This is sec 5.8 "Chebyshev approximation".
     ////////////////////////////////////////////////////////////////////////////////////////////////////
+// CJ: the one we need for Lanczos
+    void Init(RealD _lo,RealD _hi,int _order)
+    {
+      lo=_lo;
+      hi=_hi;
+      order=_order;
+      
+      if(order < 2) exit(-1);
+      Coeffs.resize(order);
+      Coeffs.assign(0.,order);
+      Coeffs[order-1] = 1.;
+    };
+
     void Init(RealD _lo,RealD _hi,int _order, RealD (* func)(RealD))
     {
       lo=_lo;

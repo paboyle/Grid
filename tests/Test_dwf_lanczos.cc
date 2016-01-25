@@ -31,6 +31,8 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
+RealD AllZero(RealD x){ return 0.;}
+
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
@@ -64,14 +66,18 @@ int main (int argc, char ** argv)
 
   const int Nstop = 30;
   const int Nk = 40;
-  const int Np = 100;
+  const int Np = 10;
   const int Nm = Nk+Np;
   const int MaxIt= 10000;
   RealD resid = 1.0e-8;
 
   std::vector<double> Coeffs { 0.,1.};
   Polynomial<LatticeFermion> PolyX(Coeffs);
-  ImplicitlyRestartedLanczos<LatticeFermion> IRL(*FGrid,HermOp,PolyX,Nstop,Nk,Nm,resid,MaxIt);
+  Chebyshev<LatticeFermion> Cheb(1,80.,11);
+//  ChebyshevLanczos<LatticeFermion> Cheb(9.,1.,0.,20);
+  Cheb.csv(std::cout);
+//  exit(-24);
+  ImplicitlyRestartedLanczos<LatticeFermion> IRL(*FGrid,HermOp,Cheb,Nstop,Nk,Nm,resid,MaxIt);
 
   
   std::vector<RealD>          eval(Nm);
