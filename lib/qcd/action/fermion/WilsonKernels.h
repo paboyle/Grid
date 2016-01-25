@@ -60,13 +60,8 @@ namespace Grid {
 
      void DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U,
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-#if 0
-//<<<<<<< HEAD
-				int sF,int sU,const FermionField &in, FermionField &out,bool local= true, bool nonlocal=true);
-//			      int sF,int sU,const FermionField &in, FermionField &out,uint64_t *);
-// doesn't seem to work with Gparity at the moment
-#undef HANDOPT
-#if 1
+			      int sF,int sU,const FermionField &in, FermionField &out,bool local= true, bool nonlocal=true);
+
      void DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
 			       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 			       int sF,int sU,const FermionField &in, FermionField &out,bool local= true, bool nonlocal=true);
@@ -74,19 +69,6 @@ namespace Grid {
      void DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
 				  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 				  int sF,int sU,const FermionField &in, FermionField &out,bool local= true, bool nonlocal=true);
-#endif
-#else
-			      int sF,int sU,const FermionField &in, FermionField &out,bool local= true, bool nonlocal=true);
-
-     int DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
-			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-			      int sF,int sU,const FermionField &in, FermionField &out,bool local= true, bool nonlocal=true);
-     
-     int DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
-				 std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-				 int sF,int sU,const FermionField &in, FermionField &out,bool local= true, bool nonlocal=true);
-//>>>>>>> fc6ad657514c7966291c19f22af89de5d5a96f93
-#endif
 
      WilsonKernels(const ImplParams &p= ImplParams());
      

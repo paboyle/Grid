@@ -11,8 +11,7 @@
   Note this class requires the gnu multiprecision (GNU MP) library.
 
 */
-// fixing ::max_align_t error for some versions of g++/clang++
-#include<stddef.h>
+
 #include<math.h>
 #include<stdio.h>
 #include<stdlib.h>

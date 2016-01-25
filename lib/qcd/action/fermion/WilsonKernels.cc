@@ -596,8 +596,7 @@ void WilsonKernels<Impl>::DiracOptDhopDir(StencilImpl &st,DoubledGaugeField &U,
   vstream(out._odata[sF],result*(-0.5));
 }
 
-//#if ( ! defined(AVX512) ) && ( ! defined(IMCI) )
-#if 1
+#if ( ! defined(AVX512) ) && ( ! defined(IMCI) )
 template<class Impl> 
 void WilsonKernels<Impl>::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U,
 					      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
@@ -608,6 +607,5 @@ void WilsonKernels<Impl>::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField 
 #endif
 
   FermOpTemplateInstantiate(WilsonKernels);
-  GparityFermOpTemplateInstantiate(WilsonKernels);
 
 }}
