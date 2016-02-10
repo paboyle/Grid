@@ -102,7 +102,7 @@ public:
 
   long long count;
   int fd;
-  uint64_t elapsed;
+  unsigned long long elapsed;
   uint64_t begin;
 
   static int NumTypes(void){ 
