@@ -427,8 +427,6 @@ void WilsonFermion5D<Impl>::DhopInternalCommsOverlapCompute(StencilImpl & st, Le
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
   alltime-=usecond();
 
-  int calls;
-  int updates;
   Compressor compressor(dag);
 
   // Assume balanced KMP_AFFINITY; this is forced in GridThread.h

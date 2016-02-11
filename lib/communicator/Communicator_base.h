@@ -34,6 +34,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifdef GRID_COMMS_MPI
 #include <mpi.h>
 #endif
+#ifdef GRID_COMMS_SHMEM
+#include <mpp/shmem.h>
+#endif
 namespace Grid {
 class CartesianCommunicator {
   public:    

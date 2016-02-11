@@ -178,11 +178,16 @@ case ${ac_COMMS} in
        echo Configuring for MPI communications
        AC_DEFINE([GRID_COMMS_MPI],[1],[GRID_COMMS_MPI] )
      ;;
+     shmem)
+       echo Configuring for SHMEM communications
+       AC_DEFINE([GRID_COMMS_MPI],[1],[GRID_COMMS_SHMEM] )
+     ;;
      *)
      AC_MSG_ERROR([${ac_COMMS} unsupported --enable-comms option]); 
      ;;
 esac
 
+AM_CONDITIONAL(BUILD_COMMS_SHMEM,[ test "X${ac_COMMS}X" == "XshmemX" ])
 AM_CONDITIONAL(BUILD_COMMS_MPI,[ test "X${ac_COMMS}X" == "XmpiX" ])
 AM_CONDITIONAL(BUILD_COMMS_NONE,[ test "X${ac_COMMS}X" == "XnoneX" ])
 
