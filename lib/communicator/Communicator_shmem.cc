@@ -41,7 +41,8 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
   _processors = processors;
   _processor_coor.resize(_ndimension);
 
-  shmem_init_thread(SHMEM_THREAD_FUNNELED);
+  //  shmem_init_thread(SHMEM_THREAD_FUNNELED);
+  start_pes(0);
   _processor = shmem_my_pe();
   
   Lexicographic::CoorFromIndex(_processor_coor,_processor,_processors);
@@ -170,11 +171,11 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 						int from,
 						int bytes)
 {
-  shmem_putmem_nb(recv,xmit,bytes,dest,NULL);
+  shmem_putmem(recv,xmit,bytes,dest);
 }
 void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
 {
-  shmem_quiet();      // I'm done
+  //  shmem_quiet();      // I'm done
   shmem_barrier_all();// He's done too
 }
 void CartesianCommunicator::Barrier(void)
