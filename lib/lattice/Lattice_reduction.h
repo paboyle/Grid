@@ -178,7 +178,7 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
   // sum over reduced dimension planes, breaking out orthog dir
 
   for(int ss=0;ss<grid->oSites();ss++){
-    GridBase::CoorFromIndex(coor,ss,grid->_rdimensions);
+    Lexicographic::CoorFromIndex(coor,ss,grid->_rdimensions);
     int r = coor[orthogdim];
     lvSum[r]=lvSum[r]+Data._odata[ss];
   }  

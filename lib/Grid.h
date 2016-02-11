@@ -66,6 +66,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <AlignedAllocator.h>
 #include <Simd.h>
 #include <Threads.h>
+#include <Lexicographic.h>
 #include <Communicator.h> 
 #include <Cartesian.h>    
 #include <Tensors.h>      

@@ -105,7 +105,7 @@ void LebesgueOrder::IterateI(int ND,
 	x[d]=xi[d]+xo[d];
       }
       IndexInteger index;
-      grid->IndexFromCoor(x,index,grid->_rdimensions);
+      Lexicographic::IndexFromCoor(x,index,grid->_rdimensions);
       _LebesgueReorder.push_back(index);
     }
   }

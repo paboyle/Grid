@@ -150,7 +150,6 @@ namespace Grid {
       void CommsMerge(void ) { 
 	//PARALLEL_NESTED_LOOP2 
 	for(int i=0;i<Mergers.size();i++){	
-
 	  
 	spintime-=usecond();
 	int packet_id = Mergers[i].packet_id;

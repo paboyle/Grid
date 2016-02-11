@@ -96,13 +96,13 @@ int main (int argc, char ** argv)
 	  std::vector<int> peer(4);
 	  Complex tmp  =cm;
 	  Integer index=real(tmp);
-	  Fine.CoorFromIndex(peer,index,latt_size);
+	  Lexicographic::CoorFromIndex(peer,index,latt_size);
 
 	  if (nrm > 0){
 	    std::cerr<<"FAIL shift "<< shift<<" in dir "<< dir<<" ["<<coor[0]<<","<<coor[1]<<","<<coor[2]<<","<<coor[3]<<"] = "<< cm()()()<<" expect "<<scm<<"  "<<nrm<<std::endl;
 	    std::cerr<<"Got    "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	    index=real(scm);
-	    Fine.CoorFromIndex(peer,index,latt_size);
+	    Lexicographic::CoorFromIndex(peer,index,latt_size);
 	    std::cerr<<"Expect "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	  }
 	}}}}

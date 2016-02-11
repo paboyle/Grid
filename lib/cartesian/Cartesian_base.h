@@ -115,26 +115,10 @@ public:
       for(int d=0;d<_ndimension;d++) idx+=_ostride[d]*ocoor[d];
       return idx;
     }
-    static inline void CoorFromIndex (std::vector<int>& coor,int index,std::vector<int> &dims){
-      int nd= dims.size();
-      coor.resize(nd);
-      for(int d=0;d<nd;d++){
-	coor[d] = index % dims[d];
-	index   = index / dims[d];
-      }
-    }
     inline void oCoorFromOindex (std::vector<int>& coor,int Oindex){
-      CoorFromIndex(coor,Oindex,_rdimensions);
+      Lexicographic::CoorFromIndex(coor,Oindex,_rdimensions);
     }
-    static inline void IndexFromCoor (std::vector<int>& coor,int &index,std::vector<int> &dims){
-      int nd=dims.size();
-      int stride=1;
-      index=0;
-      for(int d=0;d<nd;d++){
-	index = index+stride*coor[d];
-	stride=stride*dims[d];
-      }
-    }
+
 
     //////////////////////////////////////////////////////////
     // SIMD lane addressing
@@ -147,7 +131,7 @@ public:
     }
     inline void iCoorFromIindex(std::vector<int> &coor,int lane)
     {
-      CoorFromIndex(coor,lane,_simd_layout);
+      Lexicographic::CoorFromIndex(coor,lane,_simd_layout);
     }
     inline int PermuteDim(int dimension){
       return _simd_layout[dimension]>1;
@@ -179,7 +163,7 @@ public:
     // Global addressing
     ////////////////////////////////////////////////////////////////
     void GlobalIndexToGlobalCoor(int gidx,std::vector<int> &gcoor){
-      CoorFromIndex(gcoor,gidx,_gdimensions);
+      Lexicographic::CoorFromIndex(gcoor,gidx,_gdimensions);
     }
     void GlobalCoorToGlobalIndex(const std::vector<int> & gcoor,int & gidx){
       gidx=0;

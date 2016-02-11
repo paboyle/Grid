@@ -115,9 +115,9 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
     int sc;
     std::vector<int> coor_c(_ndimension);
     std::vector<int> coor_f(_ndimension);
-    GridBase::CoorFromIndex(coor_f,sf,fine->_rdimensions);
+    Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
     for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-    GridBase::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+    Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
 
     for(int i=0;i<nbasis;i++) {
       
@@ -160,9 +160,9 @@ PARALLEL_FOR_LOOP
     std::vector<int> coor_c(_ndimension);
     std::vector<int> coor_f(_ndimension);
 
-    GridBase::CoorFromIndex(coor_f,sf,fine->_rdimensions);
+    Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
     for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-    GridBase::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+    Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
 
     // z = A x + y
     fineZ._odata[sf]=coarseA._odata[sc]*fineX._odata[sf]+fineY._odata[sf];
@@ -225,9 +225,9 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
     std::vector<int> coor_c(_ndimension);
     std::vector<int> coor_f(_ndimension);
 
-    GridBase::CoorFromIndex(coor_f,sf,fine->_rdimensions);
+    Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
     for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-    GridBase::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+    Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
 
     coarseData._odata[sc]=coarseData._odata[sc]+fineData._odata[sf];
 
@@ -311,9 +311,9 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
     std::vector<int> coor_c(_ndimension);
     std::vector<int> coor_f(_ndimension);
 
-    GridBase::CoorFromIndex(coor_f,sf,fine->_rdimensions);
+    Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
     for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-    GridBase::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+    Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
 
     for(int i=0;i<nbasis;i++) {
       if(i==0) fineData._odata[sf]=coarseData._odata[sc](i) * Basis[i]._odata[sf];

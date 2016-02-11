@@ -146,7 +146,7 @@ class BinaryIO {
     csum = 0;
     std::vector<int> lcoor;
     for(int l=0;l<grid->lSites();l++){
-      grid->CoorFromIndex(lcoor,l,grid->_ldimensions);
+      Lexicographic::CoorFromIndex(lcoor,l,grid->_ldimensions);
       peekLocalSite(siteObj,lat,lcoor);
       munge(siteObj,fileObj,csum);
     }
@@ -451,7 +451,7 @@ class BinaryIO {
       std::vector<int> lsite(nd);
       std::vector<int> iosite(nd);
 
-      grid->CoorFromIndex(tsite,tlex,range);
+      Lexicographic::CoorFromIndex(tsite,tlex,range);
 
       for(int d=0;d<nd;d++){
 	lsite[d] = tsite[d]%grid->_ldimensions[d];  // local site
@@ -588,7 +588,7 @@ class BinaryIO {
       std::vector<int> lsite(nd);
       std::vector<int> iosite(nd);
 
-      grid->CoorFromIndex(tsite,tlex,range);
+      Lexicographic::CoorFromIndex(tsite,tlex,range);
 
       for(int d=0;d<nd;d++){
 	lsite[d] = tsite[d]%grid->_ldimensions[d];  // local site

@@ -132,7 +132,7 @@ int main (int argc, char ** argv)
 	  std::vector<int> peer(4);
 	  Complex ctmp = cm;
 	  Integer index=real(ctmp);
-	  Fine.CoorFromIndex(peer,index,latt_size);
+	  Lexicographic::CoorFromIndex(peer,index,latt_size);
 
 	  if (nrm > 0){
 	    std::cout<<"FAIL shift "<< shift<<" in dir "<< dir
@@ -140,7 +140,7 @@ int main (int argc, char ** argv)
 		     << cm()()()<<" expect "<<scm<<"  "<<nrm<<std::endl;
 	    std::cout<<"Got    "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	    index=real(scm);
-	    Fine.CoorFromIndex(peer,index,latt_size);
+	    Lexicographic::CoorFromIndex(peer,index,latt_size);
 	    std::cout<<"Expect "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	    exit(-1);
 	  }
@@ -180,7 +180,7 @@ int main (int argc, char ** argv)
 	  std::vector<int> peer(4);
 	  Complex ctmp=cmeo;
 	  Integer index=real(ctmp);
-	  Fine.CoorFromIndex(peer,index,latt_size);
+	  Lexicographic::CoorFromIndex(peer,index,latt_size);
 
 	  double nrm = abs(cmeo()()()-scm);
 	  if (nrm != 0) {
@@ -189,7 +189,7 @@ int main (int argc, char ** argv)
 		     << cmeo()()()<<" expect "<<scm<<"  "<<nrm<<std::endl;
 	    std::cout<<"Got    "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	    index=real(scm);
-	    Fine.CoorFromIndex(peer,index,latt_size);
+	    Lexicographic::CoorFromIndex(peer,index,latt_size);
 	    std::cout<<"Expect "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	    exx=1;
 
@@ -205,7 +205,7 @@ int main (int argc, char ** argv)
 		     << cm()()()<<" expect "<<scm<<"  "<<nrm<<std::endl;
 	    std::cout<<"Got    "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	    index=real(scm);
-	    Fine.CoorFromIndex(peer,index,latt_size);
+	    Lexicographic::CoorFromIndex(peer,index,latt_size);
 	    std::cout<<"Expect "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	    exx=1;
 	  } else if (1) { 

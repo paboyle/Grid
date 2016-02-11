@@ -40,6 +40,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifdef HAVE_MM_MALLOC_H
 #include <mm_malloc.h>
 #endif
+#ifdef GRID_COMMS_SHMEM
+#include <mpp/shmem.h>
+#endif
 
 namespace Grid {
 
@@ -74,19 +77,37 @@ public:
 
   pointer allocate(size_type __n, const void* = 0)
   { 
+#ifdef GRID_COMMS_SHMEM
+    static void * bcast;
+    static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
+
+    shmem_barrier_all(); 
+    _Tp *ptr = (_Tp *) shmem_align(128,__n*sizeof(_Tp));
+    shmem_barrier_all();
+    bcast = (void *) _Tp;
+    shmem_broadcast32((void *)&bcast,(void *)&bcast,sizeof(void *)/4,0,0,0,shmem_n_pes(),psync);
+    assert( bcast == (void *) _Tp);
+#else
+
 #ifdef HAVE_MM_MALLOC_H
     _Tp * ptr = (_Tp *) _mm_malloc(__n*sizeof(_Tp),128);
 #else
     _Tp * ptr = (_Tp *) memalign(128,__n*sizeof(_Tp));
 #endif
+
+#endif
     return ptr;
   }
 
   void deallocate(pointer __p, size_type) { 
+#ifdef GRID_COMMS_SHMEM
+    shmem_free((void *)__p);
+#else
 #ifdef HAVE_MM_MALLOC_H
     _mm_free((void *)__p); 
 #else
     free((void *)__p);
+#endif
 #endif
   }
   void construct(pointer __p, const _Tp& __val) { };
