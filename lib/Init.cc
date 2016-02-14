@@ -47,9 +47,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #define __X86_64
 
-#ifdef HAVE_EXECINFO_H
-#include <execinfo.h>
-#endif
 
 namespace Grid {
 
@@ -174,9 +171,8 @@ std::string GridCmdVectorIntToString(const std::vector<int> & vec){
 /////////////////////////////////////////////////////////
 void Grid_init(int *argc,char ***argv)
 {
-#ifdef GRID_COMMS_MPI
-  MPI_Init(argc,argv);
-#endif
+  CartesianCommunicator::Init(argc,argv);
+
   // Parse command line args.
 
   GridLogger::StopWatch.Start();
@@ -284,7 +280,6 @@ double usecond(void) {
   return 1.0*tv.tv_usec + 1.0e6*tv.tv_sec;
 }
 
-#define _NBACKTRACE (256)
 void * Grid_backtrace_buffer[_NBACKTRACE];
 
 void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)

@@ -28,6 +28,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include "Grid.h"
 namespace Grid {
 
+void CartesianCommunicator::Init(int *argc, char *** arv)
+{
+}
+
+int Rank(void ){ return 0 };
+
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {
   _processors = processors;

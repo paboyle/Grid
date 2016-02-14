@@ -31,6 +31,15 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 namespace Grid {
 
   // Should error check all MPI calls.
+void CartesianCommunicator::Init(int *argc, char ***argv) {
+  MPI_Init(argc,argv);
+}
+
+  int Rank(void) {
+    int pe;
+    MPI_Comm_rank(MPI_COMM_WORLD,&pe);
+    return pe;
+  }
 
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {

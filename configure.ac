@@ -180,7 +180,7 @@ case ${ac_COMMS} in
      ;;
      shmem)
        echo Configuring for SHMEM communications
-       AC_DEFINE([GRID_COMMS_MPI],[1],[GRID_COMMS_SHMEM] )
+       AC_DEFINE([GRID_COMMS_SHMEM],[1],[GRID_COMMS_SHMEM] )
      ;;
      *)
      AC_MSG_ERROR([${ac_COMMS} unsupported --enable-comms option]); 

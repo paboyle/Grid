@@ -56,6 +56,8 @@ class CartesianCommunicator {
     typedef int CommsRequest_t;
 #endif
 
+    static void Init(int *argc, char ***argv);
+
     // Constructor
     CartesianCommunicator(const std::vector<int> &pdimensions_in);
 

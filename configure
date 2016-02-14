@@ -5898,7 +5898,7 @@ _ACEOF
        echo Configuring for SHMEM communications
 
 cat >>confdefs.h <<\_ACEOF
-#define GRID_COMMS_MPI 1
+#define GRID_COMMS_SHMEM 1
 _ACEOF
 
      ;;

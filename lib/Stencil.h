@@ -114,15 +114,19 @@ namespace Grid {
       }
 
       void Communicate(void ) { 
+	typedef CartesianCommunicator::CommsRequest_t CommsRequest_t;
+	std::vector<CommsRequest_t> reqs(0);
 	commtime-=usecond();
 	for(int i=0;i<Packets.size();i++){
-	  _grid->SendToRecvFrom(Packets[i].send_buf,
+	  _grid->SendToRecvFromBegin(reqs,
+				Packets[i].send_buf,
 				Packets[i].to_rank,
 				Packets[i].recv_buf,
 				Packets[i].from_rank,
 				Packets[i].bytes);
 	  Packets[i].done = 1;
 	}
+	_grid->SendToRecvFromComplete(reqs);
 	commtime+=usecond();
       }
 
@@ -648,7 +652,7 @@ PARALLEL_FOR_LOOP
 	      int recv_from_rank;
 	      int xmit_to_rank;
 	      _grid->ShiftedRanks(dimension,comm_proc,xmit_to_rank,recv_from_rank);
-	      assert (xmit_to_rank != _grid->ThisRank());
+	      assert (xmit_to_rank   != _grid->ThisRank());
 	      assert (recv_from_rank != _grid->ThisRank());
 
 	      //      FIXME Implement asynchronous send & also avoid buffer copy

@@ -75,18 +75,30 @@ public:
 
   size_type  max_size() const throw() { return size_t(-1) / sizeof(_Tp); }
 
-  pointer allocate(size_type __n, const void* = 0)
+  pointer allocate(size_type __n, const void* _p= 0)
   { 
 #ifdef GRID_COMMS_SHMEM
+
+    _Tp *ptr = (_Tp *) shmem_align(__n*sizeof(_Tp),64);
+
+
+#define PARANOID_SYMMETRIC_HEAP
+#ifdef PARANOID_SYMMETRIC_HEAP
     static void * bcast;
     static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
 
-    shmem_barrier_all(); 
-    _Tp *ptr = (_Tp *) shmem_align(128,__n*sizeof(_Tp));
-    shmem_barrier_all();
-    bcast = (void *) _Tp;
+    bcast = (void *) ptr;
     shmem_broadcast32((void *)&bcast,(void *)&bcast,sizeof(void *)/4,0,0,0,shmem_n_pes(),psync);
-    assert( bcast == (void *) _Tp);
+
+    if ( bcast != ptr ) {
+      std::printf("inconsistent alloc pe %d %lx %lx \n",shmem_my_pe(),bcast,ptr);std::fflush(stdout);
+      BACKTRACEFILE();
+      exit(0);
+    }
+
+    assert( bcast == (void *) ptr);
+
+#endif 
 #else
 
 #ifdef HAVE_MM_MALLOC_H

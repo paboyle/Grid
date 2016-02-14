@@ -31,7 +31,20 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 namespace Grid {
 
   // Should error check all MPI calls.
+#define SHMEM_VET(addr) 
 
+#define SHMEM_VET_DEBUG(addr) {				\
+  if ( ! shmem_addr_accessible(addr,_processor) ) {\
+    std::fprintf(stderr,"%d Inaccessible shmem address %lx %s %s\n",_processor,addr,__FUNCTION__,#addr); \
+    BACKTRACEFILE();		   \
+  }\
+}
+  int Rank(void) {
+    return shmem_my_pe();
+  }
+void CartesianCommunicator::Init(int *argc, char ***argv) {
+  shmem_init();
+}
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {
   _ndimension = processors.size();
@@ -41,8 +54,6 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
   _processors = processors;
   _processor_coor.resize(_ndimension);
 
-  //  shmem_init_thread(SHMEM_THREAD_FUNNELED);
-  start_pes(0);
   _processor = shmem_my_pe();
   
   Lexicographic::CoorFromIndex(_processor_coor,_processor,_processors);
@@ -50,10 +61,10 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
   for(int i=0;i<_ndimension;i++){
     _Nprocessors*=_processors[i];
   }
-  if ( _processor == 0 ) {
-    printf("I'm running SHMEM communications %d  \n",_processor);
-  }
+
   int Size = shmem_n_pes(); 
+
+
   assert(Size==_Nprocessors);
 }
 
@@ -85,6 +96,12 @@ void CartesianCommunicator::GlobalSumVector(float *f,int N)
   static float llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
   static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
 
+  // Inefficient, but don't want to dynamic alloc
+  if ( shmem_addr_accessible(f,_processor)  ){
+    shmem_float_sum_to_all(f,f,N,0,0,_Nprocessors,llwrk,psync);
+    return;
+  }
+
   for(int i=0;i<N;i++){
     source = f[i];
     shmem_float_sum_to_all(&dest,&source,1,0,0,_Nprocessors,llwrk,psync);
@@ -108,6 +125,11 @@ void CartesianCommunicator::GlobalSumVector(double *d,int N)
   static double llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
   static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
 
+  if ( shmem_addr_accessible(d,_processor)  ){
+    shmem_double_sum_to_all(d,d,N,0,0,_Nprocessors,llwrk,psync);
+    return;
+  }
+
   for(int i=0;i<N;i++){
     source = d[i];
     shmem_double_sum_to_all(&dest,&source,1,0,0,_Nprocessors,llwrk,psync);
@@ -117,12 +139,13 @@ void CartesianCommunicator::GlobalSumVector(double *d,int N)
 void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest)
 {
   std::vector<int> coor = _processor_coor;
+
   assert(std::abs(shift) <_processors[dim]);
 
-  coor[dim] = (coor[dim] + shift + _processors[dim])%_processors[dim];
+  coor[dim] = (_processor_coor[dim] + shift + _processors[dim])%_processors[dim];
   Lexicographic::IndexFromCoor(coor,source,_processors);
 
-  coor[dim] = (coor[dim] - shift + _processors[dim])%_processors[dim];
+  coor[dim] = (_processor_coor[dim] - shift + _processors[dim])%_processors[dim];
   Lexicographic::IndexFromCoor(coor,dest,_processors);
 
 }
@@ -144,6 +167,8 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
 					   int from,
 					   int bytes)
 {
+  SHMEM_VET(xmit);
+  SHMEM_VET(recv);
   std::vector<CommsRequest_t> reqs(0);
   SendToRecvFromBegin(reqs,xmit,dest,recv,from,bytes);
   SendToRecvFromComplete(reqs);
@@ -171,6 +196,9 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 						int from,
 						int bytes)
 {
+  SHMEM_VET(xmit);
+  SHMEM_VET(recv);
+  //  shmem_putmem_nb(recv,xmit,bytes,dest,NULL);
   shmem_putmem(recv,xmit,bytes,dest);
 }
 void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
@@ -185,14 +213,37 @@ void CartesianCommunicator::Barrier(void)
 void CartesianCommunicator::Broadcast(int root,void* data, int bytes)
 {
   static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
+  static uint32_t word;
+  uint32_t *array = (uint32_t *) data;
   assert( (bytes % 4)==0);
-  shmem_broadcast32(data,data,bytes/4,root,0,0,_Nprocessors,psync);
+  int words = bytes/4;
+  
+  for(int w=0;w<words;w++){
+    word = array[w];
+    shmem_broadcast32((void *)&word,(void *)&word,1,root,0,0,shmem_n_pes(),psync);
+    if ( shmem_my_pe() != root ) {
+      array[w] = word;
+    }
+    shmem_barrier_all();
+  }
+
 }
 void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
 {
   static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
+  static uint32_t word;
+  uint32_t *array = (uint32_t *) data;
   assert( (bytes % 4)==0);
-  shmem_broadcast32(data,data,bytes/4,root,0,0,shmem_n_pes(),psync);
+  int words = bytes/4;
+
+  for(int w=0;w<words;w++){
+    word = array[w];
+    shmem_broadcast32((void *)&word,(void *)&word,1,root,0,0,shmem_n_pes(),psync);
+    if ( shmem_my_pe() != root ) {
+      array[w]= word;
+    }
+    shmem_barrier_all();
+  }
 }
 
 }
