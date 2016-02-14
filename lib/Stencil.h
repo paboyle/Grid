@@ -112,7 +112,24 @@ namespace Grid {
 	comms_bytes+=2.0*bytes;
 	Packets.push_back(p);
       }
-
+      /*
+      void Communicate(void ) { 
+	//	typedef CartesianCommunicator::CommsRequest_t CommsRequest_t;
+	//	std::vector<CommsRequest_t> reqs(0);
+	commtime-=usecond();
+	for(int i=0;i<Packets.size();i++){
+	  _grid->SendToRecvFrom(
+				Packets[i].send_buf,
+				Packets[i].to_rank,
+				Packets[i].recv_buf,
+				Packets[i].from_rank,
+				Packets[i].bytes);
+	  Packets[i].done = 1;
+	}
+	//	_grid->SendToRecvFromComplete(reqs);
+	commtime+=usecond();
+      }
+      */
       void Communicate(void ) { 
 	typedef CartesianCommunicator::CommsRequest_t CommsRequest_t;
 	std::vector<CommsRequest_t> reqs(0);
@@ -124,10 +141,12 @@ namespace Grid {
 				Packets[i].recv_buf,
 				Packets[i].from_rank,
 				Packets[i].bytes);
-	  Packets[i].done = 1;
 	}
 	_grid->SendToRecvFromComplete(reqs);
 	commtime+=usecond();
+	for(int i=0;i<Packets.size();i++){
+	  Packets[i].done = 1;
+	}
       }
 
       ///////////////////////////////////////////
