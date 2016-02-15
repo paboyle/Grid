@@ -244,9 +244,9 @@ void WilsonKernels<Impl>::DiracOptDhopSiteDag(StencilImpl &st,DoubledGaugeField 
   }
 
   if ( local ) {
-    vstream(out._odata[sF],result*(-0.5));
+    vstream(out._odata[sF],result);
   } else if ( num ) { 
-    vstream(out._odata[sF],out._odata[sF]+result*(-0.5));
+    vstream(out._odata[sF],out._odata[sF]+result);
   }
 };
 
@@ -461,9 +461,9 @@ void WilsonKernels<Impl>::DiracOptDhopSite(StencilImpl &st,DoubledGaugeField &U,
   }
 
   if ( local ) {
-    vstream(out._odata[sF],result*(-0.5));
+    vstream(out._odata[sF],result);
   } else if ( num ) { 
-    vstream(out._odata[sF],out._odata[sF]+result*(-0.5));
+    vstream(out._odata[sF],out._odata[sF]+result);
   }
 };
 
@@ -593,7 +593,7 @@ void WilsonKernels<Impl>::DiracOptDhopDir(StencilImpl &st,DoubledGaugeField &U,
     spReconTm(result,Uchi);
   }
 
-  vstream(out._odata[sF],result*(-0.5));
+  vstream(out._odata[sF],result);
 }
 
 #if ( ! defined(AVX512) ) && ( ! defined(IMCI) )

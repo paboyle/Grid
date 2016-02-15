@@ -544,32 +544,32 @@ int WilsonKernels<Impl >::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeFi
 
   SiteSpinor & ref (out._odata[ss]);
   if ( Local ) {
-    vstream(ref()(0)(0),result_00*(-0.5));
-    vstream(ref()(0)(1),result_01*(-0.5));
-    vstream(ref()(0)(2),result_02*(-0.5));
-    vstream(ref()(1)(0),result_10*(-0.5));
-    vstream(ref()(1)(1),result_11*(-0.5));
-    vstream(ref()(1)(2),result_12*(-0.5));
-    vstream(ref()(2)(0),result_20*(-0.5));
-    vstream(ref()(2)(1),result_21*(-0.5));
-    vstream(ref()(2)(2),result_22*(-0.5));
-    vstream(ref()(3)(0),result_30*(-0.5));
-    vstream(ref()(3)(1),result_31*(-0.5));
-    vstream(ref()(3)(2),result_32*(-0.5));
+    vstream(ref()(0)(0),result_00);
+    vstream(ref()(0)(1),result_01);
+    vstream(ref()(0)(2),result_02);
+    vstream(ref()(1)(0),result_10);
+    vstream(ref()(1)(1),result_11);
+    vstream(ref()(1)(2),result_12);
+    vstream(ref()(2)(0),result_20);
+    vstream(ref()(2)(1),result_21);
+    vstream(ref()(2)(2),result_22);
+    vstream(ref()(3)(0),result_30);
+    vstream(ref()(3)(1),result_31);
+    vstream(ref()(3)(2),result_32);
     return 1;
   } else if ( num ) { 
-    vstream(ref()(0)(0),ref()(0)(0)+result_00*(-0.5));
-    vstream(ref()(0)(1),ref()(0)(1)+result_01*(-0.5));
-    vstream(ref()(0)(2),ref()(0)(2)+result_02*(-0.5));
-    vstream(ref()(1)(0),ref()(1)(0)+result_10*(-0.5));
-    vstream(ref()(1)(1),ref()(1)(1)+result_11*(-0.5));
-    vstream(ref()(1)(2),ref()(1)(2)+result_12*(-0.5));
-    vstream(ref()(2)(0),ref()(2)(0)+result_20*(-0.5));
-    vstream(ref()(2)(1),ref()(2)(1)+result_21*(-0.5));
-    vstream(ref()(2)(2),ref()(2)(2)+result_22*(-0.5));
-    vstream(ref()(3)(0),ref()(3)(0)+result_30*(-0.5));
-    vstream(ref()(3)(1),ref()(3)(1)+result_31*(-0.5));
-    vstream(ref()(3)(2),ref()(3)(2)+result_32*(-0.5));
+    vstream(ref()(0)(0),ref()(0)(0)+result_00);
+    vstream(ref()(0)(1),ref()(0)(1)+result_01);
+    vstream(ref()(0)(2),ref()(0)(2)+result_02);
+    vstream(ref()(1)(0),ref()(1)(0)+result_10);
+    vstream(ref()(1)(1),ref()(1)(1)+result_11);
+    vstream(ref()(1)(2),ref()(1)(2)+result_12);
+    vstream(ref()(2)(0),ref()(2)(0)+result_20);
+    vstream(ref()(2)(1),ref()(2)(1)+result_21);
+    vstream(ref()(2)(2),ref()(2)(2)+result_22);
+    vstream(ref()(3)(0),ref()(3)(0)+result_30);
+    vstream(ref()(3)(1),ref()(3)(1)+result_31);
+    vstream(ref()(3)(2),ref()(3)(2)+result_32);
     return 1;
   }
   return 0;
@@ -813,32 +813,32 @@ int WilsonKernels<Impl >::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField
 
   SiteSpinor & ref (out._odata[ss]);
   if ( Local ) {
-    vstream(ref()(0)(0),result_00*(-0.5));
-    vstream(ref()(0)(1),result_01*(-0.5));
-    vstream(ref()(0)(2),result_02*(-0.5));
-    vstream(ref()(1)(0),result_10*(-0.5));
-    vstream(ref()(1)(1),result_11*(-0.5));
-    vstream(ref()(1)(2),result_12*(-0.5));
-    vstream(ref()(2)(0),result_20*(-0.5));
-    vstream(ref()(2)(1),result_21*(-0.5));
-    vstream(ref()(2)(2),result_22*(-0.5));
-    vstream(ref()(3)(0),result_30*(-0.5));
-    vstream(ref()(3)(1),result_31*(-0.5));
-    vstream(ref()(3)(2),result_32*(-0.5));
+    vstream(ref()(0)(0),result_00);
+    vstream(ref()(0)(1),result_01);
+    vstream(ref()(0)(2),result_02);
+    vstream(ref()(1)(0),result_10);
+    vstream(ref()(1)(1),result_11);
+    vstream(ref()(1)(2),result_12);
+    vstream(ref()(2)(0),result_20);
+    vstream(ref()(2)(1),result_21);
+    vstream(ref()(2)(2),result_22);
+    vstream(ref()(3)(0),result_30);
+    vstream(ref()(3)(1),result_31);
+    vstream(ref()(3)(2),result_32);
     return 1;
   } else if ( num ) { 
-    vstream(ref()(0)(0),ref()(0)(0)+result_00*(-0.5));
-    vstream(ref()(0)(1),ref()(0)(1)+result_01*(-0.5));
-    vstream(ref()(0)(2),ref()(0)(2)+result_02*(-0.5));
-    vstream(ref()(1)(0),ref()(1)(0)+result_10*(-0.5));
-    vstream(ref()(1)(1),ref()(1)(1)+result_11*(-0.5));
-    vstream(ref()(1)(2),ref()(1)(2)+result_12*(-0.5));
-    vstream(ref()(2)(0),ref()(2)(0)+result_20*(-0.5));
-    vstream(ref()(2)(1),ref()(2)(1)+result_21*(-0.5));
-    vstream(ref()(2)(2),ref()(2)(2)+result_22*(-0.5));
-    vstream(ref()(3)(0),ref()(3)(0)+result_30*(-0.5));
-    vstream(ref()(3)(1),ref()(3)(1)+result_31*(-0.5));
-    vstream(ref()(3)(2),ref()(3)(2)+result_32*(-0.5));
+    vstream(ref()(0)(0),ref()(0)(0)+result_00);
+    vstream(ref()(0)(1),ref()(0)(1)+result_01);
+    vstream(ref()(0)(2),ref()(0)(2)+result_02);
+    vstream(ref()(1)(0),ref()(1)(0)+result_10);
+    vstream(ref()(1)(1),ref()(1)(1)+result_11);
+    vstream(ref()(1)(2),ref()(1)(2)+result_12);
+    vstream(ref()(2)(0),ref()(2)(0)+result_20);
+    vstream(ref()(2)(1),ref()(2)(1)+result_21);
+    vstream(ref()(2)(2),ref()(2)(2)+result_22);
+    vstream(ref()(3)(0),ref()(3)(0)+result_30);
+    vstream(ref()(3)(1),ref()(3)(1)+result_31);
+    vstream(ref()(3)(2),ref()(3)(2)+result_32);
     return 1;
   }
   return 0;
@@ -1073,18 +1073,18 @@ void WilsonKernels<Impl >::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeFiel
 
   {
     SiteSpinor & ref (out._odata[ss]);
-    vstream(ref()(0)(0),result_00*(-0.5));
-    vstream(ref()(0)(1),result_01*(-0.5));
-    vstream(ref()(0)(2),result_02*(-0.5));
-    vstream(ref()(1)(0),result_10*(-0.5));
-    vstream(ref()(1)(1),result_11*(-0.5));
-    vstream(ref()(1)(2),result_12*(-0.5));
-    vstream(ref()(2)(0),result_20*(-0.5));
-    vstream(ref()(2)(1),result_21*(-0.5));
-    vstream(ref()(2)(2),result_22*(-0.5));
-    vstream(ref()(3)(0),result_30*(-0.5));
-    vstream(ref()(3)(1),result_31*(-0.5));
-    vstream(ref()(3)(2),result_32*(-0.5));
+    vstream(ref()(0)(0),result_00);
+    vstream(ref()(0)(1),result_01);
+    vstream(ref()(0)(2),result_02);
+    vstream(ref()(1)(0),result_10);
+    vstream(ref()(1)(1),result_11);
+    vstream(ref()(1)(2),result_12);
+    vstream(ref()(2)(0),result_20);
+    vstream(ref()(2)(1),result_21);
+    vstream(ref()(2)(2),result_22);
+    vstream(ref()(3)(0),result_30);
+    vstream(ref()(3)(1),result_31);
+    vstream(ref()(3)(2),result_32);
   }
 }
 */

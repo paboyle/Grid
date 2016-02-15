@@ -64,7 +64,9 @@ namespace QCD {
   template<class Impl>
   void WilsonFermion<Impl>::ImportGauge(const GaugeField &_Umu)
   {
-    Impl::DoubleStore(GaugeGrid(),Umu,_Umu);
+    GaugeField HUmu(_Umu._grid);
+    HUmu = _Umu*(-0.5);
+    Impl::DoubleStore(GaugeGrid(),Umu,HUmu);
     pickCheckerboard(Even,UmuEven,Umu);
     pickCheckerboard(Odd ,UmuOdd,Umu);
   }

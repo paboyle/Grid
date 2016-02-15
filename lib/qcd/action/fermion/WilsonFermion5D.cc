@@ -108,7 +108,9 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
 template<class Impl>
 void WilsonFermion5D<Impl>::ImportGauge(const GaugeField &_Umu)
 {
-  Impl::DoubleStore(GaugeGrid(),Umu,_Umu);
+    GaugeField HUmu(_Umu._grid);
+    HUmu = _Umu*(-0.5);
+  Impl::DoubleStore(GaugeGrid(),Umu,HUmu);
   pickCheckerboard(Even,UmuEven,Umu);
   pickCheckerboard(Odd ,UmuOdd,Umu);
 }
