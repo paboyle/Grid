@@ -112,10 +112,10 @@ namespace Grid {
 	comms_bytes+=2.0*bytes;
 	Packets.push_back(p);
       }
-      /*
+
+#undef SERIAL_SENDS
+#ifdef SERIAL_SENDS
       void Communicate(void ) { 
-	//	typedef CartesianCommunicator::CommsRequest_t CommsRequest_t;
-	//	std::vector<CommsRequest_t> reqs(0);
 	commtime-=usecond();
 	for(int i=0;i<Packets.size();i++){
 	  _grid->SendToRecvFrom(
@@ -126,28 +126,42 @@ namespace Grid {
 				Packets[i].bytes);
 	  Packets[i].done = 1;
 	}
-	//	_grid->SendToRecvFromComplete(reqs);
 	commtime+=usecond();
       }
-      */
+#else
       void Communicate(void ) { 
 	typedef CartesianCommunicator::CommsRequest_t CommsRequest_t;
-	std::vector<CommsRequest_t> reqs(0);
+	std::vector<std::vector<CommsRequest_t> > reqs(Packets.size());
 	commtime-=usecond();
-	for(int i=0;i<Packets.size();i++){
-	  _grid->SendToRecvFromBegin(reqs,
-				Packets[i].send_buf,
-				Packets[i].to_rank,
-				Packets[i].recv_buf,
-				Packets[i].from_rank,
-				Packets[i].bytes);
+	const int concurrency=2;
+	for(int i=0;i<Packets.size();i+=concurrency){
+	  for(int ii=0;ii<concurrency;ii++){
+	    int j = i+ii;
+	    if ( j<Packets.size() ) {
+	      _grid->SendToRecvFromBegin(reqs[j],
+					 Packets[j].send_buf,
+					 Packets[j].to_rank,
+					 Packets[j].recv_buf,
+					 Packets[j].from_rank,
+					 Packets[j].bytes);
+	    }
+	  }
+	  for(int ii=0;ii<concurrency;ii++){
+	    int j = i+ii;
+	    if ( j<Packets.size() ) {
+	      _grid->SendToRecvFromComplete(reqs[i]);
+	    }
+	  }
+	  for(int ii=0;ii<concurrency;ii++){
+	    int j = i+ii;
+	    if ( j<Packets.size() ) {
+	      Packets[j].done = 1;
+	    }
+	  }
 	}
-	_grid->SendToRecvFromComplete(reqs);
 	commtime+=usecond();
-	for(int i=0;i<Packets.size();i++){
-	  Packets[i].done = 1;
-	}
       }
+#endif
 
       ///////////////////////////////////////////
       // Simd merge queue for asynch comms
