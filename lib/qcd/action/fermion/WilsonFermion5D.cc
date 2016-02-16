@@ -280,11 +280,11 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
 					 DoubledGaugeField & U,
 					 const FermionField &in, FermionField &out,int dag)
 {
-  if ( Impl::overlapCommsCompute () ) { 
-    DhopInternalCommsOverlapCompute(st,lo,U,in,out,dag);
-  } else { 
+  //  if ( Impl::overlapCommsCompute () ) { 
+  //    DhopInternalCommsOverlapCompute(st,lo,U,in,out,dag);
+  //  } else { 
     DhopInternalCommsThenCompute(st,lo,U,in,out,dag);
-  }
+    //  }
 }
 
 template<class Impl>
@@ -319,7 +319,7 @@ void WilsonFermion5D<Impl>::DhopInternalCommsThenCompute(StencilImpl & st, Lebes
   dslashtime -=usecond();
   if ( dag == DaggerYes ) {
     if( this->HandOptDslash ) {
-#pragma omp parallel for schedule(static)
+PARALLEL_FOR_LOOP
       for(int ss=0;ss<U._grid->oSites();ss++){
 	int sU=ss;
 	for(int s=0;s<Ls;s++){
@@ -398,7 +398,7 @@ PARALLEL_FOR_LOOP
       }
       */
 
-#pragma omp parallel for schedule(static)
+PARALLEL_FOR_LOOP     
       for(int ss=0;ss<U._grid->oSites();ss++){
 	int sU=ss;
 	for(int s=0;s<Ls;s++){
@@ -426,6 +426,7 @@ void WilsonFermion5D<Impl>::DhopInternalCommsOverlapCompute(StencilImpl & st, Le
 						     DoubledGaugeField & U,
 						     const FermionField &in, FermionField &out,int dag)
 {
+  assert(0);
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
   alltime-=usecond();
 

@@ -101,7 +101,16 @@ namespace Grid {
 
       std::vector<Packet> Packets;
 
+#define SEND_IMMEDIATE
+#define SERIAL_SENDS
+
       void AddPacket(void *xmit,void * rcv, Integer to,Integer from,Integer bytes){
+	comms_bytes+=2.0*bytes;
+#ifdef SEND_IMMEDIATE
+	commtime-=usecond();
+	_grid->SendToRecvFrom(xmit,to,rcv,from,bytes);
+	commtime+=usecond();
+#endif
 	Packet p;
 	p.send_buf = xmit;
 	p.recv_buf = rcv;
@@ -111,19 +120,21 @@ namespace Grid {
 	p.done     = 0;
 	comms_bytes+=2.0*bytes;
 	Packets.push_back(p);
+
       }
 
-#undef SERIAL_SENDS
 #ifdef SERIAL_SENDS
       void Communicate(void ) { 
 	commtime-=usecond();
 	for(int i=0;i<Packets.size();i++){
+#ifndef SEND_IMMEDIATE
 	  _grid->SendToRecvFrom(
 				Packets[i].send_buf,
 				Packets[i].to_rank,
 				Packets[i].recv_buf,
 				Packets[i].from_rank,
 				Packets[i].bytes);
+#endif
 	  Packets[i].done = 1;
 	}
 	commtime+=usecond();
@@ -138,18 +149,22 @@ namespace Grid {
 	  for(int ii=0;ii<concurrency;ii++){
 	    int j = i+ii;
 	    if ( j<Packets.size() ) {
+#ifndef SEND_IMMEDIATE
 	      _grid->SendToRecvFromBegin(reqs[j],
 					 Packets[j].send_buf,
 					 Packets[j].to_rank,
 					 Packets[j].recv_buf,
 					 Packets[j].from_rank,
 					 Packets[j].bytes);
+#endif
 	    }
 	  }
 	  for(int ii=0;ii<concurrency;ii++){
 	    int j = i+ii;
 	    if ( j<Packets.size() ) {
+#ifndef SEND_IMMEDIATE
 	      _grid->SendToRecvFromComplete(reqs[i]);
+#endif
 	    }
 	  }
 	  for(int ii=0;ii<concurrency;ii++){
@@ -181,7 +196,17 @@ namespace Grid {
 	m.rpointers= rpointers;
 	m.buffer_size = buffer_size;
 	m.packet_id   = packet_id;
+#ifdef SEND_IMMEDIATE
+	mergetime-=usecond();
+PARALLEL_FOR_LOOP
+        for(int o=0;o<m.buffer_size;o++){
+	  merge1(m.mpointer[o],m.rpointers,o);
+	}
+	mergetime+=usecond();
+#else
 	Mergers.push_back(m);
+#endif
+
       }
 
       void CommsMerge(void ) { 
@@ -193,12 +218,14 @@ namespace Grid {
 	while(! Packets[packet_id].done ); // spin for completion
 	spintime+=usecond();
 
+#ifndef SEND_IMMEDIATE
 	mergetime-=usecond();
 PARALLEL_FOR_LOOP
 	  for(int o=0;o<Mergers[i].buffer_size;o++){
 	    merge1(Mergers[i].mpointer[o],Mergers[i].rpointers,o);
 	  }
 	mergetime+=usecond();
+#endif
 
 	}
       }
@@ -689,15 +716,8 @@ PARALLEL_FOR_LOOP
 	      assert (recv_from_rank != _grid->ThisRank());
 
 	      //      FIXME Implement asynchronous send & also avoid buffer copy
-	      /*
-	      _grid->SendToRecvFrom((void *)&send_buf[0],
-				   xmit_to_rank,
-				    (void *)&comm_buf[u_comm_offset],
-				   recv_from_rank,
-				   bytes);
-	      */ 
 	      AddPacket((void *)&u_send_buf[u_comm_offset],
-			(void *)&comm_buf[u_comm_offset],
+			(void *)  &comm_buf[u_comm_offset],
 			xmit_to_rank,
 			recv_from_rank,
 			bytes);
