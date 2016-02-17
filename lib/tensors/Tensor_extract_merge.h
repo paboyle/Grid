@@ -227,17 +227,14 @@ void merge1(vobj &vec,std::vector<typename vobj::scalar_object *> &extracted,int
   const int Nsimd=vobj::vector_type::Nsimd();
   const int words=sizeof(vobj)/sizeof(vector_type);
 
-  scalar_type *pointer;
   scalar_type *vp = (scalar_type *)&vec;
 
   //  assert( (((uint64_t)vp)&(sizeof(scalar_type)-1)) == 0);
 
+  for(int w=0;w<words;w++){
   for(int i=0;i<Nsimd;i++){
-    pointer=(scalar_type *)&extracted[i][offset];
-    for(int w=0;w<words;w++){
-      vp[w*Nsimd+i] = pointer[w];
-    }
-  }
+      vp[w*Nsimd+i] = ((scalar_type *)&extracted[i][offset])[w];
+  }}
 }
 
 template<class vobj> inline 

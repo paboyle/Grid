@@ -103,7 +103,7 @@ PARALLEL_NESTED_LOOP2
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 
-	int o=n*rhs._grid->_slice_stride[dimension];
+	int o      =   n*rhs._grid->_slice_stride[dimension];
 	int offset = b+n*rhs._grid->_slice_block[dimension];
 
 	cobj temp =compress(rhs._odata[so+o+b],dimension,plane,so+o+b,rhs._grid);
