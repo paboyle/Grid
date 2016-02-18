@@ -35,7 +35,7 @@ class SimpleCompressor {
 public:
   void Point(int) {};
 
-  vobj operator() (const vobj &arg,int dimension,int plane,int osite,GridBase *grid) {
+  vobj operator() (const vobj &arg) {
     return arg;
   }
 };
@@ -63,7 +63,7 @@ PARALLEL_NESTED_LOOP2
       for(int b=0;b<e2;b++){
 	int o  = n*rhs._grid->_slice_stride[dimension];
 	int bo = n*rhs._grid->_slice_block[dimension];
-	buffer[off+bo+b]=compress(rhs._odata[so+o+b],dimension,plane,so+o+b,rhs._grid);
+	buffer[off+bo+b]=compress(rhs._odata[so+o+b]);
       }
     }
   } else { 
@@ -73,7 +73,7 @@ PARALLEL_NESTED_LOOP2
 	 int o  = n*rhs._grid->_slice_stride[dimension];
 	 int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
 	 if ( ocb &cbmask ) {
-	   buffer[off+bo++]=compress(rhs._odata[so+o+b],dimension,plane,so+o+b,rhs._grid);
+	   buffer[off+bo++]=compress(rhs._odata[so+o+b]);
 	 }
        }
      }
@@ -97,16 +97,17 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename cobj::scalar_
 
   int e1=rhs._grid->_slice_nblock[dimension];
   int e2=rhs._grid->_slice_block[dimension];
-  
+  int n1=rhs._grid->_slice_stride[dimension];
+  int n2=rhs._grid->_slice_block[dimension];
   if ( cbmask ==0x3){
 PARALLEL_NESTED_LOOP2
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 
-	int o      =   n*rhs._grid->_slice_stride[dimension];
-	int offset = b+n*rhs._grid->_slice_block[dimension];
+	int o      =   n*n1;
+	int offset = b+n*n2;
 
-	cobj temp =compress(rhs._odata[so+o+b],dimension,plane,so+o+b,rhs._grid);
+	cobj temp =compress(rhs._odata[so+o+b]);
 	extract<cobj>(temp,pointers,offset);
 
       }
@@ -121,7 +122,7 @@ PARALLEL_NESTED_LOOP2
 	int offset = b+n*rhs._grid->_slice_block[dimension];
 
 	if ( ocb & cbmask ) {
-	  cobj temp =compress(rhs._odata[so+o+b],dimension,plane,so+o+b,rhs._grid);
+	  cobj temp =compress(rhs._odata[so+o+b]);
 	  extract<cobj>(temp,pointers,offset);
 	}
       }

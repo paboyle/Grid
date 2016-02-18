@@ -77,7 +77,7 @@ namespace Grid {
     int _around_the_world;
   };
 
-  template<class vobj,class cobj, class compressor>
+  template<class vobj,class cobj>
   class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal fill in.
   public:
 
@@ -580,6 +580,7 @@ PARALLEL_FOR_LOOP
     }
 
 
+      template<class compressor>
       std::thread HaloExchangeBegin(const Lattice<vobj> &source,compressor &compress) {
 	Mergers.resize(0); 
 	Packets.resize(0);
@@ -587,6 +588,7 @@ PARALLEL_FOR_LOOP
         return std::thread([&] { this->Communicate(); });
       }
 
+      template<class compressor>
       void HaloExchange(const Lattice<vobj> &source,compressor &compress) 
       {
 	auto thr = HaloExchangeBegin(source,compress);
@@ -601,20 +603,9 @@ PARALLEL_FOR_LOOP
 	jointime+=usecond();
       }
 
-      void HaloGather(const Lattice<vobj> &source,compressor &compress)
+      template<class compressor>
+      void HaloGatherDir(const Lattice<vobj> &source,compressor &compress,int point)
       {
-	// conformable(source._grid,_grid);
-	assert(source._grid==_grid);
-	halogtime-=usecond();
-
-	assert (comm_buf.size() == _unified_buffer_size );
-	u_comm_offset=0;
-
-	// Gather all comms buffers
-	for(int point = 0 ; point < _npoints; point++) {
-
-	  compress.Point(point);
-
 	  int dimension    = _directions[point];
 	  int displacement = _distances[point];
 	  
@@ -662,12 +653,29 @@ PARALLEL_FOR_LOOP
 	      }
 	    }
 	  }
+      }
+
+      template<class compressor>
+      void HaloGather(const Lattice<vobj> &source,compressor &compress)
+      {
+	// conformable(source._grid,_grid);
+	assert(source._grid==_grid);
+	halogtime-=usecond();
+
+	assert (comm_buf.size() == _unified_buffer_size );
+	u_comm_offset=0;
+
+	// Gather all comms buffers
+	for(int point = 0 ; point < _npoints; point++) {
+	  compress.Point(point);
+	  HaloGatherDir(source,compress,point);
 	}
 
 	assert(u_comm_offset==_unified_buffer_size);
 	halogtime+=usecond();
       }
 
+      template<class compressor>
         void Gather(const Lattice<vobj> &rhs,int dimension,int shift,int cbmask,compressor & compress)
 	{
 	  typedef typename cobj::vector_type vector_type;
@@ -728,6 +736,7 @@ PARALLEL_FOR_LOOP
 	}
 
 
+      template<class compressor>
 	void  GatherSimd(const Lattice<vobj> &rhs,int dimension,int shift,int cbmask,compressor &compress)
 	{
 	  const int Nsimd = _grid->Nsimd();

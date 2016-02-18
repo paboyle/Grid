@@ -304,8 +304,8 @@ void WilsonFermion5D<Impl>::DhopInternalCommsThenCompute(StencilImpl & st, Lebes
   int nwork = U._grid->oSites();
   
   commtime -=usecond();
-  auto handle = st.HaloExchangeBegin(in,compressor);
-  st.HaloExchangeComplete(handle);
+  auto handle = st.HaloExchangeOptBegin(in,compressor);
+  st.HaloExchangeOptComplete(handle);
   commtime +=usecond();
 
   jointime -=usecond();
@@ -440,7 +440,7 @@ void WilsonFermion5D<Impl>::DhopInternalCommsOverlapCompute(StencilImpl & st, Le
   int nwork = U._grid->oSites();
   
   commtime -=usecond();
-  auto handle = st.HaloExchangeBegin(in,compressor);
+  auto handle = st.HaloExchangeOptBegin(in,compressor);
   commtime +=usecond();
   
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
@@ -498,7 +498,7 @@ PARALLEL_FOR_LOOP
   dslashtime +=usecond();
 
   jointime -=usecond();
-  st.HaloExchangeComplete(handle);
+  st.HaloExchangeOptComplete(handle);
   jointime +=usecond();
 
   local    = false;

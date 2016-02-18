@@ -130,7 +130,7 @@ namespace Grid {
 
       typedef WilsonCompressor<SiteHalfSpinor,SiteSpinor> Compressor;
       typedef WilsonImplParams ImplParams;
-      typedef CartesianStencil<SiteSpinor,SiteHalfSpinor,Compressor> StencilImpl;
+      typedef WilsonStencil<SiteSpinor,SiteHalfSpinor> StencilImpl;
 
       ImplParams Params;
 
@@ -205,7 +205,7 @@ PARALLEL_FOR_LOOP
       typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
 
       typedef WilsonCompressor<SiteHalfSpinor,SiteSpinor> Compressor;
-      typedef CartesianStencil<SiteSpinor,SiteHalfSpinor,Compressor> StencilImpl;
+      typedef WilsonStencil<SiteSpinor,SiteHalfSpinor> StencilImpl;
 
       typedef GparityWilsonImplParams ImplParams;
 

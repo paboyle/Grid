@@ -200,7 +200,7 @@ namespace Grid {
     ////////////////////
     Geometry         geom;
     GridBase *       _grid; 
-    CartesianStencil<siteVector,siteVector,SimpleCompressor<siteVector> > Stencil; 
+    CartesianStencil<siteVector,siteVector> Stencil; 
 
     std::vector<CoarseMatrix> A;
 

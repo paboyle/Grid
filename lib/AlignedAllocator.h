@@ -108,6 +108,14 @@ public:
 #endif
 
 #endif
+    _Tp tmp;
+#undef FIRST_TOUCH_OPTIMISE
+#ifdef FIRST_TOUCH_OPTIMISE
+#pragma omp parallel for 
+  for(int i=0;i<__n;i++){
+    ptr[i]=tmp;
+  }
+#endif 
     return ptr;
   }
 
