@@ -56,13 +56,13 @@ Gather_plane_simple (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<
   
   int e1=rhs._grid->_slice_nblock[dimension];
   int e2=rhs._grid->_slice_block[dimension];
-
+  int stride=rhs._grid->_slice_stride[dimension];
   if ( cbmask == 0x3 ) { 
 PARALLEL_NESTED_LOOP2
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
-	int o  = n*rhs._grid->_slice_stride[dimension];
-	int bo = n*rhs._grid->_slice_block[dimension];
+	int o  = n*stride;
+	int bo = n*e2;
 	buffer[off+bo+b]=compress(rhs._odata[so+o+b]);
       }
     }
@@ -70,7 +70,7 @@ PARALLEL_NESTED_LOOP2
      int bo=0;
      for(int n=0;n<e1;n++){
        for(int b=0;b<e2;b++){
-	 int o  = n*rhs._grid->_slice_stride[dimension];
+	 int o  = n*stride;
 	 int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
 	 if ( ocb &cbmask ) {
 	   buffer[off+bo++]=compress(rhs._odata[so+o+b]);
@@ -106,7 +106,6 @@ PARALLEL_NESTED_LOOP2
 
 	int o      =   n*n1;
 	int offset = b+n*n2;
-
 	cobj temp =compress(rhs._odata[so+o+b]);
 	extract<cobj>(temp,pointers,offset);
 
@@ -244,13 +243,13 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
 
   int e1=rhs._grid->_slice_nblock[dimension]; // clearly loop invariant for icpc
   int e2=rhs._grid->_slice_block[dimension];
-
+  int stride = rhs._grid->_slice_stride[dimension];
   if(cbmask == 0x3 ){
 PARALLEL_NESTED_LOOP2
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
  
-        int o =n*rhs._grid->_slice_stride[dimension]+b;
+        int o =n*stride+b;
   	//lhs._odata[lo+o]=rhs._odata[ro+o];
 	vstream(lhs._odata[lo+o],rhs._odata[ro+o]);
       }
@@ -260,7 +259,7 @@ PARALLEL_NESTED_LOOP2
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
  
-        int o =n*rhs._grid->_slice_stride[dimension]+b;
+        int o =n*stride+b;
         int ocb=1<<lhs._grid->CheckerBoardFromOindex(o);
         if ( ocb&cbmask ) {
   	//lhs._odata[lo+o]=rhs._odata[ro+o];
@@ -286,11 +285,12 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
 
   int e1=rhs._grid->_slice_nblock[dimension];
   int e2=rhs._grid->_slice_block [dimension];
+  int stride = rhs._grid->_slice_stride[dimension];
 PARALLEL_NESTED_LOOP2
   for(int n=0;n<e1;n++){
   for(int b=0;b<e2;b++){
 
-      int o  =n*rhs._grid->_slice_stride[dimension];
+      int o  =n*stride;
       int ocb=1<<lhs._grid->CheckerBoardFromOindex(o+b);
       if ( ocb&cbmask ) {
 	permute(lhs._odata[lo+o+b],rhs._odata[ro+o+b],permute_type);
