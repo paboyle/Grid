@@ -81,7 +81,7 @@ int main (int argc, char ** argv)
   }
   */
 
-  typedef CartesianStencil<vobj,vobj,SimpleCompressor<vobj> > Stencil;
+  typedef CartesianStencil<vobj,vobj> Stencil;
     for(int dir=0;dir<4;dir++){
       for(int disp=0;disp<Fine._fdimensions[dir];disp++){
 
