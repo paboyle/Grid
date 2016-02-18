@@ -212,14 +212,14 @@ namespace QCD {
 	this->u_comm_offset=0;
 
 	int dag = compress.dag;
-	static std::vector<int> dirs(8);
-	for(int mu=0;mu<4;mu++){
+	static std::vector<int> dirs(Nd*2);
+	for(int mu=0;mu<Nd;mu++){
 	  if ( dag ) {
 	    dirs[mu]  =mu;
-	    dirs[mu+4]=mu+4;
+	    dirs[mu+4]=mu+Nd;
 	  } else { 
-	    dirs[mu]  =mu+4;
-	    dirs[mu+4]=mu;
+	    dirs[mu]  =mu+Nd;
+	    dirs[mu+Nd]=mu;
 	  }
 	}
 
