@@ -32,7 +32,7 @@ void CartesianCommunicator::Init(int *argc, char *** arv)
 {
 }
 
-int Rank(void ){ return 0 };
+int Rank(void ){ return 0; };
 
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {
