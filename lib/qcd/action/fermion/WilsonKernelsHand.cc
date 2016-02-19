@@ -1087,6 +1087,7 @@ int WilsonKernels<Impl >::DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField
     vstream(ref()(3)(1),result_31);
     vstream(ref()(3)(2),result_32);
   }
+  return 0;
 }
 
 
@@ -1332,6 +1333,7 @@ int WilsonKernels<Impl >::DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeFi
     vstream(ref()(3)(1),result_31);
     vstream(ref()(3)(2),result_32);
   }
+  return 0;
 }
 
 
