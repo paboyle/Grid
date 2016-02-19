@@ -47,7 +47,7 @@ public:
   GridRedBlackCartesian * UrbGrid ;
   GridRedBlackCartesian * FrbGrid ;
 
-  virtual void BuildTheAction (int argc, char **argv) = 0;
+  virtual void BuildTheAction (int argc, char **argv) = 0; // necessary?
 
   
   void Run (int argc, char  **argv){
@@ -96,7 +96,7 @@ public:
     
     GridSerialRNG    sRNG;
     GridParallelRNG  pRNG(UGrid);
-    LatticeGaugeField  U(UGrid);
+    LatticeGaugeField  U(UGrid); // change this to an extended field (smearing class)
 
     std::vector<int> SerSeed({1,2,3,4,5});
     std::vector<int> ParSeed({6,7,8,9,10});
@@ -129,7 +129,7 @@ public:
       Checkpoint.CheckpointRestore(StartTraj, U, sRNG, pRNG);
     }
 
-    HybridMonteCarlo<GaugeField,IntegratorType>  HMC(HMCpar, MDynamics,sRNG,pRNG,U);
+    HybridMonteCarlo<GaugeField,IntegratorType>  HMC(HMCpar, MDynamics,sRNG,pRNG,U); // pass the extended field
     HMC.AddObservable(&Checkpoint);
     HMC.AddObservable(&PlaqLog);
     

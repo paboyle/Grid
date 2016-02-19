@@ -44,7 +44,6 @@ template<class Gimpl> class WilsonLoops;
     typedef typename GImpl::GaugeLinkField       GaugeLinkField;\
     typedef typename GImpl::GaugeField               GaugeField;	
 
-
     // 
     template<class S,int Nrepresentation=Nc>
     class GaugeImplTypes { 

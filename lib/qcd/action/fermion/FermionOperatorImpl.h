@@ -75,7 +75,7 @@ namespace Grid {
     //
     //
     // template<class Impl>
-    // class MyOp : pubic<Impl> { 
+    // class MyOp : public<Impl> { 
     // public:
     //
     //    INHERIT_ALL_IMPL_TYPES(Impl);
@@ -110,7 +110,7 @@ namespace Grid {
     // Single flavour four spinors with colour index
     ///////
     template<class S,int Nrepresentation=Nc>
-    class WilsonImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepresentation> > { 
+    class WilsonImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S, Nrepresentation> > { 
     public:
 
       typedef PeriodicGaugeImpl< GaugeImplTypes< S,Nrepresentation> > Gimpl;

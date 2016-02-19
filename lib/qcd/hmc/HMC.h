@@ -44,7 +44,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 namespace Grid{
   namespace QCD{
-    
+     
 
     struct HMCparameters{
 
