@@ -77,11 +77,15 @@ namespace Grid {
       
       void set_GaugeField(){ fill_smearedSet(); }
       void smeared_force(GaugeField&) const;
-      GaugeField& get_current_conf() const;
-      GaugeField& select_conf(bool smeared) const {
+      GaugeField* get_SmearedU() const{ 
+	return const_cast<GaugeField*>(&(SmearedSet[smearingLevels-1]));
+      }
+
+      GaugeField* get_U(bool smeared=false) const { 
+	// get the config, thin links by default
 	if (smeared){
-	  if (smearingLevels) return get_current_conf();
-	  else           	  return ThinLinks;
+	  if (smearingLevels) return get_SmearedU();
+	  else                return ThinLinks;
 	}
 	else return ThinLinks;
       }
@@ -92,5 +96,9 @@ namespace Grid {
   }
 
 }
+
+
+
+
 
 #endif

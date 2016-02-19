@@ -171,6 +171,89 @@ public:
     }
   }
 
+  //////////////////////////////////////////////////
+  // the sum over all staples on each site in direction mu,nu
+  //////////////////////////////////////////////////
+  static void Staple(GaugeMat &staple,const GaugeLorentz &Umu,int mu, in nu){
+
+    GridBase *grid = Umu._grid;
+
+    std::vector<GaugeMat> U(4,grid);
+    for(int d=0;d<Nd;d++){
+      U[d] = PeekIndex<LorentzIndex>(Umu,d);
+    }
+    staple = zero;
+    GaugeMat tmp(grid);
+
+    
+    if(nu != mu) {
+      
+      // mu
+      // ^
+      // |__>  nu
+      
+      //    __ 
+      //      |
+      //    __|
+      //
+
+	staple+=Gimpl::ShiftStaple(
+	        Gimpl::CovShiftForward (U[nu],nu, 
+		Gimpl::CovShiftBackward(U[mu],mu,
+		Gimpl::CovShiftIdentityBackward(U[nu],nu))),mu);
+
+      //  __ 
+      // |   
+      // |__ 
+      //
+      //
+	staple+=Gimpl::ShiftStaple(  
+                Gimpl::CovShiftBackward(U[nu],nu,		  		  
+		Gimpl::CovShiftBackward(U[mu],mu,U[nu])),mu);
+      
+    }
+  }
+
+
+  //////////////////////////////////////////////////
+  // the sum over all staples on each site in direction mu,nu, upper part
+  //////////////////////////////////////////////////
+  static void StapleUpper(GaugeMat &staple,const GaugeLorentz &Umu,int mu, in nu){
+
+    GridBase *grid = Umu._grid;
+
+    std::vector<GaugeMat> U(4,grid);
+    for(int d=0;d<Nd;d++){
+      U[d] = PeekIndex<LorentzIndex>(Umu,d);
+    }
+    staple = zero;
+    GaugeMat tmp(grid);
+
+    
+    if(nu != mu) {
+      
+      // mu
+      // ^
+      // |__>  nu
+      
+      //    __ 
+      //      |
+      //    __|
+      //
+
+	staple+=Gimpl::ShiftStaple(
+	        Gimpl::CovShiftForward (U[nu],nu, 
+		Gimpl::CovShiftBackward(U[mu],mu,
+		Gimpl::CovShiftIdentityBackward(U[nu],nu))),mu);
+
+     }
+  }
+
+
+
+
+
+
   //////////////////////////////////////////////////////
   // Similar to above for rectangle is required
   //////////////////////////////////////////////////////
