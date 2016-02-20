@@ -43,13 +43,14 @@ int main (int argc, char ** argv)
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
+  printf("UGrid=%p UrbGrid=%p FGrid=%p FrbGrid=%p\n",UGrid,UrbGrid,FGrid,FrbGrid);
 
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
   GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
+  GridParallelRNG          RNG5rb(FrbGrid);  RNG5.SeedFixedIntegers(seeds5);
 
-  LatticeFermion    src(FGrid); gaussian(RNG5,src);
   LatticeGaugeField Umu(UGrid); 
   SU3::HotConfiguration(RNG4, Umu);
 
@@ -58,33 +59,36 @@ int main (int argc, char ** argv)
     U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
   }
   
-  RealD mass=0.1;
+  RealD mass=0.01;
   RealD M5=1.8;
   DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
-  MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
+//  MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
+//  SchurDiagTwoOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
+  SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
 
   const int Nstop = 30;
   const int Nk = 40;
-  const int Np = 10;
+  const int Np = 40;
   const int Nm = Nk+Np;
   const int MaxIt= 10000;
   RealD resid = 1.0e-8;
 
-  std::vector<double> Coeffs { 0.,1.};
+  std::vector<double> Coeffs { 0.,-1.};
   Polynomial<LatticeFermion> PolyX(Coeffs);
-  Chebyshev<LatticeFermion> Cheb(1,80.,11);
+  Chebyshev<LatticeFermion> Cheb(1,80.,21);
 //  ChebyshevLanczos<LatticeFermion> Cheb(9.,1.,0.,20);
-  Cheb.csv(std::cout);
+//  Cheb.csv(std::cout);
 //  exit(-24);
-  ImplicitlyRestartedLanczos<LatticeFermion> IRL(*FGrid,HermOp,Cheb,Nstop,Nk,Nm,resid,MaxIt);
+  ImplicitlyRestartedLanczos<LatticeFermion> IRL(HermOp,Cheb,Nstop,Nk,Nm,resid,MaxIt);
 
   
   std::vector<RealD>          eval(Nm);
-  std::vector<LatticeFermion> evec(Nm,FGrid);
-//  for(int i=0;i<Nm;i++){
-//    std::cout << i<<" / "<< Nm<< " grid pointer "<<evec[i]._grid<<std::endl;
-//  };
+  LatticeFermion    src(FrbGrid); gaussian(RNG5rb,src);
+  std::vector<LatticeFermion> evec(Nm,FrbGrid);
+  for(int i=0;i<1;i++){
+    std::cout << i<<" / "<< Nm<< " grid pointer "<<evec[i]._grid<<std::endl;
+  };
 
   int Nconv;
   IRL.calc(eval,evec,

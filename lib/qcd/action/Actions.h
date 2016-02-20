@@ -209,7 +209,7 @@ typedef WilsonFermion<GparityWilsonImplD>     GparityWilsonFermionD;
 typedef DomainWallFermion<GparityWilsonImplR> GparityDomainWallFermionR;
 typedef DomainWallFermion<GparityWilsonImplF> GparityDomainWallFermionF;
 typedef DomainWallFermion<GparityWilsonImplD> GparityDomainWallFermionD;
-#if 0
+#if 1
 typedef WilsonTMFermion<GparityWilsonImplR> GparityWilsonTMFermionR;
 typedef WilsonTMFermion<GparityWilsonImplF> GparityWilsonTMFermionF;
 typedef WilsonTMFermion<GparityWilsonImplD> GparityWilsonTMFermionD;

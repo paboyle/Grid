@@ -198,6 +198,8 @@ namespace Grid {
     void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) {
 
       GridBase *grid=in._grid;
+//std::cout << "Chevyshef(): in._grid="<<in._grid<<std::endl;
+//<<" Linop.Grid()="<<Linop.Grid()<<"Linop.RedBlackGrid()="<<Linop.RedBlackGrid()<<std::endl;
 
       int vol=grid->gSites();
 

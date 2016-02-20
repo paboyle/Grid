@@ -96,6 +96,9 @@ Test_dwf_hdcr_LDADD=-lGrid
 
 Test_dwf_lanczos_SOURCES=Test_dwf_lanczos.cc
 Test_dwf_lanczos_LDADD=-lGrid
+if USE_LAPACK
+Test_dwf_lanczos_LDADD +=-lGrid -llapack -llapacke
+endif
 
 
 Test_gamma_SOURCES=Test_gamma.cc
@@ -232,6 +235,9 @@ Test_stencil_LDADD=-lGrid
 
 Test_synthetic_lanczos_SOURCES=Test_synthetic_lanczos.cc
 Test_synthetic_lanczos_LDADD=-lGrid
+if USE_LAPACK
+Test_synthetic_lanczos_LDADD +=-lGrid -llapack -llapacke
+endif
 
 
 Test_wilson_cg_prec_SOURCES=Test_wilson_cg_prec.cc

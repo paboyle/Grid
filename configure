@@ -626,6 +626,10 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+USE_LAPACK_LIB_FALSE
+USE_LAPACK_LIB_TRUE
+USE_LAPACK_FALSE
+USE_LAPACK_TRUE
 BUILD_CHROMA_REGRESSION_FALSE
 BUILD_CHROMA_REGRESSION_TRUE
 BUILD_COMMS_NONE_FALSE
@@ -751,6 +755,7 @@ enable_precision
 enable_comms
 enable_rng
 enable_chroma
+enable_lapack
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1399,6 +1404,7 @@ Optional Features:
   --enable-rng=ranlux48|mt19937
                           Select Random Number Generator to be used
   --enable-chroma         Expect chroma compiled under c++11
+  --enable-lapack         Location of lapack
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -6629,6 +6635,47 @@ else
 fi
 
 
+#
+# Chroma regression tests
+#
+# Check whether --enable-lapack was given.
+if test "${enable_lapack+set}" = set; then :
+  enableval=$enable_lapack; ac_LAPACK=${enable_lapack}
+else
+  ac_LAPACK=no
+fi
+
+
+case ${ac_LAPACK} in
+     yes)
+       echo Enabling lapack
+     ;;
+     no)
+       echo Disabling lapack
+     ;;
+     *)
+       echo Enabling lapack at ${ac_LAPACK}
+#     AC_MSG_ERROR([Enabli${ac_LAPACK} unsupported --enable-lapack option]);
+     ;;
+esac
+
+ if  test "X${ac_LAPACK}X" != "XnoX" ; then
+  USE_LAPACK_TRUE=
+  USE_LAPACK_FALSE='#'
+else
+  USE_LAPACK_TRUE='#'
+  USE_LAPACK_FALSE=
+fi
+
+ if  test "X${ac_LAPACK}X" != "XyesX" ; then
+  USE_LAPACK_LIB_TRUE=
+  USE_LAPACK_LIB_FALSE='#'
+else
+  USE_LAPACK_LIB_TRUE='#'
+  USE_LAPACK_LIB_FALSE=
+fi
+
+
 ###################################################################
 # Checks for doxygen support
 # if present enables the "make doxyfile" command
@@ -6806,6 +6853,14 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BUILD_CHROMA_REGRESSION_TRUE}" && test -z "${BUILD_CHROMA_REGRESSION_FALSE}"; then
   as_fn_error $? "conditional \"BUILD_CHROMA_REGRESSION\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${USE_LAPACK_TRUE}" && test -z "${USE_LAPACK_FALSE}"; then
+  as_fn_error $? "conditional \"USE_LAPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${USE_LAPACK_LIB_TRUE}" && test -z "${USE_LAPACK_LIB_FALSE}"; then
+  as_fn_error $? "conditional \"USE_LAPACK_LIB\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
@@ -8154,6 +8209,7 @@ The following features are enabled:
 - communications type           : ${ac_COMMS}
 - default precision             : ${ac_PRECISION}
 - RNG choice                    : ${ac_RNG}
+- LAPACK	                : ${ac_LAPACK}
 
 
 "

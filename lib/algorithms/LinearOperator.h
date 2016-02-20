@@ -222,6 +222,7 @@ namespace Grid {
       SchurDiagMooeeOperator (Matrix &Mat): _Mat(Mat){};
       virtual  RealD Mpc      (const Field &in, Field &out) {
 	Field tmp(in._grid);
+//	std::cout <<"grid pointers: in._grid="<< in._grid << " out._grid=" << out._grid << "  _Mat.Grid=" << _Mat.Grid() << " _Mat.RedBlackGrid=" << _Mat.RedBlackGrid() << std::endl;
 
 	_Mat.Meooe(in,tmp);
 	_Mat.MooeeInv(tmp,out);
@@ -251,10 +252,10 @@ namespace Grid {
       virtual  RealD Mpc      (const Field &in, Field &out) {
 	Field tmp(in._grid);
 
-	_Mat.Meooe(in,tmp);
-	_Mat.MooeeInv(tmp,out);
-	_Mat.Meooe(out,tmp);
-	_Mat.MooeeInv(tmp,out);
+	_Mat.Meooe(in,out);
+	_Mat.MooeeInv(out,tmp);
+	_Mat.Meooe(tmp,out);
+	_Mat.MooeeInv(out,tmp);
 
 	return axpy_norm(out,-1.0,tmp,in);
       }
