@@ -103,27 +103,27 @@ public:
 
     if ( StartType == HotStart ) {
       // Hot start
-      HMCpar.NoMetropolisUntil =0;
+      HMCpar.NoMetropolisUntil =10;
       HMCpar.MetropolisTest = true;
       sRNG.SeedFixedIntegers(SerSeed);
       pRNG.SeedFixedIntegers(ParSeed);
       SU3::HotConfiguration(pRNG, U);
     } else if ( StartType == ColdStart ) { 
       // Cold start
-      HMCpar.NoMetropolisUntil =0;
+      HMCpar.NoMetropolisUntil =10;
       HMCpar.MetropolisTest = true;
       sRNG.SeedFixedIntegers(SerSeed);
       pRNG.SeedFixedIntegers(ParSeed);
       SU3::ColdConfiguration(pRNG, U);
     } else if ( StartType == TepidStart ) {       
       // Tepid start
-      HMCpar.NoMetropolisUntil =0;
+      HMCpar.NoMetropolisUntil =10;
       HMCpar.MetropolisTest = true;
       sRNG.SeedFixedIntegers(SerSeed);
       pRNG.SeedFixedIntegers(ParSeed);
       SU3::TepidConfiguration(pRNG, U);
     } else if ( StartType == CheckpointStart ) { 
-      HMCpar.NoMetropolisUntil =0;
+      HMCpar.NoMetropolisUntil =10;
       HMCpar.MetropolisTest = true;
       // CheckpointRestart
       Checkpoint.CheckpointRestore(StartTraj, U, sRNG, pRNG);
