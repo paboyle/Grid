@@ -99,7 +99,6 @@ extern GridLogger GridLogIntegrator  ;
 #define _NBACKTRACE (256)
 extern void * Grid_backtrace_buffer[_NBACKTRACE];
 
-#ifdef HAVE_EXECINFO_H
 #define BACKTRACEFILE() {\
     char string[20];					\
     std::sprintf(string,"backtrace.%d",Rank());				\
@@ -107,7 +106,9 @@ extern void * Grid_backtrace_buffer[_NBACKTRACE];
     BACKTRACEFP(fp)\
     std::fclose(fp);	    \
 }
-#define BACKTRACE() BACKTRACE(std::stdout) 
+
+
+#ifdef HAVE_EXECINFO_H
 #define BACKTRACEFP(fp) { \
   int symbols    = backtrace        (Grid_backtrace_buffer,_NBACKTRACE);\
   char **strings = backtrace_symbols(Grid_backtrace_buffer,symbols);\
@@ -116,14 +117,15 @@ extern void * Grid_backtrace_buffer[_NBACKTRACE];
   }\
 }
 #else 
-#define BACKTRACE() BACKTRACE(std::stdout);
-
 #define BACKTRACEFP(fp) { \
-  for (int i = 0; i < 4; i++){\
-    std::fprintf (fp,"BT %d %lx\n",i, __builtin_return_address(i); std::fflush(fp); \
-  }\
+    std::fprintf (fp,"BT %d %lx\n",0, __builtin_return_address(0)); std::fflush(fp); \
+    std::fprintf (fp,"BT %d %lx\n",1, __builtin_return_address(1)); std::fflush(fp); \
+    std::fprintf (fp,"BT %d %lx\n",2, __builtin_return_address(2)); std::fflush(fp); \
+    std::fprintf (fp,"BT %d %lx\n",3, __builtin_return_address(3)); std::fflush(fp); \
 }
 #endif
+
+#define BACKTRACE() BACKTRACEFP(stdout) 
 
 }
 #endif

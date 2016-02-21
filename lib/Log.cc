@@ -62,6 +62,19 @@ void GridLogConfigure(std::vector<std::string> &logstreams)
   GridLogPerformance.Active(0);
   GridLogIntegrator.Active(0);
 
+  int blackAndWhite = 1;
+  if(blackAndWhite){
+    Logger::BLACK = std::string("");
+    Logger::RED    =Logger::BLACK;
+    Logger::GREEN  =Logger::BLACK;
+    Logger::YELLOW =Logger::BLACK;
+    Logger::BLUE   =Logger::BLACK;
+    Logger::PURPLE =Logger::BLACK;
+    Logger::CYAN   =Logger::BLACK;
+    Logger::WHITE  =Logger::BLACK;
+    Logger::NORMAL =Logger::BLACK;
+  }
+
   for(int i=0;i<logstreams.size();i++){
     if ( logstreams[i]== std::string("Error")       ) GridLogError.Active(1);
     if ( logstreams[i]== std::string("Warning")     ) GridLogWarning.Active(1);
