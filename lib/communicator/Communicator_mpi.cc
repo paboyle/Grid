@@ -117,21 +117,22 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
   SendToRecvFromBegin(reqs,xmit,dest,recv,from,bytes);
   SendToRecvFromComplete(reqs);
 }
-void CartesianCommunicator::RecvFrom(void *recv,
-				     int from,
-				     int bytes) 
+
+void CartesianCommunicator::SendRecvPacket(void *xmit,
+					   void *recv,
+					   int sender,
+					   int receiver,
+					   int bytes)
 {
   MPI_Status stat;
-  int ierr=MPI_Recv(recv, bytes, MPI_CHAR,from,from,communicator,&stat);
-  assert(ierr==0);
-}
-void CartesianCommunicator::SendTo(void *xmit,
-				   int dest,
-				   int bytes)
-{
-  int rank = _processor; // used for tag; must know who it comes from
-  int ierr = MPI_Send(xmit, bytes, MPI_CHAR,dest,_processor,communicator);
-  assert(ierr==0);
+  assert(sender != receiver);
+  int tag = sender;
+  if ( _processor == sender ) {
+    MPI_Send(xmit, bytes, MPI_CHAR,receiver,tag,communicator);
+  }
+  if ( _processor == receiver ) { 
+    MPI_Recv(recv, bytes, MPI_CHAR,sender,tag,communicator,&stat);
+  }
 }
 
 // Basic Halo comms primitive

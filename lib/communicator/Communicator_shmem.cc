@@ -39,11 +39,28 @@ namespace Grid {
     BACKTRACEFILE();		   \
   }\
 }
-  int Rank(void) {
-    return shmem_my_pe();
-  }
+int Rank(void) {
+  return shmem_my_pe();
+}
+typedef struct HandShake_t { 
+  uint64_t seq_local;
+  uint64_t seq_remote;
+} HandShake;
+
+static Vector< HandShake > XConnections;
+static Vector< HandShake > RConnections;
+
 void CartesianCommunicator::Init(int *argc, char ***argv) {
   shmem_init();
+  XConnections.resize(shmem_n_pes());
+  RConnections.resize(shmem_n_pes());
+  for(int pe =0 ; pe<shmem_n_pes();pe++){
+    XConnections[pe].seq_local = 0;
+    XConnections[pe].seq_remote= 0;
+    RConnections[pe].seq_local = 0;
+    RConnections[pe].seq_remote= 0;
+  }
+  shmem_barrier_all();
 }
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {
@@ -69,23 +86,29 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 }
 
 void CartesianCommunicator::GlobalSum(uint32_t &u){
-  static long long source = (long long) u;
-  static long long dest   = 0 ;
+  static long long source ;
+  static long long dest   ;
   static long long llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
   static long      psync[_SHMEM_REDUCE_SYNC_SIZE];
 
   //  int nreduce=1;
   //  int pestart=0;
   //  int logStride=0;
+
+  source = u;
+  dest   = 0;
   shmem_longlong_sum_to_all(&dest,&source,1,0,0,_Nprocessors,llwrk,psync);
+  shmem_barrier_all(); // necessary?
   u = dest;
 }
 void CartesianCommunicator::GlobalSum(float &f){
-  static float source = f;
-  static float dest   = 0 ;
+  static float source ;
+  static float dest   ;
   static float llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
   static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
 
+  source = f;
+  dest   =0.0;
   shmem_float_sum_to_all(&dest,&source,1,0,0,_Nprocessors,llwrk,psync);
   f = dest;
 }
@@ -96,13 +119,13 @@ void CartesianCommunicator::GlobalSumVector(float *f,int N)
   static float llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
   static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
 
-  // Inefficient, but don't want to dynamic alloc
   if ( shmem_addr_accessible(f,_processor)  ){
     shmem_float_sum_to_all(f,f,N,0,0,_Nprocessors,llwrk,psync);
     return;
   }
 
   for(int i=0;i<N;i++){
+    dest   =0.0;
     source = f[i];
     shmem_float_sum_to_all(&dest,&source,1,0,0,_Nprocessors,llwrk,psync);
     f[i] = dest;
@@ -110,18 +133,20 @@ void CartesianCommunicator::GlobalSumVector(float *f,int N)
 }
 void CartesianCommunicator::GlobalSum(double &d)
 {
-  static double source = d;
-  static double dest   = 0 ;
+  static double source;
+  static double dest  ;
   static double llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
   static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
 
+  source = d;
+  dest   = 0;
   shmem_double_sum_to_all(&dest,&source,1,0,0,_Nprocessors,llwrk,psync);
   d = dest;
 }
 void CartesianCommunicator::GlobalSumVector(double *d,int N)
 {
   static double source ;
-  static double dest   = 0 ;
+  static double dest   ;
   static double llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
   static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
 
@@ -132,6 +157,7 @@ void CartesianCommunicator::GlobalSumVector(double *d,int N)
 
   for(int i=0;i<N;i++){
     source = d[i];
+    dest   =0.0;
     shmem_double_sum_to_all(&dest,&source,1,0,0,_Nprocessors,llwrk,psync);
     d[i] = dest;
   }
@@ -173,19 +199,56 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
   SendToRecvFromBegin(reqs,xmit,dest,recv,from,bytes);
   SendToRecvFromComplete(reqs);
 }
-void CartesianCommunicator::RecvFrom(void *recv,
-				     int from,
-				     int bytes) 
+
+void CartesianCommunicator::SendRecvPacket(void *xmit,
+					   void *recv,
+					   int sender,
+					   int receiver,
+					   int bytes)
 {
-  // Need to change interface to know send buffer; change to a get/put interface.
-  assert(0);
-}
-void CartesianCommunicator::SendTo(void *xmit,
-				   int dest,
-				   int bytes)
-{
-  // Need to change interface to know destination buffer... likely needed for I/O
-  assert(0);
+  static uint64_t seq;
+
+  assert(recv!=xmit);
+  volatile HandShake *RecvSeq = (volatile HandShake *) & RConnections[sender];
+  volatile HandShake *SendSeq = (volatile HandShake *) & XConnections[receiver];
+
+  if ( _processor == sender ) {
+
+    printf("Sender SHMEM pt2pt %d -> %d\n",sender,receiver);
+    // Check he has posted a receive
+    while(SendSeq->seq_remote == SendSeq->seq_local);
+
+    printf("Sender receive %d posted\n",sender,receiver);
+
+    // Advance our send count
+    seq = ++(SendSeq->seq_local);
+    
+    // Send this packet 
+    SHMEM_VET(recv);
+    shmem_putmem(recv,xmit,bytes,receiver);
+    shmem_fence();
+
+    printf("Sender sent payload %d\n",seq);
+    //Notify him we're done
+    shmem_putmem((void *)&(RecvSeq->seq_remote),&seq,sizeof(seq),receiver);
+    shmem_fence();
+    printf("Sender ringing door bell  %d\n",seq);
+  }
+  if ( _processor == receiver ) {
+
+    printf("Receiver SHMEM pt2pt %d->%d\n",sender,receiver);
+    // Post a receive
+    seq = ++(RecvSeq->seq_local);
+    shmem_putmem((void *)&(SendSeq->seq_remote),&seq,sizeof(seq),sender);
+
+    printf("Receiver Opening letter box %d\n",seq);
+
+    
+    // Now wait until he has advanced our reception counter
+    while(RecvSeq->seq_remote != RecvSeq->seq_local);
+
+    printf("Receiver Got the mail %d\n",seq);
+  }
 }
 
 // Basic Halo comms primitive
@@ -217,7 +280,12 @@ void CartesianCommunicator::Broadcast(int root,void* data, int bytes)
   uint32_t *array = (uint32_t *) data;
   assert( (bytes % 4)==0);
   int words = bytes/4;
-  
+
+  if ( shmem_addr_accessible(data,_processor)  ){
+    shmem_broadcast32(data,data,words,root,0,0,shmem_n_pes(),psync);
+    return;
+  }
+
   for(int w=0;w<words;w++){
     word = array[w];
     shmem_broadcast32((void *)&word,(void *)&word,1,root,0,0,shmem_n_pes(),psync);

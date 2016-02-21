@@ -1,3 +1,4 @@
+
     /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -304,8 +305,8 @@ void WilsonFermion5D<Impl>::DhopInternalCommsThenCompute(StencilImpl & st, Lebes
   int nwork = U._grid->oSites();
   
   commtime -=usecond();
-  auto handle = st.HaloExchangeBegin(in,compressor);
-  st.HaloExchangeComplete(handle);
+  auto handle = st.HaloExchangeOptBegin(in,compressor);
+  st.HaloExchangeOptComplete(handle);
   commtime +=usecond();
 
   jointime -=usecond();

@@ -265,6 +265,7 @@ class BinaryIO {
     typedef typename GridSerialRNG::RngStateType RngStateType;
     const int RngStateCount = GridSerialRNG::RngStateCount;
 
+
     GridBase *grid = parallel._grid;
     int gsites = grid->_gsites;
 
@@ -310,7 +311,7 @@ class BinaryIO {
       Uint32Checksum((uint32_t *)&saved[0],bytes,csum);
       fout.write((char *)&saved[0],bytes);
     }
-
+    grid->Broadcast(0,(void *)&csum,sizeof(csum));
     return csum;
   }
   static inline uint32_t readRNGSerial(GridSerialRNG &serial,GridParallelRNG &parallel,std::string file,int offset)
@@ -360,6 +361,8 @@ class BinaryIO {
       Uint32Checksum((uint32_t *)&saved[0],bytes,csum);
     }
 
+    grid->Broadcast(0,(void *)&csum,sizeof(csum));
+
     return csum;
   }
 
@@ -398,7 +401,7 @@ class BinaryIO {
     int IOnode = 1;
     for(int d=0;d<grid->_ndimension;d++) {
 
-      if ( d==0 ) parallel[d] = 0;
+      if ( d == 0 ) parallel[d] = 0;
       if (parallel[d]) {
 	range[d] = grid->_ldimensions[d];
 	start[d] = grid->_processor_coor[d]*range[d];
@@ -439,9 +442,9 @@ class BinaryIO {
     // available (how short sighted is that?)
     //////////////////////////////////////////////////////////
     Umu = zero;
-    uint32_t csum=0;
+    static uint32_t csum=0;
     fobj fileObj;
-    sobj siteObj;
+    static sobj siteObj; // Static to place in symmetric region for SHMEM
 
       // need to implement these loops in Nd independent way with a lexico conversion
     for(int tlex=0;tlex<slice_vol;tlex++){
@@ -461,7 +464,7 @@ class BinaryIO {
       /////////////////////////
       // Get the rank of owner of data
       /////////////////////////
-	int rank, o_idx,i_idx, g_idx;
+      int rank, o_idx,i_idx, g_idx;
       grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gsite);
       grid->GlobalCoorToGlobalIndex(gsite,g_idx);
       
@@ -479,23 +482,24 @@ class BinaryIO {
 	if(ieee64)    le64toh_v((void *)&fileObj,sizeof(fileObj));
 	
 	munge(fileObj,siteObj,csum);
-	
-	if ( rank != myrank ) {
-	  grid->SendTo((void *)&siteObj,rank,sizeof(siteObj));
-	} else { 
-	  pokeLocalSite(siteObj,Umu,lsite);
+
+      }	
+
+      // Possibly do transport through pt2pt 
+      if ( rank != iorank ) { 
+	if ( (myrank == rank) || (myrank==iorank) ) {
+	  grid->SendRecvPacket((void *)&siteObj,(void *)&siteObj,iorank,rank,sizeof(siteObj));
 	}
-	 
-      } else { 
-	if ( myrank == rank ) {
-	  grid->RecvFrom((void *)&siteObj,iorank,sizeof(siteObj));
+      }
+      // Poke at destination
+      if ( myrank == rank ) {
 	  pokeLocalSite(siteObj,Umu,lsite);
-	} 
       }
       grid->Barrier(); // necessary?
     }
 
     grid->GlobalSum(csum);
+    grid->Barrier();
     
     return csum;
   }
@@ -530,7 +534,7 @@ class BinaryIO {
 
     for(int d=0;d<grid->_ndimension;d++) {
 
-      if ( d==0 ) parallel[d] = 0;
+      if ( d!= grid->_ndimension-1 ) parallel[d] = 0;
 
       if (parallel[d]) {
 	range[d] = grid->_ldimensions[d];
@@ -577,10 +581,10 @@ class BinaryIO {
 
     uint32_t csum=0;
     fobj fileObj;
-    sobj siteObj;
+    static sobj siteObj; // static for SHMEM target; otherwise dynamic allocate with AlignedAllocator
 
-
-      // need to implement these loops in Nd independent way with a lexico conversion
+    // should aggregate a whole chunk and then write.
+    // need to implement these loops in Nd independent way with a lexico conversion
     for(int tlex=0;tlex<slice_vol;tlex++){
 	
       std::vector<int> tsite(nd); // temporary mixed up site
@@ -606,13 +610,21 @@ class BinaryIO {
       ////////////////////////////////
       // iorank writes from the seek
       ////////////////////////////////
-      if (myrank == iorank) {
+      
+      // Owner of data peeks it
+      peekLocalSite(siteObj,Umu,lsite);
 
-	if ( rank != myrank ) {
-	  grid->RecvFrom((void *)&siteObj,rank,sizeof(siteObj));
-	} else { 
-	  peekLocalSite(siteObj,Umu,lsite);
+      // Pair of nodes may need to do pt2pt send
+      if ( rank != iorank ) { // comms is necessary
+	if ( (myrank == rank) || (myrank==iorank) ) { // and we have to do it
+	  // Send to IOrank 
+	  grid->SendRecvPacket((void *)&siteObj,(void *)&siteObj,rank,iorank,sizeof(siteObj));
 	}
+      }
+
+      grid->Barrier(); // necessary?
+
+      if (myrank == iorank) {
 	
 	munge(siteObj,fileObj,csum);
 
@@ -624,13 +636,7 @@ class BinaryIO {
 	fout.seekp(offset+g_idx*sizeof(fileObj));
 	fout.write((char *)&fileObj,sizeof(fileObj));
 
-      } else { 
-	if ( myrank == rank ) {
-	  peekLocalSite(siteObj,Umu,lsite);
-	  grid->SendTo((void *)&siteObj,iorank,sizeof(siteObj));
-	} 
       }
-      grid->Barrier(); // necessary// or every 16 packets to rate throttle??
     }
 
     grid->GlobalSum(csum);
