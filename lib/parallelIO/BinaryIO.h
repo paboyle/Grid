@@ -1,3 +1,31 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/parallelIO/BinaryIO.h
+
+    Copyright (C) 2015
+
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #ifndef GRID_BINARY_IO_H
 #define GRID_BINARY_IO_H
 
@@ -107,7 +135,7 @@ class BinaryIO {
     }
   }
 
-  template<class vobj,class fobj,class munger> static inline void Uint32Checksum(Lattice<vobj> lat,munger munge,uint32_t &csum)
+  template<class vobj,class fobj,class munger> static inline void Uint32Checksum(Lattice<vobj> &lat,munger munge,uint32_t &csum)
   {
     typedef typename vobj::scalar_object sobj;
     GridBase *grid = lat._grid ;
@@ -118,7 +146,7 @@ class BinaryIO {
     csum = 0;
     std::vector<int> lcoor;
     for(int l=0;l<grid->lSites();l++){
-      grid->CoorFromIndex(lcoor,l,grid->_ldimensions);
+      Lexicographic::CoorFromIndex(lcoor,l,grid->_ldimensions);
       peekLocalSite(siteObj,lat,lcoor);
       munge(siteObj,fileObj,csum);
     }
@@ -232,6 +260,113 @@ class BinaryIO {
     return csum;
   }
 
+  static inline uint32_t writeRNGSerial(GridSerialRNG &serial,GridParallelRNG &parallel,std::string file,int offset)
+  {
+    typedef typename GridSerialRNG::RngStateType RngStateType;
+    const int RngStateCount = GridSerialRNG::RngStateCount;
+
+
+    GridBase *grid = parallel._grid;
+    int gsites = grid->_gsites;
+
+    //////////////////////////////////////////////////
+    // Serialise through node zero
+    //////////////////////////////////////////////////
+    std::cout<< GridLogMessage<< "Serial RNG write I/O "<< file<<std::endl;
+
+    std::ofstream fout;
+    if ( grid->IsBoss() ) {
+      fout.open(file,std::ios::binary|std::ios::out|std::ios::in);
+      fout.seekp(offset);
+    }
+    
+    uint32_t csum=0;
+    std::vector<RngStateType> saved(RngStateCount);
+    int bytes = sizeof(RngStateType)*saved.size();
+    std::vector<int> gcoor;
+
+    for(int gidx=0;gidx<gsites;gidx++){
+
+      int rank,o_idx,i_idx;
+      grid->GlobalIndexToGlobalCoor(gidx,gcoor);
+      grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
+      int l_idx=parallel.generator_idx(o_idx,i_idx);
+
+      if( rank == grid->ThisRank() ){
+	//	std::cout << "rank" << rank<<" Getting state for index "<<l_idx<<std::endl;
+	parallel.GetState(saved,l_idx);
+      }
+
+      grid->Broadcast(rank,(void *)&saved[0],bytes);
+
+      if ( grid->IsBoss() ) {
+	Uint32Checksum((uint32_t *)&saved[0],bytes,csum);
+	fout.write((char *)&saved[0],bytes);
+      }
+
+    }
+
+    if ( grid->IsBoss() ) {
+      serial.GetState(saved,0);
+      Uint32Checksum((uint32_t *)&saved[0],bytes,csum);
+      fout.write((char *)&saved[0],bytes);
+    }
+    grid->Broadcast(0,(void *)&csum,sizeof(csum));
+    return csum;
+  }
+  static inline uint32_t readRNGSerial(GridSerialRNG &serial,GridParallelRNG &parallel,std::string file,int offset)
+  {
+    typedef typename GridSerialRNG::RngStateType RngStateType;
+    const int RngStateCount = GridSerialRNG::RngStateCount;
+
+    GridBase *grid = parallel._grid;
+    int gsites = grid->_gsites;
+
+    //////////////////////////////////////////////////
+    // Serialise through node zero
+    //////////////////////////////////////////////////
+    std::cout<< GridLogMessage<< "Serial RNG read I/O "<< file<<std::endl;
+
+    std::ifstream fin(file,std::ios::binary|std::ios::in);
+    fin.seekg(offset);
+    
+    uint32_t csum=0;
+    std::vector<RngStateType> saved(RngStateCount);
+    int bytes = sizeof(RngStateType)*saved.size();
+    std::vector<int> gcoor;
+
+    for(int gidx=0;gidx<gsites;gidx++){
+
+      int rank,o_idx,i_idx;
+      grid->GlobalIndexToGlobalCoor(gidx,gcoor);
+      grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
+      int l_idx=parallel.generator_idx(o_idx,i_idx);
+
+      if ( grid->IsBoss() ) {
+	fin.read((char *)&saved[0],bytes);
+	Uint32Checksum((uint32_t *)&saved[0],bytes,csum);
+      }
+
+      grid->Broadcast(0,(void *)&saved[0],bytes);
+
+      if( rank == grid->ThisRank() ){
+	parallel.SetState(saved,l_idx);
+      }
+
+    }
+
+    if ( grid->IsBoss() ) {
+      fin.read((char *)&saved[0],bytes);
+      serial.SetState(saved,0);
+      Uint32Checksum((uint32_t *)&saved[0],bytes,csum);
+    }
+
+    grid->Broadcast(0,(void *)&csum,sizeof(csum));
+
+    return csum;
+  }
+
+
   template<class vobj,class fobj,class munger>
   static inline uint32_t readObjectParallel(Lattice<vobj> &Umu,std::string file,munger munge,int offset,const std::string &format)
   {
@@ -266,7 +401,7 @@ class BinaryIO {
     int IOnode = 1;
     for(int d=0;d<grid->_ndimension;d++) {
 
-      if ( d==0 ) parallel[d] = 0;
+      if ( d == 0 ) parallel[d] = 0;
       if (parallel[d]) {
 	range[d] = grid->_ldimensions[d];
 	start[d] = grid->_processor_coor[d]*range[d];
@@ -284,6 +419,7 @@ class BinaryIO {
     {
       uint32_t tmp = IOnode;
       grid->GlobalSum(tmp);
+      std::cout<< std::dec ;
       std::cout<< GridLogMessage<< "Parallel read I/O to "<< file << " with " <<tmp<< " IOnodes for subslice ";
       for(int d=0;d<grid->_ndimension;d++){
 	std::cout<< range[d];
@@ -306,9 +442,9 @@ class BinaryIO {
     // available (how short sighted is that?)
     //////////////////////////////////////////////////////////
     Umu = zero;
-    uint32_t csum=0;
+    static uint32_t csum=0;
     fobj fileObj;
-    sobj siteObj;
+    static sobj siteObj; // Static to place in symmetric region for SHMEM
 
       // need to implement these loops in Nd independent way with a lexico conversion
     for(int tlex=0;tlex<slice_vol;tlex++){
@@ -318,7 +454,7 @@ class BinaryIO {
       std::vector<int> lsite(nd);
       std::vector<int> iosite(nd);
 
-      grid->CoorFromIndex(tsite,tlex,range);
+      Lexicographic::CoorFromIndex(tsite,tlex,range);
 
       for(int d=0;d<nd;d++){
 	lsite[d] = tsite[d]%grid->_ldimensions[d];  // local site
@@ -328,7 +464,7 @@ class BinaryIO {
       /////////////////////////
       // Get the rank of owner of data
       /////////////////////////
-	int rank, o_idx,i_idx, g_idx;
+      int rank, o_idx,i_idx, g_idx;
       grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gsite);
       grid->GlobalCoorToGlobalIndex(gsite,g_idx);
       
@@ -346,23 +482,24 @@ class BinaryIO {
 	if(ieee64)    le64toh_v((void *)&fileObj,sizeof(fileObj));
 	
 	munge(fileObj,siteObj,csum);
-	
-	if ( rank != myrank ) {
-	  grid->SendTo((void *)&siteObj,rank,sizeof(siteObj));
-	} else { 
-	  pokeLocalSite(siteObj,Umu,lsite);
+
+      }	
+
+      // Possibly do transport through pt2pt 
+      if ( rank != iorank ) { 
+	if ( (myrank == rank) || (myrank==iorank) ) {
+	  grid->SendRecvPacket((void *)&siteObj,(void *)&siteObj,iorank,rank,sizeof(siteObj));
 	}
-	 
-      } else { 
-	if ( myrank == rank ) {
-	  grid->RecvFrom((void *)&siteObj,iorank,sizeof(siteObj));
+      }
+      // Poke at destination
+      if ( myrank == rank ) {
 	  pokeLocalSite(siteObj,Umu,lsite);
-	} 
       }
       grid->Barrier(); // necessary?
     }
 
     grid->GlobalSum(csum);
+    grid->Barrier();
     
     return csum;
   }
@@ -397,7 +534,7 @@ class BinaryIO {
 
     for(int d=0;d<grid->_ndimension;d++) {
 
-      if ( d==0 ) parallel[d] = 0;
+      if ( d!= grid->_ndimension-1 ) parallel[d] = 0;
 
       if (parallel[d]) {
 	range[d] = grid->_ldimensions[d];
@@ -444,10 +581,10 @@ class BinaryIO {
 
     uint32_t csum=0;
     fobj fileObj;
-    sobj siteObj;
+    static sobj siteObj; // static for SHMEM target; otherwise dynamic allocate with AlignedAllocator
 
-
-      // need to implement these loops in Nd independent way with a lexico conversion
+    // should aggregate a whole chunk and then write.
+    // need to implement these loops in Nd independent way with a lexico conversion
     for(int tlex=0;tlex<slice_vol;tlex++){
 	
       std::vector<int> tsite(nd); // temporary mixed up site
@@ -455,7 +592,7 @@ class BinaryIO {
       std::vector<int> lsite(nd);
       std::vector<int> iosite(nd);
 
-      grid->CoorFromIndex(tsite,tlex,range);
+      Lexicographic::CoorFromIndex(tsite,tlex,range);
 
       for(int d=0;d<nd;d++){
 	lsite[d] = tsite[d]%grid->_ldimensions[d];  // local site
@@ -473,13 +610,21 @@ class BinaryIO {
       ////////////////////////////////
       // iorank writes from the seek
       ////////////////////////////////
-      if (myrank == iorank) {
+      
+      // Owner of data peeks it
+      peekLocalSite(siteObj,Umu,lsite);
 
-	if ( rank != myrank ) {
-	  grid->RecvFrom((void *)&siteObj,rank,sizeof(siteObj));
-	} else { 
-	  peekLocalSite(siteObj,Umu,lsite);
+      // Pair of nodes may need to do pt2pt send
+      if ( rank != iorank ) { // comms is necessary
+	if ( (myrank == rank) || (myrank==iorank) ) { // and we have to do it
+	  // Send to IOrank 
+	  grid->SendRecvPacket((void *)&siteObj,(void *)&siteObj,rank,iorank,sizeof(siteObj));
 	}
+      }
+
+      grid->Barrier(); // necessary?
+
+      if (myrank == iorank) {
 	
 	munge(siteObj,fileObj,csum);
 
@@ -491,13 +636,7 @@ class BinaryIO {
 	fout.seekp(offset+g_idx*sizeof(fileObj));
 	fout.write((char *)&fileObj,sizeof(fileObj));
 
-      } else { 
-	if ( myrank == rank ) {
-	  peekLocalSite(siteObj,Umu,lsite);
-	  grid->SendTo((void *)&siteObj,iorank,sizeof(siteObj));
-	} 
       }
-      grid->Barrier(); // necessary// or every 16 packets to rate throttle??
     }
 
     grid->GlobalSum(csum);

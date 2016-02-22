@@ -1,3 +1,30 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/lattice/Lattice_transfer.h
+
+    Copyright (C) 2015
+
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #ifndef GRID_LATTICE_TRANSFER_H
 #define GRID_LATTICE_TRANSFER_H
 
@@ -88,9 +115,9 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
     int sc;
     std::vector<int> coor_c(_ndimension);
     std::vector<int> coor_f(_ndimension);
-    GridBase::CoorFromIndex(coor_f,sf,fine->_rdimensions);
+    Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
     for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-    GridBase::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+    Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
 
     for(int i=0;i<nbasis;i++) {
       
@@ -133,9 +160,9 @@ PARALLEL_FOR_LOOP
     std::vector<int> coor_c(_ndimension);
     std::vector<int> coor_f(_ndimension);
 
-    GridBase::CoorFromIndex(coor_f,sf,fine->_rdimensions);
+    Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
     for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-    GridBase::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+    Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
 
     // z = A x + y
     fineZ._odata[sf]=coarseA._odata[sc]*fineX._odata[sf]+fineY._odata[sf];
@@ -198,9 +225,9 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
     std::vector<int> coor_c(_ndimension);
     std::vector<int> coor_f(_ndimension);
 
-    GridBase::CoorFromIndex(coor_f,sf,fine->_rdimensions);
+    Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
     for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-    GridBase::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+    Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
 
     coarseData._odata[sc]=coarseData._odata[sc]+fineData._odata[sf];
 
@@ -284,9 +311,9 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
     std::vector<int> coor_c(_ndimension);
     std::vector<int> coor_f(_ndimension);
 
-    GridBase::CoorFromIndex(coor_f,sf,fine->_rdimensions);
+    Lexicographic::CoorFromIndex(coor_f,sf,fine->_rdimensions);
     for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
-    GridBase::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
+    Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
 
     for(int i=0;i<nbasis;i++) {
       if(i==0) fineData._odata[sf]=coarseData._odata[sc](i) * Basis[i]._odata[sf];

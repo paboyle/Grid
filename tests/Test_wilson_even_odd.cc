@@ -1,3 +1,31 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./tests/Test_wilson_even_odd.cc
+
+    Copyright (C) 2015
+
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #include <Grid.h>
 
 using namespace std;
@@ -61,8 +89,8 @@ int main (int argc, char ** argv)
   }
 
   RealD mass=0.1;
-
-  WilsonFermionR Dw(Umu,Grid,RBGrid,mass);
+  RealD mu  = 0.1;
+  WilsonTMFermionR Dw(Umu,Grid,RBGrid,mass,mu);
 
   LatticeFermion src_e   (&RBGrid);
   LatticeFermion src_o   (&RBGrid);
@@ -179,7 +207,7 @@ int main (int argc, char ** argv)
   pickCheckerboard(Odd ,phi_o,phi);
   RealD t1,t2;
 
-  SchurDiagMooeeOperator<WilsonFermionR,LatticeFermion> HermOpEO(Dw);
+  SchurDiagMooeeOperator<WilsonTMFermionR,LatticeFermion> HermOpEO(Dw);
   HermOpEO.MpcDagMpc(chi_e,dchi_e,t1,t2);
   HermOpEO.MpcDagMpc(chi_o,dchi_o,t1,t2);
 

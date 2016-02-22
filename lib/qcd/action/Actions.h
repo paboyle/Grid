@@ -1,11 +1,38 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/qcd/action/Actions.h
+
+    Copyright (C) 2015
+
+Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
+Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
+Author: neo <cossu@post.kek.jp>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #ifndef GRID_QCD_ACTIONS_H
 #define GRID_QCD_ACTIONS_H
 
-
-// Some reorganisation likely required as both Chroma and IroIro
-// are separating the concept of the operator from that of action.
-//
-// The FermAction contains methods to create 
 // * Linear operators             (Hermitian and non-hermitian)  .. my LinearOperator
 // * System solvers               (Hermitian and non-hermitian)  .. my OperatorFunction
 // * MultiShift System solvers    (Hermitian and non-hermitian)  .. my OperatorFunction
@@ -16,26 +43,53 @@
 #include <qcd/action/ActionBase.h>
 #include <qcd/action/ActionParams.h>
 
-
-
 ////////////////////////////////////////////
 // Utility functions
 ////////////////////////////////////////////
+#include <qcd/action/gauge/GaugeImpl.h>
+#include <qcd/utils/WilsonLoops.h>
+
 #include <qcd/action/fermion/WilsonCompressor.h>     //used by all wilson type fermions
 #include <qcd/action/fermion/FermionOperatorImpl.h>
 #include <qcd/action/fermion/FermionOperator.h>
 #include <qcd/action/fermion/WilsonKernels.h>        //used by all wilson type fermions
 
-
 ////////////////////////////////////////////
 // Gauge Actions
 ////////////////////////////////////////////
 #include <qcd/action/gauge/WilsonGaugeAction.h>
+#include <qcd/action/gauge/PlaqPlusRectangleAction.h>
+
 namespace Grid {
 namespace QCD {
-typedef WilsonGaugeAction<LatticeGaugeField>     WilsonGaugeActionR;
-typedef WilsonGaugeAction<LatticeGaugeFieldF>    WilsonGaugeActionF;
-typedef WilsonGaugeAction<LatticeGaugeFieldD>    WilsonGaugeActionD;
+
+typedef WilsonGaugeAction<PeriodicGimplR>          WilsonGaugeActionR;
+typedef WilsonGaugeAction<PeriodicGimplF>          WilsonGaugeActionF;
+typedef WilsonGaugeAction<PeriodicGimplD>          WilsonGaugeActionD;
+typedef PlaqPlusRectangleAction<PeriodicGimplR>    PlaqPlusRectangleActionR;
+typedef PlaqPlusRectangleAction<PeriodicGimplF>    PlaqPlusRectangleActionF;
+typedef PlaqPlusRectangleAction<PeriodicGimplD>    PlaqPlusRectangleActionD;
+typedef IwasakiGaugeAction<PeriodicGimplR>         IwasakiGaugeActionR;
+typedef IwasakiGaugeAction<PeriodicGimplF>         IwasakiGaugeActionF;
+typedef IwasakiGaugeAction<PeriodicGimplD>         IwasakiGaugeActionD;
+typedef SymanzikGaugeAction<PeriodicGimplR>        SymanzikGaugeActionR;
+typedef SymanzikGaugeAction<PeriodicGimplF>        SymanzikGaugeActionF;
+typedef SymanzikGaugeAction<PeriodicGimplD>        SymanzikGaugeActionD;
+
+
+typedef WilsonGaugeAction<ConjugateGimplR>          ConjugateWilsonGaugeActionR;
+typedef WilsonGaugeAction<ConjugateGimplF>          ConjugateWilsonGaugeActionF;
+typedef WilsonGaugeAction<ConjugateGimplD>          ConjugateWilsonGaugeActionD;
+typedef PlaqPlusRectangleAction<ConjugateGimplR>    ConjugatePlaqPlusRectangleActionR;
+typedef PlaqPlusRectangleAction<ConjugateGimplF>    ConjugatePlaqPlusRectangleActionF;
+typedef PlaqPlusRectangleAction<ConjugateGimplD>    ConjugatePlaqPlusRectangleActionD;
+typedef IwasakiGaugeAction<ConjugateGimplR>         ConjugateIwasakiGaugeActionR;
+typedef IwasakiGaugeAction<ConjugateGimplF>         ConjugateIwasakiGaugeActionF;
+typedef IwasakiGaugeAction<ConjugateGimplD>         ConjugateIwasakiGaugeActionD;
+typedef SymanzikGaugeAction<ConjugateGimplR>        ConjugateSymanzikGaugeActionR;
+typedef SymanzikGaugeAction<ConjugateGimplF>        ConjugateSymanzikGaugeActionF;
+typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeActionD;
+
 }}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -55,15 +109,16 @@ typedef WilsonGaugeAction<LatticeGaugeFieldD>    WilsonGaugeActionD;
 
 #define FermOpTemplateInstantiate(A) \
   template class A<WilsonImplF>;		\
-  template class A<WilsonImplD>; 
-  //  template class A<GparityWilsonImplF>;	\
-  //  template class A<GparityWilsonImplD>;		
+  template class A<WilsonImplD>;  \
+  template class A<GparityWilsonImplF>;		\
+  template class A<GparityWilsonImplD>;		
 
 ////////////////////////////////////////////
 // Fermion operators / actions
 ////////////////////////////////////////////
 
 #include <qcd/action/fermion/WilsonFermion.h>       // 4d wilson like
+#include <qcd/action/fermion/WilsonTMFermion.h>       // 4d wilson like
 #include <qcd/action/fermion/WilsonFermion5D.h>     // 5d base used by all 5d overlap types
 
 //#include <qcd/action/fermion/CloverFermion.h>
@@ -99,6 +154,10 @@ namespace Grid {
 typedef WilsonFermion<WilsonImplR> WilsonFermionR;
 typedef WilsonFermion<WilsonImplF> WilsonFermionF;
 typedef WilsonFermion<WilsonImplD> WilsonFermionD;
+
+typedef WilsonTMFermion<WilsonImplR> WilsonTMFermionR;
+typedef WilsonTMFermion<WilsonImplF> WilsonTMFermionF;
+typedef WilsonTMFermion<WilsonImplD> WilsonTMFermionD;
 
 typedef DomainWallFermion<WilsonImplR> DomainWallFermionR;
 typedef DomainWallFermion<WilsonImplF> DomainWallFermionF;
@@ -165,11 +224,6 @@ typedef DomainWallFermion<GparityWilsonImplD> GparityDomainWallFermionD;
 #include <qcd/action/pseudofermion/TwoFlavourEvenOdd.h>
 #include <qcd/action/pseudofermion/TwoFlavourEvenOddRatio.h>
 
-//IroIro inserted general "Nf" param; could also be done,
-//but not clear why unless into large Nf BSM studies
-//Even there, don't want the explicit (2) on power denominator
-//if even number of flavours, so further generalised interface
-//would be required but easy.
 #include <qcd/action/pseudofermion/OneFlavourRational.h>
 #include <qcd/action/pseudofermion/OneFlavourRationalRatio.h>
 #include <qcd/action/pseudofermion/OneFlavourEvenOddRational.h>

@@ -1,3 +1,32 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./tests/Test_GaugeAction.cc
+
+    Copyright (C) 2015
+
+Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #include <Grid.h>
 
 #include <qcd/utils/CovariantCshift.h>
@@ -87,7 +116,7 @@ int main (int argc, char ** argv)
   Plaq = zero;
   for(int mu=1;mu<Nd;mu++){
     for(int nu=0;nu<mu;nu++){
-      Plaq = Plaq + trace(CovShiftForward(U[mu],mu,U[nu])*adj(CovShiftForward(U[nu],nu,U[mu])));
+      Plaq = Plaq + trace(PeriodicBC::CovShiftForward(U[mu],mu,U[nu])*adj(PeriodicBC::CovShiftForward(U[nu],nu,U[mu])));
     }
   }
   
@@ -125,7 +154,7 @@ int main (int argc, char ** argv)
   LatticeComplex stap_tr(&Fine);
   for(int mu=0;mu<Nd;mu++){
     ColourWilsonLoops::Staple(stap,Umu,mu);
-    stap_tr = trace(stap*adj(U[mu]));
+    stap_tr = trace(stap*U[mu]);
     TComplex Ts = sum(stap_tr);
     Complex s  = TensorRemove(Ts);
     stap_plaq+=real(s);

@@ -1,3 +1,32 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./tests/Test_nersc_io.cc
+
+    Copyright (C) 2015
+
+Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #include <Grid.h>
 
 using namespace std;
@@ -19,6 +48,30 @@ int main (int argc, char ** argv)
     
   GridCartesian     Fine(latt_size,simd_layout,mpi_layout);
   GridCartesian     Coarse(clatt_size,simd_layout,mpi_layout);
+
+  GridParallelRNG   pRNGa(&Fine);
+  GridParallelRNG   pRNGb(&Fine);
+  GridSerialRNG     sRNGa;
+  GridSerialRNG     sRNGb;
+
+  pRNGa.SeedRandomDevice();
+  sRNGa.SeedRandomDevice();
+  
+  std::string rfile("./ckpoint_rng.4000");
+  NerscIO::writeRNGState(sRNGa,pRNGa,rfile);
+  NerscField rngheader;
+  NerscIO::readRNGState (sRNGb,pRNGb,rngheader,rfile);
+
+  LatticeComplex tmpa(&Fine); random(pRNGa,tmpa);
+  LatticeComplex tmpb(&Fine); random(pRNGb,tmpb);
+  tmpa = tmpa - tmpb;
+  std::cout << " difference between restored randoms and orig "<<norm2( tmpa ) <<" / "<< norm2(tmpb)<<std::endl;
+
+  ComplexD a,b;
+
+  random(sRNGa,a);
+  random(sRNGb,b);
+  std::cout << " serial RNG numbers "<<a<<" "<<b<<std::endl;
 
   LatticeGaugeField Umu(&Fine);
   LatticeGaugeField Umu_diff(&Fine);
@@ -92,8 +145,9 @@ int main (int argc, char ** argv)
 
   std::string clone2x3("./ckpoint_clone2x3.4000");
   std::string clone3x3("./ckpoint_clone3x3.4000");
-  int precision32 = 0;
 
+  int precision32 = 1;
+  int tworow      = 1;
   NerscIO::writeConfiguration(Umu,clone3x3,0,precision32);
   NerscIO::writeConfiguration(Umu,clone2x3,1,precision32);
   

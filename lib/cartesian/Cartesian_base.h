@@ -1,3 +1,31 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/cartesian/Cartesian_base.h
+
+    Copyright (C) 2015
+
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #ifndef GRID_CARTESIAN_BASE_H
 #define GRID_CARTESIAN_BASE_H
 
@@ -87,26 +115,10 @@ public:
       for(int d=0;d<_ndimension;d++) idx+=_ostride[d]*ocoor[d];
       return idx;
     }
-    static inline void CoorFromIndex (std::vector<int>& coor,int index,std::vector<int> &dims){
-      int nd= dims.size();
-      coor.resize(nd);
-      for(int d=0;d<nd;d++){
-	coor[d] = index % dims[d];
-	index   = index / dims[d];
-      }
-    }
     inline void oCoorFromOindex (std::vector<int>& coor,int Oindex){
-      CoorFromIndex(coor,Oindex,_rdimensions);
+      Lexicographic::CoorFromIndex(coor,Oindex,_rdimensions);
     }
-    static inline void IndexFromCoor (std::vector<int>& coor,int &index,std::vector<int> &dims){
-      int nd=dims.size();
-      int stride=1;
-      index=0;
-      for(int d=0;d<nd;d++){
-	index = index+stride*coor[d];
-	stride=stride*dims[d];
-      }
-    }
+
 
     //////////////////////////////////////////////////////////
     // SIMD lane addressing
@@ -119,7 +131,7 @@ public:
     }
     inline void iCoorFromIindex(std::vector<int> &coor,int lane)
     {
-      CoorFromIndex(coor,lane,_simd_layout);
+      Lexicographic::CoorFromIndex(coor,lane,_simd_layout);
     }
     inline int PermuteDim(int dimension){
       return _simd_layout[dimension]>1;
@@ -151,7 +163,7 @@ public:
     // Global addressing
     ////////////////////////////////////////////////////////////////
     void GlobalIndexToGlobalCoor(int gidx,std::vector<int> &gcoor){
-      CoorFromIndex(gcoor,gidx,_gdimensions);
+      Lexicographic::CoorFromIndex(gcoor,gidx,_gdimensions);
     }
     void GlobalCoorToGlobalIndex(const std::vector<int> & gcoor,int & gidx){
       gidx=0;
@@ -166,8 +178,9 @@ public:
       pcoor.resize(_ndimension);
       lcoor.resize(_ndimension);
       for(int mu=0;mu<_ndimension;mu++){
-	pcoor[mu] = gcoor[mu]/_ldimensions[mu];
-	lcoor[mu] = gcoor[mu]%_ldimensions[mu];
+	int _fld  = _fdimensions[mu]/_processors[mu];
+	pcoor[mu] = gcoor[mu]/_fld;
+	lcoor[mu] = gcoor[mu]%_fld;
       }
     }
     void GlobalCoorToRankIndex(int &rank, int &o_idx, int &i_idx ,const std::vector<int> &gcoor)
@@ -176,8 +189,16 @@ public:
       std::vector<int> lcoor;
       GlobalCoorToProcessorCoorLocalCoor(pcoor,lcoor,gcoor);
       rank = RankFromProcessorCoor(pcoor);
-      i_idx= iIndex(lcoor);
-      o_idx= oIndex(lcoor);
+
+      std::vector<int> cblcoor(lcoor);
+      for(int d=0;d<cblcoor.size();d++){
+	if( this->CheckerBoarded(d) ) {
+	  cblcoor[d] = lcoor[d]/2;
+	}
+      }
+
+      i_idx= iIndex(cblcoor);// this does not imply divide by 2 on checker dim
+      o_idx= oIndex(lcoor);// this implies divide by 2 on checkerdim
     }
 
     void RankIndexToGlobalCoor(int rank, int o_idx, int i_idx , std::vector<int> &gcoor)

@@ -1,59 +1,86 @@
-#include "Grid.h"
+    /*************************************************************************************
 
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./tests/Test_hmc_WilsonGauge.cc
+
+    Copyright (C) 2015
+
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: neo <cossu@post.kek.jp>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
+#include "Grid.h"
 
 using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
+namespace Grid { 
+  namespace QCD { 
+
+
+class HmcRunner : public NerscHmcRunner {
+public:
+
+  void BuildTheAction (int argc, char **argv)
+
+  {
+    typedef WilsonImplR ImplPolicy;
+    typedef WilsonFermionR FermionAction;
+    typedef typename FermionAction::FermionField FermionField;
+
+    UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
+    UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
+  
+    FGrid   = UGrid;
+    FrbGrid = UrbGrid;
+
+    // temporarily need a gauge field
+    LatticeGaugeField  U(UGrid);
+
+    // Gauge action
+    WilsonGaugeActionR Waction(5.6);
+
+    //Collect actions
+    ActionLevel<LatticeGaugeField> Level1(1);
+    Level1.push_back(&Waction);
+    TheAction.push_back(Level1);
+
+    Run(argc,argv);
+  };
+
+};
+
+}}
+
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
-  std::vector<int> mpi_layout  = GridDefaultMpi();
+  int threads = GridThread::GetThreads();
+  std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
-  latt_size.resize(4);
-
-  latt_size[0] = 8;
-  latt_size[1] = 8;
-  latt_size[2] = 8;
-  latt_size[3] = 8;
-  double volume = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
+  HmcRunner TheHMC;
   
-  GridCartesian           Fine(latt_size,simd_layout,mpi_layout);
-
-
-  std::vector<int> seeds({6,7,8,80});
-  GridParallelRNG  pRNG(&Fine);
-  pRNG.SeedFixedIntegers(seeds);
-
-  std::vector<int> seedsS({1,2,3,4});
-  GridSerialRNG    sRNG;
-  sRNG.SeedFixedIntegers(seedsS);
-
-  LatticeGaugeField U(&Fine);
-
-  SU3::HotConfiguration(pRNG, U);
-
-  // simplify template declaration? Strip the lorentz from the second template
-  WilsonGaugeActionR Waction(6.0);
-
-  //Collect actions
-  ActionLevel<LatticeGaugeField> Level1;
-  Level1.push_back(&Waction);
-  ActionSet<LatticeGaugeField> FullSet;
-  FullSet.push_back(Level1);
-
-  // Create integrator
-  typedef MinimumNorm2<LatticeGaugeField>  IntegratorAlgorithm;// change here to modify the algorithm
-  IntegratorParameters MDpar(20);
-  IntegratorAlgorithm  MDynamics(&Fine,MDpar, FullSet);
-
-  // Create HMC
-  HMCparameters HMCpar;
-  HybridMonteCarlo<LatticeGaugeField,IntegratorAlgorithm>  HMC(HMCpar, MDynamics, sRNG, pRNG);
-
-  HMC.evolve(U);
+  TheHMC.BuildTheAction(argc,argv);
 
 }
+

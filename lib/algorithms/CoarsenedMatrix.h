@@ -1,3 +1,33 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/algorithms/CoarsenedMatrix.h
+
+    Copyright (C) 2015
+
+Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #ifndef  GRID_ALGORITHM_COARSENED_MATRIX_H
 #define  GRID_ALGORITHM_COARSENED_MATRIX_H
 
@@ -170,11 +200,10 @@ namespace Grid {
     ////////////////////
     Geometry         geom;
     GridBase *       _grid; 
-    CartesianStencil<siteVector,siteVector,SimpleCompressor<siteVector> > Stencil; 
+    CartesianStencil<siteVector,siteVector> Stencil; 
 
     std::vector<CoarseMatrix> A;
 
-    std::vector<siteVector,alignedAllocator<siteVector> >   comm_buf;
       
     ///////////////////////
     // Interface
@@ -187,7 +216,7 @@ namespace Grid {
       conformable(in._grid,out._grid);
 
       SimpleCompressor<siteVector> compressor;
-      Stencil.HaloExchange(in,comm_buf,compressor);
+      Stencil.HaloExchange(in,compressor);
 
 PARALLEL_FOR_LOOP
       for(int ss=0;ss<Grid()->oSites();ss++){
@@ -204,7 +233,7 @@ PARALLEL_FOR_LOOP
 	  } else if(SE->_is_local) { 
 	    nbr = in._odata[SE->_offset];
 	  } else {
-	    nbr = comm_buf[SE->_offset];
+	    nbr = Stencil.comm_buf[SE->_offset];
 	  }
 	  res = res + A[point]._odata[ss]*nbr;
 	}
@@ -228,7 +257,6 @@ PARALLEL_FOR_LOOP
       Stencil(&CoarseGrid,geom.npoint,Even,geom.directions,geom.displacements),
       A(geom.npoint,&CoarseGrid)
     {
-      comm_buf.resize(Stencil._unified_buffer_size);
     };
 
     void CoarsenOperator(GridBase *FineGrid,LinearOperatorBase<Lattice<Fobj> > &linop,

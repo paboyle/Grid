@@ -1,3 +1,32 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/PerfCount.h
+
+    Copyright (C) 2015
+
+Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
+Author: Peter Boyle <peterboyle@MacBook-Pro.local>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #ifndef GRID_PERFCOUNT_H
 #define GRID_PERFCOUNT_H
 
@@ -11,6 +40,8 @@
 #ifdef __linux__
 #include <syscall.h>
 #include <linux/perf_event.h>
+#else
+#include <sys/syscall.h>
 #endif
 namespace Grid {
 
@@ -30,6 +61,7 @@ static long perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
 
 class PerformanceCounter {
 private:
+
   typedef struct { 
   public:
     uint32_t type;
@@ -70,7 +102,7 @@ public:
 
   long long count;
   int fd;
-  uint64_t elapsed;
+  unsigned long long elapsed;
   uint64_t begin;
 
   static int NumTypes(void){ 

@@ -1,3 +1,31 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/AlignedAllocator.h
+
+    Copyright (C) 2015
+
+Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #ifndef GRID_ALIGNED_ALLOCATOR_H
 #define GRID_ALIGNED_ALLOCATOR_H
 
@@ -11,6 +39,9 @@
 #include <immintrin.h>
 #ifdef HAVE_MM_MALLOC_H
 #include <mm_malloc.h>
+#endif
+#ifdef GRID_COMMS_SHMEM
+#include <mpp/shmem.h>
 #endif
 
 namespace Grid {
@@ -44,21 +75,59 @@ public:
 
   size_type  max_size() const throw() { return size_t(-1) / sizeof(_Tp); }
 
-  pointer allocate(size_type __n, const void* = 0)
+  pointer allocate(size_type __n, const void* _p= 0)
   { 
+#ifdef GRID_COMMS_SHMEM
+
+    _Tp *ptr = (_Tp *) shmem_align(__n*sizeof(_Tp),64);
+
+
+#define PARANOID_SYMMETRIC_HEAP
+#ifdef PARANOID_SYMMETRIC_HEAP
+    static void * bcast;
+    static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
+
+    bcast = (void *) ptr;
+    shmem_broadcast32((void *)&bcast,(void *)&bcast,sizeof(void *)/4,0,0,0,shmem_n_pes(),psync);
+
+    if ( bcast != ptr ) {
+      std::printf("inconsistent alloc pe %d %lx %lx \n",shmem_my_pe(),bcast,ptr);std::fflush(stdout);
+      BACKTRACEFILE();
+      exit(0);
+    }
+
+    assert( bcast == (void *) ptr);
+
+#endif 
+#else
+
 #ifdef HAVE_MM_MALLOC_H
     _Tp * ptr = (_Tp *) _mm_malloc(__n*sizeof(_Tp),128);
 #else
     _Tp * ptr = (_Tp *) memalign(128,__n*sizeof(_Tp));
 #endif
+
+#endif
+    _Tp tmp;
+#undef FIRST_TOUCH_OPTIMISE
+#ifdef FIRST_TOUCH_OPTIMISE
+#pragma omp parallel for 
+  for(int i=0;i<__n;i++){
+    ptr[i]=tmp;
+  }
+#endif 
     return ptr;
   }
 
   void deallocate(pointer __p, size_type) { 
+#ifdef GRID_COMMS_SHMEM
+    shmem_free((void *)__p);
+#else
 #ifdef HAVE_MM_MALLOC_H
     _mm_free((void *)__p); 
 #else
     free((void *)__p);
+#endif
 #endif
   }
   void construct(pointer __p, const _Tp& __val) { };

@@ -1,3 +1,33 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/qcd/hmc/integrators/Integrator.h
+
+    Copyright (C) 2015
+
+Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: neo <cossu@post.kek.jp>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 //--------------------------------------------------------------------
 /*! @file Integrator.h
  * @brief Classes for the Molecular Dynamics integrator
@@ -77,9 +107,7 @@ namespace Grid{
 	t_P[level]+=ep;
 	update_P(P,U,level,ep);
 
-	std::cout<<GridLogMessage;
-	for(int l=0; l<level;++l) std::cout<<"   ";	    
-	std::cout<<"["<<level<<"] P " << " dt "<< ep <<" : t_P "<< t_P[level] <<std::endl;
+	std::cout<<GridLogIntegrator<<"["<<level<<"] P " << " dt "<< ep <<" : t_P "<< t_P[level] <<std::endl;
       }
 
       void update_P(GaugeField &Mom,GaugeField&U, int level,double ep){
@@ -95,9 +123,7 @@ namespace Grid{
 
 	t_U+=ep;
 	int fl = levels-1;
-	std::cout<<GridLogMessage<<"   ";
-	for(int l=0; l<fl;++l) std::cout<<"   ";	    
-	std::cout<<"["<<fl<<"] U " << " dt "<< ep <<" : t_U "<< t_U <<std::endl;
+	std::cout<<GridLogIntegrator<<"   "<<"["<<fl<<"] U " << " dt "<< ep <<" : t_U "<< t_U <<std::endl;
 
       }
       void update_U(GaugeField &Mom, GaugeField&U, double ep){
@@ -133,7 +159,7 @@ namespace Grid{
 
       //Initialization of momenta and actions
       void refresh(GaugeField& U,GridParallelRNG &pRNG){
-	std::cout<<GridLogMessage<< "Integrator refresh\n";
+	std::cout<<GridLogIntegrator<< "Integrator refresh\n";
 	generate_momenta(P,pRNG);
 	for(int level=0; level< as.size(); ++level){
 	  for(int actionID=0; actionID<as[level].actions.size(); ++actionID){
@@ -165,7 +191,6 @@ namespace Grid{
 	    H += Hterm;
 	  }
 	}
-	std::cout<<GridLogMessage << "Total action H = "<< H << "\n";
 	
 	return H;
       }
@@ -187,7 +212,7 @@ namespace Grid{
 	// Check the clocks all match on all levels
 	for(int level=0; level<as.size(); ++level){
 	  assert(fabs(t_U - t_P[level])<1.0e-6); // must be the same
-	  std::cout<<GridLogMessage<<" times["<<level<<"]= "<<t_P[level]<< " " << t_U <<std::endl;
+	  std::cout<<GridLogIntegrator<<" times["<<level<<"]= "<<t_P[level]<< " " << t_U <<std::endl;
 	}	
 
 	// and that we indeed got to the end of the trajectory
