@@ -1,3 +1,31 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/qcd/action/pseudofermion/TwoFlavourEvenOddRatio.h
+
+    Copyright (C) 2015
+
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #ifndef QCD_PSEUDOFERMION_TWO_FLAVOUR_EVEN_ODD_RATIO_H
 #define QCD_PSEUDOFERMION_TWO_FLAVOUR_EVEN_ODD_RATIO_H
 
@@ -61,6 +89,7 @@ namespace Grid{
 	FermionField tmp    (NumOp.FermionRedBlackGrid());
 
 	gaussian(pRNG,eta);
+
 	pickCheckerboard(Even,etaEven,eta);
 	pickCheckerboard(Odd,etaOdd,eta);
 
@@ -72,6 +101,7 @@ namespace Grid{
 
 	// Odd det factors
 	Mpc.MpcDag(etaOdd,PhiOdd);
+	tmp=zero;
 	ActionSolver(Vpc,PhiOdd,tmp);
 	Vpc.Mpc(tmp,PhiOdd);            
 
@@ -98,8 +128,8 @@ namespace Grid{
 	FermionField X(NumOp.FermionRedBlackGrid());
 	FermionField Y(NumOp.FermionRedBlackGrid());
 
-	X=zero;
 	Vpc.MpcDag(PhiOdd,Y);           // Y= Vdag phi
+	X=zero;
 	ActionSolver(Mpc,Y,X);          // X= (MdagM)^-1 Vdag phi
 	Mpc.Mpc(X,Y);                   // Y=  Mdag^-1 Vdag phi
 
@@ -134,12 +164,11 @@ namespace Grid{
 
 	GaugeField   force(NumOp.GaugeGrid());	
 
-	X=zero;
-
 	//Y=Vdag phi
 	//X = (Mdag M)^-1 V^dag phi
 	//Y = (Mdag)^-1 V^dag  phi
 	Vpc.MpcDag(PhiOdd,Y);          // Y= Vdag phi
+	X=zero;
 	DerivativeSolver(Mpc,Y,X);     // X= (MdagM)^-1 Vdag phi
 	Mpc.Mpc(X,Y);                  // Y=  Mdag^-1 Vdag phi
 

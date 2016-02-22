@@ -1,9 +1,45 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/communicator/Communicator_mpi.cc
+
+    Copyright (C) 2015
+
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #include "Grid.h"
 #include <mpi.h>
 
 namespace Grid {
 
   // Should error check all MPI calls.
+void CartesianCommunicator::Init(int *argc, char ***argv) {
+  MPI_Init(argc,argv);
+}
+
+  int Rank(void) {
+    int pe;
+    MPI_Comm_rank(MPI_COMM_WORLD,&pe);
+    return pe;
+  }
 
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {
@@ -81,21 +117,22 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
   SendToRecvFromBegin(reqs,xmit,dest,recv,from,bytes);
   SendToRecvFromComplete(reqs);
 }
-void CartesianCommunicator::RecvFrom(void *recv,
-				     int from,
-				     int bytes) 
+
+void CartesianCommunicator::SendRecvPacket(void *xmit,
+					   void *recv,
+					   int sender,
+					   int receiver,
+					   int bytes)
 {
   MPI_Status stat;
-  int ierr=MPI_Recv(recv, bytes, MPI_CHAR,from,from,communicator,&stat);
-  assert(ierr==0);
-}
-void CartesianCommunicator::SendTo(void *xmit,
-				   int dest,
-				   int bytes)
-{
-  int rank = _processor; // used for tag; must know who it comes from
-  int ierr = MPI_Send(xmit, bytes, MPI_CHAR,dest,_processor,communicator);
-  assert(ierr==0);
+  assert(sender != receiver);
+  int tag = sender;
+  if ( _processor == sender ) {
+    MPI_Send(xmit, bytes, MPI_CHAR,receiver,tag,communicator);
+  }
+  if ( _processor == receiver ) { 
+    MPI_Recv(recv, bytes, MPI_CHAR,sender,tag,communicator,&stat);
+  }
 }
 
 // Basic Halo comms primitive

@@ -1,9 +1,13 @@
 
-bin_PROGRAMS = Test_GaugeAction Test_cayley_cg Test_cayley_coarsen_support Test_cayley_even_odd Test_cayley_ldop_cr Test_cf_coarsen_support Test_cf_cr_unprec Test_cheby Test_contfrac_cg Test_contfrac_even_odd Test_contfrac_force Test_cshift Test_cshift_red_black Test_dwf_cg_prec Test_dwf_cg_schur Test_dwf_cg_unprec Test_dwf_cr_unprec Test_dwf_even_odd Test_dwf_force Test_dwf_fpgcr Test_dwf_hdcr Test_gamma Test_hmc_EODWFRatio Test_hmc_EOWilsonFermionGauge Test_hmc_EOWilsonRatio Test_hmc_WilsonFermionGauge Test_hmc_WilsonGauge Test_hmc_WilsonRatio Test_lie_generators Test_main Test_multishift_sqrt Test_nersc_io Test_partfrac_force Test_quenched_update Test_remez Test_rhmc_EOWilson1p1 Test_rhmc_EOWilsonRatio Test_rhmc_Wilson1p1 Test_rhmc_WilsonRatio Test_rng Test_rng_fixed Test_serialisation Test_simd Test_stencil Test_wilson_cg_prec Test_wilson_cg_schur Test_wilson_cg_unprec Test_wilson_cr_unprec Test_wilson_even_odd Test_wilson_force Test_wilson_force_phiMdagMphi Test_wilson_force_phiMphi Test_synthetic_lanczos
+bin_PROGRAMS = Test_GaugeAction Test_RectPlaq Test_cayley_cg Test_cayley_coarsen_support Test_cayley_even_odd Test_cayley_ldop_cr Test_cf_coarsen_support Test_cf_cr_unprec Test_cheby Test_contfrac_cg Test_contfrac_even_odd Test_contfrac_force Test_cshift Test_cshift_red_black Test_dwf_cg_prec Test_dwf_cg_schur Test_dwf_cg_unprec Test_dwf_cr_unprec Test_dwf_even_odd Test_dwf_force Test_dwf_fpgcr Test_dwf_gpforce Test_dwf_hdcr Test_dwf_lanczos Test_gamma Test_gp_rect_force Test_gparity Test_gpdwf_force Test_gpwilson_even_odd Test_hmc_EODWFRatio Test_hmc_EODWFRatio_Gparity Test_hmc_EOWilsonFermionGauge Test_hmc_EOWilsonRatio Test_hmc_GparityIwasakiGauge Test_hmc_GparityWilsonGauge Test_hmc_IwasakiGauge Test_hmc_RectGauge Test_hmc_WilsonFermionGauge Test_hmc_WilsonGauge Test_hmc_WilsonRatio Test_lie_generators Test_main Test_multishift_sqrt Test_nersc_io Test_partfrac_force Test_quenched_update Test_rect_force Test_remez Test_rhmc_EOWilson1p1 Test_rhmc_EOWilsonRatio Test_rhmc_Wilson1p1 Test_rhmc_WilsonRatio Test_rng Test_rng_fixed Test_serialisation Test_simd Test_stencil Test_synthetic_lanczos Test_wilson_cg_prec Test_wilson_cg_schur Test_wilson_cg_unprec Test_wilson_cr_unprec Test_wilson_even_odd Test_wilson_force Test_wilson_force_phiMdagMphi Test_wilson_force_phiMphi Test_wilson_tm_even_odd 
 
 
 Test_GaugeAction_SOURCES=Test_GaugeAction.cc
 Test_GaugeAction_LDADD=-lGrid
+
+
+Test_RectPlaq_SOURCES=Test_RectPlaq.cc
+Test_RectPlaq_LDADD=-lGrid
 
 
 Test_cayley_cg_SOURCES=Test_cayley_cg.cc
@@ -82,6 +86,10 @@ Test_dwf_fpgcr_SOURCES=Test_dwf_fpgcr.cc
 Test_dwf_fpgcr_LDADD=-lGrid
 
 
+Test_dwf_gpforce_SOURCES=Test_dwf_gpforce.cc
+Test_dwf_gpforce_LDADD=-lGrid
+
+
 Test_dwf_hdcr_SOURCES=Test_dwf_hdcr.cc
 Test_dwf_hdcr_LDADD=-lGrid
 
@@ -94,16 +102,28 @@ Test_gamma_SOURCES=Test_gamma.cc
 Test_gamma_LDADD=-lGrid
 
 
+Test_gp_rect_force_SOURCES=Test_gp_rect_force.cc
+Test_gp_rect_force_LDADD=-lGrid
+
+
 Test_gparity_SOURCES=Test_gparity.cc
 Test_gparity_LDADD=-lGrid
 
 
-#Test_gpwilson_even_odd_SOURCES=Test_gpwilson_even_odd.cc
-#Test_gpwilson_even_odd_LDADD=-lGrid
+Test_gpdwf_force_SOURCES=Test_gpdwf_force.cc
+Test_gpdwf_force_LDADD=-lGrid
+
+
+Test_gpwilson_even_odd_SOURCES=Test_gpwilson_even_odd.cc
+Test_gpwilson_even_odd_LDADD=-lGrid
 
 
 Test_hmc_EODWFRatio_SOURCES=Test_hmc_EODWFRatio.cc
 Test_hmc_EODWFRatio_LDADD=-lGrid
+
+
+Test_hmc_EODWFRatio_Gparity_SOURCES=Test_hmc_EODWFRatio_Gparity.cc
+Test_hmc_EODWFRatio_Gparity_LDADD=-lGrid
 
 
 Test_hmc_EOWilsonFermionGauge_SOURCES=Test_hmc_EOWilsonFermionGauge.cc
@@ -112,6 +132,22 @@ Test_hmc_EOWilsonFermionGauge_LDADD=-lGrid
 
 Test_hmc_EOWilsonRatio_SOURCES=Test_hmc_EOWilsonRatio.cc
 Test_hmc_EOWilsonRatio_LDADD=-lGrid
+
+
+Test_hmc_GparityIwasakiGauge_SOURCES=Test_hmc_GparityIwasakiGauge.cc
+Test_hmc_GparityIwasakiGauge_LDADD=-lGrid
+
+
+Test_hmc_GparityWilsonGauge_SOURCES=Test_hmc_GparityWilsonGauge.cc
+Test_hmc_GparityWilsonGauge_LDADD=-lGrid
+
+
+Test_hmc_IwasakiGauge_SOURCES=Test_hmc_IwasakiGauge.cc
+Test_hmc_IwasakiGauge_LDADD=-lGrid
+
+
+Test_hmc_RectGauge_SOURCES=Test_hmc_RectGauge.cc
+Test_hmc_RectGauge_LDADD=-lGrid
 
 
 Test_hmc_WilsonFermionGauge_SOURCES=Test_hmc_WilsonFermionGauge.cc
@@ -148,6 +184,10 @@ Test_partfrac_force_LDADD=-lGrid
 
 Test_quenched_update_SOURCES=Test_quenched_update.cc
 Test_quenched_update_LDADD=-lGrid
+
+
+Test_rect_force_SOURCES=Test_rect_force.cc
+Test_rect_force_LDADD=-lGrid
 
 
 Test_remez_SOURCES=Test_remez.cc
@@ -224,4 +264,12 @@ Test_wilson_force_phiMdagMphi_LDADD=-lGrid
 
 Test_wilson_force_phiMphi_SOURCES=Test_wilson_force_phiMphi.cc
 Test_wilson_force_phiMphi_LDADD=-lGrid
+
+
+Test_wilson_tm_even_odd_SOURCES=Test_wilson_tm_even_odd.cc
+Test_wilson_tm_even_odd_LDADD=-lGrid
+
+
+Test_zmm_SOURCES=Test_zmm.cc
+Test_zmm_LDADD=-lGrid
 

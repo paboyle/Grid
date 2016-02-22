@@ -1,3 +1,31 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./benchmarks/Benchmark_wilson.cc
+
+    Copyright (C) 2015
+
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #include <Grid.h>
 
 using namespace std;
@@ -16,10 +44,15 @@ struct scal {
     Gamma::GammaT
   };
 
+bool overlapComms = false;
+
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
+  if( GridCmdOptionExists(argv,argv+argc,"--asynch") ){
+    overlapComms = true;
+  }
 
   std::vector<int> latt_size   = GridDefaultLatt();
   std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
@@ -57,11 +90,12 @@ int main (int argc, char ** argv)
   Complex cone(1.0,0.0);
   for(int nn=0;nn<Nd;nn++){
     random(pRNG,U[nn]);
-    if(0) {
-      if (nn==-1) { U[nn]=zero; std::cout<<GridLogMessage << "zeroing gauge field in dir "<<nn<<std::endl; }
-      else       { U[nn] = cone;std::cout<<GridLogMessage << "unit gauge field in dir "<<nn<<std::endl; }
+    if(1) {
+      if (nn!=2) { U[nn]=zero; std::cout<<GridLogMessage << "zeroing gauge field in dir "<<nn<<std::endl; }
+      //      else       { U[nn]= cone;std::cout<<GridLogMessage << "unit gauge field in dir "<<nn<<std::endl; }
+      else       { std::cout<<GridLogMessage << "random gauge field in dir "<<nn<<std::endl; }
     }
-    pokeIndex<LorentzIndex>(Umu,U[nn],nn);
+    PokeIndex<LorentzIndex>(Umu,U[nn],nn);
   }
 #endif
 
@@ -75,19 +109,23 @@ int main (int argc, char ** argv)
       //    ref =  src + Gamma(Gamma::GammaX)* src ; // 1-gamma_x
       tmp = U[mu]*Cshift(src,mu,1);
       for(int i=0;i<ref._odata.size();i++){
-	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
+	ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
       }
 
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu,-1);
       for(int i=0;i<ref._odata.size();i++){
-	ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
+	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
       }
     }
   }
   ref = -0.5*ref;
   RealD mass=0.1;
-  WilsonFermionR Dw(Umu,Grid,RBGrid,mass);
+
+  typename WilsonFermionR::ImplParams params; 
+  params.overlapCommsCompute = overlapComms;
+
+  WilsonFermionR Dw(Umu,Grid,RBGrid,mass,params);
   
   std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
   int ncall=1000;
@@ -124,13 +162,13 @@ int main (int argc, char ** argv)
       //    ref =  src - Gamma(Gamma::GammaX)* src ; // 1+gamma_x
       tmp = U[mu]*Cshift(src,mu,1);
       for(int i=0;i<ref._odata.size();i++){
-	ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
+	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
       }
 
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu,-1);
       for(int i=0;i<ref._odata.size();i++){
-	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
+	ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
       }
     }
   }

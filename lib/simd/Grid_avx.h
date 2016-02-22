@@ -1,3 +1,34 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/simd/Grid_avx.h
+
+    Copyright (C) 2015
+
+Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
+Author: Guido Cossu <cossu@iroiro-pc.kek.jp>
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: neo <cossu@post.kek.jp>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 //----------------------------------------------------------------------
 /*! @file Grid_avx.h
   @brief Optimization libraries for AVX1/2 instructions set
@@ -16,6 +47,7 @@
 #define _mm256_set_m128i(hi,lo) _mm256_insertf128_si256(_mm256_castsi128_si256(lo),(hi),1)
 #endif
 
+namespace Grid {
 namespace Optimization {
 
   template<class vtype>
@@ -467,7 +499,7 @@ namespace Optimization {
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types 
-namespace Grid {
+
   typedef __m256  SIMD_Ftype; // Single precision type
   typedef __m256d SIMD_Dtype; // Double precision type
   typedef __m256i SIMD_Itype; // Integer type
@@ -488,8 +520,8 @@ namespace Grid {
   typedef Optimization::Vstore   VstoreSIMD;
   typedef Optimization::Vset     VsetSIMD;
   typedef Optimization::Vstream  VstreamSIMD;
-  template <typename S, typename T> using ReduceSIMD = Optimization::Reduce<S,T>;
 
+  template <typename S, typename T> using ReduceSIMD = Optimization::Reduce<S,T>;
 
   // Arithmetic operations
   typedef Optimization::Sum         SumSIMD;

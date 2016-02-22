@@ -1,3 +1,33 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/qcd/action/fermion/WilsonFermion.cc
+
+    Copyright (C) 2015
+
+Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #include <Grid.h>
 
 namespace Grid {
@@ -28,14 +58,15 @@ namespace QCD {
 	UmuOdd (&Hgrid) 
   {
     // Allocate the required comms buffer
-    comm_buf.resize(Stencil._unified_buffer_size); // this is always big enough to contain EO
     ImportGauge(_Umu);
   }
 
   template<class Impl>
   void WilsonFermion<Impl>::ImportGauge(const GaugeField &_Umu)
   {
-    Impl::DoubleStore(GaugeGrid(),Umu,_Umu);
+    GaugeField HUmu(_Umu._grid);
+    HUmu = _Umu*(-0.5);
+    Impl::DoubleStore(GaugeGrid(),Umu,HUmu);
     pickCheckerboard(Even,UmuEven,Umu);
     pickCheckerboard(Odd ,UmuOdd,Umu);
   }
@@ -123,7 +154,7 @@ namespace QCD {
     FermionField Atilde(B._grid);
     Atilde = A;
 
-    st.HaloExchange(B,comm_buf,compressor);
+    st.HaloExchange(B,compressor);
     
     for(int mu=0;mu<Nd;mu++){
       
@@ -131,14 +162,14 @@ namespace QCD {
       // Flip gamma (1+g)<->(1-g) if dag
       ////////////////////////////////////////////////////////////////////////
       int gamma = mu;
-      if ( dag ) gamma+= Nd;
+      if ( !dag ) gamma+= Nd;
       
       ////////////////////////
       // Call the single hop
       ////////////////////////
 PARALLEL_FOR_LOOP
 	for(int sss=0;sss<B._grid->oSites();sss++){
-	  Kernels::DiracOptDhopDir(st,U,comm_buf,sss,sss,B,Btilde,mu,gamma);
+	  Kernels::DiracOptDhopDir(st,U,st.comm_buf,sss,sss,B,Btilde,mu,gamma);
 	}
       
       //////////////////////////////////////////////////
@@ -227,13 +258,15 @@ PARALLEL_FOR_LOOP
     DhopDir(in,out,dir,disp);
   }
   
+
   template<class Impl>
   void WilsonFermion<Impl>::DhopDir(const FermionField &in, FermionField &out,int dir,int disp){
     
     int skip = (disp==1) ? 0 : 1;
-    int dirdisp = dir+skip*4;
+    int dirdisp  = dir+skip*4;
+    int gamma    = dir+(1-skip)*4;
     
-    DhopDirDisp(in,out,dirdisp,dirdisp,DaggerNo);
+    DhopDirDisp(in,out,dirdisp,gamma,DaggerNo);
     
   };
   
@@ -242,53 +275,135 @@ PARALLEL_FOR_LOOP
     
     Compressor compressor(dag);
     
-    Stencil.HaloExchange(in,comm_buf,compressor);
+    Stencil.HaloExchange(in,compressor);
     
 PARALLEL_FOR_LOOP
       for(int sss=0;sss<in._grid->oSites();sss++){
-	Kernels::DiracOptDhopDir(Stencil,Umu,comm_buf,sss,sss,in,out,dirdisp,gamma);
+	Kernels::DiracOptDhopDir(Stencil,Umu,Stencil.comm_buf,sss,sss,in,out,dirdisp,gamma);
       }
     
   };
 
-
   template<class Impl>
   void WilsonFermion<Impl>::DhopInternal(StencilImpl & st,DoubledGaugeField & U,
-					 const FermionField &in, FermionField &out,int dag) {
+					 const FermionField &in, FermionField &out,int dag) 
+  {
+    if ( Impl::overlapCommsCompute () ) { 
+      DhopInternalCommsOverlapCompute(st,U,in,out,dag);
+    } else { 
+      DhopInternalCommsThenCompute(st,U,in,out,dag);
+    }
+  }
+  template<class Impl>
+  void WilsonFermion<Impl>::DhopInternalCommsThenCompute(StencilImpl & st,DoubledGaugeField & U,
+							 const FermionField &in, FermionField &out,int dag) {
 
     assert((dag==DaggerNo) ||(dag==DaggerYes));
 
     Compressor compressor(dag);
-    st.HaloExchange(in,comm_buf,compressor);
+    st.HaloExchange(in,compressor);
     
     if ( dag == DaggerYes ) {
       if( HandOptDslash ) {
 PARALLEL_FOR_LOOP
         for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptHandDhopSiteDag(st,U,comm_buf,sss,sss,in,out);
+	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out);
 	}
       } else { 
 PARALLEL_FOR_LOOP
         for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptDhopSiteDag(st,U,comm_buf,sss,sss,in,out);
+	  Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out);
 	}
       }
     } else {
       if( HandOptDslash ) {
 PARALLEL_FOR_LOOP
         for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptHandDhopSite(st,U,comm_buf,sss,sss,in,out);
+	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sss,sss,in,out);
 	}
       } else { 
 PARALLEL_FOR_LOOP
         for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptDhopSite(st,U,comm_buf,sss,sss,in,out);
+	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sss,sss,in,out);
 	}
       }
     }
   };
+
+
+  template<class Impl>
+  void WilsonFermion<Impl>::DhopInternalCommsOverlapCompute(StencilImpl & st,DoubledGaugeField & U,
+						     const FermionField &in, FermionField &out,int dag) {
+
+    assert((dag==DaggerNo) ||(dag==DaggerYes));
+
+    Compressor compressor(dag);
+
+    auto handle = st.HaloExchangeBegin(in,compressor);
+
+    bool local    = true;
+    bool nonlocal = false;
+    if ( dag == DaggerYes ) {
+      if( HandOptDslash ) {
+PARALLEL_FOR_LOOP
+        for(int sss=0;sss<in._grid->oSites();sss++){
+	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
+	}
+      } else { 
+PARALLEL_FOR_LOOP
+        for(int sss=0;sss<in._grid->oSites();sss++){
+	  Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
+	}
+      }
+    } else {
+      if( HandOptDslash ) {
+PARALLEL_FOR_LOOP
+        for(int sss=0;sss<in._grid->oSites();sss++){
+	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
+	}
+      } else { 
+PARALLEL_FOR_LOOP
+        for(int sss=0;sss<in._grid->oSites();sss++){
+	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
+	}
+      }
+    }
+
+    st.HaloExchangeComplete(handle);
+
+    local    = false;
+    nonlocal = true;
+    if ( dag == DaggerYes ) {
+      if( HandOptDslash ) {
+PARALLEL_FOR_LOOP
+        for(int sss=0;sss<in._grid->oSites();sss++){
+	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
+	}
+      } else { 
+PARALLEL_FOR_LOOP
+        for(int sss=0;sss<in._grid->oSites();sss++){
+	  Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
+	}
+      }
+    } else {
+      if( HandOptDslash ) {
+PARALLEL_FOR_LOOP
+        for(int sss=0;sss<in._grid->oSites();sss++){
+	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
+	}
+      } else { 
+PARALLEL_FOR_LOOP
+        for(int sss=0;sss<in._grid->oSites();sss++){
+	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
+	}
+      }
+    }
+
+  };
+
  
   FermOpTemplateInstantiate(WilsonFermion);
+
 
 }}
 

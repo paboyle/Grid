@@ -1,3 +1,32 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/qcd/action/pseudofermion/TwoFlavourRatio.h
+
+    Copyright (C) 2015
+
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #ifndef QCD_PSEUDOFERMION_TWO_FLAVOUR_RATIO_H
 #define QCD_PSEUDOFERMION_TWO_FLAVOUR_RATIO_H
 
@@ -58,6 +87,7 @@ namespace Grid{
 	MdagMLinearOperator<FermionOperator<Impl> ,FermionField> MdagMOp(NumOp);
 
 	DenOp.Mdag(eta,Phi);            // Mdag eta
+	tmp = zero;
 	ActionSolver(MdagMOp,Phi,tmp);  // (VdagV)^-1 Mdag eta = V^-1 Vdag^-1 Mdag eta
 	NumOp.M(tmp,Phi);               // Vdag^-1 Mdag eta
 
@@ -78,8 +108,8 @@ namespace Grid{
 	
 	MdagMLinearOperator<FermionOperator<Impl> ,FermionField> MdagMOp(DenOp);
 
-	X=zero;
 	NumOp.Mdag(Phi,Y);              // Y= Vdag phi
+	X=zero;
 	ActionSolver(MdagMOp,Y,X);      // X= (MdagM)^-1 Vdag phi
 	DenOp.M(X,Y);                  // Y=  Mdag^-1 Vdag phi
 
@@ -105,12 +135,12 @@ namespace Grid{
 
 	GaugeField   force(NumOp.GaugeGrid());	
 
-	X=zero;
 
 	//Y=Vdag phi
 	//X = (Mdag M)^-1 V^dag phi
 	//Y = (Mdag)^-1 V^dag  phi
 	NumOp.Mdag(Phi,Y);              // Y= Vdag phi
+	X=zero;
 	DerivativeSolver(MdagMOp,Y,X);      // X= (MdagM)^-1 Vdag phi
 	DenOp.M(X,Y);                  // Y=  Mdag^-1 Vdag phi
 

@@ -1,3 +1,33 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./tests/Test_main.cc
+
+    Copyright (C) 2015
+
+Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: neo <cossu@post.kek.jp>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #include "Grid.h"
 
 
@@ -35,7 +65,7 @@ int main (int argc, char ** argv)
 #ifdef AVX512
  for(int omp=128;omp<236;omp+=16){
 #else
- for(int omp=1;omp<8;omp*=20){
+ for(int omp=1;omp<2;omp*=20){
 #endif
 
 #ifdef OMP
@@ -43,6 +73,9 @@ int main (int argc, char ** argv)
 #endif 
 
   for(int lat=8;lat<=16;lat+=40){
+
+    std::cout << "Lat "<<lat<<std::endl;
+
     latt_size[0] = lat;
     latt_size[1] = lat;
     latt_size[2] = lat;
@@ -53,8 +86,25 @@ int main (int argc, char ** argv)
     GridRedBlackCartesian rbFine(latt_size,simd_layout,mpi_layout);
     GridParallelRNG       FineRNG(&Fine);
     GridSerialRNG       SerialRNG;
-    FineRNG.SeedRandomDevice();
+    GridSerialRNG       SerialRNG1;
 
+    FineRNG.SeedRandomDevice();
+    SerialRNG.SeedRandomDevice();
+
+    std::cout <<"SerialRNG" << SerialRNG._generators[0] <<std::endl;
+
+    std::vector<typename GridSerialRNG::RngStateType> saved;
+    SerialRNG.GetState(saved,0);
+    SerialRNG1.SetState(saved,0);
+
+    RealD dd1,dd2;
+
+    std::cout << "Testing RNG state save restore"<<std::endl;
+    for(int i=0;i<10;i++){
+      random(SerialRNG,dd1);
+      random(SerialRNG1,dd2);
+      std::cout << "i "<<i<<" "<<dd1<< " " <<dd2<<std::endl;
+    }
     LatticeColourMatrix Foo(&Fine);
     LatticeColourMatrix Bar(&Fine);
 
@@ -302,7 +352,6 @@ int main (int argc, char ** argv)
     }
 
     FooBar = Bar;
- 
     /*
     { 
       std::vector<int> coor(4);
@@ -314,6 +363,7 @@ int main (int argc, char ** argv)
     random(Foo);
     */
     lex_sites(Foo);
+
 
     Integer mm[4];
     mm[0]=1;
@@ -330,8 +380,12 @@ int main (int argc, char ** argv)
       
     }
 
-    Bar = zero;
-    Bar = where(lex<Integer(10),Foo,Bar);
+
+
+    //    Bar = zero;
+    //    Bar = where(lex<Integer(10),Foo,Bar);
+
+
     cout << "peeking sites..\n";
     {
       std::vector<int> coor(4);

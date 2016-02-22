@@ -1,3 +1,33 @@
+    /*************************************************************************************
+
+    Grid physics library, www.github.com/paboyle/Grid 
+
+    Source file: ./lib/qcd/action/fermion/FermionOperatorImpl.h
+
+    Copyright (C) 2015
+
+Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
+Author: paboyle <paboyle@ph.ed.ac.uk>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
 #ifndef  GRID_QCD_FERMION_OPERATOR_IMPL_H
 #define  GRID_QCD_FERMION_OPERATOR_IMPL_H
 
@@ -58,38 +88,6 @@ namespace Grid {
     //  }
     //////////////////////////////////////////////
 
-    
-    ////////////////////////////////////////////////////////////////////////
-    // Implementation dependent gauge types
-    ////////////////////////////////////////////////////////////////////////
-
-#define INHERIT_IMPL_TYPES(Base) \
-    INHERIT_GIMPL_TYPES(Base)\
-    INHERIT_FIMPL_TYPES(Base)
-
-#define INHERIT_GIMPL_TYPES(GImpl) \
-    typedef typename GImpl::Simd                           Simd;\
-    typedef typename GImpl::GaugeLinkField       GaugeLinkField;\
-    typedef typename GImpl::GaugeField               GaugeField;	
-    
-    // Composition with smeared link, bc's etc.. probably need multiple inheritance
-    // Variable precision "S" and variable Nc
-    template<class S,int Nrepresentation=Nc>
-    class ImplGauge { 
-    public:
-    
-      typedef S Simd;
-    
-      template<typename vtype> using iImplGaugeLink          = iScalar<iScalar<iMatrix<vtype, Nrepresentation> > >;
-      template<typename vtype> using iImplGaugeField         = iVector<iScalar<iMatrix<vtype, Nrepresentation> >, Nd  >;
-    
-      typedef iImplGaugeLink    <Simd>           SiteGaugeLink;
-      typedef iImplGaugeField   <Simd>           SiteGaugeField;
-    
-      typedef Lattice<SiteGaugeLink>                GaugeLinkField; // bit ugly naming; polarised gauge field, lorentz... all ugly
-      typedef Lattice<SiteGaugeField>                   GaugeField;
-
-    };
 
     ////////////////////////////////////////////////////////////////////////
     // Implementation dependent fermion types
@@ -104,14 +102,18 @@ namespace Grid {
     typedef typename Impl::StencilImpl              StencilImpl;	\
     typedef typename Impl::ImplParams ImplParams;
 
+#define INHERIT_IMPL_TYPES(Base) \
+    INHERIT_GIMPL_TYPES(Base)\
+    INHERIT_FIMPL_TYPES(Base)
+
     ///////
     // Single flavour four spinors with colour index
     ///////
     template<class S,int Nrepresentation=Nc>
-    class WilsonImpl :  public ImplGauge<S,Nrepresentation> { 
+    class WilsonImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepresentation> > { 
     public:
 
-      typedef ImplGauge<S,Nrepresentation> Gimpl;
+      typedef PeriodicGaugeImpl< GaugeImplTypes< S,Nrepresentation> > Gimpl;
 
       INHERIT_GIMPL_TYPES(Gimpl);
 
@@ -128,10 +130,14 @@ namespace Grid {
 
       typedef WilsonCompressor<SiteHalfSpinor,SiteSpinor> Compressor;
       typedef WilsonImplParams ImplParams;
-      typedef CartesianStencil<SiteSpinor,SiteHalfSpinor,Compressor> StencilImpl;
+      typedef WilsonStencil<SiteSpinor,SiteHalfSpinor> StencilImpl;
+
       ImplParams Params;
+
       WilsonImpl(const ImplParams &p= ImplParams()) : Params(p) {}; 
 
+      bool overlapCommsCompute(void) { return Params.overlapCommsCompute; };
+    
       inline void multLink(SiteHalfSpinor &phi,const SiteDoubledGaugeField &U,const SiteHalfSpinor &chi,int mu,StencilEntry *SE,StencilImpl &St){
         mult(&phi(),&U(mu),&chi());
       }
@@ -180,10 +186,10 @@ PARALLEL_FOR_LOOP
     ////////////////////////////////////////////////////////////////////////////////////////
 
     template<class S,int Nrepresentation>
-    class GparityWilsonImpl : public ImplGauge<S,Nrepresentation> { 
+    class GparityWilsonImpl : public ConjugateGaugeImpl< GaugeImplTypes<S,Nrepresentation> >{ 
     public:
 
-      typedef ImplGauge<S,Nrepresentation> Gimpl;
+      typedef ConjugateGaugeImpl< GaugeImplTypes<S,Nrepresentation> > Gimpl;
 
       INHERIT_GIMPL_TYPES(Gimpl);
 
@@ -199,12 +205,15 @@ PARALLEL_FOR_LOOP
       typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
 
       typedef WilsonCompressor<SiteHalfSpinor,SiteSpinor> Compressor;
-      typedef CartesianStencil<SiteSpinor,SiteHalfSpinor,Compressor> StencilImpl;
+      typedef WilsonStencil<SiteSpinor,SiteHalfSpinor> StencilImpl;
 
       typedef GparityWilsonImplParams ImplParams;
+
       ImplParams Params;
+
       GparityWilsonImpl(const ImplParams &p= ImplParams()) : Params(p) {}; 
       
+      bool overlapCommsCompute(void) { return Params.overlapCommsCompute; };
 
       // provide the multiply by link that is differentiated between Gparity (with flavour index) and non-Gparity
       inline void multLink(SiteHalfSpinor &phi,const SiteDoubledGaugeField &U,const SiteHalfSpinor &chi,int mu,StencilEntry *SE,StencilImpl &St){
@@ -335,13 +344,33 @@ PARALLEL_FOR_LOOP
       }
 
       inline void InsertForce4D(GaugeField &mat, FermionField &Btilde, FermionField &A,int mu){
-	assert(0);
-	// Fixme
+	
+	// DhopDir provides U or Uconj depending on coor/flavour.
+	GaugeLinkField link(mat._grid);
+	// use lorentz for flavour as hack.
+	auto tmp = TraceIndex<SpinIndex>(outerProduct(Btilde,A));  
+PARALLEL_FOR_LOOP
+        for(auto ss=tmp.begin();ss<tmp.end();ss++){
+	  link[ss]() = tmp[ss](0,0) - conjugate(tmp[ss](1,1)) ;
+	}
+	PokeIndex<LorentzIndex>(mat,link,mu);
 	return;
       }
-      inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &A,int mu){
-	assert(0);
-	// Fixme
+      inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde,int mu){
+
+	int Ls=Btilde._grid->_fdimensions[0];
+
+	GaugeLinkField tmp(mat._grid);
+	tmp = zero;
+PARALLEL_FOR_LOOP
+	for(int ss=0;ss<tmp._grid->oSites();ss++){
+	  for(int s=0;s<Ls;s++){
+	    int sF = s+Ls*ss;
+	    auto ttmp = traceIndex<SpinIndex>(outerProduct(Btilde[sF],Atilde[sF]));
+	    tmp[ss]() = tmp[ss]()+ ttmp(0,0) + conjugate(ttmp(1,1));
+	  }
+	}
+	PokeIndex<LorentzIndex>(mat,tmp,mu);
 	return;
       }
     };
