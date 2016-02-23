@@ -462,5 +462,6 @@ namespace QCD {
 #include <qcd/hmc/integrators/Integrator_algorithm.h>
 #include <qcd/hmc/HMC.h>
 
+#include <qcd/smearing/Smearing.h>
 
 #endif

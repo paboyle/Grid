@@ -195,31 +195,34 @@ inline void CBFromExpression( int &cb,const LatticeTrinaryExpression<Op,T1,T2,T3
 // Unary operators and funcs
 ////////////////////////////////////////////
 #define GridUnopClass(name,ret)\
-template <class arg> struct name\
-{\
-  static auto inline func(const arg a)-> decltype(ret) { return ret; } \
-};
-
-GridUnopClass(UnarySub,-a);
-GridUnopClass(UnaryNot,Not(a));
-GridUnopClass(UnaryAdj,adj(a));
-GridUnopClass(UnaryConj,conjugate(a));
-GridUnopClass(UnaryTrace,trace(a));
-GridUnopClass(UnaryTranspose,transpose(a));
-GridUnopClass(UnaryTa,Ta(a));
-GridUnopClass(UnaryProjectOnGroup,ProjectOnGroup(a));
-GridUnopClass(UnaryReal,real(a));
-GridUnopClass(UnaryImag,imag(a));
-GridUnopClass(UnaryToReal,toReal(a));
-GridUnopClass(UnaryToComplex,toComplex(a));
-GridUnopClass(UnaryAbs,abs(a));
-GridUnopClass(UnarySqrt,sqrt(a));
-GridUnopClass(UnaryRsqrt,rsqrt(a));
-GridUnopClass(UnarySin,sin(a));
-GridUnopClass(UnaryCos,cos(a));
-GridUnopClass(UnaryLog,log(a));
-GridUnopClass(UnaryExp,exp(a));
-
+  template <class arg> struct name		\
+    {								       \
+      static auto inline func(const arg a)-> decltype(ret) { return ret; } \
+    };
+ 
+ GridUnopClass(UnarySub,-a);
+ GridUnopClass(UnaryNot,Not(a));
+ GridUnopClass(UnaryAdj,adj(a));
+ GridUnopClass(UnaryConj,conjugate(a));
+ GridUnopClass(UnaryTrace,trace(a));
+ GridUnopClass(UnaryTranspose,transpose(a));
+ GridUnopClass(UnaryTa,Ta(a));
+ GridUnopClass(UnaryProjectOnGroup,ProjectOnGroup(a));
+ GridUnopClass(UnaryReal,real(a));
+ GridUnopClass(UnaryImag,imag(a));
+ GridUnopClass(UnaryToReal,toReal(a));
+ GridUnopClass(UnaryToComplex,toComplex(a));
+ GridUnopClass(UnaryTimesI,timesI(a));
+ GridUnopClass(UnaryAbs,abs(a));
+ GridUnopClass(UnarySqrt,sqrt(a));
+ GridUnopClass(UnaryRsqrt,rsqrt(a));
+ GridUnopClass(UnarySin,sin(a));
+ GridUnopClass(UnaryCos,cos(a));
+ GridUnopClass(UnaryAsin,sin(a));
+ GridUnopClass(UnaryAcos,cos(a));
+ GridUnopClass(UnaryLog,log(a));
+ GridUnopClass(UnaryExp,exp(a));
+ 
 ////////////////////////////////////////////
 // Binary operators
 ////////////////////////////////////////////
@@ -325,11 +328,14 @@ GRID_DEF_UNOP(real,UnaryReal);
 GRID_DEF_UNOP(imag,UnaryImag);
 GRID_DEF_UNOP(toReal,UnaryToReal);
 GRID_DEF_UNOP(toComplex,UnaryToComplex);
+GRID_DEF_UNOP(timesI,UnaryTimesI);
 GRID_DEF_UNOP(abs  ,UnaryAbs); //abs overloaded in cmath C++98; DON'T do the abs-fabs-dabs-labs thing
 GRID_DEF_UNOP(sqrt ,UnarySqrt);
 GRID_DEF_UNOP(rsqrt,UnaryRsqrt);
 GRID_DEF_UNOP(sin  ,UnarySin);
 GRID_DEF_UNOP(cos  ,UnaryCos);
+GRID_DEF_UNOP(asin  ,UnaryAsin);
+GRID_DEF_UNOP(acos  ,UnaryAcos);
 GRID_DEF_UNOP(log  ,UnaryLog);
 GRID_DEF_UNOP(exp  ,UnaryExp);
 

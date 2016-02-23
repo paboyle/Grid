@@ -60,6 +60,15 @@ template<class Gimpl> class WilsonLoops;
       typedef Lattice<SiteGaugeLink>                GaugeLinkField; // bit ugly naming; polarised gauge field, lorentz... all ugly
       typedef Lattice<SiteGaugeField>                   GaugeField;
 
+    // Move this elsewhere?
+    void AddGaugeLink(GaugeField& U, GaugeLinkField& W, int mu){  // U[mu] += W 
+PARALLEL_FOR_LOOP
+      for(auto ss=0;ss<U._grid->oSites();ss++){
+	U._odata[ss]._internal[mu] = U._odata[ss]._internal[mu] + W._odata[ss]._internal;
+        }  
+    }
+    
+      
     };
 
     // Composition with smeared link, bc's etc.. probably need multiple inheritance

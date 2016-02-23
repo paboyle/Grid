@@ -607,6 +607,11 @@ int main (int argc, char ** argv)
  } // loop for omp
 
 
+
+ // Testing Smearing routine compilation
+ Smear_APE< PeriodicGimplR > APEsmearing; // periodic gauge implemetation
+ 
+ 
  std::cout<<GridLogMessage << sizeof(vComplexF) << std::endl;
  
  Grid_finalize();

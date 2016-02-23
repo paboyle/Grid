@@ -22,7 +22,7 @@ namespace Grid {
       It stores a list of smeared configurations.
     */
     template <class Gimpl>
-    class GaugeConfiguration {
+    class SmearedConfiguration {
     public:
       INHERIT_GIMPL_TYPES(Gimpl)
       private:
@@ -58,7 +58,7 @@ namespace Grid {
 				    links configuration */
       
       /*! @brief Standard constructor */
-      GaugeConfiguration(GridCartesian * UGrid,
+      SmearedConfiguration(GridCartesian * UGrid,
 			 unsigned int Nsmear, 
 			 Smear_Stout& Stout):
 	smearingLevels(Nsmear),
@@ -69,7 +69,7 @@ namespace Grid {
       }
       
       /*! For just thin links */
-      GaugeConfiguration(GridCartesian * UGrid):
+      SmearedConfiguration(GridCartesian * UGrid):
 	smearingLevels(0),
 	StoutSmearing(),
 	SmearedSet(0),

@@ -59,6 +59,18 @@ namespace Grid {
     }
   };
 
+  template<class scalar> struct AcosRealFunctor {
+    scalar operator()(const scalar &a)  const {
+      return acos(real(a));
+    }
+  };
+
+  template<class scalar> struct AsinRealFunctor {
+    scalar operator()(const scalar &a)  const {
+      return asin(real(a));
+    }
+  };
+
   template<class scalar> struct LogRealFunctor {
     scalar operator()(const scalar &a)  const {
       return log(real(a));
@@ -144,6 +156,14 @@ namespace Grid {
   template < class S, class V > 
   inline Grid_simd<S,V> sin(const Grid_simd<S,V> &r) {
     return SimdApply(SinRealFunctor<S>(),r);
+  }
+  template < class S, class V > 
+  inline Grid_simd<S,V> acos(const Grid_simd<S,V> &r) {
+    return SimdApply(AcosRealFunctor<S>(),r);
+  }
+  template < class S, class V > 
+  inline Grid_simd<S,V> asin(const Grid_simd<S,V> &r) {
+    return SimdApply(AsinRealFunctor<S>(),r);
   }
   template < class S, class V > 
   inline Grid_simd<S,V> log(const Grid_simd<S,V> &r) {
