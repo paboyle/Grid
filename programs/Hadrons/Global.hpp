@@ -35,7 +35,8 @@ BEGIN_HADRONS_NAMESPACE
 class HadronsLogger: public Logger
 {
 public:
-    HadronsLogger(int on, std::string nm): Logger("Hadrons", on, nm){};
+    HadronsLogger(int on, std::string nm): Logger("Hadrons", on, nm,
+                                                  Logger::BLACK){};
 };
 
 #define LOG(channel) std::cout << HadronsLog##channel
