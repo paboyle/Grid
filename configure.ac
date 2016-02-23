@@ -71,7 +71,7 @@ AC_CHECK_FUNCS([gettimeofday])
 
 AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE4|AVX|AVXFMA4|AVX2|AVX512|IMCI],\
 	[Select instructions to be SSE4.0, AVX 1.0, AVX 2.0+FMA, AVX 512, IMCI])],\
-	[ac_SIMD=${enable_simd}],[ac_SIMD=AVX2])
+	[ac_SIMD=${enable_simd}],[ac_SIMD=DEBUG])
 
 supported=no
 
