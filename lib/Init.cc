@@ -45,9 +45,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <algorithm>
 #include <iterator>
 
-#define __X86_64
-
-
 namespace Grid {
 
 //////////////////////////////////////////////////////
@@ -289,14 +286,13 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   printf("         code %d\n",si->si_code);
 
   // Linux/Posix
-#ifdef __linux__ 
+#ifdef __linux__
   // And x86 64bit
-    ucontext_t * uc= (ucontext_t *)ptr;
+#ifdef __x86_64__
+  ucontext_t * uc= (ucontext_t *)ptr;
   struct sigcontext *sc = (struct sigcontext *)&uc->uc_mcontext;
   printf("  instruction %llx\n",(unsigned long long)sc->rip);
-
 #define REG(A)  printf("  %s %lx\n",#A,sc-> A);
-
   REG(rdi);
   REG(rsi);
   REG(rbp);
@@ -316,6 +312,7 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   REG(r13);
   REG(r14);
   REG(r15);
+#endif
 #endif
   BACKTRACE();
   exit(0);

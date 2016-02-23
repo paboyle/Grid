@@ -68,6 +68,7 @@ namespace Grid
     virtual ~XmlReader(void) = default;
     void push(const std::string &s);
     void pop(void);
+    bool nextElement(const std::string &s);
     template <typename U>
     void readDefault(const std::string &s, U &output);
     template <typename U>

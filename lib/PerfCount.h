@@ -43,8 +43,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #else
 #include <sys/syscall.h>
 #endif
-namespace Grid {
 
+namespace Grid {
 
 #ifdef __linux__
 static long perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
@@ -58,6 +58,23 @@ static long perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
 }
 #endif
 
+#ifdef __bgq__
+inline uint64_t cyclecount(void){ 
+   uint64_t tmp;
+   asm volatile ("mfspr %0,0x10C" : "=&r" (tmp)  );
+   return tmp;
+}
+#elif defined __x86_64__
+#include <x86intrin.h>
+inline uint64_t cyclecount(void){ 
+   return __rdtsc();
+}
+#else
+#warning No cycle counter implemented for this architecture
+inline uint64_t cyclecount(void){ 
+   return 0;
+}
+#endif
 
 class PerformanceCounter {
 private:
@@ -149,7 +166,7 @@ public:
       ioctl(fd, PERF_EVENT_IOC_RESET, 0);
       ioctl(fd, PERF_EVENT_IOC_ENABLE, 0);
     }
-    begin  =__rdtsc();
+    begin  =cyclecount();
 #else
     begin = 0;
 #endif
@@ -162,7 +179,7 @@ public:
       ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
       ::read(fd, &count, sizeof(long long));
     }
-    elapsed = __rdtsc() - begin;
+    elapsed = cyclecount() - begin;
 #else
     elapsed = 0;
 #endif
