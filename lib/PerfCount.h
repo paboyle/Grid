@@ -64,7 +64,8 @@ inline uint64_t cyclecount(void){
    asm volatile ("mfspr %0,0x10C" : "=&r" (tmp)  );
    return tmp;
 }
-#elif defined __i386__
+#elif defined __x86_64__
+#include <x86intrin.h>
 inline uint64_t cyclecount(void){ 
    return __rdtsc();
 }
