@@ -45,9 +45,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <algorithm>
 #include <iterator>
 
-#define __X86_64
-
-
 namespace Grid {
 
 //////////////////////////////////////////////////////
