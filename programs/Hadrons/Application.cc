@@ -42,10 +42,7 @@ Application::Application(const std::string parameterFileName)
 
 // destructor //////////////////////////////////////////////////////////////////
 Application::~Application(void)
-{
-    LOG(Message) << "Grid is finalizing now" << std::endl;
-    Grid_finalize();
-}
+{}
 
 // execute /////////////////////////////////////////////////////////////////////
 void Application::run(void)

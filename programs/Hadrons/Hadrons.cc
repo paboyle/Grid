@@ -33,6 +33,8 @@ int main(int argc, char *argv[])
         std::exit(EXIT_FAILURE);
     }
     parameterFileName = argv[1];
+    
+    // initialization
     Grid_init(&argc, &argv);
     HadronsLogError.Active(GridLogError.isActive());
     HadronsLogWarning.Active(GridLogWarning.isActive());
@@ -44,6 +46,10 @@ int main(int argc, char *argv[])
     Application application(parameterFileName);
     
     application.run();
+    
+    // epilogue
+    LOG(Message) << "Grid is finalizing now" << std::endl;
+    Grid_finalize();
     
     return EXIT_SUCCESS;
 }

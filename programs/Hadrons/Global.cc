@@ -26,5 +26,3 @@ HadronsLogger Hadrons::HadronsLogError(1,"Error");
 HadronsLogger Hadrons::HadronsLogWarning(1,"Warning");
 HadronsLogger Hadrons::HadronsLogMessage(1,"Message");
 HadronsLogger Hadrons::HadronsLogDebug(1,"Debug");
-
-
