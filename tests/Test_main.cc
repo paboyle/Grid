@@ -609,8 +609,10 @@ int main (int argc, char ** argv)
 
 
  // Testing Smearing routine compilation
+ GridCartesian           Fine(latt_size,simd_layout,mpi_layout);
  Smear_APE< PeriodicGimplR > APEsmearing; // periodic gauge implemetation
- 
+ Smear_Stout< PeriodicGimplR > StoutSmearing(&APEsmearing);
+ SmearedConfiguration< PeriodicGimplR > SmartConf(&Fine, 3, StoutSmearing);
  
  std::cout<<GridLogMessage << sizeof(vComplexF) << std::endl;
  

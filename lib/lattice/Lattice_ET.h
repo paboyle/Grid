@@ -213,6 +213,7 @@ inline void CBFromExpression( int &cb,const LatticeTrinaryExpression<Op,T1,T2,T3
  GridUnopClass(UnaryToReal,toReal(a));
  GridUnopClass(UnaryToComplex,toComplex(a));
  GridUnopClass(UnaryTimesI,timesI(a));
+ GridUnopClass(UnaryTimesMinusI,timesMinusI(a));
  GridUnopClass(UnaryAbs,abs(a));
  GridUnopClass(UnarySqrt,sqrt(a));
  GridUnopClass(UnaryRsqrt,rsqrt(a));
@@ -329,6 +330,7 @@ GRID_DEF_UNOP(imag,UnaryImag);
 GRID_DEF_UNOP(toReal,UnaryToReal);
 GRID_DEF_UNOP(toComplex,UnaryToComplex);
 GRID_DEF_UNOP(timesI,UnaryTimesI);
+GRID_DEF_UNOP(timesMinusI,UnaryTimesMinusI);
 GRID_DEF_UNOP(abs  ,UnaryAbs); //abs overloaded in cmath C++98; DON'T do the abs-fabs-dabs-labs thing
 GRID_DEF_UNOP(sqrt ,UnarySqrt);
 GRID_DEF_UNOP(rsqrt,UnaryRsqrt);

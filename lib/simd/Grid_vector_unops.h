@@ -118,21 +118,21 @@ namespace Grid {
   };
 
   template<class scalar> struct RealFunctor {
-    scalar operator()(const scalar &a)  const {
+    scalar operator()(const std::complex<scalar> &a)  const {
       return real(a);
     }
   };
   template<class scalar> struct ImagFunctor {
-    scalar operator()(const scalar &a)  const {
+    scalar operator()(const std::complex<scalar> &a)  const {
       return imag(a);
     }
   };
   template < class S, class V > 
-  inline Grid_simd<S,V> real(const Grid_simd<S,V> &r) {
+    inline Grid_simd<S,V> real(const Grid_simd<S,V> &r) {
     return SimdApply(RealFunctor<S>(),r);
   }
   template < class S, class V > 
-  inline Grid_simd<S,V> imag(const Grid_simd<S,V> &r) {
+    inline Grid_simd<S,V> imag(const Grid_simd<S,V> &r) {
     return SimdApply(ImagFunctor<S>(),r);
   }
 

@@ -4,6 +4,6 @@
 #include <qcd/smearing/BaseSmearing.h>
 #include <qcd/smearing/APEsmearing.h>
 #include <qcd/smearing/StoutSmearing.h>
-
+#include <qcd/smearing/GaugeConfiguration.h>
 
 #endif

@@ -15,11 +15,7 @@ namespace Grid {
       const std::vector<double> d_rho;
       const Smear < Gimpl > * SmearBase;
       
-      LatticeReal func_xi0(LatticeReal w) const{
-	// Define a function to do the check
-	//if( w < 1e-4 ) std::cout << GridLogWarning << "[Smear_stout] w too small: "<< w <<"\n";
-	return  sin(w)/w;
-      }
+
       
     public:
       INHERIT_GIMPL_TYPES(Gimpl)
@@ -32,20 +28,20 @@ namespace Grid {
       ~Smear_Stout(){}
       
       void smear(GaugeField& u_smr,const GaugeField& U) const{
-	long double timing;
-	
-	GaugeField u_tmp1, q_mu;
+	GaugeField C(U._grid);
+	GaugeLinkField tmp(U._grid), q_mu(U._grid), Umu(U._grid);
 	
 	std::cout<< GridLogDebug << "Stout smearing started\n";
 	
 	//Smear the configurations
-	SmearBase->smear(u_tmp1, U);
-	
-	q_mu = Ta(u_tmp1*adj(u_tmp1)); // q_mu = Ta(Omega_mu)
-	
-	exponentiate_iQ(u_tmp1, q_mu);
-
-	u_smr = u_tmp1*U;
+	SmearBase->smear(C, U);
+	for (int mu = 0; mu<Nd; mu++){
+	  tmp = peekLorentz(C,mu);
+	  Umu = peekLorentz(U,mu);
+	  q_mu = Ta(tmp * adj(Umu)); // q_mu = Ta(Omega_mu)
+	  exponentiate_iQ(tmp, q_mu);  
+	  pokeLorentz(u_smr, tmp*Umu, mu);// u_smr = exp(iQ_mu)*U_mu
+	}
 	
 	std::cout<< GridLogDebug << "Stout smearing completed\n";
       }
@@ -61,72 +57,95 @@ namespace Grid {
 	SmearBase->smear(C, U);
       }
       
-      void exponentiate_iQ(GaugeField& e_iQ,
-			   const GaugeField& iQ) const{
+      void exponentiate_iQ(GaugeLinkField& e_iQ,
+			   const GaugeLinkField& iQ) const{
 	// Put this outside 
 	// only valid for SU(3) matrices
 
+	// only one Lorentz direction at a time 
+
 	GridBase *grid = iQ._grid;
-	Real one_over_three = 1.0/3.0;
-	Real one_over_two = 1.0/2.0;
+	GaugeLinkField unity(grid);
+	unity=1.0;
 
-	GaugeField unity;
-	GaugeLinkField Umu(iQ._grid);
-	Umu=1.0;
-	for(int mu=0;mu<Nd;mu++){
-	  pokeLorentz(unity,Umu,mu);
-	}
-
-	
-	GaugeField iQ2, iQ3;
-	LatticeReal c0(grid), c1(grid), c0max(grid), u_val(grid), tmp(grid);
-	LatticeReal w(grid), theta(grid), xi0(grid), u2(grid), w2(grid), cosw(grid);
-	LatticeComplex fden(grid);
-	LatticeComplex f0(grid), f1(grid), f2(grid), h0(grid), h1(grid), h2(grid);
-	LatticeComplex e2iu(grid), emiu(grid), ixi0(grid), qt(grid);
+	GaugeLinkField iQ2(grid), iQ3(grid);
+	LatticeReal u(grid), w(grid);
+	LatticeComplex f0(grid), f1(grid), f2(grid);
 
 	iQ2 = iQ * iQ;
 	iQ3 = iQ * iQ2;
 
-	c0    = - imag(trace(iQ3)) * one_over_three;
-	c1    = - real(trace(iQ2)) * one_over_two;
+	set_uw(u, w, iQ2, iQ3);
+	set_fj(f0, f1, f2, u, w);
+	e_iQ = f0*unity + timesMinusI(f1) * iQ - f2 * iQ2;
+      };
+
+
+      void set_uw(LatticeReal& u, LatticeReal& w,
+		  GaugeLinkField& iQ2, GaugeLinkField& iQ3) const{
+	Real one_over_three = 1.0/3.0;
+	Real one_over_two = 1.0/2.0;
+
+	GridBase *grid = u._grid;
+	LatticeReal c0(grid), c1(grid), tmp(grid), c0max(grid), theta(grid);
+	
+	
+	c0    = - toReal(imag(trace(iQ3))) * one_over_three;
+	c1    = - toReal(real(trace(iQ2))) * one_over_two;
 	tmp   = c1 * one_over_three;
     	c0max = 2.0 * pow(tmp, 1.5);
-
+	
 	theta = acos(c0/c0max);
+	u = sqrt(tmp) * cos( theta * one_over_three);
+	w = sqrt(c1) * sin ( theta * one_over_three);
+      }
 
-	u_val = sqrt(tmp) * cos( theta * one_over_three);
-	w     = sqrt(c1) * sin ( theta * one_over_three);
+      void set_fj(LatticeComplex& f0, LatticeComplex& f1, LatticeComplex& f2,
+		  const LatticeReal& u, const LatticeReal& w) const{
+
+	GridBase *grid = u._grid;
+	LatticeReal xi0(grid), u2(grid), w2(grid), cosw(grid), tmp(grid);
+	LatticeComplex fden(grid);
+	LatticeComplex h0(grid), h1(grid), h2(grid);
+	LatticeComplex e2iu(grid), emiu(grid), ixi0(grid), qt(grid);
+	
 	xi0   = func_xi0(w);
-	u2    = u_val * u_val;
+	u2    = u * u;
 	w2    = w * w;
 	cosw  = cos(w);
-
+	
 	ixi0  = timesI(toComplex(xi0));
-	emiu  = toComplex(cos(u_val)) - timesI(toComplex(u_val));
-	e2iu  = toComplex(cos(2.0*u_val)) + timesI(toComplex(2.0*u_val));
+	emiu  = toComplex(cos(u)) - timesI(toComplex(u));
+	e2iu  = toComplex(cos(2.0*u)) + timesI(toComplex(2.0*u));
 	
 	h0    = e2iu * toComplex(u2 - w2) + emiu *( toComplex(8.0*u2*cosw) +
-						    toComplex(2.0*u_val*(3.0*u2 + w2))*ixi0);
+						    toComplex(2.0*u*(3.0*u2 + w2))*ixi0);
 	
-	h1    = toComplex(2.0*u_val) * e2iu - emiu*( toComplex(2.0*u_val*cosw) -
-						     toComplex(3.0*u2-w2)*ixi0);
+	h1    = toComplex(2.0*u) * e2iu - emiu*( toComplex(2.0*u*cosw) -
+						 toComplex(3.0*u2-w2)*ixi0);
 	
-	h2    = e2iu - emiu * (toComplex(cosw) + toComplex(3.0*u_val)*ixi0);
-
+	h2    = e2iu - emiu * (toComplex(cosw) + toComplex(3.0*u)*ixi0);
+	
 	
 	tmp   = 9.0*u2 - w2;
 	fden  = toComplex(pow(tmp, -1.0));
 	f0    = h0 * fden;
 	f1    = h1 * fden;
-	f2    = h2 * fden;
+	f2    = h2 * fden;	
+      }
 
-	
-	e_iQ = f0*unity + f1 * timesMinusI(iQ) - f2 * iQ2;
-	
-	
-	
-      };
+
+      LatticeReal func_xi0(LatticeReal w) const{
+	// Define a function to do the check
+	//if( w < 1e-4 ) std::cout << GridLogWarning<< "[Smear_stout] w too small: "<< w <<"\n";
+	return  sin(w)/w;
+      }
+
+      LatticeReal func_xi1(LatticeReal w) const{
+	// Define a function to do the check
+	//if( w < 1e-4 ) std::cout << GridLogWarning << "[Smear_stout] w too small: "<< w <<"\n";
+	return  cos(w)/(w*w) - sin(w)/(w*w*w);
+      }
       
     };
 

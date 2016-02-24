@@ -86,19 +86,19 @@ namespace Grid {
 
 	    temp_Sigma = -rho_numu*staple*iLambda_nu;
 	    //-r_numu*U_nu(x+mu)*Udag_mu(x+nu)*Udag_nu(x)*Lambda_nu(x)
-	    AddGaugeLink(SigmaTerm, temp_Sigma, mu);
+	    Gimpl::AddGaugeLink(SigmaTerm, temp_Sigma, mu);
 
 	    sh_field = Cshift(iLambda_nu, mu, 1);// general also for Gparity?
 	
 	    temp_Sigma = rho_numu*sh_field*staple;
 	    //r_numu*Lambda_nu(mu)*U_nu(x+mu)*Udag_mu(x+nu)*Udag_nu(x)
-	    AddGaugeLink(SigmaTerm, temp_Sigma, mu);
+	    Gimpl::AddGaugeLink(SigmaTerm, temp_Sigma, mu);
 
 	    sh_field = Cshift(iLambda_mu, nu, 1);
 
 	    temp_Sigma = -rho_munu*staple*U_nu*sh_field*adj(U_nu);
 	    //-r_munu*U_nu(x+mu)*Udag_mu(x+nu)*Lambda_mu(x+nu)*Udag_nu(x)
-	    AddGaugeLink(SigmaTerm, temp_Sigma, mu);
+	    Gimpl::AddGaugeLink(SigmaTerm, temp_Sigma, mu);
 
 	    staple = zero;
 	    sh_field = Cshift(U_nu, mu, 1);
@@ -110,7 +110,7 @@ namespace Grid {
 	    sh_field = Cshift(u_tmp, mu, 1);
 	    temp_Sigma += -rho_numu*sh_field*adj(U_mu)*U_nu;
 	    sh_field = Cshift(temp_Sigma, nu, -1);
-	    AddGaugeLink(SigmaTerm, sh_field, mu);
+	    Gimpl::AddGaugeLink(SigmaTerm, sh_field, mu);
 	    
 	  }
 	}
