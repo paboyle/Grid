@@ -66,4 +66,20 @@ void MQuark::execute(Environment &env)
 {
     LOG(Message) << "computing quark propagator '" << getName() << "'"
                  << std::endl;
+    
+    GridCartesian         *g4d   = env.get4dGrid(),
+                          *g5d   = env.get5dGrid(par_.Ls);
+    GridRedBlackCartesian *gRb4d = env.getRb4dGrid(),
+                          *gRb5d = env.getRb5dGrid(par_.Ls);
+    LatticeGaugeField     &Umu   = *env.getGauge();
+    LatticeFermion        src(g5d); src=zero;
+    LatticeFermion        result(g5d); result=zero;
+    
+    RealD mass=0.1;
+    RealD M5=1.8;
+    DomainWallFermionR Ddwf(Umu, *g5d, *gRb5d, *g4d, *gRb4d, mass, M5);
+    
+    ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
+    SchurRedBlackDiagMooeeSolve<LatticeFermion> SchurSolver(CG);
+    SchurSolver(Ddwf,src,result);
 }

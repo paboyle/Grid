@@ -31,28 +31,45 @@ class Environment
 {
     SINGLETON(Environment);
 public:
-    typedef std::unique_ptr<GridCartesian>     GridPt;
-    typedef std::unique_ptr<LatticePropagator> PropPt;
+    typedef std::unique_ptr<GridCartesian>         GridPt;
+    typedef std::unique_ptr<GridRedBlackCartesian> GridRbPt;
+    typedef std::unique_ptr<GridParallelRNG>       RngPt;
+    typedef std::unique_ptr<LatticePropagator>     PropPt;
+    typedef std::unique_ptr<LatticeGaugeField>     GaugePt;
 public:
     // dry run
-    void                dryRun(const bool isDry);
-    bool                isDryRun(void);
+    void                    dryRun(const bool isDry);
+    bool                    isDryRun(void);
+    // grids
+    GridCartesian *         get4dGrid(void);
+    GridRedBlackCartesian * getRb4dGrid(void);
+    GridCartesian *         get5dGrid(const unsigned int Ls);
+    GridRedBlackCartesian * getRb5dGrid(const unsigned int Ls);
     // quark propagators
-    void                addProp(const std::string name,
-                                const unsigned int Ls = 1);
-    void                freeProp(const std::string name);
-    LatticePropagator * getProp(const std::string name);
-    bool                propExists(const std::string name);
-    unsigned int        nProp(void);
+    void                    addProp(const std::string name,
+                                    const unsigned int Ls = 1);
+    void                    freeProp(const std::string name);
+    LatticePropagator *     getProp(const std::string name);
+    bool                    propExists(const std::string name);
+    unsigned int            nProp(void);
+    // gauge configuration
+    LatticeGaugeField *     getGauge(void);
+    void                    loadUnitGauge(void);
+    void                    loadRandomGauge(void);
     // general free
-    void                free(const std::string name);
-    void                freeAll(void);
+    void                    free(const std::string name);
+    void                    freeAll(void);
 private:
     bool                                dryRun_{false};
     GridPt                              grid4d_;
     std::map<unsigned int, GridPt>      grid5d_;
+    GridRbPt                            gridRb4d_;
+    std::map<unsigned int, GridRbPt>    gridRb5d_;
+    RngPt                               rng4d_;
     std::map<std::string, PropPt>       prop_;
     std::map<std::string, unsigned int> propSize_;
+    GaugePt                             gauge_;
+    
 };
 
 END_HADRONS_NAMESPACE
