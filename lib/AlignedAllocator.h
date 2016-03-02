@@ -39,8 +39,13 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifdef HAVE_MM_MALLOC_H
 #include <mm_malloc.h>
 #endif
+
 #ifdef GRID_COMMS_SHMEM
+extern "C" { 
 #include <mpp/shmem.h>
+extern void * shmem_align(size_t, size_t);
+extern void  shmem_free(void *);
+}
 #endif
 
 namespace Grid {

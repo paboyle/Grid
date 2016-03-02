@@ -101,8 +101,8 @@ public:
 	MatrixTimer.Stop();
 
 	LinalgTimer.Start();
-	RealD    qqck = norm2(mmp);
-	ComplexD dck  = innerProduct(p,mmp);
+	//	RealD    qqck = norm2(mmp);
+	//	ComplexD dck  = innerProduct(p,mmp);
       
 	a      = c/d;
 	b_pred = a*(a*qq-d)/c;
