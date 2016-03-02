@@ -36,7 +36,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <malloc.h>
 #endif
 
-#include <immintrin.h>
 #ifdef HAVE_MM_MALLOC_H
 #include <mm_malloc.h>
 #endif

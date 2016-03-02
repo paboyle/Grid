@@ -35,6 +35,7 @@ Author: neo <cossu@post.kek.jp>
 // Time-stamp: <2015-06-09 14:28:02 neo>
 //----------------------------------------------------------------------
 
+namespace Grid {
 namespace Optimization {
 
   template<class vtype>
@@ -243,6 +244,36 @@ namespace Optimization {
 
   //////////////////////////////////////////////
   // Some Template specialization
+  struct Permute{
+
+    static inline float Permute0(float in){
+      return in;
+    };
+    static inline float Permute1(float in){
+      return in;
+    };
+    static inline float Permute2(float in){
+      return in;
+    };
+    static inline float Permute3(float in){
+      return in;
+    };
+
+    static inline double Permute0(double in){
+      return in;
+    };
+    static inline double Permute1(double in){
+      return in;
+    };
+    static inline double Permute2(double in){
+      return in;
+    };
+    static inline double Permute3(double in){
+      return in;
+    };
+
+  };
+  
   template < typename vtype > 
     void permute(vtype &a, vtype b, int perm) {
    }; 
@@ -282,7 +313,6 @@ namespace Optimization {
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types 
-namespace Grid {
 
   typedef float SIMD_Ftype;  // Single precision type
   typedef double SIMD_Dtype; // Double precision type

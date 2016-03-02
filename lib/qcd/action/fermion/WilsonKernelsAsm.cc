@@ -118,12 +118,12 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField
   
   StencilEntry *SE;
 
-  //#define STAMP(i) timers[i] = __rdtsc() ; 
-#define STAMP(i) //timers[i] = __rdtsc() ; 
+  //#define STAMP(i) timers[i] = cyclecount() ; 
+#define STAMP(i) //timers[i] = cyclecount() ; 
 
   MASK_REGS;
 
-  first = __rdtsc();
+  first = cyclecount();
 
   SE=st.GetEntry(ptype,Xm,ss);
 
