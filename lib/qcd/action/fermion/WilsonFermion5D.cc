@@ -305,8 +305,8 @@ void WilsonFermion5D<Impl>::DhopInternalCommsThenCompute(StencilImpl & st, Lebes
   int nwork = U._grid->oSites();
   
   commtime -=usecond();
-  auto handle = st.HaloExchangeOptBegin(in,compressor);
-  st.HaloExchangeOptComplete(handle);
+  auto handle = st.HaloExchangeBegin(in,compressor);
+  st.HaloExchangeComplete(handle);
   commtime +=usecond();
 
   jointime -=usecond();
