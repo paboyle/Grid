@@ -43,7 +43,9 @@ std::string Logger::PURPLE("\033[35m");
 std::string Logger::CYAN("\033[36m");
 std::string Logger::WHITE("\033[37m");
 std::string Logger::NORMAL("\033[0;39m");
+std::string EMPTY("");
 
+#if 0  
   GridLogger GridLogError      (1,"Error",Logger::RED);
   GridLogger GridLogWarning    (1,"Warning",Logger::YELLOW);
   GridLogger GridLogMessage    (1,"Message",Logger::BLACK);
@@ -51,6 +53,15 @@ std::string Logger::NORMAL("\033[0;39m");
   GridLogger GridLogPerformance(1,"Performance",Logger::GREEN);
   GridLogger GridLogIterative  (1,"Iterative",Logger::BLUE);
   GridLogger GridLogIntegrator (1,"Integrator",Logger::BLUE);
+#else
+  GridLogger GridLogError      (1,"Error",EMPTY);
+  GridLogger GridLogWarning    (1,"Warning",EMPTY);
+  GridLogger GridLogMessage    (1,"Message",EMPTY);
+  GridLogger GridLogDebug      (1,"Debug",EMPTY);
+  GridLogger GridLogPerformance(1,"Performance",EMPTY);
+  GridLogger GridLogIterative  (1,"Iterative",EMPTY);
+  GridLogger GridLogIntegrator (1,"Integrator",EMPTY);
+#endif
 
 void GridLogConfigure(std::vector<std::string> &logstreams)
 {
