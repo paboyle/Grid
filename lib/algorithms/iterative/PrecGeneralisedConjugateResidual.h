@@ -68,6 +68,9 @@ namespace Grid {
       
       Field r(src._grid);
 
+      GridStopWatch SolverTimer;
+      SolverTimer.Start();
+
       steps=0;
       for(int k=0;k<MaxIterations;k++){
 
@@ -76,6 +79,9 @@ namespace Grid {
 	if ( verbose ) std::cout<<GridLogMessage<<"VPGCR("<<mmax<<","<<nstep<<") "<< steps <<" steps cp = "<<cp<<std::endl;
 
 	if(cp<rsq) {
+
+	  SolverTimer.Stop();
+
 	  Linop.HermOp(psi,r);
 	  axpy(r,-1.0,src,r);
 	  RealD tr = norm2(r);
@@ -83,6 +89,7 @@ namespace Grid {
 		   << " computed residual "<<sqrt(cp/ssq)
 	           << " true residual "    <<sqrt(tr/ssq)
 	           << " target "           <<Tolerance <<std::endl;
+	  std::cout<<GridLogMessage<<" Time elapsed: Total "<< SolverTimer.Elapsed() <<std::endl;
 	  return;
 	}
 

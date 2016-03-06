@@ -548,7 +548,7 @@ int main (int argc, char ** argv)
   DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   DomainWallFermionR DdwfDD(UmuDD,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
-  const int nbasis = 32;
+  const int nbasis = 16;
   //  const int nbasis = 4;
 
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis>              Subspace;
