@@ -403,6 +403,7 @@ PARALLEL_FOR_LOOP
 
  
   FermOpTemplateInstantiate(WilsonFermion);
+  GparityFermOpTemplateInstantiate(WilsonFermion);
 
 
 }}

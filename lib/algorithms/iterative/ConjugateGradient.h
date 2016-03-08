@@ -133,8 +133,8 @@ public:
 	  std::cout<<GridLogMessage<<"ConjugateGradient: Converged on iteration " <<k
 		   <<" computed residual "<<sqrt(cp/ssq)
 		   <<" true residual     "<<true_residual
-		   <<" target "<<Tolerance;
-	  std::cout<<" Time elapsed: Total "<< SolverTimer.Elapsed() << " Matrix  "<<MatrixTimer.Elapsed() << " Linalg "<<LinalgTimer.Elapsed();
+		   <<" target "<<Tolerance<<std::endl;
+	  std::cout<<GridLogMessage<<" Time elapsed: Total "<< SolverTimer.Elapsed() << " Matrix  "<<MatrixTimer.Elapsed() << " Linalg "<<LinalgTimer.Elapsed();
 	  std::cout<<std::endl;
 	  
 	  assert(true_residual/Tolerance < 1000.0);

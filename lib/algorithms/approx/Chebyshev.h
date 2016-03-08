@@ -58,13 +58,14 @@ namespace Grid {
       Field Mtmp(in._grid);
       AtoN = in;
       out = AtoN*Coeffs[0];
-      //      std::cout <<"Poly in " <<norm2(in)<<std::endl;
-      //      std::cout <<"0 " <<norm2(out)<<std::endl;
+//            std::cout <<"Poly in " <<norm2(in)<<" size "<< Coeffs.size()<<std::endl;
+//            std::cout <<"Coeffs[0]= "<<Coeffs[0]<< " 0 " <<norm2(out)<<std::endl;
       for(int n=1;n<Coeffs.size();n++){
 	Mtmp = AtoN;
 	Linop.HermOp(Mtmp,AtoN);
 	out=out+AtoN*Coeffs[n];
-	//	std::cout << n<<" " <<norm2(out)<<std::endl;
+//            std::cout <<"Coeffs "<<n<<"= "<< Coeffs[n]<< " 0 " <<std::endl;
+//		std::cout << n<<" " <<norm2(out)<<std::endl;
       }
     };
   };
@@ -82,7 +83,8 @@ namespace Grid {
 
   public:
     void csv(std::ostream &out){
-      for (RealD x=lo; x<hi; x+=(hi-lo)/1000) {
+	RealD diff = hi-lo;
+      for (RealD x=lo-0.2*diff; x<hi+0.2*diff; x+=(hi-lo)/1000) {
 	RealD f = approx(x);
 	out<< x<<" "<<f<<std::endl;
       }
@@ -99,10 +101,24 @@ namespace Grid {
 
     Chebyshev(){};
     Chebyshev(RealD _lo,RealD _hi,int _order, RealD (* func)(RealD) ) {Init(_lo,_hi,_order,func);};
-    
+    Chebyshev(RealD _lo,RealD _hi,int _order) {Init(_lo,_hi,_order);};
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     // c.f. numerical recipes "chebft"/"chebev". This is sec 5.8 "Chebyshev approximation".
     ////////////////////////////////////////////////////////////////////////////////////////////////////
+// CJ: the one we need for Lanczos
+    void Init(RealD _lo,RealD _hi,int _order)
+    {
+      lo=_lo;
+      hi=_hi;
+      order=_order;
+      
+      if(order < 2) exit(-1);
+      Coeffs.resize(order);
+      Coeffs.assign(0.,order);
+      Coeffs[order-1] = 1.;
+    };
+
     void Init(RealD _lo,RealD _hi,int _order, RealD (* func)(RealD))
     {
       lo=_lo;
@@ -182,6 +198,8 @@ namespace Grid {
     void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) {
 
       GridBase *grid=in._grid;
+//std::cout << "Chevyshef(): in._grid="<<in._grid<<std::endl;
+//<<" Linop.Grid()="<<Linop.Grid()<<"Linop.RedBlackGrid()="<<Linop.RedBlackGrid()<<std::endl;
 
       int vol=grid->gSites();
 

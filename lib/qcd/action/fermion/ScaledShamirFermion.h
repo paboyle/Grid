@@ -48,14 +48,16 @@ namespace Grid {
 			GridCartesian         &FourDimGrid,
 			GridRedBlackCartesian &FourDimRedBlackGrid,
 			RealD _mass,RealD _M5,
-			RealD scale) :
+//			RealD scale):
+			RealD scale,const ImplParams &p= ImplParams()) :
       
       // b+c=scale, b-c = 1 <=> 2b = scale+1; 2c = scale-1
       MobiusFermion<Impl>(_Umu,
 		    FiveDimGrid,
 		    FiveDimRedBlackGrid,
 		    FourDimGrid,
-		    FourDimRedBlackGrid,_mass,_M5,0.5*(scale+1.0),0.5*(scale-1.0))
+	FourDimRedBlackGrid,_mass,_M5,0.5*(scale+1.0),0.5*(scale-1.0),p)
+//		    FourDimRedBlackGrid,_mass,_M5,0.5*(scale+1.0),0.5*(scale-1.0))
       {
       }
 
