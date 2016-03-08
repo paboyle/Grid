@@ -263,11 +263,6 @@ public:
       resid = norm2(r) /norm2(src); 
       std::cout << "SAP "<<i<<" resid "<<resid<<std::endl;
 
-
-// Npoly*outer*2 1/2 vol matmuls.
-// 71 iters => 20*71 = 1400 matmuls.
-// 2*71 = 140 comms.
-
       // Even domain solve
       r= where(subset==(Integer)0,r,zz);
       _SmootherOperator.AdjOp(r,vec1);
@@ -332,7 +327,7 @@ public:
     CoarseVector Ctmp(_CoarseOperator.Grid());
     CoarseVector Csol(_CoarseOperator.Grid()); Csol=zero;
 
-    ConjugateGradient<CoarseVector>  CG(1.0e-3,100000);
+    ConjugateGradient<CoarseVector>  CG(1.0e-2,100000);
     //    ConjugateGradient<FineField>    fCG(3.0e-2,1000);
 
     HermitianLinearOperator<CoarseOperator,CoarseVector>  HermOp(_CoarseOperator);
@@ -345,14 +340,14 @@ public:
 
     //    Chebyshev<FineField> Cheby    (0.5,70.0,30,InverseApproximation);
     //    Chebyshev<FineField> ChebyAccu(0.5,70.0,30,InverseApproximation);
-    Chebyshev<FineField> Cheby    (2.0,70.0,15,InverseApproximation);
-    Chebyshev<FineField> ChebyAccu(2.0,70.0,15,InverseApproximation);
+    Chebyshev<FineField> Cheby    (params.lo,params.hi,params.order,InverseApproximation);
+    Chebyshev<FineField> ChebyAccu(params.lo,params.hi,params.order,InverseApproximation);
     //    Cheby.JacksonSmooth();
     //    ChebyAccu.JacksonSmooth();
 
-    _Aggregates.ProjectToSubspace  (Csrc,in);
-    _Aggregates.PromoteFromSubspace(Csrc,out);
-    std::cout<<GridLogMessage<<"Completeness: "<<std::sqrt(norm2(out)/norm2(in))<<std::endl;
+    //    _Aggregates.ProjectToSubspace  (Csrc,in);
+    //    _Aggregates.PromoteFromSubspace(Csrc,out);
+    //    std::cout<<GridLogMessage<<"Completeness: "<<std::sqrt(norm2(out)/norm2(in))<<std::endl;
     
     //    ofstream fout("smoother");
     //    Cheby.csv(fout);
@@ -479,7 +474,7 @@ int main (int argc, char ** argv)
   read(RD,"params",params);
   std::cout<<"Params: Order "<<params.order<<"["<<params.lo<<","<<params.hi<<"]"<< " steps "<<params.steps<<std::endl;
 
-  const int Ls=8;
+  const int Ls=16;
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
@@ -490,10 +485,12 @@ int main (int argc, char ** argv)
   ///////////////////////////////////////////////////
   // Construct a coarsened grid; utility for this?
   ///////////////////////////////////////////////////
-  const int block=2;
+  std::vector<int> block ({2,2,2,2});
+  const int nbasis= 32;
+
   std::vector<int> clatt = GridDefaultLatt();
   for(int d=0;d<clatt.size();d++){
-    clatt[d] = clatt[d]/block;
+    clatt[d] = clatt[d]/block[d];
   }
   GridCartesian *Coarse4d =  SpaceTimeGrid::makeFourDimGrid(clatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());;
   GridCartesian *Coarse5d =  SpaceTimeGrid::makeFiveDimGrid(1,Coarse4d);
@@ -539,7 +536,7 @@ int main (int argc, char ** argv)
   //  SU3::HotConfiguration(RNG4,Umu);
   //  Umu=zero;
 
-  RealD mass=0.01;
+  RealD mass=0.001;
   RealD M5=1.8;
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
@@ -547,9 +544,6 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   DomainWallFermionR DdwfDD(UmuDD,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-
-  const int nbasis = 16;
-  //  const int nbasis = 4;
 
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis>              Subspace;
   typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>          CoarseOperator;
