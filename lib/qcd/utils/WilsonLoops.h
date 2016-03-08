@@ -83,7 +83,7 @@ public:
   // sum over all x,y,z,t and over all planes of plaquette
   //////////////////////////////////////////////////
   static RealD sumPlaquette(const GaugeLorentz &Umu){
-    std::vector<GaugeMat> U(4,Umu._grid);
+    std::vector<GaugeMat> U(Nd,Umu._grid);
 
     for(int mu=0;mu<Nd;mu++){
       U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
@@ -111,7 +111,7 @@ public:
     return sumplaq/vol/faces/Nc; // Nd , Nc dependent... FIXME
   }
   static RealD linkTrace(const GaugeLorentz &Umu){
-    std::vector<GaugeMat> U(4,Umu._grid);
+    std::vector<GaugeMat> U(Nd,Umu._grid);
 
     LatticeComplex Tr(Umu._grid); Tr=zero;
     for(int mu=0;mu<Nd;mu++){
@@ -124,7 +124,7 @@ public:
 
     double vol = Umu._grid->gSites();
 
-    return p.real()/vol/4.0/3.0;
+    return p.real()/vol/((double)(Nd*(Nd-1)));
   };
   //////////////////////////////////////////////////
   // the sum over all staples on each site
@@ -133,7 +133,7 @@ public:
 
     GridBase *grid = Umu._grid;
 
-    std::vector<GaugeMat> U(4,grid);
+    std::vector<GaugeMat> U(Nd,grid);
     for(int d=0;d<Nd;d++){
       U[d] = PeekIndex<LorentzIndex>(Umu,d);
     }
@@ -203,7 +203,7 @@ public:
   // sum over all x,y,z,t and over all planes of plaquette
   //////////////////////////////////////////////////
   static RealD sumRectangle(const GaugeLorentz &Umu){
-    std::vector<GaugeMat> U(4,Umu._grid);
+    std::vector<GaugeMat> U(Nd,Umu._grid);
 
     for(int mu=0;mu<Nd;mu++){
       U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
@@ -329,7 +329,7 @@ public:
   static void RectStapleUnoptimised(GaugeMat &Stap,const GaugeLorentz &Umu,int mu){
     GridBase *grid = Umu._grid;
 
-    std::vector<GaugeMat> U(4,grid);
+    std::vector<GaugeMat> U(Nd,grid);
     for(int d=0;d<Nd;d++){
       U[d] = PeekIndex<LorentzIndex>(Umu,d);
     }

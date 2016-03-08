@@ -595,6 +595,7 @@ void WilsonFermion5D<Impl>::DW(const FermionField &in, FermionField &out,int dag
 }
 
 FermOpTemplateInstantiate(WilsonFermion5D);
+GparityFermOpTemplateInstantiate(WilsonFermion5D);
 
 }}
 

@@ -274,7 +274,7 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
   }
   // ugly hack
   std::cout<<GridLogMessage<<"CG multi shift did not converge"<<std::endl;
-  assert(0);
+//  assert(0);
 }
 
   };
