@@ -90,7 +90,7 @@ namespace QCD {
     template<typename vtype> using iHalfSpinVector            = iScalar<iVector<iScalar<vtype>, Nhs> >;
     template<typename vtype> using iHalfSpinColourVector      = iScalar<iVector<iVector<vtype, Nc>, Nhs> >;
 
-    template<typename vtype> using iGparitySpinColourVector       = iVector<iVector<iVector<vtype, Nc>, Nhs>, Ngp >;
+    template<typename vtype> using iGparitySpinColourVector       = iVector<iVector<iVector<vtype, Nc>, Ns>, Ngp >;
     template<typename vtype> using iGparityHalfSpinColourVector   = iVector<iVector<iVector<vtype, Nc>, Nhs>, Ngp >;
 
     // Spin matrix

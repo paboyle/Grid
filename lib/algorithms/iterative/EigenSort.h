@@ -38,6 +38,8 @@ template<class Field>
 class SortEigen {
  private:
   
+//hacking for testing for now
+#if 0
   static bool less_lmd(RealD left,RealD right){
     return fabs(left) < fabs(right);
   }  
@@ -45,6 +47,15 @@ class SortEigen {
 		 std::pair<RealD,Field>& right){
     return fabs(left.first) < fabs(right.first);
   }  
+#else
+  static bool less_lmd(RealD left,RealD right){
+    return left > right;
+  }  
+  static bool less_pair(std::pair<RealD,Field>& left,
+		 std::pair<RealD,Field>& right){
+    return left.first > (right.first);
+  }  
+#endif
   
  public:
 

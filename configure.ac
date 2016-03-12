@@ -227,6 +227,26 @@ esac
 
 AM_CONDITIONAL(BUILD_CHROMA_REGRESSION,[ test "X${ac_CHROMA}X" == "XyesX" ])
 
+#
+# Lapack
+#
+AC_ARG_ENABLE([lapack],[AC_HELP_STRING([--enable-lapack],[Enable lapack yes/no ])],[ac_LAPACK=${enable_lapack}],[ac_LAPACK=no])
+
+case ${ac_LAPACK} in
+     yes)
+       echo Enabling lapack
+     ;;
+     no)
+       echo Disabling lapack
+     ;;
+     *)
+       echo Enabling lapack at ${ac_LAPACK}
+     ;;
+esac
+
+AM_CONDITIONAL(USE_LAPACK,[ test "X${ac_LAPACK}X" != "XnoX" ])
+AM_CONDITIONAL(USE_LAPACK_LIB,[ test "X${ac_LAPACK}X" != "XyesX" ])
+
 ###################################################################
 # Checks for doxygen support
 # if present enables the "make doxyfile" command
@@ -270,6 +290,7 @@ The following features are enabled:
 - communications type           : ${ac_COMMS}
 - default precision             : ${ac_PRECISION}
 - RNG choice                    : ${ac_RNG} 
+- LAPACK	                : ${ac_LAPACK} 
 
 
 "
