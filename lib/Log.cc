@@ -102,7 +102,7 @@ void GridLogConfigure(std::vector<std::string> &logstreams)
 ////////////////////////////////////////////////////////////
 void Grid_quiesce_nodes(void)
 {
-  int me;
+  int me=0;
 #ifdef GRID_COMMS_MPI
   MPI_Comm_rank(MPI_COMM_WORLD,&me);
 #endif
