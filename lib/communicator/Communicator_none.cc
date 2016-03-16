@@ -53,6 +53,7 @@ void CartesianCommunicator::GlobalSum(float &){}
 void CartesianCommunicator::GlobalSumVector(float *,int N){}
 void CartesianCommunicator::GlobalSum(double &){}
 void CartesianCommunicator::GlobalSum(uint32_t &){}
+void CartesianCommunicator::GlobalSum(uint64_t &){}
 void CartesianCommunicator::GlobalSumVector(double *,int N){}
 
 void CartesianCommunicator::SendRecvPacket(void *xmit,
