@@ -192,7 +192,7 @@ namespace Grid {
 	  return cp;
 	}
 
-	std::cout<<GridLogMessage<< " VPGCR_step     resid " <<sqrt(cp/rsq)<<std::endl; 
+	std::cout<<GridLogMessage<< " VPGCR_step["<<steps<<"]  resid " <<sqrt(cp/rsq)<<std::endl; 
 
 	PrecTimer.Start();
 	Preconditioner(r,z);// solve Az = r
