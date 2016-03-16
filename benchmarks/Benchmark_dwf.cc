@@ -122,7 +122,7 @@ int main (int argc, char ** argv)
   DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,params);
   
   std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
-  int ncall=100;
+  int ncall=100000;
   {
     double t0=usecond();
     for(int i=0;i<ncall;i++){
@@ -143,6 +143,7 @@ int main (int argc, char ** argv)
     Dw.Report();
   }
 
+  exit(0);
 
   if (1)
   { // Naive wilson dag implementation
@@ -197,7 +198,6 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "Deo mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "Deo mflop/s per node   "<< flops/(t1-t0)/NP<<std::endl;
   }
-
   Dw.DhopEO(src_o,r_e,DaggerNo);
   Dw.DhopOE(src_e,r_o,DaggerNo);
   Dw.Dhop  (src  ,result,DaggerNo);
