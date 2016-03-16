@@ -151,7 +151,7 @@ namespace Grid {
 
       RealD scale;
 
-      ConjugateGradient<FineField> CG(1.0e-2,10000);
+      ConjugateGradient<FineField> CG(5.0e-3,10000);
       FineField noise(FineGrid);
       FineField Mn(FineGrid);
 
