@@ -147,6 +147,36 @@ namespace Grid {
       }
       Orthogonalise();
     }
+
+    virtual void CreateSubspaceLanczos(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,int nn=nbasis) 
+    {
+      // Run a Lanczos with sloppy convergence
+	const int Nstop = nn;
+	const int Nk = nn+10;
+	const int Np = nn+10;
+	const int Nm = Nk+Np;
+	const int MaxIt= 10000;
+	RealD resid = 1.0e-5;
+
+	Chebyshev<FineField> Cheb(0.2,5.,11);
+	ImplicitlyRestartedLanczos<FineField> IRL(hermop,Cheb,Nstop,Nk,Nm,resid,MaxIt);
+
+	FineField noise(FineGrid); gaussian(RNG,noise);
+	std::vector<RealD>     eval(Nm);
+	std::vector<FineField> evec(Nm,FineGrid);
+
+	int Nconv;
+	IRL.calc(eval,evec,
+		 noise,
+		 Nconv);
+
+    	// pull back nn vectors
+	for(int b=0;b<nn;b++){
+	  subspace[b]   = evec[b];
+	}
+	Orthogonalise();
+    }
+
     virtual void CreateSubspace(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,int nn=nbasis) {
 
       RealD scale;

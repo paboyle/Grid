@@ -561,6 +561,7 @@ int main (int argc, char ** argv)
   int nb=nbasis/2;
   std::cout<<GridLogMessage << " nbasis/2 = "<<nb<<std::endl;
   Aggregates.CreateSubspace(RNG5,HermDefOp,nb);
+    //  Aggregates.CreateSubspaceLanczos(RNG5,HermDefOp,nb);
   for(int n=0;n<nb;n++){
     G5R5(Aggregates.subspace[n+nb],Aggregates.subspace[n]);
     std::cout<<GridLogMessage<<n<<" subspace "<<norm2(Aggregates.subspace[n+nb])<<" "<<norm2(Aggregates.subspace[n]) <<std::endl;
