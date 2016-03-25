@@ -27,7 +27,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid.h>
-#if defined(AVX512) || defined (IMCI)
+//#if defined(AVX512) || defined (IMCI)
+#if defined (IMCI)
 
 #include <simd/Avx512Asm.h>
 

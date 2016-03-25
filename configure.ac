@@ -118,7 +118,7 @@ case ${ac_SIMD} in
        echo Configuring for AVX512 
        AC_DEFINE([AVX512],[1],[AVX512 Intrinsics for Knights Landing] )
        supported="cross compilation"
-       ac_ZMM=yes;
+       ac_ZMM=no;
      ;;
      IMCI)
        echo Configuring for IMCI

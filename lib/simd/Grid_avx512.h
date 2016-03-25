@@ -39,7 +39,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <immintrin.h>
 
 
-
+namespace Grid{
 namespace Optimization {
   
   struct Vsplat{
@@ -345,7 +345,7 @@ namespace Optimization {
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types 
-namespace Grid {
+
   typedef __m512 SIMD_Ftype;  // Single precision type
   typedef __m512d SIMD_Dtype; // Double precision type
   typedef __m512i SIMD_Itype; // Integer type
