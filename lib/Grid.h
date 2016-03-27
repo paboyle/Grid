@@ -62,6 +62,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <serialisation/Serialisation.h>
 #include <Config.h>
 #include <Timer.h>
+#include <PerfCount.h>
 #include <Log.h>
 #include <AlignedAllocator.h>
 #include <Simd.h>

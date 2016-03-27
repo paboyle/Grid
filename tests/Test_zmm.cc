@@ -207,9 +207,9 @@ int main(int argc,char **argv)
 void TimesIAvx512(void *ptr1,void *ptr3)
 {
   __asm__ ("mov     $0xAAAA, %%eax "  : : :"%eax");
-  __asm__ ("kmov    %%eax, %%k6 " : : :);
-  __asm__ ("knot     %%k6, %%k7 " : : :);
-
+  __asm__ ("kmovw    %%eax, %%k6 " : : :);
+  __asm__ ("mov     $0x5555, %%eax "  : : :"%eax");
+  __asm__ ("kmovw    %%eax, %%k7 " : : :);
 
   MASK_REGS;
   

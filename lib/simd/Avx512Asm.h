@@ -97,16 +97,26 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 // CONFIG IMCI/AVX512
 //////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef IMCI
 #define ASM_IMCI
-#undef  ASM_AVX512
+#define MASK_REGS \
+  __asm__ ("mov     $0xAAAA, %%eax \n"\
+           "kmov    %%eax, %%k6 \n"\
+           "knot     %%k6, %%k7 \n" : : : "%eax");
+
+#endif
+#ifdef AVX512
+#define  ASM_AVX512
+#define MASK_REGS \
+  __asm__ ("mov     $0xAAAA, %%eax \n"\
+           "kmovw    %%eax, %%k6 \n"\
+           "mov     $0x5555, %%eax \n"\
+           "kmovw    %%eax, %%k7 \n" : : : "%eax");
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Opcodes common to AVX512 and IMCI
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-#define MASK_REGS \
-  __asm__ ("mov     $0xAAAA, %%eax \n"\
-	   "kmov    %%eax, %%k6 \n"\
-	   "knot     %%k6, %%k7 \n" : : : "%eax");
 
 #define VZEROf(A)       "vpxorq " #A ","  #A "," #A ";\n"
 #define VZEROd(A)       "vpxorq " #A ","  #A "," #A ";\n"
@@ -137,8 +147,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
  VACCTIMESI2f(A,ACC,tmp)			
 
 #define  VACCTIMESI1MEMf(A,ACC,O,P)  "vaddps  " #O"*64("#P"),"#A "," #ACC"{%k7}" ";\n"
+#ifdef ASM_IMCI
 #define  VACCTIMESI2MEMf(A,ACC,O,P)  "vsubrps  " #O"*64("#P"),"#A "," #ACC"{%k6}" ";\n"
 #define  VACCTIMESMINUSI1MEMf(A,ACC,O,P)  "vsubrps  " #O"*64("#P"),"#A "," #ACC"{%k7}" ";\n"
+#endif
+#ifdef ASM_AVX512
+#define  VACCTIMESI2MEMf(A,ACC,O,P)  "vsubps  " #O"*64("#P"),"#A "," #ACC"{%k6}" ";\n"  // FIXME KNOWN BUG INTRODUCED TO FORCE COMPILE CLEAN
+#define  VACCTIMESMINUSI1MEMf(A,ACC,O,P)  "vsubps  " #O"*64("#P"),"#A "," #ACC"{%k7}" ";\n"
+#endif
 #define  VACCTIMESMINUSI2MEMf(A,ACC,O,P)  "vaddps  " #O"*64("#P"),"#A "," #ACC"{%k6}" ";\n"
 
 #define VACCTIMESId(A,ACC,tmp)			\
@@ -163,8 +179,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define VMOVd(A,DEST)   "vmovapd  " #A ", " #DEST  ";\n"
 
 // Field prefetch
+#ifdef ASM_IMCI
 #define VPREFETCHNTA(O,A) "vprefetchnta "#O"*64("#A");\n" "vprefetch1 ("#O"+12)*64("#A");\n"
 #define VPREFETCH(O,A)    "vprefetch0 "#O"*64("#A");\n" "vprefetch1 ("#O"+12)*64("#A");\n"
+#endif
+#ifdef ASM_AVX512 
+#define VPREFETCHNTA(O,A) 
+#define VPREFETCH(O,A)    
+#endif
 #define VPREFETCHG(O,A) 
 #define VPREFETCHW(O,A) 
 //"vprefetche0 "#O"*64("#A");\n" "vprefetche1 ("#O"+12)*64("#A");\n"
@@ -251,11 +273,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define VSTOREf(OFF,PTR,SRC)   "vmovntps " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
 #define VSTOREd(OFF,PTR,SRC)   "vmovntpd " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
 // Swaps Re/Im
-#define VSHUFd(A,DEST)         "vshufpd  $0x5, " #A "," #A "," #DEST  ";\n"
-#define VSHUFf(A,DEST)         "vshufps  $0x55," #A "," #A "," #DEST  ";\n"
+#define VSHUFd(A,DEST)         "vshufpd  $0x55," #A "," #A "," #DEST  ";\n"
+#define VSHUFf(A,DEST)         "vshufps  $0x4e," #A "," #A "," #DEST  ";\n"
 // Memops are useful for optimisation
-#define VSHUFMEMd(OFF,A,DEST)       "vpshufpd  $0x4e, " #OFF"("#A ")," #DEST  ";\n"
-#define VSHUFMEMf(OFF,A,DEST)       "vpshufps  $0xb1, " #OFF"("#A ")," #DEST  ";\n"
+#define VSHUFMEMd(OFF,A,DEST)       "vpshufd  $0x4e, " #OFF"("#A ")," #DEST  ";\n"
+#define VSHUFMEMf(OFF,A,DEST)       "vpshufd  $0xb1, " #OFF"("#A ")," #DEST  ";\n"
 
 
 // Merges accumulation for complex dot chain
@@ -271,7 +293,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #define ZEND2f(Criir,Ciirr, tmp) "vsubps  " #Ciirr "," #tmp "," #Criir"{%k7}"  ";\n"
 
-#define ZEND2d(Criir,Ciirr, tmp)	\
+#define ZEND1d(Criir,Ciirr, tmp)	\
   "vshufpd $0x33," #Ciirr "," #Criir "," #tmp  ";\n"\
   "vaddpd  " #Criir "," #tmp "," #Criir"{%k6}" ";\n"
 #define ZEND2d(Criir,Ciirr, tmp) "vsubpd  " #Ciirr "," #tmp "," #Criir"{%k7}" ";\n"
@@ -311,14 +333,41 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define  VACCTIMESI1d(A,ACC,tmp)  "vaddpd  " #tmp "," #ACC "," #ACC"{%k7}" ";\n"
 #define  VACCTIMESI2d(A,ACC,tmp)  "vsubpd  " #tmp "," #ACC "," #ACC"{%k6}" ";\n"
 
-#define VPERM0f(A,B) "vshuff32x4 " #A "," #B "," "#B" ", " #_MM_SELECT_FOUR_FOUR(1,0,3,2) ";\n"
-#define VPERM1f(A,B) "vshuff32x4 " #A "," #B "," "#B" ", " #_MM_SELECT_FOUR_FOUR(2,3,0,1) ";\n"
-#define VPERM2f(A,B) "vshufps    " #A "," #B "," "#B" ", " #_MM_SELECT_FOUR_FOUR(1,0,3,2) ";\n"
-#define VPERM3f(A,B) "vshufps    " #A "," #B "," "#B" ", " #_MM_SELECT_FOUR_FOUR(2,3,0,1) ";\n"
+    static inline __m512 Permute0(__m512 in){
+      return _mm512_shuffle_f32x4(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2));
+    };
+    static inline __m512 Permute1(__m512 in){
+      return _mm512_shuffle_f32x4(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1));
+    };
+    static inline __m512 Permute2(__m512 in){
+      return _mm512_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2));
+    };
+    static inline __m512 Permute3(__m512 in){
+      return _mm512_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1));
+    };
 
-#define VPERM0d(A,B) "vshuff64x2 " #A "," #B "," "#B" ", " #_MM_SELECT_FOUR_FOUR(1,0,3,2) ";\n"
-#define VPERM1d(A,B) "vshuff64x2 " #A "," #B "," "#B" ", " #_MM_SELECT_FOUR_FOUR(2,3,0,1) ";\n"
-#define VPERM2d(A,B) "vshufpd    " #A "," #B "," "#B" ", " 0x55 ";\n"
+    static inline __m512d Permute0(__m512d in){
+      return _mm512_shuffle_f64x2(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2));
+    };
+    static inline __m512d Permute1(__m512d in){
+      return _mm512_shuffle_f64x2(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1));
+    };
+    static inline __m512d Permute2(__m512d in){
+      return _mm512_shuffle_pd(in,in,0x55);
+    };
+    static inline __m512d Permute3(__m512d in){
+      return in;
+    };
+
+
+#define VPERM0f(A,B) "vshuff32x4  $0x4e," #A "," #B "," #B ";\n"
+#define VPERM1f(A,B) "vshuff32x4  $0xb1," #A "," #B "," #B ";\n"
+#define VPERM2f(A,B) "vshufps     $0x4e," #A "," #B "," #B ";\n"
+#define VPERM3f(A,B) "vshufps     $0xb1," #A "," #B "," #B ";\n"
+
+#define VPERM0d(A,B) "vshuff64x2  $0x4e," #A "," #B "," #B ";\n"
+#define VPERM1d(A,B) "vshuff64x2  $0xb1," #A "," #B "," #B ";\n"
+#define VPERM2d(A,B) "vshufpd     $0x55," #A "," #B "," #B ";\n"
 #define VPERM3d(A,B) VMOVd(A,B)
 
 #endif

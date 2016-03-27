@@ -38,216 +38,177 @@ WilsonKernels<Impl>::WilsonKernels(const ImplParams &p): Base(p) {};
 template<class Impl> 
 void WilsonKernels<Impl>::DiracOptDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
 					   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-					   int sF,int sU,const FermionField &in, FermionField &out,bool local, bool nonlocal)
+					   int sF,int sU,const FermionField &in, FermionField &out)
 {
   SiteHalfSpinor  tmp;    
   SiteHalfSpinor  chi;    
+  SiteHalfSpinor *chi_p;
   SiteHalfSpinor Uchi;
   SiteSpinor result;
   StencilEntry *SE;
   int ptype;
-
-  int num = 0;
-
-  result=zero;
 
   ///////////////////////////
   // Xp
   ///////////////////////////
   SE=st.GetEntry(ptype,Xp,sF);
 
-  if (local && SE->_is_local ) { 
+  if (SE->_is_local ) { 
+    chi_p = &chi;
     if ( SE->_permute ) {
       spProjXp(tmp,in._odata[SE->_offset]);
       permute(chi,tmp,ptype);
     } else {
       spProjXp(chi,in._odata[SE->_offset]);
     }
-  }
-
-  if ( nonlocal && (!SE->_is_local) ) { 
-    chi=buf[SE->_offset];
+  } else { 
+    chi_p=&buf[SE->_offset];
   }
   
-  if ( (local && SE->_is_local) || ( nonlocal && (!SE->_is_local)) ) {
-    Impl::multLink(Uchi,U._odata[sU],chi,Xp,SE,st);
-    accumReconXp(result,Uchi);
-    num++;
-  }
+  Impl::multLink(Uchi,U._odata[sU],*chi_p,Xp,SE,st);
+  spReconXp(result,Uchi);
     
   ///////////////////////////
   // Yp
   ///////////////////////////
   SE=st.GetEntry(ptype,Yp,sF);
 
-  if (local && SE->_is_local ) { 
+  if ( SE->_is_local ) { 
+    chi_p = &chi;
     if ( SE->_permute ) {
       spProjYp(tmp,in._odata[SE->_offset]);
       permute(chi,tmp,ptype);
     } else {
       spProjYp(chi,in._odata[SE->_offset]);
     }
+  } else { 
+    chi_p=&buf[SE->_offset];
   }
 
-  if ( nonlocal && (!SE->_is_local) ) { 
-    chi=buf[SE->_offset];
-  }
-
-  if ( (local && SE->_is_local) || ( nonlocal && (!SE->_is_local)) ) {
-    Impl::multLink(Uchi,U._odata[sU],chi,Yp,SE,st);
-    accumReconYp(result,Uchi);
-    num++;
-  }
+  Impl::multLink(Uchi,U._odata[sU],*chi_p,Yp,SE,st);
+  accumReconYp(result,Uchi);
 
   ///////////////////////////
   // Zp
   ///////////////////////////
   SE=st.GetEntry(ptype,Zp,sF);
 
-  if (local && SE->_is_local ) { 
+  if ( SE->_is_local ) { 
+    chi_p = &chi;
     if ( SE->_permute ) {
       spProjZp(tmp,in._odata[SE->_offset]);
       permute(chi,tmp,ptype);
     } else {
       spProjZp(chi,in._odata[SE->_offset]);
     }
+  } else { 
+    chi_p=&buf[SE->_offset];
   }
 
-  if ( nonlocal && (!SE->_is_local) ) { 
-    chi=buf[SE->_offset];
-  }
-
-  if ( (local && SE->_is_local) || ( nonlocal && (!SE->_is_local)) ) {
-    Impl::multLink(Uchi,U._odata[sU],chi,Zp,SE,st);
-    accumReconZp(result,Uchi);
-    num++;
-  }
+  Impl::multLink(Uchi,U._odata[sU],*chi_p,Zp,SE,st);
+  accumReconZp(result,Uchi);
 
   ///////////////////////////
   // Tp
   ///////////////////////////
   SE=st.GetEntry(ptype,Tp,sF);
 
-  if (local && SE->_is_local ) {
+  if ( SE->_is_local ) {
+    chi_p = &chi;
     if ( SE->_permute ) {
       spProjTp(tmp,in._odata[SE->_offset]);
       permute(chi,tmp,ptype);
     } else {
       spProjTp(chi,in._odata[SE->_offset]);
     }
+  } else {
+    chi_p=&buf[SE->_offset];
   }
 
-  if ( nonlocal && (!SE->_is_local) ) {
-    chi=buf[SE->_offset];
-  }
-
-  if ( (local && SE->_is_local) || ( nonlocal && (!SE->_is_local)) ) {
-    Impl::multLink(Uchi,U._odata[sU],chi,Tp,SE,st);
-    accumReconTp(result,Uchi);
-    num++;
-  }
+  Impl::multLink(Uchi,U._odata[sU],*chi_p,Tp,SE,st);
+  accumReconTp(result,Uchi);
 
   ///////////////////////////
   // Xm
   ///////////////////////////
   SE=st.GetEntry(ptype,Xm,sF);
 
-  if (local && SE->_is_local ) {
+  if ( SE->_is_local ) {
+    chi_p = &chi;
     if ( SE->_permute ) {
       spProjXm(tmp,in._odata[SE->_offset]);
       permute(chi,tmp,ptype);
     } else {
       spProjXm(chi,in._odata[SE->_offset]);
     }
+  } else {
+    chi_p=&buf[SE->_offset];
   }
 
-  if ( nonlocal && (!SE->_is_local) ) {
-    chi=buf[SE->_offset];
-  }
-
-  if( (local && SE->_is_local) || ( nonlocal && (!SE->_is_local)) ) {
-    Impl::multLink(Uchi,U._odata[sU],chi,Xm,SE,st);
-    accumReconXm(result,Uchi);
-    num++;
-  }
-
+  Impl::multLink(Uchi,U._odata[sU],*chi_p,Xm,SE,st);
+  accumReconXm(result,Uchi);
+  
   ///////////////////////////
   // Ym
   ///////////////////////////
   SE=st.GetEntry(ptype,Ym,sF);
 
-  if (local && SE->_is_local ) {
+  if ( SE->_is_local ) {
+    chi_p = &chi;
     if ( SE->_permute ) {
       spProjYm(tmp,in._odata[SE->_offset]);
       permute(chi,tmp,ptype);
     } else {
       spProjYm(chi,in._odata[SE->_offset]);
     }
+  } else {
+    chi_p=&buf[SE->_offset];
   }
 
-  if ( nonlocal && (!SE->_is_local) ) {
-    chi=buf[SE->_offset];
-  }
-
-  if( (local && SE->_is_local) || ( nonlocal && (!SE->_is_local)) ) {
-    Impl::multLink(Uchi,U._odata[sU],chi,Ym,SE,st);
-    accumReconYm(result,Uchi);
-    num++;
-  }
+  Impl::multLink(Uchi,U._odata[sU],*chi_p,Ym,SE,st);
+  accumReconYm(result,Uchi);
   
   ///////////////////////////
   // Zm
   ///////////////////////////
   SE=st.GetEntry(ptype,Zm,sF);
 
-  if (local && SE->_is_local ) {
+  if ( SE->_is_local ) {
+    chi_p = &chi;
     if ( SE->_permute ) {
       spProjZm(tmp,in._odata[SE->_offset]);
       permute(chi,tmp,ptype);
     } else {
       spProjZm(chi,in._odata[SE->_offset]);
     }
+  } else {
+    chi_p=&buf[SE->_offset];
   }
 
-  if ( nonlocal && (!SE->_is_local) ) {
-    chi=buf[SE->_offset];
-  }
-
-  if( (local && SE->_is_local) || ( nonlocal && (!SE->_is_local)) ) {
-    Impl::multLink(Uchi,U._odata[sU],chi,Zm,SE,st);
-    accumReconZm(result,Uchi);
-    num++;
-  }
+  Impl::multLink(Uchi,U._odata[sU],*chi_p,Zm,SE,st);
+  accumReconZm(result,Uchi);
 
   ///////////////////////////
   // Tm
   ///////////////////////////
   SE=st.GetEntry(ptype,Tm,sF);
 
-  if (local && SE->_is_local ) {
+  if ( SE->_is_local ) {
+    chi_p = &chi;
     if ( SE->_permute ) {
       spProjTm(tmp,in._odata[SE->_offset]);
       permute(chi,tmp,ptype);
     } else { 
       spProjTm(chi,in._odata[SE->_offset]);
     }
+  } else {
+    chi_p=&buf[SE->_offset];
   }
 
-  if ( nonlocal && (!SE->_is_local) ) {
-    chi=buf[SE->_offset];
-  }
+  Impl::multLink(Uchi,U._odata[sU],*chi_p,Tm,SE,st);
+  accumReconTm(result,Uchi);
 
-  if( (local && SE->_is_local) || ( nonlocal && (!SE->_is_local)) ) {
-    Impl::multLink(Uchi,U._odata[sU],chi,Tm,SE,st);
-    accumReconTm(result,Uchi);
-    num++;
-  }
-
-  if ( local ) {
-    vstream(out._odata[sF],result);
-  } else if ( num ) { 
-    vstream(out._odata[sF],out._odata[sF]+result);
-  }
+  vstream(out._odata[sF],result);
 };
 
 
@@ -255,216 +216,177 @@ void WilsonKernels<Impl>::DiracOptDhopSiteDag(StencilImpl &st,DoubledGaugeField 
 template<class Impl> 
 void WilsonKernels<Impl>::DiracOptDhopSite(StencilImpl &st,DoubledGaugeField &U,
 					   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-					   int sF,int sU,const FermionField &in, FermionField &out,bool local, bool nonlocal)
+					   int sF,int sU,const FermionField &in, FermionField &out)
 {
   SiteHalfSpinor  tmp;    
   SiteHalfSpinor  chi;    
+  SiteHalfSpinor *chi_p;    
   SiteHalfSpinor Uchi;
   SiteSpinor result;
   StencilEntry *SE;
   int ptype;
-
-  int num = 0;
-
-  result=zero;
 
   ///////////////////////////
   // Xp
   ///////////////////////////
   SE=st.GetEntry(ptype,Xm,sF);
 
-  if (local && SE->_is_local ) { 
+  if ( SE->_is_local ) { 
+    chi_p = &chi;
     if ( SE->_permute ) {
       spProjXp(tmp,in._odata[SE->_offset]);
       permute(chi,tmp,ptype);
     } else {
       spProjXp(chi,in._odata[SE->_offset]);
     }
-  }
-
-  if ( nonlocal && (!SE->_is_local) ) { 
-    chi=buf[SE->_offset];
+  } else { 
+    chi_p=&buf[SE->_offset];
   }
   
-  if ( (local && SE->_is_local) || ( nonlocal && (!SE->_is_local)) ) {
-    Impl::multLink(Uchi,U._odata[sU],chi,Xm,SE,st);
-    accumReconXp(result,Uchi);
-    num++;
-  }
+  Impl::multLink(Uchi,U._odata[sU],*chi_p,Xm,SE,st);
+  spReconXp(result,Uchi);
     
   ///////////////////////////
   // Yp
   ///////////////////////////
   SE=st.GetEntry(ptype,Ym,sF);
 
-  if (local && SE->_is_local ) { 
+  if ( SE->_is_local ) { 
+    chi_p = &chi;
     if ( SE->_permute ) {
       spProjYp(tmp,in._odata[SE->_offset]);
       permute(chi,tmp,ptype);
     } else {
       spProjYp(chi,in._odata[SE->_offset]);
     }
+  } else { 
+    chi_p=&buf[SE->_offset];
   }
 
-  if ( nonlocal && (!SE->_is_local) ) { 
-    chi=buf[SE->_offset];
-  }
-
-  if ( (local && SE->_is_local) || ( nonlocal && (!SE->_is_local)) ) {
-    Impl::multLink(Uchi,U._odata[sU],chi,Ym,SE,st);
-    accumReconYp(result,Uchi);
-    num++;
-  }
+  Impl::multLink(Uchi,U._odata[sU],*chi_p,Ym,SE,st);
+  accumReconYp(result,Uchi);
 
   ///////////////////////////
   // Zp
   ///////////////////////////
   SE=st.GetEntry(ptype,Zm,sF);
 
-  if (local && SE->_is_local ) { 
+  if ( SE->_is_local ) { 
+    chi_p = &chi;
     if ( SE->_permute ) {
       spProjZp(tmp,in._odata[SE->_offset]);
       permute(chi,tmp,ptype);
     } else {
       spProjZp(chi,in._odata[SE->_offset]);
     }
+  } else { 
+    chi_p=&buf[SE->_offset];
   }
 
-  if ( nonlocal && (!SE->_is_local) ) { 
-    chi=buf[SE->_offset];
-  }
-
-  if ( (local && SE->_is_local) || ( nonlocal && (!SE->_is_local)) ) {
-    Impl::multLink(Uchi,U._odata[sU],chi,Zm,SE,st);
-    accumReconZp(result,Uchi);
-    num++;
-  }
+  Impl::multLink(Uchi,U._odata[sU],*chi_p,Zm,SE,st);
+  accumReconZp(result,Uchi);
 
   ///////////////////////////
   // Tp
   ///////////////////////////
   SE=st.GetEntry(ptype,Tm,sF);
 
-  if (local && SE->_is_local ) {
+  if ( SE->_is_local ) {
+    chi_p = &chi;
     if ( SE->_permute ) {
       spProjTp(tmp,in._odata[SE->_offset]);
       permute(chi,tmp,ptype);
     } else {
       spProjTp(chi,in._odata[SE->_offset]);
     }
+  } else {
+    chi_p=&buf[SE->_offset];
   }
 
-  if ( nonlocal && (!SE->_is_local) ) {
-    chi=buf[SE->_offset];
-  }
-
-  if ( (local && SE->_is_local) || ( nonlocal && (!SE->_is_local)) ) {
-    Impl::multLink(Uchi,U._odata[sU],chi,Tm,SE,st);
-    accumReconTp(result,Uchi);
-    num++;
-  }
+  Impl::multLink(Uchi,U._odata[sU],*chi_p,Tm,SE,st);
+  accumReconTp(result,Uchi);
 
   ///////////////////////////
   // Xm
   ///////////////////////////
   SE=st.GetEntry(ptype,Xp,sF);
 
-  if (local && SE->_is_local ) {
+  if ( SE->_is_local ) {
+    chi_p = &chi;
     if ( SE->_permute ) {
       spProjXm(tmp,in._odata[SE->_offset]);
       permute(chi,tmp,ptype);
     } else {
       spProjXm(chi,in._odata[SE->_offset]);
     }
+  } else {
+    chi_p=&buf[SE->_offset];
   }
 
-  if ( nonlocal && (!SE->_is_local) ) {
-    chi=buf[SE->_offset];
-  }
-
-  if( (local && SE->_is_local) || ( nonlocal && (!SE->_is_local)) ) {
-    Impl::multLink(Uchi,U._odata[sU],chi,Xp,SE,st);
-    accumReconXm(result,Uchi);
-    num++;
-  }
+  Impl::multLink(Uchi,U._odata[sU],*chi_p,Xp,SE,st);
+  accumReconXm(result,Uchi);
 
   ///////////////////////////
   // Ym
   ///////////////////////////
   SE=st.GetEntry(ptype,Yp,sF);
 
-  if (local && SE->_is_local ) {
+  if ( SE->_is_local ) {
+    chi_p = &chi;
     if ( SE->_permute ) {
       spProjYm(tmp,in._odata[SE->_offset]);
       permute(chi,tmp,ptype);
     } else {
       spProjYm(chi,in._odata[SE->_offset]);
     }
+  } else {
+    chi_p=&buf[SE->_offset];
   }
 
-  if ( nonlocal && (!SE->_is_local) ) {
-    chi=buf[SE->_offset];
-  }
-
-  if( (local && SE->_is_local) || ( nonlocal && (!SE->_is_local)) ) {
-    Impl::multLink(Uchi,U._odata[sU],chi,Yp,SE,st);
-    accumReconYm(result,Uchi);
-    num++;
-  }
+  Impl::multLink(Uchi,U._odata[sU],*chi_p,Yp,SE,st);
+  accumReconYm(result,Uchi);
   
   ///////////////////////////
   // Zm
   ///////////////////////////
   SE=st.GetEntry(ptype,Zp,sF);
 
-  if (local && SE->_is_local ) {
+  if ( SE->_is_local ) {
+    chi_p = &chi;
     if ( SE->_permute ) {
       spProjZm(tmp,in._odata[SE->_offset]);
       permute(chi,tmp,ptype);
     } else {
       spProjZm(chi,in._odata[SE->_offset]);
     }
+  } else {
+    chi_p=&buf[SE->_offset];
   }
 
-  if ( nonlocal && (!SE->_is_local) ) {
-    chi=buf[SE->_offset];
-  }
-
-  if( (local && SE->_is_local) || ( nonlocal && (!SE->_is_local)) ) {
-    Impl::multLink(Uchi,U._odata[sU],chi,Zp,SE,st);
-    accumReconZm(result,Uchi);
-    num++;
-  }
+  Impl::multLink(Uchi,U._odata[sU],*chi_p,Zp,SE,st);
+  accumReconZm(result,Uchi);
 
   ///////////////////////////
   // Tm
   ///////////////////////////
   SE=st.GetEntry(ptype,Tp,sF);
 
-  if (local && SE->_is_local ) {
+  if ( SE->_is_local ) {
+    chi_p = &chi;
     if ( SE->_permute ) {
       spProjTm(tmp,in._odata[SE->_offset]);
       permute(chi,tmp,ptype);
     } else { 
       spProjTm(chi,in._odata[SE->_offset]);
     }
+  } else {
+    chi_p=&buf[SE->_offset];
   }
 
-  if ( nonlocal && (!SE->_is_local) ) {
-    chi=buf[SE->_offset];
-  }
+  Impl::multLink(Uchi,U._odata[sU],*chi_p,Tp,SE,st);
+  accumReconTm(result,Uchi);
 
-  if( (local && SE->_is_local) || ( nonlocal && (!SE->_is_local)) ) {
-    Impl::multLink(Uchi,U._odata[sU],chi,Tp,SE,st);
-    accumReconTm(result,Uchi);
-    num++;
-  }
-
-  if ( local ) {
-    vstream(out._odata[sF],result);
-  } else if ( num ) { 
-    vstream(out._odata[sF],out._odata[sF]+result);
-  }
+  vstream(out._odata[sF],result);
 };
 
 template<class Impl> 
@@ -596,7 +518,7 @@ void WilsonKernels<Impl>::DiracOptDhopDir(StencilImpl &st,DoubledGaugeField &U,
   vstream(out._odata[sF],result);
 }
 
-#if ( ! defined(IMCI) )
+#if ( ! defined(IMCI) && ! defined(AVX512) )
 template<class Impl> 
 void WilsonKernels<Impl>::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U,
 					      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,

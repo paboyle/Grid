@@ -27,8 +27,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid.h>
-//#if defined(AVX512) || defined (IMCI)
-#if defined (IMCI)
+#if defined(AVX512) || defined (IMCI)
+//#if defined (IMCI)
 
 #include <simd/Avx512Asm.h>
 
@@ -106,7 +106,7 @@ namespace QCD {
 template<class Impl>
 void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U,
 						   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-					       int ss,int sU,const FermionField &in, FermionField &out,uint64_t *timers)
+					       int ss,int sU,const FermionField &in, FermionField &out)
 {
   uint64_t  now;
   uint64_t first ;
@@ -341,6 +341,7 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField
 
   template class WilsonKernels<WilsonImplF>;		
   template class WilsonKernels<WilsonImplD>; 
-
+  template class WilsonKernels<GparityWilsonImplF>;
+  template class WilsonKernels<GparityWilsonImplD>;
 }}
 #endif

@@ -48,11 +48,11 @@ namespace Grid {
     public:
      void DiracOptDhopSite(StencilImpl &st,DoubledGaugeField &U,
 			   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-			   int sF,int sU,const FermionField &in, FermionField &out,bool local= true, bool nonlocal=true);
+			   int sF,int sU,const FermionField &in, FermionField &out);
       
      void DiracOptDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-			      int sF,int sU,const FermionField &in,FermionField &out,bool local= true, bool nonlocal=true);
+			      int sF,int sU,const FermionField &in,FermionField &out);
 
      void DiracOptDhopDir(StencilImpl &st,DoubledGaugeField &U,
 			  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
@@ -60,15 +60,15 @@ namespace Grid {
 
      void DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U,
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-			      int sF,int sU,const FermionField &in, FermionField &out,bool local= true, bool nonlocal=true);
+			      int sF,int sU,const FermionField &in, FermionField &out);
 
      int DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-			      int sF,int sU,const FermionField &in, FermionField &out,bool local= true, bool nonlocal=true);
+			      int sF,int sU,const FermionField &in, FermionField &out);
      
      int DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
 				 std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-				 int sF,int sU,const FermionField &in, FermionField &out,bool local= true, bool nonlocal=true);
+				 int sF,int sU,const FermionField &in, FermionField &out);
 
      WilsonKernels(const ImplParams &p= ImplParams());
      
