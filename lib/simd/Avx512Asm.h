@@ -69,6 +69,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define UChi_12 %zmm23 
 
 #define Uir %zmm24 
+//#define ONE %zmm24 
 #define Uri %zmm25  
 
 #define Z0 %zmm26
@@ -99,23 +100,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #ifdef IMCI
 #define ASM_IMCI
-#define MASK_REGS \
-  __asm__ ("mov     $0xAAAA, %%eax \n"\
-           "kmov    %%eax, %%k6 \n"\
-           "knot     %%k6, %%k7 \n" : : : "%eax");
-
 #endif
+
 #ifdef AVX512
 #define  ASM_AVX512
-#define MASK_REGS \
-  __asm__ ("mov     $0xAAAA, %%eax \n"\
-           "kmovw    %%eax, %%k6 \n"\
-           "mov     $0x5555, %%eax \n"\
-           "kmovw    %%eax, %%k7 \n" : : : "%eax");
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Opcodes common to AVX512 and IMCI
+// Opcodes common 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define VZEROf(A)       "vpxorq " #A ","  #A "," #A ";\n"
@@ -146,17 +138,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
  VACCTIMESI1f(A,ACC,tmp)			\
  VACCTIMESI2f(A,ACC,tmp)			
 
-#define  VACCTIMESI1MEMf(A,ACC,O,P)  "vaddps  " #O"*64("#P"),"#A "," #ACC"{%k7}" ";\n"
-#ifdef ASM_IMCI
-#define  VACCTIMESI2MEMf(A,ACC,O,P)  "vsubrps  " #O"*64("#P"),"#A "," #ACC"{%k6}" ";\n"
-#define  VACCTIMESMINUSI1MEMf(A,ACC,O,P)  "vsubrps  " #O"*64("#P"),"#A "," #ACC"{%k7}" ";\n"
-#endif
-#ifdef ASM_AVX512
-#define  VACCTIMESI2MEMf(A,ACC,O,P)  "vsubps  " #O"*64("#P"),"#A "," #ACC"{%k6}" ";\n"  // FIXME KNOWN BUG INTRODUCED TO FORCE COMPILE CLEAN
-#define  VACCTIMESMINUSI1MEMf(A,ACC,O,P)  "vsubps  " #O"*64("#P"),"#A "," #ACC"{%k7}" ";\n"
-#endif
-#define  VACCTIMESMINUSI2MEMf(A,ACC,O,P)  "vaddps  " #O"*64("#P"),"#A "," #ACC"{%k6}" ";\n"
-
 #define VACCTIMESId(A,ACC,tmp)			\
  VACCTIMESI0d(A,ACC,tmp)			\
  VACCTIMESI1d(A,ACC,tmp)			\
@@ -173,20 +154,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   VACCTIMESMINUSI2d(A,ACC,tmp)			
 
 #define LOAD64i(A,ptr)  __asm__ ( "movq %0, %" #A :  : "r"(ptr)  : #A  );
-#define LOAD64(A,ptr)          LOAD64i(A,ptr)
+#define LOAD64(A,ptr)  LOAD64i(A,ptr)
 
 #define VMOVf(A,DEST)   "vmovaps  " #A ", " #DEST  ";\n"
 #define VMOVd(A,DEST)   "vmovapd  " #A ", " #DEST  ";\n"
 
-// Field prefetch
-#ifdef ASM_IMCI
-#define VPREFETCHNTA(O,A) "vprefetchnta "#O"*64("#A");\n" "vprefetch1 ("#O"+12)*64("#A");\n"
-#define VPREFETCH(O,A)    "vprefetch0 "#O"*64("#A");\n" "vprefetch1 ("#O"+12)*64("#A");\n"
-#endif
-#ifdef ASM_AVX512 
-#define VPREFETCHNTA(O,A) 
-#define VPREFETCH(O,A)    
-#endif
+
 #define VPREFETCHG(O,A) 
 #define VPREFETCHW(O,A) 
 //"vprefetche0 "#O"*64("#A");\n" "vprefetche1 ("#O"+12)*64("#A");\n"
@@ -232,8 +205,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define ZENDf(Criir,Ciirr, tmp) ZEND1f(Criir,Ciirr, tmp) ZEND2f(Criir,Ciirr, tmp)
 #define ZENDd(Criir,Ciirr, tmp) ZEND1d(Criir,Ciirr, tmp) ZEND2d(Criir,Ciirr, tmp)
 
-// Need VSHUFMULMEMf,d for KNC
-// AVX512 friendly
 #define ZMULMEM2SPf(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)\
   VSHUFMEMf(O,P,tmp) \
   VMULMEMf(O,P,B,Biirr) \
@@ -265,100 +236,84 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   VMADDd(tmp,C,Criir)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Lane swizzling changed between AVX512 and IMCI and requires arch dependent complex support
+// ISA changed between AVX512 and IMCI and requires arch dependent complex support
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// AVX512 special (Knights Landing)
+#define VPREFETCHNTA(O,A) 
+#define VPREFETCH(O,A)    
+
+#define VSTOREf(OFF,PTR,SRC)   "vmovaps " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
+#define VSTOREd(OFF,PTR,SRC)   "vmovapd " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
+
+// Swaps Re/Im ; could unify this with IMCI
+#define VSHUFd(A,DEST)         "vpshufd  $0x4e," #A "," #DEST  ";\n"    
+#define VSHUFf(A,DEST)         "vpshufd  $0xb1," #A "," #DEST  ";\n"    
+#define VSHUFMEMd(OFF,A,DEST)  "vpshufd  $0x4e, " #OFF"*64("#A ")," #DEST  ";\n" // 32 bit level: 1,0,3,2
+#define VSHUFMEMf(OFF,A,DEST)  "vpshufd  $0xb1, " #OFF"*64("#A ")," #DEST  ";\n" // 32 bit level: 2,3,0,1
+
+
+////////////////////////////////////////////////////////////	  
+// Knights Landing specials
+////////////////////////////////////////////////////////////	  
 #ifdef ASM_AVX512
-#define VSTOREf(OFF,PTR,SRC)   "vmovntps " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
-#define VSTOREd(OFF,PTR,SRC)   "vmovntpd " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
-// Swaps Re/Im
-#define VSHUFd(A,DEST)         "vshufpd  $0x55," #A "," #A "," #DEST  ";\n"
-#define VSHUFf(A,DEST)         "vshufps  $0x4e," #A "," #A "," #DEST  ";\n"
-// Memops are useful for optimisation
-#define VSHUFMEMd(OFF,A,DEST)       "vpshufd  $0x4e, " #OFF"("#A ")," #DEST  ";\n"
-#define VSHUFMEMf(OFF,A,DEST)       "vpshufd  $0xb1, " #OFF"("#A ")," #DEST  ";\n"
 
+#define MASK_REGS \
+  __asm__ ("mov     $0xAAAA, %%eax \n"\ 
+           "kmovw    %%eax, %%k6 \n"\
+           "mov     $0x5555, %%eax \n"\
+           "kmovw    %%eax, %%k7 \n" : : : "%eax");
 
-// Merges accumulation for complex dot chain
-// TODO:  12 operation saving:
-//	# could SWIZ op 18{cdab} and eliminate temporary // 12cycles
-//	# no use KNL though. Fingour something else there.
-//	# All swizzles become perms ops, but gain addsub; subadd must use this
-//	# uint32_t (0x7F << 23 )
-//	# uint64_t (0x3FF<< 52 ) ; vpbroadcast
-#define ZEND1f(Criir,Ciirr, tmp)	\
-  "vshufps $0xb1," #Ciirr "," #Criir "," #tmp   ";\n"\
-  "vaddps  " #Criir "," #tmp "," #Criir"{%k6}"  ";\n"
+// Merges accumulation for complex dot chain; less efficient under avx512
+//ZEND1d(Criir,Ciirr, tmp) "vaddpd  " #Criir "{cdab} ," #Criir "," #Criir"{%k6}"  ";\n"
+//ZEND2d(Criir,Ciirr, tmp) "vsubpd  " #Ciirr "{cdab} ," #Ciirr "," #Criir"{%k7}"  ";\n"
+//ZEND1f(Criir,Ciirr, tmp) "vaddps  " #Criir "{cdab} ," #Criir "," #Criir"{%k6}"  ";\n"
+//ZEND2f(Criir,Ciirr, tmp) "vsubps  " #Ciirr "{cdab} ," #Ciirr "," #Criir"{%k7}"  ";\n"
+#define ZEND1f(Criir,Ciirr, tmp)  "vshufps $0xb1," #Criir "," #Criir "," #tmp   ";\n"\
+                                  "vaddps  " #tmp "," #Criir "," #Criir"{%k6}"  ";\n"
 
-#define ZEND2f(Criir,Ciirr, tmp) "vsubps  " #Ciirr "," #tmp "," #Criir"{%k7}"  ";\n"
+#define ZEND2f(Criir,Ciirr, tmp)  "vshufps $0xb1," #Ciirr "," #Ciirr "," #tmp   ";\n"\
+                                  "vsubps  " #tmp "," #Ciirr "," #Criir"{%k7}"  ";\n"
 
-#define ZEND1d(Criir,Ciirr, tmp)	\
-  "vshufpd $0x33," #Ciirr "," #Criir "," #tmp  ";\n"\
-  "vaddpd  " #Criir "," #tmp "," #Criir"{%k6}" ";\n"
-#define ZEND2d(Criir,Ciirr, tmp) "vsubpd  " #Ciirr "," #tmp "," #Criir"{%k7}" ";\n"
+#define ZEND1d(Criir,Ciirr, tmp)  "vshufpd $0x55," #Criir "," #Criir "," #tmp  ";\n"\ 
+                                  "vaddps  " #tmp "," #Criir "," #Criir"{%k6}"  ";\n"
 
+#define ZEND2d(Criir,Ciirr, tmp)  "vshufpd $0x55," #Ciirr "," #Ciirr "," #tmp   ";\n"\
+                         	  "vsubpd  " #tmp "," #Ciirr "," #Criir"{%k7};\n" // ri+ir ; ri+ir,rr-ii
+                                  
 // Further opt possible: KNC -- use swizzle operand ; no addsub.
 //                       KNL -- addsub. Saves 6 ops, 12 cycles; KNL cost of loading "1" as only fmaddsub
 //                              no swizzle on KNL.
-#define VTIMESI0f(A,DEST, Z)   VSHUFf(A,DEST)	 
-#define VTIMESI1f(A,DEST, Z)   "vaddps  " #DEST "," #Z "," #DEST"{%k7}"  ";\n"
-#define VTIMESI2f(A,DEST, Z)   "vsubps  " #DEST "," #Z "," #DEST"{%k6}"  ";\n"
+#define VTIMESI0f(A,DEST, Z)   VSHUFf(A,DEST)	  
+#define VTIMESI1f(A,DEST, Z)   "vaddps  " #DEST "," #Z "," #DEST"{%k6}"  ";\n"
+#define VTIMESI2f(A,DEST, Z)   "vsubps  " #DEST "," #Z "," #DEST"{%k7}"  ";\n"
 
 #define VTIMESI0d(A,DEST, Z)   VSHUFd(A,DEST)	 
-#define VTIMESI1d(A,DEST, Z)   "vaddpd  " #DEST "," #Z "," #DEST"{%k7}"  ";\n"
-#define VTIMESI2d(A,DEST, Z)   "vsubpd  " #DEST "," #Z "," #DEST"{%k6}"  ";\n"
+#define VTIMESI1d(A,DEST, Z)   "vaddpd  " #DEST "," #Z "," #DEST"{%k6}"  ";\n"
+#define VTIMESI2d(A,DEST, Z)   "vsubpd  " #DEST "," #Z "," #DEST"{%k7}"  ";\n"
 
 #define VTIMESMINUSI0f(A,DEST,Z)  VSHUFf(A,DEST)					
-#define VTIMESMINUSI1f(A,DEST,Z)  "vsubps  " #DEST "," #Z "," #DEST"{%k7}"  ";\n"
-#define VTIMESMINUSI2f(A,DEST,Z)  "vaddps  " #DEST "," #Z "," #DEST"{%k6}"  ";\n"
+#define VTIMESMINUSI1f(A,DEST,Z)  "vsubps  " #DEST "," #Z "," #DEST"{%k6}"  ";\n"
+#define VTIMESMINUSI2f(A,DEST,Z)  "vaddps  " #DEST "," #Z "," #DEST"{%k7}"  ";\n"
 
 #define VTIMESMINUSI0d(A,DEST,Z)  VSHUFd(A,DEST)					
-#define VTIMESMINUSI1d(A,DEST,Z)  "vsubpd  " #DEST "," #Z "," #DEST"{%k7}"  ";\n"
-#define VTIMESMINUSI2d(A,DEST,Z)  "vaddpd  " #DEST "," #Z "," #DEST"{%k6}"  ";\n"
+#define VTIMESMINUSI1d(A,DEST,Z)  "vsubpd  " #DEST "," #Z "," #DEST"{%k6}"  ";\n"
+#define VTIMESMINUSI2d(A,DEST,Z)  "vaddpd  " #DEST "," #Z "," #DEST"{%k7}"  ";\n"
 
 #define VACCTIMESMINUSI0f(A,ACC,tmp)  VSHUFf(A,tmp)					
-#define VACCTIMESMINUSI1f(A,ACC,tmp)  "vsubps  " #tmp "," #ACC "," #ACC"{%k7}" ";\n"
-#define VACCTIMESMINUSI2f(A,ACC,tmp)  "vaddps  " #tmp "," #ACC "," #ACC"{%k6}" ";\n"
+#define VACCTIMESMINUSI1f(A,ACC,tmp)  "vsubps  " #tmp "," #ACC "," #ACC"{%k6}" ";\n"
+#define VACCTIMESMINUSI2f(A,ACC,tmp)  "vaddps  " #tmp "," #ACC "," #ACC"{%k7}" ";\n"
 
 #define VACCTIMESMINUSI0d(A,ACC,tmp)  VSHUFd(A,tmp)					
-#define VACCTIMESMINUSI1d(A,ACC,tmp)  "vsubpd  " #tmp "," #ACC "," #ACC"{%k7}" ";\n"
-#define VACCTIMESMINUSI2d(A,ACC,tmp)  "vaddpd  " #tmp "," #ACC "," #ACC"{%k6}" ";\n"
+#define VACCTIMESMINUSI1d(A,ACC,tmp)  "vsubpd  " #tmp "," #ACC "," #ACC"{%k6}" ";\n"
+#define VACCTIMESMINUSI2d(A,ACC,tmp)  "vaddpd  " #tmp "," #ACC "," #ACC"{%k7}" ";\n"
 
-#define  VACCTIMESI0f(A,ACC,tmp)	VSHUFf(A,tmp)	
-#define  VACCTIMESI1f(A,ACC,tmp)  "vaddps  " #tmp "," #ACC "," #ACC"{%k7}" ";\n"
-#define  VACCTIMESI2f(A,ACC,tmp)  "vsubps  " #tmp "," #ACC "," #ACC"{%k6}" ";\n"
+#define  VACCTIMESI0f(A,ACC,tmp)  VSHUFf(A,tmp)	
+#define  VACCTIMESI1f(A,ACC,tmp)  "vaddps  " #tmp "," #ACC "," #ACC"{%k6}" ";\n"
+#define  VACCTIMESI2f(A,ACC,tmp)  "vsubps  " #tmp "," #ACC "," #ACC"{%k7}" ";\n"
 
-#define  VACCTIMESI0d(A,ACC,tmp)	VSHUFd(A,tmp)	
-#define  VACCTIMESI1d(A,ACC,tmp)  "vaddpd  " #tmp "," #ACC "," #ACC"{%k7}" ";\n"
-#define  VACCTIMESI2d(A,ACC,tmp)  "vsubpd  " #tmp "," #ACC "," #ACC"{%k6}" ";\n"
-
-    static inline __m512 Permute0(__m512 in){
-      return _mm512_shuffle_f32x4(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2));
-    };
-    static inline __m512 Permute1(__m512 in){
-      return _mm512_shuffle_f32x4(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1));
-    };
-    static inline __m512 Permute2(__m512 in){
-      return _mm512_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2));
-    };
-    static inline __m512 Permute3(__m512 in){
-      return _mm512_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1));
-    };
-
-    static inline __m512d Permute0(__m512d in){
-      return _mm512_shuffle_f64x2(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2));
-    };
-    static inline __m512d Permute1(__m512d in){
-      return _mm512_shuffle_f64x2(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1));
-    };
-    static inline __m512d Permute2(__m512d in){
-      return _mm512_shuffle_pd(in,in,0x55);
-    };
-    static inline __m512d Permute3(__m512d in){
-      return in;
-    };
-
+#define  VACCTIMESI0d(A,ACC,tmp)  VSHUFd(A,tmp)	
+#define  VACCTIMESI1d(A,ACC,tmp)  "vaddpd  " #tmp "," #ACC "," #ACC"{%k6}" ";\n"
+#define  VACCTIMESI2d(A,ACC,tmp)  "vsubpd  " #tmp "," #ACC "," #ACC"{%k7}" ";\n"
 
 #define VPERM0f(A,B) "vshuff32x4  $0x4e," #A "," #B "," #B ";\n"
 #define VPERM1f(A,B) "vshuff32x4  $0xb1," #A "," #B "," #B ";\n"
@@ -372,19 +327,16 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #endif
 
+////////////////////////////////////////////////////////////	  
 // Knights Corner specials
+////////////////////////////////////////////////////////////	  
+
 #ifdef ASM_IMCI
-#define VSTOREf(OFF,PTR,SRC)   "vmovnrngoaps " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
-#define VSTOREd(OFF,PTR,SRC)   "vmovnrngoapd " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
-  //#define VSTOREf(OFF,PTR,SRC)   "vmovaps " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
-  //#define VSTOREd(OFF,PTR,SRC)   "vmovapd " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
 
-#define VSHUFf(A,DEST)         "vmovaps " #A "{cdab} , " #DEST  ";\n"
-#define VSHUFd(A,DEST)         "vmovapd " #A "{cdab} , " #DEST  ";\n"
-
-// Memops are useful for optimisation
-#define VSHUFMEMd(OFF,A,DEST)  "vpshufd  $0x4e, " #OFF"*64("#A ")," #DEST  ";\n"
-#define VSHUFMEMf(OFF,A,DEST)  "vpshufd  $0xb1, " #OFF"*64("#A ")," #DEST  ";\n"
+#define MASK_REGS \
+  __asm__ ("mov     $0xAAAA, %%eax \n"\
+           "kmov    %%eax, %%k6 \n"\
+           "knot     %%k6, %%k7 \n" : : : "%eax");
 
 #define ZEND1d(Criir,Ciirr, tmp) "vaddpd  " #Criir "{cdab} ," #Criir "," #Criir"{%k6}"  ";\n"
 #define ZEND2d(Criir,Ciirr, tmp) "vsubpd  " #Ciirr "{cdab} ," #Ciirr "," #Criir"{%k7}"  ";\n"
@@ -423,11 +375,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define VACCTIMESMINUSI1f(A,ACC,tmp)  "vsubps  " #A "{cdab}," #ACC "," #ACC"{%k7}" ";\n"
 #define VACCTIMESMINUSI2f(A,ACC,tmp)  "vaddps  " #A "{cdab}," #ACC "," #ACC"{%k6}" ";\n"
 
+	   // Acc = Acc - i A
 #define VACCTIMESMINUSI0d(A,ACC,tmp)  
 #define VACCTIMESMINUSI1d(A,ACC,tmp)  "vsubpd  " #A "{cdab}," #ACC "," #ACC"{%k7}" ";\n"
 #define VACCTIMESMINUSI2d(A,ACC,tmp)  "vaddpd  " #A "{cdab}," #ACC "," #ACC"{%k6}" ";\n"
-
-//#define ZENDf(Criir,Ciirr, tmp)	
 
 //((1<<6)|(0<<4)|(3<<2)|(2)) == 0100,1110 = 0x4e
 //((2<<6)|(3<<4)|(0<<2)|(1)) == 1011,0001 = 0xb1
@@ -443,18 +394,15 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define VPERM3d(A,B) VMOVd(A,B)
 
 #endif
-
                     
 //  const SiteSpinor * ptr = & in._odata[offset];	
 #define LOAD_CHIMU(PTR)	 LOAD_CHIMUi(PTR)
-#define LOAD_CHI(PTR)	 LOAD_CHIi(PTR) 
+#define LOAD_CHI(PTR)	 LOAD64(%r8,PTR) __asm__ ( LOAD_CHIi );
 #define SAVE_UCHI(PTR)	 SAVE_UCHIi(PTR)
 #define SAVE_CHI(PTR)	 SAVE_CHIi(PTR)
 #define SAVE_RESULT(PTR) SAVE_RESULTi(PTR)
 
-#define LOAD_CHIMUi(PTR) \
-	   LOAD64(%r8,PTR)	\
-	   __asm__ (\
+#define LOAD_CHIMUi \
 	   LOAD_CHIMU01i	\
 	   LOAD_CHIMU23i	);
 
@@ -486,16 +434,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 //  const SiteHalfSpinor *ptr = &buf[offset];	
 
-#define LOAD_CHIi(PTR)				\
-  LOAD64(%r8,PTR)					\
-  __asm__ (						\
+#define LOAD_CHIi				\
   VLOAD(0,%r8,Chi_00)					\
   VLOAD(1,%r8,Chi_01)					\
   VLOAD(2,%r8,Chi_02)					\
   VLOAD(3,%r8,Chi_10)					\
   VLOAD(4,%r8,Chi_11)					\
-  VLOAD(5,%r8,Chi_12)					\
-							);
+  VLOAD(5,%r8,Chi_12)	
+	
 
 #define SAVE_UCHIi(PTR)				\
   LOAD64(%r8,PTR)				\
@@ -634,7 +580,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	   ZEND2(UChi_12,Z5,Chi_12)	     );
 
 #define MULT_2SPIN(ptr)	MULT_2SPIN_PF(ptr,ptr,VPREFETCHG);
-
 #define MULT_2SPIN_PFXM(ptr,pf) MULT_2SPIN_PF(ptr,pf,VPREFETCHNTA)
 #define MULT_2SPIN_PFYM(ptr,pf) MULT_2SPIN_PF(ptr,pf,VPREFETCHNTA)
 #define MULT_2SPIN_PFZM(ptr,pf) MULT_2SPIN_PF(ptr,pf,VPREFETCHNTA)
@@ -716,56 +661,23 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 //      hspin(0)=fspin(0)+timesI(fspin(3));
 //      hspin(1)=fspin(1)+timesI(fspin(2));
-//define VTIMESIf(A,DEST, Z)		
-// These don't work if DEST==Z. FIXME.	
-#define XP_PROJ __asm__ (		\
-			 VACCTIMESI(Chimu_30,Chi_00,Z0)	\
-			 VACCTIMESI(Chimu_31,Chi_01,Z1)	\
-			 VACCTIMESI(Chimu_32,Chi_02,Z2)	\
-			 VACCTIMESI(Chimu_20,Chi_10,Z3)	\
-			 VACCTIMESI(Chimu_21,Chi_11,Z4)	\
-			 VACCTIMESI(Chimu_22,Chi_12,Z5)	);
-
 #define XP_PROJMEM(PTR) \
   LOAD64(%r8,PTR)							\
   __asm__ (								\
+	   LOAD_CHIi						\
 	   SHUF_CHIMU23i						\
-	   VACCTIMESI1MEM(Chimu_30,Chi_00,0,%r8)			\
-	   VACCTIMESI1MEM(Chimu_31,Chi_01,1,%r8)			\
-	   VACCTIMESI1MEM(Chimu_32,Chi_02,2,%r8)			\
-	   VACCTIMESI1MEM(Chimu_20,Chi_10,3,%r8)			\
-	   VACCTIMESI1MEM(Chimu_21,Chi_11,4,%r8)			\
-	   VACCTIMESI1MEM(Chimu_22,Chi_12,5,%r8)			\
-	   VACCTIMESI2MEM(Chimu_30,Chi_00,0,%r8)			\
-	   VACCTIMESI2MEM(Chimu_31,Chi_01,1,%r8)			\
-	   VACCTIMESI2MEM(Chimu_32,Chi_02,2,%r8)			\
-	   VACCTIMESI2MEM(Chimu_20,Chi_10,3,%r8)			\
-	   VACCTIMESI2MEM(Chimu_21,Chi_11,4,%r8)			\
-	   VACCTIMESI2MEM(Chimu_22,Chi_12,5,%r8)			);
-
-
-#define YP_PROJ __asm__ ( 			\
-  VSUB(Chimu_30,Chimu_00,Chi_00)\
-  VSUB(Chimu_31,Chimu_01,Chi_01)\
-  VSUB(Chimu_32,Chimu_02,Chi_02)\
-  VADD(Chimu_10,Chimu_20,Chi_10)\
-  VADD(Chimu_11,Chimu_21,Chi_11)\
-  VADD(Chimu_12,Chimu_22,Chi_12) );
-
-#define EVICT_SPINOR(reg) \
-  VEVICT(0,reg)		  \
-  VEVICT(1,reg)		  \
-  VEVICT(2,reg)		  \
-  VEVICT(3,reg)		  \
-  VEVICT(4,reg)		  \
-  VEVICT(5,reg)		  \
-  VEVICT(6,reg)		  \
-  VEVICT(7,reg)		  \
-  VEVICT(8,reg)		  \
-  VEVICT(9,reg)		  \
-  VEVICT(9,reg)		  \
-  VEVICT(10,reg)	  \
-  VEVICT(11,reg)	  
+	   VACCTIMESI1(Chi_00,Chi_00,Chimu_30)		\
+	   VACCTIMESI1(Chi_01,Chi_01,Chimu_31)		\
+	   VACCTIMESI1(Chi_02,Chi_02,Chimu_32)		\
+	   VACCTIMESI1(Chi_10,Chi_10,Chimu_20)		\
+	   VACCTIMESI1(Chi_11,Chi_11,Chimu_21)		\
+	   VACCTIMESI1(Chi_12,Chi_12,Chimu_22)		\
+	   VACCTIMESI2(Chi_00,Chi_00,Chimu_30)		\
+	   VACCTIMESI2(Chi_01,Chi_01,Chimu_31)		\
+	   VACCTIMESI2(Chi_02,Chi_02,Chimu_32)		\
+	   VACCTIMESI2(Chi_10,Chi_10,Chimu_20)		\
+	   VACCTIMESI2(Chi_11,Chi_11,Chimu_21)		\
+	   VACCTIMESI2(Chi_12,Chi_12,Chimu_22)		);
 
 
 #define YP_PROJMEM(ptr) \
@@ -778,43 +690,24 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   VADDMEM(6,%r8,Chimu_10,Chi_10)		\
   VADDMEM(7,%r8,Chimu_11,Chi_11)		\
   VADDMEM(8,%r8,Chimu_12,Chi_12)		);
-  //  EVICT_SPINOR(%r8) 			);
-  
-#define ZP_PROJ __asm__ ( \
-			 VACCTIMESI(Chimu_20,Chi_00,Z0)	\
-			 VACCTIMESI(Chimu_21,Chi_01,Z1)	\
-			 VACCTIMESI(Chimu_22,Chi_02,Z2)	\
-			 VACCTIMESMINUSI(Chimu_30,Chi_10,Z3)	\
-			 VACCTIMESMINUSI(Chimu_31,Chi_11,Z4)	\
-			 VACCTIMESMINUSI(Chimu_32,Chi_12,Z5) );
 
 #define ZP_PROJMEM(PTR) \
   LOAD64(%r8,PTR)							\
   __asm__ (								\
+	   LOAD_CHIi						\
 	   SHUF_CHIMU23i						\
-	   VACCTIMESI1MEM(Chimu_20,Chi_00,0,%r8)			\
-	   VACCTIMESI1MEM(Chimu_21,Chi_01,1,%r8)			\
-	   VACCTIMESI1MEM(Chimu_22,Chi_02,2,%r8)			\
-	   VACCTIMESMINUSI1MEM(Chimu_30,Chi_10,3,%r8)			\
-	   VACCTIMESMINUSI1MEM(Chimu_31,Chi_11,4,%r8)			\
-	   VACCTIMESMINUSI1MEM(Chimu_32,Chi_12,5,%r8)			\
-	   VACCTIMESI2MEM(Chimu_20,Chi_00,0,%r8)			\
-	   VACCTIMESI2MEM(Chimu_21,Chi_01,1,%r8)			\
-	   VACCTIMESI2MEM(Chimu_22,Chi_02,2,%r8)			\
-	   VACCTIMESMINUSI2MEM(Chimu_30,Chi_10,3,%r8)			\
-	   VACCTIMESMINUSI2MEM(Chimu_31,Chi_11,4,%r8)			\
-	   VACCTIMESMINUSI2MEM(Chimu_32,Chi_12,5,%r8)			\
-	   EVICT_SPINOR(%r8) 			);
-
-
-
-#define TP_PROJ __asm__ (			\
-			 VADD(Chimu_00,Chimu_20,Chi_00)	\
-			 VADD(Chimu_01,Chimu_21,Chi_01)	\
-			 VADD(Chimu_02,Chimu_22,Chi_02)	\
-			 VADD(Chimu_10,Chimu_30,Chi_10)	\
-			 VADD(Chimu_11,Chimu_31,Chi_11)	\
-			 VADD(Chimu_12,Chimu_32,Chi_12) );
+	   VACCTIMESI1(Chi_00,Chi_00,Chimu_20)				\
+	   VACCTIMESI1(Chi_01,Chi_01,Chimu_21)		   	        \
+	   VACCTIMESI1(Chi_02,Chi_02,Chimu_22)				\
+	   VACCTIMESMINUSI1(Chi_10,Chi_10,Chimu_30)			\
+	   VACCTIMESMINUSI1(Chi_11,Chi_11,Chimu_31)			\
+	   VACCTIMESMINUSI1(Chi_12,Chi_12,Chimu_32)			\
+	   VACCTIMESI2(Chi_00,Chi_00,Chimu_20)				\
+	   VACCTIMESI2(Chi_01,Chi_01,Chimu_21)				\
+	   VACCTIMESI2(Chi_02,Chi_02,Chimu_22)				\
+	   VACCTIMESMINUSI2(Chi_10,Chi_10,Chimu_30)		\
+	   VACCTIMESMINUSI2(Chi_11,Chi_11,Chimu_31)		\
+	   VACCTIMESMINUSI2(Chi_12,Chi_12,Chimu_32)	);
 
 
 #define TP_PROJMEM(ptr)				\
@@ -826,44 +719,28 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	   VADDMEM(8,%r8,Chimu_02,Chi_02)	\
 	   VADDMEM(9,%r8,Chimu_10,Chi_10)	\
 	   VADDMEM(10,%r8,Chimu_11,Chi_11)	\
-	   VADDMEM(11,%r8,Chimu_12,Chi_12)	\
-	   EVICT_SPINOR(%r8) 			);
-
+	   VADDMEM(11,%r8,Chimu_12,Chi_12)	);
 
 //      hspin(0)=fspin(0)-timesI(fspin(3))
 //      hspin(1)=fspin(1)-timesI(fspin(2))
-#define XM_PROJ __asm__ ( \
- VACCTIMESMINUSI(Chimu_30,Chi_00,Z0)		\
- VACCTIMESMINUSI(Chimu_31,Chi_01,Z1)		\
- VACCTIMESMINUSI(Chimu_32,Chi_02,Z2)		\
- VACCTIMESMINUSI(Chimu_20,Chi_10,Z3)		\
- VACCTIMESMINUSI(Chimu_21,Chi_11,Z4)		\
- VACCTIMESMINUSI(Chimu_22,Chi_12,Z5)		);
 
 #define XM_PROJMEM(PTR) \
-  LOAD64(%r8,PTR)							\
+  LOAD64(%r8,PTR)\
   __asm__ (								\
 	   SHUF_CHIMU23i						\
-	   VACCTIMESMINUSI1MEM(Chimu_30,Chi_00,0,%r8)			\
-	   VACCTIMESMINUSI1MEM(Chimu_31,Chi_01,1,%r8)			\
-	   VACCTIMESMINUSI1MEM(Chimu_32,Chi_02,2,%r8)			\
-	   VACCTIMESMINUSI1MEM(Chimu_20,Chi_10,3,%r8)			\
-	   VACCTIMESMINUSI1MEM(Chimu_21,Chi_11,4,%r8)			\
-	   VACCTIMESMINUSI1MEM(Chimu_22,Chi_12,5,%r8)			\
-	   VACCTIMESMINUSI2MEM(Chimu_30,Chi_00,0,%r8)			\
-	   VACCTIMESMINUSI2MEM(Chimu_31,Chi_01,1,%r8)			\
-	   VACCTIMESMINUSI2MEM(Chimu_32,Chi_02,2,%r8)			\
-	   VACCTIMESMINUSI2MEM(Chimu_20,Chi_10,3,%r8)			\
-	   VACCTIMESMINUSI2MEM(Chimu_21,Chi_11,4,%r8)			\
-	   VACCTIMESMINUSI2MEM(Chimu_22,Chi_12,5,%r8)			);
-
-#define YM_PROJ __asm__ ( \
-  VADD(Chimu_00,Chimu_30,Chi_00)\
-  VADD(Chimu_01,Chimu_31,Chi_01)\
-  VADD(Chimu_02,Chimu_32,Chi_02)\
-  VSUB(Chimu_20,Chimu_10,Chi_10)\
-  VSUB(Chimu_21,Chimu_11,Chi_11)\
-  VSUB(Chimu_22,Chimu_12,Chi_12) );
+	   LOAD_CHIi \
+	   VACCTIMESMINUSI1(Chi_00,Chi_00,Chimu_30)\
+	   VACCTIMESMINUSI1(Chi_01,Chi_01,Chimu_31)\
+	   VACCTIMESMINUSI1(Chi_02,Chi_02,Chimu_32)\
+	   VACCTIMESMINUSI1(Chi_10,Chi_10,Chimu_20)\
+	   VACCTIMESMINUSI1(Chi_11,Chi_11,Chimu_21)\
+	   VACCTIMESMINUSI1(Chi_12,Chi_12,Chimu_22)\
+	   VACCTIMESMINUSI2(Chi_00,Chi_00,Chimu_30)\
+	   VACCTIMESMINUSI2(Chi_01,Chi_01,Chimu_31)\
+	   VACCTIMESMINUSI2(Chi_02,Chi_02,Chimu_32)\
+	   VACCTIMESMINUSI2(Chi_10,Chi_10,Chimu_20)\
+	   VACCTIMESMINUSI2(Chi_11,Chi_11,Chimu_21)\
+	   VACCTIMESMINUSI2(Chi_12,Chi_12,Chimu_22) );
 
 #define YM_PROJMEM(ptr)				\
   LOAD64(%r8,ptr)				\
@@ -874,45 +751,25 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   VADDMEM(11,%r8,Chimu_02,Chi_02)		\
   VSUBMEM(6,%r8,Chimu_10,Chi_10)		\
   VSUBMEM(7,%r8,Chimu_11,Chi_11)		\
-  VSUBMEM(8,%r8,Chimu_12,Chi_12)			\
-  EVICT_SPINOR(%r8) 			);
-
-
-#define ZM_PROJ __asm__ ( \
-  VACCTIMESMINUSI(Chimu_20,Chi_00,Z0)\
-  VACCTIMESMINUSI(Chimu_21,Chi_01,Z1)\
-  VACCTIMESMINUSI(Chimu_22,Chi_02,Z2)\
-  VACCTIMESI(Chimu_30,Chi_10,Z3)\
-  VACCTIMESI(Chimu_31,Chi_11,Z4)\
-  VACCTIMESI(Chimu_32,Chi_12,Z5));
+  VSUBMEM(8,%r8,Chimu_12,Chi_12)			);
 
 #define ZM_PROJMEM(PTR) \
   LOAD64(%r8,PTR)							\
   __asm__ (								\
 	   SHUF_CHIMU23i						\
-	   VACCTIMESMINUSI1MEM(Chimu_20,Chi_00,0,%r8)			\
-	   VACCTIMESMINUSI1MEM(Chimu_21,Chi_01,1,%r8)			\
-	   VACCTIMESMINUSI1MEM(Chimu_22,Chi_02,2,%r8)			\
-	   VACCTIMESI1MEM(Chimu_30,Chi_10,3,%r8)			\
-	   VACCTIMESI1MEM(Chimu_31,Chi_11,4,%r8)			\
-	   VACCTIMESI1MEM(Chimu_32,Chi_12,5,%r8)			\
-	   VACCTIMESMINUSI2MEM(Chimu_20,Chi_00,0,%r8)			\
-	   VACCTIMESMINUSI2MEM(Chimu_21,Chi_01,1,%r8)			\
-	   VACCTIMESMINUSI2MEM(Chimu_22,Chi_02,2,%r8)			\
-	   VACCTIMESI2MEM(Chimu_30,Chi_10,3,%r8)			\
-	   VACCTIMESI2MEM(Chimu_31,Chi_11,4,%r8)			\
-	   VACCTIMESI2MEM(Chimu_32,Chi_12,5,%r8)			\
-	   EVICT_SPINOR(%r8) 			);
-
-
-#define TM_PROJ __asm__ ( \
-  VSUB(Chimu_20,Chimu_00,Chi_00)\
-  VSUB(Chimu_21,Chimu_01,Chi_01)\
-  VSUB(Chimu_22,Chimu_02,Chi_02)\
-  VSUB(Chimu_30,Chimu_10,Chi_10)\
-  VSUB(Chimu_31,Chimu_11,Chi_11)\
-  VSUB(Chimu_32,Chimu_12,Chi_12) );
-
+           LOAD_CHIi \
+	   VACCTIMESMINUSI1(Chi_00,Chi_00,Chimu_20)\
+	   VACCTIMESMINUSI1(Chi_01,Chi_01,Chimu_21)\
+	   VACCTIMESMINUSI1(Chi_02,Chi_02,Chimu_22)\
+	   VACCTIMESI1(Chi_10,Chi_10,Chimu_30)\
+	   VACCTIMESI1(Chi_11,Chi_11,Chimu_31)\
+	   VACCTIMESI1(Chi_12,Chi_12,Chimu_32)\
+	   VACCTIMESMINUSI2(Chi_00,Chi_00,Chimu_20)\
+	   VACCTIMESMINUSI2(Chi_01,Chi_01,Chimu_21)\
+	   VACCTIMESMINUSI2(Chi_02,Chi_02,Chimu_22)\
+	   VACCTIMESI2(Chi_10,Chi_10,Chimu_30)\
+	   VACCTIMESI2(Chi_11,Chi_11,Chimu_31)\
+	   VACCTIMESI2(Chi_12,Chi_12,Chimu_32) );
 
 #define TM_PROJMEM(ptr)				\
   LOAD64(%r8,ptr)				\
@@ -923,8 +780,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   VSUBMEM(8,%r8,Chimu_02,Chi_02)		\
   VSUBMEM(9,%r8,Chimu_10,Chi_10)		\
   VSUBMEM(10,%r8,Chimu_11,Chi_11)		\
-  VSUBMEM(11,%r8,Chimu_12,Chi_12)		\
-  EVICT_SPINOR(%r8) );
+  VSUBMEM(11,%r8,Chimu_12,Chi_12)		);
 
 //      fspin(0)=hspin(0)
 //      fspin(1)=hspin(1)
