@@ -27,7 +27,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid.h>
 #include <PerfCount.h>
-#include <simd/Avx512Asm.h>
+#include <simd/Intel512wilson.h>
 
 
 using namespace Grid;
@@ -261,6 +261,10 @@ int main(int argc,char **argv)
 #undef ZLOAD
 #undef ZMUL
 #undef ZMADD
+#undef VMOVIDUP 
+#undef VMOVRDUP 
+#undef VMADDSUB
+#undef VSHUF
 
 #define VZERO(A) VZEROd(A)
 #define VTIMESI(A,B,C) VTIMESId(A,B,C)
@@ -268,15 +272,19 @@ int main(int argc,char **argv)
 
 #define VLOAD(OFF,PTR,DEST)       VLOADd(OFF,PTR,DEST)
 #define VSTORE(OFF,PTR,SRC)       VSTOREd(OFF,PTR,SRC)
-#define VMUL(Uri,Uir,Chi,UChi,Z)  VMULd(Uri,Uir,Chi,UChi,Z)
-#define VMADD(Uri,Uir,Chi,UChi,Z) VMADDd(Uri,Uir,Chi,UChi,Z)
-#define ZEND1(A,B,C)               ZEND1d(A,B,C)
-#define ZEND2(A,B,C)               ZEND2d(A,B,C)
+#define VMUL(Uri,Uir,Chi)         VMULd(Uri,Uir,Chi)
+#define VMADD(Uri,Uir,Chi)        VMADDd(Uri,Uir,Chi)
+#define ZEND1(A,B,C)              ZEND1d(A,B,C)
+#define ZEND2(A,B,C)              ZEND2d(A,B,C)
 #define ZLOAD(A,B,C,D)            ZLOADd(A,B,C,D)
 #define ZMUL(A,B,C,D,E)           ZMULd(A,B,C,D,E)
 #define ZMADD(A,B,C,D,E)          ZMADDd(A,B,C,D,E)
 #define ZMULMEM2SP(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) ZMULMEM2SPd(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) 
 #define ZMADDMEM2SP(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) ZMADDMEM2SPd(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) 
+#define VMOVIDUP(A,B,C) VMOVIDUPd(A,B,C)
+#define VMOVRDUP(A,B,C) VMOVRDUPd(A,B,C)
+#define VMADDSUB(A,B,accum) VMADDSUBd(A,B,accum) 
+#define VSHUF(A,B) VSHUFd(A,B)
 
 #define zz Z0
 
@@ -424,17 +432,21 @@ void WilsonDslashAvx512(void *ptr1,void *ptr2,void *ptr3)
 #undef VTIMESMINUSI
 #undef ZMULMEM2SP
 #undef ZMADDMEM2SP
+#undef VMOVIDUP 
+#undef VMOVRDUP 
+#undef VMADDSUB
+#undef VSHUF
+
 #define VZERO(A) VZEROf(A)
 #define VMOV(A,B) VMOVf(A,B)
 #define VADD(A,B,C) VADDf(A,B,C)
 #define VSUB(A,B,C) VSUBf(A,B,C)
 #define VTIMESI(A,B,C) VTIMESIf(A,B,C)
 #define VTIMESMINUSI(A,B,C) VTIMESMINUSIf(A,B,C)
-
 #define VLOAD(OFF,PTR,DEST)       VLOADf(OFF,PTR,DEST)
 #define VSTORE(OFF,PTR,SRC)       VSTOREf(OFF,PTR,SRC)
-#define VMUL(Uri,Uir,Chi,UChi,Z)  VMULf(Uri,Uir,Chi,UChi,Z)
-#define VMADD(Uri,Uir,Chi,UChi,Z) VMADDf(Uri,Uir,Chi,UChi,Z)
+#define VMUL(Uri,Uir,Chi)  VMULf(Uri,Uir,Chi)
+#define VMADD(Uri,Uir,Chi) VMADDf(Uri,Uir,Chi)
 #define ZEND1(A,B,C)               ZEND1f(A,B,C)
 #define ZEND2(A,B,C)               ZEND2f(A,B,C)
 #define ZLOAD(A,B,C,D)            ZLOADf(A,B,C,D)
@@ -442,6 +454,10 @@ void WilsonDslashAvx512(void *ptr1,void *ptr2,void *ptr3)
 #define ZMADD(A,B,C,D,E)          ZMADDf(A,B,C,D,E)
 #define ZMULMEM2SP(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)  ZMULMEM2SPf(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) 
 #define ZMADDMEM2SP(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) ZMADDMEM2SPf(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) 
+#define VMOVIDUP(A,B,C) VMOVIDUPf(A,B,C)
+#define VMOVRDUP(A,B,C) VMOVRDUPf(A,B,C)
+#define VMADDSUB(A,B,accum) VMADDSUBf(A,B,accum) 
+#define VSHUF(A,B) VSHUFf(A,B)
 
 void ZmulF(void *ptr1,void *ptr2,void *ptr3)
 {
@@ -528,7 +544,8 @@ void WilsonDslashAvx512F(void *ptr1,void *ptr2,void *ptr3)
 
   LOAD_CHI(ptr1);
 
-  MULT_2SPIN(ptr2);
+  MULT_ADDSUB_2SPIN(ptr2);
+  //MULT_2SPIN(ptr2);
 
   SAVE_UCHI(ptr3);
 

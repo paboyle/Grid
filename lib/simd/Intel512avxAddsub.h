@@ -28,18 +28,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_ASM_AV512_ADDSUB_H
 #define GRID_ASM_AV512_ADDSUB_H
 
-////////////////////////////////////////////////////////////	  
-// Knights Landing specials
-////////////////////////////////////////////////////////////	  
-
-#define VMOVRDUPd(OFF,A,DEST)       "vpshufd  $0x44," #OFF"*64("#A ")," #DEST  ";\n" // 32 bit level: 1,0,3,2
-#define VMOVIDUPd(OFF,A,DEST)       "vpshufd  $0xee," #OFF"*64("#A ")," #DEST  ";\n" // 32 bit level: 3,2,3,2
-
-#define VMOVRDUPf(O,P,DEST)         "vmovsldup " #OFF "*64(" #PTR "), " #DEST  ";\n"
-#define VMOVIDUPf(O,P,DEST)         "vmovshdup " #OFF "*64(" #PTR "), " #DEST  ";\n"
-
-#define VMADDSUBf(Aii,Bri,accum) "vfmaddsub231ps   " #A "," #B "," #accum  ";\n"
-#define VMADDSUBd(Aii,Bri,accum) "vfmaddsub231pd   " #A "," #B "," #accum  ";\n"
 
 ////////////////////////////////////////////////////////////////
 // Building blocks for SU3 x 2spinor
@@ -48,7 +36,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 //  6 Chi shuffles ir,ri
 // 6muls, 30 fmaddsubs
 ////////////////////////////////////////////////////////////////
-#define MULT_ADDSUB_2SPIN_PF(ptr)	\
+#define MULT_ADDSUB_2SPIN(ptr)	\
 	   LOAD64(%r8,ptr)			\
   __asm__ (					\
 	   VMOVIDUPf(0,%r8,Z0 ) \

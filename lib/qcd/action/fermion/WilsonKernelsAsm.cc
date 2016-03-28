@@ -30,7 +30,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #if defined(AVX512) || defined (IMCI)
 //#if defined (IMCI)
 
-#include <simd/Avx512Asm.h>
+#include <simd/Intel512wilson.h>
 
 #undef VLOAD
 #undef VSTORE

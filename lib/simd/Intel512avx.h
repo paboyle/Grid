@@ -84,6 +84,16 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #define ZEND2d(Criir,Ciirr, tmp)  "vshufpd $0x55," #Ciirr "," #Ciirr "," #tmp   ";\n"\
                          	  "vsubpd  " #tmp "," #Ciirr "," #Criir"{%k7};\n" // ri+ir ; ri+ir,rr-ii
+
+#define VMOVRDUPd(OFF,A,DEST)       "vpshufd  $0x44," #OFF "*64(" #A ")," #DEST  ";\n" // 32 bit level: 1,0,3,2
+#define VMOVIDUPd(OFF,A,DEST)       "vpshufd  $0xee," #OFF "*64(" #A ")," #DEST  ";\n" // 32 bit level: 3,2,3,2
+
+#define VMOVRDUPf(OFF,PTR,DEST)         "vmovsldup " #OFF "*64(" #PTR "), " #DEST  ";\n"
+#define VMOVIDUPf(OFF,PTR,DEST)         "vmovshdup " #OFF "*64(" #PTR "), " #DEST  ";\n"
+
+#define VMADDSUBf(A,B,accum) "vfmaddsub231ps   " #A "," #B "," #accum  ";\n"
+#define VMADDSUBd(A,B,accum) "vfmaddsub231pd   " #A "," #B "," #accum  ";\n"
+
                                   
 #define VTIMESI0f(A,DEST, Z)   VSHUFf(A,DEST)	  
 #define VTIMESI1f(A,DEST, Z)   "vaddps  " #DEST "," #Z "," #DEST"{%k6}"  ";\n"

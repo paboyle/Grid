@@ -66,6 +66,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define Uir %zmm24 
 //#define ONE %zmm24 
 #define Uri %zmm25  
+#define T1 %zmm24
+#define T2 %zmm25
 
 #define Z0 %zmm26
 #define Z1 %zmm27
@@ -288,7 +290,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	   ZEND2(UChi_02,Z4,Chi_02)			\
 	   ZEND2(UChi_12,Z5,Chi_12)	     );
 
-#define MULT_2SPIN(ptr)	MULT_2SPIN_PF(ptr,ptr,VPREFETCHG);
+#define MULT_2SPINa(ptr)	MULT_2SPIN_PF(ptr,ptr,VPREFETCHG);
+#define MULT_2SPIN(ptr)	MULT_ADDSUB_2SPIN(ptr);
+
 #define MULT_2SPIN_PFXM(ptr,pf) MULT_2SPIN_PF(ptr,pf,VPREFETCHNTA)
 #define MULT_2SPIN_PFYM(ptr,pf) MULT_2SPIN_PF(ptr,pf,VPREFETCHNTA)
 #define MULT_2SPIN_PFZM(ptr,pf) MULT_2SPIN_PF(ptr,pf,VPREFETCHNTA)
@@ -750,8 +754,63 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   VPERM3(Chi_11,Chi_11)	\
   VPERM3(Chi_12,Chi_12) );
 
-#ifdef AVX512
-#include <simd/Intel512avxAddsub.h>
-#endif
+#define MULT_ADDSUB_2SPIN1(ptr)  \
+           LOAD64(%r8,ptr)                      
+/*
+ * __asm__ (                                     \
+);
+  VMUL(Z0,%zmm2,%zmm3) \
+*/
+#define MULT_ADDSUB_2SPIN(ptr)  \
+           LOAD64(%r8,ptr)                      \
+  __asm__ (                                     \
+           VMOVIDUP(0,%r8,Z0 ) \
+           VMOVIDUP(3,%r8,Z1 )\
+           VMOVIDUP(6,%r8,Z2 )\
+           VSHUF(Chi_00,T1)    \
+           VSHUF(Chi_10,T2)    \
+                                \
+           VMUL(Z0,T1,UChi_00)            VMOVRDUP(0,%r8,Z3 ) \
+           VMUL(Z0,T2,UChi_10)            VMOVRDUP(3,%r8,Z4 ) \
+           VMUL(Z1,T1,UChi_01)            VMOVRDUP(6,%r8,Z5 ) \
+           VMUL(Z1,T2,UChi_11)            VMOVIDUP(1,%r8,Z0 ) \
+           VMUL(Z2,T1,UChi_02)            VMOVIDUP(4,%r8,Z1 ) \
+           VMUL(Z2,T2,UChi_12)            VMOVIDUP(7,%r8,Z2 ) \
+                                \
+           VMADDSUB(Z3,Chi_00,UChi_00)    VSHUF(Chi_01,T1)    \
+           VMADDSUB(Z3,Chi_10,UChi_10)    VSHUF(Chi_11,T2)    \
+           VMADDSUB(Z4,Chi_00,UChi_01)    VMOVRDUP(1,%r8,Z3 ) \
+           VMADDSUB(Z4,Chi_10,UChi_11)\
+           VMADDSUB(Z5,Chi_00,UChi_02)    VMOVRDUP(4,%r8,Z4 ) \
+           VMADDSUB(Z5,Chi_10,UChi_12)\
+                                       \
+           VMADDSUB(Z0,T1,UChi_00)        VMOVRDUP(7,%r8,Z5 ) \
+           VMADDSUB(Z0,T2,UChi_10)\
+           VMADDSUB(Z1,T1,UChi_01)        VMOVIDUP(2,%r8,Z0 ) \
+           VMADDSUB(Z1,T2,UChi_11)\
+           VMADDSUB(Z2,T1,UChi_02)        VMOVIDUP(5,%r8,Z1 ) \
+           VMADDSUB(Z2,T2,UChi_12)        VMOVIDUP(8,%r8,Z2 ) \
+                                                                \
+           VMADDSUB(Z3,Chi_01,UChi_00)    VSHUF(Chi_02,T1)    \
+           VMADDSUB(Z3,Chi_11,UChi_10)    VSHUF(Chi_12,T2)    \
+           VMADDSUB(Z4,Chi_01,UChi_01)    VMOVRDUP(2,%r8,Z3 ) \
+           VMADDSUB(Z4,Chi_11,UChi_11)\
+           VMADDSUB(Z5,Chi_01,UChi_02)    VMOVRDUP(5,%r8,Z4 ) \
+           VMADDSUB(Z5,Chi_11,UChi_12)\
+                                \
+           VMADDSUB(Z0,T1,UChi_00)        VMOVRDUP(8,%r8,Z5 ) \
+           VMADDSUB(Z0,T2,UChi_10)\
+           VMADDSUB(Z1,T1,UChi_01)\
+           VMADDSUB(Z1,T2,UChi_11)\
+           VMADDSUB(Z2,T1,UChi_02)\
+           VMADDSUB(Z2,T2,UChi_12)\
+                                   \
+           VMADDSUB(Z3,Chi_02,UChi_00)\
+           VMADDSUB(Z3,Chi_12,UChi_10)\
+           VMADDSUB(Z4,Chi_02,UChi_01)\
+           VMADDSUB(Z4,Chi_12,UChi_11)\
+           VMADDSUB(Z5,Chi_02,UChi_02)\
+           VMADDSUB(Z5,Chi_12,UChi_12)\
+                                                );
 
 #endif
