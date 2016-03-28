@@ -159,7 +159,7 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField
   else               pf=(void *)&pbuf[SE->_offset];
   
   if ( local ) {
-    XM_PROJMEM(&plocal[offset]);
+    XP_PROJMEM(&plocal[offset]);
     if ( perm) {
       PERMUTE_DIR3; // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
@@ -169,7 +169,7 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField
   {
     MULT_2SPIN_DIR_PFXM(Xm,pf);
   }
-  XM_RECON;
+  XP_RECON;
 
   // Ym
   offset = SE->_offset;
@@ -182,7 +182,7 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField
   else               pf=(void *)&pbuf[SE->_offset];
   
   if ( local ) {
-    YM_PROJMEM(&plocal[offset]);
+    YP_PROJMEM(&plocal[offset]);
     if ( perm) {
       PERMUTE_DIR2; // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
@@ -192,7 +192,7 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField
   {
     MULT_2SPIN_DIR_PFYM(Ym,pf);
   }
-  YM_RECON_ACCUM;
+  YP_RECON_ACCUM;
 
   // Zm
   offset = SE->_offset;
@@ -205,7 +205,7 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField
   else               pf=(void *)&pbuf[SE->_offset];
 
   if ( local ) {
-    ZM_PROJMEM(&plocal[offset]);
+    ZP_PROJMEM(&plocal[offset]);
     if ( perm) {
       PERMUTE_DIR1; // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
@@ -215,7 +215,7 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField
   {
     MULT_2SPIN_DIR_PFZM(Zm,pf);
   }
-  ZM_RECON_ACCUM;
+  ZP_RECON_ACCUM;
 
   // Tm
   offset = SE->_offset;
@@ -228,7 +228,7 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField
 
 
   if ( local ) {
-    TM_PROJMEM(&plocal[offset]);
+    TP_PROJMEM(&plocal[offset]);
     if ( perm) {
       PERMUTE_DIR0; // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
@@ -238,7 +238,7 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField
   {
     MULT_2SPIN_DIR_PFTM(Tm,pf);
   }
-  TM_RECON_ACCUM;
+  TP_RECON_ACCUM;
 
   // Tp
   offset = SE->_offset;
@@ -251,7 +251,7 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField
   else               pf=(void *)&pbuf[SE->_offset];
   
   if ( local ) {
-    TP_PROJMEM(&plocal[offset]);
+    TM_PROJMEM(&plocal[offset]);
     if ( perm) {
       PERMUTE_DIR0; // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
@@ -261,7 +261,7 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField
   {
     MULT_2SPIN_DIR_PFTP(Tp,pf);
   }
-  TP_RECON_ACCUM;
+  TM_RECON_ACCUM;
 
   // Zp
   offset = SE->_offset;
@@ -274,7 +274,7 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField
   else               pf=(void *)&pbuf[SE->_offset];
 
   if ( local ) {
-    ZP_PROJMEM(&plocal[offset]);
+    ZM_PROJMEM(&plocal[offset]);
     if ( perm) {
       PERMUTE_DIR1; // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
@@ -284,7 +284,7 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField
   {
     MULT_2SPIN_DIR_PFZP(Zp,pf);
   }
-  ZP_RECON_ACCUM;
+  ZM_RECON_ACCUM;
 
 
   offset = SE->_offset;
@@ -297,7 +297,7 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField
   else               pf=(void *)&pbuf[SE->_offset];
   
   if ( local ) {
-    YP_PROJMEM(&plocal[offset]);
+    YM_PROJMEM(&plocal[offset]);
     if ( perm) {
       PERMUTE_DIR2; // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
@@ -307,7 +307,7 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField
   {
     MULT_2SPIN_DIR_PFYP(Yp,pf);
   }
-  YP_RECON_ACCUM;
+  YM_RECON_ACCUM;
 
   // Xp
   perm   = SE->_permute;
@@ -322,7 +322,7 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField
   else               pf=(void *)&pbuf[SE->_offset];
 
   if ( local ) {
-    XP_PROJMEM(&plocal[offset]);
+    XM_PROJMEM(&plocal[offset]);
     if ( perm) {
       PERMUTE_DIR3; // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
@@ -332,7 +332,7 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField
   {
     MULT_2SPIN_DIR_PFXP(Xp,pf);
   }
-  XP_RECON_ACCUM;
+  XM_RECON_ACCUM;
 
  debug:
   SAVE_RESULT(&out._odata[ss]);
