@@ -522,7 +522,7 @@ void WilsonKernels<Impl>::DiracOptDhopDir(StencilImpl &st,DoubledGaugeField &U,
 template<class Impl> 
 void WilsonKernels<Impl>::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U,
 					      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-					      int sF,int sU,const FermionField &in, FermionField &out,bool local, bool nonlocal)
+					      int sF,int sU,const FermionField &in, FermionField &out)
 {
   DiracOptDhopSite(st,U,buf,sF,sU,in,out); // will template override for Wilson Nc=3
 }

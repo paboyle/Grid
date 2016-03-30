@@ -152,16 +152,18 @@ namespace Grid {
     {
       // Run a Lanczos with sloppy convergence
 	const int Nstop = nn;
-	const int Nk = nn+10;
-	const int Np = nn+10;
+	const int Nk = nn+20;
+	const int Np = nn+20;
 	const int Nm = Nk+Np;
 	const int MaxIt= 10000;
-	RealD resid = 1.0e-5;
+	RealD resid = 1.0e-3;
 
-	Chebyshev<FineField> Cheb(0.2,5.,11);
+	Chebyshev<FineField> Cheb(0.5,64.0,21);
 	ImplicitlyRestartedLanczos<FineField> IRL(hermop,Cheb,Nstop,Nk,Nm,resid,MaxIt);
+	//	IRL.lock = 1;
 
 	FineField noise(FineGrid); gaussian(RNG,noise);
+	FineField tmp(FineGrid); 
 	std::vector<RealD>     eval(Nm);
 	std::vector<FineField> evec(Nm,FineGrid);
 
@@ -172,16 +174,34 @@ namespace Grid {
 
     	// pull back nn vectors
 	for(int b=0;b<nn;b++){
+
 	  subspace[b]   = evec[b];
+
+	  std::cout << GridLogMessage <<"subspace["<<b<<"] = "<<norm2(subspace[b])<<std::endl;
+
+	  hermop.Op(subspace[b],tmp); 
+	  std::cout<<GridLogMessage << "filtered["<<b<<"] <f|MdagM|f> "<<norm2(tmp)<<std::endl;
+
+	  noise = tmp -  sqrt(eval[b])*subspace[b] ;
+
+	  std::cout<<GridLogMessage << " lambda_"<<b<<" = "<< eval[b] <<"  ;  [ M - Lambda ]_"<<b<<" vec_"<<b<<"  = " <<norm2(noise)<<std::endl;
+
+	  noise = tmp +  eval[b]*subspace[b] ;
+
+	  std::cout<<GridLogMessage << " lambda_"<<b<<" = "<< eval[b] <<"  ;  [ M - Lambda ]_"<<b<<" vec_"<<b<<"  = " <<norm2(noise)<<std::endl;
+
 	}
 	Orthogonalise();
+	for(int b=0;b<nn;b++){
+	  std::cout << GridLogMessage <<"subspace["<<b<<"] = "<<norm2(subspace[b])<<std::endl;
+	}
     }
 
     virtual void CreateSubspace(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,int nn=nbasis) {
 
       RealD scale;
 
-      ConjugateGradient<FineField> CG(5.0e-3,10000);
+      ConjugateGradient<FineField> CG(1.0e-2,10000);
       FineField noise(FineGrid);
       FineField Mn(FineGrid);
 
