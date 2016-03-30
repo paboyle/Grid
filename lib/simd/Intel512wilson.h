@@ -290,17 +290,17 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	   ZEND2(UChi_02,Z4,Chi_02)			\
 	   ZEND2(UChi_12,Z5,Chi_12)	     );
 
-#define MULT_2SPINa(ptr)	MULT_2SPIN_PF(ptr,ptr,VPREFETCHG);
-#define MULT_2SPIN(ptr)	MULT_ADDSUB_2SPIN(ptr);
+#define MULT_2SPIN_PFXM(ptr,pf) MULT_2SPIN(ptr)
+#define MULT_2SPIN_PFYM(ptr,pf) MULT_2SPIN(ptr)
+#define MULT_2SPIN_PFZM(ptr,pf) MULT_2SPIN(ptr)
+#define MULT_2SPIN_PFTM(ptr,pf) MULT_2SPIN(ptr)
+#define MULT_2SPIN_PFTP(ptr,pf) MULT_2SPIN(ptr)
+#define MULT_2SPIN_PFZP(ptr,pf) MULT_2SPIN(ptr)
+#define MULT_2SPIN_PFYP(ptr,pf) MULT_2SPIN(ptr)
+#define MULT_2SPIN_PFXP(ptr,pf) MULT_2SPIN(ptr)
 
-#define MULT_2SPIN_PFXM(ptr,pf) MULT_2SPIN_PF(ptr,pf,VPREFETCHNTA)
-#define MULT_2SPIN_PFYM(ptr,pf) MULT_2SPIN_PF(ptr,pf,VPREFETCHNTA)
-#define MULT_2SPIN_PFZM(ptr,pf) MULT_2SPIN_PF(ptr,pf,VPREFETCHNTA)
-#define MULT_2SPIN_PFTM(ptr,pf) MULT_2SPIN_PF(ptr,pf,VPREFETCHNTA)
-#define MULT_2SPIN_PFTP(ptr,pf) MULT_2SPIN_PF(ptr,pf,VPREFETCHNTA)
-#define MULT_2SPIN_PFZP(ptr,pf) MULT_2SPIN_PF(ptr,pf,VPREFETCHNTA)
-#define MULT_2SPIN_PFYP(ptr,pf) MULT_2SPIN_PF(ptr,pf,VPREFETCH)
-#define MULT_2SPIN_PFXP(ptr,pf) MULT_2SPIN_PF(ptr,pf,VPREFETCHNTA)
+#define MULT_2SPINa(ptr)        MULT_2SPIN_PF(ptr,ptr,VPREFETCHG);
+#define MULT_2SPIN(ptr) MULT_ADDSUB_2SPIN(ptr);
 
 
 #define MULT_2SPIN_PF(ptr,pf,VPF)			\
