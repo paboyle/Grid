@@ -281,11 +281,7 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
 					 DoubledGaugeField & U,
 					 const FermionField &in, FermionField &out,int dag)
 {
-  //  if ( Impl::overlapCommsCompute () ) { 
-  //    DhopInternalCommsOverlapCompute(st,lo,U,in,out,dag);
-  //  } else { 
     DhopInternalCommsThenCompute(st,lo,U,in,out,dag);
-    //  }
 }
 
 template<class Impl>
@@ -368,7 +364,7 @@ PARALLEL_FOR_LOOP
 	      sU = lo.Reorder(sU);
 	    }
 	    sF = s+Ls*sU;
-	    Kernels::DiracOptAsmDhopSite(st,U,st.comm_buf,sF,sU,in,out,(uint64_t *)0);// &buf[0]
+	    Kernels::DiracOptAsmDhopSite(st,U,st.comm_buf,sF,sU,in,out);
 	  }
 	}
       }
@@ -428,130 +424,6 @@ void WilsonFermion5D<Impl>::DhopInternalCommsOverlapCompute(StencilImpl & st, Le
 						     const FermionField &in, FermionField &out,int dag)
 {
   assert(0);
-  //  assert((dag==DaggerNo) ||(dag==DaggerYes));
-  alltime-=usecond();
-
-  Compressor compressor(dag);
-
-  // Assume balanced KMP_AFFINITY; this is forced in GridThread.h
-
-  int threads = GridThread::GetThreads();
-  int HT      = GridThread::GetHyperThreads();
-  int cores   = GridThread::GetCores();
-  int nwork = U._grid->oSites();
-  
-  commtime -=usecond();
-  auto handle = st.HaloExchangeBegin(in,compressor);
-  commtime +=usecond();
-  
-  // Dhop takes the 4d grid from U, and makes a 5d index for fermion
-  // Not loop ordering and data layout.
-  // Designed to create 
-  // - per thread reuse in L1 cache for U
-  // - 8 linear access unit stride streams per thread for Fermion for hw prefetchable.
-  bool local    = true;
-  bool nonlocal = false;
-  dslashtime -=usecond();
-  if ( dag == DaggerYes ) {
-    if( this->HandOptDslash ) {
-PARALLEL_FOR_LOOP
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	int sU=ss;
-	for(int s=0;s<Ls;s++){
-	  int sF = s+Ls*sU;
-	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out,local,nonlocal);
-	  }
-      }
-    } else { 
-PARALLEL_FOR_LOOP
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	{
-	  int sd;
-	  for(sd=0;sd<Ls;sd++){
-	    int sU=ss;
-	    int sF = sd+Ls*sU;
-	    Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out,local,nonlocal);
-	  }
-	}
-      }
-    }
-  } else {
-    if( this->HandOptDslash ) {
-PARALLEL_FOR_LOOP
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	int sU=ss;
-	for(int s=0;s<Ls;s++){
-	  int sF = s+Ls*sU;
-	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sF,sU,in,out,local,nonlocal);
-	}
-      }
-    } else { 
-PARALLEL_FOR_LOOP
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	int sU=ss;
-	for(int s=0;s<Ls;s++){
-	  int sF = s+Ls*sU; 
-	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sF,sU,in,out,local,nonlocal);
-	}
-      }
-    }
-  }
-  dslashtime +=usecond();
-
-  jointime -=usecond();
-  st.HaloExchangeComplete(handle);
-  jointime +=usecond();
-
-  local    = false;
-  nonlocal = true;
-  dslash1time -=usecond();
-  if ( dag == DaggerYes ) {
-    if( this->HandOptDslash ) {
-PARALLEL_FOR_LOOP
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	int sU=ss;
-	for(int s=0;s<Ls;s++){
-	  int sF = s+Ls*sU;
-	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out,local,nonlocal);
-	  }
-      }
-    } else { 
-PARALLEL_FOR_LOOP
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	{
-	  int sd;
-	  for(sd=0;sd<Ls;sd++){
-	    int sU=ss;
-	    int sF = sd+Ls*sU;
-	    Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out,local,nonlocal);
-	  }
-	}
-      }
-    }
-  } else {
-    if( this->HandOptDslash ) {
-PARALLEL_FOR_LOOP
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	int sU=ss;
-	for(int s=0;s<Ls;s++){
-	  int sF = s+Ls*sU;
-	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sF,sU,in,out,local,nonlocal);
-	}
-      }
-    } else { 
-PARALLEL_FOR_LOOP
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	int sU=ss;
-	for(int s=0;s<Ls;s++){
-	  int sF = s+Ls*sU; 
-	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sF,sU,in,out,local,nonlocal);
-	}
-      }
-    }
-  }
-  dslash1time +=usecond();
-  alltime+=usecond();
-
 }
 
 template<class Impl>
