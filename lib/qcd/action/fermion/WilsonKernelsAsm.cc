@@ -43,6 +43,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #undef VZERO
 #undef VTIMESI
 #undef VTIMESMINUSI
+#undef VMOVIDUP 
+#undef VMOVRDUP 
+#undef VMADDSUB
+#undef VSHUF
 
 #define VZERO(A)                  VZEROf(A)
 #define VMOV(A,B)                 VMOVf(A,B)
@@ -51,8 +55,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #define VADD(A,B,C)               VADDf(A,B,C)
 #define VSUB(A,B,C)               VSUBf(A,B,C)
-#define VMUL(Uri,Uir,Chi,UChi,Z)  VMULf(Uri,Uir,Chi,UChi,Z)
-#define VMADD(Uri,Uir,Chi,UChi,Z) VMADDf(Uri,Uir,Chi,UChi,Z)
+#define VMUL(Uri,Uir,Chi)  VMULf(Uri,Uir,Chi)
+#define VMADD(Uri,Uir,Chi) VMADDf(Uri,Uir,Chi)
 
 #define VTIMESI(A,B,C)            VTIMESIf(A,B,C)
 #define VTIMESMINUSI(A,B,C)       VTIMESMINUSIf(A,B,C)
@@ -96,6 +100,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #define VADDMEM(O,A,B,C)            VADDMEMf(O,A,B,C)
 #define VSUBMEM(O,A,B,C)            VSUBMEMf(O,A,B,C)
+#define VMOVIDUP(A,B,C) VMOVIDUPf(A,B,C)
+#define VMOVRDUP(A,B,C) VMOVRDUPf(A,B,C)
+#define VMADDSUB(A,B,accum) VMADDSUBf(A,B,accum) 
+#define VSHUF(A,B) VSHUFf(A,B)
 
 #define ZMULMEM2SP(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)  ZMULMEM2SPf(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) 
 #define ZMADDMEM2SP(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) ZMADDMEM2SPf(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) 

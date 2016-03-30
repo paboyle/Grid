@@ -318,7 +318,10 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   exit(0);
   return;
 };
-
+#ifdef GRID_FPE
+#define _GNU_SOURCE
+#include <fenv.h>
+#endif
 void Grid_debug_handler_init(void)
 {
   struct sigaction sa,osa;
@@ -327,5 +330,9 @@ void Grid_debug_handler_init(void)
   sa.sa_flags    = SA_SIGINFO;
   sigaction(SIGSEGV,&sa,NULL);
   sigaction(SIGTRAP,&sa,NULL);
+#ifdef GRID_FPE
+  feenableexcept( FE_INVALID|FE_OVERFLOW|FE_DIVBYZERO);
+  sigaction(SIGFPE,&sa,NULL);
+#endif
 }
 }
