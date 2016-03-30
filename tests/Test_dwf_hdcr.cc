@@ -329,7 +329,7 @@ public:
     CoarseVector Ctmp(_CoarseOperator.Grid());
     CoarseVector Csol(_CoarseOperator.Grid()); Csol=zero;
 
-    ConjugateGradient<CoarseVector>  CG(1.0e-4,100000);
+    ConjugateGradient<CoarseVector>  CG(3.0e-3,100000);
     //    ConjugateGradient<FineField>    fCG(3.0e-2,1000);
 
     HermitianLinearOperator<CoarseOperator,CoarseVector>  HermOp(_CoarseOperator);
@@ -560,8 +560,8 @@ int main (int argc, char ** argv)
   assert ( (nbasis & 0x1)==0);
   int nb=nbasis/2;
   std::cout<<GridLogMessage << " nbasis/2 = "<<nb<<std::endl;
-  Aggregates.CreateSubspace(RNG5,HermDefOp,nb);
-    //  Aggregates.CreateSubspaceLanczos(RNG5,HermDefOp,nb);
+  //  Aggregates.CreateSubspace(RNG5,HermDefOp,nb);
+  Aggregates.CreateSubspaceLanczos(RNG5,HermDefOp,nb);
   for(int n=0;n<nb;n++){
     G5R5(Aggregates.subspace[n+nb],Aggregates.subspace[n]);
     std::cout<<GridLogMessage<<n<<" subspace "<<norm2(Aggregates.subspace[n+nb])<<" "<<norm2(Aggregates.subspace[n]) <<std::endl;

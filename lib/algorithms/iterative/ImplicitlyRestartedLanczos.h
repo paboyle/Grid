@@ -637,21 +637,20 @@ until convergence
 	abort();
 	
       converged:
-	// Sorting
-	
-	eval.clear();
-	evec.clear();
-	for(int i=0; i<Nconv; ++i){
-	  eval.push_back(eval2[Iconv[i]]);
-	  evec.push_back(B[Iconv[i]]);
-	}
-	_sort.push(eval,evec,Nconv);
-	
-	std::cout << "\n Converged\n Summary :\n";
-	std::cout << " -- Iterations  = "<< Nconv  << "\n";
-	std::cout << " -- beta(k)     = "<< beta_k << "\n";
-	std::cout << " -- Nconv       = "<< Nconv  << "\n";
-      }
+       // Sorting
+       eval.resize(Nconv);
+       evec.resize(Nconv,grid);
+       for(int i=0; i<Nconv; ++i){
+         eval[i] = eval2[Iconv[i]];
+         evec[i] = B[Iconv[i]];
+       }
+      _sort.push(eval,evec,Nconv);
+
+      std::cout << "\n Converged\n Summary :\n";
+      std::cout << " -- Iterations  = "<< Nconv  << "\n";
+      std::cout << " -- beta(k)     = "<< beta_k << "\n";
+      std::cout << " -- Nconv       = "<< Nconv  << "\n";
+     }
 
     /////////////////////////////////////////////////
     // Adapted from Rudy's lanczos factor routine
