@@ -120,6 +120,13 @@ namespace Grid {
 			FermionField &out,
 			int dag);
 
+      void DhopInternalOMPbench(StencilImpl & st,
+				LebesgueOrder &lo,
+				DoubledGaugeField &U,
+				const FermionField &in, 
+				FermionField &out,
+				int dag);
+
       void DhopInternalCommsThenCompute(StencilImpl & st,
 			LebesgueOrder &lo,
 			DoubledGaugeField &U,
