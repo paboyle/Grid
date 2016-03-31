@@ -109,12 +109,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #undef VMOVIDUP
 #undef VMOVRDUP
-#undef VMADDSBUB
+#undef VMADDSUB
 #undef VSHUF
 #define VMOVIDUP(A,B,C)                                  VMOVIDUPd(A,B,C)
 #define VMOVRDUP(A,B,C)                                  VMOVRDUPd(A,B,C)
 #define VMADDSUB(A,B,accum)                              VMADDSUBd(A,B,accum) 
-#define VSHUD(A,B)                                       VSHUFd(A,B)
+#define VSHUF(A,B)                                       VSHUFd(A,B)
 
 
 #undef ZEND1
