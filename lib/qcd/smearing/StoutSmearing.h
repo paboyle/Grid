@@ -20,10 +20,14 @@ namespace Grid {
     public:
       INHERIT_GIMPL_TYPES(Gimpl)
       
-      Smear_Stout(Smear < Gimpl >* base):SmearBase(base){}
+      Smear_Stout(Smear < Gimpl >* base):SmearBase(base){
+	static_assert(Nc==3, "Stout smearing currently implemented only for Nc==3");
+      }
       
       /*! Default constructor */
-      Smear_Stout():SmearBase(new Smear_APE < Gimpl > ()){}
+      Smear_Stout():SmearBase(new Smear_APE < Gimpl > ()){
+	static_assert(Nc==3, "Stout smearing currently implemented only for Nc==3");
+      }
       
       ~Smear_Stout(){}
       

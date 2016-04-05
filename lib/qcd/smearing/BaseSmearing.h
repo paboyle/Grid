@@ -7,7 +7,7 @@
 template <class Gimpl> 
 class Smear{
 public:
-  INHERIT_GIMPL_TYPES(Gimpl)
+  INHERIT_GIMPL_TYPES(Gimpl) // inherits the types for the gauge fields
 
   virtual ~Smear(){}
   virtual void smear     (GaugeField&,const GaugeField&)const = 0;

@@ -81,11 +81,22 @@ public:
       NumTraj = ivec[0];
     }
 
-    // Create integrator
-    typedef MinimumNorm2<GaugeField>  IntegratorType;// change here to change the algorithm
-    IntegratorParameters MDpar(20);
-    IntegratorType MDynamics(UGrid,MDpar, TheAction);
 
+    GridSerialRNG    sRNG;
+    GridParallelRNG  pRNG(UGrid);
+    LatticeGaugeField  U(UGrid); // change this to an extended field (smearing class)
+
+    std::vector<int> SerSeed({1,2,3,4,5});
+    std::vector<int> ParSeed({6,7,8,9,10});
+
+    
+    // Create integrator, including the smearing policy
+    SmearedConfiguration<Gimpl> SmearingPolicy; // simplest empty smearer, construct here more complex smearers
+    typedef MinimumNorm2<GaugeField, SmearedConfiguration<Gimpl> >  IntegratorType;// change here to change the algorithm
+    IntegratorParameters MDpar(20);
+    IntegratorType MDynamics(UGrid, MDpar, TheAction, SmearingPolicy);
+
+    
     // Checkpoint strategy
     NerscHmcCheckpointer<Gimpl> Checkpoint(std::string("ckpoint_lat"),std::string("ckpoint_rng"),1);
     PlaquetteLogger<Gimpl>      PlaqLog(std::string("plaq"));
@@ -94,12 +105,6 @@ public:
     HMCpar.StartTrajectory = StartTraj;
     HMCpar.Trajectories    = NumTraj;
     
-    GridSerialRNG    sRNG;
-    GridParallelRNG  pRNG(UGrid);
-    LatticeGaugeField  U(UGrid); // change this to an extended field (smearing class)
-
-    std::vector<int> SerSeed({1,2,3,4,5});
-    std::vector<int> ParSeed({6,7,8,9,10});
 
     if ( StartType == HotStart ) {
       // Hot start
@@ -129,7 +134,11 @@ public:
       Checkpoint.CheckpointRestore(StartTraj, U, sRNG, pRNG);
     }
 
-    HybridMonteCarlo<GaugeField,IntegratorType>  HMC(HMCpar, MDynamics,sRNG,pRNG,U); // pass the extended field
+    // Attach the gauge field to the smearing Policy and create the fill the smeared set
+    // notice that the unit configuration is singular in this procedure
+    SmearingPolicy.set_GaugeField(U);
+    
+    HybridMonteCarlo<GaugeField,IntegratorType>  HMC(HMCpar, MDynamics,sRNG,pRNG,U); 
     HMC.AddObservable(&Checkpoint);
     HMC.AddObservable(&PlaqLog);
     

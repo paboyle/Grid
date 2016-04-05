@@ -160,7 +160,7 @@ namespace Grid{
       /////////////////////////////////////////
       // Constructor
       /////////////////////////////////////////
-      HybridMonteCarlo(HMCparameters Pms,  IntegratorType &_Int, GridSerialRNG &_sRNG, GridParallelRNG &_pRNG, GaugeField &_U ) :
+      HybridMonteCarlo(HMCparameters Pms,  IntegratorType &_Int, GridSerialRNG &_sRNG, GridParallelRNG &_pRNG, GaugeField &_U) :
         Params(Pms), 
 	TheIntegrator(_Int), 
 	sRNG(_sRNG),

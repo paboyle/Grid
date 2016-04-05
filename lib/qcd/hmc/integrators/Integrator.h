@@ -68,7 +68,7 @@ namespace Grid{
     };
 
     /*! @brief Class for Molecular Dynamics management */   
-    template<class GaugeField>
+    template<class GaugeField, class SmearingPolicy>
     class Integrator {
 
     protected:
@@ -85,6 +85,8 @@ namespace Grid{
 
       GaugeField P;
 
+      SmearingPolicy &Smearer;
+      
       // Should match any legal (SU(n)) gauge field
       // Need to use this template to match Ncol to pass to SU<N> class
       template<int Ncol,class vec> void generate_momenta(Lattice< iVector< iScalar< iMatrix<vec,Ncol> >, Nd> > & P,GridParallelRNG& pRNG){
@@ -113,7 +115,9 @@ namespace Grid{
       void update_P(GaugeField &Mom,GaugeField&U, int level,double ep){
 	for(int a=0; a<as[level].actions.size(); ++a){
 	  GaugeField force(U._grid);
-	  as[level].actions.at(a)->deriv(U,force);
+	  as[level].actions.at(a)->deriv(U,force); // deriv should not include Ta
+	  if (as[level].actions.at(a)->is_smeared) Smearer.smeared_force(force);
+	  force = Ta(force);
 	  Mom = Mom - force*ep;
 	}
       }
@@ -137,6 +141,8 @@ namespace Grid{
 	  ProjectOnGroup(Umu);
 	  PokeIndex<LorentzIndex>(U, Umu, mu);
 	}
+	// Update the smeared fields, can be implemented as observer
+	Smearer.set_GaugeField(U);
       }
       
       virtual void step (GaugeField& U,int level, int first,int last)=0;
@@ -145,14 +151,17 @@ namespace Grid{
 
       Integrator(GridBase* grid, 
 		 IntegratorParameters Par,
-		 ActionSet<GaugeField> & Aset):
+		 ActionSet<GaugeField> & Aset,
+		 SmearingPolicy &Sm):
           Params(Par),
     	  as(Aset),
 	  P(grid),
-	  levels(Aset.size())
+	  levels(Aset.size()),
+	  Smearer(Sm)
       {
 	t_P.resize(levels,0.0);
 	t_U=0.0;
+	// initialization of smearer delegated outside of Integrator
       };
       
       virtual ~Integrator(){}
@@ -163,7 +172,10 @@ namespace Grid{
 	generate_momenta(P,pRNG);
 	for(int level=0; level< as.size(); ++level){
 	  for(int actionID=0; actionID<as[level].actions.size(); ++actionID){
-	    as[level].actions.at(actionID)->refresh(U, pRNG);
+	    // get gauge field from the SmearingPolicy and
+	    // based on the boolean is_smeared in actionID
+	    GaugeField& Us = Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
+	    as[level].actions.at(actionID)->refresh(Us, pRNG);
 	  }
 	}
       }
@@ -186,7 +198,10 @@ namespace Grid{
 	// Actions
 	for(int level=0; level<as.size(); ++level){
 	  for(int actionID=0; actionID<as[level].actions.size(); ++actionID){
-	    Hterm = as[level].actions.at(actionID)->S(U);
+	    // get gauge field from the SmearingPolicy and
+	    // based on the boolean is_smeared in actionID
+	    GaugeField& Us = Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
+	    Hterm = as[level].actions.at(actionID)->S(Us);
 	    std::cout<<GridLogMessage << "Level "<<level<<" term "<<actionID<<" H = "<<Hterm<<std::endl;
 	    H += Hterm;
 	  }

@@ -35,21 +35,22 @@ namespace Grid {
       Smear_APE():rho(set_rho(1.0)){}
       ~Smear_APE(){}
 
-
       void smear(GaugeField& u_smr, const GaugeField& U)const{
 	GridBase *grid = U._grid;
 	double d_rho;
 	GaugeLinkField Cup(grid), tmp_stpl(grid);
 	WilsonLoops<Gimpl> WL;
-	u_smr = zero; // probably unecessary
+	u_smr = zero; 
 
 	for(int mu=0; mu<Nd; ++mu){
 	  Cup = zero;
 	  for(int nu=0; nu<Nd; ++nu){
 	    d_rho = rho[mu + Nd * nu];
+	    // get the staple in direction mu, nu
 	    WL.Staple(tmp_stpl, U, mu, nu);  //nb staple conventions of IroIro and Grid differ by a dag
 	    Cup += tmp_stpl*d_rho;
 	  }
+	  // save the Cup link-field on the u_smr gauge-field
 	  pokeLorentz(u_smr, adj(Cup), mu); // u_smr[mu] = Cup^dag
 	}
       }
@@ -66,8 +67,10 @@ namespace Grid {
 	int vol = U._grid->gSites();
 	
 	WilsonLoops<Gimpl> WL;
-	GaugeLinkField staple(grid), u_tmp(grid), iLambda_mu(grid), iLambda_nu(grid);
-	GaugeLinkField U_mu(grid), U_nu(grid), sh_field(grid), temp_Sigma(grid);
+	GaugeLinkField staple(grid), u_tmp(grid);
+	GaugeLinkField iLambda_mu(grid), iLambda_nu(grid);
+	GaugeLinkField U_mu(grid), U_nu(grid);
+	GaugeLinkField sh_field(grid), temp_Sigma(grid);
 	Real rho_munu, rho_numu;
     
 	for(int mu = 0; mu < Nd; ++mu){

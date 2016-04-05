@@ -22,7 +22,7 @@ namespace Grid {
       It stores a list of smeared configurations.
     */
     template <class Gimpl>
-    class SmearedConfiguration {
+      class SmearedConfiguration {
     public:
       INHERIT_GIMPL_TYPES(Gimpl) ;
       
@@ -33,17 +33,23 @@ namespace Grid {
       
       // Member functions
       //====================================================================
-      void fill_smearedSet(){
-	GaugeField previous_u;
+      void fill_smearedSet(GaugeField& U){
+	ThinLinks = &U; //attach the smearing routine to the field U
+	//check that the pointer is not null
+	if (ThinLinks==NULL) 
+	  std::cout << GridLogError << "[SmearedConfiguration] Error in ThinLinks pointer\n";
 	
-	std::cout<< GridLogDebug << "[SmearedConfiguration] Filling SmearedSet\n";
-	
-	previous_u = *ThinLinks;
-	for(int smearLvl = 0; smearLvl < smearingLevels; ++smearLvl){
-	  StoutSmearing.smear(SmearedSet[smearLvl],previous_u);
-	  previous_u = SmearedSet[smearLvl];
+	if (smearingLevels > 0){
+	  GaugeField previous_u(U._grid);
+	  std::cout<< GridLogDebug << "[SmearedConfiguration] Filling SmearedSet\n";
+	  
+	  previous_u = *ThinLinks;
+	  for(int smearLvl = 0; smearLvl < smearingLevels; ++smearLvl){
+	    StoutSmearing.smear(SmearedSet[smearLvl],previous_u);
+	    previous_u = SmearedSet[smearLvl];
+	  }
+
 	}
-	
       }
       //====================================================================
       GaugeField AnalyticSmearedForce(const GaugeField& SigmaKPrime, 
@@ -86,9 +92,9 @@ namespace Grid {
 	
 	LatticeReal u(grid), w(grid);
 	LatticeComplex f0(grid), f1(grid), f2(grid);
-	LatticeReal xi0(grid), xi1(grid), fden(grid), tmp(grid);
+	LatticeReal xi0(grid), xi1(grid), tmp(grid);
 	LatticeReal u2(grid), w2(grid), cosw(grid);
-	LatticeComplex emiu(grid), e2iu(grid), qt(grid);
+	LatticeComplex emiu(grid), e2iu(grid), qt(grid), fden(grid);
 	LatticeComplex r01(grid), r11(grid), r21(grid), r02(grid), r12(grid);
 	LatticeComplex r22(grid), tr1(grid), tr2(grid);
 	LatticeComplex b10(grid), b11(grid), b12(grid), b20(grid), b21(grid), b22(grid);
@@ -173,63 +179,67 @@ namespace Grid {
 				    links configuration */
       
       /*! @brief Standard constructor */
-      SmearedConfiguration(GridCartesian * UGrid,
-			   unsigned int Nsmear, 
-			   Smear_Stout<Gimpl>& Stout):
-	smearingLevels(Nsmear),
+    SmearedConfiguration(GridCartesian * UGrid,
+			 unsigned int Nsmear, 
+			 Smear_Stout<Gimpl>& Stout):
+      smearingLevels(Nsmear),
 	StoutSmearing(Stout),
-	ThinLinks(new GaugeField(UGrid)){
+	ThinLinks(NULL){
 	for (unsigned int i=0; i< smearingLevels; ++i)
 	  SmearedSet.push_back(*(new GaugeField(UGrid)));
       }
       
       /*! For just thin links */
-      SmearedConfiguration(GridCartesian * UGrid):
-	smearingLevels(0),
+    SmearedConfiguration():
+      smearingLevels(0),
 	StoutSmearing(),
-	SmearedSet(0),
-	ThinLinks(new GaugeField(UGrid)){}
+	SmearedSet(),
+	ThinLinks(NULL){}
       
-      void set_GaugeField(){ fill_smearedSet(); }
+      
+      // attach the smeared routines to the thin links U and fill the smeared set
+      void set_GaugeField(GaugeField& U){ fill_smearedSet(U);}
+      
       void smeared_force(GaugeField& SigmaTilde) const{
 	GaugeField force = SigmaTilde;//actually = U*SigmaTilde, check this for Grid
 	GaugeLinkField tmp_mu(SigmaTilde._grid);
 	
 	for (int mu = 0; mu < Nd; mu++){
 	  tmp_mu = adj(peekLorentz(SmearedSet[smearingLevels-1], mu)) * peekLorentz(force,mu);
-	  pokeLorentz(force, tmp_mu, mu);
+	    pokeLorentz(force, tmp_mu, mu);
 	}
 	for(int ismr = smearingLevels - 1; ismr > 0; --ismr)
 	  force = AnalyticSmearedForce(force,get_smeared_conf(ismr-1));
-
+	
 	force = AnalyticSmearedForce(force,*ThinLinks);
-
+	
 	for (int mu = 0; mu < Nd; mu++){
 	  tmp_mu = peekLorentz(*ThinLinks, mu) * peekLorentz(force, mu);
 	  pokeLorentz(SigmaTilde, tmp_mu, mu);
 	}
       }
-
-
-      GaugeField* get_SmearedU() const{ 
-	return const_cast<GaugeField*>(&(SmearedSet[smearingLevels-1]));
+      
+      
+      GaugeField& get_SmearedU(){ 
+	return SmearedSet[smearingLevels-1];
       }
-
-      GaugeField* get_U(bool smeared=false) const { 
+      
+      GaugeField& get_U(bool smeared=false) { 
 	// get the config, thin links by default
 	if (smeared){
 	  if (smearingLevels) return get_SmearedU();
-	  else                return ThinLinks;
+	  else                return *ThinLinks;
 	}
-	else return ThinLinks;
+	else return *ThinLinks;
       }
       
     };
     
     
   }
-
+  
 }
+
 
 
 
