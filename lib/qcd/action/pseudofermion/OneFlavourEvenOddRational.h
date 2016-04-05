@@ -201,7 +201,7 @@ namespace Grid{
 
 	}
 
-	dSdU = Ta(dSdU);
+	//dSdU = Ta(dSdU);
 
       };
     };
