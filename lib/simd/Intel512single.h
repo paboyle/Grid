@@ -109,7 +109,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #undef VMOVIDUP
 #undef VMOVRDUP
-#undef VMADDSBUB
+#undef VMADDSUB
 #undef VSHUF
 #define VMOVIDUP(A,B,C)                                  VMOVIDUPf(A,B,C)
 #define VMOVRDUP(A,B,C)                                  VMOVRDUPf(A,B,C)

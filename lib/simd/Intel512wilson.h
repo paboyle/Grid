@@ -302,7 +302,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define MULT_2SPIN_PFXP(ptr,pf) MULT_2SPIN(ptr)
 
 // MULT_2SPINa(ptr)        MULT_2SPIN_PF(ptr,ptr,VPREFETCHG);
-#define MULT_2SPIN(ptr) MULT_ADDSUB_2SPIN(ptr);
 
 #if 0
 #define MULT_2SPIN_PF(ptr,pf,VPF)			\
@@ -815,5 +814,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
            VMADDSUB(Z5,Chi_02,UChi_02)\
            VMADDSUB(Z5,Chi_12,UChi_12)\
                                                 );
+
+#define MULT_2SPIN(ptr) MULT_ADDSUB_2SPIN(ptr)
 
 #endif
