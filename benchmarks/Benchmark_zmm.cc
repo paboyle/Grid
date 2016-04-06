@@ -27,20 +27,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid.h>
 #include <PerfCount.h>
-#include <simd/Intel512wilson.h>
 
 
 using namespace Grid;
 using namespace Grid::QCD;
-
-void ZmulF(void *ptr1,void *ptr2,void *ptr3);
-void Zmul(void *ptr1,void *ptr2,void *ptr3);
-void WilsonDslashAvx512(void *ptr1,void *ptr2,void *ptr3);
-void WilsonDslashAvx512F(void *ptr1,void *ptr2,void *ptr3);
-void TimesIAvx512F(void *ptr1,void *ptr3);
-void TimesIAvx512(void *ptr1,void *ptr3);
-void TimesMinusIAvx512F(void *ptr1,void *ptr3);
-void TimesMinusIAvx512(void *ptr1,void *ptr3);
 
 
 int bench(std::ofstream &os, std::vector<int> &latt4,int Ls);
@@ -55,7 +45,7 @@ int main(int argc,char **argv)
     for(int m=1;m<=2;m++){
       for(int Ls=8;Ls<=16;Ls+=8){
 	std::vector<int> grid({L,L,m*L,m*L});
-	bench(os,latt4,Ls);
+	bench(os,grid,Ls);
       }
     }
   }
@@ -134,6 +124,7 @@ int bench(std::ofstream &os, std::vector<int> &latt4,int Ls)
   mfa = flops*ncall/(t1-t0);
   std::cout<<GridLogMessage << "Called ASM Dw"<< " mflop/s =   "<< mfa<<std::endl;
 
+  int dag=DaggerNo;
   t0=usecond();
   for(int i=0;i<1;i++){
     Dw.DhopInternalOMPbench(Dw.StencilOdd,Dw.LebesgueEvenOdd,Dw.UmuEven,srce,junk,dag);
