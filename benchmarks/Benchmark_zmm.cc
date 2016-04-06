@@ -41,7 +41,7 @@ int main(int argc,char **argv)
   std::ofstream os("zmm.dat");
 
   os << "#V Ls Lxy Lzt C++ Asm OMP L1 " <<std::endl;
-  for(int L=4;L<32;L+=2){
+  for(int L=8;L<32;L+=2){
     for(int m=1;m<=2;m++){
       for(int Ls=8;Ls<=16;Ls+=8){
 	std::vector<int> grid({L,L,m*L,m*L});
@@ -127,7 +127,7 @@ int bench(std::ofstream &os, std::vector<int> &latt4,int Ls)
   int dag=DaggerNo;
   t0=usecond();
   for(int i=0;i<1;i++){
-    Dw.DhopInternalOMPbench(Dw.StencilOdd,Dw.LebesgueEvenOdd,Dw.UmuEven,srce,junk,dag);
+    Dw.DhopInternalOMPbench(Dw.StencilEven,Dw.LebesgueEvenOdd,Dw.UmuOdd,srce,resulta,dag);
   }
   t1=usecond();
   mfo = flops*100/(t1-t0);
@@ -135,7 +135,7 @@ int bench(std::ofstream &os, std::vector<int> &latt4,int Ls)
 
   t0=usecond();
   for(int i=0;i<1;i++){
-    Dw.DhopInternalL1bench(Dw.StencilOdd,Dw.LebesgueEvenOdd,Dw.UmuEven,srce,junk,dag);
+    Dw.DhopInternalL1bench(Dw.StencilEven,Dw.LebesgueEvenOdd,Dw.UmuOdd,srce,resulta,dag);
   }
   t1=usecond();
   mfl1= flops*100/(t1-t0);
@@ -147,6 +147,7 @@ int bench(std::ofstream &os, std::vector<int> &latt4,int Ls)
      << mfo<<" "
      << mfl1<<std::endl;
 
+#if 0
   for(int i=0;i< PerformanceCounter::NumTypes(); i++ ){
     Dw.DhopOE(srce,resulta,0);
     PerformanceCounter Counter(i);
@@ -155,6 +156,7 @@ int bench(std::ofstream &os, std::vector<int> &latt4,int Ls)
     Counter.Stop();
     Counter.Report();
   }
+#endif
   //resulta = (-0.5) * resulta;
 
   diff = resulto-resulta;
