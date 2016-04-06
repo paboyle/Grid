@@ -41,10 +41,14 @@ int main(int argc,char **argv)
   std::ofstream os("zmm.dat");
 
   os << "#V Ls Lxy Lzt C++ Asm OMP L1 " <<std::endl;
-  for(int L=8;L<32;L+=2){
+  for(int L=8;L<=32;L+=4){
     for(int m=1;m<=2;m++){
       for(int Ls=8;Ls<=16;Ls+=8){
 	std::vector<int> grid({L,L,m*L,m*L});
+	for(int i=0;i<4;i++) { 
+	  std::cout << grid[i]<<"x";
+	}
+	std::cout << Ls<<std::endl;
 	bench(os,grid,Ls);
       }
     }
