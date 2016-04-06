@@ -35,17 +35,21 @@ namespace Grid {
       //====================================================================
       void fill_smearedSet(GaugeField& U){
 	ThinLinks = &U; //attach the smearing routine to the field U
-	//check that the pointer is not null
+
+	//check the pointer is not null
 	if (ThinLinks==NULL) 
 	  std::cout << GridLogError << "[SmearedConfiguration] Error in ThinLinks pointer\n";
 	
 	if (smearingLevels > 0){
-	  GaugeField previous_u(U._grid);
 	  std::cout<< GridLogDebug << "[SmearedConfiguration] Filling SmearedSet\n";
+	  GaugeField previous_u(ThinLinks->_grid);
+	  std::cout<< GridLogDebug << "[SmearedConfiguration] Loop\n";
 	  
 	  previous_u = *ThinLinks;
 	  for(int smearLvl = 0; smearLvl < smearingLevels; ++smearLvl){
+	    std::cout<< GridLogDebug << "[SmearedConfiguration] Loop: "<< smearLvl << "\n";
 	    StoutSmearing.smear(SmearedSet[smearLvl],previous_u);
+	    std::cout<< GridLogDebug << "[SmearedConfiguration] Loop assign: "<< smearLvl << "\n";
 	    previous_u = SmearedSet[smearLvl];
 	  }
 
@@ -201,22 +205,24 @@ namespace Grid {
       void set_GaugeField(GaugeField& U){ fill_smearedSet(U);}
       
       void smeared_force(GaugeField& SigmaTilde) const{
-	GaugeField force = SigmaTilde;//actually = U*SigmaTilde, check this for Grid
-	GaugeLinkField tmp_mu(SigmaTilde._grid);
-	
-	for (int mu = 0; mu < Nd; mu++){
-	  tmp_mu = adj(peekLorentz(SmearedSet[smearingLevels-1], mu)) * peekLorentz(force,mu);
+	if (smearingLevels > 0){
+	  GaugeField force = SigmaTilde;//actually = U*SigmaTilde, check this for Grid
+	  GaugeLinkField tmp_mu(SigmaTilde._grid);
+	  
+	  for (int mu = 0; mu < Nd; mu++){
+	    tmp_mu = adj(peekLorentz(SmearedSet[smearingLevels-1], mu)) * peekLorentz(force,mu);
 	    pokeLorentz(force, tmp_mu, mu);
-	}
-	for(int ismr = smearingLevels - 1; ismr > 0; --ismr)
-	  force = AnalyticSmearedForce(force,get_smeared_conf(ismr-1));
-	
-	force = AnalyticSmearedForce(force,*ThinLinks);
-	
-	for (int mu = 0; mu < Nd; mu++){
-	  tmp_mu = peekLorentz(*ThinLinks, mu) * peekLorentz(force, mu);
-	  pokeLorentz(SigmaTilde, tmp_mu, mu);
-	}
+	  }
+	  for(int ismr = smearingLevels - 1; ismr > 0; --ismr)
+	    force = AnalyticSmearedForce(force,get_smeared_conf(ismr-1));
+	  
+	  force = AnalyticSmearedForce(force,*ThinLinks);
+	  
+	  for (int mu = 0; mu < Nd; mu++){
+	    tmp_mu = peekLorentz(*ThinLinks, mu) * peekLorentz(force, mu);
+	    pokeLorentz(SigmaTilde, tmp_mu, mu);
+	  }
+	}// if smearingLevels = 0 do nothing
       }
       
       

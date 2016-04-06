@@ -189,7 +189,7 @@ namespace Grid{
 	assert(DenOp.ConstEE() == 1);
 
 	//dSdU = -Ta(dSdU);
-	dSDu = -dSdU;
+	dSdU = -dSdU;
 	
       };
     };

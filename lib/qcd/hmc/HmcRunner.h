@@ -91,7 +91,15 @@ public:
 
     
     // Create integrator, including the smearing policy
-    SmearedConfiguration<Gimpl> SmearingPolicy; // simplest empty smearer, construct here more complex smearers
+    // Smearing policy
+    std::cout << GridLogMessage << " Creating the Stout class\n";
+    double rho = 0.1; // smearing parameter
+    int Nsmear = 3;   // number of smearing levels
+    Smear_Stout<Gimpl> Stout(rho);
+    std::cout << GridLogMessage << " Creating the SmearedConfiguration class\n";
+    SmearedConfiguration<Gimpl> SmearingPolicy(UGrid, Nsmear, Stout);
+    std::cout << GridLogMessage << " done\n";
+    //////////////
     typedef MinimumNorm2<GaugeField, SmearedConfiguration<Gimpl> >  IntegratorType;// change here to change the algorithm
     IntegratorParameters MDpar(20);
     IntegratorType MDynamics(UGrid, MDpar, TheAction, SmearingPolicy);
@@ -136,6 +144,7 @@ public:
 
     // Attach the gauge field to the smearing Policy and create the fill the smeared set
     // notice that the unit configuration is singular in this procedure
+    std::cout << GridLogMessage << " Filling the smeared set\n";
     SmearingPolicy.set_GaugeField(U);
     
     HybridMonteCarlo<GaugeField,IntegratorType>  HMC(HMCpar, MDynamics,sRNG,pRNG,U); 
