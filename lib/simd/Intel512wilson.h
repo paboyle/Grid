@@ -201,7 +201,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 // Enables to lift ALL loads earlier by a few cycles and alleviate OoO pressure if needed.
 // KNL is DUAL issue for FP, and lifting these loads is potentially important.
 // Need detailed profile data to be sure.
-
+#if 0
 #define PREFETCH_U(A) \
   LOAD64(%r8,&U._odata[sU](A)) \
   __asm__ (		       \
@@ -230,7 +230,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   VPREFETCHW(9,%r8)	       \
   VPREFETCHW(10,%r8)	       \
   VPREFETCHW(11,%r8)	       );
-
+#endif
  
 #define MULT_2SPIN_DIR(A) MULT_2SPIN(&U._odata[sU](A))
 
@@ -244,6 +244,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define MULT_2SPIN_DIR_PFZM(A,p) MULT_2SPIN_PFZM(&U._odata[sU](A),p)
 #define MULT_2SPIN_DIR_PFTM(A,p) MULT_2SPIN_PFTM(&U._odata[sU](A),p)
 
+#if 0
 #define MULT_2SPIN_UNOPT(ptr)				\
 	   LOAD64(%r8,ptr)			\
   __asm__ (					\
@@ -289,6 +290,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	   ZEND2(UChi_11,Z3,Chi_10)			\
 	   ZEND2(UChi_02,Z4,Chi_02)			\
 	   ZEND2(UChi_12,Z5,Chi_12)	     );
+#endif
 
 #define MULT_2SPIN_PFXM(ptr,pf) MULT_2SPIN(ptr)
 #define MULT_2SPIN_PFYM(ptr,pf) MULT_2SPIN(ptr)
@@ -299,10 +301,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define MULT_2SPIN_PFYP(ptr,pf) MULT_2SPIN(ptr)
 #define MULT_2SPIN_PFXP(ptr,pf) MULT_2SPIN(ptr)
 
-#define MULT_2SPINa(ptr)        MULT_2SPIN_PF(ptr,ptr,VPREFETCHG);
-#define MULT_2SPIN(ptr) MULT_ADDSUB_2SPIN(ptr);
+// MULT_2SPINa(ptr)        MULT_2SPIN_PF(ptr,ptr,VPREFETCHG);
 
-
+#if 0
 #define MULT_2SPIN_PF(ptr,pf,VPF)			\
 	   LOAD64(%r8,ptr)			\
 	   LOAD64(%r9,pf)			\
@@ -343,8 +344,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	   ZEND2(UChi_02,Z4,Chi_02)			\
 	   VPF(11,%r9)						\
 	   ZEND2(UChi_12,Z5,Chi_12)	     );
+#endif
 
-
+#if 0 
 #define MULT_2SPIN_PFNONE(ptr,pf,VPF)			\
 	   LOAD64(%r8,ptr)			\
 	   LOAD64(%r9,pf)			\
@@ -364,7 +366,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	   VPF(9,%r9)						\
 	   VPF(10,%r9)						\
 	   VPF(11,%r9)						);
-
+#endif
 
 // Pretty much Perfectly Pipelined
 
@@ -720,7 +722,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   VSUB(UChi_11,result_31,result_31)\
   VSUB(UChi_12,result_32,result_32) );
 
-#define PREFETCH_CHIMU(A) 
+//define PREFETCH_CHIMU(A) 
 
 #define PERMUTE_DIR0 __asm__ ( 	\
   VPERM0(Chi_00,Chi_00)	\
@@ -812,5 +814,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
            VMADDSUB(Z5,Chi_02,UChi_02)\
            VMADDSUB(Z5,Chi_12,UChi_12)\
                                                 );
+
+#define MULT_2SPIN(ptr) MULT_ADDSUB_2SPIN(ptr)
 
 #endif

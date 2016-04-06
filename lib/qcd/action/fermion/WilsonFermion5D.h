@@ -1,3 +1,4 @@
+
     /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -120,6 +121,20 @@ namespace Grid {
 			FermionField &out,
 			int dag);
 
+      void DhopInternalOMPbench(StencilImpl & st,
+				LebesgueOrder &lo,
+				DoubledGaugeField &U,
+				const FermionField &in, 
+				FermionField &out,
+				int dag);
+
+      void DhopInternalL1bench(StencilImpl & st,
+				LebesgueOrder &lo,
+				DoubledGaugeField &U,
+				const FermionField &in, 
+				FermionField &out,
+				int dag);
+
       void DhopInternalCommsThenCompute(StencilImpl & st,
 			LebesgueOrder &lo,
 			DoubledGaugeField &U,
@@ -148,7 +163,7 @@ namespace Grid {
       ///////////////////////////////////////////////////////////////
       // Data members require to support the functionality
       ///////////////////////////////////////////////////////////////
-    protected:
+    public:
 
       // Add these to the support from Wilson
       GridBase *_FourDimGrid;
