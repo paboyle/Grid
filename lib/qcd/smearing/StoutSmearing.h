@@ -68,7 +68,7 @@ namespace Grid {
 
 	// only one Lorentz direction at a time 
 
-	std::cout<< GridLogDebug << "Stout smearing exponentiate iQ\n";
+
 	GridBase *grid = iQ._grid;
 	GaugeLinkField unity(grid);
 	unity=1.0;
@@ -94,8 +94,6 @@ namespace Grid {
 	GridBase *grid = u._grid;
 	LatticeReal c0(grid), c1(grid), tmp(grid), c0max(grid), theta(grid);
 
-	std::cout<< GridLogDebug << "Stout smearing set uw\n";
-	
 	c0    = - toReal(imag(trace(iQ3))) * one_over_three;
 	c1    = - toReal(real(trace(iQ2))) * one_over_two;
 	tmp   = c1 * one_over_three;
@@ -109,7 +107,6 @@ namespace Grid {
       void set_fj(LatticeComplex& f0, LatticeComplex& f1, LatticeComplex& f2,
 		  const LatticeReal& u, const LatticeReal& w) const{
 
-	std::cout<< GridLogDebug << "Stout smearing set fj\n";
 	GridBase *grid = u._grid;
 	LatticeReal xi0(grid), u2(grid), w2(grid), cosw(grid), tmp(grid);
 	LatticeComplex fden(grid);
@@ -121,9 +118,7 @@ namespace Grid {
 	w2    = w * w;
 	cosw  = cos(w);
 
-	std::cout<< GridLogDebug << "Stout smearing first toComplex\n";
 	ixi0  = timesI(toComplex(xi0));
-	std::cout<< GridLogDebug << "Stout smearing others toComplex\n";
 	emiu  = toComplex(cos(u)) - timesI(toComplex(u));
 	e2iu  = toComplex(cos(2.0*u)) + timesI(toComplex(2.0*u));
 	
@@ -144,13 +139,13 @@ namespace Grid {
       }
 
 
-      LatticeReal func_xi0(LatticeReal w) const{
+      LatticeReal func_xi0(const LatticeReal& w) const{
 	// Define a function to do the check
 	//if( w < 1e-4 ) std::cout << GridLogWarning<< "[Smear_stout] w too small: "<< w <<"\n";
 	return  sin(w)/w;
       }
 
-      LatticeReal func_xi1(LatticeReal w) const{
+      LatticeReal func_xi1(const LatticeReal& w) const{
 	// Define a function to do the check
 	//if( w < 1e-4 ) std::cout << GridLogWarning << "[Smear_stout] w too small: "<< w <<"\n";
 	return  cos(w)/(w*w) - sin(w)/(w*w*w);

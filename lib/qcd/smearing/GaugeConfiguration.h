@@ -43,13 +43,10 @@ namespace Grid {
 	if (smearingLevels > 0){
 	  std::cout<< GridLogDebug << "[SmearedConfiguration] Filling SmearedSet\n";
 	  GaugeField previous_u(ThinLinks->_grid);
-	  std::cout<< GridLogDebug << "[SmearedConfiguration] Loop\n";
 	  
 	  previous_u = *ThinLinks;
 	  for(int smearLvl = 0; smearLvl < smearingLevels; ++smearLvl){
-	    std::cout<< GridLogDebug << "[SmearedConfiguration] Loop: "<< smearLvl << "\n";
 	    StoutSmearing.smear(SmearedSet[smearLvl],previous_u);
-	    std::cout<< GridLogDebug << "[SmearedConfiguration] Loop assign: "<< smearLvl << "\n";
 	    previous_u = SmearedSet[smearLvl];
 	  }
 

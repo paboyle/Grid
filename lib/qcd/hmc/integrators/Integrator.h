@@ -116,8 +116,7 @@ namespace Grid{
 	for(int a=0; a<as[level].actions.size(); ++a){
 	  GaugeField force(U._grid);
 	  as[level].actions.at(a)->deriv(U,force); // deriv should not include Ta
-	  std::cout<<GridLogMessage<< "P Level: "<< level<< " action: "<<a<< " Smeared: "
-		   <<as[level].actions.at(a)->is_smeared <<std::endl;
+	  std::cout<<GridLogIntegrator<< "Smearing (on/off): "<<as[level].actions.at(a)->is_smeared <<std::endl;
 	  if (as[level].actions.at(a)->is_smeared) Smearer.smeared_force(force);
 	  force = Ta(force);
 	  Mom = Mom - force*ep;
@@ -176,9 +175,6 @@ namespace Grid{
 	  for(int actionID=0; actionID<as[level].actions.size(); ++actionID){
 	    // get gauge field from the SmearingPolicy and
 	    // based on the boolean is_smeared in actionID
-	    std::cout<<GridLogMessage<< "Refresh Level: "<< level<< " action: "<<actionID<< " Smeared: "
-		     <<as[level].actions.at(actionID)->is_smeared <<std::endl;
-
 	    GaugeField& Us = Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
 	    as[level].actions.at(actionID)->refresh(Us, pRNG);
 	  }
@@ -206,8 +202,8 @@ namespace Grid{
 	    // get gauge field from the SmearingPolicy and
 	    // based on the boolean is_smeared in actionID
 	    GaugeField& Us = Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
-	    std::cout<<GridLogMessage << "S Level "<<level<<" term "<<actionID<<" H = "<<Hterm<<std::endl;
 	    Hterm = as[level].actions.at(actionID)->S(Us);
+	    std::cout<<GridLogMessage << "S Level "<<level<<" term "<<actionID<<" H = "<<Hterm<<std::endl;
 	    H += Hterm;
 	  }
 	}
