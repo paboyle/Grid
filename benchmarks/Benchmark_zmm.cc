@@ -166,6 +166,7 @@ int bench(std::ofstream &os, std::vector<int> &latt4,int Ls)
   diff = resulto-resulta;
   std::cout<<GridLogMessage << "diff "<< norm2(diff)<<std::endl;
   std::cout<<std::endl;
+  return 0;
 }
 
 
