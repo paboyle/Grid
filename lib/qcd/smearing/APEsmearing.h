@@ -35,6 +35,7 @@ namespace Grid {
       Smear_APE():rho(set_rho(1.0)){}
       ~Smear_APE(){}
 
+      ///////////////////////////////////////////////////////////////////////////////
       void smear(GaugeField& u_smr, const GaugeField& U)const{
 	GridBase *grid = U._grid;
 	double d_rho;
@@ -45,16 +46,19 @@ namespace Grid {
 	for(int mu=0; mu<Nd; ++mu){
 	  Cup = zero;
 	  for(int nu=0; nu<Nd; ++nu){
-	    d_rho = rho[mu + Nd * nu];
-	    // get the staple in direction mu, nu
-	    WL.Staple(tmp_stpl, U, mu, nu);  //nb staple conventions of IroIro and Grid differ by a dag
-	    Cup += tmp_stpl*d_rho;
+	    if (nu != mu) {
+	      d_rho = rho[mu + Nd * nu];
+	      // get the staple in direction mu, nu
+	      WL.Staple(tmp_stpl, U, mu, nu);  //nb staple conventions of IroIro and Grid differ by a dagger
+	      Cup += tmp_stpl*d_rho;
+	    }
 	  }
 	  // save the Cup link-field on the u_smr gauge-field
 	  pokeLorentz(u_smr, adj(Cup), mu); // u_smr[mu] = Cup^dag
 	}
       }
 
+      ////////////////////////////////////////////////////////////////////////////////
       void derivative(GaugeField& SigmaTerm,
 		      const GaugeField& iLambda,
 		      const GaugeField& U)const{

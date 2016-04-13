@@ -100,7 +100,7 @@ namespace Grid{
 
 	PhiOdd =PhiOdd*scale;
 	PhiEven=PhiEven*scale;
-	
+
       };
 
       //////////////////////////////////////////////////////

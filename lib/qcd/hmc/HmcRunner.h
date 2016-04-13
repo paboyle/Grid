@@ -94,7 +94,7 @@ public:
     // Smearing policy
     std::cout << GridLogMessage << " Creating the Stout class\n";
     double rho = 0.1; // smearing parameter
-    int Nsmear = 3;   // number of smearing levels
+    int Nsmear = 1;   // number of smearing levels
     Smear_Stout<Gimpl> Stout(rho);
     std::cout << GridLogMessage << " Creating the SmearedConfiguration class\n";
     SmearedConfiguration<Gimpl> SmearingPolicy(UGrid, Nsmear, Stout);
@@ -144,7 +144,7 @@ public:
 
     // Attach the gauge field to the smearing Policy and create the fill the smeared set
     // notice that the unit configuration is singular in this procedure
-    std::cout << GridLogMessage << " Filling the smeared set\n";
+    std::cout << GridLogMessage << "Filling the smeared set\n";
     SmearingPolicy.set_GaugeField(U);
     
     HybridMonteCarlo<GaugeField,IntegratorType>  HMC(HMCpar, MDynamics,sRNG,pRNG,U); 

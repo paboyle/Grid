@@ -115,10 +115,12 @@ namespace Grid{
       void update_P(GaugeField &Mom,GaugeField&U, int level,double ep){
 	for(int a=0; a<as[level].actions.size(); ++a){
 	  GaugeField force(U._grid);
-	  as[level].actions.at(a)->deriv(U,force); // deriv should not include Ta
+	  GaugeField& Us = Smearer.get_U(as[level].actions.at(a)->is_smeared);
+	  as[level].actions.at(a)->deriv(Us,force); // deriv should not include Ta
 	  std::cout<<GridLogIntegrator<< "Smearing (on/off): "<<as[level].actions.at(a)->is_smeared <<std::endl;
 	  if (as[level].actions.at(a)->is_smeared) Smearer.smeared_force(force);
 	  force = Ta(force);
+	  std::cout<<GridLogIntegrator<< "Force average: "<< norm2(force)/(U._grid->gSites()) <<std::endl;
 	  Mom = Mom - force*ep;
 	}
       }

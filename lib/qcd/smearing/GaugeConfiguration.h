@@ -48,6 +48,10 @@ namespace Grid {
 	  for(int smearLvl = 0; smearLvl < smearingLevels; ++smearLvl){
 	    StoutSmearing.smear(SmearedSet[smearLvl],previous_u);
 	    previous_u = SmearedSet[smearLvl];
+
+	    RealD impl_plaq = WilsonLoops<Gimpl>::avgPlaquette(previous_u);
+	    std::cout<< GridLogDebug << "[SmearedConfiguration] Plaq: " << impl_plaq<< std::endl;
+
 	  }
 
 	}
@@ -73,14 +77,14 @@ namespace Grid {
 	  pokeLorentz(SigmaK, SigmaKPrime_mu*e_iQ + adj(Cmu)*iLambda_mu, mu);
 	  pokeLorentz(iLambda, iLambda_mu, mu);
 	}
-	StoutSmearing.derivative(SigmaK, iLambda, GaugeK);
+	StoutSmearing.derivative(SigmaK, iLambda, GaugeK);// derivative of SmearBase
 	return SigmaK;
       }
       /*! @brief Returns smeared configuration at level 'Level' */
       const GaugeField& get_smeared_conf(int Level) const{
 	return SmearedSet[Level];
       }
-      
+      //====================================================================
       void set_iLambda(GaugeLinkField& iLambda, 
 		       GaugeLinkField& e_iQ,
 		       const GaugeLinkField& iQ, 
@@ -117,8 +121,8 @@ namespace Grid {
 	w2 = w * w;
 	cosw = cos(w);
 	
-	emiu = toComplex(cos(u)) - timesI(toComplex(u));
-	e2iu = toComplex(cos(2.0*u)) + timesI(toComplex(2.0*u));
+	emiu = toComplex(cos(u)) - timesI(toComplex(sin(u)));
+	e2iu = toComplex(cos(2.0*u)) + timesI(toComplex(sin(2.0*u)));
 
 	r01 = (toComplex(2.0*u) + timesI(toComplex(2.0*(u2-w2)))) * e2iu
 	  + emiu * (toComplex(16.0*u*cosw + 2.0*u*(3.0*u2+w2)*xi0) +
@@ -174,7 +178,7 @@ namespace Grid {
 	
 		
       }
-      
+     //==================================================================== 
     public:
       GaugeField* ThinLinks;      /*!< @brief Pointer to the thin 
 				    links configuration */
@@ -201,12 +205,14 @@ namespace Grid {
       // attach the smeared routines to the thin links U and fill the smeared set
       void set_GaugeField(GaugeField& U){ fill_smearedSet(U);}
       
+      //====================================================================
       void smeared_force(GaugeField& SigmaTilde) const{
 	if (smearingLevels > 0){
-	  GaugeField force = SigmaTilde;//actually = U*SigmaTilde, check this for Grid
+	  GaugeField force = SigmaTilde;//actually = U*SigmaTilde
 	  GaugeLinkField tmp_mu(SigmaTilde._grid);
 	  
 	  for (int mu = 0; mu < Nd; mu++){
+	    // to get SigmaTilde
 	    tmp_mu = adj(peekLorentz(SmearedSet[smearingLevels-1], mu)) * peekLorentz(force,mu);
 	    pokeLorentz(force, tmp_mu, mu);
 	  }
@@ -221,7 +227,8 @@ namespace Grid {
 	  }
 	}// if smearingLevels = 0 do nothing
       }
-      
+      //====================================================================
+
       
       GaugeField& get_SmearedU(){ 
 	return SmearedSet[smearingLevels-1];
@@ -230,10 +237,22 @@ namespace Grid {
       GaugeField& get_U(bool smeared=false) { 
 	// get the config, thin links by default
 	if (smeared){
-	  if (smearingLevels) return get_SmearedU();
-	  else                return *ThinLinks;
+	  if (smearingLevels){ 
+	    RealD impl_plaq = WilsonLoops<Gimpl>::avgPlaquette(SmearedSet[smearingLevels-1]);
+	    std::cout<< GridLogDebug << "getting U Plaq: " << impl_plaq<< std::endl;
+	    return get_SmearedU();
+	    
+	  }
+	  else  {
+	    RealD impl_plaq = WilsonLoops<Gimpl>::avgPlaquette(*ThinLinks);
+	    std::cout<< GridLogDebug << "getting Thin Plaq: " << impl_plaq<< std::endl;
+              return *ThinLinks;
+	  }
 	}
-	else return *ThinLinks;
+	else{
+	    RealD impl_plaq = WilsonLoops<Gimpl>::avgPlaquette(*ThinLinks);
+	    std::cout<< GridLogDebug << "getting Thin Plaq: " << impl_plaq<< std::endl;
+	    return *ThinLinks;}
       }
       
     };

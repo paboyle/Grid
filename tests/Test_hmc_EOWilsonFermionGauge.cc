@@ -66,7 +66,7 @@ public:
 
     TwoFlavourEvenOddPseudoFermionAction<ImplPolicy> Nf2(FermOp,CG,CG);
 
-    Nf2.is_smeared=false;
+    Nf2.is_smeared=true;
     
     //Collect actions
     ActionLevel<LatticeGaugeField> Level1(1);

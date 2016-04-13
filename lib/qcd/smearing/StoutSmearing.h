@@ -33,7 +33,7 @@ namespace Grid {
       
       void smear(GaugeField& u_smr,const GaugeField& U) const{
 	GaugeField C(U._grid);
-	GaugeLinkField tmp(U._grid), q_mu(U._grid), Umu(U._grid);
+	GaugeLinkField tmp(U._grid), iq_mu(U._grid), Umu(U._grid);
 	
 	std::cout<< GridLogDebug << "Stout smearing started\n";
 	
@@ -42,8 +42,8 @@ namespace Grid {
 	for (int mu = 0; mu<Nd; mu++){
 	  tmp = peekLorentz(C,mu);
 	  Umu = peekLorentz(U,mu);
-	  q_mu = Ta(tmp * adj(Umu)); // q_mu = Ta(Omega_mu)
-	  exponentiate_iQ(tmp, q_mu);  
+	  iq_mu = Ta(tmp * adj(Umu)); // iq_mu = Ta(Omega_mu) to match the signs with the paper
+	  exponentiate_iQ(tmp, iq_mu);  
 	  pokeLorentz(u_smr, tmp*Umu, mu);// u_smr = exp(iQ_mu)*U_mu
 	}
 	
@@ -68,6 +68,10 @@ namespace Grid {
 
 	// only one Lorentz direction at a time 
 
+	// notice that it actually computes
+	// exp ( input matrix )  
+	// the i sign is coming from outside
+	// input matrix is anti-hermitian NOT hermitian
 
 	GridBase *grid = iQ._grid;
 	GaugeLinkField unity(grid);
@@ -94,6 +98,7 @@ namespace Grid {
 	GridBase *grid = u._grid;
 	LatticeReal c0(grid), c1(grid), tmp(grid), c0max(grid), theta(grid);
 
+	// sign in c0 from the conventions on the Ta
 	c0    = - toReal(imag(trace(iQ3))) * one_over_three;
 	c1    = - toReal(real(trace(iQ2))) * one_over_two;
 	tmp   = c1 * one_over_three;
@@ -101,7 +106,7 @@ namespace Grid {
 	
 	theta = acos(c0/c0max);
 	u = sqrt(tmp) * cos( theta * one_over_three);
-	w = sqrt(c1) * sin ( theta * one_over_three);
+	w = sqrt(c1)  * sin( theta * one_over_three);
       }
 
       void set_fj(LatticeComplex& f0, LatticeComplex& f1, LatticeComplex& f2,

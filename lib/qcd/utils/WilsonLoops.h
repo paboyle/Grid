@@ -197,7 +197,7 @@ namespace Grid {
 				     Gimpl::CovShiftForward (U[nu],nu, 
 							     Gimpl::CovShiftBackward(U[mu],mu,
 										     Gimpl::CovShiftIdentityBackward(U[nu],nu))),mu);
-
+  
 	  //  __ 
 	  // |   
 	  // |__ 
@@ -216,27 +216,25 @@ namespace Grid {
       //////////////////////////////////////////////////
       static void StapleUpper(GaugeMat &staple,const GaugeLorentz &Umu,int mu, int nu){
 
-	GridBase *grid = Umu._grid;
-
-	std::vector<GaugeMat> U(4,grid);
-	for(int d=0;d<Nd;d++){
-	  U[d] = PeekIndex<LorentzIndex>(Umu,d);
-	}
 	staple = zero;
 
-
-    
 	if(nu != mu) {
-      
+	  GridBase *grid = Umu._grid;
+	  
+	  std::vector<GaugeMat> U(4,grid);
+	  for(int d=0;d<Nd;d++){
+	    U[d] = PeekIndex<LorentzIndex>(Umu,d);
+	  }
+	  
 	  // mu
 	  // ^
 	  // |__>  nu
-      
+	  
 	  //    __ 
 	  //      |
 	  //    __|
 	  //
-
+	  
 	  staple+=Gimpl::ShiftStaple(
 				     Gimpl::CovShiftForward (U[nu],nu, 
 							     Gimpl::CovShiftBackward(U[mu],mu,
