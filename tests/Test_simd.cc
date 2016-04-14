@@ -145,7 +145,7 @@ void Tester(const functor &func)
 
   int ok=0;
   for(int i=0;i<Nsimd;i++){
-    if ( abs(reference[i]-result[i])>0){
+    if ( abs(reference[i]-result[i])>1.0e-7){
       std::cout<<GridLogMessage<< "*****" << std::endl;
       std::cout<<GridLogMessage<< "["<<i<<"] "<< abs(reference[i]-result[i]) << " " <<reference[i]<< " " << result[i]<<std::endl;
       ok++;

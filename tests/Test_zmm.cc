@@ -27,15 +27,20 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid.h>
 #include <PerfCount.h>
-#include <simd/Avx512Asm.h>
+#include <simd/Intel512wilson.h>
 
 
 using namespace Grid;
 using namespace Grid::QCD;
+
+void ZmulF(void *ptr1,void *ptr2,void *ptr3);
+void Zmul(void *ptr1,void *ptr2,void *ptr3);
 void WilsonDslashAvx512(void *ptr1,void *ptr2,void *ptr3);
 void WilsonDslashAvx512F(void *ptr1,void *ptr2,void *ptr3);
 void TimesIAvx512F(void *ptr1,void *ptr3);
 void TimesIAvx512(void *ptr1,void *ptr3);
+void TimesMinusIAvx512F(void *ptr1,void *ptr3);
+void TimesMinusIAvx512(void *ptr1,void *ptr3);
 
 
 
@@ -63,50 +68,106 @@ int main(int argc,char **argv)
 
   vColourMatrixD mat;
   vHalfSpinColourVectorD vec;
+  vHalfSpinColourVectorD vec1;
+  vHalfSpinColourVectorD vec2;
+  vHalfSpinColourVectorD vec3;
+ 
   vHalfSpinColourVectorD matvec;
   vHalfSpinColourVectorD ref;
   vComplexD err;
 
+  random(sRNG,vec1); 
+  vec1 = std::complex<double>(0.1,3.0);
+  random(sRNG,vec2);
+  vec2=2.0;
+  random(sRNG,vec3);
+
+  //std::cout << "Zmul  vec1"<<vec1<<" &vec1 "<<& vec1<<std::endl;
+  //std::cout << "Zmul  vec2"<<vec2<<" &vec2 "<<& vec2<<std::endl;
+  //std::cout << "Zmul  vec3"<<vec3<<" &vec3 "<<& vec3<<std::endl;
+  for(int sp=0;sp<2;sp++){
+  for(int co=0;co<3;co++){
+  ref()(sp)(co) = vec1()(sp)(co)*vec2()(sp)(co);
+  }}
+
+  Zmul((void *)&vec1,(void *)&vec2,(void *)&vec3);
+  //std::cout << "Zmul  vec3"<<vec3<<" &vec3 "<<& vec3<<std::endl;
+  //std::cout << "Zmul \n\t ref "<<ref<<"\n\t vec3"<<vec3 <<std::endl;
+  ref = ref - vec3;
+  err = TensorRemove(innerProduct(ref,ref));
+  std::cout <<"Zmul diff   "<< Reduce(err)<<std::endl;
+
   random(sRNG,mat);
+  mat = zero;
+  mat()()(0,0) = 1.0;
   random(sRNG,vec);
 
   ref = mat*vec;
   
   WilsonDslashAvx512((void *)&vec, (void *)&mat,(void *)&matvec);
 
+  //std::cout << ref   <<std::endl;
+  //std::cout << matvec<<std::endl;
   ref = ref - matvec;
   err = TensorRemove(innerProduct(ref,ref));
   std::cout <<"Double SU3 x 2spin diff   "<< Reduce(err)<<std::endl;
-
   vColourMatrixF matF;
+  vHalfSpinColourVectorF vec1F;
+  vHalfSpinColourVectorF vec2F;
+  vHalfSpinColourVectorF vec3F;
   vHalfSpinColourVectorF vecF;
   vHalfSpinColourVectorF matvecF;
   vHalfSpinColourVectorF refF;
   vComplexF errF;
 
   random(sRNG,matF);
+  matF = zero;
+  matF()()(0,0)=1.0;
   random(sRNG,vecF);
 
   refF = matF*vecF;
 
   WilsonDslashAvx512F((void *)&vecF, (void *)&matF,(void *)&matvecF);
-  
+  //std::cout << refF   <<std::endl;
+  //std::cout << matvecF<<std::endl;
+ 
   refF = refF-matvecF;
   errF = TensorRemove(innerProduct(refF,refF));
   std::cout <<"Single SU3 x 2spin diff   "<< Reduce(errF)<<std::endl;
 
   TimesIAvx512F((void *)&vecF,(void *)&matvecF);
+  //std::cout << timesI(vecF)<<std::endl;
+  //std::cout << matvecF<<std::endl;
   refF = timesI(vecF)-matvecF;
   errF = TensorRemove(innerProduct(refF,refF));
   std::cout <<" timesI single diff  "<< Reduce(errF)<<std::endl;
 
   TimesIAvx512((void *)&vec,(void *)&matvec);
-  
+  //std::cout << timesI(vec)<<std::endl;
+  //std::cout << matvec<<std::endl;
+ 
   ref = timesI(vec)-matvec;
   err = TensorRemove(innerProduct(ref,ref));
   std::cout <<" timesI double diff  "<< Reduce(err)<<std::endl;
 
+  TimesMinusIAvx512F((void *)&vecF,(void *)&matvecF);
+  //std::cout << timesMinusI(vecF)<<std::endl;
+  //std::cout << matvecF<<std::endl;
+  refF = timesMinusI(vecF)-matvecF;
+  errF = TensorRemove(innerProduct(refF,refF));
+  std::cout <<" timesMinusI single diff  "<< Reduce(errF)<<std::endl;
+
+  TimesMinusIAvx512((void *)&vec,(void *)&matvec);
+  //std::cout << timesMinusI(vec)<<std::endl;
+  //std::cout << matvec<<std::endl;
+
+  ref = timesMinusI(vec)-matvec;
+  err = TensorRemove(innerProduct(ref,ref));
+  std::cout <<" timesMinusI double diff  "<< Reduce(err)<<std::endl;
+
+
   LatticeFermion src (FGrid);
+  LatticeFermion tmp (FGrid);
   LatticeFermion srce(FrbGrid);
 
   LatticeFermion resulto(FrbGrid); resulto=zero;
@@ -114,13 +175,14 @@ int main(int argc,char **argv)
   LatticeFermion diff(FrbGrid); 
   LatticeGaugeField Umu(UGrid);
 
-#if 1
+
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
   GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
   random(RNG5,src);
+#if 1
   random(RNG4,Umu);
 #else
-  int mmu=3;
+  int mmu=2;
   std::vector<LatticeColourMatrix> U(4,UGrid);
   for(int mu=0;mu<Nd;mu++){
     U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
@@ -157,7 +219,7 @@ int main(int argc,char **argv)
   }
   t1=usecond();
 
-
+#if 1
   for(int i=0;i< PerformanceCounter::NumTypes(); i++ ){
     Dw.DhopOE(srce,resulta,0);
     PerformanceCounter Counter(i);
@@ -166,50 +228,119 @@ int main(int argc,char **argv)
     Counter.Stop();
     Counter.Report();
   }
-  resulta = (-0.5) * resulta;
+#endif
+  //resulta = (-0.5) * resulta;
 
   std::cout<<GridLogMessage << "Called Asm Dw"<<std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(resulta)<<std::endl;
   std::cout<<GridLogMessage << "mflop/s =   "<< flops*ncall/(t1-t0)<<std::endl;
   diff = resulto-resulta;
   std::cout<<GridLogMessage << "diff "<< norm2(diff)<<std::endl;
-
+  std::cout<<std::endl;
+#if 0
+  std::cout<<"=========== result Grid ============="<<std::endl;
+  std::cout<<std::endl;
+  tmp = zero;
+  setCheckerboard(tmp,resulto);
+  std::cout<<tmp<<std::endl;
+  std::cout<<std::endl;
+  std::cout<<"=========== result ASM ============="<<std::endl;
+  std::cout<<std::endl;
+  tmp = zero;
+  setCheckerboard(tmp,resulta);
+  std::cout<<tmp<<std::endl;
+#endif
 }
 
-#undef VLOAD
-#undef VSTORE
-#undef VMUL
-#undef VMADD
-#undef ZEND1
-#undef ZEND2
-#undef ZLOAD
-#undef ZMUL
-#undef ZMADD
-
-#define VZERO(A) VZEROd(A)
-#define VTIMESI(A,B,C) VTIMESId(A,B,C)
-#define VTIMESMINUSI(A,B,C) VTIMESMINUSId(A,B,C)
-
-#define VLOAD(OFF,PTR,DEST)       VLOADd(OFF,PTR,DEST)
-#define VSTORE(OFF,PTR,SRC)       VSTOREd(OFF,PTR,SRC)
-#define VMUL(Uri,Uir,Chi,UChi,Z)  VMULd(Uri,Uir,Chi,UChi,Z)
-#define VMADD(Uri,Uir,Chi,UChi,Z) VMADDd(Uri,Uir,Chi,UChi,Z)
-#define ZEND1(A,B,C)               ZEND1d(A,B,C)
-#define ZEND2(A,B,C)               ZEND2d(A,B,C)
-#define ZLOAD(A,B,C,D)            ZLOADd(A,B,C,D)
-#define ZMUL(A,B,C,D,E)           ZMULd(A,B,C,D,E)
-#define ZMADD(A,B,C,D,E)          ZMADDd(A,B,C,D,E)
-#define ZMULMEM2SP(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) ZMULMEM2SPd(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) 
-#define ZMADDMEM2SP(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) ZMADDMEM2SPd(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) 
+#include <simd/Intel512double.h>
 
 #define zz Z0
+
+
+void Zmul(void *ptr1,void *ptr2,void *ptr3)
+{
+  __asm__ ("mov     $0xAAAA, %%eax "  : : :"%eax");
+  __asm__ ("kmovw    %%eax, %%k6 " : : :);
+  __asm__ ("mov     $0x5555, %%eax "  : : :"%eax");
+  __asm__ ("kmovw    %%eax, %%k7 " : : :);
+
+#define CC result_00
+  LOAD64(%r9,ptr1);
+  LOAD64(%r8,ptr2);
+  LOAD64(%r10,ptr3)
+  __asm__ (
+  VLOAD(0,%r8,CC)
+  ZLOAD(0,%r9,Chi_00,Z0) 
+  ZMUL(Chi_00,Z0,CC,UChi_00,Z1)
+  //VSTORE(0,%r10,UChi_00)
+  //VSTORE(1,%r10,Z1)
+  ZEND1(UChi_00,Z1,Z0)
+  //VSTORE(2,%r10,UChi_00)
+  ZEND2(UChi_00,Z1,Z0)
+  //VSTORE(3,%r10,UChi_00)
+  VSTORE(0,%r10,UChi_00)
+  VLOAD(1,%r8,CC)
+  ZLOAD(1,%r9,Chi_01,Z0) 
+  ZMUL(Chi_01,Z0,CC,UChi_01,Z1)
+  ZEND1(UChi_01,Z1,Z0)
+  ZEND2(UChi_01,Z1,Z0)
+  VSTORE(1,%r10,UChi_01)
+  VLOAD(2,%r8,CC)
+  ZLOAD(2,%r9,Chi_02,Z0) 
+  ZMUL(Chi_02,Z0,CC,UChi_02,Z1)
+  ZEND1(UChi_02,Z1,Z0)
+  ZEND2(UChi_02,Z1,Z0)
+  VSTORE(2,%r10,UChi_02)
+  VLOAD(3,%r8,CC)
+  ZLOAD(3,%r9,Chi_10,Z0) 
+  ZMUL(Chi_10,Z0,CC,UChi_10,Z1)
+  ZEND1(UChi_10,Z1,Z0)
+  ZEND2(UChi_10,Z1,Z0)
+  VSTORE(3,%r10,UChi_10)
+  VLOAD(4,%r8,CC)
+  ZLOAD(4,%r9,Chi_11,Z0) 
+  ZMUL(Chi_11,Z0,CC,UChi_11,Z1)
+  ZEND1(UChi_11,Z1,Z0)
+  ZEND2(UChi_11,Z1,Z0)
+  VSTORE(4,%r10,UChi_11)
+  VLOAD(5,%r8,CC)
+  ZLOAD(5,%r9,Chi_12,Z0) 
+  ZMUL(Chi_12,Z0,CC,UChi_12,Z1)
+  ZEND1(UChi_12,Z1,Z0)
+  ZEND2(UChi_12,Z1,Z0)
+  VSTORE(5,%r10,UChi_12)
+  );
+}
+void TimesMinusIAvx512(void *ptr1,void *ptr3)
+{
+  __asm__ ("mov     $0xAAAA, %%eax "  : : :"%eax");
+  __asm__ ("kmovw    %%eax, %%k6 " : : :);
+  __asm__ ("mov     $0x5555, %%eax "  : : :"%eax");
+  __asm__ ("kmovw    %%eax, %%k7 " : : :);
+
+  MASK_REGS;
+
+  LOAD_CHI(ptr1);
+
+  __asm__ (
+  VZERO(zz)
+  VTIMESMINUSI(Chi_00,UChi_00,zz)
+  VTIMESMINUSI(Chi_01,UChi_01,zz)
+  VTIMESMINUSI(Chi_02,UChi_02,zz)
+  VTIMESMINUSI(Chi_10,UChi_10,zz)
+  VTIMESMINUSI(Chi_11,UChi_11,zz)
+  VTIMESMINUSI(Chi_12,UChi_12,zz)
+  );
+
+  SAVE_UCHI(ptr3);
+}
 
 void TimesIAvx512(void *ptr1,void *ptr3)
 {
   __asm__ ("mov     $0xAAAA, %%eax "  : : :"%eax");
-  __asm__ ("kmov    %%eax, %%k6 " : : :);
-  __asm__ ("knot     %%k6, %%k7 " : : :);
-
+  __asm__ ("kmovw    %%eax, %%k6 " : : :);
+  __asm__ ("mov     $0x5555, %%eax "  : : :"%eax");
+  __asm__ ("kmovw    %%eax, %%k7 " : : :);
 
   MASK_REGS;
   
@@ -252,41 +383,69 @@ void WilsonDslashAvx512(void *ptr1,void *ptr2,void *ptr3)
 
 }
 
-#undef VLOAD
-#undef VSTORE
-#undef VMUL
-#undef VMADD
-#undef ZEND1
-#undef ZEND2
-#undef ZLOAD
-#undef ZMUL
-#undef ZMADD
-#undef VZERO
-#undef VTIMESI
-#undef VTIMESI0
-#undef VTIMESI1
-#undef VTIMESI2
-#undef VTIMESMINUSI
-#undef ZMULMEM2SP
-#undef ZMADDMEM2SP
-#define VZERO(A) VZEROf(A)
-#define VMOV(A,B) VMOVf(A,B)
-#define VADD(A,B,C) VADDf(A,B,C)
-#define VSUB(A,B,C) VSUBf(A,B,C)
-#define VTIMESI(A,B,C) VTIMESIf(A,B,C)
-#define VTIMESMINUSI(A,B,C) VTIMESMINUSIf(A,B,C)
+#include <simd/Intel512single.h>
 
-#define VLOAD(OFF,PTR,DEST)       VLOADf(OFF,PTR,DEST)
-#define VSTORE(OFF,PTR,SRC)       VSTOREf(OFF,PTR,SRC)
-#define VMUL(Uri,Uir,Chi,UChi,Z)  VMULf(Uri,Uir,Chi,UChi,Z)
-#define VMADD(Uri,Uir,Chi,UChi,Z) VMADDf(Uri,Uir,Chi,UChi,Z)
-#define ZEND1(A,B,C)               ZEND1f(A,B,C)
-#define ZEND2(A,B,C)               ZEND2f(A,B,C)
-#define ZLOAD(A,B,C,D)            ZLOADf(A,B,C,D)
-#define ZMUL(A,B,C,D,E)           ZMULf(A,B,C,D,E)
-#define ZMADD(A,B,C,D,E)          ZMADDf(A,B,C,D,E)
-#define ZMULMEM2SP(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)  ZMULMEM2SPf(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) 
-#define ZMADDMEM2SP(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) ZMADDMEM2SPf(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) 
+void ZmulF(void *ptr1,void *ptr2,void *ptr3)
+{
+  __asm__ ("mov     $0xAAAA, %%eax "  : : :"%eax");
+  __asm__ ("kmovw    %%eax, %%k6 " : : :);
+  __asm__ ("mov     $0x5555, %%eax "  : : :"%eax");
+  __asm__ ("kmovw    %%eax, %%k7 " : : :);
+  MASK_REGS;
+  ZLOAD(0,ptr1,Chi_00,Z0);
+  ZLOAD(1,ptr1,Chi_01,Z1);
+  ZLOAD(2,ptr1,Chi_02,Z2);
+  ZLOAD(3,ptr1,Chi_10,Z3);
+  ZLOAD(4,ptr1,Chi_11,Z4);
+  ZLOAD(5,ptr1,Chi_12,Z5);
+
+  VLOAD(0,ptr2,Chi_20);
+  VLOAD(1,ptr2,Chi_21);
+  VLOAD(2,ptr2,Chi_22);
+  VLOAD(3,ptr2,Chi_30);  
+  VLOAD(4,ptr2,Chi_31);  
+  VLOAD(5,ptr2,Chi_32);  
+
+  ZMUL(Chi_00,Z0,Chi_20,UChi_00,UChi_20);
+  ZMUL(Chi_01,Z1,Chi_21,UChi_01,UChi_21);
+  ZMUL(Chi_02,Z2,Chi_22,UChi_02,UChi_22);
+  ZMUL(Chi_10,Z3,Chi_23,UChi_10,UChi_30);
+  ZMUL(Chi_11,Z4,Chi_24,UChi_11,UChi_31);
+  ZMUL(Chi_12,Z5,Chi_25,UChi_12,UChi_32);
+  
+  ZEND1(UChi_00,UChi_20,Z0);
+  ZEND1(UChi_01,UChi_21,Z1);
+  ZEND1(UChi_02,UChi_22,Z2);
+  ZEND1(UChi_10,UChi_30,Z3);
+  ZEND1(UChi_11,UChi_31,Z4);
+  ZEND1(UChi_12,UChi_32,Z5);
+
+  ZEND2(UChi_00,UChi_20,Z0);
+  ZEND2(UChi_01,UChi_21,Z1);
+  ZEND2(UChi_02,UChi_22,Z2);
+  ZEND2(UChi_10,UChi_30,Z3);
+  ZEND2(UChi_11,UChi_31,Z4);
+  ZEND2(UChi_12,UChi_32,Z5);
+
+  SAVE_UCHI(ptr3); 
+}
+
+void TimesMinusIAvx512F(void *ptr1,void *ptr3)
+{
+  MASK_REGS;
+
+  LOAD_CHI(ptr1);
+  __asm__ (
+  VZERO(zz)
+  VTIMESMINUSI(Chi_00,UChi_00,zz)
+  VTIMESMINUSI(Chi_01,UChi_01,zz)
+  VTIMESMINUSI(Chi_02,UChi_02,zz)
+  VTIMESMINUSI(Chi_10,UChi_10,zz)
+  VTIMESMINUSI(Chi_11,UChi_11,zz)
+  VTIMESMINUSI(Chi_12,UChi_12,zz)
+           );
+  SAVE_UCHI(ptr3);
+}
 
 void TimesIAvx512F(void *ptr1,void *ptr3)
 {
@@ -311,7 +470,8 @@ void WilsonDslashAvx512F(void *ptr1,void *ptr2,void *ptr3)
 
   LOAD_CHI(ptr1);
 
-  MULT_2SPIN(ptr2);
+  MULT_ADDSUB_2SPIN(ptr2);
+  //MULT_2SPIN(ptr2);
 
   SAVE_UCHI(ptr3);
 

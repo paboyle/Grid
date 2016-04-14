@@ -281,11 +281,7 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
 					 DoubledGaugeField & U,
 					 const FermionField &in, FermionField &out,int dag)
 {
-  //  if ( Impl::overlapCommsCompute () ) { 
-  //    DhopInternalCommsOverlapCompute(st,lo,U,in,out,dag);
-  //  } else { 
     DhopInternalCommsThenCompute(st,lo,U,in,out,dag);
-    //  }
 }
 
 template<class Impl>
@@ -368,7 +364,7 @@ PARALLEL_FOR_LOOP
 	      sU = lo.Reorder(sU);
 	    }
 	    sF = s+Ls*sU;
-	    Kernels::DiracOptAsmDhopSite(st,U,st.comm_buf,sF,sU,in,out,(uint64_t *)0);// &buf[0]
+	    Kernels::DiracOptAsmDhopSite(st,U,st.comm_buf,sF,sU,in,out);
 	  }
 	}
       }
@@ -423,14 +419,12 @@ PARALLEL_FOR_LOOP
 }
 
 template<class Impl>
-void WilsonFermion5D<Impl>::DhopInternalCommsOverlapCompute(StencilImpl & st, LebesgueOrder &lo,
-						     DoubledGaugeField & U,
-						     const FermionField &in, FermionField &out,int dag)
+void WilsonFermion5D<Impl>::DhopInternalOMPbench(StencilImpl & st, LebesgueOrder &lo,
+						 DoubledGaugeField & U,
+						 const FermionField &in, FermionField &out,int dag)
 {
-  assert(0);
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
   alltime-=usecond();
-
   Compressor compressor(dag);
 
   // Assume balanced KMP_AFFINITY; this is forced in GridThread.h
@@ -442,116 +436,232 @@ void WilsonFermion5D<Impl>::DhopInternalCommsOverlapCompute(StencilImpl & st, Le
   
   commtime -=usecond();
   auto handle = st.HaloExchangeBegin(in,compressor);
+  st.HaloExchangeComplete(handle);
   commtime +=usecond();
+
+  jointime -=usecond();
+  jointime +=usecond();
   
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
   // Not loop ordering and data layout.
   // Designed to create 
   // - per thread reuse in L1 cache for U
   // - 8 linear access unit stride streams per thread for Fermion for hw prefetchable.
-  bool local    = true;
-  bool nonlocal = false;
+
+#pragma omp parallel 
+  {
+  for(int jjj=0;jjj<100;jjj++){
+#pragma omp barrier
   dslashtime -=usecond();
   if ( dag == DaggerYes ) {
     if( this->HandOptDslash ) {
-PARALLEL_FOR_LOOP
+#pragma omp for
       for(int ss=0;ss<U._grid->oSites();ss++){
 	int sU=ss;
 	for(int s=0;s<Ls;s++){
 	  int sF = s+Ls*sU;
-	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out,local,nonlocal);
+	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out);
 	  }
       }
     } else { 
-PARALLEL_FOR_LOOP
+
+#pragma omp for
       for(int ss=0;ss<U._grid->oSites();ss++){
 	{
 	  int sd;
 	  for(sd=0;sd<Ls;sd++){
 	    int sU=ss;
 	    int sF = sd+Ls*sU;
-	    Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out,local,nonlocal);
+	    Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out);
 	  }
 	}
       }
     }
   } else {
-    if( this->HandOptDslash ) {
-PARALLEL_FOR_LOOP
+    if( this->AsmOptDslash ) {
+      //      for(int i=0;i<1;i++){
+      //      for(int i=0;i< PerformanceCounter::NumTypes(); i++ ){
+      //	PerformanceCounter Counter(i);
+      //	Counter.Start();
+
+#pragma omp for
+      for(int t=0;t<threads;t++){
+
+	int hyperthread = t%HT;
+	int core        = t/HT;
+
+        int sswork, swork,soff,ssoff,  sU,sF;
+	
+	GridThread::GetWork(nwork,core,sswork,ssoff,cores);
+	GridThread::GetWork(Ls   , hyperthread, swork, soff,HT);
+
+	for(int ss=0;ss<sswork;ss++){
+	  for(int s=soff;s<soff+swork;s++){
+
+	    sU=ss+ ssoff;
+
+	    if ( LebesgueOrder::UseLebesgueOrder ) {
+	      sU = lo.Reorder(sU);
+	    }
+	    sF = s+Ls*sU;
+	    Kernels::DiracOptAsmDhopSite(st,U,st.comm_buf,sF,sU,in,out);
+	  }
+	}
+      }
+      //      Counter.Stop();
+      //      Counter.Report();
+      //      }
+    } else if( this->HandOptDslash ) {
+#pragma omp for
+
       for(int ss=0;ss<U._grid->oSites();ss++){
 	int sU=ss;
 	for(int s=0;s<Ls;s++){
 	  int sF = s+Ls*sU;
-	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sF,sU,in,out,local,nonlocal);
+	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sF,sU,in,out);
 	}
       }
     } else { 
-PARALLEL_FOR_LOOP
+#pragma omp for
       for(int ss=0;ss<U._grid->oSites();ss++){
 	int sU=ss;
 	for(int s=0;s<Ls;s++){
 	  int sF = s+Ls*sU; 
-	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sF,sU,in,out,local,nonlocal);
+	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sF,sU,in,out);
 	}
       }
     }
+  }
+  }
   }
   dslashtime +=usecond();
+  alltime+=usecond();
+}
+
+
+template<class Impl>
+void WilsonFermion5D<Impl>::DhopInternalL1bench(StencilImpl & st, LebesgueOrder &lo,
+						DoubledGaugeField & U,
+						const FermionField &in, FermionField &out,int dag)
+{
+  //  assert((dag==DaggerNo) ||(dag==DaggerYes));
+  alltime-=usecond();
+  Compressor compressor(dag);
+
+  // Assume balanced KMP_AFFINITY; this is forced in GridThread.h
+
+  int threads = GridThread::GetThreads();
+  int HT      = GridThread::GetHyperThreads();
+  int cores   = GridThread::GetCores();
+  int nwork = U._grid->oSites();
+  
+  commtime -=usecond();
+  auto handle = st.HaloExchangeBegin(in,compressor);
+  st.HaloExchangeComplete(handle);
+  commtime +=usecond();
 
   jointime -=usecond();
-  st.HaloExchangeComplete(handle);
   jointime +=usecond();
+  
+  // Dhop takes the 4d grid from U, and makes a 5d index for fermion
+  // Not loop ordering and data layout.
+  // Designed to create 
+  // - per thread reuse in L1 cache for U
+  // - 8 linear access unit stride streams per thread for Fermion for hw prefetchable.
 
-  local    = false;
-  nonlocal = true;
-  dslash1time -=usecond();
+#pragma omp parallel 
+  {
+  for(int jjj=0;jjj<100;jjj++){
+#pragma omp barrier
+  dslashtime -=usecond();
   if ( dag == DaggerYes ) {
     if( this->HandOptDslash ) {
-PARALLEL_FOR_LOOP
+#pragma omp for
       for(int ss=0;ss<U._grid->oSites();ss++){
-	int sU=ss;
+	int sU=0;
 	for(int s=0;s<Ls;s++){
 	  int sF = s+Ls*sU;
-	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out,local,nonlocal);
+	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out);
 	  }
       }
     } else { 
-PARALLEL_FOR_LOOP
+
+#pragma omp for
       for(int ss=0;ss<U._grid->oSites();ss++){
 	{
 	  int sd;
 	  for(sd=0;sd<Ls;sd++){
-	    int sU=ss;
+	    int sU=0;
 	    int sF = sd+Ls*sU;
-	    Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out,local,nonlocal);
+	    Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out);
 	  }
 	}
       }
     }
   } else {
-    if( this->HandOptDslash ) {
-PARALLEL_FOR_LOOP
+    if( this->AsmOptDslash ) {
+      //      for(int i=0;i<1;i++){
+      //      for(int i=0;i< PerformanceCounter::NumTypes(); i++ ){
+      //	PerformanceCounter Counter(i);
+      //	Counter.Start();
+
+#pragma omp for
+      for(int t=0;t<threads;t++){
+
+	int hyperthread = t%HT;
+	int core        = t/HT;
+
+        int sswork, swork,soff,ssoff,  sU,sF;
+	
+	GridThread::GetWork(nwork,core,sswork,ssoff,cores);
+	GridThread::GetWork(Ls   , hyperthread, swork, soff,HT);
+
+	for(int ss=0;ss<sswork;ss++){
+	  for(int s=soff;s<soff+swork;s++){
+
+	    sU=0;
+	    sF = s+Ls*sU;
+	    Kernels::DiracOptAsmDhopSite(st,U,st.comm_buf,sF,sU,in,out);
+	  }
+	}
+      }
+      //      Counter.Stop();
+      //      Counter.Report();
+      //      }
+    } else if( this->HandOptDslash ) {
+#pragma omp for
+
       for(int ss=0;ss<U._grid->oSites();ss++){
-	int sU=ss;
+	int sU=0;
 	for(int s=0;s<Ls;s++){
 	  int sF = s+Ls*sU;
-	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sF,sU,in,out,local,nonlocal);
+	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sF,sU,in,out);
 	}
       }
     } else { 
-PARALLEL_FOR_LOOP
+#pragma omp for
       for(int ss=0;ss<U._grid->oSites();ss++){
-	int sU=ss;
+	int sU=0;
 	for(int s=0;s<Ls;s++){
 	  int sF = s+Ls*sU; 
-	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sF,sU,in,out,local,nonlocal);
+	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sF,sU,in,out);
 	}
       }
     }
   }
-  dslash1time +=usecond();
+  }
+  }
+  dslashtime +=usecond();
   alltime+=usecond();
+}
 
+
+template<class Impl>
+void WilsonFermion5D<Impl>::DhopInternalCommsOverlapCompute(StencilImpl & st, LebesgueOrder &lo,
+						     DoubledGaugeField & U,
+						     const FermionField &in, FermionField &out,int dag)
+{
+  assert(0);
 }
 
 template<class Impl>

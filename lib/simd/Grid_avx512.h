@@ -39,7 +39,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <immintrin.h>
 
 
-
+namespace Grid{
 namespace Optimization {
   
   struct Vsplat{
@@ -246,26 +246,30 @@ namespace Optimization {
   struct TimesMinusI{
     //Complex single
     inline __m512 operator()(__m512 in, __m512 ret){
-      __m512 tmp = _mm512_mask_sub_ps(in,0xaaaa,_mm512_setzero_ps(),in); // real -imag 
-      return _mm512_shuffle_ps(tmp,tmp,_MM_SELECT_FOUR_FOUR(1,0,3,2));   // 0x4E??
+      //__m512 tmp = _mm512_mask_sub_ps(in,0xaaaa,_mm512_setzero_ps(),in); // real -imag 
+      //return _mm512_shuffle_ps(tmp,tmp,_MM_SELECT_FOUR_FOUR(2,3,1,0));   // 0x4E??
+      __m512 tmp = _mm512_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1));
+      return _mm512_mask_sub_ps(tmp,0xaaaa,_mm512_setzero_ps(),tmp);
     }
     //Complex double
     inline __m512d operator()(__m512d in, __m512d ret){
-      __m512d tmp = _mm512_mask_sub_pd(in,0xaa,_mm512_setzero_pd(),in); // real -imag 
-      return _mm512_shuffle_pd(tmp,tmp,0x55);
+      //__m512d tmp = _mm512_mask_sub_pd(in,0xaa,_mm512_setzero_pd(),in); // real -imag 
+      //return _mm512_shuffle_pd(tmp,tmp,0x55);
+      __m512d tmp = _mm512_shuffle_pd(in,in,0x55);
+      return _mm512_mask_sub_pd(tmp,0xaa,_mm512_setzero_pd(),tmp);
     } 
   };
 
   struct TimesI{
     //Complex single
     inline __m512 operator()(__m512 in, __m512 ret){
-      __m512 tmp = _mm512_shuffle_ps(tmp,tmp,_MM_SELECT_FOUR_FOUR(1,0,3,2));
-      return _mm512_mask_sub_ps(tmp,0xaaaa,_mm512_setzero_ps(),tmp); 
+      __m512 tmp = _mm512_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1));
+      return _mm512_mask_sub_ps(tmp,0x5555,_mm512_setzero_ps(),tmp); 
     }
     //Complex double
     inline __m512d operator()(__m512d in, __m512d ret){
-      __m512d tmp = _mm512_shuffle_pd(tmp,tmp,0x55);
-      return _mm512_mask_sub_pd(tmp,0xaa,_mm512_setzero_pd(),tmp); 
+      __m512d tmp = _mm512_shuffle_pd(in,in,0x55);
+      return _mm512_mask_sub_pd(tmp,0x55,_mm512_setzero_pd(),tmp); 
     }
 
 
@@ -345,7 +349,7 @@ namespace Optimization {
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types 
-namespace Grid {
+
   typedef __m512 SIMD_Ftype;  // Single precision type
   typedef __m512d SIMD_Dtype; // Double precision type
   typedef __m512i SIMD_Itype; // Integer type

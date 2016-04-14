@@ -86,6 +86,7 @@ class CartesianCommunicator {
     void GlobalSumVector(RealD *,int N);
 
     void GlobalSum(uint32_t &);
+    void GlobalSum(uint64_t &);
 
     void GlobalSum(ComplexF &c)
     {

@@ -353,7 +353,7 @@ static inline void readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,
       csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>, LorentzColour2x3D> 
       	(Umu,file,Nersc3x2munger<LorentzColour2x3D,LorentzColourMatrix>(),offset,format);
     }
-  } else if ( header.data_type == std::string("4D_SU3_GAUGE_3X3") ) {
+  } else if ( header.data_type == std::string("4D_SU3_GAUGE_3x3") ) {
     if ( ieee32 || ieee32big ) {
       //csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>,LorentzColourMatrixF>
       csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>,LorentzColourMatrixF>
@@ -431,7 +431,7 @@ static inline void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu
 
   } else { 
     header.floating_point = std::string("IEEE64BIG");
-    header.data_type      = std::string("4D_SU3_GAUGE_3X3");
+    header.data_type      = std::string("4D_SU3_GAUGE_3x3");
     NerscSimpleUnmunger<fobj3D,sobj> munge;
     BinaryIO::Uint32Checksum<vobj,fobj3D>(Umu, munge,header.checksum);
     offset = writeHeader(header,file);

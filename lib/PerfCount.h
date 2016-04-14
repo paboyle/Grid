@@ -34,7 +34,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <ctime>
 #include <chrono>
 #include <string.h>
-
+#include <unistd.h>
 #include <sys/ioctl.h>
 
 #ifdef __linux__
@@ -163,8 +163,8 @@ public:
   {
 #ifdef __linux__
     if ( fd!= -1) {
-      ioctl(fd, PERF_EVENT_IOC_RESET, 0);
-      ioctl(fd, PERF_EVENT_IOC_ENABLE, 0);
+      ::ioctl(fd, PERF_EVENT_IOC_RESET, 0);
+      ::ioctl(fd, PERF_EVENT_IOC_ENABLE, 0);
     }
     begin  =cyclecount();
 #else
@@ -176,7 +176,7 @@ public:
     count=0;
 #ifdef __linux__
     if ( fd!= -1) {
-      ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
+      ::ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
       ::read(fd, &count, sizeof(long long));
     }
     elapsed = cyclecount() - begin;
@@ -187,16 +187,16 @@ public:
   }
   void Report(void) {
 #ifdef __linux__
-    printf("%llu cycles %s = %20llu\n", elapsed , PerformanceCounterConfigs[PCT].name, count);
+    std::printf("%llu cycles %s = %20llu\n", elapsed , PerformanceCounterConfigs[PCT].name, count);
 #else
-    printf("%llu cycles \n", elapsed );
+    std::printf("%llu cycles \n", elapsed );
 #endif
   }
 
   ~PerformanceCounter()
   {
 #ifdef __linux__
-    close(fd);
+    ::close(fd);
 #endif
   }
 

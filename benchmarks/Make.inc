@@ -1,5 +1,5 @@
 
-bin_PROGRAMS = Benchmark_comms Benchmark_dwf Benchmark_memory_asynch Benchmark_memory_bandwidth Benchmark_su3 Benchmark_wilson
+bin_PROGRAMS = Benchmark_comms Benchmark_dwf Benchmark_memory_asynch Benchmark_memory_bandwidth Benchmark_su3 Benchmark_wilson Benchmark_zmm
 
 
 Benchmark_comms_SOURCES=Benchmark_comms.cc
@@ -24,4 +24,8 @@ Benchmark_su3_LDADD=-lGrid
 
 Benchmark_wilson_SOURCES=Benchmark_wilson.cc
 Benchmark_wilson_LDADD=-lGrid
+
+
+Benchmark_zmm_SOURCES=Benchmark_zmm.cc
+Benchmark_zmm_LDADD=-lGrid
 

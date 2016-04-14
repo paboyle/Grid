@@ -101,6 +101,22 @@ void CartesianCommunicator::GlobalSum(uint32_t &u){
   shmem_barrier_all(); // necessary?
   u = dest;
 }
+void CartesianCommunicator::GlobalSum(uint64_t &u){
+  static long long source ;
+  static long long dest   ;
+  static long long llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
+  static long      psync[_SHMEM_REDUCE_SYNC_SIZE];
+
+  //  int nreduce=1;
+  //  int pestart=0;
+  //  int logStride=0;
+
+  source = u;
+  dest   = 0;
+  shmem_longlong_sum_to_all(&dest,&source,1,0,0,_Nprocessors,llwrk,psync);
+  shmem_barrier_all(); // necessary?
+  u = dest;
+}
 void CartesianCommunicator::GlobalSum(float &f){
   static float source ;
   static float dest   ;

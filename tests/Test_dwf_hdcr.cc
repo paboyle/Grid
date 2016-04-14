@@ -42,6 +42,8 @@ public:
 			  int, domaindecompose,
 			  int, domainsize,
 			  int, order,
+			  int, Ls,
+			  double, mq,
 			  double, lo,
 			  double, hi,
 			  int, steps);
@@ -327,7 +329,7 @@ public:
     CoarseVector Ctmp(_CoarseOperator.Grid());
     CoarseVector Csol(_CoarseOperator.Grid()); Csol=zero;
 
-    ConjugateGradient<CoarseVector>  CG(1.0e-2,100000);
+    ConjugateGradient<CoarseVector>  CG(3.0e-3,100000);
     //    ConjugateGradient<FineField>    fCG(3.0e-2,1000);
 
     HermitianLinearOperator<CoarseOperator,CoarseVector>  HermOp(_CoarseOperator);
@@ -474,7 +476,7 @@ int main (int argc, char ** argv)
   read(RD,"params",params);
   std::cout<<"Params: Order "<<params.order<<"["<<params.lo<<","<<params.hi<<"]"<< " steps "<<params.steps<<std::endl;
 
-  const int Ls=16;
+  const int Ls=params.Ls;
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
@@ -536,7 +538,7 @@ int main (int argc, char ** argv)
   //  SU3::HotConfiguration(RNG4,Umu);
   //  Umu=zero;
 
-  RealD mass=0.001;
+  RealD mass=params.mq;
   RealD M5=1.8;
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
@@ -558,7 +560,8 @@ int main (int argc, char ** argv)
   assert ( (nbasis & 0x1)==0);
   int nb=nbasis/2;
   std::cout<<GridLogMessage << " nbasis/2 = "<<nb<<std::endl;
-  Aggregates.CreateSubspace(RNG5,HermDefOp,nb);
+  //  Aggregates.CreateSubspace(RNG5,HermDefOp,nb);
+  Aggregates.CreateSubspaceLanczos(RNG5,HermDefOp,nb);
   for(int n=0;n<nb;n++){
     G5R5(Aggregates.subspace[n+nb],Aggregates.subspace[n]);
     std::cout<<GridLogMessage<<n<<" subspace "<<norm2(Aggregates.subspace[n+nb])<<" "<<norm2(Aggregates.subspace[n]) <<std::endl;
@@ -594,7 +597,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   MdagMLinearOperator<CoarseOperator,CoarseVector> PosdefLdop(LDOp);
   ConjugateGradient<CoarseVector> CG(1.0e-6,100000);
-  CG(PosdefLdop,c_src,c_res);
+  //  CG(PosdefLdop,c_src,c_res);
 
   //  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   //  std::cout<<GridLogMessage << "Solving indef-MCR on coarse space "<< std::endl;
@@ -619,17 +622,17 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Testing smoother efficacy"<< std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  Precon.SmootherTest(src);
+  //  Precon.SmootherTest(src);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Testing DD smoother efficacy"<< std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  PreconDD.SmootherTest(src);
+  //  PreconDD.SmootherTest(src);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Testing SAP smoother efficacy"<< std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  PreconDD.SAP(src,result);
+  //  PreconDD.SAP(src,result);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Unprec CG "<< std::endl;
@@ -657,18 +660,18 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Building a two level DDPGCR "<< std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  PrecGeneralisedConjugateResidual<LatticeFermion> PGCRDD(1.0e-8,100000,PreconDD,8,128);
-  result=zero;
-  std::cout<<GridLogMessage<<"checking norm src "<<norm2(src)<<std::endl;
-  PGCRDD(HermIndefOp,src,result);
+  //  PrecGeneralisedConjugateResidual<LatticeFermion> PGCRDD(1.0e-8,100000,PreconDD,8,128);
+  //  result=zero;
+  //  std::cout<<GridLogMessage<<"checking norm src "<<norm2(src)<<std::endl;
+  //  PGCRDD(HermIndefOp,src,result);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Building a two level PGCR "<< std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  //  PrecGeneralisedConjugateResidual<LatticeFermion> PGCR(1.0e-8,100000,Precon,8,128);
-  //  std::cout<<GridLogMessage<<"checking norm src "<<norm2(src)<<std::endl;
-  //  result=zero;
-  //  PGCR(HermIndefOp,src,result);
+  PrecGeneralisedConjugateResidual<LatticeFermion> PGCR(1.0e-8,100000,Precon,8,8);
+  std::cout<<GridLogMessage<<"checking norm src "<<norm2(src)<<std::endl;
+  result=zero;
+  PGCR(HermIndefOp,src,result);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Red Black Prec CG "<< std::endl;

@@ -20,6 +20,8 @@ endif
 
 if BUILD_ZMM
   bin_PROGRAMS=Test_zmm
+else
+  bin_PROGRAMS=
 endif
 
 include Make.inc

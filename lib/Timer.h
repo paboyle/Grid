@@ -44,6 +44,7 @@ double usecond(void);
 typedef  std::chrono::system_clock          GridClock;
 typedef  std::chrono::time_point<GridClock> GridTimePoint;
 typedef  std::chrono::milliseconds          GridTime;
+typedef  std::chrono::microseconds          GridUsecs;
 
 inline std::ostream& operator<< (std::ostream & stream, const std::chrono::milliseconds & time)
 {
@@ -55,7 +56,7 @@ class GridStopWatch {
 private:
   bool running;
   GridTimePoint start;
-  GridTime accumulator;
+  GridUsecs accumulator;
 public:
   GridStopWatch () { 
     Reset();
@@ -67,17 +68,21 @@ public:
   }
   void     Stop(void)  { 
     assert(running == true);
-    accumulator+= std::chrono::duration_cast<GridTime>(GridClock::now()-start); 
+    accumulator+= std::chrono::duration_cast<GridUsecs>(GridClock::now()-start); 
     running = false; 
   };
   void     Reset(void){
     running = false;
     start = GridClock::now();
-    accumulator = std::chrono::duration_cast<GridTime>(start-start); 
+    accumulator = std::chrono::duration_cast<GridUsecs>(start-start); 
   }
   GridTime Elapsed(void) {
     assert(running == false);
-    return accumulator;
+    return std::chrono::duration_cast<GridTime>( accumulator );
+  }
+  uint64_t useconds(void){
+    assert(running == false);
+    return (uint64_t) accumulator.count();
   }
 };
 

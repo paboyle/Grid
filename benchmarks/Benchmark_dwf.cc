@@ -58,7 +58,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   std::vector<int> latt4 = GridDefaultLatt();
-  const int Ls=16;
+  const int Ls=8;
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
@@ -143,6 +143,7 @@ int main (int argc, char ** argv)
     Dw.Report();
   }
 
+  exit(0);
 
   if (1)
   { // Naive wilson dag implementation
@@ -197,7 +198,6 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "Deo mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "Deo mflop/s per node   "<< flops/(t1-t0)/NP<<std::endl;
   }
-
   Dw.DhopEO(src_o,r_e,DaggerNo);
   Dw.DhopOE(src_e,r_o,DaggerNo);
   Dw.Dhop  (src  ,result,DaggerNo);

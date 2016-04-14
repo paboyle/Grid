@@ -71,7 +71,7 @@ public:
             StopWatch.Start();
             stream << BLACK<< log.topName << BLACK<< " : ";
             stream << log.COLOUR <<std::setw(10) << std::left << log.name << BLACK << " : ";
-	    //	    stream << YELLOW<< now <<BLACK << " : " ;
+	    stream << YELLOW<< now <<BLACK << " : " ;
 	    stream << log.COLOUR;
             return stream;
         } else { 

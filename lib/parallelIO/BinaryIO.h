@@ -168,6 +168,7 @@ class BinaryIO {
     GridBase *grid = Umu._grid;
 
     std::cout<< GridLogMessage<< "Serial read I/O "<< file<< std::endl;
+    GridStopWatch timer; timer.Start();
 
     int ieee32big = (format == std::string("IEEE32BIG"));
     int ieee32    = (format == std::string("IEEE32"));
@@ -182,6 +183,7 @@ class BinaryIO {
 
     Umu = zero;
     uint32_t csum=0;
+    uint64_t bytes=0;
     fobj file_object;
     sobj munged;
     
@@ -194,7 +196,7 @@ class BinaryIO {
 
       if ( grid->IsBoss() ) {
 	fin.read((char *)&file_object,sizeof(file_object));
-	
+	bytes += sizeof(file_object);
 	if(ieee32big) be32toh_v((void *)&file_object,sizeof(file_object));
 	if(ieee32)    le32toh_v((void *)&file_object,sizeof(file_object));
 	if(ieee64big) be64toh_v((void *)&file_object,sizeof(file_object));
@@ -205,6 +207,10 @@ class BinaryIO {
       // The boss who read the file has their value poked
       pokeSite(munged,Umu,site);
     }}}}
+    timer.Stop();
+    std::cout<<GridLogPerformance<<"readObjectSerial: read "<< bytes <<" bytes in "<<timer.Elapsed() <<" "
+	     << (double)bytes/ (double)timer.useconds() <<" MB/s "  <<std::endl;
+
     return csum;
   }
 
@@ -224,13 +230,14 @@ class BinaryIO {
     // Serialise through node zero
     //////////////////////////////////////////////////
     std::cout<< GridLogMessage<< "Serial write I/O "<< file<<std::endl;
+    GridStopWatch timer; timer.Start();
 
     std::ofstream fout;
     if ( grid->IsBoss() ) {
       fout.open(file,std::ios::binary|std::ios::out|std::ios::in);
       fout.seekp(offset);
     }
-    
+    uint64_t bytes=0;
     uint32_t csum=0;
     fobj file_object;
     sobj unmunged;
@@ -252,10 +259,15 @@ class BinaryIO {
 	if(ieee32)    htole32_v((void *)&file_object,sizeof(file_object));
 	if(ieee64big) htobe64_v((void *)&file_object,sizeof(file_object));
 	if(ieee64)    htole64_v((void *)&file_object,sizeof(file_object));
-	
+
+	// NB could gather an xstrip as an optimisation.
 	fout.write((char *)&file_object,sizeof(file_object));
+	bytes+=sizeof(file_object);
       }
     }}}}
+    timer.Stop();
+    std::cout<<GridLogPerformance<<"writeObjectSerial: wrote "<< bytes <<" bytes in "<<timer.Elapsed() <<" "
+	     << (double)bytes/timer.useconds() <<" MB/s "  <<std::endl;
 
     return csum;
   }
@@ -429,6 +441,9 @@ class BinaryIO {
       std::cout << std::endl;
     }
 
+    GridStopWatch timer; timer.Start();
+    uint64_t bytes=0;
+
     int myrank = grid->ThisRank();
     int iorank = grid->RankFromProcessorCoor(ioproc);
 
@@ -475,6 +490,7 @@ class BinaryIO {
 	
 	fin.seekg(offset+g_idx*sizeof(fileObj));
 	fin.read((char *)&fileObj,sizeof(fileObj));
+	bytes+=sizeof(fileObj);
 	
 	if(ieee32big) be32toh_v((void *)&fileObj,sizeof(fileObj));
 	if(ieee32)    le32toh_v((void *)&fileObj,sizeof(fileObj));
@@ -499,7 +515,12 @@ class BinaryIO {
     }
 
     grid->GlobalSum(csum);
+    grid->GlobalSum(bytes);
     grid->Barrier();
+
+    timer.Stop();
+    std::cout<<GridLogPerformance<<"readObjectParallel: read "<< bytes <<" bytes in "<<timer.Elapsed() <<" "
+	     << (double)bytes/timer.useconds() <<" MB/s "  <<std::endl;
     
     return csum;
   }
@@ -562,6 +583,9 @@ class BinaryIO {
       }
       std::cout << std::endl;
     }
+
+    GridStopWatch timer; timer.Start();
+    uint64_t bytes=0;
 
     int myrank = grid->ThisRank();
     int iorank = grid->RankFromProcessorCoor(ioproc);
@@ -635,11 +659,16 @@ class BinaryIO {
 	
 	fout.seekp(offset+g_idx*sizeof(fileObj));
 	fout.write((char *)&fileObj,sizeof(fileObj));
-
+	bytes+=sizeof(fileObj);
       }
     }
 
     grid->GlobalSum(csum);
+    grid->GlobalSum(bytes);
+
+    timer.Stop();
+    std::cout<<GridLogPerformance<<"writeObjectParallel: wrote "<< bytes <<" bytes in "<<timer.Elapsed() <<" "
+	     << (double)bytes/timer.useconds() <<" MB/s "  <<std::endl;
 
     return csum;
   }
