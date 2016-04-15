@@ -410,22 +410,22 @@ namespace Optimization {
   struct Permute{
 
     static inline __m256 Permute0(__m256 in){
-      return _mm256_permute2f128_ps(in,in,0x01);
+      return _mm256_permute2f128_ps(in,in,0x01); //ABCD EFGH -> EFGH ABCD
     };
     static inline __m256 Permute1(__m256 in){
-      return _mm256_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2));
+      return _mm256_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2)); //ABCD EFGH -> CDAB GHEF
     };
     static inline __m256 Permute2(__m256 in){
-      return _mm256_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1));
+      return _mm256_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1)); //ABCD EFGH -> BADC FEHG
     };
     static inline __m256 Permute3(__m256 in){
       return in;
     };
 
     static inline __m256d Permute0(__m256d in){
-      return _mm256_permute2f128_pd(in,in,0x01);
+      return _mm256_permute2f128_pd(in,in,0x01); //AB CD -> CD AB
     };
-    static inline __m256d Permute1(__m256d in){
+    static inline __m256d Permute1(__m256d in){ //AB CD -> BA DC
       return _mm256_shuffle_pd(in,in,0x5);
     };
     static inline __m256d Permute2(__m256d in){
