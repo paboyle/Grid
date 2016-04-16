@@ -41,7 +41,7 @@ public:\
     mod##Registrar(void)\
     {\
         ModuleFactory &modFac = ModuleFactory::getInstance();\
-        modFac.registerModule(#mod, [&](const std::string &name)\
+        modFac.registerModule(#mod, [&](const std::string name)\
                               {\
                                   return std::unique_ptr<mod>(new mod(name));\
                               });\
@@ -56,13 +56,13 @@ class Module
 {
 public:
     // constructor
-    Module(const std::string &name);
+    Module(const std::string name);
     // destructor
     virtual ~Module(void) = default;
     // access
     std::string getName(void) const;
     // parse parameters
-    virtual void parseParameters(XmlReader &reader, const std::string &name) = 0;
+    virtual void parseParameters(XmlReader &reader, const std::string name) = 0;
     // dependency relation
     virtual std::vector<std::string> getInput(void) = 0;
     virtual std::vector<std::string> getOutput(void) = 0;

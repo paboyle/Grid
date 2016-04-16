@@ -34,12 +34,12 @@ using namespace Hadrons;
  *                          MQuark implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-MQuark::MQuark(const std::string &name)
+MQuark::MQuark(const std::string name)
 : Module(name)
 {}
 
 // parse parameters
-void MQuark::parseParameters(XmlReader &reader, const std::string &name)
+void MQuark::parseParameters(XmlReader &reader, const std::string name)
 {
     read(reader, name, par_);
 }

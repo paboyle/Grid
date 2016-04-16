@@ -34,7 +34,7 @@ using namespace Hadrons;
  *                           Module implementation                            *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-Module::Module(const std::string &name)
+Module::Module(const std::string name)
 : name_(name)
 {}
 

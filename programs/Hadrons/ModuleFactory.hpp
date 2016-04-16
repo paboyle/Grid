@@ -40,16 +40,16 @@ class ModuleFactory
 {
     SINGLETON(ModuleFactory)
 public:
-    typedef std::function<std::unique_ptr<Module>(const std::string &)>
+    typedef std::function<std::unique_ptr<Module>(const std::string )>
         FactoryFunc;
 public:
     // registration
-    void registerModule(const std::string &type, const FactoryFunc &f);
+    void registerModule(const std::string type, const FactoryFunc &f);
     // get module list
     std::vector<std::string> getModuleList(void) const;
     // factory
-    std::unique_ptr<Module> create(const std::string &type,
-                                   const std::string &name) const;
+    std::unique_ptr<Module> create(const std::string type,
+                                   const std::string name) const;
 private:
     std::map<std::string, FactoryFunc> factory_;
 };

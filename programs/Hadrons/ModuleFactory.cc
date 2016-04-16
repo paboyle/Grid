@@ -39,7 +39,7 @@ ModuleFactory::ModuleFactory(void)
 }
 
 // registration ////////////////////////////////////////////////////////////////
-void ModuleFactory::registerModule(const std::string &type,
+void ModuleFactory::registerModule(const std::string type,
                                    const FactoryFunc &f)
 {
     factory_[type] = f;
@@ -59,8 +59,8 @@ std::vector<std::string> ModuleFactory::getModuleList(void) const
 }
 
 // factory /////////////////////////////////////////////////////////////////////
-std::unique_ptr<Module> ModuleFactory::create(const std::string &type,
-                                              const std::string &name) const
+std::unique_ptr<Module> ModuleFactory::create(const std::string type,
+                                              const std::string name) const
 {
     FactoryFunc func;
     

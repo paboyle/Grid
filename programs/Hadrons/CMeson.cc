@@ -34,12 +34,12 @@ using namespace Hadrons;
  *                          CMeson implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-CMeson::CMeson(const std::string &name)
+CMeson::CMeson(const std::string name)
 : Module(name)
 {}
 
 // parse parameters ////////////////////////////////////////////////////////////
-void CMeson::parseParameters(XmlReader &reader, const std::string &name)
+void CMeson::parseParameters(XmlReader &reader, const std::string name)
 {
     read(reader, name, par_);
 }

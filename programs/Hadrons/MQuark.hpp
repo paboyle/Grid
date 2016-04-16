@@ -47,11 +47,11 @@ public:
     };
 public:
     // constructor
-    MQuark(const std::string &name);
+    MQuark(const std::string name);
     // destructor
     virtual ~MQuark(void) = default;
     // parse parameters
-    virtual void parseParameters(XmlReader &reader, const std::string &name);
+    virtual void parseParameters(XmlReader &reader, const std::string name);
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);

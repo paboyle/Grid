@@ -50,11 +50,11 @@ public:
     };
 public:
     // constructor
-    CMeson(const std::string &name);
+    CMeson(const std::string name);
     // destructor
     virtual ~CMeson(void) = default;
     // parse parameters
-    virtual void parseParameters(XmlReader &reader, const std::string &name);
+    virtual void parseParameters(XmlReader &reader, const std::string name);
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
