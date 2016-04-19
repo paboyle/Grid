@@ -47,6 +47,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define _MM_SELECT_FOUR_TWO (A,B,C,D) _MM_SELECT_EIGHT_TWO(0,0,0,0,A,B,C,D)
 #define _MM_SELECT_TWO_TWO  (A,B)     _MM_SELECT_FOUR_TWO(0,0,A,B)
 
+#define RotateBit (0x100)
+
 namespace Grid {
 
   typedef uint32_t Integer;
