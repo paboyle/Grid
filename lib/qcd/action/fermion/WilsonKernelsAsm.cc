@@ -256,5 +256,7 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField
   template class WilsonKernels<WilsonImplD>; 
   template class WilsonKernels<GparityWilsonImplF>;
   template class WilsonKernels<GparityWilsonImplD>;
+  template class WilsonKernels<DomainWallRedBlack5dImplF>;
+  template class WilsonKernels<DomainWallRedBlack5dImplD>;
 }}
 #endif

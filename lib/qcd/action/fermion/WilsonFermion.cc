@@ -288,11 +288,7 @@ PARALLEL_FOR_LOOP
   void WilsonFermion<Impl>::DhopInternal(StencilImpl & st,DoubledGaugeField & U,
 					 const FermionField &in, FermionField &out,int dag) 
   {
-    if ( Impl::overlapCommsCompute () ) { 
-      DhopInternalCommsOverlapCompute(st,U,in,out,dag);
-    } else { 
-      DhopInternalCommsThenCompute(st,U,in,out,dag);
-    }
+    DhopInternalCommsThenCompute(st,U,in,out,dag);
   }
   template<class Impl>
   void WilsonFermion<Impl>::DhopInternalCommsThenCompute(StencilImpl & st,DoubledGaugeField & U,
@@ -328,15 +324,6 @@ PARALLEL_FOR_LOOP
 	}
       }
     }
-  };
-
-
-  template<class Impl>
-  void WilsonFermion<Impl>::DhopInternalCommsOverlapCompute(StencilImpl & st,DoubledGaugeField & U,
-						     const FermionField &in, FermionField &out,int dag) {
-
-    assert(0);
-
   };
 
  
