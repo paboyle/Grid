@@ -308,122 +308,54 @@ namespace Optimization {
 
   };
 
+
   struct Rotate{
 
-    static inline __m512 rotate(__m512 in, int n){ 
-      return = _mm512_alignr_epi32(in,in,n);          
+    static inline __m512 rotate(__m512 in,int n){ 
+      switch(n){
+      case 0: return tRotate<0>(in);break;
+      case 1: return tRotate<1>(in);break;
+      case 2: return tRotate<2>(in);break;
+      case 3: return tRotate<3>(in);break;
+      case 4: return tRotate<4>(in);break;
+      case 5: return tRotate<5>(in);break;
+      case 6: return tRotate<6>(in);break;
+      case 7: return tRotate<7>(in);break;
+
+      case 8 : return tRotate<8>(in);break;
+      case 9 : return tRotate<9>(in);break;
+      case 10: return tRotate<10>(in);break;
+      case 11: return tRotate<11>(in);break;
+      case 12: return tRotate<12>(in);break;
+      case 13: return tRotate<13>(in);break;
+      case 14: return tRotate<14>(in);break;
+      case 15: return tRotate<15>(in);break;
+      default: assert(0);
+      }
+    }
+    static inline __m512d rotate(__m512d in,int n){ 
+      switch(n){
+      case 0: return tRotate<0>(in);break;
+      case 1: return tRotate<1>(in);break;
+      case 2: return tRotate<2>(in);break;
+      case 3: return tRotate<3>(in);break;
+      case 4: return tRotate<4>(in);break;
+      case 5: return tRotate<5>(in);break;
+      case 6: return tRotate<6>(in);break;
+      case 7: return tRotate<7>(in);break;
+      default: assert(0);
+      }
+    }
+
+    template<int n> static inline __m512 tRotate(__m512 in){ 
+      return (__m512)_mm512_alignr_epi32((__m512i)in,(__m512i)in,n);          
     };
 
-    static inline __m512d rotate(__m512d in, int n){ 
-      return = _mm512_alignr_epi64(tmp,in,n);          
+    template<int n> static inline __m512d tRotate(__m512d in){ 
+      return (__m512d)_mm512_alignr_epi64((__m512i)in,(__m512i)in,n);          
     };
-
-
-#if 0
-    // 16 x 32 bit = 512 bits; 0-15 rotates
-    static inline __m512 rotateR(__m512 in, int n){ 
-
-      // 0 : D3210 C3210 B3210 A3210  -> D3 C3 B3 A3 D2 C2 B2 A2 D1 C1 B1 A1 D0 C0 B0 A0 
-      // 1 : A0321 D3210 C3210 B3210  -> A0 D3 C3 B3 A3 D2 C2 B2 A2 D1 C1 B1 A1 D0 C0 B0
-      // 2 : B0321 A0321 D3210 C3210  -> B0 A0 D3 C3 B3 A3 D2 C2 B2 A2 D1 C1 B1 A1 D0 C0
-      // 3 : C0321 B0321 A0321 D3210  -> C0 B0 A0 D3 C3 B3 A3 D2 C2 B2 A2 D1 C1 B1 A1 D0
-      // 4 : D0321 C0321 B0321 A0321  -> D0 C0 B0 A0 D3 C3 B3 A3 D2 C2 B2 A2 D1 C1 B1 A1
-      // 5 : A1032 D0321 C0321 B0321  -> A1 D0 C0 B0 A0 D3 C3 B3 A3 D2 C2 B2 A2 D1 C1 B1 
-      // 6 : B1032 A1032 D0321 C0321  -> B1 A1 D0 C0 B0 A0 D3 C3 B3 A3 D2 C2 B2 A2 D1 C1 
-      // 7 : C1032 B1032 A1032 D0321  -> C1 B1 A1 D0 C0 B0 A0 D3 C3 B3 A3 D2 C2 B2 A2 D1 
-      // 8 : D1032 C1032 B1032 A1032  -> D1 C1 B1 A1 D0 C0 B0 A0 D3 C3 B3 A3 D2 C2 B2 A2
-      //...
-      //15 : C3210 B3210 A3210 D2103  -> C3 B3 A3 D2 C2 B2 A2 D1 C1 B1 A1 D0 C0 B0 A0 D3 
-
-      int shuf_l = ( (n+3)/4 ) % 4; // shuf = 0,1,1,1,1,2,2,2,2,3,3,3,3,0,0,0 
-      int shuf_r = ( (n)/4 ) % 4;   // shuf = 0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3 
-
-      int peri = n%4;
-      __m512 left,right;
-      switch(shuf_l){                                                                // In  = D3210 C3210 B3210 A3210
-      case 0: left = in; break;                                                     // tmp = D3210 C3210 B3210 A3210
-      case 1: left = _mm512_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(0,3,2,1)); break; // tmp = D0321 C0321 B0321 A0321
-      case 2: left = _mm512_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2)); break; // tmp = D1032...
-      case 3: left = _mm512_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,1,0,3)); break; // tmp = D2103...
-      }
-
-      switch(shuf_r){                                                                // In  = D3210 C3210 B3210 A3210
-      case 0: right = in; break;                                                     // tmp = D3210 C3210 B3210 A3210
-      case 1: right = _mm512_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(0,3,2,1)); break; // tmp = D0321 C0321 B0321 A0321
-      case 2: right = _mm512_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2)); break; // tmp = D1032...
-      case 3: right = _mm512_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,1,0,3)); break; // tmp = D2103...
-      }
-      return = _mm512_alignr_epi32(left,right,peri*4);          
-
-    };
-
-    // 8 x 64 bit = 512 bits; 0-7 rotates
-    static inline __m512 RotateZ(__m512 in, int n){ 
-
-      // 0 : D10 C10 B10 A10  -> D1 C1 B1 A1 D0 C0 B0 A0 
-      // 1 : A01 D10 C10 B10  -> A0 D1 C1 B1 A1 D0 C0 B0
-      // 2 : B01 A01 D10 C10  -> B0 A0 D1 C1 B1 A1 D0 C0
-      // 3 : C01 B01 A01 D10  -> C0 B0 A0 D1 C1 B1 A1 D0 
-      // 4 : D01 C01 B01 A01  -> D0 C0 B0 A0 D1 C1 B1 A1
-      // 5 : A10 D01 C01 B01  -> A1 D0 C0 B0 A0 D1 C1 B1
-      // 6 : B10 A10 D01 C01  -> B1 A1 D0 C0 B0 A0 D1 C1
-      // 7 : C10 B10 A10 D01  -> C1 B1 A1 D0 C0 B0 A0 D1 
-
-      int shuf_l = ((n+3)/4) % 2;// 0,1,1,1,1,0,0,0
-      int shuf_r = (n/4)     % 2;
-      int peri = n%4;
-
-      __m512 left, right;
-      switch(shuf_l){                                                                // In  = D3210 C3210 B3210 A3210
-      case 0: left = in; break;                                                     // tmp = D3210 C3210 B3210 A3210
-      case 1: left = _mm512_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(0,1,3,2)); break; // tmp = D0132...
-      }
-      switch(shuf_r){                                                                // In  = D3210 C3210 B3210 A3210
-      case 0: right = in; break;                                                     // tmp = D3210 C3210 B3210 A3210
-      case 1: right = _mm512_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(0,1,3,2)); break; // tmp = D0132...
-      }
-      return = _mm512_alignr_epi32(tmp,in,peri*4);          
-    };
-
-
-
-    // 8 x 64 bit = 512 bits; 0-7 rotates
-    static inline __m512d RotateR(__m512d in, int n){ 
-
-      // 0 : D10 C10 B10 A10  -> D1 C1 B1 A1 D0 C0 B0 A0 
-      // 1 : A01 D10 C10 B10  -> A0 D1 C1 B1 A1 D0 C0 B0
-      // 2 : B01 A01 D10 C10  -> B0 A0 D1 C1 B1 A1 D0 C0
-      // 3 : C01 B01 A01 D10  -> C0 B0 A0 D1 C1 B1 A1 D0 
-      // 4 : D01 C01 B01 A01  -> D0 C0 B0 A0 D1 C1 B1 A1
-      // 5 : A10 D01 C01 B01  -> A1 D0 C0 B0 A0 D1 C1 B1
-      // 6 : B10 A10 D01 C01  -> B1 A1 D0 C0 B0 A0 D1 C1
-      // 7 : C10 B10 A10 D01  -> C1 B1 A1 D0 C0 B0 A0 D1 
-      int shuf_l = ((n+3)/4) % 2;// 0,1,1,1,1,0,0,0
-      int shuf_r = (n/4)     % 2;
-      int peri = n%4;
-
-      __m512 left, right;
-      switch(shuf_l){                                          
-      case 0: left = in; break;
-      case 1: left = _mm512_shuffle_pd(in,in,0x55);
-      }
-      switch(shuf_r){                                          
-      case 0: right = in; break;                               
-      case 1: right = _mm512_shuffle_pd(in,in,0x55);
-      }
-      return = _mm512_alignr_epi64(tmp,in,peri*2);          
-
-    };
-
-    // 4 x 128 bit = 512 bits; 0-4 rotates
-    static inline __m512 RotateZ(__m512 in, int n){ 
-      int peri = n%4;
-      return = _mm512_alignr_epi32(in,in,peri*2);          
-    };
-#endif
 
   };
-
 
   //////////////////////////////////////////////
   // Some Template specialization
