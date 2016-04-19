@@ -152,7 +152,7 @@ PARALLEL_FOR_LOOP
     // Peek a scalar object from the SIMD array
     //////////////////////////////////////////////////////////
     template<class vobj,class sobj>
-    void peekLocalSite(sobj &s,Lattice<vobj> &l,std::vector<int> &site){
+    void peekLocalSite(sobj &s,const Lattice<vobj> &l,std::vector<int> &site){
         
       GridBase *grid=l._grid;
 
