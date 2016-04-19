@@ -324,6 +324,7 @@ template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice
   int rd = grid->_rdimensions[dimension];
   int ld = grid->_ldimensions[dimension];
   int gd = grid->_gdimensions[dimension];
+  int ly = grid->_simd_layout[dimension];
 
   // Map to always positive shift modulo global full dimension.
   shift = (shift+fd)%fd;
@@ -332,6 +333,7 @@ template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice
   // the permute type
   int permute_dim =grid->PermuteDim(dimension);
   int permute_type=grid->PermuteType(dimension);
+  int permute_type_dist;
 
   for(int x=0;x<rd;x++){       
 
@@ -343,15 +345,31 @@ template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice
     int sshift = grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,cb);
     int sx     = (x+sshift)%rd;
 
+    // FIXME : This must change where we have a 
+    // Rotate slice.
+    
+    // Document how this works ; why didn't I do this when I first wrote it...
+    // wrap is whether sshift > rd.
+    //  num is sshift mod rd.
+    // 
     int permute_slice=0;
     if(permute_dim){
       int wrap = sshift/rd;
       int  num = sshift%rd;
+
       if ( x< rd-num ) permute_slice=wrap;
-      else permute_slice = 1-wrap;
+      else permute_slice = (wrap+1)%ly;
+
+      if ( (ly>2) && (permute_slice) ) {
+	assert(permute_type & RotateBit);
+	permute_type_dist = permute_type|permute_slice;
+      } else {
+	permute_type_dist = permute_type;
+      }
+      
     }
 
-    if ( permute_slice ) Copy_plane_permute(ret,rhs,dimension,x,sx,cbmask,permute_type);
+    if ( permute_slice ) Copy_plane_permute(ret,rhs,dimension,x,sx,cbmask,permute_type_dist);
     else                 Copy_plane(ret,rhs,dimension,x,sx,cbmask); 
 
   
