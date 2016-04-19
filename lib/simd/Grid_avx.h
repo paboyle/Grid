@@ -437,6 +437,111 @@ namespace Optimization {
 
   };
 
+#if defined (AVX2) || defined (AVXFMA4) 
+#define _mm256_alignr_epi32(ret,a,b,n) ret= _mm256_alignr_epi8(a,b,(n*4)%16)
+#define _mm256_alignr_epi64(ret,a,b,n) ret= _mm256_alignr_epi8(a,b,(n*8)%16)
+#endif
+
+#if defined (AVX1) 
+
+#define _mm256_alignr_epi32(ret,a,b,n) {	\
+    __m128 aa, bb;				\
+						\
+    aa  = _mm256_extractf128_ps(a,1);		\
+    bb  = _mm256_extractf128_ps(b,1);		\
+    aa  = _mm_alignr_epi8(aa,bb,(n*4)%16);	\
+    ret = _mm256_insertf128_ps(ret,aa,1);	\
+						\
+    aa  = _mm256_extractf128_ps(a,0);		\
+    bb  = _mm256_extractf128_ps(b,0);		\
+    aa  = _mm_alignr_epi8(aa,bb,(n*4)%16);	\
+    ret = _mm256_insertf128_ps(ret,aa,0);	\
+  }
+
+#define _mm256_alignr_epi64(ret,a,b,n) {	\
+    __m128 aa, bb;				\
+						\
+    aa  = _mm256_extractf128_pd(a,1);		\
+    bb  = _mm256_extractf128_pd(b,1);		\
+    aa  = _mm_alignr_epi8(aa,bb,(n*8)%16);	\
+    ret = _mm256_insertf128_pd(ret,aa,1);	\
+						\
+    aa  = _mm256_extractf128_pd(a,0);		\
+    bb  = _mm256_extractf128_pd(b,0);		\
+    aa  = _mm_alignr_epi8(aa,bb,(n*8)%16);	\
+    ret = _mm256_insertf128_pd(ret,aa,0);	\
+  }
+
+#endif
+
+    inline std::ostream & operator << (std::ostream& stream, const __m256 a)
+    {
+      const float *p=(const float *)&a;
+      stream<< "{"<<p[0]<<","<<p[1]<<","<<p[2]<<","<<p[3]<<","<<p[4]<<","<<p[5]<<","<<p[6]<<","<<p[7]<<"}";
+      return stream;
+    };
+    inline std::ostream & operator<< (std::ostream& stream, const __m256d a)
+    {
+      const double *p=(const double *)&a;
+      stream<< "{"<<p[0]<<","<<p[1]<<","<<p[2]<<","<<p[3]<<"}";
+      return stream;
+    };
+
+  struct Rotate{
+
+    static inline __m256 rotate(__m256 in,int n){ 
+      switch(n){
+      case 0: return tRotate<0>(in);break;
+      case 1: return tRotate<1>(in);break;
+      case 2: return tRotate<2>(in);break;
+      case 3: return tRotate<3>(in);break;
+      case 4: return tRotate<4>(in);break;
+      case 5: return tRotate<5>(in);break;
+      case 6: return tRotate<6>(in);break;
+      case 7: return tRotate<7>(in);break;
+      default: assert(0);
+      }
+    }
+    static inline __m256d rotate(__m256d in,int n){ 
+      switch(n){
+      case 0: return tRotate<0>(in);break;
+      case 1: return tRotate<1>(in);break;
+      case 2: return tRotate<2>(in);break;
+      case 3: return tRotate<3>(in);break;
+      default: assert(0);
+      }
+    }
+  
+    
+    template<int n>
+    static inline __m256 tRotate(__m256 in){ 
+      __m256 tmp = Permute::Permute0(in);
+      __m256 ret;
+      if ( n > 3 ) { 
+	_mm256_alignr_epi32(ret,in,tmp,n);  
+      } else {
+        _mm256_alignr_epi32(ret,tmp,in,n);          
+      }
+      //      std::cout << " align epi32 n=" <<n<<" in "<<tmp<<in<<" -> "<< ret <<std::endl;
+      return ret;
+    };
+
+    template<int n>
+    static inline __m256d tRotate(__m256d in){ 
+      __m256d tmp = Permute::Permute0(in);
+      __m256d ret;
+      if ( n > 1 ) {
+	_mm256_alignr_epi64(ret,in,tmp,n);          
+      } else {
+        _mm256_alignr_epi64(ret,tmp,in,n);          
+      }
+      //      std::cout << " align epi64 n=" <<n<<" in "<<tmp<<in<<" -> "<< ret <<std::endl;
+      return ret;
+    };
+
+  };
+
+
 
   //Complex float Reduce
   template<>
