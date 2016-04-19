@@ -42,7 +42,9 @@ template<class Gimpl> class WilsonLoops;
 #define INHERIT_GIMPL_TYPES(GImpl) \
     typedef typename GImpl::Simd                           Simd;\
     typedef typename GImpl::GaugeLinkField       GaugeLinkField;\
-    typedef typename GImpl::GaugeField               GaugeField;	
+    typedef typename GImpl::GaugeField               GaugeField;\
+    typedef typename GImpl::SiteGaugeField       SiteGaugeField;\
+    typedef typename GImpl::SiteGaugeLink         SiteGaugeLink;
 
 
     // 
