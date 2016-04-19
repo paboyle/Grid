@@ -321,6 +321,9 @@ PARALLEL_FOR_LOOP
 	int simd_layout     = _grid->_simd_layout[dimension];
 	int comm_dim        = _grid->_processors[dimension] >1 ;
 	int splice_dim      = _grid->_simd_layout[dimension]>1 && (comm_dim);
+	int rotate_dim      = _grid->_simd_layout[dimension]>2;
+
+	assert ( (rotate_dim && comm_dim) == false) ; // Do not think spread out is supported
 
 	int sshift[2];
 	
@@ -368,7 +371,8 @@ PARALLEL_FOR_LOOP
       int rd = _grid->_rdimensions[dimension];
       int ld = _grid->_ldimensions[dimension];
       int gd = _grid->_gdimensions[dimension];
-      
+      int ly = _grid->_simd_layout[dimension];
+
       // Map to always positive shift modulo global full dimension.
       int shift = (shiftpm+fd)%fd;
       
@@ -398,7 +402,7 @@ PARALLEL_FOR_LOOP
 	  int wrap = sshift/rd;
 	  int  num = sshift%rd;
 	  if ( x< rd-num ) permute_slice=wrap;
-	  else permute_slice = 1-wrap;
+	  else permute_slice = (wrap+1)%ly;
 	}
 
   	CopyPlane(point,dimension,x,sx,cbmask,permute_slice,wraparound);
@@ -418,7 +422,6 @@ PARALLEL_FOR_LOOP
       int simd_layout     = _grid->_simd_layout[dimension];
       int comm_dim        = _grid->_processors[dimension] >1 ;
       
-      //      assert(simd_layout==1); // Why?
       assert(comm_dim==1);
       int shift = (shiftpm + fd) %fd;
       assert(shift>=0);
@@ -529,7 +532,7 @@ PARALLEL_FOR_LOOP
 	      _entries[point][lo+o+b]._around_the_world=wrap;
 	    }
 	    
-	    }
+	  }
 	  o +=_grid->_slice_stride[dimension];
 	}
 	
@@ -749,6 +752,7 @@ PARALLEL_FOR_LOOP
 	  int comm_dim        = _grid->_processors[dimension] >1 ;
 
 	  assert(comm_dim==1);
+	  // This will not work with a rotate dim
 	  assert(simd_layout==2);
 	  assert(shift>=0);
 	  assert(shift<fd);
@@ -793,7 +797,9 @@ PARALLEL_FOR_LOOP
 	      gathermtime+=usecond();
 
 	      for(int i=0;i<Nsimd;i++){
-
+		
+		// FIXME 
+		// This logic is hard coded to simd_layout ==2 and not allowing >2
 		//		std::cout << "GatherSimd : lane 1st elem " << i << u_simd_send_buf[i ][u_comm_offset]<<std::endl;
 
 		int inner_bit = (Nsimd>>(permute_type+1));
