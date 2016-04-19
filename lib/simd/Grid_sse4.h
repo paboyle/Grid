@@ -267,10 +267,10 @@ namespace Optimization {
   struct Permute{
 
     static inline __m128 Permute0(__m128 in){
-      return _mm_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2));
+      return _mm_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2)); //AB CD -> CD AB
     };
     static inline __m128 Permute1(__m128 in){
-      return _mm_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1));
+      return _mm_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1)); //AB CD -> BA DC
     };
     static inline __m128 Permute2(__m128 in){
       return in;
@@ -279,7 +279,7 @@ namespace Optimization {
       return in;
     };
 
-    static inline __m128d Permute0(__m128d in){
+    static inline __m128d Permute0(__m128d in){ //AB -> BA
       return _mm_shuffle_pd(in,in,0x1);
     };
     static inline __m128d Permute1(__m128d in){
