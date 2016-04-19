@@ -294,6 +294,32 @@ namespace Optimization {
 
   };
 
+  struct Rotate{
+
+    static inline __m128 rotate(__m128 in,int n){ 
+      switch(n){
+      case 0: return tRotate<0>(in);break;
+      case 1: return tRotate<1>(in);break;
+      case 2: return tRotate<2>(in);break;
+      case 3: return tRotate<3>(in);break;
+      default: assert(0);
+      }
+    }
+    static inline __m128d rotate(__m128d in,int n){ 
+      switch(n){
+      case 0: return tRotate<0>(in);break;
+      case 1: return tRotate<1>(in);break;
+      default: assert(0);
+      }
+    }
+  
+#define _mm_alignr_epi32(a,b,n) _mm_alignr_epi8(a,b,(n*4)%16)
+#define _mm_alignr_epi64(a,b,n) _mm_alignr_epi8(a,b,(n*8)%16)
+    
+    template<int n> static inline __m128  tRotate(__m128  in){ return _mm_alignr_epi32(in,in,n); };
+    template<int n> static inline __m128d tRotate(__m128d in){ return _mm_alignr_epi64(in,in,n); };
+
+  };
   //////////////////////////////////////////////
   // Some Template specialization
 
