@@ -138,6 +138,25 @@ public:
     }
     inline int PermuteType(int dimension){
       int permute_type=0;
+      //
+      // FIXME:
+      //
+      // Best way to encode this would be to present a mask 
+      // for which simd dimensions are rotated, and the rotation
+      // size. If there is only one simd dimension rotated, this is just 
+      // a permute. 
+      //
+      // Cases: PermuteType == 1,2,4,8
+      // Distance should be either 0,1,2..
+      //
+      if ( _simd_layout[dimension] > 2 ) { 
+	for(int d=0;d<_ndimension;d++){
+	  if ( d != dimension ) assert ( (_simd_layout[d]==1)  );
+	}
+	permute_type = RotateBit; // How to specify distance; this is not just direction.
+	return permute_type;
+      }
+
       for(int d=_ndimension-1;d>dimension;d--){
 	if (_simd_layout[d]>1 ) permute_type++;
       }
@@ -147,12 +166,12 @@ public:
     // Array sizing queries
     ////////////////////////////////////////////////////////////////
 
-    inline int iSites(void) { return _isites; };
-    inline int Nsimd(void)  { return _isites; };// Synonymous with iSites
-    inline int oSites(void) { return _osites; };
-    inline int lSites(void) { return _isites*_osites; }; 
-    inline int gSites(void) { return _isites*_osites*_Nprocessors; }; 
-    inline int Nd    (void) { return _ndimension;};
+    inline int iSites(void) const { return _isites; };
+    inline int Nsimd(void)  const { return _isites; };// Synonymous with iSites
+    inline int oSites(void) const { return _osites; };
+    inline int lSites(void) const { return _isites*_osites; }; 
+    inline int gSites(void) const { return _isites*_osites*_Nprocessors; }; 
+    inline int Nd    (void) const { return _ndimension;};
 
     inline const std::vector<int> &FullDimensions(void)         { return _fdimensions;};
     inline const std::vector<int> &GlobalDimensions(void)       { return _gdimensions;};
@@ -164,6 +183,9 @@ public:
     ////////////////////////////////////////////////////////////////
     void GlobalIndexToGlobalCoor(int gidx,std::vector<int> &gcoor){
       Lexicographic::CoorFromIndex(gcoor,gidx,_gdimensions);
+    }
+    void LocalIndexToLocalCoor(int lidx,std::vector<int> &lcoor){
+      Lexicographic::CoorFromIndex(lcoor,lidx,_ldimensions);
     }
     void GlobalCoorToGlobalIndex(const std::vector<int> & gcoor,int & gidx){
       gidx=0;
