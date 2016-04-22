@@ -438,8 +438,8 @@ namespace Optimization {
   };
 
 #if defined (AVX2) || defined (AVXFMA4) 
-#define _mm256_alignr_epi32(ret,a,b,n) ret= _mm256_alignr_epi8(a,b,(n*4)%16)
-#define _mm256_alignr_epi64(ret,a,b,n) ret= _mm256_alignr_epi8(a,b,(n*8)%16)
+#define _mm256_alignr_epi32(ret,a,b,n) ret=(__m256) _mm256_alignr_epi8((__m256i)a,(__m256i)b,(n*4)%16)
+#define _mm256_alignr_epi64(ret,a,b,n) ret=(__m256d) _mm256_alignr_epi8((__m256i)a,(__m256i)b,(n*8)%16)
 #endif
 
 #if defined (AVX1) 
@@ -449,26 +449,26 @@ namespace Optimization {
 						\
     aa  = _mm256_extractf128_ps(a,1);		\
     bb  = _mm256_extractf128_ps(b,1);		\
-    aa  = _mm_alignr_epi8(aa,bb,(n*4)%16);	\
+    aa  = (__m128)_mm_alignr_epi8((__m128i)aa,(__m128i)bb,(n*4)%16);	\
     ret = _mm256_insertf128_ps(ret,aa,1);	\
 						\
     aa  = _mm256_extractf128_ps(a,0);		\
     bb  = _mm256_extractf128_ps(b,0);		\
-    aa  = _mm_alignr_epi8(aa,bb,(n*4)%16);	\
+    aa  = (__m128)_mm_alignr_epi8((__m128i)aa,(__m128i)bb,(n*4)%16);	\
     ret = _mm256_insertf128_ps(ret,aa,0);	\
   }
 
 #define _mm256_alignr_epi64(ret,a,b,n) {	\
-    __m128 aa, bb;				\
+    __m128d aa, bb;				\
 						\
     aa  = _mm256_extractf128_pd(a,1);		\
     bb  = _mm256_extractf128_pd(b,1);		\
-    aa  = _mm_alignr_epi8(aa,bb,(n*8)%16);	\
+    aa  = (__m128d)_mm_alignr_epi8((__m128i)aa,(__m128i)bb,(n*8)%16);	\
     ret = _mm256_insertf128_pd(ret,aa,1);	\
 						\
     aa  = _mm256_extractf128_pd(a,0);		\
     bb  = _mm256_extractf128_pd(b,0);		\
-    aa  = _mm_alignr_epi8(aa,bb,(n*8)%16);	\
+    aa  = (__m128d)_mm_alignr_epi8((__m128i)aa,(__m128i)bb,(n*8)%16);	\
     ret = _mm256_insertf128_pd(ret,aa,0);	\
   }
 
