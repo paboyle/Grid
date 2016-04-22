@@ -316,8 +316,8 @@ namespace Optimization {
 #define _mm_alignr_epi32(a,b,n) _mm_alignr_epi8(a,b,(n*4)%16)
 #define _mm_alignr_epi64(a,b,n) _mm_alignr_epi8(a,b,(n*8)%16)
     
-    template<int n> static inline __m128  tRotate(__m128  in){ return _mm_alignr_epi32(in,in,n); };
-    template<int n> static inline __m128d tRotate(__m128d in){ return _mm_alignr_epi64(in,in,n); };
+    template<int n> static inline __m128  tRotate(__m128  in){ return (__m128)_mm_alignr_epi32((__m128i)in,(__m128i)in,n); };
+    template<int n> static inline __m128d tRotate(__m128d in){ return (__m128d)_mm_alignr_epi64((__m128i)in,(__m128i)in,n); };
 
   };
   //////////////////////////////////////////////
