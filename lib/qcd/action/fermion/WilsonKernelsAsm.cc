@@ -27,7 +27,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid.h>
-#if defined(AVX512) || defined (IMCI)
+#if defined(AVX512) 
 //#if defined (IMCI)
 
 #include <simd/Intel512wilson.h>

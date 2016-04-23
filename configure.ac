@@ -55,15 +55,6 @@ echo :::::::::::::::::::::::::::::::::::::::::::
 
 AC_CHECK_FUNCS([gettimeofday])
 
-#AC_CHECK_LIB([gmp],[__gmpf_init],,
-#        [AC_MSG_ERROR(GNU Multiple Precision GMP library was not found in your system.
-#Please install or provide the correct path to your installation
-#Info at: http://www.gmplib.org)])
-
-#AC_CHECK_LIB([mpfr],[mpfr_init],,
-#        [AC_MSG_ERROR(GNU Multiple Precision MPFR library was not found in your system.
-#Please install or provide the correct path to your installation
-#Info at: http://www.mpfr.org/)])
 
 #
 # SIMD instructions selection
@@ -124,7 +115,7 @@ case ${ac_SIMD} in
        echo Configuring for IMCI
        AC_DEFINE([IMCI],[1],[IMCI Intrinsics for Knights Corner] )
        supported="cross compilation"
-       ac_ZMM=yes;
+       ac_ZMM=no;
      ;;
      NEONv8)
        echo Configuring for experimental ARMv8a support 
