@@ -594,8 +594,11 @@ PARALLEL_FOR_LOOP
       template<class compressor>
       void HaloExchange(const Lattice<vobj> &source,compressor &compress) 
       {
-	auto thr = HaloExchangeBegin(source,compress);
-        HaloExchangeComplete(thr);
+	Mergers.resize(0); 
+	Packets.resize(0);
+	HaloGather(source,compress);
+	Communicate();
+	CommsMerge();
       }
 
       void HaloExchangeComplete(std::thread &thr) 
