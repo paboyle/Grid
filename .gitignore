@@ -94,8 +94,7 @@ Thumbs.db
 
 # build directory #
 ###################
-build/*
-build_debug/*
+build*/*
 
 # IDE related files #
 #####################

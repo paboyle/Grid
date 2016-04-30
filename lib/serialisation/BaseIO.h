@@ -32,6 +32,22 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <type_traits>
 
 namespace Grid {
+  // helper function to read space-separated values
+  template <typename T>
+  std::vector<T> strToVec(const std::string s)
+  {
+    std::istringstream sstr(s);
+    T                  buf;
+    std::vector<T>     v;
+    
+    while(!sstr.eof())
+    {
+      sstr >> buf;
+      v.push_back(buf);
+    }
+    
+    return v;
+  }
   
   class Serializable {};
   

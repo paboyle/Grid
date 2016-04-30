@@ -140,4 +140,18 @@ int main(int argc,char **argv)
     std::cout << "Loaded (txt) -----------------" << std::endl;
     std::cout << copy3 << std::endl << veccopy3 << std::endl;
   }
+  
+  std::vector<int> iv = strToVec<int>("1 2 2 4");
+  std::vector<std::string> sv = strToVec<std::string>("bli bla blu");
+  
+  for (auto &e: iv)
+  {
+    std::cout << e << " ";
+  }
+  std::cout << std::endl;
+  for (auto &e: sv)
+  {
+    std::cout << e << " ";
+  }
+  std::cout << std::endl;
 }
