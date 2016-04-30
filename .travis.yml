@@ -12,7 +12,10 @@ script:
   - mkdir build
   - cd build
   - ../configure --enable-precision=single --enable-simd=AVX2 --enable-comms=none 
-  - make -j 4
+  - env
+  - cat config.log
+  - make 
+  - ./benchmarks/Benchmark_dwf --threads 1
 matrix:
   include:
     - compiler: gcc
