@@ -11,7 +11,7 @@ script:
   - ./scripts/reconfigure_script
   - mkdir build
   - cd build
-  - ../configure --enable-precision=single --enable-simd=AVX2 --enable-comms=none 
+  - ../configure CXXFLAGS="-mavx2 -mfma -fopenmp -O3 -std=c++11" LIBS="-fopenmp -lmpfr -lgmp" --enable-precision=single --enable-simd=AVX2 --enable-comms=none 
   - env
   - cat config.log
   - make 
@@ -30,5 +30,3 @@ matrix:
             - libmpc-dev
             - binutils-dev
       env: CXX=g++-4.9
-      env: CXXFLAGS="-mavx2 -mfma -fopenmp -O3 -std=c++11"
-      env: LIBS="-fopenmp -lmpfr -lgmp"
