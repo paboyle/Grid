@@ -1,0 +1,25 @@
+# Ubuntu 14.04 Trusty support
+sudo: required
+dist: trusty
+# Enable C++ support
+language: cpp
+# Compiler selection
+compiler:
+  - gcc
+# Build steps
+script:
+  - mkdir build
+  - cd build
+  - ../configure --enable-precision=single --enable-simd=AVX2 --enable-comms=none 
+matrix:
+  include:
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.9
+      env: CXX=g++-4.9
+      env: CXXFLAGS="-mavx2 -mfma -fopenmp -O3 -std=c++11"
+      env: LIBS="-fopenmp -lmpfr -lgmp"
