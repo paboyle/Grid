@@ -68,10 +68,8 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   // some assertions
   assert(FiveDimGrid._ndimension==5);
   assert(FourDimGrid._ndimension==4);
-  
   assert(FiveDimRedBlackGrid._ndimension==5);
   assert(FourDimRedBlackGrid._ndimension==4);
-
   assert(FiveDimRedBlackGrid._checker_dim==1);
 
   // Dimension zero of the five-d is the Ls direction
@@ -106,11 +104,75 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   dslashtime=0;
   dslash1time=0;
 }  
+
+template<class Impl>
+WilsonFermion5D<Impl>::WilsonFermion5D(int simd, GaugeField &_Umu,
+				       GridCartesian         &FiveDimGrid,
+				       GridRedBlackCartesian &FiveDimRedBlackGrid,
+				       GridCartesian         &FourDimGrid,
+				       GridRedBlackCartesian &FourDimRedBlackGrid,
+				       RealD _M5,const ImplParams &p) :
+  Kernels(p),
+  _FiveDimGrid        (&FiveDimGrid),
+  _FiveDimRedBlackGrid(&FiveDimRedBlackGrid),
+  _FourDimGrid        (&FourDimGrid),
+  _FourDimRedBlackGrid(&FourDimRedBlackGrid),
+  Stencil    (_FiveDimGrid,npoint,Even,directions,displacements),
+  StencilEven(_FiveDimRedBlackGrid,npoint,Even,directions,displacements), // source is Even
+  StencilOdd (_FiveDimRedBlackGrid,npoint,Odd ,directions,displacements), // source is Odd
+  M5(_M5),
+  Umu(_FourDimGrid),
+  UmuEven(_FourDimRedBlackGrid),
+  UmuOdd (_FourDimRedBlackGrid),
+  Lebesgue(_FourDimGrid),
+  LebesgueEvenOdd(_FourDimRedBlackGrid)
+{
+  int nsimd = Simd::Nsimd();
+
+  // some assertions
+  assert(FiveDimGrid._ndimension==5);
+  assert(FiveDimRedBlackGrid._ndimension==5);
+  assert(FiveDimRedBlackGrid._checker_dim==0); // Checkerboard the s-direction
+  assert(FourDimGrid._ndimension==4);
+  assert(FourDimRedBlackGrid._ndimension==4);
+
+  // Dimension zero of the five-d is the Ls direction
+  Ls=FiveDimGrid._fdimensions[0];
+  assert(FiveDimGrid._processors[0]         ==1);
+  assert(FiveDimGrid._simd_layout[0]        ==nsimd);
+
+  assert(FiveDimRedBlackGrid._fdimensions[0]==Ls);
+  assert(FiveDimRedBlackGrid._processors[0] ==1);
+  assert(FiveDimRedBlackGrid._simd_layout[0]==nsimd);
+
+  // Other dimensions must match the decomposition of the four-D fields 
+  for(int d=0;d<4;d++){
+    assert(FourDimRedBlackGrid._fdimensions[d]  ==FourDimGrid._fdimensions[d]);
+    assert(FiveDimRedBlackGrid._fdimensions[d+1]==FourDimGrid._fdimensions[d]);
+
+    assert(FourDimRedBlackGrid._processors[d]   ==FourDimGrid._processors[d]);
+    assert(FiveDimRedBlackGrid._processors[d+1] ==FourDimGrid._processors[d]);
+
+    assert(FourDimGrid._simd_layout[d]=1);
+    assert(FourDimRedBlackGrid._simd_layout[d]  ==1);
+    assert(FourDimRedBlackGrid._simd_layout[d]  ==1);
+    assert(FiveDimRedBlackGrid._simd_layout[d+1]==1);
+
+    assert(FiveDimGrid._fdimensions[d+1]        ==FourDimGrid._fdimensions[d]);
+    assert(FiveDimGrid._processors[d+1]         ==FourDimGrid._processors[d]);
+    assert(FiveDimGrid._simd_layout[d+1]        ==FourDimGrid._simd_layout[d]);
+  }
+
+  // Allocate the required comms buffer
+  ImportGauge(_Umu);
+}  
+
+
 template<class Impl>
 void WilsonFermion5D<Impl>::ImportGauge(const GaugeField &_Umu)
 {
-    GaugeField HUmu(_Umu._grid);
-    HUmu = _Umu*(-0.5);
+  GaugeField HUmu(_Umu._grid);
+  HUmu = _Umu*(-0.5);
   Impl::DoubleStore(GaugeGrid(),Umu,HUmu);
   pickCheckerboard(Even,UmuEven,Umu);
   pickCheckerboard(Odd ,UmuOdd,Umu);
@@ -294,15 +356,12 @@ void WilsonFermion5D<Impl>::DhopInternalCommsThenCompute(StencilImpl & st, Lebes
   Compressor compressor(dag);
 
   // Assume balanced KMP_AFFINITY; this is forced in GridThread.h
-
-  int threads = GridThread::GetThreads();
-  int HT      = GridThread::GetHyperThreads();
-  int cores   = GridThread::GetCores();
-  int nwork = U._grid->oSites();
+  int LLs = in._grid->_rdimensions[0];
   
   commtime -=usecond();
-  auto handle = st.HaloExchangeBegin(in,compressor);
-  st.HaloExchangeComplete(handle);
+  //  auto handle = st.HaloExchangeBegin(in,compressor);
+  //  st.HaloExchangeComplete(handle);
+  st.HaloExchange(in,compressor);
   commtime +=usecond();
 
   jointime -=usecond();
@@ -318,97 +377,48 @@ void WilsonFermion5D<Impl>::DhopInternalCommsThenCompute(StencilImpl & st, Lebes
     if( this->HandOptDslash ) {
 PARALLEL_FOR_LOOP
       for(int ss=0;ss<U._grid->oSites();ss++){
-	int sU=ss;
-	for(int s=0;s<Ls;s++){
-	  int sF = s+Ls*sU;
+	for(int s=0;s<LLs;s++){
+	  int sU=ss;
+	  int sF = s+LLs*sU;
 	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out);
 	  }
       }
     } else { 
 PARALLEL_FOR_LOOP
       for(int ss=0;ss<U._grid->oSites();ss++){
-	{
-	  int sd;
-	  for(sd=0;sd<Ls;sd++){
-	    int sU=ss;
-	    int sF = sd+Ls*sU;
-	    Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out);
-	  }
+	for(int s=0;s<LLs;s++){
+	  int sU=ss;
+	  int sF = s+LLs*sU;
+	  Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out);
 	}
       }
     }
   } else {
     if( this->AsmOptDslash ) {
-      //      for(int i=0;i<1;i++){
-      //      for(int i=0;i< PerformanceCounter::NumTypes(); i++ ){
-      //	PerformanceCounter Counter(i);
-      //	Counter.Start();
 
-#pragma omp parallel for 
-      for(int t=0;t<threads;t++){
-
-	int hyperthread = t%HT;
-	int core        = t/HT;
-
-        int sswork, swork,soff,ssoff,  sU,sF;
-	
-	GridThread::GetWork(nwork,core,sswork,ssoff,cores);
-	GridThread::GetWork(Ls   , hyperthread, swork, soff,HT);
-
-	for(int ss=0;ss<sswork;ss++){
-	  for(int s=soff;s<soff+swork;s++){
-
-	    sU=ss+ ssoff;
-
-	    if ( LebesgueOrder::UseLebesgueOrder ) {
-	      sU = lo.Reorder(sU);
-	    }
-	    sF = s+Ls*sU;
-	    Kernels::DiracOptAsmDhopSite(st,U,st.comm_buf,sF,sU,in,out);
-	  }
+PARALLEL_FOR_LOOP
+      for(int ss=0;ss<U._grid->oSites();ss++){
+	for(int s=0;s<LLs;s++){
+	  int sU=ss;
+	  int sF = s+LLs*sU;
+	  Kernels::DiracOptAsmDhopSite(st,U,st.comm_buf,sF,sU,in,out);
 	}
       }
-      //      Counter.Stop();
-      //      Counter.Report();
-      //      }
     } else if( this->HandOptDslash ) {
-      /*
-
-#pragma omp parallel for schedule(static)
-      for(int t=0;t<threads;t++){
-
-	int hyperthread = t%HT;
-	int core        = t/HT;
-
-        int sswork, swork,soff,ssoff,  sU,sF;
-	
-	GridThread::GetWork(nwork,core,sswork,ssoff,cores);
-	GridThread::GetWork(Ls   , hyperthread, swork, soff,HT);
-
-	for(int ss=0;ss<sswork;ss++){
-	  sU=ss+ ssoff;
-	  for(int s=soff;s<soff+swork;s++){
-	    sF = s+Ls*sU;
-	    Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sF,sU,in,out);
-	  }
-	}
-      }
-      */
-
 PARALLEL_FOR_LOOP     
       for(int ss=0;ss<U._grid->oSites();ss++){
-	int sU=ss;
-	for(int s=0;s<Ls;s++){
-	  int sF = s+Ls*sU;
+	for(int s=0;s<LLs;s++){
+	  int sU=ss;
+	  int sF = s+LLs*sU;
 	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sF,sU,in,out);
 	}
       }
     } else { 
 PARALLEL_FOR_LOOP
       for(int ss=0;ss<U._grid->oSites();ss++){
-	int sU=ss;
-	for(int s=0;s<Ls;s++){
-	  int sF = s+Ls*sU; 
+	for(int s=0;s<LLs;s++){
+	  int sU=ss;
+	  int sF = s+LLs*sU; 
 	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sF,sU,in,out);
 	}
       }
@@ -418,251 +428,6 @@ PARALLEL_FOR_LOOP
   alltime+=usecond();
 }
 
-template<class Impl>
-void WilsonFermion5D<Impl>::DhopInternalOMPbench(StencilImpl & st, LebesgueOrder &lo,
-						 DoubledGaugeField & U,
-						 const FermionField &in, FermionField &out,int dag)
-{
-  //  assert((dag==DaggerNo) ||(dag==DaggerYes));
-  alltime-=usecond();
-  Compressor compressor(dag);
-
-  // Assume balanced KMP_AFFINITY; this is forced in GridThread.h
-
-  int threads = GridThread::GetThreads();
-  int HT      = GridThread::GetHyperThreads();
-  int cores   = GridThread::GetCores();
-  int nwork = U._grid->oSites();
-  
-  commtime -=usecond();
-  auto handle = st.HaloExchangeBegin(in,compressor);
-  st.HaloExchangeComplete(handle);
-  commtime +=usecond();
-
-  jointime -=usecond();
-  jointime +=usecond();
-  
-  // Dhop takes the 4d grid from U, and makes a 5d index for fermion
-  // Not loop ordering and data layout.
-  // Designed to create 
-  // - per thread reuse in L1 cache for U
-  // - 8 linear access unit stride streams per thread for Fermion for hw prefetchable.
-
-#pragma omp parallel 
-  {
-  for(int jjj=0;jjj<100;jjj++){
-#pragma omp barrier
-  dslashtime -=usecond();
-  if ( dag == DaggerYes ) {
-    if( this->HandOptDslash ) {
-#pragma omp for
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	int sU=ss;
-	for(int s=0;s<Ls;s++){
-	  int sF = s+Ls*sU;
-	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out);
-	  }
-      }
-    } else { 
-
-#pragma omp for
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	{
-	  int sd;
-	  for(sd=0;sd<Ls;sd++){
-	    int sU=ss;
-	    int sF = sd+Ls*sU;
-	    Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out);
-	  }
-	}
-      }
-    }
-  } else {
-    if( this->AsmOptDslash ) {
-      //      for(int i=0;i<1;i++){
-      //      for(int i=0;i< PerformanceCounter::NumTypes(); i++ ){
-      //	PerformanceCounter Counter(i);
-      //	Counter.Start();
-
-#pragma omp for
-      for(int t=0;t<threads;t++){
-
-	int hyperthread = t%HT;
-	int core        = t/HT;
-
-        int sswork, swork,soff,ssoff,  sU,sF;
-	
-	GridThread::GetWork(nwork,core,sswork,ssoff,cores);
-	GridThread::GetWork(Ls   , hyperthread, swork, soff,HT);
-
-	for(int ss=0;ss<sswork;ss++){
-	  for(int s=soff;s<soff+swork;s++){
-
-	    sU=ss+ ssoff;
-
-	    if ( LebesgueOrder::UseLebesgueOrder ) {
-	      sU = lo.Reorder(sU);
-	    }
-	    sF = s+Ls*sU;
-	    Kernels::DiracOptAsmDhopSite(st,U,st.comm_buf,sF,sU,in,out);
-	  }
-	}
-      }
-      //      Counter.Stop();
-      //      Counter.Report();
-      //      }
-    } else if( this->HandOptDslash ) {
-#pragma omp for
-
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	int sU=ss;
-	for(int s=0;s<Ls;s++){
-	  int sF = s+Ls*sU;
-	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sF,sU,in,out);
-	}
-      }
-    } else { 
-#pragma omp for
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	int sU=ss;
-	for(int s=0;s<Ls;s++){
-	  int sF = s+Ls*sU; 
-	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sF,sU,in,out);
-	}
-      }
-    }
-  }
-  }
-  }
-  dslashtime +=usecond();
-  alltime+=usecond();
-}
-
-
-template<class Impl>
-void WilsonFermion5D<Impl>::DhopInternalL1bench(StencilImpl & st, LebesgueOrder &lo,
-						DoubledGaugeField & U,
-						const FermionField &in, FermionField &out,int dag)
-{
-  //  assert((dag==DaggerNo) ||(dag==DaggerYes));
-  alltime-=usecond();
-  Compressor compressor(dag);
-
-  // Assume balanced KMP_AFFINITY; this is forced in GridThread.h
-
-  int threads = GridThread::GetThreads();
-  int HT      = GridThread::GetHyperThreads();
-  int cores   = GridThread::GetCores();
-  int nwork = U._grid->oSites();
-  
-  commtime -=usecond();
-  auto handle = st.HaloExchangeBegin(in,compressor);
-  st.HaloExchangeComplete(handle);
-  commtime +=usecond();
-
-  jointime -=usecond();
-  jointime +=usecond();
-  
-  // Dhop takes the 4d grid from U, and makes a 5d index for fermion
-  // Not loop ordering and data layout.
-  // Designed to create 
-  // - per thread reuse in L1 cache for U
-  // - 8 linear access unit stride streams per thread for Fermion for hw prefetchable.
-
-#pragma omp parallel 
-  {
-  for(int jjj=0;jjj<100;jjj++){
-#pragma omp barrier
-  dslashtime -=usecond();
-  if ( dag == DaggerYes ) {
-    if( this->HandOptDslash ) {
-#pragma omp for
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	int sU=0;
-	for(int s=0;s<Ls;s++){
-	  int sF = s+Ls*sU;
-	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out);
-	  }
-      }
-    } else { 
-
-#pragma omp for
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	{
-	  int sd;
-	  for(sd=0;sd<Ls;sd++){
-	    int sU=0;
-	    int sF = sd+Ls*sU;
-	    Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out);
-	  }
-	}
-      }
-    }
-  } else {
-    if( this->AsmOptDslash ) {
-      //      for(int i=0;i<1;i++){
-      //      for(int i=0;i< PerformanceCounter::NumTypes(); i++ ){
-      //	PerformanceCounter Counter(i);
-      //	Counter.Start();
-
-#pragma omp for
-      for(int t=0;t<threads;t++){
-
-	int hyperthread = t%HT;
-	int core        = t/HT;
-
-        int sswork, swork,soff,ssoff,  sU,sF;
-	
-	GridThread::GetWork(nwork,core,sswork,ssoff,cores);
-	GridThread::GetWork(Ls   , hyperthread, swork, soff,HT);
-
-	for(int ss=0;ss<sswork;ss++){
-	  for(int s=soff;s<soff+swork;s++){
-
-	    sU=0;
-	    sF = s+Ls*sU;
-	    Kernels::DiracOptAsmDhopSite(st,U,st.comm_buf,sF,sU,in,out);
-	  }
-	}
-      }
-      //      Counter.Stop();
-      //      Counter.Report();
-      //      }
-    } else if( this->HandOptDslash ) {
-#pragma omp for
-
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	int sU=0;
-	for(int s=0;s<Ls;s++){
-	  int sF = s+Ls*sU;
-	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sF,sU,in,out);
-	}
-      }
-    } else { 
-#pragma omp for
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	int sU=0;
-	for(int s=0;s<Ls;s++){
-	  int sF = s+Ls*sU; 
-	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sF,sU,in,out);
-	}
-      }
-    }
-  }
-  }
-  }
-  dslashtime +=usecond();
-  alltime+=usecond();
-}
-
-
-template<class Impl>
-void WilsonFermion5D<Impl>::DhopInternalCommsOverlapCompute(StencilImpl & st, LebesgueOrder &lo,
-						     DoubledGaugeField & U,
-						     const FermionField &in, FermionField &out,int dag)
-{
-  assert(0);
-}
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int dag)
@@ -706,6 +471,8 @@ void WilsonFermion5D<Impl>::DW(const FermionField &in, FermionField &out,int dag
 
 FermOpTemplateInstantiate(WilsonFermion5D);
 GparityFermOpTemplateInstantiate(WilsonFermion5D);
+template class WilsonFermion5D<DomainWallRedBlack5dImplF>;		
+template class WilsonFermion5D<DomainWallRedBlack5dImplD>;
 
 }}
 

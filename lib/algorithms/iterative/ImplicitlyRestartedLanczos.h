@@ -564,6 +564,7 @@ until convergence
 	  
 	  for(int j=k1-1; j<k2+1; ++j){
 	    for(int k=0; k<Nm; ++k){
+	    B[j].checkerboard = evec[k].checkerboard;
 	      B[j] += Qt[k+Nm*j] * evec[k];
 	    }
 	  }
@@ -592,6 +593,7 @@ until convergence
 	  
 	  for(int j = 0; j<Nk; ++j){
 	    for(int k = 0; k<Nk; ++k){
+	    B[j].checkerboard = evec[k].checkerboard;
 	      B[j] += Qt[k+j*Nm] * evec[k];
 	    }
 //	    std::cout << "norm(B["<<j<<"])="<<norm2(B[j])<<std::endl;

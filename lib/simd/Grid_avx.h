@@ -410,22 +410,22 @@ namespace Optimization {
   struct Permute{
 
     static inline __m256 Permute0(__m256 in){
-      return _mm256_permute2f128_ps(in,in,0x01);
+      return _mm256_permute2f128_ps(in,in,0x01); //ABCD EFGH -> EFGH ABCD
     };
     static inline __m256 Permute1(__m256 in){
-      return _mm256_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2));
+      return _mm256_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2)); //ABCD EFGH -> CDAB GHEF
     };
     static inline __m256 Permute2(__m256 in){
-      return _mm256_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1));
+      return _mm256_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1)); //ABCD EFGH -> BADC FEHG
     };
     static inline __m256 Permute3(__m256 in){
       return in;
     };
 
     static inline __m256d Permute0(__m256d in){
-      return _mm256_permute2f128_pd(in,in,0x01);
+      return _mm256_permute2f128_pd(in,in,0x01); //AB CD -> CD AB
     };
-    static inline __m256d Permute1(__m256d in){
+    static inline __m256d Permute1(__m256d in){ //AB CD -> BA DC
       return _mm256_shuffle_pd(in,in,0x5);
     };
     static inline __m256d Permute2(__m256d in){
@@ -436,6 +436,111 @@ namespace Optimization {
     };
 
   };
+
+#if defined (AVX2) || defined (AVXFMA4) 
+#define _mm256_alignr_epi32(ret,a,b,n) ret=(__m256) _mm256_alignr_epi8((__m256i)a,(__m256i)b,(n*4)%16)
+#define _mm256_alignr_epi64(ret,a,b,n) ret=(__m256d) _mm256_alignr_epi8((__m256i)a,(__m256i)b,(n*8)%16)
+#endif
+
+#if defined (AVX1) 
+
+#define _mm256_alignr_epi32(ret,a,b,n) {	\
+    __m128 aa, bb;				\
+						\
+    aa  = _mm256_extractf128_ps(a,1);		\
+    bb  = _mm256_extractf128_ps(b,1);		\
+    aa  = (__m128)_mm_alignr_epi8((__m128i)aa,(__m128i)bb,(n*4)%16);	\
+    ret = _mm256_insertf128_ps(ret,aa,1);	\
+						\
+    aa  = _mm256_extractf128_ps(a,0);		\
+    bb  = _mm256_extractf128_ps(b,0);		\
+    aa  = (__m128)_mm_alignr_epi8((__m128i)aa,(__m128i)bb,(n*4)%16);	\
+    ret = _mm256_insertf128_ps(ret,aa,0);	\
+  }
+
+#define _mm256_alignr_epi64(ret,a,b,n) {	\
+    __m128d aa, bb;				\
+						\
+    aa  = _mm256_extractf128_pd(a,1);		\
+    bb  = _mm256_extractf128_pd(b,1);		\
+    aa  = (__m128d)_mm_alignr_epi8((__m128i)aa,(__m128i)bb,(n*8)%16);	\
+    ret = _mm256_insertf128_pd(ret,aa,1);	\
+						\
+    aa  = _mm256_extractf128_pd(a,0);		\
+    bb  = _mm256_extractf128_pd(b,0);		\
+    aa  = (__m128d)_mm_alignr_epi8((__m128i)aa,(__m128i)bb,(n*8)%16);	\
+    ret = _mm256_insertf128_pd(ret,aa,0);	\
+  }
+
+#endif
+
+    inline std::ostream & operator << (std::ostream& stream, const __m256 a)
+    {
+      const float *p=(const float *)&a;
+      stream<< "{"<<p[0]<<","<<p[1]<<","<<p[2]<<","<<p[3]<<","<<p[4]<<","<<p[5]<<","<<p[6]<<","<<p[7]<<"}";
+      return stream;
+    };
+    inline std::ostream & operator<< (std::ostream& stream, const __m256d a)
+    {
+      const double *p=(const double *)&a;
+      stream<< "{"<<p[0]<<","<<p[1]<<","<<p[2]<<","<<p[3]<<"}";
+      return stream;
+    };
+
+  struct Rotate{
+
+    static inline __m256 rotate(__m256 in,int n){ 
+      switch(n){
+      case 0: return tRotate<0>(in);break;
+      case 1: return tRotate<1>(in);break;
+      case 2: return tRotate<2>(in);break;
+      case 3: return tRotate<3>(in);break;
+      case 4: return tRotate<4>(in);break;
+      case 5: return tRotate<5>(in);break;
+      case 6: return tRotate<6>(in);break;
+      case 7: return tRotate<7>(in);break;
+      default: assert(0);
+      }
+    }
+    static inline __m256d rotate(__m256d in,int n){ 
+      switch(n){
+      case 0: return tRotate<0>(in);break;
+      case 1: return tRotate<1>(in);break;
+      case 2: return tRotate<2>(in);break;
+      case 3: return tRotate<3>(in);break;
+      default: assert(0);
+      }
+    }
+  
+    
+    template<int n>
+    static inline __m256 tRotate(__m256 in){ 
+      __m256 tmp = Permute::Permute0(in);
+      __m256 ret;
+      if ( n > 3 ) { 
+	_mm256_alignr_epi32(ret,in,tmp,n);  
+      } else {
+        _mm256_alignr_epi32(ret,tmp,in,n);          
+      }
+      //      std::cout << " align epi32 n=" <<n<<" in "<<tmp<<in<<" -> "<< ret <<std::endl;
+      return ret;
+    };
+
+    template<int n>
+    static inline __m256d tRotate(__m256d in){ 
+      __m256d tmp = Permute::Permute0(in);
+      __m256d ret;
+      if ( n > 1 ) {
+	_mm256_alignr_epi64(ret,in,tmp,n);          
+      } else {
+        _mm256_alignr_epi64(ret,tmp,in,n);          
+      }
+      //      std::cout << " align epi64 n=" <<n<<" in "<<tmp<<in<<" -> "<< ret <<std::endl;
+      return ret;
+    };
+
+  };
+
 
 
   //Complex float Reduce

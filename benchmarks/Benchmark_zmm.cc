@@ -127,7 +127,7 @@ int bench(std::ofstream &os, std::vector<int> &latt4,int Ls)
   t1=usecond();
   mfa = flops*ncall/(t1-t0);
   std::cout<<GridLogMessage << "Called ASM Dw"<< " mflop/s =   "<< mfa<<std::endl;
-
+  /*
   int dag=DaggerNo;
   t0=usecond();
   for(int i=0;i<1;i++){
@@ -144,12 +144,12 @@ int bench(std::ofstream &os, std::vector<int> &latt4,int Ls)
   t1=usecond();
   mfl1= flops*100/(t1-t0);
   std::cout<<GridLogMessage << "Called ASM-L1 Dw"<< " mflop/s =   "<< mfl1<<std::endl;
-
   os << latt4[0]*latt4[1]*latt4[2]*latt4[3]<< " "<<Ls<<" "<< latt4[0] <<" " <<latt4[2]<< " "
      << mfc<<" "
      << mfa<<" "
      << mfo<<" "
      << mfl1<<std::endl;
+  */
 
 #if 0
   for(int i=0;i< PerformanceCounter::NumTypes(); i++ ){
@@ -166,6 +166,7 @@ int bench(std::ofstream &os, std::vector<int> &latt4,int Ls)
   diff = resulto-resulta;
   std::cout<<GridLogMessage << "diff "<< norm2(diff)<<std::endl;
   std::cout<<std::endl;
+  return 0;
 }
 
 

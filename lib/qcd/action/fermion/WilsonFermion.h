@@ -116,9 +116,6 @@ namespace Grid {
 
       void DhopInternalCommsThenCompute(StencilImpl & st,DoubledGaugeField & U,
 				    const FermionField &in, FermionField &out,int dag) ;
-      void DhopInternalCommsOverlapCompute(StencilImpl & st,DoubledGaugeField & U,
-				    const FermionField &in, FermionField &out,int dag) ;
-
 
       // Constructor
       WilsonFermion(GaugeField &_Umu,
