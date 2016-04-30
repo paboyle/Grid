@@ -529,5 +529,7 @@ void WilsonKernels<Impl>::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField 
 #endif
 
   FermOpTemplateInstantiate(WilsonKernels);
+template class WilsonKernels<DomainWallRedBlack5dImplF>;		
+template class WilsonKernels<DomainWallRedBlack5dImplD>;
 
 }}

@@ -267,10 +267,10 @@ namespace Optimization {
   struct Permute{
 
     static inline __m128 Permute0(__m128 in){
-      return _mm_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2));
+      return _mm_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(1,0,3,2)); //AB CD -> CD AB
     };
     static inline __m128 Permute1(__m128 in){
-      return _mm_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1));
+      return _mm_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1)); //AB CD -> BA DC
     };
     static inline __m128 Permute2(__m128 in){
       return in;
@@ -279,7 +279,7 @@ namespace Optimization {
       return in;
     };
 
-    static inline __m128d Permute0(__m128d in){
+    static inline __m128d Permute0(__m128d in){ //AB -> BA
       return _mm_shuffle_pd(in,in,0x1);
     };
     static inline __m128d Permute1(__m128d in){
@@ -294,6 +294,32 @@ namespace Optimization {
 
   };
 
+  struct Rotate{
+
+    static inline __m128 rotate(__m128 in,int n){ 
+      switch(n){
+      case 0: return tRotate<0>(in);break;
+      case 1: return tRotate<1>(in);break;
+      case 2: return tRotate<2>(in);break;
+      case 3: return tRotate<3>(in);break;
+      default: assert(0);
+      }
+    }
+    static inline __m128d rotate(__m128d in,int n){ 
+      switch(n){
+      case 0: return tRotate<0>(in);break;
+      case 1: return tRotate<1>(in);break;
+      default: assert(0);
+      }
+    }
+  
+#define _mm_alignr_epi32(a,b,n) _mm_alignr_epi8(a,b,(n*4)%16)
+#define _mm_alignr_epi64(a,b,n) _mm_alignr_epi8(a,b,(n*8)%16)
+    
+    template<int n> static inline __m128  tRotate(__m128  in){ return (__m128)_mm_alignr_epi32((__m128i)in,(__m128i)in,n); };
+    template<int n> static inline __m128d tRotate(__m128d in){ return (__m128d)_mm_alignr_epi64((__m128i)in,(__m128i)in,n); };
+
+  };
   //////////////////////////////////////////////
   // Some Template specialization
 

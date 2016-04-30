@@ -299,15 +299,43 @@ namespace Grid {
     }
     friend inline void permute(Grid_simd &y,Grid_simd b,int perm)
     {
-      if      (perm==3) permute3(y,b);
-      else if (perm==2) permute2(y,b);
-      else if (perm==1) permute1(y,b);
-      else if (perm==0) permute0(y,b);
+      if ( perm & RotateBit ) {
+	int dist = perm&0xF;
+        y=rotate(b,dist);
+	return;
+      }
+      switch(perm){
+      case 3: permute3(y,b); break;
+      case 2: permute2(y,b); break;
+      case 1: permute1(y,b); break;
+      case 0: permute0(y,b); break;
+      default: assert(0);
+      }
     }
-
-
     
   };// end of Grid_simd class definition 
+
+  ////////////////////////////////////////////////////////////////////
+  // General rotate
+  ////////////////////////////////////////////////////////////////////
+  template <class S, class V, IfNotComplex<S> =0> 
+  inline Grid_simd<S,V> rotate(Grid_simd<S,V> b,int nrot)
+  {
+    nrot = nrot % Grid_simd<S,V>::Nsimd();
+    Grid_simd<S,V> ret;
+    //    std::cout << "Rotate Real by "<<nrot<<std::endl;
+    ret.v = Optimization::Rotate::rotate(b.v,nrot);
+    return ret;
+  }
+  template <class S, class V, IfComplex<S> =0> 
+  inline Grid_simd<S,V> rotate(Grid_simd<S,V> b,int nrot)
+  {
+    nrot = nrot % Grid_simd<S,V>::Nsimd();
+    Grid_simd<S,V> ret;
+    //    std::cout << "Rotate Complex by "<<nrot<<std::endl;
+    ret.v = Optimization::Rotate::rotate(b.v,2*nrot);
+    return ret;
+  }
 
   ///////////////////////
   // Splat

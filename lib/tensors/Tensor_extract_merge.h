@@ -44,7 +44,7 @@ template<class vsimd,class scalar>
 inline void extract(typename std::enable_if<!isGridTensor<vsimd>::value, const vsimd >::type * y, 
 		    std::vector<scalar *> &extracted,int offset){
   // FIXME: bounce off memory is painful
-  static const int Nsimd=vsimd::Nsimd();
+  static const int Nsimd=sizeof(vsimd)/sizeof(scalar);
   int Nextr=extracted.size();
   int s=Nsimd/Nextr;
 
@@ -59,7 +59,9 @@ inline void extract(typename std::enable_if<!isGridTensor<vsimd>::value, const v
 template<class vsimd,class scalar>
 inline void merge(typename std::enable_if<!isGridTensor<vsimd>::value, vsimd >::type * y, 
 		  std::vector<scalar *> &extracted,int offset){
-  static const int Nsimd=vsimd::Nsimd();
+
+  static const int Nsimd=sizeof(vsimd)/sizeof(scalar);
+
   int Nextr=extracted.size();
   int s=Nsimd/Nextr; // can have sparse occupation of simd vector if simd_layout does not fill it
                      // replicate n-fold. Use to allow Integer masks to 
@@ -127,7 +129,7 @@ template<class vobj> inline void extract(const vobj &vec,std::vector<typename vo
   typedef typename vobj::scalar_type scalar_type ;
   typedef typename vobj::vector_type vector_type ;
 
-  static const int Nsimd=vobj::vector_type::Nsimd();
+  static const int Nsimd=sizeof(vector_type)/sizeof(scalar_type);
   static const int words=sizeof(vobj)/sizeof(vector_type);
   int Nextr=extracted.size();
   int s=Nsimd/Nextr;
@@ -174,7 +176,7 @@ void merge(vobj &vec,std::vector<typename vobj::scalar_object> &extracted)
   typedef typename vobj::scalar_type scalar_type ;
   typedef typename vobj::vector_type vector_type ;
   
-  static const int Nsimd=vobj::vector_type::Nsimd();
+  static const int Nsimd=sizeof(vector_type)/sizeof(scalar_type);
   static const int words=sizeof(vobj)/sizeof(vector_type);
 
   int Nextr = extracted.size();
@@ -199,7 +201,7 @@ void merge(vobj &vec,std::vector<typename vobj::scalar_object *> &extracted,int 
   typedef typename vobj::scalar_type scalar_type ;
   typedef typename vobj::vector_type vector_type ;
   
-  const int Nsimd=vobj::vector_type::Nsimd();
+  const int Nsimd=sizeof(vector_type)/sizeof(scalar_type);
   const int words=sizeof(vobj)/sizeof(vector_type);
 
   int Nextr=extracted.size();
