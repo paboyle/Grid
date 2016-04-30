@@ -65,8 +65,11 @@ inline uint64_t cyclecount(void){
    return tmp;
 }
 #elif defined __x86_64__
+#include <immintrin.h>
+#ifndef __INTEL_COMPILER
 #include <x86intrin.h>
-inline uint64_t cyclecount(void){ 
+#endif
+inline uint64_t cyclecount(void){
    return __rdtsc();
 }
 #else
