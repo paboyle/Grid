@@ -49,7 +49,8 @@ public:
 
 #define LOG(channel) std::cout << HadronsLog##channel
 #define HADRON_ERROR(msg)\
-LOG(Error) << msg << std::endl;\
+LOG(Error) << msg << " (" << __FUNCTION__ << " at " << __FILE__ << ":"\
+           << __LINE__ << ")" << std::endl;\
 abort();
 
 #define DEBUG_VAR(var) LOG(Debug) << #var << "= " << (var) << std::endl;
@@ -71,6 +72,18 @@ public:\
     }\
 private:\
     name(void);
+
+#define SINGLETON_DEFCTOR(name)\
+public:\
+    name(const name &e) = delete;\
+    void operator=(const name &e) = delete;\
+    static name & getInstance(void)\
+    {\
+        static name e;\
+        return e;\
+    }\
+private:\
+    name(void) = default;
 
 END_HADRONS_NAMESPACE
 

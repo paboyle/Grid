@@ -43,7 +43,8 @@ public:
     class Par: Serializable
     {
     public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Par, unsigned int, Ls);
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Par, std::string , source,
+                                             std::string , solver);
     };
 public:
     // constructor
@@ -55,13 +56,17 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+    // setup
+    virtual void setup(Environment &env);
     // allocation
     virtual void allocate(Environment &env);
     // execution
     virtual void execute(Environment &env);
 private:
-    Par par_;
-    LatticePropagator *quark_{nullptr}, *quark5d_{nullptr};
+    Par                 par_;
+    unsigned int        Ls_;
+    LatticePropagator   *source_{nullptr}, *quark_{nullptr}, *quark5d_{nullptr};
+    Environment::Solver *solver_{nullptr};
 };
 
 MODULE_REGISTER(MQuark);

@@ -29,6 +29,7 @@ directory.
 #define Hadrons_Environment_hpp_
 
 #include <Hadrons/Global.hpp>
+#include <Hadrons/FermionAction.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -39,31 +40,46 @@ class Environment
 {
     SINGLETON(Environment);
 public:
-    typedef std::unique_ptr<GridCartesian>         GridPt;
-    typedef std::unique_ptr<GridRedBlackCartesian> GridRbPt;
-    typedef std::unique_ptr<GridParallelRNG>       RngPt;
-    typedef std::unique_ptr<LatticePropagator>     PropPt;
-    typedef std::unique_ptr<LatticeGaugeField>     GaugePt;
+    typedef std::function<void(LatticeFermion &,
+                               const LatticeFermion &)> Solver;
+    typedef std::unique_ptr<GridCartesian>              GridPt;
+    typedef std::unique_ptr<GridRedBlackCartesian>      GridRbPt;
+    typedef std::unique_ptr<GridParallelRNG>            RngPt;
+    typedef std::unique_ptr<FermionAction>              FActionPt;
+    typedef std::unique_ptr<LatticePropagator>          PropPt;
+    typedef std::unique_ptr<LatticeGaugeField>          GaugePt;
 public:
     // dry run
     void                    dryRun(const bool isDry);
-    bool                    isDryRun(void);
+    bool                    isDryRun(void) const;
     // grids
-    GridCartesian *         get4dGrid(void);
-    GridRedBlackCartesian * getRb4dGrid(void);
-    GridCartesian *         get5dGrid(const unsigned int Ls);
-    GridRedBlackCartesian * getRb5dGrid(const unsigned int Ls);
+    GridCartesian *         getGrid(const unsigned int Ls = 1) const;
+    GridRedBlackCartesian * getRbGrid(const unsigned int Ls = 1) const;
+    // fermion actions
+    void                    addFermionAction(FActionPt action);
+    FermionAction *         getFermionAction(const std::string name) const;
+    // solvers
+    void                    addSolver(const std::string name, Solver s,
+                                      const std::string actionName);
+    void                    callSolver(const std::string name,
+                                       LatticeFermion &sol,
+                                       const LatticeFermion &src) const;
     // quark propagators
     void                    addProp(const std::string name,
                                     const unsigned int Ls = 1);
     void                    freeProp(const std::string name);
-    LatticePropagator *     getProp(const std::string name);
-    bool                    propExists(const std::string name);
-    unsigned int            nProp(void);
+    bool                    isProp5d(const std::string name) const;
+    unsigned int            getPropLs(const std::string name) const;
+    LatticePropagator *     getProp(const std::string name) const;
+    bool                    propExists(const std::string name) const;
+    unsigned int            nProp(void) const;
     // gauge configuration
-    LatticeGaugeField *     getGauge(void);
+    LatticeGaugeField *     getGauge(void) const;
     void                    loadUnitGauge(void);
     void                    loadRandomGauge(void);
+    // random number generator
+    void                    setSeed(const std::vector<int> &seed);
+    GridParallelRNG *       get4dRng(void) const;
     // general free
     void                    free(const std::string name);
     void                    freeAll(void);
@@ -74,6 +90,9 @@ private:
     GridRbPt                            gridRb4d_;
     std::map<unsigned int, GridRbPt>    gridRb5d_;
     RngPt                               rng4d_;
+    std::map<std::string, FActionPt>    fAction_;
+    std::map<std::string, Solver>       solver_;
+    std::map<std::string, std::string>  solverAction_;
     std::map<std::string, PropPt>       prop_;
     std::map<std::string, unsigned int> propSize_;
     GaugePt                             gauge_;

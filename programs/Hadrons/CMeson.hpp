@@ -58,8 +58,6 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
-    // allocation
-    virtual void allocate(Environment &env);
     // execution
     virtual void execute(Environment &env);
 private:

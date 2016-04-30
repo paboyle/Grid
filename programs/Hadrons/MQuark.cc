@@ -47,7 +47,9 @@ void MQuark::parseParameters(XmlReader &reader, const std::string name)
 // dependency relation
 std::vector<std::string> MQuark::getInput(void)
 {
-    return std::vector<std::string>();
+    std::vector<std::string> in = {par_.source, par_.solver};
+    
+    return in;
 }
 
 std::vector<std::string> MQuark::getOutput(void)
@@ -57,14 +59,20 @@ std::vector<std::string> MQuark::getOutput(void)
     return out;
 }
 
+// setup ///////////////////////////////////////////////////////////////////////
+void MQuark::setup(Environment &env)
+{
+    Ls_ = env.getFermionAction(par_.solver)->getLs();
+}
+
 // allocation //////////////////////////////////////////////////////////////////
 void MQuark::allocate(Environment &env)
 {
     env.addProp(getName());
     quark_ = env.getProp(getName());
-    if (par_.Ls > 1)
+    if (Ls_ > 1)
     {
-        env.addProp(getName() + "_5d", par_.Ls);
+        env.addProp(getName() + "_5d", Ls_);
         quark5d_ = env.getProp(getName() + "_5d");
     }
 }
@@ -72,22 +80,53 @@ void MQuark::allocate(Environment &env)
 // execution
 void MQuark::execute(Environment &env)
 {
+    LatticePropagator *fullSource;
+    LatticeFermion    source(env.getGrid(Ls_)), sol(env.getGrid(Ls_));
+    
     LOG(Message) << "computing quark propagator '" << getName() << "'"
                  << std::endl;
+    if (!env.isProp5d(par_.source))
+    {
+        if (Ls_ == 1)
+        {
+            fullSource = env.getProp(par_.source);
+        }
+        else
+        {
+            HADRON_ERROR("MQuark not implemented with 5D actions");
+        }
+    }
+    else
+    {
+        if (Ls_ == 1)
+        {
+            HADRON_ERROR("MQuark not implemented with 5D actions");
+        }
+        else if (Ls_ != env.getPropLs(par_.source))
+        {
+            HADRON_ERROR("MQuark not implemented with 5D actions");
+        }
+        else
+        {
+            fullSource = env.getProp(par_.source);
+        }
+    }
     
-    GridCartesian         *g4d   = env.get4dGrid(),
-                          *g5d   = env.get5dGrid(par_.Ls);
-    GridRedBlackCartesian *gRb4d = env.getRb4dGrid(),
-                          *gRb5d = env.getRb5dGrid(par_.Ls);
-    LatticeGaugeField     &Umu   = *env.getGauge();
-    LatticeFermion        src(g5d); src=zero;
-    LatticeFermion        result(g5d); result=zero;
-    
-    RealD mass=0.1;
-    RealD M5=1.8;
-    DomainWallFermionR Ddwf(Umu, *g5d, *gRb5d, *g4d, *gRb4d, mass, M5);
-    
-    ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
-    SchurRedBlackDiagMooeeSolve<LatticeFermion> SchurSolver(CG);
-    SchurSolver(Ddwf,src,result);
+    LOG(Message) << "inverting using solver '" << par_.solver
+                 << "' on source '" << par_.source << "'" << std::endl;
+    for (unsigned int s = 0; s < Ns; ++s)
+    for (unsigned int c = 0; c < Nc; ++c)
+    {
+        PropToFerm(source, *fullSource, s, c);
+        sol = zero;
+        env.callSolver(par_.solver, sol, source);
+        if (Ls_ == 1)
+        {
+            FermToProp(*quark_, sol, s, c);
+        }
+        else
+        {
+            HADRON_ERROR("MQuark not implemented with 5D actions");
+        }
+    }
 }

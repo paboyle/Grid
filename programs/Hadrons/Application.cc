@@ -38,10 +38,17 @@ using namespace Hadrons;
 Application::Application(const std::string parameterFileName)
 : parameterFileName_(parameterFileName)
 , env_(Environment::getInstance())
+, actionFactory_(FermionActionFactory::getInstance())
 , modFactory_(ModuleFactory::getInstance())
 {
+    LOG(Message) << "Fermion actions available:" << std::endl;
+    auto list = actionFactory_.getBuilderList();
+    for (auto &m: list)
+    {
+        LOG(Message) << "  " << m << std::endl;
+    }
     LOG(Message) << "Modules available:" << std::endl;
-    auto list = modFactory_.getModuleList();
+    list = modFactory_.getBuilderList();
     for (auto &m: list)
     {
         LOG(Message) << "  " << m << std::endl;
@@ -61,10 +68,10 @@ void Application::run(void)
 }
 
 // parse parameter file ////////////////////////////////////////////////////////
-class ModuleId: Serializable
+class ObjectId: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(ModuleId,
+    GRID_SERIALIZABLE_CLASS_MEMBERS(ObjectId,
                                     std::string, name,
                                     std::string, type);
 };
@@ -72,10 +79,22 @@ public:
 void Application::parseParameterFile(void)
 {
     XmlReader reader(parameterFileName_);
-    ModuleId  id;
+    ObjectId  id;
     
     LOG(Message) << "Reading '" << parameterFileName_ << "'..." << std::endl;
     read(reader, "parameters", par_);
+    push(reader, "actions");
+    push(reader, "action");
+    do
+    {
+        read(reader, "id", id);
+        env_.addFermionAction(actionFactory_.create(id.type, id.name));
+        auto &action = *env_.getFermionAction(id.name);
+        action.parseParameters(reader, "options");
+        action.create(env_);
+    } while (reader.nextElement("action"));
+    pop(reader);
+    pop(reader);
     push(reader, "modules");
     push(reader, "module");
     do
@@ -92,6 +111,7 @@ void Application::parseParameterFile(void)
     } while (reader.nextElement("module"));
     pop(reader);
     pop(reader);
+    env_.setSeed(strToVec<int>(par_.seed));
 }
 
 // schedule computation ////////////////////////////////////////////////////////
@@ -122,33 +142,38 @@ void Application::schedule(void)
     unsigned int k = 0;
     
     std::vector<Graph<std::string>> con = moduleGraph.getConnectedComponents();
-    LOG(Message) << "Program:" << std::endl;
+    
     for (unsigned int i = 0; i < con.size(); ++i)
     {
-        std::vector<std::vector<std::string>> t = con[i].allTopoSort();
-        int                                   memPeak, minMemPeak = -1;
-        unsigned int                          bestInd;
-        bool                                  msg;
-
-        env_.dryRun(true);
-        for (unsigned int p = 0; p < t.size(); ++p)
+//        std::vector<std::vector<std::string>> t = con[i].allTopoSort();
+//        int                                   memPeak, minMemPeak = -1;
+//        unsigned int                          bestInd;
+//        bool                                  msg;
+//
+//        LOG(Message) << "analyzing " << t.size() << " possible programs..."
+//                     << std::endl;
+//        env_.dryRun(true);
+//        for (unsigned int p = 0; p < t.size(); ++p)
+//        {
+//            msg = HadronsLogMessage.isActive();
+//            HadronsLogMessage.Active(false);
+//        
+//            memPeak = execute(t[p]);
+//            if ((memPeak < minMemPeak) or (minMemPeak < 0))
+//            {
+//                minMemPeak = memPeak;
+//                bestInd = p;
+//            }
+//            HadronsLogMessage.Active(msg);
+//            env_.freeAll();
+//        }
+//        env_.dryRun(false);
+        std::vector<std::string> t = con[i].topoSort();
+        LOG(Message) << "Program " << i + 1 << ":" << std::endl;
+        for (unsigned int j = 0; j < t.size(); ++j)
         {
-            msg = HadronsLogMessage.isActive();
-            HadronsLogMessage.Active(false);
-            memPeak = execute(t[p]);
-            if ((memPeak < minMemPeak) or (minMemPeak < 0))
-            {
-                minMemPeak = memPeak;
-                bestInd = p;
-            }
-            HadronsLogMessage.Active(msg);
-            env_.freeAll();
-        }
-        env_.dryRun(false);
-        for (unsigned int j = 0; j < t[bestInd].size(); ++j)
-        {
-            program_.push_back(t[bestInd][j]);
-            LOG(Message) << std::setw(4) << std::right << k << ": "
+            program_.push_back(t[j]);
+            LOG(Message) << std::setw(4) << std::right << k + 1 << ": "
                          << program_[k] << std::endl;
             k++;
         }
@@ -164,7 +189,7 @@ void Application::configLoop(void)
     {
         LOG(Message) << "Starting measurement for trajectory " << t
                      << std::endl;
-        env_.loadUnitGauge();
+        env_.loadRandomGauge();
         execute(program_);
         env_.freeAll();
     }
@@ -172,8 +197,25 @@ void Application::configLoop(void)
 
 unsigned int Application::execute(const std::vector<std::string> &program)
 {
-    unsigned int memPeak = 0;
+    unsigned int                          memPeak = 0;
+    std::vector<std::vector<std::string>> freeProg;
     
+    freeProg.resize(program.size());
+    for (auto &n: associatedModule_)
+    {
+        auto pred = [&n, this](const std::string &s)
+        {
+            auto &in = input_[s];
+            auto it  = std::find(in.begin(), in.end(), n.first);
+            
+            return (it != in.end()) or (s == n.second);
+        };
+        auto it = std::find_if(program.rbegin(), program.rend(), pred);
+        if (it != program.rend())
+        {
+            freeProg[program.rend() - it - 1].push_back(n.first);
+        }
+    }
     for (unsigned int i = 0; i < program.size(); ++i)
     {
         LOG(Message) << "Measurement step (" << i+1 << "/" << program.size()
@@ -184,21 +226,9 @@ unsigned int Application::execute(const std::vector<std::string> &program)
         {
             memPeak = env_.nProp();
         }
-        for (auto &n: associatedModule_)
+        for (auto &n: freeProg[i])
         {
-            bool canFree = true;
-            
-            for (unsigned int j = i + 1; j < program.size(); ++j)
-            {
-                auto &in = input_[program[j]];
-                auto it  = std::find(in.begin(), in.end(), n.first);
-                canFree  = canFree and (it == in.end());
-            }
-            if (canFree and env_.propExists(n.first))
-            {
-                LOG(Message) << "freeing '" << n.first << "'" << std::endl;
-                env_.free(n.first);
-            }
+            env_.free(n);
         }
     }
     

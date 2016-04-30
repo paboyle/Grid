@@ -29,6 +29,7 @@ directory.
 #define Hadrons_ModuleFactory_hpp_
 
 #include <Hadrons/Global.hpp>
+#include <Hadrons/Factory.hpp>
 #include <Hadrons/Module.hpp>
 
 BEGIN_HADRONS_NAMESPACE
@@ -36,22 +37,9 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                            ModuleFactory                                   *
  ******************************************************************************/
-class ModuleFactory
+class ModuleFactory: public Factory<Module>
 {
-    SINGLETON(ModuleFactory)
-public:
-    typedef std::function<std::unique_ptr<Module>(const std::string )>
-        FactoryFunc;
-public:
-    // registration
-    void registerModule(const std::string type, const FactoryFunc &f);
-    // get module list
-    std::vector<std::string> getModuleList(void) const;
-    // factory
-    std::unique_ptr<Module> create(const std::string type,
-                                   const std::string name) const;
-private:
-    std::map<std::string, FactoryFunc> factory_;
+    SINGLETON_DEFCTOR(ModuleFactory)
 };
 
 END_HADRONS_NAMESPACE

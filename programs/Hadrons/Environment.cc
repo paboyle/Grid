@@ -37,15 +37,13 @@ using namespace Hadrons;
 // constructor /////////////////////////////////////////////////////////////////
 Environment::Environment(void)
 {
-    std::vector<int> seed4d({1,2,3,4});
-    
     grid4d_.reset(SpaceTimeGrid::makeFourDimGrid(
         GridDefaultLatt(), GridDefaultSimd(Nd, vComplex::Nsimd()),
         GridDefaultMpi()));
     gridRb4d_.reset(SpaceTimeGrid::makeFourDimRedBlackGrid(grid4d_.get()));
     rng4d_.reset(new GridParallelRNG(grid4d_.get()));
-    rng4d_->SeedFixedIntegers(seed4d);
     gauge_.reset(new LatticeGaugeField(grid4d_.get()));
+    loadUnitGauge();
 }
 
 // dry run /////////////////////////////////////////////////////////////////////
@@ -54,27 +52,24 @@ void Environment::dryRun(const bool isDry)
     dryRun_ = isDry;
 }
 
-bool Environment::isDryRun(void)
+bool Environment::isDryRun(void) const
 {
     return dryRun_;
 }
 
 // grids ///////////////////////////////////////////////////////////////////////
-GridCartesian * Environment::get4dGrid(void)
-{
-    return grid4d_.get();
-}
-
-GridRedBlackCartesian * Environment::getRb4dGrid(void)
-{
-    return gridRb4d_.get();
-}
-
-GridCartesian * Environment::get5dGrid(const unsigned int Ls)
+GridCartesian * Environment::getGrid(const unsigned int Ls) const
 {
     try
     {
-        return grid5d_.at(Ls).get();
+        if (Ls == 1)
+        {
+            return grid4d_.get();
+        }
+        else
+        {
+            return grid5d_.at(Ls).get();
+        }
     }
     catch(std::out_of_range &)
     {
@@ -82,15 +77,68 @@ GridCartesian * Environment::get5dGrid(const unsigned int Ls)
     }
 }
 
-GridRedBlackCartesian * Environment::getRb5dGrid(const unsigned int Ls)
+GridRedBlackCartesian * Environment::getRbGrid(const unsigned int Ls) const
 {
     try
     {
-        return gridRb5d_.at(Ls).get();
+        if (Ls == 1)
+        {
+            return gridRb4d_.get();
+        }
+        else
+        {
+            return gridRb5d_.at(Ls).get();
+        }
     }
     catch(std::out_of_range &)
     {
         HADRON_ERROR("no red-black 5D grid with Ls= " << Ls);
+    }
+}
+
+// fermion actions /////////////////////////////////////////////////////////////
+void Environment::addFermionAction(FActionPt action)
+{
+    fAction_[action->getName()] = std::move(action);
+}
+
+FermionAction * Environment::getFermionAction(const std::string name) const
+{
+    try
+    {
+        return fAction_.at(name).get();
+    }
+    catch(std::out_of_range &)
+    {
+        try
+        {
+            return fAction_.at(solverAction_.at(name)).get();
+        }
+        catch (std::out_of_range &)
+        {
+            HADRON_ERROR("no action with name '" << name << "'");
+        }
+    }
+}
+
+// solvers /////////////////////////////////////////////////////////////////////
+void Environment::addSolver(const std::string name, Solver s,
+                            const std::string actionName)
+{
+    solver_[name]       = s;
+    solverAction_[name] = actionName;
+}
+
+void Environment::callSolver(const std::string name, LatticeFermion &sol,
+                             const LatticeFermion &source) const
+{
+    try
+    {
+        solver_.at(name)(sol, source);
+    }
+    catch(std::out_of_range &)
+    {
+        HADRON_ERROR("no solver with name '" << name << "'");
     }
 }
 
@@ -154,11 +202,46 @@ void Environment::freeProp(const std::string name)
     }
 }
 
-LatticePropagator * Environment::getProp(const std::string name)
+bool Environment::isProp5d(const std::string name) const
 {
     if (propExists(name))
     {
-        return prop_[name].get();
+        return (getProp(name)->_grid->GlobalDimensions().size() == Nd + 1);
+    }
+    else
+    {
+        HADRON_ERROR("propagator '" + name + "' unknown");
+        
+        return false;
+    }
+}
+
+unsigned int Environment::getPropLs(const std::string name) const
+{
+    if (propExists(name))
+    {
+        if (isProp5d(name))
+        {
+            return getProp(name)->_grid->GlobalDimensions()[0];
+        }
+        else
+        {
+            return 1;
+        }
+    }
+    else
+    {
+        HADRON_ERROR("propagator '" + name + "' unknown");
+        
+        return 0;
+    }
+}
+
+LatticePropagator * Environment::getProp(const std::string name) const
+{
+    if (propExists(name))
+    {
+        return prop_.at(name).get();
     }
     else
     {
@@ -168,21 +251,12 @@ LatticePropagator * Environment::getProp(const std::string name)
     }
 }
 
-bool Environment::propExists(const std::string name)
+bool Environment::propExists(const std::string name) const
 {
-    auto it = prop_.find(name);
-    
-    if (it == prop_.end())
-    {
-        return false;
-    }
-    else
-    {
-        return true;
-    }
+    return (prop_.find(name) != prop_.end());
 }
 
-unsigned int Environment::nProp(void)
+unsigned int Environment::nProp(void) const
 {
     unsigned int size = 0;
     
@@ -195,7 +269,7 @@ unsigned int Environment::nProp(void)
 }
 
 // gauge configuration /////////////////////////////////////////////////////////
-LatticeGaugeField * Environment::getGauge(void)
+LatticeGaugeField * Environment::getGauge(void) const
 {
     return gauge_.get();
 }
@@ -210,11 +284,23 @@ void Environment::loadRandomGauge(void)
     SU3::HotConfiguration(*rng4d_, *gauge_);
 }
 
+// random number generator /////////////////////////////////////////////////////
+void Environment::setSeed(const std::vector<int> &seed)
+{
+    rng4d_->SeedFixedIntegers(seed);
+}
+
+GridParallelRNG * Environment::get4dRng(void) const
+{
+    return rng4d_.get();
+}
+
 // general free ////////////////////////////////////////////////////////////////
 void Environment::free(const std::string name)
 {
     if (propExists(name))
     {
+        LOG(Message) << "freeing '" << name << "'" << std::endl;
         freeProp(name);
     }
 }

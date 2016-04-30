@@ -1,9 +1,9 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/ModuleFactory.cc
+Source file: programs/Hadrons/FermionAction.cc
 
-Copyright (C) 2015
+Copyright (C) 2016
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -25,53 +25,36 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/ModuleFactory.hpp>
+#include <Hadrons/FermionAction.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
 
 /******************************************************************************
- *                      ModuleFactory implementation                          *
+ *                      FermionAction implementation                          *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-ModuleFactory::ModuleFactory(void)
+FermionAction::FermionAction(const std::string name)
+: name_(name)
+{}
+
+// access //////////////////////////////////////////////////////////////////////
+std::string FermionAction::getName(void) const
 {
+    return name_;
 }
 
-// registration ////////////////////////////////////////////////////////////////
-void ModuleFactory::registerModule(const std::string type,
-                                   const FactoryFunc &f)
+unsigned int FermionAction::getLs(void) const
 {
-    factory_[type] = f;
+    return 1;
 }
 
-// get module list /////////////////////////////////////////////////////////////
-std::vector<std::string> ModuleFactory::getModuleList(void) const
+void FermionAction::setFMat(FMat *fMat)
 {
-    std::vector<std::string> list;
-    
-    for (auto &f: factory_)
-    {
-        list.push_back(f.first);
-    }
-    
-    return list;
+    fMat_.reset(fMat);
 }
 
-// factory /////////////////////////////////////////////////////////////////////
-std::unique_ptr<Module> ModuleFactory::create(const std::string type,
-                                              const std::string name) const
+FermionAction::FMat * FermionAction::getFMat(void)
 {
-    FactoryFunc func;
-    
-    try
-    {
-        func = factory_.at(type);
-    }
-    catch (std::out_of_range)
-    {
-        HADRON_ERROR("module type '" + type + "' unknown");
-    }
-    
-    return func(name);
+    return fMat_.get();
 }

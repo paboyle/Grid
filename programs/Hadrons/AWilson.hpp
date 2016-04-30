@@ -1,9 +1,9 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/Module.cc
+Source file: programs/Hadrons/AWilson.hpp
 
-Copyright (C) 2015
+Copyright (C) 2016
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -25,31 +25,41 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/Module.hpp>
+#ifndef Hadrons_AWilson_hpp_
+#define Hadrons_AWilson_hpp_
 
-using namespace Grid;
-using namespace Hadrons;
+#include <Hadrons/Global.hpp>
+#include <Hadrons/FermionAction.hpp>
+#include <Hadrons/FermionActionFactory.hpp>
+
+BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                           Module implementation                            *
+ *                           Wilson fermions                                  *
  ******************************************************************************/
-// constructor /////////////////////////////////////////////////////////////////
-Module::Module(const std::string name)
-: name_(name)
-{}
-
-// access //////////////////////////////////////////////////////////////////////
-std::string Module::getName(void) const
+class AWilson: public FermionAction
 {
-    return name_;
-}
-
-void Module::operator()(Environment &env)
-{
-    setup(env);
-    allocate(env);
-    if (!env.isDryRun())
+public:
+    class Par: Serializable
     {
-        execute(env);
-    }
-}
+    public:
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Par, double, mass);
+    };
+public:
+    // constructor
+    AWilson(const std::string name);
+    // destructor
+    virtual ~AWilson(void) = default;
+    // parse parameters
+    virtual void parseParameters(XmlReader &reader, const std::string name);
+    // create operator
+    virtual void create(Environment &env);
+private:
+    Par par_;
+};
+
+ACTION_REGISTER(AWilson);
+
+END_HADRONS_NAMESPACE
+
+#endif // Hadrons_AWilson_hpp_

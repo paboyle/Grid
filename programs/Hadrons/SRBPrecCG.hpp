@@ -1,9 +1,9 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/Module.cc
+Source file: programs/Hadrons/SRBPrecCG.hpp
 
-Copyright (C) 2015
+Copyright (C) 2016
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -25,31 +25,45 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/Module.hpp>
+#ifndef Hadrons_SRBPrecCG_hpp_
+#define Hadrons_SRBPrecCG_hpp_
 
-using namespace Grid;
-using namespace Hadrons;
+#include <Hadrons/Global.hpp>
+#include <Hadrons/Module.hpp>
+#include <Hadrons/ModuleFactory.hpp>
+
+BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                           Module implementation                            *
+ *                         SRBPrecCG                                 *
  ******************************************************************************/
-// constructor /////////////////////////////////////////////////////////////////
-Module::Module(const std::string name)
-: name_(name)
-{}
-
-// access //////////////////////////////////////////////////////////////////////
-std::string Module::getName(void) const
+class SRBPrecCG: public Module
 {
-    return name_;
-}
-
-void Module::operator()(Environment &env)
-{
-    setup(env);
-    allocate(env);
-    if (!env.isDryRun())
+public:
+    class Par: Serializable
     {
-        execute(env);
-    }
-}
+    public:
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Par, std::string, action,
+                                             double     , residual);
+    };
+public:
+    // constructor
+    SRBPrecCG(const std::string name);
+    // destructor
+    virtual ~SRBPrecCG(void) = default;
+    // parse parameters
+    virtual void parseParameters(XmlReader &reader, const std::string name);
+    // dependency relation
+    virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getOutput(void);
+    // execution
+    virtual void execute(Environment &env);
+private:
+    Par par_;
+};
+
+MODULE_REGISTER(SRBPrecCG);
+
+END_HADRONS_NAMESPACE
+
+#endif // Hadrons_SRBPrecCG_hpp_

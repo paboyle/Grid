@@ -29,6 +29,7 @@ directory.
 #define Hadrons_Application_hpp_
 
 #include <Hadrons/Global.hpp>
+#include <Hadrons/FermionActionFactory.hpp>
 #include <Hadrons/Environment.hpp>
 #include <Hadrons/ModuleFactory.hpp>
 
@@ -59,7 +60,8 @@ class GlobalPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(GlobalPar,
-                                    ConfigPar, configs);
+                                    ConfigPar,   configs,
+                                    std::string, seed);
 };
 
 /******************************************************************************
@@ -88,11 +90,13 @@ private:
     std::string                                     parameterFileName_;
     GlobalPar                                       par_;
     Environment                                     &env_;
+    FermionActionFactory                            &actionFactory_;
     ModuleFactory                                   &modFactory_;
     std::map<std::string, std::unique_ptr<Module>>  module_;
     std::map<std::string, std::string>              associatedModule_;
     std::map<std::string, std::vector<std::string>> input_;
     std::vector<std::string>                        program_;
+    std::vector<std::vector<std::string>>           freeProg_;
 };
 
 END_HADRONS_NAMESPACE

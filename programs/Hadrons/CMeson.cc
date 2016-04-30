@@ -59,10 +59,6 @@ std::vector<std::string> CMeson::getOutput(void)
     return output;
 }
 
-// memory footprint ////////////////////////////////////////////////////////////
-void CMeson::allocate(Environment &env)
-{}
-
 // execution ///////////////////////////////////////////////////////////////////
 void CMeson::execute(Environment &env)
 {

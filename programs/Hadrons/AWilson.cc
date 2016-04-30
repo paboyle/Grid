@@ -1,9 +1,9 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/Module.cc
+Source file: programs/Hadrons/AWilson.cc
 
-Copyright (C) 2015
+Copyright (C) 2016
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -25,31 +25,32 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/Module.hpp>
+#include <Hadrons/AWilson.hpp>
+#include <Hadrons/Environment.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
 
 /******************************************************************************
- *                           Module implementation                            *
- ******************************************************************************/
+*                          AWilson implementation                             *
+******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-Module::Module(const std::string name)
-: name_(name)
+AWilson::AWilson(const std::string name)
+: FermionAction(name)
 {}
 
-// access //////////////////////////////////////////////////////////////////////
-std::string Module::getName(void) const
+// parse parameters ////////////////////////////////////////////////////////////
+void AWilson::parseParameters(XmlReader &reader, const std::string name)
 {
-    return name_;
+   read(reader, name, par_);
 }
 
-void Module::operator()(Environment &env)
+// create operator /////////////////////////////////////////////////////////////
+void AWilson::create(Environment &env)
 {
-    setup(env);
-    allocate(env);
-    if (!env.isDryRun())
-    {
-        execute(env);
-    }
+    auto &U      = *env.getGauge();
+    auto &grid   = *env.getGrid();
+    auto &gridRb = *env.getRbGrid();
+    
+    setFMat(new WilsonFermionR(U, grid, gridRb, par_.mass));
 }

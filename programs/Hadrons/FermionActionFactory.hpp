@@ -1,9 +1,9 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/Module.cc
+Source file: programs/Hadrons/FermionActionFactory.hpp
 
-Copyright (C) 2015
+Copyright (C) 2016
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -25,31 +25,23 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/Module.hpp>
+#ifndef Hadrons_FermionActionFactory_hpp_
+#define Hadrons_FermionActionFactory_hpp_
 
-using namespace Grid;
-using namespace Hadrons;
+#include <Hadrons/Global.hpp>
+#include <Hadrons/Factory.hpp>
+#include <Hadrons/FermionAction.hpp>
+
+BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                           Module implementation                            *
+ *                         FermionActionFactory                               *
  ******************************************************************************/
-// constructor /////////////////////////////////////////////////////////////////
-Module::Module(const std::string name)
-: name_(name)
-{}
-
-// access //////////////////////////////////////////////////////////////////////
-std::string Module::getName(void) const
+class FermionActionFactory: public Factory<FermionAction>
 {
-    return name_;
-}
+    SINGLETON_DEFCTOR(FermionActionFactory)
+};
 
-void Module::operator()(Environment &env)
-{
-    setup(env);
-    allocate(env);
-    if (!env.isDryRun())
-    {
-        execute(env);
-    }
-}
+END_HADRONS_NAMESPACE
+
+#endif // Hadrons_FermionActionFactory_hpp_

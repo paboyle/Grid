@@ -1,9 +1,9 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/Module.cc
+Source file: programs/Hadrons/SRBPrecCG.cc
 
-Copyright (C) 2015
+Copyright (C) 2016
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -25,31 +25,50 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/Module.hpp>
+#include <Hadrons/SRBPrecCG.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
 
 /******************************************************************************
- *                           Module implementation                            *
- ******************************************************************************/
+*                       SRBPrecCG implementation                              *
+******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-Module::Module(const std::string name)
-: name_(name)
+SRBPrecCG::SRBPrecCG(const std::string name)
+: Module(name)
 {}
 
-// access //////////////////////////////////////////////////////////////////////
-std::string Module::getName(void) const
+// parse parameters
+void SRBPrecCG::parseParameters(XmlReader &reader, const std::string name)
 {
-    return name_;
+   read(reader, name, par_);
 }
 
-void Module::operator()(Environment &env)
+// dependency relation
+std::vector<std::string> SRBPrecCG::getInput(void)
 {
-    setup(env);
-    allocate(env);
-    if (!env.isDryRun())
+    return std::vector<std::string>();
+}
+
+std::vector<std::string> SRBPrecCG::getOutput(void)
+{
+    std::vector<std::string> out = {getName()};
+    
+    return out;
+}
+
+// execution ///////////////////////////////////////////////////////////////////
+void SRBPrecCG::execute(Environment &env)
+{
+    auto &mat   = *(env.getFermionAction(par_.action)->getFMat());
+    auto solver = [&mat, this](LatticeFermion &sol,
+                               const LatticeFermion &source)
     {
-        execute(env);
-    }
+        ConjugateGradient<LatticeFermion>           cg(par_.residual, 10000);
+        SchurRedBlackDiagMooeeSolve<LatticeFermion> schurSolver(cg);
+        
+        schurSolver(mat, source, sol);
+    };
+    
+    env.addSolver(getName(), solver, par_.action);
 }

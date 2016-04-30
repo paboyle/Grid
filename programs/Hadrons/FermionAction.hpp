@@ -1,9 +1,9 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/Module.hpp
+Source file: programs/Hadrons/FermionAction.hpp
 
-Copyright (C) 2015
+Copyright (C) 2016
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -25,58 +25,59 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#ifndef Hadrons_Module_hpp_
-#define Hadrons_Module_hpp_
+#ifndef Hadrons_FermionAction_hpp_
+#define Hadrons_FermionAction_hpp_
 
 #include <Hadrons/Global.hpp>
-#include <Hadrons/Environment.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
-// module registration macro
-#define MODULE_REGISTER(mod)\
-class mod##ModuleRegistrar\
+// action registration macro
+#define ACTION_REGISTER(action)\
+class action##ActionRegistrar\
 {\
 public:\
-    mod##ModuleRegistrar(void)\
+    action##ActionRegistrar(void)\
     {\
-        ModuleFactory &modFac = ModuleFactory::getInstance();\
-        modFac.registerBuilder(#mod, [&](const std::string name)\
-                              {\
-                                  return std::unique_ptr<mod>(new mod(name));\
-                              });\
+        FermionActionFactory &actionFac = FermionActionFactory::getInstance();\
+        actionFac.registerBuilder(#action, [&](const std::string name)\
+                                  {\
+                                      return std::unique_ptr<action>(\
+                                          new action(name));\
+                                  });\
     }\
 };\
-static mod##ModuleRegistrar mod##ModuleRegistrarInstance;
+static action##ActionRegistrar action##ActionRegistrarInstance;
 
 /******************************************************************************
- *                                 Module                                     *
+ *                             FermionAction                                  *
  ******************************************************************************/
-class Module
+class Environment;
+
+class FermionAction
 {
 public:
+    typedef FermionOperator<WilsonImplR> FMat;
+    typedef std::unique_ptr<FMat>        FMatPt;
+public:
     // constructor
-    Module(const std::string name);
+    FermionAction(const std::string name);
     // destructor
-    virtual ~Module(void) = default;
+    virtual ~FermionAction(void) = default;
     // access
-    std::string getName(void) const;
+            std::string  getName(void) const;
+    virtual unsigned int getLs(void) const;
+            void         setFMat(FMat *fMat);
+            FMat *       getFMat(void);
     // parse parameters
     virtual void parseParameters(XmlReader &reader, const std::string name) = 0;
-    // dependency relation
-    virtual std::vector<std::string> getInput(void) = 0;
-    virtual std::vector<std::string> getOutput(void) = 0;
-    // setup
-    virtual void setup(Environment &env) {};
-    // allocation
-    virtual void allocate(Environment &env) {};
-    // execution
-    void operator()(Environment &env);
-    virtual void execute(Environment &env) = 0;
+    // create operator
+    virtual void create(Environment &env) = 0;
 private:
     std::string name_;
+    FMatPt      fMat_;
 };
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_Module_hpp_
+#endif // Hadrons_FermionAction_hpp_
