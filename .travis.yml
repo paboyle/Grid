@@ -8,9 +8,11 @@ compiler:
   - gcc
 # Build steps
 script:
+  - ./scripts/reconfigure_script
   - mkdir build
   - cd build
   - ../configure --enable-precision=single --enable-simd=AVX2 --enable-comms=none 
+  - make -j 4
 matrix:
   include:
     - compiler: gcc
