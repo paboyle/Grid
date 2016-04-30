@@ -25,6 +25,8 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-4.9
+            - libmpfr-dev
+            - libgmp-dev
       env: CXX=g++-4.9
       env: CXXFLAGS="-mavx2 -mfma -fopenmp -O3 -std=c++11"
       env: LIBS="-fopenmp -lmpfr -lgmp"
