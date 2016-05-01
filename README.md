@@ -1,4 +1,4 @@
-# Grid
+# Grid [![Build Status](https://travis-ci.org/paboyle/Grid.svg?branch=master)](https://travis-ci.org/paboyle/Grid)
 Data parallel C++ mathematical object library
 
 Last update 2015/7/30

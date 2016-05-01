@@ -1,20 +1,15 @@
-# Ubuntu 14.04 Trusty support
-sudo: required
-dist: trusty
-# Enable C++ support
 language: cpp
-# Compiler selection
-# Build steps
-script:
-  - ./scripts/reconfigure_script
-  - mkdir build
-  - cd build
-  - ../configure CXXFLAGS="-mavx2 -mfma -fopenmp -O3 -std=c++11" LIBS="-fopenmp -lmpfr -lgmp" --enable-precision=single --enable-simd=AVX2 --enable-comms=none 
-  - make 
-  - ./benchmarks/Benchmark_dwf --threads 1
+
 matrix:
   include:
-    - compiler: gcc-4.9
+    - os:        osx
+      osx_image: xcode7.2
+      compiler: clang
+    - os:        osx
+      osx_image: xcode7.2
+      compiler: gcc
+      env: VERSION=-5
+    - compiler: gcc
       addons:
         apt:
           sources:
@@ -25,4 +20,60 @@ matrix:
             - libgmp-dev
             - libmpc-dev
             - binutils-dev
-      env: CXX=g++-4.9
+      env: VERSION=-4.9
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+            - libmpfr-dev
+            - libgmp-dev
+            - libmpc-dev
+            - binutils-dev
+      env: VERSION=-5
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.6
+          packages:
+            - clang-3.6
+            - libmpfr-dev
+            - libgmp-dev
+            - libmpc-dev
+            - binutils-dev
+      env: VERSION=-3.6
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.7
+          packages:
+            - clang-3.7
+            - libmpfr-dev
+            - libgmp-dev
+            - libmpc-dev
+            - binutils-dev
+      env: VERSION=-3.7
+      
+before_install:
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install libmpc; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]] && [[ "$CC" == "gcc" ]]; then brew install gcc5; fi
+    
+install:
+    - export CC=$CC$VERSION
+    - export CXX=$CXX$VERSION
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export LDFLAGS='-L/usr/local/lib'; fi
+    
+script:
+    - ./scripts/reconfigure_script
+    - mkdir build
+    - cd build
+    - ../configure CXXFLAGS="-msse4.2 -O3 -std=c++11" LIBS="-lmpfr -lgmp" --enable-precision=single --enable-simd=SSE4 --enable-comms=none
+    - make -j4
+    - ./benchmarks/Benchmark_dwf --threads 1
