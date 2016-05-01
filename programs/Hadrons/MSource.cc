@@ -119,14 +119,17 @@ void MSource::execute(Environment &env)
             int                        tb = std::stoi(par_.arguments[1]);
             Lattice<iScalar<vInteger>> t(env.getGrid());
             LatticeComplex             eta(env.getGrid());
+            LatticeComplex             z(env.getGrid()), shift(env.getGrid());
             LatticeFermion             phi(env.getGrid());
-            ComplexD                   shift(1., 1.);
             
             LatticeCoordinate(t, Tp);
             bernoulli(*env.get4dRng(), eta);
-            eta   = (2.*eta - shift)*(1./::sqrt(2.));
-            *src_ = 1.;
-            *src_ = where((t >= ta) and (t <= tb), (*src_)*eta, (*src_)*0.);
+            shift  = ComplexD(1., 1.);
+            z      = zero;
+            eta    = (2.*eta - shift)*(1./::sqrt(2.));
+            eta    = where((t >= ta) and (t <= tb), eta, z);
+            *src_  = 1.;
+            *src_ *= eta;
             
             break;
         }
