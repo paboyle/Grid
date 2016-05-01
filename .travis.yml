@@ -72,7 +72,7 @@ script:
     - ./scripts/reconfigure_script
     - mkdir build
     - cd build
-    - ../configure CXXFLAGS="-mavx2 -mfma -O3 -std=c++11" LIBS="-lmpfr -lgmp" --enable-precision=single --enable-simd=AVX2 --enable-comms=none
+    - ../configure CXXFLAGS="-mavx2 -mfma -O3 -std=c++11" --enable-precision=single --enable-simd=AVX2 --enable-comms=none
     - cat config.log
     - make
     - ./benchmarks/Benchmark_dwf --threads 1
