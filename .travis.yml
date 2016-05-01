@@ -15,14 +15,6 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - g++-4.7
-      env: VERSION=-4.7
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
             - g++-4.8
       env: VERSION=-4.8
     - compiler: gcc
@@ -73,6 +65,5 @@ script:
     - mkdir build
     - cd build
     - ../configure CXXFLAGS="-mavx2 -mfma -O3 -std=c++11" --enable-precision=single --enable-simd=AVX2 --enable-comms=none
-    - cat config.log
     - make
     - ./benchmarks/Benchmark_dwf --threads 1
