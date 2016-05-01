@@ -16,6 +16,10 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-4.8
+            - libmpfr-dev
+            - libgmp-dev
+            - libmpc-dev
+            - binutils-dev
       env: VERSION=-4.8
     - compiler: gcc
       addons:
@@ -24,6 +28,10 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-4.9
+            - libmpfr-dev
+            - libgmp-dev
+            - libmpc-dev
+            - binutils-dev
       env: VERSION=-4.9
     - compiler: gcc
       addons:
@@ -32,6 +40,10 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
+            - libmpfr-dev
+            - libgmp-dev
+            - libmpc-dev
+            - binutils-dev
       env: VERSION=-5
     - compiler: clang
       addons:
@@ -41,6 +53,10 @@ matrix:
             - llvm-toolchain-precise-3.6
           packages:
             - clang-3.6
+            - libmpfr-dev
+            - libgmp-dev
+            - libmpc-dev
+            - binutils-dev
       env: VERSION=-3.6
     - compiler: clang
       addons:
@@ -50,10 +66,15 @@ matrix:
             - llvm-toolchain-precise-3.7
           packages:
             - clang-3.7
+            - libmpfr-dev
+            - libgmp-dev
+            - libmpc-dev
+            - binutils-dev
       env: VERSION=-3.7
       
 before_install:
-    - if [[ "$TRAVIS_OS_NAME" == "osx" ]] && [[ "$CC" == "gcc" ]]; then brew update; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install libmpc; fi
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]] && [[ "$CC" == "gcc" ]]; then brew install gcc5; fi
   
 install:
@@ -64,6 +85,6 @@ script:
     - ./scripts/reconfigure_script
     - mkdir build
     - cd build
-    - ../configure CXXFLAGS="-mavx2 -mfma -O3 -std=c++11" --enable-precision=single --enable-simd=AVX2 --enable-comms=none
+    - ../configure CXXFLAGS="-mavx -mfma -O3 -std=c++11" --enable-precision=single --enable-simd=AVX --enable-comms=none
     - make -j4
     - ./benchmarks/Benchmark_dwf --threads 1
