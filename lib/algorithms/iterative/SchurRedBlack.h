@@ -102,7 +102,9 @@ namespace Grid {
 
       pickCheckerboard(Even,src_e,in);
       pickCheckerboard(Odd ,src_o,in);
-
+      pickCheckerboard(Even,sol_e,out);
+      pickCheckerboard(Odd ,sol_o,out);
+    
       /////////////////////////////////////////////////////
       // src_o = Mdag * (source_o - Moe MeeInv source_e)
       /////////////////////////////////////////////////////
