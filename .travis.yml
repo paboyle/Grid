@@ -85,6 +85,6 @@ script:
     - ./scripts/reconfigure_script
     - mkdir build
     - cd build
-    - ../configure CXXFLAGS="-mavx -mfma -O3 -std=c++11" --enable-precision=single --enable-simd=AVX --enable-comms=none
+    - ../configure CXXFLAGS="-mavx -mfma -O3 -std=c++11" LIBS="-fopenmp -lmpfr -lgmp" --enable-precision=single --enable-simd=AVX --enable-comms=none
     - make -j4
     - ./benchmarks/Benchmark_dwf --threads 1
