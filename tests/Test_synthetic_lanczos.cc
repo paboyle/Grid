@@ -67,7 +67,7 @@ public:
 
     random(pRNG,scale);
 
-    scale = exp(-real(scale)*3.0);
+    scale = exp(-Grid::real(scale)*3.0);
     std::cout << " True matrix \n"<< scale <<std::endl;
   }
 

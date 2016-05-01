@@ -1,0 +1,28 @@
+# Ubuntu 14.04 Trusty support
+sudo: required
+dist: trusty
+# Enable C++ support
+language: cpp
+# Compiler selection
+# Build steps
+script:
+  - ./scripts/reconfigure_script
+  - mkdir build
+  - cd build
+  - ../configure CXXFLAGS="-mavx2 -mfma -fopenmp -O3 -std=c++11" LIBS="-fopenmp -lmpfr -lgmp" --enable-precision=single --enable-simd=AVX2 --enable-comms=none 
+  - make 
+  - ./benchmarks/Benchmark_dwf --threads 1
+matrix:
+  include:
+    - compiler: gcc-4.9
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.9
+            - libmpfr-dev
+            - libgmp-dev
+            - libmpc-dev
+            - binutils-dev
+      env: CXX=g++-4.9
