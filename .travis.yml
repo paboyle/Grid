@@ -65,5 +65,5 @@ script:
     - mkdir build
     - cd build
     - ../configure CXXFLAGS="-mavx2 -mfma -O3 -std=c++11" --enable-precision=single --enable-simd=AVX2 --enable-comms=none
-    - make
+    - make -j4
     - ./benchmarks/Benchmark_dwf --threads 1
