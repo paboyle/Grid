@@ -64,4 +64,35 @@ void CMeson::execute(Environment &env)
 {
     LOG(Message) << "computing meson contraction '" << getName() << "'"
                  << std::endl;
+    
+    XmlWriter             writer(par_.output);
+    LatticePropagator     &q1 = *env.getProp(par_.q1);
+    LatticePropagator     &q2 = *env.getProp(par_.q2);
+    LatticeComplex        c(env.getGrid());
+    SpinMatrix            g[Ns*Ns], g5;
+    std::vector<TComplex> buf;
+    Result                result;
+    unsigned int          nt = env.getGrid()->GlobalDimensions()[Tp];
+    
+    g5 = makeGammaProd(Ns*Ns - 1);
+    result.corr.resize(Ns*Ns);
+    for (unsigned int i = 0; i < Ns*Ns; ++i)
+    {
+        g[i] = makeGammaProd(i);
+    }
+    for (unsigned int iSink = 0; iSink < Ns*Ns; ++iSink)
+    {
+        result.corr[iSink].resize(Ns*Ns);
+        for (unsigned int iSrc = 0; iSrc < Ns*Ns; ++iSrc)
+        {
+            c    = trace(g[iSink]*q1*g[iSrc]*g5*adj(q2)*g5);
+            sliceSum(c, buf, Tp);
+            result.corr[iSink][iSrc].resize(buf.size());
+            for (unsigned int t = 0; t < buf.size(); ++t)
+            {
+                result.corr[iSink][iSrc][t] = TensorRemove(buf[t]);
+            }
+        }
+    }
+    write(writer, "meson", result);
 }

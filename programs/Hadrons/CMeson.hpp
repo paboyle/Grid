@@ -48,6 +48,12 @@ public:
                                         std::string, q2,
                                         std::string, output);
     };
+    class Result: Serializable
+    {
+    public:
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
+                        std::vector<std::vector<std::vector<Complex>>>, corr);
+    };
 public:
     // constructor
     CMeson(const std::string name);
