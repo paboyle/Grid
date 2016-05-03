@@ -35,7 +35,7 @@ directory.
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         SRBPrecCG                                 *
+ *                     Schur red-black preconditioned CG                      *
  ******************************************************************************/
 class SRBPrecCG: public Module
 {
@@ -53,7 +53,7 @@ public:
     virtual ~SRBPrecCG(void) = default;
     // parse parameters
     virtual void parseParameters(XmlReader &reader, const std::string name);
-    // dependency relation
+    // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
     // execution

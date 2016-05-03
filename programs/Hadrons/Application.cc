@@ -39,17 +39,10 @@ using namespace Hadrons;
 Application::Application(const std::string parameterFileName)
 : parameterFileName_(parameterFileName)
 , env_(Environment::getInstance())
-, actionFactory_(FermionActionFactory::getInstance())
 , modFactory_(ModuleFactory::getInstance())
 {
-    LOG(Message) << "Fermion actions available:" << std::endl;
-    auto list = actionFactory_.getBuilderList();
-    for (auto &m: list)
-    {
-        LOG(Message) << "  " << m << std::endl;
-    }
     LOG(Message) << "Modules available:" << std::endl;
-    list = modFactory_.getBuilderList();
+    auto list = modFactory_.getBuilderList();
     for (auto &m: list)
     {
         LOG(Message) << "  " << m << std::endl;
@@ -84,18 +77,6 @@ void Application::parseParameterFile(void)
     
     LOG(Message) << "Reading '" << parameterFileName_ << "'..." << std::endl;
     read(reader, "parameters", par_);
-    push(reader, "actions");
-    push(reader, "action");
-    do
-    {
-        read(reader, "id", id);
-        env_.addFermionAction(actionFactory_.create(id.type, id.name));
-        auto &action = *env_.getFermionAction(id.name);
-        action.parseParameters(reader, "options");
-        action.create(env_);
-    } while (reader.nextElement("action"));
-    pop(reader);
-    pop(reader);
     push(reader, "modules");
     push(reader, "module");
     do
@@ -190,7 +171,6 @@ void Application::configLoop(void)
     {
         LOG(Message) << "Starting measurement for trajectory " << t
                      << std::endl;
-        env_.loadUnitGauge();
         execute(program_);
         env_.freeAll();
     }
@@ -219,8 +199,8 @@ unsigned int Application::execute(const std::vector<std::string> &program)
     }
     for (unsigned int i = 0; i < program.size(); ++i)
     {
-        LOG(Message) << "Measurement step (" << i+1 << "/" << program.size()
-                     << ")" << std::endl;
+        LOG(Message) << "Measurement step " << i+1 << "/" << program.size()
+                     << " (module '" << program[i] << "')" << std::endl;
         (*module_[program[i]])(env_);
         LOG(Message) << "allocated propagators: " << env_.nProp() << std::endl;
         if (env_.nProp() > memPeak)

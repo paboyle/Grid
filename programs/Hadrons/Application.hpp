@@ -29,7 +29,6 @@ directory.
 #define Hadrons_Application_hpp_
 
 #include <Hadrons/Global.hpp>
-#include <Hadrons/FermionActionFactory.hpp>
 #include <Hadrons/Environment.hpp>
 #include <Hadrons/ModuleFactory.hpp>
 
@@ -90,7 +89,6 @@ private:
     std::string                                     parameterFileName_;
     GlobalPar                                       par_;
     Environment                                     &env_;
-    FermionActionFactory                            &actionFactory_;
     ModuleFactory                                   &modFactory_;
     std::map<std::string, std::unique_ptr<Module>>  module_;
     std::map<std::string, std::string>              associatedModule_;

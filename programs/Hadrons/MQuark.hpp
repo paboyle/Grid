@@ -53,7 +53,7 @@ public:
     virtual ~MQuark(void) = default;
     // parse parameters
     virtual void parseParameters(XmlReader &reader, const std::string name);
-    // dependency relation
+    // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
     // setup

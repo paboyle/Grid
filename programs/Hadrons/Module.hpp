@@ -62,8 +62,8 @@ public:
     // access
     std::string getName(void) const;
     // parse parameters
-    virtual void parseParameters(XmlReader &reader, const std::string name) = 0;
-    // dependency relation
+    virtual void parseParameters(XmlReader &reader, const std::string name) {};
+    // dependencies/products
     virtual std::vector<std::string> getInput(void) = 0;
     virtual std::vector<std::string> getOutput(void) = 0;
     // setup

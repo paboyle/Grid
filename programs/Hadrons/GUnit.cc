@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/FermionAction.cc
+Source file: programs/Hadrons/GUnit.cc
 
 Copyright (C) 2016
 
@@ -25,37 +25,41 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/FermionAction.hpp>
+#include <Hadrons/GUnit.hpp>
 
 using namespace Grid;
-using namespace QCD;
 using namespace Hadrons;
 
 /******************************************************************************
- *                      FermionAction implementation                          *
- ******************************************************************************/
+*                            GUnit implementation                             *
+******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-FermionAction::FermionAction(const std::string name)
-: name_(name)
+GUnit::GUnit(const std::string name)
+: Module(name)
 {}
 
-// access //////////////////////////////////////////////////////////////////////
-std::string FermionAction::getName(void) const
+// dependencies/products ///////////////////////////////////////////////////////
+std::vector<std::string> GUnit::getInput(void)
 {
-    return name_;
+    return std::vector<std::string>();
 }
 
-unsigned int FermionAction::getLs(void) const
+std::vector<std::string> GUnit::getOutput(void)
 {
-    return 1;
+    std::vector<std::string> out = {getName()};
+    
+    return out;
 }
 
-void FermionAction::setFMat(FMat *fMat)
+// allocation //////////////////////////////////////////////////////////////////
+void GUnit::allocate(Environment &env)
 {
-    fMat_.reset(fMat);
+    env.createGauge(getName());
+    gauge_ = env.getGauge(getName());
 }
 
-FermionAction::FMat * FermionAction::getFMat(void)
+// execution ///////////////////////////////////////////////////////////////////
+void GUnit::execute(Environment &env)
 {
-    return fMat_.get();
+    SU3::ColdConfiguration(*env.get4dRng(), *gauge_);
 }

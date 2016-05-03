@@ -29,21 +29,22 @@ directory.
 #define Hadrons_AWilson_hpp_
 
 #include <Hadrons/Global.hpp>
-#include <Hadrons/FermionAction.hpp>
-#include <Hadrons/FermionActionFactory.hpp>
+#include <Hadrons/Module.hpp>
+#include <Hadrons/ModuleFactory.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                           Wilson fermions                                  *
+ *                            Wilson quark action                             *
  ******************************************************************************/
-class AWilson: public FermionAction
+class AWilson: public Module
 {
 public:
     class Par: Serializable
     {
     public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Par, double, mass);
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Par, std::string, gauge,
+                                             double     , mass);
     };
 public:
     // constructor
@@ -52,13 +53,16 @@ public:
     virtual ~AWilson(void) = default;
     // parse parameters
     virtual void parseParameters(XmlReader &reader, const std::string name);
-    // create operator
-    virtual void create(Environment &env);
+    // dependencies/products
+    virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getOutput(void);
+    // execution
+    virtual void execute(Environment &env);
 private:
     Par par_;
 };
 
-ACTION_REGISTER(AWilson);
+MODULE_REGISTER(AWilson);
 
 END_HADRONS_NAMESPACE
 

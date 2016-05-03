@@ -41,13 +41,13 @@ MSource::MSource(const std::string name)
 : Module(name)
 {}
 
-// parse parameters
+// parse parameters ////////////////////////////////////////////////////////////
 void MSource::parseParameters(XmlReader &reader, const std::string name)
 {
     read(reader, name, par_);
 }
 
-// dependency relation
+// dependencies/products ///////////////////////////////////////////////////////
 std::vector<std::string> MSource::getInput(void)
 {
     return std::vector<std::string>();
@@ -68,7 +68,7 @@ void MSource::allocate(Environment &env)
         // 4D sources
         case Grid::SourceType::point:
         case Grid::SourceType::z2Band:
-            env.addProp(getName());
+            env.createProp(getName());
             src_ = env.getProp(getName());
             break;
         // error

@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/FermionActionFactory.hpp
+Source file: programs/Hadrons/GUnit.hpp
 
 Copyright (C) 2016
 
@@ -25,23 +25,38 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#ifndef Hadrons_FermionActionFactory_hpp_
-#define Hadrons_FermionActionFactory_hpp_
+#ifndef Hadrons_GUnit_hpp_
+#define Hadrons_GUnit_hpp_
 
 #include <Hadrons/Global.hpp>
-#include <Hadrons/Factory.hpp>
-#include <Hadrons/FermionAction.hpp>
+#include <Hadrons/Module.hpp>
+#include <Hadrons/ModuleFactory.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         FermionActionFactory                               *
+ *                              Unit gauge                                    *
  ******************************************************************************/
-class FermionActionFactory: public Factory<FermionAction>
+class GUnit: public Module
 {
-    SINGLETON_DEFCTOR(FermionActionFactory)
+public:
+    // constructor
+    GUnit(const std::string name);
+    // destructor
+    virtual ~GUnit(void) = default;
+    // dependencies/products
+    virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getOutput(void);
+    // allocation
+    virtual void allocate(Environment &env);
+    // execution
+    virtual void execute(Environment &env);
+private:
+    LatticeGaugeField *gauge_ = nullptr;
 };
+
+MODULE_REGISTER(GUnit);
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_FermionActionFactory_hpp_
+#endif // Hadrons_GUnit_hpp_

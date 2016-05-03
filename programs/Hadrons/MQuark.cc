@@ -39,13 +39,13 @@ MQuark::MQuark(const std::string name)
 : Module(name)
 {}
 
-// parse parameters
+// parse parameters ////////////////////////////////////////////////////////////
 void MQuark::parseParameters(XmlReader &reader, const std::string name)
 {
     read(reader, name, par_);
 }
 
-// dependency relation
+// dependencies/products ///////////////////////////////////////////////////////
 std::vector<std::string> MQuark::getInput(void)
 {
     std::vector<std::string> in = {par_.source, par_.solver};
@@ -63,22 +63,31 @@ std::vector<std::string> MQuark::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void MQuark::setup(Environment &env)
 {
-    Ls_ = env.getFermionAction(par_.solver)->getLs();
+    auto dim = env.getFermionMatrix(par_.solver)->Grid()->GlobalDimensions();
+    
+    if (dim.size() == Nd)
+    {
+        Ls_ = 1;
+    }
+    else
+    {
+        Ls_ = dim[0];
+    }
 }
 
 // allocation //////////////////////////////////////////////////////////////////
 void MQuark::allocate(Environment &env)
 {
-    env.addProp(getName());
+    env.createProp(getName());
     quark_ = env.getProp(getName());
     if (Ls_ > 1)
     {
-        env.addProp(getName() + "_5d", Ls_);
+        env.createProp(getName() + "_5d", Ls_);
         quark5d_ = env.getProp(getName() + "_5d");
     }
 }
 
-// execution
+// execution ///////////////////////////////////////////////////////////////////
 void MQuark::execute(Environment &env)
 {
     LatticePropagator *fullSource;

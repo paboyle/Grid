@@ -26,18 +26,16 @@ directory.
 *******************************************************************************/
 
 #include <Hadrons/AWilson.hpp>
-#include <Hadrons/Environment.hpp>
 
 using namespace Grid;
-using namespace QCD;
 using namespace Hadrons;
 
 /******************************************************************************
-*                          AWilson implementation                             *
+*                         AWilson implementation                              *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 AWilson::AWilson(const std::string name)
-: FermionAction(name)
+: Module(name)
 {}
 
 // parse parameters ////////////////////////////////////////////////////////////
@@ -46,12 +44,28 @@ void AWilson::parseParameters(XmlReader &reader, const std::string name)
    read(reader, name, par_);
 }
 
-// create operator /////////////////////////////////////////////////////////////
-void AWilson::create(Environment &env)
+// dependencies/products ///////////////////////////////////////////////////////
+std::vector<std::string> AWilson::getInput(void)
 {
-    auto &U      = *env.getGauge();
+    std::vector<std::string> in = {par_.gauge};
+    
+    return in;
+}
+
+std::vector<std::string> AWilson::getOutput(void)
+{
+    std::vector<std::string> out = {getName()};
+    
+    return out;
+}
+
+// execution ///////////////////////////////////////////////////////////////////
+void AWilson::execute(Environment &env)
+{
+    auto &U      = *env.getGauge(par_.gauge);
     auto &grid   = *env.getGrid();
     auto &gridRb = *env.getRbGrid();
     
-    setFMat(new WilsonFermionR(U, grid, gridRb, par_.mass));
+    env.addFermionMatrix(getName(),
+                         new WilsonFermionR(U, grid, gridRb, par_.mass));
 }

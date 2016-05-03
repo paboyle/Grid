@@ -42,8 +42,6 @@ Environment::Environment(void)
         GridDefaultMpi()));
     gridRb4d_.reset(SpaceTimeGrid::makeFourDimRedBlackGrid(grid4d_.get()));
     rng4d_.reset(new GridParallelRNG(grid4d_.get()));
-    gauge_.reset(new LatticeGaugeField(grid4d_.get()));
-    loadUnitGauge();
 }
 
 // dry run /////////////////////////////////////////////////////////////////////
@@ -97,22 +95,22 @@ GridRedBlackCartesian * Environment::getRbGrid(const unsigned int Ls) const
 }
 
 // fermion actions /////////////////////////////////////////////////////////////
-void Environment::addFermionAction(FActionPt action)
+void Environment::addFermionMatrix(const std::string name, FMat *fMat)
 {
-    fAction_[action->getName()] = std::move(action);
+    fMat_[name].reset(fMat);
 }
 
-FermionAction * Environment::getFermionAction(const std::string name) const
+Environment::FMat * Environment::getFermionMatrix(const std::string name) const
 {
     try
     {
-        return fAction_.at(name).get();
+        return fMat_.at(name).get();
     }
     catch(std::out_of_range &)
     {
         try
         {
-            return fAction_.at(solverAction_.at(name)).get();
+            return fMat_.at(solverAction_.at(name)).get();
         }
         catch (std::out_of_range &)
         {
@@ -143,9 +141,9 @@ void Environment::callSolver(const std::string name, LatticeFermion &sol,
 }
 
 // quark propagators ///////////////////////////////////////////////////////////
-void Environment::addProp(const std::string name, const unsigned int Ls)
+void Environment::createProp(const std::string name, const unsigned int Ls)
 {
-    GridCartesian *p4 = grid4d_.get();
+    GridCartesian *g4 = getGrid();
 
     if (propExists(name))
     {
@@ -153,21 +151,21 @@ void Environment::addProp(const std::string name, const unsigned int Ls)
     }
     if (Ls > 1)
     {
-        GridCartesian *p;
+        GridCartesian *g;
         
         try
         {
-            p = grid5d_.at(Ls).get();
+            g = grid5d_.at(Ls).get();
         }
         catch(std::out_of_range &)
         {
-            grid5d_[Ls].reset(SpaceTimeGrid::makeFiveDimGrid(Ls, p4));
-            gridRb5d_[Ls].reset(SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls, p4));
-            p = grid5d_[Ls].get();
+            grid5d_[Ls].reset(SpaceTimeGrid::makeFiveDimGrid(Ls, g4));
+            gridRb5d_[Ls].reset(SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls, g4));
+            g = grid5d_[Ls].get();
         }
         if (!isDryRun())
         {
-            prop_[name].reset(new LatticePropagator(p));
+            prop_[name].reset(new LatticePropagator(g));
         }
         else
         {
@@ -179,7 +177,7 @@ void Environment::addProp(const std::string name, const unsigned int Ls)
     {
         if (!isDryRun())
         {
-            prop_[name].reset(new LatticePropagator(p4));
+            prop_[name].reset(new LatticePropagator(g4));
         }
         else
         {
@@ -269,19 +267,44 @@ unsigned int Environment::nProp(void) const
 }
 
 // gauge configuration /////////////////////////////////////////////////////////
-LatticeGaugeField * Environment::getGauge(void) const
+void Environment::createGauge(const std::string name)
 {
-    return gauge_.get();
+    if (gaugeExists(name))
+    {
+        HADRON_ERROR("gauge field '" + name + "' already exists");
+    }
+    gauge_[name].reset(new LatticeGaugeField(getGrid()));
 }
 
-void Environment::loadUnitGauge(void)
+void Environment::freeGauge(const std::string name)
 {
-    SU3::ColdConfiguration(*rng4d_, *gauge_);
+    if (gaugeExists(name))
+    {
+        gauge_.erase(name);
+    }
+    else
+    {
+        HADRON_ERROR("trying to free unknown gauge field '" + name + "'");
+    }
 }
 
-void Environment::loadRandomGauge(void)
+LatticeGaugeField * Environment::getGauge(const std::string name) const
 {
-    SU3::HotConfiguration(*rng4d_, *gauge_);
+    if (gaugeExists(name))
+    {
+        return gauge_.at(name).get();
+    }
+    else
+    {
+        HADRON_ERROR("gauge field '" + name + "' unknown");
+        
+        return nullptr;
+    }
+}
+
+bool Environment::gaugeExists(const std::string name) const
+{
+    return (gauge_.find(name) != gauge_.end());
 }
 
 // random number generator /////////////////////////////////////////////////////
@@ -300,8 +323,13 @@ void Environment::free(const std::string name)
 {
     if (propExists(name))
     {
-        LOG(Message) << "freeing '" << name << "'" << std::endl;
+        LOG(Message) << "freeing propagator '" << name << "'" << std::endl;
         freeProp(name);
+    }
+    else if (gaugeExists(name))
+    {
+        LOG(Message) << "freeing gauge field '" << name << "'" << std::endl;
+        freeGauge(name);
     }
 }
 
@@ -309,4 +337,5 @@ void Environment::freeAll(void)
 {
     prop_.clear();
     propSize_.clear();
+    gauge_.clear();
 }

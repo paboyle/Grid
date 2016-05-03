@@ -45,7 +45,7 @@ void CMeson::parseParameters(XmlReader &reader, const std::string name)
     read(reader, name, par_);
 }
 
-// dependency relation /////////////////////////////////////////////////////////
+// dependencies/products ///////////////////////////////////////////////////////
 std::vector<std::string> CMeson::getInput(void)
 {
     std::vector<std::string> input = {par_.q1, par_.q2};

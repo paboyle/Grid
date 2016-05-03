@@ -39,16 +39,18 @@ SRBPrecCG::SRBPrecCG(const std::string name)
 : Module(name)
 {}
 
-// parse parameters
+// parse parameters ////////////////////////////////////////////////////////////
 void SRBPrecCG::parseParameters(XmlReader &reader, const std::string name)
 {
    read(reader, name, par_);
 }
 
-// dependency relation
+// dependencies/products ///////////////////////////////////////////////////////
 std::vector<std::string> SRBPrecCG::getInput(void)
 {
-    return std::vector<std::string>();
+    std::vector<std::string> in = {par_.action};
+    
+    return in;
 }
 
 std::vector<std::string> SRBPrecCG::getOutput(void)
@@ -61,7 +63,7 @@ std::vector<std::string> SRBPrecCG::getOutput(void)
 // execution ///////////////////////////////////////////////////////////////////
 void SRBPrecCG::execute(Environment &env)
 {
-    auto &mat   = *(env.getFermionAction(par_.action)->getFMat());
+    auto &mat   = *(env.getFermionMatrix(par_.action));
     auto solver = [&mat, this](LatticeFermion &sol,
                                const LatticeFermion &source)
     {
