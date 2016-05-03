@@ -28,6 +28,7 @@ directory.
 #include <Hadrons/Module.hpp>
 
 using namespace Grid;
+using namespace QCD;
 using namespace Hadrons;
 
 /******************************************************************************

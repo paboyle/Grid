@@ -28,6 +28,7 @@ directory.
 #include <Hadrons/FermionAction.hpp>
 
 using namespace Grid;
+using namespace QCD;
 using namespace Hadrons;
 
 /******************************************************************************

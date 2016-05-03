@@ -28,6 +28,7 @@ directory.
 #include <Hadrons/CMeson.hpp>
 
 using namespace Grid;
+using namespace QCD;
 using namespace Hadrons;
 
 /******************************************************************************
@@ -85,7 +86,7 @@ void CMeson::execute(Environment &env)
         result.corr[iSink].resize(Ns*Ns);
         for (unsigned int iSrc = 0; iSrc < Ns*Ns; ++iSrc)
         {
-            c    = trace(g[iSink]*q1*g[iSrc]*g5*adj(q2)*g5);
+            c = trace(g[iSink]*q1*g[iSrc]*g5*adj(q2)*g5);
             sliceSum(c, buf, Tp);
             result.corr[iSink][iSrc].resize(buf.size());
             for (unsigned int t = 0; t < buf.size(); ++t)

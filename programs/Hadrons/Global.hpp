@@ -28,15 +28,20 @@ directory.
 #ifndef Hadrons_Global_hpp_
 #define Hadrons_Global_hpp_
 
-#include <Grid.h>
 #include <set>
 #include <stack>
+#include <Grid.h>
 
 #define BEGIN_HADRONS_NAMESPACE \
+namespace Grid {\
+using namespace QCD;\
 namespace Hadrons {\
-using namespace Grid;\
-using namespace QCD;
-#define END_HADRONS_NAMESPACE }
+using Grid::operator<<;
+#define END_HADRONS_NAMESPACE }}
+
+/* the 'using Grid::operator<<;' statement prevents a very nasty compilation
+ * error with GCC (clang compiles fine without it).
+ */
 
 BEGIN_HADRONS_NAMESPACE
 

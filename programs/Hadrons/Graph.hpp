@@ -105,8 +105,8 @@ private:
     void depthFirstSearch(void);
     void depthFirstSearch(const T &root);
 private:
-    std::map<T, bool>              isMarked_;
-    std::set<Edge>                 edgeSet_;
+    std::map<T, bool> isMarked_;
+    std::set<Edge>    edgeSet_;
 };
 
 // build depedency matrix from topological sorts

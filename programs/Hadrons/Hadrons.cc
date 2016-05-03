@@ -27,6 +27,8 @@ directory.
 
 #include <Hadrons/Application.hpp>
 
+using namespace Grid;
+using namespace QCD;
 using namespace Hadrons;
 
 int main(int argc, char *argv[])

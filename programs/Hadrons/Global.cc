@@ -28,6 +28,7 @@ directory.
 #include <Hadrons/Global.hpp>
 
 using namespace Grid;
+using namespace QCD;
 using namespace Hadrons;
 
 HadronsLogger Hadrons::HadronsLogError(1,"Error");

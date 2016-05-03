@@ -47,7 +47,7 @@ public:
     virtual ~Factory(void) = default;
     // registration
     void registerBuilder(const std::string type, const Func &f);
-    // get module list
+    // get builder list
     std::vector<std::string> getBuilderList(void) const;
     // factory
     std::unique_ptr<T> create(const std::string type,
@@ -91,7 +91,7 @@ std::unique_ptr<T> Factory<T>::create(const std::string type,
     {
         func = builder_.at(type);
     }
-    catch (std::out_of_range)
+    catch (std::out_of_range &)
     {
         HADRON_ERROR("object of type '" + type + "' unknown");
     }

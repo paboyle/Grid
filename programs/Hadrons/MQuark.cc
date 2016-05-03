@@ -28,6 +28,7 @@ directory.
 #include <Hadrons/MQuark.hpp>
 
 using namespace Grid;
+using namespace QCD;
 using namespace Hadrons;
 
 /******************************************************************************

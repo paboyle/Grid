@@ -28,7 +28,9 @@ directory.
 #include <Hadrons/MSource.hpp>
 
 #define ERROR_SUF " (source '" << getName() << "')"
+
 using namespace Grid;
+using namespace QCD;
 using namespace Hadrons;
 
 /******************************************************************************
