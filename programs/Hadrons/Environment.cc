@@ -151,173 +151,6 @@ void Environment::callSolver(const std::string name, LatticeFermion &sol,
     }
 }
 
-// quark propagators ///////////////////////////////////////////////////////////
-void Environment::createProp(const std::string name, const unsigned int Ls)
-{
-    GridCartesian *g4 = getGrid();
-
-    if (propExists(name))
-    {
-        HADRON_ERROR("propagator '" + name + "' already exists");
-    }
-    if (Ls > 1)
-    {
-        GridCartesian *g;
-        
-        try
-        {
-            g = grid5d_.at(Ls).get();
-        }
-        catch(std::out_of_range &)
-        {
-            grid5d_[Ls].reset(SpaceTimeGrid::makeFiveDimGrid(Ls, g4));
-            gridRb5d_[Ls].reset(SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls, g4));
-            g = grid5d_[Ls].get();
-        }
-        if (!isDryRun())
-        {
-            prop_[name].reset(new LatticePropagator(g));
-        }
-        else
-        {
-            prop_[name].reset(nullptr);
-        }
-        propSize_[name] = Ls;
-    }
-    else
-    {
-        if (!isDryRun())
-        {
-            prop_[name].reset(new LatticePropagator(g4));
-        }
-        else
-        {
-            prop_[name].reset(nullptr);
-        }
-        propSize_[name] = 1;
-    }
-}
-
-void Environment::freeProp(const std::string name)
-{
-    if (propExists(name))
-    {
-        prop_.erase(name);
-        propSize_.erase(name);
-    }
-    else
-    {
-        HADRON_ERROR("trying to free unknown propagator '" + name + "'");
-    }
-}
-
-bool Environment::isProp5d(const std::string name) const
-{
-    if (propExists(name))
-    {
-        return (getProp(name)->_grid->GlobalDimensions().size() == Nd + 1);
-    }
-    else
-    {
-        HADRON_ERROR("propagator '" + name + "' unknown");
-        
-        return false;
-    }
-}
-
-unsigned int Environment::getPropLs(const std::string name) const
-{
-    if (propExists(name))
-    {
-        if (isProp5d(name))
-        {
-            return getProp(name)->_grid->GlobalDimensions()[0];
-        }
-        else
-        {
-            return 1;
-        }
-    }
-    else
-    {
-        HADRON_ERROR("propagator '" + name + "' unknown");
-        
-        return 0;
-    }
-}
-
-LatticePropagator * Environment::getProp(const std::string name) const
-{
-    if (propExists(name))
-    {
-        return prop_.at(name).get();
-    }
-    else
-    {
-        HADRON_ERROR("propagator '" + name + "' unknown");
-        
-        return nullptr;
-    }
-}
-
-bool Environment::propExists(const std::string name) const
-{
-    return (prop_.find(name) != prop_.end());
-}
-
-unsigned int Environment::nProp(void) const
-{
-    unsigned int size = 0;
-    
-    for (auto &s: propSize_)
-    {
-        size += s.second;
-    }
-    
-    return size;
-}
-
-// gauge configuration /////////////////////////////////////////////////////////
-void Environment::createGauge(const std::string name)
-{
-    if (gaugeExists(name))
-    {
-        HADRON_ERROR("gauge field '" + name + "' already exists");
-    }
-    gauge_[name].reset(new LatticeGaugeField(getGrid()));
-}
-
-void Environment::freeGauge(const std::string name)
-{
-    if (gaugeExists(name))
-    {
-        gauge_.erase(name);
-    }
-    else
-    {
-        HADRON_ERROR("trying to free unknown gauge field '" + name + "'");
-    }
-}
-
-LatticeGaugeField * Environment::getGauge(const std::string name) const
-{
-    if (gaugeExists(name))
-    {
-        return gauge_.at(name).get();
-    }
-    else
-    {
-        HADRON_ERROR("gauge field '" + name + "' unknown");
-        
-        return nullptr;
-    }
-}
-
-bool Environment::gaugeExists(const std::string name) const
-{
-    return (gauge_.find(name) != gauge_.end());
-}
-
 // random number generator /////////////////////////////////////////////////////
 void Environment::setSeed(const std::vector<int> &seed)
 {
@@ -329,24 +162,95 @@ GridParallelRNG * Environment::get4dRng(void) const
     return rng4d_.get();
 }
 
-// general free ////////////////////////////////////////////////////////////////
+// data store //////////////////////////////////////////////////////////////////
+void Environment::freeLattice(const std::string name)
+{
+    if (hasLattice(name))
+    {
+        LOG(Message) << "freeing lattice '" << name << "'" << std::endl;
+        lattice_.erase(name);
+        objectSize_.erase(name);
+    }
+    else
+    {
+        HADRON_ERROR("trying to free undefined lattice '" + name + "'");
+    }
+}
+
+bool Environment::hasLattice(const std::string name) const
+{
+    return (lattice_.find(name) != lattice_.end());
+}
+
+
+bool Environment::isLattice5d(const std::string name) const
+{
+    if (hasLattice(name))
+    {
+        return (lattice_.at(name)->_grid->GlobalDimensions().size() == Nd + 1);
+    }
+    else
+    {
+        HADRON_ERROR("object '" + name + "' undefined");
+        
+        return false;
+    }
+}
+
+unsigned int Environment::getLatticeLs(const std::string name) const
+{
+    if (isLattice5d(name))
+    {
+        return lattice_.at(name)->_grid->GlobalDimensions()[0];
+    }
+    else
+    {
+        return 1;
+    }
+}
+
+// general memory management ///////////////////////////////////////////////////
 void Environment::free(const std::string name)
 {
-    if (propExists(name))
+    if (hasLattice(name))
     {
-        LOG(Message) << "freeing propagator '" << name << "'" << std::endl;
-        freeProp(name);
-    }
-    else if (gaugeExists(name))
-    {
-        LOG(Message) << "freeing gauge field '" << name << "'" << std::endl;
-        freeGauge(name);
+        freeLattice(name);
     }
 }
 
 void Environment::freeAll(void)
 {
-    prop_.clear();
-    propSize_.clear();
-    gauge_.clear();
+    lattice_.clear();
+    objectSize_.clear();
+}
+
+void Environment::addSize(const std::string name, const unsigned int size)
+{
+    objectSize_[name] = size;
+}
+
+unsigned int Environment::getSize(const std::string name) const
+{
+    if (hasLattice(name))
+    {
+        return objectSize_.at(name);
+    }
+    else
+    {
+        HADRON_ERROR("object '" + name + "' undefined");
+        
+        return 0;
+    }
+}
+
+long unsigned int Environment::getTotalSize(void) const
+{
+    long unsigned int size = 0;
+    
+    for (auto &s: objectSize_)
+    {
+        size += s.second;
+    }
+    
+    return size;
 }

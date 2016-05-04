@@ -62,8 +62,8 @@ std::vector<std::string> SrcZ2::getOutput(void)
 // allocation //////////////////////////////////////////////////////////////////
 void SrcZ2::allocate(Environment &env)
 {
-    env.createProp(getName());
-    src_ = env.getProp(getName());
+    env.create<LatticePropagator>(getName());
+    src_ = env.get<LatticePropagator>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -76,12 +76,12 @@ void SrcZ2::execute(Environment &env)
     
     if (par_.tA == par_.tB)
     {
-        LOG(Message) << "generating Z_2 wall source at t= " << par_.tA
+        LOG(Message) << "Generating Z_2 wall source at t= " << par_.tA
                      << std::endl;
     }
     else
     {
-        LOG(Message) << "generating Z_2 band for " << par_.tA << " <= t <= "
+        LOG(Message) << "Generating Z_2 band for " << par_.tA << " <= t <= "
                      << par_.tB << std::endl;
     }
     LatticeCoordinate(t, Tp);

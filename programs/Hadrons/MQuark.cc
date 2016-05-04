@@ -78,12 +78,12 @@ void MQuark::setup(Environment &env)
 // allocation //////////////////////////////////////////////////////////////////
 void MQuark::allocate(Environment &env)
 {
-    env.createProp(getName());
-    quark_ = env.getProp(getName());
+    env.create<LatticePropagator>(getName());
+    quark_ = env.get<LatticePropagator>(getName());
     if (Ls_ > 1)
     {
-        env.createProp(getName() + "_5d", Ls_);
-        quark5d_ = env.getProp(getName() + "_5d");
+        env.create<LatticePropagator>(getName() + "_5d", Ls_);
+        quark5d_ = env.get<LatticePropagator>(getName() + "_5d");
     }
 }
 
@@ -93,13 +93,13 @@ void MQuark::execute(Environment &env)
     LatticePropagator *fullSource;
     LatticeFermion    source(env.getGrid(Ls_)), sol(env.getGrid(Ls_));
     
-    LOG(Message) << "computing quark propagator '" << getName() << "'"
+    LOG(Message) << "Computing quark propagator '" << getName() << "'"
                  << std::endl;
-    if (!env.isProp5d(par_.source))
+    if (!env.isLattice5d(par_.source))
     {
         if (Ls_ == 1)
         {
-            fullSource = env.getProp(par_.source);
+            fullSource = env.get<LatticePropagator>(par_.source);
         }
         else
         {
@@ -112,17 +112,17 @@ void MQuark::execute(Environment &env)
         {
             HADRON_ERROR("MQuark not implemented with 5D actions");
         }
-        else if (Ls_ != env.getPropLs(par_.source))
+        else if (Ls_ != env.getLatticeLs(par_.source))
         {
             HADRON_ERROR("MQuark not implemented with 5D actions");
         }
         else
         {
-            fullSource = env.getProp(par_.source);
+            fullSource = env.get<LatticePropagator>(par_.source);
         }
     }
     
-    LOG(Message) << "inverting using solver '" << par_.solver
+    LOG(Message) << "Inverting using solver '" << par_.solver
                  << "' on source '" << par_.source << "'" << std::endl;
     for (unsigned int s = 0; s < Ns; ++s)
     for (unsigned int c = 0; c < Nc; ++c)

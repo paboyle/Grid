@@ -85,7 +85,10 @@ private:
     // program execution
     void         configLoop(void);
     unsigned int execute(const std::vector<std::string> &program);
+    // pretty size formatting
+    std::string sizeString(long unsigned int bytes);
 private:
+    long unsigned int                               locVol_;
     std::string                                     parameterFileName_;
     GlobalPar                                       par_;
     Environment                                     &env_;

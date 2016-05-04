@@ -46,8 +46,7 @@ public:
     typedef std::unique_ptr<GridRedBlackCartesian>      GridRbPt;
     typedef std::unique_ptr<GridParallelRNG>            RngPt;
     typedef std::unique_ptr<FMat>                       FMatPt;
-    typedef std::unique_ptr<LatticePropagator>          PropPt;
-    typedef std::unique_ptr<LatticeGaugeField>          GaugePt;
+    typedef std::unique_ptr<LatticeBase>                LatticePt;
 public:
     // dry run
     void                    dryRun(const bool isDry);
@@ -67,26 +66,27 @@ public:
     void                    callSolver(const std::string name,
                                        LatticeFermion &sol,
                                        const LatticeFermion &src) const;
-    // quark propagators
-    void                    createProp(const std::string name,
-                                       const unsigned int Ls = 1);
-    void                    freeProp(const std::string name);
-    bool                    isProp5d(const std::string name) const;
-    unsigned int            getPropLs(const std::string name) const;
-    LatticePropagator *     getProp(const std::string name) const;
-    bool                    propExists(const std::string name) const;
-    unsigned int            nProp(void) const;
-    // gauge configurations
-    void                    createGauge(const std::string name);
-    void                    freeGauge(const std::string name);
-    LatticeGaugeField *     getGauge(const std::string name) const;
-    bool                    gaugeExists(const std::string name) const;
     // random number generator
     void                    setSeed(const std::vector<int> &seed);
     GridParallelRNG *       get4dRng(void) const;
-    // general free
+    // lattice store
+    template <typename T>
+    void                    create(const std::string name,
+                                   const unsigned int Ls = 1);
+    template <typename T>
+    T *                     get(const std::string name) const;
+    void                    freeLattice(const std::string name);
+    bool                    hasLattice(const std::string name) const;
+    
+    bool                    isLattice5d(const std::string name) const;
+    unsigned int            getLatticeLs(const std::string name) const;
+    // general memory management
     void                    free(const std::string name);
     void                    freeAll(void);
+    void                    addSize(const std::string name,
+                                    const unsigned int size);
+    unsigned int            getSize(const std::string name) const;
+    long unsigned int       getTotalSize(void) const;
 private:
     bool                                dryRun_{false};
     unsigned int                        traj_;
@@ -98,10 +98,74 @@ private:
     std::map<std::string, FMatPt>       fMat_;
     std::map<std::string, Solver>       solver_;
     std::map<std::string, std::string>  solverAction_;
-    std::map<std::string, PropPt>       prop_;
-    std::map<std::string, unsigned int> propSize_;
-    std::map<std::string, GaugePt>      gauge_;
+    std::map<std::string, LatticePt>    lattice_;
+    std::map<std::string, unsigned int> objectSize_;
 };
+
+/******************************************************************************
+ *                        template implementation                             *
+ ******************************************************************************/
+template <typename T>
+void Environment::create(const std::string name, const unsigned int Ls)
+{
+    GridCartesian *g4 = getGrid();
+    GridCartesian *g;
+    
+    if (hasLattice(name))
+    {
+        HADRON_ERROR("object '" + name + "' already exists");
+    }
+    if (Ls > 1)
+    {
+        try
+        {
+            g = grid5d_.at(Ls).get();
+        }
+        catch(std::out_of_range &)
+        {
+            grid5d_[Ls].reset(SpaceTimeGrid::makeFiveDimGrid(Ls, g4));
+            gridRb5d_[Ls].reset(SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls, g4));
+            g = grid5d_[Ls].get();
+        }
+    }
+    else
+    {
+        g = g4;
+    }
+    if (!isDryRun())
+    {
+        lattice_[name].reset(new T(g));
+    }
+    else
+    {
+        lattice_[name].reset(nullptr);
+    }
+    objectSize_[name] = sizeof(typename T::vector_object)/g->Nsimd()*Ls;
+}
+
+template <typename T>
+T * Environment::get(const std::string name) const
+{
+    if (hasLattice(name))
+    {
+        try
+        {
+            return dynamic_cast<T *>(lattice_.at(name).get());
+        }
+        catch (std::bad_cast &)
+        {
+            HADRON_ERROR("object '" + name + "' does not have type "
+                         + typeid(T *).name() + "(object type: "
+                         + typeid(lattice_.at(name).get()).name() + ")");
+        }
+    }
+    else
+    {
+        HADRON_ERROR("object '" + name + "' undefined");
+        
+        return nullptr;
+    }
+}
 
 END_HADRONS_NAMESPACE
 

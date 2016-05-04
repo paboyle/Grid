@@ -47,6 +47,16 @@ Application::Application(const std::string parameterFileName)
     {
         LOG(Message) << "  " << m << std::endl;
     }
+    auto dim = GridDefaultLatt(), mpi = GridDefaultMpi(), loc(dim);
+    locVol_ = 1;
+    for (unsigned int d = 0; d < dim.size(); ++d)
+    {
+        loc[d]  /= mpi[d];
+        locVol_ *= loc[d];
+    }
+    LOG(Message) << "Global lattice: " << dim << std::endl;
+    LOG(Message) << "MPI partition : " << mpi << std::endl;
+    LOG(Message) << "Local lattice : " << loc << std::endl;
 }
 
 // destructor //////////////////////////////////////////////////////////////////
@@ -169,8 +179,8 @@ void Application::configLoop(void)
     
     for (unsigned int t = range.start; t < range.end; t += range.step)
     {
-        LOG(Message) << "Starting measurement for trajectory " << t
-                     << std::endl;
+        LOG(Message) << "========== Starting measurement for trajectory " << t
+                     << " ==========" << std::endl;
         env_.setTrajectory(t);
         execute(program_);
         env_.freeAll();
@@ -179,7 +189,7 @@ void Application::configLoop(void)
 
 unsigned int Application::execute(const std::vector<std::string> &program)
 {
-    unsigned int                          memPeak = 0;
+    unsigned int                          memPeak = 0, size;
     std::vector<std::vector<std::string>> freeProg;
     
     freeProg.resize(program.size());
@@ -200,19 +210,53 @@ unsigned int Application::execute(const std::vector<std::string> &program)
     }
     for (unsigned int i = 0; i < program.size(); ++i)
     {
-        LOG(Message) << "Measurement step " << i+1 << "/" << program.size()
-                     << " (module '" << program[i] << "')" << std::endl;
+        LOG(Message) << "---------- Measurement step " << i+1 << "/"
+                     << program.size() << " (module '" << program[i] << "')"
+                     << " ----------" << std::endl;
         (*module_[program[i]])(env_);
-        LOG(Message) << "allocated propagators: " << env_.nProp() << std::endl;
-        if (env_.nProp() > memPeak)
+        size = env_.getTotalSize();
+        LOG(Message) << "Allocated objects: " << sizeString(size*locVol_)
+                     << " (" << sizeString(size)  << "/site)" << std::endl;
+        if (size > memPeak)
         {
-            memPeak = env_.nProp();
+            memPeak = size;
         }
+        LOG(Message) << "Garbage collection..." << std::endl;
         for (auto &n: freeProg[i])
         {
             env_.free(n);
         }
+        size = env_.getTotalSize();
+        LOG(Message) << "Allocated objects: " << sizeString(size*locVol_)
+                     << " (" << sizeString(size)  << "/site)" << std::endl;
     }
     
     return memPeak;
+}
+
+// pretty size formatting //////////////////////////////////////////////////////
+std::string Application::sizeString(long unsigned int bytes)
+
+{
+    constexpr unsigned int bufSize = 256;
+    const char             *suffixes[7] = {"", "K", "M", "G", "T", "P", "E"};
+    char                   buf[256];
+    long unsigned int      s     = 0;
+    double                 count = bytes;
+    
+    while (count >= 1024 && s < 7)
+    {
+        s++;
+        count /= 1024;
+    }
+    if (count - floor(count) == 0.0)
+    {
+        snprintf(buf, bufSize, "%d %sB", (int)count, suffixes[s]);
+    }
+    else
+    {
+        snprintf(buf, bufSize, "%.1f %sB", count, suffixes[s]);
+    }
+    
+    return std::string(buf);
 }

@@ -62,8 +62,8 @@ std::vector<std::string> SrcPoint::getOutput(void)
 // allocation //////////////////////////////////////////////////////////////////
 void SrcPoint::allocate(Environment &env)
 {
-    env.createProp(getName());
-    src_ = env.getProp(getName());
+    env.create<LatticePropagator>(getName());
+    src_ = env.get<LatticePropagator>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -72,7 +72,7 @@ void SrcPoint::execute(Environment &env)
     std::vector<int> position = strToVec<int>(par_.position);
     SpinColourMatrix id;
     
-    LOG(Message) << "creating point source at position [" << par_.position
+    LOG(Message) << "Creating point source at position [" << par_.position
                  << "]" << std::endl;
     id    = 1.;
     *src_ = zero;

@@ -63,13 +63,13 @@ std::vector<std::string> CMeson::getOutput(void)
 // execution ///////////////////////////////////////////////////////////////////
 void CMeson::execute(Environment &env)
 {
-    LOG(Message) << "computing meson contraction '" << getName() << "' using"
+    LOG(Message) << "Computing meson contraction '" << getName() << "' using"
                  << " quarks '" << par_.q1 << " and '" << par_.q2 << "'"
                  << std::endl;
     
     XmlWriter             writer(par_.output);
-    LatticePropagator     &q1 = *env.getProp(par_.q1);
-    LatticePropagator     &q2 = *env.getProp(par_.q2);
+    LatticePropagator     &q1 = *env.get<LatticePropagator>(par_.q1);
+    LatticePropagator     &q2 = *env.get<LatticePropagator>(par_.q2);
     LatticeComplex        c(env.getGrid());
     SpinMatrix            g[Ns*Ns], g5;
     std::vector<TComplex> buf;
