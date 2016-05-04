@@ -213,37 +213,38 @@ class NerscIO : public BinaryIO {
   static inline void truncate(std::string file){
     std::ofstream fout(file,std::ios::out);
   }
+  
+  #define dump_nersc_header(field, s)\
+  s << "BEGIN_HEADER"      << std::endl;\
+  s << "HDR_VERSION = "    << field.hdr_version    << std::endl;\
+  s << "DATATYPE = "       << field.data_type      << std::endl;\
+  s << "STORAGE_FORMAT = " << field.storage_format << std::endl;\
+  for(int i=0;i<4;i++){\
+    s << "DIMENSION_" << i+1 << " = " << field.dimension[i] << std::endl ;\
+  }\
+  s << "LINK_TRACE = " << std::setprecision(10) << field.link_trace << std::endl;\
+  s << "PLAQUETTE  = " << std::setprecision(10) << field.plaquette  << std::endl;\
+  for(int i=0;i<4;i++){\
+    s << "BOUNDARY_"<<i+1<<" = " << field.boundary[i] << std::endl;\
+  }\
+  \
+  s << "CHECKSUM = "<< std::hex << std::setw(10) << field.checksum << std::dec<<std::endl;\
+  s << "ENSEMBLE_ID = "     << field.ensemble_id      << std::endl;\
+  s << "ENSEMBLE_LABEL = "  << field.ensemble_label   << std::endl;\
+  s << "SEQUENCE_NUMBER = " << field.sequence_number  << std::endl;\
+  s << "CREATOR = "         << field.creator          << std::endl;\
+  s << "CREATOR_HARDWARE = "<< field.creator_hardware << std::endl;\
+  s << "CREATION_DATE = "   << field.creation_date    << std::endl;\
+  s << "ARCHIVE_DATE = "    << field.archive_date     << std::endl;\
+  s << "FLOATING_POINT = "  << field.floating_point   << std::endl;\
+  s << "END_HEADER"         << std::endl;
+  
   static inline unsigned int writeHeader(NerscField &field,std::string file)
   {
     std::ofstream fout(file,std::ios::out|std::ios::in);
   
     fout.seekp(0,std::ios::beg);
-    fout << "BEGIN_HEADER"      << std::endl;
-    fout << "HDR_VERSION = "    << field.hdr_version    << std::endl;
-    fout << "DATATYPE = "       << field.data_type      << std::endl;
-    fout << "STORAGE_FORMAT = " << field.storage_format << std::endl;
-
-    for(int i=0;i<4;i++){
-      fout << "DIMENSION_" << i+1 << " = " << field.dimension[i] << std::endl ;
-    }
-    // just to keep the space and write it later
-    fout << "LINK_TRACE = " << std::setprecision(10) << field.link_trace << std::endl;
-    fout << "PLAQUETTE  = " << std::setprecision(10) << field.plaquette  << std::endl;
-    for(int i=0;i<4;i++){
-      fout << "BOUNDARY_"<<i+1<<" = " << field.boundary[i] << std::endl;
-    }
-
-    fout << "CHECKSUM = "<< std::hex << std::setw(10) << field.checksum << std::dec<<std::endl;
-
-    fout << "ENSEMBLE_ID = "     << field.ensemble_id      << std::endl;
-    fout << "ENSEMBLE_LABEL = "  << field.ensemble_label   << std::endl;
-    fout << "SEQUENCE_NUMBER = " << field.sequence_number  << std::endl;
-    fout << "CREATOR = "         << field.creator          << std::endl;
-    fout << "CREATOR_HARDWARE = "<< field.creator_hardware << std::endl;
-    fout << "CREATION_DATE = "   << field.creation_date    << std::endl;
-    fout << "ARCHIVE_DATE = "    << field.archive_date     << std::endl;
-    fout << "FLOATING_POINT = "  << field.floating_point   << std::endl;
-    fout << "END_HEADER"         << std::endl;
+    dump_nersc_header(field, fout);
     field.data_start = fout.tellp();
     return field.data_start;
 }
