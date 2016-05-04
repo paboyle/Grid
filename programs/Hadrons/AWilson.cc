@@ -70,5 +70,4 @@ void AWilson::execute(Environment &env)
                  << " using gauge field '" << par_.gauge << "'" << std::endl;
     env.addFermionMatrix(getName(),
                          new WilsonFermionR(U, grid, gridRb, par_.mass));
-    LOG(Message) << sizeof(*env.getFermionMatrix(getName())) << std::endl;
 }
