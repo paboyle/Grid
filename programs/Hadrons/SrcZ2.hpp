@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/MSource.hpp
+Source file: programs/Hadrons/SrcZ2.hpp
 
 Copyright (C) 2016
 
@@ -25,66 +25,47 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-/************
- * Sources  *
- ************
- 
- Description of all source types.
- Convention: the discrete Heavyside function verifies theta(0) = 1.
- 
- point: Point source
- -------------------
- * src(x) = delta_x,o
- 
- * arguments: o
-    - o: origin, space-separated integer sequence (e.g. "0 1 1 0")
- 
- z2Band: Z_2 stochastic source
- -----------------------------
- * src(x) = eta_x * theta(x_0 - ta) * theta(tb - x_0)
- 
- * arguments: ta tb
-    - ta: begin timeslice (integer)
-    - tb: end timesilce (integer)
- 
- */
-
-
-#ifndef Hadrons_MSource_hpp_
-#define Hadrons_MSource_hpp_
+#ifndef Hadrons_SrcZ2_hpp_
+#define Hadrons_SrcZ2_hpp_
 
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
 #include <Hadrons/ModuleFactory.hpp>
 
-namespace Grid{
-    GRID_SERIALIZABLE_ENUM(SourceType, undef,
-                                       point,  1,
-                                       z2Band, 2);
-}
-
 BEGIN_HADRONS_NAMESPACE
 
+/*
+ 
+ Z_2 stochastic source
+ -----------------------------
+ * src_x = eta_x * theta(x_3 - ta) * theta(tb - x_3)
+ 
+ * options:
+ - tA: begin timeslice (integer)
+ - tB: end timesilce (integer)
+ 
+ */
+ 
 /******************************************************************************
- *                            Source module                                   *
+ *                               SrcZ2                                        *
  ******************************************************************************/
-class MSource: public Module
+class SrcZ2: public Module
 {
 public:
     class Par: Serializable
     {
     public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Par, SourceType, sourceType,
-                                        std::vector<std::string>, arguments);
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Par, unsigned int, tA,
+                                             unsigned int, tB);
     };
 public:
     // constructor
-    MSource(const std::string name);
+    SrcZ2(const std::string name);
     // destructor
-    virtual ~MSource(void) = default;
+    virtual ~SrcZ2(void) = default;
     // parse parameters
     virtual void parseParameters(XmlReader &reader, const std::string name);
-    // dependencies/products
+    // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
     // allocation
@@ -93,11 +74,11 @@ public:
     virtual void execute(Environment &env);
 private:
     Par               par_;
-    LatticePropagator *src_{nullptr};
+    LatticePropagator *src_;
 };
 
-MODULE_REGISTER(MSource);
+MODULE_REGISTER(SrcZ2);
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MSource_hpp_
+#endif // Hadrons_SrcZ2_hpp_

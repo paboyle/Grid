@@ -13,8 +13,7 @@ Hadrons_SOURCES =   \
 
 # general modules
 Hadrons_SOURCES +=  \
-    MQuark.cc       \
-    MSource.cc
+    MQuark.cc
 
 # fermion actions
 Hadrons_SOURCES +=  \
@@ -33,5 +32,10 @@ Hadrons_SOURCES +=  \
 # solver modules
 Hadrons_SOURCES +=  \
     SolRBPrecCG.cc
+
+# source modules
+Hadrons_SOURCES +=  \
+    SrcPoint.cc     \
+    SrcZ2.cc
 
 Hadrons_LDADD   = -lGrid
