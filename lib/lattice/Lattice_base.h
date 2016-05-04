@@ -55,7 +55,13 @@ extern int GridCshiftPermuteMap[4][16];
 // Basic expressions used in Expression Template
 ////////////////////////////////////////////////
 
-class LatticeBase {};
+class LatticeBase
+{
+public:
+    virtual ~LatticeBase(void) = default;
+    GridBase *_grid;
+};
+    
 class LatticeExpressionBase {};
 
 template<class T> using Vector = std::vector<T,alignedAllocator<T> >;               // Aligned allocator??
@@ -88,8 +94,6 @@ template<class vobj>
 class Lattice : public LatticeBase
 {
 public:
-
-    GridBase *_grid;
     int checkerboard;
     Vector<vobj> _odata;
     
@@ -177,8 +181,8 @@ PARALLEL_FOR_LOOP
   }
   //GridFromExpression is tricky to do
   template<class Op,class T1>
-    Lattice(const LatticeUnaryExpression<Op,T1> & expr):    _grid(nullptr){
-
+    Lattice(const LatticeUnaryExpression<Op,T1> & expr) {
+    _grid = nullptr;
     GridFromExpression(_grid,expr);
     assert(_grid!=nullptr);
 
@@ -199,7 +203,8 @@ PARALLEL_FOR_LOOP
     }
   };
   template<class Op,class T1, class T2>
-  Lattice(const LatticeBinaryExpression<Op,T1,T2> & expr):    _grid(nullptr){
+  Lattice(const LatticeBinaryExpression<Op,T1,T2> & expr) {
+    _grid = nullptr;
     GridFromExpression(_grid,expr);
     assert(_grid!=nullptr);
 
@@ -220,7 +225,8 @@ PARALLEL_FOR_LOOP
     }
   };
   template<class Op,class T1, class T2, class T3>
-  Lattice(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr):    _grid(nullptr){
+  Lattice(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr) {
+    _grid = nullptr;
     GridFromExpression(_grid,expr);
     assert(_grid!=nullptr);
 
@@ -240,7 +246,8 @@ PARALLEL_FOR_LOOP
     // Constructor requires "grid" passed.
     // what about a default grid?
     //////////////////////////////////////////////////////////////////
-    Lattice(GridBase *grid) : _grid(grid), _odata(_grid->oSites()) {
+    Lattice(GridBase *grid) : _odata(grid->oSites()) {
+        _grid = grid;
     //        _odata.reserve(_grid->oSites());
     //        _odata.resize(_grid->oSites());
     //      std::cout << "Constructing lattice object with Grid pointer "<<_grid<<std::endl;
@@ -248,6 +255,8 @@ PARALLEL_FOR_LOOP
         checkerboard=0;
     }
 
+    virtual ~Lattice(void) = default;
+    
     template<class sobj> strong_inline Lattice<vobj> & operator = (const sobj & r){
 PARALLEL_FOR_LOOP
         for(int ss=0;ss<_grid->oSites();ss++){
