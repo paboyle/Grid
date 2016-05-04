@@ -32,6 +32,6 @@ Hadrons_SOURCES +=  \
 
 # solver modules
 Hadrons_SOURCES +=  \
-    SRBPrecCG.cc
+    SolRBPrecCG.cc
 
 Hadrons_LDADD   = -lGrid

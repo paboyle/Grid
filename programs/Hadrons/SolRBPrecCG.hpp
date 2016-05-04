@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/SRBPrecCG.hpp
+Source file: programs/Hadrons/SolRBPrecCG.hpp
 
 Copyright (C) 2016
 
@@ -25,8 +25,8 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#ifndef Hadrons_SRBPrecCG_hpp_
-#define Hadrons_SRBPrecCG_hpp_
+#ifndef Hadrons_SolRBPrecCG_hpp_
+#define Hadrons_SolRBPrecCG_hpp_
 
 #include <Hadrons/Global.hpp>
 #include <Hadrons/Module.hpp>
@@ -37,7 +37,7 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                     Schur red-black preconditioned CG                      *
  ******************************************************************************/
-class SRBPrecCG: public Module
+class SolRBPrecCG: public Module
 {
 public:
     class Par: Serializable
@@ -48,9 +48,9 @@ public:
     };
 public:
     // constructor
-    SRBPrecCG(const std::string name);
+    SolRBPrecCG(const std::string name);
     // destructor
-    virtual ~SRBPrecCG(void) = default;
+    virtual ~SolRBPrecCG(void) = default;
     // parse parameters
     virtual void parseParameters(XmlReader &reader, const std::string name);
     // dependencies/products
@@ -62,8 +62,8 @@ private:
     Par par_;
 };
 
-MODULE_REGISTER(SRBPrecCG);
+MODULE_REGISTER(SolRBPrecCG);
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_SRBPrecCG_hpp_
+#endif // Hadrons_SolRBPrecCG_hpp_
