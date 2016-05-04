@@ -63,7 +63,8 @@ std::vector<std::string> CMeson::getOutput(void)
 // execution ///////////////////////////////////////////////////////////////////
 void CMeson::execute(Environment &env)
 {
-    LOG(Message) << "computing meson contraction '" << getName() << "'"
+    LOG(Message) << "computing meson contraction '" << getName() << "' using"
+                 << " quarks '" << par_.q1 << " and '" << par_.q2 << "'"
                  << std::endl;
     
     XmlWriter             writer(par_.output);

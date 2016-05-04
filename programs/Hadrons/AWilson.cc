@@ -66,6 +66,8 @@ void AWilson::execute(Environment &env)
     auto &grid   = *env.getGrid();
     auto &gridRb = *env.getRbGrid();
     
+    LOG(Message) << "setting up Wilson fermion matrix with m= " << par_.mass
+                 << " using gauge field '" << par_.gauge << "'" << std::endl;
     env.addFermionMatrix(getName(),
                          new WilsonFermionR(U, grid, gridRb, par_.mass));
 }

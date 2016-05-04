@@ -61,5 +61,6 @@ void GUnit::allocate(Environment &env)
 // execution ///////////////////////////////////////////////////////////////////
 void GUnit::execute(Environment &env)
 {
+    LOG(Message) << "creating unit gauge configuration" << std::endl;
     SU3::ColdConfiguration(*env.get4dRng(), *gauge_);
 }

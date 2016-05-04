@@ -61,5 +61,6 @@ void GRandom::allocate(Environment &env)
 // execution ///////////////////////////////////////////////////////////////////
 void GRandom::execute(Environment &env)
 {
+    LOG(Message) << "generating random gauge configuration" << std::endl;
     SU3::HotConfiguration(*env.get4dRng(), *gauge_);
 }

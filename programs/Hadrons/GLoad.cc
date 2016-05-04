@@ -73,5 +73,7 @@ void GLoad::execute(Environment &env)
     std::string fileName = par_.file + "."
                            + std::to_string(env.getTrajectory());
     
+    LOG(Message) << "loading NERSC configuration from file '" << fileName
+                 << "'" << std::endl;
     NerscIO::readConfiguration(*gauge_, header, fileName);
 }
