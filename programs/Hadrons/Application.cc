@@ -171,6 +171,7 @@ void Application::configLoop(void)
     {
         LOG(Message) << "Starting measurement for trajectory " << t
                      << std::endl;
+        env_.setTrajectory(t);
         execute(program_);
         env_.freeAll();
     }

@@ -55,6 +55,17 @@ bool Environment::isDryRun(void) const
     return dryRun_;
 }
 
+// trajectory number ///////////////////////////////////////////////////////////
+void Environment::setTrajectory(const unsigned int traj)
+{
+    traj_ = traj;
+}
+
+unsigned int Environment::getTrajectory(void) const
+{
+    return traj_;
+}
+
 // grids ///////////////////////////////////////////////////////////////////////
 GridCartesian * Environment::getGrid(const unsigned int Ls) const
 {

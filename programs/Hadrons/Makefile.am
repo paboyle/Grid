@@ -26,6 +26,8 @@ Hadrons_SOURCES +=  \
 
 # gauge modules
 Hadrons_SOURCES +=  \
+    GLoad.cc        \
+    GRandom.cc      \
     GUnit.cc
 
 # solver modules

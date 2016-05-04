@@ -52,6 +52,9 @@ public:
     // dry run
     void                    dryRun(const bool isDry);
     bool                    isDryRun(void) const;
+    // trajectory number
+    void                    setTrajectory(const unsigned int traj);
+    unsigned int            getTrajectory(void) const;
     // grids
     GridCartesian *         getGrid(const unsigned int Ls = 1) const;
     GridRedBlackCartesian * getRbGrid(const unsigned int Ls = 1) const;
@@ -86,6 +89,7 @@ public:
     void                    freeAll(void);
 private:
     bool                                dryRun_{false};
+    unsigned int                        traj_;
     GridPt                              grid4d_;
     std::map<unsigned int, GridPt>      grid5d_;
     GridRbPt                            gridRb4d_;
