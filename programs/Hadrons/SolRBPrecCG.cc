@@ -70,7 +70,6 @@ void SolRBPrecCG::setup(void)
 void SolRBPrecCG::execute(void)
 {
     auto &mat   = *(env().getFermionMatrix(par_.action));
-    
     auto solver = [&mat, this](LatticeFermion &sol,
                                const LatticeFermion &source)
     {

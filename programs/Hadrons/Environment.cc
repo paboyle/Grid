@@ -121,13 +121,13 @@ Environment::FMat * Environment::getFermionMatrix(const std::string name) const
     }
     else
     {
-        try
+        if (hasSolver(name))
         {
             return fMat_.at(solverAction_.at(name)).get();
         }
-        catch (std::out_of_range &)
+        else
         {
-            HADRON_ERROR("no action with name '" << name << "'");
+            HADRON_ERROR("no action/solver with name '" << name << "'");
         }
     }
 }
@@ -299,6 +299,8 @@ void Environment::freeAll(void)
     fMat_.clear();
     solver_.clear();
     objectSize_.clear();
+    owners_.clear();
+    properties_.clear();
 }
 
 unsigned int Environment::getSize(const std::string name) const
