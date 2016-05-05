@@ -38,19 +38,6 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.6
-          packages:
-            - clang-3.6
-            - libmpfr-dev
-            - libgmp-dev
-            - libmpc-dev
-            - binutils-dev
-      env: VERSION=-3.6
-    - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
             - llvm-toolchain-precise-3.7
           packages:
             - clang-3.7
@@ -59,6 +46,19 @@ matrix:
             - libmpc-dev
             - binutils-dev
       env: VERSION=-3.7
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.8
+          packages:
+            - clang-3.8
+            - libmpfr-dev
+            - libgmp-dev
+            - libmpc-dev
+            - binutils-dev
+      env: VERSION=-3.8
       
 before_install:
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
