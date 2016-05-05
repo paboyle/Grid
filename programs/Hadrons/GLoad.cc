@@ -60,18 +60,18 @@ std::vector<std::string> GLoad::getOutput(void)
 }
 
 // allocation //////////////////////////////////////////////////////////////////
-void GLoad::allocate(Environment &env)
+void GLoad::allocate(void)
 {
-    env.create<LatticeGaugeField>(getName());
-    gauge_ = env.get<LatticeGaugeField>(getName());
+    env().create<LatticeGaugeField>(getName());
+    gauge_ = env().get<LatticeGaugeField>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void GLoad::execute(Environment &env)
+void GLoad::execute(void)
 {
     NerscField  header;
     std::string fileName = par_.file + "."
-                           + std::to_string(env.getTrajectory());
+                           + std::to_string(env().getTrajectory());
     
     LOG(Message) << "Loading NERSC configuration from file '" << fileName
                  << "'" << std::endl;

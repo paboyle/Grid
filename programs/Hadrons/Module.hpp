@@ -61,20 +61,22 @@ public:
     virtual ~Module(void) = default;
     // access
     std::string getName(void) const;
+    Environment &env(void) const;
     // parse parameters
     virtual void parseParameters(XmlReader &reader, const std::string name) {};
     // dependencies/products
     virtual std::vector<std::string> getInput(void) = 0;
     virtual std::vector<std::string> getOutput(void) = 0;
     // setup
-    virtual void setup(Environment &env) {};
+    virtual void setup(void) {};
     // allocation
-    virtual void allocate(Environment &env) {};
+    virtual void allocate(void) {};
     // execution
-    void operator()(Environment &env);
-    virtual void execute(Environment &env) = 0;
+    void operator()(void);
+    virtual void execute(void) = 0;
 private:
     std::string name_;
+    Environment &env_;
 };
 
 END_HADRONS_NAMESPACE

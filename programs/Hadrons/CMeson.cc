@@ -61,20 +61,20 @@ std::vector<std::string> CMeson::getOutput(void)
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void CMeson::execute(Environment &env)
+void CMeson::execute(void)
 {
     LOG(Message) << "Computing meson contraction '" << getName() << "' using"
                  << " quarks '" << par_.q1 << " and '" << par_.q2 << "'"
                  << std::endl;
     
     XmlWriter             writer(par_.output);
-    LatticePropagator     &q1 = *env.get<LatticePropagator>(par_.q1);
-    LatticePropagator     &q2 = *env.get<LatticePropagator>(par_.q2);
-    LatticeComplex        c(env.getGrid());
+    LatticePropagator     &q1 = *env().get<LatticePropagator>(par_.q1);
+    LatticePropagator     &q2 = *env().get<LatticePropagator>(par_.q2);
+    LatticeComplex        c(env().getGrid());
     SpinMatrix            g[Ns*Ns], g5;
     std::vector<TComplex> buf;
     Result                result;
-    unsigned int          nt = env.getGrid()->GlobalDimensions()[Tp];
+    unsigned int          nt = env().getGrid()->GlobalDimensions()[Tp];
     
     g5 = makeGammaProd(Ns*Ns - 1);
     result.corr.resize(Ns*Ns);

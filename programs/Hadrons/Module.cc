@@ -37,6 +37,7 @@ using namespace Hadrons;
 // constructor /////////////////////////////////////////////////////////////////
 Module::Module(const std::string name)
 : name_(name)
+, env_(Environment::getInstance())
 {}
 
 // access //////////////////////////////////////////////////////////////////////
@@ -45,12 +46,18 @@ std::string Module::getName(void) const
     return name_;
 }
 
-void Module::operator()(Environment &env)
+Environment & Module::env(void) const
 {
-    setup(env);
-    allocate(env);
-    if (!env.isDryRun())
+    return env_;
+}
+
+// execution ///////////////////////////////////////////////////////////////////
+void Module::operator()(void)
+{
+    setup();
+    allocate();
+    if (!env().isDryRun())
     {
-        execute(env);
+        execute();
     }
 }

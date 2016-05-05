@@ -61,9 +61,9 @@ std::vector<std::string> MQuark::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void MQuark::setup(Environment &env)
+void MQuark::setup(void)
 {
-    auto dim = env.getFermionMatrix(par_.solver)->Grid()->GlobalDimensions();
+    auto dim = env().getFermionMatrix(par_.solver)->Grid()->GlobalDimensions();
     
     if (dim.size() == Nd)
     {
@@ -76,30 +76,30 @@ void MQuark::setup(Environment &env)
 }
 
 // allocation //////////////////////////////////////////////////////////////////
-void MQuark::allocate(Environment &env)
+void MQuark::allocate(void)
 {
-    env.create<LatticePropagator>(getName());
-    quark_ = env.get<LatticePropagator>(getName());
+    env().create<LatticePropagator>(getName());
+    quark_ = env().get<LatticePropagator>(getName());
     if (Ls_ > 1)
     {
-        env.create<LatticePropagator>(getName() + "_5d", Ls_);
-        quark5d_ = env.get<LatticePropagator>(getName() + "_5d");
+        env().create<LatticePropagator>(getName() + "_5d", Ls_);
+        quark5d_ = env().get<LatticePropagator>(getName() + "_5d");
     }
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void MQuark::execute(Environment &env)
+void MQuark::execute(void)
 {
     LatticePropagator *fullSource;
-    LatticeFermion    source(env.getGrid(Ls_)), sol(env.getGrid(Ls_));
+    LatticeFermion    source(env().getGrid(Ls_)), sol(env().getGrid(Ls_));
     
     LOG(Message) << "Computing quark propagator '" << getName() << "'"
                  << std::endl;
-    if (!env.isLattice5d(par_.source))
+    if (!env().isLattice5d(par_.source))
     {
         if (Ls_ == 1)
         {
-            fullSource = env.get<LatticePropagator>(par_.source);
+            fullSource = env().get<LatticePropagator>(par_.source);
         }
         else
         {
@@ -112,16 +112,15 @@ void MQuark::execute(Environment &env)
         {
             HADRON_ERROR("MQuark not implemented with 5D actions");
         }
-        else if (Ls_ != env.getLatticeLs(par_.source))
+        else if (Ls_ != env().getLatticeLs(par_.source))
         {
             HADRON_ERROR("MQuark not implemented with 5D actions");
         }
         else
         {
-            fullSource = env.get<LatticePropagator>(par_.source);
+            fullSource = env().get<LatticePropagator>(par_.source);
         }
     }
-    
     LOG(Message) << "Inverting using solver '" << par_.solver
                  << "' on source '" << par_.source << "'" << std::endl;
     for (unsigned int s = 0; s < Ns; ++s)
@@ -129,7 +128,7 @@ void MQuark::execute(Environment &env)
     {
         PropToFerm(source, *fullSource, s, c);
         sol = zero;
-        env.callSolver(par_.solver, sol, source);
+        env().callSolver(par_.solver, sol, source);
         if (Ls_ == 1)
         {
             FermToProp(*quark_, sol, s, c);

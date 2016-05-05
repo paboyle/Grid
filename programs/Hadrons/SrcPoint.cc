@@ -60,14 +60,14 @@ std::vector<std::string> SrcPoint::getOutput(void)
 }
 
 // allocation //////////////////////////////////////////////////////////////////
-void SrcPoint::allocate(Environment &env)
+void SrcPoint::allocate(void)
 {
-    env.create<LatticePropagator>(getName());
-    src_ = env.get<LatticePropagator>(getName());
+    env().create<LatticePropagator>(getName());
+    src_ = env().get<LatticePropagator>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void SrcPoint::execute(Environment &env)
+void SrcPoint::execute(void)
 {
     std::vector<int> position = strToVec<int>(par_.position);
     SpinColourMatrix id;

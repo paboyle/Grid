@@ -58,11 +58,16 @@ public:
     GridCartesian *         getGrid(const unsigned int Ls = 1) const;
     GridRedBlackCartesian * getRbGrid(const unsigned int Ls = 1) const;
     // fermion actions
-    void                    addFermionMatrix(const std::string name, FMat *mat);
+    void                    addFermionMatrix(const std::string name, FMat *mat,
+                                             const unsigned int size);
     FMat *                  getFermionMatrix(const std::string name) const;
+    void                    freeFermionMatrix(const std::string name);
+    bool                    hasFermionMatrix(const std::string name) const;
     // solvers
     void                    addSolver(const std::string name, Solver s,
                                       const std::string actionName);
+    bool                    hasSolver(const std::string name) const;
+    std::string             getSolverAction(const std::string name) const;
     void                    callSolver(const std::string name,
                                        LatticeFermion &sol,
                                        const LatticeFermion &src) const;
@@ -71,22 +76,26 @@ public:
     GridParallelRNG *       get4dRng(void) const;
     // lattice store
     template <typename T>
+    unsigned int            lattice4dSize(void) const;
+    template <typename T>
     void                    create(const std::string name,
                                    const unsigned int Ls = 1);
     template <typename T>
     T *                     get(const std::string name) const;
     void                    freeLattice(const std::string name);
     bool                    hasLattice(const std::string name) const;
-    
     bool                    isLattice5d(const std::string name) const;
     unsigned int            getLatticeLs(const std::string name) const;
     // general memory management
-    void                    free(const std::string name);
+    void                    addOwnership(const std::string owner,
+                                         const std::string property);
+    bool                    hasOwners(const std::string name) const;
+    bool                    free(const std::string name);
     void                    freeAll(void);
-    void                    addSize(const std::string name,
-                                    const unsigned int size);
     unsigned int            getSize(const std::string name) const;
     long unsigned int       getTotalSize(void) const;
+private:
+    void addSize(const std::string name, const unsigned int size);
 private:
     bool                                dryRun_{false};
     unsigned int                        traj_;
@@ -100,11 +109,19 @@ private:
     std::map<std::string, std::string>  solverAction_;
     std::map<std::string, LatticePt>    lattice_;
     std::map<std::string, unsigned int> objectSize_;
+    std::map<std::string, std::set<std::string>> owners_;
+    std::map<std::string, std::set<std::string>> properties_;
 };
 
 /******************************************************************************
  *                        template implementation                             *
  ******************************************************************************/
+template <typename T>
+unsigned int Environment::lattice4dSize(void) const
+{
+    return sizeof(typename T::vector_object)/getGrid()->Nsimd();
+}
+
 template <typename T>
 void Environment::create(const std::string name, const unsigned int Ls)
 {
@@ -140,7 +157,7 @@ void Environment::create(const std::string name, const unsigned int Ls)
     {
         lattice_[name].reset(nullptr);
     }
-    objectSize_[name] = sizeof(typename T::vector_object)/g->Nsimd()*Ls;
+    addSize(name, lattice4dSize<T>()*Ls);
 }
 
 template <typename T>

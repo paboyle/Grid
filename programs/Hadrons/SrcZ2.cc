@@ -60,18 +60,18 @@ std::vector<std::string> SrcZ2::getOutput(void)
 }
 
 // allocation //////////////////////////////////////////////////////////////////
-void SrcZ2::allocate(Environment &env)
+void SrcZ2::allocate(void)
 {
-    env.create<LatticePropagator>(getName());
-    src_ = env.get<LatticePropagator>(getName());
+    env().create<LatticePropagator>(getName());
+    src_ = env().get<LatticePropagator>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void SrcZ2::execute(Environment &env)
+void SrcZ2::execute(void)
 {
-    Lattice<iScalar<vInteger>> t(env.getGrid());
-    LatticeComplex             eta(env.getGrid());
-    LatticeFermion             phi(env.getGrid());
+    Lattice<iScalar<vInteger>> t(env().getGrid());
+    LatticeComplex             eta(env().getGrid());
+    LatticeFermion             phi(env().getGrid());
     Complex                    shift(1., 1.);
     
     if (par_.tA == par_.tB)
@@ -85,7 +85,7 @@ void SrcZ2::execute(Environment &env)
                      << par_.tB << std::endl;
     }
     LatticeCoordinate(t, Tp);
-    bernoulli(*env.get4dRng(), eta);
+    bernoulli(*env().get4dRng(), eta);
     eta   = (2.*eta - shift)*(1./::sqrt(2.));
     eta   = where((t >= par_.tA) and (t <= par_.tB), eta, 0.*eta);
     *src_ = 1.;

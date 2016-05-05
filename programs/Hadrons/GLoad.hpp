@@ -56,9 +56,9 @@ public:
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
     // allocation
-    virtual void allocate(Environment &env);
+    virtual void allocate(void);
     // execution
-    virtual void execute(Environment &env);
+    virtual void execute(void);
 private:
     Par               par_;
     LatticeGaugeField *gauge_ = nullptr;

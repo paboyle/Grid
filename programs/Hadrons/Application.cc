@@ -189,9 +189,11 @@ void Application::configLoop(void)
 
 unsigned int Application::execute(const std::vector<std::string> &program)
 {
-    unsigned int                          memPeak = 0, size;
-    std::vector<std::vector<std::string>> freeProg;
+    unsigned int                       memPeak = 0, size;
+    std::vector<std::set<std::string>> freeProg;
+    bool                               continueCollect;
     
+    // build garbage collection schedule
     freeProg.resize(program.size());
     for (auto &n: associatedModule_)
     {
@@ -205,27 +207,54 @@ unsigned int Application::execute(const std::vector<std::string> &program)
         auto it = std::find_if(program.rbegin(), program.rend(), pred);
         if (it != program.rend())
         {
-            freeProg[program.rend() - it - 1].push_back(n.first);
+            freeProg[program.rend() - it - 1].insert(n.first);
         }
     }
+    // program execution
     for (unsigned int i = 0; i < program.size(); ++i)
     {
+        // execute module
         LOG(Message) << "---------- Measurement step " << i+1 << "/"
                      << program.size() << " (module '" << program[i] << "')"
                      << " ----------" << std::endl;
-        (*module_[program[i]])(env_);
+        (*module_[program[i]])();
         size = env_.getTotalSize();
+        // print used memory after execution
         LOG(Message) << "Allocated objects: " << sizeString(size*locVol_)
                      << " (" << sizeString(size)  << "/site)" << std::endl;
         if (size > memPeak)
         {
             memPeak = size;
         }
+        // garbage collection for step i
         LOG(Message) << "Garbage collection..." << std::endl;
-        for (auto &n: freeProg[i])
+        do
         {
-            env_.free(n);
+            continueCollect = false;
+            auto toFree = freeProg[i];
+            for (auto &n: toFree)
+            {
+                // continue garbage collection while there are still
+                // objects without owners
+                continueCollect = continueCollect or !env_.hasOwners(n);
+                if(env_.free(n))
+                {
+                    // if an object has been freed, remove it from
+                    // the garbage collection schedule
+                    freeProg[i].erase(n);
+                }
+            }
+        } while (continueCollect);
+        // any remaining objects in step i garbage collection schedule
+        // is scheduled for step i + 1
+        if (i + 1 < program.size())
+        {
+            for (auto &n: freeProg[i])
+            {
+                freeProg[i + 1].insert(n);
+            }
         }
+        // print used memory after garbage collection
         size = env_.getTotalSize();
         LOG(Message) << "Allocated objects: " << sizeString(size*locVol_)
                      << " (" << sizeString(size)  << "/site)" << std::endl;

@@ -60,14 +60,16 @@ std::vector<std::string> AWilson::getOutput(void)
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void AWilson::execute(Environment &env)
+void AWilson::execute()
 {
-    auto &U      = *env.get<LatticeGaugeField>(par_.gauge);
-    auto &grid   = *env.getGrid();
-    auto &gridRb = *env.getRbGrid();
+    auto         &U      = *env().get<LatticeGaugeField>(par_.gauge);
+    auto         &grid   = *env().getGrid();
+    auto         &gridRb = *env().getRbGrid();
+    auto         fMatPt  = new WilsonFermionR(U, grid, gridRb, par_.mass);
+    unsigned int size;
     
     LOG(Message) << "Setting up Wilson fermion matrix with m= " << par_.mass
                  << " using gauge field '" << par_.gauge << "'" << std::endl;
-    env.addFermionMatrix(getName(),
-                         new WilsonFermionR(U, grid, gridRb, par_.mass));
+    size = 3*env().lattice4dSize<WilsonFermionR::DoubledGaugeField>();
+    env().addFermionMatrix(getName(), fMatPt, size);
 }

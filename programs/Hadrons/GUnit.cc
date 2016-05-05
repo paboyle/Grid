@@ -52,15 +52,15 @@ std::vector<std::string> GUnit::getOutput(void)
 }
 
 // allocation //////////////////////////////////////////////////////////////////
-void GUnit::allocate(Environment &env)
+void GUnit::allocate(void)
 {
-    env.create<LatticeGaugeField>(getName());
-    gauge_ = env.get<LatticeGaugeField>(getName());
+    env().create<LatticeGaugeField>(getName());
+    gauge_ = env().get<LatticeGaugeField>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void GUnit::execute(Environment &env)
+void GUnit::execute(void)
 {
     LOG(Message) << "Creating unit gauge configuration" << std::endl;
-    SU3::ColdConfiguration(*env.get4dRng(), *gauge_);
+    SU3::ColdConfiguration(*env().get4dRng(), *gauge_);
 }

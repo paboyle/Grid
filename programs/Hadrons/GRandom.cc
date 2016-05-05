@@ -52,15 +52,15 @@ std::vector<std::string> GRandom::getOutput(void)
 }
 
 // allocation //////////////////////////////////////////////////////////////////
-void GRandom::allocate(Environment &env)
+void GRandom::allocate(void)
 {
-    env.create<LatticeGaugeField>(getName());
-    gauge_ = env.get<LatticeGaugeField>(getName());
+    env().create<LatticeGaugeField>(getName());
+    gauge_ = env().get<LatticeGaugeField>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void GRandom::execute(Environment &env)
+void GRandom::execute(void)
 {
     LOG(Message) << "Generating random gauge configuration" << std::endl;
-    SU3::HotConfiguration(*env.get4dRng(), *gauge_);
+    SU3::HotConfiguration(*env().get4dRng(), *gauge_);
 }

@@ -56,8 +56,10 @@ public:
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+    // setup
+    virtual void setup(void);
     // execution
-    virtual void execute(Environment &env);
+    virtual void execute(void);
 private:
     Par par_;
 };

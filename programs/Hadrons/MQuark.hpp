@@ -43,8 +43,8 @@ public:
     class Par: Serializable
     {
     public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Par, std::string , source,
-                                             std::string , solver);
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Par, std::string, source,
+                                             std::string, solver);
     };
 public:
     // constructor
@@ -57,11 +57,11 @@ public:
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
     // setup
-    virtual void setup(Environment &env);
+    virtual void setup(void);
     // allocation
-    virtual void allocate(Environment &env);
+    virtual void allocate(void);
     // execution
-    virtual void execute(Environment &env);
+    virtual void execute(void);
 private:
     Par                 par_;
     unsigned int        Ls_;
