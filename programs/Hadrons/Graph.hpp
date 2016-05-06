@@ -116,14 +116,20 @@ makeDependencyMatrix(const std::vector<std::vector<T>> &topSort);
 
 /******************************************************************************
  *                       template implementation                              *
- ******************************************************************************/
+ ******************************************************************************
+ * in all the following V is the number of vertex and E is the number of edge
+ * in the worst case E = V^2
+ */
+
 // access //////////////////////////////////////////////////////////////////////
+// complexity: log(V)
 template <typename T>
 void Graph<T>::addVertex(const T &value)
 {
     isMarked_[value] = false;
 }
 
+// complexity: O(log(V))
 template <typename T>
 void Graph<T>::addEdge(const Edge &e)
 {
@@ -132,12 +138,14 @@ void Graph<T>::addEdge(const Edge &e)
     edgeSet_.insert(e);
 }
 
+// complexity: O(log(V))
 template <typename T>
 void Graph<T>::addEdge(const T &start, const T &end)
 {
     addEdge(Edge(start, end));
 }
 
+// complexity: O(V*log(V))
 template <typename T>
 void Graph<T>::removeVertex(const T &value)
 {
@@ -167,6 +175,7 @@ void Graph<T>::removeVertex(const T &value)
     }
 }
 
+// complexity: O(log(V))
 template <typename T>
 void Graph<T>::removeEdge(const Edge &e)
 {
@@ -182,12 +191,14 @@ void Graph<T>::removeEdge(const Edge &e)
     }
 }
 
+// complexity: O(log(V))
 template <typename T>
 void Graph<T>::removeEdge(const T &start, const T &end)
 {
     removeEdge(Edge(start, end));
 }
 
+// complexity: O(1)
 template <typename T>
 unsigned int Graph<T>::size(void) const
 {
@@ -195,6 +206,7 @@ unsigned int Graph<T>::size(void) const
 }
 
 // tests ///////////////////////////////////////////////////////////////////////
+// complexity: O(log(V))
 template <typename T>
 bool Graph<T>::gotValue(const T &value) const
 {
@@ -211,6 +223,7 @@ bool Graph<T>::gotValue(const T &value) const
 }
 
 // vertex marking //////////////////////////////////////////////////////////////
+// complexity: O(log(V))
 template <typename T>
 void Graph<T>::mark(const T &value, const bool doMark)
 {
@@ -224,6 +237,7 @@ void Graph<T>::mark(const T &value, const bool doMark)
     }
 }
 
+// complexity: O(V*log(V))
 template <typename T>
 void Graph<T>::markAll(const bool doMark)
 {
@@ -233,18 +247,21 @@ void Graph<T>::markAll(const bool doMark)
     }
 }
 
+// complexity: O(log(V))
 template <typename T>
 void Graph<T>::unmark(const T &value)
 {
     mark(value, false);
 }
 
+// complexity: O(V*log(V))
 template <typename T>
 void Graph<T>::unmarkAll(void)
 {
     markAll(false);
 }
 
+// complexity: O(log(V))
 template <typename T>
 bool Graph<T>::isMarked(const T &value) const
 {
@@ -260,6 +277,7 @@ bool Graph<T>::isMarked(const T &value) const
     }
 }
 
+// complexity: O(log(V))
 template <typename T>
 const T * Graph<T>::getFirstMarked(const bool isMarked) const
 {
@@ -279,6 +297,7 @@ const T * Graph<T>::getFirstMarked(const bool isMarked) const
     }
 }
 
+// complexity: O(log(V))
 template <typename T>
 const T * Graph<T>::getFirstUnmarked(void) const
 {
@@ -286,6 +305,7 @@ const T * Graph<T>::getFirstUnmarked(void) const
 }
 
 // prune marked/unmarked vertices //////////////////////////////////////////////
+// complexity: O(V^2*log(V))
 template <typename T>
 void Graph<T>::removeMarked(const bool isMarked)
 {
@@ -300,6 +320,7 @@ void Graph<T>::removeMarked(const bool isMarked)
     }
 }
 
+// complexity: O(V^2*log(V))
 template <typename T>
 void Graph<T>::removeUnmarked(void)
 {
@@ -307,12 +328,14 @@ void Graph<T>::removeUnmarked(void)
 }
 
 // depth-first search marking //////////////////////////////////////////////////
+// complexity: O(V*log(V))
 template <typename T>
 void Graph<T>::depthFirstSearch(void)
 {
     depthFirstSearch(isMarked_.begin()->first);
 }
 
+// complexity: O(V*log(V))
 template <typename T>
 void Graph<T>::depthFirstSearch(const T &root)
 {
@@ -330,6 +353,7 @@ void Graph<T>::depthFirstSearch(const T &root)
 }
 
 // graph topological manipulations /////////////////////////////////////////////
+// complexity: O(V*log(V))
 template <typename T>
 std::vector<T> Graph<T>::getAdjacentVertices(const T &value) const
 {
@@ -357,6 +381,7 @@ std::vector<T> Graph<T>::getAdjacentVertices(const T &value) const
     return adjacentVertex;
 }
 
+// complexity: O(V*log(V))
 template <typename T>
 std::vector<T> Graph<T>::getChildren(const T &value) const
 {
@@ -377,6 +402,7 @@ std::vector<T> Graph<T>::getChildren(const T &value) const
     return child;
 }
 
+// complexity: O(V*log(V))
 template <typename T>
 std::vector<T> Graph<T>::getParents(const T &value) const
 {
@@ -397,6 +423,7 @@ std::vector<T> Graph<T>::getParents(const T &value) const
     return parent;
 }
 
+// complexity: O(V^2*log(V))
 template <typename T>
 std::vector<T> Graph<T>::getRoots(void) const
 {
@@ -415,6 +442,7 @@ std::vector<T> Graph<T>::getRoots(void) const
     return root;
 }
 
+// complexity: O(V^2*log(V))
 template <typename T>
 std::vector<Graph<T>> Graph<T>::getConnectedComponents(void) const
 {
@@ -435,6 +463,7 @@ std::vector<Graph<T>> Graph<T>::getConnectedComponents(void) const
 }
 
 // topological sort using Tarjan's algorithm
+// complexity: O(V*log(V))
 template <typename T>
 std::vector<T> Graph<T>::topoSort(void)
 {
@@ -493,6 +522,7 @@ std::vector<T> Graph<T>::topoSort(void)
 // generate all possible topological sorts
 // Y. L. Varol & D. Rotem, Comput. J. 24(1), pp. 83–84, 1981
 // http://comjnl.oupjournals.org/cgi/doi/10.1093/comjnl/24.1.83
+// complexity: O(V*log(V))
 template <typename T>
 std::vector<std::vector<T>> Graph<T>::allTopoSort(void)
 {
@@ -570,6 +600,7 @@ std::vector<std::vector<T>> Graph<T>::allTopoSort(void)
 }
 
 // build depedency matrix from topological sorts ///////////////////////////////
+// complexity: can be V!
 template <typename T>
 std::map<T, std::map<T, bool>>
 makeDependencyMatrix(const std::vector<std::vector<T>> &topSort)
