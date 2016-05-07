@@ -55,13 +55,12 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
-    // allocation
-    virtual void allocate(void);
+    // setup
+    virtual void setup(void);
     // execution
     virtual void execute(void);
 private:
-    Par               par_;
-    LatticeGaugeField *gauge_ = nullptr;
+    Par par_;
 };
 
 MODULE_REGISTER(GLoad);

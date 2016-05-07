@@ -107,9 +107,33 @@ void Application::parseParameterFile(void)
 }
 
 // schedule computation ////////////////////////////////////////////////////////
+#define MEM_MSG(size)\
+sizeString((size)*locVol_) << " (" << sizeString(size)  << "/site)"
+
 void Application::schedule(void)
 {
-    Graph<std::string> moduleGraph;
+    // memory peak and invers memory peak functions
+    auto memPeak = [this](const std::vector<std::string> &program)
+    {
+        unsigned int memPeak;
+        bool         msg;
+        
+        msg = HadronsLogMessage.isActive();
+        HadronsLogMessage.Active(false);
+        env_.dryRun(true);
+        memPeak = execute(program);
+        env_.dryRun(false);
+        env_.freeAll();
+        HadronsLogMessage.Active(true);
+        
+        return memPeak;
+    };
+    auto invMemPeak = [&memPeak](const std::vector<std::string> &program)
+    {
+        return 1./memPeak(program);
+    };
+    
+    Graph<std::string>            moduleGraph;
     
     LOG(Message) << "Scheduling computation..." << std::endl;
     
@@ -161,7 +185,8 @@ void Application::schedule(void)
 //        }
 //        env_.dryRun(false);
         std::vector<std::string> t = con[i].topoSort();
-        LOG(Message) << "Program " << i + 1 << ":" << std::endl;
+        LOG(Message) << "Program " << i + 1 << " (memory peak: "
+                     << MEM_MSG(memPeak(t)) << "):" << std::endl;
         for (unsigned int j = 0; j < t.size(); ++j)
         {
             program_.push_back(t[j]);
@@ -210,6 +235,7 @@ unsigned int Application::execute(const std::vector<std::string> &program)
             freeProg[program.rend() - it - 1].insert(n.first);
         }
     }
+    
     // program execution
     for (unsigned int i = 0; i < program.size(); ++i)
     {
@@ -220,8 +246,7 @@ unsigned int Application::execute(const std::vector<std::string> &program)
         (*module_[program[i]])();
         size = env_.getTotalSize();
         // print used memory after execution
-        LOG(Message) << "Allocated objects: " << sizeString(size*locVol_)
-                     << " (" << sizeString(size)  << "/site)" << std::endl;
+        LOG(Message) << "Allocated objects: " << MEM_MSG(size) << std::endl;
         if (size > memPeak)
         {
             memPeak = size;
@@ -237,7 +262,7 @@ unsigned int Application::execute(const std::vector<std::string> &program)
                 // continue garbage collection while there are still
                 // objects without owners
                 continueCollect = continueCollect or !env_.hasOwners(n);
-                if(env_.free(n))
+                if(env_.freeObject(n))
                 {
                     // if an object has been freed, remove it from
                     // the garbage collection schedule
@@ -256,8 +281,7 @@ unsigned int Application::execute(const std::vector<std::string> &program)
         }
         // print used memory after garbage collection
         size = env_.getTotalSize();
-        LOG(Message) << "Allocated objects: " << sizeString(size*locVol_)
-                     << " (" << sizeString(size)  << "/site)" << std::endl;
+        LOG(Message) << "Allocated objects: " << MEM_MSG(size) << std::endl;
     }
     
     return memPeak;

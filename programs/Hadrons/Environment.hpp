@@ -47,6 +47,11 @@ public:
     typedef std::unique_ptr<GridParallelRNG>            RngPt;
     typedef std::unique_ptr<FMat>                       FMatPt;
     typedef std::unique_ptr<LatticeBase>                LatticePt;
+private:
+    struct ObjInfo
+    {
+        unsigned int size, Ls;
+    };
 public:
     // dry run
     void                    dryRun(const bool isDry);
@@ -55,18 +60,19 @@ public:
     void                    setTrajectory(const unsigned int traj);
     unsigned int            getTrajectory(void) const;
     // grids
+    void                    createGrid(const unsigned int Ls);
     GridCartesian *         getGrid(const unsigned int Ls = 1) const;
     GridRedBlackCartesian * getRbGrid(const unsigned int Ls = 1) const;
     // fermion actions
-    void                    addFermionMatrix(const std::string name, FMat *mat,
-                                             const unsigned int size);
+    void                    addFermionMatrix(const std::string name, FMat *mat);
     FMat *                  getFermionMatrix(const std::string name) const;
     void                    freeFermionMatrix(const std::string name);
     bool                    hasFermionMatrix(const std::string name) const;
     // solvers
-    void                    addSolver(const std::string name, Solver s,
-                                      const std::string actionName);
+    void                    addSolver(const std::string name, Solver s);
     bool                    hasSolver(const std::string name) const;
+    void                    setSolverAction(const std::string name,
+                                            const std::string actionName);
     std::string             getSolverAction(const std::string name) const;
     void                    callSolver(const std::string name,
                                        LatticeFermion &sol,
@@ -76,39 +82,45 @@ public:
     GridParallelRNG *       get4dRng(void) const;
     // lattice store
     template <typename T>
-    unsigned int            lattice4dSize(void) const;
-    template <typename T>
-    void                    create(const std::string name,
-                                   const unsigned int Ls = 1);
+    T *                     create(const std::string name);
     template <typename T>
     T *                     get(const std::string name) const;
-    void                    freeLattice(const std::string name);
     bool                    hasLattice(const std::string name) const;
-    bool                    isLattice5d(const std::string name) const;
-    unsigned int            getLatticeLs(const std::string name) const;
+    void                    freeLattice(const std::string name);
+    template <typename T>
+    unsigned int            lattice4dSize(void) const;
     // general memory management
+    bool                    hasObject(const std::string name) const;
+    void                    registerObject(const std::string name,
+                                           const unsigned int size,
+                                           const unsigned int Ls = 1);
+    template <typename T>
+    void                    registerLattice(const std::string name,
+                                            const unsigned int Ls = 1);
+    unsigned int            getObjectSize(const std::string name) const;
+    long unsigned int       getTotalSize(void) const;
+    unsigned int            getObjectLs(const std::string name) const;
+    bool                    isObject5d(const std::string name) const;
     void                    addOwnership(const std::string owner,
                                          const std::string property);
     bool                    hasOwners(const std::string name) const;
-    bool                    free(const std::string name);
+    bool                    freeObject(const std::string name);
     void                    freeAll(void);
-    unsigned int            getSize(const std::string name) const;
-    long unsigned int       getTotalSize(void) const;
 private:
-    void addSize(const std::string name, const unsigned int size);
+    
 private:
-    bool                                dryRun_{false};
-    unsigned int                        traj_;
-    GridPt                              grid4d_;
-    std::map<unsigned int, GridPt>      grid5d_;
-    GridRbPt                            gridRb4d_;
-    std::map<unsigned int, GridRbPt>    gridRb5d_;
-    RngPt                               rng4d_;
-    std::map<std::string, FMatPt>       fMat_;
-    std::map<std::string, Solver>       solver_;
-    std::map<std::string, std::string>  solverAction_;
-    std::map<std::string, LatticePt>    lattice_;
-    std::map<std::string, unsigned int> objectSize_;
+    bool                                         dryRun_{false};
+    unsigned int                                 traj_;
+    GridPt                                       grid4d_;
+    std::map<unsigned int, GridPt>               grid5d_;
+    GridRbPt                                     gridRb4d_;
+    std::map<unsigned int, GridRbPt>             gridRb5d_;
+    RngPt                                        rng4d_;
+    std::map<std::string, ObjInfo>               object_;
+    std::map<std::string, LatticePt>             lattice_;
+    std::map<std::string, FMatPt>                fMat_;
+    std::map<std::string, Solver>                solver_;
+    std::map<std::string, std::string>           solverAction_;
     std::map<std::string, std::set<std::string>> owners_;
     std::map<std::string, std::set<std::string>> properties_;
 };
@@ -123,41 +135,13 @@ unsigned int Environment::lattice4dSize(void) const
 }
 
 template <typename T>
-void Environment::create(const std::string name, const unsigned int Ls)
+T * Environment::create(const std::string name)
 {
-    GridCartesian *g4 = getGrid();
-    GridCartesian *g;
+    GridCartesian *g = getGrid(getObjectLs(name));
     
-    if (hasLattice(name))
-    {
-        HADRON_ERROR("object '" + name + "' already exists");
-    }
-    if (Ls > 1)
-    {
-        try
-        {
-            g = grid5d_.at(Ls).get();
-        }
-        catch(std::out_of_range &)
-        {
-            grid5d_[Ls].reset(SpaceTimeGrid::makeFiveDimGrid(Ls, g4));
-            gridRb5d_[Ls].reset(SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls, g4));
-            g = grid5d_[Ls].get();
-        }
-    }
-    else
-    {
-        g = g4;
-    }
-    if (!isDryRun())
-    {
-        lattice_[name].reset(new T(g));
-    }
-    else
-    {
-        lattice_[name].reset(nullptr);
-    }
-    addSize(name, lattice4dSize<T>()*Ls);
+    lattice_[name].reset(new T(g));
+
+    return dynamic_cast<T *>(lattice_[name].get());
 }
 
 template <typename T>
@@ -178,10 +162,17 @@ T * Environment::get(const std::string name) const
     }
     else
     {
-        HADRON_ERROR("object '" + name + "' undefined");
+        HADRON_ERROR("no lattice name '" + name + "'");
         
         return nullptr;
     }
+}
+
+template <typename T>
+void Environment::registerLattice(const std::string name, const unsigned int Ls)
+{
+    createGrid(Ls);
+    registerObject(name, Ls*lattice4dSize<T>());
 }
 
 END_HADRONS_NAMESPACE

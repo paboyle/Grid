@@ -63,7 +63,9 @@ std::vector<std::string> SolRBPrecCG::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void SolRBPrecCG::setup(void)
 {
+    env().registerObject(getName(), 0);
     env().addOwnership(getName(), par_.action);
+    env().setSolverAction(getName(), par_.action);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -82,5 +84,5 @@ void SolRBPrecCG::execute(void)
     LOG(Message) << "setting up Schur red-black preconditioned CG for"
                  << " action '" << par_.action << "' with residual "
                  << par_.residual << std::endl;
-    env().addSolver(getName(), solver, par_.action);
+    env().addSolver(getName(), solver);
 }

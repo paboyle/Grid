@@ -58,14 +58,11 @@ public:
     virtual std::vector<std::string> getOutput(void);
     // setup
     virtual void setup(void);
-    // allocation
-    virtual void allocate(void);
     // execution
     virtual void execute(void);
 private:
     Par                 par_;
     unsigned int        Ls_;
-    LatticePropagator   *source_{nullptr}, *quark_{nullptr}, *quark5d_{nullptr};
     Environment::Solver *solver_{nullptr};
 };
 

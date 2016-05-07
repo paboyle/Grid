@@ -67,6 +67,14 @@ unsigned int Environment::getTrajectory(void) const
 }
 
 // grids ///////////////////////////////////////////////////////////////////////
+void Environment::createGrid(const unsigned int Ls)
+{
+    auto g = getGrid();
+    
+    grid5d_[Ls].reset(SpaceTimeGrid::makeFiveDimGrid(Ls, g));
+    gridRb5d_[Ls].reset(SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls, g));
+}
+
 GridCartesian * Environment::getGrid(const unsigned int Ls) const
 {
     try
@@ -82,7 +90,7 @@ GridCartesian * Environment::getGrid(const unsigned int Ls) const
     }
     catch(std::out_of_range &)
     {
-        HADRON_ERROR("no 5D grid with Ls= " << Ls);
+        HADRON_ERROR("no grid with Ls= " << Ls);
     }
 }
 
@@ -106,11 +114,16 @@ GridRedBlackCartesian * Environment::getRbGrid(const unsigned int Ls) const
 }
 
 // fermion actions /////////////////////////////////////////////////////////////
-void Environment::addFermionMatrix(const std::string name, FMat *fMat,
-                                   const unsigned int size)
+void Environment::addFermionMatrix(const std::string name, FMat *fMat)
 {
-    fMat_[name].reset(fMat);
-    addSize(name, size);
+    if (hasObject(name))
+    {
+        fMat_[name].reset(fMat);
+    }
+    else
+    {
+        HADRON_ERROR("no object named '" << name << "'");
+    }
 }
 
 Environment::FMat * Environment::getFermionMatrix(const std::string name) const
@@ -138,41 +151,66 @@ void Environment::freeFermionMatrix(const std::string name)
     {
         LOG(Message) << "freeing fermion matrix '" << name << "'" << std::endl;
         fMat_.erase(name);
-        objectSize_.erase(name);
+        object_.erase(name);
     }
     else
     {
-        HADRON_ERROR("trying to free undefined fermion matrix '" + name + "'");
+        HADRON_ERROR("trying to free unknown fermion matrix '" + name + "'");
     }
 }
 
 bool Environment::hasFermionMatrix(const std::string name) const
 {
-    return (fMat_.find(name) != fMat_.end());
+    return (hasObject(name) and (fMat_.find(name) != fMat_.end()));
 }
 
 // solvers /////////////////////////////////////////////////////////////////////
-void Environment::addSolver(const std::string name, Solver s,
-                            const std::string actionName)
+void Environment::addSolver(const std::string name, Solver s)
 {
-    solver_[name]       = s;
-    solverAction_[name] = actionName;
+    if (hasObject(name))
+    {
+        solver_[name] = s;
+    }
+    else
+    {
+        HADRON_ERROR("no object named '" << name << "'");
+    }
 }
 
 bool Environment::hasSolver(const std::string name) const
 {
-    return (solver_.find(name) != solver_.end());
+    return (hasObject(name) and (solver_.find(name) != solver_.end()));
+}
+
+void Environment::setSolverAction(const std::string name,
+                                  const std::string actionName)
+{
+    if (hasObject(name))
+    {
+        solverAction_[name] = actionName;
+    }
+    else
+    {
+        HADRON_ERROR("no object named '" << name << "'");
+    }
 }
 
 std::string Environment::getSolverAction(const std::string name) const
 {
-    if (hasSolver(name))
+    if (hasObject(name))
     {
-        return solverAction_.at(name);
+        try
+        {
+            return solverAction_.at(name);
+        }
+        catch (std::out_of_range &)
+        {
+            HADRON_ERROR("no action registered for solver '" << name << "'")
+        }
     }
     else
     {
-        HADRON_ERROR("no solver with name '" << name << "'");
+        HADRON_ERROR("no object with name '" << name << "'");
     }
 }
 
@@ -207,47 +245,81 @@ void Environment::freeLattice(const std::string name)
     {
         LOG(Message) << "freeing lattice '" << name << "'" << std::endl;
         lattice_.erase(name);
-        objectSize_.erase(name);
+        object_.erase(name);
     }
     else
     {
-        HADRON_ERROR("trying to free undefined lattice '" + name + "'");
+        HADRON_ERROR("trying to free unknown lattice '" + name + "'");
     }
 }
 
 bool Environment::hasLattice(const std::string name) const
 {
-    return (lattice_.find(name) != lattice_.end());
-}
-
-
-bool Environment::isLattice5d(const std::string name) const
-{
-    if (hasLattice(name))
-    {
-        return (lattice_.at(name)->_grid->GlobalDimensions().size() == Nd + 1);
-    }
-    else
-    {
-        HADRON_ERROR("object '" + name + "' undefined");
-        
-        return false;
-    }
-}
-
-unsigned int Environment::getLatticeLs(const std::string name) const
-{
-    if (isLattice5d(name))
-    {
-        return lattice_.at(name)->_grid->GlobalDimensions()[0];
-    }
-    else
-    {
-        return 1;
-    }
+    return (hasObject(name) and (lattice_.find(name) != lattice_.end()));
 }
 
 // general memory management ///////////////////////////////////////////////////
+bool Environment::hasObject(const std::string name) const
+{
+    return (object_.find(name) != object_.end());
+}
+
+void Environment::registerObject(const std::string name,
+                                 const unsigned int size, const unsigned int Ls)
+{
+    if (!hasObject(name))
+    {
+        ObjInfo info{size, Ls};
+        
+        object_[name] = info;
+    }
+    else
+    {
+        HADRON_ERROR("object '" + name + "' already exists");
+    }
+}
+
+unsigned int Environment::getObjectSize(const std::string name) const
+{
+    if (hasObject(name))
+    {
+        return object_.at(name).size;
+    }
+    else
+    {
+        HADRON_ERROR("no object named '" + name + "'");
+    }
+}
+
+long unsigned int Environment::getTotalSize(void) const
+{
+    long unsigned int size = 0;
+    
+    for (auto &s: object_)
+    {
+        size += s.second.size;
+    }
+    
+    return size;
+}
+
+unsigned int Environment::getObjectLs(const std::string name) const
+{
+    if (hasObject(name))
+    {
+        return object_.at(name).Ls;
+    }
+    else
+    {
+        HADRON_ERROR("no object named '" + name + "'");
+    }
+}
+
+bool Environment::isObject5d(const std::string name) const
+{
+    return (getObjectLs(name) > 1);
+}
+
 void Environment::addOwnership(const std::string owner,
                                const std::string property)
 {
@@ -267,7 +339,7 @@ bool Environment::hasOwners(const std::string name) const
     }
 }
 
-bool Environment::free(const std::string name)
+bool Environment::freeObject(const std::string name)
 {
     if (!hasOwners(name))
     {
@@ -284,6 +356,10 @@ bool Environment::free(const std::string name)
         {
             freeFermionMatrix(name);
         }
+        else if (hasObject(name))
+        {
+            object_.erase(name);
+        }
         
         return true;
     }
@@ -295,41 +371,11 @@ bool Environment::free(const std::string name)
 
 void Environment::freeAll(void)
 {
+    object_.clear();
     lattice_.clear();
     fMat_.clear();
     solver_.clear();
-    objectSize_.clear();
+    solverAction_.clear();
     owners_.clear();
     properties_.clear();
-}
-
-unsigned int Environment::getSize(const std::string name) const
-{
-    if (hasLattice(name) or hasFermionMatrix(name))
-    {
-        return objectSize_.at(name);
-    }
-    else
-    {
-        HADRON_ERROR("object '" + name + "' undefined");
-        
-        return 0;
-    }
-}
-
-long unsigned int Environment::getTotalSize(void) const
-{
-    long unsigned int size = 0;
-    
-    for (auto &s: objectSize_)
-    {
-        size += s.second;
-    }
-    
-    return size;
-}
-
-void Environment::addSize(const std::string name, const unsigned int size)
-{
-    objectSize_[name] = size;
 }

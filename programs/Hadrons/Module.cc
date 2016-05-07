@@ -55,7 +55,6 @@ Environment & Module::env(void) const
 void Module::operator()(void)
 {
     setup();
-    allocate();
     if (!env().isDryRun())
     {
         execute();

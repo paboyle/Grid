@@ -69,8 +69,6 @@ public:
     virtual std::vector<std::string> getOutput(void) = 0;
     // setup
     virtual void setup(void) {};
-    // allocation
-    virtual void allocate(void) {};
     // execution
     void operator()(void);
     virtual void execute(void) = 0;

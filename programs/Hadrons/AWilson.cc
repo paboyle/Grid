@@ -59,6 +59,15 @@ std::vector<std::string> AWilson::getOutput(void)
     return out;
 }
 
+// setup ///////////////////////////////////////////////////////////////////////
+void AWilson::setup(void)
+{
+    unsigned int size;
+    
+    size = 3*env().lattice4dSize<WilsonFermionR::DoubledGaugeField>();
+    env().registerObject(getName(), size);
+}
+
 // execution ///////////////////////////////////////////////////////////////////
 void AWilson::execute()
 {
@@ -70,6 +79,5 @@ void AWilson::execute()
     
     LOG(Message) << "Setting up Wilson fermion matrix with m= " << par_.mass
                  << " using gauge field '" << par_.gauge << "'" << std::endl;
-    size = 3*env().lattice4dSize<WilsonFermionR::DoubledGaugeField>();
-    env().addFermionMatrix(getName(), fMatPt, size);
+    env().addFermionMatrix(getName(), fMatPt);
 }

@@ -52,7 +52,7 @@ public:
     typedef std::pair<T, T> Edge;
 public:
     // constructor
-    Graph(void) = default;
+    Graph(void);
     // destructor
     virtual ~Graph(void) = default;
     // access
@@ -71,7 +71,7 @@ public:
     std::vector<T>              getParents(const T &value) const;
     std::vector<T>              getRoots(void) const;
     std::vector<Graph<T>>       getConnectedComponents(void) const;
-    std::vector<T>              topoSort(void);
+    std::vector<T>              topoSort(const bool randomize = false);
     std::vector<std::vector<T>> allTopoSort(void);
     // I/O
     friend std::ostream & operator<<(std::ostream &out, const Graph<T> &g)
@@ -97,7 +97,9 @@ private:
     void      unmarkAll(void);
     bool      isMarked(const T &value) const;
     const T * getFirstMarked(const bool isMarked = true) const;
+    const T * getRandomMarked(const bool isMarked = true);
     const T * getFirstUnmarked(void) const;
+    const T * getRandomUnmarked(void);
     // prune marked/unmarked vertices
     void removeMarked(const bool isMarked = true);
     void removeUnmarked(void);
@@ -105,8 +107,9 @@ private:
     void depthFirstSearch(void);
     void depthFirstSearch(const T &root);
 private:
-    std::map<T, bool> isMarked_;
-    std::set<Edge>    edgeSet_;
+    std::map<T, bool>  isMarked_;
+    std::set<Edge>     edgeSet_;
+    std::mt19937       gen_;
 };
 
 // build depedency matrix from topological sorts
@@ -120,6 +123,15 @@ makeDependencyMatrix(const std::vector<std::vector<T>> &topSort);
  * in all the following V is the number of vertex and E is the number of edge
  * in the worst case E = V^2
  */
+
+// constructor /////////////////////////////////////////////////////////////////
+template <typename T>
+Graph<T>::Graph(void)
+{
+    std::random_device rd;
+    
+    gen_.seed(rd());
+}
 
 // access //////////////////////////////////////////////////////////////////////
 // complexity: log(V)
@@ -299,9 +311,47 @@ const T * Graph<T>::getFirstMarked(const bool isMarked) const
 
 // complexity: O(log(V))
 template <typename T>
+const T * Graph<T>::getRandomMarked(const bool isMarked)
+{
+    auto pred = [&isMarked](const std::pair<T, bool> &v)
+    {
+        return (v.second == isMarked);
+    };
+    std::uniform_int_distribution<unsigned int> dis(0, size() - 1);
+    auto                                        rIt = isMarked_.begin();
+    
+    std::advance(rIt, dis(gen_));
+    auto vIt = std::find_if(rIt, isMarked_.end(), pred);
+    if (vIt != isMarked_.end())
+    {
+        return &(vIt->first);
+    }
+    else
+    {
+        vIt = std::find_if(isMarked_.begin(), rIt, pred);
+        if (vIt != rIt)
+        {
+            return &(vIt->first);
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+}
+
+// complexity: O(log(V))
+template <typename T>
 const T * Graph<T>::getFirstUnmarked(void) const
 {
     return getFirstMarked(false);
+}
+
+// complexity: O(log(V))
+template <typename T>
+const T * Graph<T>::getRandomUnmarked(void)
+{
+    return getRandomMarked(false);
 }
 
 // prune marked/unmarked vertices //////////////////////////////////////////////
@@ -462,10 +512,10 @@ std::vector<Graph<T>> Graph<T>::getConnectedComponents(void) const
     return res;
 }
 
-// topological sort using Tarjan's algorithm
+// topological sort using a directed DFS algorithm
 // complexity: O(V*log(V))
 template <typename T>
-std::vector<T> Graph<T>::topoSort(void)
+std::vector<T> Graph<T>::topoSort(const bool randomize)
 {
     std::stack<T>     buf;
     std::vector<T>    res;
@@ -479,16 +529,20 @@ std::vector<T> Graph<T>::topoSort(void)
         {
             HADRON_ERROR("cannot topologically sort a cyclic graph");
         }
-        if (!this->isMarked(v))
+        if (!isMarked(v))
         {
-            std::vector<T> child = this->getChildren(v);
-            
+            std::vector<T> child = getChildren(v);
+
             tmpMarked[v] = true;
+            if (randomize)
+            {
+                std::shuffle(child.begin(), child.end(), gen_);
+            }
             for (auto &c: child)
             {
                 visit(c);
             }
-            this->mark(v);
+            mark(v);
             tmpMarked[v] = false;
             buf.push(v);
         }
@@ -501,11 +555,26 @@ std::vector<T> Graph<T>::topoSort(void)
     }
     
     // loop on unmarked vertices
-    vPt = getFirstUnmarked();
+    unmarkAll();
+    if (randomize)
+    {
+        vPt = getRandomUnmarked();
+    }
+    else
+    {
+        vPt = getFirstUnmarked();
+    }
     while (vPt)
     {
         visit(*vPt);
-        vPt = getFirstUnmarked();
+        if (randomize)
+        {
+            vPt = getRandomUnmarked();
+        }
+        else
+        {
+            vPt = getFirstUnmarked();
+        }
     }
     unmarkAll();
     
@@ -522,7 +591,7 @@ std::vector<T> Graph<T>::topoSort(void)
 // generate all possible topological sorts
 // Y. L. Varol & D. Rotem, Comput. J. 24(1), pp. 83–84, 1981
 // http://comjnl.oupjournals.org/cgi/doi/10.1093/comjnl/24.1.83
-// complexity: O(V*log(V))
+// complexity: O(V*log(V)) (from the paper, but really ?)
 template <typename T>
 std::vector<std::vector<T>> Graph<T>::allTopoSort(void)
 {

@@ -51,16 +51,16 @@ std::vector<std::string> GRandom::getOutput(void)
     return out;
 }
 
-// allocation //////////////////////////////////////////////////////////////////
-void GRandom::allocate(void)
+// setup ///////////////////////////////////////////////////////////////////////
+void GRandom::setup(void)
 {
-    env().create<LatticeGaugeField>(getName());
-    gauge_ = env().get<LatticeGaugeField>(getName());
+    env().registerLattice<LatticeGaugeField>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 void GRandom::execute(void)
 {
     LOG(Message) << "Generating random gauge configuration" << std::endl;
-    SU3::HotConfiguration(*env().get4dRng(), *gauge_);
+    LatticeGaugeField &U = *env().create<LatticeGaugeField>(getName());
+    SU3::HotConfiguration(*env().get4dRng(), U);
 }
