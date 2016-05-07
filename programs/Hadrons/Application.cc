@@ -32,6 +32,9 @@ using namespace Grid;
 using namespace QCD;
 using namespace Hadrons;
 
+#define BIG_SEP "==============="
+#define SEP     "---------------"
+
 /******************************************************************************
  *                       Application implementation                           *
  ******************************************************************************/
@@ -204,8 +207,8 @@ void Application::configLoop(void)
     
     for (unsigned int t = range.start; t < range.end; t += range.step)
     {
-        LOG(Message) << "========== Starting measurement for trajectory " << t
-                     << " ==========" << std::endl;
+        LOG(Message) << BIG_SEP << " Starting measurement for trajectory " << t
+                     << " " << BIG_SEP << std::endl;
         env_.setTrajectory(t);
         execute(program_);
         env_.freeAll();
@@ -240,9 +243,9 @@ unsigned int Application::execute(const std::vector<std::string> &program)
     for (unsigned int i = 0; i < program.size(); ++i)
     {
         // execute module
-        LOG(Message) << "---------- Measurement step " << i+1 << "/"
-                     << program.size() << " (module '" << program[i] << "')"
-                     << " ----------" << std::endl;
+        LOG(Message) << SEP << " Measurement step " << i+1 << "/"
+                     << program.size() << " (module '" << program[i] << "') "
+                     << SEP << std::endl;
         (*module_[program[i]])();
         size = env_.getTotalSize();
         // print used memory after execution

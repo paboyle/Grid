@@ -149,7 +149,7 @@ void Environment::freeFermionMatrix(const std::string name)
 {
     if (hasFermionMatrix(name))
     {
-        LOG(Message) << "freeing fermion matrix '" << name << "'" << std::endl;
+        LOG(Message) << "Freeing fermion matrix '" << name << "'" << std::endl;
         fMat_.erase(name);
         object_.erase(name);
     }
@@ -243,7 +243,7 @@ void Environment::freeLattice(const std::string name)
 {
     if (hasLattice(name))
     {
-        LOG(Message) << "freeing lattice '" << name << "'" << std::endl;
+        LOG(Message) << "Freeing lattice '" << name << "'" << std::endl;
         lattice_.erase(name);
         object_.erase(name);
     }
