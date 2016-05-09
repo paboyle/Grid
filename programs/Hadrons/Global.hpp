@@ -63,6 +63,7 @@ abort();
 extern HadronsLogger HadronsLogError;
 extern HadronsLogger HadronsLogWarning;
 extern HadronsLogger HadronsLogMessage;
+extern HadronsLogger HadronsLogIterative;
 extern HadronsLogger HadronsLogDebug;
 
 // singleton pattern

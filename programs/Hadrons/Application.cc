@@ -26,7 +26,7 @@ directory.
 *******************************************************************************/
 
 #include <Hadrons/Application.hpp>
-#include <Hadrons/Graph.hpp>
+#include <Hadrons/GeneticScheduler.hpp>
 
 using namespace Grid;
 using namespace QCD;
@@ -115,7 +115,7 @@ sizeString((size)*locVol_) << " (" << sizeString(size)  << "/site)"
 
 void Application::schedule(void)
 {
-    // memory peak and invers memory peak functions
+    // memory peak function
     auto memPeak = [this](const std::vector<std::string> &program)
     {
         unsigned int memPeak;
@@ -131,16 +131,11 @@ void Application::schedule(void)
         
         return memPeak;
     };
-    auto invMemPeak = [&memPeak](const std::vector<std::string> &program)
-    {
-        return 1./memPeak(program);
-    };
-    
-    Graph<std::string>            moduleGraph;
-    
-    LOG(Message) << "Scheduling computation..." << std::endl;
     
     // create dependency graph
+    Graph<std::string> moduleGraph;
+    
+    LOG(Message) << "Scheduling computation..." << std::endl;
     for (auto &m: module_)
     {
         std::vector<std::string> input = m.second->getInput();
@@ -157,39 +152,47 @@ void Application::schedule(void)
         }
     }
     
-    // topological sort
-    unsigned int k = 0;
-    
+    // constrained topological sort using a genetic algorithm
+    constexpr unsigned int maxGen = 200, maxCstGen = 50;
+    unsigned int           k = 0, gen, prevPeak, nCstPeak = 0;
     std::vector<Graph<std::string>> con = moduleGraph.getConnectedComponents();
-    
+    GeneticScheduler<std::string>::Parameters par;
+    std::random_device rd;
+
+    par.popSize      = 20;
+    par.mutationRate = .1;
+    par.seed         = rd();
+    CartesianCommunicator::BroadcastWorld(0, &(par.seed), sizeof(par.seed));
     for (unsigned int i = 0; i < con.size(); ++i)
     {
-//        std::vector<std::vector<std::string>> t = con[i].allTopoSort();
-//        int                                   memPeak, minMemPeak = -1;
-//        unsigned int                          bestInd;
-//        bool                                  msg;
-//
-//        LOG(Message) << "analyzing " << t.size() << " possible programs..."
-//                     << std::endl;
-//        env_.dryRun(true);
-//        for (unsigned int p = 0; p < t.size(); ++p)
-//        {
-//            msg = HadronsLogMessage.isActive();
-//            HadronsLogMessage.Active(false);
-//        
-//            memPeak = execute(t[p]);
-//            if ((memPeak < minMemPeak) or (minMemPeak < 0))
-//            {
-//                minMemPeak = memPeak;
-//                bestInd = p;
-//            }
-//            HadronsLogMessage.Active(msg);
-//            env_.freeAll();
-//        }
-//        env_.dryRun(false);
-        std::vector<std::string> t = con[i].topoSort();
+        GeneticScheduler<std::string> scheduler(con[i], memPeak, par);
+        
+        gen = 0;
+        do
+        {
+            scheduler.nextGeneration();
+            if (gen != 0)
+            {
+                if (prevPeak == scheduler.getMinValue())
+                {
+                    nCstPeak++;
+                }
+                else
+                {
+                    nCstPeak = 0;
+                }
+            }
+            prevPeak = scheduler.getMinValue();
+            if (gen % 10 == 0)
+            {
+                LOG(Iterative) << "Generation " << gen << ": "
+                               << MEM_MSG(scheduler.getMinValue()) << std::endl;
+            }
+            gen++;
+        } while ((gen < maxGen) and (nCstPeak < maxCstGen));
+        auto &t = scheduler.getMinSchedule();
         LOG(Message) << "Program " << i + 1 << " (memory peak: "
-                     << MEM_MSG(memPeak(t)) << "):" << std::endl;
+                     << MEM_MSG(scheduler.getMinValue()) << "):" << std::endl;
         for (unsigned int j = 0; j < t.size(); ++j)
         {
             program_.push_back(t[j]);
@@ -213,13 +216,14 @@ void Application::configLoop(void)
         execute(program_);
         env_.freeAll();
     }
+    LOG(Message) << BIG_SEP << " End of measurement " << BIG_SEP << std::endl;
 }
 
 unsigned int Application::execute(const std::vector<std::string> &program)
 {
-    unsigned int                       memPeak = 0, size;
+    unsigned int                       memPeak = 0, sizeBefore, sizeAfter;
     std::vector<std::set<std::string>> freeProg;
-    bool                               continueCollect;
+    bool                               continueCollect, nothingFreed;
     
     // build garbage collection schedule
     freeProg.resize(program.size());
@@ -247,15 +251,17 @@ unsigned int Application::execute(const std::vector<std::string> &program)
                      << program.size() << " (module '" << program[i] << "') "
                      << SEP << std::endl;
         (*module_[program[i]])();
-        size = env_.getTotalSize();
+        sizeBefore = env_.getTotalSize();
         // print used memory after execution
-        LOG(Message) << "Allocated objects: " << MEM_MSG(size) << std::endl;
-        if (size > memPeak)
+        LOG(Message) << "Allocated objects: " << MEM_MSG(sizeBefore)
+                     << std::endl;
+        if (sizeBefore > memPeak)
         {
-            memPeak = size;
+            memPeak = sizeBefore;
         }
         // garbage collection for step i
         LOG(Message) << "Garbage collection..." << std::endl;
+        nothingFreed = true;
         do
         {
             continueCollect = false;
@@ -270,6 +276,7 @@ unsigned int Application::execute(const std::vector<std::string> &program)
                     // if an object has been freed, remove it from
                     // the garbage collection schedule
                     freeProg[i].erase(n);
+                    nothingFreed = false;
                 }
             }
         } while (continueCollect);
@@ -282,9 +289,17 @@ unsigned int Application::execute(const std::vector<std::string> &program)
                 freeProg[i + 1].insert(n);
             }
         }
-        // print used memory after garbage collection
-        size = env_.getTotalSize();
-        LOG(Message) << "Allocated objects: " << MEM_MSG(size) << std::endl;
+        // print used memory after garbage collection if necessary
+        sizeAfter = env_.getTotalSize();
+        if (sizeBefore != sizeAfter)
+        {
+            LOG(Message) << "Allocated objects: " << MEM_MSG(sizeAfter)
+                         << std::endl;
+        }
+        else
+        {
+            LOG(Message) << "Nothing to free" << std::endl;
+        }
     }
     
     return memPeak;

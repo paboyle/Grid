@@ -64,7 +64,7 @@ std::vector<std::string> CMeson::getOutput(void)
 void CMeson::execute(void)
 {
     LOG(Message) << "Computing meson contraction '" << getName() << "' using"
-                 << " quarks '" << par_.q1 << " and '" << par_.q2 << "'"
+                 << " quarks '" << par_.q1 << "' and '" << par_.q2 << "'"
                  << std::endl;
     
     XmlWriter             writer(par_.output);

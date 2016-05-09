@@ -49,6 +49,7 @@ int main(int argc, char *argv[])
     HadronsLogError.Active(GridLogError.isActive());
     HadronsLogWarning.Active(GridLogWarning.isActive());
     HadronsLogMessage.Active(GridLogMessage.isActive());
+    HadronsLogIterative.Active(GridLogIterative.isActive());
     HadronsLogDebug.Active(GridLogDebug.isActive());
     LOG(Message) << "Grid initialized" << std::endl;
     

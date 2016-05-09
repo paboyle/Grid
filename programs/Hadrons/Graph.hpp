@@ -56,13 +56,14 @@ public:
     // destructor
     virtual ~Graph(void) = default;
     // access
-    void         addVertex(const T &value);
-    void         addEdge(const Edge &e);
-    void         addEdge(const T &start, const T &end);
-    void         removeVertex(const T &value);
-    void         removeEdge(const Edge &e);
-    void         removeEdge(const T &start, const T &end);
-    unsigned int size(void) const;
+    void           addVertex(const T &value);
+    void           addEdge(const Edge &e);
+    void           addEdge(const T &start, const T &end);
+    std::vector<T> getVertices(void) const;
+    void           removeVertex(const T &value);
+    void           removeEdge(const Edge &e);
+    void           removeEdge(const T &start, const T &end);
+    unsigned int   size(void) const;
     // tests
     bool gotValue(const T &value) const;
     // graph topological manipulations
@@ -71,7 +72,9 @@ public:
     std::vector<T>              getParents(const T &value) const;
     std::vector<T>              getRoots(void) const;
     std::vector<Graph<T>>       getConnectedComponents(void) const;
-    std::vector<T>              topoSort(const bool randomize = false);
+    std::vector<T>              topoSort(void);
+    template <typename Gen>
+    std::vector<T>              topoSort(Gen &gen);
     std::vector<std::vector<T>> allTopoSort(void);
     // I/O
     friend std::ostream & operator<<(std::ostream &out, const Graph<T> &g)
@@ -97,9 +100,11 @@ private:
     void      unmarkAll(void);
     bool      isMarked(const T &value) const;
     const T * getFirstMarked(const bool isMarked = true) const;
-    const T * getRandomMarked(const bool isMarked = true);
+    template <typename Gen>
+    const T * getRandomMarked(const bool isMarked, Gen &gen);
     const T * getFirstUnmarked(void) const;
-    const T * getRandomUnmarked(void);
+    template <typename Gen>
+    const T * getRandomUnmarked(Gen &gen);
     // prune marked/unmarked vertices
     void removeMarked(const bool isMarked = true);
     void removeUnmarked(void);
@@ -109,7 +114,6 @@ private:
 private:
     std::map<T, bool>  isMarked_;
     std::set<Edge>     edgeSet_;
-    std::mt19937       gen_;
 };
 
 // build depedency matrix from topological sorts
@@ -127,11 +131,7 @@ makeDependencyMatrix(const std::vector<std::vector<T>> &topSort);
 // constructor /////////////////////////////////////////////////////////////////
 template <typename T>
 Graph<T>::Graph(void)
-{
-    std::random_device rd;
-    
-    gen_.seed(rd());
-}
+{}
 
 // access //////////////////////////////////////////////////////////////////////
 // complexity: log(V)
@@ -155,6 +155,19 @@ template <typename T>
 void Graph<T>::addEdge(const T &start, const T &end)
 {
     addEdge(Edge(start, end));
+}
+
+template <typename T>
+std::vector<T> Graph<T>::getVertices(void) const
+{
+    std::vector<T> vertex;
+    
+    for (auto &v: isMarked_)
+    {
+        vertex.push_back(v.first);
+    }
+    
+    return vertex;
 }
 
 // complexity: O(V*log(V))
@@ -311,7 +324,8 @@ const T * Graph<T>::getFirstMarked(const bool isMarked) const
 
 // complexity: O(log(V))
 template <typename T>
-const T * Graph<T>::getRandomMarked(const bool isMarked)
+template <typename Gen>
+const T * Graph<T>::getRandomMarked(const bool isMarked, Gen &gen)
 {
     auto pred = [&isMarked](const std::pair<T, bool> &v)
     {
@@ -320,7 +334,7 @@ const T * Graph<T>::getRandomMarked(const bool isMarked)
     std::uniform_int_distribution<unsigned int> dis(0, size() - 1);
     auto                                        rIt = isMarked_.begin();
     
-    std::advance(rIt, dis(gen_));
+    std::advance(rIt, dis(gen));
     auto vIt = std::find_if(rIt, isMarked_.end(), pred);
     if (vIt != isMarked_.end())
     {
@@ -349,9 +363,10 @@ const T * Graph<T>::getFirstUnmarked(void) const
 
 // complexity: O(log(V))
 template <typename T>
-const T * Graph<T>::getRandomUnmarked(void)
+template <typename Gen>
+const T * Graph<T>::getRandomUnmarked(Gen &gen)
 {
-    return getRandomMarked(false);
+    return getRandomMarked(false, gen);
 }
 
 // prune marked/unmarked vertices //////////////////////////////////////////////
@@ -515,7 +530,7 @@ std::vector<Graph<T>> Graph<T>::getConnectedComponents(void) const
 // topological sort using a directed DFS algorithm
 // complexity: O(V*log(V))
 template <typename T>
-std::vector<T> Graph<T>::topoSort(const bool randomize)
+std::vector<T> Graph<T>::topoSort(void)
 {
     std::stack<T>     buf;
     std::vector<T>    res;
@@ -534,10 +549,6 @@ std::vector<T> Graph<T>::topoSort(const bool randomize)
             std::vector<T> child = getChildren(v);
 
             tmpMarked[v] = true;
-            if (randomize)
-            {
-                std::shuffle(child.begin(), child.end(), gen_);
-            }
             for (auto &c: child)
             {
                 visit(c);
@@ -556,25 +567,71 @@ std::vector<T> Graph<T>::topoSort(const bool randomize)
     
     // loop on unmarked vertices
     unmarkAll();
-    if (randomize)
-    {
-        vPt = getRandomUnmarked();
-    }
-    else
-    {
-        vPt = getFirstUnmarked();
-    }
+    vPt = getFirstUnmarked();
     while (vPt)
     {
         visit(*vPt);
-        if (randomize)
+        vPt = getFirstUnmarked();
+    }
+    unmarkAll();
+    
+    // create result vector
+    while (!buf.empty())
+    {
+        res.push_back(buf.top());
+        buf.pop();
+    }
+    
+    return res;
+}
+
+// random version of the topological sort
+// complexity: O(V*log(V))
+template <typename T>
+template <typename Gen>
+std::vector<T> Graph<T>::topoSort(Gen &gen)
+{
+    std::stack<T>     buf;
+    std::vector<T>    res;
+    const T           *vPt;
+    std::map<T, bool> tmpMarked(isMarked_);
+    
+    // visit function
+    std::function<void(const T &)> visit = [&](const T &v)
+    {
+        if (tmpMarked.at(v))
         {
-            vPt = getRandomUnmarked();
+            HADRON_ERROR("cannot topologically sort a cyclic graph");
         }
-        else
+        if (!isMarked(v))
         {
-            vPt = getFirstUnmarked();
+            std::vector<T> child = getChildren(v);
+            
+            tmpMarked[v] = true;
+            std::shuffle(child.begin(), child.end(), gen);
+            for (auto &c: child)
+            {
+                visit(c);
+            }
+            mark(v);
+            tmpMarked[v] = false;
+            buf.push(v);
         }
+    };
+    
+    // reset temporary marks
+    for (auto &v: tmpMarked)
+    {
+        tmpMarked.at(v.first) = false;
+    }
+    
+    // loop on unmarked vertices
+    unmarkAll();
+    vPt = getRandomUnmarked(gen);
+    while (vPt)
+    {
+        visit(*vPt);
+        vPt = getRandomUnmarked(gen);
     }
     unmarkAll();
     

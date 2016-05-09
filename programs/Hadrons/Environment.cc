@@ -69,10 +69,13 @@ unsigned int Environment::getTrajectory(void) const
 // grids ///////////////////////////////////////////////////////////////////////
 void Environment::createGrid(const unsigned int Ls)
 {
-    auto g = getGrid();
-    
-    grid5d_[Ls].reset(SpaceTimeGrid::makeFiveDimGrid(Ls, g));
-    gridRb5d_[Ls].reset(SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls, g));
+    if (grid5d_.find(Ls) == grid5d_.end())
+    {
+        auto g = getGrid();
+        
+        grid5d_[Ls].reset(SpaceTimeGrid::makeFiveDimGrid(Ls, g));
+        gridRb5d_[Ls].reset(SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls, g));
+    }
 }
 
 GridCartesian * Environment::getGrid(const unsigned int Ls) const
@@ -329,11 +332,14 @@ void Environment::addOwnership(const std::string owner,
 
 bool Environment::hasOwners(const std::string name) const
 {
-    try
+    
+    auto it = owners_.find(name);
+    
+    if (it != owners_.end())
     {
-        return (!owners_.at(name).empty());
+        return (!it->second.empty());
     }
-    catch (std::out_of_range &)
+    else
     {
         return false;
     }

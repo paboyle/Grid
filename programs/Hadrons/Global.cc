@@ -34,4 +34,5 @@ using namespace Hadrons;
 HadronsLogger Hadrons::HadronsLogError(1,"Error");
 HadronsLogger Hadrons::HadronsLogWarning(1,"Warning");
 HadronsLogger Hadrons::HadronsLogMessage(1,"Message");
+HadronsLogger Hadrons::HadronsLogIterative(1,"Iterative");
 HadronsLogger Hadrons::HadronsLogDebug(1,"Debug");
