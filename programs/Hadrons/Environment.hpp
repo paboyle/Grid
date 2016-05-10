@@ -149,11 +149,11 @@ T * Environment::get(const std::string name) const
 {
     if (hasLattice(name))
     {
-        try
+        if (auto pt = dynamic_cast<T *>(lattice_.at(name).get()))
         {
-            return dynamic_cast<T *>(lattice_.at(name).get());
+            return pt;
         }
-        catch (std::bad_cast &)
+        else
         {
             HADRON_ERROR("object '" + name + "' does not have type "
                          + typeid(T *).name() + "(object type: "
