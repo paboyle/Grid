@@ -82,22 +82,14 @@ private:
     void parseParameterFile(void);
     // schedule computation
     void schedule(void);
-    // program execution
-    void         configLoop(void);
-    unsigned int execute(const std::vector<std::string> &program);
-    // pretty size formatting
-    static std::string sizeString(long unsigned int bytes);
+    // loop on configurations
+    void configLoop(void);
 private:
     long unsigned int                               locVol_;
     std::string                                     parameterFileName_;
     GlobalPar                                       par_;
     Environment                                     &env_;
-    ModuleFactory                                   &modFactory_;
-    std::map<std::string, std::unique_ptr<Module>>  module_;
-    std::map<std::string, std::string>              associatedModule_;
-    std::map<std::string, std::vector<std::string>> input_;
-    std::vector<std::string>                        program_;
-    std::vector<std::vector<std::string>>           freeProg_;
+    std::vector<unsigned int>                       program_;
 };
 
 END_HADRONS_NAMESPACE

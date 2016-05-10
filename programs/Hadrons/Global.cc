@@ -36,3 +36,30 @@ HadronsLogger Hadrons::HadronsLogWarning(1,"Warning");
 HadronsLogger Hadrons::HadronsLogMessage(1,"Message");
 HadronsLogger Hadrons::HadronsLogIterative(1,"Iterative");
 HadronsLogger Hadrons::HadronsLogDebug(1,"Debug");
+
+// pretty size formatting //////////////////////////////////////////////////////
+std::string Hadrons::sizeString(long unsigned int bytes)
+
+{
+    constexpr unsigned int bufSize = 256;
+    const char             *suffixes[7] = {"", "K", "M", "G", "T", "P", "E"};
+    char                   buf[256];
+    long unsigned int      s     = 0;
+    double                 count = bytes;
+    
+    while (count >= 1024 && s < 7)
+    {
+        s++;
+        count /= 1024;
+    }
+    if (count - floor(count) == 0.0)
+    {
+        snprintf(buf, bufSize, "%d %sB", (int)count, suffixes[s]);
+    }
+    else
+    {
+        snprintf(buf, bufSize, "%.1f %sB", count, suffixes[s]);
+    }
+    
+    return std::string(buf);
+}

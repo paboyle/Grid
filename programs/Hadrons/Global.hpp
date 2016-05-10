@@ -30,6 +30,7 @@ directory.
 
 #include <set>
 #include <stack>
+#include <cxxabi.h>
 #include <Grid.h>
 
 #define BEGIN_HADRONS_NAMESPACE \
@@ -90,6 +91,25 @@ public:\
     }\
 private:\
     name(void) = default;
+
+// pretty size formating
+std::string sizeString(long unsigned int bytes);
+
+template <typename T>
+std::string typeName(const T &x)
+{
+    std::string name(typeid(x).name());
+
+    return name;
+}
+
+template <typename T>
+std::string typeName(void)
+{
+    std::string name(typeid(T).name());
+
+    return name;
+}
 
 END_HADRONS_NAMESPACE
 

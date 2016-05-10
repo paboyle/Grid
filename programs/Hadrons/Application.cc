@@ -42,10 +42,9 @@ using namespace Hadrons;
 Application::Application(const std::string parameterFileName)
 : parameterFileName_(parameterFileName)
 , env_(Environment::getInstance())
-, modFactory_(ModuleFactory::getInstance())
 {
     LOG(Message) << "Modules available:" << std::endl;
-    auto list = modFactory_.getBuilderList();
+    auto list = ModuleFactory::getInstance().getBuilderList();
     for (auto &m: list)
     {
         LOG(Message) << "  " << m << std::endl;
@@ -95,18 +94,12 @@ void Application::parseParameterFile(void)
     do
     {
         read(reader, "id", id);
-        module_[id.name] = modFactory_.create(id.type, id.name);
-        module_[id.name]->parseParameters(reader, "options");
-        std::vector<std::string> output = module_[id.name]->getOutput();
-        for (auto &n: output)
-        {
-            associatedModule_[n] = id.name;
-        }
-        input_[id.name] = module_[id.name]->getInput();
+        env_.createModule(id.name, id.type, reader);
     } while (reader.nextElement("module"));
     pop(reader);
     pop(reader);
     env_.setSeed(strToVec<int>(par_.seed));
+    env_.printContent();
 }
 
 // schedule computation ////////////////////////////////////////////////////////
@@ -116,7 +109,7 @@ sizeString((size)*locVol_) << " (" << sizeString(size)  << "/site)"
 void Application::schedule(void)
 {
     // memory peak function
-    auto memPeak = [this](const std::vector<std::string> &program)
+    auto memPeak = [this](const std::vector<unsigned int> &program)
     {
         unsigned int memPeak;
         bool         msg;
@@ -124,7 +117,7 @@ void Application::schedule(void)
         msg = HadronsLogMessage.isActive();
         HadronsLogMessage.Active(false);
         env_.dryRun(true);
-        memPeak = execute(program);
+        memPeak = env_.executeProgram(program);
         env_.dryRun(false);
         env_.freeAll();
         HadronsLogMessage.Active(true);
@@ -132,32 +125,14 @@ void Application::schedule(void)
         return memPeak;
     };
     
-    // create dependency graph
-    Graph<std::string> moduleGraph;
-    
-    LOG(Message) << "Scheduling computation..." << std::endl;
-    for (auto &m: module_)
-    {
-        std::vector<std::string> input = m.second->getInput();
-        for (auto &n: input)
-        {
-            try
-            {
-                moduleGraph.addEdge(associatedModule_.at(n), m.first);
-            }
-            catch (std::out_of_range &)
-            {
-                HADRON_ERROR("unknown object '" + n + "'");
-            }
-        }
-    }
-    
     // constrained topological sort using a genetic algorithm
+    LOG(Message) << "Scheduling computation..." << std::endl;
     constexpr unsigned int maxGen = 200, maxCstGen = 50;
     unsigned int           k = 0, gen, prevPeak, nCstPeak = 0;
-    std::vector<Graph<std::string>> con = moduleGraph.getConnectedComponents();
-    GeneticScheduler<std::string>::Parameters par;
-    std::random_device rd;
+    auto                   graph = env_.makeModuleGraph();
+    auto                   con = graph.getConnectedComponents();
+    std::random_device     rd;
+    GeneticScheduler<unsigned int>::Parameters par;
 
     par.popSize      = 20;
     par.mutationRate = .1;
@@ -165,7 +140,7 @@ void Application::schedule(void)
     CartesianCommunicator::BroadcastWorld(0, &(par.seed), sizeof(par.seed));
     for (unsigned int i = 0; i < con.size(); ++i)
     {
-        GeneticScheduler<std::string> scheduler(con[i], memPeak, par);
+        GeneticScheduler<unsigned int> scheduler(con[i], memPeak, par);
         
         gen = 0;
         do
@@ -197,13 +172,13 @@ void Application::schedule(void)
         {
             program_.push_back(t[j]);
             LOG(Message) << std::setw(4) << std::right << k + 1 << ": "
-                         << program_[k] << std::endl;
+                         << env_.getModuleName(program_[k]) << std::endl;
             k++;
         }
     }
 }
 
-// program execution ///////////////////////////////////////////////////////////
+// loop on configurations //////////////////////////////////////////////////////
 void Application::configLoop(void)
 {
     auto range = par_.configs.range;
@@ -213,121 +188,8 @@ void Application::configLoop(void)
         LOG(Message) << BIG_SEP << " Starting measurement for trajectory " << t
                      << " " << BIG_SEP << std::endl;
         env_.setTrajectory(t);
-        execute(program_);
+        env_.executeProgram(program_);
         env_.freeAll();
     }
     LOG(Message) << BIG_SEP << " End of measurement " << BIG_SEP << std::endl;
-}
-
-unsigned int Application::execute(const std::vector<std::string> &program)
-{
-    unsigned int                       memPeak = 0, sizeBefore, sizeAfter;
-    std::vector<std::set<std::string>> freeProg;
-    bool                               continueCollect, nothingFreed;
-    
-    // build garbage collection schedule
-    freeProg.resize(program.size());
-    for (auto &n: associatedModule_)
-    {
-        auto pred = [&n, this](const std::string &s)
-        {
-            auto &in = input_[s];
-            auto it  = std::find(in.begin(), in.end(), n.first);
-            
-            return (it != in.end()) or (s == n.second);
-        };
-        auto it = std::find_if(program.rbegin(), program.rend(), pred);
-        if (it != program.rend())
-        {
-            freeProg[program.rend() - it - 1].insert(n.first);
-        }
-    }
-    
-    // program execution
-    for (unsigned int i = 0; i < program.size(); ++i)
-    {
-        // execute module
-        LOG(Message) << SEP << " Measurement step " << i+1 << "/"
-                     << program.size() << " (module '" << program[i] << "') "
-                     << SEP << std::endl;
-        (*module_[program[i]])();
-        sizeBefore = env_.getTotalSize();
-        // print used memory after execution
-        LOG(Message) << "Allocated objects: " << MEM_MSG(sizeBefore)
-                     << std::endl;
-        if (sizeBefore > memPeak)
-        {
-            memPeak = sizeBefore;
-        }
-        // garbage collection for step i
-        LOG(Message) << "Garbage collection..." << std::endl;
-        nothingFreed = true;
-        do
-        {
-            continueCollect = false;
-            auto toFree = freeProg[i];
-            for (auto &n: toFree)
-            {
-                // continue garbage collection while there are still
-                // objects without owners
-                continueCollect = continueCollect or !env_.hasOwners(n);
-                if(env_.freeObject(n))
-                {
-                    // if an object has been freed, remove it from
-                    // the garbage collection schedule
-                    freeProg[i].erase(n);
-                    nothingFreed = false;
-                }
-            }
-        } while (continueCollect);
-        // any remaining objects in step i garbage collection schedule
-        // is scheduled for step i + 1
-        if (i + 1 < program.size())
-        {
-            for (auto &n: freeProg[i])
-            {
-                freeProg[i + 1].insert(n);
-            }
-        }
-        // print used memory after garbage collection if necessary
-        sizeAfter = env_.getTotalSize();
-        if (sizeBefore != sizeAfter)
-        {
-            LOG(Message) << "Allocated objects: " << MEM_MSG(sizeAfter)
-                         << std::endl;
-        }
-        else
-        {
-            LOG(Message) << "Nothing to free" << std::endl;
-        }
-    }
-    
-    return memPeak;
-}
-
-// pretty size formatting //////////////////////////////////////////////////////
-std::string Application::sizeString(long unsigned int bytes)
-
-{
-    constexpr unsigned int bufSize = 256;
-    const char             *suffixes[7] = {"", "K", "M", "G", "T", "P", "E"};
-    char                   buf[256];
-    long unsigned int      s     = 0;
-    double                 count = bytes;
-    
-    while (count >= 1024 && s < 7)
-    {
-        s++;
-        count /= 1024;
-    }
-    if (count - floor(count) == 0.0)
-    {
-        snprintf(buf, bufSize, "%d %sB", (int)count, suffixes[s]);
-    }
-    else
-    {
-        snprintf(buf, bufSize, "%.1f %sB", count, suffixes[s]);
-    }
-    
-    return std::string(buf);
 }
