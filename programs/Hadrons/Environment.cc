@@ -274,6 +274,7 @@ Graph<unsigned int> Environment::makeModuleGraph(void) const
     
     for (unsigned int i = 0; i < module_.size(); ++i)
     {
+        moduleGraph.addVertex(i);
         for (auto &j: moduleInput_[i])
         {
             moduleGraph.addEdge(objectModule_[j], i);

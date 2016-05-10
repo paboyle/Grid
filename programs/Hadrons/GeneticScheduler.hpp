@@ -183,7 +183,7 @@ template <typename T>
 void GeneticScheduler<T>::crossover(const std::vector<T> &p1,
                                     const std::vector<T> &p2)
 {
-    std::uniform_int_distribution<unsigned int> dis(1, p1.size() - 2);
+    std::uniform_int_distribution<unsigned int> dis(0, p1.size() - 1);
     unsigned int                                cut = dis(gen_);
     std::vector<T>                              c1, c2, buf;
     
@@ -211,7 +211,7 @@ void GeneticScheduler<T>::crossover(const std::vector<T> &p1,
 template <typename T>
 void GeneticScheduler<T>::mutation(std::vector<T> &c)
 {
-    std::uniform_int_distribution<unsigned int> dis(1, c.size() - 2);
+    std::uniform_int_distribution<unsigned int> dis(0, c.size() - 1);
     unsigned int                                cut = dis(gen_);
     Graph<T>                                    g = graph_;
     std::vector<T>                              buf;
@@ -220,7 +220,10 @@ void GeneticScheduler<T>::mutation(std::vector<T> &c)
     {
         g.removeVertex(c[i]);
     }
-    buf = g.topoSort(gen_);
+    if (g.size() > 0)
+    {
+        buf = g.topoSort(gen_);
+    }
     for (unsigned int i = cut; i < c.size(); ++i)
     {
         buf.push_back(c[i]);
