@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/GRandom.cc
+Source file: programs/Hadrons/GLoad.cc
 
 Copyright (C) 2016
 
@@ -25,26 +25,34 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/GRandom.hpp>
+#include <Hadrons/Modules/GLoad.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
 
 /******************************************************************************
-*                  GRandom implementation                             *
+*                          GLoad implementation                               *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-GRandom::GRandom(const std::string name)
+GLoad::GLoad(const std::string name)
 : Module(name)
 {}
 
-// dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> GRandom::getInput(void)
+// parse parameters ////////////////////////////////////////////////////////////
+void GLoad::parseParameters(XmlReader &reader, const std::string name)
 {
-    return std::vector<std::string>();
+   read(reader, name, par_);
 }
 
-std::vector<std::string> GRandom::getOutput(void)
+// dependencies/products ///////////////////////////////////////////////////////
+std::vector<std::string> GLoad::getInput(void)
+{
+    std::vector<std::string> in;
+    
+    return in;
+}
+
+std::vector<std::string> GLoad::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -52,15 +60,22 @@ std::vector<std::string> GRandom::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void GRandom::setup(void)
+void GLoad::setup(void)
 {
     env().registerLattice<LatticeGaugeField>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void GRandom::execute(void)
+void GLoad::execute(void)
 {
-    LOG(Message) << "Generating random gauge configuration" << std::endl;
+    NerscField  header;
+    std::string fileName = par_.file + "."
+                           + std::to_string(env().getTrajectory());
+    
+    LOG(Message) << "Loading NERSC configuration from file '" << fileName
+                 << "'" << std::endl;
     LatticeGaugeField &U = *env().create<LatticeGaugeField>(getName());
-    SU3::HotConfiguration(*env().get4dRng(), U);
+    NerscIO::readConfiguration(U, header, fileName);
+    LOG(Message) << "NERSC header:" << std::endl;
+    dump_nersc_header(header, LOG(Message));
 }

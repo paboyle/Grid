@@ -25,7 +25,7 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/MQuark.hpp>
+#include <Hadrons/Modules/MQuark.hpp>
 
 using namespace Grid;
 using namespace QCD;

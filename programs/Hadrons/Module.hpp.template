@@ -1,0 +1,43 @@
+#ifndef Hadrons____FILEBASENAME____hpp_
+#define Hadrons____FILEBASENAME____hpp_
+
+#include <Hadrons/Global.hpp>
+#include <Hadrons/Module.hpp>
+#include <Hadrons/ModuleFactory.hpp>
+
+BEGIN_HADRONS_NAMESPACE
+
+/******************************************************************************
+ *                         ___FILEBASENAME___                                 *
+ ******************************************************************************/
+class ___FILEBASENAME___: public Module
+{
+public:
+    class Par: Serializable
+    {
+    public:
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Par, unsigned int, i);
+    };
+public:
+    // constructor
+    ___FILEBASENAME___(const std::string name);
+    // destructor
+    virtual ~___FILEBASENAME___(void) = default;
+    // parse parameters
+    virtual void parseParameters(XmlReader &reader, const std::string name);
+    // dependency relation
+    virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getOutput(void);
+    // setup
+    virtual void setup(void);
+    // execution
+    virtual void execute(void);
+private:
+    Par par_;
+};
+
+MODULE_REGISTER(___FILEBASENAME___);
+
+END_HADRONS_NAMESPACE
+
+#endif // Hadrons____FILEBASENAME____hpp_

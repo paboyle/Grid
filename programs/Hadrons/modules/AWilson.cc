@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/GUnit.cc
+Source file: programs/Hadrons/AWilson.cc
 
 Copyright (C) 2016
 
@@ -25,26 +25,34 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/GUnit.hpp>
+#include <Hadrons/Modules/AWilson.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
 
 /******************************************************************************
-*                            GUnit implementation                             *
+*                         AWilson implementation                              *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-GUnit::GUnit(const std::string name)
+AWilson::AWilson(const std::string name)
 : Module(name)
 {}
 
-// dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> GUnit::getInput(void)
+// parse parameters ////////////////////////////////////////////////////////////
+void AWilson::parseParameters(XmlReader &reader, const std::string name)
 {
-    return std::vector<std::string>();
+   read(reader, name, par_);
 }
 
-std::vector<std::string> GUnit::getOutput(void)
+// dependencies/products ///////////////////////////////////////////////////////
+std::vector<std::string> AWilson::getInput(void)
+{
+    std::vector<std::string> in = {par_.gauge};
+    
+    return in;
+}
+
+std::vector<std::string> AWilson::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -52,15 +60,24 @@ std::vector<std::string> GUnit::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void GUnit::setup(void)
+void AWilson::setup(void)
 {
-    env().registerLattice<LatticeGaugeField>(getName());
+    unsigned int size;
+    
+    size = 3*env().lattice4dSize<WilsonFermionR::DoubledGaugeField>();
+    env().registerObject(getName(), size);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void GUnit::execute(void)
+void AWilson::execute()
 {
-    LOG(Message) << "Creating unit gauge configuration" << std::endl;
-    LatticeGaugeField &U = *env().create<LatticeGaugeField>(getName());
-    SU3::ColdConfiguration(*env().get4dRng(), U);
+    auto         &U      = *env().get<LatticeGaugeField>(par_.gauge);
+    auto         &grid   = *env().getGrid();
+    auto         &gridRb = *env().getRbGrid();
+    auto         fMatPt  = new WilsonFermionR(U, grid, gridRb, par_.mass);
+    unsigned int size;
+    
+    LOG(Message) << "Setting up Wilson fermion matrix with m= " << par_.mass
+                 << " using gauge field '" << par_.gauge << "'" << std::endl;
+    env().addFermionMatrix(getName(), fMatPt);
 }

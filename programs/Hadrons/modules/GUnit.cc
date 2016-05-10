@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/SolRBPrecCG.cc
+Source file: programs/Hadrons/GUnit.cc
 
 Copyright (C) 2016
 
@@ -25,35 +25,26 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/SolRBPrecCG.hpp>
+#include <Hadrons/Modules/GUnit.hpp>
 
 using namespace Grid;
-using namespace QCD;
 using namespace Hadrons;
 
 /******************************************************************************
-*                       SolRBPrecCG implementation                            *
+*                            GUnit implementation                             *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-SolRBPrecCG::SolRBPrecCG(const std::string name)
+GUnit::GUnit(const std::string name)
 : Module(name)
 {}
 
-// parse parameters ////////////////////////////////////////////////////////////
-void SolRBPrecCG::parseParameters(XmlReader &reader, const std::string name)
-{
-   read(reader, name, par_);
-}
-
 // dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> SolRBPrecCG::getInput(void)
+std::vector<std::string> GUnit::getInput(void)
 {
-    std::vector<std::string> in = {par_.action};
-    
-    return in;
+    return std::vector<std::string>();
 }
 
-std::vector<std::string> SolRBPrecCG::getOutput(void)
+std::vector<std::string> GUnit::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -61,28 +52,15 @@ std::vector<std::string> SolRBPrecCG::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void SolRBPrecCG::setup(void)
+void GUnit::setup(void)
 {
-    env().registerObject(getName(), 0);
-    env().addOwnership(getName(), par_.action);
-    env().setSolverAction(getName(), par_.action);
+    env().registerLattice<LatticeGaugeField>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void SolRBPrecCG::execute(void)
+void GUnit::execute(void)
 {
-    auto &mat   = *(env().getFermionMatrix(par_.action));
-    auto solver = [&mat, this](LatticeFermion &sol,
-                               const LatticeFermion &source)
-    {
-        ConjugateGradient<LatticeFermion>           cg(par_.residual, 10000);
-        SchurRedBlackDiagMooeeSolve<LatticeFermion> schurSolver(cg);
-        
-        schurSolver(mat, source, sol);
-    };
-    
-    LOG(Message) << "setting up Schur red-black preconditioned CG for"
-                 << " action '" << par_.action << "' with residual "
-                 << par_.residual << std::endl;
-    env().addSolver(getName(), solver);
+    LOG(Message) << "Creating unit gauge configuration" << std::endl;
+    LatticeGaugeField &U = *env().create<LatticeGaugeField>(getName());
+    SU3::ColdConfiguration(*env().get4dRng(), U);
 }

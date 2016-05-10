@@ -1,0 +1,45 @@
+#include <Hadrons/Modules/___FILEBASENAME___.hpp>
+
+using namespace Grid;
+using namespace Hadrons;
+
+/******************************************************************************
+*                  ___FILEBASENAME___ implementation                             *
+******************************************************************************/
+// constructor /////////////////////////////////////////////////////////////////
+___FILEBASENAME___::___FILEBASENAME___(const std::string name)
+: Module(name)
+{}
+
+// parse parameters ////////////////////////////////////////////////////////////
+void ___FILEBASENAME___::parseParameters(XmlReader &reader, const std::string name)
+{
+   read(reader, name, par_);
+}
+
+// dependencies/products ///////////////////////////////////////////////////////
+std::vector<std::string> ___FILEBASENAME___::getInput(void)
+{
+    std::vector<std::string> in;
+    
+    return in;
+}
+
+std::vector<std::string> ___FILEBASENAME___::getOutput(void)
+{
+    std::vector<std::string> out = {getName()};
+    
+    return out;
+}
+
+// setup ///////////////////////////////////////////////////////////////////////
+void ___FILEBASENAME___::setup(void)
+{
+
+}
+
+// execution ///////////////////////////////////////////////////////////////////
+void ___FILEBASENAME___::execute(void)
+{
+
+}

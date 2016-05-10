@@ -1,4 +1,4 @@
-AM_CXXFLAGS = -I$(top_srcdir)/programs -I$(top_srcdir)/lib
+AM_CXXFLAGS = -I$(top_srcdir)/programs -I../$(top_srcdir)/programs -I$(top_srcdir)/lib
 AM_LDFLAGS  = -L$(top_builddir)/lib
 
 bin_PROGRAMS = Hadrons
@@ -11,31 +11,8 @@ Hadrons_SOURCES =   \
     Hadrons.cc      \
     Module.cc
 
-# general modules
-Hadrons_SOURCES +=  \
-    MQuark.cc
-
-# fermion actions
-Hadrons_SOURCES +=  \
-    AWilson.cc
-
-# contraction modules
-Hadrons_SOURCES +=  \
-    CMeson.cc
-
-# gauge modules
-Hadrons_SOURCES +=  \
-    GLoad.cc        \
-    GRandom.cc      \
-    GUnit.cc
-
-# solver modules
-Hadrons_SOURCES +=  \
-    SolRBPrecCG.cc
-
-# source modules
-Hadrons_SOURCES +=  \
-    SrcPoint.cc     \
-    SrcZ2.cc
+# modules
+include modules.inc
+Hadrons_SOURCES += $(modules)
 
 Hadrons_LDADD   = -lGrid

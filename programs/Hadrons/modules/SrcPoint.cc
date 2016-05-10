@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/GLoad.cc
+Source file: programs/Hadrons/SrcPoint.cc
 
 Copyright (C) 2016
 
@@ -25,34 +25,34 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/GLoad.hpp>
+#include <Hadrons/Modules/SrcPoint.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
 
 /******************************************************************************
-*                          GLoad implementation                               *
+*                         SrcPoint implementation                             *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-GLoad::GLoad(const std::string name)
+SrcPoint::SrcPoint(const std::string name)
 : Module(name)
 {}
 
 // parse parameters ////////////////////////////////////////////////////////////
-void GLoad::parseParameters(XmlReader &reader, const std::string name)
+void SrcPoint::parseParameters(XmlReader &reader, const std::string name)
 {
    read(reader, name, par_);
 }
 
 // dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> GLoad::getInput(void)
+std::vector<std::string> SrcPoint::getInput(void)
 {
     std::vector<std::string> in;
     
     return in;
 }
 
-std::vector<std::string> GLoad::getOutput(void)
+std::vector<std::string> SrcPoint::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -60,22 +60,21 @@ std::vector<std::string> GLoad::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void GLoad::setup(void)
+void SrcPoint::setup(void)
 {
-    env().registerLattice<LatticeGaugeField>(getName());
+    env().registerLattice<LatticePropagator>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void GLoad::execute(void)
+void SrcPoint::execute(void)
 {
-    NerscField  header;
-    std::string fileName = par_.file + "."
-                           + std::to_string(env().getTrajectory());
+    std::vector<int> position = strToVec<int>(par_.position);
+    SpinColourMatrix id;
     
-    LOG(Message) << "Loading NERSC configuration from file '" << fileName
-                 << "'" << std::endl;
-    LatticeGaugeField &U = *env().create<LatticeGaugeField>(getName());
-    NerscIO::readConfiguration(U, header, fileName);
-    LOG(Message) << "NERSC header:" << std::endl;
-    dump_nersc_header(header, LOG(Message));
+    LOG(Message) << "Creating point source at position [" << par_.position
+                 << "]" << std::endl;
+    LatticePropagator &src = *env().create<LatticePropagator>(getName());
+    id  = 1.;
+    src = zero;
+    pokeSite(id, src, position);
 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/SrcPoint.cc
+Source file: programs/Hadrons/GRandom.cc
 
 Copyright (C) 2016
 
@@ -25,34 +25,26 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/SrcPoint.hpp>
+#include <Hadrons/Modules/GRandom.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
 
 /******************************************************************************
-*                         SrcPoint implementation                             *
+*                          GRandom implementation                             *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-SrcPoint::SrcPoint(const std::string name)
+GRandom::GRandom(const std::string name)
 : Module(name)
 {}
 
-// parse parameters ////////////////////////////////////////////////////////////
-void SrcPoint::parseParameters(XmlReader &reader, const std::string name)
-{
-   read(reader, name, par_);
-}
-
 // dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> SrcPoint::getInput(void)
+std::vector<std::string> GRandom::getInput(void)
 {
-    std::vector<std::string> in;
-    
-    return in;
+    return std::vector<std::string>();
 }
 
-std::vector<std::string> SrcPoint::getOutput(void)
+std::vector<std::string> GRandom::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -60,21 +52,15 @@ std::vector<std::string> SrcPoint::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void SrcPoint::setup(void)
+void GRandom::setup(void)
 {
-    env().registerLattice<LatticePropagator>(getName());
+    env().registerLattice<LatticeGaugeField>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void SrcPoint::execute(void)
+void GRandom::execute(void)
 {
-    std::vector<int> position = strToVec<int>(par_.position);
-    SpinColourMatrix id;
-    
-    LOG(Message) << "Creating point source at position [" << par_.position
-                 << "]" << std::endl;
-    LatticePropagator &src = *env().create<LatticePropagator>(getName());
-    id  = 1.;
-    src = zero;
-    pokeSite(id, src, position);
+    LOG(Message) << "Generating random gauge configuration" << std::endl;
+    LatticeGaugeField &U = *env().create<LatticeGaugeField>(getName());
+    SU3::HotConfiguration(*env().get4dRng(), U);
 }
