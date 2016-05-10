@@ -316,20 +316,29 @@ unsigned int Environment::executeProgram(const std::vector<unsigned int> &p)
     for (unsigned int i = 0; i < p.size(); ++i)
     {
         // execute module
-        LOG(Message) << SEP << " Measurement step " << i+1 << "/"
-                     << p.size() << " (module '" << moduleName_[p[i]] << "') "
-                     << SEP << std::endl;
+        if (!isDryRun())
+        {
+            LOG(Message) << SEP << " Measurement step " << i+1 << "/"
+                         << p.size() << " (module '" << moduleName_[p[i]]
+                         << "') " << SEP << std::endl;
+        }
         (*module_[p[i]])();
         sizeBefore = getTotalSize();
         // print used memory after execution
-        LOG(Message) << "Allocated objects: " << MEM_MSG(sizeBefore)
-                     << std::endl;
+        if (!isDryRun())
+        {
+            LOG(Message) << "Allocated objects: " << MEM_MSG(sizeBefore)
+                         << std::endl;
+        }
         if (sizeBefore > memPeak)
         {
             memPeak = sizeBefore;
         }
         // garbage collection for step i
-        LOG(Message) << "Garbage collection..." << std::endl;
+        if (!isDryRun())
+        {
+            LOG(Message) << "Garbage collection..." << std::endl;
+        }
         nothingFreed = true;
         do
         {
@@ -360,14 +369,17 @@ unsigned int Environment::executeProgram(const std::vector<unsigned int> &p)
         }
         // print used memory after garbage collection if necessary
         sizeAfter = getTotalSize();
-        if (sizeBefore != sizeAfter)
+        if (!isDryRun())
         {
-            LOG(Message) << "Allocated objects: " << MEM_MSG(sizeAfter)
-                         << std::endl;
-        }
-        else
-        {
-            LOG(Message) << "Nothing to free" << std::endl;
+            if (sizeBefore != sizeAfter)
+            {
+                LOG(Message) << "Allocated objects: " << MEM_MSG(sizeAfter)
+                             << std::endl;
+            }
+            else
+            {
+                LOG(Message) << "Nothing to free" << std::endl;
+            }
         }
     }
     
