@@ -44,7 +44,7 @@ inline void subdivides(GridBase *coarse,GridBase *fine)
   }
 }
 
-
+ 
   ////////////////////////////////////////////////////////////////////////////////////////////
   // remove and insert a half checkerboard
   ////////////////////////////////////////////////////////////////////////////////////////////
@@ -325,6 +325,126 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
   
 }
 
+// Useful for precision conversion, or indeed anything where an operator= does a conversion on scalars.
+// Simd layouts need not match since we use peek/poke Local
+template<class vobj,class vvobj>
+void localConvert(const Lattice<vobj> &in,Lattice<vvobj> &out)
+{
+  typedef typename vobj::scalar_object sobj;
+  typedef typename vvobj::scalar_object ssobj;
+
+  sobj s;
+  ssobj ss;
+
+  GridBase *ig = in._grid;
+  GridBase *og = out._grid;
+
+  int ni = ig->_ndimension;
+  int no = og->_ndimension;
+
+  assert(ni == no);
+
+  for(int d=0;d<no;d++){
+    assert(ig->_processors[d]  == og->_processors[d]);
+    assert(ig->_ldimensions[d] == og->_ldimensions[d]);
+  }
+
+PARALLEL_FOR_LOOP
+  for(int idx=0;idx<ig->lSites();idx++){
+    std::vector<int> lcoor(ni);
+    ig->LocalIndexToLocalCoor(idx,lcoor);
+    peekLocalSite(s,in,lcoor);
+    ss=s;
+    pokeLocalSite(ss,out,lcoor);
+  }
+}
+
+
+template<class vobj>
+void InsertSlice(const Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int orthog)
+{
+  typedef typename vobj::scalar_object sobj;
+  sobj s;
+
+  GridBase *lg = lowDim._grid;
+  GridBase *hg = higherDim._grid;
+  int nl = lg->_ndimension;
+  int nh = hg->_ndimension;
+
+  assert(nl+1 == nh);
+  assert(orthog<nh);
+  assert(orthog>=0);
+  assert(hg->_processors[orthog]==0);
+
+  int dl; dl = 0;
+  for(int d=0;d<nh;d++){
+    if ( d != orthog) {
+      assert(lg->_processors[dl]  == hg->_processors[d]);
+      assert(lg->_ldimensions[dl] == hg->_ldimensions[d]);
+      dl++;
+    }
+  }
+
+  // the above should guarantee that the operations are local
+PARALLEL_FOR_LOOP
+  for(int idx=0;idx<lg->lSites();idx++){
+    std::vector<int> lcoor(nl);
+    std::vector<int> hcoor(nh);
+    lg->LocalIndexToLocalCoor(idx,lcoor);
+    dl=0;
+    hcoor[orthog] = slice;
+    for(int d=0;d<nh;d++){
+      if ( d!=orthog ) { 
+	hcoor[d]=lcoor[dl++];
+      }
+    }
+    peekLocalSite(s,higherDim,hcoor);
+    pokeLocalSite(s,lowDim,lcoor);
+  }
+}
+
+template<class vobj>
+void ExtractSlice(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int slice, int orthog)
+{
+  typedef typename vobj::scalar_object sobj;
+  sobj s;
+
+  GridBase *lg = lowDim._grid;
+  GridBase *hg = higherDim._grid;
+  int nl = lg->_ndimension;
+  int nh = hg->_ndimension;
+
+  assert(nl+1 == nh);
+  assert(orthog<nh);
+  assert(orthog>=0);
+  assert(hg->_processors[orthog]==0);
+
+  int dl; dl = 0;
+  for(int d=0;d<nh;d++){
+    if ( d != orthog) {
+      assert(lg->_processors[dl]  == hg->_processors[d]);
+      assert(lg->_ldimensions[dl] == hg->_ldimensions[d]);
+      dl++;
+    }
+  }
+  // the above should guarantee that the operations are local
+PARALLEL_FOR_LOOP
+  for(int idx=0;idx<lg->lSites();idx++){
+    std::vector<int> lcoor(nl);
+    std::vector<int> hcoor(nh);
+    lg->LocalIndexToLocalCoor(idx,lcoor);
+    dl=0;
+    hcoor[orthog] = slice;
+    for(int d=0;d<nh;d++){
+      if ( d!=orthog ) { 
+	hcoor[d]=lcoor[dl++];
+      }
+    }
+    peekLocalSite(s,lowDim,lcoor);
+    pokeLocalSite(s,higherDim,hcoor);
+  }
+
+}
 
 template<class vobj>
 void Replicate(Lattice<vobj> &coarse,Lattice<vobj> & fine)
