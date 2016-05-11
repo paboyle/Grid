@@ -331,8 +331,8 @@ void InsertSlice(const Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice
   typedef typename vobj::scalar_object sobj;
   sobj s;
 
-  GridBase *lg = lowdim._grid;
-  GridBase *hg = higherdim._grid;
+  GridBase *lg = lowDim._grid;
+  GridBase *hg = higherDim._grid;
   int nl = lg->_ndimension;
   int nh = hg->_ndimension;
 
@@ -358,8 +358,8 @@ void InsertSlice(const Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice
     lg->LocalIndexToLocalCoor(idx,lcoor);
     dl=0;
     for(int d=0;d<nh;d++){
-      if ( d!orthog ) { 
-	hcoor[d]=lcoor[ld++];
+      if ( d!=orthog ) { 
+	hcoor[d]=lcoor[dl++];
       }
     }
     peekLocalSite(s,higherDim,hcoor);
@@ -368,13 +368,13 @@ void InsertSlice(const Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice
 }
 
 template<class vobj>
-void ExtractSlice(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int slice, int dir)
+void ExtractSlice(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int slice, int orthog)
 {
   typedef typename vobj::scalar_object sobj;
   sobj s;
 
-  GridBase *lg = lowdim._grid;
-  GridBase *hg = higherdim._grid;
+  GridBase *lg = lowDim._grid;
+  GridBase *hg = higherDim._grid;
   int nl = lg->_ndimension;
   int nh = hg->_ndimension;
 
@@ -399,8 +399,8 @@ void ExtractSlice(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int slic
     lg->LocalIndexToLocalCoor(idx,lcoor);
     dl=0;
     for(int d=0;d<nh;d++){
-      if ( d!orthog ) { 
-	hcoor[d]=lcoor[ld++];
+      if ( d!=orthog ) { 
+	hcoor[d]=lcoor[dl++];
       }
     }
     peekLocalSite(s,lowDim,lcoor);
