@@ -181,7 +181,7 @@ void Application::schedule(void)
 // loop on configurations //////////////////////////////////////////////////////
 void Application::configLoop(void)
 {
-    auto range = par_.configs.range;
+    auto range = par_.trajCounter;
     
     for (unsigned int t = range.start; t < range.end; t += range.step)
     {

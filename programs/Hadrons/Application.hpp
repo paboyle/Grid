@@ -32,10 +32,6 @@ directory.
 #include <Hadrons/Environment.hpp>
 #include <Hadrons/ModuleFactory.hpp>
 
-namespace Grid {
-    GRID_SERIALIZABLE_ENUM(ConfigType, undef, load, 1, unit, 2, gen, 3);
-}
-
 BEGIN_HADRONS_NAMESPACE
 
 class TrajRange: Serializable
@@ -47,19 +43,11 @@ public:
                                     unsigned int, step);
 };
 
-class ConfigPar: Serializable
-{
-public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(ConfigPar,
-                                    std::string, ioStem,
-                                    TrajRange,   range);
-};
-
 class GlobalPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(GlobalPar,
-                                    ConfigPar,   configs,
+                                    TrajRange,   trajCounter,
                                     std::string, seed);
 };
 
