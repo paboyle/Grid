@@ -1,4 +1,5 @@
 modules =\
+  Modules/ADWF.cc \
   Modules/AWilson.cc \
   Modules/CMeson.cc \
   Modules/GLoad.cc \
