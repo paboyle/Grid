@@ -1,4 +1,4 @@
-#include <Hadrons/Modules/___FILEBASENAME___.hpp>
+#include <Hadrons/___FILEBASENAME___.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
@@ -8,14 +8,8 @@ using namespace Hadrons;
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 ___FILEBASENAME___::___FILEBASENAME___(const std::string name)
-: Module(name)
+: Module<___FILEBASENAME___Par>(name)
 {}
-
-// parse parameters ////////////////////////////////////////////////////////////
-void ___FILEBASENAME___::parseParameters(XmlReader &reader, const std::string name)
-{
-   read(reader, name, par_);
-}
 
 // dependencies/products ///////////////////////////////////////////////////////
 std::vector<std::string> ___FILEBASENAME___::getInput(void)
