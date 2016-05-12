@@ -374,7 +374,7 @@ void InsertSlice(Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int 
   assert(nl+1 == nh);
   assert(orthog<nh);
   assert(orthog>=0);
-  assert(hg->_processors[orthog]==0);
+  assert(hg->_processors[orthog]==1);
 
   int dl; dl = 0;
   for(int d=0;d<nh;d++){
@@ -398,8 +398,8 @@ PARALLEL_FOR_LOOP
 	hcoor[d]=lcoor[dl++];
       }
     }
-    peekLocalSite(s,higherDim,hcoor);
-    pokeLocalSite(s,lowDim,lcoor);
+    peekLocalSite(s,lowDim,lcoor);
+    pokeLocalSite(s,higherDim,hcoor);
   }
 }
 
@@ -417,7 +417,7 @@ void ExtractSlice(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice, in
   assert(nl+1 == nh);
   assert(orthog<nh);
   assert(orthog>=0);
-  assert(hg->_processors[orthog]==0);
+  assert(hg->_processors[orthog]==1);
 
   int dl; dl = 0;
   for(int d=0;d<nh;d++){
@@ -440,8 +440,8 @@ PARALLEL_FOR_LOOP
 	hcoor[d]=lcoor[dl++];
       }
     }
-    peekLocalSite(s,lowDim,lcoor);
-    pokeLocalSite(s,higherDim,hcoor);
+    peekLocalSite(s,higherDim,hcoor);
+    pokeLocalSite(s,lowDim,lcoor);
   }
 
 }
