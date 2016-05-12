@@ -1,5 +1,5 @@
 #!/bin/bash
-
+ 
 cd lib
 
 HFILES=`find . -type f -name '*.h'`
