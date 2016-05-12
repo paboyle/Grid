@@ -377,7 +377,55 @@ namespace Optimization {
   
   template < typename vtype > 
     void permute(vtype &a, vtype b, int perm) {
-   }; 
+   };
+    
+  struct Rotate{
+
+    static inline u128f rotate(u128f in,int n){
+      u128f out;
+      switch(n){
+      case 0:
+        out.f[0] = in.f[0];
+        out.f[1] = in.f[1];
+        out.f[2] = in.f[2];
+        out.f[3] = in.f[3];
+        break;
+      case 1:
+        out.f[0] = in.f[1];
+        out.f[1] = in.f[2];
+        out.f[2] = in.f[3];
+        out.f[3] = in.f[0];
+        break;
+      case 2:
+        out.f[0] = in.f[2];
+        out.f[1] = in.f[3];
+        out.f[2] = in.f[0];
+        out.f[3] = in.f[1];
+        break;
+      case 3:
+        out.f[0] = in.f[3];
+        out.f[1] = in.f[0];
+        out.f[2] = in.f[1];
+        out.f[3] = in.f[2];
+        break;
+      default: assert(0);
+      }
+    }
+    static inline u128d rotate(u128d in,int n){
+      u128d out;
+      switch(n){
+      case 0:
+        out.f[0] = in.f[0];
+        out.f[1] = in.f[1];
+        break;
+      case 1:
+        out.f[0] = in.f[1];
+        out.f[1] = in.f[0];
+        break;
+      default: assert(0);
+      }
+    }
+  };
 
   //Complex float Reduce
   template<>
