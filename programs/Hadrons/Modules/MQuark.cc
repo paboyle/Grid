@@ -76,6 +76,10 @@ void MQuark::execute(void)
                  << std::endl;
     LatticePropagator &prop    = *env().create<LatticePropagator>(propName);
     LatticePropagator &fullSrc = *env().get<LatticePropagator>(par().source);
+    if (Ls_ > 1)
+    {
+        env().create<LatticePropagator>(getName());
+    }
 
     LOG(Message) << "Inverting using solver '" << par().solver
                  << "' on source '" << par().source << "'" << std::endl;
@@ -91,9 +95,10 @@ void MQuark::execute(void)
             }
             else
             {
+                source = zero;
                 PropToFerm(tmp, fullSrc, s, c);
-                InsertSlice(source, tmp, 0, 0);
-                InsertSlice(source, tmp, Ls_-1, 0);
+                InsertSlice(tmp, source, 0, 0);
+                InsertSlice(tmp, source, Ls_-1, 0);
                 axpby_ssp_pplus(source, 0., source, 1., source, 0, 0);
                 axpby_ssp_pminus(source, 0., source, 1., source, Ls_-1, Ls_-1);
             }
@@ -113,12 +118,15 @@ void MQuark::execute(void)
         sol = zero;
         env().callSolver(par().solver, sol, source);
         FermToProp(prop, sol, s, c);
-    }
-    // create 4D propagators from 5D one if necessary
-    if (Ls_ > 1)
-    {
-        LatticePropagator &prop4d = *env().create<LatticePropagator>(getName());
-        
-        HADRON_ERROR("5D implementation not finished");
+        // create 4D propagators from 5D one if necessary
+        if (Ls_ > 1)
+        {
+            LatticePropagator &p4d = *env().get<LatticePropagator>(getName());
+            
+            axpby_ssp_pminus(sol, 0., sol, 1., sol, 0, 0);
+            axpby_ssp_pplus(sol, 0., sol, 1., sol, 0, Ls_-1);
+            ExtractSlice(tmp, sol, 0, 0);
+            FermToProp(p4d, tmp, s, c);
+        }
     }
 }
