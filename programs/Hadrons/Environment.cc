@@ -406,7 +406,7 @@ void Environment::freeLattice(const unsigned int address)
     {
         if (!isDryRun())
         {
-            LOG(Message) << "Freeing lattice '" << moduleName_[address]
+            LOG(Message) << "Freeing lattice '" << objectName_[address]
                          << "'" << std::endl;
         }
         lattice_.erase(address);
