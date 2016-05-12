@@ -726,7 +726,7 @@ std::vector<std::vector<T>> Graph<T>::allTopoSort(void)
 }
 
 // build depedency matrix from topological sorts ///////////////////////////////
-// complexity: can be V!
+// complexity: something like O(V^2*log(V!))
 template <typename T>
 std::map<T, std::map<T, bool>>
 makeDependencyMatrix(const std::vector<std::vector<T>> &topSort)

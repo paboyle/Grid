@@ -50,8 +50,9 @@ public:\
 static mod##ModuleRegistrar mod##ModuleRegistrarInstance;
 
 /******************************************************************************
- *                                 Module                                     *
+ *                            Module class                                    *
  ******************************************************************************/
+// base class
 class ModuleBase
 {
 public:
@@ -77,8 +78,7 @@ private:
     Environment &env_;
 };
 
-typedef Serializable NoPar;
-
+// derived class, templating the parameter class
 template <typename P>
 class Module: public ModuleBase
 {
@@ -98,6 +98,12 @@ private:
     P par_;
 };
 
+// no parameter type
+typedef Serializable NoPar;
+
+/******************************************************************************
+ *                           Template implementation                          *
+ ******************************************************************************/
 template <typename P>
 Module<P>::Module(const std::string name)
 : ModuleBase(name)

@@ -93,11 +93,9 @@ void MQuark::execute(void)
             {
                 PropToFerm(tmp, fullSrc, s, c);
                 InsertSlice(source, tmp, 0, 0);
-                InsertSlice(source, tmp, Ls_ - 1, 0);
-                axpby_ssp_pplus(source, 0., source, 1., source,
-                                0, 0);
-                axpby_ssp_pminus(source, 0., source, 1., source,
-                                 Ls_ - 1, Ls_ - 1);
+                InsertSlice(source, tmp, Ls_-1, 0);
+                axpby_ssp_pplus(source, 0., source, 1., source, 0, 0);
+                axpby_ssp_pminus(source, 0., source, 1., source, Ls_-1, Ls_-1);
             }
         }
         // source conversion for 5D sources

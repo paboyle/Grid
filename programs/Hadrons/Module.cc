@@ -32,7 +32,7 @@ using namespace QCD;
 using namespace Hadrons;
 
 /******************************************************************************
- *                           Module implementation                            *
+ *                       ModuleBase implementation                            *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 ModuleBase::ModuleBase(const std::string name)
