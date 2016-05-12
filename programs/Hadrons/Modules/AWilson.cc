@@ -35,19 +35,13 @@ using namespace Hadrons;
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 AWilson::AWilson(const std::string name)
-: Module(name)
+: Module<AWilsonPar>(name)
 {}
-
-// parse parameters ////////////////////////////////////////////////////////////
-void AWilson::parseParameters(XmlReader &reader, const std::string name)
-{
-   read(reader, name, par_);
-}
 
 // dependencies/products ///////////////////////////////////////////////////////
 std::vector<std::string> AWilson::getInput(void)
 {
-    std::vector<std::string> in = {par_.gauge};
+    std::vector<std::string> in = {par().gauge};
     
     return in;
 }
@@ -71,13 +65,13 @@ void AWilson::setup(void)
 // execution ///////////////////////////////////////////////////////////////////
 void AWilson::execute()
 {
-    auto         &U      = *env().get<LatticeGaugeField>(par_.gauge);
+    auto         &U      = *env().get<LatticeGaugeField>(par().gauge);
     auto         &grid   = *env().getGrid();
     auto         &gridRb = *env().getRbGrid();
-    auto         fMatPt  = new WilsonFermionR(U, grid, gridRb, par_.mass);
+    auto         fMatPt  = new WilsonFermionR(U, grid, gridRb, par().mass);
     unsigned int size;
     
-    LOG(Message) << "Setting up Wilson fermion matrix with m= " << par_.mass
-                 << " using gauge field '" << par_.gauge << "'" << std::endl;
+    LOG(Message) << "Setting up Wilson fermion matrix with m= " << par().mass
+                 << " using gauge field '" << par().gauge << "'" << std::endl;
     env().addFermionMatrix(getName(), fMatPt);
 }

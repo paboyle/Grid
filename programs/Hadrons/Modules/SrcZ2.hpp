@@ -49,22 +49,21 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                               SrcZ2                                        *
  ******************************************************************************/
-class SrcZ2: public Module
+class SrcZ2Par: Serializable
 {
 public:
-    class Par: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Par, unsigned int, tA,
-                                             unsigned int, tB);
-    };
+    GRID_SERIALIZABLE_CLASS_MEMBERS(SrcZ2Par,
+                                    unsigned int, tA,
+                                    unsigned int, tB);
+};
+
+class SrcZ2: public Module<SrcZ2Par>
+{
 public:
     // constructor
     SrcZ2(const std::string name);
     // destructor
     virtual ~SrcZ2(void) = default;
-    // parse parameters
-    virtual void parseParameters(XmlReader &reader, const std::string name);
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -72,8 +71,6 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
-private:
-    Par par_;
 };
 
 MODULE_REGISTER(SrcZ2);

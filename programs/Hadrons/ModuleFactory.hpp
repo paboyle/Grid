@@ -37,7 +37,7 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                            ModuleFactory                                   *
  ******************************************************************************/
-class ModuleFactory: public Factory<Module>
+class ModuleFactory: public Factory<ModuleBase>
 {
     SINGLETON_DEFCTOR(ModuleFactory)
 };

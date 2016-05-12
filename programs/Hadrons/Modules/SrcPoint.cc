@@ -35,14 +35,8 @@ using namespace Hadrons;
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 SrcPoint::SrcPoint(const std::string name)
-: Module(name)
+: Module<SrcPointPar>(name)
 {}
-
-// parse parameters ////////////////////////////////////////////////////////////
-void SrcPoint::parseParameters(XmlReader &reader, const std::string name)
-{
-   read(reader, name, par_);
-}
 
 // dependencies/products ///////////////////////////////////////////////////////
 std::vector<std::string> SrcPoint::getInput(void)
@@ -68,10 +62,10 @@ void SrcPoint::setup(void)
 // execution ///////////////////////////////////////////////////////////////////
 void SrcPoint::execute(void)
 {
-    std::vector<int> position = strToVec<int>(par_.position);
+    std::vector<int> position = strToVec<int>(par().position);
     SpinColourMatrix id;
     
-    LOG(Message) << "Creating point source at position [" << par_.position
+    LOG(Message) << "Creating point source at position [" << par().position
                  << "]" << std::endl;
     LatticePropagator &src = *env().create<LatticePropagator>(getName());
     id  = 1.;

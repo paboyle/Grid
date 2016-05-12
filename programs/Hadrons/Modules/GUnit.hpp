@@ -37,7 +37,7 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                              Unit gauge                                    *
  ******************************************************************************/
-class GUnit: public Module
+class GUnit: public Module<NoPar>
 {
 public:
     // constructor

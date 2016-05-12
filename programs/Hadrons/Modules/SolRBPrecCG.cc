@@ -39,16 +39,10 @@ SolRBPrecCG::SolRBPrecCG(const std::string name)
 : Module(name)
 {}
 
-// parse parameters ////////////////////////////////////////////////////////////
-void SolRBPrecCG::parseParameters(XmlReader &reader, const std::string name)
-{
-   read(reader, name, par_);
-}
-
 // dependencies/products ///////////////////////////////////////////////////////
 std::vector<std::string> SolRBPrecCG::getInput(void)
 {
-    std::vector<std::string> in = {par_.action};
+    std::vector<std::string> in = {par().action};
     
     return in;
 }
@@ -64,25 +58,25 @@ std::vector<std::string> SolRBPrecCG::getOutput(void)
 void SolRBPrecCG::setup(void)
 {
     env().registerObject(getName(), 0);
-    env().addOwnership(getName(), par_.action);
-    env().setSolverAction(getName(), par_.action);
+    env().addOwnership(getName(), par().action);
+    env().setSolverAction(getName(), par().action);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 void SolRBPrecCG::execute(void)
 {
-    auto &mat   = *(env().getFermionMatrix(par_.action));
+    auto &mat   = *(env().getFermionMatrix(par().action));
     auto solver = [&mat, this](LatticeFermion &sol,
                                const LatticeFermion &source)
     {
-        ConjugateGradient<LatticeFermion>           cg(par_.residual, 10000);
+        ConjugateGradient<LatticeFermion>           cg(par().residual, 10000);
         SchurRedBlackDiagMooeeSolve<LatticeFermion> schurSolver(cg);
         
         schurSolver(mat, source, sol);
     };
     
     LOG(Message) << "setting up Schur red-black preconditioned CG for"
-                 << " action '" << par_.action << "' with residual "
-                 << par_.residual << std::endl;
+                 << " action '" << par().action << "' with residual "
+                 << par().residual << std::endl;
     env().addSolver(getName(), solver);
 }

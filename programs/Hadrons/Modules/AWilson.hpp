@@ -37,22 +37,21 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                            Wilson quark action                             *
  ******************************************************************************/
-class AWilson: public Module
+class AWilsonPar: Serializable
 {
 public:
-    class Par: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Par, std::string, gauge,
-                                             double     , mass);
-    };
+    GRID_SERIALIZABLE_CLASS_MEMBERS(AWilsonPar,
+                                    std::string, gauge,
+                                    double     , mass);
+};
+
+class AWilson: public Module<AWilsonPar>
+{
 public:
     // constructor
     AWilson(const std::string name);
     // destructor
     virtual ~AWilson(void) = default;
-    // parse parameters
-    virtual void parseParameters(XmlReader &reader, const std::string name);
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -60,8 +59,6 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
-private:
-    Par par_;
 };
 
 MODULE_REGISTER(AWilson);

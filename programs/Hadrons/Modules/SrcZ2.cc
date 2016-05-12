@@ -35,14 +35,8 @@ using namespace Hadrons;
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 SrcZ2::SrcZ2(const std::string name)
-: Module(name)
+: Module<SrcZ2Par>(name)
 {}
-
-// parse parameters ////////////////////////////////////////////////////////////
-void SrcZ2::parseParameters(XmlReader &reader, const std::string name)
-{
-   read(reader, name, par_);
-}
 
 // dependencies/products ///////////////////////////////////////////////////////
 std::vector<std::string> SrcZ2::getInput(void)
@@ -73,21 +67,21 @@ void SrcZ2::execute(void)
     LatticeFermion             phi(env().getGrid());
     Complex                    shift(1., 1.);
     
-    if (par_.tA == par_.tB)
+    if (par().tA == par().tB)
     {
-        LOG(Message) << "Generating Z_2 wall source at t= " << par_.tA
+        LOG(Message) << "Generating Z_2 wall source at t= " << par().tA
                      << std::endl;
     }
     else
     {
-        LOG(Message) << "Generating Z_2 band for " << par_.tA << " <= t <= "
-                     << par_.tB << std::endl;
+        LOG(Message) << "Generating Z_2 band for " << par().tA << " <= t <= "
+                     << par().tB << std::endl;
     }
     LatticePropagator &src = *env().create<LatticePropagator>(getName());
     LatticeCoordinate(t, Tp);
     bernoulli(*env().get4dRng(), eta);
     eta = (2.*eta - shift)*(1./::sqrt(2.));
-    eta = where((t >= par_.tA) and (t <= par_.tB), eta, 0.*eta);
+    eta = where((t >= par().tA) and (t <= par().tB), eta, 0.*eta);
     src = 1.;
     src = src*eta;
 }

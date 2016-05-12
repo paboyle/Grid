@@ -37,13 +37,13 @@ BEGIN_HADRONS_NAMESPACE
  *                         Global environment                                 *
  ******************************************************************************/
 // forward declaration of Module
-class Module;
+class ModuleBase;
 
 class Environment
 {
     SINGLETON(Environment);
 public:
-    typedef std::unique_ptr<Module>                     ModPt;
+    typedef std::unique_ptr<ModuleBase>                 ModPt;
     typedef std::unique_ptr<GridCartesian>              GridPt;
     typedef std::unique_ptr<GridRedBlackCartesian>      GridRbPt;
     typedef FermionOperator<WilsonImplR>                FMat;
@@ -76,8 +76,8 @@ public:
     void                    createModule(const std::string name,
                                          const std::string type,
                                          XmlReader &reader);
-    Module *                getModule(const unsigned int address) const;
-    Module *                getModule(const std::string name) const;
+    ModuleBase *            getModule(const unsigned int address) const;
+    ModuleBase *            getModule(const std::string name) const;
     unsigned int            getModuleAddress(const std::string name) const;
     std::string             getModuleName(const unsigned int address) const;
     std::string             getModuleType(const unsigned int address) const;

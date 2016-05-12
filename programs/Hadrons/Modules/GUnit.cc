@@ -35,7 +35,7 @@ using namespace Hadrons;
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 GUnit::GUnit(const std::string name)
-: Module(name)
+: Module<NoPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////

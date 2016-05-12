@@ -35,14 +35,8 @@ using namespace Hadrons;
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 GLoad::GLoad(const std::string name)
-: Module(name)
+: Module<GLoadPar>(name)
 {}
-
-// parse parameters ////////////////////////////////////////////////////////////
-void GLoad::parseParameters(XmlReader &reader, const std::string name)
-{
-   read(reader, name, par_);
-}
 
 // dependencies/products ///////////////////////////////////////////////////////
 std::vector<std::string> GLoad::getInput(void)
@@ -69,7 +63,7 @@ void GLoad::setup(void)
 void GLoad::execute(void)
 {
     NerscField  header;
-    std::string fileName = par_.file + "."
+    std::string fileName = par().file + "."
                            + std::to_string(env().getTrajectory());
     
     LOG(Message) << "Loading NERSC configuration from file '" << fileName

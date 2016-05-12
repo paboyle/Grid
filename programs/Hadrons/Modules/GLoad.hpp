@@ -37,21 +37,20 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                         Load a NERSC configuration                         *
  ******************************************************************************/
-class GLoad: public Module
+class GLoadPar: Serializable
 {
 public:
-    class Par: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Par, std::string, file);
-    };
+    GRID_SERIALIZABLE_CLASS_MEMBERS(GLoadPar,
+                                    std::string, file);
+};
+
+class GLoad: public Module<GLoadPar>
+{
 public:
     // constructor
     GLoad(const std::string name);
     // destructor
     virtual ~GLoad(void) = default;
-    // parse parameters
-    virtual void parseParameters(XmlReader &reader, const std::string name);
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -59,8 +58,6 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
-private:
-    Par par_;
 };
 
 MODULE_REGISTER(GLoad);

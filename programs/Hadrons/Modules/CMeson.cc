@@ -36,19 +36,13 @@ using namespace Hadrons;
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 CMeson::CMeson(const std::string name)
-: Module(name)
+: Module<CMesonPar>(name)
 {}
-
-// parse parameters ////////////////////////////////////////////////////////////
-void CMeson::parseParameters(XmlReader &reader, const std::string name)
-{
-    read(reader, name, par_);
-}
 
 // dependencies/products ///////////////////////////////////////////////////////
 std::vector<std::string> CMeson::getInput(void)
 {
-    std::vector<std::string> input = {par_.q1, par_.q2};
+    std::vector<std::string> input = {par().q1, par().q2};
     
     return input;
 }
@@ -64,12 +58,12 @@ std::vector<std::string> CMeson::getOutput(void)
 void CMeson::execute(void)
 {
     LOG(Message) << "Computing meson contraction '" << getName() << "' using"
-                 << " quarks '" << par_.q1 << "' and '" << par_.q2 << "'"
+                 << " quarks '" << par().q1 << "' and '" << par().q2 << "'"
                  << std::endl;
     
-    XmlWriter             writer(par_.output);
-    LatticePropagator     &q1 = *env().get<LatticePropagator>(par_.q1);
-    LatticePropagator     &q2 = *env().get<LatticePropagator>(par_.q2);
+    XmlWriter             writer(par().output);
+    LatticePropagator     &q1 = *env().get<LatticePropagator>(par().q1);
+    LatticePropagator     &q2 = *env().get<LatticePropagator>(par().q2);
     LatticeComplex        c(env().getGrid());
     SpinMatrix            g[Ns*Ns], g5;
     std::vector<TComplex> buf;

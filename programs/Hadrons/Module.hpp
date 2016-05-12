@@ -52,21 +52,21 @@ static mod##ModuleRegistrar mod##ModuleRegistrarInstance;
 /******************************************************************************
  *                                 Module                                     *
  ******************************************************************************/
-class Module
+class ModuleBase
 {
 public:
     // constructor
-    Module(const std::string name);
+    ModuleBase(const std::string name);
     // destructor
-    virtual ~Module(void) = default;
+    virtual ~ModuleBase(void) = default;
     // access
     std::string getName(void) const;
     Environment &env(void) const;
-    // parse parameters
-    virtual void parseParameters(XmlReader &reader, const std::string name) {};
     // dependencies/products
     virtual std::vector<std::string> getInput(void) = 0;
     virtual std::vector<std::string> getOutput(void) = 0;
+    // parse parameters
+    virtual void parseParameters(XmlReader &reader, const std::string name) = 0;
     // setup
     virtual void setup(void) {};
     // execution
@@ -76,6 +76,50 @@ private:
     std::string name_;
     Environment &env_;
 };
+
+typedef Serializable NoPar;
+
+template <typename P>
+class Module: public ModuleBase
+{
+public:
+    typedef P Par;
+public:
+    // constructor
+    Module(const std::string name);
+    // destructor
+    virtual ~Module(void) = default;
+    // parse parameters
+    virtual void parseParameters(XmlReader &reader, const std::string name);
+    // parameter access
+    const P & par(void) const;
+    void      setPar(const P &par);
+private:
+    P par_;
+};
+
+template <typename P>
+Module<P>::Module(const std::string name)
+: ModuleBase(name)
+{}
+
+template <typename P>
+void Module<P>::parseParameters(XmlReader &reader, const std::string name)
+{
+    read(reader, name, par_);read(reader, name, par_);
+}
+
+template <typename P>
+const P & Module<P>::par(void) const
+{
+    return par_;
+}
+
+template <typename P>
+void Module<P>::setPar(const P &par)
+{
+    par_ = par;
+}
 
 END_HADRONS_NAMESPACE
 

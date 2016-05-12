@@ -39,16 +39,10 @@ MQuark::MQuark(const std::string name)
 : Module(name)
 {}
 
-// parse parameters ////////////////////////////////////////////////////////////
-void MQuark::parseParameters(XmlReader &reader, const std::string name)
-{
-    read(reader, name, par_);
-}
-
 // dependencies/products ///////////////////////////////////////////////////////
 std::vector<std::string> MQuark::getInput(void)
 {
-    std::vector<std::string> in = {par_.source, par_.solver};
+    std::vector<std::string> in = {par().source, par().solver};
     
     return in;
 }
@@ -63,7 +57,7 @@ std::vector<std::string> MQuark::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void MQuark::setup(void)
 {
-    Ls_ = env().getObjectLs(env().getSolverAction(par_.solver));
+    Ls_ = env().getObjectLs(env().getSolverAction(par().solver));
     env().registerLattice<LatticePropagator>(getName());
     if (Ls_ > 1)
     {
@@ -74,54 +68,59 @@ void MQuark::setup(void)
 // execution ///////////////////////////////////////////////////////////////////
 void MQuark::execute(void)
 {
-    LatticePropagator *fullSource;
-    LatticeFermion    source(env().getGrid(Ls_)), sol(env().getGrid(Ls_));
-    std::string       propName = (Ls_ == 1) ? getName() : (getName() + "_5d");
+    LatticeFermion source(env().getGrid(Ls_)), sol(env().getGrid(Ls_)),
+                   tmp(env().getGrid());
+    std::string    propName = (Ls_ == 1) ? getName() : (getName() + "_5d");
     
     LOG(Message) << "Computing quark propagator '" << getName() << "'"
                  << std::endl;
-    LatticePropagator &prop = *env().create<LatticePropagator>(propName);
-    // source conversion for 4D sources
-    if (!env().isObject5d(par_.source))
-    {
-        if (Ls_ == 1)
-        {
-            fullSource = env().get<LatticePropagator>(par_.source);
-        }
-        else
-        {
-            HADRON_ERROR("MQuark not implemented with 5D actions");
-        }
-    }
-    // source conversion for 5D sources
-    else
-    {
-        if (Ls_ == 1)
-        {
-            HADRON_ERROR("MQuark not implemented with 5D actions");
-        }
-        else if (Ls_ != env().getObjectLs(par_.source))
-        {
-            HADRON_ERROR("Ls mismatch between quark action and source");
-        }
-        else
-        {
-            fullSource = env().get<LatticePropagator>(par_.source);
-        }
-    }
-    LOG(Message) << "Inverting using solver '" << par_.solver
-                 << "' on source '" << par_.source << "'" << std::endl;
+    LatticePropagator &prop    = *env().create<LatticePropagator>(propName);
+    LatticePropagator &fullSrc = *env().create<LatticePropagator>(par().source);
+
+    LOG(Message) << "Inverting using solver '" << par().solver
+                 << "' on source '" << par().source << "'" << std::endl;
     for (unsigned int s = 0; s < Ns; ++s)
     for (unsigned int c = 0; c < Nc; ++c)
     {
-        PropToFerm(source, *fullSource, s, c);
+        // source conversion for 4D sources
+        if (!env().isObject5d(par().source))
+        {
+            if (Ls_ == 1)
+            {
+                PropToFerm(source, fullSrc, s, c);
+            }
+            else
+            {
+                PropToFerm(tmp, fullSrc, s, c);
+                InsertSlice(source, tmp, 0, 0);
+                InsertSlice(source, tmp, Ls_ - 1, 0);
+                axpby_ssp_pplus(source, 0., source, 1., source,
+                                0, 0);
+                axpby_ssp_pminus(source, 0., source, 1., source,
+                                 Ls_ - 1, Ls_ - 1);
+            }
+        }
+        // source conversion for 5D sources
+        else
+        {
+            if (Ls_ != env().getObjectLs(par().source))
+            {
+                HADRON_ERROR("Ls mismatch between quark action and source");
+            }
+            else
+            {
+                PropToFerm(source, fullSrc, s, c);
+            }
+        }
         sol = zero;
-        env().callSolver(par_.solver, sol, source);
+        env().callSolver(par().solver, sol, source);
         FermToProp(prop, sol, s, c);
     }
     // create 4D propagators from 5D one if necessary
     if (Ls_ > 1)
     {
-        HADRON_ERROR("MQuark not implemented with 5D actions");
+        LatticePropagator &prop4d = *env().create<LatticePropagator>(getName());
+        
+        
     }
 }

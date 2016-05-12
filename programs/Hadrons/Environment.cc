@@ -200,7 +200,7 @@ void Environment::createModule(const std::string name, const std::string type,
     }
 }
 
-Module * Environment::getModule(const unsigned int address) const
+ModuleBase * Environment::getModule(const unsigned int address) const
 {
     if (hasModule(address))
     {
@@ -212,7 +212,7 @@ Module * Environment::getModule(const unsigned int address) const
     }
 }
 
-Module * Environment::getModule(const std::string name) const
+ModuleBase * Environment::getModule(const std::string name) const
 {
     return getModule(getModuleAddress(name));
 }

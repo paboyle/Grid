@@ -35,24 +35,24 @@ using namespace Hadrons;
  *                           Module implementation                            *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-Module::Module(const std::string name)
+ModuleBase::ModuleBase(const std::string name)
 : name_(name)
 , env_(Environment::getInstance())
 {}
 
 // access //////////////////////////////////////////////////////////////////////
-std::string Module::getName(void) const
+std::string ModuleBase::getName(void) const
 {
     return name_;
 }
 
-Environment & Module::env(void) const
+Environment & ModuleBase::env(void) const
 {
     return env_;
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void Module::operator()(void)
+void ModuleBase::operator()(void)
 {
     setup();
     if (!env().isDryRun())

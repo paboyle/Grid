@@ -37,22 +37,21 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                               MQuark                                       *
  ******************************************************************************/
-class MQuark: public Module
+class MQuarkPar: Serializable
 {
 public:
-    class Par: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Par, std::string, source,
-                                             std::string, solver);
-    };
+    GRID_SERIALIZABLE_CLASS_MEMBERS(MQuarkPar,
+                                    std::string, source,
+                                    std::string, solver);
+};
+
+class MQuark: public Module<MQuarkPar>
+{
 public:
     // constructor
     MQuark(const std::string name);
     // destructor
     virtual ~MQuark(void) = default;
-    // parse parameters
-    virtual void parseParameters(XmlReader &reader, const std::string name);
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -61,7 +60,6 @@ public:
     // execution
     virtual void execute(void);
 private:
-    Par                 par_;
     unsigned int        Ls_;
     Environment::Solver *solver_{nullptr};
 };

@@ -37,22 +37,21 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                     Schur red-black preconditioned CG                      *
  ******************************************************************************/
-class SolRBPrecCG: public Module
+class SolRBPrecCGPar: Serializable
 {
 public:
-    class Par: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Par, std::string, action,
-                                             double     , residual);
-    };
+    GRID_SERIALIZABLE_CLASS_MEMBERS(SolRBPrecCGPar,
+                                    std::string, action,
+                                    double     , residual);
+};
+
+class SolRBPrecCG: public Module<SolRBPrecCGPar>
+{
 public:
     // constructor
     SolRBPrecCG(const std::string name);
     // destructor
     virtual ~SolRBPrecCG(void) = default;
-    // parse parameters
-    virtual void parseParameters(XmlReader &reader, const std::string name);
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -60,8 +59,6 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
-private:
-    Par par_;
 };
 
 MODULE_REGISTER(SolRBPrecCG);

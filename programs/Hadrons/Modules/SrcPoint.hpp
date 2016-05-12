@@ -48,21 +48,20 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                                SrcPoint                                    *
  ******************************************************************************/
-class SrcPoint: public Module
+class SrcPointPar: Serializable
 {
 public:
-    class Par: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Par, std::string, position);
-    };
+    GRID_SERIALIZABLE_CLASS_MEMBERS(SrcPointPar,
+                                    std::string, position);
+};
+
+class SrcPoint: public Module<SrcPointPar>
+{
 public:
     // constructor
     SrcPoint(const std::string name);
     // destructor
     virtual ~SrcPoint(void) = default;
-    // parse parameters
-    virtual void parseParameters(XmlReader &reader, const std::string name);
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -70,8 +69,6 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
-private:
-    Par par_;
 };
 
 MODULE_REGISTER(SrcPoint);

@@ -37,17 +37,18 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                               CMeson                                       *
  ******************************************************************************/
-class CMeson: public Module
+class CMesonPar: Serializable
 {
 public:
-    class Par: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Par,
-                                        std::string, q1,
-                                        std::string, q2,
-                                        std::string, output);
-    };
+    GRID_SERIALIZABLE_CLASS_MEMBERS(CMesonPar,
+                                    std::string, q1,
+                                    std::string, q2,
+                                    std::string, output);
+};
+
+class CMeson: public Module<CMesonPar>
+{
+public:
     class Result: Serializable
     {
     public:
@@ -59,15 +60,11 @@ public:
     CMeson(const std::string name);
     // destructor
     virtual ~CMeson(void) = default;
-    // parse parameters
-    virtual void parseParameters(XmlReader &reader, const std::string name);
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
     // execution
     virtual void execute(void);
-private:
-    Par par_;
 };
 
 MODULE_REGISTER(CMeson);

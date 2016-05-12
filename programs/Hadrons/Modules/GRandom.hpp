@@ -37,7 +37,7 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                             Random gauge                                   *
  ******************************************************************************/
-class GRandom: public Module
+class GRandom: public Module<NoPar>
 {
 public:
     // constructor
