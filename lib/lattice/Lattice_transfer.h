@@ -361,7 +361,7 @@ PARALLEL_FOR_LOOP
 
 
 template<class vobj>
-void InsertSlice(const Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int orthog)
+void InsertSlice(Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int orthog)
 {
   typedef typename vobj::scalar_object sobj;
   sobj s;
@@ -404,7 +404,7 @@ PARALLEL_FOR_LOOP
 }
 
 template<class vobj>
-void ExtractSlice(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int slice, int orthog)
+void ExtractSlice(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice, int orthog)
 {
   typedef typename vobj::scalar_object sobj;
   sobj s;
