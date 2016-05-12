@@ -75,7 +75,7 @@ void MQuark::execute(void)
     LOG(Message) << "Computing quark propagator '" << getName() << "'"
                  << std::endl;
     LatticePropagator &prop    = *env().create<LatticePropagator>(propName);
-    LatticePropagator &fullSrc = *env().create<LatticePropagator>(par().source);
+    LatticePropagator &fullSrc = *env().get<LatticePropagator>(par().source);
 
     LOG(Message) << "Inverting using solver '" << par().solver
                  << "' on source '" << par().source << "'" << std::endl;
@@ -121,6 +121,6 @@ void MQuark::execute(void)
     {
         LatticePropagator &prop4d = *env().create<LatticePropagator>(getName());
         
-        
+        HADRON_ERROR("5D implementation not finished");
     }
 }
