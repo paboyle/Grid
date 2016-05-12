@@ -78,6 +78,10 @@ public:
                                          XmlReader &reader);
     ModuleBase *            getModule(const unsigned int address) const;
     ModuleBase *            getModule(const std::string name) const;
+    template <typename M>
+    M *                     getModule(const unsigned int address) const;
+    template <typename M>
+    M *                     getModule(const std::string name) const;
     unsigned int            getModuleAddress(const std::string name) const;
     std::string             getModuleName(const unsigned int address) const;
     std::string             getModuleType(const unsigned int address) const;
@@ -187,6 +191,27 @@ private:
 /******************************************************************************
  *                        template implementation                             *
  ******************************************************************************/
+template <typename M>
+M * Environment::getModule(const unsigned int address) const
+{
+    if (auto *pt = dynamic_cast<M *>(getModule(address)))
+    {
+        return pt;
+    }
+    else
+    {
+        HADRON_ERROR("module '" + moduleName_[address] + "' does not have type "
+                     + typeName<M>() + "(object type: "
+                     + typeName(*module_.at(address).get()) + ")");
+    }
+}
+
+template <typename M>
+M * Environment::getModule(const std::string name) const
+{
+    return getModule<M>(getModuleAddress(name));
+}
+
 template <typename T>
 unsigned int Environment::lattice4dSize(void) const
 {
