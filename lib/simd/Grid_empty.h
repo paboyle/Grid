@@ -410,6 +410,7 @@ namespace Optimization {
         break;
       default: assert(0);
       }
+      return out;
     }
     static inline u128d rotate(u128d in,int n){
       u128d out;
@@ -424,6 +425,7 @@ namespace Optimization {
         break;
       default: assert(0);
       }
+      return out;
     }
   };
 
