@@ -243,6 +243,8 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
       if ( (!converged[s]) ){
 	
 	RealD css  = c * z[s][iz]* z[s][iz];
+    if((k%100)==0 && (s==0) )
+	    std::cout<<GridLogMessage<<"ConjugateGradientMultiShift k="<<k<<" css " <<css <<std::endl;
 	
 	if(css<rsq[s]){
 	  if ( ! converged[s] )
