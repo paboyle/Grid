@@ -133,3 +133,22 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define ZMULMEM2SP(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)  ZMULMEM2SPd(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) 
 #define ZMADDMEM2SP(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) ZMADDMEM2SPd(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) 
 
+
+#undef VRDUP
+#undef VIDUP
+#undef VMADDSUBMEM
+#undef VMADDMEM
+#undef VMULMEM
+#define VRDUP(SRC,DEST) VRDUPd(SRC,DEST) 
+#define VIDUP(SRC,DEST) VIDUPd(SRC,DEST) 
+#define VMADDSUBMEM(O,P,B,accum) VMADDSUBMEMd(O,P,B,accum)
+#define VMADDMEM(O,P,B,accum)    VMADDMEMd(O,P,B,accum)
+#define VMULMEM(O,P,B,accum)     VMULMEMd(O,P,B,accum)
+#undef VMADDSUBRDUP   
+#undef VMADDSUBIDUP   
+#undef VMULRDUP   
+#undef VMULIDUP   
+#define VMADDSUBRDUP(O,P,B,accum) VMADDSUBRDUPd(O,P,B,accum) 
+#define VMADDSUBIDUP(O,P,B,accum) VMADDSUBIDUPd(O,P,B,accum) 
+#define VMULRDUP(O,P,B,accum)     VMULRDUPd(O,P,B,accum)      
+#define VMULIDUP(O,P,B,accum)     VMULIDUPd(O,P,B,accum) 

@@ -172,6 +172,9 @@ public:
 	_rdimensions[d]= _ldimensions[d]/_simd_layout[d];
 
 	// all elements of a simd vector must have same checkerboard.
+	//
+	// If Ls vectorised, this must still be the case; e.g. 
+	// layout == 8 , require _rdimensions[d] >= 2;
 	if ( simd_layout[d]>1 ) assert((_rdimensions[d]&0x1)==0); 
 
 	_osites *= _rdimensions[d];

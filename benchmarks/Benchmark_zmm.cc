@@ -119,7 +119,7 @@ int bench(std::ofstream &os, std::vector<int> &latt4,int Ls)
   mfc = flops*ncall/(t1-t0);
   std::cout<<GridLogMessage << "Called C++ Dw"<< " mflop/s =   "<< mfc<<std::endl;
 
-  QCD::WilsonFermion5DStatic::AsmOptDslash=1;
+  QCD::WilsonKernelsStatic::AsmOpt=1;
   t0=usecond();
   for(int i=0;i<ncall;i++){
     Dw.DhopOE(srce,resulta,0);

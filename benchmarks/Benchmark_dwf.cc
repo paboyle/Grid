@@ -27,6 +27,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid.h>
+#include <PerfCount.h>
 
 using namespace std;
 using namespace Grid;
@@ -45,6 +46,10 @@ struct scal {
   };
 
 bool overlapComms = false;
+typedef WilsonFermion5D<DomainWallRedBlack5dImplR> WilsonFermion5DR;
+typedef WilsonFermion5D<DomainWallRedBlack5dImplF> WilsonFermion5DF;
+typedef WilsonFermion5D<DomainWallRedBlack5dImplD> WilsonFermion5DD;
+
 
 int main (int argc, char ** argv)
 {
@@ -58,11 +63,16 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   std::vector<int> latt4 = GridDefaultLatt();
-  const int Ls=8;
+  const int Ls=16;
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
+
+  GridCartesian         * sUGrid   = SpaceTimeGrid::makeFourDimDWFGrid(GridDefaultLatt(),GridDefaultMpi());
+  GridRedBlackCartesian * sUrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(sUGrid);
+  GridCartesian         * sFGrid   = SpaceTimeGrid::makeFiveDimDWFGrid(Ls,UGrid);
+  GridRedBlackCartesian * sFrbGrid = SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(Ls,UGrid);
 
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});
@@ -78,7 +88,9 @@ int main (int argc, char ** argv)
 
   ColourMatrix cm = Complex(1.0,0.0);
 
-  LatticeGaugeField Umu(UGrid); random(RNG4,Umu);
+  LatticeGaugeField Umu(UGrid); 
+  random(RNG4,Umu);
+
   LatticeGaugeField Umu5d(FGrid); 
 
   // replicate across fifth dimension
@@ -119,11 +131,16 @@ int main (int argc, char ** argv)
   
   RealD NP = UGrid->_Nprocessors;
 
+  for(int doasm=1;doasm<2;doasm++){
+
+    QCD::WilsonKernelsStatic::AsmOpt=doasm;
+
   DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,params);
   
   std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
-  int ncall=100;
-  {
+  int ncall =50;
+  if (0) {
+
     double t0=usecond();
     for(int i=0;i<ncall;i++){
       Dw.Dhop(src,result,0);
@@ -140,10 +157,83 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NP<<std::endl;
     err = ref-result; 
     std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
-    Dw.Report();
+    //    Dw.Report();
   }
 
-  exit(0);
+  if (1)
+  {
+    typedef WilsonFermion5D<DomainWallRedBlack5dImplF> WilsonFermion5DF;
+    LatticeFermionF ssrc(sFGrid);
+    LatticeFermionF sref(sFGrid);
+    LatticeFermionF sresult(sFGrid);
+    WilsonFermion5DF sDw(1,Umu,*sFGrid,*sFrbGrid,*sUGrid,*sUrbGrid,M5,params);
+  
+    for(int x=0;x<latt4[0];x++){
+    for(int y=0;y<latt4[1];y++){
+    for(int z=0;z<latt4[2];z++){
+    for(int t=0;t<latt4[3];t++){
+    for(int s=0;s<Ls;s++){
+      std::vector<int> site({s,x,y,z,t});
+      SpinColourVectorF tmp;
+      peekSite(tmp,src,site);
+      pokeSite(tmp,ssrc,site);
+    }}}}}
+
+    double t0=usecond();
+    for(int i=0;i<ncall;i++){
+      __SSC_START;
+      sDw.Dhop(ssrc,sresult,0);
+      __SSC_STOP;
+    }
+    double t1=usecond();
+    double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
+    double flops=1344*volume*ncall;
+
+    std::cout<<GridLogMessage << "Called Dw sinner "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NP<<std::endl;
+    //  sDw.Report();
+  
+    if(1){
+      for(int i=0;i< PerformanceCounter::NumTypes(); i++ ){
+	sDw.Dhop(ssrc,sresult,0);
+	PerformanceCounter Counter(i);
+	Counter.Start();
+	sDw.Dhop(ssrc,sresult,0);
+	Counter.Stop();
+	Counter.Report();
+      }
+    }
+
+    
+    if(0){
+      std::cout<<GridLogMessage << " Cycle reporting "<<std::endl;
+
+    QCD::WilsonFermion5DStatic::CycleReport=1;
+    for(int i=0;i<ncall;i++){
+      sDw.Dhop(ssrc,sresult,0);
+    }
+    QCD::WilsonFermion5DStatic::CycleReport=0;
+    }
+
+    RealF sum=0;
+    for(int x=0;x<latt4[0];x++){
+    for(int y=0;y<latt4[1];y++){
+    for(int z=0;z<latt4[2];z++){
+    for(int t=0;t<latt4[3];t++){
+    for(int s=0;s<Ls;s++){
+      std::vector<int> site({s,x,y,z,t});
+      SpinColourVectorF normal, simd;
+      peekSite(normal,result,site);
+      peekSite(simd,sresult,site);
+      sum=sum+norm2(normal-simd);
+      //      std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" "<<norm2(normal-simd)<<std::endl;
+      //      std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" "<<normal<<std::endl;
+      //      std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" "<<simd<<std::endl;
+    }}}}}
+    std::cout<<" difference between normal and simd is "<<sum<<std::endl;
+
+  }
 
   if (1)
   { // Naive wilson dag implementation
@@ -216,6 +306,9 @@ int main (int argc, char ** argv)
   pickCheckerboard(Odd,src_o,err);
   std::cout<<GridLogMessage << "norm diff even  "<< norm2(src_e)<<std::endl;
   std::cout<<GridLogMessage << "norm diff odd   "<< norm2(src_o)<<std::endl;
+
+
+  }
 
   Grid_finalize();
 }

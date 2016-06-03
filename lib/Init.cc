@@ -211,8 +211,7 @@ void Grid_init(int *argc,char ***argv)
     Grid_quiesce_nodes();
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-opt") ){
-    QCD::WilsonFermionStatic::HandOptDslash=1;
-    QCD::WilsonFermion5DStatic::HandOptDslash=1;
+    QCD::WilsonKernelsStatic::HandOpt=1;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--lebesgue") ){
     LebesgueOrder::UseLebesgueOrder=1;
@@ -275,11 +274,6 @@ void Grid_finalize(void)
   MPI_Finalize();
   Grid_unquiesce_nodes();
 #endif
-}
-double usecond(void) {
-  struct timeval tv;
-  gettimeofday(&tv,NULL);
-  return 1.0*tv.tv_usec + 1.0e6*tv.tv_sec;
 }
 
 void * Grid_backtrace_buffer[_NBACKTRACE];

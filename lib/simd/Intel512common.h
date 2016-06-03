@@ -86,8 +86,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define VMOVf(A,DEST)   "vmovaps  " #A ", " #DEST  ";\n"
 #define VMOVd(A,DEST)   "vmovapd  " #A ", " #DEST  ";\n"
 
-#define VPREFETCHG(O,A) 
-#define VPREFETCHW(O,A) 
+#define VPREFETCHG(O,A) "prefetcht0 "#O"*64("#A");\n" 
+#define VPREFETCH2(O,A) "prefetcht1 "#O"*64("#A");\n" 
+#define VPREFETCHW(O,A) "prefetchwt1 "#O"*64("#A");\n" 
 #define VEVICT(O,A)   
 
 //"vprefetche0 "#O"*64("#A");\n" "vprefetche1 ("#O"+12)*64("#A");\n"

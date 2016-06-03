@@ -103,7 +103,9 @@ void LebesgueOrder::IterateI(int ND,
     } else {
       for(int d=0;d<ND;d++){
 	x[d]=xi[d]+xo[d];
+	std::cout << x[d]<<" ";
       }
+      std::cout << "\n";
       IndexInteger index;
       Lexicographic::IndexFromCoor(x,index,grid->_rdimensions);
       _LebesgueReorder.push_back(index);
@@ -188,6 +190,7 @@ void LebesgueOrder::ZGraph(void)
   }
   assert( _LebesgueReorder.size() == vol );
 
+  /*
   std::vector<int> coor(4);
   for(IndexInteger asite=0;asite<vol;asite++){
     grid->oCoorFromOindex (coor,_LebesgueReorder[asite]);
@@ -198,5 +201,6 @@ void LebesgueOrder::ZGraph(void)
 		<< coor[3]<<"]"
 		<<std::endl;
   }
+  */
 }
 }

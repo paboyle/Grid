@@ -114,9 +114,6 @@ namespace Grid {
       void DhopInternal(StencilImpl & st,DoubledGaugeField & U,
 			const FermionField &in, FermionField &out,int dag) ;
 
-      void DhopInternalCommsThenCompute(StencilImpl & st,DoubledGaugeField & U,
-				    const FermionField &in, FermionField &out,int dag) ;
-
       // Constructor
       WilsonFermion(GaugeField &_Umu,
 		    GridCartesian         &Fgrid,

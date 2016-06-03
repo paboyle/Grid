@@ -1,5 +1,4 @@
-
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -39,8 +38,6 @@ namespace QCD {
 // S-direction is INNERMOST and takes no part in the parity.
 const std::vector<int> WilsonFermion5DStatic::directions   ({1,2,3,4, 1, 2, 3, 4});
 const std::vector<int> WilsonFermion5DStatic::displacements({1,1,1,1,-1,-1,-1,-1});
-int WilsonFermion5DStatic::HandOptDslash;
-int WilsonFermion5DStatic::AsmOptDslash;
 
   // 5d lattice for DWF.
 template<class Impl>
@@ -300,6 +297,8 @@ void WilsonFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
 template<class Impl>
 void WilsonFermion5D<Impl>::Report(void)
 {
+  return;
+#if 0
   std::cout<<GridLogMessage << "******************** WilsonFermion"<<std::endl;
   std::cout<<GridLogMessage << "Wilson5d      time "<<alltime <<" us"<<std::endl;
   std::cout<<GridLogMessage << "HaloBegin     time "<<commtime <<" us"<<std::endl;
@@ -320,6 +319,7 @@ void WilsonFermion5D<Impl>::Report(void)
   std::cout<<GridLogMessage << "Stencil comm     time "<<Stencil.commtime<<" us"<<std::endl;
   std::cout<<GridLogMessage << "Stencil join     time "<<Stencil.jointime<<" us"<<std::endl;
   std::cout<<GridLogMessage << "********************"<<std::endl;
+#endif
 }
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
@@ -343,24 +343,13 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
 					 DoubledGaugeField & U,
 					 const FermionField &in, FermionField &out,int dag)
 {
-    DhopInternalCommsThenCompute(st,lo,U,in,out,dag);
-}
-
-template<class Impl>
-void WilsonFermion5D<Impl>::DhopInternalCommsThenCompute(StencilImpl & st, LebesgueOrder &lo,
-					 DoubledGaugeField & U,
-					 const FermionField &in, FermionField &out,int dag)
-{
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
   alltime-=usecond();
   Compressor compressor(dag);
 
-  // Assume balanced KMP_AFFINITY; this is forced in GridThread.h
   int LLs = in._grid->_rdimensions[0];
   
   commtime -=usecond();
-  //  auto handle = st.HaloExchangeBegin(in,compressor);
-  //  st.HaloExchangeComplete(handle);
   st.HaloExchange(in,compressor);
   commtime +=usecond();
 
@@ -368,59 +357,24 @@ void WilsonFermion5D<Impl>::DhopInternalCommsThenCompute(StencilImpl & st, Lebes
   jointime +=usecond();
   
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
-  // Not loop ordering and data layout.
-  // Designed to create 
-  // - per thread reuse in L1 cache for U
-  // - 8 linear access unit stride streams per thread for Fermion for hw prefetchable.
   dslashtime -=usecond();
   if ( dag == DaggerYes ) {
-    if( this->HandOptDslash ) {
 PARALLEL_FOR_LOOP
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	for(int s=0;s<LLs;s++){
-	  int sU=ss;
-	  int sF = s+LLs*sU;
-	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out);
-	  }
-      }
-    } else { 
-PARALLEL_FOR_LOOP
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	for(int s=0;s<LLs;s++){
-	  int sU=ss;
-	  int sF = s+LLs*sU;
-	  Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out);
-	}
+    for(int ss=0;ss<U._grid->oSites();ss++){
+      for(int s=0;s<LLs;s++){
+	int sU=ss;
+	int sF=s+LLs*sU;
+	Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out);
       }
     }
   } else {
-    if( this->AsmOptDslash ) {
-
-PARALLEL_FOR_LOOP
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	for(int s=0;s<LLs;s++){
-	  int sU=ss;
-	  int sF = s+LLs*sU;
-	  Kernels::DiracOptAsmDhopSite(st,U,st.comm_buf,sF,sU,in,out);
-	}
-      }
-    } else if( this->HandOptDslash ) {
-PARALLEL_FOR_LOOP     
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	for(int s=0;s<LLs;s++){
-	  int sU=ss;
-	  int sF = s+LLs*sU;
-	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sF,sU,in,out);
-	}
-      }
-    } else { 
-PARALLEL_FOR_LOOP
-      for(int ss=0;ss<U._grid->oSites();ss++){
-	for(int s=0;s<LLs;s++){
-	  int sU=ss;
-	  int sF = s+LLs*sU; 
-	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sF,sU,in,out);
-	}
+#pragma omp parallel for schedule(runtime)
+    for(int ss=0;ss<U._grid->oSites();ss++){
+      int sU=lo.Reorder(ss);
+      int sF=LLs*sU;
+      for(int s=0;s<LLs;s++){
+	Kernels::DiracOptDhopSite(st,U,st.comm_buf,sF,sU,in,out);
+	sF++;
       }
     }
   }
@@ -473,7 +427,7 @@ FermOpTemplateInstantiate(WilsonFermion5D);
 GparityFermOpTemplateInstantiate(WilsonFermion5D);
 template class WilsonFermion5D<DomainWallRedBlack5dImplF>;		
 template class WilsonFermion5D<DomainWallRedBlack5dImplD>;
-
+  
 }}
 
 
