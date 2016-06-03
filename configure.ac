@@ -212,7 +212,7 @@ esac
 #
 # SDE timing mode
 #
-AC_ARG_ENABLE([timers],[AC_HELP_STRING([--enable-timers=yes|mp],\
+AC_ARG_ENABLE([timers],[AC_HELP_STRING([--enable-timers=yes|no],\
 	[Enable system dependent high res timers])],\
 	[ac_TIMERS=${enable_timers}],[ac_TIMERS=yes])
 case ${ac_TIMERS} in
