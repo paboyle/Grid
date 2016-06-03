@@ -131,7 +131,7 @@ int main (int argc, char ** argv)
   
   RealD NP = UGrid->_Nprocessors;
 
-  for(int doasm=1;doasm<2;doasm++){
+  for(int doasm=0;doasm<1;doasm++){
 
     QCD::WilsonKernelsStatic::AsmOpt=doasm;
 
