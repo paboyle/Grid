@@ -205,16 +205,7 @@ int main (int argc, char ** argv)
       }
     }
 
-    
-    if(0){
-      std::cout<<GridLogMessage << " Cycle reporting "<<std::endl;
 
-    QCD::WilsonFermion5DStatic::CycleReport=1;
-    for(int i=0;i<ncall;i++){
-      sDw.Dhop(ssrc,sresult,0);
-    }
-    QCD::WilsonFermion5DStatic::CycleReport=0;
-    }
 
     RealF sum=0;
     for(int x=0;x<latt4[0];x++){

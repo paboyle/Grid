@@ -87,6 +87,7 @@ namespace Grid {
      void DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
 				 std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 				 int sF,int sU,const FermionField &in, FermionField &out);
+    public:
 
      WilsonKernels(const ImplParams &p= ImplParams());
      

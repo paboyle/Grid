@@ -368,7 +368,7 @@ PARALLEL_FOR_LOOP
       }
     }
   } else {
-#pragma omp parallel for schedule(runtime)
+PARALLEL_FOR_LOOP
     for(int ss=0;ss<U._grid->oSites();ss++){
       int sU=lo.Reorder(ss);
       int sF=LLs*sU;

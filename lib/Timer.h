@@ -35,9 +35,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 namespace Grid {
 
-#ifdef TIMERS_OFF
-#warning Timer.h Disabling timers
-#endif
 
   // Dress the output; use std::chrono
 

@@ -60,7 +60,6 @@ static long perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
 
 #ifdef TIMERS_OFF
 
-#warning PerfCount: Disabling cycle timers
 
 inline uint64_t cyclecount(void){ 
   return 0;
@@ -95,7 +94,6 @@ inline uint64_t cyclecount(void){
 }
 #else
 
-#warning No cycle counter implemented for this architecture
 inline uint64_t cyclecount(void){ 
    return 0;
 }

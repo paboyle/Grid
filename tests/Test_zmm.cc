@@ -27,9 +27,13 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid.h>
 #include <PerfCount.h>
+
+int main(int argc,char **argv)
+{
+  return 0;
+}
+#if 0
 #include <simd/Intel512wilson.h>
-
-
 using namespace Grid;
 using namespace Grid::QCD;
 
@@ -478,3 +482,4 @@ void WilsonDslashAvx512F(void *ptr1,void *ptr2,void *ptr3)
   return;
 }
 
+#endif
