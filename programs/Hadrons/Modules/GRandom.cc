@@ -61,6 +61,6 @@ void GRandom::setup(void)
 void GRandom::execute(void)
 {
     LOG(Message) << "Generating random gauge configuration" << std::endl;
-    LatticeGaugeField &U = *env().create<LatticeGaugeField>(getName());
+    LatticeGaugeField &U = *env().createLattice<LatticeGaugeField>(getName());
     SU3::HotConfiguration(*env().get4dRng(), U);
 }

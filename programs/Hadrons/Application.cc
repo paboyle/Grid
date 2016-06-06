@@ -127,7 +127,7 @@ void Application::schedule(void)
     
     // constrained topological sort using a genetic algorithm
     LOG(Message) << "Scheduling computation..." << std::endl;
-    constexpr unsigned int maxGen = 200, maxCstGen = 50;
+    constexpr unsigned int maxGen = 2000000, maxCstGen = 2000000;
     unsigned int           k = 0, gen, prevPeak, nCstPeak = 0;
     auto                   graph = env_.makeModuleGraph();
     auto                   con = graph.getConnectedComponents();

@@ -39,6 +39,27 @@ BEGIN_HADRONS_NAMESPACE
 // forward declaration of Module
 class ModuleBase;
 
+class Object
+{
+public:
+    Object(void) = default;
+    virtual ~Object(void) = default;
+};
+
+template <typename T>
+class Holder: public Object
+{
+public:
+    Holder(void) = default;
+    Holder(T *pt);
+    virtual ~Holder(void) = default;
+    T &       get(void) const;
+    T *       getPt(void) const;
+    void      reset(T *pt);
+private:
+    std::unique_ptr<T> objPt_{nullptr};
+};
+
 class Environment
 {
     SINGLETON(Environment);
@@ -53,10 +74,22 @@ public:
     typedef std::unique_ptr<GridParallelRNG>            RngPt;
     typedef std::unique_ptr<LatticeBase>                LatticePt;
 private:
+    struct ModuleInfo
+    {
+        const std::type_info        *type{nullptr};
+        std::string                 name;
+        std::unique_ptr<ModuleBase> data{nullptr};
+        std::vector<unsigned int>   input;
+    };
     struct ObjInfo
     {
-        unsigned int size{0}, Ls{0};
-        bool         isRegistered{false};
+        unsigned int            size{0}, Ls{0};
+        bool                    isRegistered{false};
+        const std::type_info    *type{nullptr};
+        std::string             name;
+        int                     module{-1};
+        std::set<unsigned int>  owners, properties;
+        std::unique_ptr<Object> data{nullptr};
     };
 public:
     // dry run
@@ -91,35 +124,9 @@ public:
     Graph<unsigned int>     makeModuleGraph(void) const;
     unsigned int            executeProgram(const std::vector<unsigned int> &p);
     unsigned int            executeProgram(const std::vector<std::string> &p);
-    // lattice store
-    template <typename T>
-    T *                     create(const std::string name);
-    template <typename T>
-    T *                     get(const std::string name) const;
-    bool                    hasLattice(const unsigned int address) const;
-    bool                    hasLattice(const std::string name) const;
-    void                    freeLattice(const unsigned int address);
-    void                    freeLattice(const std::string name);
-    template <typename T>
-    unsigned int            lattice4dSize(void) const;
-    // fermion actions
-    void                    addFermionMatrix(const std::string name, FMat *mat);
-    FMat *                  getFermionMatrix(const std::string name) const;
-    bool                    hasFermionMatrix(const unsigned int address) const;
-    bool                    hasFermionMatrix(const std::string name) const;
-    void                    freeFermionMatrix(const unsigned int address);
-    void                    freeFermionMatrix(const std::string name);
-    // solvers
-    void                    addSolver(const std::string name, Solver s);
-    bool                    hasSolver(const unsigned int address) const;
-    bool                    hasSolver(const std::string name) const;
-    void                    setSolverAction(const std::string name,
-                                            const std::string actionName);
-    std::string             getSolverAction(const std::string name) const;
-    void                    callSolver(const std::string name,
-                                       LatticeFermion &sol,
-                                       const LatticeFermion &src) const;
     // general memory management
+    void                    addObject(const std::string name,
+                                      const int moduleAddress);
     void                    registerObject(const unsigned int address,
                                            const unsigned int size,
                                            const unsigned int Ls = 1);
@@ -127,13 +134,29 @@ public:
                                            const unsigned int size,
                                            const unsigned int Ls = 1);
     template <typename T>
+    unsigned int            lattice4dSize(void) const;
+    template <typename T>
     void                    registerLattice(const unsigned int address,
                                             const unsigned int Ls = 1);
     template <typename T>
     void                    registerLattice(const std::string name,
                                             const unsigned int Ls = 1);
+    template <typename T>
+    void                    setObject(const unsigned int address, T *object);
+    template <typename T>
+    void                    setObject(const std::string name, T *object);
+    template <typename T>
+    T *                     getObject(const unsigned int address) const;
+    template <typename T>
+    T *                     getObject(const std::string name) const;
+    template <typename T>
+    T *                     createLattice(const unsigned int address);
+    template <typename T>
+    T *                     createLattice(const std::string name);
     unsigned int            getObjectAddress(const std::string name) const;
     std::string             getObjectName(const unsigned int address) const;
+    std::string             getObjectType(const unsigned int address) const;
+    std::string             getObjectType(const std::string name) const;
     unsigned int            getObjectSize(const unsigned int address) const;
     unsigned int            getObjectSize(const std::string name) const;
     unsigned int            getObjectLs(const unsigned int address) const;
@@ -167,11 +190,8 @@ private:
     // random number generator
     RngPt                                  rng4d_;
     // module and related maps
-    std::vector<ModPt>                     module_;
-    std::vector<std::string>               moduleType_;
-    std::vector<std::string>               moduleName_;
+    std::vector<ModuleInfo>                module_;
     std::map<std::string, unsigned int>    moduleAddress_;
-    std::vector<std::vector<unsigned int>> moduleInput_;
     // lattice store
     std::map<unsigned int, LatticePt>      lattice_;
     // fermion matrix store
@@ -179,18 +199,37 @@ private:
     // solver store & solver/action map
     std::map<unsigned int, Solver>         solver_;
     std::map<std::string, std::string>     solverAction_;
-    // object register
+    // object store
     std::vector<ObjInfo>                   object_;
-    std::vector<std::string>               objectName_;
     std::map<std::string, unsigned int>    objectAddress_;
-    std::vector<int>                       objectModule_;
-    std::vector<std::set<unsigned int>>    owners_;
-    std::vector<std::set<unsigned int>>    properties_;
 };
 
 /******************************************************************************
  *                        template implementation                             *
  ******************************************************************************/
+template <typename T>
+Holder<T>::Holder(T *pt)
+: objPt_(pt)
+{}
+
+template <typename T>
+T & Holder<T>::get(void) const
+{
+    return &objPt_.get();
+}
+
+template <typename T>
+T * Holder<T>::getPt(void) const
+{
+    return objPt_.get();
+}
+
+template <typename T>
+void Holder<T>::reset(T *pt)
+{
+    objPt_.reset(pt);
+}
+
 template <typename M>
 M * Environment::getModule(const unsigned int address) const
 {
@@ -200,9 +239,9 @@ M * Environment::getModule(const unsigned int address) const
     }
     else
     {
-        HADRON_ERROR("module '" + moduleName_[address] + "' does not have type "
-                     + typeName<M>() + "(object type: "
-                     + typeName(*module_.at(address).get()) + ")");
+        HADRON_ERROR("module '" + module_[address].name
+                     + "' does not have type " + typeid(M).name()
+                     + "(object type: " + getModuleType(address) + ")");
     }
 }
 
@@ -219,55 +258,92 @@ unsigned int Environment::lattice4dSize(void) const
 }
 
 template <typename T>
-T * Environment::create(const std::string name)
-{
-    auto           i = getObjectAddress(name);
-    GridCartesian *g = getGrid(getObjectLs(i));
-    
-    lattice_[i].reset(new T(g));
-
-    return dynamic_cast<T *>(lattice_[i].get());
-}
-
-template <typename T>
-T * Environment::get(const std::string name) const
-{
-    if (hasLattice(name))
-    {
-        auto i = getObjectAddress(name);
-        
-        if (auto pt = dynamic_cast<T *>(lattice_.at(i).get()))
-        {
-            return pt;
-        }
-        else
-        {
-            HADRON_ERROR("object '" + name + "' does not have type "
-                         + typeName<T>() + "(object type: "
-                         + typeName(*lattice_.at(i).get()) + ")");
-        }
-    }
-    else
-    {
-        HADRON_ERROR("no lattice with name '" + name + "'");
-        
-        return nullptr;
-    }
-}
-
-template <typename T>
 void Environment::registerLattice(const unsigned int address,
                                   const unsigned int Ls)
 {
     createGrid(Ls);
-    registerObject(address, Ls*lattice4dSize<T>());
+    registerObject(address, Ls*lattice4dSize<T>(), Ls);
 }
 
 template <typename T>
 void Environment::registerLattice(const std::string name, const unsigned int Ls)
 {
     createGrid(Ls);
-    registerObject(name, Ls*lattice4dSize<T>());
+    registerObject(name, Ls*lattice4dSize<T>(), Ls);
+}
+
+template <typename T>
+void Environment::setObject(const unsigned int address, T *object)
+{
+    if (hasRegisteredObject(address))
+    {
+        object_[address].data.reset(new Holder<T>(object));
+        object_[address].type = &typeid(T);
+    }
+    else if (hasObject(address))
+    {
+        HADRON_ERROR("object with address " + std::to_string(address) +
+                     " exists but is not registered");
+    }
+    else
+    {
+        HADRON_ERROR("no object with address " + std::to_string(address));
+    }
+}
+
+template <typename T>
+void Environment::setObject(const std::string name, T *object)
+{
+    setObject(getObjectAddress(name), object);
+}
+
+template <typename T>
+T * Environment::getObject(const unsigned int address) const
+{
+    if (hasRegisteredObject(address))
+    {
+        if (auto h = dynamic_cast<Holder<T> *>(object_[address].data.get()))
+        {
+            return h->getPt();
+        }
+        else
+        {
+            HADRON_ERROR("object with address " + std::to_string(address) +
+                         " does not have type '" + typeid(T).name() +
+                         "' (has type '" + getObjectType(address) + "')");
+        }
+    }
+    else if (hasObject(address))
+    {
+        HADRON_ERROR("object with address " + std::to_string(address) +
+                     " exists but is not registered");
+    }
+    else
+    {
+        HADRON_ERROR("no object with address " + std::to_string(address));
+    }
+}
+
+template <typename T>
+T * Environment::getObject(const std::string name) const
+{
+    return getObject<T>(getObjectAddress(name));
+}
+
+template <typename T>
+T * Environment::createLattice(const unsigned int address)
+{
+    GridCartesian *g = getGrid(getObjectLs(address));
+    
+    setObject(address, new T(g));
+    
+    return getObject<T>(address);
+}
+
+template <typename T>
+T * Environment::createLattice(const std::string name)
+{
+    return createLattice<T>(getObjectAddress(name));
 }
 
 END_HADRONS_NAMESPACE

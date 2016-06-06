@@ -56,6 +56,10 @@ static mod##ModuleRegistrar mod##ModuleRegistrarInstance;
 class ModuleBase
 {
 public:
+    // convenient type shortcuts
+    typedef Environment::FMat   FMat;
+    typedef Environment::Solver Solver;
+public:
     // constructor
     ModuleBase(const std::string name);
     // destructor
@@ -99,7 +103,19 @@ private:
 };
 
 // no parameter type
-typedef Serializable NoPar;
+class NoPar {};
+
+template <>
+class Module<NoPar>: public ModuleBase
+{
+public:
+    // constructor
+    Module(const std::string name): ModuleBase(name) {};
+    // destructor
+    virtual ~Module(void) = default;
+    // parse parameters (do nothing)
+    virtual void parseParameters(XmlReader &reader, const std::string name) {};
+};
 
 /******************************************************************************
  *                           Template implementation                          *

@@ -57,7 +57,7 @@ std::vector<std::string> MQuark::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void MQuark::setup(void)
 {
-    Ls_ = env().getObjectLs(env().getSolverAction(par().solver));
+    Ls_ = env().getObjectLs(par().solver);
     env().registerLattice<LatticePropagator>(getName());
     if (Ls_ > 1)
     {
@@ -74,11 +74,12 @@ void MQuark::execute(void)
     
     LOG(Message) << "Computing quark propagator '" << getName() << "'"
                  << std::endl;
-    LatticePropagator &prop    = *env().create<LatticePropagator>(propName);
-    LatticePropagator &fullSrc = *env().get<LatticePropagator>(par().source);
+    LatticePropagator   &prop    = *env().createLattice<LatticePropagator>(propName);
+    LatticePropagator   &fullSrc = *env().getObject<LatticePropagator>(par().source);
+    Environment::Solver &solver  = *env().getObject<Environment::Solver>(par().solver);
     if (Ls_ > 1)
     {
-        env().create<LatticePropagator>(getName());
+        env().createLattice<LatticePropagator>(getName());
     }
 
     LOG(Message) << "Inverting using solver '" << par().solver
@@ -86,6 +87,8 @@ void MQuark::execute(void)
     for (unsigned int s = 0; s < Ns; ++s)
     for (unsigned int c = 0; c < Nc; ++c)
     {
+        LOG(Message) << "Inversion for spin= " << s << ", color= " << c
+                     << std::endl;
         // source conversion for 4D sources
         if (!env().isObject5d(par().source))
         {
@@ -116,12 +119,12 @@ void MQuark::execute(void)
             }
         }
         sol = zero;
-        env().callSolver(par().solver, sol, source);
+        solver(sol, source);
         FermToProp(prop, sol, s, c);
         // create 4D propagators from 5D one if necessary
         if (Ls_ > 1)
         {
-            LatticePropagator &p4d = *env().get<LatticePropagator>(getName());
+            LatticePropagator &p4d = *env().getObject<LatticePropagator>(getName());
             
             axpby_ssp_pminus(sol, 0., sol, 1., sol, 0, 0);
             axpby_ssp_pplus(sol, 0., sol, 1., sol, 0, Ls_-1);

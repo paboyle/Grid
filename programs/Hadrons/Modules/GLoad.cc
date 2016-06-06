@@ -68,7 +68,7 @@ void GLoad::execute(void)
     
     LOG(Message) << "Loading NERSC configuration from file '" << fileName
                  << "'" << std::endl;
-    LatticeGaugeField &U = *env().create<LatticeGaugeField>(getName());
+    LatticeGaugeField &U = *env().createLattice<LatticeGaugeField>(getName());
     NerscIO::readConfiguration(U, header, fileName);
     LOG(Message) << "NERSC header:" << std::endl;
     dump_nersc_header(header, LOG(Message));

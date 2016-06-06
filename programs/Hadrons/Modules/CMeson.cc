@@ -62,8 +62,8 @@ void CMeson::execute(void)
                  << std::endl;
     
     XmlWriter             writer(par().output);
-    LatticePropagator     &q1 = *env().get<LatticePropagator>(par().q1);
-    LatticePropagator     &q2 = *env().get<LatticePropagator>(par().q2);
+    LatticePropagator     &q1 = *env().getObject<LatticePropagator>(par().q1);
+    LatticePropagator     &q2 = *env().getObject<LatticePropagator>(par().q2);
     LatticeComplex        c(env().getGrid());
     SpinMatrix            g[Ns*Ns], g5;
     std::vector<TComplex> buf;

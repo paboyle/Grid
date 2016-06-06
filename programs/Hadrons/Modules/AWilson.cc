@@ -65,13 +65,11 @@ void AWilson::setup(void)
 // execution ///////////////////////////////////////////////////////////////////
 void AWilson::execute()
 {
-    auto         &U      = *env().get<LatticeGaugeField>(par().gauge);
-    auto         &grid   = *env().getGrid();
-    auto         &gridRb = *env().getRbGrid();
-    auto         fMatPt  = new WilsonFermionR(U, grid, gridRb, par().mass);
-    unsigned int size;
-    
     LOG(Message) << "Setting up Wilson fermion matrix with m= " << par().mass
                  << " using gauge field '" << par().gauge << "'" << std::endl;
-    env().addFermionMatrix(getName(), fMatPt);
+    auto &U      = *env().getObject<LatticeGaugeField>(par().gauge);
+    auto &grid   = *env().getGrid();
+    auto &gridRb = *env().getRbGrid();
+    FMat *fMatPt = new WilsonFermionR(U, grid, gridRb, par().mass);
+    env().setObject(getName(), fMatPt);
 }

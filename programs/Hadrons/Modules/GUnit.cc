@@ -61,6 +61,6 @@ void GUnit::setup(void)
 void GUnit::execute(void)
 {
     LOG(Message) << "Creating unit gauge configuration" << std::endl;
-    LatticeGaugeField &U = *env().create<LatticeGaugeField>(getName());
+    LatticeGaugeField &U = *env().createLattice<LatticeGaugeField>(getName());
     SU3::ColdConfiguration(*env().get4dRng(), U);
 }

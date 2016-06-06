@@ -77,7 +77,7 @@ void SrcZ2::execute(void)
         LOG(Message) << "Generating Z_2 band for " << par().tA << " <= t <= "
                      << par().tB << std::endl;
     }
-    LatticePropagator &src = *env().create<LatticePropagator>(getName());
+    LatticePropagator &src = *env().createLattice<LatticePropagator>(getName());
     LatticeCoordinate(t, Tp);
     bernoulli(*env().get4dRng(), eta);
     eta = (2.*eta - shift)*(1./::sqrt(2.));

@@ -111,6 +111,18 @@ std::string typeName(void)
     return name;
 }
 
+template <typename T>
+const std::type_info * typeIdPt(const T &x)
+{
+    return &typeid(x);
+}
+
+template <typename T>
+const std::type_info * typeName(void)
+{
+    return &typeid(T);
+}
+
 END_HADRONS_NAMESPACE
 
 #endif // Hadrons_Global_hpp_

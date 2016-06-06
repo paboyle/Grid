@@ -65,19 +65,17 @@ void ADWF::setup(void)
 // execution ///////////////////////////////////////////////////////////////////
 void ADWF::execute(void)
 {
-    env().createGrid(par().Ls);
-    
-    auto         &U   = *env().get<LatticeGaugeField>(par().gauge);
-    auto         &g4   = *env().getGrid();
-    auto         &grb4 = *env().getRbGrid();
-    auto         &g5   = *env().getGrid(par().Ls);
-    auto         &grb5 = *env().getRbGrid(par().Ls);
-    auto         fMatPt = new DomainWallFermionR(U, g5, grb5, g4, grb4,
-                                                 par().mass, par().M5);
-    
     LOG(Message) << "Setting up domain wall fermion matrix with m= "
                  << par().mass << ", M5= " << par().M5 << " and Ls= "
                  << par().Ls << " using gauge field '" << par().gauge << "'"
                  << std::endl;
-    env().addFermionMatrix(getName(), fMatPt);
+    env().createGrid(par().Ls);
+    auto &U      = *env().getObject<LatticeGaugeField>(par().gauge);
+    auto &g4     = *env().getGrid();
+    auto &grb4   = *env().getRbGrid();
+    auto &g5     = *env().getGrid(par().Ls);
+    auto &grb5   = *env().getRbGrid(par().Ls);
+    FMat *fMatPt = new DomainWallFermionR(U, g5, grb5, g4, grb4, par().mass,
+                                          par().M5);
+    env().setObject(getName(), fMatPt);
 }

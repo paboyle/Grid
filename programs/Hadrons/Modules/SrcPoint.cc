@@ -67,7 +67,7 @@ void SrcPoint::execute(void)
     
     LOG(Message) << "Creating point source at position [" << par().position
                  << "]" << std::endl;
-    LatticePropagator &src = *env().create<LatticePropagator>(getName());
+    LatticePropagator &src = *env().createLattice<LatticePropagator>(getName());
     id  = 1.;
     src = zero;
     pokeSite(id, src, position);

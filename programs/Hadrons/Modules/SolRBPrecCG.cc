@@ -57,15 +57,16 @@ std::vector<std::string> SolRBPrecCG::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void SolRBPrecCG::setup(void)
 {
-    env().registerObject(getName(), 0);
+    auto Ls = env().getObjectLs(par().action);
+    
+    env().registerObject(getName(), 0, Ls);
     env().addOwnership(getName(), par().action);
-    env().setSolverAction(getName(), par().action);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 void SolRBPrecCG::execute(void)
 {
-    auto &mat   = *(env().getFermionMatrix(par().action));
+    auto &mat   = *(env().getObject<Environment::FMat>(par().action));
     auto solver = [&mat, this](LatticeFermion &sol,
                                const LatticeFermion &source)
     {
@@ -78,5 +79,5 @@ void SolRBPrecCG::execute(void)
     LOG(Message) << "setting up Schur red-black preconditioned CG for"
                  << " action '" << par().action << "' with residual "
                  << par().residual << std::endl;
-    env().addSolver(getName(), solver);
+    env().setObject(getName(), new Environment::Solver(solver));
 }
