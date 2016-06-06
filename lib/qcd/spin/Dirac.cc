@@ -60,6 +60,31 @@ namespace Grid {
       "-Gamma5  ",
       "         "
     };
+    
+    SpinMatrix makeGammaProd(const unsigned int i)
+    {
+      SpinMatrix g;
+      
+      g = 1.;
+      if (i & 0x1)
+      {
+        g = g*Gamma(Gamma::GammaMatrix::GammaX);
+      }
+      if (i & 0x2)
+      {
+        g = g*Gamma(Gamma::GammaMatrix::GammaY);
+      }
+      if (i & 0x4)
+      {
+        g = g*Gamma(Gamma::GammaMatrix::GammaZ);
+      }
+      if (i & 0x8)
+      {
+        g = g*Gamma(Gamma::GammaMatrix::GammaT);
+      }
+      
+      return g;
+    }
 
     //    void sprojMul( vHalfSpinColourVector &out,vColourMatrix &u, vSpinColourVector &in){
     //      vHalfSpinColourVector hspin;

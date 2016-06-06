@@ -49,6 +49,24 @@ namespace Grid {
     return v;
   }
   
+  // output to streams for vectors
+  template < class T >
+  inline std::ostream & operator<<(std::ostream &os, const std::vector<T> &v)
+  {
+    os << "[";
+    for (auto &x: v)
+    {
+      os << x << " ";
+    }
+    if (v.size() > 0)
+    {
+      os << "\b";
+    }
+    os << "]";
+    
+    return os;
+  }
+  
   class Serializable {};
   
   // static polymorphism implemented using CRTP idiom
@@ -152,23 +170,6 @@ namespace Grid {
   inline void read(Reader<T> &r, const std::string &s, U &output)
   {
     r.read(s, output);
-  }
-  
-  template < class T >
-  inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
-  {
-    os << "[";
-    for (auto &x: v)
-    {
-      os << x << " ";
-    }
-    if (v.size() > 0)
-    {
-      os << "\b";
-    }
-    os << "]";
-    
-    return os;
   }
   
   // Writer template implementation ////////////////////////////////////////////

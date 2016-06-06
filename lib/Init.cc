@@ -144,6 +144,10 @@ void GridParseLayout(char **argv,int argc,
   }
   if( GridCmdOptionExists(argv,argv+argc,"--threads") ){
     std::vector<int> ompthreads(0);
+#ifndef GRID_OMP
+    std::cout << GridLogWarning << "'--threads' option used but Grid was"
+              << " not compiled with thread support" << std::endl;
+#endif
     arg= GridCmdOptionPayload(argv,argv+argc,"--threads");
     GridCmdOptionIntVector(arg,ompthreads);
     assert(ompthreads.size()==1);
@@ -187,9 +191,10 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"--debug-stdout  : print stdout from EVERY node"<<std::endl;    
     std::cout<<GridLogMessage<<"--decomposition : report on default omp,mpi and simd decomposition"<<std::endl;    
     std::cout<<GridLogMessage<<"--mpi n.n.n.n   : default MPI decomposition"<<std::endl;    
-    std::cout<<GridLogMessage<<"--omp n         : default number of OMP threads"<<std::endl;    
+    std::cout<<GridLogMessage<<"--threads n     : default number of OMP threads"<<std::endl;
     std::cout<<GridLogMessage<<"--grid n.n.n.n  : default Grid size"<<std::endl;    
-    std::cout<<GridLogMessage<<"--log list      : comma separted list of streams from Error,Warning,Message,Performance,Iterative,Integrator,Debug"<<std::endl;    
+    std::cout<<GridLogMessage<<"--log list      : comma separted list of streams from Error,Warning,Message,Performance,Iterative,Integrator,Debug"<<std::endl;
+    exit(EXIT_SUCCESS);
   }
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--log") ){
