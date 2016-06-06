@@ -92,11 +92,24 @@ void WilsonKernels<DomainWallRedBlack5dImplF>::DiracOptAsmDhopSite(StencilImpl &
 
 #endif
 
-template class WilsonKernels<WilsonImplF>;		
-template class WilsonKernels<WilsonImplD>; 
-template class WilsonKernels<GparityWilsonImplF>;
-template class WilsonKernels<GparityWilsonImplD>;
-template class WilsonKernels<DomainWallRedBlack5dImplF>;
-template class WilsonKernels<DomainWallRedBlack5dImplD>;
+template class WilsonKernels<WilsonImplF>::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U,
+							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							       int ss,int sU,const FermionField &in, FermionField &out);		
+
+template class WilsonKernels<WilsonImplD>::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U, 
+							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							       int ss,int sU,const FermionField &in, FermionField &out);		
+template class WilsonKernels<GparityWilsonImplF>::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U, 
+							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							       int ss,int sU,const FermionField &in, FermionField &out);		
+template class WilsonKernels<GparityWilsonImplD>::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U, 
+							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							       int ss,int sU,const FermionField &in, FermionField &out);		
+template class WilsonKernels<DomainWallRedBlack5dImplF>::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U, 
+							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							       int ss,int sU,const FermionField &in, FermionField &out);		
+template class WilsonKernels<DomainWallRedBlack5dImplD>::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U, 
+							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							       int ss,int sU,const FermionField &in, FermionField &out);		
 }}
 
