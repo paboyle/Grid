@@ -69,9 +69,11 @@ int main (int argc, char ** argv)
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
+  std::cout << GridLogMessage << "Making s innermost grids"<<std::endl;
   GridCartesian         * sUGrid   = SpaceTimeGrid::makeFourDimDWFGrid(GridDefaultLatt(),GridDefaultMpi());
   GridRedBlackCartesian * sUrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(sUGrid);
   GridCartesian         * sFGrid   = SpaceTimeGrid::makeFiveDimDWFGrid(Ls,UGrid);
+  std::cout << GridLogMessage << "Making s innermost rb grids"<<std::endl;
   GridRedBlackCartesian * sFrbGrid = SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(Ls,UGrid);
 
   std::vector<int> seeds4({1,2,3,4});
@@ -131,7 +133,7 @@ int main (int argc, char ** argv)
   
   RealD NP = UGrid->_Nprocessors;
 
-  for(int doasm=1;doasm<2;doasm++){
+  for(int doasm=0;doasm<1;doasm++){
 
     QCD::WilsonKernelsStatic::AsmOpt=doasm;
 
@@ -139,7 +141,7 @@ int main (int argc, char ** argv)
   
   std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
   int ncall =50;
-  if (0) {
+  if (1) {
 
     double t0=usecond();
     for(int i=0;i<ncall;i++){
@@ -160,7 +162,7 @@ int main (int argc, char ** argv)
     //    Dw.Report();
   }
 
-  if (1)
+  if (0)
   {
     typedef WilsonFermion5D<DomainWallRedBlack5dImplF> WilsonFermion5DF;
     LatticeFermionF ssrc(sFGrid);

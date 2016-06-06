@@ -175,7 +175,14 @@ public:
 	//
 	// If Ls vectorised, this must still be the case; e.g. 
 	// layout == 8 , require _rdimensions[d] >= 2;
-	if ( simd_layout[d]>1 ) assert((_rdimensions[d]&0x1)==0); 
+	//	std::cout << GridLogMessage << " dimension "<<d<< " layout "<< _simd_layout[d] <<" ldimension "<<_ldimensions[d]<<std::endl;
+	if ( _simd_layout[d]>1 ) {
+	  if ( _rdimensions[d]&0x1 ) { 
+	    std::cout << GridLogMessage << " dimension "<<d<< " bad layout "<<
+	      _simd_layout[d] << " " << _ldimensions[d] << std::endl;
+	    //	    assert(0);
+	  }
+	}
 
 	_osites *= _rdimensions[d];
 	_isites *= _simd_layout[d];
