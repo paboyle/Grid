@@ -103,9 +103,9 @@ void LebesgueOrder::IterateI(int ND,
     } else {
       for(int d=0;d<ND;d++){
 	x[d]=xi[d]+xo[d];
-	std::cout << x[d]<<" ";
+//	std::cout << x[d]<<" ";
       }
-      std::cout << "\n";
+//      std::cout << "\n";
       IndexInteger index;
       Lexicographic::IndexFromCoor(x,index,grid->_rdimensions);
       _LebesgueReorder.push_back(index);
