@@ -71,7 +71,6 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << "Making s innermost grids"<<std::endl;
   GridCartesian         * sUGrid   = SpaceTimeGrid::makeFourDimDWFGrid(GridDefaultLatt(),GridDefaultMpi());
-  GridRedBlackCartesian * sUrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(sUGrid);
   GridCartesian         * sFGrid   = SpaceTimeGrid::makeFiveDimDWFGrid(Ls,UGrid);
   std::cout << GridLogMessage << "Making s innermost rb grids"<<std::endl;
   GridRedBlackCartesian * sFrbGrid = SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(Ls,UGrid);
@@ -162,13 +161,13 @@ int main (int argc, char ** argv)
     //    Dw.Report();
   }
 
-  if (0)
+  if (1)
   {
     typedef WilsonFermion5D<DomainWallRedBlack5dImplF> WilsonFermion5DF;
     LatticeFermionF ssrc(sFGrid);
     LatticeFermionF sref(sFGrid);
     LatticeFermionF sresult(sFGrid);
-    WilsonFermion5DF sDw(1,Umu,*sFGrid,*sFrbGrid,*sUGrid,*sUrbGrid,M5,params);
+    WilsonFermion5DF sDw(1,Umu,*sFGrid,*sFrbGrid,*sUGrid,M5,params);
   
     for(int x=0;x<latt4[0];x++){
     for(int y=0;y<latt4[1];y++){
@@ -196,7 +195,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NP<<std::endl;
     //  sDw.Report();
   
-    if(1){
+    if(0){
       for(int i=0;i< PerformanceCounter::NumTypes(); i++ ){
 	sDw.Dhop(ssrc,sresult,0);
 	PerformanceCounter Counter(i);
@@ -225,6 +224,53 @@ int main (int argc, char ** argv)
       //      std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" "<<simd<<std::endl;
     }}}}}
     std::cout<<" difference between normal and simd is "<<sum<<std::endl;
+
+
+    if (1) {
+
+      LatticeFermionF sr_eo(sFGrid);
+      LatticeFermionF serr(sFGrid);
+
+      LatticeFermion ssrc_e (sFrbGrid);
+      LatticeFermion ssrc_o (sFrbGrid);
+      LatticeFermion sr_e   (sFrbGrid);
+      LatticeFermion sr_o   (sFrbGrid);
+
+      pickCheckerboard(Even,ssrc_e,ssrc);
+      pickCheckerboard(Odd,ssrc_o,ssrc);
+
+      setCheckerboard(sr_eo,ssrc_o);
+      setCheckerboard(sr_eo,ssrc_e);
+      serr = sr_eo-ssrc; 
+      std::cout<<GridLogMessage << "EO src norm diff   "<< norm2(serr)<<std::endl;
+
+      sr_e = zero;
+      sr_o = zero;
+
+      double t0=usecond();
+      for(int i=0;i<ncall;i++){
+	sDw.DhopEO(ssrc_o,sr_e,DaggerNo);
+      }
+      double t1=usecond();
+
+      double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
+      double flops=(1344.0*volume*ncall)/2;
+
+      std::cout<<GridLogMessage << "sDeo mflop/s =   "<< flops/(t1-t0)<<std::endl;
+      std::cout<<GridLogMessage << "sDeo mflop/s per node   "<< flops/(t1-t0)/NP<<std::endl;
+
+      sDw.DhopEO(ssrc_o,sr_e,DaggerNo);
+      sDw.DhopOE(ssrc_e,sr_o,DaggerNo);
+      sDw.Dhop  (ssrc  ,sresult,DaggerNo);
+
+      pickCheckerboard(Even,ssrc_e,sresult);
+      pickCheckerboard(Odd ,ssrc_o,sresult);
+      ssrc_e = ssrc_e - sr_e;
+      std::cout<<GridLogMessage << "sE norm diff   "<< norm2(ssrc_e)<<std::endl;
+      ssrc_o = ssrc_o - sr_o;
+      std::cout<<GridLogMessage << "sO norm diff   "<< norm2(ssrc_o)<<std::endl;
+    }
+
 
   }
 

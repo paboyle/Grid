@@ -134,7 +134,6 @@ namespace Grid {
 		      GridCartesian         &FiveDimGrid,
 		      GridRedBlackCartesian &FiveDimRedBlackGrid,
 		      GridCartesian         &FourDimGrid,
-		      GridRedBlackCartesian &FourDimRedBlackGrid,
 		      double _M5,const ImplParams &p= ImplParams());
 
       // DoubleStore
