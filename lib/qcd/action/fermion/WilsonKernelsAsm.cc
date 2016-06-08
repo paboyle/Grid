@@ -68,7 +68,7 @@ int setupSigns(void ){
 static int signInit = setupSigns();
 
 #define MAYBEPERM(A,perm) if (perm) { A ; }
-#define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN(ptr)
+#define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN(ptr,pf)
 
 template<>
 void WilsonKernels<WilsonImplF>::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U,

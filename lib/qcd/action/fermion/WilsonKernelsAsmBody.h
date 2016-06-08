@@ -32,7 +32,6 @@
   ////////////////////////////////
   // Yp
   ////////////////////////////////
-
   basea = st.GetInfo(ptypea,locala,perma,Xp,ent,plocal); ent++;
   if ( localb ) {
     LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit

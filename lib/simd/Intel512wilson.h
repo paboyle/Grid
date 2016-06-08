@@ -593,11 +593,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   VPERM3(Chi_11,Chi_11)	\
   VPERM3(Chi_12,Chi_12) );
 
-#define MULT_ADDSUB_2SPIN1(ptr)  \
-           LOAD64(%r8,ptr)                      
 
-#define MULT_ADDSUB_2SPIN(ptr)					\
+#define MULT_ADDSUB_2SPIN(ptr,pf)					\
   LOAD64(%r8,ptr)						\
+  LOAD64(%r9,pf)						\
 	   __asm__ (						\
 		    VSHUF(Chi_00,T1)				\
 	   VMOVIDUP(0,%r8,Z0 )					\
@@ -610,6 +609,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
            VMUL(Z1,T2,UChi_11)            VMOVIDUP(1,%r8,Z0 )	\
            VMUL(Z2,T1,UChi_02)            VMOVIDUP(4,%r8,Z1 )	\
            VMUL(Z2,T2,UChi_12)            VMOVIDUP(7,%r8,Z2 )	\
+	   VPREFETCHG(0,%r9)					   \
+	   VPREFETCHG(1,%r9)					   \
+	   VPREFETCHG(2,%r9)					   \
+	   VPREFETCHG(3,%r9)					   \
 	   /*18*/						\
            VMADDSUB(Z3,Chi_00,UChi_00)    VSHUF(Chi_01,T1)	\
            VMADDSUB(Z3,Chi_10,UChi_10)				\
@@ -617,6 +620,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
            VMADDSUB(Z4,Chi_10,UChi_11)    VSHUF(Chi_11,T2)	\
            VMADDSUB(Z5,Chi_00,UChi_02)    VMOVRDUP(4,%r8,Z4 )	\
            VMADDSUB(Z5,Chi_10,UChi_12)				\
+	   VPREFETCHG(4,%r9)					   \
+	   VPREFETCHG(5,%r9)					   \
+	   VPREFETCHG(6,%r9)					   \
+	   VPREFETCHG(7,%r9)					   \
 	   /*28*/						\
            VMADDSUB(Z0,T1,UChi_00)        VMOVRDUP(7,%r8,Z5 )	\
            VMADDSUB(Z0,T2,UChi_10)				\
@@ -638,6 +645,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
            VMADDSUB(Z1,T2,UChi_11)			      \
            VMADDSUB(Z2,T1,UChi_02)			      \
            VMADDSUB(Z2,T2,UChi_12)			      \
+	   VPREFETCHG(8,%r9)					   \
+	   VPREFETCHG(9,%r9)					   \
+	   VPREFETCHG(10,%r9)					   \
+	   VPREFETCHG(11,%r9)					   \
 	   /*55*/					      \
            VMADDSUB(Z3,Chi_02,UChi_00)			      \
            VMADDSUB(Z3,Chi_12,UChi_10)			      \
@@ -645,6 +656,15 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
            VMADDSUB(Z4,Chi_12,UChi_11)			      \
            VMADDSUB(Z5,Chi_02,UChi_02)			      \
            VMADDSUB(Z5,Chi_12,UChi_12)			      \
+	   VPREFETCHG(9,%r8)					   \
+	   VPREFETCHG(10,%r8)					   \
+	   VPREFETCHG(11,%r8)					   \
+	   VPREFETCHG(12,%r8)					   \
+	   VPREFETCHG(13,%r8)					   \
+	   VPREFETCHG(14,%r8)					   \
+	   VPREFETCHG(15,%r8)					   \
+	   VPREFETCHG(16,%r8)					   \
+	   VPREFETCHG(17,%r8)					   \
 	   /*61 insns*/							);
 
 
@@ -744,7 +764,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 
 #define Z6 Chi_00
-#define MULT_ADDSUB_2SPIN_NEW(ptr)  \
+#define MULT_ADDSUB_2SPIN_NEW(ptr,pf)			       \
   LOAD64(%r8,ptr)					       \
   __asm__ (							  \
    VSHUFMEM(0,%r8,Z0)					          \
