@@ -631,6 +631,18 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
            VMADDSUB(Z1,T2,UChi_11)				\
            VMADDSUB(Z2,T1,UChi_02)        VMOVIDUP(5,%r8,Z1 )	\
            VMADDSUB(Z2,T2,UChi_12)        VMOVIDUP(8,%r8,Z2 )	\
+	   VPREFETCH2(12,%r9)					   \
+	   VPREFETCH2(13,%r9)					   \
+	   VPREFETCH2(14,%r9)					   \
+	   VPREFETCH2(15,%r9)					   \
+	   VPREFETCH2(16,%r9)					   \
+	   VPREFETCH2(17,%r9)					   \
+	   VPREFETCH2(18,%r9)					   \
+	   VPREFETCH2(19,%r9)					   \
+	   VPREFETCH2(20,%r9)					   \
+	   VPREFETCH2(21,%r9)					   \
+	   VPREFETCH2(22,%r9)					   \
+	   VPREFETCH2(23,%r9)					   \
            /*38*/						\
            VMADDSUB(Z3,Chi_01,UChi_00)    VSHUF(Chi_02,T1)	\
            VMADDSUB(Z3,Chi_11,UChi_10)				\

@@ -95,11 +95,6 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
 
   // Allocate the required comms buffer
   ImportGauge(_Umu);
-  alltime=0;
-  commtime=0;
-  jointime=0;
-  dslashtime=0;
-  dslash1time=0;
 }  
 
 template<class Impl>
@@ -292,33 +287,6 @@ void WilsonFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
 
 
 template<class Impl>
-void WilsonFermion5D<Impl>::Report(void)
-{
-  return;
-#if 0
-  std::cout<<GridLogMessage << "******************** WilsonFermion"<<std::endl;
-  std::cout<<GridLogMessage << "Wilson5d      time "<<alltime <<" us"<<std::endl;
-  std::cout<<GridLogMessage << "HaloBegin     time "<<commtime <<" us"<<std::endl;
-  std::cout<<GridLogMessage << "Dslash        time "<<dslashtime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "Dslash1       time "<<dslash1time<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "HaloComplete  time "<<jointime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "******************** Stencil"<<std::endl;
-  std::cout<<GridLogMessage << "Stencil all gather      time "<<Stencil.halogtime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "Stencil nosplice gather time "<<Stencil.nosplicetime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "Stencil splice   gather time "<<Stencil.splicetime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "********************"<<std::endl;
-  std::cout<<GridLogMessage << "Stencil gather        "<<Stencil.gathertime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "Stencil gather simd   "<<Stencil.gathermtime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "Stencil merge  simd   "<<Stencil.mergetime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "Stencil spin   simd   "<<Stencil.spintime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "********************"<<std::endl;
-  std::cout<<GridLogMessage << "Stencil MB/s          "<<(double)Stencil.comms_bytes/Stencil.commtime<<std::endl;
-  std::cout<<GridLogMessage << "Stencil comm     time "<<Stencil.commtime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "Stencil join     time "<<Stencil.jointime<<" us"<<std::endl;
-  std::cout<<GridLogMessage << "********************"<<std::endl;
-#endif
-}
-template<class Impl>
 void WilsonFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
 				  const FermionField &A,
 				  const FermionField &B,
@@ -341,42 +309,28 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
 					 const FermionField &in, FermionField &out,int dag)
 {
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
-  alltime-=usecond();
   Compressor compressor(dag);
 
   int LLs = in._grid->_rdimensions[0];
   
-  commtime -=usecond();
   st.HaloExchange(in,compressor);
-  commtime +=usecond();
-
-  jointime -=usecond();
-  jointime +=usecond();
   
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
-  dslashtime -=usecond();
   if ( dag == DaggerYes ) {
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<U._grid->oSites();ss++){
-      for(int s=0;s<LLs;s++){
 	int sU=ss;
-	int sF=s+LLs*sU;
-	Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sF,sU,in,out);
-      }
+	int sF=LLs*sU;
+	Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sF,sU,LLs,1,in,out);
     }
   } else {
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<U._grid->oSites();ss++){
-      int sU=lo.Reorder(ss);
+      int sU=ss;
       int sF=LLs*sU;
-      for(int s=0;s<LLs;s++){
-	Kernels::DiracOptDhopSite(st,U,st.comm_buf,sF,sU,in,out);
-	sF++;
-      }
+      Kernels::DiracOptDhopSite(st,U,st.comm_buf,sF,sU,LLs,1,in,out);
     }
   }
-  dslashtime +=usecond();
-  alltime+=usecond();
 }
 
 

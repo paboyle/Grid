@@ -55,11 +55,11 @@ namespace Grid {
 
      void DiracOptDhopSite(StencilImpl &st,DoubledGaugeField &U,
 			   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-			   int sF,int sU,const FermionField &in, FermionField &out);
+			   int sF, int sU,int Ls, int Ns, const FermionField &in, FermionField &out);
       
      void DiracOptDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-			      int sF,int sU,const FermionField &in,FermionField &out);
+			      int sF,int sU,int Ls, int Ns, const FermionField &in,FermionField &out);
 
      void DiracOptDhopDir(StencilImpl &st,DoubledGaugeField &U,
 			  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
@@ -69,7 +69,7 @@ namespace Grid {
      // Specialised variants
      void DiracOptGenericDhopSite(StencilImpl &st,DoubledGaugeField &U,
 			   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-			   int sF,int sU,const FermionField &in, FermionField &out);
+			   int sF,int sU, const FermionField &in, FermionField &out);
       
      void DiracOptGenericDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
@@ -77,7 +77,7 @@ namespace Grid {
 
      void DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U,
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-			      int sF,int sU,const FermionField &in, FermionField &out);
+			      int sF,int sU,int Ls, int Ns, const FermionField &in, FermionField &out);
 
 
      void DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,

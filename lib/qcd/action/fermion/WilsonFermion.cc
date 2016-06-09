@@ -296,12 +296,12 @@ PARALLEL_FOR_LOOP
     if ( dag == DaggerYes ) {
 PARALLEL_FOR_LOOP
       for(int sss=0;sss<in._grid->oSites();sss++){
-	Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out);
+	Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sss,sss,1,1,in,out);
       }
     } else {
 PARALLEL_FOR_LOOP
       for(int sss=0;sss<in._grid->oSites();sss++){
-	Kernels::DiracOptDhopSite(st,U,st.comm_buf,sss,sss,in,out);
+	Kernels::DiracOptDhopSite(st,U,st.comm_buf,sss,sss,1,1,in,out);
       }
     }
   };

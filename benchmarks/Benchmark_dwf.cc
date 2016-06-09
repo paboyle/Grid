@@ -132,19 +132,21 @@ int main (int argc, char ** argv)
   
   RealD NP = UGrid->_Nprocessors;
 
-  for(int doasm=0;doasm<1;doasm++){
+  for(int doasm=1;doasm<2;doasm++){
 
     QCD::WilsonKernelsStatic::AsmOpt=doasm;
 
   DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,params);
   
   std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
-  int ncall =50;
+  int ncall =10;
   if (1) {
 
     double t0=usecond();
     for(int i=0;i<ncall;i++){
+      __SSC_START;
       Dw.Dhop(src,result,0);
+      __SSC_STOP;
     }
     double t1=usecond();
     

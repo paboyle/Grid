@@ -60,11 +60,7 @@ namespace Grid {
     public:
      INHERIT_IMPL_TYPES(Impl);
      typedef WilsonKernels<Impl> Kernels;
-     double alltime;
-     double jointime;
-     double commtime;
-     double dslashtime;
-     double dslash1time;
+
       ///////////////////////////////////////////////////////////////
       // Implement the abstract base
       ///////////////////////////////////////////////////////////////
@@ -139,7 +135,6 @@ namespace Grid {
       // DoubleStore
       void ImportGauge(const GaugeField &_Umu);
 
-      void Report(void);
       ///////////////////////////////////////////////////////////////
       // Data members require to support the functionality
       ///////////////////////////////////////////////////////////////

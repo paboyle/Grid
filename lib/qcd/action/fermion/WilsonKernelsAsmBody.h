@@ -2,19 +2,24 @@
   int locala,perma, ptypea;
   int localb,permb, ptypeb;
   uint64_t basea, baseb;
-
+  uint64_t basex;
   const uint64_t plocal =(uint64_t) & in._odata[0];
 
   //  vComplexF isigns[2] = { signs[0], signs[1] };
   vComplexF *isigns = &signs[0];
 
   MASK_REGS;
+
+  for(int site=0;site<Ns;site++) {
+  for(int s=0;s<Ls;s++) {
+
   ////////////////////////////////
   // Xp
   ////////////////////////////////
   int ent=ss*8;// 2*Ndim
   basea = st.GetInfo(ptypea,locala,perma,Xp,ent,plocal); ent++;
   baseb = st.GetInfo(ptypeb,localb,permb,Yp,ent,plocal); ent++;
+  basex = basea;
 
   if ( locala ) {
     LOAD64(%r10,isigns);
@@ -149,5 +154,8 @@
   TP_RECON_ACCUM;
 
   SAVE_RESULT(&out._odata[ss]);
-
+  ss++;
+  } 
+  sU++;
+  }
 }
