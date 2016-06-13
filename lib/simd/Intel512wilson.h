@@ -559,7 +559,21 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   VSUB(UChi_02,result_22,result_22)\
   VSUB(UChi_12,result_32,result_32) );
 
-//define PREFETCH_CHIMU(A) 
+#define PREFETCH_CHIMU(A) \
+  LOAD64(%r9,A)						\
+	   __asm__ (						\
+  VPREFETCHG(12,%r9)\
+  VPREFETCHG(13,%r9)\
+  VPREFETCHG(14,%r9)\
+  VPREFETCHG(15,%r9)\
+  VPREFETCHG(16,%r9)\
+  VPREFETCHG(17,%r9)\
+  VPREFETCHG(18,%r9)\
+  VPREFETCHG(19,%r9)\
+  VPREFETCHG(20,%r9)\
+  VPREFETCHG(21,%r9)\
+  VPREFETCHG(22,%r9)\
+  VPREFETCHG(23,%r9));
 
 #define PERMUTE_DIR0 __asm__ ( 	\
   VPERM0(Chi_00,Chi_00)	\
@@ -598,7 +612,16 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   LOAD64(%r8,ptr)						\
   LOAD64(%r9,pf)						\
 	   __asm__ (						\
-		    VSHUF(Chi_00,T1)				\
+	   VPREFETCH2(9,%r8)				   \
+	   VPREFETCH2(10,%r8)					   \
+	   VPREFETCH2(11,%r8)					   \
+	   VPREFETCH2(12,%r8)					   \
+	   VPREFETCH2(13,%r8)					   \
+	   VPREFETCH2(14,%r8)					   \
+	   VPREFETCH2(15,%r8)					   \
+	   VPREFETCH2(16,%r8)					   \
+	   VPREFETCH2(17,%r8)					   \
+	   VSHUF(Chi_00,T1)				\
 	   VMOVIDUP(0,%r8,Z0 )					\
            VMOVIDUP(3,%r8,Z1 )					\
            VMOVIDUP(6,%r8,Z2 )	          VSHUF(Chi_10,T2)		\
@@ -650,6 +673,15 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
            VMADDSUB(Z4,Chi_11,UChi_11)    VSHUF(Chi_12,T2)	\
            VMADDSUB(Z5,Chi_01,UChi_02)    VMOVRDUP(5,%r8,Z4 )	\
            VMADDSUB(Z5,Chi_11,UChi_12)				\
+	   VPREFETCHG(9,%r8)				   \
+	   VPREFETCHG(10,%r8)					   \
+	   VPREFETCHG(11,%r8)					   \
+	   VPREFETCHG(12,%r8)					   \
+	   VPREFETCHG(13,%r8)					   \
+	   VPREFETCHG(14,%r8)					   \
+	   VPREFETCHG(15,%r8)					   \
+	   VPREFETCHG(16,%r8)					   \
+	   VPREFETCHG(17,%r8)					   \
 	   /*48*/						\
            VMADDSUB(Z0,T1,UChi_00)        VMOVRDUP(8,%r8,Z5 ) \
            VMADDSUB(Z0,T2,UChi_10)			      \
@@ -668,15 +700,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
            VMADDSUB(Z4,Chi_12,UChi_11)			      \
            VMADDSUB(Z5,Chi_02,UChi_02)			      \
            VMADDSUB(Z5,Chi_12,UChi_12)			      \
-	   VPREFETCHG(9,%r8)					   \
-	   VPREFETCHG(10,%r8)					   \
-	   VPREFETCHG(11,%r8)					   \
-	   VPREFETCHG(12,%r8)					   \
-	   VPREFETCHG(13,%r8)					   \
-	   VPREFETCHG(14,%r8)					   \
-	   VPREFETCHG(15,%r8)					   \
-	   VPREFETCHG(16,%r8)					   \
-	   VPREFETCHG(17,%r8)					   \
 	   /*61 insns*/							);
 
 

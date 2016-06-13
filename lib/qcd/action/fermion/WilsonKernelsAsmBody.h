@@ -153,7 +153,10 @@
   LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
   TP_RECON_ACCUM;
 
+  PREFETCH_CHIMU(basex);
   SAVE_RESULT(&out._odata[ss]);
+
+  
   ss++;
   } 
   sU++;
