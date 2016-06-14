@@ -1,22 +1,11 @@
-#!/bin/bash
-
-while (( "$#" )); do
-
-echo $1
-
-cat > message  <<EOF
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: $1
+Source file: programs/Hadrons/ModuleFactory.hpp
 
 Copyright (C) 2015
 
-EOF
-
-git log $1 | grep Author | sort -u >> message
-
-cat >> message <<EOF
+Author: Antonin Portelli <antonin.portelli@me.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -36,14 +25,23 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-EOF
+#ifndef Hadrons_ModuleFactory_hpp_
+#define Hadrons_ModuleFactory_hpp_
 
-cat message > tmp.fil
-cat $1 >> tmp.fil
-cp tmp.fil $1
+#include <Hadrons/Global.hpp>
+#include <Hadrons/Factory.hpp>
+#include <Hadrons/Module.hpp>
 
-shift
+BEGIN_HADRONS_NAMESPACE
 
-done
+/******************************************************************************
+ *                            ModuleFactory                                   *
+ ******************************************************************************/
+class ModuleFactory: public Factory<ModuleBase>
+{
+    SINGLETON_DEFCTOR(ModuleFactory)
+};
 
+END_HADRONS_NAMESPACE
 
+#endif // Hadrons_ModuleFactory_hpp_

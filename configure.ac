@@ -287,6 +287,8 @@ AC_CONFIG_FILES(lib/Makefile)
 AC_CONFIG_FILES(tests/Makefile)
 AC_CONFIG_FILES(tests/qdpxx/Makefile)
 AC_CONFIG_FILES(benchmarks/Makefile)
+AC_CONFIG_FILES(programs/Makefile)
+AC_CONFIG_FILES(programs/Hadrons/Makefile)
 AC_OUTPUT
 
 
