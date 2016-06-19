@@ -559,22 +559,23 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   VSUB(UChi_02,result_22,result_22)\
   VSUB(UChi_12,result_32,result_32) );
 
-#define PREFETCH_CHIMU(A) \
+#define PREFETCH_CHIMU(A) 
+/*
   LOAD64(%r9,A)						\
 	   __asm__ (						\
-  VPREFETCHG(12,%r9)\
-  VPREFETCHG(13,%r9)\
-  VPREFETCHG(14,%r9)\
-  VPREFETCHG(15,%r9)\
-  VPREFETCHG(16,%r9)\
-  VPREFETCHG(17,%r9)\
-  VPREFETCHG(18,%r9)\
-  VPREFETCHG(19,%r9)\
-  VPREFETCHG(20,%r9)\
-  VPREFETCHG(21,%r9)\
-  VPREFETCHG(22,%r9)\
-  VPREFETCHG(23,%r9));
-
+  VPREFETCHG(0,%r9)\
+  VPREFETCHG(1,%r9)\
+  VPREFETCHG(2,%r9)\
+  VPREFETCHG(3,%r9)\
+  VPREFETCHG(4,%r9)\
+  VPREFETCHG(5,%r9)\
+  VPREFETCHG(6,%r9)\
+  VPREFETCHG(7,%r9)\
+  VPREFETCHG(8,%r9)\
+  VPREFETCHG(9,%r9)\
+  VPREFETCHG(10,%r9)\
+  VPREFETCHG(11,%r9));
+*/
 #define PERMUTE_DIR0 __asm__ ( 	\
   VPERM0(Chi_00,Chi_00)	\
   VPERM0(Chi_01,Chi_01)	\
@@ -612,8 +613,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   LOAD64(%r8,ptr)						\
   LOAD64(%r9,pf)						\
 	   __asm__ (						\
-	   VPREFETCH2(9,%r8)				   \
-	   VPREFETCH2(10,%r8)					   \
+	   VPREFETCH2(9,%r8)				   VPREFETCH2(10,%r8)					   \
 	   VPREFETCH2(11,%r8)					   \
 	   VPREFETCH2(12,%r8)					   \
 	   VPREFETCH2(13,%r8)					   \

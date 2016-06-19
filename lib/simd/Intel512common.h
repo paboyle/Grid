@@ -88,7 +88,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #define VPREFETCHG(O,A) "prefetcht0 "#O"*64("#A");\n" 
 #define VPREFETCH2(O,A) "prefetcht1 "#O"*64("#A");\n" 
+#define VPREFETCHP(O,A) "prefetcht1 "#O"*64("#A");\n" 
 #define VPREFETCHW(O,A) "prefetchwt1 "#O"*64("#A");\n" 
+#define VPREFETCHNTA(O,A) 
+#define VPREFETCH(O,A)    
+
 #define VEVICT(O,A)   
 
 //"vprefetche0 "#O"*64("#A");\n" "vprefetche1 ("#O"+12)*64("#A");\n"
@@ -124,8 +128,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define ZLOADf(OFF,PTR,ri,ir)  VLOADf(OFF,PTR,ir)  VSHUFf(ir,ri)
 #define ZLOADd(OFF,PTR,ri,ir)  VLOADd(OFF,PTR,ir)  VSHUFd(ir,ri)
 
-#define VPREFETCHNTA(O,A) 
-#define VPREFETCH(O,A)    
 
 #define VSTOREf(OFF,PTR,SRC)   "vmovaps " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
 #define VSTOREd(OFF,PTR,SRC)   "vmovapd " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
