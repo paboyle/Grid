@@ -1,5 +1,5 @@
 
-bin_PROGRAMS = Benchmark_comms Benchmark_dwf Benchmark_dwf_ntpf Benchmark_memory_asynch Benchmark_memory_bandwidth Benchmark_su3 Benchmark_wilson Benchmark_zmm
+bin_PROGRAMS = Benchmark_comms Benchmark_dwf Benchmark_dwf_ntpf Benchmark_dwf_sweep Benchmark_memory_asynch Benchmark_memory_bandwidth Benchmark_su3 Benchmark_wilson Benchmark_zmm
 
 
 Benchmark_comms_SOURCES=Benchmark_comms.cc
@@ -12,6 +12,10 @@ Benchmark_dwf_LDADD=-lGrid
 
 Benchmark_dwf_ntpf_SOURCES=Benchmark_dwf_ntpf.cc
 Benchmark_dwf_ntpf_LDADD=-lGrid
+
+
+Benchmark_dwf_sweep_SOURCES=Benchmark_dwf_sweep.cc
+Benchmark_dwf_sweep_LDADD=-lGrid
 
 
 Benchmark_memory_asynch_SOURCES=Benchmark_memory_asynch.cc
