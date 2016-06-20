@@ -165,11 +165,11 @@ int main (int argc, char ** argv)
 
   if (1)
   {
-    typedef WilsonFermion5D<DomainWallRedBlack5dImplF> WilsonFermion5DF;
-    LatticeFermionF ssrc(sFGrid);
-    LatticeFermionF sref(sFGrid);
-    LatticeFermionF sresult(sFGrid);
-    WilsonFermion5DF sDw(1,Umu,*sFGrid,*sFrbGrid,*sUGrid,M5,params);
+    typedef WilsonFermion5D<DomainWallRedBlack5dImplR> WilsonFermion5DR;
+    LatticeFermion ssrc(sFGrid);
+    LatticeFermion sref(sFGrid);
+    LatticeFermion sresult(sFGrid);
+    WilsonFermion5DR sDw(1,Umu,*sFGrid,*sFrbGrid,*sUGrid,M5,params);
   
     for(int x=0;x<latt4[0];x++){
     for(int y=0;y<latt4[1];y++){
@@ -177,7 +177,7 @@ int main (int argc, char ** argv)
     for(int t=0;t<latt4[3];t++){
     for(int s=0;s<Ls;s++){
       std::vector<int> site({s,x,y,z,t});
-      SpinColourVectorF tmp;
+      SpinColourVector tmp;
       peekSite(tmp,src,site);
       pokeSite(tmp,ssrc,site);
     }}}}}
@@ -217,7 +217,7 @@ int main (int argc, char ** argv)
     for(int t=0;t<latt4[3];t++){
     for(int s=0;s<Ls;s++){
       std::vector<int> site({s,x,y,z,t});
-      SpinColourVectorF normal, simd;
+      SpinColourVector normal, simd;
       peekSite(normal,result,site);
       peekSite(simd,sresult,site);
       sum=sum+norm2(normal-simd);
@@ -230,8 +230,8 @@ int main (int argc, char ** argv)
 
     if (1) {
 
-      LatticeFermionF sr_eo(sFGrid);
-      LatticeFermionF serr(sFGrid);
+      LatticeFermion sr_eo(sFGrid);
+      LatticeFermion serr(sFGrid);
 
       LatticeFermion ssrc_e (sFrbGrid);
       LatticeFermion ssrc_o (sFrbGrid);
