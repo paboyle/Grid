@@ -104,7 +104,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define LOAD_CHI(PTR)	 LOAD64(%r8,PTR) __asm__ ( LOAD_CHIi );
 #define SAVE_UCHI(PTR)	 SAVE_UCHIi(PTR)
 #define SAVE_CHI(PTR)	 SAVE_CHIi(PTR)
-#define SAVE_RESULT(PTR) SAVE_RESULTi(PTR)
+#define SAVE_RESULT(PT,R) SAVE_RESULTi(PT,R)
 
 #define LOAD_CHIMUi \
 	   LOAD_CHIMU01i	\
@@ -169,21 +169,22 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   VSTORE(5,%r8,Chi_12)				\
 						);
 
-#define SAVE_RESULTi(PTR)\
+#define SAVE_RESULTi(PTR,pf)			\
 	   LOAD64(%r8,PTR)			\
+	   LOAD64(%r9,pf)			\
   __asm__ (					\
-	   VSTORE(0,%r8,result_00)		\
-	   VSTORE(1,%r8,result_01)		\
-	   VSTORE(2,%r8,result_02)		\
-	   VSTORE(3,%r8,result_10)		\
-	   VSTORE(4,%r8,result_11)		\
-	   VSTORE(5,%r8,result_12)		\
-	   VSTORE(6,%r8,result_20)		\
-	   VSTORE(7,%r8,result_21)		\
-	   VSTORE(8,%r8,result_22)		\
-	   VSTORE(9,%r8,result_30)		\
-	   VSTORE(10,%r8,result_31)		\
-	   VSTORE(11,%r8,result_32) 		\
+	   VSTORE(0,%r8,result_00)	VPREFETCHG(0,%r9)	\
+	   VSTORE(1,%r8,result_01)	VPREFETCHG(1,%r9)	\
+	   VSTORE(2,%r8,result_02)	VPREFETCHG(2,%r9)	\
+	   VSTORE(3,%r8,result_10)	VPREFETCHG(3,%r9)	\
+	   VSTORE(4,%r8,result_11)	VPREFETCHG(4,%r9)	\
+	   VSTORE(5,%r8,result_12)	VPREFETCHG(5,%r9)	\
+	   VSTORE(6,%r8,result_20)	VPREFETCHG(6,%r9)	\
+	   VSTORE(7,%r8,result_21)	VPREFETCHG(7,%r9)	\
+	   VSTORE(8,%r8,result_22)	VPREFETCHG(8,%r9)	\
+	   VSTORE(9,%r8,result_30)	VPREFETCHG(9,%r9)	\
+	   VSTORE(10,%r8,result_31)	VPREFETCHG(10,%r9)	\
+	   VSTORE(11,%r8,result_32) 	VPREFETCHG(11,%r9)	\
 						);
 
 #define MULT_2SPIN_DIR_PFXP(A,p) MULT_2SPIN_PFXP(&U._odata[sU](A),p)
