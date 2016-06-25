@@ -29,6 +29,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define GRID_ASM_INTEL_COMMON_512_H
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// Peformance options
+////////////////////////////////////////////////////////////////////////////////////////////////////
+#define AVX512_PF_L1
+#undef  AVX512_PF_L2_LINEAR
+#undef  AVX512_PF_L2_TABLE
+#undef  AVX512_PF_L2_WRITE
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 // Opcodes common 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #define MASK_REGS \
@@ -88,10 +96,30 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define VMOVf(A,DEST)   "vmovaps  " #A ", " #DEST  ";\n"
 #define VMOVd(A,DEST)   "vmovapd  " #A ", " #DEST  ";\n"
 
+#ifdef AVX512_PF_L1
 #define VPREFETCHG(O,A) "prefetcht0 "#O"*64("#A");\n" 
+#else
+#define VPREFETCHG(O,A) 
+#endif
+
+#ifdef AVX512_PF_L2_LINEAR
 #define VPREFETCH2(O,A) "prefetcht1 "#O"*64("#A");\n" 
+#else
+#define VPREFETCH2(O,A) 
+#endif
+
+#ifdef AVX512_PF_L2_TABLE
 #define VPREFETCHP(O,A) "prefetcht1 "#O"*64("#A");\n" 
+#else
+#define VPREFETCHP(O,A) 
+#endif
+
+#ifdef AVX512_PF_L2_WRITE
 #define VPREFETCHW(O,A) "prefetchwt1 "#O"*64("#A");\n" 
+#else
+#define VPREFETCHW(O,A) 
+#endif
+
 #define VPREFETCHNTA(O,A) 
 #define VPREFETCH(O,A)    
 
