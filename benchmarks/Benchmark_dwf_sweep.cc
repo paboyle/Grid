@@ -68,10 +68,12 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "=========================================================================="<<std::endl;
 
   int Lmax=32;
+  int dmin=0;
   if ( getenv("LMAX") ) Lmax=atoi(getenv("LMAX"));
-  for (int L=8;L<Lmax;L*=2){
+  if ( getenv("DMIN") ) dmin=atoi(getenv("DMIN"));
+  for (int L=8;L<=Lmax;L*=2){
     std::vector<int> latt4(4,L);
-    for(int d=4;d>0;d--){
+    for(int d=4;d>dmin;d--){
       if ( d<=3 ) latt4[d]*=2;
       std::cout << GridLogMessage <<"\t";
       for(int d=0;d<Nd;d++){
@@ -170,7 +172,11 @@ void benchDw(std::vector<int> & latt4, int Ls, int threads,int report )
   Dw.Dhop(src,result,0);
   double t1=usecond();
 
+#ifdef TIMERS_OFF
+    int ncall =10;
+#else
   int ncall =1+(int) ((5.0*1000*1000)/(t1-t0));
+#endif
 
   if (ncall < 5 ) exit(0);
 
@@ -297,7 +303,11 @@ void benchsDw(std::vector<int> & latt4, int Ls, int threads, int report )
     sDw.Dhop(ssrc,sresult,0);
     double t1=usecond();
 
+#ifdef TIMERS_OFF
+    int ncall =10;
+#else 
     int ncall =1+(int) ((5.0*1000*1000)/(t1-t0));
+#endif
 
     PerformanceCounter Counter(8);
     Counter.Start();
@@ -340,7 +350,9 @@ void benchsDw(std::vector<int> & latt4, int Ls, int threads, int report )
     CounterSdw.Start();
     t0=usecond();
     for(int i=0;i<ncall;i++){
+      __SSC_START;
       sDw.DhopEO(ssrc_o,sr_e,DaggerNo);
+      __SSC_STOP;
     }
     t1=usecond();
     CounterSdw.Stop();

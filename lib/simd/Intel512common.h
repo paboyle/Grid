@@ -1,4 +1,4 @@
-    /*************************************************************************************
+   /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -36,6 +36,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
            "kmovw    %%eax, %%k6 \n"\
            "mov     $0x5555, %%eax \n"\
            "kmovw    %%eax, %%k7 \n" : : : "%eax");
+
+//#define label(B) __asm__ ( __func__ __LINE__ #B ":\n" );
 
 #define VZEROf(A)       "vpxorq " #A ","  #A "," #A ";\n"
 #define VZEROd(A)       "vpxorq " #A ","  #A "," #A ";\n"

@@ -1,7 +1,8 @@
 {
   int locala,perma, ptypea;
   int localb,permb, ptypeb;
-  uint64_t basea, baseb;
+  int localc,permc, ptypec;
+  uint64_t basea, baseb, basec;
   uint64_t basex;
   const uint64_t plocal =(uint64_t) & in._odata[0];
 
@@ -11,17 +12,25 @@
   MASK_REGS;
 
   for(int site=0;site<Ns;site++) {
-  int sU=lo.Reorder(ssU);  
+  int sU=lo.Reorder(ssU);
+
   for(int s=0;s<Ls;s++) {
-  ss=sU*Ls+s;
+  ss     =sU*Ls+s;
+
   ////////////////////////////////
   // Xp
   ////////////////////////////////
   int ent=ss*8;// 2*Ndim
   basea = st.GetInfo(ptypea,locala,perma,Xp,ent,plocal); ent++;
+  PREFETCH_CHIMU(basea);
   baseb = st.GetInfo(ptypeb,localb,permb,Yp,ent,plocal); ent++;
+  PREFETCH_CHIMU(baseb);
+  basec = st.GetInfo(ptypec,localc,permc,Zp,ent,plocal); ent++;
+  PREFETCH_CHIMU(basec);
+
   basex = basea;
 
+  label(FX(XP) );
   if ( locala ) {
     LOAD64(%r10,isigns);
     XM_PROJMEM(basea);
@@ -39,6 +48,8 @@
   // Yp
   ////////////////////////////////
   basea = st.GetInfo(ptypea,locala,perma,Xp,ent,plocal); ent++;
+  PREFETCH_CHIMU(basea);
+  label(FX(YP) );
   if ( localb ) {
     LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
     YM_PROJMEM(baseb);
@@ -47,7 +58,7 @@
     LOAD_CHI(baseb);
   }
   {
-    MULT_2SPIN_DIR_PFYP(Yp,basea);
+    MULT_2SPIN_DIR_PFYP(Yp,basec);
   }
   LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
   YM_RECON_ACCUM;
@@ -56,15 +67,17 @@
   // Zp
   ////////////////////////////////
   baseb = st.GetInfo(ptypeb,localb,permb,Yp,ent,plocal); ent++;
-  if ( locala ) {
+  PREFETCH_CHIMU(baseb);
+  label(FX(ZP) );
+  if ( localc ) {
     LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
-    ZM_PROJMEM(basea);
-    MAYBEPERM(PERMUTE_DIR1,perma);
+    ZM_PROJMEM(basec);
+    MAYBEPERM(PERMUTE_DIR1,permc);
   } else { 
-    LOAD_CHI(basea);
+    LOAD_CHI(basec);
   }
   {
-    MULT_2SPIN_DIR_PFZP(Zp,baseb);
+    MULT_2SPIN_DIR_PFZP(Zp,basea);
   }
   LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
   ZM_RECON_ACCUM;
@@ -72,16 +85,18 @@
   ////////////////////////////////
   // Tp
   ////////////////////////////////
-  basea = st.GetInfo(ptypea,locala,perma,Xp,ent,plocal); ent++;
-  if ( localb ) {
+  basec = st.GetInfo(ptypec,localc,permc,Xp,ent,plocal); ent++;
+  PREFETCH_CHIMU(basec);
+  label(FX(TP) );
+  if ( locala ) {
     LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
-    TM_PROJMEM(baseb);
-    MAYBEPERM(PERMUTE_DIR0,permb);
+    TM_PROJMEM(basea);
+    MAYBEPERM(PERMUTE_DIR0,perma);
   } else { 
-    LOAD_CHI(baseb);
+    LOAD_CHI(basea);
   }
   {
-    MULT_2SPIN_DIR_PFTP(Tp,basea);
+    MULT_2SPIN_DIR_PFTP(Tp,baseb);
   }
   LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
   TM_RECON_ACCUM;
@@ -89,16 +104,18 @@
   ////////////////////////////////
   // Xm
   ////////////////////////////////
-  baseb = st.GetInfo(ptypeb,localb,permb,Yp,ent,plocal); ent++;
-  if ( locala ) {
+  basea = st.GetInfo(ptypea,locala,perma,Yp,ent,plocal); ent++;
+  PREFETCH_CHIMU(basea);
+  label(FX(XM) );
+  if ( localb ) {
     LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
-    XP_PROJMEM(basea);
-    MAYBEPERM(PERMUTE_DIR3,perma);
+    XP_PROJMEM(baseb);
+    MAYBEPERM(PERMUTE_DIR3,permb);
   } else { 
-    LOAD_CHI(basea);
+    LOAD_CHI(baseb);
   }
   {
-    MULT_2SPIN_DIR_PFXM(Xm,baseb);
+    MULT_2SPIN_DIR_PFXM(Xm,basec);
   }
   LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
   XP_RECON_ACCUM;
@@ -106,13 +123,15 @@
   ////////////////////////////////
   // Ym
   ////////////////////////////////
-  basea = st.GetInfo(ptypea,locala,perma,Xp,ent,plocal); ent++;
-  if ( localb ) {
+  baseb = st.GetInfo(ptypeb,localb,permb,Xp,ent,plocal); ent++;
+  PREFETCH_CHIMU(baseb);
+  label(FX(YM) );
+  if ( localc ) {
     LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
-    YP_PROJMEM(baseb);
-    MAYBEPERM(PERMUTE_DIR2,permb);
+    YP_PROJMEM(basec);
+    MAYBEPERM(PERMUTE_DIR2,permc);
   } else { 
-    LOAD_CHI(baseb);
+    LOAD_CHI(basec);
   }
   {
     MULT_2SPIN_DIR_PFYM(Ym,basea);
@@ -123,7 +142,9 @@
   ////////////////////////////////
   // Zm
   ////////////////////////////////
-  baseb = st.GetInfo(ptypeb,localb,permb,Yp,ent,plocal); ent++;
+  basec = st.GetInfo(ptypec,localc,permc,Yp,ent,plocal); ent++;
+  PREFETCH_CHIMU(basec);
+  label(FX(ZM) );
   if ( locala ) {
     LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
     ZP_PROJMEM(basea);
@@ -141,6 +162,8 @@
   // Tm
   ////////////////////////////////
   basea = (uint64_t)&out._odata[ss];
+  PREFETCH_CHIMU(basea);
+  label(FX(TM) );
   if ( localb ) {
     LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
     TP_PROJMEM(baseb);
@@ -148,16 +171,17 @@
   } else { 
     LOAD_CHI(baseb);
   }
-  baseb = st.GetInfo(ptypeb,localb,permb,Yp,ent,plocal);
   {
-    MULT_2SPIN_DIR_PFTM(Tm,basea);
+    MULT_2SPIN_DIR_PFTM(Tm,basec);
   }
   LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
   TP_RECON_ACCUM;
 
-  SAVE_RESULT(&out._odata[ss],baseb);
-
-  } 
+  //  PREFETCH_CHIMU(basex);
+  label(FX(SAV) );
+  SAVE_RESULT(&out._odata[ss]);
+  
+  }
   ssU++;
   }
 }
