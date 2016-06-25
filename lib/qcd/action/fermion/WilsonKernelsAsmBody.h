@@ -2,7 +2,6 @@
   int locala,perma, ptypea;
   int localb,permb, ptypeb;
   uint64_t basea, baseb;
-  uint64_t basex;
   const uint64_t plocal =(uint64_t) & in._odata[0];
 
   //  vComplexF isigns[2] = { signs[0], signs[1] };
@@ -20,7 +19,6 @@
   int ent=ss*8;// 2*Ndim
   basea = st.GetInfo(ptypea,locala,perma,Xp,ent,plocal); ent++;
   baseb = st.GetInfo(ptypeb,localb,permb,Yp,ent,plocal); ent++;
-  basex = basea;
 
   if ( locala ) {
     LOAD64(%r10,isigns);
@@ -38,7 +36,7 @@
   ////////////////////////////////
   // Yp
   ////////////////////////////////
-  basea = st.GetInfo(ptypea,locala,perma,Xp,ent,plocal); ent++;
+  basea = st.GetInfo(ptypea,locala,perma,Zp,ent,plocal); ent++;
   if ( localb ) {
     LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
     YM_PROJMEM(baseb);
@@ -55,7 +53,7 @@
   ////////////////////////////////
   // Zp
   ////////////////////////////////
-  baseb = st.GetInfo(ptypeb,localb,permb,Yp,ent,plocal); ent++;
+  baseb = st.GetInfo(ptypeb,localb,permb,Tp,ent,plocal); ent++;
   if ( locala ) {
     LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
     ZM_PROJMEM(basea);
@@ -72,7 +70,7 @@
   ////////////////////////////////
   // Tp
   ////////////////////////////////
-  basea = st.GetInfo(ptypea,locala,perma,Xp,ent,plocal); ent++;
+  basea = st.GetInfo(ptypea,locala,perma,Xm,ent,plocal); ent++;
   if ( localb ) {
     LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
     TM_PROJMEM(baseb);
@@ -89,7 +87,7 @@
   ////////////////////////////////
   // Xm
   ////////////////////////////////
-  baseb = st.GetInfo(ptypeb,localb,permb,Yp,ent,plocal); ent++;
+  baseb = st.GetInfo(ptypeb,localb,permb,Ym,ent,plocal); ent++;
   if ( locala ) {
     LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
     XP_PROJMEM(basea);
@@ -106,7 +104,7 @@
   ////////////////////////////////
   // Ym
   ////////////////////////////////
-  basea = st.GetInfo(ptypea,locala,perma,Xp,ent,plocal); ent++;
+  basea = st.GetInfo(ptypea,locala,perma,Zm,ent,plocal); ent++;
   if ( localb ) {
     LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
     YP_PROJMEM(baseb);
@@ -123,7 +121,7 @@
   ////////////////////////////////
   // Zm
   ////////////////////////////////
-  baseb = st.GetInfo(ptypeb,localb,permb,Yp,ent,plocal); ent++;
+  baseb = st.GetInfo(ptypeb,localb,permb,Tm,ent,plocal); ent++;
   if ( locala ) {
     LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
     ZP_PROJMEM(basea);
@@ -148,7 +146,7 @@
   } else { 
     LOAD_CHI(baseb);
   }
-  baseb = st.GetInfo(ptypeb,localb,permb,Yp,ent,plocal);
+  baseb = st.GetInfo(ptypeb,localb,permb,Xp,ent,plocal);
   {
     MULT_2SPIN_DIR_PFTM(Tm,basea);
   }
