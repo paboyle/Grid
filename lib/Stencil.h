@@ -1,4 +1,4 @@
-     /*************************************************************************************
+   /*************************************************************************************
 
      Grid physics library, www.github.com/paboyle/Grid 
 
@@ -261,6 +261,9 @@
 	 }
        };
 
+       inline uint64_t Touch(int ent) {
+	 //	 _mm_prefetch((char *)&_entries[ent],_MM_HINT_T0);
+       }
        inline uint64_t GetInfo(int &ptype,int &local,int &perm,int point,int ent,uint64_t base) {
 	 _mm_prefetch((char *)&_entries[ent+1],_MM_HINT_T0);
 	 local = _entries[ent]._is_local;
