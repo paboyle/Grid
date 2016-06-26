@@ -31,9 +31,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Peformance options
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-#define AVX512_PF_L1
-#undef  AVX512_PF_L2_LINEAR
-#undef  AVX512_PF_L2_TABLE
 #undef  AVX512_PF_L2_WRITE
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -45,7 +42,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
            "mov     $0x5555, %%eax \n"\
            "kmovw    %%eax, %%k7 \n" : : : "%eax");
 
-//#define label(B) __asm__ ( __func__ __LINE__ #B ":\n" );
+//#define label(B) __asm__ ( __func__ _LINE__ #B ":\n" );
 
 #define VZEROf(A)       "vpxorq " #A ","  #A "," #A ";\n"
 #define VZEROd(A)       "vpxorq " #A ","  #A "," #A ";\n"
@@ -96,30 +93,13 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define VMOVf(A,DEST)   "vmovaps  " #A ", " #DEST  ";\n"
 #define VMOVd(A,DEST)   "vmovapd  " #A ", " #DEST  ";\n"
 
-#ifdef AVX512_PF_L1
-#define VPREFETCHG(O,A) "prefetcht0 "#O"*64("#A");\n" 
-#else
-#define VPREFETCHG(O,A) 
-#endif
-
-#ifdef AVX512_PF_L2_LINEAR
+#define VPREFETCH1(O,A) "prefetcht0 "#O"*64("#A");\n" 
 #define VPREFETCH2(O,A) "prefetcht1 "#O"*64("#A");\n" 
-#else
-#define VPREFETCH2(O,A) 
-#endif
-
-#ifdef AVX512_PF_L2_TABLE
-#define VPREFETCHP(O,A) "prefetcht1 "#O"*64("#A");\n" 
-#else
-#define VPREFETCHP(O,A) 
-#endif
-
 #ifdef AVX512_PF_L2_WRITE
 #define VPREFETCHW(O,A) "prefetchwt1 "#O"*64("#A");\n" 
 #else
 #define VPREFETCHW(O,A) 
 #endif
-
 #define VPREFETCHNTA(O,A) 
 #define VPREFETCH(O,A)    
 
