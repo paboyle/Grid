@@ -59,6 +59,7 @@ namespace Grid {
     // Cartesian stencil blocking strategy
     /////////////////////////////////
     static std::vector<int> Block;
+    void NoBlocking(void);
     void CartesianBlocking(void);
     void IterateO(int ND,int dim,
 		  std::vector<IndexInteger> & xo,

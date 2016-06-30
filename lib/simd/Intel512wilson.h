@@ -104,7 +104,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define LOAD_CHI(PTR)	 LOAD64(%r8,PTR) __asm__ ( LOAD_CHIi );
 #define SAVE_UCHI(PTR)	 SAVE_UCHIi(PTR)
 #define SAVE_CHI(PTR)	 SAVE_CHIi(PTR)
-#define SAVE_RESULT(PTR) SAVE_RESULTi(PTR)
+#define SAVE_RESULT(PT,R) SAVE_RESULTi(PT,R)
 
 #define LOAD_CHIMUi \
 	   LOAD_CHIMU01i	\
@@ -169,22 +169,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   VSTORE(5,%r8,Chi_12)				\
 						);
 
-#define SAVE_RESULTi(PTR)\
-	   LOAD64(%r8,PTR)			\
-  __asm__ (					\
-	   VSTORE(0,%r8,result_00)		\
-	   VSTORE(1,%r8,result_01)		\
-	   VSTORE(2,%r8,result_02)		\
-	   VSTORE(3,%r8,result_10)		\
-	   VSTORE(4,%r8,result_11)		\
-	   VSTORE(5,%r8,result_12)		\
-	   VSTORE(6,%r8,result_20)		\
-	   VSTORE(7,%r8,result_21)		\
-	   VSTORE(8,%r8,result_22)		\
-	   VSTORE(9,%r8,result_30)		\
-	   VSTORE(10,%r8,result_31)		\
-	   VSTORE(11,%r8,result_32) 		\
-						);
 
 #define MULT_2SPIN_DIR_PFXP(A,p) MULT_2SPIN_PFXP(&U._odata[sU](A),p)
 #define MULT_2SPIN_DIR_PFYP(A,p) MULT_2SPIN_PFYP(&U._odata[sU](A),p)
@@ -277,8 +261,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define XM_PROJMEM(PTR) \
   LOAD64(%r8,PTR)\
   __asm__ (								\
-	   SHUF_CHIMU23i						\
 	   LOAD_CHIi \
+	   SHUF_CHIMU23i						\
 	   VACCTIMESMINUSI1(Chi_00,Chi_00,Chimu_30)\
 	   VACCTIMESMINUSI1(Chi_01,Chi_01,Chimu_31)\
 	   VACCTIMESMINUSI1(Chi_02,Chi_02,Chimu_32)\
@@ -306,8 +290,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define ZM_PROJMEM(PTR) \
   LOAD64(%r8,PTR)							\
   __asm__ (								\
-	   SHUF_CHIMU23i						\
            LOAD_CHIi \
+	   SHUF_CHIMU23i						\
 	   VACCTIMESMINUSI1(Chi_00,Chi_00,Chimu_20)\
 	   VACCTIMESMINUSI1(Chi_01,Chi_01,Chimu_21)\
 	   VACCTIMESMINUSI1(Chi_02,Chi_02,Chimu_22)\
@@ -559,23 +543,95 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   VSUB(UChi_02,result_22,result_22)\
   VSUB(UChi_12,result_32,result_32) );
 
-#define PREFETCH_CHIMU(A) \
-  LOAD64(%r9,A)						\
-	   __asm__ (						\
-  VPREFETCHG(12,%r9)\
-  VPREFETCHG(13,%r9)\
-  VPREFETCHG(14,%r9)\
-  VPREFETCHG(15,%r9)\
-  VPREFETCHG(16,%r9)\
-  VPREFETCHG(17,%r9)\
-  VPREFETCHG(18,%r9)\
-  VPREFETCHG(19,%r9)\
-  VPREFETCHG(20,%r9)\
-  VPREFETCHG(21,%r9)\
-  VPREFETCHG(22,%r9)\
-  VPREFETCHG(23,%r9));
+#define AVX512_PF_L1
+#define AVX512_PF_L2_GAUGE
+#define AVX512_PF_L2_TABLE
+#undef  AVX512_PF_L2_LINEAR
 
-#define PERMUTE_DIR0 __asm__ ( 	\
+#ifdef AVX512_PF_L2_TABLE  
+// P1 Fetches the base pointer for next link into L1 with P1
+// M1 Fetches the next site pointer into L2
+#define VPREFETCH_P1(A,B) VPREFETCH1(A,B)
+#define VPREFETCH_P2(A,B) 
+#define VPREFETCH_M1(A,B) VPREFETCH2(A,B)
+#define VPREFETCH_M2(A,B) 
+#endif
+
+#ifdef AVX512_PF_L2_LINEAR
+#define VPREFETCH_M1(A,B) VPREFETCH1(A,B)
+#define VPREFETCH_M2(A,B) VPREFETCH2(A,B)
+#define VPREFETCH_P1(A,B) 
+#define VPREFETCH_P2(A,B)
+#endif
+
+#ifdef AVX512_PF_L2_GAUGE
+#define VPREFETCH_G1(A,B)  VPREFETCH1(A,B)
+#define VPREFETCH_G2(A,B)  VPREFETCH2(A,B)
+#endif
+
+#define PF_GAUGE(A) \
+  LOAD64(%r8,&U._odata[sU](A))						\
+  __asm__ (								\
+	   VPREFETCH_G1(0,%r8) VPREFETCH_G1(1,%r8)			\
+	   VPREFETCH_G1(2,%r8) VPREFETCH_G1(3,%r8)			\
+									);
+
+#define SAVE_RESULTi(PTR,pf)			\
+	   LOAD64(%r8,PTR)			\
+	   LOAD64(%r9,pf)			\
+  __asm__ (					\
+	   VSTORE(0,%r8,result_00)	VPREFETCH_M1(0,%r9)	\
+	   VSTORE(1,%r8,result_01)	VPREFETCH_M1(1,%r9)	\
+	   VSTORE(2,%r8,result_02)	VPREFETCH_M1(2,%r9)	\
+	   VSTORE(3,%r8,result_10)	VPREFETCH_M1(3,%r9)	\
+	   VSTORE(4,%r8,result_11)	VPREFETCH_M1(4,%r9)	\
+	   VSTORE(5,%r8,result_12)	VPREFETCH_M1(5,%r9)	\
+	   VSTORE(6,%r8,result_20)	VPREFETCH_M1(6,%r9)	\
+	   VSTORE(7,%r8,result_21)	VPREFETCH_M1(7,%r9)	\
+	   VSTORE(8,%r8,result_22)	VPREFETCH_M1(8,%r9)	\
+	   VSTORE(9,%r8,result_30)	VPREFETCH_M1(9,%r9)	\
+	   VSTORE(10,%r8,result_31)	VPREFETCH_M1(10,%r9)	\
+	   VSTORE(11,%r8,result_32) 	VPREFETCH_M1(11,%r9)	\
+						);
+
+#ifdef AVX512_PF_L2_TABLE
+#define PREFETCH_CHIMU(A) \
+  LOAD64(%r9,A)							\
+  __asm__ (							\
+	   VPREFETCH_P1(0,%r9)					\
+	   VPREFETCH_P1(1,%r9)					\
+	   VPREFETCH_P1(2,%r9)					\
+	   VPREFETCH_P1(3,%r9)					\
+	   VPREFETCH_P1(4,%r9)					\
+	   VPREFETCH_P1(5,%r9)					\
+	   VPREFETCH_P1(6,%r9)					\
+	   VPREFETCH_P1(7,%r9)					\
+	   VPREFETCH_P1(8,%r9)					\
+	   VPREFETCH_P1(9,%r9)					\
+	   VPREFETCH_P1(10,%r9)					\
+	   VPREFETCH_P1(11,%r9));
+
+#else
+#define PREFETCH_CHIMU(A)
+#endif
+
+#define PREFETCH1_CHIMU(A) \
+  LOAD64(%r9,A)							\
+  __asm__ (							\
+	   VPREFETCH_P1(0,%r9)					\
+	   VPREFETCH_P1(1,%r9)					\
+	   VPREFETCH_P1(2,%r9)					\
+	   VPREFETCH_P1(3,%r9)					\
+	   VPREFETCH_P1(4,%r9)					\
+	   VPREFETCH_P1(5,%r9)					\
+	   VPREFETCH_P1(6,%r9)					\
+	   VPREFETCH_P1(7,%r9)					\
+	   VPREFETCH_P1(8,%r9)					\
+	   VPREFETCH_P1(9,%r9)					\
+	   VPREFETCH_P1(10,%r9)					\
+	   VPREFETCH_P1(11,%r9));
+
+#define PERMUTE_DIR0 __asm__ (			\
   VPERM0(Chi_00,Chi_00)	\
   VPERM0(Chi_01,Chi_01)	\
   VPERM0(Chi_02,Chi_02)	\
@@ -612,15 +668,15 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   LOAD64(%r8,ptr)						\
   LOAD64(%r9,pf)						\
 	   __asm__ (						\
-	   VPREFETCH2(9,%r8)				   \
-	   VPREFETCH2(10,%r8)					   \
-	   VPREFETCH2(11,%r8)					   \
-	   VPREFETCH2(12,%r8)					   \
-	   VPREFETCH2(13,%r8)					   \
-	   VPREFETCH2(14,%r8)					   \
-	   VPREFETCH2(15,%r8)					   \
-	   VPREFETCH2(16,%r8)					   \
-	   VPREFETCH2(17,%r8)					   \
+	   VPREFETCH_G2(9,%r8)				   \
+	   VPREFETCH_G2(10,%r8)					   \
+	   VPREFETCH_G2(11,%r8)					   \
+	   VPREFETCH_G2(12,%r8)					   \
+	   VPREFETCH_G2(13,%r8)					   \
+	   VPREFETCH_G2(14,%r8)					   \
+	   VPREFETCH_G2(15,%r8)					   \
+	   VPREFETCH_G2(16,%r8)					   \
+	   VPREFETCH_G2(17,%r8)					   \
 	   VSHUF(Chi_00,T1)				\
 	   VMOVIDUP(0,%r8,Z0 )					\
            VMOVIDUP(3,%r8,Z1 )					\
@@ -632,10 +688,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
            VMUL(Z1,T2,UChi_11)            VMOVIDUP(1,%r8,Z0 )	\
            VMUL(Z2,T1,UChi_02)            VMOVIDUP(4,%r8,Z1 )	\
            VMUL(Z2,T2,UChi_12)            VMOVIDUP(7,%r8,Z2 )	\
-	   VPREFETCHG(0,%r9)					   \
-	   VPREFETCHG(1,%r9)					   \
-	   VPREFETCHG(2,%r9)					   \
-	   VPREFETCHG(3,%r9)					   \
+	   VPREFETCH_M1(0,%r9)					   \
+	   VPREFETCH_M1(1,%r9)					   \
+	   VPREFETCH_M1(2,%r9)					   \
+	   VPREFETCH_M1(3,%r9)					   \
 	   /*18*/						\
            VMADDSUB(Z3,Chi_00,UChi_00)    VSHUF(Chi_01,T1)	\
            VMADDSUB(Z3,Chi_10,UChi_10)				\
@@ -643,10 +699,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
            VMADDSUB(Z4,Chi_10,UChi_11)    VSHUF(Chi_11,T2)	\
            VMADDSUB(Z5,Chi_00,UChi_02)    VMOVRDUP(4,%r8,Z4 )	\
            VMADDSUB(Z5,Chi_10,UChi_12)				\
-	   VPREFETCHG(4,%r9)					   \
-	   VPREFETCHG(5,%r9)					   \
-	   VPREFETCHG(6,%r9)					   \
-	   VPREFETCHG(7,%r9)					   \
+	   VPREFETCH_M1(4,%r9)					   \
+	   VPREFETCH_M1(5,%r9)					   \
+	   VPREFETCH_M1(6,%r9)					   \
+	   VPREFETCH_M1(7,%r9)					   \
 	   /*28*/						\
            VMADDSUB(Z0,T1,UChi_00)        VMOVRDUP(7,%r8,Z5 )	\
            VMADDSUB(Z0,T2,UChi_10)				\
@@ -673,15 +729,15 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
            VMADDSUB(Z4,Chi_11,UChi_11)    VSHUF(Chi_12,T2)	\
            VMADDSUB(Z5,Chi_01,UChi_02)    VMOVRDUP(5,%r8,Z4 )	\
            VMADDSUB(Z5,Chi_11,UChi_12)				\
-	   VPREFETCHG(9,%r8)				   \
-	   VPREFETCHG(10,%r8)					   \
-	   VPREFETCHG(11,%r8)					   \
-	   VPREFETCHG(12,%r8)					   \
-	   VPREFETCHG(13,%r8)					   \
-	   VPREFETCHG(14,%r8)					   \
-	   VPREFETCHG(15,%r8)					   \
-	   VPREFETCHG(16,%r8)					   \
-	   VPREFETCHG(17,%r8)					   \
+	   VPREFETCH_M1(9,%r8)				   \
+	   VPREFETCH_M1(10,%r8)					   \
+	   VPREFETCH_M1(11,%r8)					   \
+	   VPREFETCH_M1(12,%r8)					   \
+	   VPREFETCH_M1(13,%r8)					   \
+	   VPREFETCH_M1(14,%r8)					   \
+	   VPREFETCH_M1(15,%r8)					   \
+	   VPREFETCH_M1(16,%r8)					   \
+	   VPREFETCH_M1(17,%r8)					   \
 	   /*48*/						\
            VMADDSUB(Z0,T1,UChi_00)        VMOVRDUP(8,%r8,Z5 ) \
            VMADDSUB(Z0,T2,UChi_10)			      \
@@ -689,10 +745,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
            VMADDSUB(Z1,T2,UChi_11)			      \
            VMADDSUB(Z2,T1,UChi_02)			      \
            VMADDSUB(Z2,T2,UChi_12)			      \
-	   VPREFETCHG(8,%r9)					   \
-	   VPREFETCHG(9,%r9)					   \
-	   VPREFETCHG(10,%r9)					   \
-	   VPREFETCHG(11,%r9)					   \
+	   VPREFETCH_M1(8,%r9)					   \
+	   VPREFETCH_M1(9,%r9)					   \
+	   VPREFETCH_M1(10,%r9)					   \
+	   VPREFETCH_M1(11,%r9)					   \
 	   /*55*/					      \
            VMADDSUB(Z3,Chi_02,UChi_00)			      \
            VMADDSUB(Z3,Chi_12,UChi_10)			      \
@@ -711,56 +767,58 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
            VMULIDUP(0,%r8,T1,UChi_00) VMULIDUP(0,%r8,T2,UChi_10)   \
            VMULIDUP(3,%r8,T1,UChi_01) VMULIDUP(3,%r8,T2,UChi_11)   \
            VMULIDUP(6,%r8,T1,UChi_02) VMULIDUP(6,%r8,T2,UChi_12)   \
-	   VPREFETCHG(0,%r9)					   \
-	   VPREFETCHG(1,%r9)					   \
-	   VPREFETCHG(2,%r9)					   \
-	   VPREFETCHG(3,%r9)					   \
+	   VPREFETCH_M1(0,%r9)					   \
+	   VPREFETCH_M1(1,%r9)					   \
+	   VPREFETCH_M1(2,%r9)					   \
+	   VPREFETCH_M1(3,%r9)					   \
 	   /*8*/						   \
            VSHUF(Chi_01,T1)	  VSHUF(Chi_11,T2)	       	   \
            VMADDSUBRDUP(0,%r8,Chi_00,UChi_00) VMADDSUBRDUP(0,%r8,Chi_10,UChi_10) \
            VMADDSUBRDUP(3,%r8,Chi_00,UChi_01) VMADDSUBRDUP(3,%r8,Chi_10,UChi_11) \
            VMADDSUBRDUP(6,%r8,Chi_00,UChi_02) VMADDSUBRDUP(6,%r8,Chi_10,UChi_12) \
-	   VPREFETCHG(4,%r9)					   \
-	   VPREFETCHG(5,%r9)					   \
-	   VPREFETCHG(6,%r9)					   \
-	   VPREFETCHG(7,%r9)					   \
+	   VPREFETCH_M1(4,%r9)					   \
+	   VPREFETCH_M1(5,%r9)					   \
+	   VPREFETCH_M1(6,%r9)					   \
+	   VPREFETCH_M1(7,%r9)					   \
 	   /*16*/					  	   \
            VMADDSUBIDUP(1,%r8,T1,UChi_00)     VMADDSUBIDUP(1,%r8,T2,UChi_10)	   \
            VMADDSUBIDUP(4,%r8,T1,UChi_01)     VMADDSUBIDUP(4,%r8,T2,UChi_11) \
            VMADDSUBIDUP(7,%r8,T1,UChi_02)     VMADDSUBIDUP(7,%r8,T2,UChi_12) \
-	   VPREFETCHG(8,%r9)					   \
-	   VPREFETCHG(9,%r9)					   \
-	   VPREFETCHG(10,%r9)					   \
-	   VPREFETCHG(11,%r9)					   \
+	   VPREFETCH_M1(8,%r9)					   \
+	   VPREFETCH_M1(9,%r9)					   \
+	   VPREFETCH_M1(10,%r9)					   \
+	   VPREFETCH_M1(11,%r9)					   \
            /*22*/						   \
            VSHUF(Chi_02,T1)    VSHUF(Chi_12,T2)	                   \
            VMADDSUBRDUP(1,%r8,Chi_01,UChi_00) VMADDSUBRDUP(1,%r8,Chi_11,UChi_10) \
            VMADDSUBRDUP(4,%r8,Chi_01,UChi_01) VMADDSUBRDUP(4,%r8,Chi_11,UChi_11) \
            VMADDSUBRDUP(7,%r8,Chi_01,UChi_02) VMADDSUBRDUP(7,%r8,Chi_11,UChi_12) \
-	   VPREFETCH2(12,%r9)					   \
-	   VPREFETCH2(13,%r9)					   \
-	   VPREFETCH2(14,%r9)					   \
-	   VPREFETCH2(15,%r9)					   \
+	   VPREFETCH_M2(12,%r9)					   \
+	   VPREFETCH_M2(13,%r9)					   \
+	   VPREFETCH_M2(14,%r9)					   \
+	   VPREFETCH_M2(15,%r9)					   \
 	   /*30*/						   \
            VMADDSUBIDUP(2,%r8,T1,UChi_00)     VMADDSUBIDUP(2,%r8,T2,UChi_10)	   \
            VMADDSUBIDUP(5,%r8,T1,UChi_01)     VMADDSUBIDUP(5,%r8,T2,UChi_11)     \
-	   VPREFETCH2(16,%r9)					   \
-	   VPREFETCH2(17,%r9)					   \
-	   VPREFETCH2(18,%r9)					   \
-	   VPREFETCH2(19,%r9)					   \
+	   VPREFETCH_M2(16,%r9)					   \
+	   VPREFETCH_M2(17,%r9)					   \
+	   VPREFETCH_M2(18,%r9)					   \
+	   VPREFETCH_M2(19,%r9)					   \
            VMADDSUBIDUP(8,%r8,T1,UChi_02)     VMADDSUBIDUP(8,%r8,T2,UChi_12)     \
 	   /*36*/					           \
            VMADDSUBRDUP(2,%r8,Chi_02,UChi_00) VMADDSUBRDUP(2,%r8,Chi_12,UChi_10) \
            VMADDSUBRDUP(5,%r8,Chi_02,UChi_01) VMADDSUBRDUP(5,%r8,Chi_12,UChi_11) \
            VMADDSUBRDUP(8,%r8,Chi_02,UChi_02) VMADDSUBRDUP(8,%r8,Chi_12,UChi_12) \
-	   VPREFETCH2(20,%r9)					   \
-	   VPREFETCH2(21,%r9)					   \
-	   VPREFETCH2(22,%r9)					   \
-	   VPREFETCH2(23,%r9)					   \
-	   VPREFETCHG(2,%r8)					   \
-	   VPREFETCHG(3,%r8)					   \
-	   VPREFETCH2(4,%r8)					   \
-	   VPREFETCH2(5,%r8)					   \
+	   VPREFETCH_M2(20,%r9)					   \
+	   VPREFETCH_M2(21,%r9)					   \
+	   VPREFETCH_M2(22,%r9)					   \
+	   VPREFETCH_M2(23,%r9)					   \
+	   VPREFETCH_G1(2,%r8)					   \
+	   VPREFETCH_G1(3,%r8)					   \
+	   VPREFETCH_G2(4,%r8)					   \
+	   VPREFETCH_G2(5,%r8)					   \
+	   VPREFETCH_G2(6,%r8)					   \
+	   VPREFETCH_G2(7,%r8)					   \
 	   /*42 insns*/						);
 
 #define MULT_ADDSUB_2SPIN_LSNOPF(ptr,pf)				   \
@@ -793,8 +851,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
            VMADDSUBRDUP(2,%r8,Chi_02,UChi_00) VMADDSUBRDUP(2,%r8,Chi_12,UChi_10) \
            VMADDSUBRDUP(5,%r8,Chi_02,UChi_01) VMADDSUBRDUP(5,%r8,Chi_12,UChi_11) \
            VMADDSUBRDUP(8,%r8,Chi_02,UChi_02) VMADDSUBRDUP(8,%r8,Chi_12,UChi_12) \
-	   /*	   VPREFETCHG(2,%r8)*/				   \
-	   /*	   VPREFETCHG(3,%r8)*/				   \
+	   /*	   VPREFETCH1(2,%r8)*/				   \
+	   /*	   VPREFETCH1(3,%r8)*/				   \
 	   /*42 insns*/						);
 
 

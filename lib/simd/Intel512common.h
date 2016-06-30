@@ -1,4 +1,4 @@
-    /*************************************************************************************
+   /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -29,6 +29,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define GRID_ASM_INTEL_COMMON_512_H
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// Peformance options
+////////////////////////////////////////////////////////////////////////////////////////////////////
+#undef  AVX512_PF_L2_WRITE
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 // Opcodes common 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #define MASK_REGS \
@@ -36,6 +41,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
            "kmovw    %%eax, %%k6 \n"\
            "mov     $0x5555, %%eax \n"\
            "kmovw    %%eax, %%k7 \n" : : : "%eax");
+
+//#define label(B) __asm__ ( __func__ _LINE__ #B ":\n" );
 
 #define VZEROf(A)       "vpxorq " #A ","  #A "," #A ";\n"
 #define VZEROd(A)       "vpxorq " #A ","  #A "," #A ";\n"
@@ -86,9 +93,16 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define VMOVf(A,DEST)   "vmovaps  " #A ", " #DEST  ";\n"
 #define VMOVd(A,DEST)   "vmovapd  " #A ", " #DEST  ";\n"
 
-#define VPREFETCHG(O,A) "prefetcht0 "#O"*64("#A");\n" 
+#define VPREFETCH1(O,A) "prefetcht0 "#O"*64("#A");\n" 
 #define VPREFETCH2(O,A) "prefetcht1 "#O"*64("#A");\n" 
+#ifdef AVX512_PF_L2_WRITE
 #define VPREFETCHW(O,A) "prefetchwt1 "#O"*64("#A");\n" 
+#else
+#define VPREFETCHW(O,A) 
+#endif
+#define VPREFETCHNTA(O,A) 
+#define VPREFETCH(O,A)    
+
 #define VEVICT(O,A)   
 
 //"vprefetche0 "#O"*64("#A");\n" "vprefetche1 ("#O"+12)*64("#A");\n"
@@ -124,8 +138,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define ZLOADf(OFF,PTR,ri,ir)  VLOADf(OFF,PTR,ir)  VSHUFf(ir,ri)
 #define ZLOADd(OFF,PTR,ri,ir)  VLOADd(OFF,PTR,ir)  VSHUFd(ir,ri)
 
-#define VPREFETCHNTA(O,A) 
-#define VPREFETCH(O,A)    
 
 #define VSTOREf(OFF,PTR,SRC)   "vmovaps " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
 #define VSTOREd(OFF,PTR,SRC)   "vmovapd " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
