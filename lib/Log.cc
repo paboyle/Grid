@@ -31,26 +31,18 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid.h>
 
 namespace Grid {
-
-GridStopWatch Logger::StopWatch;
-std::ostream  Logger::devnull(0);
-std::string Logger::BLACK("\033[30m");
-std::string Logger::RED("\033[31m");
-std::string Logger::GREEN("\033[32m");
-std::string Logger::YELLOW("\033[33m");
-std::string Logger::BLUE("\033[34m");
-std::string Logger::PURPLE("\033[35m");
-std::string Logger::CYAN("\033[36m");
-std::string Logger::WHITE("\033[37m");
-std::string Logger::NORMAL("\033[0;39m");
-
-  GridLogger GridLogError      (1,"Error",Logger::RED);
-  GridLogger GridLogWarning    (1,"Warning",Logger::YELLOW);
-  GridLogger GridLogMessage    (1,"Message",Logger::BLACK);
-  GridLogger GridLogDebug      (1,"Debug",Logger::PURPLE);
-  GridLogger GridLogPerformance(1,"Performance",Logger::GREEN);
-  GridLogger GridLogIterative  (1,"Iterative",Logger::BLUE);
-  GridLogger GridLogIntegrator (1,"Integrator",Logger::BLUE);
+  
+  GridStopWatch Logger::StopWatch;
+  std::ostream  Logger::devnull(0);
+  
+  Colours    GridLogColours    (0);
+  GridLogger GridLogError      (1,"Error",GridLogColours, "RED");
+  GridLogger GridLogWarning    (1,"Warning",GridLogColours, "YELLOW");
+  GridLogger GridLogMessage    (1,"Message",GridLogColours, "NORMAL");
+  GridLogger GridLogDebug      (1,"Debug",GridLogColours, "PURPLE");
+  GridLogger GridLogPerformance(1,"Performance",GridLogColours, "GREEN");
+  GridLogger GridLogIterative  (1,"Iterative",GridLogColours, "BLUE");
+  GridLogger GridLogIntegrator (1,"Integrator",GridLogColours, "BLUE");
 
 void GridLogConfigure(std::vector<std::string> &logstreams)
 {
@@ -61,6 +53,7 @@ void GridLogConfigure(std::vector<std::string> &logstreams)
   GridLogDebug.Active(0);
   GridLogPerformance.Active(0);
   GridLogIntegrator.Active(0);
+  GridLogColours.Active(0);
 
   for(int i=0;i<logstreams.size();i++){
     if ( logstreams[i]== std::string("Error")       ) GridLogError.Active(1);
@@ -70,6 +63,8 @@ void GridLogConfigure(std::vector<std::string> &logstreams)
     if ( logstreams[i]== std::string("Debug")       ) GridLogDebug.Active(1);
     if ( logstreams[i]== std::string("Performance") ) GridLogPerformance.Active(1);
     if ( logstreams[i]== std::string("Integrator" ) ) GridLogIntegrator.Active(1);
+    if ( logstreams[i]== std::string("Colours" )    ) GridLogColours.Active(1);
+     
   }
 }
 

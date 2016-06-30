@@ -607,7 +607,7 @@ int main (int argc, char ** argv)
  } // loop for omp
 
 
-
+ /*
  // Testing Smearing routine compilation, separate in a different file
  GridCartesian           Fine(latt_size,simd_layout,mpi_layout);
  Smear_APE< PeriodicGimplR > APEsmearing; // periodic gauge implemetation
@@ -615,6 +615,6 @@ int main (int argc, char ** argv)
  SmearedConfiguration< PeriodicGimplR > SmartConf(&Fine, 3, StoutSmearing);
  
  std::cout<<GridLogMessage << sizeof(vComplexF) << std::endl;
- 
+ */
  Grid_finalize();
 }

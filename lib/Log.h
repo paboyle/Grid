@@ -27,45 +27,94 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+
+#include <map>
+
 #ifndef GRID_LOG_H
 #define GRID_LOG_H
 namespace Grid {
+  
+  // Dress the output; use std::chrono for time stamping via the StopWatch class
 
-// Dress the output; use std::chrono for time stamping via the StopWatch class
 
+  class Colours{
+  protected:
+    bool is_active;
+  public:
+    std::map<std::string, std::string> colour;
+    
+   
+    Colours(bool activate=false){
+      Active(activate);
+    };
 
-class Logger {
-protected:
+    
+    void Active(bool activate){
+      is_active=activate;
+      
+      if (is_active){
+	colour["BLACK"]  ="\033[30m";
+	colour["RED"]    ="\033[31m";
+	colour["GREEN"]  ="\033[32m";
+	colour["YELLOW"] ="\033[33m";
+	colour["BLUE"]   ="\033[34m";
+	colour["PURPLE"] ="\033[35m";
+	colour["CYAN"]   ="\033[36m";
+	colour["WHITE"]  ="\033[37m";
+	colour["NORMAL"] ="\033[0;39m";
+      } else {
+	std::cout << "Switching off colours\n";
+      colour["BLACK"] ="";
+      colour["RED"]   ="";
+      colour["GREEN"] ="";
+      colour["YELLOW"]="";
+      colour["BLUE"]  ="";
+      colour["PURPLE"]="";
+      colour["CYAN"]  ="";
+      colour["WHITE"] ="";
+      colour["NORMAL"]="";
+      }
+
+      
+    };
+    
+  };
+    
+  
+  class Logger {
+  protected:
+    Colours &Painter;
     int active;
-    std::string name, topName, COLOUR;
-public:
+    std::string name, topName;
+    std::string COLOUR;
+
+  public:
     static GridStopWatch StopWatch;
     static std::ostream devnull;
-
-    static std::string BLACK;
-    static std::string RED  ;
-    static std::string GREEN;
-    static std::string YELLOW;
-    static std::string BLUE  ;
-    static std::string PURPLE;
-    static std::string CYAN  ;
-    static std::string WHITE ;
-    static std::string NORMAL;
     
- Logger(std::string topNm, int on, std::string nm,std::string col)
-   : active(on), name(nm), topName(topNm), COLOUR(col) {};
+    std::string background() {return Painter.colour["NORMAL"];}
+    std::string evidence() {return Painter.colour["YELLOW"];}
+    std::string colour() {return Painter.colour[COLOUR];}
     
-    void Active(int on) {active = on;};
-    int  isActive(void) {return active;};
-    
-    friend std::ostream& operator<< (std::ostream& stream, const Logger& log){
-        if ( log.active ) {
+    Logger(std::string topNm, int on, std::string nm, Colours& col_class, std::string col)
+      : active(on),
+	name(nm),
+	topName(topNm),
+	Painter(col_class),
+	COLOUR(col){} ;
+  
+  void Active(int on) {active = on;};
+  int  isActive(void) {return active;};
+  
+  friend std::ostream& operator<< (std::ostream& stream, Logger& log){
+      
+    if ( log.active ) {
             StopWatch.Stop();
             GridTime now = StopWatch.Elapsed();
             StopWatch.Start();
-            stream << BLACK<< log.topName << BLACK<< " : ";
-            stream << log.COLOUR <<std::setw(10) << std::left << log.name << BLACK << " : ";
-            stream << YELLOW<< now <<BLACK << " : " << log.COLOUR;
+            stream << log.background()<< log.topName << log.background()<< " : ";
+            stream << log.colour() <<std::setw(10) << std::left << log.name << log.background() << " : ";
+            stream << log.evidence()<< now << log.background() << " : " << log.colour();
             return stream;
         } else { 
             return devnull;
@@ -76,18 +125,21 @@ public:
     
 class GridLogger: public Logger {
 public:
- GridLogger(int on, std::string nm, std::string col = Logger::BLACK): Logger("Grid", on, nm, col){};
+  GridLogger(int on, std::string nm, Colours&col_class, std::string col_key = "NORMAL"):
+    Logger("Grid", on, nm, col_class, col_key){};
 };
 
 void GridLogConfigure(std::vector<std::string> &logstreams);
 
-extern GridLogger GridLogError;
-extern GridLogger GridLogWarning;
-extern GridLogger GridLogMessage;
-extern GridLogger GridLogDebug  ;
-extern GridLogger GridLogPerformance;
-extern GridLogger GridLogIterative  ;
-extern GridLogger GridLogIntegrator  ;
+  extern GridLogger GridLogError;
+  extern GridLogger GridLogWarning;
+  extern GridLogger GridLogMessage;
+  extern GridLogger GridLogDebug  ;
+  extern GridLogger GridLogPerformance;
+  extern GridLogger GridLogIterative  ;
+  extern GridLogger GridLogIntegrator  ;
+  extern Colours    GridLogColours;
 
+  
 }
 #endif

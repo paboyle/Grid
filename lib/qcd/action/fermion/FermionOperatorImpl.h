@@ -99,7 +99,7 @@ namespace Grid {
     typedef typename Impl::SiteSpinor               SiteSpinor;		\
     typedef typename Impl::SiteHalfSpinor       SiteHalfSpinor;		\
     typedef typename Impl::Compressor               Compressor;		\
-    typedef typename Impl::StencilImpl              StencilImpl;	\
+    typedef typename Impl::StencilImpl             StencilImpl;	  \
     typedef typename Impl::ImplParams ImplParams;
 
 #define INHERIT_IMPL_TYPES(Base) \
