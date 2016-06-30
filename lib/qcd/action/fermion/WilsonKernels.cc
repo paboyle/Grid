@@ -42,12 +42,15 @@ void WilsonKernels<Impl>::DiracOptDhopSite(StencilImpl &st,LebesgueOrder &lo,Dou
 						  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 						  int sF,int sU,int Ls, int Ns, const FermionField &in, FermionField &out)
 {
+#ifdef AVX512
   if ( AsmOpt ) {
 
     WilsonKernels<Impl>::DiracOptAsmDhopSite(st,lo,U,buf,sF,sU,Ls,Ns,in,out);
 
   } else {
-
+#else
+  {  
+#endif
     for(int site=0;site<Ns;site++) {
       for(int s=0;s<Ls;s++) {
 	if (HandOpt) WilsonKernels<Impl>::DiracOptHandDhopSite(st,lo,U,buf,sF,sU,in,out);
