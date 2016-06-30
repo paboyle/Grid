@@ -261,8 +261,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define XM_PROJMEM(PTR) \
   LOAD64(%r8,PTR)\
   __asm__ (								\
-	   SHUF_CHIMU23i						\
 	   LOAD_CHIi \
+	   SHUF_CHIMU23i						\
 	   VACCTIMESMINUSI1(Chi_00,Chi_00,Chimu_30)\
 	   VACCTIMESMINUSI1(Chi_01,Chi_01,Chimu_31)\
 	   VACCTIMESMINUSI1(Chi_02,Chi_02,Chimu_32)\
@@ -290,8 +290,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define ZM_PROJMEM(PTR) \
   LOAD64(%r8,PTR)							\
   __asm__ (								\
-	   SHUF_CHIMU23i						\
            LOAD_CHIi \
+	   SHUF_CHIMU23i						\
 	   VACCTIMESMINUSI1(Chi_00,Chi_00,Chimu_20)\
 	   VACCTIMESMINUSI1(Chi_01,Chi_01,Chimu_21)\
 	   VACCTIMESMINUSI1(Chi_02,Chi_02,Chimu_22)\
@@ -548,24 +548,25 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define AVX512_PF_L2_TABLE
 #undef  AVX512_PF_L2_LINEAR
 
-#ifdef AVX512_PF_L2_TABLE
-#define VPREFETCH_P1(A,B)  VPREFETCH1(A,B)
-#define VPREFETCH_P2(A,B) VPREFETCH1(A,B)
-#else
-#define VPREFETCH_P1(A,B)
-#define VPREFETCH_P2(A,B)
-#endif
-#ifdef AVX512_PF_L2_LINEAR
-#define VPREFETCH_M1(A,B) 
+#ifdef AVX512_PF_L2_TABLE  
+// P1 Fetches the base pointer for next link into L1 with P1
+// M1 Fetches the next site pointer into L2
+#define VPREFETCH_P1(A,B) VPREFETCH1(A,B)
+#define VPREFETCH_P2(A,B) 
+#define VPREFETCH_M1(A,B) VPREFETCH2(A,B)
 #define VPREFETCH_M2(A,B) 
-#else 
+#endif
+
+#ifdef AVX512_PF_L2_LINEAR
 #define VPREFETCH_M1(A,B) VPREFETCH1(A,B)
 #define VPREFETCH_M2(A,B) VPREFETCH2(A,B)
+#define VPREFETCH_P1(A,B) 
+#define VPREFETCH_P2(A,B)
 #endif
+
 #ifdef AVX512_PF_L2_GAUGE
 #define VPREFETCH_G1(A,B)  VPREFETCH1(A,B)
 #define VPREFETCH_G2(A,B)  VPREFETCH2(A,B)
-#else
 #endif
 
 #define PF_GAUGE(A) \
@@ -593,21 +594,26 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	   VSTORE(11,%r8,result_32) 	VPREFETCH_M1(11,%r9)	\
 						);
 
+#ifdef AVX512_PF_L2_TABLE
 #define PREFETCH_CHIMU(A) \
   LOAD64(%r9,A)							\
   __asm__ (							\
-	   VPREFETCH_P2(0,%r9)					\
-	   VPREFETCH_P2(1,%r9)					\
-	   VPREFETCH_P2(2,%r9)					\
-	   VPREFETCH_P2(3,%r9)					\
-	   VPREFETCH_P2(4,%r9)					\
-	   VPREFETCH_P2(5,%r9)					\
-	   VPREFETCH_P2(6,%r9)					\
-	   VPREFETCH_P2(7,%r9)					\
-	   VPREFETCH_P2(8,%r9)					\
-	   VPREFETCH_P2(9,%r9)					\
-	   VPREFETCH_P2(10,%r9)					\
-	   VPREFETCH_P2(11,%r9));
+	   VPREFETCH_P1(0,%r9)					\
+	   VPREFETCH_P1(1,%r9)					\
+	   VPREFETCH_P1(2,%r9)					\
+	   VPREFETCH_P1(3,%r9)					\
+	   VPREFETCH_P1(4,%r9)					\
+	   VPREFETCH_P1(5,%r9)					\
+	   VPREFETCH_P1(6,%r9)					\
+	   VPREFETCH_P1(7,%r9)					\
+	   VPREFETCH_P1(8,%r9)					\
+	   VPREFETCH_P1(9,%r9)					\
+	   VPREFETCH_P1(10,%r9)					\
+	   VPREFETCH_P1(11,%r9));
+
+#else
+#define PREFETCH_CHIMU(A)
+#endif
 
 #define PREFETCH1_CHIMU(A) \
   LOAD64(%r9,A)							\
@@ -811,6 +817,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	   VPREFETCH_G1(3,%r8)					   \
 	   VPREFETCH_G2(4,%r8)					   \
 	   VPREFETCH_G2(5,%r8)					   \
+	   VPREFETCH_G2(6,%r8)					   \
+	   VPREFETCH_G2(7,%r8)					   \
 	   /*42 insns*/						);
 
 #define MULT_ADDSUB_2SPIN_LSNOPF(ptr,pf)				   \

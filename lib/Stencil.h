@@ -272,6 +272,11 @@
 	 if (local) return base + _entries[ent]._byte_offset;
 	 else       return _entries[ent]._byte_offset;
        }
+       inline uint64_t GetPFInfo(int ent,uint64_t base) {
+	 int local = _entries[ent]._is_local;
+	 if (local) return base + _entries[ent]._byte_offset;
+	 else       return        _entries[ent]._byte_offset;
+       }
 
        // Comms buffers
        std::vector<Vector<scalar_object> > u_simd_send_buf;
