@@ -1,5 +1,9 @@
 language: cpp
 
+cache:
+  directories:
+    - clang
+
 matrix:
   include:
     - os:        osx
@@ -38,29 +42,31 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.7
           packages:
-            - clang-3.7
+            - g++-4.8
             - libmpfr-dev
             - libgmp-dev
             - libmpc-dev
             - binutils-dev
-      env: VERSION=-3.7
+      env: CLANG_LINK=http://llvm.org/releases/3.8.0/clang+llvm-3.8.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
     - compiler: clang
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.8
           packages:
-            - clang-3.8
+            - g++-4.8
             - libmpfr-dev
             - libgmp-dev
             - libmpc-dev
             - binutils-dev
-      env: VERSION=-3.8
+      env: CLANG_LINK=http://llvm.org/releases/3.7.0/clang+llvm-3.7.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
       
 before_install:
+    - export GRIDDIR=`pwd`
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]] && [[ "$CC" == "clang" ]] && [ ! -e clang/bin ]; then wget $CLANG_LINK; tar -xf `basename $CLANG_LINK`; mkdir clang; mv clang+*/* clang/; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]] && [[ "$CC" == "clang" ]]; then export PATH="${GRIDDIR}/clang/bin:${PATH}"; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]] && [[ "$CC" == "clang" ]]; then export LD_LIBRARY_PATH="${GRIDDIR}/clang/lib:${LD_LIBRARY_PATH}"; fi
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install libmpc; fi
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]] && [[ "$CC" == "gcc" ]]; then brew install gcc5; fi
@@ -68,6 +74,11 @@ before_install:
 install:
     - export CC=$CC$VERSION
     - export CXX=$CXX$VERSION
+    - echo $PATH
+    - which $CC
+    - $CC  --version
+    - which $CXX
+    - $CXX --version
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export LDFLAGS='-L/usr/local/lib'; fi
     
 script:
