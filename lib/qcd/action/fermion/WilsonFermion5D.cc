@@ -321,14 +321,14 @@ PARALLEL_FOR_LOOP
     for(int ss=0;ss<U._grid->oSites();ss++){
 	int sU=ss;
 	int sF=LLs*sU;
-	Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sF,sU,LLs,1,in,out);
+	Kernels::DiracOptDhopSiteDag(st,lo,U,st.comm_buf,sF,sU,LLs,1,in,out);
     }
   } else {
 PARALLEL_FOR_LOOP
     for(int ss=0;ss<U._grid->oSites();ss++){
       int sU=ss;
       int sF=LLs*sU;
-      Kernels::DiracOptDhopSite(st,U,st.comm_buf,sF,sU,LLs,1,in,out);
+      Kernels::DiracOptDhopSite(st,lo,U,st.comm_buf,sF,sU,LLs,1,in,out);
     }
   }
 }
