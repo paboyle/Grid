@@ -1,4 +1,3 @@
-
     /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -282,11 +281,11 @@ void benchsDw(std::vector<int> & latt4, int Ls, int threads, int report )
   RealD mass=0.1;
   RealD M5  =1.8;
 
-    typedef WilsonFermion5D<DomainWallRedBlack5dImplF> WilsonFermion5DF;
-    LatticeFermionF ssrc(sFGrid);
-    LatticeFermionF sref(sFGrid);
-    LatticeFermionF sresult(sFGrid);
-    WilsonFermion5DF sDw(1,Umu,*sFGrid,*sFrbGrid,*sUGrid,M5);
+    typedef WilsonFermion5D<DomainWallRedBlack5dImplR> WilsonFermion5DR;
+    LatticeFermion ssrc(sFGrid);
+    LatticeFermion sref(sFGrid);
+    LatticeFermion sresult(sFGrid);
+    WilsonFermion5DR sDw(1,Umu,*sFGrid,*sFrbGrid,*sUGrid,M5);
   
     for(int x=0;x<latt4[0];x++){
     for(int y=0;y<latt4[1];y++){
@@ -294,7 +293,7 @@ void benchsDw(std::vector<int> & latt4, int Ls, int threads, int report )
     for(int t=0;t<latt4[3];t++){
     for(int s=0;s<Ls;s++){
       std::vector<int> site({s,x,y,z,t});
-      SpinColourVectorF tmp;
+      SpinColourVector tmp;
       peekSite(tmp,src,site);
       pokeSite(tmp,ssrc,site);
     }}}}}
@@ -328,8 +327,8 @@ void benchsDw(std::vector<int> & latt4, int Ls, int threads, int report )
     }
 
 
-    LatticeFermionF sr_eo(sFGrid);
-    LatticeFermionF serr(sFGrid);
+    LatticeFermion sr_eo(sFGrid);
+    LatticeFermion serr(sFGrid);
     
     LatticeFermion ssrc_e (sFrbGrid);
     LatticeFermion ssrc_o (sFrbGrid);
