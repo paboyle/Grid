@@ -116,7 +116,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define VMADDSUB(A,B,accum)                              VMADDSUBf(A,B,accum) 
 #define VSHUF(A,B)                                       VSHUFf(A,B)
 
-
 #undef ZEND1
 #undef ZEND2
 #undef ZLOAD
@@ -133,3 +132,24 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define ZMULMEM2SP(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)  ZMULMEM2SPf(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) 
 #define ZMADDMEM2SP(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) ZMADDMEM2SPf(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr) 
 
+#undef VRDUP
+#undef VIDUP
+#undef VMADDSUBMEM
+#undef VMADDMEM
+#undef VMULMEM
+
+#define VRDUP(SRC,DEST) VRDUPf(SRC,DEST) 
+#define VIDUP(SRC,DEST) VIDUPf(SRC,DEST) 
+#define VMADDSUBMEM(O,P,B,accum) VMADDSUBMEMf(O,P,B,accum)
+#define VMADDMEM(O,P,B,accum) VMADDMEMf(O,P,B,accum)
+#define VMULMEM(O,P,B,accum) VMULMEMf(O,P,B,accum)
+
+#undef VMADDSUBRDUP   
+#undef VMADDSUBIDUP   
+#undef VMULRDUP   
+#undef VMULIDUP   
+#define VMADDSUBRDUP(O,P,B,accum) VMADDSUBRDUPf(O,P,B,accum) 
+#define VMADDSUBIDUP(O,P,B,accum) VMADDSUBIDUPf(O,P,B,accum) 
+#define VMULRDUP(O,P,B,accum)     VMULRDUPf(O,P,B,accum)      
+#define VMULIDUP(O,P,B,accum)     VMULIDUPf(O,P,B,accum) 
+   

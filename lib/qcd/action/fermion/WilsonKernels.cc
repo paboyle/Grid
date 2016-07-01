@@ -31,12 +31,63 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 namespace Grid {
 namespace QCD {
 
+  int WilsonKernelsStatic::HandOpt;
+  int WilsonKernelsStatic::AsmOpt;
+
 template<class Impl> 
 WilsonKernels<Impl>::WilsonKernels(const ImplParams &p): Base(p) {};
 
-  // Need controls to do interior, exterior, or both
 template<class Impl> 
-void WilsonKernels<Impl>::DiracOptDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
+void WilsonKernels<Impl>::DiracOptDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
+						  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+						  int sF,int sU,int Ls, int Ns, const FermionField &in, FermionField &out)
+{
+#ifdef AVX512
+  if ( AsmOpt ) {
+
+    WilsonKernels<Impl>::DiracOptAsmDhopSite(st,lo,U,buf,sF,sU,Ls,Ns,in,out);
+
+  } else {
+#else
+  {  
+#endif
+    for(int site=0;site<Ns;site++) {
+      for(int s=0;s<Ls;s++) {
+	if (HandOpt) WilsonKernels<Impl>::DiracOptHandDhopSite(st,lo,U,buf,sF,sU,in,out);
+	else         WilsonKernels<Impl>::DiracOptGenericDhopSite(st,lo,U,buf,sF,sU,in,out);
+	sF++;
+      }
+      sU++;
+    }
+
+  }
+}
+
+template<class Impl> 
+void WilsonKernels<Impl>::DiracOptDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
+					   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+					   int sF,int sU,int Ls, int Ns, const FermionField &in, FermionField &out)
+{
+  // No asm implementation yet.
+  //  if ( AsmOpt )     WilsonKernels<Impl>::DiracOptAsmDhopSiteDag(st,lo,U,buf,sF,sU,in,out);
+  //  else
+  for(int site=0;site<Ns;site++) {
+    for(int s=0;s<Ls;s++) {
+      if (HandOpt) WilsonKernels<Impl>::DiracOptHandDhopSiteDag(st,lo,U,buf,sF,sU,in,out);
+      else         WilsonKernels<Impl>::DiracOptGenericDhopSiteDag(st,lo,U,buf,sF,sU,in,out);
+      sF++;
+    }
+    sU++;
+  }
+}
+
+
+  ////////////////////////////////////////////
+  // Generic implementation; move to different file?
+  ////////////////////////////////////////////
+
+template<class Impl> 
+void WilsonKernels<Impl>::DiracOptGenericDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
 					   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 					   int sF,int sU,const FermionField &in, FermionField &out)
 {
@@ -214,9 +265,9 @@ void WilsonKernels<Impl>::DiracOptDhopSiteDag(StencilImpl &st,DoubledGaugeField 
 
   // Need controls to do interior, exterior, or both
 template<class Impl> 
-void WilsonKernels<Impl>::DiracOptDhopSite(StencilImpl &st,DoubledGaugeField &U,
-					   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-					   int sF,int sU,const FermionField &in, FermionField &out)
+void WilsonKernels<Impl>::DiracOptGenericDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
+						  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+						  int sF,int sU,const FermionField &in, FermionField &out)
 {
   SiteHalfSpinor  tmp;    
   SiteHalfSpinor  chi;    
@@ -518,17 +569,9 @@ void WilsonKernels<Impl>::DiracOptDhopDir(StencilImpl &st,DoubledGaugeField &U,
   vstream(out._odata[sF],result);
 }
 
-#if ( ! defined(AVX512) )
-template<class Impl> 
-void WilsonKernels<Impl>::DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U,
-					      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-					      int sF,int sU,const FermionField &in, FermionField &out)
-{
-  DiracOptDhopSite(st,U,buf,sF,sU,in,out); // will template override for Wilson Nc=3
-}
-#endif
 
   FermOpTemplateInstantiate(WilsonKernels);
+
 template class WilsonKernels<DomainWallRedBlack5dImplF>;		
 template class WilsonKernels<DomainWallRedBlack5dImplD>;
 

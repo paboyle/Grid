@@ -49,8 +49,6 @@ namespace Grid {
     class WilsonFermion5DStatic { 
     public:
       // S-direction is INNERMOST and takes no part in the parity.
-      static int AsmOptDslash; // these are a temporary hack
-      static int HandOptDslash; // these are a temporary hack
       static const std::vector<int> directions;
       static const std::vector<int> displacements;
       const int npoint = 8;
@@ -62,11 +60,7 @@ namespace Grid {
     public:
      INHERIT_IMPL_TYPES(Impl);
      typedef WilsonKernels<Impl> Kernels;
-     double alltime;
-     double jointime;
-     double commtime;
-     double dslashtime;
-     double dslash1time;
+
       ///////////////////////////////////////////////////////////////
       // Implement the abstract base
       ///////////////////////////////////////////////////////////////
@@ -122,13 +116,6 @@ namespace Grid {
 			FermionField &out,
 			int dag);
 
-      void DhopInternalCommsThenCompute(StencilImpl & st,
-			LebesgueOrder &lo,
-			DoubledGaugeField &U,
-			const FermionField &in, 
-			FermionField &out,
-			int dag);
-
       // Constructors
       WilsonFermion5D(GaugeField &_Umu,
 		      GridCartesian         &FiveDimGrid,
@@ -143,13 +130,11 @@ namespace Grid {
 		      GridCartesian         &FiveDimGrid,
 		      GridRedBlackCartesian &FiveDimRedBlackGrid,
 		      GridCartesian         &FourDimGrid,
-		      GridRedBlackCartesian &FourDimRedBlackGrid,
 		      double _M5,const ImplParams &p= ImplParams());
 
       // DoubleStore
       void ImportGauge(const GaugeField &_Umu);
 
-      void Report(void);
       ///////////////////////////////////////////////////////////////
       // Data members require to support the functionality
       ///////////////////////////////////////////////////////////////

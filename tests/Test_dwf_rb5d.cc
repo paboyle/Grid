@@ -97,7 +97,7 @@ int main (int argc, char ** argv)
   RealD M5  =1.8;
   typename WilsonFermion5DR::ImplParams params;
 
-  WilsonFermion5DR Dw(1,Umu,*FGrid,*FrbGrid,*sUGrid,*sUrbGrid,M5,params);
+  WilsonFermion5DR Dw(1,Umu,*FGrid,*FrbGrid,*sUGrid,M5,params);
 
   Dw.Dhop(src,result,0);
 

@@ -111,11 +111,8 @@ namespace Grid {
 			 const FermionField &B,
 			 int dag);
 
-      void DhopInternal(StencilImpl & st,DoubledGaugeField & U,
+      void DhopInternal(StencilImpl & st,LebesgueOrder & lo,DoubledGaugeField & U,
 			const FermionField &in, FermionField &out,int dag) ;
-
-      void DhopInternalCommsThenCompute(StencilImpl & st,DoubledGaugeField & U,
-				    const FermionField &in, FermionField &out,int dag) ;
 
       // Constructor
       WilsonFermion(GaugeField &_Umu,
@@ -149,6 +146,10 @@ namespace Grid {
       DoubledGaugeField Umu;
       DoubledGaugeField UmuEven;
       DoubledGaugeField UmuOdd;
+
+      LebesgueOrder Lebesgue;
+      LebesgueOrder LebesgueEvenOdd;
+
       
     };
 

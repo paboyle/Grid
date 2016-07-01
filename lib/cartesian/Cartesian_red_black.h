@@ -170,9 +170,15 @@ public:
 	// Use a reduced simd grid
 	_simd_layout[d] = simd_layout[d];
 	_rdimensions[d]= _ldimensions[d]/_simd_layout[d];
+	assert(_rdimensions[d]>0);
 
 	// all elements of a simd vector must have same checkerboard.
-	if ( simd_layout[d]>1 ) assert((_rdimensions[d]&0x1)==0); 
+	// If Ls vectorised, this must still be the case; e.g. dwf rb5d
+	if ( _simd_layout[d]>1 ) {
+	  if ( d != _checker_dim ) { 
+	    assert( (_rdimensions[d]&0x1) == 0 );
+	  }
+	}
 
 	_osites *= _rdimensions[d];
 	_isites *= _simd_layout[d];

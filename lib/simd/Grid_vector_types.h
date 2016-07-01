@@ -367,6 +367,9 @@ namespace Grid {
   template <class S,class V, IfComplex<S> = 0 > inline void vzero(Grid_simd<S,V> &ret)     { vsplat(ret,S(0.0,0.0)); }// use xor?
   template <class S,class V, IfComplex<S> = 0 > inline void vcomplex_i(Grid_simd<S,V> &ret){ vsplat(ret,S(0.0,1.0));} 
 
+  template <class S,class V, IfComplex<S> = 0 > inline void visign(Grid_simd<S,V> &ret){ vsplat(ret,S(1.0,-1.0));} 
+  template <class S,class V, IfComplex<S> = 0 > inline void vrsign(Grid_simd<S,V> &ret){ vsplat(ret,S(-1.0,1.0));} 
+
   // if not complex overload here 
   template <class S,class V, IfReal<S> = 0 > inline void vone (Grid_simd<S,V> &ret){ vsplat(ret,S(1.0)); }
   template <class S,class V, IfReal<S> = 0 > inline void vzero(Grid_simd<S,V> &ret){ vsplat(ret,S(0.0)); }

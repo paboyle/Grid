@@ -39,7 +39,13 @@ namespace Grid {
   // Dress the output; use std::chrono
 
 // C++11 time facilities better?
-double usecond(void);
+inline double usecond(void) {
+  struct timeval tv;
+#ifdef TIMERS_ON
+  gettimeofday(&tv,NULL);
+#endif
+  return 1.0*tv.tv_usec + 1.0e6*tv.tv_sec;
+}
 
 typedef  std::chrono::system_clock          GridClock;
 typedef  std::chrono::time_point<GridClock> GridTimePoint;
@@ -63,17 +69,23 @@ public:
   }
   void     Start(void) { 
     assert(running == false);
+#ifdef TIMERS_ON
     start = GridClock::now(); 
+#endif
     running = true;
   }
   void     Stop(void)  { 
     assert(running == true);
+#ifdef TIMERS_ON
     accumulator+= std::chrono::duration_cast<GridUsecs>(GridClock::now()-start); 
+#endif
     running = false; 
   };
   void     Reset(void){
     running = false;
+#ifdef TIMERS_ON
     start = GridClock::now();
+#endif
     accumulator = std::chrono::duration_cast<GridUsecs>(start-start); 
   }
   GridTime Elapsed(void) {

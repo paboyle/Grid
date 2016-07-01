@@ -53,6 +53,8 @@ namespace QCD {
 	StencilEven(&Hgrid,npoint,Even,directions,displacements), // source is Even
 	StencilOdd (&Hgrid,npoint,Odd ,directions,displacements), // source is Odd
 	mass(_mass),
+	Lebesgue(_grid),
+	LebesgueEvenOdd(_cbgrid),
 	Umu(&Fgrid),
 	UmuEven(&Hgrid),
 	UmuOdd (&Hgrid) 
@@ -228,7 +230,7 @@ PARALLEL_FOR_LOOP
     
     out.checkerboard = in.checkerboard;
     
-    DhopInternal(Stencil,Umu,in,out,dag);
+    DhopInternal(Stencil,Lebesgue,Umu,in,out,dag);
   }
   
   template<class Impl>
@@ -239,7 +241,7 @@ PARALLEL_FOR_LOOP
     assert(in.checkerboard==Even);
     out.checkerboard = Odd;
     
-    DhopInternal(StencilEven,UmuOdd,in,out,dag);
+    DhopInternal(StencilEven,LebesgueEvenOdd,UmuOdd,in,out,dag);
   }
   
   template<class Impl>
@@ -250,7 +252,7 @@ PARALLEL_FOR_LOOP
     assert(in.checkerboard==Odd);
     out.checkerboard = Even;
     
-    DhopInternal(StencilOdd,UmuEven,in,out,dag);
+    DhopInternal(StencilOdd,LebesgueEvenOdd,UmuEven,in,out,dag);
   }
   
   template<class Impl>
@@ -285,43 +287,23 @@ PARALLEL_FOR_LOOP
   };
 
   template<class Impl>
-  void WilsonFermion<Impl>::DhopInternal(StencilImpl & st,DoubledGaugeField & U,
+  void WilsonFermion<Impl>::DhopInternal(StencilImpl & st,LebesgueOrder& lo,DoubledGaugeField & U,
 					 const FermionField &in, FermionField &out,int dag) 
   {
-    DhopInternalCommsThenCompute(st,U,in,out,dag);
-  }
-  template<class Impl>
-  void WilsonFermion<Impl>::DhopInternalCommsThenCompute(StencilImpl & st,DoubledGaugeField & U,
-							 const FermionField &in, FermionField &out,int dag) {
-
     assert((dag==DaggerNo) ||(dag==DaggerYes));
 
     Compressor compressor(dag);
     st.HaloExchange(in,compressor);
     
     if ( dag == DaggerYes ) {
-      if( HandOptDslash ) {
 PARALLEL_FOR_LOOP
-        for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out);
-	}
-      } else { 
-PARALLEL_FOR_LOOP
-        for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out);
-	}
+      for(int sss=0;sss<in._grid->oSites();sss++){
+	Kernels::DiracOptDhopSiteDag(st,lo,U,st.comm_buf,sss,sss,1,1,in,out);
       }
     } else {
-      if( HandOptDslash ) {
 PARALLEL_FOR_LOOP
-        for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sss,sss,in,out);
-	}
-      } else { 
-PARALLEL_FOR_LOOP
-        for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sss,sss,in,out);
-	}
+      for(int sss=0;sss<in._grid->oSites();sss++){
+	Kernels::DiracOptDhopSite(st,lo,U,st.comm_buf,sss,sss,1,1,in,out);
       }
     }
   };

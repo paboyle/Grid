@@ -58,6 +58,27 @@ static long perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
 }
 #endif
 
+#ifdef TIMERS_OFF
+
+
+inline uint64_t cyclecount(void){ 
+  return 0;
+}
+#define __SSC_MARK(mark) __asm__ __volatile__ ("movl %0, %%ebx; .byte 0x64, 0x67, 0x90 " ::"i"(mark):"%ebx")
+#define __SSC_STOP  __SSC_MARK(0x110)
+#define __SSC_START __SSC_MARK(0x111)
+
+
+#else
+
+#define __SSC_MARK(mark) 
+#define __SSC_STOP  
+#define __SSC_START 
+
+/*
+ * cycle counters arch dependent
+ */
+
 #ifdef __bgq__
 inline uint64_t cyclecount(void){ 
    uint64_t tmp;
@@ -65,18 +86,20 @@ inline uint64_t cyclecount(void){
    return tmp;
 }
 #elif defined __x86_64__
-#include <immintrin.h>
-#ifndef __INTEL_COMPILER
 #include <x86intrin.h>
-#endif
-inline uint64_t cyclecount(void){
-   return __rdtsc();
+inline uint64_t cyclecount(void){ 
+  return __rdtsc();
+  //  unsigned int dummy;
+  // return __rdtscp(&dummy);
 }
 #else
-#warning No cycle counter implemented for this architecture
+
 inline uint64_t cyclecount(void){ 
    return 0;
 }
+
+#endif
+
 #endif
 
 class PerformanceCounter {
@@ -87,6 +110,7 @@ private:
     uint32_t type;
     uint64_t config;
     const char *name;
+    int normalisation;
   } PerformanceCounterConfig; 
   
   static const PerformanceCounterConfig PerformanceCounterConfigs [];
@@ -94,26 +118,12 @@ private:
 public:
 
   enum PerformanceCounterType {
-    CPUCYCLES=0,
-    INSTRUCTIONS,
-    //    STALL_CYCLES,
-    CACHE_REFERENCES,
-    CACHE_MISSES,
-    L1D_READ_MISS,
-    L1D_READ_ACCESS,
-    L1D_WRITE_MISS,
-    L1D_WRITE_ACCESS,
-    L1D_PREFETCH_MISS,
-    L1D_PREFETCH_ACCESS,
-    LL_READ_MISS,
-    //    LL_READ_ACCESS,
-    LL_WRITE_MISS,
-    LL_WRITE_ACCESS,
-    LL_PREFETCH_MISS,
-    LL_PREFETCH_ACCESS,
-    L1I_READ_MISS,
-    L1I_READ_ACCESS,
-    PERFORMANCE_COUNTER_NUM_TYPES
+    CACHE_REFERENCES=0,
+    CACHE_MISSES=1,
+    CPUCYCLES=2,
+    INSTRUCTIONS=3,
+    L1D_READ_ACCESS=4,
+    PERFORMANCE_COUNTER_NUM_TYPES=19
   };
 
 public:
@@ -121,7 +131,9 @@ public:
   int PCT;
 
   long long count;
+  long long cycles;
   int fd;
+  int cyclefd;
   unsigned long long elapsed;
   uint64_t begin;
 
@@ -134,7 +146,9 @@ public:
     assert(_pct>=0);
     assert(_pct<PERFORMANCE_COUNTER_NUM_TYPES);
     fd=-1;
+    cyclefd=-1;
     count=0;
+    cycles=0;
     PCT =_pct;
     Open();
 #endif
@@ -159,6 +173,15 @@ public:
       fprintf(stderr, "Error opening leader %llx for event %s\n", pe.config,name);
       perror("Error is");
     }
+    int norm = PerformanceCounterConfigs[PCT].normalisation;
+    pe.type  = PerformanceCounterConfigs[norm].type;
+    pe.config= PerformanceCounterConfigs[norm].config;
+    name = PerformanceCounterConfigs[norm].name;
+    cyclefd = perf_event_open(&pe, 0, -1, -1, 0); // pid 0, cpu -1 current process any cpu. group -1
+    if (cyclefd == -1) {
+      fprintf(stderr, "Error opening leader %llx for event %s\n", pe.config,name);
+      perror("Error is");
+    }
 #endif
   }
 
@@ -168,6 +191,8 @@ public:
     if ( fd!= -1) {
       ::ioctl(fd, PERF_EVENT_IOC_RESET, 0);
       ::ioctl(fd, PERF_EVENT_IOC_ENABLE, 0);
+      ::ioctl(cyclefd, PERF_EVENT_IOC_RESET, 0);
+      ::ioctl(cyclefd, PERF_EVENT_IOC_ENABLE, 0);
     }
     begin  =cyclecount();
 #else
@@ -177,10 +202,13 @@ public:
 
   void Stop(void) {
     count=0;
+    cycles=0;
 #ifdef __linux__
     if ( fd!= -1) {
       ::ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
+      ::ioctl(cyclefd, PERF_EVENT_IOC_DISABLE, 0);
       ::read(fd, &count, sizeof(long long));
+      ::read(cyclefd, &cycles, sizeof(long long));
     }
     elapsed = cyclecount() - begin;
 #else
@@ -190,7 +218,11 @@ public:
   }
   void Report(void) {
 #ifdef __linux__
-    std::printf("%llu cycles %s = %20llu\n", elapsed , PerformanceCounterConfigs[PCT].name, count);
+    int N = PerformanceCounterConfigs[PCT].normalisation;
+    const char * sn = PerformanceCounterConfigs[N].name ;
+    const char * sc = PerformanceCounterConfigs[PCT].name;
+      std::printf("tsc = %llu %s = %llu  %s = %20llu\n (%s/%s) rate = %lf\n", elapsed,sn ,cycles, 
+		  sc, count, sc,sn, (double)count/(double)cycles);
 #else
     std::printf("%llu cycles \n", elapsed );
 #endif
@@ -199,7 +231,7 @@ public:
   ~PerformanceCounter()
   {
 #ifdef __linux__
-    ::close(fd);
+    ::close(fd);    ::close(cyclefd);
 #endif
   }
 

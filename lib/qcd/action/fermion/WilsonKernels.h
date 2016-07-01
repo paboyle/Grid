@@ -38,37 +38,56 @@ namespace Grid {
     // Helper routines that implement Wilson stencil for a single site.
     // Common to both the WilsonFermion and WilsonFermion5D
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    class WilsonKernelsStatic { 
+    public:
+      // S-direction is INNERMOST and takes no part in the parity.
+      static int AsmOpt;  // these are a temporary hack
+      static int HandOpt; // these are a temporary hack
+    };
 
-    template<class Impl> class WilsonKernels : public FermionOperator<Impl> { 
+    template<class Impl> class WilsonKernels : public FermionOperator<Impl> , public WilsonKernelsStatic { 
     public:
 
      INHERIT_IMPL_TYPES(Impl);
      typedef FermionOperator<Impl> Base;
      
     public:
-     void DiracOptDhopSite(StencilImpl &st,DoubledGaugeField &U,
+
+     void DiracOptDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
 			   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-			   int sF,int sU,const FermionField &in, FermionField &out);
+			   int sF, int sU,int Ls, int Ns, const FermionField &in, FermionField &out);
       
-     void DiracOptDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
+     void DiracOptDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-			      int sF,int sU,const FermionField &in,FermionField &out);
+			      int sF,int sU,int Ls, int Ns, const FermionField &in,FermionField &out);
 
      void DiracOptDhopDir(StencilImpl &st,DoubledGaugeField &U,
 			  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 			  int sF,int sU,const FermionField &in, FermionField &out,int dirdisp,int gamma);
 
-     void DiracOptAsmDhopSite(StencilImpl &st,DoubledGaugeField &U,
+    private:
+     // Specialised variants
+     void DiracOptGenericDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
+			   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+			   int sF,int sU, const FermionField &in, FermionField &out);
+      
+     void DiracOptGenericDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-			      int sF,int sU,const FermionField &in, FermionField &out);
+			      int sF,int sU,const FermionField &in,FermionField &out);
 
-     int DiracOptHandDhopSite(StencilImpl &st,DoubledGaugeField &U,
+     void DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
+			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+			      int sF,int sU,int Ls, int Ns, const FermionField &in, FermionField &out);
+
+
+     void DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 			      int sF,int sU,const FermionField &in, FermionField &out);
      
-     int DiracOptHandDhopSiteDag(StencilImpl &st,DoubledGaugeField &U,
+     void DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
 				 std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 				 int sF,int sU,const FermionField &in, FermionField &out);
+    public:
 
      WilsonKernels(const ImplParams &p= ImplParams());
      

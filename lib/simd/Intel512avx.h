@@ -87,14 +87,39 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #define VMOVRDUPd(OFF,A,DEST)       "vpshufd  $0x44," #OFF "*64(" #A ")," #DEST  ";\n" // 32 bit level: 1,0,3,2
 #define VMOVIDUPd(OFF,A,DEST)       "vpshufd  $0xee," #OFF "*64(" #A ")," #DEST  ";\n" // 32 bit level: 3,2,3,2
-
 #define VMOVRDUPf(OFF,PTR,DEST)         "vmovsldup " #OFF "*64(" #PTR "), " #DEST  ";\n"
 #define VMOVIDUPf(OFF,PTR,DEST)         "vmovshdup " #OFF "*64(" #PTR "), " #DEST  ";\n"
 
+#define VRDUPd(SRC,DEST)       "vpshufd  $0x44," #SRC"," #DEST  ";\n" // 32 bit level: 1,0,3,2
+#define VRDUPf(SRC,DEST)         "vmovsldup " #SRC ", " #DEST  ";\n"
+#define VIDUPd(SRC,DEST)       "vpshufd  $0xee," #SRC"," #DEST  ";\n" // 32 bit level: 3,2,3,2
+#define VIDUPf(SRC,DEST)         "vmovshdup " #SRC ", " #DEST  ";\n"
+
+#define VBCASTRDUPd(OFF,A,DEST)           "vbroadcastsd (" #OFF "*16+0)(" #A ")," #DEST  ";\n" 
+#define VBCASTIDUPd(OFF,A,DEST)           "vbroadcastsd (" #OFF "*16+8)(" #A ")," #DEST  ";\n" 
+#define VBCASTRDUPf(OFF,PTR,DEST)         "vbroadcastss (" #OFF "*8 +0)(" #PTR "), " #DEST  ";\n"
+#define VBCASTIDUPf(OFF,PTR,DEST)         "vbroadcastss (" #OFF "*8 +4)(" #PTR "), " #DEST  ";\n"
+
 #define VMADDSUBf(A,B,accum) "vfmaddsub231ps   " #A "," #B "," #accum  ";\n"
 #define VMADDSUBd(A,B,accum) "vfmaddsub231pd   " #A "," #B "," #accum  ";\n"
+#define VMADDSUBMEMf(O,P,B,accum) "vfmaddsub231ps   " #O"*64("#P "),"#B "," #accum  ";\n"
+#define VMADDSUBMEMd(O,P,B,accum) "vfmaddsub231pd   " #O"*64("#P "),"#B "," #accum  ";\n"
 
-                                  
+
+#define VMADDSUBRDUPf(O,P,B,accum) "vfmaddsub231ps   (" #O"*8+0)("#P "){1to16},"#B "," #accum  ";\n"
+#define VMADDSUBIDUPf(O,P,B,accum) "vfmaddsub231ps   (" #O"*8+4)("#P "){1to16},"#B "," #accum  ";\n"
+#define VMULRDUPf(O,P,B,accum) "vmulps   (" #O"*8+0)("#P "){1to16},"#B "," #accum  ";\n"
+#define VMULIDUPf(O,P,B,accum) "vmulps   (" #O"*8+4)("#P "){1to16},"#B "," #accum  ";\n"
+
+#define VMADDSUBRDUPd(O,P,B,accum) "vfmaddsub231pd   (" #O"*16+0)("#P "){1to8},"#B "," #accum  ";\n"
+#define VMADDSUBIDUPd(O,P,B,accum) "vfmaddsub231pd   (" #O"*16+8)("#P "){1to8},"#B "," #accum  ";\n"
+#define VMULRDUPd(O,P,B,accum) "vmulpd   (" #O"*16+0)("#P "){1to8},"#B "," #accum  ";\n"
+#define VMULIDUPd(O,P,B,accum) "vmulpd   (" #O"*16+8)("#P "){1to8},"#B "," #accum  ";\n"
+  /*
+   * TimesI is used only in the XP recon
+   * Could zero the regs and use RECON_ACCUM
+   */
+
 #define VTIMESI0f(A,DEST, Z)   VSHUFf(A,DEST)	  
 #define VTIMESI1f(A,DEST, Z)   "vaddps  " #DEST "," #Z "," #DEST"{%k6}"  ";\n"
 #define VTIMESI2f(A,DEST, Z)   "vsubps  " #DEST "," #Z "," #DEST"{%k7}"  ";\n"
@@ -111,6 +136,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define VTIMESMINUSI1d(A,DEST,Z)  "vsubpd  " #DEST "," #Z "," #DEST"{%k6}"  ";\n"
 #define VTIMESMINUSI2d(A,DEST,Z)  "vaddpd  " #DEST "," #Z "," #DEST"{%k7}"  ";\n"
 
+#if 0
+
 #define VACCTIMESMINUSI0f(A,ACC,tmp)  VSHUFf(A,tmp)					
 #define VACCTIMESMINUSI1f(A,ACC,tmp)  "vsubps  " #tmp "," #ACC "," #ACC"{%k6}" ";\n"
 #define VACCTIMESMINUSI2f(A,ACC,tmp)  "vaddps  " #tmp "," #ACC "," #ACC"{%k7}" ";\n"
@@ -126,6 +153,35 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define  VACCTIMESI0d(A,ACC,tmp)  VSHUFd(A,tmp)	
 #define  VACCTIMESI1d(A,ACC,tmp)  "vaddpd  " #tmp "," #ACC "," #ACC"{%k6}" ";\n"
 #define  VACCTIMESI2d(A,ACC,tmp)  "vsubpd  " #tmp "," #ACC "," #ACC"{%k7}" ";\n"
+
+#else
+
+// o_p must point to floating 1.0f/d
+//
+// Ai, Ar -> tmp (r i)
+// tmp *1.0 
+// ACC i - Ar ; ACC r + Ai
+#define VACCTIMESMINUSI0f(A,ACC,tmp)  VSHUFf(A,tmp)					
+#define VACCTIMESMINUSI1f(A,ACC,tmp)  VMADDMEMf(1,%r10,tmp,ACC)
+#define VACCTIMESMINUSI2f(A,ACC,tmp)  
+
+
+#define VACCTIMESMINUSI0d(A,ACC,tmp)  VSHUFd(A,tmp)					
+#define VACCTIMESMINUSI1d(A,ACC,tmp)  VMADDMEMd(1,%r10,tmp,ACC)  
+#define VACCTIMESMINUSI2d(A,ACC,tmp)
+
+// Ai, Ar -> tmp (r i)
+// tmp *1.0 
+// ACC i + Ar ; ACC r - Ai
+#define  VACCTIMESI0f(A,ACC,tmp)  VSHUFf(A,tmp)	
+#define  VACCTIMESI1f(A,ACC,tmp)  VMADDMEMf(0,%r10,tmp,ACC)  
+#define  VACCTIMESI2f(A,ACC,tmp)
+
+#define  VACCTIMESI0d(A,ACC,tmp)  VSHUFd(A,tmp)	
+#define  VACCTIMESI1d(A,ACC,tmp)  VMADDMEMd(0,%r10,tmp,ACC)  
+#define  VACCTIMESI2d(A,ACC,tmp)
+
+#endif
 
 #define VPERM0f(A,B) "vshuff32x4  $0x4e," #A "," #B "," #B ";\n"
 #define VPERM1f(A,B) "vshuff32x4  $0xb1," #A "," #B "," #B ";\n"

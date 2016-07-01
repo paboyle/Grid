@@ -55,6 +55,15 @@ echo :::::::::::::::::::::::::::::::::::::::::::
 
 AC_CHECK_FUNCS([gettimeofday])
 
+#AC_CHECK_LIB([gmp],[__gmpf_init],,
+#        [AC_MSG_ERROR(GNU Multiple Precision GMP library was not found in your system.
+#Please install or provide the correct path to your installation
+#Info at: http://www.gmplib.org)])
+
+#AC_CHECK_LIB([mpfr],[mpfr_init],,
+#        [AC_MSG_ERROR(GNU Multiple Precision MPFR library was not found in your system.
+#Please install or provide the correct path to your installation
+#Info at: http://www.mpfr.org/)])
 
 #
 # SIMD instructions selection
@@ -199,6 +208,25 @@ case ${ac_RNG} in
      AC_MSG_ERROR([${ac_RNG} unsupported --enable-rng option]); 
      ;;
 esac
+
+#
+# SDE timing mode
+#
+AC_ARG_ENABLE([timers],[AC_HELP_STRING([--enable-timers=yes|no],\
+	[Enable system dependent high res timers])],\
+	[ac_TIMERS=${enable_timers}],[ac_TIMERS=yes])
+case ${ac_TIMERS} in
+     yes)
+     AC_DEFINE([TIMERS_ON],[1],[TIMERS_ON] )
+     ;;
+     no)
+     AC_DEFINE([TIMERS_OFF],[1],[TIMERS_OFF] )
+     ;;
+     *)
+     AC_MSG_ERROR([${ac_TIMERS} unsupported --enable-timers option]); 
+     ;;
+esac
+
 #
 # Chroma regression tests
 #

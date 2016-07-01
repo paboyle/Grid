@@ -49,16 +49,25 @@ LebesgueOrder::LebesgueOrder(GridBase *_grid)
 {
   grid = _grid;
   if ( Block[0]==0) ZGraph();
+  else if ( Block[1]==0) NoBlocking();
   else CartesianBlocking();
 }
 
+void LebesgueOrder::NoBlocking(void) 
+{
+  std::cout<<GridLogDebug<<"Lexicographic : no cache blocking"<<std::endl;
+  _LebesgueReorder.resize(0);
+  for ( int s = 0 ; s!= grid->oSites();s++){
+    _LebesgueReorder.push_back(s);
+  }
+}
 void LebesgueOrder::CartesianBlocking(void) 
 {
   _LebesgueReorder.resize(0);
 
-  std::cout << GridLogMessage << " CartesianBlocking ";
-  for(int d=0;d<Block.size();d++) std::cout <<Block[d]<<" ";
-  std::cout<<std::endl; 
+  std::cout << GridLogDebug << " CartesianBlocking ";
+  //    for(int d=0;d<Block.size();d++) std::cout <<Block[d]<<" ";
+  //    std::cout<<std::endl; 
 
   IndexInteger ND = grid->_ndimension;
 
@@ -103,7 +112,9 @@ void LebesgueOrder::IterateI(int ND,
     } else {
       for(int d=0;d<ND;d++){
 	x[d]=xi[d]+xo[d];
+//	std::cout << x[d]<<" ";
       }
+//      std::cout << "\n";
       IndexInteger index;
       Lexicographic::IndexFromCoor(x,index,grid->_rdimensions);
       _LebesgueReorder.push_back(index);
@@ -114,7 +125,8 @@ void LebesgueOrder::IterateI(int ND,
 void LebesgueOrder::ZGraph(void) 
 {
   _LebesgueReorder.resize(0);
-  
+
+  std::cout << GridLogDebug << " Lebesgue order "<<std::endl;
   // Align up dimensions to power of two.
   const IndexInteger one=1;
 
@@ -188,6 +200,7 @@ void LebesgueOrder::ZGraph(void)
   }
   assert( _LebesgueReorder.size() == vol );
 
+  /*
   std::vector<int> coor(4);
   for(IndexInteger asite=0;asite<vol;asite++){
     grid->oCoorFromOindex (coor,_LebesgueReorder[asite]);
@@ -198,5 +211,6 @@ void LebesgueOrder::ZGraph(void)
 		<< coor[3]<<"]"
 		<<std::endl;
   }
+  */
 }
 }
