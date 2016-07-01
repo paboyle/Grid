@@ -63,7 +63,6 @@ namespace Grid {
 	colour["WHITE"]  ="\033[37m";
 	colour["NORMAL"] ="\033[0;39m";
       } else {
-	std::cout << "Switching off colours\n";
       colour["BLACK"] ="";
       colour["RED"]   ="";
       colour["GREEN"] ="";

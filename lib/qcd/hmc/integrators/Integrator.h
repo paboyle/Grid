@@ -117,10 +117,10 @@ namespace Grid{
 	  GaugeField force(U._grid);
 	  GaugeField& Us = Smearer.get_U(as[level].actions.at(a)->is_smeared);
 	  as[level].actions.at(a)->deriv(Us,force); // deriv should not include Ta
-	  std::cout<<GridLogIntegrator<< "Smearing (on/off): "<<as[level].actions.at(a)->is_smeared <<std::endl;
+	  std::cout<< GridLogIntegrator << "Smearing (on/off): "<<as[level].actions.at(a)->is_smeared <<std::endl;
 	  if (as[level].actions.at(a)->is_smeared) Smearer.smeared_force(force);
 	  force = Ta(force);
-	  std::cout<<GridLogIntegrator<< "Force average: "<< norm2(force)/(U._grid->gSites()) <<std::endl;
+	  std::cout<< GridLogIntegrator << "Force average: "<< norm2(force)/(U._grid->gSites()) <<std::endl;
 	  Mom = Mom - force*ep;
 	}
       }
@@ -130,7 +130,7 @@ namespace Grid{
 
 	t_U+=ep;
 	int fl = levels-1;
-	std::cout<<GridLogIntegrator<<"   "<<"["<<fl<<"] U " << " dt "<< ep <<" : t_U "<< t_U <<std::endl;
+	std::cout<< GridLogIntegrator <<"   "<<"["<<fl<<"] U " << " dt "<< ep <<" : t_U "<< t_U <<std::endl;
 
       }
       void update_U(GaugeField &Mom, GaugeField&U, double ep){
