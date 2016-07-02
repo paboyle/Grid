@@ -235,25 +235,24 @@ void Grid_init(int *argc,char ***argv)
   }
 
   std::cout <<std::endl;
-  std::cout <<Logger::RED  << "__|__|__|__|__"<<             "|__|__|_"<<Logger::PURPLE<<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
-  std::cout <<Logger::RED  << "__|__|__|__|__"<<             "|__|__|_"<<Logger::PURPLE<<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
-  std::cout <<Logger::RED  << "__|__|  |  |  "<<             "|  |  | "<<Logger::PURPLE<<" |  |  |"<<                "  |  |  | _|__"<<std::endl; 
-  std::cout <<Logger::RED  << "__|__         "<<             "        "<<Logger::PURPLE<<"        "<<                "          _|__"<<std::endl; 
-  std::cout <<Logger::RED  << "__|_  "<<Logger::GREEN<<" GGGG   "<<Logger::RED<<" RRRR   "<<Logger::BLUE  <<" III    "<<Logger::PURPLE<<"DDDD  "<<Logger::PURPLE<<"    _|__"<<std::endl;
-  std::cout <<Logger::RED  << "__|_  "<<Logger::GREEN<<"G       "<<Logger::RED<<" R   R  "<<Logger::BLUE  <<"  I     "<<Logger::PURPLE<<"D   D "<<Logger::PURPLE<<"    _|__"<<std::endl;
-  std::cout <<Logger::RED  << "__|_  "<<Logger::GREEN<<"G       "<<Logger::RED<<" R   R  "<<Logger::BLUE  <<"  I     "<<Logger::PURPLE<<"D    D"<<Logger::PURPLE<<"    _|__"<<std::endl;
-  std::cout <<Logger::BLUE << "__|_  "<<Logger::GREEN<<"G  GG   "<<Logger::RED<<" RRRR   "<<Logger::BLUE  <<"  I     "<<Logger::PURPLE<<"D    D"<<Logger::GREEN <<"    _|__"<<std::endl;
-  std::cout <<Logger::BLUE << "__|_  "<<Logger::GREEN<<"G   G   "<<Logger::RED<<" R  R   "<<Logger::BLUE  <<"  I     "<<Logger::PURPLE<<"D   D "<<Logger::GREEN <<"    _|__"<<std::endl;
-  std::cout <<Logger::BLUE << "__|_  "<<Logger::GREEN<<" GGGG   "<<Logger::RED<<" R   R  "<<Logger::BLUE  <<" III    "<<Logger::PURPLE<<"DDDD  "<<Logger::GREEN <<"    _|__"<<std::endl;
-  std::cout <<Logger::BLUE << "__|__         "<<             "        "<<Logger::GREEN <<"        "<<                "          _|__"<<std::endl; 
-  std::cout <<Logger::BLUE << "__|__|__|__|__"<<             "|__|__|_"<<Logger::GREEN <<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
-  std::cout <<Logger::BLUE << "__|__|__|__|__"<<             "|__|__|_"<<Logger::GREEN <<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
-  std::cout <<Logger::BLUE << "  |  |  |  |  "<<             "|  |  | "<<Logger::GREEN <<" |  |  |"<<                "  |  |  |  |  "<<std::endl; 
+  std::cout << "__|__|__|__|__|__|__|__|__|__|__|__|__|__|__"<<std::endl; 
+  std::cout << "__|__|__|__|__|__|__|__|__|__|__|__|__|__|__"<<std::endl; 
+  std::cout << "__|_ |  |  |  |  |  |  |  |  |  |  |  | _|__"<<std::endl; 
+  std::cout << "__|_                                    _|__"<<std::endl; 
+  std::cout << "__|_    GGGG    RRRR    III    DDDD     _|__"<<std::endl;
+  std::cout << "__|_   G        R   R    I     D   D    _|__"<<std::endl;
+  std::cout << "__|_   G        R   R    I     D    D   _|__"<<std::endl;
+  std::cout << "__|_   G  GG    RRRR     I     D    D   _|__"<<std::endl;
+  std::cout << "__|_   G   G    R  R     I     D   D    _|__"<<std::endl;
+  std::cout << "__|_    GGGG    R   R   III    DDDD     _|__"<<std::endl;
+  std::cout << "__|_                                    _|__"<<std::endl; 
+  std::cout << "__|__|__|__|__|__|__|__|__|__|__|__|__|__|__"<<std::endl; 
+  std::cout << "__|__|__|__|__|__|__|__|__|__|__|__|__|__|__"<<std::endl; 
+  std::cout << "  |  |  |  |  |  |  |  |  |  |  |  |  |  |  "<<std::endl; 
   std::cout << std::endl;
   std::cout << std::endl;
-  std::cout <<Logger::YELLOW<< std::endl;
+  std::cout << std::endl;
   std::cout << "Copyright (C) 2015 Peter Boyle, Azusa Yamaguchi, Guido Cossu, Antonin Portelli and other authors"<<std::endl;
-  std::cout << "Colours by Tadahito Boyle "<<std::endl;
   std::cout << std::endl;
   std::cout << "This program is free software; you can redistribute it and/or modify"<<std::endl;
   std::cout << "it under the terms of the GNU General Public License as published by"<<std::endl;
@@ -264,7 +263,7 @@ void Grid_init(int *argc,char ***argv)
   std::cout << "but WITHOUT ANY WARRANTY; without even the implied warranty of"<<std::endl;
   std::cout << "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"<<std::endl;
   std::cout << "GNU General Public License for more details."<<std::endl;
-  std::cout << Logger::BLACK <<std::endl;
+  std::cout << std::endl;
 }
 
   
