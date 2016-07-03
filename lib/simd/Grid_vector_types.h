@@ -490,7 +490,7 @@ namespace Grid {
     typedef Grid_simd<S,V> simd;
     simd ret;
     typename simd::conv_t conv;
-    conv.v = in.v;
+    conv.v = in.v; // copy the vector content (bytewise)
     for(int i=0;i<simd::Nsimd();i+=2){
       conv.s[i+1]=conv.s[i];    // duplicate (r,r);(r,r);(r,r); etc...
     }

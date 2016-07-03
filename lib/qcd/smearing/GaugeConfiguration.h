@@ -81,11 +81,16 @@ GaugeField AnalyticSmearedForce(const GaugeField& SigmaKPrime,
 	StoutSmearing.derivative(SigmaK, iLambda, GaugeK);// derivative of SmearBase
 	return SigmaK;
 }
-      /*! @brief Returns smeared configuration at level 'Level' */
+     
+
+
+/*! @brief Returns smeared configuration at level 'Level' */
 const GaugeField& get_smeared_conf(int Level) const{
 	return SmearedSet[Level];
 }
-      //====================================================================
+      
+
+//====================================================================
 void set_iLambda(GaugeLinkField& iLambda, 
 	GaugeLinkField& e_iQ,
 	const GaugeLinkField& iQ, 
@@ -179,10 +184,11 @@ void set_iLambda(GaugeLinkField& iLambda,
 	
 
 }
-     //==================================================================== 
+     
+//==================================================================== 
 public:
       GaugeField* ThinLinks;      /*!< @brief Pointer to the thin 
-				    links configuration */
+				    					links configuration */
       
       /*! @brief Standard constructor */
       SmearedConfiguration(GridCartesian * UGrid,
