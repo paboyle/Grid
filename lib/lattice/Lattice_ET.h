@@ -219,8 +219,8 @@ inline void CBFromExpression( int &cb,const LatticeTrinaryExpression<Op,T1,T2,T3
  GridUnopClass(UnaryRsqrt,rsqrt(a));
  GridUnopClass(UnarySin,sin(a));
  GridUnopClass(UnaryCos,cos(a));
- GridUnopClass(UnaryAsin,sin(a));
- GridUnopClass(UnaryAcos,cos(a));
+ GridUnopClass(UnaryAsin,asin(a));
+ GridUnopClass(UnaryAcos,acos(a));
  GridUnopClass(UnaryLog,log(a));
  GridUnopClass(UnaryExp,exp(a));
  

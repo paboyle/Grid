@@ -30,6 +30,8 @@
   			~Smear_Stout(){}
 
   			void smear(GaugeField& u_smr,const GaugeField& U) const{
+
+
   				GaugeField C(U._grid);
   				GaugeLinkField tmp(U._grid), iq_mu(U._grid), Umu(U._grid);
 
@@ -41,9 +43,14 @@
   				{
   					tmp = peekLorentz(C,mu);
   					Umu = peekLorentz(U,mu);
+		  			std::cout << "source matrix " << Umu << std::endl;	
+
 		  			iq_mu = Ta(tmp * adj(Umu)); // iq_mu = Ta(Omega_mu) to match the signs with the paper
+
 		  			exponentiate_iQ(tmp, iq_mu);  
+		  			//Debug check
 		  			GaugeLinkField check = adj(tmp) * tmp - 1.0;
+		  			std::cout << "check " << check << std::endl;
 					pokeLorentz(u_smr, tmp*Umu, mu);// u_smr = exp(iQ_mu)*U_mu
 		  		}
 
@@ -90,9 +97,16 @@
 
 		  		set_uw_complex(u, w, iQ2, iQ3);
 		  		set_fj_complex(f0, f1, f2, u, w);
-		  		
+
+		  		std::cout << "f0 " << f0 << std::endl;
+		  		std::cout << "f1 " << f1 << std::endl;
+		  		std::cout << "f2 " << f2 << std::endl;
+	  			std::cout << "iQ " << iQ << std::endl;	
+	  			std::cout << "iQ2 " << iQ2 << std::endl;	
 
 		  		e_iQ = f0*unity + timesMinusI(f1) * iQ - f2 * iQ2;
+
+
 		  	};
 
 
@@ -128,12 +142,26 @@
 				// sign in c0 from the conventions on the Ta
 				c0    = - real(timesMinusI(trace(iQ3))) * one_over_three; //temporary hack 
 				c1    = - real(trace(iQ2)) * one_over_two;
+
+				//Cayley Hamilton checks to machine precision, tested
+
+				std::cout << "c0 " << c0 << std::endl;
+				std::cout << "c1 " << c1 << std::endl;
+
 				tmp   = c1 * one_over_three;
 				c0max = 2.0 * pow(tmp, 1.5);
 
-				theta = acos(c0/c0max);
+				std::cout << "c0max " << c0max << std::endl;
+				LatticeComplex tempratio = c0/c0max;
+				std::cout << "ratio c0/c0max " << tempratio << std::endl;
+				theta = acos(c0/c0max); // divide by three here, now leave as it is
+				std::cout << "theta " << theta << std::endl;
+
 				u = sqrt(tmp) * cos( theta * one_over_three);
 				w = sqrt(c1)  * sin( theta * one_over_three);
+
+				std::cout << "u " << u << std::endl;
+				std::cout << "w " << w << std::endl;
 
 			}
 
@@ -177,34 +205,41 @@
 				const LatticeComplex& u, const LatticeComplex& w) const{
 
 				GridBase *grid = u._grid;
-				LatticeComplex xi0(grid), u2(grid), w2(grid), cosw(grid), tmp(grid);
+				LatticeComplex xi0(grid), u2(grid), w2(grid), cosw(grid);
 				LatticeComplex fden(grid);
 				LatticeComplex h0(grid), h1(grid), h2(grid);
 				LatticeComplex e2iu(grid), emiu(grid), ixi0(grid), qt(grid);
+				LatticeComplex unity(grid);
+				unity = 1.0;
 
 				xi0   = sin(w)/w;//func_xi0(w);
+				std::cout << "xi0 " << xi0 << std::endl;
 				u2    = u * u;
+				std::cout << "u2 " << u2 << std::endl;
 				w2    = w * w;
+				std::cout << "w2 " << w2 << std::endl;
 				cosw  = cos(w);
+				std::cout << "cosw " << cosw << std::endl;
 
 				ixi0  = timesI(xi0);
-				emiu  = cos(u) - timesI(sin(u));
+				emiu  = cos(u)     - timesI(sin(u));
 				e2iu  = cos(2.0*u) + timesI(sin(2.0*u));
+				std::cout << "emiu " << emiu << std::endl;
+				std::cout << "e2iu " << e2iu << std::endl;
 
-				h0    = e2iu * (u2 - w2) + emiu *( (8.0*u2*cosw) +
-					(2.0*u*(3.0*u2 + w2)*ixi0));
+				h0    = e2iu * (u2 - w2) + emiu * ( (8.0*u2*cosw) + (2.0*u*(3.0*u2 + w2)*ixi0));
+				h1    = e2iu * (2.0 * u) - emiu * ( (2.0*u*cosw) - (3.0*u2-w2)*ixi0);
+				h2    = e2iu             - emiu * ( cosw + (3.0*u)*ixi0);
 
-				h1    = (2.0*u) * e2iu - emiu*( (2.0*u*cosw) -
-					(3.0*u2-w2)*ixi0);
+				std::cout << "h0 " << h0 << std::endl;
+				std::cout << "h1 " << h1 << std::endl;
+				std::cout << "h2 " << h2 << std::endl;
 
-				h2    = e2iu - emiu * (cosw + (3.0*u)*ixi0);
-
-				tmp   = 9.0*u2 - w2;
-				fden  = pow(tmp, -1.0);
+				fden   = unity/(9.0*u2 - w2);// reals
+				std::cout << "fden " << fden << std::endl;
 				f0    = h0 * fden;
 				f1    = h1 * fden;
 				f2    = h2 * fden;	
-
 
 			}
 
