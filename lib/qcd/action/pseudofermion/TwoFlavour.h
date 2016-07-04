@@ -137,7 +137,7 @@ namespace Grid{
 	FermOp.MDeriv(tmp , Y, X,DaggerNo );  dSdU=tmp;
 	FermOp.MDeriv(tmp , X, Y,DaggerYes);  dSdU=dSdU+tmp;
 	
-	dSdU = Ta(dSdU);
+	//dSdU = Ta(dSdU);
 
       };
 

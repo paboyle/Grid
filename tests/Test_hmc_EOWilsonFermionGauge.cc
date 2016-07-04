@@ -66,6 +66,7 @@ public:
 
     TwoFlavourEvenOddPseudoFermionAction<ImplPolicy> Nf2(FermOp,CG,CG);
 
+    //Set smearing (true/false), default: false
     Nf2.is_smeared=true;
     
     //Collect actions
