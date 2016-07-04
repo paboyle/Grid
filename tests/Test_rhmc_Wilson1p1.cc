@@ -66,6 +66,10 @@ public:
     OneFlavourRationalPseudoFermionAction<WilsonImplR> WilsonNf1a(FermOp,Params);
     OneFlavourRationalPseudoFermionAction<WilsonImplR> WilsonNf1b(FermOp,Params);
 
+    //Set smearing (true/false), default: false
+    WilsonNf1a.is_smeared=false;
+    WilsonNf1b.is_smeared=false;
+
     //Collect actions
     ActionLevel<LatticeGaugeField> Level1;
     Level1.push_back(&WilsonNf1a);
