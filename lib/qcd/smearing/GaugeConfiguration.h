@@ -17,7 +17,7 @@
       the HMC update and integrators.
       An "advanced configuration" object that can provide not only the 
       data to store the gauge configuration but also operations to manipulate
-      it like smearing.
+      it, like smearing.
       
       It stores a list of smeared configurations.
     */
@@ -57,7 +57,7 @@
 
 	}
 }
-      //====================================================================
+//====================================================================
 GaugeField AnalyticSmearedForce(const GaugeField& SigmaKPrime, 
 	const GaugeField& GaugeK) const{
 	GridBase *grid = GaugeK._grid;
@@ -68,12 +68,14 @@ GaugeField AnalyticSmearedForce(const GaugeField& SigmaKPrime,
 	GaugeLinkField GaugeKmu(grid), Cmu(grid);
 
 	StoutSmearing.BaseSmear(C, GaugeK);
+	SigmaK = zero;
+	iLambda = zero;
 
 	for (int mu = 0; mu < Nd; mu++){
 		Cmu            = peekLorentz(     C,mu);
 		GaugeKmu       = peekLorentz(GaugeK,mu);
 		SigmaKPrime_mu = peekLorentz(SigmaKPrime,mu);
-		iQ = Ta(Cmu*adj(GaugeKmu));
+		iQ = Ta(Cmu*adj(GaugeKmu));	
 		set_iLambda(iLambda_mu, e_iQ, iQ, SigmaKPrime_mu, GaugeKmu);
 		pokeLorentz(SigmaK, SigmaKPrime_mu*e_iQ + adj(Cmu)*iLambda_mu, mu);
 		pokeLorentz(iLambda, iLambda_mu, mu);
@@ -81,14 +83,14 @@ GaugeField AnalyticSmearedForce(const GaugeField& SigmaKPrime,
 	StoutSmearing.derivative(SigmaK, iLambda, GaugeK);// derivative of SmearBase
 	return SigmaK;
 }
-     
+
 
 
 /*! @brief Returns smeared configuration at level 'Level' */
 const GaugeField& get_smeared_conf(int Level) const{
 	return SmearedSet[Level];
 }
-      
+
 
 //====================================================================
 void set_iLambda(GaugeLinkField& iLambda, 
@@ -101,17 +103,17 @@ void set_iLambda(GaugeLinkField& iLambda,
 	GaugeLinkField unity(grid);
 	unity=1.0;
 	
-	LatticeReal u(grid), w(grid);
+	LatticeComplex u(grid), w(grid);
 	LatticeComplex f0(grid), f1(grid), f2(grid);
-	LatticeReal xi0(grid), xi1(grid), tmp(grid);
-	LatticeReal u2(grid), w2(grid), cosw(grid);
+	LatticeComplex xi0(grid), xi1(grid), tmp(grid);
+	LatticeComplex u2(grid), w2(grid), cosw(grid);
 	LatticeComplex emiu(grid), e2iu(grid), qt(grid), fden(grid);
 	LatticeComplex r01(grid), r11(grid), r21(grid), r02(grid), r12(grid);
 	LatticeComplex r22(grid), tr1(grid), tr2(grid);
 	LatticeComplex b10(grid), b11(grid), b12(grid), b20(grid), b21(grid), b22(grid);
-	LatticeReal LatticeUnitReal(grid);
+	LatticeComplex LatticeUnitComplex(grid);
 
-	LatticeUnitReal = 1.0;
+	LatticeUnitComplex = 1.0;
 	
 	// Exponential
 	iQ2 = iQ * iQ;
@@ -121,44 +123,44 @@ void set_iLambda(GaugeLinkField& iLambda,
 	e_iQ = f0*unity + timesMinusI(f1) * iQ - f2 * iQ2;
 
 	// Getting B1, B2, Gamma and Lambda
+	// simplify this part, reduntant calculations in set_fj
 	xi0 = StoutSmearing.func_xi0(w);
 	xi1 = StoutSmearing.func_xi1(w);
 	u2 = u * u;
 	w2 = w * w;
 	cosw = cos(w);
-	
-	emiu = toComplex(cos(u)) - timesI(toComplex(sin(u)));
-	e2iu = toComplex(cos(2.0*u)) + timesI(toComplex(sin(2.0*u)));
 
-	r01 = (toComplex(2.0*u) + timesI(toComplex(2.0*(u2-w2)))) * e2iu
-	+ emiu * (toComplex(16.0*u*cosw + 2.0*u*(3.0*u2+w2)*xi0) +
-		timesI(toComplex(-8.0*u2*cosw + 2.0*(9.0*u2+w2)*xi0)));
+	emiu = cos(u) - timesI(sin(u));
+	e2iu = cos(2.0*u) + timesI(sin(2.0*u));
+
+	r01 = (2.0*u + timesI(2.0*(u2-w2))) * e2iu
+	+ emiu * ((16.0*u*cosw + 2.0*u*(3.0*u2+w2)*xi0) +
+		timesI(-8.0*u2*cosw + 2.0*(9.0*u2+w2)*xi0));
 	
-	r11 = (toComplex(2.0*LatticeUnitReal) + timesI(toComplex(4.0*u)))* e2iu
-	+ emiu * (toComplex(-2.0*cosw + (3.0*u2-w2)*xi0) +
-		timesI(toComplex(2.0*u*cosw + 6.0*u*xi0)));
+	r11 = (2.0*LatticeUnitComplex + timesI(4.0*u))* e2iu
+	+ emiu * ((-2.0*cosw + (3.0*u2-w2)*xi0) +
+		timesI((2.0*u*cosw + 6.0*u*xi0)));
 
 	r21 = 2.0*timesI(e2iu)
-	+ emiu * (toComplex(-3.0*u*xi0) + timesI(toComplex(cosw - 3.0*xi0)));
+	+ emiu * (-3.0*u*xi0 + timesI(cosw - 3.0*xi0));
 
 	
-	r02 = -2.0 * e2iu + emiu * (toComplex(-8.0*u2*xi0) +
-		timesI(toComplex(2.0*u*(cosw + xi0 + 3.0*u2*xi1))));
+	r02 = -2.0 * e2iu + emiu * (-8.0*u2*xi0 +
+		timesI(2.0*u*(cosw + xi0 + 3.0*u2*xi1)));
 
-	r12 = emiu * (toComplex(2.0*u*xi0) + timesI(toComplex(-cosw - xi0 + 3.0*u2*xi1)));
+	r12 = emiu * (2.0*u*xi0 + timesI(-cosw - xi0 + 3.0*u2*xi1));
 
-	r22 = emiu * (toComplex(xi0) - timesI(toComplex(3.0*u*xi1)));
+	r22 = emiu * (xi0 - timesI(3.0*u*xi1));
 
-	tmp = (2.0*(9.0*u2-w2)*(9.0*u2-w2));
-	fden = toComplex(pow(tmp, -1.0));  // 1/tmp
+	fden = LatticeUnitComplex/(2.0*(9.0*u2-w2)*(9.0*u2-w2));
+	
+	b10 = 2.0 * u * r01 + (3.0* u2 - w2)*r02 - (30.0 * u2 + 2.0 * w2)*f0;
+	b11 = 2.0 * u * r11 + (3.0* u2 - w2)*r12 - (30.0 * u2 + 2.0 * w2)*f1;
+	b12 = 2.0 * u * r21 + (3.0* u2 - w2)*r22 - (30.0 * u2 + 2.0 * w2)*f2;
 
-	b10 = toComplex(2.0*u) * r01 + toComplex(3.0*u2 - w2)*r02 - toComplex(30.0*u2 + 2.0*w2)*f0;
-	b11 = toComplex(2.0*u) * r11 + toComplex(3.0*u2 - w2)*r12 - toComplex(30.0*u2 + 2.0*w2)*f1;
-	b12 = toComplex(2.0*u) * r21 + toComplex(3.0*u2 - w2)*r22 - toComplex(30.0*u2 + 2.0*w2)*f2;
-
-	b20 = r01 - toComplex(3.0*u)*r02 - toComplex(24.0*u)*f0;
-	b21 = r11 - toComplex(3.0*u)*r12 - toComplex(24.0*u)*f1;
-	b22 = r21 - toComplex(3.0*u)*r22 - toComplex(24.0*u)*f2;
+	b20 = r01 - (3.0*u)*r02 - (24.0*u)*f0;
+	b21 = r11 - (3.0*u)*r12 - (24.0*u)*f1;
+	b22 = r21 - (3.0*u)*r22 - (24.0*u)*f2;
 
 	b10 *= fden;
 	b11 *= fden;
@@ -166,7 +168,8 @@ void set_iLambda(GaugeLinkField& iLambda,
 	b20 *= fden;
 	b21 *= fden;
 	b22 *= fden;
-	
+
+
 	B1 = b10*unity + timesMinusI(b11) * iQ - b12 * iQ2;
 	B2 = b20*unity + timesMinusI(b21) * iQ - b22 * iQ2;
 	USigmap = GaugeK * Sigmap;
@@ -180,58 +183,60 @@ void set_iLambda(GaugeLinkField& iLambda,
 	GaugeLinkField iGamma = tr1 * timesMinusI(iQ) - tr2 * iQ2 +
 	f1 * USigmap + f2 * QUS + f2 * USQ;
 
-	iLambda = Ta(iGamma);
-	
+	iLambda = Ta(timesI(iGamma));
 
 }
-     
+
 //==================================================================== 
 public:
-      GaugeField* ThinLinks;      /*!< @brief Pointer to the thin 
+    GaugeField* ThinLinks;      /*!< @brief Pointer to the thin 
 				    					links configuration */
-      
+
       /*! @brief Standard constructor */
-      SmearedConfiguration(GridCartesian * UGrid,
-      	unsigned int Nsmear, 
-      	Smear_Stout<Gimpl>& Stout):
-      smearingLevels(Nsmear),
-      StoutSmearing(Stout),
-      ThinLinks(NULL){
-      	for (unsigned int i=0; i< smearingLevels; ++i)
-      		SmearedSet.push_back(*(new GaugeField(UGrid)));
-      }
-      
+    SmearedConfiguration(GridCartesian * UGrid,
+    	unsigned int Nsmear, 
+    	Smear_Stout<Gimpl>& Stout):
+    smearingLevels(Nsmear),
+    StoutSmearing(Stout),
+    ThinLinks(NULL){
+    	for (unsigned int i=0; i< smearingLevels; ++i)
+    		SmearedSet.push_back(*(new GaugeField(UGrid)));
+    }
+
       /*! For just thin links */
-      SmearedConfiguration():
-      smearingLevels(0),
-      StoutSmearing(),
-      SmearedSet(),
-      ThinLinks(NULL){}
-      
-      
+    SmearedConfiguration():
+    smearingLevels(0),
+    StoutSmearing(),
+    SmearedSet(),
+    ThinLinks(NULL){}
+
+
       // attach the smeared routines to the thin links U and fill the smeared set
-      void set_GaugeField(GaugeField& U){ fill_smearedSet(U);}
-      
-      //====================================================================
-      void smeared_force(GaugeField& SigmaTilde) const{
-      	if (smearingLevels > 0){
-	  GaugeField force = SigmaTilde;//actually = U*SigmaTilde
-	  GaugeLinkField tmp_mu(SigmaTilde._grid);
-	  
-	for (int mu = 0; mu < Nd; mu++){
-	    // to get SigmaTilde
-	  	tmp_mu = adj(peekLorentz(SmearedSet[smearingLevels-1], mu)) * peekLorentz(force,mu);
-	  	pokeLorentz(force, tmp_mu, mu);
-	  }
-	  for(int ismr = smearingLevels - 1; ismr > 0; --ismr)
-	  	force = AnalyticSmearedForce(force,get_smeared_conf(ismr-1));
-	  
-	  force = AnalyticSmearedForce(force,*ThinLinks);
-	  
-	  for (int mu = 0; mu < Nd; mu++){
-	  	tmp_mu = peekLorentz(*ThinLinks, mu) * peekLorentz(force, mu);
-	  	pokeLorentz(SigmaTilde, tmp_mu, mu);
-	  }
+    void set_GaugeField(GaugeField& U){ fill_smearedSet(U);}
+
+//====================================================================
+    void smeared_force(GaugeField& SigmaTilde) const{
+
+    	if (smearingLevels > 0){
+    		GaugeField     force(SigmaTilde._grid); 
+    		GaugeLinkField tmp_mu(SigmaTilde._grid);
+	  		force = SigmaTilde;//actually = U*SigmaTilde
+
+	  		for (int mu = 0; mu < Nd; mu++){
+		    	// to get just SigmaTilde
+	  			tmp_mu = adj(peekLorentz(SmearedSet[smearingLevels-1], mu)) * peekLorentz(force,mu);
+	  			pokeLorentz(force, tmp_mu, mu);
+	  		}
+
+	  		for(int ismr = smearingLevels - 1; ismr > 0; --ismr)
+	  			force = AnalyticSmearedForce(force,get_smeared_conf(ismr-1));
+
+	  		force = AnalyticSmearedForce(force,*ThinLinks);
+	  		
+	  		for (int mu = 0; mu < Nd; mu++){
+	  			tmp_mu = peekLorentz(*ThinLinks, mu) * peekLorentz(force, mu);
+	  			pokeLorentz(SigmaTilde, tmp_mu, mu);
+	  		}
 	}// if smearingLevels = 0 do nothing
 }
       //====================================================================
@@ -246,7 +251,7 @@ GaugeField& get_U(bool smeared=false) {
 	if (smeared){
 		if (smearingLevels){ 
 			RealD impl_plaq = WilsonLoops<Gimpl>::avgPlaquette(SmearedSet[smearingLevels-1]);
-			std::cout<< GridLogDebug << "getting U Plaq: " << impl_plaq<< std::endl;
+			std::cout<< GridLogDebug << "getting Usmr Plaq: " << impl_plaq<< std::endl;
 			return get_SmearedU();
 
 		}
