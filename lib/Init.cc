@@ -262,7 +262,6 @@ void Grid_init(int *argc,char ***argv)
   std::cout << std::endl;
   std::cout <<COL_YELLOW<< std::endl;
   std::cout << "Copyright (C) 2015 Peter Boyle, Azusa Yamaguchi, Guido Cossu, Antonin Portelli and other authors"<<std::endl;
-  std::cout << "Colours by Tadahito Boyle "<<std::endl;
   std::cout << std::endl;
   std::cout << "This program is free software; you can redistribute it and/or modify"<<std::endl;
   std::cout << "it under the terms of the GNU General Public License as published by"<<std::endl;
@@ -274,6 +273,7 @@ void Grid_init(int *argc,char ***argv)
   std::cout << "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"<<std::endl;
   std::cout << "GNU General Public License for more details."<<std::endl;
   std::cout << COL_BACKGROUND <<std::endl;
+  std::cout << std::endl;
 }
 
   
