@@ -177,13 +177,13 @@ void set_iLambda(GaugeLinkField& iLambda,
 	tr1 = trace(USigmap*B1);
 	tr2 = trace(USigmap*B2);
 
-	GaugeLinkField QUS = timesMinusI(iQ) * USigmap;
-	GaugeLinkField USQ = USigmap * timesMinusI(iQ);
+	GaugeLinkField QUS = iQ * USigmap;
+	GaugeLinkField USQ = USigmap * iQ;
 
-	GaugeLinkField iGamma = tr1 * timesMinusI(iQ) - tr2 * iQ2 +
-	f1 * USigmap + f2 * QUS + f2 * USQ;
+	GaugeLinkField iGamma = tr1 * iQ - timesI(tr2) * iQ2 +
+	timesI(f1) * USigmap + f2 * QUS + f2 * USQ;
 
-	iLambda = Ta(timesI(iGamma));
+	iLambda = Ta(iGamma);
 
 }
 
