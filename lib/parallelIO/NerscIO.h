@@ -213,37 +213,38 @@ class NerscIO : public BinaryIO {
   static inline void truncate(std::string file){
     std::ofstream fout(file,std::ios::out);
   }
+  
+  #define dump_nersc_header(field, s)\
+  s << "BEGIN_HEADER"      << std::endl;\
+  s << "HDR_VERSION = "    << field.hdr_version    << std::endl;\
+  s << "DATATYPE = "       << field.data_type      << std::endl;\
+  s << "STORAGE_FORMAT = " << field.storage_format << std::endl;\
+  for(int i=0;i<4;i++){\
+    s << "DIMENSION_" << i+1 << " = " << field.dimension[i] << std::endl ;\
+  }\
+  s << "LINK_TRACE = " << std::setprecision(10) << field.link_trace << std::endl;\
+  s << "PLAQUETTE  = " << std::setprecision(10) << field.plaquette  << std::endl;\
+  for(int i=0;i<4;i++){\
+    s << "BOUNDARY_"<<i+1<<" = " << field.boundary[i] << std::endl;\
+  }\
+  \
+  s << "CHECKSUM = "<< std::hex << std::setw(10) << field.checksum << std::dec<<std::endl;\
+  s << "ENSEMBLE_ID = "     << field.ensemble_id      << std::endl;\
+  s << "ENSEMBLE_LABEL = "  << field.ensemble_label   << std::endl;\
+  s << "SEQUENCE_NUMBER = " << field.sequence_number  << std::endl;\
+  s << "CREATOR = "         << field.creator          << std::endl;\
+  s << "CREATOR_HARDWARE = "<< field.creator_hardware << std::endl;\
+  s << "CREATION_DATE = "   << field.creation_date    << std::endl;\
+  s << "ARCHIVE_DATE = "    << field.archive_date     << std::endl;\
+  s << "FLOATING_POINT = "  << field.floating_point   << std::endl;\
+  s << "END_HEADER"         << std::endl;
+  
   static inline unsigned int writeHeader(NerscField &field,std::string file)
   {
     std::ofstream fout(file,std::ios::out|std::ios::in);
   
     fout.seekp(0,std::ios::beg);
-    fout << "BEGIN_HEADER"      << std::endl;
-    fout << "HDR_VERSION = "    << field.hdr_version    << std::endl;
-    fout << "DATATYPE = "       << field.data_type      << std::endl;
-    fout << "STORAGE_FORMAT = " << field.storage_format << std::endl;
-
-    for(int i=0;i<4;i++){
-      fout << "DIMENSION_" << i+1 << " = " << field.dimension[i] << std::endl ;
-    }
-    // just to keep the space and write it later
-    fout << "LINK_TRACE = " << std::setprecision(10) << field.link_trace << std::endl;
-    fout << "PLAQUETTE  = " << std::setprecision(10) << field.plaquette  << std::endl;
-    for(int i=0;i<4;i++){
-      fout << "BOUNDARY_"<<i+1<<" = " << field.boundary[i] << std::endl;
-    }
-
-    fout << "CHECKSUM = "<< std::hex << std::setw(10) << field.checksum << std::dec<<std::endl;
-
-    fout << "ENSEMBLE_ID = "     << field.ensemble_id      << std::endl;
-    fout << "ENSEMBLE_LABEL = "  << field.ensemble_label   << std::endl;
-    fout << "SEQUENCE_NUMBER = " << field.sequence_number  << std::endl;
-    fout << "CREATOR = "         << field.creator          << std::endl;
-    fout << "CREATOR_HARDWARE = "<< field.creator_hardware << std::endl;
-    fout << "CREATION_DATE = "   << field.creation_date    << std::endl;
-    fout << "ARCHIVE_DATE = "    << field.archive_date     << std::endl;
-    fout << "FLOATING_POINT = "  << field.floating_point   << std::endl;
-    fout << "END_HEADER"         << std::endl;
+    dump_nersc_header(field, fout);
     field.data_start = fout.tellp();
     return field.data_start;
 }
@@ -345,17 +346,17 @@ static inline void readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,
   if ( header.data_type == std::string("4D_SU3_GAUGE") ) {
     if ( ieee32 || ieee32big ) {
       //      csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>, LorentzColour2x3F> 
-      csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>, LorentzColour2x3F> 
+	csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>, LorentzColour2x3F> 
 	(Umu,file,Nersc3x2munger<LorentzColour2x3F,LorentzColourMatrix>(), offset,format);
     }
     if ( ieee64 || ieee64big ) {
-      //      csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>, LorentzColour2x3D> 
+      //csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>, LorentzColour2x3D> 
       csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>, LorentzColour2x3D> 
-	(Umu,file,Nersc3x2munger<LorentzColour2x3D,LorentzColourMatrix>(),offset,format);
+      	(Umu,file,Nersc3x2munger<LorentzColour2x3D,LorentzColourMatrix>(),offset,format);
     }
-  } else if ( header.data_type == std::string("4D_SU3_GAUGE_3X3") ) {
+  } else if ( header.data_type == std::string("4D_SU3_GAUGE_3x3") ) {
     if ( ieee32 || ieee32big ) {
-      //      csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>,LorentzColourMatrixF>
+      //csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>,LorentzColourMatrixF>
       csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>,LorentzColourMatrixF>
 	(Umu,file,NerscSimpleMunger<LorentzColourMatrixF,LorentzColourMatrix>(),offset,format);
     }
@@ -372,6 +373,7 @@ static inline void readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,
 
   assert(fabs(clone.plaquette -header.plaquette ) < 1.0e-5 );
   assert(fabs(clone.link_trace-header.link_trace) < 1.0e-6 );
+
   assert(csum == header.checksum );
 
   std::cout<<GridLogMessage <<"Read NERSC Configuration "<<file<< " and plaquette, link trace, and checksum agree"<<std::endl;
@@ -419,6 +421,7 @@ static inline void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu
     std::string file1 = file+"para";
     int offset1 = writeHeader(header,file1);
     int csum1=BinaryIO::writeObjectParallel<vobj,fobj2D>(Umu,file1,munge,offset,header.floating_point);
+    //int csum1=BinaryIO::writeObjectSerial<vobj,fobj2D>(Umu,file1,munge,offset,header.floating_point);
 
     
     std::cout << GridLogMessage << " TESTING PARALLEL WRITE offsets " << offset1 << " "<< offset << std::endl;
@@ -429,11 +432,12 @@ static inline void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu
 
   } else { 
     header.floating_point = std::string("IEEE64BIG");
-    header.data_type      = std::string("4D_SU3_GAUGE_3X3");
+    header.data_type      = std::string("4D_SU3_GAUGE_3x3");
     NerscSimpleUnmunger<fobj3D,sobj> munge;
     BinaryIO::Uint32Checksum<vobj,fobj3D>(Umu, munge,header.checksum);
     offset = writeHeader(header,file);
-    csum=BinaryIO::writeObjectSerial<vobj,fobj3D>(Umu,file,munge,offset,header.floating_point);
+    //    csum=BinaryIO::writeObjectSerial<vobj,fobj3D>(Umu,file,munge,offset,header.floating_point);
+    csum=BinaryIO::writeObjectParallel<vobj,fobj3D>(Umu,file,munge,offset,header.floating_point);
   }
 
   std::cout<<GridLogMessage <<"Written NERSC Configuration "<<file<< " checksum "<<std::hex<<csum<< std::dec<<" plaq "<< header.plaquette <<std::endl;
@@ -506,6 +510,8 @@ static inline void readRNGState(GridSerialRNG &serial,GridParallelRNG & parallel
   // depending on datatype, set up munger;
   // munger is a function of <floating point, Real, data_type>
   uint32_t csum=BinaryIO::readRNGSerial(serial,parallel,file,offset);
+
+  std::cerr<<" Csum "<< csum << " "<< header.checksum <<std::endl;
 
   assert(csum == header.checksum );
 

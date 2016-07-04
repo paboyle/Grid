@@ -39,7 +39,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <immintrin.h>
 
 
-
+namespace Grid{
 namespace Optimization {
   
   struct Vsplat{
@@ -246,26 +246,30 @@ namespace Optimization {
   struct TimesMinusI{
     //Complex single
     inline __m512 operator()(__m512 in, __m512 ret){
-      __m512 tmp = _mm512_mask_sub_ps(in,0xaaaa,_mm512_setzero_ps(),in); // real -imag 
-      return _mm512_shuffle_ps(tmp,tmp,_MM_SELECT_FOUR_FOUR(1,0,3,2));   // 0x4E??
+      //__m512 tmp = _mm512_mask_sub_ps(in,0xaaaa,_mm512_setzero_ps(),in); // real -imag 
+      //return _mm512_shuffle_ps(tmp,tmp,_MM_SELECT_FOUR_FOUR(2,3,1,0));   // 0x4E??
+      __m512 tmp = _mm512_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1));
+      return _mm512_mask_sub_ps(tmp,0xaaaa,_mm512_setzero_ps(),tmp);
     }
     //Complex double
     inline __m512d operator()(__m512d in, __m512d ret){
-      __m512d tmp = _mm512_mask_sub_pd(in,0xaa,_mm512_setzero_pd(),in); // real -imag 
-      return _mm512_shuffle_pd(tmp,tmp,0x55);
+      //__m512d tmp = _mm512_mask_sub_pd(in,0xaa,_mm512_setzero_pd(),in); // real -imag 
+      //return _mm512_shuffle_pd(tmp,tmp,0x55);
+      __m512d tmp = _mm512_shuffle_pd(in,in,0x55);
+      return _mm512_mask_sub_pd(tmp,0xaa,_mm512_setzero_pd(),tmp);
     } 
   };
 
   struct TimesI{
     //Complex single
     inline __m512 operator()(__m512 in, __m512 ret){
-      __m512 tmp = _mm512_shuffle_ps(tmp,tmp,_MM_SELECT_FOUR_FOUR(1,0,3,2));
-      return _mm512_mask_sub_ps(tmp,0xaaaa,_mm512_setzero_ps(),tmp); 
+      __m512 tmp = _mm512_shuffle_ps(in,in,_MM_SELECT_FOUR_FOUR(2,3,0,1));
+      return _mm512_mask_sub_ps(tmp,0x5555,_mm512_setzero_ps(),tmp); 
     }
     //Complex double
     inline __m512d operator()(__m512d in, __m512d ret){
-      __m512d tmp = _mm512_shuffle_pd(tmp,tmp,0x55);
-      return _mm512_mask_sub_pd(tmp,0xaa,_mm512_setzero_pd(),tmp); 
+      __m512d tmp = _mm512_shuffle_pd(in,in,0x55);
+      return _mm512_mask_sub_pd(tmp,0x55,_mm512_setzero_pd(),tmp); 
     }
 
 
@@ -304,6 +308,54 @@ namespace Optimization {
 
   };
 
+
+  struct Rotate{
+
+    static inline __m512 rotate(__m512 in,int n){ 
+      switch(n){
+      case 0: return tRotate<0>(in);break;
+      case 1: return tRotate<1>(in);break;
+      case 2: return tRotate<2>(in);break;
+      case 3: return tRotate<3>(in);break;
+      case 4: return tRotate<4>(in);break;
+      case 5: return tRotate<5>(in);break;
+      case 6: return tRotate<6>(in);break;
+      case 7: return tRotate<7>(in);break;
+
+      case 8 : return tRotate<8>(in);break;
+      case 9 : return tRotate<9>(in);break;
+      case 10: return tRotate<10>(in);break;
+      case 11: return tRotate<11>(in);break;
+      case 12: return tRotate<12>(in);break;
+      case 13: return tRotate<13>(in);break;
+      case 14: return tRotate<14>(in);break;
+      case 15: return tRotate<15>(in);break;
+      default: assert(0);
+      }
+    }
+    static inline __m512d rotate(__m512d in,int n){ 
+      switch(n){
+      case 0: return tRotate<0>(in);break;
+      case 1: return tRotate<1>(in);break;
+      case 2: return tRotate<2>(in);break;
+      case 3: return tRotate<3>(in);break;
+      case 4: return tRotate<4>(in);break;
+      case 5: return tRotate<5>(in);break;
+      case 6: return tRotate<6>(in);break;
+      case 7: return tRotate<7>(in);break;
+      default: assert(0);
+      }
+    }
+
+    template<int n> static inline __m512 tRotate(__m512 in){ 
+      return (__m512)_mm512_alignr_epi32((__m512i)in,(__m512i)in,n);          
+    };
+
+    template<int n> static inline __m512d tRotate(__m512d in){ 
+      return (__m512d)_mm512_alignr_epi64((__m512i)in,(__m512i)in,n);          
+    };
+
+  };
 
   //////////////////////////////////////////////
   // Some Template specialization
@@ -345,7 +397,7 @@ namespace Optimization {
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types 
-namespace Grid {
+
   typedef __m512 SIMD_Ftype;  // Single precision type
   typedef __m512d SIMD_Dtype; // Double precision type
   typedef __m512i SIMD_Itype; // Integer type

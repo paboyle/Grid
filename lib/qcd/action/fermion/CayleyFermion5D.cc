@@ -527,6 +527,7 @@ namespace QCD {
   }
 
   FermOpTemplateInstantiate(CayleyFermion5D);
+  GparityFermOpTemplateInstantiate(CayleyFermion5D);
 
 }}
 

@@ -84,7 +84,7 @@ public:
 	return;
       }
       
-      std::cout<<GridLogIterative << std::setprecision(4)<< "ConjugateGradient: k=0 residual "<<cp<<" rsq"<<rsq<<std::endl;
+      std::cout<<GridLogIterative << std::setprecision(4)<< "ConjugateGradient: k=0 residual "<<cp<<" target "<<rsq<<std::endl;
 
       GridStopWatch LinalgTimer;
       GridStopWatch MatrixTimer;
@@ -101,8 +101,8 @@ public:
 	MatrixTimer.Stop();
 
 	LinalgTimer.Start();
-	RealD    qqck = norm2(mmp);
-	ComplexD dck  = innerProduct(p,mmp);
+	//	RealD    qqck = norm2(mmp);
+	//	ComplexD dck  = innerProduct(p,mmp);
       
 	a      = c/d;
 	b_pred = a*(a*qq-d)/c;
@@ -115,7 +115,7 @@ public:
 	p  = p*b+r;
 	  
 	LinalgTimer.Stop();
-	std::cout<<GridLogIterative<<"ConjugateGradient: Iteration " <<k<<" residual "<<cp<< " target"<< rsq<<std::endl;
+	std::cout<<GridLogIterative<<"ConjugateGradient: Iteration " <<k<<" residual "<<cp<< " target "<< rsq<<std::endl;
 	
 	// Stopping condition
 	if ( cp <= rsq ) { 
@@ -132,9 +132,9 @@ public:
 
 	  std::cout<<GridLogMessage<<"ConjugateGradient: Converged on iteration " <<k
 		   <<" computed residual "<<sqrt(cp/ssq)
-		   <<" true residual     "<<true_residual
-		   <<" target "<<Tolerance;
-	  std::cout<<" Time elapsed: Total "<< SolverTimer.Elapsed() << " Matrix  "<<MatrixTimer.Elapsed() << " Linalg "<<LinalgTimer.Elapsed();
+		   <<" true residual "    <<true_residual
+		   <<" target "<<Tolerance<<std::endl;
+	  std::cout<<GridLogMessage<<"Time elapsed: Total "<< SolverTimer.Elapsed() << " Matrix  "<<MatrixTimer.Elapsed() << " Linalg "<<LinalgTimer.Elapsed();
 	  std::cout<<std::endl;
 	  
 	  assert(true_residual/Tolerance < 1000.0);

@@ -38,32 +38,34 @@ template<class Field>
 class SortEigen {
  private:
   
+//hacking for testing for now
+ private:
   static bool less_lmd(RealD left,RealD right){
-    return fabs(left) < fabs(right);
+    return left > right;
   }  
-  static bool less_pair(std::pair<RealD,Field>& left,
-		 std::pair<RealD,Field>& right){
-    return fabs(left.first) < fabs(right.first);
+  static bool less_pair(std::pair<RealD,Field const*>& left,
+                        std::pair<RealD,Field const*>& right){
+    return left.first > (right.first);
   }  
+  
   
  public:
 
   void push(DenseVector<RealD>& lmd,
-	    DenseVector<Field>& evec,int N) {
-
-    DenseVector<std::pair<RealD, Field> > emod;
-    typename DenseVector<std::pair<RealD, Field> >::iterator it;
+            DenseVector<Field>& evec,int N) {
+    DenseVector<Field> cpy(lmd.size(),evec[0]._grid);
+    for(int i=0;i<lmd.size();i++) cpy[i] = evec[i];
     
-    for(int i=0;i<lmd.size();++i){
-      emod.push_back(std::pair<RealD,Field>(lmd[i],evec[i]));
-    }
+    DenseVector<std::pair<RealD, Field const*> > emod(lmd.size());    
+    for(int i=0;i<lmd.size();++i)
+      emod[i] = std::pair<RealD,Field const*>(lmd[i],&cpy[i]);
 
     partial_sort(emod.begin(),emod.begin()+N,emod.end(),less_pair);
 
-    it=emod.begin();
+    typename DenseVector<std::pair<RealD, Field const*> >::iterator it = emod.begin();
     for(int i=0;i<N;++i){
       lmd[i]=it->first;
-      evec[i]=it->second;
+      evec[i]=*(it->second);
       ++it;
     }
   }

@@ -35,7 +35,7 @@ class SimpleCompressor {
 public:
   void Point(int) {};
 
-  vobj operator() (const vobj &arg,int dimension,int plane,int osite,GridBase *grid) {
+  vobj operator() (const vobj &arg) {
     return arg;
   }
 };
@@ -56,24 +56,24 @@ Gather_plane_simple (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<
   
   int e1=rhs._grid->_slice_nblock[dimension];
   int e2=rhs._grid->_slice_block[dimension];
-
+  int stride=rhs._grid->_slice_stride[dimension];
   if ( cbmask == 0x3 ) { 
 PARALLEL_NESTED_LOOP2
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
-	int o  = n*rhs._grid->_slice_stride[dimension];
-	int bo = n*rhs._grid->_slice_block[dimension];
-	buffer[off+bo+b]=compress(rhs._odata[so+o+b],dimension,plane,so+o+b,rhs._grid);
+	int o  = n*stride;
+	int bo = n*e2;
+	buffer[off+bo+b]=compress(rhs._odata[so+o+b]);
       }
     }
   } else { 
      int bo=0;
      for(int n=0;n<e1;n++){
        for(int b=0;b<e2;b++){
-	 int o  = n*rhs._grid->_slice_stride[dimension];
+	 int o  = n*stride;
 	 int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
 	 if ( ocb &cbmask ) {
-	   buffer[off+bo++]=compress(rhs._odata[so+o+b],dimension,plane,so+o+b,rhs._grid);
+	   buffer[off+bo++]=compress(rhs._odata[so+o+b]);
 	 }
        }
      }
@@ -97,16 +97,16 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename cobj::scalar_
 
   int e1=rhs._grid->_slice_nblock[dimension];
   int e2=rhs._grid->_slice_block[dimension];
-  
+  int n1=rhs._grid->_slice_stride[dimension];
+  int n2=rhs._grid->_slice_block[dimension];
   if ( cbmask ==0x3){
 PARALLEL_NESTED_LOOP2
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 
-	int o=n*rhs._grid->_slice_stride[dimension];
-	int offset = b+n*rhs._grid->_slice_block[dimension];
-
-	cobj temp =compress(rhs._odata[so+o+b],dimension,plane,so+o+b,rhs._grid);
+	int o      =   n*n1;
+	int offset = b+n*n2;
+	cobj temp =compress(rhs._odata[so+o+b]);
 	extract<cobj>(temp,pointers,offset);
 
       }
@@ -121,7 +121,7 @@ PARALLEL_NESTED_LOOP2
 	int offset = b+n*rhs._grid->_slice_block[dimension];
 
 	if ( ocb & cbmask ) {
-	  cobj temp =compress(rhs._odata[so+o+b],dimension,plane,so+o+b,rhs._grid);
+	  cobj temp =compress(rhs._odata[so+o+b]);
 	  extract<cobj>(temp,pointers,offset);
 	}
       }
@@ -243,13 +243,13 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
 
   int e1=rhs._grid->_slice_nblock[dimension]; // clearly loop invariant for icpc
   int e2=rhs._grid->_slice_block[dimension];
-
+  int stride = rhs._grid->_slice_stride[dimension];
   if(cbmask == 0x3 ){
 PARALLEL_NESTED_LOOP2
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
  
-        int o =n*rhs._grid->_slice_stride[dimension]+b;
+        int o =n*stride+b;
   	//lhs._odata[lo+o]=rhs._odata[ro+o];
 	vstream(lhs._odata[lo+o],rhs._odata[ro+o]);
       }
@@ -259,7 +259,7 @@ PARALLEL_NESTED_LOOP2
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
  
-        int o =n*rhs._grid->_slice_stride[dimension]+b;
+        int o =n*stride+b;
         int ocb=1<<lhs._grid->CheckerBoardFromOindex(o);
         if ( ocb&cbmask ) {
   	//lhs._odata[lo+o]=rhs._odata[ro+o];
@@ -285,11 +285,12 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
 
   int e1=rhs._grid->_slice_nblock[dimension];
   int e2=rhs._grid->_slice_block [dimension];
+  int stride = rhs._grid->_slice_stride[dimension];
 PARALLEL_NESTED_LOOP2
   for(int n=0;n<e1;n++){
   for(int b=0;b<e2;b++){
 
-      int o  =n*rhs._grid->_slice_stride[dimension];
+      int o  =n*stride;
       int ocb=1<<lhs._grid->CheckerBoardFromOindex(o+b);
       if ( ocb&cbmask ) {
 	permute(lhs._odata[lo+o+b],rhs._odata[ro+o+b],permute_type);
@@ -323,6 +324,7 @@ template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice
   int rd = grid->_rdimensions[dimension];
   int ld = grid->_ldimensions[dimension];
   int gd = grid->_gdimensions[dimension];
+  int ly = grid->_simd_layout[dimension];
 
   // Map to always positive shift modulo global full dimension.
   shift = (shift+fd)%fd;
@@ -331,6 +333,7 @@ template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice
   // the permute type
   int permute_dim =grid->PermuteDim(dimension);
   int permute_type=grid->PermuteType(dimension);
+  int permute_type_dist;
 
   for(int x=0;x<rd;x++){       
 
@@ -342,15 +345,31 @@ template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice
     int sshift = grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,cb);
     int sx     = (x+sshift)%rd;
 
+    // FIXME : This must change where we have a 
+    // Rotate slice.
+    
+    // Document how this works ; why didn't I do this when I first wrote it...
+    // wrap is whether sshift > rd.
+    //  num is sshift mod rd.
+    // 
     int permute_slice=0;
     if(permute_dim){
       int wrap = sshift/rd;
       int  num = sshift%rd;
+
       if ( x< rd-num ) permute_slice=wrap;
-      else permute_slice = 1-wrap;
+      else permute_slice = (wrap+1)%ly;
+
+      if ( (ly>2) && (permute_slice) ) {
+	assert(permute_type & RotateBit);
+	permute_type_dist = permute_type|permute_slice;
+      } else {
+	permute_type_dist = permute_type;
+      }
+      
     }
 
-    if ( permute_slice ) Copy_plane_permute(ret,rhs,dimension,x,sx,cbmask,permute_type);
+    if ( permute_slice ) Copy_plane_permute(ret,rhs,dimension,x,sx,cbmask,permute_type_dist);
     else                 Copy_plane(ret,rhs,dimension,x,sx,cbmask); 
 
   

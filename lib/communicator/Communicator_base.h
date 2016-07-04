@@ -34,6 +34,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifdef GRID_COMMS_MPI
 #include <mpi.h>
 #endif
+#ifdef GRID_COMMS_SHMEM
+#include <mpp/shmem.h>
+#endif
 namespace Grid {
 class CartesianCommunicator {
   public:    
@@ -52,6 +55,8 @@ class CartesianCommunicator {
 #else 
     typedef int CommsRequest_t;
 #endif
+
+    static void Init(int *argc, char ***argv);
 
     // Constructor
     CartesianCommunicator(const std::vector<int> &pdimensions_in);
@@ -81,6 +86,7 @@ class CartesianCommunicator {
     void GlobalSumVector(RealD *,int N);
 
     void GlobalSum(uint32_t &);
+    void GlobalSum(uint64_t &);
 
     void GlobalSum(ComplexF &c)
     {
@@ -115,12 +121,11 @@ class CartesianCommunicator {
 			int recv_from_rank,
 			int bytes);
 
-    void RecvFrom(void *recv,
-		  int recv_from_rank,
-		  int bytes);
-    void SendTo(void *xmit,
-		int xmit_to_rank,
-		int bytes);
+    void SendRecvPacket(void *xmit,
+			void *recv,
+			int xmit_to_rank,
+			int recv_from_rank,
+			int bytes);
 
     void SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 			 void *xmit,

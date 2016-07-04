@@ -35,6 +35,7 @@ Author: neo <cossu@post.kek.jp>
 // Time-stamp: <2015-06-09 14:28:02 neo>
 //----------------------------------------------------------------------
 
+namespace Grid {
 namespace Optimization {
 
   template<class vtype>
@@ -54,51 +55,67 @@ namespace Optimization {
   
   struct Vsplat{
     //Complex float
-    inline float operator()(float a, float b){
-      return 0;
+    inline u128f operator()(float a, float b){
+      u128f out; 
+      out.f[0] = a;
+      out.f[1] = b;
+      out.f[2] = a;
+      out.f[3] = b;
+      return out;
     }
     // Real float
-    inline float operator()(float a){
-      return 0;
+    inline u128f operator()(float a){
+      u128f out; 
+      out.f[0] = a;
+      out.f[1] = a;
+      out.f[2] = a;
+      out.f[3] = a;
+      return out;
     }
     //Complex double
-    inline double operator()(double a, double b){
-      return 0;
+    inline u128d operator()(double a, double b){
+      u128d out; 
+      out.f[0] = a;
+      out.f[1] = b;
+      return out;
     }
     //Real double
-    inline double operator()(double a){
-      return 0;
+    inline u128d operator()(double a){
+      u128d out; 
+      out.f[0] = a;
+      out.f[1] = a;
+      return out;
     }
     //Integer
     inline int operator()(Integer a){
-      return 0;
+      return a;
     }
   };
 
   struct Vstore{
     //Float 
-    inline void operator()(float a, float* F){
-      
+    inline void operator()(u128f a, float* F){
+      memcpy(F,a.f,4*sizeof(float));
     }
     //Double
-    inline void operator()(double a, double* D){
-     
+    inline void operator()(u128d a, double* D){
+      memcpy(D,a.f,2*sizeof(double));
     }
     //Integer
     inline void operator()(int a, Integer* I){
-      
+      I[0] = a;
     }
 
   };
 
   struct Vstream{
     //Float
-    inline void operator()(float * a, float b){
-     
+    inline void operator()(float * a, u128f b){
+      memcpy(a,b.f,4*sizeof(float));
     }
     //Double
-    inline void operator()(double * a, double b){
-     
+    inline void operator()(double * a, u128d b){
+      memcpy(a,b.f,2*sizeof(double));
     }
 
 
@@ -106,24 +123,40 @@ namespace Optimization {
 
   struct Vset{
     // Complex float 
-    inline float operator()(Grid::ComplexF *a){
-      return 0;
+    inline u128f operator()(Grid::ComplexF *a){
+      u128f out; 
+      out.f[0] = a[0].real();
+      out.f[1] = a[0].imag();
+      out.f[2] = a[1].real();
+      out.f[3] = a[1].imag();
+      return out;
     }
     // Complex double 
-    inline double operator()(Grid::ComplexD *a){
-      return 0;
+    inline u128d operator()(Grid::ComplexD *a){
+      u128d out; 
+      out.f[0] = a[0].real();
+      out.f[1] = a[0].imag();
+      return out;
     }
     // Real float 
-    inline float operator()(float *a){
-      return  0;
+    inline u128f operator()(float *a){
+      u128f out; 
+      out.f[0] = a[0];
+      out.f[1] = a[1];
+      out.f[2] = a[2];
+      out.f[3] = a[3];
+      return out;
     }
     // Real double
-    inline double operator()(double *a){
-      return 0;
+    inline u128d operator()(double *a){
+      u128d out; 
+      out.f[0] = a[0];
+      out.f[1] = a[1];
+      return out;
     }
     // Integer
     inline int operator()(Integer *a){
-      return 0;
+      return a[0];
     }
 
 
@@ -145,130 +178,279 @@ namespace Optimization {
   /////////////////////////////////////////////////////
   struct Sum{
     //Complex/Real float
-    inline float operator()(float a, float b){
-      return 0;
+    inline u128f operator()(u128f a, u128f b){
+      u128f out;
+      out.f[0] = a.f[0] + b.f[0];
+      out.f[1] = a.f[1] + b.f[1];
+      out.f[2] = a.f[2] + b.f[2];
+      out.f[3] = a.f[3] + b.f[3];
+      return out;
     }
     //Complex/Real double
-    inline double operator()(double a, double b){
-      return 0;
+    inline u128d operator()(u128d a, u128d b){
+      u128d out;
+      out.f[0] = a.f[0] + b.f[0];
+      out.f[1] = a.f[1] + b.f[1];
+      return out;
     }
     //Integer
     inline int operator()(int a, int b){
-      return 0;
+      return a + b;
     }
   };
 
   struct Sub{
     //Complex/Real float
-    inline float operator()(float a, float b){
-      return 0;
+    inline u128f operator()(u128f a, u128f b){
+      u128f out;
+      out.f[0] = a.f[0] - b.f[0];
+      out.f[1] = a.f[1] - b.f[1];
+      out.f[2] = a.f[2] - b.f[2];
+      out.f[3] = a.f[3] - b.f[3];
+      return out;
     }
     //Complex/Real double
-    inline double operator()(double a, double b){
-      return 0;
+    inline u128d operator()(u128d a, u128d b){
+      u128d out;
+      out.f[0] = a.f[0] - b.f[0];
+      out.f[1] = a.f[1] - b.f[1];
+      return out;
     }
     //Integer
     inline int operator()(int a, int b){
-      return 0;
+      return a-b;
     }
   };
 
   struct MultComplex{
     // Complex float
-    inline float operator()(float a, float b){
-      return 0;
+    inline u128f operator()(u128f a, u128f b){
+      u128f out;
+      out.f[0] = a.f[0]*b.f[0] - a.f[1]*b.f[1];
+      out.f[1] = a.f[0]*b.f[1] + a.f[1]*b.f[0];
+      out.f[2] = a.f[2]*b.f[2] - a.f[3]*b.f[3];
+      out.f[3] = a.f[2]*b.f[3] + a.f[3]*b.f[2];
+      return out;
     }
     // Complex double
-    inline double operator()(double a, double b){
-      return 0;
+    inline u128d operator()(u128d a, u128d b){
+      u128d out;
+      out.f[0] = a.f[0]*b.f[0] - a.f[1]*b.f[1];
+      out.f[1] = a.f[0]*b.f[1] + a.f[1]*b.f[0];
+      return out;
     }
   };
 
   struct Mult{
-    inline float  mac(float a, float b,double c){
-      return 0;
-    }
-    inline double mac(double a, double b,double c){
-      return 0;
-    }
+    //CK: Appear unneeded
+    // inline float  mac(float a, float b,double c){
+    //   return 0;
+    // }
+    // inline double mac(double a, double b,double c){
+    //   return 0;
+    // }
+
     // Real float
-    inline float operator()(float a, float b){
-      return 0;
+    inline u128f operator()(u128f a, u128f b){
+      u128f out;
+      out.f[0] = a.f[0]*b.f[0];
+      out.f[1] = a.f[1]*b.f[1];
+      out.f[2] = a.f[2]*b.f[2];
+      out.f[3] = a.f[3]*b.f[3];
+      return out;
     }
     // Real double
-    inline double operator()(double a, double b){
-      return 0;
+    inline u128d operator()(u128d a, u128d b){
+      u128d out;
+      out.f[0] = a.f[0]*b.f[0];
+      out.f[1] = a.f[1]*b.f[1];
+      return out;
     }
     // Integer
     inline int operator()(int a, int b){
-      return 0;
+      return a*b;
     }
   };
 
   struct Conj{
     // Complex single
-    inline float operator()(float in){
-      return 0;
+    inline u128f operator()(u128f in){
+      u128f out;
+      out.f[0] = in.f[0];
+      out.f[1] = -in.f[1];
+      out.f[2] = in.f[2];
+      out.f[3] = -in.f[3];
+      return out;
     }
     // Complex double
-    inline double operator()(double in){
-      return 0;
+    inline u128d operator()(u128d in){
+      u128d out;
+      out.f[0] = in.f[0];
+      out.f[1] = -in.f[1];
+      return out;
     }
     // do not define for integer input
   };
 
   struct TimesMinusI{
     //Complex single
-    inline float operator()(float in, float ret){
-      return 0;
+    inline u128f operator()(u128f in, u128f ret){ //note ret is ignored
+      u128f out;
+      out.f[0] = in.f[1];
+      out.f[1] = -in.f[0];
+      out.f[2] = in.f[3];
+      out.f[3] = -in.f[2];
+      return out;
     }
     //Complex double
-    inline double operator()(double in, double ret){
-      return 0;
+    inline u128d operator()(u128d in, u128d ret){
+      u128d out;
+      out.f[0] = in.f[1];
+      out.f[1] = -in.f[0];
+      return out;
     }
-
-
   };
 
   struct TimesI{
     //Complex single
-    inline float operator()(float in, float ret){
-      return 0;
+    inline u128f operator()(u128f in, u128f ret){ //note ret is ignored
+      u128f out;
+      out.f[0] = -in.f[1];
+      out.f[1] = in.f[0];
+      out.f[2] = -in.f[3];
+      out.f[3] = in.f[2];
+      return out;
     }
     //Complex double
-    inline double operator()(double in, double ret){
-      return 0;
+    inline u128d operator()(u128d in, u128d ret){
+      u128d out;
+      out.f[0] = -in.f[1];
+      out.f[1] = in.f[0];
+      return out;
     }
   };
 
   //////////////////////////////////////////////
   // Some Template specialization
+  struct Permute{
+    //We just have to mirror the permutes of Grid_sse4.h
+    static inline u128f Permute0(u128f in){ //AB CD -> CD AB
+      u128f out;
+      out.f[0] = in.f[2];
+      out.f[1] = in.f[3];
+      out.f[2] = in.f[0];
+      out.f[3] = in.f[1];
+      return out;
+    };
+    static inline u128f Permute1(u128f in){ //AB CD -> BA DC
+      u128f out;
+      out.f[0] = in.f[1];
+      out.f[1] = in.f[0];
+      out.f[2] = in.f[3];
+      out.f[3] = in.f[2];
+      return out;
+    };
+    static inline u128f Permute2(u128f in){
+      return in;
+    };
+    static inline u128f Permute3(u128f in){
+      return in;
+    };
+
+    static inline u128d Permute0(u128d in){ //AB -> BA
+      u128d out;
+      out.f[0] = in.f[1];
+      out.f[1] = in.f[0];
+      return out;      
+    };
+    static inline u128d Permute1(u128d in){
+      return in;
+    };
+    static inline u128d Permute2(u128d in){
+      return in;
+    };
+    static inline u128d Permute3(u128d in){
+      return in;
+    };
+
+  };
+  
   template < typename vtype > 
     void permute(vtype &a, vtype b, int perm) {
-   }; 
+   };
+    
+  struct Rotate{
+
+    static inline u128f rotate(u128f in,int n){
+      u128f out;
+      switch(n){
+      case 0:
+        out.f[0] = in.f[0];
+        out.f[1] = in.f[1];
+        out.f[2] = in.f[2];
+        out.f[3] = in.f[3];
+        break;
+      case 1:
+        out.f[0] = in.f[1];
+        out.f[1] = in.f[2];
+        out.f[2] = in.f[3];
+        out.f[3] = in.f[0];
+        break;
+      case 2:
+        out.f[0] = in.f[2];
+        out.f[1] = in.f[3];
+        out.f[2] = in.f[0];
+        out.f[3] = in.f[1];
+        break;
+      case 3:
+        out.f[0] = in.f[3];
+        out.f[1] = in.f[0];
+        out.f[2] = in.f[1];
+        out.f[3] = in.f[2];
+        break;
+      default: assert(0);
+      }
+      return out;
+    }
+    static inline u128d rotate(u128d in,int n){
+      u128d out;
+      switch(n){
+      case 0:
+        out.f[0] = in.f[0];
+        out.f[1] = in.f[1];
+        break;
+      case 1:
+        out.f[0] = in.f[1];
+        out.f[1] = in.f[0];
+        break;
+      default: assert(0);
+      }
+      return out;
+    }
+  };
 
   //Complex float Reduce
   template<>
-  inline Grid::ComplexF Reduce<Grid::ComplexF, float>::operator()(float in){
-    return 0;
+  inline Grid::ComplexF Reduce<Grid::ComplexF, u128f>::operator()(u128f in){ //2 complex
+    return Grid::ComplexF(in.f[0] + in.f[2], in.f[1] + in.f[3]);
   }
   //Real float Reduce
   template<>
-  inline Grid::RealF Reduce<Grid::RealF, float>::operator()(float in){
-    return 0;
+  inline Grid::RealF Reduce<Grid::RealF, u128f>::operator()(u128f in){ //4 floats
+    return in.f[0] + in.f[1] + in.f[2] + in.f[3];
   }
   
   
   //Complex double Reduce
   template<>
-  inline Grid::ComplexD Reduce<Grid::ComplexD, double>::operator()(double in){
-    return 0;
+  inline Grid::ComplexD Reduce<Grid::ComplexD, u128d>::operator()(u128d in){ //1 complex
+    return Grid::ComplexD(in.f[0],in.f[1]);
   }
   
   //Real double Reduce
   template<>
-  inline Grid::RealD Reduce<Grid::RealD, double>::operator()(double in){
-    return 0;
+  inline Grid::RealD Reduce<Grid::RealD, u128d>::operator()(u128d in){ //2 doubles
+    return in.f[0] + in.f[1];
   }
 
   //Integer Reduce
@@ -282,10 +464,9 @@ namespace Optimization {
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types 
-namespace Grid {
 
-  typedef float SIMD_Ftype;  // Single precision type
-  typedef double SIMD_Dtype; // Double precision type
+  typedef Optimization::u128f SIMD_Ftype;  // Single precision type
+  typedef Optimization::u128d SIMD_Dtype; // Double precision type
   typedef int SIMD_Itype; // Integer type
 
   // prefetch utilities

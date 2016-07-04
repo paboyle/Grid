@@ -44,8 +44,8 @@ template<class vsimd,class scalar>
 inline void extract(typename std::enable_if<!isGridTensor<vsimd>::value, const vsimd >::type * y, 
 		    std::vector<scalar *> &extracted,int offset){
   // FIXME: bounce off memory is painful
+  static const int Nsimd=sizeof(vsimd)/sizeof(scalar);
   int Nextr=extracted.size();
-  int Nsimd=vsimd::Nsimd();
   int s=Nsimd/Nextr;
 
   scalar*buf = (scalar *)y;
@@ -59,8 +59,10 @@ inline void extract(typename std::enable_if<!isGridTensor<vsimd>::value, const v
 template<class vsimd,class scalar>
 inline void merge(typename std::enable_if<!isGridTensor<vsimd>::value, vsimd >::type * y, 
 		  std::vector<scalar *> &extracted,int offset){
+
+  static const int Nsimd=sizeof(vsimd)/sizeof(scalar);
+
   int Nextr=extracted.size();
-  int Nsimd=vsimd::Nsimd();
   int s=Nsimd/Nextr; // can have sparse occupation of simd vector if simd_layout does not fill it
                      // replicate n-fold. Use to allow Integer masks to 
                      // predicate floating point of various width assignments and maintain conformable.
@@ -85,6 +87,7 @@ inline void extract(typename std::enable_if<!isGridTensor<vsimd>::value, const v
   scalar *buf = (scalar *)&y;
   for(int i=0;i<Nextr;i++){
     extracted[i]=buf[i*s];
+#ifdef PARANOID
     for(int ii=1;ii<s;ii++){
       if ( buf[i*s]!=buf[i*s+ii] ){
 	std::cout<<GridLogMessage << " SIMD extract failure splat = "<<s<<" ii "<<ii<<" " <<Nextr<<" "<< Nsimd<<" "<<std::endl;
@@ -96,6 +99,7 @@ inline void extract(typename std::enable_if<!isGridTensor<vsimd>::value, const v
       }
       assert(buf[i*s]==buf[i*s+ii]);
     }
+#endif
   }
 
 };
@@ -106,7 +110,7 @@ inline void extract(typename std::enable_if<!isGridTensor<vsimd>::value, const v
 template<class vsimd,class scalar>
 inline void merge(typename std::enable_if<!isGridTensor<vsimd>::value, vsimd >::type  &y,std::vector<scalar> &extracted){
   int Nextr=extracted.size();
-  int Nsimd=vsimd::Nsimd();
+  static const int Nsimd=vsimd::Nsimd();
   int s=Nsimd/Nextr;
   scalar *buf = (scalar *)&y;
 
@@ -125,9 +129,9 @@ template<class vobj> inline void extract(const vobj &vec,std::vector<typename vo
   typedef typename vobj::scalar_type scalar_type ;
   typedef typename vobj::vector_type vector_type ;
 
-  const int Nsimd=vobj::vector_type::Nsimd();
+  static const int Nsimd=sizeof(vector_type)/sizeof(scalar_type);
+  static const int words=sizeof(vobj)/sizeof(vector_type);
   int Nextr=extracted.size();
-  const int words=sizeof(vobj)/sizeof(vector_type);
   int s=Nsimd/Nextr;
 
   std::vector<scalar_type *> pointers(Nextr);
@@ -148,8 +152,8 @@ void extract(const vobj &vec,std::vector<typename vobj::scalar_object *> &extrac
   typedef typename vobj::scalar_type scalar_type ;
   typedef typename vobj::vector_type vector_type ;
 
-  const int words=sizeof(vobj)/sizeof(vector_type);
-  const int Nsimd=vobj::vector_type::Nsimd();
+  static const int words=sizeof(vobj)/sizeof(vector_type);
+  static const int Nsimd=vobj::vector_type::Nsimd();
 
   int Nextr=extracted.size();
   int s = Nsimd/Nextr;
@@ -172,8 +176,8 @@ void merge(vobj &vec,std::vector<typename vobj::scalar_object> &extracted)
   typedef typename vobj::scalar_type scalar_type ;
   typedef typename vobj::vector_type vector_type ;
   
-  const int Nsimd=vobj::vector_type::Nsimd();
-  const int words=sizeof(vobj)/sizeof(vector_type);
+  static const int Nsimd=sizeof(vector_type)/sizeof(scalar_type);
+  static const int words=sizeof(vobj)/sizeof(vector_type);
 
   int Nextr = extracted.size();
   int splat=Nsimd/Nextr;
@@ -197,7 +201,7 @@ void merge(vobj &vec,std::vector<typename vobj::scalar_object *> &extracted,int 
   typedef typename vobj::scalar_type scalar_type ;
   typedef typename vobj::vector_type vector_type ;
   
-  const int Nsimd=vobj::vector_type::Nsimd();
+  const int Nsimd=sizeof(vector_type)/sizeof(scalar_type);
   const int words=sizeof(vobj)/sizeof(vector_type);
 
   int Nextr=extracted.size();
@@ -224,20 +228,17 @@ void merge1(vobj &vec,std::vector<typename vobj::scalar_object *> &extracted,int
   typedef typename vobj::scalar_type scalar_type ;
   typedef typename vobj::vector_type vector_type ;
   
-  const int Nsimd=vobj::vector_type::Nsimd();
-  const int words=sizeof(vobj)/sizeof(vector_type);
+  static const int Nsimd=vobj::vector_type::Nsimd();
+  static const int words=sizeof(vobj)/sizeof(vector_type);
 
-  scalar_type *pointer;
   scalar_type *vp = (scalar_type *)&vec;
 
   //  assert( (((uint64_t)vp)&(sizeof(scalar_type)-1)) == 0);
 
+  for(int w=0;w<words;w++){
   for(int i=0;i<Nsimd;i++){
-    pointer=(scalar_type *)&extracted[i][offset];
-    for(int w=0;w<words;w++){
-      vp[w*Nsimd+i] = pointer[w];
-    }
-  }
+      vp[w*Nsimd+i] = ((scalar_type *)&extracted[i][offset])[w];
+  }}
 }
 
 template<class vobj> inline 

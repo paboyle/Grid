@@ -42,9 +42,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 
 #define _MM_SELECT_FOUR_FOUR(A,B,C,D) ((A<<6)|(B<<4)|(C<<2)|(D))
+#define _MM_SELECT_FOUR_FOUR_STRING(A,B,C,D) "((" #A "<<6)|(" #B "<<4)|(" #C "<<2)|(" #D "))"
 #define _MM_SELECT_EIGHT_TWO(A,B,C,D,E,F,G,H) ((A<<7)|(B<<6)|(C<<5)|(D<<4)|(E<<3)|(F<<2)|(G<<4)|(H))
 #define _MM_SELECT_FOUR_TWO (A,B,C,D) _MM_SELECT_EIGHT_TWO(0,0,0,0,A,B,C,D)
 #define _MM_SELECT_TWO_TWO  (A,B)     _MM_SELECT_FOUR_TWO(0,0,A,B)
+
+#define RotateBit (0x100)
 
 namespace Grid {
 

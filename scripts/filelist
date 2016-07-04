@@ -1,5 +1,5 @@
 #!/bin/bash
-
+ 
 cd lib
 
 HFILES=`find . -type f -name '*.h'`
@@ -18,7 +18,7 @@ TESTS=`ls T*.cc`
 TESTLIST=`echo ${TESTS} | sed s/.cc//g `
 
 echo > Make.inc
-echo bin_PROGRAMS = ${TESTLIST} | sed s/Test_zmm//g >> Make.inc
+echo bin_PROGRAMS += ${TESTLIST} | sed s/Test_zmm//g >> Make.inc
 echo >> Make.inc
 
 for f in $TESTS

@@ -64,7 +64,9 @@ namespace QCD {
   template<class Impl>
   void WilsonFermion<Impl>::ImportGauge(const GaugeField &_Umu)
   {
-    Impl::DoubleStore(GaugeGrid(),Umu,_Umu);
+    GaugeField HUmu(_Umu._grid);
+    HUmu = _Umu*(-0.5);
+    Impl::DoubleStore(GaugeGrid(),Umu,HUmu);
     pickCheckerboard(Even,UmuEven,Umu);
     pickCheckerboard(Odd ,UmuOdd,Umu);
   }
@@ -286,121 +288,27 @@ PARALLEL_FOR_LOOP
   void WilsonFermion<Impl>::DhopInternal(StencilImpl & st,DoubledGaugeField & U,
 					 const FermionField &in, FermionField &out,int dag) 
   {
-    if ( Impl::overlapCommsCompute () ) { 
-      DhopInternalCommsOverlapCompute(st,U,in,out,dag);
-    } else { 
-      DhopInternalCommsThenCompute(st,U,in,out,dag);
-    }
-  }
-  template<class Impl>
-  void WilsonFermion<Impl>::DhopInternalCommsThenCompute(StencilImpl & st,DoubledGaugeField & U,
-							 const FermionField &in, FermionField &out,int dag) {
-
     assert((dag==DaggerNo) ||(dag==DaggerYes));
 
     Compressor compressor(dag);
     st.HaloExchange(in,compressor);
     
     if ( dag == DaggerYes ) {
-      if( HandOptDslash ) {
 PARALLEL_FOR_LOOP
-        for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out);
-	}
-      } else { 
-PARALLEL_FOR_LOOP
-        for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out);
-	}
+      for(int sss=0;sss<in._grid->oSites();sss++){
+	Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sss,sss,1,1,in,out);
       }
     } else {
-      if( HandOptDslash ) {
 PARALLEL_FOR_LOOP
-        for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sss,sss,in,out);
-	}
-      } else { 
-PARALLEL_FOR_LOOP
-        for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sss,sss,in,out);
-	}
+      for(int sss=0;sss<in._grid->oSites();sss++){
+	Kernels::DiracOptDhopSite(st,U,st.comm_buf,sss,sss,1,1,in,out);
       }
     }
-  };
-
-
-  template<class Impl>
-  void WilsonFermion<Impl>::DhopInternalCommsOverlapCompute(StencilImpl & st,DoubledGaugeField & U,
-						     const FermionField &in, FermionField &out,int dag) {
-
-    assert((dag==DaggerNo) ||(dag==DaggerYes));
-
-    Compressor compressor(dag);
-
-    auto handle = st.HaloExchangeBegin(in,compressor);
-
-    bool local    = true;
-    bool nonlocal = false;
-    if ( dag == DaggerYes ) {
-      if( HandOptDslash ) {
-PARALLEL_FOR_LOOP
-        for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
-	}
-      } else { 
-PARALLEL_FOR_LOOP
-        for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
-	}
-      }
-    } else {
-      if( HandOptDslash ) {
-PARALLEL_FOR_LOOP
-        for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
-	}
-      } else { 
-PARALLEL_FOR_LOOP
-        for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
-	}
-      }
-    }
-
-    st.HaloExchangeComplete(handle);
-
-    local    = false;
-    nonlocal = true;
-    if ( dag == DaggerYes ) {
-      if( HandOptDslash ) {
-PARALLEL_FOR_LOOP
-        for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptHandDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
-	}
-      } else { 
-PARALLEL_FOR_LOOP
-        for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptDhopSiteDag(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
-	}
-      }
-    } else {
-      if( HandOptDslash ) {
-PARALLEL_FOR_LOOP
-        for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptHandDhopSite(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
-	}
-      } else { 
-PARALLEL_FOR_LOOP
-        for(int sss=0;sss<in._grid->oSites();sss++){
-	  Kernels::DiracOptDhopSite(st,U,st.comm_buf,sss,sss,in,out,local,nonlocal);
-	}
-      }
-    }
-
   };
 
  
   FermOpTemplateInstantiate(WilsonFermion);
+  GparityFermOpTemplateInstantiate(WilsonFermion);
 
 
 }}

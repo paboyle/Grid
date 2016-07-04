@@ -39,11 +39,18 @@ namespace Grid {
   // Dress the output; use std::chrono
 
 // C++11 time facilities better?
-double usecond(void);
+inline double usecond(void) {
+  struct timeval tv;
+#ifdef TIMERS_ON
+  gettimeofday(&tv,NULL);
+#endif
+  return 1.0*tv.tv_usec + 1.0e6*tv.tv_sec;
+}
 
 typedef  std::chrono::system_clock          GridClock;
 typedef  std::chrono::time_point<GridClock> GridTimePoint;
 typedef  std::chrono::milliseconds          GridTime;
+typedef  std::chrono::microseconds          GridUsecs;
 
 inline std::ostream& operator<< (std::ostream & stream, const std::chrono::milliseconds & time)
 {
@@ -55,29 +62,39 @@ class GridStopWatch {
 private:
   bool running;
   GridTimePoint start;
-  GridTime accumulator;
+  GridUsecs accumulator;
 public:
   GridStopWatch () { 
     Reset();
   }
   void     Start(void) { 
     assert(running == false);
+#ifdef TIMERS_ON
     start = GridClock::now(); 
+#endif
     running = true;
   }
   void     Stop(void)  { 
     assert(running == true);
-    accumulator+= std::chrono::duration_cast<GridTime>(GridClock::now()-start); 
+#ifdef TIMERS_ON
+    accumulator+= std::chrono::duration_cast<GridUsecs>(GridClock::now()-start); 
+#endif
     running = false; 
   };
   void     Reset(void){
     running = false;
+#ifdef TIMERS_ON
     start = GridClock::now();
-    accumulator = std::chrono::duration_cast<GridTime>(start-start); 
+#endif
+    accumulator = std::chrono::duration_cast<GridUsecs>(start-start); 
   }
   GridTime Elapsed(void) {
     assert(running == false);
-    return accumulator;
+    return std::chrono::duration_cast<GridTime>( accumulator );
+  }
+  uint64_t useconds(void){
+    assert(running == false);
+    return (uint64_t) accumulator.count();
   }
 };
 

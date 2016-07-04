@@ -191,8 +191,9 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
   int buffer_size = grid->_slice_nblock[dimension]*grid->_slice_block[dimension];
   int words = sizeof(vobj)/sizeof(vector_type);
 
-  std::vector<std::vector<scalar_object> > send_buf_extract(Nsimd,std::vector<scalar_object>(buffer_size) );
-  std::vector<std::vector<scalar_object> > recv_buf_extract(Nsimd,std::vector<scalar_object>(buffer_size) );
+  std::vector<Vector<scalar_object> >   send_buf_extract(Nsimd,Vector<scalar_object>(buffer_size) );
+  std::vector<Vector<scalar_object> >   recv_buf_extract(Nsimd,Vector<scalar_object>(buffer_size) );
+
   int bytes = buffer_size*sizeof(scalar_object);
 
   std::vector<scalar_object *>  pointers(Nsimd); // 

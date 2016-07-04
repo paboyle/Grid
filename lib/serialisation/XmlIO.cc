@@ -80,6 +80,20 @@ void XmlReader::pop(void)
   node_ = node_.parent();
 }
 
+bool XmlReader::nextElement(const std::string &s)
+{
+  if (node_.next_sibling(s.c_str()))
+  {
+    node_ = node_.next_sibling(s.c_str());
+    
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
 template <>
 void XmlReader::readDefault(const string &s, string &output)
 {

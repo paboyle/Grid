@@ -73,13 +73,16 @@ void GridLogConfigure(std::vector<std::string> &logstreams)
 ////////////////////////////////////////////////////////////
 void Grid_quiesce_nodes(void)
 {
+  int me=0;
 #ifdef GRID_COMMS_MPI
-  int me;
   MPI_Comm_rank(MPI_COMM_WORLD,&me);
+#endif
+#ifdef GRID_COMMS_SHMEM
+  me = shmem_my_pe();
+#endif
   if ( me ) { 
     std::cout.setstate(std::ios::badbit);
   }
-#endif
 }
 
 void Grid_unquiesce_nodes(void)

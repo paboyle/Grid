@@ -32,6 +32,40 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <type_traits>
 
 namespace Grid {
+  // helper function to read space-separated values
+  template <typename T>
+  std::vector<T> strToVec(const std::string s)
+  {
+    std::istringstream sstr(s);
+    T                  buf;
+    std::vector<T>     v;
+    
+    while(!sstr.eof())
+    {
+      sstr >> buf;
+      v.push_back(buf);
+    }
+    
+    return v;
+  }
+  
+  // output to streams for vectors
+  template < class T >
+  inline std::ostream & operator<<(std::ostream &os, const std::vector<T> &v)
+  {
+    os << "[";
+    for (auto &x: v)
+    {
+      os << x << " ";
+    }
+    if (v.size() > 0)
+    {
+      os << "\b";
+    }
+    os << "]";
+    
+    return os;
+  }
   
   class Serializable {};
   
@@ -136,23 +170,6 @@ namespace Grid {
   inline void read(Reader<T> &r, const std::string &s, U &output)
   {
     r.read(s, output);
-  }
-  
-  template < class T >
-  inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
-  {
-    os << "[";
-    for (auto &x: v)
-    {
-      os << x << " ";
-    }
-    if (v.size() > 0)
-    {
-      os << "\b";
-    }
-    os << "]";
-    
-    return os;
   }
   
   // Writer template implementation ////////////////////////////////////////////

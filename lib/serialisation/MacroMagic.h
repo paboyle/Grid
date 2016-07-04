@@ -120,7 +120,7 @@ THE SOFTWARE.
   \
   \
   template <typename T>\
-  static void write(Writer<T> &WR,const std::string &s, const cname &obj){ \
+  static inline void write(Writer<T> &WR,const std::string &s, const cname &obj){ \
     push(WR,s);\
     GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_WRITE_MEMBER,__VA_ARGS__))	\
     pop(WR);\
@@ -128,14 +128,14 @@ THE SOFTWARE.
   \
   \
   template <typename T>\
-  static void read(Reader<T> &RD,const std::string &s, cname &obj){	\
+  static inline void read(Reader<T> &RD,const std::string &s, cname &obj){	\
     push(RD,s);\
     GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_READ_MEMBER,__VA_ARGS__))	\
     pop(RD);\
   } \
   \
   \
-  friend std::ostream & operator << (std::ostream &os, const cname &obj ) { \
+  friend inline std::ostream & operator << (std::ostream &os, const cname &obj ) { \
     os<<"class "<<#cname<<" {"<<std::endl;\
     GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_OS_WRITE_MEMBER,__VA_ARGS__))	\
       os<<"}";								\
@@ -165,7 +165,7 @@ namespace Grid {
   class EnumIO<name> {\
     public:\
       template <typename T>\
-      static void write(Writer<T> &WR,const std::string &s, const name &obj){ \
+      static inline void write(Writer<T> &WR,const std::string &s, const name &obj){ \
         switch (obj) {\
           GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_ENUMCASE,__VA_ARGS__))\
           default: Grid::write(WR,s,#undefname); break;\
@@ -173,7 +173,7 @@ namespace Grid {
       }\
       \
       template <typename T>\
-      static void read(Reader<T> &RD,const std::string &s, name &obj){ \
+      static inline void read(Reader<T> &RD,const std::string &s, name &obj){ \
         std::string buf;\
         Grid::read(RD, s, buf);\
         if (buf == #undefname) {obj = name::undefname;}\
@@ -182,7 +182,7 @@ namespace Grid {
       }\
   };\
   \
-  std::ostream & operator << (std::ostream &os, const name &obj ) { \
+  inline std::ostream & operator << (std::ostream &os, const name &obj ) { \
     switch (obj) {\
         GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_ENUMCASEIO,__VA_ARGS__))\
         default: os << #undefname; break;\

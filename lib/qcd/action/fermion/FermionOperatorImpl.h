@@ -130,7 +130,7 @@ namespace Grid {
 
       typedef WilsonCompressor<SiteHalfSpinor,SiteSpinor> Compressor;
       typedef WilsonImplParams ImplParams;
-      typedef CartesianStencil<SiteSpinor,SiteHalfSpinor,Compressor> StencilImpl;
+      typedef WilsonStencil<SiteSpinor,SiteHalfSpinor> StencilImpl;
 
       ImplParams Params;
 
@@ -142,6 +142,10 @@ namespace Grid {
         mult(&phi(),&U(mu),&chi());
       }
 
+      template<class ref>
+      inline void loadLinkElement(Simd & reg,ref &memory){
+	reg = memory;
+      }
       inline void DoubleStore(GridBase *GaugeGrid,DoubledGaugeField &Uds,const GaugeField &Umu)
       {
         conformable(Uds._grid,GaugeGrid);
@@ -181,6 +185,100 @@ PARALLEL_FOR_LOOP
 
     };
 
+
+
+    ///////
+    // Single flavour four spinors with colour index, 5d redblack
+    ///////
+    template<class S,int Nrepresentation=Nc>
+    class DomainWallRedBlack5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepresentation> > { 
+    public:
+
+      typedef PeriodicGaugeImpl< GaugeImplTypes< S,Nrepresentation> > Gimpl;
+
+      INHERIT_GIMPL_TYPES(Gimpl);
+      
+      template<typename vtype> using iImplSpinor             = iScalar<iVector<iVector<vtype, Nrepresentation>, Ns> >;
+      template<typename vtype> using iImplHalfSpinor         = iScalar<iVector<iVector<vtype, Nrepresentation>, Nhs> >;
+      template<typename vtype> using iImplDoubledGaugeField  = iVector<iScalar<iMatrix<vtype, Nrepresentation> >, Nds >;
+      template<typename vtype> using iImplGaugeField         = iVector<iScalar<iMatrix<vtype, Nrepresentation> >, Nd >;
+      template<typename vtype> using iImplGaugeLink          = iScalar<iScalar<iMatrix<vtype, Nrepresentation> > >;
+    
+      typedef iImplSpinor    <Simd>           SiteSpinor;
+      typedef iImplHalfSpinor<Simd>           SiteHalfSpinor;
+      typedef Lattice<SiteSpinor>             FermionField;
+
+      // Make the doubled gauge field a *scalar*
+      typedef iImplDoubledGaugeField<typename Simd::scalar_type>    SiteDoubledGaugeField; // This is a scalar
+      typedef iImplGaugeField<typename Simd::scalar_type>           SiteScalarGaugeField;  // scalar
+      typedef iImplGaugeLink <typename Simd::scalar_type>           SiteScalarGaugeLink;   // scalar
+
+      typedef Lattice<SiteDoubledGaugeField>                  DoubledGaugeField;
+
+      typedef WilsonCompressor<SiteHalfSpinor,SiteSpinor> Compressor;
+      typedef WilsonImplParams ImplParams;
+      typedef WilsonStencil<SiteSpinor,SiteHalfSpinor> StencilImpl;
+
+      ImplParams Params;
+
+      DomainWallRedBlack5dImpl(const ImplParams &p= ImplParams()) : Params(p) {}; 
+
+      bool overlapCommsCompute(void) { return false; };
+    
+      template<class ref>
+      inline void loadLinkElement(Simd & reg,ref &memory){
+	vsplat(reg,memory);
+      }
+      inline void multLink(SiteHalfSpinor &phi,const SiteDoubledGaugeField &U,const SiteHalfSpinor &chi,int mu,StencilEntry *SE,StencilImpl &St)
+      {
+	SiteGaugeLink UU;
+	for(int i=0;i<Nrepresentation;i++){
+	  for(int j=0;j<Nrepresentation;j++){
+	    vsplat(UU()()(i,j),U(mu)()(i,j));
+	  }
+	}
+        mult(&phi(),&UU(),&chi());
+      }
+
+      inline void DoubleStore(GridBase *GaugeGrid,DoubledGaugeField &Uds,const GaugeField &Umu)
+      {
+	SiteScalarGaugeField  ScalarUmu;
+	SiteDoubledGaugeField ScalarUds;
+
+        GaugeLinkField U   (Umu._grid);
+	GaugeField     Uadj(Umu._grid);
+        for(int mu=0;mu<Nd;mu++){
+  	  U = PeekIndex<LorentzIndex>(Umu,mu);
+	  U = adj(Cshift(U,mu,-1));
+	  PokeIndex<LorentzIndex>(Uadj,U,mu);
+	}
+
+	for(int lidx=0;lidx<GaugeGrid->lSites();lidx++){
+	  std::vector<int> lcoor;
+	  GaugeGrid->LocalIndexToLocalCoor(lidx,lcoor);
+
+	  peekLocalSite(ScalarUmu,Umu,lcoor);
+	  for(int mu=0;mu<4;mu++) ScalarUds(mu) = ScalarUmu(mu);
+
+	  peekLocalSite(ScalarUmu,Uadj,lcoor);
+	  for(int mu=0;mu<4;mu++) ScalarUds(mu+4) = ScalarUmu(mu);
+
+	  pokeLocalSite(ScalarUds,Uds,lcoor);
+	}
+
+      }
+	
+      inline void InsertForce4D(GaugeField &mat, FermionField &Btilde, FermionField &A,int mu){
+	assert(0);
+      }   
+
+      inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde,int mu){
+	assert(0);
+      }
+
+    };
+
+
     ////////////////////////////////////////////////////////////////////////////////////////
     // Flavour doubled spinors; is Gparity the only? what about C*?
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -205,7 +303,7 @@ PARALLEL_FOR_LOOP
       typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
 
       typedef WilsonCompressor<SiteHalfSpinor,SiteSpinor> Compressor;
-      typedef CartesianStencil<SiteSpinor,SiteHalfSpinor,Compressor> StencilImpl;
+      typedef WilsonStencil<SiteSpinor,SiteHalfSpinor> StencilImpl;
 
       typedef GparityWilsonImplParams ImplParams;
 
@@ -290,8 +388,8 @@ PARALLEL_FOR_LOOP
 	conformable(Uds._grid,GaugeGrid);
 	conformable(Umu._grid,GaugeGrid);
 	
-	GaugeLinkField Utmp(GaugeGrid);
-	GaugeLinkField U(GaugeGrid);
+	GaugeLinkField Utmp (GaugeGrid);
+	GaugeLinkField U    (GaugeGrid);
 	GaugeLinkField Uconj(GaugeGrid);
 	
 	Lattice<iScalar<vInteger> > coor(GaugeGrid);
@@ -378,6 +476,10 @@ PARALLEL_FOR_LOOP
     typedef WilsonImpl<vComplex ,Nc> WilsonImplR; // Real.. whichever prec
     typedef WilsonImpl<vComplexF,Nc> WilsonImplF; // Float
     typedef WilsonImpl<vComplexD,Nc> WilsonImplD; // Double
+
+    typedef DomainWallRedBlack5dImpl<vComplex ,Nc> DomainWallRedBlack5dImplR; // Real.. whichever prec
+    typedef DomainWallRedBlack5dImpl<vComplexF,Nc> DomainWallRedBlack5dImplF; // Float
+    typedef DomainWallRedBlack5dImpl<vComplexD,Nc> DomainWallRedBlack5dImplD; // Double
 
     typedef GparityWilsonImpl<vComplex ,Nc> GparityWilsonImplR; // Real.. whichever prec
     typedef GparityWilsonImpl<vComplexF,Nc> GparityWilsonImplF; // Float

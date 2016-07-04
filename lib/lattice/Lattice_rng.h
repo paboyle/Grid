@@ -75,7 +75,7 @@ namespace Grid {
 
     std::seed_seq src;
     
-    fixedSeed(std::vector<int> &seeds) : src(seeds.begin(),seeds.end()) {};
+    fixedSeed(const std::vector<int> &seeds) : src(seeds.begin(),seeds.end()) {};
 
     result_type operator () (void){
 
@@ -119,9 +119,10 @@ namespace Grid {
     typedef uint32_t     RngStateType;
     static const int     RngStateCount = std::mt19937::state_size;
 #endif
-    std::vector<RngEngine>             _generators;
-    std::vector<std::uniform_real_distribution<RealD> > _uniform;
-    std::vector<std::normal_distribution<RealD> >       _gaussian;
+    std::vector<RngEngine>                             _generators;
+    std::vector<std::uniform_real_distribution<RealD>> _uniform;
+    std::vector<std::normal_distribution<RealD>>       _gaussian;
+    std::vector<std::discrete_distribution<int32_t>>     _bernoulli;
 
     void GetState(std::vector<RngStateType> & saved,int gen) {
       saved.resize(RngStateCount);
@@ -161,6 +162,7 @@ namespace Grid {
       _generators.resize(1);
       _uniform.resize(1,std::uniform_real_distribution<RealD>{0,1});
       _gaussian.resize(1,std::normal_distribution<RealD>(0.0,1.0) );
+      _bernoulli.resize(1,std::discrete_distribution<int32_t>{1,1});
       _seeded=0;
     }
 
@@ -242,7 +244,7 @@ namespace Grid {
       std::random_device rd;
       Seed(rd);
     }
-    void SeedFixedIntegers(std::vector<int> &seeds){
+    void SeedFixedIntegers(const std::vector<int> &seeds){
       fixedSeed src(seeds);
       Seed(src);
     }
@@ -266,6 +268,7 @@ namespace Grid {
       _generators.resize(_vol);
       _uniform.resize(_vol,std::uniform_real_distribution<RealD>{0,1});
       _gaussian.resize(_vol,std::normal_distribution<RealD>(0.0,1.0) );
+      _bernoulli.resize(_vol,std::discrete_distribution<int32_t>{1,1});
       _seeded=0;
     }
 
@@ -354,7 +357,7 @@ PARALLEL_FOR_LOOP
       std::random_device rd;
       Seed(rd);
     }
-    void SeedFixedIntegers(std::vector<int> &seeds){
+    void SeedFixedIntegers(const std::vector<int> &seeds){
       fixedSeed src(seeds);
       Seed(src);
     }
@@ -368,13 +371,21 @@ PARALLEL_FOR_LOOP
   template <class vobj> inline void gaussian(GridParallelRNG &rng,Lattice<vobj> &l){
     rng.fill(l,rng._gaussian);
   }
-
+  
+  template <class vobj> inline void bernoulli(GridParallelRNG &rng,Lattice<vobj> &l){
+    rng.fill(l,rng._bernoulli);
+  }
 
   template <class sobj> inline void random(GridSerialRNG &rng,sobj &l){
     rng.fill(l,rng._uniform);
   }
+  
   template <class sobj> inline void gaussian(GridSerialRNG &rng,sobj &l){
     rng.fill(l,rng._gaussian);
+  }
+  
+  template <class sobj> inline void bernoulli(GridSerialRNG &rng,sobj &l){
+    rng.fill(l,rng._bernoulli);
   }
 
 }

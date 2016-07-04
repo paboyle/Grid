@@ -109,9 +109,11 @@ typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeAction
 
 #define FermOpTemplateInstantiate(A) \
   template class A<WilsonImplF>;		\
-  template class A<WilsonImplD>;  \
+  template class A<WilsonImplD>;		\
   template class A<GparityWilsonImplF>;		\
   template class A<GparityWilsonImplD>;		
+
+#define GparityFermOpTemplateInstantiate(A) 
 
 ////////////////////////////////////////////
 // Fermion operators / actions
@@ -207,6 +209,14 @@ typedef WilsonFermion<GparityWilsonImplD>     GparityWilsonFermionD;
 typedef DomainWallFermion<GparityWilsonImplR> GparityDomainWallFermionR;
 typedef DomainWallFermion<GparityWilsonImplF> GparityDomainWallFermionF;
 typedef DomainWallFermion<GparityWilsonImplD> GparityDomainWallFermionD;
+
+typedef WilsonTMFermion<GparityWilsonImplR> GparityWilsonTMFermionR;
+typedef WilsonTMFermion<GparityWilsonImplF> GparityWilsonTMFermionF;
+typedef WilsonTMFermion<GparityWilsonImplD> GparityWilsonTMFermionD;
+typedef MobiusFermion<GparityWilsonImplR> GparityMobiusFermionR;
+typedef MobiusFermion<GparityWilsonImplF> GparityMobiusFermionF;
+typedef MobiusFermion<GparityWilsonImplD> GparityMobiusFermionD;
+
 
   }}
 ///////////////////////////////////////////////////////////////////////////////

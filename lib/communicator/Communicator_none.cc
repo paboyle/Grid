@@ -28,6 +28,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include "Grid.h"
 namespace Grid {
 
+void CartesianCommunicator::Init(int *argc, char *** arv)
+{
+}
+
+int Rank(void ){ return 0; };
+
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {
   _processors = processors;
@@ -47,17 +53,14 @@ void CartesianCommunicator::GlobalSum(float &){}
 void CartesianCommunicator::GlobalSumVector(float *,int N){}
 void CartesianCommunicator::GlobalSum(double &){}
 void CartesianCommunicator::GlobalSum(uint32_t &){}
+void CartesianCommunicator::GlobalSum(uint64_t &){}
 void CartesianCommunicator::GlobalSumVector(double *,int N){}
 
-void CartesianCommunicator::RecvFrom(void *recv,
-				     int recv_from_rank,
-				     int bytes) 
-{
-  assert(0);
-}
-void CartesianCommunicator::SendTo(void *xmit,
-				   int xmit_to_rank,
-				   int bytes)
+void CartesianCommunicator::SendRecvPacket(void *xmit,
+					   void *recv,
+					   int xmit_to_rank,
+					   int recv_from_rank,
+					   int bytes)
 {
   assert(0);
 }

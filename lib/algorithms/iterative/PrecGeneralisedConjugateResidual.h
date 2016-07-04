@@ -47,6 +47,10 @@ namespace Grid {
     int mmax;
     int nstep;
     int steps;
+    GridStopWatch PrecTimer;
+    GridStopWatch MatTimer;
+    GridStopWatch LinalgTimer;
+
     LinearFunction<Field> &Preconditioner;
 
    PrecGeneralisedConjugateResidual(RealD tol,Integer maxit,LinearFunction<Field> &Prec,int _mmax,int _nstep) : 
@@ -68,14 +72,24 @@ namespace Grid {
       
       Field r(src._grid);
 
+        PrecTimer.Reset();
+         MatTimer.Reset();
+      LinalgTimer.Reset();
+
+      GridStopWatch SolverTimer;
+      SolverTimer.Start();
+
       steps=0;
       for(int k=0;k<MaxIterations;k++){
 
 	cp=GCRnStep(Linop,src,psi,rsq);
 
-	if ( verbose ) std::cout<<GridLogMessage<<"VPGCR("<<mmax<<","<<nstep<<") "<< steps <<" steps cp = "<<cp<<std::endl;
+	std::cout<<GridLogMessage<<"VPGCR("<<mmax<<","<<nstep<<") "<< steps <<" steps cp = "<<cp<<std::endl;
 
 	if(cp<rsq) {
+
+	  SolverTimer.Stop();
+
 	  Linop.HermOp(psi,r);
 	  axpy(r,-1.0,src,r);
 	  RealD tr = norm2(r);
@@ -83,6 +97,11 @@ namespace Grid {
 		   << " computed residual "<<sqrt(cp/ssq)
 	           << " true residual "    <<sqrt(tr/ssq)
 	           << " target "           <<Tolerance <<std::endl;
+
+	  std::cout<<GridLogMessage<<"VPGCR Time elapsed: Total  "<< SolverTimer.Elapsed() <<std::endl;
+	  std::cout<<GridLogMessage<<"VPGCR Time elapsed: Precon "<<   PrecTimer.Elapsed() <<std::endl;
+	  std::cout<<GridLogMessage<<"VPGCR Time elapsed: Matrix "<<    MatTimer.Elapsed() <<std::endl;
+	  std::cout<<GridLogMessage<<"VPGCR Time elapsed: Linalg "<< LinalgTimer.Elapsed() <<std::endl;
 	  return;
 	}
 
@@ -90,6 +109,7 @@ namespace Grid {
       std::cout<<GridLogMessage<<"Variable Preconditioned GCR did not converge"<<std::endl;
       assert(0);
     }
+
     RealD GCRnStep(LinearOperatorBase<Field> &Linop,const Field &src, Field &psi,RealD rsq){
 
       RealD cp;
@@ -116,24 +136,25 @@ namespace Grid {
       // initial guess x0 is taken as nonzero.
       // r0=src-A x0 = src
       //////////////////////////////////
+      MatTimer.Start();
       Linop.HermOpAndNorm(psi,Az,zAz,zAAz); 
+      MatTimer.Stop();
       r=src-Az;
       
       /////////////////////
       // p = Prec(r)
       /////////////////////
+      PrecTimer.Start();
       Preconditioner(r,z);
+      PrecTimer.Stop();
 
-      std::cout<<GridLogMessage<< " Preconditioner in " << norm2(r)<<std::endl; 
-      std::cout<<GridLogMessage<< " Preconditioner out " << norm2(z)<<std::endl; 
-      
+      MatTimer.Start();
       Linop.HermOp(z,tmp); 
+      MatTimer.Stop();
 
-      std::cout<<GridLogMessage<< " Preconditioner Aout " << norm2(tmp)<<std::endl; 
       ttmp=tmp;
       tmp=tmp-r;
 
-      std::cout<<GridLogMessage<< " Preconditioner resid " << std::sqrt(norm2(tmp)/norm2(r))<<std::endl; 
       /*
       std::cout<<GridLogMessage<<r<<std::endl;
       std::cout<<GridLogMessage<<z<<std::endl;
@@ -141,7 +162,9 @@ namespace Grid {
       std::cout<<GridLogMessage<<tmp<<std::endl;
       */
 
+      MatTimer.Start();
       Linop.HermOpAndNorm(z,Az,zAz,zAAz); 
+      MatTimer.Stop();
 
       //p[0],q[0],qq[0] 
       p[0]= z;
@@ -165,18 +188,22 @@ namespace Grid {
 
 	cp = axpy_norm(r,-a,q[peri_k],r);  
 
-	std::cout<<GridLogMessage<< " VPGCR_step resid" <<sqrt(cp/rsq)<<std::endl; 
 	if((k==nstep-1)||(cp<rsq)){
 	  return cp;
 	}
 
+	std::cout<<GridLogMessage<< " VPGCR_step["<<steps<<"]  resid " <<sqrt(cp/rsq)<<std::endl; 
+
+	PrecTimer.Start();
 	Preconditioner(r,z);// solve Az = r
+	PrecTimer.Stop();
+
+	MatTimer.Start();
 	Linop.HermOpAndNorm(z,Az,zAz,zAAz);
-
-
 	Linop.HermOp(z,tmp);
+	MatTimer.Stop();
         tmp=tmp-r;
-	std::cout<<GridLogMessage<< " Preconditioner resid" <<sqrt(norm2(tmp)/norm2(r))<<std::endl; 
+	std::cout<<GridLogMessage<< " Preconditioner resid " <<sqrt(norm2(tmp)/norm2(r))<<std::endl; 
 
 	q[peri_kp]=Az;
 	p[peri_kp]=z;

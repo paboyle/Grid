@@ -42,7 +42,9 @@ template<class Gimpl> class WilsonLoops;
 #define INHERIT_GIMPL_TYPES(GImpl) \
     typedef typename GImpl::Simd                           Simd;\
     typedef typename GImpl::GaugeLinkField       GaugeLinkField;\
-    typedef typename GImpl::GaugeField               GaugeField;	
+    typedef typename GImpl::GaugeField               GaugeField;\
+    typedef typename GImpl::SiteGaugeField       SiteGaugeField;\
+    typedef typename GImpl::SiteGaugeLink         SiteGaugeLink;
 
     // 
     template<class S,int Nrepresentation=Nc>
@@ -62,9 +64,9 @@ template<class Gimpl> class WilsonLoops;
 
     // Move this elsewhere?
     static inline void AddGaugeLink(GaugeField& U, GaugeLinkField& W, int mu){  // U[mu] += W 
-PARALLEL_FOR_LOOP
+    PARALLEL_FOR_LOOP
       for(auto ss=0;ss<U._grid->oSites();ss++){
-	U._odata[ss]._internal[mu] = U._odata[ss]._internal[mu] + W._odata[ss]._internal;
+	         U._odata[ss]._internal[mu] = U._odata[ss]._internal[mu] + W._odata[ss]._internal;
         }  
     }
     

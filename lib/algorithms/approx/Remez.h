@@ -16,9 +16,13 @@
 #define INCLUDED_ALG_REMEZ_H
 
 #include <stddef.h>
+#include <Config.h>
 
-//#include <algorithms/approx/bigfloat.h>
+#ifdef HAVE_GMP_H
+#include <algorithms/approx/bigfloat.h>
+#else
 #include <algorithms/approx/bigfloat_double.h>
+#endif
 
 #define JMAX 10000 //Maximum number of iterations of Newton's approximation
 #define SUM_MAX 10 // Maximum number of terms in exponential

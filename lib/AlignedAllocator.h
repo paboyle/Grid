@@ -36,9 +36,16 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <malloc.h>
 #endif
 
-#include <immintrin.h>
 #ifdef HAVE_MM_MALLOC_H
 #include <mm_malloc.h>
+#endif
+
+#ifdef GRID_COMMS_SHMEM
+extern "C" { 
+#include <mpp/shmem.h>
+extern void * shmem_align(size_t, size_t);
+extern void  shmem_free(void *);
+}
 #endif
 
 namespace Grid {
@@ -72,21 +79,59 @@ public:
 
   size_type  max_size() const throw() { return size_t(-1) / sizeof(_Tp); }
 
-  pointer allocate(size_type __n, const void* = 0)
+  pointer allocate(size_type __n, const void* _p= 0)
   { 
+#ifdef GRID_COMMS_SHMEM
+
+    _Tp *ptr = (_Tp *) shmem_align(__n*sizeof(_Tp),64);
+
+
+#define PARANOID_SYMMETRIC_HEAP
+#ifdef PARANOID_SYMMETRIC_HEAP
+    static void * bcast;
+    static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
+
+    bcast = (void *) ptr;
+    shmem_broadcast32((void *)&bcast,(void *)&bcast,sizeof(void *)/4,0,0,0,shmem_n_pes(),psync);
+
+    if ( bcast != ptr ) {
+      std::printf("inconsistent alloc pe %d %lx %lx \n",shmem_my_pe(),bcast,ptr);std::fflush(stdout);
+      BACKTRACEFILE();
+      exit(0);
+    }
+
+    assert( bcast == (void *) ptr);
+
+#endif 
+#else
+
 #ifdef HAVE_MM_MALLOC_H
     _Tp * ptr = (_Tp *) _mm_malloc(__n*sizeof(_Tp),128);
 #else
     _Tp * ptr = (_Tp *) memalign(128,__n*sizeof(_Tp));
 #endif
+
+#endif
+    _Tp tmp;
+#undef FIRST_TOUCH_OPTIMISE
+#ifdef FIRST_TOUCH_OPTIMISE
+#pragma omp parallel for 
+  for(int i=0;i<__n;i++){
+    ptr[i]=tmp;
+  }
+#endif 
     return ptr;
   }
 
   void deallocate(pointer __p, size_type) { 
+#ifdef GRID_COMMS_SHMEM
+    shmem_free((void *)__p);
+#else
 #ifdef HAVE_MM_MALLOC_H
     _mm_free((void *)__p); 
 #else
     free((void *)__p);
+#endif
 #endif
   }
   void construct(pointer __p, const _Tp& __val) { };

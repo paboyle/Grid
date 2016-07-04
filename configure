@@ -626,12 +626,18 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+USE_LAPACK_LIB_FALSE
+USE_LAPACK_LIB_TRUE
+USE_LAPACK_FALSE
+USE_LAPACK_TRUE
 BUILD_CHROMA_REGRESSION_FALSE
 BUILD_CHROMA_REGRESSION_TRUE
 BUILD_COMMS_NONE_FALSE
 BUILD_COMMS_NONE_TRUE
 BUILD_COMMS_MPI_FALSE
 BUILD_COMMS_MPI_TRUE
+BUILD_COMMS_SHMEM_FALSE
+BUILD_COMMS_SHMEM_TRUE
 BUILD_ZMM_FALSE
 BUILD_ZMM_TRUE
 EGREP
@@ -751,7 +757,9 @@ enable_simd
 enable_precision
 enable_comms
 enable_rng
+enable_timers
 enable_chroma
+enable_lapack
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1410,7 +1418,9 @@ Optional Features:
   --enable-comms=none|mpi Select communications
   --enable-rng=ranlux48|mt19937
                           Select Random Number Generator to be used
+  --enable-timers=yes|no  Enable system dependent high res timers
   --enable-chroma         Expect chroma compiled under c++11
+  --enable-lapack         Enable lapack yes/no
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -6410,7 +6420,7 @@ if test "${enable_simd+set}" = set; then :
   enableval=$enable_simd; \
 	ac_SIMD=${enable_simd}
 else
-  ac_SIMD=AVX2
+  ac_SIMD=DEBUG
 fi
 
 
@@ -6477,7 +6487,7 @@ $as_echo "#define AVX512 1" >>confdefs.h
 $as_echo "#define IMCI 1" >>confdefs.h
 
        supported="cross compilation"
-       ac_ZMM=yes;
+       ac_ZMM=no;
      ;;
      NEONv8)
        echo Configuring for experimental ARMv8a support
@@ -6562,10 +6572,24 @@ $as_echo "#define GRID_COMMS_NONE 1" >>confdefs.h
 $as_echo "#define GRID_COMMS_MPI 1" >>confdefs.h
 
      ;;
+     shmem)
+       echo Configuring for SHMEM communications
+
+$as_echo "#define GRID_COMMS_SHMEM 1" >>confdefs.h
+
+     ;;
      *)
      as_fn_error $? "${ac_COMMS} unsupported --enable-comms option" "$LINENO" 5;
      ;;
 esac
+
+ if  test "X${ac_COMMS}X" == "XshmemX" ; then
+  BUILD_COMMS_SHMEM_TRUE=
+  BUILD_COMMS_SHMEM_FALSE='#'
+else
+  BUILD_COMMS_SHMEM_TRUE='#'
+  BUILD_COMMS_SHMEM_FALSE=
+fi
 
  if  test "X${ac_COMMS}X" == "XmpiX" ; then
   BUILD_COMMS_MPI_TRUE=
@@ -6610,6 +6634,34 @@ $as_echo "#define RNG_MT19937 1" >>confdefs.h
      as_fn_error $? "${ac_RNG} unsupported --enable-rng option" "$LINENO" 5;
      ;;
 esac
+
+#
+# SDE timing mode
+#
+# Check whether --enable-timers was given.
+if test "${enable_timers+set}" = set; then :
+  enableval=$enable_timers; \
+	ac_TIMERS=${enable_timers}
+else
+  ac_TIMERS=yes
+fi
+
+case ${ac_TIMERS} in
+     yes)
+
+$as_echo "#define TIMERS_ON 1" >>confdefs.h
+
+     ;;
+     no)
+
+$as_echo "#define TIMERS_OFF 1" >>confdefs.h
+
+     ;;
+     *)
+     as_fn_error $? "${ac_TIMERS} unsupported --enable-timers option" "$LINENO" 5;
+     ;;
+esac
+
 #
 # Chroma regression tests
 #
@@ -6639,6 +6691,46 @@ esac
 else
   BUILD_CHROMA_REGRESSION_TRUE='#'
   BUILD_CHROMA_REGRESSION_FALSE=
+fi
+
+
+#
+# Lapack
+#
+# Check whether --enable-lapack was given.
+if test "${enable_lapack+set}" = set; then :
+  enableval=$enable_lapack; ac_LAPACK=${enable_lapack}
+else
+  ac_LAPACK=no
+fi
+
+
+case ${ac_LAPACK} in
+     yes)
+       echo Enabling lapack
+     ;;
+     no)
+       echo Disabling lapack
+     ;;
+     *)
+       echo Enabling lapack at ${ac_LAPACK}
+     ;;
+esac
+
+ if  test "X${ac_LAPACK}X" != "XnoX" ; then
+  USE_LAPACK_TRUE=
+  USE_LAPACK_FALSE='#'
+else
+  USE_LAPACK_TRUE='#'
+  USE_LAPACK_FALSE=
+fi
+
+ if  test "X${ac_LAPACK}X" != "XyesX" ; then
+  USE_LAPACK_LIB_TRUE=
+  USE_LAPACK_LIB_FALSE='#'
+else
+  USE_LAPACK_LIB_TRUE='#'
+  USE_LAPACK_LIB_FALSE=
 fi
 
 
@@ -6809,6 +6901,10 @@ if test -z "${BUILD_ZMM_TRUE}" && test -z "${BUILD_ZMM_FALSE}"; then
   as_fn_error $? "conditional \"BUILD_ZMM\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${BUILD_COMMS_SHMEM_TRUE}" && test -z "${BUILD_COMMS_SHMEM_FALSE}"; then
+  as_fn_error $? "conditional \"BUILD_COMMS_SHMEM\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${BUILD_COMMS_MPI_TRUE}" && test -z "${BUILD_COMMS_MPI_FALSE}"; then
   as_fn_error $? "conditional \"BUILD_COMMS_MPI\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -6819,6 +6915,14 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BUILD_CHROMA_REGRESSION_TRUE}" && test -z "${BUILD_CHROMA_REGRESSION_FALSE}"; then
   as_fn_error $? "conditional \"BUILD_CHROMA_REGRESSION\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${USE_LAPACK_TRUE}" && test -z "${USE_LAPACK_FALSE}"; then
+  as_fn_error $? "conditional \"USE_LAPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${USE_LAPACK_LIB_TRUE}" && test -z "${USE_LAPACK_LIB_FALSE}"; then
+  as_fn_error $? "conditional \"USE_LAPACK_LIB\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
@@ -8167,6 +8271,7 @@ The following features are enabled:
 - communications type           : ${ac_COMMS}
 - default precision             : ${ac_PRECISION}
 - RNG choice                    : ${ac_RNG}
+- LAPACK	                : ${ac_LAPACK}
 
 
 "

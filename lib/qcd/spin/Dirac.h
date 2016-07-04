@@ -82,7 +82,10 @@ namespace QCD {
     GammaMatrix _g;
 
   };
-
+  
+    // Make gamma products (Chroma convention)
+    SpinMatrix makeGammaProd(const unsigned int i);
+    
     /* Gx
      *  0 0  0  i    
      *  0 0  i  0    

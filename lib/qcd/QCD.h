@@ -90,7 +90,7 @@ namespace QCD {
     template<typename vtype> using iHalfSpinVector            = iScalar<iVector<iScalar<vtype>, Nhs> >;
     template<typename vtype> using iHalfSpinColourVector      = iScalar<iVector<iVector<vtype, Nc>, Nhs> >;
 
-    template<typename vtype> using iGparitySpinColourVector       = iVector<iVector<iVector<vtype, Nc>, Nhs>, Ngp >;
+    template<typename vtype> using iGparitySpinColourVector       = iVector<iVector<iVector<vtype, Nc>, Ns>, Ngp >;
     template<typename vtype> using iGparityHalfSpinColourVector   = iVector<iVector<iVector<vtype, Nc>, Nhs>, Ngp >;
 
     // Spin matrix
@@ -383,7 +383,6 @@ namespace QCD {
     //////////////////////////////////////////////
     // Poke scalars
     //////////////////////////////////////////////
-
     template<class vobj> void pokeSpin(vobj &lhs,const decltype(peekIndex<SpinIndex>(lhs,0)) & rhs,int i)
     {
       pokeIndex<SpinIndex>(lhs,rhs,i);
@@ -407,7 +406,41 @@ namespace QCD {
       pokeIndex<LorentzIndex>(lhs,rhs,i);
     }
 
-
+    //////////////////////////////////////////////
+    // Fermion <-> propagator assignements
+    //////////////////////////////////////////////
+    template <class Prop, class Ferm>
+    void FermToProp(Prop &p, const Ferm &f, const int s, const int c)
+    {
+        for(int j = 0; j < Ns; ++j)
+        {
+            auto pjs = peekSpin(p, j, s);
+            auto fj  = peekSpin(f, j);
+            
+            for(int i = 0; i < Nc; ++i)
+            {
+                pokeColour(pjs, peekColour(fj, i), i, c);
+            }
+            pokeSpin(p, pjs, j, s);
+        }
+    }
+    
+    template <class Prop, class Ferm>
+    void PropToFerm(Ferm &f, const Prop &p, const int s, const int c)
+    {
+        for(int j = 0; j < Ns; ++j)
+        {
+            auto pjs = peekSpin(p, j, s);
+            auto fj  = peekSpin(f, j);
+            
+            for(int i = 0; i < Nc; ++i)
+            {
+                pokeColour(fj, peekColour(pjs, i, c), i);
+            }
+            pokeSpin(f, fj, j);
+        }
+    }
+    
     //////////////////////////////////////////////
     // transpose array and scalar
     //////////////////////////////////////////////

@@ -92,13 +92,13 @@ public:
     
     // Create integrator, including the smearing policy
     // Smearing policy
-    std::cout << GridLogMessage << " Creating the Stout class\n";
-    double rho = 0.1; // smearing parameter
+    std::cout << GridLogDebug << " Creating the Stout class\n";
+    double rho = 0.1; // smearing parameter, now hardcoded
     int Nsmear = 1;   // number of smearing levels
     Smear_Stout<Gimpl> Stout(rho);
-    std::cout << GridLogMessage << " Creating the SmearedConfiguration class\n";
+    std::cout << GridLogDebug << " Creating the SmearedConfiguration class\n";
     SmearedConfiguration<Gimpl> SmearingPolicy(UGrid, Nsmear, Stout);
-    std::cout << GridLogMessage << " done\n";
+    std::cout << GridLogDebug << " done\n";
     //////////////
     typedef MinimumNorm2<GaugeField, SmearedConfiguration<Gimpl> >  IntegratorType;// change here to change the algorithm
     IntegratorParameters MDpar(20);
@@ -116,27 +116,27 @@ public:
 
     if ( StartType == HotStart ) {
       // Hot start
-      HMCpar.NoMetropolisUntil =0;
+      HMCpar.NoMetropolisUntil =10;
       HMCpar.MetropolisTest = true;
       sRNG.SeedFixedIntegers(SerSeed);
       pRNG.SeedFixedIntegers(ParSeed);
       SU3::HotConfiguration(pRNG, U);
     } else if ( StartType == ColdStart ) { 
       // Cold start
-      HMCpar.NoMetropolisUntil =0;
+      HMCpar.NoMetropolisUntil =10;
       HMCpar.MetropolisTest = true;
       sRNG.SeedFixedIntegers(SerSeed);
       pRNG.SeedFixedIntegers(ParSeed);
       SU3::ColdConfiguration(pRNG, U);
     } else if ( StartType == TepidStart ) {       
       // Tepid start
-      HMCpar.NoMetropolisUntil =0;
+      HMCpar.NoMetropolisUntil =10;
       HMCpar.MetropolisTest = true;
       sRNG.SeedFixedIntegers(SerSeed);
       pRNG.SeedFixedIntegers(ParSeed);
       SU3::TepidConfiguration(pRNG, U);
     } else if ( StartType == CheckpointStart ) { 
-      HMCpar.NoMetropolisUntil =0;
+      HMCpar.NoMetropolisUntil =10;
       HMCpar.MetropolisTest = true;
       // CheckpointRestart
       Checkpoint.CheckpointRestore(StartTraj, U, sRNG, pRNG);
@@ -144,7 +144,7 @@ public:
 
     // Attach the gauge field to the smearing Policy and create the fill the smeared set
     // notice that the unit configuration is singular in this procedure
-    std::cout << GridLogMessage << "Filling the smeared set\n";
+    std::cout << GridLogMessage << "Filling the smeared set\n"; 
     SmearingPolicy.set_GaugeField(U);
     
     HybridMonteCarlo<GaugeField,IntegratorType>  HMC(HMCpar, MDynamics,sRNG,pRNG,U); 

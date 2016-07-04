@@ -31,6 +31,19 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 namespace Grid {
 
   // Should error check all MPI calls.
+void CartesianCommunicator::Init(int *argc, char ***argv) {
+  int flag;
+  MPI_Initialized(&flag); // needed to coexist with other libs apparently
+  if ( !flag ) {
+    MPI_Init(argc,argv);
+  }
+}
+
+  int Rank(void) {
+    int pe;
+    MPI_Comm_rank(MPI_COMM_WORLD,&pe);
+    return pe;
+  }
 
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {
@@ -57,6 +70,10 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 
 void CartesianCommunicator::GlobalSum(uint32_t &u){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_SUM,communicator);
+  assert(ierr==0);
+}
+void CartesianCommunicator::GlobalSum(uint64_t &u){
+  int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT64_T,MPI_SUM,communicator);
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalSum(float &f){
@@ -108,21 +125,22 @@ void CartesianCommunicator::SendToRecvFrom(void *xmit,
   SendToRecvFromBegin(reqs,xmit,dest,recv,from,bytes);
   SendToRecvFromComplete(reqs);
 }
-void CartesianCommunicator::RecvFrom(void *recv,
-				     int from,
-				     int bytes) 
+
+void CartesianCommunicator::SendRecvPacket(void *xmit,
+					   void *recv,
+					   int sender,
+					   int receiver,
+					   int bytes)
 {
   MPI_Status stat;
-  int ierr=MPI_Recv(recv, bytes, MPI_CHAR,from,from,communicator,&stat);
-  assert(ierr==0);
-}
-void CartesianCommunicator::SendTo(void *xmit,
-				   int dest,
-				   int bytes)
-{
-  int rank = _processor; // used for tag; must know who it comes from
-  int ierr = MPI_Send(xmit, bytes, MPI_CHAR,dest,_processor,communicator);
-  assert(ierr==0);
+  assert(sender != receiver);
+  int tag = sender;
+  if ( _processor == sender ) {
+    MPI_Send(xmit, bytes, MPI_CHAR,receiver,tag,communicator);
+  }
+  if ( _processor == receiver ) { 
+    MPI_Recv(recv, bytes, MPI_CHAR,sender,tag,communicator,&stat);
+  }
 }
 
 // Basic Halo comms primitive
