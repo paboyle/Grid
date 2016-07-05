@@ -81,6 +81,14 @@ public:
       NumTraj = ivec[0];
     }
 
+    int NumThermalizations = 10;
+    if( GridCmdOptionExists(argv,argv+argc,"--Thermalizations") ){
+      arg= GridCmdOptionPayload(argv,argv+argc,"--Thermalizations");
+      std::vector<int> ivec(0);
+      GridCmdOptionIntVector(arg,ivec);
+      NumThermalizations = ivec[0];
+    }
+
 
     GridSerialRNG    sRNG;
     GridParallelRNG  pRNG(UGrid);
@@ -110,33 +118,30 @@ public:
     PlaquetteLogger<Gimpl>      PlaqLog(std::string("plaq"));
 
     HMCparameters HMCpar;
-    HMCpar.StartTrajectory = StartTraj;
-    HMCpar.Trajectories    = NumTraj;
+    HMCpar.StartTrajectory   = StartTraj;
+    HMCpar.Trajectories      = NumTraj;
+    HMCpar.NoMetropolisUntil = NumThermalizations;
     
 
     if ( StartType == HotStart ) {
       // Hot start
-      HMCpar.NoMetropolisUntil =10;
       HMCpar.MetropolisTest = true;
       sRNG.SeedFixedIntegers(SerSeed);
       pRNG.SeedFixedIntegers(ParSeed);
       SU3::HotConfiguration(pRNG, U);
     } else if ( StartType == ColdStart ) { 
       // Cold start
-      HMCpar.NoMetropolisUntil =10;
       HMCpar.MetropolisTest = true;
       sRNG.SeedFixedIntegers(SerSeed);
       pRNG.SeedFixedIntegers(ParSeed);
       SU3::ColdConfiguration(pRNG, U);
     } else if ( StartType == TepidStart ) {       
       // Tepid start
-      HMCpar.NoMetropolisUntil =10;
       HMCpar.MetropolisTest = true;
       sRNG.SeedFixedIntegers(SerSeed);
       pRNG.SeedFixedIntegers(ParSeed);
       SU3::TepidConfiguration(pRNG, U);
     } else if ( StartType == CheckpointStart ) { 
-      HMCpar.NoMetropolisUntil =10;
       HMCpar.MetropolisTest = true;
       // CheckpointRestart
       Checkpoint.CheckpointRestore(StartTraj, U, sRNG, pRNG);

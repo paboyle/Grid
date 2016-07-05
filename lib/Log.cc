@@ -1,51 +1,51 @@
-    /*************************************************************************************
+/*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+Grid physics library, www.github.com/paboyle/Grid
 
-    Source file: ./lib/Log.cc
+Source file: ./lib/Log.cc
 
-    Copyright (C) 2015
+Copyright (C) 2015
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-    See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+See the full license in the file "LICENSE" in the top level distribution
+directory
+*************************************************************************************/
+/*  END LEGAL */
 #include <Grid.h>
 
 namespace Grid {
-  
-  GridStopWatch Logger::StopWatch;
-  std::ostream  Logger::devnull(0);
-  
-  Colours    GridLogColours    (0);
-  GridLogger GridLogError      (1,"Error",GridLogColours, "RED");
-  GridLogger GridLogWarning    (1,"Warning",GridLogColours, "YELLOW");
-  GridLogger GridLogMessage    (1,"Message",GridLogColours, "NORMAL");
-  GridLogger GridLogDebug      (1,"Debug",GridLogColours, "PURPLE");
-  GridLogger GridLogPerformance(1,"Performance",GridLogColours, "GREEN");
-  GridLogger GridLogIterative  (1,"Iterative",GridLogColours, "BLUE");
-  GridLogger GridLogIntegrator (1,"Integrator",GridLogColours, "BLUE");
 
-void GridLogConfigure(std::vector<std::string> &logstreams)
-{
+GridStopWatch Logger::StopWatch;
+std::ostream Logger::devnull(0);
+
+Colours GridLogColours(0);
+GridLogger GridLogError(1, "Error", GridLogColours, "RED");
+GridLogger GridLogWarning(1, "Warning", GridLogColours, "YELLOW");
+GridLogger GridLogMessage(1, "Message", GridLogColours, "NORMAL");
+GridLogger GridLogDebug(1, "Debug", GridLogColours, "PURPLE");
+GridLogger GridLogPerformance(1, "Performance", GridLogColours, "GREEN");
+GridLogger GridLogIterative(1, "Iterative", GridLogColours, "BLUE");
+GridLogger GridLogIntegrator(1, "Integrator", GridLogColours, "BLUE");
+
+void GridLogConfigure(std::vector<std::string> &logstreams) {
   GridLogError.Active(0);
   GridLogWarning.Active(0);
   GridLogMessage.Active(0);
@@ -55,43 +55,38 @@ void GridLogConfigure(std::vector<std::string> &logstreams)
   GridLogIntegrator.Active(0);
   GridLogColours.Active(0);
 
-  for(int i=0;i<logstreams.size();i++){
-    if ( logstreams[i]== std::string("Error")       ) GridLogError.Active(1);
-    if ( logstreams[i]== std::string("Warning")     ) GridLogWarning.Active(1);
-    if ( logstreams[i]== std::string("Message")     ) GridLogMessage.Active(1);
-    if ( logstreams[i]== std::string("Iterative")   ) GridLogIterative.Active(1);
-    if ( logstreams[i]== std::string("Debug")       ) GridLogDebug.Active(1);
-    if ( logstreams[i]== std::string("Performance") ) GridLogPerformance.Active(1);
-    if ( logstreams[i]== std::string("Integrator" ) ) GridLogIntegrator.Active(1);
-    if ( logstreams[i]== std::string("Colours" )    ) GridLogColours.Active(1);
-     
+  for (int i = 0; i < logstreams.size(); i++) {
+    if (logstreams[i] == std::string("Error")) GridLogError.Active(1);
+    if (logstreams[i] == std::string("Warning")) GridLogWarning.Active(1);
+    if (logstreams[i] == std::string("Message")) GridLogMessage.Active(1);
+    if (logstreams[i] == std::string("Iterative")) GridLogIterative.Active(1);
+    if (logstreams[i] == std::string("Debug")) GridLogDebug.Active(1);
+    if (logstreams[i] == std::string("Performance"))
+      GridLogPerformance.Active(1);
+    if (logstreams[i] == std::string("Integrator")) GridLogIntegrator.Active(1);
+    if (logstreams[i] == std::string("Colours")) GridLogColours.Active(1);
   }
 }
 
 ////////////////////////////////////////////////////////////
 // Verbose limiter on MPI tasks
 ////////////////////////////////////////////////////////////
-void Grid_quiesce_nodes(void)
-{
-  int me=0;
+void Grid_quiesce_nodes(void) {
+  int me = 0;
 #ifdef GRID_COMMS_MPI
-  MPI_Comm_rank(MPI_COMM_WORLD,&me);
+  MPI_Comm_rank(MPI_COMM_WORLD, &me);
 #endif
 #ifdef GRID_COMMS_SHMEM
   me = shmem_my_pe();
 #endif
-  if ( me ) { 
+  if (me) {
     std::cout.setstate(std::ios::badbit);
   }
 }
 
-void Grid_unquiesce_nodes(void)
-{
+void Grid_unquiesce_nodes(void) {
 #ifdef GRID_COMMS_MPI
-    std::cout.clear();
+  std::cout.clear();
 #endif
 }
-
-
 }
-

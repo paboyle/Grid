@@ -6,9 +6,9 @@
 
     Copyright (C) 2015
 
-Author: Antonin Portelli <antonin.portelli@me.com>
-Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+    Author: Antonin Portelli <antonin.portelli@me.com>
+    Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
+    Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -48,7 +48,6 @@ protected:
   bool is_active;
 public:
   std::map<std::string, std::string> colour;
-
 
   Colours(bool activate=false){
     Active(activate);
