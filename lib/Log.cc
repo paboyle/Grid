@@ -48,7 +48,7 @@ GridLogger GridLogIntegrator(1, "Integrator", GridLogColours, "BLUE");
 void GridLogConfigure(std::vector<std::string> &logstreams) {
   GridLogError.Active(0);
   GridLogWarning.Active(0);
-  GridLogMessage.Active(0);
+  GridLogMessage.Active(1); // at least the messages should be always on
   GridLogIterative.Active(0);
   GridLogDebug.Active(0);
   GridLogPerformance.Active(0);
@@ -58,7 +58,7 @@ void GridLogConfigure(std::vector<std::string> &logstreams) {
   for (int i = 0; i < logstreams.size(); i++) {
     if (logstreams[i] == std::string("Error")) GridLogError.Active(1);
     if (logstreams[i] == std::string("Warning")) GridLogWarning.Active(1);
-    if (logstreams[i] == std::string("Message")) GridLogMessage.Active(1);
+    if (logstreams[i] == std::string("NoMessage")) GridLogMessage.Active(0);
     if (logstreams[i] == std::string("Iterative")) GridLogIterative.Active(1);
     if (logstreams[i] == std::string("Debug")) GridLogDebug.Active(1);
     if (logstreams[i] == std::string("Performance"))

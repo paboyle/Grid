@@ -116,7 +116,7 @@ public:
       GridTime now = StopWatch.Elapsed();
       StopWatch.Start();
       stream << log.background()<< log.topName << log.background()<< " : ";
-      stream << log.colour() <<std::setw(10) << std::left << log.name << log.background() << " : ";
+      stream << log.colour() <<std::setw(14) << std::left << log.name << log.background() << " : ";
       stream << log.evidence()<< now << log.background() << " : " << log.colour();
       return stream;
     } else { 
