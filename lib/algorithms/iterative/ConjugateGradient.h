@@ -40,9 +40,10 @@ namespace Grid {
   template<class Field> 
     class ConjugateGradient : public OperatorFunction<Field> {
 public:                                                
+    bool ErrorOnNoConverge; //throw an assert when the CG fails to converge. Defaults true.
     RealD   Tolerance;
     Integer MaxIterations;
-    ConjugateGradient(RealD tol,Integer maxit) : Tolerance(tol), MaxIterations(maxit) { 
+  ConjugateGradient(RealD tol,Integer maxit, bool err_on_no_conv = true) : Tolerance(tol), MaxIterations(maxit), ErrorOnNoConverge(err_on_no_conv){ 
     };
 
 
@@ -137,13 +138,15 @@ public:
 	  std::cout<<GridLogMessage<<"Time elapsed: Total "<< SolverTimer.Elapsed() << " Matrix  "<<MatrixTimer.Elapsed() << " Linalg "<<LinalgTimer.Elapsed();
 	  std::cout<<std::endl;
 	  
-	  assert(true_residual/Tolerance < 1000.0);
+	  if(ErrorOnNoConverge)
+	    assert(true_residual/Tolerance < 1000.0);
 
 	  return;
 	}
       }
       std::cout<<GridLogMessage<<"ConjugateGradient did NOT converge"<<std::endl;
-      assert(0);
+      if(ErrorOnNoConverge)	
+	assert(0);
     }
   };
 }
