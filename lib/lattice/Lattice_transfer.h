@@ -493,7 +493,7 @@ typename std::enable_if<isSIMDvectorized<vobj>::value && !isSIMDvectorized<sobj>
   int ndim = in_grid->Nd();
   int in_nsimd = vtype::Nsimd();
 
-  std::vector<int> in_icoor[in_nsimd];
+  std::vector<std::vector<int> > in_icoor(in_nsimd);
       
   for(int lane=0; lane < in_nsimd; lane++){
     in_icoor[lane].resize(ndim);
