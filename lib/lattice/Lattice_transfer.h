@@ -539,7 +539,7 @@ void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
   int ndim = out._grid->Nd();
   int out_nsimd = out_grid->Nsimd();
     
-  std::vector<int> out_icoor[out_nsimd];
+  std::vector<std::vector<int> > out_icoor(out_nsimd);
       
   for(int lane=0; lane < out_nsimd; lane++){
     out_icoor[lane].resize(ndim);
