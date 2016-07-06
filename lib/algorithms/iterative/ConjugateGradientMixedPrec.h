@@ -30,6 +30,7 @@ Author: Christopher Kelly <ckelly@phys.columbia.edu>
 
 namespace Grid {
 
+  //Mixed precision restarted defect correction CG
   template<class FieldD,class FieldF, typename std::enable_if< getPrecision<FieldD>::value == 2, int>::type = 0,typename std::enable_if< getPrecision<FieldF>::value == 1, int>::type = 0> 
   class MixedPrecisionConjugateGradient : public LinearFunction<FieldD> {
   public:                                                
