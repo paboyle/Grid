@@ -8,6 +8,7 @@
 
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Christopher Kelly <ckelly@phys.columbia.edu>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -230,6 +231,35 @@ namespace Grid {
     static const bool value = true;
   };
 
+  //Get the SIMD vector type from a Grid tensor or Lattice<Tensor>
+  template<typename T>
+  struct getVectorType{
+    typedef T type;
+  };
+  
+  //Query if a tensor or Lattice<Tensor> is SIMD vector or scalar
+  template<typename T>
+  class isSIMDvectorized{
+    template<typename U>
+    static typename std::enable_if< !std::is_same< typename GridTypeMapper<typename getVectorType<U>::type>::scalar_type,   typename GridTypeMapper<typename getVectorType<U>::type>::vector_type>::value, char>::type test(void *);
+
+    template<typename U>
+    static double test(...);
+  
+  public:
+    enum {value = sizeof(test<T>(0)) == sizeof(char) };
+  };
+  
+  //Get the precision of a Lattice, tensor or scalar type in units of sizeof(float)
+  template<typename T>
+  class getPrecision{
+    typedef typename getVectorType<T>::type vector_obj; //get the vector_obj (i.e. a grid Tensor) if its a Lattice<vobj>, do nothing otherwise (i.e. if fundamental or grid Tensor)
+  
+    typedef typename GridTypeMapper<vector_obj>::scalar_type scalar_type; //get the associated scalar type. Works on fundamental and tensor types
+    typedef typename GridTypeMapper<scalar_type>::Realified real_scalar_type; //remove any std::complex wrapper, should get us to the fundamental type
+  public:
+    enum { value = sizeof(real_scalar_type)/sizeof(float) };
+  };
 }
 
 #endif

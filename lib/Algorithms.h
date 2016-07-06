@@ -44,6 +44,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <algorithms/iterative/SchurRedBlack.h>
 
 #include <algorithms/iterative/ConjugateGradientMultiShift.h>
+#include <algorithms/iterative/ConjugateGradientMixedPrec.h>
 
 // Lanczos support
 #include <algorithms/iterative/MatrixUtils.h>

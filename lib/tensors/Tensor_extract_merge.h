@@ -10,6 +10,7 @@ Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: neo <cossu@post.kek.jp>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Christopher Kelly <ckelly@phys.columbia.edu>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -167,6 +168,33 @@ void extract(const vobj &vec,std::vector<typename vobj::scalar_object *> &extrac
   }
 }
 
+////////////////////////////////////////////////////////////////////////
+// Extract to a bunch of scalar object pointers of different scalar type, with offset. Useful for precision change
+////////////////////////////////////////////////////////////////////////
+template<class vobj, class sobj> inline 
+void extract1(const vobj &vec,std::vector<sobj*> &extracted, int offset)
+{
+  typedef typename vobj::scalar_type vobj_scalar_type ;
+  typedef typename vobj::vector_type vobj_vector_type ;
+
+  typedef typename sobj::scalar_type sobj_scalar_type ;
+  
+  static const int words=sizeof(vobj)/sizeof(vobj_vector_type);
+  static const int Nsimd=vobj_vector_type::Nsimd();
+
+  int Nextr=extracted.size();
+  int s = Nsimd/Nextr;
+  vobj_scalar_type * vp = (vobj_scalar_type *)&vec;
+
+  for(int w=0;w<words;w++){
+    for(int i=0;i<Nextr;i++){
+      sobj_scalar_type * pointer = (sobj_scalar_type *)& extracted[i][offset];
+      pointer[w] = vp[i*s+w*Nsimd];
+    }
+  }
+}
+
+  
 ////////////////////////////////////////////////////////////////////////
 // Merge a contiguous array of scalar objects
 ////////////////////////////////////////////////////////////////////////
