@@ -82,6 +82,12 @@ template <typename T> using is_lattice      = std::is_base_of<LatticeBase,T >;
 
 template <typename T> using is_lattice_expr = std::is_base_of<LatticeExpressionBase,T >;
 
+//Specialization of getVectorType for lattices
+template<typename T>
+struct getVectorType<Lattice<T> >{
+  typedef typename Lattice<T>::vector_object type;
+};
+ 
 template<class sobj>
 inline sobj eval(const unsigned int ss, const sobj &arg)
 {

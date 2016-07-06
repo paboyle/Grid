@@ -482,6 +482,96 @@ void Replicate(Lattice<vobj> &coarse,Lattice<vobj> & fine)
 
 }
 
+//Copy SIMD-vectorized lattice to array of scalar objects in lexicographic order
+template<typename vobj, typename sobj>
+typename std::enable_if<isSIMDvectorized<vobj>::value && !isSIMDvectorized<sobj>::value, void>::type unvectorizeToLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in){
+  typedef typename vobj::vector_type vtype;
+  
+  GridBase* in_grid = in._grid;
+  out.resize(in_grid->lSites());
+  
+  int ndim = in_grid->Nd();
+  int in_nsimd = vtype::Nsimd();
 
+  std::vector<std::vector<int> > in_icoor(in_nsimd);
+      
+  for(int lane=0; lane < in_nsimd; lane++){
+    in_icoor[lane].resize(ndim);
+    in_grid->iCoorFromIindex(in_icoor[lane], lane);
+  }
+  
+PARALLEL_FOR_LOOP
+  for(int in_oidx = 0; in_oidx < in_grid->oSites(); in_oidx++){ //loop over outer index
+    //Assemble vector of pointers to output elements
+    std::vector<sobj*> out_ptrs(in_nsimd);
+
+    std::vector<int> in_ocoor(ndim);
+    in_grid->oCoorFromOindex(in_ocoor, in_oidx);
+
+    std::vector<int> lcoor(in_grid->Nd());
+      
+    for(int lane=0; lane < in_nsimd; lane++){
+      for(int mu=0;mu<ndim;mu++)
+	lcoor[mu] = in_ocoor[mu] + in_grid->_rdimensions[mu]*in_icoor[lane][mu];
+
+      int lex;
+      Lexicographic::IndexFromCoor(lcoor, lex, in_grid->_ldimensions);
+      out_ptrs[lane] = &out[lex];
+    }
+    
+    //Unpack into those ptrs
+    const vobj & in_vobj = in._odata[in_oidx];
+    extract1(in_vobj, out_ptrs, 0);
+  }
+}
+
+//Convert a Lattice from one precision to another
+template<class VobjOut, class VobjIn>
+void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
+  assert(out._grid->Nd() == in._grid->Nd());
+  out.checkerboard = in.checkerboard;
+  GridBase *in_grid=in._grid;
+  GridBase *out_grid = out._grid;
+
+  typedef typename VobjOut::scalar_object SobjOut;
+  typedef typename VobjIn::scalar_object SobjIn;
+
+  int ndim = out._grid->Nd();
+  int out_nsimd = out_grid->Nsimd();
+    
+  std::vector<std::vector<int> > out_icoor(out_nsimd);
+      
+  for(int lane=0; lane < out_nsimd; lane++){
+    out_icoor[lane].resize(ndim);
+    out_grid->iCoorFromIindex(out_icoor[lane], lane);
+  }
+        
+  std::vector<SobjOut> in_slex_conv(in_grid->lSites());
+  unvectorizeToLexOrdArray(in_slex_conv, in);
+    
+  PARALLEL_FOR_LOOP
+  for(int out_oidx=0;out_oidx<out_grid->oSites();out_oidx++){
+    std::vector<int> out_ocoor(ndim);
+    out_grid->oCoorFromOindex(out_ocoor, out_oidx);
+
+    std::vector<SobjOut*> ptrs(out_nsimd);      
+
+    std::vector<int> lcoor(out_grid->Nd());
+      
+    for(int lane=0; lane < out_nsimd; lane++){
+      for(int mu=0;mu<ndim;mu++)
+	lcoor[mu] = out_ocoor[mu] + out_grid->_rdimensions[mu]*out_icoor[lane][mu];
+	
+      int llex; Lexicographic::IndexFromCoor(lcoor, llex, out_grid->_ldimensions);
+      ptrs[lane] = &in_slex_conv[llex];
+    }
+    merge(out._odata[out_oidx], ptrs, 0);
+  }
+}
+
+
+  
+
+ 
 }
 #endif

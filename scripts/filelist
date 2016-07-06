@@ -2,7 +2,8 @@
  
 cd lib
 
-HFILES=`find . -type f -name '*.h'`
+HFILES=`find . -type f -name '*.h' -not -path '*/Old/*'`
+HFILES="$HFILES Config.h"
 CCFILES=`find . -type f -name '*.cc' -not  -name '*ommunicator*.cc'`
 echo> Make.inc
 echo HFILES=$HFILES >> Make.inc
