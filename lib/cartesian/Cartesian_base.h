@@ -29,7 +29,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_CARTESIAN_BASE_H
 #define GRID_CARTESIAN_BASE_H
 
-#include <Grid.h>
 
 namespace Grid{
 

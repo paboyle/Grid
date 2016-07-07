@@ -33,8 +33,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifdef USE_LAPACK
 #include <lapacke.h>
 #endif
-#include <algorithms/iterative/DenseMatrix.h>
-#include <algorithms/iterative/EigenSort.h>
+#include "DenseMatrix.h"
+#include "EigenSort.h"
 
 namespace Grid {
 

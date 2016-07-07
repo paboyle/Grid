@@ -29,27 +29,27 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_ALGORITHMS_H
 #define GRID_ALGORITHMS_H
 
-#include <algorithms/SparseMatrix.h>
-#include <algorithms/LinearOperator.h>
-#include <algorithms/Preconditioner.h>
+#include <Grid/algorithms/SparseMatrix.h>
+#include <Grid/algorithms/LinearOperator.h>
+#include <Grid/algorithms/Preconditioner.h>
 
-#include <algorithms/approx/Zolotarev.h>
-#include <algorithms/approx/Chebyshev.h>
-#include <algorithms/approx/Remez.h>
-#include <algorithms/approx/MultiShiftFunction.h>
+#include <Grid/algorithms/approx/Zolotarev.h>
+#include <Grid/algorithms/approx/Chebyshev.h>
+#include <Grid/algorithms/approx/Remez.h>
+#include <Grid/algorithms/approx/MultiShiftFunction.h>
 
-#include <algorithms/iterative/ConjugateGradient.h>
-#include <algorithms/iterative/ConjugateResidual.h>
-#include <algorithms/iterative/NormalEquations.h>
-#include <algorithms/iterative/SchurRedBlack.h>
+#include <Grid/algorithms/iterative/ConjugateGradient.h>
+#include <Grid/algorithms/iterative/ConjugateResidual.h>
+#include <Grid/algorithms/iterative/NormalEquations.h>
+#include <Grid/algorithms/iterative/SchurRedBlack.h>
 
-#include <algorithms/iterative/ConjugateGradientMultiShift.h>
+#include <Grid/algorithms/iterative/ConjugateGradientMultiShift.h>
 
 // Lanczos support
-#include <algorithms/iterative/MatrixUtils.h>
-#include <algorithms/iterative/ImplicitlyRestartedLanczos.h>
+#include <Grid/algorithms/iterative/MatrixUtils.h>
+#include <Grid/algorithms/iterative/ImplicitlyRestartedLanczos.h>
 
-#include <algorithms/CoarsenedMatrix.h>
+#include <Grid/algorithms/CoarsenedMatrix.h>
 
 // Eigen/lanczos
 // EigCg

@@ -484,16 +484,16 @@ namespace QCD {
 }   //namespace QCD
 } // Grid
 
-#include <qcd/utils/SpaceTimeGrid.h>
-#include <qcd/spin/Dirac.h>
-#include <qcd/spin/TwoSpinor.h>
-#include <qcd/utils/LinalgUtils.h>
-#include <qcd/utils/CovariantCshift.h>
-#include <qcd/utils/SUn.h>
-#include <qcd/action/Actions.h>
-#include <qcd/hmc/integrators/Integrator.h>
-#include <qcd/hmc/integrators/Integrator_algorithm.h>
-#include <qcd/hmc/HMC.h>
+#include <Grid/qcd/utils/SpaceTimeGrid.h>
+#include <Grid/qcd/spin/Dirac.h>
+#include <Grid/qcd/spin/TwoSpinor.h>
+#include <Grid/qcd/utils/LinalgUtils.h>
+#include <Grid/qcd/utils/CovariantCshift.h>
+#include <Grid/qcd/utils/SUn.h>
+#include <Grid/qcd/action/Actions.h>
+#include <Grid/qcd/hmc/integrators/Integrator.h>
+#include <Grid/qcd/hmc/integrators/Integrator_algorithm.h>
+#include <Grid/qcd/hmc/HMC.h>
 
 
 #endif

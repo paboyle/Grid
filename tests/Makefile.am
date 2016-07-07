@@ -1,11 +1,16 @@
 # additional include paths necessary to compile the C++ library
 
-SUBDIRS = 
+SUBDIRS = core
+
+# Uncomment to enable complete test suite build
+#SUBDIRS = core forces hmc solver debug	
+
 if BUILD_CHROMA_REGRESSION
   SUBDIRS+= qdpxx
 endif
+bin_PROGRAMS =
 
-AM_CXXFLAGS = -I$(top_srcdir)/lib
+AM_CXXFLAGS = -I$(top_srcdir)/include
 AM_LDFLAGS = -L$(top_builddir)/lib
 
 if USE_LAPACK
@@ -16,12 +21,6 @@ AM_CXXFLAGS += -I$(ac_LAPACK)/include
 AM_LDFLAGS += -L$(ac_LAPACK)/lib
 #fi
 endif
-endif
-
-if BUILD_ZMM
-  bin_PROGRAMS=Test_zmm
-else
-  bin_PROGRAMS=
 endif
 
 include Make.inc

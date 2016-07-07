@@ -90,8 +90,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define Chimu_31 UChi_11
 #define Chimu_32 UChi_12
 
-#include <simd/Intel512common.h>
-#include <simd/Intel512avx.h>
+#include "Intel512common.h"
+#include "Intel512avx.h"
 
 //////////////////////////////////////////////////////////////////
 // Macros used to build wilson kernel -- can rationalise and simplify
