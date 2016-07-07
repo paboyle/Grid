@@ -34,78 +34,75 @@ directory
 
 namespace Grid {
 
-namespace QCD {
+  namespace QCD {
 
-//////////////////////////////////////////////
-// Template parameter class constructs to package
-// externally control Fermion implementations
-// in orthogonal directions
-//
-// Ultimately need Impl to always define types where XXX is opaque
-//
-//    typedef typename XXX               Simd;
-//    typedef typename XXX     GaugeLinkField;
-//    typedef typename XXX         GaugeField;
-//    typedef typename XXX      GaugeActField;
-//    typedef typename XXX       FermionField;
-//    typedef typename XXX  DoubledGaugeField;
-//    typedef typename XXX         SiteSpinor;
-//    typedef typename XXX     SiteHalfSpinor;
-//    typedef typename XXX         Compressor;
-//
-// and Methods:
-//    void ImportGauge(GridBase *GaugeGrid,DoubledGaugeField &Uds,const
-//    GaugeField &Umu)
-//    void DoubleStore(GridBase *GaugeGrid,DoubledGaugeField &Uds,const
-//    GaugeField &Umu)
-//    void multLink(SiteHalfSpinor &phi,const SiteDoubledGaugeField &U,const
-//    SiteHalfSpinor &chi,int mu,StencilEntry *SE,StencilImpl &St)
-//    void InsertForce4D(GaugeField &mat,const FermionField &Btilde,const
-//    FermionField &A,int mu)
-//    void InsertForce5D(GaugeField &mat,const FermionField &Btilde,const
-//    FermionField &A,int mu)
-//
-//
-// To acquire the typedefs from "Base" (either a base class or template param)
-// use:
-//
-// INHERIT_GIMPL_TYPES(Base)
-// INHERIT_FIMPL_TYPES(Base)
-// INHERIT_IMPL_TYPES(Base)
-//
-// The Fermion operators will do the following:
-//
-// struct MyOpParams {
-//   RealD mass;
-// };
-//
-//
-// template<class Impl>
-// class MyOp : pubic<Impl> {
-// public:
-//
-//    INHERIT_ALL_IMPL_TYPES(Impl);
-//
-//    MyOp(MyOpParams Myparm, ImplParams &ImplParam) :  Impl(ImplParam)
-//    {
-//
-//    };
-//
-//  }
-//////////////////////////////////////////////
 
-////////////////////////////////////////////////////////////////////////
-// Implementation dependent fermion types
-////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////
+    // Template parameter class constructs to package
+    // externally control Fermion implementations
+    // in orthogonal directions
+    //
+    // Ultimately need Impl to always define types where XXX is opaque
+    //
+    //    typedef typename XXX               Simd;
+    //    typedef typename XXX     GaugeLinkField;	
+    //    typedef typename XXX         GaugeField;
+    //    typedef typename XXX      GaugeActField;
+    //    typedef typename XXX       FermionField;
+    //    typedef typename XXX  DoubledGaugeField;
+    //    typedef typename XXX         SiteSpinor;
+    //    typedef typename XXX     SiteHalfSpinor;	
+    //    typedef typename XXX         Compressor;	
+    //
+    // and Methods:
+    //    void ImportGauge(GridBase *GaugeGrid,DoubledGaugeField &Uds,const GaugeField &Umu)
+    //    void DoubleStore(GridBase *GaugeGrid,DoubledGaugeField &Uds,const GaugeField &Umu)
+    //    void multLink(SiteHalfSpinor &phi,const SiteDoubledGaugeField &U,const SiteHalfSpinor &chi,int mu,StencilEntry *SE,StencilImpl &St)
+    //    void InsertForce4D(GaugeField &mat,const FermionField &Btilde,const FermionField &A,int mu)
+    //    void InsertForce5D(GaugeField &mat,const FermionField &Btilde,const FermionField &A,int mu)
+    //
+    //
+    // To acquire the typedefs from "Base" (either a base class or template param) use:
+    //
+    // INHERIT_GIMPL_TYPES(Base)
+    // INHERIT_FIMPL_TYPES(Base)
+    // INHERIT_IMPL_TYPES(Base)
+    //
+    // The Fermion operators will do the following:
+    //
+    // struct MyOpParams { 
+    //   RealD mass;
+    // };
+    //
+    //
+    // template<class Impl>
+    // class MyOp : public<Impl> { 
+    // public:
+    //
+    //    INHERIT_ALL_IMPL_TYPES(Impl);
+    //
+    //    MyOp(MyOpParams Myparm, ImplParams &ImplParam) :  Impl(ImplParam)
+    //    {
+    //
+    //    };
+    //    
+    //  }
+    //////////////////////////////////////////////
 
-#define INHERIT_FIMPL_TYPES(Impl)                             \
-  typedef typename Impl::FermionField FermionField;           \
-  typedef typename Impl::DoubledGaugeField DoubledGaugeField; \
-  typedef typename Impl::SiteSpinor SiteSpinor;               \
-  typedef typename Impl::SiteHalfSpinor SiteHalfSpinor;       \
-  typedef typename Impl::Compressor Compressor;               \
-  typedef typename Impl::StencilImpl StencilImpl;             \
-  typedef typename Impl::ImplParams ImplParams;
+
+    ////////////////////////////////////////////////////////////////////////
+    // Implementation dependent fermion types
+    ////////////////////////////////////////////////////////////////////////
+
+#define INHERIT_FIMPL_TYPES(Impl)\
+    typedef typename Impl::FermionField           FermionField;		\
+    typedef typename Impl::DoubledGaugeField DoubledGaugeField;		\
+    typedef typename Impl::SiteSpinor               SiteSpinor;		\
+    typedef typename Impl::SiteHalfSpinor       SiteHalfSpinor;		\
+    typedef typename Impl::Compressor               Compressor;		\
+    typedef typename Impl::StencilImpl             StencilImpl;	  \
+    typedef typename Impl::ImplParams ImplParams;
+
 
 #define INHERIT_IMPL_TYPES(Base) \
   INHERIT_GIMPL_TYPES(Base)      \
@@ -148,17 +145,22 @@ class WilsonImpl
 
   bool overlapCommsCompute(void) { return Params.overlapCommsCompute; };
 
-  inline void multLink(SiteHalfSpinor &phi, const SiteDoubledGaugeField &U,
-                       const SiteHalfSpinor &chi, int mu, StencilEntry *SE,
+  inline void multLink(SiteHalfSpinor &phi,
+		       const SiteDoubledGaugeField &U,
+                       const SiteHalfSpinor &chi,
+		       int mu,
+		       StencilEntry *SE,
                        StencilImpl &St) {
     mult(&phi(), &U(mu), &chi());
   }
 
   template <class ref>
-  inline void loadLinkElement(Simd &reg, ref &memory) {
+  inline void loadLinkElement(Simd &reg,
+			      ref &memory) {
     reg = memory;
   }
-  inline void DoubleStore(GridBase *GaugeGrid, DoubledGaugeField &Uds,
+  inline void DoubleStore(GridBase *GaugeGrid,
+			  DoubledGaugeField &Uds,
                           const GaugeField &Umu) {
     conformable(Uds._grid, GaugeGrid);
     conformable(Umu._grid, GaugeGrid);
@@ -171,15 +173,19 @@ class WilsonImpl
     }
   }
 
-  inline void InsertForce4D(GaugeField &mat, FermionField &Btilde,
-                            FermionField &A, int mu) {
+  inline void InsertForce4D(GaugeField &mat,
+			    FermionField &Btilde,
+                            FermionField &A,
+			    int mu) {
     GaugeLinkField link(mat._grid);
     link = TraceIndex<SpinIndex>(outerProduct(Btilde, A));
     PokeIndex<LorentzIndex>(mat, link, mu);
   }
 
-  inline void InsertForce5D(GaugeField &mat, FermionField &Btilde,
-                            FermionField &Atilde, int mu) {
+  inline void InsertForce5D(GaugeField &mat,
+			    FermionField &Btilde,
+                            FermionField &Atilde,
+			    int mu) {
     int Ls = Btilde._grid->_fdimensions[0];
 
     GaugeLinkField tmp(mat._grid);

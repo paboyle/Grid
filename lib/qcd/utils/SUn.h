@@ -43,7 +43,7 @@ public:
 
   template<typename vtype> using iSUnMatrix              = iScalar<iScalar<iMatrix<vtype, ncolour> > > ;
   template<typename vtype> using iSU2Matrix              = iScalar<iScalar<iMatrix<vtype, 2> > > ;
-
+  
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Types can be accessed as SU<2>::Matrix , SU<2>::vSUnMatrix, SU<2>::LatticeMatrix etc...
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -552,15 +552,24 @@ Note that in step D setting B ~ X - A and using B in place of A in step E will g
   }
 
   // reunitarise??
-  static void LieRandomize(GridParallelRNG     &pRNG,LatticeMatrix &out,double scale=1.0){
+  template<typename LatticeMatrixType>
+  static void LieRandomize(GridParallelRNG     &pRNG,LatticeMatrixType &out,double scale=1.0){
     GridBase *grid = out._grid;
-
-    LatticeComplex ca (grid);
-    LatticeMatrix  lie(grid);
-    LatticeMatrix  la (grid);
-    Complex ci(0.0,scale);
-    Complex cone(1.0,0.0);
-    Matrix ta;
+    
+    typedef typename LatticeMatrixType::vector_type vector_type;
+    typedef typename LatticeMatrixType::scalar_type scalar_type;
+    
+    typedef iSinglet<vector_type> vTComplexType;
+    
+    typedef Lattice<vTComplexType> LatticeComplexType;
+    typedef typename GridTypeMapper<typename LatticeMatrixType::vector_object>::scalar_object MatrixType;
+    
+    LatticeComplexType ca (grid);
+    LatticeMatrixType  lie(grid);
+    LatticeMatrixType  la (grid);
+    ComplexD ci(0.0,scale);
+    ComplexD cone(1.0,0.0);
+    MatrixType ta;
 
     lie=zero;
     for(int a=0;a<generators();a++){
@@ -596,9 +605,13 @@ Note that in step D setting B ~ X - A and using B in place of A in step E will g
 
   }
 
-
-  static void HotConfiguration(GridParallelRNG &pRNG,LatticeGaugeField &out){
-    LatticeMatrix Umu(out._grid);
+  template<typename GaugeField>
+  static void HotConfiguration(GridParallelRNG &pRNG,GaugeField &out){
+    typedef typename GaugeField::vector_type vector_type;
+    typedef iSUnMatrix<vector_type> vMatrixType;
+    typedef Lattice<vMatrixType> LatticeMatrixType;
+    
+    LatticeMatrixType Umu(out._grid);
     for(int mu=0;mu<Nd;mu++){
       LieRandomize(pRNG,Umu,1.0);
       PokeIndex<LorentzIndex>(out,Umu,mu);
@@ -622,13 +635,15 @@ Note that in step D setting B ~ X - A and using B in place of A in step E will g
   static void taProj( const LatticeMatrix &in,  LatticeMatrix &out){
     out = Ta(in);
   }
-  static void taExp( const LatticeMatrix &x,  LatticeMatrix &ex){ 
-
-    LatticeMatrix xn(x._grid);
+  template<typename LatticeMatrixType>
+  static void taExp( const LatticeMatrixType &x,  LatticeMatrixType &ex){ 
+    typedef typename LatticeMatrixType::scalar_type ComplexType;    
+    
+    LatticeMatrixType xn(x._grid);
     RealD nfac = 1.0;
 
     xn = x;
-    ex =xn+Complex(1.0); // 1+x
+    ex =xn+ComplexType(1.0); // 1+x
 
     // Do a 12th order exponentiation
     for(int i=2; i <= 12; ++i)
