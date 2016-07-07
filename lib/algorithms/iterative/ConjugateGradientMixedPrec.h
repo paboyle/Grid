@@ -51,7 +51,7 @@ namespace Grid {
       OuterLoopNormMult(100.), guesser(NULL){ };
 
     void useGuesser(LinearFunction<FieldF> &g){
-      guesser = g;
+      guesser = &g;
     }
   
     void operator() (const FieldD &src_d_in, FieldD &sol_d){
