@@ -22,7 +22,7 @@ Eigen:  $(top_srcdir)/prerequisites/$(EIGENTAR)
 	tar xvf $(top_srcdir)/prerequisites/$(EIGENTAR)
 	- rm -rf  ../include/Grid/Eigen
 	mv eigen-eigen*/Eigen .
-	echo EFILES=`find Eigen -type f -name '*.h' ` | sed > $(top_srcdir)/lib/Eigen.inc
+	echo EFILES=`find Eigen -type f -name '*.h' ` > $(top_srcdir)/lib/Eigen.inc
 	mv Eigen ../include/Grid/
 	touch Eigen
 
