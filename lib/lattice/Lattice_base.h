@@ -1,32 +1,33 @@
-    /*************************************************************************************
+/*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+Grid physics library, www.github.com/paboyle/Grid
 
-    Source file: ./lib/lattice/Lattice_base.h
+Source file: ./lib/lattice/Lattice_base.h
 
-    Copyright (C) 2015
+Copyright (C) 2015
 
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-    See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+See the full license in the file "LICENSE" in the top level distribution
+directory
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_LATTICE_BASE_H
 #define GRID_LATTICE_BASE_H
 
@@ -255,6 +256,18 @@ PARALLEL_FOR_LOOP
         checkerboard=0;
     }
 
+    Lattice(const Lattice& r){ // copy constructor
+    	_grid = r._grid;
+    	checkerboard = r.checkerboard;
+    	_odata.resize(_grid->oSites());// essential
+  		PARALLEL_FOR_LOOP
+        for(int ss=0;ss<_grid->oSites();ss++){
+            _odata[ss]=r._odata[ss];
+        }  	
+    }
+
+
+
     virtual ~Lattice(void) = default;
     
     template<class sobj> strong_inline Lattice<vobj> & operator = (const sobj & r){
@@ -267,7 +280,7 @@ PARALLEL_FOR_LOOP
     template<class robj> strong_inline Lattice<vobj> & operator = (const Lattice<robj> & r){
       this->checkerboard = r.checkerboard;
       conformable(*this,r);
-      std::cout<<GridLogMessage<<"Lattice operator ="<<std::endl;
+      
 PARALLEL_FOR_LOOP
         for(int ss=0;ss<_grid->oSites();ss++){
             this->_odata[ss]=r._odata[ss];

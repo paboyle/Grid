@@ -155,7 +155,8 @@ namespace Grid{
 	DenOp.MDeriv(force,Y,X,DaggerNo);   dSdU=dSdU-force;
 	DenOp.MDeriv(force,X,Y,DaggerYes);  dSdU=dSdU-force;
 
-	dSdU = - Ta(dSdU);
+	dSdU *= -1.0;
+	//dSdU = - Ta(dSdU);
 
       };
     };

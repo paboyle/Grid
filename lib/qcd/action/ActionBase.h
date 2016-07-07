@@ -35,6 +35,7 @@ template<class GaugeField>
 class Action { 
 
  public:
+  bool is_smeared = false;
   // Boundary conditions? // Heatbath?
   virtual void  refresh(const GaugeField &U, GridParallelRNG& pRNG) = 0;// refresh pseudofermions
   virtual RealD S    (const GaugeField &U)                        = 0;  // evaluate the action

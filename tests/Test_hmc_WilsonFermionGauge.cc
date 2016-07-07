@@ -67,6 +67,10 @@ public:
 
     TwoFlavourPseudoFermionAction<ImplPolicy> Nf2(FermOp,CG,CG);
   
+    //Set smearing (true/false), default: false
+    Nf2.is_smeared = true;
+
+
     //Collect actions
     ActionLevel<LatticeGaugeField> Level1(1);
     Level1.push_back(&Nf2);

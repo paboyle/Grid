@@ -193,7 +193,7 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"--mpi n.n.n.n   : default MPI decomposition"<<std::endl;    
     std::cout<<GridLogMessage<<"--threads n     : default number of OMP threads"<<std::endl;
     std::cout<<GridLogMessage<<"--grid n.n.n.n  : default Grid size"<<std::endl;    
-    std::cout<<GridLogMessage<<"--log list      : comma separted list of streams from Error,Warning,Message,Performance,Iterative,Integrator,Debug"<<std::endl;
+    std::cout<<GridLogMessage<<"--log list      : comma separted list of streams from Error,Warning,Message,Performance,Iterative,Integrator,Debug,Colours"<<std::endl;
     exit(EXIT_SUCCESS);
   }
 
@@ -234,24 +234,33 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"\tvComplexD      : "<<sizeof(vComplexD)*8 <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vComplexD::Nsimd()))<<std::endl;
   }
 
+  std::string COL_RED    = GridLogColours.colour["RED"];
+  std::string COL_PURPLE = GridLogColours.colour["PURPLE"];
+  std::string COL_BLACK  = GridLogColours.colour["BLACK"];
+  std::string COL_GREEN  = GridLogColours.colour["GREEN"];
+  std::string COL_BLUE   = GridLogColours.colour["BLUE"];
+  std::string COL_YELLOW = GridLogColours.colour["YELLOW"];
+  std::string COL_BACKGROUND = GridLogColours.colour["NORMAL"];
+
+  
   std::cout <<std::endl;
-  std::cout << "__|__|__|__|__|__|__|__|__|__|__|__|__|__|__"<<std::endl; 
-  std::cout << "__|__|__|__|__|__|__|__|__|__|__|__|__|__|__"<<std::endl; 
-  std::cout << "__|_ |  |  |  |  |  |  |  |  |  |  |  | _|__"<<std::endl; 
-  std::cout << "__|_                                    _|__"<<std::endl; 
-  std::cout << "__|_    GGGG    RRRR    III    DDDD     _|__"<<std::endl;
-  std::cout << "__|_   G        R   R    I     D   D    _|__"<<std::endl;
-  std::cout << "__|_   G        R   R    I     D    D   _|__"<<std::endl;
-  std::cout << "__|_   G  GG    RRRR     I     D    D   _|__"<<std::endl;
-  std::cout << "__|_   G   G    R  R     I     D   D    _|__"<<std::endl;
-  std::cout << "__|_    GGGG    R   R   III    DDDD     _|__"<<std::endl;
-  std::cout << "__|_                                    _|__"<<std::endl; 
-  std::cout << "__|__|__|__|__|__|__|__|__|__|__|__|__|__|__"<<std::endl; 
-  std::cout << "__|__|__|__|__|__|__|__|__|__|__|__|__|__|__"<<std::endl; 
-  std::cout << "  |  |  |  |  |  |  |  |  |  |  |  |  |  |  "<<std::endl; 
+  std::cout <<COL_RED  << "__|__|__|__|__"<<             "|__|__|_"<<COL_PURPLE<<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
+  std::cout <<COL_RED  << "__|__|__|__|__"<<             "|__|__|_"<<COL_PURPLE<<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
+  std::cout <<COL_RED  << "__|__|  |  |  "<<             "|  |  | "<<COL_PURPLE<<" |  |  |"<<                "  |  |  | _|__"<<std::endl; 
+  std::cout <<COL_RED  << "__|__         "<<             "        "<<COL_PURPLE<<"        "<<                "          _|__"<<std::endl; 
+  std::cout <<COL_RED  << "__|_  "<<COL_GREEN<<" GGGG   "<<COL_RED<<" RRRR   "<<COL_BLUE  <<" III    "<<COL_PURPLE<<"DDDD  "<<COL_PURPLE<<"    _|__"<<std::endl;
+  std::cout <<COL_RED  << "__|_  "<<COL_GREEN<<"G       "<<COL_RED<<" R   R  "<<COL_BLUE  <<"  I     "<<COL_PURPLE<<"D   D "<<COL_PURPLE<<"    _|__"<<std::endl;
+  std::cout <<COL_RED  << "__|_  "<<COL_GREEN<<"G       "<<COL_RED<<" R   R  "<<COL_BLUE  <<"  I     "<<COL_PURPLE<<"D    D"<<COL_PURPLE<<"    _|__"<<std::endl;
+  std::cout <<COL_BLUE << "__|_  "<<COL_GREEN<<"G  GG   "<<COL_RED<<" RRRR   "<<COL_BLUE  <<"  I     "<<COL_PURPLE<<"D    D"<<COL_GREEN <<"    _|__"<<std::endl;
+  std::cout <<COL_BLUE << "__|_  "<<COL_GREEN<<"G   G   "<<COL_RED<<" R  R   "<<COL_BLUE  <<"  I     "<<COL_PURPLE<<"D   D "<<COL_GREEN <<"    _|__"<<std::endl;
+  std::cout <<COL_BLUE << "__|_  "<<COL_GREEN<<" GGGG   "<<COL_RED<<" R   R  "<<COL_BLUE  <<" III    "<<COL_PURPLE<<"DDDD  "<<COL_GREEN <<"    _|__"<<std::endl;
+  std::cout <<COL_BLUE << "__|__         "<<             "        "<<COL_GREEN <<"        "<<                "          _|__"<<std::endl; 
+  std::cout <<COL_BLUE << "__|__|__|__|__"<<             "|__|__|_"<<COL_GREEN <<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
+  std::cout <<COL_BLUE << "__|__|__|__|__"<<             "|__|__|_"<<COL_GREEN <<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
+  std::cout <<COL_BLUE << "  |  |  |  |  "<<             "|  |  | "<<COL_GREEN <<" |  |  |"<<                "  |  |  |  |  "<<std::endl; 
   std::cout << std::endl;
   std::cout << std::endl;
-  std::cout << std::endl;
+  std::cout <<COL_YELLOW<< std::endl;
   std::cout << "Copyright (C) 2015 Peter Boyle, Azusa Yamaguchi, Guido Cossu, Antonin Portelli and other authors"<<std::endl;
   std::cout << std::endl;
   std::cout << "This program is free software; you can redistribute it and/or modify"<<std::endl;
@@ -263,6 +272,7 @@ void Grid_init(int *argc,char ***argv)
   std::cout << "but WITHOUT ANY WARRANTY; without even the implied warranty of"<<std::endl;
   std::cout << "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"<<std::endl;
   std::cout << "GNU General Public License for more details."<<std::endl;
+  std::cout << COL_BACKGROUND <<std::endl;
   std::cout << std::endl;
 }
 

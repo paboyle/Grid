@@ -6,9 +6,9 @@
 
     Copyright (C) 2015
 
-Author: Antonin Portelli <antonin.portelli@me.com>
-Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+    Author: Antonin Portelli <antonin.portelli@me.com>
+    Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
+    Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,6 +27,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+
+#include <map>
+
 #ifndef GRID_LOG_H
 #define GRID_LOG_H
 
@@ -34,56 +37,99 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <execinfo.h>
 #endif
 
-namespace Grid {
+    namespace Grid {
 
 // Dress the output; use std::chrono for time stamping via the StopWatch class
 int Rank(void); // used for early stage debug before library init
 
 
+class Colours{
+protected:
+  bool is_active;
+public:
+  std::map<std::string, std::string> colour;
+
+  Colours(bool activate=false){
+    Active(activate);
+  };
+
+  void Active(bool activate){
+    is_active=activate;
+
+    if (is_active){
+     colour["BLACK"]  ="\033[30m";
+     colour["RED"]    ="\033[31m";
+     colour["GREEN"]  ="\033[32m";
+     colour["YELLOW"] ="\033[33m";
+     colour["BLUE"]   ="\033[34m";
+     colour["PURPLE"] ="\033[35m";
+     colour["CYAN"]   ="\033[36m";
+     colour["WHITE"]  ="\033[37m";
+     colour["NORMAL"] ="\033[0;39m";
+   } else {
+    colour["BLACK"] ="";
+    colour["RED"]   ="";
+    colour["GREEN"] ="";
+    colour["YELLOW"]="";
+    colour["BLUE"]  ="";
+    colour["PURPLE"]="";
+    colour["CYAN"]  ="";
+    colour["WHITE"] ="";
+    colour["NORMAL"]="";
+  }
+
+
+};
+
+};
+
+
 class Logger {
 protected:
-    int active;
-    std::string name, topName, COLOUR;
-public:
-    static GridStopWatch StopWatch;
-    static std::ostream devnull;
+  Colours &Painter;
+  int active;
+  std::string name, topName;
+  std::string COLOUR;
 
-    static std::string BLACK;
-    static std::string RED  ;
-    static std::string GREEN;
-    static std::string YELLOW;
-    static std::string BLUE  ;
-    static std::string PURPLE;
-    static std::string CYAN  ;
-    static std::string WHITE ;
-    static std::string NORMAL;
-    
- Logger(std::string topNm, int on, std::string nm,std::string col)
-   : active(on), name(nm), topName(topNm), COLOUR(col) {};
-    
-    void Active(int on) {active = on;};
-    int  isActive(void) {return active;};
-    
-    friend std::ostream& operator<< (std::ostream& stream, const Logger& log){
-        if ( log.active ) {
-            StopWatch.Stop();
-            GridTime now = StopWatch.Elapsed();
-            StopWatch.Start();
-            stream << BLACK <<std::setw(8) << std::left << log.topName << BLACK<< " : ";
-            stream << log.COLOUR <<std::setw(11)  << log.name << BLACK << " : ";
-            stream << YELLOW <<std::setw(6) << now <<BLACK << " : " ;
-            stream << log.COLOUR;
-            return stream;
-        } else { 
-            return devnull;
-        }
+public:
+  static GridStopWatch StopWatch;
+  static std::ostream devnull;
+
+  std::string background() {return Painter.colour["NORMAL"];}
+  std::string evidence() {return Painter.colour["YELLOW"];}
+  std::string colour() {return Painter.colour[COLOUR];}
+
+  Logger(std::string topNm, int on, std::string nm, Colours& col_class, std::string col)
+  : active(on),
+  name(nm),
+  topName(topNm),
+  Painter(col_class),
+  COLOUR(col){} ;
+  
+  void Active(int on) {active = on;};
+  int  isActive(void) {return active;};
+  
+  friend std::ostream& operator<< (std::ostream& stream, Logger& log){
+
+    if ( log.active ) {
+      StopWatch.Stop();
+      GridTime now = StopWatch.Elapsed();
+      StopWatch.Start();
+      stream << log.background()<< log.topName << log.background()<< " : ";
+      stream << log.colour() <<std::setw(14) << std::left << log.name << log.background() << " : ";
+      stream << log.evidence()<< now << log.background() << " : " << log.colour();
+      return stream;
+    } else { 
+      return devnull;
     }
-    
+  }
+
 };
-    
+
 class GridLogger: public Logger {
 public:
- GridLogger(int on, std::string nm, std::string col = Logger::BLACK): Logger("Grid", on, nm, col){};
+  GridLogger(int on, std::string nm, Colours&col_class, std::string col_key = "NORMAL"):
+  Logger("Grid", on, nm, col_class, col_key){};
 };
 
 void GridLogConfigure(std::vector<std::string> &logstreams);
@@ -95,38 +141,40 @@ extern GridLogger GridLogDebug  ;
 extern GridLogger GridLogPerformance;
 extern GridLogger GridLogIterative  ;
 extern GridLogger GridLogIntegrator  ;
+extern Colours    GridLogColours;
 
 
 #define _NBACKTRACE (256)
 extern void * Grid_backtrace_buffer[_NBACKTRACE];
 
 #define BACKTRACEFILE() {\
-    char string[20];					\
-    std::sprintf(string,"backtrace.%d",Rank());				\
-    std::FILE * fp = std::fopen(string,"w");				\
-    BACKTRACEFP(fp)\
-    std::fclose(fp);	    \
+char string[20];					\
+std::sprintf(string,"backtrace.%d",Rank());				\
+std::FILE * fp = std::fopen(string,"w");				\
+BACKTRACEFP(fp)\
+std::fclose(fp);	    \
 }
 
 
 #ifdef HAVE_EXECINFO_H
 #define BACKTRACEFP(fp) { \
-  int symbols    = backtrace        (Grid_backtrace_buffer,_NBACKTRACE);\
-  char **strings = backtrace_symbols(Grid_backtrace_buffer,symbols);\
-  for (int i = 0; i < symbols; i++){\
-    std::fprintf (fp,"BackTrace Strings: %d %s\n",i, strings[i]); std::fflush(fp); \
-  }\
+int symbols    = backtrace        (Grid_backtrace_buffer,_NBACKTRACE);\
+char **strings = backtrace_symbols(Grid_backtrace_buffer,symbols);\
+for (int i = 0; i < symbols; i++){\
+  std::fprintf (fp,"BackTrace Strings: %d %s\n",i, strings[i]); std::fflush(fp); \
+}\
 }
 #else 
 #define BACKTRACEFP(fp) { \
-    std::fprintf (fp,"BT %d %lx\n",0, __builtin_return_address(0)); std::fflush(fp); \
-    std::fprintf (fp,"BT %d %lx\n",1, __builtin_return_address(1)); std::fflush(fp); \
-    std::fprintf (fp,"BT %d %lx\n",2, __builtin_return_address(2)); std::fflush(fp); \
-    std::fprintf (fp,"BT %d %lx\n",3, __builtin_return_address(3)); std::fflush(fp); \
+std::fprintf (fp,"BT %d %lx\n",0, __builtin_return_address(0)); std::fflush(fp); \
+std::fprintf (fp,"BT %d %lx\n",1, __builtin_return_address(1)); std::fflush(fp); \
+std::fprintf (fp,"BT %d %lx\n",2, __builtin_return_address(2)); std::fflush(fp); \
+std::fprintf (fp,"BT %d %lx\n",3, __builtin_return_address(3)); std::fflush(fp); \
 }
 #endif
 
 #define BACKTRACE() BACKTRACEFP(stdout) 
+
 
 }
 #endif
