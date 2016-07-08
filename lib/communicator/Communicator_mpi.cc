@@ -173,8 +173,12 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 						int from,
 						int bytes)
 {
-  SendToRecvFromInit(list,xmit,dest,recv,from,bytes);
-  SendToRecvFromBegin(list);
+  std::vector<CommsRequest_t> reqs(0);
+  SendToRecvFromInit(reqs,xmit,dest,recv,from,bytes);
+  SendToRecvFromBegin(reqs);
+  for(int i=0;i<reqs.size();i++){
+    list.push_back(reqs[i]);
+  }
 }
 void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
 {
