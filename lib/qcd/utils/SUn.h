@@ -47,6 +47,10 @@ class SU {
   using iSU2Matrix = iScalar<iScalar<iMatrix<vtype, 2> > >;
   template <typename vtype>
   using iSUnAdjointMatrix = iScalar<iScalar<iMatrix<vtype, (ncolour*ncolour - 1)> > >;
+  template <typename vtype>
+  using iSUnAlgebraVector = iScalar<iScalar<iVector<vtype , (ncolour*ncolour -1)> > >;
+
+
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Types can be accessed as SU<2>::Matrix , SU<2>::vSUnMatrix,
@@ -70,9 +74,24 @@ class SU {
   typedef iSUnAdjointMatrix<vComplexF> vAMatrixF;
   typedef iSUnAdjointMatrix<vComplexD> vAMatrixD;
 
+  // For the projectors to the algebra
+  // these should be real...
+  // keeping complex for consistency with the SIMD vector types
+  typedef iSUnAlgebraVector<Complex> AlgebraVector;
+  typedef iSUnAlgebraVector<ComplexF> AlgebraVectorF;
+  typedef iSUnAlgebraVector<ComplexD> AlgebraVectorD;
+
+  typedef iSUnAlgebraVector<vComplex> vAlgebraVector;
+  typedef iSUnAlgebraVector<vComplexF> vAlgebraVectorF;
+  typedef iSUnAlgebraVector<vComplexD> vAlgebraVectorD;
+
   typedef Lattice<vMatrix> LatticeMatrix;
   typedef Lattice<vMatrixF> LatticeMatrixF;
   typedef Lattice<vMatrixD> LatticeMatrixD;
+
+  typedef Lattice<vAlgebraVector> LatticeAlgebraVector;
+  typedef Lattice<vAlgebraVectorF> LatticeAlgebraVectorF;
+  typedef Lattice<vAlgebraVectorD> LatticeAlgebraVectorD;
 
   typedef iSU2Matrix<Complex> SU2Matrix;
   typedef iSU2Matrix<ComplexF> SU2MatrixF;
@@ -713,7 +732,7 @@ class SU {
     }
   }
 
-  static void FundamentalLieAlgebraMatrix(Vector<Real> &h, LatticeMatrix &out,
+  static void FundamentalLieAlgebraMatrix(LatticeAlgebraVector &h, LatticeMatrix &out,
                                           Real scale = 1.0) {
     GridBase *grid = out._grid;
     LatticeMatrix la(grid);
@@ -722,8 +741,19 @@ class SU {
     out = zero;
     for (int a = 0; a < generators(); a++) {
       generator(a, ta);
-      la = Complex(0.0, h[a]) * scale * ta;
+      la = peekColour(h,a) * scale * ta;
       out += la;
+    }
+  }
+
+  static void projectAdjointAlgebra(LatticeAlgebraVector &h_out, LatticeMatrix &in){
+    GridBase *grid = in._grid;
+    AMatrix iTa;
+
+    for (int a = 0; a< generators(); a++){
+      generatorAdjoint(a, iTa);
+      AlgebraVector tmp = real(trace(iTa * in));//*factor
+      pokeColour(h_out, tmp, a);
     }
   }
 
