@@ -101,6 +101,7 @@ public:
     int begin(void) { return 0;};
     int end(void)   { return _odata.size(); }
     vobj & operator[](int i) { return _odata[i]; };
+    const vobj & operator[](int i) const { return _odata[i]; };
 
 public:
     typedef typename vobj::scalar_type scalar_type;

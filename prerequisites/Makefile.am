@@ -20,10 +20,10 @@ $(top_srcdir)/prerequisites/$(FFTWTAR):
 
 Eigen:  $(top_srcdir)/prerequisites/$(EIGENTAR)
 	tar xvf $(top_srcdir)/prerequisites/$(EIGENTAR)
-	- rm -rf  ../include/Grid/Eigen
+	- rm -rf  $(top_srcdir)/lib/Eigen
 	mv eigen-eigen*/Eigen .
 	echo EFILES=`find Eigen -type f -name '*.h' ` > $(top_srcdir)/lib/Eigen.inc
-	mv Eigen ../include/Grid/
+	mv Eigen $(top_srcdir)/lib/
 	touch Eigen
 
 FFTW: $(top_srcdir)/prerequisites/$(FFTWTAR)

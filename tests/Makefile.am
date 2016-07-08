@@ -1,9 +1,9 @@
 # additional include paths necessary to compile the C++ library
 
-SUBDIRS = core
+#SUBDIRS = core
 
 # Uncomment to enable complete test suite build
-#SUBDIRS = core forces hmc solver debug	
+SUBDIRS = core forces hmc solver debug	
 
 if BUILD_CHROMA_REGRESSION
   SUBDIRS+= qdpxx

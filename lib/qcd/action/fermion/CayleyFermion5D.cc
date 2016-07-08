@@ -28,7 +28,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+#include <Grid/Eigen/Dense>
+
 #include <Grid.h>
+
+
 namespace Grid {
 namespace QCD {
 
@@ -95,22 +99,6 @@ namespace QCD {
     FermionField Din(psi._grid);
 
     // Assemble Din
-    /*
-    for(int s=0;s<Ls;s++){
-      if ( s==0 ) {
-	//	Din = bs psi[s] + cs[s] psi[s+1}
-	axpby_ssp_pminus(Din,bs[s],psi,cs[s],psi,s,s+1);
-	//      Din+= -mass*cs[s] psi[s+1}
-	axpby_ssp_pplus (Din,1.0,Din,-mass*cs[s],psi,s,Ls-1);
-      } else if ( s==(Ls-1)) { 
-	axpby_ssp_pminus(Din,bs[s],psi,-mass*cs[s],psi,s,0);
-	axpby_ssp_pplus (Din,1.0,Din,cs[s],psi,s,s-1);
-      } else {
-	axpby_ssp_pminus(Din,bs[s],psi,cs[s],psi,s,s+1);
-	axpby_ssp_pplus(Din,1.0,Din,cs[s],psi,s,s-1);
-      }
-    }
-    */
     Meooe5D(psi,Din);
 
     this->DW(Din,chi,DaggerNo);
@@ -152,18 +140,6 @@ namespace QCD {
       // Collect the terms in DW
       //	Chi = bs Din[s] + cs[s] Din[s+1}
       //    Chi+= -mass*cs[s] psi[s+1}
-      /*
-      if ( s==0 ) {
-	axpby_ssp_pplus (chi,bs[s],Din,cs[s+1],Din,s,s+1);
-	axpby_ssp_pminus(chi,1.0,chi,-mass*cs[Ls-1],Din,s,Ls-1);
-      } else if ( s==(Ls-1)) { 
-	axpby_ssp_pplus (chi,bs[s],Din,-mass*cs[0],Din,s,0);
-	axpby_ssp_pminus(chi,1.0,chi,cs[s-1],Din,s,s-1);
-      } else {
-	axpby_ssp_pplus (chi,bs[s],Din,cs[s+1],Din,s,s+1);
-	axpby_ssp_pminus(chi,1.0,chi,cs[s-1],Din,s,s-1);
-      }
-      */
 
       // FIXME just call MooeeDag??
 
@@ -193,24 +169,6 @@ namespace QCD {
     FermionField tmp(psi._grid);
     // Assemble the 5d matrix
     Meooe5D(psi,tmp); 
-#if 0
-    std::cout << "Meooe Test replacement norm2 tmp = " <<norm2(tmp)<<std::endl;
-    for(int s=0;s<Ls;s++){
-      if ( s==0 ) {
-	//	tmp = bs psi[s] + cs[s] psi[s+1}
-	//      tmp+= -mass*cs[s] psi[s+1}
-	axpby_ssp_pminus(tmp,beo[s],psi,-ceo[s],psi ,s, s+1);
-	axpby_ssp_pplus(tmp,1.0,tmp,mass*ceo[s],psi,s,Ls-1);
-      } else if ( s==(Ls-1)) { 
-	axpby_ssp_pminus(tmp,beo[s],psi,mass*ceo[s],psi,s,0);
-	axpby_ssp_pplus(tmp,1.0,tmp,-ceo[s],psi,s,s-1);
-      } else {
-	axpby_ssp_pminus(tmp,beo[s],psi,-ceo[s],psi,s,s+1);
-	axpby_ssp_pplus (tmp,1.0,tmp,-ceo[s],psi,s,s-1);
-      }
-    }
-    std::cout << "Meooe Test replacement norm2 tmp old = " <<norm2(tmp)<<std::endl;
-#endif
 
     // Apply 4d dslash
     if ( psi.checkerboard == Odd ) {
@@ -232,28 +190,10 @@ namespace QCD {
     }
 
     MeooeDag5D(tmp,chi); 
-#if 0
-    std::cout << "Meooe Test replacement norm2 chi new = " <<norm2(chi)<<std::endl;
-    // Assemble the 5d matrix
-    int Ls=this->Ls;
-    for(int s=0;s<Ls;s++){
-      if ( s==0 ) {
-	axpby_ssp_pplus(chi,beo[s],tmp,   -ceo[s+1]  ,tmp,s,s+1);
-	axpby_ssp_pminus(chi,   1.0,chi,mass*ceo[Ls-1],tmp,s,Ls-1);
-      } else if ( s==(Ls-1)) { 
-	axpby_ssp_pplus(chi,beo[s],tmp,mass*ceo[0],tmp,s,0);
-	axpby_ssp_pminus(chi,1.0,chi,-ceo[s-1],tmp,s,s-1);
-      } else {
-	axpby_ssp_pplus(chi,beo[s],tmp,-ceo[s+1],tmp,s,s+1);
-	axpby_ssp_pminus(chi,1.0   ,chi,-ceo[s-1],tmp,s,s-1);
-      }
-    }
-    std::cout << "Meooe Test replacement norm2 chi old = " <<norm2(chi)<<std::endl;
-#endif
 
   }
 
- template<class Impl>
+  template<class Impl>
   void CayleyFermion5D<Impl>::Mooee       (const FermionField &psi, FermionField &chi)
   {
     int Ls=this->Ls;
@@ -269,6 +209,10 @@ namespace QCD {
 	axpby_ssp_pplus (chi,1.0,chi,-cee[s],psi,s,s-1);
       }
     }
+    FermionField temp(psi._grid);
+    this->MooeeDenseInternal(psi,temp,DaggerNo,InverseNo);
+    temp = temp - chi;
+    std::cout << "Difference between dense and normal "<<  norm2(temp) <<std::endl;
   }
 
  template<class Impl>
@@ -294,7 +238,7 @@ namespace QCD {
     this->DhopDir(tmp,chi,dir,disp);
   }
 
- template<class Impl>
+  template<class Impl>
   void CayleyFermion5D<Impl>::MooeeDag    (const FermionField &psi, FermionField &chi)
   {
     int Ls=this->Ls;
@@ -311,11 +255,139 @@ namespace QCD {
 	axpby_ssp_pminus(chi,1.0   ,chi,-cee[s-1],psi,s,s-1);
       }
     }
+    FermionField temp(psi._grid);
+    this->MooeeDenseInternal(psi,temp,DaggerYes,InverseNo);
+    temp = temp - chi;
+    std::cout << "Difference between dense and normal "<<  norm2(temp) <<std::endl;
   }
 
- template<class Impl>
+  template<class Impl>
   void CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi, FermionField &chi)
   {
+    FermionField temp(psi._grid);
+    this->MooeeLDUInv(psi,chi);
+    this->MooeeDenseInv(psi,temp);
+    temp = temp - chi;
+    std::cout << "Difference between dense and normal "<<  norm2(temp) <<std::endl;
+  }
+
+  template<class Impl>
+  void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &chi)
+  {
+    FermionField temp(psi._grid);
+    this->MooeeLDUInvDag(psi,chi);
+    this->MooeeDenseInvDag(psi,temp);
+    temp = temp - chi;
+    std::cout << "Difference between dense and normal "<<  norm2(temp) <<std::endl;
+  }
+
+  template<class Impl>
+  void CayleyFermion5D<Impl>::MooeeDenseInvDag (const FermionField &psi, FermionField &chi)
+  {
+    this->MooeeDenseInternal(psi,chi,DaggerYes,InverseYes);
+  }
+
+  template<class Impl>
+  void CayleyFermion5D<Impl>::MooeeDenseInv(const FermionField &psi, FermionField &chi)
+  {
+    this->MooeeDenseInternal(psi,chi,DaggerNo,InverseYes);
+  }
+
+  template<class Impl>
+  void CayleyFermion5D<Impl>::MooeeDenseInternal(const FermionField &psi, FermionField &chi,int dag, int inv)
+  {
+    int Ls=this->Ls;
+    int LLs = psi._grid->_rdimensions[0];
+    int vol = psi._grid->oSites()/LLs;
+
+    chi.checkerboard=psi.checkerboard;
+
+    assert(Ls==LLs);
+
+    Eigen::MatrixXd Pplus  = Eigen::MatrixXd::Zero(Ls,Ls);
+    Eigen::MatrixXd Pminus = Eigen::MatrixXd::Zero(Ls,Ls);
+
+    for(int s=0;s<Ls;s++){
+      Pplus(s,s) = bee[s];
+      Pminus(s,s)= bee[s];
+    }
+
+    for(int s=0;s<Ls-1;s++){
+      Pminus(s,s+1) = -cee[s];
+    }
+
+    for(int s=0;s<Ls-1;s++){
+      Pplus(s+1,s) = -cee[s];
+    }
+
+    std::cout << " Pplus  "<<Pplus<<std::endl;
+    std::cout << " Pminus "<<Pminus<<std::endl;
+    Pplus (0,Ls-1) = mass*cee[0];
+    Pminus(Ls-1,0) = mass*cee[Ls-1];
+    
+    Eigen::MatrixXd PplusMat ;
+    Eigen::MatrixXd PminusMat;
+
+    if ( inv ) {
+      PplusMat =Pplus.inverse();
+      PminusMat=Pminus.inverse();
+    } else { 
+      PplusMat =Pplus;
+      PminusMat=Pminus;
+    }
+
+    if(dag){
+      PplusMat.adjointInPlace();
+      PminusMat.adjointInPlace();
+    }
+
+    // For the non-vectorised s-direction this is simple
+PARALLEL_FOR_LOOP
+    for(auto site=0;site<vol;site++){
+
+      SiteSpinor     SiteChi;
+      SiteHalfSpinor SitePplus;
+      SiteHalfSpinor SitePminus;
+
+      for(int s1=0;s1<Ls;s1++){
+	SiteChi =zero;
+	for(int s2=0;s2<Ls;s2++){
+	  int lex2 = s2+Ls*site;
+
+	  if ( PplusMat(s1,s2) != 0.0 ) {
+	    spProj5p(SitePplus,psi[lex2]);
+	    accumRecon5p(SiteChi,PplusMat (s1,s2)*SitePplus);
+	  }
+	  
+	  if ( PminusMat(s1,s2) != 0.0 ) {
+	    spProj5m(SitePminus,psi[lex2]);
+	    accumRecon5m(SiteChi,PminusMat(s1,s2)*SitePminus);
+	  }
+	}
+	chi[s1+Ls*site] = SiteChi;
+      }
+    }
+    // For the non-vectorised s-direction we have more work to do in an alternate implementation
+    // 
+    //  ai = Mij bj
+    //
+    //  where b == {b0} {b1}.. 
+    //
+    //  Best to load/bcast b0
+    //  
+    //   ai  = Mi0 b0
+    //   for(int i=0;i<Ls;i++){
+    //     ai += Mij bj
+    //   }
+    //
+    //   For rb5d shamir DWF, the Moo is proportional to the identity
+    //   For rb4d Moo, we need to set a vector of coeffs, and use a stencil type construct, which is cheap.
+  }
+
+  template<class Impl>
+  void CayleyFermion5D<Impl>::MooeeLDUInv    (const FermionField &psi, FermionField &chi)
+  {
+    chi.checkerboard=psi.checkerboard;
     int Ls=this->Ls;
     // Apply (L^{\prime})^{-1}
     axpby_ssp (chi,1.0,psi,     0.0,psi,0,0);      // chi[0]=psi[0]
@@ -340,8 +412,9 @@ namespace QCD {
   }
 
  template<class Impl>
-  void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &chi)
+  void CayleyFermion5D<Impl>::MooeeLDUInvDag (const FermionField &psi, FermionField &chi)
   {
+    chi.checkerboard=psi.checkerboard;
     int Ls=this->Ls;
     // Apply (U^{\prime})^{-dagger}
     axpby_ssp (chi,1.0,psi,     0.0,psi,0,0);      // chi[0]=psi[0]
@@ -363,6 +436,7 @@ namespace QCD {
       axpby_ssp_pplus (chi,1.0,chi,-lee[s],chi,s,s+1);  // chi[Ls]
     }
   }
+
 
   // force terms; five routines; default to Dhop on diagonal
   template<class Impl>
@@ -416,7 +490,6 @@ namespace QCD {
   void CayleyFermion5D<Impl>::SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD b,RealD c)
   {
     SetCoefficientsZolotarev(1.0,zdata,b,c);
-
   }
   //Zolo
  template<class Impl>
@@ -524,7 +597,10 @@ namespace QCD {
       for(int j=0;j<Ls-1;j++) delta_d *= cee[j]/bee[j];
       dee[Ls-1] += delta_d;
     }
+
   }
+
+
 
   FermOpTemplateInstantiate(CayleyFermion5D);
   GparityFermOpTemplateInstantiate(CayleyFermion5D);

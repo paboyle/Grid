@@ -60,6 +60,12 @@ namespace QCD {
     static const int SpinIndex   = 1;
     static const int LorentzIndex= 0;
 
+    // Also should make these a named enum type
+    static const int DaggerNo=0;
+    static const int DaggerYes=1;
+    static const int InverseNo=0;
+    static const int InverseYes=1;
+
     // Useful traits is this a spin index
     //typename std::enable_if<matchGridTensorIndex<iVector<vtype,Ns>,SpinorIndex>::value,iVector<vtype,Ns> >::type *SFINAE;
 

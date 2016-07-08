@@ -51,6 +51,11 @@ namespace Grid {
       virtual void   MooeeDag    (const FermionField &in, FermionField &out);
       virtual void   MooeeInv    (const FermionField &in, FermionField &out);
       virtual void   MooeeInvDag (const FermionField &in, FermionField &out);
+      virtual void   MooeeLDUInv    (const FermionField &in, FermionField &out);
+      virtual void   MooeeLDUInvDag (const FermionField &in, FermionField &out);
+      virtual void   MooeeDenseInv    (const FermionField &in, FermionField &out);
+      virtual void   MooeeDenseInvDag (const FermionField &in, FermionField &out);
+      void   MooeeDenseInternal(const FermionField &in, FermionField &out,int dag,int inv);
       virtual void   Instantiatable(void)=0;
 
       // force terms; five routines; default to Dhop on diagonal
@@ -93,6 +98,7 @@ namespace Grid {
 		      GridCartesian         &FourDimGrid,
 		      GridRedBlackCartesian &FourDimRedBlackGrid,
 		      RealD _mass,RealD _M5,const ImplParams &p= ImplParams());
+
 
     protected:
       void SetCoefficientsZolotarev(RealD zolohi,Approx::zolotarev_data *zdata,RealD b,RealD c);
