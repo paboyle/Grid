@@ -86,7 +86,7 @@ int main (int argc, char ** argv)
   LatticeColourMatrix Umu_save(&Grid);
   LatticeColourMatrix dU (&Grid);
   LatticeColourMatrix mom(&Grid); 
-  SU3::GaussianLieAlgebraMatrix(pRNG, mom); // Traceless antihermitian momentum; gaussian in lie alg
+  SU3::GaussianFundamentalLieAlgebraMatrix(pRNG, mom); // Traceless antihermitian momentum; gaussian in lie alg
 
 
   // check mom is as i expect

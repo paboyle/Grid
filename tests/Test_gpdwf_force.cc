@@ -100,7 +100,7 @@ int main (int argc, char ** argv)
 
   for(int mu=0;mu<Nd;mu++){
 
-    SU3::GaussianLieAlgebraMatrix(RNG4, mommu); // Traceless antihermitian momentum; gaussian in lie alg
+    SU3::GaussianFundamentalLieAlgebraMatrix(RNG4, mommu); // Traceless antihermitian momentum; gaussian in lie alg
 
     PokeIndex<LorentzIndex>(mom,mommu,mu);
 
@@ -169,7 +169,7 @@ int main (int argc, char ** argv)
   //
   //	Pmu = zero;
   //	for(int mu=0;mu<Nd;mu++){
-  //	  SU<Ncol>::GaussianLieAlgebraMatrix(pRNG, Pmu);
+  //	  SU<Ncol>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
   //	  PokeIndex<LorentzIndex>(P, Pmu, mu);
   //	}
   //
