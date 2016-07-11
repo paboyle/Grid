@@ -123,7 +123,7 @@ public:
     //////////////////////////////////////////////////////////
     // SIMD lane addressing
     //////////////////////////////////////////////////////////
-    inline int iIndex(std::vector<int> &lcoor)
+    virtual int iIndex(std::vector<int> &lcoor)
     {
         int idx=0;
         for(int d=0;d<_ndimension;d++) idx+=_istride[d]*(lcoor[d]/_rdimensions[d]);
