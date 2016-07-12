@@ -31,6 +31,8 @@ directory
 
 #include <qcd/utils/CovariantCshift.h>
 #include <qcd/utils/SUn.h>
+#include <qcd/utils/SUnAdjoint.h>
+#include <qcd/representations/adjoint.h>
 #include <qcd/utils/WilsonLoops.h>
 
 using namespace std;
@@ -52,8 +54,10 @@ int main(int argc, char** argv) {
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
   SU2::printGenerators();
-  SU2::printAdjointGenerators();
+  std::cout << "Dimension of adjoint representation: "<< SU2Adjoint::Dimension << std::endl;
+  SU2Adjoint::printGenerators();
   SU2::testGenerators();
+  SU2Adjoint::testGenerators();
 
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
@@ -61,20 +65,54 @@ int main(int argc, char** argv) {
   std::cout << GridLogMessage << "*********************************************"
             << std::endl;
   SU3::printGenerators();
-  SU3::printAdjointGenerators();
+  std::cout << "Dimension of adjoint representation: "<< SU3Adjoint::Dimension << std::endl;
+  SU3Adjoint::printGenerators();
   SU3::testGenerators();
+  SU3Adjoint::testGenerators();
 
   std::cout<<GridLogMessage<<"*********************************************"<<std::endl;
   std::cout<<GridLogMessage<<"* Generators for SU(4)"<<std::endl;
   std::cout<<GridLogMessage<<"*********************************************"<<std::endl;
   SU4::printGenerators();
+  std::cout << "Dimension of adjoint representation: "<< SU4Adjoint::Dimension << std::endl;
+  SU4Adjoint::printGenerators();
   SU4::testGenerators();
+  SU4Adjoint::testGenerators();
 
   //  std::cout<<GridLogMessage<<"*********************************************"<<std::endl;
   //  std::cout<<GridLogMessage<<"* Generators for SU(5)"<<std::endl;
   //  std::cout<<GridLogMessage<<"*********************************************"<<std::endl;
   //  SU5::printGenerators();
   //  SU5::testGenerators();
+
+
+  // Projectors 
+  GridParallelRNG gridRNG(grid);
+  gridRNG.SeedRandomDevice();
+  SU3Adjoint::LatticeAdjMatrix Gauss(grid);
+  SU3::LatticeAlgebraVector ha(grid);
+  SU3::LatticeAlgebraVector hb(grid);
+  random(gridRNG,Gauss);
+
+  std::cout << GridLogMessage << "Start projectOnAlgebra" << std::endl;
+  SU3Adjoint::projectOnAlgebra(ha, Gauss);
+  std::cout << GridLogMessage << "end projectOnAlgebra" << std::endl;
+  std::cout << GridLogMessage << "Start projector" << std::endl;
+  SU3Adjoint::projector(hb, Gauss);
+  std::cout << GridLogMessage << "end projector" << std::endl;
+
+  std::cout << GridLogMessage << "ReStart projector" << std::endl;
+  SU3Adjoint::projector(hb, Gauss);
+  std::cout << GridLogMessage << "end projector" << std::endl;
+  SU3::LatticeAlgebraVector diff = ha -hb;
+  std::cout << GridLogMessage << "Difference: " << norm2(diff) << std::endl;
+
+
+  // Testing HMC representation classes
+  AdjointRep<3> AdjRep(grid);
+
+  // AdjointRepresentation has the predefined number of colours Nc
+  Representations<AdjointRepresentation> RepresentationTypes(grid);  
 
   Grid_finalize();
 }

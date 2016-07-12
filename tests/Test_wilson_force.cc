@@ -76,6 +76,8 @@ int main (int argc, char ** argv)
 
   Dw.MDeriv(tmp , Mphi,  phi,DaggerNo );  UdSdU=tmp;
   Dw.MDeriv(tmp , phi,  Mphi,DaggerYes ); UdSdU=(UdSdU+tmp);
+  // Take the trace
+  UdSdU = Ta(UdSdU);
   
   LatticeFermion Ftmp      (&Grid);
 

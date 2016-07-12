@@ -116,6 +116,7 @@ class WilsonImpl
     : public PeriodicGaugeImpl<GaugeImplTypes<S, Nrepresentation> > {
  public:
   typedef PeriodicGaugeImpl<GaugeImplTypes<S, Nrepresentation> > Gimpl;
+  constexpr bool is_fundamental() const{return Nrepresentation == Nc ? 1 : 0;}
 
   INHERIT_GIMPL_TYPES(Gimpl);
 
@@ -500,9 +501,13 @@ class GparityWilsonImpl
   }
 };
 
-typedef WilsonImpl<vComplex, Nc> WilsonImplR;   // Real.. whichever prec
+typedef WilsonImpl<vComplex,  Nc> WilsonImplR;   // Real.. whichever prec
 typedef WilsonImpl<vComplexF, Nc> WilsonImplF;  // Float
 typedef WilsonImpl<vComplexD, Nc> WilsonImplD;  // Double
+
+typedef WilsonImpl<vComplex,  SU_Adjoint<Nc>::Dimension > WilsonAdjImplR;   // Real.. whichever prec
+typedef WilsonImpl<vComplexF, SU_Adjoint<Nc>::Dimension > WilsonAdjImplF;  // Float
+typedef WilsonImpl<vComplexD, SU_Adjoint<Nc>::Dimension > WilsonAdjImplD;  // Double
 
 typedef DomainWallRedBlack5dImpl<vComplex, Nc>
     DomainWallRedBlack5dImplR;  // Real.. whichever prec

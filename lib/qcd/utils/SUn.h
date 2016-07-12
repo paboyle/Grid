@@ -38,7 +38,8 @@ namespace QCD {
 template <int ncolour>
 class SU {
  public:
-  static int generators(void) { return ncolour * ncolour - 1; }
+  static const int Dimension = ncolour;
+  static const int AdjointDimension = ncolour * ncolour - 1;
   static int su2subgroups(void) { return (ncolour * (ncolour - 1)) / 2; }
 
   template <typename vtype>
@@ -46,11 +47,8 @@ class SU {
   template <typename vtype>
   using iSU2Matrix = iScalar<iScalar<iMatrix<vtype, 2> > >;
   template <typename vtype>
-  using iSUnAdjointMatrix = iScalar<iScalar<iMatrix<vtype, (ncolour*ncolour - 1)> > >;
-  template <typename vtype>
-  using iSUnAlgebraVector = iScalar<iScalar<iVector<vtype , (ncolour*ncolour -1)> > >;
-
-
+  using iSUnAlgebraVector =
+      iScalar<iScalar<iVector<vtype, (ncolour * ncolour - 1)> > >;
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Types can be accessed as SU<2>::Matrix , SU<2>::vSUnMatrix,
@@ -63,16 +61,6 @@ class SU {
   typedef iSUnMatrix<vComplex> vMatrix;
   typedef iSUnMatrix<vComplexF> vMatrixF;
   typedef iSUnMatrix<vComplexD> vMatrixD;
-
-  // Actually the adjoint matrices are real...
-  // Consider this overhead... FIXME
-  typedef iSUnAdjointMatrix<Complex> AMatrix;
-  typedef iSUnAdjointMatrix<ComplexF> AMatrixF;
-  typedef iSUnAdjointMatrix<ComplexD> AMatrixD;
-
-  typedef iSUnAdjointMatrix<vComplex> vAMatrix;
-  typedef iSUnAdjointMatrix<vComplexF> vAMatrixF;
-  typedef iSUnAdjointMatrix<vComplexD> vAMatrixD;
 
   // For the projectors to the algebra
   // these should be real...
@@ -152,19 +140,6 @@ class SU {
   //   (    1   ) / sqrt(3) /2  = 1/2 lambda_8
   //   (      -2)
   //
-  //
-  // * Adjoint representation generators
-  //  
-  //   base for NxN hermitian traceless matrices
-  //   normalized to 1:
-  //
-  //   (e_Adj)^a = t^a / sqrt(T_F)
-  //   
-  //   then the real, antisymmetric generators for the adjoint representations
-  //   are computed ( shortcut: e^a == (e_Adj)^a )
-  //
-  //   (iT_adj)^d_ab = i tr[e^a t^d e^b - t^d e^a e^b]
-  // 
   ////////////////////////////////////////////////////////////////////////
   template <class cplx>
   static void generator(int lieIndex, iSUnMatrix<cplx> &ta) {
@@ -178,7 +153,7 @@ class SU {
       generatorDiagonal(diagIndex, ta);
       return;
     }
-    sigxy = lieIndex & 0x1;//even or odd
+    sigxy = lieIndex & 0x1;  // even or odd
     su2Index = lieIndex >> 1;
     if (sigxy)
       generatorSigmaY(su2Index, ta);
@@ -208,39 +183,15 @@ class SU {
   static void generatorDiagonal(int diagIndex, iSUnMatrix<cplx> &ta) {
     // diag ({1, 1, ..., 1}(k-times), -k, 0, 0, ...)
     ta = zero;
-    int k = diagIndex + 1;// diagIndex starts from 0
-    for (int i = 0; i <= diagIndex; i++) {// k iterations
+    int k = diagIndex + 1;                  // diagIndex starts from 0
+    for (int i = 0; i <= diagIndex; i++) {  // k iterations
       ta()()(i, i) = 1.0;
     }
-    ta()()(k,k) = -k;//indexing starts from 0
-    RealD nrm = 1.0 / std::sqrt(2.0 * k*(k+1));
+    ta()()(k, k) = -k;  // indexing starts from 0
+    RealD nrm = 1.0 / std::sqrt(2.0 * k * (k + 1));
     ta = ta * nrm;
   }
 
-  template <class cplx>
-  static void generatorAdjoint(int Index, iSUnAdjointMatrix<cplx> &iAdjTa){
-    // returns i(T_Adj)^index necessary for the projectors
-    // see definitions above
-    iAdjTa = zero;
-    Vector< iSUnMatrix<cplx> > ta(ncolour*ncolour -1);
-    iSUnMatrix<cplx> tmp;
-
-    // FIXME not very efficient to get all the generators everytime
-    for (int a = 0; a < (ncolour * ncolour - 1); a++) 
-      generator(a, ta[a]);
-
-
-    for (int a = 0; a < (ncolour*ncolour - 1); a++){
-      tmp = ta[a] * ta[Index] - ta[Index] * ta[a];
-      for (int b = 0; b < (ncolour*ncolour - 1); b++){
-        iSUnMatrix<cplx> tmp1 = 2.0 * tmp * ta[b];  // 2.0 from the normalization
-        Complex iTr = TensorRemove(timesI(trace(tmp1)));
-        iAdjTa()()(b,a) = iTr;
-      }
-    }
-
-
-  }
   ////////////////////////////////////////////////////////////////////////
   // Map a su2 subgroup number to the pair of rows that are non zero
   ////////////////////////////////////////////////////////////////////////
@@ -600,19 +551,9 @@ class SU {
   }
 
   static void printGenerators(void) {
-    for (int gen = 0; gen < generators(); gen++) {
+    for (int gen = 0; gen < AdjointDimension; gen++) {
       Matrix ta;
       generator(gen, ta);
-      std::cout << GridLogMessage << "Nc = " << ncolour << " t_" << gen
-                << std::endl;
-      std::cout << GridLogMessage << ta << std::endl;
-    }
-  }
-
-  static void printAdjointGenerators(void) {
-    for (int gen = 0; gen < generators(); gen++) {
-      AMatrix ta;
-      generatorAdjoint(gen, ta);
       std::cout << GridLogMessage << "Nc = " << ncolour << " t_" << gen
                 << std::endl;
       std::cout << GridLogMessage << ta << std::endl;
@@ -624,56 +565,39 @@ class SU {
   static void testGenerators(void) {
     Matrix ta;
     Matrix tb;
-    std::cout << GridLogMessage << "Fundamental - Checking trace ta tb is 0.5 delta_ab"
+    std::cout << GridLogMessage
+              << "Fundamental - Checking trace ta tb is 0.5 delta_ab"
               << std::endl;
-    for (int a = 0; a < generators(); a++) {
-      for (int b = 0; b < generators(); b++) {
+    for (int a = 0; a < AdjointDimension; a++) {
+      for (int b = 0; b < AdjointDimension; b++) {
         generator(a, ta);
         generator(b, tb);
         Complex tr = TensorRemove(trace(ta * tb));
-        std::cout << GridLogMessage << "("<< a << "," << b << ") =  "<< tr << std::endl;
+        std::cout << GridLogMessage << "(" << a << "," << b << ") =  " << tr
+                  << std::endl;
         if (a == b) assert(abs(tr - Complex(0.5)) < 1.0e-6);
         if (a != b) assert(abs(tr) < 1.0e-6);
       }
       std::cout << GridLogMessage << std::endl;
     }
-    std::cout << GridLogMessage << "Fundamental - Checking if hermitian" << std::endl;
-    for (int a = 0; a < generators(); a++) {
+    std::cout << GridLogMessage << "Fundamental - Checking if hermitian"
+              << std::endl;
+    for (int a = 0; a < AdjointDimension; a++) {
       generator(a, ta);
       std::cout << GridLogMessage << a << std::endl;
-      assert(norm2(ta - adj(ta)) < 1.0e-6) ; 
+      assert(norm2(ta - adj(ta)) < 1.0e-6);
     }
     std::cout << GridLogMessage << std::endl;
 
-    std::cout << GridLogMessage << "Fundamental - Checking if traceless" << std::endl;
-    for (int a = 0; a < generators(); a++) {
+    std::cout << GridLogMessage << "Fundamental - Checking if traceless"
+              << std::endl;
+    for (int a = 0; a < AdjointDimension; a++) {
       generator(a, ta);
       Complex tr = TensorRemove(trace(ta));
       std::cout << GridLogMessage << a << " " << std::endl;
       assert(abs(tr) < 1.0e-6);
     }
     std::cout << GridLogMessage << std::endl;
-
-    AMatrix adjTa;
-    std::cout << GridLogMessage << "Adjoint - Checking if real" << std::endl;
-    for (int a = 0; a < generators(); a++) {
-      generatorAdjoint(a, adjTa);
-      std::cout << GridLogMessage << a << std::endl;
-      assert(norm2(adjTa - conjugate(adjTa)) < 1.0e-6);
-    }
-    std::cout << GridLogMessage << std::endl;
-
-    std::cout << GridLogMessage << "Adjoint - Checking if antisymmetric" << std::endl;
-    for (int a = 0; a < generators(); a++) {
-      generatorAdjoint(a, adjTa);
-      std::cout << GridLogMessage << a << std::endl;
-      assert(norm2(adjTa + transpose(adjTa)) < 1.0e-6);
-    }
-    std::cout << GridLogMessage << std::endl;
-
-
-
-
   }
 
   // reunitarise??
@@ -699,7 +623,7 @@ class SU {
     MatrixType ta;
 
     lie = zero;
-    for (int a = 0; a < generators(); a++) {
+    for (int a = 0; a < AdjointDimension; a++) {
       random(pRNG, ca);
 
       ca = (ca + conjugate(ca)) * 0.5;
@@ -724,7 +648,7 @@ class SU {
     Matrix ta;
 
     out = zero;
-    for (int a = 0; a < generators(); a++) {
+    for (int a = 0; a < AdjointDimension; a++) {
       gaussian(pRNG, ca);
       generator(a, ta);
       la = toComplex(ca) * ci * ta;
@@ -732,30 +656,23 @@ class SU {
     }
   }
 
-  static void FundamentalLieAlgebraMatrix(LatticeAlgebraVector &h, LatticeMatrix &out,
+  static void FundamentalLieAlgebraMatrix(LatticeAlgebraVector &h,
+                                          LatticeMatrix &out,
                                           Real scale = 1.0) {
+    conformable(h, out);
     GridBase *grid = out._grid;
     LatticeMatrix la(grid);
     Matrix ta;
 
     out = zero;
-    for (int a = 0; a < generators(); a++) {
+    for (int a = 0; a < AdjointDimension; a++) {
       generator(a, ta);
-      la = peekColour(h,a) * scale * ta;
+      la = peekColour(h, a) * scale * ta;
       out += la;
     }
   }
 
-  static void projectAdjointAlgebra(LatticeAlgebraVector &h_out, LatticeMatrix &in){
-    GridBase *grid = in._grid;
-    AMatrix iTa;
 
-    for (int a = 0; a< generators(); a++){
-      generatorAdjoint(a, iTa);
-      AlgebraVector tmp = real(trace(iTa * in));//*factor
-      pokeColour(h_out, tmp, a);
-    }
-  }
 
   template <typename GaugeField>
   static void HotConfiguration(GridParallelRNG &pRNG, GaugeField &out) {

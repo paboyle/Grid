@@ -138,8 +138,6 @@ class Integrator {
   }
   void update_U(GaugeField& Mom, GaugeField& U, double ep) {
     // rewrite exponential to deal automatically  with the lorentz index?
-    //	GaugeLinkField Umu(U._grid);
-    //	GaugeLinkField Pmu(U._grid);
     for (int mu = 0; mu < Nd; mu++) {
       auto Umu = PeekIndex<LorentzIndex>(U, mu);
       auto Pmu = PeekIndex<LorentzIndex>(Mom, mu);
@@ -168,6 +166,9 @@ class Integrator {
   void refresh(GaugeField& U, GridParallelRNG& pRNG) {
     std::cout << GridLogIntegrator << "Integrator refresh\n";
     generate_momenta(P, pRNG);
+    // The Smearer is attached to a pointer of the gauge field
+    // automatically gets the updated field
+    // whether or not has been accepted in the previous sweep
     for (int level = 0; level < as.size(); ++level) {
       for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
         // get gauge field from the SmearingPolicy and

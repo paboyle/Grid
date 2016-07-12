@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./tests/Test_hmc_WilsonFermionGauge.cc
+Source file: ./tests/Test_hmc_WilsonAdjointFermionGauge.cc
 
 Copyright (C) 2015
 
@@ -43,8 +43,8 @@ class HmcRunner : public NerscHmcRunner {
   void BuildTheAction(int argc, char **argv)
 
   {
-    typedef WilsonImplR ImplPolicy;
-    typedef WilsonFermionR FermionAction;
+    typedef WilsonImplR ImplPolicy; // gauge field implemetation
+    typedef WilsonFermionR FermionAction; // type of lattice fermions
     typedef typename FermionAction::FermionField FermionField;
 
     UGrid = SpaceTimeGrid::makeFourDimGrid(
