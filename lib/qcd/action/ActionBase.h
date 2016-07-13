@@ -66,13 +66,13 @@ template<class GaugeField> struct ActionLevel{
 public:
    
   typedef Action<GaugeField>*  ActPtr; // now force the same colours as the rest of the code
-
-  int multiplier;
+    
+  unsigned int multiplier;
 
   std::vector<ActPtr> actions;
 
-  ActionLevel(int mul = 1) : multiplier(mul) {
-    assert (mul > 0);
+  ActionLevel(unsigned int mul = 1) : actions(0), multiplier(mul) {
+    assert (mul >= 1);
   };
    
   void push_back(ActPtr ptr){
@@ -83,5 +83,6 @@ public:
 template<class GaugeField> using ActionSet = std::vector<ActionLevel< GaugeField > >;
 
 
-}}
+}
+}
 #endif

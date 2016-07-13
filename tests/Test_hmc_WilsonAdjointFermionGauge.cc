@@ -43,8 +43,8 @@ class HmcRunner : public NerscHmcRunner {
   void BuildTheAction(int argc, char **argv)
 
   {
-    typedef WilsonImplR ImplPolicy; // gauge field implemetation
-    typedef WilsonFermionR FermionAction; // type of lattice fermions
+    typedef WilsonImplR ImplPolicy; // gauge field implemetation for the pseudofermions
+    typedef WilsonFermionR FermionAction; // type of lattice fermions (Wilson, DW, ...)
     typedef typename FermionAction::FermionField FermionField;
 
     UGrid = SpaceTimeGrid::makeFourDimGrid(

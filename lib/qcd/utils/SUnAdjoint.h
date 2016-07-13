@@ -137,12 +137,14 @@ class SU_Adjoint : public SU<ncolour> {
 
 
 
-
+// Some useful type names
 
 typedef SU_Adjoint<2> SU2Adjoint;
 typedef SU_Adjoint<3> SU3Adjoint;
 typedef SU_Adjoint<4> SU4Adjoint;
 typedef SU_Adjoint<5> SU5Adjoint;
+
+typedef SU_Adjoint<Nc> AdjointMatrices;
 }
 }
 

@@ -91,17 +91,19 @@ namespace Grid{
     *  P 1/2                            P 1/2
     */    
 
-    template<class GaugeField, class SmearingPolicy> class LeapFrog :
-      public Integrator<GaugeField, SmearingPolicy> {
+    template<class GaugeField,
+	     class SmearingPolicy,
+	     class RepresentationPolicy = Representations< FundamentalRepresentation > > class LeapFrog :
+      public Integrator<GaugeField, SmearingPolicy, RepresentationPolicy> {
     public:
 
-      typedef LeapFrog<GaugeField, SmearingPolicy> Algorithm;
+      typedef LeapFrog<GaugeField, SmearingPolicy, RepresentationPolicy> Algorithm;
 
       LeapFrog(GridBase* grid, 
 	       IntegratorParameters Par,
 	       ActionSet<GaugeField> & Aset,
 	       SmearingPolicy & Sm):
-	Integrator<GaugeField, SmearingPolicy>(grid,Par,Aset,Sm) {};
+	Integrator<GaugeField, SmearingPolicy, RepresentationPolicy>(grid,Par,Aset,Sm) {};
 
 
       void step (GaugeField& U, int level,int _first, int _last){
@@ -138,8 +140,10 @@ namespace Grid{
       }
     };
 
-    template<class GaugeField, class SmearingPolicy> class MinimumNorm2 :
-      public Integrator<GaugeField, SmearingPolicy> {
+    template<class GaugeField,
+	     class SmearingPolicy,
+	     class RepresentationPolicy = Representations < FundamentalRepresentation > > class MinimumNorm2 :
+      public Integrator<GaugeField, SmearingPolicy, RepresentationPolicy> {
     private:
       const RealD lambda = 0.1931833275037836;
 
@@ -149,7 +153,7 @@ namespace Grid{
 		   IntegratorParameters Par,
 		   ActionSet<GaugeField> & Aset,
 		   SmearingPolicy& Sm):
-	Integrator<GaugeField, SmearingPolicy>(grid,Par,Aset,Sm) {};
+	Integrator<GaugeField, SmearingPolicy, RepresentationPolicy>(grid,Par,Aset,Sm) {};
 
       void step (GaugeField& U, int level, int _first,int _last){
 
@@ -197,8 +201,10 @@ namespace Grid{
     };
 
 
-    template<class GaugeField, class SmearingPolicy> class ForceGradient :
-      public Integrator<GaugeField, SmearingPolicy> {
+    template<class GaugeField,
+	     class SmearingPolicy,
+	     class RepresentationPolicy = Representations< FundamentalRepresentation > > class ForceGradient :
+      public Integrator<GaugeField, SmearingPolicy, RepresentationPolicy> {
     private:
       const RealD lambda = 1.0/6.0;;
       const RealD chi    = 1.0/72.0;
@@ -211,7 +217,7 @@ namespace Grid{
 		  IntegratorParameters Par,
 		  ActionSet<GaugeField> & Aset,
 		  SmearingPolicy &Sm):
-      Integrator<GaugeField, SmearingPolicy>(grid,Par,Aset, Sm) {};
+      Integrator<GaugeField, SmearingPolicy, RepresentationPolicy>(grid,Par,Aset, Sm) {};
 
 
       void FG_update_P(GaugeField&U, int level,double fg_dt,double ep){

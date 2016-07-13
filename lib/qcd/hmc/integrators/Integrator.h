@@ -64,7 +64,7 @@ struct IntegratorParameters {
 };
 
 /*! @brief Class for Molecular Dynamics management */
-template <class GaugeField, class SmearingPolicy>
+template <class GaugeField, class SmearingPolicy ,class RepresentationPolicy >
 class Integrator {
  protected:
   typedef IntegratorParameters ParameterType;
@@ -80,6 +80,8 @@ class Integrator {
   GaugeField P;
 
   SmearingPolicy& Smearer;
+
+  RepresentationPolicy Representations; 
 
   // Should match any legal (SU(n)) gauge field
   // Need to use this template to match Ncol to pass to SU<N> class
@@ -108,8 +110,28 @@ class Integrator {
               << " dt " << ep << " : t_P " << t_P[level] << std::endl;
   }
 
+  // to be used by the actionlevel class to iterate
+  // over the representations
+  template <class Level>
+  void update_P_core(Level repr_level, GaugeField& Mom, GaugeField& U,
+                     double ep) {
+    typedef typename Level::LatticeField FieldType;
+    FieldType Ur = repr_level->getRepresentation();// update U is better
+    for (int a = 0; a < repr_level.size(); ++a) {
+      FieldType forceR(U._grid);
+      // Implement smearing only for the fundamental representation now
+      repr_level.at(a)->deriv(Ur, forceR);
+      GaugeField force = repr_level.at(a)->RtoFundamentalProject(forceR);
+      std::cout << GridLogIntegrator
+                << "Hirep Force average: " << norm2(force) / (U._grid->gSites())
+                << std::endl;
+      Mom -= force * ep;
+    }
+  }
+  // Add the specialized class for the fundamental case
+
   void update_P(GaugeField& Mom, GaugeField& U, int level, double ep) {
-    // input U actually not used...
+    // input U actually not used in the fundamental case
     for (int a = 0; a < as[level].actions.size(); ++a) {
       GaugeField force(U._grid);
       GaugeField& Us = Smearer.get_U(as[level].actions.at(a)->is_smeared);
@@ -125,6 +147,8 @@ class Integrator {
                 << std::endl;
       Mom -= force * ep;
     }
+    // Add here the other representations
+    // as[level].apply(update_P_hireps, Args...)
   }
 
   void update_U(GaugeField& U, double ep) {
@@ -147,6 +171,8 @@ class Integrator {
     }
     // Update the smeared fields, can be implemented as observer
     Smearer.set_GaugeField(U);
+    // Update the higher representations fields
+    //Representations.update(U);// void functions if fundamental representation
   }
 
   virtual void step(GaugeField& U, int level, int first, int last) = 0;
@@ -154,7 +180,7 @@ class Integrator {
  public:
   Integrator(GridBase* grid, IntegratorParameters Par,
              ActionSet<GaugeField>& Aset, SmearingPolicy& Sm)
-      : Params(Par), as(Aset), P(grid), levels(Aset.size()), Smearer(Sm) {
+      : Params(Par), as(Aset), P(grid), levels(Aset.size()), Smearer(Sm), Representations(grid) {
     t_P.resize(levels, 0.0);
     t_U = 0.0;
     // initialization of smearer delegated outside of Integrator
@@ -166,8 +192,16 @@ class Integrator {
   void refresh(GaugeField& U, GridParallelRNG& pRNG) {
     std::cout << GridLogIntegrator << "Integrator refresh\n";
     generate_momenta(P, pRNG);
+    
+    // Update the smeared fields, can be implemented as observer
+    // necessary to keep the fields updated even after a reject 
+    // of the Metropolis
+    Smearer.set_GaugeField(U);
+    // Set the (eventual) representations gauge fields
+    // Representations.update(U);
+
     // The Smearer is attached to a pointer of the gauge field
-    // automatically gets the updated field
+    // automatically gets the correct field
     // whether or not has been accepted in the previous sweep
     for (int level = 0; level < as.size(); ++level) {
       for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
@@ -178,6 +212,9 @@ class Integrator {
         as[level].actions.at(actionID)->refresh(Us, pRNG);
       }
     }
+ 
+
+
   }
 
   // Calculate action
@@ -220,7 +257,8 @@ class Integrator {
       t_P[level] = 0;
     }
 
-    for (int step = 0; step < Params.MDsteps; ++step) {  // MD step
+
+     for (int step = 0; step < Params.MDsteps; ++step) {  // MD step
       int first_step = (step == 0);
       int last_step = (step == Params.MDsteps - 1);
       this->step(U, 0, first_step, last_step);

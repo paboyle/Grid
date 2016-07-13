@@ -728,6 +728,10 @@ typedef SU<2> SU2;
 typedef SU<3> SU3;
 typedef SU<4> SU4;
 typedef SU<5> SU5;
+
+
+typedef SU<Nc> FundamentalMatrices;
+
 }
 }
 #endif

@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
   AdjointRep<3> AdjRep(grid);
 
   // AdjointRepresentation has the predefined number of colours Nc
-  Representations<AdjointRepresentation> RepresentationTypes(grid);  
+  Representations<FundamentalRepresentation, AdjointRepresentation> RepresentationTypes(grid);  
 
   Grid_finalize();
 }

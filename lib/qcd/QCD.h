@@ -496,11 +496,12 @@ namespace QCD {
 
 #include <qcd/action/Actions.h>
 
+#include <qcd/smearing/Smearing.h>
+
+#include <qcd/representations/hmc_types.h>
+
 #include <qcd/hmc/integrators/Integrator.h>
 #include <qcd/hmc/integrators/Integrator_algorithm.h>
 #include <qcd/hmc/HMC.h>
 
-#include <qcd/smearing/Smearing.h>
-
-#include <qcd/representations/hmc_types.h>
 #endif

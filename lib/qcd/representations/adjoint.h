@@ -19,11 +19,16 @@ namespace QCD {
 template <int ncolour>
 class AdjointRep {
  public:
-  typename SU_Adjoint<ncolour>::LatticeAdjMatrix U;
+ 	// typdef to be used by the Representations class in HMC to get the
+ 	// types for the higher representation fields
+  typedef typename SU_Adjoint<ncolour>::LatticeAdjMatrix LatticeField;
   const int Dimension = ncolour * ncolour - 1;
 
-  explicit AdjointRep(GridBase* grid):U(grid) {}
-  void update_representation(const LatticeGaugeField& Uin) {
+  LatticeField U;
+  
+
+  explicit AdjointRep(GridBase* grid) : U(grid) {}
+  LatticeField update_representation(const LatticeGaugeField& Uin) {
     // Uin is in the fundamental representation
     // get the U in AdjointRep
     // (U_adj)_B = tr[e^a U e^b U^dag]
@@ -34,19 +39,20 @@ class AdjointRep {
     U = zero;
     LatticeGaugeField tmp(Uin._grid);
 
-    Vector<typename SU<ncolour>::Matrix > ta(ncolour * ncolour - 1);
+    Vector<typename SU<ncolour>::Matrix> ta(ncolour * ncolour - 1);
 
-    // FIXME probably not very efficient to get all the generators everytime
+    // FIXME probably not very efficient to get all the generators
+    // everytime
     for (int a = 0; a < Dimension; a++) SU<ncolour>::generator(a, ta[a]);
 
     for (int a = 0; a < Dimension; a++) {
-    	tmp = 2.0 * adj(Uin) * ta[a] * Uin;
+      tmp = 2.0 * adj(Uin) * ta[a] * Uin;
       for (int b = 0; b < (ncolour * ncolour - 1); b++) {
         auto Tr = TensorRemove(trace(tmp * ta[b]));
-        pokeColour(U, Tr, a,b);
+        pokeColour(U, Tr, a, b);
       }
     }  	 
-
+    
   }
 };
 
