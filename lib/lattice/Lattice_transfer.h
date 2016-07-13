@@ -386,7 +386,7 @@ void InsertSlice(Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int 
   }
 
   // the above should guarantee that the operations are local
-PARALLEL_FOR_LOOP
+  //PARALLEL_FOR_LOOP
   for(int idx=0;idx<lg->lSites();idx++){
     std::vector<int> lcoor(nl);
     std::vector<int> hcoor(nh);
@@ -420,15 +420,15 @@ void ExtractSlice(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice, in
   assert(hg->_processors[orthog]==1);
 
   int dl; dl = 0;
-  for(int d=0;d<nh;d++){
-    if ( d != orthog) {
-      assert(lg->_processors[dl]  == hg->_processors[d]);
-      assert(lg->_ldimensions[dl] == hg->_ldimensions[d]);
-      dl++;
+    for(int d=0;d<nh;d++){
+      if ( d != orthog) {
+	assert(lg->_processors[dl]  == hg->_processors[d]);
+	assert(lg->_ldimensions[dl] == hg->_ldimensions[d]);
+	dl++;
     }
   }
   // the above should guarantee that the operations are local
-PARALLEL_FOR_LOOP
+  //PARALLEL_FOR_LOOP
   for(int idx=0;idx<lg->lSites();idx++){
     std::vector<int> lcoor(nl);
     std::vector<int> hcoor(nh);
