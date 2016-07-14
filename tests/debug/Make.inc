@@ -1,5 +1,5 @@
 
-bin_PROGRAMS += Test_cayley_cg Test_cayley_coarsen_support Test_cayley_even_odd Test_cayley_ldop_cr Test_cheby Test_synthetic_lanczos 
+bin_PROGRAMS += Test_cayley_cg Test_cayley_coarsen_support Test_cayley_even_odd Test_cayley_even_odd_vec Test_cayley_ldop_cr Test_cheby Test_synthetic_lanczos 
 
 
 Test_cayley_cg_SOURCES=Test_cayley_cg.cc
@@ -12,6 +12,10 @@ Test_cayley_coarsen_support_LDADD=-lGrid
 
 Test_cayley_even_odd_SOURCES=Test_cayley_even_odd.cc
 Test_cayley_even_odd_LDADD=-lGrid
+
+
+Test_cayley_even_odd_vec_SOURCES=Test_cayley_even_odd_vec.cc
+Test_cayley_even_odd_vec_LDADD=-lGrid
 
 
 Test_cayley_ldop_cr_SOURCES=Test_cayley_ldop_cr.cc
