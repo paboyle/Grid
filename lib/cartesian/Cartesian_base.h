@@ -106,6 +106,12 @@ public:
         for(int d=0;d<_ndimension;d++) idx+=_ostride[d]*(coor[d]%_rdimensions[d]);
         return idx;
     }
+    virtual int iIndex(std::vector<int> &lcoor)
+    {
+        int idx=0;
+        for(int d=0;d<_ndimension;d++) idx+=_istride[d]*(lcoor[d]/_rdimensions[d]);
+        return idx;
+    }
     inline int oIndexReduced(std::vector<int> &ocoor)
     {
       int idx=0; 
@@ -122,12 +128,6 @@ public:
     //////////////////////////////////////////////////////////
     // SIMD lane addressing
     //////////////////////////////////////////////////////////
-    inline int iIndex(std::vector<int> &lcoor)
-    {
-        int idx=0;
-        for(int d=0;d<_ndimension;d++) idx+=_istride[d]*(lcoor[d]/_rdimensions[d]);
-        return idx;
-    }
     inline void iCoorFromIindex(std::vector<int> &coor,int lane)
     {
       Lexicographic::CoorFromIndex(coor,lane,_simd_layout);
@@ -219,7 +219,7 @@ public:
       }
 
       i_idx= iIndex(cblcoor);// this does not imply divide by 2 on checker dim
-      o_idx= oIndex(lcoor);// this implies divide by 2 on checkerdim
+      o_idx= oIndex(lcoor);  // this implies divide by 2 on checkerdim
     }
 
     void RankIndexToGlobalCoor(int rank, int o_idx, int i_idx , std::vector<int> &gcoor)

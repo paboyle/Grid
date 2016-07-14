@@ -221,6 +221,18 @@ protected:
         return idx;
     };
         
+    virtual int iIndex(std::vector<int> &lcoor)
+    {
+        int idx=0;
+        for(int d=0;d<_ndimension;d++) {
+	  if( d==_checker_dim ) {
+	    idx+=_istride[d]*(lcoor[d]/(2*_rdimensions[d]));
+	  } else { 
+	    idx+=_istride[d]*(lcoor[d]/_rdimensions[d]);
+	  }
+	}
+        return idx;
+    }
 };
 
 }
