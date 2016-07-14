@@ -240,34 +240,4 @@ void  TestWhat(What & Ddwf,
   err = phi-chi;
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<< std::endl;
 
-  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
-  std::cout<<GridLogMessage<<"= Test DiagMoo MpcDagMpc is Hermitian              "<<std::endl;
-  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
-  
-  random(*RNG5,phi);
-  random(*RNG5,chi);
-  pickCheckerboard(Even,chi_e,chi);
-  pickCheckerboard(Odd ,chi_o,chi);
-  pickCheckerboard(Even,phi_e,phi);
-  pickCheckerboard(Odd ,phi_o,phi);
-  RealD t1,t2;
-
-  SchurDiagMooeeOperator<What,LatticeFermion> HermOpEO(Ddwf);
-  HermOpEO.MpcDagMpc(chi_e,dchi_e,t1,t2);
-  HermOpEO.MpcDagMpc(chi_o,dchi_o,t1,t2);
-
-  HermOpEO.MpcDagMpc(phi_e,dphi_e,t1,t2);
-  HermOpEO.MpcDagMpc(phi_o,dphi_o,t1,t2);
-
-  pDce = innerProduct(phi_e,dchi_e);
-  pDco = innerProduct(phi_o,dchi_o);
-  cDpe = innerProduct(chi_e,dphi_e);
-  cDpo = innerProduct(chi_o,dphi_o);
-
-  std::cout<<GridLogMessage <<"e "<<pDce<<" "<<cDpe <<std::endl;
-  std::cout<<GridLogMessage <<"o "<<pDco<<" "<<cDpo <<std::endl;
-
-  std::cout<<GridLogMessage <<"pDce - conj(cDpo) "<< pDco-conj(cDpo) <<std::endl;
-  std::cout<<GridLogMessage <<"pDco - conj(cDpe) "<< pDce-conj(cDpe) <<std::endl;
-  
 }
