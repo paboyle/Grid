@@ -44,9 +44,9 @@ struct scal {
     Gamma::GammaT
   };
 
-typedef WilsonFermion5D<DomainWallRedBlack5dImplR> WilsonFermion5DR;
-typedef WilsonFermion5D<DomainWallRedBlack5dImplF> WilsonFermion5DF;
-typedef WilsonFermion5D<DomainWallRedBlack5dImplD> WilsonFermion5DD;
+typedef WilsonFermion5D<DomainWallVec5dImplR> WilsonFermion5DR;
+typedef WilsonFermion5D<DomainWallVec5dImplF> WilsonFermion5DF;
+typedef WilsonFermion5D<DomainWallVec5dImplD> WilsonFermion5DD;
 
 typedef WilsonFermion5D<WilsonImplR> WilsonFermion5D_OKR;
 
@@ -97,13 +97,11 @@ int main (int argc, char ** argv)
   RealD M5  =1.8;
   typename WilsonFermion5DR::ImplParams params;
 
-  WilsonFermion5DR Dw(1,Umu,*FGrid,*FrbGrid,*sUGrid,M5,params);
+  WilsonFermion5DR Dw(Umu,*FGrid,*FrbGrid,*sUGrid,*sUrbGrid,M5,params);
 
   Dw.Dhop(src,result,0);
 
   std::cout << "Norm src = "<<norm2(src)<<" Norm res = "<<norm2(result) << std::endl;
-
-
 
   GridCartesian         * FokGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FokrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
@@ -131,7 +129,7 @@ int main (int argc, char ** argv)
   
   std::cout << "Reference = "<<norm2(src_ok)<<" res = "<<norm2(ref_ok) << std::endl;
   ref_ok = ref_ok - result_ok;
-  std::cout << "Reference diff = "<<norm2(result_ok)<< std::endl;
+  std::cout << "Result = "<<norm2(result_ok)<< std::endl;
   std::cout << "Reference diff = "<<norm2(ref_ok)<< std::endl;
 
   Grid_finalize();
