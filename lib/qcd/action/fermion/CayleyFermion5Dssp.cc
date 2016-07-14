@@ -137,8 +137,8 @@ void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &
   }
 }
 
-  FermOp4dVecTemplateInstantiate(CayleyFermion5D);
-  GparityFermOpTemplateInstantiate(CayleyFermion5D);
+  //  FermOp4dVecTemplateInstantiate(CayleyFermion5D);
+  //  GparityFermOpTemplateInstantiate(CayleyFermion5D);
 
 }
 }
