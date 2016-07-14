@@ -1,5 +1,5 @@
 
-bin_PROGRAMS += Test_GaugeAction Test_RectPlaq Test_cf_coarsen_support Test_contfrac_even_odd Test_cshift_red_black Test_cshift_red_black_rotate Test_cshift_rotate Test_dwf_even_odd Test_dwf_rb5d Test_gamma Test_gparity Test_gpwilson_even_odd Test_lie_generators Test_main Test_quenched_update Test_rng Test_rng_fixed Test_wilson_even_odd Test_wilson_tm_even_odd
+bin_PROGRAMS += Test_GaugeAction Test_RectPlaq Test_cf_coarsen_support Test_checker Test_contfrac_even_odd Test_cshift_red_black Test_cshift_red_black_rotate Test_cshift_rotate Test_dwf_even_odd Test_dwf_rb5d Test_gamma Test_gparity Test_gpwilson_even_odd Test_lie_generators Test_main Test_quenched_update Test_rng Test_rng_fixed Test_wilson_even_odd Test_wilson_tm_even_odd
 
 
 Test_GaugeAction_SOURCES=Test_GaugeAction.cc
@@ -12,6 +12,10 @@ Test_RectPlaq_LDADD=-lGrid
 
 Test_cf_coarsen_support_SOURCES=Test_cf_coarsen_support.cc
 Test_cf_coarsen_support_LDADD=-lGrid
+
+
+Test_checker_SOURCES=Test_checker.cc
+Test_checker_LDADD=-lGrid
 
 
 Test_contfrac_even_odd_SOURCES=Test_contfrac_even_odd.cc
