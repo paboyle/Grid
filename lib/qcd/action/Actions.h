@@ -107,11 +107,20 @@ typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeAction
 // for EVERY .cc file. This define centralises the list and restores global push of impl cases
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define FermOpTemplateInstantiate(A) \
+
+#define FermOp4dVecTemplateInstantiate(A) \
   template class A<WilsonImplF>;		\
   template class A<WilsonImplD>;		\
   template class A<GparityWilsonImplF>;		\
   template class A<GparityWilsonImplD>;		
+
+#define FermOp5dVecTemplateInstantiate(A) \
+  template class A<DomainWallVec5dImplF>;	\
+  template class A<DomainWallVec5dImplD>;	
+
+#define FermOpTemplateInstantiate(A) \
+ FermOp4dVecTemplateInstantiate(A) \
+ FermOp5dVecTemplateInstantiate(A) 
 
 #define GparityFermOpTemplateInstantiate(A) 
 
