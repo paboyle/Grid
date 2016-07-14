@@ -45,9 +45,9 @@ struct scal {
   };
 
 bool overlapComms = false;
-typedef WilsonFermion5D<DomainWallRedBlack5dImplR> WilsonFermion5DR;
-typedef WilsonFermion5D<DomainWallRedBlack5dImplF> WilsonFermion5DF;
-typedef WilsonFermion5D<DomainWallRedBlack5dImplD> WilsonFermion5DD;
+typedef WilsonFermion5D<DomainWallVec5dImplR> WilsonFermion5DR;
+typedef WilsonFermion5D<DomainWallVec5dImplF> WilsonFermion5DF;
+typedef WilsonFermion5D<DomainWallVec5dImplD> WilsonFermion5DD;
 
 
 int main (int argc, char ** argv)
@@ -70,8 +70,8 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << "Making s innermost grids"<<std::endl;
   GridCartesian         * sUGrid   = SpaceTimeGrid::makeFourDimDWFGrid(GridDefaultLatt(),GridDefaultMpi());
+  GridRedBlackCartesian * sUrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(sUGrid);
   GridCartesian         * sFGrid   = SpaceTimeGrid::makeFiveDimDWFGrid(Ls,UGrid);
-  std::cout << GridLogMessage << "Making s innermost rb grids"<<std::endl;
   GridRedBlackCartesian * sFrbGrid = SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(Ls,UGrid);
 
   std::vector<int> seeds4({1,2,3,4});
@@ -85,6 +85,16 @@ int main (int argc, char ** argv)
   LatticeFermion    ref(FGrid);    ref=zero;
   LatticeFermion    tmp(FGrid);
   LatticeFermion    err(FGrid);
+
+  /*  src=zero;
+  std::vector<int> origin(5,0);
+  SpinColourVector f=zero;
+  for(int sp=0;sp<4;sp++){
+  for(int co=0;co<3;co++){
+    f()(sp)(co)=Complex(1.0,0.0); 
+  }}
+  pokeSite(f,src,origin);
+  */
 
   ColourMatrix cm = Complex(1.0,0.0);
 
@@ -126,19 +136,16 @@ int main (int argc, char ** argv)
   RealD mass=0.1;
   RealD M5  =1.8;
 
-  typename DomainWallFermionR::ImplParams params; 
-  params.overlapCommsCompute = overlapComms;
-  
   RealD NP = UGrid->_Nprocessors;
 
   for(int doasm=1;doasm<2;doasm++){
 
     QCD::WilsonKernelsStatic::AsmOpt=doasm;
 
-  DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,params);
+  DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   
   std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
-  int ncall =10;
+  int ncall =100;
   if (1) {
 
     double t0=usecond();
@@ -164,11 +171,12 @@ int main (int argc, char ** argv)
 
   if (1)
   {
-    typedef WilsonFermion5D<DomainWallRedBlack5dImplR> WilsonFermion5DR;
+    typedef WilsonFermion5D<DomainWallVec5dImplR> WilsonFermion5DR;
     LatticeFermion ssrc(sFGrid);
     LatticeFermion sref(sFGrid);
     LatticeFermion sresult(sFGrid);
-    WilsonFermion5DR sDw(1,Umu,*sFGrid,*sFrbGrid,*sUGrid,M5,params);
+
+    WilsonFermion5DR sDw(Umu,*sFGrid,*sFrbGrid,*sUGrid,*sUrbGrid,M5);
   
     for(int x=0;x<latt4[0];x++){
     for(int y=0;y<latt4[1];y++){
@@ -180,7 +188,7 @@ int main (int argc, char ** argv)
       peekSite(tmp,src,site);
       pokeSite(tmp,ssrc,site);
     }}}}}
-
+    std::cout<<"src norms "<< norm2(src)<<" " <<norm2(ssrc)<<std::endl;
     double t0=usecond();
     for(int i=0;i<ncall;i++){
       __SSC_START;
@@ -207,6 +215,7 @@ int main (int argc, char ** argv)
       }
     }
 
+    std::cout<<"res norms "<< norm2(result)<<" " <<norm2(sresult)<<std::endl;
 
 
     RealF sum=0;
@@ -220,9 +229,11 @@ int main (int argc, char ** argv)
       peekSite(normal,result,site);
       peekSite(simd,sresult,site);
       sum=sum+norm2(normal-simd);
-      //      std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" "<<norm2(normal-simd)<<std::endl;
-      //      std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" "<<normal<<std::endl;
-      //      std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" "<<simd<<std::endl;
+      if (norm2(normal-simd) > 1.0e-6 ) {
+	std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" "<<norm2(normal-simd)<<std::endl;
+	std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" normal "<<normal<<std::endl;
+	std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" simd   "<<simd<<std::endl;
+      }
     }}}}}
     std::cout<<" difference between normal and simd is "<<sum<<std::endl;
 
@@ -267,9 +278,9 @@ int main (int argc, char ** argv)
       pickCheckerboard(Even,ssrc_e,sresult);
       pickCheckerboard(Odd ,ssrc_o,sresult);
       ssrc_e = ssrc_e - sr_e;
-      std::cout<<GridLogMessage << "sE norm diff   "<< norm2(ssrc_e)<<std::endl;
+      std::cout<<GridLogMessage << "sE norm diff   "<< norm2(ssrc_e)<< "  vec nrm"<<norm2(sr_e) <<std::endl;
       ssrc_o = ssrc_o - sr_o;
-      std::cout<<GridLogMessage << "sO norm diff   "<< norm2(ssrc_o)<<std::endl;
+      std::cout<<GridLogMessage << "sO norm diff   "<< norm2(ssrc_o)<< "  vec nrm"<<norm2(sr_o) <<std::endl;
     }
 
 
