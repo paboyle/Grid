@@ -128,12 +128,6 @@ public:
     //////////////////////////////////////////////////////////
     // SIMD lane addressing
     //////////////////////////////////////////////////////////
-    virtual int iIndex(std::vector<int> &lcoor)
-    {
-        int idx=0;
-        for(int d=0;d<_ndimension;d++) idx+=_istride[d]*(lcoor[d]/_rdimensions[d]);
-        return idx;
-    }
     inline void iCoorFromIindex(std::vector<int> &coor,int lane)
     {
       Lexicographic::CoorFromIndex(coor,lane,_simd_layout);

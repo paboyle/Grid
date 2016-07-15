@@ -233,7 +233,6 @@ class iVector {
       vstream(out._internal[i], in._internal[i]);
     }
   }
-<<<<<<< HEAD
   friend strong_inline void vbroadcast(iVector<vtype,N> &out,const iVector<vtype,N> &in,int lane){
     for(int i=0;i<N;i++){
       vbroadcast(out._internal[i],in._internal[i],lane);
@@ -242,13 +241,6 @@ class iVector {
   friend strong_inline void permute(iVector<vtype,N> &out,const iVector<vtype,N> &in,int permutetype){
     for(int i=0;i<N;i++){
       permute(out._internal[i],in._internal[i],permutetype);
-=======
-  friend strong_inline void permute(iVector<vtype, N> &out,
-                                    const iVector<vtype, N> &in,
-                                    int permutetype) {
-    for (int i = 0; i < N; i++) {
-      permute(out._internal[i], in._internal[i], permutetype);
->>>>>>> 8b9301a74cde2f28a321baf4bca854d950585b56
     }
   }
   friend strong_inline void rotate(iVector<vtype,N> &out,const iVector<vtype,N> &in,int rot){
@@ -346,7 +338,6 @@ class iMatrix {
     return *this;
   }
 
-<<<<<<< HEAD
   friend strong_inline void zeroit(iMatrix<vtype,N> &that){
     for(int i=0;i<N;i++){
       for(int j=0;j<N;j++){
@@ -376,42 +367,12 @@ class iMatrix {
       for(int j=0;j<N;j++){
 	permute(out._internal[i][j],in._internal[i][j],permutetype);
     }}
-=======
-  friend strong_inline void zeroit(iMatrix<vtype, N> &that) {
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j < N; j++) {
-        zeroit(that._internal[i][j]);
-      }
-    }
-  }
-  friend strong_inline void prefetch(iMatrix<vtype, N> &that) {
-    for (int i = 0; i < N; i++)
-      for (int j = 0; j < N; j++) prefetch(that._internal[i][j]);
-  }
-  friend strong_inline void vstream(iMatrix<vtype, N> &out,
-                                    const iMatrix<vtype, N> &in) {
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j < N; j++) {
-        vstream(out._internal[i][j], in._internal[i][j]);
-      }
-    }
->>>>>>> 8b9301a74cde2f28a321baf4bca854d950585b56
   }
   friend strong_inline void rotate(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in,int rot){
     for(int i=0;i<N;i++){
       for(int j=0;j<N;j++){
 	rotate(out._internal[i][j],in._internal[i][j],rot);
     }}
-  }
-
-  friend strong_inline void permute(iMatrix<vtype, N> &out,
-                                    const iMatrix<vtype, N> &in,
-                                    int permutetype) {
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j < N; j++) {
-        permute(out._internal[i][j], in._internal[i][j], permutetype);
-      }
-    }
   }
 
   // Unary negation

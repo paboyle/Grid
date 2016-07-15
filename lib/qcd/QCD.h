@@ -500,7 +500,6 @@ namespace QCD {
 #include <Grid/qcd/hmc/integrators/Integrator.h>
 #include <Grid/qcd/hmc/integrators/Integrator_algorithm.h>
 #include <Grid/qcd/hmc/HMC.h>
-
-#include <qcd/smearing/Smearing.h>
+#include <Grid/qcd/smearing/Smearing.h>
 
 #endif

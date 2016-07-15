@@ -142,88 +142,12 @@ class Grid_simd {
     conv_t_union(){};
   } conv_t;
 
-    ////////////////////////////////////////////////////////////////////
-    // General permute; assumes vector length is same across 
-    // all subtypes; may not be a good assumption, but could
-    // add the vector width as a template param for BG/Q for example
-    ////////////////////////////////////////////////////////////////////
-    friend inline void permute0(Grid_simd &y,Grid_simd b){
-      y.v = Optimization::Permute::Permute0(b.v);
-    }
-    friend inline void permute1(Grid_simd &y,Grid_simd b){
-      y.v = Optimization::Permute::Permute1(b.v);
-    }
-    friend inline void permute2(Grid_simd &y,Grid_simd b){
-      y.v = Optimization::Permute::Permute2(b.v);
-    }
-    friend inline void permute3(Grid_simd &y,Grid_simd b){
-      y.v = Optimization::Permute::Permute3(b.v);
-    }
-    friend inline void permute(Grid_simd &y,Grid_simd b,int perm)
-    {
-      if ( perm & RotateBit ) {
-	int dist = perm&0xF;
-        y=rotate(b,dist);
-	return;
-      } else { 
-	switch(perm){
-	case 3: permute3(y,b); break;
-	case 2: permute2(y,b); break;
-	case 1: permute1(y,b); break;
-	case 0: permute0(y,b); break;
-	default: assert(0);
-	}
-      }
-    }
-    
-  };// end of Grid_simd class definition 
+  Vector_type v;
 
   static inline int Nsimd(void) {
     return sizeof(Vector_type) / sizeof(Scalar_type);
   }
-  template <class S, class V, IfNotComplex<S> =0> 
-  inline void rotate( Grid_simd<S,V> &ret,Grid_simd<S,V> b,int nrot)
-  {
-    nrot = nrot % Grid_simd<S,V>::Nsimd();
-    //    std::cout << "Rotate Real by "<<nrot<<std::endl;
-    ret.v = Optimization::Rotate::rotate(b.v,nrot);
-  }
-  template <class S, class V, IfComplex<S> =0> 
-    inline void rotate(Grid_simd<S,V> &ret,Grid_simd<S,V> b,int nrot)
-  {
-    nrot = nrot % Grid_simd<S,V>::Nsimd();
-    //    std::cout << "Rotate Complex by "<<nrot<<std::endl;
-    ret.v = Optimization::Rotate::rotate(b.v,2*nrot);
-  }
 
-  ///////////////////////
-  // Splat
-  ///////////////////////
-  
-  // this is only for the complex version
-  template <class S, class V, IfComplex<S> =0, class ABtype> 
-  inline void vsplat(Grid_simd<S,V> &ret,ABtype a, ABtype b){
-    ret.v = binary<V>(a, b, VsplatSIMD());
-  }    
-
-  template <class S, class V> 
-  inline void vbroadcast(Grid_simd<S,V> &ret,const Grid_simd<S,V> &src,int lane){
-    S* typepun =(S*) &src;
-    vsplat(ret,typepun[lane]);
-  }    
-
-  // overload if complex
-  template <class S,class V> inline void vsplat(Grid_simd<S,V> &ret, EnableIf<is_complex < S >, S> c) {
-    vsplat(ret,real(c),imag(c));
-  }
-
-  //if real fill with a, if complex fill with a in the real part (first function above)
-  template <class S,class V>
-  inline void vsplat(Grid_simd<S,V> &ret,NotEnableIf<is_complex< S>,S> a){
-    ret.v = unary<V>(a, VsplatSIMD());
-  }    
-  //////////////////////////
-=======
   Grid_simd &operator=(const Grid_simd &&rhs) {
     v = rhs.v;
     return *this;
@@ -251,7 +175,6 @@ class Grid_simd {
   };
 
   Grid_simd(const Real a) { vsplat(*this, Scalar_type(a)); };
->>>>>>> 8b9301a74cde2f28a321baf4bca854d950585b56
 
   ///////////////////////////////////////////////
   // mac, mult, sub, add, adj
@@ -484,6 +407,27 @@ inline Grid_simd<S, V> rotate(Grid_simd<S, V> b, int nrot) {
   ret.v = Optimization::Rotate::rotate(b.v, 2 * nrot);
   return ret;
 }
+template <class S, class V, IfNotComplex<S> =0> 
+inline void rotate( Grid_simd<S,V> &ret,Grid_simd<S,V> b,int nrot)
+{
+  nrot = nrot % Grid_simd<S,V>::Nsimd();
+  //    std::cout << "Rotate Real by "<<nrot<<std::endl;
+  ret.v = Optimization::Rotate::rotate(b.v,nrot);
+}
+template <class S, class V, IfComplex<S> =0> 
+inline void rotate(Grid_simd<S,V> &ret,Grid_simd<S,V> b,int nrot)
+{
+  nrot = nrot % Grid_simd<S,V>::Nsimd();
+  //    std::cout << "Rotate Complex by "<<nrot<<std::endl;
+  ret.v = Optimization::Rotate::rotate(b.v,2*nrot);
+}
+
+
+template <class S, class V> 
+inline void vbroadcast(Grid_simd<S,V> &ret,const Grid_simd<S,V> &src,int lane){
+  S* typepun =(S*) &src;
+  vsplat(ret,typepun[lane]);
+}    
 
 ///////////////////////
 // Splat
