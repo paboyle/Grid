@@ -303,13 +303,14 @@ namespace Grid {
 	int dist = perm&0xF;
         y=rotate(b,dist);
 	return;
-      }
-      switch(perm){
-      case 3: permute3(y,b); break;
-      case 2: permute2(y,b); break;
-      case 1: permute1(y,b); break;
-      case 0: permute0(y,b); break;
-      default: assert(0);
+      } else { 
+	switch(perm){
+	case 3: permute3(y,b); break;
+	case 2: permute2(y,b); break;
+	case 1: permute1(y,b); break;
+	case 0: permute0(y,b); break;
+	default: assert(0);
+	}
       }
     }
     
@@ -336,6 +337,20 @@ namespace Grid {
     ret.v = Optimization::Rotate::rotate(b.v,2*nrot);
     return ret;
   }
+  template <class S, class V, IfNotComplex<S> =0> 
+  inline void rotate( Grid_simd<S,V> &ret,Grid_simd<S,V> b,int nrot)
+  {
+    nrot = nrot % Grid_simd<S,V>::Nsimd();
+    //    std::cout << "Rotate Real by "<<nrot<<std::endl;
+    ret.v = Optimization::Rotate::rotate(b.v,nrot);
+  }
+  template <class S, class V, IfComplex<S> =0> 
+    inline void rotate(Grid_simd<S,V> &ret,Grid_simd<S,V> b,int nrot)
+  {
+    nrot = nrot % Grid_simd<S,V>::Nsimd();
+    //    std::cout << "Rotate Complex by "<<nrot<<std::endl;
+    ret.v = Optimization::Rotate::rotate(b.v,2*nrot);
+  }
 
   ///////////////////////
   // Splat
@@ -347,6 +362,12 @@ namespace Grid {
     ret.v = binary<V>(a, b, VsplatSIMD());
   }    
 
+  template <class S, class V> 
+  inline void vbroadcast(Grid_simd<S,V> &ret,const Grid_simd<S,V> &src,int lane){
+    S* typepun =(S*) &src;
+    vsplat(ret,typepun[lane]);
+  }    
+
   // overload if complex
   template <class S,class V> inline void vsplat(Grid_simd<S,V> &ret, EnableIf<is_complex < S >, S> c) {
     vsplat(ret,real(c),imag(c));
@@ -354,7 +375,7 @@ namespace Grid {
 
   //if real fill with a, if complex fill with a in the real part (first function above)
   template <class S,class V>
-    inline void vsplat(Grid_simd<S,V> &ret,NotEnableIf<is_complex< S>,S> a){
+  inline void vsplat(Grid_simd<S,V> &ret,NotEnableIf<is_complex< S>,S> a){
     ret.v = unary<V>(a, VsplatSIMD());
   }    
   //////////////////////////

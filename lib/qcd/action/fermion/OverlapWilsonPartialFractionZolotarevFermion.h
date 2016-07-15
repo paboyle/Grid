@@ -29,7 +29,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef OVERLAP_WILSON_PARTFRAC_ZOLOTAREV_FERMION_H
 #define OVERLAP_WILSON_PARTFRAC_ZOLOTAREV_FERMION_H
 
-#include <Grid.h>
+#include <Grid/Grid.h>
 
 namespace Grid {
 

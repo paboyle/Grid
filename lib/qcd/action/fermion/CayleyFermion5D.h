@@ -51,6 +51,29 @@ namespace Grid {
       virtual void   MooeeDag    (const FermionField &in, FermionField &out);
       virtual void   MooeeInv    (const FermionField &in, FermionField &out);
       virtual void   MooeeInvDag (const FermionField &in, FermionField &out);
+      virtual void   Meo5D (const FermionField &psi, FermionField &chi);
+
+      virtual void   M5D   (const FermionField &psi, FermionField &chi);
+      virtual void   M5Ddag(const FermionField &psi, FermionField &chi);
+
+      /////////////////////////////////////////////////////
+      // Instantiate different versions depending on Impl
+      /////////////////////////////////////////////////////
+      void M5D(const FermionField &psi,
+	       const FermionField &phi, 
+	       FermionField &chi,
+	       std::vector<RealD> &lower,
+	       std::vector<RealD> &diag,
+	       std::vector<RealD> &upper);
+
+      void M5Ddag(const FermionField &psi,
+		  const FermionField &phi, 
+		  FermionField &chi,
+		  std::vector<RealD> &lower,
+		  std::vector<RealD> &diag,
+		  std::vector<RealD> &upper);
+      void MooeeInternal(const FermionField &in, FermionField &out,int dag,int inv);
+
       virtual void   Instantiatable(void)=0;
 
       // force terms; five routines; default to Dhop on diagonal
@@ -94,6 +117,8 @@ namespace Grid {
 		      GridRedBlackCartesian &FourDimRedBlackGrid,
 		      RealD _mass,RealD _M5,const ImplParams &p= ImplParams());
 
+
+
     protected:
       void SetCoefficientsZolotarev(RealD zolohi,Approx::zolotarev_data *zdata,RealD b,RealD c);
       void SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD b,RealD c);
@@ -101,5 +126,15 @@ namespace Grid {
 
   }
 }
+#define INSTANTIATE_DPERP(A)\
+template void CayleyFermion5D< A >::M5D(const FermionField &psi,const FermionField &phi,FermionField &chi,\
+					std::vector<RealD> &lower,std::vector<RealD> &diag,std::vector<RealD> &upper); \
+template void CayleyFermion5D< A >::M5Ddag(const FermionField &psi,const FermionField &phi,FermionField &chi,\
+					   std::vector<RealD> &lower,std::vector<RealD> &diag,std::vector<RealD> &upper); \
+template void CayleyFermion5D< A >::MooeeInv    (const FermionField &psi, FermionField &chi); \
+template void CayleyFermion5D< A >::MooeeInvDag (const FermionField &psi, FermionField &chi);
+
+#define CAYLEY_DPERP_CACHE
+#undef  CAYLEY_DPERP_LINALG
 
 #endif

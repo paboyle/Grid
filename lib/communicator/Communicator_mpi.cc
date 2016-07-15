@@ -144,6 +144,28 @@ void CartesianCommunicator::SendRecvPacket(void *xmit,
 }
 
 // Basic Halo comms primitive
+// Basic Halo comms primitive
+void CartesianCommunicator::SendToRecvFromInit(std::vector<CommsRequest_t> &list,
+					       void *xmit,
+					       int dest,
+					       void *recv,
+					       int from,
+					       int bytes)
+{
+  MPI_Request xrq;
+  MPI_Request rrq;
+  int rank = _processor;
+  int ierr;
+  ierr =MPI_Send_init(xmit, bytes, MPI_CHAR,dest,_processor,communicator,&xrq);
+  ierr|=MPI_Recv_init(recv, bytes, MPI_CHAR,dest,_processor,communicator,&rrq);
+  assert(ierr==0);
+  list.push_back(xrq);
+  list.push_back(rrq);
+}
+void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &list)
+{
+  MPI_Startall(list.size(),&list[0]);
+}
 void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 						void *xmit,
 						int dest,
@@ -151,17 +173,12 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 						int from,
 						int bytes)
 {
-  MPI_Request xrq;
-  MPI_Request rrq;
-  int rank = _processor;
-  int ierr;
-  ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator,&xrq);
-  ierr|=MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator,&rrq);
-  
-  assert(ierr==0);
-
-  list.push_back(xrq);
-  list.push_back(rrq);
+  std::vector<CommsRequest_t> reqs(0);
+  SendToRecvFromInit(reqs,xmit,dest,recv,from,bytes);
+  SendToRecvFromBegin(reqs);
+  for(int i=0;i<reqs.size();i++){
+    list.push_back(reqs[i]);
+  }
 }
 void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
 {

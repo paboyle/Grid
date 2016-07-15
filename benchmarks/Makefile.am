@@ -1,5 +1,5 @@
 # additional include paths necessary to compile the C++ library
-AM_CXXFLAGS = -I$(top_srcdir)/lib
+AM_CXXFLAGS = -I$(top_srcdir)/include
 AM_LDFLAGS = -L$(top_builddir)/lib
 
 #

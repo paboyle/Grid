@@ -32,17 +32,11 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 namespace Grid {
 
-    static const int CbRed  =0;
-    static const int CbBlack=1;
-    static const int Even   =CbRed;
-    static const int Odd    =CbBlack;
-
-    // Perhaps these are misplaced and 
-    // should be in sparse matrix.
-    // Also should make these a named enum type
-    static const int DaggerNo=0;
-    static const int DaggerYes=1;
-
+  static const int CbRed  =0;
+  static const int CbBlack=1;
+  static const int Even   =CbRed;
+  static const int Odd    =CbBlack;
+    
 // Specialise this for red black grids storing half the data like a chess board.
 class GridRedBlackCartesian : public GridBase
 {
@@ -227,6 +221,18 @@ protected:
         return idx;
     };
         
+    virtual int iIndex(std::vector<int> &lcoor)
+    {
+        int idx=0;
+        for(int d=0;d<_ndimension;d++) {
+	  if( d==_checker_dim ) {
+	    idx+=_istride[d]*(lcoor[d]/(2*_rdimensions[d]));
+	  } else { 
+	    idx+=_istride[d]*(lcoor[d]/_rdimensions[d]);
+	  }
+	}
+        return idx;
+    }
 };
 
 }

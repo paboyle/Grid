@@ -572,7 +572,4 @@ void WilsonKernels<Impl>::DiracOptDhopDir(StencilImpl &st,DoubledGaugeField &U,
 
   FermOpTemplateInstantiate(WilsonKernels);
 
-template class WilsonKernels<DomainWallRedBlack5dImplF>;		
-template class WilsonKernels<DomainWallRedBlack5dImplD>;
-
 }}

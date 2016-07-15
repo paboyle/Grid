@@ -125,12 +125,14 @@ namespace Grid {
 		      double _M5,const ImplParams &p= ImplParams());
 
       // Constructors
+      /*
       WilsonFermion5D(int simd, 
 		      GaugeField &_Umu,
 		      GridCartesian         &FiveDimGrid,
 		      GridRedBlackCartesian &FiveDimRedBlackGrid,
 		      GridCartesian         &FourDimGrid,
 		      double _M5,const ImplParams &p= ImplParams());
+      */
 
       // DoubleStore
       void ImportGauge(const GaugeField &_Umu);

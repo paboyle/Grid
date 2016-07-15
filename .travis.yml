@@ -82,13 +82,14 @@ install:
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export LDFLAGS='-L/usr/local/lib'; fi
     
 script:
-    - ./scripts/reconfigure_script
+    - ./autogen.sh
     - mkdir build
     - cd build
     - ../configure CXXFLAGS="-msse4.2 -O3 -std=c++11" LIBS="-lmpfr -lgmp" --enable-precision=single --enable-simd=SSE4 --enable-comms=none
-    - make -j4
+    - make -j1 -C prerequisites
+    - make -j4 
     - ./benchmarks/Benchmark_dwf --threads 1
-    - make clean
+    - echo make clean
     - ../configure CXXFLAGS="-msse4.2 -O3 -std=c++11" LIBS="-lmpfr -lgmp" --enable-precision=double --enable-simd=SSE4 --enable-comms=none
     - make -j4
     - ./benchmarks/Benchmark_dwf --threads 1
