@@ -65,6 +65,9 @@ public:
   
     ConjugateGradient<FermionField>  CG(1.0e-8,10000);
     TwoFlavourRatioPseudoFermionAction<ImplPolicy> Nf2(NumOp, DenOp,CG,CG);
+
+    //Set smearing (true/false), default: false
+    Nf2.is_smeared=true;
   
     //Collect actions
     ActionLevel<LatticeGaugeField> Level1;

@@ -86,6 +86,8 @@ UNARY(sqrt);
 UNARY(rsqrt);
 UNARY(sin);
 UNARY(cos);
+UNARY(asin);
+UNARY(acos);
 UNARY(log);
 UNARY(exp);
 UNARY(abs);

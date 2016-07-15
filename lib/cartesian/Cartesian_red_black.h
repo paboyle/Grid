@@ -218,7 +218,7 @@ protected:
 	  idx+=_ostride[d]*(coor[d]%_rdimensions[d]);
 	}
       }
-        return idx;
+      return idx;
     };
         
     virtual int iIndex(std::vector<int> &lcoor)

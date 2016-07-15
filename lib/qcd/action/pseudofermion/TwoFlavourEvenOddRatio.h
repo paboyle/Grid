@@ -188,8 +188,9 @@ namespace Grid{
 	assert(NumOp.ConstEE() == 1);
 	assert(DenOp.ConstEE() == 1);
 
-	dSdU = -Ta(dSdU);
-
+	//dSdU = -Ta(dSdU);
+	dSdU = -dSdU;
+	
       };
     };
   }
