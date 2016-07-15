@@ -22,7 +22,8 @@ class FundamentalRep {
 
   // typdef to be used by the Representations class in HMC to get the
   // types for the higher representation fields
-  typedef typename SU<ncolour>::LatticeMatrix LatticeField;
+  typedef typename SU<ncolour>::LatticeMatrix LatticeMatrix;
+  typedef LatticeGaugeField LatticeField;
   
   explicit FundamentalRep(GridBase* grid) {} //do nothing
   void update_representation(const LatticeGaugeField& Uin) {} // do nothing

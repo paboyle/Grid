@@ -71,7 +71,7 @@ class Integrator {
 
   IntegratorParameters Params;
 
-  const ActionSet<GaugeField> as;
+  const ActionSetHirep<GaugeField, RepresentationPolicy> as;
 
   int levels;  //
   double t_U;  // Track time passing on each level and for U and for P
@@ -113,7 +113,7 @@ class Integrator {
   // to be used by the actionlevel class to iterate
   // over the representations
   template <class Level>
-  void update_P_core(Level repr_level, GaugeField& Mom, GaugeField& U,
+  void update_P_hireps(Level repr_level, GaugeField& Mom, GaugeField& U,
                      double ep) {
     typedef typename Level::LatticeField FieldType;
     FieldType Ur = repr_level->getRepresentation();// update U is better
@@ -128,10 +128,10 @@ class Integrator {
       Mom -= force * ep;
     }
   }
-  // Add the specialized class for the fundamental case
 
   void update_P(GaugeField& Mom, GaugeField& U, int level, double ep) {
     // input U actually not used in the fundamental case
+  	// Fundamental updates, include smearing
     for (int a = 0; a < as[level].actions.size(); ++a) {
       GaugeField force(U._grid);
       GaugeField& Us = Smearer.get_U(as[level].actions.at(a)->is_smeared);
@@ -148,7 +148,7 @@ class Integrator {
       Mom -= force * ep;
     }
     // Add here the other representations
-    // as[level].apply(update_P_hireps, Args...)
+    //apply(update_P_hireps, as[level], Args...)
   }
 
   void update_U(GaugeField& U, double ep) {
@@ -179,7 +179,7 @@ class Integrator {
 
  public:
   Integrator(GridBase* grid, IntegratorParameters Par,
-             ActionSet<GaugeField>& Aset, SmearingPolicy& Sm)
+             ActionSetHirep<GaugeField, RepresentationPolicy>& Aset, SmearingPolicy& Sm)
       : Params(Par), as(Aset), P(grid), levels(Aset.size()), Smearer(Sm), Representations(grid) {
     t_P.resize(levels, 0.0);
     t_U = 0.0;

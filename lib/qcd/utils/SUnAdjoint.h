@@ -48,6 +48,15 @@ class SU_Adjoint : public SU<ncolour> {
   typedef Lattice<vAMatrixF> LatticeAdjMatrixF;
   typedef Lattice<vAMatrixD> LatticeAdjMatrixD;
 
+  typedef Lattice<iVector<iScalar<iMatrix<vComplex, Dimension> >, Nd> >
+      LatticeAdjField;
+  typedef Lattice<iVector<iScalar<iMatrix<vComplexF, Dimension> >, Nd> >
+      LatticeAdjFieldF;
+  typedef Lattice<iVector<iScalar<iMatrix<vComplexD, Dimension> >, Nd> >
+      LatticeAdjFieldD;
+
+
+
 
   template <class cplx>
   static void generator(int Index, iSUnAdjointMatrix<cplx> &iAdjTa) {

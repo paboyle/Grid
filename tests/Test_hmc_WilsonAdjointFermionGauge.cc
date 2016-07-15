@@ -30,6 +30,7 @@ directory
 *************************************************************************************/
 /*  END LEGAL */
 #include "Grid.h"
+//#include "qcd/hmc/HmcRunner.h"
 
 using namespace std;
 using namespace Grid;
@@ -38,7 +39,11 @@ using namespace Grid::QCD;
 namespace Grid {
 namespace QCD {
 
-class HmcRunner : public NerscHmcRunner {
+// Here change the allowed (higher) representations
+typedef Representations< FundamentalRepresentation, FundamentalRepresentation > TheRepresentations;
+
+
+class HmcRunner : public NerscHmcRunnerHirep< TheRepresentations > {
  public:
   void BuildTheAction(int argc, char **argv)
 
@@ -69,13 +74,13 @@ class HmcRunner : public NerscHmcRunner {
     TwoFlavourPseudoFermionAction<ImplPolicy> Nf2(FermOp, CG, CG);
 
     // Set smearing (true/false), default: false
-    Nf2.is_smeared = true;
+    Nf2.is_smeared = false;
 
     // Collect actions
-    ActionLevel<LatticeGaugeField> Level1(1);
+    ActionLevelHirep<LatticeGaugeField, TheRepresentations > Level1(1);
     Level1.push_back(&Nf2);
 
-    ActionLevel<LatticeGaugeField> Level2(4);
+    ActionLevelHirep<LatticeGaugeField, TheRepresentations > Level2(4);
     Level2.push_back(&Waction);
 
     TheAction.push_back(Level1);

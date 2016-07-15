@@ -151,7 +151,7 @@ namespace Grid{
 
       MinimumNorm2(GridBase* grid, 
 		   IntegratorParameters Par,
-		   ActionSet<GaugeField> & Aset,
+		   ActionSetHirep<GaugeField, RepresentationPolicy> & Aset,
 		   SmearingPolicy& Sm):
 	Integrator<GaugeField, SmearingPolicy, RepresentationPolicy>(grid,Par,Aset,Sm) {};
 

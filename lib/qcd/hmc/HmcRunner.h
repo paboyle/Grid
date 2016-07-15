@@ -32,14 +32,14 @@ directory
 namespace Grid {
 namespace QCD {
 
-template <class Gimpl>
+template <class Gimpl, class RepresentationsPolicy = NoHirep >
 class NerscHmcRunnerTemplate {
  public:
   INHERIT_GIMPL_TYPES(Gimpl);
 
   enum StartType_t { ColdStart, HotStart, TepidStart, CheckpointStart };
 
-  ActionSet<GaugeField> TheAction;
+  ActionSetHirep<GaugeField, RepresentationsPolicy> TheAction;
 
   GridCartesian *UGrid;
   GridCartesian *FGrid;
@@ -111,7 +111,7 @@ class NerscHmcRunnerTemplate {
     SmearedConfiguration<Gimpl> SmearingPolicy(UGrid, Nsmear, Stout);
     std::cout << GridLogDebug << " done\n";
     //////////////
-    typedef MinimumNorm2<GaugeField, SmearedConfiguration<Gimpl> >
+    typedef MinimumNorm2<GaugeField, SmearedConfiguration<Gimpl>, RepresentationsPolicy >
         IntegratorType;  // change here to change the algorithm
     IntegratorParameters MDpar(20);
     IntegratorType MDynamics(UGrid, MDpar, TheAction, SmearingPolicy);
@@ -177,6 +177,12 @@ typedef NerscHmcRunnerTemplate<PeriodicGimplD> PeriodicNerscHmcRunnerD;
 typedef NerscHmcRunnerTemplate<ConjugateGimplR> ConjugateNerscHmcRunner;
 typedef NerscHmcRunnerTemplate<ConjugateGimplF> ConjugateNerscHmcRunnerF;
 typedef NerscHmcRunnerTemplate<ConjugateGimplD> ConjugateNerscHmcRunnerD;
+
+template <class RepresentationsPolicy>
+using NerscHmcRunnerHirep = NerscHmcRunnerTemplate<PeriodicGimplR, RepresentationsPolicy>;
+
+
+
 }
 }
 #endif

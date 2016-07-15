@@ -484,6 +484,8 @@ namespace QCD {
 }   //namespace QCD
 } // Grid
 
+
+
 #include <qcd/spin/Dirac.h>
 
 #include <qcd/spin/TwoSpinor.h>
@@ -494,11 +496,11 @@ namespace QCD {
 #include <qcd/utils/SUn.h>
 #include <qcd/utils/SUnAdjoint.h>
 
+#include <qcd/representations/hmc_types.h>
+
 #include <qcd/action/Actions.h>
 
 #include <qcd/smearing/Smearing.h>
-
-#include <qcd/representations/hmc_types.h>
 
 #include <qcd/hmc/integrators/Integrator.h>
 #include <qcd/hmc/integrators/Integrator_algorithm.h>
