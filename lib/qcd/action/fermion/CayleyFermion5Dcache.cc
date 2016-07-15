@@ -199,8 +199,11 @@ PARALLEL_FOR_LOOP
   }
 }
 
-FermOp4dVecTemplateInstantiate(CayleyFermion5D);
-GparityFermOpTemplateInstantiate(CayleyFermion5D);
-
+#ifdef CAYLEY_DPERP_CACHE
+  INSTANTIATE_DPERP(WilsonImplF);
+  INSTANTIATE_DPERP(WilsonImplD);
+  INSTANTIATE_DPERP(GparityWilsonImplF);
+  INSTANTIATE_DPERP(GparityWilsonImplD);
+#endif
 
 }}

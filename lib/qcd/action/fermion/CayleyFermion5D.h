@@ -126,5 +126,15 @@ namespace Grid {
 
   }
 }
+#define INSTANTIATE_DPERP(A)\
+template void CayleyFermion5D< A >::M5D(const FermionField &psi,const FermionField &phi,FermionField &chi,\
+					std::vector<RealD> &lower,std::vector<RealD> &diag,std::vector<RealD> &upper); \
+template void CayleyFermion5D< A >::M5Ddag(const FermionField &psi,const FermionField &phi,FermionField &chi,\
+					   std::vector<RealD> &lower,std::vector<RealD> &diag,std::vector<RealD> &upper); \
+template void CayleyFermion5D< A >::MooeeInv    (const FermionField &psi, FermionField &chi); \
+template void CayleyFermion5D< A >::MooeeInvDag (const FermionField &psi, FermionField &chi);
+
+#define CAYLEY_DPERP_CACHE
+#undef  CAYLEY_DPERP_LINALG
 
 #endif

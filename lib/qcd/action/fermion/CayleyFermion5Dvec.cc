@@ -296,6 +296,10 @@ PARALLEL_FOR_LOOP
   }
 }
 
-  FermOp5dVecTemplateInstantiate(CayleyFermion5D);
+INSTANTIATE_DPERP(DomainWallVec5dImplD);
+INSTANTIATE_DPERP(DomainWallVec5dImplF);
+
+template void CayleyFermion5D<DomainWallVec5dImplF>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
+template void CayleyFermion5D<DomainWallVec5dImplD>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
 
 }}

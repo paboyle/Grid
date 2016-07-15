@@ -39,6 +39,7 @@ namespace QCD {
    * Dense matrix versions of routines
    */
 
+  /*
 template<class Impl>
 void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &chi)
 {
@@ -50,7 +51,7 @@ void CayleyFermion5D<Impl>::MooeeInv(const FermionField &psi, FermionField &chi)
 {
   this->MooeeInternal(psi,chi,DaggerNo,InverseYes);
 }
-
+  */
 template<class Impl>
 void CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv)
 {
@@ -124,6 +125,9 @@ void CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField 
   }
 }
 
-  FermOp4dVecTemplateInstantiate(CayleyFermion5D);
+template void CayleyFermion5D<GparityWilsonImplF>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
+template void CayleyFermion5D<GparityWilsonImplD>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
+template void CayleyFermion5D<WilsonImplF>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
+template void CayleyFermion5D<WilsonImplD>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
 
 }}
