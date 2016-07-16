@@ -452,10 +452,10 @@ PARALLEL_FOR_LOOP
 	// DhopDir provides U or Uconj depending on coor/flavour.
 	GaugeLinkField link(mat._grid);
 	// use lorentz for flavour as hack.
-	auto tmp = TraceIndex<SpinIndex>(outerProduct(Btilde,A));  
 PARALLEL_FOR_LOOP
-        for(auto ss=tmp.begin();ss<tmp.end();ss++){
-	  link[ss]() = tmp[ss](0,0) - conjugate(tmp[ss](1,1)) ; // IS THIS SIGN RIGHT?
+        for(auto ss=link.begin();ss<link.end();ss++){
+	  auto ttmp = traceIndex<SpinIndex>(outerProduct(Btilde[ss],A[ss]));  
+	  link[ss]() = ttmp(0,0) + conjugate(ttmp(1,1)) ; 
 	}
 	PokeIndex<LorentzIndex>(mat,link,mu);
 	return;
