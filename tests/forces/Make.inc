@@ -1,5 +1,5 @@
 
-bin_PROGRAMS += Test_contfrac_force Test_dwf_force Test_dwf_gpforce Test_gp_rect_force Test_gpdwf_force Test_partfrac_force Test_rect_force Test_wilson_force Test_wilson_force_phiMdagMphi Test_wilson_force_phiMphi
+bin_PROGRAMS += Test_contfrac_force Test_dwf_force Test_dwf_gpforce Test_gp_rect_force Test_gpdwf_force Test_gpwilson_force Test_partfrac_force Test_rect_force Test_wilson_force Test_wilson_force_phiMdagMphi Test_wilson_force_phiMphi
 
 
 Test_contfrac_force_SOURCES=Test_contfrac_force.cc
@@ -20,6 +20,10 @@ Test_gp_rect_force_LDADD=-lGrid
 
 Test_gpdwf_force_SOURCES=Test_gpdwf_force.cc
 Test_gpdwf_force_LDADD=-lGrid
+
+
+Test_gpwilson_force_SOURCES=Test_gpwilson_force.cc
+Test_gpwilson_force_LDADD=-lGrid
 
 
 Test_partfrac_force_SOURCES=Test_partfrac_force.cc
