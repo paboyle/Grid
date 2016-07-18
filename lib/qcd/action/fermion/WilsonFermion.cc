@@ -308,6 +308,7 @@ void WilsonFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
 };
 
 FermOpTemplateInstantiate(WilsonFermion);
+AdjointFermOpTemplateInstantiate(WilsonFermion);
 GparityFermOpTemplateInstantiate(WilsonFermion);
 }
 }

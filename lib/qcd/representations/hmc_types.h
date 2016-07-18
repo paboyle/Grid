@@ -72,7 +72,7 @@ struct AccessTypes<A, TupleClass, 0, S...> {
   using elem = typename std::tuple_element<N, Rfields>::type;  // fields types
 
   typedef std::tuple<std::vector< A< elem<S> >* > ... > VectorCollection;
-  typedef std::tuple< A< elem<S> >* ... > ClassCollection;
+  typedef std::tuple< elem<S> ... > FieldTypeCollection;
 
   // Debug
   void return_size() {

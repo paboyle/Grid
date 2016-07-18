@@ -30,7 +30,6 @@ directory
 *************************************************************************************/
 /*  END LEGAL */
 #include "Grid.h"
-//#include "qcd/hmc/HmcRunner.h"
 
 using namespace std;
 using namespace Grid;
@@ -62,6 +61,7 @@ class HmcRunner : public NerscHmcRunnerHirep< TheRepresentations > {
 
     // temporarily need a gauge field
     LatticeGaugeField U(UGrid);
+    //AdjointRepresentation::LatticeField Ua(UGrid);
 
     // Gauge action
     WilsonGaugeActionR Waction(5.6);
@@ -69,7 +69,7 @@ class HmcRunner : public NerscHmcRunnerHirep< TheRepresentations > {
     Real mass = -0.77;
     FermionAction FermOp(U, *FGrid, *FrbGrid, mass);
 
-    ConjugateGradient<FermionField> CG(1.0e-8, 10000);
+    ConjugateGradient<FermionField> CG(1.0e-6, 10000);
 
     TwoFlavourPseudoFermionAction<ImplPolicy> Nf2(FermOp, CG, CG);
 

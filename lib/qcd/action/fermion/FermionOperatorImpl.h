@@ -115,22 +115,23 @@ template <class S, class Representation = FundamentalRepresentation >
 class WilsonImpl
     : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation::Dimension > > {
  public:
-  static const int Nrepresentation = Representation::Dimension;
-  typedef PeriodicGaugeImpl<GaugeImplTypes<S, Representation::Dimension > > Gimpl;
+  static const int Dimension = Representation::Dimension;
+//  static const int Nrepresentation = Representation::Dimension;
+  typedef PeriodicGaugeImpl<GaugeImplTypes<S, Dimension > > Gimpl;
   
   //Necessary?
-  constexpr bool is_fundamental() const{return Representation::Dimension == Nc ? 1 : 0;}
+  constexpr bool is_fundamental() const{return Dimension == Nc ? 1 : 0;}
 
   INHERIT_GIMPL_TYPES(Gimpl);
 
   template <typename vtype>
-  using iImplSpinor = iScalar<iVector<iVector<vtype, Nrepresentation>, Ns> >;
+  using iImplSpinor = iScalar<iVector<iVector<vtype, Dimension>, Ns> >;
   template <typename vtype>
   using iImplHalfSpinor =
-      iScalar<iVector<iVector<vtype, Nrepresentation>, Nhs> >;
+      iScalar<iVector<iVector<vtype, Dimension>, Nhs> >;
   template <typename vtype>
   using iImplDoubledGaugeField =
-      iVector<iScalar<iMatrix<vtype, Nrepresentation> >, Nds>;
+      iVector<iScalar<iMatrix<vtype, Dimension> >, Nds>;
 
   typedef iImplSpinor<Simd> SiteSpinor;
   typedef iImplHalfSpinor<Simd> SiteHalfSpinor;
@@ -214,6 +215,8 @@ template <class S, int Nrepresentation = Nc>
 class DomainWallRedBlack5dImpl
     : public PeriodicGaugeImpl<GaugeImplTypes<S, Nrepresentation> > {
  public:
+  static const int Dimension = Nrepresentation;
+
   typedef PeriodicGaugeImpl<GaugeImplTypes<S, Nrepresentation> > Gimpl;
 
   INHERIT_GIMPL_TYPES(Gimpl);
@@ -318,6 +321,7 @@ template <class S, int Nrepresentation>
 class GparityWilsonImpl
     : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresentation> > {
  public:
+  static const int Dimension = Nrepresentation;
   typedef ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresentation> > Gimpl;
 
   INHERIT_GIMPL_TYPES(Gimpl);

@@ -311,8 +311,8 @@ namespace Grid {
 namespace QCD {
 
 
-template<class Impl>
-void WilsonKernels<Impl >::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
+  template<class Impl>
+  void WilsonKernels<Impl>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
 					       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 					       int ss,int sU,const FermionField &in, FermionField &out)
 {
@@ -554,8 +554,8 @@ void WilsonKernels<Impl >::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &l
   }
 }
 
-template<class Impl>
-void WilsonKernels<Impl >::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
+  template<class Impl>
+  void WilsonKernels<Impl>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
 					       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 					       int ss,int sU,const FermionField &in, FermionField &out)
 {

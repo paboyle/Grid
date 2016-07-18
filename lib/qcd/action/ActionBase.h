@@ -66,6 +66,20 @@ Phi(&_Grid), pRNG(_pRNG) {
 };
 */
 
+// Indexing of tuple types
+template <class T, class Tuple>
+struct Index;
+
+template <class T, class... Types>
+struct Index<T, std::tuple<T, Types...>> {
+  static const std::size_t value = 0;
+};
+
+template <class T, class U, class... Types>
+struct Index<T, std::tuple<U, Types...>> {
+  static const std::size_t value = 1 + Index<T, std::tuple<Types...>>::value;
+};
+
 template <class GaugeField>
 struct ActionLevel {
  public:
@@ -99,14 +113,12 @@ struct ActionLevelHirep {
   // representation fields
   typedef typename AccessTypes<Action, Repr>::VectorCollection action_collection;
   action_collection actions_hirep;
-  typedef typename  AccessTypes<Action, Repr>::ClassCollection actions_hirep_ptrs_type;
+  typedef typename  AccessTypes<Action, Repr>::FieldTypeCollection action_hirep_types;
 
   std::vector<ActPtr>& actions;
 
   // Temporary conversion between ActionLevel and ActionLevelHirep
   ActionLevelHirep(ActionLevel<GaugeField>& AL ):actions(AL.actions), multiplier(AL.multiplier){}
-
-
 
   ActionLevelHirep(unsigned int mul = 1) : actions(std::get<0>(actions_hirep)), multiplier(mul) {
     // initialize the hirep vectors to zero.
@@ -114,14 +126,17 @@ struct ActionLevelHirep {
     assert(mul >= 1);
   };
 
-  void push_back(ActPtr ptr) { actions.push_back(ptr); }
+  //void push_back(ActPtr ptr) { actions.push_back(ptr); }
 
-// SFINAE construct, check
-  template <class actionpointer, size_t N>
-  void push_back(actionpointer ptr, decltype(std::tuple_element<N, actions_hirep_ptrs_type>::value)* = 0) {
-    //insert only in the correct vector
-    std::get<N>(actions_hirep).push_back(ptr);
+
+
+  template < class Field >
+  void push_back(Action<Field>* ptr) {
+    // insert only in the correct vector
+    std::get< Index < Field, action_hirep_types>::value >(actions_hirep).push_back(ptr);
   };
+
+ 
 
   template < class ActPtr>
   static void resize(ActPtr ap, unsigned int n){
@@ -129,8 +144,8 @@ struct ActionLevelHirep {
 
   }
 
-  template <std::size_t I>
-  auto getRepresentation(Repr& R)->decltype(std::get<I>(R).U)  {return std::get<I>(R).U;}
+  //template <std::size_t I>
+  //auto getRepresentation(Repr& R)->decltype(std::get<I>(R).U)  {return std::get<I>(R).U;}
 
   // Loop on tuple for a callable function
   template <std::size_t I = 1, typename Callable, typename ...Args>

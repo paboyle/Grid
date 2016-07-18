@@ -96,7 +96,7 @@ class NerscHmcRunnerTemplate {
 
     GridSerialRNG sRNG;
     GridParallelRNG pRNG(UGrid);
-    LatticeGaugeField U(UGrid);  // change this to an extended field (smearing class)
+    LatticeGaugeField U(UGrid);  // change this to an extended field (smearing class)?
 
     std::vector<int> SerSeed({1, 2, 3, 4, 5});
     std::vector<int> ParSeed({6, 7, 8, 9, 10});

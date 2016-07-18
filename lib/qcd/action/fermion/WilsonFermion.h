@@ -148,6 +148,8 @@ class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
 
 typedef WilsonFermion<WilsonImplF> WilsonFermionF;
 typedef WilsonFermion<WilsonImplD> WilsonFermionD;
+
+
 }
 }
 #endif
