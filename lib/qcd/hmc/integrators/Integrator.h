@@ -64,7 +64,7 @@ struct IntegratorParameters {
 };
 
 /*! @brief Class for Molecular Dynamics management */
-template <class GaugeField, class SmearingPolicy ,class RepresentationPolicy >
+template <class GaugeField, class SmearingPolicy, class RepresentationPolicy>
 class Integrator {
  protected:
   typedef IntegratorParameters ParameterType;
@@ -81,7 +81,7 @@ class Integrator {
 
   SmearingPolicy& Smearer;
 
-  RepresentationPolicy Representations; 
+  RepresentationPolicy Representations;
 
   // Should match any legal (SU(n)) gauge field
   // Need to use this template to match Ncol to pass to SU<N> class
@@ -112,26 +112,26 @@ class Integrator {
 
   // to be used by the actionlevel class to iterate
   // over the representations
-  template <class Level>
-  void update_P_hireps(Level repr_level, GaugeField& Mom, GaugeField& U,
-                     double ep) {
-    typedef typename Level::LatticeField FieldType;
-    FieldType Ur = repr_level->getRepresentation();// update U is better
-    for (int a = 0; a < repr_level.size(); ++a) {
-      FieldType forceR(U._grid);
-      // Implement smearing only for the fundamental representation now
-      repr_level.at(a)->deriv(Ur, forceR);
-      GaugeField force = repr_level.at(a)->RtoFundamentalProject(forceR);
-      std::cout << GridLogIntegrator
-                << "Hirep Force average: " << norm2(force) / (U._grid->gSites())
-                << std::endl;
-      Mom -= force * ep;
+  struct _updateP {
+    template <class FieldType, class GF, class Repr>
+    void operator()(std::vector<Action<FieldType>*> repr_set, Repr& Rep,
+                    GF& Mom, GF& U, double ep) {
+      for (int a = 0; a < repr_set.size(); ++a) {
+        FieldType forceR(U._grid);
+        // Implement smearing only for the fundamental representation now
+        repr_set.at(a)->deriv(Rep.U, forceR);
+        GF force =
+            Rep.RtoFundamentalProject(forceR);  // Ta for the fundamental rep
+        std::cout << GridLogIntegrator << "Hirep Force average: "
+                  << norm2(force) / (U._grid->gSites()) << std::endl;
+        Mom -= force * ep;
+      }
     }
-  }
+  } update_P_hireps{};
 
   void update_P(GaugeField& Mom, GaugeField& U, int level, double ep) {
     // input U actually not used in the fundamental case
-  	// Fundamental updates, include smearing
+    // Fundamental updates, include smearing
     for (int a = 0; a < as[level].actions.size(); ++a) {
       GaugeField force(U._grid);
       GaugeField& Us = Smearer.get_U(as[level].actions.at(a)->is_smeared);
@@ -147,8 +147,9 @@ class Integrator {
                 << std::endl;
       Mom -= force * ep;
     }
-    // Add here the other representations
-    //apply(update_P_hireps, as[level], Args...)
+
+    // Force from the other representations
+    as[level].apply(update_P_hireps, Representations, Mom, U, ep);
   }
 
   void update_U(GaugeField& U, double ep) {
@@ -172,15 +173,21 @@ class Integrator {
     // Update the smeared fields, can be implemented as observer
     Smearer.set_GaugeField(U);
     // Update the higher representations fields
-    //Representations.update(U);// void functions if fundamental representation
+    Representations.update(U);  // void functions if fundamental representation
   }
 
   virtual void step(GaugeField& U, int level, int first, int last) = 0;
 
  public:
   Integrator(GridBase* grid, IntegratorParameters Par,
-             ActionSetHirep<GaugeField, RepresentationPolicy>& Aset, SmearingPolicy& Sm)
-      : Params(Par), as(Aset), P(grid), levels(Aset.size()), Smearer(Sm), Representations(grid) {
+             ActionSetHirep<GaugeField, RepresentationPolicy>& Aset,
+             SmearingPolicy& Sm)
+      : Params(Par),
+        as(Aset),
+        P(grid),
+        levels(Aset.size()),
+        Smearer(Sm),
+        Representations(grid) {
     t_P.resize(levels, 0.0);
     t_U = 0.0;
     // initialization of smearer delegated outside of Integrator
@@ -188,13 +195,24 @@ class Integrator {
 
   virtual ~Integrator() {}
 
+  // to be used by the actionlevel class to iterate
+  // over the representations
+  struct _refresh {
+    template <class FieldType, class Repr>
+    void operator()(std::vector<Action<FieldType>*> repr_set, Repr& Rep,
+                    GridParallelRNG& pRNG) {
+      for (int a = 0; a < repr_set.size(); ++a)
+        repr_set.at(a)->refresh(Rep.U, pRNG);
+    }
+  } refresh_hireps{};
+
   // Initialization of momenta and actions
   void refresh(GaugeField& U, GridParallelRNG& pRNG) {
     std::cout << GridLogIntegrator << "Integrator refresh\n";
     generate_momenta(P, pRNG);
-    
+
     // Update the smeared fields, can be implemented as observer
-    // necessary to keep the fields updated even after a reject 
+    // necessary to keep the fields updated even after a reject
     // of the Metropolis
     Smearer.set_GaugeField(U);
     // Set the (eventual) representations gauge fields
@@ -211,11 +229,26 @@ class Integrator {
             Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
         as[level].actions.at(actionID)->refresh(Us, pRNG);
       }
+
+      as[level].apply(refresh_hireps, Representations, pRNG);
     }
- 
-
-
   }
+
+  // to be used by the actionlevel class to iterate
+  // over the representations
+  struct _S {
+    template <class FieldType, class Repr>
+    void operator()(std::vector<Action<FieldType>*> repr_set, Repr& Rep,
+                    int level, RealD& H) {
+      RealD H_hirep = 0.0;
+      for (int a = 0; a < repr_set.size(); ++a) {
+        RealD Hterm = repr_set.at(a)->S(Rep.U);
+        std::cout << GridLogMessage << "S Level " << level << " term " << a
+                  << " H Hirep = " << Hterm << std::endl;
+        H += Hterm;
+      }
+    }
+  } S_hireps{};
 
   // Calculate action
   RealD S(GaugeField& U) {  // here also U not used
@@ -245,6 +278,7 @@ class Integrator {
                   << actionID << " H = " << Hterm << std::endl;
         H += Hterm;
       }
+      as[level].apply(S_hireps, Representations, level, H);
     }
 
     return H;
@@ -257,8 +291,7 @@ class Integrator {
       t_P[level] = 0;
     }
 
-
-     for (int step = 0; step < Params.MDsteps; ++step) {  // MD step
+    for (int step = 0; step < Params.MDsteps; ++step) {  // MD step
       int first_step = (step == 0);
       int last_step = (step == Params.MDsteps - 1);
       this->step(U, 0, first_step, last_step);

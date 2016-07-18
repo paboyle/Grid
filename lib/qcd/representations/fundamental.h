@@ -18,7 +18,7 @@ namespace QCD {
 template <int ncolour>
 class FundamentalRep {
  public:
-  const int Dimension = ncolour;
+  static const int Dimension = ncolour;
 
   // typdef to be used by the Representations class in HMC to get the
   // types for the higher representation fields
@@ -27,6 +27,11 @@ class FundamentalRep {
   
   explicit FundamentalRep(GridBase* grid) {} //do nothing
   void update_representation(const LatticeGaugeField& Uin) {} // do nothing
+
+  LatticeField RtoFundamentalProject(const LatticeField& in, Real scale = 1.0) const{
+    return (scale * in);
+  }
+
 };
 
 typedef	 FundamentalRep<Nc> FundamentalRepresentation;

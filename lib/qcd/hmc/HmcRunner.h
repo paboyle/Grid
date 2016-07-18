@@ -113,7 +113,7 @@ class NerscHmcRunnerTemplate {
     //////////////
     typedef MinimumNorm2<GaugeField, SmearedConfiguration<Gimpl>, RepresentationsPolicy >
         IntegratorType;  // change here to change the algorithm
-    IntegratorParameters MDpar(20);
+    IntegratorParameters MDpar(20, 1.0);
     IntegratorType MDynamics(UGrid, MDpar, TheAction, SmearingPolicy);
 
     // Checkpoint strategy

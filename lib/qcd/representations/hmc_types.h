@@ -28,7 +28,7 @@ class Representations {
   template <std::size_t N>
   using repr_type = typename std::tuple_element<N, Representation_type>::type;
   // in order to get the typename of the field use
-  // type repr_type::LatticeField
+  // type repr_type<I>::LatticeField
 
   Representation_type rep;
 

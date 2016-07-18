@@ -111,12 +111,15 @@ namespace Grid {
 ///////
 // Single flavour four spinors with colour index
 ///////
-template <class S, int Nrepresentation = Nc>
+template <class S, class Representation = FundamentalRepresentation >
 class WilsonImpl
-    : public PeriodicGaugeImpl<GaugeImplTypes<S, Nrepresentation> > {
+    : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation::Dimension > > {
  public:
-  typedef PeriodicGaugeImpl<GaugeImplTypes<S, Nrepresentation> > Gimpl;
-  constexpr bool is_fundamental() const{return Nrepresentation == Nc ? 1 : 0;}
+  static const int Nrepresentation = Representation::Dimension;
+  typedef PeriodicGaugeImpl<GaugeImplTypes<S, Representation::Dimension > > Gimpl;
+  
+  //Necessary?
+  constexpr bool is_fundamental() const{return Representation::Dimension == Nc ? 1 : 0;}
 
   INHERIT_GIMPL_TYPES(Gimpl);
 
@@ -501,13 +504,13 @@ class GparityWilsonImpl
   }
 };
 
-typedef WilsonImpl<vComplex,  Nc> WilsonImplR;   // Real.. whichever prec
-typedef WilsonImpl<vComplexF, Nc> WilsonImplF;  // Float
-typedef WilsonImpl<vComplexD, Nc> WilsonImplD;  // Double
+typedef WilsonImpl<vComplex,  FundamentalRepresentation> WilsonImplR;   // Real.. whichever prec
+typedef WilsonImpl<vComplexF, FundamentalRepresentation> WilsonImplF;  // Float
+typedef WilsonImpl<vComplexD, FundamentalRepresentation> WilsonImplD;  // Double
 
-typedef WilsonImpl<vComplex,  SU_Adjoint<Nc>::Dimension > WilsonAdjImplR;   // Real.. whichever prec
-typedef WilsonImpl<vComplexF, SU_Adjoint<Nc>::Dimension > WilsonAdjImplF;  // Float
-typedef WilsonImpl<vComplexD, SU_Adjoint<Nc>::Dimension > WilsonAdjImplD;  // Double
+typedef WilsonImpl<vComplex,  AdjointRepresentation > WilsonAdjImplR;   // Real.. whichever prec
+typedef WilsonImpl<vComplexF, AdjointRepresentation > WilsonAdjImplF;  // Float
+typedef WilsonImpl<vComplexD, AdjointRepresentation > WilsonAdjImplD;  // Double
 
 typedef DomainWallRedBlack5dImpl<vComplex, Nc>
     DomainWallRedBlack5dImplR;  // Real.. whichever prec

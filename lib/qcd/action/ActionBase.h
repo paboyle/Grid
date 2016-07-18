@@ -97,7 +97,8 @@ struct ActionLevelHirep {
   //std::vector<ActPtr> actions;
   // construct a tuple of vectors of the actions for the corresponding higher
   // representation fields
-  typename AccessTypes<Action, Repr>::VectorCollection actions_hirep;
+  typedef typename AccessTypes<Action, Repr>::VectorCollection action_collection;
+  action_collection actions_hirep;
   typedef typename  AccessTypes<Action, Repr>::ClassCollection actions_hirep_ptrs_type;
 
   std::vector<ActPtr>& actions;
@@ -109,7 +110,7 @@ struct ActionLevelHirep {
 
   ActionLevelHirep(unsigned int mul = 1) : actions(std::get<0>(actions_hirep)), multiplier(mul) {
     // initialize the hirep vectors to zero.
-    //apply(&ActionLevelHirep::resize, actions_hirep, 0); //need a working resize
+    //apply(this->resize, actions_hirep, 0); //need a working resize
     assert(mul >= 1);
   };
 
@@ -128,18 +129,19 @@ struct ActionLevelHirep {
 
   }
 
-  
+  template <std::size_t I>
+  auto getRepresentation(Repr& R)->decltype(std::get<I>(R).U)  {return std::get<I>(R).U;}
 
   // Loop on tuple for a callable function
-  template <std::size_t I = 0, class Tuple, typename Callable, typename ...Args>
-  inline typename std::enable_if<(I == std::tuple_size<Tuple>::value), void>::type apply(
-      Callable&, Tuple& , Args...) {}
+  template <std::size_t I = 1, typename Callable, typename ...Args>
+  inline typename std::enable_if<I == std::tuple_size<action_collection>::value, void>::type apply(
+      Callable, Repr& R,Args...) const {}
 
-  template <std::size_t I = 0, class Tuple, typename Callable, typename ...Args>
-  inline typename std::enable_if<(I < std::tuple_size<Tuple>::value), void>::type apply(
-      Callable& fn,  Tuple& T, Args... arguments) {
-    fn(std::get<I>(T), arguments...);
-    apply<I + 1>(T, fn, arguments...);
+  template <std::size_t I = 1, typename Callable, typename ...Args>
+  inline typename std::enable_if<I < std::tuple_size<action_collection>::value, void>::type apply(
+      Callable fn, Repr& R, Args... arguments) const {
+    fn(std::get<I>(actions_hirep), std::get<I>(R.rep), arguments...);
+    apply<I + 1>(fn, R, arguments...);
   }  
 
 };

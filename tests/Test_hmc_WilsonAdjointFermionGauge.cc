@@ -40,7 +40,7 @@ namespace Grid {
 namespace QCD {
 
 // Here change the allowed (higher) representations
-typedef Representations< FundamentalRepresentation, FundamentalRepresentation > TheRepresentations;
+typedef Representations< FundamentalRepresentation, AdjointRepresentation > TheRepresentations;
 
 
 class HmcRunner : public NerscHmcRunnerHirep< TheRepresentations > {

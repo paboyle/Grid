@@ -111,7 +111,7 @@ class SU_Adjoint : public SU<ncolour> {
   }
 
   // Projects the algebra components a lattice matrix (of dimension ncol*ncol -1 )
-  static void projectOnAlgebra(typename SU<ncolour>::LatticeAlgebraVector &h_out, LatticeAdjMatrix &in, Real scale = 1.0) {
+  static void projectOnAlgebra(typename SU<ncolour>::LatticeAlgebraVector &h_out, const LatticeAdjMatrix &in, Real scale = 1.0) {
     conformable(h_out, in);
     h_out = zero;
     AMatrix iTa;
@@ -124,7 +124,7 @@ class SU_Adjoint : public SU<ncolour> {
   }
 
   // a projector that keeps the generators stored to avoid the overhead of recomputing. 
-  static void projector(typename SU<ncolour>::LatticeAlgebraVector &h_out, LatticeAdjMatrix &in, Real scale = 1.0) {
+  static void projector(typename SU<ncolour>::LatticeAlgebraVector &h_out, const LatticeAdjMatrix &in, Real scale = 1.0) {
     conformable(h_out, in);
     static std::vector<AMatrix> iTa(Dimension);  // to store the generators
     h_out = zero;
