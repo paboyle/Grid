@@ -31,5 +31,4 @@ fftw_DATA = libfftw3.a
 # Include files
 #
 otherincludedir = $(includedir)/Grid
-nobase_otherinclude_HEADERS =$(HFILES) $(EFILES) fftw3.h Config.h
-
+nobase_otherinclude_HEADERS =$(HFILES) $(EFILES) fftw3.h
