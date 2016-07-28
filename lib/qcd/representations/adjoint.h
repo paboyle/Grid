@@ -28,6 +28,7 @@ class AdjointRep {
 
   explicit AdjointRep(GridBase *grid) : U(grid) {}
   void update_representation(const LatticeGaugeField &Uin) {
+  	std::cout << GridLogDebug << "Updating adjoint representation\n" ;
     // Uin is in the fundamental representation
     // get the U in AdjointRep
     // (U_adj)_B = tr[e^a U e^b U^dag]
@@ -49,9 +50,18 @@ class AdjointRep {
       auto U_mu = peekLorentz(U, mu);
       for (int a = 0; a < Dimension; a++) {
         tmp = 2.0 * adj(Uin_mu) * ta[a] * Uin_mu;
-        for (int b = 0; b < (ncolour * ncolour - 1); b++)
+        for (int b = 0; b < Dimension; b++)
           pokeColour(U_mu, trace(tmp * ta[b]), a, b);
       }
+      // Check matrix U_mu, must be real orthogonal
+      //reality
+      LatticeMatrix Ucheck = U_mu - conjugate(U_mu);
+      std::cout << GridLogMessage << "Reality check: " << norm2(Ucheck) << std::endl;
+      LatticeMatrix uno(Uin._grid);
+      uno = 1.0;
+      Ucheck = U_mu * adj(U_mu) - uno;
+      std::cout << GridLogMessage << "orthogonality check: " << norm2(Ucheck) << std::endl;
+
       pokeLorentz(U, U_mu, mu);
     }
   }
@@ -59,6 +69,7 @@ class AdjointRep {
   LatticeGaugeField RtoFundamentalProject(const LatticeField &in,
                                           Real scale = 1.0) const {
     LatticeGaugeField out(in._grid);
+    out = zero;
 
     for (int mu = 0; mu < Nd; mu++) {
       LatticeColourMatrix out_mu(in._grid);  // fundamental representation
@@ -70,6 +81,8 @@ class AdjointRep {
       projectOnAlgebra(h, in_mu, scale);
       FundamentalLieAlgebraMatrix(h, out_mu, 1.0);  // apply scale only once
       pokeLorentz(out, out_mu, mu);
+	  // Returns traceless antihermitian matrix Nc * Nc.
+	  // Confirmed            
     }
     return out;
   }

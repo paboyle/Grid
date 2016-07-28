@@ -150,11 +150,11 @@ struct ActionLevelHirep {
   // Loop on tuple for a callable function
   template <std::size_t I = 1, typename Callable, typename ...Args>
   inline typename std::enable_if<I == std::tuple_size<action_collection>::value, void>::type apply(
-      Callable, Repr& R,Args...) const {}
+      Callable, Repr& R,Args&...) const {}
 
   template <std::size_t I = 1, typename Callable, typename ...Args>
   inline typename std::enable_if<I < std::tuple_size<action_collection>::value, void>::type apply(
-      Callable fn, Repr& R, Args... arguments) const {
+      Callable fn, Repr& R, Args&... arguments) const {
     fn(std::get<I>(actions_hirep), std::get<I>(R.rep), arguments...);
     apply<I + 1>(fn, R, arguments...);
   }  

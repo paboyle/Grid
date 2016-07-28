@@ -48,7 +48,7 @@ class SU {
   using iSU2Matrix = iScalar<iScalar<iMatrix<vtype, 2> > >;
   template <typename vtype>
   using iSUnAlgebraVector =
-      iScalar<iScalar<iVector<vtype, (ncolour * ncolour - 1)> > >;
+      iScalar<iScalar<iVector<vtype, AdjointDimension> > >;
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Types can be accessed as SU<2>::Matrix , SU<2>::vSUnMatrix,
@@ -656,7 +656,7 @@ class SU {
     }
   }
 
-  static void FundamentalLieAlgebraMatrix(LatticeAlgebraVector &h,
+  static void FundamentalLieAlgebraMatrix(const LatticeAlgebraVector &h,
                                           LatticeMatrix &out,
                                           Real scale = 1.0) {
     conformable(h, out);
@@ -667,7 +667,7 @@ class SU {
     out = zero;
     for (int a = 0; a < AdjointDimension; a++) {
       generator(a, ta);
-      la = peekColour(h, a) * scale * ta;
+      la = peekColour(h, a) * timesI(ta) * scale;
       out += la;
     }
   }

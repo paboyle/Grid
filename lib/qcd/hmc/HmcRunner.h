@@ -102,7 +102,8 @@ class NerscHmcRunnerTemplate {
     std::vector<int> ParSeed({6, 7, 8, 9, 10});
 
     // Create integrator, including the smearing policy
-    // Smearing policy
+    // Smearing policy, only defined for Nc=3
+    
     std::cout << GridLogDebug << " Creating the Stout class\n";
     double rho = 0.1;  // smearing parameter, now hardcoded
     int Nsmear = 1;    // number of smearing levels
@@ -110,7 +111,9 @@ class NerscHmcRunnerTemplate {
     std::cout << GridLogDebug << " Creating the SmearedConfiguration class\n";
     SmearedConfiguration<Gimpl> SmearingPolicy(UGrid, Nsmear, Stout);
     std::cout << GridLogDebug << " done\n";
+    
     //////////////
+    //NoSmearing<Gimpl> SmearingPolicy;
     typedef MinimumNorm2<GaugeField, SmearedConfiguration<Gimpl>, RepresentationsPolicy >
         IntegratorType;  // change here to change the algorithm
     IntegratorParameters MDpar(20, 1.0);
@@ -131,19 +134,19 @@ class NerscHmcRunnerTemplate {
       HMCpar.MetropolisTest = true;
       sRNG.SeedFixedIntegers(SerSeed);
       pRNG.SeedFixedIntegers(ParSeed);
-      SU3::HotConfiguration(pRNG, U);
+      SU<Nc>::HotConfiguration(pRNG, U);
     } else if (StartType == ColdStart) {
       // Cold start
       HMCpar.MetropolisTest = true;
       sRNG.SeedFixedIntegers(SerSeed);
       pRNG.SeedFixedIntegers(ParSeed);
-      SU3::ColdConfiguration(pRNG, U);
+      SU<Nc>::ColdConfiguration(pRNG, U);
     } else if (StartType == TepidStart) {
       // Tepid start
       HMCpar.MetropolisTest = true;
       sRNG.SeedFixedIntegers(SerSeed);
       pRNG.SeedFixedIntegers(ParSeed);
-      SU3::TepidConfiguration(pRNG, U);
+      SU<Nc>::TepidConfiguration(pRNG, U);
     } else if (StartType == CheckpointStart) {
       HMCpar.MetropolisTest = true;
       // CheckpointRestart

@@ -18,14 +18,12 @@ class Smear_Stout : public Smear<Gimpl> {
   INHERIT_GIMPL_TYPES(Gimpl)
 
   Smear_Stout(Smear<Gimpl>* base) : SmearBase(base) {
-    static_assert(Nc == 3,
-                  "Stout smearing currently implemented only for Nc==3");
+    assert(Nc == 3);//                  "Stout smearing currently implemented only for Nc==3");
   }
 
   /*! Default constructor */
   Smear_Stout(double rho = 1.0) : SmearBase(new Smear_APE<Gimpl>(rho)) {
-    static_assert(Nc == 3,
-                  "Stout smearing currently implemented only for Nc==3");
+    assert(Nc == 3);//                  "Stout smearing currently implemented only for Nc==3");
   }
 
   ~Smear_Stout() {}  // delete SmearBase...

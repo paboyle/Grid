@@ -118,7 +118,7 @@ class SU_Adjoint : public SU<ncolour> {
 
     for (int a = 0; a < Dimension; a++) {
       generator(a, iTa);
-      auto tmp = real(trace(iTa * in)) * scale; 
+      auto tmp = - 2.0 * real(trace(iTa * in)) * scale; 
       pokeColour(h_out, tmp, a);
     }
   }
@@ -135,7 +135,7 @@ class SU_Adjoint : public SU<ncolour> {
     }
 
     for (int a = 0; a < Dimension; a++) {
-      auto tmp = real(trace(iTa[a] * in)) * scale; 
+      auto tmp = - 2.0*real(trace(iTa[a] * in)) * scale; 
       pokeColour(h_out, tmp, a);
     }
   }

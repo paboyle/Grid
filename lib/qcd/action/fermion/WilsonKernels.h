@@ -54,7 +54,7 @@ class WilsonKernels : public FermionOperator<Impl>, public WilsonKernelsStatic {
 
  public:
   template <bool EnableBool = true>
-  typename std::enable_if<Impl::Dimension == 3 && EnableBool, void>::type
+  typename std::enable_if<Impl::Dimension == 3 && Nc == 3 &&EnableBool, void>::type
   DiracOptDhopSite(
       StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
       std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf,
@@ -85,7 +85,7 @@ class WilsonKernels : public FermionOperator<Impl>, public WilsonKernelsStatic {
   }
 
   template <bool EnableBool = true>
-  typename std::enable_if<Impl::Dimension != 3 && EnableBool, void>::type
+    typename std::enable_if<(Impl::Dimension != 3 || (Impl::Dimension == 3 && Nc != 3)) && EnableBool, void>::type
   DiracOptDhopSite(
       StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
       std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf,
@@ -102,7 +102,7 @@ class WilsonKernels : public FermionOperator<Impl>, public WilsonKernelsStatic {
   }
 
   template <bool EnableBool = true>
-  typename std::enable_if<Impl::Dimension == 3 && EnableBool, void>::type
+  typename std::enable_if<Impl::Dimension == 3 && Nc== 3 && EnableBool, void>::type
   DiracOptDhopSiteDag(
       StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
       std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf,
@@ -126,11 +126,11 @@ class WilsonKernels : public FermionOperator<Impl>, public WilsonKernelsStatic {
   }
 
   template <bool EnableBool = true>
-  typename std::enable_if<Impl::Dimension != 3 && EnableBool, void>::type
-  DiracOptDhopSiteDag(
-      StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-      std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf,
-      int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out) {
+    typename std::enable_if<(Impl::Dimension != 3 || (Impl::Dimension == 3 && Nc != 3)) && EnableBool, void>::type
+    DiracOptDhopSiteDag(
+			StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+			std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf,
+			int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out) {
     for (int site = 0; site < Ns; site++) {
       for (int s = 0; s < Ls; s++) {
         WilsonKernels<Impl>::DiracOptGenericDhopSiteDag(st, lo, U, buf, sF, sU,
@@ -140,7 +140,7 @@ class WilsonKernels : public FermionOperator<Impl>, public WilsonKernelsStatic {
       sU++;
     }
   }
-
+  
   void DiracOptDhopDir(
       StencilImpl &st, DoubledGaugeField &U,
       std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf,

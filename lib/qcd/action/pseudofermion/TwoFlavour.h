@@ -133,6 +133,28 @@ class TwoFlavourPseudoFermionAction : public Action<typename Impl::GaugeField> {
     DerivativeSolver(MdagMOp, Phi, X);
     MdagMOp.Op(X, Y);
 
+    // Check hermiticity
+    /*
+    std::vector<int> seeds({1,2,3,4});
+    GridParallelRNG          RNG(U._grid);   RNG.SeedFixedIntegers(seeds);
+    FermionField RNGphi(FermOp.FermionGrid());
+    FermionField RNGchi(FermOp.FermionGrid());
+    FermionField Achi(FermOp.FermionGrid());
+    FermionField Aphi(FermOp.FermionGrid());
+
+    random(RNG, RNGphi);
+    random(RNG, RNGchi);
+    MdagMOp.Op(RNGchi, Achi);
+    MdagMOp.Op(RNGphi, Aphi);
+    ComplexD pAc = innerProduct(RNGphi, Achi);
+    ComplexD cAp = innerProduct(RNGchi, Aphi);
+    //these should be real
+    ComplexD pAp = innerProduct(RNGphi, Aphi);
+    ComplexD cAc = innerProduct(RNGchi, Achi);
+
+    std::cout<<GridLogMessage<< "pAc "<<pAc<<" cAp "<< cAp<< " diff "<<pAc-adj(cAp)<<std::endl;
+    std::cout << GridLogMessage << "pAp " << pAp << " cAc " << cAc << std::endl;
+*/
     // Our conventions really make this UdSdU; We do not differentiate wrt Udag
     // here.
     // So must take dSdU - adj(dSdU) and left multiply by mom to get dS/dt.

@@ -39,7 +39,8 @@ namespace Grid {
 namespace QCD {
 
 // Here change the allowed (higher) representations
-typedef Representations< FundamentalRepresentation, AdjointRepresentation > TheRepresentations;
+//typedef Representations< FundamentalRepresentation, AdjointRepresentation > TheRepresentations;
+typedef Representations< FundamentalRepresentation > TheRepresentations;
 
 
 class HmcRunner : public NerscHmcRunnerHirep< TheRepresentations > {
@@ -61,7 +62,7 @@ class HmcRunner : public NerscHmcRunnerHirep< TheRepresentations > {
 
     // temporarily need a gauge field
     LatticeGaugeField U(UGrid);
-    //AdjointRepresentation::LatticeField Ua(UGrid);
+    //AdjointRepresentation::LatticeField U(UGrid);
 
     // Gauge action
     WilsonGaugeActionR Waction(5.6);
@@ -69,7 +70,7 @@ class HmcRunner : public NerscHmcRunnerHirep< TheRepresentations > {
     Real mass = -0.77;
     FermionAction FermOp(U, *FGrid, *FrbGrid, mass);
 
-    ConjugateGradient<FermionField> CG(1.0e-6, 10000);
+    ConjugateGradient<FermionField> CG(1.0e-8, 10000);
 
     TwoFlavourPseudoFermionAction<ImplPolicy> Nf2(FermOp, CG, CG);
 

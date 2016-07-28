@@ -149,7 +149,7 @@ class Integrator {
     }
 
     // Force from the other representations
-    as[level].apply(update_P_hireps, Representations, Mom, U, ep);
+    //as[level].apply(update_P_hireps, Representations, Mom, U, ep);
   }
 
   void update_U(GaugeField& U, double ep) {
@@ -173,7 +173,7 @@ class Integrator {
     // Update the smeared fields, can be implemented as observer
     Smearer.set_GaugeField(U);
     // Update the higher representations fields
-    Representations.update(U);  // void functions if fundamental representation
+    //Representations.update(U);  // void functions if fundamental representation
   }
 
   virtual void step(GaugeField& U, int level, int first, int last) = 0;
@@ -203,6 +203,7 @@ class Integrator {
                     GridParallelRNG& pRNG) {
       for (int a = 0; a < repr_set.size(); ++a)
         repr_set.at(a)->refresh(Rep.U, pRNG);
+      std::cout << GridLogDebug << "Hirep refreshing pseudofermions" << std::endl;
     }
   } refresh_hireps{};
 
@@ -216,7 +217,7 @@ class Integrator {
     // of the Metropolis
     Smearer.set_GaugeField(U);
     // Set the (eventual) representations gauge fields
-    // Representations.update(U);
+    //Representations.update(U);
 
     // The Smearer is attached to a pointer of the gauge field
     // automatically gets the correct field
@@ -230,7 +231,8 @@ class Integrator {
         as[level].actions.at(actionID)->refresh(Us, pRNG);
       }
 
-      as[level].apply(refresh_hireps, Representations, pRNG);
+      // Refresh the higher representation actions
+      //as[level].apply(refresh_hireps, Representations, pRNG);
     }
   }
 
@@ -240,12 +242,13 @@ class Integrator {
     template <class FieldType, class Repr>
     void operator()(std::vector<Action<FieldType>*> repr_set, Repr& Rep,
                     int level, RealD& H) {
-      RealD H_hirep = 0.0;
+      
       for (int a = 0; a < repr_set.size(); ++a) {
         RealD Hterm = repr_set.at(a)->S(Rep.U);
         std::cout << GridLogMessage << "S Level " << level << " term " << a
                   << " H Hirep = " << Hterm << std::endl;
         H += Hterm;
+
       }
     }
   } S_hireps{};
@@ -278,7 +281,7 @@ class Integrator {
                   << actionID << " H = " << Hterm << std::endl;
         H += Hterm;
       }
-      as[level].apply(S_hireps, Representations, level, H);
+      //as[level].apply(S_hireps, Representations, level, H);
     }
 
     return H;
