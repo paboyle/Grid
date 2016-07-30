@@ -1,6 +1,6 @@
 # additional include paths necessary to compile the C++ library
 
-AM_CXXFLAGS = -I$(top_srcdir)/include `chroma-config --cxxflags`
+AM_CXXFLAGS = `chroma-config --cxxflags`
 AM_LDFLAGS = -L$(top_builddir)/lib `chroma-config --ldflags` `chroma-config --libs`
-bin_PROGRAMS=
+
 include Make.inc

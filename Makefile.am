@@ -1,6 +1,5 @@
 # additional include paths necessary to compile the C++ library
-AM_CXXFLAGS = -I$(top_srcdir)/include/
+SUBDIRS = lib benchmarks tests
 
-SUBDIRS = prerequisites lib benchmarks tests
-
-filelist: $(SUBDIRS)
+AM_CXXFLAGS += -I$(top_builddir)/include
+ACLOCAL_AMFLAGS = -I m4

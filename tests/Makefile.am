@@ -1,16 +1,9 @@
-# additional include paths necessary to compile the C++ library
-
-#SUBDIRS = core
-
-# Uncomment to enable complete test suite build
 SUBDIRS = core forces hmc solver debug	
 
 if BUILD_CHROMA_REGRESSION
   SUBDIRS+= qdpxx
 endif
-bin_PROGRAMS =
 
-AM_CXXFLAGS = -I$(top_srcdir)/include
 AM_LDFLAGS = -L$(top_builddir)/lib
 
 if USE_LAPACK

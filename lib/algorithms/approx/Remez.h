@@ -18,10 +18,10 @@
 #include <stddef.h>
 #include <Config.h>
 
-#ifdef HAVE_GMP_H
+#ifdef HAVE_LIBGMP
 #include "bigfloat.h"
 #else
-#include "algorithms/approx/bigfloat_double.h"
+#include "bigfloat_double.h"
 #endif
 
 #define JMAX 10000 //Maximum number of iterations of Newton's approximation

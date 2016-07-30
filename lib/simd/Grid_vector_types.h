@@ -38,7 +38,7 @@ directory
 #ifndef GRID_VECTOR_TYPES
 #define GRID_VECTOR_TYPES
 
-#ifdef EMPTY_SIMD
+#ifdef GENERIC_VEC
 #include "Grid_empty.h"
 #endif
 #ifdef SSE4

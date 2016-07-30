@@ -3,8 +3,8 @@
 home=`pwd`
  
 cd $home/lib
-HFILES=`find . -type f -name '*.h' -not -path '*/Old/*'`
-HFILES="$HFILES Config.h"
+HFILES=`find . -type f -name '*.h' -not -path '*/Old/*' -not -path '*/Eigen/*'`
+HFILES="$HFILES"
 CCFILES=`find . -type f -name '*.cc' -not  -name '*ommunicator*.cc'`
 echo> Make.inc
 echo HFILES=$HFILES >> Make.inc
@@ -18,16 +18,13 @@ dirs=`find . -type d `
 for subdir in $dirs
 do
 
-pwd
-echo subdir is $subdir of $dirs
-
 cd $home/tests/$subdir
 
 TESTS=`ls T*.cc`
 TESTLIST=`echo ${TESTS} | sed s/.cc//g `
 
-echo > Make.inc
-echo bin_PROGRAMS += ${TESTLIST} | sed s/Test_zmm//g >> Make.inc
+echo noinst_PROGRAMS  = > Make.inc
+echo noinst_PROGRAMS += ${TESTLIST} >> Make.inc
 echo >> Make.inc
 for f in $TESTS
 do

@@ -1,9 +1,5 @@
 # additional include paths necessary to compile the C++ library
 
-bin_PROGRAMS =
-SUBDIRS =
-
-AM_CXXFLAGS = -I$(top_srcdir)/include
 AM_LDFLAGS = -L$(top_builddir)/lib
 
 if USE_LAPACK

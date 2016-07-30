@@ -26,12 +26,15 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
-#include <PerfCount.h>
+#include <Grid/PerfCount.h>
+
+#ifdef TEST_ZMM
 
 int main(int argc,char **argv)
 {
   return 0;
 }
+
 #if 0
 #include <simd/Intel512wilson.h>
 using namespace Grid;
@@ -481,5 +484,12 @@ void WilsonDslashAvx512F(void *ptr1,void *ptr2,void *ptr3)
 
   return;
 }
+#endif
+#else
+int main(int argc, char **argv)
+{
+  std::cerr << "error: no ZMM test for the selected architecture" << std::endl;
 
+  return 1;
+}
 #endif
