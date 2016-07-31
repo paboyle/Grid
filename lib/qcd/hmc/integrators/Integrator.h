@@ -149,7 +149,7 @@ class Integrator {
     }
 
     // Force from the other representations
-    //as[level].apply(update_P_hireps, Representations, Mom, U, ep);
+    as[level].apply(update_P_hireps, Representations, Mom, U, ep);
   }
 
   void update_U(GaugeField& U, double ep) {
@@ -167,13 +167,12 @@ class Integrator {
       auto Umu = PeekIndex<LorentzIndex>(U, mu);
       auto Pmu = PeekIndex<LorentzIndex>(Mom, mu);
       Umu = expMat(Pmu, ep, Params.Nexp) * Umu;
-      ProjectOnGroup(Umu);
-      PokeIndex<LorentzIndex>(U, Umu, mu);
+      PokeIndex<LorentzIndex>(U, ProjectOnGroup(Umu), mu);
     }
     // Update the smeared fields, can be implemented as observer
     Smearer.set_GaugeField(U);
     // Update the higher representations fields
-    //Representations.update(U);  // void functions if fundamental representation
+    Representations.update(U);  // void functions if fundamental representation
   }
 
   virtual void step(GaugeField& U, int level, int first, int last) = 0;
@@ -217,7 +216,7 @@ class Integrator {
     // of the Metropolis
     Smearer.set_GaugeField(U);
     // Set the (eventual) representations gauge fields
-    //Representations.update(U);
+    Representations.update(U);
 
     // The Smearer is attached to a pointer of the gauge field
     // automatically gets the correct field
@@ -232,7 +231,7 @@ class Integrator {
       }
 
       // Refresh the higher representation actions
-      //as[level].apply(refresh_hireps, Representations, pRNG);
+      as[level].apply(refresh_hireps, Representations, pRNG);
     }
   }
 
@@ -281,7 +280,7 @@ class Integrator {
                   << actionID << " H = " << Hterm << std::endl;
         H += Hterm;
       }
-      //as[level].apply(S_hireps, Representations, level, H);
+      as[level].apply(S_hireps, Representations, level, H);
     }
 
     return H;

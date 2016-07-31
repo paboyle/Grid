@@ -109,12 +109,12 @@ class NerscHmcRunnerTemplate {
     int Nsmear = 1;    // number of smearing levels
     Smear_Stout<Gimpl> Stout(rho);
     std::cout << GridLogDebug << " Creating the SmearedConfiguration class\n";
-    SmearedConfiguration<Gimpl> SmearingPolicy(UGrid, Nsmear, Stout);
+    //SmearedConfiguration<Gimpl> SmearingPolicy(UGrid, Nsmear, Stout);
     std::cout << GridLogDebug << " done\n";
     
     //////////////
-    //NoSmearing<Gimpl> SmearingPolicy;
-    typedef MinimumNorm2<GaugeField, SmearedConfiguration<Gimpl>, RepresentationsPolicy >
+    NoSmearing<Gimpl> SmearingPolicy;
+    typedef MinimumNorm2<GaugeField, NoSmearing<Gimpl>, RepresentationsPolicy >
         IntegratorType;  // change here to change the algorithm
     IntegratorParameters MDpar(20, 1.0);
     IntegratorType MDynamics(UGrid, MDpar, TheAction, SmearingPolicy);

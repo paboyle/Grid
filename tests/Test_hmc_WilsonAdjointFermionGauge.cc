@@ -39,8 +39,8 @@ namespace Grid {
 namespace QCD {
 
 // Here change the allowed (higher) representations
-//typedef Representations< FundamentalRepresentation, AdjointRepresentation > TheRepresentations;
-typedef Representations< FundamentalRepresentation > TheRepresentations;
+typedef Representations< FundamentalRepresentation, AdjointRepresentation > TheRepresentations;
+//typedef Representations< FundamentalRepresentation > TheRepresentations;
 
 
 class HmcRunner : public NerscHmcRunnerHirep< TheRepresentations > {
@@ -48,8 +48,8 @@ class HmcRunner : public NerscHmcRunnerHirep< TheRepresentations > {
   void BuildTheAction(int argc, char **argv)
 
   {
-    typedef WilsonImplR ImplPolicy; // gauge field implemetation for the pseudofermions
-    typedef WilsonFermionR FermionAction; // type of lattice fermions (Wilson, DW, ...)
+    typedef WilsonAdjImplR ImplPolicy; // gauge field implemetation for the pseudofermions
+    typedef WilsonAdjFermionR FermionAction; // type of lattice fermions (Wilson, DW, ...)
     typedef typename FermionAction::FermionField FermionField;
 
     UGrid = SpaceTimeGrid::makeFourDimGrid(
@@ -61,8 +61,8 @@ class HmcRunner : public NerscHmcRunnerHirep< TheRepresentations > {
     FrbGrid = UrbGrid;
 
     // temporarily need a gauge field
-    LatticeGaugeField U(UGrid);
-    //AdjointRepresentation::LatticeField U(UGrid);
+    //LatticeGaugeField U(UGrid);
+    AdjointRepresentation::LatticeField U(UGrid);
 
     // Gauge action
     WilsonGaugeActionR Waction(5.6);
