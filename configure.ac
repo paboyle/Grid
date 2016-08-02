@@ -10,6 +10,7 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_LANG(C++)
 AC_PROG_CXX
 AC_OPENMP
+AM_CXXFLAGS="$AM_CXXFLAGS $OPENMP_CXXFLAGS"
 LT_INIT([disable-shared])
 
 ############### Checks for header files
