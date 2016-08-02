@@ -38,6 +38,19 @@ AC_ARG_WITH([mpfr],
     [try this for a non-standard install prefix of the MPFR library])],
     [AM_CXXFLAGS="$AM_CXXFLAGS -I$with_mpfr/include"]
     [AM_LDFLAGS="$AM_LDFLAGS -L$with_mpfr/lib"])
+AC_ARG_ENABLE([lapack],
+    [AC_HELP_STRING([--enable-lapack=yes|no|prefix], [enable LAPACK])], 
+    [ac_LAPACK=${enable_lapack}],[ac_LAPACK=no])
+case ${ac_LAPACK} in
+    no)
+        ;;
+    yes)
+        AC_DEFINE([USE_LAPACK],[1],[use LAPACK]);;
+    *)
+        AM_CXXFLAGS="$AM_CXXFLAGS -I$ac_LAPACK/include"
+        AM_LDFLAGS="$AM_LDFLAGS -L$ac_LAPACK/lib"
+        AC_DEFINE([USE_LAPACK],[1],[use LAPACK])
+esac
 
 ################ Get compiler informations
 AC_LANG([C++])
@@ -53,6 +66,10 @@ AC_DEFINE_UNQUOTED([GXX_VERSION],["$GXX_VERSION"],
 AC_CHECK_FUNCS([gettimeofday])
 AC_CHECK_LIB([gmp],[__gmpf_init],[],[])
 AC_CHECK_LIB([mpfr],[mpfr_init],[],[])
+if test "${ac_LAPACK}x" != "nox"; then
+    AC_CHECK_LIB([lapack],[LAPACKE_sbdsdc],[],
+                 [AC_MSG_ERROR("LAPACK enabled but library not found")])
+fi
 
 ############### SIMD instruction selection
 AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE4|AVX|AVXFMA4|AVX2|AVX512|AVX512MIC|IMCI|KNL|KNC],\
@@ -208,26 +225,7 @@ case ${ac_CHROMA} in
        AC_MSG_ERROR([${ac_CHROMA} unsupported --enable-chroma option]); 
      ;;
 esac
-
 AM_CONDITIONAL(BUILD_CHROMA_REGRESSION,[ test "X${ac_CHROMA}X" == "XyesX" ])
-
-############### Lapack
-AC_ARG_ENABLE([lapack],[AC_HELP_STRING([--enable-lapack],[Enable lapack yes/no ])],[ac_LAPACK=${enable_lapack}],[ac_LAPACK=no])
-
-case ${ac_LAPACK} in
-     yes)
-       echo Enabling lapack
-     ;;
-     no)
-       echo Disabling lapack
-     ;;
-     *)
-       echo Enabling lapack at ${ac_LAPACK}
-     ;;
-esac
-
-AM_CONDITIONAL(USE_LAPACK,[ test "X${ac_LAPACK}X" != "XnoX" ])
-AM_CONDITIONAL(USE_LAPACK_LIB,[ test "X${ac_LAPACK}X" != "XyesX" ])
 
 ############### Doxygen
 AC_PROG_DOXYGEN

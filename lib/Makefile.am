@@ -1,5 +1,3 @@
-# additional include paths necessary to compile the C++ library
-
 extra_sources=
 if BUILD_COMMS_MPI
   extra_sources+=communicator/Communicator_mpi.cc
