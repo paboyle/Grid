@@ -1,60 +1,47 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 home=`pwd`
- 
+
+# library Make.inc
 cd $home/lib
 HFILES=`find . -type f -name '*.h' -not -path '*/Old/*' -not -path '*/Eigen/*'`
 HFILES="$HFILES"
 CCFILES=`find . -type f -name '*.cc' -not  -name '*ommunicator*.cc'`
-echo> Make.inc
-echo HFILES=$HFILES >> Make.inc
+echo HFILES=$HFILES > Make.inc
 echo >> Make.inc
 echo CCFILES=$CCFILES >> Make.inc
 
+# tests Make.inc
 cd $home/tests
-
 dirs=`find . -type d `
-
-for subdir in $dirs
-do
-
-cd $home/tests/$subdir
-
-TESTS=`ls T*.cc`
-TESTLIST=`echo ${TESTS} | sed s/.cc//g `
-
-echo noinst_PROGRAMS  = > Make.inc
-echo noinst_PROGRAMS += ${TESTLIST} >> Make.inc
-echo >> Make.inc
-for f in $TESTS
-do
-BNAME=`basename $f .cc`
-echo >> Make.inc
-echo ${BNAME}_SOURCES=$f  >> Make.inc
-echo ${BNAME}_LDADD=-lGrid>> Make.inc
-echo >> Make.inc
+for subdir in $dirs; do
+	cd $home/tests/$subdir
+	TESTS=`ls T*.cc`
+	TESTLIST=`echo ${TESTS} | sed s/.cc//g `
+	PREF=`[ $subdir = '.' ] && echo noinst || echo EXTRA`
+	echo "tests: ${TESTLIST}" > Make.inc
+	echo ${PREF}_PROGRAMS = ${TESTLIST} >> Make.inc
+	echo >> Make.inc
+	for f in $TESTS; do
+		BNAME=`basename $f .cc`
+		echo ${BNAME}_SOURCES=$f  >> Make.inc
+		echo ${BNAME}_LDADD=-lGrid>> Make.inc
+		echo >> Make.inc
+	done
 done
 
-
-done
-
+# benchmarks Make.inc
 cd $home/benchmarks
-
 echo> Make.inc
 TESTS=`ls B*.cc`
 TESTLIST=`echo ${TESTS} | sed s/.cc//g `
-
-echo > Make.inc
-echo bin_PROGRAMS = ${TESTLIST} >> Make.inc
+echo bin_PROGRAMS = ${TESTLIST} > Make.inc
 echo >> Make.inc
-
-for f in $TESTS
-do
-BNAME=`basename $f .cc`
-echo >> Make.inc
-echo ${BNAME}_SOURCES=$f  >> Make.inc
-echo ${BNAME}_LDADD=-lGrid>> Make.inc
-echo >> Make.inc
+for f in $TESTS; do
+	BNAME=`basename $f .cc`
+	echo ${BNAME}_SOURCES=$f  >> Make.inc
+	echo ${BNAME}_LDADD=-lGrid>> Make.inc
+	echo >> Make.inc
 done
 
 cd ..
