@@ -256,6 +256,7 @@ fi
 cwd=`pwd -P`; cd ${srcdir}; abs_srcdir=`pwd -P`; cd ${cwd}
 AM_CXXFLAGS="-I${abs_srcdir}/include $AM_CXXFLAGS"
 AM_CFLAGS="-I${abs_srcdir}/include $AM_CFLAGS"
+AM_LDFLAGS="-L${cwd}/lib $AM_LDFLAGS"
 AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_CXXFLAGS])
 AC_SUBST([AM_LDFLAGS])
