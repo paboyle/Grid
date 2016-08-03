@@ -8,9 +8,10 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 ############### Checks for programs
 AC_LANG(C++)
+: ${CXXFLAGS="-O3"}
 AC_PROG_CXX
 AC_OPENMP
-AM_CXXFLAGS="$AM_CXXFLAGS $OPENMP_CXXFLAGS"
+AM_CXXFLAGS="$OPENMP_CXXFLAGS $AM_CXXFLAGS"
 LT_INIT([disable-shared])
 
 ############### Checks for header files
@@ -32,13 +33,13 @@ AC_TYPE_UINT64_T
 AC_ARG_WITH([gmp],
     [AS_HELP_STRING([--with-gmp=prefix],
     [try this for a non-standard install prefix of the GMP library])],
-    [AM_CXXFLAGS="$AM_CXXFLAGS -I$with_gmp/include"]
-    [AM_LDFLAGS="$AM_LDFLAGS -L$with_gmp/lib"])
+    [AM_CXXFLAGS="-I$with_gmp/include $AM_CXXFLAGS"]
+    [AM_LDFLAGS="-L$with_gmp/lib" $AM_LDFLAGS])
 AC_ARG_WITH([mpfr],
     [AS_HELP_STRING([--with-mpfr=prefix],
     [try this for a non-standard install prefix of the MPFR library])],
-    [AM_CXXFLAGS="$AM_CXXFLAGS -I$with_mpfr/include"]
-    [AM_LDFLAGS="$AM_LDFLAGS -L$with_mpfr/lib"])
+    [AM_CXXFLAGS="-I$with_mpfr/include $AM_CXXFLAGS"]
+    [AM_LDFLAGS="-L$with_mpfr/lib $AM_LDFLAGS"])
 AC_ARG_ENABLE([lapack],
     [AC_HELP_STRING([--enable-lapack=yes|no|prefix], [enable LAPACK])], 
     [ac_LAPACK=${enable_lapack}],[ac_LAPACK=no])
@@ -48,8 +49,8 @@ case ${ac_LAPACK} in
     yes)
         AC_DEFINE([USE_LAPACK],[1],[use LAPACK]);;
     *)
-        AM_CXXFLAGS="$AM_CXXFLAGS -I$ac_LAPACK/include"
-        AM_LDFLAGS="$AM_LDFLAGS -L$ac_LAPACK/lib"
+        AM_CXXFLAGS="-I$ac_LAPACK/include $AM_CXXFLAGS"
+        AM_LDFLAGS="-L$ac_LAPACK/lib $AM_LDFLAGS"
         AC_DEFINE([USE_LAPACK],[1],[use LAPACK])
 esac
 
@@ -64,13 +65,20 @@ AC_DEFINE_UNQUOTED([GXX_VERSION],["$GXX_VERSION"],
       [version of g++ that will compile the code])
 
 ############### Checks for library functions
+CXXFLAGS_CPY=$CXXFLAGS
+LDFLAGS_CPY=$LDFLAGS
+LIBS_CPY=$LIBS
+CXXFLAGS="$AM_CXXFLAGS $CXXFLAGS"
+LDFLAGS="$AM_LDFLAGS $LDFLAGS"
 AC_CHECK_FUNCS([gettimeofday])
-AC_CHECK_LIB([gmp],[__gmpf_init],[],[])
-AC_CHECK_LIB([mpfr],[mpfr_init],[],[])
+AC_CHECK_LIB([gmp],[__gmpf_init])
+AC_CHECK_LIB([mpfr],[mpfr_init])
 if test "${ac_LAPACK}x" != "nox"; then
     AC_CHECK_LIB([lapack],[LAPACKE_sbdsdc],[],
                  [AC_MSG_ERROR("LAPACK enabled but library not found")])
 fi
+CXXFLAGS=$CXXFLAGS_CPY
+LDFLAGS=$LDFLAGS_CPY
 
 ############### SIMD instruction selection
 AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE4|AVX|AVXFMA4|AVX2|AVX512|AVX512MIC|IMCI|KNL|KNC],\
@@ -170,8 +178,8 @@ case ${ac_COMMS} in
        LX_FIND_MPI
        AM_CXXFLAGS="$MPI_CXXFLAGS $AM_CXXFLAGS"
        AM_CFLAGS="$MPI_CFLAGS $AM_CFLAGS"
-       AM_LDFLAGS="$MPI_CXXLDFLAGS $AM_LDFLAGS"
-       AM_LIBS="$MPI_CXXLDFLAGS $AM_LIBS"
+       AM_LDFLAGS="`echo $MPI_CXXLDFLAGS | sed -E 's/-l@<:@^ @:>@+//g'` $AM_LDFLAGS"
+       AM_LIBS="`echo $MPI_CXXLDFLAGS | sed -E 's/-L@<:@^ @:>@+//g'` $AM_LIBS"
      ;;
      shmem)
        AC_DEFINE([GRID_COMMS_SHMEM],[1],[GRID_COMMS_SHMEM] )
@@ -261,19 +269,28 @@ echo "
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Summary of configuration for $PACKAGE v$VERSION
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+----- PLATFORM ----------------------------------------
 - architecture (build)          : $build_cpu
 - os (build)                    : $build_os
 - architecture (target)         : $target_cpu
 - os (target)                   : $target_os
-- build DOXYGEN documentation   : `if test "x$enable_doc" = xyes; then echo yes; else echo no; fi`
-- graphs and diagrams           : `if test "x$enable_dot" = xyes; then echo yes; else echo no; fi`
-----------------------------------------------------------
 - compiler vendor               : ${ax_cv_cxx_compiler_vendor}
 - compiler version              : ${ax_cv_gxx_version}
+----- BUILD OPTIONS -----------------------------------
 - SIMD                          : ${ac_SIMD}
-- SIMD flags                    : ${SIMD_FLAGS}
 - communications type           : ${ac_COMMS}
 - default precision             : ${ac_PRECISION}
 - RNG choice                    : ${ac_RNG} 
-- LAPACK                        : ${ac_LAPACK} 
+- LAPACK                        : ${ac_LAPACK}
+- build DOXYGEN documentation   : `if test "x$enable_doc" = xyes; then echo yes; else echo no; fi`
+- graphs and diagrams           : `if test "x$enable_dot" = xyes; then echo yes; else echo no; fi`
+----- BUILD FLAGS -------------------------------------
+- CXXFLAGS: 
+`echo ${AM_CXXFLAGS} ${CXXFLAGS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
+- LDFLAGS:
+`echo ${AM_LDFLAGS} ${LDFLAGS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
+- LIBS:
+`echo ${AM_LIBS} ${LIBS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
+-------------------------------------------------------
 "
