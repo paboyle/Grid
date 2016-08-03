@@ -63,6 +63,7 @@ config.sub
 config.guess
 INSTALL
 .dirstamp
+ltmain.sh
  
 # Logs and databases #
 ######################
