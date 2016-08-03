@@ -184,6 +184,7 @@ case ${ac_COMMS} in
      mpi)
        AC_DEFINE([GRID_COMMS_MPI],[1],[GRID_COMMS_MPI] )
        LX_FIND_MPI
+       if test "x$have_CXX_mpi" = 'xno'; then AC_MSG_ERROR(["MPI not found"]); fi
        AM_CXXFLAGS="$MPI_CXXFLAGS $AM_CXXFLAGS"
        AM_CFLAGS="$MPI_CFLAGS $AM_CFLAGS"
        AM_LDFLAGS="`echo $MPI_CXXLDFLAGS | sed -E 's/-l@<:@^ @:>@+//g'` $AM_LDFLAGS"
