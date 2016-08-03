@@ -179,7 +179,7 @@ case ${ac_COMMS} in
        AM_CXXFLAGS="$MPI_CXXFLAGS $AM_CXXFLAGS"
        AM_CFLAGS="$MPI_CFLAGS $AM_CFLAGS"
        AM_LDFLAGS="`echo $MPI_CXXLDFLAGS | sed -E 's/-l@<:@^ @:>@+//g'` $AM_LDFLAGS"
-       AM_LIBS="`echo $MPI_CXXLDFLAGS | sed -E 's/-L@<:@^ @:>@+//g'` $AM_LIBS"
+       LIBS="`echo $MPI_CXXLDFLAGS | sed -E 's/-L@<:@^ @:>@+//g'` $LIBS"
      ;;
      shmem)
        AC_DEFINE([GRID_COMMS_SHMEM],[1],[GRID_COMMS_SHMEM] )
@@ -251,7 +251,6 @@ AM_CFLAGS="-I${abs_srcdir}/include $AM_CFLAGS"
 AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_CXXFLAGS])
 AC_SUBST([AM_LDFLAGS])
-AC_SUBST([AM_LIBS])
 AC_CONFIG_FILES(Makefile)
 AC_CONFIG_FILES(lib/Makefile)
 AC_CONFIG_FILES(tests/Makefile)
@@ -291,6 +290,6 @@ Summary of configuration for $PACKAGE v$VERSION
 - LDFLAGS:
 `echo ${AM_LDFLAGS} ${LDFLAGS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
 - LIBS:
-`echo ${AM_LIBS} ${LIBS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
+`echo ${LIBS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
 -------------------------------------------------------
 "
