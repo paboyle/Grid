@@ -8,7 +8,7 @@
 </tr>
 <tr>
     <td>Development branch</td>
-    <td><a href="https://travis-ci.org/aportelli/LatAnalyze">
+    <td><a href="https://travis-ci.org/paboyle/Grid">
     <img src="https://travis-ci.org/paboyle/Grid.svg?branch=develop"></a>
     </td>
 </tr>
