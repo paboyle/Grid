@@ -1,5 +1,4 @@
-AM_CXXFLAGS = -I$(top_srcdir)/programs -I../$(top_srcdir)/programs -I$(top_srcdir)/lib
-AM_LDFLAGS  = -L$(top_builddir)/lib
+AM_CXXFLAGS += -I$(top_srcdir)/programs -I../$(top_srcdir)/programs
 
 bin_PROGRAMS = Hadrons
 

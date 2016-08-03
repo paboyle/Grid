@@ -30,8 +30,7 @@ directory.
 
 #include <set>
 #include <stack>
-#include <cxxabi.h>
-#include <Grid.h>
+#include <Grid/Grid.h>
 
 #define BEGIN_HADRONS_NAMESPACE \
 namespace Grid {\
@@ -50,7 +49,7 @@ class HadronsLogger: public Logger
 {
 public:
     HadronsLogger(int on, std::string nm): Logger("Hadrons", on, nm,
-                                                  Logger::BLACK){};
+                                                  GridLogColours, "BLACK"){};
 };
 
 #define LOG(channel) std::cout << HadronsLog##channel
