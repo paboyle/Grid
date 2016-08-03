@@ -1,4 +1,3 @@
-
     /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -27,8 +26,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#include <Grid.h>
-#include <PerfCount.h>
+#include <Grid/Grid.h>
 
 using namespace std;
 using namespace Grid;
@@ -127,7 +125,6 @@ void benchDw(std::vector<int> & latt4, int Ls, int threads,int report )
 
   ColourMatrix cm = Complex(1.0,0.0);
 
-
   LatticeGaugeField Umu5d(FGrid); 
 
   // replicate across fifth dimension
@@ -146,11 +143,10 @@ void benchDw(std::vector<int> & latt4, int Ls, int threads,int report )
   }
 
 #ifdef CHECK
-  if (1)
-  {
+  if (1) {
+
     ref = zero;
     for(int mu=0;mu<Nd;mu++){
-
       tmp = U[mu]*Cshift(src,mu+1,1);
       ref=ref + tmp - Gamma(Gmu[mu])*tmp;
 
@@ -194,20 +190,19 @@ void benchDw(std::vector<int> & latt4, int Ls, int threads,int report )
     Counter.Report();
   }
   
-  if ( ! report ) 
-    {
-      double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-      double flops=1344*volume*ncall;
-      std::cout <<"\t"<<NP<< "\t"<<flops/(t1-t0)<< "\t";
-    }
+  if ( ! report ) {
+    double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
+    double flops=1344*volume*ncall;
+    std::cout <<"\t"<<NP<< "\t"<<flops/(t1-t0)<< "\t";
+  }
   
 #ifdef CHECK
-    err = ref-result; 
-    RealD errd = norm2(err);
-    if ( errd> 1.0e-4 ) {
-      std::cout<<GridLogMessage << "oops !!! norm diff   "<< norm2(err)<<std::endl;
-      exit(-1);
-    }
+  err = ref-result; 
+  RealD errd = norm2(err);
+  if ( errd> 1.0e-4 ) {
+    std::cout<<GridLogMessage << "oops !!! norm diff   "<< norm2(err)<<std::endl;
+    exit(-1);
+  }
 #endif
     
   LatticeFermion src_e (FrbGrid);
@@ -233,10 +228,9 @@ void benchDw(std::vector<int> & latt4, int Ls, int threads,int report )
       std::cout<< flops/(t1-t0);
     }
   }
-  
 }
 
-#undef CHECK_SDW
+#define CHECK_SDW
 void benchsDw(std::vector<int> & latt4, int Ls, int threads, int report )
 {
 
@@ -244,7 +238,9 @@ void benchsDw(std::vector<int> & latt4, int Ls, int threads, int report )
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
+
   GridCartesian         * sUGrid   = SpaceTimeGrid::makeFourDimDWFGrid(latt4,GridDefaultMpi());
+  GridRedBlackCartesian * sUrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(sUGrid);
   GridCartesian         * sFGrid   = SpaceTimeGrid::makeFiveDimDWFGrid(Ls,UGrid);
   GridRedBlackCartesian * sFrbGrid = SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(Ls,UGrid);
 
@@ -278,93 +274,89 @@ void benchsDw(std::vector<int> & latt4, int Ls, int threads, int report )
     }
   }
 
-
   RealD mass=0.1;
   RealD M5  =1.8;
 
-    typedef WilsonFermion5D<DomainWallRedBlack5dImplF> WilsonFermion5DF;
-    LatticeFermionF ssrc(sFGrid);
-    LatticeFermionF sref(sFGrid);
-    LatticeFermionF sresult(sFGrid);
-    WilsonFermion5DF sDw(1,Umu,*sFGrid,*sFrbGrid,*sUGrid,M5);
+  typedef WilsonFermion5D<DomainWallVec5dImplR> WilsonFermion5DR;
+  LatticeFermion ssrc(sFGrid);
+  LatticeFermion sref(sFGrid);
+  LatticeFermion sresult(sFGrid);
+  WilsonFermion5DR sDw(Umu,*sFGrid,*sFrbGrid,*sUGrid,*sUrbGrid,M5);
   
-    for(int x=0;x<latt4[0];x++){
-    for(int y=0;y<latt4[1];y++){
-    for(int z=0;z<latt4[2];z++){
-    for(int t=0;t<latt4[3];t++){
-    for(int s=0;s<Ls;s++){
-      std::vector<int> site({s,x,y,z,t});
-      SpinColourVectorF tmp;
-      peekSite(tmp,src,site);
-      pokeSite(tmp,ssrc,site);
-    }}}}}
+  for(int x=0;x<latt4[0];x++){
+  for(int y=0;y<latt4[1];y++){
+  for(int z=0;z<latt4[2];z++){
+  for(int t=0;t<latt4[3];t++){
+  for(int s=0;s<Ls;s++){
+    std::vector<int> site({s,x,y,z,t});
+    SpinColourVector tmp;
+    peekSite(tmp,src,site);
+    pokeSite(tmp,ssrc,site);
+  }}}}}
 
-    double t0=usecond();
-    sDw.Dhop(ssrc,sresult,0);
-    double t1=usecond();
+  double t0=usecond();
+  sDw.Dhop(ssrc,sresult,0);
+  double t1=usecond();
 
 #ifdef TIMERS_OFF
-    int ncall =10;
+  int ncall =10;
 #else 
-    int ncall =1+(int) ((5.0*1000*1000)/(t1-t0));
+  int ncall =1+(int) ((5.0*1000*1000)/(t1-t0));
 #endif
 
-    PerformanceCounter Counter(8);
-    Counter.Start();
-    t0=usecond();
-    for(int i=0;i<ncall;i++){
-      sDw.Dhop(ssrc,sresult,0);
-    }
-    t1=usecond();
-    Counter.Stop();
+  PerformanceCounter Counter(8);
+  Counter.Start();
+  t0=usecond();
+  for(int i=0;i<ncall;i++){
+    sDw.Dhop(ssrc,sresult,0);
+  }
+  t1=usecond();
+  Counter.Stop();
+  
+  if ( report ) {
+    Counter.Report();
+  } else { 
+    double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
+    double flops=1344*volume*ncall;
+    std::cout<<"\t"<< flops/(t1-t0);
+  }
 
-    if ( report ) {
-      Counter.Report();
-    } else { 
-
-      double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-      double flops=1344*volume*ncall;
-      std::cout<<"\t"<< flops/(t1-t0);
-    }
-
-
-    LatticeFermionF sr_eo(sFGrid);
-    LatticeFermionF serr(sFGrid);
-    
-    LatticeFermion ssrc_e (sFrbGrid);
-    LatticeFermion ssrc_o (sFrbGrid);
-    LatticeFermion sr_e   (sFrbGrid);
-    LatticeFermion sr_o   (sFrbGrid);
+  LatticeFermion sr_eo(sFGrid);
+  LatticeFermion serr(sFGrid);
+  
+  LatticeFermion ssrc_e (sFrbGrid);
+  LatticeFermion ssrc_o (sFrbGrid);
+  LatticeFermion sr_e   (sFrbGrid);
+  LatticeFermion sr_o   (sFrbGrid);
       
-    pickCheckerboard(Even,ssrc_e,ssrc);
-    pickCheckerboard(Odd,ssrc_o,ssrc);
-
-    setCheckerboard(sr_eo,ssrc_o);
-    setCheckerboard(sr_eo,ssrc_e);
+  pickCheckerboard(Even,ssrc_e,ssrc);
+  pickCheckerboard(Odd,ssrc_o,ssrc);
+  
+  setCheckerboard(sr_eo,ssrc_o);
+  setCheckerboard(sr_eo,ssrc_e);
     
-    sr_e = zero;
-    sr_o = zero;
-    
+  sr_e = zero;
+  sr_o = zero;
+  
+  sDw.DhopEO(ssrc_o,sr_e,DaggerNo);
+  PerformanceCounter CounterSdw(8);
+  CounterSdw.Start();
+  t0=usecond();
+  for(int i=0;i<ncall;i++){
+    __SSC_START;
     sDw.DhopEO(ssrc_o,sr_e,DaggerNo);
-    PerformanceCounter CounterSdw(8);
-    CounterSdw.Start();
-    t0=usecond();
-    for(int i=0;i<ncall;i++){
-      __SSC_START;
-      sDw.DhopEO(ssrc_o,sr_e,DaggerNo);
-      __SSC_STOP;
-    }
-    t1=usecond();
-    CounterSdw.Stop();
+    __SSC_STOP;
+  }
+  t1=usecond();
+  CounterSdw.Stop();
 
-    if ( report ) { 
-      CounterSdw.Report();
-    } else {
-
-      double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
-      double flops=(1344.0*volume*ncall)/2;
-      std::cout<<"\t"<< flops/(t1-t0);
-    }
+  if ( report ) { 
+    CounterSdw.Report();
+  } else {
+    double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
+    double flops=(1344.0*volume*ncall)/2;
+    std::cout<<"\t"<< flops/(t1-t0);
+  }
 }
 
 

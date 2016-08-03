@@ -19,7 +19,7 @@ count=`grep total tmp.fil`
 echo $count " in lib/${sdir}" 
 done
 
-wc -l tests/*.cc | grep total >& tmp.fil
+wc -l tests/*.cc tests/*/*.cc | grep total >& tmp.fil
 count=`grep total tmp.fil`
 echo  $count " in tests"
 

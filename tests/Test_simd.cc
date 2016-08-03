@@ -1,32 +1,32 @@
-    /*************************************************************************************
+/*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+Grid physics library, www.github.com/paboyle/Grid
 
-    Source file: ./tests/Test_simd.cc
+Source file: ./tests/Test_simd.cc
 
-    Copyright (C) 2015
+Copyright (C) 2015
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: neo <cossu@post.kek.jp>
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#include <Grid.h>
+#include <Grid/Grid.h>
 
 using namespace std;
 using namespace Grid;
@@ -61,6 +61,18 @@ public:
   funcAdj() {};
   template<class vec> void operator()(vec &rr,vec &i1,vec &i2) const { rr = adj(i1);}
   std::string name(void) const { return std::string("Adj"); }
+};
+class funcImag {
+public:
+  funcImag() {};
+  template<class vec> void operator()(vec &rr,vec &i1,vec &i2) const { rr = imag(i1);}
+  std::string name(void) const { return std::string("imag"); }
+};
+class funcReal {
+public:
+  funcReal() {};
+  template<class vec> void operator()(vec &rr,vec &i1,vec &i2) const { rr = real(i1);}
+  std::string name(void) const { return std::string("real"); }
 };
 
 class funcTimesI {
@@ -141,7 +153,13 @@ void Tester(const functor &func)
   }
 
   extract<vec,scal>(v_result,result);
-  std::cout<<GridLogMessage << " " << func.name()<<std::endl;
+
+  std::cout << GridLogMessage << " " << func.name() << std::endl;
+
+  std::cout << GridLogDebug << v_input1 << std::endl;
+  std::cout << GridLogDebug << v_result << std::endl;
+
+
 
   int ok=0;
   for(int i=0;i<Nsimd;i++){
@@ -389,6 +407,8 @@ int main (int argc, char ** argv)
   Tester<ComplexF,vComplexF>(funcTimes());
   Tester<ComplexF,vComplexF>(funcConj());
   Tester<ComplexF,vComplexF>(funcAdj());
+  Tester<ComplexF,vComplexF>(funcReal());
+  Tester<ComplexF,vComplexF>(funcImag());
   Tester<ComplexF,vComplexF>(funcInnerProduct());
   ReductionTester<ComplexF,ComplexF,vComplexF>(funcReduce());
 
@@ -421,17 +441,21 @@ int main (int argc, char ** argv)
   Tester<ComplexD,vComplexD>(funcTimes());
   Tester<ComplexD,vComplexD>(funcConj());
   Tester<ComplexD,vComplexD>(funcAdj());
-  Tester<ComplexD,vComplexD>(funcInnerProduct());
-  ReductionTester<ComplexD,ComplexD,vComplexD>(funcReduce());
+  Tester<ComplexD, vComplexD>(funcReal());
+  Tester<ComplexD, vComplexD>(funcImag());
 
+  Tester<ComplexD, vComplexD>(funcInnerProduct());
+  ReductionTester<ComplexD, ComplexD, vComplexD>(funcReduce());
 
-  std::cout<<GridLogMessage << "==================================="<<  std::endl;
-  std::cout<<GridLogMessage << "Testing vComplexD permutes "<<std::endl;
-  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout << GridLogMessage
+            << "===================================" << std::endl;
+  std::cout << GridLogMessage << "Testing vComplexD permutes " << std::endl;
+  std::cout << GridLogMessage
+            << "===================================" << std::endl;
 
   // Log2 iteration
-  for(int i=0;(1<<i)< vComplexD::Nsimd();i++){
-    PermTester<ComplexD,vComplexD>(funcPermute(i));
+  for (int i = 0; (1 << i) < vComplexD::Nsimd(); i++) {
+    PermTester<ComplexD, vComplexD>(funcPermute(i));
   }
 
 

@@ -75,7 +75,7 @@ namespace Grid {
     //
     //
     // template<class Impl>
-    // class MyOp : pubic<Impl> { 
+    // class MyOp : public<Impl> { 
     // public:
     //
     //    INHERIT_ALL_IMPL_TYPES(Impl);
@@ -99,7 +99,7 @@ namespace Grid {
     typedef typename Impl::SiteSpinor               SiteSpinor;		\
     typedef typename Impl::SiteHalfSpinor       SiteHalfSpinor;		\
     typedef typename Impl::Compressor               Compressor;		\
-    typedef typename Impl::StencilImpl              StencilImpl;	\
+    typedef typename Impl::StencilImpl             StencilImpl;	  \
     typedef typename Impl::ImplParams ImplParams;
 
 #define INHERIT_IMPL_TYPES(Base) \
@@ -110,8 +110,10 @@ namespace Grid {
     // Single flavour four spinors with colour index
     ///////
     template<class S,int Nrepresentation=Nc>
-    class WilsonImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepresentation> > { 
+    class WilsonImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S, Nrepresentation> > { 
     public:
+
+      const bool LsVectorised=false;
 
       typedef PeriodicGaugeImpl< GaugeImplTypes< S,Nrepresentation> > Gimpl;
 
@@ -191,8 +193,10 @@ PARALLEL_FOR_LOOP
     // Single flavour four spinors with colour index, 5d redblack
     ///////
     template<class S,int Nrepresentation=Nc>
-    class DomainWallRedBlack5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepresentation> > { 
+    class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepresentation> > { 
     public:
+    
+      const bool LsVectorised=true;
 
       typedef PeriodicGaugeImpl< GaugeImplTypes< S,Nrepresentation> > Gimpl;
 
@@ -221,7 +225,7 @@ PARALLEL_FOR_LOOP
 
       ImplParams Params;
 
-      DomainWallRedBlack5dImpl(const ImplParams &p= ImplParams()) : Params(p) {}; 
+      DomainWallVec5dImpl(const ImplParams &p= ImplParams()) : Params(p) {}; 
 
       bool overlapCommsCompute(void) { return false; };
     
@@ -286,6 +290,8 @@ PARALLEL_FOR_LOOP
     template<class S,int Nrepresentation>
     class GparityWilsonImpl : public ConjugateGaugeImpl< GaugeImplTypes<S,Nrepresentation> >{ 
     public:
+
+      const bool LsVectorised=false;
 
       typedef ConjugateGaugeImpl< GaugeImplTypes<S,Nrepresentation> > Gimpl;
 
@@ -446,10 +452,10 @@ PARALLEL_FOR_LOOP
 	// DhopDir provides U or Uconj depending on coor/flavour.
 	GaugeLinkField link(mat._grid);
 	// use lorentz for flavour as hack.
-	auto tmp = TraceIndex<SpinIndex>(outerProduct(Btilde,A));  
 PARALLEL_FOR_LOOP
-        for(auto ss=tmp.begin();ss<tmp.end();ss++){
-	  link[ss]() = tmp[ss](0,0) - conjugate(tmp[ss](1,1)) ;
+        for(auto ss=link.begin();ss<link.end();ss++){
+	  auto ttmp = traceIndex<SpinIndex>(outerProduct(Btilde[ss],A[ss]));  
+	  link[ss]() = ttmp(0,0) + conjugate(ttmp(1,1)) ; 
 	}
 	PokeIndex<LorentzIndex>(mat,link,mu);
 	return;
@@ -477,9 +483,9 @@ PARALLEL_FOR_LOOP
     typedef WilsonImpl<vComplexF,Nc> WilsonImplF; // Float
     typedef WilsonImpl<vComplexD,Nc> WilsonImplD; // Double
 
-    typedef DomainWallRedBlack5dImpl<vComplex ,Nc> DomainWallRedBlack5dImplR; // Real.. whichever prec
-    typedef DomainWallRedBlack5dImpl<vComplexF,Nc> DomainWallRedBlack5dImplF; // Float
-    typedef DomainWallRedBlack5dImpl<vComplexD,Nc> DomainWallRedBlack5dImplD; // Double
+    typedef DomainWallVec5dImpl<vComplex ,Nc> DomainWallVec5dImplR; // Real.. whichever prec
+    typedef DomainWallVec5dImpl<vComplexF,Nc> DomainWallVec5dImplF; // Float
+    typedef DomainWallVec5dImpl<vComplexD,Nc> DomainWallVec5dImplD; // Double
 
     typedef GparityWilsonImpl<vComplex ,Nc> GparityWilsonImplR; // Real.. whichever prec
     typedef GparityWilsonImpl<vComplexF,Nc> GparityWilsonImplF; // Float

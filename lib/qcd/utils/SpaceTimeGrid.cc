@@ -84,7 +84,7 @@ GridRedBlackCartesian *SpaceTimeGrid::makeFiveDimRedBlackGrid(int Ls,const GridC
 
 GridCartesian         *SpaceTimeGrid::makeFiveDimDWFGrid(int Ls,const GridCartesian *FourDimGrid)
 {
-  int N4=FourDimGrid->_ndimension;
+  int N4    = FourDimGrid->_ndimension;
   int nsimd = FourDimGrid->Nsimd();
 
   std::vector<int> latt5(1,Ls);
@@ -103,11 +103,11 @@ GridRedBlackCartesian *SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(int Ls,const Gr
 {
   int N4=FourDimGrid->_ndimension;
   int nsimd = FourDimGrid->Nsimd();
-  int cbd=0;
+  int cbd=1;
   std::vector<int> latt5(1,Ls);
   std::vector<int> simd5(1,nsimd);
   std::vector<int>  mpi5(1,1);
-  std::vector<int>   cb5(1,1);
+  std::vector<int>   cb5(1,0);
     
   for(int d=0;d<N4;d++){
     latt5.push_back(FourDimGrid->_fdimensions[d]);

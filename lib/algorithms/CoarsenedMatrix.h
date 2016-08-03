@@ -31,7 +31,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef  GRID_ALGORITHM_COARSENED_MATRIX_H
 #define  GRID_ALGORITHM_COARSENED_MATRIX_H
 
-#include <Grid.h>
 
 namespace Grid {
 

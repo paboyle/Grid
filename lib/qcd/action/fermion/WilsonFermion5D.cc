@@ -48,9 +48,9 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
 				       GridRedBlackCartesian &FourDimRedBlackGrid,
 				       RealD _M5,const ImplParams &p) :
   Kernels(p),
-  _FiveDimGrid(&FiveDimGrid),
+  _FiveDimGrid        (&FiveDimGrid),
   _FiveDimRedBlackGrid(&FiveDimRedBlackGrid),
-  _FourDimGrid(&FourDimGrid),
+  _FourDimGrid        (&FourDimGrid),
   _FourDimRedBlackGrid(&FourDimRedBlackGrid),
   Stencil    (_FiveDimGrid,npoint,Even,directions,displacements),
   StencilEven(_FiveDimRedBlackGrid,npoint,Even,directions,displacements), // source is Even
@@ -62,60 +62,83 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   Lebesgue(_FourDimGrid),
   LebesgueEvenOdd(_FourDimRedBlackGrid)
 {
-  // some assertions
-  assert(FiveDimGrid._ndimension==5);
-  assert(FourDimGrid._ndimension==4);
-  assert(FiveDimRedBlackGrid._ndimension==5);
-  assert(FourDimRedBlackGrid._ndimension==4);
-  assert(FiveDimRedBlackGrid._checker_dim==1);
+  if (Impl::LsVectorised) { 
 
-  // Dimension zero of the five-d is the Ls direction
-  Ls=FiveDimGrid._fdimensions[0];
-  assert(FiveDimRedBlackGrid._fdimensions[0]==Ls);
-  assert(FiveDimRedBlackGrid._processors[0] ==1);
-  assert(FiveDimRedBlackGrid._simd_layout[0]==1);
-  assert(FiveDimGrid._processors[0]         ==1);
-  assert(FiveDimGrid._simd_layout[0]        ==1);
+    int nsimd = Simd::Nsimd();
+    
+    // some assertions
+    assert(FiveDimGrid._ndimension==5);
+    assert(FiveDimRedBlackGrid._ndimension==5);
+    assert(FiveDimRedBlackGrid._checker_dim==1); // Don't checker the s direction
+    assert(FourDimGrid._ndimension==4);
 
-  // Other dimensions must match the decomposition of the four-D fields 
-  for(int d=0;d<4;d++){
-    assert(FourDimRedBlackGrid._fdimensions[d]  ==FourDimGrid._fdimensions[d]);
-    assert(FiveDimRedBlackGrid._fdimensions[d+1]==FourDimGrid._fdimensions[d]);
+    // Dimension zero of the five-d is the Ls direction
+    Ls=FiveDimGrid._fdimensions[0];
+    assert(FiveDimGrid._processors[0]         ==1);
+    assert(FiveDimGrid._simd_layout[0]        ==nsimd);
 
-    assert(FourDimRedBlackGrid._processors[d]   ==FourDimGrid._processors[d]);
-    assert(FiveDimRedBlackGrid._processors[d+1] ==FourDimGrid._processors[d]);
+    assert(FiveDimRedBlackGrid._fdimensions[0]==Ls);
+    assert(FiveDimRedBlackGrid._processors[0] ==1);
+    assert(FiveDimRedBlackGrid._simd_layout[0]==nsimd);
 
-    assert(FourDimRedBlackGrid._simd_layout[d]  ==FourDimGrid._simd_layout[d]);
-    assert(FiveDimRedBlackGrid._simd_layout[d+1]==FourDimGrid._simd_layout[d]);
+    // Other dimensions must match the decomposition of the four-D fields 
+    for(int d=0;d<4;d++){
+      assert(FiveDimRedBlackGrid._fdimensions[d+1]==FourDimGrid._fdimensions[d]);
+      assert(FiveDimRedBlackGrid._processors[d+1] ==FourDimGrid._processors[d]);
+      
+      assert(FourDimGrid._simd_layout[d]=1);
+      assert(FourDimRedBlackGrid._simd_layout[d]=1);
+      assert(FiveDimRedBlackGrid._simd_layout[d+1]==1);
 
-    assert(FiveDimGrid._fdimensions[d+1]        ==FourDimGrid._fdimensions[d]);
-    assert(FiveDimGrid._processors[d+1]         ==FourDimGrid._processors[d]);
-    assert(FiveDimGrid._simd_layout[d+1]        ==FourDimGrid._simd_layout[d]);
+      assert(FiveDimGrid._fdimensions[d+1]        ==FourDimGrid._fdimensions[d]);
+      assert(FiveDimGrid._processors[d+1]         ==FourDimGrid._processors[d]);
+      assert(FiveDimGrid._simd_layout[d+1]        ==FourDimGrid._simd_layout[d]);
+    }
+
+  } else {
+
+    // some assertions
+    assert(FiveDimGrid._ndimension==5);
+    assert(FourDimGrid._ndimension==4);
+    assert(FiveDimRedBlackGrid._ndimension==5);
+    assert(FourDimRedBlackGrid._ndimension==4);
+    assert(FiveDimRedBlackGrid._checker_dim==1);
+    
+    // Dimension zero of the five-d is the Ls direction
+    Ls=FiveDimGrid._fdimensions[0];
+    assert(FiveDimRedBlackGrid._fdimensions[0]==Ls);
+    assert(FiveDimRedBlackGrid._processors[0] ==1);
+    assert(FiveDimRedBlackGrid._simd_layout[0]==1);
+    assert(FiveDimGrid._processors[0]         ==1);
+    assert(FiveDimGrid._simd_layout[0]        ==1);
+    
+    // Other dimensions must match the decomposition of the four-D fields 
+    for(int d=0;d<4;d++){
+      assert(FourDimRedBlackGrid._fdimensions[d]  ==FourDimGrid._fdimensions[d]);
+      assert(FiveDimRedBlackGrid._fdimensions[d+1]==FourDimGrid._fdimensions[d]);
+      
+      assert(FourDimRedBlackGrid._processors[d]   ==FourDimGrid._processors[d]);
+      assert(FiveDimRedBlackGrid._processors[d+1] ==FourDimGrid._processors[d]);
+      
+      assert(FourDimRedBlackGrid._simd_layout[d]  ==FourDimGrid._simd_layout[d]);
+      assert(FiveDimRedBlackGrid._simd_layout[d+1]==FourDimGrid._simd_layout[d]);
+      
+      assert(FiveDimGrid._fdimensions[d+1]        ==FourDimGrid._fdimensions[d]);
+      assert(FiveDimGrid._processors[d+1]         ==FourDimGrid._processors[d]);
+      assert(FiveDimGrid._simd_layout[d+1]        ==FourDimGrid._simd_layout[d]);
+    }
   }
-
+    
   // Allocate the required comms buffer
   ImportGauge(_Umu);
-}  
-
+}
+  /*
 template<class Impl>
 WilsonFermion5D<Impl>::WilsonFermion5D(int simd,GaugeField &_Umu,
 				       GridCartesian         &FiveDimGrid,
 				       GridRedBlackCartesian &FiveDimRedBlackGrid,
 				       GridCartesian         &FourDimGrid,
 				       RealD _M5,const ImplParams &p) :
-  Kernels(p),
-  _FiveDimGrid        (&FiveDimGrid),
-  _FiveDimRedBlackGrid(&FiveDimRedBlackGrid),
-  _FourDimGrid        (&FourDimGrid),
-  Stencil    (_FiveDimGrid,npoint,Even,directions,displacements),
-  StencilEven(_FiveDimRedBlackGrid,npoint,Even,directions,displacements), // source is Even
-  StencilOdd (_FiveDimRedBlackGrid,npoint,Odd ,directions,displacements), // source is Odd
-  M5(_M5),
-  Umu(_FourDimGrid),
-  UmuEven(_FourDimGrid),
-  UmuOdd (_FourDimGrid),
-  Lebesgue(_FourDimGrid),
-  LebesgueEvenOdd(_FourDimGrid)
 {
   int nsimd = Simd::Nsimd();
 
@@ -148,15 +171,10 @@ WilsonFermion5D<Impl>::WilsonFermion5D(int simd,GaugeField &_Umu,
   }
 
   {
-    GaugeField HUmu(_Umu._grid);
-    HUmu = _Umu*(-0.5);
-    Impl::DoubleStore(GaugeGrid(),Umu,HUmu);
-    UmuEven=Umu;// Really want a reference.
-    UmuOdd =Umu;
   }
 }  
-
-
+  */
+     
 template<class Impl>
 void WilsonFermion5D<Impl>::ImportGauge(const GaugeField &_Umu)
 {
@@ -376,8 +394,6 @@ void WilsonFermion5D<Impl>::DW(const FermionField &in, FermionField &out,int dag
 
 FermOpTemplateInstantiate(WilsonFermion5D);
 GparityFermOpTemplateInstantiate(WilsonFermion5D);
-template class WilsonFermion5D<DomainWallRedBlack5dImplF>;		
-template class WilsonFermion5D<DomainWallRedBlack5dImplD>;
   
 }}
 

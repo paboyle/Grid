@@ -90,7 +90,7 @@ void WilsonKernels<WilsonImplF>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrd
 #define VMOVRDUP(A,B,C)                                  VBCASTRDUPf(A,B,C)
 #define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN_LS(ptr,pf)
 template<>
-void WilsonKernels<DomainWallRedBlack5dImplF>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
+void WilsonKernels<DomainWallVec5dImplF>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
 								   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 								   int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
@@ -110,10 +110,10 @@ template void WilsonKernels<GparityWilsonImplF>::DiracOptAsmDhopSite(StencilImpl
 template void WilsonKernels<GparityWilsonImplD>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, 
 							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 							       int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out);		
-template void WilsonKernels<DomainWallRedBlack5dImplF>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, 
+template void WilsonKernels<DomainWallVec5dImplF>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, 
 							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 							       int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out);		
-template void WilsonKernels<DomainWallRedBlack5dImplD>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, 
+template void WilsonKernels<DomainWallVec5dImplD>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, 
 							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 							       int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out);		
 }}

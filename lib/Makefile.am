@@ -1,6 +1,3 @@
-# additional include paths necessary to compile the C++ library
-AM_CXXFLAGS = -I$(top_srcdir)/
-
 extra_sources=
 if BUILD_COMMS_MPI
   extra_sources+=communicator/Communicator_mpi.cc
@@ -17,16 +14,11 @@ endif
 #
 # Libraries
 #
-
 include Make.inc
+include Eigen.inc
 
-lib_LIBRARIES = libGrid.a
-libGrid_a_SOURCES = $(CCFILES) $(extra_sources)
+lib_LTLIBRARIES = libGrid.la
 
-
-#	qcd/action/fermion/PartialFractionFermion5D.cc\	\
-#
-# Include files
-#
-nobase_include_HEADERS=$(HFILES)
-
+libGrid_la_SOURCES             = $(CCFILES) $(extra_sources)
+libGrid_ladir                  = $(pkgincludedir)
+nobase_dist_pkginclude_HEADERS = $(HFILES) $(eigen_files) Config.h

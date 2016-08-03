@@ -100,7 +100,7 @@ namespace Grid{
 
 	PhiOdd =PhiOdd*scale;
 	PhiEven=PhiEven*scale;
-	
+
       };
 
       //////////////////////////////////////////////////////
@@ -173,7 +173,7 @@ namespace Grid{
 	FermOp.MeeDeriv(tmp , X, Y,DaggerYes);  dSdU=dSdU+tmp;
 	*/
 	
-	dSdU = Ta(dSdU);
+	//dSdU = Ta(dSdU);
 
       };
 
