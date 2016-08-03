@@ -71,8 +71,16 @@ LIBS_CPY=$LIBS
 CXXFLAGS="$AM_CXXFLAGS $CXXFLAGS"
 LDFLAGS="$AM_LDFLAGS $LDFLAGS"
 AC_CHECK_FUNCS([gettimeofday])
-AC_CHECK_LIB([gmp],[__gmpf_init])
-AC_CHECK_LIB([mpfr],[mpfr_init])
+AC_CHECK_LIB([gmp],[__gmpf_init],
+             [AC_CHECK_LIB([mpfr],[mpfr_init],
+                 [AC_DEFINE([HAVE_LIBMPFR], [1], [Define to 1 if you have the `MPFR' library (-lmpfr).])]
+                 [have_mpfr=true]
+                 [LIBS="$LIBS -lmpfr"],
+                 [AC_MSG_ERROR([MPFR library not found])])]
+             [AC_DEFINE([HAVE_LIBGMP], [1], [Define to 1 if you have the `GMP' library (-lgmp).])]
+             [have_gmp=true]
+             [LIBS="$LIBS -lgmp"])
+
 if test "${ac_LAPACK}x" != "nox"; then
     AC_CHECK_LIB([lapack],[LAPACKE_sbdsdc],[],
                  [AC_MSG_ERROR("LAPACK enabled but library not found")])
@@ -281,6 +289,7 @@ Summary of configuration for $PACKAGE v$VERSION
 - communications type           : ${ac_COMMS}
 - default precision             : ${ac_PRECISION}
 - RNG choice                    : ${ac_RNG} 
+- GMP                           : `if test "x$have_gmp" = xtrue; then echo yes; else echo no; fi`
 - LAPACK                        : ${ac_LAPACK}
 - build DOXYGEN documentation   : `if test "x$enable_doc" = xyes; then echo yes; else echo no; fi`
 - graphs and diagrams           : `if test "x$enable_dot" = xyes; then echo yes; else echo no; fi`
