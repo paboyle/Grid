@@ -39,7 +39,7 @@ directory
 #define GRID_VECTOR_TYPES
 
 #ifdef GENERIC_VEC
-#include "Grid_empty.h"
+#include "Grid_generic.h"
 #endif
 #ifdef SSE4
 #include "Grid_sse4.h"

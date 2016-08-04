@@ -79,7 +79,8 @@ AC_CHECK_LIB([gmp],[__gmpf_init],
                  [AC_MSG_ERROR([MPFR library not found])])]
              [AC_DEFINE([HAVE_LIBGMP], [1], [Define to 1 if you have the `GMP' library (-lgmp).])]
              [have_gmp=true]
-             [LIBS="$LIBS -lgmp"])
+             [LIBS="$LIBS -lgmp"],
+             [AC_MSG_WARN([**** GMP library not found, Grid can still compile but RHMC will not work ****])])
 
 if test "${ac_LAPACK}x" != "nox"; then
     AC_CHECK_LIB([lapack],[LAPACKE_sbdsdc],[],
@@ -118,7 +119,7 @@ case ${ax_cv_cxx_compiler_vendor} in
         AC_DEFINE([GENERIC_VEC],[1],[generic vector code])
         SIMD_FLAGS='';;
       *)
-        AC_MSG_ERROR(["SIMD option ${ac_SIMD} not supported by the GCC/Clang"]);;
+        AC_MSG_ERROR(["SIMD option ${ac_SIMD} not supported by the GCC/Clang compiler"]);;
     esac;;
   intel)
     case ${ac_SIMD} in
@@ -175,13 +176,13 @@ case ${ac_PRECISION} in
 esac
 
 ############### communication type selection
-AC_ARG_ENABLE([comms],[AC_HELP_STRING([--enable-comms=none|mpi],[Select communications])],[ac_COMMS=${enable_comms}],[ac_COMMS=none])
+AC_ARG_ENABLE([comms],[AC_HELP_STRING([--enable-comms=none|mpi|mpi-auto|shmem],[Select communications])],[ac_COMMS=${enable_comms}],[ac_COMMS=none])
 
 case ${ac_COMMS} in
      none)
        AC_DEFINE([GRID_COMMS_NONE],[1],[GRID_COMMS_NONE] )
      ;;
-     mpi)
+     mpi-auto)
        AC_DEFINE([GRID_COMMS_MPI],[1],[GRID_COMMS_MPI] )
        LX_FIND_MPI
        if test "x$have_CXX_mpi" = 'xno'; then AC_MSG_ERROR(["MPI not found"]); fi
@@ -189,6 +190,9 @@ case ${ac_COMMS} in
        AM_CFLAGS="$MPI_CFLAGS $AM_CFLAGS"
        AM_LDFLAGS="`echo $MPI_CXXLDFLAGS | sed -E 's/-l@<:@^ @:>@+//g'` $AM_LDFLAGS"
        LIBS="`echo $MPI_CXXLDFLAGS | sed -E 's/-L@<:@^ @:>@+//g'` $LIBS"
+     ;;
+     mpi)
+       AC_DEFINE([GRID_COMMS_MPI],[1],[GRID_COMMS_MPI] )
      ;;
      shmem)
        AC_DEFINE([GRID_COMMS_SHMEM],[1],[GRID_COMMS_SHMEM] )
@@ -198,7 +202,7 @@ case ${ac_COMMS} in
      ;;
 esac
 AM_CONDITIONAL(BUILD_COMMS_SHMEM,[ test "X${ac_COMMS}X" == "XshmemX" ])
-AM_CONDITIONAL(BUILD_COMMS_MPI,[ test "X${ac_COMMS}X" == "XmpiX" ])
+AM_CONDITIONAL(BUILD_COMMS_MPI,[ test "X${ac_COMMS}X" == "XmpiX" || test "X${ac_COMMS}X" == "Xmpi-autoX" ])
 AM_CONDITIONAL(BUILD_COMMS_NONE,[ test "X${ac_COMMS}X" == "XnoneX" ])
 
 ############### RNG selection
