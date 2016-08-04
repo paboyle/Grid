@@ -2,7 +2,7 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./lib/simd/Grid_empty.h
+    Source file: ./lib/simd/Grid_generic.h
 
     Copyright (C) 2015
 
@@ -26,14 +26,6 @@ Author: neo <cossu@post.kek.jp>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-//----------------------------------------------------------------------
-/*! @file Grid_sse4.h
-  @brief Empty Optimization libraries for debugging
-
-  Using intrinsics
-*/
-// Time-stamp: <2015-06-09 14:28:02 neo>
-//----------------------------------------------------------------------
 
 namespace Grid {
 namespace Optimization {
