@@ -23,6 +23,8 @@ matrix:
             - libmpfr-dev
             - libgmp-dev
             - libmpc-dev
+            - libopenmpi-dev
+            - openmpi-bin
             - binutils-dev
       env: VERSION=-4.9
     - compiler: gcc
@@ -35,6 +37,8 @@ matrix:
             - libmpfr-dev
             - libgmp-dev
             - libmpc-dev
+            - libopenmpi-dev
+            - openmpi-bin
             - binutils-dev
       env: VERSION=-5
     - compiler: clang
@@ -47,6 +51,8 @@ matrix:
             - libmpfr-dev
             - libgmp-dev
             - libmpc-dev
+            - libopenmpi-dev
+            - openmpi-bin
             - binutils-dev
       env: CLANG_LINK=http://llvm.org/releases/3.8.0/clang+llvm-3.8.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
     - compiler: clang
@@ -59,6 +65,8 @@ matrix:
             - libmpfr-dev
             - libgmp-dev
             - libmpc-dev
+            - libopenmpi-dev
+            - openmpi-bin
             - binutils-dev
       env: CLANG_LINK=http://llvm.org/releases/3.7.0/clang+llvm-3.7.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
       
@@ -69,6 +77,7 @@ before_install:
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]] && [[ "$CC" == "clang" ]]; then export LD_LIBRARY_PATH="${GRIDDIR}/clang/lib:${LD_LIBRARY_PATH}"; fi
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install libmpc; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install openmpi; fi
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]] && [[ "$CC" == "gcc" ]]; then brew install gcc5; fi
     
 install:
@@ -92,3 +101,8 @@ script:
     - ../configure --enable-precision=double --enable-simd=SSE4 --enable-comms=none
     - make -j4
     - ./benchmarks/Benchmark_dwf --threads 1
+    - echo make clean
+    - ../configure --enable-precision=single --enable-simd=SSE4 --enable-comms=mpi-auto
+    - make -j4
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then mpirun.openmpi -n 2 ./benchmarks/Benchmark_dwf --threads 1; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then mpirun -n 2 ./benchmarks/Benchmark_dwf --threads 1; fi
