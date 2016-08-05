@@ -26,14 +26,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-//----------------------------------------------------------------------
-/*! @file Grid_knc.h
-  @brief Optimization libraries for AVX512 instructions set for KNC
-
-  Using intrinsics
-*/
-// Time-stamp: <2015-06-09 14:27:28 neo>
-//----------------------------------------------------------------------
 
 #include <immintrin.h>
 #include <zmmintrin.h>

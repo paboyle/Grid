@@ -250,12 +250,17 @@ esac
 AM_CONDITIONAL(BUILD_CHROMA_REGRESSION,[ test "X${ac_CHROMA}X" == "XyesX" ])
 
 ############### Doxygen
-AC_PROG_DOXYGEN
-
-if test -n "$DOXYGEN"
-then
-AC_CONFIG_FILES([docs/doxy.cfg])
-fi
+DX_DOXYGEN_FEATURE([OFF])
+DX_DOT_FEATURE([OFF])
+DX_HTML_FEATURE([ON])
+DX_CHM_FEATURE([OFF])
+DX_CHI_FEATURE([OFF])
+DX_MAN_FEATURE([OFF])
+DX_RTF_FEATURE([OFF])
+DX_XML_FEATURE([OFF])
+DX_PDF_FEATURE([OFF])
+DX_PS_FEATURE([OFF])
+DX_INIT_DOXYGEN([$PACKAGE_NAME], [doxygen.cfg])
 
 ############### Ouput
 cwd=`pwd -P`; cd ${srcdir}; abs_srcdir=`pwd -P`; cd ${cwd}
