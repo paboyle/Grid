@@ -108,7 +108,7 @@ case ${ax_cv_cxx_compiler_vendor} in
         SIMD_FLAGS='-mavx -mfma4';;
       AVX2)
         AC_DEFINE([AVX2],[1],[AVX2 intrinsics])
-        SIMD_FLAGS='-mavx2';;
+        SIMD_FLAGS='-mavx2 -mfma';;
       AVX512|AVX512MIC|KNL)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-mavx512f -mavx512pf -mavx512er -mavx512cd';;
