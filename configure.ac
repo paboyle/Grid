@@ -302,8 +302,7 @@ Summary of configuration for $PACKAGE v$VERSION
 - RNG choice                    : ${ac_RNG} 
 - GMP                           : `if test "x$have_gmp" = xtrue; then echo yes; else echo no; fi`
 - LAPACK                        : ${ac_LAPACK}
-- build DOXYGEN documentation   : `if test "x$enable_doc" = xyes; then echo yes; else echo no; fi`
-- graphs and diagrams           : `if test "x$enable_dot" = xyes; then echo yes; else echo no; fi`
+- build DOXYGEN documentation   : `if test "$DX_FLAG_doc" = '1'; then echo yes; else echo no; fi`
 ----- BUILD FLAGS -------------------------------------
 - CXXFLAGS: 
 `echo ${AM_CXXFLAGS} ${CXXFLAGS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
