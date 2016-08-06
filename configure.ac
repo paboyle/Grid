@@ -8,7 +8,7 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 ############### Checks for programs
 AC_LANG(C++)
-: ${CXXFLAGS="-O3"}
+CXXFLAGS="-O3 $CXXFLAGS"
 AC_PROG_CXX
 AC_OPENMP
 AM_CXXFLAGS="$OPENMP_CXXFLAGS $AM_CXXFLAGS"
