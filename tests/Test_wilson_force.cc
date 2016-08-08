@@ -58,7 +58,7 @@ int main (int argc, char ** argv)
 
   LatticeGaugeField U(&Grid);
 
-  SU3::HotConfiguration(pRNG,U);
+  SU2::HotConfiguration(pRNG,U);
   //  SU3::ColdConfiguration(pRNG,U);
   
   ////////////////////////////////////
@@ -95,7 +95,7 @@ int main (int argc, char ** argv)
 
   for(int mu=0;mu<Nd;mu++){
 
-    SU3::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu); // Traceless antihermitian momentum; gaussian in lie alg
+    SU2::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu); // Traceless antihermitian momentum; gaussian in lie alg
 
     Hmom -= real(sum(trace(mommu*mommu)));
 

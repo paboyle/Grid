@@ -109,10 +109,104 @@ int main(int argc, char** argv) {
 
 
   // Testing HMC representation classes
-  AdjointRep<3> AdjRep(grid);
+  AdjointRep<Nc> AdjRep(grid);
 
   // AdjointRepresentation has the predefined number of colours Nc
   Representations<FundamentalRepresentation, AdjointRepresentation> RepresentationTypes(grid);  
+
+  LatticeGaugeField U(grid), V(grid);
+  SU<Nc>::HotConfiguration<LatticeGaugeField>(gridRNG, U);
+  SU<Nc>::HotConfiguration<LatticeGaugeField>(gridRNG, V);
+
+  // Test group structure
+  // (U_f * V_f)_r = U_r * V_r
+  LatticeGaugeField UV(grid);
+  for (int mu = 0; mu < Nd; mu++) {
+    SU<Nc>::LatticeMatrix Umu = peekLorentz(U,mu);
+    SU<Nc>::LatticeMatrix Vmu = peekLorentz(V,mu);
+    pokeLorentz(UV,Umu*Vmu, mu);
+  }
+
+  AdjRep.update_representation(UV);
+  typename AdjointRep<Nc>::LatticeField UVr = AdjRep.U;  // (U_f * V_f)_r
+
+
+  AdjRep.update_representation(U);
+  typename AdjointRep<Nc>::LatticeField Ur = AdjRep.U;  // U_r
+
+  AdjRep.update_representation(V);
+  typename AdjointRep<Nc>::LatticeField Vr = AdjRep.U;  // V_r
+
+  typename AdjointRep<Nc>::LatticeField UrVr(grid);
+  for (int mu = 0; mu < Nd; mu++) {
+    typename AdjointRep<Nc>::LatticeMatrix Urmu = peekLorentz(Ur,mu);
+    typename AdjointRep<Nc>::LatticeMatrix Vrmu = peekLorentz(Vr,mu);
+    pokeLorentz(UrVr,Urmu*Vrmu, mu);
+  }
+
+  typename AdjointRep<Nc>::LatticeField Diff_check = UVr - UrVr;
+  std::cout << GridLogMessage << "Group structure check difference : " << norm2(Diff_check) << std::endl;
+
+  //  Check correspondence of algebra and group transformations
+  // Create a random vector
+  SU<Nc>::LatticeAlgebraVector h_adj(grid);
+  typename AdjointRep<Nc>::LatticeMatrix Ar(grid);
+  random(gridRNG,h_adj);
+  h_adj = real(h_adj);
+  SU_Adjoint<Nc>::AdjointLieAlgebraMatrix(h_adj,Ar);
+
+  // Re-extract h_adj
+  SU<Nc>::LatticeAlgebraVector h_adj2(grid);
+  SU_Adjoint<Nc>::projectOnAlgebra(h_adj2, Ar);
+  SU<Nc>::LatticeAlgebraVector h_diff = h_adj - h_adj2;
+  std::cout << GridLogMessage << "Projections structure check vector difference : " << norm2(h_diff) << std::endl;
+
+  // Exponentiate
+  typename AdjointRep<Nc>::LatticeMatrix Uadj(grid);
+  Uadj  = expMat(Ar, 1.0, 16);
+
+  typename AdjointRep<Nc>::LatticeMatrix uno(grid);
+  uno = 1.0;
+  // Check matrix Uadj, must be real orthogonal
+  typename AdjointRep<Nc>::LatticeMatrix Ucheck = Uadj - conjugate(Uadj);
+  std::cout << GridLogMessage << "Reality check: " << norm2(Ucheck)
+            << std::endl;
+
+  Ucheck = Uadj * adj(Uadj) - uno;
+  std::cout << GridLogMessage << "orthogonality check 1: " << norm2(Ucheck)
+            << std::endl;
+  Ucheck = adj(Uadj) * Uadj - uno;
+  std::cout << GridLogMessage << "orthogonality check 2: " << norm2(Ucheck)
+            << std::endl;
+      
+
+  // Construct the fundamental matrix in the group
+  SU<Nc>::LatticeMatrix Af(grid);
+  SU<Nc>::FundamentalLieAlgebraMatrix(h_adj,Af);
+  SU<Nc>::LatticeMatrix Ufund(grid);
+  Ufund  = expMat(Af, 1.0, 16);
+  // Check unitarity
+  SU<Nc>::LatticeMatrix uno_f(grid);
+  uno_f = 1.0;
+  SU<Nc>::LatticeMatrix UnitCheck(grid);
+  UnitCheck = Ufund * adj(Ufund) - uno_f;
+  std::cout << GridLogMessage << "unitarity check 1: " << norm2(UnitCheck)
+            << std::endl;
+  UnitCheck = adj(Ufund) * Ufund - uno_f;
+  std::cout << GridLogMessage << "unitarity check 2: " << norm2(UnitCheck)
+            << std::endl;
+
+
+  // Tranform to the adjoint representation
+  U = zero; // fill this with only one direction
+  pokeLorentz(U,Ufund,0); // the representation transf acts on full gauge fields
+
+  AdjRep.update_representation(U);
+  Ur = AdjRep.U;  // U_r  
+  typename AdjointRep<Nc>::LatticeMatrix Ur0 = peekLorentz(Ur,0); // this should be the same as Uadj
+
+  typename AdjointRep<Nc>::LatticeMatrix Diff_check_mat = Ur0 - Uadj;
+  std::cout << GridLogMessage << "Projections structure check group difference : " << norm2(Diff_check_mat) << std::endl;
 
   Grid_finalize();
 }

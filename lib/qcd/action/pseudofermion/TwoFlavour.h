@@ -130,8 +130,8 @@ class TwoFlavourPseudoFermionAction : public Action<typename Impl::GaugeField> {
     MdagMLinearOperator<FermionOperator<Impl>, FermionField> MdagMOp(FermOp);
 
     X = zero;
-    DerivativeSolver(MdagMOp, Phi, X);
-    MdagMOp.Op(X, Y);
+    DerivativeSolver(MdagMOp, Phi, X); // X = (MdagM)^-1 phi
+    MdagMOp.Op(X, Y);                  // Y = M X = (Mdag)^-1 phi
 
     // Check hermiticity
     

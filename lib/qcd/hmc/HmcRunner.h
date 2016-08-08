@@ -103,7 +103,7 @@ class NerscHmcRunnerTemplate {
 
     // Create integrator, including the smearing policy
     // Smearing policy, only defined for Nc=3
-    
+    /*
     std::cout << GridLogDebug << " Creating the Stout class\n";
     double rho = 0.1;  // smearing parameter, now hardcoded
     int Nsmear = 1;    // number of smearing levels
@@ -111,7 +111,7 @@ class NerscHmcRunnerTemplate {
     std::cout << GridLogDebug << " Creating the SmearedConfiguration class\n";
     //SmearedConfiguration<Gimpl> SmearingPolicy(UGrid, Nsmear, Stout);
     std::cout << GridLogDebug << " done\n";
-    
+    */
     //////////////
     NoSmearing<Gimpl> SmearingPolicy;
     typedef MinimumNorm2<GaugeField, NoSmearing<Gimpl>, RepresentationsPolicy >

@@ -672,6 +672,20 @@ class SU {
     }
   }
 
+  // Projects the algebra components a lattice matrix (of dimension ncol*ncol -1 )
+  // inverse operation: FundamentalLieAlgebraMatrix
+  static void projectOnAlgebra(LatticeAlgebraVector &h_out, const LatticeMatrix &in, Real scale = 1.0) {
+    conformable(h_out, in);
+    h_out = zero;
+    Matrix Ta;
+
+    for (int a = 0; a < AdjointDimension; a++) {
+      generator(a, Ta);
+      auto tmp = - 2.0 * (trace(timesI(Ta) * in)) * scale;// 2.0 for the normalization of the trace in the fundamental rep
+      pokeColour(h_out, tmp, a);
+    }
+    std::cout << "h_out " << h_out << std::endl;
+  }
 
 
   template <typename GaugeField>

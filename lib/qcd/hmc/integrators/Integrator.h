@@ -120,6 +120,7 @@ class Integrator {
         FieldType forceR(U._grid);
         // Implement smearing only for the fundamental representation now
         repr_set.at(a)->deriv(Rep.U, forceR);
+        forceR -= adj(forceR);
         GF force =
             Rep.RtoFundamentalProject(forceR);  // Ta for the fundamental rep
         std::cout << GridLogIntegrator << "Hirep Force average: "
@@ -200,9 +201,11 @@ class Integrator {
     template <class FieldType, class Repr>
     void operator()(std::vector<Action<FieldType>*> repr_set, Repr& Rep,
                     GridParallelRNG& pRNG) {
-      for (int a = 0; a < repr_set.size(); ++a)
+      for (int a = 0; a < repr_set.size(); ++a){
         repr_set.at(a)->refresh(Rep.U, pRNG);
+      
       std::cout << GridLogDebug << "Hirep refreshing pseudofermions" << std::endl;
+    }
     }
   } refresh_hireps{};
 

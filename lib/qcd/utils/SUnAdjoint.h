@@ -110,6 +110,22 @@ class SU_Adjoint : public SU<ncolour> {
     std::cout << GridLogMessage << std::endl;
   }
 
+  static void AdjointLieAlgebraMatrix(
+      const typename SU<ncolour>::LatticeAlgebraVector &h,
+      LatticeAdjMatrix &out, Real scale = 1.0) {
+    conformable(h, out);
+    GridBase *grid = out._grid;
+    LatticeAdjMatrix la(grid);
+    AMatrix iTa;
+
+    out = zero;
+    for (int a = 0; a < Dimension; a++) {
+      generator(a, iTa);
+      la = peekColour(h, a) * iTa * scale;
+      out += la;
+    }
+  }
+
   // Projects the algebra components a lattice matrix (of dimension ncol*ncol -1 )
   static void projectOnAlgebra(typename SU<ncolour>::LatticeAlgebraVector &h_out, const LatticeAdjMatrix &in, Real scale = 1.0) {
     conformable(h_out, in);
@@ -118,9 +134,10 @@ class SU_Adjoint : public SU<ncolour> {
 
     for (int a = 0; a < Dimension; a++) {
       generator(a, iTa);
-      auto tmp = - 2.0 * real(trace(iTa * in)) * scale; 
+      auto tmp = - 1.0/(ncolour) * (trace(iTa * in)) * scale;// 1/Nc for the normalization of the trace in the adj rep
       pokeColour(h_out, tmp, a);
     }
+    //std::cout << "h_out " << h_out << std::endl;
   }
 
   // a projector that keeps the generators stored to avoid the overhead of recomputing. 
@@ -130,12 +147,12 @@ class SU_Adjoint : public SU<ncolour> {
     h_out = zero;
     static bool precalculated = false; 
     if (!precalculated){
-    	precalculated = true;
+      precalculated = true;
         for (int a = 0; a < Dimension; a++) generator(a, iTa[a]);
     }
 
     for (int a = 0; a < Dimension; a++) {
-      auto tmp = - 2.0*real(trace(iTa[a] * in)) * scale; 
+      auto tmp = - 1.0/(ncolour) * (trace(iTa[a] * in)) * scale; 
       pokeColour(h_out, tmp, a);
     }
   }
