@@ -488,7 +488,7 @@ PARALLEL_FOR_LOOP
     typedef WilsonImpl<vComplexF,Nc> WilsonImplF; // Float
     typedef WilsonImpl<vComplexD,Nc> WilsonImplD; // Double
 
-    typedef WilsonImpl<vComplex ,Nc,ComplexD>  ZWilsonImplR; // Real.. whichever prec
+    typedef WilsonImpl<vComplex ,Nc,ComplexD> ZWilsonImplR; // Real.. whichever prec
     typedef WilsonImpl<vComplexF,Nc,ComplexD> ZWilsonImplF; // Float
     typedef WilsonImpl<vComplexD,Nc,ComplexD> ZWilsonImplD; // Double
 
@@ -496,7 +496,7 @@ PARALLEL_FOR_LOOP
     typedef DomainWallVec5dImpl<vComplexF,Nc> DomainWallVec5dImplF; // Float
     typedef DomainWallVec5dImpl<vComplexD,Nc> DomainWallVec5dImplD; // Double
 
-    typedef DomainWallVec5dImpl<vComplex ,Nc,ComplexD>  ZDomainWallVec5dImplR; // Real.. whichever prec
+    typedef DomainWallVec5dImpl<vComplex ,Nc,ComplexD> ZDomainWallVec5dImplR; // Real.. whichever prec
     typedef DomainWallVec5dImpl<vComplexF,Nc,ComplexD> ZDomainWallVec5dImplF; // Float
     typedef DomainWallVec5dImpl<vComplexD,Nc,ComplexD> ZDomainWallVec5dImplD; // Double
 
