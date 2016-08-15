@@ -68,16 +68,21 @@ void WilsonKernels<Impl>::DiracOptDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,
 					   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 					   int sF,int sU,int Ls, int Ns, const FermionField &in, FermionField &out)
 {
-  // No asm implementation yet.
-  //  if ( AsmOpt )     WilsonKernels<Impl>::DiracOptAsmDhopSiteDag(st,lo,U,buf,sF,sU,in,out);
-  //  else
-  for(int site=0;site<Ns;site++) {
-    for(int s=0;s<Ls;s++) {
-      if (HandOpt) WilsonKernels<Impl>::DiracOptHandDhopSiteDag(st,lo,U,buf,sF,sU,in,out);
-      else         WilsonKernels<Impl>::DiracOptGenericDhopSiteDag(st,lo,U,buf,sF,sU,in,out);
-      sF++;
+#ifdef AVX512
+  if ( AsmOpt ) {
+    WilsonKernels<Impl>::DiracOptAsmDhopSiteDag(st,lo,U,buf,sF,sU,Ls,Ns,in,out);
+  } else {
+#else
+  {  
+#endif
+    for(int site=0;site<Ns;site++) {
+      for(int s=0;s<Ls;s++) {
+	if (HandOpt) WilsonKernels<Impl>::DiracOptHandDhopSiteDag(st,lo,U,buf,sF,sU,in,out);
+	else         WilsonKernels<Impl>::DiracOptGenericDhopSiteDag(st,lo,U,buf,sF,sU,in,out);
+	sF++;
+      }
+      sU++;
     }
-    sU++;
   }
 }
 
