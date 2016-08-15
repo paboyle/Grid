@@ -100,7 +100,8 @@ namespace Grid {
     typedef typename Impl::SiteHalfSpinor       SiteHalfSpinor;		\
     typedef typename Impl::Compressor               Compressor;		\
     typedef typename Impl::StencilImpl             StencilImpl;	  \
-    typedef typename Impl::ImplParams ImplParams;
+    typedef typename Impl::ImplParams ImplParams; \
+    typedef typename Impl::Coeff_t       Coeff_t;
 
 #define INHERIT_IMPL_TYPES(Base) \
     INHERIT_GIMPL_TYPES(Base)\
@@ -109,12 +110,14 @@ namespace Grid {
     ///////
     // Single flavour four spinors with colour index
     ///////
-    template<class S,int Nrepresentation=Nc>
+    template<class S,int Nrepresentation=Nc,class _Coeff_t = RealD>
     class WilsonImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S, Nrepresentation> > { 
     public:
 
+
       const bool LsVectorised=false;
 
+      typedef _Coeff_t Coeff_t;
       typedef PeriodicGaugeImpl< GaugeImplTypes< S,Nrepresentation> > Gimpl;
 
       INHERIT_GIMPL_TYPES(Gimpl);
@@ -192,12 +195,13 @@ PARALLEL_FOR_LOOP
     ///////
     // Single flavour four spinors with colour index, 5d redblack
     ///////
-    template<class S,int Nrepresentation=Nc>
+    template<class S,int Nrepresentation=Nc,class _Coeff_t = RealD>
     class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepresentation> > { 
     public:
     
       const bool LsVectorised=true;
 
+      typedef _Coeff_t Coeff_t;
       typedef PeriodicGaugeImpl< GaugeImplTypes< S,Nrepresentation> > Gimpl;
 
       INHERIT_GIMPL_TYPES(Gimpl);
@@ -287,12 +291,13 @@ PARALLEL_FOR_LOOP
     // Flavour doubled spinors; is Gparity the only? what about C*?
     ////////////////////////////////////////////////////////////////////////////////////////
 
-    template<class S,int Nrepresentation>
+    template<class S,int Nrepresentation,class _Coeff_t = RealD>
     class GparityWilsonImpl : public ConjugateGaugeImpl< GaugeImplTypes<S,Nrepresentation> >{ 
     public:
 
       const bool LsVectorised=false;
 
+      typedef _Coeff_t Coeff_t;
       typedef ConjugateGaugeImpl< GaugeImplTypes<S,Nrepresentation> > Gimpl;
 
       INHERIT_GIMPL_TYPES(Gimpl);
@@ -482,6 +487,18 @@ PARALLEL_FOR_LOOP
     typedef WilsonImpl<vComplex ,Nc> WilsonImplR; // Real.. whichever prec
     typedef WilsonImpl<vComplexF,Nc> WilsonImplF; // Float
     typedef WilsonImpl<vComplexD,Nc> WilsonImplD; // Double
+
+    typedef WilsonImpl<vComplex ,Nc,ComplexD>  ZWilsonImplR; // Real.. whichever prec
+    typedef WilsonImpl<vComplexF,Nc,ComplexD> ZWilsonImplF; // Float
+    typedef WilsonImpl<vComplexD,Nc,ComplexD> ZWilsonImplD; // Double
+
+    typedef DomainWallVec5dImpl<vComplex ,Nc> DomainWallVec5dImplR; // Real.. whichever prec
+    typedef DomainWallVec5dImpl<vComplexF,Nc> DomainWallVec5dImplF; // Float
+    typedef DomainWallVec5dImpl<vComplexD,Nc> DomainWallVec5dImplD; // Double
+
+    typedef DomainWallVec5dImpl<vComplex ,Nc,ComplexD>  ZDomainWallVec5dImplR; // Real.. whichever prec
+    typedef DomainWallVec5dImpl<vComplexF,Nc,ComplexD> ZDomainWallVec5dImplF; // Float
+    typedef DomainWallVec5dImpl<vComplexD,Nc,ComplexD> ZDomainWallVec5dImplD; // Double
 
     typedef DomainWallVec5dImpl<vComplex ,Nc> DomainWallVec5dImplR; // Real.. whichever prec
     typedef DomainWallVec5dImpl<vComplexF,Nc> DomainWallVec5dImplF; // Float

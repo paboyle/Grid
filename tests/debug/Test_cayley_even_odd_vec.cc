@@ -44,6 +44,7 @@ struct scal {
   };
 
 typedef DomainWallFermion<DomainWallVec5dImplR>                      DomainWallVecFermionR;
+typedef ZMobiusFermion<ZDomainWallVec5dImplR>                        ZMobiusVecFermionR;
 typedef MobiusFermion<DomainWallVec5dImplR>                          MobiusVecFermionR;
 typedef MobiusZolotarevFermion<DomainWallVec5dImplR>                 MobiusZolotarevVecFermionR;
 typedef ScaledShamirFermion<DomainWallVec5dImplR>                    ScaledShamirVecFermionR;
@@ -116,6 +117,17 @@ int main (int argc, char ** argv)
   TestMoo(Dmob,sDmob);
   TestWhat<MobiusFermionR>(Dmob,FGrid,FrbGrid,UGrid,mass,M5,&RNG4,&RNG5);
   TestWhat<MobiusVecFermionR>(sDmob,sFGrid,sFrbGrid,sUGrid,mass,M5,&sRNG4,&sRNG5);
+
+
+  std::cout<<GridLogMessage<<"**************************************************************"<<std::endl;
+  std::cout<<GridLogMessage <<"Z-MobiusFermion test"<<std::endl;
+  std::cout<<GridLogMessage<<"**************************************************************"<<std::endl;
+  std::vector<ComplexD> gamma(Ls,std::complex<double>(1.0,0.0));
+  ZMobiusFermionR     zDmob(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,gamma,b,c);
+  ZMobiusVecFermionR szDmob(Umu,*sFGrid,*sFrbGrid,*sUGrid,*sUrbGrid,mass,M5,gamma,b,c);
+  TestMoo(zDmob,szDmob);
+  TestWhat<ZMobiusFermionR>(zDmob,FGrid,FrbGrid,UGrid,mass,M5,&RNG4,&RNG5);
+  TestWhat<ZMobiusVecFermionR>(szDmob,sFGrid,sFrbGrid,sUGrid,mass,M5,&sRNG4,&sRNG5);
 
   std::cout<<GridLogMessage<<"**************************************************************"<<std::endl;
   std::cout<<GridLogMessage <<"MobiusZolotarevFermion test"<<std::endl;

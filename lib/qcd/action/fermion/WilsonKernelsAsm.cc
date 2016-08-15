@@ -73,8 +73,17 @@ static int signInit = setupSigns();
 #define MAYBEPERM(A,perm) if (perm) { A ; }
 #define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN(ptr,pf)
 #define FX(A) WILSONASM_ ##A
+
+#undef KERNEL_DAG
 template<>
 void WilsonKernels<WilsonImplF>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
+						     std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+						     int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+
+#define KERNEL_DAG
+template<>
+void WilsonKernels<WilsonImplF>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
 						     std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 						     int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
@@ -89,13 +98,24 @@ void WilsonKernels<WilsonImplF>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrd
 #define VMOVIDUP(A,B,C)                                  VBCASTIDUPf(A,B,C)
 #define VMOVRDUP(A,B,C)                                  VBCASTRDUPf(A,B,C)
 #define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN_LS(ptr,pf)
+
+#undef KERNEL_DAG
 template<>
 void WilsonKernels<DomainWallVec5dImplF>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
 								   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 								   int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 
+#define KERNEL_DAG
+template<>
+void WilsonKernels<DomainWallVec5dImplF>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
+								   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+								   int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+
 #endif
+
+
 
 template void WilsonKernels<WilsonImplF>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
 							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,

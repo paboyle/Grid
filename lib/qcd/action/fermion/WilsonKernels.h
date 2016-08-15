@@ -79,6 +79,10 @@ namespace Grid {
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 			      int sF,int sU,int Ls, int Ns, const FermionField &in, FermionField &out);
 
+     void DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
+			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+			      int sF,int sU,int Ls, int Ns, const FermionField &in, FermionField &out);
+
 
      void DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,

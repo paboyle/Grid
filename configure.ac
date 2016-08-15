@@ -12,7 +12,7 @@ CXXFLAGS="-O3 $CXXFLAGS"
 AC_PROG_CXX
 AC_OPENMP
 AM_CXXFLAGS="$OPENMP_CXXFLAGS $AM_CXXFLAGS"
-LT_INIT([disable-shared])
+LT_INIT
 
 ############### Checks for header files
 AC_CHECK_HEADERS(stdint.h)
