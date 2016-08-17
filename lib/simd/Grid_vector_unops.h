@@ -67,15 +67,13 @@ template <class scalar>
 struct AsinRealFunctor {
   scalar operator()(const scalar &a) const { return asin(real(a)); }
 };
-
 template <class scalar>
 struct LogRealFunctor {
   scalar operator()(const scalar &a) const { return log(real(a)); }
 };
-
 template <class scalar>
-struct ExpRealFunctor {
-  scalar operator()(const scalar &a) const { return exp(real(a)); }
+struct ExpFunctor {
+  scalar operator()(const scalar &a) const { return exp(a); }
 };
 template <class scalar>
 struct NotFunctor {
@@ -85,7 +83,6 @@ template <class scalar>
 struct AbsRealFunctor {
   scalar operator()(const scalar &a) const { return std::abs(real(a)); }
 };
-
 template <class scalar>
 struct PowRealFunctor {
   double y;
@@ -135,7 +132,6 @@ template <class Scalar>
 inline Scalar rsqrt(const Scalar &r) {
   return (RSqrtRealFunctor<Scalar>(), r);
 }
-
 template <class S, class V>
 inline Grid_simd<S, V> cos(const Grid_simd<S, V> &r) {
   return SimdApply(CosRealFunctor<S>(), r);
@@ -162,7 +158,7 @@ inline Grid_simd<S, V> abs(const Grid_simd<S, V> &r) {
 }
 template <class S, class V>
 inline Grid_simd<S, V> exp(const Grid_simd<S, V> &r) {
-  return SimdApply(ExpRealFunctor<S>(), r);
+  return SimdApply(ExpFunctor<S>(), r);
 }
 template <class S, class V>
 inline Grid_simd<S, V> Not(const Grid_simd<S, V> &r) {
