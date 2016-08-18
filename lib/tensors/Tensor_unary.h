@@ -36,7 +36,6 @@ template<class obj> inline auto func(const iScalar<obj> &z) -> iScalar<obj>\
 {\
     iScalar<obj> ret;\
     ret._internal = func( (z._internal));\
-    std::cout << "Unary "<<#func<<" " << z._internal <<" -> "<< ret._internal <<" "<< typeid(obj).name() <<std::endl; \
     return ret;\
 }\
 template<class obj,int N> inline auto func(const iVector<obj,N> &z) -> iVector<obj,N>\

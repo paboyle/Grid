@@ -93,23 +93,20 @@ namespace Grid {
       Lattice<sobj> plresult(&pencil_l);
 
       {
-
 	assert(sizeof(typename sobj::scalar_type)==sizeof(ComplexD));
 	assert(sizeof(fftw_complex)==sizeof(ComplexD));
 	assert(sizeof(fftw_complex)==sizeof(ComplexD));
 
 	int Ncomp = sizeof(sobj)/sizeof(fftw_complex);
 
-	std::cout << "Ncomp = "<<Ncomp<<std::endl;
-
-	int rank = 1;   /* not 2: we are computing 1d transforms */
+	int rank = 1;  /* not 2: we are computing 1d transforms */
 	int n[] = {G}; /* 1d transforms of length G */
 	int howmany = Ncomp;
 	int odist,idist,istride,ostride;
 	idist   = odist   = 1;
 	istride = ostride = Ncomp; /* distance between two elements in the same column */
 	int *inembed = n, *onembed = n;
-	
+
 	fftw_complex *in = (fftw_complex *)&plsource._odata[0];
 	fftw_complex *out= (fftw_complex *)&plresult._odata[0];
 	
@@ -123,11 +120,9 @@ namespace Grid {
 					 ostride, odist,
 					 sign,FFTW_ESTIMATE);
 
-
 	// Barrel shift and collect global pencil
 	for(int p=0;p<processors[dim];p++) { 
-	  
-	      
+
 	  for(int idx=0;idx<sgrid->lSites();idx++) { 
 
 	    std::vector<int> lcoor(Nd);
@@ -144,8 +139,6 @@ namespace Grid {
 
 	  ssource = Cshift(ssource,dim,L);
 	}
-
-	std::cout << " pgsource pencil " << pgsource<<std::endl ;
 	
 	// Loop over orthog coords
 	for(int idx=0;idx<sgrid->lSites();idx++) { 
@@ -163,11 +156,6 @@ namespace Grid {
 	      lcoor[dim]=l;
 	      peekLocalSite(s,pgsource,lcoor);
 	      pokeLocalSite(s,plsource,pcoor);
-	    }
-
-
-	    if ( idx==0) {
-	      std::cout << " plsource pencil " << pgsource<<std::endl ;
 	    }
 
 	    // FFT the pencil

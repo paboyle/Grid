@@ -39,6 +39,10 @@ int main (int argc, char ** argv)
   std::vector<int> simd_layout( { vComplexD::Nsimd(),1,1,1});
   std::vector<int> mpi_layout  = GridDefaultMpi();
 
+  int vol = 1;
+  for(int d=0;d<latt_size.size();d++){
+    vol = vol * latt_size[d];
+  }
   GridCartesian        Fine(latt_size,simd_layout,mpi_layout);
 
   LatticeComplexD     one(&Fine);
@@ -46,8 +50,11 @@ int main (int argc, char ** argv)
   LatticeComplexD       C(&Fine);
   LatticeComplexD  Ctilde(&Fine);
   LatticeComplexD    coor(&Fine);
+
+  LatticeSpinMatrixD    S(&Fine);
+  LatticeSpinMatrixD    Stilde(&Fine);
   
-  std::vector<RealD> p({1.0,2.0,3.0,2.0});
+  std::vector<int> p({1,2,3,2});
 
   one = ComplexD(1.0,0.0);
   zz  = ComplexD(0.0,0.0);
@@ -58,30 +65,44 @@ int main (int argc, char ** argv)
   for(int mu=0;mu<4;mu++){
     RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
     LatticeCoordinate(coor,mu);
-    C = C - TwoPiL * p[mu] * coor;
+    C = C - (TwoPiL * p[mu]) * coor;
   }
 
-  std::cout << GridLogMessage<< " C " << C<<std::endl;
+  C = exp(C*ci);
 
-  C = C*ci;
-  std::cout << GridLogMessage<< " C " << C<<std::endl;
-
-  C = exp(C);
-  std::cout << GridLogMessage<< " C " << C<<std::endl;
+  S=zero;
+  S = S+C;
 
   FFT theFFT(&Fine);
-  theFFT.FFT_dim(Ctilde,C,0,FFT::forward);
-  std::cout << GridLogMessage<< "FT[C] " << Ctilde<<std::endl;
 
-  C=Ctilde;
-  theFFT.FFT_dim(Ctilde,C,1,FFT::forward);
-  std::cout << GridLogMessage<< "FT[C] " << Ctilde<<std::endl;
-  C=Ctilde;
-  theFFT.FFT_dim(Ctilde,C,2,FFT::forward);
-  std::cout << GridLogMessage<< "FT[C] " << Ctilde<<std::endl;
-  C=Ctilde;
+  theFFT.FFT_dim(Ctilde,C,0,FFT::forward);  C=Ctilde;
+  theFFT.FFT_dim(Ctilde,C,1,FFT::forward);  C=Ctilde;
+  theFFT.FFT_dim(Ctilde,C,2,FFT::forward);  C=Ctilde;
   theFFT.FFT_dim(Ctilde,C,3,FFT::forward);
-  std::cout << GridLogMessage<< "FT[C] " << Ctilde<<std::endl;
+
+  //  C=zero;
+  //  Ctilde = where(abs(Ctilde)<1.0e-10,C,Ctilde);
+  TComplexD cVol;
+  cVol()()() = vol;
+
+  C=zero;
+  pokeSite(cVol,C,p);
+  C=C-Ctilde;
+  std::cout << "diff scalar "<<norm2(C) << std::endl;
+
+  theFFT.FFT_dim(Stilde,S,0,FFT::forward);  S=Stilde;
+  theFFT.FFT_dim(Stilde,S,1,FFT::forward);  S=Stilde;
+  theFFT.FFT_dim(Stilde,S,2,FFT::forward);  S=Stilde;
+  theFFT.FFT_dim(Stilde,S,3,FFT::forward);
+
+  SpinMatrixD Sp; 
+  Sp = zero; Sp = Sp+cVol;
+
+  S=zero;
+  pokeSite(Sp,S,p);
+
+  S= S-Stilde;
+  std::cout << "diff FT[SpinMat] "<<norm2(S) << std::endl;
 
   Grid_finalize();
 }
