@@ -43,6 +43,7 @@ AC_ARG_WITH([mpfr],
 AC_ARG_ENABLE([lapack],
     [AC_HELP_STRING([--enable-lapack=yes|no|prefix], [enable LAPACK])], 
     [ac_LAPACK=${enable_lapack}],[ac_LAPACK=no])
+
 case ${ac_LAPACK} in
     no)
         ;;
@@ -53,6 +54,17 @@ case ${ac_LAPACK} in
         AM_LDFLAGS="-L$ac_LAPACK/lib $AM_LDFLAGS"
         AC_DEFINE([USE_LAPACK],[1],[use LAPACK])
 esac
+
+AC_CHECK_LIB([fftw3],[fft_init_threads],
+	[AC_DEFINE([HAVE_FFTW],[1],[Define to 1 if you have the `FFTW' library (-lfftw3).])] [ac_fftw=yes],
+        [ac_fftw=no])
+case ${ac_fftw} in
+    no)
+        ;;
+    yes)
+        AM_LDFLAGS="-lfftw3 $AM_LDFLAGS"
+esac
+
 
 ################ Get compiler informations
 AC_LANG([C++])
@@ -77,7 +89,7 @@ AC_CHECK_LIB([gmp],[__gmpf_init],
                  [have_mpfr=true]
                  [LIBS="$LIBS -lmpfr"],
                  [AC_MSG_ERROR([MPFR library not found])])]
-             [AC_DEFINE([HAVE_LIBGMP], [1], [Define to 1 if you have the `GMP' library (-lgmp).])]
+   	     [AC_DEFINE([HAVE_LIBGMP], [1], [Define to 1 if you have the `GMP' library (-lgmp).])]
              [have_gmp=true]
              [LIBS="$LIBS -lgmp"],
              [AC_MSG_WARN([**** GMP library not found, Grid can still compile but RHMC will not work ****])])

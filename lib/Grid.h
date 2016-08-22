@@ -68,6 +68,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Simd.h>
 #include <Grid/Threads.h>
 #include <Grid/Lexicographic.h>
+#include <Grid/Init.h>
 #include <Grid/Communicator.h> 
 #include <Grid/Cartesian.h>    
 #include <Grid/Tensors.h>      
@@ -78,7 +79,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/parallelIO/BinaryIO.h>
 #include <Grid/qcd/QCD.h>
 #include <Grid/parallelIO/NerscIO.h>
-#include <Grid/Init.h>
+
+#include <Grid/FFT.h>
 
 #include <Grid/qcd/hmc/NerscCheckpointer.h>
 #include <Grid/qcd/hmc/HmcRunner.h>
