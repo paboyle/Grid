@@ -111,12 +111,16 @@ typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeAction
 #define FermOp4dVecTemplateInstantiate(A) \
   template class A<WilsonImplF>;		\
   template class A<WilsonImplD>;		\
+  template class A<ZWilsonImplF>;		\
+  template class A<ZWilsonImplD>;		\
   template class A<GparityWilsonImplF>;		\
   template class A<GparityWilsonImplD>;		
 
 #define FermOp5dVecTemplateInstantiate(A) \
   template class A<DomainWallVec5dImplF>;	\
-  template class A<DomainWallVec5dImplD>;	
+  template class A<DomainWallVec5dImplD>;	\
+  template class A<ZDomainWallVec5dImplF>;	\
+  template class A<ZDomainWallVec5dImplD>;	
 
 #define FermOpTemplateInstantiate(A) \
  FermOp4dVecTemplateInstantiate(A) \
@@ -138,6 +142,7 @@ typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeAction
 #include <Grid/qcd/action/fermion/DomainWallFermion.h>
 #include <Grid/qcd/action/fermion/DomainWallFermion.h>
 #include <Grid/qcd/action/fermion/MobiusFermion.h>
+#include <Grid/qcd/action/fermion/ZMobiusFermion.h>
 #include <Grid/qcd/action/fermion/ScaledShamirFermion.h>
 #include <Grid/qcd/action/fermion/MobiusZolotarevFermion.h>
 #include <Grid/qcd/action/fermion/ShamirZolotarevFermion.h>
@@ -176,6 +181,11 @@ typedef DomainWallFermion<WilsonImplD> DomainWallFermionD;
 typedef MobiusFermion<WilsonImplR> MobiusFermionR;
 typedef MobiusFermion<WilsonImplF> MobiusFermionF;
 typedef MobiusFermion<WilsonImplD> MobiusFermionD;
+
+typedef ZMobiusFermion<ZWilsonImplR> ZMobiusFermionR;
+typedef ZMobiusFermion<ZWilsonImplF> ZMobiusFermionF;
+typedef ZMobiusFermion<ZWilsonImplD> ZMobiusFermionD;
+
 typedef ScaledShamirFermion<WilsonImplR> ScaledShamirFermionR;
 typedef ScaledShamirFermion<WilsonImplF> ScaledShamirFermionF;
 typedef ScaledShamirFermion<WilsonImplD> ScaledShamirFermionD;
