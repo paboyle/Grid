@@ -113,12 +113,17 @@ namespace Grid {
 	int sign = FFTW_FORWARD;
 	if (inverse) sign = FFTW_BACKWARD;
 
+#ifdef HAVE_FFTW
 	fftw_plan p = fftw_plan_many_dft(rank,n,howmany,
 					 in,inembed,
 					 istride,idist,
 					 out,onembed,
 					 ostride, odist,
 					 sign,FFTW_ESTIMATE);
+#else 
+	fftw_plan p ;
+	assert(0);
+#endif
 
 	// Barrel shift and collect global pencil
 	for(int p=0;p<processors[dim];p++) { 
@@ -159,7 +164,9 @@ namespace Grid {
 	    }
 
 	    // FFT the pencil
+#ifdef HAVE_FFTW
 	    fftw_execute(p);
+#endif
 
 	    // Extract the result
 	    for(int l=0;l<L;l++){
