@@ -125,10 +125,13 @@ case ${ax_cv_cxx_compiler_vendor} in
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-mavx512f -mavx512pf -mavx512er -mavx512cd';;
       IMCI|KNC)
-        AC_DEFINE([IMCI],[1],[IMCI Intrinsics for Knights Corner])
+        AC_DEFINE([IMCI],[1],[IMCI intrinsics for Knights Corner])
         SIMD_FLAGS='';;
       GEN)
         AC_DEFINE([GENERIC_VEC],[1],[generic vector code])
+        SIMD_FLAGS='';;
+      QPX|BGQ)
+        AC_DEFINE([QPX],[1],[QPX intrinsics for BG/Q])
         SIMD_FLAGS='';;
       *)
         AC_MSG_ERROR(["SIMD option ${ac_SIMD} not supported by the GCC/Clang compiler"]);;
