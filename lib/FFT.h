@@ -93,6 +93,11 @@ namespace Grid {
 
 #endif
 
+#ifndef FFTW_FORWARD
+#define FFTW_FORWARD (-1)
+#define FFTW_BACKWARD (+1)
+#endif
+
   class FFT { 
   private:
 
