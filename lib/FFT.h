@@ -198,7 +198,7 @@ namespace Grid {
 	double add,mul,fma;
 	FFTW<scalar>::fftw_flops(p,&add,&mul,&fma);
 	flops_call = add+mul+2.0*fma;
-	std::cout << "FFT Flops per call "<<flops_call<<std::endl;
+
 	GridStopWatch timer;
 
 	// Barrel shift and collect global pencil
