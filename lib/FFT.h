@@ -244,7 +244,6 @@ PARALLEL_FOR_LOOP
 	usec += Timer.useconds();
 	flops+= flops_call*NN;
 
-
         int pc = processor_coor[dim];
         for(int idx=0;idx<sgrid->lSites();idx++) { 
 	  std::vector<int> lcoor(Nd);
