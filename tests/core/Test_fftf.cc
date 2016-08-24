@@ -39,7 +39,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout( { vComplexD::Nsimd(),1,1,1});
+  std::vector<int> simd_layout( { vComplexF::Nsimd(),1,1,1});
   std::vector<int> mpi_layout  = GridDefaultMpi();
 
   int vol = 1;
@@ -48,21 +48,21 @@ int main (int argc, char ** argv)
   }
   GridCartesian        Fine(latt_size,simd_layout,mpi_layout);
 
-  LatticeComplexD     one(&Fine);
-  LatticeComplexD      zz(&Fine);
-  LatticeComplexD       C(&Fine);
-  LatticeComplexD  Ctilde(&Fine);
-  LatticeComplexD    coor(&Fine);
+  LatticeComplexF     one(&Fine);
+  LatticeComplexF      zz(&Fine);
+  LatticeComplexF       C(&Fine);
+  LatticeComplexF  Ctilde(&Fine);
+  LatticeComplexF    coor(&Fine);
 
-  LatticeSpinMatrixD    S(&Fine);
-  LatticeSpinMatrixD    Stilde(&Fine);
+  LatticeSpinMatrixF    S(&Fine);
+  LatticeSpinMatrixF    Stilde(&Fine);
   
   std::vector<int> p({1,2,3,2});
 
-  one = ComplexD(1.0,0.0);
-  zz  = ComplexD(0.0,0.0);
+  one = ComplexF(1.0,0.0);
+  zz  = ComplexF(0.0,0.0);
 
-  ComplexD ci(0.0,1.0);
+  ComplexF ci(0.0,1.0);
 
   C=zero;
   for(int mu=0;mu<4;mu++){
@@ -85,7 +85,7 @@ int main (int argc, char ** argv)
 
   //  C=zero;
   //  Ctilde = where(abs(Ctilde)<1.0e-10,C,Ctilde);
-  TComplexD cVol;
+  TComplexF cVol;
   cVol()()() = vol;
 
   C=zero;
@@ -98,7 +98,7 @@ int main (int argc, char ** argv)
   theFFT.FFT_dim(Stilde,S,2,FFT::forward);  S=Stilde;std::cout << theFFT.MFlops()<<std::endl;
   theFFT.FFT_dim(Stilde,S,3,FFT::forward);std::cout << theFFT.MFlops()<<std::endl;
 
-  SpinMatrixD Sp; 
+  SpinMatrixF Sp; 
   Sp = zero; Sp = Sp+cVol;
 
   S=zero;
