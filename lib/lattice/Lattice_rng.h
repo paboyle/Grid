@@ -31,6 +31,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #include <random>
 
+// Have not enable RNG_SPRNG_SHA256 by default yet.
+// Uncomment the following line to see the effect of the new RNG.
+// #define RNG_SPRNG_SHA256
+
+#ifdef RNG_SPRNG_SHA256
+#include "rng/sprng-sha256.h"
+#endif
+
 namespace Grid {
 
 
@@ -110,7 +118,11 @@ namespace Grid {
     int _seeded;
     // One generator per site.
     // Uniform and Gaussian distributions from these generators.
-#ifdef RNG_RANLUX
+#ifdef RNG_SPRNG_SHA256
+    typedef uint64_t      RngStateType;
+    typedef SprngSha256 RngEngine;
+    static const int RngStateCount = 16;
+#elif defined RNG_RANLUX
     typedef uint64_t      RngStateType;
     typedef std::ranlux48 RngEngine;
     static const int RngStateCount = 15;
@@ -273,6 +285,34 @@ namespace Grid {
     }
 
 
+#ifdef RNG_SPRNG_SHA256
+    template<class source> void Seed(source &src)
+    {
+      std::vector<int> gcoor;
+
+      long gsites = _grid->_gsites;
+
+      RngState rs;
+      for (int i = 0; i < 8; ++i) {
+        splitRngState(rs, rs, src());
+      }
+
+      for(long gidx=0;gidx<gsites;gidx++){
+
+        int rank,o_idx,i_idx;
+        _grid->GlobalIndexToGlobalCoor(gidx,gcoor);
+        _grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
+
+        int l_idx=generator_idx(o_idx,i_idx);
+
+        if( rank == _grid->ThisRank() ){
+          splitRngState(_generators[l_idx].rs, rs, gidx);
+        }
+      }
+      _seeded=1;
+
+    }
+#else
     // This loop could be made faster to avoid the Ahmdahl by
     // i)  seed generators on each timeslice, for x=y=z=0;
     // ii) seed generators on each z for x=y=0
@@ -313,6 +353,7 @@ namespace Grid {
       }
       _seeded=1;
     }    
+#endif
 
     //FIXME implement generic IO and create state save/restore
     //void SaveState(const std::string<char> &file);
