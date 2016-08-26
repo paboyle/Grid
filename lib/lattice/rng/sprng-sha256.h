@@ -69,6 +69,7 @@ struct SprngSha256
   {
     std::array<uint32_t, 8> seq;
     q.generate(seq.begin(), seq.end());
+    reset(rs);
     for (size_t i = 0; i < seq.size(); ++i) {
       splitRngState(rs, rs, seq[i]);
     }
