@@ -120,12 +120,11 @@ class Integrator {
         FieldType forceR(U._grid);
         // Implement smearing only for the fundamental representation now
         repr_set.at(a)->deriv(Rep.U, forceR);
-        forceR -= adj(forceR);
         GF force =
             Rep.RtoFundamentalProject(forceR);  // Ta for the fundamental rep
         std::cout << GridLogIntegrator << "Hirep Force average: "
                   << norm2(force) / (U._grid->gSites()) << std::endl;
-        Mom -= force * ep;
+        Mom -= force * ep ;
       }
     }
   } update_P_hireps{};
@@ -163,13 +162,14 @@ class Integrator {
               << " dt " << ep << " : t_U " << t_U << std::endl;
   }
   void update_U(GaugeField& Mom, GaugeField& U, double ep) {
-    // rewrite exponential to deal automatically  with the lorentz index?
+    // rewrite exponential to deal internally with the lorentz index?
     for (int mu = 0; mu < Nd; mu++) {
       auto Umu = PeekIndex<LorentzIndex>(U, mu);
       auto Pmu = PeekIndex<LorentzIndex>(Mom, mu);
       Umu = expMat(Pmu, ep, Params.Nexp) * Umu;
       PokeIndex<LorentzIndex>(U, ProjectOnGroup(Umu), mu);
     }
+    
     // Update the smeared fields, can be implemented as observer
     Smearer.set_GaugeField(U);
     // Update the higher representations fields

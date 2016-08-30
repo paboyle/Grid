@@ -58,8 +58,8 @@ int main (int argc, char ** argv)
 
   LatticeGaugeField U(&Grid);
 
-  SU2::HotConfiguration(pRNG,U);
-  //  SU3::ColdConfiguration(pRNG,U);
+  //SU2::HotConfiguration(pRNG,U);
+  SU3::ColdConfiguration(pRNG,U);
   
   ////////////////////////////////////
   // Unmodified matrix element
@@ -95,7 +95,7 @@ int main (int argc, char ** argv)
 
   for(int mu=0;mu<Nd;mu++){
 
-    SU2::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu); // Traceless antihermitian momentum; gaussian in lie alg
+    SU3::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu); // Traceless antihermitian momentum; gaussian in lie alg
 
     Hmom -= real(sum(trace(mommu*mommu)));
 
@@ -142,11 +142,13 @@ int main (int argc, char ** argv)
   LatticeComplex dS(&Grid); dS = zero;
   LatticeComplex dSmom(&Grid); dSmom = zero;
   LatticeComplex dSmom2(&Grid); dSmom2 = zero;
+  
   for(int mu=0;mu<Nd;mu++){
     mommu   = PeekIndex<LorentzIndex>(UdSdU,mu);
     mommu=Ta(mommu)*2.0;
     PokeIndex<LorentzIndex>(UdSdU,mommu,mu);
   }
+  
 
   for(int mu=0;mu<Nd;mu++){
     mommu   = PeekIndex<LorentzIndex>(mom,mu);
@@ -170,7 +172,7 @@ int main (int argc, char ** argv)
     dSmom2 = dSmom2 - trace(forcemu*forcemu) *(0.25* dt*dt);
 
     // Update mom action density
-    mommu = mommu + forcemu*(dt*0.5);
+    mommu = mommu + forcemu*(dt * 0.5);
 
     Hmomprime -= real(sum(trace(mommu*mommu)));
 

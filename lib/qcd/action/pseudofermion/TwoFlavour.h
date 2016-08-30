@@ -130,31 +130,8 @@ class TwoFlavourPseudoFermionAction : public Action<typename Impl::GaugeField> {
     MdagMLinearOperator<FermionOperator<Impl>, FermionField> MdagMOp(FermOp);
 
     X = zero;
-    DerivativeSolver(MdagMOp, Phi, X); // X = (MdagM)^-1 phi
+    DerivativeSolver(MdagMOp, Phi, X); // X = (MdagM)^-1 phi    
     MdagMOp.Op(X, Y);                  // Y = M X = (Mdag)^-1 phi
-
-    // Check hermiticity
-    
-    std::vector<int> seeds({1,2,3,4});
-    GridParallelRNG RNG(U._grid);   RNG.SeedFixedIntegers(seeds);
-    FermionField RNGphi(FermOp.FermionGrid());
-    FermionField RNGchi(FermOp.FermionGrid());
-    FermionField Achi(FermOp.FermionGrid());
-    FermionField Aphi(FermOp.FermionGrid());
-
-    random(RNG, RNGphi);
-    random(RNG, RNGchi);
-    MdagMOp.HermOp(RNGchi, Achi);
-    MdagMOp.HermOp(RNGphi, Aphi);
-    ComplexD pAc = innerProduct(RNGphi, Achi);
-    ComplexD cAp = innerProduct(RNGchi, Aphi);
-    //these should be real
-    ComplexD pAp = innerProduct(RNGphi, Aphi);
-    ComplexD cAc = innerProduct(RNGchi, Achi);
-
-    std::cout<<GridLogMessage<< "pAc "<<pAc<<" cAp "<< cAp<< " diff "<<pAc-adj(cAp)<<std::endl;
-    // These ones should be real
-    std::cout << GridLogMessage << "pAp " << pAp << " cAc " << cAc << std::endl;
 
     // Our conventions really make this UdSdU; We do not differentiate wrt Udag
     // here.

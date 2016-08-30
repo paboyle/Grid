@@ -121,6 +121,7 @@ int main(int argc, char** argv) {
   // Test group structure
   // (U_f * V_f)_r = U_r * V_r
   LatticeGaugeField UV(grid);
+  UV = zero;
   for (int mu = 0; mu < Nd; mu++) {
     SU<Nc>::LatticeMatrix Umu = peekLorentz(U,mu);
     SU<Nc>::LatticeMatrix Vmu = peekLorentz(V,mu);
@@ -138,6 +139,7 @@ int main(int argc, char** argv) {
   typename AdjointRep<Nc>::LatticeField Vr = AdjRep.U;  // V_r
 
   typename AdjointRep<Nc>::LatticeField UrVr(grid);
+  UrVr = zero;
   for (int mu = 0; mu < Nd; mu++) {
     typename AdjointRep<Nc>::LatticeMatrix Urmu = peekLorentz(Ur,mu);
     typename AdjointRep<Nc>::LatticeMatrix Vrmu = peekLorentz(Vr,mu);
@@ -145,9 +147,9 @@ int main(int argc, char** argv) {
   }
 
   typename AdjointRep<Nc>::LatticeField Diff_check = UVr - UrVr;
-  std::cout << GridLogMessage << "Group structure check difference : " << norm2(Diff_check) << std::endl;
+  std::cout << GridLogMessage << "Group structure SU("<<Nc<<") check difference : " << norm2(Diff_check) << std::endl;
 
-  //  Check correspondence of algebra and group transformations
+  // Check correspondence of algebra and group transformations
   // Create a random vector
   SU<Nc>::LatticeAlgebraVector h_adj(grid);
   typename AdjointRep<Nc>::LatticeMatrix Ar(grid);

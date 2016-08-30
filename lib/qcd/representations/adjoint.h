@@ -29,7 +29,7 @@ class AdjointRep {
   explicit AdjointRep(GridBase *grid) : U(grid) {}
 
   void update_representation(const LatticeGaugeField &Uin) {
-    std::cout << GridLogDebug << "Updating adjoint representation\n" ;
+    std::cout << GridLogDebug << "Updating adjoint representation\n";
     // Uin is in the fundamental representation
     // get the U in AdjointRep
     // (U_adj)_B = tr[e^a U e^b U^dag]
@@ -43,8 +43,8 @@ class AdjointRep {
     Vector<typename SU<ncolour>::Matrix> ta(Dimension);
 
     // Debug lines
-    //LatticeMatrix uno(Uin._grid);
-    //uno = 1.0;
+    // LatticeMatrix uno(Uin._grid);
+    // uno = 1.0;
     ////////////////
 
     // FIXME probably not very efficient to get all the generators
@@ -53,11 +53,11 @@ class AdjointRep {
 
     for (int mu = 0; mu < Nd; mu++) {
       auto Uin_mu = peekLorentz(Uin, mu);
-      auto U_mu   = peekLorentz(U, mu);
+      auto U_mu = peekLorentz(U, mu);
       for (int a = 0; a < Dimension; a++) {
         tmp = 2.0 * adj(Uin_mu) * ta[a] * Uin_mu;
         for (int b = 0; b < Dimension; b++)
-          pokeColour(U_mu, trace(tmp * ta[b]), b, a);
+          pokeColour(U_mu, trace(tmp * ta[b]), a, b);
       }
       pokeLorentz(U, U_mu, mu);
       // Check matrix U_mu, must be real orthogonal
@@ -71,7 +71,6 @@ class AdjointRep {
       std::cout << GridLogMessage << "orthogonality check: " << norm2(Ucheck) <<
       std::endl;
       */
-
     }
   }
 
@@ -87,11 +86,11 @@ class AdjointRep {
       out_mu = zero;
 
       typename SU<ncolour>::LatticeAlgebraVector h(in._grid);
-      projectOnAlgebra(h, in_mu, scale);
-      FundamentalLieAlgebraMatrix(h, out_mu, 1.0);  // apply scale only once
+      projectOnAlgebra(h, in_mu, double(Nc) * 2.0);  // factor C(r)/C(fund)
+      FundamentalLieAlgebraMatrix(h, out_mu);   // apply scale only once
       pokeLorentz(out, out_mu, mu);
-    // Returns traceless antihermitian matrix Nc * Nc.
-    // Confirmed            
+      // Returns traceless antihermitian matrix Nc * Nc.
+      // Confirmed
     }
     return out;
   }

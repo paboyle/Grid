@@ -160,8 +160,9 @@ class SU {
     else
       generatorSigmaX(su2Index, ta);
   }
+  
   template <class cplx>
-  static void generatorSigmaX(int su2Index, iSUnMatrix<cplx> &ta) {
+  static void generatorSigmaY(int su2Index, iSUnMatrix<cplx> &ta) {
     ta = zero;
     int i1, i2;
     su2SubGroupIndex(i1, i2, su2Index);
@@ -170,15 +171,16 @@ class SU {
     ta = ta * 0.5;
   }
   template <class cplx>
-  static void generatorSigmaY(int su2Index, iSUnMatrix<cplx> &ta) {
+  static void generatorSigmaX(int su2Index, iSUnMatrix<cplx> &ta) {
     ta = zero;
     cplx i(0.0, 1.0);
     int i1, i2;
     su2SubGroupIndex(i1, i2, su2Index);
-    ta()()(i1, i2) = -i;
-    ta()()(i2, i1) = i;
+    ta()()(i1, i2) = i;
+    ta()()(i2, i1) = -i;
     ta = ta * 0.5;
   }
+
   template <class cplx>
   static void generatorDiagonal(int diagIndex, iSUnMatrix<cplx> &ta) {
     // diag ({1, 1, ..., 1}(k-times), -k, 0, 0, ...)
@@ -651,9 +653,10 @@ class SU {
     for (int a = 0; a < AdjointDimension; a++) {
       gaussian(pRNG, ca);
       generator(a, ta);
-      la = toComplex(ca) * ci * ta;
+      la = toComplex(ca) * ta;
       out += la;
     }
+    out *= ci;
   }
 
   static void FundamentalLieAlgebraMatrix(const LatticeAlgebraVector &h,
@@ -684,7 +687,6 @@ class SU {
       auto tmp = - 2.0 * (trace(timesI(Ta) * in)) * scale;// 2.0 for the normalization of the trace in the fundamental rep
       pokeColour(h_out, tmp, a);
     }
-    std::cout << "h_out " << h_out << std::endl;
   }
 
 

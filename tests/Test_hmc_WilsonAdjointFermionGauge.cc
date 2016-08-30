@@ -65,14 +65,15 @@ class HmcRunner : public NerscHmcRunnerHirep< TheRepresentations > {
     AdjointRepresentation::LatticeField U(UGrid);
 
     // Gauge action
-    WilsonGaugeActionR Waction(2.0);
+    WilsonGaugeActionR Waction(2.25);
 
-    Real mass = -1.0;
+    Real mass = -0.95;
     FermionAction FermOp(U, *FGrid, *FrbGrid, mass);
 
     ConjugateGradient<FermionField> CG(1.0e-8, 10000);
     ConjugateResidual<FermionField> CR(1.0e-8, 10000);
 
+    // Pass two solvers: one for the force computation and one for the action
     TwoFlavourPseudoFermionAction<ImplPolicy> Nf2(FermOp, CG, CG);
 
     // Set smearing (true/false), default: false

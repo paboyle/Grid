@@ -75,7 +75,8 @@ class SU_Adjoint : public SU<ncolour> {
         typename SU<ncolour>::template iSUnMatrix<cplx> tmp1 =
             2.0 * tmp * ta[b];  // 2.0 from the normalization
         Complex iTr = TensorRemove(timesI(trace(tmp1)));
-        iAdjTa()()(b, a) = iTr;
+        //iAdjTa()()(b, a) = iTr;
+        iAdjTa()()(a, b) = iTr;
       }
     }
   }
@@ -121,9 +122,10 @@ class SU_Adjoint : public SU<ncolour> {
     out = zero;
     for (int a = 0; a < Dimension; a++) {
       generator(a, iTa);
-      la = peekColour(h, a) * iTa * scale;
+      la = peekColour(h, a) * iTa;
       out += la;
     }
+    out *= scale;
   }
 
   // Projects the algebra components a lattice matrix (of dimension ncol*ncol -1 )
@@ -131,16 +133,16 @@ class SU_Adjoint : public SU<ncolour> {
     conformable(h_out, in);
     h_out = zero;
     AMatrix iTa;
+    Real coefficient = - 1.0/(ncolour) * scale;// 1/Nc for the normalization of the trace in the adj rep
 
     for (int a = 0; a < Dimension; a++) {
       generator(a, iTa);
-      auto tmp = - 1.0/(ncolour) * (trace(iTa * in)) * scale;// 1/Nc for the normalization of the trace in the adj rep
+      auto tmp = real(trace(iTa * in)) * coefficient;
       pokeColour(h_out, tmp, a);
     }
-    //std::cout << "h_out " << h_out << std::endl;
   }
 
-  // a projector that keeps the generators stored to avoid the overhead of recomputing. 
+  // a projector that keeps the generators stored to avoid the overhead of recomputing them 
   static void projector(typename SU<ncolour>::LatticeAlgebraVector &h_out, const LatticeAdjMatrix &in, Real scale = 1.0) {
     conformable(h_out, in);
     static std::vector<AMatrix> iTa(Dimension);  // to store the generators
@@ -151,8 +153,11 @@ class SU_Adjoint : public SU<ncolour> {
         for (int a = 0; a < Dimension; a++) generator(a, iTa[a]);
     }
 
+    Real coefficient = -1.0 / (ncolour)*scale;  // 1/Nc for the normalization of
+                                                // the trace in the adj rep
+
     for (int a = 0; a < Dimension; a++) {
-      auto tmp = - 1.0/(ncolour) * (trace(iTa[a] * in)) * scale; 
+      auto tmp = real(trace(iTa[a] * in)) * coefficient; 
       pokeColour(h_out, tmp, a);
     }
   }
