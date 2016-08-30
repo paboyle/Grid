@@ -77,11 +77,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Stencil.h>      
 #include <Grid/Algorithms.h>   
 #include <Grid/parallelIO/BinaryIO.h>
-#include <Grid/qcd/QCD.h>
-#include <Grid/parallelIO/NerscIO.h>
-
 #include <Grid/FFT.h>
 
+#include <Grid/qcd/QCD.h>
+#include <Grid/parallelIO/NerscIO.h>
 #include <Grid/qcd/hmc/NerscCheckpointer.h>
 #include <Grid/qcd/hmc/HmcRunner.h>
 
