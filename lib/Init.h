@@ -52,6 +52,8 @@ namespace Grid {
   void GridCmdOptionCSL(std::string str,std::vector<std::string> & vec);
   void GridCmdOptionIntVector(std::string &str,std::vector<int> & vec);
 
+  std::string demangle(const char* name) ;
+
   void GridParseLayout(char **argv,int argc,
 		       std::vector<int> &latt,
 		       std::vector<int> &simd,
