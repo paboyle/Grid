@@ -626,6 +626,13 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+enable_latex_docs
+enable_html_docs
+enable_dot
+DOXYGEN_DOC_FALSE
+DOXYGEN_DOC_TRUE
+DOT
+DOXYGEN
 USE_LAPACK_LIB_FALSE
 USE_LAPACK_LIB_TRUE
 USE_LAPACK_FALSE
@@ -760,6 +767,10 @@ enable_rng
 enable_timers
 enable_chroma
 enable_lapack
+enable_doxygen
+enable_dot
+enable_html_docs
+enable_latex_docs
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1421,6 +1432,11 @@ Optional Features:
   --enable-timers=yes|no  Enable system dependent high res timers
   --enable-chroma         Expect chroma compiled under c++11
   --enable-lapack         Enable lapack yes/no
+  --enable-doxygen        enable documentation generation with doxygen (auto)
+  --enable-dot            use 'dot' to generate graphs in doxygen (auto)
+  --enable-html-docs      enable HTML generation with doxygen (yes)
+  --enable-latex-docs     enable LaTeX documentation generation with doxygen
+                          (no)
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -3170,6 +3186,15 @@ END
   fi
 fi
 
+
+ac_sources="lib"
+ac_dests="include/Grid "
+while test -n "$ac_sources"; do
+  set $ac_dests; ac_dest=$1; shift; ac_dests=$*
+  set $ac_sources; ac_source=$1; shift; ac_sources=$*
+  ac_config_links_1="$ac_config_links_1 $ac_dest:$ac_source"
+done
+ac_config_links="$ac_config_links $ac_config_links_1"
 
 
 ac_config_headers="$ac_config_headers lib/Config.h"
@@ -6672,7 +6697,6 @@ else
   ac_CHROMA=no
 fi
 
-
 case ${ac_CHROMA} in
      yes)
        echo Enabling tests regressing to Chroma
@@ -6737,15 +6761,160 @@ fi
 ###################################################################
 # Checks for doxygen support
 # if present enables the "make doxyfile" command
-#echo
-#echo Checking doxygen support
-#echo :::::::::::::::::::::::::::::::::::::::::::
-#AC_PROG_DOXYGEN
+echo
+echo Checking doxygen support
+echo :::::::::::::::::::::::::::::::::::::::::::
 
-#if test -n "$DOXYGEN"
-#then
-#AC_CONFIG_FILES([docs/doxy.cfg])
-#fi
+# Check whether --enable-doxygen was given.
+if test "${enable_doxygen+set}" = set; then :
+  enableval=$enable_doxygen;
+fi
+
+
+# Check whether --enable-dot was given.
+if test "${enable_dot+set}" = set; then :
+  enableval=$enable_dot;
+fi
+
+# Check whether --enable-html-docs was given.
+if test "${enable_html_docs+set}" = set; then :
+  enableval=$enable_html_docs;
+else
+   enable_html_docs=yes
+fi
+
+# Check whether --enable-latex-docs was given.
+if test "${enable_latex_docs+set}" = set; then :
+  enableval=$enable_latex_docs;
+else
+  enable_latex_docs=no
+fi
+
+
+if test "x$enable_doxygen" = xno; then
+ enable_doc=no
+else
+ # Extract the first word of "doxygen", so it can be a program name with args.
+set dummy doxygen; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_DOXYGEN+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$DOXYGEN"; then
+  ac_cv_prog_DOXYGEN="$DOXYGEN" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_DOXYGEN="doxygen"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+DOXYGEN=$ac_cv_prog_DOXYGEN
+if test -n "$DOXYGEN"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DOXYGEN" >&5
+$as_echo "$DOXYGEN" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+ if test x$DOXYGEN = x; then
+  if test "x$enable_doxygen" = xyes; then
+   as_fn_error $? "could not find doxygen" "$LINENO" 5
+  fi
+  enable_doc=no
+ else
+  doxy_ver=`doxygen --version`
+  doxy_major=`expr "$doxy_ver" : '\([0-9]\)\..*'`
+  doxy_minor=`expr "$doxy_ver" : '[0-9]\.\([0-9]\).*'`
+  if test $doxy_major -eq "1" -a $doxy_minor -ge "3" ; then
+   enable_doc=yes
+   # Extract the first word of "dot", so it can be a program name with args.
+set dummy dot; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_DOT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$DOT"; then
+  ac_cv_prog_DOT="$DOT" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_DOT="dot"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+DOT=$ac_cv_prog_DOT
+if test -n "$DOT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DOT" >&5
+$as_echo "$DOT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  else
+   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: doxygen version $doxy_ver too old, doxygen will not be used." >&5
+$as_echo "$as_me: WARNING: doxygen version $doxy_ver too old, doxygen will not be used." >&2;}
+   enable_doc=no
+  fi
+ fi
+fi
+
+ if test x$enable_doc = xyes; then
+  DOXYGEN_DOC_TRUE=
+  DOXYGEN_DOC_FALSE='#'
+else
+  DOXYGEN_DOC_TRUE='#'
+  DOXYGEN_DOC_FALSE=
+fi
+
+
+if test x$DOT = x; then
+ if test "x$enable_dot" = xyes; then
+  as_fn_error $? "could not find dot" "$LINENO" 5
+ fi
+ enable_dot=no
+else
+ enable_dot=yes
+fi
+
+
+
+
+
+
+if test -n "$DOXYGEN"
+then
+ac_config_files="$ac_config_files docs/doxy.cfg"
+
+fi
 
 echo
 echo Creating configuration files
@@ -6756,9 +6925,23 @@ ac_config_files="$ac_config_files lib/Makefile"
 
 ac_config_files="$ac_config_files tests/Makefile"
 
+ac_config_files="$ac_config_files tests/IO/Makefile"
+
+ac_config_files="$ac_config_files tests/core/Makefile"
+
+ac_config_files="$ac_config_files tests/debug/Makefile"
+
+ac_config_files="$ac_config_files tests/forces/Makefile"
+
+ac_config_files="$ac_config_files tests/hmc/Makefile"
+
+ac_config_files="$ac_config_files tests/solver/Makefile"
+
 ac_config_files="$ac_config_files tests/qdpxx/Makefile"
 
 ac_config_files="$ac_config_files benchmarks/Makefile"
+
+ac_config_files="$ac_config_files prerequisites/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -6923,6 +7106,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${USE_LAPACK_LIB_TRUE}" && test -z "${USE_LAPACK_LIB_FALSE}"; then
   as_fn_error $? "conditional \"USE_LAPACK_LIB\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DOXYGEN_DOC_TRUE}" && test -z "${DOXYGEN_DOC_FALSE}"; then
+  as_fn_error $? "conditional \"DOXYGEN_DOC\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
@@ -7349,6 +7536,7 @@ cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 # Files that config.status was made for.
 config_files="$ac_config_files"
 config_headers="$ac_config_headers"
+config_links="$ac_config_links"
 config_commands="$ac_config_commands"
 
 _ACEOF
@@ -7378,6 +7566,9 @@ $config_files
 
 Configuration headers:
 $config_headers
+
+Configuration links:
+$config_links
 
 Configuration commands:
 $config_commands
@@ -7517,13 +7708,22 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
+    "$ac_config_links_1") CONFIG_LINKS="$CONFIG_LINKS $ac_config_links_1" ;;
     "lib/Config.h") CONFIG_HEADERS="$CONFIG_HEADERS lib/Config.h" ;;
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
+    "docs/doxy.cfg") CONFIG_FILES="$CONFIG_FILES docs/doxy.cfg" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "lib/Makefile") CONFIG_FILES="$CONFIG_FILES lib/Makefile" ;;
     "tests/Makefile") CONFIG_FILES="$CONFIG_FILES tests/Makefile" ;;
+    "tests/IO/Makefile") CONFIG_FILES="$CONFIG_FILES tests/IO/Makefile" ;;
+    "tests/core/Makefile") CONFIG_FILES="$CONFIG_FILES tests/core/Makefile" ;;
+    "tests/debug/Makefile") CONFIG_FILES="$CONFIG_FILES tests/debug/Makefile" ;;
+    "tests/forces/Makefile") CONFIG_FILES="$CONFIG_FILES tests/forces/Makefile" ;;
+    "tests/hmc/Makefile") CONFIG_FILES="$CONFIG_FILES tests/hmc/Makefile" ;;
+    "tests/solver/Makefile") CONFIG_FILES="$CONFIG_FILES tests/solver/Makefile" ;;
     "tests/qdpxx/Makefile") CONFIG_FILES="$CONFIG_FILES tests/qdpxx/Makefile" ;;
     "benchmarks/Makefile") CONFIG_FILES="$CONFIG_FILES benchmarks/Makefile" ;;
+    "prerequisites/Makefile") CONFIG_FILES="$CONFIG_FILES prerequisites/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
@@ -7537,6 +7737,7 @@ done
 if $ac_need_defaults; then
   test "${CONFIG_FILES+set}" = set || CONFIG_FILES=$config_files
   test "${CONFIG_HEADERS+set}" = set || CONFIG_HEADERS=$config_headers
+  test "${CONFIG_LINKS+set}" = set || CONFIG_LINKS=$config_links
   test "${CONFIG_COMMANDS+set}" = set || CONFIG_COMMANDS=$config_commands
 fi
 
@@ -7834,7 +8035,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 fi # test -n "$CONFIG_HEADERS"
 
 
-eval set X "  :F $CONFIG_FILES  :H $CONFIG_HEADERS    :C $CONFIG_COMMANDS"
+eval set X "  :F $CONFIG_FILES  :H $CONFIG_HEADERS  :L $CONFIG_LINKS  :C $CONFIG_COMMANDS"
 shift
 for ac_tag
 do
@@ -8111,7 +8312,38 @@ $as_echo X"$_am_arg" |
 	  }
 	  s/.*/./; q'`/stamp-h$_am_stamp_count
  ;;
+  :L)
+  #
+  # CONFIG_LINK
+  #
 
+  if test "$ac_source" = "$ac_file" && test "$srcdir" = '.'; then
+    :
+  else
+    # Prefer the file from the source tree if names are identical.
+    if test "$ac_source" = "$ac_file" || test ! -r "$ac_source"; then
+      ac_source=$srcdir/$ac_source
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: linking $ac_source to $ac_file" >&5
+$as_echo "$as_me: linking $ac_source to $ac_file" >&6;}
+
+    if test ! -r "$ac_source"; then
+      as_fn_error $? "$ac_source: file not found" "$LINENO" 5
+    fi
+    rm -f "$ac_file"
+
+    # Try a relative symlink, then a hard link, then a copy.
+    case $ac_source in
+    [\\/$]* | ?:[\\/]* ) ac_rel_source=$ac_source ;;
+	*) ac_rel_source=$ac_top_build_prefix$ac_source ;;
+    esac
+    ln -s "$ac_rel_source" "$ac_file" 2>/dev/null ||
+      ln "$ac_source" "$ac_file" 2>/dev/null ||
+      cp -p "$ac_source" "$ac_file" ||
+      as_fn_error $? "cannot link or copy $ac_source to $ac_file" "$LINENO" 5
+  fi
+ ;;
   :C)  { $as_echo "$as_me:${as_lineno-$LINENO}: executing $ac_file commands" >&5
 $as_echo "$as_me: executing $ac_file commands" >&6;}
  ;;

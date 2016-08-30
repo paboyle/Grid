@@ -30,7 +30,7 @@
 
  #include <thread>
 
- #include <stencil/Lebesgue.h>   // subdir aggregate
+ #include <Grid/stencil/Lebesgue.h>   // subdir aggregate
 
  //////////////////////////////////////////////////////////////////////////////////////////
  // Must not lose sight that goal is to be able to construct really efficient

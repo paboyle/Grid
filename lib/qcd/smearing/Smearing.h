@@ -1,9 +1,9 @@
 #ifndef GRID_QCD_SMEARING_H
 #define GRID_QCD_SMEARING_H
 
-#include <qcd/smearing/BaseSmearing.h>
-#include <qcd/smearing/APEsmearing.h>
-#include <qcd/smearing/StoutSmearing.h>
-#include <qcd/smearing/GaugeConfiguration.h>
+#include <Grid/qcd/smearing/BaseSmearing.h>
+#include <Grid/qcd/smearing/APEsmearing.h>
+#include <Grid/qcd/smearing/StoutSmearing.h>
+#include <Grid/qcd/smearing/GaugeConfiguration.h>
 
 #endif

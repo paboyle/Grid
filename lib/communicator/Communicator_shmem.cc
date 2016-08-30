@@ -268,6 +268,10 @@ void CartesianCommunicator::SendRecvPacket(void *xmit,
 }
 
 // Basic Halo comms primitive
+void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &list)
+{
+  assert(0); //unimplemented
+}
 void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 						void *xmit,
 						int dest,
@@ -279,6 +283,15 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
   SHMEM_VET(recv);
   //  shmem_putmem_nb(recv,xmit,bytes,dest,NULL);
   shmem_putmem(recv,xmit,bytes,dest);
+}
+void CartesianCommunicator::SendToRecvFromInit(std::vector<CommsRequest_t> &list,
+						void *xmit,
+						int dest,
+						void *recv,
+						int from,
+						int bytes)
+{
+  assert(0); // Unimplemented
 }
 void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
 {

@@ -89,7 +89,10 @@ class iScalar {
                                     const iScalar<vtype> &in) {
     vstream(out._internal, in._internal);
   }
-  friend strong_inline void zeroit(iScalar<vtype> &that) {
+  friend strong_inline void vbroadcast(iScalar<vtype> &out,const iScalar<vtype> &in,int lane){
+    vbroadcast(out._internal,in._internal,lane);
+  }
+  friend strong_inline void zeroit(iScalar<vtype> &that){
     zeroit(that._internal);
   }
   friend strong_inline void prefetch(iScalar<vtype> &that) {
@@ -98,6 +101,9 @@ class iScalar {
   friend strong_inline void permute(iScalar<vtype> &out,
                                     const iScalar<vtype> &in, int permutetype) {
     permute(out._internal, in._internal, permutetype);
+  }
+  friend strong_inline void rotate(iScalar<vtype> &out,const iScalar<vtype> &in,int rot){
+    rotate(out._internal,in._internal,rot);
   }
 
   // Unary negation
@@ -227,11 +233,19 @@ class iVector {
       vstream(out._internal[i], in._internal[i]);
     }
   }
-  friend strong_inline void permute(iVector<vtype, N> &out,
-                                    const iVector<vtype, N> &in,
-                                    int permutetype) {
-    for (int i = 0; i < N; i++) {
-      permute(out._internal[i], in._internal[i], permutetype);
+  friend strong_inline void vbroadcast(iVector<vtype,N> &out,const iVector<vtype,N> &in,int lane){
+    for(int i=0;i<N;i++){
+      vbroadcast(out._internal[i],in._internal[i],lane);
+    }
+  }
+  friend strong_inline void permute(iVector<vtype,N> &out,const iVector<vtype,N> &in,int permutetype){
+    for(int i=0;i<N;i++){
+      permute(out._internal[i],in._internal[i],permutetype);
+    }
+  }
+  friend strong_inline void rotate(iVector<vtype,N> &out,const iVector<vtype,N> &in,int rot){
+    for(int i=0;i<N;i++){
+      rotate(out._internal[i],in._internal[i],rot);
     }
   }
 
@@ -324,34 +338,41 @@ class iMatrix {
     return *this;
   }
 
-  friend strong_inline void zeroit(iMatrix<vtype, N> &that) {
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j < N; j++) {
-        zeroit(that._internal[i][j]);
-      }
-    }
+  friend strong_inline void zeroit(iMatrix<vtype,N> &that){
+    for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+	zeroit(that._internal[i][j]);
+    }}
   }
-  friend strong_inline void prefetch(iMatrix<vtype, N> &that) {
-    for (int i = 0; i < N; i++)
-      for (int j = 0; j < N; j++) prefetch(that._internal[i][j]);
+  friend strong_inline void prefetch(iMatrix<vtype,N> &that){
+    for(int i=0;i<N;i++) 
+    for(int j=0;j<N;j++) 
+      prefetch(that._internal[i][j]);
   }
-  friend strong_inline void vstream(iMatrix<vtype, N> &out,
-                                    const iMatrix<vtype, N> &in) {
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j < N; j++) {
-        vstream(out._internal[i][j], in._internal[i][j]);
-      }
-    }
+  friend strong_inline void vstream(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in){
+      for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+	vstream(out._internal[i][j],in._internal[i][j]);
+      }}
+  }
+  friend strong_inline void vbroadcast(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in,int lane){
+      for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+	vbroadcast(out._internal[i][j],in._internal[i][j],lane);
+      }}
   }
 
-  friend strong_inline void permute(iMatrix<vtype, N> &out,
-                                    const iMatrix<vtype, N> &in,
-                                    int permutetype) {
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j < N; j++) {
-        permute(out._internal[i][j], in._internal[i][j], permutetype);
-      }
-    }
+  friend strong_inline void permute(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in,int permutetype){
+    for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+	permute(out._internal[i][j],in._internal[i][j],permutetype);
+    }}
+  }
+  friend strong_inline void rotate(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in,int rot){
+    for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+	rotate(out._internal[i][j],in._internal[i][j],rot);
+    }}
   }
 
   // Unary negation

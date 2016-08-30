@@ -29,8 +29,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_CHEBYSHEV_H
 #define GRID_CHEBYSHEV_H
 
-#include<Grid.h>
-#include<algorithms/LinearOperator.h>
+#include <Grid/algorithms/LinearOperator.h>
 
 namespace Grid {
 

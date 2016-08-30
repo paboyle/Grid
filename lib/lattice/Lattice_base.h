@@ -102,6 +102,7 @@ public:
     int begin(void) { return 0;};
     int end(void)   { return _odata.size(); }
     vobj & operator[](int i) { return _odata[i]; };
+    const vobj & operator[](int i) const { return _odata[i]; };
 
 public:
     typedef typename vobj::scalar_type scalar_type;
@@ -337,27 +338,27 @@ PARALLEL_FOR_LOOP
 
 
 
-#include <lattice/Lattice_conformable.h>
+#include "Lattice_conformable.h"
 #define GRID_LATTICE_EXPRESSION_TEMPLATES
 #ifdef  GRID_LATTICE_EXPRESSION_TEMPLATES
-#include <lattice/Lattice_ET.h>
+#include "Lattice_ET.h"
 #else 
-#include <lattice/Lattice_overload.h>
+#include "Lattice_overload.h"
 #endif
-#include <lattice/Lattice_arith.h>
-#include <lattice/Lattice_trace.h>
-#include <lattice/Lattice_transpose.h>
-#include <lattice/Lattice_local.h>
-#include <lattice/Lattice_reduction.h>
-#include <lattice/Lattice_peekpoke.h>
-#include <lattice/Lattice_reality.h>
-#include <lattice/Lattice_comparison_utils.h>
-#include <lattice/Lattice_comparison.h>
-#include <lattice/Lattice_coordinate.h>
-#include <lattice/Lattice_where.h>
-#include <lattice/Lattice_rng.h>
-#include <lattice/Lattice_unary.h>
-#include <lattice/Lattice_transfer.h>
+#include "Lattice_arith.h"
+#include "Lattice_trace.h"
+#include "Lattice_transpose.h"
+#include "Lattice_local.h"
+#include "Lattice_reduction.h"
+#include "Lattice_peekpoke.h"
+#include "Lattice_reality.h"
+#include "Lattice_comparison_utils.h"
+#include "Lattice_comparison.h"
+#include "Lattice_coordinate.h"
+#include "Lattice_where.h"
+#include "Lattice_rng.h"
+#include "Lattice_unary.h"
+#include "Lattice_transfer.h"
 
 
 #endif

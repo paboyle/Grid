@@ -23,11 +23,10 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-See the full license in the file "LICENSE" in the top level distribution
-directory
-*************************************************************************************/
-/*  END LEGAL */
-#include <Grid.h>
+    See the full license in the file "LICENSE" in the top level distribution directory
+    *************************************************************************************/
+    /*  END LEGAL */
+#include <Grid/Grid.h>
 
 using namespace std;
 using namespace Grid;

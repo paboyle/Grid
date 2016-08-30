@@ -1,5 +1,5 @@
 # additional include paths necessary to compile the C++ library
-AM_CXXFLAGS = -I$(top_srcdir)/
+AM_CXXFLAGS = -I$(top_srcdir)/include/
 
 extra_sources=
 if BUILD_COMMS_MPI
@@ -17,16 +17,19 @@ endif
 #
 # Libraries
 #
-
 include Make.inc
+include Eigen.inc
 
 lib_LIBRARIES = libGrid.a
+
 libGrid_a_SOURCES = $(CCFILES) $(extra_sources)
 
+fftwdir = $(prefix)/lib/
+fftw_DATA = libfftw3.a
 
-#	qcd/action/fermion/PartialFractionFermion5D.cc\	\
 #
 # Include files
 #
-nobase_include_HEADERS=$(HFILES)
+otherincludedir = $(includedir)/Grid
+nobase_otherinclude_HEADERS =$(HFILES) $(EFILES) fftw3.h Config.h
 

@@ -10,6 +10,7 @@ AC_INIT([Grid], [1.0], [paboyle@ph.ed.ac.uk])
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE(subdir-objects)
 AC_CONFIG_MACRO_DIR([m4])
+AC_LINK_FILES(lib,include/Grid )
 AC_CONFIG_SRCDIR([lib/Grid.h])
 AC_CONFIG_HEADERS([lib/Config.h])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -231,7 +232,6 @@ esac
 # Chroma regression tests
 #
 AC_ARG_ENABLE([chroma],[AC_HELP_STRING([--enable-chroma],[Expect chroma compiled under c++11 ])],ac_CHROMA=yes,ac_CHROMA=no)
-
 case ${ac_CHROMA} in
      yes)
        echo Enabling tests regressing to Chroma
@@ -269,15 +269,15 @@ AM_CONDITIONAL(USE_LAPACK_LIB,[ test "X${ac_LAPACK}X" != "XyesX" ])
 ###################################################################
 # Checks for doxygen support
 # if present enables the "make doxyfile" command
-#echo
-#echo Checking doxygen support 
-#echo :::::::::::::::::::::::::::::::::::::::::::
-#AC_PROG_DOXYGEN
+echo
+echo Checking doxygen support 
+echo :::::::::::::::::::::::::::::::::::::::::::
+AC_PROG_DOXYGEN
 
-#if test -n "$DOXYGEN"
-#then
-#AC_CONFIG_FILES([docs/doxy.cfg])
-#fi
+if test -n "$DOXYGEN"
+then
+AC_CONFIG_FILES([docs/doxy.cfg])
+fi
 
 echo
 echo Creating configuration files
@@ -285,8 +285,15 @@ echo :::::::::::::::::::::::::::::::::::::::::::
 AC_CONFIG_FILES(Makefile)
 AC_CONFIG_FILES(lib/Makefile)
 AC_CONFIG_FILES(tests/Makefile)
+AC_CONFIG_FILES(tests/IO/Makefile)
+AC_CONFIG_FILES(tests/core/Makefile)
+AC_CONFIG_FILES(tests/debug/Makefile)
+AC_CONFIG_FILES(tests/forces/Makefile)
+AC_CONFIG_FILES(tests/hmc/Makefile)
+AC_CONFIG_FILES(tests/solver/Makefile)
 AC_CONFIG_FILES(tests/qdpxx/Makefile)
 AC_CONFIG_FILES(benchmarks/Makefile)
+AC_CONFIG_FILES(prerequisites/Makefile)
 AC_OUTPUT
 
 

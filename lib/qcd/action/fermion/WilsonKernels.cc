@@ -611,7 +611,5 @@ void WilsonKernels<Impl>::DiracOptDhopDir(
 FermOpTemplateInstantiate(WilsonKernels);
 AdjointFermOpTemplateInstantiate(WilsonKernels);
 
-template class WilsonKernels<DomainWallRedBlack5dImplF>;
-template class WilsonKernels<DomainWallRedBlack5dImplD>;
-}
-}
+}}
+

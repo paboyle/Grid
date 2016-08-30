@@ -1,8 +1,8 @@
 #ifndef HMC_TYPES_H
 #define HMC_TYPES_H
 
-#include <qcd/representations/adjoint.h>
-#include <qcd/representations/fundamental.h>
+#include <Grid/qcd/representations/adjoint.h>
+#include <Grid/qcd/representations/fundamental.h>
 #include <tuple>
 #include <utility>
 

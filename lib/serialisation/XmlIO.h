@@ -38,7 +38,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <vector>
 #include <cassert>
 
-#include "pugixml/pugixml.h"
+#include <Grid/pugixml/pugixml.h>
 
 namespace Grid
 {
