@@ -10,15 +10,15 @@ matrix:
       osx_image: xcode7.2
       compiler: clang
       env:
-	- PRECISION=single
-	- PRECISION=double
+        - PRECISION=single
+        - PRECISION=double
     - os:        osx
       osx_image: xcode7.2
       compiler: gcc
       env:
-	- VERSION=-5
-	- PRECISION=single
-	- PRECISION=double
+        - VERSION=-5
+        - PRECISION=single
+        - PRECISION=double
     - compiler: gcc
       addons:
         apt:
@@ -31,9 +31,9 @@ matrix:
             - libmpc-dev
             - binutils-dev
       env:
-	- VERSION=-4.9
-	- PRECISION=single
-	- PRECISION=double
+        - VERSION=-4.9
+        - PRECISION=single
+        - PRECISION=double
     - compiler: gcc
       addons:
         apt:
@@ -46,9 +46,9 @@ matrix:
             - libmpc-dev
             - binutils-dev
       env:
-	- VERSION=-5
-	- PRECISION=single
-	- PRECISION=double
+        - VERSION=-5
+        - PRECISION=single
+        - PRECISION=double
     - compiler: clang
       addons:
         apt:
@@ -61,9 +61,9 @@ matrix:
             - libmpc-dev
             - binutils-dev
       env:
-	- CLANG_LINK=http://llvm.org/releases/3.8.0/clang+llvm-3.8.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
-	- PRECISION=single
-	- PRECISION=double
+        - CLANG_LINK=http://llvm.org/releases/3.8.0/clang+llvm-3.8.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
+        - PRECISION=single
+        - PRECISION=double
     - compiler: clang
       addons:
         apt:
@@ -76,9 +76,9 @@ matrix:
             - libmpc-dev
             - binutils-dev
       env:
-	- CLANG_LINK=http://llvm.org/releases/3.7.0/clang+llvm-3.7.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
-	- PRECISION=single
-	- PRECISION=double
+        - CLANG_LINK=http://llvm.org/releases/3.7.0/clang+llvm-3.7.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
+        - PRECISION=single
+        - PRECISION=double
       
 before_install:
     - export GRIDDIR=`pwd`
