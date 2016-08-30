@@ -44,8 +44,25 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid.h>
 #include <algorithm>
 #include <iterator>
+#include <cstdlib>
+#include <memory>
+#include <cxxabi.h>
+
 
 namespace Grid {
+
+    std::string demangle(const char* name) {
+
+      int status = -4; // some arbitrary value to eliminate the compiler warning
+
+      // enable c++11 by passing the flag -std=c++11 to g++
+      std::unique_ptr<char, void(*)(void*)> res {
+	abi::__cxa_demangle(name, NULL, NULL, &status),
+	  std::free
+	  };
+
+      return (status==0) ? res.get() : name ;
+    }
 
 //////////////////////////////////////////////////////
 // Convenience functions to access stadard command line arg
