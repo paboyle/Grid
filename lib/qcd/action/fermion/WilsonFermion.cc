@@ -136,6 +136,58 @@ namespace QCD {
     out.checkerboard = in.checkerboard;
     MooeeInv(in,out);
   }
+  template<class Impl>
+  void WilsonFermion<Impl>:: MomentumSpacePropagator(FermionField &out, const FermionField &in) {
+
+    // what type LatticeComplex 
+    conformable(_grid,out._grid);
+
+    typedef typename FermionField::vector_type vector_type;
+    typedef typename FermionField::scalar_type ScalComplex;
+
+    typedef Lattice<iSinglet<vector_type> > LatComplex;
+
+    Gamma::GammaMatrix Gmu [] = {
+      Gamma::GammaX,
+      Gamma::GammaY,
+      Gamma::GammaZ,
+      Gamma::GammaT
+    };
+
+    std::vector<int> latt_size   = _grid->_fdimensions;
+
+    FermionField   num  (_grid); num  = zero;
+    LatComplex    wilson(_grid); wilson= zero;
+    LatComplex     one  (_grid); one = ScalComplex(1.0,0.0);
+
+    LatComplex denom(_grid); denom= zero;
+    LatComplex kmu(_grid); 
+    ScalComplex ci(0.0,1.0);
+    // momphase = n * 2pi / L
+    for(int mu=0;mu<Nd;mu++) {
+
+      LatticeCoordinate(kmu,mu);
+
+      RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
+
+      kmu = TwoPiL * kmu;
+
+      wilson = wilson + 2.0*sin(kmu*0.5)*sin(kmu*0.5); // Wilson term
+
+      num = num - sin(kmu)*ci*(Gamma(Gmu[mu])*in);    // derivative term
+
+      denom=denom + sin(kmu)*sin(kmu);
+    }
+
+    wilson = wilson + mass;     // 2 sin^2 k/2 + m
+
+    num   = num + wilson*in;     // -i gmu sin k + 2 sin^2 k/2 + m
+
+    denom= denom+wilson*wilson; // sin^2 k + (2 sin^2 k/2 + m)^2
+    denom= one/denom;
+    out = num*denom; // [ -i gmu sin k + 2 sin^2 k/2 + m] / [ sin^2 k + (2 sin^2 k/2 + m)^2 ]
+
+  }
   
   ///////////////////////////////////
   // Internal
