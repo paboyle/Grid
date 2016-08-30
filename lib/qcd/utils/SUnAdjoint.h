@@ -153,7 +153,7 @@ class SU_Adjoint : public SU<ncolour> {
         for (int a = 0; a < Dimension; a++) generator(a, iTa[a]);
     }
 
-    Real coefficient = -1.0 / (ncolour)*scale;  // 1/Nc for the normalization of
+    Real coefficient = -1.0 / (ncolour) * scale;  // 1/Nc for the normalization of
                                                 // the trace in the adj rep
 
     for (int a = 0; a < Dimension; a++) {

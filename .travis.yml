@@ -9,10 +9,16 @@ matrix:
     - os:        osx
       osx_image: xcode7.2
       compiler: clang
+      env:
+	- PRECISION=single
+	- PRECISION=double
     - os:        osx
       osx_image: xcode7.2
       compiler: gcc
-      env: VERSION=-5
+      env:
+	- VERSION=-5
+	- PRECISION=single
+	- PRECISION=double
     - compiler: gcc
       addons:
         apt:
@@ -24,7 +30,10 @@ matrix:
             - libgmp-dev
             - libmpc-dev
             - binutils-dev
-      env: VERSION=-4.9
+      env:
+	- VERSION=-4.9
+	- PRECISION=single
+	- PRECISION=double
     - compiler: gcc
       addons:
         apt:
@@ -36,7 +45,10 @@ matrix:
             - libgmp-dev
             - libmpc-dev
             - binutils-dev
-      env: VERSION=-5
+      env:
+	- VERSION=-5
+	- PRECISION=single
+	- PRECISION=double
     - compiler: clang
       addons:
         apt:
@@ -48,7 +60,10 @@ matrix:
             - libgmp-dev
             - libmpc-dev
             - binutils-dev
-      env: CLANG_LINK=http://llvm.org/releases/3.8.0/clang+llvm-3.8.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
+      env:
+	- CLANG_LINK=http://llvm.org/releases/3.8.0/clang+llvm-3.8.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
+	- PRECISION=single
+	- PRECISION=double
     - compiler: clang
       addons:
         apt:
@@ -60,7 +75,10 @@ matrix:
             - libgmp-dev
             - libmpc-dev
             - binutils-dev
-      env: CLANG_LINK=http://llvm.org/releases/3.7.0/clang+llvm-3.7.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
+      env:
+	- CLANG_LINK=http://llvm.org/releases/3.7.0/clang+llvm-3.7.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
+	- PRECISION=single
+	- PRECISION=double
       
 before_install:
     - export GRIDDIR=`pwd`
@@ -85,10 +103,7 @@ script:
     - ./scripts/reconfigure_script
     - mkdir build
     - cd build
-    - ../configure CXXFLAGS="-msse4.2 -O3 -std=c++11" LIBS="-lmpfr -lgmp" --enable-precision=single --enable-simd=SSE4 --enable-comms=none
+    - ../configure CXXFLAGS="-msse4.2 -O3 -std=c++11" LIBS="-lmpfr -lgmp" --enable-precision=$PRECISION --enable-simd=SSE4 --enable-comms=none
     - make -j4
     - ./benchmarks/Benchmark_dwf --threads 1
-    - make clean
-    - ../configure CXXFLAGS="-msse4.2 -O3 -std=c++11" LIBS="-lmpfr -lgmp" --enable-precision=double --enable-simd=SSE4 --enable-comms=none
-    - make -j4
-    - ./benchmarks/Benchmark_dwf --threads 1
+

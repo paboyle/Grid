@@ -70,7 +70,7 @@ class HmcRunner : public NerscHmcRunnerHirep< TheRepresentations > {
     Real mass = -0.95;
     FermionAction FermOp(U, *FGrid, *FrbGrid, mass);
 
-    ConjugateGradient<FermionField> CG(1.0e-8, 10000);
+    ConjugateGradient<FermionField> CG(1.0e-8, 10000, false);
     ConjugateResidual<FermionField> CR(1.0e-8, 10000);
 
     // Pass two solvers: one for the force computation and one for the action
