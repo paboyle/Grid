@@ -12,7 +12,9 @@ matrix:
     - os:        osx
       osx_image: xcode7.2
       compiler: gcc
-      env: VERSION=-5
+      env: 
+        global:
+          - VERSION=-5
     - compiler: gcc
       addons:
         apt:
@@ -24,7 +26,9 @@ matrix:
             - libgmp-dev
             - libmpc-dev
             - binutils-dev
-      env: VERSION=-4.9
+      env: 
+        global:
+          - VERSION=-4.9
     - compiler: gcc
       addons:
         apt:
@@ -36,7 +40,9 @@ matrix:
             - libgmp-dev
             - libmpc-dev
             - binutils-dev
-      env: VERSION=-5
+      env: 
+        global:
+          - VERSION=-5
     - compiler: clang
       addons:
         apt:
@@ -48,7 +54,9 @@ matrix:
             - libgmp-dev
             - libmpc-dev
             - binutils-dev
-      env: CLANG_LINK=http://llvm.org/releases/3.8.0/clang+llvm-3.8.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
+      env: 
+        global:
+          - CLANG_LINK=http://llvm.org/releases/3.8.0/clang+llvm-3.8.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
     - compiler: clang
       addons:
         apt:
@@ -60,7 +68,9 @@ matrix:
             - libgmp-dev
             - libmpc-dev
             - binutils-dev
-      env: CLANG_LINK=http://llvm.org/releases/3.7.0/clang+llvm-3.7.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
+      env: 
+        global:
+          - CLANG_LINK=http://llvm.org/releases/3.7.0/clang+llvm-3.7.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
       
 before_install:
     - export GRIDDIR=`pwd`
