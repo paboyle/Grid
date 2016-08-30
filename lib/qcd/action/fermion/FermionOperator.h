@@ -91,6 +91,19 @@ namespace Grid {
       virtual void  Mdiag  (const FermionField &in, FermionField &out) { Mooee(in,out);};   // Same as Mooee applied to both CB's
       virtual void  Mdir   (const FermionField &in, FermionField &out,int dir,int disp)=0;   // case by case Wilson, Clover, Cayley, ContFrac, PartFrac
 
+
+      virtual void  MomentumSpacePropagator(FermionField &out,const FermionField &in) { assert(0);};
+      virtual void  FreePropagator(const FermionField &in,FermionField &out) { 
+	FFT theFFT((GridCartesian *) in._grid);
+
+	FermionField in_k(in._grid);
+	FermionField prop_k(in._grid);
+
+	theFFT.FFT_all_dim(in_k,in,FFT::forward);
+        this->MomentumSpacePropagator(prop_k,in_k);
+	theFFT.FFT_all_dim(out,prop_k,FFT::backward);
+      };
+
       ///////////////////////////////////////////////
       // Updates gauge field during HMC
       ///////////////////////////////////////////////
