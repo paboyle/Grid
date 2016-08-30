@@ -46,16 +46,19 @@ int main (int argc, char ** argv)
   for(int d=0;d<latt_size.size();d++){
     vol = vol * latt_size[d];
   }
-  GridCartesian        Fine(latt_size,simd_layout,mpi_layout);
+  GridCartesian         GRID(latt_size,simd_layout,mpi_layout);
+  GridRedBlackCartesian RBGRID(latt_size,simd_layout,mpi_layout);
 
-  LatticeComplexD     one(&Fine);
-  LatticeComplexD      zz(&Fine);
-  LatticeComplexD       C(&Fine);
-  LatticeComplexD  Ctilde(&Fine);
-  LatticeComplexD    coor(&Fine);
+  LatticeComplexD     one(&GRID);
+  LatticeComplexD      zz(&GRID);
+  LatticeComplexD       C(&GRID);
+  LatticeComplexD  Ctilde(&GRID);
+  LatticeComplexD  Cref  (&GRID);
+  LatticeComplexD  Csav  (&GRID);
+  LatticeComplexD    coor(&GRID);
 
-  LatticeSpinMatrixD    S(&Fine);
-  LatticeSpinMatrixD    Stilde(&Fine);
+  LatticeSpinMatrixD    S(&GRID);
+  LatticeSpinMatrixD    Stilde(&GRID);
   
   std::vector<int> p({1,2,3,2});
 
@@ -72,31 +75,41 @@ int main (int argc, char ** argv)
   }
 
   C = exp(C*ci);
-
+  Csav = C;
   S=zero;
   S = S+C;
 
-  FFT theFFT(&Fine);
+  FFT theFFT(&GRID);
 
-  theFFT.FFT_dim(Ctilde,C,0,FFT::forward);  C=Ctilde; std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Ctilde,C,1,FFT::forward);  C=Ctilde; std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Ctilde,C,2,FFT::forward);  C=Ctilde; std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Ctilde,C,3,FFT::forward);  std::cout << theFFT.MFlops()<<std::endl;
+  theFFT.FFT_dim(Ctilde,C,0,FFT::forward);  C=Ctilde;
+  theFFT.FFT_dim(Ctilde,C,1,FFT::forward);  C=Ctilde; std::cout << theFFT.MFlops()<<" Mflops "<<std::endl;
+  theFFT.FFT_dim(Ctilde,C,2,FFT::forward);  C=Ctilde;
+  theFFT.FFT_dim(Ctilde,C,3,FFT::forward);  
+
 
   //  C=zero;
   //  Ctilde = where(abs(Ctilde)<1.0e-10,C,Ctilde);
   TComplexD cVol;
   cVol()()() = vol;
 
-  C=zero;
-  pokeSite(cVol,C,p);
-  C=C-Ctilde;
-  std::cout << "diff scalar "<<norm2(C) << std::endl;
+  Cref=zero;
+  pokeSite(cVol,Cref,p);
+  Cref=Cref-Ctilde;
+  std::cout << "diff scalar "<<norm2(Cref) << std::endl;
 
-  theFFT.FFT_dim(Stilde,S,0,FFT::forward);  S=Stilde; std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Stilde,S,1,FFT::forward);  S=Stilde;std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Stilde,S,2,FFT::forward);  S=Stilde;std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Stilde,S,3,FFT::forward);std::cout << theFFT.MFlops()<<std::endl;
+  C=Csav;
+  theFFT.FFT_all_dim(Ctilde,C,FFT::forward);
+  theFFT.FFT_all_dim(Cref,Ctilde,FFT::backward); 
+
+  std::cout << norm2(C) << " " << norm2(Ctilde) << " " << norm2(Cref)<< " vol " << vol<< std::endl;
+
+  Cref= Cref - C;
+  std::cout << " invertible check " << norm2(Cref)<<std::endl;
+
+  theFFT.FFT_dim(Stilde,S,0,FFT::forward);  S=Stilde;
+  theFFT.FFT_dim(Stilde,S,1,FFT::forward);  S=Stilde;std::cout << theFFT.MFlops()<<" mflops "<<std::endl;
+  theFFT.FFT_dim(Stilde,S,2,FFT::forward);  S=Stilde;
+  theFFT.FFT_dim(Stilde,S,3,FFT::forward);
 
   SpinMatrixD Sp; 
   Sp = zero; Sp = Sp+cVol;
@@ -106,6 +119,35 @@ int main (int argc, char ** argv)
 
   S= S-Stilde;
   std::cout << "diff FT[SpinMat] "<<norm2(S) << std::endl;
+
+  /*
+   */
+  std::vector<int> seeds({1,2,3,4});
+  GridParallelRNG          pRNG(&GRID);
+  pRNG.SeedFixedIntegers(seeds);
+
+  LatticeGaugeFieldD Umu(&GRID);
+  LatticeFermionD    src(&GRID); gaussian(pRNG,src);
+  LatticeFermionD    tmp(&GRID);
+  LatticeFermionD    ref(&GRID);
+
+  SU3::ColdConfiguration(pRNG,Umu); // Unit gauge
+  
+  RealD mass=0.1;
+  WilsonFermionD Dw(Umu,GRID,RBGRID,mass);
+
+  Dw.M(src,tmp);
+
+  std::cout << " src = " <<norm2(src)<<std::endl;
+  std::cout << " tmp = " <<norm2(tmp)<<std::endl;
+
+  Dw.FreePropagator(tmp,ref);
+
+  std::cout << " ref = " <<norm2(ref)<<std::endl;
+  
+  ref = ref - src;
+  
+  std::cout << " ref-src = " <<norm2(ref)<<std::endl;
 
   Grid_finalize();
 }
