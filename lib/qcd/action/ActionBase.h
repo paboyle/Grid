@@ -108,7 +108,7 @@ struct ActionLevelHirep {
 
   // Fundamental repr actions separated because of the smearing
   typedef Action<GaugeField>* ActPtr;
-  //std::vector<ActPtr> actions;
+
   // construct a tuple of vectors of the actions for the corresponding higher
   // representation fields
   typedef typename AccessTypes<Action, Repr>::VectorCollection action_collection;
