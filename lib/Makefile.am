@@ -1,6 +1,3 @@
-# additional include paths necessary to compile the C++ library
-AM_CXXFLAGS = -I$(top_srcdir)/include/
-
 extra_sources=
 if BUILD_COMMS_MPI
   extra_sources+=communicator/Communicator_mpi.cc
@@ -20,16 +17,8 @@ endif
 include Make.inc
 include Eigen.inc
 
-lib_LIBRARIES = libGrid.a
+lib_LTLIBRARIES = libGrid.la
 
-libGrid_a_SOURCES = $(CCFILES) $(extra_sources)
-
-fftwdir = $(prefix)/lib/
-fftw_DATA = libfftw3.a
-
-#
-# Include files
-#
-otherincludedir = $(includedir)/Grid
-nobase_otherinclude_HEADERS =$(HFILES) $(EFILES) fftw3.h Config.h
-
+libGrid_la_SOURCES             = $(CCFILES) $(extra_sources)
+libGrid_ladir                  = $(pkgincludedir)
+nobase_dist_pkginclude_HEADERS = $(HFILES) $(eigen_files) Config.h

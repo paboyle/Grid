@@ -103,7 +103,7 @@ namespace Grid {
     typedef typename Impl::StencilImpl             StencilImpl;		\
     typedef typename Impl::ImplParams ImplParams;			\
     typedef typename Impl::Coeff_t       Coeff_t;
-    
+
 #define INHERIT_IMPL_TYPES(Base) \
     INHERIT_GIMPL_TYPES(Base)	 \
     INHERIT_FIMPL_TYPES(Base)
@@ -122,9 +122,9 @@ namespace Grid {
       constexpr bool is_fundamental() const{return Dimension == Nc ? 1 : 0;}
 
       const bool LsVectorised=false;
-
       typedef _Coeff_t Coeff_t;
-      
+
+
       INHERIT_GIMPL_TYPES(Gimpl);
       
       template <typename vtype> using iImplSpinor            = iScalar<iVector<iVector<vtype, Dimension>, Ns> >;
@@ -211,10 +211,9 @@ namespace Grid {
       
       static const int Dimension = Nrepresentation;
       const bool LsVectorised=true;
-      
       typedef _Coeff_t Coeff_t;      
       typedef PeriodicGaugeImpl<GaugeImplTypes<S, Nrepresentation> > Gimpl;
-      
+
       INHERIT_GIMPL_TYPES(Gimpl);
       
       template <typename vtype> using iImplSpinor            = iScalar<iVector<iVector<vtype, Nrepresentation>, Ns> >;
@@ -312,7 +311,7 @@ namespace Grid {
       static const int Dimension = Nrepresentation;
 
       const bool LsVectorised=false;
-      
+
       typedef _Coeff_t Coeff_t;
       typedef ConjugateGaugeImpl< GaugeImplTypes<S,Nrepresentation> > Gimpl;
       
@@ -514,6 +513,7 @@ namespace Grid {
     typedef WilsonImpl<vComplex,  FundamentalRepresentation > WilsonImplR;   // Real.. whichever prec
     typedef WilsonImpl<vComplexF, FundamentalRepresentation > WilsonImplF;  // Float
     typedef WilsonImpl<vComplexD, FundamentalRepresentation > WilsonImplD;  // Double
+
 
     typedef WilsonImpl<vComplex,  FundamentalRepresentation, ComplexD > ZWilsonImplR; // Real.. whichever prec
     typedef WilsonImpl<vComplexF, FundamentalRepresentation, ComplexD > ZWilsonImplF; // Float

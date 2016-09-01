@@ -62,16 +62,16 @@ namespace Grid {
       void M5D(const FermionField &psi,
 	       const FermionField &phi, 
 	       FermionField &chi,
-	       std::vector<RealD> &lower,
-	       std::vector<RealD> &diag,
-	       std::vector<RealD> &upper);
+	       std::vector<Coeff_t> &lower,
+	       std::vector<Coeff_t> &diag,
+	       std::vector<Coeff_t> &upper);
 
       void M5Ddag(const FermionField &psi,
 		  const FermionField &phi, 
 		  FermionField &chi,
-		  std::vector<RealD> &lower,
-		  std::vector<RealD> &diag,
-		  std::vector<RealD> &upper);
+		  std::vector<Coeff_t> &lower,
+		  std::vector<Coeff_t> &diag,
+		  std::vector<Coeff_t> &upper);
       void MooeeInternal(const FermionField &in, FermionField &out,int dag,int inv);
 
       virtual void   Instantiatable(void)=0;
@@ -91,23 +91,23 @@ namespace Grid {
       RealD mass;
 
       // Cayley form Moebius (tanh and zolotarev)
-      std::vector<RealD> omega; 
-      std::vector<RealD> bs;    // S dependent coeffs
-      std::vector<RealD> cs;    
-      std::vector<RealD> as;    
+      std::vector<Coeff_t> omega; 
+      std::vector<Coeff_t> bs;    // S dependent coeffs
+      std::vector<Coeff_t> cs;    
+      std::vector<Coeff_t> as;    
       // For preconditioning Cayley form
-      std::vector<RealD> bee;    
-      std::vector<RealD> cee;    
-      std::vector<RealD> aee;    
-      std::vector<RealD> beo;    
-      std::vector<RealD> ceo;    
-      std::vector<RealD> aeo;    
+      std::vector<Coeff_t> bee;    
+      std::vector<Coeff_t> cee;    
+      std::vector<Coeff_t> aee;    
+      std::vector<Coeff_t> beo;    
+      std::vector<Coeff_t> ceo;    
+      std::vector<Coeff_t> aeo;    
       // LDU factorisation of the eeoo matrix
-      std::vector<RealD> lee;    
-      std::vector<RealD> leem;    
-      std::vector<RealD> uee;    
-      std::vector<RealD> ueem;    
-      std::vector<RealD> dee;    
+      std::vector<Coeff_t> lee;    
+      std::vector<Coeff_t> leem;    
+      std::vector<Coeff_t> uee;    
+      std::vector<Coeff_t> ueem;    
+      std::vector<Coeff_t> dee;    
 
       // Constructors
       CayleyFermion5D(GaugeField &_Umu,
@@ -117,20 +117,19 @@ namespace Grid {
 		      GridRedBlackCartesian &FourDimRedBlackGrid,
 		      RealD _mass,RealD _M5,const ImplParams &p= ImplParams());
 
-
-
     protected:
       void SetCoefficientsZolotarev(RealD zolohi,Approx::zolotarev_data *zdata,RealD b,RealD c);
       void SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD b,RealD c);
+      void SetCoefficientsInternal(RealD zolo_hi,std::vector<Coeff_t> & gamma,RealD b,RealD c);
     };
 
   }
 }
 #define INSTANTIATE_DPERP(A)\
 template void CayleyFermion5D< A >::M5D(const FermionField &psi,const FermionField &phi,FermionField &chi,\
-					std::vector<RealD> &lower,std::vector<RealD> &diag,std::vector<RealD> &upper); \
+					std::vector<Coeff_t> &lower,std::vector<Coeff_t> &diag,std::vector<Coeff_t> &upper); \
 template void CayleyFermion5D< A >::M5Ddag(const FermionField &psi,const FermionField &phi,FermionField &chi,\
-					   std::vector<RealD> &lower,std::vector<RealD> &diag,std::vector<RealD> &upper); \
+					   std::vector<Coeff_t> &lower,std::vector<Coeff_t> &diag,std::vector<Coeff_t> &upper); \
 template void CayleyFermion5D< A >::MooeeInv    (const FermionField &psi, FermionField &chi); \
 template void CayleyFermion5D< A >::MooeeInvDag (const FermionField &psi, FermionField &chi);
 

@@ -62,6 +62,8 @@ int main (int argc, char ** argv)
   }
 
   std::cout<<GridLogMessage << "=========================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "= Benchmarking DWF"<<std::endl;
+  std::cout<<GridLogMessage << "=========================================================================="<<std::endl;
   std::cout<<GridLogMessage << "Volume \t\t\tProcs \t Dw \t eoDw \t sDw \t eosDw (Mflop/s)  "<<std::endl;
   std::cout<<GridLogMessage << "=========================================================================="<<std::endl;
 

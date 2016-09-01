@@ -1,82 +1,68 @@
-
-bin_PROGRAMS += Test_cf_coarsen_support Test_checker Test_contfrac_even_odd Test_cshift_red_black Test_cshift_red_black_rotate Test_cshift_rotate Test_dwf_even_odd Test_dwf_rb5d Test_gamma Test_GaugeAction Test_gparity Test_gpwilson_even_odd Test_lie_generators Test_main Test_quenched_update Test_RectPlaq Test_rng Test_rng_fixed Test_wilson_even_odd Test_wilson_tm_even_odd
-
+tests: Test_cf_coarsen_support Test_checker Test_contfrac_even_odd Test_cshift_red_black Test_cshift_red_black_rotate Test_cshift_rotate Test_dwf_even_odd Test_dwf_rb5d Test_fft Test_fftf Test_gamma Test_GaugeAction Test_gparity Test_gpwilson_even_odd Test_lie_generators Test_main Test_quenched_update Test_RectPlaq Test_rng Test_rng_fixed Test_wilson_even_odd Test_wilson_tm_even_odd
+EXTRA_PROGRAMS = Test_cf_coarsen_support Test_checker Test_contfrac_even_odd Test_cshift_red_black Test_cshift_red_black_rotate Test_cshift_rotate Test_dwf_even_odd Test_dwf_rb5d Test_fft Test_fftf Test_gamma Test_GaugeAction Test_gparity Test_gpwilson_even_odd Test_lie_generators Test_main Test_quenched_update Test_RectPlaq Test_rng Test_rng_fixed Test_wilson_even_odd Test_wilson_tm_even_odd
 
 Test_cf_coarsen_support_SOURCES=Test_cf_coarsen_support.cc
 Test_cf_coarsen_support_LDADD=-lGrid
 
-
 Test_checker_SOURCES=Test_checker.cc
 Test_checker_LDADD=-lGrid
-
 
 Test_contfrac_even_odd_SOURCES=Test_contfrac_even_odd.cc
 Test_contfrac_even_odd_LDADD=-lGrid
 
-
 Test_cshift_red_black_SOURCES=Test_cshift_red_black.cc
 Test_cshift_red_black_LDADD=-lGrid
-
 
 Test_cshift_red_black_rotate_SOURCES=Test_cshift_red_black_rotate.cc
 Test_cshift_red_black_rotate_LDADD=-lGrid
 
-
 Test_cshift_rotate_SOURCES=Test_cshift_rotate.cc
 Test_cshift_rotate_LDADD=-lGrid
-
 
 Test_dwf_even_odd_SOURCES=Test_dwf_even_odd.cc
 Test_dwf_even_odd_LDADD=-lGrid
 
-
 Test_dwf_rb5d_SOURCES=Test_dwf_rb5d.cc
 Test_dwf_rb5d_LDADD=-lGrid
 
+Test_fft_SOURCES=Test_fft.cc
+Test_fft_LDADD=-lGrid
+
+Test_fftf_SOURCES=Test_fftf.cc
+Test_fftf_LDADD=-lGrid
 
 Test_gamma_SOURCES=Test_gamma.cc
 Test_gamma_LDADD=-lGrid
 
-
 Test_GaugeAction_SOURCES=Test_GaugeAction.cc
 Test_GaugeAction_LDADD=-lGrid
-
 
 Test_gparity_SOURCES=Test_gparity.cc
 Test_gparity_LDADD=-lGrid
 
-
 Test_gpwilson_even_odd_SOURCES=Test_gpwilson_even_odd.cc
 Test_gpwilson_even_odd_LDADD=-lGrid
-
 
 Test_lie_generators_SOURCES=Test_lie_generators.cc
 Test_lie_generators_LDADD=-lGrid
 
-
 Test_main_SOURCES=Test_main.cc
 Test_main_LDADD=-lGrid
-
 
 Test_quenched_update_SOURCES=Test_quenched_update.cc
 Test_quenched_update_LDADD=-lGrid
 
-
 Test_RectPlaq_SOURCES=Test_RectPlaq.cc
 Test_RectPlaq_LDADD=-lGrid
-
 
 Test_rng_SOURCES=Test_rng.cc
 Test_rng_LDADD=-lGrid
 
-
 Test_rng_fixed_SOURCES=Test_rng_fixed.cc
 Test_rng_fixed_LDADD=-lGrid
 
-
 Test_wilson_even_odd_SOURCES=Test_wilson_even_odd.cc
 Test_wilson_even_odd_LDADD=-lGrid
-
 
 Test_wilson_tm_even_odd_SOURCES=Test_wilson_tm_even_odd.cc
 Test_wilson_tm_even_odd_LDADD=-lGrid

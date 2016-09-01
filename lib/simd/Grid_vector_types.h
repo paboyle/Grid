@@ -38,8 +38,8 @@ directory
 #ifndef GRID_VECTOR_TYPES
 #define GRID_VECTOR_TYPES
 
-#ifdef EMPTY_SIMD
-#include "Grid_empty.h"
+#ifdef GENERIC_VEC
+#include "Grid_generic.h"
 #endif
 #ifdef SSE4
 #include "Grid_sse4.h"
@@ -387,6 +387,12 @@ class Grid_simd {
   }
 
 };  // end of Grid_simd class definition
+
+
+inline void permute(ComplexD &y,ComplexD b, int perm) {  y=b; }
+inline void permute(ComplexF &y,ComplexF b, int perm) {  y=b; }
+inline void permute(RealD &y,RealD b, int perm) {  y=b; }
+inline void permute(RealF &y,RealF b, int perm) {  y=b; }
 
 ////////////////////////////////////////////////////////////////////
 // General rotate

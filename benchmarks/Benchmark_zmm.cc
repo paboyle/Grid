@@ -40,14 +40,20 @@ int main(int argc,char **argv)
   std::ofstream os("zmm.dat");
 
   os << "#V Ls Lxy Lzt C++ Asm OMP L1 " <<std::endl;
+  std::cout<<GridLogMessage << "====================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "= Benchmarking ZMM"<<std::endl;
+  std::cout<<GridLogMessage << "====================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "Volume \t\t\t\tC++DW/MFLOPs\tASM-DW/MFLOPs\tdiff"<<std::endl;
+  std::cout<<GridLogMessage << "====================================================================="<<std::endl;
   for(int L=4;L<=32;L+=4){
     for(int m=1;m<=2;m++){
       for(int Ls=8;Ls<=16;Ls+=8){
 	std::vector<int> grid({L,L,m*L,m*L});
+  std::cout << GridLogMessage <<"\t";
 	for(int i=0;i<4;i++) { 
 	  std::cout << grid[i]<<"x";
 	}
-	std::cout << Ls<<std::endl;
+	std::cout << Ls<<"\t\t";
 	bench(os,grid,Ls);
       }
     }
@@ -104,7 +110,6 @@ int bench(std::ofstream &os, std::vector<int> &latt4,int Ls)
   RealD M5  =1.8;
   DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
-  std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
   int ncall=50;
   double t0=usecond();
   for(int i=0;i<ncall;i++){
@@ -116,7 +121,7 @@ int bench(std::ofstream &os, std::vector<int> &latt4,int Ls)
   double flops=1344*volume/2;
 
   mfc = flops*ncall/(t1-t0);
-  std::cout<<GridLogMessage << "Called C++ Dw"<< " mflop/s =   "<< mfc<<std::endl;
+  std::cout<<mfc<<"\t\t";
 
   QCD::WilsonKernelsStatic::AsmOpt=1;
   t0=usecond();
@@ -125,7 +130,7 @@ int bench(std::ofstream &os, std::vector<int> &latt4,int Ls)
   }
   t1=usecond();
   mfa = flops*ncall/(t1-t0);
-  std::cout<<GridLogMessage << "Called ASM Dw"<< " mflop/s =   "<< mfa<<std::endl;
+  std::cout<<mfa<<"\t\t";
   /*
   int dag=DaggerNo;
   t0=usecond();
@@ -163,8 +168,7 @@ int bench(std::ofstream &os, std::vector<int> &latt4,int Ls)
   //resulta = (-0.5) * resulta;
 
   diff = resulto-resulta;
-  std::cout<<GridLogMessage << "diff "<< norm2(diff)<<std::endl;
-  std::cout<<std::endl;
+  std::cout<<norm2(diff)<<std::endl;
   return 0;
 }
 

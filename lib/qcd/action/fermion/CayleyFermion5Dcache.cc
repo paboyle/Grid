@@ -43,9 +43,9 @@ template<class Impl>
 void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
 				const FermionField &phi, 
 				FermionField &chi,
-				std::vector<RealD> &lower,
-				std::vector<RealD> &diag,
-				std::vector<RealD> &upper)
+				std::vector<Coeff_t> &lower,
+				std::vector<Coeff_t> &diag,
+				std::vector<Coeff_t> &upper)
 {
   int Ls =this->Ls;
   GridBase *grid=psi._grid;
@@ -82,9 +82,9 @@ template<class Impl>
 void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
 				   const FermionField &phi, 
 				   FermionField &chi,
-				   std::vector<RealD> &lower,
-				   std::vector<RealD> &diag,
-				   std::vector<RealD> &upper)
+				   std::vector<Coeff_t> &lower,
+				   std::vector<Coeff_t> &diag,
+				   std::vector<Coeff_t> &upper)
 {
   int Ls =this->Ls;
   GridBase *grid=psi._grid;
@@ -204,6 +204,8 @@ PARALLEL_FOR_LOOP
   INSTANTIATE_DPERP(WilsonImplD);
   INSTANTIATE_DPERP(GparityWilsonImplF);
   INSTANTIATE_DPERP(GparityWilsonImplD);
+  INSTANTIATE_DPERP(ZWilsonImplF);
+  INSTANTIATE_DPERP(ZWilsonImplD);
 #endif
 
 }}

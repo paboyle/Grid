@@ -43,9 +43,9 @@ template<class Impl>
 void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
 				const FermionField &phi, 
 				FermionField &chi,
-				std::vector<RealD> &lower,
-				std::vector<RealD> &diag,
-				std::vector<RealD> &upper)
+				std::vector<Coeff_t> &lower,
+				std::vector<Coeff_t> &diag,
+				std::vector<Coeff_t> &upper)
 {
   int Ls=this->Ls;
   for(int s=0;s<Ls;s++){
@@ -65,9 +65,9 @@ template<class Impl>
 void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
 				   const FermionField &phi, 
 				   FermionField &chi,
-				   std::vector<RealD> &lower,
-				   std::vector<RealD> &diag,
-				   std::vector<RealD> &upper)
+				   std::vector<Coeff_t> &lower,
+				   std::vector<Coeff_t> &diag,
+				   std::vector<Coeff_t> &upper)
 {
   int Ls=this->Ls;
   for(int s=0;s<Ls;s++){

@@ -839,46 +839,23 @@ void WilsonKernels<GparityWilsonImplD>::DiracOptHandDhopSiteDag(StencilImpl &st,
 ////////////// Wilson ; uses this implementation /////////////////////
 // Need Nc=3 though //
 
-template void WilsonKernels<WilsonImplF>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-							       int ss,int sU,const FermionField &in, FermionField &out);
-template void WilsonKernels<WilsonImplD>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-							       int ss,int sU,const FermionField &in, FermionField &out);
-template void WilsonKernels<WilsonImplF>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-								  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-								  int ss,int sU,const FermionField &in, FermionField &out);
-template void WilsonKernels<WilsonImplD>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-								  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+#define INSTANTIATE_THEM(A) \
+template void WilsonKernels<A>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,\
+							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,\
+							       int ss,int sU,const FermionField &in, FermionField &out);\
+template void WilsonKernels<A>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,\
+								  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,\
 								  int ss,int sU,const FermionField &in, FermionField &out);
 
-
-template void WilsonKernels<GparityWilsonImplF>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-								      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-								      int ss,int sU,const FermionField &in, FermionField &out);
-template void WilsonKernels<GparityWilsonImplD>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-								      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-								      int ss,int sU,const FermionField &in, FermionField &out);
-template void WilsonKernels<GparityWilsonImplF>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-									 std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-									 int ss,int sU,const FermionField &in, FermionField &out);
-template void WilsonKernels<GparityWilsonImplD>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-									 std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-									 int ss,int sU,const FermionField &in, FermionField &out);
-
-
-template void WilsonKernels<DomainWallVec5dImplF>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-								      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-								      int ss,int sU,const FermionField &in, FermionField &out);
-template void WilsonKernels<DomainWallVec5dImplD>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-								      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-								      int ss,int sU,const FermionField &in, FermionField &out);
-template void WilsonKernels<DomainWallVec5dImplF>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-									 std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-									 int ss,int sU,const FermionField &in, FermionField &out);
-template void WilsonKernels<DomainWallVec5dImplD>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-									 std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-									 int ss,int sU,const FermionField &in, FermionField &out);
-
+INSTANTIATE_THEM(WilsonImplF);
+INSTANTIATE_THEM(WilsonImplD);
+INSTANTIATE_THEM(ZWilsonImplF);
+INSTANTIATE_THEM(ZWilsonImplD);
+INSTANTIATE_THEM(GparityWilsonImplF);
+INSTANTIATE_THEM(GparityWilsonImplD);
+INSTANTIATE_THEM(DomainWallVec5dImplF);
+INSTANTIATE_THEM(DomainWallVec5dImplD);
+INSTANTIATE_THEM(ZDomainWallVec5dImplF);
+INSTANTIATE_THEM(ZDomainWallVec5dImplD);
 
 }}
