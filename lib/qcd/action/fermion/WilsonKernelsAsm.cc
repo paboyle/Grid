@@ -38,6 +38,7 @@ namespace QCD {
   ///////////////////////////////////////////////////////////
   // Default to no assembler implementation
   ///////////////////////////////////////////////////////////
+  /*
 template<class Impl>
 void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
 					       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
@@ -45,6 +46,14 @@ void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & l
 {
   assert(0);
 }
+template<class Impl>
+void WilsonKernels<Impl >::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
+						  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+						  int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+{
+  assert(0);
+}
+  */
 
 #if defined(AVX512) 
 
@@ -116,7 +125,7 @@ void WilsonKernels<DomainWallVec5dImplF>::DiracOptAsmDhopSiteDag(StencilImpl &st
 #endif
 
 
-
+/*
 template void WilsonKernels<WilsonImplF>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
 							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 							      int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out);		
@@ -136,5 +145,26 @@ template void WilsonKernels<DomainWallVec5dImplF>::DiracOptAsmDhopSite(StencilIm
 template void WilsonKernels<DomainWallVec5dImplD>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, 
 							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 							       int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out);		
+
+template void WilsonKernels<WilsonImplF>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
+							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							      int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out);		
+
+template void WilsonKernels<WilsonImplD>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, 
+							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							       int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out);		
+template void WilsonKernels<GparityWilsonImplF>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, 
+							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							       int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out);		
+template void WilsonKernels<GparityWilsonImplD>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, 
+							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							       int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out);		
+template void WilsonKernels<DomainWallVec5dImplF>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, 
+							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							       int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out);		
+template void WilsonKernels<DomainWallVec5dImplD>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, 
+							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							       int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out);		
+*/
 }}
 

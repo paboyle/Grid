@@ -96,7 +96,24 @@ namespace Grid {
      WilsonKernels(const ImplParams &p= ImplParams());
      
     };
-
+    
+    
+    template<class Impl>
+      void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
+						     std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+						     int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+      {
+	assert(0);
+      }
+    template<class Impl>
+      void WilsonKernels<Impl >::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
+							std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+      {
+	assert(0);
+      }
+    
+    
   }
 }
 #endif
