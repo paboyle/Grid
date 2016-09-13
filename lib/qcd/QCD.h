@@ -55,11 +55,14 @@ namespace QCD {
     //////////////////////////////////////////////////////////////////////////////
     // QCD iMatrix types
     // Index conventions:                            Lorentz x Spin x Colour
+    // note: static const int or constexpr will work for type deductions
+    //       with the intel compiler (up to version 17)
     //////////////////////////////////////////////////////////////////////////////
-    static const int ColourIndex = 2;
-    static const int SpinIndex   = 1;
-    static const int LorentzIndex= 0;
+    #define ColourIndex  2
+    #define SpinIndex    1
+    #define LorentzIndex 0
 
+  
     // Also should make these a named enum type
     static const int DaggerNo=0;
     static const int DaggerYes=1;
