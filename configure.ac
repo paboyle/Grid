@@ -10,8 +10,19 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_LANG(C++)
 CXXFLAGS="-O3 $CXXFLAGS"
 AC_PROG_CXX
+
+############ openmp  ###############
 AC_OPENMP
+
+ac_openmp=no
+
+if test "${OPENMP_CXXFLAGS}X" != "X"; then
+ac_openmp=yes
 AM_CXXFLAGS="$OPENMP_CXXFLAGS $AM_CXXFLAGS"
+AM_LDFLAGS="$OPENMP_CXXFLAGS $AM_LDFLAGS"
+fi
+
+############ libtool ###############
 LT_INIT
 
 ############### Checks for header files
@@ -29,7 +40,7 @@ AC_TYPE_SIZE_T
 AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 
-############### Options
+############### GMP and MPFR #################
 AC_ARG_WITH([gmp],
     [AS_HELP_STRING([--with-gmp=prefix],
     [try this for a non-standard install prefix of the GMP library])],
@@ -40,6 +51,8 @@ AC_ARG_WITH([mpfr],
     [try this for a non-standard install prefix of the MPFR library])],
     [AM_CXXFLAGS="-I$with_mpfr/include $AM_CXXFLAGS"]
     [AM_LDFLAGS="-L$with_mpfr/lib $AM_LDFLAGS"])
+
+################## lapack ####################
 AC_ARG_ENABLE([lapack],
     [AC_HELP_STRING([--enable-lapack=yes|no|prefix], [enable LAPACK])], 
     [ac_LAPACK=${enable_lapack}],[ac_LAPACK=no])
@@ -55,14 +68,27 @@ case ${ac_LAPACK} in
         AC_DEFINE([USE_LAPACK],[1],[use LAPACK])
 esac
 
-AC_CHECK_LIB([fftw3],[fft_init_threads],
+################## FFTW3 ####################
+AC_ARG_WITH([fftw],    
+            [AS_HELP_STRING([--with-fftw=prefix],
+            [try this for a non-standard install prefix of the FFTW3 library])],
+            [AM_CXXFLAGS="-I$with_fftw/include $AM_CXXFLAGS"]
+            [AM_LDFLAGS="-L$with_fftw/lib $AM_LDFLAGS"])
+
+#
+# What about the MKL library replacement for fftw3 ?  How do we know if fftw_execute
+# can be found in MKL? 
+#
+AC_CHECK_LIB([fftw3],[fftw_execute],
 	[AC_DEFINE([HAVE_FFTW],[1],[Define to 1 if you have the `FFTW' library (-lfftw3).])] [ac_fftw=yes],
         [ac_fftw=no])
+
 case ${ac_fftw} in
     no)
+        echo WARNING libfftw3 not found FFT routines will not work
         ;;
     yes)
-        AM_LDFLAGS="-lfftw3 $AM_LDFLAGS"
+        AM_LDFLAGS="$AM_LDFLAGS -lfftw3 -lfftw3f"
 esac
 
 
@@ -307,19 +333,18 @@ Summary of configuration for $PACKAGE v$VERSION
 - compiler version              : ${ax_cv_gxx_version}
 ----- BUILD OPTIONS -----------------------------------
 - SIMD                          : ${ac_SIMD}
-- communications type           : ${ac_COMMS}
-- default precision             : ${ac_PRECISION}
+- Threading                     : ${ac_openmp} 
+- Communications type           : ${ac_COMMS}
+- Default precision             : ${ac_PRECISION}
 - RNG choice                    : ${ac_RNG} 
 - GMP                           : `if test "x$have_gmp" = xtrue; then echo yes; else echo no; fi`
 - LAPACK                        : ${ac_LAPACK}
+- FFTW                          : ${ac_fftw}
 - build DOXYGEN documentation   : `if test "x$enable_doc" = xyes; then echo yes; else echo no; fi`
 - graphs and diagrams           : `if test "x$enable_dot" = xyes; then echo yes; else echo no; fi`
 ----- BUILD FLAGS -------------------------------------
-- CXXFLAGS: 
-`echo ${AM_CXXFLAGS} ${CXXFLAGS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
-- LDFLAGS:
-`echo ${AM_LDFLAGS} ${LDFLAGS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
-- LIBS:
-`echo ${LIBS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
+- CXXFLAGS:  "${AM_CXXFLAGS} ${CXXFLAGS}"
+- LDFLAGS:   "${AM_LDFLAGS} ${LDFLAGS}"
+- LIBS:      "${LIBS} "
 -------------------------------------------------------
 "

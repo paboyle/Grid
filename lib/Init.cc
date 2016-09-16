@@ -153,6 +153,7 @@ void GridParseLayout(char **argv,int argc,
     assert(ompthreads.size()==1);
     GridThread::SetThreads(ompthreads[0]);
   }
+
   if( GridCmdOptionExists(argv,argv+argc,"--cores") ){
     std::vector<int> cores(0);
     arg= GridCmdOptionPayload(argv,argv+argc,"--cores");
@@ -202,7 +203,6 @@ void Grid_init(int *argc,char ***argv)
     GridCmdOptionCSL(arg,logstreams);
     GridLogConfigure(logstreams);
   }
-
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-signals") ){
     Grid_debug_handler_init();
