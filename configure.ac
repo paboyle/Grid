@@ -10,6 +10,7 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_LANG(C++)
 CXXFLAGS="-O3 $CXXFLAGS"
 AC_PROG_CXX
+AC_PROG_RANLIB
 
 ############ openmp  ###############
 AC_OPENMP
@@ -21,9 +22,6 @@ ac_openmp=yes
 AM_CXXFLAGS="$OPENMP_CXXFLAGS $AM_CXXFLAGS"
 AM_LDFLAGS="$OPENMP_CXXFLAGS $AM_LDFLAGS"
 fi
-
-############ libtool ###############
-LT_INIT
 
 ############### Checks for header files
 AC_CHECK_HEADERS(stdint.h)
