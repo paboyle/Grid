@@ -119,9 +119,9 @@ namespace Grid {
     // One generator per site.
     // Uniform and Gaussian distributions from these generators.
 #ifdef RNG_SPRNG_SHA256
-    typedef uint64_t      RngStateType;
+    typedef uint32_t      RngStateType;
     typedef SprngSha256 RngEngine;
-    static const int RngStateCount = 16;
+    static const int RngStateCount = 22;
 #elif defined RNG_RANLUX
     typedef uint64_t      RngStateType;
     typedef std::ranlux48 RngEngine;

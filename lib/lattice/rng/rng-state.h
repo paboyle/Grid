@@ -112,7 +112,7 @@ struct RngState
   }
 };
 
-const size_t RNG_STATE_SIZE_OF_INT32 = 2 + 8 + 2 + 3 * 2 + 2 + 1 + 1;
+const size_t RNG_STATE_NUM_OF_INT32 = 2 + 8 + 2 + 3 * 2 + 2 + 1 + 1;
 
 inline uint64_t patchTwoUint32(const uint32_t a, const uint32_t b)
 {
@@ -128,8 +128,8 @@ inline void splitTwoUint32(uint32_t& a, uint32_t& b, const uint64_t x)
 
 inline void exportRngState(std::vector<uint32_t>& v, const RngState& rs)
 {
-  assert(22 == RNG_STATE_SIZE_OF_INT32);
-  v.resize(RNG_STATE_SIZE_OF_INT32);
+  assert(22 == RNG_STATE_NUM_OF_INT32);
+  v.resize(RNG_STATE_NUM_OF_INT32);
   splitTwoUint32(v[0], v[1], rs.numBytes);
   for (int i = 0; i < 8; ++i) {
     v[2 + i] = rs.hash[i];
@@ -146,8 +146,8 @@ inline void exportRngState(std::vector<uint32_t>& v, const RngState& rs)
 
 inline void importRngState(RngState& rs, const std::vector<uint32_t>& v)
 {
-  assert(RNG_STATE_SIZE_OF_INT32 == v.size());
-  assert(22 == RNG_STATE_SIZE_OF_INT32);
+  assert(RNG_STATE_NUM_OF_INT32 == v.size());
+  assert(22 == RNG_STATE_NUM_OF_INT32);
   rs.numBytes = patchTwoUint32(v[0], v[1]);
   for (int i = 0; i < 8; ++i) {
     rs.hash[i] = v[2 + i];
@@ -164,7 +164,7 @@ inline void importRngState(RngState& rs, const std::vector<uint32_t>& v)
 
 inline std::ostream& operator<<(std::ostream& os, const RngState& rs)
 {
-  std::vector<uint32_t> v(RNG_STATE_SIZE_OF_INT32);
+  std::vector<uint32_t> v(RNG_STATE_NUM_OF_INT32);
   exportRngState(v, rs);
   for (size_t i = 0; i < v.size() - 1; ++i) {
     os << v[i] << " ";
@@ -175,7 +175,7 @@ inline std::ostream& operator<<(std::ostream& os, const RngState& rs)
 
 inline std::istream& operator>>(std::istream& is, RngState& rs)
 {
-  std::vector<uint32_t> v(RNG_STATE_SIZE_OF_INT32);
+  std::vector<uint32_t> v(RNG_STATE_NUM_OF_INT32);
   for (size_t i = 0; i < v.size(); ++i) {
     is >> v[i];
   }
