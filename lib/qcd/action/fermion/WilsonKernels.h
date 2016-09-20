@@ -79,6 +79,10 @@ namespace Grid {
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
 			      int sF,int sU,int Ls, int Ns, const FermionField &in, FermionField &out);
 
+     void DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
+			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+			      int sF,int sU,int Ls, int Ns, const FermionField &in, FermionField &out);
+
 
      void DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
 			      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
@@ -92,7 +96,25 @@ namespace Grid {
      WilsonKernels(const ImplParams &p= ImplParams());
      
     };
-
+    
+    ///////////////////////////////////////////////////////////
+    // Default to no assembler implementation
+    ///////////////////////////////////////////////////////////
+    template<class Impl>
+    void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
+						   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+						   int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+    {
+      assert(0);
+    }
+    template<class Impl>
+    void WilsonKernels<Impl >::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
+						      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+						      int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+    {
+      assert(0);
+    }
+        
   }
 }
 #endif

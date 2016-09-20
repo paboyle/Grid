@@ -194,7 +194,7 @@ int main (int argc, char ** argv)
     }
   }  
 
-
+#if 0
 
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking sequential persistent halo exchange in "<<nmu<<" dimensions"<<std::endl;
@@ -315,7 +315,7 @@ int main (int argc, char ** argv)
     }
   }
 
-
+#endif
 
   Grid_finalize();
 }

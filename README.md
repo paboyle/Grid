@@ -68,10 +68,18 @@ Now you can execute the `configure` script to generate makefiles (here from a bu
 
 ``` bash
 mkdir build; cd build
-../configure --enable-precision=double --enable-simd=AVX --enable-comms=mpi --prefix=<path>
+../configure --enable-precision=double --enable-simd=AVX --enable-comms=mpi-auto --prefix=<path>
 ```
 
-where `--enable-precision=` set the default precision (`single` or `double`), `--enable-simd=` set the SIMD type (see possible values below), `--enable-comms=` set the protocol used for communications (`none`, `mpi` or `shmem`), and `<path>` should be replaced by the prefix path where you want to install Grid. Other options are available, use `configure --help` to display them. Like with any other program using GNU autotool, the `CXX`, `CXXFLAGS`, `LDFLAGS`, ... environment variables can be modified to customise the build.
+where `--enable-precision=` set the default precision (`single` or `double`),
+`--enable-simd=` set the SIMD type (see possible values below), `--enable-
+comms=` set the protocol used for communications (`none`, `mpi`, `mpi-auto` or
+`shmem`), and `<path>` should be replaced by the prefix path where you want to
+install Grid. The `mpi-auto` communication option set `configure` to determine
+automatically how to link to MPI. Other options are available, use `configure
+--help` to display them. Like with any other program using GNU autotool, the
+`CXX`, `CXXFLAGS`, `LDFLAGS`, ... environment variables can be modified to
+customise the build.
 
 Finally, you can build and install Grid:
 

@@ -84,19 +84,6 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 {
   assert(0);
 }
-void CartesianCommunicator::SendToRecvFromInit(std::vector<CommsRequest_t> &list,
-						void *xmit,
-						int dest,
-						void *recv,
-						int from,
-						int bytes)
-{
-  assert(0);
-}
-void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &list)
-{
-  assert(0);
-}
 void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
 {
   assert(0);

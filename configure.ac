@@ -8,11 +8,20 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 ############### Checks for programs
 AC_LANG(C++)
-: ${CXXFLAGS="-O3"}
+CXXFLAGS="-O3 $CXXFLAGS"
 AC_PROG_CXX
+AC_PROG_RANLIB
+
+############ openmp  ###############
 AC_OPENMP
+
+ac_openmp=no
+
+if test "${OPENMP_CXXFLAGS}X" != "X"; then
+ac_openmp=yes
 AM_CXXFLAGS="$OPENMP_CXXFLAGS $AM_CXXFLAGS"
-LT_INIT([disable-shared])
+AM_LDFLAGS="$OPENMP_CXXFLAGS $AM_LDFLAGS"
+fi
 
 ############### Checks for header files
 AC_CHECK_HEADERS(stdint.h)
@@ -29,7 +38,7 @@ AC_TYPE_SIZE_T
 AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 
-############### Options
+############### GMP and MPFR #################
 AC_ARG_WITH([gmp],
     [AS_HELP_STRING([--with-gmp=prefix],
     [try this for a non-standard install prefix of the GMP library])],
@@ -40,9 +49,12 @@ AC_ARG_WITH([mpfr],
     [try this for a non-standard install prefix of the MPFR library])],
     [AM_CXXFLAGS="-I$with_mpfr/include $AM_CXXFLAGS"]
     [AM_LDFLAGS="-L$with_mpfr/lib $AM_LDFLAGS"])
+
+################## lapack ####################
 AC_ARG_ENABLE([lapack],
     [AC_HELP_STRING([--enable-lapack=yes|no|prefix], [enable LAPACK])], 
     [ac_LAPACK=${enable_lapack}],[ac_LAPACK=no])
+
 case ${ac_LAPACK} in
     no)
         ;;
@@ -53,6 +65,13 @@ case ${ac_LAPACK} in
         AM_LDFLAGS="-L$ac_LAPACK/lib $AM_LDFLAGS"
         AC_DEFINE([USE_LAPACK],[1],[use LAPACK])
 esac
+
+################## FFTW3 ####################
+AC_ARG_WITH([fftw],    
+            [AS_HELP_STRING([--with-fftw=prefix],
+            [try this for a non-standard install prefix of the FFTW3 library])],
+            [AM_CXXFLAGS="-I$with_fftw/include $AM_CXXFLAGS"]
+            [AM_LDFLAGS="-L$with_fftw/lib $AM_LDFLAGS"])
 
 ################ Get compiler informations
 AC_LANG([C++])
@@ -67,7 +86,6 @@ AC_DEFINE_UNQUOTED([GXX_VERSION],["$GXX_VERSION"],
 ############### Checks for library functions
 CXXFLAGS_CPY=$CXXFLAGS
 LDFLAGS_CPY=$LDFLAGS
-LIBS_CPY=$LIBS
 CXXFLAGS="$AM_CXXFLAGS $CXXFLAGS"
 LDFLAGS="$AM_LDFLAGS $LDFLAGS"
 AC_CHECK_FUNCS([gettimeofday])
@@ -77,7 +95,7 @@ AC_CHECK_LIB([gmp],[__gmpf_init],
                  [have_mpfr=true]
                  [LIBS="$LIBS -lmpfr"],
                  [AC_MSG_ERROR([MPFR library not found])])]
-             [AC_DEFINE([HAVE_LIBGMP], [1], [Define to 1 if you have the `GMP' library (-lgmp).])]
+   	     [AC_DEFINE([HAVE_LIBGMP], [1], [Define to 1 if you have the `GMP' library (-lgmp).])]
              [have_gmp=true]
              [LIBS="$LIBS -lgmp"],
              [AC_MSG_WARN([**** GMP library not found, Grid can still compile but RHMC will not work ****])])
@@ -86,6 +104,11 @@ if test "${ac_LAPACK}x" != "nox"; then
     AC_CHECK_LIB([lapack],[LAPACKE_sbdsdc],[],
                  [AC_MSG_ERROR("LAPACK enabled but library not found")])
 fi
+AC_CHECK_LIB([fftw3],[fftw_execute],
+  [AC_DEFINE([HAVE_FFTW],[1],[Define to 1 if you have the `FFTW' library (-lfftw3).])]
+  [have_fftw=true]
+  [LIBS="$LIBS -lfftw3 -lfftw3f"],
+  [AC_MSG_WARN([**** FFTW library not found, Grid can still compile but FFT-based routines will not work ****])])
 CXXFLAGS=$CXXFLAGS_CPY
 LDFLAGS=$LDFLAGS_CPY
 
@@ -108,15 +131,18 @@ case ${ax_cv_cxx_compiler_vendor} in
         SIMD_FLAGS='-mavx -mfma4';;
       AVX2)
         AC_DEFINE([AVX2],[1],[AVX2 intrinsics])
-        SIMD_FLAGS='-mavx2';;
+        SIMD_FLAGS='-mavx2 -mfma';;
       AVX512|AVX512MIC|KNL)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-mavx512f -mavx512pf -mavx512er -mavx512cd';;
       IMCI|KNC)
-        AC_DEFINE([IMCI],[1],[IMCI Intrinsics for Knights Corner])
+        AC_DEFINE([IMCI],[1],[IMCI intrinsics for Knights Corner])
         SIMD_FLAGS='';;
       GEN)
         AC_DEFINE([GENERIC_VEC],[1],[generic vector code])
+        SIMD_FLAGS='';;
+      QPX|BGQ)
+        AC_DEFINE([QPX],[1],[QPX intrinsics for BG/Q])
         SIMD_FLAGS='';;
       *)
         AC_MSG_ERROR(["SIMD option ${ac_SIMD} not supported by the GCC/Clang compiler"]);;
@@ -294,15 +320,17 @@ Summary of configuration for $PACKAGE v$VERSION
 - compiler version              : ${ax_cv_gxx_version}
 ----- BUILD OPTIONS -----------------------------------
 - SIMD                          : ${ac_SIMD}
-- communications type           : ${ac_COMMS}
-- default precision             : ${ac_PRECISION}
+- Threading                     : ${ac_openmp} 
+- Communications type           : ${ac_COMMS}
+- Default precision             : ${ac_PRECISION}
 - RNG choice                    : ${ac_RNG} 
 - GMP                           : `if test "x$have_gmp" = xtrue; then echo yes; else echo no; fi`
 - LAPACK                        : ${ac_LAPACK}
+- FFTW                          : `if test "x$have_fftw" = xtrue; then echo yes; else echo no; fi`
 - build DOXYGEN documentation   : `if test "x$enable_doc" = xyes; then echo yes; else echo no; fi`
 - graphs and diagrams           : `if test "x$enable_dot" = xyes; then echo yes; else echo no; fi`
 ----- BUILD FLAGS -------------------------------------
-- CXXFLAGS: 
+- CXXFLAGS:
 `echo ${AM_CXXFLAGS} ${CXXFLAGS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
 - LDFLAGS:
 `echo ${AM_LDFLAGS} ${LDFLAGS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
