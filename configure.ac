@@ -73,23 +73,6 @@ AC_ARG_WITH([fftw],
             [AM_CXXFLAGS="-I$with_fftw/include $AM_CXXFLAGS"]
             [AM_LDFLAGS="-L$with_fftw/lib $AM_LDFLAGS"])
 
-#
-# What about the MKL library replacement for fftw3 ?  How do we know if fftw_execute
-# can be found in MKL? 
-#
-AC_CHECK_LIB([fftw3],[fftw_execute],
-	[AC_DEFINE([HAVE_FFTW],[1],[Define to 1 if you have the `FFTW' library (-lfftw3).])] [ac_fftw=yes],
-        [ac_fftw=no])
-
-case ${ac_fftw} in
-    no)
-        echo WARNING libfftw3 not found FFT routines will not work
-        ;;
-    yes)
-        AM_LDFLAGS="$AM_LDFLAGS -lfftw3 -lfftw3f"
-esac
-
-
 ################ Get compiler informations
 AC_LANG([C++])
 AX_CXX_COMPILE_STDCXX_11([noext],[mandatory])
@@ -103,7 +86,6 @@ AC_DEFINE_UNQUOTED([GXX_VERSION],["$GXX_VERSION"],
 ############### Checks for library functions
 CXXFLAGS_CPY=$CXXFLAGS
 LDFLAGS_CPY=$LDFLAGS
-LIBS_CPY=$LIBS
 CXXFLAGS="$AM_CXXFLAGS $CXXFLAGS"
 LDFLAGS="$AM_LDFLAGS $LDFLAGS"
 AC_CHECK_FUNCS([gettimeofday])
@@ -122,6 +104,11 @@ if test "${ac_LAPACK}x" != "nox"; then
     AC_CHECK_LIB([lapack],[LAPACKE_sbdsdc],[],
                  [AC_MSG_ERROR("LAPACK enabled but library not found")])
 fi
+AC_CHECK_LIB([fftw3],[fftw_execute],
+  [AC_DEFINE([HAVE_FFTW],[1],[Define to 1 if you have the `FFTW' library (-lfftw3).])]
+  [have_fftw=true]
+  [LIBS="$LIBS -lfftw3 -lfftw3f"],
+  [AC_MSG_WARN([**** FFTW library not found, Grid can still compile but FFT-based routines will not work ****])])
 CXXFLAGS=$CXXFLAGS_CPY
 LDFLAGS=$LDFLAGS_CPY
 
@@ -337,12 +324,15 @@ Summary of configuration for $PACKAGE v$VERSION
 - RNG choice                    : ${ac_RNG} 
 - GMP                           : `if test "x$have_gmp" = xtrue; then echo yes; else echo no; fi`
 - LAPACK                        : ${ac_LAPACK}
-- FFTW                          : ${ac_fftw}
+- FFTW                          : `if test "x$have_fftw" = xtrue; then echo yes; else echo no; fi`
 - build DOXYGEN documentation   : `if test "x$enable_doc" = xyes; then echo yes; else echo no; fi`
 - graphs and diagrams           : `if test "x$enable_dot" = xyes; then echo yes; else echo no; fi`
 ----- BUILD FLAGS -------------------------------------
-- CXXFLAGS:  "${AM_CXXFLAGS} ${CXXFLAGS}"
-- LDFLAGS:   "${AM_LDFLAGS} ${LDFLAGS}"
-- LIBS:      "${LIBS} "
+- CXXFLAGS:
+`echo ${AM_CXXFLAGS} ${CXXFLAGS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
+- LDFLAGS:
+`echo ${AM_LDFLAGS} ${LDFLAGS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
+- LIBS:
+`echo ${LIBS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
 -------------------------------------------------------
 "
