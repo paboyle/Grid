@@ -81,8 +81,9 @@ class SU_TwoIndex : public SU<ncolour> {
       int counter = 0;
       for (int i = 1; i < ncolour; i++) {
         for (int j = 0; j < i; j++) {
-          a[counter++][0] = i;
-          a[counter++][1] = j;
+          a[counter][0] = i;
+          a[counter][1] = j;
+          counter++;
         }
       }
       filled = true;

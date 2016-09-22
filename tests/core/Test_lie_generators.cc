@@ -406,7 +406,7 @@ int main(int argc, char** argv) {
 
 
 
-  if (SU2TwoIndexAntiSymm::Dimension != 1){
+  if (TwoIndexRep<Nc, AntiSymmetric >::Dimension != 1){
 
   std::cout << GridLogMessage << "*********************************************"
       << std::endl;
