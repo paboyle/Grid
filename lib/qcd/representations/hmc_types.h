@@ -2,6 +2,7 @@
 #define HMC_TYPES_H
 
 #include <Grid/qcd/representations/adjoint.h>
+#include <Grid/qcd/representations/two_index.h>
 #include <Grid/qcd/representations/fundamental.h>
 #include <tuple>
 #include <utility>

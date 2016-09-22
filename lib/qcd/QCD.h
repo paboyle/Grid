@@ -45,7 +45,7 @@ namespace QCD {
     static const int Zm = 6;
     static const int Tm = 7;
 
-    static const int Nc=3;
+    static const int Nc=2;
     static const int Ns=4;
     static const int Nd=4;
     static const int Nhs=2; // half spinor
@@ -499,12 +499,13 @@ namespace QCD {
 #include <Grid/qcd/spin/TwoSpinor.h>
 #include <Grid/qcd/utils/LinalgUtils.h>
 #include <Grid/qcd/utils/CovariantCshift.h>
-	
+
+// Include representations 	
 #include <Grid/qcd/utils/SUn.h>
 #include <Grid/qcd/utils/SUnAdjoint.h>
-	
+#include <Grid/qcd/utils/SUnTwoIndex.h>
 #include <Grid/qcd/representations/hmc_types.h>
-	
+
 #include <Grid/qcd/action/Actions.h>
 
 #include <Grid/qcd/smearing/Smearing.h>

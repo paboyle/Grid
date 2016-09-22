@@ -526,6 +526,7 @@ void WilsonKernels<Impl>::DiracOptDhopDir(
 
 FermOpTemplateInstantiate(WilsonKernels);
 AdjointFermOpTemplateInstantiate(WilsonKernels);
+TwoIndexFermOpTemplateInstantiate(WilsonKernels);
 
 }}
 
