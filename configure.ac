@@ -1,10 +1,14 @@
 AC_PREREQ([2.63])
 AC_INIT([Grid], [0.5.1-dev], [https://github.com/paboyle/Grid], [Grid])
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE(subdir-objects)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([lib/Grid.h])
 AC_CONFIG_HEADERS([lib/Config.h])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+
 
 ############### Checks for programs
 AC_LANG(C++)
