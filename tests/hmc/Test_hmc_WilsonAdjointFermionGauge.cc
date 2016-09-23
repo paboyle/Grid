@@ -40,7 +40,6 @@ namespace QCD {
 
 // Here change the allowed (higher) representations
 typedef Representations< FundamentalRepresentation, AdjointRepresentation > TheRepresentations;
-//typedef Representations< FundamentalRepresentation > TheRepresentations;
 
 
 class HmcRunner : public NerscHmcRunnerHirep< TheRepresentations > {
@@ -80,10 +79,10 @@ class HmcRunner : public NerscHmcRunnerHirep< TheRepresentations > {
     Nf2.is_smeared = false;
 
     // Collect actions
-    ActionLevelHirep<LatticeGaugeField, TheRepresentations > Level1(1);
+    ActionLevel<LatticeGaugeField, TheRepresentations > Level1(1);
     Level1.push_back(&Nf2);
 
-    ActionLevelHirep<LatticeGaugeField, TheRepresentations > Level2(4);
+    ActionLevel<LatticeGaugeField, TheRepresentations > Level2(4);
     Level2.push_back(&Waction);
 
     TheAction.push_back(Level1);

@@ -101,7 +101,7 @@ namespace Grid{
 
       LeapFrog(GridBase* grid, 
 	       IntegratorParameters Par,
-	       ActionSet<GaugeField> & Aset,
+	       ActionSet<GaugeField, RepresentationPolicy> & Aset,
 	       SmearingPolicy & Sm):
 	Integrator<GaugeField, SmearingPolicy, RepresentationPolicy>(grid,Par,Aset,Sm) {};
 
@@ -151,7 +151,7 @@ namespace Grid{
 
       MinimumNorm2(GridBase* grid, 
 		   IntegratorParameters Par,
-		   ActionSetHirep<GaugeField, RepresentationPolicy> & Aset,
+		   ActionSet<GaugeField, RepresentationPolicy> & Aset,
 		   SmearingPolicy& Sm):
 	Integrator<GaugeField, SmearingPolicy, RepresentationPolicy>(grid,Par,Aset,Sm) {};
 
@@ -215,7 +215,7 @@ namespace Grid{
       // Looks like dH scales as dt^4. tested wilson/wilson 2 level.
     ForceGradient(GridBase* grid, 
 		  IntegratorParameters Par,
-		  ActionSet<GaugeField> & Aset,
+		  ActionSet<GaugeField, RepresentationPolicy> & Aset,
 		  SmearingPolicy &Sm):
       Integrator<GaugeField, SmearingPolicy, RepresentationPolicy>(grid,Par,Aset, Sm) {};
 

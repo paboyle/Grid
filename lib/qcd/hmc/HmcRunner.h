@@ -39,7 +39,7 @@ class NerscHmcRunnerTemplate {
 
   enum StartType_t { ColdStart, HotStart, TepidStart, CheckpointStart };
 
-  ActionSetHirep<GaugeField, RepresentationsPolicy> TheAction;
+  ActionSet<GaugeField, RepresentationsPolicy> TheAction;
 
   GridCartesian *UGrid;
   GridCartesian *FGrid;

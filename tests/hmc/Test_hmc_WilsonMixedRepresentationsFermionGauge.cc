@@ -69,7 +69,7 @@ class HmcRunner : public NerscHmcRunnerHirep< TheRepresentations > {
     TwoIndexSymmetricRepresentation::LatticeField US(UGrid);
 
     // Gauge action
-    WilsonGaugeActionR Waction(2.25);
+    WilsonGaugeActionR Waction(5.6);
 
     Real adjoint_mass = -0.1;
     Real symm_mass = -0.5;
@@ -84,11 +84,11 @@ class HmcRunner : public NerscHmcRunnerHirep< TheRepresentations > {
     TwoFlavourPseudoFermionAction<SymmImplPolicy> Nf2_Symm(SymmFermOp, CG_symm, CG_symm);
 
     // Collect actions
-    ActionLevelHirep<LatticeGaugeField, TheRepresentations > Level1(1);
+    ActionLevel<LatticeGaugeField, TheRepresentations > Level1(1);
     Level1.push_back(&Nf2_Adj);
     Level1.push_back(&Nf2_Symm);
 
-    ActionLevelHirep<LatticeGaugeField, TheRepresentations > Level2(4);
+    ActionLevel<LatticeGaugeField, TheRepresentations > Level2(4);
     Level2.push_back(&Waction);
 
     TheAction.push_back(Level1);

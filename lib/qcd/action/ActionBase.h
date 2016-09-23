@@ -45,27 +45,6 @@ class Action {
   virtual ~Action(){};
 };
 
-// Could derive PseudoFermion action with a PF field, FermionField, and a Grid;
-// implement refresh
-/*
-template<class GaugeField, class FermionField>
-class PseudoFermionAction : public Action<GaugeField> {
- public:
-  FermionField Phi;
-  GridParallelRNG &pRNG;
-  GridBase &Grid;
-
-  PseudoFermionAction(GridBase &_Grid,GridParallelRNG &_pRNG) : Grid(_Grid),
-Phi(&_Grid), pRNG(_pRNG) {
-  };
-
-  virtual void refresh(const GaugeField &gauge) {
-    gaussian(Phi,pRNG);
-  };
-
-};
-*/
-
 // Indexing of tuple types
 template <class T, class Tuple>
 struct Index;
@@ -80,6 +59,7 @@ struct Index<T, std::tuple<U, Types...>> {
   static const std::size_t value = 1 + Index<T, std::tuple<Types...>>::value;
 };
 
+/*
 template <class GaugeField>
 struct ActionLevel {
  public:
@@ -99,10 +79,10 @@ struct ActionLevel {
 
   void push_back(ActPtr ptr) { actions.push_back(ptr); }
 };
+*/
 
-
-template <class GaugeField, class Repr>
-struct ActionLevelHirep {
+template <class GaugeField, class Repr = NoHirep >
+struct ActionLevel {
  public:
   unsigned int multiplier; 
 
@@ -118,9 +98,9 @@ struct ActionLevelHirep {
   std::vector<ActPtr>& actions;
 
   // Temporary conversion between ActionLevel and ActionLevelHirep
-  ActionLevelHirep(ActionLevel<GaugeField>& AL ):actions(AL.actions), multiplier(AL.multiplier){}
+  //ActionLevelHirep(ActionLevel<GaugeField>& AL ):actions(AL.actions), multiplier(AL.multiplier){}
 
-  ActionLevelHirep(unsigned int mul = 1) : actions(std::get<0>(actions_hirep)), multiplier(mul) {
+  ActionLevel(unsigned int mul = 1) : actions(std::get<0>(actions_hirep)), multiplier(mul) {
     // initialize the hirep vectors to zero.
     //apply(this->resize, actions_hirep, 0); //need a working resize
     assert(mul >= 1);
@@ -162,11 +142,11 @@ struct ActionLevelHirep {
 };
 
 
-template <class GaugeField>
-using ActionSet = std::vector<ActionLevel<GaugeField> >;
+//template <class GaugeField>
+//using ActionSet = std::vector<ActionLevel<GaugeField> >;
 
 template <class GaugeField, class R>
-using ActionSetHirep = std::vector<ActionLevelHirep<GaugeField, R> >;
+using ActionSet = std::vector<ActionLevel<GaugeField, R> >;
 
 }
 }

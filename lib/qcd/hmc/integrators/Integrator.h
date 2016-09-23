@@ -71,7 +71,7 @@ class Integrator {
 
   IntegratorParameters Params;
 
-  const ActionSetHirep<GaugeField, RepresentationPolicy> as;
+  const ActionSet<GaugeField, RepresentationPolicy> as;
 
   int levels;  //
   double t_U;  // Track time passing on each level and for U and for P
@@ -180,7 +180,7 @@ class Integrator {
 
  public:
   Integrator(GridBase* grid, IntegratorParameters Par,
-             ActionSetHirep<GaugeField, RepresentationPolicy>& Aset,
+             ActionSet<GaugeField, RepresentationPolicy>& Aset,
              SmearingPolicy& Sm)
       : Params(Par),
         as(Aset),
