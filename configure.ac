@@ -1,15 +1,20 @@
 AC_PREREQ([2.63])
 AC_INIT([Grid], [0.5.1-dev], [https://github.com/paboyle/Grid], [Grid])
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE(subdir-objects)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([lib/Grid.h])
 AC_CONFIG_HEADERS([lib/Config.h])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
+
 ############### Checks for programs
 AC_LANG(C++)
 CXXFLAGS="-O3 $CXXFLAGS"
 AC_PROG_CXX
+AC_PROG_RANLIB
 
 ############ openmp  ###############
 AC_OPENMP
@@ -21,9 +26,6 @@ ac_openmp=yes
 AM_CXXFLAGS="$OPENMP_CXXFLAGS $AM_CXXFLAGS"
 AM_LDFLAGS="$OPENMP_CXXFLAGS $AM_LDFLAGS"
 fi
-
-############ libtool ###############
-LT_INIT
 
 ############### Checks for header files
 AC_CHECK_HEADERS(stdint.h)
@@ -75,23 +77,6 @@ AC_ARG_WITH([fftw],
             [AM_CXXFLAGS="-I$with_fftw/include $AM_CXXFLAGS"]
             [AM_LDFLAGS="-L$with_fftw/lib $AM_LDFLAGS"])
 
-#
-# What about the MKL library replacement for fftw3 ?  How do we know if fftw_execute
-# can be found in MKL? 
-#
-AC_CHECK_LIB([fftw3],[fftw_execute],
-	[AC_DEFINE([HAVE_FFTW],[1],[Define to 1 if you have the `FFTW' library (-lfftw3).])] [ac_fftw=yes],
-        [ac_fftw=no])
-
-case ${ac_fftw} in
-    no)
-        echo WARNING libfftw3 not found FFT routines will not work
-        ;;
-    yes)
-        AM_LDFLAGS="$AM_LDFLAGS -lfftw3 -lfftw3f"
-esac
-
-
 ################ Get compiler informations
 AC_LANG([C++])
 AX_CXX_COMPILE_STDCXX_11([noext],[mandatory])
@@ -105,7 +90,6 @@ AC_DEFINE_UNQUOTED([GXX_VERSION],["$GXX_VERSION"],
 ############### Checks for library functions
 CXXFLAGS_CPY=$CXXFLAGS
 LDFLAGS_CPY=$LDFLAGS
-LIBS_CPY=$LIBS
 CXXFLAGS="$AM_CXXFLAGS $CXXFLAGS"
 LDFLAGS="$AM_LDFLAGS $LDFLAGS"
 AC_CHECK_FUNCS([gettimeofday])
@@ -124,6 +108,11 @@ if test "${ac_LAPACK}x" != "nox"; then
     AC_CHECK_LIB([lapack],[LAPACKE_sbdsdc],[],
                  [AC_MSG_ERROR("LAPACK enabled but library not found")])
 fi
+AC_CHECK_LIB([fftw3],[fftw_execute],
+  [AC_DEFINE([HAVE_FFTW],[1],[Define to 1 if you have the `FFTW' library (-lfftw3).])]
+  [have_fftw=true]
+  [LIBS="$LIBS -lfftw3 -lfftw3f"],
+  [AC_MSG_WARN([**** FFTW library not found, Grid can still compile but FFT-based routines will not work ****])])
 CXXFLAGS=$CXXFLAGS_CPY
 LDFLAGS=$LDFLAGS_CPY
 
@@ -151,10 +140,13 @@ case ${ax_cv_cxx_compiler_vendor} in
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-mavx512f -mavx512pf -mavx512er -mavx512cd';;
       IMCI|KNC)
-        AC_DEFINE([IMCI],[1],[IMCI Intrinsics for Knights Corner])
+        AC_DEFINE([IMCI],[1],[IMCI intrinsics for Knights Corner])
         SIMD_FLAGS='';;
       GEN)
         AC_DEFINE([GENERIC_VEC],[1],[generic vector code])
+        SIMD_FLAGS='';;
+      QPX|BGQ)
+        AC_DEFINE([QPX],[1],[QPX intrinsics for BG/Q])
         SIMD_FLAGS='';;
       *)
         AC_MSG_ERROR(["SIMD option ${ac_SIMD} not supported by the GCC/Clang compiler"]);;
@@ -336,12 +328,15 @@ Summary of configuration for $PACKAGE v$VERSION
 - RNG choice                    : ${ac_RNG} 
 - GMP                           : `if test "x$have_gmp" = xtrue; then echo yes; else echo no; fi`
 - LAPACK                        : ${ac_LAPACK}
-- FFTW                          : ${ac_fftw}
+- FFTW                          : `if test "x$have_fftw" = xtrue; then echo yes; else echo no; fi`
 - build DOXYGEN documentation   : `if test "x$enable_doc" = xyes; then echo yes; else echo no; fi`
 - graphs and diagrams           : `if test "x$enable_dot" = xyes; then echo yes; else echo no; fi`
 ----- BUILD FLAGS -------------------------------------
-- CXXFLAGS:  "${AM_CXXFLAGS} ${CXXFLAGS}"
-- LDFLAGS:   "${AM_LDFLAGS} ${LDFLAGS}"
-- LIBS:      "${LIBS} "
+- CXXFLAGS:
+`echo ${AM_CXXFLAGS} ${CXXFLAGS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
+- LDFLAGS:
+`echo ${AM_LDFLAGS} ${LDFLAGS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
+- LIBS:
+`echo ${LIBS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
 -------------------------------------------------------
 "
