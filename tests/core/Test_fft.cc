@@ -27,6 +27,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
+#include <Grid/qcd/action/gauge/Photon.h>
 
 using namespace Grid;
 using namespace Grid::QCD;
@@ -127,27 +128,96 @@ int main (int argc, char ** argv)
   pRNG.SeedFixedIntegers(seeds);
 
   LatticeGaugeFieldD Umu(&GRID);
-  LatticeFermionD    src(&GRID); gaussian(pRNG,src);
-  LatticeFermionD    tmp(&GRID);
-  LatticeFermionD    ref(&GRID);
 
   SU3::ColdConfiguration(pRNG,Umu); // Unit gauge
   
-  RealD mass=0.1;
-  WilsonFermionD Dw(Umu,GRID,RBGRID,mass);
+  {
+    LatticeFermionD    src(&GRID); gaussian(pRNG,src);
+    LatticeFermionD    tmp(&GRID);
+    LatticeFermionD    ref(&GRID);
+    
+    RealD mass=0.1;
+    WilsonFermionD Dw(Umu,GRID,RBGRID,mass);
+    
+    Dw.M(src,tmp);
 
-  Dw.M(src,tmp);
+    std::cout << " src = " <<norm2(src)<<std::endl;
+    std::cout << " tmp = " <<norm2(tmp)<<std::endl;
+    
+    Dw.FreePropagator(tmp,ref);
 
-  std::cout << " src = " <<norm2(src)<<std::endl;
-  std::cout << " tmp = " <<norm2(tmp)<<std::endl;
+    std::cout << " ref = " <<norm2(ref)<<std::endl;
+    
+    ref = ref - src;
+    
+    std::cout << " ref-src = " <<norm2(ref)<<std::endl;
+  }
 
-  Dw.FreePropagator(tmp,ref);
+  {
+    LatticeFermionD    src(&GRID); gaussian(pRNG,src);
+    LatticeFermionD    tmp(&GRID);
+    LatticeFermionD    ref(&GRID);
 
-  std::cout << " ref = " <<norm2(ref)<<std::endl;
-  
-  ref = ref - src;
-  
-  std::cout << " ref-src = " <<norm2(ref)<<std::endl;
+    const int Ls=8;
+    GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,&GRID);
+    GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,&GRID);
 
+    RealD mass=0.1;
+    RealD M5  =0.9;
+    DomainWallFermionD Ddwf(Umu,*FGrid,*FrbGrid,GRID,RBGRID,mass,M5);
+
+    // Need to solve and project 4d. New test required.
+
+    Ddwf.MomentumSpacePropagatorHw(ref,src) ;
+    std::cout << " Hw Mom space \n";
+
+
+    Ddwf.MomentumSpacePropagatorHt(ref,src) ;
+    std::cout << " Ht Mom space \n";
+
+      
+    {   
+      Gamma G5(Gamma::Gamma5);
+
+      LatticeFermionD    src5(FGrid); src5=zero;
+      LatticeFermionD    result5(FGrid); result5=zero;
+      LatticeFermionD    result4(&GRID); 
+
+      const int sdir=0;
+      
+      tmp =   (src + G5*src)*0.5;
+      InsertSlice(tmp,src5,Ls-1,sdir);
+      
+      tmp =   (src - G5*src)*0.5;
+      InsertSlice(tmp,src5,0,sdir);
+      
+      MdagMLinearOperator<DomainWallFermionD,LatticeFermionD> HermOp(Ddwf);
+      ConjugateGradient<LatticeFermionD> CG(1.0e-4,1000);
+      CG(HermOp,src5,result5);
+      result5 = zero;
+
+      ExtractSlice(tmp,result5,0,sdir);
+      result4 = (tmp+G5*tmp)*0.5;
+      
+      ExtractSlice(tmp,result5,Ls-1,sdir);
+      result4 = result4+(tmp-G5*tmp)*0.5;
+
+      std::cout << "src     "<<norm2(src)<<std::endl;
+      std::cout << "src5    "<<norm2(src5)<<std::endl;
+      std::cout << "result4 "<<norm2(result4)<<std::endl;
+      std::cout << "ref     "<<norm2(ref)<<std::endl;
+    }
+  }
+
+  {
+    typedef GaugeImplTypes<vComplexD, 1> QEDGimplTypesD;
+    typedef Photon<QEDGimplTypesD>       QEDGaction;
+    QEDGaction Maxwell(QEDGaction::FEYNMAN_L);
+    QEDGaction::GaugeField Prop(&GRID);Prop=zero;
+    QEDGaction::GaugeField Source(&GRID);Source=zero;
+
+    Maxwell.FreePropagator (Source,Prop);
+    std::cout << " MaxwellFree propagator\n";
+  }
   Grid_finalize();
 }
