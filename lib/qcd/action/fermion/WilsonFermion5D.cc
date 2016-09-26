@@ -392,6 +392,170 @@ void WilsonFermion5D<Impl>::DW(const FermionField &in, FermionField &out,int dag
   axpy(out,4.0-M5,in,out);
 }
 
+template<class Impl>
+void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const FermionField &in) 
+{
+    // what type LatticeComplex 
+    GridBase *_grid = _FourDimGrid;
+    conformable(_grid,out._grid);
+
+    typedef typename FermionField::vector_type vector_type;
+    typedef typename FermionField::scalar_type ScalComplex;
+    typedef iSinglet<ScalComplex> Tcomplex;
+    typedef Lattice<iSinglet<vector_type> > LatComplex;
+
+    Gamma::GammaMatrix Gmu [] = {
+      Gamma::GammaX,
+      Gamma::GammaY,
+      Gamma::GammaZ,
+      Gamma::GammaT
+    };
+
+    std::vector<int> latt_size   = _grid->_fdimensions;
+
+
+    LatComplex    sk(_grid);  sk = zero;
+    LatComplex    sk2(_grid); sk2= zero;
+
+    LatComplex    W(_grid); W= zero;
+    LatComplex    a(_grid); a= zero;
+    LatComplex    cosha(_grid); a= zero;
+
+    LatComplex     one  (_grid);     one = ScalComplex(1.0,0.0);
+
+    FermionField   num  (_grid); num  = zero;
+    LatComplex denom(_grid); denom= zero;
+    LatComplex kmu(_grid); 
+    ScalComplex ci(0.0,1.0);
+
+    for(int mu=0;mu<Nd;mu++) {
+
+      LatticeCoordinate(kmu,mu);
+
+      RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
+
+      kmu = TwoPiL * kmu;
+
+      sk2 = sk2 + 2.0*sin(kmu*0.5)*sin(kmu*0.5);
+      sk  = sk  + sin(kmu)*sin(kmu); 
+
+      num = num - sin(kmu)*ci*(Gamma(Gmu[mu])*in);
+
+    }
+
+    W = one - M5 - sk2;
+    cosha =  (one + W*W + sk) / (W*2.0);
+    
+    for(int idx=0;idx<_grid->lSites();idx++){
+      Tcomplex cc;
+      RealD sgn;
+      std::vector<int> lcoor(Nd);
+      _grid->LocalIndexToLocalCoor(idx,lcoor);
+      peekLocalSite(cc,cosha,lcoor);
+      sgn= ::fabs(real(cc));
+      cc = ScalComplex(::acosh(sgn),0.0);
+      pokeLocalSite(cc,a,lcoor);
+    }
+
+  std::cout << "Ht mom space num" << norm2(num)<<std::endl;// num ok
+  std::cout << "Ht mom space W  " << norm2(W)<<std::endl;// w ok
+  std::cout << "Ht mom space a  " << norm2(a)<<std::endl;// a ok
+  denom= ( exp(a) ); 
+  std::cout << "Ht mom space den" << norm2(denom)<<std::endl;
+  denom= ( exp(a) * W  ); 
+  std::cout << "Ht mom space den W" << norm2(denom)<<std::endl;
+  denom= ( exp(a) * W - one ); 
+  std::cout << "Ht mom space den W- 1" << norm2(denom)<<std::endl;
+  denom=where(sk==ScalComplex(0,0),one,denom);
+  std::cout << "Ht mom space den W- 1" << denom<<std::endl;
+  std::cout << "Ht mom space one " << norm2(one)<<std::endl;
+  denom= one/denom;
+  std::cout << "Ht mom space div " << norm2(denom)<<std::endl;
+  out = num*denom;
+  std::cout << "Ht mom space out" << norm2(out)<<std::endl;
+}
+
+template<class Impl>
+void WilsonFermion5D<Impl>::MomentumSpacePropagatorHw(FermionField &out,const FermionField &in) 
+{
+    // what type LatticeComplex 
+    GridBase *_grid = _FourDimGrid;
+    conformable(_grid,out._grid);
+
+    typedef typename FermionField::vector_type vector_type;
+    typedef typename FermionField::scalar_type ScalComplex;
+
+    typedef Lattice<iSinglet<vector_type> > LatComplex;
+
+    Gamma::GammaMatrix Gmu [] = {
+      Gamma::GammaX,
+      Gamma::GammaY,
+      Gamma::GammaZ,
+      Gamma::GammaT
+    };
+
+    std::vector<int> latt_size   = _grid->_fdimensions;
+
+
+    LatComplex    sk(_grid);  sk = zero;
+    LatComplex    sk2(_grid); sk2= zero;
+
+    LatComplex    w_k(_grid); w_k= zero;
+    LatComplex    b_k(_grid); b_k= zero;
+
+    LatComplex     one  (_grid); one = ScalComplex(1.0,0.0);
+
+    FermionField   num  (_grid); num  = zero;
+    LatComplex denom(_grid); denom= zero;
+    LatComplex kmu(_grid); 
+    ScalComplex ci(0.0,1.0);
+
+    for(int mu=0;mu<Nd;mu++) {
+
+      LatticeCoordinate(kmu,mu);
+
+      RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
+
+      kmu = TwoPiL * kmu;
+
+      sk2 = sk2 + 2.0*sin(kmu*0.5)*sin(kmu*0.5);
+      sk  = sk  + sin(kmu)*sin(kmu); 
+
+      num = num - sin(kmu)*ci*(Gamma(Gmu[mu])*in);
+
+    }
+
+    b_k = sk2 - M5;
+     
+    w_k = sqrt(sk + b_k*b_k);
+
+    std::cout << "Hw M5 " << M5<<std::endl;
+    std::cout << "Hw mom space NUM" << norm2(num)<<std::endl;
+    std::cout << "Hw mom space BK" << norm2(b_k)<<std::endl;
+    std::cout << "Hw mom space BK" << b_k<<std::endl;
+    std::cout << "Hw mom space WK" << norm2(w_k)<<std::endl;
+    std::cout << "Hw mom space WK" << w_k<<std::endl;
+
+    denom= ( w_k + b_k ) * (2.0 * M5);
+    denom=where(sk==ScalComplex(0,0),one,denom);
+
+    std::cout << "Hw mom space DEMON" << norm2(denom)<<std::endl;
+
+    std::cout << "Hw mom space DEMON" << denom<<std::endl;
+    
+    std::cout << "Hw mom space one" << norm2(one)<<std::endl;
+
+    denom= one/denom;
+
+    std::cout << "Hw mom space div " << norm2(denom)<<std::endl;
+
+    std::cout << "denom " << denom<<std::endl;
+
+    out = num*denom;
+    std::cout << "Hw mom space OUT" << norm2(out)<<std::endl;
+}
+
+
 FermOpTemplateInstantiate(WilsonFermion5D);
 GparityFermOpTemplateInstantiate(WilsonFermion5D);
   

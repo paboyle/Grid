@@ -184,7 +184,9 @@ namespace QCD {
     num   = num + wilson*in;     // -i gmu sin k + 2 sin^2 k/2 + m
 
     denom= denom+wilson*wilson; // sin^2 k + (2 sin^2 k/2 + m)^2
+
     denom= one/denom;
+
     out = num*denom; // [ -i gmu sin k + 2 sin^2 k/2 + m] / [ sin^2 k + (2 sin^2 k/2 + m)^2 ]
 
   }

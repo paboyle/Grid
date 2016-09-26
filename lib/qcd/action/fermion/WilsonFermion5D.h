@@ -88,6 +88,9 @@ namespace Grid {
       virtual void DhopDerivEO(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
       virtual void DhopDerivOE(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
 
+      void MomentumSpacePropagatorHt(FermionField &out,const FermionField &in) ;
+      void MomentumSpacePropagatorHw(FermionField &out,const FermionField &in) ;
+
       // Implement hopping term non-hermitian hopping term; half cb or both
       // Implement s-diagonal DW
       void DW    (const FermionField &in, FermionField &out,int dag);
