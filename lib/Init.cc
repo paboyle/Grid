@@ -48,6 +48,26 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <memory>
 
 
+#include <fenv.h>
+#ifdef __APPLE__
+static int
+feenableexcept (unsigned int excepts)
+{
+  static fenv_t fenv;
+  unsigned int new_excepts = excepts & FE_ALL_EXCEPT,
+    old_excepts;  // previous masks
+
+  if ( fegetenv (&fenv) ) return -1;
+  old_excepts = fenv.__control & FE_ALL_EXCEPT;
+
+  // unmask
+  fenv.__control &= ~new_excepts;
+  fenv.__mxcsr   &= ~(new_excepts << 7);
+
+  return ( fesetenv (&fenv) ? -1 : old_excepts );
+}
+#endif
+
 namespace Grid {
 
 
@@ -330,27 +350,6 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   exit(0);
   return;
 };
-
-#include <fenv.h>
-
-#ifdef __APPLE__
-static int
-feenableexcept (unsigned int excepts)
-{
-  static fenv_t fenv;
-  unsigned int new_excepts = excepts & FE_ALL_EXCEPT,
-    old_excepts;  // previous masks
-
-  if ( fegetenv (&fenv) ) return -1;
-  old_excepts = fenv.__control & FE_ALL_EXCEPT;
-
-  // unmask
-  fenv.__control &= ~new_excepts;
-  fenv.__mxcsr   &= ~(new_excepts << 7);
-
-  return ( fesetenv (&fenv) ? -1 : old_excepts );
-}
-#endif
 
 void Grid_debug_handler_init(void)
 {
