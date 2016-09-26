@@ -139,8 +139,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define ZLOADd(OFF,PTR,ri,ir)  VLOADd(OFF,PTR,ir)  VSHUFd(ir,ri)
 
 
-#define VSTOREf(OFF,PTR,SRC)   "vmovaps " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
-#define VSTOREd(OFF,PTR,SRC)   "vmovapd " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
+#define VSTOREf(OFF,PTR,SRC)   "vmovntps " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
+#define VSTOREd(OFF,PTR,SRC)   "vmovntpd " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
 
 // Swaps Re/Im ; could unify this with IMCI
 #define VSHUFd(A,DEST)         "vpshufd  $0x4e," #A "," #DEST  ";\n"    
