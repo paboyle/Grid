@@ -331,8 +331,6 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   return;
 };
 
-
-#define _GNU_SOURCE
 #include <fenv.h>
 
 #ifdef __APPLE__
