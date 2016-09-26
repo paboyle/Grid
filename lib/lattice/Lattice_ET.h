@@ -261,6 +261,7 @@ GridUnopClass(UnaryExp, exp(a));
 GridBinOpClass(BinaryAdd, lhs + rhs);
 GridBinOpClass(BinarySub, lhs - rhs);
 GridBinOpClass(BinaryMul, lhs *rhs);
+GridBinOpClass(BinaryDiv, lhs /rhs);
 
 GridBinOpClass(BinaryAnd, lhs &rhs);
 GridBinOpClass(BinaryOr, lhs | rhs);
@@ -385,6 +386,7 @@ GRID_DEF_UNOP(exp, UnaryExp);
 GRID_DEF_BINOP(operator+, BinaryAdd);
 GRID_DEF_BINOP(operator-, BinarySub);
 GRID_DEF_BINOP(operator*, BinaryMul);
+GRID_DEF_BINOP(operator/, BinaryDiv);
 
 GRID_DEF_BINOP(operator&, BinaryAnd);
 GRID_DEF_BINOP(operator|, BinaryOr);
