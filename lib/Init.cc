@@ -46,23 +46,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <iterator>
 #include <cstdlib>
 #include <memory>
-#include <cxxabi.h>
 
 
 namespace Grid {
 
-    std::string demangle(const char* name) {
-
-      int status = -4; // some arbitrary value to eliminate the compiler warning
-
-      // enable c++11 by passing the flag -std=c++11 to g++
-      std::unique_ptr<char, void(*)(void*)> res {
-	abi::__cxa_demangle(name, NULL, NULL, &status),
-	  std::free
-	  };
-
-      return (status==0) ? res.get() : name ;
-    }
 
 //////////////////////////////////////////////////////
 // Convenience functions to access stadard command line arg
@@ -343,10 +330,30 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   exit(0);
   return;
 };
-#ifdef GRID_FPE
+
+
 #define _GNU_SOURCE
 #include <fenv.h>
+
+#ifdef __APPLE__
+static int
+feenableexcept (unsigned int excepts)
+{
+  static fenv_t fenv;
+  unsigned int new_excepts = excepts & FE_ALL_EXCEPT,
+    old_excepts;  // previous masks
+
+  if ( fegetenv (&fenv) ) return -1;
+  old_excepts = fenv.__control & FE_ALL_EXCEPT;
+
+  // unmask
+  fenv.__control &= ~new_excepts;
+  fenv.__mxcsr   &= ~(new_excepts << 7);
+
+  return ( fesetenv (&fenv) ? -1 : old_excepts );
+}
 #endif
+
 void Grid_debug_handler_init(void)
 {
   struct sigaction sa,osa;
@@ -355,9 +362,9 @@ void Grid_debug_handler_init(void)
   sa.sa_flags    = SA_SIGINFO;
   sigaction(SIGSEGV,&sa,NULL);
   sigaction(SIGTRAP,&sa,NULL);
-#ifdef GRID_FPE
+
   feenableexcept( FE_INVALID|FE_OVERFLOW|FE_DIVBYZERO);
+
   sigaction(SIGFPE,&sa,NULL);
-#endif
 }
 }
