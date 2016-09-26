@@ -365,6 +365,18 @@ namespace Optimization {
     }
   };
 
+  struct Div{
+    // Real float
+    inline __m256 operator()(__m256 a, __m256 b){
+      return _mm256_div_ps(a,b);
+    }
+    // Real double
+    inline __m256d operator()(__m256d a, __m256d b){
+      return _mm256_div_pd(a,b);
+    }
+  };
+
+
   struct Conj{
     // Complex single
     inline __m256 operator()(__m256 in){
@@ -473,7 +485,7 @@ namespace Optimization {
   }
 
 #endif
-
+  /*
     inline std::ostream & operator << (std::ostream& stream, const __m256 a)
     {
       const float *p=(const float *)&a;
@@ -486,7 +498,7 @@ namespace Optimization {
       stream<< "{"<<p[0]<<","<<p[1]<<","<<p[2]<<","<<p[3]<<"}";
       return stream;
     };
-
+  */
   struct Rotate{
 
     static inline __m256 rotate(__m256 in,int n){ 
@@ -631,6 +643,7 @@ namespace Optimization {
   // Arithmetic operations
   typedef Optimization::Sum         SumSIMD;
   typedef Optimization::Sub         SubSIMD;
+  typedef Optimization::Div         DivSIMD;
   typedef Optimization::Mult        MultSIMD;
   typedef Optimization::MultComplex MultComplexSIMD;
   typedef Optimization::Conj        ConjSIMD;
