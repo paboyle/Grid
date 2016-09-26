@@ -303,17 +303,6 @@ PARALLEL_FOR_LOOP
         *this = (*this)+r;
         return *this;
     }
-    
-    strong_inline friend Lattice<vobj> operator / (const Lattice<vobj> &lhs,const Lattice<vobj> &rhs){
-        conformable(lhs,rhs);
-        Lattice<vobj> ret(lhs._grid);
-PARALLEL_FOR_LOOP
-        for(int ss=0;ss<lhs._grid->oSites();ss++){
-	  ret._odata[ss] = lhs._odata[ss]*pow(rhs._odata[ss],-1.0);
-        }
-        return ret;
-    };
-
  }; // class Lattice
 
   template<class vobj> std::ostream& operator<< (std::ostream& stream, const Lattice<vobj> &o){
