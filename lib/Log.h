@@ -143,6 +143,7 @@ extern GridLogger GridLogIterative  ;
 extern GridLogger GridLogIntegrator  ;
 extern Colours    GridLogColours;
 
+ std::string demangle(const char* name) ;
 
 #define _NBACKTRACE (256)
 extern void * Grid_backtrace_buffer[_NBACKTRACE];
@@ -161,7 +162,7 @@ std::fclose(fp);	    \
 int symbols    = backtrace        (Grid_backtrace_buffer,_NBACKTRACE);\
 char **strings = backtrace_symbols(Grid_backtrace_buffer,symbols);\
 for (int i = 0; i < symbols; i++){\
-  std::fprintf (fp,"BackTrace Strings: %d %s\n",i, strings[i]); std::fflush(fp); \
+  std::fprintf (fp,"BackTrace Strings: %d %s\n",i, demangle(strings[i]).c_str()); std::fflush(fp); \
 }\
 }
 #else 
