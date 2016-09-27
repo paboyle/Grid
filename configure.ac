@@ -333,10 +333,10 @@ Summary of configuration for $PACKAGE v$VERSION
 - graphs and diagrams           : `if test "x$enable_dot" = xyes; then echo yes; else echo no; fi`
 ----- BUILD FLAGS -------------------------------------
 - CXXFLAGS:
-`echo ${AM_CXXFLAGS} ${CXXFLAGS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
+`echo ${AM_CXXFLAGS} ${CXXFLAGS} | tr ' ' '\n' | sed 's/^-/    -/g'`
 - LDFLAGS:
-`echo ${AM_LDFLAGS} ${LDFLAGS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
+`echo ${AM_LDFLAGS} ${LDFLAGS} | tr ' ' '\n' | sed 's/^-/    -/g'`
 - LIBS:
-`echo ${LIBS} | sed 's/ -/\n\t-/g' | sed 's/^-/\t-/g'`
+`echo ${LIBS} | tr ' ' '\n' | sed 's/^-/    -/g'`
 -------------------------------------------------------
 "
