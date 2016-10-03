@@ -38,15 +38,19 @@ namespace QCD {
 
 template <class Gimpl> class WilsonLoops;
 
-#define INHERIT_GIMPL_TYPES(GImpl)                                             \
-  typedef typename GImpl::Simd Simd;                                           \
-  typedef typename GImpl::GaugeLinkField GaugeLinkField;                       \
-  typedef typename GImpl::GaugeField GaugeField;                               \
-  typedef typename GImpl::SiteGaugeField SiteGaugeField;                       \
-  typedef typename GImpl::SiteGaugeLink SiteGaugeLink;
+// 
+#define INHERIT_GIMPL_TYPES(GImpl)             \
+  typedef typename GImpl::Simd Simd;           \
+  typedef typename GImpl::LinkField GaugeLinkField; \
+  typedef typename GImpl::Field GaugeField;         \
+  typedef typename GImpl::SiteField SiteGaugeField; \
+  typedef typename GImpl::SiteLink SiteGaugeLink;
 
-//
-template <class S, int Nrepresentation = Nc> class GaugeImplTypes {
+#define INHERIT_FIELD_TYPES(Impl) \
+  typedef typename Impl::Field Field; 
+
+
+template <class S, int Nrepresentation = Nc > class GaugeImplTypes {
 public:
   typedef S Simd;
 
@@ -55,16 +59,14 @@ public:
   template <typename vtype>
   using iImplGaugeField = iVector<iScalar<iMatrix<vtype, Nrepresentation>>, Nd>;
 
-  typedef iImplGaugeLink<Simd> SiteGaugeLink;
-  typedef iImplGaugeField<Simd> SiteGaugeField;
+  typedef iImplGaugeLink<Simd> SiteLink;
+  typedef iImplGaugeField<Simd> SiteField;
 
-  typedef Lattice<SiteGaugeLink> GaugeLinkField; // bit ugly naming; polarised
-                                                 // gauge field, lorentz... all
-                                                 // ugly
-  typedef Lattice<SiteGaugeField> GaugeField;
+  typedef Lattice<SiteLink>  LinkField; 
+  typedef Lattice<SiteField> Field;
 
   // Move this elsewhere? FIXME
-  static inline void AddGaugeLink(GaugeField &U, GaugeLinkField &W,
+  static inline void AddLink(Field &U, LinkField &W,
                                   int mu) { // U[mu] += W
     PARALLEL_FOR_LOOP
     for (auto ss = 0; ss < U._grid->oSites(); ss++) {
@@ -72,6 +74,28 @@ public:
           U._odata[ss]._internal[mu] + W._odata[ss]._internal;
     }
   }
+
+  static inline void generate_momenta(Field& P, GridParallelRNG& pRNG){
+    // specific for SU gauge fields
+    LinkField Pmu(P._grid);
+    Pmu = zero;
+    for (int mu = 0; mu < Nd; mu++) {
+      SU<Nrepresentation>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
+      PokeIndex<LorentzIndex>(P, Pmu, mu);
+    }
+  }
+
+  static inline void update_field(Field& P, Field& U, double ep, unsigned int Nexp){
+
+    for (int mu = 0; mu < Nd; mu++) {
+      auto Umu = PeekIndex<LorentzIndex>(U, mu);
+      auto Pmu = PeekIndex<LorentzIndex>(P, mu);
+      Umu = expMat(Pmu, ep, Nexp) * Umu;
+      PokeIndex<LorentzIndex>(U, ProjectOnGroup(Umu), mu);
+    }
+
+  }
+
 };
 
 // Composition with smeared link, bc's etc.. probably need multiple inheritance

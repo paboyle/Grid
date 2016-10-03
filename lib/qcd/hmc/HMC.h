@@ -60,24 +60,25 @@ struct HMCparameters {
     /////////////////////////////////
   }
 
-  void print() const {
-    std::cout << GridLogMessage << "[HMC parameter] Trajectories            : " << Trajectories << "\n";
-    std::cout << GridLogMessage << "[HMC parameter] Start trajectory        : " << StartTrajectory << "\n";
-    std::cout << GridLogMessage << "[HMC parameter] Metropolis test (on/off): " << MetropolisTest << "\n";
-    std::cout << GridLogMessage << "[HMC parameter] Thermalization trajs    : " << NoMetropolisUntil << "\n";
+  void print_parameters() const {
+    std::cout << GridLogMessage << "[HMC parameters] Trajectories            : " << Trajectories << "\n";
+    std::cout << GridLogMessage << "[HMC parameters] Start trajectory        : " << StartTrajectory << "\n";
+    std::cout << GridLogMessage << "[HMC parameters] Metropolis test (on/off): " << MetropolisTest << "\n";
+    std::cout << GridLogMessage << "[HMC parameters] Thermalization trajs    : " << NoMetropolisUntil << "\n";
   }
   
 };
 
-template <class GaugeField>
+template <class Field>
 class HmcObservable {
  public:
-  virtual void TrajectoryComplete(int traj, GaugeField &U, GridSerialRNG &sRNG,
+  virtual void TrajectoryComplete(int traj, Field &U, GridSerialRNG &sRNG,
                                   GridParallelRNG &pRNG) = 0;
 };
 
+  // this is only defined for a gauge theory
 template <class Gimpl>
-class PlaquetteLogger : public HmcObservable<typename Gimpl::GaugeField> {
+class PlaquetteLogger : public HmcObservable<typename Gimpl::Field> {
  private:
   std::string Stem;
 
@@ -117,19 +118,19 @@ class PlaquetteLogger : public HmcObservable<typename Gimpl::GaugeField> {
   }
 };
 
-//    template <class GaugeField, class Integrator, class Smearer, class
-//    Boundary>
-template <class GaugeField, class IntegratorType>
+template <class IntegratorType>
 class HybridMonteCarlo {
  private:
   const HMCparameters Params;
 
+  typedef typename IntegratorType::Field Field;
+  
   GridSerialRNG &sRNG;    // Fixme: need a RNG management strategy.
   GridParallelRNG &pRNG;  // Fixme: need a RNG management strategy.
-  GaugeField &Ucur;
+  Field &Ucur;
 
   IntegratorType &TheIntegrator;
-  std::vector<HmcObservable<GaugeField> *> Observables;
+  std::vector<HmcObservable<Field> *> Observables;
 
   /////////////////////////////////////////////////////////
   // Metropolis step
@@ -164,7 +165,7 @@ class HybridMonteCarlo {
   /////////////////////////////////////////////////////////
   // Evolution
   /////////////////////////////////////////////////////////
-  RealD evolve_step(GaugeField &U) {
+  RealD evolve_step(Field &U) {
     TheIntegrator.refresh(U, pRNG);  // set U and initialize P and phi's
 
     RealD H0 = TheIntegrator.S(U);  // initial state action
@@ -191,20 +192,21 @@ class HybridMonteCarlo {
   // Constructor
   /////////////////////////////////////////
   HybridMonteCarlo(HMCparameters Pams, IntegratorType &_Int,
-                   GridSerialRNG &_sRNG, GridParallelRNG &_pRNG, GaugeField &_U)
+                   GridSerialRNG &_sRNG, GridParallelRNG &_pRNG, Field &_U)
       : Params(Pams), TheIntegrator(_Int), sRNG(_sRNG), pRNG(_pRNG), Ucur(_U) {}
   ~HybridMonteCarlo(){};
 
-  void AddObservable(HmcObservable<GaugeField> *obs) {
+  void AddObservable(HmcObservable<Field> *obs) {
     Observables.push_back(obs);
   }
 
   void evolve(void) {
     Real DeltaH;
 
-    GaugeField Ucopy(Ucur._grid);
+    Field Ucopy(Ucur._grid);
 
-    Params.print();
+    Params.print_parameters();
+    TheIntegrator.print_parameters();
 
     // Actual updates (evolve a copy Ucopy then copy back eventually)
     for (int traj = Params.StartTrajectory;

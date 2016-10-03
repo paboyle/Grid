@@ -32,6 +32,7 @@ directory
 namespace Grid {
 namespace QCD {
 
+// Class for HMC specific for gauge theories
 template <class Gimpl, class RepresentationsPolicy = NoHirep >
 class NerscHmcRunnerTemplate {
  public:
@@ -114,7 +115,7 @@ class NerscHmcRunnerTemplate {
     */
     //////////////
     NoSmearing<Gimpl> SmearingPolicy;
-    typedef MinimumNorm2<GaugeField, NoSmearing<Gimpl>, RepresentationsPolicy >
+    typedef MinimumNorm2<Gimpl, NoSmearing<Gimpl>, RepresentationsPolicy >
         IntegratorType;  // change here to change the algorithm
     IntegratorParameters MDpar(20, 1.0);
     IntegratorType MDynamics(UGrid, MDpar, TheAction, SmearingPolicy);
@@ -157,10 +158,9 @@ class NerscHmcRunnerTemplate {
     // smeared set
     // notice that the unit configuration is singular in this procedure
     std::cout << GridLogMessage << "Filling the smeared set\n";
-    SmearingPolicy.set_GaugeField(U);
+    SmearingPolicy.set_Field(U);
 
-    HybridMonteCarlo<GaugeField, IntegratorType> HMC(HMCpar, MDynamics, sRNG,
-                                                     pRNG, U);
+    HybridMonteCarlo<IntegratorType> HMC(HMCpar, MDynamics, sRNG, pRNG, U);
     HMC.AddObservable(&Checkpoint);
     HMC.AddObservable(&PlaqLog);
 

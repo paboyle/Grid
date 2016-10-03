@@ -21,7 +21,7 @@ public:
 
   NoSmearing(): ThinLinks(NULL) {}
 
-  void set_GaugeField(GaugeField& U) { ThinLinks = &U; }
+  void set_Field(GaugeField& U) { ThinLinks = &U; }
 
   void smeared_force(GaugeField& SigmaTilde) const {}
 
@@ -227,7 +227,7 @@ class SmearedConfiguration {
 
   
   // attach the smeared routines to the thin links U and fill the smeared set
-  void set_GaugeField(GaugeField& U) { fill_smearedSet(U); }
+  void set_Field(GaugeField& U) { fill_smearedSet(U); }
 
   //====================================================================
   void smeared_force(GaugeField& SigmaTilde) const {

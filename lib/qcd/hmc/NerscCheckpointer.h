@@ -36,7 +36,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 namespace Grid{
   namespace QCD{
     
-
+    // Only for gauge fields
     template<class Gimpl> 
     class NerscHmcCheckpointer : public HmcObservable<typename Gimpl::GaugeField> {
     private:
