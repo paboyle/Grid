@@ -96,6 +96,17 @@ public:
 
   }
 
+  static inline RealD FieldSquareNorm(Field& U){
+    LatticeComplex Hloc(U._grid);
+    Hloc = zero;
+    for (int mu = 0; mu < Nd; mu++) {
+      auto Umu = PeekIndex<LorentzIndex>(U, mu);
+      Hloc += trace(Umu * Umu);
+    }
+    Complex Hsum = sum(Hloc);
+    return Hsum.real();
+  }
+
 };
 
 // Composition with smeared link, bc's etc.. probably need multiple inheritance

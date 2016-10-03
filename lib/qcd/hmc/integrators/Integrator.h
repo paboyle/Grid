@@ -253,17 +253,7 @@ class Integrator {
   // Calculate action
   RealD S(Field& U) {  // here also U not used
 
-    LatticeComplex Hloc(U._grid);
-    Hloc = zero;
-    // Momenta  --- modify this (take the trace of field)
-    // momenta_action()
-    for (int mu = 0; mu < Nd; mu++) {
-      auto Pmu = PeekIndex<LorentzIndex>(P, mu);
-      Hloc -= trace(Pmu * Pmu);
-    }
-    Complex Hsum = sum(Hloc);
-
-    RealD H = Hsum.real();
+    RealD H = - FieldImplementation::FieldSquareNorm(P); // - trace (P*P)
     RealD Hterm;
     std::cout << GridLogMessage << "Momentum action H_p = " << H << "\n";
 
