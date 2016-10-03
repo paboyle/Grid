@@ -155,7 +155,8 @@ class Integrator {
               << " dt " << ep << " : t_U " << t_U << std::endl;
   }
   void update_U(MomentaField& Mom, Field& U, double ep) {
-    FieldImplementation::update_field(Mom, U, ep, Params.Nexp);
+    // exponential of Mom*U in the gauge fields case
+    FieldImplementation::update_field(Mom, U, ep);
 
     // Update the smeared fields, can be implemented as observer
     Smearer.set_Field(U);

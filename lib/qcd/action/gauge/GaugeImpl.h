@@ -49,8 +49,8 @@ template <class Gimpl> class WilsonLoops;
 #define INHERIT_FIELD_TYPES(Impl) \
   typedef typename Impl::Field Field; 
 
-
-template <class S, int Nrepresentation = Nc > class GaugeImplTypes {
+// hard codes the exponential approximation in the template
+template <class S, int Nrepresentation = Nc, int Nexp = 12 > class GaugeImplTypes {
 public:
   typedef S Simd;
 
@@ -75,6 +75,7 @@ public:
     }
   }
 
+  // HMC auxiliary functions
   static inline void generate_momenta(Field& P, GridParallelRNG& pRNG){
     // specific for SU gauge fields
     LinkField Pmu(P._grid);
@@ -85,15 +86,15 @@ public:
     }
   }
 
-  static inline void update_field(Field& P, Field& U, double ep, unsigned int Nexp){
-
+   
+  
+  static inline void update_field(Field& P, Field& U, double ep){
     for (int mu = 0; mu < Nd; mu++) {
       auto Umu = PeekIndex<LorentzIndex>(U, mu);
       auto Pmu = PeekIndex<LorentzIndex>(P, mu);
       Umu = expMat(Pmu, ep, Nexp) * Umu;
       PokeIndex<LorentzIndex>(U, ProjectOnGroup(Umu), mu);
     }
-
   }
 
   static inline RealD FieldSquareNorm(Field& U){
