@@ -539,6 +539,12 @@ class BinaryIO {
     int ieee64big = (format == std::string("IEEE64BIG"));
     int ieee64    = (format == std::string("IEEE64"));
 
+    if(!(ieee32big || ieee32 || ieee64big || ieee64)){
+      std::cout << GridLogError << "Unrecognized file format " << format << std::endl;
+      std::cout << GridLogError << "Allowed: IEEE32BIG | IEEE32 | IEEE64BIG | IEEE64" << std::endl; 
+      exit(0);
+    }
+
     int nd = grid->_ndimension;
     for(int d=0;d<nd;d++){
       assert(grid->CheckerBoarded(d) == 0);

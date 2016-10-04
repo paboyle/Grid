@@ -41,8 +41,6 @@ directory
 #ifndef INTEGRATOR_INCLUDED
 #define INTEGRATOR_INCLUDED
 
-// class Observer;
-
 #include <memory>
 
 namespace Grid {
@@ -77,23 +75,19 @@ struct IntegratorParameters {
 template <class FieldImplementation, class SmearingPolicy, class RepresentationPolicy>
 class Integrator {
  protected:
-  typedef IntegratorParameters ParameterType;
   typedef typename FieldImplementation::Field MomentaField;  //for readability
   typedef typename FieldImplementation::Field Field;
 
+  int levels;  // number of integration levels
+  double t_U;  // Track time passing on each level and for U and for P
+  std::vector<double> t_P;  
+
+  MomentaField P;
+  SmearingPolicy& Smearer;
+  RepresentationPolicy Representations;
   IntegratorParameters Params;
 
   const ActionSet<Field, RepresentationPolicy> as;
-
-  int levels;  //
-  double t_U;  // Track time passing on each level and for U and for P
-  std::vector<double> t_P;  //
-
-  MomentaField P;
-
-  SmearingPolicy& Smearer;
-
-  RepresentationPolicy Representations;
 
   void update_P(Field& U, int level, double ep) {
     t_P[level] += ep;

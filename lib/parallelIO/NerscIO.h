@@ -137,51 +137,53 @@ inline void NerscMachineCharacteristics(NerscField &header)
       const int y=1;
       const int z=2;
       for(int mu=0;mu<4;mu++){
-	cm(mu)()(2,x) = adj(cm(mu)()(0,y)*cm(mu)()(1,z)-cm(mu)()(0,z)*cm(mu)()(1,y)); //x= yz-zy
-	cm(mu)()(2,y) = adj(cm(mu)()(0,z)*cm(mu)()(1,x)-cm(mu)()(0,x)*cm(mu)()(1,z)); //y= zx-xz
-	cm(mu)()(2,z) = adj(cm(mu)()(0,x)*cm(mu)()(1,y)-cm(mu)()(0,y)*cm(mu)()(1,x)); //z= xy-yx
+  cm(mu)()(2,x) = adj(cm(mu)()(0,y)*cm(mu)()(1,z)-cm(mu)()(0,z)*cm(mu)()(1,y)); //x= yz-zy
+  cm(mu)()(2,y) = adj(cm(mu)()(0,z)*cm(mu)()(1,x)-cm(mu)()(0,x)*cm(mu)()(1,z)); //y= zx-xz
+  cm(mu)()(2,z) = adj(cm(mu)()(0,x)*cm(mu)()(1,y)-cm(mu)()(0,y)*cm(mu)()(1,x)); //z= xy-yx
       }
     }
 
     template<class fobj,class sobj>
     struct NerscSimpleMunger{
-
-      void operator() (fobj &in,sobj &out,uint32_t &csum){
-
-      for(int mu=0;mu<4;mu++){
-      for(int i=0;i<3;i++){
-      for(int j=0;j<3;j++){
-	out(mu)()(i,j) = in(mu)()(i,j);
-      }}}
-      NerscChecksum((uint32_t *)&in,sizeof(in),csum); 
+      void operator()(fobj &in, sobj &out, uint32_t &csum) {
+        for (int mu = 0; mu < Nd; mu++) {
+          for (int i = 0; i < Nc; i++) {
+            for (int j = 0; j < Nc; j++) {
+              out(mu)()(i, j) = in(mu)()(i, j);
+            }
+          }
+        }
+        NerscChecksum((uint32_t *)&in, sizeof(in), csum);
       };
     };
 
-    template<class fobj,class sobj>
-    struct NerscSimpleUnmunger{
-      void operator() (sobj &in,fobj &out,uint32_t &csum){
-	for(int mu=0;mu<Nd;mu++){
-	for(int i=0;i<Nc;i++){
-	for(int j=0;j<Nc;j++){
-	  out(mu)()(i,j) = in(mu)()(i,j);
-	}}}
-	NerscChecksum((uint32_t *)&out,sizeof(out),csum); 
+    template <class fobj, class sobj>
+    struct NerscSimpleUnmunger {
+      void operator()(sobj &in, fobj &out, uint32_t &csum) {
+        for (int mu = 0; mu < Nd; mu++) {
+          for (int i = 0; i < Nc; i++) {
+            for (int j = 0; j < Nc; j++) {
+              out(mu)()(i, j) = in(mu)()(i, j);
+            }
+          }
+        }
+        NerscChecksum((uint32_t *)&out, sizeof(out), csum);
       };
     };
- 
+
     template<class fobj,class sobj>
     struct Nersc3x2munger{
       void operator() (fobj &in,sobj &out,uint32_t &csum){
      
-	NerscChecksum((uint32_t *)&in,sizeof(in),csum); 
+  NerscChecksum((uint32_t *)&in,sizeof(in),csum); 
 
-	for(int mu=0;mu<4;mu++){
-	  for(int i=0;i<2;i++){
-	    for(int j=0;j<3;j++){
-	      out(mu)()(i,j) = in(mu)(i)(j);
-	    }}
-	}
-	reconstruct3(out);
+  for(int mu=0;mu<4;mu++){
+    for(int i=0;i<2;i++){
+      for(int j=0;j<3;j++){
+        out(mu)()(i,j) = in(mu)(i)(j);
+      }}
+  }
+  reconstruct3(out);
       }
     };
 
@@ -191,14 +193,14 @@ inline void NerscMachineCharacteristics(NerscField &header)
       void operator() (sobj &in,fobj &out,uint32_t &csum){
 
 
-	for(int mu=0;mu<4;mu++){
-	  for(int i=0;i<2;i++){
-	    for(int j=0;j<3;j++){
-	      out(mu)(i)(j) = in(mu)()(i,j);
-	    }}
-	}
+  for(int mu=0;mu<4;mu++){
+    for(int i=0;i<2;i++){
+      for(int j=0;j<3;j++){
+        out(mu)(i)(j) = in(mu)()(i,j);
+      }}
+  }
 
-	NerscChecksum((uint32_t *)&out,sizeof(out),csum); 
+  NerscChecksum((uint32_t *)&out,sizeof(out),csum); 
 
       }
     };
@@ -346,24 +348,24 @@ static inline void readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,
   if ( header.data_type == std::string("4D_SU3_GAUGE") ) {
     if ( ieee32 || ieee32big ) {
       //      csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>, LorentzColour2x3F> 
-	csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>, LorentzColour2x3F> 
-	(Umu,file,Nersc3x2munger<LorentzColour2x3F,LorentzColourMatrix>(), offset,format);
+  csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>, LorentzColour2x3F> 
+  (Umu,file,Nersc3x2munger<LorentzColour2x3F,LorentzColourMatrix>(), offset,format);
     }
     if ( ieee64 || ieee64big ) {
       //csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>, LorentzColour2x3D> 
       csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>, LorentzColour2x3D> 
-      	(Umu,file,Nersc3x2munger<LorentzColour2x3D,LorentzColourMatrix>(),offset,format);
+        (Umu,file,Nersc3x2munger<LorentzColour2x3D,LorentzColourMatrix>(),offset,format);
     }
   } else if ( header.data_type == std::string("4D_SU3_GAUGE_3x3") ) {
     if ( ieee32 || ieee32big ) {
       //csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>,LorentzColourMatrixF>
       csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>,LorentzColourMatrixF>
-	(Umu,file,NerscSimpleMunger<LorentzColourMatrixF,LorentzColourMatrix>(),offset,format);
+  (Umu,file,NerscSimpleMunger<LorentzColourMatrixF,LorentzColourMatrix>(),offset,format);
     }
     if ( ieee64 || ieee64big ) {
       //      csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>,LorentzColourMatrixD>
       csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>,LorentzColourMatrixD>
-	(Umu,file,NerscSimpleMunger<LorentzColourMatrixD,LorentzColourMatrix>(),offset,format);
+  (Umu,file,NerscSimpleMunger<LorentzColourMatrixD,LorentzColourMatrix>(),offset,format);
     }
   } else {
     assert(0);
