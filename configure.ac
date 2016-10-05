@@ -47,7 +47,7 @@ AC_ARG_WITH([gmp],
     [AS_HELP_STRING([--with-gmp=prefix],
     [try this for a non-standard install prefix of the GMP library])],
     [AM_CXXFLAGS="-I$with_gmp/include $AM_CXXFLAGS"]
-    [AM_LDFLAGS="-L$with_gmp/lib" $AM_LDFLAGS])
+    [AM_LDFLAGS="-L$with_gmp/lib $AM_LDFLAGS"])
 AC_ARG_WITH([mpfr],
     [AS_HELP_STRING([--with-mpfr=prefix],
     [try this for a non-standard install prefix of the MPFR library])],
