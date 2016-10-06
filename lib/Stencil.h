@@ -106,7 +106,6 @@
  #define SERIAL_SENDS
 
        void AddPacket(void *xmit,void * rcv, Integer to,Integer from,Integer bytes){
-	 comms_bytes+=2.0*bytes;
  #ifdef SEND_IMMEDIATE
 	 commtime-=usecond();
 	 _grid->SendToRecvFrom(xmit,to,rcv,from,bytes);
@@ -304,23 +303,23 @@
        double calls;
 
        void ZeroCounters(void) {
-	 gathertime=0;
-	 jointime=0;
-	 commtime=0;
-	 halogtime=0;
-	 mergetime=0;
-	 spintime=0;
-	 gathermtime=0;
-	 splicetime=0;
-	 nosplicetime=0;
-	 comms_bytes=0;
-	 calls=0;
+         gathertime = 0.;
+         jointime = 0.;
+         commtime = 0.;
+         halogtime = 0.;
+         mergetime = 0.;
+         spintime = 0.;
+         gathermtime = 0.;
+         splicetime = 0.;
+         nosplicetime = 0.;
+         comms_bytes = 0.;
+         calls = 0.;
        };
 
        void Report(void) {
 #define PRINTIT(A)	\
  std::cout << GridLogMessage << " Stencil " << #A << " "<< A/calls<<std::endl;
-	 if ( calls > 0 ) {
+	 if ( calls > 0. ) {
  std::cout << GridLogMessage << " Stencil calls "<<calls<<std::endl;
        PRINTIT(jointime);
        PRINTIT(gathertime);

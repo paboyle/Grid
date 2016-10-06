@@ -63,9 +63,14 @@ namespace Grid {
 
      void Report(void);
      void ZeroCounters(void);
-     double Calls;
-     double CommTime;
-     double ComputeTime;
+     double DhopCalls;
+     double DhopCommTime;
+     double DhopComputeTime;
+
+     double DerivCalls;
+     double DerivCommTime;
+     double DerivComputeTime;
+     double DerivDhopComputeTime;
 
       ///////////////////////////////////////////////////////////////
       // Implement the abstract base

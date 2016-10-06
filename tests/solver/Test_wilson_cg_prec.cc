@@ -83,6 +83,7 @@ int main (int argc, char ** argv)
   SchurDiagMooeeOperator<WilsonFermionR,LatticeFermion> HermOpEO(Dw);
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
   CG(HermOpEO,src_o,result_o);
+  
 
   Grid_finalize();
 }

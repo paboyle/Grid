@@ -76,6 +76,12 @@ public:
     TheAction.push_back(Level1);
 
     Run(argc,argv);
+
+    std::cout << GridLogMessage << "Numerator report, Pauli-Villars term         : " << std::endl;
+    NumOp.Report();
+    std::cout << GridLogMessage << "Denominator report, Dw(m) term (includes CG) : " << std::endl;
+    DenOp.Report();
+    
   };
 
 };
