@@ -397,8 +397,8 @@ static inline void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu
 
   typedef LorentzColourMatrixD fobj3D;
   typedef LorentzColour2x3D    fobj2D;
-  typedef LorentzColourMatrixF fobj3f;
-  typedef LorentzColour2x3F    fobj2f;
+  //typedef LorentzColourMatrixF fobj3f;
+  //typedef LorentzColour2x3F    fobj2f;
 
   GridBase *grid = Umu._grid;
 

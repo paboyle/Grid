@@ -57,6 +57,7 @@ namespace Grid {
     typedef typename T::scalar_object scalar_object;
     typedef typename T::Complexified Complexified;
     typedef typename T::Realified Realified;
+    typedef typename T::DoublePrecision DoublePrecision;
     enum { TensorLevel = T::TensorLevel };
   };
 
@@ -71,6 +72,7 @@ namespace Grid {
     typedef RealF scalar_object;
     typedef ComplexF Complexified;
     typedef RealF Realified;
+    typedef RealD DoublePrecision;
     enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<RealD> {
@@ -81,6 +83,7 @@ namespace Grid {
     typedef RealD scalar_object;
     typedef ComplexD Complexified;
     typedef RealD Realified;
+    typedef RealD DoublePrecision;
     enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<ComplexF> {
@@ -91,6 +94,7 @@ namespace Grid {
     typedef ComplexF scalar_object;
     typedef ComplexF Complexified;
     typedef RealF Realified;
+    typedef ComplexD DoublePrecision;
     enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<ComplexD> {
@@ -101,6 +105,7 @@ namespace Grid {
     typedef ComplexD scalar_object;
     typedef ComplexD Complexified;
     typedef RealD Realified;
+    typedef ComplexD DoublePrecision;
     enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<Integer> {
@@ -111,6 +116,7 @@ namespace Grid {
     typedef Integer scalar_object;
     typedef void Complexified;
     typedef void Realified;
+    typedef void DoublePrecision;
     enum { TensorLevel = 0 };
   };
 
@@ -122,6 +128,7 @@ namespace Grid {
     typedef RealF  scalar_object;
     typedef vComplexF Complexified;
     typedef vRealF Realified;
+    typedef vRealD DoublePrecision;
     enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<vRealD> {
@@ -132,6 +139,7 @@ namespace Grid {
     typedef RealD  scalar_object;
     typedef vComplexD Complexified;
     typedef vRealD Realified;
+    typedef vRealD DoublePrecision;
     enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<vComplexF> {
@@ -142,6 +150,7 @@ namespace Grid {
     typedef ComplexF  scalar_object;
     typedef vComplexF Complexified;
     typedef vRealF Realified;
+    typedef vComplexD DoublePrecision;
     enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<vComplexD> {
@@ -152,6 +161,7 @@ namespace Grid {
     typedef ComplexD  scalar_object;
     typedef vComplexD Complexified;
     typedef vRealD Realified;
+    typedef vComplexD DoublePrecision;
     enum { TensorLevel = 0 };
   };
   template<> class GridTypeMapper<vInteger> {
@@ -162,6 +172,7 @@ namespace Grid {
     typedef  Integer scalar_object;
     typedef void Complexified;
     typedef void Realified;
+    typedef void DoublePrecision;
     enum { TensorLevel = 0 };
   };
 
@@ -256,8 +267,8 @@ namespace Grid {
     typedef typename getVectorType<T>::type vector_obj; //get the vector_obj (i.e. a grid Tensor) if its a Lattice<vobj>, do nothing otherwise (i.e. if fundamental or grid Tensor)
   
     typedef typename GridTypeMapper<vector_obj>::scalar_type scalar_type; //get the associated scalar type. Works on fundamental and tensor types
-    typedef typename GridTypeMapper<scalar_type>::Realified real_scalar_type; //remove any std::complex wrapper, should get us to the fundamental type
   public:
+    typedef typename GridTypeMapper<scalar_type>::Realified real_scalar_type; //remove any std::complex wrapper, should get us to the fundamental type
     enum { value = sizeof(real_scalar_type)/sizeof(float) };
   };
 }

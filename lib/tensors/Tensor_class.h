@@ -65,6 +65,9 @@ class iScalar {
   typedef iScalar<typename GridTypeMapper<vtype>::Complexified> Complexified;
   typedef iScalar<typename GridTypeMapper<vtype>::Realified> Realified;
 
+  // get double precision version
+  typedef iScalar<typename GridTypeMapper<vtype>::DoublePrecision> DoublePrecision;
+
   enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1 };
 
   // Scalar no action
@@ -197,6 +200,10 @@ class iVector {
   typedef iVector<typename GridTypeMapper<vtype>::Complexified, N> Complexified;
   typedef iVector<typename GridTypeMapper<vtype>::Realified, N> Realified;
 
+  // get double precision version
+  typedef iVector<typename GridTypeMapper<vtype>::DoublePrecision, N> DoublePrecision;
+
+
   template <class T, typename std::enable_if<!isGridTensor<T>::value, T>::type
                          * = nullptr>
   strong_inline auto operator=(T arg) -> iVector<vtype, N> {
@@ -300,7 +307,11 @@ class iMatrix {
   typedef iMatrix<typename GridTypeMapper<vtype>::Complexified, N> Complexified;
   typedef iMatrix<typename GridTypeMapper<vtype>::Realified, N> Realified;
 
-  // Tensure removal
+  // get double precision version
+  typedef iMatrix<typename GridTypeMapper<vtype>::DoublePrecision, N> DoublePrecision;
+
+
+  // Tensor removal
   typedef iScalar<tensor_reduced_v> tensor_reduced;
   typedef iMatrix<recurse_scalar_object, N> scalar_object;
 
