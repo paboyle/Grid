@@ -176,6 +176,35 @@ WilsonFermion5D<Impl>::WilsonFermion5D(int simd,GaugeField &_Umu,
   */
      
 template<class Impl>
+void WilsonFermion5D<Impl>::Report(void)
+{
+  if ( Calls > 0 ) {
+  std::cout << GridLogMessage << "WilsonFermion5D Dhop Calls  " <<Calls <<std::endl;
+  std::cout << GridLogMessage << "WilsonFermion5D CommTime    " <<CommTime/Calls<<" us" <<std::endl;
+  std::cout << GridLogMessage << "WilsonFermion5D ComputeTime " <<ComputeTime/Calls<<" us" <<std::endl;
+
+  std::cout << GridLogMessage << "WilsonFermion5D Stencil"<<std::endl;
+  Stencil.Report();
+
+  std::cout << GridLogMessage << "WilsonFermion5D StencilEven"<<std::endl;
+  StencilEven.Report();
+
+  std::cout << GridLogMessage << "WilsonFermion5D StencilOdd"<<std::endl;
+  StencilOdd.Report();
+  }
+}
+template<class Impl>
+void WilsonFermion5D<Impl>::ZeroCounters(void) {
+  Calls=0;
+  CommTime=0;
+  ComputeTime=0;
+  Stencil.ZeroCounters();
+  StencilEven.ZeroCounters();
+  StencilOdd.ZeroCounters();
+}
+
+
+template<class Impl>
 void WilsonFermion5D<Impl>::ImportGauge(const GaugeField &_Umu)
 {
   GaugeField HUmu(_Umu._grid);
@@ -326,13 +355,17 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
 					 DoubledGaugeField & U,
 					 const FermionField &in, FermionField &out,int dag)
 {
+  Calls++;
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
   Compressor compressor(dag);
 
   int LLs = in._grid->_rdimensions[0];
   
+  CommTime-=usecond();
   st.HaloExchange(in,compressor);
+  CommTime+=usecond();
   
+  ComputeTime-=usecond();
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
   if ( dag == DaggerYes ) {
 PARALLEL_FOR_LOOP
@@ -349,6 +382,7 @@ PARALLEL_FOR_LOOP
       Kernels::DiracOptDhopSite(st,lo,U,st.comm_buf,sF,sU,LLs,1,in,out);
     }
   }
+  ComputeTime+=usecond();
 }
 
 

@@ -148,6 +148,7 @@ int main (int argc, char ** argv)
   int ncall =100;
   if (1) {
 
+    Dw.ZeroCounters();
     double t0=usecond();
     for(int i=0;i<ncall;i++){
       __SSC_START;
@@ -166,7 +167,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NP<<std::endl;
     err = ref-result; 
     std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
-    //    Dw.Report();
+    Dw.Report();
   }
 
   if (1)
@@ -190,6 +191,7 @@ int main (int argc, char ** argv)
     }}}}}
     std::cout<<"src norms "<< norm2(src)<<" " <<norm2(ssrc)<<std::endl;
     double t0=usecond();
+    sDw.ZeroCounters();
     for(int i=0;i<ncall;i++){
       __SSC_START;
       sDw.Dhop(ssrc,sresult,0);
@@ -202,7 +204,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "Called Dw sinner "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NP<<std::endl;
-    //  sDw.Report();
+    sDw.Report();
   
     if(0){
       for(int i=0;i< PerformanceCounter::NumTypes(); i++ ){
@@ -259,6 +261,7 @@ int main (int argc, char ** argv)
       sr_e = zero;
       sr_o = zero;
 
+      sDw.ZeroCounters();
       double t0=usecond();
       for(int i=0;i<ncall;i++){
 	sDw.DhopEO(ssrc_o,sr_e,DaggerNo);
@@ -270,6 +273,7 @@ int main (int argc, char ** argv)
 
       std::cout<<GridLogMessage << "sDeo mflop/s =   "<< flops/(t1-t0)<<std::endl;
       std::cout<<GridLogMessage << "sDeo mflop/s per node   "<< flops/(t1-t0)/NP<<std::endl;
+      sDw.Report();
 
       sDw.DhopEO(ssrc_o,sr_e,DaggerNo);
       sDw.DhopOE(ssrc_e,sr_o,DaggerNo);
@@ -327,6 +331,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "src_o"<<norm2(src_o)<<std::endl;
 
   {
+    Dw.ZeroCounters();
     double t0=usecond();
     for(int i=0;i<ncall;i++){
       Dw.DhopEO(src_o,r_e,DaggerNo);
@@ -338,6 +343,7 @@ int main (int argc, char ** argv)
 
     std::cout<<GridLogMessage << "Deo mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "Deo mflop/s per node   "<< flops/(t1-t0)/NP<<std::endl;
+    Dw.Report();
   }
   Dw.DhopEO(src_o,r_e,DaggerNo);
   Dw.DhopOE(src_e,r_o,DaggerNo);
