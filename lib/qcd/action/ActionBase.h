@@ -81,13 +81,13 @@ struct ActionLevel {
 };
 */
 
-template <class GaugeField, class Repr = NoHirep >
+template <class Field, class Repr = NoHirep >
 struct ActionLevel {
  public:
   unsigned int multiplier; 
 
   // Fundamental repr actions separated because of the smearing
-  typedef Action<GaugeField>* ActPtr;
+  typedef Action<Field>* ActPtr;
 
   // construct a tuple of vectors of the actions for the corresponding higher
   // representation fields
@@ -96,9 +96,6 @@ struct ActionLevel {
   typedef typename  AccessTypes<Action, Repr>::FieldTypeCollection action_hirep_types;
 
   std::vector<ActPtr>& actions;
-
-  // Temporary conversion between ActionLevel and ActionLevelHirep
-  //ActionLevelHirep(ActionLevel<GaugeField>& AL ):actions(AL.actions), multiplier(AL.multiplier){}
 
   ActionLevel(unsigned int mul = 1) : actions(std::get<0>(actions_hirep)), multiplier(mul) {
     // initialize the hirep vectors to zero.
@@ -110,10 +107,10 @@ struct ActionLevel {
 
 
 
-  template < class Field >
-  void push_back(Action<Field>* ptr) {
+  template < class GenField >
+  void push_back(Action<GenField>* ptr) {
     // insert only in the correct vector
-    std::get< Index < Field, action_hirep_types>::value >(actions_hirep).push_back(ptr);
+    std::get< Index < GenField, action_hirep_types>::value >(actions_hirep).push_back(ptr);
   };
 
  
@@ -141,9 +138,6 @@ struct ActionLevel {
 
 };
 
-
-//template <class GaugeField>
-//using ActionSet = std::vector<ActionLevel<GaugeField> >;
 
 template <class GaugeField, class R>
 using ActionSet = std::vector<ActionLevel<GaugeField, R> >;

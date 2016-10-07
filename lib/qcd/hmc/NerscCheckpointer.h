@@ -36,7 +36,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 namespace Grid{
   namespace QCD{
     
-    // Only for gauge fields
+    // Only for Gauge fields
     template<class Gimpl> 
     class NerscHmcCheckpointer : public HmcObservable<typename Gimpl::GaugeField> {
     private:
@@ -44,12 +44,13 @@ namespace Grid{
       std::string rngStem;
       int SaveInterval;
     public:
-      INHERIT_GIMPL_TYPES(Gimpl);
+      INHERIT_GIMPL_TYPES(Gimpl);// 
 
-      NerscHmcCheckpointer(std::string cf, std::string rn,int savemodulo) {
+      NerscHmcCheckpointer(std::string cf, std::string rn,int savemodulo, std::string format = "") {
         configStem  = cf;
         rngStem     = rn;
         SaveInterval= savemodulo;
+        // format is fixed to IEEE64BIG for NERSC
       };
 
       void TrajectoryComplete(int traj, GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG & pRNG )

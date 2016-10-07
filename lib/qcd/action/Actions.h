@@ -60,6 +60,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/qcd/action/gauge/WilsonGaugeAction.h>
 #include <Grid/qcd/action/gauge/PlaqPlusRectangleAction.h>
 
+////////////////////////////////////////////
+// Scalar Actions
+////////////////////////////////////////////
+#include <Grid/qcd/action/scalar/scalarImpl.h>
+#include <Grid/qcd/action/scalar/ScalarAction.h>
+
 namespace Grid {
 namespace QCD {
 
@@ -90,6 +96,12 @@ typedef SymanzikGaugeAction<ConjugateGimplR>        ConjugateSymanzikGaugeAction
 typedef SymanzikGaugeAction<ConjugateGimplF>        ConjugateSymanzikGaugeActionF;
 typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeActionD;
 
+
+  typedef ScalarAction<ScalarImplR>                 ScalarActionR;
+  typedef ScalarAction<ScalarImplF>                 ScalarActionF;
+  typedef ScalarAction<ScalarImplD>                 ScalarActionD;
+  
+  
 }}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

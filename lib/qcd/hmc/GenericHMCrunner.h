@@ -34,16 +34,21 @@ namespace QCD {
 
 // Virtual Class for HMC specific for gauge theories
 // implement a specific theory by defining the BuildTheAction
-template <class Implementation, class RepresentationsPolicy = NoHirep>
+template <class Implementation,
+          class IOCheckpointer = BinaryHmcCheckpointer<Implementation>,
+          class RepresentationsPolicy = NoHirep>
 class BinaryHmcRunnerTemplate {
  public:
   INHERIT_FIELD_TYPES(Implementation);
+  typedef Implementation ImplPolicy;
 
   enum StartType_t { ColdStart, HotStart, TepidStart, CheckpointStart };
 
   ActionSet<Field, RepresentationsPolicy> TheAction;
   // Add here a vector of HmcObservable 
   // that can be injected from outside  
+  std::vector< HmcObservable<typename Implementation::Field> > ObservablesList;
+
 
   GridCartesian *UGrid;
   GridCartesian *FGrid;
@@ -119,8 +124,7 @@ class BinaryHmcRunnerTemplate {
     std::string format = std::string("IEEE64BIG");
     std::string conf_prefix = std::string("ckpoint_lat");
     std::string rng_prefix = std::string("ckpoint_rng");
-    BinaryHmcCheckpointer<Implementation> Checkpoint(conf_prefix, rng_prefix,
-                                                     SaveInterval, format);
+    IOCheckpointer Checkpoint(conf_prefix, rng_prefix, SaveInterval, format);
 
     HMCparameters HMCpar;
     HMCpar.StartTrajectory = StartTraj;
@@ -154,20 +158,31 @@ class BinaryHmcRunnerTemplate {
     SmearingPolicy.set_Field(U);
 
     HybridMonteCarlo<IntegratorType> HMC(HMCpar, MDynamics, sRNG, pRNG, U);
-    HMC.AddObservable(&Checkpoint);
+    //HMC.AddObservable(&Checkpoint);
+
+    for (int obs = 0; obs < ObservablesList.size(); obs++)
+      HMC.AddObservable(&ObservablesList[obs]); 
 
     // Run it
     HMC.evolve();
   }
 };
 
+// These are for gauge fields
 typedef BinaryHmcRunnerTemplate<PeriodicGimplR> BinaryHmcRunner;
 typedef BinaryHmcRunnerTemplate<PeriodicGimplF> BinaryHmcRunnerF;
 typedef BinaryHmcRunnerTemplate<PeriodicGimplD> BinaryHmcRunnerD;
 
+typedef BinaryHmcRunnerTemplate<PeriodicGimplR, NerscHmcCheckpointer<PeriodicGimplR> > NerscTestHmcRunner;
+
+
 template <class RepresentationsPolicy>
 using BinaryHmcRunnerTemplateHirep =
     BinaryHmcRunnerTemplate<PeriodicGimplR, RepresentationsPolicy>;
+
+
+
+typedef BinaryHmcRunnerTemplate<ScalarImplR, BinaryHmcCheckpointer<ScalarImplR>, ScalarFields> ScalarBinaryHmcRunner;
 }
 }
 #endif

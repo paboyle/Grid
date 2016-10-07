@@ -506,6 +506,9 @@ namespace QCD {
 #include <Grid/qcd/utils/SUnTwoIndex.h>
 #include <Grid/qcd/representations/hmc_types.h>
 
+// Scalar field
+#include <Grid/qcd/utils/ScalarObjs.h>
+
 #include <Grid/qcd/action/Actions.h>
 
 #include <Grid/qcd/smearing/Smearing.h>

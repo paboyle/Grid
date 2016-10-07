@@ -38,52 +38,25 @@ namespace Grid {
 namespace QCD {
 
 // Derive from the BinaryHmcRunner (templated for gauge fields)
-class HmcRunner : public BinaryHmcRunner {
+class HmcRunner : public ScalarBinaryHmcRunner {
  public:
   void BuildTheAction(int argc, char **argv)
 
   {
-    typedef WilsonImplR ImplPolicy;
-    typedef WilsonFermionR FermionAction;
-    typedef typename FermionAction::FermionField FermionField;
-
     UGrid = SpaceTimeGrid::makeFourDimGrid(
         GridDefaultLatt(), GridDefaultSimd(Nd, vComplex::Nsimd()),
         GridDefaultMpi());
     UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
 
-    FGrid = UGrid;
-    FrbGrid = UrbGrid;
-
-    // temporarily need a gauge field
-    LatticeGaugeField U(UGrid);
-
-    // Gauge action
-    WilsonGaugeActionR Waction(5.6);
-
-    Real mass = -0.77;
-    FermionAction FermOp(U, *FGrid, *FrbGrid, mass);
-
-    ConjugateGradient<FermionField> CG(1.0e-8, 10000);
-
-    TwoFlavourPseudoFermionAction<ImplPolicy> Nf2(FermOp, CG, CG);
-
-    // Set smearing (true/false), default: false
-    Nf2.is_smeared = true;
+    // Scalar action
+    ScalarActionR Saction(0.11,0.);
 
     // Collect actions
-    ActionLevel<Field> Level1(1);
-    Level1.push_back(&Nf2);
-
-    ActionLevel<Field> Level2(4);
-    Level2.push_back(&Waction);
+    ActionLevel<Field, ScalarFields> Level1(1);
+    Level1.push_back(&Saction);
 
     TheAction.push_back(Level1);
-    TheAction.push_back(Level2);
 
-    // Add observables
-    //PlaquetteLogger<BinaryHmcRunner::ImplPolicy> PlaqLog(std::string("plaq"));
-    //ObservablesList.push_back(PlaqLog);
 
     Run(argc, argv);
   };

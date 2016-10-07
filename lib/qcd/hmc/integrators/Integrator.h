@@ -128,7 +128,7 @@ class Integrator {
                 << "Smearing (on/off): " << as[level].actions.at(a)->is_smeared
                 << std::endl;
       if (as[level].actions.at(a)->is_smeared) Smearer.smeared_force(force);
-      force = Ta(force);
+      force = FieldImplementation::projectForce(force); // Ta for gauge fields
       std::cout << GridLogIntegrator
                 << "Force average: " << norm2(force) / (U._grid->gSites())
                 << std::endl;
@@ -201,9 +201,10 @@ class Integrator {
 
   // Initialization of momenta and actions
   void refresh(Field& U, GridParallelRNG& pRNG) {
+    assert(P._grid == U._grid);
     std::cout << GridLogIntegrator << "Integrator refresh\n";
     FieldImplementation::generate_momenta(P, pRNG);
-
+ 
     // Update the smeared fields, can be implemented as observer
     // necessary to keep the fields updated even after a reject
     // of the Metropolis

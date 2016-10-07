@@ -34,8 +34,21 @@ class FundamentalRep {
 
 };
 
+  template<class Field> 
+  class EmptyRep {
+  public:
+    typedef Field LatticeField;
+
+    explicit EmptyRep(GridBase* grid) {} //do nothing
+    void update_representation(const LatticeField& Uin) {} // do nothing
+    LatticeField RtoFundamentalProject(const LatticeField& in, Real scale = 1.0) const{}// do nothing
+  };
+    
+
+  
 typedef	 FundamentalRep<Nc> FundamentalRepresentation;
 
+  
 }
 }
 

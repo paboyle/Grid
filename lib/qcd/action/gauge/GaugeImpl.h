@@ -47,6 +47,8 @@ template <class Gimpl> class WilsonLoops;
   typedef typename GImpl::SiteLink SiteGaugeLink;
 
 #define INHERIT_FIELD_TYPES(Impl) \
+  typedef typename Impl::Simd Simd;           \
+  typedef typename Impl::SiteField SiteField; \
   typedef typename Impl::Field Field; 
 
 // hard codes the exponential approximation in the template
@@ -88,7 +90,9 @@ public:
     }
   }
 
-   
+   static inline Field projectForce(Field& P){
+    return Ta(P);
+   }
   
   static inline void update_field(Field& P, Field& U, double ep){
     for (int mu = 0; mu < Nd; mu++) {
@@ -117,7 +121,7 @@ public:
   static inline void TepidConfiguration(GridParallelRNG &pRNG, Field &U) {
     SU<Nc>::TepidConfiguration(pRNG, U);
   }
-  
+
   static inline void ColdConfiguration(GridParallelRNG &pRNG, Field &U) {
     SU<Nc>::ColdConfiguration(pRNG, U);
   }
