@@ -159,7 +159,48 @@ class BinaryIO {
       csum=csum+buf[i];
     }
   }
-  
+
+  // Simple classes for precision conversion
+  template <class fobj, class sobj>
+  struct BinarySimpleUnmunger {
+    typedef typename getPrecision<fobj>::real_scalar_type fobj_stype;
+    typedef typename getPrecision<sobj>::real_scalar_type sobj_stype;
+
+    void operator()(sobj &in, fobj &out, uint32_t &csum) {
+      // take word by word and transform accoding to the status
+      fobj_stype *out_buffer = (fobj_stype *)&out;
+      sobj_stype *in_buffer = (sobj_stype *)&in;
+      size_t fobj_words = sizeof(out) / sizeof(fobj_stype);
+      size_t sobj_words = sizeof(in) / sizeof(sobj_stype);
+      assert(fobj_words == sobj_words);
+
+      for (unsigned int word = 0; word < sobj_words; word++)
+        out_buffer[word] = in_buffer[word];  // type conversion on the fly
+
+      BinaryIO::Uint32Checksum((uint32_t *)&out, sizeof(out), csum);
+    }
+  };
+
+  template <class fobj, class sobj>
+  struct BinarySimpleMunger {
+    typedef typename getPrecision<fobj>::real_scalar_type fobj_stype;
+    typedef typename getPrecision<sobj>::real_scalar_type sobj_stype;
+
+    void operator()(fobj &in, sobj &out, uint32_t &csum) {
+      // take word by word and transform accoding to the status
+      fobj_stype *in_buffer = (fobj_stype *)&in;
+      sobj_stype *out_buffer = (sobj_stype *)&out;
+      size_t fobj_words = sizeof(in) / sizeof(fobj_stype);
+      size_t sobj_words = sizeof(out) / sizeof(sobj_stype);
+      assert(fobj_words == sobj_words);
+
+      for (unsigned int word = 0; word < sobj_words; word++)
+        out_buffer[word] = in_buffer[word];  // type conversion on the fly
+
+      BinaryIO::Uint32Checksum((uint32_t *)&in, sizeof(in), csum);
+    }
+  };
+
   template<class vobj,class fobj,class munger>
   static inline uint32_t readObjectSerial(Lattice<vobj> &Umu,std::string file,munger munge,int offset,const std::string &format)
   {
@@ -272,11 +313,11 @@ class BinaryIO {
     return csum;
   }
 
-  static inline uint32_t writeRNGSerial(GridSerialRNG &serial,GridParallelRNG &parallel,std::string file,int offset)
-  {
+  static inline uint32_t writeRNGSerial(GridSerialRNG &serial,
+                                        GridParallelRNG &parallel,
+                                        std::string file, int offset) {
     typedef typename GridSerialRNG::RngStateType RngStateType;
     const int RngStateCount = GridSerialRNG::RngStateCount;
-
 
     GridBase *grid = parallel._grid;
     int gsites = grid->_gsites;
@@ -284,46 +325,53 @@ class BinaryIO {
     //////////////////////////////////////////////////
     // Serialise through node zero
     //////////////////////////////////////////////////
-    std::cout<< GridLogMessage<< "Serial RNG write I/O "<< file<<std::endl;
-
     std::ofstream fout;
-    if ( grid->IsBoss() ) {
-      fout.open(file,std::ios::binary|std::ios::out|std::ios::in);
+    if (grid->IsBoss()) {
+      fout.open(file, std::ios::binary | std::ios::out | std::ios::in);
+      if (!fout.is_open()) {
+        std::cout << GridLogMessage << "writeRNGSerial: Error opening file "
+                  << file << std::endl;
+        exit(0);
+      }
       fout.seekp(offset);
     }
-    
-    uint32_t csum=0;
+
+    std::cout << GridLogMessage << "Serial RNG write I/O " << file << std::endl;
+    uint32_t csum = 0;
     std::vector<RngStateType> saved(RngStateCount);
-    int bytes = sizeof(RngStateType)*saved.size();
+    int bytes = sizeof(RngStateType) * saved.size();
     std::vector<int> gcoor;
 
-    for(int gidx=0;gidx<gsites;gidx++){
+    for (int gidx = 0; gidx < gsites; gidx++) {
+      int rank, o_idx, i_idx;
+      grid->GlobalIndexToGlobalCoor(gidx, gcoor);
+      grid->GlobalCoorToRankIndex(rank, o_idx, i_idx, gcoor);
+      int l_idx = parallel.generator_idx(o_idx, i_idx);
 
-      int rank,o_idx,i_idx;
-      grid->GlobalIndexToGlobalCoor(gidx,gcoor);
-      grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
-      int l_idx=parallel.generator_idx(o_idx,i_idx);
-
-      if( rank == grid->ThisRank() ){
-  //  std::cout << "rank" << rank<<" Getting state for index "<<l_idx<<std::endl;
-  parallel.GetState(saved,l_idx);
+      if (rank == grid->ThisRank()) {
+        //  std::cout << "rank" << rank<<" Getting state for index
+        //  "<<l_idx<<std::endl;
+        parallel.GetState(saved, l_idx);
       }
 
-      grid->Broadcast(rank,(void *)&saved[0],bytes);
+      grid->Broadcast(rank, (void *)&saved[0], bytes);
 
-      if ( grid->IsBoss() ) {
-  Uint32Checksum((uint32_t *)&saved[0],bytes,csum);
-  fout.write((char *)&saved[0],bytes);
+      if (grid->IsBoss()) {
+        Uint32Checksum((uint32_t *)&saved[0], bytes, csum);
+        fout.write((char *)&saved[0], bytes);
       }
-
     }
 
-    if ( grid->IsBoss() ) {
-      serial.GetState(saved,0);
-      Uint32Checksum((uint32_t *)&saved[0],bytes,csum);
-      fout.write((char *)&saved[0],bytes);
+    if (grid->IsBoss()) {
+      serial.GetState(saved, 0);
+      Uint32Checksum((uint32_t *)&saved[0], bytes, csum);
+      fout.write((char *)&saved[0], bytes);
     }
-    grid->Broadcast(0,(void *)&csum,sizeof(csum));
+    grid->Broadcast(0, (void *)&csum, sizeof(csum));
+
+    if (grid->IsBoss()) 
+      fout.close();
+
     return csum;
   }
   static inline uint32_t readRNGSerial(GridSerialRNG &serial,GridParallelRNG &parallel,std::string file,int offset)
@@ -528,30 +576,35 @@ class BinaryIO {
   //////////////////////////////////////////////////////////
   // Parallel writer
   //////////////////////////////////////////////////////////
-  template<class vobj,class fobj,class munger>
-  static inline uint32_t writeObjectParallel(Lattice<vobj> &Umu,std::string file,munger munge,int offset,const std::string & format)
-  {
+  template <class vobj, class fobj, class munger>
+  static inline uint32_t writeObjectParallel(Lattice<vobj> &Umu,
+                                             std::string file, munger munge,
+                                             int offset,
+                                             const std::string &format) {
     typedef typename vobj::scalar_object sobj;
     GridBase *grid = Umu._grid;
 
     int ieee32big = (format == std::string("IEEE32BIG"));
-    int ieee32    = (format == std::string("IEEE32"));
+    int ieee32 = (format == std::string("IEEE32"));
     int ieee64big = (format == std::string("IEEE64BIG"));
-    int ieee64    = (format == std::string("IEEE64"));
+    int ieee64 = (format == std::string("IEEE64"));
 
-    if(!(ieee32big || ieee32 || ieee64big || ieee64)){
-      std::cout << GridLogError << "Unrecognized file format " << format << std::endl;
-      std::cout << GridLogError << "Allowed: IEEE32BIG | IEEE32 | IEEE64BIG | IEEE64" << std::endl; 
+    if (!(ieee32big || ieee32 || ieee64big || ieee64)) {
+      std::cout << GridLogError << "Unrecognized file format " << format
+                << std::endl;
+      std::cout << GridLogError
+                << "Allowed: IEEE32BIG | IEEE32 | IEEE64BIG | IEEE64"
+                << std::endl;
       exit(0);
     }
 
     int nd = grid->_ndimension;
-    for(int d=0;d<nd;d++){
+    for (int d = 0; d < nd; d++) {
       assert(grid->CheckerBoarded(d) == 0);
     }
 
-    std::vector<int> parallel(nd,1);
-    std::vector<int> ioproc  (nd);
+    std::vector<int> parallel(nd, 1);
+    std::vector<int> ioproc(nd);
     std::vector<int> start(nd);
     std::vector<int> range(nd);
 
@@ -559,39 +612,39 @@ class BinaryIO {
 
     int IOnode = 1;
 
-    for(int d=0;d<grid->_ndimension;d++) {
-
-      if ( d!= grid->_ndimension-1 ) parallel[d] = 0;
+    for (int d = 0; d < grid->_ndimension; d++) {
+      if (d != grid->_ndimension - 1) parallel[d] = 0;
 
       if (parallel[d]) {
-  range[d] = grid->_ldimensions[d];
-  start[d] = grid->_processor_coor[d]*range[d];
-  ioproc[d]= grid->_processor_coor[d];
+        range[d] = grid->_ldimensions[d];
+        start[d] = grid->_processor_coor[d] * range[d];
+        ioproc[d] = grid->_processor_coor[d];
       } else {
-  range[d] = grid->_gdimensions[d];
-  start[d] = 0;
-  ioproc[d]= 0;
+        range[d] = grid->_gdimensions[d];
+        start[d] = 0;
+        ioproc[d] = 0;
 
-  if ( grid->_processor_coor[d] != 0 ) IOnode = 0;
+        if (grid->_processor_coor[d] != 0) IOnode = 0;
       }
 
       slice_vol = slice_vol * range[d];
     }
-    
+
     {
       uint32_t tmp = IOnode;
       grid->GlobalSum(tmp);
-      std::cout<< GridLogMessage<< "Parallel write I/O from "<< file << " with " <<tmp<< " IOnodes for subslice ";
-      for(int d=0;d<grid->_ndimension;d++){
-  std::cout<< range[d];
-  if( d< grid->_ndimension-1 ) 
-    std::cout<< " x ";
+      std::cout << GridLogMessage << "Parallel write I/O from " << file
+                << " with " << tmp << " IOnodes for subslice ";
+      for (int d = 0; d < grid->_ndimension; d++) {
+        std::cout << range[d];
+        if (d < grid->_ndimension - 1) std::cout << " x ";
       }
       std::cout << std::endl;
     }
 
-    GridStopWatch timer; timer.Start();
-    uint64_t bytes=0;
+    GridStopWatch timer;
+    timer.Start();
+    uint64_t bytes = 0;
 
     int myrank = grid->ThisRank();
     int iorank = grid->RankFromProcessorCoor(ioproc);
@@ -601,71 +654,79 @@ class BinaryIO {
     // Ideally one reader/writer per xy plane and read these contiguously
     // with comms from nominated I/O nodes.
     std::ofstream fout;
-    if ( IOnode ) fout.open(file,std::ios::binary|std::ios::in|std::ios::out);
+    if (IOnode){
+      fout.open(file, std::ios::binary | std::ios::in | std::ios::out);
+      if (!fout.is_open()) {
+        std::cout << GridLogMessage << "writeObjectParallel: Error opening file " << file
+                  << std::endl;
+        exit(0);
+      }
+    }
 
     //////////////////////////////////////////////////////////
     // Find the location of each site and send to primary node
-    // Take loop order from Chroma; defines loop order now that NERSC doc no longer
+    // Take loop order from Chroma; defines loop order now that NERSC doc no
+    // longer
     // available (how short sighted is that?)
     //////////////////////////////////////////////////////////
 
-    uint32_t csum=0;
+    uint32_t csum = 0;
     fobj fileObj;
-    static sobj siteObj; // static for SHMEM target; otherwise dynamic allocate with AlignedAllocator
+    static sobj siteObj;  // static for SHMEM target; otherwise dynamic allocate
+                          // with AlignedAllocator
 
     // should aggregate a whole chunk and then write.
-    // need to implement these loops in Nd independent way with a lexico conversion
-    for(int tlex=0;tlex<slice_vol;tlex++){
-  
-      std::vector<int> tsite(nd); // temporary mixed up site
+    // need to implement these loops in Nd independent way with a lexico
+    // conversion
+    for (int tlex = 0; tlex < slice_vol; tlex++) {
+      std::vector<int> tsite(nd);  // temporary mixed up site
       std::vector<int> gsite(nd);
       std::vector<int> lsite(nd);
       std::vector<int> iosite(nd);
 
-      Lexicographic::CoorFromIndex(tsite,tlex,range);
+      Lexicographic::CoorFromIndex(tsite, tlex, range);
 
-      for(int d=0;d<nd;d++){
-  lsite[d] = tsite[d]%grid->_ldimensions[d];  // local site
-  gsite[d] = tsite[d]+start[d];               // global site
+      for (int d = 0; d < nd; d++) {
+        lsite[d] = tsite[d] % grid->_ldimensions[d];  // local site
+        gsite[d] = tsite[d] + start[d];               // global site
       }
-
 
       /////////////////////////
       // Get the rank of owner of data
       /////////////////////////
-      int rank, o_idx,i_idx, g_idx;
-      grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gsite);
-      grid->GlobalCoorToGlobalIndex(gsite,g_idx);
+      int rank, o_idx, i_idx, g_idx;
+      grid->GlobalCoorToRankIndex(rank, o_idx, i_idx, gsite);
+      grid->GlobalCoorToGlobalIndex(gsite, g_idx);
 
       ////////////////////////////////
       // iorank writes from the seek
       ////////////////////////////////
-      
+
       // Owner of data peeks it
-      peekLocalSite(siteObj,Umu,lsite);
+      peekLocalSite(siteObj, Umu, lsite);
 
       // Pair of nodes may need to do pt2pt send
-      if ( rank != iorank ) { // comms is necessary
-  if ( (myrank == rank) || (myrank==iorank) ) { // and we have to do it
-    // Send to IOrank 
-    grid->SendRecvPacket((void *)&siteObj,(void *)&siteObj,rank,iorank,sizeof(siteObj));
-  }
+      if (rank != iorank) {                            // comms is necessary
+        if ((myrank == rank) || (myrank == iorank)) {  // and we have to do it
+          // Send to IOrank
+          grid->SendRecvPacket((void *)&siteObj, (void *)&siteObj, rank, iorank,
+                               sizeof(siteObj));
+        }
       }
 
-      grid->Barrier(); // necessary?
+      grid->Barrier();  // necessary?
 
       if (myrank == iorank) {
-  
-  munge(siteObj,fileObj,csum);
+        munge(siteObj, fileObj, csum);
 
-  if(ieee32big) htobe32_v((void *)&fileObj,sizeof(fileObj));
-  if(ieee32)    htole32_v((void *)&fileObj,sizeof(fileObj));
-  if(ieee64big) htobe64_v((void *)&fileObj,sizeof(fileObj));
-  if(ieee64)    htole64_v((void *)&fileObj,sizeof(fileObj));
-  
-  fout.seekp(offset+g_idx*sizeof(fileObj));
-  fout.write((char *)&fileObj,sizeof(fileObj));
-  bytes+=sizeof(fileObj);
+        if (ieee32big) htobe32_v((void *)&fileObj, sizeof(fileObj));
+        if (ieee32) htole32_v((void *)&fileObj, sizeof(fileObj));
+        if (ieee64big) htobe64_v((void *)&fileObj, sizeof(fileObj));
+        if (ieee64) htole64_v((void *)&fileObj, sizeof(fileObj));
+
+        fout.seekp(offset + g_idx * sizeof(fileObj));
+        fout.write((char *)&fileObj, sizeof(fileObj));
+        bytes += sizeof(fileObj);
       }
     }
 
@@ -673,14 +734,19 @@ class BinaryIO {
     grid->GlobalSum(bytes);
 
     timer.Stop();
-    std::cout<<GridLogPerformance<<"writeObjectParallel: wrote "<< bytes <<" bytes in "<<timer.Elapsed() <<" "
-       << (double)bytes/timer.useconds() <<" MB/s "  <<std::endl;
+    std::cout << GridLogPerformance << "writeObjectParallel: wrote " << bytes
+              << " bytes in " << timer.Elapsed() << " "
+              << (double)bytes / timer.useconds() << " MB/s " << std::endl;
+
+
+
+     grid->Barrier();  // necessary?
+    if (IOnode) 
+      fout.close();
 
     return csum;
   }
-
 };
-
 }
 
 #endif

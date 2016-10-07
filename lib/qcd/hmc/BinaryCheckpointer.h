@@ -36,93 +36,36 @@ directory
 namespace Grid {
 namespace QCD {
 
-template <class fobj, class sobj>
-struct BinarySimpleUnmunger {
-  typedef typename getPrecision<fobj>::real_scalar_type fobj_stype;
+// Simple checkpointer, only binary file
+template <class Impl>
+class BinaryHmcCheckpointer : public HmcObservable<typename Impl::Field> {
+ private:
+  std::string configStem;
+  std::string rngStem;
+  int SaveInterval;
+  std::string format;
+
+ public:
+  INHERIT_FIELD_TYPES(Impl);  // Gets the Field type, a Lattice object
+
+  // Extract types from the Field 
+  typedef typename Field::vector_object vobj;
+  typedef typename vobj::scalar_object sobj;
   typedef typename getPrecision<sobj>::real_scalar_type sobj_stype;
+  typedef typename sobj::DoublePrecision sobj_double;
 
-  void operator()(sobj &in, fobj &out, uint32_t &csum) {
-    // take word by word and transform accoding to the status
-  	fobj_stype* out_buffer = (fobj_stype*)&out;
-  	sobj_stype* in_buffer = (sobj_stype*)&in;
-  	size_t fobj_words = sizeof(out)/sizeof(fobj_stype);
-  	size_t sobj_words = sizeof(in)/sizeof(sobj_stype);
-  	assert(fobj_words == sobj_words);
+  BinaryHmcCheckpointer(std::string cf, std::string rn, int savemodulo,
+                        const std::string &f)
+      : configStem(cf), rngStem(rn), SaveInterval(savemodulo), format(f){};
 
-  	for (unsigned int word = 0; word < sobj_words; word++)
-			out_buffer[word] = in_buffer[word];  // type conversion on the fly		
+  void truncate(std::string file) {
+    std::ofstream fout(file, std::ios::out);
+    fout.close();
+  }
 
-			BinaryIO::Uint32Checksum((uint32_t*)&out,sizeof(out),csum);
-    
-  };
-
-template <class fobj, class sobj>
-struct BinarySimpleMunger {
-  typedef typename getPrecision<fobj>::real_scalar_type fobj_stype;
-  typedef typename getPrecision<sobj>::real_scalar_type sobj_stype;
-
-  void operator()(sobj &out, fobj &in, uint32_t &csum) {
-    // take word by word and transform accoding to the status
-  	fobj_stype* in_buffer = (fobj_stype*)&in;
-  	sobj_stype* out_buffer = (sobj_stype*)&out;
-  	size_t fobj_words = sizeof(in)/sizeof(fobj_stype);
-  	size_t sobj_words = sizeof(out)/sizeof(sobj_stype);
-  	assert(fobj_words == sobj_words);
-
-  	for (unsigned int word = 0; word < sobj_words; word++)
-			out_buffer[word] = in_buffer[word];  // type conversion on the fly		
-
-			BinaryIO::Uint32Checksum((uint32_t*)&in,sizeof(in),csum);
-    
-  };
-
-
-  // Only for the main field in the hmc
-  template <class Impl>
-  class BinaryHmcCheckpointer : public HmcObservable<typename Impl::Field> {
-   private:
-    std::string configStem;
-    std::string rngStem;
-    int SaveInterval;
-
-   public:
-    INHERIT_FIELD_TYPES(Impl);  // The Field is a Lattice object
-
-    typedef typename Field::vector_object vobj;
-    typedef typename vobj::scalar_object sobj;
-		typedef typename getPrecision<sobj>::real_scalar_type sobj_stype;
-		typedef typename sobj::DoublePrecision sobj_double;
-
-    BinaryHmcCheckpointer(std::string cf, std::string rn, int savemodulo, const std::string &format)
-        : configStem(cf),
-          rngStem(rn),
-          SaveInterval(savemodulo){};
-
-    void TrajectoryComplete(int traj, Field &U, GridSerialRNG &sRNG,
-                            GridParallelRNG &pRNG) {
-      if ((traj % SaveInterval) == 0) {
-        std::string rng;
-        {
-          std::ostringstream os;
-          os << rngStem << "." << traj;
-          rng = os.str();
-        }
-        std::string config;
-        {
-          std::ostringstream os;
-          os << configStem << "." << traj;
-          config = os.str();
-        }
-
-        // Save always in double precision
-        BinarySimpleUnmunger<sobj_double, sobj> munge;
-        BinaryIO::writeRNGSerial(sRNG, pRNG, rng, 0);
-        BinaryIO::writeObjectParallel<vobj, sobj_double>(U, config, munge, 0, format);
-      }
-    };
-
-    void CheckpointRestore(int traj, Field &U, GridSerialRNG &sRNG,
-                           GridParallelRNG &pRNG) {
+  void TrajectoryComplete(int traj, Field &U, GridSerialRNG &sRNG,
+                          GridParallelRNG &pRNG) {
+    if ((traj % SaveInterval) == 0) {
       std::string rng;
       {
         std::ostringstream os;
@@ -136,11 +79,42 @@ struct BinarySimpleMunger {
         config = os.str();
       }
 
-      BinarySimpleMunger<sobj_double, sobj> munge;
-      BinaryIO::readRNGSerial(sRNG, pRNG, rng, header);
-      BinaryIO::readObjectParallel<vobj, sobj_double>(U, config, munge, 0, format);
-    };
+      BinaryIO::BinarySimpleUnmunger<sobj_double, sobj> munge;
+      truncate(rng);
+      BinaryIO::writeRNGSerial(sRNG, pRNG, rng, 0);
+      truncate(config);
+      uint32_t csum = BinaryIO::writeObjectParallel<vobj, sobj_double>(
+          U, config, munge, 0, format);
+
+      std::cout << GridLogMessage << "Written Binary Configuration " << config
+                << " checksum " << std::hex << csum << std::dec << std::endl;
+    }
   };
+
+  void CheckpointRestore(int traj, Field &U, GridSerialRNG &sRNG,
+                         GridParallelRNG &pRNG) {
+    std::string rng;
+    {
+      std::ostringstream os;
+      os << rngStem << "." << traj;
+      rng = os.str();
+    }
+    std::string config;
+    {
+      std::ostringstream os;
+      os << configStem << "." << traj;
+      config = os.str();
+    }
+
+    BinaryIO::BinarySimpleMunger<sobj_double, sobj> munge;
+    BinaryIO::readRNGSerial(sRNG, pRNG, rng, 0);
+    uint32_t csum = BinaryIO::readObjectParallel<vobj, sobj_double>(
+        U, config, munge, 0, format);
+
+    std::cout << GridLogMessage << "Read Binary Configuration " << config
+              << " checksum " << std::hex << csum << std::dec << std::endl;
+  };
+};
 }
 }
 #endif

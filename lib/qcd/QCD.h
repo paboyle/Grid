@@ -45,7 +45,7 @@ namespace QCD {
     static const int Zm = 6;
     static const int Tm = 7;
 
-    static const int Nc=3;
+    static const int Nc=2;
     static const int Ns=4;
     static const int Nd=4;
     static const int Nhs=2; // half spinor

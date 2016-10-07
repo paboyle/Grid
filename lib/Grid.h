@@ -83,7 +83,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/FFT.h>
 
 #include <Grid/qcd/hmc/NerscCheckpointer.h>
+#include <Grid/qcd/hmc/BinaryCheckpointer.h>
 #include <Grid/qcd/hmc/HmcRunner.h>
+#include <Grid/qcd/hmc/GenericHMCrunner.h>
 
 
 

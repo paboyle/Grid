@@ -75,6 +75,8 @@ public:
     }
   }
 
+  ///////////////////////////////////////////////////////////
+  // Move these to another class
   // HMC auxiliary functions
   static inline void generate_momenta(Field& P, GridParallelRNG& pRNG){
     // specific for SU gauge fields
@@ -108,6 +110,17 @@ public:
     return Hsum.real();
   }
 
+  static inline void HotConfiguration(GridParallelRNG &pRNG, Field &U) {
+    SU<Nc>::HotConfiguration(pRNG, U);
+  }
+
+  static inline void TepidConfiguration(GridParallelRNG &pRNG, Field &U) {
+    SU<Nc>::TepidConfiguration(pRNG, U);
+  }
+  
+  static inline void ColdConfiguration(GridParallelRNG &pRNG, Field &U) {
+    SU<Nc>::ColdConfiguration(pRNG, U);
+  }
 };
 
 // Composition with smeared link, bc's etc.. probably need multiple inheritance
