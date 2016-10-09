@@ -53,9 +53,9 @@ template<class Impl>
 void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
 				const FermionField &phi, 
 				FermionField &chi,
-				std::vector<RealD> &lower,
-				std::vector<RealD> &diag,
-				std::vector<RealD> &upper)
+				std::vector<Coeff_t> &lower,
+				std::vector<Coeff_t> &diag,
+				std::vector<Coeff_t> &upper)
 {
   GridBase *grid=psi._grid;
   int Ls   = this->Ls;
@@ -121,9 +121,9 @@ template<class Impl>
 void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
 				   const FermionField &phi, 
 				   FermionField &chi,
-				   std::vector<RealD> &lower,
-				   std::vector<RealD> &diag,
-				   std::vector<RealD> &upper)
+				   std::vector<Coeff_t> &lower,
+				   std::vector<Coeff_t> &diag,
+				   std::vector<Coeff_t> &upper)
 {
   GridBase *grid=psi._grid;
   int Ls   = this->Ls;
@@ -194,8 +194,8 @@ void CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField 
 
   chi.checkerboard=psi.checkerboard;
   
-  Eigen::MatrixXd Pplus  = Eigen::MatrixXd::Zero(Ls,Ls);
-  Eigen::MatrixXd Pminus = Eigen::MatrixXd::Zero(Ls,Ls);
+  Eigen::MatrixXcd Pplus  = Eigen::MatrixXcd::Zero(Ls,Ls);
+  Eigen::MatrixXcd Pminus = Eigen::MatrixXcd::Zero(Ls,Ls);
   
   for(int s=0;s<Ls;s++){
     Pplus(s,s) = bee[s];
@@ -212,8 +212,8 @@ void CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField 
   Pplus (0,Ls-1) = mass*cee[0];
   Pminus(Ls-1,0) = mass*cee[Ls-1];
   
-  Eigen::MatrixXd PplusMat ;
-  Eigen::MatrixXd PminusMat;
+  Eigen::MatrixXcd PplusMat ;
+  Eigen::MatrixXcd PminusMat;
   
   if ( inv ) {
     PplusMat =Pplus.inverse();
@@ -298,8 +298,12 @@ PARALLEL_FOR_LOOP
 
 INSTANTIATE_DPERP(DomainWallVec5dImplD);
 INSTANTIATE_DPERP(DomainWallVec5dImplF);
+INSTANTIATE_DPERP(ZDomainWallVec5dImplD);
+INSTANTIATE_DPERP(ZDomainWallVec5dImplF);
 
 template void CayleyFermion5D<DomainWallVec5dImplF>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
 template void CayleyFermion5D<DomainWallVec5dImplD>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
+template void CayleyFermion5D<ZDomainWallVec5dImplF>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
+template void CayleyFermion5D<ZDomainWallVec5dImplD>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
 
 }}

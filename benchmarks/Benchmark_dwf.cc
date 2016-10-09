@@ -86,18 +86,6 @@ int main (int argc, char ** argv)
   LatticeFermion    tmp(FGrid);
   LatticeFermion    err(FGrid);
 
-  /*  src=zero;
-  std::vector<int> origin(5,0);
-  SpinColourVector f=zero;
-  for(int sp=0;sp<4;sp++){
-  for(int co=0;co<3;co++){
-    f()(sp)(co)=Complex(1.0,0.0); 
-  }}
-  pokeSite(f,src,origin);
-  */
-
-  ColourMatrix cm = Complex(1.0,0.0);
-
   LatticeGaugeField Umu(UGrid); 
   random(RNG4,Umu);
 
@@ -144,10 +132,12 @@ int main (int argc, char ** argv)
 
   DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   
-  std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
+  std::cout<<GridLogMessage << "Naive wilson implementation "<<std::endl;
+  std::cout << GridLogMessage<< "Calling Dw"<<std::endl;
   int ncall =100;
   if (1) {
 
+    Dw.ZeroCounters();
     double t0=usecond();
     for(int i=0;i<ncall;i++){
       __SSC_START;
@@ -166,7 +156,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NP<<std::endl;
     err = ref-result; 
     std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
-    //    Dw.Report();
+    Dw.Report();
   }
 
   if (1)
@@ -188,8 +178,9 @@ int main (int argc, char ** argv)
       peekSite(tmp,src,site);
       pokeSite(tmp,ssrc,site);
     }}}}}
-    std::cout<<"src norms "<< norm2(src)<<" " <<norm2(ssrc)<<std::endl;
+    std::cout<<GridLogMessage<< "src norms "<< norm2(src)<<" " <<norm2(ssrc)<<std::endl;
     double t0=usecond();
+    sDw.ZeroCounters();
     for(int i=0;i<ncall;i++){
       __SSC_START;
       sDw.Dhop(ssrc,sresult,0);
@@ -199,23 +190,23 @@ int main (int argc, char ** argv)
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=1344*volume*ncall;
 
-    std::cout<<GridLogMessage << "Called Dw sinner "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
+    std::cout<<GridLogMessage << "Called Dw s_inner "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NP<<std::endl;
-    //  sDw.Report();
+    sDw.Report();
   
     if(0){
       for(int i=0;i< PerformanceCounter::NumTypes(); i++ ){
-	sDw.Dhop(ssrc,sresult,0);
-	PerformanceCounter Counter(i);
-	Counter.Start();
-	sDw.Dhop(ssrc,sresult,0);
-	Counter.Stop();
-	Counter.Report();
+  sDw.Dhop(ssrc,sresult,0);
+  PerformanceCounter Counter(i);
+  Counter.Start();
+  sDw.Dhop(ssrc,sresult,0);
+  Counter.Stop();
+  Counter.Report();
       }
     }
 
-    std::cout<<"res norms "<< norm2(result)<<" " <<norm2(sresult)<<std::endl;
+    std::cout<<GridLogMessage<< "res norms "<< norm2(result)<<" " <<norm2(sresult)<<std::endl;
 
 
     RealF sum=0;
@@ -230,12 +221,12 @@ int main (int argc, char ** argv)
       peekSite(simd,sresult,site);
       sum=sum+norm2(normal-simd);
       if (norm2(normal-simd) > 1.0e-6 ) {
-	std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" "<<norm2(normal-simd)<<std::endl;
-	std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" normal "<<normal<<std::endl;
-	std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" simd   "<<simd<<std::endl;
+  std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" "<<norm2(normal-simd)<<std::endl;
+  std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" normal "<<normal<<std::endl;
+  std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" simd   "<<simd<<std::endl;
       }
     }}}}}
-    std::cout<<" difference between normal and simd is "<<sum<<std::endl;
+    std::cout<<GridLogMessage<<" difference between normal and simd is "<<sum<<std::endl;
 
 
     if (1) {
@@ -259,9 +250,10 @@ int main (int argc, char ** argv)
       sr_e = zero;
       sr_o = zero;
 
+      sDw.ZeroCounters();
       double t0=usecond();
-      for(int i=0;i<ncall;i++){
-	sDw.DhopEO(ssrc_o,sr_e,DaggerNo);
+      for (int i = 0; i < ncall; i++) {
+        sDw.DhopEO(ssrc_o, sr_e, DaggerNo);
       }
       double t1=usecond();
 
@@ -270,6 +262,7 @@ int main (int argc, char ** argv)
 
       std::cout<<GridLogMessage << "sDeo mflop/s =   "<< flops/(t1-t0)<<std::endl;
       std::cout<<GridLogMessage << "sDeo mflop/s per node   "<< flops/(t1-t0)/NP<<std::endl;
+      sDw.Report();
 
       sDw.DhopEO(ssrc_o,sr_e,DaggerNo);
       sDw.DhopOE(ssrc_e,sr_o,DaggerNo);
@@ -294,18 +287,19 @@ int main (int argc, char ** argv)
       //    ref =  src - Gamma(Gamma::GammaX)* src ; // 1+gamma_x
       tmp = U[mu]*Cshift(src,mu+1,1);
       for(int i=0;i<ref._odata.size();i++){
-	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
+  ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
       }
 
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu+1,-1);
       for(int i=0;i<ref._odata.size();i++){
-	ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
+  ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
       }
     }
     ref = -0.5*ref;
   }
   Dw.Dhop(src,result,1);
+  std::cout << GridLogMessage << "Naive wilson implementation Dag" << std::endl;
   std::cout<<GridLogMessage << "Called DwDag"<<std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
   std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
@@ -327,6 +321,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "src_o"<<norm2(src_o)<<std::endl;
 
   {
+    Dw.ZeroCounters();
     double t0=usecond();
     for(int i=0;i<ncall;i++){
       Dw.DhopEO(src_o,r_e,DaggerNo);
@@ -338,6 +333,7 @@ int main (int argc, char ** argv)
 
     std::cout<<GridLogMessage << "Deo mflop/s =   "<< flops/(t1-t0)<<std::endl;
     std::cout<<GridLogMessage << "Deo mflop/s per node   "<< flops/(t1-t0)/NP<<std::endl;
+    Dw.Report();
   }
   Dw.DhopEO(src_o,r_e,DaggerNo);
   Dw.DhopOE(src_e,r_o,DaggerNo);

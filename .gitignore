@@ -95,6 +95,10 @@ build.sh
 ################
 lib/Eigen/*
 
+# FFTW source #
+################
+lib/fftw/*
+
 # libtool macros #
 ##################
 m4/lt*

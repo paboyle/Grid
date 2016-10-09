@@ -55,11 +55,14 @@ namespace QCD {
     //////////////////////////////////////////////////////////////////////////////
     // QCD iMatrix types
     // Index conventions:                            Lorentz x Spin x Colour
+    // note: static const int or constexpr will work for type deductions
+    //       with the intel compiler (up to version 17)
     //////////////////////////////////////////////////////////////////////////////
-    static const int ColourIndex = 2;
-    static const int SpinIndex   = 1;
-    static const int LorentzIndex= 0;
+    #define ColourIndex  2
+    #define SpinIndex    1
+    #define LorentzIndex 0
 
+  
     // Also should make these a named enum type
     static const int DaggerNo=0;
     static const int DaggerYes=1;
@@ -490,16 +493,27 @@ namespace QCD {
 }   //namespace QCD
 } // Grid
 
+
 #include <Grid/qcd/utils/SpaceTimeGrid.h>
 #include <Grid/qcd/spin/Dirac.h>
 #include <Grid/qcd/spin/TwoSpinor.h>
 #include <Grid/qcd/utils/LinalgUtils.h>
 #include <Grid/qcd/utils/CovariantCshift.h>
+
+// Include representations 	
 #include <Grid/qcd/utils/SUn.h>
+#include <Grid/qcd/utils/SUnAdjoint.h>
+#include <Grid/qcd/utils/SUnTwoIndex.h>
+#include <Grid/qcd/representations/hmc_types.h>
+
 #include <Grid/qcd/action/Actions.h>
+
+#include <Grid/qcd/smearing/Smearing.h>
+
 #include <Grid/qcd/hmc/integrators/Integrator.h>
 #include <Grid/qcd/hmc/integrators/Integrator_algorithm.h>
 #include <Grid/qcd/hmc/HMC.h>
-#include <Grid/qcd/smearing/Smearing.h>
+
+
 
 #endif

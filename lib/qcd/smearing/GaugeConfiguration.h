@@ -10,6 +10,29 @@ namespace Grid {
 
 namespace QCD {
 
+  //trivial class for no smearing
+  template< class Gimpl >
+class NoSmearing {
+public:
+  INHERIT_GIMPL_TYPES(Gimpl);
+
+  GaugeField*
+      ThinLinks;
+
+  NoSmearing(): ThinLinks(NULL) {}
+
+  void set_GaugeField(GaugeField& U) { ThinLinks = &U; }
+
+  void smeared_force(GaugeField& SigmaTilde) const {}
+
+  GaugeField& get_SmearedU() { return *ThinLinks; }
+
+  GaugeField& get_U(bool smeared = false) {
+    return *ThinLinks;
+  }
+
+};
+
 /*!
   @brief Smeared configuration container
 
@@ -201,6 +224,8 @@ class SmearedConfiguration {
   SmearedConfiguration()
       : smearingLevels(0), StoutSmearing(), SmearedSet(), ThinLinks(NULL) {}
 
+
+  
   // attach the smeared routines to the thin links U and fill the smeared set
   void set_GaugeField(GaugeField& U) { fill_smearedSet(U); }
 

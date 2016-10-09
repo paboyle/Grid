@@ -17,8 +17,8 @@ endif
 include Make.inc
 include Eigen.inc
 
-lib_LTLIBRARIES = libGrid.la
+lib_LIBRARIES = libGrid.a
 
-libGrid_la_SOURCES             = $(CCFILES) $(extra_sources)
-libGrid_ladir                  = $(pkgincludedir)
+libGrid_a_SOURCES              = $(CCFILES) $(extra_sources)
+libGrid_adir                   = $(pkgincludedir)
 nobase_dist_pkginclude_HEADERS = $(HFILES) $(eigen_files) Config.h

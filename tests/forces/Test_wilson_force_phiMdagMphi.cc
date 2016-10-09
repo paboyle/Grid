@@ -103,7 +103,7 @@ int main (int argc, char ** argv)
 
   for(int mu=0;mu<Nd;mu++){
 
-    SU3::GaussianLieAlgebraMatrix(pRNG, mommu); // Traceless antihermitian momentum; gaussian in lie alg
+    SU3::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu); // Traceless antihermitian momentum; gaussian in lie alg
 
     //    Dw.DoubleStore(Dw.Umu,Uprime); // update U _and_ Udag
     Dw.DhopDirDisp(phi,Ftmp,mu,mu+4,DaggerYes); 

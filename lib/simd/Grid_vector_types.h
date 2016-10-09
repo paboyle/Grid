@@ -388,6 +388,12 @@ class Grid_simd {
 
 };  // end of Grid_simd class definition
 
+
+inline void permute(ComplexD &y,ComplexD b, int perm) {  y=b; }
+inline void permute(ComplexF &y,ComplexF b, int perm) {  y=b; }
+inline void permute(RealD &y,RealD b, int perm) {  y=b; }
+inline void permute(RealF &y,RealF b, int perm) {  y=b; }
+
 ////////////////////////////////////////////////////////////////////
 // General rotate
 ////////////////////////////////////////////////////////////////////

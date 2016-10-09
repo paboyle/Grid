@@ -111,16 +111,29 @@ typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeAction
 #define FermOp4dVecTemplateInstantiate(A) \
   template class A<WilsonImplF>;		\
   template class A<WilsonImplD>;		\
+  template class A<ZWilsonImplF>;		\
+  template class A<ZWilsonImplD>;		\
   template class A<GparityWilsonImplF>;		\
   template class A<GparityWilsonImplD>;		
 
+#define AdjointFermOpTemplateInstantiate(A) \
+  template class A<WilsonAdjImplF>; \
+  template class A<WilsonAdjImplD>; 
+
+#define TwoIndexFermOpTemplateInstantiate(A) \
+  template class A<WilsonTwoIndexSymmetricImplF>; \
+  template class A<WilsonTwoIndexSymmetricImplD>; 
+
 #define FermOp5dVecTemplateInstantiate(A) \
   template class A<DomainWallVec5dImplF>;	\
-  template class A<DomainWallVec5dImplD>;	
+  template class A<DomainWallVec5dImplD>;	\
+  template class A<ZDomainWallVec5dImplF>;	\
+  template class A<ZDomainWallVec5dImplD>;	
 
 #define FermOpTemplateInstantiate(A) \
  FermOp4dVecTemplateInstantiate(A) \
  FermOp5dVecTemplateInstantiate(A) 
+
 
 #define GparityFermOpTemplateInstantiate(A) 
 
@@ -138,6 +151,7 @@ typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeAction
 #include <Grid/qcd/action/fermion/DomainWallFermion.h>
 #include <Grid/qcd/action/fermion/DomainWallFermion.h>
 #include <Grid/qcd/action/fermion/MobiusFermion.h>
+#include <Grid/qcd/action/fermion/ZMobiusFermion.h>
 #include <Grid/qcd/action/fermion/ScaledShamirFermion.h>
 #include <Grid/qcd/action/fermion/MobiusZolotarevFermion.h>
 #include <Grid/qcd/action/fermion/ShamirZolotarevFermion.h>
@@ -166,6 +180,14 @@ typedef WilsonFermion<WilsonImplR> WilsonFermionR;
 typedef WilsonFermion<WilsonImplF> WilsonFermionF;
 typedef WilsonFermion<WilsonImplD> WilsonFermionD;
 
+typedef WilsonFermion<WilsonAdjImplR> WilsonAdjFermionR;
+typedef WilsonFermion<WilsonAdjImplF> WilsonAdjFermionF;
+typedef WilsonFermion<WilsonAdjImplD> WilsonAdjFermionD;
+
+typedef WilsonFermion<WilsonTwoIndexSymmetricImplR> WilsonTwoIndexSymmetricFermionR;
+typedef WilsonFermion<WilsonTwoIndexSymmetricImplF> WilsonTwoIndexSymmetricFermionF;
+typedef WilsonFermion<WilsonTwoIndexSymmetricImplD> WilsonTwoIndexSymmetricFermionD;
+
 typedef WilsonTMFermion<WilsonImplR> WilsonTMFermionR;
 typedef WilsonTMFermion<WilsonImplF> WilsonTMFermionF;
 typedef WilsonTMFermion<WilsonImplD> WilsonTMFermionD;
@@ -176,6 +198,11 @@ typedef DomainWallFermion<WilsonImplD> DomainWallFermionD;
 typedef MobiusFermion<WilsonImplR> MobiusFermionR;
 typedef MobiusFermion<WilsonImplF> MobiusFermionF;
 typedef MobiusFermion<WilsonImplD> MobiusFermionD;
+
+typedef ZMobiusFermion<ZWilsonImplR> ZMobiusFermionR;
+typedef ZMobiusFermion<ZWilsonImplF> ZMobiusFermionF;
+typedef ZMobiusFermion<ZWilsonImplD> ZMobiusFermionD;
+
 typedef ScaledShamirFermion<WilsonImplR> ScaledShamirFermionR;
 typedef ScaledShamirFermion<WilsonImplF> ScaledShamirFermionF;
 typedef ScaledShamirFermion<WilsonImplD> ScaledShamirFermionD;
