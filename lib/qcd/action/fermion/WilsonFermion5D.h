@@ -61,6 +61,17 @@ namespace Grid {
      INHERIT_IMPL_TYPES(Impl);
      typedef WilsonKernels<Impl> Kernels;
 
+     void Report(void);
+     void ZeroCounters(void);
+     double DhopCalls;
+     double DhopCommTime;
+     double DhopComputeTime;
+
+     double DerivCalls;
+     double DerivCommTime;
+     double DerivComputeTime;
+     double DerivDhopComputeTime;
+
       ///////////////////////////////////////////////////////////////
       // Implement the abstract base
       ///////////////////////////////////////////////////////////////
