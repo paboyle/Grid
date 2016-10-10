@@ -42,6 +42,10 @@ namespace Grid {
      INHERIT_IMPL_TYPES(Impl);
     public:
 
+      void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m) { 
+	this->MomentumSpacePropagatorHt(out,in,_m);
+      };
+
       virtual void   Instantiatable(void) {};
       // Constructors
       DomainWallFermion(GaugeField &_Umu,
@@ -50,6 +54,7 @@ namespace Grid {
 			GridCartesian         &FourDimGrid,
 			GridRedBlackCartesian &FourDimRedBlackGrid,
 			RealD _mass,RealD _M5,const ImplParams &p= ImplParams()) : 
+
 
       CayleyFermion5D<Impl>(_Umu,
 			    FiveDimGrid,
