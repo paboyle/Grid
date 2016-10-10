@@ -450,13 +450,12 @@ namespace Optimization {
   };
 
 #if defined (AVX2) || defined (AVXFMA4) 
-#define _mm256_alignr_epi32(ret,a,b,n) ret=(__m256) _mm256_alignr_epi8((__m256i)a,(__m256i)b,(n*4)%16)
-#define _mm256_alignr_epi64(ret,a,b,n) ret=(__m256d) _mm256_alignr_epi8((__m256i)a,(__m256i)b,(n*8)%16)
+#define _mm256_alignr_epi32_grid(ret,a,b,n) ret=(__m256)  _mm256_alignr_epi8((__m256i)a,(__m256i)b,(n*4)%16)
+#define _mm256_alignr_epi64_grid(ret,a,b,n) ret=(__m256d) _mm256_alignr_epi8((__m256i)a,(__m256i)b,(n*8)%16)
 #endif
 
 #if defined (AVX1) 
-
-#define _mm256_alignr_epi32(ret,a,b,n) {	\
+#define _mm256_alignr_epi32_grid(ret,a,b,n) {	\
     __m128 aa, bb;				\
 						\
     aa  = _mm256_extractf128_ps(a,1);		\
@@ -470,7 +469,7 @@ namespace Optimization {
     ret = _mm256_insertf128_ps(ret,aa,0);	\
   }
 
-#define _mm256_alignr_epi64(ret,a,b,n) {	\
+#define _mm256_alignr_epi64_grid(ret,a,b,n) {	\
     __m128d aa, bb;				\
 						\
     aa  = _mm256_extractf128_pd(a,1);		\
@@ -530,9 +529,9 @@ namespace Optimization {
       __m256 tmp = Permute::Permute0(in);
       __m256 ret;
       if ( n > 3 ) { 
-	_mm256_alignr_epi32(ret,in,tmp,n);  
+	_mm256_alignr_epi32_grid(ret,in,tmp,n);  
       } else {
-        _mm256_alignr_epi32(ret,tmp,in,n);          
+        _mm256_alignr_epi32_grid(ret,tmp,in,n);          
       }
       //      std::cout << " align epi32 n=" <<n<<" in "<<tmp<<in<<" -> "<< ret <<std::endl;
       return ret;
@@ -543,9 +542,9 @@ namespace Optimization {
       __m256d tmp = Permute::Permute0(in);
       __m256d ret;
       if ( n > 1 ) {
-	_mm256_alignr_epi64(ret,in,tmp,n);          
+	_mm256_alignr_epi64_grid(ret,in,tmp,n);          
       } else {
-        _mm256_alignr_epi64(ret,tmp,in,n);          
+        _mm256_alignr_epi64_grid(ret,tmp,in,n);          
       }
       //      std::cout << " align epi64 n=" <<n<<" in "<<tmp<<in<<" -> "<< ret <<std::endl;
       return ret;
