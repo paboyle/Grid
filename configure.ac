@@ -117,7 +117,7 @@ CXXFLAGS=$CXXFLAGS_CPY
 LDFLAGS=$LDFLAGS_CPY
 
 ############### SIMD instruction selection
-AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE4|AVX|AVXFMA4|AVX2|AVX512|AVX512MIC|IMCI|KNL|KNC],\
+AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE4|AVX|AVXFMA4|AVXFMA|AVX2|AVX512|AVX512MIC|IMCI|KNL|KNC],\
 	[Select instructions to be SSE4.0, AVX 1.0, AVX 2.0+FMA, AVX 512, IMCI])],\
 	[ac_SIMD=${enable_simd}],[ac_SIMD=GEN])
 
@@ -133,6 +133,9 @@ case ${ax_cv_cxx_compiler_vendor} in
       AVXFMA4)
         AC_DEFINE([AVXFMA4],[1],[AVX intrinsics with FMA4])
         SIMD_FLAGS='-mavx -mfma4';;
+      AVXFMA)
+        AC_DEFINE([AVXFMA],[1],[AVX intrinsics with FMA3])
+        SIMD_FLAGS='-mavx -mfma';;
       AVX2)
         AC_DEFINE([AVX2],[1],[AVX2 intrinsics])
         SIMD_FLAGS='-mavx2 -mfma';;
@@ -161,6 +164,9 @@ case ${ax_cv_cxx_compiler_vendor} in
         SIMD_FLAGS='-mavx -xavx';;
       AVXFMA4)
         AC_DEFINE([AVXFMA4],[1],[AVX intrinsics with FMA4])
+        SIMD_FLAGS='-mavx -mfma';;
+      AVXFMA)
+        AC_DEFINE([AVXFMA],[1],[AVX intrinsics with FMA4])
         SIMD_FLAGS='-mavx -mfma';;
       AVX2)
         AC_DEFINE([AVX2],[1],[AVX2 intrinsics])
