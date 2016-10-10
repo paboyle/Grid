@@ -47,7 +47,7 @@ class BinaryHmcRunnerTemplate {
   ActionSet<Field, RepresentationsPolicy> TheAction;
   // Add here a vector of HmcObservable 
   // that can be injected from outside  
-  std::vector< HmcObservable<typename Implementation::Field> > ObservablesList;
+  std::vector< HmcObservable<typename Implementation::Field>* > ObservablesList;
 
 
   GridCartesian *UGrid;
@@ -119,12 +119,13 @@ class BinaryHmcRunnerTemplate {
     IntegratorParameters MDpar(20, 1.0);
     IntegratorType MDynamics(UGrid, MDpar, TheAction, SmearingPolicy);
 
-    // Checkpoint strategy
+    // Checkpoint strategy    
     int SaveInterval = 1;
     std::string format = std::string("IEEE64BIG");
     std::string conf_prefix = std::string("ckpoint_lat");
     std::string rng_prefix = std::string("ckpoint_rng");
     IOCheckpointer Checkpoint(conf_prefix, rng_prefix, SaveInterval, format);
+    
 
     HMCparameters HMCpar;
     HMCpar.StartTrajectory = StartTraj;
@@ -158,10 +159,10 @@ class BinaryHmcRunnerTemplate {
     SmearingPolicy.set_Field(U);
 
     HybridMonteCarlo<IntegratorType> HMC(HMCpar, MDynamics, sRNG, pRNG, U);
-    //HMC.AddObservable(&Checkpoint);
+    HMC.AddObservable(&Checkpoint);
 
     for (int obs = 0; obs < ObservablesList.size(); obs++)
-      HMC.AddObservable(&ObservablesList[obs]); 
+      HMC.AddObservable(ObservablesList[obs]); 
 
     // Run it
     HMC.evolve();

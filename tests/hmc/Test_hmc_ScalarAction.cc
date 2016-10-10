@@ -43,12 +43,13 @@ class HmcRunner : public ScalarBinaryHmcRunner {
   void BuildTheAction(int argc, char **argv)
 
   {
+    // Notice that the Grid is for reals now
     UGrid = SpaceTimeGrid::makeFourDimGrid(
-        GridDefaultLatt(), GridDefaultSimd(Nd, vComplex::Nsimd()),
+        GridDefaultLatt(), GridDefaultSimd(Nd, vReal::Nsimd()),
         GridDefaultMpi());
     UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
 
-    // Scalar action
+    // Real Scalar action
     ScalarActionR Saction(0.11,0.);
 
     // Collect actions
@@ -59,7 +60,7 @@ class HmcRunner : public ScalarBinaryHmcRunner {
 
 
     Run(argc, argv);
-  };
+  };  
 };
 }
 }

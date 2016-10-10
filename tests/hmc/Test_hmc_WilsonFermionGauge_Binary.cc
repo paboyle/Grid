@@ -82,8 +82,8 @@ class HmcRunner : public BinaryHmcRunner {
     TheAction.push_back(Level2);
 
     // Add observables
-    //PlaquetteLogger<BinaryHmcRunner::ImplPolicy> PlaqLog(std::string("plaq"));
-    //ObservablesList.push_back(PlaqLog);
+    PlaquetteLogger<BinaryHmcRunner::ImplPolicy> PlaqLog(std::string("plaq"));
+    ObservablesList.push_back(&PlaqLog);
 
     Run(argc, argv);
   };
