@@ -35,7 +35,6 @@ namespace QCD {
 // Virtual Class for HMC specific for gauge theories
 // implement a specific theory by defining the BuildTheAction
 template <class Implementation,
-          class IOCheckpointer = BinaryHmcCheckpointer<Implementation>,
           class RepresentationsPolicy = NoHirep>
 class BinaryHmcRunnerTemplate {
  public:
@@ -45,7 +44,8 @@ class BinaryHmcRunnerTemplate {
   enum StartType_t { ColdStart, HotStart, TepidStart, CheckpointStart };
 
   ActionSet<Field, RepresentationsPolicy> TheAction;
-  // Add here a vector of HmcObservable 
+  
+  // A vector of HmcObservable 
   // that can be injected from outside  
   std::vector< HmcObservable<typename Implementation::Field>* > ObservablesList;
 
@@ -57,7 +57,9 @@ class BinaryHmcRunnerTemplate {
 
   virtual void BuildTheAction(int argc, char **argv) = 0;  // necessary?
 
-  void Run(int argc, char **argv) {
+// add here the smearing implementation?
+template <class IOCheckpointer = BinaryHmcCheckpointer<Implementation> >
+  void Run(int argc, char **argv, IOCheckpointer &Checkpoint) {
     StartType_t StartType = HotStart;
 
     std::string arg;
@@ -119,13 +121,14 @@ class BinaryHmcRunnerTemplate {
     IntegratorParameters MDpar(20, 1.0);
     IntegratorType MDynamics(UGrid, MDpar, TheAction, SmearingPolicy);
 
-    // Checkpoint strategy    
+    // Checkpoint strategy   
+    /* 
     int SaveInterval = 1;
     std::string format = std::string("IEEE64BIG");
     std::string conf_prefix = std::string("ckpoint_lat");
     std::string rng_prefix = std::string("ckpoint_rng");
     IOCheckpointer Checkpoint(conf_prefix, rng_prefix, SaveInterval, format);
-    
+    */
 
     HMCparameters HMCpar;
     HMCpar.StartTrajectory = StartTraj;
@@ -159,7 +162,7 @@ class BinaryHmcRunnerTemplate {
     SmearingPolicy.set_Field(U);
 
     HybridMonteCarlo<IntegratorType> HMC(HMCpar, MDynamics, sRNG, pRNG, U);
-    HMC.AddObservable(&Checkpoint);
+    //HMC.AddObservable(&Checkpoint);
 
     for (int obs = 0; obs < ObservablesList.size(); obs++)
       HMC.AddObservable(ObservablesList[obs]); 
@@ -174,7 +177,7 @@ typedef BinaryHmcRunnerTemplate<PeriodicGimplR> BinaryHmcRunner;
 typedef BinaryHmcRunnerTemplate<PeriodicGimplF> BinaryHmcRunnerF;
 typedef BinaryHmcRunnerTemplate<PeriodicGimplD> BinaryHmcRunnerD;
 
-typedef BinaryHmcRunnerTemplate<PeriodicGimplR, NerscHmcCheckpointer<PeriodicGimplR> > NerscTestHmcRunner;
+//typedef BinaryHmcRunnerTemplate<PeriodicGimplR, NerscHmcCheckpointer<PeriodicGimplR> > NerscTestHmcRunner;
 
 
 template <class RepresentationsPolicy>
@@ -183,7 +186,8 @@ using BinaryHmcRunnerTemplateHirep =
 
 
 
-typedef BinaryHmcRunnerTemplate<ScalarImplR, BinaryHmcCheckpointer<ScalarImplR>, ScalarFields> ScalarBinaryHmcRunner;
+//typedef BinaryHmcRunnerTemplate<ScalarImplR, BinaryHmcCheckpointer<ScalarImplR>, ScalarFields> ScalarBinaryHmcRunner;
+    typedef BinaryHmcRunnerTemplate<ScalarImplR, ScalarFields> ScalarBinaryHmcRunner;
 }
 }
 #endif

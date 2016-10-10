@@ -59,7 +59,15 @@ class HmcRunner : public ScalarBinaryHmcRunner {
     TheAction.push_back(Level1);
 
 
-    Run(argc, argv);
+    // Add observables and checkpointers
+    int SaveInterval = 1;
+    std::string format = std::string("IEEE64BIG");
+    std::string conf_prefix = std::string("ckpoint_scalar_lat");
+    std::string rng_prefix = std::string("ckpoint_scalar_rng");
+    BinaryHmcCheckpointer<ScalarBinaryHmcRunner::ImplPolicy> Checkpoint(conf_prefix, rng_prefix, SaveInterval, format);
+    ObservablesList.push_back(&Checkpoint);
+
+    Run(argc, argv, Checkpoint);
   };  
 };
 }

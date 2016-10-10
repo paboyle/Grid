@@ -7,9 +7,8 @@ Source file: ./tests/Test_hmc_WilsonFermionGauge.cc
 Copyright (C) 2015
 
 Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: neo <cossu@post.kek.jp>
-Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -25,7 +24,8 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-See the full license in the file "LICENSE" in the top level distribution directory
+See the full license in the file "LICENSE" in the top level distribution
+directory
 *************************************************************************************/
 /*  END LEGAL */
 #include <Grid/Grid.h>
@@ -36,6 +36,23 @@ using namespace Grid::QCD;
 
 namespace Grid {
 namespace QCD {
+
+class HMCRunnerParameters : Serializable {
+ public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(HMCRunnerParameters,
+                                  double, beta,
+                                  double, mass,
+                                  int, MaxCGIterations,
+                                  double, StoppingCondition,
+                                  bool, smearedAction,
+                                  int, SaveInterval,
+                                  std::string, format,
+                                  std::string, conf_prefix,
+                                  std::string, rng_prefix,
+                                  );
+
+  HMCRunnerParameters() {}
+};
 
 // Derive from the BinaryHmcRunner (templated for gauge fields)
 class HmcRunner : public BinaryHmcRunner {
@@ -62,6 +79,9 @@ class HmcRunner : public BinaryHmcRunner {
     WilsonGaugeActionR Waction(5.6);
 
     Real mass = -0.77;
+
+    // Can we define an overloaded operator that does not need U and initialises
+    // it with zeroes?
     FermionAction FermOp(U, *FGrid, *FrbGrid, mass);
 
     ConjugateGradient<FermionField> CG(1.0e-8, 10000);
@@ -82,10 +102,24 @@ class HmcRunner : public BinaryHmcRunner {
     TheAction.push_back(Level2);
 
     // Add observables
-    PlaquetteLogger<BinaryHmcRunner::ImplPolicy> PlaqLog(std::string("plaq"));
-    ObservablesList.push_back(&PlaqLog);
+    int SaveInterval = 2;
+    std::string format = std::string("IEEE64BIG");
+    std::string conf_prefix = std::string("ckpoint_lat");
+    std::string rng_prefix = std::string("ckpoint_rng");
+    BinaryHmcCheckpointer<BinaryHmcRunner::ImplPolicy> Checkpoint(
+        conf_prefix, rng_prefix, SaveInterval, format);
+    // Can implement also a specific function in the hmcrunner
+    // AddCheckpoint (...) that takes the same parameters + a string/tag
+    // defining the type of the checkpointer
+    // with tags can be implemented by overloading and no ifs
+    // Then force all checkpoint to have few common functions
+    // return an object that is then passed to the Run function
 
-    Run(argc, argv);
+    PlaquetteLogger<BinaryHmcRunner::ImplPolicy> PlaqLog(std::string("Plaquette"));
+    ObservablesList.push_back(&PlaqLog);
+    ObservablesList.push_back(&Checkpoint);
+
+    Run(argc, argv, Checkpoint);
   };
 };
 }
