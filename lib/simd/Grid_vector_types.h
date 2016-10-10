@@ -583,8 +583,6 @@ inline Grid_simd<S, V> operator/(Grid_simd<S, V> a, Grid_simd<S, V> b) {
 
   ret.v=binary<V>(ret.v, real_den.v, DivSIMD());
 
-  std::cout << " Div call from complex "<<a<<" / " << b<< " = " <<ret<< std::endl;
-
   return ret;
 };
 
