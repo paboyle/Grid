@@ -8,8 +8,7 @@ Copyright (C) 2015
 
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: neo <cossu@post.kek.jp>
-Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Guido Cossu <cossu@post.kek.jp>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

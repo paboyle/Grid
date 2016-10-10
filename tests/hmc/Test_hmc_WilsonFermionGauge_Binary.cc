@@ -102,7 +102,7 @@ class HmcRunner : public BinaryHmcRunner {
     TheAction.push_back(Level2);
 
     // Add observables
-    int SaveInterval = 2;
+    int SaveInterval = 1;
     std::string format = std::string("IEEE64BIG");
     std::string conf_prefix = std::string("ckpoint_lat");
     std::string rng_prefix = std::string("ckpoint_rng");
