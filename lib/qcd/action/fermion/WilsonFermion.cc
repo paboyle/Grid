@@ -137,7 +137,7 @@ namespace QCD {
     MooeeInv(in,out);
   }
   template<class Impl>
-  void WilsonFermion<Impl>:: MomentumSpacePropagator(FermionField &out, const FermionField &in) {
+  void WilsonFermion<Impl>:: MomentumSpacePropagator(FermionField &out, const FermionField &in,RealD _m) {
 
     // what type LatticeComplex 
     conformable(_grid,out._grid);
@@ -179,7 +179,7 @@ namespace QCD {
       denom=denom + sin(kmu)*sin(kmu);
     }
 
-    wilson = wilson + mass;     // 2 sin^2 k/2 + m
+    wilson = wilson + _m;     // 2 sin^2 k/2 + m
 
     num   = num + wilson*in;     // -i gmu sin k + 2 sin^2 k/2 + m
 
