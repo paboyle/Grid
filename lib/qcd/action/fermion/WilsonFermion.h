@@ -78,7 +78,7 @@ namespace Grid {
       virtual void MooeeInv(const FermionField &in, FermionField &out) ;
       virtual void MooeeInvDag(const FermionField &in, FermionField &out) ;
 
-      virtual void  MomentumSpacePropagator(FermionField &out,const FermionField &in) ;
+      virtual void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _mass) ;
 
       ////////////////////////
       // Derivative interface
