@@ -39,6 +39,13 @@ class GridCartesian: public GridBase {
 
 public:
 
+    virtual int  CheckerBoardFromOindexTable (int Oindex) {
+      return 0;
+    }
+    virtual int  CheckerBoardFromOindex (int Oindex)
+    {
+      return 0;
+    }
     virtual int CheckerBoarded(int dim){
       return 0;
     }

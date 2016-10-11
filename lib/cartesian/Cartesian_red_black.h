@@ -43,6 +43,7 @@ class GridRedBlackCartesian : public GridBase
 public:
     std::vector<int> _checker_dim_mask;
     int              _checker_dim;
+    std::vector<int> _checker_board;
 
     virtual int CheckerBoarded(int dim){
       if( dim==_checker_dim) return 1;
@@ -72,11 +73,19 @@ public:
       // or by looping over x,y,z and multiply rather than computing checkerboard.
 	  
       if ( (source_cb+ocb)&1 ) {
-
 	return (shift)/2;
       } else {
 	return (shift+1)/2;
       }
+    }
+    virtual int  CheckerBoardFromOindexTable (int Oindex) {
+      return _checker_board[Oindex];
+    }
+    virtual int  CheckerBoardFromOindex (int Oindex)
+    {
+      std::vector<int> ocoor;
+      oCoorFromOindex(ocoor,Oindex);
+      return CheckerBoard(ocoor);
     }
     virtual int CheckerBoardShift(int source_cb,int dim,int shift,int osite){
 
@@ -185,6 +194,8 @@ public:
 	  _ostride[d] = _ostride[d-1]*_rdimensions[d-1];
 	  _istride[d] = _istride[d-1]*_simd_layout[d-1];
 	}
+
+
       }
             
       ////////////////////////////////////////////////////////////////////////////////////////////
@@ -204,6 +215,18 @@ public:
 	_slice_stride[d]=_ostride[d]*_rdimensions[d];
 	_slice_nblock[d]=nblock;
 	block = block*_rdimensions[d];
+      }
+
+      ////////////////////////////////////////////////
+      // Create a checkerboard lookup table
+      ////////////////////////////////////////////////
+      int rvol = 1;
+      for(int d=0;d<_ndimension;d++){
+	rvol=rvol * _rdimensions[d];
+      }
+      _checker_board.resize(rvol);
+      for(int osite=0;osite<_osites;osite++){
+	_checker_board[osite] = CheckerBoardFromOindex (osite);
       }
       
     };
