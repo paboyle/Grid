@@ -77,8 +77,8 @@ namespace Grid{
 	  out = where(coor==Integer(0),zz,out);
 	}
       }
-      void  FeynmanGaugeMomentumSpacePropagator_TL(GaugeField &out, const GaugeField &in) { 
 
+      void  FeynmanGaugeMomentumSpacePropagator_TL(GaugeField &out, const GaugeField &in) { 
 
 	// what type LatticeComplex 
 	GridBase *grid = out._grid;
@@ -92,8 +92,8 @@ namespace Grid{
 
 	LatComplex denom(grid); denom= zero;
 	LatComplex   one(grid); one = ScalComplex(1.0,0.0);
+	LatComplex   kmu(grid); 
 
-	LatComplex kmu(grid); 
 	ScalComplex ci(0.0,1.0);
 	// momphase = n * 2pi / L
 	for(int mu=0;mu<Nd;mu++) {
