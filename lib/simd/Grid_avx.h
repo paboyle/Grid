@@ -449,12 +449,12 @@ namespace Optimization {
 
   };
 
-#if defined (AVX2) || defined (AVXFMA4) 
+#if defined (AVX2)
 #define _mm256_alignr_epi32_grid(ret,a,b,n) ret=(__m256)  _mm256_alignr_epi8((__m256i)a,(__m256i)b,(n*4)%16)
 #define _mm256_alignr_epi64_grid(ret,a,b,n) ret=(__m256d) _mm256_alignr_epi8((__m256i)a,(__m256i)b,(n*8)%16)
 #endif
 
-#if defined (AVX1) 
+#if defined (AVX1) || defined (AVXFMA4)  
 #define _mm256_alignr_epi32_grid(ret,a,b,n) {	\
     __m128 aa, bb;				\
 						\
@@ -484,20 +484,7 @@ namespace Optimization {
   }
 
 #endif
-  /*
-    inline std::ostream & operator << (std::ostream& stream, const __m256 a)
-    {
-      const float *p=(const float *)&a;
-      stream<< "{"<<p[0]<<","<<p[1]<<","<<p[2]<<","<<p[3]<<","<<p[4]<<","<<p[5]<<","<<p[6]<<","<<p[7]<<"}";
-      return stream;
-    };
-    inline std::ostream & operator<< (std::ostream& stream, const __m256d a)
-    {
-      const double *p=(const double *)&a;
-      stream<< "{"<<p[0]<<","<<p[1]<<","<<p[2]<<","<<p[3]<<"}";
-      return stream;
-    };
-  */
+
   struct Rotate{
 
     static inline __m256 rotate(__m256 in,int n){ 
@@ -533,7 +520,6 @@ namespace Optimization {
       } else {
         _mm256_alignr_epi32_grid(ret,tmp,in,n);          
       }
-      //      std::cout << " align epi32 n=" <<n<<" in "<<tmp<<in<<" -> "<< ret <<std::endl;
       return ret;
     };
 
@@ -546,13 +532,10 @@ namespace Optimization {
       } else {
         _mm256_alignr_epi64_grid(ret,tmp,in,n);          
       }
-      //      std::cout << " align epi64 n=" <<n<<" in "<<tmp<<in<<" -> "<< ret <<std::endl;
       return ret;
     };
 
   };
-
-
 
   //Complex float Reduce
   template<>
