@@ -265,16 +265,18 @@
        }
        inline uint64_t GetInfo(int &ptype,int &local,int &perm,int point,int ent,uint64_t base) {
 	 //_mm_prefetch((char *)&_entries[ent+1],_MM_HINT_T0);
+	 uint64_t cbase = & comm_buf[0];
 	 local = _entries[ent]._is_local;
 	 perm  = _entries[ent]._permute;
 	 if (perm)  ptype = _permute_type[point]; 
-	 if (local) return base + _entries[ent]._byte_offset;
-	 else       return _entries[ent]._byte_offset;
+	 if (local) return  base + _entries[ent]._byte_offset;
+	 else       return cbase +_entries[ent]._byte_offset;
        }
        inline uint64_t GetPFInfo(int ent,uint64_t base) {
+	 uint64_t cbase = & comm_buf[0];
 	 int local = _entries[ent]._is_local;
-	 if (local) return base + _entries[ent]._byte_offset;
-	 else       return        _entries[ent]._byte_offset;
+	 if (local) return  base + _entries[ent]._byte_offset;
+	 else       return cbase + _entries[ent]._byte_offset;
        }
 
        // Comms buffers
