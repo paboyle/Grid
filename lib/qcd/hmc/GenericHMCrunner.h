@@ -111,24 +111,17 @@ template <class IOCheckpointer = BinaryHmcCheckpointer<Implementation> >
     GridParallelRNG pRNG(UGrid);
     Field U(UGrid);
 
+    // This outside
     std::vector<int> SerSeed({1, 2, 3, 4, 5});
     std::vector<int> ParSeed({6, 7, 8, 9, 10});
 
+    // these decisions outside
     NoSmearing<Implementation> SmearingPolicy;
     typedef MinimumNorm2<Implementation, NoSmearing<Implementation>,
                          RepresentationsPolicy>
         IntegratorType;  // change here to change the algorithm
     IntegratorParameters MDpar(20, 1.0);
     IntegratorType MDynamics(UGrid, MDpar, TheAction, SmearingPolicy);
-
-    // Checkpoint strategy   
-    /* 
-    int SaveInterval = 1;
-    std::string format = std::string("IEEE64BIG");
-    std::string conf_prefix = std::string("ckpoint_lat");
-    std::string rng_prefix = std::string("ckpoint_rng");
-    IOCheckpointer Checkpoint(conf_prefix, rng_prefix, SaveInterval, format);
-    */
 
     HMCparameters HMCpar;
     HMCpar.StartTrajectory = StartTraj;

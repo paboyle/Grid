@@ -33,6 +33,71 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define GRID_QCD_H
 namespace Grid{
 
+// First steps in the complete generalization of the Physics part
+namespace LatticeTheories {
+
+template <int Dimensions>
+struct LatticeTheory {
+  static const int Nd = Dimensions;
+  static const int Nds = Dimensions * 2;  // double stored field
+  template <typename vtype>
+  using iSinglet = iScalar<iScalar<iScalar<vtype> > >;
+};
+
+template <int Dimensions, int Colours>
+struct LatticeGaugeTheory : public LatticeTheory<Dimensions> {
+  static const int Nds = Dimensions * 2;
+  static const int Nd = Dimensions;
+  static const int Nc = Colours;
+
+  template <typename vtype>
+  using iColourMatrix = iScalar<iScalar<iMatrix<vtype, Nc> > >;
+  template <typename vtype>
+  using iLorentzColourMatrix = iVector<iScalar<iMatrix<vtype, Nc> >, Nd>;
+  template <typename vtype>
+  using iDoubleStoredColourMatrix = iVector<iScalar<iMatrix<vtype, Nc> >, Nds>;
+  template <typename vtype>
+  using iColourVector = iScalar<iScalar<iVector<vtype, Nc> > >;
+};
+
+template <int Dimensions, int Colours, int Spin>
+struct FermionicLatticeGaugeTheory
+    : public LatticeGaugeTheory<Dimensions, Colours> {
+  static const int Nd = Dimensions;
+  static const int Nds = Dimensions * 2;
+  static const int Nc = Colours;
+  static const int Ns = Spin;
+
+  template <typename vtype>
+  using iSpinMatrix = iScalar<iMatrix<iScalar<vtype>, Ns> >;
+  template <typename vtype>
+  using iSpinColourMatrix = iScalar<iMatrix<iMatrix<vtype, Nc>, Ns> >;
+  template <typename vtype>
+  using iSpinVector = iScalar<iVector<iScalar<vtype>, Ns> >;
+  template <typename vtype>
+  using iSpinColourVector = iScalar<iVector<iVector<vtype, Nc>, Ns> >;
+  // These 2 only is Spin is a multiple of 2
+  static const int Nhs = Spin / 2;
+  template <typename vtype>
+  using iHalfSpinVector = iScalar<iVector<iScalar<vtype>, Nhs> >;
+  template <typename vtype>
+  using iHalfSpinColourVector = iScalar<iVector<iVector<vtype, Nc>, Nhs> >;
+};
+
+struct QCD : public FermionicLatticeGaugeTheory<4, 3, 4> {
+    typedef FermionicLatticeGaugeTheory FLGT;
+    typedef FLGT::iSpinMatrix<Complex  >          SpinMatrix;
+    typedef FLGT::iSpinMatrix<ComplexF >          SpinMatrixF;
+    typedef FLGT::iSpinMatrix<ComplexD >          SpinMatrixD;
+
+};
+struct QED : public FermionicLatticeGaugeTheory<4, 1, 4> {};
+
+template <int Dimensions>
+struct Scalar : public LatticeTheory<Dimensions> {};
+
+}  // LatticeTheories
+
 namespace QCD {
 
 
@@ -355,36 +420,36 @@ namespace QCD {
     //////////////////////////////////////////////
     template<class vobj> 
       void pokeColour(Lattice<vobj> &lhs,
-		      const Lattice<decltype(peekIndex<ColourIndex>(lhs._odata[0],0))> & rhs,
-		      int i)
+              const Lattice<decltype(peekIndex<ColourIndex>(lhs._odata[0],0))> & rhs,
+              int i)
     {
       PokeIndex<ColourIndex>(lhs,rhs,i);
     }
     template<class vobj> 
       void pokeColour(Lattice<vobj> &lhs,
-		      const Lattice<decltype(peekIndex<ColourIndex>(lhs._odata[0],0,0))> & rhs,
-		      int i,int j)
+              const Lattice<decltype(peekIndex<ColourIndex>(lhs._odata[0],0,0))> & rhs,
+              int i,int j)
     {
       PokeIndex<ColourIndex>(lhs,rhs,i,j);
     }
     template<class vobj> 
       void pokeSpin(Lattice<vobj> &lhs,
-		      const Lattice<decltype(peekIndex<SpinIndex>(lhs._odata[0],0))> & rhs,
-		      int i)
+              const Lattice<decltype(peekIndex<SpinIndex>(lhs._odata[0],0))> & rhs,
+              int i)
     {
       PokeIndex<SpinIndex>(lhs,rhs,i);
     }
     template<class vobj> 
       void pokeSpin(Lattice<vobj> &lhs,
-		      const Lattice<decltype(peekIndex<SpinIndex>(lhs._odata[0],0,0))> & rhs,
-		      int i,int j)
+              const Lattice<decltype(peekIndex<SpinIndex>(lhs._odata[0],0,0))> & rhs,
+              int i,int j)
     {
       PokeIndex<SpinIndex>(lhs,rhs,i,j);
     }
     template<class vobj> 
       void pokeLorentz(Lattice<vobj> &lhs,
-		      const Lattice<decltype(peekIndex<LorentzIndex>(lhs._odata[0],0))> & rhs,
-		      int i)
+              const Lattice<decltype(peekIndex<LorentzIndex>(lhs._odata[0],0))> & rhs,
+              int i)
     {
       PokeIndex<LorentzIndex>(lhs,rhs,i);
     }
@@ -500,7 +565,7 @@ namespace QCD {
 #include <Grid/qcd/utils/LinalgUtils.h>
 #include <Grid/qcd/utils/CovariantCshift.h>
 
-// Include representations 	
+// Include representations  
 #include <Grid/qcd/utils/SUn.h>
 #include <Grid/qcd/utils/SUnAdjoint.h>
 #include <Grid/qcd/utils/SUnTwoIndex.h>
