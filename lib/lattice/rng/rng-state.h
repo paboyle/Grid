@@ -5,7 +5,7 @@
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
+// the Free Software Foundation, either version 2 of the License, or
 // (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -19,7 +19,8 @@
 // Code within namespace sha256 are from Stephan Brumme.
 // see http://create.stephan-brumme.com/disclaimer.html
 
-#pragma once
+#ifndef RNG_STATE_RNG_STATE_H
+#define RNG_STATE_RNG_STATE_H
 
 #include "show.h"
 
@@ -126,10 +127,9 @@ inline void splitTwoUint32(uint32_t& a, uint32_t& b, const uint64_t x)
   assert(x == patchTwoUint32(a, b));
 }
 
-inline void exportRngState(std::vector<uint32_t>& v, const RngState& rs)
+inline void exportRngState(uint32_t* v, const RngState& rs)
 {
   assert(22 == RNG_STATE_NUM_OF_INT32);
-  v.resize(RNG_STATE_NUM_OF_INT32);
   splitTwoUint32(v[0], v[1], rs.numBytes);
   for (int i = 0; i < 8; ++i) {
     v[2 + i] = rs.hash[i];
@@ -144,9 +144,8 @@ inline void exportRngState(std::vector<uint32_t>& v, const RngState& rs)
   v[21] = rs.gaussianAvail;
 }
 
-inline void importRngState(RngState& rs, const std::vector<uint32_t>& v)
+inline void importRngState(RngState& rs, const uint32_t* v)
 {
-  assert(RNG_STATE_NUM_OF_INT32 == v.size());
   assert(22 == RNG_STATE_NUM_OF_INT32);
   rs.numBytes = patchTwoUint32(v[0], v[1]);
   for (int i = 0; i < 8; ++i) {
@@ -156,10 +155,22 @@ inline void importRngState(RngState& rs, const std::vector<uint32_t>& v)
   for (int i = 0; i < 3; ++i) {
     rs.cache[i] = patchTwoUint32(v[12 + i * 2], v[12 + i * 2 + 1]);
   }
-  uint64_t* p = (uint64_t*)&rs.gaussian;
-  *p = patchTwoUint32(v[18], v[19]);
+  uint64_t g = patchTwoUint32(v[18], v[19]);
+  rs.gaussian = reinterpret_cast<double&>(g);
   rs.cacheAvail = v[20];
   rs.gaussianAvail = v[21];
+}
+
+inline void exportRngState(std::vector<uint32_t>& v, const RngState& rs)
+{
+  v.resize(RNG_STATE_NUM_OF_INT32);
+  exportRngState(v.data(), rs);
+}
+
+inline void importRngState(RngState& rs, const std::vector<uint32_t>& v)
+{
+  assert(RNG_STATE_NUM_OF_INT32 == v.size());
+  importRngState(rs, v.data());
 }
 
 inline std::ostream& operator<<(std::ostream& os, const RngState& rs)
@@ -567,4 +578,6 @@ inline double gRandGen(RngState& rs, const double sigma, const double center)
 
 #ifdef CURRENT_DEFAULT_NAMESPACE_NAME
 }
+#endif
+
 #endif
