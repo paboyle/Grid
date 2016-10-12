@@ -5,11 +5,14 @@
 #define _KNIGHTS_LANDING_
 #endif
 
-#ifdef _KNIGHTS_LANDING_
+namespace Grid { 
 
+///////////////////////////////////////////////////////////////////////////////
+// Extra KNL counters from MCDRAM
+///////////////////////////////////////////////////////////////////////////////
+#ifdef _KNIGHTS_LANDING_
 #define NMC 6
 #define NEDC 8
-namespace Grid { 
 struct ctrs
 {
     uint64_t mcrd[NMC];
@@ -37,6 +40,7 @@ struct knl_gbl_
   int edc_missm[NEDC];
 };
 #endif
+///////////////////////////////////////////////////////////////////////////////
 
 class PmuStat
 {
@@ -95,6 +99,6 @@ public:
   };
 
 }
-
 #endif
+
 
