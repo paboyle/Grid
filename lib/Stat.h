@@ -40,11 +40,11 @@ struct knl_gbl_
 
 class PmuStat
 {
-    const char *name;
-    __declspec(align(64)) uint64_t counters[8][256];
+    uint64_t counters[8][256];
 #ifdef _KNIGHTS_LANDING_
     static struct knl_gbl_ gbl;
 #endif
+    const char *name;
 
     uint64_t reads;     // memory reads
     uint64_t writes;    // memory writes
