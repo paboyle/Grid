@@ -71,8 +71,8 @@
  namespace Grid {
 
    struct StencilEntry { 
-     uint32_t _offset;
-     uint32_t _byte_offset;
+     uint64_t _offset;
+     uint64_t _byte_offset;
      uint16_t _is_local;
      uint16_t _permute;
      uint32_t _around_the_world; //256 bits, 32 bytes, 1/2 cacheline
@@ -255,7 +255,8 @@
 	   if( _entries[i]._is_local ) {
 	     _entries[i]._byte_offset = _entries[i]._offset*sizeof(vobj);
 	   } else { 
-	     _entries[i]._byte_offset =(uint64_t)&comm_buf[0]+ _entries[i]._offset*sizeof(cobj);
+	     // PrecomputeByteOffsets [5] 16384/32768 140735768678528 140735781261056 2581581952
+	     _entries[i]._byte_offset = _entries[i]._offset*sizeof(cobj);
 	   }
 	 }
        };
@@ -264,16 +265,18 @@
 	 //	 _mm_prefetch((char *)&_entries[ent],_MM_HINT_T0);
        }
        inline uint64_t GetInfo(int &ptype,int &local,int &perm,int point,int ent,uint64_t base) {
-	 //_mm_prefetch((char *)&_entries[ent+1],_MM_HINT_T0);
-	 uint64_t cbase = (uint64_t) 0;
+	 uint64_t cbase = (uint64_t)&comm_buf[0];
 	 local = _entries[ent]._is_local;
 	 perm  = _entries[ent]._permute;
 	 if (perm)  ptype = _permute_type[point]; 
-	 if (local) return  base + _entries[ent]._byte_offset;
-	 else       return cbase + _entries[ent]._byte_offset;
+	 if (local) {
+	   return  base + _entries[ent]._byte_offset;
+	 } else {
+	   return cbase + _entries[ent]._byte_offset;
+	 }
        }
        inline uint64_t GetPFInfo(int ent,uint64_t base) {
-	 uint64_t cbase =  (uint64_t) 0;
+	 uint64_t cbase = (uint64_t)&comm_buf[0];
 	 int local = _entries[ent]._is_local;
 	 if (local) return  base + _entries[ent]._byte_offset;
 	 else       return cbase + _entries[ent]._byte_offset;
