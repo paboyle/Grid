@@ -2,7 +2,7 @@
 #define _GRID_STAT_H
 
 #ifdef AVX512
-#define _KNIGHTS_LANDING_
+#define _KNIGHTS_LANDING_ROOTONLY
 #endif
 
 namespace Grid { 
