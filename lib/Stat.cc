@@ -11,6 +11,7 @@ bool PmuStat::pmu_initialized=false;
 
 void PmuStat::init(const char *regname)
 {
+#ifdef __x86_64__
   name = regname;
   if (!pmu_initialized)
     {
@@ -19,9 +20,11 @@ void PmuStat::init(const char *regname)
       pmu_init();
     }
   clear();
+#endif
 }
 void PmuStat::clear(void)
 {
+#ifdef __x86_64__
   count = 0;
   tregion = 0;
   pmc0 = 0;
@@ -32,9 +35,11 @@ void PmuStat::clear(void)
   tcycles = 0;
   reads = 0;
   writes = 0;
+#endif
 }
 void PmuStat::print(void)
 {
+#ifdef __x86_64__
   std::cout <<"Reg "<<std::string(name)<<":\n";
   std::cout <<"  region "<<tregion<<std::endl;
   std::cout <<"  cycles "<<tcycles<<std::endl;
@@ -46,34 +51,42 @@ void PmuStat::print(void)
   std::cout <<"  count  "<<count  <<std::endl;
   std::cout <<"  reads  "<<reads  <<std::endl;
   std::cout <<"  writes "<<writes <<std::endl;
+#endif
 }
 void PmuStat::start(void)
 {
+#ifdef __x86_64__
   pmu_start();
   ++count;
   xmemctrs(&mrstart, &mwstart);
   tstart = _rdtsc();
+#endif
 }
 void PmuStat::enter(int t)
 {
+#ifdef __x86_64__
   counters[0][t] = _rdpmc(0);
   counters[1][t] = _rdpmc(1);
   counters[2][t] = _rdpmc((1<<30)|0);
   counters[3][t] = _rdpmc((1<<30)|1);
   counters[4][t] = _rdpmc((1<<30)|2);
   counters[5][t] = _rdtsc();
+#endif
 }
 void PmuStat::exit(int t)
 {
+#ifdef __x86_64__
   counters[0][t] = _rdpmc(0) - counters[0][t];
   counters[1][t] = _rdpmc(1) - counters[1][t];
   counters[2][t] = _rdpmc((1<<30)|0) - counters[2][t];
   counters[3][t] = _rdpmc((1<<30)|1) - counters[3][t];
   counters[4][t] = _rdpmc((1<<30)|2) - counters[4][t];
   counters[5][t] = _rdtsc() - counters[5][t];
+#endif
 }
 void PmuStat::accum(int nthreads)
 {
+#ifdef __x86_64__
   tend = _rdtsc();
   xmemctrs(&mrend, &mwend);
   pmu_stop();
@@ -91,6 +104,7 @@ void PmuStat::accum(int nthreads)
   reads += mreads;
   uint64_t mwrites = mwend - mwstart;
   writes += mwrites;
+#endif
 }
 
 
