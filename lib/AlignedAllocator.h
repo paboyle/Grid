@@ -113,9 +113,8 @@ public:
 
 #endif
     _Tp tmp;
-#undef FIRST_TOUCH_OPTIMISE
-#ifdef FIRST_TOUCH_OPTIMISE
-#pragma omp parallel for 
+#ifdef GRID_NUMA
+#pragma omp parallel for schedule(static)
   for(int i=0;i<__n;i++){
     ptr[i]=tmp;
   }

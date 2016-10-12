@@ -70,6 +70,20 @@ case ${ac_LAPACK} in
         AC_DEFINE([USE_LAPACK],[1],[use LAPACK])
 esac
 
+################## first-touch ####################
+AC_ARG_ENABLE([numa],
+    [AC_HELP_STRING([--enable-numa=yes|no|prefix], [enable first touch numa opt])], 
+    [ac_NUMA=${enable_NUMA}],[ac_NUMA=no])
+
+case ${ac_NUMA} in
+    no)
+        ;;
+    yes)
+        AC_DEFINE([GRID_NUMA],[1],[First touch numa locality]);;
+    *)
+        AC_DEFINE([GRID_NUMA],[1],[First touch numa locality]);;
+esac
+
 ################## FFTW3 ####################
 AC_ARG_WITH([fftw],    
             [AS_HELP_STRING([--with-fftw=prefix],

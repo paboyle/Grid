@@ -416,6 +416,28 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
       Kernels::DiracOptDhopSiteDag(st, lo, U, st.comm_buf, sF, sU, LLs, 1, in,
                                    out);
     }
+#ifdef AVX512
+  } else if (stat.is_init() ) {
+
+    int nthreads;
+    stat.start();
+    #pragma omp parallel
+    {
+    #pragma omp master
+    nthreads = omp_get_num_threads();
+    int mythread = omp_get_thread_num();
+    stat.enter(mythread);
+    #pragma omp for nowait
+   for(int ss=0;ss<U._grid->oSites();ss++)
+    {
+       int sU=ss;
+       int sF=LLs*sU;
+       Kernels::DiracOptDhopSite(st,lo,U,st.comm_buf,sF,sU,LLs,1,in,out);
+     }
+    stat.exit(mythread);
+    }
+    stat.accum(nthreads);
+#endif
   } else {
     PARALLEL_FOR_LOOP
     for (int ss = 0; ss < U._grid->oSites(); ss++) {

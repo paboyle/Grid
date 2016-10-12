@@ -251,11 +251,13 @@ int main (int argc, char ** argv)
       sr_o = zero;
 
       sDw.ZeroCounters();
+      sDw.stat.init("DhopEO");
       double t0=usecond();
       for (int i = 0; i < ncall; i++) {
         sDw.DhopEO(ssrc_o, sr_e, DaggerNo);
       }
       double t1=usecond();
+      sDw.stat.print();
 
       double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
       double flops=(1344.0*volume*ncall)/2;
