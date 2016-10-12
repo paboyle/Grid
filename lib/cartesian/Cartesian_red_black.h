@@ -178,7 +178,7 @@ public:
 	// all elements of a simd vector must have same checkerboard.
 	// If Ls vectorised, this must still be the case; e.g. dwf rb5d
 	if ( _simd_layout[d]>1 ) {
-	  if ( d != _checker_dim ) { 
+	  if ( checker_dim_mask[d] ) { 
 	    assert( (_rdimensions[d]&0x1) == 0 );
 	  }
 	}
