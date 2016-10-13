@@ -70,6 +70,60 @@
 
  namespace Grid {
 
+template<class vobj,class cobj,class compressor> void 
+Gather_plane_simple_stencil (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<cobj> > &buffer,int dimension,int plane,int cbmask,compressor &compress, int off=0,
+			     double &t_table ,double & t_data )
+{
+  int rd = rhs._grid->_rdimensions[dimension];
+
+  if ( !rhs._grid->CheckerBoarded(dimension) ) {
+    cbmask = 0x3;
+  }
+  
+  int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+  
+  int e1=rhs._grid->_slice_nblock[dimension];
+  int e2=rhs._grid->_slice_block[dimension];
+
+  t_table = 0.0;
+  t_data  = 0.0;
+
+  int stride=rhs._grid->_slice_stride[dimension];
+  if ( cbmask == 0x3 ) { 
+  t_data-=usecond();
+PARALLEL_NESTED_LOOP2
+    for(int n=0;n<e1;n++){
+      for(int b=0;b<e2;b++){
+	int o  = n*stride;
+	int bo = n*e2;
+	buffer[off+bo+b]=compress(rhs._odata[so+o+b]);
+      }
+    }
+  t_data+=usecond();
+  } else { 
+     int bo=0;
+     t_table-=usecond();
+     std::vector<std::pair<int,int> > table;
+     for(int n=0;n<e1;n++){
+       for(int b=0;b<e2;b++){
+	 int o  = n*stride;
+	 int ocb=1<<rhs._grid->CheckerBoardFromOindexTable(o+b);
+	 if ( ocb &cbmask ) {
+	   table.push_back(std::pair<int,int> (bo++,o+b));
+	 }
+       }
+     }
+     t_table+=usecond();
+     t_data-=usecond();
+PARALLEL_FOR_LOOP     
+     for(int i=0;i<table.size();i++){
+       buffer[off+table[i].first]=compress(rhs._odata[so+table[i].second]);
+     }
+     t_data+=usecond();
+  }
+}
+
+
    struct StencilEntry { 
      uint64_t _offset;
      uint64_t _byte_offset;
@@ -102,8 +156,8 @@
 
        std::vector<Packet> Packets;
        
- #define SEND_IMMEDIATE
- #define SERIAL_SENDS
+#define SEND_IMMEDIATE
+#define SERIAL_SENDS
 
        void AddPacket(void *xmit,void * rcv, Integer to,Integer from,Integer bytes){
  #ifdef SEND_IMMEDIATE
@@ -305,6 +359,8 @@
        double gathermtime;
        double splicetime;
        double nosplicetime;
+       double t_data;
+       double t_table;
        double calls;
 
        void ZeroCounters(void) {
@@ -317,6 +373,8 @@
          gathermtime = 0.;
          splicetime = 0.;
          nosplicetime = 0.;
+	 t_data = 0.0;
+         t_table= 0.0;
          comms_bytes = 0.;
          calls = 0.;
        };
@@ -336,6 +394,8 @@
        PRINTIT(gathermtime);
        PRINTIT(splicetime);
        PRINTIT(nosplicetime);
+       PRINTIT(t_table);
+       PRINTIT(t_data);
 	 }
        };
  #endif
@@ -783,7 +843,7 @@
 	       int bytes = words * sizeof(cobj);
 
 	       gathertime-=usecond();
-	       Gather_plane_simple (rhs,u_send_buf,dimension,sx,cbmask,compress,u_comm_offset);
+	       Gather_plane_simple_stencil (rhs,u_send_buf,dimension,sx,cbmask,compress,u_comm_offset,t_table,t_data);
 	       gathertime+=usecond();
 
 	       int rank           = _grid->_processor;
