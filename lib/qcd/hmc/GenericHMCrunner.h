@@ -7,6 +7,7 @@ Source file: ./lib/qcd/hmc/GenericHmcRunner.h
 Copyright (C) 2015
 
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -49,17 +50,39 @@ class BinaryHmcRunnerTemplate {
   // that can be injected from outside  
   std::vector< HmcObservable<typename Implementation::Field>* > ObservablesList;
 
+  IntegratorParameters MDparameters;
 
   GridCartesian *UGrid;
   GridCartesian *FGrid;
   GridRedBlackCartesian *UrbGrid;
   GridRedBlackCartesian *FrbGrid;
 
+  std::vector<int> SerialSeed;
+  std::vector<int> ParallelSeed;
+
+  void RNGSeeds(std::vector<int> S, std::vector<int> P){
+    SerialSeed = S;
+    ParallelSeed = P;
+  }
+
   virtual void BuildTheAction(int argc, char **argv) = 0;  // necessary?
 
-// add here the smearing implementation?
-template <class IOCheckpointer = BinaryHmcCheckpointer<Implementation> >
+  // A couple of wrapper classes
+  template <class IOCheckpointer>
   void Run(int argc, char **argv, IOCheckpointer &Checkpoint) {
+    NoSmearing<Implementation> S;
+    Runner(argc, argv, Checkpoint, S);
+  }
+
+  template <class IOCheckpointer, class SmearingPolicy>
+  void Run(int argc, char **argv, IOCheckpointer &CP, SmearingPolicy &S) {
+    Runner(argc, argv, CP, S);
+  }
+  //////////////////////////////
+
+  template <class SmearingPolicy, class IOCheckpointer >
+  void Runner(int argc, char **argv, IOCheckpointer &Checkpoint,
+           SmearingPolicy &Smearing) {
     StartType_t StartType = HotStart;
 
     std::string arg;
@@ -111,17 +134,10 @@ template <class IOCheckpointer = BinaryHmcCheckpointer<Implementation> >
     GridParallelRNG pRNG(UGrid);
     Field U(UGrid);
 
-    // This outside
-    std::vector<int> SerSeed({1, 2, 3, 4, 5});
-    std::vector<int> ParSeed({6, 7, 8, 9, 10});
-
-    // these decisions outside
-    NoSmearing<Implementation> SmearingPolicy;
-    typedef MinimumNorm2<Implementation, NoSmearing<Implementation>,
+    typedef MinimumNorm2<Implementation, SmearingPolicy,
                          RepresentationsPolicy>
         IntegratorType;  // change here to change the algorithm
-    IntegratorParameters MDpar(20, 1.0);
-    IntegratorType MDynamics(UGrid, MDpar, TheAction, SmearingPolicy);
+    IntegratorType MDynamics(UGrid, MDparameters, TheAction, Smearing);
 
     HMCparameters HMCpar;
     HMCpar.StartTrajectory = StartTraj;
@@ -131,20 +147,20 @@ template <class IOCheckpointer = BinaryHmcCheckpointer<Implementation> >
     if (StartType == HotStart) {
       // Hot start
       HMCpar.MetropolisTest = true;
-      sRNG.SeedFixedIntegers(SerSeed);
-      pRNG.SeedFixedIntegers(ParSeed);
+      sRNG.SeedFixedIntegers(SerialSeed);
+      pRNG.SeedFixedIntegers(ParallelSeed);
       Implementation::HotConfiguration(pRNG, U);
     } else if (StartType == ColdStart) {
       // Cold start
       HMCpar.MetropolisTest = true;
-      sRNG.SeedFixedIntegers(SerSeed);
-      pRNG.SeedFixedIntegers(ParSeed);
+      sRNG.SeedFixedIntegers(SerialSeed);
+      pRNG.SeedFixedIntegers(ParallelSeed);
       Implementation::ColdConfiguration(pRNG, U);
     } else if (StartType == TepidStart) {
       // Tepid start
       HMCpar.MetropolisTest = true;
-      sRNG.SeedFixedIntegers(SerSeed);
-      pRNG.SeedFixedIntegers(ParSeed);
+      sRNG.SeedFixedIntegers(SerialSeed);
+      pRNG.SeedFixedIntegers(ParallelSeed);
       Implementation::TepidConfiguration(pRNG, U);
     } else if (StartType == CheckpointStart) {
       HMCpar.MetropolisTest = true;
@@ -152,10 +168,9 @@ template <class IOCheckpointer = BinaryHmcCheckpointer<Implementation> >
       Checkpoint.CheckpointRestore(StartTraj, U, sRNG, pRNG);
     }
 
-    SmearingPolicy.set_Field(U);
+    Smearing.set_Field(U);
 
     HybridMonteCarlo<IntegratorType> HMC(HMCpar, MDynamics, sRNG, pRNG, U);
-    //HMC.AddObservable(&Checkpoint);
 
     for (int obs = 0; obs < ObservablesList.size(); obs++)
       HMC.AddObservable(ObservablesList[obs]); 
@@ -170,16 +185,12 @@ typedef BinaryHmcRunnerTemplate<PeriodicGimplR> BinaryHmcRunner;
 typedef BinaryHmcRunnerTemplate<PeriodicGimplF> BinaryHmcRunnerF;
 typedef BinaryHmcRunnerTemplate<PeriodicGimplD> BinaryHmcRunnerD;
 
-//typedef BinaryHmcRunnerTemplate<PeriodicGimplR, NerscHmcCheckpointer<PeriodicGimplR> > NerscTestHmcRunner;
-
-
 template <class RepresentationsPolicy>
 using BinaryHmcRunnerTemplateHirep =
     BinaryHmcRunnerTemplate<PeriodicGimplR, RepresentationsPolicy>;
 
 
 
-//typedef BinaryHmcRunnerTemplate<ScalarImplR, BinaryHmcCheckpointer<ScalarImplR>, ScalarFields> ScalarBinaryHmcRunner;
     typedef BinaryHmcRunnerTemplate<ScalarImplR, ScalarFields> ScalarBinaryHmcRunner;
 }
 }

@@ -46,27 +46,28 @@ namespace Grid {
 namespace QCD {
 
 struct IntegratorParameters {
-  unsigned int
-      Nexp;  // number of terms in the Taylor expansion of the exponential
   unsigned int MDsteps;  // number of outer steps
   RealD trajL;           // trajectory length
   RealD stepsize;        // trajectory stepsize
 
-  IntegratorParameters(int MDsteps_, RealD trajL_ = 1.0,
-                       unsigned int Nexp_ = 12)
-      : Nexp(Nexp_),
-        MDsteps(MDsteps_),
+  IntegratorParameters(int MDsteps_ = 10, RealD trajL_ = 1.0)
+      : MDsteps(MDsteps_),
         trajL(trajL_),
         stepsize(trajL / MDsteps){
             // empty body constructor
   };
 
+  void set(int MDsteps_, RealD trajL_){
+    MDsteps = MDsteps_;
+    trajL = trajL_;
+    stepsize = trajL/MDsteps;
+  }
+
+
   void print_parameters() {
     std::cout << GridLogMessage << "[Integrator] Trajectory length  : " << trajL << std::endl;
     std::cout << GridLogMessage << "[Integrator] Number of MD steps : " << MDsteps << std::endl;
     std::cout << GridLogMessage << "[Integrator] Step size          : " << stepsize << std::endl;
-    std::cout << GridLogMessage << "[Integrator] Exponential approx.: " << Nexp << std::endl;
-
   }
 };
 

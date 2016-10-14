@@ -49,6 +49,8 @@ class HMCRunnerParameters : Serializable {
                                   std::string, format,
                                   std::string, conf_prefix,
                                   std::string, rng_prefix,
+                                  double, rho,
+                                  int, SmearingLevels,
                                   );
 
   HMCRunnerParameters() {}
@@ -115,11 +117,21 @@ class HmcRunner : public BinaryHmcRunner {
     // Then force all checkpoint to have few common functions
     // return an object that is then passed to the Run function
 
-    PlaquetteLogger<BinaryHmcRunner::ImplPolicy> PlaqLog(std::string("Plaquette"));
+    PlaquetteLogger<BinaryHmcRunner::ImplPolicy> PlaqLog(
+        std::string("Plaquette"));
     ObservablesList.push_back(&PlaqLog);
     ObservablesList.push_back(&Checkpoint);
 
-    Run(argc, argv, Checkpoint);
+    // Smearing section, omit if not needed
+    double rho = 0.1;  // smearing parameter
+    int Nsmear = 2;    // number of smearing levels
+    Smear_Stout<BinaryHmcRunner::ImplPolicy> Stout(rho);
+    SmearedConfiguration<BinaryHmcRunner::ImplPolicy> SmearingPolicy(
+        UGrid, Nsmear, Stout);
+    ///////////////////
+
+    // Run(argc, argv, Checkpoint, SmearingPolicy);
+    Run(argc, argv, Checkpoint);  // no smearing
   };
 };
 }
@@ -133,6 +145,13 @@ int main(int argc, char **argv) {
             << " threads" << std::endl;
 
   HmcRunner TheHMC;
+
+  // Seeds for the random number generators
+  std::vector<int> SerSeed({1, 2, 3, 4, 5});
+  std::vector<int> ParSeed({6, 7, 8, 9, 10});
+  TheHMC.RNGSeeds(SerSeed, ParSeed);
+
+  TheHMC.MDparameters.set(20, 1.0);// MDsteps, traj length
 
   TheHMC.BuildTheAction(argc, argv);
 }
