@@ -514,7 +514,7 @@ inline void splitRngState(RngState& rs, const RngState& rs0, const std::string& 
 
 inline void computeHashWithInput(uint32_t hash[8], const RngState& rs, const std::string& input)
 {
-  sha256::processInput(hash, rs.hash, rs.numBytes, (const uint8_t*)input.c_str(), input.length() + 1);
+  sha256::processInput(hash, rs.hash, rs.numBytes, (const uint8_t*)input.c_str(), input.length());
 }
 
 inline uint64_t randGen(RngState& rs)
