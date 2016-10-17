@@ -359,7 +359,67 @@ namespace Optimization {
 
   //////////////////////////////////////////////
   // Some Template specialization
+
+  // Hack for CLANG until mm512_reduce_add_ps etc... are implemented in GCC and Clang releases
+#undef GNU_CLANG_COMPILER 
+#ifdef GNU_CLANG_COMPILER
+  //Complex float Reduce
+  template<>
+    inline Grid::ComplexF Reduce<Grid::ComplexF, __m512>::operator()(__m512 in){
+    __m512 v1,v2;
+    v1=Optimization::Permute::Permute0(in); // avx 512; quad complex single
+    v1= _mm512_add_ps(v1,in);
+    v2=Optimization::Permute::Permute1(v1); 
+    v1 = _mm512_add_ps(v1,v2);
+    v2=Optimization::Permute::Permute2(v1); 
+    v1 = _mm512_add_ps(v1,v2);
+    u512f conv; conv.v = v1;
+    return Grid::ComplexF(conv.f[0],conv.f[1]);
+  }
   
+  //Real float Reduce
+  template<>
+    inline Grid::RealF Reduce<Grid::RealF, __m512>::operator()(__m512 in){
+    __m512 v1,v2;
+    v1 = Optimization::Permute::Permute0(in); // avx 512; octo-double
+    v1 = _mm512_add_ps(v1,in);
+    v2 = Optimization::Permute::Permute1(v1); 
+    v1 = _mm512_add_ps(v1,v2);
+    v2 = Optimization::Permute::Permute2(v1); 
+    v1 = _mm512_add_ps(v1,v2);
+    v2 = Optimization::Permute::Permute3(v1); 
+    v1 = _mm512_add_ps(v1,v2);
+    u512f conv; conv.v=v1;
+    return conv.f[0];
+  }
+  
+  
+  //Complex double Reduce
+  template<>
+    inline Grid::ComplexD Reduce<Grid::ComplexD, __m512d>::operator()(__m512d in){
+    __m512d v1;
+    v1 = Optimization::Permute::Permute0(in); // sse 128; paired complex single
+    v1 = _mm512_add_pd(v1,in);
+    v1 = Optimization::Permute::Permute1(in); // sse 128; paired complex single
+    v1 = _mm512_add_pd(v1,in);
+    u512d conv; conv.v = v1;
+    return Grid::ComplexD(conv.f[0],conv.f[1]);
+  }
+  
+  //Real double Reduce
+  template<>
+    inline Grid::RealD Reduce<Grid::RealD, __m512d>::operator()(__m512d in){
+    __m512d v1,v2;
+    v1 = Optimization::Permute::Permute0(in); // avx 512; quad double
+    v1 = _mm512_add_pd(v1,in);
+      v2 = Optimization::Permute::Permute1(v1); 
+      v1 = _mm512_add_pd(v1,v2);
+      v2 = Optimization::Permute::Permute2(v1); 
+      v1 = _mm512_add_pd(v1,v2);
+     u512d conv; conv.v = v1;
+     return conv.f[0];
+  }
+#else
   //Complex float Reduce
   template<>
   inline Grid::ComplexF Reduce<Grid::ComplexF, __m512>::operator()(__m512 in){
@@ -370,7 +430,6 @@ namespace Optimization {
   inline Grid::RealF Reduce<Grid::RealF, __m512>::operator()(__m512 in){
     return _mm512_reduce_add_ps(in);
   }
-  
   
   //Complex double Reduce
   template<>
@@ -391,6 +450,7 @@ namespace Optimization {
     printf("Reduce : Missing integer implementation -> FIX\n");
     assert(0);
   }
+#endif
   
   
 }
