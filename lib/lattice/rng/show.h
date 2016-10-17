@@ -16,8 +16,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef RNG_STATE_SHOW_H
-#define RNG_STATE_SHOW_H
+#pragma once
+
+#ifndef INCLUDE_SHOW_H
+#define INCLUDE_SHOW_H
 
 #include <sstream>
 #include <string>
