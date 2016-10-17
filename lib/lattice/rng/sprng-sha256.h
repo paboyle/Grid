@@ -16,8 +16,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef RNG_STATE_SPRNG_SHA256_H
-#define RNG_STATE_SPRNG_SHA256_H
+#pragma once
+
+#ifndef INCLUDE_SPRNG_SHA256_H
+#define INCLUDE_SPRNG_SHA256_H
 
 #include "rng-state.h"
 
