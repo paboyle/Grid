@@ -71,7 +71,7 @@
  namespace Grid {
 
 template<class vobj,class cobj,class compressor> void 
-Gather_plane_simple_stencil (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<cobj> > &buffer,int dimension,int plane,int cbmask,compressor &compress, int off=0,
+Gather_plane_simple_stencil (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<cobj> > &buffer,int dimension,int plane,int cbmask,compressor &compress, int off,
 			     double &t_table ,double & t_data )
 {
   int rd = rhs._grid->_rdimensions[dimension];
@@ -103,20 +103,20 @@ PARALLEL_NESTED_LOOP2
   } else { 
      int bo=0;
      t_table-=usecond();
-     std::vector<std::pair<int,int> > table;
+     std::vector<std::pair<int,int> > table(e1*e2);
      for(int n=0;n<e1;n++){
        for(int b=0;b<e2;b++){
 	 int o  = n*stride;
 	 int ocb=1<<rhs._grid->CheckerBoardFromOindexTable(o+b);
 	 if ( ocb &cbmask ) {
-	   table.push_back(std::pair<int,int> (bo++,o+b));
+	   table[bo]=std::pair<int,int>(bo,o+b); bo++;
 	 }
        }
      }
      t_table+=usecond();
      t_data-=usecond();
 PARALLEL_FOR_LOOP     
-     for(int i=0;i<table.size();i++){
+     for(int i=0;i<bo;i++){
        buffer[off+table[i].first]=compress(rhs._odata[so+table[i].second]);
      }
      t_data+=usecond();
