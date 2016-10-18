@@ -71,39 +71,31 @@
  namespace Grid {
 
 template<class vobj,class cobj,class compressor> void 
-Gather_plane_simple_stencil (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<cobj> > &buffer,int dimension,int plane,int cbmask,compressor &compress, int off,
-			     double &t_table ,double & t_data )
+Gather_plane_simple_table_compute (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<cobj> > &buffer,int dimension,int plane,int cbmask,compressor &compress, int off,std::vector<std::pair<int,int> >& table)
 {
+  table.resize(0);
   int rd = rhs._grid->_rdimensions[dimension];
 
   if ( !rhs._grid->CheckerBoarded(dimension) ) {
     cbmask = 0x3;
   }
-  
-  int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-  
+  int so= plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
   int e1=rhs._grid->_slice_nblock[dimension];
   int e2=rhs._grid->_slice_block[dimension];
 
-  t_table = 0.0;
-  t_data  = 0.0;
-
   int stride=rhs._grid->_slice_stride[dimension];
   if ( cbmask == 0x3 ) { 
-  t_data-=usecond();
-PARALLEL_NESTED_LOOP2
+    table.resize(e1*e2);
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int o  = n*stride;
 	int bo = n*e2;
-	buffer[off+bo+b]=compress(rhs._odata[so+o+b]);
+	table[bo+b]=std::pair<int,int>(bo+b,o+b);
       }
     }
-  t_data+=usecond();
   } else { 
      int bo=0;
-     t_table-=usecond();
-     std::vector<std::pair<int,int> > table(e1*e2);
+     table.resize(e1*e2/2);
      for(int n=0;n<e1;n++){
        for(int b=0;b<e2;b++){
 	 int o  = n*stride;
@@ -113,15 +105,30 @@ PARALLEL_NESTED_LOOP2
 	 }
        }
      }
-     t_table+=usecond();
-     t_data-=usecond();
-PARALLEL_FOR_LOOP     
-     for(int i=0;i<bo;i++){
-       buffer[off+table[i].first]=compress(rhs._odata[so+table[i].second]);
-     }
-     t_data+=usecond();
   }
 }
+
+template<class vobj,class cobj,class compressor> void 
+Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<cobj> > &buffer,
+			   compressor &compress, int off,int so)
+{
+PARALLEL_FOR_LOOP     
+     for(int i=0;i<table.size();i++){
+       buffer[off+table[i].first]=compress(rhs._odata[so+table[i].second]);
+     }
+}
+
+template<class vobj,class cobj,class compressor> void 
+Gather_plane_simple_stencil (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<cobj> > &buffer,int dimension,int plane,int cbmask,compressor &compress, int off,
+			     double &t_table ,double & t_data )
+{
+  std::vector<std::pair<int,int> > table;
+  Gather_plane_simple_table_compute (rhs, buffer,dimension,plane,cbmask,compress,off,table);
+  int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+  Gather_plane_simple_table         (table,rhs,buffer,compress,off,so);
+}
+
+
 
 
    struct StencilEntry { 
@@ -155,6 +162,9 @@ PARALLEL_FOR_LOOP
        };
 
        std::vector<Packet> Packets;
+
+       int face_table_computed;
+       std::vector<std::vector<std::pair<int,int> > > face_table ;
        
 #define SEND_IMMEDIATE
 #define SERIAL_SENDS
@@ -383,19 +393,22 @@ PARALLEL_FOR_LOOP
 #define PRINTIT(A)	\
  std::cout << GridLogMessage << " Stencil " << #A << " "<< A/calls<<std::endl;
 	 if ( calls > 0. ) {
- std::cout << GridLogMessage << " Stencil calls "<<calls<<std::endl;
-       PRINTIT(jointime);
-       PRINTIT(gathertime);
-       PRINTIT(commtime);
-       PRINTIT(halogtime);
-       PRINTIT(mergetime);
-       PRINTIT(spintime);
-       PRINTIT(comms_bytes);
-       PRINTIT(gathermtime);
-       PRINTIT(splicetime);
-       PRINTIT(nosplicetime);
-       PRINTIT(t_table);
-       PRINTIT(t_data);
+	   std::cout << GridLogMessage << " Stencil calls "<<calls<<std::endl;
+	   PRINTIT(halogtime);
+	   PRINTIT(gathertime);
+	   PRINTIT(gathermtime);
+	   PRINTIT(mergetime);
+	   if(comms_bytes>1.0){
+	     PRINTIT(comms_bytes);
+	     PRINTIT(commtime);
+	     std::cout << GridLogMessage << " Stencil " << comms_bytes/commtime/1000. << " GB/s "<<std::endl;
+	   }
+	   PRINTIT(jointime);
+	   PRINTIT(spintime);
+	   PRINTIT(splicetime);
+	   PRINTIT(nosplicetime);
+	   PRINTIT(t_table);
+	   PRINTIT(t_data);
 	 }
        };
  #endif
@@ -407,6 +420,7 @@ PARALLEL_FOR_LOOP
 				      const std::vector<int> &distances) 
      :   _permute_type(npoints), _comm_buf_size(npoints)
      {
+       face_table_computed=0;
        _npoints = npoints;
        _grid    = grid;
        _directions = directions;
@@ -734,7 +748,7 @@ PARALLEL_FOR_LOOP
        }
 #endif
        template<class compressor>
-       void HaloGatherDir(const Lattice<vobj> &source,compressor &compress,int point)
+       void HaloGatherDir(const Lattice<vobj> &source,compressor &compress,int point,int & face_idx)
        {
 	   int dimension    = _directions[point];
 	   int displacement = _distances[point];
@@ -762,23 +776,23 @@ PARALLEL_FOR_LOOP
 	     if ( sshift[0] == sshift[1] ) {
 	       if (splice_dim) {
 		 splicetime-=usecond();
-		 GatherSimd(source,dimension,shift,0x3,compress);
+		 GatherSimd(source,dimension,shift,0x3,compress,face_idx);
 		 splicetime+=usecond();
 	       } else { 
 		 nosplicetime-=usecond();
-		 Gather(source,dimension,shift,0x3,compress);
+		 Gather(source,dimension,shift,0x3,compress,face_idx);
 		 nosplicetime+=usecond();
 	       }
 	     } else {
 	       if(splice_dim){
 		 splicetime-=usecond();
-		 GatherSimd(source,dimension,shift,0x1,compress);// if checkerboard is unfavourable take two passes
-		 GatherSimd(source,dimension,shift,0x2,compress);// both with block stride loop iteration
+		 GatherSimd(source,dimension,shift,0x1,compress,face_idx);// if checkerboard is unfavourable take two passes
+		 GatherSimd(source,dimension,shift,0x2,compress,face_idx);// both with block stride loop iteration
 		 splicetime+=usecond();
 	       } else {
 		 nosplicetime-=usecond();
-		 Gather(source,dimension,shift,0x1,compress);
-		 Gather(source,dimension,shift,0x2,compress);
+		 Gather(source,dimension,shift,0x1,compress,face_idx);
+		 Gather(source,dimension,shift,0x2,compress,face_idx);
 		 nosplicetime+=usecond();
 	       }
 	     }
@@ -796,17 +810,19 @@ PARALLEL_FOR_LOOP
 	 u_comm_offset=0;
 
 	 // Gather all comms buffers
+	 int face_idx=0;
 	 for(int point = 0 ; point < _npoints; point++) {
 	   compress.Point(point);
-	   HaloGatherDir(source,compress,point);
+	   HaloGatherDir(source,compress,point,face_idx);
 	 }
+	 face_table_computed=1;
 
 	 assert(u_comm_offset==_unified_buffer_size);
 	 halogtime+=usecond();
        }
 
        template<class compressor>
-	 void Gather(const Lattice<vobj> &rhs,int dimension,int shift,int cbmask,compressor & compress)
+	 void Gather(const Lattice<vobj> &rhs,int dimension,int shift,int cbmask,compressor & compress,int &face_idx)
 	 {
 	   typedef typename cobj::vector_type vector_type;
 	   typedef typename cobj::scalar_type scalar_type;
@@ -843,8 +859,20 @@ PARALLEL_FOR_LOOP
 	       int bytes = words * sizeof(cobj);
 
 	       gathertime-=usecond();
-	       Gather_plane_simple_stencil (rhs,u_send_buf,dimension,sx,cbmask,compress,u_comm_offset,t_table,t_data);
+	       int so  = sx*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+	       if ( !face_table_computed ) {
+		 t_table-=usecond();
+		 face_table.resize(face_idx+1);
+		 Gather_plane_simple_table_compute (rhs,u_send_buf,dimension,sx,cbmask,compress,u_comm_offset,face_table[face_idx]);
+		 t_table+=usecond();
+	       }
+	       t_data-=usecond();
+	       Gather_plane_simple_table         (face_table[face_idx],rhs,u_send_buf,compress,u_comm_offset,so);
+	       face_idx++;
+	       t_data+=usecond();
 	       gathertime+=usecond();
+	       
+	       //	       Gather_plane_simple_stencil (rhs,u_send_buf,dimension,sx,cbmask,compress,u_comm_offset,t_table,t_data);
 
 	       int rank           = _grid->_processor;
 	       int recv_from_rank;
@@ -867,7 +895,7 @@ PARALLEL_FOR_LOOP
 
 
        template<class compressor>
-	 void  GatherSimd(const Lattice<vobj> &rhs,int dimension,int shift,int cbmask,compressor &compress)
+	 void  GatherSimd(const Lattice<vobj> &rhs,int dimension,int shift,int cbmask,compressor &compress,int & face_idx)
 	 {
 	   const int Nsimd = _grid->Nsimd();
 
