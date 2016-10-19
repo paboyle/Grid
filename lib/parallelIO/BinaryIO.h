@@ -372,8 +372,8 @@ class BinaryIO {
     if (grid->IsBoss()) 
       fout.close();
 
-    std::cout << GridLogMessage << "RNG file checksum " << csum << std::endl;
-
+    std::cout << GridLogMessage << "RNG file checksum " << std::hex << csum << std::dec << std::endl;
+    
     return csum;
   }
   static inline uint32_t readRNGSerial(GridSerialRNG &serial,GridParallelRNG &parallel,std::string file,int offset)
@@ -423,7 +423,7 @@ class BinaryIO {
       Uint32Checksum((uint32_t *)&saved[0],bytes,csum);
     }
 
-    std::cout << GridLogMessage << "RNG file checksum " << csum << std::endl;
+    std::cout << GridLogMessage << "RNG file checksum " << std::hex << csum << std::dec << std::endl;
 
     grid->Broadcast(0,(void *)&csum,sizeof(csum));
 
