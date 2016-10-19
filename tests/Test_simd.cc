@@ -157,9 +157,8 @@ void Tester(const functor &func)
   std::cout << GridLogMessage << " " << func.name() << std::endl;
 
   std::cout << GridLogDebug << v_input1 << std::endl;
+  std::cout << GridLogDebug << v_input2 << std::endl;
   std::cout << GridLogDebug << v_result << std::endl;
-
-
 
   int ok=0;
   for(int i=0;i<Nsimd;i++){

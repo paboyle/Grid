@@ -30,7 +30,6 @@ directory
 #define GRID_QCD_GAUGE_IMPL_H
 
 namespace Grid {
-
 namespace QCD {
 
 ////////////////////////////////////////////////////////////////////////
@@ -52,7 +51,7 @@ public:
   typedef S Simd;
 
   template <typename vtype>
-  using iImplGaugeLink = iScalar<iScalar<iMatrix<vtype, Nrepresentation>>>;
+  using iImplGaugeLink  = iScalar<iScalar<iMatrix<vtype, Nrepresentation>>>;
   template <typename vtype>
   using iImplGaugeField = iVector<iScalar<iMatrix<vtype, Nrepresentation>>, Nd>;
 
@@ -64,7 +63,7 @@ public:
                                                  // ugly
   typedef Lattice<SiteGaugeField> GaugeField;
 
-  // Move this elsewhere?
+  // Move this elsewhere? FIXME
   static inline void AddGaugeLink(GaugeField &U, GaugeLinkField &W,
                                   int mu) { // U[mu] += W
     PARALLEL_FOR_LOOP
@@ -174,12 +173,19 @@ typedef GaugeImplTypes<vComplex, Nc> GimplTypesR;
 typedef GaugeImplTypes<vComplexF, Nc> GimplTypesF;
 typedef GaugeImplTypes<vComplexD, Nc> GimplTypesD;
 
+typedef GaugeImplTypes<vComplex, SU<Nc>::AdjointDimension> GimplAdjointTypesR;
+typedef GaugeImplTypes<vComplexF, SU<Nc>::AdjointDimension> GimplAdjointTypesF;
+typedef GaugeImplTypes<vComplexD, SU<Nc>::AdjointDimension> GimplAdjointTypesD;
+
 typedef PeriodicGaugeImpl<GimplTypesR> PeriodicGimplR; // Real.. whichever prec
 typedef PeriodicGaugeImpl<GimplTypesF> PeriodicGimplF; // Float
 typedef PeriodicGaugeImpl<GimplTypesD> PeriodicGimplD; // Double
 
-typedef ConjugateGaugeImpl<GimplTypesR>
-    ConjugateGimplR; // Real.. whichever prec
+typedef PeriodicGaugeImpl<GimplAdjointTypesR> PeriodicGimplAdjR; // Real.. whichever prec
+typedef PeriodicGaugeImpl<GimplAdjointTypesF> PeriodicGimplAdjF; // Float
+typedef PeriodicGaugeImpl<GimplAdjointTypesD> PeriodicGimplAdjD; // Double
+
+typedef ConjugateGaugeImpl<GimplTypesR> ConjugateGimplR; // Real.. whichever prec
 typedef ConjugateGaugeImpl<GimplTypesF> ConjugateGimplF; // Float
 typedef ConjugateGaugeImpl<GimplTypesD> ConjugateGimplD; // Double
 }

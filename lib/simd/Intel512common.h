@@ -138,9 +138,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define ZLOADf(OFF,PTR,ri,ir)  VLOADf(OFF,PTR,ir)  VSHUFf(ir,ri)
 #define ZLOADd(OFF,PTR,ri,ir)  VLOADd(OFF,PTR,ir)  VSHUFd(ir,ri)
 
-
+#define STREAM_STORE
+#ifdef STREAM_STORE
 #define VSTOREf(OFF,PTR,SRC)   "vmovntps " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
 #define VSTOREd(OFF,PTR,SRC)   "vmovntpd " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
+#else
+#define VSTOREf(OFF,PTR,SRC)   "vmovaps " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
+#define VSTOREd(OFF,PTR,SRC)   "vmovapd " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
+#endif
 
 // Swaps Re/Im ; could unify this with IMCI
 #define VSHUFd(A,DEST)         "vpshufd  $0x4e," #A "," #DEST  ";\n"    

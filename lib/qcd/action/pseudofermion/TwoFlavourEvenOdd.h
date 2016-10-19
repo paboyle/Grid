@@ -1,70 +1,66 @@
-    /*************************************************************************************
+/*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+Grid physics library, www.github.com/paboyle/Grid
 
-    Source file: ./lib/qcd/action/pseudofermion/TwoFlavourEvenOdd.h
+Source file: ./lib/qcd/action/pseudofermion/TwoFlavourEvenOdd.h
 
-    Copyright (C) 2015
+Copyright (C) 2015
 
 Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-    See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+See the full license in the file "LICENSE" in the top level distribution
+directory
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef QCD_PSEUDOFERMION_TWO_FLAVOUR_EVEN_ODD_H
 #define QCD_PSEUDOFERMION_TWO_FLAVOUR_EVEN_ODD_H
 
-namespace Grid{
-  namespace QCD{
+namespace Grid {
+namespace QCD {
 
+////////////////////////////////////////////////////////////////////////
+// Two flavour pseudofermion action for any EO prec dop
+////////////////////////////////////////////////////////////////////////
+template <class Impl>
+class TwoFlavourEvenOddPseudoFermionAction
+    : public Action<typename Impl::GaugeField> {
+ public:
+  INHERIT_IMPL_TYPES(Impl);
 
+ private:
+  FermionOperator<Impl> &FermOp;  // the basic operator
 
-    ////////////////////////////////////////////////////////////////////////
-    // Two flavour pseudofermion action for any EO prec dop
-    ////////////////////////////////////////////////////////////////////////
-    template<class Impl>
-    class TwoFlavourEvenOddPseudoFermionAction : public Action<typename Impl::GaugeField> {
+  OperatorFunction<FermionField> &DerivativeSolver;
+  OperatorFunction<FermionField> &ActionSolver;
 
-    public:
+  FermionField PhiOdd;   // the pseudo fermion field for this trajectory
+  FermionField PhiEven;  // the pseudo fermion field for this trajectory
 
-      INHERIT_IMPL_TYPES(Impl);
-
-    private:
-      
-      FermionOperator<Impl> & FermOp;// the basic operator
-
-      OperatorFunction<FermionField> &DerivativeSolver;
-      OperatorFunction<FermionField> &ActionSolver;
-
-      FermionField PhiOdd;   // the pseudo fermion field for this trajectory
-      FermionField PhiEven;  // the pseudo fermion field for this trajectory
-
-    public:
-      /////////////////////////////////////////////////
-      // Pass in required objects.
-      /////////////////////////////////////////////////
-      TwoFlavourEvenOddPseudoFermionAction(FermionOperator<Impl>  &Op, 
-					 OperatorFunction<FermionField> & DS,
-					 OperatorFunction<FermionField> & AS
-					   ) : 
-        FermOp(Op), 
-	DerivativeSolver(DS), 
-	ActionSolver(AS), 
+ public:
+  /////////////////////////////////////////////////
+  // Pass in required objects.
+  /////////////////////////////////////////////////
+  TwoFlavourEvenOddPseudoFermionAction(FermionOperator<Impl> &Op,
+                                       OperatorFunction<FermionField> &DS,
+                                       OperatorFunction<FermionField> &AS)
+      : FermOp(Op),
+        DerivativeSolver(DS),
+        ActionSolver(AS),
         PhiEven(Op.FermionRedBlackGrid()),
 	PhiOdd(Op.FermionRedBlackGrid())
 		  {};

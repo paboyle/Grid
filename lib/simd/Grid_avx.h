@@ -454,7 +454,7 @@ namespace Optimization {
 #define _mm256_alignr_epi64_grid(ret,a,b,n) ret=(__m256d) _mm256_alignr_epi8((__m256i)a,(__m256i)b,(n*8)%16)
 #endif
 
-#if defined (AVX1) || defined (AVXFMA4)  
+#if defined (AVX1) || defined (AVXFMA)  
 #define _mm256_alignr_epi32_grid(ret,a,b,n) {	\
     __m128 aa, bb;				\
 						\

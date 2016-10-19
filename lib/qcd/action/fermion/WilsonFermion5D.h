@@ -31,6 +31,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef  GRID_QCD_WILSON_FERMION_5D_H
 #define  GRID_QCD_WILSON_FERMION_5D_H
 
+#include <Grid/Stat.h>
+
 namespace Grid {
 
   namespace QCD {
@@ -60,6 +62,18 @@ namespace Grid {
     public:
      INHERIT_IMPL_TYPES(Impl);
      typedef WilsonKernels<Impl> Kernels;
+     PmuStat stat;
+
+     void Report(void);
+     void ZeroCounters(void);
+     double DhopCalls;
+     double DhopCommTime;
+     double DhopComputeTime;
+
+     double DerivCalls;
+     double DerivCommTime;
+     double DerivComputeTime;
+     double DerivDhopComputeTime;
 
       ///////////////////////////////////////////////////////////////
       // Implement the abstract base

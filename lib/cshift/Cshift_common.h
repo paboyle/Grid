@@ -1,3 +1,4 @@
+
     /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -56,6 +57,7 @@ Gather_plane_simple (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<
   
   int e1=rhs._grid->_slice_nblock[dimension];
   int e2=rhs._grid->_slice_block[dimension];
+
   int stride=rhs._grid->_slice_stride[dimension];
   if ( cbmask == 0x3 ) { 
 PARALLEL_NESTED_LOOP2
@@ -68,14 +70,19 @@ PARALLEL_NESTED_LOOP2
     }
   } else { 
      int bo=0;
+     std::vector<std::pair<int,int> > table;
      for(int n=0;n<e1;n++){
        for(int b=0;b<e2;b++){
 	 int o  = n*stride;
-	 int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
+	 int ocb=1<<rhs._grid->CheckerBoardFromOindexTable(o+b);
 	 if ( ocb &cbmask ) {
-	   buffer[off+bo++]=compress(rhs._odata[so+o+b]);
+	   table.push_back(std::pair<int,int> (bo++,o+b));
 	 }
        }
+     }
+PARALLEL_FOR_LOOP     
+     for(int i=0;i<table.size();i++){
+       buffer[off+table[i].first]=compress(rhs._odata[so+table[i].second]);
      }
   }
 }

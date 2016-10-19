@@ -37,7 +37,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #ifdef GRID_OMP
 #include <omp.h>
+#ifdef GRID_NUMA
+#define PARALLEL_FOR_LOOP _Pragma("omp parallel for schedule(static)")
+#else
 #define PARALLEL_FOR_LOOP _Pragma("omp parallel for schedule(runtime)")
+#endif
 #define PARALLEL_NESTED_LOOP2 _Pragma("omp parallel for collapse(2)")
 #else
 #define PARALLEL_FOR_LOOP 

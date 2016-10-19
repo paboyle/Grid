@@ -134,7 +134,9 @@
   ////////////////////////////////
   // Xm
   ////////////////////////////////
+#ifndef STREAM_STORE
   basep= (uint64_t) &out._odata[ss];
+#endif
   //  basep= st.GetPFInfo(nent,plocal); nent++;
   if ( local ) {
     LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
@@ -229,7 +231,9 @@
     LOAD_CHI(base);
   }
   base= (uint64_t) &out._odata[ss];
+#ifndef STREAM_STORE
   PREFETCH_CHIMU(base);
+#endif
   {
     MULT_2SPIN_DIR_PFTM(Tm,basep);
   }
