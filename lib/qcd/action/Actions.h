@@ -72,6 +72,10 @@ namespace QCD {
 typedef WilsonGaugeAction<PeriodicGimplR>          WilsonGaugeActionR;
 typedef WilsonGaugeAction<PeriodicGimplF>          WilsonGaugeActionF;
 typedef WilsonGaugeAction<PeriodicGimplD>          WilsonGaugeActionD;
+typedef VariableWilsonGaugeAction<PeriodicGimplR>          VariableWilsonGaugeActionR;
+typedef VariableWilsonGaugeAction<PeriodicGimplF>          VariableWilsonGaugeActionF;
+typedef VariableWilsonGaugeAction<PeriodicGimplD>          VariableWilsonGaugeActionD;
+
 typedef PlaqPlusRectangleAction<PeriodicGimplR>    PlaqPlusRectangleActionR;
 typedef PlaqPlusRectangleAction<PeriodicGimplF>    PlaqPlusRectangleActionF;
 typedef PlaqPlusRectangleAction<PeriodicGimplD>    PlaqPlusRectangleActionD;
