@@ -82,9 +82,9 @@ class HmcRunner : public BinaryHmcRunner {
     std::vector<RealD> betat(Ls,5);
     std::vector<RealD> betas(Ls);
     betas={5,6,6,5};
-    std:cout << "Betas:" << betas << std::endl;
-    VariableWilsonGaugeActionR Waction(betas, betat, UGrid);
-    //WilsonGaugeActionR Waction(5.6);
+    //std:cout << "Betas:" << betas << std::endl;
+    //VariableWilsonGaugeActionR Waction(betas, betat, UGrid);
+    WilsonGaugeActionR Waction(5.6);
 
     // Collect actions
     ActionLevel<Field> Level1(1);

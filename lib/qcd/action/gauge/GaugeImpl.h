@@ -85,7 +85,6 @@ public:
     LinkField Pmu(P._grid);
     Pmu = zero;
     for (int mu = 0; mu < Nd; mu++) {
-      std::cout << "generating momenta " << mu << "\n"; 
       SU<Nrepresentation>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
       PokeIndex<LorentzIndex>(P, Pmu, mu);
     }

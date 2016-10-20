@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
   std::vector<int> ParSeed({6, 7, 8, 9, 10});
   TheHMC.RNGSeeds(SerSeed, ParSeed);
 
-  TheHMC.MDparameters.set(20, 1.0);// MDsteps, traj length
+  TheHMC.MDparameters.set(5, 1.0);// MDsteps, traj length
 
   TheHMC.BuildTheAction(argc, argv);
 }

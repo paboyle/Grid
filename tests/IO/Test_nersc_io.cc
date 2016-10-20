@@ -41,7 +41,7 @@ int main (int argc, char ** argv)
 
   std::vector<int> simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
-  std::vector<int> latt_size  ({16,16,16,32});
+  std::vector<int> latt_size  ({32,32,32,32});
   std::vector<int> clatt_size  ({4,4,4,8});
   int orthodir=3;
   int orthosz =latt_size[orthodir];
@@ -72,6 +72,7 @@ int main (int argc, char ** argv)
   random(sRNGa,a);
   random(sRNGb,b);
   std::cout << " serial RNG numbers "<<a<<" "<<b<<std::endl;
+
 
   LatticeGaugeField Umu(&Fine);
   LatticeGaugeField Umu_diff(&Fine);

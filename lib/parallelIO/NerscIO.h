@@ -513,8 +513,6 @@ static inline void readRNGState(GridSerialRNG &serial,GridParallelRNG & parallel
   // munger is a function of <floating point, Real, data_type>
   uint32_t csum=BinaryIO::readRNGSerial(serial,parallel,file,offset);
 
-  std::cerr<<" Csum "<< csum << " "<< header.checksum <<std::endl;
-
   assert(csum == header.checksum );
 
   std::cout<<GridLogMessage <<"Read NERSC RNG file "<<file<< " format "<< data_type <<std::endl;
