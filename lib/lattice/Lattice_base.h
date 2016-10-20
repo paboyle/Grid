@@ -65,9 +65,6 @@ public:
     
 class LatticeExpressionBase {};
 
-template<class T> using Vector = std::vector<T,alignedAllocator<T> >;               // Aligned allocator??
-template<class T> using Matrix = std::vector<std::vector<T,alignedAllocator<T> > >; // Aligned allocator??
-
 template <typename Op, typename T1>                           
 class LatticeUnaryExpression  : public std::pair<Op,std::tuple<T1> > , public LatticeExpressionBase {
  public:
