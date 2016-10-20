@@ -47,7 +47,7 @@ AC_ARG_WITH([gmp],
     [AS_HELP_STRING([--with-gmp=prefix],
     [try this for a non-standard install prefix of the GMP library])],
     [AM_CXXFLAGS="-I$with_gmp/include $AM_CXXFLAGS"]
-    [AM_LDFLAGS="-L$with_gmp/lib" $AM_LDFLAGS])
+    [AM_LDFLAGS="-L$with_gmp/lib $AM_LDFLAGS"])
 AC_ARG_WITH([mpfr],
     [AS_HELP_STRING([--with-mpfr=prefix],
     [try this for a non-standard install prefix of the MPFR library])],
@@ -68,6 +68,20 @@ case ${ac_LAPACK} in
         AM_CXXFLAGS="-I$ac_LAPACK/include $AM_CXXFLAGS"
         AM_LDFLAGS="-L$ac_LAPACK/lib $AM_LDFLAGS"
         AC_DEFINE([USE_LAPACK],[1],[use LAPACK])
+esac
+
+################## first-touch ####################
+AC_ARG_ENABLE([numa],
+    [AC_HELP_STRING([--enable-numa=yes|no|prefix], [enable first touch numa opt])], 
+    [ac_NUMA=${enable_NUMA}],[ac_NUMA=no])
+
+case ${ac_NUMA} in
+    no)
+        ;;
+    yes)
+        AC_DEFINE([GRID_NUMA],[1],[First touch numa locality]);;
+    *)
+        AC_DEFINE([GRID_NUMA],[1],[First touch numa locality]);;
 esac
 
 ################## FFTW3 ####################
@@ -117,7 +131,7 @@ CXXFLAGS=$CXXFLAGS_CPY
 LDFLAGS=$LDFLAGS_CPY
 
 ############### SIMD instruction selection
-AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE4|AVX|AVXFMA4|AVX2|AVX512|AVX512MIC|IMCI|KNL|KNC],\
+AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE4|AVX|AVXFMA4|AVXFMA|AVX2|AVX512|AVX512MIC|IMCI|KNL|KNC],\
 	[Select instructions to be SSE4.0, AVX 1.0, AVX 2.0+FMA, AVX 512, IMCI])],\
 	[ac_SIMD=${enable_simd}],[ac_SIMD=GEN])
 
@@ -133,6 +147,9 @@ case ${ax_cv_cxx_compiler_vendor} in
       AVXFMA4)
         AC_DEFINE([AVXFMA4],[1],[AVX intrinsics with FMA4])
         SIMD_FLAGS='-mavx -mfma4';;
+      AVXFMA)
+        AC_DEFINE([AVXFMA],[1],[AVX intrinsics with FMA3])
+        SIMD_FLAGS='-mavx -mfma';;
       AVX2)
         AC_DEFINE([AVX2],[1],[AVX2 intrinsics])
         SIMD_FLAGS='-mavx2 -mfma';;
@@ -161,7 +178,10 @@ case ${ax_cv_cxx_compiler_vendor} in
         SIMD_FLAGS='-mavx -xavx';;
       AVXFMA4)
         AC_DEFINE([AVXFMA4],[1],[AVX intrinsics with FMA4])
-        SIMD_FLAGS='-mavx -xavx -mfma';;
+        SIMD_FLAGS='-mavx -mfma';;
+      AVXFMA)
+        AC_DEFINE([AVXFMA],[1],[AVX intrinsics with FMA4])
+        SIMD_FLAGS='-mavx -mfma';;
       AVX2)
         AC_DEFINE([AVX2],[1],[AVX2 intrinsics])
         SIMD_FLAGS='-march=core-avx2 -xcore-avx2';;

@@ -246,15 +246,15 @@ void Grid_init(int *argc,char ***argv)
   std::cout <<std::endl;
   std::cout <<COL_RED  << "__|__|__|__|__"<<             "|__|__|_"<<COL_PURPLE<<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
   std::cout <<COL_RED  << "__|__|__|__|__"<<             "|__|__|_"<<COL_PURPLE<<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
-  std::cout <<COL_RED  << "__|__|  |  |  "<<             "|  |  | "<<COL_PURPLE<<" |  |  |"<<                "  |  |  | _|__"<<std::endl; 
-  std::cout <<COL_RED  << "__|__         "<<             "        "<<COL_PURPLE<<"        "<<                "          _|__"<<std::endl; 
+  std::cout <<COL_RED  << "__|_ |  |  |  "<<             "|  |  | "<<COL_PURPLE<<" |  |  |"<<                "  |  |  | _|__"<<std::endl; 
+  std::cout <<COL_RED  << "__|_          "<<             "        "<<COL_PURPLE<<"        "<<                "          _|__"<<std::endl; 
   std::cout <<COL_RED  << "__|_  "<<COL_GREEN<<" GGGG   "<<COL_RED<<" RRRR   "<<COL_BLUE  <<" III    "<<COL_PURPLE<<"DDDD  "<<COL_PURPLE<<"    _|__"<<std::endl;
   std::cout <<COL_RED  << "__|_  "<<COL_GREEN<<"G       "<<COL_RED<<" R   R  "<<COL_BLUE  <<"  I     "<<COL_PURPLE<<"D   D "<<COL_PURPLE<<"    _|__"<<std::endl;
   std::cout <<COL_RED  << "__|_  "<<COL_GREEN<<"G       "<<COL_RED<<" R   R  "<<COL_BLUE  <<"  I     "<<COL_PURPLE<<"D    D"<<COL_PURPLE<<"    _|__"<<std::endl;
   std::cout <<COL_BLUE << "__|_  "<<COL_GREEN<<"G  GG   "<<COL_RED<<" RRRR   "<<COL_BLUE  <<"  I     "<<COL_PURPLE<<"D    D"<<COL_GREEN <<"    _|__"<<std::endl;
   std::cout <<COL_BLUE << "__|_  "<<COL_GREEN<<"G   G   "<<COL_RED<<" R  R   "<<COL_BLUE  <<"  I     "<<COL_PURPLE<<"D   D "<<COL_GREEN <<"    _|__"<<std::endl;
   std::cout <<COL_BLUE << "__|_  "<<COL_GREEN<<" GGGG   "<<COL_RED<<" R   R  "<<COL_BLUE  <<" III    "<<COL_PURPLE<<"DDDD  "<<COL_GREEN <<"    _|__"<<std::endl;
-  std::cout <<COL_BLUE << "__|__         "<<             "        "<<COL_GREEN <<"        "<<                "          _|__"<<std::endl; 
+  std::cout <<COL_BLUE << "__|_          "<<             "        "<<COL_GREEN <<"        "<<                "          _|__"<<std::endl; 
   std::cout <<COL_BLUE << "__|__|__|__|__"<<             "|__|__|_"<<COL_GREEN <<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
   std::cout <<COL_BLUE << "__|__|__|__|__"<<             "|__|__|_"<<COL_GREEN <<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
   std::cout <<COL_BLUE << "  |  |  |  |  "<<             "|  |  | "<<COL_GREEN <<" |  |  |"<<                "  |  |  |  |  "<<std::endl; 

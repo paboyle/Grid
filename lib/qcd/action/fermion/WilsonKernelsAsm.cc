@@ -31,9 +31,30 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #include <Grid.h>
 
+
 namespace Grid {
   namespace QCD {
     
+    ///////////////////////////////////////////////////////////
+    // Default to no assembler implementation
+    ///////////////////////////////////////////////////////////
+    template<class Impl>
+      void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
+                             std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+                             int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+    {
+      assert(0);
+    }
+    template<class Impl>
+      void WilsonKernels<Impl >::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
+                                std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+                                int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+    {
+      assert(0);
+    }
+
+
+
 #if defined(AVX512) 
     
     
@@ -102,6 +123,27 @@ namespace Grid {
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
 #endif
+
+
+#define INSTANTIATE_ASM(A)\
+template void WilsonKernels<A>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,\
+                                   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,\
+                                  int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out);\
+template void WilsonKernels<A>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,\
+                                   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,\
+                                  int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out);\
+
+
+INSTANTIATE_ASM(WilsonImplF);
+INSTANTIATE_ASM(WilsonImplD);
+INSTANTIATE_ASM(ZWilsonImplF);
+INSTANTIATE_ASM(ZWilsonImplD);
+INSTANTIATE_ASM(GparityWilsonImplF);
+INSTANTIATE_ASM(GparityWilsonImplD);
+INSTANTIATE_ASM(DomainWallVec5dImplF);
+INSTANTIATE_ASM(DomainWallVec5dImplD);
+INSTANTIATE_ASM(ZDomainWallVec5dImplF);
+INSTANTIATE_ASM(ZDomainWallVec5dImplD);
   }
 }
 

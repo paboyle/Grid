@@ -186,10 +186,10 @@ namespace Grid {
       inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde,int mu){
 	
 	int Ls=Btilde._grid->_fdimensions[0];
-	
 	GaugeLinkField tmp(mat._grid);
 	tmp = zero;
-	PARALLEL_FOR_LOOP
+
+        PARALLEL_FOR_LOOP
 	  for(int sss=0;sss<tmp._grid->oSites();sss++){
 	    int sU=sss;
 	    for(int s=0;s<Ls;s++){
@@ -198,7 +198,7 @@ namespace Grid {
 	    }
 	  }
 	PokeIndex<LorentzIndex>(mat,tmp,mu);
-	
+
       }
     };
 
