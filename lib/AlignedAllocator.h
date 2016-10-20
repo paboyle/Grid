@@ -161,7 +161,8 @@ public:
 #error "implement MPI3 windowed allocate"
   }
 #else
-  pointer allocate(size_type __n, const void* _p= 0)
+  pointer allocate(size_type __n, const void* _p= 0) 
+  {
 #ifdef HAVE_MM_MALLOC_H
     _Tp * ptr = (_Tp *) _mm_malloc(__n*sizeof(_Tp),128);
 #else
@@ -187,9 +188,9 @@ template<typename _Tp>  inline bool operator!=(const commAllocator<_Tp>&, const 
 ////////////////////////////////////////////////////////////////////////////////
 // Template typedefs
 ////////////////////////////////////////////////////////////////////////////////
-template<class T> using Vector    = std::vector<T,alignedAllocator<T> >;           
+template<class T> using Vector     = std::vector<T,alignedAllocator<T> >;           
 template<class T> using commVector = std::vector<T,commAllocator<T> >;              
-template<class T> using Matrix = std::vector<std::vector<T,alignedAllocator<T> > >;
+template<class T> using Matrix     = std::vector<std::vector<T,alignedAllocator<T> > >;
     
 }; // namespace Grid
 #endif
