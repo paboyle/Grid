@@ -130,8 +130,12 @@ public:
 
 #ifdef GRID_COMMS_SHMEM
   pointer allocate(size_type __n, const void* _p= 0)
-  { 
+  {
+#ifdef CRAY
     _Tp *ptr = (_Tp *) shmem_align(__n*sizeof(_Tp),64);
+#else
+    _Tp *ptr = (_Tp *) shmem_align(64,__n*sizeof(_Tp));
+#endif
 #ifdef PARANOID_SYMMETRIC_HEAP
     static void * bcast;
     static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
