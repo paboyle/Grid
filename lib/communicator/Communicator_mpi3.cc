@@ -196,10 +196,12 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
   }
 
   ShmCommBufs.resize(ShmSize);
+  ShmStencilBufs.resize(ShmSize);
   for(int r=0;r<ShmSize;r++){
     MPI_Aint sz;
     int dsp_unit;
     MPI_Win_shared_query (ShmWindow, r, &sz, &dsp_unit, &ShmCommBufs[r]);
+    ShmStencilBufs[r] = (void *) ((uint64_t)ShmCommBufs[r]+MAX_MPI_SHM_BYTES/4);
   }
   
   ////////////////////////////////////////////////////////////////
@@ -341,30 +343,54 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 						int from,
 						int bytes)
 {
+#undef SHM_USE_BCOPY
   MPI_Request xrq;
   MPI_Request rrq;
   
+  static int sequence;
+
   int rank = _processor;
   int ierr;
   int tag;
-  int small = (bytes<MAX_MPI_SHM_BYTES) || (shm_mode==0);
-  static int sequence;
   int check;
+
   assert(dest != _processor);
   assert(from != _processor);
   
   int gdest = GroupRanks[dest];
   int gme   = GroupRanks[_processor];
+
   sequence++;
   
+  char *to_ptr   = (char *)ShmCommBufs[gdest];
+  char *from_ptr = (char *)ShmCommBufs[ShmRank];
+
+  int small = (bytes<MAX_MPI_SHM_BYTES) || (shm_mode==0);
+
+#ifndef SHM_USE_BCOPY
+  int words = bytes>>2;
+  assert(((size_t)bytes &0x3)==0);
+  assert(((size_t)xmit  &0x3)==0);
+  assert(((size_t)recv  &0x3)==0);
+#endif
+
   assert(gme == ShmRank);
   
   if ( small && (dest !=MPI_UNDEFINED) ) {
-    char *ptr = (char *)ShmCommBufs[gdest];
     assert(gme != gdest);
-    GridThread::bcopy(xmit,ptr,bytes);
-    bcopy(&_processor,&ptr[bytes],sizeof(_processor));
-    bcopy(&  sequence,&ptr[bytes+4],sizeof(sequence));
+    float *ip = (float *)xmit;
+    float *op = (float *)to_ptr;
+
+#ifdef SHM_USE_BCOPY
+    bcopy(ip,op,bytes);
+#else
+    PARALLEL_FOR_LOOP 
+    for(int w=0;w<words;w++) {
+      op[w]=ip[w];
+    }
+#endif
+    bcopy(&_processor,&to_ptr[bytes],sizeof(_processor));
+    bcopy(&  sequence,&to_ptr[bytes+4],sizeof(sequence));
   } else { 
     ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator,&xrq);
     assert(ierr==0);
@@ -376,10 +402,18 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
   MPI_Win_sync (ShmWindow);   
   
   if (small && (from !=MPI_UNDEFINED) ) {
-    char *ptr = (char *)ShmCommBufs[ShmRank];
-    GridThread::bcopy(ptr,recv,bytes);
-    bcopy(&ptr[bytes]  ,&tag  ,sizeof(tag));
-    bcopy(&ptr[bytes+4],&check,sizeof(check));
+    float *ip = (float *)from_ptr;
+    float *op = (float *)recv;
+#ifdef SHM_USE_BCOPY
+    bcopy(ip,op,bytes);
+#else
+    PARALLEL_FOR_LOOP 
+    for(int w=0;w<words;w++) {
+      op[w]=ip[w];
+    }
+#endif
+    bcopy(&from_ptr[bytes]  ,&tag  ,sizeof(tag));
+    bcopy(&from_ptr[bytes+4],&check,sizeof(check));
     assert(check==sequence);
     assert(tag==from);
   } else { 
