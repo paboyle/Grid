@@ -45,7 +45,7 @@ namespace QCD{
     void MomentumSpacePropagator(const GaugeField &in, GaugeField &out);
     void StochasticField(GaugeField &out, GridParallelRNG &rng);
   private:
-    void kHatSquared(GaugeLinkField &out);
+    void invKHatSquared(GaugeLinkField &out);
     void zmSub(GaugeLinkField &out);
   private:
     Gauge    gauge_;
@@ -71,13 +71,17 @@ namespace QCD{
   }
   
   template<class Gimpl>
-  void Photon<Gimpl>::kHatSquared(GaugeLinkField &out)
+  void Photon<Gimpl>::invKHatSquared(GaugeLinkField &out)
   {
     GridBase           *grid = out._grid;
-    GaugeLinkField     kmu(grid);
+    GaugeLinkField     kmu(grid), one(grid);
     const unsigned int nd    = grid->_ndimension;
     std::vector<int>   &l    = grid->_fdimensions;
+    std::vector<int>   zm(nd,0);
+    TComplexD          Tone = ComplexD(1.0,0.0);
+    TComplexD          Tzero= ComplexD(0.0,0.0);
     
+    one = ComplexD(1.0,0.0);
     out = zero;
     for(int mu = 0; mu < nd; mu++)
     {
@@ -87,6 +91,9 @@ namespace QCD{
       kmu = 2.*sin(.5*twoPiL*kmu);
       out = out + kmu*kmu;
     }
+    pokeSite(Tone, out, zm);
+    out = one/out;
+    pokeSite(Tzero, out,zm);
   }
   
   template<class Gimpl>
@@ -131,19 +138,10 @@ namespace QCD{
                                                GaugeField &out)
   {
     GridBase           *grid = out._grid;
-    const unsigned int nd    = grid->_ndimension;
-    LatticeComplex     k2Inv(grid), one(grid);
+    LatticeComplex     k2Inv(grid);
     
-    one = ComplexD(1.0,0.0);
-    kHatSquared(k2Inv);
-    
-    std::vector<int> zm(nd,0);
-    TComplexD Tone = ComplexD(1.0,0.0);
-    TComplexD Tzero= ComplexD(0.0,0.0);
-    
-    pokeSite(Tone, k2Inv, zm);
-    k2Inv = one/k2Inv;
-    pokeSite(Tzero, k2Inv,zm);
+    invKHatSquared(k2Inv);
+    zmSub(k2Inv);
     
     out = in*k2Inv;
   }
@@ -153,16 +151,17 @@ namespace QCD{
   {
     auto               *grid = out._grid;
     const unsigned int nd = grid->_ndimension;
-    GaugeLinkField     k2(grid), r(grid);
+    GaugeLinkField     sqrtK2Inv(grid), r(grid);
     GaugeField         aTilde(grid);
     FFT                fft(grid);
     
-    kHatSquared(k2);
-    zmSub(k2);
+    invKHatSquared(sqrtK2Inv);
+    sqrtK2Inv = sqrt(real(sqrtK2Inv));
+    zmSub(sqrtK2Inv);
     for(int mu = 0; mu < nd; mu++)
     {
       gaussian(rng, r);
-      r = k2*r;
+      r = sqrtK2Inv*r;
       pokeLorentz(aTilde, r, mu);
     }
     fft.FFT_all_dim(out, aTilde, FFT::backward);
