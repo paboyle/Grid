@@ -62,27 +62,15 @@ class HmcRunner : public BinaryHmcRunner {
   void BuildTheAction(int argc, char **argv)
 
   {
-    int Ndim=5;
     typedef WilsonImplR ImplPolicy;
     typedef WilsonFermionR FermionAction;
     typedef typename FermionAction::FermionField FermionField;
 
-    std::vector<int> simd = GridDefaultSimd(Ndim-1,vComplex::Nsimd());
-    simd.push_back(1);
-
-
-    //UGrid = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), simd, GridDefaultMpi());
-    UGrid   =  new GridCartesian(GridDefaultLatt(),simd,GridDefaultMpi());
+    UGrid = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd, vComplex::Nsimd()), GridDefaultMpi());
+    
 
     // Gauge action
-    int Ls = UGrid->_fdimensions[Nd - 1];
-    std::vector<RealD> betat(Ls,6.0);
-    std::vector<RealD> betas(Ls,5.6);
-    betat[Ls-1]= 0.0;
-    betas={5.2,5.5,5.8,6,6,5.8,5.5,5.2};
-    std:cout << GridLogMessage << "Betas: " << betas << std::endl;
-    VariableWilsonGaugeActionR Waction(betas, betat, UGrid);
-    //WilsonGaugeActionR Waction(5.6);
+    WilsonGaugeActionR Waction(5.6);
 
     // Collect actions
     ActionLevel<Field> Level1(1);
