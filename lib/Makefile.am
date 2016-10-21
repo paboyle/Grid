@@ -3,6 +3,10 @@ if BUILD_COMMS_MPI
   extra_sources+=communicator/Communicator_mpi.cc
 endif
 
+if BUILD_COMMS_MPI3
+  extra_sources+=communicator/Communicator_mpi3.cc
+endif
+
 if BUILD_COMMS_SHMEM
   extra_sources+=communicator/Communicator_shmem.cc
 endif

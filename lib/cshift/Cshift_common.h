@@ -45,7 +45,7 @@ public:
 // Gather for when there is no need to SIMD split with compression
 ///////////////////////////////////////////////////////////////////
 template<class vobj,class cobj,class compressor> void 
-Gather_plane_simple (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<cobj> > &buffer,int dimension,int plane,int cbmask,compressor &compress, int off=0)
+Gather_plane_simple (const Lattice<vobj> &rhs,commVector<cobj> &buffer,int dimension,int plane,int cbmask,compressor &compress, int off=0)
 {
   int rd = rhs._grid->_rdimensions[dimension];
 
@@ -114,6 +114,7 @@ PARALLEL_NESTED_LOOP2
 	int o      =   n*n1;
 	int offset = b+n*n2;
 	cobj temp =compress(rhs._odata[so+o+b]);
+
 	extract<cobj>(temp,pointers,offset);
 
       }
@@ -121,6 +122,7 @@ PARALLEL_NESTED_LOOP2
   } else { 
 
     assert(0); //Fixme think this is buggy
+
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int o=n*rhs._grid->_slice_stride[dimension];
@@ -139,7 +141,7 @@ PARALLEL_NESTED_LOOP2
 //////////////////////////////////////////////////////
 // Gather for when there is no need to SIMD split
 //////////////////////////////////////////////////////
-template<class vobj> void Gather_plane_simple (const Lattice<vobj> &rhs,std::vector<vobj,alignedAllocator<vobj> > &buffer,             int dimension,int plane,int cbmask)
+template<class vobj> void Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer, int dimension,int plane,int cbmask)
 {
   SimpleCompressor<vobj> dontcompress;
   Gather_plane_simple (rhs,buffer,dimension,plane,cbmask,dontcompress);
@@ -157,7 +159,7 @@ template<class vobj> void Gather_plane_extract(const Lattice<vobj> &rhs,std::vec
 //////////////////////////////////////////////////////
 // Scatter for when there is no need to SIMD split
 //////////////////////////////////////////////////////
-template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,std::vector<vobj,alignedAllocator<vobj> > &buffer, int dimension,int plane,int cbmask)
+template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vobj> &buffer, int dimension,int plane,int cbmask)
 {
   int rd = rhs._grid->_rdimensions[dimension];
 

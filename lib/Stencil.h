@@ -71,7 +71,7 @@
  namespace Grid {
 
 template<class vobj,class cobj,class compressor> void 
-Gather_plane_simple_table_compute (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<cobj> > &buffer,int dimension,int plane,int cbmask,compressor &compress, int off,std::vector<std::pair<int,int> >& table)
+Gather_plane_simple_table_compute (const Lattice<vobj> &rhs,commVector<cobj> &buffer,int dimension,int plane,int cbmask,compressor &compress, int off,std::vector<std::pair<int,int> >& table)
 {
   table.resize(0);
   int rd = rhs._grid->_rdimensions[dimension];
@@ -109,7 +109,7 @@ Gather_plane_simple_table_compute (const Lattice<vobj> &rhs,std::vector<cobj,ali
 }
 
 template<class vobj,class cobj,class compressor> void 
-Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<cobj> > &buffer,
+Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,commVector<cobj> &buffer,
 			   compressor &compress, int off,int so)
 {
 PARALLEL_FOR_LOOP     
@@ -119,7 +119,7 @@ PARALLEL_FOR_LOOP
 }
 
 template<class vobj,class cobj,class compressor> void 
-Gather_plane_simple_stencil (const Lattice<vobj> &rhs,std::vector<cobj,alignedAllocator<cobj> > &buffer,int dimension,int plane,int cbmask,compressor &compress, int off,
+Gather_plane_simple_stencil (const Lattice<vobj> &rhs,commVector<cobj> &buffer,int dimension,int plane,int cbmask,compressor &compress, int off,
 			     double &t_table ,double & t_data )
 {
   std::vector<std::pair<int,int> > table;
@@ -347,10 +347,10 @@ Gather_plane_simple_stencil (const Lattice<vobj> &rhs,std::vector<cobj,alignedAl
        }
 
        // Comms buffers
-       std::vector<Vector<scalar_object> > u_simd_send_buf;
-       std::vector<Vector<scalar_object> > u_simd_recv_buf;
-       Vector<cobj>          u_send_buf;
-       Vector<cobj>          comm_buf;
+       std::vector<commVector<scalar_object> > u_simd_send_buf;
+       std::vector<commVector<scalar_object> > u_simd_recv_buf;
+       commVector<cobj>          u_send_buf;
+       commVector<cobj>          comm_buf;
        int u_comm_offset;
        int _unified_buffer_size;
 
