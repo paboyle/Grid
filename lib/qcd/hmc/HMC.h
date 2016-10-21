@@ -34,7 +34,6 @@ directory
  * @brief Classes for Hybrid Monte Carlo update
  *
  * @author Guido Cossu
- * Time-stamp: <2015-07-30 16:58:26 neo>
  */
 //--------------------------------------------------------------------
 #ifndef HMC_INCLUDED

@@ -1,10 +1,10 @@
-    /*************************************************************************************
+/*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+Grid physics library, www.github.com/paboyle/Grid
 
-    Source file: ./lib/qcd/QCD.h
+Source file: ./lib/qcd/QCD.h
 
-    Copyright (C) 2015
+Copyright (C) 2015
 
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
@@ -12,28 +12,30 @@ Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
 Author: neo <cossu@post.kek.jp>
 Author: paboyle <paboyle@ph.ed.ac.uk>
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-    See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+See the full license in the file "LICENSE" in the top level distribution
+directory
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_LT_H
 #define GRID_LT_H
 namespace Grid{
 
 // First steps in the complete generalization of the Physics part
+// Design not final
 namespace LatticeTheories {
 
 template <int Dimensions>
@@ -50,7 +52,7 @@ struct LatticeGaugeTheory : public LatticeTheory<Dimensions> {
   static const int Nd = Dimensions;
   static const int Nc = Colours;
 
-  template <typename vtype>
+  template <typename vtype> 
   using iColourMatrix = iScalar<iScalar<iMatrix<vtype, Nc> > >;
   template <typename vtype>
   using iLorentzColourMatrix = iVector<iScalar<iMatrix<vtype, Nc> >, Nd>;
@@ -82,6 +84,13 @@ struct FermionicLatticeGaugeTheory
   using iHalfSpinVector = iScalar<iVector<iScalar<vtype>, Nhs> >;
   template <typename vtype>
   using iHalfSpinColourVector = iScalar<iVector<iVector<vtype, Nc>, Nhs> >;
+
+  //tests
+  typedef iColourMatrix<Complex> ColourMatrix;
+  typedef iColourMatrix<ComplexF> ColourMatrixF;
+  typedef iColourMatrix<ComplexD> ColourMatrixD;
+
+
 };
 
 // Examples, not complete now.
@@ -96,10 +105,6 @@ struct QCD : public FermionicLatticeGaugeTheory<4, 3, 4> {
     static const int Tm = 7;
 
     typedef FermionicLatticeGaugeTheory FLGT;
-
-    typedef FLGT::iColourMatrix<Complex  >        ColourMatrix;
-    typedef FLGT::iColourMatrix<ComplexF >        ColourMatrixF;
-    typedef FLGT::iColourMatrix<ComplexD >        ColourMatrixD;
 
     typedef FLGT::iSpinMatrix<Complex  >          SpinMatrix;
     typedef FLGT::iSpinMatrix<ComplexF >          SpinMatrixF;

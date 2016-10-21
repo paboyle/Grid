@@ -29,14 +29,6 @@ directory
 *************************************************************************************/
 /*  END LEGAL */
 //--------------------------------------------------------------------
-/*! @file Integrator.h
- * @brief Classes for the Molecular Dynamics integrator
- *
- * @author Guido Cossu
- * Time-stamp: <2015-07-30 16:21:29 neo>
- */
-//--------------------------------------------------------------------
-
 #ifndef INTEGRATOR_INCLUDED
 #define INTEGRATOR_INCLUDED
 

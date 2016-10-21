@@ -79,12 +79,16 @@ class HmcRunner : public BinaryHmcRunner {
 
     // Gauge action
     int Ls = UGrid->_gdimensions[Nd - 1];
-    std::vector<RealD> betat(Ls,5);
+    std::vector<RealD> betat(Ls);
     std::vector<RealD> betas(Ls);
-    betas={5,6,6,5};
-    //std:cout << "Betas:" << betas << std::endl;
-    //VariableWilsonGaugeActionR Waction(betas, betat, UGrid);
-    WilsonGaugeActionR Waction(5.6);
+    //betat={5,6,6,6,6,6,6,5};
+    betat={1,1,1,0,1,1,1,1};
+    //betas={5.2,5.5,5.8,6,6,5.8,5.5,5.2};
+    betas={0,0,0,0,0,0,0,0};
+    bool openBC = false;
+    std:cout << GridLogMessage << "Betas: " << betas << std::endl;
+    VariableWilsonGaugeActionR Waction(betas, betat, UGrid, openBC);
+    //WilsonGaugeActionR Waction(5.6);
 
     // Collect actions
     ActionLevel<Field> Level1(1);
