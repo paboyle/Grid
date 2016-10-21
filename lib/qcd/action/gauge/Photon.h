@@ -124,7 +124,7 @@ namespace QCD{
           LatticeCoordinate(coor,d);
           spNrm = spNrm + coor*coor;
         }
-        out = where(spNrm == 0, 0.*out, out);
+        out = where(spNrm == Integer(0), 0.*out, out);
         
         break;
       }
@@ -149,7 +149,7 @@ namespace QCD{
   template<class Gimpl>
   void Photon<Gimpl>::StochasticField(GaugeField &out, GridParallelRNG &rng)
   {
-    auto               *grid = out._grid;
+    auto               *grid = dynamic_cast<GridCartesian *>(out._grid);
     const unsigned int nd = grid->_ndimension;
     GaugeLinkField     sqrtK2Inv(grid), r(grid);
     GaugeField         aTilde(grid);
