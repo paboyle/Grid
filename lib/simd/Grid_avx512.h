@@ -41,6 +41,16 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 namespace Grid{
 namespace Optimization {
+
+  union u512f {
+    __m512 v;
+    float f[16];
+  };
+
+  union u512d {
+    __m512d v;
+    double f[8];
+  };
   
   struct Vsplat{
     //Complex float
@@ -361,7 +371,7 @@ namespace Optimization {
   // Some Template specialization
 
   // Hack for CLANG until mm512_reduce_add_ps etc... are implemented in GCC and Clang releases
-#undef GNU_CLANG_COMPILER 
+#define GNU_CLANG_COMPILER 
 #ifdef GNU_CLANG_COMPILER
   //Complex float Reduce
   template<>

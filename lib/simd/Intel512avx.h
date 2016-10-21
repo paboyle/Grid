@@ -53,7 +53,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #define ZMULMEM2SPd(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)\
   VSHUFMEMd(O,P,tmp)  \
-  VMULMEMd(O,P,B,Biirr)  \ 
+  VMULMEMd(O,P,B,Biirr)  \
   VMULMEMd(O,P,C,Ciirr)  \
   VMULd(tmp,B,Briir)  \
   VMULd(tmp,C,Criir) 
