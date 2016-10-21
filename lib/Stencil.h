@@ -70,20 +70,20 @@
 
  namespace Grid {
 
-template<class vobj,class cobj,class compressor> void 
-Gather_plane_simple_table_compute (const Lattice<vobj> &rhs,commVector<cobj> &buffer,int dimension,int plane,int cbmask,compressor &compress, int off,std::vector<std::pair<int,int> >& table)
+inline void Gather_plane_simple_table_compute (GridBase *grid,int dimension,int plane,int cbmask,
+					       int off,std::vector<std::pair<int,int> > & table)
 {
   table.resize(0);
-  int rd = rhs._grid->_rdimensions[dimension];
+  int rd = grid->_rdimensions[dimension];
 
-  if ( !rhs._grid->CheckerBoarded(dimension) ) {
+  if ( !grid->CheckerBoarded(dimension) ) {
     cbmask = 0x3;
   }
-  int so= plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-  int e1=rhs._grid->_slice_nblock[dimension];
-  int e2=rhs._grid->_slice_block[dimension];
+  int so= plane*grid->_ostride[dimension]; // base offset for start of plane 
+  int e1=grid->_slice_nblock[dimension];
+  int e2=grid->_slice_block[dimension];
 
-  int stride=rhs._grid->_slice_stride[dimension];
+  int stride=grid->_slice_stride[dimension];
   if ( cbmask == 0x3 ) { 
     table.resize(e1*e2);
     for(int n=0;n<e1;n++){
@@ -99,7 +99,7 @@ Gather_plane_simple_table_compute (const Lattice<vobj> &rhs,commVector<cobj> &bu
      for(int n=0;n<e1;n++){
        for(int b=0;b<e2;b++){
 	 int o  = n*stride;
-	 int ocb=1<<rhs._grid->CheckerBoardFromOindexTable(o+b);
+	 int ocb=1<<grid->CheckerBoardFromOindexTable(o+b);
 	 if ( ocb &cbmask ) {
 	   table[bo]=std::pair<int,int>(bo,o+b); bo++;
 	 }
@@ -109,8 +109,7 @@ Gather_plane_simple_table_compute (const Lattice<vobj> &rhs,commVector<cobj> &bu
 }
 
 template<class vobj,class cobj,class compressor> void 
-Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,commVector<cobj> &buffer,
-			   compressor &compress, int off,int so)
+Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so)
 {
 PARALLEL_FOR_LOOP     
      for(int i=0;i<table.size();i++){
@@ -119,11 +118,11 @@ PARALLEL_FOR_LOOP
 }
 
 template<class vobj,class cobj,class compressor> void 
-Gather_plane_simple_stencil (const Lattice<vobj> &rhs,commVector<cobj> &buffer,int dimension,int plane,int cbmask,compressor &compress, int off,
+Gather_plane_simple_stencil (const Lattice<vobj> &rhs,cobj *buffer,int dimension,int plane,int cbmask,compressor &compress, int off,
 			     double &t_table ,double & t_data )
 {
   std::vector<std::pair<int,int> > table;
-  Gather_plane_simple_table_compute (rhs, buffer,dimension,plane,cbmask,compress,off,table);
+  Gather_plane_simple_table_compute (rhs._grid,dimension,plane,cbmask,off,table);
   int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
   Gather_plane_simple_table         (table,rhs,buffer,compress,off,so);
 }
@@ -143,10 +142,11 @@ Gather_plane_simple_stencil (const Lattice<vobj> &rhs,commVector<cobj> &buffer,i
    class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal fill in.
    public:
 
-       typedef uint32_t StencilInteger;
-       typedef typename cobj::vector_type vector_type;
-       typedef typename cobj::scalar_type scalar_type;
-       typedef typename cobj::scalar_object scalar_object;
+     typedef CartesianCommunicator::CommsRequest_t CommsRequest_t;
+     typedef uint32_t StencilInteger;
+     typedef typename cobj::vector_type vector_type;
+     typedef typename cobj::scalar_type scalar_type;
+     typedef typename cobj::scalar_object scalar_object;
 
        //////////////////////////////////////////
        // Comms packet queue for asynch thread
@@ -158,7 +158,6 @@ Gather_plane_simple_stencil (const Lattice<vobj> &rhs,commVector<cobj> &buffer,i
 	 Integer to_rank;
 	 Integer from_rank;
 	 Integer bytes;
-	 volatile Integer done;
        };
 
        std::vector<Packet> Packets;
@@ -166,81 +165,39 @@ Gather_plane_simple_stencil (const Lattice<vobj> &rhs,commVector<cobj> &buffer,i
        int face_table_computed;
        std::vector<std::vector<std::pair<int,int> > > face_table ;
        
-#define SEND_IMMEDIATE
-#define SERIAL_SENDS
-
        void AddPacket(void *xmit,void * rcv, Integer to,Integer from,Integer bytes){
- #ifdef SEND_IMMEDIATE
-	 commtime-=usecond();
-	 _grid->SendToRecvFrom(xmit,to,rcv,from,bytes);
-	 commtime+=usecond();
- #endif
 	 Packet p;
 	 p.send_buf = xmit;
 	 p.recv_buf = rcv;
 	 p.to_rank  = to;
 	 p.from_rank= from;
 	 p.bytes    = bytes;
-	 p.done     = 0;
 	 comms_bytes+=2.0*bytes;
 	 Packets.push_back(p);
-
        }
 
- #ifdef SERIAL_SENDS
-       void Communicate(void ) { 
-	 commtime-=usecond();
+       void CommunicateBegin(std::vector<std::vector<CommsRequest_t> > &reqs)
+       {
+	 reqs.resize(Packets.size());
+         commtime-=usecond();
 	 for(int i=0;i<Packets.size();i++){
- #ifndef SEND_IMMEDIATE
-	   _grid->SendToRecvFrom(
-				 Packets[i].send_buf,
-				 Packets[i].to_rank,
-				 Packets[i].recv_buf,
-				 Packets[i].from_rank,
-				 Packets[i].bytes);
- #endif
-	   Packets[i].done = 1;
+	   _grid->SendToRecvFromBegin(reqs[i],
+				      Packets[i].send_buf,
+				      Packets[i].to_rank,
+				      Packets[i].recv_buf,
+				      Packets[i].from_rank,
+				      Packets[i].bytes);
 	 }
 	 commtime+=usecond();
        }
- #else
-       void Communicate(void ) { 
-	 typedef CartesianCommunicator::CommsRequest_t CommsRequest_t;
-	 std::vector<std::vector<CommsRequest_t> > reqs(Packets.size());
-	 commtime-=usecond();
-	 const int concurrency=2;
-	 for(int i=0;i<Packets.size();i+=concurrency){
-	   for(int ii=0;ii<concurrency;ii++){
-	     int j = i+ii;
-	     if ( j<Packets.size() ) {
- #ifndef SEND_IMMEDIATE
-	       _grid->SendToRecvFromBegin(reqs[j],
-					  Packets[j].send_buf,
-					  Packets[j].to_rank,
-					  Packets[j].recv_buf,
-					  Packets[j].from_rank,
-					  Packets[j].bytes);
- #endif
-	     }
-	   }
-	   for(int ii=0;ii<concurrency;ii++){
-	     int j = i+ii;
-	     if ( j<Packets.size() ) {
- #ifndef SEND_IMMEDIATE
-	       _grid->SendToRecvFromComplete(reqs[i]);
- #endif
-	     }
-	   }
-	   for(int ii=0;ii<concurrency;ii++){
-	     int j = i+ii;
-	     if ( j<Packets.size() ) {
-	       Packets[j].done = 1;
-	     }
-	   }
+       void CommunicateComplete(std::vector<std::vector<CommsRequest_t> > &reqs)
+       {
+         commtime-=usecond();
+	 for(int i=0;i<Packets.size();i++){
+	   _grid->SendToRecvFromComplete(reqs[i]);
 	 }
 	 commtime+=usecond();
        }
- #endif
 
        ///////////////////////////////////////////
        // Simd merge queue for asynch comms
@@ -260,36 +217,19 @@ Gather_plane_simple_stencil (const Lattice<vobj> &rhs,commVector<cobj> &buffer,i
 	 m.rpointers= rpointers;
 	 m.buffer_size = buffer_size;
 	 m.packet_id   = packet_id;
- #ifdef SEND_IMMEDIATE
-	 mergetime-=usecond();
- PARALLEL_FOR_LOOP
-	 for(int o=0;o<m.buffer_size;o++){
-	   merge1(m.mpointer[o],m.rpointers,o);
-	 }
-	 mergetime+=usecond();
- #else
 	 Mergers.push_back(m);
- #endif
-
        }
 
        void CommsMerge(void ) { 
-	 //PARALLEL_NESTED_LOOP2 
+
 	 for(int i=0;i<Mergers.size();i++){	
 
-	 spintime-=usecond();
-	 int packet_id = Mergers[i].packet_id;
-	 while(! Packets[packet_id].done ); // spin for completion
-	 spintime+=usecond();
-
- #ifndef SEND_IMMEDIATE
 	 mergetime-=usecond();
- PARALLEL_FOR_LOOP
+PARALLEL_FOR_LOOP
 	   for(int o=0;o<Mergers[i].buffer_size;o++){
 	     merge1(Mergers[i].mpointer[o],Mergers[i].rpointers,o);
 	   }
 	 mergetime+=usecond();
- #endif
 
 	 }
        }
@@ -346,11 +286,14 @@ Gather_plane_simple_stencil (const Lattice<vobj> &rhs,commVector<cobj> &buffer,i
 	 else       return cbase + _entries[ent]._byte_offset;
        }
 
+       ///////////////////////////////////////////////////////////
        // Comms buffers
+       ///////////////////////////////////////////////////////////
        std::vector<commVector<scalar_object> > u_simd_send_buf;
        std::vector<commVector<scalar_object> > u_simd_recv_buf;
        commVector<cobj>          u_send_buf;
        commVector<cobj>          comm_buf;
+
        int u_comm_offset;
        int _unified_buffer_size;
 
@@ -483,7 +426,7 @@ Gather_plane_simple_stencil (const Lattice<vobj> &rhs,commVector<cobj> &buffer,i
 	 }
        }
        u_send_buf.resize(_unified_buffer_size);
-       comm_buf.resize(_unified_buffer_size);
+         comm_buf.resize(_unified_buffer_size);
 
        PrecomputeByteOffsets();
 
@@ -722,31 +665,16 @@ Gather_plane_simple_stencil (const Lattice<vobj> &rhs,commVector<cobj> &buffer,i
        template<class compressor>
        void HaloExchange(const Lattice<vobj> &source,compressor &compress) 
        {
+	 std::vector<std::vector<CommsRequest_t> > reqs;
 	 calls++;
 	 Mergers.resize(0);
          Packets.resize(0);
          HaloGather(source,compress);
-	 this->Communicate();
+	 this->CommunicateBegin(reqs);
+	 this->CommunicateComplete(reqs);
 	 CommsMerge(); // spins
        }
-#if 0
-       // Overlapping comms and compute typically slows down compute and  is useless
-       // unless memory bandwidth greatly exceeds network
-       template<class compressor>
-       std::thread HaloExchangeBegin(const Lattice<vobj> &source,compressor &compress) {
-	 Mergers.resize(0); 
-	 Packets.resize(0);
-	 HaloGather(source,compress);
-	 return std::thread([&] { this->Communicate(); });
-       }
-       void HaloExchangeComplete(std::thread &thr) 
-       {
-	 CommsMerge(); // spins
-	 jointime-=usecond();
-	 thr.join();
-	 jointime+=usecond();
-       }
-#endif
+
        template<class compressor>
        void HaloGatherDir(const Lattice<vobj> &source,compressor &compress,int point,int & face_idx)
        {
@@ -851,6 +779,9 @@ Gather_plane_simple_stencil (const Lattice<vobj> &rhs,commVector<cobj> &buffer,i
 	     int sx        = (x+sshift)%rd;
 	     int comm_proc = ((x+sshift)/rd)%pd;
 
+	     cobj *u_send_buf_p;
+	     cobj   *comm_buf_p;
+
 	     if (comm_proc) {
 
 	       int words = buffer_size;
@@ -863,16 +794,15 @@ Gather_plane_simple_stencil (const Lattice<vobj> &rhs,commVector<cobj> &buffer,i
 	       if ( !face_table_computed ) {
 		 t_table-=usecond();
 		 face_table.resize(face_idx+1);
-		 Gather_plane_simple_table_compute (rhs,u_send_buf,dimension,sx,cbmask,compress,u_comm_offset,face_table[face_idx]);
+		 cobj *ptr; ptr = &u_send_buf[0];
+		 Gather_plane_simple_table_compute ((GridBase *)_grid,dimension,sx,cbmask,u_comm_offset,
+						    face_table[face_idx]);
 		 t_table+=usecond();
 	       }
 	       t_data-=usecond();
-	       Gather_plane_simple_table         (face_table[face_idx],rhs,u_send_buf,compress,u_comm_offset,so);
-	       face_idx++;
+	       Gather_plane_simple_table         (face_table[face_idx],rhs,&u_send_buf[0],compress,u_comm_offset,so);  face_idx++;
 	       t_data+=usecond();
 	       gathertime+=usecond();
-	       
-	       //	       Gather_plane_simple_stencil (rhs,u_send_buf,dimension,sx,cbmask,compress,u_comm_offset,t_table,t_data);
 
 	       int rank           = _grid->_processor;
 	       int recv_from_rank;
