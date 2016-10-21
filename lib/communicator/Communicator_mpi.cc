@@ -39,11 +39,11 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
   }
 }
 
-  int Rank(void) {
-    int pe;
-    MPI_Comm_rank(MPI_COMM_WORLD,&pe);
-    return pe;
-  }
+int Rank(void) {
+  int pe;
+  MPI_Comm_rank(MPI_COMM_WORLD,&pe);
+  return pe;
+}
 
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {
@@ -168,7 +168,6 @@ void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &
   int nreq=list.size();
   std::vector<MPI_Status> status(nreq);
   int ierr = MPI_Waitall(nreq,&list[0],&status[0]);
-
   assert(ierr==0);
 }
 

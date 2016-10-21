@@ -208,7 +208,6 @@ int main (int argc, char ** argv)
 
     std::cout<<GridLogMessage<< "res norms "<< norm2(result)<<" " <<norm2(sresult)<<std::endl;
 
-
     RealF sum=0;
     for(int x=0;x<latt4[0];x++){
     for(int y=0;y<latt4[1];y++){
@@ -221,9 +220,9 @@ int main (int argc, char ** argv)
       peekSite(simd,sresult,site);
       sum=sum+norm2(normal-simd);
       if (norm2(normal-simd) > 1.0e-6 ) {
-  std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" "<<norm2(normal-simd)<<std::endl;
-  std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" normal "<<normal<<std::endl;
-  std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" simd   "<<simd<<std::endl;
+	std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" "<<norm2(normal-simd)<<std::endl;
+	std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" normal "<<normal<<std::endl;
+	std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" simd   "<<simd<<std::endl;
       }
     }}}}}
     std::cout<<GridLogMessage<<" difference between normal and simd is "<<sum<<std::endl;

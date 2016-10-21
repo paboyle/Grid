@@ -151,15 +151,6 @@ public:
   void deallocate(pointer __p, size_type) { 
     shmem_free((void *)__p);
   }
-#elif defined(GRID_COMMS_MPI3)
-  pointer allocate(size_type __n, const void* _p= 0)
-  { 
-#error "implement MPI3 windowed allocate"
-    
-  }
-  void deallocate(pointer __p, size_type) { 
-#error "implement MPI3 windowed allocate"
-  }
 #else
   pointer allocate(size_type __n, const void* _p= 0) 
   {

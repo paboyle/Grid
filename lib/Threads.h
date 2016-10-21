@@ -31,6 +31,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #ifdef _OPENMP
 #define GRID_OMP
+#warning "OpenMP"
 #endif
 
 #define UNROLL  _Pragma("unroll")
@@ -126,6 +127,22 @@ class GridThread {
     for(int i=0;i<_threads;i++) val+= sum_array[i];
     ThreadBarrier();
   };
+
+  static void bcopy(const void *src, void *dst, size_t len) {
+#ifdef GRID_OMP
+#pragma omp parallel 
+    {
+      const char *c_src =(char *) src;
+      char *c_dest=(char *) dst;
+      int me,mywork,myoff;
+      GridThread::GetWorkBarrier(len,me, mywork,myoff);
+      bcopy(&c_src[myoff],&c_dest[myoff],mywork);
+    }
+#else 
+    bcopy(src,dst,len);
+#endif
+  }
+
 
 };
 

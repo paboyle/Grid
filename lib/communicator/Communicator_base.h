@@ -45,7 +45,7 @@ class CartesianCommunicator {
   public:    
 
   // Communicator should know nothing of the physics grid, only processor grid.
-
+  
     int              _Nprocessors;     // How many in all
     std::vector<int> _processors;      // Which dimensions get relayed out over processors lanes.
     int              _processor;       // linear processor rank
@@ -56,10 +56,13 @@ class CartesianCommunicator {
     MPI_Comm communicator;
     typedef MPI_Request CommsRequest_t;
 #elif  GRID_COMMS_MPI3
+    int shm_mode;
+
     MPI_Comm communicator;
     typedef MPI_Request CommsRequest_t;
 
-    const int MAXLOG2RANKSPERNODE = 16; // 65536 ranks per node adequate for now
+    const int MAXLOG2RANKSPERNODE = 16;     // 65536 ranks per node adequate for now
+    const uint64_t MAX_MPI_SHM_BYTES = 256*1024*1024; // 256MB shared memory for comms enought for 48^4 local vol comms
 
     std::vector<int>  WorldDims;
     std::vector<int>  GroupDims;
@@ -69,13 +72,22 @@ class CartesianCommunicator {
     std::vector<int> ShmCoor;
     std::vector<int> WorldCoor;
 
-    int GroupRank;
-    int ShmRank;
-    int WorldRank;
+    static std::vector<int> GroupRanks; 
+    static std::vector<int> MyGroup;
+    static int ShmSetup;
+    static MPI_Win ShmWindow; 
+    static MPI_Comm ShmComm;
 
-    int GroupSize;
-    int ShmSize;
+    void * ShmCommBuf;
+    std::vector<void *> ShmCommBufs;
+
+    int WorldRank;
     int WorldSize;
+
+    static int ShmRank;
+    static int ShmSize;
+    static int GroupSize;
+    static int GroupRank;
 
     std::vector<int>  LexicographicToWorldRank;
 #else 
