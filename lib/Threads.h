@@ -31,7 +31,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #ifdef _OPENMP
 #define GRID_OMP
-#warning "OpenMP"
 #endif
 
 #define UNROLL  _Pragma("unroll")
