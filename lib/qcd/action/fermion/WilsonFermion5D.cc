@@ -194,7 +194,7 @@ void WilsonFermion5D<Impl>::Report(void)
     std::cout << GridLogMessage << "WilsonFermion5D ComputeTime/Calls        : "
               << DhopComputeTime / DhopCalls << " us" << std::endl;
 
-    RealD mflops = 1344*volume*DhopCalls/DhopComputeTime;
+    RealD mflops = 1344*volume*DhopCalls/DhopComputeTime/2; // 2 for red black counting
     std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
     std::cout << GridLogMessage << "Average mflops/s per call per node       : " << mflops/NP << std::endl;
 
@@ -396,7 +396,6 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
            DoubledGaugeField & U,
            const FermionField &in, FermionField &out,int dag)
 {
-  DhopCalls++;
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
   Compressor compressor(dag);
 
@@ -454,6 +453,7 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int dag)
 {
+  DhopCalls++;
   conformable(in._grid,FermionRedBlackGrid());    // verifies half grid
   conformable(in._grid,out._grid); // drops the cb check
 
@@ -465,6 +465,7 @@ void WilsonFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag)
 {
+  DhopCalls++;
   conformable(in._grid,FermionRedBlackGrid());    // verifies half grid
   conformable(in._grid,out._grid); // drops the cb check
 
@@ -476,6 +477,7 @@ void WilsonFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int
 template<class Impl>
 void WilsonFermion5D<Impl>::Dhop(const FermionField &in, FermionField &out,int dag)
 {
+  DhopCalls+=2;
   conformable(in._grid,FermionGrid()); // verifies full grid
   conformable(in._grid,out._grid);
 
