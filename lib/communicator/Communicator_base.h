@@ -80,6 +80,7 @@ class CartesianCommunicator {
 
     void * ShmCommBuf;
     std::vector<void *> ShmCommBufs;
+    std::vector<void *> ShmStencilBufs;
 
     int WorldRank;
     int WorldSize;
