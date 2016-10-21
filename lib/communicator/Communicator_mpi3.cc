@@ -380,7 +380,7 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
   int small = (bytes<MAX_MPI_SHM_BYTES);
 
 #ifndef SHM_USE_BCOPY
-  typedef long long T __attribute__ ((__vector_size__ (16)));
+  typedef vRealD T;
   int words = bytes/sizeof(T);
   assert(((size_t)bytes &(sizeof(T)-1))==0);
   //  assert(((size_t)xmit  &(sizeof(T)-1))==0);
@@ -400,7 +400,7 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
     T *op = (T *)to_ptr;
     PARALLEL_FOR_LOOP 
     for(int w=0;w<words;w++) {
-      op[w]=ip[w];
+      vstream(op[w],ip[w]);
     }
 #endif
     bcopy(&_processor,&to_ptr[bytes],sizeof(_processor));
@@ -426,7 +426,7 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
     T *op = (T *)recv;
     PARALLEL_FOR_LOOP 
     for(int w=0;w<words;w++) {
-      op[w]=ip[w];
+      vstream(op[w],ip[w]);
     }
 #endif
     bcopy(&from_ptr[bytes]  ,&tag  ,sizeof(tag));
