@@ -28,6 +28,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include "Grid.h"
 #include <mpi.h>
+#include <numaif.h>
 
 namespace Grid {
 
@@ -182,6 +183,15 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
     ShmCommBuf = 0;
     ierr = MPI_Win_allocate_shared(MAX_MPI_SHM_BYTES,1,MPI_INFO_NULL,ShmComm,&ShmCommBuf,&ShmWindow);
     assert(ierr==0);
+    for(uint64_t page=0;page<MAX_MPI_SHM_BYTES;page+=4096){
+      void *pages = (void *) ( page + ShmCommBuf );
+      int status;
+      int flags=MPOL_MF_MOVE_ALL;
+      int nodes=1; // numa domain == MCDRAM
+      unsigned long count=1;
+      ierr= move_pages(0,count, &pages,&nodes,&status,flags);
+      if (ierr && (page==0)) perror("numa relocate command failed");
+    }
     MPI_Win_lock_all (MPI_MODE_NOCHECK, ShmWindow);
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -367,10 +377,10 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
   char *to_ptr   = (char *)ShmCommBufs[gdest];
   char *from_ptr = (char *)ShmCommBufs[ShmRank];
 
-  int small = (bytes<MAX_MPI_SHM_BYTES) || (shm_mode==0);
+  int small = (bytes<MAX_MPI_SHM_BYTES);
 
 #ifndef SHM_USE_BCOPY
-  typedef double T;
+  typedef long long T __attribute__ ((__vector_size__ (16)));
   int words = bytes/sizeof(T);
   assert(((size_t)bytes &(sizeof(T)-1))==0);
   //  assert(((size_t)xmit  &(sizeof(T)-1))==0);
