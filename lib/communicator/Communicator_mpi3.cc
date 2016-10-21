@@ -1,3 +1,4 @@
+
     /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -181,6 +182,7 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
     ShmCommBuf = 0;
     ierr = MPI_Win_allocate_shared(MAX_MPI_SHM_BYTES,1,MPI_INFO_NULL,ShmComm,&ShmCommBuf,&ShmWindow);
     assert(ierr==0);
+    MPI_Win_lock_all (MPI_MODE_NOCHECK, ShmWindow);
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Verbose for now
@@ -368,22 +370,24 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
   int small = (bytes<MAX_MPI_SHM_BYTES) || (shm_mode==0);
 
 #ifndef SHM_USE_BCOPY
-  int words = bytes>>2;
-  assert(((size_t)bytes &0x3)==0);
-  assert(((size_t)xmit  &0x3)==0);
-  assert(((size_t)recv  &0x3)==0);
+  typedef double T;
+  int words = bytes/sizeof(T);
+  assert(((size_t)bytes &(sizeof(T)-1))==0);
+  //  assert(((size_t)xmit  &(sizeof(T)-1))==0);
+  //  assert(((size_t)recv  &(sizeof(T)-1))==0);
 #endif
 
   assert(gme == ShmRank);
-  
+
+  //  std::cerr << "proc dest from gme  gdest "<<_processor<<" "<<dest <<" "<< from <<" "<<gme<<" "<< gdest<<std::endl; Barrier();
   if ( small && (dest !=MPI_UNDEFINED) ) {
     assert(gme != gdest);
-    float *ip = (float *)xmit;
-    float *op = (float *)to_ptr;
 
 #ifdef SHM_USE_BCOPY
-    bcopy(ip,op,bytes);
+    bcopy(xmit,to_ptr,bytes);
 #else
+    T *ip = (T *)xmit;
+    T *op = (T *)to_ptr;
     PARALLEL_FOR_LOOP 
     for(int w=0;w<words;w++) {
       op[w]=ip[w];
@@ -397,16 +401,19 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
     list.push_back(xrq);
   }
   
+  //  std::cout << "Syncing "<<std::endl; Barrier();
   MPI_Win_sync (ShmWindow);   
   MPI_Barrier  (ShmComm);
   MPI_Win_sync (ShmWindow);   
+
+  //  std::cout << "Receiving "<<std::endl; Barrier();
   
   if (small && (from !=MPI_UNDEFINED) ) {
-    float *ip = (float *)from_ptr;
-    float *op = (float *)recv;
 #ifdef SHM_USE_BCOPY
-    bcopy(ip,op,bytes);
+    bcopy(from_ptr,recv,bytes);
 #else
+    T *ip = (T *)from_ptr;
+    T *op = (T *)recv;
     PARALLEL_FOR_LOOP 
     for(int w=0;w<words;w++) {
       op[w]=ip[w];
@@ -422,9 +429,25 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
     list.push_back(rrq);
   }
   
+  //  std::cout << "Syncing"<<std::endl; Barrier();
+
   MPI_Win_sync (ShmWindow);   
   MPI_Barrier  (ShmComm);
   MPI_Win_sync (ShmWindow);   
+
+#if 0
+  MPI_Request xrq;
+  MPI_Request rrq;
+  int rank = _processor;
+  int ierr;
+  ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator,&xrq);
+  ierr|=MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator,&rrq);
+  
+  assert(ierr==0);
+
+  list.push_back(xrq);
+  list.push_back(rrq);
+#endif
 }
 
 void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
