@@ -99,7 +99,7 @@ class VariableWilsonGaugeAction : public Action<typename Gimpl::GaugeField> {
 
  public:
   VariableWilsonGaugeAction(std::vector<RealD> bulk, std::vector<RealD> xdim,
-                            GridBase *_grid, bool openBC = false)
+                            GridBase *_grid)
       : b_bulk(bulk),
         b_xdim(xdim),
         grid(_grid),
@@ -130,11 +130,6 @@ class VariableWilsonGaugeAction : public Action<typename Gimpl::GaugeField> {
       beta_xdim = where(coor == tau, temp, beta_xdim);
     }
 
-    if (!openBC) {
-      temp = b_xdim[Nex - 1];
-      beta_xdim = where(coor == Nex - 1, temp, beta_xdim);
-    }
-
     beta_xdim_shifted = Cshift(beta_xdim, Ndim - 1, -1);
 
     beta_bulk = zero;
@@ -143,8 +138,7 @@ class VariableWilsonGaugeAction : public Action<typename Gimpl::GaugeField> {
       beta_bulk = where(coor == tau, temp, beta_bulk);
     }
 
-    std::cout << beta_xdim << std::endl;
-    std::cout << beta_xdim_shifted << std::endl;
+
   };
 
   virtual void refresh(const GaugeField &U,
@@ -180,6 +174,7 @@ class VariableWilsonGaugeAction : public Action<typename Gimpl::GaugeField> {
       }
     }
 
+    
     double faces = (1.0 * (Nd - 1) * (Nd - 2)) / 2.0;
     SumdirPlaq *= OneOnNc / (RealD(bulk_volume) * faces);
 

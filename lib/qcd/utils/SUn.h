@@ -170,6 +170,7 @@ class SU {
     ta()()(i2, i1) = 1.0;
     ta = ta * 0.5;
   }
+  
   template <class cplx>
   static void generatorSigmaX(int su2Index, iSUnMatrix<cplx> &ta) {
     ta = zero;
@@ -193,6 +194,8 @@ class SU {
     RealD nrm = 1.0 / std::sqrt(2.0 * k * (k + 1));
     ta = ta * nrm;
   }
+
+
 
   ////////////////////////////////////////////////////////////////////////
   // Map a su2 subgroup number to the pair of rows that are non zero

@@ -54,9 +54,21 @@ public:
     // resolution throughout the usage in this file, and rather defeats the
     // purpose of deriving
     // from Gimpl.
+    /*
     plaq = Gimpl::CovShiftBackward(
         U[mu], mu, Gimpl::CovShiftBackward(
                        U[nu], nu, Gimpl::CovShiftForward(U[mu], mu, U[nu])));
+                       */
+    // _
+    //|< _|
+    plaq = Gimpl::CovShiftForward(U[mu],mu,
+           Gimpl::CovShiftForward(U[nu],nu,
+           Gimpl::CovShiftBackward(U[mu],mu,
+           Gimpl::CovShiftIdentityBackward(U[nu], nu))));
+
+
+
+
   }
   //////////////////////////////////////////////////
   // trace of directed plaquette oriented in mu,nu plane

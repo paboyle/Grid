@@ -62,32 +62,26 @@ class HmcRunner : public BinaryHmcRunner {
   void BuildTheAction(int argc, char **argv)
 
   {
+    int Ndim=5;
     typedef WilsonImplR ImplPolicy;
     typedef WilsonFermionR FermionAction;
     typedef typename FermionAction::FermionField FermionField;
 
-    UGrid = SpaceTimeGrid::makeFourDimGrid(
-        GridDefaultLatt(), GridDefaultSimd(Nd, vComplex::Nsimd()),
-        GridDefaultMpi());
-    UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
+    std::vector<int> simd = GridDefaultSimd(Ndim-1,vComplex::Nsimd());
+    simd.push_back(1);
 
-    FGrid = UGrid;
-    FrbGrid = UrbGrid;
 
-    // temporarily need a gauge field
-    LatticeGaugeField U(UGrid);
+    //UGrid = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), simd, GridDefaultMpi());
+    UGrid   =  new GridCartesian(GridDefaultLatt(),simd,GridDefaultMpi());
 
     // Gauge action
-    int Ls = UGrid->_gdimensions[Nd - 1];
-    std::vector<RealD> betat(Ls);
-    std::vector<RealD> betas(Ls);
-    //betat={5,6,6,6,6,6,6,5};
-    betat={1,1,1,0,1,1,1,1};
-    //betas={5.2,5.5,5.8,6,6,5.8,5.5,5.2};
-    betas={0,0,0,0,0,0,0,0};
-    bool openBC = false;
+    int Ls = UGrid->_fdimensions[Nd - 1];
+    std::vector<RealD> betat(Ls,6.0);
+    std::vector<RealD> betas(Ls,5.6);
+    betat[Ls-1]= 0.0;
+    betas={5.2,5.5,5.8,6,6,5.8,5.5,5.2};
     std:cout << GridLogMessage << "Betas: " << betas << std::endl;
-    VariableWilsonGaugeActionR Waction(betas, betat, UGrid, openBC);
+    VariableWilsonGaugeActionR Waction(betas, betat, UGrid);
     //WilsonGaugeActionR Waction(5.6);
 
     // Collect actions
