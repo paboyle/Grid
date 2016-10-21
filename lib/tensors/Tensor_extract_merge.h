@@ -250,8 +250,7 @@ void merge(vobj &vec,std::vector<typename vobj::scalar_object *> &extracted,int 
   }
  }
 
-template<class vobj> inline 
-void merge1(vobj &vec,std::vector<typename vobj::scalar_object *> &extracted,int offset)
+template<class vobj> inline void merge1(vobj &vec,std::vector<typename vobj::scalar_object *> &extracted,int offset)
 {
   typedef typename vobj::scalar_type scalar_type ;
   typedef typename vobj::vector_type vector_type ;
@@ -269,8 +268,7 @@ void merge1(vobj &vec,std::vector<typename vobj::scalar_object *> &extracted,int
   }}
 }
 
-template<class vobj> inline 
-void merge2(vobj &vec,std::vector<typename vobj::scalar_object *> &extracted,int offset)
+template<class vobj> inline void merge2(vobj &vec,std::vector<typename vobj::scalar_object *> &extracted,int offset)
 {
   typedef typename vobj::scalar_type scalar_type ;
   typedef typename vobj::vector_type vector_type ;

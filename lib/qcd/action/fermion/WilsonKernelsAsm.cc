@@ -40,14 +40,14 @@ namespace Grid {
     ///////////////////////////////////////////////////////////
     template<class Impl>
       void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
-                             std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+                             commVector<SiteHalfSpinor>  &buf,
                              int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
     {
       assert(0);
     }
     template<class Impl>
       void WilsonKernels<Impl >::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
-                                std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+                                commVector<SiteHalfSpinor>  &buf,
                                 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
     {
       assert(0);
@@ -86,14 +86,14 @@ namespace Grid {
 #undef KERNEL_DAG
     template<>
     void WilsonKernels<WilsonImplF>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
-							 std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							 commVector<SiteHalfSpinor>  &buf,
 							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
       
 #define KERNEL_DAG
     template<>
     void WilsonKernels<WilsonImplF>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
-							    std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+							    commVector<SiteHalfSpinor>  &buf,
 							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
@@ -111,14 +111,14 @@ namespace Grid {
 #undef KERNEL_DAG
     template<>
     void WilsonKernels<DomainWallVec5dImplF>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
-								  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+								  commVector<SiteHalfSpinor>  &buf,
 								  int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
 #define KERNEL_DAG
     template<>
     void WilsonKernels<DomainWallVec5dImplF>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
-								     std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
+								     commVector<SiteHalfSpinor>  &buf,
 								     int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
@@ -127,10 +127,10 @@ namespace Grid {
 
 #define INSTANTIATE_ASM(A)\
 template void WilsonKernels<A>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,\
-                                   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,\
+                                   commVector<SiteHalfSpinor>  &buf,\
                                   int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out);\
 template void WilsonKernels<A>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,\
-                                   std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,\
+                                   commVector<SiteHalfSpinor>  &buf,\
                                   int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out);\
 
 

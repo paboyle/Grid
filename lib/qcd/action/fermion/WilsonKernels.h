@@ -58,7 +58,7 @@ namespace Grid {
       typename std::enable_if<Impl::Dimension == 3 && Nc == 3 &&EnableBool, void>::type
 	DiracOptDhopSite(
 			 StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-			 std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf,
+			 commVector<SiteHalfSpinor> &buf,
 			 int sF, int sU, int Ls, int Ns, const FermionField &in,
 			 FermionField &out) {
 #ifdef AVX512
@@ -89,7 +89,7 @@ namespace Grid {
 	  typename std::enable_if<(Impl::Dimension != 3 || (Impl::Dimension == 3 && Nc != 3)) && EnableBool, void>::type
 	  DiracOptDhopSite(
 			   StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-			   std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf,
+			   commVector<SiteHalfSpinor> &buf,
 			   int sF, int sU, int Ls, int Ns, const FermionField &in,
 			   FermionField &out) {
 	  for (int site = 0; site < Ns; site++) {
@@ -107,7 +107,7 @@ namespace Grid {
 				  void>::type
 	  DiracOptDhopSiteDag(
 			      StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-			      std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf,
+			      commVector<SiteHalfSpinor> &buf,
 			      int sF, int sU, int Ls, int Ns, const FermionField &in,
 			      FermionField &out) {
 #ifdef AVX512
@@ -139,7 +139,7 @@ namespace Grid {
 				      void>::type
 				      DiracOptDhopSiteDag(
 							  StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-							  std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf,
+							  commVector<SiteHalfSpinor> &buf,
 							  int sF, int sU, int Ls, int Ns, const FermionField &in,
 							  FermionField &out) {
 					for (int site = 0; site < Ns; site++) {
@@ -154,7 +154,7 @@ namespace Grid {
 
 				    void DiracOptDhopDir(
 							 StencilImpl &st, DoubledGaugeField &U,
-							 std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf,
+							 commVector<SiteHalfSpinor> &buf,
 							 int sF, int sU, const FermionField &in, FermionField &out, int dirdisp,
 							 int gamma);
 
@@ -162,34 +162,34 @@ namespace Grid {
 				    // Specialised variants
 				    void DiracOptGenericDhopSite(
 								 StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-								 std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf,
+								 commVector<SiteHalfSpinor> &buf,
 								 int sF, int sU, const FermionField &in, FermionField &out);
 
 				    void DiracOptGenericDhopSiteDag(
 								    StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-								    std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf,
+								    commVector<SiteHalfSpinor> &buf,
 								    int sF, int sU, const FermionField &in, FermionField &out);
 
 				    void DiracOptAsmDhopSite(
 							     StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-							     std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf,
+							     commVector<SiteHalfSpinor> &buf,
 							     int sF, int sU, int Ls, int Ns, const FermionField &in,
 							     FermionField &out);
 
 				    void DiracOptAsmDhopSiteDag(
 								StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-								std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf,
+								commVector<SiteHalfSpinor> &buf,
 								int sF, int sU, int Ls, int Ns, const FermionField &in,
 								FermionField &out);
 
 				    void DiracOptHandDhopSite(
 							      StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-							      std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf,
+							      commVector<SiteHalfSpinor> &buf,
 							      int sF, int sU, const FermionField &in, FermionField &out);
 
 				    void DiracOptHandDhopSiteDag(
 								 StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-								 std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf,
+								 commVector<SiteHalfSpinor> &buf,
 								 int sF, int sU, const FermionField &in, FermionField &out);
 
 	public:

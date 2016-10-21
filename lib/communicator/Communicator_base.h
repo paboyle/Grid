@@ -34,6 +34,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifdef GRID_COMMS_MPI
 #include <mpi.h>
 #endif
+#ifdef GRID_COMMS_MPI3
+#include <mpi.h>
+#endif
 #ifdef GRID_COMMS_SHMEM
 #include <mpp/shmem.h>
 #endif
@@ -52,6 +55,29 @@ class CartesianCommunicator {
 #ifdef GRID_COMMS_MPI
     MPI_Comm communicator;
     typedef MPI_Request CommsRequest_t;
+#elif  GRID_COMMS_MPI3
+    MPI_Comm communicator;
+    typedef MPI_Request CommsRequest_t;
+
+    const int MAXLOG2RANKSPERNODE = 16; // 65536 ranks per node adequate for now
+
+    std::vector<int>  WorldDims;
+    std::vector<int>  GroupDims;
+    std::vector<int>  ShmDims;
+
+    std::vector<int> GroupCoor;
+    std::vector<int> ShmCoor;
+    std::vector<int> WorldCoor;
+
+    int GroupRank;
+    int ShmRank;
+    int WorldRank;
+
+    int GroupSize;
+    int ShmSize;
+    int WorldSize;
+
+    std::vector<int>  LexicographicToWorldRank;
 #else 
     typedef int CommsRequest_t;
 #endif
