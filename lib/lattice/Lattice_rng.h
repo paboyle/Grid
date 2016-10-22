@@ -130,14 +130,14 @@ namespace Grid {
       ss<<_generators[gen];
       ss.seekg(0,ss.beg);
       for(int i=0;i<RngStateCount;i++){
-  ss>>saved[i];
+      	ss>>saved[i];
       }
     }
     void SetState(std::vector<RngStateType> & saved,int gen){
       assert(saved.size()==RngStateCount);
       std::stringstream ss;
       for(int i=0;i<RngStateCount;i++){
-  ss<< saved[i]<<" ";
+        ss<< saved[i]<<" ";
       }
       ss.seekg(0,ss.beg);
       ss>>_generators[gen];

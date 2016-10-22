@@ -348,12 +348,12 @@ class BinaryIO {
       grid->GlobalIndexToGlobalCoor(gidx, gcoor);
       grid->GlobalCoorToRankIndex(rank, o_idx, i_idx, gcoor);
       int l_idx = parallel.generator_idx(o_idx, i_idx);
+      std::cout << GridLogDebug << "l_idx "<< l_idx << " o_idx " << o_idx << " i_idx " << i_idx << std::endl;
 
       if (rank == grid->ThisRank()) {
         parallel.GetState(saved, l_idx);
-
-        grid->Broadcast(rank, (void *)&saved[0], bytes);
       }
+      grid->Broadcast(rank, (void *)&saved[0], bytes);
 
       if (grid->IsBoss()) {
         Uint32Checksum((uint32_t *)&saved[0], bytes, csum);
@@ -419,14 +419,13 @@ class BinaryIO {
       grid->GlobalIndexToGlobalCoor(gidx,gcoor);
       grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
       int l_idx=parallel.generator_idx(o_idx,i_idx);
+      std::cout << GridLogDebug << "l_idx "<< l_idx << " o_idx " << o_idx << " i_idx " << i_idx << std::endl;
 
       if ( grid->IsBoss() ) {
         fin.read((char *)&saved[0],bytes);
         Uint32Checksum((uint32_t *)&saved[0],bytes,csum);
-
-
-        grid->Broadcast(0,(void *)&saved[0],bytes);
       }
+      grid->Broadcast(0,(void *)&saved[0],bytes);
 
       if( rank == grid->ThisRank() ){
         parallel.SetState(saved,l_idx);
