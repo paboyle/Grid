@@ -356,6 +356,7 @@ class BinaryIO {
       grid->Broadcast(rank, (void *)&saved[0], bytes);
 
       if (grid->IsBoss()) {
+        std::cout << "Saved: " << saved << std::endl;
         Uint32Checksum((uint32_t *)&saved[0], bytes, csum);
         fout.write((char *)&saved[0], bytes);
       }
@@ -429,6 +430,7 @@ class BinaryIO {
 
       if( rank == grid->ThisRank() ){
         parallel.SetState(saved,l_idx);
+        std::cout << "Saved: " << saved << std::endl;
       }
     }
 
