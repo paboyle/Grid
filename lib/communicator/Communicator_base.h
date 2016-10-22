@@ -80,7 +80,6 @@ class CartesianCommunicator {
 
     void * ShmCommBuf;
     std::vector<void *> ShmCommBufs;
-    std::vector<void *> ShmStencilBufs;
 
     int WorldRank;
     int WorldSize;
@@ -104,6 +103,10 @@ class CartesianCommunicator {
     void ShiftedRanks(int dim,int shift,int & source, int & dest);
     int  RankFromProcessorCoor(std::vector<int> &coor);
     void ProcessorCoorFromRank(int rank,std::vector<int> &coor);
+
+    // Helper function for SHM Windows in MPI3
+    void *ShmBufferSelf(void);
+    void *ShmBuffer(int rank);
 
     /////////////////////////////////
     // Grid information queries
@@ -173,6 +176,16 @@ class CartesianCommunicator {
 			 int recv_from_rank,
 			 int bytes);
     void SendToRecvFromComplete(std::vector<CommsRequest_t> &waitall);
+    void StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
+			 void *xmit,
+			 int xmit_to_rank,
+			 void *recv,
+			 int recv_from_rank,
+			 int bytes);
+    void StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall)
+    {
+      SendToRecvFromComplete(waitall);
+    }
 
     ////////////////////////////////////////////////////////////
     // Barrier

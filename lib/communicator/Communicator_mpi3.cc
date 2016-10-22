@@ -197,10 +197,10 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Verbose for now
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    std::cout<< "Ranks per node "<< ShmSize << std::endl;
-    std::cout<< "Nodes          "<< GroupSize << std::endl;
-    std::cout<< "Ranks          "<< WorldSize << std::endl;
-    std::cout<< "Shm CommBuf "<< ShmCommBuf << std::endl;
+    std::cout<<GridLogMessage<< "MPI-3 configuration: Ranks per node "<< ShmSize ;
+    std::cout<< " Nodes "<< GroupSize;
+    std::cout<< " Ranks "<< WorldSize;
+    std::cout<< " Shm CommBuf address"<< std::hex <<ShmCommBuf << std::dec<<std::endl;
 
     // Done
     ShmSetup=1;
@@ -208,12 +208,10 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
   }
 
   ShmCommBufs.resize(ShmSize);
-  ShmStencilBufs.resize(ShmSize);
   for(int r=0;r<ShmSize;r++){
     MPI_Aint sz;
     int dsp_unit;
     MPI_Win_shared_query (ShmWindow, r, &sz, &dsp_unit, &ShmCommBufs[r]);
-    ShmStencilBufs[r] = (void *) ((uint64_t)ShmCommBufs[r]+MAX_MPI_SHM_BYTES/4);
   }
   
   ////////////////////////////////////////////////////////////////
@@ -240,6 +238,7 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
   ShmCoor.resize(_ndimension);
   GroupCoor.resize(_ndimension);
   WorldCoor.resize(_ndimension);
+
   for(int l2=0;l2<log2size;l2++){
     while ( WorldDims[dim] / ShmDims[dim] <= 1 ) dim=(dim+1)%_ndimension;
     ShmDims[dim]*=2;
@@ -347,6 +346,21 @@ void CartesianCommunicator::SendRecvPacket(void *xmit,
   }
 }
 
+
+void *CartesianCommunicator::ShmBufferSelf(void)
+{
+  return ShmCommBufs[ShmRank];
+}
+void *CartesianCommunicator::ShmBuffer(int rank)
+{
+  int gpeer = GroupRanks[rank];
+  if (gpeer == MPI_UNDEFINED){
+    return NULL;
+  } else { 
+    return ShmCommBufs[gpeer];
+  }
+}
+
 // Basic Halo comms primitive
 void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 						void *xmit,
@@ -355,13 +369,11 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 						int from,
 						int bytes)
 {
-#undef SHM_USE_BCOPY
   MPI_Request xrq;
   MPI_Request rrq;
   
   static int sequence;
 
-  int rank = _processor;
   int ierr;
   int tag;
   int check;
@@ -370,6 +382,7 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
   assert(from != _processor);
   
   int gdest = GroupRanks[dest];
+  int gfrom = GroupRanks[from];
   int gme   = GroupRanks[_processor];
 
   sequence++;
@@ -379,30 +392,23 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 
   int small = (bytes<MAX_MPI_SHM_BYTES);
 
-#ifndef SHM_USE_BCOPY
   typedef vRealD T;
   int words = bytes/sizeof(T);
-  assert(((size_t)bytes &(sizeof(T)-1))==0);
-  //  assert(((size_t)xmit  &(sizeof(T)-1))==0);
-  //  assert(((size_t)recv  &(sizeof(T)-1))==0);
-#endif
 
+  assert(((size_t)bytes &(sizeof(T)-1))==0);
   assert(gme == ShmRank);
 
-  //  std::cerr << "proc dest from gme  gdest "<<_processor<<" "<<dest <<" "<< from <<" "<<gme<<" "<< gdest<<std::endl; Barrier();
-  if ( small && (dest !=MPI_UNDEFINED) ) {
+  if ( small && (gdest !=MPI_UNDEFINED) ) {
+
     assert(gme != gdest);
 
-#ifdef SHM_USE_BCOPY
-    bcopy(xmit,to_ptr,bytes);
-#else
     T *ip = (T *)xmit;
     T *op = (T *)to_ptr;
-    PARALLEL_FOR_LOOP 
+PARALLEL_FOR_LOOP 
     for(int w=0;w<words;w++) {
       vstream(op[w],ip[w]);
     }
-#endif
+
     bcopy(&_processor,&to_ptr[bytes],sizeof(_processor));
     bcopy(&  sequence,&to_ptr[bytes+4],sizeof(sequence));
   } else { 
@@ -411,24 +417,17 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
     list.push_back(xrq);
   }
   
-  //  std::cout << "Syncing "<<std::endl; Barrier();
   MPI_Win_sync (ShmWindow);   
   MPI_Barrier  (ShmComm);
   MPI_Win_sync (ShmWindow);   
 
-  //  std::cout << "Receiving "<<std::endl; Barrier();
-  
-  if (small && (from !=MPI_UNDEFINED) ) {
-#ifdef SHM_USE_BCOPY
-    bcopy(from_ptr,recv,bytes);
-#else
+  if (small && (gfrom !=MPI_UNDEFINED) ) {
     T *ip = (T *)from_ptr;
     T *op = (T *)recv;
-    PARALLEL_FOR_LOOP 
+PARALLEL_FOR_LOOP 
     for(int w=0;w<words;w++) {
       vstream(op[w],ip[w]);
     }
-#endif
     bcopy(&from_ptr[bytes]  ,&tag  ,sizeof(tag));
     bcopy(&from_ptr[bytes+4],&check,sizeof(check));
     assert(check==sequence);
@@ -438,27 +437,51 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
     assert(ierr==0);
     list.push_back(rrq);
   }
-  
-  //  std::cout << "Syncing"<<std::endl; Barrier();
 
   MPI_Win_sync (ShmWindow);   
   MPI_Barrier  (ShmComm);
   MPI_Win_sync (ShmWindow);   
+}
 
-#if 0
+void CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
+						       void *xmit,
+						       int dest,
+						       void *recv,
+						       int from,
+						       int bytes)
+{
   MPI_Request xrq;
   MPI_Request rrq;
-  int rank = _processor;
-  int ierr;
-  ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator,&xrq);
-  ierr|=MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator,&rrq);
-  
-  assert(ierr==0);
 
-  list.push_back(xrq);
-  list.push_back(rrq);
-#endif
+  int ierr;
+
+  assert(dest != _processor);
+  assert(from != _processor);
+  
+  int gdest = GroupRanks[dest];
+  int gfrom = GroupRanks[from];
+  int gme   = GroupRanks[_processor];
+
+  assert(gme == ShmRank);
+
+  if ( gdest == MPI_UNDEFINED ) {
+    ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator,&xrq);
+    assert(ierr==0);
+    list.push_back(xrq);
+  }
+  
+  if ( gfrom ==MPI_UNDEFINED) {
+    ierr=MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator,&rrq);
+    assert(ierr==0);
+    list.push_back(rrq);
+  }
+
+  MPI_Win_sync (ShmWindow);   
+  MPI_Barrier  (ShmComm);
+  MPI_Win_sync (ShmWindow);   
+  
 }
+
 
 void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
 {

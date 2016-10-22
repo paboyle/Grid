@@ -33,30 +33,26 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 
 namespace Grid {
-  namespace QCD {
+namespace QCD {
     
-    ///////////////////////////////////////////////////////////
-    // Default to no assembler implementation
-    ///////////////////////////////////////////////////////////
-    template<class Impl>
-      void WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
-                             commVector<SiteHalfSpinor>  &buf,
-                             int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
-    {
-      assert(0);
-    }
-    template<class Impl>
-      void WilsonKernels<Impl >::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
-                                commVector<SiteHalfSpinor>  &buf,
-                                int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
-    {
-      assert(0);
-    }
+///////////////////////////////////////////////////////////
+// Default to no assembler implementation
+///////////////////////////////////////////////////////////
+template<class Impl> void 
+WilsonKernels<Impl >::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+					  int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+{
+  assert(0);
+}
 
-
+template<class Impl> void 
+WilsonKernels<Impl >::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+					     int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+{
+  assert(0);
+}
 
 #if defined(AVX512) 
-    
     
     ///////////////////////////////////////////////////////////
     // If we are AVX512 specialise the single precision routine
@@ -65,16 +61,16 @@ namespace Grid {
 #include <simd/Intel512wilson.h>
 #include <simd/Intel512single.h>
     
-    static Vector<vComplexF> signs;
+static Vector<vComplexF> signs;
     
-    int setupSigns(void ){
-      Vector<vComplexF> bother(2);
-      signs = bother;
-      vrsign(signs[0]);
-      visign(signs[1]);
-      return 1;
-    }
-    static int signInit = setupSigns();
+  int setupSigns(void ){
+    Vector<vComplexF> bother(2);
+    signs = bother;
+    vrsign(signs[0]);
+    visign(signs[1]);
+    return 1;
+  }
+  static int signInit = setupSigns();
   
 #define label(A)  ilabel(A)
 #define ilabel(A) ".globl\n"  #A ":\n" 
@@ -84,17 +80,15 @@ namespace Grid {
 #define FX(A) WILSONASM_ ##A
   
 #undef KERNEL_DAG
-    template<>
-    void WilsonKernels<WilsonImplF>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
-							 commVector<SiteHalfSpinor>  &buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+template<> void 
+WilsonKernels<WilsonImplF>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
       
 #define KERNEL_DAG
-    template<>
-    void WilsonKernels<WilsonImplF>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
-							    commVector<SiteHalfSpinor>  &buf,
-							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+template<> void 
+WilsonKernels<WilsonImplF>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+						   int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
 #undef VMOVIDUP
@@ -109,30 +103,25 @@ namespace Grid {
 #define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN_LS(ptr,pf)
 				    
 #undef KERNEL_DAG
-    template<>
-    void WilsonKernels<DomainWallVec5dImplF>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
-								  commVector<SiteHalfSpinor>  &buf,
-								  int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+template<> void 
+WilsonKernels<DomainWallVec5dImplF>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
 #define KERNEL_DAG
-    template<>
-    void WilsonKernels<DomainWallVec5dImplF>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,
-								     commVector<SiteHalfSpinor>  &buf,
-								     int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+template<> void 
+WilsonKernels<DomainWallVec5dImplF>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
 #endif
 
-
 #define INSTANTIATE_ASM(A)\
-template void WilsonKernels<A>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,\
-                                   commVector<SiteHalfSpinor>  &buf,\
+template void WilsonKernels<A>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,\
                                   int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out);\
-template void WilsonKernels<A>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,\
-                                   commVector<SiteHalfSpinor>  &buf,\
+ \
+template void WilsonKernels<A>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,\
                                   int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out);\
-
 
 INSTANTIATE_ASM(WilsonImplF);
 INSTANTIATE_ASM(WilsonImplD);
@@ -144,6 +133,6 @@ INSTANTIATE_ASM(DomainWallVec5dImplF);
 INSTANTIATE_ASM(DomainWallVec5dImplD);
 INSTANTIATE_ASM(ZDomainWallVec5dImplF);
 INSTANTIATE_ASM(ZDomainWallVec5dImplD);
-  }
-}
+
+}}
 

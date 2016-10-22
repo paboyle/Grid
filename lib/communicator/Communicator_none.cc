@@ -33,6 +33,14 @@ void CartesianCommunicator::Init(int *argc, char *** arv)
 }
 
 int Rank(void ){ return 0; };
+void *CartesianCommunicator::ShmBufferSelf(void)
+{
+  return NULL;
+}
+void *CartesianCommunicator::ShmBuffer(int rank)
+{
+  return NULL;
+}
 
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {

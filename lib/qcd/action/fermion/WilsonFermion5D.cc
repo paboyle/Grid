@@ -184,44 +184,37 @@ void WilsonFermion5D<Impl>::Report(void)
 
   if ( DhopCalls > 0 ) {
     std::cout << GridLogMessage << "#### Dhop calls report " << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D Number of Dhop Calls     : " << DhopCalls  << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D Total Communication time : " << DhopCommTime
-              << " us" << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D CommTime/Calls           : "
-              << DhopCommTime / DhopCalls << " us" << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D Total Compute time       : "
-              << DhopComputeTime << " us" << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D ComputeTime/Calls        : "
-              << DhopComputeTime / DhopCalls << " us" << std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D Number of Dhop Calls     : " << DhopCalls   << std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D Total Communication time : " << DhopCommTime<< " us" << std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D CommTime/Calls           : " << DhopCommTime / DhopCalls << " us" << std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D Total Compute time       : " << DhopComputeTime << " us" << std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D ComputeTime/Calls        : " << DhopComputeTime / DhopCalls << " us" << std::endl;
 
     RealD mflops = 1344*volume*DhopCalls/DhopComputeTime/2; // 2 for red black counting
     std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
-    std::cout << GridLogMessage << "Average mflops/s per call per node       : " << mflops/NP << std::endl;
+    std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
 
    }
 
   if ( DerivCalls > 0 ) {
-  std::cout << GridLogMessage << "#### Deriv calls report "<< std::endl;
-  std::cout << GridLogMessage << "WilsonFermion5D Number of Deriv Calls    : " <<DerivCalls <<std::endl;
-  std::cout << GridLogMessage << "WilsonFermion5D Total Communication time : " <<DerivCommTime <<" us"<<std::endl;
-  std::cout << GridLogMessage << "WilsonFermion5D CommTime/Calls           : " <<DerivCommTime/DerivCalls<<" us" <<std::endl;
-  std::cout << GridLogMessage << "WilsonFermion5D Total Compute time       : " <<DerivComputeTime <<" us"<<std::endl;
-  std::cout << GridLogMessage << "WilsonFermion5D ComputeTime/Calls        : " <<DerivComputeTime/DerivCalls<<" us" <<std::endl;
-  std::cout << GridLogMessage << "WilsonFermion5D Total Dhop Compute time  : " <<DerivDhopComputeTime <<" us"<<std::endl;
-  std::cout << GridLogMessage << "WilsonFermion5D Dhop ComputeTime/Calls   : " <<DerivDhopComputeTime/DerivCalls<<" us" <<std::endl;
-
-
-
-  RealD mflops = 144*volume*DerivCalls/DerivDhopComputeTime;
-  std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
-  std::cout << GridLogMessage << "Average mflops/s per call per node       : " << mflops/NP << std::endl;
-
+    std::cout << GridLogMessage << "#### Deriv calls report "<< std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D Number of Deriv Calls    : " <<DerivCalls <<std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D Total Communication time : " <<DerivCommTime <<" us"<<std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D CommTime/Calls           : " <<DerivCommTime/DerivCalls<<" us" <<std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D Total Compute time       : " <<DerivComputeTime <<" us"<<std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D ComputeTime/Calls        : " <<DerivComputeTime/DerivCalls<<" us" <<std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D Total Dhop Compute time  : " <<DerivDhopComputeTime <<" us"<<std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D Dhop ComputeTime/Calls   : " <<DerivDhopComputeTime/DerivCalls<<" us" <<std::endl;
+    
+    RealD mflops = 144*volume*DerivCalls/DerivDhopComputeTime;
+    std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
+    std::cout << GridLogMessage << "Average mflops/s per call per node       : " << mflops/NP << std::endl;
   }
 
   if (DerivCalls > 0 || DhopCalls > 0){
-  std::cout << GridLogMessage << "WilsonFermion5D Stencil"<<std::endl;  Stencil.Report();
-  std::cout << GridLogMessage << "WilsonFermion5D StencilEven"<<std::endl;  StencilEven.Report();
-  std::cout << GridLogMessage << "WilsonFermion5D StencilOdd"<<std::endl;  StencilOdd.Report();
+    std::cout << GridLogMessage << "WilsonFermion5D Stencil"<<std::endl;  Stencil.Report();
+    std::cout << GridLogMessage << "WilsonFermion5D StencilEven"<<std::endl;  StencilEven.Report();
+    std::cout << GridLogMessage << "WilsonFermion5D StencilOdd"<<std::endl;  StencilOdd.Report();
   }
 }
 
@@ -275,7 +268,7 @@ PARALLEL_FOR_LOOP
     for(int s=0;s<Ls;s++){
       int sU=ss;
       int sF = s+Ls*sU; 
-      Kernels::DiracOptDhopDir(Stencil,Umu,Stencil.comm_buf,sF,sU,in,out,dirdisp,gamma);
+      Kernels::DiracOptDhopDir(Stencil,Umu,Stencil.CommBuf(),sF,sU,in,out,dirdisp,gamma);
     }
   }
 };
@@ -327,8 +320,7 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
         assert(sF < B._grid->oSites());
         assert(sU < U._grid->oSites());
 
-        Kernels::DiracOptDhopDir(st, U, st.comm_buf, sF, sU, B, Btilde, mu,
-                                 gamma);
+        Kernels::DiracOptDhopDir(st, U, st.CommBuf(), sF, sU, B, Btilde, mu, gamma);
 
         ////////////////////////////
         // spin trace outer product
@@ -342,10 +334,10 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
 }
 
 template<class Impl>
-void WilsonFermion5D<Impl>::DhopDeriv(      GaugeField &mat,
-              const FermionField &A,
-              const FermionField &B,
-              int dag)
+void WilsonFermion5D<Impl>::DhopDeriv(GaugeField &mat,
+				      const FermionField &A,
+				      const FermionField &B,
+				      int dag)
 {
   conformable(A._grid,FermionGrid());  
   conformable(A._grid,B._grid);
@@ -358,9 +350,9 @@ void WilsonFermion5D<Impl>::DhopDeriv(      GaugeField &mat,
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
-          const FermionField &A,
-          const FermionField &B,
-          int dag)
+					const FermionField &A,
+					const FermionField &B,
+					int dag)
 {
   conformable(A._grid,FermionRedBlackGrid());
   conformable(GaugeRedBlackGrid(),mat._grid);
@@ -376,9 +368,9 @@ void WilsonFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
-          const FermionField &A,
-          const FermionField &B,
-          int dag)
+					const FermionField &A,
+					const FermionField &B,
+					int dag)
 {
   conformable(A._grid,FermionRedBlackGrid());
   conformable(GaugeRedBlackGrid(),mat._grid);
@@ -393,8 +385,8 @@ void WilsonFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
-           DoubledGaugeField & U,
-           const FermionField &in, FermionField &out,int dag)
+					 DoubledGaugeField & U,
+					 const FermionField &in, FermionField &out,int dag)
 {
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
   Compressor compressor(dag);
@@ -412,27 +404,25 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
     for (int ss = 0; ss < U._grid->oSites(); ss++) {
       int sU = ss;
       int sF = LLs * sU;
-      Kernels::DiracOptDhopSiteDag(st, lo, U, st.comm_buf, sF, sU, LLs, 1, in,
-                                   out);
+      Kernels::DiracOptDhopSiteDag(st, lo, U, st.CommBuf(), sF, sU, LLs, 1, in, out);
     }
 #ifdef AVX512
   } else if (stat.is_init() ) {
 
     int nthreads;
     stat.start();
-    #pragma omp parallel
+#pragma omp parallel
     {
-    #pragma omp master
+#pragma omp master
     nthreads = omp_get_num_threads();
     int mythread = omp_get_thread_num();
     stat.enter(mythread);
-    #pragma omp for nowait
-   for(int ss=0;ss<U._grid->oSites();ss++)
-    {
-       int sU=ss;
-       int sF=LLs*sU;
-       Kernels::DiracOptDhopSite(st,lo,U,st.comm_buf,sF,sU,LLs,1,in,out);
-     }
+#pragma omp for nowait
+    for(int ss=0;ss<U._grid->oSites();ss++) {
+      int sU=ss;
+      int sF=LLs*sU;
+      Kernels::DiracOptDhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
+    }
     stat.exit(mythread);
     }
     stat.accum(nthreads);
@@ -442,8 +432,7 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
     for (int ss = 0; ss < U._grid->oSites(); ss++) {
       int sU = ss;
       int sF = LLs * sU;
-      Kernels::DiracOptDhopSite(st, lo, U, st.comm_buf, sF, sU, LLs, 1, in,
-                                out);
+      Kernels::DiracOptDhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
     }
   }
   DhopComputeTime+=usecond();

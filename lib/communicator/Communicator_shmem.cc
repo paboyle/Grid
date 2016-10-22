@@ -50,6 +50,14 @@ typedef struct HandShake_t {
 static Vector< HandShake > XConnections;
 static Vector< HandShake > RConnections;
 
+void *CartesianCommunicator::ShmBufferSelf(void)
+{
+  return NULL;
+}
+void *CartesianCommunicator::ShmBuffer(int rank)
+{
+  return NULL;
+}
 void CartesianCommunicator::Init(int *argc, char ***argv) {
   shmem_init();
   XConnections.resize(shmem_n_pes());
