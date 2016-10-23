@@ -289,11 +289,17 @@ PARALLEL_FOR_LOOP
   ///////////////////////////////////////////////////////////
   // Unified Comms buffers for all directions
   ///////////////////////////////////////////////////////////
-  std::vector<commVector<scalar_object> > u_simd_send_buf;
-  std::vector<commVector<scalar_object> > u_simd_recv_buf;
+  // Vectors that live on the symmetric heap in case of SHMEM
+  std::vector<commVector<scalar_object> > u_simd_send_buf_hide;
+  std::vector<commVector<scalar_object> > u_simd_recv_buf_hide;
   commVector<cobj>          u_send_buf;
   commVector<cobj>          u_recv_buf_hide;
+  // These are used; either SHM objects or refs to the above symmetric heap vectors
+  // depending on comms target
   cobj* u_recv_buf_p;
+  cobj* u_send_buf_p;
+  std::vector<scalar_object *> u_simd_send_buf;
+  std::vector<scalar_object *> u_simd_recv_buf;
 
   int u_comm_offset;
   int _unified_buffer_size;
@@ -427,32 +433,42 @@ PARALLEL_FOR_LOOP
 	}
       }
     }
-    u_send_buf.resize(_unified_buffer_size);
 
     /////////////////////////////////////////////////////////////////////////////////
     // Try to allocate for receiving in a shared memory region, fall back to buffer
     /////////////////////////////////////////////////////////////////////////////////
-    if( ShmDirectCopy ) {
+    const int Nsimd = grid->Nsimd();
 
-      u_recv_buf_p=(cobj *)_grid->ShmBufferSelf();
-      if ( u_recv_buf_p == NULL ) {
-	u_recv_buf_hide.resize(_unified_buffer_size);
-	u_recv_buf_p=&u_recv_buf_hide[0];
+    uint8_t *shm_ptr   = (uint8_t *)_grid->ShmBufferSelf();
+
+    u_simd_send_buf.resize(Nsimd);
+    u_simd_recv_buf.resize(Nsimd);
+
+    u_send_buf.resize(_unified_buffer_size);
+
+    if( ShmDirectCopy && shm_ptr != NULL ) {
+
+      u_recv_buf_p=(cobj *)shm_ptr; shm_ptr+= _unified_buffer_size*sizeof(cobj);
+      for(int l=0;l<Nsimd;l++){
+	u_simd_send_buf[l] = (scalar_object *)shm_ptr; shm_ptr += _unified_buffer_size*sizeof(scalar_object);
+	u_simd_recv_buf[l] = (scalar_object *)shm_ptr; shm_ptr += _unified_buffer_size*sizeof(scalar_object);
       }
+
     } else {
+
       u_recv_buf_hide.resize(_unified_buffer_size);
+      u_simd_send_buf_hide.resize(Nsimd,commVector<scalar_object>(_unified_buffer_size));
+      u_simd_recv_buf_hide.resize(Nsimd,commVector<scalar_object>(_unified_buffer_size));
+
       u_recv_buf_p=&u_recv_buf_hide[0];
+      for(int l=0;l<Nsimd;l++){
+	u_simd_send_buf[l] = & u_simd_send_buf_hide[l][0];
+	u_simd_recv_buf[l] = & u_simd_recv_buf_hide[l][0];
+      }
     }
 
     PrecomputeByteOffsets();
 
-    const int Nsimd = grid->Nsimd();
-    u_simd_send_buf.resize(Nsimd);
-    u_simd_recv_buf.resize(Nsimd);
-    for(int l=0;l<Nsimd;l++){
-      u_simd_send_buf[l].resize(_unified_buffer_size);
-      u_simd_recv_buf[l].resize(_unified_buffer_size);
-    }
   }
 
   void Local     (int point, int dimension,int shiftpm,int cbmask)
@@ -930,10 +946,19 @@ PARALLEL_FOR_LOOP
 	    int xmit_to_rank;
 	    
 	    _grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank); 
-	    
+ 
+
 	    AddPacket((void *)sp,(void *)rp,xmit_to_rank,recv_from_rank,bytes);
+
+	    auto shm_or_rp = rp;
+	    if (ShmDirectCopy) { 
+	      scalar_object *shm = (scalar_object *) _grid->ShmBufferTranslate(xmit_to_rank,sp);
+	      if ( shm!=NULL) { 
+		shm_or_rp = shm;
+	      }
+	    }
 	    
-	    rpointers[i] = rp;
+	    rpointers[i] = shm_or_rp;
 	    
 	  } else { 
 	    
@@ -942,7 +967,6 @@ PARALLEL_FOR_LOOP
 	  }
 	}
 
-	assert(0);
 	AddMerge(&u_recv_buf_p[u_comm_offset],rpointers,buffer_size,Packets.size()-1);
 	
 	u_comm_offset     +=buffer_size;
