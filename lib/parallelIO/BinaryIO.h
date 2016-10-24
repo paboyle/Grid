@@ -258,7 +258,7 @@ class BinaryIO {
   template<class vobj,class fobj,class munger> 
   static inline uint32_t writeObjectSerial(Lattice<vobj> &Umu,std::string file,munger munge,int offset,const std::string & format)
   {
-  	typedef typename vobj::scalar_object sobj;
+        typedef typename vobj::scalar_object sobj;
 
     GridBase *grid = Umu._grid;
 
@@ -296,14 +296,14 @@ class BinaryIO {
       
       if ( grid->IsBoss() ) {
 
-      	if(ieee32big) htobe32_v((void *)&file_object,sizeof(file_object));
-      	if(ieee32)    htole32_v((void *)&file_object,sizeof(file_object));
-      	if(ieee64big) htobe64_v((void *)&file_object,sizeof(file_object));
-      	if(ieee64)    htole64_v((void *)&file_object,sizeof(file_object));
+        if(ieee32big) htobe32_v((void *)&file_object,sizeof(file_object));
+        if(ieee32)    htole32_v((void *)&file_object,sizeof(file_object));
+        if(ieee64big) htobe64_v((void *)&file_object,sizeof(file_object));
+        if(ieee64)    htole64_v((void *)&file_object,sizeof(file_object));
 
-  			// NB could gather an xstrip as an optimisation.
-      	fout.write((char *)&file_object,sizeof(file_object));
-      	bytes+=sizeof(file_object);
+                        // NB could gather an xstrip as an optimisation.
+        fout.write((char *)&file_object,sizeof(file_object));
+        bytes+=sizeof(file_object);
       }
     }}}}
     timer.Stop();
@@ -326,7 +326,7 @@ class BinaryIO {
     //////////////////////////////////////////////////
     std::ofstream fout;
     if (grid->IsBoss()) {
-      fout.open(file, std::ios::binary | std::ios::out | std::ios::in);
+      fout.open(file, std::ios::binary | std::ios::out);
       if (!fout.is_open()) {
         std::cout << GridLogMessage << "writeRNGSerial: Error opening file " << file << std::endl;
         exit(0);// write better error handling
@@ -348,20 +348,23 @@ class BinaryIO {
       grid->GlobalIndexToGlobalCoor(gidx, gcoor);
       grid->GlobalCoorToRankIndex(rank, o_idx, i_idx, gcoor);
       int l_idx = parallel.generator_idx(o_idx, i_idx);
-      std::cout << GridLogDebug << "l_idx "<< l_idx << " o_idx " << o_idx << " i_idx " << i_idx << std::endl;
-
+      std::cout << GridLogDebug << "l_idx " << l_idx << " o_idx " << o_idx
+                << " i_idx " << i_idx << " rank " << rank << std::endl;
       if (rank == grid->ThisRank()) {
         parallel.GetState(saved, l_idx);
       }
       grid->Broadcast(rank, (void *)&saved[0], bytes);
 
+      grid->Barrier();  // necessary?
       if (grid->IsBoss()) {
         std::cout << "Saved: " << saved << std::endl;
         Uint32Checksum((uint32_t *)&saved[0], bytes, csum);
         fout.write((char *)&saved[0], bytes);
       }
+      grid->Barrier();  // this can be necessary
     }
 
+  
     if (grid->IsBoss()) {
       serial.GetState(saved, 0);
       Uint32Checksum((uint32_t *)&saved[0], bytes, csum);
@@ -376,8 +379,7 @@ class BinaryIO {
     timer.Stop();
 
     std::cout << GridLogMessage   << "RNG file checksum " << std::hex << csum << std::dec << std::endl;
-    std::cout << GridLogMessage << "RNG state saved in " << timer.Elapsed() << " "
-              << timer.useconds() <<" us"  <<std::endl;
+    std::cout << GridLogMessage << "RNG state saved in " << timer.Elapsed() << std::endl;
     return csum;
   }
 
@@ -420,17 +422,19 @@ class BinaryIO {
       grid->GlobalIndexToGlobalCoor(gidx,gcoor);
       grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
       int l_idx=parallel.generator_idx(o_idx,i_idx);
-      std::cout << GridLogDebug << "l_idx "<< l_idx << " o_idx " << o_idx << " i_idx " << i_idx << std::endl;
+      std::cout << GridLogDebug << "l_idx " << l_idx << " o_idx " << o_idx
+                << " i_idx " << i_idx << " rank " << rank << std::endl;
 
       if ( grid->IsBoss() ) {
         fin.read((char *)&saved[0],bytes);
+        std::cout << "Saved: " << saved << std::endl;
         Uint32Checksum((uint32_t *)&saved[0],bytes,csum);
       }
+      
       grid->Broadcast(0,(void *)&saved[0],bytes);
 
       if( rank == grid->ThisRank() ){
         parallel.SetState(saved,l_idx);
-        std::cout << "Saved: " << saved << std::endl;
       }
     }
 

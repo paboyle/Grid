@@ -291,24 +291,24 @@ namespace Grid {
 
       for(int gidx=0;gidx<gsites;gidx++){
 
-  int rank,o_idx,i_idx;
-  _grid->GlobalIndexToGlobalCoor(gidx,gcoor);
-  _grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
+        int rank,o_idx,i_idx;
+      	_grid->GlobalIndexToGlobalCoor(gidx,gcoor);
+      	_grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
 
-  int l_idx=generator_idx(o_idx,i_idx);
-  
-  std::vector<int> site_seeds(4);
-  for(int i=0;i<4;i++){
-    site_seeds[i]= ui(pseeder);
-  }
+      	int l_idx=generator_idx(o_idx,i_idx);
+      	
+      	std::vector<int> site_seeds(4);
+      	for(int i=0;i<4;i++){
+          site_seeds[i]= ui(pseeder);
+      	}
 
-  _grid->Broadcast(0,(void *)&site_seeds[0],sizeof(int)*site_seeds.size());
+      	_grid->Broadcast(0,(void *)&site_seeds[0],sizeof(int)*site_seeds.size());
 
-  if( rank == _grid->ThisRank() ){
-    fixedSeed ssrc(site_seeds);
-    typename source::result_type sinit = ssrc();
-    _generators[l_idx] = RngEngine(sinit);
-  }
+      	if( rank == _grid->ThisRank() ){
+          fixedSeed ssrc(site_seeds);
+          typename source::result_type sinit = ssrc();
+          _generators[l_idx] = RngEngine(sinit);
+      	}
       }
       _seeded=1;
     }    

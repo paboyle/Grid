@@ -37,28 +37,28 @@ using namespace Grid::QCD;
 namespace Grid {
 namespace QCD {
 
-class HMCRunnerParameters : Serializable {
- public:
-  GRID_SERIALIZABLE_CLASS_MEMBERS(HMCRunnerParameters,
-                                  double, beta,
-                                  double, mass,
-                                  int, MaxCGIterations,
-                                  double, StoppingCondition,
-                                  bool, smearedAction,
-                                  int, SaveInterval,
-                                  std::string, format,
-                                  std::string, conf_prefix,
-                                  std::string, rng_prefix,
-                                  double, rho,
-                                  int, SmearingLevels,
-                                  );
+  class HMCRunnerParameters : Serializable {
+  public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(HMCRunnerParameters,
+      double, beta,
+      double, mass,
+      int, MaxCGIterations,
+      double, StoppingCondition,
+      bool, smearedAction,
+      int, SaveInterval,
+      std::string, format,
+      std::string, conf_prefix,
+      std::string, rng_prefix,
+      double, rho,
+      int, SmearingLevels,
+      );
 
-  HMCRunnerParameters() {}
-};
+    HMCRunnerParameters() {}
+  };
 
 // Derive from the BinaryHmcRunner (templated for gauge fields)
 class HmcRunner : public BinaryHmcRunner {
- public:
+public:
   void BuildTheAction(int argc, char **argv)
 
   {
@@ -70,7 +70,7 @@ class HmcRunner : public BinaryHmcRunner {
 
     UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
     UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
-  
+
     FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
     FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
@@ -87,12 +87,12 @@ class HmcRunner : public BinaryHmcRunner {
     RealD scale = 2.0;
     FermionAction DenOp(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,scale);
     FermionAction NumOp(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,pv,M5,scale);
-  
+
     double StoppingCondition = 1.0e-8;
     double MaxCGIterations = 10000;
     ConjugateGradient<FermionField>  CG(StoppingCondition,MaxCGIterations);
     TwoFlavourEvenOddRatioPseudoFermionAction<ImplPolicy> Nf2(NumOp, DenOp,CG,CG);
-  
+
     // Set smearing (true/false), default: false
     Nf2.is_smeared = true;
 
@@ -115,8 +115,7 @@ class HmcRunner : public BinaryHmcRunner {
     std::string format = std::string("IEEE64BIG");
     std::string conf_prefix = std::string("DWF_ckpoint_lat");
     std::string rng_prefix = std::string("DWF_ckpoint_rng");
-    BinaryHmcCheckpointer<BinaryHmcRunner::ImplPolicy> Checkpoint(
-        conf_prefix, rng_prefix, SaveInterval, format);
+    BinaryHmcCheckpointer<BinaryHmcRunner::ImplPolicy> Checkpoint(conf_prefix, rng_prefix, SaveInterval, format);
     // Can implement also a specific function in the hmcrunner
     // AddCheckpoint (...) that takes the same parameters + a string/tag
     // defining the type of the checkpointer
@@ -124,8 +123,7 @@ class HmcRunner : public BinaryHmcRunner {
     // Then force all checkpoint to have few common functions
     // return an object that is then passed to the Run function
 
-    PlaquetteLogger<BinaryHmcRunner::ImplPolicy> PlaqLog(
-        std::string("Plaquette"));
+    PlaquetteLogger<BinaryHmcRunner::ImplPolicy> PlaqLog(std::string("Plaquette"));
     ObservablesList.push_back(&PlaqLog);
     ObservablesList.push_back(&Checkpoint);
 
@@ -139,7 +137,7 @@ class HmcRunner : public BinaryHmcRunner {
 
     Run(argc, argv, Checkpoint, SmearingPolicy); 
     //Run(argc, argv, Checkpoint);  // no smearing
-  };
+};
 };
 }
 }
@@ -152,6 +150,7 @@ int main(int argc, char **argv) {
             << " threads" << std::endl;
 
   HmcRunner TheHMC;
+
 
   // Seeds for the random number generators
   std::vector<int> SerSeed({1, 2, 3, 4, 5});

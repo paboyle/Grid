@@ -6,8 +6,9 @@
 
     Copyright (C) 2015
 
-Author: Antonin Portelli <antonin.portelli@me.com>
-Author: paboyle <paboyle@ph.ed.ac.uk>
+    Author: Antonin Portelli <antonin.portelli@me.com>
+    Author: paboyle <paboyle@ph.ed.ac.uk>
+    Author: Guido Cossu<guido.cossu@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -50,14 +51,19 @@ void TextWriter::indent(void)
 {
   for (int i = 0; i < level_; ++i)
   {
-    file_ << '\t';
+    file_ << '\t';//is this portable?
   }
 };
 
 // Reader implementation ///////////////////////////////////////////////////////
-TextReader::TextReader(const string &fileName)
-: file_(fileName, ios::in)
-{}
+TextReader::TextReader(const string &fileName) 
+{
+    file_.open(fileName, ios::in);
+    if (!file_.is_open()) {
+        std::cout << GridLogMessage << "TextReader: Error opening file " << fileName << std::endl;
+        exit(0);// write better error handling
+    } 
+}
 
 void TextReader::push(const string &s)
 {
@@ -78,7 +84,7 @@ void TextReader::checkIndent(void)
     file_.get(c);
     if (c != '\t')
     {
-      cerr << "mismatch on tab " << c << " level " << level_;
+      cerr << "TextReader: mismatch on tab " << c << " level " << level_;
       cerr << " i "<< i << endl;
       abort();
     }

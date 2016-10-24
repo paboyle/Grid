@@ -359,4 +359,5 @@ Summary of configuration for $PACKAGE v$VERSION
 - LIBS:
 `echo ${LIBS} | tr ' ' '\n' | sed 's/^-/    -/g'`
 -------------------------------------------------------
-"
+" > grid.configure.summary
+cat grid.configure.summary

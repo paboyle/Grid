@@ -37,20 +37,22 @@ using namespace Grid::QCD;
 namespace Grid {
 namespace QCD {
 
+//Change here the type of reader
+typedef Grid::TextReader InputFileReader; 
+
+
 class HMCRunnerParameters : Serializable {
  public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(HMCRunnerParameters,
                                   double, beta,
-                                  double, mass,
-                                  int, MaxCGIterations,
-                                  double, StoppingCondition,
-                                  bool, smearedAction,
+                                  int, MDsteps,
+                                  double, TrajectorLength,
                                   int, SaveInterval,
                                   std::string, format,
                                   std::string, conf_prefix,
                                   std::string, rng_prefix,
-                                  double, rho,
-                                  int, SmearingLevels,
+                                  std::string, serial_seeds,
+                                  std::string, parallel_seeds,
                                   );
 
   HMCRunnerParameters() {}
@@ -59,7 +61,8 @@ class HMCRunnerParameters : Serializable {
 // Derive from the BinaryHmcRunner (templated for gauge fields)
 class HmcRunner : public BinaryHmcRunner {
  public:
-  void BuildTheAction(int argc, char **argv)
+    HMCRunnerParameters HMCPar;
+    void BuildTheAction(int argc, char **argv)
 
   {
     typedef WilsonImplR ImplPolicy;
@@ -70,7 +73,7 @@ class HmcRunner : public BinaryHmcRunner {
     
 
     // Gauge action
-    WilsonGaugeActionR Waction(5.6);
+    WilsonGaugeActionR Waction(HMCPar.beta);
 
     // Collect actions
     ActionLevel<Field> Level1(1);
@@ -78,12 +81,8 @@ class HmcRunner : public BinaryHmcRunner {
     TheAction.push_back(Level1);
 
     // Add observables
-    int SaveInterval = 1;
-    std::string format = std::string("IEEE64BIG");
-    std::string conf_prefix = std::string("ckpoint_lat");
-    std::string rng_prefix = std::string("ckpoint_rng");
     BinaryHmcCheckpointer<BinaryHmcRunner::ImplPolicy> Checkpoint(
-        conf_prefix, rng_prefix, SaveInterval, format);
+        HMCPar.conf_prefix, HMCPar.rng_prefix, HMCPar.SaveInterval, HMCPar.format);
     // Can implement also a specific function in the hmcrunner
     // AddCheckpoint (...) that takes the same parameters + a string/tag
     // defining the type of the checkpointer
@@ -110,13 +109,18 @@ int main(int argc, char **argv) {
             << " threads" << std::endl;
 
   HmcRunner TheHMC;
+  InputFileReader Reader("input.wilson_gauge.params");
+  read(Reader, "HMC", TheHMC.HMCPar);
+
+  std::cout << GridLogMessage << TheHMC.HMCPar << std::endl;
 
   // Seeds for the random number generators
-  std::vector<int> SerSeed({1, 2, 3, 4, 5});
-  std::vector<int> ParSeed({6, 7, 8, 9, 10});
+  std::vector<int> SerSeed = strToVec<int>(TheHMC.HMCPar.serial_seeds);
+  std::vector<int> ParSeed = strToVec<int>(TheHMC.HMCPar.parallel_seeds);
+
   TheHMC.RNGSeeds(SerSeed, ParSeed);
 
-  TheHMC.MDparameters.set(20, 1.0);// MDsteps, traj length
+  TheHMC.MDparameters.set(TheHMC.HMCPar.MDsteps, TheHMC.HMCPar.TrajectorLength);
 
   TheHMC.BuildTheAction(argc, argv);
 

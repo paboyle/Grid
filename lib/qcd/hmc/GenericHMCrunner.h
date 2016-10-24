@@ -139,10 +139,12 @@ namespace QCD {
       GridParallelRNG pRNG(UGrid);
       Field           U(UGrid);
 
+
       typedef MinimumNorm2<Implementation,
                            SmearingPolicy,
                            RepresentationsPolicy>
           IntegratorType; // change here to change the algorithm
+          
       IntegratorType MDynamics(UGrid, MDparameters, TheAction, Smearing);
 
       HMCparameters HMCpar;
