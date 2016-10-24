@@ -200,18 +200,14 @@ namespace Grid {
 					       sign,FFTW_ESTIMATE);
 	}
 
-	double add,mul,fma;
-	FFTW<scalar>::fftw_flops(p,&add,&mul,&fma);
-	flops_call = add+mul+2.0*fma;
-
-	GridStopWatch timer;
+    std::vector<int> lcoor(Nd), gcoor(Nd);
 
 	// Barrel shift and collect global pencil
 	for(int p=0;p<processors[dim];p++) { 
 
 	  for(int idx=0;idx<sgrid->lSites();idx++) { 
 
-	    std::vector<int> lcoor(Nd);
+	    
     	    sgrid->LocalIndexToLocalCoor(idx,lcoor);
 
 	    sobj s;
@@ -228,14 +224,11 @@ namespace Grid {
 	
 	// Loop over orthog coords
 	int NN=pencil_g.lSites();
-
-	GridStopWatch Timer;
-	Timer.Start();
+	GridStopWatch timer;
+	timer.Start();
 
 PARALLEL_FOR_LOOP
-	for(int idx=0;idx<NN;idx++) { 
-
-	  std::vector<int> lcoor(Nd);
+	for(int idx=0;idx<NN;idx++) {
 	  pencil_g.LocalIndexToLocalCoor(idx,lcoor);
 
 	  if ( lcoor[dim] == 0 ) {  // restricts loop to plane at lcoor[dim]==0
@@ -245,15 +238,17 @@ PARALLEL_FOR_LOOP
 	  }
 	}
 
-        Timer.Stop();
-	usec += Timer.useconds();
-	flops+= flops_call*NN;
+        timer.Stop();
 
+          double add,mul,fma;
+          FFTW<scalar>::fftw_flops(p,&add,&mul,&fma);
+          flops_call = add+mul+2.0*fma;
+          usec += timer.useconds();
+          flops+= flops_call*NN;
         int pc = processor_coor[dim];
-        for(int idx=0;idx<sgrid->lSites();idx++) { 
-	  std::vector<int> lcoor(Nd);
+        for(int idx=0;idx<sgrid->lSites();idx++) {
 	  sgrid->LocalIndexToLocalCoor(idx,lcoor);
-	  std::vector<int> gcoor = lcoor;
+	  gcoor = lcoor;
 	  // extract the result
 	  sobj s;
 	  gcoor[dim] = lcoor[dim]+L*pc;
