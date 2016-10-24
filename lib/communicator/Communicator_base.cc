@@ -69,7 +69,7 @@ int                      CartesianCommunicator::ProcessorCount(void)    { return
 ////////////////////////////////////////////////////////////////////////////////
 // very VERY rarely (Log, serial RNG) we need world without a grid
 ////////////////////////////////////////////////////////////////////////////////
-int  CartesianCommunicator::RankWorld(void) { return WorldRank; };
+int  CartesianCommunicator::RankWorld(void){ return WorldRank; };
 int CartesianCommunicator::Ranks    (void) { return WorldSize; };
 int CartesianCommunicator::Nodes    (void) { return GroupSize; };
 int CartesianCommunicator::Cores    (void) { return ShmSize;   };
@@ -108,22 +108,22 @@ void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsReque
 {
   SendToRecvFromComplete(waitall);
 }
-void StencilBarrier(void){};
+void CartesianCommunicator::StencilBarrier(void){};
 
 commVector<uint8_t> CartesianCommunicator::ShmBufStorageVector;
 
 void *CartesianCommunicator::ShmBufferSelf(void) { return ShmCommBuf; }
+
 void *CartesianCommunicator::ShmBuffer(int rank) {
-  if (rank != ShmRank ) return NULL;
-  else                  return ShmCommBuf;
+  return NULL;
 }
 void *CartesianCommunicator::ShmBufferTranslate(int rank,void * local_p) { 
-  if (rank != ShmRank ) return NULL;
-  else                  return local_p;
+  return NULL;
 }
 void CartesianCommunicator::ShmInitGeneric(void){
   ShmBufStorageVector.resize(MAX_MPI_SHM_BYTES);
   ShmCommBuf=(void *)&ShmBufStorageVector[0];
+  std::cout << "allocated persistent buffer"<<std::hex << ShmCommBuf << std::dec<<std::endl;
 }
 
 #endif

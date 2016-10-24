@@ -47,8 +47,8 @@ void CartesianCommunicator::Init(int *argc, char *** arv)
   WorldSize = 1;
   ShmRank=0;
   ShmSize=1;
-  GroupRank=_WorldRank;
-  GroupSize=_WorldSize;
+  GroupRank=WorldRank;
+  GroupSize=WorldSize;
   Slave    =0;
   ShmInitGeneric();
 }

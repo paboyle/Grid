@@ -141,7 +141,7 @@ public:
 
     if ( bcast != ptr ) {
       std::printf("inconsistent alloc pe %d %lx %lx \n",shmem_my_pe(),bcast,ptr);std::fflush(stdout);
-      BACKTRACEFILE();
+      //      BACKTRACEFILE();
       exit(0);
     }
     assert( bcast == (void *) ptr);

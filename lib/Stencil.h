@@ -32,8 +32,6 @@
 
  #include <Grid/stencil/Lebesgue.h>   // subdir aggregate
 
-const int ShmDirectCopy = 1;
-
  //////////////////////////////////////////////////////////////////////////////////////////
  // Must not lose sight that goal is to be able to construct really efficient
  // gather to a point stencil code. CSHIFT is not the best way, so need
@@ -170,13 +168,13 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
     reqs.resize(Packets.size());
     commtime-=usecond();
     for(int i=0;i<Packets.size();i++){
-      if( ShmDirectCopy ) {
 	_grid->StencilSendToRecvFromBegin(reqs[i],
 					  Packets[i].send_buf,
 					  Packets[i].to_rank,
 					  Packets[i].recv_buf,
 					  Packets[i].from_rank,
 					  Packets[i].bytes);
+	/*
       }else{
 	_grid->SendToRecvFromBegin(reqs[i],
 				   Packets[i].send_buf,
@@ -185,17 +183,19 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
 				   Packets[i].from_rank,
 				   Packets[i].bytes);
       }
+	*/
     }
     commtime+=usecond();
   }
   void CommunicateComplete(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
     commtime-=usecond();
+
     for(int i=0;i<Packets.size();i++){
-      if( ShmDirectCopy ) 
+      //      if( ShmDirectCopy ) 
 	_grid->StencilSendToRecvFromComplete(reqs[i]);
-      else 
-	_grid->SendToRecvFromComplete(reqs[i]);
+	//      else 
+	//	_grid->SendToRecvFromComplete(reqs[i]);
     }
     commtime+=usecond();
   }
@@ -253,8 +253,6 @@ PARALLEL_FOR_LOOP
   // Flat vector, change layout for cache friendly.
   Vector<StencilEntry>  _entries;
   
-  inline StencilEntry * GetEntry(int &ptype,int point,int osite) { ptype = _permute_type[point]; return & _entries[point+_npoints*osite]; }
-  
   void PrecomputeByteOffsets(void){
     for(int i=0;i<_entries.size();i++){
       if( _entries[i]._is_local ) {
@@ -265,9 +263,7 @@ PARALLEL_FOR_LOOP
     }
   };
 
-  inline uint64_t Touch(int ent) {
-    //	 _mm_prefetch((char *)&_entries[ent],_MM_HINT_T0);
-  }
+  inline StencilEntry * GetEntry(int &ptype,int point,int osite) { ptype = _permute_type[point]; return & _entries[point+_npoints*osite]; }
   inline uint64_t GetInfo(int &ptype,int &local,int &perm,int point,int ent,uint64_t base) {
     uint64_t cbase = (uint64_t)&u_recv_buf_p[0];
     local = _entries[ent]._is_local;
@@ -685,7 +681,9 @@ PARALLEL_FOR_LOOP
     _grid->StencilBarrier();
     HaloGather(source,compress);
     this->CommunicateBegin(reqs);
+    _grid->StencilBarrier();
     this->CommunicateComplete(reqs);
+    _grid->StencilBarrier();
     CommsMerge(); // spins
   }
   
@@ -823,11 +821,13 @@ PARALLEL_FOR_LOOP
 
 
 	cobj *send_buf = (cobj *)_grid->ShmBufferTranslate(xmit_to_rank,u_recv_buf_p);
-	if ( (ShmDirectCopy==0)||send_buf==NULL ) { 
-	  cobj *send_buf = u_send_buf_p;
+	if ( (send_buf==NULL) ) { 
+	  send_buf = u_send_buf_p;
 	}
-	
+	//	std::cout << " send_bufs  "<<std::hex<< send_buf <<" ubp "<<u_send_buf_p <<std::dec<<std::endl;
 	t_data-=usecond();
+	assert(u_send_buf_p!=NULL);
+	assert(send_buf!=NULL);
 	Gather_plane_simple_table         (face_table[face_idx],rhs,send_buf,compress,u_comm_offset,so);  face_idx++;
 	t_data+=usecond();
 	
@@ -931,7 +931,8 @@ PARALLEL_FOR_LOOP
 	    _grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank); 
  
 	    scalar_object *shm = (scalar_object *) _grid->ShmBufferTranslate(recv_from_rank,sp);
-	    if ((ShmDirectCopy==0)||(shm==NULL)) { 
+	    //	    if ((ShmDirectCopy==0)||(shm==NULL)) { 
+	    if (shm==NULL) { 
 	      shm = rp;
 	    } 
 	    

@@ -400,7 +400,9 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 						int from,
 						int bytes)
 {
-#if 1
+#if 0
+  this->StencilBarrier();
+
   MPI_Request xrq;
   MPI_Request rrq;
   
@@ -440,9 +442,6 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 PARALLEL_FOR_LOOP 
     for(int w=0;w<words;w++) {
       op[w]=ip[w];
-      if ( w == 0 ) { 
-	//	std::cout << " xmit "<< ShmRank <<" -> "<< gdest<<" " <<std::hex<<op[w]<<std::dec<<std::endl;
-      }
     }
 
     bcopy(&_processor,&to_ptr[bytes],sizeof(_processor));
@@ -452,20 +451,15 @@ PARALLEL_FOR_LOOP
     assert(ierr==0);
     list.push_back(xrq);
   }
-  
-  MPI_Win_sync (ShmWindow);   
-  MPI_Barrier  (ShmComm);
-  MPI_Win_sync (ShmWindow);   
 
+  this->StencilBarrier();
+  
   if (small && (gfrom !=MPI_UNDEFINED) ) {
     T *ip = (T *)from_ptr;
     T *op = (T *)recv;
 PARALLEL_FOR_LOOP 
     for(int w=0;w<words;w++) {
       op[w]=ip[w];
-      if ( w == 0 ) { 
-	//	std::cout << " recv "<< ShmRank <<" <- "<< gfrom<<" " <<std::hex<<op[w]<<std::dec<<std::endl;
-      }
     }
     bcopy(&from_ptr[bytes]  ,&tag  ,sizeof(tag));
     bcopy(&from_ptr[bytes+4],&check,sizeof(check));
@@ -477,9 +471,8 @@ PARALLEL_FOR_LOOP
     list.push_back(rrq);
   }
 
-  MPI_Win_sync (ShmWindow);   
-  MPI_Barrier  (ShmComm);
-  MPI_Win_sync (ShmWindow);   
+  this->StencilBarrier();
+
 #else
   MPI_Request xrq;
   MPI_Request rrq;
@@ -527,9 +520,6 @@ void CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_
     assert(ierr==0);
     list.push_back(rrq);
   }
-
-
-  StencilBarrier();
 
 }
 
