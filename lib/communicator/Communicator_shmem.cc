@@ -39,25 +39,19 @@ namespace Grid {
     BACKTRACEFILE();		   \
   }\
 }
-int Rank(void) {
-  return shmem_my_pe();
-}
-typedef struct HandShake_t { 
-  uint64_t seq_local;
-  uint64_t seq_remote;
-} HandShake;
 
-static Vector< HandShake > XConnections;
-static Vector< HandShake > RConnections;
 
-void *CartesianCommunicator::ShmBufferSelf(void)
-{
-  return NULL;
-}
-void *CartesianCommunicator::ShmBuffer(int rank)
-{
-  return NULL;
-}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Info that is setup once and indept of cartesian layout
+///////////////////////////////////////////////////////////////////////////////////////////////////
+int CartesianCommunicator::ShmRank;
+int CartesianCommunicator::ShmSize;
+int CartesianCommunicator::GroupRank;
+int CartesianCommunicator::GroupSize;
+int CartesianCommunicator::WorldRank;
+int CartesianCommunicator::WorldSize;
+int CartesianCommunicator::Slave;
+
 void CartesianCommunicator::Init(int *argc, char ***argv) {
   shmem_init();
   XConnections.resize(shmem_n_pes());
@@ -69,7 +63,36 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
     RConnections[pe].seq_remote= 0;
   }
   shmem_barrier_all();
+  ShmInitGeneric();
 }
+
+
+// Should error check all MPI calls.
+void CartesianCommunicator::Init(int *argc, char ***argv) {
+  int flag;
+  MPI_Initialized(&flag); // needed to coexist with other libs apparently
+  if ( !flag ) {
+    MPI_Init(argc,argv);
+    MPI_Comm_dup (MPI_COMM_WORLD,&communicator_world);
+    MPI_Comm_rank(communicator_world,&_WorldRank);
+    MPI_Comm_size(communicator_world,&_WorldSize);
+    _ShmRank=0;
+    _ShmSize=1;
+    _GroupRank=_WorldRank;
+    _GroupSize=_WorldSize;
+    _Slave    =0;
+  }
+}
+
+
+typedef struct HandShake_t { 
+  uint64_t seq_local;
+  uint64_t seq_remote;
+} HandShake;
+
+static Vector< HandShake > XConnections;
+static Vector< HandShake > RConnections;
+
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {
   _ndimension = processors.size();

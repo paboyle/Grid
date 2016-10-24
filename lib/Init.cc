@@ -171,13 +171,16 @@ std::string GridCmdVectorIntToString(const std::vector<int> & vec){
 /////////////////////////////////////////////////////////
 //
 /////////////////////////////////////////////////////////
+static int Grid_is_initialised = 0;
+
+
 void Grid_init(int *argc,char ***argv)
 {
+  GridLogger::StopWatch.Start();
+
   CartesianCommunicator::Init(argc,argv);
 
   // Parse command line args.
-
-  GridLogger::StopWatch.Start();
 
   std::string arg;
   std::vector<std::string> logstreams;
@@ -216,11 +219,14 @@ void Grid_init(int *argc,char ***argv)
   if( GridCmdOptionExists(*argv,*argv+*argc,"--lebesgue") ){
     LebesgueOrder::UseLebesgueOrder=1;
   }
-
   if( GridCmdOptionExists(*argv,*argv+*argc,"--cacheblocking") ){
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--cacheblocking");
     GridCmdOptionIntVector(arg,LebesgueOrder::Block);
   }
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--timestamp") ){
+    GridLogTimestamp(1);
+  }
+
   GridParseLayout(*argv,*argc,
 		  Grid_default_latt,
 		  Grid_default_mpi);
@@ -274,6 +280,8 @@ void Grid_init(int *argc,char ***argv)
   std::cout << "GNU General Public License for more details."<<std::endl;
   std::cout << COL_BACKGROUND <<std::endl;
   std::cout << std::endl;
+
+  Grid_is_initialised = 1;
 }
 
   

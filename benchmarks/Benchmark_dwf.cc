@@ -156,6 +156,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "mflop/s per rank =  "<< flops/(t1-t0)/NP<<std::endl;
     err = ref-result; 
     std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
+    assert (norm2(err)< 1.0e-5 );
     Dw.Report();
   }
 
@@ -208,7 +209,7 @@ int main (int argc, char ** argv)
 
     std::cout<<GridLogMessage<< "res norms "<< norm2(result)<<" " <<norm2(sresult)<<std::endl;
 
-    RealF sum=0;
+    RealD sum=0;
     for(int x=0;x<latt4[0];x++){
     for(int y=0;y<latt4[1];y++){
     for(int z=0;z<latt4[2];z++){
@@ -226,12 +227,12 @@ int main (int argc, char ** argv)
       }
     }}}}}
     std::cout<<GridLogMessage<<" difference between normal and simd is "<<sum<<std::endl;
+    assert (sum< 1.0e-5 );
 
 
     if (1) {
 
       LatticeFermion sr_eo(sFGrid);
-      LatticeFermion serr(sFGrid);
 
       LatticeFermion ssrc_e (sFrbGrid);
       LatticeFermion ssrc_o (sFrbGrid);
@@ -243,8 +244,6 @@ int main (int argc, char ** argv)
 
       setCheckerboard(sr_eo,ssrc_o);
       setCheckerboard(sr_eo,ssrc_e);
-      serr = sr_eo-ssrc; 
-      std::cout<<GridLogMessage << "EO src norm diff   "<< norm2(serr)<<std::endl;
 
       sr_e = zero;
       sr_o = zero;
@@ -272,9 +271,18 @@ int main (int argc, char ** argv)
       pickCheckerboard(Even,ssrc_e,sresult);
       pickCheckerboard(Odd ,ssrc_o,sresult);
       ssrc_e = ssrc_e - sr_e;
+      RealD error = norm2(ssrc_e);
+
       std::cout<<GridLogMessage << "sE norm diff   "<< norm2(ssrc_e)<< "  vec nrm"<<norm2(sr_e) <<std::endl;
       ssrc_o = ssrc_o - sr_o;
+
+      error+= norm2(ssrc_o);
       std::cout<<GridLogMessage << "sO norm diff   "<< norm2(ssrc_o)<< "  vec nrm"<<norm2(sr_o) <<std::endl;
+      if(error>1.0e-5) { 
+	setCheckerboard(ssrc,ssrc_o);
+	setCheckerboard(ssrc,ssrc_e);
+	std::cout<< ssrc << std::endl;
+      }
     }
 
 
@@ -306,7 +314,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
   err = ref-result; 
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
-
+  assert(norm2(err)<1.0e-5);
   LatticeFermion src_e (FrbGrid);
   LatticeFermion src_o (FrbGrid);
   LatticeFermion r_e   (FrbGrid);
@@ -349,11 +357,14 @@ int main (int argc, char ** argv)
 
   err = r_eo-result; 
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
+  assert(norm2(err)<1.0e-5);
 
   pickCheckerboard(Even,src_e,err);
   pickCheckerboard(Odd,src_o,err);
   std::cout<<GridLogMessage << "norm diff even  "<< norm2(src_e)<<std::endl;
   std::cout<<GridLogMessage << "norm diff odd   "<< norm2(src_o)<<std::endl;
+  assert(norm2(src_e)<1.0e-5);
+  assert(norm2(src_o)<1.0e-5);
 
 
   }

@@ -34,7 +34,12 @@ directory
 namespace Grid {
 
 GridStopWatch Logger::StopWatch;
+int Logger::timestamp;
 std::ostream Logger::devnull(0);
+
+void GridLogTimestamp(int on){
+  Logger::Timestamp(on);
+}
 
 Colours GridLogColours(0);
 GridLogger GridLogError(1, "Error", GridLogColours, "RED");

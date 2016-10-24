@@ -28,18 +28,29 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include "Grid.h"
 namespace Grid {
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Info that is setup once and indept of cartesian layout
+///////////////////////////////////////////////////////////////////////////////////////////////////
+int CartesianCommunicator::ShmRank;
+int CartesianCommunicator::ShmSize;
+int CartesianCommunicator::GroupRank;
+int CartesianCommunicator::GroupSize;
+int CartesianCommunicator::WorldRank;
+int CartesianCommunicator::WorldSize;
+int CartesianCommunicator::Slave;
+void *              CartesianCommunicator::ShmCommBuf;
+commVector<uint8_t> CartesianCommunicator::ShmBufStorageVector;
+
 void CartesianCommunicator::Init(int *argc, char *** arv)
 {
-}
-
-int Rank(void ){ return 0; };
-void *CartesianCommunicator::ShmBufferSelf(void)
-{
-  return NULL;
-}
-void *CartesianCommunicator::ShmBuffer(int rank)
-{
-  return NULL;
+  WorldRank = 0;
+  WorldSize = 1;
+  ShmRank=0;
+  ShmSize=1;
+  GroupRank=_WorldRank;
+  GroupSize=_WorldSize;
+  Slave    =0;
+  ShmInitGeneric();
 }
 
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
@@ -97,29 +108,15 @@ void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &
   assert(0);
 }
 
-void CartesianCommunicator::Barrier(void)
-{
-}
-
-void CartesianCommunicator::Broadcast(int root,void* data, int bytes)
-{
-}
-void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
-{
-}
-
-
+void CartesianCommunicator::Barrier(void){}
+void CartesianCommunicator::Broadcast(int root,void* data, int bytes) {}
+void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes) { }
+int  CartesianCommunicator::RankFromProcessorCoor(std::vector<int> &coor) {  return 0;}
+void CartesianCommunicator::ProcessorCoorFromRank(int rank, std::vector<int> &coor){  assert(0);}
 void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest)
 {
   source =0;
   dest=0;
-}
-int CartesianCommunicator::RankFromProcessorCoor(std::vector<int> &coor)
-{
-  return 0;
-}
-void  CartesianCommunicator::ProcessorCoorFromRank(int rank, std::vector<int> &coor)
-{
 }
 
 

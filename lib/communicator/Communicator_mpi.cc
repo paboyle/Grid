@@ -30,19 +30,28 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 namespace Grid {
 
-  // Should error check all MPI calls.
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Info that is setup once and indept of cartesian layout
+///////////////////////////////////////////////////////////////////////////////////////////////////
+MPI_Comm CartesianCommunicator::communicator_world;
+
+// Should error check all MPI calls.
 void CartesianCommunicator::Init(int *argc, char ***argv) {
   int flag;
   MPI_Initialized(&flag); // needed to coexist with other libs apparently
   if ( !flag ) {
     MPI_Init(argc,argv);
   }
-}
-
-int Rank(void) {
-  int pe;
-  MPI_Comm_rank(MPI_COMM_WORLD,&pe);
-  return pe;
+  MPI_Comm_dup (MPI_COMM_WORLD,&communicator_world);
+  MPI_Comm_rank(communicator_world,&WorldRank);
+  MPI_Comm_size(communicator_world,&WorldSize);
+  ShmRank=0;
+  ShmSize=1;
+  GroupRank=WorldRank;
+  GroupSize=WorldSize;
+  Slave    =0;
+  ShmInitGeneric();
 }
 
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
@@ -54,7 +63,7 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
   _processors = processors;
   _processor_coor.resize(_ndimension);
   
-  MPI_Cart_create(MPI_COMM_WORLD, _ndimension,&_processors[0],&periodic[0],1,&communicator);
+  MPI_Cart_create(communicator_world, _ndimension,&_processors[0],&periodic[0],1,&communicator);
   MPI_Comm_rank(communicator,&_processor);
   MPI_Cart_coords(communicator,_processor,_ndimension,&_processor_coor[0]);
 
@@ -67,15 +76,6 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
   
   assert(Size==_Nprocessors);
 }
-void *CartesianCommunicator::ShmBufferSelf(void)
-{
-  return NULL;
-}
-void *CartesianCommunicator::ShmBuffer(int rank)
-{
-  return NULL;
-}
-
 void CartesianCommunicator::GlobalSum(uint32_t &u){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_SUM,communicator);
   assert(ierr==0);
@@ -194,14 +194,17 @@ void CartesianCommunicator::Broadcast(int root,void* data, int bytes)
 		     communicator);
   assert(ierr==0);
 }
-
+  ///////////////////////////////////////////////////////
+  // Should only be used prior to Grid Init finished.
+  // Check for this?
+  ///////////////////////////////////////////////////////
 void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
 {
   int ierr= MPI_Bcast(data,
 		      bytes,
 		      MPI_BYTE,
 		      root,
-		      MPI_COMM_WORLD);
+		      communicator_world);
   assert(ierr==0);
 }
 
