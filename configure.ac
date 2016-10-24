@@ -130,6 +130,13 @@ AC_CHECK_LIB([fftw3],[fftw_execute],
 CXXFLAGS=$CXXFLAGS_CPY
 LDFLAGS=$LDFLAGS_CPY
 
+AC_CHECK_LIB([lime],[limeCreateReader],
+  [LIBS="$LIBS -llime"],
+  [AC_MSG_ERROR(C-LIME library was not found in your system.
+Please install or provide the correct path to your installation [default search path ~/lime/]
+Info at: http://usqcd.jlab.org/usqcd-docs/c-lime/)])
+
+
 ############### SIMD instruction selection
 AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE4|AVX|AVXFMA4|AVXFMA|AVX2|AVX512|AVX512MIC|IMCI|KNL|KNC],\
 	[Select instructions to be SSE4.0, AVX 1.0, AVX 2.0+FMA, AVX 512, IMCI])],\

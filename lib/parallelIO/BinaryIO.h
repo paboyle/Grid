@@ -348,8 +348,8 @@ class BinaryIO {
       grid->GlobalIndexToGlobalCoor(gidx, gcoor);
       grid->GlobalCoorToRankIndex(rank, o_idx, i_idx, gcoor);
       int l_idx = parallel.generator_idx(o_idx, i_idx);
-      std::cout << GridLogDebug << "l_idx " << l_idx << " o_idx " << o_idx
-                << " i_idx " << i_idx << " rank " << rank << std::endl;
+      //std::cout << GridLogDebug << "l_idx " << l_idx << " o_idx " << o_idx
+      //          << " i_idx " << i_idx << " rank " << rank << std::endl;
       if (rank == grid->ThisRank()) {
         parallel.GetState(saved, l_idx);
       }
@@ -357,7 +357,6 @@ class BinaryIO {
 
       grid->Barrier();  // necessary?
       if (grid->IsBoss()) {
-        std::cout << "Saved: " << saved << std::endl;
         Uint32Checksum((uint32_t *)&saved[0], bytes, csum);
         fout.write((char *)&saved[0], bytes);
       }
@@ -422,12 +421,11 @@ class BinaryIO {
       grid->GlobalIndexToGlobalCoor(gidx,gcoor);
       grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
       int l_idx=parallel.generator_idx(o_idx,i_idx);
-      std::cout << GridLogDebug << "l_idx " << l_idx << " o_idx " << o_idx
-                << " i_idx " << i_idx << " rank " << rank << std::endl;
+      //std::cout << GridLogDebug << "l_idx " << l_idx << " o_idx " << o_idx
+      //          << " i_idx " << i_idx << " rank " << rank << std::endl;
 
       if ( grid->IsBoss() ) {
         fin.read((char *)&saved[0],bytes);
-        std::cout << "Saved: " << saved << std::endl;
         Uint32Checksum((uint32_t *)&saved[0],bytes,csum);
       }
       
@@ -608,7 +606,8 @@ class BinaryIO {
   static inline uint32_t writeObjectParallel(Lattice<vobj> &Umu,
                                              std::string file, munger munge,
                                              int offset,
-                                             const std::string &format) {
+                                             const std::string &format,
+                                             ILDGtype ILDG = ILDGtype()) {
     typedef typename vobj::scalar_object sobj;
     GridBase *grid = Umu._grid;
 
@@ -682,13 +681,15 @@ class BinaryIO {
     // Ideally one reader/writer per xy plane and read these contiguously
     // with comms from nominated I/O nodes.
     std::ofstream fout;
-    if (IOnode){
-      fout.open(file, std::ios::binary | std::ios::in | std::ios::out);
-      if (!fout.is_open()) {
-        std::cout << GridLogMessage << "writeObjectParallel: Error opening file " << file
-                  << std::endl;
-        exit(0);
-      }
+    if (!ILDG.is_ILDG){
+    	if (IOnode){
+    		fout.open(file, std::ios::binary | std::ios::in | std::ios::out);
+    		if (!fout.is_open()) {
+    			std::cout << GridLogMessage << "writeObjectParallel: Error opening file " << file
+    			<< std::endl;
+    			exit(0);
+    		}
+    	}
     }
 
     //////////////////////////////////////////////////////////
@@ -752,8 +753,13 @@ class BinaryIO {
         if (ieee64big) htobe64_v((void *)&fileObj, sizeof(fileObj));
         if (ieee64) htole64_v((void *)&fileObj, sizeof(fileObj));
 
-        fout.seekp(offset + g_idx * sizeof(fileObj));
-        fout.write((char *)&fileObj, sizeof(fileObj));
+        if (ILDG.is_ILDG){
+        	size_t sizeFO = sizeof(fileObj);
+        	int status = limeWriteRecordData((char*)&fileObj, &sizeFO, ILDG.LW);
+        } else{
+        	fout.seekp(offset + g_idx * sizeof(fileObj));
+        	fout.write((char *)&fileObj, sizeof(fileObj));
+        }
         bytes += sizeof(fileObj);
       }
     }
