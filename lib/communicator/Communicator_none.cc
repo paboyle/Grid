@@ -31,15 +31,6 @@ namespace Grid {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Info that is setup once and indept of cartesian layout
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-int CartesianCommunicator::ShmRank;
-int CartesianCommunicator::ShmSize;
-int CartesianCommunicator::GroupRank;
-int CartesianCommunicator::GroupSize;
-int CartesianCommunicator::WorldRank;
-int CartesianCommunicator::WorldSize;
-int CartesianCommunicator::Slave;
-void *              CartesianCommunicator::ShmCommBuf;
-commVector<uint8_t> CartesianCommunicator::ShmBufStorageVector;
 
 void CartesianCommunicator::Init(int *argc, char *** arv)
 {
