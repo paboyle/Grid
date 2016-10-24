@@ -33,14 +33,16 @@ extern "C" { // for linkage
 
 namespace Grid {
 
-	struct ILDGtype{
-		bool is_ILDG;
-		LimeWriter* LW;
-
-		ILDGtype(bool is, LimeWriter* L):is_ILDG(is),LW(L){}
-    ILDGtype():is_ILDG(false),LW(NULL){}
-	};
-
+  struct ILDGtype{
+    bool is_ILDG;
+    LimeWriter* LW;
+    LimeReader* LR;
+    
+    ILDGtype(bool is, LimeWriter* L):is_ILDG(is),LW(L),LR(NULL){}
+    ILDGtype(bool is, LimeReader* L):is_ILDG(is),LW(NULL),LR(L){}
+    ILDGtype():is_ILDG(false),LW(NULL),LR(NULL){}
+  };
+  
 
 
 

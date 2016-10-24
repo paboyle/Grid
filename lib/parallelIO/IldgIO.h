@@ -87,7 +87,7 @@ struct ILDGMunger {
 };
 
 template <class fobj, class sobj>
-struct ILDGSimpleUnmunger {
+struct ILDGUnmunger {
   void operator()(sobj &in, fobj &out, uint32_t &csum) {
     for (int mu = 0; mu < 4; mu++) {
       for (int i = 0; i < 3; i++) {
@@ -103,20 +103,45 @@ struct ILDGSimpleUnmunger {
 ////////////////////////////////////////////////////////////////////////////////
 // Write and read from fstream; compute header offset for payload
 ////////////////////////////////////////////////////////////////////////////////
+enum ILDGstate {ILDGread, ILDGwrite};
+
 class ILDGIO : public BinaryIO {
-  FILE *outFile;
+  FILE *File;
   LimeWriter *LimeW;
   LimeRecordHeader *LimeHeader;
+  LimeReader *LimeR;
+  std::string filename;
+
 
  public:
-  ILDGIO(std::string file) {
-    outFile = fopen(file.c_str(), "w");
-    // check if opened correctly
+  ILDGIO(std::string file, ILDGstate RW) {
+      filename = file;
+    if (RW == ILDGwrite){
+      File = fopen(file.c_str(), "w");
+      // check if opened correctly
 
-    LimeW = limeCreateWriter(outFile);
+      LimeW = limeCreateWriter(File);
+    } else {
+      File = fopen(file.c_str(), "r");
+      // check if opened correctly
+
+      LimeR = limeCreateReader(File);
+    }
   }
 
-  ~ILDGIO() { fclose(outFile); }
+  ~ILDGIO() { fclose(File); }
+
+  int createHeader(std::string message, int MB, int ME, size_t PayloadSize, LimeWriter* L){
+    LimeRecordHeader *h;
+    h = limeCreateHeader(MB, ME, const_cast<char *>(message.c_str()), PayloadSize);
+    int status = limeWriteRecordHeader(h, L);
+    if (status < 0) {
+      std::cerr << "ILDG Header error\n";
+      return status;
+    }
+    limeDestroyHeader(h);
+    return LIME_SUCCESS;
+  }
 
   unsigned int writeHeader(ILDGField &header) {
     // write header in LIME
@@ -131,60 +156,86 @@ class ILDGIO : public BinaryIO {
     // save the xml header here
     // use the xml_writer to c++ streams in pugixml
     // and convert to char message
-    // limeWriteRecordData(message, &nbytes, LimeW);
+    limeWriteRecordData(message, &nbytes, LimeW);
     limeWriterCloseRecord(LimeW);
 
     return 0;
   }
 
-  unsigned int readHeader(std::string file, GridBase *grid, ILDGField &field) {
+  unsigned int readHeader(ILDGField &header) {
     return 0;
   }
 
   template <class vsimd>
-  int readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,
-                        ILDGField &header, std::string file) {
+  uint32_t readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu) {
     typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
+    typedef LorentzColourMatrixD sobjd;
+    typedef LorentzColourMatrixF sobjf;
+    typedef iLorentzColourMatrix<vsimd> itype;
+    typedef LorentzColourMatrix sobj;
+    GridBase *grid = Umu._grid;
 
-    return 0;
+    ILDGField header;
+    readHeader(header);
+
+    // now just the conf, ignore the header
+    std::string format = std::string("IEEE64BIG");
+    do {limeReaderNextRecord(LimeR);}
+    while (strncmp(limeReaderType(LimeR), "ildg-binary-data",16));
+
+    n_uint64_t nbytes = limeReaderBytes(LimeR);//size of this record (configuration)
+
+
+    ILDGtype ILDGt(true, LimeR);
+    // this is special for double prec data, just for the moment
+    uint32_t csum = BinaryIO::readObjectParallel< itype, sobjd >(
+       Umu, filename, ILDGMunger<sobjd, sobj>(), 0, format, ILDGt);
+
+    // Check configuration 
+    // todo
+
+    return csum;
   }
 
   template <class vsimd>
-  int writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,
-                         ILDGField &header, std::string file) {
+  uint32_t writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu, std::string format) {
     typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
     typedef iLorentzColourMatrix<vsimd> vobj;
     typedef typename vobj::scalar_object sobj;
     typedef LorentzColourMatrixD fobj;
 
-    ILDGSimpleUnmunger<fobj, sobj> munge;
+    ILDGField header;
+    // fill the header
+    header.floating_point = format;
+
+    ILDGUnmunger<fobj, sobj> munge;
     unsigned int offset = writeHeader(header);
 
     BinaryIO::Uint32Checksum<vobj, fobj>(Umu, munge, header.checksum);
 
-    // Write record header 
-    LimeRecordHeader *h;
-    std::cout << GridLogDebug << "ILDG Creating Header" << std::endl;
-    char message[] = "ildg-binary-data";
-    h = limeCreateHeader(1, 1, message, strlen(message));
-
-    std::cout << GridLogDebug << "ILDG Writing Header" << std::endl;
-    int status = limeWriteRecordHeader(h, LimeW);
-
-    if (status < 0) {
-      std::cerr << "ILDG Header error\n";
-      return 1;
-    }
-
-    limeDestroyHeader(h);
+    // Write data record header
+    n_uint64_t PayloadSize = sizeof(fobj) * Umu._grid->_gsites;
+    createHeader("ildg-binary-data", 0, 1, PayloadSize, LimeW);
 
     ILDGtype ILDGt(true, LimeW);
     uint32_t csum = BinaryIO::writeObjectParallel<vobj, fobj>(
-        Umu, file, munge, offset, header.floating_point, ILDGt);
+       Umu, filename, munge, 0, header.floating_point, ILDGt);
 
     limeWriterCloseRecord(LimeW);
 
-    return 0;
+    // Last record
+    // the logical file name LNF
+    // look into documentation on how to generate this string
+    std::string LNF = "empty"; 
+
+
+    PayloadSize = sizeof(LNF);
+    createHeader("ildg-binary-lfn", 1 , 1, PayloadSize, LimeW);
+    limeWriteRecordData(const_cast<char*>(LNF.c_str()), &PayloadSize, LimeW);
+
+    limeWriterCloseRecord(LimeW);
+
+    return csum;
   }
 
   // format for RNG?

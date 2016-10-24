@@ -424,8 +424,8 @@ static inline void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu
     //int csum1=BinaryIO::writeObjectSerial<vobj,fobj2D>(Umu,file1,munge,offset,header.floating_point);
 
     
-    std::cout << GridLogMessage << " TESTING PARALLEL WRITE offsets " << offset1 << " "<< offset << std::endl;
-    std::cout << GridLogMessage << " TESTING PARALLEL WRITE csums   " << csum1 << " "<<std::hex<< csum << std::dec<< std::endl;
+    //std::cout << GridLogMessage << " TESTING PARALLEL WRITE offsets " << offset1 << " "<< offset << std::endl;
+    //std::cout << GridLogMessage << " TESTING PARALLEL WRITE csums   " << csum1 << " "<<std::hex<< csum << std::dec<< std::endl;
 
     assert(offset1==offset);  
     assert(csum1==csum);  
@@ -436,11 +436,10 @@ static inline void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu
     NerscSimpleUnmunger<fobj3D,sobj> munge;
     BinaryIO::Uint32Checksum<vobj,fobj3D>(Umu, munge,header.checksum);
     offset = writeHeader(header,file);
-    //    csum=BinaryIO::writeObjectSerial<vobj,fobj3D>(Umu,file,munge,offset,header.floating_point);
     csum=BinaryIO::writeObjectParallel<vobj,fobj3D>(Umu,file,munge,offset,header.floating_point);
   }
 
-  std::cout<<GridLogMessage <<"Written NERSC Configuration "<<file<< " checksum "<<std::hex<<csum<< std::dec<<" plaq "<< header.plaquette <<std::endl;
+  std::cout<<GridLogMessage <<"Written NERSC Configuration on "<< file << " checksum "<<std::hex<<csum<< std::dec<<" plaq "<< header.plaquette <<std::endl;
 
  }
 

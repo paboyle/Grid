@@ -449,10 +449,13 @@ class BinaryIO {
     return csum;
   }
 
-
-  template<class vobj,class fobj,class munger>
-  static inline uint32_t readObjectParallel(Lattice<vobj> &Umu,std::string file,munger munge,int offset,const std::string &format)
-  {
+  template <class vobj, class fobj, class munger>
+  static inline uint32_t readObjectParallel(Lattice<vobj> &Umu,
+                                            std::string file, 
+                                            munger munge,
+                                            int offset,
+                                            const std::string &format,
+                                            ILDGtype ILDG = ILDGtype()) {
     typedef typename vobj::scalar_object sobj;
 
     GridBase *grid = Umu._grid;
@@ -518,9 +521,10 @@ class BinaryIO {
     int myrank = grid->ThisRank();
     int iorank = grid->RankFromProcessorCoor(ioproc);
 
-    if ( IOnode ) { 
-      fin.open(file,std::ios::binary|std::ios::in);
-    }
+    if (!ILDG.is_ILDG)
+    	if ( IOnode ) { 
+    		fin.open(file,std::ios::binary|std::ios::in);
+    	}
 
     //////////////////////////////////////////////////////////
     // Find the location of each site and send to primary node
@@ -562,8 +566,15 @@ class BinaryIO {
       ////////////////////////////////
       if (myrank == iorank) {
 
-        fin.seekg(offset+g_idx*sizeof(fileObj));
-        fin.read((char *)&fileObj,sizeof(fileObj));
+      	if (ILDG.is_ILDG){
+      		// use C-LIME to populate the record
+          size_t sizeFO = sizeof(fileObj);
+          limeReaderSeek(ILDG.LR, g_idx*sizeFO, SEEK_SET);
+          int status = limeReaderReadData((void *)&fileObj, &sizeFO, ILDG.LR);
+        } else{
+          fin.seekg(offset+g_idx*sizeof(fileObj));
+          fin.read((char *)&fileObj,sizeof(fileObj));
+        }
         bytes+=sizeof(fileObj);
 
         if(ieee32big) be32toh_v((void *)&fileObj,sizeof(fileObj));
@@ -681,7 +692,7 @@ class BinaryIO {
     // Ideally one reader/writer per xy plane and read these contiguously
     // with comms from nominated I/O nodes.
     std::ofstream fout;
-    if (!ILDG.is_ILDG){
+    if (!ILDG.is_ILDG)
     	if (IOnode){
     		fout.open(file, std::ios::binary | std::ios::in | std::ios::out);
     		if (!fout.is_open()) {
@@ -690,7 +701,7 @@ class BinaryIO {
     			exit(0);
     		}
     	}
-    }
+
 
     //////////////////////////////////////////////////////////
     // Find the location of each site and send to primary node
@@ -753,12 +764,13 @@ class BinaryIO {
         if (ieee64big) htobe64_v((void *)&fileObj, sizeof(fileObj));
         if (ieee64) htole64_v((void *)&fileObj, sizeof(fileObj));
 
-        if (ILDG.is_ILDG){
-        	size_t sizeFO = sizeof(fileObj);
-        	int status = limeWriteRecordData((char*)&fileObj, &sizeFO, ILDG.LW);
-        } else{
-        	fout.seekp(offset + g_idx * sizeof(fileObj));
-        	fout.write((char *)&fileObj, sizeof(fileObj));
+        if (ILDG.is_ILDG) {
+          size_t sizeFO = sizeof(fileObj);
+ 					limeWriterSeek(ILDG.LW, g_idx*sizeFO, SEEK_SET);
+          int status = limeWriteRecordData((void *)&fileObj, &sizeFO, ILDG.LW);
+        } else {
+          fout.seekp(offset + g_idx * sizeof(fileObj));
+          fout.write((char *)&fileObj, sizeof(fileObj));
         }
         bytes += sizeof(fileObj);
       }
