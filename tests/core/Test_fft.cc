@@ -441,6 +441,8 @@ int main (int argc, char ** argv)
   }
 
   {
+    /*
+     * 
     typedef GaugeImplTypes<vComplexD, 1> QEDGimplTypesD;
     typedef Photon<QEDGimplTypesD>       QEDGaction;
 
@@ -450,6 +452,7 @@ int main (int argc, char ** argv)
 
     Maxwell.FreePropagator (Source,Prop);
     std::cout << " MaxwellFree propagator\n";
+    */
   }
   Grid_finalize();
 }
