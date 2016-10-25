@@ -227,7 +227,7 @@ namespace Grid {
 	GridStopWatch timer;
 	timer.Start();
 
-PARALLEL_FOR_LOOP
+//PARALLEL_FOR_LOOP
 	for(int idx=0;idx<NN;idx++) {
 	  pencil_g.LocalIndexToLocalCoor(idx,lcoor);
 
