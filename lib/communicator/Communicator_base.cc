@@ -48,10 +48,11 @@ void *CartesianCommunicator::ShmBufferMalloc(size_t bytes){
   void *ptr = (void *)heap_top;
   heap_top  += bytes;
   heap_bytes+= bytes;
+  std::cout <<"Shm alloc "<<ptr<<std::endl;
   assert(heap_bytes < MAX_MPI_SHM_BYTES);
   return ptr;
 }
-void *CartesianCommunicator::ShmBufferFreeAll(void) { 
+void CartesianCommunicator::ShmBufferFreeAll(void) { 
   heap_top  =(size_t)ShmBufferSelf();
   heap_bytes=0;
 }

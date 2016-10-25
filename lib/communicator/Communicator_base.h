@@ -104,7 +104,7 @@ class CartesianCommunicator {
   void *ShmBuffer(int rank);
   void *ShmBufferTranslate(int rank,void * local_p);
   void *ShmBufferMalloc(size_t bytes);
-  void *ShmBufferFreeAll(void) ;
+  void ShmBufferFreeAll(void) ;
   
   ////////////////////////////////////////////////
   // Must call in Grid startup

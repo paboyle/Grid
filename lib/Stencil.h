@@ -821,7 +821,7 @@ PARALLEL_FOR_LOOP
 
 
 	cobj *send_buf = (cobj *)_grid->ShmBufferTranslate(xmit_to_rank,u_recv_buf_p);
-	if ( (send_buf==NULL) ) { 
+	if ( send_buf==NULL ) { 
 	  send_buf = u_send_buf_p;
 	}
 	//	std::cout << " send_bufs  "<<std::hex<< send_buf <<" ubp "<<u_send_buf_p <<std::dec<<std::endl;
