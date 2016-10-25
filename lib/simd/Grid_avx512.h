@@ -371,8 +371,14 @@ namespace Optimization {
   // Some Template specialization
 
   // Hack for CLANG until mm512_reduce_add_ps etc... are implemented in GCC and Clang releases
+<<<<<<< HEAD
 #define GNU_CLANG_COMPILER 
 #ifdef GNU_CLANG_COMPILER
+=======
+
+#ifndef __INTEL_COMPILER
+#warning "Slow reduction due to incomplete reduce intrinsics"
+>>>>>>> develop
   //Complex float Reduce
   template<>
     inline Grid::ComplexF Reduce<Grid::ComplexF, __m512>::operator()(__m512 in){
