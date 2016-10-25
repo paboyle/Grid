@@ -123,7 +123,6 @@ void *CartesianCommunicator::ShmBufferTranslate(int rank,void * local_p) {
 void CartesianCommunicator::ShmInitGeneric(void){
   ShmBufStorageVector.resize(MAX_MPI_SHM_BYTES);
   ShmCommBuf=(void *)&ShmBufStorageVector[0];
-  std::cout << "allocated persistent buffer"<<std::hex << ShmCommBuf << std::dec<<std::endl;
 }
 
 #endif
