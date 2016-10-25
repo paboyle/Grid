@@ -127,6 +127,22 @@ class GridThread {
     ThreadBarrier();
   };
 
+  static void bcopy(const void *src, void *dst, size_t len) {
+#ifdef GRID_OMP
+#pragma omp parallel 
+    {
+      const char *c_src =(char *) src;
+      char *c_dest=(char *) dst;
+      int me,mywork,myoff;
+      GridThread::GetWorkBarrier(len,me, mywork,myoff);
+      bcopy(&c_src[myoff],&c_dest[myoff],mywork);
+    }
+#else 
+    bcopy(src,dst,len);
+#endif
+  }
+
+
 };
 
 }

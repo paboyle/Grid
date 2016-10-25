@@ -34,7 +34,12 @@ directory
 namespace Grid {
 
 GridStopWatch Logger::StopWatch;
+int Logger::timestamp;
 std::ostream Logger::devnull(0);
+
+void GridLogTimestamp(int on){
+  Logger::Timestamp(on);
+}
 
 Colours GridLogColours(0);
 GridLogger GridLogError(1, "Error", GridLogColours, "RED");
@@ -73,7 +78,7 @@ void GridLogConfigure(std::vector<std::string> &logstreams) {
 ////////////////////////////////////////////////////////////
 void Grid_quiesce_nodes(void) {
   int me = 0;
-#ifdef GRID_COMMS_MPI
+#if defined(GRID_COMMS_MPI) || defined(GRID_COMMS_MPI3)
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
 #endif
 #ifdef GRID_COMMS_SHMEM
