@@ -27,7 +27,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include "Grid.h"
 #include <mpi.h>
-#include <numaif.h>
 
 namespace Grid {
 
@@ -157,6 +156,7 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
   assert(ierr==0);
   // KNL hack -- force to numa-domain 1 in flat
 #if 0
+  //#include <numaif.h>
   for(uint64_t page=0;page<MAX_MPI_SHM_BYTES;page+=4096){
     void *pages = (void *) ( page + ShmCommBuf );
     int status;
