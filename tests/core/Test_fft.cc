@@ -76,13 +76,14 @@ int main (int argc, char ** argv)
   S=zero;
   S = S+C;
 
+  Ctilde = C;
   FFT theFFT(&Fine);
 
-  theFFT.FFT_dim(Ctilde,C,0,FFT::forward);  C=Ctilde; std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Ctilde,C,1,FFT::forward);  C=Ctilde; std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Ctilde,C,2,FFT::forward);  C=Ctilde; std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Ctilde,C,3,FFT::forward);  std::cout << theFFT.MFlops()<<std::endl;
-
+  theFFT.FFT_dim(Ctilde,Ctilde,0,FFT::forward); std::cout << theFFT.MFlops()<<std::endl;
+  theFFT.FFT_dim(Ctilde,Ctilde,1,FFT::forward); std::cout << theFFT.MFlops()<<std::endl;
+  theFFT.FFT_dim(Ctilde,Ctilde,2,FFT::forward); std::cout << theFFT.MFlops()<<std::endl;
+  theFFT.FFT_dim(Ctilde,Ctilde,3,FFT::forward); std::cout << theFFT.MFlops()<<std::endl;
+  
   //  C=zero;
   //  Ctilde = where(abs(Ctilde)<1.0e-10,C,Ctilde);
   TComplexD cVol;
@@ -92,12 +93,13 @@ int main (int argc, char ** argv)
   pokeSite(cVol,C,p);
   C=C-Ctilde;
   std::cout << "diff scalar "<<norm2(C) << std::endl;
-
-  theFFT.FFT_dim(Stilde,S,0,FFT::forward);  S=Stilde; std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Stilde,S,1,FFT::forward);  S=Stilde;std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Stilde,S,2,FFT::forward);  S=Stilde;std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Stilde,S,3,FFT::forward);std::cout << theFFT.MFlops()<<std::endl;
-
+  Stilde = S;
+  
+  theFFT.FFT_dim(Stilde,Stilde,0,FFT::forward); std::cout << theFFT.MFlops()<<std::endl;
+  theFFT.FFT_dim(Stilde,Stilde,1,FFT::forward); std::cout << theFFT.MFlops()<<std::endl;
+  theFFT.FFT_dim(Stilde,Stilde,2,FFT::forward); std::cout << theFFT.MFlops()<<std::endl;
+  theFFT.FFT_dim(Stilde,Stilde,3,FFT::forward); std::cout << theFFT.MFlops()<<std::endl;
+  
   SpinMatrixD Sp; 
   Sp = zero; Sp = Sp+cVol;
 
