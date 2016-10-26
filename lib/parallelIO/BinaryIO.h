@@ -568,9 +568,11 @@ class BinaryIO {
 
       	if (ILDG.is_ILDG){
       		// use C-LIME to populate the record
+          #ifdef HAVE_LIME
           size_t sizeFO = sizeof(fileObj);
           limeReaderSeek(ILDG.LR, g_idx*sizeFO, SEEK_SET);
           int status = limeReaderReadData((void *)&fileObj, &sizeFO, ILDG.LR);
+          #endif
         } else{
           fin.seekg(offset+g_idx*sizeof(fileObj));
           fin.read((char *)&fileObj,sizeof(fileObj));
@@ -764,11 +766,16 @@ class BinaryIO {
         if (ieee64big) htobe64_v((void *)&fileObj, sizeof(fileObj));
         if (ieee64) htole64_v((void *)&fileObj, sizeof(fileObj));
 
+
         if (ILDG.is_ILDG) {
+          #ifdef HAVE_LIME
           size_t sizeFO = sizeof(fileObj);
  					limeWriterSeek(ILDG.LW, g_idx*sizeFO, SEEK_SET);
           int status = limeWriteRecordData((void *)&fileObj, &sizeFO, ILDG.LW);
-        } else {
+          #endif
+        } 
+
+        else {
           fout.seekp(offset + g_idx * sizeof(fileObj));
           fout.write((char *)&fileObj, sizeof(fileObj));
         }

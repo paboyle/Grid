@@ -83,6 +83,7 @@ namespace QCD {
     }
     //////////////////////////////
 
+
     template <class SmearingPolicy, class IOCheckpointer>
     void Runner(int             argc,
                 char **         argv,

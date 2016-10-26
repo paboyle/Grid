@@ -131,9 +131,11 @@ CXXFLAGS=$CXXFLAGS_CPY
 LDFLAGS=$LDFLAGS_CPY
 
 AC_CHECK_LIB([lime],[limeCreateReader],
+  [AC_DEFINE([HAVE_LIME],[1],[Define to 1 if you have the `LIME' library (-llime).])]
+  [have_lime=true]
   [LIBS="$LIBS -llime"],
-  [AC_MSG_ERROR(C-LIME library was not found in your system.
-Please install or provide the correct path to your installation [default search path ~/lime/]
+  [AC_MSG_WARN(C-LIME library was not found in your system.
+In order to use ILGG file format please install or provide the correct path to your installation [default search path ~/lime/]
 Info at: http://usqcd.jlab.org/usqcd-docs/c-lime/)])
 
 
@@ -355,6 +357,7 @@ Summary of configuration for $PACKAGE v$VERSION
 - RNG choice                    : ${ac_RNG} 
 - GMP                           : `if test "x$have_gmp" = xtrue; then echo yes; else echo no; fi`
 - LAPACK                        : ${ac_LAPACK}
+- ILDG support (LIME)           : `if test "x$have_lime" = xtrue; then echo yes; else echo no; fi`
 - FFTW                          : `if test "x$have_fftw" = xtrue; then echo yes; else echo no; fi`
 - build DOXYGEN documentation   : `if test "x$enable_doc" = xyes; then echo yes; else echo no; fi`
 - graphs and diagrams           : `if test "x$enable_dot" = xyes; then echo yes; else echo no; fi`

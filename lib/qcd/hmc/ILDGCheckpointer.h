@@ -29,6 +29,8 @@ directory
 #ifndef ILDG_CHECKPOINTER
 #define ILDG_CHECKPOINTER
 
+#ifdef HAVE_LIME
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -47,7 +49,7 @@ class ILDGHmcCheckpointer
   std::string format;
 
  public:
-  INHERIT_GIMPL_TYPES(Implementation);  //
+  INHERIT_GIMPL_TYPES(Implementation);  
 
   ILDGHmcCheckpointer(std::string cf, std::string rn, int savemodulo,
                        std::string form = "IEEE64BIG") {
@@ -62,8 +64,13 @@ class ILDGHmcCheckpointer
     int ieee64big = (format == std::string("IEEE64BIG"));
     int ieee64    = (format == std::string("IEEE64"));
 
-    if (!(ieee64big ^ ieee32 ^ ieee32big ^ ieee64)) {
-      std::cout << GridLogMessage << "Invalid format: " << format << std::endl;
+    if (!(ieee64big || ieee32 || ieee32big || ieee64)) {
+      std::cout << GridLogError << "Unrecognized file format " << format
+                << std::endl;
+      std::cout << GridLogError
+                << "Allowed: IEEE32BIG | IEEE32 | IEEE64BIG | IEEE64"
+                << std::endl;
+
       exit(0);
     }
   };
@@ -118,4 +125,6 @@ class ILDGHmcCheckpointer
 };
 }
 }
+
+#endif
 #endif

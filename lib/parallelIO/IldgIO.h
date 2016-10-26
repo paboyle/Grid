@@ -37,6 +37,8 @@ directory
 #include <sys/utsname.h>
 #include <unistd.h>
 
+#ifdef HAVE_LIME
+
 extern "C" {  // for linkage
 #include "lime.h"
 }
@@ -238,8 +240,12 @@ class ILDGIO : public BinaryIO {
     return csum;
   }
 
-  // format for RNG?
+  // format for RNG? Now just binary out
 };
 }
 }
+
+//HAVE_LIME
+#endif
+
 #endif
