@@ -85,7 +85,7 @@ class HmcRunner : public BinaryHmcRunner {
     //BinaryHmcCheckpointer
     //ILDGHmcCheckpointer
     //NerscHmcCheckpointer
-    ILDGHmcCheckpointer<BinaryHmcRunner::ImplPolicy> Checkpoint(
+    NerscHmcCheckpointer<BinaryHmcRunner::ImplPolicy> Checkpoint(
         HMCPar.conf_prefix, HMCPar.rng_prefix, HMCPar.SaveInterval, HMCPar.format);
     // Can implement also a specific function in the hmcrunner
     // AddCheckpoint (...) that takes the same parameters + a string/tag

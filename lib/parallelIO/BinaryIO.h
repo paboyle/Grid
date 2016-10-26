@@ -355,7 +355,7 @@ class BinaryIO {
       }
       grid->Broadcast(rank, (void *)&saved[0], bytes);
 
-      grid->Barrier();  // necessary?
+      //grid->Barrier();  // necessary?
       if (grid->IsBoss()) {
         Uint32Checksum((uint32_t *)&saved[0], bytes, csum);
         fout.write((char *)&saved[0], bytes);
