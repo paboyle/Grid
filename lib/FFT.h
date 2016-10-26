@@ -200,12 +200,18 @@ namespace Grid {
       std::vector<int> lcoor(Nd), gcoor(Nd);
       result = source;
       for(int p=0;p<processors[dim];p++) {
-        for(int idx=0;idx<sgrid->lSites();idx++) {
-          sgrid->LocalIndexToLocalCoor(idx,lcoor);
+        PARALLEL_REGION
+        {
+          std::vector<int> cbuf(Nd);
           sobj s;
-          peekLocalSite(s,result,lcoor);
-          lcoor[dim]+=p*L;
-          pokeLocalSite(s,pgbuf,lcoor);
+          
+          PARALLEL_FOR_LOOP_INTERN
+          for(int idx=0;idx<sgrid->lSites();idx++) {
+            sgrid->LocalIndexToLocalCoor(idx,cbuf);
+            peekLocalSite(s,result,cbuf);
+            cbuf[dim]+=p*L;
+            pokeLocalSite(s,pgbuf,cbuf);
+          }
         }
         result = Cshift(result,dim,L);
       }
@@ -214,14 +220,18 @@ namespace Grid {
       int NN=pencil_g.lSites();
       GridStopWatch timer;
       timer.Start();
-      //PARALLEL_FOR_LOOP
-      for(int idx=0;idx<NN;idx++) {
-        pencil_g.LocalIndexToLocalCoor(idx,lcoor);
+      PARALLEL_REGION
+      {
+        std::vector<int> cbuf(Nd);
         
-        if ( lcoor[dim] == 0 ) {  // restricts loop to plane at lcoor[dim]==0
-          FFTW_scalar *in = (FFTW_scalar *)&pgbuf._odata[idx];
-          FFTW_scalar *out= (FFTW_scalar *)&pgbuf._odata[idx];
-          FFTW<scalar>::fftw_execute_dft(p,in,out);
+        PARALLEL_FOR_LOOP_INTERN
+        for(int idx=0;idx<NN;idx++) {
+          pencil_g.LocalIndexToLocalCoor(idx, cbuf);
+          if ( cbuf[dim] == 0 ) {  // restricts loop to plane at lcoor[dim]==0
+            FFTW_scalar *in = (FFTW_scalar *)&pgbuf._odata[idx];
+            FFTW_scalar *out= (FFTW_scalar *)&pgbuf._odata[idx];
+            FFTW<scalar>::fftw_execute_dft(p,in,out);
+          }
         }
       }
       timer.Stop();
@@ -235,13 +245,19 @@ namespace Grid {
       
       // writing out result
       int pc = processor_coor[dim];
-      for(int idx=0;idx<sgrid->lSites();idx++) {
-        sgrid->LocalIndexToLocalCoor(idx,lcoor);
-        gcoor = lcoor;
+      PARALLEL_REGION
+      {
+        std::vector<int> clbuf(Nd), cgbuf(Nd);
         sobj s;
-        gcoor[dim] = lcoor[dim]+L*pc;
-        peekLocalSite(s,pgbuf,gcoor);
-        pokeLocalSite(s,result,lcoor);
+        
+        PARALLEL_FOR_LOOP_INTERN
+        for(int idx=0;idx<sgrid->lSites();idx++) {
+          sgrid->LocalIndexToLocalCoor(idx,clbuf);
+          cgbuf = clbuf;
+          cgbuf[dim] = clbuf[dim]+L*pc;
+          peekLocalSite(s,pgbuf,cgbuf);
+          pokeLocalSite(s,result,clbuf);
+        }
       }
       
       // destroying plan
