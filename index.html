@@ -1,23 +1,19 @@
 ---
-layout: default
+layout: splash
+author_profile: false
+classes:
+  - landing
+excerpt: "Data parallel C++ mathematical object library."
+permalink: /
+header:
+  overlay_color: "#5e616c"
+  cta_label: "Github page"
+  cta_url: "https://github.com/paboyle/Grid"
+intro:
+  - excerpt: 'Get notified when we add new stuff &nbsp; [<i class="fa fa-github"></i> watch project](https://github.com/paboyle/Grid/subscription){: .btn .btn--info}'
+downloads:
+  - excerpt: 'Downloads [<i class="mega-octicon octicon-desktop-download"></i> Develop branch ZIP](https://github.com/paboyle/Grid/archive/develop.zip){: .btn .btn--large .btn--inverse}'
 ---
 
-<div class="home">
-
-  <h1 class="page-heading">Posts</h1>
-
-  <ul class="post-list">
-    {% for post in site.posts %}
-      <li>
-        <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}</span>
-
-        <h2>
-          <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
-        </h2>
-      </li>
-    {% endfor %}
-  </ul>
-
-  <p class="rss-subscribe">subscribe <a href="{{ "/feed.xml" | prepend: site.baseurl }}">via RSS</a></p>
-
-</div>
+{% include feature_row id="intro" type="center" %}
+{% include feature_row id="downloads" type="center" %}

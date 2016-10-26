@@ -1,0 +1,44 @@
+# main links links
+main:
+  - title: "Docs"
+    url: /docs/
+
+  - title: "Quick-start guide"
+    url: /docs/quick-start-guide
+
+  - title: "About"
+    url: /about/
+
+  - title: "GPL License"
+    url: /license/
+
+
+docs:
+  - title: Getting Started
+    children:
+      - title: "Quick-Start Guide"
+        url: /docs/quick-start-guide/
+      - title: "Structure"
+        url: /docs/structure/
+      - title: "Building"
+        url: /docs/building/
+
+
+  - title: API description
+    children:
+      - title: "SIMD classes"
+        url: /docs/simd/
+      - title: "Grid classes"
+        url: /docs/grid/
+      - title: "Tensor classes"
+        url: /docs/tensor/
+      - title: "Lattice classes"
+        url: /docs/lattice/
+
+  
+  - title: "Lattice theories"
+    children:
+      - title : "Theories"
+        url: /docs/theories/
+      - title: "HMC"
+        url: /docs/theories/hmc/

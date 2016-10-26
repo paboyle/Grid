@@ -1,0 +1,9 @@
+# /_data/authors.yml
+
+Guido Cossu:
+  name: "Guido Cossu"
+  uri: "http://www.google.com"
+  email: "guido.cossu@ed.ac.uk"
+  bio: "Senior researcher at Higgs Centre"
+  avatar: "bio-photo-2.jpg"
+  twitter: "coppolachan"
