@@ -53,12 +53,13 @@ WilsonKernels<Impl >::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,
 }
 
 #if defined(AVX512) 
-    
+#include <simd/Intel512wilson.h>
+
+#if defined(GRID_DEFAULT_PRECISION_SINGLE)    
     ///////////////////////////////////////////////////////////
     // If we are AVX512 specialise the single precision routine
     ///////////////////////////////////////////////////////////
-    
-#include <simd/Intel512wilson.h>
+
 #include <simd/Intel512single.h>
     
 static Vector<vComplexF> signs;
@@ -78,6 +79,7 @@ static Vector<vComplexF> signs;
 #define MAYBEPERM(A,perm) if (perm) { A ; }
 #define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN(ptr,pf)
 #define FX(A) WILSONASM_ ##A
+#define COMPLEX_TYPE vComplexF
   
 #undef KERNEL_DAG
 template<> void 
@@ -113,8 +115,79 @@ template<> void
 WilsonKernels<DomainWallVec5dImplF>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
 							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+#undef COMPLEX_TYPE
+	
+#endif //Single precision			    
+
+#if defined(GRID_DEFAULT_PRECISION_DOUBLE)    
+//temporary separating the two sections
+//for debug in isolation
+//can be unified
+
+    ///////////////////////////////////////////////////////////
+    // If we are AVX512 specialise the double precision routine
+    ///////////////////////////////////////////////////////////
+
+#include <simd/Intel512double.h>
+    
+static Vector<vComplexD> signs;
+    
+  int setupSigns(void ){
+    Vector<vComplexD> bother(2);
+    signs = bother;
+    vrsign(signs[0]);
+    visign(signs[1]);
+    return 1;
+  }
+  static int signInit = setupSigns();
+  
+#define label(A)  ilabel(A)
+#define ilabel(A) ".globl\n"  #A ":\n" 
+  
+#define MAYBEPERM(A,perm) if (perm) { A ; }
+#define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN(ptr,pf)
+#define FX(A) WILSONASM_ ##A
+#define COMPLEX_TYPE vComplexD
+  
+#undef KERNEL_DAG
+template<> void 
+WilsonKernels<WilsonImplD>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+      
+#define KERNEL_DAG
+template<> void 
+WilsonKernels<WilsonImplD>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+						   int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
-#endif
+#undef VMOVIDUP
+#undef VMOVRDUP
+#undef MAYBEPERM
+#undef MULT_2SPIN
+#undef FX 
+#define FX(A) DWFASM_ ## A
+#define MAYBEPERM(A,B) 
+#define VMOVIDUP(A,B,C)                                  VBCASTIDUPf(A,B,C)
+#define VMOVRDUP(A,B,C)                                  VBCASTRDUPf(A,B,C)
+#define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN_LS(ptr,pf)
+				    
+#undef KERNEL_DAG
+template<> void 
+WilsonKernels<DomainWallVec5dImplD>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+				    
+#define KERNEL_DAG
+template<> void 
+WilsonKernels<DomainWallVec5dImplD>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+	
+#undef COMPLEX_TYPE
+#endif //Double precision			    
+
+#endif //AVX512
 
 #define INSTANTIATE_ASM(A)\
 template void WilsonKernels<A>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,\
