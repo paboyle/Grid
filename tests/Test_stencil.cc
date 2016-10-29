@@ -116,7 +116,7 @@ int main (int argc, char ** argv)
 	  else if (SE->_is_local)
 	    Check._odata[i] = Foo._odata[SE->_offset];
 	  else 
-	    Check._odata[i] = myStencil.comm_buf[SE->_offset];
+	    Check._odata[i] = myStencil.CommBuf()[SE->_offset];
 	}
 
 	Real nrmC = norm2(Check);
@@ -207,7 +207,7 @@ int main (int argc, char ** argv)
 	  else if (SE->_is_local)
 	    OCheck._odata[i] = EFoo._odata[SE->_offset];
 	  else 
-	    OCheck._odata[i] = EStencil.comm_buf[SE->_offset];
+	    OCheck._odata[i] = EStencil.CommBuf()[SE->_offset];
 	}
 	for(int i=0;i<ECheck._grid->oSites();i++){
 	  int permute_type;
@@ -220,7 +220,7 @@ int main (int argc, char ** argv)
 	  else if (SE->_is_local)
 	    ECheck._odata[i] = OFoo._odata[SE->_offset];
 	  else 
-	    ECheck._odata[i] = OStencil.comm_buf[SE->_offset];
+	    ECheck._odata[i] = OStencil.CommBuf()[SE->_offset];
 	}
 	
 	setCheckerboard(Check,ECheck);

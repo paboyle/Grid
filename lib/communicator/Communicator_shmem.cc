@@ -39,16 +39,21 @@ namespace Grid {
     BACKTRACEFILE();		   \
   }\
 }
-int Rank(void) {
-  return shmem_my_pe();
-}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Info that is setup once and indept of cartesian layout
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 typedef struct HandShake_t { 
   uint64_t seq_local;
   uint64_t seq_remote;
 } HandShake;
 
+
 static Vector< HandShake > XConnections;
 static Vector< HandShake > RConnections;
+
 
 void CartesianCommunicator::Init(int *argc, char ***argv) {
   shmem_init();
@@ -60,8 +65,17 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
     RConnections[pe].seq_local = 0;
     RConnections[pe].seq_remote= 0;
   }
+  WorldSize = shmem_n_pes();
+  WorldRank = shmem_my_pe();
+  ShmRank=0;
+  ShmSize=1;
+  GroupRank=WorldRank;
+  GroupSize=WorldSize;
+  Slave    =0;
   shmem_barrier_all();
+  ShmInitGeneric();
 }
+
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {
   _ndimension = processors.size();
@@ -230,11 +244,8 @@ void CartesianCommunicator::SendRecvPacket(void *xmit,
 
   if ( _processor == sender ) {
 
-    printf("Sender SHMEM pt2pt %d -> %d\n",sender,receiver);
     // Check he has posted a receive
     while(SendSeq->seq_remote == SendSeq->seq_local);
-
-    printf("Sender receive %d posted\n",sender,receiver);
 
     // Advance our send count
     seq = ++(SendSeq->seq_local);
@@ -244,26 +255,19 @@ void CartesianCommunicator::SendRecvPacket(void *xmit,
     shmem_putmem(recv,xmit,bytes,receiver);
     shmem_fence();
 
-    printf("Sender sent payload %d\n",seq);
     //Notify him we're done
     shmem_putmem((void *)&(RecvSeq->seq_remote),&seq,sizeof(seq),receiver);
     shmem_fence();
-    printf("Sender ringing door bell  %d\n",seq);
   }
   if ( _processor == receiver ) {
 
-    printf("Receiver SHMEM pt2pt %d->%d\n",sender,receiver);
     // Post a receive
     seq = ++(RecvSeq->seq_local);
     shmem_putmem((void *)&(SendSeq->seq_remote),&seq,sizeof(seq),sender);
 
-    printf("Receiver Opening letter box %d\n",seq);
-
-    
     // Now wait until he has advanced our reception counter
     while(RecvSeq->seq_remote != RecvSeq->seq_local);
 
-    printf("Receiver Got the mail %d\n",seq);
   }
 }
 

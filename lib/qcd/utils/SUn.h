@@ -674,6 +674,37 @@ class SU {
       out += la;
     }
   }
+/*
+ add GaugeTrans
+*/
+
+template<typename GaugeField,typename GaugeMat>
+  static void GaugeTransform( GaugeField &Umu, GaugeMat &g){
+    GridBase *grid = Umu._grid;
+    conformable(grid,g._grid);
+
+    GaugeMat U(grid);
+    GaugeMat ag(grid); ag = adj(g);
+
+    for(int mu=0;mu<Nd;mu++){
+      U= PeekIndex<LorentzIndex>(Umu,mu);
+      U = g*U*Cshift(ag, mu, 1);
+      PokeIndex<LorentzIndex>(Umu,U,mu);
+    }
+  }
+  template<typename GaugeMat>
+    static void GaugeTransform( std::vector<GaugeMat> &U, GaugeMat &g){
+    GridBase *grid = g._grid;
+    GaugeMat ag(grid); ag = adj(g);
+    for(int mu=0;mu<Nd;mu++){
+      U[mu] = g*U[mu]*Cshift(ag, mu, 1);
+    }
+  }
+  template<typename GaugeField,typename GaugeMat>
+  static void RandomGaugeTransform(GridParallelRNG &pRNG, GaugeField &Umu, GaugeMat &g){
+    LieRandomize(pRNG,g,1.0);
+    GaugeTransform(Umu,g);
+  }
 
   // Projects the algebra components a lattice matrix (of dimension ncol*ncol -1 )
   // inverse operation: FundamentalLieAlgebraMatrix

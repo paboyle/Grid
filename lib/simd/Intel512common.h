@@ -37,7 +37,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 // Opcodes common 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #define MASK_REGS \
-  __asm__ ("mov     $0xAAAA, %%eax \n"\ 
+  __asm__ ("mov     $0xAAAA, %%eax \n"\
            "kmovw    %%eax, %%k6 \n"\
            "mov     $0x5555, %%eax \n"\
            "kmovw    %%eax, %%k7 \n" : : : "%eax");

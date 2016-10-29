@@ -42,20 +42,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 namespace Grid{
 namespace Optimization {
 
-  template<class vtype>
-  union uconv {
-    __m512 f;
-    vtype v;
-  };
-
   union u512f {
     __m512 v;
-    float f[8];
+    float f[16];
   };
 
   union u512d {
-    __m512 v;
-    double f[4];
+    __m512d v;
+    double f[8];
   };
   
   struct Vsplat{
@@ -388,9 +382,14 @@ namespace Optimization {
   // Some Template specialization
 
   // Hack for CLANG until mm512_reduce_add_ps etc... are implemented in GCC and Clang releases
+<<<<<<< HEAD
+#define GNU_CLANG_COMPILER 
+#ifdef GNU_CLANG_COMPILER
+=======
 
 #ifndef __INTEL_COMPILER
 #warning "Slow reduction due to incomplete reduce intrinsics"
+>>>>>>> develop
   //Complex float Reduce
   template<>
     inline Grid::ComplexF Reduce<Grid::ComplexF, __m512>::operator()(__m512 in){
