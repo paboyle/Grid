@@ -159,8 +159,8 @@ WilsonKernels<WilsonImplD>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder
 #undef FX 
 #define FX(A) DWFASM_ ## A
 #define MAYBEPERM(A,B) 
-#define VMOVIDUP(A,B,C)                                  VBCASTIDUPf(A,B,C)
-#define VMOVRDUP(A,B,C)                                  VBCASTRDUPf(A,B,C)
+#define VMOVIDUP(A,B,C)                                  VBCASTIDUPd(A,B,C)
+#define VMOVRDUP(A,B,C)                                  VBCASTRDUPd(A,B,C)
 #define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN_LS(ptr,pf)
 				    
 #undef KERNEL_DAG
