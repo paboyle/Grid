@@ -10,6 +10,7 @@
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -55,23 +56,24 @@ WilsonKernels<Impl >::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,
 #if defined(AVX512) 
 #include <simd/Intel512wilson.h>
 
-#if defined(GRID_DEFAULT_PRECISION_SINGLE)    
     ///////////////////////////////////////////////////////////
     // If we are AVX512 specialise the single precision routine
     ///////////////////////////////////////////////////////////
 
 #include <simd/Intel512single.h>
     
-static Vector<vComplexF> signs;
-    
-  int setupSigns(void ){
-    Vector<vComplexF> bother(2);
+static Vector<vComplexF> signsF;
+
+  template<typename vtype>    
+  int setupSigns(Vector<vtype>& signs ){
+    Vector<vtype> bother(2);
     signs = bother;
     vrsign(signs[0]);
     visign(signs[1]);
     return 1;
   }
-  static int signInit = setupSigns();
+
+  static int signInitF = setupSigns(signsF);
   
 #define label(A)  ilabel(A)
 #define ilabel(A) ".globl\n"  #A ":\n" 
@@ -80,6 +82,7 @@ static Vector<vComplexF> signs;
 #define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN(ptr,pf)
 #define FX(A) WILSONASM_ ##A
 #define COMPLEX_TYPE vComplexF
+#define signs signsF
   
 #undef KERNEL_DAG
 template<> void 
@@ -116,34 +119,22 @@ WilsonKernels<DomainWallVec5dImplF>::DiracOptAsmDhopSiteDag(StencilImpl &st,Lebe
 							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 #undef COMPLEX_TYPE
+#undef signs
+#undef VMOVRDUP
+#undef MAYBEPERM
+#undef MULT_2SPIN
+#undef FX 
 	
-#endif //Single precision			    
-
-#if defined(GRID_DEFAULT_PRECISION_DOUBLE)    
-//temporary separating the two sections
-//for debug in isolation
-//can be unified
-
-    ///////////////////////////////////////////////////////////
-    // If we are AVX512 specialise the double precision routine
-    ///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+// If we are AVX512 specialise the double precision routine
+///////////////////////////////////////////////////////////
 
 #include <simd/Intel512double.h>
     
-static Vector<vComplexD> signs;
+static Vector<vComplexD> signsD;
+#define signs signsD
+static int signInitD = setupSigns(signsD);
     
-  int setupSigns(void ){
-    Vector<vComplexD> bother(2);
-    signs = bother;
-    vrsign(signs[0]);
-    visign(signs[1]);
-    return 1;
-  }
-  static int signInit = setupSigns();
-  
-#define label(A)  ilabel(A)
-#define ilabel(A) ".globl\n"  #A ":\n" 
-  
 #define MAYBEPERM(A,perm) if (perm) { A ; }
 #define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN(ptr,pf)
 #define FX(A) WILSONASM_ ##A
@@ -185,7 +176,11 @@ WilsonKernels<DomainWallVec5dImplD>::DiracOptAsmDhopSiteDag(StencilImpl &st,Lebe
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 	
 #undef COMPLEX_TYPE
-#endif //Double precision			    
+#undef signs
+#undef VMOVRDUP
+#undef MAYBEPERM
+#undef MULT_2SPIN
+#undef FX 
 
 #endif //AVX512
 
