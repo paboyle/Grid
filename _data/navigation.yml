@@ -4,7 +4,7 @@ main:
     url: /docs/
 
   - title: "Quick-start guide"
-    url: /docs/quick-start-guide
+    url: /docs/quick-start-guide/
 
   - title: "About"
     url: /about/
@@ -42,3 +42,4 @@ docs:
         url: /docs/theories/
       - title: "HMC"
         url: /docs/theories/hmc/
+        
