@@ -1,3 +1,12 @@
+---
+layout: single
+title : "Quick start guide"
+author_profile: false
+excerpt: "How to install"
+header:
+  overlay_color: "#333"
+permalink: /docs/quick-start-guide/
+---
 ### Installation
 First, start by cloning the repository:
 
