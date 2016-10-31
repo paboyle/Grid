@@ -151,12 +151,19 @@ namespace QCD{
   {
     auto               *grid = dynamic_cast<GridCartesian *>(out._grid);
     const unsigned int nd = grid->_ndimension;
+    std::vector<int> latt_size   = grid->_fdimensions;
     GaugeLinkField     sqrtK2Inv(grid), r(grid);
     GaugeField         aTilde(grid);
     FFT                fft(grid);
     
+    Integer vol = 1;
+    for(int d = 0; d < nd; d++)
+    {
+      vol = vol * latt_size[d];
+    }
+
     invKHatSquared(sqrtK2Inv);
-    sqrtK2Inv = sqrt(real(sqrtK2Inv));
+    sqrtK2Inv = sqrt(vol*real(sqrtK2Inv));
     zmSub(sqrtK2Inv);
     for(int mu = 0; mu < nd; mu++)
     {
