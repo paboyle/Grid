@@ -64,6 +64,51 @@ int main(int argc, char *argv[])
     pRNG.SeedRandomDevice();
     photon.StochasticField(a, pRNG);
 
+    // Calculate log of plaquette
+    EmComp              plaqA(&grid);
+    EmComp              wlA(&grid);
+    EmComp              tmp(&grid);
+    std::vector<EmComp> a_comp(4, &grid);
+
+    for (int dir = 0; dir < Nd; dir++) {
+      a_comp[dir] = PeekIndex<LorentzIndex>(a, dir);
+    }
+
+    plaqA = zero;
+    wlA = zero;
+
+    for(int mu = 1; mu < Nd; mu++) {
+        for(int nu = 0; nu < mu; nu++) {
+            tmp = a_comp[mu] + Cshift(a_comp[nu], mu, 1) - Cshift(a_comp[mu], nu, 1) - a_comp[nu];
+            plaqA = plaqA + cos(tmp);
+
+            tmp = a_comp[mu] + Cshift(a_comp[mu], mu, 1)
+                  + Cshift(a_comp[nu], mu, 2) + Cshift(Cshift(a_comp[nu], mu, 2), nu, 1)
+                  - Cshift(Cshift(a_comp[mu], nu, 2), mu, 1) - Cshift(a_comp[mu], nu, 2)
+                  - Cshift(a_comp[nu], nu, 1) - a_comp[nu];
+            wlA = wlA + cos(tmp);
+        }
+    }
+
+    double vol = grid.gSites();
+    double faces = (1.0 * Nd * (Nd - 1)) / 2.0;
+
+    Complex avgPlaqA = sum(trace(plaqA));
+    avgPlaqA = avgPlaqA / vol / faces;
+
+    Complex avgWlA = sum(trace(wlA));
+    avgWlA = avgWlA / vol / faces;
+
+    TComplex tplaqsite;
+    LatticeComplex plaqtrace = trace(plaqA);
+    std::vector<int> site0 = {0,0,0,0};
+    peekSite(tplaqsite, plaqtrace, site0);
+    Complex plaqsite = TensorRemove(tplaqsite);
+
+    LOG(Message) << "Plaquette average: " << avgPlaqA << std::endl;
+    LOG(Message) << "2x2 Wilson Loop average: " << avgWlA << std::endl;
+    LOG(Message) << "Plaquette (one site): " << plaqsite / faces << std::endl;
+
     // epilogue
     LOG(Message) << "Grid is finalizing now" << std::endl;
     Grid_finalize();
