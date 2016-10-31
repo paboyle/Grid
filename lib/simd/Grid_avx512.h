@@ -42,20 +42,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 namespace Grid{
 namespace Optimization {
 
-  template<class vtype>
-  union uconv {
-    __m512 f;
-    vtype v;
-  };
-
   union u512f {
     __m512 v;
-    float f[8];
+    float f[16];
   };
 
   union u512d {
-    __m512 v;
-    double f[4];
+    __m512d v;
+    double f[8];
   };
   
   struct Vsplat{

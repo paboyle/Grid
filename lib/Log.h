@@ -37,10 +37,11 @@
 #include <execinfo.h>
 #endif
 
-    namespace Grid {
+namespace Grid {
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
 // Dress the output; use std::chrono for time stamping via the StopWatch class
-int Rank(void); // used for early stage debug before library init
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 class Colours{
@@ -55,7 +56,6 @@ public:
 
   void Active(bool activate){
     is_active=activate;
-
     if (is_active){
      colour["BLACK"]  ="\033[30m";
      colour["RED"]    ="\033[31m";
@@ -66,21 +66,18 @@ public:
      colour["CYAN"]   ="\033[36m";
      colour["WHITE"]  ="\033[37m";
      colour["NORMAL"] ="\033[0;39m";
-   } else {
-    colour["BLACK"] ="";
-    colour["RED"]   ="";
-    colour["GREEN"] ="";
-    colour["YELLOW"]="";
-    colour["BLUE"]  ="";
-    colour["PURPLE"]="";
-    colour["CYAN"]  ="";
-    colour["WHITE"] ="";
-    colour["NORMAL"]="";
-  }
-
-
-};
-
+    } else {
+      colour["BLACK"] ="";
+      colour["RED"]   ="";
+      colour["GREEN"] ="";
+      colour["YELLOW"]="";
+      colour["BLUE"]  ="";
+      colour["PURPLE"]="";
+      colour["CYAN"]  ="";
+      colour["WHITE"] ="";
+      colour["NORMAL"]="";
+    }
+  };
 };
 
 
@@ -88,6 +85,7 @@ class Logger {
 protected:
   Colours &Painter;
   int active;
+  static int timestamp;
   std::string name, topName;
   std::string COLOUR;
 
@@ -99,25 +97,28 @@ public:
   std::string evidence() {return Painter.colour["YELLOW"];}
   std::string colour() {return Painter.colour[COLOUR];}
 
-  Logger(std::string topNm, int on, std::string nm, Colours& col_class, std::string col)
-  : active(on),
-  name(nm),
-  topName(topNm),
-  Painter(col_class),
-  COLOUR(col){} ;
+  Logger(std::string topNm, int on, std::string nm, Colours& col_class, std::string col)  : active(on),
+    name(nm),
+    topName(topNm),
+    Painter(col_class),
+    COLOUR(col) {} ;
   
   void Active(int on) {active = on;};
   int  isActive(void) {return active;};
+  static void Timestamp(int on) {timestamp = on;};
   
   friend std::ostream& operator<< (std::ostream& stream, Logger& log){
 
     if ( log.active ) {
-      StopWatch.Stop();
-      GridTime now = StopWatch.Elapsed();
-      StopWatch.Start();
       stream << log.background()<< log.topName << log.background()<< " : ";
       stream << log.colour() <<std::setw(14) << std::left << log.name << log.background() << " : ";
-      stream << log.evidence()<< now << log.background() << " : " << log.colour();
+      if ( log.timestamp ) {
+	StopWatch.Stop();
+	GridTime now = StopWatch.Elapsed();
+	StopWatch.Start();
+	stream << log.evidence()<< now << log.background() << " : " ;
+      }
+      stream << log.colour();
       return stream;
     } else { 
       return devnull;
@@ -150,7 +151,7 @@ extern void * Grid_backtrace_buffer[_NBACKTRACE];
 
 #define BACKTRACEFILE() {\
 char string[20];					\
-std::sprintf(string,"backtrace.%d",Rank());				\
+std::sprintf(string,"backtrace.%d",CartesianCommunicator::RankWorld()); \
 std::FILE * fp = std::fopen(string,"w");				\
 BACKTRACEFP(fp)\
 std::fclose(fp);	    \

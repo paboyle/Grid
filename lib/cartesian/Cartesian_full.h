@@ -49,7 +49,7 @@ public:
     virtual int CheckerBoarded(int dim){
       return 0;
     }
-    virtual int CheckerBoard(std::vector<int> site){
+    virtual int CheckerBoard(std::vector<int> &site){
         return 0;
     }
     virtual int CheckerBoardDestination(int cb,int shift,int dim){

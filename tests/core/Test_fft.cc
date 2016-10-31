@@ -86,11 +86,12 @@ int main (int argc, char ** argv)
 
   FFT theFFT(&GRID);
 
+  Ctilde=C;
   std::cout<<" Benchmarking FFT of LatticeComplex  "<<std::endl;
-  theFFT.FFT_dim(Ctilde,C,0,FFT::forward);  C=Ctilde; std::cout << theFFT.MFlops()<<" Mflops "<<std::endl;
-  theFFT.FFT_dim(Ctilde,C,1,FFT::forward);  C=Ctilde; std::cout << theFFT.MFlops()<<" Mflops "<<std::endl;
-  theFFT.FFT_dim(Ctilde,C,2,FFT::forward);  C=Ctilde; std::cout << theFFT.MFlops()<<" Mflops "<<std::endl;
-  theFFT.FFT_dim(Ctilde,C,3,FFT::forward);            std::cout << theFFT.MFlops()<<" Mflops "<<std::endl;
+  theFFT.FFT_dim(Ctilde,Ctilde,0,FFT::forward); std::cout << theFFT.MFlops()<<" Mflops "<<std::endl;
+  theFFT.FFT_dim(Ctilde,Ctilde,1,FFT::forward); std::cout << theFFT.MFlops()<<" Mflops "<<std::endl;
+  theFFT.FFT_dim(Ctilde,Ctilde,2,FFT::forward); std::cout << theFFT.MFlops()<<" Mflops "<<std::endl;
+  theFFT.FFT_dim(Ctilde,Ctilde,3,FFT::forward); std::cout << theFFT.MFlops()<<" Mflops "<<std::endl;
 
   //  C=zero;
   //  Ctilde = where(abs(Ctilde)<1.0e-10,C,Ctilde);
@@ -113,11 +114,12 @@ int main (int argc, char ** argv)
   Cref= Cref - C;
   std::cout << " invertible check " << norm2(Cref)<<std::endl;
 
+  Stilde=S;
   std::cout<<" Benchmarking FFT of LatticeSpinMatrix  "<<std::endl;
-  theFFT.FFT_dim(Stilde,S,0,FFT::forward);  S=Stilde;std::cout << theFFT.MFlops()<<" mflops "<<std::endl;
-  theFFT.FFT_dim(Stilde,S,1,FFT::forward);  S=Stilde;std::cout << theFFT.MFlops()<<" mflops "<<std::endl;
-  theFFT.FFT_dim(Stilde,S,2,FFT::forward);  S=Stilde;std::cout << theFFT.MFlops()<<" mflops "<<std::endl;
-  theFFT.FFT_dim(Stilde,S,3,FFT::forward);std::cout << theFFT.MFlops()<<" mflops "<<std::endl;
+  theFFT.FFT_dim(Stilde,S,0,FFT::forward); std::cout << theFFT.MFlops()<<" mflops "<<std::endl;
+  theFFT.FFT_dim(Stilde,S,1,FFT::forward); std::cout << theFFT.MFlops()<<" mflops "<<std::endl;
+  theFFT.FFT_dim(Stilde,S,2,FFT::forward); std::cout << theFFT.MFlops()<<" mflops "<<std::endl;
+  theFFT.FFT_dim(Stilde,S,3,FFT::forward); std::cout << theFFT.MFlops()<<" mflops "<<std::endl;
 
   SpinMatrixD Sp; 
   Sp = zero; Sp = Sp+cVol;
@@ -441,6 +443,8 @@ int main (int argc, char ** argv)
   }
 
   {
+    /*
+     * 
     typedef GaugeImplTypes<vComplexD, 1> QEDGimplTypesD;
     typedef Photon<QEDGimplTypesD>       QEDGaction;
 
@@ -450,6 +454,7 @@ int main (int argc, char ** argv)
 
     Maxwell.FreePropagator (Source,Prop);
     std::cout << " MaxwellFree propagator\n";
+    */
   }
   Grid_finalize();
 }

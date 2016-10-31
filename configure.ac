@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([Grid], [0.5.1-dev], [https://github.com/paboyle/Grid], [Grid])
+AC_INIT([Grid], [0.6.0], [https://github.com/paboyle/Grid], [Grid])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -9,22 +9,33 @@ AC_CONFIG_SRCDIR([lib/Grid.h])
 AC_CONFIG_HEADERS([lib/Config.h])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
-
 ############### Checks for programs
-AC_LANG(C++)
 CXXFLAGS="-O3 $CXXFLAGS"
 AC_PROG_CXX
 AC_PROG_RANLIB
 
-############ openmp  ###############
+############### Get compiler informations
+AC_LANG([C++])
+AX_CXX_COMPILE_STDCXX_11([noext],[mandatory])
+AX_COMPILER_VENDOR
+AC_DEFINE_UNQUOTED([CXX_COMP_VENDOR],["$ax_cv_cxx_compiler_vendor"],
+      [vendor of C++ compiler that will compile the code])
+AX_GXX_VERSION
+AC_DEFINE_UNQUOTED([GXX_VERSION],["$GXX_VERSION"],
+      [version of g++ that will compile the code])
+
+############### Checks for typedefs, structures, and compiler characteristics
+AC_TYPE_SIZE_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
+
+############### OpenMP 
 AC_OPENMP
-
 ac_openmp=no
-
 if test "${OPENMP_CXXFLAGS}X" != "X"; then
-ac_openmp=yes
-AM_CXXFLAGS="$OPENMP_CXXFLAGS $AM_CXXFLAGS"
-AM_LDFLAGS="$OPENMP_CXXFLAGS $AM_LDFLAGS"
+  ac_openmp=yes
+  AM_CXXFLAGS="$OPENMP_CXXFLAGS $AM_CXXFLAGS"
+  AM_LDFLAGS="$OPENMP_CXXFLAGS $AM_LDFLAGS"
 fi
 
 ############### Checks for header files
@@ -37,12 +48,7 @@ AC_CHECK_HEADERS(execinfo.h)
 AC_CHECK_DECLS([ntohll],[], [], [[#include <arpa/inet.h>]])
 AC_CHECK_DECLS([be64toh],[], [], [[#include <arpa/inet.h>]])
 
-############### Checks for typedefs, structures, and compiler characteristics
-AC_TYPE_SIZE_T
-AC_TYPE_UINT32_T
-AC_TYPE_UINT64_T
-
-############### GMP and MPFR #################
+############### GMP and MPFR
 AC_ARG_WITH([gmp],
     [AS_HELP_STRING([--with-gmp=prefix],
     [try this for a non-standard install prefix of the GMP library])],
@@ -54,10 +60,17 @@ AC_ARG_WITH([mpfr],
     [AM_CXXFLAGS="-I$with_mpfr/include $AM_CXXFLAGS"]
     [AM_LDFLAGS="-L$with_mpfr/lib $AM_LDFLAGS"])
 
-################## lapack ####################
+############### FFTW3 
+AC_ARG_WITH([fftw],    
+            [AS_HELP_STRING([--with-fftw=prefix],
+            [try this for a non-standard install prefix of the FFTW3 library])],
+            [AM_CXXFLAGS="-I$with_fftw/include $AM_CXXFLAGS"]
+            [AM_LDFLAGS="-L$with_fftw/lib $AM_LDFLAGS"])
+
+############### lapack 
 AC_ARG_ENABLE([lapack],
     [AC_HELP_STRING([--enable-lapack=yes|no|prefix], [enable LAPACK])], 
-    [ac_LAPACK=${enable_lapack}],[ac_LAPACK=no])
+    [ac_LAPACK=${enable_lapack}], [ac_LAPACK=no])
 
 case ${ac_LAPACK} in
     no)
@@ -67,10 +80,26 @@ case ${ac_LAPACK} in
     *)
         AM_CXXFLAGS="-I$ac_LAPACK/include $AM_CXXFLAGS"
         AM_LDFLAGS="-L$ac_LAPACK/lib $AM_LDFLAGS"
-        AC_DEFINE([USE_LAPACK],[1],[use LAPACK])
+        AC_DEFINE([USE_LAPACK],[1],[use LAPACK]);;
 esac
 
-################## first-touch ####################
+############### MKL
+AC_ARG_ENABLE([mkl],
+    [AC_HELP_STRING([--enable-mkl=yes|no|prefix], [enable Intel MKL for LAPACK & FFTW])],
+    [ac_MKL=${enable_mkl}], [ac_MKL=no])
+
+case ${ac_MKL} in
+    no)
+        ;;
+    yes)
+        AC_DEFINE([USE_MKL], [1], [Define to 1 if you use the Intel MKL]);;
+    *)
+        AM_CXXFLAGS="-I$ac_MKL/include $AM_CXXFLAGS"
+        AM_LDFLAGS="-L$ac_MKL/lib $AM_LDFLAGS"
+        AC_DEFINE([USE_MKL], [1], [Define to 1 if you use the Intel MKL]);;
+esac
+
+############### first-touch
 AC_ARG_ENABLE([numa],
     [AC_HELP_STRING([--enable-numa=yes|no|prefix], [enable first touch numa opt])], 
     [ac_NUMA=${enable_NUMA}],[ac_NUMA=no])
@@ -84,56 +113,44 @@ case ${ac_NUMA} in
         AC_DEFINE([GRID_NUMA],[1],[First touch numa locality]);;
 esac
 
-################## FFTW3 ####################
-AC_ARG_WITH([fftw],    
-            [AS_HELP_STRING([--with-fftw=prefix],
-            [try this for a non-standard install prefix of the FFTW3 library])],
-            [AM_CXXFLAGS="-I$with_fftw/include $AM_CXXFLAGS"]
-            [AM_LDFLAGS="-L$with_fftw/lib $AM_LDFLAGS"])
-
-################ Get compiler informations
-AC_LANG([C++])
-AX_CXX_COMPILE_STDCXX_11([noext],[mandatory])
-AX_COMPILER_VENDOR
-AC_DEFINE_UNQUOTED([CXX_COMP_VENDOR],["$ax_cv_cxx_compiler_vendor"],
-      [vendor of C++ compiler that will compile the code])
-AX_GXX_VERSION
-AC_DEFINE_UNQUOTED([GXX_VERSION],["$GXX_VERSION"],
-      [version of g++ that will compile the code])
-
 ############### Checks for library functions
 CXXFLAGS_CPY=$CXXFLAGS
 LDFLAGS_CPY=$LDFLAGS
 CXXFLAGS="$AM_CXXFLAGS $CXXFLAGS"
 LDFLAGS="$AM_LDFLAGS $LDFLAGS"
+
 AC_CHECK_FUNCS([gettimeofday])
-AC_CHECK_LIB([gmp],[__gmpf_init],
-             [AC_CHECK_LIB([mpfr],[mpfr_init],
-                 [AC_DEFINE([HAVE_LIBMPFR], [1], [Define to 1 if you have the `MPFR' library (-lmpfr).])]
-                 [have_mpfr=true]
-                 [LIBS="$LIBS -lmpfr"],
-                 [AC_MSG_ERROR([MPFR library not found])])]
-   	     [AC_DEFINE([HAVE_LIBGMP], [1], [Define to 1 if you have the `GMP' library (-lgmp).])]
-             [have_gmp=true]
-             [LIBS="$LIBS -lgmp"],
-             [AC_MSG_WARN([**** GMP library not found, Grid can still compile but RHMC will not work ****])])
+
+if test "${ac_MKL}x" != "nox"; then
+    AC_SEARCH_LIBS([mkl_set_interface_layer], [mkl_rt], [],
+                   [AC_MSG_ERROR("MKL enabled but library not found")])
+fi
+
+AC_SEARCH_LIBS([__gmpf_init], [gmp],
+               [AC_SEARCH_LIBS([mpfr_init], [mpfr], 
+                               [AC_DEFINE([HAVE_LIBMPFR], [1], 
+                                          [Define to 1 if you have the `MPFR' library])]
+                               [have_mpfr=true], [AC_MSG_ERROR([MPFR library not found])])]
+               [AC_DEFINE([HAVE_LIBGMP], [1], [Define to 1 if you have the `GMP' library])]
+               [have_gmp=true])
 
 if test "${ac_LAPACK}x" != "nox"; then
-    AC_CHECK_LIB([lapack],[LAPACKE_sbdsdc],[],
-                 [AC_MSG_ERROR("LAPACK enabled but library not found")])
-fi
-AC_CHECK_LIB([fftw3],[fftw_execute],
-  [AC_DEFINE([HAVE_FFTW],[1],[Define to 1 if you have the `FFTW' library (-lfftw3).])]
-  [have_fftw=true]
-  [LIBS="$LIBS -lfftw3 -lfftw3f"],
-  [AC_MSG_WARN([**** FFTW library not found, Grid can still compile but FFT-based routines will not work ****])])
+    AC_SEARCH_LIBS([LAPACKE_sbdsdc], [lapack], [],
+                   [AC_MSG_ERROR("LAPACK enabled but library not found")])
+fi   
+
+AC_SEARCH_LIBS([fftw_execute], [fftw3],
+               [AC_SEARCH_LIBS([fftwf_execute], [fftw3f], [],
+                               [AC_MSG_ERROR("single precision FFTW library not found")])]
+               [AC_DEFINE([HAVE_FFTW], [1], [Define to 1 if you have the `FFTW' library])]
+               [have_fftw=true])
+
 CXXFLAGS=$CXXFLAGS_CPY
 LDFLAGS=$LDFLAGS_CPY
 
 ############### SIMD instruction selection
-AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=SSE4|AVX|AVXFMA4|AVXFMA|AVX2|AVX512|AVX512MIC|IMCI|KNL|KNC],\
-	[Select instructions to be SSE4.0, AVX 1.0, AVX 2.0+FMA, AVX 512, IMCI])],\
-	[ac_SIMD=${enable_simd}],[ac_SIMD=GEN])
+AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=<code>],
+	            [select SIMD target (cf. README.md)])], [ac_SIMD=${enable_simd}], [ac_SIMD=GEN])
 
 case ${ax_cv_cxx_compiler_vendor} in
   clang|gnu)
@@ -153,12 +170,15 @@ case ${ax_cv_cxx_compiler_vendor} in
       AVX2)
         AC_DEFINE([AVX2],[1],[AVX2 intrinsics])
         SIMD_FLAGS='-mavx2 -mfma';;
-      AVX512|AVX512MIC|KNL)
+      AVX512)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-mavx512f -mavx512pf -mavx512er -mavx512cd';;
-      IMCI|KNC)
+      KNC)
         AC_DEFINE([IMCI],[1],[IMCI intrinsics for Knights Corner])
         SIMD_FLAGS='';;
+      KNL)
+        AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
+        SIMD_FLAGS='-march=knl';;
       GEN)
         AC_DEFINE([GENERIC_VEC],[1],[generic vector code])
         SIMD_FLAGS='';;
@@ -176,9 +196,6 @@ case ${ax_cv_cxx_compiler_vendor} in
       AVX)
         AC_DEFINE([AVX1],[1],[AVX intrinsics])
         SIMD_FLAGS='-mavx -xavx';;
-      AVXFMA4)
-        AC_DEFINE([AVXFMA4],[1],[AVX intrinsics with FMA4])
-        SIMD_FLAGS='-mavx -mfma';;
       AVXFMA)
         AC_DEFINE([AVXFMA],[1],[AVX intrinsics with FMA4])
         SIMD_FLAGS='-mavx -mfma';;
@@ -188,12 +205,12 @@ case ${ax_cv_cxx_compiler_vendor} in
       AVX512)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-xcore-avx512';;
-      AVX512MIC|KNL)
-        AC_DEFINE([AVX512],[1],[AVX512 intrinsics for Knights Landing])
-        SIMD_FLAGS='-xmic-avx512';;
-      IMCI|KNC)
+      KNC)
         AC_DEFINE([IMCI],[1],[IMCI Intrinsics for Knights Corner])
         SIMD_FLAGS='';;
+      KNL)
+        AC_DEFINE([AVX512],[1],[AVX512 intrinsics for Knights Landing])
+        SIMD_FLAGS='-xmic-avx512';;
       GEN)
         AC_DEFINE([GENERIC_VEC],[1],[generic vector code])
         SIMD_FLAGS='';;
@@ -208,14 +225,18 @@ AM_CXXFLAGS="$SIMD_FLAGS $AM_CXXFLAGS"
 AM_CFLAGS="$SIMD_FLAGS $AM_CFLAGS"
 
 case ${ac_SIMD} in
-  AVX512|AVX512MIC|KNL)
+  AVX512|KNL)
     AC_DEFINE([TEST_ZMM],[1],[compile ZMM test]);;
   *)
 	;;
 esac
 
-############### precision selection
-AC_ARG_ENABLE([precision],[AC_HELP_STRING([--enable-precision=single|double],[Select default word size of Real])],[ac_PRECISION=${enable_precision}],[ac_PRECISION=double])
+############### Precision selection
+AC_ARG_ENABLE([precision],
+              [AC_HELP_STRING([--enable-precision=single|double],
+                              [Select default word size of Real])],
+              [ac_PRECISION=${enable_precision}],[ac_PRECISION=double])
+
 case ${ac_PRECISION} in
      single)
        AC_DEFINE([GRID_DEFAULT_PRECISION_SINGLE],[1],[GRID_DEFAULT_PRECISION is SINGLE] )
@@ -226,43 +247,49 @@ case ${ac_PRECISION} in
 esac
 
 ############### communication type selection
-AC_ARG_ENABLE([comms],[AC_HELP_STRING([--enable-comms=none|mpi|mpi-auto|shmem],[Select communications])],[ac_COMMS=${enable_comms}],[ac_COMMS=none])
+AC_ARG_ENABLE([comms],[AC_HELP_STRING([--enable-comms=none|mpi|mpi-auto|mpi3|mpi3-auto|shmem],
+              [Select communications])],[ac_COMMS=${enable_comms}],[ac_COMMS=none])
 
 case ${ac_COMMS} in
      none)
-       AC_DEFINE([GRID_COMMS_NONE],[1],[GRID_COMMS_NONE] )
+        AC_DEFINE([GRID_COMMS_NONE],[1],[GRID_COMMS_NONE] )
      ;;
-     mpi-auto)
-       AC_DEFINE([GRID_COMMS_MPI],[1],[GRID_COMMS_MPI] )
-       LX_FIND_MPI
-       if test "x$have_CXX_mpi" = 'xno'; then AC_MSG_ERROR(["MPI not found"]); fi
-       AM_CXXFLAGS="$MPI_CXXFLAGS $AM_CXXFLAGS"
-       AM_CFLAGS="$MPI_CFLAGS $AM_CFLAGS"
-       AM_LDFLAGS="`echo $MPI_CXXLDFLAGS | sed -E 's/-l@<:@^ @:>@+//g'` $AM_LDFLAGS"
-       LIBS="`echo $MPI_CXXLDFLAGS | sed -E 's/-L@<:@^ @:>@+//g'` $LIBS"
+     mpi|mpi-auto)
+        AC_DEFINE([GRID_COMMS_MPI],[1],[GRID_COMMS_MPI] )
      ;;
-     mpi)
-       AC_DEFINE([GRID_COMMS_MPI],[1],[GRID_COMMS_MPI] )
-     ;;
-     mpi3)
-       AC_DEFINE([GRID_COMMS_MPI3],[1],[GRID_COMMS_MPI3] )
+     mpi3|mpi3-auto)
+        AC_DEFINE([GRID_COMMS_MPI3],[1],[GRID_COMMS_MPI3] )
      ;;
      shmem)
-       AC_DEFINE([GRID_COMMS_SHMEM],[1],[GRID_COMMS_SHMEM] )
+        AC_DEFINE([GRID_COMMS_SHMEM],[1],[GRID_COMMS_SHMEM] )
      ;;
      *)
-     AC_MSG_ERROR([${ac_COMMS} unsupported --enable-comms option]); 
+        AC_MSG_ERROR([${ac_COMMS} unsupported --enable-comms option]); 
      ;;
 esac
+case ${ac_COMMS} in
+    *-auto)
+        LX_FIND_MPI
+        if test "x$have_CXX_mpi" = 'xno'; then AC_MSG_ERROR(["MPI not found"]); fi
+        AM_CXXFLAGS="$MPI_CXXFLAGS $AM_CXXFLAGS"
+        AM_CFLAGS="$MPI_CFLAGS $AM_CFLAGS"
+        AM_LDFLAGS="`echo $MPI_CXXLDFLAGS | sed -E 's/-l@<:@^ @:>@+//g'` $AM_LDFLAGS"
+        LIBS="`echo $MPI_CXXLDFLAGS | sed -E 's/-L@<:@^ @:>@+//g'` $LIBS";;
+    *)
+        ;;
+esac
+
 AM_CONDITIONAL(BUILD_COMMS_SHMEM,[ test "X${ac_COMMS}X" == "XshmemX" ])
-AM_CONDITIONAL(BUILD_COMMS_MPI,[ test "X${ac_COMMS}X" == "XmpiX" || test "X${ac_COMMS}X" == "Xmpi-autoX" ])
-AM_CONDITIONAL(BUILD_COMMS_MPI3,[ test "X${ac_COMMS}X" == "Xmpi3X"] )
+AM_CONDITIONAL(BUILD_COMMS_MPI,
+               [ test "X${ac_COMMS}X" == "XmpiX" || test "X${ac_COMMS}X" == "Xmpi-autoX" ])
+AM_CONDITIONAL(BUILD_COMMS_MPI3,
+               [ test "X${ac_COMMS}X" == "Xmpi3X" || test "X${ac_COMMS}X" == "Xmpi3-autoX" ])
 AM_CONDITIONAL(BUILD_COMMS_NONE,[ test "X${ac_COMMS}X" == "XnoneX" ])
 
 ############### RNG selection
 AC_ARG_ENABLE([rng],[AC_HELP_STRING([--enable-rng=ranlux48|mt19937],\
-	[Select Random Number Generator to be used])],\
-	[ac_RNG=${enable_rng}],[ac_RNG=ranlux48])
+	            [Select Random Number Generator to be used])],\
+	            [ac_RNG=${enable_rng}],[ac_RNG=ranlux48])
 
 case ${ac_RNG} in
      ranlux48)
@@ -276,10 +303,11 @@ case ${ac_RNG} in
      ;;
 esac
 
-############### timer option
+############### Timer option
 AC_ARG_ENABLE([timers],[AC_HELP_STRING([--enable-timers],\
-	[Enable system dependent high res timers])],\
-	[ac_TIMERS=${enable_timers}],[ac_TIMERS=yes])
+	            [Enable system dependent high res timers])],\
+	            [ac_TIMERS=${enable_timers}],[ac_TIMERS=yes])
+
 case ${ac_TIMERS} in
      yes)
       AC_DEFINE([TIMERS_ON],[1],[TIMERS_ON] )
@@ -293,7 +321,9 @@ case ${ac_TIMERS} in
 esac
 
 ############### Chroma regression test
-AC_ARG_ENABLE([chroma],[AC_HELP_STRING([--enable-chroma],[Expect chroma compiled under c++11 ])],ac_CHROMA=yes,ac_CHROMA=no)
+AC_ARG_ENABLE([chroma],[AC_HELP_STRING([--enable-chroma],
+              [Expect chroma compiled under c++11 ])],ac_CHROMA=yes,ac_CHROMA=no)
+
 case ${ac_CHROMA} in
      yes|no)
      ;;
@@ -301,6 +331,7 @@ case ${ac_CHROMA} in
        AC_MSG_ERROR([${ac_CHROMA} unsupported --enable-chroma option]); 
      ;;
 esac
+
 AM_CONDITIONAL(BUILD_CHROMA_REGRESSION,[ test "X${ac_CHROMA}X" == "XyesX" ])
 
 ############### Doxygen
@@ -334,35 +365,36 @@ AC_CONFIG_FILES(programs/Makefile)
 AC_CONFIG_FILES(programs/qed-fvol/Makefile)
 AC_OUTPUT
 
-echo "
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Summary of configuration for $PACKAGE v$VERSION
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ----- PLATFORM ----------------------------------------
-- architecture (build)          : $build_cpu
-- os (build)                    : $build_os
-- architecture (target)         : $target_cpu
-- os (target)                   : $target_os
-- compiler vendor               : ${ax_cv_cxx_compiler_vendor}
-- compiler version              : ${ax_cv_gxx_version}
+architecture (build)        : $build_cpu
+os (build)                  : $build_os
+architecture (target)       : $target_cpu
+os (target)                 : $target_os
+compiler vendor             : ${ax_cv_cxx_compiler_vendor}
+compiler version            : ${ax_cv_gxx_version}
 ----- BUILD OPTIONS -----------------------------------
-- SIMD                          : ${ac_SIMD}
-- Threading                     : ${ac_openmp} 
-- Communications type           : ${ac_COMMS}
-- Default precision             : ${ac_PRECISION}
-- RNG choice                    : ${ac_RNG} 
-- GMP                           : `if test "x$have_gmp" = xtrue; then echo yes; else echo no; fi`
-- LAPACK                        : ${ac_LAPACK}
-- FFTW                          : `if test "x$have_fftw" = xtrue; then echo yes; else echo no; fi`
-- build DOXYGEN documentation   : `if test "x$enable_doc" = xyes; then echo yes; else echo no; fi`
-- graphs and diagrams           : `if test "x$enable_dot" = xyes; then echo yes; else echo no; fi`
+SIMD                        : ${ac_SIMD}
+Threading                   : ${ac_openmp} 
+Communications type         : ${ac_COMMS}
+Default precision           : ${ac_PRECISION}
+RNG choice                  : ${ac_RNG} 
+GMP                         : `if test "x$have_gmp" = xtrue; then echo yes; else echo no; fi`
+LAPACK                      : ${ac_LAPACK}
+FFTW                        : `if test "x$have_fftw" = xtrue; then echo yes; else echo no; fi`
+build DOXYGEN documentation : `if test "x$enable_doc" = xyes; then echo yes; else echo no; fi`
+graphs and diagrams         : `if test "x$enable_dot" = xyes; then echo yes; else echo no; fi`
 ----- BUILD FLAGS -------------------------------------
-- CXXFLAGS:
+CXXFLAGS:
 `echo ${AM_CXXFLAGS} ${CXXFLAGS} | tr ' ' '\n' | sed 's/^-/    -/g'`
-- LDFLAGS:
+LDFLAGS:
 `echo ${AM_LDFLAGS} ${LDFLAGS} | tr ' ' '\n' | sed 's/^-/    -/g'`
-- LIBS:
+LIBS:
 `echo ${LIBS} | tr ' ' '\n' | sed 's/^-/    -/g'`
--------------------------------------------------------
-"
+-------------------------------------------------------" > config.summary
+echo ""
+cat config.summary
+echo ""
