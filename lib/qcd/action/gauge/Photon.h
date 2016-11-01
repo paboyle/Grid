@@ -78,14 +78,14 @@ namespace QCD{
     const unsigned int nd    = grid->_ndimension;
     std::vector<int>   &l    = grid->_fdimensions;
     std::vector<int>   zm(nd,0);
-    TComplexD          Tone = ComplexD(1.0,0.0);
-    TComplexD          Tzero= ComplexD(0.0,0.0);
+    TComplex           Tone = Complex(1.0,0.0);
+    TComplex           Tzero= Complex(0.0,0.0);
     
-    one = ComplexD(1.0,0.0);
+    one = Complex(1.0,0.0);
     out = zero;
     for(int mu = 0; mu < nd; mu++)
     {
-      RealD twoPiL = M_PI*2./l[mu];
+      Real twoPiL = M_PI*2./l[mu];
       
       LatticeCoordinate(kmu,mu);
       kmu = 2.*sin(.5*twoPiL*kmu);
@@ -93,7 +93,7 @@ namespace QCD{
     }
     pokeSite(Tone, out, zm);
     out = one/out;
-    pokeSite(Tzero, out,zm);
+    pokeSite(Tzero, out, zm);
   }
   
   template<class Gimpl>
@@ -107,7 +107,7 @@ namespace QCD{
       case ZmScheme::QedTL:
       {
         std::vector<int> zm(nd,0);
-        TComplexD        Tzero = ComplexD(0.0,0.0);
+        TComplex         Tzero = Complex(0.0,0.0);
         
         pokeSite(Tzero, out, zm);
         
