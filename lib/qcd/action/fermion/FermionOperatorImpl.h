@@ -343,7 +343,7 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
 		      StencilImpl &St) {
 
   typedef SiteHalfSpinor vobj;
-   typedef typename SiteHalfSpinor::scalar_object sobj;
+  typedef typename SiteHalfSpinor::scalar_object sobj;
 	
    vobj vtmp;
    sobj stmp;
@@ -499,6 +499,97 @@ PARALLEL_FOR_LOOP
 
 };
 
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Single flavour one component spinors with colour index
+  /////////////////////////////////////////////////////////////////////////////
+  template <class S, class Representation = FundamentalRepresentation >
+  class StaggeredImpl : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation::Dimension > > {
+
+    public:
+
+    typedef RealD  _Coeff_t ;
+    static const int Dimension = Representation::Dimension;
+    typedef PeriodicGaugeImpl<GaugeImplTypes<S, Dimension > > Gimpl;
+      
+    //Necessary?
+    constexpr bool is_fundamental() const{return Dimension == Nc ? 1 : 0;}
+    
+    const bool LsVectorised=false;
+    typedef _Coeff_t Coeff_t;
+
+    INHERIT_GIMPL_TYPES(Gimpl);
+      
+    template <typename vtype> using iImplSpinor            = iScalar<iScalar<iVector<vtype, Dimension> > >;
+    template <typename vtype> using iImplHalfSpinor        = iVector<iScalar<iVector<vtype, Dimension> >, Ngp>;
+    template <typename vtype> using iImplDoubledGaugeField = iVector<iScalar<iMatrix<vtype, Dimension> >, Nds>;
+    
+    typedef iImplSpinor<Simd>            SiteSpinor;
+    typedef iImplHalfSpinor<Simd>        SiteHalfSpinor;
+    typedef iImplDoubledGaugeField<Simd> SiteDoubledGaugeField;
+    
+    typedef Lattice<SiteSpinor>            FermionField;
+    typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
+    
+    typedef SimpleCompressor<SiteSpinor> Compressor;
+    typedef StaggeredImplParams ImplParams;
+    typedef CartesianStencil<SiteSpinor, SiteSpinor> StencilImpl;
+    
+    ImplParams Params;
+    
+    StaggeredImpl(const ImplParams &p = ImplParams()) : Params(p){};
+      
+    inline void multLink(SiteSpinor &phi,
+			 const SiteDoubledGaugeField &U,
+			 const SiteSpinor &chi,
+			 int mu){
+      mult(&phi(), &U(mu), &chi());
+    }
+    inline void multLinkAdd(SiteSpinor &phi,
+			    const SiteDoubledGaugeField &U,
+			    const SiteSpinor &chi,
+			    int mu){
+      mac(&phi(), &U(mu), &chi());
+    }
+      
+    template <class ref>
+    inline void loadLinkElement(Simd &reg, ref &memory) {
+      reg = memory;
+    }
+      
+    inline void DoubleStore(GridBase *GaugeGrid,
+			    DoubledGaugeField &Uds,
+			    DoubledGaugeField &UUUds, // for Naik term
+			    const GaugeField &Umu) {
+      conformable(Uds._grid, GaugeGrid);
+      conformable(Umu._grid, GaugeGrid);
+      GaugeLinkField U(GaugeGrid);
+      for (int mu = 0; mu < Nd; mu++) {
+	U = PeekIndex<LorentzIndex>(Umu, mu);
+	PokeIndex<LorentzIndex>(Uds, U, mu);
+	PokeIndex<LorentzIndex>(UUUds, U, mu);
+	std::cout << GridLogMessage << " NOT created the treble links for staggered yet" <<std::endl;
+	std::cout << GridLogMessage << " Must do this and also apply the staggered phases which requires understanding the action conventions" <<std::endl;
+	U = adj(Cshift(U, mu, -1));
+	PokeIndex<LorentzIndex>(Uds, U, mu + 4);
+	PokeIndex<LorentzIndex>(UUUds, U, mu+4);
+      }
+    }
+
+    inline void InsertForce4D(GaugeField &mat, FermionField &Btilde, FermionField &A,int mu){
+      GaugeLinkField link(mat._grid);
+      link = TraceIndex<SpinIndex>(outerProduct(Btilde,A)); 
+      PokeIndex<LorentzIndex>(mat,link,mu);
+    }   
+      
+    inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde,int mu){
+      assert (0); 
+      // Must never hit
+    }
+  };
+
+
+
  typedef WilsonImpl<vComplex,  FundamentalRepresentation > WilsonImplR;   // Real.. whichever prec
  typedef WilsonImpl<vComplexF, FundamentalRepresentation > WilsonImplF;  // Float
  typedef WilsonImpl<vComplexD, FundamentalRepresentation > WilsonImplD;  // Double
@@ -526,6 +617,10 @@ PARALLEL_FOR_LOOP
  typedef GparityWilsonImpl<vComplex , Nc> GparityWilsonImplR;  // Real.. whichever prec
  typedef GparityWilsonImpl<vComplexF, Nc> GparityWilsonImplF;  // Float
  typedef GparityWilsonImpl<vComplexD, Nc> GparityWilsonImplD;  // Double
+
+ typedef StaggeredImpl<vComplex,  FundamentalRepresentation > StaggeredImplR;   // Real.. whichever prec
+ typedef StaggeredImpl<vComplexF, FundamentalRepresentation > StaggeredImplF;  // Float
+ typedef StaggeredImpl<vComplexD, FundamentalRepresentation > StaggeredImplD;  // Double
 
 }}
 

@@ -53,6 +53,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/qcd/action/fermion/FermionOperatorImpl.h>
 #include <Grid/qcd/action/fermion/FermionOperator.h>
 #include <Grid/qcd/action/fermion/WilsonKernels.h>        //used by all wilson type fermions
+#include <Grid/qcd/action/fermion/StaggeredKernels.h>        //used by all wilson type fermions
 
 ////////////////////////////////////////////
 // Gauge Actions
@@ -108,6 +109,10 @@ typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeAction
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+#define FermOpStaggeredTemplateInstantiate(A) \
+  template class A<StaggeredImplF>;		\
+  template class A<StaggeredImplD>;		
+
 #define FermOp4dVecTemplateInstantiate(A) \
   template class A<WilsonImplF>;		\
   template class A<WilsonImplD>;		\
@@ -146,6 +151,8 @@ typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeAction
 #include <Grid/qcd/action/fermion/WilsonFermion5D.h>     // 5d base used by all 5d overlap types
 
 //#include <Grid/qcd/action/fermion/CloverFermion.h>
+
+#include <Grid/qcd/action/fermion/ImprovedStaggeredFermion.h>
 
 #include <Grid/qcd/action/fermion/CayleyFermion5D.h>     // Cayley types
 #include <Grid/qcd/action/fermion/DomainWallFermion.h>
