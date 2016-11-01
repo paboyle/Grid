@@ -90,8 +90,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    double vol = grid.gSites();
-    double faces = (1.0 * Nd * (Nd - 1)) / 2.0;
+    Real vol = grid.gSites();
+    Real faces = (1.0 * Nd * (Nd - 1)) / 2.0;
 
     Complex avgPlaqA = sum(trace(plaqA));
     avgPlaqA = avgPlaqA / vol / faces;
