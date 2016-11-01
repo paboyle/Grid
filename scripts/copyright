@@ -12,6 +12,7 @@ Grid physics library, www.github.com/paboyle/Grid
 Source file: $1
 
 Copyright (C) 2015
+Copyright (C) 2016
 
 EOF
 
@@ -38,8 +39,21 @@ See the full license in the file "LICENSE" in the top level distribution directo
 /*  END LEGAL */
 EOF
 
+
 cat message > tmp.fil
-cat $1 >> tmp.fil
+
+NOTICE=`grep -n "END LEGAL" $1 | awk '{ print $1 }'  `
+
+if [ "X$NOTICE" != "X" ]
+then
+    echo "found notice ending on line $NOTICE"
+    awk 'BEGIN { P=0 } { if ( P ) print } /END LEGAL/{P=1} ' $1 >> tmp.fil
+else
+    cat $1 >> tmp.fil
+      
+fi
+
+
 cp tmp.fil $1
 
 shift

@@ -31,13 +31,6 @@ namespace Grid {
 ///////////////////////////////////////////////////////////////
 // Info that is setup once and indept of cartesian layout
 ///////////////////////////////////////////////////////////////
-int CartesianCommunicator::ShmRank;
-int CartesianCommunicator::ShmSize;
-int CartesianCommunicator::GroupRank;
-int CartesianCommunicator::GroupSize;
-int CartesianCommunicator::WorldRank;
-int CartesianCommunicator::WorldSize;
-int CartesianCommunicator::Slave;
 void *              CartesianCommunicator::ShmCommBuf;
 
 /////////////////////////////////
@@ -70,12 +63,6 @@ int                      CartesianCommunicator::ProcessorCount(void)    { return
 ////////////////////////////////////////////////////////////////////////////////
 // very VERY rarely (Log, serial RNG) we need world without a grid
 ////////////////////////////////////////////////////////////////////////////////
-int  CartesianCommunicator::RankWorld(void){ return WorldRank; };
-int CartesianCommunicator::Ranks    (void) { return WorldSize; };
-int CartesianCommunicator::Nodes    (void) { return GroupSize; };
-int CartesianCommunicator::Cores    (void) { return ShmSize;   };
-int CartesianCommunicator::NodeRank (void) { return GroupRank; };
-int CartesianCommunicator::CoreRank (void) { return ShmRank;   };
 
 void CartesianCommunicator::GlobalSum(ComplexF &c)
 {
@@ -94,7 +81,7 @@ void CartesianCommunicator::GlobalSumVector(ComplexD *c,int N)
   GlobalSumVector((double *)c,2*N);
 }
 
-#ifndef GRID_COMMS_MPI3
+#if !defined( GRID_COMMS_MPI3) && !defined (GRID_COMMS_MPI3L)
 
 void CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 						       void *xmit,

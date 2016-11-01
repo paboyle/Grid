@@ -247,6 +247,9 @@ case ${ac_COMMS} in
      mpi3)
        AC_DEFINE([GRID_COMMS_MPI3],[1],[GRID_COMMS_MPI3] )
      ;;
+     mpi3l)
+       AC_DEFINE([GRID_COMMS_MPI3L],[1],[GRID_COMMS_MPI3L] )
+     ;;
      shmem)
        AC_DEFINE([GRID_COMMS_SHMEM],[1],[GRID_COMMS_SHMEM] )
      ;;
@@ -257,6 +260,7 @@ esac
 AM_CONDITIONAL(BUILD_COMMS_SHMEM,[ test "X${ac_COMMS}X" == "XshmemX" ])
 AM_CONDITIONAL(BUILD_COMMS_MPI,[ test "X${ac_COMMS}X" == "XmpiX" || test "X${ac_COMMS}X" == "Xmpi-autoX" ])
 AM_CONDITIONAL(BUILD_COMMS_MPI3,[ test "X${ac_COMMS}X" == "Xmpi3X"] )
+AM_CONDITIONAL(BUILD_COMMS_MPI3L,[ test "X${ac_COMMS}X" == "Xmpi3lX"] )
 AM_CONDITIONAL(BUILD_COMMS_NONE,[ test "X${ac_COMMS}X" == "XnoneX" ])
 
 ############### RNG selection
