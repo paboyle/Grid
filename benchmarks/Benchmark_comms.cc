@@ -48,7 +48,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "= Benchmarking concurrent halo exchange in "<<nmu<<" dimensions"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
-  int maxlat=32;
+  int maxlat=16;
   for(int lat=4;lat<=maxlat;lat+=2){
     for(int Ls=1;Ls<=16;Ls*=2){
 
@@ -193,7 +193,7 @@ int main (int argc, char ** argv)
     }
   }  
 
-
+  Nloop=100;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking concurrent STENCIL halo exchange in "<<nmu<<" dimensions"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
