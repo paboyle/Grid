@@ -58,6 +58,19 @@ int main (int argc, char ** argv)
   std::vector<int> seeds({1,2,3,4});
   RealD mass = 0.1;
 
+  std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
+  std::cout << GridLogMessage<< "* Kernel options --dslash-generic, --dslash-unroll, --dslash-asm" <<std::endl;
+  std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
+  std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
+  std::cout << GridLogMessage<< "* Benchmarking WilsonFermionR::Dhop                  "<<std::endl;
+  std::cout << GridLogMessage<< "* Vectorising space-time by "<<vComplex::Nsimd()<<std::endl;
+  if ( sizeof(Real)==4 )   std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
+  if ( sizeof(Real)==8 )   std::cout << GridLogMessage<< "* DOUBLE precision "<<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
+  std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
+
   std::cout<<GridLogMessage << "============================================================================="<< std::endl;
   std::cout<<GridLogMessage << "= Benchmarking Wilson" << std::endl;
   std::cout<<GridLogMessage << "============================================================================="<< std::endl;
