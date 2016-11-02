@@ -55,7 +55,7 @@ class CartesianCommunicator {
   // Give external control (command line override?) of this
 
   static const int      MAXLOG2RANKSPERNODE = 16;            
-  static const uint64_t MAX_MPI_SHM_BYTES   = 128*1024*1024; 
+  static uint64_t MAX_MPI_SHM_BYTES;
 
   // Communicator should know nothing of the physics grid, only processor grid.
   int              _Nprocessors;     // How many in all

@@ -44,7 +44,6 @@ struct scal {
     Gamma::GammaT
   };
 
-bool overlapComms = false;
 typedef WilsonFermion5D<DomainWallVec5dImplR> WilsonFermion5DR;
 typedef WilsonFermion5D<DomainWallVec5dImplF> WilsonFermion5DF;
 typedef WilsonFermion5D<DomainWallVec5dImplD> WilsonFermion5DD;
@@ -53,10 +52,6 @@ typedef WilsonFermion5D<DomainWallVec5dImplD> WilsonFermion5DD;
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
-
-  if( GridCmdOptionExists(argv,argv+argc,"--asynch") ){
-    overlapComms = true;
-  }
 
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
@@ -126,14 +121,21 @@ int main (int argc, char ** argv)
 
   RealD NP = UGrid->_Nprocessors;
 
-  for(int doasm=1;doasm<2;doasm++){
-
-    QCD::WilsonKernelsStatic::AsmOpt=doasm;
-
   DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  
-  std::cout<<GridLogMessage << "Naive wilson implementation "<<std::endl;
-  std::cout << GridLogMessage<< "Calling Dw"<<std::endl;
+
+  std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
+  std::cout << GridLogMessage<< "* Kernel options --dslash-generic, --dslash-unroll, --dslash-asm" <<std::endl;
+  std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
+  std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
+  std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionR::Dhop                  "<<std::endl;
+  std::cout << GridLogMessage<< "* Vectorising space-time by "<<vComplex::Nsimd()<<std::endl;
+  if ( sizeof(Real)==4 )   std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
+  if ( sizeof(Real)==8 )   std::cout << GridLogMessage<< "* DOUBLE precision "<<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
+  std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
+
   int ncall =100;
   if (1) {
 
@@ -162,6 +164,17 @@ int main (int argc, char ** argv)
 
   if (1)
   {
+
+    std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
+    std::cout << GridLogMessage<< "* Benchmarking WilsonFermion5D<DomainWallVec5dImplR>::Dhop "<<std::endl;
+    std::cout << GridLogMessage<< "* Vectorising fifth dimension by "<<vComplex::Nsimd()<<std::endl;
+    if ( sizeof(Real)==4 )   std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
+    if ( sizeof(Real)==8 )   std::cout << GridLogMessage<< "* DOUBLE precision "<<std::endl;
+    if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
+    if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
+    if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
+    std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
+
     typedef WilsonFermion5D<DomainWallVec5dImplR> WilsonFermion5DR;
     LatticeFermion ssrc(sFGrid);
     LatticeFermion sref(sFGrid);
@@ -248,6 +261,16 @@ int main (int argc, char ** argv)
       sr_e = zero;
       sr_o = zero;
 
+      std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
+      std::cout << GridLogMessage<< "* Benchmarking WilsonFermion5D<DomainWallVec5dImplR>::DhopEO "<<std::endl;
+      std::cout << GridLogMessage<< "* Vectorising fifth dimension by "<<vComplex::Nsimd()<<std::endl;
+      if ( sizeof(Real)==4 )   std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
+      if ( sizeof(Real)==8 )   std::cout << GridLogMessage<< "* DOUBLE precision "<<std::endl;
+      if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
+      if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
+      if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
+      std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
+
       sDw.ZeroCounters();
       sDw.stat.init("DhopEO");
       double t0=usecond();
@@ -308,7 +331,7 @@ int main (int argc, char ** argv)
     ref = -0.5*ref;
   }
   Dw.Dhop(src,result,1);
-  std::cout << GridLogMessage << "Naive wilson implementation Dag" << std::endl;
+  std::cout << GridLogMessage << "Compare to naive wilson implementation Dag to verify correctness" << std::endl;
   std::cout<<GridLogMessage << "Called DwDag"<<std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
   std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
@@ -322,13 +345,22 @@ int main (int argc, char ** argv)
   LatticeFermion r_eo  (FGrid);
 
 
-  std::cout<<GridLogMessage << "Calling Deo and Doe"<<std::endl;
+  std::cout<<GridLogMessage << "Calling Deo and Doe and assert Deo+Doe == Dunprec"<<std::endl;
   pickCheckerboard(Even,src_e,src);
   pickCheckerboard(Odd,src_o,src);
 
   std::cout<<GridLogMessage << "src_e"<<norm2(src_e)<<std::endl;
   std::cout<<GridLogMessage << "src_o"<<norm2(src_o)<<std::endl;
 
+  std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
+  std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionR::DhopEO                "<<std::endl;
+  std::cout << GridLogMessage<< "* Vectorising space-time by "<<vComplex::Nsimd()<<std::endl;
+  if ( sizeof(Real)==4 )   std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
+  if ( sizeof(Real)==8 )   std::cout << GridLogMessage<< "* DOUBLE precision "<<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
+  std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
   {
     Dw.ZeroCounters();
     double t0=usecond();
@@ -365,9 +397,6 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "norm diff odd   "<< norm2(src_o)<<std::endl;
   assert(norm2(src_e)<1.0e-5);
   assert(norm2(src_o)<1.0e-5);
-
-
-  }
 
   Grid_finalize();
 }

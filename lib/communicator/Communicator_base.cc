@@ -32,6 +32,7 @@ namespace Grid {
 // Info that is setup once and indept of cartesian layout
 ///////////////////////////////////////////////////////////////
 void *              CartesianCommunicator::ShmCommBuf;
+uint64_t            CartesianCommunicator::MAX_MPI_SHM_BYTES   = 128*1024*1024; 
 
 /////////////////////////////////
 // Alloc, free shmem region
@@ -41,8 +42,12 @@ void *CartesianCommunicator::ShmBufferMalloc(size_t bytes){
   void *ptr = (void *)heap_top;
   heap_top  += bytes;
   heap_bytes+= bytes;
-  std::cout <<"Shm alloc "<<ptr<<std::endl;
-  assert(heap_bytes < MAX_MPI_SHM_BYTES);
+  if (heap_bytes >= MAX_MPI_SHM_BYTES) {
+    std::cout<< " ShmBufferMalloc exceeded shared heap size -- try increasing with --shm <MB> flag" <<std::endl;
+    std::cout<< " Parameter specified in units of MB (megabytes) " <<std::endl;
+    std::cout<< " Current value is " << (MAX_MPI_SHM_BYTES/(1024*1024)) <<std::endl;
+    assert(heap_bytes<MAX_MPI_SHM_BYTES);
+  }
   return ptr;
 }
 void CartesianCommunicator::ShmBufferFreeAll(void) { 
