@@ -30,7 +30,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #define _GRID_FFT_H_
 
 #ifdef HAVE_FFTW	
-#include <fftw3.h>
+#include <Grid/fftw/fftw3.h>
 #endif
 namespace Grid {
 
@@ -227,7 +227,7 @@ namespace Grid {
 	GridStopWatch timer;
 	timer.Start();
 
-PARALLEL_FOR_LOOP
+//PARALLEL_FOR_LOOP
 	for(int idx=0;idx<NN;idx++) {
 	  pencil_g.LocalIndexToLocalCoor(idx,lcoor);
 
