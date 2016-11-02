@@ -48,7 +48,6 @@ typedef sem_t *Grid_semaphore;
 
 #include <sys/mman.h>
 
-
 namespace Grid {
 
 enum { COMMAND_ISEND, COMMAND_IRECV, COMMAND_WAITALL };
@@ -91,18 +90,18 @@ public:
 
   void SemInit(void) {
     sprintf(sem_name,"/Grid_mpi3_sem_head_%d",universe_rank);
-    printf("SEM_NAME: %s \n",sem_name);
+    //    printf("SEM_NAME: %s \n",sem_name);
     SEM_INIT(sem_head);
     sprintf(sem_name,"/Grid_mpi3_sem_tail_%d",universe_rank);
-    printf("SEM_NAME: %s \n",sem_name);
+    //    printf("SEM_NAME: %s \n",sem_name);
     SEM_INIT(sem_tail);
   }  
   void SemInitExcl(void) {
     sprintf(sem_name,"/Grid_mpi3_sem_head_%d",universe_rank);
-    printf("SEM_INIT_EXCL: %s \n",sem_name);
+    //    printf("SEM_INIT_EXCL: %s \n",sem_name);
     SEM_INIT_EXCL(sem_head);
     sprintf(sem_name,"/Grid_mpi3_sem_tail_%d",universe_rank);
-    printf("SEM_INIT_EXCL: %s \n",sem_name);
+    //    printf("SEM_INIT_EXCL: %s \n",sem_name);
     SEM_INIT_EXCL(sem_tail);
   }  
   void WakeUpDMA(void) { 
@@ -118,7 +117,7 @@ public:
     SEM_WAIT(sem_tail);
   };
   void EventLoop (void) {
-    std::cout<< " Entering event loop "<<std::endl;
+    //    std::cout<< " Entering event loop "<<std::endl;
     while(1){
       WaitForCommand();
       //      std::cout << "Getting command "<<std::endl;
@@ -291,7 +290,7 @@ void MPIoffloadEngine::CommunicatorInit (MPI_Comm &communicator_world,
   /////////////////////////////////////////////////////////////////////
   // Split into groups that can share memory (Verticals)
   /////////////////////////////////////////////////////////////////////
-#define MPI_SHARED_MEM_DEBUG
+#undef MPI_SHARED_MEM_DEBUG
 #ifdef  MPI_SHARED_MEM_DEBUG
   MPI_Comm_split(communicator_universe,(UniverseRank/4),UniverseRank,&VerticalComm);
 #else 
@@ -527,7 +526,7 @@ void Slave::Init(SlaveState * _state,MPI_Comm _squadron,int _universe_rank,int _
   universe_rank=_universe_rank;
   vertical_rank=_vertical_rank;
   state   =_state;
-  std::cout << "state "<<_state<<" comm "<<_squadron<<" universe_rank"<<universe_rank <<std::endl;
+  //  std::cout << "state "<<_state<<" comm "<<_squadron<<" universe_rank"<<universe_rank <<std::endl;
   state->head = state->tail = state->start = 0;
   base = (uint64_t)MPIoffloadEngine::VerticalShmBufs[0];
   int rank; MPI_Comm_rank(_squadron,&rank);
