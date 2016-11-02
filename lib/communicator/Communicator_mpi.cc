@@ -44,13 +44,6 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
     MPI_Init(argc,argv);
   }
   MPI_Comm_dup (MPI_COMM_WORLD,&communicator_world);
-  MPI_Comm_rank(communicator_world,&WorldRank);
-  MPI_Comm_size(communicator_world,&WorldSize);
-  ShmRank=0;
-  ShmSize=1;
-  GroupRank=WorldRank;
-  GroupSize=WorldSize;
-  Slave    =0;
   ShmInitGeneric();
 }
 
@@ -198,6 +191,11 @@ void CartesianCommunicator::Broadcast(int root,void* data, int bytes)
   // Should only be used prior to Grid Init finished.
   // Check for this?
   ///////////////////////////////////////////////////////
+int CartesianCommunicator::RankWorld(void){ 
+  int r; 
+  MPI_Comm_rank(communicator_world,&r);
+  return r;
+}
 void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
 {
   int ierr= MPI_Bcast(data,

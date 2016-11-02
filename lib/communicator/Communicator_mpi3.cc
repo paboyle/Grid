@@ -30,11 +30,17 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 namespace Grid {
 
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Info that is setup once and indept of cartesian layout
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 int CartesianCommunicator::ShmSetup = 0;
+
+int CartesianCommunicator::ShmRank;
+int CartesianCommunicator::ShmSize;
+int CartesianCommunicator::GroupRank;
+int CartesianCommunicator::GroupSize;
+int CartesianCommunicator::WorldRank;
+int CartesianCommunicator::WorldSize;
 
 MPI_Comm CartesianCommunicator::communicator_world;
 MPI_Comm CartesianCommunicator::ShmComm;
@@ -97,15 +103,15 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
   
   std::vector<int> world_ranks(WorldSize); 
   GroupRanks.resize(WorldSize); 
-  MyGroup.resize(ShmSize);
   for(int r=0;r<WorldSize;r++) world_ranks[r]=r;
   
   MPI_Group_translate_ranks (WorldGroup,WorldSize,&world_ranks[0],ShmGroup, &GroupRanks[0]); 
 
   ///////////////////////////////////////////////////////////////////
   // Identify who is in my group and noninate the leader
-    ///////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////
   int g=0;
+  MyGroup.resize(ShmSize);
   for(int rank=0;rank<WorldSize;rank++){
     if(GroupRanks[rank]!=MPI_UNDEFINED){
       assert(g<ShmSize);
