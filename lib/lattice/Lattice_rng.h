@@ -294,7 +294,7 @@ namespace Grid {
 	int rank,o_idx,i_idx;
 	_grid->GlobalIndexToGlobalCoor(gidx,gcoor);
 	_grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
-
+        
 	int l_idx=generator_idx(o_idx,i_idx);
 
 	const int num_rand_seed=16;

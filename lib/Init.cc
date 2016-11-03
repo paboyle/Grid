@@ -44,8 +44,32 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid.h>
 #include <algorithm>
 #include <iterator>
+#include <cstdlib>
+#include <memory>
+
+
+#include <fenv.h>
+#ifdef __APPLE__
+static int
+feenableexcept (unsigned int excepts)
+{
+  static fenv_t fenv;
+  unsigned int new_excepts = excepts & FE_ALL_EXCEPT,
+    old_excepts;  // previous masks
+
+  if ( fegetenv (&fenv) ) return -1;
+  old_excepts = fenv.__control & FE_ALL_EXCEPT;
+
+  // unmask
+  fenv.__control &= ~new_excepts;
+  fenv.__mxcsr   &= ~(new_excepts << 7);
+
+  return ( fesetenv (&fenv) ? -1 : old_excepts );
+}
+#endif
 
 namespace Grid {
+
 
 //////////////////////////////////////////////////////
 // Convenience functions to access stadard command line arg
@@ -123,6 +147,13 @@ void GridCmdOptionIntVector(std::string &str,std::vector<int> & vec)
   return;
 }
 
+void GridCmdOptionInt(std::string &str,int & val)
+{
+  std::stringstream ss(str);
+  ss>>val;
+  return;
+}
+
 
 void GridParseLayout(char **argv,int argc,
 		     std::vector<int> &latt,
@@ -153,14 +184,12 @@ void GridParseLayout(char **argv,int argc,
     assert(ompthreads.size()==1);
     GridThread::SetThreads(ompthreads[0]);
   }
-
   if( GridCmdOptionExists(argv,argv+argc,"--cores") ){
-    std::vector<int> cores(0);
+    int cores;
     arg= GridCmdOptionPayload(argv,argv+argc,"--cores");
-    GridCmdOptionIntVector(arg,cores);
-    GridThread::SetCores(cores[0]);
+    GridCmdOptionInt(arg,cores);
+    GridThread::SetCores(cores);
   }
-
 }
 
 std::string GridCmdVectorIntToString(const std::vector<int> & vec){
@@ -169,7 +198,7 @@ std::string GridCmdVectorIntToString(const std::vector<int> & vec){
   return oss.str();
 }
 /////////////////////////////////////////////////////////
-//
+// Reinit guard
 /////////////////////////////////////////////////////////
 static int Grid_is_initialised = 0;
 
@@ -178,27 +207,31 @@ void Grid_init(int *argc,char ***argv)
 {
   GridLogger::StopWatch.Start();
 
+  std::string arg;
+
+  ////////////////////////////////////
+  // Shared memory block size
+  ////////////////////////////////////
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--shm") ){
+    int MB;
+    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--shm");
+    GridCmdOptionInt(arg,MB);
+    CartesianCommunicator::MAX_MPI_SHM_BYTES = MB*1024*1024;
+  }
+
   CartesianCommunicator::Init(argc,argv);
 
-  // Parse command line args.
+  ////////////////////////////////////
+  // Logging
+  ////////////////////////////////////
 
-  std::string arg;
   std::vector<std::string> logstreams;
   std::string defaultLog("Error,Warning,Message,Performance");
-
   GridCmdOptionCSL(defaultLog,logstreams);
   GridLogConfigure(logstreams);
 
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--help") ){
-    std::cout<<GridLogMessage<<"--help : this message"<<std::endl;
-    std::cout<<GridLogMessage<<"--debug-signals : catch sigsegv and print a blame report"<<std::endl;
-    std::cout<<GridLogMessage<<"--debug-stdout  : print stdout from EVERY node"<<std::endl;    
-    std::cout<<GridLogMessage<<"--decomposition : report on default omp,mpi and simd decomposition"<<std::endl;    
-    std::cout<<GridLogMessage<<"--mpi n.n.n.n   : default MPI decomposition"<<std::endl;    
-    std::cout<<GridLogMessage<<"--threads n     : default number of OMP threads"<<std::endl;
-    std::cout<<GridLogMessage<<"--grid n.n.n.n  : default Grid size"<<std::endl;    
-    std::cout<<GridLogMessage<<"--log list      : comma separted list of streams from Error,Warning,Message,Performance,Iterative,Integrator,Debug,Colours"<<std::endl;
-    exit(EXIT_SUCCESS);
+  if( !GridCmdOptionExists(*argv,*argv+*argc,"--debug-stdout") ){
+    Grid_quiesce_nodes();
   }
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--log") ){
@@ -207,38 +240,39 @@ void Grid_init(int *argc,char ***argv)
     GridLogConfigure(logstreams);
   }
 
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-signals") ){
-    Grid_debug_handler_init();
-  }
-  if( !GridCmdOptionExists(*argv,*argv+*argc,"--debug-stdout") ){
-    Grid_quiesce_nodes();
-  }
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-opt") ){
-    QCD::WilsonKernelsStatic::HandOpt=1;
-  }
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--lebesgue") ){
-    LebesgueOrder::UseLebesgueOrder=1;
-  }
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--cacheblocking") ){
-    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--cacheblocking");
-    GridCmdOptionIntVector(arg,LebesgueOrder::Block);
-  }
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--timestamp") ){
-    GridLogTimestamp(1);
+  ////////////////////////////////////
+  // Help message
+  ////////////////////////////////////
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--help") ){
+    std::cout<<GridLogMessage<<"  --help : this message"<<std::endl;
+    std::cout<<GridLogMessage<<std::endl;
+    std::cout<<GridLogMessage<<"Geometry:"<<std::endl;
+    std::cout<<GridLogMessage<<"  --mpi n.n.n.n   : default MPI decomposition"<<std::endl;    
+    std::cout<<GridLogMessage<<"  --threads n     : default number of OMP threads"<<std::endl;
+    std::cout<<GridLogMessage<<"  --grid n.n.n.n  : default Grid size"<<std::endl;    
+    std::cout<<GridLogMessage<<"  --shm  M        : allocate M megabytes of shared memory for comms"<<std::endl;    
+    std::cout<<GridLogMessage<<std::endl;
+    std::cout<<GridLogMessage<<"Verbose and debug:"<<std::endl;
+    std::cout<<GridLogMessage<<"  --log list      : comma separted list of streams from Error,Warning,Message,Performance,Iterative,Integrator,Debug,Colours"<<std::endl;
+    std::cout<<GridLogMessage<<"  --decomposition : report on default omp,mpi and simd decomposition"<<std::endl;    
+    std::cout<<GridLogMessage<<"  --debug-signals : catch sigsegv and print a blame report"<<std::endl;
+    std::cout<<GridLogMessage<<"  --debug-stdout  : print stdout from EVERY node"<<std::endl;    
+    std::cout<<GridLogMessage<<"  --notimestamp   : suppress millisecond resolution stamps"<<std::endl;    
+    std::cout<<GridLogMessage<<std::endl;
+    std::cout<<GridLogMessage<<"Performance:"<<std::endl;
+    std::cout<<GridLogMessage<<"  --dslash-generic: Wilson kernel for generic Nc"<<std::endl;    
+    std::cout<<GridLogMessage<<"  --dslash-unroll : Wilson kernel for Nc=3"<<std::endl;    
+    std::cout<<GridLogMessage<<"  --dslash-asm    : Wilson kernel for AVX512"<<std::endl;    
+    std::cout<<GridLogMessage<<"  --lebesgue      : Cache oblivious Lebesgue curve/Morton order/Z-graph stencil looping"<<std::endl;    
+    std::cout<<GridLogMessage<<"  --cacheblocking n.m.o.p : Hypercuboidal cache blocking"<<std::endl;    
+    std::cout<<GridLogMessage<<std::endl;
+    exit(EXIT_SUCCESS);
   }
 
-  GridParseLayout(*argv,*argc,
-		  Grid_default_latt,
-		  Grid_default_mpi);
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--decomposition") ){
-    std::cout<<GridLogMessage<<"Grid Decomposition\n";
-    std::cout<<GridLogMessage<<"\tOpenMP threads : "<<GridThread::GetThreads()<<std::endl;
-    std::cout<<GridLogMessage<<"\tMPI tasks      : "<<GridCmdVectorIntToString(GridDefaultMpi())<<std::endl;
-    std::cout<<GridLogMessage<<"\tvRealF         : "<<sizeof(vRealF)*8    <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vRealF::Nsimd()))<<std::endl;
-    std::cout<<GridLogMessage<<"\tvRealD         : "<<sizeof(vRealD)*8    <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vRealD::Nsimd()))<<std::endl;
-    std::cout<<GridLogMessage<<"\tvComplexF      : "<<sizeof(vComplexF)*8 <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vComplexF::Nsimd()))<<std::endl;
-    std::cout<<GridLogMessage<<"\tvComplexD      : "<<sizeof(vComplexD)*8 <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vComplexD::Nsimd()))<<std::endl;
-  }
+  ////////////////////////////////////
+  // Banner
+  ////////////////////////////////////
 
   std::string COL_RED    = GridLogColours.colour["RED"];
   std::string COL_PURPLE = GridLogColours.colour["PURPLE"];
@@ -247,7 +281,6 @@ void Grid_init(int *argc,char ***argv)
   std::string COL_BLUE   = GridLogColours.colour["BLUE"];
   std::string COL_YELLOW = GridLogColours.colour["YELLOW"];
   std::string COL_BACKGROUND = GridLogColours.colour["NORMAL"];
-
   
   std::cout <<std::endl;
   std::cout <<COL_RED  << "__|__|__|__|__"<<             "|__|__|_"<<COL_PURPLE<<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
@@ -280,6 +313,55 @@ void Grid_init(int *argc,char ***argv)
   std::cout << "GNU General Public License for more details."<<std::endl;
   std::cout << COL_BACKGROUND <<std::endl;
   std::cout << std::endl;
+
+  ////////////////////////////////////
+  // Debug and performance options
+  ////////////////////////////////////
+
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-signals") ){
+    Grid_debug_handler_init();
+  }
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-unroll") ){
+    QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptHandUnroll;
+  }
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-asm") ){
+    QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptInlineAsm;
+  }
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-generic") ){
+    QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptGeneric;
+  }
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--lebesgue") ){
+    LebesgueOrder::UseLebesgueOrder=1;
+  }
+
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--cacheblocking") ){
+    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--cacheblocking");
+    GridCmdOptionIntVector(arg,LebesgueOrder::Block);
+  }
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--notimestamp") ){
+    GridLogTimestamp(0);
+  } else { 
+    GridLogTimestamp(1);
+  }
+
+  GridParseLayout(*argv,*argc,
+		  Grid_default_latt,
+		  Grid_default_mpi);
+
+  std::cout << GridLogMessage << "Requesting "<< CartesianCommunicator::MAX_MPI_SHM_BYTES <<" byte stencil comms buffers "<<std::endl;
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--decomposition") ){
+    std::cout<<GridLogMessage<<"Grid Decomposition\n";
+    std::cout<<GridLogMessage<<"\tOpenMP threads : "<<GridThread::GetThreads()<<std::endl;
+    std::cout<<GridLogMessage<<"\tMPI tasks      : "<<GridCmdVectorIntToString(GridDefaultMpi())<<std::endl;
+    std::cout<<GridLogMessage<<"\tvRealF         : "<<sizeof(vRealF)*8    <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vRealF::Nsimd()))<<std::endl;
+    std::cout<<GridLogMessage<<"\tvRealD         : "<<sizeof(vRealD)*8    <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vRealD::Nsimd()))<<std::endl;
+    std::cout<<GridLogMessage<<"\tvComplexF      : "<<sizeof(vComplexF)*8 <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vComplexF::Nsimd()))<<std::endl;
+    std::cout<<GridLogMessage<<"\tvComplexD      : "<<sizeof(vComplexD)*8 <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vComplexD::Nsimd()))<<std::endl;
+  }
+
 
   Grid_is_initialised = 1;
 }
@@ -334,10 +416,7 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   exit(0);
   return;
 };
-#ifdef GRID_FPE
-#define _GNU_SOURCE
-#include <fenv.h>
-#endif
+
 void Grid_debug_handler_init(void)
 {
   struct sigaction sa,osa;
@@ -346,9 +425,9 @@ void Grid_debug_handler_init(void)
   sa.sa_flags    = SA_SIGINFO;
   sigaction(SIGSEGV,&sa,NULL);
   sigaction(SIGTRAP,&sa,NULL);
-#ifdef GRID_FPE
+
   feenableexcept( FE_INVALID|FE_OVERFLOW|FE_DIVBYZERO);
+
   sigaction(SIGFPE,&sa,NULL);
-#endif
 }
 }

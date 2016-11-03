@@ -674,6 +674,37 @@ class SU {
       out += la;
     }
   }
+/*
+ add GaugeTrans
+*/
+
+template<typename GaugeField,typename GaugeMat>
+  static void GaugeTransform( GaugeField &Umu, GaugeMat &g){
+    GridBase *grid = Umu._grid;
+    conformable(grid,g._grid);
+
+    GaugeMat U(grid);
+    GaugeMat ag(grid); ag = adj(g);
+
+    for(int mu=0;mu<Nd;mu++){
+      U= PeekIndex<LorentzIndex>(Umu,mu);
+      U = g*U*Cshift(ag, mu, 1);
+      PokeIndex<LorentzIndex>(Umu,U,mu);
+    }
+  }
+  template<typename GaugeMat>
+    static void GaugeTransform( std::vector<GaugeMat> &U, GaugeMat &g){
+    GridBase *grid = g._grid;
+    GaugeMat ag(grid); ag = adj(g);
+    for(int mu=0;mu<Nd;mu++){
+      U[mu] = g*U[mu]*Cshift(ag, mu, 1);
+    }
+  }
+  template<typename GaugeField,typename GaugeMat>
+  static void RandomGaugeTransform(GridParallelRNG &pRNG, GaugeField &Umu, GaugeMat &g){
+    LieRandomize(pRNG,g,1.0);
+    GaugeTransform(Umu,g);
+  }
 
   // Projects the algebra components a lattice matrix (of dimension ncol*ncol -1 )
   // inverse operation: FundamentalLieAlgebraMatrix
@@ -702,23 +733,33 @@ class SU {
       PokeIndex<LorentzIndex>(out, Umu, mu);
     }
   }
-  static void TepidConfiguration(GridParallelRNG &pRNG,
-                                 LatticeGaugeField &out) {
-    LatticeMatrix Umu(out._grid);
-    for (int mu = 0; mu < Nd; mu++) {
-      LieRandomize(pRNG, Umu, 0.01);
-      PokeIndex<LorentzIndex>(out, Umu, mu);
+  template<typename GaugeField>
+  static void TepidConfiguration(GridParallelRNG &pRNG,GaugeField &out){
+    typedef typename GaugeField::vector_type vector_type;
+    typedef iSUnMatrix<vector_type> vMatrixType;
+    typedef Lattice<vMatrixType> LatticeMatrixType;
+
+    LatticeMatrixType Umu(out._grid);
+    for(int mu=0;mu<Nd;mu++){
+      LieRandomize(pRNG,Umu,0.01);
+      PokeIndex<LorentzIndex>(out,Umu,mu);
     }
   }
-  static void ColdConfiguration(GridParallelRNG &pRNG, LatticeGaugeField &out) {
-    LatticeMatrix Umu(out._grid);
-    Umu = 1.0;
-    for (int mu = 0; mu < Nd; mu++) {
-      PokeIndex<LorentzIndex>(out, Umu, mu);
+  template<typename GaugeField>
+  static void ColdConfiguration(GridParallelRNG &pRNG,GaugeField &out){
+    typedef typename GaugeField::vector_type vector_type;
+    typedef iSUnMatrix<vector_type> vMatrixType;
+    typedef Lattice<vMatrixType> LatticeMatrixType;
+
+    LatticeMatrixType Umu(out._grid);
+    Umu=1.0;
+    for(int mu=0;mu<Nd;mu++){
+      PokeIndex<LorentzIndex>(out,Umu,mu);
     }
   }
 
-  static void taProj(const LatticeMatrix &in, LatticeMatrix &out) {
+  template<typename LatticeMatrixType>
+  static void taProj( const LatticeMatrixType &in,  LatticeMatrixType &out){
     out = Ta(in);
   }
   template <typename LatticeMatrixType>

@@ -32,6 +32,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifdef HAVE_FFTW	
 #include <Grid/fftw/fftw3.h>
 #endif
+
+
 namespace Grid {
 
   template<class scalar> struct FFTW { };
@@ -139,13 +141,35 @@ namespace Grid {
     }
     
     template<class vobj>
-    void FFT_dim(Lattice<vobj> &result,const Lattice<vobj> &source,int dim, int inverse){
+    void FFT_dim_mask(Lattice<vobj> &result,const Lattice<vobj> &source,std::vector<int> mask,int sign){
+
+      conformable(result._grid,vgrid);
+      conformable(source._grid,vgrid);
+      Lattice<vobj> tmp(vgrid);
+      tmp = source;
+      for(int d=0;d<Nd;d++){
+	if( mask[d] ) {
+	  FFT_dim(result,tmp,d,sign);
+	  tmp=result;
+	}
+      }
+    }
+
+    template<class vobj>
+    void FFT_all_dim(Lattice<vobj> &result,const Lattice<vobj> &source,int sign){
+      std::vector<int> mask(Nd,1);
+      FFT_dim_mask(result,source,mask,sign);
+    }
+
+
+    template<class vobj>
+    void FFT_dim(Lattice<vobj> &result,const Lattice<vobj> &source,int dim, int sign){
 #ifndef HAVE_FFTW
       assert(0);
 #else
       conformable(result._grid,vgrid);
       conformable(source._grid,vgrid);
-      
+
       int L = vgrid->_ldimensions[dim];
       int G = vgrid->_fdimensions[dim];
       
@@ -181,8 +205,10 @@ namespace Grid {
       istride = ostride = Ncomp*Nlow; /* distance between two elements in the same FT */
       int *inembed = n, *onembed = n;
       
-      int sign = FFTW_FORWARD;
-      if (inverse) sign = FFTW_BACKWARD;
+      scalar div;
+	  if ( sign == backward ) div = 1.0/G;
+	  else if ( sign == forward ) div = 1.0;
+	  else assert(0);
       
       FFTW_plan p;
       {
@@ -256,6 +282,7 @@ namespace Grid {
           cgbuf = clbuf;
           cgbuf[dim] = clbuf[dim]+L*pc;
           peekLocalSite(s,pgbuf,cgbuf);
+          s = s * div;
           pokeLocalSite(s,result,clbuf);
         }
       }

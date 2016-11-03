@@ -253,15 +253,23 @@ AC_ARG_ENABLE([comms],[AC_HELP_STRING([--enable-comms=none|mpi|mpi-auto|mpi3|mpi
 case ${ac_COMMS} in
      none)
         AC_DEFINE([GRID_COMMS_NONE],[1],[GRID_COMMS_NONE] )
+        comms_type='none'
      ;;
-     mpi|mpi-auto)
-        AC_DEFINE([GRID_COMMS_MPI],[1],[GRID_COMMS_MPI] )
+     mpi3l*)
+       AC_DEFINE([GRID_COMMS_MPI3L],[1],[GRID_COMMS_MPI3L] )
+       comms_type='mpi3l'
      ;;
-     mpi3|mpi3-auto)
+     mpi3*)
         AC_DEFINE([GRID_COMMS_MPI3],[1],[GRID_COMMS_MPI3] )
+        comms_type='mpi3'
+     ;;
+     mpi*)
+        AC_DEFINE([GRID_COMMS_MPI],[1],[GRID_COMMS_MPI] )
+        comms_type='mpi'
      ;;
      shmem)
         AC_DEFINE([GRID_COMMS_SHMEM],[1],[GRID_COMMS_SHMEM] )
+        comms_type='shmem'
      ;;
      *)
         AC_MSG_ERROR([${ac_COMMS} unsupported --enable-comms option]); 
@@ -279,12 +287,11 @@ case ${ac_COMMS} in
         ;;
 esac
 
-AM_CONDITIONAL(BUILD_COMMS_SHMEM,[ test "X${ac_COMMS}X" == "XshmemX" ])
-AM_CONDITIONAL(BUILD_COMMS_MPI,
-               [ test "X${ac_COMMS}X" == "XmpiX" || test "X${ac_COMMS}X" == "Xmpi-autoX" ])
-AM_CONDITIONAL(BUILD_COMMS_MPI3,
-               [ test "X${ac_COMMS}X" == "Xmpi3X" || test "X${ac_COMMS}X" == "Xmpi3-autoX" ])
-AM_CONDITIONAL(BUILD_COMMS_NONE,[ test "X${ac_COMMS}X" == "XnoneX" ])
+AM_CONDITIONAL(BUILD_COMMS_SHMEM, [ test "${comms_type}X" == "shmemX" ])
+AM_CONDITIONAL(BUILD_COMMS_MPI,   [ test "${comms_type}X" == "mpiX" ])
+AM_CONDITIONAL(BUILD_COMMS_MPI3,  [ test "${comms_type}X" == "mpi3X" ] )
+AM_CONDITIONAL(BUILD_COMMS_MPI3L, [ test "${comms_type}X" == "mpi3lX" ] )
+AM_CONDITIONAL(BUILD_COMMS_NONE,  [ test "${comms_type}X" == "noneX" ])
 
 ############### RNG selection
 AC_ARG_ENABLE([rng],[AC_HELP_STRING([--enable-rng=ranlux48|mt19937],\
@@ -377,7 +384,7 @@ compiler version            : ${ax_cv_gxx_version}
 ----- BUILD OPTIONS -----------------------------------
 SIMD                        : ${ac_SIMD}
 Threading                   : ${ac_openmp} 
-Communications type         : ${ac_COMMS}
+Communications type         : ${comms_type}
 Default precision           : ${ac_PRECISION}
 RNG choice                  : ${ac_RNG} 
 GMP                         : `if test "x$have_gmp" = xtrue; then echo yes; else echo no; fi`
