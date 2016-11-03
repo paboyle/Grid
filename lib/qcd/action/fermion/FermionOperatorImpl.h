@@ -520,14 +520,17 @@ PARALLEL_FOR_LOOP
 
     INHERIT_GIMPL_TYPES(Gimpl);
       
+    template <typename vtype> using iImplScalar            = iScalar<iScalar<iScalar<vtype> > >;
     template <typename vtype> using iImplSpinor            = iScalar<iScalar<iVector<vtype, Dimension> > >;
     template <typename vtype> using iImplHalfSpinor        = iVector<iScalar<iVector<vtype, Dimension> >, Ngp>;
     template <typename vtype> using iImplDoubledGaugeField = iVector<iScalar<iMatrix<vtype, Dimension> >, Nds>;
     
+    typedef iImplScalar<Simd>            SiteComplex;
     typedef iImplSpinor<Simd>            SiteSpinor;
     typedef iImplHalfSpinor<Simd>        SiteHalfSpinor;
     typedef iImplDoubledGaugeField<Simd> SiteDoubledGaugeField;
     
+    typedef Lattice<SiteComplex>           ComplexField;
     typedef Lattice<SiteSpinor>            FermionField;
     typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
     
@@ -564,15 +567,46 @@ PARALLEL_FOR_LOOP
       conformable(Uds._grid, GaugeGrid);
       conformable(Umu._grid, GaugeGrid);
       GaugeLinkField U(GaugeGrid);
+      GaugeLinkField UU(GaugeGrid);
+      GaugeLinkField UUU(GaugeGrid);
+      GaugeLinkField Udag(GaugeGrid);
+      GaugeLinkField UUUdag(GaugeGrid);
       for (int mu = 0; mu < Nd; mu++) {
-	U = PeekIndex<LorentzIndex>(Umu, mu);
+
+	// Staggered Phase.
+	ComplexField coor(GaugeGrid);
+	ComplexField phases(GaugeGrid);
+	ComplexField x(GaugeGrid); LatticeCoordinate(x,0);
+	ComplexField y(GaugeGrid); LatticeCoordinate(y,1);
+	ComplexField z(GaugeGrid); LatticeCoordinate(z,2);
+	ComplexField t(GaugeGrid); LatticeCoordinate(t,3);
+
+	SiteComplex zz(0.0,0.0);
+	SiteComplex one(1.0,0.0);
+
+	phases = one;
+	if ( mu == 1 ) phases = where( mod(x    ,2)== zz, phases,-phases);
+	if ( mu == 2 ) phases = where( mod(x+y  ,2)== zz, phases,-phases);
+	if ( mu == 3 ) phases = where( mod(x+y+z,2)== zz, phases,-phases);
+
+	U  = PeekIndex<LorentzIndex>(Umu, mu);
+	UU = Gimpl::CovShiftForward(U,mu,U);
+	UUU= Gimpl::CovShiftForward(U,mu,UU);
+	
+	U   = U   *phases;
+	UUU = UUU *phases;
+
 	PokeIndex<LorentzIndex>(Uds, U, mu);
-	PokeIndex<LorentzIndex>(UUUds, U, mu);
-	std::cout << GridLogMessage << " NOT created the treble links for staggered yet" <<std::endl;
-	std::cout << GridLogMessage << " Must do this and also apply the staggered phases which requires understanding the action conventions" <<std::endl;
-	U = adj(Cshift(U, mu, -1));
-	PokeIndex<LorentzIndex>(Uds, U, mu + 4);
-	PokeIndex<LorentzIndex>(UUUds, U, mu+4);
+	PokeIndex<LorentzIndex>(UUUds, UUU, mu);
+
+	std::cout << GridLogMessage << " Created the treble links for staggered Naik term" <<std::endl;
+	std::cout << GridLogMessage << " Multiplied the staggered phases which requires understanding the action conventions" <<std::endl;
+
+	Udag   = adj( Cshift(U, mu, -1));
+	UUUdag = adj( Cshift(UUU, mu, -3));
+	PokeIndex<LorentzIndex>(Uds, Udag, mu + 4);
+	PokeIndex<LorentzIndex>(UUUds, UUUdag, mu+4);
+
       }
     }
 

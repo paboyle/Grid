@@ -108,6 +108,7 @@ class ImprovedStaggeredFermion : public StaggeredKernels<Impl>, public ImprovedS
   // Constructor
   ImprovedStaggeredFermion(GaugeField &_Umu, GridCartesian &Fgrid,
 			   GridRedBlackCartesian &Hgrid, RealD _mass,
+			   RealD _c1=9.0/8.0, RealD _c2=-1.0/24.0,RealD _u0,
 			   const ImplParams &p = ImplParams());
 
   // DoubleStore impl dependent
@@ -122,6 +123,9 @@ class ImprovedStaggeredFermion : public StaggeredKernels<Impl>, public ImprovedS
   // any other parameters of action ???
 
   RealD mass;
+  RealD u0;
+  RealD c1;
+  RealD c2;
 
   GridBase *_grid;
   GridBase *_cbgrid;

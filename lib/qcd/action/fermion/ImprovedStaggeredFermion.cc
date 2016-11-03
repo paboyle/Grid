@@ -43,6 +43,7 @@ ImprovedStaggeredFermionStatic::displacements({1, 1, 1, 1, -1, -1, -1, -1, 3, 3,
 template <class Impl>
 ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Umu, GridCartesian &Fgrid,
 							 GridRedBlackCartesian &Hgrid, RealD _mass,
+							 RealD _c1, RealD _c2,RealD _u0,
 							 const ImplParams &p)
     : Kernels(p),
       _grid(&Fgrid),
@@ -51,6 +52,9 @@ ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Umu, GridC
       StencilEven(&Hgrid, npoint, Even, directions, displacements),  // source is Even
       StencilOdd(&Hgrid, npoint, Odd, directions, displacements),  // source is Odd
       mass(_mass),
+      c1(_c1),
+      c2(_c2),
+      u0(_u0),
       Lebesgue(_grid),
       LebesgueEvenOdd(_cbgrid),
       Umu(&Fgrid),
@@ -63,15 +67,52 @@ ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Umu, GridC
   ImportGauge(_Umu);
 }
 
+  ////////////////////////////////////////////////////////////
+  // Momentum space propagator should be 
+  // https://arxiv.org/pdf/hep-lat/9712010.pdf
+  //
+  // mom space action.
+  //   gamma_mu i ( c1 sin pmu + c2 sin 3 pmu ) + m
+  //
+  // must track through staggered flavour/spin reduction in literature to 
+  // turn to free propagator for the one component chi field, a la page 4/5
+  // of above link to implmement fourier based solver.
+  ////////////////////////////////////////////////////////////
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::ImportGauge(const GaugeField &_Umu) {
-  GaugeField HUmu(_Umu._grid);
-  HUmu = _Umu * (-0.5);
-  Impl::DoubleStore(GaugeGrid(), Umu, UUUmu, HUmu);
+
+  GaugeLinkField U(GaugeGrid);
+
+  ////////////////////////////////////////////////////////
+  // Double Store should take two fields for Naik and one hop separately.
+  ////////////////////////////////////////////////////////
+  Impl::DoubleStore(GaugeGrid(), Umu, UUUmu, _Umu);
+
+
+  ////////////////////////////////////////////////////////
+  // Apply scale factors to get the right fermion Kinetic term
+  // 
+  // 0.5 ( U p(x+mu) - Udag(x-mu) p(x-mu) ) 
+  ////////////////////////////////////////////////////////
+  for (int mu = 0; mu < Nd; mu++) {
+
+    U = PeekIndex<LorentzIndex>(Umu, mu);
+    PokeIndex<LorentzIndex>(Umu, U*( 0.5*c1/u0), mu );
+    
+    U = PeekIndex<LorentzIndex>(Umu, mu+4);
+    PokeIndex<LorentzIndex>(Umu, U*(-0.5*c1/u0), mu+4);
+
+    U = PeekIndex<LorentzIndex>(UUUmu, mu);
+    PokeIndex<LorentzIndex>(UUUmu, U*( 0.5*c2/u0/u0/u0), mu );
+    
+    U = PeekIndex<LorentzIndex>(UUUmu, mu+4);
+    PokeIndex<LorentzIndex>(UUUmu, U*(-0.5*c2/u0/u0/u0), mu+4);
+  }
+
   pickCheckerboard(Even, UmuEven, Umu);
-  pickCheckerboard(Odd, UmuOdd, Umu);
+  pickCheckerboard(Odd,  UmuOdd , Umu);
   pickCheckerboard(Even, UUUmuEven, UUUmu);
-  pickCheckerboard(Odd, UUUmuOdd, UUUmu);
+  pickCheckerboard(Odd,   UUUmuOdd, UUUmu);
 }
 
 /////////////////////////////

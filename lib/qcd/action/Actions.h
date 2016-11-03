@@ -260,6 +260,9 @@ typedef MobiusFermion<GparityWilsonImplR> GparityMobiusFermionR;
 typedef MobiusFermion<GparityWilsonImplF> GparityMobiusFermionF;
 typedef MobiusFermion<GparityWilsonImplD> GparityMobiusFermionD;
 
+typedef ImprovedStaggeredFermion<StaggeredImplR> ImprovedStaggeredFermionR;
+typedef ImprovedStaggeredFermion<StaggeredImplF> ImprovedStaggeredFermionF;
+typedef ImprovedStaggeredFermion<StaggeredImplD> ImprovedStaggeredFermionD;
 
   }}
 ///////////////////////////////////////////////////////////////////////////////
