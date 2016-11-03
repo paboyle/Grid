@@ -1,3 +1,4 @@
+
     /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -37,6 +38,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifdef GRID_COMMS_MPI3
 #include <mpi.h>
 #endif
+#ifdef GRID_COMMS_MPI3L
+#include <mpi.h>
+#endif
 #ifdef GRID_COMMS_SHMEM
 #include <mpp/shmem.h>
 #endif
@@ -51,7 +55,7 @@ class CartesianCommunicator {
   // Give external control (command line override?) of this
 
   static const int      MAXLOG2RANKSPERNODE = 16;            
-  static const uint64_t MAX_MPI_SHM_BYTES   = 128*1024*1024; 
+  static uint64_t MAX_MPI_SHM_BYTES;
 
   // Communicator should know nothing of the physics grid, only processor grid.
   int              _Nprocessors;     // How many in all
@@ -60,9 +64,9 @@ class CartesianCommunicator {
   std::vector<int> _processor_coor;  // linear processor coordinate
   unsigned long _ndimension;
 
-#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3)
-  MPI_Comm communicator;
+#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3) || defined (GRID_COMMS_MPI3L)
   static MPI_Comm communicator_world;
+         MPI_Comm communicator;
   typedef MPI_Request CommsRequest_t;
 #else 
   typedef int CommsRequest_t;
@@ -75,7 +79,15 @@ class CartesianCommunicator {
   // cartesian communicator on a subset of ranks, slave ranks controlled
   // by group leader with data xfer via shared memory
   ////////////////////////////////////////////////////////////////////
-#ifdef  GRID_COMMS_MPI3
+#ifdef GRID_COMMS_MPI3
+
+  static int ShmRank;
+  static int ShmSize;
+  static int GroupRank;
+  static int GroupSize;
+  static int WorldRank;
+  static int WorldSize;
+
   std::vector<int>  WorldDims;
   std::vector<int>  GroupDims;
   std::vector<int>  ShmDims;
@@ -83,7 +95,7 @@ class CartesianCommunicator {
   std::vector<int> GroupCoor;
   std::vector<int> ShmCoor;
   std::vector<int> WorldCoor;
-  
+
   static std::vector<int> GroupRanks; 
   static std::vector<int> MyGroup;
   static int ShmSetup;
@@ -93,13 +105,20 @@ class CartesianCommunicator {
   std::vector<int>  LexicographicToWorldRank;
   
   static std::vector<void *> ShmCommBufs;
+
 #else 
   static void ShmInitGeneric(void);
   static commVector<uint8_t> ShmBufStorageVector;
 #endif 
+
+  /////////////////////////////////
+  // Grid information and queries
+  // Implemented in Communicator_base.C
+  /////////////////////////////////
   static void * ShmCommBuf;
   size_t heap_top;
   size_t heap_bytes;
+
   void *ShmBufferSelf(void);
   void *ShmBuffer(int rank);
   void *ShmBufferTranslate(int rank,void * local_p);
@@ -123,28 +142,12 @@ class CartesianCommunicator {
   int  RankFromProcessorCoor(std::vector<int> &coor);
   void ProcessorCoorFromRank(int rank,std::vector<int> &coor);
   
-  /////////////////////////////////
-  // Grid information and queries
-  /////////////////////////////////
-  static int ShmRank;
-  static int ShmSize;
-  static int GroupSize;
-  static int GroupRank;
-  static int WorldRank;
-  static int WorldSize;
-  static int Slave;
-  
   int                      IsBoss(void)            ;
   int                      BossRank(void)          ;
   int                      ThisRank(void)          ;
   const std::vector<int> & ThisProcessorCoor(void) ;
   const std::vector<int> & ProcessorGrid(void)     ;
   int                      ProcessorCount(void)    ;
-  static int Ranks    (void);
-  static int Nodes    (void);
-  static int Cores    (void);
-  static int NodeRank (void);
-  static int CoreRank (void);
 
   ////////////////////////////////////////////////////////////////////////////////
   // very VERY rarely (Log, serial RNG) we need world without a grid

@@ -32,8 +32,7 @@ directory
 namespace Grid {
 namespace QCD {
 
-int WilsonKernelsStatic::HandOpt;
-int WilsonKernelsStatic::AsmOpt;
+int WilsonKernelsStatic::Opt;
 
 template <class Impl>
 WilsonKernels<Impl>::WilsonKernels(const ImplParams &p) : Base(p){};
