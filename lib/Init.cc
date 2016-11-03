@@ -234,7 +234,7 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"  --decomposition : report on default omp,mpi and simd decomposition"<<std::endl;    
     std::cout<<GridLogMessage<<"  --debug-signals : catch sigsegv and print a blame report"<<std::endl;
     std::cout<<GridLogMessage<<"  --debug-stdout  : print stdout from EVERY node"<<std::endl;    
-    std::cout<<GridLogMessage<<"  --timestamp     : tag with millisecond resolution stamps"<<std::endl;    
+    std::cout<<GridLogMessage<<"  --notimestamp   : suppress millisecond resolution stamps"<<std::endl;    
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Performance:"<<std::endl;
     std::cout<<GridLogMessage<<"  --dslash-generic: Wilson kernel for generic Nc"<<std::endl;    
@@ -316,7 +316,9 @@ void Grid_init(int *argc,char ***argv)
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--cacheblocking");
     GridCmdOptionIntVector(arg,LebesgueOrder::Block);
   }
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--timestamp") ){
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--notimestamp") ){
+    GridLogTimestamp(0);
+  } else { 
     GridLogTimestamp(1);
   }
 
