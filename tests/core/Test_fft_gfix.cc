@@ -27,7 +27,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
-#include <Grid/qcd/action/gauge/Photon.h>
 
 using namespace Grid;
 using namespace Grid::QCD;

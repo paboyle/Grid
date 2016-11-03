@@ -57,7 +57,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 ////////////////////////////////////////////
 // Gauge Actions
 ////////////////////////////////////////////
-#include <Grid/qcd/action/gauge/Photon.h>
 #include <Grid/qcd/action/gauge/WilsonGaugeAction.h>
 #include <Grid/qcd/action/gauge/PlaqPlusRectangleAction.h>
 
