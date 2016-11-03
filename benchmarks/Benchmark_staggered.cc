@@ -111,7 +111,8 @@ int main (int argc, char ** argv)
   RealD mass=0.1;
   RealD c1=9.0/8.0;
   RealD c2=-1.0/24.0;
-  ImprovedStaggeredFermionR Ds(Umu,Grid,RBGrid,mass,c1,c2,params);
+  RealD u0=1.0;
+  ImprovedStaggeredFermionR Ds(Umu,Grid,RBGrid,mass,c1,c2,u0,params);
   
   std::cout<<GridLogMessage << "Calling Ds"<<std::endl;
   int ncall=1000;

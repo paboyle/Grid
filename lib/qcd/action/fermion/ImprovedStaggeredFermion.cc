@@ -81,7 +81,7 @@ ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Umu, GridC
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::ImportGauge(const GaugeField &_Umu) {
 
-  GaugeLinkField U(GaugeGrid);
+  GaugeLinkField U(GaugeGrid());
 
   ////////////////////////////////////////////////////////
   // Double Store should take two fields for Naik and one hop separately.

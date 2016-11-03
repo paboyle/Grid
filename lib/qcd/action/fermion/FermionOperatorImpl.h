@@ -574,20 +574,20 @@ PARALLEL_FOR_LOOP
       for (int mu = 0; mu < Nd; mu++) {
 
 	// Staggered Phase.
-	ComplexField coor(GaugeGrid);
-	ComplexField phases(GaugeGrid);
-	ComplexField x(GaugeGrid); LatticeCoordinate(x,0);
-	ComplexField y(GaugeGrid); LatticeCoordinate(y,1);
-	ComplexField z(GaugeGrid); LatticeCoordinate(z,2);
-	ComplexField t(GaugeGrid); LatticeCoordinate(t,3);
+	Lattice<iScalar<vInteger> > coor(GaugeGrid);
+	Lattice<iScalar<vInteger> > x(GaugeGrid); LatticeCoordinate(x,0);
+	Lattice<iScalar<vInteger> > y(GaugeGrid); LatticeCoordinate(y,1);
+	Lattice<iScalar<vInteger> > z(GaugeGrid); LatticeCoordinate(z,2);
+	Lattice<iScalar<vInteger> > t(GaugeGrid); LatticeCoordinate(t,3);
 
-	SiteComplex zz(0.0,0.0);
-	SiteComplex one(1.0,0.0);
+	Lattice<iScalar<vInteger> > lin_z(GaugeGrid); lin_z=x+y;
+	Lattice<iScalar<vInteger> > lin_t(GaugeGrid); lin_t=x+y+z;
 
-	phases = one;
-	if ( mu == 1 ) phases = where( mod(x    ,2)== zz, phases,-phases);
-	if ( mu == 2 ) phases = where( mod(x+y  ,2)== zz, phases,-phases);
-	if ( mu == 3 ) phases = where( mod(x+y+z,2)== zz, phases,-phases);
+	ComplexField phases(GaugeGrid);	phases=1.0;
+
+	if ( mu == 1 ) phases = where( mod(x    ,2)==(Integer)0, phases,-phases);
+	if ( mu == 2 ) phases = where( mod(lin_z,2)==(Integer)0, phases,-phases);
+	if ( mu == 3 ) phases = where( mod(lin_t,2)==(Integer)0, phases,-phases);
 
 	U  = PeekIndex<LorentzIndex>(Umu, mu);
 	UU = Gimpl::CovShiftForward(U,mu,U);
