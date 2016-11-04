@@ -14,6 +14,8 @@ sidebar:
 
 These are few suggestions in order to get the best performance on the Intel Knights Landing (KNL). 
 
+
+
 ### Bind the memory allocation to the MCDRAM NUMA node
 
 The KNL  has two memory systems, the DDR4 (~90 GFlops/s) and the High Bandwidth Memory (MCDRAM, ~400 Gflops/s).
@@ -57,6 +59,20 @@ A typical setting for the best performance on a single node is to use **62 cores
 ``` bash
 export KMP_HW_SUBSETS=62c,1t
 ```
+
+### Using the optimised Wilson Dslash kernels
+
+Beside the generic implementation using stencils, GRID has optimised version of the Dslash kernels (for Wilson and DWF fermions). 
+
+Flags at runtime can be used for the optimised paths
+
+| Flag    | Description                            |
+| ----------- | -------------------------------------- |
+| `--dslash-generic`  	| This is the default option and used the implementation with stencils 	|
+| `--dslash-unroll`   	| This explicitly unroll the colour loops. It is tied to `Nc=3`        	|
+| `--dslash-asm`      	| This is specific for AVX512-F architectures and `Nc=3`               	|
+
+
 
 The information included in this page has been updated on *November 2016* and it is valid for the release version 0.6.0.
 {: .notice}
