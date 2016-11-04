@@ -33,7 +33,7 @@ docs:
 
   - title: Development
     children:
-      - title: "Reporting a bug"
+      - title: "Reporting an issue"
         url: /docs/bug_report/
       - title: "Continuous integration"
         url: /docs/travis/

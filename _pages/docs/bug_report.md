@@ -2,7 +2,7 @@
 layout: single
 title : "Documentation"
 author_profile: false
-excerpt: "Reporting a bug"
+excerpt: "Reporting an issue"
 header:
   overlay_color: "#C70039"
 permalink: /docs/bug_report/
