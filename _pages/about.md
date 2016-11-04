@@ -1,8 +1,11 @@
 ---
-layout: single
+layout: splash
 permalink: /about/
+author_profile: false
 title: "About"
-excerpt: "on the project and the authors"
+excerpt: "The project and the authors"
+header:
+  overlay_color: "#5DADE2"
 ---
 
 {% include base_path %}

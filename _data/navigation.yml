@@ -1,6 +1,7 @@
 # main links links
 main:
-  - title: "Docs"
+  - title: "Documentation"
+    icon: "octicon octicon-book vertical-middle"
     url: /docs/
 
   - title: "Quick-start guide"
@@ -18,28 +19,50 @@ docs:
     children:
       - title: "Quick-Start Guide"
         url: /docs/quick-start-guide/
-      - title: "Structure"
-        url: /docs/structure/
-      - title: "Building"
-        url: /docs/building/
+      - title: "Communication interfaces"
+        url: /docs/comm_interfaces/
+      - title: "Architecture targets"
+        url: /docs/simd_targets/
+      - title: "Building on KNL"
+        url: /docs/knl_build/
 
+  - title: Using GRID
+    children:
+      - title: "Running on KNL"
+        url: /docs/running_knl/
+
+  - title: Development
+    children:
+      - title: "Reporting a bug"
+        url: /docs/bug_report/
+      - title: "Continuous integration"
+        url: /docs/travis/
 
   - title: API description
     children:
+      - title: "Structure"
+        url: /docs/structure/
+        disable: "yes"
       - title: "SIMD classes"
         url: /docs/simd/
+        disable: "yes"
       - title: "Grid classes"
         url: /docs/grid/
+        disable: "yes"
       - title: "Tensor classes"
         url: /docs/tensor/
+        disable: "yes"
       - title: "Lattice classes"
         url: /docs/lattice/
+        disable: "yes"
 
   
   - title: "Lattice theories"
     children:
       - title : "Theories"
         url: /docs/theories/
+        disable: "yes"
       - title: "HMC"
         url: /docs/theories/hmc/
+        disable: "yes"
         

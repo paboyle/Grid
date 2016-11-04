@@ -36,7 +36,13 @@
               {% assign active = "" %}
             {% endif %}
 
-            <li><a href="{{ domain }}{{ child.url }}" class="{{ active }}">{{ child.title }}</a></li>
+            {% if child.disable == "yes" %}
+              {% assign disable = "nav__noclick" %}
+            {% else %}
+              {% assign disable = "" %}
+            {% endif %}
+
+            <li><a href="{{ domain }}{{ child.url }}" class="{{ disable }} {{ active }}">{{ child.title }}</a></li>
           {% endfor %}
         </ul>
         {% endif %}

@@ -1,0 +1,10 @@
+{% capture imagePath %}/{{ include.name }}{% endcapture %}
+{% if include.caption %}
+    <figure>
+        <img src="{{ site.baseurl }}/images{{ imagePath }}" {% if include.alt %} alt="{{ include.alt }}" {% endif %} {% if include.width %} width="{{ include.width }}" style="display: block;  margin-left: auto;  margin-right: auto" {% endif %}/>
+    <figcaption>{{ include.caption }}</figcaption>
+    </figure>
+{% else %}
+        <img src="{{ site.baseurl }}/images{{ imagePath }}" {% if include.alt %} alt="{{ include.alt }}" {% endif %} {% if include.width %} width="{{ include.width }}" style="display: block;  margin-left: auto;  margin-right: auto" {% endif %}/>
+{% endif %}
+                            

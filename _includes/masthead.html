@@ -13,8 +13,9 @@
               {% else %}
               {% assign domain = base_path %}
             {% endif %}
-            <li class="masthead__menu-item"><a href="{{ domain }}{{ link.url }}">{{ link.title }}</a></li>
+            <li class="masthead__menu-item"><a href="{{ domain }}{{ link.url }}"><span class="{{ link.icon }}"></span> {{ link.title }}</a></li>
           {% endfor %}
+          <li class="masthead__menu-item"><a href="https://github.com/paboyle/Grid" title="Github repository page"><span class="mega-octicon octicon-mark-github vertical-middle"></span></a></li>
         </ul>
         <ul class="hidden-links hidden"></ul>
       </nav>

@@ -343,6 +343,11 @@
       color: #fff;
     }
   }
+
+  .nav__noclick {
+    pointer-events: none;
+    color: #ccc;
+  }
 }
 
 .nav__title {
@@ -363,6 +368,11 @@
   text-transform: uppercase;
   border-bottom: 1px solid $border-color;
 }
+
+
+
+
+
 
 
 /*
