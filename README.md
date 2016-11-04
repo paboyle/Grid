@@ -106,6 +106,7 @@ To minimise the build time, only the tests at the root of the `tests` directory 
 ``` bash
 make -C tests/<subdir> tests
 ```
+If you want to build all the tests at once just use `make tests`.
 
 ### Build configuration options
 
