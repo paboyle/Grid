@@ -51,6 +51,30 @@ namespace QCD {
  { }
 
 template<class Impl>  
+void CayleyFermion5D<Impl>::Dminus(const FermionField &psi, FermionField &chi)
+{
+  int Ls=this->Ls;
+  FermionField tmp(psi._grid);
+
+  this->DW(psi,tmp,DaggerNo);
+
+  for(int s=0;s<Ls;s++){
+    axpby_ssp(chi,Coeff_t(1.0),psi,-cs[s],tmp,s,s);// chi = (1-c[s] D_W) psi
+  }
+}
+template<class Impl>  
+void CayleyFermion5D<Impl>::DminusDag(const FermionField &psi, FermionField &chi)
+{
+  int Ls=this->Ls;
+  FermionField tmp(psi._grid);
+
+  this->DW(psi,tmp,DaggerYes);
+
+  for(int s=0;s<Ls;s++){
+    axpby_ssp(chi,Coeff_t(1.0),psi,-cs[s],tmp,s,s);// chi = (1-c[s] D_W) psi
+  }
+}
+template<class Impl>  
 void CayleyFermion5D<Impl>::M5D   (const FermionField &psi, FermionField &chi)
 {
   int Ls=this->Ls;

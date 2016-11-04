@@ -39,8 +39,8 @@ namespace QCD{
 //on the 5d (rb4d) checkerboarded lattices
 ////////////////////////////////////////////////////////////////////////
 
-template<class vobj> 
-void axpibg5x(Lattice<vobj> &z,const Lattice<vobj> &x,RealD a,RealD b)
+template<class vobj,class Coeff>
+void axpibg5x(Lattice<vobj> &z,const Lattice<vobj> &x,Coeff a,Coeff b)
 {
   z.checkerboard = x.checkerboard;
   conformable(x,z);
@@ -57,8 +57,8 @@ PARALLEL_FOR_LOOP
   }
 }
 
-template<class vobj> 
-void axpby_ssp(Lattice<vobj> &z, RealD a,const Lattice<vobj> &x,RealD b,const Lattice<vobj> &y,int s,int sp)
+template<class vobj,class Coeff> 
+void axpby_ssp(Lattice<vobj> &z, Coeff a,const Lattice<vobj> &x,Coeff b,const Lattice<vobj> &y,int s,int sp)
 {
   z.checkerboard = x.checkerboard;
   conformable(x,y);
@@ -72,8 +72,8 @@ PARALLEL_FOR_LOOP
   }
 }
 
-template<class vobj> 
-void ag5xpby_ssp(Lattice<vobj> &z,RealD a,const Lattice<vobj> &x,RealD b,const Lattice<vobj> &y,int s,int sp)
+template<class vobj,class Coeff> 
+void ag5xpby_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const Lattice<vobj> &y,int s,int sp)
 {
   z.checkerboard = x.checkerboard;
   conformable(x,y);
@@ -90,8 +90,8 @@ PARALLEL_FOR_LOOP
   }
 }
 
-template<class vobj> 
-void axpbg5y_ssp(Lattice<vobj> &z,RealD a,const Lattice<vobj> &x,RealD b,const Lattice<vobj> &y,int s,int sp)
+template<class vobj,class Coeff> 
+void axpbg5y_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const Lattice<vobj> &y,int s,int sp)
 {
   z.checkerboard = x.checkerboard;
   conformable(x,y);
@@ -108,8 +108,8 @@ PARALLEL_FOR_LOOP
   }
 }
 
-template<class vobj> 
-void ag5xpbg5y_ssp(Lattice<vobj> &z,RealD a,const Lattice<vobj> &x,RealD b,const Lattice<vobj> &y,int s,int sp)
+template<class vobj,class Coeff> 
+void ag5xpbg5y_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const Lattice<vobj> &y,int s,int sp)
 {
   z.checkerboard = x.checkerboard;
   conformable(x,y);
@@ -127,8 +127,8 @@ PARALLEL_FOR_LOOP
   }
 }
 
-template<class vobj> 
-void axpby_ssp_pminus(Lattice<vobj> &z,RealD a,const Lattice<vobj> &x,RealD b,const Lattice<vobj> &y,int s,int sp)
+template<class vobj,class Coeff> 
+void axpby_ssp_pminus(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const Lattice<vobj> &y,int s,int sp)
 {
   z.checkerboard = x.checkerboard;
   conformable(x,y);
@@ -144,8 +144,8 @@ PARALLEL_FOR_LOOP
   }
 }
 
-template<class vobj> 
-void axpby_ssp_pplus(Lattice<vobj> &z,RealD a,const Lattice<vobj> &x,RealD b,const Lattice<vobj> &y,int s,int sp)
+template<class vobj,class Coeff> 
+void axpby_ssp_pplus(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const Lattice<vobj> &y,int s,int sp)
 {
   z.checkerboard = x.checkerboard;
   conformable(x,y);

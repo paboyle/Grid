@@ -42,7 +42,11 @@ namespace Grid {
      INHERIT_IMPL_TYPES(Impl);
     public:
 
-      // Constructors
+     void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m) { 
+       this->MomentumSpacePropagatorHw(out,in,_m);
+     };
+
+     // Constructors
     OverlapWilsonCayleyTanhFermion(GaugeField &_Umu,
 				   GridCartesian         &FiveDimGrid,
 				   GridRedBlackCartesian &FiveDimRedBlackGrid,

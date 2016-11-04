@@ -44,8 +44,32 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid.h>
 #include <algorithm>
 #include <iterator>
+#include <cstdlib>
+#include <memory>
+
+
+#include <fenv.h>
+#ifdef __APPLE__
+static int
+feenableexcept (unsigned int excepts)
+{
+  static fenv_t fenv;
+  unsigned int new_excepts = excepts & FE_ALL_EXCEPT,
+    old_excepts;  // previous masks
+
+  if ( fegetenv (&fenv) ) return -1;
+  old_excepts = fenv.__control & FE_ALL_EXCEPT;
+
+  // unmask
+  fenv.__control &= ~new_excepts;
+  fenv.__mxcsr   &= ~(new_excepts << 7);
+
+  return ( fesetenv (&fenv) ? -1 : old_excepts );
+}
+#endif
 
 namespace Grid {
+
 
 //////////////////////////////////////////////////////
 // Convenience functions to access stadard command line arg
@@ -234,7 +258,7 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"  --decomposition : report on default omp,mpi and simd decomposition"<<std::endl;    
     std::cout<<GridLogMessage<<"  --debug-signals : catch sigsegv and print a blame report"<<std::endl;
     std::cout<<GridLogMessage<<"  --debug-stdout  : print stdout from EVERY node"<<std::endl;    
-    std::cout<<GridLogMessage<<"  --timestamp     : tag with millisecond resolution stamps"<<std::endl;    
+    std::cout<<GridLogMessage<<"  --notimestamp   : suppress millisecond resolution stamps"<<std::endl;    
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Performance:"<<std::endl;
     std::cout<<GridLogMessage<<"  --dslash-generic: Wilson kernel for generic Nc"<<std::endl;    
@@ -316,7 +340,9 @@ void Grid_init(int *argc,char ***argv)
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--cacheblocking");
     GridCmdOptionIntVector(arg,LebesgueOrder::Block);
   }
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--timestamp") ){
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--notimestamp") ){
+    GridLogTimestamp(0);
+  } else { 
     GridLogTimestamp(1);
   }
 
@@ -390,10 +416,7 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   exit(0);
   return;
 };
-#ifdef GRID_FPE
-#define _GNU_SOURCE
-#include <fenv.h>
-#endif
+
 void Grid_debug_handler_init(void)
 {
   struct sigaction sa,osa;
@@ -402,9 +425,9 @@ void Grid_debug_handler_init(void)
   sa.sa_flags    = SA_SIGINFO;
   sigaction(SIGSEGV,&sa,NULL);
   sigaction(SIGTRAP,&sa,NULL);
-#ifdef GRID_FPE
+
   feenableexcept( FE_INVALID|FE_OVERFLOW|FE_DIVBYZERO);
+
   sigaction(SIGFPE,&sa,NULL);
-#endif
 }
 }
