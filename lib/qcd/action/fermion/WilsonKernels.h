@@ -61,14 +61,8 @@ public:
     switch(Opt) {
 #ifdef AVX512
     case OptInlineAsm:
-      for (int site = 0; site < Ns; site++) {
-	for (int s = 0; s < Ls; s++) {
-	  WilsonKernels<Impl>::DiracOptAsmDhopSite(st,lo,U,buf,sF,sU,Ls,Ns,in,out);
-	  sF++;
-	}
-	sU++;
-      }
-      break;
+       WilsonKernels<Impl>::DiracOptAsmDhopSite(st,lo,U,buf,sF,sU,Ls,Ns,in,out);
+       break;
 #endif
     case OptHandUnroll:
       for (int site = 0; site < Ns; site++) {
@@ -115,13 +109,7 @@ public:
     switch(Opt) {
 #ifdef AVX512
     case OptInlineAsm:
-      for (int site = 0; site < Ns; site++) {
-	for (int s = 0; s < Ls; s++) {
-	  WilsonKernels<Impl>::DiracOptAsmDhopSiteDag(st,lo,U,buf,sF,sU,Ls,Ns,in,out);
-	  sF++;
-	}
-	sU++;
-      }
+      WilsonKernels<Impl>::DiracOptAsmDhopSiteDag(st,lo,U,buf,sF,sU,Ls,Ns,in,out);
       break;
 #endif
     case OptHandUnroll:
