@@ -30,7 +30,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #define _GRID_FFT_H_
 
 #ifdef HAVE_FFTW	
-#include <Grid/fftw/fftw3.h>
+#include <fftw3.h>
 #endif
 
 
