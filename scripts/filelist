@@ -20,7 +20,7 @@ for subdir in $dirs; do
     TESTS=`ls T*.cc`
     TESTLIST=`echo ${TESTS} | sed s/.cc//g `
     PREF=`[ $subdir = '.' ] && echo noinst || echo EXTRA`
-    echo "tests: ${TESTLIST}" > Make.inc
+    echo "tests-local: ${TESTLIST}" > Make.inc
     echo ${PREF}_PROGRAMS = ${TESTLIST} >> Make.inc
     echo >> Make.inc
     for f in $TESTS; do
