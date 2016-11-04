@@ -11,7 +11,9 @@ sidebar:
 ---
 {% include base_path %}
 
-{% octicon alert height:32 class:"right left" aria-label:hi %} __To help us tracking and solving more efficiently issues with Grid, please report problems using the [issue system of GitHub](https://github.com/paboyle/Grid/issues) rather than sending emails to Grid developers.__
+<!--{% octicon alert height:32 class:"right left" aria-label:hi %} -->
+
+__To help us tracking and solving more efficiently issues with Grid, please report problems using the [issue system of GitHub](https://github.com/paboyle/Grid/issues) rather than sending emails to Grid developers.__
 
 We also suggest to have a brief look at the [closed issues pages](https://github.com/paboyle/Grid/issues?q=is%3Aissue+is%3Aclosed) and check whether the problem has been addressed already.
 
