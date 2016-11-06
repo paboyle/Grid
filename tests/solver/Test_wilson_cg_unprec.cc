@@ -71,7 +71,7 @@ int main (int argc, char ** argv)
   WilsonFermionR Dw(Umu,Grid,RBGrid,mass);
 
   MdagMLinearOperator<WilsonFermionR,LatticeFermion> HermOp(Dw);
-  ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
+  ConjugateGradient<LatticeFermion> CG(1.0e-8,10000,true, true);
   CG(HermOp,src,result);
 
   Grid_finalize();
