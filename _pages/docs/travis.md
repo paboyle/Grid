@@ -21,4 +21,18 @@ The current status is
 | [Master](https://travis-ci.org/paboyle/Grid)       |  [![Build Status](https://travis-ci.org/paboyle/Grid.svg?branch=master)](https://travis-ci.org/paboyle/Grid) |
 | [Develop](https://travis-ci.org/paboyle/Grid)       | [![Build Status](https://travis-ci.org/paboyle/Grid.svg?branch=develop)](https://travis-ci.org/paboyle/Grid) |
 
+
+### Automated tests
+
+Travis will test the compilation workflow for single and double precision version on the following compilers for each commit:
+
+ - clang 3.7.0 on Ubuntu 14.04
+ - clang 3.8.0 on Ubuntu 14.04
+ - gcc 5.4.1 on Ubuntu 14.04
+ - gcc 4.9.4 on Ubuntu 14.04
+ - clang LLVM 7.0 on OSX (x86_64-apple-darwin15.5.0)
+
+Due to the limitations of the Travis virtual machines, the archictecture is limited to SSE4.
+
+
 {% include paginator.html %}
