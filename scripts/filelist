@@ -13,21 +13,27 @@ echo CCFILES=$CCFILES >> Make.inc
 
 # tests Make.inc
 cd $home/tests
-dirs=`find . -type d `
+dirs=`find . -type d -not -path '*/\.*'`
 for subdir in $dirs; do
-	cd $home/tests/$subdir
-	TESTS=`ls T*.cc`
-	TESTLIST=`echo ${TESTS} | sed s/.cc//g `
-	PREF=`[ $subdir = '.' ] && echo noinst || echo EXTRA`
-	echo "tests: ${TESTLIST}" > Make.inc
-	echo ${PREF}_PROGRAMS = ${TESTLIST} >> Make.inc
-	echo >> Make.inc
-	for f in $TESTS; do
-		BNAME=`basename $f .cc`
-		echo ${BNAME}_SOURCES=$f  >> Make.inc
-		echo ${BNAME}_LDADD=-lGrid>> Make.inc
-		echo >> Make.inc
-	done
+    cd $home/tests/$subdir
+    pwd
+    TESTS=`ls T*.cc`
+    TESTLIST=`echo ${TESTS} | sed s/.cc//g `
+    PREF=`[ $subdir = '.' ] && echo noinst || echo EXTRA`
+    SUB=`[ $subdir = '.' ] && echo subtests`
+    echo "tests: ${TESTLIST} ${SUB}" > Make.inc
+    echo ${PREF}_PROGRAMS = ${TESTLIST} >> Make.inc
+    echo >> Make.inc
+    for f in $TESTS; do
+	   BNAME=`basename $f .cc`
+	   echo ${BNAME}_SOURCES=$f  >> Make.inc
+	   echo ${BNAME}_LDADD=-lGrid>> Make.inc
+	   echo >> Make.inc
+    done
+    if [ $subdir != '.' ]; then
+       echo CLEANFILES = ${TESTLIST} >> Make.inc
+       echo >> Make.inc
+    fi
 done
 
 # benchmarks Make.inc
@@ -38,10 +44,10 @@ TESTLIST=`echo ${TESTS} | sed s/.cc//g `
 echo bin_PROGRAMS = ${TESTLIST} > Make.inc
 echo >> Make.inc
 for f in $TESTS; do
-	BNAME=`basename $f .cc`
-	echo ${BNAME}_SOURCES=$f  >> Make.inc
-	echo ${BNAME}_LDADD=-lGrid>> Make.inc
-	echo >> Make.inc
+    BNAME=`basename $f .cc`
+    echo ${BNAME}_SOURCES=$f  >> Make.inc
+    echo ${BNAME}_LDADD=-lGrid>> Make.inc
+    echo >> Make.inc
 done
 
 cd ..

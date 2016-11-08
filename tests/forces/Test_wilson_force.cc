@@ -58,8 +58,8 @@ int main (int argc, char ** argv)
 
   LatticeGaugeField U(&Grid);
 
-  SU3::HotConfiguration(pRNG,U);
-  //  SU3::ColdConfiguration(pRNG,U);
+  //SU2::HotConfiguration(pRNG,U);
+  SU3::ColdConfiguration(pRNG,U);
   
   ////////////////////////////////////
   // Unmodified matrix element
@@ -76,6 +76,8 @@ int main (int argc, char ** argv)
 
   Dw.MDeriv(tmp , Mphi,  phi,DaggerNo );  UdSdU=tmp;
   Dw.MDeriv(tmp , phi,  Mphi,DaggerYes ); UdSdU=(UdSdU+tmp);
+  // Take the trace
+  UdSdU = Ta(UdSdU);
   
   LatticeFermion Ftmp      (&Grid);
 
@@ -93,23 +95,21 @@ int main (int argc, char ** argv)
 
   for(int mu=0;mu<Nd;mu++){
 
-    SU3::GaussianLieAlgebraMatrix(pRNG, mommu); // Traceless antihermitian momentum; gaussian in lie alg
+    SU3::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu); // Traceless antihermitian momentum; gaussian in lie alg
 
     Hmom -= real(sum(trace(mommu*mommu)));
 
     PokeIndex<LorentzIndex>(mom,mommu,mu);
 
     // fourth order exponential approx
-    parallel_for(auto i=mom.begin();i<mom.end();i++){
-      Uprime[i](mu) =
-	  U[i](mu)
-	+ mom[i](mu)*U[i](mu)*dt 
-	+ mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt/2.0)
-	+ mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt/6.0)
-	+ mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt/24.0)
-	+ mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt*dt/120.0)
-	+ mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt*dt*dt/720.0)
-	;
+    parallel_for(auto i=mom.begin();i<mom.end();i++) {
+      Uprime[i](mu)  =	  U[i](mu);
+      Uprime[i](mu) += mom[i](mu)*U[i](mu)*dt ;
+      Uprime[i](mu) += mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt/2.0);
+      Uprime[i](mu) += mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt/6.0);
+      Uprime[i](mu) += mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt/24.0);
+      Uprime[i](mu) += mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt*dt/120.0);
+      Uprime[i](mu) += mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt*dt*dt/720.0);
     }
 
   }
@@ -140,11 +140,13 @@ int main (int argc, char ** argv)
   LatticeComplex dS(&Grid); dS = zero;
   LatticeComplex dSmom(&Grid); dSmom = zero;
   LatticeComplex dSmom2(&Grid); dSmom2 = zero;
+  
   for(int mu=0;mu<Nd;mu++){
     mommu   = PeekIndex<LorentzIndex>(UdSdU,mu);
     mommu=Ta(mommu)*2.0;
     PokeIndex<LorentzIndex>(UdSdU,mommu,mu);
   }
+  
 
   for(int mu=0;mu<Nd;mu++){
     mommu   = PeekIndex<LorentzIndex>(mom,mu);
@@ -168,7 +170,7 @@ int main (int argc, char ** argv)
     dSmom2 = dSmom2 - trace(forcemu*forcemu) *(0.25* dt*dt);
 
     // Update mom action density
-    mommu = mommu + forcemu*(dt*0.5);
+    mommu = mommu + forcemu*(dt * 0.5);
 
     Hmomprime -= real(sum(trace(mommu*mommu)));
 

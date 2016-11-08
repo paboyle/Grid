@@ -237,6 +237,18 @@ namespace Grid {
     stream<<">";
     return stream;
   }
+  inline std::ostream& operator<< (std::ostream& stream, const vInteger &o){
+    int nn=vInteger::Nsimd();
+    std::vector<Integer,alignedAllocator<Integer> > buf(nn);
+    vstore(o,&buf[0]);
+    stream<<"<";
+    for(int i=0;i<nn;i++){
+      stream<<buf[i];
+      if(i<nn-1) stream<<",";
+    }
+    stream<<">";
+    return stream;
+  }
 
 
 }

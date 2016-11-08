@@ -5,7 +5,9 @@
   const uint64_t plocal =(uint64_t) & in._odata[0];
 
   //  vComplexF isigns[2] = { signs[0], signs[1] };
-  vComplexF *isigns = &signs[0];
+  //COMPLEX_TYPE is vComplexF of vComplexD depending 
+  //on the chosen precision
+  COMPLEX_TYPE *isigns = &signs[0];
 
   MASK_REGS;
   int nmax=U._grid->oSites();
@@ -134,7 +136,9 @@
   ////////////////////////////////
   // Xm
   ////////////////////////////////
+#ifndef STREAM_STORE
   basep= (uint64_t) &out._odata[ss];
+#endif
   //  basep= st.GetPFInfo(nent,plocal); nent++;
   if ( local ) {
     LOAD64(%r10,isigns);  // times i => shuffle and xor the real part sign bit
@@ -229,7 +233,9 @@
     LOAD_CHI(base);
   }
   base= (uint64_t) &out._odata[ss];
+#ifndef STREAM_STORE
   PREFETCH_CHIMU(base);
+#endif
   {
     MULT_2SPIN_DIR_PFTM(Tm,basep);
   }

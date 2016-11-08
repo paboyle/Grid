@@ -119,8 +119,8 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
   assert(shift<fd);
   
   int buffer_size = rhs._grid->_slice_nblock[dimension]*rhs._grid->_slice_block[dimension];
-  std::vector<vobj,alignedAllocator<vobj> > send_buf(buffer_size);
-  std::vector<vobj,alignedAllocator<vobj> > recv_buf(buffer_size);
+  commVector<vobj> send_buf(buffer_size);
+  commVector<vobj> recv_buf(buffer_size);
 
   int cb= (cbmask==0x2)? Odd : Even;
   int sshift= rhs._grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,cb);
@@ -191,8 +191,8 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
   int buffer_size = grid->_slice_nblock[dimension]*grid->_slice_block[dimension];
   int words = sizeof(vobj)/sizeof(vector_type);
 
-  std::vector<Vector<scalar_object> >   send_buf_extract(Nsimd,Vector<scalar_object>(buffer_size) );
-  std::vector<Vector<scalar_object> >   recv_buf_extract(Nsimd,Vector<scalar_object>(buffer_size) );
+  std::vector<commVector<scalar_object> >   send_buf_extract(Nsimd,commVector<scalar_object>(buffer_size) );
+  std::vector<commVector<scalar_object> >   recv_buf_extract(Nsimd,commVector<scalar_object>(buffer_size) );
 
   int bytes = buffer_size*sizeof(scalar_object);
 

@@ -294,11 +294,12 @@ namespace Grid {
 	int rank,o_idx,i_idx;
 	_grid->GlobalIndexToGlobalCoor(gidx,gcoor);
 	_grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
-
+        
 	int l_idx=generator_idx(o_idx,i_idx);
-	
-	std::vector<int> site_seeds(4);
-	for(int i=0;i<4;i++){
+
+	const int num_rand_seed=16;
+	std::vector<int> site_seeds(num_rand_seed);
+	for(int i=0;i<site_seeds.size();i++){
 	  site_seeds[i]= ui(pseeder);
 	}
 

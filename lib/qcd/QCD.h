@@ -493,16 +493,27 @@ namespace QCD {
 }   //namespace QCD
 } // Grid
 
+
 #include <Grid/qcd/utils/SpaceTimeGrid.h>
 #include <Grid/qcd/spin/Dirac.h>
 #include <Grid/qcd/spin/TwoSpinor.h>
 #include <Grid/qcd/utils/LinalgUtils.h>
 #include <Grid/qcd/utils/CovariantCshift.h>
+
+// Include representations 	
 #include <Grid/qcd/utils/SUn.h>
+#include <Grid/qcd/utils/SUnAdjoint.h>
+#include <Grid/qcd/utils/SUnTwoIndex.h>
+#include <Grid/qcd/representations/hmc_types.h>
+
 #include <Grid/qcd/action/Actions.h>
+
+#include <Grid/qcd/smearing/Smearing.h>
+
 #include <Grid/qcd/hmc/integrators/Integrator.h>
 #include <Grid/qcd/hmc/integrators/Integrator_algorithm.h>
 #include <Grid/qcd/hmc/HMC.h>
-#include <Grid/qcd/smearing/Smearing.h>
+
+
 
 #endif

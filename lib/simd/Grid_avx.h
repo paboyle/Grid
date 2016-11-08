@@ -365,6 +365,18 @@ namespace Optimization {
     }
   };
 
+  struct Div{
+    // Real float
+    inline __m256 operator()(__m256 a, __m256 b){
+      return _mm256_div_ps(a,b);
+    }
+    // Real double
+    inline __m256d operator()(__m256d a, __m256d b){
+      return _mm256_div_pd(a,b);
+    }
+  };
+
+
   struct Conj{
     // Complex single
     inline __m256 operator()(__m256 in){
@@ -437,14 +449,13 @@ namespace Optimization {
 
   };
 
-#if defined (AVX2) || defined (AVXFMA4) 
-#define _mm256_alignr_epi32(ret,a,b,n) ret=(__m256) _mm256_alignr_epi8((__m256i)a,(__m256i)b,(n*4)%16)
-#define _mm256_alignr_epi64(ret,a,b,n) ret=(__m256d) _mm256_alignr_epi8((__m256i)a,(__m256i)b,(n*8)%16)
+#if defined (AVX2)
+#define _mm256_alignr_epi32_grid(ret,a,b,n) ret=(__m256)  _mm256_alignr_epi8((__m256i)a,(__m256i)b,(n*4)%16)
+#define _mm256_alignr_epi64_grid(ret,a,b,n) ret=(__m256d) _mm256_alignr_epi8((__m256i)a,(__m256i)b,(n*8)%16)
 #endif
 
-#if defined (AVX1) 
-
-#define _mm256_alignr_epi32(ret,a,b,n) {	\
+#if defined (AVX1) || defined (AVXFMA)  
+#define _mm256_alignr_epi32_grid(ret,a,b,n) {	\
     __m128 aa, bb;				\
 						\
     aa  = _mm256_extractf128_ps(a,1);		\
@@ -458,7 +469,7 @@ namespace Optimization {
     ret = _mm256_insertf128_ps(ret,aa,0);	\
   }
 
-#define _mm256_alignr_epi64(ret,a,b,n) {	\
+#define _mm256_alignr_epi64_grid(ret,a,b,n) {	\
     __m128d aa, bb;				\
 						\
     aa  = _mm256_extractf128_pd(a,1);		\
@@ -473,19 +484,6 @@ namespace Optimization {
   }
 
 #endif
-
-    inline std::ostream & operator << (std::ostream& stream, const __m256 a)
-    {
-      const float *p=(const float *)&a;
-      stream<< "{"<<p[0]<<","<<p[1]<<","<<p[2]<<","<<p[3]<<","<<p[4]<<","<<p[5]<<","<<p[6]<<","<<p[7]<<"}";
-      return stream;
-    };
-    inline std::ostream & operator<< (std::ostream& stream, const __m256d a)
-    {
-      const double *p=(const double *)&a;
-      stream<< "{"<<p[0]<<","<<p[1]<<","<<p[2]<<","<<p[3]<<"}";
-      return stream;
-    };
 
   struct Rotate{
 
@@ -518,11 +516,10 @@ namespace Optimization {
       __m256 tmp = Permute::Permute0(in);
       __m256 ret;
       if ( n > 3 ) { 
-	_mm256_alignr_epi32(ret,in,tmp,n);  
+	_mm256_alignr_epi32_grid(ret,in,tmp,n);  
       } else {
-        _mm256_alignr_epi32(ret,tmp,in,n);          
+        _mm256_alignr_epi32_grid(ret,tmp,in,n);          
       }
-      //      std::cout << " align epi32 n=" <<n<<" in "<<tmp<<in<<" -> "<< ret <<std::endl;
       return ret;
     };
 
@@ -531,17 +528,14 @@ namespace Optimization {
       __m256d tmp = Permute::Permute0(in);
       __m256d ret;
       if ( n > 1 ) {
-	_mm256_alignr_epi64(ret,in,tmp,n);          
+	_mm256_alignr_epi64_grid(ret,in,tmp,n);          
       } else {
-        _mm256_alignr_epi64(ret,tmp,in,n);          
+        _mm256_alignr_epi64_grid(ret,tmp,in,n);          
       }
-      //      std::cout << " align epi64 n=" <<n<<" in "<<tmp<<in<<" -> "<< ret <<std::endl;
       return ret;
     };
 
   };
-
-
 
   //Complex float Reduce
   template<>
@@ -631,6 +625,7 @@ namespace Optimization {
   // Arithmetic operations
   typedef Optimization::Sum         SumSIMD;
   typedef Optimization::Sub         SubSIMD;
+  typedef Optimization::Div         DivSIMD;
   typedef Optimization::Mult        MultSIMD;
   typedef Optimization::MultComplex MultComplexSIMD;
   typedef Optimization::Conj        ConjSIMD;
