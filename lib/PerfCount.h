@@ -43,6 +43,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #else
 #include <sys/syscall.h>
 #endif
+#ifdef __x86_64__
+#include <x86intrin.h>
+#endif
 
 namespace Grid {
 
@@ -86,7 +89,6 @@ inline uint64_t cyclecount(void){
    return tmp;
 }
 #elif defined __x86_64__
-#include <x86intrin.h>
 inline uint64_t cyclecount(void){ 
   return __rdtsc();
   //  unsigned int dummy;
