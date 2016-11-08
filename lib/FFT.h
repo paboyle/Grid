@@ -29,8 +29,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef _GRID_FFT_H_
 #define _GRID_FFT_H_
 
-#ifdef HAVE_FFTW	
+#ifdef HAVE_FFTW
+#ifdef USE_MKL
+#include <fftw/fftw3.h>
+#else
 #include <fftw3.h>
+#endif
 #endif
 
 
