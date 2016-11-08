@@ -31,14 +31,8 @@ namespace Grid {
 ///////////////////////////////////////////////////////////////
 // Info that is setup once and indept of cartesian layout
 ///////////////////////////////////////////////////////////////
-int CartesianCommunicator::ShmRank;
-int CartesianCommunicator::ShmSize;
-int CartesianCommunicator::GroupRank;
-int CartesianCommunicator::GroupSize;
-int CartesianCommunicator::WorldRank;
-int CartesianCommunicator::WorldSize;
-int CartesianCommunicator::Slave;
 void *              CartesianCommunicator::ShmCommBuf;
+uint64_t            CartesianCommunicator::MAX_MPI_SHM_BYTES   = 128*1024*1024; 
 
 /////////////////////////////////
 // Alloc, free shmem region
@@ -48,7 +42,12 @@ void *CartesianCommunicator::ShmBufferMalloc(size_t bytes){
   void *ptr = (void *)heap_top;
   heap_top  += bytes;
   heap_bytes+= bytes;
-  assert(heap_bytes < MAX_MPI_SHM_BYTES);
+  if (heap_bytes >= MAX_MPI_SHM_BYTES) {
+    std::cout<< " ShmBufferMalloc exceeded shared heap size -- try increasing with --shm <MB> flag" <<std::endl;
+    std::cout<< " Parameter specified in units of MB (megabytes) " <<std::endl;
+    std::cout<< " Current value is " << (MAX_MPI_SHM_BYTES/(1024*1024)) <<std::endl;
+    assert(heap_bytes<MAX_MPI_SHM_BYTES);
+  }
   return ptr;
 }
 void CartesianCommunicator::ShmBufferFreeAll(void) { 
@@ -69,12 +68,6 @@ int                      CartesianCommunicator::ProcessorCount(void)    { return
 ////////////////////////////////////////////////////////////////////////////////
 // very VERY rarely (Log, serial RNG) we need world without a grid
 ////////////////////////////////////////////////////////////////////////////////
-int  CartesianCommunicator::RankWorld(void){ return WorldRank; };
-int CartesianCommunicator::Ranks    (void) { return WorldSize; };
-int CartesianCommunicator::Nodes    (void) { return GroupSize; };
-int CartesianCommunicator::Cores    (void) { return ShmSize;   };
-int CartesianCommunicator::NodeRank (void) { return GroupRank; };
-int CartesianCommunicator::CoreRank (void) { return ShmRank;   };
 
 void CartesianCommunicator::GlobalSum(ComplexF &c)
 {
@@ -93,7 +86,7 @@ void CartesianCommunicator::GlobalSumVector(ComplexD *c,int N)
   GlobalSumVector((double *)c,2*N);
 }
 
-#ifndef GRID_COMMS_MPI3
+#if !defined( GRID_COMMS_MPI3) && !defined (GRID_COMMS_MPI3L)
 
 void CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 						       void *xmit,

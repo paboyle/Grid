@@ -20,7 +20,7 @@ License: GPL v2.
 
 Last update Nov 2016.
 
-_Please send all pull requests to the `develop` branch._
+_Please do not send pull requests to the `master` branch which is reserved for releases._
 
 ### Bug report
 
@@ -29,7 +29,7 @@ _To help us tracking and solving more efficiently issues with Grid, please repor
 When you file an issue, please go though the following checklist:
 
 1. Check that the code is pointing to the `HEAD` of `develop` or any commit in `master` which is tagged with a version number. 
-2. Give a description of the target platform (CPU, network, compiler).
+2. Give a description of the target platform (CPU, network, compiler). Please give the full CPU part description, using for example `cat /proc/cpuinfo | grep 'model name' | uniq` (Linux) or `sysctl machdep.cpu.brand_string` (macOS) and the full output the `--version` option of your compiler.
 3. Give the exact `configure` command used.
 4. Attach `config.log`.
 5. Attach `config.summary`.
@@ -45,7 +45,7 @@ are provided, similar to HPF and cmfortran, and user control is given over the m
 array indices to both MPI tasks and SIMD processing elements.
 
 * Identically shaped arrays then be processed with perfect data parallelisation.
-* Such identically shapped arrays are called conformable arrays.
+* Such identically shaped arrays are called conformable arrays.
 
 The transformation is based on the observation that Cartesian array processing involves
 identical processing to be performed on different regions of the Cartesian array.
@@ -127,14 +127,15 @@ make -C tests/<subdir> tests
 
 The following options can be use with the `--enable-simd=` option to target different communication interfaces:
 
-| `<comm>`      | Description                                  |
-| ------------- | -------------------------------------------- |
-| `none`        | no communications                            |
-| `mpi[-auto]`  | MPI communications                           |
-| `mpi3[-auto]` | MPI communications using MPI 3 shared memory |
-| `shmem `      | Cray SHMEM communications                    |
+| `<comm>`       | Description                                                   |
+| -------------- | ------------------------------------------------------------- |
+| `none`         | no communications                                             |
+| `mpi[-auto]`   | MPI communications                                            |
+| `mpi3[-auto]`  | MPI communications using MPI 3 shared memory                  |
+| `mpi3l[-auto]` | MPI communications using MPI 3 shared memory and leader model |
+| `shmem `       | Cray SHMEM communications                                     |
 
-For `mpi` and `mpi3` the optional `-auto` suffix instructs the `configure` scripts to determine all the necessary compilation and linking flags. This is done by extracting the informations from the MPI wrapper specified in the environment variable `MPICXX` (if not specified `configure` will scan though a list of default names).
+For the MPI interfaces the optional `-auto` suffix instructs the `configure` scripts to determine all the necessary compilation and linking flags. This is done by extracting the informations from the MPI wrapper specified in the environment variable `MPICXX` (if not specified `configure` will scan though a list of default names).
 
 ### Possible SIMD types
 
@@ -160,7 +161,7 @@ Alternatively, some CPU codenames can be directly used:
 | `BGQ`       | Blue Gene/Q                            |
 
 #### Notes:
-- We currently support AVX512 only for the Intel compiler. Support for GCC and clang will appear in future versions.
+- We currently support AVX512 only for the Intel compiler. Support for GCC and clang will appear in future versions of Grid when the AVX512 support within GCC and clang will be more advanced.
 - For BG/Q only [bgclang](http://trac.alcf.anl.gov/projects/llvm-bgq) is supported. We do not presently plan to support more compilers for this platform.
 - BG/Q performances are currently rather poor. This is being investigated for future versions.
 
@@ -171,7 +172,7 @@ The following configuration is recommended for the Intel Knights Landing platfor
 ``` bash
 ../configure --enable-precision=double\
              --enable-simd=KNL        \
-             --enable-comms=mpi3-auto \
+             --enable-comms=mpi-auto \
              --with-gmp=<path>        \
              --with-mpfr=<path>       \
              --enable-mkl             \
@@ -183,10 +184,9 @@ where `<path>` is the UNIX prefix where GMP and MPFR are installed. If you are w
 ``` bash
 ../configure --enable-precision=double\
              --enable-simd=KNL        \
-             --enable-comms=mpi3      \
+             --enable-comms=mpi       \
              --with-gmp=<path>        \
              --with-mpfr=<path>       \
              --enable-mkl             \
              CXX=CC CC=cc
 ```
-
