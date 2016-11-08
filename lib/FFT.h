@@ -122,7 +122,8 @@ namespace Grid {
     
     double Flops(void) {return flops;}
     double MFlops(void) {return flops/usec;}
-    
+    double USec(void)   {return (double)usec;}    
+
     FFT ( GridCartesian * grid ) :
     vgrid(grid),
     Nd(grid->_ndimension),
