@@ -120,7 +120,7 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
     LatticeComplex  Fp(grid);
     LatticeComplex  psq(grid); psq=zero;
     LatticeComplex  pmu(grid); 
-    LatticeComplex   one(grid); one = ComplexD(1.0,0.0);
+    LatticeComplex   one(grid); one = Complex(1.0,0.0);
 
     GaugeMat g(grid);
     GaugeMat dmuAmu_p(grid);
@@ -261,25 +261,25 @@ int main (int argc, char ** argv)
   std::cout<< "* Testing we can gauge fix steep descent a RGT of Unit gauge    *" <<std::endl;
   std::cout<< "*****************************************************************" <<std::endl;
 
-  LatticeGaugeFieldD   Umu(&GRID);
-  LatticeGaugeFieldD   Uorg(&GRID);
-  LatticeColourMatrixD   g(&GRID); // Gauge xform
+  LatticeGaugeField   Umu(&GRID);
+  LatticeGaugeField   Uorg(&GRID);
+  LatticeColourMatrix   g(&GRID); // Gauge xform
 
   
   SU3::ColdConfiguration(pRNG,Umu); // Unit gauge
   Uorg=Umu;
 
   SU3::RandomGaugeTransform(pRNG,Umu,g); // Unit gauge
-  RealD plaq=WilsonLoops<PeriodicGimplD>::avgPlaquette(Umu);
+  RealD plaq=WilsonLoops<PeriodicGimplF>::avgPlaquette(Umu);
   std::cout << " Initial plaquette "<<plaq << std::endl;
 
 
 
   RealD alpha=0.1;
-  FourierAcceleratedGaugeFixer<PeriodicGimplD>::SteepestDescentGaugeFix(Umu,alpha,10000,1.0e-10, 1.0e-10);
+  FourierAcceleratedGaugeFixer<PeriodicGimplF>::SteepestDescentGaugeFix(Umu,alpha,10000,1.0e-10, 1.0e-10);
 
 
-  plaq=WilsonLoops<PeriodicGimplD>::avgPlaquette(Umu);
+  plaq=WilsonLoops<PeriodicGimplF>::avgPlaquette(Umu);
   std::cout << " Final plaquette "<<plaq << std::endl;
 
   Uorg = Uorg - Umu;
