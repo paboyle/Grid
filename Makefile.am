@@ -3,7 +3,7 @@ SUBDIRS = lib benchmarks tests
 
 .PHONY: tests
 
-tests:
+tests: all
 	$(MAKE) -C tests tests
 
 AM_CXXFLAGS += -I$(top_builddir)/include
