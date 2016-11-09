@@ -57,7 +57,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   std::vector<int> latt4 = GridDefaultLatt();
-  const int Ls=16;
+  const int Ls=8;
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
@@ -138,7 +138,7 @@ int main (int argc, char ** argv)
 
   int ncall =100;
   if (1) {
-
+    FGrid->Barrier();
     Dw.ZeroCounters();
     double t0=usecond();
     for(int i=0;i<ncall;i++){
@@ -147,6 +147,7 @@ int main (int argc, char ** argv)
       __SSC_STOP;
     }
     double t1=usecond();
+    FGrid->Barrier();
     
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=1344*volume*ncall;
@@ -158,7 +159,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "mflop/s per rank =  "<< flops/(t1-t0)/NP<<std::endl;
     err = ref-result; 
     std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
-    assert (norm2(err)< 1.0e-5 );
+    assert (norm2(err)< 1.0e-4 );
     Dw.Report();
   }
 
@@ -193,6 +194,7 @@ int main (int argc, char ** argv)
       pokeSite(tmp,ssrc,site);
     }}}}}
     std::cout<<GridLogMessage<< "src norms "<< norm2(src)<<" " <<norm2(ssrc)<<std::endl;
+    FGrid->Barrier();
     double t0=usecond();
     sDw.ZeroCounters();
     for(int i=0;i<ncall;i++){
@@ -201,6 +203,7 @@ int main (int argc, char ** argv)
       __SSC_STOP;
     }
     double t1=usecond();
+    FGrid->Barrier();
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=1344*volume*ncall;
 
@@ -211,12 +214,12 @@ int main (int argc, char ** argv)
   
     if(0){
       for(int i=0;i< PerformanceCounter::NumTypes(); i++ ){
-  sDw.Dhop(ssrc,sresult,0);
-  PerformanceCounter Counter(i);
-  Counter.Start();
-  sDw.Dhop(ssrc,sresult,0);
-  Counter.Stop();
-  Counter.Report();
+	sDw.Dhop(ssrc,sresult,0);
+	PerformanceCounter Counter(i);
+	Counter.Start();
+	sDw.Dhop(ssrc,sresult,0);
+	Counter.Stop();
+	Counter.Report();
       }
     }
 
@@ -240,7 +243,7 @@ int main (int argc, char ** argv)
       }
     }}}}}
     std::cout<<GridLogMessage<<" difference between normal and simd is "<<sum<<std::endl;
-    assert (sum< 1.0e-5 );
+    assert (sum< 1.0e-4 );
 
 
     if (1) {
@@ -271,6 +274,7 @@ int main (int argc, char ** argv)
       if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
       std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
 
+      FGrid->Barrier();
       sDw.ZeroCounters();
       sDw.stat.init("DhopEO");
       double t0=usecond();
@@ -278,6 +282,7 @@ int main (int argc, char ** argv)
         sDw.DhopEO(ssrc_o, sr_e, DaggerNo);
       }
       double t1=usecond();
+      FGrid->Barrier();
       sDw.stat.print();
 
       double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
@@ -301,7 +306,7 @@ int main (int argc, char ** argv)
 
       error+= norm2(ssrc_o);
       std::cout<<GridLogMessage << "sO norm diff   "<< norm2(ssrc_o)<< "  vec nrm"<<norm2(sr_o) <<std::endl;
-      if(error>1.0e-5) { 
+      if(error>1.0e-4) { 
 	setCheckerboard(ssrc,ssrc_o);
 	setCheckerboard(ssrc,ssrc_e);
 	std::cout<< ssrc << std::endl;
@@ -337,7 +342,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
   err = ref-result; 
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
-  assert(norm2(err)<1.0e-5);
+  assert(norm2(err)<1.0e-4);
   LatticeFermion src_e (FrbGrid);
   LatticeFermion src_o (FrbGrid);
   LatticeFermion r_e   (FrbGrid);
@@ -363,11 +368,13 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
   {
     Dw.ZeroCounters();
+    FGrid->Barrier();
     double t0=usecond();
     for(int i=0;i<ncall;i++){
       Dw.DhopEO(src_o,r_e,DaggerNo);
     }
     double t1=usecond();
+    FGrid->Barrier();
     
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=(1344.0*volume*ncall)/2;
@@ -389,14 +396,14 @@ int main (int argc, char ** argv)
 
   err = r_eo-result; 
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
-  assert(norm2(err)<1.0e-5);
+  assert(norm2(err)<1.0e-4);
 
   pickCheckerboard(Even,src_e,err);
   pickCheckerboard(Odd,src_o,err);
   std::cout<<GridLogMessage << "norm diff even  "<< norm2(src_e)<<std::endl;
   std::cout<<GridLogMessage << "norm diff odd   "<< norm2(src_o)<<std::endl;
-  assert(norm2(src_e)<1.0e-5);
-  assert(norm2(src_o)<1.0e-5);
+  assert(norm2(src_e)<1.0e-4);
+  assert(norm2(src_o)<1.0e-4);
 
   Grid_finalize();
 }
