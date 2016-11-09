@@ -1,32 +1,33 @@
-    /*************************************************************************************
+/*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+Grid physics library, www.github.com/paboyle/Grid
 
-    Source file: ./lib/lattice/Lattice_base.h
+Source file: ./lib/lattice/Lattice_base.h
 
-    Copyright (C) 2015
+Copyright (C) 2015
 
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-    See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+See the full license in the file "LICENSE" in the top level distribution
+directory
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_LATTICE_BASE_H
 #define GRID_LATTICE_BASE_H
 
@@ -64,9 +65,6 @@ public:
     
 class LatticeExpressionBase {};
 
-template<class T> using Vector = std::vector<T,alignedAllocator<T> >;               // Aligned allocator??
-template<class T> using Matrix = std::vector<std::vector<T,alignedAllocator<T> > >; // Aligned allocator??
-
 template <typename Op, typename T1>                           
 class LatticeUnaryExpression  : public std::pair<Op,std::tuple<T1> > , public LatticeExpressionBase {
  public:
@@ -101,6 +99,7 @@ public:
     int begin(void) { return 0;};
     int end(void)   { return _odata.size(); }
     vobj & operator[](int i) { return _odata[i]; };
+    const vobj & operator[](int i) const { return _odata[i]; };
 
 public:
     typedef typename vobj::scalar_type scalar_type;
@@ -255,6 +254,18 @@ PARALLEL_FOR_LOOP
         checkerboard=0;
     }
 
+    Lattice(const Lattice& r){ // copy constructor
+    	_grid = r._grid;
+    	checkerboard = r.checkerboard;
+    	_odata.resize(_grid->oSites());// essential
+  		PARALLEL_FOR_LOOP
+        for(int ss=0;ss<_grid->oSites();ss++){
+            _odata[ss]=r._odata[ss];
+        }  	
+    }
+
+
+
     virtual ~Lattice(void) = default;
     
     template<class sobj> strong_inline Lattice<vobj> & operator = (const sobj & r){
@@ -267,7 +278,7 @@ PARALLEL_FOR_LOOP
     template<class robj> strong_inline Lattice<vobj> & operator = (const Lattice<robj> & r){
       this->checkerboard = r.checkerboard;
       conformable(*this,r);
-      std::cout<<GridLogMessage<<"Lattice operator ="<<std::endl;
+      
 PARALLEL_FOR_LOOP
         for(int ss=0;ss<_grid->oSites();ss++){
             this->_odata[ss]=r._odata[ss];
@@ -289,17 +300,6 @@ PARALLEL_FOR_LOOP
         *this = (*this)+r;
         return *this;
     }
-    
-    strong_inline friend Lattice<vobj> operator / (const Lattice<vobj> &lhs,const Lattice<vobj> &rhs){
-        conformable(lhs,rhs);
-        Lattice<vobj> ret(lhs._grid);
-PARALLEL_FOR_LOOP
-        for(int ss=0;ss<lhs._grid->oSites();ss++){
-	  ret._odata[ss] = lhs._odata[ss]*pow(rhs._odata[ss],-1.0);
-        }
-        return ret;
-    };
-
  }; // class Lattice
 
   template<class vobj> std::ostream& operator<< (std::ostream& stream, const Lattice<vobj> &o){
@@ -324,27 +324,27 @@ PARALLEL_FOR_LOOP
 
 
 
-#include <lattice/Lattice_conformable.h>
+#include "Lattice_conformable.h"
 #define GRID_LATTICE_EXPRESSION_TEMPLATES
 #ifdef  GRID_LATTICE_EXPRESSION_TEMPLATES
-#include <lattice/Lattice_ET.h>
+#include "Lattice_ET.h"
 #else 
-#include <lattice/Lattice_overload.h>
+#include "Lattice_overload.h"
 #endif
-#include <lattice/Lattice_arith.h>
-#include <lattice/Lattice_trace.h>
-#include <lattice/Lattice_transpose.h>
-#include <lattice/Lattice_local.h>
-#include <lattice/Lattice_reduction.h>
-#include <lattice/Lattice_peekpoke.h>
-#include <lattice/Lattice_reality.h>
-#include <lattice/Lattice_comparison_utils.h>
-#include <lattice/Lattice_comparison.h>
-#include <lattice/Lattice_coordinate.h>
-#include <lattice/Lattice_where.h>
-#include <lattice/Lattice_rng.h>
-#include <lattice/Lattice_unary.h>
-#include <lattice/Lattice_transfer.h>
+#include "Lattice_arith.h"
+#include "Lattice_trace.h"
+#include "Lattice_transpose.h"
+#include "Lattice_local.h"
+#include "Lattice_reduction.h"
+#include "Lattice_peekpoke.h"
+#include "Lattice_reality.h"
+#include "Lattice_comparison_utils.h"
+#include "Lattice_comparison.h"
+#include "Lattice_coordinate.h"
+#include "Lattice_where.h"
+#include "Lattice_rng.h"
+#include "Lattice_unary.h"
+#include "Lattice_transfer.h"
 
 
 #endif

@@ -130,8 +130,8 @@ DenseMatrix<T> GetSubMtx(DenseMatrix<T> &A,int row_st, int row_end, int col_st, 
 
 }
 
-#include <algorithms/iterative/Householder.h>
-#include <algorithms/iterative/Francis.h>
+#include "Householder.h"
+#include "Francis.h"
 
 #endif
 

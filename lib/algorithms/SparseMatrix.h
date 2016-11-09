@@ -28,7 +28,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef  GRID_ALGORITHM_SPARSE_MATRIX_H
 #define  GRID_ALGORITHM_SPARSE_MATRIX_H
 
-#include <Grid.h>
 
 namespace Grid {
 

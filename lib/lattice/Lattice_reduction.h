@@ -40,7 +40,7 @@ namespace Grid {
     ////////////////////////////////////////////////////////////////////////////////////////////////////
   template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
     ComplexD nrm = innerProduct(arg,arg);
-    return real(nrm); 
+    return std::real(nrm); 
   }
 
     template<class vobj>

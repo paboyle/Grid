@@ -29,18 +29,18 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_SERIALISATION_READER_H
 #define GRID_SERIALISATION_READER_H
 
-#include <serialisation/MacroMagic.h>
-#include <serialisation/BaseIO.h>
 #include <stdint.h>
 
+#include "MacroMagic.h"
+#include "BaseIO.h"
+#include "BinaryIO.h"
+#include "TextIO.h"
+#include "XmlIO.h"
 //////////////////////////////////////////
 // Todo:
 //////////////////////////////////////////
-#include <serialisation/BinaryIO.h>
-#include <serialisation/TextIO.h>
-//#include <serialisation/JsonIO.h>
-//#include <serialisation/YamlIO.h>
-#include <serialisation/XmlIO.h>
+//#include "JsonIO.h"
+//#include "YamlIO.h"
 
 //////////////////////////////////////////
 // Select the default serialiser use ifdef's

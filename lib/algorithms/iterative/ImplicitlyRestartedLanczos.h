@@ -31,10 +31,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #include <string.h> //memset
 #ifdef USE_LAPACK
-#include <lapacke.h>
+void LAPACK_dstegr(char *jobz, char *range, int *n, double *d, double *e,
+                   double *vl, double *vu, int *il, int *iu, double *abstol,
+                   int *m, double *w, double *z, int *ldz, int *isuppz,
+                   double *work, int *lwork, int *iwork, int *liwork,
+                   int *info);
 #endif
-#include <algorithms/iterative/DenseMatrix.h>
-#include <algorithms/iterative/EigenSort.h>
+#include "DenseMatrix.h"
+#include "EigenSort.h"
 
 namespace Grid {
 

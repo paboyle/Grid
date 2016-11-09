@@ -5,7 +5,6 @@
 *.o
 *.obj
 
-
 # Editor files #
 ################
 *~
@@ -48,6 +47,7 @@ Config.h.in
 config.log
 config.status
 .deps
+*.inc
 
 # http://www.gnu.org/software/autoconf #
 ########################################
@@ -63,19 +63,7 @@ config.sub
 config.guess
 INSTALL
 .dirstamp
-
-# Packages #
-############
-# it's better to unpack these files and commit the raw source
-# git has its own built in compression methods
-*.7z
-*.dmg
-*.gz
-*.iso
-*.jar
-*.rar
-*.tar
-*.zip
+ltmain.sh
  
 # Logs and databases #
 ######################
@@ -101,3 +89,16 @@ build*/*
 #####################
 *.xcodeproj/*
 build.sh
+
+# Eigen source #
+################
+lib/Eigen/*
+
+# FFTW source #
+################
+lib/fftw/*
+
+# libtool macros #
+##################
+m4/lt*
+m4/libtool.m4

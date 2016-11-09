@@ -31,7 +31,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef  GRID_ALGORITHM_COARSENED_MATRIX_H
 #define  GRID_ALGORITHM_COARSENED_MATRIX_H
 
-#include <Grid.h>
 
 namespace Grid {
 
@@ -283,7 +282,7 @@ PARALLEL_FOR_LOOP
 	  } else if(SE->_is_local) { 
 	    nbr = in._odata[SE->_offset];
 	  } else {
-	    nbr = Stencil.comm_buf[SE->_offset];
+	    nbr = Stencil.CommBuf()[SE->_offset];
 	  }
 	  res = res + A[point]._odata[ss]*nbr;
 	}

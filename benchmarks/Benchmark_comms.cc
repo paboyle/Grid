@@ -25,7 +25,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#include <Grid.h>
+#include <Grid/Grid.h>
 
 using namespace std;
 using namespace Grid;
@@ -42,15 +42,14 @@ int main (int argc, char ** argv)
 
   int Nloop=10;
   int nmu=0;
-  for(int mu=0;mu<4;mu++) if (mpi_layout[mu]>1) nmu++;
+  for(int mu=0;mu<Nd;mu++) if (mpi_layout[mu]>1) nmu++;
+
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking concurrent halo exchange in "<<nmu<<" dimensions"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
-
-
-
-  for(int lat=4;lat<=32;lat+=2){
+  int maxlat=16;
+  for(int lat=4;lat<=maxlat;lat+=2){
     for(int Ls=1;Ls<=16;Ls*=2){
 
       std::vector<int> latt_size  ({lat*mpi_layout[0],
@@ -125,7 +124,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
 
 
-  for(int lat=4;lat<=32;lat+=2){
+  for(int lat=4;lat<=maxlat;lat+=2){
     for(int Ls=1;Ls<=16;Ls*=2){
 
       std::vector<int> latt_size  ({lat,lat,lat,lat});
@@ -195,6 +194,168 @@ int main (int argc, char ** argv)
   }  
 
 
+  Nloop=100;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "= Benchmarking concurrent STENCIL halo exchange in "<<nmu<<" dimensions"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
+
+  for(int lat=4;lat<=maxlat;lat+=2){
+    for(int Ls=1;Ls<=16;Ls*=2){
+
+      std::vector<int> latt_size  ({lat*mpi_layout[0],
+      				    lat*mpi_layout[1],
+      				    lat*mpi_layout[2],
+      				    lat*mpi_layout[3]});
+
+      GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
+
+      std::vector<HalfSpinColourVectorD *> xbuf(8);
+      std::vector<HalfSpinColourVectorD *> rbuf(8);
+      Grid.ShmBufferFreeAll();
+      for(int d=0;d<8;d++){
+	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+      }
+
+      int ncomm;
+      int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
+
+      double start=usecond();
+      for(int i=0;i<Nloop;i++){
+
+	std::vector<CartesianCommunicator::CommsRequest_t> requests;
+
+	ncomm=0;
+	for(int mu=0;mu<4;mu++){
+	
+	  if (mpi_layout[mu]>1 ) {
+	  
+	    ncomm++;
+	    int comm_proc=1;
+	    int xmit_to_rank;
+	    int recv_from_rank;
+	    
+	    Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
+	    Grid.StencilSendToRecvFromBegin(requests,
+					    (void *)&xbuf[mu][0],
+					    xmit_to_rank,
+					    (void *)&rbuf[mu][0],
+					    recv_from_rank,
+					    bytes);
+	
+	    comm_proc = mpi_layout[mu]-1;
+	  
+	    Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
+	    Grid.StencilSendToRecvFromBegin(requests,
+					    (void *)&xbuf[mu+4][0],
+					    xmit_to_rank,
+					    (void *)&rbuf[mu+4][0],
+					    recv_from_rank,
+					    bytes);
+	  
+	  }
+	}
+	Grid.StencilSendToRecvFromComplete(requests);
+	Grid.Barrier();
+
+      }
+      double stop=usecond();
+
+      double dbytes    = bytes;
+      double xbytes    = Nloop*dbytes*2.0*ncomm;
+      double rbytes    = xbytes;
+      double bidibytes = xbytes+rbytes;
+
+      double time = stop-start; // microseconds
+
+      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<<bytes<<"\t\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
+    }
+  }    
+
+
+
+  Nloop=100;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "= Benchmarking sequential STENCIL halo exchange in "<<nmu<<" dimensions"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
+
+  for(int lat=4;lat<=maxlat;lat+=2){
+    for(int Ls=1;Ls<=16;Ls*=2){
+
+      std::vector<int> latt_size  ({lat*mpi_layout[0],
+      				    lat*mpi_layout[1],
+      				    lat*mpi_layout[2],
+      				    lat*mpi_layout[3]});
+
+      GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
+
+      std::vector<HalfSpinColourVectorD *> xbuf(8);
+      std::vector<HalfSpinColourVectorD *> rbuf(8);
+      Grid.ShmBufferFreeAll();
+      for(int d=0;d<8;d++){
+	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+      }
+
+      int ncomm;
+      int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
+
+      double start=usecond();
+      for(int i=0;i<Nloop;i++){
+
+	std::vector<CartesianCommunicator::CommsRequest_t> requests;
+
+	ncomm=0;
+	for(int mu=0;mu<4;mu++){
+	
+	  if (mpi_layout[mu]>1 ) {
+	  
+	    ncomm++;
+	    int comm_proc=1;
+	    int xmit_to_rank;
+	    int recv_from_rank;
+	    
+	    Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
+	    Grid.StencilSendToRecvFromBegin(requests,
+					    (void *)&xbuf[mu][0],
+					    xmit_to_rank,
+					    (void *)&rbuf[mu][0],
+					    recv_from_rank,
+					    bytes);
+	    //	    Grid.StencilSendToRecvFromComplete(requests);
+	    //	    requests.resize(0);
+
+	    comm_proc = mpi_layout[mu]-1;
+	  
+	    Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
+	    Grid.StencilSendToRecvFromBegin(requests,
+					    (void *)&xbuf[mu+4][0],
+					    xmit_to_rank,
+					    (void *)&rbuf[mu+4][0],
+					    recv_from_rank,
+					    bytes);
+	    Grid.StencilSendToRecvFromComplete(requests);
+	    requests.resize(0);
+	  
+	  }
+	}
+	Grid.Barrier();
+
+      }
+      double stop=usecond();
+
+      double dbytes    = bytes;
+      double xbytes    = Nloop*dbytes*2.0*ncomm;
+      double rbytes    = xbytes;
+      double bidibytes = xbytes+rbytes;
+
+      double time = stop-start; // microseconds
+
+      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<<bytes<<"\t\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
+    }
+  }    
 
   Grid_finalize();
 }

@@ -29,7 +29,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef  GRID_QCD_SCALED_SHAMIR_FERMION_H
 #define  GRID_QCD_SCALED_SHAMIR_FERMION_H
 
-#include <Grid.h>
+#include <Grid/Grid.h>
 
 namespace Grid {
 

@@ -1,76 +1,53 @@
-#!/bin/bash
- 
-cd lib
+#!/usr/bin/env bash
 
-HFILES=`find . -type f -name '*.h'`
+home=`pwd`
+
+# library Make.inc
+cd $home/lib
+HFILES=`find . -type f -name '*.h' -not -path '*/Old/*' -not -path '*/Eigen/*'`
+HFILES="$HFILES"
 CCFILES=`find . -type f -name '*.cc' -not  -name '*ommunicator*.cc'`
-echo> Make.inc
-echo HFILES=$HFILES >> Make.inc
+echo HFILES=$HFILES > Make.inc
 echo >> Make.inc
 echo CCFILES=$CCFILES >> Make.inc
 
-cd ..
-
-cd tests
-
-echo> Make.inc
-TESTS=`ls T*.cc`
-TESTLIST=`echo ${TESTS} | sed s/.cc//g `
-
-echo > Make.inc
-echo bin_PROGRAMS += ${TESTLIST} | sed s/Test_zmm//g >> Make.inc
-echo >> Make.inc
-
-for f in $TESTS
-do
-BNAME=`basename $f .cc`
-echo >> Make.inc
-echo ${BNAME}_SOURCES=$f  >> Make.inc
-echo ${BNAME}_LDADD=-lGrid>> Make.inc
-echo >> Make.inc
+# tests Make.inc
+cd $home/tests
+dirs=`find . -type d -not -path '*/\.*'`
+for subdir in $dirs; do
+    cd $home/tests/$subdir
+    pwd
+    TESTS=`ls T*.cc`
+    TESTLIST=`echo ${TESTS} | sed s/.cc//g `
+    PREF=`[ $subdir = '.' ] && echo noinst || echo EXTRA`
+    SUB=`[ $subdir = '.' ] && echo subtests`
+    echo "tests: ${TESTLIST} ${SUB}" > Make.inc
+    echo ${PREF}_PROGRAMS = ${TESTLIST} >> Make.inc
+    echo >> Make.inc
+    for f in $TESTS; do
+	   BNAME=`basename $f .cc`
+	   echo ${BNAME}_SOURCES=$f  >> Make.inc
+	   echo ${BNAME}_LDADD=-lGrid>> Make.inc
+	   echo >> Make.inc
+    done
+    if [ $subdir != '.' ]; then
+       echo CLEANFILES = ${TESTLIST} >> Make.inc
+       echo >> Make.inc
+    fi
 done
 
-cd qdpxx
-
-echo> Make.inc
-TESTS=`ls T*.cc`
-TESTLIST=`echo ${TESTS} | sed s/.cc//g `
-
-echo > Make.inc
-echo bin_PROGRAMS = ${TESTLIST} >> Make.inc
-echo >> Make.inc
-
-for f in $TESTS
-do
-BNAME=`basename $f .cc`
-echo >> Make.inc
-echo ${BNAME}_SOURCES=$f  >> Make.inc
-echo ${BNAME}_LDADD=-lGrid>> Make.inc
-echo >> Make.inc
-done
-
-cd ..
-cd ..
-
-
-cd benchmarks
-
-
+# benchmarks Make.inc
+cd $home/benchmarks
 echo> Make.inc
 TESTS=`ls B*.cc`
 TESTLIST=`echo ${TESTS} | sed s/.cc//g `
-
-echo > Make.inc
-echo bin_PROGRAMS = ${TESTLIST} >> Make.inc
+echo bin_PROGRAMS = ${TESTLIST} > Make.inc
 echo >> Make.inc
-
-for f in $TESTS
-do
-BNAME=`basename $f .cc`
-echo >> Make.inc
-echo ${BNAME}_SOURCES=$f  >> Make.inc
-echo ${BNAME}_LDADD=-lGrid>> Make.inc
-echo >> Make.inc
+for f in $TESTS; do
+    BNAME=`basename $f .cc`
+    echo ${BNAME}_SOURCES=$f  >> Make.inc
+    echo ${BNAME}_LDADD=-lGrid>> Make.inc
+    echo >> Make.inc
 done
 
 cd ..

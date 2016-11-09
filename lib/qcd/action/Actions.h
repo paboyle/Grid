@@ -40,25 +40,25 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 ////////////////////////////////////////////
 // Abstract base interface
 ////////////////////////////////////////////
-#include <qcd/action/ActionBase.h>
-#include <qcd/action/ActionParams.h>
+#include <Grid/qcd/action/ActionBase.h>
+#include <Grid/qcd/action/ActionParams.h>
 
 ////////////////////////////////////////////
 // Utility functions
 ////////////////////////////////////////////
-#include <qcd/action/gauge/GaugeImpl.h>
-#include <qcd/utils/WilsonLoops.h>
+#include <Grid/qcd/action/gauge/GaugeImpl.h>
+#include <Grid/qcd/utils/WilsonLoops.h>
 
-#include <qcd/action/fermion/WilsonCompressor.h>     //used by all wilson type fermions
-#include <qcd/action/fermion/FermionOperatorImpl.h>
-#include <qcd/action/fermion/FermionOperator.h>
-#include <qcd/action/fermion/WilsonKernels.h>        //used by all wilson type fermions
+#include <Grid/qcd/action/fermion/WilsonCompressor.h>     //used by all wilson type fermions
+#include <Grid/qcd/action/fermion/FermionOperatorImpl.h>
+#include <Grid/qcd/action/fermion/FermionOperator.h>
+#include <Grid/qcd/action/fermion/WilsonKernels.h>        //used by all wilson type fermions
 
 ////////////////////////////////////////////
 // Gauge Actions
 ////////////////////////////////////////////
-#include <qcd/action/gauge/WilsonGaugeAction.h>
-#include <qcd/action/gauge/PlaqPlusRectangleAction.h>
+#include <Grid/qcd/action/gauge/WilsonGaugeAction.h>
+#include <Grid/qcd/action/gauge/PlaqPlusRectangleAction.h>
 
 namespace Grid {
 namespace QCD {
@@ -107,11 +107,33 @@ typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeAction
 // for EVERY .cc file. This define centralises the list and restores global push of impl cases
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define FermOpTemplateInstantiate(A) \
+
+#define FermOp4dVecTemplateInstantiate(A) \
   template class A<WilsonImplF>;		\
   template class A<WilsonImplD>;		\
+  template class A<ZWilsonImplF>;		\
+  template class A<ZWilsonImplD>;		\
   template class A<GparityWilsonImplF>;		\
   template class A<GparityWilsonImplD>;		
+
+#define AdjointFermOpTemplateInstantiate(A) \
+  template class A<WilsonAdjImplF>; \
+  template class A<WilsonAdjImplD>; 
+
+#define TwoIndexFermOpTemplateInstantiate(A) \
+  template class A<WilsonTwoIndexSymmetricImplF>; \
+  template class A<WilsonTwoIndexSymmetricImplD>; 
+
+#define FermOp5dVecTemplateInstantiate(A) \
+  template class A<DomainWallVec5dImplF>;	\
+  template class A<DomainWallVec5dImplD>;	\
+  template class A<ZDomainWallVec5dImplF>;	\
+  template class A<ZDomainWallVec5dImplD>;	
+
+#define FermOpTemplateInstantiate(A) \
+ FermOp4dVecTemplateInstantiate(A) \
+ FermOp5dVecTemplateInstantiate(A) 
+
 
 #define GparityFermOpTemplateInstantiate(A) 
 
@@ -119,29 +141,30 @@ typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeAction
 // Fermion operators / actions
 ////////////////////////////////////////////
 
-#include <qcd/action/fermion/WilsonFermion.h>       // 4d wilson like
-#include <qcd/action/fermion/WilsonTMFermion.h>       // 4d wilson like
-#include <qcd/action/fermion/WilsonFermion5D.h>     // 5d base used by all 5d overlap types
+#include <Grid/qcd/action/fermion/WilsonFermion.h>       // 4d wilson like
+#include <Grid/qcd/action/fermion/WilsonTMFermion.h>       // 4d wilson like
+#include <Grid/qcd/action/fermion/WilsonFermion5D.h>     // 5d base used by all 5d overlap types
 
-//#include <qcd/action/fermion/CloverFermion.h>
+//#include <Grid/qcd/action/fermion/CloverFermion.h>
 
-#include <qcd/action/fermion/CayleyFermion5D.h>     // Cayley types
-#include <qcd/action/fermion/DomainWallFermion.h>
-#include <qcd/action/fermion/DomainWallFermion.h>
-#include <qcd/action/fermion/MobiusFermion.h>
-#include <qcd/action/fermion/ScaledShamirFermion.h>
-#include <qcd/action/fermion/MobiusZolotarevFermion.h>
-#include <qcd/action/fermion/ShamirZolotarevFermion.h>
-#include <qcd/action/fermion/OverlapWilsonCayleyTanhFermion.h>
-#include <qcd/action/fermion/OverlapWilsonCayleyZolotarevFermion.h>
+#include <Grid/qcd/action/fermion/CayleyFermion5D.h>     // Cayley types
+#include <Grid/qcd/action/fermion/DomainWallFermion.h>
+#include <Grid/qcd/action/fermion/DomainWallFermion.h>
+#include <Grid/qcd/action/fermion/MobiusFermion.h>
+#include <Grid/qcd/action/fermion/ZMobiusFermion.h>
+#include <Grid/qcd/action/fermion/ScaledShamirFermion.h>
+#include <Grid/qcd/action/fermion/MobiusZolotarevFermion.h>
+#include <Grid/qcd/action/fermion/ShamirZolotarevFermion.h>
+#include <Grid/qcd/action/fermion/OverlapWilsonCayleyTanhFermion.h>
+#include <Grid/qcd/action/fermion/OverlapWilsonCayleyZolotarevFermion.h>
 
-#include <qcd/action/fermion/ContinuedFractionFermion5D.h>               // Continued fraction
-#include <qcd/action/fermion/OverlapWilsonContfracTanhFermion.h>
-#include <qcd/action/fermion/OverlapWilsonContfracZolotarevFermion.h>
+#include <Grid/qcd/action/fermion/ContinuedFractionFermion5D.h>               // Continued fraction
+#include <Grid/qcd/action/fermion/OverlapWilsonContfracTanhFermion.h>
+#include <Grid/qcd/action/fermion/OverlapWilsonContfracZolotarevFermion.h>
 
-#include <qcd/action/fermion/PartialFractionFermion5D.h>                 // Partial fraction
-#include <qcd/action/fermion/OverlapWilsonPartialFractionTanhFermion.h>
-#include <qcd/action/fermion/OverlapWilsonPartialFractionZolotarevFermion.h>
+#include <Grid/qcd/action/fermion/PartialFractionFermion5D.h>                 // Partial fraction
+#include <Grid/qcd/action/fermion/OverlapWilsonPartialFractionTanhFermion.h>
+#include <Grid/qcd/action/fermion/OverlapWilsonPartialFractionZolotarevFermion.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // More maintainable to maintain the following typedef list centrally, as more "impl" targets
@@ -157,6 +180,14 @@ typedef WilsonFermion<WilsonImplR> WilsonFermionR;
 typedef WilsonFermion<WilsonImplF> WilsonFermionF;
 typedef WilsonFermion<WilsonImplD> WilsonFermionD;
 
+typedef WilsonFermion<WilsonAdjImplR> WilsonAdjFermionR;
+typedef WilsonFermion<WilsonAdjImplF> WilsonAdjFermionF;
+typedef WilsonFermion<WilsonAdjImplD> WilsonAdjFermionD;
+
+typedef WilsonFermion<WilsonTwoIndexSymmetricImplR> WilsonTwoIndexSymmetricFermionR;
+typedef WilsonFermion<WilsonTwoIndexSymmetricImplF> WilsonTwoIndexSymmetricFermionF;
+typedef WilsonFermion<WilsonTwoIndexSymmetricImplD> WilsonTwoIndexSymmetricFermionD;
+
 typedef WilsonTMFermion<WilsonImplR> WilsonTMFermionR;
 typedef WilsonTMFermion<WilsonImplF> WilsonTMFermionF;
 typedef WilsonTMFermion<WilsonImplD> WilsonTMFermionD;
@@ -167,6 +198,11 @@ typedef DomainWallFermion<WilsonImplD> DomainWallFermionD;
 typedef MobiusFermion<WilsonImplR> MobiusFermionR;
 typedef MobiusFermion<WilsonImplF> MobiusFermionF;
 typedef MobiusFermion<WilsonImplD> MobiusFermionD;
+
+typedef ZMobiusFermion<ZWilsonImplR> ZMobiusFermionR;
+typedef ZMobiusFermion<ZWilsonImplF> ZMobiusFermionF;
+typedef ZMobiusFermion<ZWilsonImplD> ZMobiusFermionD;
+
 typedef ScaledShamirFermion<WilsonImplR> ScaledShamirFermionR;
 typedef ScaledShamirFermion<WilsonImplF> ScaledShamirFermionF;
 typedef ScaledShamirFermion<WilsonImplD> ScaledShamirFermionD;
@@ -222,21 +258,21 @@ typedef MobiusFermion<GparityWilsonImplD> GparityMobiusFermionD;
 ///////////////////////////////////////////////////////////////////////////////
 // G5 herm -- this has to live in QCD since dirac matrix is not in the broader sector of code
 ///////////////////////////////////////////////////////////////////////////////
-#include <qcd/action/fermion/g5HermitianLinop.h>
+#include <Grid/qcd/action/fermion/g5HermitianLinop.h>
 
 ////////////////////////////////////////
 // Pseudo fermion combinations for HMC
 ////////////////////////////////////////
-#include <qcd/action/pseudofermion/EvenOddSchurDifferentiable.h>
+#include <Grid/qcd/action/pseudofermion/EvenOddSchurDifferentiable.h>
 
-#include <qcd/action/pseudofermion/TwoFlavour.h>
-#include <qcd/action/pseudofermion/TwoFlavourRatio.h>
-#include <qcd/action/pseudofermion/TwoFlavourEvenOdd.h>
-#include <qcd/action/pseudofermion/TwoFlavourEvenOddRatio.h>
+#include <Grid/qcd/action/pseudofermion/TwoFlavour.h>
+#include <Grid/qcd/action/pseudofermion/TwoFlavourRatio.h>
+#include <Grid/qcd/action/pseudofermion/TwoFlavourEvenOdd.h>
+#include <Grid/qcd/action/pseudofermion/TwoFlavourEvenOddRatio.h>
 
-#include <qcd/action/pseudofermion/OneFlavourRational.h>
-#include <qcd/action/pseudofermion/OneFlavourRationalRatio.h>
-#include <qcd/action/pseudofermion/OneFlavourEvenOddRational.h>
-#include <qcd/action/pseudofermion/OneFlavourEvenOddRationalRatio.h>
+#include <Grid/qcd/action/pseudofermion/OneFlavourRational.h>
+#include <Grid/qcd/action/pseudofermion/OneFlavourRationalRatio.h>
+#include <Grid/qcd/action/pseudofermion/OneFlavourEvenOddRational.h>
+#include <Grid/qcd/action/pseudofermion/OneFlavourEvenOddRationalRatio.h>
 
 #endif

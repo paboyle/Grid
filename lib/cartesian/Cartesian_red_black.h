@@ -32,29 +32,24 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 namespace Grid {
 
-    static const int CbRed  =0;
-    static const int CbBlack=1;
-    static const int Even   =CbRed;
-    static const int Odd    =CbBlack;
-
-    // Perhaps these are misplaced and 
-    // should be in sparse matrix.
-    // Also should make these a named enum type
-    static const int DaggerNo=0;
-    static const int DaggerYes=1;
-
+  static const int CbRed  =0;
+  static const int CbBlack=1;
+  static const int Even   =CbRed;
+  static const int Odd    =CbBlack;
+    
 // Specialise this for red black grids storing half the data like a chess board.
 class GridRedBlackCartesian : public GridBase
 {
 public:
     std::vector<int> _checker_dim_mask;
     int              _checker_dim;
+    std::vector<int> _checker_board;
 
     virtual int CheckerBoarded(int dim){
       if( dim==_checker_dim) return 1;
       else return 0;
     }
-    virtual int CheckerBoard(std::vector<int> site){
+    virtual int CheckerBoard(std::vector<int> &site){
       int linear=0;
       assert(site.size()==_ndimension);
       for(int d=0;d<_ndimension;d++){ 
@@ -78,11 +73,19 @@ public:
       // or by looping over x,y,z and multiply rather than computing checkerboard.
 	  
       if ( (source_cb+ocb)&1 ) {
-
 	return (shift)/2;
       } else {
 	return (shift+1)/2;
       }
+    }
+    virtual int  CheckerBoardFromOindexTable (int Oindex) {
+      return _checker_board[Oindex];
+    }
+    virtual int  CheckerBoardFromOindex (int Oindex)
+    {
+      std::vector<int> ocoor;
+      oCoorFromOindex(ocoor,Oindex);
+      return CheckerBoard(ocoor);
     }
     virtual int CheckerBoardShift(int source_cb,int dim,int shift,int osite){
 
@@ -175,7 +178,7 @@ public:
 	// all elements of a simd vector must have same checkerboard.
 	// If Ls vectorised, this must still be the case; e.g. dwf rb5d
 	if ( _simd_layout[d]>1 ) {
-	  if ( d != _checker_dim ) { 
+	  if ( checker_dim_mask[d] ) { 
 	    assert( (_rdimensions[d]&0x1) == 0 );
 	  }
 	}
@@ -191,6 +194,8 @@ public:
 	  _ostride[d] = _ostride[d-1]*_rdimensions[d-1];
 	  _istride[d] = _istride[d-1]*_simd_layout[d-1];
 	}
+
+
       }
             
       ////////////////////////////////////////////////////////////////////////////////////////////
@@ -211,6 +216,18 @@ public:
 	_slice_nblock[d]=nblock;
 	block = block*_rdimensions[d];
       }
+
+      ////////////////////////////////////////////////
+      // Create a checkerboard lookup table
+      ////////////////////////////////////////////////
+      int rvol = 1;
+      for(int d=0;d<_ndimension;d++){
+	rvol=rvol * _rdimensions[d];
+      }
+      _checker_board.resize(rvol);
+      for(int osite=0;osite<_osites;osite++){
+	_checker_board[osite] = CheckerBoardFromOindex (osite);
+      }
       
     };
 protected:
@@ -224,9 +241,21 @@ protected:
 	  idx+=_ostride[d]*(coor[d]%_rdimensions[d]);
 	}
       }
-        return idx;
+      return idx;
     };
         
+    virtual int iIndex(std::vector<int> &lcoor)
+    {
+        int idx=0;
+        for(int d=0;d<_ndimension;d++) {
+	  if( d==_checker_dim ) {
+	    idx+=_istride[d]*(lcoor[d]/(2*_rdimensions[d]));
+	  } else { 
+	    idx+=_istride[d]*(lcoor[d]/_rdimensions[d]);
+	  }
+	}
+        return idx;
+    }
 };
 
 }

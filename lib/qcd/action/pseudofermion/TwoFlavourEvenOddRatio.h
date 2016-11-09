@@ -131,9 +131,11 @@ namespace Grid{
 	Vpc.MpcDag(PhiOdd,Y);           // Y= Vdag phi
 	X=zero;
 	ActionSolver(Mpc,Y,X);          // X= (MdagM)^-1 Vdag phi
-	Mpc.Mpc(X,Y);                   // Y=  Mdag^-1 Vdag phi
+	//Mpc.Mpc(X,Y);                   // Y=  Mdag^-1 Vdag phi
+	// Multiply by Ydag
+	RealD action = real(innerProduct(Y,X));
 
-	RealD action = norm2(Y);
+	//RealD action = norm2(Y);
 
 	// The EE factorised block; normally can replace with zero if det is constant (gauge field indept)
 	// Only really clover term that creates this. Leave the EE portion as a future to do to make most
@@ -188,8 +190,9 @@ namespace Grid{
 	assert(NumOp.ConstEE() == 1);
 	assert(DenOp.ConstEE() == 1);
 
-	dSdU = -Ta(dSdU);
-
+	//dSdU = -Ta(dSdU);
+	dSdU = -dSdU;
+	
       };
     };
   }

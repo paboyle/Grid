@@ -29,7 +29,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef  GRID_QCD_DOMAIN_WALL_FERMION_H
 #define  GRID_QCD_DOMAIN_WALL_FERMION_H
 
-#include <Grid.h>
+#include <Grid/Grid.h>
 
 namespace Grid {
 
@@ -42,6 +42,10 @@ namespace Grid {
      INHERIT_IMPL_TYPES(Impl);
     public:
 
+      void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m) { 
+	this->MomentumSpacePropagatorHt(out,in,_m);
+      };
+
       virtual void   Instantiatable(void) {};
       // Constructors
       DomainWallFermion(GaugeField &_Umu,
@@ -50,6 +54,7 @@ namespace Grid {
 			GridCartesian         &FourDimGrid,
 			GridRedBlackCartesian &FourDimRedBlackGrid,
 			RealD _mass,RealD _M5,const ImplParams &p= ImplParams()) : 
+
 
       CayleyFermion5D<Impl>(_Umu,
 			    FiveDimGrid,

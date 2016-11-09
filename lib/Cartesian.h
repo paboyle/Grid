@@ -28,8 +28,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_CARTESIAN_H
 #define GRID_CARTESIAN_H
 
-#include <cartesian/Cartesian_base.h>
-#include <cartesian/Cartesian_full.h>
-#include <cartesian/Cartesian_red_black.h> 
+#include <Grid/cartesian/Cartesian_base.h>
+#include <Grid/cartesian/Cartesian_full.h>
+#include <Grid/cartesian/Cartesian_red_black.h> 
 
 #endif

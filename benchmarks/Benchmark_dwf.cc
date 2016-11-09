@@ -26,8 +26,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#include <Grid.h>
-#include <PerfCount.h>
+#include <Grid/Grid.h>
 
 using namespace std;
 using namespace Grid;
@@ -45,25 +44,20 @@ struct scal {
     Gamma::GammaT
   };
 
-bool overlapComms = false;
-typedef WilsonFermion5D<DomainWallRedBlack5dImplR> WilsonFermion5DR;
-typedef WilsonFermion5D<DomainWallRedBlack5dImplF> WilsonFermion5DF;
-typedef WilsonFermion5D<DomainWallRedBlack5dImplD> WilsonFermion5DD;
+typedef WilsonFermion5D<DomainWallVec5dImplR> WilsonFermion5DR;
+typedef WilsonFermion5D<DomainWallVec5dImplF> WilsonFermion5DF;
+typedef WilsonFermion5D<DomainWallVec5dImplD> WilsonFermion5DD;
 
 
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  if( GridCmdOptionExists(argv,argv+argc,"--asynch") ){
-    overlapComms = true;
-  }
-
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   std::vector<int> latt4 = GridDefaultLatt();
-  const int Ls=16;
+  const int Ls=8;
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
@@ -71,8 +65,8 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << "Making s innermost grids"<<std::endl;
   GridCartesian         * sUGrid   = SpaceTimeGrid::makeFourDimDWFGrid(GridDefaultLatt(),GridDefaultMpi());
+  GridRedBlackCartesian * sUrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(sUGrid);
   GridCartesian         * sFGrid   = SpaceTimeGrid::makeFiveDimDWFGrid(Ls,UGrid);
-  std::cout << GridLogMessage << "Making s innermost rb grids"<<std::endl;
   GridRedBlackCartesian * sFrbGrid = SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(Ls,UGrid);
 
   std::vector<int> seeds4({1,2,3,4});
@@ -86,8 +80,6 @@ int main (int argc, char ** argv)
   LatticeFermion    ref(FGrid);    ref=zero;
   LatticeFermion    tmp(FGrid);
   LatticeFermion    err(FGrid);
-
-  ColourMatrix cm = Complex(1.0,0.0);
 
   LatticeGaugeField Umu(UGrid); 
   random(RNG4,Umu);
@@ -127,21 +119,27 @@ int main (int argc, char ** argv)
   RealD mass=0.1;
   RealD M5  =1.8;
 
-  typename DomainWallFermionR::ImplParams params; 
-  params.overlapCommsCompute = overlapComms;
-  
   RealD NP = UGrid->_Nprocessors;
 
-  for(int doasm=1;doasm<2;doasm++){
+  DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
-    QCD::WilsonKernelsStatic::AsmOpt=doasm;
+  std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
+  std::cout << GridLogMessage<< "* Kernel options --dslash-generic, --dslash-unroll, --dslash-asm" <<std::endl;
+  std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
+  std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
+  std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionR::Dhop                  "<<std::endl;
+  std::cout << GridLogMessage<< "* Vectorising space-time by "<<vComplex::Nsimd()<<std::endl;
+  if ( sizeof(Real)==4 )   std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
+  if ( sizeof(Real)==8 )   std::cout << GridLogMessage<< "* DOUBLE precision "<<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
+  std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
 
-  DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,params);
-  
-  std::cout<<GridLogMessage << "Calling Dw"<<std::endl;
-  int ncall =10;
+  int ncall =100;
   if (1) {
-
+    FGrid->Barrier();
+    Dw.ZeroCounters();
     double t0=usecond();
     for(int i=0;i<ncall;i++){
       __SSC_START;
@@ -149,6 +147,7 @@ int main (int argc, char ** argv)
       __SSC_STOP;
     }
     double t1=usecond();
+    FGrid->Barrier();
     
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=1344*volume*ncall;
@@ -157,19 +156,32 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
     std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
-    std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NP<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s per rank =  "<< flops/(t1-t0)/NP<<std::endl;
     err = ref-result; 
     std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
-    //    Dw.Report();
+    assert (norm2(err)< 1.0e-4 );
+    Dw.Report();
   }
 
   if (1)
   {
-    typedef WilsonFermion5D<DomainWallRedBlack5dImplR> WilsonFermion5DR;
+
+    std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
+    std::cout << GridLogMessage<< "* Benchmarking WilsonFermion5D<DomainWallVec5dImplR>::Dhop "<<std::endl;
+    std::cout << GridLogMessage<< "* Vectorising fifth dimension by "<<vComplex::Nsimd()<<std::endl;
+    if ( sizeof(Real)==4 )   std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
+    if ( sizeof(Real)==8 )   std::cout << GridLogMessage<< "* DOUBLE precision "<<std::endl;
+    if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
+    if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
+    if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
+    std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
+
+    typedef WilsonFermion5D<DomainWallVec5dImplR> WilsonFermion5DR;
     LatticeFermion ssrc(sFGrid);
     LatticeFermion sref(sFGrid);
     LatticeFermion sresult(sFGrid);
-    WilsonFermion5DR sDw(1,Umu,*sFGrid,*sFrbGrid,*sUGrid,M5,params);
+
+    WilsonFermion5DR sDw(Umu,*sFGrid,*sFrbGrid,*sUGrid,*sUrbGrid,M5);
   
     for(int x=0;x<latt4[0];x++){
     for(int y=0;y<latt4[1];y++){
@@ -181,21 +193,24 @@ int main (int argc, char ** argv)
       peekSite(tmp,src,site);
       pokeSite(tmp,ssrc,site);
     }}}}}
-
+    std::cout<<GridLogMessage<< "src norms "<< norm2(src)<<" " <<norm2(ssrc)<<std::endl;
+    FGrid->Barrier();
     double t0=usecond();
+    sDw.ZeroCounters();
     for(int i=0;i<ncall;i++){
       __SSC_START;
       sDw.Dhop(ssrc,sresult,0);
       __SSC_STOP;
     }
     double t1=usecond();
+    FGrid->Barrier();
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=1344*volume*ncall;
 
-    std::cout<<GridLogMessage << "Called Dw sinner "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
+    std::cout<<GridLogMessage << "Called Dw s_inner "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
     std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
-    std::cout<<GridLogMessage << "mflop/s per node =  "<< flops/(t1-t0)/NP<<std::endl;
-    //  sDw.Report();
+    std::cout<<GridLogMessage << "mflop/s per rank =  "<< flops/(t1-t0)/NP<<std::endl;
+    sDw.Report();
   
     if(0){
       for(int i=0;i< PerformanceCounter::NumTypes(); i++ ){
@@ -208,9 +223,9 @@ int main (int argc, char ** argv)
       }
     }
 
+    std::cout<<GridLogMessage<< "res norms "<< norm2(result)<<" " <<norm2(sresult)<<std::endl;
 
-
-    RealF sum=0;
+    RealD sum=0;
     for(int x=0;x<latt4[0];x++){
     for(int y=0;y<latt4[1];y++){
     for(int z=0;z<latt4[2];z++){
@@ -221,17 +236,19 @@ int main (int argc, char ** argv)
       peekSite(normal,result,site);
       peekSite(simd,sresult,site);
       sum=sum+norm2(normal-simd);
-      //      std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" "<<norm2(normal-simd)<<std::endl;
-      //      std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" "<<normal<<std::endl;
-      //      std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" "<<simd<<std::endl;
+      if (norm2(normal-simd) > 1.0e-6 ) {
+	std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" "<<norm2(normal-simd)<<std::endl;
+	std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" normal "<<normal<<std::endl;
+	std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" simd   "<<simd<<std::endl;
+      }
     }}}}}
-    std::cout<<" difference between normal and simd is "<<sum<<std::endl;
+    std::cout<<GridLogMessage<<" difference between normal and simd is "<<sum<<std::endl;
+    assert (sum< 1.0e-4 );
 
 
     if (1) {
 
       LatticeFermion sr_eo(sFGrid);
-      LatticeFermion serr(sFGrid);
 
       LatticeFermion ssrc_e (sFrbGrid);
       LatticeFermion ssrc_o (sFrbGrid);
@@ -243,23 +260,37 @@ int main (int argc, char ** argv)
 
       setCheckerboard(sr_eo,ssrc_o);
       setCheckerboard(sr_eo,ssrc_e);
-      serr = sr_eo-ssrc; 
-      std::cout<<GridLogMessage << "EO src norm diff   "<< norm2(serr)<<std::endl;
 
       sr_e = zero;
       sr_o = zero;
 
+      std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
+      std::cout << GridLogMessage<< "* Benchmarking WilsonFermion5D<DomainWallVec5dImplR>::DhopEO "<<std::endl;
+      std::cout << GridLogMessage<< "* Vectorising fifth dimension by "<<vComplex::Nsimd()<<std::endl;
+      if ( sizeof(Real)==4 )   std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
+      if ( sizeof(Real)==8 )   std::cout << GridLogMessage<< "* DOUBLE precision "<<std::endl;
+      if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
+      if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
+      if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
+      std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
+
+      FGrid->Barrier();
+      sDw.ZeroCounters();
+      sDw.stat.init("DhopEO");
       double t0=usecond();
-      for(int i=0;i<ncall;i++){
-	sDw.DhopEO(ssrc_o,sr_e,DaggerNo);
+      for (int i = 0; i < ncall; i++) {
+        sDw.DhopEO(ssrc_o, sr_e, DaggerNo);
       }
       double t1=usecond();
+      FGrid->Barrier();
+      sDw.stat.print();
 
       double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
       double flops=(1344.0*volume*ncall)/2;
 
       std::cout<<GridLogMessage << "sDeo mflop/s =   "<< flops/(t1-t0)<<std::endl;
-      std::cout<<GridLogMessage << "sDeo mflop/s per node   "<< flops/(t1-t0)/NP<<std::endl;
+      std::cout<<GridLogMessage << "sDeo mflop/s per rank   "<< flops/(t1-t0)/NP<<std::endl;
+      sDw.Report();
 
       sDw.DhopEO(ssrc_o,sr_e,DaggerNo);
       sDw.DhopOE(ssrc_e,sr_o,DaggerNo);
@@ -268,9 +299,18 @@ int main (int argc, char ** argv)
       pickCheckerboard(Even,ssrc_e,sresult);
       pickCheckerboard(Odd ,ssrc_o,sresult);
       ssrc_e = ssrc_e - sr_e;
-      std::cout<<GridLogMessage << "sE norm diff   "<< norm2(ssrc_e)<<std::endl;
+      RealD error = norm2(ssrc_e);
+
+      std::cout<<GridLogMessage << "sE norm diff   "<< norm2(ssrc_e)<< "  vec nrm"<<norm2(sr_e) <<std::endl;
       ssrc_o = ssrc_o - sr_o;
-      std::cout<<GridLogMessage << "sO norm diff   "<< norm2(ssrc_o)<<std::endl;
+
+      error+= norm2(ssrc_o);
+      std::cout<<GridLogMessage << "sO norm diff   "<< norm2(ssrc_o)<< "  vec nrm"<<norm2(sr_o) <<std::endl;
+      if(error>1.0e-4) { 
+	setCheckerboard(ssrc,ssrc_o);
+	setCheckerboard(ssrc,ssrc_e);
+	std::cout<< ssrc << std::endl;
+      }
     }
 
 
@@ -284,24 +324,25 @@ int main (int argc, char ** argv)
       //    ref =  src - Gamma(Gamma::GammaX)* src ; // 1+gamma_x
       tmp = U[mu]*Cshift(src,mu+1,1);
       for(int i=0;i<ref._odata.size();i++){
-	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
+  ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
       }
 
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu+1,-1);
       for(int i=0;i<ref._odata.size();i++){
-	ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
+  ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
       }
     }
     ref = -0.5*ref;
   }
   Dw.Dhop(src,result,1);
+  std::cout << GridLogMessage << "Compare to naive wilson implementation Dag to verify correctness" << std::endl;
   std::cout<<GridLogMessage << "Called DwDag"<<std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
   std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
   err = ref-result; 
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
-
+  assert(norm2(err)<1.0e-4);
   LatticeFermion src_e (FrbGrid);
   LatticeFermion src_o (FrbGrid);
   LatticeFermion r_e   (FrbGrid);
@@ -309,25 +350,38 @@ int main (int argc, char ** argv)
   LatticeFermion r_eo  (FGrid);
 
 
-  std::cout<<GridLogMessage << "Calling Deo and Doe"<<std::endl;
+  std::cout<<GridLogMessage << "Calling Deo and Doe and assert Deo+Doe == Dunprec"<<std::endl;
   pickCheckerboard(Even,src_e,src);
   pickCheckerboard(Odd,src_o,src);
 
   std::cout<<GridLogMessage << "src_e"<<norm2(src_e)<<std::endl;
   std::cout<<GridLogMessage << "src_o"<<norm2(src_o)<<std::endl;
 
+  std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
+  std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionR::DhopEO                "<<std::endl;
+  std::cout << GridLogMessage<< "* Vectorising space-time by "<<vComplex::Nsimd()<<std::endl;
+  if ( sizeof(Real)==4 )   std::cout << GridLogMessage<< "* SINGLE precision "<<std::endl;
+  if ( sizeof(Real)==8 )   std::cout << GridLogMessage<< "* DOUBLE precision "<<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
+  std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
   {
+    Dw.ZeroCounters();
+    FGrid->Barrier();
     double t0=usecond();
     for(int i=0;i<ncall;i++){
       Dw.DhopEO(src_o,r_e,DaggerNo);
     }
     double t1=usecond();
+    FGrid->Barrier();
     
     double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
     double flops=(1344.0*volume*ncall)/2;
 
     std::cout<<GridLogMessage << "Deo mflop/s =   "<< flops/(t1-t0)<<std::endl;
-    std::cout<<GridLogMessage << "Deo mflop/s per node   "<< flops/(t1-t0)/NP<<std::endl;
+    std::cout<<GridLogMessage << "Deo mflop/s per rank   "<< flops/(t1-t0)/NP<<std::endl;
+    Dw.Report();
   }
   Dw.DhopEO(src_o,r_e,DaggerNo);
   Dw.DhopOE(src_e,r_o,DaggerNo);
@@ -342,14 +396,14 @@ int main (int argc, char ** argv)
 
   err = r_eo-result; 
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
+  assert(norm2(err)<1.0e-4);
 
   pickCheckerboard(Even,src_e,err);
   pickCheckerboard(Odd,src_o,err);
   std::cout<<GridLogMessage << "norm diff even  "<< norm2(src_e)<<std::endl;
   std::cout<<GridLogMessage << "norm diff odd   "<< norm2(src_o)<<std::endl;
-
-
-  }
+  assert(norm2(src_e)<1.0e-4);
+  assert(norm2(src_o)<1.0e-4);
 
   Grid_finalize();
 }

@@ -59,29 +59,30 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 ///////////////////
 // Grid headers
 ///////////////////
-#include <serialisation/Serialisation.h>
-#include <Config.h>
-#include <Timer.h>
-#include <PerfCount.h>
-#include <Log.h>
-#include <AlignedAllocator.h>
-#include <Simd.h>
-#include <Threads.h>
-#include <Lexicographic.h>
-#include <Communicator.h> 
-#include <Cartesian.h>    
-#include <Tensors.h>      
-#include <Lattice.h>      
-#include <Cshift.h>       
-#include <Stencil.h>      
-#include <Algorithms.h>   
-#include <parallelIO/BinaryIO.h>
-#include <qcd/QCD.h>
-#include <parallelIO/NerscIO.h>
-#include <Init.h>
+#include <Grid/serialisation/Serialisation.h>
+#include "Config.h"
+#include <Grid/Timer.h>
+#include <Grid/PerfCount.h>
+#include <Grid/Log.h>
+#include <Grid/AlignedAllocator.h>
+#include <Grid/Simd.h>
+#include <Grid/Threads.h>
+#include <Grid/Lexicographic.h>
+#include <Grid/Init.h>
+#include <Grid/Communicator.h> 
+#include <Grid/Cartesian.h>    
+#include <Grid/Tensors.h>      
+#include <Grid/Lattice.h>      
+#include <Grid/Cshift.h>       
+#include <Grid/Stencil.h>      
+#include <Grid/Algorithms.h>   
+#include <Grid/parallelIO/BinaryIO.h>
+#include <Grid/FFT.h>
 
-#include <qcd/hmc/NerscCheckpointer.h>
-#include <qcd/hmc/HmcRunner.h>
+#include <Grid/qcd/QCD.h>
+#include <Grid/parallelIO/NerscIO.h>
+#include <Grid/qcd/hmc/NerscCheckpointer.h>
+#include <Grid/qcd/hmc/HmcRunner.h>
 
 
 

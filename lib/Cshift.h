@@ -28,17 +28,25 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef _GRID_CSHIFT_H_
 #define _GRID_CSHIFT_H_
 
-#include <cshift/Cshift_common.h>
+#include <Grid/cshift/Cshift_common.h>
 
 #ifdef GRID_COMMS_NONE
-#include <cshift/Cshift_none.h>
+#include <Grid/cshift/Cshift_none.h>
 #endif
 
 #ifdef GRID_COMMS_MPI
-#include <cshift/Cshift_mpi.h>
+#include <Grid/cshift/Cshift_mpi.h>
+#endif 
+
+#ifdef GRID_COMMS_MPI3
+#include <Grid/cshift/Cshift_mpi.h>
+#endif 
+
+#ifdef GRID_COMMS_MPI3L
+#include <Grid/cshift/Cshift_mpi.h>
 #endif 
 
 #ifdef GRID_COMMS_SHMEM
-#include <cshift/Cshift_mpi.h> // uses same implementation of communicator
+#include <Grid/cshift/Cshift_mpi.h> // uses same implementation of communicator
 #endif 
 #endif

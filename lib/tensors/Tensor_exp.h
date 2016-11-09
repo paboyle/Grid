@@ -56,7 +56,7 @@ namespace Grid {
 	temp = unit + temp*arg;
       }
       
-      return ProjectOnGroup(temp);//maybe not strictly necessary
+      return temp;
       
     }
 
