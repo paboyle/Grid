@@ -42,7 +42,7 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
   static void GaugeLinkToLieAlgebraField(const std::vector<GaugeMat> &U,std::vector<GaugeMat> &A) {
     for(int mu=0;mu<Nd;mu++){
 //      ImplComplex cmi(0.0,-1.0);
-      ComplexD cmi(0.0,-1.0);
+      Complex cmi(0.0,-1.0);
       A[mu] = Ta(U[mu]) * cmi;
     }
   }
@@ -52,13 +52,13 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
       dmuAmu = dmuAmu + A[mu] - Cshift(A[mu],mu,-1);
     }
   }  
-  static void SteepestDescentGaugeFix(GaugeLorentz &Umu,RealD & alpha,int maxiter,RealD Omega_tol, RealD Phi_tol) {
+  static void SteepestDescentGaugeFix(GaugeLorentz &Umu,Real & alpha,int maxiter,Real Omega_tol, Real Phi_tol) {
     GridBase *grid = Umu._grid;
 
-    RealD org_plaq      =WilsonLoops<Gimpl>::avgPlaquette(Umu);
-    RealD org_link_trace=WilsonLoops<Gimpl>::linkTrace(Umu); 
-    RealD old_trace = org_link_trace;
-    RealD trG;
+    Real org_plaq      =WilsonLoops<Gimpl>::avgPlaquette(Umu);
+    Real org_link_trace=WilsonLoops<Gimpl>::linkTrace(Umu); 
+    Real old_trace = org_link_trace;
+    Real trG;
 
     std::vector<GaugeMat> U(Nd,grid);
                  GaugeMat dmuAmu(grid);
@@ -71,13 +71,13 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
       // Monitor progress and convergence test 
       // infrequently to minimise cost overhead
       if ( i %20 == 0 ) { 
-	RealD plaq      =WilsonLoops<Gimpl>::avgPlaquette(Umu);
-	RealD link_trace=WilsonLoops<Gimpl>::linkTrace(Umu); 
+	Real plaq      =WilsonLoops<Gimpl>::avgPlaquette(Umu);
+	Real link_trace=WilsonLoops<Gimpl>::linkTrace(Umu); 
 
 	std::cout << GridLogMessage << " Iteration "<<i<< " plaq= "<<plaq<< " dmuAmu " << norm2(dmuAmu)<< std::endl;
 	
-	RealD Phi  = 1.0 - old_trace / link_trace ;
-	RealD Omega= 1.0 - trG;
+	Real Phi  = 1.0 - old_trace / link_trace ;
+	Real Omega= 1.0 - trG;
 
 
 	std::cout << GridLogMessage << " Iteration "<<i<< " Phi= "<<Phi<< " Omega= " << Omega<< " trG " << trG <<std::endl;
@@ -91,7 +91,7 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
       }
     }
   };
-  static RealD SteepestDescentStep(std::vector<GaugeMat> &U,RealD & alpha, GaugeMat & dmuAmu) {
+  static Real SteepestDescentStep(std::vector<GaugeMat> &U,Real & alpha, GaugeMat & dmuAmu) {
     GridBase *grid = U[0]._grid;
 
     std::vector<GaugeMat> A(Nd,grid);
@@ -101,26 +101,26 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
     ExpiAlphaDmuAmu(A,g,alpha,dmuAmu);
 
 
-    RealD vol = grid->gSites();
-    RealD trG = TensorRemove(sum(trace(g))).real()/vol/Nc;
+    Real vol = grid->gSites();
+    Real trG = TensorRemove(sum(trace(g))).real()/vol/Nc;
 
     SU<Nc>::GaugeTransform(U,g);
 
     return trG;
   }
 
-  static RealD FourierAccelSteepestDescentStep(std::vector<GaugeMat> &U,RealD & alpha, GaugeMat & dmuAmu) {
+  static Real FourierAccelSteepestDescentStep(std::vector<GaugeMat> &U,Real & alpha, GaugeMat & dmuAmu) {
 
     GridBase *grid = U[0]._grid;
 
-    RealD vol = grid->gSites();
+    Real vol = grid->gSites();
 
     FFT theFFT((GridCartesian *)grid);
 
     LatticeComplex  Fp(grid);
     LatticeComplex  psq(grid); psq=zero;
     LatticeComplex  pmu(grid); 
-    LatticeComplex   one(grid); one = ComplexD(1.0,0.0);
+    LatticeComplex   one(grid); one = Complex(1.0,0.0);
 
     GaugeMat g(grid);
     GaugeMat dmuAmu_p(grid);
@@ -139,13 +139,13 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
     std::vector<int> coor(grid->_ndimension,0);
     for(int mu=0;mu<Nd;mu++) {
 
-      RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
+      Real TwoPiL =  M_PI * 2.0/ latt_size[mu];
       LatticeCoordinate(pmu,mu);
       pmu = TwoPiL * pmu ;
       psq = psq + 4.0*sin(pmu*0.5)*sin(pmu*0.5); 
     }
 
-    ComplexD psqMax(16.0);
+    Complex psqMax(16.0);
     Fp =  psqMax*one/psq;
 
     static int once;
@@ -160,20 +160,20 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
     theFFT.FFT_all_dim(dmuAmu,dmuAmu_p,FFT::backward);
 
     GaugeMat ciadmam(grid);
-    ComplexD cialpha(0.0,-alpha);
+    Complex cialpha(0.0,-alpha);
     ciadmam = dmuAmu*cialpha;
     SU<Nc>::taExp(ciadmam,g);
 
-    RealD trG = TensorRemove(sum(trace(g))).real()/vol/Nc;
+    Real trG = TensorRemove(sum(trace(g))).real()/vol/Nc;
 
     SU<Nc>::GaugeTransform(U,g);
 
     return trG;
   }
 
-  static void ExpiAlphaDmuAmu(const std::vector<GaugeMat> &A,GaugeMat &g,RealD & alpha, GaugeMat &dmuAmu) {
+  static void ExpiAlphaDmuAmu(const std::vector<GaugeMat> &A,GaugeMat &g,Real & alpha, GaugeMat &dmuAmu) {
     GridBase *grid = g._grid;
-    ComplexD cialpha(0.0,-alpha);
+    Complex cialpha(0.0,-alpha);
     GaugeMat ciadmam(grid);
     DmuAmu(A,dmuAmu);
     ciadmam = dmuAmu*cialpha;
@@ -193,11 +193,11 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
     ComplexField  pha(grid);
     GaugeMat      Apha(grid);
 
-    ComplexD ci(0.0,1.0);
+    Complex ci(0.0,1.0);
 
     for(int mu=0;mu<Nd;mu++){
 
-      RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
+      Real TwoPiL =  M_PI * 2.0/ latt_size[mu];
       LatticeCoordinate(pmu,mu);
       pmu = TwoPiL * pmu ;
       pha = exp(pmu *  (0.5 *ci)); // e(ipmu/2) since Amu(x+mu/2)
@@ -213,14 +213,14 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
 
     ComplexField  pmu(grid);
     ComplexField  pha(grid);
-    ComplexD ci(0.0,1.0);
+    Complex ci(0.0,1.0);
     
     // Sign convention for FFTW calls:
     // A(x)= Sum_p e^ipx A(p) / V
     // A(p)= Sum_p e^-ipx A(x)
 
     for(int mu=0;mu<Nd;mu++){
-      RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
+      Real TwoPiL =  M_PI * 2.0/ latt_size[mu];
       LatticeCoordinate(pmu,mu);
       pmu = TwoPiL * pmu ;
       pha = exp(-pmu *  (0.5 *ci)); // e(+ipmu/2) since Amu(x+mu/2)
@@ -241,7 +241,7 @@ int main (int argc, char ** argv)
   int threads = GridThread::GetThreads();
 
   std::vector<int> latt_size   = GridDefaultLatt();
-  std::vector<int> simd_layout( { vComplexD::Nsimd(),1,1,1});
+  std::vector<int> simd_layout( { vComplex::Nsimd(),1,1,1});
   std::vector<int> mpi_layout  = GridDefaultMpi();
 
   int vol = 1;
@@ -261,25 +261,25 @@ int main (int argc, char ** argv)
   std::cout<< "* Testing we can gauge fix steep descent a RGT of Unit gauge    *" <<std::endl;
   std::cout<< "*****************************************************************" <<std::endl;
 
-  LatticeGaugeFieldD   Umu(&GRID);
-  LatticeGaugeFieldD   Uorg(&GRID);
-  LatticeColourMatrixD   g(&GRID); // Gauge xform
+  LatticeGaugeField   Umu(&GRID);
+  LatticeGaugeField   Uorg(&GRID);
+  LatticeColourMatrix   g(&GRID); // Gauge xform
 
   
   SU3::ColdConfiguration(pRNG,Umu); // Unit gauge
   Uorg=Umu;
 
   SU3::RandomGaugeTransform(pRNG,Umu,g); // Unit gauge
-  RealD plaq=WilsonLoops<PeriodicGimplD>::avgPlaquette(Umu);
+  Real plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
   std::cout << " Initial plaquette "<<plaq << std::endl;
 
 
 
-  RealD alpha=0.1;
-  FourierAcceleratedGaugeFixer<PeriodicGimplD>::SteepestDescentGaugeFix(Umu,alpha,10000,1.0e-10, 1.0e-10);
+  Real alpha=0.1;
+  FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(Umu,alpha,10000,1.0e-10, 1.0e-10);
 
 
-  plaq=WilsonLoops<PeriodicGimplD>::avgPlaquette(Umu);
+  plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
   std::cout << " Final plaquette "<<plaq << std::endl;
 
   Uorg = Uorg - Umu;

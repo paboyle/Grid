@@ -369,7 +369,7 @@ void Grid_init(int *argc,char ***argv)
   
 void Grid_finalize(void)
 {
-#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3)
+#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3) 
   MPI_Finalize();
   Grid_unquiesce_nodes();
 #endif

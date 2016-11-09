@@ -191,7 +191,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
                   << LinalgTimer.Elapsed();
         std::cout << std::endl;
 
-        if (ErrorOnNoConverge) assert(true_residual / Tolerance < 1000.0);
+        if (ErrorOnNoConverge) assert(true_residual / Tolerance < 10000.0);
 
        	if (!CGState.do_repro && ReproTest){
        		CGState.do_repro = true;

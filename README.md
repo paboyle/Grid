@@ -126,7 +126,7 @@ If you want to build all the tests at once just use `make tests`.
 
 ### Possible communication interfaces
 
-The following options can be use with the `--enable-simd=` option to target different communication interfaces:
+The following options can be use with the `--enable-comms=` option to target different communication interfaces:
 
 | `<comm>`       | Description                                                   |
 | -------------- | ------------------------------------------------------------- |

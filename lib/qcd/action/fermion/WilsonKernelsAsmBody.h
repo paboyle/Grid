@@ -5,7 +5,9 @@
   const uint64_t plocal =(uint64_t) & in._odata[0];
 
   //  vComplexF isigns[2] = { signs[0], signs[1] };
-  vComplexF *isigns = &signs[0];
+  //COMPLEX_TYPE is vComplexF of vComplexD depending 
+  //on the chosen precision
+  COMPLEX_TYPE *isigns = &signs[0];
 
   MASK_REGS;
   int nmax=U._grid->oSites();

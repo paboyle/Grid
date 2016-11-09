@@ -9,4 +9,4 @@ endif
 include Make.inc
 
 subtests:
-	for d in $(SUBDIRS); do make -C $${d} tests; done
+	for d in $(SUBDIRS); do $(MAKE) -C $${d} tests; done
