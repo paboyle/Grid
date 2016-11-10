@@ -117,7 +117,7 @@ class NerscHmcRunnerTemplate {
     NoSmearing<Gimpl> SmearingPolicy;
     typedef MinimumNorm2<Gimpl, NoSmearing<Gimpl>, RepresentationsPolicy >
         IntegratorType;  // change here to change the algorithm
-    IntegratorParameters MDpar(20, 1.0);
+    IntegratorParameters MDpar(40, 1.0);
     IntegratorType MDynamics(UGrid, MDpar, TheAction, SmearingPolicy);
 
     // Checkpoint strategy

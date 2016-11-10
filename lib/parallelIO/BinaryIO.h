@@ -533,6 +533,7 @@ class BinaryIO {
     //////////////////////////////////////////////////////////
     Umu = zero;
     static uint32_t csum; csum=0;//static for SHMEM
+
     fobj fileObj;
     static sobj siteObj; // Static to place in symmetric region for SHMEM
 

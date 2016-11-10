@@ -34,8 +34,18 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Stat.h>
 
 namespace Grid {
+namespace QCD {
 
-  namespace QCD {
+  ////////////////////////////////////////////////////////////////////////////////
+  // This is the 4d red black case appropriate to support
+  //
+  // parity = (x+y+z+t)|2;
+  // generalised five dim fermions like mobius, zolotarev etc..	
+  //
+  // i.e. even even contains fifth dim hopping term.
+  //
+  // [DIFFERS from original CPS red black implementation parity = (x+y+z+t+s)|2 ]
+  ////////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////
     // This is the 4d red black case appropriate to support
@@ -102,6 +112,9 @@ namespace Grid {
       virtual void DhopDerivEO(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
       virtual void DhopDerivOE(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
 
+      void MomentumSpacePropagatorHt(FermionField &out,const FermionField &in,RealD mass) ;
+      void MomentumSpacePropagatorHw(FermionField &out,const FermionField &in,RealD mass) ;
+
       // Implement hopping term non-hermitian hopping term; half cb or both
       // Implement s-diagonal DW
       void DW    (const FermionField &in, FermionField &out,int dag);
@@ -111,78 +124,78 @@ namespace Grid {
 
       // add a DhopComm
       // -- suboptimal interface will presently trigger multiple comms.
-      void DhopDir(const FermionField &in, FermionField &out,int dir,int disp);
-
-      ///////////////////////////////////////////////////////////////
-      // New methods added 
-      ///////////////////////////////////////////////////////////////
-      void DerivInternal(StencilImpl & st,
-			 DoubledGaugeField & U,
-			 GaugeField &mat,
-			 const FermionField &A,
-			 const FermionField &B,
-			 int dag);
-
-      void DhopInternal(StencilImpl & st,
-			LebesgueOrder &lo,
-			DoubledGaugeField &U,
-			const FermionField &in, 
-			FermionField &out,
-			int dag);
-
-      // Constructors
-      WilsonFermion5D(GaugeField &_Umu,
-		      GridCartesian         &FiveDimGrid,
-		      GridRedBlackCartesian &FiveDimRedBlackGrid,
-		      GridCartesian         &FourDimGrid,
-		      GridRedBlackCartesian &FourDimRedBlackGrid,
-		      double _M5,const ImplParams &p= ImplParams());
-
-      // Constructors
-      /*
+    void DhopDir(const FermionField &in, FermionField &out,int dir,int disp);
+    
+    ///////////////////////////////////////////////////////////////
+    // New methods added 
+    ///////////////////////////////////////////////////////////////
+    void DerivInternal(StencilImpl & st,
+		       DoubledGaugeField & U,
+		       GaugeField &mat,
+		       const FermionField &A,
+		       const FermionField &B,
+		       int dag);
+    
+    void DhopInternal(StencilImpl & st,
+		      LebesgueOrder &lo,
+		      DoubledGaugeField &U,
+		      const FermionField &in, 
+		      FermionField &out,
+		      int dag);
+    
+    // Constructors
+    WilsonFermion5D(GaugeField &_Umu,
+		    GridCartesian         &FiveDimGrid,
+		    GridRedBlackCartesian &FiveDimRedBlackGrid,
+		    GridCartesian         &FourDimGrid,
+		    GridRedBlackCartesian &FourDimRedBlackGrid,
+		    double _M5,const ImplParams &p= ImplParams());
+    
+    // Constructors
+    /*
       WilsonFermion5D(int simd, 
-		      GaugeField &_Umu,
-		      GridCartesian         &FiveDimGrid,
-		      GridRedBlackCartesian &FiveDimRedBlackGrid,
-		      GridCartesian         &FourDimGrid,
-		      double _M5,const ImplParams &p= ImplParams());
-      */
+      GaugeField &_Umu,
+      GridCartesian         &FiveDimGrid,
+      GridRedBlackCartesian &FiveDimRedBlackGrid,
+      GridCartesian         &FourDimGrid,
+      double _M5,const ImplParams &p= ImplParams());
+    */
+    
+    // DoubleStore
+    void ImportGauge(const GaugeField &_Umu);
+    
+    ///////////////////////////////////////////////////////////////
+    // Data members require to support the functionality
+    ///////////////////////////////////////////////////////////////
+  public:
+    
+    // Add these to the support from Wilson
+    GridBase *_FourDimGrid;
+    GridBase *_FourDimRedBlackGrid;
+    GridBase *_FiveDimGrid;
+    GridBase *_FiveDimRedBlackGrid;
+    
+    double                        M5;
+    int Ls;
+    
+    //Defines the stencils for even and odd
+    StencilImpl Stencil; 
+    StencilImpl StencilEven; 
+    StencilImpl StencilOdd; 
+    
+    // Copy of the gauge field , with even and odd subsets
+    DoubledGaugeField Umu;
+    DoubledGaugeField UmuEven;
+    DoubledGaugeField UmuOdd;
+    
+    LebesgueOrder Lebesgue;
+    LebesgueOrder LebesgueEvenOdd;
+    
+    // Comms buffer
+    std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  comm_buf;
+    
+  };
 
-      // DoubleStore
-      void ImportGauge(const GaugeField &_Umu);
-
-      ///////////////////////////////////////////////////////////////
-      // Data members require to support the functionality
-      ///////////////////////////////////////////////////////////////
-    public:
-
-      // Add these to the support from Wilson
-      GridBase *_FourDimGrid;
-      GridBase *_FourDimRedBlackGrid;
-      GridBase *_FiveDimGrid;
-      GridBase *_FiveDimRedBlackGrid;
-
-      double                        M5;
-      int Ls;
-
-      //Defines the stencils for even and odd
-      StencilImpl Stencil; 
-      StencilImpl StencilEven; 
-      StencilImpl StencilOdd; 
-
-      // Copy of the gauge field , with even and odd subsets
-      DoubledGaugeField Umu;
-      DoubledGaugeField UmuEven;
-      DoubledGaugeField UmuOdd;
-
-      LebesgueOrder Lebesgue;
-      LebesgueOrder LebesgueEvenOdd;
-
-      // Comms buffer
-      std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  comm_buf;
-      
-    };
-  }
-}
+}}
 
 #endif

@@ -51,24 +51,26 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
+  std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
+  std::cout << GridLogMessage<< "* Kernel options --dslash-generic, --dslash-unroll, --dslash-asm" <<std::endl;
+  std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
+
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
+  if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
+  std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
+
   const int Ls=8;
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
-
-  if ( getenv("ASMOPT") )  {
-    QCD::WilsonKernelsStatic::AsmOpt=1;
-  } else { 
-    QCD::WilsonKernelsStatic::AsmOpt=0;
-  }
-
   std::cout<<GridLogMessage << "=========================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking DWF"<<std::endl;
   std::cout<<GridLogMessage << "=========================================================================="<<std::endl;
   std::cout<<GridLogMessage << "Volume \t\t\tProcs \t Dw \t eoDw \t sDw \t eosDw (Mflop/s)  "<<std::endl;
   std::cout<<GridLogMessage << "=========================================================================="<<std::endl;
 
-  int Lmax=32;
-  int dmin=0;
+  int Lmax=16;
+  int dmin=2;
   if ( getenv("LMAX") ) Lmax=atoi(getenv("LMAX"));
   if ( getenv("DMIN") ) dmin=atoi(getenv("DMIN"));
   for (int L=8;L<=Lmax;L*=2){

@@ -311,10 +311,9 @@ namespace Grid {
 namespace QCD {
 
 
-  template<class Impl>
-  void WilsonKernels<Impl>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-					       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-					       int ss,int sU,const FermionField &in, FermionField &out)
+template<class Impl> void 
+WilsonKernels<Impl>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf,
+					  int ss,int sU,const FermionField &in, FermionField &out)
 {
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -554,10 +553,9 @@ namespace QCD {
   }
 }
 
-  template<class Impl>
-  void WilsonKernels<Impl>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-					       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-					       int ss,int sU,const FermionField &in, FermionField &out)
+template<class Impl>
+void WilsonKernels<Impl>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+						  int ss,int sU,const FermionField &in, FermionField &out)
 {
   //  std::cout << "Hand op Dhop "<<std::endl;
   typedef typename Simd::scalar_type S;
@@ -798,38 +796,35 @@ namespace QCD {
   }
 }
 
-
   ////////////////////////////////////////////////
   // Specialise Gparity to simple implementation
   ////////////////////////////////////////////////
-template<>
-void WilsonKernels<GparityWilsonImplF>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-							     std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-							     int sF,int sU,const FermionField &in, FermionField &out)
+template<> void 
+WilsonKernels<GparityWilsonImplF>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
+							SiteHalfSpinor *buf,
+							int sF,int sU,const FermionField &in, FermionField &out)
 {
   assert(0);
 }
 
-template<>
-void WilsonKernels<GparityWilsonImplF>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-								std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-								int sF,int sU,const FermionField &in, FermionField &out)
+template<> void 
+WilsonKernels<GparityWilsonImplF>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
+							   SiteHalfSpinor *buf,
+							   int sF,int sU,const FermionField &in, FermionField &out)
 {
   assert(0);
 }
 
-template<>
-void WilsonKernels<GparityWilsonImplD>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-							     std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-							     int sF,int sU,const FermionField &in, FermionField &out)
+template<> void 
+WilsonKernels<GparityWilsonImplD>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+							int sF,int sU,const FermionField &in, FermionField &out)
 {
   assert(0);
 }
 
-template<>
-void WilsonKernels<GparityWilsonImplD>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-								std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,
-								int sF,int sU,const FermionField &in, FermionField &out)
+template<> void 
+WilsonKernels<GparityWilsonImplD>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+							   int sF,int sU,const FermionField &in, FermionField &out)
 {
   assert(0);
 }
@@ -840,12 +835,10 @@ void WilsonKernels<GparityWilsonImplD>::DiracOptHandDhopSiteDag(StencilImpl &st,
 // Need Nc=3 though //
 
 #define INSTANTIATE_THEM(A) \
-template void WilsonKernels<A>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,\
-							       std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,\
-							       int ss,int sU,const FermionField &in, FermionField &out);\
-template void WilsonKernels<A>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,\
-								  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  &buf,\
-								  int ss,int sU,const FermionField &in, FermionField &out);
+template void WilsonKernels<A>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,\
+						     int ss,int sU,const FermionField &in, FermionField &out); \
+template void WilsonKernels<A>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,\
+							int ss,int sU,const FermionField &in, FermionField &out);
 
 INSTANTIATE_THEM(WilsonImplF);
 INSTANTIATE_THEM(WilsonImplD);

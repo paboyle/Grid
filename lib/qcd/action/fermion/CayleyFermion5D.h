@@ -56,6 +56,9 @@ namespace Grid {
       virtual void   M5D   (const FermionField &psi, FermionField &chi);
       virtual void   M5Ddag(const FermionField &psi, FermionField &chi);
 
+      virtual void   Dminus(const FermionField &psi, FermionField &chi);
+      virtual void   DminusDag(const FermionField &psi, FermionField &chi);
+
       /////////////////////////////////////////////////////
       // Instantiate different versions depending on Impl
       /////////////////////////////////////////////////////
@@ -116,6 +119,7 @@ namespace Grid {
 		      GridCartesian         &FourDimGrid,
 		      GridRedBlackCartesian &FourDimRedBlackGrid,
 		      RealD _mass,RealD _M5,const ImplParams &p= ImplParams());
+
 
     protected:
       void SetCoefficientsZolotarev(RealD zolohi,Approx::zolotarev_data *zdata,RealD b,RealD c);

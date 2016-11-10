@@ -41,6 +41,16 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 namespace Grid{
 namespace Optimization {
+
+  union u512f {
+    __m512 v;
+    float f[16];
+  };
+
+  union u512d {
+    __m512d v;
+    double f[8];
+  };
   
   struct Vsplat{
     //Complex float
@@ -230,6 +240,17 @@ namespace Optimization {
     }
   };
 
+  struct Div{
+    // Real float
+    inline __m512 operator()(__m512 a, __m512 b){
+      return _mm512_div_ps(a,b);
+    }
+    // Real double
+    inline __m512d operator()(__m512d a, __m512d b){
+      return _mm512_div_pd(a,b);
+    }
+  };
+
 
   struct Conj{
     // Complex single
@@ -361,8 +382,8 @@ namespace Optimization {
   // Some Template specialization
 
   // Hack for CLANG until mm512_reduce_add_ps etc... are implemented in GCC and Clang releases
-#undef GNU_CLANG_COMPILER 
-#ifdef GNU_CLANG_COMPILER
+#ifndef __INTEL_COMPILER
+#warning "Slow reduction due to incomplete reduce intrinsics"
   //Complex float Reduce
   template<>
     inline Grid::ComplexF Reduce<Grid::ComplexF, __m512>::operator()(__m512 in){
@@ -487,6 +508,7 @@ namespace Optimization {
   typedef Optimization::Sum         SumSIMD;
   typedef Optimization::Sub         SubSIMD;
   typedef Optimization::Mult        MultSIMD;
+  typedef Optimization::Div         DivSIMD;
   typedef Optimization::MultComplex MultComplexSIMD;
   typedef Optimization::Conj        ConjSIMD;
   typedef Optimization::TimesMinusI TimesMinusISIMD;

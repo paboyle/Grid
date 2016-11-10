@@ -154,7 +154,7 @@ PARALLEL_FOR_LOOP
     template<class vobj,class sobj>
     void peekLocalSite(sobj &s,const Lattice<vobj> &l,std::vector<int> &site){
         
-      GridBase *grid=l._grid;
+      GridBase *grid = l._grid;
 
       typedef typename vobj::scalar_type scalar_type;
       typedef typename vobj::vector_type vector_type;
@@ -164,16 +164,18 @@ PARALLEL_FOR_LOOP
       assert( l.checkerboard== l._grid->CheckerBoard(site));
       assert( sizeof(sobj)*Nsimd == sizeof(vobj));
 
+      static const int words=sizeof(vobj)/sizeof(vector_type);
       int odx,idx;
       idx= grid->iIndex(site);
       odx= grid->oIndex(site);
 
-      std::vector<sobj> buf(Nsimd);
-
-      extract(l._odata[odx],buf);
+      scalar_type * vp = (scalar_type *)&l._odata[odx];
+      scalar_type * pt = (scalar_type *)&s;
       
-      s = buf[idx];
-
+      for(int w=0;w<words;w++){
+        pt[w] = vp[idx+w*Nsimd];
+      }
+      
       return;
     };
 
@@ -190,18 +192,17 @@ PARALLEL_FOR_LOOP
       assert( l.checkerboard== l._grid->CheckerBoard(site));
       assert( sizeof(sobj)*Nsimd == sizeof(vobj));
 
+      static const int words=sizeof(vobj)/sizeof(vector_type);
       int odx,idx;
       idx= grid->iIndex(site);
       odx= grid->oIndex(site);
 
-      std::vector<sobj> buf(Nsimd);
-
-      // extract-modify-merge cycle is easiest way and this is not perf critical
-      extract(l._odata[odx],buf);
+      scalar_type * vp = (scalar_type *)&l._odata[odx];
+      scalar_type * pt = (scalar_type *)&s;
       
-      buf[idx] = s;
-
-      merge(l._odata[odx],buf);
+      for(int w=0;w<words;w++){
+        vp[idx+w*Nsimd] = pt[w];
+      }
 
       return;
     };

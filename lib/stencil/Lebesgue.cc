@@ -32,7 +32,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 namespace Grid {
 
 int LebesgueOrder::UseLebesgueOrder;
-std::vector<int> LebesgueOrder::Block({2,2,2,2});
+std::vector<int> LebesgueOrder::Block({8,2,2,2});
 
 LebesgueOrder::IndexInteger LebesgueOrder::alignup(IndexInteger n){
   n--;           // 1000 0011 --> 1000 0010

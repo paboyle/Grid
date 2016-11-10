@@ -32,8 +32,7 @@ directory
 namespace Grid {
 namespace QCD {
 
-int WilsonKernelsStatic::HandOpt;
-int WilsonKernelsStatic::AsmOpt;
+int WilsonKernelsStatic::Opt;
 
 template <class Impl>
 WilsonKernels<Impl>::WilsonKernels(const ImplParams &p) : Base(p){};
@@ -43,10 +42,9 @@ WilsonKernels<Impl>::WilsonKernels(const ImplParams &p) : Base(p){};
 ////////////////////////////////////////////
 
 template <class Impl>
-void WilsonKernels<Impl>::DiracOptGenericDhopSiteDag(
-    StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-    std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf, int sF,
-    int sU, const FermionField &in, FermionField &out) {
+void WilsonKernels<Impl>::DiracOptGenericDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+						     SiteHalfSpinor *buf, int sF,
+						     int sU, const FermionField &in, FermionField &out) {
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
   SiteHalfSpinor *chi_p;
@@ -220,10 +218,9 @@ void WilsonKernels<Impl>::DiracOptGenericDhopSiteDag(
 
 // Need controls to do interior, exterior, or both
 template <class Impl>
-void WilsonKernels<Impl>::DiracOptGenericDhopSite(
-    StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-    std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf, int sF,
-    int sU, const FermionField &in, FermionField &out) {
+void WilsonKernels<Impl>::DiracOptGenericDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+						  SiteHalfSpinor *buf, int sF,
+						  int sU, const FermionField &in, FermionField &out) {
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
   SiteHalfSpinor *chi_p;
@@ -396,10 +393,9 @@ void WilsonKernels<Impl>::DiracOptGenericDhopSite(
 };
 
 template <class Impl>
-void WilsonKernels<Impl>::DiracOptDhopDir(
-    StencilImpl &st, DoubledGaugeField &U,
-    std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > &buf, int sF,
-    int sU, const FermionField &in, FermionField &out, int dir, int gamma) {
+void WilsonKernels<Impl>::DiracOptDhopDir( StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor *buf, int sF,
+					   int sU, const FermionField &in, FermionField &out, int dir, int gamma) {
+
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
   SiteSpinor result;

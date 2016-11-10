@@ -76,15 +76,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Cshift.h>       
 #include <Grid/Stencil.h>      
 #include <Grid/Algorithms.h>   
+
+#include <Grid/FFT.h>
+
 #include <Grid/qcd/QCD.h>
 #include <Grid/parallelIO/IldgIOtypes.h>
 #include <Grid/parallelIO/BinaryIO.h>
 #include <Grid/parallelIO/IldgIO.h>
 #include <Grid/parallelIO/NerscIO.h>
-
-
-#include <Grid/FFT.h>
-
 #include <Grid/qcd/hmc/NerscCheckpointer.h>
 #include <Grid/qcd/hmc/BinaryCheckpointer.h>
 #include <Grid/qcd/hmc/ILDGCheckpointer.h>

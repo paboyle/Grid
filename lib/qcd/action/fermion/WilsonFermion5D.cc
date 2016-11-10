@@ -184,44 +184,37 @@ void WilsonFermion5D<Impl>::Report(void)
 
   if ( DhopCalls > 0 ) {
     std::cout << GridLogMessage << "#### Dhop calls report " << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D Number of Dhop Calls     : " << DhopCalls  << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D Total Communication time : " << DhopCommTime
-              << " us" << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D CommTime/Calls           : "
-              << DhopCommTime / DhopCalls << " us" << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D Total Compute time       : "
-              << DhopComputeTime << " us" << std::endl;
-    std::cout << GridLogMessage << "WilsonFermion5D ComputeTime/Calls        : "
-              << DhopComputeTime / DhopCalls << " us" << std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D Number of Dhop Calls     : " << DhopCalls   << std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D Total Communication time : " << DhopCommTime<< " us" << std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D CommTime/Calls           : " << DhopCommTime / DhopCalls << " us" << std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D Total Compute time       : " << DhopComputeTime << " us" << std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D ComputeTime/Calls        : " << DhopComputeTime / DhopCalls << " us" << std::endl;
 
-    RealD mflops = 1344*volume*DhopCalls/DhopComputeTime;
+    RealD mflops = 1344*volume*DhopCalls/DhopComputeTime/2; // 2 for red black counting
     std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
-    std::cout << GridLogMessage << "Average mflops/s per call per node       : " << mflops/NP << std::endl;
+    std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
 
    }
 
   if ( DerivCalls > 0 ) {
-  std::cout << GridLogMessage << "#### Deriv calls report "<< std::endl;
-  std::cout << GridLogMessage << "WilsonFermion5D Number of Deriv Calls    : " <<DerivCalls <<std::endl;
-  std::cout << GridLogMessage << "WilsonFermion5D Total Communication time : " <<DerivCommTime <<" us"<<std::endl;
-  std::cout << GridLogMessage << "WilsonFermion5D CommTime/Calls           : " <<DerivCommTime/DerivCalls<<" us" <<std::endl;
-  std::cout << GridLogMessage << "WilsonFermion5D Total Compute time       : " <<DerivComputeTime <<" us"<<std::endl;
-  std::cout << GridLogMessage << "WilsonFermion5D ComputeTime/Calls        : " <<DerivComputeTime/DerivCalls<<" us" <<std::endl;
-  std::cout << GridLogMessage << "WilsonFermion5D Total Dhop Compute time  : " <<DerivDhopComputeTime <<" us"<<std::endl;
-  std::cout << GridLogMessage << "WilsonFermion5D Dhop ComputeTime/Calls   : " <<DerivDhopComputeTime/DerivCalls<<" us" <<std::endl;
-
-
-
-  RealD mflops = 144*volume*DerivCalls/DerivDhopComputeTime;
-  std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
-  std::cout << GridLogMessage << "Average mflops/s per call per node       : " << mflops/NP << std::endl;
-
+    std::cout << GridLogMessage << "#### Deriv calls report "<< std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D Number of Deriv Calls    : " <<DerivCalls <<std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D Total Communication time : " <<DerivCommTime <<" us"<<std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D CommTime/Calls           : " <<DerivCommTime/DerivCalls<<" us" <<std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D Total Compute time       : " <<DerivComputeTime <<" us"<<std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D ComputeTime/Calls        : " <<DerivComputeTime/DerivCalls<<" us" <<std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D Total Dhop Compute time  : " <<DerivDhopComputeTime <<" us"<<std::endl;
+    std::cout << GridLogMessage << "WilsonFermion5D Dhop ComputeTime/Calls   : " <<DerivDhopComputeTime/DerivCalls<<" us" <<std::endl;
+    
+    RealD mflops = 144*volume*DerivCalls/DerivDhopComputeTime;
+    std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
+    std::cout << GridLogMessage << "Average mflops/s per call per node       : " << mflops/NP << std::endl;
   }
 
   if (DerivCalls > 0 || DhopCalls > 0){
-  std::cout << GridLogMessage << "WilsonFermion5D Stencil"<<std::endl;  Stencil.Report();
-  std::cout << GridLogMessage << "WilsonFermion5D StencilEven"<<std::endl;  StencilEven.Report();
-  std::cout << GridLogMessage << "WilsonFermion5D StencilOdd"<<std::endl;  StencilOdd.Report();
+    std::cout << GridLogMessage << "WilsonFermion5D Stencil"<<std::endl;  Stencil.Report();
+    std::cout << GridLogMessage << "WilsonFermion5D StencilEven"<<std::endl;  StencilEven.Report();
+    std::cout << GridLogMessage << "WilsonFermion5D StencilOdd"<<std::endl;  StencilOdd.Report();
   }
 }
 
@@ -275,7 +268,7 @@ PARALLEL_FOR_LOOP
     for(int s=0;s<Ls;s++){
       int sU=ss;
       int sF = s+Ls*sU; 
-      Kernels::DiracOptDhopDir(Stencil,Umu,Stencil.comm_buf,sF,sU,in,out,dirdisp,gamma);
+      Kernels::DiracOptDhopDir(Stencil,Umu,Stencil.CommBuf(),sF,sU,in,out,dirdisp,gamma);
     }
   }
 };
@@ -327,8 +320,7 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
         assert(sF < B._grid->oSites());
         assert(sU < U._grid->oSites());
 
-        Kernels::DiracOptDhopDir(st, U, st.comm_buf, sF, sU, B, Btilde, mu,
-                                 gamma);
+        Kernels::DiracOptDhopDir(st, U, st.CommBuf(), sF, sU, B, Btilde, mu, gamma);
 
         ////////////////////////////
         // spin trace outer product
@@ -342,10 +334,10 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
 }
 
 template<class Impl>
-void WilsonFermion5D<Impl>::DhopDeriv(      GaugeField &mat,
-              const FermionField &A,
-              const FermionField &B,
-              int dag)
+void WilsonFermion5D<Impl>::DhopDeriv(GaugeField &mat,
+				      const FermionField &A,
+				      const FermionField &B,
+				      int dag)
 {
   conformable(A._grid,FermionGrid());  
   conformable(A._grid,B._grid);
@@ -358,9 +350,9 @@ void WilsonFermion5D<Impl>::DhopDeriv(      GaugeField &mat,
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
-          const FermionField &A,
-          const FermionField &B,
-          int dag)
+					const FermionField &A,
+					const FermionField &B,
+					int dag)
 {
   conformable(A._grid,FermionRedBlackGrid());
   conformable(GaugeRedBlackGrid(),mat._grid);
@@ -376,9 +368,9 @@ void WilsonFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
-          const FermionField &A,
-          const FermionField &B,
-          int dag)
+					const FermionField &A,
+					const FermionField &B,
+					int dag)
 {
   conformable(A._grid,FermionRedBlackGrid());
   conformable(GaugeRedBlackGrid(),mat._grid);
@@ -393,10 +385,9 @@ void WilsonFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
-           DoubledGaugeField & U,
-           const FermionField &in, FermionField &out,int dag)
+					 DoubledGaugeField & U,
+					 const FermionField &in, FermionField &out,int dag)
 {
-  DhopCalls++;
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
   Compressor compressor(dag);
 
@@ -413,27 +404,25 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
     for (int ss = 0; ss < U._grid->oSites(); ss++) {
       int sU = ss;
       int sF = LLs * sU;
-      Kernels::DiracOptDhopSiteDag(st, lo, U, st.comm_buf, sF, sU, LLs, 1, in,
-                                   out);
+      Kernels::DiracOptDhopSiteDag(st, lo, U, st.CommBuf(), sF, sU, LLs, 1, in, out);
     }
 #ifdef AVX512
   } else if (stat.is_init() ) {
 
     int nthreads;
     stat.start();
-    #pragma omp parallel
+#pragma omp parallel
     {
-    #pragma omp master
+#pragma omp master
     nthreads = omp_get_num_threads();
     int mythread = omp_get_thread_num();
     stat.enter(mythread);
-    #pragma omp for nowait
-   for(int ss=0;ss<U._grid->oSites();ss++)
-    {
-       int sU=ss;
-       int sF=LLs*sU;
-       Kernels::DiracOptDhopSite(st,lo,U,st.comm_buf,sF,sU,LLs,1,in,out);
-     }
+#pragma omp for nowait
+    for(int ss=0;ss<U._grid->oSites();ss++) {
+      int sU=ss;
+      int sF=LLs*sU;
+      Kernels::DiracOptDhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
+    }
     stat.exit(mythread);
     }
     stat.accum(nthreads);
@@ -443,8 +432,7 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
     for (int ss = 0; ss < U._grid->oSites(); ss++) {
       int sU = ss;
       int sF = LLs * sU;
-      Kernels::DiracOptDhopSite(st, lo, U, st.comm_buf, sF, sU, LLs, 1, in,
-                                out);
+      Kernels::DiracOptDhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
     }
   }
   DhopComputeTime+=usecond();
@@ -454,6 +442,7 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int dag)
 {
+  DhopCalls++;
   conformable(in._grid,FermionRedBlackGrid());    // verifies half grid
   conformable(in._grid,out._grid); // drops the cb check
 
@@ -465,6 +454,7 @@ void WilsonFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag)
 {
+  DhopCalls++;
   conformable(in._grid,FermionRedBlackGrid());    // verifies half grid
   conformable(in._grid,out._grid); // drops the cb check
 
@@ -476,6 +466,7 @@ void WilsonFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int
 template<class Impl>
 void WilsonFermion5D<Impl>::Dhop(const FermionField &in, FermionField &out,int dag)
 {
+  DhopCalls+=2;
   conformable(in._grid,FermionGrid()); // verifies full grid
   conformable(in._grid,out._grid);
 
@@ -490,6 +481,148 @@ void WilsonFermion5D<Impl>::DW(const FermionField &in, FermionField &out,int dag
   Dhop(in,out,dag); // -0.5 is included
   axpy(out,4.0-M5,in,out);
 }
+
+template<class Impl>
+void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const FermionField &in, RealD mass) 
+{
+  // what type LatticeComplex 
+  GridBase *_grid = _FourDimGrid;
+  conformable(_grid,out._grid);
+  
+  typedef typename FermionField::vector_type vector_type;
+  typedef typename FermionField::scalar_type ScalComplex;
+  typedef iSinglet<ScalComplex> Tcomplex;
+  typedef Lattice<iSinglet<vector_type> > LatComplex;
+  
+  Gamma::GammaMatrix Gmu [] = {
+    Gamma::GammaX,
+    Gamma::GammaY,
+    Gamma::GammaZ,
+    Gamma::GammaT
+  };
+
+  std::vector<int> latt_size   = _grid->_fdimensions;
+
+  
+  FermionField   num  (_grid); num  = zero;
+
+  LatComplex    sk(_grid);  sk = zero;
+  LatComplex    sk2(_grid); sk2= zero;
+  LatComplex    W(_grid); W= zero;
+  LatComplex    a(_grid); a= zero;
+  LatComplex    one  (_grid); one = ScalComplex(1.0,0.0);
+  LatComplex denom(_grid); denom= zero;
+  LatComplex cosha(_grid); 
+  LatComplex kmu(_grid); 
+  LatComplex Wea(_grid); 
+  LatComplex Wema(_grid); 
+
+  ScalComplex ci(0.0,1.0);
+  
+  for(int mu=0;mu<Nd;mu++) {
+    
+    LatticeCoordinate(kmu,mu);
+    
+    RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
+    
+    kmu = TwoPiL * kmu;
+    
+    sk2 = sk2 + 2.0*sin(kmu*0.5)*sin(kmu*0.5);
+    sk  = sk  +     sin(kmu)    *sin(kmu); 
+    
+    num = num - sin(kmu)*ci*(Gamma(Gmu[mu])*in);
+    
+  }
+  
+  W = one - M5 + sk2;
+
+  ////////////////////////////////////////////
+  // Cosh alpha -> alpha
+  ////////////////////////////////////////////
+  cosha =  (one + W*W + sk) / (W*2.0);
+
+  // FIXME Need a Lattice acosh
+  for(int idx=0;idx<_grid->lSites();idx++){
+    std::vector<int> lcoor(Nd);
+    Tcomplex cc;
+    RealD sgn;
+    _grid->LocalIndexToLocalCoor(idx,lcoor);
+    peekLocalSite(cc,cosha,lcoor);
+    assert((double)real(cc)>=1.0);
+    assert(fabs((double)imag(cc))<=1.0e-15);
+    cc = ScalComplex(::acosh(real(cc)),0.0);
+    pokeLocalSite(cc,a,lcoor);
+  }
+  
+  Wea = ( exp( a) * W  ); 
+  Wema= ( exp(-a) * W  ); 
+  
+  num   = num + ( one - Wema ) * mass * in;
+  denom= ( Wea - one ) + mass*mass * (one - Wema); 
+  out = num/denom;
+}
+
+template<class Impl>
+void WilsonFermion5D<Impl>::MomentumSpacePropagatorHw(FermionField &out,const FermionField &in,RealD mass) 
+{
+    Gamma::GammaMatrix Gmu [] = {
+      Gamma::GammaX,
+      Gamma::GammaY,
+      Gamma::GammaZ,
+      Gamma::GammaT
+    };
+
+    GridBase *_grid = _FourDimGrid;
+    conformable(_grid,out._grid);
+
+    typedef typename FermionField::vector_type vector_type;
+    typedef typename FermionField::scalar_type ScalComplex;
+
+    typedef Lattice<iSinglet<vector_type> > LatComplex;
+
+
+    std::vector<int> latt_size   = _grid->_fdimensions;
+
+    LatComplex    sk(_grid);  sk = zero;
+    LatComplex    sk2(_grid); sk2= zero;
+
+    LatComplex    w_k(_grid); w_k= zero;
+    LatComplex    b_k(_grid); b_k= zero;
+
+    LatComplex     one  (_grid); one = ScalComplex(1.0,0.0);
+
+    FermionField   num  (_grid); num  = zero;
+    LatComplex denom(_grid); denom= zero;
+    LatComplex kmu(_grid); 
+    ScalComplex ci(0.0,1.0);
+
+    for(int mu=0;mu<Nd;mu++) {
+
+      LatticeCoordinate(kmu,mu);
+
+      RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
+
+      kmu = TwoPiL * kmu;
+
+      sk2 = sk2 + 2.0*sin(kmu*0.5)*sin(kmu*0.5);
+      sk  = sk  + sin(kmu)*sin(kmu); 
+
+      num = num - sin(kmu)*ci*(Gamma(Gmu[mu])*in);
+
+    }
+    num = num + mass * in ;
+
+    b_k = sk2 - M5;
+     
+    w_k = sqrt(sk + b_k*b_k);
+
+    denom= ( w_k + b_k + mass*mass) ;
+
+    denom= one/denom;
+    out = num*denom;
+
+}
+
 
 FermOpTemplateInstantiate(WilsonFermion5D);
 GparityFermOpTemplateInstantiate(WilsonFermion5D);
