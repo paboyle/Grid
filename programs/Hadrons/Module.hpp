@@ -128,7 +128,7 @@ Module<P>::Module(const std::string name)
 template <typename P>
 void Module<P>::parseParameters(XmlReader &reader, const std::string name)
 {
-    read(reader, name, par_);read(reader, name, par_);
+    read(reader, name, par_);
 }
 
 template <typename P>
