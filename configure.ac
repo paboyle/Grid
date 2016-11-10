@@ -9,6 +9,9 @@ AC_CONFIG_SRCDIR([lib/Grid.h])
 AC_CONFIG_HEADERS([lib/Config.h])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
+################ Get git info
+#AC_REVISION([m4_esyscmd_s([./scripts/configure.commit])])
+
 ############### Checks for programs
 CXXFLAGS="-O3 $CXXFLAGS"
 AC_PROG_CXX
@@ -379,9 +382,14 @@ AC_CONFIG_FILES(tests/qdpxx/Makefile)
 AC_CONFIG_FILES(benchmarks/Makefile)
 AC_OUTPUT
 
+git_commit=`cd $srcdir && ./scripts/configure.commit`
+
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Summary of configuration for $PACKAGE v$VERSION
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+----- GIT VERSION -------------------------------------
+$git_commit
 
 ----- PLATFORM ----------------------------------------
 architecture (build)        : $build_cpu
