@@ -58,6 +58,7 @@ class HMCRunnerParameters : Serializable {
   HMCRunnerParameters() {}
 };
 
+
 // Derive from the BinaryHmcRunner (templated for gauge fields)
 class HmcRunner : public BinaryHmcRunner {
  public:
@@ -65,15 +66,21 @@ class HmcRunner : public BinaryHmcRunner {
     void BuildTheAction(int argc, char **argv)
 
   {
+    // Typedefs to simplify notation
+    typedef WilsonGaugeActionR GaugeAction;
     typedef WilsonImplR ImplPolicy;
     typedef WilsonFermionR FermionAction;
     typedef typename FermionAction::FermionField FermionField;
 
-    UGrid = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd, vComplex::Nsimd()), GridDefaultMpi());
+    // this can be simplified too. MakeDefaultGrid(Nd)
+    UGrid = SpaceTimeGrid::makeFourDimGrid(
+        GridDefaultLatt(), 
+        GridDefaultSimd(Nd, vComplex::Nsimd()), 
+        GridDefaultMpi());
     
 
     // Gauge action
-    WilsonGaugeActionR Waction(HMCPar.beta);
+    GaugeAction Waction(HMCPar.beta);
 
     // Collect actions
     ActionLevel<Field> Level1(1);
@@ -113,12 +120,14 @@ int main(int argc, char **argv) {
             << " threads" << std::endl;
 
   HmcRunner TheHMC;
+  // make input file name general
   InputFileReader Reader("input.wilson_gauge.params");
   read(Reader, "HMC", TheHMC.HMCPar);
 
   std::cout << GridLogMessage << TheHMC.HMCPar << std::endl;
 
   // Seeds for the random number generators
+  // generalise
   std::vector<int> SerSeed = strToVec<int>(TheHMC.HMCPar.serial_seeds);
   std::vector<int> ParSeed = strToVec<int>(TheHMC.HMCPar.parallel_seeds);
 
