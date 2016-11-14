@@ -5,7 +5,7 @@
 
 BEGIN_QEDFVOL_NAMESPACE
 
-template <class Gimpl> class WilsonLoops : public Gimpl {
+template <class Gimpl> class NewWilsonLoops : public Gimpl {
 public:
   INHERIT_GIMPL_TYPES(Gimpl);
 
@@ -55,7 +55,7 @@ public:
   //////////////////////////////////////////////////
   // sum over all x,y,z,t and over all planes of plaquette
   //////////////////////////////////////////////////
-  static RealD sumPlaquette(const GaugeLorentz &Umu) {
+  static Real sumPlaquette(const GaugeLorentz &Umu) {
     std::vector<GaugeMat> U(4, Umu._grid);
 
     for (int mu = 0; mu < Nd; mu++) {
@@ -73,8 +73,8 @@ public:
   //////////////////////////////////////////////////
   // average over all x,y,z,t and over all planes of plaquette
   //////////////////////////////////////////////////
-  static RealD avgPlaquette(const GaugeLorentz &Umu) {
-    RealD sumplaq = sumPlaquette(Umu);
+  static Real avgPlaquette(const GaugeLorentz &Umu) {
+    Real sumplaq = sumPlaquette(Umu);
     double vol = Umu._grid->gSites();
     double faces = (1.0 * Nd * (Nd - 1)) / 2.0;
     return sumplaq / vol / faces / Nc; // Nd , Nc dependent... FIXME
@@ -112,14 +112,14 @@ public:
                                 const int Rmu, const int Rnu,
                                 const int mu, const int nu) {
     GaugeMat sp(U[0]._grid);
-    WilsonLoop(sp, U, Rmu, Rnu, mu, nu);
+    wilsonLoop(sp, U, Rmu, Rnu, mu, nu);
     wl = trace(sp);
   }
   //////////////////////////////////////////////////
   // sum over all planes of Wilson loop
   //////////////////////////////////////////////////
   static void siteWilsonLoop(LatticeComplex &Wl,
-                            const std::vector<GaugeMat> &U
+                            const std::vector<GaugeMat> &U,
                             const int R1, const int R2) {
     LatticeComplex siteWl(U[0]._grid);
     Wl = zero;
@@ -135,7 +135,7 @@ public:
   //////////////////////////////////////////////////
   // sum over all x,y,z,t and over all planes of Wilson loop
   //////////////////////////////////////////////////
-  static RealD sumWilsonLoop(const GaugeLorentz &Umu,
+  static Real sumWilsonLoop(const GaugeLorentz &Umu,
                             const int R1, const int R2) {
     std::vector<GaugeMat> U(4, Umu._grid);
 
@@ -154,13 +154,14 @@ public:
   //////////////////////////////////////////////////
   // average over all x,y,z,t and over all planes of Wilson loop
   //////////////////////////////////////////////////
-  static RealD avgPlaquette(const GaugeLorentz &Umu,
+  static Real avgWilsonLoop(const GaugeLorentz &Umu,
                             const int R1, const int R2) {
-    RealD sumWl = sumWilsonLoop(Umu);
+    Real sumWl = sumWilsonLoop(Umu, R1, R2);
     double vol = Umu._grid->gSites();
     double faces = 1.0 * Nd * (Nd - 1);
     return sumWl / vol / faces / Nc; // Nd , Nc dependent... FIXME
   }
+};
 
 END_QEDFVOL_NAMESPACE
 

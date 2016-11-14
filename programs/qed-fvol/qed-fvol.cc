@@ -1,4 +1,5 @@
 #include <Global.hpp>
+#include <WilsonLoops.h>
 
 using namespace Grid;
 using namespace QCD;
@@ -24,10 +25,11 @@ public:
   typedef Lattice<SiteGaugeField> GaugeField;
 };
 
-typedef QedGimpl<vComplex>      QedGimplR;
-typedef Photon<QedGimplR>       PhotonR;
-typedef PhotonR::GaugeField     EmField;
-typedef PhotonR::GaugeLinkField EmComp;
+typedef QedGimpl<vComplex>              QedGimplR;
+typedef PeriodicGaugeImpl<QedGimplR>    QedPeriodicGimplR;
+typedef Photon<QedGimplR>               PhotonR;
+typedef PhotonR::GaugeField             EmField;
+typedef PhotonR::GaugeLinkField         EmComp;
 
 int main(int argc, char *argv[])
 {
@@ -60,11 +62,18 @@ int main(int argc, char *argv[])
     PhotonR          photon(PhotonR::Gauge::Feynman,
                             PhotonR::ZmScheme::QedL);
     EmField          a(&grid);
+    EmField          expA(&grid);
+
+    Real avgPlaqAexp, avgWl2x2Aexp;
 
     pRNG.SeedRandomDevice();
     photon.StochasticField(a, pRNG);
 
-    // Calculate log of plaquette
+    // Exponentiate photon field
+    Complex imag_unit(0, 1);
+    expA = exp(imag_unit*0.5*(a+conjugate(a)));
+
+    // Calculate plaquette from photon field
     EmComp              plaqA(&grid);
     EmComp              wlA(&grid);
     EmComp              tmp(&grid);
@@ -105,8 +114,17 @@ int main(int argc, char *argv[])
     peekSite(tplaqsite, plaqtrace, site0);
     Complex plaqsite = TensorRemove(tplaqsite);
 
-    LOG(Message) << "Plaquette average: " << avgPlaqA << std::endl;
-    LOG(Message) << "2x2 Wilson Loop average: " << avgWlA << std::endl;
+    // Calculate plaquette from exponentiated photon field
+    avgPlaqAexp = NewWilsonLoops<QedPeriodicGimplR>::avgPlaquette(expA);
+    avgWl2x2Aexp = NewWilsonLoops<QedPeriodicGimplR>::avgWilsonLoop(expA, 2, 2);
+
+    avgPlaqAexp = avgPlaqAexp*3;
+    avgWl2x2Aexp = avgWl2x2Aexp*3;
+
+    LOG(Message) << "Plaquette average (from A): " << avgPlaqA << std::endl;
+    LOG(Message) << "Plaquette average (from exp(A)): " << avgPlaqAexp << std::endl;
+    LOG(Message) << "2x2 Wilson Loop average (from A): " << avgWlA << std::endl;
+    LOG(Message) << "2x2 Wilson Loop average (from exp(A)): " << avgWl2x2Aexp << std::endl;
     LOG(Message) << "Plaquette (one site): " << plaqsite / faces << std::endl;
 
     // epilogue
