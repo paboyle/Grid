@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
     EmField          a(&grid);
     EmField          expA(&grid);
 
-    Real avgPlaqAexp, avgWl2x2Aexp;
+    Real avgPlaqAexp, avgWl2x2Aexp, avgWl2x2Aexp_time, avgWl2x2Aexp_space;
 
     pRNG.SeedRandomDevice();
     photon.StochasticField(a, pRNG);
@@ -117,14 +117,20 @@ int main(int argc, char *argv[])
     // Calculate plaquette from exponentiated photon field
     avgPlaqAexp = NewWilsonLoops<QedPeriodicGimplR>::avgPlaquette(expA);
     avgWl2x2Aexp = NewWilsonLoops<QedPeriodicGimplR>::avgWilsonLoop(expA, 2, 2);
+    avgWl2x2Aexp_time = NewWilsonLoops<QedPeriodicGimplR>::avgTimelikeWilsonLoop(expA, 2, 2);
+    avgWl2x2Aexp_space = NewWilsonLoops<QedPeriodicGimplR>::avgSpatialWilsonLoop(expA, 2, 2);
 
     avgPlaqAexp = avgPlaqAexp*3;
     avgWl2x2Aexp = avgWl2x2Aexp*3;
+    avgWl2x2Aexp_time = avgWl2x2Aexp_time*3;
+    avgWl2x2Aexp_space = avgWl2x2Aexp_space*3;
 
     LOG(Message) << "Plaquette average (from A): " << avgPlaqA << std::endl;
     LOG(Message) << "Plaquette average (from exp(A)): " << avgPlaqAexp << std::endl;
     LOG(Message) << "2x2 Wilson Loop average (from A): " << avgWlA << std::endl;
     LOG(Message) << "2x2 Wilson Loop average (from exp(A)): " << avgWl2x2Aexp << std::endl;
+    LOG(Message) << "2x2 Wilson Loop timelike average (from exp(A)): " << avgWl2x2Aexp_time << std::endl;
+    LOG(Message) << "2x2 Wilson Loop spatial average (from exp(A)): " << avgWl2x2Aexp_space << std::endl;
     LOG(Message) << "Plaquette (one site): " << plaqsite / faces << std::endl;
 
     // epilogue
