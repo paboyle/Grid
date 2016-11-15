@@ -173,7 +173,7 @@ namespace QCD{
     }
     fft.FFT_all_dim(out, aTilde, FFT::backward);
 
-    out = 0.5*(out + conjugate(out));
+    out = real(out);
   }
 //  template<class Gimpl>
 //  void Photon<Gimpl>::FeynmanGaugeMomentumSpacePropagator_L(GaugeField &out,
