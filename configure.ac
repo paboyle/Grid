@@ -179,8 +179,8 @@ case ${ax_cv_cxx_compiler_vendor} in
       KNL)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-march=knl';;
-      GEN)
-        AC_DEFINE([GENERIC_VEC],[1],[generic vector code])
+      GEN256)
+        AC_DEFINE([GEN256],[1],[generic vector code])
         SIMD_FLAGS='';;
       QPX|BGQ)
         AC_DEFINE([QPX],[1],[QPX intrinsics for BG/Q])
@@ -211,8 +211,8 @@ case ${ax_cv_cxx_compiler_vendor} in
       KNL)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics for Knights Landing])
         SIMD_FLAGS='-xmic-avx512';;
-      GEN)
-        AC_DEFINE([GENERIC_VEC],[1],[generic vector code])
+      GEN256)
+        AC_DEFINE([GEN256],[1],[generic vector code])
         SIMD_FLAGS='';;
       *)
         AC_MSG_ERROR(["SIMD option ${ac_SIMD} not supported by the Intel compiler"]);;

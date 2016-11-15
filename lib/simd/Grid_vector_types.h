@@ -38,8 +38,8 @@ directory
 #ifndef GRID_VECTOR_TYPES
 #define GRID_VECTOR_TYPES
 
-#ifdef GENERIC_VEC
-#include "Grid_generic.h"
+#ifdef GEN256
+#include "Grid_generic_256.h"
 #endif
 #ifdef SSE4
 #include "Grid_sse4.h"
