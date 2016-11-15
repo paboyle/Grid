@@ -86,12 +86,12 @@ class HmcRunner : public BinaryHmcRunner {
     // it with zeroes?
     FermionAction FermOp(U, *FGrid, *FrbGrid, mass);
 
-    ConjugateGradient<FermionField> CG(1.0e-8, 10000);
+    ConjugateGradient<FermionField> CG(1.0e-8, 2000);
 
     TwoFlavourPseudoFermionAction<ImplPolicy> Nf2(FermOp, CG, CG);
 
     // Set smearing (true/false), default: false
-    Nf2.is_smeared = true;
+    Nf2.is_smeared = false;
 
     // Collect actions
     ActionLevel<Field> Level1(1);
