@@ -90,6 +90,8 @@ class OneFlavourEvenOddRationalPseudoFermionAction
     PowerNegQuarter.Init(remez, param.tolerance, true);
   };
 
+  virtual std::string action_name(){return "OneFlavourEvenOddRationalPseudoFermionAction";}
+  
   virtual void refresh(const GaugeField &U, GridParallelRNG &pRNG) {
     // P(phi) = e^{- phi^dag (MpcdagMpc)^-1/2 phi}
     //        = e^{- phi^dag (MpcdagMpc)^-1/4 (MpcdagMpc)^-1/4 phi}

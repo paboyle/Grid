@@ -87,6 +87,8 @@ namespace Grid{
    	PowerQuarter.Init(remez,param.tolerance,false);
 	PowerNegQuarter.Init(remez,param.tolerance,true);
       };
+
+      virtual std::string action_name(){return "OneFlavourEvenOddRatioRationalPseudoFermionAction";}
       
       virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG) {
 

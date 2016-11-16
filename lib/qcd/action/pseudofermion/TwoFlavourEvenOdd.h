@@ -64,6 +64,8 @@ class TwoFlavourEvenOddPseudoFermionAction
         PhiEven(Op.FermionRedBlackGrid()),
 	PhiOdd(Op.FermionRedBlackGrid())
 		  {};
+  
+  virtual std::string action_name(){return "TwoFlavourEvenOddPseudoFermionAction";}
       
       //////////////////////////////////////////////////////////////////////////////////////
       // Push the gauge field in to the dops. Assume any BC's and smearing already applied

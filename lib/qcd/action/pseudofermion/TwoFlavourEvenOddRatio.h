@@ -67,6 +67,8 @@ namespace Grid{
 	  conformable(_NumOp.GaugeGrid(), _DenOp.GaugeGrid());
 	  conformable(_NumOp.GaugeRedBlackGrid(), _DenOp.GaugeRedBlackGrid());
 	};
+
+      virtual std::string action_name(){return "TwoFlavourEvenOddRatioPseudoFermionAction";}
       
       virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG) {
 

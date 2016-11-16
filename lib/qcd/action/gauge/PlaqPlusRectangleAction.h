@@ -47,6 +47,8 @@ namespace Grid{
 
     public:
     PlaqPlusRectangleAction(RealD b,RealD c): c_plaq(b),c_rect(c){};
+
+      virtual std::string action_name(){return "PlaqPlusRectangleAction";}
       
       virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG) {}; // noop as no pseudoferms
       
@@ -108,32 +110,32 @@ namespace Grid{
     class RBCGaugeAction : public PlaqPlusRectangleAction<Gimpl> {
     public:
       INHERIT_GIMPL_TYPES(Gimpl);
-      RBCGaugeAction(RealD beta,RealD c1) : PlaqPlusRectangleAction<Gimpl>(beta*(1.0-8.0*c1), beta*c1) {
-      };
+      RBCGaugeAction(RealD beta,RealD c1) : PlaqPlusRectangleAction<Gimpl>(beta*(1.0-8.0*c1), beta*c1) {};
+      virtual std::string action_name(){return "RBCGaugeAction";}
     };
 
     template<class Gimpl>
     class IwasakiGaugeAction : public RBCGaugeAction<Gimpl> {
     public:
       INHERIT_GIMPL_TYPES(Gimpl);
-      IwasakiGaugeAction(RealD beta) : RBCGaugeAction<Gimpl>(beta,-0.331) {
-      };
+      IwasakiGaugeAction(RealD beta) : RBCGaugeAction<Gimpl>(beta,-0.331) {};
+      virtual std::string action_name(){return "IwasakiGaugeAction";}
     };
 
     template<class Gimpl>
     class SymanzikGaugeAction : public RBCGaugeAction<Gimpl> {
     public:
       INHERIT_GIMPL_TYPES(Gimpl);
-      SymanzikGaugeAction(RealD beta) : RBCGaugeAction<Gimpl>(beta,-1.0/12.0) {
-      };
+      SymanzikGaugeAction(RealD beta) : RBCGaugeAction<Gimpl>(beta,-1.0/12.0) {};
+      virtual std::string action_name(){return "SymanzikGaugeAction";}
     };
 
     template<class Gimpl>
     class DBW2GaugeAction : public RBCGaugeAction<Gimpl> {
     public:
       INHERIT_GIMPL_TYPES(Gimpl);
-      DBW2GaugeAction(RealD beta) : RBCGaugeAction<Gimpl>(beta,-1.4067) {
-      };
+      DBW2GaugeAction(RealD beta) : RBCGaugeAction<Gimpl>(beta,-1.4067) {};
+      virtual std::string action_name(){return "DBW2GaugeAction";}
     };
 
   }

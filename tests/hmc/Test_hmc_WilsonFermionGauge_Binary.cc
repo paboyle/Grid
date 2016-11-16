@@ -123,11 +123,13 @@ class HmcRunner : public BinaryHmcRunner {
     ObservablesList.push_back(&Checkpoint);
 
     // Smearing section, omit if not needed
+    /*
     double rho = 0.1;  // smearing parameter
     int Nsmear = 2;    // number of smearing levels
     Smear_Stout<BinaryHmcRunner::ImplPolicy> Stout(rho);
     SmearedConfiguration<BinaryHmcRunner::ImplPolicy> SmearingPolicy(
         UGrid, Nsmear, Stout);
+        */
     ///////////////////
 
     // Run(argc, argv, Checkpoint, SmearingPolicy);
@@ -151,7 +153,7 @@ int main(int argc, char **argv) {
   std::vector<int> ParSeed({6, 7, 8, 9, 10});
   TheHMC.RNGSeeds(SerSeed, ParSeed);
 
-  TheHMC.MDparameters.set(5, 1.0);// MDsteps, traj length
+  TheHMC.MDparameters.set(10, 1.0);// MDsteps, traj length
 
   TheHMC.BuildTheAction(argc, argv);
 }

@@ -57,7 +57,7 @@ struct IntegratorParameters {
 
 
   void print_parameters() {
-    std::cout << GridLogMessage << "[Integrator] Trajectory length  : " << trajL << std::endl;
+  	std::cout << GridLogMessage << "[Integrator] Trajectory length  : " << trajL << std::endl;
     std::cout << GridLogMessage << "[Integrator] Number of MD steps : " << MDsteps << std::endl;
     std::cout << GridLogMessage << "[Integrator] Step size          : " << stepsize << std::endl;
   }
@@ -101,8 +101,9 @@ class Integrator {
         repr_set.at(a)->deriv(Rep.U, forceR);
         GF force =
             Rep.RtoFundamentalProject(forceR);  // Ta for the fundamental rep
+        Real force_abs = std::sqrt(norm2(force));
         std::cout << GridLogIntegrator << "Hirep Force average: "
-                  << norm2(force) / (U._grid->gSites()) << std::endl;
+                  << force_abs / (U._grid->gSites()) << std::endl;
         Mom -= force * ep ;
       }
     }
@@ -121,8 +122,9 @@ class Integrator {
                 << std::endl;
       if (as[level].actions.at(a)->is_smeared) Smearer.smeared_force(force);
       force = FieldImplementation::projectForce(force); // Ta for gauge fields
+      Real force_abs = std::sqrt(norm2(force));
       std::cout << GridLogIntegrator
-                << "Force average: " << norm2(force) / (U._grid->gSites())
+                << "Force average: " << force_abs / (U._grid->gSites())
                 << std::endl;
       Mom -= force * ep;
     }

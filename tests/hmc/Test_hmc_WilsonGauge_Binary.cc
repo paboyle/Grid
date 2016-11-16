@@ -80,6 +80,7 @@ class HmcRunner : public BinaryHmcRunner {
     
 
     // Gauge action
+    std::cout << GridLogMessage << "Beta: " << HMCPar.beta << std::endl;
     GaugeAction Waction(HMCPar.beta);
 
     // Collect actions

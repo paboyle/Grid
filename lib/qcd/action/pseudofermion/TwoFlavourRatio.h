@@ -57,6 +57,8 @@ namespace Grid{
 					 OperatorFunction<FermionField> & AS
 					 ) : NumOp(_NumOp), DenOp(_DenOp), DerivativeSolver(DS), ActionSolver(AS), Phi(_NumOp.FermionGrid()) {};
       
+      virtual std::string action_name(){return "TwoFlavourRatioPseudoFermionAction";}
+
       virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG) {
 
 	// P(phi) = e^{- phi^dag V (MdagM)^-1 Vdag phi}

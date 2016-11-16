@@ -51,6 +51,8 @@ class WilsonGaugeAction : public Action<typename Gimpl::GaugeField> {
  public:
   WilsonGaugeAction(RealD b) : beta(b){};
 
+  virtual std::string action_name(){return "WilsonGaugeAction";}
+
   virtual void refresh(const GaugeField &U,
                        GridParallelRNG &pRNG){};  // noop as no pseudoferms
 
@@ -65,7 +67,6 @@ class WilsonGaugeAction : public Action<typename Gimpl::GaugeField> {
     // not optimal implementation FIXME
     // extend Ta to include Lorentz indexes
 
-    // RealD factor = 0.5*beta/RealD(Nc);
     RealD factor = 0.5 * beta / RealD(Nc);
 
     GaugeLinkField Umu(U._grid);
@@ -79,6 +80,7 @@ class WilsonGaugeAction : public Action<typename Gimpl::GaugeField> {
 
       PokeIndex<LorentzIndex>(dSdU, dSdU_mu, mu);
     }
+
   };
 };
 
