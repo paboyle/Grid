@@ -51,6 +51,8 @@ class ScalarAction : public Action<typename Impl::Field> {
  public:
   ScalarAction(RealD ms, RealD l) : mass_square(ms), lambda(l){};
 
+  virtual std::string action_name(){return "ScalarAction";}
+  
   virtual void refresh(const Field &U,
                        GridParallelRNG &pRNG){};  // noop as no pseudoferms
 
