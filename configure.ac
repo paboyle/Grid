@@ -222,8 +222,8 @@ case ${ax_cv_cxx_compiler_vendor} in
         SIMD_FLAGS='-xmic-avx512';;
       GEN)
         AC_DEFINE([GEN],[1],[generic vector code])
-        AC_DEFINE([GEN_SIMD_WIDTH],[$ac_gen_simd_width],
-                  [generic SIMD vector width (in bytes)])
+        AC_DEFINE_UNQUOTED([GEN_SIMD_WIDTH],[$ac_gen_simd_width],
+                           [generic SIMD vector width (in bytes)])
         SIMD_GEN_WIDTH_MSG=" (width= $ac_gen_simd_width)"
         SIMD_FLAGS='';;
       *)
