@@ -149,8 +149,14 @@ CXXFLAGS=$CXXFLAGS_CPY
 LDFLAGS=$LDFLAGS_CPY
 
 ############### SIMD instruction selection
-AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=<code>],
-	            [select SIMD target (cf. README.md)])], [ac_SIMD=${enable_simd}], [ac_SIMD=GEN])
+AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=code],
+              [select SIMD target (cf. README.md)])], [ac_SIMD=${enable_simd}], [ac_SIMD=GEN])
+
+AC_ARG_ENABLE([gen-simd-width],
+            [AS_HELP_STRING([--enable-gen-simd-width=size],
+            [size (in bytes) of the generic SIMD vectors (default: 32)])],
+            [ac_gen_simd_width=$enable_gen_simd_width],
+            [ac_gen_simd_width=32])
 
 case ${ax_cv_cxx_compiler_vendor} in
   clang|gnu)
@@ -179,8 +185,11 @@ case ${ax_cv_cxx_compiler_vendor} in
       KNL)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-march=knl';;
-      GEN256)
-        AC_DEFINE([GEN256],[1],[generic vector code])
+      GEN)
+        AC_DEFINE([GEN],[1],[generic vector code])
+        AC_DEFINE_UNQUOTED([GEN_SIMD_WIDTH],[$ac_gen_simd_width],
+                           [generic SIMD vector width (in bytes)])
+        SIMD_GEN_WIDTH_MSG=" (width= $ac_gen_simd_width)"
         SIMD_FLAGS='';;
       QPX|BGQ)
         AC_DEFINE([QPX],[1],[QPX intrinsics for BG/Q])
@@ -211,8 +220,11 @@ case ${ax_cv_cxx_compiler_vendor} in
       KNL)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics for Knights Landing])
         SIMD_FLAGS='-xmic-avx512';;
-      GEN256)
-        AC_DEFINE([GEN256],[1],[generic vector code])
+      GEN)
+        AC_DEFINE([GEN],[1],[generic vector code])
+        AC_DEFINE([GEN_SIMD_WIDTH],[$ac_gen_simd_width],
+                  [generic SIMD vector width (in bytes)])
+        SIMD_GEN_WIDTH_MSG=" (width= $ac_gen_simd_width)"
         SIMD_FLAGS='';;
       *)
         AC_MSG_ERROR(["SIMD option ${ac_SIMD} not supported by the Intel compiler"]);;
@@ -382,7 +394,7 @@ os (target)                 : $target_os
 compiler vendor             : ${ax_cv_cxx_compiler_vendor}
 compiler version            : ${ax_cv_gxx_version}
 ----- BUILD OPTIONS -----------------------------------
-SIMD                        : ${ac_SIMD}
+SIMD                        : ${ac_SIMD}${SIMD_GEN_WIDTH_MSG}
 Threading                   : ${ac_openmp} 
 Communications type         : ${comms_type}
 Default precision           : ${ac_PRECISION}
