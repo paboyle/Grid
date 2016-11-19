@@ -77,15 +77,12 @@ public:
     // GridCartesian / GridRedBlackCartesian
     ////////////////////////////////////////////////////////////////
     virtual int CheckerBoarded(int dim)=0;
-    virtual int CheckerBoard(std::vector<int> site)=0;
+    virtual int CheckerBoard(std::vector<int> &site)=0;
     virtual int CheckerBoardDestination(int source_cb,int shift,int dim)=0;
     virtual int CheckerBoardShift(int source_cb,int dim,int shift,int osite)=0;
     virtual int CheckerBoardShiftForCB(int source_cb,int dim,int shift,int cb)=0;
-    int  CheckerBoardFromOindex (int Oindex){
-      std::vector<int> ocoor;
-      oCoorFromOindex(ocoor,Oindex); 
-      return CheckerBoard(ocoor);
-    }
+    virtual int CheckerBoardFromOindex (int Oindex)=0;
+    virtual int CheckerBoardFromOindexTable (int Oindex)=0;
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Local layout calculations

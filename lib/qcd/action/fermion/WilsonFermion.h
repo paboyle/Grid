@@ -78,16 +78,15 @@ class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
   virtual void MooeeInv(const FermionField &in, FermionField &out);
   virtual void MooeeInvDag(const FermionField &in, FermionField &out);
 
+  virtual void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _mass) ;
+
   ////////////////////////
   // Derivative interface
   ////////////////////////
   // Interface calls an internal routine
-  void DhopDeriv(GaugeField &mat, const FermionField &U, const FermionField &V,
-                 int dag);
-  void DhopDerivOE(GaugeField &mat, const FermionField &U,
-                   const FermionField &V, int dag);
-  void DhopDerivEO(GaugeField &mat, const FermionField &U,
-                   const FermionField &V, int dag);
+  void DhopDeriv(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
+  void DhopDerivOE(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
+  void DhopDerivEO(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
 
   ///////////////////////////////////////////////////////////////
   // non-hermitian hopping term; half cb or both

@@ -39,13 +39,23 @@ namespace Grid {
     BACKTRACEFILE();		   \
   }\
 }
-int Rank(void) {
-  return shmem_my_pe();
-}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Info that is setup once and indept of cartesian layout
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 typedef struct HandShake_t { 
   uint64_t seq_local;
   uint64_t seq_remote;
 } HandShake;
+
+std::array<long,_SHMEM_REDUCE_SYNC_SIZE> make_psync_init(void) {
+  array<long,_SHMEM_REDUCE_SYNC_SIZE> ret;
+  ret.fill(SHMEM_SYNC_VALUE);
+  return ret;
+}
+static std::array<long,_SHMEM_REDUCE_SYNC_SIZE> psync_init = make_psync_init();
 
 static Vector< HandShake > XConnections;
 static Vector< HandShake > RConnections;
@@ -61,7 +71,9 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
     RConnections[pe].seq_remote= 0;
   }
   shmem_barrier_all();
+  ShmInitGeneric();
 }
+
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {
   _ndimension = processors.size();
@@ -89,7 +101,7 @@ void CartesianCommunicator::GlobalSum(uint32_t &u){
   static long long source ;
   static long long dest   ;
   static long long llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
-  static long      psync[_SHMEM_REDUCE_SYNC_SIZE];
+  static std::array<long,_SHMEM_REDUCE_SYNC_SIZE> psync =  psync_init;
 
   //  int nreduce=1;
   //  int pestart=0;
@@ -105,7 +117,7 @@ void CartesianCommunicator::GlobalSum(uint64_t &u){
   static long long source ;
   static long long dest   ;
   static long long llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
-  static long      psync[_SHMEM_REDUCE_SYNC_SIZE];
+  static std::array<long,_SHMEM_REDUCE_SYNC_SIZE> psync =  psync_init;
 
   //  int nreduce=1;
   //  int pestart=0;
@@ -121,7 +133,7 @@ void CartesianCommunicator::GlobalSum(float &f){
   static float source ;
   static float dest   ;
   static float llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
-  static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
+  static std::array<long,_SHMEM_REDUCE_SYNC_SIZE> psync =  psync_init;
 
   source = f;
   dest   =0.0;
@@ -133,7 +145,7 @@ void CartesianCommunicator::GlobalSumVector(float *f,int N)
   static float source ;
   static float dest   = 0 ;
   static float llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
-  static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
+  static std::array<long,_SHMEM_REDUCE_SYNC_SIZE> psync =  psync_init;
 
   if ( shmem_addr_accessible(f,_processor)  ){
     shmem_float_sum_to_all(f,f,N,0,0,_Nprocessors,llwrk,psync);
@@ -152,7 +164,7 @@ void CartesianCommunicator::GlobalSum(double &d)
   static double source;
   static double dest  ;
   static double llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
-  static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
+  static std::array<long,_SHMEM_REDUCE_SYNC_SIZE> psync =  psync_init;
 
   source = d;
   dest   = 0;
@@ -164,7 +176,8 @@ void CartesianCommunicator::GlobalSumVector(double *d,int N)
   static double source ;
   static double dest   ;
   static double llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
-  static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
+  static std::array<long,_SHMEM_REDUCE_SYNC_SIZE> psync =  psync_init;
+
 
   if ( shmem_addr_accessible(d,_processor)  ){
     shmem_double_sum_to_all(d,d,N,0,0,_Nprocessors,llwrk,psync);
@@ -230,11 +243,8 @@ void CartesianCommunicator::SendRecvPacket(void *xmit,
 
   if ( _processor == sender ) {
 
-    printf("Sender SHMEM pt2pt %d -> %d\n",sender,receiver);
     // Check he has posted a receive
     while(SendSeq->seq_remote == SendSeq->seq_local);
-
-    printf("Sender receive %d posted\n",sender,receiver);
 
     // Advance our send count
     seq = ++(SendSeq->seq_local);
@@ -244,26 +254,19 @@ void CartesianCommunicator::SendRecvPacket(void *xmit,
     shmem_putmem(recv,xmit,bytes,receiver);
     shmem_fence();
 
-    printf("Sender sent payload %d\n",seq);
     //Notify him we're done
     shmem_putmem((void *)&(RecvSeq->seq_remote),&seq,sizeof(seq),receiver);
     shmem_fence();
-    printf("Sender ringing door bell  %d\n",seq);
   }
   if ( _processor == receiver ) {
 
-    printf("Receiver SHMEM pt2pt %d->%d\n",sender,receiver);
     // Post a receive
     seq = ++(RecvSeq->seq_local);
     shmem_putmem((void *)&(SendSeq->seq_remote),&seq,sizeof(seq),sender);
 
-    printf("Receiver Opening letter box %d\n",seq);
-
-    
     // Now wait until he has advanced our reception counter
     while(RecvSeq->seq_remote != RecvSeq->seq_local);
 
-    printf("Receiver Got the mail %d\n",seq);
   }
 }
 
@@ -291,7 +294,7 @@ void CartesianCommunicator::Barrier(void)
 }
 void CartesianCommunicator::Broadcast(int root,void* data, int bytes)
 {
-  static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
+  static std::array<long,_SHMEM_REDUCE_SYNC_SIZE> psync =  psync_init;
   static uint32_t word;
   uint32_t *array = (uint32_t *) data;
   assert( (bytes % 4)==0);
@@ -314,7 +317,7 @@ void CartesianCommunicator::Broadcast(int root,void* data, int bytes)
 }
 void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
 {
-  static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
+  static std::array<long,_SHMEM_REDUCE_SYNC_SIZE> psync =  psync_init;
   static uint32_t word;
   uint32_t *array = (uint32_t *) data;
   assert( (bytes % 4)==0);

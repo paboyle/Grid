@@ -1,14 +1,27 @@
 extra_sources=
 if BUILD_COMMS_MPI
   extra_sources+=communicator/Communicator_mpi.cc
+  extra_sources+=communicator/Communicator_base.cc
+endif
+
+if BUILD_COMMS_MPI3
+  extra_sources+=communicator/Communicator_mpi3.cc
+  extra_sources+=communicator/Communicator_base.cc
+endif
+
+if BUILD_COMMS_MPI3L
+  extra_sources+=communicator/Communicator_mpi3_leader.cc
+  extra_sources+=communicator/Communicator_base.cc
 endif
 
 if BUILD_COMMS_SHMEM
   extra_sources+=communicator/Communicator_shmem.cc
+  extra_sources+=communicator/Communicator_base.cc
 endif
 
 if BUILD_COMMS_NONE
   extra_sources+=communicator/Communicator_none.cc
+  extra_sources+=communicator/Communicator_base.cc
 endif
 
 #

@@ -38,7 +38,7 @@ directory
 #ifndef GRID_VECTOR_TYPES
 #define GRID_VECTOR_TYPES
 
-#ifdef GENERIC_VEC
+#ifdef GEN
 #include "Grid_generic.h"
 #endif
 #ifdef SSE4
@@ -77,38 +77,24 @@ struct RealPart<std::complex<T> > {
 //////////////////////////////////////
 // demote a vector to real type
 //////////////////////////////////////
-
 // type alias used to simplify the syntax of std::enable_if
-template <typename T>
-using Invoke = typename T::type;
-template <typename Condition, typename ReturnType>
-using EnableIf = Invoke<std::enable_if<Condition::value, ReturnType> >;
-template <typename Condition, typename ReturnType>
-using NotEnableIf = Invoke<std::enable_if<!Condition::value, ReturnType> >;
+template <typename T> using Invoke = typename T::type;
+template <typename Condition, typename ReturnType> using EnableIf = Invoke<std::enable_if<Condition::value, ReturnType> >;
+template <typename Condition, typename ReturnType> using NotEnableIf = Invoke<std::enable_if<!Condition::value, ReturnType> >;
 
 ////////////////////////////////////////////////////////
 // Check for complexity with type traits
-template <typename T>
-struct is_complex : public std::false_type {};
-template <>
-struct is_complex<std::complex<double> > : public std::true_type {};
-template <>
-struct is_complex<std::complex<float> > : public std::true_type {};
+template <typename T> struct is_complex : public std::false_type {};
+template <> struct is_complex<std::complex<double> > : public std::true_type {};
+template <> struct is_complex<std::complex<float> > : public std::true_type {};
 
-template <typename T>
-using IfReal = Invoke<std::enable_if<std::is_floating_point<T>::value, int> >;
-template <typename T>
-using IfComplex = Invoke<std::enable_if<is_complex<T>::value, int> >;
-template <typename T>
-using IfInteger = Invoke<std::enable_if<std::is_integral<T>::value, int> >;
+template <typename T> using IfReal       = Invoke<std::enable_if<std::is_floating_point<T>::value, int> >;
+template <typename T> using IfComplex    = Invoke<std::enable_if<is_complex<T>::value, int> >;
+template <typename T> using IfInteger    = Invoke<std::enable_if<std::is_integral<T>::value, int> >;
 
-template <typename T>
-using IfNotReal =
-    Invoke<std::enable_if<!std::is_floating_point<T>::value, int> >;
-template <typename T>
-using IfNotComplex = Invoke<std::enable_if<!is_complex<T>::value, int> >;
-template <typename T>
-using IfNotInteger = Invoke<std::enable_if<!std::is_integral<T>::value, int> >;
+template <typename T> using IfNotReal    = Invoke<std::enable_if<!std::is_floating_point<T>::value, int> >;
+template <typename T> using IfNotComplex = Invoke<std::enable_if<!is_complex<T>::value, int> >;
+template <typename T> using IfNotInteger = Invoke<std::enable_if<!std::is_integral<T>::value, int> >;
 
 ////////////////////////////////////////////////////////
 // Define the operation templates functors
@@ -285,6 +271,20 @@ class Grid_simd {
     return a * b;
   }
 
+  //////////////////////////////////
+  // Divides
+  //////////////////////////////////
+  friend inline Grid_simd operator/(const Scalar_type &a, Grid_simd b) {
+    Grid_simd va;
+    vsplat(va, a);
+    return va / b;
+  }
+  friend inline Grid_simd operator/(Grid_simd b, const Scalar_type &a) {
+    Grid_simd va;
+    vsplat(va, a);
+    return b / a;
+  }
+
   ///////////////////////
   // Unary negation
   ///////////////////////
@@ -428,7 +428,6 @@ inline void rotate(Grid_simd<S,V> &ret,Grid_simd<S,V> b,int nrot)
   ret.v = Optimization::Rotate::rotate(b.v,2*nrot);
 }
 
-
 template <class S, class V> 
 inline void vbroadcast(Grid_simd<S,V> &ret,const Grid_simd<S,V> &src,int lane){
   S* typepun =(S*) &src;
@@ -512,7 +511,6 @@ template <class S, class V, IfInteger<S> = 0>
 inline void vfalse(Grid_simd<S, V> &ret) {
   vsplat(ret, 0);
 }
-
 template <class S, class V>
 inline void zeroit(Grid_simd<S, V> &z) {
   vzero(z);
@@ -530,7 +528,6 @@ inline void vstream(Grid_simd<S, V> &out, const Grid_simd<S, V> &in) {
   typedef typename S::value_type T;
   binary<void>((T *)&out.v, in.v, VstreamSIMD());
 }
-
 template <class S, class V, IfInteger<S> = 0>
 inline void vstream(Grid_simd<S, V> &out, const Grid_simd<S, V> &in) {
   out = in;
@@ -569,6 +566,34 @@ inline Grid_simd<S, V> operator*(Grid_simd<S, V> a, Grid_simd<S, V> b) {
   return ret;
 };
 
+// Distinguish between complex types and others
+template <class S, class V, IfComplex<S> = 0>
+inline Grid_simd<S, V> operator/(Grid_simd<S, V> a, Grid_simd<S, V> b) {
+  typedef Grid_simd<S, V> simd;
+
+  simd ret;
+  simd den;
+  typename simd::conv_t conv;
+
+  ret = a * conjugate(b) ;
+  den = b * conjugate(b) ;
+
+  
+  auto real_den = toReal(den);
+
+  ret.v=binary<V>(ret.v, real_den.v, DivSIMD());
+
+  return ret;
+};
+
+// Real/Integer types
+template <class S, class V, IfNotComplex<S> = 0>
+inline Grid_simd<S, V> operator/(Grid_simd<S, V> a, Grid_simd<S, V> b) {
+  Grid_simd<S, V> ret;
+  ret.v = binary<V>(a.v, b.v, DivSIMD());
+  return ret;
+};
+
 ///////////////////////
 // Conjugate
 ///////////////////////
@@ -582,7 +607,6 @@ template <class S, class V, IfNotComplex<S> = 0>
 inline Grid_simd<S, V> conjugate(const Grid_simd<S, V> &in) {
   return in;  // for real objects
 }
-
 // Suppress adj for integer types... // odd; why conjugate above but not adj??
 template <class S, class V, IfNotInteger<S> = 0>
 inline Grid_simd<S, V> adj(const Grid_simd<S, V> &in) {
@@ -596,14 +620,12 @@ template <class S, class V, IfComplex<S> = 0>
 inline void timesMinusI(Grid_simd<S, V> &ret, const Grid_simd<S, V> &in) {
   ret.v = binary<V>(in.v, ret.v, TimesMinusISIMD());
 }
-
 template <class S, class V, IfComplex<S> = 0>
 inline Grid_simd<S, V> timesMinusI(const Grid_simd<S, V> &in) {
   Grid_simd<S, V> ret;
   timesMinusI(ret, in);
   return ret;
 }
-
 template <class S, class V, IfNotComplex<S> = 0>
 inline Grid_simd<S, V> timesMinusI(const Grid_simd<S, V> &in) {
   return in;
@@ -616,14 +638,12 @@ template <class S, class V, IfComplex<S> = 0>
 inline void timesI(Grid_simd<S, V> &ret, const Grid_simd<S, V> &in) {
   ret.v = binary<V>(in.v, ret.v, TimesISIMD());
 }
-
 template <class S, class V, IfComplex<S> = 0>
 inline Grid_simd<S, V> timesI(const Grid_simd<S, V> &in) {
   Grid_simd<S, V> ret;
   timesI(ret, in);
   return ret;
 }
-
 template <class S, class V, IfNotComplex<S> = 0>
 inline Grid_simd<S, V> timesI(const Grid_simd<S, V> &in) {
   return in;

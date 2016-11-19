@@ -126,6 +126,36 @@ iVector<rtype,N> operator * (const iVector<mtype,N>& lhs,const iScalar<vtype>& r
     mult(&ret,&lhs,&rhs);
     return ret;
 }
+
+//////////////////////////////////////////////////////////////////
+// Divide by scalar
+//////////////////////////////////////////////////////////////////
+template<class rtype,class vtype> strong_inline
+iScalar<rtype> operator / (const iScalar<rtype>& lhs,const iScalar<vtype>& rhs)
+{
+    iScalar<rtype> ret;
+    ret._internal = lhs._internal/rhs._internal;
+    return ret;
+}
+template<class rtype,class vtype,int N> strong_inline
+iVector<rtype,N> operator / (const iVector<rtype,N>& lhs,const iScalar<vtype>& rhs)
+{
+    iVector<rtype,N> ret;
+    for(int i=0;i<N;i++){
+      ret._internal[i] = lhs._internal[i]/rhs._internal;
+    }
+    return ret;
+}
+template<class rtype,class vtype,int N> strong_inline
+iMatrix<rtype,N> operator / (const iMatrix<rtype,N>& lhs,const iScalar<vtype>& rhs)
+{
+    iMatrix<rtype,N> ret;
+    for(int i=0;i<N;i++){
+    for(int j=0;j<N;j++){
+      ret._internal[i][j] = lhs._internal[i][j]/rhs._internal;
+    }}
+    return ret;
+}
     
     //////////////////////////////////////////////////////////////////
     // Glue operators to mult routines. Must resolve return type cleverly from typeof(internal)

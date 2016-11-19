@@ -68,7 +68,7 @@ class HmcRunner : public NerscHmcRunner {
     TwoFlavourPseudoFermionAction<ImplPolicy> Nf2(FermOp, CG, CG);
 
     // Set smearing (true/false), default: false
-    Nf2.is_smeared = true;
+    Nf2.is_smeared = false;
 
     // Collect actions
     ActionLevel<LatticeGaugeField> Level1(1);

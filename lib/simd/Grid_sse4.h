@@ -224,6 +224,18 @@ namespace Optimization {
     }
   };
 
+  struct Div{
+    // Real float
+    inline __m128 operator()(__m128 a, __m128 b){
+      return _mm_div_ps(a,b);
+    }
+    // Real double
+    inline __m128d operator()(__m128d a, __m128d b){
+      return _mm_div_pd(a,b);
+    }
+  };
+
+
   struct Conj{
     // Complex single
     inline __m128 operator()(__m128 in){
@@ -372,6 +384,8 @@ namespace Optimization {
   }
 }
 
+
+
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types 
 
@@ -398,6 +412,7 @@ namespace Optimization {
   // Arithmetic operations
   typedef Optimization::Sum         SumSIMD;
   typedef Optimization::Sub         SubSIMD;
+  typedef Optimization::Div         DivSIMD;
   typedef Optimization::Mult        MultSIMD;
   typedef Optimization::MultComplex MultComplexSIMD;
   typedef Optimization::Conj        ConjSIMD;

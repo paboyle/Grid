@@ -37,11 +37,20 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #ifdef GRID_OMP
 #include <omp.h>
-#define PARALLEL_FOR_LOOP _Pragma("omp parallel for ")
-#define PARALLEL_NESTED_LOOP2 _Pragma("omp parallel for collapse(2)")
+#ifdef GRID_NUMA
+#define PARALLEL_FOR_LOOP        _Pragma("omp parallel for schedule(static)")
+#define PARALLEL_FOR_LOOP_INTERN _Pragma("omp for schedule(static)")
 #else
-#define PARALLEL_FOR_LOOP 
+#define PARALLEL_FOR_LOOP        _Pragma("omp parallel for schedule(runtime)")
+#define PARALLEL_FOR_LOOP_INTERN _Pragma("omp for schedule(runtime)")
+#endif
+#define PARALLEL_NESTED_LOOP2 _Pragma("omp parallel for collapse(2)")
+#define PARALLEL_REGION       _Pragma("omp parallel")
+#else
+#define PARALLEL_FOR_LOOP
+#define PARALLEL_FOR_LOOP_INTERN
 #define PARALLEL_NESTED_LOOP2
+#define PARALLEL_REGION
 #endif
 
 namespace Grid {
@@ -122,6 +131,22 @@ class GridThread {
     for(int i=0;i<_threads;i++) val+= sum_array[i];
     ThreadBarrier();
   };
+
+  static void bcopy(const void *src, void *dst, size_t len) {
+#ifdef GRID_OMP
+#pragma omp parallel 
+    {
+      const char *c_src =(char *) src;
+      char *c_dest=(char *) dst;
+      int me,mywork,myoff;
+      GridThread::GetWorkBarrier(len,me, mywork,myoff);
+      bcopy(&c_src[myoff],&c_dest[myoff],mywork);
+    }
+#else 
+    bcopy(src,dst,len);
+#endif
+  }
+
 
 };
 

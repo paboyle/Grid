@@ -101,6 +101,7 @@ void WilsonFermion<Impl>::Meooe(const FermionField &in, FermionField &out) {
     DhopOE(in, out, DaggerNo);
   }
 }
+
 template <class Impl>
 void WilsonFermion<Impl>::MeooeDag(const FermionField &in, FermionField &out) {
   if (in.checkerboard == Odd) {
@@ -109,32 +110,87 @@ void WilsonFermion<Impl>::MeooeDag(const FermionField &in, FermionField &out) {
     DhopOE(in, out, DaggerYes);
   }
 }
+  
+  template <class Impl>
+  void WilsonFermion<Impl>::Mooee(const FermionField &in, FermionField &out) {
+    out.checkerboard = in.checkerboard;
+    typename FermionField::scalar_type scal(4.0 + mass);
+    out = scal * in;
+  }
 
-template <class Impl>
-void WilsonFermion<Impl>::Mooee(const FermionField &in, FermionField &out) {
-  out.checkerboard = in.checkerboard;
-  typename FermionField::scalar_type scal(4.0 + mass);
-  out = scal * in;
-}
+  template <class Impl>
+  void WilsonFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out) {
+    out.checkerboard = in.checkerboard;
+    Mooee(in, out);
+  }
 
-template <class Impl>
-void WilsonFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out) {
-  out.checkerboard = in.checkerboard;
-  Mooee(in, out);
-}
+  template<class Impl>
+  void WilsonFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out) {
+    out.checkerboard = in.checkerboard;
+    out = (1.0/(4.0+mass))*in;
+  }
+  
+  template<class Impl>
+  void WilsonFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out) {
+    out.checkerboard = in.checkerboard;
+    MooeeInv(in,out);
+  }
 
-template <class Impl>
-void WilsonFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out) {
-  out.checkerboard = in.checkerboard;
-  out = (1.0 / (4.0 + mass)) * in;
-}
+  template<class Impl>
+  void WilsonFermion<Impl>::MomentumSpacePropagator(FermionField &out, const FermionField &in,RealD _m) {
 
-template <class Impl>
-void WilsonFermion<Impl>::MooeeInvDag(const FermionField &in,
-                                      FermionField &out) {
-  out.checkerboard = in.checkerboard;
-  MooeeInv(in, out);
-}
+    // what type LatticeComplex 
+    conformable(_grid,out._grid);
+
+    typedef typename FermionField::vector_type vector_type;
+    typedef typename FermionField::scalar_type ScalComplex;
+
+    typedef Lattice<iSinglet<vector_type> > LatComplex;
+
+    Gamma::GammaMatrix Gmu [] = {
+      Gamma::GammaX,
+      Gamma::GammaY,
+      Gamma::GammaZ,
+      Gamma::GammaT
+    };
+
+    std::vector<int> latt_size   = _grid->_fdimensions;
+
+    FermionField   num  (_grid); num  = zero;
+    LatComplex    wilson(_grid); wilson= zero;
+    LatComplex     one  (_grid); one = ScalComplex(1.0,0.0);
+
+    LatComplex denom(_grid); denom= zero;
+    LatComplex kmu(_grid); 
+    ScalComplex ci(0.0,1.0);
+    // momphase = n * 2pi / L
+    for(int mu=0;mu<Nd;mu++) {
+
+      LatticeCoordinate(kmu,mu);
+
+      RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
+
+      kmu = TwoPiL * kmu;
+
+      wilson = wilson + 2.0*sin(kmu*0.5)*sin(kmu*0.5); // Wilson term
+
+      num = num - sin(kmu)*ci*(Gamma(Gmu[mu])*in);    // derivative term
+
+      denom=denom + sin(kmu)*sin(kmu);
+    }
+
+    wilson = wilson + _m;     // 2 sin^2 k/2 + m
+
+    num   = num + wilson*in;     // -i gmu sin k + 2 sin^2 k/2 + m
+
+    denom= denom+wilson*wilson; // sin^2 k + (2 sin^2 k/2 + m)^2
+
+    denom= one/denom;
+
+    out = num*denom; // [ -i gmu sin k + 2 sin^2 k/2 + m] / [ sin^2 k + (2 sin^2 k/2 + m)^2 ]
+
+  }
+ 
 
 ///////////////////////////////////
 // Internal
@@ -166,7 +222,7 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
     ////////////////////////
     PARALLEL_FOR_LOOP
     for (int sss = 0; sss < B._grid->oSites(); sss++) {
-      Kernels::DiracOptDhopDir(st, U, st.comm_buf, sss, sss, B, Btilde, mu,
+      Kernels::DiracOptDhopDir(st, U, st.CommBuf(), sss, sss, B, Btilde, mu,
                                gamma);
     }
 
@@ -277,7 +333,7 @@ void WilsonFermion<Impl>::DhopDirDisp(const FermionField &in, FermionField &out,
 
   PARALLEL_FOR_LOOP
   for (int sss = 0; sss < in._grid->oSites(); sss++) {
-    Kernels::DiracOptDhopDir(Stencil, Umu, Stencil.comm_buf, sss, sss, in, out,
+    Kernels::DiracOptDhopDir(Stencil, Umu, Stencil.CommBuf(), sss, sss, in, out,
                              dirdisp, gamma);
   }
 };
@@ -295,13 +351,13 @@ void WilsonFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
   if (dag == DaggerYes) {
     PARALLEL_FOR_LOOP
     for (int sss = 0; sss < in._grid->oSites(); sss++) {
-      Kernels::DiracOptDhopSiteDag(st, lo, U, st.comm_buf, sss, sss, 1, 1, in,
+      Kernels::DiracOptDhopSiteDag(st, lo, U, st.CommBuf(), sss, sss, 1, 1, in,
                                    out);
     }
   } else {
     PARALLEL_FOR_LOOP
     for (int sss = 0; sss < in._grid->oSites(); sss++) {
-      Kernels::DiracOptDhopSite(st, lo, U, st.comm_buf, sss, sss, 1, 1, in,
+      Kernels::DiracOptDhopSite(st, lo, U, st.CommBuf(), sss, sss, 1, 1, in,
                                 out);
     }
   }
