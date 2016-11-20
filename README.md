@@ -116,13 +116,15 @@ If you want to build all the tests at once just use `make tests`.
 - `--with-fftw=<path>`: look for FFTW in the UNIX prefix `<path>`
 - `--enable-lapack[=<path>]`: enable LAPACK support in Lanczos eigensolver. A UNIX prefix containing the library can be specified (optional).
 - `--enable-mkl[=<path>]`: use Intel MKL for FFT (and LAPACK if enabled) routines. A UNIX prefix containing the library can be specified (optional).
-- `--enable-numa`: ???
+- `--enable-numa`: enable NUMA first touch optimisation
 - `--enable-simd=<code>`: setup Grid for the SIMD target `<code>` (default: `GEN`). A list of possible SIMD targets is detailed in a section below.
+- `--enable-gen-simd-width=<size>`: select the size (in bytes) of the generic SIMD vector type (default: 32 bytes).
 - `--enable-precision={single|double}`: set the default precision (default: `double`).
 - `--enable-precision=<comm>`: Use `<comm>` for message passing (default: `none`). A list of possible SIMD targets is detailed in a section below.
 - `--enable-rng={ranlux48|mt19937}`: choose the RNG (default: `ranlux48 `).
 - `--disable-timers`: disable system dependent high-resolution timers.
 - `--enable-chroma`: enable Chroma regression tests.
+- `--enable-doxygen-doc`: enable the Doxygen documentation generation (build with `make doxygen-doc`)
 
 ### Possible communication interfaces
 
@@ -165,6 +167,7 @@ Alternatively, some CPU codenames can be directly used:
 - We currently support AVX512 only for the Intel compiler. Support for GCC and clang will appear in future versions of Grid when the AVX512 support within GCC and clang will be more advanced.
 - For BG/Q only [bgclang](http://trac.alcf.anl.gov/projects/llvm-bgq) is supported. We do not presently plan to support more compilers for this platform.
 - BG/Q performances are currently rather poor. This is being investigated for future versions.
+- The vector size for the `GEN` target can be specified with the `configure` script option `--enable-gen-simd-width`.
 
 ### Build setup for Intel Knights Landing platform
 

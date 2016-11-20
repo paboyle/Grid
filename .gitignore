@@ -47,7 +47,8 @@ Config.h.in
 config.log
 config.status
 .deps
-*.inc
+Make.inc
+eigen.inc
 
 # http://www.gnu.org/software/autoconf #
 ########################################
