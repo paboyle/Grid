@@ -206,8 +206,8 @@ case ${ax_cv_cxx_compiler_vendor} in
         AC_DEFINE([AVX1],[1],[AVX intrinsics])
         SIMD_FLAGS='-mavx -xavx';;
       AVXFMA)
-        AC_DEFINE([AVXFMA],[1],[AVX intrinsics with FMA4])
-        SIMD_FLAGS='-mavx -mfma';;
+        AC_DEFINE([AVXFMA],[1],[AVX intrinsics with FMA3])
+        SIMD_FLAGS='-mavx -fma';;
       AVX2)
         AC_DEFINE([AVX2],[1],[AVX2 intrinsics])
         SIMD_FLAGS='-march=core-avx2 -xcore-avx2';;

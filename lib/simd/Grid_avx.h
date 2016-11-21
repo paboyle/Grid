@@ -167,7 +167,7 @@ namespace Optimization {
     }
     //Integer
     inline __m256i operator()(__m256i a, __m256i b){
-#if defined (AVX1) || defined (AVXFMA4)
+#if defined (AVX1) || defined (AVXFMA) || defined (AVXFMA4)
           __m128i a0,a1;
           __m128i b0,b1;
           a0 = _mm256_extractf128_si256(a,0);
@@ -195,7 +195,7 @@ namespace Optimization {
     }
     //Integer
     inline __m256i operator()(__m256i a, __m256i b){
-#if defined (AVX1) || defined (AVXFMA4)
+#if defined (AVX1) || defined (AVXFMA) || defined (AVXFMA4)
           __m128i a0,a1;
           __m128i b0,b1;
           a0 = _mm256_extractf128_si256(a,0);
@@ -216,7 +216,7 @@ namespace Optimization {
   struct MultComplex{
     // Complex float
     inline __m256 operator()(__m256 a, __m256 b){
-#if defined (AVX1) 
+#if defined (AVX1)
       __m256 ymm0,ymm1,ymm2;
       ymm0 = _mm256_shuffle_ps(a,a,_MM_SELECT_FOUR_FOUR(2,2,0,0)); // ymm0 <- ar ar,
       ymm0 = _mm256_mul_ps(ymm0,b);                       // ymm0 <- ar bi, ar br
@@ -233,7 +233,7 @@ namespace Optimization {
       a_imag = _mm256_mul_ps( a_imag,tmp  );  // (Ai, Ai) * (Bi, Br) = Ai Bi, Ai Br
       return _mm256_maddsub_ps( a_real, b, a_imag ); // Ar Br , Ar Bi   +- Ai Bi             = ArBr-AiBi , ArBi+AiBr
 #endif
-#if defined (AVX2)
+#if defined (AVX2)  || defined (AVXFMA)
       __m256 a_real = _mm256_moveldup_ps( a ); // Ar Ar
       __m256 a_imag = _mm256_movehdup_ps( a ); // Ai Ai
       a_imag = _mm256_mul_ps( a_imag, _mm256_shuffle_ps( b,b, _MM_SELECT_FOUR_FOUR(2,3,0,1) ));  // (Ai, Ai) * (Bi, Br) = Ai Bi, Ai Br
@@ -264,7 +264,7 @@ namespace Optimization {
 	IF IMM0[3] = 0
 	THEN DEST[255:192]=SRC2[191:128] ELSE DEST[255:192]=SRC2[255:192] FI; // Ox5 r<->i   ; 0xC unchanged
       */
-#if defined (AVX1) 
+#if defined (AVX1)
       __m256d ymm0,ymm1,ymm2;
       ymm0 = _mm256_shuffle_pd(a,a,0x0); // ymm0 <- ar ar, ar,ar b'00,00
       ymm0 = _mm256_mul_pd(ymm0,b);      // ymm0 <- ar bi, ar br
@@ -279,7 +279,7 @@ namespace Optimization {
       a_imag = _mm256_mul_pd( a_imag, _mm256_permute_pd( b, 0x5 ) );  // (Ai, Ai) * (Bi, Br) = Ai Bi, Ai Br
       return _mm256_maddsub_pd( a_real, b, a_imag ); // Ar Br , Ar Bi   +- Ai Bi             = ArBr-AiBi , ArBi+AiBr
 #endif
-#if defined (AVX2)
+#if defined (AVX2) || defined (AVXFMA)
       __m256d a_real = _mm256_movedup_pd( a ); // Ar Ar
       __m256d a_imag = _mm256_shuffle_pd(a,a,0xF);//aiai
       a_imag = _mm256_mul_pd( a_imag, _mm256_permute_pd( b, 0x5 ) );  // (Ai, Ai) * (Bi, Br) = Ai Bi, Ai Br
@@ -320,7 +320,7 @@ namespace Optimization {
 #if defined (AVXFMA4)
       a= _mm256_macc_ps(b,c,a);
 #endif
-#if defined (AVX2)
+#if defined (AVX2) || defined (AVXFMA)
       a= _mm256_fmadd_ps( b, c, a);
 #endif
     }
@@ -332,7 +332,7 @@ namespace Optimization {
 #if defined (AVXFMA4)
       a= _mm256_macc_pd(b,c,a);
 #endif
-#if defined (AVX2)
+#if defined (AVX2) || defined (AVXFMA)
       a= _mm256_fmadd_pd( b, c, a);
 #endif
     }
@@ -347,7 +347,7 @@ namespace Optimization {
     }
     // Integer
     inline __m256i operator()(__m256i a, __m256i b){
-#if defined (AVX1) 
+#if defined (AVX1) || defined (AVXFMA)
       __m128i a0,a1;
       __m128i b0,b1;
       a0 = _mm256_extractf128_si256(a,0);
