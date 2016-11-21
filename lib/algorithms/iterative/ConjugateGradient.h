@@ -33,16 +33,20 @@ directory
 
 namespace Grid {
 
-struct CG_state{
-	bool do_repro;
-	std::vector<RealD> residuals;
+struct CG_state {
+  bool do_repro;
+  std::vector<RealD> residuals;
 
-	CG_state(){
-		do_repro = false;
-		residuals.clear();}
+  CG_state() {
+    do_repro = false;
+    residuals.clear();
+  }
 
+  void reset(){
+    do_repro = false;
+    residuals.clear();
+  }
 };
-
 
 /////////////////////////////////////////////////////////////
 // Base classes for iterative processes based on operators
@@ -57,7 +61,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
   RealD Tolerance;
   Integer MaxIterations;
   bool ReproTest;
-  CG_state CGState;
+  CG_state CGState;//to check reproducibility by repeating the CG
 
   ConjugateGradient(RealD tol, Integer maxit, bool err_on_no_conv = true,
   	bool ReproducibilityTest = false)
@@ -199,8 +203,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
        	}
 
        	// Clear state
-       	CGState.residuals.clear();
-       	CGState.do_repro = false;
+       	CGState.reset();
         return;
       }
     }
