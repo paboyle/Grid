@@ -47,68 +47,82 @@ namespace QCD {
   // [DIFFERS from original CPS red black implementation parity = (x+y+z+t+s)|2 ]
   ////////////////////////////////////////////////////////////////////////////////
 
-  class WilsonFermion5DStatic { 
-  public:
-    // S-direction is INNERMOST and takes no part in the parity.
-    static const std::vector<int> directions;
-    static const std::vector<int> displacements;
-    const int npoint = 8;
-  };
-  
-  template<class Impl>
-  class WilsonFermion5D : public WilsonKernels<Impl>, public WilsonFermion5DStatic
-  {
-  public:
-    INHERIT_IMPL_TYPES(Impl);
-    typedef WilsonKernels<Impl> Kernels;
-    PmuStat stat;
-    
-    void Report(void);
-    void ZeroCounters(void);
-    double DhopCalls;
-    double DhopCommTime;
-    double DhopComputeTime;
-    
-    double DerivCalls;
-    double DerivCommTime;
-    double DerivComputeTime;
-    double DerivDhopComputeTime;
-    
-    ///////////////////////////////////////////////////////////////
-    // Implement the abstract base
-    ///////////////////////////////////////////////////////////////
-    GridBase *GaugeGrid(void)              { return _FourDimGrid ;}
-    GridBase *GaugeRedBlackGrid(void)      { return _FourDimRedBlackGrid ;}
-    GridBase *FermionGrid(void)            { return _FiveDimGrid;}
-    GridBase *FermionRedBlackGrid(void)    { return _FiveDimRedBlackGrid;}
-    
-    // full checkerboard operations; leave unimplemented as abstract for now
-    virtual RealD  M    (const FermionField &in, FermionField &out){assert(0); return 0.0;};
-    virtual RealD  Mdag (const FermionField &in, FermionField &out){assert(0); return 0.0;};
-    
-    // half checkerboard operations; leave unimplemented as abstract for now
-    virtual void   Meooe       (const FermionField &in, FermionField &out){assert(0);};
-    virtual void   Mooee       (const FermionField &in, FermionField &out){assert(0);};
-    virtual void   MooeeInv    (const FermionField &in, FermionField &out){assert(0);};
-    
-    virtual void   MeooeDag    (const FermionField &in, FermionField &out){assert(0);};
-    virtual void   MooeeDag    (const FermionField &in, FermionField &out){assert(0);};
-    virtual void   MooeeInvDag (const FermionField &in, FermionField &out){assert(0);};
-    virtual void   Mdir   (const FermionField &in, FermionField &out,int dir,int disp){assert(0);};   // case by case Wilson, Clover, Cayley, ContFrac, PartFrac
-    
-    // These can be overridden by fancy 5d chiral action
-    virtual void DhopDeriv  (GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
-    virtual void DhopDerivEO(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
-    virtual void DhopDerivOE(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
-    
-    // Implement hopping term non-hermitian hopping term; half cb or both
-    // Implement s-diagonal DW
-    void DW    (const FermionField &in, FermionField &out,int dag);
-    void Dhop  (const FermionField &in, FermionField &out,int dag);
-    void DhopOE(const FermionField &in, FermionField &out,int dag);
-    void DhopEO(const FermionField &in, FermionField &out,int dag);
-    
-    // add a DhopComm
+    ////////////////////////////////////////////////////////////////////////////////
+    // This is the 4d red black case appropriate to support
+    //
+    // parity = (x+y+z+t)|2;
+    // generalised five dim fermions like mobius, zolotarev etc..	
+    //
+    // i.e. even even contains fifth dim hopping term.
+    //
+    // [DIFFERS from original CPS red black implementation parity = (x+y+z+t+s)|2 ]
+    ////////////////////////////////////////////////////////////////////////////////
+
+    class WilsonFermion5DStatic { 
+    public:
+      // S-direction is INNERMOST and takes no part in the parity.
+      static const std::vector<int> directions;
+      static const std::vector<int> displacements;
+      const int npoint = 8;
+    };
+
+    template<class Impl>
+    class WilsonFermion5D : public WilsonKernels<Impl>, public WilsonFermion5DStatic
+    {
+    public:
+     INHERIT_IMPL_TYPES(Impl);
+     typedef WilsonKernels<Impl> Kernels;
+     PmuStat stat;
+
+     void Report(void);
+     void ZeroCounters(void);
+     double DhopCalls;
+     double DhopCommTime;
+     double DhopComputeTime;
+
+     double DerivCalls;
+     double DerivCommTime;
+     double DerivComputeTime;
+     double DerivDhopComputeTime;
+
+      ///////////////////////////////////////////////////////////////
+      // Implement the abstract base
+      ///////////////////////////////////////////////////////////////
+      GridBase *GaugeGrid(void)              { return _FourDimGrid ;}
+      GridBase *GaugeRedBlackGrid(void)      { return _FourDimRedBlackGrid ;}
+      GridBase *FermionGrid(void)            { return _FiveDimGrid;}
+      GridBase *FermionRedBlackGrid(void)    { return _FiveDimRedBlackGrid;}
+
+      // full checkerboard operations; leave unimplemented as abstract for now
+      virtual RealD  M    (const FermionField &in, FermionField &out){assert(0); return 0.0;};
+      virtual RealD  Mdag (const FermionField &in, FermionField &out){assert(0); return 0.0;};
+
+      // half checkerboard operations; leave unimplemented as abstract for now
+      virtual void   Meooe       (const FermionField &in, FermionField &out){assert(0);};
+      virtual void   Mooee       (const FermionField &in, FermionField &out){assert(0);};
+      virtual void   MooeeInv    (const FermionField &in, FermionField &out){assert(0);};
+
+      virtual void   MeooeDag    (const FermionField &in, FermionField &out){assert(0);};
+      virtual void   MooeeDag    (const FermionField &in, FermionField &out){assert(0);};
+      virtual void   MooeeInvDag (const FermionField &in, FermionField &out){assert(0);};
+      virtual void   Mdir   (const FermionField &in, FermionField &out,int dir,int disp){assert(0);};   // case by case Wilson, Clover, Cayley, ContFrac, PartFrac
+
+      // These can be overridden by fancy 5d chiral action
+      virtual void DhopDeriv  (GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
+      virtual void DhopDerivEO(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
+      virtual void DhopDerivOE(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
+
+      void MomentumSpacePropagatorHt(FermionField &out,const FermionField &in,RealD mass) ;
+      void MomentumSpacePropagatorHw(FermionField &out,const FermionField &in,RealD mass) ;
+
+      // Implement hopping term non-hermitian hopping term; half cb or both
+      // Implement s-diagonal DW
+      void DW    (const FermionField &in, FermionField &out,int dag);
+      void Dhop  (const FermionField &in, FermionField &out,int dag);
+      void DhopOE(const FermionField &in, FermionField &out,int dag);
+      void DhopEO(const FermionField &in, FermionField &out,int dag);
+
+      // add a DhopComm
       // -- suboptimal interface will presently trigger multiple comms.
     void DhopDir(const FermionField &in, FermionField &out,int dir,int disp);
     

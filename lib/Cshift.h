@@ -42,6 +42,10 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/cshift/Cshift_mpi.h>
 #endif 
 
+#ifdef GRID_COMMS_MPI3L
+#include <Grid/cshift/Cshift_mpi.h>
+#endif 
+
 #ifdef GRID_COMMS_SHMEM
 #include <Grid/cshift/Cshift_mpi.h> // uses same implementation of communicator
 #endif 

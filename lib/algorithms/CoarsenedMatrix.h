@@ -282,7 +282,7 @@ PARALLEL_FOR_LOOP
 	  } else if(SE->_is_local) { 
 	    nbr = in._odata[SE->_offset];
 	  } else {
-	    nbr = Stencil.comm_buf[SE->_offset];
+	    nbr = Stencil.CommBuf()[SE->_offset];
 	  }
 	  res = res + A[point]._odata[ss]*nbr;
 	}

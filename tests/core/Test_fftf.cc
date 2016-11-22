@@ -93,10 +93,10 @@ int main (int argc, char ** argv)
   C=C-Ctilde;
   std::cout << "diff scalar "<<norm2(C) << std::endl;
 
-  theFFT.FFT_dim(Stilde,S,0,FFT::forward);  S=Stilde; std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Stilde,S,1,FFT::forward);  S=Stilde;std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Stilde,S,2,FFT::forward);  S=Stilde;std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Stilde,S,3,FFT::forward);std::cout << theFFT.MFlops()<<std::endl;
+  theFFT.FFT_dim(Stilde,S,0,FFT::forward);  S=Stilde;std::cout << theFFT.MFlops()<< " "<<theFFT.USec() <<std::endl;
+  theFFT.FFT_dim(Stilde,S,1,FFT::forward);  S=Stilde;std::cout << theFFT.MFlops()<< " "<<theFFT.USec() <<std::endl;
+  theFFT.FFT_dim(Stilde,S,2,FFT::forward);  S=Stilde;std::cout << theFFT.MFlops()<< " "<<theFFT.USec() <<std::endl;
+  theFFT.FFT_dim(Stilde,S,3,FFT::forward);std::cout << theFFT.MFlops()<<" "<<theFFT.USec() <<std::endl;
 
   SpinMatrixF Sp; 
   Sp = zero; Sp = Sp+cVol;

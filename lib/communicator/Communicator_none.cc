@@ -34,13 +34,6 @@ namespace Grid {
 
 void CartesianCommunicator::Init(int *argc, char *** arv)
 {
-  WorldRank = 0;
-  WorldSize = 1;
-  ShmRank=0;
-  ShmSize=1;
-  GroupRank=WorldRank;
-  GroupSize=WorldSize;
-  Slave    =0;
   ShmInitGeneric();
 }
 
@@ -94,11 +87,13 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 {
   assert(0);
 }
+
 void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
 {
   assert(0);
 }
 
+int  CartesianCommunicator::RankWorld(void){return 0;}
 void CartesianCommunicator::Barrier(void){}
 void CartesianCommunicator::Broadcast(int root,void* data, int bytes) {}
 void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes) { }

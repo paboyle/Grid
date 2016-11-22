@@ -50,10 +50,15 @@ typedef struct HandShake_t {
   uint64_t seq_remote;
 } HandShake;
 
+std::array<long,_SHMEM_REDUCE_SYNC_SIZE> make_psync_init(void) {
+  array<long,_SHMEM_REDUCE_SYNC_SIZE> ret;
+  ret.fill(SHMEM_SYNC_VALUE);
+  return ret;
+}
+static std::array<long,_SHMEM_REDUCE_SYNC_SIZE> psync_init = make_psync_init();
 
 static Vector< HandShake > XConnections;
 static Vector< HandShake > RConnections;
-
 
 void CartesianCommunicator::Init(int *argc, char ***argv) {
   shmem_init();
@@ -65,13 +70,6 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
     RConnections[pe].seq_local = 0;
     RConnections[pe].seq_remote= 0;
   }
-  WorldSize = shmem_n_pes();
-  WorldRank = shmem_my_pe();
-  ShmRank=0;
-  ShmSize=1;
-  GroupRank=WorldRank;
-  GroupSize=WorldSize;
-  Slave    =0;
   shmem_barrier_all();
   ShmInitGeneric();
 }
@@ -103,7 +101,7 @@ void CartesianCommunicator::GlobalSum(uint32_t &u){
   static long long source ;
   static long long dest   ;
   static long long llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
-  static long      psync[_SHMEM_REDUCE_SYNC_SIZE];
+  static std::array<long,_SHMEM_REDUCE_SYNC_SIZE> psync =  psync_init;
 
   //  int nreduce=1;
   //  int pestart=0;
@@ -119,7 +117,7 @@ void CartesianCommunicator::GlobalSum(uint64_t &u){
   static long long source ;
   static long long dest   ;
   static long long llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
-  static long      psync[_SHMEM_REDUCE_SYNC_SIZE];
+  static std::array<long,_SHMEM_REDUCE_SYNC_SIZE> psync =  psync_init;
 
   //  int nreduce=1;
   //  int pestart=0;
@@ -135,7 +133,7 @@ void CartesianCommunicator::GlobalSum(float &f){
   static float source ;
   static float dest   ;
   static float llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
-  static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
+  static std::array<long,_SHMEM_REDUCE_SYNC_SIZE> psync =  psync_init;
 
   source = f;
   dest   =0.0;
@@ -147,7 +145,7 @@ void CartesianCommunicator::GlobalSumVector(float *f,int N)
   static float source ;
   static float dest   = 0 ;
   static float llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
-  static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
+  static std::array<long,_SHMEM_REDUCE_SYNC_SIZE> psync =  psync_init;
 
   if ( shmem_addr_accessible(f,_processor)  ){
     shmem_float_sum_to_all(f,f,N,0,0,_Nprocessors,llwrk,psync);
@@ -166,7 +164,7 @@ void CartesianCommunicator::GlobalSum(double &d)
   static double source;
   static double dest  ;
   static double llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
-  static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
+  static std::array<long,_SHMEM_REDUCE_SYNC_SIZE> psync =  psync_init;
 
   source = d;
   dest   = 0;
@@ -178,7 +176,8 @@ void CartesianCommunicator::GlobalSumVector(double *d,int N)
   static double source ;
   static double dest   ;
   static double llwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
-  static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
+  static std::array<long,_SHMEM_REDUCE_SYNC_SIZE> psync =  psync_init;
+
 
   if ( shmem_addr_accessible(d,_processor)  ){
     shmem_double_sum_to_all(d,d,N,0,0,_Nprocessors,llwrk,psync);
@@ -295,7 +294,7 @@ void CartesianCommunicator::Barrier(void)
 }
 void CartesianCommunicator::Broadcast(int root,void* data, int bytes)
 {
-  static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
+  static std::array<long,_SHMEM_REDUCE_SYNC_SIZE> psync =  psync_init;
   static uint32_t word;
   uint32_t *array = (uint32_t *) data;
   assert( (bytes % 4)==0);
@@ -318,7 +317,7 @@ void CartesianCommunicator::Broadcast(int root,void* data, int bytes)
 }
 void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
 {
-  static long  psync[_SHMEM_REDUCE_SYNC_SIZE];
+  static std::array<long,_SHMEM_REDUCE_SYNC_SIZE> psync =  psync_init;
   static uint32_t word;
   uint32_t *array = (uint32_t *) data;
   assert( (bytes % 4)==0);
