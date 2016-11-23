@@ -44,8 +44,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define PARALLEL_FOR_LOOP        _Pragma("omp parallel for schedule(runtime)")
 #define PARALLEL_FOR_LOOP_INTERN _Pragma("omp for schedule(runtime)")
 #endif
-#define PARALLEL_NESTED_LOOP2 _Pragma("omp parallel for collapse(2)")
-#define PARALLEL_REGION       _Pragma("omp parallel")
+#define PARALLEL_NESTED_LOOP2    _Pragma("omp parallel for collapse(2)")
+#define PARALLEL_REGION          _Pragma("omp parallel")
+#define PARALLEL_FOR_LOOP_STATIC _Pragma("omp parallel for schedule(static)")
 #else
 #define PARALLEL_FOR_LOOP
 #define PARALLEL_FOR_LOOP_INTERN

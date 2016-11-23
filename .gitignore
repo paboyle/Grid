@@ -49,6 +49,7 @@ config.status
 .deps
 Make.inc
 eigen.inc
+Eigen.inc
 
 # http://www.gnu.org/software/autoconf #
 ########################################

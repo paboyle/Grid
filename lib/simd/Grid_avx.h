@@ -66,6 +66,9 @@ namespace Optimization {
     double f[4];
   };
 
+
+
+
   struct Vsplat{
     //Complex float
     inline __m256 operator()(float a, float b){

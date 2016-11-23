@@ -147,6 +147,23 @@ class Grid_simd {
   Grid_simd(const Grid_simd &&rhs) : v(rhs.v){};
 
   /////////////////////////////
+  // Comparisons
+  /////////////////////////////
+  inline bool operator==(const Grid_simd& lhs){ 
+    Grid_simd::conv_t conv1;
+    Grid_simd::conv_t conv2;
+    conv1.v = v;
+    conv2.v = lhs.v;
+    return std::equal(std::begin(conv1.s), std::end(conv1.s), std::begin(conv2.s));
+  }
+
+  inline bool operator!=(const Grid_simd& lhs){ 
+    return !(*this == lhs);
+  }
+
+
+
+  /////////////////////////////
   // Constructors
   /////////////////////////////
   Grid_simd &operator=(Zero &z) {
