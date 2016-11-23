@@ -60,9 +60,11 @@ class ConjugateGradient : public OperatorFunction<Field> {
                            // Defaults true.
   RealD Tolerance;
   Integer MaxIterations;
+
+  // Reproducibility controls
   bool ReproTest;
-  CG_state CGState;//to check reproducibility by repeating the CG
-  ReproducibilityState<typename Field::vector_object> ReprTest;
+  CG_state CGState; //to check reproducibility by repeating the CG
+  ReproducibilityState<typename Field::vector_object> ReprTest; // for the inner proucts
 
   ConjugateGradient(RealD tol, Integer maxit, bool err_on_no_conv = true,
         bool ReproducibilityTest = false)
@@ -95,7 +97,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
     Linop.HermOpAndNorm(psi, mmp, d, b);
     
     if(!ReprTest.do_check)
-    	ReprTest.reset();
+        ReprTest.reset();
     ReprTest.enable_reprocheck=ReproTest;
 
 

@@ -63,6 +63,9 @@ class HmcRunner : public NerscHmcRunner {
     Real mass = -0.77;
     FermionAction FermOp(U, *FGrid, *FrbGrid, mass);
 
+    // To enable the CG reproducibility tests use 
+    // ConjugateGradient<FermionField> CG(1.0e-8, 10000, true, true);
+    // This is the plain version
     ConjugateGradient<FermionField> CG(1.0e-8, 10000);
 
     TwoFlavourPseudoFermionAction<ImplPolicy> Nf2(FermOp, CG, CG);
