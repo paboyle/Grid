@@ -59,7 +59,7 @@ public:
 
     int Nstop;   // Number of evecs checked for convergence
     int Nk;      // Number of converged sought
-    int Np;      // Np -- Number of spare vecs in kryloc space
+    int Np;      // Np -- Number of spare vecs in krylov space
     int Nm;      // Nm -- total number of vectors
 
     RealD eresid;
