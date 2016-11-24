@@ -245,6 +245,21 @@ namespace Optimization {
     }
   };
   
+  struct Div{
+    // Real double
+    inline vector4double operator()(vector4double a, vector4double b){
+      return vec_swdivs(a, b);
+    }
+    
+    // Real float
+    FLOAT_WRAP_2(operator(), inline)
+    
+    // Integer
+    inline int operator()(int a, int b){
+      return a/b;
+    }
+  }
+  
   struct Conj{
     // Complex double
     inline vector4double operator()(vector4double v){
@@ -412,6 +427,7 @@ template <typename S, typename T> using ReduceSIMD = Optimization::Reduce<S,T>;
 // Arithmetic operations
 typedef Optimization::Sum         SumSIMD;
 typedef Optimization::Sub         SubSIMD;
+typedef Optimization::Div         DivSIMD;
 typedef Optimization::Mult        MultSIMD;
 typedef Optimization::MultComplex MultComplexSIMD;
 typedef Optimization::Conj        ConjSIMD;
