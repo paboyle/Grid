@@ -1,2 +1,0 @@
-module swap PrgEnv-cray PrgEnv-intel
-module swap intel/14.0.4.211 intel/15.0.2.164

@@ -172,6 +172,8 @@ namespace QCD{
       pokeLorentz(aTilde, r, mu);
     }
     fft.FFT_all_dim(out, aTilde, FFT::backward);
+
+    out = real(out);
   }
 //  template<class Gimpl>
 //  void Photon<Gimpl>::FeynmanGaugeMomentumSpacePropagator_L(GaugeField &out,

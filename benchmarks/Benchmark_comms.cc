@@ -42,15 +42,14 @@ int main (int argc, char ** argv)
 
   int Nloop=10;
   int nmu=0;
-  for(int mu=0;mu<4;mu++) if (mpi_layout[mu]>1) nmu++;
+  for(int mu=0;mu<Nd;mu++) if (mpi_layout[mu]>1) nmu++;
+
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking concurrent halo exchange in "<<nmu<<" dimensions"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
-
-
-
-  for(int lat=4;lat<=32;lat+=2){
+  int maxlat=16;
+  for(int lat=4;lat<=maxlat;lat+=2){
     for(int Ls=1;Ls<=16;Ls*=2){
 
       std::vector<int> latt_size  ({lat*mpi_layout[0],
@@ -125,7 +124,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
 
 
-  for(int lat=4;lat<=32;lat+=2){
+  for(int lat=4;lat<=maxlat;lat+=2){
     for(int Ls=1;Ls<=16;Ls*=2){
 
       std::vector<int> latt_size  ({lat,lat,lat,lat});
@@ -194,128 +193,83 @@ int main (int argc, char ** argv)
     }
   }  
 
-#if 0
-
+  Nloop=100;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << "= Benchmarking sequential persistent halo exchange in "<<nmu<<" dimensions"<<std::endl;
+  std::cout<<GridLogMessage << "= Benchmarking concurrent STENCIL halo exchange in "<<nmu<<" dimensions"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
 
-
-  for(int lat=4;lat<=32;lat+=2){
+  for(int lat=4;lat<=maxlat;lat+=2){
     for(int Ls=1;Ls<=16;Ls*=2){
 
-      std::vector<int> latt_size  ({lat,lat,lat,lat});
+      std::vector<int> latt_size  ({lat*mpi_layout[0],
+      				    lat*mpi_layout[1],
+      				    lat*mpi_layout[2],
+      				    lat*mpi_layout[3]});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
-      std::vector<std::vector<HalfSpinColourVectorD> > xbuf(8,std::vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
-      std::vector<std::vector<HalfSpinColourVectorD> > rbuf(8,std::vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
-
+      std::vector<HalfSpinColourVectorD *> xbuf(8);
+      std::vector<HalfSpinColourVectorD *> rbuf(8);
+      Grid.ShmBufferFreeAll();
+      for(int d=0;d<8;d++){
+	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+      }
 
       int ncomm;
       int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
 
+      double start=usecond();
+      for(int i=0;i<Nloop;i++){
 
-      std::vector<CartesianCommunicator::CommsRequest_t> empty;
-      std::vector<std::vector<CartesianCommunicator::CommsRequest_t> > requests_fwd(Nd,empty);
-      std::vector<std::vector<CartesianCommunicator::CommsRequest_t> > requests_bwd(Nd,empty);
+	std::vector<CartesianCommunicator::CommsRequest_t> requests;
 
-      for(int mu=0;mu<4;mu++){
 	ncomm=0;
-	if (mpi_layout[mu]>1 ) {
-	  ncomm++;
-
-	  int comm_proc;
-	  int xmit_to_rank;
-	  int recv_from_rank;
-
-	  comm_proc=1;
-	  Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
-	  Grid.SendToRecvFromInit(requests_fwd[mu],
-				  (void *)&xbuf[mu][0],
-				  xmit_to_rank,
-				  (void *)&rbuf[mu][0],
-				  recv_from_rank,
-				  bytes);
-
-	  comm_proc = mpi_layout[mu]-1;
-	  Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
-	  Grid.SendToRecvFromInit(requests_bwd[mu],
-				  (void *)&xbuf[mu+4][0],
-				  xmit_to_rank,
-				  (void *)&rbuf[mu+4][0],
-				  recv_from_rank,
-				  bytes);
-
-	}
-      }
-
-      {
-	double start=usecond();
-	for(int i=0;i<Nloop;i++){
+	for(int mu=0;mu<4;mu++){
+	
+	  if (mpi_layout[mu]>1 ) {
 	  
-	  for(int mu=0;mu<4;mu++){
+	    ncomm++;
+	    int comm_proc=1;
+	    int xmit_to_rank;
+	    int recv_from_rank;
 	    
-	    if (mpi_layout[mu]>1 ) {
-	      
-	      Grid.SendToRecvFromBegin(requests_fwd[mu]);
-	      Grid.SendToRecvFromComplete(requests_fwd[mu]);
-	      Grid.SendToRecvFromBegin(requests_bwd[mu]);
-	      Grid.SendToRecvFromComplete(requests_bwd[mu]);
-	    }
-	  }
-	  Grid.Barrier();
-	}
+	    Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
+	    Grid.StencilSendToRecvFromBegin(requests,
+					    (void *)&xbuf[mu][0],
+					    xmit_to_rank,
+					    (void *)&rbuf[mu][0],
+					    recv_from_rank,
+					    bytes);
 	
-	double stop=usecond();
-	
-	double dbytes    = bytes;
-	double xbytes    = Nloop*dbytes*2.0*ncomm;
-	double rbytes    = xbytes;
-	double bidibytes = xbytes+rbytes;
-	
-	double time = stop-start;
-	
-	std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<<bytes<<"\t\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
-
-      }
-
-
-      {
-	double start=usecond();
-	for(int i=0;i<Nloop;i++){
+	    comm_proc = mpi_layout[mu]-1;
 	  
-	  for(int mu=0;mu<4;mu++){
-	    
-	    if (mpi_layout[mu]>1 ) {
-	      
-	      Grid.SendToRecvFromBegin(requests_fwd[mu]);
-	      Grid.SendToRecvFromBegin(requests_bwd[mu]);
-	      Grid.SendToRecvFromComplete(requests_fwd[mu]);
-	      Grid.SendToRecvFromComplete(requests_bwd[mu]);
-	    }
+	    Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
+	    Grid.StencilSendToRecvFromBegin(requests,
+					    (void *)&xbuf[mu+4][0],
+					    xmit_to_rank,
+					    (void *)&rbuf[mu+4][0],
+					    recv_from_rank,
+					    bytes);
+	  
 	  }
-	  Grid.Barrier();
 	}
-	
-	double stop=usecond();
-	
-	double dbytes    = bytes;
-	double xbytes    = Nloop*dbytes*2.0*ncomm;
-	double rbytes    = xbytes;
-	double bidibytes = xbytes+rbytes;
-	
-	double time = stop-start;
-	
-	std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<<bytes<<"\t\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
+	Grid.StencilSendToRecvFromComplete(requests);
+	Grid.Barrier();
 
       }
+      double stop=usecond();
 
+      double dbytes    = bytes;
+      double xbytes    = Nloop*dbytes*2.0*ncomm;
+      double rbytes    = xbytes;
+      double bidibytes = xbytes+rbytes;
+
+      double time = stop-start; // microseconds
+
+      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<<bytes<<"\t\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
     }
-  }
-
-#endif
-
+  }    
   Grid_finalize();
 }
