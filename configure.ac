@@ -290,7 +290,7 @@ esac
 case ${ac_COMMS} in
     *-auto)
         LX_FIND_MPI
-        if test "x$have_CXX_mpi" = 'xno'; then AC_MSG_ERROR(["MPI not found"]); fi
+        if test "x$have_CXX_mpi" = 'xno'; then AC_MSG_ERROR(["The configure could not find the MPI compilation flags. N.B. The -auto mode is not supported by Cray wrappers. Use the non -auto version in this case."]); fi
         AM_CXXFLAGS="$MPI_CXXFLAGS $AM_CXXFLAGS"
         AM_CFLAGS="$MPI_CFLAGS $AM_CFLAGS"
         AM_LDFLAGS="`echo $MPI_CXXLDFLAGS | sed -E 's/-l@<:@^ @:>@+//g'` $AM_LDFLAGS"
