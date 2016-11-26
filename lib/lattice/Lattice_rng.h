@@ -121,7 +121,7 @@ namespace Grid {
 #ifdef RNG_SPRNG_SHA256
     typedef uint32_t      RngStateType;
     typedef SprngSha256 RngEngine;
-    static const int RngStateCount = 22;
+    static const int RngStateCount = RNG_STATE_NUM_OF_INT32;
 #elif defined RNG_RANLUX
     typedef uint64_t      RngStateType;
     typedef std::ranlux48 RngEngine;

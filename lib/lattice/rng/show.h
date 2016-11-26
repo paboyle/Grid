@@ -1,6 +1,6 @@
 // vim: set ts=2 sw=2 expandtab:
 
-// Copyright (c) 2014 Luchang Jin
+// Copyright (c) 2016 Luchang Jin
 // All rights reserved.
 
 // This program is free software: you can redistribute it and/or modify
@@ -15,8 +15,6 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-#pragma once
 
 #ifndef INCLUDE_SHOW_H
 #define INCLUDE_SHOW_H
@@ -107,6 +105,30 @@ T& reads(T& x, const std::string& str)
   in >> x;
   return x;
 }
+
+inline FILE*& get_output_file()
+{
+  static FILE* out = stdout;
+  return out;
+}
+
+inline void display(const std::string& str, FILE* fp = NULL)
+{
+  if (NULL == fp) {
+    fp = get_output_file();
+  }
+  fprintf(fp, "%s", str.c_str());
+}
+
+inline void displayln(const std::string& str, FILE* fp = NULL)
+{
+  if (NULL == fp) {
+    fp = get_output_file();
+  }
+  fprintf(fp, "%s\n", str.c_str());
+}
+
+//////////////////////////////////////////////////////////////////
 
 inline void fdisplay(FILE* fp, const std::string& str)
 {
