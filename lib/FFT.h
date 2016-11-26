@@ -244,7 +244,10 @@ namespace Grid {
             pokeLocalSite(s,pgbuf,cbuf);
           }
         }
-        result = Cshift(result,dim,L);
+        if (p != processors[dim] - 1)
+        {
+          result = Cshift(result,dim,L);
+        }
       }
       
       // Loop over orthog coords
@@ -287,10 +290,10 @@ namespace Grid {
           cgbuf = clbuf;
           cgbuf[dim] = clbuf[dim]+L*pc;
           peekLocalSite(s,pgbuf,cgbuf);
-          s = s * div;
           pokeLocalSite(s,result,clbuf);
         }
       }
+      result = result*div;
       
       // destroying plan
       FFTW<scalar>::fftw_destroy_plan(p);
