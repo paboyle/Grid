@@ -76,7 +76,7 @@ void MQuark::execute(void)
                  << std::endl;
     LatticePropagator   &prop    = *env().createLattice<LatticePropagator>(propName);
     LatticePropagator   &fullSrc = *env().getObject<LatticePropagator>(par().source);
-    Environment::Solver &solver  = *env().getObject<Environment::Solver>(par().solver);
+    Solver              &solver  = *env().getObject<Solver>(par().solver);
     if (Ls_ > 1)
     {
         env().createLattice<LatticePropagator>(getName());

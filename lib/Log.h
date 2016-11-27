@@ -110,8 +110,8 @@ public:
   friend std::ostream& operator<< (std::ostream& stream, Logger& log){
 
     if ( log.active ) {
-      stream << log.background()<< log.topName << log.background()<< " : ";
-      stream << log.colour() <<std::setw(14) << std::left << log.name << log.background() << " : ";
+      stream << log.background()<< std::setw(10) << std::left << log.topName << log.background()<< " : ";
+      stream << log.colour() << std::setw(14) << std::left << log.name << log.background() << " : ";
       if ( log.timestamp ) {
 	StopWatch.Stop();
 	GridTime now = StopWatch.Elapsed();

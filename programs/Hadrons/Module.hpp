@@ -56,10 +56,6 @@ static mod##ModuleRegistrar mod##ModuleRegistrarInstance;
 class ModuleBase
 {
 public:
-    // convenient type shortcuts
-    typedef Environment::FMat   FMat;
-    typedef Environment::Solver Solver;
-public:
     // constructor
     ModuleBase(const std::string name);
     // destructor

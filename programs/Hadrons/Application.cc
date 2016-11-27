@@ -171,7 +171,7 @@ void Application::schedule(void)
         for (unsigned int j = 0; j < t.size(); ++j)
         {
             program_.push_back(t[j]);
-            LOG(Message) << std::setw(4) << std::right << k + 1 << ": "
+            LOG(Message) << std::setw(4) << k + 1 << ": "
                          << env_.getModuleName(program_[k]) << std::endl;
             k++;
         }

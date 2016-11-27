@@ -67,10 +67,6 @@ public:
     typedef std::unique_ptr<ModuleBase>                 ModPt;
     typedef std::unique_ptr<GridCartesian>              GridPt;
     typedef std::unique_ptr<GridRedBlackCartesian>      GridRbPt;
-    typedef FermionOperator<WilsonImplR>                FMat;
-    typedef std::unique_ptr<FMat>                       FMatPt;
-    typedef std::function<void(LatticeFermion &,
-                               const LatticeFermion &)> Solver;
     typedef std::unique_ptr<GridParallelRNG>            RngPt;
     typedef std::unique_ptr<LatticeBase>                LatticePt;
 private:
@@ -194,24 +190,21 @@ private:
     std::map<std::string, unsigned int>    moduleAddress_;
     // lattice store
     std::map<unsigned int, LatticePt>      lattice_;
-    // fermion matrix store
-    std::map<unsigned int, FMatPt>         fMat_;
-    // solver store & solver/action map
-    std::map<unsigned int, Solver>         solver_;
-    std::map<std::string, std::string>     solverAction_;
     // object store
     std::vector<ObjInfo>                   object_;
     std::map<std::string, unsigned int>    objectAddress_;
 };
 
 /******************************************************************************
- *                        template implementation                             *
+ *                       Holder template implementation                       *
  ******************************************************************************/
+// constructor /////////////////////////////////////////////////////////////////
 template <typename T>
 Holder<T>::Holder(T *pt)
 : objPt_(pt)
 {}
 
+// access //////////////////////////////////////////////////////////////////////
 template <typename T>
 T & Holder<T>::get(void) const
 {
@@ -230,6 +223,10 @@ void Holder<T>::reset(T *pt)
     objPt_.reset(pt);
 }
 
+/******************************************************************************
+ *                     Environment template implementation                    *
+ ******************************************************************************/
+// module management ///////////////////////////////////////////////////////////
 template <typename M>
 M * Environment::getModule(const unsigned int address) const
 {

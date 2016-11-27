@@ -671,14 +671,14 @@ void Environment::printContent(void)
     LOG(Message) << "Modules: " << std::endl;
     for (unsigned int i = 0; i < module_.size(); ++i)
     {
-        LOG(Message) << std::setw(4) << std::right << i << ": "
+        LOG(Message) << std::setw(4) << i << ": "
                      << getModuleName(i) << " ("
                      << getModuleType(i) << ")" << std::endl;
     }
     LOG(Message) << "Objects: " << std::endl;
     for (unsigned int i = 0; i < object_.size(); ++i)
     {
-        LOG(Message) << std::setw(4) << std::right << i << ": "
+        LOG(Message) << std::setw(4) << i << ": "
                      << getObjectName(i) << std::endl;
     }
 }

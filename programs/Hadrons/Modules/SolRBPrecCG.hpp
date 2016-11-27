@@ -48,6 +48,10 @@ public:
 class SolRBPrecCG: public Module<SolRBPrecCGPar>
 {
 public:
+    typedef FermionOperator<FIMPL> FMat;
+    typedef FIMPL::FermionField    FermionField;
+    typedef std::function<void(FermionField &, const FermionField &)> Solver;
+public:
     // constructor
     SolRBPrecCG(const std::string name);
     // destructor

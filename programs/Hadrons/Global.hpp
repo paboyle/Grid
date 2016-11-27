@@ -43,6 +43,11 @@ using Grid::operator<<;
  * error with GCC (clang compiles fine without it).
  */
 
+// FIXME: find a way to do that in a more general fashion
+#ifndef FIMPL
+#define FIMPL WilsonImplR
+#endif
+
 BEGIN_HADRONS_NAMESPACE
 
 class HadronsLogger: public Logger

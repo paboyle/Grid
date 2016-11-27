@@ -48,6 +48,8 @@ public:
 class AWilson: public Module<AWilsonPar>
 {
 public:
+    typedef FermionOperator<FIMPL> FMat;
+public:
     // constructor
     AWilson(const std::string name);
     // destructor
