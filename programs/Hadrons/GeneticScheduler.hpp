@@ -28,8 +28,8 @@ directory.
 #ifndef Hadrons_GeneticScheduler_hpp_
 #define Hadrons_GeneticScheduler_hpp_
 
-#include <Hadrons/Global.hpp>
-#include <Hadrons/Graph.hpp>
+#include <Grid/Hadrons/Global.hpp>
+#include <Grid/Hadrons/Graph.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 

@@ -28,8 +28,8 @@ directory.
 #ifndef Hadrons_Environment_hpp_
 #define Hadrons_Environment_hpp_
 
-#include <Hadrons/Global.hpp>
-#include <Hadrons/Graph.hpp>
+#include <Grid/Hadrons/Global.hpp>
+#include <Grid/Hadrons/Graph.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -72,10 +72,10 @@ public:
 private:
     struct ModuleInfo
     {
-        const std::type_info        *type{nullptr};
-        std::string                 name;
-        std::unique_ptr<ModuleBase> data{nullptr};
-        std::vector<unsigned int>   input;
+        const std::type_info      *type{nullptr};
+        std::string               name;
+        ModPt                     data{nullptr};
+        std::vector<unsigned int> input;
     };
     struct ObjInfo
     {
@@ -102,6 +102,12 @@ public:
     void                    setSeed(const std::vector<int> &seed);
     GridParallelRNG *       get4dRng(void) const;
     // module management
+    void                    pushModule(ModPt &pt);
+    template <typename M>
+    void                    createModule(const std::string name);
+    template <typename M>
+    void                    createModule(const std::string name,
+                                         const typename M::Par &par);
     void                    createModule(const std::string name,
                                          const std::string type,
                                          XmlReader &reader);
@@ -227,6 +233,24 @@ void Holder<T>::reset(T *pt)
  *                     Environment template implementation                    *
  ******************************************************************************/
 // module management ///////////////////////////////////////////////////////////
+template <typename M>
+void Environment::createModule(const std::string name)
+{
+    ModPt pt(new M(name));
+    
+    pushModule(pt);
+}
+
+template <typename M>
+void Environment::createModule(const std::string name,
+                               const typename M::Par &par)
+{
+    ModPt pt(new M(name));
+    
+    pt->setPar(par);
+    pushModule(pt);
+}
+
 template <typename M>
 M * Environment::getModule(const unsigned int address) const
 {

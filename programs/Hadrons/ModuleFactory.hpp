@@ -28,9 +28,9 @@ directory.
 #ifndef Hadrons_ModuleFactory_hpp_
 #define Hadrons_ModuleFactory_hpp_
 
-#include <Hadrons/Global.hpp>
-#include <Hadrons/Factory.hpp>
-#include <Hadrons/Module.hpp>
+#include <Grid/Hadrons/Global.hpp>
+#include <Grid/Hadrons/Factory.hpp>
+#include <Grid/Hadrons/Module.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 

@@ -28,7 +28,7 @@ directory.
 #ifndef Hadrons_Graph_hpp_
 #define Hadrons_Graph_hpp_
 
-#include <Hadrons/Global.hpp>
+#include <Grid/Hadrons/Global.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 

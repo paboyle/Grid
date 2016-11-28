@@ -1,15 +1,26 @@
-AM_CXXFLAGS += -I$(top_srcdir)/programs -I../$(top_srcdir)/programs
+lib_LIBRARIES = libHadrons.a
 
 bin_PROGRAMS = Hadrons
 
 include modules.inc
 
-Hadrons_SOURCES =   \
-    $(modules)      \
-    Application.cc  \
-    Environment.cc  \
-    Global.cc       \
-    Hadrons.cc      \
+libHadrons_a_SOURCES = \
+    $(modules_cc)      \
+    Application.cc     \
+    Environment.cc     \
+    Global.cc          \
     Module.cc
+libHadrons_adir = $(pkgincludedir)/Hadrons
+nobase_libHadrons_a_HEADERS = \
+	$(modules_hpp)               \
+	Application.hpp              \
+	Environment.hpp              \
+	Factory.hpp                  \
+	GeneticScheduler.hpp         \
+	Global.hpp                   \
+	Graph.hpp                    \
+	Module.hpp                   \
+	ModuleFactory.hpp
 
-Hadrons_LDADD   = -lGrid
+Hadrons_SOURCES = Hadrons.cc
+Hadrons_LDADD   = libHadrons.a -lGrid

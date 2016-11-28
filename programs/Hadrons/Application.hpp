@@ -28,28 +28,11 @@ directory.
 #ifndef Hadrons_Application_hpp_
 #define Hadrons_Application_hpp_
 
-#include <Hadrons/Global.hpp>
-#include <Hadrons/Environment.hpp>
-#include <Hadrons/ModuleFactory.hpp>
+#include <Grid/Hadrons/Global.hpp>
+#include <Grid/Hadrons/Environment.hpp>
+#include <Grid/Hadrons/ModuleFactory.hpp>
 
 BEGIN_HADRONS_NAMESPACE
-
-class TrajRange: Serializable
-{
-public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(TrajRange,
-                                    unsigned int, start,
-                                    unsigned int, end,
-                                    unsigned int, step);
-};
-
-class GlobalPar: Serializable
-{
-public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(GlobalPar,
-                                    TrajRange,   trajCounter,
-                                    std::string, seed);
-};
 
 /******************************************************************************
  *                         Main program manager                               *
@@ -57,15 +40,32 @@ public:
 class Application
 {
 public:
-
+    class TrajRange: Serializable
+    {
+    public:
+        GRID_SERIALIZABLE_CLASS_MEMBERS(TrajRange,
+                                        unsigned int, start,
+                                        unsigned int, end,
+                                        unsigned int, step);
+    };
+    class GlobalPar: Serializable
+    {
+    public:
+        GRID_SERIALIZABLE_CLASS_MEMBERS(GlobalPar,
+                                        TrajRange,   trajCounter,
+                                        std::string, seed);
+    };
 public:
-    // constructor
+    // constructors
+    Application(void);
+    Application(const GlobalPar &par);
     Application(const std::string parameterFileName);
     // destructor
-    virtual ~Application(void);
+    virtual ~Application(void) = default;
+    // access
+    void setPar(const GlobalPar &par);
     // execute
     void run(void);
-private:
     // parse parameter file
     void parseParameterFile(void);
     // schedule computation
@@ -74,7 +74,7 @@ private:
     void configLoop(void);
 private:
     long unsigned int                               locVol_;
-    std::string                                     parameterFileName_;
+    std::string                                     parameterFileName_{""};
     GlobalPar                                       par_;
     Environment                                     &env_;
     std::vector<unsigned int>                       program_;

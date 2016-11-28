@@ -25,8 +25,8 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/Application.hpp>
-#include <Hadrons/GeneticScheduler.hpp>
+#include <Grid/Hadrons/Application.hpp>
+#include <Grid/Hadrons/GeneticScheduler.hpp>
 
 using namespace Grid;
 using namespace QCD;
@@ -38,10 +38,9 @@ using namespace Hadrons;
 /******************************************************************************
  *                       Application implementation                           *
  ******************************************************************************/
-// constructor /////////////////////////////////////////////////////////////////
-Application::Application(const std::string parameterFileName)
-: parameterFileName_(parameterFileName)
-, env_(Environment::getInstance())
+// constructors ////////////////////////////////////////////////////////////////
+Application::Application(void)
+: env_(Environment::getInstance())
 {
     LOG(Message) << "Modules available:" << std::endl;
     auto list = ModuleFactory::getInstance().getBuilderList();
@@ -61,14 +60,31 @@ Application::Application(const std::string parameterFileName)
     LOG(Message) << "Local lattice : " << loc << std::endl;
 }
 
-// destructor //////////////////////////////////////////////////////////////////
-Application::~Application(void)
-{}
+Application::Application(const Application::GlobalPar &par)
+: Application()
+{
+    setPar(par);
+}
+
+Application::Application(const std::string parameterFileName)
+: Application()
+{
+    parameterFileName_ = parameterFileName;
+}
+
+// access //////////////////////////////////////////////////////////////////////
+void Application::setPar(const Application::GlobalPar &par)
+{
+    par_ = par;
+}
 
 // execute /////////////////////////////////////////////////////////////////////
 void Application::run(void)
 {
-    parseParameterFile();
+    if (!parameterFileName_.empty())
+    {
+        parseParameterFile();
+    }
     schedule();
     configLoop();
 }

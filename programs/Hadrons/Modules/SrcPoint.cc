@@ -25,7 +25,7 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/Modules/SrcPoint.hpp>
+#include <Grid/Hadrons/Modules/SrcPoint.hpp>
 
 using namespace Grid;
 using namespace Hadrons;

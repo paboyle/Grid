@@ -25,9 +25,9 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/Environment.hpp>
-#include <Hadrons/Module.hpp>
-#include <Hadrons/ModuleFactory.hpp>
+#include <Grid/Hadrons/Environment.hpp>
+#include <Grid/Hadrons/Module.hpp>
+#include <Grid/Hadrons/ModuleFactory.hpp>
 
 using namespace Grid;
 using namespace QCD;
@@ -136,19 +136,18 @@ GridParallelRNG * Environment::get4dRng(void) const
 }
 
 // module management ///////////////////////////////////////////////////////////
-void Environment::createModule(const std::string name, const std::string type,
-                               XmlReader &reader)
+void Environment::pushModule(Environment::ModPt &pt)
 {
+    std::string name = pt->getName();
+    
     if (!hasModule(name))
     {
-        auto                      &factory = ModuleFactory::getInstance();
         std::vector<unsigned int> inputAddress;
         ModuleInfo                m;
-
-        m.data = factory.create(type, name);
+        
+        m.data = std::move(pt);
         m.type = typeIdPt(*m.data.get());
         m.name = name;
-        m.data->parseParameters(reader, "options");
         auto input  = m.data->getInput();
         for (auto &in: input)
         {
@@ -176,9 +175,9 @@ void Environment::createModule(const std::string name, const std::string type,
                 else
                 {
                     HADRON_ERROR("object '" + out
-                        + "' is already produced by module '"
-                        + module_[object_[getObjectAddress(out)].module].name
-                        + "' (while creating module '" + name + "')");
+                                 + "' is already produced by module '"
+                                 + module_[object_[getObjectAddress(out)].module].name
+                                 + "' (while pushing module '" + name + "')");
                 }
             }
         }
@@ -187,6 +186,16 @@ void Environment::createModule(const std::string name, const std::string type,
     {
         HADRON_ERROR("module '" + name + "' already exists");
     }
+}
+
+void Environment::createModule(const std::string name, const std::string type,
+                               XmlReader &reader)
+{
+    auto &factory = ModuleFactory::getInstance();
+    auto pt       = factory.create(type, name);
+    
+    pt->parseParameters(reader, "options");
+    pushModule(pt);
 }
 
 ModuleBase * Environment::getModule(const unsigned int address) const

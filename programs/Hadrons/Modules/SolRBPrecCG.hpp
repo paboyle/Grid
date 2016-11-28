@@ -28,9 +28,9 @@ directory.
 #ifndef Hadrons_SolRBPrecCG_hpp_
 #define Hadrons_SolRBPrecCG_hpp_
 
-#include <Hadrons/Global.hpp>
-#include <Hadrons/Module.hpp>
-#include <Hadrons/ModuleFactory.hpp>
+#include <Grid/Hadrons/Global.hpp>
+#include <Grid/Hadrons/Module.hpp>
+#include <Grid/Hadrons/ModuleFactory.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 

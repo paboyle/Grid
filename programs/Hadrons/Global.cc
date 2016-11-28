@@ -25,7 +25,7 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/Global.hpp>
+#include <Grid/Hadrons/Global.hpp>
 
 using namespace Grid;
 using namespace QCD;

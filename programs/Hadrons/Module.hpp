@@ -28,8 +28,8 @@ directory.
 #ifndef Hadrons_Module_hpp_
 #define Hadrons_Module_hpp_
 
-#include <Hadrons/Global.hpp>
-#include <Hadrons/Environment.hpp>
+#include <Grid/Hadrons/Global.hpp>
+#include <Grid/Hadrons/Environment.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 

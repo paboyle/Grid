@@ -25,7 +25,7 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/Modules/SrcZ2.hpp>
+#include <Grid/Hadrons/Modules/SrcZ2.hpp>
 
 using namespace Grid;
 using namespace Hadrons;

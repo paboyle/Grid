@@ -25,7 +25,7 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/Modules/AWilson.hpp>
+#include <Grid/Hadrons/Modules/AWilson.hpp>
 
 using namespace Grid;
 using namespace Hadrons;

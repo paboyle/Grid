@@ -25,7 +25,7 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/Modules/CMeson.hpp>
+#include <Grid/Hadrons/Modules/CMeson.hpp>
 
 using namespace Grid;
 using namespace QCD;

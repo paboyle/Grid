@@ -25,7 +25,7 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Hadrons/Modules/SolRBPrecCG.hpp>
+#include <Grid/Hadrons/Modules/SolRBPrecCG.hpp>
 
 using namespace Grid;
 using namespace QCD;
