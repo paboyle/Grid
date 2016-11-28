@@ -50,8 +50,6 @@ public:
 class ADWF: public Module<ADWFPar>
 {
 public:
-    typedef FermionOperator<FIMPL> FMat;
-public:
     // constructor
     ADWF(const std::string name);
     // destructor

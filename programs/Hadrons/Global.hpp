@@ -50,6 +50,13 @@ using Grid::operator<<;
 
 BEGIN_HADRONS_NAMESPACE
 
+// type aliases
+typedef FermionOperator<FIMPL> FMat;
+typedef FIMPL::FermionField    FermionField;
+typedef FIMPL::PropagatorField PropagatorField;
+typedef std::function<void(FermionField &, const FermionField &)> Solver;
+
+// logger
 class HadronsLogger: public Logger
 {
 public:

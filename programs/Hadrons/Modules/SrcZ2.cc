@@ -56,7 +56,7 @@ std::vector<std::string> SrcZ2::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void SrcZ2::setup(void)
 {
-    env().registerLattice<LatticePropagator>(getName());
+    env().registerLattice<PropagatorField>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -77,7 +77,7 @@ void SrcZ2::execute(void)
         LOG(Message) << "Generating Z_2 band for " << par().tA << " <= t <= "
                      << par().tB << std::endl;
     }
-    LatticePropagator &src = *env().createLattice<LatticePropagator>(getName());
+    PropagatorField &src = *env().createLattice<PropagatorField>(getName());
     LatticeCoordinate(t, Tp);
     bernoulli(*env().get4dRng(), eta);
     eta = (2.*eta - shift)*(1./::sqrt(2.));

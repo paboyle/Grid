@@ -56,7 +56,7 @@ std::vector<std::string> SrcPoint::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void SrcPoint::setup(void)
 {
-    env().registerLattice<LatticePropagator>(getName());
+    env().registerLattice<PropagatorField>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -67,7 +67,7 @@ void SrcPoint::execute(void)
     
     LOG(Message) << "Creating point source at position [" << par().position
                  << "]" << std::endl;
-    LatticePropagator &src = *env().createLattice<LatticePropagator>(getName());
+    PropagatorField &src = *env().createLattice<PropagatorField>(getName());
     id  = 1.;
     src = zero;
     pokeSite(id, src, position);

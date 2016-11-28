@@ -48,9 +48,6 @@ public:
 class MQuark: public Module<MQuarkPar>
 {
 public:
-    typedef FIMPL::FermionField FermionField;
-    typedef std::function<void(FermionField &, const FermionField &)> Solver;
-public:
     // constructor
     MQuark(const std::string name);
     // destructor
