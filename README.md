@@ -138,7 +138,7 @@ The following options can be use with the `--enable-comms=` option to target dif
 | `mpi3l[-auto]` | MPI communications using MPI 3 shared memory and leader model |
 | `shmem `       | Cray SHMEM communications                                     |
 
-For the MPI interfaces the optional `-auto` suffix instructs the `configure` scripts to determine all the necessary compilation and linking flags. This is done by extracting the informations from the MPI wrapper specified in the environment variable `MPICXX` (if not specified `configure` will scan though a list of default names).
+For the MPI interfaces the optional `-auto` suffix instructs the `configure` scripts to determine all the necessary compilation and linking flags. This is done by extracting the informations from the MPI wrapper specified in the environment variable `MPICXX` (if not specified `configure` will scan though a list of default names). The `-auto` suffix is not supported by the Cray environment wrapper scripts. Use the standard versions instead.  
 
 ### Possible SIMD types
 
