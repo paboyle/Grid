@@ -70,7 +70,7 @@ int main (int argc, char ** argv)
   GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
 
-  LatticeGaugeField Umu(UGrid); random(RNG4,Umu);
+  LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(RNG4,Umu);
   std::vector<LatticeColourMatrix> U(4,UGrid);
 
   RealD mass=0.1;

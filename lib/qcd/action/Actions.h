@@ -153,6 +153,7 @@ typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeAction
 //#include <Grid/qcd/action/fermion/CloverFermion.h>
 
 #include <Grid/qcd/action/fermion/ImprovedStaggeredFermion.h>
+#include <Grid/qcd/action/fermion/ImprovedStaggeredFermion5D.h>
 
 #include <Grid/qcd/action/fermion/CayleyFermion5D.h>     // Cayley types
 #include <Grid/qcd/action/fermion/DomainWallFermion.h>
@@ -263,6 +264,10 @@ typedef MobiusFermion<GparityWilsonImplD> GparityMobiusFermionD;
 typedef ImprovedStaggeredFermion<StaggeredImplR> ImprovedStaggeredFermionR;
 typedef ImprovedStaggeredFermion<StaggeredImplF> ImprovedStaggeredFermionF;
 typedef ImprovedStaggeredFermion<StaggeredImplD> ImprovedStaggeredFermionD;
+
+typedef ImprovedStaggeredFermion5D<StaggeredImplR> ImprovedStaggeredFermion5DR;
+typedef ImprovedStaggeredFermion5D<StaggeredImplF> ImprovedStaggeredFermion5DF;
+typedef ImprovedStaggeredFermion5D<StaggeredImplD> ImprovedStaggeredFermion5DD;
 
   }}
 ///////////////////////////////////////////////////////////////////////////////

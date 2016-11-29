@@ -60,7 +60,7 @@ int main (int argc, char ** argv)
   LatticeFermion src(&Grid); random(pRNG,src);
   RealD nrm = norm2(src);
   LatticeFermion result(&Grid); result=zero;
-  LatticeGaugeField Umu(&Grid); random(pRNG,Umu);
+  LatticeGaugeField Umu(&Grid); SU3::HotConfiguration(pRNG,Umu);
 
   std::vector<LatticeColourMatrix> U(4,&Grid);
 

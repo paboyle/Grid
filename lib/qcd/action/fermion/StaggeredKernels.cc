@@ -191,7 +191,7 @@ void StaggeredKernels<Impl>::DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, Dou
   int threeLink=1;
   DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
   DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
-  out._odata[sF] =naive+naik;
+  out._odata[sF] =-naive-naik;
 };
 template <class Impl>
 void StaggeredKernels<Impl>::DhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU,
@@ -203,7 +203,7 @@ void StaggeredKernels<Impl>::DhopSite(StencilImpl &st, LebesgueOrder &lo, Double
   int threeLink=1;
   DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
   DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
-  out._odata[sF] =-naive-naik;
+  out._odata[sF] =naive+naik;
 };
 
 template <class Impl>

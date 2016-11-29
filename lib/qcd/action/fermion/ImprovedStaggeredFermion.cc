@@ -41,7 +41,7 @@ ImprovedStaggeredFermionStatic::displacements({1, 1, 1, 1, -1, -1, -1, -1, 3, 3,
 /////////////////////////////////
 
 template <class Impl>
-ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Umu, GridCartesian &Fgrid,
+ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Uthin, GaugeField &_Ufat, GridCartesian &Fgrid,
 							 GridRedBlackCartesian &Hgrid, RealD _mass,
 							 RealD _c1, RealD _c2,RealD _u0,
 							 const ImplParams &p)
@@ -62,9 +62,10 @@ ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Umu, GridC
       UmuOdd(&Hgrid),
       UUUmu(&Fgrid),
       UUUmuEven(&Hgrid),
-      UUUmuOdd(&Hgrid) {
+      UUUmuOdd(&Hgrid) 
+{
   // Allocate the required comms buffer
-  ImportGauge(_Umu);
+  ImportGauge(_Uthin,_Ufat);
 }
 
   ////////////////////////////////////////////////////////////
@@ -79,19 +80,24 @@ ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Umu, GridC
   // of above link to implmement fourier based solver.
   ////////////////////////////////////////////////////////////
 template <class Impl>
-void ImprovedStaggeredFermion<Impl>::ImportGauge(const GaugeField &_Umu) {
-
+void ImprovedStaggeredFermion<Impl>::ImportGauge(const GaugeField &_Uthin) 
+{
+  ImportGauge(_Uthin,_Uthin);
+};
+template <class Impl>
+void ImprovedStaggeredFermion<Impl>::ImportGauge(const GaugeField &_Uthin,const GaugeField &_Ufat) 
+{
   GaugeLinkField U(GaugeGrid());
 
   ////////////////////////////////////////////////////////
   // Double Store should take two fields for Naik and one hop separately.
   ////////////////////////////////////////////////////////
-  Impl::DoubleStore(GaugeGrid(), Umu, UUUmu, _Umu);
+  Impl::DoubleStore(GaugeGrid(), UUUmu, Umu, _Uthin, _Ufat );
 
 
   ////////////////////////////////////////////////////////
   // Apply scale factors to get the right fermion Kinetic term
-  // 
+  // Could pass coeffs into the double store to save work.
   // 0.5 ( U p(x+mu) - Udag(x-mu) p(x-mu) ) 
   ////////////////////////////////////////////////////////
   for (int mu = 0; mu < Nd; mu++) {
@@ -312,7 +318,7 @@ void ImprovedStaggeredFermion<Impl>::DhopDir(const FermionField &in, FermionFiel
   Compressor compressor;
   Stencil.HaloExchange(in, compressor);
 
-PARALLEL_FOR_LOOP
+  PARALLEL_FOR_LOOP
   for (int sss = 0; sss < in._grid->oSites(); sss++) {
     Kernels::DhopDir(Stencil, Umu, UUUmu, Stencil.CommBuf(), sss, sss, in, out, dir, disp);
   }

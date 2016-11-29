@@ -561,11 +561,13 @@ PARALLEL_FOR_LOOP
     }
       
     inline void DoubleStore(GridBase *GaugeGrid,
-			    DoubledGaugeField &Uds,
 			    DoubledGaugeField &UUUds, // for Naik term
-			    const GaugeField &Umu) {
+			    DoubledGaugeField &Uds,
+			    const GaugeField &Uthin,
+			    const GaugeField &Ufat) {
       conformable(Uds._grid, GaugeGrid);
-      conformable(Umu._grid, GaugeGrid);
+      conformable(Uthin._grid, GaugeGrid);
+      conformable(Ufat._grid, GaugeGrid);
       GaugeLinkField U(GaugeGrid);
       GaugeLinkField UU(GaugeGrid);
       GaugeLinkField UUU(GaugeGrid);
@@ -589,23 +591,31 @@ PARALLEL_FOR_LOOP
 	if ( mu == 2 ) phases = where( mod(lin_z,2)==(Integer)0, phases,-phases);
 	if ( mu == 3 ) phases = where( mod(lin_t,2)==(Integer)0, phases,-phases);
 
-	U  = PeekIndex<LorentzIndex>(Umu, mu);
+	// 1 hop based on fat links
+	U      = PeekIndex<LorentzIndex>(Ufat, mu);
+	Udag   = adj( Cshift(U, mu, -1));
+
+	U    = U    *phases;
+	Udag = Udag *phases;
+
+	PokeIndex<LorentzIndex>(Uds, U, mu);
+	PokeIndex<LorentzIndex>(Uds, Udag, mu + 4);
+
+	// 3 hop based on thin links. Crazy huh ?
+	U  = PeekIndex<LorentzIndex>(Uthin, mu);
 	UU = Gimpl::CovShiftForward(U,mu,U);
 	UUU= Gimpl::CovShiftForward(U,mu,UU);
 	
-	U   = U   *phases;
-	UUU = UUU *phases;
+	UUUdag = adj( Cshift(UUU, mu, -3));
 
-	PokeIndex<LorentzIndex>(Uds, U, mu);
+	UUU    = UUU    *phases;
+	UUUdag = UUUdag *phases;
+
 	PokeIndex<LorentzIndex>(UUUds, UUU, mu);
+	PokeIndex<LorentzIndex>(UUUds, UUUdag, mu+4);
 
 	std::cout << GridLogMessage << " Created the treble links for staggered Naik term" <<std::endl;
 	std::cout << GridLogMessage << " Multiplied the staggered phases which requires understanding the action conventions" <<std::endl;
-
-	Udag   = adj( Cshift(U, mu, -1));
-	UUUdag = adj( Cshift(UUU, mu, -3));
-	PokeIndex<LorentzIndex>(Uds, Udag, mu + 4);
-	PokeIndex<LorentzIndex>(UUUds, UUUdag, mu+4);
 
       }
     }

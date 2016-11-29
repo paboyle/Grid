@@ -2,7 +2,7 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./benchmarks/Benchmark_wilson.cc
+    Source file: ./benchmarks/Benchmark_staggered.cc
 
     Copyright (C) 2015
 
@@ -112,7 +112,7 @@ int main (int argc, char ** argv)
   RealD c1=9.0/8.0;
   RealD c2=-1.0/24.0;
   RealD u0=1.0;
-  ImprovedStaggeredFermionR Ds(Umu,Grid,RBGrid,mass,c1,c2,u0,params);
+  ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass,c1,c2,u0,params);
   
   std::cout<<GridLogMessage << "Calling Ds"<<std::endl;
   int ncall=1000;
