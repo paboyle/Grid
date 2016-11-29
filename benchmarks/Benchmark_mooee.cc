@@ -70,7 +70,7 @@ int main (int argc, char ** argv)
 
   if (1)
   {
-    const int ncall=100;
+    const int ncall=1000;
 
     std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
     std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionR::Dhop "<<std::endl;
@@ -81,18 +81,7 @@ int main (int argc, char ** argv)
     LatticeFermion result(FGrid);
 
     DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-
-    FGrid->Barrier();
-
     double t0,t1;
-    t0=usecond();
-    for(int i=0;i<ncall;i++){
-      Dw.Dhop(src,result,0);
-    }
-    t1=usecond();
-    FGrid->Barrier();
-
-    std::cout<<GridLogMessage << "Called Dhop "<< (t1-t0)/ncall<<" us"<<std::endl;
 
     LatticeFermion r_eo(FGrid);
     LatticeFermion src_e (FrbGrid);
@@ -109,48 +98,44 @@ int main (int argc, char ** argv)
     r_e = zero;
     r_o = zero;
 
-    FGrid->Barrier();
-    t0=usecond();
-    for (int i = 0; i < ncall; i++) {
-      Dw.DhopEO(src_o, r_e, DaggerNo);
-    }
-    t1=usecond();
-    FGrid->Barrier();
-    std::cout<<GridLogMessage << "Called DhopEO "<< (t1-t0)/ncall<<" us"<<std::endl;
 
-    FGrid->Barrier();
-    t0=usecond();
-    for (int i = 0; i < ncall; i++) {
-      Dw.Mooee(src_o, r_o);
-    }
-    t1=usecond();
-    FGrid->Barrier();
-    std::cout<<GridLogMessage << "Called Mooee "<< (t1-t0)/ncall<<" us"<<std::endl;
+#define BENCH_DW(A,in,out)			\
+    Dw.CayleyZeroCounters();			\
+    FGrid->Barrier();				\
+    t0=usecond();				\
+    for(int i=0;i<ncall;i++){			\
+      Dw. A (in,out);				\
+    }						\
+    t1=usecond();				\
+    FGrid->Barrier();				\
+    Dw.CayleyReport();					\
+    std::cout<<GridLogMessage << "Called " #A " "<< (t1-t0)/ncall<<" us"<<std::endl;\
+    std::cout<<GridLogMessage << "******************"<<std::endl;
 
-    FGrid->Barrier();
-    t0=usecond();
-    for (int i = 0; i < ncall; i++) {
-      Dw.MooeeInv(src_o, r_o);
-    }
-    t1=usecond();
-    FGrid->Barrier();
-    std::cout<<GridLogMessage << "Called MooeeInv "<< (t1-t0)/ncall<<" us"<<std::endl;
+#define BENCH_DW_MEO(A,in,out)			\
+    Dw.CayleyZeroCounters();			\
+    FGrid->Barrier();				\
+    t0=usecond();				\
+    for(int i=0;i<ncall;i++){			\
+      Dw. A (in,out,0);				\
+    }						\
+    t1=usecond();				\
+    FGrid->Barrier();				\
+    Dw.CayleyReport();					\
+    std::cout<<GridLogMessage << "Called " #A " "<< (t1-t0)/ncall<<" us"<<std::endl;\
+    std::cout<<GridLogMessage << "******************"<<std::endl;
 
-
-    FGrid->Barrier();
-    t0=usecond();
-    for (int i = 0; i < ncall; i++) {
-      Dw.Meooe(src_o, r_e);
-    }
-    t1=usecond();
-    FGrid->Barrier();
-    std::cout<<GridLogMessage << "Called Meooe "<< (t1-t0)/ncall<<" us"<<std::endl;
+    BENCH_DW_MEO(Dhop    ,src,result);
+    BENCH_DW_MEO(DhopEO  ,src_o,r_e);
+    BENCH_DW(Meooe   ,src_o,r_e);
+    BENCH_DW(Mooee   ,src_o,r_o);
+    BENCH_DW(MooeeInv,src_o,r_o);
 
   }
 
   if (1)
   {
-    const int ncall=100;
+    const int ncall=1000;
 
     std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
     std::cout << GridLogMessage<< "* Benchmarking DomainWallFermionVec5dR::Dhop "<<std::endl;
@@ -168,14 +153,6 @@ int main (int argc, char ** argv)
     FGrid->Barrier();
 
     double t0,t1;
-    t0=usecond();
-    for(int i=0;i<ncall;i++){
-      Dw.Dhop(src,result,0);
-    }
-    t1=usecond();
-    FGrid->Barrier();
-
-    std::cout<<GridLogMessage << "Called Vec5D Dhop "<< (t1-t0)/ncall<<" us"<<std::endl;
 
     LatticeFermion r_eo(sFGrid);
     LatticeFermion src_e (sFrbGrid);
@@ -192,46 +169,13 @@ int main (int argc, char ** argv)
     r_e = zero;
     r_o = zero;
 
-    FGrid->Barrier();
-    t0=usecond();
-    for (int i = 0; i < ncall; i++) {
-      Dw.DhopEO(src_o, r_e, DaggerNo);
-    }
-    t1=usecond();
-    FGrid->Barrier();
-    std::cout<<GridLogMessage << "Called Vec5D DhopEO "<< (t1-t0)/ncall<<" us"<<std::endl;
-
-    FGrid->Barrier();
-    t0=usecond();
-    for (int i = 0; i < ncall; i++) {
-      Dw.Mooee(src_o, r_o);
-    }
-    t1=usecond();
-    FGrid->Barrier();
-    std::cout<<GridLogMessage << "Called Vec5D Mooee "<< (t1-t0)/ncall<<" us"<<std::endl;
-
-    FGrid->Barrier();
-    t0=usecond();
-    for (int i = 0; i < ncall; i++) {
-      Dw.MooeeInv(src_o, r_o);
-    }
-    t1=usecond();
-    FGrid->Barrier();
-    std::cout<<GridLogMessage << "Called Vec5D MooeeInv "<< (t1-t0)/ncall<<" us"<<std::endl;
-
-
-    FGrid->Barrier();
-    t0=usecond();
-    for (int i = 0; i < ncall; i++) {
-      Dw.Meooe(src_o, r_e);
-    }
-    t1=usecond();
-    FGrid->Barrier();
-    std::cout<<GridLogMessage << "Called Vec5D Meooe "<< (t1-t0)/ncall<<" us"<<std::endl;
+    BENCH_DW_MEO(Dhop    ,src,result);
+    BENCH_DW_MEO(DhopEO  ,src_o,r_e);
+    BENCH_DW(Meooe   ,src_o,r_e);
+    BENCH_DW(Mooee   ,src_o,r_o);
+    BENCH_DW(MooeeInv,src_o,r_o);
 
   }
-
-
 
   Grid_finalize();
 }

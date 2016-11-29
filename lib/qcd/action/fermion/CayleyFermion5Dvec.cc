@@ -71,6 +71,7 @@ void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
 
   chi.checkerboard=psi.checkerboard;
 
+
   // just directly address via type pun
   typedef typename Simd::scalar_type scalar_type;
   scalar_type * u_p = (scalar_type *)&u[0];
@@ -86,6 +87,8 @@ void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
     d_p[ss] = diag[s];
   }}
 
+  M5Dcalls++;
+  M5Dtime-=usecond();
 PARALLEL_FOR_LOOP
   for(int ss=0;ss<grid->oSites();ss+=LLs){ // adds LLs
 
@@ -115,6 +118,7 @@ PARALLEL_FOR_LOOP
 
     }
   }
+  M5Dtime+=usecond();
 }
 
 template<class Impl>  
@@ -154,6 +158,8 @@ void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
     d_p[ss] = diag[s];
   }}
 
+  M5Dcalls++;
+  M5Dtime-=usecond();
 PARALLEL_FOR_LOOP
   for(int ss=0;ss<grid->oSites();ss+=LLs){ // adds LLs
 
@@ -183,6 +189,7 @@ PARALLEL_FOR_LOOP
 
     }
   }
+  M5Dtime+=usecond();
 }
 
 template<class Impl>
@@ -250,13 +257,11 @@ void CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField 
     }
   }
   
+  MooeeInvCalls++;
+  MooeeInvTime-=usecond();
   // Dynamic allocate on stack to get per thread without serialised heap acces
-PARALLEL_FOR_LOOP
-  for(auto site=0;site<vol;site++){
-    
-    //    SiteHalfSpinor *SitePplus =(SiteHalfSpinor *) alloca(LLs*sizeof(SiteHalfSpinor));
-    //    SiteHalfSpinor *SitePminus=(SiteHalfSpinor *) alloca(LLs*sizeof(SiteHalfSpinor));
-    //    SiteSpinor     *SiteChi   =(SiteSpinor *)     alloca(LLs*sizeof(SiteSpinor));
+#pragma omp parallel  
+  {
 
     Vector<SiteHalfSpinor> SitePplus(LLs);
     Vector<SiteHalfSpinor> SitePminus(LLs);
@@ -266,6 +271,9 @@ PARALLEL_FOR_LOOP
 
     SiteHalfSpinor BcastP;
     SiteHalfSpinor BcastM;
+
+#pragma omp for 
+  for(auto site=0;site<vol;site++){
 
     for(int s=0;s<LLs;s++){
       int lex = s+LLs*site;
@@ -294,6 +302,8 @@ PARALLEL_FOR_LOOP
       chi[lex] = SiteChi[s]*0.5;
     }
   }
+  }
+  MooeeInvTime+=usecond();
 }
 
 INSTANTIATE_DPERP(DomainWallVec5dImplD);
