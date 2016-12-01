@@ -31,6 +31,7 @@ directory.
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Environment.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
+#include <Grid/Hadrons/Modules.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 

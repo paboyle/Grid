@@ -1,0 +1,10 @@
+#include <Grid/Hadrons/Modules/ADWF.hpp>
+#include <Grid/Hadrons/Modules/AWilson.hpp>
+#include <Grid/Hadrons/Modules/CMeson.hpp>
+#include <Grid/Hadrons/Modules/GLoad.hpp>
+#include <Grid/Hadrons/Modules/GRandom.hpp>
+#include <Grid/Hadrons/Modules/GUnit.hpp>
+#include <Grid/Hadrons/Modules/MQuark.hpp>
+#include <Grid/Hadrons/Modules/SolRBPrecCG.hpp>
+#include <Grid/Hadrons/Modules/SrcPoint.hpp>
+#include <Grid/Hadrons/Modules/SrcZ2.hpp>
