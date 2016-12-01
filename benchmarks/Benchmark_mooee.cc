@@ -101,6 +101,7 @@ int main (int argc, char ** argv)
 
 #define BENCH_DW(A,in,out)			\
     Dw.CayleyZeroCounters();			\
+    Dw. A (in,out);				\
     FGrid->Barrier();				\
     t0=usecond();				\
     for(int i=0;i<ncall;i++){			\
@@ -114,6 +115,7 @@ int main (int argc, char ** argv)
 
 #define BENCH_DW_MEO(A,in,out)			\
     Dw.CayleyZeroCounters();			\
+    Dw. A (in,out,0);				\
     FGrid->Barrier();				\
     t0=usecond();				\
     for(int i=0;i<ncall;i++){			\

@@ -124,7 +124,10 @@ PARALLEL_FOR_LOOP
       }
 #else
       for(int v=0;v<LLs;v++){
-      
+
+	vprefetch(psi[ss+v+LLs]);
+	//	vprefetch(phi[ss+v+LLs]);
+
 	int vp= (v==LLs-1) ? 0     : v+1;
 	int vm= (v==0    ) ? LLs-1 : v-1;
 	
