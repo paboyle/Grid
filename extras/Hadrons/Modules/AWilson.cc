@@ -70,6 +70,6 @@ void AWilson::execute()
     auto &U      = *env().getObject<LatticeGaugeField>(par().gauge);
     auto &grid   = *env().getGrid();
     auto &gridRb = *env().getRbGrid();
-    FMat *fMatPt = new WilsonFermionR(U, grid, gridRb, par().mass);
+    FMat *fMatPt = new WilsonFermion<FIMPL>(U, grid, gridRb, par().mass);
     env().setObject(getName(), fMatPt);
 }

@@ -75,7 +75,7 @@ void ADWF::execute(void)
     auto &grb4   = *env().getRbGrid();
     auto &g5     = *env().getGrid(par().Ls);
     auto &grb5   = *env().getRbGrid(par().Ls);
-    FMat *fMatPt = new DomainWallFermionR(U, g5, grb5, g4, grb4, par().mass,
-                                          par().M5);
+    FMat *fMatPt = new DomainWallFermion<FIMPL>(U, g5, grb5, g4, grb4,
+                                                par().mass, par().M5);
     env().setObject(getName(), fMatPt);
 }
