@@ -245,7 +245,7 @@ template <typename M>
 void Environment::createModule(const std::string name,
                                const typename M::Par &par)
 {
-    ModPt pt(new M(name));
+    std::unique_ptr<M> pt(new M(name));
     
     pt->setPar(par);
     pushModule(pt);
