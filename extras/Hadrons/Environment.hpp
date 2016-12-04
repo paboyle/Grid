@@ -31,6 +31,10 @@ directory.
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Graph.hpp>
 
+#ifndef SITE_SIZE_TYPE
+#define SITE_SIZE_TYPE unsigned int
+#endif
+
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
@@ -64,11 +68,12 @@ class Environment
 {
     SINGLETON(Environment);
 public:
-    typedef std::unique_ptr<ModuleBase>                 ModPt;
-    typedef std::unique_ptr<GridCartesian>              GridPt;
-    typedef std::unique_ptr<GridRedBlackCartesian>      GridRbPt;
-    typedef std::unique_ptr<GridParallelRNG>            RngPt;
-    typedef std::unique_ptr<LatticeBase>                LatticePt;
+    typedef SITE_SIZE_TYPE                         Size;
+    typedef std::unique_ptr<ModuleBase>            ModPt;
+    typedef std::unique_ptr<GridCartesian>         GridPt;
+    typedef std::unique_ptr<GridRedBlackCartesian> GridRbPt;
+    typedef std::unique_ptr<GridParallelRNG>       RngPt;
+    typedef std::unique_ptr<LatticeBase>           LatticePt;
 private:
     struct ModuleInfo
     {
@@ -79,7 +84,8 @@ private:
     };
     struct ObjInfo
     {
-        unsigned int            size{0}, Ls{0};
+        Size                    size{0};
+        unsigned int            Ls{0};
         bool                    isRegistered{false};
         const std::type_info    *type{nullptr};
         std::string             name;
@@ -124,8 +130,8 @@ public:
     bool                    hasModule(const unsigned int address) const;
     bool                    hasModule(const std::string name) const;
     Graph<unsigned int>     makeModuleGraph(void) const;
-    unsigned int            executeProgram(const std::vector<unsigned int> &p);
-    unsigned int            executeProgram(const std::vector<std::string> &p);
+    Size                    executeProgram(const std::vector<unsigned int> &p);
+    Size                    executeProgram(const std::vector<std::string> &p);
     // general memory management
     void                    addObject(const std::string name,
                                       const int moduleAddress);
@@ -159,8 +165,8 @@ public:
     std::string             getObjectName(const unsigned int address) const;
     std::string             getObjectType(const unsigned int address) const;
     std::string             getObjectType(const std::string name) const;
-    unsigned int            getObjectSize(const unsigned int address) const;
-    unsigned int            getObjectSize(const std::string name) const;
+    Size                    getObjectSize(const unsigned int address) const;
+    Size                    getObjectSize(const std::string name) const;
     unsigned int            getObjectLs(const unsigned int address) const;
     unsigned int            getObjectLs(const std::string name) const;
     bool                    hasObject(const unsigned int address) const;
@@ -169,7 +175,7 @@ public:
     bool                    hasRegisteredObject(const std::string name) const;
     bool                    isObject5d(const unsigned int address) const;
     bool                    isObject5d(const std::string name) const;
-    long unsigned int       getTotalSize(void) const;
+    Environment::Size       getTotalSize(void) const;
     void                    addOwnership(const unsigned int owner,
                                          const unsigned int property);
     void                    addOwnership(const std::string owner,

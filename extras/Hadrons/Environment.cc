@@ -143,6 +143,7 @@ void Environment::pushModule(Environment::ModPt &pt)
     if (!hasModule(name))
     {
         std::vector<unsigned int> inputAddress;
+        unsigned int              address;
         ModuleInfo                m;
         
         m.data = std::move(pt);
@@ -159,18 +160,19 @@ void Environment::pushModule(Environment::ModPt &pt)
         }
         auto output = m.data->getOutput();
         module_.push_back(std::move(m));
-        moduleAddress_[name] = module_.size() - 1;
+        address              = static_cast<unsigned int>(module_.size() - 1);
+        moduleAddress_[name] = address;
         for (auto &out: output)
         {
             if (!hasObject(out))
             {
-                addObject(out , module_.size() - 1);
+                addObject(out, address);
             }
             else
             {
                 if (object_[objectAddress_[out]].module < 0)
                 {
-                    object_[objectAddress_[out]].module = module_.size() - 1;
+                    object_[objectAddress_[out]].module = address;
                 }
                 else
                 {
@@ -287,9 +289,10 @@ Graph<unsigned int> Environment::makeModuleGraph(void) const
 #define MEM_MSG(size)\
 sizeString((size)*locVol_) << " (" << sizeString(size)  << "/site)"
 
-unsigned int Environment::executeProgram(const std::vector<unsigned int> &p)
+Environment::Size
+Environment::executeProgram(const std::vector<unsigned int> &p)
 {
-    unsigned int                        memPeak = 0, sizeBefore, sizeAfter;
+    Size                                memPeak = 0, sizeBefore, sizeAfter;
     std::vector<std::set<unsigned int>> freeProg;
     bool                                continueCollect, nothingFreed;
     
@@ -385,7 +388,7 @@ unsigned int Environment::executeProgram(const std::vector<unsigned int> &p)
     return memPeak;
 }
 
-unsigned int Environment::executeProgram(const std::vector<std::string> &p)
+Environment::Size Environment::executeProgram(const std::vector<std::string> &p)
 {
     std::vector<unsigned int> pAddress;
     
@@ -405,7 +408,7 @@ void Environment::addObject(const std::string name, const int moduleAddress)
     info.name   = name;
     info.module = moduleAddress;
     object_.push_back(std::move(info));
-    objectAddress_[name] = object_.size() - 1;
+    objectAddress_[name] = static_cast<unsigned int>(object_.size() - 1);
 }
 
 void Environment::registerObject(const unsigned int address,
@@ -483,7 +486,7 @@ std::string Environment::getObjectType(const std::string name) const
     return getObjectType(getObjectAddress(name));
 }
 
-unsigned int Environment::getObjectSize(const unsigned int address) const
+Environment::Size Environment::getObjectSize(const unsigned int address) const
 {
     if (hasRegisteredObject(address))
     {
@@ -500,7 +503,7 @@ unsigned int Environment::getObjectSize(const unsigned int address) const
     }
 }
 
-unsigned int Environment::getObjectSize(const std::string name) const
+Environment::Size Environment::getObjectSize(const std::string name) const
 {
     return getObjectSize(getObjectAddress(name));
 }
@@ -573,9 +576,9 @@ bool Environment::isObject5d(const std::string name) const
     return (getObjectLs(name) > 1);
 }
 
-long unsigned int Environment::getTotalSize(void) const
+Environment::Size Environment::getTotalSize(void) const
 {
-    long unsigned int size = 0;
+    Environment::Size size = 0;
     
     for (auto &o: object_)
     {
