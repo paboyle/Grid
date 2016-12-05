@@ -65,6 +65,11 @@ public:
     virtual ~Application(void) = default;
     // access
     void setPar(const GlobalPar &par);
+    // module creation
+    template <typename M>
+    void createModule(const std::string name);
+    template <typename M>
+    void createModule(const std::string name, const typename M::Par &par);
     // execute
     void run(void);
     // parse parameter file
@@ -80,6 +85,23 @@ private:
     Environment                                     &env_;
     std::vector<unsigned int>                       program_;
 };
+
+/******************************************************************************
+ *                     Application template implementation                    *
+ ******************************************************************************/
+// module creation /////////////////////////////////////////////////////////////
+template <typename M>
+void Application::createModule(const std::string name)
+{
+    env_.createModule<M>(name);
+}
+
+template <typename M>
+void Application::createModule(const std::string name,
+                               const typename M::Par &par)
+{
+    env_.createModule<M>(name, par);
+}
 
 END_HADRONS_NAMESPACE
 
