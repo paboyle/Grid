@@ -32,7 +32,7 @@ using namespace Hadrons;
 using namespace MAction;
 
 /******************************************************************************
-*                         Wilson implementation                              *
+*                          Wilson implementation                              *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 Wilson::Wilson(const std::string name)

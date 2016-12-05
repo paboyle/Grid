@@ -32,7 +32,7 @@ using namespace Hadrons;
 using namespace MGauge;
 
 /******************************************************************************
-*                            Unit implementation                             *
+*                             Unit implementation                             *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 Unit::Unit(const std::string name)

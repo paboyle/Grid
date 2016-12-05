@@ -33,7 +33,7 @@ using namespace Hadrons;
 using namespace MSolver;
 
 /******************************************************************************
-*                       RBPrecCG implementation                            *
+*                          RBPrecCG implementation                            *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 RBPrecCG::RBPrecCG(const std::string name)

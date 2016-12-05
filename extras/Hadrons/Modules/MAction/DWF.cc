@@ -32,7 +32,7 @@ using namespace Hadrons;
 using namespace MAction;
 
 /******************************************************************************
-*                          DWF implementation                                *
+*                           DWF implementation                                *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 DWF::DWF(const std::string name)

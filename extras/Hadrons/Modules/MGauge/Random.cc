@@ -32,7 +32,7 @@ using namespace Hadrons;
 using namespace MGauge;
 
 /******************************************************************************
-*                          Random implementation                             *
+*                           Random implementation                             *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 Random::Random(const std::string name)

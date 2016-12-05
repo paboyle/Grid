@@ -32,7 +32,7 @@ using namespace Hadrons;
 using namespace MGauge;
 
 /******************************************************************************
-*                          Load implementation                               *
+*                           Load implementation                               *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 Load::Load(const std::string name)

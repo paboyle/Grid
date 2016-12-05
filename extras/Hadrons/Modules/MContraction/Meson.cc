@@ -33,7 +33,7 @@ using namespace Hadrons;
 using namespace MContraction;
 
 /******************************************************************************
- *                          Meson implementation                             *
+ *                           Meson implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 Meson::Meson(const std::string name)
@@ -63,13 +63,12 @@ void Meson::execute(void)
                  << std::endl;
     
     XmlWriter             writer(par().output);
-    PropagatorField     &q1 = *env().getObject<PropagatorField>(par().q1);
-    PropagatorField     &q2 = *env().getObject<PropagatorField>(par().q2);
+    PropagatorField       &q1 = *env().getObject<PropagatorField>(par().q1);
+    PropagatorField       &q2 = *env().getObject<PropagatorField>(par().q2);
     LatticeComplex        c(env().getGrid());
     SpinMatrix            g[Ns*Ns], g5;
     std::vector<TComplex> buf;
     Result                result;
-    unsigned int          nt = env().getGrid()->GlobalDimensions()[Tp];
     
     g5 = makeGammaProd(Ns*Ns - 1);
     result.corr.resize(Ns*Ns);
