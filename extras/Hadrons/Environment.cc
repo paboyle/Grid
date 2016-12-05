@@ -640,7 +640,7 @@ bool Environment::freeObject(const unsigned int address)
 {
     if (!hasOwners(address))
     {
-        if (!isDryRun())
+        if (!isDryRun() and object_[address].isRegistered)
         {
             LOG(Message) << "Destroying object '" << object_[address].name
                          << "'" << std::endl;
