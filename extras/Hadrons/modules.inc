@@ -1,24 +1,24 @@
 modules_cc =\
-  Modules/ADWF.cc \
-  Modules/AWilson.cc \
-  Modules/CMeson.cc \
-  Modules/GLoad.cc \
-  Modules/GRandom.cc \
-  Modules/GUnit.cc \
+  Modules/MAction/DWF.cc \
+  Modules/MAction/Wilson.cc \
+  Modules/MContraction/Meson.cc \
+  Modules/MGauge/Load.cc \
+  Modules/MGauge/Random.cc \
+  Modules/MGauge/Unit.cc \
   Modules/MQuark.cc \
-  Modules/SolRBPrecCG.cc \
-  Modules/SrcPoint.cc \
-  Modules/SrcZ2.cc
+  Modules/MSolver/RBPrecCG.cc \
+  Modules/MSource/Point.cc \
+  Modules/MSource/Z2.cc
 
 modules_hpp =\
-  Modules/ADWF.hpp \
-  Modules/AWilson.hpp \
-  Modules/CMeson.hpp \
-  Modules/GLoad.hpp \
-  Modules/GRandom.hpp \
-  Modules/GUnit.hpp \
+  Modules/MAction/DWF.hpp \
+  Modules/MAction/Wilson.hpp \
+  Modules/MContraction/Meson.hpp \
+  Modules/MGauge/Load.hpp \
+  Modules/MGauge/Random.hpp \
+  Modules/MGauge/Unit.hpp \
   Modules/MQuark.hpp \
-  Modules/SolRBPrecCG.hpp \
-  Modules/SrcPoint.hpp \
-  Modules/SrcZ2.hpp
+  Modules/MSolver/RBPrecCG.hpp \
+  Modules/MSource/Point.hpp \
+  Modules/MSource/Z2.hpp
 

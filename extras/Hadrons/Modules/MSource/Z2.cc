@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/GLoad.cc
+Source file: programs/Hadrons/Z2.cc
 
 Copyright (C) 2016
 
@@ -25,28 +25,29 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Grid/Hadrons/Modules/GLoad.hpp>
+#include <Grid/Hadrons/Modules/MSource/Z2.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
+using namespace MSource;
 
 /******************************************************************************
-*                          GLoad implementation                               *
+*                              Z2 implementation                              *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-GLoad::GLoad(const std::string name)
-: Module<GLoadPar>(name)
+Z2::Z2(const std::string name)
+: Module<Z2Par>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> GLoad::getInput(void)
+std::vector<std::string> Z2::getInput(void)
 {
     std::vector<std::string> in;
     
     return in;
 }
 
-std::vector<std::string> GLoad::getOutput(void)
+std::vector<std::string> Z2::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -54,22 +55,34 @@ std::vector<std::string> GLoad::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void GLoad::setup(void)
+void Z2::setup(void)
 {
-    env().registerLattice<LatticeGaugeField>(getName());
+    env().registerLattice<PropagatorField>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void GLoad::execute(void)
+void Z2::execute(void)
 {
-    NerscField  header;
-    std::string fileName = par().file + "."
-                           + std::to_string(env().getTrajectory());
+    Lattice<iScalar<vInteger>> t(env().getGrid());
+    LatticeComplex             eta(env().getGrid());
+    LatticeFermion             phi(env().getGrid());
+    Complex                    shift(1., 1.);
     
-    LOG(Message) << "Loading NERSC configuration from file '" << fileName
-                 << "'" << std::endl;
-    LatticeGaugeField &U = *env().createLattice<LatticeGaugeField>(getName());
-    NerscIO::readConfiguration(U, header, fileName);
-    LOG(Message) << "NERSC header:" << std::endl;
-    dump_nersc_header(header, LOG(Message));
+    if (par().tA == par().tB)
+    {
+        LOG(Message) << "Generating Z_2 wall source at t= " << par().tA
+                     << std::endl;
+    }
+    else
+    {
+        LOG(Message) << "Generating Z_2 band for " << par().tA << " <= t <= "
+                     << par().tB << std::endl;
+    }
+    PropagatorField &src = *env().createLattice<PropagatorField>(getName());
+    LatticeCoordinate(t, Tp);
+    bernoulli(*env().get4dRng(), eta);
+    eta = (2.*eta - shift)*(1./::sqrt(2.));
+    eta = where((t >= par().tA) and (t <= par().tB), eta, 0.*eta);
+    src = 1.;
+    src = src*eta;
 }

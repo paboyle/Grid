@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/SrcPoint.cc
+Source file: programs/Hadrons/DWF.cc
 
 Copyright (C) 2016
 
@@ -25,28 +25,29 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Grid/Hadrons/Modules/SrcPoint.hpp>
+#include <Grid/Hadrons/Modules/MAction/DWF.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
+using namespace MAction;
 
 /******************************************************************************
-*                         SrcPoint implementation                             *
+*                          DWF implementation                                *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-SrcPoint::SrcPoint(const std::string name)
-: Module<SrcPointPar>(name)
+DWF::DWF(const std::string name)
+: Module<DWFPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> SrcPoint::getInput(void)
+std::vector<std::string> DWF::getInput(void)
 {
-    std::vector<std::string> in;
+    std::vector<std::string> in = {par().gauge};
     
     return in;
 }
 
-std::vector<std::string> SrcPoint::getOutput(void)
+std::vector<std::string> DWF::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -54,21 +55,28 @@ std::vector<std::string> SrcPoint::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void SrcPoint::setup(void)
+void DWF::setup(void)
 {
-    env().registerLattice<PropagatorField>(getName());
+    unsigned int size;
+    
+    size = 3*env().lattice4dSize<WilsonFermionR::DoubledGaugeField>();
+    env().registerObject(getName(), size, par().Ls);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void SrcPoint::execute(void)
+void DWF::execute(void)
 {
-    std::vector<int> position = strToVec<int>(par().position);
-    SpinColourMatrix id;
-    
-    LOG(Message) << "Creating point source at position [" << par().position
-                 << "]" << std::endl;
-    PropagatorField &src = *env().createLattice<PropagatorField>(getName());
-    id  = 1.;
-    src = zero;
-    pokeSite(id, src, position);
+    LOG(Message) << "Setting up domain wall fermion matrix with m= "
+                 << par().mass << ", M5= " << par().M5 << " and Ls= "
+                 << par().Ls << " using gauge field '" << par().gauge << "'"
+                 << std::endl;
+    env().createGrid(par().Ls);
+    auto &U      = *env().getObject<LatticeGaugeField>(par().gauge);
+    auto &g4     = *env().getGrid();
+    auto &grb4   = *env().getRbGrid();
+    auto &g5     = *env().getGrid(par().Ls);
+    auto &grb5   = *env().getRbGrid(par().Ls);
+    FMat *fMatPt = new DomainWallFermion<FIMPL>(U, g5, grb5, g4, grb4,
+                                                par().mass, par().M5);
+    env().setObject(getName(), fMatPt);
 }

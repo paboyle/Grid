@@ -1,9 +1,9 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/CMeson.hpp
+Source file: programs/Hadrons/DWF.hpp
 
-Copyright (C) 2015
+Copyright (C) 2016
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -25,8 +25,8 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#ifndef Hadrons_CMeson_hpp_
-#define Hadrons_CMeson_hpp_
+#ifndef Hadrons_DWF_hpp_
+#define Hadrons_DWF_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -35,40 +35,39 @@ directory.
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                               CMeson                                       *
+ *                     Domain wall quark action                               *
  ******************************************************************************/
-class CMesonPar: Serializable
+namespace MAction
 {
-public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(CMesonPar,
-                                    std::string, q1,
-                                    std::string, q2,
-                                    std::string, output);
-};
-
-class CMeson: public Module<CMesonPar>
-{
-public:
-    class Result: Serializable
+    class DWFPar: Serializable
     {
     public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                        std::vector<std::vector<std::vector<Complex>>>, corr);
+        GRID_SERIALIZABLE_CLASS_MEMBERS(DWFPar,
+                                        std::string, gauge,
+                                        unsigned int, Ls,
+                                        double      , mass,
+                                        double      , M5);
     };
-public:
-    // constructor
-    CMeson(const std::string name);
-    // destructor
-    virtual ~CMeson(void) = default;
-    // dependencies/products
-    virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getOutput(void);
-    // execution
-    virtual void execute(void);
-};
+    
+    class DWF: public Module<DWFPar>
+    {
+    public:
+        // constructor
+        DWF(const std::string name);
+        // destructor
+        virtual ~DWF(void) = default;
+        // dependency relation
+        virtual std::vector<std::string> getInput(void);
+        virtual std::vector<std::string> getOutput(void);
+        // setup
+        virtual void setup(void);
+        // execution
+        virtual void execute(void);
+    };
+}
 
-MODULE_REGISTER(CMeson);
+MODULE_REGISTER_NS(DWF, MAction);
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_CMeson_hpp_
+#endif // Hadrons_DWF_hpp_

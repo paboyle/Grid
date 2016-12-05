@@ -61,7 +61,7 @@ public:
     virtual void execute(void);
 private:
     unsigned int Ls_;
-    Solver       *solver_{nullptr};
+    SolverFn     *solver_{nullptr};
 };
 
 MODULE_REGISTER(MQuark);

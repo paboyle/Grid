@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/GRandom.hpp
+Source file: programs/Hadrons/RBPrecCG.hpp
 
 Copyright (C) 2016
 
@@ -25,8 +25,8 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#ifndef Hadrons_GRandom_hpp_
-#define Hadrons_GRandom_hpp_
+#ifndef Hadrons_RBPrecCG_hpp_
+#define Hadrons_RBPrecCG_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -35,26 +35,37 @@ directory.
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                             Random gauge                                   *
+ *                     Schur red-black preconditioned CG                      *
  ******************************************************************************/
-class GRandom: public Module<NoPar>
+namespace MSolver
 {
-public:
-    // constructor
-    GRandom(const std::string name);
-    // destructor
-    virtual ~GRandom(void) = default;
-    // dependency relation
-    virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getOutput(void);
-    // setup
-    virtual void setup(void);
-    // execution
-    virtual void execute(void);
-};
+    class RBPrecCGPar: Serializable
+    {
+    public:
+        GRID_SERIALIZABLE_CLASS_MEMBERS(RBPrecCGPar,
+                                        std::string, action,
+                                        double     , residual);
+    };
+    
+    class RBPrecCG: public Module<RBPrecCGPar>
+    {
+    public:
+        // constructor
+        RBPrecCG(const std::string name);
+        // destructor
+        virtual ~RBPrecCG(void) = default;
+        // dependencies/products
+        virtual std::vector<std::string> getInput(void);
+        virtual std::vector<std::string> getOutput(void);
+        // setup
+        virtual void setup(void);
+        // execution
+        virtual void execute(void);
+    };
+}
 
-MODULE_REGISTER(GRandom);
+MODULE_REGISTER_NS(RBPrecCG, MSolver);
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_GRandom_hpp_
+#endif // Hadrons_RBPrecCG_hpp_

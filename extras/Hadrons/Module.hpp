@@ -33,7 +33,7 @@ directory.
 
 BEGIN_HADRONS_NAMESPACE
 
-// module registration macro
+// module registration macros
 #define MODULE_REGISTER(mod)\
 class mod##ModuleRegistrar\
 {\
@@ -48,6 +48,21 @@ public:\
     }\
 };\
 static mod##ModuleRegistrar mod##ModuleRegistrarInstance;
+
+#define MODULE_REGISTER_NS(mod, ns)\
+class ns##mod##ModuleRegistrar\
+{\
+public:\
+    ns##mod##ModuleRegistrar(void)\
+    {\
+        ModuleFactory &modFac = ModuleFactory::getInstance();\
+        modFac.registerBuilder(#ns "::" #mod, [&](const std::string name)\
+                              {\
+                                  return std::unique_ptr<ns::mod>(new ns::mod(name));\
+                              });\
+    }\
+};\
+static ns##mod##ModuleRegistrar ns##mod##ModuleRegistrarInstance;
 
 /******************************************************************************
  *                            Module class                                    *

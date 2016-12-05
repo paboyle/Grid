@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/SolRBPrecCG.hpp
+Source file: programs/Hadrons/Point.hpp
 
 Copyright (C) 2016
 
@@ -25,8 +25,8 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#ifndef Hadrons_SolRBPrecCG_hpp_
-#define Hadrons_SolRBPrecCG_hpp_
+#ifndef Hadrons_Point_hpp_
+#define Hadrons_Point_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -34,35 +34,48 @@ directory.
 
 BEGIN_HADRONS_NAMESPACE
 
+/*
+ 
+ Point source
+ ------------
+ * src_x = delta_x,o
+ 
+ * options: o
+ - position: space-separated integer sequence (e.g. "0 1 1 0")
+ 
+ */
+
 /******************************************************************************
- *                     Schur red-black preconditioned CG                      *
+ *                                  Point                                     *
  ******************************************************************************/
-class SolRBPrecCGPar: Serializable
+namespace MSource
 {
-public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(SolRBPrecCGPar,
-                                    std::string, action,
-                                    double     , residual);
-};
+    class PointPar: Serializable
+    {
+    public:
+        GRID_SERIALIZABLE_CLASS_MEMBERS(PointPar,
+                                        std::string, position);
+    };
+    
+    class Point: public Module<PointPar>
+    {
+    public:
+        // constructor
+        Point(const std::string name);
+        // destructor
+        virtual ~Point(void) = default;
+        // dependency relation
+        virtual std::vector<std::string> getInput(void);
+        virtual std::vector<std::string> getOutput(void);
+        // setup
+        virtual void setup(void);
+        // execution
+        virtual void execute(void);
+    };
+}
 
-class SolRBPrecCG: public Module<SolRBPrecCGPar>
-{
-public:
-    // constructor
-    SolRBPrecCG(const std::string name);
-    // destructor
-    virtual ~SolRBPrecCG(void) = default;
-    // dependencies/products
-    virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getOutput(void);
-    // setup
-    virtual void setup(void);
-    // execution
-    virtual void execute(void);
-};
-
-MODULE_REGISTER(SolRBPrecCG);
+MODULE_REGISTER_NS(Point, MSource);
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_SolRBPrecCG_hpp_
+#endif // Hadrons_Point_hpp_

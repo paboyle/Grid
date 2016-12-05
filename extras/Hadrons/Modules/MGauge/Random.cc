@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/ADWF.cc
+Source file: programs/Hadrons/Random.cc
 
 Copyright (C) 2016
 
@@ -25,28 +25,27 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Grid/Hadrons/Modules/ADWF.hpp>
+#include <Grid/Hadrons/Modules/MGauge/Random.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
+using namespace MGauge;
 
 /******************************************************************************
-*                          ADWF implementation                                *
+*                          Random implementation                             *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-ADWF::ADWF(const std::string name)
-: Module<ADWFPar>(name)
+Random::Random(const std::string name)
+: Module<NoPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> ADWF::getInput(void)
+std::vector<std::string> Random::getInput(void)
 {
-    std::vector<std::string> in = {par().gauge};
-    
-    return in;
+    return std::vector<std::string>();
 }
 
-std::vector<std::string> ADWF::getOutput(void)
+std::vector<std::string> Random::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -54,28 +53,15 @@ std::vector<std::string> ADWF::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void ADWF::setup(void)
+void Random::setup(void)
 {
-    unsigned int size;
-    
-    size = 3*env().lattice4dSize<WilsonFermionR::DoubledGaugeField>();
-    env().registerObject(getName(), size, par().Ls);
+    env().registerLattice<LatticeGaugeField>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void ADWF::execute(void)
+void Random::execute(void)
 {
-    LOG(Message) << "Setting up domain wall fermion matrix with m= "
-                 << par().mass << ", M5= " << par().M5 << " and Ls= "
-                 << par().Ls << " using gauge field '" << par().gauge << "'"
-                 << std::endl;
-    env().createGrid(par().Ls);
-    auto &U      = *env().getObject<LatticeGaugeField>(par().gauge);
-    auto &g4     = *env().getGrid();
-    auto &grb4   = *env().getRbGrid();
-    auto &g5     = *env().getGrid(par().Ls);
-    auto &grb5   = *env().getRbGrid(par().Ls);
-    FMat *fMatPt = new DomainWallFermion<FIMPL>(U, g5, grb5, g4, grb4,
-                                                par().mass, par().M5);
-    env().setObject(getName(), fMatPt);
+    LOG(Message) << "Generating random gauge configuration" << std::endl;
+    LatticeGaugeField &U = *env().createLattice<LatticeGaugeField>(getName());
+    SU3::HotConfiguration(*env().get4dRng(), U);
 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/CMeson.cc
+Source file: programs/Hadrons/Meson.cc
 
 Copyright (C) 2015
 
@@ -25,29 +25,30 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Grid/Hadrons/Modules/CMeson.hpp>
+#include <Grid/Hadrons/Modules/MContraction/Meson.hpp>
 
 using namespace Grid;
 using namespace QCD;
 using namespace Hadrons;
+using namespace MContraction;
 
 /******************************************************************************
- *                          CMeson implementation                             *
+ *                          Meson implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-CMeson::CMeson(const std::string name)
-: Module<CMesonPar>(name)
+Meson::Meson(const std::string name)
+: Module<MesonPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> CMeson::getInput(void)
+std::vector<std::string> Meson::getInput(void)
 {
     std::vector<std::string> input = {par().q1, par().q2};
     
     return input;
 }
 
-std::vector<std::string> CMeson::getOutput(void)
+std::vector<std::string> Meson::getOutput(void)
 {
     std::vector<std::string> output = {getName()};
     
@@ -55,7 +56,7 @@ std::vector<std::string> CMeson::getOutput(void)
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void CMeson::execute(void)
+void Meson::execute(void)
 {
     LOG(Message) << "Computing meson contraction '" << getName() << "' using"
                  << " quarks '" << par().q1 << "' and '" << par().q2 << "'"

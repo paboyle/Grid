@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/SrcPoint.hpp
+Source file: programs/Hadrons/Unit.hpp
 
 Copyright (C) 2016
 
@@ -25,8 +25,8 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#ifndef Hadrons_SrcPoint_hpp_
-#define Hadrons_SrcPoint_hpp_
+#ifndef Hadrons_Unit_hpp_
+#define Hadrons_Unit_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -34,45 +34,30 @@ directory.
 
 BEGIN_HADRONS_NAMESPACE
 
-/*
- 
- Point source
- ------------
- * src_x = delta_x,o
- 
- * options: o
- - position: space-separated integer sequence (e.g. "0 1 1 0")
- 
- */
-
 /******************************************************************************
- *                                SrcPoint                                    *
+ *                              Unit gauge                                    *
  ******************************************************************************/
-class SrcPointPar: Serializable
+namespace MGauge
 {
-public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(SrcPointPar,
-                                    std::string, position);
-};
+    class Unit: public Module<NoPar>
+    {
+    public:
+        // constructor
+        Unit(const std::string name);
+        // destructor
+        virtual ~Unit(void) = default;
+        // dependencies/products
+        virtual std::vector<std::string> getInput(void);
+        virtual std::vector<std::string> getOutput(void);
+        // setup
+        virtual void setup(void);
+        // execution
+        virtual void execute(void);
+    };
+}
 
-class SrcPoint: public Module<SrcPointPar>
-{
-public:
-    // constructor
-    SrcPoint(const std::string name);
-    // destructor
-    virtual ~SrcPoint(void) = default;
-    // dependency relation
-    virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getOutput(void);
-    // setup
-    virtual void setup(void);
-    // execution
-    virtual void execute(void);
-};
-
-MODULE_REGISTER(SrcPoint);
+MODULE_REGISTER_NS(Unit, MGauge);
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_SrcPoint_hpp_
+#endif // Hadrons_Unit_hpp_

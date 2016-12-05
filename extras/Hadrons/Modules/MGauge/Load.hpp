@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/AWilson.hpp
+Source file: programs/Hadrons/Load.hpp
 
 Copyright (C) 2016
 
@@ -25,8 +25,8 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#ifndef Hadrons_AWilson_hpp_
-#define Hadrons_AWilson_hpp_
+#ifndef Hadrons_Load_hpp_
+#define Hadrons_Load_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -35,34 +35,36 @@ directory.
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                            Wilson quark action                             *
+ *                         Load a NERSC configuration                         *
  ******************************************************************************/
-class AWilsonPar: Serializable
+namespace MGauge
 {
-public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(AWilsonPar,
-                                    std::string, gauge,
-                                    double     , mass);
-};
+    class LoadPar: Serializable
+    {
+    public:
+        GRID_SERIALIZABLE_CLASS_MEMBERS(LoadPar,
+                                        std::string, file);
+    };
 
-class AWilson: public Module<AWilsonPar>
-{
-public:
-    // constructor
-    AWilson(const std::string name);
-    // destructor
-    virtual ~AWilson(void) = default;
-    // dependencies/products
-    virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getOutput(void);
-    // setup
-    virtual void setup(void);
-    // execution
-    virtual void execute(void);
-};
+    class Load: public Module<LoadPar>
+    {
+    public:
+        // constructor
+        Load(const std::string name);
+        // destructor
+        virtual ~Load(void) = default;
+        // dependency relation
+        virtual std::vector<std::string> getInput(void);
+        virtual std::vector<std::string> getOutput(void);
+        // setup
+        virtual void setup(void);
+        // execution
+        virtual void execute(void);
+    };
+}
 
-MODULE_REGISTER(AWilson);
+MODULE_REGISTER_NS(Load, MGauge);
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_AWilson_hpp_
+#endif // Hadrons_Load_hpp_

@@ -1,4 +1,4 @@
-#include <Hadrons/___FILEBASENAME___.hpp>
+#include <Grid/Hadrons/Modules/___FILEBASENAME___.hpp>
 
 using namespace Grid;
 using namespace Hadrons;

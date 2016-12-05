@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/SrcZ2.hpp
+Source file: programs/Hadrons/Wilson.hpp
 
 Copyright (C) 2016
 
@@ -25,8 +25,8 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#ifndef Hadrons_SrcZ2_hpp_
-#define Hadrons_SrcZ2_hpp_
+#ifndef Hadrons_Wilson_hpp_
+#define Hadrons_Wilson_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -34,47 +34,38 @@ directory.
 
 BEGIN_HADRONS_NAMESPACE
 
-/*
- 
- Z_2 stochastic source
- -----------------------------
- * src_x = eta_x * theta(x_3 - ta) * theta(tb - x_3)
- 
- * options:
- - tA: begin timeslice (integer)
- - tB: end timesilce (integer)
- 
- */
- 
 /******************************************************************************
- *                               SrcZ2                                        *
+ *                            Wilson quark action                             *
  ******************************************************************************/
-class SrcZ2Par: Serializable
+namespace MAction
 {
-public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(SrcZ2Par,
-                                    unsigned int, tA,
-                                    unsigned int, tB);
-};
+    class WilsonPar: Serializable
+    {
+    public:
+        GRID_SERIALIZABLE_CLASS_MEMBERS(WilsonPar,
+                                        std::string, gauge,
+                                        double     , mass);
+    };
 
-class SrcZ2: public Module<SrcZ2Par>
-{
-public:
-    // constructor
-    SrcZ2(const std::string name);
-    // destructor
-    virtual ~SrcZ2(void) = default;
-    // dependency relation
-    virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getOutput(void);
-    // setup
-    virtual void setup(void);
-    // execution
-    virtual void execute(void);
-};
+    class Wilson: public Module<WilsonPar>
+    {
+    public:
+        // constructor
+        Wilson(const std::string name);
+        // destructor
+        virtual ~Wilson(void) = default;
+        // dependencies/products
+        virtual std::vector<std::string> getInput(void);
+        virtual std::vector<std::string> getOutput(void);
+        // setup
+        virtual void setup(void);
+        // execution
+        virtual void execute(void);
+    };
+}
 
-MODULE_REGISTER(SrcZ2);
+MODULE_REGISTER_NS(Wilson, MAction);
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_SrcZ2_hpp_
+#endif // Hadrons_Wilson_hpp_

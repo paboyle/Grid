@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/GRandom.cc
+Source file: programs/Hadrons/RBPrecCG.cc
 
 Copyright (C) 2016
 
@@ -25,26 +25,30 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Grid/Hadrons/Modules/GRandom.hpp>
+#include <Grid/Hadrons/Modules/MSolver/RBPrecCG.hpp>
 
 using namespace Grid;
+using namespace QCD;
 using namespace Hadrons;
+using namespace MSolver;
 
 /******************************************************************************
-*                          GRandom implementation                             *
+*                       RBPrecCG implementation                            *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-GRandom::GRandom(const std::string name)
-: Module<NoPar>(name)
+RBPrecCG::RBPrecCG(const std::string name)
+: Module(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> GRandom::getInput(void)
+std::vector<std::string> RBPrecCG::getInput(void)
 {
-    return std::vector<std::string>();
+    std::vector<std::string> in = {par().action};
+    
+    return in;
 }
 
-std::vector<std::string> GRandom::getOutput(void)
+std::vector<std::string> RBPrecCG::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -52,15 +56,29 @@ std::vector<std::string> GRandom::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void GRandom::setup(void)
+void RBPrecCG::setup(void)
 {
-    env().registerLattice<LatticeGaugeField>(getName());
+    auto Ls = env().getObjectLs(par().action);
+    
+    env().registerObject(getName(), 0, Ls);
+    env().addOwnership(getName(), par().action);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void GRandom::execute(void)
+void RBPrecCG::execute(void)
 {
-    LOG(Message) << "Generating random gauge configuration" << std::endl;
-    LatticeGaugeField &U = *env().createLattice<LatticeGaugeField>(getName());
-    SU3::HotConfiguration(*env().get4dRng(), U);
+    auto &mat   = *(env().getObject<FMat>(par().action));
+    auto solver = [&mat, this](LatticeFermion &sol,
+                               const LatticeFermion &source)
+    {
+        ConjugateGradient<LatticeFermion>           cg(par().residual, 10000);
+        SchurRedBlackDiagMooeeSolve<LatticeFermion> schurSolver(cg);
+        
+        schurSolver(mat, source, sol);
+    };
+    
+    LOG(Message) << "setting up Schur red-black preconditioned CG for"
+                 << " action '" << par().action << "' with residual "
+                 << par().residual << std::endl;
+    env().setObject(getName(), new SolverFn(solver));
 }

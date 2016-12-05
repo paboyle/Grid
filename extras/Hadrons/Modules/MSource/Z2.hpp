@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/ADWF.hpp
+Source file: programs/Hadrons/Z2.hpp
 
 Copyright (C) 2016
 
@@ -25,8 +25,8 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#ifndef Hadrons_ADWF_hpp_
-#define Hadrons_ADWF_hpp_
+#ifndef Hadrons_Z2_hpp_
+#define Hadrons_Z2_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -34,37 +34,50 @@ directory.
 
 BEGIN_HADRONS_NAMESPACE
 
+/*
+ 
+ Z_2 stochastic source
+ -----------------------------
+ * src_x = eta_x * theta(x_3 - ta) * theta(tb - x_3)
+ 
+ * options:
+ - tA: begin timeslice (integer)
+ - tB: end timesilce (integer)
+ 
+ */
+ 
 /******************************************************************************
- *                     Domain wall quark action                               *
+ *                                 Z2                                         *
  ******************************************************************************/
-class ADWFPar: Serializable
+namespace MSource
 {
-public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(ADWFPar, 
-                                    std::string, gauge,
-                                    unsigned int, Ls,
-                                    double      , mass,
-                                    double      , M5);
-};
+    class Z2Par: Serializable
+    {
+    public:
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Z2Par,
+                                        unsigned int, tA,
+                                        unsigned int, tB);
+    };
 
-class ADWF: public Module<ADWFPar>
-{
-public:
-    // constructor
-    ADWF(const std::string name);
-    // destructor
-    virtual ~ADWF(void) = default;
-    // dependency relation
-    virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getOutput(void);
-    // setup
-    virtual void setup(void);
-    // execution
-    virtual void execute(void);
-};
+    class Z2: public Module<Z2Par>
+    {
+    public:
+        // constructor
+        Z2(const std::string name);
+        // destructor
+        virtual ~Z2(void) = default;
+        // dependency relation
+        virtual std::vector<std::string> getInput(void);
+        virtual std::vector<std::string> getOutput(void);
+        // setup
+        virtual void setup(void);
+        // execution
+        virtual void execute(void);
+    };
+}
 
-MODULE_REGISTER(ADWF);
+MODULE_REGISTER_NS(Z2, MSource);
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_ADWF_hpp_
+#endif // Hadrons_Z2_hpp_

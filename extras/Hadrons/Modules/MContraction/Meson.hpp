@@ -1,9 +1,9 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/GLoad.hpp
+Source file: programs/Hadrons/Meson.hpp
 
-Copyright (C) 2016
+Copyright (C) 2015
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -25,8 +25,8 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#ifndef Hadrons_GLoad_hpp_
-#define Hadrons_GLoad_hpp_
+#ifndef Hadrons_Meson_hpp_
+#define Hadrons_Meson_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -35,33 +35,43 @@ directory.
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         Load a NERSC configuration                         *
+ *                                Meson                                       *
  ******************************************************************************/
-class GLoadPar: Serializable
+namespace MContraction
 {
-public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(GLoadPar,
-                                    std::string, file);
-};
+    class MesonPar: Serializable
+    {
+    public:
+        GRID_SERIALIZABLE_CLASS_MEMBERS(MesonPar,
+                                        std::string, q1,
+                                        std::string, q2,
+                                        std::string, output);
+    };
+    
+    class Meson: public Module<MesonPar>
+    {
+    public:
+        class Result: Serializable
+        {
+        public:
+            GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
+                                            std::vector<std::vector<std::vector<Complex>>>, corr);
+        };
+    public:
+        // constructor
+        Meson(const std::string name);
+        // destructor
+        virtual ~Meson(void) = default;
+        // dependencies/products
+        virtual std::vector<std::string> getInput(void);
+        virtual std::vector<std::string> getOutput(void);
+        // execution
+        virtual void execute(void);
+    };
+}
 
-class GLoad: public Module<GLoadPar>
-{
-public:
-    // constructor
-    GLoad(const std::string name);
-    // destructor
-    virtual ~GLoad(void) = default;
-    // dependency relation
-    virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getOutput(void);
-    // setup
-    virtual void setup(void);
-    // execution
-    virtual void execute(void);
-};
-
-MODULE_REGISTER(GLoad);
+MODULE_REGISTER_NS(Meson, MContraction);
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_GLoad_hpp_
+#endif // Hadrons_Meson_hpp_

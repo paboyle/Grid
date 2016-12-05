@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/GUnit.cc
+Source file: programs/Hadrons/Unit.cc
 
 Copyright (C) 2016
 
@@ -25,26 +25,27 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Grid/Hadrons/Modules/GUnit.hpp>
+#include <Grid/Hadrons/Modules/MGauge/Unit.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
+using namespace MGauge;
 
 /******************************************************************************
-*                            GUnit implementation                             *
+*                            Unit implementation                             *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-GUnit::GUnit(const std::string name)
+Unit::Unit(const std::string name)
 : Module<NoPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> GUnit::getInput(void)
+std::vector<std::string> Unit::getInput(void)
 {
     return std::vector<std::string>();
 }
 
-std::vector<std::string> GUnit::getOutput(void)
+std::vector<std::string> Unit::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -52,13 +53,13 @@ std::vector<std::string> GUnit::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void GUnit::setup(void)
+void Unit::setup(void)
 {
     env().registerLattice<LatticeGaugeField>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void GUnit::execute(void)
+void Unit::execute(void)
 {
     LOG(Message) << "Creating unit gauge configuration" << std::endl;
     LatticeGaugeField &U = *env().createLattice<LatticeGaugeField>(getName());

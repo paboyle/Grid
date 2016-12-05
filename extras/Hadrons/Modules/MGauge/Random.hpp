@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/GUnit.hpp
+Source file: programs/Hadrons/Random.hpp
 
 Copyright (C) 2016
 
@@ -25,8 +25,8 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#ifndef Hadrons_GUnit_hpp_
-#define Hadrons_GUnit_hpp_
+#ifndef Hadrons_Random_hpp_
+#define Hadrons_Random_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -35,26 +35,29 @@ directory.
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                              Unit gauge                                    *
+ *                             Random gauge                                   *
  ******************************************************************************/
-class GUnit: public Module<NoPar>
+namespace MGauge
 {
-public:
-    // constructor
-    GUnit(const std::string name);
-    // destructor
-    virtual ~GUnit(void) = default;
-    // dependencies/products
-    virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getOutput(void);
-    // setup
-    virtual void setup(void);
-    // execution
-    virtual void execute(void);
-};
+    class Random: public Module<NoPar>
+    {
+    public:
+        // constructor
+        Random(const std::string name);
+        // destructor
+        virtual ~Random(void) = default;
+        // dependency relation
+        virtual std::vector<std::string> getInput(void);
+        virtual std::vector<std::string> getOutput(void);
+        // setup
+        virtual void setup(void);
+        // execution
+        virtual void execute(void);
+    };
+}
 
-MODULE_REGISTER(GUnit);
+MODULE_REGISTER_NS(Random, MGauge);
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_GUnit_hpp_
+#endif // Hadrons_Random_hpp_

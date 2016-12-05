@@ -28,7 +28,6 @@
 #include <Grid/Hadrons/Application.hpp>
 
 using namespace Grid;
-using namespace QCD;
 using namespace Hadrons;
 
 int main(int argc, char *argv[])
@@ -56,30 +55,31 @@ int main(int argc, char *argv[])
     globalPar.seed              = "1 2 3 4";
     application.setPar(globalPar);
     // gauge field
-    application.createModule<GUnit>("gauge");
+    application.createModule<MGauge::Unit>("gauge");
     // sources
-    SrcZ2::Par z2Par;
+    MSource::Z2::Par z2Par;
     z2Par.tA = 0;
     z2Par.tB = 0;
-    application.createModule<SrcZ2>("z2", z2Par);
-    SrcPoint::Par ptPar;
+    application.createModule<MSource::Z2>("z2", z2Par);
+    MSource::Point::Par ptPar;
     ptPar.position = "0 0 0 0";
-    application.createModule<SrcPoint>("pt", ptPar);
+    application.createModule<MSource::Point>("pt", ptPar);
     for (unsigned int i = 0; i < flavour.size(); ++i)
     {
         // actions
-        ADWF::Par actionPar;
+        MAction::DWF::Par actionPar;
         actionPar.gauge = "gauge";
         actionPar.Ls    = 12;
         actionPar.M5    = 1.8;
         actionPar.mass  = mass[i];
-        application.createModule<ADWF>("DWF_" + flavour[i], actionPar);
+        application.createModule<MAction::DWF>("DWF_" + flavour[i], actionPar);
         
         // solvers
-        SolRBPrecCG::Par solverPar;
+        MSolver::RBPrecCG::Par solverPar;
         solverPar.action   = "DWF_" + flavour[i];
         solverPar.residual = 1.0e-8;
-        application.createModule<SolRBPrecCG>("CG_" + flavour[i], solverPar);
+        application.createModule<MSolver::RBPrecCG>("CG_" + flavour[i],
+                                                    solverPar);
         
         // propagators
         MQuark::Par quarkPar;
@@ -90,13 +90,14 @@ int main(int argc, char *argv[])
     for (unsigned int i = 0;     i < flavour.size(); ++i)
     for (unsigned int j = i + 1; j < flavour.size(); ++j)
     {
-        CMeson::Par mesPar;
+        MContraction::Meson::Par mesPar;
         
         mesPar.output = "mesons/" + flavour[i] + flavour[j];
         mesPar.q1     = "Q_" + flavour[i];
         mesPar.q2     = "Q_" + flavour[j];
-        application.createModule<CMeson>("meson_" + flavour[i] + flavour[j],
-                                         mesPar);
+        application.createModule<MContraction::Meson>("meson_"
+                                                      + flavour[i] + flavour[j],
+                                                      mesPar);
     }
     
     // execution

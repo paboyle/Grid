@@ -54,7 +54,7 @@ BEGIN_HADRONS_NAMESPACE
 typedef FermionOperator<FIMPL> FMat;
 typedef FIMPL::FermionField    FermionField;
 typedef FIMPL::PropagatorField PropagatorField;
-typedef std::function<void(FermionField &, const FermionField &)> Solver;
+typedef std::function<void(FermionField &, const FermionField &)> SolverFn;
 
 // logger
 class HadronsLogger: public Logger

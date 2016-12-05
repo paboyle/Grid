@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/SolRBPrecCG.cc
+Source file: programs/Hadrons/Load.cc
 
 Copyright (C) 2016
 
@@ -25,29 +25,29 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Grid/Hadrons/Modules/SolRBPrecCG.hpp>
+#include <Grid/Hadrons/Modules/MGauge/Load.hpp>
 
 using namespace Grid;
-using namespace QCD;
 using namespace Hadrons;
+using namespace MGauge;
 
 /******************************************************************************
-*                       SolRBPrecCG implementation                            *
+*                          Load implementation                               *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-SolRBPrecCG::SolRBPrecCG(const std::string name)
-: Module(name)
+Load::Load(const std::string name)
+: Module<LoadPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> SolRBPrecCG::getInput(void)
+std::vector<std::string> Load::getInput(void)
 {
-    std::vector<std::string> in = {par().action};
+    std::vector<std::string> in;
     
     return in;
 }
 
-std::vector<std::string> SolRBPrecCG::getOutput(void)
+std::vector<std::string> Load::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -55,29 +55,22 @@ std::vector<std::string> SolRBPrecCG::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void SolRBPrecCG::setup(void)
+void Load::setup(void)
 {
-    auto Ls = env().getObjectLs(par().action);
-    
-    env().registerObject(getName(), 0, Ls);
-    env().addOwnership(getName(), par().action);
+    env().registerLattice<LatticeGaugeField>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void SolRBPrecCG::execute(void)
+void Load::execute(void)
 {
-    auto &mat   = *(env().getObject<FMat>(par().action));
-    auto solver = [&mat, this](LatticeFermion &sol,
-                               const LatticeFermion &source)
-    {
-        ConjugateGradient<LatticeFermion>           cg(par().residual, 10000);
-        SchurRedBlackDiagMooeeSolve<LatticeFermion> schurSolver(cg);
-        
-        schurSolver(mat, source, sol);
-    };
+    NerscField  header;
+    std::string fileName = par().file + "."
+                           + std::to_string(env().getTrajectory());
     
-    LOG(Message) << "setting up Schur red-black preconditioned CG for"
-                 << " action '" << par().action << "' with residual "
-                 << par().residual << std::endl;
-    env().setObject(getName(), new Solver(solver));
+    LOG(Message) << "Loading NERSC configuration from file '" << fileName
+                 << "'" << std::endl;
+    LatticeGaugeField &U = *env().createLattice<LatticeGaugeField>(getName());
+    NerscIO::readConfiguration(U, header, fileName);
+    LOG(Message) << "NERSC header:" << std::endl;
+    dump_nersc_header(header, LOG(Message));
 }

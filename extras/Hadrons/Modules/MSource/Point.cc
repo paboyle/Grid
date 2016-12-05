@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/SrcZ2.cc
+Source file: programs/Hadrons/Point.cc
 
 Copyright (C) 2016
 
@@ -25,28 +25,29 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Grid/Hadrons/Modules/SrcZ2.hpp>
+#include <Grid/Hadrons/Modules/MSource/Point.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
+using namespace MSource;
 
 /******************************************************************************
-*                           SrcZ2 implementation                              *
+*                           Point implementation                              *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-SrcZ2::SrcZ2(const std::string name)
-: Module<SrcZ2Par>(name)
+Point::Point(const std::string name)
+: Module<PointPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> SrcZ2::getInput(void)
+std::vector<std::string> Point::getInput(void)
 {
     std::vector<std::string> in;
     
     return in;
 }
 
-std::vector<std::string> SrcZ2::getOutput(void)
+std::vector<std::string> Point::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -54,34 +55,21 @@ std::vector<std::string> SrcZ2::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void SrcZ2::setup(void)
+void Point::setup(void)
 {
     env().registerLattice<PropagatorField>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void SrcZ2::execute(void)
+void Point::execute(void)
 {
-    Lattice<iScalar<vInteger>> t(env().getGrid());
-    LatticeComplex             eta(env().getGrid());
-    LatticeFermion             phi(env().getGrid());
-    Complex                    shift(1., 1.);
+    std::vector<int> position = strToVec<int>(par().position);
+    SpinColourMatrix id;
     
-    if (par().tA == par().tB)
-    {
-        LOG(Message) << "Generating Z_2 wall source at t= " << par().tA
-                     << std::endl;
-    }
-    else
-    {
-        LOG(Message) << "Generating Z_2 band for " << par().tA << " <= t <= "
-                     << par().tB << std::endl;
-    }
+    LOG(Message) << "Creating point source at position [" << par().position
+                 << "]" << std::endl;
     PropagatorField &src = *env().createLattice<PropagatorField>(getName());
-    LatticeCoordinate(t, Tp);
-    bernoulli(*env().get4dRng(), eta);
-    eta = (2.*eta - shift)*(1./::sqrt(2.));
-    eta = where((t >= par().tA) and (t <= par().tB), eta, 0.*eta);
-    src = 1.;
-    src = src*eta;
+    id  = 1.;
+    src = zero;
+    pokeSite(id, src, position);
 }

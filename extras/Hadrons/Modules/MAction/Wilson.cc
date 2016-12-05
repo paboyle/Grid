@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/AWilson.cc
+Source file: programs/Hadrons/Wilson.cc
 
 Copyright (C) 2016
 
@@ -25,28 +25,29 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Grid/Hadrons/Modules/AWilson.hpp>
+#include <Grid/Hadrons/Modules/MAction/Wilson.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
+using namespace MAction;
 
 /******************************************************************************
-*                         AWilson implementation                              *
+*                         Wilson implementation                              *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-AWilson::AWilson(const std::string name)
-: Module<AWilsonPar>(name)
+Wilson::Wilson(const std::string name)
+: Module<WilsonPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> AWilson::getInput(void)
+std::vector<std::string> Wilson::getInput(void)
 {
     std::vector<std::string> in = {par().gauge};
     
     return in;
 }
 
-std::vector<std::string> AWilson::getOutput(void)
+std::vector<std::string> Wilson::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -54,7 +55,7 @@ std::vector<std::string> AWilson::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void AWilson::setup(void)
+void Wilson::setup(void)
 {
     unsigned int size;
     
@@ -63,7 +64,7 @@ void AWilson::setup(void)
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void AWilson::execute()
+void Wilson::execute()
 {
     LOG(Message) << "Setting up Wilson fermion matrix with m= " << par().mass
                  << " using gauge field '" << par().gauge << "'" << std::endl;
