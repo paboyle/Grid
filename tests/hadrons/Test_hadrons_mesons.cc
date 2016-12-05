@@ -87,8 +87,8 @@ int main(int argc, char *argv[])
         quarkPar.source = (flavour[i][0] == 'c') ? "z2" : "pt";
         application.createModule<Quark>("Q_" + flavour[i], quarkPar);
     }
-    for (unsigned int i = 0;     i < flavour.size(); ++i)
-    for (unsigned int j = i + 1; j < flavour.size(); ++j)
+    for (unsigned int i = 0; i < flavour.size(); ++i)
+    for (unsigned int j = i; j < flavour.size(); ++j)
     {
         MContraction::Meson::Par mesPar;
         
@@ -98,6 +98,19 @@ int main(int argc, char *argv[])
         application.createModule<MContraction::Meson>("meson_"
                                                       + flavour[i] + flavour[j],
                                                       mesPar);
+    }
+    for (unsigned int i = 0; i < flavour.size(); ++i)
+    for (unsigned int j = i; j < flavour.size(); ++j)
+    for (unsigned int k = j; k < flavour.size(); ++k)
+    {
+        MContraction::Baryon::Par barPar;
+        
+        barPar.output = "baryons/" + flavour[i] + flavour[j] + flavour[k];
+        barPar.q1     = "Q_" + flavour[i];
+        barPar.q2     = "Q_" + flavour[j];
+        barPar.q3     = "Q_" + flavour[k];
+        application.createModule<MContraction::Baryon>(
+            "baryon_" + flavour[i] + flavour[j] + flavour[k], barPar);
     }
     
     // execution

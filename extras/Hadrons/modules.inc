@@ -6,6 +6,7 @@ modules_cc =\
 modules_hpp =\
   Modules/MAction/DWF.hpp \
   Modules/MAction/Wilson.hpp \
+  Modules/MContraction/Baryon.hpp \
   Modules/MContraction/Meson.hpp \
   Modules/MGauge/Load.hpp \
   Modules/MGauge/Random.hpp \
