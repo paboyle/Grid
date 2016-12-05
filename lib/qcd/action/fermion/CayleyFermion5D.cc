@@ -62,6 +62,50 @@ void CayleyFermion5D<Impl>::Dminus(const FermionField &psi, FermionField &chi)
     axpby_ssp(chi,Coeff_t(1.0),psi,-cs[s],tmp,s,s);// chi = (1-c[s] D_W) psi
   }
 }
+
+
+template<class Impl> void CayleyFermion5D<Impl>::CayleyReport(void)
+{
+  this->Report();
+  std::vector<int> latt = GridDefaultLatt();          
+  RealD volume = this->Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt[mu];
+  RealD NP     = this->_FourDimGrid->_Nprocessors;
+  if ( M5Dcalls > 0 ) {
+    std::cout << GridLogMessage << "#### M5D calls report " << std::endl;
+    std::cout << GridLogMessage << "CayleyFermion5D Number of M5D Calls     : " << M5Dcalls   << std::endl;
+    std::cout << GridLogMessage << "CayleyFermion5D ComputeTime/Calls       : " << M5Dtime / M5Dcalls << " us" << std::endl;
+
+    // Flops = 6.0*(Nc*Ns) *Ls*vol
+    RealD mflops = 6.0*12*volume*M5Dcalls/M5Dtime/2; // 2 for red black counting
+    std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
+    std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
+  }
+
+  if ( MooeeInvCalls > 0 ) {
+
+    std::cout << GridLogMessage << "#### MooeeInv calls report " << std::endl;
+    std::cout << GridLogMessage << "CayleyFermion5D Number of MooeeInv Calls     : " << MooeeInvCalls   << std::endl;
+    std::cout << GridLogMessage << "CayleyFermion5D ComputeTime/Calls            : " << MooeeInvTime / MooeeInvCalls << " us" << std::endl;
+
+    // Flops = 9*12*Ls*vol/2
+    RealD mflops = 9.0*12*volume*MooeeInvCalls/MooeeInvTime/2; // 2 for red black counting
+    std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
+    std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
+  }
+
+}
+template<class Impl> void CayleyFermion5D<Impl>::CayleyZeroCounters(void)
+{
+  this->ZeroCounters();
+  M5Dflops=0;
+  M5Dcalls=0;
+  M5Dtime=0;
+  MooeeInvFlops=0;
+  MooeeInvCalls=0;
+  MooeeInvTime=0;
+}
+
+
 template<class Impl>  
 void CayleyFermion5D<Impl>::DminusDag(const FermionField &psi, FermionField &chi)
 {

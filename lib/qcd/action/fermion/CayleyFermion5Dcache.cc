@@ -51,6 +51,9 @@ void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
   GridBase *grid=psi._grid;
   assert(phi.checkerboard == psi.checkerboard);
   chi.checkerboard=psi.checkerboard;
+  // Flops = 6.0*(Nc*Ns) *Ls*vol
+  M5Dcalls++;
+  M5Dtime-=usecond();
 PARALLEL_FOR_LOOP
   for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     for(int s=0;s<Ls;s++){
@@ -76,6 +79,7 @@ PARALLEL_FOR_LOOP
       }
     }
   }
+  M5Dtime+=usecond();
 }
 
 template<class Impl>  
@@ -91,6 +95,9 @@ void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
   assert(phi.checkerboard == psi.checkerboard);
   chi.checkerboard=psi.checkerboard;
 
+  // Flops = 6.0*(Nc*Ns) *Ls*vol
+  M5Dcalls++;
+  M5Dtime-=usecond();
 PARALLEL_FOR_LOOP
   for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     auto tmp = psi._odata[0];
@@ -116,6 +123,7 @@ PARALLEL_FOR_LOOP
       }
     }
   }
+  M5Dtime+=usecond();
 }
 
 template<class Impl>
@@ -126,10 +134,14 @@ void CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi, FermionField &
 
   chi.checkerboard=psi.checkerboard;
 
+  MooeeInvCalls++;
+  MooeeInvTime-=usecond();
+
 PARALLEL_FOR_LOOP
   for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     auto tmp = psi._odata[0];
 
+    // flops = 12*2*Ls + 12*2*Ls + 3*12*Ls + 12*2*Ls  = 12*Ls * (9) = 108*Ls flops
     // Apply (L^{\prime})^{-1}
     chi[ss]=psi[ss]; // chi[0]=psi[0]
     for(int s=1;s<Ls;s++){
@@ -155,6 +167,9 @@ PARALLEL_FOR_LOOP
       chi[ss+s] = chi[ss+s] - uee[s]*tmp;
     }
   }
+
+  MooeeInvTime+=usecond();
+
 }
 
 template<class Impl>
@@ -166,6 +181,8 @@ void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &
   assert(psi.checkerboard == psi.checkerboard);
   chi.checkerboard=psi.checkerboard;
 
+  MooeeInvCalls++;
+  MooeeInvTime-=usecond();
 
 PARALLEL_FOR_LOOP
   for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
@@ -197,6 +214,9 @@ PARALLEL_FOR_LOOP
       chi[ss+s] = chi[ss+s] - lee[s]*tmp;
     }
   }
+
+  MooeeInvTime+=usecond();
+
 }
 
 #ifdef CAYLEY_DPERP_CACHE

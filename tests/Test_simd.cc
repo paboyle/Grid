@@ -50,6 +50,12 @@ public:
   template<class vec> void operator()(vec &rr,vec &i1,vec &i2) const { rr = i1*i2;}
   std::string name(void) const { return std::string("Times"); }
 };
+class funcDivide {
+public:
+  funcDivide() {};
+  template<class vec> void operator()(vec &rr,vec &i1,vec &i2) const { rr = i1/i2;}
+  std::string name(void) const { return std::string("Divide"); }
+};
 class funcConj {
 public:
   funcConj() {};
@@ -341,6 +347,7 @@ int main (int argc, char ** argv)
   Tester<RealF,vRealF>(funcPlus());
   Tester<RealF,vRealF>(funcMinus());
   Tester<RealF,vRealF>(funcTimes());
+  Tester<RealF,vRealF>(funcDivide());
   Tester<RealF,vRealF>(funcAdj());
   Tester<RealF,vRealF>(funcConj());
   Tester<RealF,vRealF>(funcInnerProduct());
@@ -371,6 +378,7 @@ int main (int argc, char ** argv)
   Tester<RealD,vRealD>(funcPlus());
   Tester<RealD,vRealD>(funcMinus());
   Tester<RealD,vRealD>(funcTimes());
+  Tester<RealD,vRealD>(funcDivide());
   Tester<RealD,vRealD>(funcAdj());
   Tester<RealD,vRealD>(funcConj());
   Tester<RealD,vRealD>(funcInnerProduct());
