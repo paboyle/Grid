@@ -37,34 +37,35 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                     Domain wall quark action                               *
  ******************************************************************************/
-namespace MAction
+BEGIN_MODULE_NAMESPACE(MAction)
+
+class DWFPar: Serializable
 {
-    class DWFPar: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(DWFPar,
-                                        std::string, gauge,
-                                        unsigned int, Ls,
-                                        double      , mass,
-                                        double      , M5);
-    };
-    
-    class DWF: public Module<DWFPar>
-    {
-    public:
-        // constructor
-        DWF(const std::string name);
-        // destructor
-        virtual ~DWF(void) = default;
-        // dependency relation
-        virtual std::vector<std::string> getInput(void);
-        virtual std::vector<std::string> getOutput(void);
-        // setup
-        virtual void setup(void);
-        // execution
-        virtual void execute(void);
-    };
-}
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(DWFPar,
+                                    std::string, gauge,
+                                    unsigned int, Ls,
+                                    double      , mass,
+                                    double      , M5);
+};
+
+class DWF: public Module<DWFPar>
+{
+public:
+    // constructor
+    DWF(const std::string name);
+    // destructor
+    virtual ~DWF(void) = default;
+    // dependency relation
+    virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getOutput(void);
+    // setup
+    virtual void setup(void);
+    // execution
+    virtual void execute(void);
+};
+
+END_MODULE_NAMESPACE
 
 MODULE_REGISTER_NS(DWF, MAction);
 

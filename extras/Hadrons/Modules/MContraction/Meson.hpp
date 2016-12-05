@@ -37,38 +37,39 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                                Meson                                       *
  ******************************************************************************/
-namespace MContraction
+BEGIN_MODULE_NAMESPACE(MContraction)
+
+class MesonPar: Serializable
 {
-    class MesonPar: Serializable
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(MesonPar,
+                                    std::string, q1,
+                                    std::string, q2,
+                                    std::string, output);
+};
+
+class Meson: public Module<MesonPar>
+{
+public:
+    class Result: Serializable
     {
     public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(MesonPar,
-                                        std::string, q1,
-                                        std::string, q2,
-                                        std::string, output);
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
+                                        std::vector<std::vector<std::vector<Complex>>>, corr);
     };
-    
-    class Meson: public Module<MesonPar>
-    {
-    public:
-        class Result: Serializable
-        {
-        public:
-            GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                            std::vector<std::vector<std::vector<Complex>>>, corr);
-        };
-    public:
-        // constructor
-        Meson(const std::string name);
-        // destructor
-        virtual ~Meson(void) = default;
-        // dependencies/products
-        virtual std::vector<std::string> getInput(void);
-        virtual std::vector<std::string> getOutput(void);
-        // execution
-        virtual void execute(void);
-    };
-}
+public:
+    // constructor
+    Meson(const std::string name);
+    // destructor
+    virtual ~Meson(void) = default;
+    // dependencies/products
+    virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getOutput(void);
+    // execution
+    virtual void execute(void);
+};
+
+END_MODULE_NAMESPACE
 
 MODULE_REGISTER_NS(Meson, MContraction);
 

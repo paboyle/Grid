@@ -37,24 +37,25 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                              Unit gauge                                    *
  ******************************************************************************/
-namespace MGauge
+BEGIN_MODULE_NAMESPACE(MGauge)
+
+class Unit: public Module<NoPar>
 {
-    class Unit: public Module<NoPar>
-    {
-    public:
-        // constructor
-        Unit(const std::string name);
-        // destructor
-        virtual ~Unit(void) = default;
-        // dependencies/products
-        virtual std::vector<std::string> getInput(void);
-        virtual std::vector<std::string> getOutput(void);
-        // setup
-        virtual void setup(void);
-        // execution
-        virtual void execute(void);
-    };
-}
+public:
+    // constructor
+    Unit(const std::string name);
+    // destructor
+    virtual ~Unit(void) = default;
+    // dependencies/products
+    virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getOutput(void);
+    // setup
+    virtual void setup(void);
+    // execution
+    virtual void execute(void);
+};
+
+END_MODULE_NAMESPACE
 
 MODULE_REGISTER_NS(Unit, MGauge);
 

@@ -48,31 +48,32 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                                  Point                                     *
  ******************************************************************************/
-namespace MSource
+BEGIN_MODULE_NAMESPACE(MSource)
+
+class PointPar: Serializable
 {
-    class PointPar: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(PointPar,
-                                        std::string, position);
-    };
-    
-    class Point: public Module<PointPar>
-    {
-    public:
-        // constructor
-        Point(const std::string name);
-        // destructor
-        virtual ~Point(void) = default;
-        // dependency relation
-        virtual std::vector<std::string> getInput(void);
-        virtual std::vector<std::string> getOutput(void);
-        // setup
-        virtual void setup(void);
-        // execution
-        virtual void execute(void);
-    };
-}
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(PointPar,
+                                    std::string, position);
+};
+
+class Point: public Module<PointPar>
+{
+public:
+    // constructor
+    Point(const std::string name);
+    // destructor
+    virtual ~Point(void) = default;
+    // dependency relation
+    virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getOutput(void);
+    // setup
+    virtual void setup(void);
+    // execution
+    virtual void execute(void);
+};
+
+END_MODULE_NAMESPACE
 
 MODULE_REGISTER_NS(Point, MSource);
 

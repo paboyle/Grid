@@ -49,32 +49,33 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                                 Z2                                         *
  ******************************************************************************/
-namespace MSource
-{
-    class Z2Par: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Z2Par,
-                                        unsigned int, tA,
-                                        unsigned int, tB);
-    };
+BEGIN_MODULE_NAMESPACE(MSource)
 
-    class Z2: public Module<Z2Par>
-    {
-    public:
-        // constructor
-        Z2(const std::string name);
-        // destructor
-        virtual ~Z2(void) = default;
-        // dependency relation
-        virtual std::vector<std::string> getInput(void);
-        virtual std::vector<std::string> getOutput(void);
-        // setup
-        virtual void setup(void);
-        // execution
-        virtual void execute(void);
-    };
-}
+class Z2Par: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(Z2Par,
+                                    unsigned int, tA,
+                                    unsigned int, tB);
+};
+
+class Z2: public Module<Z2Par>
+{
+public:
+    // constructor
+    Z2(const std::string name);
+    // destructor
+    virtual ~Z2(void) = default;
+    // dependency relation
+    virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getOutput(void);
+    // setup
+    virtual void setup(void);
+    // execution
+    virtual void execute(void);
+};
+
+END_MODULE_NAMESPACE
 
 MODULE_REGISTER_NS(Z2, MSource);
 

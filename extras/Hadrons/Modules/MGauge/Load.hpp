@@ -37,31 +37,32 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                         Load a NERSC configuration                         *
  ******************************************************************************/
-namespace MGauge
-{
-    class LoadPar: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(LoadPar,
-                                        std::string, file);
-    };
+BEGIN_MODULE_NAMESPACE(MGauge)
 
-    class Load: public Module<LoadPar>
-    {
-    public:
-        // constructor
-        Load(const std::string name);
-        // destructor
-        virtual ~Load(void) = default;
-        // dependency relation
-        virtual std::vector<std::string> getInput(void);
-        virtual std::vector<std::string> getOutput(void);
-        // setup
-        virtual void setup(void);
-        // execution
-        virtual void execute(void);
-    };
-}
+class LoadPar: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(LoadPar,
+                                    std::string, file);
+};
+
+class Load: public Module<LoadPar>
+{
+public:
+    // constructor
+    Load(const std::string name);
+    // destructor
+    virtual ~Load(void) = default;
+    // dependency relation
+    virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getOutput(void);
+    // setup
+    virtual void setup(void);
+    // execution
+    virtual void execute(void);
+};
+
+END_MODULE_NAMESPACE
 
 MODULE_REGISTER_NS(Load, MGauge);
 

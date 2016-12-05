@@ -37,32 +37,33 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                     Schur red-black preconditioned CG                      *
  ******************************************************************************/
-namespace MSolver
+BEGIN_MODULE_NAMESPACE(MSolver)
+
+class RBPrecCGPar: Serializable
 {
-    class RBPrecCGPar: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(RBPrecCGPar,
-                                        std::string, action,
-                                        double     , residual);
-    };
-    
-    class RBPrecCG: public Module<RBPrecCGPar>
-    {
-    public:
-        // constructor
-        RBPrecCG(const std::string name);
-        // destructor
-        virtual ~RBPrecCG(void) = default;
-        // dependencies/products
-        virtual std::vector<std::string> getInput(void);
-        virtual std::vector<std::string> getOutput(void);
-        // setup
-        virtual void setup(void);
-        // execution
-        virtual void execute(void);
-    };
-}
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(RBPrecCGPar,
+                                    std::string, action,
+                                    double     , residual);
+};
+
+class RBPrecCG: public Module<RBPrecCGPar>
+{
+public:
+    // constructor
+    RBPrecCG(const std::string name);
+    // destructor
+    virtual ~RBPrecCG(void) = default;
+    // dependencies/products
+    virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getOutput(void);
+    // setup
+    virtual void setup(void);
+    // execution
+    virtual void execute(void);
+};
+
+END_MODULE_NAMESPACE
 
 MODULE_REGISTER_NS(RBPrecCG, MSolver);
 

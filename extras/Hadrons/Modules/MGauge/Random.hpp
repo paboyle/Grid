@@ -37,24 +37,25 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                             Random gauge                                   *
  ******************************************************************************/
-namespace MGauge
+BEGIN_MODULE_NAMESPACE(MGauge)
+
+class Random: public Module<NoPar>
 {
-    class Random: public Module<NoPar>
-    {
-    public:
-        // constructor
-        Random(const std::string name);
-        // destructor
-        virtual ~Random(void) = default;
-        // dependency relation
-        virtual std::vector<std::string> getInput(void);
-        virtual std::vector<std::string> getOutput(void);
-        // setup
-        virtual void setup(void);
-        // execution
-        virtual void execute(void);
-    };
-}
+public:
+    // constructor
+    Random(const std::string name);
+    // destructor
+    virtual ~Random(void) = default;
+    // dependency relation
+    virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getOutput(void);
+    // setup
+    virtual void setup(void);
+    // execution
+    virtual void execute(void);
+};
+
+END_MODULE_NAMESPACE
 
 MODULE_REGISTER_NS(Random, MGauge);
 

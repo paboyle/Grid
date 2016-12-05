@@ -39,8 +39,13 @@ namespace Hadrons {\
 using Grid::operator<<;
 #define END_HADRONS_NAMESPACE }}
 
+#define BEGIN_MODULE_NAMESPACE(name)\
+namespace name {\
+using Grid::operator<<;
+#define END_MODULE_NAMESPACE }
+
 /* the 'using Grid::operator<<;' statement prevents a very nasty compilation
- * error with GCC (clang compiles fine without it).
+ * error with GCC 5 (clang & GCC 6 compile fine without it).
  */
 
 // FIXME: find a way to do that in a more general fashion

@@ -37,32 +37,33 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                            Wilson quark action                             *
  ******************************************************************************/
-namespace MAction
-{
-    class WilsonPar: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(WilsonPar,
-                                        std::string, gauge,
-                                        double     , mass);
-    };
+BEGIN_MODULE_NAMESPACE(MAction)
 
-    class Wilson: public Module<WilsonPar>
-    {
-    public:
-        // constructor
-        Wilson(const std::string name);
-        // destructor
-        virtual ~Wilson(void) = default;
-        // dependencies/products
-        virtual std::vector<std::string> getInput(void);
-        virtual std::vector<std::string> getOutput(void);
-        // setup
-        virtual void setup(void);
-        // execution
-        virtual void execute(void);
-    };
-}
+class WilsonPar: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(WilsonPar,
+                                    std::string, gauge,
+                                    double     , mass);
+};
+
+class Wilson: public Module<WilsonPar>
+{
+public:
+    // constructor
+    Wilson(const std::string name);
+    // destructor
+    virtual ~Wilson(void) = default;
+    // dependencies/products
+    virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getOutput(void);
+    // setup
+    virtual void setup(void);
+    // execution
+    virtual void execute(void);
+};
+
+END_MODULE_NAMESPACE
 
 MODULE_REGISTER_NS(Wilson, MAction);
 
