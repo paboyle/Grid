@@ -54,7 +54,6 @@ class TMeson: public Module<MesonPar>
 public:
     TYPE_ALIASES(FImpl1, 1);
     TYPE_ALIASES(FImpl2, 2);
-public:
     class Result: Serializable
     {
     public:
@@ -103,9 +102,9 @@ std::vector<std::string> TMeson<FImpl1, FImpl2>::getOutput(void)
 template <typename FImpl1, typename FImpl2>
 void TMeson<FImpl1, FImpl2>::execute(void)
 {
-    LOG(Message) << "Computing meson contraction '" << getName() << "' using"
-    << " quarks '" << par().q1 << "' and '" << par().q2 << "'"
-    << std::endl;
+    LOG(Message) << "Computing meson contractions '" << getName() << "' using"
+                 << " quarks '" << par().q1 << "' and '" << par().q2 << "'"
+                 << std::endl;
     
     XmlWriter             writer(par().output);
     PropagatorField1      &q1 = *env().template getObject<PropagatorField1>(par().q1);

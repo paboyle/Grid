@@ -117,8 +117,6 @@ void Application::parseParameterFile(void)
     } while (reader.nextElement("module"));
     pop(reader);
     pop(reader);
-    env_.setSeed(strToVec<int>(par_.seed));
-    env_.printContent();
 }
 
 // schedule computation ////////////////////////////////////////////////////////
