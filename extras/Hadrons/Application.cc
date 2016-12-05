@@ -76,6 +76,7 @@ Application::Application(const std::string parameterFileName)
 void Application::setPar(const Application::GlobalPar &par)
 {
     par_ = par;
+    env_.setSeed(strToVec<int>(par_.seed));
 }
 
 // execute /////////////////////////////////////////////////////////////////////
@@ -101,10 +102,12 @@ public:
 void Application::parseParameterFile(void)
 {
     XmlReader reader(parameterFileName_);
+    GlobalPar par;
     ObjectId  id;
     
     LOG(Message) << "Reading '" << parameterFileName_ << "'..." << std::endl;
-    read(reader, "parameters", par_);
+    read(reader, "parameters", par);
+    setPar(par);
     push(reader, "modules");
     push(reader, "module");
     do
@@ -150,7 +153,7 @@ void Application::schedule(void)
     std::random_device     rd;
     GeneticScheduler<unsigned int>::Parameters par;
 
-    par.popSize      = 20;
+    par.popSize      = 10;
     par.mutationRate = .1;
     par.seed         = rd();
     CartesianCommunicator::BroadcastWorld(0, &(par.seed), sizeof(par.seed));
@@ -173,6 +176,7 @@ void Application::schedule(void)
                     nCstPeak = 0;
                 }
             }
+            LOG(Debug) << "generation " << gen << ":\n" << scheduler;
             prevPeak = scheduler.getMinValue();
             if (gen % 10 == 0)
             {
