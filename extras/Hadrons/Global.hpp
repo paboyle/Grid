@@ -56,10 +56,19 @@ using Grid::operator<<;
 BEGIN_HADRONS_NAMESPACE
 
 // type aliases
-typedef FermionOperator<FIMPL> FMat;
-typedef FIMPL::FermionField    FermionField;
-typedef FIMPL::PropagatorField PropagatorField;
-typedef std::function<void(FermionField &, const FermionField &)> SolverFn;
+//typedef FermionOperator<FIMPL> FMat;
+//typedef FIMPL::FermionField    FermionField;
+//typedef FIMPL::PropagatorField PropagatorField;
+//typedef std::function<void(FermionField &, const FermionField &)> SolverFn;
+
+#define TYPE_ALIASES(FImpl, suffix)\
+typedef FermionOperator<FImpl>                       FMat##suffix;             \
+typedef typename FImpl::FermionField                 FermionField##suffix;     \
+typedef typename FImpl::PropagatorField              PropagatorField##suffix;  \
+typedef typename FImpl::SitePropagator               SitePropagator##suffix;   \
+typedef typename FImpl::DoubledGaugeField            DoubledGaugeField##suffix;\
+typedef std::function<void(FermionField##suffix &,                             \
+                      const FermionField##suffix &)> SolverFn##suffix;
 
 // logger
 class HadronsLogger: public Logger

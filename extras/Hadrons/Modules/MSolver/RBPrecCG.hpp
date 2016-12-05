@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/RBPrecCG.hpp
+Source file: programs/Hadrons/TRBPrecCG.hpp
 
 Copyright (C) 2016
 
@@ -47,13 +47,16 @@ public:
                                     double     , residual);
 };
 
-class RBPrecCG: public Module<RBPrecCGPar>
+template <typename FImpl>
+class TRBPrecCG: public Module<RBPrecCGPar>
 {
 public:
+    TYPE_ALIASES(FImpl,);
+public:
     // constructor
-    RBPrecCG(const std::string name);
+    TRBPrecCG(const std::string name);
     // destructor
-    virtual ~RBPrecCG(void) = default;
+    virtual ~TRBPrecCG(void) = default;
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -62,6 +65,63 @@ public:
     // execution
     virtual void execute(void);
 };
+
+/******************************************************************************
+ *                      TRBPrecCG template implementation                     *
+ ******************************************************************************/
+// constructor /////////////////////////////////////////////////////////////////
+template <typename FImpl>
+TRBPrecCG<FImpl>::TRBPrecCG(const std::string name)
+: Module(name)
+{}
+
+// dependencies/products ///////////////////////////////////////////////////////
+template <typename FImpl>
+std::vector<std::string> TRBPrecCG<FImpl>::getInput(void)
+{
+    std::vector<std::string> in = {par().action};
+    
+    return in;
+}
+
+template <typename FImpl>
+std::vector<std::string> TRBPrecCG<FImpl>::getOutput(void)
+{
+    std::vector<std::string> out = {getName()};
+    
+    return out;
+}
+
+// setup ///////////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TRBPrecCG<FImpl>::setup(void)
+{
+    auto Ls = env().getObjectLs(par().action);
+    
+    env().registerObject(getName(), 0, Ls);
+    env().addOwnership(getName(), par().action);
+}
+
+// execution ///////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TRBPrecCG<FImpl>::execute(void)
+{
+    auto &mat   = *(env().template getObject<FMat>(par().action));
+    auto solver = [&mat, this](FermionField &sol, const FermionField &source)
+    {
+        ConjugateGradient<FermionField>           cg(par().residual, 10000);
+        SchurRedBlackDiagMooeeSolve<FermionField> schurSolver(cg);
+        
+        schurSolver(mat, source, sol);
+    };
+    
+    LOG(Message) << "setting up Schur red-black preconditioned CG for"
+                 << " action '" << par().action << "' with residual "
+                 << par().residual << std::endl;
+    env().setObject(getName(), new SolverFn(solver));
+}
+
+typedef TRBPrecCG<FIMPL> RBPrecCG;
 
 END_MODULE_NAMESPACE
 

@@ -4,7 +4,7 @@
 #include <Grid/Hadrons/Modules/MGauge/Load.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Random.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Unit.hpp>
-#include <Grid/Hadrons/Modules/MQuark.hpp>
 #include <Grid/Hadrons/Modules/MSolver/RBPrecCG.hpp>
 #include <Grid/Hadrons/Modules/MSource/Point.hpp>
 #include <Grid/Hadrons/Modules/MSource/Z2.hpp>
+#include <Grid/Hadrons/Modules/Quark.hpp>

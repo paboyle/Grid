@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/Point.hpp
+Source file: programs/Hadrons/TPoint.hpp
 
 Copyright (C) 2016
 
@@ -46,7 +46,7 @@ BEGIN_HADRONS_NAMESPACE
  */
 
 /******************************************************************************
- *                                  Point                                     *
+ *                                  TPoint                                     *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MSource)
 
@@ -57,13 +57,16 @@ public:
                                     std::string, position);
 };
 
-class Point: public Module<PointPar>
+template <typename FImpl>
+class TPoint: public Module<PointPar>
 {
 public:
+    TYPE_ALIASES(FImpl,);
+public:
     // constructor
-    Point(const std::string name);
+    TPoint(const std::string name);
     // destructor
-    virtual ~Point(void) = default;
+    virtual ~TPoint(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -72,6 +75,56 @@ public:
     // execution
     virtual void execute(void);
 };
+
+/******************************************************************************
+ *                       TPoint template implementation                       *
+ ******************************************************************************/
+// constructor /////////////////////////////////////////////////////////////////
+template <typename FImpl>
+TPoint<FImpl>::TPoint(const std::string name)
+: Module<PointPar>(name)
+{}
+
+// dependencies/products ///////////////////////////////////////////////////////
+template <typename FImpl>
+std::vector<std::string> TPoint<FImpl>::getInput(void)
+{
+    std::vector<std::string> in;
+    
+    return in;
+}
+
+template <typename FImpl>
+std::vector<std::string> TPoint<FImpl>::getOutput(void)
+{
+    std::vector<std::string> out = {getName()};
+    
+    return out;
+}
+
+// setup ///////////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TPoint<FImpl>::setup(void)
+{
+    env().template registerLattice<PropagatorField>(getName());
+}
+
+// execution ///////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TPoint<FImpl>::execute(void)
+{
+    std::vector<int> position = strToVec<int>(par().position);
+    typename SitePropagator::scalar_object id;
+    
+    LOG(Message) << "Creating point source at position [" << par().position
+                 << "]" << std::endl;
+    PropagatorField &src = *env().template createLattice<PropagatorField>(getName());
+    id  = 1.;
+    src = zero;
+    pokeSite(id, src, position);
+}
+
+typedef TPoint<FIMPL> Point;
 
 END_MODULE_NAMESPACE
 

@@ -82,10 +82,10 @@ int main(int argc, char *argv[])
                                                     solverPar);
         
         // propagators
-        MQuark::Par quarkPar;
+        Quark::Par quarkPar;
         quarkPar.solver = "CG_" + flavour[i];
         quarkPar.source = (flavour[i][0] == 'c') ? "z2" : "pt";
-        application.createModule<MQuark>("Q_" + flavour[i], quarkPar);
+        application.createModule<Quark>("Q_" + flavour[i], quarkPar);
     }
     for (unsigned int i = 0;     i < flavour.size(); ++i)
     for (unsigned int j = i + 1; j < flavour.size(); ++j)

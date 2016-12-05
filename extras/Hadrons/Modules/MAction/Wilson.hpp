@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/Wilson.hpp
+Source file: programs/Hadrons/TWilson.hpp
 
 Copyright (C) 2016
 
@@ -35,7 +35,7 @@ directory.
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                            Wilson quark action                             *
+ *                            TWilson quark action                            *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MAction)
 
@@ -47,13 +47,16 @@ public:
                                     double     , mass);
 };
 
-class Wilson: public Module<WilsonPar>
+template <typename FImpl>
+class TWilson: public Module<WilsonPar>
 {
 public:
+    TYPE_ALIASES(FImpl,);
+public:
     // constructor
-    Wilson(const std::string name);
+    TWilson(const std::string name);
     // destructor
-    virtual ~Wilson(void) = default;
+    virtual ~TWilson(void) = default;
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -62,6 +65,57 @@ public:
     // execution
     virtual void execute(void);
 };
+
+/******************************************************************************
+ *                     TWilson template implementation                        *
+ ******************************************************************************/
+// constructor /////////////////////////////////////////////////////////////////
+template <typename FImpl>
+TWilson<FImpl>::TWilson(const std::string name)
+: Module<WilsonPar>(name)
+{}
+
+// dependencies/products ///////////////////////////////////////////////////////
+template <typename FImpl>
+std::vector<std::string> TWilson<FImpl>::getInput(void)
+{
+    std::vector<std::string> in = {par().gauge};
+    
+    return in;
+}
+
+template <typename FImpl>
+std::vector<std::string> TWilson<FImpl>::getOutput(void)
+{
+    std::vector<std::string> out = {getName()};
+    
+    return out;
+}
+
+// setup ///////////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TWilson<FImpl>::setup(void)
+{
+    unsigned int size;
+    
+    size = 3*env().template lattice4dSize<typename FImpl::DoubledGaugeField>();
+    env().registerObject(getName(), size);
+}
+
+// execution ///////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TWilson<FImpl>::execute()
+{
+    LOG(Message) << "Setting up TWilson fermion matrix with m= " << par().mass
+                 << " using gauge field '" << par().gauge << "'" << std::endl;
+    auto &U      = *env().template getObject<LatticeGaugeField>(par().gauge);
+    auto &grid   = *env().getGrid();
+    auto &gridRb = *env().getRbGrid();
+    FMat *fMatPt = new WilsonFermion<FImpl>(U, grid, gridRb, par().mass);
+    env().setObject(getName(), fMatPt);
+}
+
+typedef TWilson<FIMPL> Wilson;
 
 END_MODULE_NAMESPACE
 

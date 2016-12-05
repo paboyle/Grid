@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/Z2.hpp
+Source file: programs/Hadrons/TZ2.hpp
 
 Copyright (C) 2016
 
@@ -47,7 +47,7 @@ BEGIN_HADRONS_NAMESPACE
  */
  
 /******************************************************************************
- *                                 Z2                                         *
+ *                          Z2 stochastic source                              *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MSource)
 
@@ -59,13 +59,16 @@ public:
                                     unsigned int, tB);
 };
 
-class Z2: public Module<Z2Par>
+template <typename FImpl>
+class TZ2: public Module<Z2Par>
 {
 public:
+    TYPE_ALIASES(FImpl,);
+public:
     // constructor
-    Z2(const std::string name);
+    TZ2(const std::string name);
     // destructor
-    virtual ~Z2(void) = default;
+    virtual ~TZ2(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -74,6 +77,68 @@ public:
     // execution
     virtual void execute(void);
 };
+
+/******************************************************************************
+ *                       TZ2 template implementation                          *
+ ******************************************************************************/
+// constructor /////////////////////////////////////////////////////////////////
+template <typename FImpl>
+TZ2<FImpl>::TZ2(const std::string name)
+: Module<Z2Par>(name)
+{}
+
+// dependencies/products ///////////////////////////////////////////////////////
+template <typename FImpl>
+std::vector<std::string> TZ2<FImpl>::getInput(void)
+{
+    std::vector<std::string> in;
+    
+    return in;
+}
+
+template <typename FImpl>
+std::vector<std::string> TZ2<FImpl>::getOutput(void)
+{
+    std::vector<std::string> out = {getName()};
+    
+    return out;
+}
+
+// setup ///////////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TZ2<FImpl>::setup(void)
+{
+    env().template registerLattice<PropagatorField>(getName());
+}
+
+// execution ///////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TZ2<FImpl>::execute(void)
+{
+    Lattice<iScalar<vInteger>> t(env().getGrid());
+    LatticeComplex             eta(env().getGrid());
+    Complex                    shift(1., 1.);
+    
+    if (par().tA == par().tB)
+    {
+        LOG(Message) << "Generating Z_2 wall source at t= " << par().tA
+        << std::endl;
+    }
+    else
+    {
+        LOG(Message) << "Generating Z_2 band for " << par().tA << " <= t <= "
+        << par().tB << std::endl;
+    }
+    PropagatorField &src = *env().template createLattice<PropagatorField>(getName());
+    LatticeCoordinate(t, Tp);
+    bernoulli(*env().get4dRng(), eta);
+    eta = (2.*eta - shift)*(1./::sqrt(2.));
+    eta = where((t >= par().tA) and (t <= par().tB), eta, 0.*eta);
+    src = 1.;
+    src = src*eta;
+}
+
+typedef TZ2<FIMPL> Z2;
 
 END_MODULE_NAMESPACE
 

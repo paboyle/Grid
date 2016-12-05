@@ -49,13 +49,16 @@ public:
                                     double      , M5);
 };
 
-class DWF: public Module<DWFPar>
+template <typename FImpl>
+class TDWF: public Module<DWFPar>
 {
 public:
+    TYPE_ALIASES(FImpl,);
+public:
     // constructor
-    DWF(const std::string name);
+    TDWF(const std::string name);
     // destructor
-    virtual ~DWF(void) = default;
+    virtual ~TDWF(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -64,6 +67,63 @@ public:
     // execution
     virtual void execute(void);
 };
+
+/******************************************************************************
+ *                        DWF template implementation                         *
+ ******************************************************************************/
+// constructor /////////////////////////////////////////////////////////////////
+template <typename FImpl>
+TDWF<FImpl>::TDWF(const std::string name)
+: Module<DWFPar>(name)
+{}
+
+// dependencies/products ///////////////////////////////////////////////////////
+template <typename FImpl>
+std::vector<std::string> TDWF<FImpl>::getInput(void)
+{
+    std::vector<std::string> in = {par().gauge};
+    
+    return in;
+}
+
+template <typename FImpl>
+std::vector<std::string> TDWF<FImpl>::getOutput(void)
+{
+    std::vector<std::string> out = {getName()};
+    
+    return out;
+}
+
+// setup ///////////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TDWF<FImpl>::setup(void)
+{
+    unsigned int size;
+    
+    size = 3*env().template lattice4dSize<typename FImpl::DoubledGaugeField>();
+    env().registerObject(getName(), size, par().Ls);
+}
+
+// execution ///////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TDWF<FImpl>::execute(void)
+{
+    LOG(Message) << "Setting up domain wall fermion matrix with m= "
+    << par().mass << ", M5= " << par().M5 << " and Ls= "
+    << par().Ls << " using gauge field '" << par().gauge << "'"
+    << std::endl;
+    env().createGrid(par().Ls);
+    auto &U      = *env().template getObject<LatticeGaugeField>(par().gauge);
+    auto &g4     = *env().getGrid();
+    auto &grb4   = *env().getRbGrid();
+    auto &g5     = *env().getGrid(par().Ls);
+    auto &grb5   = *env().getRbGrid(par().Ls);
+    FMat *fMatPt = new DomainWallFermion<FImpl>(U, g5, grb5, g4, grb4,
+                                                par().mass, par().M5);
+    env().setObject(getName(), fMatPt);
+}
+
+typedef TDWF<FIMPL> DWF;
 
 END_MODULE_NAMESPACE
 

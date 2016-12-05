@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/MQuark.cc
+Source file: programs/Hadrons/TQuark.hpp
 
 Copyright (C) 2015
 
@@ -25,29 +25,68 @@ See the full license in the file "LICENSE" in the top level distribution
 directory.
 *******************************************************************************/
 
-#include <Grid/Hadrons/Modules/MQuark.hpp>
+#ifndef Hadrons_Quark_hpp_
+#define Hadrons_Quark_hpp_
 
-using namespace Grid;
-using namespace QCD;
-using namespace Hadrons;
+#include <Grid/Hadrons/Global.hpp>
+#include <Grid/Hadrons/Module.hpp>
+#include <Grid/Hadrons/ModuleFactory.hpp>
+
+BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                          MQuark implementation                             *
+ *                               TQuark                                       *
+ ******************************************************************************/
+class QuarkPar: Serializable
+{
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(QuarkPar,
+                                    std::string, source,
+                                    std::string, solver);
+};
+
+template <typename FImpl>
+class TQuark: public Module<QuarkPar>
+{
+public:
+    TYPE_ALIASES(FImpl,);
+public:
+    // constructor
+    TQuark(const std::string name);
+    // destructor
+    virtual ~TQuark(void) = default;
+    // dependencies/products
+    virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getOutput(void);
+    // setup
+    virtual void setup(void);
+    // execution
+    virtual void execute(void);
+private:
+    unsigned int Ls_;
+    SolverFn     *solver_{nullptr};
+};
+
+/******************************************************************************
+ *                          TQuark implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-MQuark::MQuark(const std::string name)
+template <typename FImpl>
+TQuark<FImpl>::TQuark(const std::string name)
 : Module(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> MQuark::getInput(void)
+template <typename FImpl>
+std::vector<std::string> TQuark<FImpl>::getInput(void)
 {
     std::vector<std::string> in = {par().source, par().solver};
     
     return in;
 }
 
-std::vector<std::string> MQuark::getOutput(void)
+template <typename FImpl>
+std::vector<std::string> TQuark<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName(), getName() + "_5d"};
     
@@ -55,40 +94,42 @@ std::vector<std::string> MQuark::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void MQuark::setup(void)
+template <typename FImpl>
+void TQuark<FImpl>::setup(void)
 {
     Ls_ = env().getObjectLs(par().solver);
-    env().registerLattice<LatticePropagator>(getName());
+    env().template registerLattice<PropagatorField>(getName());
     if (Ls_ > 1)
     {
-        env().registerLattice<LatticePropagator>(getName() + "_5d", Ls_);
+        env().template registerLattice<PropagatorField>(getName() + "_5d", Ls_);
     }
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void MQuark::execute(void)
+template <typename FImpl>
+void TQuark<FImpl>::execute(void)
 {
-    LatticeFermion source(env().getGrid(Ls_)), sol(env().getGrid(Ls_)),
-                   tmp(env().getGrid());
-    std::string    propName = (Ls_ == 1) ? getName() : (getName() + "_5d");
-    
     LOG(Message) << "Computing quark propagator '" << getName() << "'"
                  << std::endl;
-    LatticePropagator   &prop    = *env().createLattice<LatticePropagator>(propName);
-    LatticePropagator   &fullSrc = *env().getObject<LatticePropagator>(par().source);
-    SolverFn            &solver  = *env().getObject<SolverFn>(par().solver);
+    
+    FermionField    source(env().getGrid(Ls_)), sol(env().getGrid(Ls_)),
+                    tmp(env().getGrid());
+    std::string     propName = (Ls_ == 1) ? getName() : (getName() + "_5d");
+    PropagatorField &prop    = *env().template createLattice<PropagatorField>(propName);
+    PropagatorField &fullSrc = *env().template getObject<PropagatorField>(par().source);
+    SolverFn        &solver  = *env().template getObject<SolverFn>(par().solver);
     if (Ls_ > 1)
     {
-        env().createLattice<LatticePropagator>(getName());
+        env().template createLattice<PropagatorField>(getName());
     }
-
+    
     LOG(Message) << "Inverting using solver '" << par().solver
                  << "' on source '" << par().source << "'" << std::endl;
     for (unsigned int s = 0; s < Ns; ++s)
     for (unsigned int c = 0; c < Nc; ++c)
     {
         LOG(Message) << "Inversion for spin= " << s << ", color= " << c
-                     << std::endl;
+        << std::endl;
         // source conversion for 4D sources
         if (!env().isObject5d(par().source))
         {
@@ -124,7 +165,8 @@ void MQuark::execute(void)
         // create 4D propagators from 5D one if necessary
         if (Ls_ > 1)
         {
-            LatticePropagator &p4d = *env().getObject<LatticePropagator>(getName());
+            PropagatorField &p4d =
+                *env().template getObject<PropagatorField>(getName());
             
             axpby_ssp_pminus(sol, 0., sol, 1., sol, 0, 0);
             axpby_ssp_pplus(sol, 0., sol, 1., sol, 0, Ls_-1);
@@ -133,3 +175,11 @@ void MQuark::execute(void)
         }
     }
 }
+
+typedef TQuark<FIMPL> Quark;
+
+MODULE_REGISTER(Quark);
+
+END_HADRONS_NAMESPACE
+
+#endif // Hadrons_Quark_hpp_
