@@ -84,18 +84,26 @@ int main(int argc, char *argv[])
         // propagators
         Quark::Par quarkPar;
         quarkPar.solver = "CG_" + flavour[i];
-        quarkPar.source = (flavour[i][0] == 'c') ? "z2" : "pt";
-        application.createModule<Quark>("Q_" + flavour[i], quarkPar);
+        quarkPar.source = "pt";
+        application.createModule<Quark>("Qpt_" + flavour[i], quarkPar);
+        quarkPar.source = "z2";
+        application.createModule<Quark>("QZ2_" + flavour[i], quarkPar);
     }
     for (unsigned int i = 0; i < flavour.size(); ++i)
     for (unsigned int j = i; j < flavour.size(); ++j)
     {
         MContraction::Meson::Par mesPar;
         
-        mesPar.output = "mesons/" + flavour[i] + flavour[j];
-        mesPar.q1     = "Q_" + flavour[i];
-        mesPar.q2     = "Q_" + flavour[j];
-        application.createModule<MContraction::Meson>("meson_"
+        mesPar.output = "mesons/pt_" + flavour[i] + flavour[j];
+        mesPar.q1     = "Qpt_" + flavour[i];
+        mesPar.q2     = "Qpt_" + flavour[j];
+        application.createModule<MContraction::Meson>("meson_pt_"
+                                                      + flavour[i] + flavour[j],
+                                                      mesPar);
+        mesPar.output = "mesons/Z2_" + flavour[i] + flavour[j];
+        mesPar.q1     = "QZ2_" + flavour[i];
+        mesPar.q2     = "QZ2_" + flavour[j];
+        application.createModule<MContraction::Meson>("meson_Z2_"
                                                       + flavour[i] + flavour[j],
                                                       mesPar);
     }
@@ -105,12 +113,12 @@ int main(int argc, char *argv[])
     {
         MContraction::Baryon::Par barPar;
         
-        barPar.output = "baryons/" + flavour[i] + flavour[j] + flavour[k];
-        barPar.q1     = "Q_" + flavour[i];
-        barPar.q2     = "Q_" + flavour[j];
-        barPar.q3     = "Q_" + flavour[k];
+        barPar.output = "baryons/pt_" + flavour[i] + flavour[j] + flavour[k];
+        barPar.q1     = "Qpt_" + flavour[i];
+        barPar.q2     = "Qpt_" + flavour[j];
+        barPar.q3     = "Qpt_" + flavour[k];
         application.createModule<MContraction::Baryon>(
-            "baryon_" + flavour[i] + flavour[j] + flavour[k], barPar);
+            "baryon_pt_" + flavour[i] + flavour[j] + flavour[k], barPar);
     }
     
     // execution
