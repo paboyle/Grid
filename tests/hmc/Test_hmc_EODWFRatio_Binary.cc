@@ -62,31 +62,45 @@ public:
   void BuildTheAction(int argc, char **argv)
 
   {
-    typedef WilsonImplR ImplPolicy;
-    typedef ScaledShamirFermionR FermionAction;
+    //typedef WilsonImplR ImplPolicy;
+    typedef DomainWallVec5dImplR ImplPolicy;
+    typedef ScaledShamirFermion<ImplPolicy> FermionAction;
     typedef typename FermionAction::FermionField FermionField;
 
-    const int Ls = 12;
+    const int Ls = 8;
 
     UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
     UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
 
+
+    GridCartesian* sUGrid   = SpaceTimeGrid::makeFourDimDWFGrid(GridDefaultLatt(),GridDefaultMpi());
+    GridRedBlackCartesian* sUrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(sUGrid);
+
+    
+    FGrid   = SpaceTimeGrid::makeFiveDimDWFGrid(Ls,UGrid);
+    FrbGrid = SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(Ls,UGrid);
+    
+    /*
     FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
     FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
+    */
 
     // temporarily need a gauge field
     LatticeGaugeField  U(UGrid);
 
     // Gauge action
     double beta = 4.0;
-    IwasakiGaugeActionR Iaction(beta);
+    WilsonGaugeActionR Iaction(beta);
 
     Real mass = 0.04;
     Real pv   = 1.0;
     RealD M5  = 1.5;
     RealD scale = 2.0;
-    FermionAction DenOp(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,scale);
-    FermionAction NumOp(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,pv,M5,scale);
+    FermionAction DenOp(U,*FGrid,*FrbGrid,*sUGrid,*sUrbGrid,mass,M5,scale);
+    FermionAction NumOp(U,*FGrid,*FrbGrid,*sUGrid,*sUrbGrid,pv,M5,scale);
+
+    std::cout << GridLogMessage << "Frb Osites: " << FrbGrid->oSites() << std::endl;
+    std::cout << GridLogMessage << "sUGrid Osites: " << sUGrid->oSites() << std::endl;
 
     double StoppingCondition = 1.0e-8;
     double MaxCGIterations = 10000;
@@ -94,7 +108,7 @@ public:
     TwoFlavourEvenOddRatioPseudoFermionAction<ImplPolicy> Nf2(NumOp, DenOp,CG,CG);
 
     // Set smearing (true/false), default: false
-    Nf2.is_smeared = true;
+    Nf2.is_smeared = false;
 
     // Collect actions
     // here an example of 2 level integration
@@ -154,7 +168,7 @@ int main(int argc, char **argv) {
 
   // Seeds for the random number generators
   std::vector<int> SerSeed({1, 2, 3, 4, 5});
-  std::vector<int> ParSeed({6, 7, 8, 9, 10});
+  std::vector<int> ParSeed({6, 7, 8, 9, 5});
   TheHMC.RNGSeeds(SerSeed, ParSeed);
 
   TheHMC.MDparameters.set(20, 1.0);// MDsteps, traj length

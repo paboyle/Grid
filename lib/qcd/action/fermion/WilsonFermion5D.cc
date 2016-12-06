@@ -271,11 +271,14 @@ void WilsonFermion5D<Impl>::DhopDir(const FermionField &in, FermionField &out,in
   assert(dirdisp<=7);
   assert(dirdisp>=0);
 
+  int LLs = out._grid->_rdimensions[0];
+
 PARALLEL_FOR_LOOP
   for(int ss=0;ss<Umu._grid->oSites();ss++){
-    for(int s=0;s<Ls;s++){
-      int sU=ss;
-      int sF = s+Ls*sU; 
+    int sU=ss;
+    for(int s=0;s<LLs;s++){
+      int sF = s+LLs*sU; 
+      assert(sF < out._grid->oSites());
       Kernels::DiracOptDhopDir(Stencil,Umu,Stencil.CommBuf(),sF,sU,in,out,dirdisp,gamma);
     }
   }
@@ -305,6 +308,8 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
   DerivCommTime+=usecond();
 
   Atilde=A;
+  int LLs = B._grid->_rdimensions[0];
+
 
   DerivComputeTime-=usecond();
   for (int mu = 0; mu < Nd; mu++) {
@@ -321,20 +326,18 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
     DerivDhopComputeTime -= usecond();
     PARALLEL_FOR_LOOP
     for (int sss = 0; sss < U._grid->oSites(); sss++) {
-      for (int s = 0; s < Ls; s++) {
-        int sU = sss;
-        int sF = s + Ls * sU;
-
+      int sU = sss;
+      for (int s = 0; s < LLs; s++) {
+        int sF = s + LLs * sU;
         assert(sF < B._grid->oSites());
         assert(sU < U._grid->oSites());
 
         Kernels::DiracOptDhopDir(st, U, st.CommBuf(), sF, sU, B, Btilde, mu, gamma);
-
-        ////////////////////////////
-        // spin trace outer product
-        ////////////////////////////
       }
     }
+    ////////////////////////////
+    // spin trace outer product
+    ////////////////////////////
     DerivDhopComputeTime += usecond();
     Impl::InsertForce5D(mat, Btilde, Atilde, mu);
   }
@@ -349,7 +352,7 @@ void WilsonFermion5D<Impl>::DhopDeriv(GaugeField &mat,
 {
   conformable(A._grid,FermionGrid());  
   conformable(A._grid,B._grid);
-  conformable(GaugeGrid(),mat._grid);
+  //conformable(GaugeGrid(),mat._grid);
 
   mat.checkerboard = A.checkerboard;
 
@@ -363,7 +366,7 @@ void WilsonFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
 					int dag)
 {
   conformable(A._grid,FermionRedBlackGrid());
-  conformable(GaugeRedBlackGrid(),mat._grid);
+  //conformable(GaugeRedBlackGrid(),mat._grid);
   conformable(A._grid,B._grid);
 
   assert(B.checkerboard==Odd);
@@ -381,7 +384,7 @@ void WilsonFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
 					int dag)
 {
   conformable(A._grid,FermionRedBlackGrid());
-  conformable(GaugeRedBlackGrid(),mat._grid);
+  //conformable(GaugeRedBlackGrid(),mat._grid);
   conformable(A._grid,B._grid);
 
   assert(B.checkerboard==Even);

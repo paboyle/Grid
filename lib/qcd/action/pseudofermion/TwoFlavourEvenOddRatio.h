@@ -166,7 +166,9 @@ namespace Grid{
 	FermionField  X(NumOp.FermionRedBlackGrid());
 	FermionField  Y(NumOp.FermionRedBlackGrid());
 
-	GaugeField   force(NumOp.GaugeGrid());	
+	//GaugeField   force(NumOp.GaugeGrid());
+        GaugeField   force(dSdU._grid);
+        conformable(force._grid, dSdU._grid);
 
 	//Y=Vdag phi
 	//X = (Mdag M)^-1 V^dag phi

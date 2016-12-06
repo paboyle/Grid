@@ -68,8 +68,14 @@ namespace Grid{
 	  assert(U.checkerboard==Odd);
 	  assert(V.checkerboard==U.checkerboard);
 
-	  GaugeField ForceO(ucbgrid);
-	  GaugeField ForceE(ucbgrid);
+          // NOTE Guido: WE DO NOT WANT TO USE THIS GRID FOR THE FORCE
+          // INHERIT FROM THE Force field
+          //GaugeField ForceO(ucbgrid);
+          //GaugeField ForceE(ucbgrid);
+          GridRedBlackCartesian* forcecb = new GridRedBlackCartesian(Force._grid);
+          GaugeField ForceO(forcecb);
+          GaugeField ForceE(forcecb);
+
 
 	  //  X^dag Der_oe MeeInv Meo Y
 	  // Use Mooee as nontrivial but gauge field indept
@@ -110,8 +116,14 @@ namespace Grid{
 	  assert(V.checkerboard==Odd);
 	  assert(V.checkerboard==V.checkerboard);
 
-	  GaugeField ForceO(ucbgrid);
-	  GaugeField ForceE(ucbgrid);
+          // NOTE Guido: WE DO NOT WANT TO USE THIS GRID FOR THE FORCE
+          // INHERIT FROM THE Force field
+
+	  //GaugeField ForceO(ucbgrid);
+	  //GaugeField ForceE(ucbgrid);
+          GridRedBlackCartesian* forcecb = new GridRedBlackCartesian(Force._grid);
+          GaugeField ForceO(forcecb);
+          GaugeField ForceE(forcecb);
 
 	  //  X^dag Der_oe MeeInv Meo Y
 	  // Use Mooee as nontrivial but gauge field indept
@@ -130,6 +142,8 @@ namespace Grid{
 	  setCheckerboard(Force,ForceE); 
 	  setCheckerboard(Force,ForceO);
 	  Force=-Force;
+
+
 	}
 
     };

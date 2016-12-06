@@ -156,4 +156,6 @@ int main(int argc, char **argv) {
   TheHMC.MDparameters.set(10, 1.0);// MDsteps, traj length
 
   TheHMC.BuildTheAction(argc, argv);
+
+  Grid_finalize();
 }

@@ -99,7 +99,7 @@ public:
     virtual int oIndex(std::vector<int> &coor)
     {
         int idx=0;
-	// Works with either global or local coordinates
+        // Works with either global or local coordinates
         for(int d=0;d<_ndimension;d++) idx+=_ostride[d]*(coor[d]%_rdimensions[d]);
         return idx;
     }
@@ -146,15 +146,15 @@ public:
       // Distance should be either 0,1,2..
       //
       if ( _simd_layout[dimension] > 2 ) { 
-	for(int d=0;d<_ndimension;d++){
-	  if ( d != dimension ) assert ( (_simd_layout[d]==1)  );
-	}
-	permute_type = RotateBit; // How to specify distance; this is not just direction.
-	return permute_type;
+        for(int d=0;d<_ndimension;d++){
+          if ( d != dimension ) assert ( (_simd_layout[d]==1)  );
+        }
+        permute_type = RotateBit; // How to specify distance; this is not just direction.
+        return permute_type;
       }
 
       for(int d=_ndimension-1;d>dimension;d--){
-	if (_simd_layout[d]>1 ) permute_type++;
+        if (_simd_layout[d]>1 ) permute_type++;
       }
       return permute_type;
     }
@@ -175,6 +175,22 @@ public:
     inline const std::vector<int> &VirtualLocalDimensions(void) { return _ldimensions;};
 
     ////////////////////////////////////////////////////////////////
+    // Print decomposition
+    ////////////////////////////////////////////////////////////////
+
+   	void show_decomposition(){
+   		std::cout << GridLogMessage << "Full Dimensions    : " << _fdimensions << std::endl;
+   		std::cout << GridLogMessage << "Global Dimensions  : " << _gdimensions << std::endl;
+   	        std::cout << GridLogMessage << "Local Dimensions   : " << _ldimensions << std::endl;
+                std::cout << GridLogMessage << "Reduced Dimensions : " << _rdimensions << std::endl;
+   		std::cout << GridLogMessage << "iSites             : " << _isites << std::endl;
+   		std::cout << GridLogMessage << "oSites             : " << _osites << std::endl;
+   		std::cout << GridLogMessage << "lSites             : " << lSites() << std::endl;	
+   		std::cout << GridLogMessage << "gSites             : " << gSites() << std::endl;
+   		std::cout << GridLogMessage << "Nd                 : " << _ndimension << std::endl;		
+   	} 
+
+    ////////////////////////////////////////////////////////////////
     // Global addressing
     ////////////////////////////////////////////////////////////////
     void GlobalIndexToGlobalCoor(int gidx,std::vector<int> &gcoor){
@@ -187,8 +203,8 @@ public:
       gidx=0;
       int mult=1;
       for(int mu=0;mu<_ndimension;mu++) {
-	gidx+=mult*gcoor[mu];
-	mult*=_gdimensions[mu];
+        gidx+=mult*gcoor[mu];
+        mult*=_gdimensions[mu];
       }
     }
     void GlobalCoorToProcessorCoorLocalCoor(std::vector<int> &pcoor,std::vector<int> &lcoor,const std::vector<int> &gcoor)
@@ -196,9 +212,9 @@ public:
       pcoor.resize(_ndimension);
       lcoor.resize(_ndimension);
       for(int mu=0;mu<_ndimension;mu++){
-	int _fld  = _fdimensions[mu]/_processors[mu];
-	pcoor[mu] = gcoor[mu]/_fld;
-	lcoor[mu] = gcoor[mu]%_fld;
+        int _fld  = _fdimensions[mu]/_processors[mu];
+        pcoor[mu] = gcoor[mu]/_fld;
+        lcoor[mu] = gcoor[mu]%_fld;
       }
     }
     void GlobalCoorToRankIndex(int &rank, int &o_idx, int &i_idx ,const std::vector<int> &gcoor)
@@ -210,9 +226,9 @@ public:
 
       std::vector<int> cblcoor(lcoor);
       for(int d=0;d<cblcoor.size();d++){
-	if( this->CheckerBoarded(d) ) {
-	  cblcoor[d] = lcoor[d]/2;
-	}
+        if( this->CheckerBoarded(d) ) {
+          cblcoor[d] = lcoor[d]/2;
+        }
       }
 
       i_idx= iIndex(cblcoor);// this does not imply divide by 2 on checker dim
@@ -238,7 +254,7 @@ public:
     {
       RankIndexToGlobalCoor(rank,o_idx,i_idx ,fcoor);
       if(CheckerBoarded(0)){
-	fcoor[0] = fcoor[0]*2+cb;
+        fcoor[0] = fcoor[0]*2+cb;
       }
     }
     void ProcessorCoorLocalCoorToGlobalCoor(std::vector<int> &Pcoor,std::vector<int> &Lcoor,std::vector<int> &gcoor)

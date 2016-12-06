@@ -88,6 +88,21 @@ class iScalar {
     zeroit(*this);
     return *this;
   }
+
+
+  // managing the internal vector structure
+  strong_inline scalar_object getlane(int lane){
+    scalar_object ret;
+    ret._internal = _internal.getlane(lane);
+    return ret;
+  }
+
+  strong_inline void putlane(scalar_object &s, int lane){
+    _internal.putlane(s._internal,lane);
+  }
+
+
+  
   friend strong_inline void vstream(iScalar<vtype> &out,
                                     const iScalar<vtype> &in) {
     vstream(out._internal, in._internal);
@@ -226,6 +241,20 @@ class iVector {
     zeroit(*this);
     return *this;
   }
+
+  strong_inline scalar_object getlane(int lane){
+    scalar_object ret;
+    for (int i = 0; i < N; i++) ret._internal[i] = _internal[i].getlane(lane);
+    return ret;
+  }
+
+  strong_inline void putlane(scalar_object &s, int lane){
+    for (int i = 0; i < N; i++) _internal[i].putlane(s._internal[i],lane);
+  }
+  
+
+
+  
   friend strong_inline void zeroit(iVector<vtype, N> &that) {
     for (int i = 0; i < N; i++) {
       zeroit(that._internal[i]);
@@ -348,6 +377,25 @@ class iMatrix {
     for (int i = 0; i < N; i++) _internal[i][i] = arg;
     return *this;
   }
+
+
+  strong_inline scalar_object getlane(int lane){
+    scalar_object ret;
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+	ret._internal[i][j] = _internal[i][j].getlane(lane);
+      }
+    }
+    return ret;
+  }
+
+  strong_inline void putlane(scalar_object &s, int lane){
+    for (int i = 0; i < N; i++)
+      for (int j = 0; j < N; j++) _internal[i][j].putlane(s._internal[i][j],lane);
+  }
+  
+
+  
 
   friend strong_inline void zeroit(iMatrix<vtype,N> &that){
     for(int i=0;i<N;i++){
