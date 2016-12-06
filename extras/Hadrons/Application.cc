@@ -76,7 +76,6 @@ Application::Application(const std::string parameterFileName)
 void Application::setPar(const Application::GlobalPar &par)
 {
     par_ = par;
-    LOG(Message) << par_.seed << std::endl;
     env_.setSeed(strToVec<int>(par_.seed));
 }
 
@@ -143,14 +142,23 @@ void Application::schedule(void)
         return memPeak;
     };
     
-    // constrained topological sort using a genetic algorithm
-    LOG(Message) << "Scheduling computation..." << std::endl;
-    unsigned int           k = 0, gen, prevPeak, nCstPeak = 0;
+    // build module dependency graph
+    LOG(Message) << "Building module graph..." << std::endl;
     auto                   graph = env_.makeModuleGraph();
     auto                   con = graph.getConnectedComponents();
-    std::random_device     rd;
+    
+    // constrained topological sort using a genetic algorithm
+    LOG(Message) << "Scheduling computation..." << std::endl;
+    LOG(Message) << "               #module= " << graph.size() << std::endl;
+    LOG(Message) << "       population size= " << par_.genetic.popSize << std::endl;
+    LOG(Message) << "       max. generation= " << par_.genetic.maxGen << std::endl;
+    LOG(Message) << "  max. cst. generation= " << par_.genetic.maxCstGen << std::endl;
+    LOG(Message) << "         mutation rate= " << par_.genetic.mutationRate << std::endl;
+    
+    unsigned int                               k = 0, gen, prevPeak, nCstPeak = 0;
+    std::random_device                         rd;
     GeneticScheduler<unsigned int>::Parameters par;
-
+    
     par.popSize      = par_.genetic.popSize;
     par.mutationRate = par_.genetic.mutationRate;
     par.seed         = rd();
@@ -162,6 +170,7 @@ void Application::schedule(void)
         gen = 0;
         do
         {
+            LOG(Debug) << "Generation " << gen << ":" << std::endl;
             scheduler.nextGeneration();
             if (gen != 0)
             {
@@ -174,13 +183,14 @@ void Application::schedule(void)
                     nCstPeak = 0;
                 }
             }
-            LOG(Debug) << "generation " << gen << ":\n" << scheduler;
+            
             prevPeak = scheduler.getMinValue();
             if (gen % 10 == 0)
             {
                 LOG(Iterative) << "Generation " << gen << ": "
                                << MEM_MSG(scheduler.getMinValue()) << std::endl;
             }
+            
             gen++;
         } while ((gen < par_.genetic.maxGen)
                  and (nCstPeak < par_.genetic.maxCstGen));
