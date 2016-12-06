@@ -38,7 +38,9 @@ BEGIN_HADRONS_NAMESPACE
  
  Z_2 stochastic source
  -----------------------------
- * src_x = eta_x * theta(x_3 - ta) * theta(tb - x_3)
+ * src_x = eta_x * theta(x_3 - tA) * theta(tB - x_3)
+ 
+ the eta_x are independent uniform random numbers in {+/- 1 +/- i}
  
  * options:
  - tA: begin timeslice (integer)

@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/Hadrons.cc
+Source file: tests/hadrons/Test_hadrons_xmldriven.cc
 
 Copyright (C) 2015
 

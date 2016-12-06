@@ -38,9 +38,9 @@ BEGIN_HADRONS_NAMESPACE
  
  Point source
  ------------
- * src_x = delta_x,o
+ * src_x = delta_x,position
  
- * options: o
+ * options:
  - position: space-separated integer sequence (e.g. "0 1 1 0")
  
  */
