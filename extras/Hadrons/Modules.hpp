@@ -7,5 +7,6 @@
 #include <Grid/Hadrons/Modules/MGauge/Unit.hpp>
 #include <Grid/Hadrons/Modules/MSolver/RBPrecCG.hpp>
 #include <Grid/Hadrons/Modules/MSource/Point.hpp>
+#include <Grid/Hadrons/Modules/MSource/SeqGamma.hpp>
 #include <Grid/Hadrons/Modules/MSource/Z2.hpp>
 #include <Grid/Hadrons/Modules/Quark.hpp>

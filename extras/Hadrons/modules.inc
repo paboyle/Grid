@@ -13,6 +13,7 @@ modules_hpp =\
   Modules/MGauge/Unit.hpp \
   Modules/MSolver/RBPrecCG.hpp \
   Modules/MSource/Point.hpp \
+  Modules/MSource/SeqGamma.hpp \
   Modules/MSource/Z2.hpp \
   Modules/Quark.hpp
 
