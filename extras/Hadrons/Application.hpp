@@ -49,11 +49,24 @@ public:
                                         unsigned int, end,
                                         unsigned int, step);
     };
+    class GeneticPar: Serializable
+    {
+    public:
+        GeneticPar(void):
+            popSize{20}, maxGen{1000}, maxCstGen{100}, mutationRate{.1} {};
+    public:
+        GRID_SERIALIZABLE_CLASS_MEMBERS(GeneticPar,
+                                        unsigned int, popSize,
+                                        unsigned int, maxGen,
+                                        unsigned int, maxCstGen,
+                                        double      , mutationRate);
+    };
     class GlobalPar: Serializable
     {
     public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(GlobalPar,
                                         TrajRange,   trajCounter,
+                                        GeneticPar,  genetic,
                                         std::string, seed);
     };
 public:

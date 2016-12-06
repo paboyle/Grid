@@ -76,6 +76,7 @@ Application::Application(const std::string parameterFileName)
 void Application::setPar(const Application::GlobalPar &par)
 {
     par_ = par;
+    LOG(Message) << par_.seed << std::endl;
     env_.setSeed(strToVec<int>(par_.seed));
 }
 
@@ -144,15 +145,14 @@ void Application::schedule(void)
     
     // constrained topological sort using a genetic algorithm
     LOG(Message) << "Scheduling computation..." << std::endl;
-    constexpr unsigned int maxGen = 200, maxCstGen = 50;
     unsigned int           k = 0, gen, prevPeak, nCstPeak = 0;
     auto                   graph = env_.makeModuleGraph();
     auto                   con = graph.getConnectedComponents();
     std::random_device     rd;
     GeneticScheduler<unsigned int>::Parameters par;
 
-    par.popSize      = 10;
-    par.mutationRate = .1;
+    par.popSize      = par_.genetic.popSize;
+    par.mutationRate = par_.genetic.mutationRate;
     par.seed         = rd();
     CartesianCommunicator::BroadcastWorld(0, &(par.seed), sizeof(par.seed));
     for (unsigned int i = 0; i < con.size(); ++i)
@@ -182,7 +182,8 @@ void Application::schedule(void)
                                << MEM_MSG(scheduler.getMinValue()) << std::endl;
             }
             gen++;
-        } while ((gen < maxGen) and (nCstPeak < maxCstGen));
+        } while ((gen < par_.genetic.maxGen)
+                 and (nCstPeak < par_.genetic.maxCstGen));
         auto &t = scheduler.getMinSchedule();
         LOG(Message) << "Program " << i + 1 << " (memory peak: "
                      << MEM_MSG(scheduler.getMinValue()) << "):" << std::endl;
