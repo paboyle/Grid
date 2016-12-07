@@ -292,35 +292,43 @@ class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepres
   }
 
   inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde, int mu) {
-    int LLs = Btilde._grid->_rdimensions[0];
-    conformable(Atilde._grid,Btilde._grid);
-    GaugeLinkField tmp(mat._grid); 
-    tmp = zero;
     typedef decltype(traceIndex<SpinIndex>(outerProduct(Btilde[0], Atilde[0]))) result_type;
-    std::vector<typename result_type::scalar_object> v_scalar_object(Btilde._grid->Nsimd());
+    unsigned int LLs = Btilde._grid->_rdimensions[0];
+    conformable(Atilde._grid,Btilde._grid);
+    GridBase* grid = mat._grid;
+    GridBase* Bgrid = Btilde._grid;
+    unsigned int dimU = grid->Nd();
+    unsigned int dimF = Bgrid->Nd();
+    GaugeLinkField tmp(grid); 
+    tmp = zero;
+    
+    // FIXME 
+    // Current implementation works, thread safe, probably suboptimal
 
     PARALLEL_FOR_LOOP
-    for (int sss = 0; sss < tmp._grid->oSites(); sss++) {
-      std::vector<int> ocoor;
-      tmp._grid->oCoorFromOindex(ocoor,sss); 
+    for (int so = 0; so < grid->oSites(); so++) {
+      std::vector<typename result_type::scalar_object> vres(Bgrid->Nsimd());
+      std::vector<int> ocoor;  grid->oCoorFromOindex(ocoor,so); 
       for (int si = 0; si < tmp._grid->iSites(); si++){
-        typename result_type::scalar_object scalar_object;
-        scalar_object = zero;
-        std::vector<int> local_coor(tmp._grid->Nd());      
-        std::vector<int> icoor;  
-        tmp._grid->iCoorFromIindex(icoor,si);
-        for (int i = 0; i < tmp._grid->Nd(); i++) local_coor[i] = ocoor[i] + tmp._grid->_rdimensions[i]*icoor[i];
-        
+        typename result_type::scalar_object scalar_object; scalar_object = zero;
+        std::vector<int> local_coor;      
+        std::vector<int> icoor; grid->iCoorFromIindex(icoor,si);
+        grid->InOutCoorToLocalCoor(ocoor, icoor, local_coor);
+        //for (int i = 0; i < dimU; i++) local_coor[i] = ocoor[i] + grid->_rdimensions[i]*icoor[i];
+        //std::cout << "so: " << so << "  si: "<< si << "  local_coor: " << local_coor << std::endl;
+
         for (int s = 0; s < LLs; s++) {
-          std::vector<int> slocal_coor(Btilde._grid->Nd());
+          std::vector<int> slocal_coor(dimF);
           slocal_coor[0] = s;
-          for (int s4d = 1; s4d< Btilde._grid->Nd(); s4d++) slocal_coor[s4d] = local_coor[s4d-1];
-          int sF = Btilde._grid->oIndexReduced(slocal_coor);  
-          assert(sF < Btilde._grid->oSites());
-          extract(traceIndex<SpinIndex>(outerProduct(Btilde[sF], Atilde[sF])), v_scalar_object); 
-          for (int sv = 0; sv < v_scalar_object.size(); sv++) scalar_object += v_scalar_object[sv];  // sum across the 5d dimension
+          for (int s4d = 1; s4d< dimF; s4d++) slocal_coor[s4d] = local_coor[s4d-1];
+          int sF = Bgrid->oIndexReduced(slocal_coor);  
+          assert(sF < Bgrid->oSites());
+
+          extract(traceIndex<SpinIndex>(outerProduct(Btilde[sF], Atilde[sF])), vres); 
+          // sum across the 5d dimension
+          for (auto v : vres) scalar_object += v;  
         }
-        tmp._odata[sss].putlane(scalar_object, si);
+        tmp._odata[so].putlane(scalar_object, si);
       }
     }
     PokeIndex<LorentzIndex>(mat, tmp, mu);

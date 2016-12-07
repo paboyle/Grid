@@ -85,6 +85,7 @@ public:
     FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
     */
 
+
     // temporarily need a gauge field
     LatticeGaugeField  U(UGrid);
 

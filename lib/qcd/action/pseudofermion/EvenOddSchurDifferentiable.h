@@ -7,6 +7,7 @@
     Copyright (C) 2015
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -45,106 +46,97 @@ namespace Grid{
       public:
       INHERIT_IMPL_TYPES(Impl);
 
- 	typedef FermionOperator<Impl> Matrix;
+        typedef FermionOperator<Impl> Matrix;
 
-	SchurDifferentiableOperator (Matrix &Mat) : SchurDiagMooeeOperator<Matrix,FermionField>(Mat) {};
+        SchurDifferentiableOperator (Matrix &Mat) : SchurDiagMooeeOperator<Matrix,FermionField>(Mat) {};
 
-	void MpcDeriv(GaugeField &Force,const FermionField &U,const FermionField &V) {
-	
-	  GridBase *fgrid   = this->_Mat.FermionGrid();
-	  GridBase *fcbgrid = this->_Mat.FermionRedBlackGrid();
-	  GridBase *ugrid   = this->_Mat.GaugeGrid();
-	  GridBase *ucbgrid = this->_Mat.GaugeRedBlackGrid();
+        void MpcDeriv(GaugeField &Force,const FermionField &U,const FermionField &V) {
+        
+          GridBase *fgrid   = this->_Mat.FermionGrid();
+          GridBase *fcbgrid = this->_Mat.FermionRedBlackGrid();
 
-	  Real coeff = 1.0;
+          FermionField tmp1(fcbgrid);
+          FermionField tmp2(fcbgrid);
 
-	  FermionField tmp1(fcbgrid);
-	  FermionField tmp2(fcbgrid);
+          conformable(fcbgrid,U._grid);
+          conformable(fcbgrid,V._grid);
 
-	  conformable(fcbgrid,U._grid);
-	  conformable(fcbgrid,V._grid);
+          // Assert the checkerboard?? or code for either
+          assert(U.checkerboard==Odd);
+          assert(V.checkerboard==U.checkerboard);
 
-	  // Assert the checkerboard?? or code for either
-	  assert(U.checkerboard==Odd);
-	  assert(V.checkerboard==U.checkerboard);
-
-          // NOTE Guido: WE DO NOT WANT TO USE THIS GRID FOR THE FORCE
-          // INHERIT FROM THE Force field
-          //GaugeField ForceO(ucbgrid);
-          //GaugeField ForceE(ucbgrid);
+          // NOTE Guido: WE DO NOT WANT TO USE THE ucbgrid GRID FOR THE FORCE
+          // it is not conformable with the HMC force field
+          // INHERIT FROM THE Force field instead
           GridRedBlackCartesian* forcecb = new GridRedBlackCartesian(Force._grid);
           GaugeField ForceO(forcecb);
           GaugeField ForceE(forcecb);
 
 
-	  //  X^dag Der_oe MeeInv Meo Y
-	  // Use Mooee as nontrivial but gauge field indept
-	  this->_Mat.Meooe   (V,tmp1);      // odd->even -- implicit -0.5 factor to be applied
-	  this->_Mat.MooeeInv(tmp1,tmp2);   // even->even 
-	  this->_Mat.MoeDeriv(ForceO,U,tmp2,DaggerNo);
-	  
-	  //  Accumulate X^dag M_oe MeeInv Der_eo Y
-	  this->_Mat.MeooeDag   (U,tmp1);    // even->odd -- implicit -0.5 factor to be applied
-	  this->_Mat.MooeeInvDag(tmp1,tmp2); // even->even 
-	  this->_Mat.MeoDeriv(ForceE,tmp2,V,DaggerNo);
-	  
-	  assert(ForceE.checkerboard==Even);
-	  assert(ForceO.checkerboard==Odd);
+          //  X^dag Der_oe MeeInv Meo Y
+          // Use Mooee as nontrivial but gauge field indept
+          this->_Mat.Meooe   (V,tmp1);      // odd->even -- implicit -0.5 factor to be applied
+          this->_Mat.MooeeInv(tmp1,tmp2);   // even->even 
+          this->_Mat.MoeDeriv(ForceO,U,tmp2,DaggerNo);
+          
+          //  Accumulate X^dag M_oe MeeInv Der_eo Y
+          this->_Mat.MeooeDag   (U,tmp1);    // even->odd -- implicit -0.5 factor to be applied
+          this->_Mat.MooeeInvDag(tmp1,tmp2); // even->even 
+          this->_Mat.MeoDeriv(ForceE,tmp2,V,DaggerNo);
+          
+          assert(ForceE.checkerboard==Even);
+          assert(ForceO.checkerboard==Odd);
 
-	  setCheckerboard(Force,ForceE); 
-	  setCheckerboard(Force,ForceO);
-	  Force=-Force;
-	}
+          setCheckerboard(Force,ForceE); 
+          setCheckerboard(Force,ForceO);
+          Force=-Force;
+
+          delete forcecb;
+        }
 
 
-	void MpcDagDeriv(GaugeField &Force,const FermionField &U,const FermionField &V) {
-	
-	  GridBase *fgrid   = this->_Mat.FermionGrid();
-	  GridBase *fcbgrid = this->_Mat.FermionRedBlackGrid();
-	  GridBase *ugrid   = this->_Mat.GaugeGrid();
-	  GridBase *ucbgrid = this->_Mat.GaugeRedBlackGrid();
+        void MpcDagDeriv(GaugeField &Force,const FermionField &U,const FermionField &V) {
+        
+          GridBase *fgrid   = this->_Mat.FermionGrid();
+          GridBase *fcbgrid = this->_Mat.FermionRedBlackGrid();
 
-	  Real coeff = 1.0;
+          FermionField tmp1(fcbgrid);
+          FermionField tmp2(fcbgrid);
 
-	  FermionField tmp1(fcbgrid);
-	  FermionField tmp2(fcbgrid);
+          conformable(fcbgrid,U._grid);
+          conformable(fcbgrid,V._grid);
 
-	  conformable(fcbgrid,U._grid);
-	  conformable(fcbgrid,V._grid);
+          // Assert the checkerboard?? or code for either
+          assert(V.checkerboard==Odd);
+          assert(V.checkerboard==V.checkerboard);
 
-	  // Assert the checkerboard?? or code for either
-	  assert(V.checkerboard==Odd);
-	  assert(V.checkerboard==V.checkerboard);
-
-          // NOTE Guido: WE DO NOT WANT TO USE THIS GRID FOR THE FORCE
-          // INHERIT FROM THE Force field
-
-	  //GaugeField ForceO(ucbgrid);
-	  //GaugeField ForceE(ucbgrid);
-          GridRedBlackCartesian* forcecb = new GridRedBlackCartesian(Force._grid);
+          // NOTE Guido: WE DO NOT WANT TO USE THE ucbgrid GRID FOR THE FORCE
+          // it is not conformable with the HMC force field
+          // INHERIT FROM THE Force field instead
+	  GridRedBlackCartesian* forcecb = new GridRedBlackCartesian(Force._grid);
           GaugeField ForceO(forcecb);
           GaugeField ForceE(forcecb);
 
-	  //  X^dag Der_oe MeeInv Meo Y
-	  // Use Mooee as nontrivial but gauge field indept
-	  this->_Mat.MeooeDag   (V,tmp1);      // odd->even -- implicit -0.5 factor to be applied
-	  this->_Mat.MooeeInvDag(tmp1,tmp2);   // even->even 
-	  this->_Mat.MoeDeriv(ForceO,U,tmp2,DaggerYes);
-	  
-	  //  Accumulate X^dag M_oe MeeInv Der_eo Y
-	  this->_Mat.Meooe   (U,tmp1);    // even->odd -- implicit -0.5 factor to be applied
-	  this->_Mat.MooeeInv(tmp1,tmp2); // even->even 
-	  this->_Mat.MeoDeriv(ForceE,tmp2,V,DaggerYes);
+          //  X^dag Der_oe MeeInv Meo Y
+          // Use Mooee as nontrivial but gauge field indept
+          this->_Mat.MeooeDag   (V,tmp1);      // odd->even -- implicit -0.5 factor to be applied
+          this->_Mat.MooeeInvDag(tmp1,tmp2);   // even->even 
+          this->_Mat.MoeDeriv(ForceO,U,tmp2,DaggerYes);
+          
+          //  Accumulate X^dag M_oe MeeInv Der_eo Y
+          this->_Mat.Meooe   (U,tmp1);    // even->odd -- implicit -0.5 factor to be applied
+          this->_Mat.MooeeInv(tmp1,tmp2); // even->even 
+          this->_Mat.MeoDeriv(ForceE,tmp2,V,DaggerYes);
 
-	  assert(ForceE.checkerboard==Even);
-	  assert(ForceO.checkerboard==Odd);
+          assert(ForceE.checkerboard==Even);
+          assert(ForceO.checkerboard==Odd);
 
-	  setCheckerboard(Force,ForceE); 
-	  setCheckerboard(Force,ForceO);
-	  Force=-Force;
+          setCheckerboard(Force,ForceE); 
+          setCheckerboard(Force,ForceO);
+          Force=-Force;
 
-
-	}
+          delete forcecb;
+        }
 
     };
 

@@ -11,6 +11,7 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -132,48 +133,6 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   // Allocate the required comms buffer
   ImportGauge(_Umu);
 }
-  /*
-template<class Impl>
-WilsonFermion5D<Impl>::WilsonFermion5D(int simd,GaugeField &_Umu,
-               GridCartesian         &FiveDimGrid,
-               GridRedBlackCartesian &FiveDimRedBlackGrid,
-               GridCartesian         &FourDimGrid,
-               RealD _M5,const ImplParams &p) :
-{
-  int nsimd = Simd::Nsimd();
-
-  // some assertions
-  assert(FiveDimGrid._ndimension==5);
-  assert(FiveDimRedBlackGrid._ndimension==5);
-  assert(FiveDimRedBlackGrid._checker_dim==0); // Checkerboard the s-direction
-  assert(FourDimGrid._ndimension==4);
-
-  // Dimension zero of the five-d is the Ls direction
-  Ls=FiveDimGrid._fdimensions[0];
-  assert(FiveDimGrid._processors[0]         ==1);
-  assert(FiveDimGrid._simd_layout[0]        ==nsimd);
-
-  assert(FiveDimRedBlackGrid._fdimensions[0]==Ls);
-  assert(FiveDimRedBlackGrid._processors[0] ==1);
-  assert(FiveDimRedBlackGrid._simd_layout[0]==nsimd);
-
-  // Other dimensions must match the decomposition of the four-D fields 
-  for(int d=0;d<4;d++){
-    assert(FiveDimRedBlackGrid._fdimensions[d+1]==FourDimGrid._fdimensions[d]);
-    assert(FiveDimRedBlackGrid._processors[d+1] ==FourDimGrid._processors[d]);
-
-    assert(FourDimGrid._simd_layout[d]=1);
-    assert(FiveDimRedBlackGrid._simd_layout[d+1]==1);
-
-    assert(FiveDimGrid._fdimensions[d+1]        ==FourDimGrid._fdimensions[d]);
-    assert(FiveDimGrid._processors[d+1]         ==FourDimGrid._processors[d]);
-    assert(FiveDimGrid._simd_layout[d+1]        ==FourDimGrid._simd_layout[d]);
-  }
-
-  {
-  }
-}  
-  */
      
 template<class Impl>
 void WilsonFermion5D<Impl>::Report(void)
@@ -346,13 +305,14 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopDeriv(GaugeField &mat,
-				      const FermionField &A,
-				      const FermionField &B,
-				      int dag)
+                                      const FermionField &A,
+                                      const FermionField &B,
+                                      int dag)
 {
   conformable(A._grid,FermionGrid());  
   conformable(A._grid,B._grid);
-  //conformable(GaugeGrid(),mat._grid);
+
+  //conformable(GaugeGrid(),mat._grid);// this is not general! leaving as a comment
 
   mat.checkerboard = A.checkerboard;
 
@@ -361,12 +321,11 @@ void WilsonFermion5D<Impl>::DhopDeriv(GaugeField &mat,
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
-					const FermionField &A,
-					const FermionField &B,
-					int dag)
+                                        const FermionField &A,
+                                        const FermionField &B,
+                                        int dag)
 {
   conformable(A._grid,FermionRedBlackGrid());
-  //conformable(GaugeRedBlackGrid(),mat._grid);
   conformable(A._grid,B._grid);
 
   assert(B.checkerboard==Odd);
@@ -379,12 +338,11 @@ void WilsonFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
-					const FermionField &A,
-					const FermionField &B,
-					int dag)
+                                        const FermionField &A,
+                                        const FermionField &B,
+                                        int dag)
 {
   conformable(A._grid,FermionRedBlackGrid());
-  //conformable(GaugeRedBlackGrid(),mat._grid);
   conformable(A._grid,B._grid);
 
   assert(B.checkerboard==Even);
@@ -396,8 +354,8 @@ void WilsonFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
-					 DoubledGaugeField & U,
-					 const FermionField &in, FermionField &out,int dag)
+                                         DoubledGaugeField & U,
+                                         const FermionField &in, FermionField &out,int dag)
 {
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
   Compressor compressor(dag);

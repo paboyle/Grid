@@ -57,7 +57,7 @@ struct IntegratorParameters {
 
 
   void print_parameters() {
-  	std::cout << GridLogMessage << "[Integrator] Trajectory length  : " << trajL << std::endl;
+        std::cout << GridLogMessage << "[Integrator] Trajectory length  : " << trajL << std::endl;
     std::cout << GridLogMessage << "[Integrator] Number of MD steps : " << MDsteps << std::endl;
     std::cout << GridLogMessage << "[Integrator] Step size          : " << stepsize << std::endl;
   }
@@ -99,11 +99,9 @@ class Integrator {
         FieldType forceR(U._grid);
         // Implement smearing only for the fundamental representation now
         repr_set.at(a)->deriv(Rep.U, forceR);
-        GF force =
-            Rep.RtoFundamentalProject(forceR);  // Ta for the fundamental rep
-        Real force_abs = std::sqrt(norm2(force));
-        std::cout << GridLogIntegrator << "Hirep Force average: "
-                  << force_abs / (U._grid->gSites()) << std::endl;
+        GF force = Rep.RtoFundamentalProject(forceR);  // Ta for the fundamental rep
+        Real force_abs = std::sqrt(norm2(force)/(U._grid->gSites()));
+        std::cout << GridLogIntegrator << "Hirep Force average: " << force_abs << std::endl;
         Mom -= force * ep ;
       }
     }
@@ -118,15 +116,11 @@ class Integrator {
       Field& Us = Smearer.get_U(as[level].actions.at(a)->is_smeared);
       as[level].actions.at(a)->deriv(Us, force);  // deriv should NOT include Ta
 
-      std::cout << GridLogIntegrator
-                << "Smearing (on/off): " << as[level].actions.at(a)->is_smeared
-                << std::endl;
+      std::cout << GridLogIntegrator << "Smearing (on/off): " << as[level].actions.at(a)->is_smeared << std::endl;
       if (as[level].actions.at(a)->is_smeared) Smearer.smeared_force(force);
       force = FieldImplementation::projectForce(force); // Ta for gauge fields
-      Real force_abs = std::sqrt(norm2(force));
-      std::cout << GridLogIntegrator
-                << "Force average: " << force_abs / (U._grid->gSites())
-                << std::endl;
+      Real force_abs = std::sqrt(norm2(force)/U._grid->gSites());
+      std::cout << GridLogIntegrator << "Force average: " << force_abs << std::endl;
       Mom -= force * ep;
     }
 
@@ -139,10 +133,9 @@ class Integrator {
 
     t_U += ep;
     int fl = levels - 1;
-    std::cout << GridLogIntegrator << "   "
-              << "[" << fl << "] U "
-              << " dt " << ep << " : t_U " << t_U << std::endl;
+    std::cout << GridLogIntegrator << "   " << "[" << fl << "] U " << " dt " << ep << " : t_U " << t_U << std::endl;
   }
+  
   void update_U(MomentaField& Mom, Field& U, double ep) {
     // exponential of Mom*U in the gauge fields case
     FieldImplementation::update_field(Mom, U, ep);

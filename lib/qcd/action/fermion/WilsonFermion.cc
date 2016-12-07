@@ -222,8 +222,7 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
     ////////////////////////
     PARALLEL_FOR_LOOP
     for (int sss = 0; sss < B._grid->oSites(); sss++) {
-      Kernels::DiracOptDhopDir(st, U, st.CommBuf(), sss, sss, B, Btilde, mu,
-                               gamma);
+      Kernels::DiracOptDhopDir(st, U, st.CommBuf(), sss, sss, B, Btilde, mu, gamma);
     }
 
     //////////////////////////////////////////////////
@@ -234,8 +233,7 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U,
-                                    const FermionField &V, int dag) {
+void WilsonFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
   conformable(U._grid, _grid);
   conformable(U._grid, V._grid);
   conformable(U._grid, mat._grid);
@@ -246,8 +244,7 @@ void WilsonFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U,
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U,
-                                      const FermionField &V, int dag) {
+void WilsonFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
   conformable(U._grid, _cbgrid);
   conformable(U._grid, V._grid);
   conformable(U._grid, mat._grid);
@@ -260,8 +257,7 @@ void WilsonFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U,
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U,
-                                      const FermionField &V, int dag) {
+void WilsonFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
   conformable(U._grid, _cbgrid);
   conformable(U._grid, V._grid);
   conformable(U._grid, mat._grid);

@@ -122,6 +122,12 @@ public:
     }
 
 
+    inline void InOutCoorToLocalCoor (std::vector<int> &ocoor, std::vector<int> &icoor, std::vector<int> &lcoor) {
+      lcoor.resize(_ndimension);
+      for (int d = 0; d < _ndimension; d++)
+        lcoor[d] = ocoor[d] + _rdimensions[d] * icoor[d];
+    }
+
     //////////////////////////////////////////////////////////
     // SIMD lane addressing
     //////////////////////////////////////////////////////////
@@ -129,6 +135,7 @@ public:
     {
       Lexicographic::CoorFromIndex(coor,lane,_simd_layout);
     }
+
     inline int PermuteDim(int dimension){
       return _simd_layout[dimension]>1;
     }
@@ -175,20 +182,22 @@ public:
     inline const std::vector<int> &VirtualLocalDimensions(void) { return _ldimensions;};
 
     ////////////////////////////////////////////////////////////////
-    // Print decomposition
+    // Utility to print the full decomposition details 
     ////////////////////////////////////////////////////////////////
 
-   	void show_decomposition(){
-   		std::cout << GridLogMessage << "Full Dimensions    : " << _fdimensions << std::endl;
-   		std::cout << GridLogMessage << "Global Dimensions  : " << _gdimensions << std::endl;
-   	        std::cout << GridLogMessage << "Local Dimensions   : " << _ldimensions << std::endl;
-                std::cout << GridLogMessage << "Reduced Dimensions : " << _rdimensions << std::endl;
-   		std::cout << GridLogMessage << "iSites             : " << _isites << std::endl;
-   		std::cout << GridLogMessage << "oSites             : " << _osites << std::endl;
-   		std::cout << GridLogMessage << "lSites             : " << lSites() << std::endl;	
-   		std::cout << GridLogMessage << "gSites             : " << gSites() << std::endl;
-   		std::cout << GridLogMessage << "Nd                 : " << _ndimension << std::endl;		
-   	} 
+    void show_decomposition(){
+      std::cout << GridLogMessage << "Full Dimensions    : " << _fdimensions << std::endl;
+      std::cout << GridLogMessage << "Global Dimensions  : " << _gdimensions << std::endl;
+      std::cout << GridLogMessage << "Local Dimensions   : " << _ldimensions << std::endl;
+      std::cout << GridLogMessage << "Reduced Dimensions : " << _rdimensions << std::endl;
+      std::cout << GridLogMessage << "Outer strides      : " << _ostride << std::endl;
+      std::cout << GridLogMessage << "Inner strides      : " << _istride << std::endl;
+      std::cout << GridLogMessage << "iSites             : " << _isites << std::endl;
+      std::cout << GridLogMessage << "oSites             : " << _osites << std::endl;
+      std::cout << GridLogMessage << "lSites             : " << lSites() << std::endl;        
+      std::cout << GridLogMessage << "gSites             : " << gSites() << std::endl;
+      std::cout << GridLogMessage << "Nd                 : " << _ndimension << std::endl;             
+    } 
 
     ////////////////////////////////////////////////////////////////
     // Global addressing
@@ -199,6 +208,9 @@ public:
     void LocalIndexToLocalCoor(int lidx,std::vector<int> &lcoor){
       Lexicographic::CoorFromIndex(lcoor,lidx,_ldimensions);
     }
+
+
+
     void GlobalCoorToGlobalIndex(const std::vector<int> & gcoor,int & gidx){
       gidx=0;
       int mult=1;
