@@ -62,7 +62,7 @@ public:
   void BuildTheAction(int argc, char **argv)
 
   {
-    typedef WilsonImplR ImplPolicy;
+    typedef DomainWallVec5dImplR ImplPolicy;
     typedef ScaledShamirFermion<ImplPolicy> FermionAction;
     typedef typename FermionAction::FermionField FermionField;
 
@@ -70,9 +70,14 @@ public:
 
     UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
     UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
+
+
+    GridCartesian* sUGrid   = SpaceTimeGrid::makeFourDimDWFGrid(GridDefaultLatt(),GridDefaultMpi());
+    GridRedBlackCartesian* sUrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(sUGrid);
+
     
-    FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
-    FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
+    FGrid   = SpaceTimeGrid::makeFiveDimDWFGrid(Ls,UGrid);
+    FrbGrid = SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(Ls,UGrid);
 
     // temporarily need a gauge field
     LatticeGaugeField  U(UGrid);
@@ -85,8 +90,8 @@ public:
     Real pv   = 1.0;
     RealD M5  = 1.5;
     RealD scale = 2.0;
-    FermionAction DenOp(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,scale);
-    FermionAction NumOp(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,pv,M5,scale);
+    FermionAction DenOp(U,*FGrid,*FrbGrid,*sUGrid,*sUrbGrid,mass,M5,scale);
+    FermionAction NumOp(U,*FGrid,*FrbGrid,*sUGrid,*sUrbGrid,pv,M5,scale);
 
     double StoppingCondition = 1.0e-8;
     double MaxCGIterations = 10000;

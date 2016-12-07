@@ -148,7 +148,7 @@ namespace Grid {
       ss<<_generators[gen];
       ss.seekg(0,ss.beg);
       for(int i=0;i<RngStateCount;i++){
-      	ss>>saved[i];
+        ss>>saved[i];
       }
     }
     void SetState(std::vector<RngStateType> & saved,int gen){
@@ -315,26 +315,26 @@ namespace Grid {
 
       for(int gidx=0;gidx<gsites;gidx++){
 
-	int rank,o_idx,i_idx;
-	_grid->GlobalIndexToGlobalCoor(gidx,gcoor);
-	_grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
+        int rank,o_idx,i_idx;
+        _grid->GlobalIndexToGlobalCoor(gidx,gcoor);
+        _grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
         
-	int l_idx=generator_idx(o_idx,i_idx);
+        int l_idx=generator_idx(o_idx,i_idx);
 
-	const int num_rand_seed=16;
-	std::vector<int> site_seeds(num_rand_seed);
-	for(int i=0;i<site_seeds.size();i++){
-	  site_seeds[i]= ui(pseeder);
-	}
+        const int num_rand_seed=16;
+        std::vector<int> site_seeds(num_rand_seed);
+        for(int i=0;i<site_seeds.size();i++){
+          site_seeds[i]= ui(pseeder);
+        }
 
 
-      	_grid->Broadcast(0,(void *)&site_seeds[0],sizeof(int)*site_seeds.size());
+        _grid->Broadcast(0,(void *)&site_seeds[0],sizeof(int)*site_seeds.size());
 
-      	if( rank == _grid->ThisRank() ){
+        if( rank == _grid->ThisRank() ){
           fixedSeed ssrc(site_seeds);
           typename source::result_type sinit = ssrc();
           _generators[l_idx] = RngEngine(sinit);
-      	}
+        }
       }
       _seeded=1;
     }    
@@ -373,7 +373,7 @@ namespace Grid {
             for (int idx = 0; idx < words; idx++) 
               fillScalar(pointer[idx], dist[gdx], _generators[gdx]);
           }
-          // merge into SIMD lanes
+          // merge into SIMD lanes, FIXME suboptimal implementation
           merge(l._odata[sm], buf);
         }
       }

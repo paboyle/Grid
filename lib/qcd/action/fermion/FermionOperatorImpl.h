@@ -304,6 +304,8 @@ class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepres
     
     // FIXME 
     // Current implementation works, thread safe, probably suboptimal
+    // Passing through the local coordinate for grid transformation
+    // the force grid is in general very different from the Ls vectorized grid
 
     PARALLEL_FOR_LOOP
     for (int so = 0; so < grid->oSites(); so++) {
@@ -314,9 +316,6 @@ class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepres
         std::vector<int> local_coor;      
         std::vector<int> icoor; grid->iCoorFromIindex(icoor,si);
         grid->InOutCoorToLocalCoor(ocoor, icoor, local_coor);
-        //for (int i = 0; i < dimU; i++) local_coor[i] = ocoor[i] + grid->_rdimensions[i]*icoor[i];
-        //std::cout << "so: " << so << "  si: "<< si << "  local_coor: " << local_coor << std::endl;
-
         for (int s = 0; s < LLs; s++) {
           std::vector<int> slocal_coor(dimF);
           slocal_coor[0] = s;
