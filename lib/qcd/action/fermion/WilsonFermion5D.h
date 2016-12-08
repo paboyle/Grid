@@ -74,6 +74,9 @@ namespace QCD {
      typedef WilsonKernels<Impl> Kernels;
      PmuStat stat;
 
+     FermionField _tmp;
+     FermionField &tmp(void) { return _tmp; }
+
      void Report(void);
      void ZeroCounters(void);
      double DhopCalls;

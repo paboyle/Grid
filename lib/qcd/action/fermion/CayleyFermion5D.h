@@ -76,6 +76,11 @@ namespace Grid {
 		  std::vector<Coeff_t> &diag,
 		  std::vector<Coeff_t> &upper);
       void MooeeInternal(const FermionField &in, FermionField &out,int dag,int inv);
+      void MooeeInternalAsm(const FermionField &in, FermionField &out,
+			    int LLs, int site,
+			    Vector<iSinglet<Simd> > &Matp,
+			    Vector<iSinglet<Simd> > &Matm);
+
 
       virtual void   Instantiatable(void)=0;
 
