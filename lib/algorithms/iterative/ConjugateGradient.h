@@ -214,7 +214,12 @@ class ConjugateGradient : public OperatorFunction<Field> {
                 ReprTest.do_check = true;
                 ReprTest.reset_counter();
                 this->operator()(Linop, src, psi_start);// run the repro test
-                std::cout << GridLogMessage << "Test passed" << std::endl;
+                if (ReprTest.success)
+                	std::cout << GridLogMessage << "Reproducibility test passed" << std::endl;
+                else{
+                	std::cout << GridLogMessage << "Reproducibility test failed" << std::endl;
+                	exit(1);
+                }
         }
 
         // Clear state

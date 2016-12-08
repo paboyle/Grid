@@ -40,6 +40,7 @@ class ReproducibilityState {
   unsigned int n_call;
   bool do_check;
   bool enable_reprocheck;
+  bool success;
   sum_type th_states;
 
   void reset_counter() { n_call = 0; }
@@ -47,6 +48,7 @@ class ReproducibilityState {
     th_states.clear();
     do_check = false;
     enable_reprocheck = false;
+    success = true;
     n_call = 0;
   };
 
@@ -131,7 +133,8 @@ class ReproducibilityState {
               std::cout << GridLogMessage << "Current state" << std::endl;
               show_binaryrep(sumarray[thread]);
               std::cout << GridLogMessage << "Xor result" << std::endl;
-              show_binaryrep(xors, words);                          
+              show_binaryrep(xors, words);
+              repr.success = false;                          
             }
           }
           repr.n_call++;
