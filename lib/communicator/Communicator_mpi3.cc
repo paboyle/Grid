@@ -576,5 +576,10 @@ void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
   assert(ierr==0);
 }
 
+  void CartesianCommunicator::PrintRankInfo(){
+    std::cout << "Grid: Rank "<< _processor << "  -  Physical node name: " << name << std::endl;
+  }
+
+  
 }
 

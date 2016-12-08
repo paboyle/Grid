@@ -37,6 +37,11 @@ void CartesianCommunicator::Init(int *argc, char *** arv)
   ShmInitGeneric();
 }
 
+void CartesianCommunicator::PrintRankInfo(){
+    std::cout << GridLogMessage << "No Rank Info available" << std::endl;
+}
+
+
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {
   _processors = processors;
@@ -60,10 +65,10 @@ void CartesianCommunicator::GlobalSum(uint64_t &){}
 void CartesianCommunicator::GlobalSumVector(double *,int N){}
 
 void CartesianCommunicator::SendRecvPacket(void *xmit,
-					   void *recv,
-					   int xmit_to_rank,
-					   int recv_from_rank,
-					   int bytes)
+                                           void *recv,
+                                           int xmit_to_rank,
+                                           int recv_from_rank,
+                                           int bytes)
 {
   assert(0);
 }
@@ -71,19 +76,19 @@ void CartesianCommunicator::SendRecvPacket(void *xmit,
 
 // Basic Halo comms primitive -- should never call in single node
 void CartesianCommunicator::SendToRecvFrom(void *xmit,
-					   int dest,
-					   void *recv,
-					   int from,
-					   int bytes)
+                                           int dest,
+                                           void *recv,
+                                           int from,
+                                           int bytes)
 {
   assert(0);
 }
 void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &list,
-						void *xmit,
-						int dest,
-						void *recv,
-						int from,
-						int bytes)
+                                                void *xmit,
+                                                int dest,
+                                                void *recv,
+                                                int from,
+                                                int bytes)
 {
   assert(0);
 }

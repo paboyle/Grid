@@ -37,10 +37,7 @@ struct CG_state {
   bool do_repro;
   std::vector<RealD> residuals;
 
-  CG_state() {
-    do_repro = false;
-    residuals.clear();
-  }
+  CG_state() {reset();}
 
   void reset(){
     do_repro = false;
@@ -71,7 +68,14 @@ class ConjugateGradient : public OperatorFunction<Field> {
       : Tolerance(tol),
         MaxIterations(maxit),
         ErrorOnNoConverge(err_on_no_conv),
-        ReproTest(ReproducibilityTest){};
+        ReproTest(ReproducibilityTest){
+        	if(ReproducibilityTest == true && err_on_no_conv == true){
+        		std::cout << GridLogMessage << "CG: Reproducibility test ON "<<
+        					"and error on convergence ON are incompatible options" << std::endl;
+        	exit(1);
+        	}
+        	
+        };
 
 
   void operator()(LinearOperatorBase<Field> &Linop, const Field &src,
@@ -210,6 +214,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
                 ReprTest.do_check = true;
                 ReprTest.reset_counter();
                 this->operator()(Linop, src, psi_start);// run the repro test
+                std::cout << GridLogMessage << "Test passed" << std::endl;
         }
 
         // Clear state

@@ -65,6 +65,7 @@ const std::vector<int> & CartesianCommunicator::ThisProcessorCoor(void) { return
 const std::vector<int> & CartesianCommunicator::ProcessorGrid(void)     { return _processors; };
 int                      CartesianCommunicator::ProcessorCount(void)    { return _Nprocessors; };
 
+
 ////////////////////////////////////////////////////////////////////////////////
 // very VERY rarely (Log, serial RNG) we need world without a grid
 ////////////////////////////////////////////////////////////////////////////////
@@ -89,11 +90,11 @@ void CartesianCommunicator::GlobalSumVector(ComplexD *c,int N)
 #if !defined( GRID_COMMS_MPI3) && !defined (GRID_COMMS_MPI3L)
 
 void CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
-						       void *xmit,
-						       int xmit_to_rank,
-						       void *recv,
-						       int recv_from_rank,
-						       int bytes)
+                                                       void *xmit,
+                                                       int xmit_to_rank,
+                                                       void *recv,
+                                                       int recv_from_rank,
+                                                       int bytes)
 {
   SendToRecvFromBegin(list,xmit,xmit_to_rank,recv,recv_from_rank,bytes);
 }

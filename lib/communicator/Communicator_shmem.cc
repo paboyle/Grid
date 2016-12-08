@@ -333,5 +333,9 @@ void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
   }
 }
 
+  void CartesianCommunicator::PrintRankInfo(){
+    std::cout << GridLogMessage << "SHMEM: Rank Info not implemented yet" << std::endl;
+  }
+
 }
 

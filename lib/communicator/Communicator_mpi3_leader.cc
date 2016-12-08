@@ -869,6 +869,9 @@ void *CartesianCommunicator::ShmBufferTranslate(int rank,void * local_p) {
   return NULL;
 }
 
+  void CartesianCommunicator::PrintRankInfo(){
+    std::cout << "Grid: Rank "<< _processor << "  -  Physical node name: " << name << std::endl;
+  }
 
 };
 

@@ -33,25 +33,27 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 namespace Grid {
 
 template <class T>
-struct ReproducibilityState {
+class ReproducibilityState {
+ public:
   typedef typename T::vector_type vector_type;
+  typedef std::vector<std::vector<vector_type, alignedAllocator<vector_type> > > sum_type;
   unsigned int n_call;
   bool do_check;
   bool enable_reprocheck;
-  std::vector<std::vector<vector_type, alignedAllocator<vector_type> > >
-      th_states;
+  sum_type th_states;
 
+  void reset_counter() { n_call = 0; }
   void reset() {
     th_states.clear();
     do_check = false;
     enable_reprocheck = false;
     n_call = 0;
-  }
-
-  void reset_counter() { n_call = 0; }
+  };
 
   ReproducibilityState() { reset(); }
 };
+
+
 
 #ifdef GRID_WARN_SUBOPTIMAL
 #warning "Optimisation alert all these reduction loops are NOT threaded "
@@ -94,8 +96,6 @@ struct ReproducibilityState {
         sumarray[i]=zero;
       }
 
-      // accumulation done in the same precision ad vobj...
-      // may need to froce higher precision
       PARALLEL_FOR_LOOP_STATIC //request statically scheduled threads for reproducibility
       for(int thr=0;thr<grid->SumArraySize();thr++){
         int nwork, mywork, myoff;
@@ -103,30 +103,41 @@ struct ReproducibilityState {
         
         decltype(innerProduct(left._odata[0],right._odata[0])) vnrm = zero; // private to thread; sub summation
         for(int ss=myoff;ss<mywork+myoff; ss++){
-          vnrm = vnrm + innerProduct(left._odata[ss],right._odata[ss]);// accumulate here in higher precision
+          vnrm = vnrm + innerProduct(left._odata[ss],right._odata[ss]);
         }
         sumarray[thr]=TensorRemove(vnrm) ;
       }
       
-
       ///////////////////////  Reproducibility section
       if (repr.enable_reprocheck) {
         if (repr.do_check) {
-          //std::cout << GridLogMessage << "Checking thread state for inner product. Call n. " << repr.n_call << std::endl;
+          std::cout << GridLogDebug << "Checking thread state for inner product. Call n. " << repr.n_call << std::endl;
           for (int thread = 0; thread < sumarray.size(); thread++) {
-            if (sumarray[thread] != repr.th_states[repr.n_call][thread]) {
-              std::cout << GridLogMessage << "Reproducibility failure on node " << grid->ThisRank() << std::endl;
+            int words = sizeof(sumarray[thread])/sizeof(unsigned char);
+            unsigned char xors[words];
+            bitwise_xor(sumarray[thread], repr.th_states[repr.n_call][thread],xors);
+            // XOR all words
+            unsigned char res = 0;
+            for (int w = 0; w < words; w++) res = res ^ xors[w];
+            if ( res ) {
+              std::cout << GridLogMessage << "Reproducibility failure report" << std::endl;
+              grid->PrintRankInfo();
               std::cout << GridLogMessage << "Call: "<< repr.n_call << " Thread: " << thread << std::endl;
               std::cout << GridLogMessage << "Size of states: " << repr.th_states.size() << std::endl;
-              std::cout << GridLogMessage << sumarray[thread] << std::endl;
-              std::cout << GridLogMessage << repr.th_states[repr.n_call][thread] << std::endl;
-              //exit(1);
+              std::cout << GridLogMessage << "Current partial sum: " << sumarray[thread] << std::endl;
+              std::cout << GridLogMessage << "Saved partial sum  : " << repr.th_states[repr.n_call][thread] << std::endl;
+              std::cout << GridLogMessage << "Saved state " << std::endl;
+              show_binaryrep(repr.th_states[repr.n_call][thread]);
+              std::cout << GridLogMessage << "Current state" << std::endl;
+              show_binaryrep(sumarray[thread]);
+              std::cout << GridLogMessage << "Xor result" << std::endl;
+              show_binaryrep(xors, words);                          
             }
           }
           repr.n_call++;
         } else 
         {
-          //std::cout << GridLogMessage << "Saving thread state for inner product. Call n. " << repr.n_call << std::endl;
+          std::cout << GridLogDebug << "Saving thread state for inner product. Call n. " << repr.n_call << std::endl;
           repr.th_states.resize(repr.n_call+1);
           repr.th_states[repr.n_call].resize(grid->SumArraySize());
           repr.th_states[repr.n_call] = sumarray;  // save threads state

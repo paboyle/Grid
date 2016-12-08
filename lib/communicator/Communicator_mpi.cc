@@ -35,6 +35,8 @@ namespace Grid {
 // Info that is setup once and indept of cartesian layout
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 MPI_Comm CartesianCommunicator::communicator_world;
+char CartesianCommunicator::name[MPI_MAX_PROCESSOR_NAME]; // processing node physical name
+int CartesianCommunicator::length; 
 
 // Should error check all MPI calls.
 void CartesianCommunicator::Init(int *argc, char ***argv) {
@@ -44,6 +46,8 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
     MPI_Init(argc,argv);
   }
   MPI_Comm_dup (MPI_COMM_WORLD,&communicator_world);
+
+  MPI_Get_processor_name(name, &length);
   ShmInitGeneric();
 }
 
@@ -206,5 +210,10 @@ void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
   assert(ierr==0);
 }
 
+void CartesianCommunicator::PrintRankInfo(){
+    std::cout << "Grid: Rank "<< _processor << "  -  Physical node name: " << name << std::endl;
 }
+
+
+}// end of namespace
 

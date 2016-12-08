@@ -62,6 +62,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/serialisation/Serialisation.h>
 #include "Config.h"
 #include <Grid/Timer.h>
+#include <Grid/Bitwise.h>
 #include <Grid/PerfCount.h>
 #include <Grid/Log.h>
 #include <Grid/AlignedAllocator.h>

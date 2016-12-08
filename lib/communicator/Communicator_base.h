@@ -68,6 +68,8 @@ class CartesianCommunicator {
   static MPI_Comm communicator_world;
          MPI_Comm communicator;
   typedef MPI_Request CommsRequest_t;
+  static char name[MPI_MAX_PROCESSOR_NAME]; // processing node physical name
+  static int length; 
 #else 
   typedef int CommsRequest_t;
 #endif
@@ -149,6 +151,7 @@ class CartesianCommunicator {
   const std::vector<int> & ProcessorGrid(void)     ;
   int                      ProcessorCount(void)    ;
 
+  void        		 PrintRankInfo(void)     ;
   ////////////////////////////////////////////////////////////////////////////////
   // very VERY rarely (Log, serial RNG) we need world without a grid
   ////////////////////////////////////////////////////////////////////////////////
