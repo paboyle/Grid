@@ -113,6 +113,22 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "Called " #A " "<< (t1-t0)/ncall<<" us"<<std::endl;\
     std::cout<<GridLogMessage << "******************"<<std::endl;
 
+#define BENCH_DW_SSC(A,in,out)			\
+    Dw.CayleyZeroCounters();			\
+    Dw. A (in,out);				\
+    FGrid->Barrier();				\
+    t0=usecond();				\
+    for(int i=0;i<ncall;i++){			\
+      __SSC_START ;				\
+      Dw. A (in,out);				\
+      __SSC_STOP ;				\
+    }						\
+    t1=usecond();				\
+    FGrid->Barrier();				\
+    Dw.CayleyReport();					\
+    std::cout<<GridLogMessage << "Called " #A " "<< (t1-t0)/ncall<<" us"<<std::endl;\
+    std::cout<<GridLogMessage << "******************"<<std::endl;
+
 #define BENCH_DW_MEO(A,in,out)			\
     Dw.CayleyZeroCounters();			\
     Dw. A (in,out,0);				\
@@ -173,7 +189,7 @@ int main (int argc, char ** argv)
 
     BENCH_DW_MEO(Dhop    ,src,result);
     BENCH_DW_MEO(DhopEO  ,src_o,r_e);
-    BENCH_DW(Meooe   ,src_o,r_e);
+    BENCH_DW_SSC(Meooe   ,src_o,r_e);
     BENCH_DW(Mooee   ,src_o,r_o);
     BENCH_DW(MooeeInv,src_o,r_o);
 
