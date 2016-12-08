@@ -95,10 +95,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define VIDUPd(SRC,DEST)       "vpshufd  $0xee," #SRC"," #DEST  ";\n" // 32 bit level: 3,2,3,2
 #define VIDUPf(SRC,DEST)         "vmovshdup " #SRC ", " #DEST  ";\n"
 
-#define VBCASTRDUPd(OFF,A,DEST)           "vbroadcastsd (" #OFF "*16+0)(" #A ")," #DEST  ";\n" 
-#define VBCASTIDUPd(OFF,A,DEST)           "vbroadcastsd (" #OFF "*16+8)(" #A ")," #DEST  ";\n" 
-#define VBCASTRDUPf(OFF,PTR,DEST)         "vbroadcastss (" #OFF "*8 +0)(" #PTR "), " #DEST  ";\n"
-#define VBCASTIDUPf(OFF,PTR,DEST)         "vbroadcastss (" #OFF "*8 +4)(" #PTR "), " #DEST  ";\n"
+#define VBCASTRDUPd(OFF,A,DEST)           "vbroadcastsd    (" #OFF "*16+0)(" #A ")," #DEST  ";\n" 
+#define VBCASTIDUPd(OFF,A,DEST)           "vbroadcastsd    (" #OFF "*16+8)(" #A ")," #DEST  ";\n" 
+#define VBCASTRDUPf(OFF,PTR,DEST)         "vbroadcastss    (" #OFF "*8 +0)(" #PTR "), " #DEST  ";\n"
+#define VBCASTIDUPf(OFF,PTR,DEST)         "vbroadcastss    (" #OFF "*8 +4)(" #PTR "), " #DEST  ";\n"
+#define VBCASTCDUPf(OFF,A,DEST)           "vbroadcastsd    (" #OFF "*64  )(" #A ")," #DEST  ";\n" 
+#define VBCASTZDUPf(OFF,A,DEST)           "vbroadcastf32x4 (" #OFF "*64  )(" #A ")," #DEST  ";\n" 
+#define VBCASTCDUP(OFF,A,DEST) VBCASTCDUPf(OFF,A,DEST) 
+#define VBCASTZDUP(OFF,A,DEST) VBCASTZDUPf(OFF,A,DEST) 
 
 #define VMADDSUBf(A,B,accum) "vfmaddsub231ps   " #A "," #B "," #accum  ";\n"
 #define VMADDSUBd(A,B,accum) "vfmaddsub231pd   " #A "," #B "," #accum  ";\n"
@@ -106,11 +110,15 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define VMADDSUBMEMd(O,P,B,accum) "vfmaddsub231pd   " #O"*64("#P "),"#B "," #accum  ";\n"
 
 
+#define VMADDRDUPf(O,P,B,accum) "vfmadd231ps   (" #O"*8+0)("#P "){1to16},"#B "," #accum  ";\n"
+#define VMADDIDUPf(O,P,B,accum) "vfmadd231ps   (" #O"*8+4)("#P "){1to16},"#B "," #accum  ";\n"
 #define VMADDSUBRDUPf(O,P,B,accum) "vfmaddsub231ps   (" #O"*8+0)("#P "){1to16},"#B "," #accum  ";\n"
 #define VMADDSUBIDUPf(O,P,B,accum) "vfmaddsub231ps   (" #O"*8+4)("#P "){1to16},"#B "," #accum  ";\n"
 #define VMULRDUPf(O,P,B,accum) "vmulps   (" #O"*8+0)("#P "){1to16},"#B "," #accum  ";\n"
 #define VMULIDUPf(O,P,B,accum) "vmulps   (" #O"*8+4)("#P "){1to16},"#B "," #accum  ";\n"
 
+#define VMADDRDUPd(O,P,B,accum) "vfmadd231pd   (" #O"*16+0)("#P "){1to8},"#B "," #accum  ";\n"
+#define VMADDIDUPd(O,P,B,accum) "vfmadd231pd   (" #O"*16+8)("#P "){1to8},"#B "," #accum  ";\n"
 #define VMADDSUBRDUPd(O,P,B,accum) "vfmaddsub231pd   (" #O"*16+0)("#P "){1to8},"#B "," #accum  ";\n"
 #define VMADDSUBIDUPd(O,P,B,accum) "vfmaddsub231pd   (" #O"*16+8)("#P "){1to8},"#B "," #accum  ";\n"
 #define VMULRDUPd(O,P,B,accum) "vmulpd   (" #O"*16+0)("#P "){1to8},"#B "," #accum  ";\n"

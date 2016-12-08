@@ -189,6 +189,29 @@ namespace Optimization {
   //  2mul,4 mac +add+sub = 8 flop type insns
   //  3shuf + 2 (+shuf)   = 5/6 simd perm and 1/2 the load.
 
+  struct MultRealPart{
+    inline __m512 operator()(__m512 a, __m512 b){
+      __m512 ymm0;
+      ymm0 = _mm512_moveldup_ps(a); // ymm0 <- ar ar,
+      return _mm512_mul_ps(ymm0,b);                       // ymm0 <- ar bi, ar br
+    }
+    inline __m512d operator()(__m512d a, __m512d b){
+      __m512d ymm0;
+      ymm0 = _mm512_shuffle_pd(a,a,0x00); // ymm0 <- ar ar, ar,ar b'00,00
+      return _mm512_mul_pd(ymm0,b);      // ymm0 <- ar bi, ar br
+    }
+  };
+  struct MaddRealPart{
+    inline __m512 operator()(__m512 a, __m512 b, __m512 c){
+      __m512 ymm0 =  _mm512_moveldup_ps(a); // ymm0 <- ar ar,
+      return _mm512_fmadd_ps( ymm0, b, c);                         
+    }
+    inline __m512d operator()(__m512d a, __m512d b, __m512d c){
+      __m512d ymm0 = _mm512_shuffle_pd( a, a, 0x00 );
+      return _mm512_fmadd_pd( ymm0, b, c);                         
+    }
+  };
+
   struct MultComplex{
     // Complex float
     inline __m512 operator()(__m512 a, __m512 b){
@@ -501,6 +524,8 @@ namespace Optimization {
   typedef Optimization::Mult        MultSIMD;
   typedef Optimization::Div         DivSIMD;
   typedef Optimization::MultComplex MultComplexSIMD;
+  typedef Optimization::MultRealPart MultRealPartSIMD;
+  typedef Optimization::MaddRealPart MaddRealPartSIMD;
   typedef Optimization::Conj        ConjSIMD;
   typedef Optimization::TimesMinusI TimesMinusISIMD;
   typedef Optimization::TimesI      TimesISIMD;

@@ -177,6 +177,29 @@ namespace Optimization {
     }
   };
 
+  struct MultRealPart{
+    inline __m128 operator()(__m128 a, __m128 b){
+      __m128 ymm0;
+      ymm0  = _mm_shuffle_ps(a,a,_MM_SELECT_FOUR_FOUR(2,2,0,0)); // ymm0 <- ar ar,
+      return  _mm_mul_ps(ymm0,b);                       // ymm0 <- ar bi, ar br
+    }
+    inline __m128d operator()(__m128d a, __m128d b){
+      __m128d ymm0;
+      ymm0 = _mm_shuffle_pd(a,a,0x0); // ymm0 <- ar ar, ar,ar b'00,00
+      return _mm_mul_pd(ymm0,b);      // ymm0 <- ar bi, ar br
+    }
+  };
+  struct MaddRealPart{
+    inline __m128 operator()(__m128 a, __m128 b, __m128 c){
+      __m128 ymm0 =  _mm_shuffle_ps(a,a,_MM_SELECT_FOUR_FOUR(2,2,0,0)); // ymm0 <- ar ar,
+      _mm_add_ps(_mm_mul_ps( ymm0, b),c);                         
+    }
+    inline __m128d operator()(__m128d a, __m128d b, __m128 c){
+      __m128d ymm0 = _mm_shuffle_pd( a, a, 0x0 );
+      return _mm_add_pd(_mm_mul_pd( ymm0, b),c);                         
+    }
+  };
+
   struct MultComplex{
     // Complex float
     inline __m128 operator()(__m128 a, __m128 b){
@@ -415,6 +438,8 @@ namespace Optimization {
   typedef Optimization::Div         DivSIMD;
   typedef Optimization::Mult        MultSIMD;
   typedef Optimization::MultComplex MultComplexSIMD;
+  typedef Optimization::MultRealPart MultRealPartSIMD;
+  typedef Optimization::MaddRealPart MaddRealPartSIMD;
   typedef Optimization::Conj        ConjSIMD;
   typedef Optimization::TimesMinusI TimesMinusISIMD;
   typedef Optimization::TimesI      TimesISIMD;

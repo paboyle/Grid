@@ -213,6 +213,29 @@ namespace Optimization {
     }
   };
 
+  struct MultRealPart{
+    inline __m256 operator()(__m256 a, __m256 b){
+      __m256 ymm0;
+      ymm0  = _mm256_shuffle_ps(a,a,_MM_SELECT_FOUR_FOUR(2,2,0,0)); // ymm0 <- ar ar,
+      return  _mm256_mul_ps(ymm0,b);                       // ymm0 <- ar bi, ar br
+    }
+    inline __m256d operator()(__m256d a, __m256d b){
+      __m256d ymm0;
+      ymm0 = _mm256_shuffle_pd(a,a,0x0); // ymm0 <- ar ar, ar,ar b'00,00
+      return _mm256_mul_pd(ymm0,b);      // ymm0 <- ar bi, ar br
+    }
+  };
+  struct MaddRealPart{
+    inline __m256 operator()(__m256 a, __m256 b, __m256 c){
+      __m256 ymm0 =  _mm256_moveldup_ps(a); // ymm0 <- ar ar,
+      _mm256_add_ps(_mm256_mul_ps( ymm0, b),c);                         
+    }
+    inline __m256d operator()(__m256d a, __m256d b, __m256d c){
+      __m256d ymm0 = _mm256_shuffle_pd( a, a, 0x0 );
+      return _mm256_add_pd(_mm256_mul_pd( ymm0, b),c);                         
+    }
+  };
+
   struct MultComplex{
     // Complex float
     inline __m256 operator()(__m256 a, __m256 b){
@@ -627,7 +650,9 @@ namespace Optimization {
   typedef Optimization::Sub         SubSIMD;
   typedef Optimization::Div         DivSIMD;
   typedef Optimization::Mult        MultSIMD;
-  typedef Optimization::MultComplex MultComplexSIMD;
+  typedef Optimization::MultComplex  MultComplexSIMD;
+  typedef Optimization::MultRealPart MultRealPartSIMD;
+  typedef Optimization::MaddRealPart MaddRealPartSIMD;
   typedef Optimization::Conj        ConjSIMD;
   typedef Optimization::TimesMinusI TimesMinusISIMD;
   typedef Optimization::TimesI      TimesISIMD;
