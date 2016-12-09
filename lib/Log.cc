@@ -100,7 +100,7 @@ void Grid_quiesce_nodes(void) {
   me = shmem_my_pe();
 #endif
   if (me) {
-    std::cout.setstate(std::ios::badbit);
+    std::cout.setstate(std::ios::badbit);// mute all nodes except 0
   }
 }
 

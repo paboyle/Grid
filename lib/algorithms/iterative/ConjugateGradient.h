@@ -46,6 +46,9 @@ struct CG_state {
   }
 };
 
+
+enum CGexec_modes{ Default, ReproducibilityTest };
+
 /////////////////////////////////////////////////////////////
 // Base classes for iterative processes based on operators
 // single input vec, single output vec.
