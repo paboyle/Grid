@@ -120,13 +120,14 @@ class ReproducibilityState {
             bitwise_xor(sumarray[thread], repr.th_states[repr.n_call][thread],xors);
             // OR all words
             unsigned char res = 0;
+            xors[0]=1;
             for (int w = 0; w < words; w++) res = res | xors[w];
             if ( res ) {
               std::cout << GridLogMessage << "Reproducibility failure report" << std::endl;
               grid->PrintRankInfo();
               std::cout << "Call: "<< repr.n_call << " Thread: " << thread << std::endl;
               std::cout << "Size of states: " << repr.th_states.size() << std::endl;
-              std::cout << std::setprecision(15) << std::scientific;
+              std::cout << std::setprecision(GRID_REAL_DIGITS+1) << std::scientific;
               std::cout << "Saved partial sum  : " << repr.th_states[repr.n_call][thread] << std::endl;
               std::cout << "Current partial sum: " << sumarray[thread] << std::endl;
               std::cout << "Saved state "  << std::endl; show_binaryrep(repr.th_states[repr.n_call][thread]);

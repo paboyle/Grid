@@ -30,6 +30,7 @@ directory
 #define GRID_BITWISE_H
 
 #include <cassert>
+#include <cfloat>
 #include <bitset>
 #include <climits>
 #include <Config.h>

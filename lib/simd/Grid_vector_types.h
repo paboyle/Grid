@@ -60,6 +60,13 @@ directory
 #include "Grid_neon.h"
 #endif
 
+#ifdef GRID_DEFAULT_PRECISION_SINGLE
+#define GRID_REAL_DIGITS FLT_DIG
+#endif
+#ifdef GRID_DEFAULT_PRECISION_DOUBLE
+#define GRID_REAL_DIGITS DBL_DIG
+#endif
+
 namespace Grid {
 
 //////////////////////////////////////
