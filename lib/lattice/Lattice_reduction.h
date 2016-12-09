@@ -110,7 +110,7 @@ class ReproducibilityState {
         sumarray[thr]=TensorRemove(vnrm) ;
       }
       
-      ///////////////////////  Reproducibility section
+      ///////////////////////  Reproducibility section, not threaded on purpouse
       if (repr.enable_reprocheck) {
         if (repr.do_check) {
           std::cout << GridLogDebug << "Checking thread state for inner product. Call n. " << repr.n_call << std::endl;
