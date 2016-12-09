@@ -120,7 +120,6 @@ class ReproducibilityState {
             bitwise_xor(sumarray[thread], repr.th_states[repr.n_call][thread],xors);
             // OR all words
             unsigned char res = 0;
-            xors[0]=1;
             for (int w = 0; w < words; w++) res = res | xors[w];
             if ( res ) {
               std::cout << GridLogMessage << "Reproducibility failure report" << std::endl;
