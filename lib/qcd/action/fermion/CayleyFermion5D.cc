@@ -29,6 +29,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 
+#include <Grid/Eigen/Dense>
 #include <Grid.h>
 
 
@@ -48,7 +49,8 @@ namespace QCD {
 		   FourDimGrid,
  	 	   FourDimRedBlackGrid,_M5,p),
    mass(_mass)
- { }
+ { 
+ }
 
 template<class Impl>  
 void CayleyFermion5D<Impl>::Dminus(const FermionField &psi, FermionField &chi)
@@ -455,8 +457,90 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
     for(int j=0;j<Ls-1;j++) delta_d *= cee[j]/bee[j];
     dee[Ls-1] += delta_d;
   }  
+
+  int inv=1;
+  this->MooeeInternalCompute(0,inv,MatpInv,MatmInv);
+  this->MooeeInternalCompute(1,inv,MatpInvDag,MatmInvDag);
+
 }
 
+
+template<class Impl>
+void CayleyFermion5D<Impl>::MooeeInternalCompute(int dag, int inv,
+						 Vector<iSinglet<Simd> > & Matp,
+						 Vector<iSinglet<Simd> > & Matm)
+{
+  int Ls=this->Ls;
+
+  GridBase *grid = this->FermionRedBlackGrid();
+  int LLs = grid->_rdimensions[0];
+
+  if ( LLs == Ls ) return; // Not vectorised in 5th direction
+
+  Eigen::MatrixXcd Pplus  = Eigen::MatrixXcd::Zero(Ls,Ls);
+  Eigen::MatrixXcd Pminus = Eigen::MatrixXcd::Zero(Ls,Ls);
+  
+  for(int s=0;s<Ls;s++){
+    Pplus(s,s) = bee[s];
+    Pminus(s,s)= bee[s];
+  }
+  
+  for(int s=0;s<Ls-1;s++){
+    Pminus(s,s+1) = -cee[s];
+  }
+  
+  for(int s=0;s<Ls-1;s++){
+    Pplus(s+1,s) = -cee[s+1];
+  }
+  Pplus (0,Ls-1) = mass*cee[0];
+  Pminus(Ls-1,0) = mass*cee[Ls-1];
+  
+  Eigen::MatrixXcd PplusMat ;
+  Eigen::MatrixXcd PminusMat;
+  
+  if ( inv ) {
+    PplusMat =Pplus.inverse();
+    PminusMat=Pminus.inverse();
+  } else { 
+    PplusMat =Pplus;
+    PminusMat=Pminus;
+  }
+  
+  if(dag){
+    PplusMat.adjointInPlace();
+    PminusMat.adjointInPlace();
+  }
+  
+  typedef typename SiteHalfSpinor::scalar_type scalar_type;
+  const int Nsimd=Simd::Nsimd();
+  Matp.resize(Ls*LLs);
+  Matm.resize(Ls*LLs);
+
+  for(int s2=0;s2<Ls;s2++){
+  for(int s1=0;s1<LLs;s1++){
+    int istride = LLs;
+    int ostride = 1;
+    Simd Vp;
+    Simd Vm;
+    scalar_type *sp = (scalar_type *)&Vp;
+    scalar_type *sm = (scalar_type *)&Vm;
+    for(int l=0;l<Nsimd;l++){
+      if ( switcheroo<Coeff_t>::iscomplex() ) {
+	sp[l] = PplusMat (l*istride+s1*ostride,s2);
+	sm[l] = PminusMat(l*istride+s1*ostride,s2);
+      } else { 
+      // if real
+	scalar_type tmp;
+	tmp = PplusMat (l*istride+s1*ostride,s2);
+	sp[l] = scalar_type(tmp.real(),tmp.real());
+	tmp = PminusMat(l*istride+s1*ostride,s2);
+	sm[l] = scalar_type(tmp.real(),tmp.real());
+      }
+    }
+    Matp[LLs*s2+s1] = Vp;
+    Matm[LLs*s2+s1] = Vm;
+  }}
+}
 
 
   FermOpTemplateInstantiate(CayleyFermion5D);

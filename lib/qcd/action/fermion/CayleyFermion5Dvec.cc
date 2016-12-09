@@ -29,7 +29,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 
-#include <Grid/Eigen/Dense>
+
 #include <Grid.h>
 
 
@@ -343,7 +343,7 @@ void CayleyFermion5D<Impl>::MooeeInternalAsm(const FermionField &psi, FermionFie
 					     Vector<iSinglet<Simd> > &Matp,
 					     Vector<iSinglet<Simd> > &Matm)
 {
-#if 0
+#ifndef AVX512
   {
   SiteHalfSpinor BcastP;
   SiteHalfSpinor BcastM;
@@ -485,6 +485,177 @@ void CayleyFermion5D<Impl>::MooeeInternalAsm(const FermionField &psi, FermionFie
 #endif
 };
 
+  // Z-mobius version
+template<class Impl>
+void CayleyFermion5D<Impl>::MooeeInternalZAsm(const FermionField &psi, FermionField &chi,
+					     int LLs, int site, Vector<iSinglet<Simd> > &Matp, Vector<iSinglet<Simd> > &Matm)
+{
+#if 1
+  {
+  SiteHalfSpinor BcastP;
+  SiteHalfSpinor BcastM;
+  SiteHalfSpinor SiteChiP;
+  SiteHalfSpinor SiteChiM;
+
+  // Ls*Ls * 2 * 12 * vol flops
+  for(int s1=0;s1<LLs;s1++){ 
+    for(int s2=0;s2<LLs;s2++){ 
+      for(int  l=0; l<Simd::Nsimd();l++){ // simd lane
+
+        int s=s2+l*LLs;
+	int lex=s2+LLs*site;
+	
+	if ( s2==0 && l==0) {
+	  SiteChiP=zero;
+	  SiteChiM=zero;
+	}
+	
+	for(int sp=0;sp<2;sp++){
+        for(int co=0;co<Nc;co++){
+	  vbroadcast(BcastP()(sp  )(co),psi[lex]()(sp)(co),l);
+	}}
+	for(int sp=0;sp<2;sp++){
+        for(int co=0;co<Nc;co++){
+	  vbroadcast(BcastM()(sp  )(co),psi[lex]()(sp+2)(co),l);
+	}}
+
+	for(int sp=0;sp<2;sp++){
+        for(int co=0;co<Nc;co++){
+	  SiteChiP()(sp)(co)=SiteChiP()(sp)(co)+ Matp[LLs*s+s1]()()()*BcastP()(sp)(co); 
+	  SiteChiM()(sp)(co)=SiteChiM()(sp)(co)+ Matm[LLs*s+s1]()()()*BcastM()(sp)(co); 
+	}}
+
+    }}
+    {
+      int lex = s1+LLs*site;
+      for(int sp=0;sp<2;sp++){
+      for(int co=0;co<Nc;co++){
+	vstream(chi[lex]()(sp)(co), SiteChiP()(sp)(co));
+	vstream(chi[lex]()(sp+2)(co), SiteChiM()(sp)(co));
+      }}
+    }
+  }
+
+  }
+#else
+  {
+  // pointers
+    //  MASK_REGS;
+#define Chi_00 %%zmm0
+#define Chi_01 %%zmm1
+#define Chi_02 %%zmm2
+#define Chi_10 %%zmm3
+#define Chi_11 %%zmm4
+#define Chi_12 %%zmm5
+#define Chi_20 %%zmm6
+#define Chi_21 %%zmm7
+#define Chi_22 %%zmm8
+#define Chi_30 %%zmm9
+#define Chi_31 %%zmm10
+#define Chi_32 %%zmm11
+
+#define BCAST0   %%zmm12
+#define BCAST1   %%zmm13
+#define BCAST2   %%zmm14
+#define BCAST3   %%zmm15
+#define BCAST4   %%zmm16
+#define BCAST5   %%zmm17
+#define BCAST6   %%zmm18
+#define BCAST7   %%zmm19
+#define BCAST8   %%zmm20
+#define BCAST9   %%zmm21
+#define BCAST10  %%zmm22
+#define BCAST11  %%zmm23
+
+  int incr=LLs*LLs*sizeof(iSinglet<Simd>);
+  for(int s1=0;s1<LLs;s1++){ 
+    for(int s2=0;s2<LLs;s2++){ 
+      int lex=s2+LLs*site;
+      uint64_t a0 = (uint64_t)&Matp[LLs*s2+s1]; // should be cacheable
+      uint64_t a1 = (uint64_t)&Matm[LLs*s2+s1];
+      uint64_t a2 = (uint64_t)&psi[lex];
+      for(int  l=0; l<Simd::Nsimd();l++){ // simd lane
+	if ( (s2+l)==0 ) {
+	  asm (
+  	           VPREFETCH1(0,%2)  	     VPREFETCH1(0,%1)
+  	           VPREFETCH1(12,%2)  	     VPREFETCH1(13,%2)
+  	           VPREFETCH1(14,%2)  	     VPREFETCH1(15,%2)         
+		   VBCASTCDUP(0,%2,BCAST0)   		   VBCASTCDUP(1,%2,BCAST1)   
+		   VBCASTCDUP(2,%2,BCAST2)   		   VBCASTCDUP(3,%2,BCAST3)   
+		   VBCASTCDUP(4,%2,BCAST4)     		   VBCASTCDUP(5,%2,BCAST5)     
+		   VBCASTCDUP(6,%2,BCAST6)     		   VBCASTCDUP(7,%2,BCAST7)   
+		   VBCASTCDUP(8,%2,BCAST8)  		   VBCASTCDUP(9,%2,BCAST9)  
+		   VBCASTCDUP(10,%2,BCAST10)		   VBCASTCDUP(11,%2,BCAST11) 
+		   VMULIDUP (0,%0,BCAST0,Chi_00) 		   VMULIDUP(0,%0,BCAST1,Chi_01) // II RI  from Mat / Psi
+		   VMULIDUP (0,%0,BCAST2,Chi_02) 		   VMULIDUP(0,%0,BCAST3,Chi_10)
+		   VMULIDUP (0,%0,BCAST4,Chi_11) 		   VMULIDUP(0,%0,BCAST5,Chi_12)
+		   VMULIDUP (0,%0,BCAST6,Chi_20) 		   VMULIDUP(0,%0,BCAST7,Chi_21)
+		   VMULIDUP (0,%0,BCAST8,Chi_22) 		   VMULIDUP(0,%0,BCAST9,Chi_30)
+		   VMULIDUP (0,%0,BCAST10,Chi_31) 		   VMULIDUP(0,%0,BCAST11,Chi_32)
+		   VSHUF(BCAST0,BCAST0)		  		   VSHUF(BCAST1,BCAST1)		  
+		   VSHUF(BCAST2,BCAST2)		  		   VSHUF(BCAST3,BCAST3)		  
+		   VSHUF(BCAST4,BCAST4)		  		   VSHUF(BCAST5,BCAST5)		  
+		   VSHUF(BCAST6,BCAST6)		  		   VSHUF(BCAST7,BCAST7)		  
+		   VSHUF(BCAST8,BCAST8)		  		   VSHUF(BCAST9,BCAST9)		  
+		   VSHUF(BCAST10,BCAST10)	  		   VSHUF(BCAST11,BCAST11)		  
+		   VMADDSUBRDUP(0,%0,BCAST0,Chi_00)  		   VMADDSUBRDUP(0,%0,BCAST1,Chi_01)  
+		   VMADDSUBRDUP(0,%0,BCAST2,Chi_02)  		   VMADDSUBRDUP(0,%0,BCAST3,Chi_10)  
+		   VMADDSUBRDUP(0,%0,BCAST4,Chi_11)  		   VMADDSUBRDUP(0,%0,BCAST5,Chi_12)  
+		   VMADDSUBRDUP(0,%0,BCAST6,Chi_20)  		   VMADDSUBRDUP(0,%0,BCAST7,Chi_21)  
+		   VMADDSUBRDUP(0,%0,BCAST8,Chi_22)  		   VMADDSUBRDUP(0,%0,BCAST9,Chi_30)  
+		   VMADDSUBRDUP(0,%0,BCAST10,Chi_31) 		   VMADDSUBRDUP(0,%0,BCAST11,Chi_32)  
+		   : : "r" (a0), "r" (a1), "r" (a2)  );
+	} else { 
+	  asm (
+  	           VPREFETCH1(0,%2)  	     VPREFETCH1(0,%1)
+  	           VPREFETCH1(12,%2)  	     VPREFETCH1(13,%2)
+  	           VPREFETCH1(14,%2)  	     VPREFETCH1(15,%2)         
+		   VBCASTCDUP(0,%2,BCAST0)   		   VBCASTCDUP(1,%2,BCAST1)   
+		   VBCASTCDUP(2,%2,BCAST2)   		   VBCASTCDUP(3,%2,BCAST3)   
+		   VBCASTCDUP(4,%2,BCAST4)     		   VBCASTCDUP(5,%2,BCAST5)     
+		   VBCASTCDUP(6,%2,BCAST6)     		   VBCASTCDUP(7,%2,BCAST7)   
+		   VBCASTCDUP(8,%2,BCAST8)  		   VBCASTCDUP(9,%2,BCAST9)  
+		   VBCASTCDUP(10,%2,BCAST10)		   VBCASTCDUP(11,%2,BCAST11) 
+		   VMADDSUBIDUP (0,%0,BCAST0,Chi_00) 		   VMADDSUBIDUP(0,%0,BCAST1,Chi_01) // II RI  from Mat / Psi
+		   VMADDSUBIDUP (0,%0,BCAST2,Chi_02) 		   VMADDSUBIDUP(0,%0,BCAST3,Chi_10)
+		   VMADDSUBIDUP (0,%0,BCAST4,Chi_11) 		   VMADDSUBIDUP(0,%0,BCAST5,Chi_12)
+		   VMADDSUBIDUP (0,%0,BCAST6,Chi_20) 		   VMADDSUBIDUP(0,%0,BCAST7,Chi_21)
+		   VMADDSUBIDUP (0,%0,BCAST8,Chi_22) 		   VMADDSUBIDUP(0,%0,BCAST9,Chi_30)
+		   VMADDSUBIDUP (0,%0,BCAST10,Chi_31) 		   VMADDSUBIDUP(0,%0,BCAST11,Chi_32)
+		   VSHUF(BCAST0,BCAST0)		  		   VSHUF(BCAST1,BCAST1)		  
+		   VSHUF(BCAST2,BCAST2)		  		   VSHUF(BCAST3,BCAST3)		  
+		   VSHUF(BCAST4,BCAST4)		  		   VSHUF(BCAST5,BCAST5)		  
+		   VSHUF(BCAST6,BCAST6)		  		   VSHUF(BCAST7,BCAST7)		  
+		   VSHUF(BCAST8,BCAST8)		  		   VSHUF(BCAST9,BCAST9)		  
+		   VSHUF(BCAST10,BCAST10)	  		   VSHUF(BCAST11,BCAST11)		  
+		   VMADDSUBRDUP(0,%0,BCAST0,Chi_00)  		   VMADDSUBRDUP(0,%0,BCAST1,Chi_01)  
+		   VMADDSUBRDUP(0,%0,BCAST2,Chi_02)  		   VMADDSUBRDUP(0,%0,BCAST3,Chi_10)  
+		   VMADDSUBRDUP(0,%0,BCAST4,Chi_11)  		   VMADDSUBRDUP(0,%0,BCAST5,Chi_12)  
+		   VMADDSUBRDUP(0,%0,BCAST6,Chi_20)  		   VMADDSUBRDUP(0,%0,BCAST7,Chi_21)  
+		   VMADDSUBRDUP(0,%0,BCAST8,Chi_22)  		   VMADDSUBRDUP(0,%0,BCAST9,Chi_30)  
+		   VMADDSUBRDUP(0,%0,BCAST10,Chi_31) 		   VMADDSUBRDUP(0,%0,BCAST11,Chi_32)  
+		   : : "r" (a0), "r" (a1), "r" (a2)  );
+	}
+	a0 = a0+incr;
+	a1 = a1+incr;
+	a2 = a2+sizeof(Simd::scalar_type);
+      }}
+    {
+      int lexa = s1+LLs*site;
+      asm (
+	       VSTORE(0,%0,Chi_00) VSTORE(1 ,%0,Chi_01)  VSTORE(2 ,%0,Chi_02)		
+	       VSTORE(3,%0,Chi_10) VSTORE(4 ,%0,Chi_11)  VSTORE(5 ,%0,Chi_12)		
+	       VSTORE(6,%0,Chi_20) VSTORE(7 ,%0,Chi_21)  VSTORE(8 ,%0,Chi_22)		
+	       VSTORE(9,%0,Chi_30) VSTORE(10,%0,Chi_31)  VSTORE(11,%0,Chi_32)		
+	       : : "r" ((uint64_t)&chi[lexa]) : "memory" );
+
+    }
+  }
+  }
+#endif
+};
+
+
 template<class Impl>
 void CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv)
 {
@@ -494,118 +665,41 @@ void CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField 
 
   chi.checkerboard=psi.checkerboard;
   
-  Eigen::MatrixXcd Pplus  = Eigen::MatrixXcd::Zero(Ls,Ls);
-  Eigen::MatrixXcd Pminus = Eigen::MatrixXcd::Zero(Ls,Ls);
+  Vector<iSinglet<Simd> >  Matp;
+  Vector<iSinglet<Simd> >  Matm;
+  Vector<iSinglet<Simd> >  *_Matp;
+  Vector<iSinglet<Simd> >  *_Matm;
   
-  for(int s=0;s<Ls;s++){
-    Pplus(s,s) = bee[s];
-    Pminus(s,s)= bee[s];
+  //  MooeeInternalCompute(dag,inv,Matp,Matm);
+  if ( inv && dag ) { 
+    _Matp = &MatpInvDag;
+    _Matm = &MatmInvDag;
   }
-  
-  for(int s=0;s<Ls-1;s++){
-    Pminus(s,s+1) = -cee[s];
+  if ( inv && (!dag) ) { 
+    _Matp = &MatpInv;
+    _Matm = &MatmInv;
+  } 
+  if ( !inv ) {
+    MooeeInternalCompute(dag,inv,Matp,Matm);
+    _Matp = &Matp;
+    _Matm = &Matm;
   }
-  
-  for(int s=0;s<Ls-1;s++){
-    Pplus(s+1,s) = -cee[s+1];
-  }
-  Pplus (0,Ls-1) = mass*cee[0];
-  Pminus(Ls-1,0) = mass*cee[Ls-1];
-  
-  Eigen::MatrixXcd PplusMat ;
-  Eigen::MatrixXcd PminusMat;
-  
-  if ( inv ) {
-    PplusMat =Pplus.inverse();
-    PminusMat=Pminus.inverse();
-  } else { 
-    PplusMat =Pplus;
-    PminusMat=Pminus;
-  }
-  
-  if(dag){
-    PplusMat.adjointInPlace();
-    PminusMat.adjointInPlace();
-  }
-  
-  typedef typename SiteHalfSpinor::scalar_type scalar_type;
-  const int Nsimd=Simd::Nsimd();
-  Vector<iSinglet<Simd> > Matp(Ls*LLs);
-  Vector<iSinglet<Simd> > Matm(Ls*LLs);
+  assert(_Matp->size()==Ls*LLs);
 
-  for(int s2=0;s2<Ls;s2++){
-  for(int s1=0;s1<LLs;s1++){
-    int istride = LLs;
-    int ostride = 1;
-    Simd Vp;
-    Simd Vm;
-    scalar_type *sp = (scalar_type *)&Vp;
-    scalar_type *sm = (scalar_type *)&Vm;
-    for(int l=0;l<Nsimd;l++){
-      sp[l] = PplusMat (l*istride+s1*ostride,s2);
-      sp[l] = scalar_type(sp[l].real(),sp[l].real());
-      sm[l] = PminusMat(l*istride+s1*ostride,s2);
-      sm[l] = scalar_type(sm[l].real(),sm[l].real());
-    }
-    Matp[LLs*s2+s1] = Vp;
-    Matm[LLs*s2+s1] = Vm;
-  }}
-  
-  
   MooeeInvCalls++;
   MooeeInvTime-=usecond();
 
-  // Dynamic allocate on stack to get per thread without serialised heap acces
-#if 0
-#pragma omp parallel  
-  {
-    std::vector<SiteHalfSpinor> SitePplus(LLs);
-    std::vector<SiteHalfSpinor> SitePminus(LLs);
-    std::vector<SiteHalfSpinor> SiteChiP(LLs);
-    std::vector<SiteHalfSpinor> SiteChiM(LLs);
-    std::vector<SiteSpinor>     SiteChi(LLs);
-
-#pragma omp for 
-  for(auto site=0;site<vol;site++){
-    SiteHalfSpinor BcastP;
-    SiteHalfSpinor BcastM;
-    for(int s=0;s<LLs;s++){
-      int lex = s+LLs*site;
-      spProj5p(SitePplus[s] ,psi[lex]);
-      spProj5m(SitePminus[s],psi[lex]);
-      SiteChiP[s]=zero;
-      SiteChiM[s]=zero;
-    }
-      
-    int s=0;
-    for(int  l=0; l<Simd::Nsimd();l++){ // simd lane
-      for(int s2=0;s2<LLs;s2++){ // Column loop of right hand side
-	vbroadcast(BcastP,SitePplus [s2],l);
-	vbroadcast(BcastM,SitePminus[s2],l);
-	for(int s1=0;s1<LLs;s1++){ // Column loop of reduction variables
-	  SiteChiP[s1]=SiteChiP[s1]+Matp[LLs*s+s1]*BcastP;
-	  SiteChiM[s1]=SiteChiM[s1]+Matm[LLs*s+s1]*BcastM;
-	}
-	s++;
-      }
-    }
-
-    for(int s=0;s<LLs;s++){
-      int lex = s+LLs*site;
-      spRecon5p(SiteChi[s],SiteChiP[s]);
-      accumRecon5m(SiteChi[s],SiteChiM[s]);
-      chi[lex] = SiteChi[s]*0.5;
-    }
-  }}
-#else    
+  if ( switcheroo<Coeff_t>::iscomplex() ) {
   PARALLEL_FOR_LOOP
-  for(auto site=0;site<vol;site++){
-    MooeeInternalAsm(psi,chi,
-		     LLs,site,
-		     Matp,Matm);
+    for(auto site=0;site<vol;site++){
+      MooeeInternalZAsm(psi,chi,LLs,site,*_Matp,*_Matm);
+    }
+  } else { 
+  PARALLEL_FOR_LOOP
+    for(auto site=0;site<vol;site++){
+      MooeeInternalAsm(psi,chi,LLs,site,*_Matp,*_Matm);
+    }
   }
-#endif
-
   MooeeInvTime+=usecond();
 }
 
@@ -618,5 +712,6 @@ template void CayleyFermion5D<DomainWallVec5dImplF>::MooeeInternal(const Fermion
 template void CayleyFermion5D<DomainWallVec5dImplD>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
 template void CayleyFermion5D<ZDomainWallVec5dImplF>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
 template void CayleyFermion5D<ZDomainWallVec5dImplD>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
+
 
 }}
