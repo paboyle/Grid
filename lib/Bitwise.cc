@@ -26,9 +26,6 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef GRID_BITWISE_H
-#define GRID_BITWISE_H
-
 #include <iostream>
 #include <Bitwise.h>
 #include <bitset>
@@ -39,10 +36,14 @@ namespace Grid {
 void show_binaryrep(const unsigned char* a, size_t size) {
   const unsigned char* beg = a;
   const unsigned char* end = a + size;
-  while (beg != end) std::cout << std::bitset<CHAR_BIT>(*beg++) << ' ';
+  unsigned int ctr = 0;
+  while (beg != end) {
+    std::cout << std::bitset<CHAR_BIT>(*beg++) << ' ';
+    ctr++;
+    if (ctr % GRID_REAL_BYTES == 0) std::cout << '\n';
+  }
   std::cout << '\n';
 }
 
 } // namespace 
 
-#endif

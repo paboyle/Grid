@@ -29,8 +29,18 @@ directory
 #ifndef GRID_BITWISE_H
 #define GRID_BITWISE_H
 
+#include <cassert>
 #include <bitset>
 #include <climits>
+#include <Config.h>
+
+#ifdef GRID_DEFAULT_PRECISION_SINGLE
+#define GRID_REAL_BYTES 4
+#endif
+#ifdef GRID_DEFAULT_PRECISION_DOUBLE
+#define GRID_REAL_BYTES 8
+#endif
+
 
 namespace Grid {
 
@@ -40,7 +50,12 @@ template <typename T>
 void show_binaryrep(const T& a) {
   const char* beg = reinterpret_cast<const char*>(&a);
   const char* end = beg + sizeof(a);
-  while (beg != end) std::cout << std::bitset<CHAR_BIT>(*beg++) << ' ';
+  unsigned int ctr = 0;
+  while (beg != end) {
+  	std::cout << std::bitset<CHAR_BIT>(*beg++) << ' ';
+  	ctr++;
+  	if (ctr % GRID_REAL_BYTES == 0) std::cout << '\n';
+  }
   std::cout << '\n';
 }
 
@@ -55,5 +70,6 @@ void bitwise_xor(T& l, T& r, unsigned char* xors) {
 }
 
 }; // namespace 
+
 
 #endif

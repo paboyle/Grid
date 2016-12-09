@@ -118,22 +118,21 @@ class ReproducibilityState {
             int words = sizeof(sumarray[thread])/sizeof(unsigned char);
             unsigned char xors[words];
             bitwise_xor(sumarray[thread], repr.th_states[repr.n_call][thread],xors);
-            // XOR all words
+            // OR all words
             unsigned char res = 0;
-            for (int w = 0; w < words; w++) res = res ^ xors[w];
+            for (int w = 0; w < words; w++) res = res | xors[w];
             if ( res ) {
               std::cout << GridLogMessage << "Reproducibility failure report" << std::endl;
               grid->PrintRankInfo();
-              std::cout << GridLogMessage << "Call: "<< repr.n_call << " Thread: " << thread << std::endl;
-              std::cout << GridLogMessage << "Size of states: " << repr.th_states.size() << std::endl;
-              std::cout << GridLogMessage << "Current partial sum: " << sumarray[thread] << std::endl;
-              std::cout << GridLogMessage << "Saved partial sum  : " << repr.th_states[repr.n_call][thread] << std::endl;
-              std::cout << GridLogMessage << "Saved state " << std::endl;
-              show_binaryrep(repr.th_states[repr.n_call][thread]);
-              std::cout << GridLogMessage << "Current state" << std::endl;
-              show_binaryrep(sumarray[thread]);
-              std::cout << GridLogMessage << "Xor result" << std::endl;
-              show_binaryrep(xors, words);
+              std::cout << "Call: "<< repr.n_call << " Thread: " << thread << std::endl;
+              std::cout << "Size of states: " << repr.th_states.size() << std::endl;
+              std::cout << std::setprecision(15) << std::scientific;
+              std::cout << "Saved partial sum  : " << repr.th_states[repr.n_call][thread] << std::endl;
+              std::cout << "Current partial sum: " << sumarray[thread] << std::endl;
+              std::cout << "Saved state "  << std::endl; show_binaryrep(repr.th_states[repr.n_call][thread]);
+              std::cout << "Current state" << std::endl; show_binaryrep(sumarray[thread]);
+              std::cout << "XOR result"    << std::endl; show_binaryrep(xors, words);
+              std::cout << std::defaultfloat;
               repr.success = false;                          
             }
           }

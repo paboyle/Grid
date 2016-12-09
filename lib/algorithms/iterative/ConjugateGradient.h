@@ -9,6 +9,7 @@ Copyright (C) 2015
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -158,7 +159,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
 
 
       axpy(r, -a, mmp, r);// new residual r = r_old - a * Ap
-      cp = norm2(r, ReprTest);// 
+      cp = norm2(r, ReprTest); // 
       if (ReproTest && !CGState.do_repro) {
         CGState.residuals.push_back(cp);  // save residuals state
                 std::cout << GridLogIterative << "ReproTest: Saving state" << std::endl;
@@ -171,7 +172,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
                 std::cout << GridLogMessage << " at k=" << k << std::endl;
                 std::cout << GridLogMessage << "saved residual = " << CGState.residuals[k-1] 
                         << " cp = " << cp << std::endl;
-                exit(-1);
+                //exit(-1);  do not stop, report all the failures
         }
       }
       b = cp / c;
