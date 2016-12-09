@@ -2,12 +2,12 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./tests/Test_cayley_cg.cc
+    Source file: ./tests/Test_cayley_cg_reproducibility.cc
 
     Copyright (C) 2015
 
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: paboyle <paboyle@ph.ed.ac.uk>
+    Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+    Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,6 +31,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
+
+#define REPRODUCIBILITY_INTERVAL 1
+
 
 template<class d>
 struct scal {
@@ -169,6 +172,7 @@ void  TestCGunprec(What & Ddwf,
 
   MdagMLinearOperator<What,LatticeFermion> HermOp(Ddwf);
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000, ReproducibilityTest);
+  CG.set_reproducibility_interval(REPRODUCIBILITY_INTERVAL);
   CG(HermOp,src,result);
 
 }
@@ -188,6 +192,7 @@ void  TestCGprec(What & Ddwf,
 
   SchurDiagMooeeOperator<What,LatticeFermion> HermOpEO(Ddwf);
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000, ReproducibilityTest);
+  CG.set_reproducibility_interval(REPRODUCIBILITY_INTERVAL);
   CG(HermOpEO,src_o,result_o);
 }
 
@@ -204,6 +209,7 @@ void  TestCGschur(What & Ddwf,
   LatticeFermion result(FGrid); result=zero;
 
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000, ReproducibilityTest);
+  CG.set_reproducibility_interval(REPRODUCIBILITY_INTERVAL);
   SchurRedBlackDiagMooeeSolve<LatticeFermion> SchurSolver(CG);
   SchurSolver(Ddwf,src,result);
 }

@@ -41,6 +41,7 @@ class ReproducibilityState {
   bool          do_check;
   bool          enable_reprocheck;
   bool          success;
+  unsigned int  interval; 
   std::vector<sum_type> th_states;
 
   void reset_counter() { n_call = 0; }
@@ -52,12 +53,14 @@ class ReproducibilityState {
     n_call            = 0;
   };
 
-  ReproducibilityState() { reset(); }
+  ReproducibilityState():interval(1) { 
+    reset(); 
+  }
 
   void check(GridBase* grid, sum_type &sumarray){
     ///////////////////////  Reproducibility section, not threaded on purpouse
     if (enable_reprocheck) {
-      if (do_check) {
+      if (do_check && (n_call % interval) == 0) {
         for (int thread = 0; thread < sumarray.size(); thread++) {
           int words = sizeof(sumarray[thread])/sizeof(unsigned char);
           unsigned char xors[words];
@@ -65,43 +68,45 @@ class ReproducibilityState {
           // OR all words
           unsigned char res = 0;
           for (int w = 0; w < words; w++) res = res | xors[w];
-            if ( res ) {
-              std::cout << GridLogMessage << "Reproducibility failure report" << std::endl;
 
-              Grid_unquiesce_nodes();
-              int rank = 0;
-              while (rank < grid->_Nprocessors){
-              	if (rank == grid->ThisRank() ){
-              		grid->PrintRankInfo();
-              		std::cout << "Call: "<< n_call << " Thread: " << thread << std::endl;
-              		std::cout << "Size of states: " << th_states.size() << std::endl;
-              		std::cout << std::setprecision(GRID_REAL_DIGITS+1) << std::scientific;
-              		std::cout << "Saved partial sum  : " << th_states[n_call][thread] << std::endl;
-              		std::cout << "Current partial sum: " << sumarray[thread] << std::endl;
-              		std::cout << "Saved state "  << std::endl; show_binaryrep(th_states[n_call][thread]);
-              		std::cout << "Current state" << std::endl; show_binaryrep(sumarray[thread]);
-              		std::cout << "XOR result"    << std::endl; show_binaryrep(xors, words);
+          Grid_unquiesce_nodes();
+          int rank = 0;
+          while (rank < grid->_Nprocessors){
+            if (rank == grid->ThisRank() ){
+              if ( res ) {
+                std::cout << "Reproducibility failure report" << std::endl;
+                grid->PrintRankInfo();
+                std::cout << "Call: "<< n_call << " Thread: " << thread << std::endl;
+                std::cout << "Size of states: " << th_states.size() << std::endl;
+                std::cout << std::setprecision(GRID_REAL_DIGITS+1) << std::scientific;
+                std::cout << "Saved partial sum  : " << th_states[n_call][thread] << std::endl;
+                std::cout << "Current partial sum: " << sumarray[thread] << std::endl;
+                std::cout << "Saved state "  << std::endl; show_binaryrep(th_states[n_call][thread]);
+                std::cout << "Current state" << std::endl; show_binaryrep(sumarray[thread]);
+                std::cout << "XOR result"    << std::endl; show_binaryrep(xors, words);
               		//std::cout << std::defaultfloat;  //not supported by some compilers
-              		std::cout << std::setprecision(6);
-              		success = false; 
-              	}
-              	rank++;
-              	grid->Barrier();
+                std::cout << std::setprecision(6);
+                success = false; 
               }
-              Grid_quiesce_nodes();                         
             }
+            rank++;
+            grid->Barrier();
           }
-          n_call++;
-        } else 
-        {
-          std::cout << GridLogDebug << "Saving thread state for inner product. Call n. " << n_call << std::endl;
-          th_states.resize(n_call+1);
-          th_states[n_call].resize(grid->SumArraySize());
-          th_states[n_call] = sumarray;  // save threads state
-          n_call++;
+          Grid_quiesce_nodes();                         
         }
+
+      } else if (!do_check)
+      {
+        std::cout << GridLogDebug << "Saving thread state for inner product. Call n. " 
+        << n_call << std::endl;
+        th_states.resize(n_call+1);
+        th_states[n_call].resize(grid->SumArraySize());
+          th_states[n_call] = sumarray;  // save threads state
+          //n_call++;
+        }
+        n_call++;
       }
-  }
+    }
 
 };
 

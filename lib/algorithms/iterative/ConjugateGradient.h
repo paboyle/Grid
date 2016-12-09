@@ -81,6 +81,9 @@ class ConjugateGradient : public OperatorFunction<Field> {
     }
   };
 
+  void set_reproducibility_interval(unsigned int interval){
+    ReprTest.interval = interval;
+  }
 
 
   void operator()(LinearOperatorBase<Field> &Linop, const Field &src,
@@ -95,8 +98,9 @@ class ConjugateGradient : public OperatorFunction<Field> {
     Field r(src);
     Field psi_start(psi);// save for the repro test
 
-    if (CGState.do_repro)
-        std::cout << GridLogMessage << "Starting reproducibility test" << std::endl;
+    if (CGState.do_repro && ReproTest)
+        std::cout << GridLogMessage << "Starting reproducibility test, full check every "
+                  << ReprTest.interval << " calls" << std::endl;
 
     // Initial residual computation & set up
     RealD guess = norm2(psi);
@@ -208,7 +212,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
 
         if (ErrorOnNoConverge) assert(true_residual / Tolerance < 10000.0);
 
-        if (!CGState.do_repro && ReproTest){
+        if (! (CGState.do_repro && ReproTest)){
                 CGState.do_repro = true;
                 ReprTest.do_check = true;
                 ReprTest.reset_counter();
