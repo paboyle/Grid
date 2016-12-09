@@ -133,7 +133,8 @@ class ReproducibilityState {
               std::cout << "Saved state "  << std::endl; show_binaryrep(repr.th_states[repr.n_call][thread]);
               std::cout << "Current state" << std::endl; show_binaryrep(sumarray[thread]);
               std::cout << "XOR result"    << std::endl; show_binaryrep(xors, words);
-              std::cout << std::defaultfloat;
+              //std::cout << std::defaultfloat;  //not supported by some compilers
+              std::cout << std::setprecision(6);
               repr.success = false;                          
             }
           }
