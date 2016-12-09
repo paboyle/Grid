@@ -47,7 +47,7 @@ struct CG_state {
 };
 
 
-enum CGexec_modes{ Default, ReproducibilityTest };
+enum CGexec_mode{ Default, ReproducibilityTest };
 
 /////////////////////////////////////////////////////////////
 // Base classes for iterative processes based on operators
@@ -67,19 +67,20 @@ class ConjugateGradient : public OperatorFunction<Field> {
   CG_state CGState; //to check reproducibility by repeating the CG
   ReproducibilityState<typename Field::vector_object> ReprTest; // for the inner proucts
 
-  ConjugateGradient(RealD tol, Integer maxit, bool err_on_no_conv = true,
-        bool ReproducibilityTest = false)
-      : Tolerance(tol),
-        MaxIterations(maxit),
-        ErrorOnNoConverge(err_on_no_conv),
-        ReproTest(ReproducibilityTest){
-        	if(ReproducibilityTest == true && err_on_no_conv == true){
-        		std::cout << GridLogMessage << "CG: Reproducibility test ON "<<
-        					"and error on convergence ON are incompatible options" << std::endl;
-        	exit(1);
-        	}
-        	
-        };
+  // Constructor
+  ConjugateGradient(RealD tol, Integer maxit, CGexec_mode Mode = Default)
+    : Tolerance(tol),MaxIterations(maxit){
+    switch(Mode)
+    {
+      case Default  : 
+      ErrorOnNoConverge = true;
+      ReproTest = false;
+      case ReproducibilityTest :
+      ErrorOnNoConverge = false;
+      ReproTest = true; 
+    }
+  };
+
 
 
   void operator()(LinearOperatorBase<Field> &Linop, const Field &src,
@@ -116,18 +117,12 @@ class ConjugateGradient : public OperatorFunction<Field> {
     cp = a;
     ssq = norm2(src);
 
-    std::cout << GridLogIterative << std::setprecision(4)
-              << "ConjugateGradient: guess " << guess << std::endl;
-    std::cout << GridLogIterative << std::setprecision(4)
-              << "ConjugateGradient:   src " << ssq << std::endl;
-    std::cout << GridLogIterative << std::setprecision(4)
-              << "ConjugateGradient:    mp " << d << std::endl;
-    std::cout << GridLogIterative << std::setprecision(4)
-              << "ConjugateGradient:   mmp " << b << std::endl;
-    std::cout << GridLogIterative << std::setprecision(4)
-              << "ConjugateGradient:  cp,r " << cp << std::endl;
-    std::cout << GridLogIterative << std::setprecision(4)
-              << "ConjugateGradient:     p " << a << std::endl;
+    std::cout << GridLogIterative << "ConjugateGradient: guess " << guess << std::endl;
+    std::cout << GridLogIterative << "ConjugateGradient:   src " << ssq << std::endl;
+    std::cout << GridLogIterative << "ConjugateGradient:    mp " << d << std::endl;
+    std::cout << GridLogIterative << "ConjugateGradient:   mmp " << b << std::endl;
+    std::cout << GridLogIterative << "ConjugateGradient:  cp,r " << cp << std::endl;
+    std::cout << GridLogIterative << "ConjugateGradient:     p " << a << std::endl;
 
     RealD rsq = Tolerance * Tolerance * ssq;
 
@@ -162,7 +157,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
 
 
       axpy(r, -a, mmp, r);// new residual r = r_old - a * Ap
-      cp = norm2(r, ReprTest); // 
+      cp = norm2(r, ReprTest); // bookmarking this norm
       if (ReproTest && !CGState.do_repro) {
         CGState.residuals.push_back(cp);  // save residuals state
                 std::cout << GridLogIterative << "ReproTest: Saving state" << std::endl;

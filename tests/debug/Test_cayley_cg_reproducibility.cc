@@ -168,7 +168,7 @@ void  TestCGunprec(What & Ddwf,
   LatticeFermion result(FGrid); result=zero;
 
   MdagMLinearOperator<What,LatticeFermion> HermOp(Ddwf);
-  ConjugateGradient<LatticeFermion> CG(1.0e-8,10000, false, true);
+  ConjugateGradient<LatticeFermion> CG(1.0e-8,10000, ReproducibilityTest);
   CG(HermOp,src,result);
 
 }
@@ -187,7 +187,7 @@ void  TestCGprec(What & Ddwf,
   result_o=zero;
 
   SchurDiagMooeeOperator<What,LatticeFermion> HermOpEO(Ddwf);
-  ConjugateGradient<LatticeFermion> CG(1.0e-8,10000, false, true);
+  ConjugateGradient<LatticeFermion> CG(1.0e-8,10000, ReproducibilityTest);
   CG(HermOpEO,src_o,result_o);
 }
 
@@ -203,7 +203,7 @@ void  TestCGschur(What & Ddwf,
   LatticeFermion src   (FGrid); random(*RNG5,src);
   LatticeFermion result(FGrid); result=zero;
 
-  ConjugateGradient<LatticeFermion> CG(1.0e-8,10000, false, true);
+  ConjugateGradient<LatticeFermion> CG(1.0e-8,10000, ReproducibilityTest);
   SchurRedBlackDiagMooeeSolve<LatticeFermion> SchurSolver(CG);
   SchurSolver(Ddwf,src,result);
 }
