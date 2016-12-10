@@ -40,7 +40,9 @@ template <typename T>
 class GeneticScheduler
 {
 public:
-    typedef std::function<int(const std::vector<T> &)> ObjFunc;
+    typedef std::vector<T>                   Gene;
+    typedef std::pair<Gene *, Gene *>        GenePair;
+    typedef std::function<int(const Gene &)> ObjFunc;
     struct Parameters
     {
         double       mutationRate;
@@ -53,8 +55,8 @@ public:
     // destructor
     virtual ~GeneticScheduler(void) = default;
     // access
-    const std::vector<T> & getMinSchedule(void);
-    int                    getMinValue(void);
+    const Gene & getMinSchedule(void);
+    int          getMinValue(void);
     // breed a new generation
     void nextGeneration(void);
     // print population
@@ -71,19 +73,20 @@ public:
         return out;
     }
 private:
-    // randomly initialize population
+    // evolution steps
     void initPopulation(void);
+    void doCrossover(void);
+    void doMutation(void);
     // genetic operators
-    std::vector<T> *                              select1(void);
-    std::pair<std::vector<T> *, std::vector<T> *> select2(void);
-    void                                          crossover(void);
-    void                                          mutation(void);
+    GenePair selectPair(void);
+    void     crossover(Gene &c, const Gene &p1, const Gene &p2);
+    void     mutation(Gene &m, const Gene &c);
 private:
-    Graph<T>                           &graph_;
-    const ObjFunc                      &func_;
-    const Parameters                   par_;
-    std::multimap<int, std::vector<T>> population_;
-    std::mt19937                       gen_;
+    Graph<T>                 &graph_;
+    const ObjFunc            &func_;
+    const Parameters         par_;
+    std::multimap<int, Gene> population_;
+    std::mt19937             gen_;
 };
 
 /******************************************************************************
@@ -102,7 +105,8 @@ GeneticScheduler<T>::GeneticScheduler(Graph<T> &graph, const ObjFunc &func,
 
 // access //////////////////////////////////////////////////////////////////////
 template <typename T>
-const std::vector<T> & GeneticScheduler<T>::getMinSchedule(void)
+const typename GeneticScheduler<T>::Gene &
+GeneticScheduler<T>::getMinSchedule(void)
 {
     return population_.begin()->second;
 }
@@ -128,7 +132,7 @@ void GeneticScheduler<T>::nextGeneration(void)
     PARALLEL_FOR_LOOP
     for (unsigned int i = 0; i < par_.popSize; ++i)
     {
-        mutation();
+        doMutation();
     }
     LOG(Debug) << "After mutations:\n" << *this << std::endl;
     
@@ -136,7 +140,7 @@ void GeneticScheduler<T>::nextGeneration(void)
     PARALLEL_FOR_LOOP
     for (unsigned int i = 0; i < par_.popSize/2; ++i)
     {
-        crossover();
+        doCrossover();
     }
     LOG(Debug) << "After mating:\n" << *this << std::endl;
     
@@ -148,7 +152,7 @@ void GeneticScheduler<T>::nextGeneration(void)
     LOG(Debug) << "After grim reaper:\n" << *this << std::endl;
 }
 
-// randomly initialize population //////////////////////////////////////////////
+// evolution steps /////////////////////////////////////////////////////////////
 template <typename T>
 void GeneticScheduler<T>::initPopulation(void)
 {
@@ -161,24 +165,50 @@ void GeneticScheduler<T>::initPopulation(void)
     }
 }
 
-// genetic operators ///////////////////////////////////////////////////////////
 template <typename T>
-std::vector<T> * GeneticScheduler<T>::select1(void)
+void GeneticScheduler<T>::doCrossover(void)
 {
-    std::uniform_int_distribution<unsigned int> pdis(0, population_.size() - 1);
+    auto p = selectPair();
+    auto &p1 = *(p.first), &p2 = *(p.second);
+    Gene c1, c2;
     
-    auto it = population_.begin();
-    std::advance(it, pdis(gen_));
-    
-    return &(it->second);
+    crossover(c1, p1, p2);
+    crossover(c2, p2, p1);
+    PARALLEL_CRITICAL
+    {
+        population_.emplace(func_(c1), c1);
+        population_.emplace(func_(c2), c2);
+    }
 }
 
 template <typename T>
-std::pair<std::vector<T> *, std::vector<T> *> GeneticScheduler<T>::select2(void)
+void GeneticScheduler<T>::doMutation(void)
+{
+    std::uniform_real_distribution<double>      mdis(0., 1.);
+    std::uniform_int_distribution<unsigned int> pdis(0, population_.size() - 1);
+    
+    if (mdis(gen_) < par_.mutationRate)
+    {
+        Gene m;
+        auto it = population_.begin();
+        
+        std::advance(it, pdis(gen_));
+        mutation(m, it->second);
+        PARALLEL_CRITICAL
+        {
+            population_.erase(it);
+            population_.emplace(func_(m), m);
+        }
+    }
+}
+
+// genetic operators ///////////////////////////////////////////////////////////
+template <typename T>
+typename GeneticScheduler<T>::GenePair GeneticScheduler<T>::selectPair(void)
 {
     std::vector<double> prob;
     unsigned int        ind;
-    std::vector<T>      *p1, *p2;
+    Gene                *p1, *p2;
     
     for (auto &c: population_)
     {
@@ -206,76 +236,52 @@ std::pair<std::vector<T> *, std::vector<T> *> GeneticScheduler<T>::select2(void)
 }
 
 template <typename T>
-void GeneticScheduler<T>::crossover(void)
+void GeneticScheduler<T>::crossover(Gene &c, const Gene &p1, const Gene &p2)
 {
-    auto                                        p = select2();
-    auto                                        &p1 = *(p.first),
-                                                &p2 = *(p.second);
-    std::uniform_int_distribution<unsigned int> dis2(0, p1.size() - 1);
-    unsigned int                                cut = dis2(gen_);
-    std::vector<T>                              c1, c2, buf;
+    Gene                                        buf;
+    std::uniform_int_distribution<unsigned int> dis(0, p1.size() - 1);
+    unsigned int                                cut = dis(gen_);
     
-    auto cross = [&buf, cut](std::vector<T> &c, const std::vector<T> &p1,
-                             const std::vector<T> &p2)
+    c.clear();
+    buf = p1;
+    for (unsigned int i = 0; i < cut; ++i)
     {
-        buf = p1;
-        for (unsigned int i = 0; i < cut; ++i)
-        {
-            c.push_back(p2[i]);
-            buf.erase(std::find(buf.begin(), buf.end(), p2[i]));
-        }
-        for (unsigned int i = 0; i < buf.size(); ++i)
-        {
-            c.push_back(buf[i]);
-        }
-    };
-    
-    cross(c1, p1, p2);
-    cross(c2, p2, p1);
-    PARALLEL_CRITICAL
+        c.push_back(p2[i]);
+        buf.erase(std::find(buf.begin(), buf.end(), p2[i]));
+    }
+    for (unsigned int i = 0; i < buf.size(); ++i)
     {
-        population_.emplace(func_(c1), c1);
-        population_.emplace(func_(c2), c2);
+        c.push_back(buf[i]);
     }
 }
 
 template <typename T>
-void GeneticScheduler<T>::mutation(void)
+void GeneticScheduler<T>::mutation(Gene &m, const Gene &c)
 {
-    std::uniform_real_distribution<double> mdis(0., 1.);
+    Gene                                        buf;
+    std::uniform_int_distribution<unsigned int> dis(0, c.size() - 1);
+    unsigned int                                cut = dis(gen_);
+    Graph<T>                                    g1 = graph_, g2 = graph_;
     
-    if (mdis(gen_) < par_.mutationRate)
+    for (unsigned int i = 0; i < cut; ++i)
     {
-        auto                                        &c = *select1();
-        std::uniform_int_distribution<unsigned int> cdis(0, c.size() - 1);
-        unsigned int                                cut = cdis(gen_);
-        std::vector<T>                              buf1, buf2;
-        Graph<T>                                    g1 = graph_, g2 = graph_;
-
-        for (unsigned int i = 0; i < cut; ++i)
-        {
-            g1.removeVertex(c[i]);
-        }
-        for (unsigned int i = cut; i < c.size(); ++i)
-        {
-            g2.removeVertex(c[i]);
-        }
-        if (g1.size() > 0)
-        {
-            buf1 = g1.topoSort(gen_);
-        }
-        if (g2.size() > 0)
-        {
-            buf2 = g2.topoSort(gen_);
-        }
-        for (unsigned int i = cut; i < c.size(); ++i)
-        {
-            buf2.push_back(buf1[i - cut]);
-        }
-        PARALLEL_CRITICAL
-        {
-            population_.emplace(func_(buf2), buf2);
-        }
+        g1.removeVertex(c[i]);
+    }
+    for (unsigned int i = cut; i < c.size(); ++i)
+    {
+        g2.removeVertex(c[i]);
+    }
+    if (g1.size() > 0)
+    {
+        buf = g1.topoSort(gen_);
+    }
+    if (g2.size() > 0)
+    {
+        m = g2.topoSort(gen_);
+    }
+    for (unsigned int i = cut; i < c.size(); ++i)
+    {
+        m.push_back(buf[i - cut]);
     }
 }
 
