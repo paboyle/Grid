@@ -102,24 +102,24 @@ class ConjugateGradient : public OperatorFunction<Field> {
         std::cout << GridLogMessage << "Starting reproducibility test, full check every "
                   << ReprTest.interval << " calls" << std::endl;
 
-    // Initial residual computation & set up
-    RealD guess = norm2(psi);
-    assert(std::isnan(guess) == 0);
-
-    
-    Linop.HermOpAndNorm(psi, mmp, d, b);
-    
     if(!ReprTest.do_check)
         ReprTest.reset();
     ReprTest.enable_reprocheck=ReproTest;
 
 
+
+    // Initial residual computation & set up
+    RealD guess = norm2(psi, ReprTest);
+    assert(std::isnan(guess) == 0);
+
+    Linop.HermOpAndNorm(psi, mmp, d, b);// eventually split this for the norm check
+    
     r = src - mmp;
     p = r;
 
-    a = norm2(p);
+    a = norm2(p, ReprTest);
     cp = a;
-    ssq = norm2(src);
+    ssq = norm2(src, ReprTest);
 
     std::cout << GridLogIterative << "ConjugateGradient: guess " << guess << std::endl;
     std::cout << GridLogIterative << "ConjugateGradient:   src " << ssq << std::endl;
@@ -174,7 +174,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
                 std::cout << GridLogMessage << " at k=" << k << std::endl;
                 std::cout << GridLogMessage << "saved residual = " << CGState.residuals[k-1] 
                         << " cp = " << cp << std::endl;
-                //exit(-1);  do not stop, report all the failures
+                exit(1);  // exit after the first failure
         }
       }
       b = cp / c;
