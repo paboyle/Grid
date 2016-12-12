@@ -135,8 +135,17 @@ public:
         UGrid, Nsmear, Stout);
     ///////////////////
 
+    NumOp.ZeroCounters();
+    DenOp.ZeroCounters();
     Run(argc, argv, Checkpoint, SmearingPolicy); 
     //Run(argc, argv, Checkpoint);  // no smearing
+
+
+
+    std::cout << GridLogMessage << "Numerator report, Pauli-Villars term         : " << std::endl;
+    NumOp.Report();
+    std::cout << GridLogMessage << "Denominator report, Dw(m) term (includes CG) : " << std::endl;
+    DenOp.Report();
 };
 };
 }

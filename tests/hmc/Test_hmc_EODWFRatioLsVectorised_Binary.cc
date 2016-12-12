@@ -63,7 +63,8 @@ public:
 
   {
     typedef DomainWallVec5dImplR ImplPolicy;
-    typedef ScaledShamirFermion<ImplPolicy> FermionAction;
+    //typedef ScaledShamirFermion<ImplPolicy> FermionAction;
+    typedef DomainWallFermion<ImplPolicy> FermionAction;
     typedef typename FermionAction::FermionField FermionField;
 
     const int Ls = 8;
@@ -83,15 +84,21 @@ public:
     LatticeGaugeField  U(UGrid);
 
     // Gauge action
-    double beta = 4.0;
+    double beta = 5.6;
     WilsonGaugeActionR Waction(beta);
 
     Real mass = 0.04;
     Real pv   = 1.0;
     RealD M5  = 1.5;
     RealD scale = 2.0;
+    /*  
+    // Scaled Shamir
     FermionAction DenOp(U,*FGrid,*FrbGrid,*sUGrid,*sUrbGrid,mass,M5,scale);
     FermionAction NumOp(U,*FGrid,*FrbGrid,*sUGrid,*sUrbGrid,pv,M5,scale);
+    */
+    // Std Domain wall fermion
+    FermionAction DenOp(U,*FGrid,*FrbGrid,*sUGrid,*sUrbGrid,mass,M5);
+    FermionAction NumOp(U,*FGrid,*FrbGrid,*sUGrid,*sUrbGrid,pv,M5);
 
     double StoppingCondition = 1.0e-8;
     double MaxCGIterations = 10000;
@@ -99,7 +106,7 @@ public:
     TwoFlavourEvenOddRatioPseudoFermionAction<ImplPolicy> Nf2(NumOp, DenOp,CG,CG);
 
     // Set smearing (true/false), default: false
-    Nf2.is_smeared = true;
+    Nf2.is_smeared = false;
 
     // Collect actions
     // here an example of 2 level integration
@@ -140,8 +147,17 @@ public:
         UGrid, Nsmear, Stout);
     ///////////////////
 
-    Run(argc, argv, Checkpoint, SmearingPolicy); 
-    //Run(argc, argv, Checkpoint);  // no smearing
+    NumOp.ZeroCounters();
+    DenOp.ZeroCounters();
+    //Run(argc, argv, Checkpoint, SmearingPolicy); 
+    Run(argc, argv, Checkpoint);  // no smearing
+
+
+    std::cout << GridLogMessage << "Numerator report, Pauli-Villars term         : " << std::endl;
+    NumOp.Report();
+    std::cout << GridLogMessage << "Denominator report, Dw(m) term (includes CG) : " << std::endl;
+    DenOp.Report();
+
 };
 };
 }
