@@ -161,7 +161,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
 
 
       axpy(r, -a, mmp, r);// new residual r = r_old - a * Ap
-      cp = norm2(r, ReprTest); // bookmarking this norm
+      cp = norm2(r, ReprTest); // bookkeeping this norm
       if (ReproTest && !CGState.do_repro) {
         CGState.residuals.push_back(cp);  // save residuals state
                 std::cout << GridLogIterative << "ReproTest: Saving state" << std::endl;
