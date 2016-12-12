@@ -37,6 +37,9 @@ namespace QCD {
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class StaggeredKernelsStatic { 
  public:
+  enum { OptGeneric, OptHandUnroll, OptInlineAsm };
+  // S-direction is INNERMOST and takes no part in the parity.
+  static int Opt;  // these are a temporary hack
 };
  
 template<class Impl> class StaggeredKernels : public FermionOperator<Impl> , public StaggeredKernelsStatic { 
@@ -51,6 +54,9 @@ public:
 		      int sF, int sU, const FermionField &in, FermionField &out, int dir,int disp);
 
    void DhopSiteDepth(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteSpinor * buf,
+		     int sF, int sU, const FermionField &in, SiteSpinor &out,int threeLink);
+
+   void DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteSpinor * buf,
 		     int sF, int sU, const FermionField &in, SiteSpinor &out,int threeLink);
       
    void DhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU, SiteSpinor * buf,

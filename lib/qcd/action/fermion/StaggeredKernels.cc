@@ -30,6 +30,8 @@ directory
 namespace Grid {
 namespace QCD {
 
+int StaggeredKernelsStatic::Opt;
+
 template <class Impl>
 StaggeredKernels<Impl>::StaggeredKernels(const ImplParams &p) : Base(p){};
 
@@ -189,8 +191,17 @@ void StaggeredKernels<Impl>::DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, Dou
   SiteSpinor naive;
   int oneLink  =0;
   int threeLink=1;
-  DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
-  DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
+  switch(Opt) {
+  case OptHandUnroll:
+    DhopSiteDepthHand(st,lo,U,buf,sF,sU,in,naive,oneLink);
+    DhopSiteDepthHand(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
+    break;
+  case OptGeneric:
+  default:
+    DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
+    DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
+    break;
+  }
   out._odata[sF] =-naive-naik;
 };
 template <class Impl>
@@ -201,8 +212,17 @@ void StaggeredKernels<Impl>::DhopSite(StencilImpl &st, LebesgueOrder &lo, Double
   SiteSpinor naive;
   int oneLink  =0;
   int threeLink=1;
-  DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
-  DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
+  switch(Opt) {
+  case OptHandUnroll:
+    DhopSiteDepthHand(st,lo,U,buf,sF,sU,in,naive,oneLink);
+    DhopSiteDepthHand(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
+    break;
+  case OptGeneric:
+  default:
+    DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
+    DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
+    break;
+  }
   out._odata[sF] =naive+naik;
 };
 
