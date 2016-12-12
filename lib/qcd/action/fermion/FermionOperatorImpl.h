@@ -614,9 +614,6 @@ PARALLEL_FOR_LOOP
 	PokeIndex<LorentzIndex>(UUUds, UUU, mu);
 	PokeIndex<LorentzIndex>(UUUds, UUUdag, mu+4);
 
-	std::cout << GridLogMessage << " Created the treble links for staggered Naik term" <<std::endl;
-	std::cout << GridLogMessage << " Multiplied the staggered phases which requires understanding the action conventions" <<std::endl;
-
       }
     }
 
