@@ -324,12 +324,15 @@ void Grid_init(int *argc,char ***argv)
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-unroll") ){
     QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptHandUnroll;
+    QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptHandUnroll;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-asm") ){
     QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptInlineAsm;
+    QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptInlineAsm;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-generic") ){
     QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptGeneric;
+    QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptGeneric;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--lebesgue") ){
     LebesgueOrder::UseLebesgueOrder=1;
