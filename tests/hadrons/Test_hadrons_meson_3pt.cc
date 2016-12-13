@@ -50,14 +50,14 @@ int main(int argc, char *argv[])
     
     // global parameters
     Application::GlobalPar globalPar;
-    globalPar.trajCounter.start = 1500;
-    globalPar.trajCounter.end   = 1520;
-    globalPar.trajCounter.step  = 20;
-    globalPar.seed              = "1 2 3 4";
-    globalPar.genetic.maxGen    = 5000;
-    globalPar.genetic.maxCstGen = 100;
-    globalPar.genetic.popSize   = 50;
-    globalPar.genetic.mutationRate = .25;
+    globalPar.trajCounter.start    = 1500;
+    globalPar.trajCounter.end      = 1520;
+    globalPar.trajCounter.step     = 20;
+    globalPar.seed                 = "1 2 3 4";
+    globalPar.genetic.maxGen       = 1000;
+    globalPar.genetic.maxCstGen    = 200;
+    globalPar.genetic.popSize      = 20;
+    globalPar.genetic.mutationRate = .1;
     application.setPar(globalPar);
     
     // gauge field
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
         application.createModule<MSolver::RBPrecCG>("CG_" + flavour[i],
                                                     solverPar);
     }
-    for (unsigned int t = 0; t < nt; t += 8)
+    for (unsigned int t = 0; t < nt; t += 1)
     {
         std::string                           srcName;
         std::vector<std::string>              qName;
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
             for (unsigned int mu = 0; mu < Nd; ++mu)
             {
                 quarkPar.source = seqName[i][mu];
-                seqName[i][mu]  = qName[i] + "-" + seqName[i][mu];
+                seqName[i][mu]  = "Q_" + flavour[i] + "-" + seqName[i][mu];
                 application.createModule<Quark>(seqName[i][mu], quarkPar);
             }
         }
@@ -159,7 +159,6 @@ int main(int argc, char *argv[])
         }
     }
     
-    Environment::getInstance().printContent();
     // execution
     application.run();
     
