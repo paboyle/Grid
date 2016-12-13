@@ -214,9 +214,7 @@ void CayleyFermion5D<Impl>::MeooeDag5D    (const FermionField &psi, FermionField
   std::vector<Coeff_t> lower=cs;
   upper[Ls-1]=-mass*upper[Ls-1];
   lower[0]   =-mass*lower[0];
-  std::cout << "MeooeDag5D:  psi: " << norm2(psi) << std::endl;
   M5Ddag(psi,psi,Din,lower,diag,upper);
-  std::cout << "MeooeDag5D:  Din: " << norm2(Din) << std::endl;
 }
 
 template<class Impl>
@@ -282,9 +280,7 @@ void CayleyFermion5D<Impl>::MeooeDag    (const FermionField &psi, FermionField &
   } else {
     this->DhopOE(psi,tmp,DaggerYes);
   }
-  std::cout << "MeooeDag:  tmp: " << norm2(tmp) << std::endl;
   MeooeDag5D(tmp,chi); 
-  std::cout << "MeooeDag:  chi: " << norm2(chi) << std::endl;
 }
 
 template<class Impl>

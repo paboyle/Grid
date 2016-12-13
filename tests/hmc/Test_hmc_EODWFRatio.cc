@@ -60,9 +60,9 @@ public:
     // Gauge action
     WilsonGaugeActionR Waction(5.6);
 
-    Real mass=0.04;
-    Real pv  =1.0;
-    RealD M5=1.5;
+    Real mass= 0.04;
+    Real pv  = 1.0;
+    RealD M5 = 1.5;
     FermionAction DenOp(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
     FermionAction NumOp(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,pv,M5);
   

@@ -64,6 +64,7 @@ int main(int argc, char** argv) {
   GridParallelRNG RNG4(UGrid);
   RNG4.SeedFixedIntegers(seeds4);
 
+  std::cout << GridLogMessage << "Generating source field" << std::endl;
   LatticeFermion src(FGrid);
   random(RNG5, src);
   LatticeFermion result(FGrid);
