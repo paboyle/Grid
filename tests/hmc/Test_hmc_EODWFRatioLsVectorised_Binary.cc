@@ -175,10 +175,10 @@ int main(int argc, char **argv) {
 
   // Seeds for the random number generators
   std::vector<int> SerSeed({1, 2, 3, 4, 5});
-  std::vector<int> ParSeed({6, 7, 8, 9, 5});
+  std::vector<int> ParSeed({6, 7, 8, 9, 10});
   TheHMC.RNGSeeds(SerSeed, ParSeed);
 
-  TheHMC.MDparameters.set(20, 1.0);// MDsteps, traj length
+  TheHMC.MDparameters.set(40, 1.0);// MDsteps, traj length
 
   TheHMC.BuildTheAction(argc, argv);
 

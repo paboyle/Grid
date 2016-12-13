@@ -28,9 +28,13 @@
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid.h>
+#include <ctype.h>
 
 using namespace Grid;
 using namespace std;
+
+#define GRID_TEXT_INDENT 2      //number of spaces for indentation of levels
+
 
 // Writer implementation ///////////////////////////////////////////////////////
 TextWriter::TextWriter(const string &fileName)
@@ -50,9 +54,8 @@ void TextWriter::pop(void)
 void TextWriter::indent(void)
 {
   for (int i = 0; i < level_; ++i)
-  {
-    file_ << '\t';//is this portable?
-  }
+    for (int t = 0; t < GRID_TEXT_INDENT; t++)
+      file_ << ' ';
 };
 
 // Reader implementation ///////////////////////////////////////////////////////
@@ -61,7 +64,7 @@ TextReader::TextReader(const string &fileName)
     file_.open(fileName, ios::in);
     if (!file_.is_open()) {
         std::cout << GridLogMessage << "TextReader: Error opening file " << fileName << std::endl;
-        exit(0);// write better error handling
+        exit(1);// write better error handling
     } 
 }
 
@@ -81,12 +84,15 @@ void TextReader::checkIndent(void)
   
   for (int i = 0; i < level_; ++i)
   {
+    bool check = true;
+    for (int t = 0; t< GRID_TEXT_INDENT; t++){
     file_.get(c);
-    if (c != '\t')
+    check = check && isspace(c);
+  }
+    if (!check)
     {
-      cerr << "TextReader: mismatch on tab " << c << " level " << level_;
-      cerr << " i "<< i << endl;
-      abort();
+      cerr << "TextReader: mismatch on level " << level_ << std::endl;
+      exit(1);
     }
   }
 }

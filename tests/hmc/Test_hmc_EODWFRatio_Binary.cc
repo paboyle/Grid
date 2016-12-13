@@ -63,7 +63,8 @@ public:
 
   {
     typedef WilsonImplR ImplPolicy;
-    typedef ScaledShamirFermion<ImplPolicy> FermionAction;
+    //typedef ScaledShamirFermion<ImplPolicy> FermionAction;
+    typedef DomainWallFermionR FermionAction;
     typedef typename FermionAction::FermionField FermionField;
 
     const int Ls = 8;
@@ -78,15 +79,19 @@ public:
     LatticeGaugeField  U(UGrid);
 
     // Gauge action
-    double beta = 4.0;
+    double beta = 5.6;
     WilsonGaugeActionR Waction(beta);
 
     Real mass = 0.04;
     Real pv   = 1.0;
     RealD M5  = 1.5;
     RealD scale = 2.0;
+    /*
     FermionAction DenOp(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,scale);
     FermionAction NumOp(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,pv,M5,scale);
+    */
+    FermionAction DenOp(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+    FermionAction NumOp(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,pv,M5);
 
     double StoppingCondition = 1.0e-8;
     double MaxCGIterations = 10000;
@@ -100,15 +105,16 @@ public:
     // here an example of 2 level integration
     ActionLevel<Field> Level1(1);
     Level1.push_back(&Nf2);
+    Level1.push_back(&Waction);
 
     // this level will integrate with a
     // step that is 4 times finer
     // than the previous level
-    ActionLevel<Field> Level2(4);
-    Level2.push_back(&Waction);
+    //ActionLevel<Field> Level2(4);
+    
 
     TheAction.push_back(Level1);
-    TheAction.push_back(Level2);
+    //TheAction.push_back(Level2);
 
     // Add observables
     int SaveInterval = 1;
@@ -137,8 +143,8 @@ public:
 
     NumOp.ZeroCounters();
     DenOp.ZeroCounters();
-    Run(argc, argv, Checkpoint, SmearingPolicy); 
-    //Run(argc, argv, Checkpoint);  // no smearing
+    //Run(argc, argv, Checkpoint, SmearingPolicy); 
+    Run(argc, argv, Checkpoint);  // no smearing
 
 
 
@@ -163,10 +169,10 @@ int main(int argc, char **argv) {
 
   // Seeds for the random number generators
   std::vector<int> SerSeed({1, 2, 3, 4, 5});
-  std::vector<int> ParSeed({6, 7, 8, 9, 5});
+  std::vector<int> ParSeed({6, 7, 8, 9, 10});
   TheHMC.RNGSeeds(SerSeed, ParSeed);
 
-  TheHMC.MDparameters.set(20, 1.0);// MDsteps, traj length
+  TheHMC.MDparameters.set(40, 1.0);// MDsteps, traj length
 
   TheHMC.BuildTheAction(argc, argv);
 
