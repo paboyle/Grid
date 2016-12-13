@@ -59,6 +59,8 @@ public:
     int          getMinValue(void);
     // breed a new generation
     void nextGeneration(void);
+    // heuristic benchmarks
+    void benchmarkCrossover(const unsigned int nIt);
     // print population
     friend std::ostream & operator<<(std::ostream &out,
                                      const GeneticScheduler<T> &s)
@@ -297,6 +299,27 @@ void GeneticScheduler<T>::mutation(Gene &m, const Gene &c)
     {
         m.push_back(buf[i - cut]);
     }
+}
+
+template <typename T>
+void GeneticScheduler<T>::benchmarkCrossover(const unsigned int nIt)
+{
+    Gene   p1, p2, c1, c2;
+    double neg = 0., eq = 0., pos = 0., total;
+    int    improvement;
+    
+    LOG(Message) << "Benchmarking crossover..." << std::endl;
+    for (unsigned int i = 0; i < nIt; ++i)
+    {
+        p1 = graph_.topoSort(gen_);
+        p2 = graph_.topoSort(gen_);
+        crossover(c1, c2, p1, p2);
+        improvement = (func_(c1) + func_(c2) - func_(p1) - func_(p2))/2;
+        if (improvement < 0) neg++; else if (improvement == 0) eq++; else pos++;
+    }
+    total = neg + eq + pos;
+    LOG(Message) << "  -: " << neg/total << "  =: " << eq/total
+                 << "  +: " << pos/total << std::endl;
 }
 
 END_HADRONS_NAMESPACE
