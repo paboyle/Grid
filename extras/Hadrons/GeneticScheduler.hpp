@@ -79,8 +79,9 @@ private:
     void doMutation(void);
     // genetic operators
     GenePair selectPair(void);
-    void     crossover(Gene &c, const Gene &p1, const Gene &p2);
+    void     crossover(Gene &c1, Gene &c2, const Gene &p1, const Gene &p2);
     void     mutation(Gene &m, const Gene &c);
+    
 private:
     Graph<T>                 &graph_;
     const ObjFunc            &func_;
@@ -169,11 +170,10 @@ template <typename T>
 void GeneticScheduler<T>::doCrossover(void)
 {
     auto p = selectPair();
-    auto &p1 = *(p.first), &p2 = *(p.second);
+    Gene &p1 = *(p.first), &p2 = *(p.second);
     Gene c1, c2;
     
-    crossover(c1, p1, p2);
-    crossover(c2, p2, p1);
+    crossover(c1, c2, p1, p2);
     PARALLEL_CRITICAL
     {
         population_.emplace(func_(c1), c1);
@@ -196,7 +196,6 @@ void GeneticScheduler<T>::doMutation(void)
         mutation(m, it->second);
         PARALLEL_CRITICAL
         {
-            population_.erase(it);
             population_.emplace(func_(m), m);
         }
     }
@@ -236,22 +235,37 @@ typename GeneticScheduler<T>::GenePair GeneticScheduler<T>::selectPair(void)
 }
 
 template <typename T>
-void GeneticScheduler<T>::crossover(Gene &c, const Gene &p1, const Gene &p2)
+void GeneticScheduler<T>::crossover(Gene &c1, Gene &c2, const Gene &p1,
+                                    const Gene &p2)
 {
     Gene                                        buf;
     std::uniform_int_distribution<unsigned int> dis(0, p1.size() - 1);
     unsigned int                                cut = dis(gen_);
     
-    c.clear();
-    buf = p1;
+    c1.clear();
+    buf = p2;
     for (unsigned int i = 0; i < cut; ++i)
     {
-        c.push_back(p2[i]);
-        buf.erase(std::find(buf.begin(), buf.end(), p2[i]));
+        c1.push_back(p1[i]);
+        buf.erase(std::find(buf.begin(), buf.end(), p1[i]));
     }
     for (unsigned int i = 0; i < buf.size(); ++i)
     {
-        c.push_back(buf[i]);
+        c1.push_back(buf[i]);
+    }
+    c2.clear();
+    buf = p2;
+    for (unsigned int i = cut; i < p1.size(); ++i)
+    {
+        buf.erase(std::find(buf.begin(), buf.end(), p1[i]));
+    }
+    for (unsigned int i = 0; i < buf.size(); ++i)
+    {
+        c2.push_back(buf[i]);
+    }
+    for (unsigned int i = cut; i < p1.size(); ++i)
+    {
+        c2.push_back(p1[i]);
     }
 }
 
