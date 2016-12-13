@@ -128,8 +128,12 @@ class ConjugateGradient : public OperatorFunction<Field> {
       p = p * b + r;
 
       LinalgTimer.Stop();
+
       std::cout << GridLogIterative << "ConjugateGradient: Iteration " << k
                 << " residual " << cp << " target " << rsq << std::endl;
+      std::cout << GridLogDebug << "a = "<< a << " b_pred = "<< b_pred << "  b = "<< b << std::endl;
+      std::cout << GridLogDebug << "qq = "<< qq << " d = "<< d << "  c = "<< c << std::endl;
+
 
       // Stopping condition
       if (cp <= rsq) {
@@ -161,7 +165,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
     }
     std::cout << GridLogMessage << "ConjugateGradient did NOT converge"
               << std::endl;
-    if (ErrorOnNoConverge) assert(0);
+    if (ErrorOnNoConverge) exit(1);
   }
 };
 }

@@ -51,12 +51,10 @@ int main(int argc, char** argv) {
   GridRedBlackCartesian* UrbGrid =
       SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
 
-  GridCartesian* sUGrid =
-      SpaceTimeGrid::makeFourDimDWFGrid(GridDefaultLatt(), GridDefaultMpi());
-  GridRedBlackCartesian* sUrbGrid =
-      SpaceTimeGrid::makeFourDimRedBlackGrid(sUGrid);
+  GridCartesian* sUGrid = SpaceTimeGrid::makeFourDimDWFGrid(GridDefaultLatt(), GridDefaultMpi());
+  GridRedBlackCartesian* sUrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(sUGrid);
 
-  GridCartesian* FGrid = SpaceTimeGrid::makeFiveDimDWFGrid(Ls, UGrid);
+  GridCartesian*           FGrid = SpaceTimeGrid::makeFiveDimDWFGrid(Ls, UGrid);
   GridRedBlackCartesian* FrbGrid = SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(Ls, UGrid);
 
   std::vector<int> seeds4({1, 2, 3, 4});

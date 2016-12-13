@@ -234,11 +234,17 @@ namespace Grid {
       virtual  RealD MpcDag   (const Field &in, Field &out){
 	Field tmp(in._grid);
 
+        std::cout << "norm in :" << norm2(in) << std::endl;
 	_Mat.MeooeDag(in,tmp);
-	_Mat.MooeeInvDag(tmp,out);
+        std::cout << "norm tmp :" << norm2(tmp) << std::endl;
+        _Mat.MooeeInvDag(tmp,out);
+        std::cout << "norm out :" << norm2(out) << std::endl;
 	_Mat.MeooeDag(out,tmp);
+        std::cout << "norm tmp :" << norm2(tmp) << std::endl;
+        
 
 	_Mat.MooeeDag(in,out);
+        std::cout << "norm out :" << norm2(out) << std::endl;        
 	return axpy_norm(out,-1.0,tmp,out);
       }
     };
