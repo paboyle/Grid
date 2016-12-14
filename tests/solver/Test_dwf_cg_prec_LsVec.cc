@@ -57,6 +57,9 @@ int main(int argc, char** argv) {
   GridCartesian*           FGrid = SpaceTimeGrid::makeFiveDimDWFGrid(Ls, UGrid);
   GridRedBlackCartesian* FrbGrid = SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(Ls, UGrid);
 
+  std::cout << GridLogMessage << "Lattice dimensions: " << GridDefaultLatt()
+            << "   Ls: " << Ls << std::endl;
+
   std::vector<int> seeds4({1, 2, 3, 4});
   std::vector<int> seeds5({5, 6, 7, 8});
   GridParallelRNG RNG5(FGrid);
@@ -64,17 +67,17 @@ int main(int argc, char** argv) {
   GridParallelRNG RNG4(UGrid);
   RNG4.SeedFixedIntegers(seeds4);
 
-  std::cout << GridLogMessage << "Generating source field" << std::endl;
+  std::cout << GridLogMessage << "Generating random ferrmion field" << std::endl;
   LatticeFermion src(FGrid);
   random(RNG5, src);
   LatticeFermion result(FGrid);
   result = zero;
   LatticeGaugeField Umu(UGrid);
 
+  std::cout << GridLogMessage << "Generating random gauge field" << std::endl;
   SU3::HotConfiguration(RNG4, Umu);
 
-  std::cout << GridLogMessage << "Lattice dimensions: " << GridDefaultLatt()
-            << "   Ls: " << Ls << std::endl;
+
 
   std::vector<LatticeColourMatrix> U(4, UGrid);
   for (int mu = 0; mu < Nd; mu++) {
