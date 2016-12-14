@@ -91,14 +91,19 @@ public:
     void saveParameterFile(const std::string parameterFileName);
     // schedule computation
     void schedule(void);
+    void saveSchedule(const std::string filename);
+    void loadSchedule(const std::string filename);
+    void printSchedule(void);
     // loop on configurations
     void configLoop(void);
 private:
-    long unsigned int                               locVol_;
-    std::string                                     parameterFileName_{""};
-    GlobalPar                                       par_;
-    Environment                                     &env_;
-    std::vector<unsigned int>                       program_;
+    long unsigned int         locVol_;
+    std::string               parameterFileName_{""};
+    GlobalPar                 par_;
+    Environment               &env_;
+    std::vector<unsigned int> program_;
+    Environment::Size         memPeak_;
+    bool                      scheduled_{false};
 };
 
 /******************************************************************************

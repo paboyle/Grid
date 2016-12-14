@@ -87,11 +87,15 @@ const Application::GlobalPar & Application::getPar(void)
 // execute /////////////////////////////////////////////////////////////////////
 void Application::run(void)
 {
-    if (!parameterFileName_.empty())
+    if (!parameterFileName_.empty() and (env_.getNModule() == 0))
     {
         parseParameterFile(parameterFileName_);
     }
-    schedule();
+    if (!scheduled_)
+    {
+        schedule();
+    }
+    printSchedule();
     configLoop();
 }
 
@@ -110,7 +114,7 @@ void Application::parseParameterFile(const std::string parameterFileName)
     GlobalPar par;
     ObjectId  id;
     
-    LOG(Message) << "Reading '" << parameterFileName << "'..." << std::endl;
+    LOG(Message) << "Building application from '" << parameterFileName << "'..." << std::endl;
     read(reader, "parameters", par);
     setPar(par);
     push(reader, "modules");
@@ -130,7 +134,7 @@ void Application::saveParameterFile(const std::string parameterFileName)
     ObjectId           id;
     const unsigned int nMod = env_.getNModule();
     
-    LOG(Message) << "Writing '" << parameterFileName << "'..." << std::endl;
+    LOG(Message) << "Saving application to '" << parameterFileName << "'..." << std::endl;
     write(writer, "parameters", getPar());
     push(writer, "modules");
     for (unsigned int i = 0; i < nMod; ++i)
@@ -150,29 +154,31 @@ void Application::saveParameterFile(const std::string parameterFileName)
 #define MEM_MSG(size)\
 sizeString((size)*locVol_) << " (" << sizeString(size)  << "/site)"
 
+#define DEFINE_MEMPEAK \
+auto memPeak = [this](const std::vector<unsigned int> &program)\
+{\
+    unsigned int memPeak;\
+    bool         msg;\
+    \
+    msg = HadronsLogMessage.isActive();\
+    HadronsLogMessage.Active(false);\
+    env_.dryRun(true);\
+    memPeak = env_.executeProgram(program);\
+    env_.dryRun(false);\
+    env_.freeAll();\
+    HadronsLogMessage.Active(true);\
+    \
+    return memPeak;\
+}
+
 void Application::schedule(void)
 {
-    // memory peak function
-    auto memPeak = [this](const std::vector<unsigned int> &program)
-    {
-        unsigned int memPeak;
-        bool         msg;
-        
-        msg = HadronsLogMessage.isActive();
-        HadronsLogMessage.Active(false);
-        env_.dryRun(true);
-        memPeak = env_.executeProgram(program);
-        env_.dryRun(false);
-        env_.freeAll();
-        HadronsLogMessage.Active(true);
-        
-        return memPeak;
-    };
+    DEFINE_MEMPEAK;
     
     // build module dependency graph
     LOG(Message) << "Building module graph..." << std::endl;
-    auto                   graph = env_.makeModuleGraph();
-    auto                   con = graph.getConnectedComponents();
+    auto graph = env_.makeModuleGraph();
+    auto con = graph.getConnectedComponents();
     
     // constrained topological sort using a genetic algorithm
     LOG(Message) << "Scheduling computation..." << std::endl;
@@ -189,6 +195,7 @@ void Application::schedule(void)
     par.popSize      = par_.genetic.popSize;
     par.mutationRate = par_.genetic.mutationRate;
     par.seed         = rd();
+    memPeak_         = 0;
     CartesianCommunicator::BroadcastWorld(0, &(par.seed), sizeof(par.seed));
     for (unsigned int i = 0; i < con.size(); ++i)
     {
@@ -222,15 +229,67 @@ void Application::schedule(void)
         } while ((gen < par_.genetic.maxGen)
                  and (nCstPeak < par_.genetic.maxCstGen));
         auto &t = scheduler.getMinSchedule();
-        LOG(Message) << "Program " << i + 1 << " (memory peak: "
-                     << MEM_MSG(scheduler.getMinValue()) << "):" << std::endl;
+        if (scheduler.getMinValue() > memPeak_)
+        {
+            memPeak_ = scheduler.getMinValue();
+        }
         for (unsigned int j = 0; j < t.size(); ++j)
         {
             program_.push_back(t[j]);
-            LOG(Message) << std::setw(4) << k + 1 << ": "
-                         << env_.getModuleName(program_[k]) << std::endl;
-            k++;
         }
+    }
+    scheduled_ = true;
+}
+
+void Application::saveSchedule(const std::string filename)
+{
+    TextWriter               writer(filename);
+    std::vector<std::string> program;
+    
+    if (!scheduled_)
+    {
+        HADRON_ERROR("Computation not scheduled");
+    }
+    LOG(Message) << "Saving current schedule to '" << filename << "'..."
+                 << std::endl;
+    for (auto address: program_)
+    {
+        program.push_back(env_.getModuleName(address));
+    }
+    write(writer, "schedule", program);
+}
+
+void Application::loadSchedule(const std::string filename)
+{
+    DEFINE_MEMPEAK;
+    
+    TextReader               reader(filename);
+    std::vector<std::string> program;
+    
+    LOG(Message) << "Loading schedule from '" << filename << "'..."
+                 << std::endl;
+    read(reader, "schedule", program);
+    program_.clear();
+    for (auto &name: program)
+    {
+        program_.push_back(env_.getModuleAddress(name));
+    }
+    scheduled_ = true;
+    memPeak_   = memPeak(program_);
+}
+
+void Application::printSchedule(void)
+{
+    if (!scheduled_)
+    {
+        HADRON_ERROR("Computation not scheduled");
+    }
+    LOG(Message) << "Schedule (memory peak: " << MEM_MSG(memPeak_) << "):"
+                 << std::endl;
+    for (unsigned int i = 0; i < program_.size(); ++i)
+    {
+        LOG(Message) << std::setw(4) << i + 1 << ": "
+                     << env_.getModuleName(program_[i]) << std::endl;
     }
 }
 
