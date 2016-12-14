@@ -190,6 +190,11 @@ void Environment::pushModule(Environment::ModPt &pt)
     }
 }
 
+unsigned int Environment::getNModule(void) const
+{
+    return module_.size();
+}
+
 void Environment::createModule(const std::string name, const std::string type,
                                XmlReader &reader)
 {

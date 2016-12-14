@@ -117,6 +117,7 @@ public:
     void                    createModule(const std::string name,
                                          const std::string type,
                                          XmlReader &reader);
+    unsigned int            getNModule(void) const;
     ModuleBase *            getModule(const unsigned int address) const;
     ModuleBase *            getModule(const std::string name) const;
     template <typename M>

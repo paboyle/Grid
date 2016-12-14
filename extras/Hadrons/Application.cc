@@ -79,12 +79,17 @@ void Application::setPar(const Application::GlobalPar &par)
     env_.setSeed(strToVec<int>(par_.seed));
 }
 
+const Application::GlobalPar & Application::getPar(void)
+{
+    return par_;
+}
+
 // execute /////////////////////////////////////////////////////////////////////
 void Application::run(void)
 {
     if (!parameterFileName_.empty())
     {
-        parseParameterFile();
+        parseParameterFile(parameterFileName_);
     }
     schedule();
     configLoop();
@@ -99,13 +104,13 @@ public:
                                     std::string, type);
 };
 
-void Application::parseParameterFile(void)
+void Application::parseParameterFile(const std::string parameterFileName)
 {
-    XmlReader reader(parameterFileName_);
+    XmlReader reader(parameterFileName);
     GlobalPar par;
     ObjectId  id;
     
-    LOG(Message) << "Reading '" << parameterFileName_ << "'..." << std::endl;
+    LOG(Message) << "Reading '" << parameterFileName << "'..." << std::endl;
     read(reader, "parameters", par);
     setPar(par);
     push(reader, "modules");
@@ -117,6 +122,28 @@ void Application::parseParameterFile(void)
     } while (reader.nextElement("module"));
     pop(reader);
     pop(reader);
+}
+
+void Application::saveParameterFile(const std::string parameterFileName)
+{
+    XmlWriter          writer(parameterFileName);
+    ObjectId           id;
+    const unsigned int nMod = env_.getNModule();
+    
+    LOG(Message) << "Writing '" << parameterFileName << "'..." << std::endl;
+    write(writer, "parameters", getPar());
+    push(writer, "modules");
+    for (unsigned int i = 0; i < nMod; ++i)
+    {
+        push(writer, "module");
+        id.name = env_.getModuleName(i);
+        id.type = env_.getModule(i)->getRegisteredName();
+        write(writer, "id", id);
+        env_.getModule(i)->saveParameters(writer, "options");
+        pop(writer);
+    }
+    pop(writer);
+    pop(writer);
 }
 
 // schedule computation ////////////////////////////////////////////////////////

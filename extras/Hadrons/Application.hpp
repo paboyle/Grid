@@ -77,7 +77,8 @@ public:
     // destructor
     virtual ~Application(void) = default;
     // access
-    void setPar(const GlobalPar &par);
+    void              setPar(const GlobalPar &par);
+    const GlobalPar & getPar(void);
     // module creation
     template <typename M>
     void createModule(const std::string name);
@@ -85,8 +86,9 @@ public:
     void createModule(const std::string name, const typename M::Par &par);
     // execute
     void run(void);
-    // parse parameter file
-    void parseParameterFile(void);
+    // XML parameter file I/O
+    void parseParameterFile(const std::string parameterFileName);
+    void saveParameterFile(const std::string parameterFileName);
     // schedule computation
     void schedule(void);
     // loop on configurations

@@ -107,6 +107,7 @@ public:
     virtual std::vector<std::string> getOutput(void) = 0;
     // parse parameters
     virtual void parseParameters(XmlReader &reader, const std::string name) = 0;
+    virtual void saveParameters(XmlWriter &writer, const std::string name) = 0;
     // setup
     virtual void setup(void) {};
     // execution
@@ -130,6 +131,7 @@ public:
     virtual ~Module(void) = default;
     // parse parameters
     virtual void parseParameters(XmlReader &reader, const std::string name);
+    virtual void saveParameters(XmlWriter &writer, const std::string name);
     // parameter access
     const P & par(void) const;
     void      setPar(const P &par);
@@ -150,6 +152,11 @@ public:
     virtual ~Module(void) = default;
     // parse parameters (do nothing)
     virtual void parseParameters(XmlReader &reader, const std::string name) {};
+    virtual void saveParameters(XmlWriter &writer, const std::string name)
+    {
+        push(writer, "options");
+        pop(writer);
+    };
 };
 
 /******************************************************************************
@@ -164,6 +171,12 @@ template <typename P>
 void Module<P>::parseParameters(XmlReader &reader, const std::string name)
 {
     read(reader, name, par_);
+}
+
+template <typename P>
+void Module<P>::saveParameters(XmlWriter &writer, const std::string name)
+{
+    write(writer, name, par_);
 }
 
 template <typename P>
