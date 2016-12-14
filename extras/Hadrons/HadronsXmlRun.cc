@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/Hadrons.cc
+Source file: programs/Hadrons/HadronsXmlRun.cc
 
 Copyright (C) 2015
 
@@ -34,15 +34,22 @@ using namespace Hadrons;
 int main(int argc, char *argv[])
 {
     // parse command line
-    std::string parameterFileName;
+    std::string parameterFileName, scheduleFileName = "";
     
     if (argc < 2)
     {
-        std::cerr << "usage: " << argv[0] << " <parameter file> [Grid options]";
+        std::cerr << "usage: " << argv[0] << " <parameter file> [<precomputed schedule>] [Grid options]";
         std::cerr << std::endl;
         std::exit(EXIT_FAILURE);
     }
     parameterFileName = argv[1];
+    if (argc > 2)
+    {
+        if (argv[2][0] != '-')
+        {
+            scheduleFileName = argv[2];
+        }
+    }
     
     // initialization
     Grid_init(&argc, &argv);
@@ -56,6 +63,11 @@ int main(int argc, char *argv[])
     // execution
     Application application(parameterFileName);
     
+    application.parseParameterFile(parameterFileName);
+    if (!scheduleFileName.empty())
+    {
+        application.loadSchedule(scheduleFileName);
+    }
     application.run();
     
     // epilogue
