@@ -76,6 +76,8 @@ public:
     virtual void execute(void);
 };
 
+MODULE_REGISTER_NS(Point, TPoint<FIMPL>, MSource);
+
 /******************************************************************************
  *                       TPoint template implementation                       *
  ******************************************************************************/
@@ -124,11 +126,7 @@ void TPoint<FImpl>::execute(void)
     pokeSite(id, src, position);
 }
 
-typedef TPoint<FIMPL> Point;
-
 END_MODULE_NAMESPACE
-
-MODULE_REGISTER_NS(Point, MSource);
 
 END_HADRONS_NAMESPACE
 

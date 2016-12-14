@@ -51,6 +51,13 @@ Environment & ModuleBase::env(void) const
     return env_;
 }
 
+// get factory registration name if available
+std::string ModuleBase::getRegisteredName(void)
+{
+    HADRON_ERROR("module '" + getName() + "' has a type not registered"
+                 + " in the factory");
+}
+
 // execution ///////////////////////////////////////////////////////////////////
 void ModuleBase::operator()(void)
 {

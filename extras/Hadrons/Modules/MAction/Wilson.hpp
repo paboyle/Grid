@@ -66,6 +66,8 @@ public:
     virtual void execute(void);
 };
 
+MODULE_REGISTER_NS(Wilson, TWilson<FIMPL>, MAction);
+
 /******************************************************************************
  *                     TWilson template implementation                        *
  ******************************************************************************/
@@ -98,7 +100,7 @@ void TWilson<FImpl>::setup(void)
 {
     unsigned int size;
     
-    size = 3*env().template lattice4dSize<typename FImpl::DoubledGaugeField>();
+    size = 2*env().template lattice4dSize<typename FImpl::DoubledGaugeField>();
     env().registerObject(getName(), size);
 }
 
@@ -115,11 +117,7 @@ void TWilson<FImpl>::execute()
     env().setObject(getName(), fMatPt);
 }
 
-typedef TWilson<FIMPL> Wilson;
-
 END_MODULE_NAMESPACE
-
-MODULE_REGISTER_NS(Wilson, MAction);
 
 END_HADRONS_NAMESPACE
 

@@ -32,22 +32,22 @@ using namespace Hadrons;
 using namespace MGauge;
 
 /******************************************************************************
-*                           Load implementation                               *
+*                           TLoad implementation                               *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-Load::Load(const std::string name)
+TLoad::TLoad(const std::string name)
 : Module<LoadPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> Load::getInput(void)
+std::vector<std::string> TLoad::getInput(void)
 {
     std::vector<std::string> in;
     
     return in;
 }
 
-std::vector<std::string> Load::getOutput(void)
+std::vector<std::string> TLoad::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -55,13 +55,13 @@ std::vector<std::string> Load::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void Load::setup(void)
+void TLoad::setup(void)
 {
     env().registerLattice<LatticeGaugeField>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void Load::execute(void)
+void TLoad::execute(void)
 {
     NerscField  header;
     std::string fileName = par().file + "."

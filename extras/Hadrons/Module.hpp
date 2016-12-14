@@ -34,7 +34,17 @@ directory.
 BEGIN_HADRONS_NAMESPACE
 
 // module registration macros
-#define MODULE_REGISTER(mod)\
+#define MODULE_REGISTER(mod, base)\
+class mod: public base\
+{\
+public:\
+    typedef base Base;\
+    using Base::Base;\
+    virtual std::string getRegisteredName(void)\
+    {\
+        return std::string(#mod);\
+    }\
+};\
 class mod##ModuleRegistrar\
 {\
 public:\
@@ -49,7 +59,17 @@ public:\
 };\
 static mod##ModuleRegistrar mod##ModuleRegistrarInstance;
 
-#define MODULE_REGISTER_NS(mod, ns)\
+#define MODULE_REGISTER_NS(mod, base, ns)\
+class mod: public base\
+{\
+public:\
+    typedef base Base;\
+    using Base::Base;\
+    virtual std::string getRegisteredName(void)\
+    {\
+        return std::string(#ns "::" #mod);\
+    }\
+};\
 class ns##mod##ModuleRegistrar\
 {\
 public:\
@@ -63,6 +83,8 @@ public:\
     }\
 };\
 static ns##mod##ModuleRegistrar ns##mod##ModuleRegistrarInstance;
+
+#define ARG(...) __VA_ARGS__
 
 /******************************************************************************
  *                            Module class                                    *
@@ -78,6 +100,8 @@ public:
     // access
     std::string getName(void) const;
     Environment &env(void) const;
+    // get factory registration name if available
+    virtual std::string getRegisteredName(void);
     // dependencies/products
     virtual std::vector<std::string> getInput(void) = 0;
     virtual std::vector<std::string> getOutput(void) = 0;

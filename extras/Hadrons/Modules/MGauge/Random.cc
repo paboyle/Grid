@@ -32,20 +32,20 @@ using namespace Hadrons;
 using namespace MGauge;
 
 /******************************************************************************
-*                           Random implementation                             *
+*                           TRandom implementation                            *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-Random::Random(const std::string name)
+TRandom::TRandom(const std::string name)
 : Module<NoPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> Random::getInput(void)
+std::vector<std::string> TRandom::getInput(void)
 {
     return std::vector<std::string>();
 }
 
-std::vector<std::string> Random::getOutput(void)
+std::vector<std::string> TRandom::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -53,13 +53,13 @@ std::vector<std::string> Random::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void Random::setup(void)
+void TRandom::setup(void)
 {
     env().registerLattice<LatticeGaugeField>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void Random::execute(void)
+void TRandom::execute(void)
 {
     LOG(Message) << "Generating random gauge configuration" << std::endl;
     LatticeGaugeField &U = *env().createLattice<LatticeGaugeField>(getName());

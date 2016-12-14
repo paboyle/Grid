@@ -80,6 +80,8 @@ public:
     virtual void execute(void);
 };
 
+MODULE_REGISTER_NS(Z2, TZ2<FIMPL>, MSource);
+
 /******************************************************************************
  *                       TZ2 template implementation                          *
  ******************************************************************************/
@@ -140,11 +142,7 @@ void TZ2<FImpl>::execute(void)
     src = src*eta;
 }
 
-typedef TZ2<FIMPL> Z2;
-
 END_MODULE_NAMESPACE
-
-MODULE_REGISTER_NS(Z2, MSource);
 
 END_HADRONS_NAMESPACE
 

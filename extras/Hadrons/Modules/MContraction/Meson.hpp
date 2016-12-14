@@ -72,6 +72,8 @@ public:
     virtual void execute(void);
 };
 
+MODULE_REGISTER_NS(Meson, ARG(TMeson<FIMPL, FIMPL>), MContraction);
+
 /******************************************************************************
  *                           TMeson implementation                            *
  ******************************************************************************/
@@ -137,11 +139,7 @@ void TMeson<FImpl1, FImpl2>::execute(void)
     write(writer, "meson", result);
 }
 
-typedef TMeson<FIMPL, FIMPL> Meson;
-
 END_MODULE_NAMESPACE
-
-MODULE_REGISTER_NS(Meson, MContraction);
 
 END_HADRONS_NAMESPACE
 

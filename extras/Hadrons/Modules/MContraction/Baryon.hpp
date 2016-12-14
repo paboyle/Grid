@@ -47,7 +47,7 @@ public:
     virtual void execute(void);
 };
 
-typedef TBaryon<FIMPL, FIMPL, FIMPL> Baryon;
+MODULE_REGISTER_NS(Baryon, ARG(TBaryon<FIMPL, FIMPL, FIMPL>), MContraction);
 
 /******************************************************************************
  *                         TBaryon implementation                             *
@@ -96,8 +96,6 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
 }
 
 END_MODULE_NAMESPACE
-
-MODULE_REGISTER_NS(Baryon, MContraction);
 
 END_HADRONS_NAMESPACE
 

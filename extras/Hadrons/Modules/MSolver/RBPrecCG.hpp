@@ -66,6 +66,8 @@ public:
     virtual void execute(void);
 };
 
+MODULE_REGISTER_NS(RBPrecCG, TRBPrecCG<FIMPL>, MSolver);
+
 /******************************************************************************
  *                      TRBPrecCG template implementation                     *
  ******************************************************************************/
@@ -121,11 +123,7 @@ void TRBPrecCG<FImpl>::execute(void)
     env().setObject(getName(), new SolverFn(solver));
 }
 
-typedef TRBPrecCG<FIMPL> RBPrecCG;
-
 END_MODULE_NAMESPACE
-
-MODULE_REGISTER_NS(RBPrecCG, MSolver);
 
 END_HADRONS_NAMESPACE
 

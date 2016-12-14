@@ -57,10 +57,10 @@ public:
     virtual void execute(void);
 };
 
-typedef TSeqGamma<FIMPL> SeqGamma;
+MODULE_REGISTER_NS(SeqGamma, TSeqGamma<FIMPL>, MSource);
 
 /******************************************************************************
- *                 TSeqGamma implementation                             *
+ *                         TSeqGamma implementation                           *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
@@ -129,8 +129,6 @@ void TSeqGamma<FImpl>::execute(void)
 }
 
 END_MODULE_NAMESPACE
-
-MODULE_REGISTER_NS(SeqGamma, MSource);
 
 END_HADRONS_NAMESPACE
 

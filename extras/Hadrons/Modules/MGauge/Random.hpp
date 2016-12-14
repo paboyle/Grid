@@ -39,13 +39,13 @@ BEGIN_HADRONS_NAMESPACE
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MGauge)
 
-class Random: public Module<NoPar>
+class TRandom: public Module<NoPar>
 {
 public:
     // constructor
-    Random(const std::string name);
+    TRandom(const std::string name);
     // destructor
-    virtual ~Random(void) = default;
+    virtual ~TRandom(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -55,9 +55,9 @@ public:
     virtual void execute(void);
 };
 
-END_MODULE_NAMESPACE
+MODULE_REGISTER_NS(Random, TRandom, MGauge);
 
-MODULE_REGISTER_NS(Random, MGauge);
+END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 

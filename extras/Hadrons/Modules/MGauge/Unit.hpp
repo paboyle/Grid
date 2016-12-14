@@ -39,13 +39,13 @@ BEGIN_HADRONS_NAMESPACE
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MGauge)
 
-class Unit: public Module<NoPar>
+class TUnit: public Module<NoPar>
 {
 public:
     // constructor
-    Unit(const std::string name);
+    TUnit(const std::string name);
     // destructor
-    virtual ~Unit(void) = default;
+    virtual ~TUnit(void) = default;
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -55,9 +55,9 @@ public:
     virtual void execute(void);
 };
 
-END_MODULE_NAMESPACE
+MODULE_REGISTER_NS(Unit, TUnit, MGauge);
 
-MODULE_REGISTER_NS(Unit, MGauge);
+END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 

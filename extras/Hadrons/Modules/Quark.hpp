@@ -67,6 +67,8 @@ private:
     SolverFn     *solver_{nullptr};
 };
 
+MODULE_REGISTER(Quark, TQuark<FIMPL>);
+
 /******************************************************************************
  *                          TQuark implementation                             *
  ******************************************************************************/
@@ -175,10 +177,6 @@ void TQuark<FImpl>::execute(void)
         }
     }
 }
-
-typedef TQuark<FIMPL> Quark;
-
-MODULE_REGISTER(Quark);
 
 END_HADRONS_NAMESPACE
 

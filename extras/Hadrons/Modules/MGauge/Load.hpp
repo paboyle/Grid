@@ -46,13 +46,13 @@ public:
                                     std::string, file);
 };
 
-class Load: public Module<LoadPar>
+class TLoad: public Module<LoadPar>
 {
 public:
     // constructor
-    Load(const std::string name);
+    TLoad(const std::string name);
     // destructor
-    virtual ~Load(void) = default;
+    virtual ~TLoad(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -62,9 +62,9 @@ public:
     virtual void execute(void);
 };
 
-END_MODULE_NAMESPACE
+MODULE_REGISTER_NS(Load, TLoad, MGauge);
 
-MODULE_REGISTER_NS(Load, MGauge);
+END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 

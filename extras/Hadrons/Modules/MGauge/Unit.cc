@@ -32,20 +32,20 @@ using namespace Hadrons;
 using namespace MGauge;
 
 /******************************************************************************
-*                             Unit implementation                             *
+*                            TUnit implementation                             *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-Unit::Unit(const std::string name)
+TUnit::TUnit(const std::string name)
 : Module<NoPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> Unit::getInput(void)
+std::vector<std::string> TUnit::getInput(void)
 {
     return std::vector<std::string>();
 }
 
-std::vector<std::string> Unit::getOutput(void)
+std::vector<std::string> TUnit::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -53,13 +53,13 @@ std::vector<std::string> Unit::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void Unit::setup(void)
+void TUnit::setup(void)
 {
     env().registerLattice<LatticeGaugeField>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void Unit::execute(void)
+void TUnit::execute(void)
 {
     LOG(Message) << "Creating unit gauge configuration" << std::endl;
     LatticeGaugeField &U = *env().createLattice<LatticeGaugeField>(getName());

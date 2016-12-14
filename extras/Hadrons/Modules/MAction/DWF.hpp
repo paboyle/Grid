@@ -68,6 +68,8 @@ public:
     virtual void execute(void);
 };
 
+MODULE_REGISTER_NS(DWF, TDWF<FIMPL>, MAction);
+
 /******************************************************************************
  *                        DWF template implementation                         *
  ******************************************************************************/
@@ -109,9 +111,9 @@ template <typename FImpl>
 void TDWF<FImpl>::execute(void)
 {
     LOG(Message) << "Setting up domain wall fermion matrix with m= "
-    << par().mass << ", M5= " << par().M5 << " and Ls= "
-    << par().Ls << " using gauge field '" << par().gauge << "'"
-    << std::endl;
+                 << par().mass << ", M5= " << par().M5 << " and Ls= "
+                 << par().Ls << " using gauge field '" << par().gauge << "'"
+                 << std::endl;
     env().createGrid(par().Ls);
     auto &U      = *env().template getObject<LatticeGaugeField>(par().gauge);
     auto &g4     = *env().getGrid();
@@ -123,11 +125,7 @@ void TDWF<FImpl>::execute(void)
     env().setObject(getName(), fMatPt);
 }
 
-typedef TDWF<FIMPL> DWF;
-
 END_MODULE_NAMESPACE
-
-MODULE_REGISTER_NS(DWF, MAction);
 
 END_HADRONS_NAMESPACE
 
