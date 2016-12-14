@@ -4,22 +4,22 @@ using namespace Grid;
 using namespace Hadrons;
 
 /******************************************************************************
-*                  ___FILEBASENAME___ implementation                             *
+*                  T___FILEBASENAME___ implementation                             *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-___FILEBASENAME___::___FILEBASENAME___(const std::string name)
+T___FILEBASENAME___::T___FILEBASENAME___(const std::string name)
 : Module<___FILEBASENAME___Par>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> ___FILEBASENAME___::getInput(void)
+std::vector<std::string> T___FILEBASENAME___::getInput(void)
 {
     std::vector<std::string> in;
     
     return in;
 }
 
-std::vector<std::string> ___FILEBASENAME___::getOutput(void)
+std::vector<std::string> T___FILEBASENAME___::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -27,13 +27,13 @@ std::vector<std::string> ___FILEBASENAME___::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void ___FILEBASENAME___::setup(void)
+void T___FILEBASENAME___::setup(void)
 {
 
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void ___FILEBASENAME___::execute(void)
+void T___FILEBASENAME___::execute(void)
 {
 
 }

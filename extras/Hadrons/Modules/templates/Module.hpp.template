@@ -17,13 +17,13 @@ public:
                                     unsigned int, i);
 };
 
-class ___FILEBASENAME___: public Module<___FILEBASENAME___Par>
+class T___FILEBASENAME___: public Module<___FILEBASENAME___Par>
 {
 public:
     // constructor
-    ___FILEBASENAME___(const std::string name);
+    T___FILEBASENAME___(const std::string name);
     // destructor
-    virtual ~___FILEBASENAME___(void) = default;
+    virtual ~T___FILEBASENAME___(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -33,7 +33,7 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER(___FILEBASENAME___);
+MODULE_REGISTER(___FILEBASENAME___, T___FILEBASENAME___);
 
 END_HADRONS_NAMESPACE
 

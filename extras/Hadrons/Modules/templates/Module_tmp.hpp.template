@@ -34,7 +34,7 @@ public:
     virtual void execute(void);
 };
 
-typedef T___FILEBASENAME___<FIMPL> ___FILEBASENAME___;
+MODULE_REGISTER(___FILEBASENAME___, T___FILEBASENAME___<FIMPL>);
 
 /******************************************************************************
  *                 T___FILEBASENAME___ implementation                             *
@@ -75,8 +75,6 @@ void T___FILEBASENAME___<FImpl>::execute(void)
 {
     
 }
-
-MODULE_REGISTER(___FILEBASENAME___);
 
 END_HADRONS_NAMESPACE
 
