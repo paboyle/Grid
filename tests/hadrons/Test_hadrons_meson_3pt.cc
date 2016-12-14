@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
         {
             // sequential sources
             MSource::SeqGamma::Par seqPar;
-            qName.push_back("QZ2_" + flavour[i] + srcName);
+            qName.push_back("QZ2_" + flavour[i] + "_" + std::to_string(t));
             seqPar.q   = qName[i];
             seqPar.tA  = (t + nt/4) % nt;
             seqPar.tB  = (t + nt/4) % nt;
@@ -159,6 +159,7 @@ int main(int argc, char *argv[])
     }
     
     // execution
+    application.saveParameterFile("meson3pt.xml");
     application.run();
     
     // epilogue

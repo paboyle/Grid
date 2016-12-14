@@ -121,6 +121,7 @@ int main(int argc, char *argv[])
     }
     
     // execution
+    application.saveParameterFile("spectrum.xml");
     application.run();
     
     // epilogue
