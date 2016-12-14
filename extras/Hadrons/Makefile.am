@@ -1,4 +1,5 @@
 lib_LIBRARIES = libHadrons.a
+bin_PROGRAMS  = HadronsXmlRun
 
 include modules.inc
 
@@ -20,3 +21,6 @@ nobase_libHadrons_a_HEADERS = \
 	Module.hpp                \
 	Modules.hpp               \
 	ModuleFactory.hpp
+
+HadronsXmlRun_SOURCES = HadronsXmlRun.cc
+HadronsXmlRun_LDADD   = -lGrid libHadrons.a
