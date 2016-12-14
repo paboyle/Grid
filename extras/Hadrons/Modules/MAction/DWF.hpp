@@ -102,7 +102,7 @@ void TDWF<FImpl>::setup(void)
 {
     unsigned int size;
     
-    size = 3*env().template lattice4dSize<typename FImpl::DoubledGaugeField>();
+    size = 2*env().template lattice4dSize<typename FImpl::DoubledGaugeField>();
     env().registerObject(getName(), size, par().Ls);
 }
 
