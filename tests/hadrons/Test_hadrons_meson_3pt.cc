@@ -42,11 +42,10 @@ int main(int argc, char *argv[])
     LOG(Message) << "Grid initialized" << std::endl;
     
     // run setup ///////////////////////////////////////////////////////////////
-    Application                   application;
-
-    std::vector<std::string>              flavour = {"l", "s", "c1", "c2", "c3"};
-    std::vector<double>                   mass    = {.01, .04, .2  , .25 , .3  };
-    unsigned int                          nt      = GridDefaultLatt()[Tp];
+    Application              application;
+    std::vector<std::string> flavour = {"l", "s", "c1", "c2", "c3"};
+    std::vector<double>      mass    = {.01, .04, .2  , .25 , .3  };
+    unsigned int             nt      = GridDefaultLatt()[Tp];
     
     // global parameters
     Application::GlobalPar globalPar;
