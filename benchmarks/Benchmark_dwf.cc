@@ -163,6 +163,24 @@ int main (int argc, char ** argv)
     Dw.Report();
   }
 
+  if (1) {  // Naive wilson dag implementation
+    ref = zero;
+    for (int mu = 0; mu < Nd; mu++) {
+      //    ref =  src - Gamma(Gamma::GammaX)* src ; // 1+gamma_x
+      tmp = U[mu] * Cshift(src, mu + 1, 1);
+      for (int i = 0; i < ref._odata.size(); i++) {
+        ref._odata[i] += tmp._odata[i] + Gamma(Gmu[mu]) * tmp._odata[i];
+      }
+
+      tmp = adj(U[mu]) * src;
+      tmp = Cshift(tmp, mu + 1, -1);
+      for (int i = 0; i < ref._odata.size(); i++) {
+        ref._odata[i] += tmp._odata[i] - Gamma(Gmu[mu]) * tmp._odata[i];
+      }
+    }
+    ref = -0.5 * ref;
+  }
+
   if (1)
   {
 
@@ -245,6 +263,33 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage<<" difference between normal and simd is "<<sum<<std::endl;
     assert (sum< 1.0e-4 );
 
+    // Check Dag
+    std::cout << GridLogMessage << "Compare WilsonFermion5D<DomainWallVec5dImplR>::Dhop to naive wilson implementation Dag to verify correctness" << std::endl;
+    sDw.Dhop(ssrc,sresult,1);
+    sum=0;
+    for(int x=0;x<latt4[0];x++){
+    for(int y=0;y<latt4[1];y++){
+    for(int z=0;z<latt4[2];z++){
+    for(int t=0;t<latt4[3];t++){
+    for(int s=0;s<Ls;s++){
+      std::vector<int> site({s,x,y,z,t});
+      SpinColourVector normal, simd;
+      peekSite(normal,ref,site);
+      peekSite(simd,sresult,site);
+      sum=sum+norm2(normal-simd);
+      if (norm2(normal-simd) > 1.0e-6 ) {
+        std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" "<<norm2(normal-simd)<<std::endl;
+        std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" normal "<<normal<<std::endl;
+        std::cout << "site "<<x<<","<<y<<","<<z<<","<<t<<","<<s<<" simd   "<<simd<<std::endl;
+      }
+    }}}}}
+    std::cout<<GridLogMessage<<" difference between normal and simd is "<<sum<<std::endl;
+    assert (sum< 1.0e-4 );
+
+
+
+
+
 
     if (1) {
 
@@ -301,42 +346,50 @@ int main (int argc, char ** argv)
       ssrc_e = ssrc_e - sr_e;
       RealD error = norm2(ssrc_e);
 
-      std::cout<<GridLogMessage << "sE norm diff   "<< norm2(ssrc_e)<< "  vec nrm"<<norm2(sr_e) <<std::endl;
+      std::cout<<GridLogMessage << "sE norm diff   "<< norm2(ssrc_e)<< "  vec nrm: "<<norm2(sr_e) <<std::endl;
       ssrc_o = ssrc_o - sr_o;
 
       error+= norm2(ssrc_o);
-      std::cout<<GridLogMessage << "sO norm diff   "<< norm2(ssrc_o)<< "  vec nrm"<<norm2(sr_o) <<std::endl;
+      std::cout<<GridLogMessage << "sO norm diff   "<< norm2(ssrc_o)<< "  vec nrm: "<<norm2(sr_o) <<std::endl;
       if(error>1.0e-4) { 
 	setCheckerboard(ssrc,ssrc_o);
 	setCheckerboard(ssrc,ssrc_e);
 	std::cout<< ssrc << std::endl;
       }
+
+      // Check the dag
+      std::cout << GridLogMessage << "Compare WilsonFermion5D<DomainWallVec5dImplR>::DhopEO to Dhop to verify correctness" << std::endl;
+      pickCheckerboard(Even,ssrc_e,ssrc);
+      pickCheckerboard(Odd,ssrc_o,ssrc);
+      sDw.DhopEO(ssrc_o,sr_e,DaggerYes);
+      sDw.DhopOE(ssrc_e,sr_o,DaggerYes);
+      sDw.Dhop  (ssrc  ,sresult,DaggerYes);
+
+      pickCheckerboard(Even,ssrc_e,sresult);
+      pickCheckerboard(Odd ,ssrc_o,sresult);
+      ssrc_e = ssrc_e - sr_e;
+      error = norm2(ssrc_e);
+
+      std::cout<<GridLogMessage << "sE norm diff   "<< norm2(ssrc_e)<< "  vec nrm: "<<norm2(sr_e) <<std::endl;
+      ssrc_o = ssrc_o - sr_o;
+
+      error+= norm2(ssrc_o);
+      std::cout<<GridLogMessage << "sO norm diff   "<< norm2(ssrc_o)<< "  vec nrm: "<<norm2(sr_o) <<std::endl;
+      if(error>1.0e-4) { 
+        setCheckerboard(ssrc,ssrc_o);
+        setCheckerboard(ssrc,ssrc_e);
+        std::cout<< ssrc << std::endl;
+      } 
+
+
     }
 
 
   }
 
-  if (1)
-  { // Naive wilson dag implementation
-    ref = zero;
-    for(int mu=0;mu<Nd;mu++){
 
-      //    ref =  src - Gamma(Gamma::GammaX)* src ; // 1+gamma_x
-      tmp = U[mu]*Cshift(src,mu+1,1);
-      for(int i=0;i<ref._odata.size();i++){
-  ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
-      }
-
-      tmp =adj(U[mu])*src;
-      tmp =Cshift(tmp,mu+1,-1);
-      for(int i=0;i<ref._odata.size();i++){
-  ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
-      }
-    }
-    ref = -0.5*ref;
-  }
   Dw.Dhop(src,result,1);
-  std::cout << GridLogMessage << "Compare to naive wilson implementation Dag to verify correctness" << std::endl;
+  std::cout << GridLogMessage << "Compare DomainWallFermionR::Dhop to naive wilson implementation Dag to verify correctness" << std::endl;
   std::cout<<GridLogMessage << "Called DwDag"<<std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
   std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;

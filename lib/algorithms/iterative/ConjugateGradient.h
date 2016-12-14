@@ -134,7 +134,6 @@ class ConjugateGradient : public OperatorFunction<Field> {
       std::cout << GridLogDebug << "a = "<< a << " b_pred = "<< b_pred << "  b = "<< b << std::endl;
       std::cout << GridLogDebug << "qq = "<< qq << " d = "<< d << "  c = "<< c << std::endl;
 
-
       // Stopping condition
       if (cp <= rsq) {
         SolverTimer.Stop();
