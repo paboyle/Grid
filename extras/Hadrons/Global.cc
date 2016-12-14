@@ -63,3 +63,18 @@ std::string Hadrons::sizeString(long unsigned int bytes)
     
     return std::string(buf);
 }
+
+// type utilities //////////////////////////////////////////////////////////////
+constexpr unsigned int maxNameSize = 1024u;
+
+std::string Hadrons::typeName(const std::type_info *info)
+{
+    char        *buf;
+    std::string name;
+    
+    buf  = abi::__cxa_demangle(info->name(), nullptr, nullptr, nullptr);
+    name = buf;
+    free(buf);
+    
+    return name;
+}

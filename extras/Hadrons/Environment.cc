@@ -250,7 +250,7 @@ std::string Environment::getModuleType(const unsigned int address) const
 {
     if (hasModule(address))
     {
-        return module_[address].type->name();
+        return typeName(module_[address].type);
     }
     else
     {
@@ -473,7 +473,7 @@ std::string Environment::getObjectType(const unsigned int address) const
 {
     if (hasRegisteredObject(address))
     {
-        return object_[address].type->name();
+        return typeName(object_[address].type);
     }
     else if (hasObject(address))
     {
@@ -689,8 +689,7 @@ void Environment::printContent(void)
     for (unsigned int i = 0; i < module_.size(); ++i)
     {
         LOG(Message) << std::setw(4) << i << ": "
-                     << getModuleName(i) << " ("
-                     << getModuleType(i) << ")" << std::endl;
+                     << getModuleName(i) << std::endl;
     }
     LOG(Message) << "Objects: " << std::endl;
     for (unsigned int i = 0; i < object_.size(); ++i)

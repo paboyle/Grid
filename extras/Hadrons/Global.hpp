@@ -31,6 +31,7 @@ directory.
 #include <set>
 #include <stack>
 #include <Grid/Grid.h>
+#include <cxxabi.h>
 
 #define BEGIN_HADRONS_NAMESPACE \
 namespace Grid {\
@@ -56,11 +57,6 @@ using Grid::operator<<;
 BEGIN_HADRONS_NAMESPACE
 
 // type aliases
-//typedef FermionOperator<FIMPL> FMat;
-//typedef FIMPL::FermionField    FermionField;
-//typedef FIMPL::PropagatorField PropagatorField;
-//typedef std::function<void(FermionField &, const FermionField &)> SolverFn;
-
 #define TYPE_ALIASES(FImpl, suffix)\
 typedef FermionOperator<FImpl>                       FMat##suffix;             \
 typedef typename FImpl::FermionField                 FermionField##suffix;     \
@@ -120,32 +116,31 @@ private:\
 // pretty size formating
 std::string sizeString(long unsigned int bytes);
 
-template <typename T>
-std::string typeName(const T &x)
-{
-    std::string name(typeid(x).name());
-
-    return name;
-}
-
-template <typename T>
-std::string typeName(void)
-{
-    std::string name(typeid(T).name());
-
-    return name;
-}
-
+// type utilities
 template <typename T>
 const std::type_info * typeIdPt(const T &x)
 {
     return &typeid(x);
 }
 
+std::string typeName(const std::type_info *info);
+
 template <typename T>
-const std::type_info * typeName(void)
+const std::type_info * typeIdPt(void)
 {
     return &typeid(T);
+}
+
+template <typename T>
+std::string typeName(const T &x)
+{
+    return typeName(typeIdPt(x));
+}
+
+template <typename T>
+std::string typeName(void)
+{
+    return typeName(typeIdPt<T>());
 }
 
 END_HADRONS_NAMESPACE
