@@ -1,5 +1,5 @@
 lib_LIBRARIES = libHadrons.a
-bin_PROGRAMS  = HadronsXmlRun
+bin_PROGRAMS  = HadronsXmlRun HadronsXmlSchedule
 
 include modules.inc
 
@@ -24,3 +24,6 @@ nobase_libHadrons_a_HEADERS = \
 
 HadronsXmlRun_SOURCES = HadronsXmlRun.cc
 HadronsXmlRun_LDADD   = -lGrid libHadrons.a
+
+HadronsXmlSchedule_SOURCES = HadronsXmlSchedule.cc
+HadronsXmlSchedule_LDADD   = -lGrid libHadrons.a
