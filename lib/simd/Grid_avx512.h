@@ -86,13 +86,13 @@ namespace Optimization {
   struct Vstream{
     //Float
     inline void operator()(float * a, __m512 b){
-      //_mm512_stream_ps(a,b);
-      _mm512_store_ps(a,b);
+      _mm512_stream_ps(a,b);
+      //      _mm512_store_ps(a,b);
     }
     //Double
     inline void operator()(double * a, __m512d b){
-      //_mm512_stream_pd(a,b);
-      _mm512_store_pd(a,b);
+      _mm512_stream_pd(a,b);
+      //      _mm512_store_pd(a,b);
     }
 
   };

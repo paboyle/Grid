@@ -130,7 +130,7 @@ class Grid_simd {
 
   Vector_type v;
 
-  static inline int Nsimd(void) {
+  static inline constexpr int Nsimd(void) {
     return sizeof(Vector_type) / sizeof(Scalar_type);
   }
 

@@ -514,7 +514,7 @@ namespace Optimization {
     template<int n>
     static inline __m256 tRotate(__m256 in){ 
       __m256 tmp = Permute::Permute0(in);
-      __m256 ret;
+      __m256 ret = in;
       if ( n > 3 ) { 
 	_mm256_alignr_epi32_grid(ret,in,tmp,n);  
       } else {
@@ -526,7 +526,7 @@ namespace Optimization {
     template<int n>
     static inline __m256d tRotate(__m256d in){ 
       __m256d tmp = Permute::Permute0(in);
-      __m256d ret;
+      __m256d ret = in;
       if ( n > 1 ) {
 	_mm256_alignr_epi64_grid(ret,in,tmp,n);          
       } else {
