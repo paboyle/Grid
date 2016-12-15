@@ -1,4 +1,4 @@
-AM_CXXFLAGS += -I$(top_srcdir)/programs -I../$(top_srcdir)/programs
+AM_CXXFLAGS += -I$(top_srcdir)/extras
 
 bin_PROGRAMS = qed-fvol
 
