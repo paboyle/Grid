@@ -65,7 +65,7 @@ void LebesgueOrder::CartesianBlocking(void)
 {
   _LebesgueReorder.resize(0);
 
-  std::cout << GridLogDebug << " CartesianBlocking ";
+  //    std::cout << GridLogDebug << " CartesianBlocking ";
   //    for(int d=0;d<Block.size();d++) std::cout <<Block[d]<<" ";
   //    std::cout<<std::endl; 
 
