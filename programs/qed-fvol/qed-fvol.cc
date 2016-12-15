@@ -31,6 +31,9 @@ typedef Photon<QedGimplR>               PhotonR;
 typedef PhotonR::GaugeField             EmField;
 typedef PhotonR::GaugeLinkField         EmComp;
 
+const int NCONFIGS = 10;
+const int NWILSON = 10;
+
 int main(int argc, char *argv[])
 {
     // parse command line
@@ -64,27 +67,39 @@ int main(int argc, char *argv[])
     EmField          a(&grid);
     EmField          expA(&grid);
 
-    Real wlA, logWlA;
+    Complex imag_unit(0, 1);
+
+    Real wlA;
+    std::vector<Real> logWlAvg(NWILSON, 0.0), logWlTime(NWILSON, 0.0), logWlSpace(NWILSON, 0.0);
 
     pRNG.SeedRandomDevice();
-    photon.StochasticField(a, pRNG);
 
-    // Exponentiate photon field
-    Complex imag_unit(0, 1);
-    expA = exp(imag_unit*a);
+    LOG(Message) << "Wilson loop calculation beginning" << std::endl;
+    for(int ic = 0; ic < NCONFIGS; ic++){
+        LOG(Message) << "Configuration " << ic <<std::endl;
+        photon.StochasticField(a, pRNG);
 
+        // Exponentiate photon field
+        expA = exp(imag_unit*a);
+
+        // Calculate Wilson loops
+        for(int iw=1; iw<=NWILSON; iw++){
+            wlA = NewWilsonLoops<QedPeriodicGimplR>::avgWilsonLoop(expA, iw, iw) * 3;
+            logWlAvg[iw-1] -= 2*log(wlA);
+            wlA = NewWilsonLoops<QedPeriodicGimplR>::avgTimelikeWilsonLoop(expA, iw, iw) * 3;
+            logWlTime[iw-1] -= 2*log(wlA);
+            wlA = NewWilsonLoops<QedPeriodicGimplR>::avgSpatialWilsonLoop(expA, iw, iw) * 3;
+            logWlSpace[iw-1] -= 2*log(wlA);
+        }
+    }
+    LOG(Message) << "Wilson loop calculation completed" << std::endl;
+    
     // Calculate Wilson loops
-    for(int i=1; i<=10; i++){
-        LOG(Message) << i << 'x' << i << " Wilson loop" << std::endl;
-        wlA = NewWilsonLoops<QedPeriodicGimplR>::avgWilsonLoop(expA, i, i) * 3;
-        logWlA = -2*log(wlA);
-        LOG(Message) << "-2log(W) average: " << logWlA << std::endl;
-        wlA = NewWilsonLoops<QedPeriodicGimplR>::avgTimelikeWilsonLoop(expA, i, i) * 3;
-        logWlA = -2*log(wlA);
-        LOG(Message) << "-2log(W) timelike: " << logWlA << std::endl;
-        wlA = NewWilsonLoops<QedPeriodicGimplR>::avgSpatialWilsonLoop(expA, i, i) * 3;
-        logWlA = -2*log(wlA);
-        LOG(Message) << "-2log(W) spatial: " << logWlA << std::endl;
+    for(int iw=1; iw<=10; iw++){
+        LOG(Message) << iw << 'x' << iw << " Wilson loop" << std::endl;
+        LOG(Message) << "-2log(W) average: " << logWlAvg[iw-1]/NCONFIGS << std::endl;
+        LOG(Message) << "-2log(W) timelike: " << logWlTime[iw-1]/NCONFIGS << std::endl;
+        LOG(Message) << "-2log(W) spatial: " << logWlSpace[iw-1]/NCONFIGS << std::endl;
     }
 
     // epilogue
