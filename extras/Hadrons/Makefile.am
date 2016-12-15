@@ -23,7 +23,7 @@ nobase_libHadrons_a_HEADERS = \
 	ModuleFactory.hpp
 
 HadronsXmlRun_SOURCES = HadronsXmlRun.cc
-HadronsXmlRun_LDADD   = -lGrid libHadrons.a
+HadronsXmlRun_LDADD   = libHadrons.a -lGrid
 
 HadronsXmlSchedule_SOURCES = HadronsXmlSchedule.cc
-HadronsXmlSchedule_LDADD   = -lGrid libHadrons.a
+HadronsXmlSchedule_LDADD   = libHadrons.a -lGrid
