@@ -1,8 +1,10 @@
-/*******************************************************************************
+/*************************************************************************************
+
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/Point.hpp
+Source file: extras/Hadrons/Modules/MSource/Point.hpp
 
+Copyright (C) 2015
 Copyright (C) 2016
 
 Author: Antonin Portelli <antonin.portelli@me.com>
@@ -21,9 +23,8 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-See the full license in the file "LICENSE" in the top level distribution 
-directory.
-*******************************************************************************/
+See the full license in the file "LICENSE" in the top level distribution directory
+*************************************************************************************/
 /*  END LEGAL */
 
 #ifndef Hadrons_Point_hpp_
