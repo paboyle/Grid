@@ -20,15 +20,21 @@ for subdir in $dirs; do
     TESTS=`ls T*.cc`
     TESTLIST=`echo ${TESTS} | sed s/.cc//g `
     PREF=`[ $subdir = '.' ] && echo noinst || echo EXTRA`
-    echo "tests: ${TESTLIST}" > Make.inc
+    SUB=`[ $subdir = '.' ] && echo subtests`
+    echo "tests: ${TESTLIST} ${SUB}" > Make.inc
     echo ${PREF}_PROGRAMS = ${TESTLIST} >> Make.inc
     echo >> Make.inc
+    HADLINK=`[ $subdir = './hadrons' ] && echo '-lHadrons '`
     for f in $TESTS; do
-	BNAME=`basename $f .cc`
-	echo ${BNAME}_SOURCES=$f  >> Make.inc
-	echo ${BNAME}_LDADD=-lGrid>> Make.inc
-	echo >> Make.inc
+	   BNAME=`basename $f .cc`
+	   echo ${BNAME}_SOURCES=$f >> Make.inc
+	   echo ${BNAME}_LDADD=${HADLINK}-lGrid  >> Make.inc
+	   echo >> Make.inc
     done
+    if [ $subdir != '.' ]; then
+       echo CLEANFILES = ${TESTLIST} >> Make.inc
+       echo >> Make.inc
+    fi
 done
 
 # benchmarks Make.inc

@@ -48,8 +48,10 @@ namespace QCD {
   //    typedef typename XXX         GaugeField;
   //    typedef typename XXX      GaugeActField;
   //    typedef typename XXX       FermionField;
+  //    typedef typename XXX    PropagatorField;
   //    typedef typename XXX  DoubledGaugeField;
   //    typedef typename XXX         SiteSpinor;
+  //    typedef typename XXX     SitePropagator;
   //    typedef typename XXX     SiteHalfSpinor;	
   //    typedef typename XXX         Compressor;	
   //
@@ -95,13 +97,15 @@ namespace QCD {
   
 #define INHERIT_FIMPL_TYPES(Impl)\
   typedef typename Impl::FermionField           FermionField;		\
+  typedef typename Impl::PropagatorField     PropagatorField;		\
   typedef typename Impl::DoubledGaugeField DoubledGaugeField;		\
   typedef typename Impl::SiteSpinor               SiteSpinor;		\
+  typedef typename Impl::SitePropagator       SitePropagator;		\
   typedef typename Impl::SiteHalfSpinor       SiteHalfSpinor;		\
   typedef typename Impl::Compressor               Compressor;		\
   typedef typename Impl::StencilImpl             StencilImpl;		\
-  typedef typename Impl::ImplParams ImplParams;				\
-  typedef typename Impl::Coeff_t       Coeff_t;
+  typedef typename Impl::ImplParams               ImplParams;	        \
+  typedef typename Impl::Coeff_t                     Coeff_t;           \
   
 #define INHERIT_IMPL_TYPES(Base) \
   INHERIT_GIMPL_TYPES(Base)	 \
@@ -127,14 +131,17 @@ namespace QCD {
     INHERIT_GIMPL_TYPES(Gimpl);
       
     template <typename vtype> using iImplSpinor            = iScalar<iVector<iVector<vtype, Dimension>, Ns> >;
+    template <typename vtype> using iImplPropagator        = iScalar<iMatrix<iMatrix<vtype, Dimension>, Ns> >;
     template <typename vtype> using iImplHalfSpinor        = iScalar<iVector<iVector<vtype, Dimension>, Nhs> >;
     template <typename vtype> using iImplDoubledGaugeField = iVector<iScalar<iMatrix<vtype, Dimension> >, Nds>;
     
     typedef iImplSpinor<Simd>            SiteSpinor;
+    typedef iImplPropagator<Simd>        SitePropagator;
     typedef iImplHalfSpinor<Simd>        SiteHalfSpinor;
     typedef iImplDoubledGaugeField<Simd> SiteDoubledGaugeField;
     
     typedef Lattice<SiteSpinor>            FermionField;
+    typedef Lattice<SitePropagator>        PropagatorField;
     typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
     
     typedef WilsonCompressor<SiteHalfSpinor, SiteSpinor> Compressor;
@@ -216,14 +223,17 @@ class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepres
   INHERIT_GIMPL_TYPES(Gimpl);
   
   template <typename vtype> using iImplSpinor            = iScalar<iVector<iVector<vtype, Nrepresentation>, Ns> >;
+  template <typename vtype> using iImplPropagator        = iScalar<iMatrix<iMatrix<vtype, Nrepresentation>, Ns> >;
   template <typename vtype> using iImplHalfSpinor        = iScalar<iVector<iVector<vtype, Nrepresentation>, Nhs> >;
   template <typename vtype> using iImplDoubledGaugeField = iVector<iScalar<iMatrix<vtype, Nrepresentation> >, Nds>;
   template <typename vtype> using iImplGaugeField        = iVector<iScalar<iMatrix<vtype, Nrepresentation> >, Nd>;
   template <typename vtype> using iImplGaugeLink         = iScalar<iScalar<iMatrix<vtype, Nrepresentation> > >;
   
   typedef iImplSpinor<Simd> SiteSpinor;
+  typedef iImplPropagator<Simd> SitePropagator;
   typedef iImplHalfSpinor<Simd> SiteHalfSpinor;
   typedef Lattice<SiteSpinor> FermionField;
+  typedef Lattice<SitePropagator> PropagatorField;
   
   // Make the doubled gauge field a *scalar*
   typedef iImplDoubledGaugeField<typename Simd::scalar_type>  SiteDoubledGaugeField;  // This is a scalar
@@ -315,14 +325,17 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
  INHERIT_GIMPL_TYPES(Gimpl);
       
  template <typename vtype> using iImplSpinor            = iVector<iVector<iVector<vtype, Nrepresentation>, Ns>, Ngp>;
+ template <typename vtype> using iImplPropagator        = iVector<iMatrix<iMatrix<vtype, Nrepresentation>, Ns>, Ngp >;
  template <typename vtype> using iImplHalfSpinor        = iVector<iVector<iVector<vtype, Nrepresentation>, Nhs>, Ngp>;
  template <typename vtype> using iImplDoubledGaugeField = iVector<iVector<iScalar<iMatrix<vtype, Nrepresentation> >, Nds>, Ngp>;
       
  typedef iImplSpinor<Simd> SiteSpinor;
+ typedef iImplPropagator<Simd> SitePropagator;
  typedef iImplHalfSpinor<Simd> SiteHalfSpinor;
  typedef iImplDoubledGaugeField<Simd> SiteDoubledGaugeField;
  
  typedef Lattice<SiteSpinor> FermionField;
+ typedef Lattice<SitePropagator> PropagatorField;
  typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
  
  typedef WilsonCompressor<SiteHalfSpinor, SiteSpinor> Compressor;

@@ -27,7 +27,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
-#include <Grid/qcd/action/gauge/Photon.h>
 
 using namespace Grid;
 using namespace Grid::QCD;
@@ -70,7 +69,7 @@ int main (int argc, char ** argv)
 
 
   std::cout<<"*************************************************"<<std::endl;
-  std::cout<<"Testing Fourier xfrom of known plane wave        "<<std::endl;
+  std::cout<<"Testing Fourier from of known plane wave         "<<std::endl;
   std::cout<<"*************************************************"<<std::endl;
   C=zero;
   for(int mu=0;mu<4;mu++){

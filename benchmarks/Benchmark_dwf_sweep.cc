@@ -69,8 +69,8 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Volume \t\t\tProcs \t Dw \t eoDw \t sDw \t eosDw (Mflop/s)  "<<std::endl;
   std::cout<<GridLogMessage << "=========================================================================="<<std::endl;
 
-  int Lmax=32;
-  int dmin=0;
+  int Lmax=16;
+  int dmin=2;
   if ( getenv("LMAX") ) Lmax=atoi(getenv("LMAX"));
   if ( getenv("DMIN") ) dmin=atoi(getenv("DMIN"));
   for (int L=8;L<=Lmax;L*=2){

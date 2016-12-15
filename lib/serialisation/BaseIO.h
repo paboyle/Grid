@@ -67,9 +67,8 @@ namespace Grid {
     return os;
   }
   
-  class Serializable {};
-  
   // static polymorphism implemented using CRTP idiom
+  class Serializable;
   
   // Static abstract writer
   template <typename T>
@@ -120,6 +119,27 @@ namespace Grid {
     void fromString(U &output, const std::string &s);
   private:
     T *upcast;
+  };
+  
+  // serializable base class
+  class Serializable
+  {
+  public:
+    template <typename T>
+    static inline void write(Writer<T> &WR,const std::string &s,
+                             const Serializable &obj)
+    {}
+    
+    template <typename T>
+    static inline void read(Reader<T> &RD,const std::string &s,
+                            Serializable &obj)
+    {}
+    
+    friend inline std::ostream & operator<<(std::ostream &os,
+                                            const Serializable &obj)
+    {
+      return os;
+    }
   };
   
   // Generic writer interface

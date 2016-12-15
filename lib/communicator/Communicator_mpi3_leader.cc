@@ -39,6 +39,10 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include <semaphore.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <limits.h>
+
 typedef sem_t *Grid_semaphore;
 
 #define SEM_INIT(S)      S = sem_open(sem_name,0,0600,0); assert ( S != SEM_FAILED );

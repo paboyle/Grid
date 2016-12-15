@@ -29,8 +29,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef _GRID_FFT_H_
 #define _GRID_FFT_H_
 
-#ifdef HAVE_FFTW	
-#include <Grid/fftw/fftw3.h>
+#ifdef HAVE_FFTW
+#ifdef USE_MKL
+#include <fftw/fftw3.h>
+#else
+#include <fftw3.h>
+#endif
 #endif
 
 
@@ -122,7 +126,8 @@ namespace Grid {
     
     double Flops(void) {return flops;}
     double MFlops(void) {return flops/usec;}
-    
+    double USec(void)   {return (double)usec;}    
+
     FFT ( GridCartesian * grid ) :
     vgrid(grid),
     Nd(grid->_ndimension),
@@ -226,28 +231,41 @@ namespace Grid {
       std::vector<int> lcoor(Nd), gcoor(Nd);
       result = source;
       for(int p=0;p<processors[dim];p++) {
-        for(int idx=0;idx<sgrid->lSites();idx++) {
-          sgrid->LocalIndexToLocalCoor(idx,lcoor);
+        PARALLEL_REGION
+        {
+          std::vector<int> cbuf(Nd);
           sobj s;
-          peekLocalSite(s,result,lcoor);
-          lcoor[dim]+=p*L;
-          pokeLocalSite(s,pgbuf,lcoor);
+          
+          PARALLEL_FOR_LOOP_INTERN
+          for(int idx=0;idx<sgrid->lSites();idx++) {
+            sgrid->LocalIndexToLocalCoor(idx,cbuf);
+            peekLocalSite(s,result,cbuf);
+            cbuf[dim]+=p*L;
+            pokeLocalSite(s,pgbuf,cbuf);
+          }
         }
-        result = Cshift(result,dim,L);
+        if (p != processors[dim] - 1)
+        {
+          result = Cshift(result,dim,L);
+        }
       }
       
       // Loop over orthog coords
       int NN=pencil_g.lSites();
       GridStopWatch timer;
       timer.Start();
-      //PARALLEL_FOR_LOOP
-      for(int idx=0;idx<NN;idx++) {
-        pencil_g.LocalIndexToLocalCoor(idx,lcoor);
+      PARALLEL_REGION
+      {
+        std::vector<int> cbuf(Nd);
         
-        if ( lcoor[dim] == 0 ) {  // restricts loop to plane at lcoor[dim]==0
-          FFTW_scalar *in = (FFTW_scalar *)&pgbuf._odata[idx];
-          FFTW_scalar *out= (FFTW_scalar *)&pgbuf._odata[idx];
-          FFTW<scalar>::fftw_execute_dft(p,in,out);
+        PARALLEL_FOR_LOOP_INTERN
+        for(int idx=0;idx<NN;idx++) {
+          pencil_g.LocalIndexToLocalCoor(idx, cbuf);
+          if ( cbuf[dim] == 0 ) {  // restricts loop to plane at lcoor[dim]==0
+            FFTW_scalar *in = (FFTW_scalar *)&pgbuf._odata[idx];
+            FFTW_scalar *out= (FFTW_scalar *)&pgbuf._odata[idx];
+            FFTW<scalar>::fftw_execute_dft(p,in,out);
+          }
         }
       }
       timer.Stop();
@@ -261,15 +279,21 @@ namespace Grid {
       
       // writing out result
       int pc = processor_coor[dim];
-      for(int idx=0;idx<sgrid->lSites();idx++) {
-        sgrid->LocalIndexToLocalCoor(idx,lcoor);
-        gcoor = lcoor;
+      PARALLEL_REGION
+      {
+        std::vector<int> clbuf(Nd), cgbuf(Nd);
         sobj s;
-        gcoor[dim] = lcoor[dim]+L*pc;
-        peekLocalSite(s,pgbuf,gcoor);
-		s = s * div;
-        pokeLocalSite(s,result,lcoor);
+        
+        PARALLEL_FOR_LOOP_INTERN
+        for(int idx=0;idx<sgrid->lSites();idx++) {
+          sgrid->LocalIndexToLocalCoor(idx,clbuf);
+          cgbuf = clbuf;
+          cgbuf[dim] = clbuf[dim]+L*pc;
+          peekLocalSite(s,pgbuf,cgbuf);
+          pokeLocalSite(s,result,clbuf);
+        }
       }
+      result = result*div;
       
       // destroying plan
       FFTW<scalar>::fftw_destroy_plan(p);

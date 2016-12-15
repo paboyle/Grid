@@ -68,7 +68,7 @@ int main (int argc, char ** argv)
   for(int mu=0;mu<4;mu++){
     RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
     LatticeCoordinate(coor,mu);
-    C = C - (TwoPiL * p[mu]) * coor;
+    C = C + (TwoPiL * p[mu]) * coor;
   }
 
   C = exp(C*ci);
@@ -78,10 +78,11 @@ int main (int argc, char ** argv)
 
   FFT theFFT(&Fine);
 
-  theFFT.FFT_dim(Ctilde,C,0,FFT::forward);  C=Ctilde; std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Ctilde,C,1,FFT::forward);  C=Ctilde; std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Ctilde,C,2,FFT::forward);  C=Ctilde; std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Ctilde,C,3,FFT::forward);  std::cout << theFFT.MFlops()<<std::endl;
+  Ctilde = C;
+  theFFT.FFT_dim(Ctilde,Ctilde,0,FFT::forward); std::cout << theFFT.MFlops()<<std::endl;
+  theFFT.FFT_dim(Ctilde,Ctilde,1,FFT::forward); std::cout << theFFT.MFlops()<<std::endl;
+  theFFT.FFT_dim(Ctilde,Ctilde,2,FFT::forward); std::cout << theFFT.MFlops()<<std::endl;
+  theFFT.FFT_dim(Ctilde,Ctilde,3,FFT::forward); std::cout << theFFT.MFlops()<<std::endl;
 
   //  C=zero;
   //  Ctilde = where(abs(Ctilde)<1.0e-10,C,Ctilde);
@@ -93,10 +94,11 @@ int main (int argc, char ** argv)
   C=C-Ctilde;
   std::cout << "diff scalar "<<norm2(C) << std::endl;
 
-  theFFT.FFT_dim(Stilde,S,0,FFT::forward);  S=Stilde; std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Stilde,S,1,FFT::forward);  S=Stilde;std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Stilde,S,2,FFT::forward);  S=Stilde;std::cout << theFFT.MFlops()<<std::endl;
-  theFFT.FFT_dim(Stilde,S,3,FFT::forward);std::cout << theFFT.MFlops()<<std::endl;
+  Stilde = S;
+  theFFT.FFT_dim(Stilde,Stilde,0,FFT::forward); std::cout << theFFT.MFlops()<< " "<<theFFT.USec() <<std::endl;
+  theFFT.FFT_dim(Stilde,Stilde,1,FFT::forward); std::cout << theFFT.MFlops()<< " "<<theFFT.USec() <<std::endl;
+  theFFT.FFT_dim(Stilde,Stilde,2,FFT::forward); std::cout << theFFT.MFlops()<< " "<<theFFT.USec() <<std::endl;
+  theFFT.FFT_dim(Stilde,Stilde,3,FFT::forward); std::cout << theFFT.MFlops()<<" "<<theFFT.USec() <<std::endl;
 
   SpinMatrixF Sp; 
   Sp = zero; Sp = Sp+cVol;
