@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/TRBPrecCG.hpp
+Source file: programs/Hadrons/RBPrecCG.hpp
 
 Copyright (C) 2016
 
@@ -24,6 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution 
 directory.
 *******************************************************************************/
+/*  END LEGAL */
 
 #ifndef Hadrons_RBPrecCG_hpp_
 #define Hadrons_RBPrecCG_hpp_

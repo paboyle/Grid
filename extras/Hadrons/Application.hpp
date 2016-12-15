@@ -24,6 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution 
 directory.
 *******************************************************************************/
+/*  END LEGAL */
 
 #ifndef Hadrons_Application_hpp_
 #define Hadrons_Application_hpp_

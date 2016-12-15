@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/TMeson.hpp
+Source file: programs/Hadrons/Meson.hpp
 
 Copyright (C) 2015
 

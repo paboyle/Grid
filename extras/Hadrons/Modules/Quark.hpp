@@ -1,7 +1,7 @@
 /*******************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: programs/Hadrons/TQuark.hpp
+Source file: programs/Hadrons/Quark.hpp
 
 Copyright (C) 2015
 
@@ -24,6 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution 
 directory.
 *******************************************************************************/
+/*  END LEGAL */
 
 #ifndef Hadrons_Quark_hpp_
 #define Hadrons_Quark_hpp_
