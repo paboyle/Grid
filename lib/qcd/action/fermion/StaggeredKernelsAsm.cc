@@ -249,13 +249,22 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 namespace Grid {
 namespace QCD {
 
-  // This is the single precision 5th direction vectorised kernel
 template <class Impl>
 void StaggeredKernels<Impl>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
 					      DoubledGaugeField &U,
 					      DoubledGaugeField &UUU,
 					      SiteSpinor *buf, int sF,
 					      int sU, const FermionField &in, SiteSpinor &out) 
+{
+  assert(0);
+
+}
+  // This is the single precision 5th direction vectorised kernel
+template <> void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
+								    DoubledGaugeField &U,
+								    DoubledGaugeField &UUU,
+								    SiteSpinor *buf, int sF,
+								    int sU, const FermionField &in, SiteSpinor &out) 
 {
 #ifdef AVX512
   uint64_t gauge0,gauge1,gauge2,gauge3;
