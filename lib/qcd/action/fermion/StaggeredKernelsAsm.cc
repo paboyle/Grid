@@ -257,6 +257,7 @@ void StaggeredKernels<Impl>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo,
 					      SiteSpinor *buf, int sF,
 					      int sU, const FermionField &in, SiteSpinor &out) 
 {
+#ifdef AVX512
   uint64_t gauge0,gauge1,gauge2,gauge3;
   uint64_t addr0,addr1,addr2,addr3;
 
@@ -318,6 +319,9 @@ void StaggeredKernels<Impl>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo,
 
   addr0 = (uint64_t) &out;
   REDUCE(addr0);
+#else 
+  assert(0);
+#endif
 }
 
 FermOpStaggeredTemplateInstantiate(StaggeredKernels);

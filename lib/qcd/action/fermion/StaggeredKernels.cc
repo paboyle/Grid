@@ -192,9 +192,11 @@ void StaggeredKernels<Impl>::DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, Dou
   int oneLink  =0;
   int threeLink=1;
   switch(Opt) {
+#ifdef AVX512
   case OptInlineAsm:
     DhopSiteAsm(st,lo,U,UUU,buf,sF,sU,in,out._odata[sF]);
     break;
+#endif
   case OptHandUnroll:
     DhopSiteDepthHand(st,lo,U,buf,sF,sU,in,naive,oneLink);
     DhopSiteDepthHand(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
@@ -220,9 +222,11 @@ void StaggeredKernels<Impl>::DhopSite(StencilImpl &st, LebesgueOrder &lo, Double
   SiteSpinor naive;
   static int once;
   switch(Opt) {
+#ifdef AVX512
   case OptInlineAsm:
     DhopSiteAsm(st,lo,U,UUU,buf,sF,sU,in,out._odata[sF]);
     break;
+#endif
   case OptHandUnroll:
     DhopSiteDepthHand(st,lo,U,buf,sF,sU,in,naive,oneLink);
     DhopSiteDepthHand(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
