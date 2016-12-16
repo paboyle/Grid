@@ -69,37 +69,57 @@ ImprovedStaggeredFermion5D<Impl>::ImprovedStaggeredFermion5D(GaugeField &_Uthin,
   Lebesgue(_FourDimGrid),
   LebesgueEvenOdd(_FourDimRedBlackGrid)
 {
+
   // some assertions
   assert(FiveDimGrid._ndimension==5);
   assert(FourDimGrid._ndimension==4);
-  assert(FiveDimRedBlackGrid._ndimension==5);
   assert(FourDimRedBlackGrid._ndimension==4);
-  assert(FiveDimRedBlackGrid._checker_dim==1);
-  
-  // Dimension zero of the five-d is the Ls direction
+  assert(FiveDimRedBlackGrid._ndimension==5);
+  assert(FiveDimRedBlackGrid._checker_dim==1); // Don't checker the s direction
+
+  // extent of fifth dim and not spread out
   Ls=FiveDimGrid._fdimensions[0];
   assert(FiveDimRedBlackGrid._fdimensions[0]==Ls);
-  assert(FiveDimRedBlackGrid._processors[0] ==1);
-  assert(FiveDimRedBlackGrid._simd_layout[0]==1);
   assert(FiveDimGrid._processors[0]         ==1);
-  assert(FiveDimGrid._simd_layout[0]        ==1);
-  
+  assert(FiveDimRedBlackGrid._processors[0] ==1);
+
   // Other dimensions must match the decomposition of the four-D fields 
   for(int d=0;d<4;d++){
-    assert(FourDimRedBlackGrid._fdimensions[d]  ==FourDimGrid._fdimensions[d]);
-    assert(FiveDimRedBlackGrid._fdimensions[d+1]==FourDimGrid._fdimensions[d]);
-    
-    assert(FourDimRedBlackGrid._processors[d]   ==FourDimGrid._processors[d]);
-    assert(FiveDimRedBlackGrid._processors[d+1] ==FourDimGrid._processors[d]);
-    
-    assert(FourDimRedBlackGrid._simd_layout[d]  ==FourDimGrid._simd_layout[d]);
-    assert(FiveDimRedBlackGrid._simd_layout[d+1]==FourDimGrid._simd_layout[d]);
-    
-    assert(FiveDimGrid._fdimensions[d+1]        ==FourDimGrid._fdimensions[d]);
     assert(FiveDimGrid._processors[d+1]         ==FourDimGrid._processors[d]);
+    assert(FiveDimRedBlackGrid._processors[d+1] ==FourDimGrid._processors[d]);
+    assert(FourDimRedBlackGrid._processors[d]   ==FourDimGrid._processors[d]);
+
+    assert(FiveDimGrid._fdimensions[d+1]        ==FourDimGrid._fdimensions[d]);
+    assert(FiveDimRedBlackGrid._fdimensions[d+1]==FourDimGrid._fdimensions[d]);
+    assert(FourDimRedBlackGrid._fdimensions[d]  ==FourDimGrid._fdimensions[d]);
+
     assert(FiveDimGrid._simd_layout[d+1]        ==FourDimGrid._simd_layout[d]);
+    assert(FiveDimRedBlackGrid._simd_layout[d+1]==FourDimGrid._simd_layout[d]);
+    assert(FourDimRedBlackGrid._simd_layout[d]  ==FourDimGrid._simd_layout[d]);
   }
+
+  if (Impl::LsVectorised) { 
+
+    int nsimd = Simd::Nsimd();
     
+    // Dimension zero of the five-d is the Ls direction
+    assert(FiveDimGrid._simd_layout[0]        ==nsimd);
+    assert(FiveDimRedBlackGrid._simd_layout[0]==nsimd);
+
+    for(int d=0;d<4;d++){
+      assert(FourDimGrid._simd_layout[d]=1);
+      assert(FourDimRedBlackGrid._simd_layout[d]=1);
+      assert(FiveDimRedBlackGrid._simd_layout[d+1]==1);
+    }
+
+  } else {
+    
+    // Dimension zero of the five-d is the Ls direction
+    assert(FiveDimRedBlackGrid._simd_layout[0]==1);
+    assert(FiveDimGrid._simd_layout[0]        ==1);
+
+  }
+
   // Allocate the required comms buffer
   ImportGauge(_Uthin,_Ufat);
 }
@@ -112,8 +132,6 @@ void ImprovedStaggeredFermion5D<Impl>::ImportGauge(const GaugeField &_Uthin)
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::ImportGauge(const GaugeField &_Uthin,const GaugeField &_Ufat)
 {
-  GaugeLinkField U(GaugeGrid());
-
   ////////////////////////////////////////////////////////
   // Double Store should take two fields for Naik and one hop separately.
   ////////////////////////////////////////////////////////
@@ -126,7 +144,7 @@ void ImprovedStaggeredFermion5D<Impl>::ImportGauge(const GaugeField &_Uthin,cons
   ////////////////////////////////////////////////////////
   for (int mu = 0; mu < Nd; mu++) {
 
-    U = PeekIndex<LorentzIndex>(Umu, mu);
+    auto U = PeekIndex<LorentzIndex>(Umu, mu);
     PokeIndex<LorentzIndex>(Umu, U*( 0.5*c1/u0), mu );
     
     U = PeekIndex<LorentzIndex>(Umu, mu+4);
@@ -221,7 +239,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOr
     for (int ss = 0; ss < U._grid->oSites(); ss++) {
     for(int s=0;s<LLs;s++){
       int sU=ss;
-      int sF = s+LLs*sU; 
+      int sF=s+LLs*sU; 
       Kernels::DhopSiteDag(st, lo, U, UUU, st.CommBuf(), sF, sU, in, out);
     }}
   } else {
@@ -229,7 +247,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOr
     for (int ss = 0; ss < U._grid->oSites(); ss++) {
     for(int s=0;s<LLs;s++){
       int sU=ss;
-      int sF = s+LLs*sU; 
+      int sF=s+LLs*sU; 
       Kernels::DhopSite(st,lo,U,UUU,st.CommBuf(),sF,sU,in,out);
     }}
   }
@@ -335,8 +353,8 @@ void ImprovedStaggeredFermion5D<Impl>::MooeeInvDag(const FermionField &in,
 }
 
 
-
 FermOpStaggeredTemplateInstantiate(ImprovedStaggeredFermion5D);
+FermOpStaggeredVec5dTemplateInstantiate(ImprovedStaggeredFermion5D);
   
 }}
 

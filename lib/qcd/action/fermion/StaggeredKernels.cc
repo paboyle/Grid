@@ -192,38 +192,51 @@ void StaggeredKernels<Impl>::DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, Dou
   int oneLink  =0;
   int threeLink=1;
   switch(Opt) {
+  case OptInlineAsm:
+    DhopSiteAsm(st,lo,U,UUU,buf,sF,sU,in,out._odata[sF]);
+    break;
   case OptHandUnroll:
     DhopSiteDepthHand(st,lo,U,buf,sF,sU,in,naive,oneLink);
     DhopSiteDepthHand(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
+    out._odata[sF] =-naive-naik;
     break;
   case OptGeneric:
-  default:
     DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
     DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
+    out._odata[sF] =-naive-naik;
+    break;
+  default:
+    assert(0);
     break;
   }
-  out._odata[sF] =-naive-naik;
 };
 template <class Impl>
 void StaggeredKernels<Impl>::DhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU,
 				      SiteSpinor *buf, int sF,
 				      int sU, const FermionField &in, FermionField &out) {
-  SiteSpinor naik;
-  SiteSpinor naive;
   int oneLink  =0;
   int threeLink=1;
+  SiteSpinor naik;
+  SiteSpinor naive;
+  static int once;
   switch(Opt) {
+  case OptInlineAsm:
+    DhopSiteAsm(st,lo,U,UUU,buf,sF,sU,in,out._odata[sF]);
+    break;
   case OptHandUnroll:
     DhopSiteDepthHand(st,lo,U,buf,sF,sU,in,naive,oneLink);
     DhopSiteDepthHand(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
+    out._odata[sF] =naive+naik;
     break;
   case OptGeneric:
-  default:
     DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
     DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
+    out._odata[sF] =naive+naik;
+    break;
+  default:
+    assert(0);
     break;
   }
-  out._odata[sF] =naive+naik;
 };
 
 template <class Impl>
@@ -238,6 +251,7 @@ void StaggeredKernels<Impl>::DhopDir( StencilImpl &st, DoubledGaugeField &U,  Do
 }
 
 FermOpStaggeredTemplateInstantiate(StaggeredKernels);
+FermOpStaggeredVec5dTemplateInstantiate(StaggeredKernels);
 
 }}
 

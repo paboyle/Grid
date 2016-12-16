@@ -224,12 +224,13 @@ class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepres
   typedef iImplSpinor<Simd> SiteSpinor;
   typedef iImplHalfSpinor<Simd> SiteHalfSpinor;
   typedef Lattice<SiteSpinor> FermionField;
-  
+
+  /////////////////////////////////////////////////
   // Make the doubled gauge field a *scalar*
+  /////////////////////////////////////////////////
   typedef iImplDoubledGaugeField<typename Simd::scalar_type>  SiteDoubledGaugeField;  // This is a scalar
   typedef iImplGaugeField<typename Simd::scalar_type>         SiteScalarGaugeField;  // scalar
   typedef iImplGaugeLink<typename Simd::scalar_type>          SiteScalarGaugeLink;  // scalar
-      
   typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
       
   typedef WilsonCompressor<SiteHalfSpinor, SiteSpinor> Compressor;
@@ -261,11 +262,11 @@ class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepres
       
   inline void DoubleStore(GridBase *GaugeGrid, DoubledGaugeField &Uds,const GaugeField &Umu) 
   {
-    SiteScalarGaugeField ScalarUmu;
+    SiteScalarGaugeField  ScalarUmu;
     SiteDoubledGaugeField ScalarUds;
     
     GaugeLinkField U(Umu._grid);
-    GaugeField Uadj(Umu._grid);
+    GaugeField  Uadj(Umu._grid);
     for (int mu = 0; mu < Nd; mu++) {
       U = PeekIndex<LorentzIndex>(Umu, mu);
       U = adj(Cshift(U, mu, -1));
@@ -631,6 +632,184 @@ PARALLEL_FOR_LOOP
 
 
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Single flavour one component spinors with colour index. 5d vec
+  /////////////////////////////////////////////////////////////////////////////
+  template <class S, class Representation = FundamentalRepresentation >
+  class StaggeredVec5dImpl : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation::Dimension > > {
+
+    public:
+
+    typedef RealD  _Coeff_t ;
+    static const int Dimension = Representation::Dimension;
+    typedef PeriodicGaugeImpl<GaugeImplTypes<S, Dimension > > Gimpl;
+      
+    //Necessary?
+    constexpr bool is_fundamental() const{return Dimension == Nc ? 1 : 0;}
+    
+    const bool LsVectorised=true;
+
+    typedef _Coeff_t Coeff_t;
+
+    INHERIT_GIMPL_TYPES(Gimpl);
+
+    template <typename vtype> using iImplScalar            = iScalar<iScalar<iScalar<vtype> > >;
+    template <typename vtype> using iImplSpinor            = iScalar<iScalar<iVector<vtype, Dimension> > >;
+    template <typename vtype> using iImplHalfSpinor        = iScalar<iScalar<iVector<vtype, Dimension> > >;
+    template <typename vtype> using iImplDoubledGaugeField = iVector<iScalar<iMatrix<vtype, Dimension> >, Nds>;
+    template <typename vtype> using iImplGaugeField        = iVector<iScalar<iMatrix<vtype, Dimension> >, Nd>;
+    template <typename vtype> using iImplGaugeLink         = iScalar<iScalar<iMatrix<vtype, Dimension> > >;
+
+    // Make the doubled gauge field a *scalar*
+    typedef iImplDoubledGaugeField<typename Simd::scalar_type>  SiteDoubledGaugeField;  // This is a scalar
+    typedef iImplGaugeField<typename Simd::scalar_type>         SiteScalarGaugeField;  // scalar
+    typedef iImplGaugeLink<typename Simd::scalar_type>          SiteScalarGaugeLink;  // scalar
+    typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
+    
+    typedef iImplScalar<Simd>            SiteComplex;
+    typedef iImplSpinor<Simd>            SiteSpinor;
+    typedef iImplHalfSpinor<Simd>        SiteHalfSpinor;
+
+    
+    typedef Lattice<SiteComplex>           ComplexField;
+    typedef Lattice<SiteSpinor>            FermionField;
+    
+    typedef SimpleCompressor<SiteSpinor> Compressor;
+    typedef StaggeredImplParams ImplParams;
+    typedef CartesianStencil<SiteSpinor, SiteSpinor> StencilImpl;
+    
+    ImplParams Params;
+    
+    StaggeredVec5dImpl(const ImplParams &p = ImplParams()) : Params(p){};
+
+    template <class ref>
+    inline void loadLinkElement(Simd &reg, ref &memory) {
+      vsplat(reg, memory);
+    }
+
+    inline void multLink(SiteHalfSpinor &phi, const SiteDoubledGaugeField &U,
+			 const SiteHalfSpinor &chi, int mu) {
+      SiteGaugeLink UU;
+      for (int i = 0; i < Dimension; i++) {
+	for (int j = 0; j < Dimension; j++) {
+	  vsplat(UU()()(i, j), U(mu)()(i, j));
+	}
+      }
+      mult(&phi(), &UU(), &chi());
+    }
+    inline void multLinkAdd(SiteHalfSpinor &phi, const SiteDoubledGaugeField &U,
+			    const SiteHalfSpinor &chi, int mu) {
+      SiteGaugeLink UU;
+      for (int i = 0; i < Dimension; i++) {
+	for (int j = 0; j < Dimension; j++) {
+	  vsplat(UU()()(i, j), U(mu)()(i, j));
+	}
+      }
+      mac(&phi(), &UU(), &chi());
+    }
+      
+    inline void DoubleStore(GridBase *GaugeGrid,
+			    DoubledGaugeField &UUUds, // for Naik term
+			    DoubledGaugeField &Uds,
+			    const GaugeField &Uthin,
+			    const GaugeField &Ufat) 
+    {
+
+      GridBase * InputGrid = Uthin._grid;
+      conformable(InputGrid,Ufat._grid);
+
+      GaugeLinkField U(InputGrid);
+      GaugeLinkField UU(InputGrid);
+      GaugeLinkField UUU(InputGrid);
+      GaugeLinkField Udag(InputGrid);
+      GaugeLinkField UUUdag(InputGrid);
+
+      for (int mu = 0; mu < Nd; mu++) {
+
+	// Staggered Phase.
+	Lattice<iScalar<vInteger> > coor(InputGrid);
+	Lattice<iScalar<vInteger> > x(InputGrid); LatticeCoordinate(x,0);
+	Lattice<iScalar<vInteger> > y(InputGrid); LatticeCoordinate(y,1);
+	Lattice<iScalar<vInteger> > z(InputGrid); LatticeCoordinate(z,2);
+	Lattice<iScalar<vInteger> > t(InputGrid); LatticeCoordinate(t,3);
+
+	Lattice<iScalar<vInteger> > lin_z(InputGrid); lin_z=x+y;
+	Lattice<iScalar<vInteger> > lin_t(InputGrid); lin_t=x+y+z;
+
+	ComplexField phases(InputGrid);	phases=1.0;
+
+	if ( mu == 1 ) phases = where( mod(x    ,2)==(Integer)0, phases,-phases);
+	if ( mu == 2 ) phases = where( mod(lin_z,2)==(Integer)0, phases,-phases);
+	if ( mu == 3 ) phases = where( mod(lin_t,2)==(Integer)0, phases,-phases);
+
+	// 1 hop based on fat links
+	U      = PeekIndex<LorentzIndex>(Ufat, mu);
+	Udag   = adj( Cshift(U, mu, -1));
+
+	U    = U    *phases;
+	Udag = Udag *phases;
+
+
+	for (int lidx = 0; lidx < GaugeGrid->lSites(); lidx++) {
+	  SiteScalarGaugeLink   ScalarU;
+	  SiteDoubledGaugeField ScalarUds;
+	  
+	  std::vector<int> lcoor;
+	  GaugeGrid->LocalIndexToLocalCoor(lidx, lcoor);
+	  peekLocalSite(ScalarUds, Uds, lcoor);
+
+	  peekLocalSite(ScalarU, U, lcoor);
+	  ScalarUds(mu) = ScalarU();
+
+	  peekLocalSite(ScalarU, Udag, lcoor);
+	  ScalarUds(mu + 4) = ScalarU();
+
+	  pokeLocalSite(ScalarUds, Uds, lcoor);
+	}
+
+	// 3 hop based on thin links. Crazy huh ?
+	U  = PeekIndex<LorentzIndex>(Uthin, mu);
+	UU = Gimpl::CovShiftForward(U,mu,U);
+	UUU= Gimpl::CovShiftForward(U,mu,UU);
+	
+	UUUdag = adj( Cshift(UUU, mu, -3));
+
+	UUU    = UUU    *phases;
+	UUUdag = UUUdag *phases;
+
+	for (int lidx = 0; lidx < GaugeGrid->lSites(); lidx++) {
+
+	  SiteScalarGaugeLink  ScalarU;
+	  SiteDoubledGaugeField ScalarUds;
+	  
+	  std::vector<int> lcoor;
+	  GaugeGrid->LocalIndexToLocalCoor(lidx, lcoor);
+      
+	  peekLocalSite(ScalarUds, UUUds, lcoor);
+
+	  peekLocalSite(ScalarU, UUU, lcoor);
+	  ScalarUds(mu) = ScalarU();
+
+	  peekLocalSite(ScalarU, UUUdag, lcoor);
+	  ScalarUds(mu + 4) = ScalarU();
+	  
+	  pokeLocalSite(ScalarUds, UUUds, lcoor);
+	}
+
+      }
+    }
+
+    inline void InsertForce4D(GaugeField &mat, FermionField &Btilde, FermionField &A,int mu){
+      assert(0);
+    }   
+      
+    inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde,int mu){
+      assert (0); 
+    }
+  };
+
+
+
  typedef WilsonImpl<vComplex,  FundamentalRepresentation > WilsonImplR;   // Real.. whichever prec
  typedef WilsonImpl<vComplexF, FundamentalRepresentation > WilsonImplF;  // Float
  typedef WilsonImpl<vComplexD, FundamentalRepresentation > WilsonImplD;  // Double
@@ -662,6 +841,10 @@ PARALLEL_FOR_LOOP
  typedef StaggeredImpl<vComplex,  FundamentalRepresentation > StaggeredImplR;   // Real.. whichever prec
  typedef StaggeredImpl<vComplexF, FundamentalRepresentation > StaggeredImplF;  // Float
  typedef StaggeredImpl<vComplexD, FundamentalRepresentation > StaggeredImplD;  // Double
+
+ typedef StaggeredVec5dImpl<vComplex,  FundamentalRepresentation > StaggeredVec5dImplR;   // Real.. whichever prec
+ typedef StaggeredVec5dImpl<vComplexF, FundamentalRepresentation > StaggeredVec5dImplF;  // Float
+ typedef StaggeredVec5dImpl<vComplexD, FundamentalRepresentation > StaggeredVec5dImplD;  // Double
 
 }}
 

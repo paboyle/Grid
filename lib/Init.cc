@@ -416,7 +416,7 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
 #endif
 #endif
   BACKTRACE();
-  exit(0);
+  if ( si->si_signo != SIGTRAP )   exit(0);
   return;
 };
 

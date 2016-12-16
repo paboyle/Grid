@@ -51,7 +51,6 @@ int main (int argc, char ** argv)
   int threads = GridThread::GetThreads();
 
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
-
   std::cout<<GridLogMessage << "Grid floating point word size is REALF"<< sizeof(RealF)<<std::endl;
   std::cout<<GridLogMessage << "Grid floating point word size is REALD"<< sizeof(RealD)<<std::endl;
   std::cout<<GridLogMessage << "Grid floating point word size is REAL"<< sizeof(Real)<<std::endl;
@@ -66,7 +65,10 @@ int main (int argc, char ** argv)
   typedef typename ImprovedStaggeredFermion5DR::ComplexField ComplexField; 
   typename ImprovedStaggeredFermion5DR::ImplParams params; 
 
-  FermionField src   (FGrid); random(pRNG5,src);
+  FermionField src   (FGrid);
+
+  random(pRNG5,src);
+
   FermionField result(FGrid); result=zero;
   FermionField    ref(FGrid);    ref=zero;
   FermionField    tmp(FGrid);    tmp=zero;
@@ -75,6 +77,7 @@ int main (int argc, char ** argv)
   FermionField chi   (FGrid); random(pRNG5,chi);
 
   LatticeGaugeField Umu(UGrid); SU3::ColdConfiguration(pRNG4,Umu);
+  LatticeGaugeField Umua(UGrid); Umua=Umu;
 
   double volume=Ls;
   for(int mu=0;mu<Nd;mu++){
@@ -93,19 +96,9 @@ int main (int argc, char ** argv)
   }
 
   std::vector<LatticeColourMatrix> U(4,FGrid);
+
   for(int mu=0;mu<Nd;mu++){
     U[mu] = PeekIndex<LorentzIndex>(Umu5d,mu);
-    if ( mu!=0 ) U[mu]=zero;
-    PokeIndex<LorentzIndex>(Umu5d,U[mu],mu);
-  }
-
-  std::vector<LatticeColourMatrix> Ua(4,UGrid);
-  for(int mu=0;mu<Nd;mu++){
-    Ua[mu] = PeekIndex<LorentzIndex>(Umu,mu);
-    if ( mu!=0 ) {
-      Ua[mu]=zero;
-    }
-    PokeIndex<LorentzIndex>(Umu,Ua[mu],mu);
   }
 
   RealD mass=0.1;
@@ -171,6 +164,8 @@ int main (int argc, char ** argv)
   double flops=(16*(3*(6+8+8)) + 15*3*2)*volume*ncall; // == 66*16 +  == 1146
   
   std::cout<<GridLogMessage << "Called Ds"<<std::endl;
+  //  std::cout<<GridLogMessage << "result"<< result <<std::endl;
+  //  std::cout<<GridLogMessage << "ref   "<< ref   <<std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
   std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
   std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;

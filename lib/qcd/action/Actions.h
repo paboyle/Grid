@@ -113,6 +113,10 @@ typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeAction
   template class A<StaggeredImplF>;		\
   template class A<StaggeredImplD>;		
 
+#define FermOpStaggeredVec5dTemplateInstantiate(A) \
+  template class A<StaggeredVec5dImplF>;		\
+  template class A<StaggeredVec5dImplD>;		
+
 #define FermOp4dVecTemplateInstantiate(A) \
   template class A<WilsonImplF>;		\
   template class A<WilsonImplD>;		\
@@ -283,6 +287,10 @@ typedef ImprovedStaggeredFermion<StaggeredImplD> ImprovedStaggeredFermionD;
 typedef ImprovedStaggeredFermion5D<StaggeredImplR> ImprovedStaggeredFermion5DR;
 typedef ImprovedStaggeredFermion5D<StaggeredImplF> ImprovedStaggeredFermion5DF;
 typedef ImprovedStaggeredFermion5D<StaggeredImplD> ImprovedStaggeredFermion5DD;
+
+typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplR> ImprovedStaggeredFermionVec5dR;
+typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplF> ImprovedStaggeredFermionVec5dF;
+typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplD> ImprovedStaggeredFermionVec5dD;
 
 
   }}

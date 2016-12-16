@@ -58,6 +58,9 @@ public:
 
    void DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteSpinor * buf,
 		     int sF, int sU, const FermionField &in, SiteSpinor &out,int threeLink);
+
+   void DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,DoubledGaugeField &UUU, SiteSpinor * buf,
+			 int sF, int sU, const FermionField &in, SiteSpinor &out);
       
    void DhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU, SiteSpinor * buf,
 		int sF, int sU, const FermionField &in, FermionField &out);

@@ -279,5 +279,6 @@ void StaggeredKernels<Impl>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &l
 }
 
 FermOpStaggeredTemplateInstantiate(StaggeredKernels);
+FermOpStaggeredVec5dTemplateInstantiate(StaggeredKernels);
 
 }}
