@@ -68,12 +68,14 @@ int main (int argc, char ** argv)
 
   FermionField src   (FGrid);
 
-  //random(pRNG5,src);
+  random(pRNG5,src);
+  /*
   std::vector<int> site({0,0,0,0,0});
   ColourVector cv = zero;
   cv()()(0)=1.0;
   src = zero;
   pokeSite(cv,src,site);
+  */
 
   FermionField result(FGrid); result=zero;
   FermionField    tmp(FGrid);    tmp=zero;
@@ -81,8 +83,15 @@ int main (int argc, char ** argv)
   FermionField phi   (FGrid); random(pRNG5,phi);
   FermionField chi   (FGrid); random(pRNG5,chi);
 
-  LatticeGaugeField Umu(UGrid); SU3::ColdConfiguration(pRNG4,Umu);
+  LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG4,Umu);
 
+  /*
+  for(int mu=1;mu<4;mu++){
+    auto tmp = PeekIndex<LorentzIndex>(Umu,mu);
+        tmp = zero;
+    PokeIndex<LorentzIndex>(Umu,tmp,mu);
+  }
+  */
   double volume=Ls;
   for(int mu=0;mu<Nd;mu++){
     volume=volume*latt_size[mu];
@@ -117,7 +126,20 @@ int main (int argc, char ** argv)
 
   std::cout<<GridLogMessage << "Calling vectorised staggered operator"<<std::endl;
 
+  QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptInlineAsm;
+  t0=usecond();
+  for(int i=0;i<ncall;i++){
+    Ds.Dhop(src,tmp,0);
+  }
+  t1=usecond();
+ 
+  std::cout<<GridLogMessage << "Called Ds ASM"<<std::endl;
+  std::cout<<GridLogMessage << "norm result "<< norm2(tmp)<<std::endl;
+  std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
 
+  err = tmp-result; 
+  std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
+  
   FermionField ssrc  (sFGrid);  localConvert(src,ssrc);
   FermionField sresult(sFGrid); sresult=zero;
 
@@ -132,6 +154,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Called sDs"<<std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(sresult)<<std::endl;
   std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
+
 
   QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptInlineAsm;
 

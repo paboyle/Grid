@@ -90,13 +90,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define T2 %zmm26
 #define T3 %zmm27
 
-#define Z00 %zmm28
-#define Z10 %zmm29
-#define Z1 %zmm30
-#define Z2 %zmm31
+#define Z00 %zmm26
+#define Z10 %zmm27
+#define Z0 Z00
+#define Z1 %zmm28
+#define Z2 %zmm29
 
-#define Z3 Chi_22
-#define Z4 Chi_30
+#define Z3 %zmm30
+#define Z4 %zmm31
 #define Z5 Chi_31
 #define Z6 Chi_32
 
@@ -198,86 +199,269 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   VMADDSUBRDUP(5,%r10,Chi_22,UChi_21) VMADDSUBRDUP(5,%r11,Chi_32,UChi_31) \
   VMADDSUBRDUP(8,%r10,Chi_22,UChi_22) VMADDSUBRDUP(8,%r11,Chi_32,UChi_32) );
 
+#define MULT_ADD_XYZTa(g0,g1)					\
+  asm ( "movq %0, %%r8 \n\t"					\
+	"movq %1, %%r9 \n\t"	 :  : "r"(g0), "r"(g1) : "%r8","%r9");\
+	   __asm__ (						\
+	   VSHUF(Chi_00,T0)				\
+	   VSHUF(Chi_10,T1)						\
+	   VMOVIDUP(0,%r8,Z0 )						\
+           VMOVIDUP(3,%r8,Z1 )						\
+           VMOVIDUP(6,%r8,Z2 )						\
+           VMADDSUB(Z0,T0,UChi_00)					\
+	   VMADDSUB(Z1,T0,UChi_01)					\
+	   VMADDSUB(Z2,T0,UChi_02)					\
+									\
+	   VMOVIDUP(0,%r9,Z0 )						\
+           VMOVIDUP(3,%r9,Z1 )						\
+           VMOVIDUP(6,%r9,Z2 )						\
+           VMADDSUB(Z0,T1,UChi_10)					\
+           VMADDSUB(Z1,T1,UChi_11)            \
+           VMADDSUB(Z2,T1,UChi_12)            \
+	   							\
+								\
+	   VMOVRDUP(0,%r8,Z3 )					\
+	   VMOVRDUP(3,%r8,Z4 )					\
+	   VMOVRDUP(6,%r8,Z5 )					\
+           VMADDSUB(Z3,Chi_00,UChi_00)/*rr * ir = ri rr*/	\
+           VMADDSUB(Z4,Chi_00,UChi_01)				\
+           VMADDSUB(Z5,Chi_00,UChi_02)				\
+								\
+	   VMOVRDUP(0,%r9,Z3 )					\
+	   VMOVRDUP(3,%r9,Z4 )					\
+	   VMOVRDUP(6,%r9,Z5 )					\
+           VMADDSUB(Z3,Chi_10,UChi_10)				\
+           VMADDSUB(Z4,Chi_10,UChi_11)\
+           VMADDSUB(Z5,Chi_10,UChi_12)				\
+	   							\
+								\
+	   VMOVIDUP(1,%r8,Z0 )					\
+	   VMOVIDUP(4,%r8,Z1 )					\
+	   VMOVIDUP(7,%r8,Z2 )					\
+	   VSHUF(Chi_01,T0)					\
+           VMADDSUB(Z0,T0,UChi_00)				\
+           VMADDSUB(Z1,T0,UChi_01)				\
+           VMADDSUB(Z2,T0,UChi_02)				\
+								\
+	   VMOVIDUP(1,%r9,Z0 )					\
+	   VMOVIDUP(4,%r9,Z1 )					\
+	   VMOVIDUP(7,%r9,Z2 )					\
+	   VSHUF(Chi_11,T1)					\
+           VMADDSUB(Z0,T1,UChi_10)				\
+           VMADDSUB(Z1,T1,UChi_11)				\
+           VMADDSUB(Z2,T1,UChi_12)				\
+								\
+	   VMOVRDUP(1,%r8,Z3 )					\
+	   VMOVRDUP(4,%r8,Z4 )					\
+	   VMOVRDUP(7,%r8,Z5 )					\
+           VMADDSUB(Z3,Chi_01,UChi_00)				\
+           VMADDSUB(Z4,Chi_01,UChi_01)				\
+           VMADDSUB(Z5,Chi_01,UChi_02)				\
+								\
+	   VMOVRDUP(1,%r9,Z3 )					\
+	   VMOVRDUP(4,%r9,Z4 )					\
+	   VMOVRDUP(7,%r9,Z5 )					\
+           VMADDSUB(Z3,Chi_11,UChi_10)				\
+           VMADDSUB(Z4,Chi_11,UChi_11)				\
+           VMADDSUB(Z5,Chi_11,UChi_12)				\
+	   							\
+	   VSHUF(Chi_02,T0)					\
+	   VSHUF(Chi_12,T1)					\
+	   VMOVIDUP(2,%r8,Z0 )					\
+	   VMOVIDUP(5,%r8,Z1 )					\
+	   VMOVIDUP(8,%r8,Z2 )					\
+           VMADDSUB(Z0,T0,UChi_00)				\
+           VMADDSUB(Z1,T0,UChi_01)			      \
+           VMADDSUB(Z2,T0,UChi_02)			      \
+	   VMOVIDUP(2,%r9,Z0 )					\
+	   VMOVIDUP(5,%r9,Z1 )					\
+	   VMOVIDUP(8,%r9,Z2 )					\
+           VMADDSUB(Z0,T1,UChi_10)			      \
+           VMADDSUB(Z1,T1,UChi_11)			      \
+           VMADDSUB(Z2,T1,UChi_12)			      \
+	   /*55*/					      \
+	   VMOVRDUP(2,%r8,Z3 )		  \
+	   VMOVRDUP(5,%r8,Z4 )					\
+	   VMOVRDUP(8,%r8,Z5 )				      \
+           VMADDSUB(Z3,Chi_02,UChi_00)			      \
+           VMADDSUB(Z4,Chi_02,UChi_01)			      \
+           VMADDSUB(Z5,Chi_02,UChi_02)			      \
+	   VMOVRDUP(2,%r9,Z3 )		  \
+	   VMOVRDUP(5,%r9,Z4 )					\
+	   VMOVRDUP(8,%r9,Z5 )				      \
+           VMADDSUB(Z3,Chi_12,UChi_10)			      \
+           VMADDSUB(Z4,Chi_12,UChi_11)			      \
+           VMADDSUB(Z5,Chi_12,UChi_12)			      \
+	   /*61 insns*/							);
 
 #define MULT_ADD_XYZT(g0,g1)					\
   asm ( "movq %0, %%r8 \n\t"					\
 	"movq %1, %%r9 \n\t"	 :  : "r"(g0), "r"(g1) : "%r8","%r9");\
   __asm__ (							  \
-   VSHUFMEM(0,%r8,Z00)		   VSHUFMEM(0,%r9,Z10)	  \
-   VRDUP(Chi_00,T1)           VIDUP(Chi_00,Chi_00)	          \
-   VRDUP(Chi_10,T2)           VIDUP(Chi_10,Chi_10)		  \
+  VSHUFMEM(0,%r8,Z00)		   VSHUFMEM(0,%r9,Z10)			\
+  VRDUP(Chi_00,T0)           VIDUP(Chi_00,Chi_00)	          \
+   VRDUP(Chi_10,T1)           VIDUP(Chi_10,Chi_10)		  \
    VMUL(Z00,Chi_00,Z1)        VMUL(Z10,Chi_10,Z2)		  \
-   VSHUFMEM(3,%r8,Z00)	      VSHUFMEM(3,%r9,Z10)		  \
+   VSHUFMEM(3,%r8,Z00)	      VSHUFMEM(3,%r9,Z10)		  \    
    VMUL(Z00,Chi_00,Z3)        VMUL(Z10,Chi_10,Z4)		  \
    VSHUFMEM(6,%r8,Z00)	      VSHUFMEM(6,%r9,Z10)		  \
    VMUL(Z00,Chi_00,Z5)        VMUL(Z10,Chi_10,Z6)		  \
-   VMADDMEM(0,%r8,T1,UChi_00)  VMADDMEM(0,%r8,T2,UChi_10)		  \
-   VMADDMEM(3,%r8,T1,UChi_01)  VMADDMEM(3,%r8,T2,UChi_11)		  \
-   VMADDMEM(6,%r8,T1,UChi_02)  VMADDMEM(6,%r8,T2,UChi_12)		  \
+   VMADDMEM(0,%r8,T0,UChi_00)  VMADDMEM(0,%r9,T1,UChi_10)		  \
+   VMADDMEM(3,%r8,T0,UChi_01)  VMADDMEM(3,%r9,T1,UChi_11)		  \
+   VMADDMEM(6,%r8,T0,UChi_02)  VMADDMEM(6,%r9,T1,UChi_12)		  \
    VSHUFMEM(1,%r8,Z00)	      VSHUFMEM(1,%r9,Z10)		  \
-   VRDUP(Chi_01,T1)           VIDUP(Chi_01,Chi_01)		  \
-   VRDUP(Chi_11,T2)           VIDUP(Chi_11,Chi_11)		  \
+   VRDUP(Chi_01,T0)           VIDUP(Chi_01,Chi_01)		  \
+   VRDUP(Chi_11,T1)           VIDUP(Chi_11,Chi_11)		  \
    VMADD(Z00,Chi_01,Z1)       VMADD(Z10,Chi_11,Z2)		  \
    VSHUFMEM(4,%r8,Z00)	      VSHUFMEM(4,%r9,Z10)		  \
    VMADD(Z00,Chi_01,Z3)       VMADD(Z10,Chi_11,Z4)		  \
    VSHUFMEM(7,%r8,Z00)	      VSHUFMEM(7,%r9,Z10)		  \
    VMADD(Z00,Chi_01,Z5)       VMADD(Z10,Chi_11,Z6)		  \
-   VMADDMEM(1,%r8,T1,UChi_00) VMADDMEM(1,%r8,T2,UChi_10)	  \
-   VMADDMEM(4,%r8,T1,UChi_01) VMADDMEM(4,%r8,T2,UChi_11)	  \
-   VMADDMEM(7,%r8,T1,UChi_02) VMADDMEM(7,%r8,T2,UChi_12)	  \
+   VMADDMEM(1,%r8,T0,UChi_00) VMADDMEM(1,%r9,T1,UChi_10)	  \
+   VMADDMEM(4,%r8,T0,UChi_01) VMADDMEM(4,%r9,T1,UChi_11)	  \
+   VMADDMEM(7,%r8,T0,UChi_02) VMADDMEM(7,%r9,T1,UChi_12)	  \
    VSHUFMEM(2,%r8,Z00)	      VSHUFMEM(2,%r9,Z10)			\
-   VRDUP(Chi_02,T1)           VIDUP(Chi_02,Chi_02)			\
-   VRDUP(Chi_12,T2)           VIDUP(Chi_12,Chi_12)			\
+   VRDUP(Chi_02,T0)           VIDUP(Chi_02,Chi_02)			\
+   VRDUP(Chi_12,T1)           VIDUP(Chi_12,Chi_12)			\
    VMADD(Z00,Chi_02,Z1)       VMADD(Z10,Chi_12,Z2)		  \
    VSHUFMEM(5,%r8,Z00)	      VSHUFMEM(5,%r9,Z10)		  \
    VMADD(Z00,Chi_02,Z3)       VMADD(Z10,Chi_12,Z4)		  \
    VSHUFMEM(8,%r8,Z00)	      VSHUFMEM(8,%r9,Z10)		  \
    VMADD(Z00,Chi_02,Z5)       VMADD(Z10,Chi_12,Z6)		  \
-   VMADDSUBMEM(2,%r8,T1,Z1)   VMADDSUBMEM(2,%r8,T2,Z2)		  \
-   VMADDSUBMEM(5,%r8,T1,Z3)   VMADDSUBMEM(5,%r8,T2,Z4)	          \
-   VMADDSUBMEM(8,%r8,T1,Z5)   VMADDSUBMEM(8,%r8,T2,Z6)	       \
+   VMADDSUBMEM(2,%r8,T0,Z1)   VMADDSUBMEM(2,%r9,T1,Z2)		  \
+   VMADDSUBMEM(5,%r8,T0,Z3)   VMADDSUBMEM(5,%r9,T1,Z4)	          \
+   VMADDSUBMEM(8,%r8,T0,Z5)   VMADDSUBMEM(8,%r9,T1,Z6)	       \
    VADD(Z1,UChi_00,UChi_00)   VADD(Z2,UChi_10,UChi_10)	       \
    VADD(Z3,UChi_01,UChi_01)   VADD(Z4,UChi_11,UChi_11)	       \
    VADD(Z5,UChi_02,UChi_02)   VADD(Z6,UChi_12,UChi_12) );
 
-
 #define MULT_XYZT(g0,g1)					\
+    asm ( "movq %0, %%r8 \n\t"						\
+	"movq %1, %%r9 \n\t" :  : "r"(g0), "r"(g1) : "%r8","%r9" ); \
+	   __asm__ (						\
+	   VSHUF(Chi_00,T0)				\
+	   VSHUF(Chi_10,T1)						\
+	   VMOVIDUP(0,%r8,Z0 )						\
+           VMOVIDUP(3,%r8,Z1 )						\
+           VMOVIDUP(6,%r8,Z2 )						\
+	   /*6*/							\
+           VMUL(Z0,T0,UChi_00)            \
+           VMUL(Z1,T0,UChi_01)            \
+           VMUL(Z2,T0,UChi_02)            \
+	   VMOVIDUP(0,%r9,Z0 )						\
+           VMOVIDUP(3,%r9,Z1 )						\
+           VMOVIDUP(6,%r9,Z2 )						\
+           VMUL(Z0,T1,UChi_10)            \
+           VMUL(Z1,T1,UChi_11)            \
+           VMUL(Z2,T1,UChi_12)            \
+	   VMOVRDUP(0,%r8,Z3 )					\
+	   VMOVRDUP(3,%r8,Z4 )					\
+	   VMOVRDUP(6,%r8,Z5 )					\
+	   /*18*/						\
+           VMADDSUB(Z3,Chi_00,UChi_00)				\
+           VMADDSUB(Z4,Chi_00,UChi_01)\
+           VMADDSUB(Z5,Chi_00,UChi_02) \
+	   VMOVRDUP(0,%r9,Z3 )					\
+	   VMOVRDUP(3,%r9,Z4 )					\
+	   VMOVRDUP(6,%r9,Z5 )					\
+           VMADDSUB(Z3,Chi_10,UChi_10)				\
+           VMADDSUB(Z4,Chi_10,UChi_11)\
+           VMADDSUB(Z5,Chi_10,UChi_12)				\
+	   VMOVIDUP(1,%r8,Z0 )					\
+	   VMOVIDUP(4,%r8,Z1 )					\
+	   VMOVIDUP(7,%r8,Z2 )					\
+	   /*28*/						\
+	   VSHUF(Chi_01,T0)					\
+           VMADDSUB(Z0,T0,UChi_00)      \
+           VMADDSUB(Z1,T0,UChi_01)       \
+           VMADDSUB(Z2,T0,UChi_02)        \
+	   VMOVIDUP(1,%r9,Z0 )					\
+	   VMOVIDUP(4,%r9,Z1 )					\
+	   VMOVIDUP(7,%r9,Z2 )					\
+	   VSHUF(Chi_11,T1)					\
+           VMADDSUB(Z0,T1,UChi_10)				\
+           VMADDSUB(Z1,T1,UChi_11)				\
+           VMADDSUB(Z2,T1,UChi_12)        \
+	   VMOVRDUP(1,%r8,Z3 )					\
+	   VMOVRDUP(4,%r8,Z4 )					\
+	   VMOVRDUP(7,%r8,Z5 )					\
+           /*38*/						\
+           VMADDSUB(Z3,Chi_01,UChi_00)    \
+           VMADDSUB(Z4,Chi_01,UChi_01)    \
+           VMADDSUB(Z5,Chi_01,UChi_02)    \
+	   VMOVRDUP(1,%r9,Z3 )					\
+	   VMOVRDUP(4,%r9,Z4 )					\
+	   VMOVRDUP(7,%r9,Z5 )					\
+           VMADDSUB(Z3,Chi_11,UChi_10)				\
+           VMADDSUB(Z4,Chi_11,UChi_11)    \
+           VMADDSUB(Z5,Chi_11,UChi_12)				\
+	   /*48*/						\
+	   VSHUF(Chi_02,T0)					\
+	   VSHUF(Chi_12,T1)					\
+	   VMOVIDUP(2,%r8,Z0 )					\
+	   VMOVIDUP(5,%r8,Z1 )					\
+	   VMOVIDUP(8,%r8,Z2 )					\
+           VMADDSUB(Z0,T0,UChi_00)				\
+           VMADDSUB(Z1,T0,UChi_01)			      \
+           VMADDSUB(Z2,T0,UChi_02)			      \
+	   VMOVIDUP(2,%r9,Z0 )					\
+	   VMOVIDUP(5,%r9,Z1 )					\
+	   VMOVIDUP(8,%r9,Z2 )					\
+           VMADDSUB(Z0,T1,UChi_10)			      \
+           VMADDSUB(Z1,T1,UChi_11)			      \
+           VMADDSUB(Z2,T1,UChi_12)			      \
+	   /*55*/					      \
+	   VMOVRDUP(2,%r8,Z3 )		  \
+	   VMOVRDUP(5,%r8,Z4 )					\
+	   VMOVRDUP(8,%r8,Z5 )				      \
+           VMADDSUB(Z3,Chi_02,UChi_00)			      \
+           VMADDSUB(Z4,Chi_02,UChi_01)			      \
+           VMADDSUB(Z5,Chi_02,UChi_02)			      \
+	   VMOVRDUP(2,%r9,Z3 )		  \
+	   VMOVRDUP(5,%r9,Z4 )					\
+	   VMOVRDUP(8,%r9,Z5 )				      \
+           VMADDSUB(Z3,Chi_12,UChi_10)			      \
+           VMADDSUB(Z4,Chi_12,UChi_11)			      \
+           VMADDSUB(Z5,Chi_12,UChi_12)			      \
+	   /*61 insns*/							);
+
+#define MULT_XYZTa(g0,g1)					\
   asm ( "movq %0, %%r8 \n\t"					\
 	"movq %1, %%r9 \n\t" :  : "r"(g0), "r"(g1) : "%r8","%r9" ); \
   __asm__ (							  \
    VSHUFMEM(0,%r8,Z00)		   VSHUFMEM(0,%r9,Z10)	  \
-   VRDUP(Chi_00,T1)           VIDUP(Chi_00,Chi_00)	          \
-   VRDUP(Chi_10,T2)           VIDUP(Chi_10,Chi_10)		  \
+   VRDUP(Chi_00,T0)           VIDUP(Chi_00,Chi_00)	          \
+   VRDUP(Chi_10,T1)           VIDUP(Chi_10,Chi_10)		  \
    VMUL(Z00,Chi_00,Z1)        VMUL(Z10,Chi_10,Z2)		  \
    VSHUFMEM(3,%r8,Z00)	      VSHUFMEM(3,%r9,Z10)		  \
    VMUL(Z00,Chi_00,Z3)        VMUL(Z10,Chi_10,Z4)		  \
    VSHUFMEM(6,%r8,Z00)	      VSHUFMEM(6,%r9,Z10)		  \
    VMUL(Z00,Chi_00,Z5)        VMUL(Z10,Chi_10,Z6)		  \
-   VMULMEM(0,%r8,T1,UChi_00)  VMULMEM(0,%r8,T2,UChi_10)		  \
-   VMULMEM(3,%r8,T1,UChi_01)  VMULMEM(3,%r8,T2,UChi_11)		  \
-   VMULMEM(6,%r8,T1,UChi_02)  VMULMEM(6,%r8,T2,UChi_12)		  \
+   VMULMEM(0,%r8,T0,UChi_00)  VMULMEM(0,%r9,T1,UChi_10)		  \
+   VMULMEM(3,%r8,T0,UChi_01)  VMULMEM(3,%r9,T1,UChi_11)		  \
+   VMULMEM(6,%r8,T0,UChi_02)  VMULMEM(6,%r9,T1,UChi_12)		  \
    VSHUFMEM(1,%r8,Z00)	      VSHUFMEM(1,%r9,Z10)		  \
-   VRDUP(Chi_01,T1)           VIDUP(Chi_01,Chi_01)		  \
-   VRDUP(Chi_11,T2)           VIDUP(Chi_11,Chi_11)		  \
+   VRDUP(Chi_01,T0)           VIDUP(Chi_01,Chi_01)		  \
+   VRDUP(Chi_11,T1)           VIDUP(Chi_11,Chi_11)		  \
    VMADD(Z00,Chi_01,Z1)       VMADD(Z10,Chi_11,Z2)		  \
    VSHUFMEM(4,%r8,Z00)	      VSHUFMEM(4,%r9,Z10)		  \
    VMADD(Z00,Chi_01,Z3)       VMADD(Z10,Chi_11,Z4)		  \
    VSHUFMEM(7,%r8,Z00)	      VSHUFMEM(7,%r9,Z10)		  \
    VMADD(Z00,Chi_01,Z5)       VMADD(Z10,Chi_11,Z6)		  \
-   VMADDMEM(1,%r8,T1,UChi_00) VMADDMEM(1,%r8,T2,UChi_10)	  \
-   VMADDMEM(4,%r8,T1,UChi_01) VMADDMEM(4,%r8,T2,UChi_11)	  \
-   VMADDMEM(7,%r8,T1,UChi_02) VMADDMEM(7,%r8,T2,UChi_12)	  \
+   VMADDMEM(1,%r8,T0,UChi_00) VMADDMEM(1,%r9,T1,UChi_10)	  \
+   VMADDMEM(4,%r8,T0,UChi_01) VMADDMEM(4,%r9,T1,UChi_11)	  \
+   VMADDMEM(7,%r8,T0,UChi_02) VMADDMEM(7,%r9,T1,UChi_12)	  \
    VSHUFMEM(2,%r8,Z00)	      VSHUFMEM(2,%r9,Z10)			\
-   VRDUP(Chi_02,T1)           VIDUP(Chi_02,Chi_02)			\
-   VRDUP(Chi_12,T2)           VIDUP(Chi_12,Chi_12)			\
+   VRDUP(Chi_02,T0)           VIDUP(Chi_02,Chi_02)			\
+   VRDUP(Chi_12,T1)           VIDUP(Chi_12,Chi_12)			\
    VMADD(Z00,Chi_02,Z1)       VMADD(Z10,Chi_12,Z2)		  \
    VSHUFMEM(5,%r8,Z00)	      VSHUFMEM(5,%r9,Z10)		  \
    VMADD(Z00,Chi_02,Z3)       VMADD(Z10,Chi_12,Z4)		  \
    VSHUFMEM(8,%r8,Z00)	      VSHUFMEM(8,%r9,Z10)		  \
    VMADD(Z00,Chi_02,Z5)       VMADD(Z10,Chi_12,Z6)		  \
-   VMADDSUBMEM(2,%r8,T1,Z1)   VMADDSUBMEM(2,%r8,T2,Z2)		  \
-   VMADDSUBMEM(5,%r8,T1,Z3)   VMADDSUBMEM(5,%r8,T2,Z4)	          \
-   VMADDSUBMEM(8,%r8,T1,Z5)   VMADDSUBMEM(8,%r8,T2,Z6)	       \
+   VMADDSUBMEM(2,%r8,T0,Z1)   VMADDSUBMEM(2,%r9,T1,Z2)		  \
+   VMADDSUBMEM(5,%r8,T0,Z3)   VMADDSUBMEM(5,%r9,T1,Z4)	          \
+   VMADDSUBMEM(8,%r8,T0,Z5)   VMADDSUBMEM(8,%r9,T1,Z6)	       \
    VADD(Z1,UChi_00,UChi_00)   VADD(Z2,UChi_10,UChi_10)	       \
    VADD(Z3,UChi_01,UChi_01)   VADD(Z4,UChi_11,UChi_11)	       \
    VADD(Z5,UChi_02,UChi_02)   VADD(Z6,UChi_12,UChi_12) );
@@ -383,24 +567,28 @@ void StaggeredKernels<Impl>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo,
   SE0=st.GetEntry(ptype,X+skew,sF);			\
   o0 = SE0->_offset;					\
   l0 = SE0->_is_local;					\
+  p0 = SE0->_permute;					\
   addr0 = l0 ?  (uint64_t) &in._odata[o0] : (uint64_t) &buf[o0];	\
   PF_CHI(addr0);							\
 									\
   SE1=st.GetEntry(ptype,Y+skew,sF);			\
   o1 = SE1->_offset;					\
   l1 = SE1->_is_local;					\
+  p1 = SE1->_permute;					\
   addr1 = l1 ?  (uint64_t) &in._odata[o1] : (uint64_t) &buf[o1];	\
   PF_CHI(addr1);							\
 									\
   SE2=st.GetEntry(ptype,Z+skew,sF);			\
   o2 = SE2->_offset;					\
   l2 = SE2->_is_local;					\
+  p2 = SE2->_permute;					\
   addr2 = l2 ?  (uint64_t) &in._odata[o2] : (uint64_t) &buf[o2];	\
   PF_CHI(addr2);							\
 									\
   SE3=st.GetEntry(ptype,T+skew,sF);			\
   o3 = SE3->_offset;					\
   l3 = SE3->_is_local;					\
+  p3 = SE3->_permute;					\
   addr3 = l3 ?  (uint64_t) &in._odata[o3] : (uint64_t) &buf[o3];	\
   PF_CHI(addr3);							\
   									\
@@ -501,6 +689,27 @@ template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilImpl 
 #endif
 }
 
+
+#define PERMUTE_DIR3 __asm__ (	\
+  VPERM3(Chi_00,Chi_00)	\
+  VPERM3(Chi_01,Chi_01)	\
+  VPERM3(Chi_02,Chi_02)	);
+
+#define PERMUTE_DIR2 __asm__ (	\
+  VPERM2(Chi_10,Chi_10)	\
+  VPERM2(Chi_11,Chi_11)	\
+  VPERM2(Chi_12,Chi_12) );
+
+#define PERMUTE_DIR1 __asm__ (	\
+  VPERM1(Chi_00,Chi_00)	\
+  VPERM1(Chi_01,Chi_01)	\
+  VPERM1(Chi_02,Chi_02)	);
+
+#define PERMUTE_DIR0 __asm__ (			\
+  VPERM0(Chi_10,Chi_10)	\
+  VPERM0(Chi_11,Chi_11)	\
+  VPERM0(Chi_12,Chi_12) );
+
   // This is the single precision 5th direction vectorised kernel
 #include <simd/Intel512single.h>
 template <> void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
@@ -523,29 +732,115 @@ template <> void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(StencilImpl &st, 
   StencilEntry *SE3;
 
   // Xp, Yp, Zp, Tp
-
   PREPARE(Xp,Yp,Zp,Tp,0,U);
   LOAD_CHIa(addr0,addr1);
+  if (l0&&p0) {     PERMUTE_DIR3;  }
+  if (l1&&p1) {     PERMUTE_DIR2;  }
   MULT_XYZT(gauge0,gauge1);  
   LOAD_CHIa(addr2,addr3);
-  MULT_XYZT(gauge2,gauge3);  
+  if (l2&&p2) {     PERMUTE_DIR1;  }
+  if (l3&&p3) {     PERMUTE_DIR0;  }
+  MULT_ADD_XYZT(gauge2,gauge3);  
 
   PREPARE(Xm,Ym,Zm,Tm,0,U);
   LOAD_CHIa(addr0,addr1);
+  if (l0&&p0) {     PERMUTE_DIR3;  }
+  if (l1&&p1) {     PERMUTE_DIR2;  }
   MULT_ADD_XYZT(gauge0,gauge1);  
   LOAD_CHIa(addr2,addr3);
+  if (l2&&p2) {     PERMUTE_DIR1;  }
+  if (l3&&p3) {     PERMUTE_DIR0;  }
   MULT_ADD_XYZT(gauge2,gauge3);  
 
   PREPARE(Xp,Yp,Zp,Tp,8,UUU);
   LOAD_CHIa(addr0,addr1);
+  if (l0&&p0) {     PERMUTE_DIR3;  }
+  if (l1&&p1) {     PERMUTE_DIR2;  }
   MULT_ADD_XYZT(gauge0,gauge1);  
   LOAD_CHIa(addr2,addr3);
+  if (l2&&p2) {     PERMUTE_DIR1;  }
+  if (l3&&p3) {     PERMUTE_DIR0;  }
   MULT_ADD_XYZT(gauge2,gauge3);  
 
   PREPARE(Xm,Ym,Zm,Tm,8,UUU);
   LOAD_CHIa(addr0,addr1);
+  if (l0&&p0) {     PERMUTE_DIR3;  }
+  if (l1&&p1) {     PERMUTE_DIR2;  }
   MULT_ADD_XYZT(gauge0,gauge1);  
   LOAD_CHIa(addr2,addr3);
+  if (l2&&p2) {     PERMUTE_DIR1;  }
+  if (l3&&p3) {     PERMUTE_DIR0;  }
+  MULT_ADD_XYZT(gauge2,gauge3);  
+
+  addr0 = (uint64_t) &out;
+  REDUCEa(addr0);
+#else 
+  assert(0);
+#endif
+}
+
+
+  // This is the single precision 5th direction vectorised kernel
+#include <simd/Intel512double.h>
+template <> void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
+							       DoubledGaugeField &U,
+							       DoubledGaugeField &UUU,
+							       SiteSpinor *buf, int sF,
+							       int sU, const FermionField &in, SiteSpinor &out) 
+{
+#ifdef AVX512
+  uint64_t gauge0,gauge1,gauge2,gauge3;
+  uint64_t addr0,addr1,addr2,addr3;
+
+  int o0,o1,o2,o3; // offsets
+  int l0,l1,l2,l3; // local 
+  int p0,p1,p2,p3; // perm
+  int ptype;
+  StencilEntry *SE0;
+  StencilEntry *SE1;
+  StencilEntry *SE2;
+  StencilEntry *SE3;
+
+  // Xp, Yp, Zp, Tp
+
+  PREPARE(Xp,Yp,Zp,Tp,0,U);
+  LOAD_CHIa(addr0,addr1);
+  if (p0) {     PERMUTE_DIR3;  }
+  if (p1) {     PERMUTE_DIR2;  }
+  MULT_XYZT(gauge0,gauge1);  
+  LOAD_CHIa(addr2,addr3);
+  if (p2) {     PERMUTE_DIR1;  }
+  if (p3) {     PERMUTE_DIR0;  }
+  MULT_ADD_XYZT(gauge2,gauge3);  
+
+  PREPARE(Xm,Ym,Zm,Tm,0,U);
+  LOAD_CHIa(addr0,addr1);
+  if (p0) {     PERMUTE_DIR3;  }
+  if (p1) {     PERMUTE_DIR2;  }
+  MULT_ADD_XYZT(gauge0,gauge1);  
+  LOAD_CHIa(addr2,addr3);
+  if (p2) {     PERMUTE_DIR1;  }
+  if (p3) {     PERMUTE_DIR0;  }
+  MULT_ADD_XYZT(gauge2,gauge3);  
+
+  PREPARE(Xp,Yp,Zp,Tp,8,UUU);
+  LOAD_CHIa(addr0,addr1);
+  if (p0) {     PERMUTE_DIR3;  }
+  if (p1) {     PERMUTE_DIR2;  }
+  MULT_ADD_XYZT(gauge0,gauge1);  
+  LOAD_CHIa(addr2,addr3);
+  if (p2) {     PERMUTE_DIR1;  }
+  if (p3) {     PERMUTE_DIR0;  }
+  MULT_ADD_XYZT(gauge2,gauge3);  
+
+  PREPARE(Xm,Ym,Zm,Tm,8,UUU);
+  LOAD_CHIa(addr0,addr1);
+  if (p0) {     PERMUTE_DIR3;  }
+  if (p1) {     PERMUTE_DIR2;  }
+  MULT_ADD_XYZT(gauge0,gauge1);  
+  LOAD_CHIa(addr2,addr3);
+  if (p2) {     PERMUTE_DIR1;  }
+  if (p3) {     PERMUTE_DIR0;  }
   MULT_ADD_XYZT(gauge2,gauge3);  
 
   addr0 = (uint64_t) &out;
