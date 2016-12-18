@@ -194,7 +194,7 @@ namespace Optimization {
       __m128 ymm0 =  _mm_shuffle_ps(a,a,_MM_SELECT_FOUR_FOUR(2,2,0,0)); // ymm0 <- ar ar,
       _mm_add_ps(_mm_mul_ps( ymm0, b),c);                         
     }
-    inline __m128d operator()(__m128d a, __m128d b, __m128 c){
+    inline __m128d operator()(__m128d a, __m128d b, __m128d c){
       __m128d ymm0 = _mm_shuffle_pd( a, a, 0x0 );
       return _mm_add_pd(_mm_mul_pd( ymm0, b),c);                         
     }
