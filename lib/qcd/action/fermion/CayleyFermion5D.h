@@ -33,9 +33,29 @@ namespace Grid {
 
   namespace QCD {
 
-     template<typename T> struct switcheroo   {  static int iscomplex()  { return 0; } };
-     template<> struct switcheroo<ComplexD> {  static int iscomplex()  { return 1; } };
-     template<> struct switcheroo<ComplexF> {  static int iscomplex()  { return 1; } };
+     template<typename T> struct switcheroo   {  
+       static inline int iscomplex()  { return 0; } 
+
+       template<class vec>
+       static inline vec mult(vec a, vec b) {
+	 return real_mult(a,b);
+       }
+     };
+     template<> struct switcheroo<ComplexD> {  
+       static inline int iscomplex()  { return 1; } 
+
+       template<class vec>
+       static inline vec mult(vec a, vec b) {
+	 return a*b;
+       }
+     };
+     template<> struct switcheroo<ComplexF> {  
+       static inline int iscomplex()  { return 1; } 
+       template<class vec>
+       static inline vec mult(vec a, vec b) {
+	 return a*b;
+       }
+     };
 
 
     template<class Impl>

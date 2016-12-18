@@ -161,18 +161,18 @@ PARALLEL_FOR_LOOP
 	}
 
 	// Can force these to real arithmetic and save 2x.
-	Simd p_00  = real_mult(d[v]()()(), phi[ss+v]()(0)(0))  + real_mult(l[v]()()(),hm_00); 
-	Simd p_01  = real_mult(d[v]()()(), phi[ss+v]()(0)(1))  + real_mult(l[v]()()(),hm_01); 
-	Simd p_02  = real_mult(d[v]()()(), phi[ss+v]()(0)(2))  + real_mult(l[v]()()(),hm_02); 
-	Simd p_10  = real_mult(d[v]()()(), phi[ss+v]()(1)(0))  + real_mult(l[v]()()(),hm_10); 
-	Simd p_11  = real_mult(d[v]()()(), phi[ss+v]()(1)(1))  + real_mult(l[v]()()(),hm_11); 
-	Simd p_12  = real_mult(d[v]()()(), phi[ss+v]()(1)(2))  + real_mult(l[v]()()(),hm_12); 
-	Simd p_20  = real_mult(d[v]()()(), phi[ss+v]()(2)(0))  + real_mult(u[v]()()(),hp_00); 
-	Simd p_21  = real_mult(d[v]()()(), phi[ss+v]()(2)(1))  + real_mult(u[v]()()(),hp_01); 
-	Simd p_22  = real_mult(d[v]()()(), phi[ss+v]()(2)(2))  + real_mult(u[v]()()(),hp_02);  
-	Simd p_30  = real_mult(d[v]()()(), phi[ss+v]()(3)(0))  + real_mult(u[v]()()(),hp_10); 
-	Simd p_31  = real_mult(d[v]()()(), phi[ss+v]()(3)(1))  + real_mult(u[v]()()(),hp_11); 
-	Simd p_32  = real_mult(d[v]()()(), phi[ss+v]()(3)(2))  + real_mult(u[v]()()(),hp_12); 
+	Simd p_00  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(0)(0))  + switcheroo<Coeff_t>::mult(l[v]()()(),hm_00); 
+	Simd p_01  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(0)(1))  + switcheroo<Coeff_t>::mult(l[v]()()(),hm_01); 
+	Simd p_02  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(0)(2))  + switcheroo<Coeff_t>::mult(l[v]()()(),hm_02); 
+	Simd p_10  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(1)(0))  + switcheroo<Coeff_t>::mult(l[v]()()(),hm_10); 
+	Simd p_11  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(1)(1))  + switcheroo<Coeff_t>::mult(l[v]()()(),hm_11); 
+	Simd p_12  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(1)(2))  + switcheroo<Coeff_t>::mult(l[v]()()(),hm_12); 
+	Simd p_20  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(2)(0))  + switcheroo<Coeff_t>::mult(u[v]()()(),hp_00); 
+	Simd p_21  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(2)(1))  + switcheroo<Coeff_t>::mult(u[v]()()(),hp_01); 
+	Simd p_22  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(2)(2))  + switcheroo<Coeff_t>::mult(u[v]()()(),hp_02);  
+	Simd p_30  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(3)(0))  + switcheroo<Coeff_t>::mult(u[v]()()(),hp_10); 
+	Simd p_31  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(3)(1))  + switcheroo<Coeff_t>::mult(u[v]()()(),hp_11); 
+	Simd p_32  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(3)(2))  + switcheroo<Coeff_t>::mult(u[v]()()(),hp_12); 
 
 	vstream(chi[ss+v]()(0)(0),p_00);
 	vstream(chi[ss+v]()(0)(1),p_01);
@@ -299,19 +299,19 @@ PARALLEL_FOR_LOOP
 	  hm_12.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hm_12.v);
 	}
 
-	Simd p_00  = real_mult(d[v]()()(), phi[ss+v]()(0)(0))  + real_mult(u[v]()()(),hp_00); 
-	Simd p_01  = real_mult(d[v]()()(), phi[ss+v]()(0)(1))  + real_mult(u[v]()()(),hp_01); 
-	Simd p_02  = real_mult(d[v]()()(), phi[ss+v]()(0)(2))  + real_mult(u[v]()()(),hp_02); 
-	Simd p_10  = real_mult(d[v]()()(), phi[ss+v]()(1)(0))  + real_mult(u[v]()()(),hp_10); 
-	Simd p_11  = real_mult(d[v]()()(), phi[ss+v]()(1)(1))  + real_mult(u[v]()()(),hp_11); 
-	Simd p_12  = real_mult(d[v]()()(), phi[ss+v]()(1)(2))  + real_mult(u[v]()()(),hp_12); 
+	Simd p_00  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(0)(0))  + switcheroo<Coeff_t>::mult(u[v]()()(),hp_00); 
+	Simd p_01  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(0)(1))  + switcheroo<Coeff_t>::mult(u[v]()()(),hp_01); 
+	Simd p_02  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(0)(2))  + switcheroo<Coeff_t>::mult(u[v]()()(),hp_02); 
+	Simd p_10  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(1)(0))  + switcheroo<Coeff_t>::mult(u[v]()()(),hp_10); 
+	Simd p_11  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(1)(1))  + switcheroo<Coeff_t>::mult(u[v]()()(),hp_11); 
+	Simd p_12  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(1)(2))  + switcheroo<Coeff_t>::mult(u[v]()()(),hp_12); 
 
-	Simd p_20  = real_mult(d[v]()()(), phi[ss+v]()(2)(0))  + real_mult(l[v]()()(),hm_00); 
-	Simd p_21  = real_mult(d[v]()()(), phi[ss+v]()(2)(1))  + real_mult(l[v]()()(),hm_01); 
-	Simd p_22  = real_mult(d[v]()()(), phi[ss+v]()(2)(2))  + real_mult(l[v]()()(),hm_02);  
-	Simd p_30  = real_mult(d[v]()()(), phi[ss+v]()(3)(0))  + real_mult(l[v]()()(),hm_10); 
-	Simd p_31  = real_mult(d[v]()()(), phi[ss+v]()(3)(1))  + real_mult(l[v]()()(),hm_11); 
-	Simd p_32  = real_mult(d[v]()()(), phi[ss+v]()(3)(2))  + real_mult(l[v]()()(),hm_12); 
+	Simd p_20  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(2)(0))  + switcheroo<Coeff_t>::mult(l[v]()()(),hm_00); 
+	Simd p_21  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(2)(1))  + switcheroo<Coeff_t>::mult(l[v]()()(),hm_01); 
+	Simd p_22  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(2)(2))  + switcheroo<Coeff_t>::mult(l[v]()()(),hm_02);  
+	Simd p_30  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(3)(0))  + switcheroo<Coeff_t>::mult(l[v]()()(),hm_10); 
+	Simd p_31  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(3)(1))  + switcheroo<Coeff_t>::mult(l[v]()()(),hm_11); 
+	Simd p_32  = switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(3)(2))  + switcheroo<Coeff_t>::mult(l[v]()()(),hm_12); 
 
 	vstream(chi[ss+v]()(0)(0),p_00);
 	vstream(chi[ss+v]()(0)(1),p_01);
@@ -544,13 +544,13 @@ void CayleyFermion5D<Impl>::MooeeInternalZAsm(const FermionField &psi, FermionFi
         for(int co=0;co<Nc;co++){
 	  vbroadcast(BcastM()(sp  )(co),psi[lex]()(sp+2)(co),l);
 	}}
-	if ( s2==0 && l==0) {
+
 	for(int sp=0;sp<2;sp++){
         for(int co=0;co<Nc;co++){
 	  SiteChiP()(sp)(co)=SiteChiP()(sp)(co)+ Matp[LLs*s+s1]()()()*BcastP()(sp)(co); 
 	  SiteChiM()(sp)(co)=SiteChiM()(sp)(co)+ Matm[LLs*s+s1]()()()*BcastM()(sp)(co); 
 	}}
-	}
+
 
     }}
     {
