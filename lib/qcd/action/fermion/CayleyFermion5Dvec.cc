@@ -514,7 +514,8 @@ template<class Impl>
 void CayleyFermion5D<Impl>::MooeeInternalZAsm(const FermionField &psi, FermionField &chi,
 					     int LLs, int site, Vector<iSinglet<Simd> > &Matp, Vector<iSinglet<Simd> > &Matm)
 {
-#if 1
+#ifndef AVX512
+  //#if 0
   {
   SiteHalfSpinor BcastP;
   SiteHalfSpinor BcastM;
@@ -542,12 +543,13 @@ void CayleyFermion5D<Impl>::MooeeInternalZAsm(const FermionField &psi, FermionFi
         for(int co=0;co<Nc;co++){
 	  vbroadcast(BcastM()(sp  )(co),psi[lex]()(sp+2)(co),l);
 	}}
-
+	if ( s2==0 && l==0) {
 	for(int sp=0;sp<2;sp++){
         for(int co=0;co<Nc;co++){
 	  SiteChiP()(sp)(co)=SiteChiP()(sp)(co)+ Matp[LLs*s+s1]()()()*BcastP()(sp)(co); 
 	  SiteChiM()(sp)(co)=SiteChiM()(sp)(co)+ Matm[LLs*s+s1]()()()*BcastM()(sp)(co); 
 	}}
+	}
 
     }}
     {
@@ -564,7 +566,7 @@ void CayleyFermion5D<Impl>::MooeeInternalZAsm(const FermionField &psi, FermionFi
 #else
   {
   // pointers
-    //  MASK_REGS;
+  //  MASK_REGS;
 #define Chi_00 %zmm0
 #define Chi_01 %zmm1
 #define Chi_02 %zmm2
@@ -577,20 +579,37 @@ void CayleyFermion5D<Impl>::MooeeInternalZAsm(const FermionField &psi, FermionFi
 #define Chi_30 %zmm9
 #define Chi_31 %zmm10
 #define Chi_32 %zmm11
+#define pChi_00 %%zmm0
+#define pChi_01 %%zmm1
+#define pChi_02 %%zmm2
+#define pChi_10 %%zmm3
+#define pChi_11 %%zmm4
+#define pChi_12 %%zmm5
+#define pChi_20 %%zmm6
+#define pChi_21 %%zmm7
+#define pChi_22 %%zmm8
+#define pChi_30 %%zmm9
+#define pChi_31 %%zmm10
+#define pChi_32 %%zmm11
 
-#define BCAST0   %zmm12
-#define BCAST1   %zmm13
-#define BCAST2   %zmm14
-#define BCAST3   %zmm15
-#define BCAST4   %zmm16
-#define BCAST5   %zmm17
-#define BCAST6   %zmm18
-#define BCAST7   %zmm19
-#define BCAST8   %zmm20
-#define BCAST9   %zmm21
-#define BCAST10  %zmm22
-#define BCAST11  %zmm23
+#define BCAST_00   %zmm12
+#define  SHUF_00   %zmm13
+#define BCAST_01   %zmm14
+#define  SHUF_01   %zmm15
+#define BCAST_02   %zmm16
+#define  SHUF_02   %zmm17
+#define BCAST_10   %zmm18
+#define  SHUF_10   %zmm19
+#define BCAST_11   %zmm20
+#define  SHUF_11   %zmm21
+#define BCAST_12   %zmm22
+#define  SHUF_12   %zmm23
 
+#define Mp  %zmm24
+#define Mps %zmm25
+#define Mm  %zmm26
+#define Mms %zmm27
+#define N 8
   int incr=LLs*LLs*sizeof(iSinglet<Simd>);
   for(int s1=0;s1<LLs;s1++){ 
     for(int s2=0;s2<LLs;s2++){ 
@@ -604,67 +623,80 @@ void CayleyFermion5D<Impl>::MooeeInternalZAsm(const FermionField &psi, FermionFi
 	  LOAD64(%r9,a1);
 	  LOAD64(%r10,a2);
 	  asm (
-  	           VPREFETCH1(0,%r10)  	     VPREFETCH1(0,%r9)
-  	           VPREFETCH1(12,%r10)  	     VPREFETCH1(13,%r10)
-  	           VPREFETCH1(14,%r10)  	     VPREFETCH1(15,%r10)         
-		   VBCASTCDUP(0,%r10,BCAST0)   		   VBCASTCDUP(1,%r10,BCAST1)   
-		   VBCASTCDUP(2,%r10,BCAST2)   		   VBCASTCDUP(3,%r10,BCAST3)   
-		   VBCASTCDUP(4,%r10,BCAST4)     		   VBCASTCDUP(5,%r10,BCAST5)     
-		   VBCASTCDUP(6,%r10,BCAST6)     		   VBCASTCDUP(7,%r10,BCAST7)   
-		   VBCASTCDUP(8,%r10,BCAST8)  		   VBCASTCDUP(9,%r10,BCAST9)  
-		   VBCASTCDUP(10,%r10,BCAST10)		   VBCASTCDUP(11,%r10,BCAST11) 
-		   VMULIDUP (0,%r8,BCAST0,Chi_00) 		   VMULIDUP(0,%r8,BCAST1,Chi_01) // II RI  from Mat / Psi
-		   VMULIDUP (0,%r8,BCAST2,Chi_02) 		   VMULIDUP(0,%r8,BCAST3,Chi_10)
-		   VMULIDUP (0,%r8,BCAST4,Chi_11) 		   VMULIDUP(0,%r8,BCAST5,Chi_12)
-		   VMULIDUP (0,%r9,BCAST6,Chi_20) 		   VMULIDUP(0,%r9,BCAST7,Chi_21)
-		   VMULIDUP (0,%r9,BCAST8,Chi_22) 		   VMULIDUP(0,%r9,BCAST9,Chi_30)
-		   VMULIDUP (0,%r9,BCAST10,Chi_31) 		   VMULIDUP(0,%r9,BCAST11,Chi_32)
-		   VSHUF(BCAST0,BCAST0)		  		   VSHUF(BCAST1,BCAST1)		  
-		   VSHUF(BCAST2,BCAST2)		  		   VSHUF(BCAST3,BCAST3)		  
-		   VSHUF(BCAST4,BCAST4)		  		   VSHUF(BCAST5,BCAST5)		  
-		   VSHUF(BCAST6,BCAST6)		  		   VSHUF(BCAST7,BCAST7)		  
-		   VSHUF(BCAST8,BCAST8)		  		   VSHUF(BCAST9,BCAST9)		  
-		   VSHUF(BCAST10,BCAST10)	  		   VSHUF(BCAST11,BCAST11)		  
-		   VMADDSUBRDUP(0,%r8,BCAST0,Chi_00)  		   VMADDSUBRDUP(0,%r8,BCAST1,Chi_01)  
-		   VMADDSUBRDUP(0,%r8,BCAST2,Chi_02)  		   VMADDSUBRDUP(0,%r8,BCAST3,Chi_10)  
-		   VMADDSUBRDUP(0,%r8,BCAST4,Chi_11)  		   VMADDSUBRDUP(0,%r8,BCAST5,Chi_12)  
-		   VMADDSUBRDUP(0,%r9,BCAST6,Chi_20)  		   VMADDSUBRDUP(0,%r9,BCAST7,Chi_21)  
-		   VMADDSUBRDUP(0,%r9,BCAST8,Chi_22)  		   VMADDSUBRDUP(0,%r9,BCAST9,Chi_30)  
-	       VMADDSUBRDUP(0,%r9,BCAST10,Chi_31) 		   VMADDSUBRDUP(0,%r9,BCAST11,Chi_32)  );
+	       VLOAD(0,%r8,Mp)// i r
+	       VLOAD(0,%r9,Mm)
+	       VSHUF(Mp,Mps)  // r i 
+	       VSHUF(Mm,Mms)
+	       VPREFETCH1(12,%r10)  	     VPREFETCH1(13,%r10)
+	       VPREFETCH1(14,%r10)  	     VPREFETCH1(15,%r10)         
 
+	       VMULIDUP(0*N,%r10,Mps,Chi_00)
+	       VMULIDUP(1*N,%r10,Mps,Chi_01)
+	       VMULIDUP(2*N,%r10,Mps,Chi_02)
+	       VMULIDUP(3*N,%r10,Mps,Chi_10)
+	       VMULIDUP(4*N,%r10,Mps,Chi_11)
+	       VMULIDUP(5*N,%r10,Mps,Chi_12)
+
+	       VMULIDUP(6*N ,%r10,Mms,Chi_20)
+	       VMULIDUP(7*N ,%r10,Mms,Chi_21)
+	       VMULIDUP(8*N ,%r10,Mms,Chi_22)
+	       VMULIDUP(9*N ,%r10,Mms,Chi_30)
+	       VMULIDUP(10*N,%r10,Mms,Chi_31)
+	       VMULIDUP(11*N,%r10,Mms,Chi_32)
+
+	       VMADDSUBRDUP(0*N,%r10,Mp,Chi_00)
+	       VMADDSUBRDUP(1*N,%r10,Mp,Chi_01)
+	       VMADDSUBRDUP(2*N,%r10,Mp,Chi_02)
+	       VMADDSUBRDUP(3*N,%r10,Mp,Chi_10)
+	       VMADDSUBRDUP(4*N,%r10,Mp,Chi_11)
+	       VMADDSUBRDUP(5*N,%r10,Mp,Chi_12)
+
+	       VMADDSUBRDUP(6*N ,%r10,Mm,Chi_20)
+	       VMADDSUBRDUP(7*N ,%r10,Mm,Chi_21)
+	       VMADDSUBRDUP(8*N ,%r10,Mm,Chi_22)
+	       VMADDSUBRDUP(9*N ,%r10,Mm,Chi_30)
+	       VMADDSUBRDUP(10*N,%r10,Mm,Chi_31)
+	       VMADDSUBRDUP(11*N,%r10,Mm,Chi_32)
+	       );
 	} else { 
 	  LOAD64(%r8,a0);
 	  LOAD64(%r9,a1);
 	  LOAD64(%r10,a2);
 	  asm (
-  	           VPREFETCH1(0,%r10)  	     VPREFETCH1(0,%r9)
-  	           VPREFETCH1(12,%r10)  	     VPREFETCH1(13,%r10)
-  	           VPREFETCH1(14,%r10)  	     VPREFETCH1(15,%r10)         
-		   VBCASTCDUP(0,%r10,BCAST0)   		   VBCASTCDUP(1,%r10,BCAST1)   
-		   VBCASTCDUP(2,%r10,BCAST2)   		   VBCASTCDUP(3,%r10,BCAST3)   
-		   VBCASTCDUP(4,%r10,BCAST4)     		   VBCASTCDUP(5,%r10,BCAST5)     
-		   VBCASTCDUP(6,%r10,BCAST6)     		   VBCASTCDUP(7,%r10,BCAST7)   
-		   VBCASTCDUP(8,%r10,BCAST8)  		   VBCASTCDUP(9,%r10,BCAST9)  
-		   VBCASTCDUP(10,%r10,BCAST10)		   VBCASTCDUP(11,%r10,BCAST11) 
-		   VMADDSUBIDUP (0,%r8,BCAST0,Chi_00) 		   VMADDSUBIDUP(0,%r8,BCAST1,Chi_01) // II RI  from Mat / Psi
-		   VMADDSUBIDUP (0,%r8,BCAST2,Chi_02) 		   VMADDSUBIDUP(0,%r8,BCAST3,Chi_10)
-		   VMADDSUBIDUP (0,%r8,BCAST4,Chi_11) 		   VMADDSUBIDUP(0,%r8,BCAST5,Chi_12)
-		   VMADDSUBIDUP (0,%r9,BCAST6,Chi_20) 		   VMADDSUBIDUP(0,%r9,BCAST7,Chi_21)
-		   VMADDSUBIDUP (0,%r9,BCAST8,Chi_22) 		   VMADDSUBIDUP(0,%r9,BCAST9,Chi_30)
-		   VMADDSUBIDUP (0,%r9,BCAST10,Chi_31) 		   VMADDSUBIDUP(0,%r9,BCAST11,Chi_32)
-		   VSHUF(BCAST0,BCAST0)		  		   VSHUF(BCAST1,BCAST1)		  
-		   VSHUF(BCAST2,BCAST2)		  		   VSHUF(BCAST3,BCAST3)		  
-		   VSHUF(BCAST4,BCAST4)		  		   VSHUF(BCAST5,BCAST5)		  
-		   VSHUF(BCAST6,BCAST6)		  		   VSHUF(BCAST7,BCAST7)		  
-		   VSHUF(BCAST8,BCAST8)		  		   VSHUF(BCAST9,BCAST9)		  
-		   VSHUF(BCAST10,BCAST10)	  		   VSHUF(BCAST11,BCAST11)		  
-		   VMADDSUBRDUP(0,%r8,BCAST0,Chi_00)  		   VMADDSUBRDUP(0,%r8,BCAST1,Chi_01)  
-		   VMADDSUBRDUP(0,%r8,BCAST2,Chi_02)  		   VMADDSUBRDUP(0,%r8,BCAST3,Chi_10)  
-		   VMADDSUBRDUP(0,%r8,BCAST4,Chi_11)  		   VMADDSUBRDUP(0,%r8,BCAST5,Chi_12)  
-		   VMADDSUBRDUP(0,%r9,BCAST6,Chi_20)  		   VMADDSUBRDUP(0,%r9,BCAST7,Chi_21)  
-		   VMADDSUBRDUP(0,%r9,BCAST8,Chi_22)  		   VMADDSUBRDUP(0,%r9,BCAST9,Chi_30)  
-		   VMADDSUBRDUP(0,%r9,BCAST10,Chi_31) 		   VMADDSUBRDUP(0,%r9,BCAST11,Chi_32)  
-		    );
+	       VLOAD(0,%r8,Mp)
+	       VSHUF(Mp,Mps)
+
+	       VLOAD(0,%r9,Mm)
+	       VSHUF(Mm,Mms)
+
+	       VMADDSUBIDUP(0*N,%r10,Mps,Chi_00) //  Mri * Pii +- Cir
+	       VMADDSUBIDUP(1*N,%r10,Mps,Chi_01)
+	       VMADDSUBIDUP(2*N,%r10,Mps,Chi_02)
+	       VMADDSUBIDUP(3*N,%r10,Mps,Chi_10)
+	       VMADDSUBIDUP(4*N,%r10,Mps,Chi_11)
+	       VMADDSUBIDUP(5*N,%r10,Mps,Chi_12)
+
+	       VMADDSUBIDUP(6 *N,%r10,Mms,Chi_20)
+	       VMADDSUBIDUP(7 *N,%r10,Mms,Chi_21)
+	       VMADDSUBIDUP(8 *N,%r10,Mms,Chi_22)
+	       VMADDSUBIDUP(9 *N,%r10,Mms,Chi_30)
+	       VMADDSUBIDUP(10*N,%r10,Mms,Chi_31)
+	       VMADDSUBIDUP(11*N,%r10,Mms,Chi_32)
+
+	       VMADDSUBRDUP(0*N,%r10,Mp,Chi_00) //  Cir = Mir * Prr +- ( Mri * Pii +- Cir) 
+	       VMADDSUBRDUP(1*N,%r10,Mp,Chi_01) //  Ci = MiPr + Ci + MrPi ;    Cr = MrPr - ( MiPi - Cr)
+	       VMADDSUBRDUP(2*N,%r10,Mp,Chi_02)
+	       VMADDSUBRDUP(3*N,%r10,Mp,Chi_10)
+	       VMADDSUBRDUP(4*N,%r10,Mp,Chi_11)
+	       VMADDSUBRDUP(5*N,%r10,Mp,Chi_12)
+
+	       VMADDSUBRDUP(6 *N,%r10,Mm,Chi_20)
+	       VMADDSUBRDUP(7 *N,%r10,Mm,Chi_21)
+	       VMADDSUBRDUP(8 *N,%r10,Mm,Chi_22)
+	       VMADDSUBRDUP(9 *N,%r10,Mm,Chi_30)
+	       VMADDSUBRDUP(10*N,%r10,Mm,Chi_31)
+	       VMADDSUBRDUP(11*N,%r10,Mm,Chi_32)
+	       );
 	}
 	a0 = a0+incr;
 	a1 = a1+incr;
@@ -672,13 +704,26 @@ void CayleyFermion5D<Impl>::MooeeInternalZAsm(const FermionField &psi, FermionFi
       }}
     {
       int lexa = s1+LLs*site;
+      /*
+      SiteSpinor tmp;
       asm (
-	       VSTORE(0,%0,Chi_00) VSTORE(1 ,%0,Chi_01)  VSTORE(2 ,%0,Chi_02)		
-	       VSTORE(3,%0,Chi_10) VSTORE(4 ,%0,Chi_11)  VSTORE(5 ,%0,Chi_12)		
-	       VSTORE(6,%0,Chi_20) VSTORE(7 ,%0,Chi_21)  VSTORE(8 ,%0,Chi_22)		
-	       VSTORE(9,%0,Chi_30) VSTORE(10,%0,Chi_31)  VSTORE(11,%0,Chi_32)		
+	       VSTORE(0,%0,pChi_00) VSTORE(1 ,%0,pChi_01)  VSTORE(2 ,%0,pChi_02)		
+	       VSTORE(3,%0,pChi_10) VSTORE(4 ,%0,pChi_11)  VSTORE(5 ,%0,pChi_12)		
+	       VSTORE(6,%0,pChi_20) VSTORE(7 ,%0,pChi_21)  VSTORE(8 ,%0,pChi_22)		
+	       VSTORE(9,%0,pChi_30) VSTORE(10,%0,pChi_31)  VSTORE(11,%0,pChi_32)		
+	       : : "r" ((uint64_t)&tmp) : "memory" );
+      */
+
+      asm (
+	       VSTORE(0,%0,pChi_00) VSTORE(1 ,%0,pChi_01)  VSTORE(2 ,%0,pChi_02)		
+	       VSTORE(3,%0,pChi_10) VSTORE(4 ,%0,pChi_11)  VSTORE(5 ,%0,pChi_12)		
+	       VSTORE(6,%0,pChi_20) VSTORE(7 ,%0,pChi_21)  VSTORE(8 ,%0,pChi_22)		
+	       VSTORE(9,%0,pChi_30) VSTORE(10,%0,pChi_31)  VSTORE(11,%0,pChi_32)		
 	       : : "r" ((uint64_t)&chi[lexa]) : "memory" );
 
+      //      if ( 1 || (site==0) ) { 
+      //	std::cout<<site << " s1 "<<s1<<"\n\t"<<tmp << "\n't" << chi[lexa] <<"\n\t"<<tmp-chi[lexa]<<std::endl;
+      //      }
     }
   }
   }
