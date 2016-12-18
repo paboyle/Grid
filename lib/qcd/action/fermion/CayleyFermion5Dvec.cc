@@ -332,9 +332,11 @@ PARALLEL_FOR_LOOP
 }
 
 
+#ifdef AVX512 
 #include <simd/Intel512common.h>
 #include <simd/Intel512avx.h>
 #include <simd/Intel512single.h>
+#endif 
 
 template<class Impl>
 void CayleyFermion5D<Impl>::MooeeInternalAsm(const FermionField &psi, FermionField &chi,
@@ -515,7 +517,6 @@ void CayleyFermion5D<Impl>::MooeeInternalZAsm(const FermionField &psi, FermionFi
 					     int LLs, int site, Vector<iSinglet<Simd> > &Matp, Vector<iSinglet<Simd> > &Matm)
 {
 #ifndef AVX512
-  //#if 0
   {
   SiteHalfSpinor BcastP;
   SiteHalfSpinor BcastM;
