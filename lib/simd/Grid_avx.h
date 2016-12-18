@@ -228,7 +228,7 @@ namespace Optimization {
   struct MaddRealPart{
     inline __m256 operator()(__m256 a, __m256 b, __m256 c){
       __m256 ymm0 =  _mm256_moveldup_ps(a); // ymm0 <- ar ar,
-      _mm256_add_ps(_mm256_mul_ps( ymm0, b),c);                         
+      return _mm256_add_ps(_mm256_mul_ps( ymm0, b),c);                         
     }
     inline __m256d operator()(__m256d a, __m256d b, __m256d c){
       __m256d ymm0 = _mm256_shuffle_pd( a, a, 0x0 );
