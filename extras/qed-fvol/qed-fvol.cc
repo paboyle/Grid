@@ -62,8 +62,8 @@ int main(int argc, char *argv[])
     std::vector<int> mpi_layout  = GridDefaultMpi();
     GridCartesian    grid(latt_size,simd_layout,mpi_layout);
     GridParallelRNG  pRNG(&grid);
-    PhotonR          photon(PhotonR::Gauge::Feynman,
-                            PhotonR::ZmScheme::QedL);
+    PhotonR          photon(PhotonR::Gauge::feynman,
+                            PhotonR::ZmScheme::qedL);
     EmField          a(&grid);
     EmField          expA(&grid);
 
