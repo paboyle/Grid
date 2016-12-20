@@ -1,6 +1,6 @@
     /*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
 
     Source file: ./lib/simd/Grid_avx.h
 
@@ -29,15 +29,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-//----------------------------------------------------------------------
-/*! @file Grid_avx.h
-  @brief Optimization libraries for AVX1/2 instructions set
-
-  Using intrinsics
-*/
-// Time-stamp: <2015-06-16 23:30:41 neo>
-//----------------------------------------------------------------------
-
 #include <immintrin.h>
 #ifdef AVXFMA4
 #include <x86intrin.h>
@@ -66,9 +57,9 @@ namespace Optimization {
     double f[4];
   };
 
-  struct Vsplat{
-    //Complex float
-    inline __m256 operator()(float a, float b){
+ struct Vsplat{
+    // Complex float
+    inline __m256 operator()(float a, float b) {
       return _mm256_set_ps(b,a,b,a,b,a,b,a);
     }
     // Real float
@@ -90,7 +81,7 @@ namespace Optimization {
   };
 
   struct Vstore{
-    //Float 
+    //Float
     inline void operator()(__m256 a, float* F){
       _mm256_store_ps(F,a);
     }
@@ -119,15 +110,15 @@ namespace Optimization {
   };
 
   struct Vset{
-    // Complex float 
+    // Complex float
     inline __m256 operator()(Grid::ComplexF *a){
       return _mm256_set_ps(a[3].imag(),a[3].real(),a[2].imag(),a[2].real(),a[1].imag(),a[1].real(),a[0].imag(),a[0].real());
     }
-    // Complex double 
+    // Complex double
     inline __m256d operator()(Grid::ComplexD *a){
       return _mm256_set_pd(a[1].imag(),a[1].real(),a[0].imag(),a[0].real());
     }
-    // Real float 
+    // Real float
     inline __m256 operator()(float *a){
       return _mm256_set_ps(a[7],a[6],a[5],a[4],a[3],a[2],a[1],a[0]);
     }
@@ -144,8 +135,8 @@ namespace Optimization {
 
   template <typename Out_type, typename In_type>
   struct Reduce{
-    //Need templated class to overload output type
-    //General form must generate error if compiled
+    // Need templated class to overload output type
+    // General form must generate error if compiled
     inline Out_type operator()(In_type in){
       printf("Error, using wrong Reduce function\n");
       exit(1);
@@ -224,7 +215,7 @@ namespace Optimization {
       ymm1 = _mm256_shuffle_ps(b,b,_MM_SELECT_FOUR_FOUR(2,3,0,1)); // ymm1 <- br,bi
       ymm2 = _mm256_shuffle_ps(a,a,_MM_SELECT_FOUR_FOUR(3,3,1,1)); // ymm2 <- ai,ai
       ymm1 = _mm256_mul_ps(ymm1,ymm2);                    // ymm1 <- br ai, ai bi
-      return _mm256_addsub_ps(ymm0,ymm1);  
+      return _mm256_addsub_ps(ymm0,ymm1);
 #endif
 #if defined (AVXFMA4)
       __m256 a_real = _mm256_shuffle_ps(a,a,_MM_SELECT_FOUR_FOUR(2,2,0,0)); // ar ar,
@@ -241,10 +232,10 @@ namespace Optimization {
 #endif
     }
     // Complex double
-    inline __m256d operator()(__m256d a, __m256d b){
-      //Multiplication of (ak+ibk)*(ck+idk)
+    inline __m256d operator()(__m256d a, __m256d b) {
+      // Multiplication of (ak+ibk)*(ck+idk)
       // a + i b can be stored as a data structure
-      //From intel optimisation reference guide
+      // From intel optimisation reference guide
       /*
 	movsldup xmm0, Src1; load real parts into the destination,
 	; a1, a1, a0, a0
@@ -268,7 +259,7 @@ namespace Optimization {
       __m256d ymm0,ymm1,ymm2;
       ymm0 = _mm256_shuffle_pd(a,a,0x0); // ymm0 <- ar ar, ar,ar b'00,00
       ymm0 = _mm256_mul_pd(ymm0,b);      // ymm0 <- ar bi, ar br
-      ymm1 = _mm256_shuffle_pd(b,b,0x5); // ymm1 <- br,bi  b'01,01 
+      ymm1 = _mm256_shuffle_pd(b,b,0x5); // ymm1 <- br,bi  b'01,01
       ymm2 = _mm256_shuffle_pd(a,a,0xF); // ymm2 <- ai,ai  b'11,11
       ymm1 = _mm256_mul_pd(ymm1,ymm2);   // ymm1 <- br ai, ai bi
       return _mm256_addsub_pd(ymm0,ymm1);
@@ -365,10 +356,10 @@ namespace Optimization {
     }
   };
 
-  struct Div{
+  struct Div {
     // Real float
-    inline __m256 operator()(__m256 a, __m256 b){
-      return _mm256_div_ps(a,b);
+    inline __m256 operator()(__m256 a, __m256 b) {
+      return _mm256_div_ps(a, b);
     }
     // Real double
     inline __m256d operator()(__m256d a, __m256d b){
@@ -454,7 +445,7 @@ namespace Optimization {
 #define _mm256_alignr_epi64_grid(ret,a,b,n) ret=(__m256d) _mm256_alignr_epi8((__m256i)a,(__m256i)b,(n*8)%16)
 #endif
 
-#if defined (AVX1) || defined (AVXFMA)  
+#if defined (AVX1) || defined (AVXFMA)
 #define _mm256_alignr_epi32_grid(ret,a,b,n) {	\
     __m128 aa, bb;				\
 						\
@@ -487,7 +478,7 @@ namespace Optimization {
 
   struct Rotate{
 
-    static inline __m256 rotate(__m256 in,int n){ 
+    static inline __m256 rotate(__m256 in,int n){
       switch(n){
       case 0: return tRotate<0>(in);break;
       case 1: return tRotate<1>(in);break;
@@ -500,7 +491,7 @@ namespace Optimization {
       default: assert(0);
       }
     }
-    static inline __m256d rotate(__m256d in,int n){ 
+    static inline __m256d rotate(__m256d in,int n){
       switch(n){
       case 0: return tRotate<0>(in);break;
       case 1: return tRotate<1>(in);break;
@@ -509,28 +500,28 @@ namespace Optimization {
       default: assert(0);
       }
     }
-  
-    
-    template<int n>
-    static inline __m256 tRotate(__m256 in){ 
-      __m256 tmp = Permute::Permute0(in);
-      __m256 ret = in;
-      if ( n > 3 ) { 
-	_mm256_alignr_epi32_grid(ret,in,tmp,n);  
-      } else {
-        _mm256_alignr_epi32_grid(ret,tmp,in,n);          
-      }
-      return ret;
-    };
+
 
     template<int n>
-    static inline __m256d tRotate(__m256d in){ 
-      __m256d tmp = Permute::Permute0(in);
-      __m256d ret = in;
-      if ( n > 1 ) {
-	_mm256_alignr_epi64_grid(ret,in,tmp,n);          
+    static inline __m256 tRotate(__m256 in){
+      __m256 tmp = Permute::Permute0(in);
+      __m256 ret;
+      if ( n > 3 ) {
+          _mm256_alignr_epi32_grid(ret,in,tmp,n);
       } else {
-        _mm256_alignr_epi64_grid(ret,tmp,in,n);          
+          _mm256_alignr_epi32_grid(ret,tmp,in,n);
+      }
+      return ret;
+    }
+
+    template<int n>
+    static inline __m256d tRotate(__m256d in){
+      __m256d tmp = Permute::Permute0(in);
+      __m256d ret;
+      if ( n > 1 ) {
+	_mm256_alignr_epi64_grid(ret,in,tmp,n);
+      } else {
+        _mm256_alignr_epi64_grid(ret,tmp,in,n);
       }
       return ret;
     };
@@ -543,7 +534,7 @@ namespace Optimization {
     __m256 v1,v2;
     v1=Optimization::Permute::Permute0(in); // avx 256; quad complex single
     v1= _mm256_add_ps(v1,in);
-    v2=Optimization::Permute::Permute1(v1); 
+    v2=Optimization::Permute::Permute1(v1);
     v1 = _mm256_add_ps(v1,v2);
     u256f conv; conv.v = v1;
     return Grid::ComplexF(conv.f[0],conv.f[1]);
@@ -555,15 +546,15 @@ namespace Optimization {
     __m256 v1,v2;
     v1 = Optimization::Permute::Permute0(in); // avx 256; octo-double
     v1 = _mm256_add_ps(v1,in);
-    v2 = Optimization::Permute::Permute1(v1); 
+    v2 = Optimization::Permute::Permute1(v1);
     v1 = _mm256_add_ps(v1,v2);
-    v2 = Optimization::Permute::Permute2(v1); 
+    v2 = Optimization::Permute::Permute2(v1);
     v1 = _mm256_add_ps(v1,v2);
     u256f conv; conv.v=v1;
     return conv.f[0];
   }
-  
-  
+
+
   //Complex double Reduce
   template<>
   inline Grid::ComplexD Reduce<Grid::ComplexD, __m256d>::operator()(__m256d in){
@@ -573,14 +564,14 @@ namespace Optimization {
     u256d conv; conv.v = v1;
     return Grid::ComplexD(conv.f[0],conv.f[1]);
   }
-  
+
   //Real double Reduce
   template<>
   inline Grid::RealD Reduce<Grid::RealD, __m256d>::operator()(__m256d in){
     __m256d v1,v2;
     v1 = Optimization::Permute::Permute0(in); // avx 256; quad double
     v1 = _mm256_add_pd(v1,in);
-    v2 = Optimization::Permute::Permute1(v1); 
+    v2 = Optimization::Permute::Permute1(v1);
     v1 = _mm256_add_pd(v1,v2);
     u256d conv; conv.v = v1;
     return conv.f[0];
@@ -593,17 +584,17 @@ namespace Optimization {
     printf("Reduce : Missing integer implementation -> FIX\n");
     assert(0);
   }
-  
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-// Here assign types 
+// Here assign types
 
   typedef __m256  SIMD_Ftype; // Single precision type
   typedef __m256d SIMD_Dtype; // Double precision type
   typedef __m256i SIMD_Itype; // Integer type
 
-  // prefecthing 
+  // prefecthing
   inline void v_prefetch0(int size, const char *ptr){
     for(int i=0;i<size;i+=64){ //  Define L1 linesize above
       _mm_prefetch(ptr+i+4096,_MM_HINT_T1);
@@ -611,7 +602,7 @@ namespace Optimization {
     }
   }
   inline void prefetch_HINT_T0(const char *ptr){
-    _mm_prefetch(ptr,_MM_HINT_T0);
+    _mm_prefetch(ptr, _MM_HINT_T0);
   }
 
   // Function name aliases
@@ -620,7 +611,7 @@ namespace Optimization {
   typedef Optimization::Vset     VsetSIMD;
   typedef Optimization::Vstream  VstreamSIMD;
 
-  template <typename S, typename T> using ReduceSIMD = Optimization::Reduce<S,T>;
+  template <typename S, typename T> using ReduceSIMD = Optimization::Reduce<S, T>;
 
   // Arithmetic operations
   typedef Optimization::Sum         SumSIMD;
@@ -632,4 +623,4 @@ namespace Optimization {
   typedef Optimization::TimesMinusI TimesMinusISIMD;
   typedef Optimization::TimesI      TimesISIMD;
 
-}
+}  // namespace Grid

@@ -46,4 +46,4 @@
 #endif
 
 
-#endif
+#endif  // COMPILER_CHECK_H

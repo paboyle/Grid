@@ -255,19 +255,28 @@ PARALLEL_FOR_LOOP
     }
 
     Lattice(const Lattice& r){ // copy constructor
-    	_grid = r._grid;
-    	checkerboard = r.checkerboard;
+      _grid = r._grid;
+      checkerboard = r.checkerboard;
     	_odata.resize(_grid->oSites());// essential
-  		PARALLEL_FOR_LOOP
+  	PARALLEL_FOR_LOOP
         for(int ss=0;ss<_grid->oSites();ss++){
-            _odata[ss]=r._odata[ss];
+          _odata[ss]=r._odata[ss];
         }  	
-    }
+      }
 
 
 
     virtual ~Lattice(void) = default;
     
+    void reset(GridBase* grid) {
+      if (_grid != grid) {
+        _grid = grid;
+        _odata.resize(grid->oSites());
+        checkerboard = 0;
+      }
+    }
+
+
     template<class sobj> strong_inline Lattice<vobj> & operator = (const sobj & r){
 PARALLEL_FOR_LOOP
         for(int ss=0;ss<_grid->oSites();ss++){

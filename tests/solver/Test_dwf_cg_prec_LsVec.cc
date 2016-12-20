@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
   GridParallelRNG RNG4(UGrid);
   RNG4.SeedFixedIntegers(seeds4);
 
-  std::cout << GridLogMessage << "Generating random ferrmion field" << std::endl;
+  std::cout << GridLogMessage << "Generating random fermion field" << std::endl;
   LatticeFermion src(FGrid);
   random(RNG5, src);
   LatticeFermion result(FGrid);
@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
   GridStopWatch CGTimer;
 
   SchurDiagMooeeOperator<DomainWallFermionVec5dR, LatticeFermion> HermOpEO(Ddwf);
-  ConjugateGradient<LatticeFermion> CG(1.0e-8, 10000, 0);// switch off the assert
+  ConjugateGradient<LatticeFermion> CG(1.0e-8, 10000, 0);  // switch off the assert
 
   Ddwf.ZeroCounters();
   CGTimer.Start();
@@ -110,4 +110,4 @@ int main(int argc, char** argv) {
   Ddwf.Report();
 
   Grid_finalize();
-}
+}  

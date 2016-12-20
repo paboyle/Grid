@@ -27,17 +27,17 @@ with this program; if not, write to the Free Software Foundation, Inc.,
   directory
   *************************************************************************************/
 /*  END LEGAL */
-#ifndef GENERIC_HMC_RUNNER
-#define GENERIC_HMC_RUNNER
+#ifndef GRID_GENERIC_HMC_RUNNER
+#define GRID_GENERIC_HMC_RUNNER
 
 namespace Grid {
 namespace QCD {
 
-  // Virtual Class for HMC specific for gauge theories
-  // implement a specific theory by defining the BuildTheAction
-  template <class Implementation, class RepresentationsPolicy = NoHirep>
-  class BinaryHmcRunnerTemplate {
-  public:
+// Virtual Class for HMC specific for gauge theories
+// implement a specific theory by defining the BuildTheAction
+template <class Implementation, class RepresentationsPolicy = NoHirep>
+class BinaryHmcRunnerTemplate {
+public:
     INHERIT_FIELD_TYPES(Implementation);
     typedef Implementation ImplPolicy;
 
@@ -56,8 +56,10 @@ namespace QCD {
     IntegratorParameters MDparameters;
 
     GridCartesian *        UGrid;
-    GridCartesian *        FGrid;
     GridRedBlackCartesian *UrbGrid;
+
+    // These two are unnecessary, eliminate
+    GridCartesian *        FGrid;
     GridRedBlackCartesian *FrbGrid;
 
     std::vector<int> SerialSeed;
@@ -68,11 +70,11 @@ namespace QCD {
       ParallelSeed = P;
     }
 
-    virtual void BuildTheAction(int argc, char **argv) = 0; // necessary?
+    virtual void BuildTheAction(int argc, char **argv) = 0;  // necessary?
 
     // A couple of wrapper classes
     template <class IOCheckpointer>
-    void Run(int argc, char **argv, IOCheckpointer &Checkpoint) {
+    void Run(int argc, char **argv, IOCheckpointer &Checkpoint)  {
       NoSmearing<Implementation> S;
       Runner(argc, argv, Checkpoint, S);
     }
@@ -82,6 +84,8 @@ namespace QCD {
       Runner(argc, argv, CP, S);
     }
     //////////////////////////////
+
+    
 
 
     template <class SmearingPolicy, class IOCheckpointer>
@@ -141,11 +145,7 @@ namespace QCD {
       Field           U(UGrid);
 
 
-      typedef MinimumNorm2<Implementation,
-                           SmearingPolicy,
-                           RepresentationsPolicy>
-          IntegratorType; // change here to change the algorithm
-          
+      typedef MinimumNorm2<Implementation, SmearingPolicy, RepresentationsPolicy> IntegratorType;  // change here to change the algorithm
       IntegratorType MDynamics(UGrid, MDparameters, TheAction, Smearing);
 
       HMCparameters HMCpar;
@@ -187,7 +187,7 @@ namespace QCD {
       // Run it
       HMC.evolve();
     }
-  };
+};
 
   // These are for gauge fields
   typedef BinaryHmcRunnerTemplate<PeriodicGimplR> BinaryHmcRunner;
@@ -199,6 +199,7 @@ namespace QCD {
 
   typedef BinaryHmcRunnerTemplate<ScalarImplR, ScalarFields>
       ScalarBinaryHmcRunner;
-}
-}
-#endif
+
+}  // namespace QCD
+}  // namespace Grid
+#endif 

@@ -189,7 +189,8 @@ class Integrator {
 
   // Initialization of momenta and actions
   void refresh(Field& U, GridParallelRNG& pRNG) {
-    assert(P._grid == U._grid);
+    //assert(P._grid == U._grid);
+    P.reset(U._grid);
     std::cout << GridLogIntegrator << "Integrator refresh\n";
     FieldImplementation::generate_momenta(P, pRNG);
  
