@@ -224,6 +224,21 @@ namespace Optimization {
   #define cmul(a, b, c, i)\
   c[i]   = a[i]*b[i]   - a[i+1]*b[i+1];\
   c[i+1] = a[i]*b[i+1] + a[i+1]*b[i];
+
+  struct MultRealPart{
+    template <typename T>
+    inline vec<T> operator()(vec<T> a, vec<T> b){
+      vec<T> out;
+      
+      VECTOR_FOR(i, W<T>::c, 1)
+      {
+         out.v[2*i]   = a[2*i]*b[2*i];
+         out.v[2*i+1] = a[2*i]*b[2*i+1];
+      }      
+      return out;
+    };
+  };
+
   
   struct MultComplex{
     // Complex
@@ -456,6 +471,7 @@ namespace Optimization {
   typedef Optimization::Div         DivSIMD;
   typedef Optimization::Mult        MultSIMD;
   typedef Optimization::MultComplex MultComplexSIMD;
+  typedef Optimization::MultRealPart MultRealPartSIMD;
   typedef Optimization::Conj        ConjSIMD;
   typedef Optimization::TimesMinusI TimesMinusISIMD;
   typedef Optimization::TimesI      TimesISIMD;

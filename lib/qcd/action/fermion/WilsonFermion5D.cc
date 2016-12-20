@@ -60,7 +60,8 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   UmuEven(_FourDimRedBlackGrid),
   UmuOdd (_FourDimRedBlackGrid),
   Lebesgue(_FourDimGrid),
-  LebesgueEvenOdd(_FourDimRedBlackGrid)
+  LebesgueEvenOdd(_FourDimRedBlackGrid),
+  _tmp(&FiveDimRedBlackGrid)
 {
   if (Impl::LsVectorised) { 
 

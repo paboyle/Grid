@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -42,9 +42,32 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 namespace Grid {
 
+  class PointerCache {
+  private:
+
+    static const int Ncache=8;
+    static int victim;
+
+    typedef struct { 
+      void *address;
+      size_t bytes;
+      int valid;
+    } PointerCacheEntry;
+    
+    static PointerCacheEntry Entries[Ncache];
+
+  public:
+
+
+    static void *Insert(void *ptr,size_t bytes) ;
+    static void *Lookup(size_t bytes) ;
+
+  };
+
 ////////////////////////////////////////////////////////////////////
 // A lattice of something, but assume the something is SIMDized.
 ////////////////////////////////////////////////////////////////////
+
 template<typename _Tp>
 class alignedAllocator {
 public: 
@@ -66,27 +89,27 @@ public:
 
   pointer allocate(size_type __n, const void* _p= 0)
   { 
+    size_type bytes = __n*sizeof(_Tp);
+
+    _Tp *ptr = (_Tp *) PointerCache::Lookup(bytes);
+    
 #ifdef HAVE_MM_MALLOC_H
-    _Tp * ptr = (_Tp *) _mm_malloc(__n*sizeof(_Tp),128);
+    if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) _mm_malloc(bytes,128);
 #else
-    _Tp * ptr = (_Tp *) memalign(128,__n*sizeof(_Tp));
+    if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) memalign(128,bytes);
 #endif
 
-    _Tp tmp;
-#ifdef GRID_NUMA
-#pragma omp parallel for schedule(static)
-  for(int i=0;i<__n;i++){
-    ptr[i]=tmp;
-  }
-#endif 
     return ptr;
   }
 
-  void deallocate(pointer __p, size_type) { 
+  void deallocate(pointer __p, size_type __n) { 
+    size_type bytes = __n * sizeof(_Tp);
+    pointer __freeme = (pointer)PointerCache::Insert((void *)__p,bytes);
+
 #ifdef HAVE_MM_MALLOC_H
-    _mm_free((void *)__p); 
+    if ( __freeme ) _mm_free((void *)__freeme); 
 #else
-    free((void *)__p);
+    if ( __freeme ) free((void *)__freeme);
 #endif
   }
   void construct(pointer __p, const _Tp& __val) { };

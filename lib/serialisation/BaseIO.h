@@ -83,12 +83,7 @@ namespace Grid {
     typename std::enable_if<std::is_base_of<Serializable, U>::value, void>::type
     write(const std::string& s, const U &output);
     template <typename U>
-    typename std::enable_if<std::is_enum<U>::value, void>::type
-    write(const std::string& s, const U &output);
-    template <typename U>
-    typename std::enable_if<
-      !(std::is_base_of<Serializable, U>::value or std::is_enum<U>::value),
-      void>::type
+    typename std::enable_if<!std::is_base_of<Serializable, U>::value, void>::type
     write(const std::string& s, const U &output);
   private:
     T *upcast;
@@ -107,12 +102,7 @@ namespace Grid {
     typename std::enable_if<std::is_base_of<Serializable, U>::value, void>::type
     read(const std::string& s, U &output);
     template <typename U>
-    typename std::enable_if<std::is_enum<U>::value, void>::type
-    read(const std::string& s, U &output);
-    template <typename U>
-    typename std::enable_if<
-      !(std::is_base_of<Serializable, U>::value or std::is_enum<U>::value),
-      void>::type
+    typename std::enable_if<!std::is_base_of<Serializable, U>::value, void>::type
     read(const std::string& s, U &output);
   protected:
     template <typename U>
@@ -221,17 +211,7 @@ namespace Grid {
   
   template <typename T>
   template <typename U>
-  typename std::enable_if<std::is_enum<U>::value, void>::type
-  Writer<T>::write(const std::string &s, const U &output)
-  {
-    EnumIO<U>::write(*this, s, output);
-  }
-  
-  template <typename T>
-  template <typename U>
-  typename std::enable_if<
-    !(std::is_base_of<Serializable, U>::value or std::is_enum<U>::value),
-    void>::type
+  typename std::enable_if<!std::is_base_of<Serializable, U>::value, void>::type
   Writer<T>::write(const std::string &s, const U &output)
   {
     upcast->writeDefault(s, output);
@@ -266,17 +246,7 @@ namespace Grid {
   
   template <typename T>
   template <typename U>
-  typename std::enable_if<std::is_enum<U>::value, void>::type
-  Reader<T>::read(const std::string &s, U &output)
-  {
-    EnumIO<U>::read(*this, s, output);
-  }
-  
-  template <typename T>
-  template <typename U>
-  typename std::enable_if<
-    !(std::is_base_of<Serializable, U>::value or std::is_enum<U>::value),
-    void>::type
+  typename std::enable_if<!std::is_base_of<Serializable, U>::value, void>::type
   Reader<T>::read(const std::string &s, U &output)
   {
     upcast->readDefault(s, output);
@@ -300,7 +270,6 @@ namespace Grid {
       abort();
     }
   }
-
 }
 
 #endif
