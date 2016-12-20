@@ -28,6 +28,7 @@
 #ifndef QCD_PHOTON_ACTION_H
 #define QCD_PHOTON_ACTION_H
 
+
 namespace Grid{
 namespace QCD{
   
@@ -36,8 +37,8 @@ namespace QCD{
   {
   public:
     INHERIT_GIMPL_TYPES(Gimpl);
-    enum class Gauge    {Feynman, Coulomb, Landau};
-    enum class ZmScheme {QedL, QedTL};
+    GRID_SERIALIZABLE_ENUM(Gauge, undef, feynman, 1, coulomb, 2, landau, 3);
+    GRID_SERIALIZABLE_ENUM(ZmScheme, undef, qedL, 1, qedTL, 2);
   public:
     Photon(Gauge gauge, ZmScheme zmScheme);
     virtual ~Photon(void) = default;
@@ -104,7 +105,7 @@ namespace QCD{
     
     switch (zmScheme_)
     {
-      case ZmScheme::QedTL:
+      case ZmScheme::qedTL:
       {
         std::vector<int> zm(nd,0);
         TComplex         Tzero = Complex(0.0,0.0);
@@ -113,7 +114,7 @@ namespace QCD{
         
         break;
       }
-      case ZmScheme::QedL:
+      case ZmScheme::qedL:
       {
         LatticeInteger spNrm(grid), coor(grid);
         GaugeLinkField z(grid);
