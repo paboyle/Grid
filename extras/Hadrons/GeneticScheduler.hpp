@@ -134,7 +134,7 @@ void GeneticScheduler<T>::nextGeneration(void)
     LOG(Debug) << "Starting population:\n" << *this << std::endl;
     
     // random mutations
-    PARALLEL_FOR_LOOP
+    //PARALLEL_FOR_LOOP
     for (unsigned int i = 0; i < par_.popSize; ++i)
     {
         doMutation();
@@ -142,7 +142,7 @@ void GeneticScheduler<T>::nextGeneration(void)
     LOG(Debug) << "After mutations:\n" << *this << std::endl;
     
     // mating
-    PARALLEL_FOR_LOOP
+    //PARALLEL_FOR_LOOP
     for (unsigned int i = 0; i < par_.popSize/2; ++i)
     {
         doCrossover();

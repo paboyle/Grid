@@ -410,12 +410,19 @@ Environment::Size Environment::executeProgram(const std::vector<std::string> &p)
 // general memory management ///////////////////////////////////////////////////
 void Environment::addObject(const std::string name, const int moduleAddress)
 {
-    ObjInfo info;
-    
-    info.name   = name;
-    info.module = moduleAddress;
-    object_.push_back(std::move(info));
-    objectAddress_[name] = static_cast<unsigned int>(object_.size() - 1);
+    if (!hasObject(name))
+    {
+        ObjInfo info;
+        
+        info.name   = name;
+        info.module = moduleAddress;
+        object_.push_back(std::move(info));
+        objectAddress_[name] = static_cast<unsigned int>(object_.size() - 1);
+    }
+    else
+    {
+        HADRON_ERROR("object '" + name + "' already exists");
+    }
 }
 
 void Environment::registerObject(const unsigned int address,
@@ -444,6 +451,10 @@ void Environment::registerObject(const unsigned int address,
 void Environment::registerObject(const std::string name,
                                  const unsigned int size, const unsigned int Ls)
 {
+    if (!hasObject(name))
+    {
+        addObject(name);
+    }
     registerObject(getObjectAddress(name), size, Ls);
 }
 
@@ -566,6 +577,30 @@ bool Environment::hasRegisteredObject(const std::string name) const
     if (hasObject(name))
     {
         return hasRegisteredObject(getObjectAddress(name));
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool Environment::hasCreatedObject(const unsigned int address) const
+{
+    if (hasObject(address))
+    {
+        return (object_[address].data != nullptr);
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool Environment::hasCreatedObject(const std::string name) const
+{
+    if (hasObject(name))
+    {
+        return hasCreatedObject(getObjectAddress(name));
     }
     else
     {
