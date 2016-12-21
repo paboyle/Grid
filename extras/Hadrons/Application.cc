@@ -306,7 +306,7 @@ void Application::configLoop(void)
                      << " " << BIG_SEP << std::endl;
         env_.setTrajectory(t);
         env_.executeProgram(program_);
-        env_.freeAll();
     }
     LOG(Message) << BIG_SEP << " End of measurement " << BIG_SEP << std::endl;
+    env_.freeAll();
 }
