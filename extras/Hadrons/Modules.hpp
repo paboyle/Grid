@@ -32,6 +32,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MContraction/Meson.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Load.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Random.hpp>
+#include <Grid/Hadrons/Modules/MGauge/StochEm.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Unit.hpp>
 #include <Grid/Hadrons/Modules/MSolver/RBPrecCG.hpp>
 #include <Grid/Hadrons/Modules/MSource/Point.hpp>
