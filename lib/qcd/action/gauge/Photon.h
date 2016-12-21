@@ -44,7 +44,10 @@ namespace QCD{
     virtual ~Photon(void) = default;
     void FreePropagator(const GaugeField &in, GaugeField &out);
     void MomentumSpacePropagator(const GaugeField &in, GaugeField &out);
+    void StochasticWeight(GaugeLinkField &weight);
     void StochasticField(GaugeField &out, GridParallelRNG &rng);
+    void StochasticField(GaugeField &out, GridParallelRNG &rng,
+                         const GaugeLinkField &weight);
   private:
     void invKHatSquared(GaugeLinkField &out);
     void zmSub(GaugeLinkField &out);
@@ -148,32 +151,50 @@ namespace QCD{
   }
   
   template<class Gimpl>
-  void Photon<Gimpl>::StochasticField(GaugeField &out, GridParallelRNG &rng)
+  void Photon<Gimpl>::StochasticWeight(GaugeLinkField &weight)
   {
-    auto               *grid = dynamic_cast<GridCartesian *>(out._grid);
-    const unsigned int nd = grid->_ndimension;
-    std::vector<int> latt_size   = grid->_fdimensions;
-    GaugeLinkField     sqrtK2Inv(grid), r(grid);
-    GaugeField         aTilde(grid);
-    FFT                fft(grid);
+    auto               *grid     = dynamic_cast<GridCartesian *>(weight._grid);
+    const unsigned int nd        = grid->_ndimension;
+    std::vector<int>   latt_size = grid->_fdimensions;
     
     Integer vol = 1;
     for(int d = 0; d < nd; d++)
     {
       vol = vol * latt_size[d];
     }
-
-    invKHatSquared(sqrtK2Inv);
-    sqrtK2Inv = sqrt(vol*real(sqrtK2Inv));
-    zmSub(sqrtK2Inv);
+    invKHatSquared(weight);
+    weight = sqrt(vol*real(weight));
+    zmSub(weight);
+  }
+  
+  template<class Gimpl>
+  void Photon<Gimpl>::StochasticField(GaugeField &out, GridParallelRNG &rng)
+  {
+    auto           *grid = dynamic_cast<GridCartesian *>(out._grid);
+    GaugeLinkField weight(grid);
+    
+    StochasticWeight(weight);
+    StochasticField(out, rng, weight);
+  }
+  
+  template<class Gimpl>
+  void Photon<Gimpl>::StochasticField(GaugeField &out, GridParallelRNG &rng,
+                                      const GaugeLinkField &weight)
+  {
+    auto               *grid = dynamic_cast<GridCartesian *>(out._grid);
+    const unsigned int nd = grid->_ndimension;
+    GaugeLinkField     r(grid);
+    GaugeField         aTilde(grid);
+    FFT                fft(grid);
+    
     for(int mu = 0; mu < nd; mu++)
     {
       gaussian(rng, r);
-      r = sqrtK2Inv*r;
+      r = weight*r;
       pokeLorentz(aTilde, r, mu);
     }
     fft.FFT_all_dim(out, aTilde, FFT::backward);
-
+    
     out = real(out);
   }
 //  template<class Gimpl>
