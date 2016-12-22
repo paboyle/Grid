@@ -34,6 +34,8 @@ directory
 namespace Grid {
 namespace QCD {
 
+void bgq_l1p_optimisation(int mode);
+
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Helper routines that implement Wilson stencil for a single site.
   // Common to both the WilsonFermion and WilsonFermion5D
@@ -58,8 +60,9 @@ public:
   DiracOptDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
 		   int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out) 
   {
+    bgq_l1p_optimisation(1);
     switch(Opt) {
-#ifdef AVX512
+#if defined(AVX512) || defined (QPX)
     case OptInlineAsm:
        WilsonKernels<Impl>::DiracOptAsmDhopSite(st,lo,U,buf,sF,sU,Ls,Ns,in,out);
        break;
@@ -85,6 +88,7 @@ public:
     default:
       assert(0);
     }
+    bgq_l1p_optimisation(0);
   }
      
   template <bool EnableBool = true>
@@ -106,8 +110,9 @@ public:
   DiracOptDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
 		      int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out) {
 
+    bgq_l1p_optimisation(1);
     switch(Opt) {
-#ifdef AVX512
+#if defined(AVX512) || defined (QPX)
     case OptInlineAsm:
       WilsonKernels<Impl>::DiracOptAsmDhopSiteDag(st,lo,U,buf,sF,sU,Ls,Ns,in,out);
       break;
@@ -133,6 +138,7 @@ public:
     default:
       assert(0);
     }
+    bgq_l1p_optimisation(0);
   }
 
   template <bool EnableBool = true>
