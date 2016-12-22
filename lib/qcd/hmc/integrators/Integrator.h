@@ -57,7 +57,7 @@ struct IntegratorParameters {
 
 
   void print_parameters() {
-        std::cout << GridLogMessage << "[Integrator] Trajectory length  : " << trajL << std::endl;
+    std::cout << GridLogMessage << "[Integrator] Trajectory length  : " << trajL << std::endl;
     std::cout << GridLogMessage << "[Integrator] Number of MD steps : " << MDsteps << std::endl;
     std::cout << GridLogMessage << "[Integrator] Step size          : " << stepsize << std::endl;
   }
@@ -173,6 +173,20 @@ class Integrator {
     Params.print_parameters();
   }
 
+  void print_actions(){
+  	std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::" << std::endl;
+  	std::cout << GridLogMessage << "[Integrator] Action summary: "<<std::endl;
+  	for (int level = 0; level < as.size(); ++level) {
+  		std::cout << GridLogMessage << "[Integrator] ---- Level: "<< level << std::endl;
+  		for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
+  			std::cout << GridLogMessage << "["<< as[level].actions.at(actionID)->action_name() << "] ID: " << actionID << std::endl;
+  			std::cout << as[level].actions.at(actionID)->LogParameters();
+  		}
+  	}
+  	std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::"<< std::endl;
+
+  }
+
   // to be used by the actionlevel class to iterate
   // over the representations
   struct _refresh {
@@ -189,8 +203,7 @@ class Integrator {
 
   // Initialization of momenta and actions
   void refresh(Field& U, GridParallelRNG& pRNG) {
-    //assert(P._grid == U._grid);
-    P.reset(U._grid);
+    assert(P._grid == U._grid);
     std::cout << GridLogIntegrator << "Integrator refresh\n";
     FieldImplementation::generate_momenta(P, pRNG);
  

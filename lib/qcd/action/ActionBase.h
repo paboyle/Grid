@@ -36,14 +36,13 @@ template <class GaugeField>
 class Action {
  public:
   bool is_smeared = false;
-  // Boundary conditions? // Heatbath?
-  virtual void refresh(const GaugeField& U,
-                       GridParallelRNG& pRNG) = 0;  // refresh pseudofermions
-  virtual RealD S(const GaugeField& U) = 0;         // evaluate the action
-  virtual void deriv(const GaugeField& U,
-                     GaugeField& dSdU) = 0;  // evaluate the action derivative
-  virtual std::string action_name() = 0; // return the action name
-  virtual ~Action(){};
+  // Heatbath?
+  virtual void refresh(const GaugeField& U, const GridParallelRNG& pRNG) = 0; // refresh pseudofermions
+  virtual RealD S(const GaugeField& U) = 0;                       // evaluate the action
+  virtual void deriv(const GaugeField& U, GaugeField& dSdU) = 0;  // evaluate the action derivative
+  virtual std::string action_name()    = 0;                       // return the action name
+  virtual std::string LogParameters()  = 0;  											// prints action parameters
+  virtual ~Action(){}
 };
 
 // Indexing of tuple types
@@ -60,32 +59,10 @@ struct Index<T, std::tuple<U, Types...>> {
   static const std::size_t value = 1 + Index<T, std::tuple<Types...>>::value;
 };
 
-/*
-template <class GaugeField>
-struct ActionLevel {
- public:
-  typedef Action<GaugeField>*
-      ActPtr;  // now force the same colours as the rest of the code
-
-  //Add supported representations here
-
-
-  unsigned int multiplier;
-
-  std::vector<ActPtr> actions;
-
-  ActionLevel(unsigned int mul = 1) : actions(0), multiplier(mul) {
-    assert(mul >= 1);
-  };
-
-  void push_back(ActPtr ptr) { actions.push_back(ptr); }
-};
-*/
-
 template <class Field, class Repr = NoHirep >
 struct ActionLevel {
  public:
-  unsigned int multiplier; 
+  unsigned int multiplier;
 
   // Fundamental repr actions separated because of the smearing
   typedef Action<Field>* ActPtr;
@@ -98,15 +75,13 @@ struct ActionLevel {
 
   std::vector<ActPtr>& actions;
 
-  ActionLevel(unsigned int mul = 1) : actions(std::get<0>(actions_hirep)), multiplier(mul) {
+  explicit ActionLevel(unsigned int mul = 1) : actions(std::get<0>(actions_hirep)), multiplier(mul) {
     // initialize the hirep vectors to zero.
-    //apply(this->resize, actions_hirep, 0); //need a working resize
+    // apply(this->resize, actions_hirep, 0); //need a working resize
     assert(mul >= 1);
-  };
+  }
 
-  //void push_back(ActPtr ptr) { actions.push_back(ptr); }
-
-
+  // void push_back(ActPtr ptr) { actions.push_back(ptr); }
 
   template < class GenField >
   void push_back(Action<GenField>* ptr) {

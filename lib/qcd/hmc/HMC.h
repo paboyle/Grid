@@ -55,7 +55,7 @@ struct HMCparameters {
     MetropolisTest = true;
     NoMetropolisUntil = 10;
     StartTrajectory = 0;
-    Trajectories = 200;
+    Trajectories = 10;
     /////////////////////////////////
   }
 
@@ -206,10 +206,10 @@ class HybridMonteCarlo {
 
     Params.print_parameters();
     TheIntegrator.print_parameters();
+    TheIntegrator.print_actions();
 
     // Actual updates (evolve a copy Ucopy then copy back eventually)
-    for (int traj = Params.StartTrajectory;
-         traj < Params.Trajectories + Params.StartTrajectory; ++traj) {
+    for (int traj = Params.StartTrajectory; traj < Params.Trajectories + Params.StartTrajectory; ++traj) {
       std::cout << GridLogMessage << "-- # Trajectory = " << traj << "\n";
       Ucopy = Ucur;
 

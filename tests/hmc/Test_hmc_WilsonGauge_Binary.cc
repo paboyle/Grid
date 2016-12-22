@@ -35,140 +35,52 @@ using namespace Grid;
 using namespace Grid::QCD;
 
 namespace Grid {
-namespace QCD {
+  namespace QCD {
 
-//Change here the type of reader
-typedef Grid::TextReader InputFileReader; 
-
-
-class HMCRunnerParameters : Serializable {
- public:
-  GRID_SERIALIZABLE_CLASS_MEMBERS(HMCRunnerParameters,
-                                  double, beta,
-                                  int, MDsteps,
-                                  double, TrajectorLength,
-                                  int, SaveInterval,
-                                  std::string, format,
-                                  std::string, conf_prefix,
-                                  std::string, rng_prefix,
-                                  std::string, serial_seeds,
-                                  std::string, parallel_seeds,
-                                  );
-
-  HMCRunnerParameters() {}
-};
+    //Change here the type of reader
+    typedef Grid::TextReader InputFileReader; 
 
 
-// Derive from the BinaryHmcRunner (templated for gauge fields)
-class HmcRunner : public BinaryHmcRunner {
- public:
-    HMCRunnerParameters HMCPar;
-    void BuildTheAction(int argc, char **argv){}
-};
-/*
+    class HMCRunnerParameters : Serializable {
+    public:
+      GRID_SERIALIZABLE_CLASS_MEMBERS(HMCRunnerParameters,
+        double, beta,
+        int, MDsteps,
+        double, TrajectorLength,
+        int, SaveInterval,
+        std::string, format,
+        std::string, conf_prefix,
+        std::string, rng_prefix,
+        std::string, serial_seeds,
+        std::string, parallel_seeds,
+        );
 
-    // eliminate arcg and argv from here
-    void BuildTheAction(int argc, char **argv)
-
-  {
-    // Typedefs to simplify notation
-    typedef WilsonGaugeActionR GaugeAction;
-    typedef WilsonImplR ImplPolicy;
-    typedef WilsonFermionR FermionAction;
-    typedef typename FermionAction::FermionField FermionField;
-
-    // this can be simplified too. MakeDefaultGrid(Nd)
-    UGrid = SpaceTimeGrid::makeFourDimGrid(
-        GridDefaultLatt(), 
-        GridDefaultSimd(Nd, vComplex::Nsimd()), 
-        GridDefaultMpi());
-    
-
-    // Gauge action
-    std::cout << GridLogMessage << "Beta: " << HMCPar.beta << std::endl;
-    GaugeAction Waction(HMCPar.beta);
-
-    // Collect actions
-    ActionLevel<Field> Level1(1);
-    Level1.push_back(&Waction);
-    TheAction.push_back(Level1);
-
-    // Add observables
-    // options for checkpointers
-    // this can be moved outside the BuildTheAction
-    //BinaryHmcCheckpointer
-    //ILDGHmcCheckpointer
-    //NerscHmcCheckpointer
-    NerscHmcCheckpointer<BinaryHmcRunner::ImplPolicy> Checkpoint(
-        HMCPar.conf_prefix, HMCPar.rng_prefix, HMCPar.SaveInterval, HMCPar.format);
-    // Can implement also a specific function in the hmcrunner
-    // AddCheckpoint (...) that takes the same parameters + a string/tag
-    // defining the type of the checkpointer
-    // with tags can be implemented by overloading and no ifs
-    // Then force all checkpoint to have few common functions
-    // return an object that is then passed to the Run function
-
-    PlaquetteLogger<BinaryHmcRunner::ImplPolicy> PlaqLog(
-        std::string("Plaquette"));
-    ObservablesList.push_back(&PlaqLog);
-    ObservablesList.push_back(&Checkpoint);
-
-    // This must run from here so that the grids are defined
-    Run(argc, argv, Checkpoint);  // no smearing
-  };
-};
-*/
-}
+      HMCRunnerParameters() {}
+    };
+  }
 }
 
 int main(int argc, char **argv) {
   Grid_init(&argc, &argv);
+   // Typedefs to simplify notation
+  typedef BinaryHmcRunner<MinimumNorm2> HMCWrapper;// Uses the default minimum norm
+  typedef WilsonGaugeActionR GaugeAction;
 
   int threads = GridThread::GetThreads();
-  std::cout << GridLogMessage << "Grid is setup to use " << threads
-            << " threads" << std::endl;
+  std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
-  HmcRunner TheHMC;
+  //////////////////////////////////////////////////////////////
+  // Input file section 
   // make input file name general
+  HMCRunnerParameters HMCPar;
   InputFileReader Reader("input.wilson_gauge.params");
-  read(Reader, "HMC", TheHMC.HMCPar);
-
-  std::cout << GridLogMessage << TheHMC.HMCPar << std::endl;
+  read(Reader, "HMC", HMCPar);
+  std::cout << GridLogMessage << HMCPar << std::endl;
 
   // Seeds for the random number generators
   // generalise
-  std::vector<int> SerSeed = strToVec<int>(TheHMC.HMCPar.serial_seeds);
-  std::vector<int> ParSeed = strToVec<int>(TheHMC.HMCPar.parallel_seeds);
-
-  TheHMC.RNGSeeds(SerSeed, ParSeed);
-
-  TheHMC.MDparameters.set(TheHMC.HMCPar.MDsteps, TheHMC.HMCPar.TrajectorLength);
-
-  //TheHMC.BuildTheAction(argc, argv);
-
-
-
-     // Typedefs to simplify notation
-    typedef WilsonGaugeActionR GaugeAction;
-    typedef WilsonImplR ImplPolicy;
-    typedef WilsonFermionR FermionAction;
-    typedef typename FermionAction::FermionField FermionField;
-
-    // this can be simplified too. MakeDefaultGrid(Nd)
-    TheHMC.UGrid = SpaceTimeGrid::makeFourDimGrid(
-        GridDefaultLatt(), 
-        GridDefaultSimd(Nd, vComplex::Nsimd()), 
-        GridDefaultMpi());
-    
-
-    // Gauge action
-    std::cout << GridLogMessage << "Beta: " << TheHMC.HMCPar.beta << std::endl;
-    GaugeAction Waction(TheHMC.HMCPar.beta);
-
-    // Collect actions
-    ActionLevel<BinaryHmcRunner::Field> Level1(1);
-    Level1.push_back(&Waction);
-    TheHMC.TheAction.push_back(Level1);
+  std::vector<int> SerSeed = strToVec<int>(HMCPar.serial_seeds);
+  std::vector<int> ParSeed = strToVec<int>(HMCPar.parallel_seeds);
 
     // Add observables
     // options for checkpointers
@@ -176,8 +88,8 @@ int main(int argc, char **argv) {
     //BinaryHmcCheckpointer
     //ILDGHmcCheckpointer
     //NerscHmcCheckpointer
-    NerscHmcCheckpointer<BinaryHmcRunner::ImplPolicy> Checkpoint(
-        TheHMC.HMCPar.conf_prefix, TheHMC.HMCPar.rng_prefix, TheHMC.HMCPar.SaveInterval, TheHMC.HMCPar.format);
+  BinaryHmcCheckpointer<HMCWrapper::ImplPolicy> Checkpoint(HMCPar.conf_prefix, HMCPar.rng_prefix, 
+                                                           HMCPar.SaveInterval, HMCPar.format);
     // Can implement also a specific function in the hmcrunner
     // AddCheckpoint (...) that takes the same parameters + a string/tag
     // defining the type of the checkpointer
@@ -185,16 +97,38 @@ int main(int argc, char **argv) {
     // Then force all checkpoint to have few common functions
     // return an object that is then passed to the Run function
 
-    PlaquetteLogger<BinaryHmcRunner::ImplPolicy> PlaqLog(
-        std::string("Plaquette"));
-    TheHMC.ObservablesList.push_back(&PlaqLog);
-    TheHMC.ObservablesList.push_back(&Checkpoint);
+  /////////////////////////////////////////////////////////////
+  HMCWrapper TheHMC;
+  TheHMC.Resources.AddFourDimGrid("gauge");
 
-    // This must run from here so that the grids are defined
-    TheHMC.Run(argc, argv, Checkpoint);  // no smearing
+  /////////////////////////////////////////////////////////////
+  // Collect actions, here use more encapsulation
+
+  // Gauge action
+  std::cout << GridLogMessage << "Beta: " << HMCPar.beta << std::endl;
+  GaugeAction Waction(HMCPar.beta);
+
+  ActionLevel<HMCWrapper::Field> Level1(1);
+  Level1.push_back(&Waction);
+  TheHMC.TheAction.push_back(Level1);
+  /////////////////////////////////////////////////////////////
+
+  // Construct observables 
+  PlaquetteLogger<HMCWrapper::ImplPolicy> PlaqLog("Plaquette");
+  TheHMC.ObservablesList.push_back(&PlaqLog);
+  TheHMC.ObservablesList.push_back(&Checkpoint);
+  //////////////////////////////////////////////
+
+  // Fill resources
+  TheHMC.Resources.AddRNGSeeds(SerSeed, ParSeed);
+  TheHMC.MDparameters.set(HMCPar.MDsteps, HMCPar.TrajectorLength);
+
+  // eventually smearing here
+  ////////////////////////////////////////////////////////////////
 
 
-
+  TheHMC.ReadCommandLine(argc, argv);
+  TheHMC.Run(Checkpoint);  // no smearing
 
   Grid_finalize();
 }

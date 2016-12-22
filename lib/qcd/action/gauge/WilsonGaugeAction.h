@@ -43,18 +43,22 @@ class WilsonGaugeAction : public Action<typename Gimpl::GaugeField> {
  public:
   INHERIT_GIMPL_TYPES(Gimpl);
 
-  //      typedef LorentzScalar<GaugeField> GaugeLinkField;
-
  private:
   RealD beta;
 
  public:
-  WilsonGaugeAction(RealD b) : beta(b){};
+  explicit WilsonGaugeAction(RealD b) : beta(b){}
 
-  virtual std::string action_name(){return "WilsonGaugeAction";}
+  virtual std::string action_name() {return "WilsonGaugeAction";}
+
+  virtual std::string LogParameters(){
+  	std::stringstream sstream;
+  	sstream << GridLogMessage << "[WilsonGaugeAction] Beta: " << beta << std::endl;
+  	return sstream.str();
+  }
 
   virtual void refresh(const GaugeField &U,
-                       GridParallelRNG &pRNG){};  // noop as no pseudoferms
+                       const GridParallelRNG &pRNG){};  // noop as no pseudoferms
 
   virtual RealD S(const GaugeField &U) {
     RealD plaq = WilsonLoops<Gimpl>::avgPlaquette(U);
@@ -80,8 +84,7 @@ class WilsonGaugeAction : public Action<typename Gimpl::GaugeField> {
 
       PokeIndex<LorentzIndex>(dSdU, dSdU_mu, mu);
     }
-
-  };
+  }
 };
 
 
