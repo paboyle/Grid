@@ -7,12 +7,15 @@
   //  vComplexF isigns[2] = { signs[0], signs[1] };
   //COMPLEX_TYPE is vComplexF of vComplexD depending 
   //on the chosen precision
-  COMPLEX_TYPE *isigns = &signs[0];
-
+  COMPLEX_SIGNS(isigns);
   MASK_REGS;
   int nmax=U._grid->oSites();
   for(int site=0;site<Ns;site++) {
   int sU =lo.Reorder(ssU);
+
+  LOCK_GAUGE(0);
+
+
   int ssn=ssU+1; 
   if(ssn>=nmax) ssn=0;
   int sUn=lo.Reorder(ssn);
@@ -251,5 +254,6 @@
   
   }
   ssU++;
+  UNLOCK_GAUGE(0);
   }
 }
