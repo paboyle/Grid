@@ -91,7 +91,8 @@ int main (int argc, char ** argv)
   GridParallelRNG          sRNG4(sUGrid);  sRNG4.SeedFixedIntegers(seeds4);
   GridParallelRNG          sRNG5(sFGrid);  sRNG5.SeedFixedIntegers(seeds5);
 
-  LatticeGaugeField Umu(UGrid); random(RNG4,Umu);
+  LatticeGaugeField Umu(UGrid);
+  SU3::HotConfiguration(RNG4,Umu);
 
   RealD mass=0.1;
   RealD M5  =1.8;
