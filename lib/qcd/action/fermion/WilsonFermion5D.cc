@@ -437,12 +437,25 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
     stat.accum(nthreads);
 #endif
   } else {
+#if 0
     PARALLEL_FOR_LOOP
     for (int ss = 0; ss < U._grid->oSites(); ss++) {
       int sU = ss;
       int sF = LLs * sU;
       Kernels::DiracOptDhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
     }
+#else
+#pragma omp parallel 
+    {
+      for(int i=0;i<10;i++){
+      int me, myoff,mywork;
+      int len = U._grid->oSites();
+      GridThread::GetWorkBarrier(len,me, mywork,myoff);
+      int sF = LLs * myoff;
+      Kernels::DiracOptDhopSite(st,lo,U,st.CommBuf(),sF,myoff,LLs,mywork,in,out);
+      }
+    }
+#endif
   }
   DhopComputeTime+=usecond();
 }
