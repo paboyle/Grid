@@ -171,6 +171,8 @@ namespace QCD {
   class WilsonStencil : public CartesianStencil<vobj,cobj> {
   public:
 
+    typedef CartesianCommunicator::CommsRequest_t CommsRequest_t;
+
     WilsonStencil(GridBase *grid,
 		int npoints,
 		int checkerboard,
@@ -178,79 +180,71 @@ namespace QCD {
 		const std::vector<int> &distances)  : CartesianStencil<vobj,cobj> (grid,npoints,checkerboard,directions,distances) 
       {    };
 
-    template < class compressor>
-    std::thread HaloExchangeOptBegin(const Lattice<vobj> &source,compressor &compress) {
-      this->Mergers.resize(0); 
-      this->Packets.resize(0);
-      this->HaloGatherOpt(source,compress);
-      return std::thread([&] { this->Communicate(); });
-    }
 
     template < class compressor>
     void HaloExchangeOpt(const Lattice<vobj> &source,compressor &compress) 
     {
-      auto thr = this->HaloExchangeOptBegin(source,compress);
-      this->HaloExchangeOptComplete(thr);
+      std::vector<std::vector<CommsRequest_t> > reqs;
+      this->Mergers.resize(0); 
+      this->Packets.resize(0);
+      this->HaloGatherOpt(source,compress);
+      this->CommunicateBegin(reqs);
+      this->CommunicateComplete(reqs);
+      this->CommsMerge(); // spins
+      this->calls++;
     }
 
-    void HaloExchangeOptComplete(std::thread &thr) 
-    {
-	this->CommsMerge(); // spins
-	this->jointime-=usecond();
-	thr.join();
-	this->jointime+=usecond();
-    }
 
     template < class compressor>
     void HaloGatherOpt(const Lattice<vobj> &source,compressor &compress)
     {
-	// conformable(source._grid,_grid);
-	assert(source._grid==this->_grid);
-	this->halogtime-=usecond();
+      int face_idx=0;
 
-	assert (this->comm_buf.size() == this->_unified_buffer_size );
-	this->u_comm_offset=0;
+      // conformable(source._grid,_grid);
+      assert(source._grid==this->_grid);
+      this->halogtime-=usecond();
+      
+      this->u_comm_offset=0;
+      
+      int dag = compress.dag;
+      
+      WilsonXpCompressor<cobj,vobj> XpCompress; 
+      WilsonYpCompressor<cobj,vobj> YpCompress; 
+      WilsonZpCompressor<cobj,vobj> ZpCompress; 
+      WilsonTpCompressor<cobj,vobj> TpCompress;
+      WilsonXmCompressor<cobj,vobj> XmCompress;
+      WilsonYmCompressor<cobj,vobj> YmCompress;
+      WilsonZmCompressor<cobj,vobj> ZmCompress;
+      WilsonTmCompressor<cobj,vobj> TmCompress;
 
-	int dag = compress.dag;
-	static std::vector<int> dirs(Nd*2);
-	for(int mu=0;mu<Nd;mu++){
-	  if ( dag ) {
-	    dirs[mu]  =mu;
-	    dirs[mu+4]=mu+Nd;
-	  } else { 
-	    dirs[mu]  =mu+Nd;
-	    dirs[mu+Nd]=mu;
-	  }
-	}
-
-
-	WilsonXpCompressor<cobj,vobj> XpCompress;
-	this->HaloGatherDir(source,XpCompress,dirs[0]);
-
-	WilsonYpCompressor<cobj,vobj> YpCompress;
-	this->HaloGatherDir(source,YpCompress,dirs[1]);
-
-	WilsonZpCompressor<cobj,vobj> ZpCompress;
-	this->HaloGatherDir(source,ZpCompress,dirs[2]);
-
-	WilsonTpCompressor<cobj,vobj> TpCompress;
-	this->HaloGatherDir(source,TpCompress,dirs[3]);
-
-	WilsonXmCompressor<cobj,vobj> XmCompress;
-	this->HaloGatherDir(source,XmCompress,dirs[4]);
-
-	WilsonYmCompressor<cobj,vobj> YmCompress;
-	this->HaloGatherDir(source,YmCompress,dirs[5]);
-
-	WilsonZmCompressor<cobj,vobj> ZmCompress;
-	this->HaloGatherDir(source,ZmCompress,dirs[6]);
-
-	WilsonTmCompressor<cobj,vobj> TmCompress;
-	this->HaloGatherDir(source,TmCompress,dirs[7]);
-
-	assert(this->u_comm_offset==this->_unified_buffer_size);
-	this->halogtime+=usecond();
+      // Gather all comms buffers
+      //    for(int point = 0 ; point < _npoints; point++) {
+      //      compress.Point(point);
+      //      HaloGatherDir(source,compress,point,face_idx);
+      //    }
+      if ( dag ) { 
+	this->HaloGatherDir(source,XpCompress,Xp,face_idx);
+	this->HaloGatherDir(source,YpCompress,Yp,face_idx);
+	this->HaloGatherDir(source,ZpCompress,Zp,face_idx);
+	this->HaloGatherDir(source,TpCompress,Tp,face_idx);
+	this->HaloGatherDir(source,XmCompress,Xm,face_idx);
+	this->HaloGatherDir(source,YmCompress,Ym,face_idx);
+	this->HaloGatherDir(source,ZmCompress,Zm,face_idx);
+	this->HaloGatherDir(source,TmCompress,Tm,face_idx);
+      } else {
+	this->HaloGatherDir(source,XmCompress,Xp,face_idx);
+	this->HaloGatherDir(source,YmCompress,Yp,face_idx);
+	this->HaloGatherDir(source,ZmCompress,Zp,face_idx);
+	this->HaloGatherDir(source,TmCompress,Tp,face_idx);
+	this->HaloGatherDir(source,XpCompress,Xm,face_idx);
+	this->HaloGatherDir(source,YpCompress,Ym,face_idx);
+	this->HaloGatherDir(source,ZpCompress,Zm,face_idx);
+	this->HaloGatherDir(source,TpCompress,Tm,face_idx);
       }
+      this->face_table_computed=1;
+      assert(this->u_comm_offset==this->_unified_buffer_size);
+      this->halogtime+=usecond();
+    }
 
   };
 

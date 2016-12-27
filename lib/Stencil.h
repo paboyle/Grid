@@ -678,12 +678,9 @@ PARALLEL_FOR_LOOP
     calls++;
     Mergers.resize(0);
     Packets.resize(0);
-    _grid->StencilBarrier();
     HaloGather(source,compress);
     this->CommunicateBegin(reqs);
-    _grid->StencilBarrier();
     this->CommunicateComplete(reqs);
-    _grid->StencilBarrier();
     CommsMerge(); // spins
   }
   

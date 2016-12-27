@@ -403,7 +403,7 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
   int LLs = in._grid->_rdimensions[0];
   
   DhopCommTime-=usecond();
-  st.HaloExchange(in,compressor);
+  st.HaloExchangeOpt(in,compressor);
   DhopCommTime+=usecond();
   
   DhopComputeTime-=usecond();
@@ -437,7 +437,7 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
     stat.accum(nthreads);
 #endif
   } else {
-#if 1
+#if 0
     PARALLEL_FOR_LOOP
     for (int ss = 0; ss < U._grid->oSites(); ss++) {
       int sU = ss;
