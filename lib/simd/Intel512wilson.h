@@ -98,6 +98,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 // a little as some duplication developed during trying different
 // variants during optimisation. Could cut back to only those used.
 //////////////////////////////////////////////////////////////////
+#define LOCK_GAUGE(dir) 
+#define UNLOCK_GAUGE(dir) 
 
 //  const SiteSpinor * ptr = & in._odata[offset];	
 #define LOAD_CHIMU(PTR)	 LOAD_CHIMUi(PTR)
