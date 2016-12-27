@@ -415,7 +415,7 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
       int sF = LLs * sU;
       Kernels::DiracOptDhopSiteDag(st, lo, U, st.CommBuf(), sF, sU, LLs, 1, in, out);
     }
-#ifdef AVX512
+#ifdef AVX512_SWITCHOFF
   } else if (stat.is_init() ) {
 
     int nthreads;
