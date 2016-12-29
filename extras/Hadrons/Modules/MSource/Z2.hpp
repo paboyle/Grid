@@ -67,7 +67,7 @@ template <typename FImpl>
 class TZ2: public Module<Z2Par>
 {
 public:
-    TYPE_ALIASES(FImpl,);
+    FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TZ2(const std::string name);
@@ -82,7 +82,8 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(Z2, TZ2<FIMPL>, MSource);
+MODULE_REGISTER_NS(Z2,       TZ2<FIMPL>,       MSource);
+MODULE_REGISTER_NS(ScalarZ2, TZ2<ScalarImplR>, MSource);
 
 /******************************************************************************
  *                       TZ2 template implementation                          *

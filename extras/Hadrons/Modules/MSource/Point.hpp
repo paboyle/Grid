@@ -63,7 +63,7 @@ template <typename FImpl>
 class TPoint: public Module<PointPar>
 {
 public:
-    TYPE_ALIASES(FImpl,);
+    FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TPoint(const std::string name);
@@ -78,7 +78,8 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(Point, TPoint<FIMPL>, MSource);
+MODULE_REGISTER_NS(Point,       TPoint<FIMPL>,       MSource);
+MODULE_REGISTER_NS(ScalarPoint, TPoint<ScalarImplR>, MSource);
 
 /******************************************************************************
  *                       TPoint template implementation                       *
