@@ -28,9 +28,27 @@
 #ifndef QCD_PHOTON_ACTION_H
 #define QCD_PHOTON_ACTION_H
 
-
 namespace Grid{
 namespace QCD{
+  template <class S>
+  class QedGimpl
+  {
+  public:
+    typedef S Simd;
+    
+    template <typename vtype>
+    using iImplGaugeLink  = iScalar<iScalar<iScalar<vtype>>>;
+    template <typename vtype>
+    using iImplGaugeField = iVector<iScalar<iScalar<vtype>>, Nd>;
+    
+    typedef iImplGaugeLink<Simd> SiteGaugeLink;
+    typedef iImplGaugeField<Simd> SiteGaugeField;
+    
+    typedef Lattice<SiteGaugeLink> GaugeLinkField;
+    typedef Lattice<SiteGaugeField> GaugeField;
+  };
+  
+  typedef QedGimpl<vComplex> QedGimplR;
   
   template<class Gimpl>
   class Photon
@@ -56,6 +74,8 @@ namespace QCD{
     ZmScheme zmScheme_;
   };
 
+  typedef Photon<QedGimplR>  PhotonR;
+  
   template<class Gimpl>
   Photon<Gimpl>::Photon(Gauge gauge, ZmScheme zmScheme)
   : gauge_(gauge), zmScheme_(zmScheme)

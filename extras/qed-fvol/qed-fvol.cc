@@ -5,29 +5,7 @@ using namespace Grid;
 using namespace QCD;
 using namespace QedFVol;
 
-template <class S> 
-class QedGimpl 
-{
-public:
-  typedef S Simd;
-
-  template <typename vtype>
-  using iImplGaugeLink  = iScalar<iScalar<iScalar<vtype>>>;
-  template <typename vtype>
-  using iImplGaugeField = iVector<iScalar<iScalar<vtype>>, Nd>;
-
-  typedef iImplGaugeLink<Simd> SiteGaugeLink;
-  typedef iImplGaugeField<Simd> SiteGaugeField;
-
-  typedef Lattice<SiteGaugeLink> GaugeLinkField; // bit ugly naming; polarised
-                                                 // gauge field, lorentz... all
-                                                 // ugly
-  typedef Lattice<SiteGaugeField> GaugeField;
-};
-
-typedef QedGimpl<vComplex>              QedGimplR;
 typedef PeriodicGaugeImpl<QedGimplR>    QedPeriodicGimplR;
-typedef Photon<QedGimplR>               PhotonR;
 typedef PhotonR::GaugeField             EmField;
 typedef PhotonR::GaugeLinkField         EmComp;
 

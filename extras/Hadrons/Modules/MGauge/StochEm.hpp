@@ -39,27 +39,6 @@ BEGIN_HADRONS_NAMESPACE
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MGauge)
 
-template <class S>
-class QedGimpl
-{
-public:
-    typedef S Simd;
-    
-    template <typename vtype>
-    using iImplGaugeLink  = iScalar<iScalar<iScalar<vtype>>>;
-    template <typename vtype>
-    using iImplGaugeField = iVector<iScalar<iScalar<vtype>>, Nd>;
-    
-    typedef iImplGaugeLink<Simd> SiteGaugeLink;
-    typedef iImplGaugeField<Simd> SiteGaugeField;
-    
-    typedef Lattice<SiteGaugeLink> GaugeLinkField;
-    typedef Lattice<SiteGaugeField> GaugeField;
-};
-
-typedef QedGimpl<vComplex> QedGimplR;
-typedef Photon<QedGimplR>  PhotonR;
-
 class StochEmPar: Serializable
 {
 public:
