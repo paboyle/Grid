@@ -292,4 +292,9 @@ typedef MobiusFermion<GparityWilsonImplD> GparityMobiusFermionD;
 #include <Grid/qcd/action/pseudofermion/OneFlavourEvenOddRational.h>
 #include <Grid/qcd/action/pseudofermion/OneFlavourEvenOddRationalRatio.h>
 
+////////////////////
+// Scalar actions
+////////////////////
+#include <Grid/qcd/action/scalar/Scalar.h>
+
 #endif
