@@ -89,6 +89,7 @@ namespace Optimization {
       vec_st(a, 0, d);
     }
     //Integer
+    // PAB: fixme -- is this right ; just looks like scalar not vector
     inline void operator()(int a, Integer *i){
       i[0] = a;
     }

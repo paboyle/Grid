@@ -70,51 +70,20 @@
 
 namespace Grid {
 
-inline void Gather_plane_simple_table_compute (GridBase *grid,int dimension,int plane,int cbmask,
-					       int off,std::vector<std::pair<int,int> > & table)
+void Gather_plane_simple_table_compute (GridBase *grid,int dimension,int plane,int cbmask,
+					int off,std::vector<std::pair<int,int> > & table);
+
+template<class vobj,class cobj,class compressor> 
+void Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so)   __attribute__((noinline));
+
+template<class vobj,class cobj,class compressor> 
+void Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so)
 {
-  table.resize(0);
-  int rd = grid->_rdimensions[dimension];
-
-  if ( !grid->CheckerBoarded(dimension) ) {
-    cbmask = 0x3;
+  int num=table.size();
+  PARALLEL_FOR_LOOP     
+  for(int i=0;i<num;i++){
+    vstream(buffer[off+table[i].first],compress(rhs._odata[so+table[i].second]));
   }
-  int so= plane*grid->_ostride[dimension]; // base offset for start of plane 
-  int e1=grid->_slice_nblock[dimension];
-  int e2=grid->_slice_block[dimension];
-
-  int stride=grid->_slice_stride[dimension];
-  if ( cbmask == 0x3 ) { 
-    table.resize(e1*e2);
-    for(int n=0;n<e1;n++){
-      for(int b=0;b<e2;b++){
-	int o  = n*stride;
-	int bo = n*e2;
-	table[bo+b]=std::pair<int,int>(bo+b,o+b);
-      }
-    }
-  } else { 
-     int bo=0;
-     table.resize(e1*e2/2);
-     for(int n=0;n<e1;n++){
-       for(int b=0;b<e2;b++){
-	 int o  = n*stride;
-	 int ocb=1<<grid->CheckerBoardFromOindexTable(o+b);
-	 if ( ocb &cbmask ) {
-	   table[bo]=std::pair<int,int>(bo,o+b); bo++;
-	 }
-       }
-     }
-  }
-}
-
-template<class vobj,class cobj,class compressor> void 
-Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so)
-{
-PARALLEL_FOR_LOOP     
-     for(int i=0;i<table.size();i++){
-       vstream(buffer[off+table[i].first],compress(rhs._odata[so+table[i].second]));
-     }
 }
 
 struct StencilEntry { 
