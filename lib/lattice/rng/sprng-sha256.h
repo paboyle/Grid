@@ -62,17 +62,17 @@ struct SprngSha256
   //
   void seed(result_type val = default_seed)
   {
-    reset(rs, (long)val);
+    rs.init(val);
   }
   template <class Sseq>
   typename std::enable_if<std::is_class<Sseq>::value>::type
   seed(Sseq& q)
   {
-    std::array<uint32_t, 8> seq;
+    std::array<uint32_t, RngStateSizeUint32> seq;
     q.generate(seq.begin(), seq.end());
-    reset(rs);
+    rs.init();
     for (size_t i = 0; i < seq.size(); ++i) {
-      splitRngState(rs, rs, seq[i]);
+      rs.state[i] = seq[i];
     }
   }
   //

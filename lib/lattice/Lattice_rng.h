@@ -292,10 +292,9 @@ namespace Grid {
 
       long gsites = _grid->_gsites;
 
-      RngState rs;
-      for (int i = 0; i < 8; ++i) {
-        splitRngState(rs, rs, src());
-      }
+      long seed = src();
+      long type = src();
+      long traj = src();
 
       for(long gidx=0;gidx<gsites;gidx++){
 
@@ -306,7 +305,7 @@ namespace Grid {
         int l_idx=generator_idx(o_idx,i_idx);
 
         if( rank == _grid->ThisRank() ){
-          splitRngState(_generators[l_idx].rs, rs, gidx);
+          _generators[l_idx].rs.init(seed, type, traj, gidx);
         }
       }
       _seeded=1;

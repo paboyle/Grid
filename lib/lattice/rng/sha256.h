@@ -19,7 +19,8 @@
 // Code within namespace sha256 are originally from Stephan Brumme.
 // see http://create.stephan-brumme.com/disclaimer.html
 
-#pragma once
+#ifndef INCLUDE_SHA256_H
+#define INCLUDE_SHA256_H
 
 #include <stdint.h>
 #include <endian.h>
@@ -345,4 +346,6 @@ namespace sha256 {
 
 #ifdef CURRENT_DEFAULT_NAMESPACE_NAME
 }
+#endif
+
 #endif
