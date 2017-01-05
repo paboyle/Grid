@@ -148,10 +148,11 @@ namespace QCD{
   void Scalar<SImpl>::MomentumSpacePropagator(ScalarField &out, RealD m)
   {
     GridBase           *grid = out._grid;
-    ScalarField        kmu(grid);
+    ScalarField        kmu(grid), one(grid);
     const unsigned int nd    = grid->_ndimension;
     std::vector<int>   &l    = grid->_fdimensions;
     
+    one = Complex(1.0,0.0);
     out = m*m;
     for(int mu = 0; mu < nd; mu++)
     {
@@ -161,6 +162,7 @@ namespace QCD{
       kmu = 2.*sin(.5*twoPiL*kmu);
       out = out + kmu*kmu;
     }
+    out = one/out;
   }
   
   template <typename SImpl>
