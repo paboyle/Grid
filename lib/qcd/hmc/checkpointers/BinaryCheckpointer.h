@@ -36,14 +36,12 @@ directory
 namespace Grid {
 namespace QCD {
 
+
 // Simple checkpointer, only binary file
 template <class Impl>
-class BinaryHmcCheckpointer : public HmcObservable<typename Impl::Field> {
+class BinaryHmcCheckpointer : public BaseHmcCheckpointer<Impl> {
  private:
-  std::string configStem;
-  std::string rngStem;
-  int SaveInterval;
-  std::string format;
+  CheckpointerParameters Params;
 
  public:
   INHERIT_FIELD_TYPES(Impl);  // Gets the Field type, a Lattice object
@@ -54,9 +52,11 @@ class BinaryHmcCheckpointer : public HmcObservable<typename Impl::Field> {
   typedef typename getPrecision<sobj>::real_scalar_type sobj_stype;
   typedef typename sobj::DoublePrecision sobj_double;
 
-  BinaryHmcCheckpointer(std::string cf, std::string rn, int savemodulo,
-                        const std::string &f)
-      : configStem(cf), rngStem(rn), SaveInterval(savemodulo), format(f){};
+  BinaryHmcCheckpointer(CheckpointerParameters& Params_){
+  	initialize(Params_);
+  }
+
+  void initialize(CheckpointerParameters& Params_){ Params = Params_; }
 
   void truncate(std::string file) {
     std::ofstream fout(file, std::ios::out);
@@ -65,17 +65,17 @@ class BinaryHmcCheckpointer : public HmcObservable<typename Impl::Field> {
 
   void TrajectoryComplete(int traj, Field &U, GridSerialRNG &sRNG,
                           GridParallelRNG &pRNG) {
-    if ((traj % SaveInterval) == 0) {
+    if ((traj % Params.SaveInterval) == 0) {
       std::string rng;
       {
         std::ostringstream os;
-        os << rngStem << "." << traj;
+        os << Params.rngStem << "." << traj;
         rng = os.str();
       }
       std::string config;
       {
         std::ostringstream os;
-        os << configStem << "." << traj;
+        os << Params.configStem << "." << traj;
         config = os.str();
       }
 
@@ -84,7 +84,7 @@ class BinaryHmcCheckpointer : public HmcObservable<typename Impl::Field> {
       BinaryIO::writeRNGSerial(sRNG, pRNG, rng, 0);
       truncate(config);
       uint32_t csum = BinaryIO::writeObjectParallel<vobj, sobj_double>(
-          U, config, munge, 0, format);
+          U, config, munge, 0, Params.format);
 
       std::cout << GridLogMessage << "Written Binary Configuration " << config
                 << " checksum " << std::hex << csum << std::dec << std::endl;
@@ -96,20 +96,20 @@ class BinaryHmcCheckpointer : public HmcObservable<typename Impl::Field> {
     std::string rng;
     {
       std::ostringstream os;
-      os << rngStem << "." << traj;
+      os << Params.rngStem << "." << traj;
       rng = os.str();
     }
     std::string config;
     {
       std::ostringstream os;
-      os << configStem << "." << traj;
+      os << Params.configStem << "." << traj;
       config = os.str();
     }
 
     BinaryIO::BinarySimpleMunger<sobj_double, sobj> munge;
     BinaryIO::readRNGSerial(sRNG, pRNG, rng, 0);
     uint32_t csum = BinaryIO::readObjectParallel<vobj, sobj_double>(
-        U, config, munge, 0, format);
+        U, config, munge, 0, Params.format);
 
     std::cout << GridLogMessage << "Read Binary Configuration " << config
               << " checksum " << std::hex << csum << std::dec << std::endl;

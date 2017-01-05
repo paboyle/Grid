@@ -84,9 +84,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/parallelIO/BinaryIO.h>
 #include <Grid/parallelIO/IldgIO.h>
 #include <Grid/parallelIO/NerscIO.h>
-#include <Grid/qcd/hmc/NerscCheckpointer.h>
-#include <Grid/qcd/hmc/BinaryCheckpointer.h>
-#include <Grid/qcd/hmc/ILDGCheckpointer.h>
+#include <Grid/qcd/hmc/checkpointers/BaseCheckpointer.h>
+#include <Grid/qcd/hmc/checkpointers/NerscCheckpointer.h>
+#include <Grid/qcd/hmc/checkpointers/BinaryCheckpointer.h>
+#include <Grid/qcd/hmc/checkpointers/ILDGCheckpointer.h>
 #include <Grid/qcd/hmc/HMCModules.h>
 #include <Grid/qcd/hmc/HMCResourceManager.h>
 #include <Grid/qcd/hmc/HmcRunner.h>

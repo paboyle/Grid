@@ -52,17 +52,17 @@ struct HMCparameters {
 
   HMCparameters() {
     ////////////////////////////// Default values
-    MetropolisTest = true;
+    MetropolisTest    = true;
     NoMetropolisUntil = 10;
-    StartTrajectory = 0;
-    Trajectories = 10;
+    StartTrajectory   = 0;
+    Trajectories      = 10;
     /////////////////////////////////
   }
 
   void print_parameters() const {
     std::cout << GridLogMessage << "[HMC parameters] Trajectories            : " << Trajectories << "\n";
     std::cout << GridLogMessage << "[HMC parameters] Start trajectory        : " << StartTrajectory << "\n";
-    std::cout << GridLogMessage << "[HMC parameters] Metropolis test (on/off): " << MetropolisTest << "\n";
+    std::cout << GridLogMessage << "[HMC parameters] Metropolis test (on/off): " << std::boolalpha << MetropolisTest << "\n";
     std::cout << GridLogMessage << "[HMC parameters] Thermalization trajs    : " << NoMetropolisUntil << "\n";
   }
   
@@ -209,24 +209,39 @@ class HybridMonteCarlo {
     TheIntegrator.print_actions();
 
     // Actual updates (evolve a copy Ucopy then copy back eventually)
-    for (int traj = Params.StartTrajectory; traj < Params.Trajectories + Params.StartTrajectory; ++traj) {
+    unsigned int FinalTrajectory = Params.Trajectories + Params.NoMetropolisUntil + Params.StartTrajectory;
+    for (int traj = Params.StartTrajectory; traj < FinalTrajectory; ++traj) {
       std::cout << GridLogMessage << "-- # Trajectory = " << traj << "\n";
+      if (traj < Params.StartTrajectory + Params.NoMetropolisUntil) {
+      	std::cout << GridLogMessage << "-- Thermalization" << std::endl;
+    	}
+
+    	double t0=usecond();
       Ucopy = Ucur;
 
       DeltaH = evolve_step(Ucopy);
 
       bool accept = true;
-      if (traj >= Params.NoMetropolisUntil) {
+      if (traj >= Params.StartTrajectory + Params.NoMetropolisUntil) {
         accept = metropolis_test(DeltaH);
+      } else {
+      	std::cout << GridLogMessage << "Skipping Metropolis test" << std::endl;
       }
 
       if (accept) {
         Ucur = Ucopy;
       }
+      double t1=usecond();
+      std::cout << GridLogMessage << "Total time for trajectory (s): " << (t1-t0)/1e6 << std::endl;
+
 
       for (int obs = 0; obs < Observables.size(); obs++) {
+      	std::cout << GridLogDebug << "Observables # " << obs << std::endl;
+      	std::cout << GridLogDebug << "Observables total " << Observables.size() << std::endl;
+      	std::cout << GridLogDebug << "Observables pointer " << Observables[obs] << std::endl;
         Observables[obs]->TrajectoryComplete(traj + 1, Ucur, sRNG, pRNG);
       }
+      std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::::" << std::endl;
     }
   }
 };

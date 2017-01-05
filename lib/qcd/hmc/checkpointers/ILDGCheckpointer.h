@@ -4,9 +4,9 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: ./lib/qcd/hmc/ILDGCheckpointer.h
 
-Copyright (C) 2015
+Copyright (C) 2016
 
-Author: Guido Cossu
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -41,59 +41,60 @@ namespace QCD {
 // Only for Gauge fields
 template <class Implementation>
 class ILDGHmcCheckpointer
-    : public HmcObservable<typename Implementation::GaugeField> {
+    : public BaseHmcCheckpointer<Implementation> {
  private:
+ 	CheckpointerParameters Params;
+/*
   std::string configStem;
   std::string rngStem;
   int SaveInterval;
   std::string format;
+*/
 
  public:
-  INHERIT_GIMPL_TYPES(Implementation);  
+  INHERIT_GIMPL_TYPES(Implementation);
 
-  ILDGHmcCheckpointer(std::string cf, std::string rn, int savemodulo,
-                       std::string form = "IEEE64BIG") {
-    configStem = cf;
-    rngStem = rn;
-    SaveInterval = savemodulo;
-    format = form;
+  ILDGHmcCheckpointer(CheckpointerParameters &Params_) { initialize(Params_); }
+
+  void initialize(CheckpointerParameters &Params_) {
+    Params = Params_;
 
     // check here that the format is valid
-    int ieee32big = (format == std::string("IEEE32BIG"));
-    int ieee32    = (format == std::string("IEEE32"));
-    int ieee64big = (format == std::string("IEEE64BIG"));
-    int ieee64    = (format == std::string("IEEE64"));
+    int ieee32big = (Params.format == std::string("IEEE32BIG"));
+    int ieee32    = (Params.format == std::string("IEEE32"));
+    int ieee64big = (Params.format == std::string("IEEE64BIG"));
+    int ieee64    = (Params.format == std::string("IEEE64"));
 
     if (!(ieee64big || ieee32 || ieee32big || ieee64)) {
-      std::cout << GridLogError << "Unrecognized file format " << format
+      std::cout << GridLogError << "Unrecognized file format " << Params.format
                 << std::endl;
       std::cout << GridLogError
                 << "Allowed: IEEE32BIG | IEEE32 | IEEE64BIG | IEEE64"
                 << std::endl;
 
-      exit(0);
+      exit(1);
     }
-  };
+  }
 
   void TrajectoryComplete(int traj, GaugeField &U, GridSerialRNG &sRNG,
                           GridParallelRNG &pRNG) {
-    if ((traj % SaveInterval) == 0) {
+    if ((traj % Params.SaveInterval) == 0) {
       std::string rng;
       {
         std::ostringstream os;
-        os << rngStem << "." << traj;
+        os << Params.rngStem << "." << traj;
         rng = os.str();
       }
       std::string config;
       {
         std::ostringstream os;
-        os << configStem << "." << traj;
+        os << Params.configStem << "." << traj;
         config = os.str();
       }
 
       ILDGIO IO(config, ILDGwrite);
       BinaryIO::writeRNGSerial(sRNG, pRNG, rng, 0);
-      uint32_t csum  = IO.writeConfiguration(U, format);
+      uint32_t csum  = IO.writeConfiguration(U, Params.format);
 
       std::cout << GridLogMessage << "Written ILDG Configuration on " << config
                 << " checksum " << std::hex << csum << std::dec << std::endl;
@@ -105,13 +106,13 @@ class ILDGHmcCheckpointer
     std::string rng;
     {
       std::ostringstream os;
-      os << rngStem << "." << traj;
+      os << Params.rngStem << "." << traj;
       rng = os.str();
     }
     std::string config;
     {
       std::ostringstream os;
-      os << configStem << "." << traj;
+      os << Params.configStem << "." << traj;
       config = os.str();
     }
 
@@ -126,5 +127,5 @@ class ILDGHmcCheckpointer
 }
 }
 
-#endif
-#endif
+#endif // HAVE_LIME
+#endif // ILDG_CHECKPOINTER

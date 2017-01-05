@@ -30,10 +30,6 @@ directory
 /*  END LEGAL */
 #include <Grid/Grid.h>
 
-using namespace std;
-using namespace Grid;
-using namespace Grid::QCD;
-
 namespace Grid {
   namespace QCD {
 
@@ -61,52 +57,46 @@ namespace Grid {
 }
 
 int main(int argc, char **argv) {
-  Grid_init(&argc, &argv);
-   // Typedefs to simplify notation
-  typedef BinaryHmcRunner<MinimumNorm2> HMCWrapper;// Uses the default minimum norm
-  typedef WilsonGaugeActionR GaugeAction;
+  using namespace Grid;
+  using namespace Grid::QCD;
 
+  Grid_init(&argc, &argv);
   int threads = GridThread::GetThreads();
+
+   // Typedefs to simplify notation
+  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
+
   std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
   //////////////////////////////////////////////////////////////
   // Input file section 
   // make input file name general
+  // now working with the text reader but I should drop this support
+  // i need a structured format where every object is able
+  // to locate the required data: XML, JSON, YAML.
   HMCRunnerParameters HMCPar;
   InputFileReader Reader("input.wilson_gauge.params");
   read(Reader, "HMC", HMCPar);
   std::cout << GridLogMessage << HMCPar << std::endl;
 
   // Seeds for the random number generators
-  // generalise
+  // generalise, ugly now
   std::vector<int> SerSeed = strToVec<int>(HMCPar.serial_seeds);
   std::vector<int> ParSeed = strToVec<int>(HMCPar.parallel_seeds);
+  CheckpointerParameters CP_params(HMCPar.conf_prefix, HMCPar.rng_prefix,
+                                   HMCPar.SaveInterval, HMCPar.format);
 
-    // Add observables
-    // options for checkpointers
-    // this can be moved outside the BuildTheAction
-    //BinaryHmcCheckpointer
-    //ILDGHmcCheckpointer
-    //NerscHmcCheckpointer
-  BinaryHmcCheckpointer<HMCWrapper::ImplPolicy> Checkpoint(HMCPar.conf_prefix, HMCPar.rng_prefix, 
-                                                           HMCPar.SaveInterval, HMCPar.format);
-    // Can implement also a specific function in the hmcrunner
-    // AddCheckpoint (...) that takes the same parameters + a string/tag
-    // defining the type of the checkpointer
-    // with tags can be implemented by overloading and no ifs
-    // Then force all checkpoint to have few common functions
-    // return an object that is then passed to the Run function
-
-  /////////////////////////////////////////////////////////////
   HMCWrapper TheHMC;
   TheHMC.Resources.AddFourDimGrid("gauge");
+  TheHMC.Resources.LoadBinaryCheckpointer(CP_params);
 
   /////////////////////////////////////////////////////////////
   // Collect actions, here use more encapsulation
+  // need wrappers of the fermionic classes 
+  // that have a complex construction
 
   // Gauge action
-  std::cout << GridLogMessage << "Beta: " << HMCPar.beta << std::endl;
-  GaugeAction Waction(HMCPar.beta);
+  WilsonGaugeActionR Waction(HMCPar.beta);
 
   ActionLevel<HMCWrapper::Field> Level1(1);
   Level1.push_back(&Waction);
@@ -116,19 +106,21 @@ int main(int argc, char **argv) {
   // Construct observables 
   PlaquetteLogger<HMCWrapper::ImplPolicy> PlaqLog("Plaquette");
   TheHMC.ObservablesList.push_back(&PlaqLog);
-  TheHMC.ObservablesList.push_back(&Checkpoint);
   //////////////////////////////////////////////
 
   // Fill resources
+  // here we can simplify a lot if the input file is structured
+  // just pass the input file reader 
   TheHMC.Resources.AddRNGSeeds(SerSeed, ParSeed);
   TheHMC.MDparameters.set(HMCPar.MDsteps, HMCPar.TrajectorLength);
 
   // eventually smearing here
+  // ...
   ////////////////////////////////////////////////////////////////
 
-
-  TheHMC.ReadCommandLine(argc, argv);
-  TheHMC.Run(Checkpoint);  // no smearing
+  TheHMC.ReadCommandLine(argc, argv); // these must be parameters from file
+  TheHMC.Run();  // no smearing
 
   Grid_finalize();
-}
+
+} // main
