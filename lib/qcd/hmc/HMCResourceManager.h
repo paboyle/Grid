@@ -33,22 +33,37 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <unordered_map>
 
 // One function per Checkpointer, use a macro to simplify
-  #define RegisterLoadCheckPointerFunction(NAME)                                       \
-  void Load##NAME##Checkpointer(CheckpointerParameters& Params_) {   \
-    if (!have_CheckPointer) {                                        \
-      std::cout << GridLogDebug << "Loading Checkpointer " << #NAME  \
-                << std::endl;                                        \
-      CP.set_Checkpointer(                                           \
-          new NAME##HmcCheckpointer<ImplementationPolicy>(Params_)); \
-      have_CheckPointer = true;                                      \
-    } else {                                                         \
-      std::cout << GridLogError << "Checkpointer already loaded "    \
-                << std::endl;                                        \
-      exit(1);                                                       \
-    }                                                                \
+#define RegisterLoadCheckPointerFunction(NAME)                           \
+  void Load##NAME##Checkpointer(const CheckpointerParameters& Params_) { \
+    if (!have_CheckPointer) {                                            \
+      std::cout << GridLogDebug << "Loading Checkpointer " << #NAME      \
+                << std::endl;                                            \
+      CP.set_Checkpointer(                                               \
+          new NAME##HmcCheckpointer<ImplementationPolicy>(Params_));     \
+      have_CheckPointer = true;                                          \
+    } else {                                                             \
+      std::cout << GridLogError << "Checkpointer already loaded "        \
+                << std::endl;                                            \
+      exit(1);                                                           \
+    }                                                                    \
   }
 
-
+// One function per Checkpointer using the reader, use a macro to simplify
+#define RegisterLoadCheckPointerReaderFunction(NAME)                       \
+  template <class Reader>                                                  \
+  void Load##NAME##Checkpointer(Reader& Reader_) {                         \
+    if (!have_CheckPointer) {                                              \
+      std::cout << GridLogDebug << "Loading Checkpointer " << #NAME        \
+                << std::endl;                                              \
+      CP.set_Checkpointer(new NAME##HmcCheckpointer<ImplementationPolicy>( \
+          CheckpointerParameters(Reader_)));                               \
+      have_CheckPointer = true;                                            \
+    } else {                                                               \
+      std::cout << GridLogError << "Checkpointer already loaded "          \
+                << std::endl;                                              \
+      exit(1);                                                             \
+    }                                                                      \
+  }
 
 namespace Grid {
 namespace QCD {
@@ -141,7 +156,11 @@ class HMCResourceManager{
 
   RegisterLoadCheckPointerFunction (Binary);
   RegisterLoadCheckPointerFunction (Nersc);
-  RegisterLoadCheckPointerFunction (ILDG)
+  RegisterLoadCheckPointerFunction (ILDG);
+
+  RegisterLoadCheckPointerReaderFunction (Binary);
+  RegisterLoadCheckPointerReaderFunction (Nersc);
+  RegisterLoadCheckPointerReaderFunction (ILDG);
 
 };
 }

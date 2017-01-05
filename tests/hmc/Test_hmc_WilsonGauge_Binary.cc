@@ -34,7 +34,7 @@ namespace Grid {
   namespace QCD {
 
     //Change here the type of reader
-    typedef Grid::TextReader InputFileReader; 
+    typedef Grid::XmlReader InputFileReader; 
 
 
     class HMCRunnerParameters : Serializable {
@@ -42,11 +42,11 @@ namespace Grid {
       GRID_SERIALIZABLE_CLASS_MEMBERS(HMCRunnerParameters,
         double, beta,
         int, MDsteps,
-        double, TrajectorLength,
-        int, SaveInterval,
-        std::string, format,
-        std::string, conf_prefix,
-        std::string, rng_prefix,
+        double, TrajectoryLength,
+        //int, SaveInterval,
+        //std::string, format,
+        //std::string, conf_prefix,
+        //std::string, rng_prefix,
         std::string, serial_seeds,
         std::string, parallel_seeds,
         );
@@ -66,6 +66,7 @@ int main(int argc, char **argv) {
    // Typedefs to simplify notation
   typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
 
+  // here make a routine to print all the relevant information on the run
   std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
   //////////////////////////////////////////////////////////////
@@ -74,21 +75,18 @@ int main(int argc, char **argv) {
   // now working with the text reader but I should drop this support
   // i need a structured format where every object is able
   // to locate the required data: XML, JSON, YAML.
+  InputFileReader Reader("input.wilson_gauge.params.xml");
   HMCRunnerParameters HMCPar;
-  InputFileReader Reader("input.wilson_gauge.params");
   read(Reader, "HMC", HMCPar);
-  std::cout << GridLogMessage << HMCPar << std::endl;
 
   // Seeds for the random number generators
   // generalise, ugly now
   std::vector<int> SerSeed = strToVec<int>(HMCPar.serial_seeds);
   std::vector<int> ParSeed = strToVec<int>(HMCPar.parallel_seeds);
-  CheckpointerParameters CP_params(HMCPar.conf_prefix, HMCPar.rng_prefix,
-                                   HMCPar.SaveInterval, HMCPar.format);
 
   HMCWrapper TheHMC;
   TheHMC.Resources.AddFourDimGrid("gauge");
-  TheHMC.Resources.LoadBinaryCheckpointer(CP_params);
+  TheHMC.Resources.LoadBinaryCheckpointer(Reader);
 
   /////////////////////////////////////////////////////////////
   // Collect actions, here use more encapsulation
@@ -112,7 +110,7 @@ int main(int argc, char **argv) {
   // here we can simplify a lot if the input file is structured
   // just pass the input file reader 
   TheHMC.Resources.AddRNGSeeds(SerSeed, ParSeed);
-  TheHMC.MDparameters.set(HMCPar.MDsteps, HMCPar.TrajectorLength);
+  TheHMC.MDparameters.set(HMCPar.MDsteps, HMCPar.TrajectoryLength);
 
   // eventually smearing here
   // ...

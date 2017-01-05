@@ -40,30 +40,23 @@ namespace QCD {
 
 // Only for Gauge fields
 template <class Implementation>
-class ILDGHmcCheckpointer
-    : public BaseHmcCheckpointer<Implementation> {
+class ILDGHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
  private:
- 	CheckpointerParameters Params;
-/*
-  std::string configStem;
-  std::string rngStem;
-  int SaveInterval;
-  std::string format;
-*/
+  CheckpointerParameters Params;
 
  public:
   INHERIT_GIMPL_TYPES(Implementation);
 
-  ILDGHmcCheckpointer(CheckpointerParameters &Params_) { initialize(Params_); }
+  ILDGHmcCheckpointer(const CheckpointerParameters &Params_) { initialize(Params_); }
 
-  void initialize(CheckpointerParameters &Params_) {
+  void initialize(const CheckpointerParameters &Params_) {
     Params = Params_;
 
     // check here that the format is valid
     int ieee32big = (Params.format == std::string("IEEE32BIG"));
-    int ieee32    = (Params.format == std::string("IEEE32"));
+    int ieee32 = (Params.format == std::string("IEEE32"));
     int ieee64big = (Params.format == std::string("IEEE64BIG"));
-    int ieee64    = (Params.format == std::string("IEEE64"));
+    int ieee64 = (Params.format == std::string("IEEE64"));
 
     if (!(ieee64big || ieee32 || ieee32big || ieee64)) {
       std::cout << GridLogError << "Unrecognized file format " << Params.format
@@ -78,23 +71,13 @@ class ILDGHmcCheckpointer
 
   void TrajectoryComplete(int traj, GaugeField &U, GridSerialRNG &sRNG,
                           GridParallelRNG &pRNG) {
-    if ((traj % Params.SaveInterval) == 0) {
-      std::string rng;
-      {
-        std::ostringstream os;
-        os << Params.rngStem << "." << traj;
-        rng = os.str();
-      }
-      std::string config;
-      {
-        std::ostringstream os;
-        os << Params.configStem << "." << traj;
-        config = os.str();
-      }
+    if ((traj % Params.saveInterval) == 0) {
+      std::string config, rng;
+      this->build_filenames(traj, Params, config, rng);
 
       ILDGIO IO(config, ILDGwrite);
       BinaryIO::writeRNGSerial(sRNG, pRNG, rng, 0);
-      uint32_t csum  = IO.writeConfiguration(U, Params.format);
+      uint32_t csum = IO.writeConfiguration(U, Params.format);
 
       std::cout << GridLogMessage << "Written ILDG Configuration on " << config
                 << " checksum " << std::hex << csum << std::dec << std::endl;
@@ -103,22 +86,12 @@ class ILDGHmcCheckpointer
 
   void CheckpointRestore(int traj, GaugeField &U, GridSerialRNG &sRNG,
                          GridParallelRNG &pRNG) {
-    std::string rng;
-    {
-      std::ostringstream os;
-      os << Params.rngStem << "." << traj;
-      rng = os.str();
-    }
-    std::string config;
-    {
-      std::ostringstream os;
-      os << Params.configStem << "." << traj;
-      config = os.str();
-    }
+    std::string config, rng;
+    this->build_filenames(traj, Params, config, rng);
 
     ILDGIO IO(config, ILDGread);
     BinaryIO::readRNGSerial(sRNG, pRNG, rng, 0);
-    uint32_t csum = IO.readConfiguration(U);// format from the header
+    uint32_t csum = IO.readConfiguration(U);  // format from the header
 
     std::cout << GridLogMessage << "Read ILDG Configuration from " << config
               << " checksum " << std::hex << csum << std::dec << std::endl;
@@ -127,5 +100,5 @@ class ILDGHmcCheckpointer
 }
 }
 
-#endif // HAVE_LIME
-#endif // ILDG_CHECKPOINTER
+#endif  // HAVE_LIME
+#endif  // ILDG_CHECKPOINTER

@@ -30,25 +30,49 @@ directory
 #define BASE_CHECKPOINTER
 
 namespace Grid {
-namespace QCD {
+	namespace QCD {
 
-class CheckpointerParameters : Serializable {
- public:
-  GRID_SERIALIZABLE_CLASS_MEMBERS(CheckpointerParameters, std::string,
-                                  configStem, std::string, rngStem, int,
-                                  SaveInterval, std::string, format, );
+		class CheckpointerParameters : Serializable {
+		public:
+			GRID_SERIALIZABLE_CLASS_MEMBERS(CheckpointerParameters, 
+				std::string, config_prefix, 
+				std::string, rng_prefix, 
+				int, saveInterval, 
+				std::string, format, );
 
-  CheckpointerParameters(std::string cf = "cfg", std::string rn = "rng",
-                         int savemodulo = 1, const std::string &f = "IEEE64BIG")
-      : configStem(cf), rngStem(rn), SaveInterval(savemodulo), format(f){};
-};
+			CheckpointerParameters(std::string cf = "cfg", std::string rn = "rng",
+				int savemodulo = 1, const std::string &f = "IEEE64BIG")
+			: config_prefix(cf), rng_prefix(rn), saveInterval(savemodulo), format(f){};
+
+
+      template<class ReaderClass>
+			CheckpointerParameters(ReaderClass &Reader){
+				read(Reader, "Checkpointer", *this);
+			}
+
+		};
 
 //////////////////////////////////////////////////////////////////////////////
 // Base class for checkpointers
 template <class Impl>
 class BaseHmcCheckpointer : public HmcObservable<typename Impl::Field> {
  public:
-  virtual void initialize(CheckpointerParameters &Params) = 0;
+  void build_filenames(int traj, CheckpointerParameters &Params,
+                       std::string &conf_file, std::string &rng_file) {
+    {
+      std::ostringstream os;
+      os << Params.rng_prefix << "." << traj;
+      rng_file = os.str();
+    }
+
+    {
+      std::ostringstream os;
+      os << Params.config_prefix << "." << traj;
+      conf_file = os.str();
+    }
+ 	} 
+
+  virtual void initialize(const CheckpointerParameters &Params) = 0;
 
   virtual void CheckpointRestore(int traj, typename Impl::Field &U,
                                  GridSerialRNG &sRNG,

@@ -2,11 +2,11 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./lib/qcd/hmc/NerscCheckpointer.h
+Source file: ./lib/qcd/hmc/BinaryCheckpointer.h
 
-Copyright (C) 2015
+Copyright (C) 2016
 
-Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -36,7 +36,6 @@ directory
 namespace Grid {
 namespace QCD {
 
-
 // Simple checkpointer, only binary file
 template <class Impl>
 class BinaryHmcCheckpointer : public BaseHmcCheckpointer<Impl> {
@@ -46,17 +45,17 @@ class BinaryHmcCheckpointer : public BaseHmcCheckpointer<Impl> {
  public:
   INHERIT_FIELD_TYPES(Impl);  // Gets the Field type, a Lattice object
 
-  // Extract types from the Field 
+  // Extract types from the Field
   typedef typename Field::vector_object vobj;
   typedef typename vobj::scalar_object sobj;
   typedef typename getPrecision<sobj>::real_scalar_type sobj_stype;
   typedef typename sobj::DoublePrecision sobj_double;
 
-  BinaryHmcCheckpointer(CheckpointerParameters& Params_){
-  	initialize(Params_);
+  BinaryHmcCheckpointer(const CheckpointerParameters &Params_) {
+    initialize(Params_);
   }
 
-  void initialize(CheckpointerParameters& Params_){ Params = Params_; }
+  void initialize(const CheckpointerParameters &Params_) { Params = Params_; }
 
   void truncate(std::string file) {
     std::ofstream fout(file, std::ios::out);
@@ -65,19 +64,9 @@ class BinaryHmcCheckpointer : public BaseHmcCheckpointer<Impl> {
 
   void TrajectoryComplete(int traj, Field &U, GridSerialRNG &sRNG,
                           GridParallelRNG &pRNG) {
-    if ((traj % Params.SaveInterval) == 0) {
-      std::string rng;
-      {
-        std::ostringstream os;
-        os << Params.rngStem << "." << traj;
-        rng = os.str();
-      }
-      std::string config;
-      {
-        std::ostringstream os;
-        os << Params.configStem << "." << traj;
-        config = os.str();
-      }
+    if ((traj % Params.saveInterval) == 0) {
+      std::string config, rng;
+      this->build_filenames(traj, Params, config, rng);
 
       BinaryIO::BinarySimpleUnmunger<sobj_double, sobj> munge;
       truncate(rng);
@@ -93,18 +82,8 @@ class BinaryHmcCheckpointer : public BaseHmcCheckpointer<Impl> {
 
   void CheckpointRestore(int traj, Field &U, GridSerialRNG &sRNG,
                          GridParallelRNG &pRNG) {
-    std::string rng;
-    {
-      std::ostringstream os;
-      os << Params.rngStem << "." << traj;
-      rng = os.str();
-    }
-    std::string config;
-    {
-      std::ostringstream os;
-      os << Params.configStem << "." << traj;
-      config = os.str();
-    }
+    std::string config, rng;
+    this->build_filenames(traj, Params, config, rng);
 
     BinaryIO::BinarySimpleMunger<sobj_double, sobj> munge;
     BinaryIO::readRNGSerial(sRNG, pRNG, rng, 0);
