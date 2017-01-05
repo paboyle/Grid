@@ -8,7 +8,7 @@
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         FreeProp                                 *
+ *                               FreeProp                                     *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MScalar)
 
@@ -17,7 +17,8 @@ class FreePropPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(FreePropPar,
                                     std::string, source,
-                                    double,      mass);
+                                    double,      mass,
+                                    std::string, output);
 };
 
 class TFreeProp: public Module<FreePropPar>
