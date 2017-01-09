@@ -43,10 +43,6 @@ namespace Grid {
         double, beta,
         int, MDsteps,
         double, TrajectoryLength,
-        //int, SaveInterval,
-        //std::string, format,
-        //std::string, conf_prefix,
-        //std::string, rng_prefix,
         std::string, serial_seeds,
         std::string, parallel_seeds,
         );
@@ -86,6 +82,9 @@ int main(int argc, char **argv) {
 
   HMCWrapper TheHMC;
   TheHMC.Resources.AddFourDimGrid("gauge");
+  
+  // here using the Reader but an overloaded function to pass the 
+  // parameters class is provided 
   TheHMC.Resources.LoadBinaryCheckpointer(Reader);
 
   /////////////////////////////////////////////////////////////

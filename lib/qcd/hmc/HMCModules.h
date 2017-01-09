@@ -60,31 +60,86 @@ class GridFourDimModule : public GridModule {
 
 };
 
+
+////////////////////////////////////////////////////////////////////
+class RNGModuleParameters: Serializable {
+public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(RNGModuleParameters,
+  std::vector<int>, SerialSeed_,
+  std::vector<int>, ParallelSeed_,);
+
+
+  // default constructor, needed for the non-Reader 
+  // construction of the module
+  RNGModuleParameters(){
+    SerialSeed_.resize(0);
+    ParallelSeed_.resize(0);
+  }
+
+  RNGModuleParameters(const std::vector<int> S, const std::vector<int> P){
+  set_RNGSeeds(S,P);  
+  }
+
+  template < class ReaderClass > 
+  RNGModuleParameters(ReaderClass &Reader){
+    read(Reader, "RandomNumberGenerator", *this);
+  }
+
+  void set_RNGSeeds(const std::vector<int>& S, const std::vector<int>& P){
+    SerialSeed_   = S;
+    ParallelSeed_ = P;    
+  }
+
+};
+
+
 class RNGModule{
    // Random number generators
    GridSerialRNG sRNG_;
    std::unique_ptr<GridParallelRNG> pRNG_;
-   std::vector<int> SerialSeed_;
-   std::vector<int> ParallelSeed_;
+   RNGModuleParameters Params_;
 
 public:
-   void set_pRNG(GridParallelRNG* pRNG){
-      pRNG_.reset(pRNG);
-   }
+  template < class ReaderClass > 
+  RNGModule(ReaderClass &Reader):Params_(Reader){};
 
-   void set_RNGSeeds(const std::vector<int> S, const std::vector<int> P) {
-    SerialSeed_   = S;
-    ParallelSeed_ = P;
+  RNGModule(){};
+
+  void set_pRNG(GridParallelRNG* pRNG){
+    pRNG_.reset(pRNG);
   }
 
-  GridSerialRNG& get_sRNG(){return sRNG_;}
-  GridParallelRNG& get_pRNG(){return *pRNG_.get();}
+  void set_RNGSeeds(const std::vector<int> S, const std::vector<int> P) {
+    Params_.set_RNGSeeds(S,P);
+  }
+
+
+
+  GridSerialRNG& get_sRNG(){
+    if (Params_.SerialSeed_.size()==0){
+      std::cout << "Serial seeds not initialized" << std::endl;
+      exit(1);
+    }
+    return sRNG_;
+  }
+  GridParallelRNG& get_pRNG(){
+   if (Params_.ParallelSeed_.size()==0){
+    std::cout << "Parallel seeds not initialized" << std::endl;
+    exit(1);
+    } 
+    return *pRNG_.get();
+  }
+
   void seed(){
-    sRNG_.SeedFixedIntegers(SerialSeed_);
-    pRNG_->SeedFixedIntegers(ParallelSeed_);
+    sRNG_.SeedFixedIntegers(Params_.SerialSeed_);
+    pRNG_->SeedFixedIntegers(Params_.ParallelSeed_);
   }
 };
 
+
+
+
+///////////////////////////////////////////////////////////////////
 /// Smearing module
 template <class ImplementationPolicy>
 class SmearingModule{
@@ -96,6 +151,8 @@ class StoutSmearingModule: public SmearingModule<ImplementationPolicy>{
    SmearedConfiguration<ImplementationPolicy> SmearingPolicy;
 };
 
+
+////////////////////////////////////////////////////////////////////////
 // Checkpoint module, owns the Checkpointer
 template <class ImplementationPolicy>
 class CheckPointModule {
