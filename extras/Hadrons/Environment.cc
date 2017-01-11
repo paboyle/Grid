@@ -41,8 +41,9 @@ using namespace Hadrons;
 // constructor /////////////////////////////////////////////////////////////////
 Environment::Environment(void)
 {
+    nd_ = GridDefaultLatt().size();
     grid4d_.reset(SpaceTimeGrid::makeFourDimGrid(
-        GridDefaultLatt(), GridDefaultSimd(Nd, vComplex::Nsimd()),
+        GridDefaultLatt(), GridDefaultSimd(nd_, vComplex::Nsimd()),
         GridDefaultMpi()));
     gridRb4d_.reset(SpaceTimeGrid::makeFourDimRedBlackGrid(grid4d_.get()));
     auto loc = getGrid()->LocalDimensions();
@@ -124,6 +125,11 @@ GridRedBlackCartesian * Environment::getRbGrid(const unsigned int Ls) const
     {
         HADRON_ERROR("no red-black 5D grid with Ls= " << Ls);
     }
+}
+
+unsigned int Environment::getNd(void) const
+{
+    return nd_;
 }
 
 // random number generator /////////////////////////////////////////////////////
