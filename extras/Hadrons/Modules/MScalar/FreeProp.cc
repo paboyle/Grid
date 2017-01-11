@@ -1,6 +1,5 @@
 #include <Grid/Hadrons/Modules/MScalar/FreeProp.hpp>
-
-#define KERNAME "_" + getName() + "_momKernel"
+#include <Grid/Hadrons/Modules/MScalar/Scalar.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
@@ -32,11 +31,11 @@ std::vector<std::string> TFreeProp::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void TFreeProp::setup(void)
 {
-    std::string kerName = KERNAME;
+    freeMomPropName_ = FREEMOMPROP(par().mass);
     
-    if (!env().hasRegisteredObject(kerName))
+    if (!env().hasRegisteredObject(freeMomPropName_))
     {
-        env().registerLattice<ScalarField>(kerName);
+        env().registerLattice<ScalarField>(freeMomPropName_);
     }
     env().registerLattice<ScalarField>(getName());
 }
@@ -46,22 +45,21 @@ void TFreeProp::execute(void)
 {
     ScalarField &prop   = *env().createLattice<ScalarField>(getName());
     ScalarField &source = *env().getObject<ScalarField>(par().source);
-    ScalarField *momKernel;
-    std::string kerName = KERNAME;
+    ScalarField *freeMomProp;
 
-    if (!env().hasCreatedObject(kerName))
+    if (!env().hasCreatedObject(freeMomPropName_))
     {
         LOG(Message) << "Caching momentum space free scalar propagator"
                      << " (mass= " << par().mass << ")..." << std::endl;
-        momKernel = env().createLattice<ScalarField>(kerName);
-        Scalar<SIMPL>::MomentumSpacePropagator(*momKernel, par().mass);
+        freeMomProp = env().createLattice<ScalarField>(freeMomPropName_);
+        Scalar<SIMPL>::MomentumSpacePropagator(*freeMomProp, par().mass);
     }
     else
     {
-        momKernel = env().getObject<ScalarField>(kerName);
+        freeMomProp = env().getObject<ScalarField>(freeMomPropName_);
     }
     LOG(Message) << "Computing free scalar propagator..." << std::endl;
-    Scalar<SIMPL>::FreePropagator(source, prop, *momKernel);
+    Scalar<SIMPL>::FreePropagator(source, prop, *freeMomProp);
     
     if (!par().output.empty())
     {

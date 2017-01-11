@@ -37,6 +37,8 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
+private:
+    std::string freeMomPropName_;
 };
 
 MODULE_REGISTER_NS(FreeProp, TFreeProp, MScalar);

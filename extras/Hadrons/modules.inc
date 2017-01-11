@@ -17,6 +17,7 @@ modules_hpp =\
   Modules/MGauge/Unit.hpp \
   Modules/MScalar/ChargedProp.hpp \
   Modules/MScalar/FreeProp.hpp \
+  Modules/MScalar/Scalar.hpp \
   Modules/MSolver/RBPrecCG.hpp \
   Modules/MSource/Point.hpp \
   Modules/MSource/SeqGamma.hpp \
