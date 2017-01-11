@@ -16,11 +16,16 @@ class ChargedPropPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(ChargedPropPar,
-                                    unsigned int, i);
+                                    std::string, emField,
+                                    std::string, source,
+                                    double,      mass,
+                                    std::string, output);
 };
 
 class TChargedProp: public Module<ChargedPropPar>
 {
+public:
+    SCALAR_TYPE_ALIASES(SIMPL,);
 public:
     // constructor
     TChargedProp(const std::string name);
@@ -33,6 +38,9 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
+private:
+    std::string              freeMomPropName_;
+    std::vector<std::string> shiftedMomPropName_;
 };
 
 MODULE_REGISTER_NS(ChargedProp, TChargedProp, MScalar);
