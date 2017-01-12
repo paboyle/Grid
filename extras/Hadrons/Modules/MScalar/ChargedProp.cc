@@ -6,7 +6,7 @@ using namespace Hadrons;
 using namespace MScalar;
 
 /******************************************************************************
-*                  TChargedProp implementation                             *
+*                     TChargedProp implementation                             *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 TChargedProp::TChargedProp(const std::string name)

@@ -8,7 +8,7 @@
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         ChargedProp                                 *
+ *                       Charged scalar propagator                            *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MScalar)
 
