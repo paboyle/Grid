@@ -19,6 +19,7 @@ public:
                                     std::string, emField,
                                     std::string, source,
                                     double,      mass,
+                                    double,      charge,
                                     std::string, output);
 };
 
@@ -26,6 +27,8 @@ class TChargedProp: public Module<ChargedPropPar>
 {
 public:
     SCALAR_TYPE_ALIASES(SIMPL,);
+    typedef PhotonR::GaugeField     EmField;
+    typedef PhotonR::GaugeLinkField EmComp;
 public:
     // constructor
     TChargedProp(const std::string name);
@@ -39,8 +42,14 @@ public:
     // execution
     virtual void execute(void);
 private:
-    std::string              freeMomPropName_;
-    std::vector<std::string> shiftedMomPropName_;
+    void momD1(ScalarField &s, FFT &fft);
+    void momD2(ScalarField &s, FFT &fft);
+private:
+    std::string                freeMomPropName_, GFSrcName_;
+    std::vector<std::string>   phaseName_;
+    ScalarField                *freeMomProp_, *GFSrc_;
+    std::vector<ScalarField *> phase_;
+    EmField                    *A;
 };
 
 MODULE_REGISTER_NS(ChargedProp, TChargedProp, MScalar);

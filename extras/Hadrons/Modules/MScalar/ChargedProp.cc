@@ -32,22 +32,27 @@ std::vector<std::string> TChargedProp::getOutput(void)
 void TChargedProp::setup(void)
 {
     freeMomPropName_ = FREEMOMPROP(par().mass);
-    shiftedMomPropName_.clear();
+    phaseName_.clear();
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
-        shiftedMomPropName_.push_back(freeMomPropName_ + "_"
+        phaseName_.push_back(freeMomPropName_ + "_"
                                       + std::to_string(mu));
     }
+    GFSrcName_ = "_" + getName() + "_DinvSrc";
     if (!env().hasRegisteredObject(freeMomPropName_))
     {
         env().registerLattice<ScalarField>(freeMomPropName_);
     }
-    if (!env().hasRegisteredObject(shiftedMomPropName_[0]))
+    if (!env().hasRegisteredObject(phaseName_[0]))
     {
         for (unsigned int mu = 0; mu < env().getNd(); ++mu)
         {
-            env().registerLattice<ScalarField>(shiftedMomPropName_[mu]);
+            env().registerLattice<ScalarField>(phaseName_[mu]);
         }
+    }
+    if (!env().hasRegisteredObject(GFSrcName_))
+    {
+        env().registerLattice<ScalarField>(GFSrcName_);
     }
     env().registerLattice<ScalarField>(getName());
     
@@ -56,24 +61,26 @@ void TChargedProp::setup(void)
 // execution ///////////////////////////////////////////////////////////////////
 void TChargedProp::execute(void)
 {
+    // CACHING ANALYTIC EXPRESSIONS
     ScalarField &prop   = *env().createLattice<ScalarField>(getName());
     ScalarField &source = *env().getObject<ScalarField>(par().source);
-    ScalarField *freeMomProp;
-    std::vector<ScalarField *> shiftedMomProp;
-    Complex                    ci(0.0,1.0);
+    Complex     ci(0.0,1.0);
+    FFT         fft(env().getGrid());
     
+    // cache free scalar propagator
     if (!env().hasCreatedObject(freeMomPropName_))
     {
         LOG(Message) << "Caching momentum space free scalar propagator"
                      << " (mass= " << par().mass << ")..." << std::endl;
-        freeMomProp = env().createLattice<ScalarField>(freeMomPropName_);
-        Scalar<SIMPL>::MomentumSpacePropagator(*freeMomProp, par().mass);
+        freeMomProp_ = env().createLattice<ScalarField>(freeMomPropName_);
+        Scalar<SIMPL>::MomentumSpacePropagator(*freeMomProp_, par().mass);
     }
     else
     {
-        freeMomProp = env().getObject<ScalarField>(freeMomPropName_);
+        freeMomProp_ = env().getObject<ScalarField>(freeMomPropName_);
     }
-    if (!env().hasCreatedObject(shiftedMomPropName_[0]))
+    // cache phases
+    if (!env().hasCreatedObject(phaseName_[0]))
     {
         std::vector<int> &l = env().getGrid()->_fdimensions;
         
@@ -83,20 +90,99 @@ void TChargedProp::execute(void)
         {
             Real    twoPiL = M_PI*2./l[mu];
             
-            shiftedMomProp.push_back(
-                env().createLattice<ScalarField>(shiftedMomPropName_[mu]));
-            LatticeCoordinate(*(shiftedMomProp[mu]), mu);
-            *(shiftedMomProp[mu]) = exp(ci*twoPiL*(*(shiftedMomProp[mu])))
-                                    *(*freeMomProp);
+            phase_.push_back(env().createLattice<ScalarField>(phaseName_[mu]));
+            LatticeCoordinate(*(phase_[mu]), mu);
+            *(phase_[mu]) = exp(ci*twoPiL*(*(phase_[mu])));
         }
     }
     else
     {
         for (unsigned int mu = 0; mu < env().getNd(); ++mu)
         {
-            shiftedMomProp.push_back(
-                env().getObject<ScalarField>(shiftedMomPropName_[mu]));
+            phase_.push_back(env().getObject<ScalarField>(phaseName_[mu]));
         }
     }
+    // cache G*F*src
+    if (!env().hasCreatedObject(GFSrcName_))
+        
+    {
+        GFSrc_ = env().createLattice<ScalarField>(GFSrcName_);
+        fft.FFT_all_dim(*GFSrc_, source, FFT::forward);
+        *GFSrc_ = (*freeMomProp_)*(*GFSrc_);
+    }
+    else
+    {
+        GFSrc_ = env().getObject<ScalarField>(GFSrcName_);
+    }
     
+    // PROPAGATOR CALCULATION
+    ScalarField buf(env().getGrid());
+    ScalarField &GFSrc = *GFSrc_, &G = *freeMomProp_;
+    double      q = par().charge;
+    
+    // G*F*Src
+    prop = GFSrc;
+    // - q*G*momD1*G*F*Src (momD1 = F*D1*Finv)
+    buf = GFSrc;
+    momD1(buf, fft);
+    buf = G*buf;
+    prop = prop - q*buf;
+    // + q^2*G*momD1*G*momD1*G*F*Src (here buf = G*momD1*G*F*Src)
+    momD1(buf, fft);
+    prop = prop + q*q*G*buf;
+    // + q^2*G*momD2*G*F*Src (momD1 = F*D2*Finv)
+    buf = GFSrc;
+    momD2(buf, fft);
+    prop = prop + q*q*G*buf;
+    // final FT
+    fft.FFT_all_dim(prop, prop, FFT::backward);
+}
+
+void TChargedProp::momD1(ScalarField &s, FFT &fft)
+{
+    EmField     &A = *env().getObject<EmField>(par().emField);
+    ScalarField buf(env().getGrid()), Amu(env().getGrid());
+    Complex     ci(0.0,1.0);
+    
+    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+    {
+        Amu = peekLorentz(A, mu);
+        fft.FFT_all_dim(buf, s, FFT::backward);
+        buf = Amu*buf;
+        fft.FFT_all_dim(buf, buf, FFT::forward);
+        s = s + ci*adj(*phase_[mu])*buf;
+    }
+    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+    {
+        Amu = peekLorentz(A, mu);
+        buf = (*phase_[mu])*s;
+        fft.FFT_all_dim(buf, buf, FFT::backward);
+        buf = Amu*buf;
+        fft.FFT_all_dim(buf, buf, FFT::forward);
+        s = s - ci*buf;
+    }
+}
+
+void TChargedProp::momD2(ScalarField &s, FFT &fft)
+{
+    EmField     &A = *env().getObject<EmField>(par().emField);
+    ScalarField buf(env().getGrid()), Amu(env().getGrid());
+    
+    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+    {
+        Amu = peekLorentz(A, mu);
+        fft.FFT_all_dim(buf, s, FFT::backward);
+        buf = Amu*Amu*buf;
+        fft.FFT_all_dim(buf, buf, FFT::forward);
+        s = s + .5*adj(*phase_[mu])*buf;
+    }
+    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+    {
+        Amu = peekLorentz(A, mu);
+        buf = (*phase_[mu])*s;
+        fft.FFT_all_dim(buf, buf, FFT::backward);
+        buf = Amu*Amu*buf;
+        fft.FFT_all_dim(buf, buf, FFT::forward);
+        s = s + .5*buf;
+    }
 }
