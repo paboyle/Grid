@@ -46,11 +46,13 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #endif
 #define PARALLEL_NESTED_LOOP2 _Pragma("omp parallel for collapse(2)")
 #define PARALLEL_REGION       _Pragma("omp parallel")
+#define PARALLEL_CRITICAL     _Pragma("omp critical")
 #else
 #define PARALLEL_FOR_LOOP
 #define PARALLEL_FOR_LOOP_INTERN
 #define PARALLEL_NESTED_LOOP2
 #define PARALLEL_REGION
+#define PARALLEL_CRITICAL
 #endif
 
 namespace Grid {

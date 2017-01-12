@@ -27,15 +27,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-//----------------------------------------------------------------------
-/*! @file Grid_knc.h
-  @brief Optimization libraries for AVX512 instructions set for KNC
-
-  Using intrinsics
-*/
-// Time-stamp: <2015-06-09 14:27:28 neo>
-//----------------------------------------------------------------------
-
 #include <immintrin.h>
 
 
@@ -95,13 +86,13 @@ namespace Optimization {
   struct Vstream{
     //Float
     inline void operator()(float * a, __m512 b){
-      //_mm512_stream_ps(a,b);
-      _mm512_store_ps(a,b);
+      _mm512_stream_ps(a,b);
+      //      _mm512_store_ps(a,b);
     }
     //Double
     inline void operator()(double * a, __m512d b){
-      //_mm512_stream_pd(a,b);
-      _mm512_store_pd(a,b);
+      _mm512_stream_pd(a,b);
+      //      _mm512_store_pd(a,b);
     }
 
   };

@@ -1080,10 +1080,10 @@ say con = 2
 **/
 
 template<class T>
-static void Lock(DenseMatrix<T> &H, 	///Hess mtx	
-		 DenseMatrix<T> &Q, 	///Lock Transform
-		 T val, 		///value to be locked
-		 int con, 	///number already locked
+static void Lock(DenseMatrix<T> &H, 	// Hess mtx	
+		 DenseMatrix<T> &Q, 	// Lock Transform
+		 T val, 		// value to be locked
+		 int con, 	// number already locked
 		 RealD small,
 		 int dfg,
 		 bool herm)

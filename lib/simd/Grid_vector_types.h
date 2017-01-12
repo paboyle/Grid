@@ -38,13 +38,13 @@ directory
 #ifndef GRID_VECTOR_TYPES
 #define GRID_VECTOR_TYPES
 
-#ifdef GENERIC_VEC
+#ifdef GEN
 #include "Grid_generic.h"
 #endif
 #ifdef SSE4
 #include "Grid_sse4.h"
 #endif
-#if defined(AVX1) || defined(AVX2) || defined(AVXFMA4)
+#if defined(AVX1) || defined (AVXFMA) || defined(AVX2) || defined(AVXFMA4)
 #include "Grid_avx.h"
 #endif
 #if defined AVX512
@@ -130,7 +130,7 @@ class Grid_simd {
 
   Vector_type v;
 
-  static inline int Nsimd(void) {
+  static inline constexpr int Nsimd(void) {
     return sizeof(Vector_type) / sizeof(Scalar_type);
   }
 

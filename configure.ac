@@ -149,8 +149,14 @@ CXXFLAGS=$CXXFLAGS_CPY
 LDFLAGS=$LDFLAGS_CPY
 
 ############### SIMD instruction selection
-AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=<code>],
-	            [select SIMD target (cf. README.md)])], [ac_SIMD=${enable_simd}], [ac_SIMD=GEN])
+AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=code],
+              [select SIMD target (cf. README.md)])], [ac_SIMD=${enable_simd}], [ac_SIMD=GEN])
+
+AC_ARG_ENABLE([gen-simd-width],
+            [AS_HELP_STRING([--enable-gen-simd-width=size],
+            [size (in bytes) of the generic SIMD vectors (default: 32)])],
+            [ac_gen_simd_width=$enable_gen_simd_width],
+            [ac_gen_simd_width=32])
 
 case ${ax_cv_cxx_compiler_vendor} in
   clang|gnu)
@@ -180,7 +186,10 @@ case ${ax_cv_cxx_compiler_vendor} in
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-march=knl';;
       GEN)
-        AC_DEFINE([GENERIC_VEC],[1],[generic vector code])
+        AC_DEFINE([GEN],[1],[generic vector code])
+        AC_DEFINE_UNQUOTED([GEN_SIMD_WIDTH],[$ac_gen_simd_width],
+                           [generic SIMD vector width (in bytes)])
+        SIMD_GEN_WIDTH_MSG=" (width= $ac_gen_simd_width)"
         SIMD_FLAGS='';;
       QPX|BGQ)
         AC_DEFINE([QPX],[1],[QPX intrinsics for BG/Q])
@@ -197,8 +206,8 @@ case ${ax_cv_cxx_compiler_vendor} in
         AC_DEFINE([AVX1],[1],[AVX intrinsics])
         SIMD_FLAGS='-mavx -xavx';;
       AVXFMA)
-        AC_DEFINE([AVXFMA],[1],[AVX intrinsics with FMA4])
-        SIMD_FLAGS='-mavx -mfma';;
+        AC_DEFINE([AVXFMA],[1],[AVX intrinsics with FMA3])
+        SIMD_FLAGS='-mavx -fma';;
       AVX2)
         AC_DEFINE([AVX2],[1],[AVX2 intrinsics])
         SIMD_FLAGS='-march=core-avx2 -xcore-avx2';;
@@ -212,7 +221,10 @@ case ${ax_cv_cxx_compiler_vendor} in
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics for Knights Landing])
         SIMD_FLAGS='-xmic-avx512';;
       GEN)
-        AC_DEFINE([GENERIC_VEC],[1],[generic vector code])
+        AC_DEFINE([GEN],[1],[generic vector code])
+        AC_DEFINE_UNQUOTED([GEN_SIMD_WIDTH],[$ac_gen_simd_width],
+                           [generic SIMD vector width (in bytes)])
+        SIMD_GEN_WIDTH_MSG=" (width= $ac_gen_simd_width)"
         SIMD_FLAGS='';;
       *)
         AC_MSG_ERROR(["SIMD option ${ac_SIMD} not supported by the Intel compiler"]);;
@@ -278,7 +290,7 @@ esac
 case ${ac_COMMS} in
     *-auto)
         LX_FIND_MPI
-        if test "x$have_CXX_mpi" = 'xno'; then AC_MSG_ERROR(["MPI not found"]); fi
+        if test "x$have_CXX_mpi" = 'xno'; then AC_MSG_ERROR(["The configure could not find the MPI compilation flags. N.B. The -auto mode is not supported by Cray wrappers. Use the non -auto version in this case."]); fi
         AM_CXXFLAGS="$MPI_CXXFLAGS $AM_CXXFLAGS"
         AM_CFLAGS="$MPI_CFLAGS $AM_CFLAGS"
         AM_LDFLAGS="`echo $MPI_CXXLDFLAGS | sed -E 's/-l@<:@^ @:>@+//g'` $AM_LDFLAGS"
@@ -342,12 +354,17 @@ esac
 AM_CONDITIONAL(BUILD_CHROMA_REGRESSION,[ test "X${ac_CHROMA}X" == "XyesX" ])
 
 ############### Doxygen
-AC_PROG_DOXYGEN
-
-if test -n "$DOXYGEN"
-then
-AC_CONFIG_FILES([docs/doxy.cfg])
-fi
+DX_DOXYGEN_FEATURE([OFF])
+DX_DOT_FEATURE([OFF])
+DX_HTML_FEATURE([ON])
+DX_CHM_FEATURE([OFF])
+DX_CHI_FEATURE([OFF])
+DX_MAN_FEATURE([OFF])
+DX_RTF_FEATURE([OFF])
+DX_XML_FEATURE([OFF])
+DX_PDF_FEATURE([OFF])
+DX_PS_FEATURE([OFF])
+DX_INIT_DOXYGEN([$PACKAGE_NAME], [doxygen.cfg])
 
 ############### Ouput
 cwd=`pwd -P`; cd ${srcdir}; abs_srcdir=`pwd -P`; cd ${cwd}
@@ -364,12 +381,13 @@ AC_CONFIG_FILES(tests/IO/Makefile)
 AC_CONFIG_FILES(tests/core/Makefile)
 AC_CONFIG_FILES(tests/debug/Makefile)
 AC_CONFIG_FILES(tests/forces/Makefile)
+AC_CONFIG_FILES(tests/hadrons/Makefile)
 AC_CONFIG_FILES(tests/hmc/Makefile)
 AC_CONFIG_FILES(tests/solver/Makefile)
 AC_CONFIG_FILES(tests/qdpxx/Makefile)
 AC_CONFIG_FILES(benchmarks/Makefile)
-AC_CONFIG_FILES(programs/Makefile)
-AC_CONFIG_FILES(programs/Hadrons/Makefile)
+AC_CONFIG_FILES(extras/Makefile)
+AC_CONFIG_FILES(extras/Hadrons/Makefile)
 AC_OUTPUT
 
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -384,7 +402,7 @@ os (target)                 : $target_os
 compiler vendor             : ${ax_cv_cxx_compiler_vendor}
 compiler version            : ${ax_cv_gxx_version}
 ----- BUILD OPTIONS -----------------------------------
-SIMD                        : ${ac_SIMD}
+SIMD                        : ${ac_SIMD}${SIMD_GEN_WIDTH_MSG}
 Threading                   : ${ac_openmp} 
 Communications type         : ${comms_type}
 Default precision           : ${ac_PRECISION}
@@ -392,8 +410,7 @@ RNG choice                  : ${ac_RNG}
 GMP                         : `if test "x$have_gmp" = xtrue; then echo yes; else echo no; fi`
 LAPACK                      : ${ac_LAPACK}
 FFTW                        : `if test "x$have_fftw" = xtrue; then echo yes; else echo no; fi`
-build DOXYGEN documentation : `if test "x$enable_doc" = xyes; then echo yes; else echo no; fi`
-graphs and diagrams         : `if test "x$enable_dot" = xyes; then echo yes; else echo no; fi`
+build DOXYGEN documentation : `if test "$DX_FLAG_doc" = '1'; then echo yes; else echo no; fi`
 ----- BUILD FLAGS -------------------------------------
 CXXFLAGS:
 `echo ${AM_CXXFLAGS} ${CXXFLAGS} | tr ' ' '\n' | sed 's/^-/    -/g'`
