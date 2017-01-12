@@ -14,6 +14,7 @@ modules_hpp =\
   Modules/MSolver/RBPrecCG.hpp \
   Modules/MSource/Point.hpp \
   Modules/MSource/SeqGamma.hpp \
+  Modules/MSource/Wall.hpp \
   Modules/MSource/Z2.hpp \
   Modules/Quark.hpp
 
