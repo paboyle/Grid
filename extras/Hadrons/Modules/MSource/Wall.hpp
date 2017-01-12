@@ -23,6 +23,8 @@ template <typename FImpl>
 class TWall: public Module<WallPar>
 {
 public:
+    TYPE_ALIASES(FImpl,);
+public:
     // constructor
     TWall(const std::string name);
     // destructor
