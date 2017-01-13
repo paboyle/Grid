@@ -35,8 +35,7 @@ void TChargedProp::setup(void)
     phaseName_.clear();
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
-        phaseName_.push_back(freeMomPropName_ + "_"
-                                      + std::to_string(mu));
+        phaseName_.push_back("_shiftphase_" + std::to_string(mu));
     }
     GFSrcName_ = "_" + getName() + "_DinvSrc";
     if (!env().hasRegisteredObject(freeMomPropName_))
@@ -55,14 +54,12 @@ void TChargedProp::setup(void)
         env().registerLattice<ScalarField>(GFSrcName_);
     }
     env().registerLattice<ScalarField>(getName());
-    
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 void TChargedProp::execute(void)
 {
     // CACHING ANALYTIC EXPRESSIONS
-    ScalarField &prop   = *env().createLattice<ScalarField>(getName());
     ScalarField &source = *env().getObject<ScalarField>(par().source);
     Complex     ci(0.0,1.0);
     FFT         fft(env().getGrid());
@@ -79,13 +76,24 @@ void TChargedProp::execute(void)
     {
         freeMomProp_ = env().getObject<ScalarField>(freeMomPropName_);
     }
+    // cache G*F*src
+    if (!env().hasCreatedObject(GFSrcName_))
+        
+    {
+        GFSrc_ = env().createLattice<ScalarField>(GFSrcName_);
+        fft.FFT_all_dim(*GFSrc_, source, FFT::forward);
+        *GFSrc_ = (*freeMomProp_)*(*GFSrc_);
+    }
+    else
+    {
+        GFSrc_ = env().getObject<ScalarField>(GFSrcName_);
+    }
     // cache phases
     if (!env().hasCreatedObject(phaseName_[0]))
     {
         std::vector<int> &l = env().getGrid()->_fdimensions;
         
-        LOG(Message) << "Caching shifted momentum space free scalar propagator"
-                     << " (mass= " << par().mass << ")..." << std::endl;
+        LOG(Message) << "Caching shift phases..." << std::endl;
         for (unsigned int mu = 0; mu < env().getNd(); ++mu)
         {
             Real    twoPiL = M_PI*2./l[mu];
@@ -102,20 +110,13 @@ void TChargedProp::execute(void)
             phase_.push_back(env().getObject<ScalarField>(phaseName_[mu]));
         }
     }
-    // cache G*F*src
-    if (!env().hasCreatedObject(GFSrcName_))
-        
-    {
-        GFSrc_ = env().createLattice<ScalarField>(GFSrcName_);
-        fft.FFT_all_dim(*GFSrc_, source, FFT::forward);
-        *GFSrc_ = (*freeMomProp_)*(*GFSrc_);
-    }
-    else
-    {
-        GFSrc_ = env().getObject<ScalarField>(GFSrcName_);
-    }
-    
+
     // PROPAGATOR CALCULATION
+    LOG(Message) << "Computing charged scalar propagator"
+                 << " (mass= " << par().mass
+                 << ", charge= " << par().charge << ")..." << std::endl;
+    
+    ScalarField &prop   = *env().createLattice<ScalarField>(getName());
     ScalarField buf(env().getGrid());
     ScalarField &GFSrc = *GFSrc_, &G = *freeMomProp_;
     double      q = par().charge;
@@ -136,6 +137,28 @@ void TChargedProp::execute(void)
     prop = prop + q*q*G*buf;
     // final FT
     fft.FFT_all_dim(prop, prop, FFT::backward);
+    
+    // OUTPUT IF NECESSARY
+    if (!par().output.empty())
+    {
+        std::string           filename = par().output + "." +
+                                         std::to_string(env().getTrajectory());
+        
+        LOG(Message) << "Saving zero-momentum projection to '"
+                     << filename << "'..." << std::endl;
+        
+        TextWriter            writer(filename);
+        std::vector<TComplex> vecBuf;
+        std::vector<Complex>  result;
+        
+        sliceSum(prop, vecBuf, Tp);
+        result.resize(vecBuf.size());
+        for (unsigned int t = 0; t < vecBuf.size(); ++t)
+        {
+            result[t] = TensorRemove(vecBuf[t]);
+        }
+        write(writer, "prop", result);
+    }
 }
 
 void TChargedProp::momD1(ScalarField &s, FFT &fft)
