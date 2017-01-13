@@ -7,6 +7,19 @@
 
 BEGIN_HADRONS_NAMESPACE
 
+/*
+ 
+ Wall source
+ -----------------------------
+ * src_x = theta(x_3 - tA) * theta(tB - x_3) * exp(i x.mom)
+ 
+ * options:
+ - tA: begin timeslice (integer)
+ - tB: end timeslice (integer)
+ - mom: momentum insertion, space-separated float sequence (e.g ".1 .2 1. 0.")
+ 
+ */
+
 /******************************************************************************
  *                         Wall                                               *
  ******************************************************************************/
@@ -16,7 +29,8 @@ class WallPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(WallPar,
-                                    unsigned int, tW);
+                                    unsigned int, tW,
+                                    std::string, mom);
 };
 
 template <typename FImpl>
@@ -76,14 +90,27 @@ void TWall<FImpl>::setup(void)
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TWall<FImpl>::execute(void)
-{
-    Lattice<iScalar<vInteger>> t(env().getGrid());
+{    
+    LOG(Message) << "Generating wall source at t = " << par().tW 
+                 << " with momentum " << par().mom << std::endl;
     
-    LOG(Message) << "Generating wall source at t = " << par().tW << std::endl;
     PropagatorField &src = *env().template createLattice<PropagatorField>(getName());
+    Lattice<iScalar<vInteger>> t(env().getGrid());
+    LatticeComplex             ph(env().getGrid()), coor(env().getGrid());
+    std::vector<Real>          p;
+    Complex                    i(0.0,1.0);
+    
+    p  = strToVec<Real>(par().mom);
+    ph = zero;
+    for(unsigned int mu = 0; mu < Nd; mu++)
+    {
+        LatticeCoordinate(coor, mu);
+        ph = ph + p[mu]*coor;
+    }
+    ph = exp(i*ph);
     LatticeCoordinate(t, Tp);
     src = 1.;
-    src = where((t == par().tW), src, 0.*src);
+    src = where((t == par().tW), src*ph, 0.*src);
 }
 
 END_MODULE_NAMESPACE
