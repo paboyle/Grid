@@ -48,8 +48,8 @@ class CheckpointerParameters : Serializable {
         format(f){};
 
 
-  template <class ReaderClass, typename std::enable_if< isReader<ReaderClass>::value, int>::type = 0 >
-  CheckpointerParameters(ReaderClass &Reader) {
+  template <class ReaderClass >
+  CheckpointerParameters(Reader<ReaderClass> &Reader) {
     read(Reader, "Checkpointer", *this);
   }
  

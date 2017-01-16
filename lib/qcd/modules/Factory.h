@@ -50,6 +50,7 @@ public:
               const ProductCreator& name) const;
 private:
     std::map<std::string, Func> builder_;
+    virtual std::string obj_type() const = 0;
 };
 
 /******************************************************************************
@@ -79,20 +80,24 @@ std::vector<std::string> Factory<T, ProductCreator>::getBuilderList(void) const
 // factory /////////////////////////////////////////////////////////////////////
 template <typename T, typename ProductCreator>
 std::unique_ptr<T> Factory<T, ProductCreator>::create(const std::string type,
-                                      const ProductCreator& name) const
+                                      const ProductCreator& input) const
 {
     Func func;
     
+    std::cout << GridLogDebug << "Creating object of type "<< type << std::endl;
     try
     {
         func = builder_.at(type);
     }
     catch (std::out_of_range &)
     {
-        //HADRON_ERROR("object of type '" + type + "' unknown");
+      //HADRON_ERROR("object of type '" + type + "' unknown");
+    	std::cout << GridLogError << "Error" << std::endl;
+    	std::cout << GridLogError << obj_type() << " object of name [" << type << "] unknown" << std::endl;
+    	exit(1);
     }
     
-    return func(name);
+    return func(input);
 }
 
 }

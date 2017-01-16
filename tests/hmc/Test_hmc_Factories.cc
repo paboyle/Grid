@@ -41,27 +41,14 @@ int main(int argc, char **argv) {
 
    // Typedefs to simplify notation
   typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
+  typedef Grid::XmlReader InputFileReader; 
+
+  // Reader
+  InputFileReader Reader("input.wilson_gauge.params.xml");
+
   HMCWrapper TheHMC;
 
-  // Grid from the command line
-  TheHMC.Resources.AddFourDimGrid("gauge");
-  // Possibile to create the module by hand 
-  // hardcoding parameters or using a Reader
-
-
-  // Checkpointer definition
-  CheckpointerParameters CPparams;  
-  CPparams.config_prefix = "ckpoint_lat";
-  CPparams.rng_prefix = "ckpoint_rng";
-  CPparams.saveInterval = 5;
-  CPparams.format = "IEEE64BIG";
-  
-  TheHMC.Resources.LoadBinaryCheckpointer(CPparams);
-
-  RNGModuleParameters RNGpar;
-  RNGpar.SerialSeed = {1,2,3,4,5};
-  RNGpar.ParallelSeed = {6,7,8,9,10};
-  TheHMC.Resources.SetRNGSeeds(RNGpar);
+  TheHMC.Resources.initialize(Reader);
 
   // Construct observables
   // here there is too much indirection 
@@ -73,6 +60,7 @@ int main(int argc, char **argv) {
   // Collect actions, here use more encapsulation
   // need wrappers of the fermionic classes 
   // that have a complex construction
+
   // standard
   RealD beta = 5.6 ;
   WilsonGaugeActionR Waction(beta);
@@ -87,6 +75,10 @@ int main(int argc, char **argv) {
   // make it serializable 
   TheHMC.MDparameters.MDsteps = 20;
   TheHMC.MDparameters.trajL = 1.0;
+
+  // eventually smearing here
+  // ...
+  ////////////////////////////////////////////////////////////////
 
   TheHMC.ReadCommandLine(argc, argv); // these must be parameters from file
   TheHMC.Run();  // no smearing

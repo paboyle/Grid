@@ -34,7 +34,7 @@ namespace Grid {
 namespace QCD {
 
 
-
+// Some modules for the basic setup
 
 
 ///////////////////////////////////////////////////
@@ -165,6 +165,9 @@ public:
   }
 };
 
+
+
+/*
 ///////////////////////////////////////////////////////////////////
 /// Smearing module
 template <class ImplementationPolicy>
@@ -177,24 +180,9 @@ class StoutSmearingModule: public SmearingModule<ImplementationPolicy>{
    SmearedConfiguration<ImplementationPolicy> SmearingPolicy;
 };
 
+*/
 
-////////////////////////////////////////////////////////////////////////
-// Checkpoint module, owns the Checkpointer
-template <class ImplementationPolicy>
-class CheckPointModule {
-  std::unique_ptr<BaseHmcCheckpointer<ImplementationPolicy> > cp_;
 
- public:
-  void set_Checkpointer(BaseHmcCheckpointer<ImplementationPolicy>* cp) {
-    cp_.reset(cp);
-  };
-
-  BaseHmcCheckpointer<ImplementationPolicy>* get_CheckPointer() {
-    return cp_.get();
-  }
-
-  void initialize(CheckpointerParameters& P) { cp_.initialize(P); }
-};
 
 }  // namespace QCD
 }  // namespace Grid

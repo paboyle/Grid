@@ -38,8 +38,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
     if (!have_CheckPointer) {                                            \
       std::cout << GridLogDebug << "Loading Checkpointer " << #NAME      \
                 << std::endl;                                            \
-      CP.set_Checkpointer(                                               \
-          new NAME##HmcCheckpointer<ImplementationPolicy>(Params_));     \
+      CP = std::unique_ptr<CheckpointerBaseModule>(                      \
+        new NAME##CPModule<ImplementationPolicy>(Params_));              \
       have_CheckPointer = true;                                          \
     } else {                                                             \
       std::cout << GridLogError << "Checkpointer already loaded "        \
@@ -48,24 +48,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
     }                                                                    \
   }
 
-/*
-// One function per Checkpointer using the reader, use a macro to simplify
-#define RegisterLoadCheckPointerReaderFunction(NAME)                       \
-  template <class Reader>                                                  \
-  void Load##NAME##Checkpointer(Reader& Reader_) {                         \
-    if (!have_CheckPointer) {                                              \
-      std::cout << GridLogDebug << "Loading Checkpointer " << #NAME        \
-                << std::endl;                                              \
-      CP.set_Checkpointer(new NAME##HmcCheckpointer<ImplementationPolicy>( \
-          CheckpointerParameters(Reader_)));                               \
-      have_CheckPointer = true;                                            \
-    } else {                                                               \
-      std::cout << GridLogError << "Checkpointer already loaded "          \
-                << std::endl;                                              \
-      exit(1);                                                             \
-    }                                                                      \
-  }
-*/
 
 namespace Grid {
 namespace QCD {
@@ -73,20 +55,49 @@ namespace QCD {
 // HMC Resource manager
 template <class ImplementationPolicy>
 class HMCResourceManager {
+  typedef HMCModuleBase< QCD::BaseHmcCheckpointer<ImplementationPolicy> > CheckpointerBaseModule;
+
+
   // Named storage for grid pairs (std + red-black)
   std::unordered_map<std::string, GridModule> Grids;
   RNGModule RNGs;
 
   // SmearingModule<ImplementationPolicy> Smearing;
-  CheckPointModule<ImplementationPolicy> CP;
-
+  std::unique_ptr<CheckpointerBaseModule > CP;
+  
   bool have_RNG;
   bool have_CheckPointer;
 
  public:
   HMCResourceManager() : have_RNG(false), have_CheckPointer(false) {}
 
-  // Here need a constructor for using the Reader class
+  template <class ReaderClass >
+  void initialize(ReaderClass &Read){
+    // assumes we are starting from the main node
+
+    // Geometry
+    GridModuleParameters GridPar(Read);
+    GridFourDimModule GridMod( GridPar) ;
+    AddGrid("gauge", GridMod);
+
+    // Checkpointer
+    auto &CPfactory = HMC_CPModuleFactory<cp_string, QCD::PeriodicGimplR, ReaderClass >::getInstance();
+    Read.push("Checkpointer");
+    std::string cp_type;
+    Read.readDefault("name", cp_type);
+    std::cout << "Registered types " << std::endl;
+    std::cout << CPfactory.getBuilderList() << std::endl;
+
+    CP = CPfactory.create(cp_type, Read);
+    CP->print_parameters();
+    Read.pop();    
+    have_CheckPointer = true;  
+
+    RNGModuleParameters RNGpar(Read);
+    SetRNGSeeds(RNGpar);
+
+    // HMC here
+  }
 
   //////////////////////////////////////////////////////////////
   // Grids
@@ -159,7 +170,7 @@ class HMCResourceManager {
 
   BaseHmcCheckpointer<ImplementationPolicy>* GetCheckPointer() {
     if (have_CheckPointer)
-      return CP.get_CheckPointer();
+      return CP->getPtr();
     else {
       std::cout << GridLogError << "Error: no checkpointer defined"
                 << std::endl;
@@ -170,13 +181,6 @@ class HMCResourceManager {
   RegisterLoadCheckPointerFunction(Binary);
   RegisterLoadCheckPointerFunction(Nersc);
   RegisterLoadCheckPointerFunction(ILDG);
-
-/*
-  RegisterLoadCheckPointerReaderFunction(Binary);
-  RegisterLoadCheckPointerReaderFunction(Nersc);
-  RegisterLoadCheckPointerReaderFunction(ILDG);
-*/
-
 };
 }
 }

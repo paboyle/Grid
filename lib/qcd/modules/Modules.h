@@ -50,6 +50,16 @@ public:
   Parametrized(Reader<ReaderClass> & Reader){
     read(Reader, section_name(), Par_);
   }
+
+  void set_parameters(Parameters Par){
+  	Par_ = Par;
+  }
+
+
+  void print_parameters(){
+  	std::cout << Par_ << std::endl;
+  }
+
 protected:
   Parameters Par_;
 
@@ -70,6 +80,7 @@ class HMCModuleBase{
 public:
   typedef Prod Product;
 virtual Prod* getPtr() = 0;  
+virtual void print_parameters(){}; //default to nothing
 };
 
 
@@ -87,12 +98,18 @@ class ActionModule
   typedef HMCModuleBase< QCD::Action<typename ActionType::GaugeField> > Base;
   typedef typename Base::Product Product;
 
+
+
   std::unique_ptr<ActionType> ActionPtr;
 
   ActionModule(APar Par) : Parametrized<APar>(Par) {}
 
   template <class ReaderClass>
   ActionModule(Reader<ReaderClass>& Reader) : Parametrized<APar>(Reader){};
+
+  virtual void print_parameters(){
+  	std::cout << this->Par_ << std::endl;
+  }
 
   Product* getPtr() {
     if (!ActionPtr) initialize();
@@ -102,7 +119,15 @@ class ActionModule
 
  private:
   virtual void initialize() = 0;
+
 };
+
+
+
+
+
+
+
 
 namespace QCD{
 
@@ -118,11 +143,11 @@ class WilsonGaugeActionParameters : Serializable {
 template<class Impl>
 class WilsonGModule: public ActionModule<WilsonGaugeAction<Impl>, WilsonGaugeActionParameters> {
   typedef ActionModule<WilsonGaugeAction<Impl>, WilsonGaugeActionParameters> ActionBase;
-  using ActionBase::ActionBase;
+  using ActionBase::ActionBase; // for constructors
 
   // acquire resource
   virtual void initialize(){
-    ActionBase::ActionPtr.reset(new WilsonGaugeAction<Impl>(ActionBase::Par_.beta));
+    this->ActionPtr.reset(new WilsonGaugeAction<Impl>(this->Par_.beta));
   }
 
 };
@@ -137,31 +162,38 @@ typedef WilsonGModule<PeriodicGimplR> WilsonGMod;
 
 
 
+
+////////////////////////////////////////
+// Factories specialisations
+////////////////////////////////////////
+
+
+
 // use the same classed defined by Antonin, does not make sense to rewrite
 // Factory is perfectly fine
 // Registar must be changed because I do not want to use the ModuleFactory
-/*
-define
-*/
 
+// ref to LatticeGaugeField must be changed
+typedef HMCModuleBase< QCD::Action< QCD::LatticeGaugeField > > HMC_LGTActionModBase;
 
-typedef HMCModuleBase< QCD::Action< QCD::LatticeGaugeField > > HMCModBase;
-
-template <class ReaderClass >
-class HMCActionModuleFactory
-    : public Factory < HMCModBase ,	Reader<ReaderClass> > {
+template <char const *str, class ReaderClass >
+class HMC_LGTActionModuleFactory
+    : public Factory < HMC_LGTActionModBase ,	Reader<ReaderClass> > {
  public:
- 	typedef Reader<ReaderClass> TheReader;
+ 	typedef Reader<ReaderClass> TheReader; 
  	// use SINGLETON FUNCTOR MACRO HERE
-  HMCActionModuleFactory(const HMCActionModuleFactory& e) = delete;
-  void operator=(const HMCActionModuleFactory& e) = delete;
-  static HMCActionModuleFactory& getInstance(void) {
-    static HMCActionModuleFactory e;
+  HMC_LGTActionModuleFactory(const HMC_LGTActionModuleFactory& e) = delete;
+  void operator=(const HMC_LGTActionModuleFactory& e) = delete;
+  static HMC_LGTActionModuleFactory& getInstance(void) {
+    static HMC_LGTActionModuleFactory e;
     return e;
   }
 
  private:
-  HMCActionModuleFactory(void) = default;
+  HMC_LGTActionModuleFactory(void) = default;
+    std::string obj_type() const {
+  	return std::string(str);
+  }
 };
 
 /*
@@ -178,6 +210,8 @@ when needed a pointer is released
 
 
 
+
+
 template <class T, class TheFactory>
 class Registrar {
  public:
@@ -188,9 +222,10 @@ class Registrar {
   }
 };
 
-Registrar<QCD::WilsonGMod, HMCActionModuleFactory<XmlReader> > __WGmodInit("WilsonGaugeAction"); 
 
 
+extern char gauge_string[];
+static Registrar<QCD::WilsonGMod, HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __WGmodXMLInit("Wilson"); 
 
 }
 
