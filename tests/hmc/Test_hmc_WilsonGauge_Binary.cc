@@ -30,62 +30,59 @@ directory
 /*  END LEGAL */
 #include <Grid/Grid.h>
 
-namespace Grid {
-  namespace QCD {
-
-    //Change here the type of reader
-    typedef Grid::XmlReader InputFileReader; 
-
-
-    class HMCRunnerParameters : Serializable {
-    public:
-      GRID_SERIALIZABLE_CLASS_MEMBERS(HMCRunnerParameters,
-        double, beta,
-        int, MDsteps,
-        double, TrajectoryLength,
-        std::string, serial_seeds,
-        std::string, parallel_seeds,
-        );
-
-      HMCRunnerParameters() {}
-    };
-  }
-}
-
 int main(int argc, char **argv) {
   using namespace Grid;
   using namespace Grid::QCD;
 
   Grid_init(&argc, &argv);
   int threads = GridThread::GetThreads();
-
-   // Typedefs to simplify notation
-  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
-
   // here make a routine to print all the relevant information on the run
   std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
-  //////////////////////////////////////////////////////////////
-  // Input file section 
-  // make input file name general
-  // now working with the text reader but I should drop this support
-  // i need a structured format where every object is able
-  // to locate the required data: XML, JSON, YAML.
-  InputFileReader Reader("input.wilson_gauge.params.xml");
-  HMCRunnerParameters HMCPar;
-  read(Reader, "HMC", HMCPar);
+   // Typedefs to simplify notation
+  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
+  typedef Grid::XmlReader InputFileReader; 
 
-  // Seeds for the random number generators
-  // generalise, ugly now
-  std::vector<int> SerSeed = strToVec<int>(HMCPar.serial_seeds);
-  std::vector<int> ParSeed = strToVec<int>(HMCPar.parallel_seeds);
+  // Reader, now not necessary
+  InputFileReader Reader("input.wilson_gauge.params.xml");
 
   HMCWrapper TheHMC;
+
+  // Grid from the command line
   TheHMC.Resources.AddFourDimGrid("gauge");
+
+  // Grid from the Reader
+  /*
+  GridModuleParameters GridPar(Reader);
+  GridFourDimModule GridMod( GridPar) ;
+  TheHMC.Resources.AddGrid("gauge", GridMod);
+  */
+
+  // Checkpointer definition
+  CheckpointerParameters CPparams;  
+  CPparams.config_prefix = "ckpoint_lat";
+  CPparams.rng_prefix = "ckpoint_rng";
+  CPparams.saveInterval = 5;
+  CPparams.format = "IEEE64BIG";
   
-  // here using the Reader but an overloaded function to pass the 
-  // parameters class is provided 
-  TheHMC.Resources.LoadBinaryCheckpointer(Reader);
+  // can also use the reader constructor
+  // CheckpointerParameters CPparams(Reader);
+  TheHMC.Resources.LoadBinaryCheckpointer(CPparams);
+ 
+
+  // Fill resources
+  // Seeds for the random number generators
+  // Can also initialize using the Reader
+  RNGModuleParameters RNGpar;
+  RNGpar.SerialSeed = {1,2,3,4,5};
+  RNGpar.ParallelSeed = {6,7,8,9,10};
+  TheHMC.Resources.SetRNGSeeds(RNGpar);
+
+  // Construct observables
+  // here there is too much indirection 
+  PlaquetteLogger<HMCWrapper::ImplPolicy> PlaqLog("Plaquette");
+  TheHMC.ObservablesList.push_back(&PlaqLog);
+  //////////////////////////////////////////////
 
   /////////////////////////////////////////////////////////////
   // Collect actions, here use more encapsulation
@@ -93,23 +90,30 @@ int main(int argc, char **argv) {
   // that have a complex construction
 
   // Gauge action
-  WilsonGaugeActionR Waction(HMCPar.beta);
+  // as module
+  /*
+  WilsonGMod::Parameters WPar;
+  WPar.beta = 6.0;
+  WilsonGMod WGMod(WPar);
+  auto testAction = WGMod.getPtr();// test to pass to the action set
+  HMCModuleBase<Action<LatticeGaugeField>>* HMB = &WGMod;
+  */
+
+
+  // standard
+  RealD beta = 5.6 ;
+  WilsonGaugeActionR Waction(beta);
 
   ActionLevel<HMCWrapper::Field> Level1(1);
   Level1.push_back(&Waction);
+  //Level1.push_back(WGMod.getPtr());
   TheHMC.TheAction.push_back(Level1);
   /////////////////////////////////////////////////////////////
 
-  // Construct observables 
-  PlaquetteLogger<HMCWrapper::ImplPolicy> PlaqLog("Plaquette");
-  TheHMC.ObservablesList.push_back(&PlaqLog);
-  //////////////////////////////////////////////
-
-  // Fill resources
-  // here we can simplify a lot if the input file is structured
-  // just pass the input file reader 
-  TheHMC.Resources.AddRNGSeeds(SerSeed, ParSeed);
-  TheHMC.MDparameters.set(HMCPar.MDsteps, HMCPar.TrajectoryLength);
+  // Nest MDparameters in the HMCparameters->HMCPayload
+  // make it serializable 
+  TheHMC.MDparameters.MDsteps = 20;
+  TheHMC.MDparameters.trajL = 1.0;
 
   // eventually smearing here
   // ...

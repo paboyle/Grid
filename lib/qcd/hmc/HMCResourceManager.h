@@ -48,6 +48,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
     }                                                                    \
   }
 
+/*
 // One function per Checkpointer using the reader, use a macro to simplify
 #define RegisterLoadCheckPointerReaderFunction(NAME)                       \
   template <class Reader>                                                  \
@@ -64,18 +65,19 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       exit(1);                                                             \
     }                                                                      \
   }
+*/
 
 namespace Grid {
 namespace QCD {
 
 // HMC Resource manager
-  template <class ImplementationPolicy>
-class HMCResourceManager{
-  // Storage for grid pairs (std + red-black)
+template <class ImplementationPolicy>
+class HMCResourceManager {
+  // Named storage for grid pairs (std + red-black)
   std::unordered_map<std::string, GridModule> Grids;
   RNGModule RNGs;
 
-  //SmearingModule<ImplementationPolicy> Smearing;
+  // SmearingModule<ImplementationPolicy> Smearing;
   CheckPointModule<ImplementationPolicy> CP;
 
   bool have_RNG;
@@ -83,6 +85,13 @@ class HMCResourceManager{
 
  public:
   HMCResourceManager() : have_RNG(false), have_CheckPointer(false) {}
+
+  // Here need a constructor for using the Reader class
+
+  //////////////////////////////////////////////////////////////
+  // Grids
+  //////////////////////////////////////////////////////////////
+
   void AddGrid(std::string s, GridModule& M) {
     // Check for name clashes
     auto search = Grids.find(s);
@@ -94,11 +103,13 @@ class HMCResourceManager{
     Grids[s] = std::move(M);
   }
 
-  // Add a named grid set
+  // Add a named grid set, 4d shortcut
   void AddFourDimGrid(std::string s) {
     GridFourDimModule Mod;
     AddGrid(s, Mod);
   }
+
+
 
   GridCartesian* GetCartesian(std::string s = "") {
     if (s.empty()) s = Grids.begin()->first;
@@ -114,6 +125,10 @@ class HMCResourceManager{
     return Grids[s].get_rb();
   }
 
+  //////////////////////////////////////////////////////
+  // Random number generators
+  //////////////////////////////////////////////////////
+
   void AddRNGs(std::string s = "") {
     // Couple the RNGs to the GridModule tagged by s
     // the default is the first grid registered
@@ -124,43 +139,43 @@ class HMCResourceManager{
     have_RNG = true;
   }
 
-  void AddRNGSeeds(const std::vector<int> S, const std::vector<int> P) {
-    RNGs.set_RNGSeeds(S, P);
-  }
+  void SetRNGSeeds(RNGModuleParameters& Params) { RNGs.set_RNGSeeds(Params); }
 
   GridSerialRNG& GetSerialRNG() { return RNGs.get_sRNG(); }
+
   GridParallelRNG& GetParallelRNG() {
     assert(have_RNG);
     return RNGs.get_pRNG();
   }
-  
+
   void SeedFixedIntegers() {
     assert(have_RNG);
     RNGs.seed();
   }
 
-
-
   //////////////////////////////////////////////////////
   // Checkpointers
   //////////////////////////////////////////////////////
 
-  BaseHmcCheckpointer<ImplementationPolicy>* get_CheckPointer(){
+  BaseHmcCheckpointer<ImplementationPolicy>* GetCheckPointer() {
     if (have_CheckPointer)
-    return CP.get_CheckPointer();
-    else{
-      std::cout << GridLogError << "Error: no checkpointer defined" << std::endl;
+      return CP.get_CheckPointer();
+    else {
+      std::cout << GridLogError << "Error: no checkpointer defined"
+                << std::endl;
       exit(1);
     }
   }
 
-  RegisterLoadCheckPointerFunction (Binary);
-  RegisterLoadCheckPointerFunction (Nersc);
-  RegisterLoadCheckPointerFunction (ILDG);
+  RegisterLoadCheckPointerFunction(Binary);
+  RegisterLoadCheckPointerFunction(Nersc);
+  RegisterLoadCheckPointerFunction(ILDG);
 
-  RegisterLoadCheckPointerReaderFunction (Binary);
-  RegisterLoadCheckPointerReaderFunction (Nersc);
-  RegisterLoadCheckPointerReaderFunction (ILDG);
+/*
+  RegisterLoadCheckPointerReaderFunction(Binary);
+  RegisterLoadCheckPointerReaderFunction(Nersc);
+  RegisterLoadCheckPointerReaderFunction(ILDG);
+*/
 
 };
 }

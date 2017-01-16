@@ -30,27 +30,31 @@ directory
 #define BASE_CHECKPOINTER
 
 namespace Grid {
-	namespace QCD {
+namespace QCD {
 
-		class CheckpointerParameters : Serializable {
-		public:
-			GRID_SERIALIZABLE_CLASS_MEMBERS(CheckpointerParameters, 
-				std::string, config_prefix, 
-				std::string, rng_prefix, 
-				int, saveInterval, 
-				std::string, format, );
+class CheckpointerParameters : Serializable {
+ public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(CheckpointerParameters, 
+  	std::string, config_prefix, 
+  	std::string, rng_prefix, 
+  	int, saveInterval, 
+  	std::string, format, );
 
-			CheckpointerParameters(std::string cf = "cfg", std::string rn = "rng",
-				int savemodulo = 1, const std::string &f = "IEEE64BIG")
-			: config_prefix(cf), rng_prefix(rn), saveInterval(savemodulo), format(f){};
+  CheckpointerParameters(std::string cf = "cfg", std::string rn = "rng",
+   		      int savemodulo = 1, const std::string &f = "IEEE64BIG")
+      : config_prefix(cf),
+        rng_prefix(rn),
+        saveInterval(savemodulo),
+        format(f){};
 
 
-      template<class ReaderClass>
-			CheckpointerParameters(ReaderClass &Reader){
-				read(Reader, "Checkpointer", *this);
-			}
+  template <class ReaderClass, typename std::enable_if< isReader<ReaderClass>::value, int>::type = 0 >
+  CheckpointerParameters(ReaderClass &Reader) {
+    read(Reader, "Checkpointer", *this);
+  }
+ 
 
-		};
+};
 
 //////////////////////////////////////////////////////////////////////////////
 // Base class for checkpointers

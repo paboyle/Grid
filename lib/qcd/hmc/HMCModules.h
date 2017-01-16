@@ -33,8 +33,42 @@ directory
 namespace Grid {
 namespace QCD {
 
+
+
+
+
 ///////////////////////////////////////////////////
 // Modules
+class GridModuleParameters: Serializable{
+  
+  GRID_SERIALIZABLE_CLASS_MEMBERS(GridModuleParameters,
+  std::string, lattice,
+  std::string,  mpi);
+
+public: 
+  // these namings are ugly
+  // also ugly the distinction between the serializable members
+  // and this
+  std::vector<int> lattice_v;
+  std::vector<int> mpi_v;
+
+  GridModuleParameters(const std::vector<int> l_ = std::vector<int>(),
+    const std::vector<int> mpi_ = std::vector<int>()):lattice_v(l_), mpi_v(mpi_){}
+
+  template <class ReaderClass>
+  GridModuleParameters(Reader<ReaderClass>& Reader) {
+    read(Reader, "LatticeGrid", *this);
+    lattice_v = strToVec<int>(lattice);
+    mpi_v = strToVec<int>(mpi);
+    if (mpi_v.size() != lattice_v.size()) {
+      std::cout << "Error in GridModuleParameters: lattice and mpi dimensions "
+                   "do not match"
+                << std::endl;
+      exit(1);
+    }
+  }
+};
+
 class GridModule {
  public:
   GridCartesian* get_full() { return grid_.get(); }
@@ -46,11 +80,13 @@ class GridModule {
  protected:
   std::unique_ptr<GridCartesian> grid_;
   std::unique_ptr<GridRedBlackCartesian> rbgrid_;
+  
 };
 
 // helpers
 class GridFourDimModule : public GridModule {
  public:
+  // add a function to create the module from a Reader
   GridFourDimModule() {
     set_full(SpaceTimeGrid::makeFourDimGrid(
         GridDefaultLatt(), GridDefaultSimd(4, vComplex::Nsimd()),
@@ -58,50 +94,53 @@ class GridFourDimModule : public GridModule {
     set_rb(SpaceTimeGrid::makeFourDimRedBlackGrid(grid_.get()));
   }
 
+  template <class vector_type = vComplex>
+  GridFourDimModule(GridModuleParameters Params) {
+    if (Params.lattice_v.size() == 4) {
+      set_full(SpaceTimeGrid::makeFourDimGrid(
+          Params.lattice_v, GridDefaultSimd(4, vector_type::Nsimd()),
+          Params.mpi_v));
+      set_rb(SpaceTimeGrid::makeFourDimRedBlackGrid(grid_.get()));
+    } else {
+      std::cout
+          << "Error in GridFourDimModule: lattice dimension different from 4"
+          << std::endl;
+      exit(1);
+    }
+  }
 };
-
 
 ////////////////////////////////////////////////////////////////////
 class RNGModuleParameters: Serializable {
-public:
+
   GRID_SERIALIZABLE_CLASS_MEMBERS(RNGModuleParameters,
-  std::vector<int>, SerialSeed_,
-  std::vector<int>, ParallelSeed_,);
+  std::string, serial_seeds,
+  std::string, parallel_seeds,);
+public:
+  std::vector<int> SerialSeed;
+  std::vector<int> ParallelSeed;
+
+  RNGModuleParameters(const std::vector<int> S = std::vector<int>(),
+                      const std::vector<int> P = std::vector<int>())
+      : SerialSeed(S), ParallelSeed(P) {}
 
 
-  // default constructor, needed for the non-Reader 
-  // construction of the module
-  RNGModuleParameters(){
-    SerialSeed_.resize(0);
-    ParallelSeed_.resize(0);
+  template <class ReaderClass >
+  RNGModuleParameters(Reader<ReaderClass>& Reader){
+    read(Reader, "RandomNumberGenerator", *this); 
+    SerialSeed = strToVec<int>(serial_seeds);
+    ParallelSeed = strToVec<int>(parallel_seeds);
   }
-
-  RNGModuleParameters(const std::vector<int> S, const std::vector<int> P){
-  set_RNGSeeds(S,P);  
-  }
-
-  template < class ReaderClass > 
-  RNGModuleParameters(ReaderClass &Reader){
-    read(Reader, "RandomNumberGenerator", *this);
-  }
-
-  void set_RNGSeeds(const std::vector<int>& S, const std::vector<int>& P){
-    SerialSeed_   = S;
-    ParallelSeed_ = P;    
-  }
-
+  
 };
 
-
+// Random number generators module
 class RNGModule{
-   // Random number generators
    GridSerialRNG sRNG_;
    std::unique_ptr<GridParallelRNG> pRNG_;
    RNGModuleParameters Params_;
 
 public:
-  template < class ReaderClass > 
-  RNGModule(ReaderClass &Reader):Params_(Reader){};
 
   RNGModule(){};
 
@@ -109,35 +148,22 @@ public:
     pRNG_.reset(pRNG);
   }
 
-  void set_RNGSeeds(const std::vector<int> S, const std::vector<int> P) {
-    Params_.set_RNGSeeds(S,P);
+  void set_RNGSeeds(RNGModuleParameters& Params) {
+    Params_ = Params;
   }
 
+  GridSerialRNG& get_sRNG() { return sRNG_; }
+  GridParallelRNG& get_pRNG() { return *pRNG_.get(); }
 
-
-  GridSerialRNG& get_sRNG(){
-    if (Params_.SerialSeed_.size()==0){
-      std::cout << "Serial seeds not initialized" << std::endl;
+  void seed() {
+    if (Params_.SerialSeed.size() == 0 && Params_.ParallelSeed.size() == 0) {
+      std::cout << "Seeds not initialized" << std::endl;
       exit(1);
     }
-    return sRNG_;
-  }
-  GridParallelRNG& get_pRNG(){
-   if (Params_.ParallelSeed_.size()==0){
-    std::cout << "Parallel seeds not initialized" << std::endl;
-    exit(1);
-    } 
-    return *pRNG_.get();
-  }
-
-  void seed(){
-    sRNG_.SeedFixedIntegers(Params_.SerialSeed_);
-    pRNG_->SeedFixedIntegers(Params_.ParallelSeed_);
+    sRNG_.SeedFixedIntegers(Params_.SerialSeed);
+    pRNG_->SeedFixedIntegers(Params_.ParallelSeed);
   }
 };
-
-
-
 
 ///////////////////////////////////////////////////////////////////
 /// Smearing module

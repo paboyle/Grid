@@ -492,7 +492,6 @@ namespace QCD {
 }   //namespace QCD
 } // Grid
 
-
 #include <Grid/qcd/utils/SpaceTimeGrid.h>
 #include <Grid/qcd/spin/Dirac.h>
 #include <Grid/qcd/spin/TwoSpinor.h>
@@ -517,5 +516,6 @@ namespace QCD {
 #include <Grid/qcd/hmc/HMC.h>
 
 
+#include <Grid/qcd/modules/mods.h>
 
 #endif

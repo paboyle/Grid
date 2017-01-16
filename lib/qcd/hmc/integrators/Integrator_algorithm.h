@@ -117,7 +117,7 @@ class LeapFrog : public Integrator<FieldImplementation, SmearingPolicy,
     // eps    : current step size
 
     // Get current level step size
-    RealD eps = this->Params.stepsize;
+    RealD eps = this->Params.trajL/this->Params.MDsteps;
     for (int l = 0; l <= level; ++l) eps /= this->as[l].multiplier;
 
     int multiplier = this->as[level].multiplier;
@@ -166,7 +166,7 @@ class MinimumNorm2 : public Integrator<FieldImplementation, SmearingPolicy,
 
     int fl = this->as.size() - 1;
 
-    RealD eps = this->Params.stepsize * 2.0;
+    RealD eps = this->Params.trajL/this->Params.MDsteps * 2.0;
     for (int l = 0; l <= level; ++l) eps /= 2.0 * this->as[l].multiplier;
 
     // Nesting:  2xupdate_U of size eps/2
@@ -247,7 +247,7 @@ class ForceGradient : public Integrator<FieldImplementation, SmearingPolicy,
   }
 
   void step(Field& U, int level, int _first, int _last) {
-    RealD eps = this->Params.stepsize * 2.0;
+    RealD eps = this->Params.trajL/this->Params.MDsteps * 2.0;
     for (int l = 0; l <= level; ++l) eps /= 2.0 * this->as[l].multiplier;
 
     RealD Chi = chi * eps * eps * eps;

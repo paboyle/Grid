@@ -50,6 +50,8 @@ struct HMCparameters {
   bool MetropolisTest;
   Integer NoMetropolisUntil;
 
+  // nest here the MDparameters and make all serializable
+
   HMCparameters() {
     ////////////////////////////// Default values
     MetropolisTest    = true;

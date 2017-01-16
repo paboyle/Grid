@@ -10,6 +10,7 @@ Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: neo <cossu@post.kek.jp>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -40,21 +41,18 @@ namespace QCD {
 ////////////////////////////////////////////////////////////////////////
 template <class Gimpl>
 class WilsonGaugeAction : public Action<typename Gimpl::GaugeField> {
- public:
+ public:  
   INHERIT_GIMPL_TYPES(Gimpl);
 
- private:
-  RealD beta;
-
- public:
-  explicit WilsonGaugeAction(RealD b) : beta(b){}
+  /////////////////////////// constructors
+  explicit WilsonGaugeAction(RealD beta_):beta(beta_){};
 
   virtual std::string action_name() {return "WilsonGaugeAction";}
 
   virtual std::string LogParameters(){
-  	std::stringstream sstream;
-  	sstream << GridLogMessage << "[WilsonGaugeAction] Beta: " << beta << std::endl;
-  	return sstream.str();
+    std::stringstream sstream;
+    sstream << GridLogMessage << "[WilsonGaugeAction] Beta: " << beta << std::endl;
+    return sstream.str();
   }
 
   virtual void refresh(const GaugeField &U,
@@ -85,7 +83,10 @@ class WilsonGaugeAction : public Action<typename Gimpl::GaugeField> {
       PokeIndex<LorentzIndex>(dSdU, dSdU_mu, mu);
     }
   }
+private:
+  RealD beta;  
 };
+
 
 
 }

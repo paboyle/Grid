@@ -151,7 +151,7 @@ class HMCWrapperTemplate {
       Implementation::TepidConfiguration(Resources.GetParallelRNG(), U);
     } else if (Payload.StartType == CheckpointStart) {
       // CheckpointRestart
-      Resources.get_CheckPointer()->CheckpointRestore(Payload.Parameters.StartTrajectory, U,
+      Resources.GetCheckPointer()->CheckpointRestore(Payload.Parameters.StartTrajectory, U,
                                    Resources.GetSerialRNG(),
                                    Resources.GetParallelRNG());
     }
@@ -164,7 +164,7 @@ class HMCWrapperTemplate {
 
     for (int obs = 0; obs < ObservablesList.size(); obs++)
       HMC.AddObservable(ObservablesList[obs]);
-    HMC.AddObservable(Resources.get_CheckPointer());
+    HMC.AddObservable(Resources.GetCheckPointer());
 
 
     // Run it

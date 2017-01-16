@@ -69,6 +69,9 @@ namespace Grid {
   
   class Serializable {};
   
+
+
+
   // static polymorphism implemented using CRTP idiom
   
   // Static abstract writer
@@ -121,11 +124,19 @@ namespace Grid {
   private:
     T *upcast;
   };
-  
+
+  // type traits
+    // What is the vtype
+  template<typename T> struct isReader {
+    static const bool value = false;
+  };
+  template<typename T> struct isWriter {
+    static const bool value = false;
+  }; 
+
   // Generic writer interface
   template <typename T>
-  inline void push(Writer<T> &w, const std::string &s)
-  {
+  inline void push(Writer<T> &w, const std::string &s) {
     w.push(s);
   }
   

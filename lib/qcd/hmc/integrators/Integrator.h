@@ -37,29 +37,30 @@ directory
 namespace Grid {
 namespace QCD {
 
-struct IntegratorParameters {
-  unsigned int MDsteps;  // number of outer steps
-  RealD trajL;           // trajectory length
-  RealD stepsize;        // trajectory stepsize
+class IntegratorParameters: Serializable {
+public:
+	GRID_SERIALIZABLE_CLASS_MEMBERS(IntegratorParameters,
+		std::string, name,      // name of the integrator
+    unsigned int, MDsteps,  // number of outer steps
+    RealD, trajL,           // trajectory length
+  )
 
   IntegratorParameters(int MDsteps_ = 10, RealD trajL_ = 1.0)
       : MDsteps(MDsteps_),
-        trajL(trajL_),
-        stepsize(trajL / MDsteps){
-            // empty body constructor
+        trajL(trajL_){
+        // empty body constructor
   };
 
-  void set(int MDsteps_, RealD trajL_){
-    MDsteps = MDsteps_;
-    trajL = trajL_;
-    stepsize = trajL/MDsteps;
-  }
 
+  template <class ReaderClass, typename std::enable_if<isReader<ReaderClass>::value, int >::type = 0 >
+  IntegratorParameters(ReaderClass & Reader){
+  	read(Reader, "Integrator", *this);
+  }
 
   void print_parameters() {
     std::cout << GridLogMessage << "[Integrator] Trajectory length  : " << trajL << std::endl;
     std::cout << GridLogMessage << "[Integrator] Number of MD steps : " << MDsteps << std::endl;
-    std::cout << GridLogMessage << "[Integrator] Step size          : " << stepsize << std::endl;
+    std::cout << GridLogMessage << "[Integrator] Step size          : " << trajL/MDsteps << std::endl;
   }
 };
 
