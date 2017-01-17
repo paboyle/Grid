@@ -103,7 +103,7 @@ class BinaryCPModule: public CheckPointerModule< ImplementationPolicy> {
 
   // acquire resource
   virtual void initialize(){
-     this->CheckPointPtr.reset(new BinaryHmcCheckpointer<ImplementationPolicy>(this->Par_));
+    this->CheckPointPtr.reset(new BinaryHmcCheckpointer<ImplementationPolicy>(this->Par_));
   }
 
 };
@@ -112,7 +112,7 @@ class BinaryCPModule: public CheckPointerModule< ImplementationPolicy> {
 template<class ImplementationPolicy>
 class NerscCPModule: public CheckPointerModule< ImplementationPolicy> {
   typedef CheckPointerModule< ImplementationPolicy> CPBase;
-  using CPBase::CPBase; // for constructors
+  using CPBase::CPBase; // for constructors inheritance
 
   // acquire resource
   virtual void initialize(){
@@ -140,6 +140,8 @@ class ILDGCPModule: public CheckPointerModule< ImplementationPolicy> {
 
 extern char cp_string[];
 
+
+// use macros?
 static Registrar<QCD::BinaryCPModule<QCD::PeriodicGimplR>, HMC_CPModuleFactory<cp_string, QCD::PeriodicGimplR, XmlReader> > __CPBinarymodXMLInit("Binary");
 static Registrar<QCD::NerscCPModule<QCD::PeriodicGimplR> , HMC_CPModuleFactory<cp_string, QCD::PeriodicGimplR, XmlReader> > __CPNerscmodXMLInit("Nersc");
 static Registrar<QCD::ILDGCPModule<QCD::PeriodicGimplR>  , HMC_CPModuleFactory<cp_string, QCD::PeriodicGimplR, XmlReader> > __CPILDGmodXMLInit("ILDG");

@@ -173,7 +173,7 @@ typedef WilsonGModule<PeriodicGimplR> WilsonGMod;
 // Factory is perfectly fine
 // Registar must be changed because I do not want to use the ModuleFactory
 
-// ref to LatticeGaugeField must be changed
+// explicit ref to LatticeGaugeField must be changed
 typedef HMCModuleBase< QCD::Action< QCD::LatticeGaugeField > > HMC_LGTActionModBase;
 
 template <char const *str, class ReaderClass >
@@ -196,17 +196,10 @@ class HMC_LGTActionModuleFactory
   }
 };
 
-/*
-then rewrite the registar
-
-when this is done we have all the modules that contain the pointer to the objects
-(actions, integrators, checkpointers, solvers)
-
-factory will create only the modules and prepare the parameters
-when needed a pointer is released
 
 
-*/
+
+
 
 
 
@@ -226,6 +219,8 @@ class Registrar {
 
 extern char gauge_string[];
 static Registrar<QCD::WilsonGMod, HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __WGmodXMLInit("Wilson"); 
+// add here the registration for other implementations and readers
+
 
 }
 

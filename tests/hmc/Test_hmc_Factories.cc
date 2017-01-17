@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
   // here make a routine to print all the relevant information on the run
   std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
-   // Typedefs to simplify notation
+   // Typedefs to simplify notation 
   typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
   typedef Grid::XmlReader InputFileReader; 
 

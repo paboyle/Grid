@@ -35,10 +35,17 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 namespace Grid {
 namespace QCD {
 
+class HMCBase{
+public:
+  virtual void Run() = 0;
+
+};
+
+
 template <class Implementation,
           template <typename, typename, typename> class Integrator,
           class RepresentationsPolicy = NoHirep>
-class HMCWrapperTemplate {
+class HMCWrapperTemplate: public HMCBase {
  public:
   INHERIT_FIELD_TYPES(Implementation);
   typedef Implementation ImplPolicy;  // visible from outside
@@ -134,6 +141,7 @@ class HMCWrapperTemplate {
     Resources.AddRNGs();
     Field U(UGrid);
 
+    // Can move this outside?
     typedef IntegratorType<SmearingPolicy> TheIntegrator;
     TheIntegrator MDynamics(UGrid, MDparameters, TheAction, Smearing);
 
