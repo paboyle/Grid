@@ -54,7 +54,7 @@ TNoiseLoop<FImpl>::TNoiseLoop(const std::string name)
 template <typename FImpl>
 std::vector<std::string> TNoiseLoop<FImpl>::getInput(void)
 {
-    std::vector<std::string> in;
+    std::vector<std::string> in = {par().q, par().eta};
     
     return in;
 }
