@@ -54,10 +54,12 @@ public:
 
   template <class ReaderClass, typename std::enable_if<isReader<ReaderClass>::value, int >::type = 0 >
   IntegratorParameters(ReaderClass & Reader){
+    std::cout << "Reading integrator\n";
   	read(Reader, "Integrator", *this);
   }
 
-  void print_parameters() {
+  void print_parameters() const {
+    std::cout << GridLogMessage << "[Integrator] Type               : " << name << std::endl;
     std::cout << GridLogMessage << "[Integrator] Trajectory length  : " << trajL << std::endl;
     std::cout << GridLogMessage << "[Integrator] Number of MD steps : " << MDsteps << std::endl;
     std::cout << GridLogMessage << "[Integrator] Step size          : " << trajL/MDsteps << std::endl;

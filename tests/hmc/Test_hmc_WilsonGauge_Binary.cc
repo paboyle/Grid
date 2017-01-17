@@ -83,10 +83,9 @@ int main(int argc, char **argv) {
   TheHMC.TheAction.push_back(Level1);
   /////////////////////////////////////////////////////////////
 
-  // Nest MDparameters in the HMCparameters->HMCPayload
-  // make it serializable 
-  TheHMC.MDparameters.MDsteps = 20;
-  TheHMC.MDparameters.trajL = 1.0;
+  // HMC parameters are serialisable 
+  TheHMC.Parameters.MD.MDsteps = 20;
+  TheHMC.Parameters.MD.trajL   = 1.0;
 
   TheHMC.ReadCommandLine(argc, argv); // these must be parameters from file
   TheHMC.Run();  // no smearing

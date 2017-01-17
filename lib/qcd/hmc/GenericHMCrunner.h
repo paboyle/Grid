@@ -52,26 +52,10 @@ class HMCWrapperTemplate: public HMCBase {
   template <typename S = NoSmearing<Implementation> >
   using IntegratorType = Integrator<Implementation, S, RepresentationsPolicy>;
 
-  enum StartType_t {
-    ColdStart,
-    HotStart,
-    TepidStart,
-    CheckpointStart,
-    FilenameStart
-  };
-
-  struct HMCPayload {
-    StartType_t StartType;
-    HMCparameters Parameters;
-
-    HMCPayload() { StartType = HotStart; }
-  };
-
-  // These can be rationalised, some private
-  HMCPayload Payload;  // Parameters
+  HMCparameters Parameters;
   HMCResourceManager<Implementation> Resources;
-  IntegratorParameters MDparameters;
 
+  // The set of actions
   ActionSet<Field, RepresentationsPolicy> TheAction;
 
   // A vector of HmcObservable that can be injected from outside
@@ -80,44 +64,39 @@ class HMCWrapperTemplate: public HMCBase {
   void ReadCommandLine(int argc, char **argv) {
     std::string arg;
 
-    if (GridCmdOptionExists(argv, argv + argc, "--StartType")) {
-      arg = GridCmdOptionPayload(argv, argv + argc, "--StartType");
-      if (arg == "HotStart") {
-        Payload.StartType = HotStart;
-      } else if (arg == "ColdStart") {
-        Payload.StartType = ColdStart;
-      } else if (arg == "TepidStart") {
-        Payload.StartType = TepidStart;
-      } else if (arg == "CheckpointStart") {
-        Payload.StartType = CheckpointStart;
-      } else {
-        std::cout << GridLogError << "Unrecognized option in --StartType\n";
+    if (GridCmdOptionExists(argv, argv + argc, "--StartingType")) {
+      arg = GridCmdOptionPayload(argv, argv + argc, "--StartingType");
+
+      if (arg != "HotStart" && arg != "ColdStart" && arg != "TepidStart" &&
+          arg != "CheckpointStart") {
+        std::cout << GridLogError << "Unrecognized option in --StartingType\n";
         std::cout
             << GridLogError
             << "Valid [HotStart, ColdStart, TepidStart, CheckpointStart]\n";
-        assert(0);
+        exit(1);
       }
+      Parameters.StartingType = arg;
     }
 
     if (GridCmdOptionExists(argv, argv + argc, "--StartTrajectory")) {
       arg = GridCmdOptionPayload(argv, argv + argc, "--StartTrajectory");
       std::vector<int> ivec(0);
       GridCmdOptionIntVector(arg, ivec);
-      Payload.Parameters.StartTrajectory = ivec[0];
+      Parameters.StartTrajectory = ivec[0];
     }
 
     if (GridCmdOptionExists(argv, argv + argc, "--Trajectories")) {
       arg = GridCmdOptionPayload(argv, argv + argc, "--Trajectories");
       std::vector<int> ivec(0);
       GridCmdOptionIntVector(arg, ivec);
-      Payload.Parameters.Trajectories = ivec[0];
+      Parameters.Trajectories = ivec[0];
     }
 
     if (GridCmdOptionExists(argv, argv + argc, "--Thermalizations")) {
       arg = GridCmdOptionPayload(argv, argv + argc, "--Thermalizations");
       std::vector<int> ivec(0);
       GridCmdOptionIntVector(arg, ivec);
-      Payload.Parameters.NoMetropolisUntil = ivec[0];
+      Parameters.NoMetropolisUntil = ivec[0];
     }
   }
 
@@ -143,30 +122,30 @@ class HMCWrapperTemplate: public HMCBase {
 
     // Can move this outside?
     typedef IntegratorType<SmearingPolicy> TheIntegrator;
-    TheIntegrator MDynamics(UGrid, MDparameters, TheAction, Smearing);
+    TheIntegrator MDynamics(UGrid, Parameters.MD, TheAction, Smearing);
 
-    if (Payload.StartType == HotStart) {
+    if (Parameters.StartingType == "HotStart") {
       // Hot start
       Resources.SeedFixedIntegers();
       Implementation::HotConfiguration(Resources.GetParallelRNG(), U);
-    } else if (Payload.StartType == ColdStart) {
+    } else if (Parameters.StartingType == "ColdStart") {
       // Cold start
       Resources.SeedFixedIntegers();
       Implementation::ColdConfiguration(Resources.GetParallelRNG(), U);
-    } else if (Payload.StartType == TepidStart) {
+    } else if (Parameters.StartingType == "TepidStart") {
       // Tepid start
       Resources.SeedFixedIntegers();
       Implementation::TepidConfiguration(Resources.GetParallelRNG(), U);
-    } else if (Payload.StartType == CheckpointStart) {
+    } else if (Parameters.StartingType == "CheckpointStart") {
       // CheckpointRestart
-      Resources.GetCheckPointer()->CheckpointRestore(Payload.Parameters.StartTrajectory, U,
+      Resources.GetCheckPointer()->CheckpointRestore(Parameters.StartTrajectory, U,
                                    Resources.GetSerialRNG(),
                                    Resources.GetParallelRNG());
     }
 
     Smearing.set_Field(U);
 
-    HybridMonteCarlo<TheIntegrator> HMC(Payload.Parameters, MDynamics,
+    HybridMonteCarlo<TheIntegrator> HMC(Parameters, MDynamics,
                                         Resources.GetSerialRNG(),
                                         Resources.GetParallelRNG(), U);
 

@@ -50,9 +50,9 @@ struct HMCparameters: Serializable {
   Integer, Trajectories, /* @brief Number of sweeps in this run */
   bool, MetropolisTest,
   Integer, NoMetropolisUntil,
+  std::string, StartingType,
+  IntegratorParameters, MD,
   )
-
-  // nest here the MDparameters and make all serializable
 
   HMCparameters() {
     ////////////////////////////// Default values
@@ -60,14 +60,29 @@ struct HMCparameters: Serializable {
     NoMetropolisUntil = 10;
     StartTrajectory   = 0;
     Trajectories      = 10;
+    StartingType      = "HotStart";
     /////////////////////////////////
   }
+
+  template <class ReaderClass >
+  HMCparameters(Reader<ReaderClass> & TheReader){
+  	initialize(TheReader);
+  }
+
+  template < class ReaderClass > 
+  void initialize(Reader<ReaderClass> &TheReader){
+  	std::cout << "Reading HMC\n";
+  	read(TheReader, "HMC", *this);
+  }
+
 
   void print_parameters() const {
     std::cout << GridLogMessage << "[HMC parameters] Trajectories            : " << Trajectories << "\n";
     std::cout << GridLogMessage << "[HMC parameters] Start trajectory        : " << StartTrajectory << "\n";
     std::cout << GridLogMessage << "[HMC parameters] Metropolis test (on/off): " << std::boolalpha << MetropolisTest << "\n";
     std::cout << GridLogMessage << "[HMC parameters] Thermalization trajs    : " << NoMetropolisUntil << "\n";
+    std::cout << GridLogMessage << "[HMC parameters] Starting type           : " << StartingType << "\n";
+    MD.print_parameters();
   }
   
 };
@@ -209,7 +224,6 @@ class HybridMonteCarlo {
     Field Ucopy(Ucur._grid);
 
     Params.print_parameters();
-    TheIntegrator.print_parameters();
     TheIntegrator.print_actions();
 
     // Actual updates (evolve a copy Ucopy then copy back eventually)

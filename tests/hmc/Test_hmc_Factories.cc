@@ -43,11 +43,12 @@ int main(int argc, char **argv) {
   typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
   typedef Grid::XmlReader InputFileReader; 
 
-  // Reader
+  // Reader, file should come from command line
   InputFileReader Reader("input.wilson_gauge.params.xml");
 
   HMCWrapper TheHMC;
 
+  TheHMC.Parameters.initialize(Reader);
   TheHMC.Resources.initialize(Reader);
 
   // Construct observables
@@ -67,20 +68,13 @@ int main(int argc, char **argv) {
 
   ActionLevel<HMCWrapper::Field> Level1(1);
   Level1.push_back(&Waction);
-  //Level1.push_back(WGMod.getPtr());
   TheHMC.TheAction.push_back(Level1);
   /////////////////////////////////////////////////////////////
-
-  // Nest MDparameters in the HMCparameters->HMCPayload
-  // make it serializable 
-  TheHMC.MDparameters.MDsteps = 20;
-  TheHMC.MDparameters.trajL = 1.0;
 
   // eventually smearing here
   // ...
   ////////////////////////////////////////////////////////////////
 
-  TheHMC.ReadCommandLine(argc, argv); // these must be parameters from file
   TheHMC.Run();  // no smearing
 
   Grid_finalize();
