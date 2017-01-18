@@ -65,8 +65,10 @@ int main(int argc, char **argv) {
 
   // Construct observables
   // here there is too much indirection 
-  PlaquetteLogger<HMCWrapper::ImplPolicy> PlaqLog("Plaquette");
-  TheHMC.ObservablesList.push_back(&PlaqLog);
+  PlaquetteObsParameters PlPar;
+  PlPar.output_prefix = "Plaquette";
+  PlaquetteMod<HMCWrapper::ImplPolicy> PlaqModule(PlPar);
+  TheHMC.Resources.AddObservable(&PlaqModule);
   //////////////////////////////////////////////
 
   /////////////////////////////////////////////////////////////

@@ -56,15 +56,23 @@ namespace QCD {
 template <class ImplementationPolicy>
 class HMCResourceManager {
   typedef HMCModuleBase< QCD::BaseHmcCheckpointer<ImplementationPolicy> > CheckpointerBaseModule;
-
+  typedef HMCModuleBase< QCD::HmcObservable<typename ImplementationPolicy::Field> > ObservableBaseModule;
+  typedef HMCModuleBase< QCD::Action<typename ImplementationPolicy::Field> > ActionBaseModule;
 
   // Named storage for grid pairs (std + red-black)
   std::unordered_map<std::string, GridModule> Grids;
   RNGModule RNGs;
 
   // SmearingModule<ImplementationPolicy> Smearing;
-  std::unique_ptr<CheckpointerBaseModule > CP;
-  
+  std::unique_ptr<CheckpointerBaseModule> CP;
+
+  // A vector of HmcObservable modules
+  std::vector<std::unique_ptr<ObservableBaseModule> > ObservablesList;
+
+  // A vector of HmcObservable modules
+  std::multimap<int, std::unique_ptr<ActionBaseModule> > ActionsList;
+  std::vector<int> multipliers;
+
   bool have_RNG;
   bool have_CheckPointer;
 
@@ -96,8 +104,67 @@ class HMCResourceManager {
     RNGModuleParameters RNGpar(Read);
     SetRNGSeeds(RNGpar);
 
-    // HMC here
+    // Observables
+    auto &ObsFactory = HMC_ObservablesModuleFactory<observable_string, ReaderClass>::getInstance(); 
+    Read.push(observable_string);// here must check if existing...
+    do {
+      std::string obs_type;
+      Read.readDefault("name", obs_type);
+      std::cout << "Registered types " << std::endl;
+      std::cout << ObsFactory.getBuilderList() << std::endl;
+
+      ObservablesList.emplace_back(ObsFactory.create(obs_type, Read));
+      ObservablesList[ObservablesList.size() - 1]->print_parameters();
+    } while (Read.nextElement(observable_string));
+    std::cout << "Size of ObservablesList " << ObservablesList.size()
+              << std::endl;
+    Read.pop();
+
+    // Loop on levels
+    Read.push("Actions");
+
+    Read.push("Level");// push must check if the node exist
+    do {
+    fill_ActionsLevel(Read); 
+    } while(Read.nextElement("Level"));
+    Read.pop();
   }
+
+
+  // this private
+  template <class ReaderClass >
+  void fill_ActionsLevel(ReaderClass &Read){
+    // Actions set
+    int m;
+    Read.readDefault("multiplier",m);
+    multipliers.push_back(m);
+    std::cout << "Level : " << multipliers.size()  << " with multiplier : " << m << std::endl; 
+    // here gauge
+    Read.push("Action");
+    do{
+      auto &ActionFactory = HMC_LGTActionModuleFactory<gauge_string, ReaderClass>::getInstance(); 
+      std::string action_type;
+      Read.readDefault("name", action_type);
+      std::cout << "Registered types " << std::endl;
+      std::cout << ActionFactory.getBuilderList() << std::endl;  
+
+      ActionsList.emplace(m, ActionFactory.create(action_type, Read));
+
+    } while (Read.nextElement("Action"));
+
+      ActionsList.find(m)->second->print_parameters();
+
+  }
+
+  template <class RepresentationPolicy>
+  void GetActionSet(ActionSet<typename ImplementationPolicy::Field, RepresentationPolicy>& Aset){
+    Aset.resize(multipliers.size());
+ 
+    for(auto it = ActionsList.begin(); it != ActionsList.end(); it++)
+      Aset[(*it).first-1].push_back((*it).second->getPtr());
+  }
+
+
 
   //////////////////////////////////////////////////////////////
   // Grids
@@ -181,6 +248,29 @@ class HMCResourceManager {
   RegisterLoadCheckPointerFunction(Binary);
   RegisterLoadCheckPointerFunction(Nersc);
   RegisterLoadCheckPointerFunction(ILDG);
+
+
+  ////////////////////////////////////////////////////////
+  // Observables
+  ////////////////////////////////////////////////////////
+
+  void AddObservable(ObservableBaseModule *O){
+    // acquire resource
+    ObservablesList.push_back(std::unique_ptr<ObservableBaseModule>(std::move(O)));
+  }
+
+  std::vector<HmcObservable<typename ImplementationPolicy::Field>* > GetObservables(){
+    std::vector<HmcObservable<typename ImplementationPolicy::Field>* > out;
+    for (auto &i : ObservablesList){
+      out.push_back(i->getPtr());
+    }
+
+    // Add the checkpointer to the observables
+    out.push_back(GetCheckPointer());
+    return out;
+  }
+
+
 };
 }
 }

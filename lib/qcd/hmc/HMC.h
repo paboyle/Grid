@@ -87,6 +87,8 @@ struct HMCparameters: Serializable {
   
 };
 
+
+// Move this to a different file
 template <class Field>
 class HmcObservable {
  public:
@@ -95,13 +97,13 @@ class HmcObservable {
 };
 
   // this is only defined for a gauge theory
-template <class Gimpl>
-class PlaquetteLogger : public HmcObservable<typename Gimpl::Field> {
+template <class Impl>
+class PlaquetteLogger : public HmcObservable<typename Impl::Field> {
  private:
   std::string Stem;
 
  public:
-  INHERIT_GIMPL_TYPES(Gimpl);
+  INHERIT_GIMPL_TYPES(Impl);
   PlaquetteLogger(std::string cf) { Stem = cf; };
 
   void TrajectoryComplete(int traj, GaugeField &U, GridSerialRNG &sRNG,
@@ -117,9 +119,10 @@ class PlaquetteLogger : public HmcObservable<typename Gimpl::Field> {
     RealD peri_plaq = WilsonLoops<PeriodicGimplR>::avgPlaquette(U);
     RealD peri_rect = WilsonLoops<PeriodicGimplR>::avgRectangle(U);
 
-    RealD impl_plaq = WilsonLoops<Gimpl>::avgPlaquette(U);
-    RealD impl_rect = WilsonLoops<Gimpl>::avgRectangle(U);
+    RealD impl_plaq = WilsonLoops<Impl>::avgPlaquette(U);
+    RealD impl_rect = WilsonLoops<Impl>::avgRectangle(U);
 
+    // Fixme reorganise this output
     of << traj << " " << impl_plaq << " " << impl_rect << "  " << peri_plaq
        << " " << peri_rect << std::endl;
     std::cout << GridLogMessage << "traj"
@@ -135,6 +138,8 @@ class PlaquetteLogger : public HmcObservable<typename Gimpl::Field> {
               << "  " << peri_plaq << " " << peri_rect << std::endl;
   }
 };
+//////////////////////////////////////////////////////////////
+
 
 template <class IntegratorType>
 class HybridMonteCarlo {
@@ -142,13 +147,16 @@ class HybridMonteCarlo {
   const HMCparameters Params;
 
   typedef typename IntegratorType::Field Field;
+  typedef std::vector< HmcObservable<Field> * > ObsListType;
   
-  GridSerialRNG &sRNG;    // Fixme: need a RNG management strategy.
-  GridParallelRNG &pRNG;  // Fixme: need a RNG management strategy.
+  	//pass these from the resource manager
+  GridSerialRNG &sRNG;   
+  GridParallelRNG &pRNG; 
+
   Field &Ucur;
 
   IntegratorType &TheIntegrator;
-  std::vector<HmcObservable<Field> *> Observables;
+	ObsListType Observables;
 
   /////////////////////////////////////////////////////////
   // Metropolis step
@@ -209,14 +217,11 @@ class HybridMonteCarlo {
   /////////////////////////////////////////
   // Constructor
   /////////////////////////////////////////
-  HybridMonteCarlo(HMCparameters Pams, IntegratorType &_Int,
-                   GridSerialRNG &_sRNG, GridParallelRNG &_pRNG, Field &_U)
-      : Params(Pams), TheIntegrator(_Int), sRNG(_sRNG), pRNG(_pRNG), Ucur(_U) {}
+  HybridMonteCarlo(HMCparameters _Pams, IntegratorType &_Int,
+                   GridSerialRNG &_sRNG, GridParallelRNG &_pRNG, 
+                   ObsListType _Obs, Field &_U)
+      : Params(_Pams), TheIntegrator(_Int), sRNG(_sRNG), pRNG(_pRNG), Observables(_Obs), Ucur(_U) {}
   ~HybridMonteCarlo(){};
-
-  void AddObservable(HmcObservable<Field> *obs) {
-    Observables.push_back(obs);
-  }
 
   void evolve(void) {
     Real DeltaH;
@@ -262,6 +267,7 @@ class HybridMonteCarlo {
       std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::::" << std::endl;
     }
   }
+
 };
 
 }  // QCD

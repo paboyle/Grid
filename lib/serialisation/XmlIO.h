@@ -120,6 +120,7 @@ namespace Grid
     std::string buf;
     
     readDefault(s, buf);
+    std::cout << s << "   " << buf << std::endl;
     fromString(output, buf);
   }
   

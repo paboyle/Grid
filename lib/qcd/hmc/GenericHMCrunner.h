@@ -35,17 +35,20 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 namespace Grid {
 namespace QCD {
 
-class HMCBase{
+
+// very ugly here but possibly resolved if we have a base Reader class
+template < class ReaderClass >
+class HMCRunnerBase {
 public:
   virtual void Run() = 0;
-
+  virtual void initialize(ReaderClass& ) = 0;
 };
 
 
 template <class Implementation,
           template <typename, typename, typename> class Integrator,
-          class RepresentationsPolicy = NoHirep>
-class HMCWrapperTemplate: public HMCBase {
+          class RepresentationsPolicy = NoHirep, class ReaderClass = XmlReader>
+class HMCWrapperTemplate: public HMCRunnerBase<ReaderClass> {
  public:
   INHERIT_FIELD_TYPES(Implementation);
   typedef Implementation ImplPolicy;  // visible from outside
@@ -55,11 +58,24 @@ class HMCWrapperTemplate: public HMCBase {
   HMCparameters Parameters;
   HMCResourceManager<Implementation> Resources;
 
-  // The set of actions
+  // The set of actions (keep here for lower level users, for now)
   ActionSet<Field, RepresentationsPolicy> TheAction;
 
-  // A vector of HmcObservable that can be injected from outside
-  std::vector<HmcObservable<typename Implementation::Field> *> ObservablesList;
+  HMCWrapperTemplate() = default;
+
+  HMCWrapperTemplate(HMCparameters Par){
+    Parameters = Par;
+  }
+
+  void initialize(ReaderClass & TheReader){
+    std::cout  << "Initialization of the HMC" << std::endl;
+    Resources.initialize(TheReader);
+
+    // eventually add smearing
+
+    Resources.GetActionSet(TheAction);    
+  }
+
 
   void ReadCommandLine(int argc, char **argv) {
     std::string arg;
@@ -147,12 +163,8 @@ class HMCWrapperTemplate: public HMCBase {
 
     HybridMonteCarlo<TheIntegrator> HMC(Parameters, MDynamics,
                                         Resources.GetSerialRNG(),
-                                        Resources.GetParallelRNG(), U);
-
-    for (int obs = 0; obs < ObservablesList.size(); obs++)
-      HMC.AddObservable(ObservablesList[obs]);
-    HMC.AddObservable(Resources.GetCheckPointer());
-
+                                        Resources.GetParallelRNG(), 
+                                        Resources.GetObservables(), U);
 
     // Run it
     HMC.evolve();
@@ -171,6 +183,11 @@ template <class RepresentationsPolicy,
           template <typename, typename, typename> class Integrator>
 using GenericHMCRunnerHirep =
     HMCWrapperTemplate<PeriodicGimplR, Integrator, RepresentationsPolicy>;
+
+template <class Implementation, class RepresentationsPolicy, 
+          template <typename, typename, typename> class Integrator>
+using GenericHMCRunnerTemplate = HMCWrapperTemplate<Implementation, Integrator, RepresentationsPolicy>;
+
 
 typedef HMCWrapperTemplate<ScalarImplR, MinimumNorm2, ScalarFields>
     ScalarGenericHMCRunner;

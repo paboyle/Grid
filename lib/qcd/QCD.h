@@ -516,6 +516,6 @@ namespace QCD {
 #include <Grid/qcd/hmc/HMC.h>
 
 
-#include <Grid/qcd/modules/mods.h>
+//#include <Grid/qcd/modules/mods.h>
 
 #endif

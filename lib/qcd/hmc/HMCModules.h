@@ -33,6 +33,7 @@ directory
 namespace Grid {
 namespace QCD {
 
+// call these: resources
 
 // Some modules for the basic setup
 
@@ -164,7 +165,6 @@ public:
     pRNG_->SeedFixedIntegers(Params_.ParallelSeed);
   }
 };
-
 
 
 /*

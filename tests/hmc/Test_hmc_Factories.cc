@@ -2,12 +2,10 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./tests/Test_hmc_WilsonFermionGauge.cc
+Source file: ./tests/Test_hmc_Factories.cc
 
-Copyright (C) 2015
+Copyright (C) 2016
 
-Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
-Author: neo <cossu@post.kek.jp>
 Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
@@ -30,6 +28,16 @@ directory
 /*  END LEGAL */
 #include <Grid/Grid.h>
 
+namespace Grid{
+  // ifdefs ?? Local makefile suggestion , policy as make parameter
+typedef QCD::PeriodicGimplR ImplementationPolicy;
+typedef QCD::NoHirep RepresentationPolicy;
+
+static Registrar< HMCLeapFrog<ImplementationPolicy, RepresentationPolicy, XmlReader>      , HMCRunnerModuleFactory<hmc_string, XmlReader> > __HMCLFmodXMLInit("LeapFrog");
+static Registrar< HMCMinimumNorm2<ImplementationPolicy, RepresentationPolicy, XmlReader>  , HMCRunnerModuleFactory<hmc_string, XmlReader> > __HMCMN2modXMLInit("MinimumNorm2");
+static Registrar< HMCForceGradient<ImplementationPolicy, RepresentationPolicy, XmlReader> , HMCRunnerModuleFactory<hmc_string, XmlReader> > __HMCFGmodXMLInit("ForceGradient");
+}
+
 int main(int argc, char **argv) {
   using namespace Grid;
   using namespace Grid::QCD;
@@ -40,42 +48,22 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
    // Typedefs to simplify notation 
-  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
   typedef Grid::XmlReader InputFileReader; 
 
   // Reader, file should come from command line
   InputFileReader Reader("input.wilson_gauge.params.xml");
 
-  HMCWrapper TheHMC;
+  // Test HMC factory (put in an external file)
+  auto &HMCfactory = HMCRunnerModuleFactory<hmc_string, InputFileReader >::getInstance();
+  // Simplify this step (IntergratorName field?)
+  HMCparameters HMCpar(Reader);
+  
+  // Construct the module
+  auto myHMCmodule = HMCfactory.create(HMCpar.MD.name, Reader);
 
-  TheHMC.Parameters.initialize(Reader);
-  TheHMC.Resources.initialize(Reader);
+  myHMCmodule->getPtr()->initialize(Reader);
+  myHMCmodule->getPtr()->Run();
 
-  // Construct observables
-  // here there is too much indirection 
-  PlaquetteLogger<HMCWrapper::ImplPolicy> PlaqLog("Plaquette");
-  TheHMC.ObservablesList.push_back(&PlaqLog);
-  //////////////////////////////////////////////
-
-  /////////////////////////////////////////////////////////////
-  // Collect actions, here use more encapsulation
-  // need wrappers of the fermionic classes 
-  // that have a complex construction
-
-  // standard
-  RealD beta = 5.6 ;
-  WilsonGaugeActionR Waction(beta);
-
-  ActionLevel<HMCWrapper::Field> Level1(1);
-  Level1.push_back(&Waction);
-  TheHMC.TheAction.push_back(Level1);
-  /////////////////////////////////////////////////////////////
-
-  // eventually smearing here
-  // ...
-  ////////////////////////////////////////////////////////////////
-
-  TheHMC.Run();  // no smearing
 
   Grid_finalize();
 

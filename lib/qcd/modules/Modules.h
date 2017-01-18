@@ -36,6 +36,10 @@ for the HMC execution
 
 namespace Grid {
 
+// Empty class for no parameters
+class NoParameters{};
+
+
 /*
 Base class for modules with parameters
 */
@@ -47,8 +51,8 @@ public:
   Parametrized(Parameters Par):Par_(Par){};
 
   template <class ReaderClass>
-  Parametrized(Reader<ReaderClass> & Reader){
-    read(Reader, section_name(), Par_);
+  Parametrized(Reader<ReaderClass> & Reader, std::string section_name = "parameters"){
+    read(Reader, section_name, Par_);
   }
 
   void set_parameters(Parameters Par){
@@ -64,26 +68,39 @@ protected:
   Parameters Par_;
 
 private:
-  // identifies the section name
-  // override in derived classes if needed 
-  virtual std::string section_name(){
-    return std::string("parameters"); //default
-  }
+	std::string section_name;
 };
+
+
+template <>
+class Parametrized<NoParameters>{
+  typedef NoParameters Parameters;
+
+  Parametrized(Parameters Par){};
+
+  template <class ReaderClass>
+  Parametrized(Reader<ReaderClass> & Reader){};
+
+  void set_parameters(Parameters Par){}
+
+  void print_parameters(){}
+
+};
+
 
 
 /*
 Lowest level abstract module class
 */
-template < class Prod >
-class HMCModuleBase{
-public:
+template <class Prod>
+class HMCModuleBase {
+ public:
   typedef Prod Product;
-virtual Prod* getPtr() = 0;  
-virtual void print_parameters(){}; //default to nothing
+
+  virtual Prod* getPtr() = 0;
+
+  virtual void print_parameters(){};  // default to nothing
 };
-
-
 
 
 //////////////////////////////////////////////
@@ -98,8 +115,6 @@ class ActionModule
   typedef HMCModuleBase< QCD::Action<typename ActionType::GaugeField> > Base;
   typedef typename Base::Product Product;
 
-
-
   std::unique_ptr<ActionType> ActionPtr;
 
   ActionModule(APar Par) : Parametrized<APar>(Par) {}
@@ -108,7 +123,7 @@ class ActionModule
   ActionModule(Reader<ReaderClass>& Reader) : Parametrized<APar>(Reader){};
 
   virtual void print_parameters(){
-  	std::cout << this->Par_ << std::endl;
+    std::cout << this->Par_ << std::endl;
   }
 
   Product* getPtr() {
@@ -119,7 +134,42 @@ class ActionModule
 
  private:
   virtual void initialize() = 0;
+};
 
+
+
+
+/////////////////////////////
+// Observables
+/////////////////////////////
+// explicit gauge field here....
+template <class ObservableType, class OPar>
+class ObservableModule
+    : public Parametrized<OPar>,
+      public HMCModuleBase< QCD::HmcObservable<typename ObservableType::GaugeField> > {
+ public:
+  typedef HMCModuleBase< QCD::HmcObservable< typename ObservableType::GaugeField> > Base;
+  typedef typename Base::Product Product;
+
+  std::unique_ptr<ObservableType> ObservablePtr;
+
+  ObservableModule(OPar Par) : Parametrized<OPar>(Par) {}
+
+  virtual void print_parameters(){
+    std::cout << this->Par_ << std::endl;
+  }
+
+  template <class ReaderClass>
+  ObservableModule(Reader<ReaderClass>& Reader) : Parametrized<OPar>(Reader){};
+
+  Product* getPtr() {
+    if (!ObservablePtr) initialize();
+
+    return ObservablePtr.get();
+  }
+
+ private:
+  virtual void initialize() = 0;
 };
 
 
@@ -128,6 +178,10 @@ class ActionModule
 
 
 
+
+////////////////
+// Modules
+////////////////
 
 namespace QCD{
 
@@ -140,7 +194,7 @@ class WilsonGaugeActionParameters : Serializable {
 
 
 
-template<class Impl>
+template <class Impl >
 class WilsonGModule: public ActionModule<WilsonGaugeAction<Impl>, WilsonGaugeActionParameters> {
   typedef ActionModule<WilsonGaugeAction<Impl>, WilsonGaugeActionParameters> ActionBase;
   using ActionBase::ActionBase; // for constructors
@@ -153,6 +207,44 @@ class WilsonGModule: public ActionModule<WilsonGaugeAction<Impl>, WilsonGaugeAct
 };
 
 typedef WilsonGModule<PeriodicGimplR> WilsonGMod;
+
+
+
+
+
+
+
+
+
+//// Observables module
+class PlaquetteObsParameters : Serializable {
+ public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(PlaquetteObsParameters, 
+    std::string, output_prefix);
+};
+
+template < class Impl >
+class PlaquetteMod: public ObservableModule<PlaquetteLogger<Impl>, PlaquetteObsParameters>{
+  typedef ObservableModule<PlaquetteLogger<Impl>, PlaquetteObsParameters> ObsBase;
+  using ObsBase::ObsBase; // for constructors
+
+  // acquire resource
+  virtual void initialize(){
+    this->ObservablePtr.reset(new PlaquetteLogger<Impl>(this->Par_.output_prefix));
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 }// QCD temporarily here
@@ -173,7 +265,7 @@ typedef WilsonGModule<PeriodicGimplR> WilsonGMod;
 // Factory is perfectly fine
 // Registar must be changed because I do not want to use the ModuleFactory
 
-// explicit ref to LatticeGaugeField must be changed
+// explicit ref to LatticeGaugeField must be changed of put in the factory
 typedef HMCModuleBase< QCD::Action< QCD::LatticeGaugeField > > HMC_LGTActionModBase;
 
 template <char const *str, class ReaderClass >
@@ -196,7 +288,28 @@ class HMC_LGTActionModuleFactory
   }
 };
 
+// explicit ref to LatticeGaugeField must be changed of put in the factory
+typedef HMCModuleBase< QCD::HmcObservable<QCD::LatticeGaugeField> > HMC_ObsModBase;
 
+template <char const *str, class ReaderClass >
+class HMC_ObservablesModuleFactory
+    : public Factory < HMC_ObsModBase , Reader<ReaderClass> > {
+ public:
+  typedef Reader<ReaderClass> TheReader; 
+  // use SINGLETON FUNCTOR MACRO HERE
+  HMC_ObservablesModuleFactory(const HMC_ObservablesModuleFactory& e) = delete;
+  void operator=(const HMC_ObservablesModuleFactory& e) = delete;
+  static HMC_ObservablesModuleFactory& getInstance(void) {
+    static HMC_ObservablesModuleFactory e;
+    return e;
+  }
+
+ private:
+  HMC_ObservablesModuleFactory(void) = default;
+    std::string obj_type() const {
+    return std::string(str);
+  }
+};
 
 
 
@@ -221,6 +334,10 @@ extern char gauge_string[];
 static Registrar<QCD::WilsonGMod, HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __WGmodXMLInit("Wilson"); 
 // add here the registration for other implementations and readers
 
+
+
+extern char observable_string[];
+static Registrar<QCD::PlaquetteMod<QCD::PeriodicGimplR>, HMC_ObservablesModuleFactory<observable_string, XmlReader> > __OBSPLmodXMLInit("Plaquette"); 
 
 }
 

@@ -84,12 +84,13 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/parallelIO/BinaryIO.h>
 #include <Grid/parallelIO/IldgIO.h>
 #include <Grid/parallelIO/NerscIO.h>
+#include <Grid/qcd/modules/mods.h>
 #include <Grid/qcd/hmc/checkpointers/CheckPointers.h>
 #include <Grid/qcd/hmc/HMCModules.h>
 #include <Grid/qcd/hmc/HMCResourceManager.h>
 #include <Grid/qcd/hmc/HmcRunner.h>
 #include <Grid/qcd/hmc/GenericHMCrunner.h>
-
+#include <Grid/qcd/hmc/HMCRunnerModule.h>
 
 
 #endif

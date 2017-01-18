@@ -73,6 +73,7 @@ XmlReader::XmlReader(const string &fileName)
 void XmlReader::push(const string &s)
 {
   node_ = node_.child(s.c_str());
+  // add error check
 }
 
 void XmlReader::pop(void)
