@@ -140,6 +140,22 @@ int main(int argc,char **argv)
     std::cout << "Loaded (txt) -----------------" << std::endl;
     std::cout << copy3 << std::endl << veccopy3 << std::endl;
   }
+#ifdef HAVE_HDF5
+  //// HDF5
+  //// HDF5 does not accept elements with the duplicated names, hence "discard2"
+  {
+    Hdf5Writer TWR("bother.h5");
+    write(TWR,"discard",copy1 );
+    write(TWR,"discard2",veccopy1 );
+  }
+  {
+    Hdf5Reader TRD("bother.h5");
+    read (TRD,"discard",copy3 );
+    read (TRD,"discard2",veccopy3 );
+    std::cout << "Loaded (h5) -----------------" << std::endl;
+    std::cout << copy3 << std::endl << veccopy3 << std::endl;
+  }
+#endif
   
   std::vector<int> iv = strToVec<int>("1 2 2 4");
   std::vector<std::string> sv = strToVec<std::string>("bli bla blu");

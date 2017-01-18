@@ -59,8 +59,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 ///////////////////
 // Grid headers
 ///////////////////
-#include <Grid/serialisation/Serialisation.h>
 #include "Config.h"
+#include <Grid/serialisation/Serialisation.h>
 #include <Grid/Timer.h>
 #include <Grid/PerfCount.h>
 #include <Grid/Log.h>
