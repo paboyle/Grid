@@ -134,7 +134,7 @@ void GeneticScheduler<T>::nextGeneration(void)
     LOG(Debug) << "Starting population:\n" << *this << std::endl;
     
     // random mutations
-    PARALLEL_FOR_LOOP
+    //PARALLEL_FOR_LOOP
     for (unsigned int i = 0; i < par_.popSize; ++i)
     {
         doMutation();
@@ -142,7 +142,7 @@ void GeneticScheduler<T>::nextGeneration(void)
     LOG(Debug) << "After mutations:\n" << *this << std::endl;
     
     // mating
-    PARALLEL_FOR_LOOP
+    //PARALLEL_FOR_LOOP
     for (unsigned int i = 0; i < par_.popSize/2; ++i)
     {
         doCrossover();
@@ -166,7 +166,7 @@ void GeneticScheduler<T>::initPopulation(void)
     {
         auto p = graph_.topoSort(gen_);
         
-        population_.emplace(func_(p), p);
+        population_.insert(std::make_pair(func_(p), p));
     }
 }
 
@@ -180,8 +180,8 @@ void GeneticScheduler<T>::doCrossover(void)
     crossover(c1, c2, p1, p2);
     PARALLEL_CRITICAL
     {
-        population_.emplace(func_(c1), c1);
-        population_.emplace(func_(c2), c2);
+        population_.insert(std::make_pair(func_(c1), c1));
+        population_.insert(std::make_pair(func_(c2), c2));
     }
 }
 
@@ -200,7 +200,7 @@ void GeneticScheduler<T>::doMutation(void)
         mutation(m, it->second);
         PARALLEL_CRITICAL
         {
-            population_.emplace(func_(m), m);
+            population_.insert(std::make_pair(func_(m), m));
         }
     }
 }
