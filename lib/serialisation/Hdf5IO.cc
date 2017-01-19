@@ -100,12 +100,4 @@ void Hdf5Reader::readDefault(const std::string &s, std::string &x)
   
   x.resize(strType.getSize());
   attribute.read(strType, &(x[0]));
-  
-  std::cout << "length: " << strType.getSize() << std::endl;
-  std::cout << "string: |";
-  for (auto &c: x)
-  {
-    std::cout << "'" << c << "'|";
-  }
-  std::cout << std::endl;
 }
