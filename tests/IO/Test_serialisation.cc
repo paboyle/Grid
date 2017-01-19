@@ -104,8 +104,8 @@ int main(int argc,char **argv)
   };
   
   // read tests
-  myclass copy1, copy2, copy3;
-  std::vector<myclass> veccopy1, veccopy2, veccopy3;
+  myclass copy1, copy2, copy3, copy4;
+  std::vector<myclass> veccopy1, veccopy2, veccopy3, veccopy4;
   //// XML
   {
     XmlReader RD("bother.xml");
@@ -150,24 +150,41 @@ int main(int argc,char **argv)
   }
   {
     Hdf5Reader TRD("bother.h5");
-    read (TRD,"discard",copy3 );
-    read (TRD,"discard2",veccopy3 );
+    std::cout << "read single" << std::endl;
+    read (TRD,"discard",copy4 );
+    std::cout << "read vec" << std::endl;
+    read (TRD,"discard2",veccopy4 );
     std::cout << "Loaded (h5) -----------------" << std::endl;
-    std::cout << copy3 << std::endl << veccopy3 << std::endl;
+    std::cout << copy3 << std::endl << veccopy4 << std::endl;
   }
 #endif
   
-  std::vector<int> iv = strToVec<int>("1 2 2 4");
-  std::vector<std::string> sv = strToVec<std::string>("bli bla blu");
+  typedef std::vector<std::vector<std::vector<double>>> vec3d;
   
-  for (auto &e: iv)
+  vec3d dv, buf;
+  double d = 0.;
+  
+  dv.resize(4);
+  for (auto &v1: dv)
   {
-    std::cout << e << " ";
+    v1.resize(3);
+    for (auto &v2: v1)
+    {
+      v2.resize(5);
+      for (auto &x: v2)
+      {
+        x = d++;
+      }
+    }
   }
-  std::cout << std::endl;
-  for (auto &e: sv)
-  {
-    std::cout << e << " ";
-  }
-  std::cout << std::endl;
+  std::cout << dv << std::endl;
+  
+  Flatten<vec3d> flatdv(dv);
+  
+  std::cout << flatdv.getDim() << std::endl;
+  std::cout << flatdv.getFlatVector() << std::endl;
+  
+  Reconstruct<vec3d> rec(flatdv.getFlatVector(), flatdv.getDim());
+  
+  std::cout << flatdv.getVector() << std::endl;
 }

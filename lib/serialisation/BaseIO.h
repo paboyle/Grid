@@ -32,6 +32,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <type_traits>
 
 namespace Grid {
+  // Vector IO utilities ///////////////////////////////////////////////////////
   // helper function to read space-separated values
   template <typename T>
   std::vector<T> strToVec(const std::string s)
@@ -67,6 +68,76 @@ namespace Grid {
     return os;
   }
   
+  // Vector element trait //////////////////////////////////////////////////////
+  template <typename T>
+  struct element
+  {
+    typedef T type;
+    static constexpr bool is_arithmetic = false;
+  };
+  
+  template <typename T>
+  struct element<std::vector<T>>
+  {
+    typedef typename element<T>::type type;
+    static constexpr bool is_arithmetic = std::is_arithmetic<T>::value
+                                          or element<T>::is_arithmetic;
+  };
+  
+  // Vector flatening utility class ////////////////////////////////////////////
+  // Class to flatten a multidimensional std::vector
+  template <typename V>
+  class Flatten
+  {
+  public:
+    typedef typename element<V>::type Element;
+  public:
+    explicit                     Flatten(const V &vector);
+    const V &                    getVector(void);
+    const std::vector<Element> & getFlatVector(void);
+    const std::vector<size_t>  & getDim(void);
+  private:
+    void accumulate(const Element &e);
+    template <typename W>
+    void accumulate(const W &v);
+    void accumulateDim(const Element &e);
+    template <typename W>
+    void accumulateDim(const W &v);
+  private:
+    const V              &vector_;
+    std::vector<Element> flatVector_;
+    std::vector<size_t>  dim_;
+  };
+  
+  
+  // Class to reconstruct a multidimensional std::vector
+  template <typename V>
+  class Reconstruct
+  {
+  public:
+    typedef typename element<V>::type Element;
+  public:
+    Reconstruct(const std::vector<Element> &flatVector,
+                const std::vector<size_t> &dim);
+    const V &                    getVector(void);
+    const std::vector<Element> & getFlatVector(void);
+    const std::vector<size_t>  & getDim(void);
+  private:
+    void fill(std::vector<Element> &v);
+    template <typename W>
+    void fill(W &v);
+    void resize(std::vector<Element> &v, const unsigned int dim);
+    template <typename W>
+    void resize(W &v, const unsigned int dim);
+  private:
+    V                          vector_;
+    const std::vector<Element> &flatVector_;
+    std::vector<size_t>        dim_;
+    size_t                     ind_{0};
+    unsigned int               dimInd_{0};
+  };
+  
+  // Abstract writer/reader classes ////////////////////////////////////////////
   // static polymorphism implemented using CRTP idiom
   class Serializable;
   
@@ -132,7 +203,128 @@ namespace Grid {
     }
   };
   
-  // Generic writer interface
+  // Flatten class template implementation /////////////////////////////////////
+  template <typename V>
+  void Flatten<V>::accumulate(const Element &e)
+  {
+    flatVector_.push_back(e);
+  }
+  
+  template <typename V>
+  template <typename W>
+  void Flatten<V>::accumulate(const W &v)
+  {
+    for (auto &e: v)
+    {
+      accumulate(e);
+    }
+  }
+  
+  template <typename V>
+  void Flatten<V>::accumulateDim(const Element &e) {};
+  
+  template <typename V>
+  template <typename W>
+  void Flatten<V>::accumulateDim(const W &v)
+  {
+    dim_.push_back(v.size());
+    accumulateDim(v[0]);
+  }
+  
+  template <typename V>
+  Flatten<V>::Flatten(const V &vector)
+  : vector_(vector)
+  {
+    accumulate(vector_);
+    accumulateDim(vector_);
+  }
+  
+  template <typename V>
+  const V & Flatten<V>::getVector(void)
+  {
+    return vector_;
+  }
+  
+  template <typename V>
+  const std::vector<typename Flatten<V>::Element> &
+  Flatten<V>::getFlatVector(void)
+  {
+    return flatVector_;
+  }
+  
+  template <typename V>
+  const std::vector<size_t> & Flatten<V>::getDim(void)
+  {
+    return dim_;
+  }
+  
+  // Reconstruct class template implementation /////////////////////////////////
+  template <typename V>
+  void Reconstruct<V>::fill(std::vector<Element> &v)
+  {
+    for (auto &e: v)
+    {
+      e = flatVector_[ind_++];
+    }
+  }
+  
+  template <typename V>
+  template <typename W>
+  void Reconstruct<V>::fill(W &v)
+  {
+    for (auto &e: v)
+    {
+      fill(e);
+    }
+  }
+  
+  template <typename V>
+  void Reconstruct<V>::resize(std::vector<Element> &v, const unsigned int dim)
+  {
+    v.resize(dim_[dim]);
+  }
+  
+  template <typename V>
+  template <typename W>
+  void Reconstruct<V>::resize(W &v, const unsigned int dim)
+  {
+    v.resize(dim_[dim]);
+    for (auto &e: v)
+    {
+      resize(e, dim + 1);
+    }
+  }
+  
+  template <typename V>
+  Reconstruct<V>::Reconstruct(const std::vector<Element> &flatVector,
+                              const std::vector<size_t> &dim)
+  : flatVector_(flatVector)
+  , dim_(dim)
+  {
+    resize(vector_, 0);
+    fill(vector_);
+  }
+  
+  template <typename V>
+  const V & Reconstruct<V>::Reconstruct<V>::getVector(void)
+  {
+    return vector_;
+  }
+  
+  template <typename V>
+  const std::vector<typename Reconstruct<V>::Element> &
+  Reconstruct<V>::getFlatVector(void)
+  {
+    return flatVector_;
+  }
+  
+  template <typename V>
+  const std::vector<size_t> & Reconstruct<V>::getDim(void)
+  {
+    return dim_;
+  }
+  
+  // Generic writer interface //////////////////////////////////////////////////
   template <typename T>
   inline void push(Writer<T> &w, const std::string &s)
   {
@@ -217,7 +409,7 @@ namespace Grid {
     upcast->writeDefault(s, output);
   }
   
-  // Reader template implementation ////////////////////////////////////////////
+  // Reader template implementation
   template <typename T>
   Reader<T>::Reader(void)
   {

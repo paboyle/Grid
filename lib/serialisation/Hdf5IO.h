@@ -12,139 +12,135 @@
 #endif
 
 // default thresold above which datasets are used instead of attributes
-#ifndef H5_DEF_DATASET_THRES
-#define H5_DEF_DATASET_THRES 6u
+#ifndef HDF5_DEF_DATASET_THRES
+#define HDF5_DEF_DATASET_THRES 6u
 #endif
+
+// name guard for Grid metadata
+#define HDF5_GRID_GUARD "_Grid_"
 
 namespace Grid
 {
-  template <typename T>
-  struct is_arithmetic_vector
-  {
-    static constexpr bool value = false;
-  };
-  
-  template <typename T>
-  struct is_arithmetic_vector<std::vector<T>>
-  {
-    static constexpr bool value = std::is_arithmetic<T>::value
-                                  or is_arithmetic_vector<T>::value;
-  };
-  
   class Hdf5Writer: public Writer<Hdf5Writer>
   {
   public:
     Hdf5Writer(const std::string &fileName);
-    virtual ~Hdf5Writer(void);
+    virtual ~Hdf5Writer(void) = default;
     void push(const std::string &s);
     void pop(void);
     void writeDefault(const std::string &s, const char *x);
     template <typename U>
     void writeDefault(const std::string &s, const U &x);
     template <typename U>
-    typename std::enable_if<is_arithmetic_vector<std::vector<U>>::value
-                            and std::is_arithmetic<U>::value, void>::type
+    typename std::enable_if<element<std::vector<U>>::is_arithmetic, void>::type
     writeDefault(const std::string &s, const std::vector<U> &x);
     template <typename U>
-    typename std::enable_if<is_arithmetic_vector<std::vector<U>>::value
-                            and !std::is_arithmetic<U>::value, void>::type
+    typename std::enable_if<!element<std::vector<U>>::is_arithmetic, void>::type
     writeDefault(const std::string &s, const std::vector<U> &x);
+  private:
     template <typename U>
-    typename std::enable_if<!is_arithmetic_vector<std::vector<U>>::value, void>::type
-    writeDefault(const std::string &s, const std::vector<U> &x);
+    void writeSingleAttribute(const U &x, const std::string &name,
+                              const H5NS::DataType &type);
   private:
     std::string              fileName_;
     std::vector<std::string> path_;
-    std::vector<hsize_t>     dim_;
-    bool                     multiDim_{true};
     H5NS::H5File             file_;
     H5NS::Group              group_;
-    unsigned int             datasetThres_{H5_DEF_DATASET_THRES};
+    unsigned int             dataSetThres_{HDF5_DEF_DATASET_THRES};
   };
   
   class Hdf5Reader: public Reader<Hdf5Reader>
   {
   public:
     Hdf5Reader(const std::string &fileName);
-    virtual ~Hdf5Reader(void);
+    virtual ~Hdf5Reader(void) = default;
     void push(const std::string &s);
     void pop(void);
     template <typename U>
     void readDefault(const std::string &s, U &output);
     template <typename U>
-    void readDefault(const std::string &s, std::vector<U> &output);
+    typename std::enable_if<element<std::vector<U>>::is_arithmetic, void>::type
+    readDefault(const std::string &s, std::vector<U> &x);
+    template <typename U>
+    typename std::enable_if<!element<std::vector<U>>::is_arithmetic, void>::type
+    readDefault(const std::string &s, std::vector<U> &x);
   private:
+    template <typename U>
+    void readSingleAttribute(U &x, const std::string &name,
+                             const H5NS::DataType &type);
+  private:
+    std::string              fileName_;
+    std::vector<std::string> path_;
+    H5NS::H5File             file_;
+    H5NS::Group              group_;
+    unsigned int             dataSetThres_;
   };
   
   // Writer template implementation ////////////////////////////////////////////
   template <typename U>
-  void Hdf5Writer::writeDefault(const std::string &s, const U &x)
+  void Hdf5Writer::writeSingleAttribute(const U &x, const std::string &name,
+                                        const H5NS::DataType &type)
   {
     H5NS::Attribute attribute;
     hsize_t         attrDim = 1;
     H5NS::DataSpace attrSpace(1, &attrDim);
     
-    attribute = group_.createAttribute(s, *Hdf5Type<U>::type, attrSpace);
-    attribute.write(*Hdf5Type<U>::type, &x);
+    attribute = group_.createAttribute(name, type, attrSpace);
+    attribute.write(type, &x);
+  }
+  
+  template <typename U>
+  void Hdf5Writer::writeDefault(const std::string &s, const U &x)
+  {
+    writeSingleAttribute(x, s, *Hdf5Type<U>::type);
   }
   
   template <>
   void Hdf5Writer::writeDefault(const std::string &s, const std::string &x);
   
   template <typename U>
-  typename std::enable_if<is_arithmetic_vector<std::vector<U>>::value
-                          and std::is_arithmetic<U>::value, void>::type
+  typename std::enable_if<element<std::vector<U>>::is_arithmetic, void>::type
   Hdf5Writer::writeDefault(const std::string &s, const std::vector<U> &x)
   {
-    hsize_t size = 1;
+    // alias to element type
+    typedef typename element<std::vector<U>>::type Element;
     
-    dim_.push_back(x.size());
-    for (auto d: dim_)
+    // flatten the vector and getting dimensions
+    Flatten<std::vector<U>> flat(x);
+    std::vector<hsize_t> dim;
+    const auto           &flatx = flat.getFlatVector();
+    
+    for (auto &d: flat.getDim())
     {
-      size *= d;
+      dim.push_back(d);
     }
     
-    H5NS::DataSpace dataspace(dim_.size(), dim_.data());
+    // write to file
+    H5NS::DataSpace dataSpace(dim.size(), dim.data());
     
-    if (size > datasetThres_)
+    if (flatx.size() > dataSetThres_)
     {
-      H5NS::DataSet dataset;
+      H5NS::DataSet dataSet;
       
-      dataset = group_.createDataSet(s, *Hdf5Type<U>::type, dataspace);
-      dataset.write(x.data(), *Hdf5Type<U>::type);
+      dataSet = group_.createDataSet(s, *Hdf5Type<Element>::type, dataSpace);
+      dataSet.write(flatx.data(), *Hdf5Type<Element>::type);
     }
     else
     {
       H5NS::Attribute attribute;
       
-      attribute = group_.createAttribute(s, *Hdf5Type<U>::type, dataspace);
-      attribute.write(*Hdf5Type<U>::type, x.data());
+      attribute = group_.createAttribute(s, *Hdf5Type<Element>::type, dataSpace);
+      attribute.write(*Hdf5Type<Element>::type, flatx.data());
     }
-    dim_.clear();
-    multiDim_ = true;
   }
   
   template <typename U>
-  typename std::enable_if<is_arithmetic_vector<std::vector<U>>::value
-                          and !std::is_arithmetic<U>::value, void>::type
-  Hdf5Writer::writeDefault(const std::string &s, const std::vector<U> &x)
-  {
-    hsize_t firstSize = x[0].size();
-    
-    for (auto &v: x)
-    {
-      multiDim_ = (multiDim_ and (v.size() == firstSize));
-    }
-    assert(multiDim_);
-    dim_.push_back(x.size());
-    writeDefault(s, x[0]);
-  }
-  
-  template <typename U>
-  typename std::enable_if<!is_arithmetic_vector<std::vector<U>>::value, void>::type
+  typename std::enable_if<!element<std::vector<U>>::is_arithmetic, void>::type
   Hdf5Writer::writeDefault(const std::string &s, const std::vector<U> &x)
   {
     push(s);
+    writeSingleAttribute(x.size(), HDF5_GRID_GUARD "vector_size",
+                         *Hdf5Type<uint64_t>::type);
     for (hsize_t i = 0; i < x.size(); ++i)
     {
       write(s + "_" + std::to_string(i), x[i]);
@@ -154,15 +150,97 @@ namespace Grid
   
   // Reader template implementation ////////////////////////////////////////////
   template <typename U>
-  void Hdf5Reader::readDefault(const std::string &s, U &output)
+  void Hdf5Reader::readSingleAttribute(U &x, const std::string &name,
+                                       const H5NS::DataType &type)
   {
+    H5NS::Attribute attribute;
     
+    attribute = group_.openAttribute(name);
+    attribute.read(type, &x);
   }
   
   template <typename U>
-  void Hdf5Reader::readDefault(const std::string &s, std::vector<U> &output)
+  void Hdf5Reader::readDefault(const std::string &s, U &output)
   {
+    readSingleAttribute(output, s, *Hdf5Type<U>::type);
+  }
+  
+  template <>
+  void Hdf5Reader::readDefault(const std::string &s, std::string &x);
+  
+  template <typename U>
+  typename std::enable_if<element<std::vector<U>>::is_arithmetic, void>::type
+  Hdf5Reader::readDefault(const std::string &s, std::vector<U> &x)
+  {
+    // alias to element type
+    typedef typename element<std::vector<U>>::type Element;
     
+    // read the dimensions
+    H5NS::DataSpace       dataSpace;
+    H5E_auto2_t           func;
+    void *                client_data;
+    std::vector<hsize_t>  hdim;
+    std::vector<size_t>   dim;
+    hsize_t               size = 1;
+    
+    H5NS::Exception::getAutoPrint(func, &client_data);
+    try
+    {
+      H5NS::Exception::dontPrint();
+      dataSpace = group_.openDataSet(s).getSpace();
+    }
+    catch (H5NS::Exception &e)
+    {
+      H5NS::Exception::setAutoPrint(func, client_data);
+      dataSpace = group_.openAttribute(s).getSpace();
+    }
+    hdim.resize(dataSpace.getSimpleExtentNdims());
+    dataSpace.getSimpleExtentDims(hdim.data());
+    for (auto &d: hdim)
+    {
+      dim.push_back(d);
+      size *= d;
+    }
+    
+    // read the flat vector
+    std::vector<Element> buf(size);
+
+    if (size > dataSetThres_)
+    {
+      H5NS::DataSet dataSet;
+      
+      dataSet = group_.openDataSet(s);
+      dataSet.read(buf.data(), *Hdf5Type<Element>::type);
+    }
+    else
+    {
+      H5NS::Attribute attribute;
+      
+      attribute = group_.openAttribute(s);
+      attribute.read(*Hdf5Type<Element>::type, buf.data());
+    }
+    
+    // reconstruct the multidimensional vector
+    Reconstruct<std::vector<U>> r(buf, dim);
+    
+    x = r.getVector();
+  }
+  
+  template <typename U>
+  typename std::enable_if<!element<std::vector<U>>::is_arithmetic, void>::type
+  Hdf5Reader::readDefault(const std::string &s, std::vector<U> &x)
+  {
+    uint64_t size;
+    
+    push(s);
+    readSingleAttribute(size, HDF5_GRID_GUARD "vector_size",
+                        *Hdf5Type<uint64_t>::type);
+    x.resize(size);
+    for (hsize_t i = 0; i < x.size(); ++i)
+    {
+      read(s + "_" + std::to_string(i), x[i]);
+    }
+    pop();
   }
 }
 
