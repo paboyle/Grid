@@ -28,137 +28,119 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid/Grid.h>
 
-namespace Grid {
-  
-  GRID_SERIALIZABLE_ENUM(myenum, undef, red, 1, blue, 2, green, 3);
-    
-  class myclass: Serializable {
-  public:
-    
-    GRID_SERIALIZABLE_CLASS_MEMBERS(myclass,
-                            myenum, e,
-                            std::vector<myenum>, ve,
-                            std::string, name,
-                            int, x,
-                            double, y,
-                            bool , b,
-                            std::vector<double>, array,
-                            std::vector<std::vector<double>>, twodimarray,
-                            );
-    
-    myclass() {}
-    myclass(int i)
-    : array(4,5.1), twodimarray(3,std::vector<double>(2,1.23456)), ve(2, myenum::blue)
-    {
-      e=myenum::red;
-      x=i;
-      y=2*i;
-      b=true;
-      name="bother said pooh";
-    }
-  };
-  
-}
-
 using namespace Grid;
 
-int16_t i16 = 1;
+GRID_SERIALIZABLE_ENUM(myenum, undef, red, 1, blue, 2, green, 3);
+  
+class myclass: Serializable {
+public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(myclass,
+                          myenum, e,
+                          std::vector<myenum>, ve,
+                          std::string, name,
+                          int, x,
+                          double, y,
+                          bool , b,
+                          std::vector<double>, array,
+                          std::vector<std::vector<double>>, twodimarray,
+                          );
+  myclass() {}
+  myclass(int i)
+  : array(4,5.1), twodimarray(3,std::vector<double>(2,1.23456)), ve(2, myenum::blue)
+  {
+    e=myenum::red;
+    x=i;
+    y=2*i;
+    b=true;
+    name="bother said pooh";
+  }
+};
+
+int16_t  i16 = 1;
 uint16_t u16 = 2;
-int32_t i32 = 3;
+int32_t  i32 = 3;
 uint32_t u32 = 4;
-int64_t i64 = 5;
+int64_t  i64 = 5;
 uint64_t u64 = 6;
-float    f = M_PI;
-double   d = 2*M_PI;
-bool     b = false;
+float    f   = M_PI;
+double   d   = 2*M_PI;
+bool     b   = false;
+
+template <typename W, typename R, typename O>
+void ioTest(const std::string &filename, const O &object, const std::string &name)
+{
+  // writer needs to be destroyed so that writing physically happens
+  {
+    W writer(filename);
+    
+    write(writer, "testobject", object);
+  }
+  
+  R    reader(filename);
+  O    buf;
+  bool good;
+  
+  read(reader, "testobject", buf);
+  good = (object == buf);
+  std::cout << name << " IO test: " << (good ? "success" : "failure");
+  std::cout << std::endl;
+  if (!good) exit(EXIT_FAILURE);
+}
 
 int main(int argc,char **argv)
 {
-  {
-    XmlWriter WR("bother.xml");
-    
-    // test basic type writing
-    push(WR,"BasicTypes");
-    write(WR,std::string("i16"),i16);
-    write(WR,"u16",u16);
-    write(WR,"i32",i32);
-    write(WR,"u32",u32);
-    write(WR,"i64",i64);
-    write(WR,"u64",u64);
-    write(WR,"f",f);
-    write(WR,"d",d);
-    write(WR,"b",b);
-    pop(WR);
-    
-    // test serializable class writing
-    myclass obj(1234); // non-trivial constructor
-    write(WR,"obj",obj);
-    WR.write("obj2", obj);
-    std::cout << obj << std::endl;
-    
-    std::vector<myclass> vec;
-    vec.push_back(myclass(1234));
-    vec.push_back(myclass(5678));
-    vec.push_back(myclass(3838));
-    write(WR, "objvec", vec);
-  };
+  std::cout << "==== basic IO" << std::endl;
+  XmlWriter WR("bother.xml");
+  
+  // test basic type writing
+  std::cout << "-- basic writing to 'bother.xml'..." << std::endl;
+  push(WR,"BasicTypes");
+  write(WR,std::string("i16"),i16);
+  write(WR,"u16",u16);
+  write(WR,"i32",i32);
+  write(WR,"u32",u32);
+  write(WR,"i64",i64);
+  write(WR,"u64",u64);
+  write(WR,"f",f);
+  write(WR,"d",d);
+  write(WR,"b",b);
+  pop(WR);
+  
+  // test serializable class writing
+  myclass              obj(1234); // non-trivial constructor
+  std::vector<myclass> vec;
+  
+  std::cout << "-- serialisable class writing to 'bother.xml'..." << std::endl;
+  write(WR,"obj",obj);
+  WR.write("obj2", obj);
+  vec.push_back(myclass(1234));
+  vec.push_back(myclass(5678));
+  vec.push_back(myclass(3838));
+  write(WR, "objvec", vec);
+  std::cout << "-- serialisable class writing to std::cout:" << std::endl;
+  std::cout << obj << std::endl;
+  std::cout << "-- serialisable class comparison:" << std::endl;
+  std::cout << "vec[0] == obj: " << ((vec[0] == obj) ? "true" : "false") << std::endl;
+  std::cout << "vec[1] == obj: " << ((vec[1] == obj) ? "true" : "false") << std::endl;
   
   // read tests
-  myclass copy1, copy2, copy3, copy4;
-  std::vector<myclass> veccopy1, veccopy2, veccopy3, veccopy4;
+  std::cout << "\n==== IO self-consistency tests" << std::endl;
   //// XML
-  {
-    XmlReader RD("bother.xml");
-    read(RD,"obj",copy1);
-    read(RD,"objvec", veccopy1);
-    std::cout << "Loaded (XML) -----------------" << std::endl;
-    std::cout << copy1 << std::endl << veccopy1 << std::endl;
-  }
+  ioTest<XmlWriter, XmlReader>("iotest.xml", obj, "XML    (object)           ");
+  ioTest<XmlWriter, XmlReader>("iotest.xml", vec, "XML    (vector of objects)");
   //// binary
-  {
-    BinaryWriter BWR("bother.bin");
-    write(BWR,"discard",copy1 );
-    write(BWR,"discard",veccopy1 );
-  }
-  {
-    BinaryReader BRD("bother.bin");
-    read (BRD,"discard",copy2 );
-    read (BRD,"discard",veccopy2 );
-    std::cout << "Loaded (bin) -----------------" << std::endl;
-    std::cout << copy2 << std::endl << veccopy2 << std::endl;
-  }
+  ioTest<BinaryWriter, BinaryReader>("iotest.bin", obj, "binary (object)           ");
+  ioTest<BinaryWriter, BinaryReader>("iotest.bin", vec, "binary (vector of objects)");
   //// text
-  {
-    TextWriter TWR("bother.txt");
-    write(TWR,"discard",copy1 );
-    write(TWR,"discard",veccopy1 );
-  }
-  {
-    TextReader TRD("bother.txt");
-    read (TRD,"discard",copy3 );
-    read (TRD,"discard",veccopy3 );
-    std::cout << "Loaded (txt) -----------------" << std::endl;
-    std::cout << copy3 << std::endl << veccopy3 << std::endl;
-  }
-#ifdef HAVE_HDF5
+  ioTest<TextWriter, TextReader>("iotest.dat", obj, "text   (object)           ");
+  ioTest<TextWriter, TextReader>("iotest.dat", vec, "text   (vector of objects)");
   //// HDF5
-  //// HDF5 does not accept elements with the duplicated names, hence "discard2"
-  {
-    Hdf5Writer TWR("bother.h5");
-    write(TWR,"discard",copy1 );
-    write(TWR,"discard2",veccopy1 );
-  }
-  {
-    Hdf5Reader TRD("bother.h5");
-    std::cout << "read single" << std::endl;
-    read (TRD,"discard",copy4 );
-    std::cout << "read vec" << std::endl;
-    read (TRD,"discard2",veccopy4 );
-    std::cout << "Loaded (h5) -----------------" << std::endl;
-    std::cout << copy3 << std::endl << veccopy4 << std::endl;
-  }
+#ifdef HAVE_HDF5
+  ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", obj, "HDF5   (object)           ");
+  ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", vec, "HDF5   (vector of objects)");
 #endif
   
+  std::cout << "\n==== vector flattening/reconstruction" << std::endl;
   typedef std::vector<std::vector<std::vector<double>>> vec3d;
   
   vec3d dv, buf;
@@ -177,14 +159,17 @@ int main(int argc,char **argv)
       }
     }
   }
+  std::cout << "original 3D vector:" << std::endl;
   std::cout << dv << std::endl;
   
   Flatten<vec3d> flatdv(dv);
   
+  std::cout << "\ndimensions:" << std::endl;
   std::cout << flatdv.getDim() << std::endl;
+  std::cout << "\nflattened vector:" << std::endl;
   std::cout << flatdv.getFlatVector() << std::endl;
   
   Reconstruct<vec3d> rec(flatdv.getFlatVector(), flatdv.getDim());
-  
+  std::cout << "\nreconstructed vector:" << std::endl;
   std::cout << flatdv.getVector() << std::endl;
 }
