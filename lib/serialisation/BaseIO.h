@@ -306,7 +306,7 @@ namespace Grid {
   }
   
   template <typename V>
-  const V & Reconstruct<V>::Reconstruct<V>::getVector(void)
+  const V & Reconstruct<V>::getVector(void)
   {
     return vector_;
   }
