@@ -56,7 +56,7 @@ class WilsonGaugeAction : public Action<typename Gimpl::GaugeField> {
   }
 
   virtual void refresh(const GaugeField &U,
-                       const GridParallelRNG &pRNG){};  // noop as no pseudoferms
+                       GridParallelRNG &pRNG){};  // noop as no pseudoferms
 
   virtual RealD S(const GaugeField &U) {
     RealD plaq = WilsonLoops<Gimpl>::avgPlaquette(U);

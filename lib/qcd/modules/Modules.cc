@@ -34,4 +34,8 @@ char cp_string[]    = "CheckPointer";
 char hmc_string[]   = "HMC";
 char observable_string[] = "Observable";
 
+
+
+
+
 }

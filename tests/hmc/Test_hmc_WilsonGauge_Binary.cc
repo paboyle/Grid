@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
   // standard
   RealD beta = 5.6 ;
   WilsonGaugeActionR Waction(beta);
-
+  
   ActionLevel<HMCWrapper::Field> Level1(1);
   Level1.push_back(&Waction);
   //Level1.push_back(WGMod.getPtr());
@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
   TheHMC.Parameters.MD.MDsteps = 20;
   TheHMC.Parameters.MD.trajL   = 1.0;
 
-  TheHMC.ReadCommandLine(argc, argv); // these must be parameters from file
+  TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
   TheHMC.Run();  // no smearing
 
   Grid_finalize();

@@ -37,11 +37,11 @@ class Action {
  public:
   bool is_smeared = false;
   // Heatbath?
-  virtual void refresh(const GaugeField& U, const GridParallelRNG& pRNG) = 0; // refresh pseudofermions
+  virtual void refresh(const GaugeField& U, GridParallelRNG& pRNG) = 0; // refresh pseudofermions
   virtual RealD S(const GaugeField& U) = 0;                       // evaluate the action
   virtual void deriv(const GaugeField& U, GaugeField& dSdU) = 0;  // evaluate the action derivative
   virtual std::string action_name()    = 0;                       // return the action name
-  virtual std::string LogParameters()  = 0;  											// prints action parameters
+  virtual std::string LogParameters()  = 0;                       // prints action parameters
   virtual ~Action(){}
 };
 

@@ -278,7 +278,7 @@ namespace Grid {
     GridBase *_grid;
     unsigned int _vol;
 
-    int generator_idx(int os,int is){
+    int generator_idx(int os,int is) {
       return is*_grid->oSites()+os;
     }
 

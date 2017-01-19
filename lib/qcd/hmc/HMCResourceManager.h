@@ -48,7 +48,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
     }                                                                    \
   }
 
-
 namespace Grid {
 namespace QCD {
 
@@ -131,31 +130,7 @@ class HMCResourceManager {
   }
 
 
-  // this private
-  template <class ReaderClass >
-  void fill_ActionsLevel(ReaderClass &Read){
-    // Actions set
-    int m;
-    Read.readDefault("multiplier",m);
-    multipliers.push_back(m);
-    std::cout << "Level : " << multipliers.size()  << " with multiplier : " << m << std::endl; 
-    // here gauge
-    Read.push("Action");
-    do{
-      auto &ActionFactory = HMC_LGTActionModuleFactory<gauge_string, ReaderClass>::getInstance(); 
-      std::string action_type;
-      Read.readDefault("name", action_type);
-      std::cout << "Registered types " << std::endl;
-      std::cout << ActionFactory.getBuilderList() << std::endl;  
-
-      ActionsList.emplace(m, ActionFactory.create(action_type, Read));
-
-    } while (Read.nextElement("Action"));
-
-      ActionsList.find(m)->second->print_parameters();
-
-  }
-
+ 
   template <class RepresentationPolicy>
   void GetActionSet(ActionSet<typename ImplementationPolicy::Field, RepresentationPolicy>& Aset){
     Aset.resize(multipliers.size());
@@ -269,6 +244,35 @@ class HMCResourceManager {
     out.push_back(GetCheckPointer());
     return out;
   }
+
+
+
+private:
+   // this private
+  template <class ReaderClass >
+  void fill_ActionsLevel(ReaderClass &Read){
+    // Actions set
+    int m;
+    Read.readDefault("multiplier",m);
+    multipliers.push_back(m);
+    std::cout << "Level : " << multipliers.size()  << " with multiplier : " << m << std::endl; 
+    // here gauge
+    Read.push("Action");
+    do{
+      auto &ActionFactory = HMC_LGTActionModuleFactory<gauge_string, ReaderClass>::getInstance(); 
+      std::string action_type;
+      Read.readDefault("name", action_type);
+      std::cout << "Registered types " << std::endl;
+      std::cout << ActionFactory.getBuilderList() << std::endl;  
+
+      ActionsList.emplace(m, ActionFactory.create(action_type, Read));
+
+    } while (Read.nextElement("Action"));
+
+      ActionsList.find(m)->second->print_parameters();
+
+  }
+
 
 
 };

@@ -52,6 +52,14 @@ namespace Grid{
       
       virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG) {}; // noop as no pseudoferms
       
+      virtual std::string LogParameters(){
+      	std::stringstream sstream;
+      	sstream << GridLogMessage << "["<<action_name() <<"] c_plaq: " << c_plaq << std::endl;
+      	sstream << GridLogMessage << "["<<action_name() <<"] c_rect: " << c_rect << std::endl;
+      	return sstream.str();
+      }
+
+
       virtual RealD S(const GaugeField &U) {
 	RealD vol = U._grid->gSites();
 

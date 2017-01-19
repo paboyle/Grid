@@ -34,5 +34,7 @@ directory
 #include <Grid/qcd/modules/Factory.h>
 #include <Grid/qcd/modules/Modules.h>
 
+#include <Grid/qcd/modules/ActionModules.h>
+
 
 #endif //MODS_H
