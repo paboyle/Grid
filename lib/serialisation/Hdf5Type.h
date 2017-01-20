@@ -2,7 +2,8 @@
 #define GRID_SERIALISATION_HDF5_TYPE_H
 
 #include <H5Cpp.h>
-#include <vector>
+#include <complex>
+#include <memory>
 
 #ifndef H5_NO_NAMESPACE
 #define H5NS H5
