@@ -58,6 +58,9 @@ class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
   GridBase *FermionGrid(void) { return _grid; }
   GridBase *FermionRedBlackGrid(void) { return _cbgrid; }
 
+  FermionField _tmp;
+  FermionField &tmp(void) { return _tmp; }
+
   //////////////////////////////////////////////////////////////////
   // override multiply; cut number routines if pass dagger argument
   // and also make interface more uniformly consistent

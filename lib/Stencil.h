@@ -113,7 +113,7 @@ Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const Lattice
 {
 PARALLEL_FOR_LOOP     
      for(int i=0;i<table.size();i++){
-       buffer[off+table[i].first]=compress(rhs._odata[so+table[i].second]);
+       vstream(buffer[off+table[i].first],compress(rhs._odata[so+table[i].second]));
      }
 }
 

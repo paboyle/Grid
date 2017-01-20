@@ -177,6 +177,29 @@ namespace Optimization {
     }
   };
 
+  struct MultRealPart{
+    inline __m128 operator()(__m128 a, __m128 b){
+      __m128 ymm0;
+      ymm0  = _mm_shuffle_ps(a,a,_MM_SELECT_FOUR_FOUR(2,2,0,0)); // ymm0 <- ar ar,
+      return  _mm_mul_ps(ymm0,b);                       // ymm0 <- ar bi, ar br
+    }
+    inline __m128d operator()(__m128d a, __m128d b){
+      __m128d ymm0;
+      ymm0 = _mm_shuffle_pd(a,a,0x0); // ymm0 <- ar ar, ar,ar b'00,00
+      return _mm_mul_pd(ymm0,b);      // ymm0 <- ar bi, ar br
+    }
+  };
+  struct MaddRealPart{
+    inline __m128 operator()(__m128 a, __m128 b, __m128 c){
+      __m128 ymm0 =  _mm_shuffle_ps(a,a,_MM_SELECT_FOUR_FOUR(2,2,0,0)); // ymm0 <- ar ar,
+      return _mm_add_ps(_mm_mul_ps( ymm0, b),c);                         
+    }
+    inline __m128d operator()(__m128d a, __m128d b, __m128d c){
+      __m128d ymm0 = _mm_shuffle_pd( a, a, 0x0 );
+      return _mm_add_pd(_mm_mul_pd( ymm0, b),c);                         
+    }
+  };
+
   struct MultComplex{
     // Complex float
     inline __m128 operator()(__m128 a, __m128 b){
@@ -325,9 +348,11 @@ namespace Optimization {
       }
     }
   
+#ifndef _mm_alignr_epi64
 #define _mm_alignr_epi32(a,b,n) _mm_alignr_epi8(a,b,(n*4)%16)
 #define _mm_alignr_epi64(a,b,n) _mm_alignr_epi8(a,b,(n*8)%16)
-    
+#endif 
+
     template<int n> static inline __m128  tRotate(__m128  in){ return (__m128)_mm_alignr_epi32((__m128i)in,(__m128i)in,n); };
     template<int n> static inline __m128d tRotate(__m128d in){ return (__m128d)_mm_alignr_epi64((__m128i)in,(__m128i)in,n); };
 
@@ -415,6 +440,8 @@ namespace Optimization {
   typedef Optimization::Div         DivSIMD;
   typedef Optimization::Mult        MultSIMD;
   typedef Optimization::MultComplex MultComplexSIMD;
+  typedef Optimization::MultRealPart MultRealPartSIMD;
+  typedef Optimization::MaddRealPart MaddRealPartSIMD;
   typedef Optimization::Conj        ConjSIMD;
   typedef Optimization::TimesMinusI TimesMinusISIMD;
   typedef Optimization::TimesI      TimesISIMD;
