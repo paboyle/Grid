@@ -36,6 +36,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include "BinaryIO.h"
 #include "TextIO.h"
 #include "XmlIO.h"
+#ifdef HAVE_HDF5
+#include "Hdf5IO.h"
+#endif
 //////////////////////////////////////////
 // Todo:
 //////////////////////////////////////////

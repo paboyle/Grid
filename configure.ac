@@ -99,6 +99,13 @@ case ${ac_MKL} in
         AC_DEFINE([USE_MKL], [1], [Define to 1 if you use the Intel MKL]);;
 esac
 
+############### HDF5
+AC_ARG_WITH([hdf5],
+    [AS_HELP_STRING([--with-hdf5=prefix],
+    [try this for a non-standard install prefix of the HDF5 library])],
+    [AM_CXXFLAGS="-I$with_hdf5/include $AM_CXXFLAGS"]
+    [AM_LDFLAGS="-L$with_hdf5/lib $AM_LDFLAGS"])
+
 ############### first-touch
 AC_ARG_ENABLE([numa],
     [AC_HELP_STRING([--enable-numa=yes|no|prefix], [enable first touch numa opt])], 
@@ -144,6 +151,12 @@ AC_SEARCH_LIBS([fftw_execute], [fftw3],
                                [AC_MSG_ERROR("single precision FFTW library not found")])]
                [AC_DEFINE([HAVE_FFTW], [1], [Define to 1 if you have the `FFTW' library])]
                [have_fftw=true])
+
+AC_SEARCH_LIBS([H5Fopen], [hdf5_cpp],
+               [AC_DEFINE([HAVE_HDF5], [1], [Define to 1 if you have the `HDF5' library])]
+               [have_hdf5=true]
+               [LIBS="${LIBS} -lhdf5"], [], [-lhdf5])
+AM_CONDITIONAL(BUILD_HDF5, [ test "${have_hdf5}X" == "trueX" ])
 
 CXXFLAGS=$CXXFLAGS_CPY
 LDFLAGS=$LDFLAGS_CPY
@@ -411,6 +424,7 @@ RNG choice                  : ${ac_RNG}
 GMP                         : `if test "x$have_gmp" = xtrue; then echo yes; else echo no; fi`
 LAPACK                      : ${ac_LAPACK}
 FFTW                        : `if test "x$have_fftw" = xtrue; then echo yes; else echo no; fi`
+HDF5                        : `if test "x$have_hdf5" = xtrue; then echo yes; else echo no; fi`
 build DOXYGEN documentation : `if test "$DX_FLAG_doc" = '1'; then echo yes; else echo no; fi`
 ----- BUILD FLAGS -------------------------------------
 CXXFLAGS:
