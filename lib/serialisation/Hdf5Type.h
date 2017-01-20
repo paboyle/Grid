@@ -12,7 +12,10 @@
 template <>\
 struct Hdf5Type<cType>\
 {\
-static const H5NS::PredType *type;\
+static inline const H5NS::PredType *type(void)\
+{\
+  return &H5NS::PredType::predType;\
+}\
 static constexpr bool       isNative = true;\
 };
 

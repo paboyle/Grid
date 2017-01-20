@@ -27,7 +27,6 @@ endif
 
 if BUILD_HDF5
   extra_sources+=serialisation/Hdf5IO.cc 
-  extra_sources+=serialisation/Hdf5Type.cc
   extra_headers+=serialisation/Hdf5IO.h
   extra_headers+=serialisation/Hdf5Type.h
 endif
