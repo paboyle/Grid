@@ -105,7 +105,7 @@ namespace Grid {
   public:
     Reader(void);
     virtual ~Reader(void) = default;
-    void push(const std::string &s);
+    bool push(const std::string &s);
     void pop(void);
     template <typename U>
     typename std::enable_if<std::is_base_of<Serializable, U>::value, void>::type
@@ -160,15 +160,15 @@ namespace Grid {
   
   // Generic reader interface
   template <typename T>
-  inline void push(Reader<T> &r, const std::string &s)
+  inline bool push(Reader<T> &r, const std::string &s)
   {
-    r.push(s);
+    return r.push(s);
   }
   
   template <typename T>
-  inline void push(Reader<T> &r, const char *s)
+  inline bool push(Reader<T> &r, const char *s)
   {
-    r.push(std::string(s));
+    return r.push(std::string(s));
   }
   
   template <typename T>
@@ -236,9 +236,9 @@ namespace Grid {
   }
   
   template <typename T>
-  void Reader<T>::push(const std::string &s)
+  bool Reader<T>::push(const std::string &s)
   {
-    upcast->push(s);
+    return upcast->push(s);
   }
   
   template <typename T>

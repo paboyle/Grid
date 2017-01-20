@@ -63,7 +63,7 @@ namespace Grid
   public:
     TextReader(const std::string &fileName);
     virtual ~TextReader(void) = default;
-    void push(const std::string &s);
+    bool push(const std::string &s);
     void pop(void);
     template <typename U>
     void readDefault(const std::string &s, U &output);

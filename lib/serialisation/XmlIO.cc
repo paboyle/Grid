@@ -70,10 +70,13 @@ XmlReader::XmlReader(const string &fileName)
   node_ = doc_.child("grid");
 }
 
-void XmlReader::push(const string &s)
+bool XmlReader::push(const string &s)
 {
   node_ = node_.child(s.c_str());
-  // add error check
+  if (node_ == NULL)
+    return false;
+
+  return true;
 }
 
 void XmlReader::pop(void)

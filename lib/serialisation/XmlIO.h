@@ -66,7 +66,7 @@ namespace Grid
   public:
     XmlReader(const std::string &fileName);
     virtual ~XmlReader(void) = default;
-    void push(const std::string &s);
+    bool push(const std::string &s);
     void pop(void);
     bool nextElement(const std::string &s);
     template <typename U>

@@ -68,9 +68,10 @@ TextReader::TextReader(const string &fileName)
     } 
 }
 
-void TextReader::push(const string &s)
+bool TextReader::push(const string &s)
 {
   level_++;
+  return true;
 };
 
 void TextReader::pop(void)

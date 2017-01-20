@@ -1,11 +1,12 @@
 /*************************************************************************************
 Grid physics library, www.github.com/paboyle/Grid 
-Source file: extras/Hadrons/Factory.hpp
+Source file: Factory.h
 
 Copyright (C) 2015
 Copyright (C) 2016
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,6 +29,9 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 namespace Grid{
 
+
+
+
 /******************************************************************************
  *                        abstract factory class                              *
  ******************************************************************************/
@@ -35,8 +39,8 @@ template <typename T, typename ProductCreator>
 class Factory
 {
 public:
-    typedef std::function< std::unique_ptr<T> (const ProductCreator&)> Func;
-public:
+    typedef std::function< std::unique_ptr<T> (const ProductCreator&) > Func;
+
     // constructor
     Factory(void) = default;
     // destructor
@@ -47,7 +51,7 @@ public:
     std::vector<std::string> getBuilderList(void) const;
     // factory
     std::unique_ptr<T> create(const std::string type,
-              const ProductCreator& name) const;
+              								const ProductCreator& input) const;
 private:
     std::map<std::string, Func> builder_;
     virtual std::string obj_type() const = 0;
@@ -80,7 +84,7 @@ std::vector<std::string> Factory<T, ProductCreator>::getBuilderList(void) const
 // factory /////////////////////////////////////////////////////////////////////
 template <typename T, typename ProductCreator>
 std::unique_ptr<T> Factory<T, ProductCreator>::create(const std::string type,
-                                      const ProductCreator& input) const
+                                      								const ProductCreator& input) const
 {
     Func func;
     

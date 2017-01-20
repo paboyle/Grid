@@ -43,6 +43,16 @@ class NoParameters{};
 /*
 Base class for modules with parameters
 */
+
+
+
+class ObjectInfo: Serializable {
+public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(ObjectInfo, 
+  std::string, name);
+};
+
+
 template < class P >
 class Parametrized{
 public:
@@ -51,29 +61,28 @@ public:
   Parametrized(Parameters Par):Par_(Par){};
 
   template <class ReaderClass>
-  Parametrized(Reader<ReaderClass> & Reader, std::string section_name = "parameters"){
-    read(Reader, section_name, Par_);
+  Parametrized(Reader<ReaderClass> & R, std::string section_name = "parameters"){
+    read(R, section_name, Par_);
   }
 
   void set_parameters(Parameters Par){
-  	Par_ = Par;
+        Par_ = Par;
   }
 
-
   void print_parameters(){
-  	std::cout << Par_ << std::endl;
+    std::cout << Par_ << std::endl;
   }
 
 protected:
   Parameters Par_;
-
 private:
-	std::string section_name;
+  std::string section_name;
 };
 
 
 template <>
 class Parametrized<NoParameters>{
+        public:
   typedef NoParameters Parameters;
 
   Parametrized(Parameters Par){};
@@ -92,6 +101,9 @@ class Parametrized<NoParameters>{
 /*
 Lowest level abstract module class
 */
+
+
+
 template <class Prod>
 class HMCModuleBase {
  public:
@@ -99,6 +111,8 @@ class HMCModuleBase {
 
   virtual Prod* getPtr() = 0;
 
+  // add a getReference? 
+  
   virtual void print_parameters(){};  // default to nothing
 };
 
@@ -205,8 +219,12 @@ class Registrar {
  public:
   Registrar(std::string className) {
     // register the class factory function
-    TheFactory::getInstance().registerBuilder(className, [&](typename TheFactory::TheReader Reader)
-        { return std::unique_ptr<T>(new T(Reader));});
+    TheFactory::getInstance().registerBuilder(className, 
+        [&](typename TheFactory::TheReader Reader)
+        { 
+          return std::unique_ptr<T>(new T(Reader));
+        }
+        );
   }
 };
 

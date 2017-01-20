@@ -56,7 +56,7 @@ template <class ImplementationPolicy>
 class HMCResourceManager {
   typedef HMCModuleBase< QCD::BaseHmcCheckpointer<ImplementationPolicy> > CheckpointerBaseModule;
   typedef HMCModuleBase< QCD::HmcObservable<typename ImplementationPolicy::Field> > ObservableBaseModule;
-  typedef HMCModuleBase< QCD::Action<typename ImplementationPolicy::Field> > ActionBaseModule;
+  typedef ActionModuleBase< QCD::Action<typename ImplementationPolicy::Field>, GridModule > ActionBaseModule;
 
   // Named storage for grid pairs (std + red-black)
   std::unordered_map<std::string, GridModule> Grids;
@@ -91,7 +91,7 @@ class HMCResourceManager {
     auto &CPfactory = HMC_CPModuleFactory<cp_string, QCD::PeriodicGimplR, ReaderClass >::getInstance();
     Read.push("Checkpointer");
     std::string cp_type;
-    Read.readDefault("name", cp_type);
+    read(Read,"name", cp_type);
     std::cout << "Registered types " << std::endl;
     std::cout << CPfactory.getBuilderList() << std::endl;
 
@@ -108,7 +108,7 @@ class HMCResourceManager {
     Read.push(observable_string);// here must check if existing...
     do {
       std::string obs_type;
-      Read.readDefault("name", obs_type);
+      read(Read,"name", obs_type);
       std::cout << "Registered types " << std::endl;
       std::cout << ObsFactory.getBuilderList() << std::endl;
 
@@ -123,9 +123,12 @@ class HMCResourceManager {
     Read.push("Actions");
 
     Read.push("Level");// push must check if the node exist
-    do {
-    fill_ActionsLevel(Read); 
-    } while(Read.nextElement("Level"));
+    do
+    {
+      fill_ActionsLevel(Read); 
+    }
+    while(Read.push("Level"));
+
     Read.pop();
   }
 
@@ -135,8 +138,10 @@ class HMCResourceManager {
   void GetActionSet(ActionSet<typename ImplementationPolicy::Field, RepresentationPolicy>& Aset){
     Aset.resize(multipliers.size());
  
-    for(auto it = ActionsList.begin(); it != ActionsList.end(); it++)
+    for(auto it = ActionsList.begin(); it != ActionsList.end(); it++){
+      (*it).second->acquireResource(Grids["gauge"]);
       Aset[(*it).first-1].push_back((*it).second->getPtr());
+    }
   }
 
 
@@ -262,15 +267,11 @@ private:
       auto &ActionFactory = HMC_LGTActionModuleFactory<gauge_string, ReaderClass>::getInstance(); 
       std::string action_type;
       Read.readDefault("name", action_type);
-      std::cout << "Registered types " << std::endl;
       std::cout << ActionFactory.getBuilderList() << std::endl;  
-
       ActionsList.emplace(m, ActionFactory.create(action_type, Read));
-
     } while (Read.nextElement("Action"));
 
-      ActionsList.find(m)->second->print_parameters();
-
+    ActionsList.find(m)->second->print_parameters();
   }
 
 

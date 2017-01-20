@@ -37,16 +37,26 @@ for the HMC execution
 namespace Grid {
 
 //////////////////////////////////////////////
-//		Actions
+//              Actions
 //////////////////////////////////////////////
+
+template <class Product, class Resource>
+class ActionModuleBase: public HMCModuleBase<Product>{
+public:
+  typedef Resource Res;
+  virtual void acquireResource(Resource& ){};
+
+};
+
 
 template <class ActionType, class APar>
 class ActionModule
     : public Parametrized<APar>,
-      public HMCModuleBase<QCD::Action<typename ActionType::GaugeField> > {
+      public ActionModuleBase< QCD::Action<typename ActionType::GaugeField> , QCD::GridModule > {
  public:
-  typedef HMCModuleBase< QCD::Action<typename ActionType::GaugeField> > Base;
+  typedef ActionModuleBase< QCD::Action<typename ActionType::GaugeField>, QCD::GridModule > Base;
   typedef typename Base::Product Product;
+  typedef APar Parameters;
 
   std::unique_ptr<ActionType> ActionPtr;
 
@@ -55,8 +65,9 @@ class ActionModule
   template <class ReaderClass>
   ActionModule(Reader<ReaderClass>& Reader) : Parametrized<APar>(Reader){};
 
+
   virtual void print_parameters(){
-    std::cout << this->Par_ << std::endl;
+    Parametrized<APar>::print_parameters();
   }
 
   Product* getPtr() {
@@ -67,12 +78,12 @@ class ActionModule
 
  private:
   virtual void initialize() = 0;
+
 };
 
-
-////////////////
+//////////////////////////
 // Modules
-////////////////
+//////////////////////////
 
 namespace QCD{
 
@@ -177,6 +188,63 @@ class DBW2GModule: public ActionModule<DBW2GaugeAction<Impl>, BetaGaugeActionPar
 
 };
 
+/////////////////////////////////////////
+// Fermion Actions
+/////////////////////////////////////////
+
+
+template <class Impl >
+class TwoFlavourFModule: public ActionModule<TwoFlavourPseudoFermionAction<Impl>, NoParameters> {
+  typedef ActionModule<TwoFlavourPseudoFermionAction<Impl>, NoParameters> ActionBase;
+  using ActionBase::ActionBase; // for constructors
+
+  std::unique_ptr<HMCModuleBase<OperatorFunction<typename Impl::FermionField> > >solver_mod;
+  std::unique_ptr<FermionOperatorModuleBase<FermionOperator<Impl>> > fop_mod;
+public:
+
+  virtual void acquireResource(typename ActionBase::Res& GridMod){
+    fop_mod->AddGridPair(GridMod);
+  }
+
+  template <class ReaderClass>
+  TwoFlavourFModule(Reader<ReaderClass>& Reader) : ActionBase(Reader){
+    std::cout << "Constructing TwoFlavourFModule" << std::endl;
+    auto& SolverFactory = HMC_SolverModuleFactory<solver_string, typename Impl::FermionField, ReaderClass>::getInstance();
+    Reader.push("Solver");
+    std::string solv_name;
+    read(Reader,"name", solv_name);
+    solver_mod = SolverFactory.create(solv_name, Reader);
+    std::cout << "Registered types " << std::endl;
+    std::cout << SolverFactory.getBuilderList() << std::endl;
+    solver_mod->print_parameters();
+    Reader.pop();
+
+
+
+    auto &FOFactory = HMC_FermionOperatorModuleFactory<fermionop_string, Impl, ReaderClass>::getInstance();
+    Reader.push("Operator");
+    std::string op_name;
+    read(Reader,"name", op_name);
+    fop_mod = FOFactory.create(op_name, Reader);
+    std::cout << "Registered types " << std::endl;
+    std::cout << FOFactory.getBuilderList() << std::endl;
+
+    fop_mod->print_parameters();
+    Reader.pop();  
+
+
+
+  };
+
+private:
+  // acquire resource
+  virtual void initialize() {
+    this->ActionPtr.reset(new TwoFlavourPseudoFermionAction<Impl>(*fop_mod->getPtr(), *solver_mod->getPtr(), *solver_mod->getPtr()));
+  }
+
+};
+
+
 
 
 
@@ -206,15 +274,15 @@ typedef PlaqPlusRectangleGModule<PeriodicGimplR> PlaqPlusRectangleGMod;
 // Factory is perfectly fine
 // Registar must be changed because I do not want to use the ModuleFactory
 
-// explicit ref to LatticeGaugeField must be changed of put in the factory
-typedef HMCModuleBase< QCD::Action< QCD::LatticeGaugeField > > HMC_LGTActionModBase;
+// explicit ref to LatticeGaugeField must be changed or put in the factory
+typedef ActionModuleBase< QCD::Action< QCD::LatticeGaugeField >, QCD::GridModule > HMC_LGTActionModBase;
 
 template <char const *str, class ReaderClass >
 class HMC_LGTActionModuleFactory
-    : public Factory < HMC_LGTActionModBase ,	Reader<ReaderClass> > {
+    : public Factory < HMC_LGTActionModBase , Reader<ReaderClass> > {
  public:
- 	typedef Reader<ReaderClass> TheReader; 
- 	// use SINGLETON FUNCTOR MACRO HERE
+  typedef Reader<ReaderClass> TheReader; 
+  // use SINGLETON FUNCTOR MACRO HERE
   HMC_LGTActionModuleFactory(const HMC_LGTActionModuleFactory& e) = delete;
   void operator=(const HMC_LGTActionModuleFactory& e) = delete;
   static HMC_LGTActionModuleFactory& getInstance(void) {
@@ -225,7 +293,7 @@ class HMC_LGTActionModuleFactory
  private:
   HMC_LGTActionModuleFactory(void) = default;
     std::string obj_type() const {
-  	return std::string(str);
+        return std::string(str);
   }
 };
 
@@ -237,10 +305,14 @@ static Registrar<QCD::DBW2GMod,              HMC_LGTActionModuleFactory<gauge_st
 static Registrar<QCD::RBCGMod,               HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __RBCGmodXMLInit("RBC"); 
 static Registrar<QCD::PlaqPlusRectangleGMod, HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __PPRectGmodXMLInit("PlaqPlusRect"); 
 
+
+// FIXME more general implementation
+static Registrar<QCD::TwoFlavourFModule<QCD::WilsonImplR> , HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __TwoFlavourFmodXMLInit("TwoFlavours"); 
+
 // add here the registration for other implementations and readers
 
 
-}
+} // Grid
 
 
 #endif //HMC_MODULES_H

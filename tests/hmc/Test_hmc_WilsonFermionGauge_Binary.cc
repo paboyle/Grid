@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
   RealD beta = 5.6 ;
   WilsonGaugeActionR Waction(beta);
   
-    // temporarily need a gauge field
+  // temporarily need a gauge field
   auto GridPtr = TheHMC.Resources.GetCartesian();
   auto GridRBPtr = TheHMC.Resources.GetRBCartesian();
 
