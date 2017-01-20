@@ -17,21 +17,20 @@ static constexpr bool       isNative = true;\
 };
 
 #define DEFINE_HDF5_NATIVE_TYPES \
-HDF5_NATIVE_TYPE(NATIVE_B8,      bool);\
-HDF5_NATIVE_TYPE(NATIVE_CHAR,    char);\
-HDF5_NATIVE_TYPE(NATIVE_SCHAR,   signed char);\
-HDF5_NATIVE_TYPE(NATIVE_UCHAR,   unsigned char);\
-HDF5_NATIVE_TYPE(NATIVE_SHORT,   short);\
-HDF5_NATIVE_TYPE(NATIVE_USHORT,  unsigned short);\
-HDF5_NATIVE_TYPE(NATIVE_INT,     int);\
-HDF5_NATIVE_TYPE(NATIVE_UINT,    unsigned int);\
-HDF5_NATIVE_TYPE(NATIVE_LONG,    long);\
-HDF5_NATIVE_TYPE(NATIVE_ULONG,   unsigned long);\
-HDF5_NATIVE_TYPE(NATIVE_LLONG,   long long);\
-HDF5_NATIVE_TYPE(NATIVE_ULLONG,  unsigned long long);\
-HDF5_NATIVE_TYPE(NATIVE_FLOAT,   float);\
-HDF5_NATIVE_TYPE(NATIVE_DOUBLE,  double);\
-HDF5_NATIVE_TYPE(NATIVE_LDOUBLE, long double);
+HDF5_NATIVE_TYPE(STD_B8LE,   bool);\
+HDF5_NATIVE_TYPE(STD_I8LE,   char);\
+HDF5_NATIVE_TYPE(STD_U8LE,   unsigned char);\
+HDF5_NATIVE_TYPE(STD_I16LE,  short);\
+HDF5_NATIVE_TYPE(STD_U16LE,  unsigned short);\
+HDF5_NATIVE_TYPE(STD_I32LE,  int);\
+HDF5_NATIVE_TYPE(STD_U32LE,  unsigned int);\
+HDF5_NATIVE_TYPE(STD_I64LE,  long);\
+HDF5_NATIVE_TYPE(STD_U64LE,  unsigned long);\
+HDF5_NATIVE_TYPE(STD_I64LE,  long long);\
+HDF5_NATIVE_TYPE(STD_U64LE,  unsigned long long);\
+HDF5_NATIVE_TYPE(IEEE_F32LE, float);\
+HDF5_NATIVE_TYPE(IEEE_F64LE, double);\
+HDF5_NATIVE_TYPE(IEEE_F64LE, long double);
 
 namespace Grid
 {
