@@ -92,7 +92,7 @@ namespace Grid
   template <typename U>
   void Hdf5Writer::writeDefault(const std::string &s, const U &x)
   {
-    writeSingleAttribute(x, s, *Hdf5Type<U>::type());
+    writeSingleAttribute(x, s, Hdf5Type<U>::type());
   }
   
   template <>
@@ -122,7 +122,7 @@ namespace Grid
     {
       H5NS::DataSet dataSet;
       
-      dataSet = group_.createDataSet(s, *Hdf5Type<Element>::type(), dataSpace);
+      dataSet = group_.createDataSet(s, Hdf5Type<Element>::type(), dataSpace);
       dataSet.write(flatx.data(), *Hdf5Type<Element>::type());
     }
     else
@@ -140,7 +140,7 @@ namespace Grid
   {
     push(s);
     writeSingleAttribute(x.size(), HDF5_GRID_GUARD "vector_size",
-                         *Hdf5Type<uint64_t>::type());
+                         Hdf5Type<uint64_t>::type());
     for (hsize_t i = 0; i < x.size(); ++i)
     {
       write(s + "_" + std::to_string(i), x[i]);
@@ -162,7 +162,7 @@ namespace Grid
   template <typename U>
   void Hdf5Reader::readDefault(const std::string &s, U &output)
   {
-    readSingleAttribute(output, s, *Hdf5Type<U>::type());
+    readSingleAttribute(output, s, Hdf5Type<U>::type());
   }
   
   template <>
@@ -210,14 +210,14 @@ namespace Grid
       H5NS::DataSet dataSet;
       
       dataSet = group_.openDataSet(s);
-      dataSet.read(buf.data(), *Hdf5Type<Element>::type());
+      dataSet.read(buf.data(), Hdf5Type<Element>::type());
     }
     else
     {
       H5NS::Attribute attribute;
       
       attribute = group_.openAttribute(s);
-      attribute.read(*Hdf5Type<Element>::type(), buf.data());
+      attribute.read(Hdf5Type<Element>::type(), buf.data());
     }
     
     // reconstruct the multidimensional vector
@@ -234,7 +234,7 @@ namespace Grid
     
     push(s);
     readSingleAttribute(size, HDF5_GRID_GUARD "vector_size",
-                        *Hdf5Type<uint64_t>::type());
+                        Hdf5Type<uint64_t>::type());
     x.resize(size);
     for (hsize_t i = 0; i < x.size(); ++i)
     {

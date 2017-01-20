@@ -12,7 +12,7 @@ Hdf5Writer::Hdf5Writer(const std::string &fileName)
 {
   group_ = file_.openGroup("/");
   writeSingleAttribute(dataSetThres_, HDF5_GRID_GUARD "dataset_threshold",
-                       *Hdf5Type<unsigned int>::type());
+                       Hdf5Type<unsigned int>::type());
 }
 
 void Hdf5Writer::push(const std::string &s)
@@ -62,7 +62,7 @@ Hdf5Reader::Hdf5Reader(const std::string &fileName)
 {
   group_ = file_.openGroup("/");
   readSingleAttribute(dataSetThres_, HDF5_GRID_GUARD "dataset_threshold",
-                      *Hdf5Type<unsigned int>::type());
+                      Hdf5Type<unsigned int>::type());
 }
 
 void Hdf5Reader::push(const std::string &s)
