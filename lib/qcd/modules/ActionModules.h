@@ -40,11 +40,11 @@ namespace Grid {
 //              Actions
 //////////////////////////////////////////////
 
-template <class Product, class Resource>
+template <class Product, class R>
 class ActionModuleBase: public HMCModuleBase<Product>{
 public:
-  typedef Resource Res;
-  virtual void acquireResource(Resource& ){};
+  typedef R Resource;
+  virtual void acquireResource(R& ){};
 
 };
 
@@ -193,57 +193,95 @@ class DBW2GModule: public ActionModule<DBW2GaugeAction<Impl>, BetaGaugeActionPar
 /////////////////////////////////////////
 
 
-template <class Impl >
-class TwoFlavourFModule: public ActionModule<TwoFlavourPseudoFermionAction<Impl>, NoParameters> {
-  typedef ActionModule<TwoFlavourPseudoFermionAction<Impl>, NoParameters> ActionBase;
+template <class Impl, template <typename> class FermionA >
+class PseudoFermionModuleBase: public ActionModule<FermionA<Impl>, NoParameters> {
+protected:
+  typedef ActionModule<FermionA<Impl>, NoParameters> ActionBase;
   using ActionBase::ActionBase; // for constructors
 
-  std::unique_ptr<HMCModuleBase<OperatorFunction<typename Impl::FermionField> > >solver_mod;
-  std::unique_ptr<FermionOperatorModuleBase<FermionOperator<Impl>> > fop_mod;
-public:
+  typedef std::unique_ptr<FermionOperatorModuleBase<FermionOperator<Impl>> > operator_type;
+  typedef std::unique_ptr<HMCModuleBase<OperatorFunction<typename Impl::FermionField> > > solver_type;
 
-  virtual void acquireResource(typename ActionBase::Res& GridMod){
-    fop_mod->AddGridPair(GridMod);
+  template <class ReaderClass>
+  void getFermionOperator(Reader<ReaderClass>& Reader, operator_type &fo, std::string section_name){
+    auto &FOFactory = HMC_FermionOperatorModuleFactory<fermionop_string, Impl, ReaderClass>::getInstance();
+    Reader.push(section_name);
+    std::string op_name;
+    read(Reader,"name", op_name);
+    fo = FOFactory.create(op_name, Reader);
+    Reader.pop();  
   }
 
   template <class ReaderClass>
-  TwoFlavourFModule(Reader<ReaderClass>& Reader) : ActionBase(Reader){
-    std::cout << "Constructing TwoFlavourFModule" << std::endl;
+  void getSolverOperator(Reader<ReaderClass>& Reader, solver_type &so, std::string section_name){
     auto& SolverFactory = HMC_SolverModuleFactory<solver_string, typename Impl::FermionField, ReaderClass>::getInstance();
-    Reader.push("Solver");
+    Reader.push(section_name);
     std::string solv_name;
     read(Reader,"name", solv_name);
-    solver_mod = SolverFactory.create(solv_name, Reader);
-    std::cout << "Registered types " << std::endl;
-    std::cout << SolverFactory.getBuilderList() << std::endl;
-    solver_mod->print_parameters();
-    Reader.pop();
+    so = SolverFactory.create(solv_name, Reader);
+    Reader.pop();    
+  }
+};
 
 
+template <class Impl >
+class TwoFlavourFModule: public PseudoFermionModuleBase<Impl, TwoFlavourPseudoFermionAction>{
+  typedef PseudoFermionModuleBase<Impl, TwoFlavourPseudoFermionAction> Base;
+  using Base::Base;
 
-    auto &FOFactory = HMC_FermionOperatorModuleFactory<fermionop_string, Impl, ReaderClass>::getInstance();
-    Reader.push("Operator");
-    std::string op_name;
-    read(Reader,"name", op_name);
-    fop_mod = FOFactory.create(op_name, Reader);
-    std::cout << "Registered types " << std::endl;
-    std::cout << FOFactory.getBuilderList() << std::endl;
+  typename Base::operator_type fop_mod;
+  typename Base::solver_type   solver_mod;
 
-    fop_mod->print_parameters();
-    Reader.pop();  
+ public:
+  virtual void acquireResource(typename Base::Resource& GridMod){
+    fop_mod->AddGridPair(GridMod);
+  }
 
+   // constructor
+   template <class ReaderClass>
+   TwoFlavourFModule(Reader<ReaderClass>& R): PseudoFermionModuleBase<Impl, TwoFlavourPseudoFermionAction>(R) {
+    this->getSolverOperator(R, solver_mod, "Solver");
+    this->getFermionOperator(R, fop_mod, "Operator");
+    R.pop();
+   } 
 
-
-  };
-
-private:
   // acquire resource
   virtual void initialize() {
-    this->ActionPtr.reset(new TwoFlavourPseudoFermionAction<Impl>(*fop_mod->getPtr(), *solver_mod->getPtr(), *solver_mod->getPtr()));
+    // here temporarily assuming that the force and action solver are the same
+    this->ActionPtr.reset(new TwoFlavourPseudoFermionAction<Impl>(*(this->fop_mod->getPtr()), *(this->solver_mod->getPtr()), *(this->solver_mod->getPtr())));
   }
 
 };
 
+// very similar, I could have templated this but it is overkilling
+template <class Impl >
+class TwoFlavourEOFModule: public PseudoFermionModuleBase<Impl, TwoFlavourEvenOddPseudoFermionAction>{
+  typedef PseudoFermionModuleBase<Impl, TwoFlavourEvenOddPseudoFermionAction> Base;
+  using Base::Base;
+
+  typename Base::operator_type fop_mod;
+  typename Base::solver_type   solver_mod;
+
+ public:
+  virtual void acquireResource(typename Base::Resource& GridMod){
+    fop_mod->AddGridPair(GridMod);
+  }
+
+   // constructor
+   template <class ReaderClass>
+   TwoFlavourEOFModule(Reader<ReaderClass>& R): PseudoFermionModuleBase<Impl, TwoFlavourEvenOddPseudoFermionAction>(R) {
+    this->getSolverOperator(R, solver_mod, "Solver");
+    this->getFermionOperator(R, fop_mod, "Operator");
+    R.pop();
+   } 
+
+  // acquire resource
+  virtual void initialize() {
+    // here temporarily assuming that the force and action solver are the same
+    this->ActionPtr.reset(new TwoFlavourEvenOddPseudoFermionAction<Impl>(*(this->fop_mod->getPtr()), *(this->solver_mod->getPtr()), *(this->solver_mod->getPtr())));
+  }
+
+};
 
 
 
@@ -308,6 +346,9 @@ static Registrar<QCD::PlaqPlusRectangleGMod, HMC_LGTActionModuleFactory<gauge_st
 
 // FIXME more general implementation
 static Registrar<QCD::TwoFlavourFModule<QCD::WilsonImplR> , HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __TwoFlavourFmodXMLInit("TwoFlavours"); 
+static Registrar<QCD::TwoFlavourEOFModule<QCD::WilsonImplR> , HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __TwoFlavourEOFmodXMLInit("TwoFlavoursEvenOdd"); 
+
+
 
 // add here the registration for other implementations and readers
 

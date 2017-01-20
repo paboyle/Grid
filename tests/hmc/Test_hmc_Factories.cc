@@ -68,7 +68,10 @@ int main(int argc, char **argv) {
   // Construct the module
   auto myHMCmodule = HMCfactory.create(HMCpar.MD.name, Reader);
 
+  myHMCmodule->getPtr()->initialize(Reader);
+  myHMCmodule->getPtr()->Run();
 
+  Grid_finalize();
 
 
 /*
@@ -100,10 +103,6 @@ int main(int argc, char **argv) {
 */
   
 
-  myHMCmodule->getPtr()->initialize(Reader);
-  myHMCmodule->getPtr()->Run();
 
-
-  Grid_finalize();
 
 } // main

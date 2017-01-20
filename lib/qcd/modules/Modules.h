@@ -43,16 +43,6 @@ class NoParameters{};
 /*
 Base class for modules with parameters
 */
-
-
-
-class ObjectInfo: Serializable {
-public:
-  GRID_SERIALIZABLE_CLASS_MEMBERS(ObjectInfo, 
-  std::string, name);
-};
-
-
 template < class P >
 class Parametrized{
 public:
@@ -101,9 +91,6 @@ class Parametrized<NoParameters>{
 /*
 Lowest level abstract module class
 */
-
-
-
 template <class Prod>
 class HMCModuleBase {
  public:

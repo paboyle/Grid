@@ -67,6 +67,7 @@ namespace Grid{
 
           // NOTE Guido: WE DO NOT WANT TO USE THE ucbgrid GRID FOR THE FORCE
           // it is not conformable with the HMC force field
+	  // Case: Ls vectorised fields
           // INHERIT FROM THE Force field instead
           GridRedBlackCartesian* forcecb = new GridRedBlackCartesian(Force._grid);
           GaugeField ForceO(forcecb);
@@ -76,9 +77,8 @@ namespace Grid{
           //  X^dag Der_oe MeeInv Meo Y
           // Use Mooee as nontrivial but gauge field indept
           this->_Mat.Meooe   (V,tmp1);      // odd->even -- implicit -0.5 factor to be applied
-          this->_Mat.MooeeInv(tmp1,tmp2);   // even->even 
+	  this->_Mat.MooeeInv(tmp1,tmp2);   // even->even 
           this->_Mat.MoeDeriv(ForceO,U,tmp2,DaggerNo);
-          
           //  Accumulate X^dag M_oe MeeInv Der_eo Y
           this->_Mat.MeooeDag   (U,tmp1);    // even->odd -- implicit -0.5 factor to be applied
           this->_Mat.MooeeInvDag(tmp1,tmp2); // even->even 

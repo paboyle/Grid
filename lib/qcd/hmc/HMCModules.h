@@ -72,8 +72,12 @@ public:
 
 class GridModule {
  public:
-  GridCartesian* get_full() { return grid_.get(); }
-  GridRedBlackCartesian* get_rb() { return rbgrid_.get(); }
+  GridCartesian* get_full() { 
+    std::cout << GridLogDebug << "Getting cartesian in module"<< std::endl;
+    return grid_.get(); }
+  GridRedBlackCartesian* get_rb() { 
+    std::cout << GridLogDebug << "Getting rb-cartesian in module"<< std::endl;
+    return rbgrid_.get(); }
 
   void set_full(GridCartesian* grid) { grid_.reset(grid); }
   void set_rb(GridRedBlackCartesian* rbgrid) { rbgrid_.reset(rbgrid); }

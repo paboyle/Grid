@@ -124,8 +124,9 @@ class WilsonFermionModule: public FermionOperatorModule<WilsonFermion, FermionIm
 
   // acquire resource
   virtual void initialize(){
-    typename FermionImpl::GaugeField U(this->GridRefs[0].get().get_full());
-    this->FOPtr.reset(new WilsonFermion<FermionImpl>(U, *(this->GridRefs[0].get().get_full()), *(this->GridRefs[0].get().get_rb()), this->Par_.mass));
+    auto &GridMod = this->GridRefs[0].get();
+    typename FermionImpl::GaugeField U(GridMod.get_full());
+    this->FOPtr.reset(new WilsonFermion<FermionImpl>(U, *(GridMod.get_full()), *(GridMod.get_rb()), this->Par_.mass));
   }
 };
 
