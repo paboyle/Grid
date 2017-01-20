@@ -35,6 +35,22 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Module.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
 
+namespace Grid {
+    // Overload >> to extract gamma pair from "[g1 g2]" string.
+    template <typename T1, typename T2>
+    inline std::istringstream &operator>>(std::istringstream &sstr,
+                                          std::pair<T1, T2> &buf)
+    {
+        T1 buf1;
+        T2 buf2;
+        char c;
+        sstr >> c >> buf1 >> buf2 >> c;
+        sstr.peek();
+        buf = std::make_pair(buf1, buf2);
+        return sstr;
+    }
+}
+
 BEGIN_HADRONS_NAMESPACE
 
 /*
@@ -45,9 +61,9 @@ BEGIN_HADRONS_NAMESPACE
  * options:
  - q1: input propagator 1 (string)
  - q2: input propagator 2 (string)
- - gammas: gamma products to insert at source & sink, pairs of gamma matrices 
-           (space-separated integers) in square brackets, in a sequence 
-           (e.g. "[15 7][7 15][7 7]").
+ - gammas: gamma products to insert at sink & source, pairs of gamma matrices 
+           (space-separated integers) in square brackets (i.e. [g_sink g_src]),
+           in a sequence (e.g. "[15 7][7 15][7 7]").
 
            Special values: "all" - perform all possible contractions.
  
@@ -57,6 +73,8 @@ BEGIN_HADRONS_NAMESPACE
  *                                TMeson                                       *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MContraction)
+
+typedef std::pair<unsigned int, unsigned int> GammaPair;
 
 class MesonPar: Serializable
 {
@@ -78,7 +96,9 @@ public:
     {
     public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        std::vector<std::vector<std::vector<Complex>>>, corr);
+                                        unsigned int, gamma_snk,
+                                        unsigned int, gamma_src,
+                                        std::vector<Complex>, corr);
     };
 public:
     // constructor
@@ -88,10 +108,7 @@ public:
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
-    virtual void parseGammaString(SpinMatrix*,
-                                  unsigned int &, 
-                                  unsigned int &,
-                                  std::vector<std::vector<bool>> &);
+    virtual void parseGammaString(std::vector<GammaPair> &gammaList);
     // execution
     virtual void execute(void);
 };
@@ -124,75 +141,27 @@ std::vector<std::string> TMeson<FImpl1, FImpl2>::getOutput(void)
     return output;
 }
 
-template <typename T>
-std::vector<std::pair<T, T>> strToVecPair(const std::string s)
-{
-    std::vector<std::pair<T, T>> v;
-    return v;
-}
-
 template <typename FImpl1, typename FImpl2>
-void TMeson<FImpl1, FImpl2>::parseGammaString(SpinMatrix *g,
-                                              unsigned int &n_snk, 
-                                              unsigned int &n_src,
-                                              std::vector<std::vector<bool>> &toDo)
+void TMeson<FImpl1, FImpl2>::parseGammaString(std::vector<GammaPair> &gammaList)
 {
-    // Initialise counters for parsing gamma insertions at source & sink.
-    int empty = -1;
-    std::vector<int> gamma_inds(Ns*Ns, empty);
-    unsigned int n_gam = 0;
-
     // Determine gamma matrices to insert at source/sink.
     if (par().gammas.compare("all") == 0)
     {
         // Do all contractions.
-        toDo.resize(Ns*Ns);
-        for (int i = 0; i < Ns*Ns; ++i)
+        unsigned int n_gam = Ns*Ns;
+        gammaList.resize(n_gam*n_gam);
+        for (unsigned int i = 0; i < n_gam; ++i)
         {
-            g[i] = makeGammaProd(i);
-            toDo[i].assign(Ns*Ns, true);
+            for (unsigned int j = 0; j < n_gam; ++j)
+            {
+                gammaList.push_back(std::make_pair(i, j));
+            }
         }
     }
     else
     {
         // Parse individual contractions from input string.
-        std::vector<std::pair<int, int>> gamma_pairs;
-        gamma_pairs = strToVecPair<int>(par().gammas);
-
-        // Function for gamma matrix counting & indexing at source/sink.
-        auto index_gamma = [&empty, &g, &gamma_inds, &n_gam](int i, 
-                                                             unsigned int &n)
-        {
-            if (i >= gamma_inds.size())
-            {
-                HADRON_ERROR("Invalid gamma matrix index " << i);
-            }
-            if (gamma_inds[i] == empty)
-            {
-                g[n_gam] = makeGammaProd(i);
-                gamma_inds[i] = n_gam;
-                ++n_gam;
-                ++n;
-            }
-        };
-
-        // Count no. of unique gamma matrices, then construct matrix of
-        // contractions to do.
-        for (unsigned int i = 0; i < gamma_inds.size(); ++i)
-        {
-            index_gamma(gamma_pairs[i].first, n_snk);
-            index_gamma(gamma_pairs[i].second, n_src);
-        }
-        toDo.resize(n_gam);
-        for (int i = 0; i < n_gam; ++i)
-        {
-            toDo[i].assign(n_gam, false);
-        }
-        for (int i = 0; i < gamma_inds.size(); ++i)
-        {
-            toDo[gamma_inds[gamma_pairs[i].first]]
-                [gamma_inds[gamma_pairs[i].second]] = true;
-        }
+        gammaList = strToVec<GammaPair>(par().gammas);
     }
 }
 
@@ -205,38 +174,37 @@ void TMeson<FImpl1, FImpl2>::execute(void)
                  << " quarks '" << par().q1 << "' and '" << par().q2 << "'"
                  << std::endl;
     
-    XmlWriter             writer(par().output);
-    PropagatorField1      &q1 = *env().template getObject<PropagatorField1>(par().q1);
-    PropagatorField2      &q2 = *env().template getObject<PropagatorField2>(par().q2);
-    LatticeComplex        c(env().getGrid());
-    SpinMatrix            g[Ns*Ns], g5;
-    std::vector<std::vector<bool>> toDo;
-    std::vector<TComplex> buf;
-    Result                result;
-    unsigned int          n_snk, n_src;
+    XmlWriter              writer(par().output);
+    PropagatorField1       &q1 = *env().template getObject<PropagatorField1>(par().q1);
+    PropagatorField2       &q2 = *env().template getObject<PropagatorField2>(par().q2);
+    LatticeComplex         c(env().getGrid());
+    SpinMatrix             g[Ns*Ns], g5;
+    std::vector<GammaPair> gammaList;
+    std::vector<TComplex>  buf;
+    std::vector<Result>    result;
 
     g5 = makeGammaProd(Ns*Ns - 1);
-    parseGammaString(g, n_snk, n_src, toDo);
-
-    result.corr.resize(n_snk);
-    for (unsigned int iSink = 0; iSink < toDo.size(); ++iSink)
+    for (int i = 0; i < Ns*Ns; ++i)
     {
-        result.corr[iSink].resize(n_src);
-        for (unsigned int iSrc = 0; iSrc < toDo.size(); ++iSrc)
-        {
-            if (toDo[iSink][iSrc])
-            {
-                c = trace(g[iSink]*q1*g[iSrc]*g5*adj(q2)*g5);
-                sliceSum(c, buf, Tp);
-                result.corr[iSink][iSrc].resize(buf.size());
-                for (unsigned int t = 0; t < buf.size(); ++t)
-                {
-                    result.corr[iSink][iSrc][t] = TensorRemove(buf[t]);
-                }
-            }
-        }
+        g[i] = makeGammaProd(i);
     }
-    write(writer, "meson", result);
+    parseGammaString(gammaList);
+
+    result.resize(gammaList.size());
+    for (unsigned int i = 0; i < result.size(); ++i)
+    {
+        c = trace(g[gammaList[i].first]*q1*g[gammaList[i].second]*g5*adj(q2)*g5);
+        sliceSum(c, buf, Tp);
+
+        result[i].gamma_snk = gammaList[i].first;
+        result[i].gamma_src = gammaList[i].second;
+        result[i].corr.resize(buf.size());
+        for (unsigned int t = 0; t < buf.size(); ++t)
+        {
+            result[i].corr[t] = TensorRemove(buf[t]);
+        }
+        write(writer, "meson", result[i]);
+    }
 }
 
 END_MODULE_NAMESPACE
