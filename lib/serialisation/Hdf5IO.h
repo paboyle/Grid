@@ -123,14 +123,14 @@ namespace Grid
       H5NS::DataSet dataSet;
       
       dataSet = group_.createDataSet(s, Hdf5Type<Element>::type(), dataSpace);
-      dataSet.write(flatx.data(), *Hdf5Type<Element>::type());
+      dataSet.write(flatx.data(), Hdf5Type<Element>::type());
     }
     else
     {
       H5NS::Attribute attribute;
       
-      attribute = group_.createAttribute(s, *Hdf5Type<Element>::type(), dataSpace);
-      attribute.write(*Hdf5Type<Element>::type(), flatx.data());
+      attribute = group_.createAttribute(s, Hdf5Type<Element>::type(), dataSpace);
+      attribute.write(Hdf5Type<Element>::type(), flatx.data());
     }
   }
   
