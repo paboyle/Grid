@@ -10,13 +10,14 @@
 
 #define HDF5_NATIVE_TYPE(predType, cType)\
 template <>\
-struct Hdf5Type<cType>\
+class Hdf5Type<cType>\
 {\
-static inline const H5NS::PredType & type(void)\
-{\
-  return H5NS::PredType::predType;\
-}\
-static constexpr bool       isNative = true;\
+public:\
+  static inline const H5NS::DataType & type(void)\
+  {\
+    return H5NS::PredType::predType;\
+  }\
+  static constexpr bool isNative = true;\
 };
 
 #define DEFINE_HDF5_NATIVE_TYPES \
@@ -38,12 +39,36 @@ HDF5_NATIVE_TYPE(NATIVE_LDOUBLE, long double);
 
 namespace Grid
 {
-  template <typename T> struct Hdf5Type
+  template <typename T> class Hdf5Type
   {
+  public:
     static constexpr bool isNative = false;
   };
   
   DEFINE_HDF5_NATIVE_TYPES;
+  
+  template <typename R>
+  class Hdf5Type<std::complex<R>>
+  {
+  public:
+    static inline const H5NS::DataType & type(void)
+    {
+      if (typePtr_ == nullptr)
+      {
+        typePtr_.reset(new H5NS::CompType(sizeof(std::complex<R>)));
+        typePtr_->insertMember("re", 0,         Hdf5Type<R>::type());
+        typePtr_->insertMember("im", sizeof(R), Hdf5Type<R>::type());
+      }
+
+      return *typePtr_;
+    }
+    static constexpr bool isNative = false;
+  private:
+    static std::unique_ptr<H5NS::CompType> typePtr_;
+  };
+  
+  template <typename R>
+  std::unique_ptr<H5NS::CompType> Hdf5Type<std::complex<R>>::typePtr_ = nullptr;
 }
 
 #undef HDF5_NATIVE_TYPE

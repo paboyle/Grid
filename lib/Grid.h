@@ -60,12 +60,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 // Grid headers
 ///////////////////
 #include "Config.h"
-#include <Grid/serialisation/Serialisation.h>
 #include <Grid/Timer.h>
 #include <Grid/PerfCount.h>
 #include <Grid/Log.h>
 #include <Grid/AlignedAllocator.h>
 #include <Grid/Simd.h>
+#include <Grid/serialisation/Serialisation.h>
 #include <Grid/Threads.h>
 #include <Grid/Lexicographic.h>
 #include <Grid/Init.h>

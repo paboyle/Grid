@@ -32,10 +32,10 @@ namespace Grid
     template <typename U>
     void writeDefault(const std::string &s, const U &x);
     template <typename U>
-    typename std::enable_if<element<std::vector<U>>::is_arithmetic, void>::type
+    typename std::enable_if<element<std::vector<U>>::is_number, void>::type
     writeDefault(const std::string &s, const std::vector<U> &x);
     template <typename U>
-    typename std::enable_if<!element<std::vector<U>>::is_arithmetic, void>::type
+    typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
     writeDefault(const std::string &s, const std::vector<U> &x);
   private:
     template <typename U>
@@ -59,10 +59,10 @@ namespace Grid
     template <typename U>
     void readDefault(const std::string &s, U &output);
     template <typename U>
-    typename std::enable_if<element<std::vector<U>>::is_arithmetic, void>::type
+    typename std::enable_if<element<std::vector<U>>::is_number, void>::type
     readDefault(const std::string &s, std::vector<U> &x);
     template <typename U>
-    typename std::enable_if<!element<std::vector<U>>::is_arithmetic, void>::type
+    typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
     readDefault(const std::string &s, std::vector<U> &x);
   private:
     template <typename U>
@@ -99,7 +99,7 @@ namespace Grid
   void Hdf5Writer::writeDefault(const std::string &s, const std::string &x);
   
   template <typename U>
-  typename std::enable_if<element<std::vector<U>>::is_arithmetic, void>::type
+  typename std::enable_if<element<std::vector<U>>::is_number, void>::type
   Hdf5Writer::writeDefault(const std::string &s, const std::vector<U> &x)
   {
     // alias to element type
@@ -135,7 +135,7 @@ namespace Grid
   }
   
   template <typename U>
-  typename std::enable_if<!element<std::vector<U>>::is_arithmetic, void>::type
+  typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
   Hdf5Writer::writeDefault(const std::string &s, const std::vector<U> &x)
   {
     push(s);
@@ -169,7 +169,7 @@ namespace Grid
   void Hdf5Reader::readDefault(const std::string &s, std::string &x);
   
   template <typename U>
-  typename std::enable_if<element<std::vector<U>>::is_arithmetic, void>::type
+  typename std::enable_if<element<std::vector<U>>::is_number, void>::type
   Hdf5Reader::readDefault(const std::string &s, std::vector<U> &x)
   {
     // alias to element type
@@ -222,7 +222,7 @@ namespace Grid
   }
   
   template <typename U>
-  typename std::enable_if<!element<std::vector<U>>::is_arithmetic, void>::type
+  typename std::enable_if<!element<std::vector<U>>::is_number, void>::type
   Hdf5Reader::readDefault(const std::string &s, std::vector<U> &x)
   {
     uint64_t size;

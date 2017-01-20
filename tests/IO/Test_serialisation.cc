@@ -43,10 +43,14 @@ public:
                           bool , b,
                           std::vector<double>, array,
                           std::vector<std::vector<double>>, twodimarray,
+                          std::vector<std::vector<std::vector<Complex>>>, cmplx3darray
                           );
   myclass() {}
   myclass(int i)
-  : array(4,5.1), twodimarray(3,std::vector<double>(2,1.23456)), ve(2, myenum::blue)
+  : array(4,5.1)
+  , twodimarray(3,std::vector<double>(5, 1.23456))
+  , cmplx3darray(3,std::vector<std::vector<Complex>>(5, std::vector<Complex>(7, Complex(1.2, 3.4))))
+  , ve(2, myenum::blue)
   {
     e=myenum::red;
     x=i;

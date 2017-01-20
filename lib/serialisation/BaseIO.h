@@ -68,20 +68,21 @@ namespace Grid {
     return os;
   }
   
-  // Vector element trait //////////////////////////////////////////////////////
+  // Vector element trait //////////////////////////////////////////////////////  
   template <typename T>
   struct element
   {
     typedef T type;
-    static constexpr bool is_arithmetic = false;
+    static constexpr bool is_number = false;
   };
   
   template <typename T>
   struct element<std::vector<T>>
   {
     typedef typename element<T>::type type;
-    static constexpr bool is_arithmetic = std::is_arithmetic<T>::value
-                                          or element<T>::is_arithmetic;
+    static constexpr bool is_number = std::is_arithmetic<T>::value
+                                      or is_complex<T>::value
+                                      or element<T>::is_number;
   };
   
   // Vector flatening utility class ////////////////////////////////////////////
