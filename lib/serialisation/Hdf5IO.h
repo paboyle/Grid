@@ -177,22 +177,17 @@ namespace Grid
     
     // read the dimensions
     H5NS::DataSpace       dataSpace;
-    H5E_auto2_t           func;
-    void *                client_data;
     std::vector<hsize_t>  hdim;
     std::vector<size_t>   dim;
     hsize_t               size = 1;
     
-    H5NS::Exception::getAutoPrint(func, &client_data);
-    try
+    if (group_.attrExists(s))
     {
-      H5NS::Exception::dontPrint();
-      dataSpace = group_.openDataSet(s).getSpace();
-    }
-    catch (H5NS::Exception &e)
-    {
-      H5NS::Exception::setAutoPrint(func, client_data);
       dataSpace = group_.openAttribute(s).getSpace();
+    }
+    else
+    {
+      dataSpace = group_.openDataSet(s).getSpace();
     }
     hdim.resize(dataSpace.getSimpleExtentNdims());
     dataSpace.getSimpleExtentDims(hdim.data());
