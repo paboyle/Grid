@@ -99,10 +99,12 @@ public:
     // loop on configurations
     void configLoop(void);
 private:
+    // environment shortcut
+    Environment & env(void) const;
+private:
     long unsigned int         locVol_;
     std::string               parameterFileName_{""};
     GlobalPar                 par_;
-    Environment               &env_;
     std::vector<unsigned int> program_;
     Environment::Size         memPeak_;
     bool                      scheduled_{false};
@@ -115,14 +117,14 @@ private:
 template <typename M>
 void Application::createModule(const std::string name)
 {
-    env_.createModule<M>(name);
+    env().createModule<M>(name);
 }
 
 template <typename M>
 void Application::createModule(const std::string name,
                                const typename M::Par &par)
 {
-    env_.createModule<M>(name, par);
+    env().createModule<M>(name, par);
 }
 
 END_HADRONS_NAMESPACE
