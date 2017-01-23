@@ -144,10 +144,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define VMADDSUBMEM(O,P,B,accum) VMADDSUBMEMd(O,P,B,accum)
 #define VMADDMEM(O,P,B,accum)    VMADDMEMd(O,P,B,accum)
 #define VMULMEM(O,P,B,accum)     VMULMEMd(O,P,B,accum)
+#undef VMADDRDUP   
 #undef VMADDSUBRDUP   
 #undef VMADDSUBIDUP   
 #undef VMULRDUP   
 #undef VMULIDUP   
+#define VMADDRDUP(O,P,B,accum)    VMADDRDUPd(O,P,B,accum) 
 #define VMADDSUBRDUP(O,P,B,accum) VMADDSUBRDUPd(O,P,B,accum) 
 #define VMADDSUBIDUP(O,P,B,accum) VMADDSUBIDUPd(O,P,B,accum) 
 #define VMULRDUP(O,P,B,accum)     VMULRDUPd(O,P,B,accum)      

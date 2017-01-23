@@ -220,6 +220,14 @@ namespace Optimization {
     }
   };
   
+  struct MultRealPart{
+    // Complex double
+    inline vector4double operator()(vector4double a, vector4double b){
+  //      return vec_xmul(b, a);
+        return vec_xmul(a, b);
+    }
+    FLOAT_WRAP_2(operator(), inline)
+  };
   struct MultComplex{
     // Complex double
     inline vector4double operator()(vector4double a, vector4double b){
@@ -430,6 +438,7 @@ typedef Optimization::Sub         SubSIMD;
 typedef Optimization::Mult        MultSIMD;
 typedef Optimization::Div         DivSIMD;
 typedef Optimization::MultComplex MultComplexSIMD;
+typedef Optimization::MultRealPart MultRealPartSIMD;
 typedef Optimization::Conj        ConjSIMD;
 typedef Optimization::TimesMinusI TimesMinusISIMD;
 typedef Optimization::TimesI      TimesISIMD;

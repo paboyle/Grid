@@ -147,7 +147,7 @@ void TSeqGamma<FImpl>::execute(void)
     g  = makeGammaProd(par().gamma);
     p  = strToVec<Real>(par().mom);
     ph = zero;
-    for(unsigned int mu = 0; mu < Nd; mu++)
+    for(unsigned int mu = 0; mu < env().getNd(); mu++)
     {
         LatticeCoordinate(coor, mu);
         ph = ph + p[mu]*coor;
