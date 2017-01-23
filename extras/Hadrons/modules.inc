@@ -12,6 +12,7 @@ modules_hpp =\
   Modules/MGauge/Random.hpp \
   Modules/MGauge/Unit.hpp \
   Modules/MLoop/NoiseLoop.hpp \
+  Modules/MSink/Wall.hpp \
   Modules/MSolver/RBPrecCG.hpp \
   Modules/MSource/Point.hpp \
   Modules/MSource/SeqGamma.hpp \
