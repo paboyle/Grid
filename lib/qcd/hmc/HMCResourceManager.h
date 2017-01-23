@@ -115,14 +115,18 @@ class HMCResourceManager {
       ObservablesList.emplace_back(ObsFactory.create(obs_type, Read));
       ObservablesList[ObservablesList.size() - 1]->print_parameters();
     } while (Read.nextElement(observable_string));
-    std::cout << "Size of ObservablesList " << ObservablesList.size()
-              << std::endl;
     Read.pop();
 
     // Loop on levels
-    Read.push("Actions");
+    if(!Read.push("Actions")){
+      std::cout << "Actions not found" << std::endl; 
+      exit(1);
+    }
 
-    Read.push("Level");// push must check if the node exist
+    if(!Read.push("Level")){// push must check if the node exist
+         std::cout << "Level not found" << std::endl; 
+      exit(1);
+    }
     do
     {
       fill_ActionsLevel(Read); 
@@ -267,11 +271,12 @@ private:
       auto &ActionFactory = HMC_LGTActionModuleFactory<gauge_string, ReaderClass>::getInstance(); 
       std::string action_type;
       Read.readDefault("name", action_type);
-      std::cout << ActionFactory.getBuilderList() << std::endl;  
+      std::cout << ActionFactory.getBuilderList() << std::endl;  // temporary
       ActionsList.emplace(m, ActionFactory.create(action_type, Read));
     } while (Read.nextElement("Action"));
+    ActionsList.find(m)->second->print_parameters();    
+    Read.pop();
 
-    ActionsList.find(m)->second->print_parameters();
   }
 
 

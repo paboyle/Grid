@@ -242,7 +242,6 @@ class TwoFlavourFModule: public PseudoFermionModuleBase<Impl, TwoFlavourPseudoFe
    TwoFlavourFModule(Reader<ReaderClass>& R): PseudoFermionModuleBase<Impl, TwoFlavourPseudoFermionAction>(R) {
     this->getSolverOperator(R, solver_mod, "Solver");
     this->getFermionOperator(R, fop_mod, "Operator");
-    R.pop();
    } 
 
   // acquire resource
@@ -272,13 +271,45 @@ class TwoFlavourEOFModule: public PseudoFermionModuleBase<Impl, TwoFlavourEvenOd
    TwoFlavourEOFModule(Reader<ReaderClass>& R): PseudoFermionModuleBase<Impl, TwoFlavourEvenOddPseudoFermionAction>(R) {
     this->getSolverOperator(R, solver_mod, "Solver");
     this->getFermionOperator(R, fop_mod, "Operator");
-    R.pop();
    } 
 
   // acquire resource
   virtual void initialize() {
     // here temporarily assuming that the force and action solver are the same
     this->ActionPtr.reset(new TwoFlavourEvenOddPseudoFermionAction<Impl>(*(this->fop_mod->getPtr()), *(this->solver_mod->getPtr()), *(this->solver_mod->getPtr())));
+  }
+
+};
+
+
+template <class Impl >
+class TwoFlavourRatioFModule: public PseudoFermionModuleBase<Impl, TwoFlavourRatioPseudoFermionAction>{
+  typedef PseudoFermionModuleBase<Impl, TwoFlavourRatioPseudoFermionAction> Base;
+  using Base::Base;
+
+  typename Base::operator_type fop_numerator_mod;
+  typename Base::operator_type fop_denominator_mod;
+  typename Base::solver_type   solver_mod;
+
+ public:
+  virtual void acquireResource(typename Base::Resource& GridMod){
+    fop_numerator_mod->AddGridPair(GridMod);
+    fop_denominator_mod->AddGridPair(GridMod);
+  }
+
+   // constructor
+   template <class ReaderClass>
+   TwoFlavourRatioFModule(Reader<ReaderClass>& R): PseudoFermionModuleBase<Impl, TwoFlavourRatioPseudoFermionAction>(R) {
+    this->getSolverOperator(R, solver_mod, "Solver");
+    this->getFermionOperator(R, fop_numerator_mod, "Numerator");
+    this->getFermionOperator(R, fop_denominator_mod, "Denominator");
+   } 
+
+  // acquire resource
+  virtual void initialize() {
+    // here temporarily assuming that the force and action solver are the same
+    this->ActionPtr.reset(new TwoFlavourRatioPseudoFermionAction<Impl>(*(this->fop_numerator_mod->getPtr()), 
+      *(this->fop_denominator_mod->getPtr()), *(this->solver_mod->getPtr()), *(this->solver_mod->getPtr())));
   }
 
 };
@@ -346,6 +377,7 @@ static Registrar<QCD::PlaqPlusRectangleGMod, HMC_LGTActionModuleFactory<gauge_st
 
 // FIXME more general implementation
 static Registrar<QCD::TwoFlavourFModule<QCD::WilsonImplR> , HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __TwoFlavourFmodXMLInit("TwoFlavours"); 
+static Registrar<QCD::TwoFlavourRatioFModule<QCD::WilsonImplR> , HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __TwoFlavourRatioFmodXMLInit("TwoFlavoursRatio"); 
 static Registrar<QCD::TwoFlavourEOFModule<QCD::WilsonImplR> , HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __TwoFlavourEOFmodXMLInit("TwoFlavoursEvenOdd"); 
 
 

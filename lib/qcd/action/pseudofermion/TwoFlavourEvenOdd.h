@@ -144,7 +144,6 @@ namespace Grid {
       //
       //////////////////////////////////////////////////////
       virtual void deriv(const GaugeField &U,GaugeField & dSdU) {
-      	std::cout << GridLogDebug << "Calling deriv" << std::endl;
 	FermOp.ImportGauge(U);
 
 	FermionField X(FermOp.FermionRedBlackGrid());
@@ -158,16 +157,9 @@ namespace Grid {
 
 	X=zero;
 	DerivativeSolver(Mpc,PhiOdd,X);
-        std::cout << GridLogDebug << "Calling deriv 2 " << std::endl;
 	Mpc.Mpc(X,Y);
-                std::cout << GridLogDebug << "Calling deriv 3 " << std::endl;
-  	Mpc.MpcDeriv(tmp , Y, X );  
-                   std::cout << GridLogDebug << "Calling deriv 4 " << std::endl;
-          dSdU=tmp;
-                std::cout << GridLogDebug << "Calling deriv 5 " << std::endl;
-	Mpc.MpcDagDeriv(tmp , X, Y);  dSdU=dSdU+tmp;
-
-        std::cout << GridLogDebug << "Calling deriv 6" << std::endl;
+  	Mpc.MpcDeriv(tmp , Y, X );    dSdU=tmp;
+        Mpc.MpcDagDeriv(tmp , X, Y);  dSdU=dSdU+tmp;
 
 	// Treat the EE case. (MdagM)^-1 = Minv Minvdag
 	// Deriv defaults to zero.

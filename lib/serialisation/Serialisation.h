@@ -36,10 +36,10 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include "BinaryIO.h"
 #include "TextIO.h"
 #include "XmlIO.h"
+#include "JSON_IO.h"
 //////////////////////////////////////////
 // Todo:
 //////////////////////////////////////////
-//#include "JsonIO.h"
 //#include "YamlIO.h"
 
 //////////////////////////////////////////
