@@ -118,11 +118,11 @@ void TMeson<FImpl1, FImpl2>::execute(void)
     std::vector<TComplex> buf;
     Result                result;
     
-    g5 = makeGammaProd(Ns*Ns - 1);
+    //g5 = makeGammaProd(Ns*Ns - 1);
     result.corr.resize(Ns*Ns);
     for (unsigned int i = 0; i < Ns*Ns; ++i)
     {
-        g[i] = makeGammaProd(i);
+        //g[i] = makeGammaProd(i);
     }
     for (unsigned int iSink = 0; iSink < Ns*Ns; ++iSink)
     {

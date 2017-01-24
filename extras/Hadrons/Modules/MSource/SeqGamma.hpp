@@ -144,7 +144,7 @@ void TSeqGamma<FImpl>::execute(void)
     std::vector<Real>          p;
     Complex                    i(0.0,1.0);
     
-    g  = makeGammaProd(par().gamma);
+    //g  = makeGammaProd(par().gamma);
     p  = strToVec<Real>(par().mom);
     ph = zero;
     for(unsigned int mu = 0; mu < env().getNd(); mu++)

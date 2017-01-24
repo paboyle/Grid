@@ -503,11 +503,11 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const Fe
   typedef iSinglet<ScalComplex> Tcomplex;
   typedef Lattice<iSinglet<vector_type> > LatComplex;
   
-  Gamma::GammaMatrix Gmu [] = {
-    Gamma::GammaX,
-    Gamma::GammaY,
-    Gamma::GammaZ,
-    Gamma::GammaT
+  Gamma::Algebra Gmu [] = {
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT
   };
 
   std::vector<int> latt_size   = _grid->_fdimensions;
@@ -574,11 +574,11 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const Fe
 template<class Impl>
 void WilsonFermion5D<Impl>::MomentumSpacePropagatorHw(FermionField &out,const FermionField &in,RealD mass) 
 {
-    Gamma::GammaMatrix Gmu [] = {
-      Gamma::GammaX,
-      Gamma::GammaY,
-      Gamma::GammaZ,
-      Gamma::GammaT
+    Gamma::Algebra Gmu [] = {
+      Gamma::Algebra::GammaX,
+      Gamma::Algebra::GammaY,
+      Gamma::Algebra::GammaZ,
+      Gamma::Algebra::GammaT
     };
 
     GridBase *_grid = _FourDimGrid;
