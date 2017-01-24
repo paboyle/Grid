@@ -109,38 +109,36 @@ THE SOFTWARE.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define GRID_MACRO_MEMBER(A,B)        A B;
+#define GRID_MACRO_COMP_MEMBER(A,B) result = (result and (lhs. B == rhs. B));
 #define GRID_MACRO_OS_WRITE_MEMBER(A,B) os<< #A <<" "#B <<" = "<< obj. B <<" ; " <<std::endl;
 #define GRID_MACRO_READ_MEMBER(A,B) Grid::read(RD,#B,obj. B);
 #define GRID_MACRO_WRITE_MEMBER(A,B) Grid::write(WR,#B,obj. B);
 
-#define GRID_SERIALIZABLE_CLASS_MEMBERS(cname,...)		\
-\
-\
-GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_MEMBER,__VA_ARGS__))		\
-\
-\
+#define GRID_SERIALIZABLE_CLASS_MEMBERS(cname,...)\
+GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_MEMBER,__VA_ARGS__))\
 template <typename T>\
 static inline void write(Writer<T> &WR,const std::string &s, const cname &obj){ \
   push(WR,s);\
   GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_WRITE_MEMBER,__VA_ARGS__))	\
   pop(WR);\
-} \
-\
-\
+}\
 template <typename T>\
 static inline void read(Reader<T> &RD,const std::string &s, cname &obj){	\
   push(RD,s);\
   GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_READ_MEMBER,__VA_ARGS__))	\
   pop(RD);\
-} \
-\
-\
+}\
 friend inline std::ostream & operator << (std::ostream &os, const cname &obj ) { \
   os<<"class "<<#cname<<" {"<<std::endl;\
   GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_OS_WRITE_MEMBER,__VA_ARGS__))	\
     os<<"}";								\
   return os;\
-};  
+}\
+friend inline bool operator==(const cname &lhs, const cname &rhs) {\
+  bool result = true;\
+  GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_COMP_MEMBER,__VA_ARGS__))\
+  return result;\
+}
 
 #define GRID_ENUM_TYPE(obj) std::remove_reference<decltype(obj)>::type
 #define GRID_MACRO_ENUMVAL(A,B) A = B,
@@ -149,7 +147,7 @@ friend inline std::ostream & operator << (std::ostream &os, const cname &obj ) {
 #define GRID_MACRO_ENUMCASEIO(A,B) case GRID_ENUM_TYPE(obj)::A: os << #A; break;
 
 #define GRID_SERIALIZABLE_ENUM(name,undefname,...)\
-class name: public Serializable\
+class name: public Grid::Serializable\
 {\
 public:\
   enum EnumType\
@@ -161,7 +159,7 @@ public:\
   name(void): value_(undefname) {};\
   name(EnumType value): value_(value) {};\
   template <typename T>\
-  static inline void write(Writer<T> &WR,const std::string &s, const name &obj)\
+  static inline void write(Grid::Writer<T> &WR,const std::string &s, const name &obj)\
   {\
     switch (obj.value_)\
     {\
@@ -171,7 +169,7 @@ public:\
   }\
   \
   template <typename T>\
-  static inline void read(Reader<T> &RD,const std::string &s, name &obj)\
+  static inline void read(Grid::Reader<T> &RD,const std::string &s, name &obj)\
   {\
     std::string buf;\
     Grid::read(RD, s, buf);\
