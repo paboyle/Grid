@@ -89,6 +89,18 @@ namespace Grid{
       };
 
       virtual std::string action_name(){return "OneFlavourEvenOddRatioRationalPseudoFermionAction";}
+
+      virtual std::string LogParameters(){
+	std::stringstream sstream;
+	sstream << GridLogMessage << "["<<action_name()<<"] Low            :" << param.lo <<  std::endl;
+	sstream << GridLogMessage << "["<<action_name()<<"] High           :" << param.hi <<  std::endl;
+	sstream << GridLogMessage << "["<<action_name()<<"] Max iterations :" << param.MaxIter <<  std::endl;
+	sstream << GridLogMessage << "["<<action_name()<<"] Tolerance      :" << param.tolerance <<  std::endl;
+	sstream << GridLogMessage << "["<<action_name()<<"] Degree         :" << param.degree <<  std::endl;
+	sstream << GridLogMessage << "["<<action_name()<<"] Precision      :" << param.precision <<  std::endl;
+	return sstream.str();
+      }
+      
       
       virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG) {
 

@@ -69,6 +69,13 @@ namespace Grid{
         };
 
       virtual std::string action_name(){return "TwoFlavourEvenOddRatioPseudoFermionAction";}
+
+      virtual std::string LogParameters(){
+	std::stringstream sstream;
+	sstream << GridLogMessage << "["<<action_name()<<"] has no parameters" << std::endl;
+	return sstream.str();
+      } 
+
       
       virtual void refresh(const GaugeField &U, GridParallelRNG& pRNG) {
 

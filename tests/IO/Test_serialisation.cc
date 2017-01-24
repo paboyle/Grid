@@ -49,7 +49,7 @@ namespace Grid {
     
     myclass() {}
     myclass(int i)
-    : array(4,5.1), twodimarray(3,std::vector<double>(2,1.23456)), ve(2, myenum::blue)
+      : array(4,5.1), twodimarray(3,std::vector<double>(2,1.23456)), ve({myenum::blue, myenum::red})
     {
       e=myenum::red;
       x=i;
@@ -202,5 +202,13 @@ int main(int argc,char **argv)
     std::cout << jcopy1 << std::endl << jveccopy1 << std::endl;
   }
   
+  {
+    // Testing the next element function
+    JSONReader RD("test.json");
+    RD.push("grid");
+    RD.push("Observable");
+    std::string name;
+    read(RD,"name", name);
+  }
   
 }

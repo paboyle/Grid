@@ -84,6 +84,8 @@ namespace Grid
     std::vector<json>   jold_;  // previous json object
     std::string         fileName_;
     std::vector<bool>   do_pop;
+    json::iterator      it_;
+    json::iterator      it_end_;
   };
   
   // Writer template implementation ////////////////////////////////////////////
@@ -125,12 +127,7 @@ namespace Grid
   template <typename U>
   void JSONReader::readDefault(const std::string &s, U &output)
   {
-    //std::string buf;
     std::cout << "JSONReader::readDefault(U) : " << s << "  :  "<< jcur_ << std::endl;
-    //readDefault(s, output);
-
-    //std::cout << s << "   " << buf << std::endl;
-    //fromString(output, buf);
   
     if (s.size()){
       std::cout << "String: "<< jcur_[s] << std::endl;
@@ -164,6 +161,7 @@ namespace Grid
       output.resize(i + 1);
       read("", output[i++]);
     }
+    
 
     jcur_ = j;
     if (s.size())

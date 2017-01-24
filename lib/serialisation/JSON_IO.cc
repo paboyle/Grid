@@ -106,15 +106,15 @@ bool JSONReader::push(const string &s)
       std::cout << "out of range: " << e.what() << '\n';
       return false;
     }
-
     cout << "JSONReader::push : " << s << " : "<< jcur_ << endl;
-    return true;
   }
   else
   {
     do_pop.push_back(false);
-    return true;
   }
+
+
+  return true;
 }
 
 void JSONReader::pop(void)
@@ -134,19 +134,17 @@ bool JSONReader::nextElement(const std::string &s)
 {
   // JSON dictionaries do not support multiple names 
   // Same name objects must be packed in vectors
-  cout << "JSONReader::nextElement(string) : " << s << " : "<< jcur_ << endl;
-  /*
-  if (node_.next_sibling(s.c_str()))
-    {
-      node_ = node_.next_sibling(s.c_str());
-      
-      return true;
-    }
-  else
-    {
-      return false;
-    }
-*/
+  ++it_;
+  
+  //if (it_ == it_end_){
+  //  return false;
+  //}
+
+  jcur_ = *it_; 
+  //cout << "JSONReader::nextElement(string) : " << s << " : "<< jcur_ << endl;
+  //return true;
+
+    return false;
 }
 
 template <>

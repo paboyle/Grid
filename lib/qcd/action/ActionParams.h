@@ -45,15 +45,20 @@ namespace QCD {
       WilsonImplParams() : overlapCommsCompute(false) {};
     };
 
-    struct OneFlavourRationalParams { 
-      RealD  lo;
-      RealD  hi;
-      int MaxIter;   // Vector?
-      RealD tolerance; // Vector? 
-      int    degree=10;
-      int precision=64;
+  struct OneFlavourRationalParams : Serializable {
+      GRID_SERIALIZABLE_CLASS_MEMBERS(OneFlavourRationalParams,
+				      RealD,  lo,
+				      RealD,  hi,
+				      int, MaxIter,   
+				      RealD, tolerance, 
+				      int,    degree,
+				      int, precision);
 
-      OneFlavourRationalParams (RealD _lo,RealD _hi,int _maxit,RealD tol=1.0e-8,int _degree = 10,int _precision=64) :
+      // MaxIter and tolerance, vectors??
+  public:
+      OneFlavourRationalParams (RealD _lo   = 0.0,  RealD _hi      = 0.0 ,
+				int _maxit  = 1000, RealD tol      = 1.0e-8,
+				int _degree = 10,   int _precision = 64) :
         lo(_lo), hi(_hi), MaxIter(_maxit), tolerance(tol), degree(_degree), precision(_precision)
       {};
     };
