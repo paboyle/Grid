@@ -152,14 +152,14 @@ friend inline std::ostream & operator << (std::ostream &os, const cname &obj ) {
 class name: public Serializable\
 {\
 public:\
-  enum EnumType\
+  enum\
   {\
     GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_ENUMVAL,__VA_ARGS__))\
     undefname = -1\
   };\
 public:\
   name(void): value_(undefname) {};\
-  name(EnumType value): value_(value) {};\
+  name(int value): value_(value) {};\
   template <typename T>\
   static inline void write(Writer<T> &WR,const std::string &s, const name &obj)\
   {\
@@ -179,7 +179,7 @@ public:\
     GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_ENUMTEST,__VA_ARGS__))\
     else {obj = name::undefname;}\
   }\
-  inline operator EnumType(void) const\
+  inline operator int(void) const\
   {\
     return value_;\
   }\
@@ -192,7 +192,7 @@ public:\
     return os;\
   }\
 private:\
-  EnumType value_;\
+  int value_;\
 };
 
 
