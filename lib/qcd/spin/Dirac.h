@@ -208,10 +208,10 @@ inline void rmultMinusGammaTGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype,
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
-    ret(i, 0) = rhs(i, 2);
-    ret(i, 1) = rhs(i, 3);
-    ret(i, 2) = -rhs(i, 0);
-    ret(i, 3) = -rhs(i, 1);
+    ret(i, 0) = -rhs(i, 2);
+    ret(i, 1) = -rhs(i, 3);
+    ret(i, 2) = rhs(i, 0);
+    ret(i, 3) = rhs(i, 1);
   }
 };
 
@@ -241,10 +241,10 @@ inline void rmultGammaTGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
-    ret(i, 0) = -rhs(i, 2);
-    ret(i, 1) = -rhs(i, 3);
-    ret(i, 2) = rhs(i, 0);
-    ret(i, 3) = rhs(i, 1);
+    ret(i, 0) = rhs(i, 2);
+    ret(i, 1) = rhs(i, 3);
+    ret(i, 2) = -rhs(i, 0);
+    ret(i, 3) = -rhs(i, 1);
   }
 };
 
@@ -274,10 +274,10 @@ inline void rmultMinusGammaX(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
-    ret(i, 0) = timesMinusI(rhs(i, 3));
-    ret(i, 1) = timesMinusI(rhs(i, 2));
-    ret(i, 2) = timesI(rhs(i, 1));
-    ret(i, 3) = timesI(rhs(i, 0));
+    ret(i, 0) = timesI(rhs(i, 3));
+    ret(i, 1) = timesI(rhs(i, 2));
+    ret(i, 2) = timesMinusI(rhs(i, 1));
+    ret(i, 3) = timesMinusI(rhs(i, 0));
   }
 };
 
@@ -307,10 +307,10 @@ inline void rmultGammaX(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
-    ret(i, 0) = timesI(rhs(i, 3));
-    ret(i, 1) = timesI(rhs(i, 2));
-    ret(i, 2) = timesMinusI(rhs(i, 1));
-    ret(i, 3) = timesMinusI(rhs(i, 0));
+    ret(i, 0) = timesMinusI(rhs(i, 3));
+    ret(i, 1) = timesMinusI(rhs(i, 2));
+    ret(i, 2) = timesI(rhs(i, 1));
+    ret(i, 3) = timesI(rhs(i, 0));
   }
 };
 
@@ -472,10 +472,10 @@ inline void rmultMinusGammaYGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype,
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
-    ret(i, 0) = -rhs(i, 3);
-    ret(i, 1) = rhs(i, 2);
-    ret(i, 2) = -rhs(i, 1);
-    ret(i, 3) = rhs(i, 0);
+    ret(i, 0) = rhs(i, 3);
+    ret(i, 1) = -rhs(i, 2);
+    ret(i, 2) = rhs(i, 1);
+    ret(i, 3) = -rhs(i, 0);
   }
 };
 
@@ -505,10 +505,10 @@ inline void rmultGammaYGamma5(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
-    ret(i, 0) = rhs(i, 3);
-    ret(i, 1) = -rhs(i, 2);
-    ret(i, 2) = rhs(i, 1);
-    ret(i, 3) = -rhs(i, 0);
+    ret(i, 0) = -rhs(i, 3);
+    ret(i, 1) = rhs(i, 2);
+    ret(i, 2) = -rhs(i, 1);
+    ret(i, 3) = rhs(i, 0);
   }
 };
 
@@ -538,10 +538,10 @@ inline void rmultMinusGammaZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
-    ret(i, 0) = timesMinusI(rhs(i, 2));
-    ret(i, 1) = timesI(rhs(i, 3));
-    ret(i, 2) = timesI(rhs(i, 0));
-    ret(i, 3) = timesMinusI(rhs(i, 1));
+    ret(i, 0) = timesI(rhs(i, 2));
+    ret(i, 1) = timesMinusI(rhs(i, 3));
+    ret(i, 2) = timesMinusI(rhs(i, 0));
+    ret(i, 3) = timesI(rhs(i, 1));
   }
 };
 
@@ -571,10 +571,10 @@ inline void rmultGammaZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
-    ret(i, 0) = timesI(rhs(i, 2));
-    ret(i, 1) = timesMinusI(rhs(i, 3));
-    ret(i, 2) = timesMinusI(rhs(i, 0));
-    ret(i, 3) = timesI(rhs(i, 1));
+    ret(i, 0) = timesMinusI(rhs(i, 2));
+    ret(i, 1) = timesI(rhs(i, 3));
+    ret(i, 2) = timesI(rhs(i, 0));
+    ret(i, 3) = timesMinusI(rhs(i, 1));
   }
 };
 
@@ -868,10 +868,10 @@ inline void rmultMinusSigmaXZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
-    ret(i, 0) = rhs(i, 1);
-    ret(i, 1) = -rhs(i, 0);
-    ret(i, 2) = rhs(i, 3);
-    ret(i, 3) = -rhs(i, 2);
+    ret(i, 0) = -rhs(i, 1);
+    ret(i, 1) = rhs(i, 0);
+    ret(i, 2) = -rhs(i, 3);
+    ret(i, 3) = rhs(i, 2);
   }
 };
 
@@ -901,10 +901,10 @@ inline void rmultSigmaXZ(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
-    ret(i, 0) = -rhs(i, 1);
-    ret(i, 1) = rhs(i, 0);
-    ret(i, 2) = -rhs(i, 3);
-    ret(i, 3) = rhs(i, 2);
+    ret(i, 0) = rhs(i, 1);
+    ret(i, 1) = -rhs(i, 0);
+    ret(i, 2) = rhs(i, 3);
+    ret(i, 3) = -rhs(i, 2);
   }
 };
 
@@ -934,10 +934,10 @@ inline void rmultMinusSigmaYT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> 
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
-    ret(i, 0) = rhs(i, 1);
-    ret(i, 1) = -rhs(i, 0);
-    ret(i, 2) = -rhs(i, 3);
-    ret(i, 3) = rhs(i, 2);
+    ret(i, 0) = -rhs(i, 1);
+    ret(i, 1) = rhs(i, 0);
+    ret(i, 2) = rhs(i, 3);
+    ret(i, 3) = -rhs(i, 2);
   }
 };
 
@@ -967,10 +967,10 @@ inline void rmultSigmaYT(iMatrix<vtype, Ns> &ret, const iMatrix<vtype, Ns> &rhs)
 {
   for(unsigned int i = 0; i < Ns; ++i)
   {
-    ret(i, 0) = -rhs(i, 1);
-    ret(i, 1) = rhs(i, 0);
-    ret(i, 2) = rhs(i, 3);
-    ret(i, 3) = -rhs(i, 2);
+    ret(i, 0) = rhs(i, 1);
+    ret(i, 1) = -rhs(i, 0);
+    ret(i, 2) = -rhs(i, 3);
+    ret(i, 3) = rhs(i, 2);
   }
 };
 
