@@ -121,6 +121,9 @@ class NerscCPModule: public CheckPointerModule< ImplementationPolicy> {
 
 };
 
+
+#ifdef HAVE_LIME
+  
 template<class ImplementationPolicy>
 class ILDGCPModule: public CheckPointerModule< ImplementationPolicy> {
   typedef CheckPointerModule< ImplementationPolicy> CPBase;
@@ -133,6 +136,7 @@ class ILDGCPModule: public CheckPointerModule< ImplementationPolicy> {
 
 };
 
+#endif
 
 
 }// QCD temporarily here
@@ -144,8 +148,10 @@ extern char cp_string[];
 // use macros?
 static Registrar<QCD::BinaryCPModule<QCD::PeriodicGimplR>, HMC_CPModuleFactory<cp_string, QCD::PeriodicGimplR, XmlReader> > __CPBinarymodXMLInit("Binary");
 static Registrar<QCD::NerscCPModule<QCD::PeriodicGimplR> , HMC_CPModuleFactory<cp_string, QCD::PeriodicGimplR, XmlReader> > __CPNerscmodXMLInit("Nersc");
-static Registrar<QCD::ILDGCPModule<QCD::PeriodicGimplR>  , HMC_CPModuleFactory<cp_string, QCD::PeriodicGimplR, XmlReader> > __CPILDGmodXMLInit("ILDG");
 
+#ifdef HAVE_LIME
+static Registrar<QCD::ILDGCPModule<QCD::PeriodicGimplR>  , HMC_CPModuleFactory<cp_string, QCD::PeriodicGimplR, XmlReader> > __CPILDGmodXMLInit("ILDG");
+#endif
 
 
 }// Grid
