@@ -231,8 +231,9 @@ class HMCResourceManager {
 
   RegisterLoadCheckPointerFunction(Binary);
   RegisterLoadCheckPointerFunction(Nersc);
+  #ifdef HAVE_LIME
   RegisterLoadCheckPointerFunction(ILDG);
-
+  #endif
 
   ////////////////////////////////////////////////////////
   // Observables
