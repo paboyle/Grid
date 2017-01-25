@@ -105,3 +105,8 @@ lib/fftw/*
 ##################
 m4/lt*
 m4/libtool.m4
+
+# generated sources #
+#####################
+lib/qcd/spin/gamma-gen/*.h
+lib/qcd/spin/gamma-gen/*.cc
