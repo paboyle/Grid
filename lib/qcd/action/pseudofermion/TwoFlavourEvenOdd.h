@@ -158,8 +158,8 @@ namespace Grid {
 	X=zero;
 	DerivativeSolver(Mpc,PhiOdd,X);
 	Mpc.Mpc(X,Y);
-  	Mpc.MpcDeriv(tmp , Y, X );    dSdU=tmp;
-        Mpc.MpcDagDeriv(tmp , X, Y);  dSdU=dSdU+tmp;
+  Mpc.MpcDeriv(tmp , Y, X );    dSdU=tmp;
+  Mpc.MpcDagDeriv(tmp , X, Y);  dSdU=dSdU+tmp;
 
 	// Treat the EE case. (MdagM)^-1 = Minv Minvdag
 	// Deriv defaults to zero.

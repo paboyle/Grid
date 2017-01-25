@@ -88,7 +88,7 @@ class HMCResourceManager {
     AddGrid("gauge", GridMod);
 
     // Checkpointer
-    auto &CPfactory = HMC_CPModuleFactory<cp_string, QCD::PeriodicGimplR, ReaderClass >::getInstance();
+    auto &CPfactory = HMC_CPModuleFactory<cp_string, ImplementationPolicy, ReaderClass >::getInstance();
     Read.push("Checkpointer");
     std::string cp_type;
     read(Read,"name", cp_type);
