@@ -78,7 +78,7 @@ namespace Grid
     pugi::xml_node     node_;
     std::string        fileName_;
   };
-  
+
   template <>
   struct isReader< XmlReader > {
     static const bool value = true;
@@ -88,9 +88,7 @@ namespace Grid
   struct isWriter<XmlWriter > {
     static const bool value = true;
   };
-
-
-
+  
   // Writer template implementation ////////////////////////////////////////////
   template <typename U>
   void XmlWriter::writeDefault(const std::string &s, const U &x)

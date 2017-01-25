@@ -68,15 +68,22 @@ void JSONWriter::delete_comma()
   ss_.str(dlast);
 }
 
-
-template<>
-void JSONWriter::writeDefault(const std::string &s, const std::string &x){
-  if (s.size())
-  ss_ << "\""<< s << "\" : \"" << x << "\" ," ; 
-  else
-    ss_ << "\"" << x << "\" ," ;
-}
-
+// here we are hitting a g++ bug (Bug 56480)
+// compiles fine with clang
+// have to wrap in the Grid namespace
+// annoying, but necessary for TravisCI
+namespace Grid
+{
+  template<>
+  void JSONWriter::writeDefault(const std::string &s,
+				const std::string &x)
+  {
+    if (s.size())
+      ss_ << "\""<< s << "\" : \"" << x << "\" ," ; 
+    else
+      ss_ << "\"" << x << "\" ," ;
+  }
+}// namespace Grid 
 
 
 // Reader implementation ///////////////////////////////////////////////////////

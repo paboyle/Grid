@@ -8,6 +8,7 @@
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -182,6 +183,16 @@ namespace Grid {
     T *upcast;
   };
 
+   // What is the vtype
+  template<typename T> struct isReader {
+    static const bool value = false;
+  };
+  template<typename T> struct isWriter {
+    static const bool value = false;
+  }; 
+
+
+
   // Generic writer interface
   // serializable base class
   class Serializable
@@ -326,7 +337,6 @@ namespace Grid {
   }
   
   // Generic writer interface //////////////////////////////////////////////////
->>>>>>> develop
   template <typename T>
   inline void push(Writer<T> &w, const std::string &s) {
     w.push(s);

@@ -87,6 +87,16 @@ namespace Grid
     json::iterator      it_;
     json::iterator      it_end_;
   };
+
+  template <>
+  struct isReader< JSONReader > {
+    static const bool value = true;
+  };
+
+  template <>
+  struct isWriter< JSONWriter > {
+    static const bool value = true;
+  };
   
   // Writer template implementation ////////////////////////////////////////////
   template <typename U>
