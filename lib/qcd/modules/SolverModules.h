@@ -136,6 +136,8 @@ class ConjugateResidualModule: public SolverModule<ConjugateResidual, Field, Sol
 };
 
 extern char solver_string[];
+
+/*
 // Now a specific registration with a fermion field
 static Registrar< ConjugateGradientModule<QCD::WilsonFermionR::FermionField>,   
                   HMC_SolverModuleFactory<solver_string, QCD::WilsonFermionR::FermionField, XmlReader> > __CGWFmodXMLInit("ConjugateGradientWF"); 
@@ -143,7 +145,7 @@ static Registrar< ConjugateResidualModule<QCD::WilsonFermionR::FermionField>,
                   HMC_SolverModuleFactory<solver_string, QCD::WilsonFermionR::FermionField, XmlReader> > __CRWFmodXMLInit("ConjugateResidualWF"); 
 
 
-
+*/
 
 
 } // Grid

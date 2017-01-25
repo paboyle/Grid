@@ -204,6 +204,8 @@ class DomainWallFermionModule: public FermionOperatorModule<DomainWallFermion, F
 
 
 // Now a specific registration with a fermion field
+
+/*
 static Registrar< WilsonFermionModule<WilsonImplR>,   
                   HMC_FermionOperatorModuleFactory<fermionop_string, WilsonImplR, XmlReader> > __WilsonFOPmodXMLInit("Wilson"); 
 static Registrar< MobiusFermionModule<WilsonImplR>,   
@@ -211,7 +213,7 @@ static Registrar< MobiusFermionModule<WilsonImplR>,
 static Registrar< DomainWallFermionModule<WilsonImplR>,   
                   HMC_FermionOperatorModuleFactory<fermionop_string, WilsonImplR, XmlReader> > __DWFOPmodXMLInit("DomainWall");
 
-
+*/
 
 
 

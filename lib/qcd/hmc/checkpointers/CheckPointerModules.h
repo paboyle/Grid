@@ -144,7 +144,7 @@ class ILDGCPModule: public CheckPointerModule< ImplementationPolicy> {
 
 extern char cp_string[];
 
-
+/*
 // use macros?
 static Registrar<QCD::BinaryCPModule<QCD::PeriodicGimplR>, HMC_CPModuleFactory<cp_string, QCD::PeriodicGimplR, XmlReader> > __CPBinarymodXMLInit("Binary");
 static Registrar<QCD::NerscCPModule<QCD::PeriodicGimplR> , HMC_CPModuleFactory<cp_string, QCD::PeriodicGimplR, XmlReader> > __CPNerscmodXMLInit("Nersc");
@@ -152,7 +152,7 @@ static Registrar<QCD::NerscCPModule<QCD::PeriodicGimplR> , HMC_CPModuleFactory<c
 #ifdef HAVE_LIME
 static Registrar<QCD::ILDGCPModule<QCD::PeriodicGimplR>  , HMC_CPModuleFactory<cp_string, QCD::PeriodicGimplR, XmlReader> > __CPILDGmodXMLInit("ILDG");
 #endif
-
+*/
 
 }// Grid
 #endif //CP_MODULES_H

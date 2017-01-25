@@ -518,7 +518,10 @@ class HMC_LGTActionModuleFactory
   }
 };
 
+
+
 extern char gauge_string[];
+/*
 static Registrar<QCD::WilsonGMod,            HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __WGmodXMLInit("Wilson"); 
 static Registrar<QCD::SymanzikGMod,          HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __SymGmodXMLInit("Symanzik"); 
 static Registrar<QCD::IwasakiGMod,           HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __IwGmodXMLInit("Iwasaki"); 
@@ -538,7 +541,7 @@ static Registrar<QCD::OneFlavourRatioFModule<QCD::WilsonImplR> , HMC_LGTActionMo
 static Registrar<QCD::OneFlavourRatioEOFModule<QCD::WilsonImplR> , HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __OneFlavourRatioEOFmodXMLInit("OneFlavourEvenOddRatio"); 
 
 
-
+*/
 
 // add here the registration for other implementations and readers
 

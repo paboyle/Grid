@@ -218,7 +218,8 @@ class Registrar {
 
 
 extern char observable_string[];
-static Registrar<QCD::PlaquetteMod<QCD::PeriodicGimplR>, HMC_ObservablesModuleFactory<observable_string, XmlReader> > __OBSPLmodXMLInit("Plaquette"); 
+
+//static Registrar<QCD::PlaquetteMod<QCD::PeriodicGimplR>, HMC_ObservablesModuleFactory<observable_string, XmlReader> > __OBSPLmodXMLInit("Plaquette"); 
 
 }
 
