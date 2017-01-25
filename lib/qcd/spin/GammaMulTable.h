@@ -1056,3 +1056,38 @@ Gamma::mul = {{
    Gamma::Algebra::Identity,
    Gamma::Algebra::MinusIdentity}
 }};
+
+const std::array<Gamma::Algebra, Gamma::nGamma> Gamma::adj = {
+  Gamma::Algebra::MinusGamma5,
+  Gamma::Algebra::Gamma5,
+  Gamma::Algebra::MinusGammaT,
+  Gamma::Algebra::GammaT,
+  Gamma::Algebra::GammaTGamma5,
+  Gamma::Algebra::MinusGammaTGamma5,
+  Gamma::Algebra::MinusGammaX,
+  Gamma::Algebra::GammaX,
+  Gamma::Algebra::GammaXGamma5,
+  Gamma::Algebra::MinusGammaXGamma5,
+  Gamma::Algebra::MinusGammaY,
+  Gamma::Algebra::GammaY,
+  Gamma::Algebra::GammaYGamma5,
+  Gamma::Algebra::MinusGammaYGamma5,
+  Gamma::Algebra::MinusGammaZ,
+  Gamma::Algebra::GammaZ,
+  Gamma::Algebra::GammaZGamma5,
+  Gamma::Algebra::MinusGammaZGamma5,
+  Gamma::Algebra::MinusIdentity,
+  Gamma::Algebra::Identity,
+  Gamma::Algebra::SigmaXT,
+  Gamma::Algebra::MinusSigmaXT,
+  Gamma::Algebra::SigmaXY,
+  Gamma::Algebra::MinusSigmaXY,
+  Gamma::Algebra::SigmaXZ,
+  Gamma::Algebra::MinusSigmaXZ,
+  Gamma::Algebra::SigmaYT,
+  Gamma::Algebra::MinusSigmaYT,
+  Gamma::Algebra::SigmaYZ,
+  Gamma::Algebra::MinusSigmaYZ,
+  Gamma::Algebra::SigmaZT,
+  Gamma::Algebra::MinusSigmaZT
+};

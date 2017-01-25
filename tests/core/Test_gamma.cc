@@ -160,11 +160,24 @@ void checkMat(const Gamma::Algebra a, GridSerialRNG &rng)
 void checkProd(const Gamma::Algebra a, const Gamma::Algebra b)
 {
   SpinMatrix gm, testg = testAlgebra[a]*testAlgebra[b];
-  Gamma      ga(a), gb(b), g = ga*gb;
+  Gamma      g = Gamma(a)*Gamma(b);
   bool       pass = true;
   
   std::cout << GridLogMessage << "Checking " << Gamma::name[a] << " * "
             << Gamma::name[b] << ": ";
+  gm = 1.0;
+  gm = g*gm;
+  test(gm, testg);
+  std::cout << "(= " << Gamma::name[g.g] << ")" << std::endl;
+}
+
+void checkAdj(const Gamma::Algebra a)
+{
+  SpinMatrix gm, testg = adj(testAlgebra[a]);
+  Gamma      g(adj(Gamma(a)));
+  bool       pass = true;
+  
+  std::cout << GridLogMessage << "Checking adj(" << Gamma::name[a] << "): ";
   gm = 1.0;
   gm = g*gm;
   test(gm, testg);
@@ -227,8 +240,15 @@ int main(int argc, char *argv[])
     checkProd(i, j);
   }
   std::cout << GridLogMessage << std::endl;
+  std::cout << GridLogMessage << "======== Adjoints check" << std::endl;
+  for (int i = 0; i < Gamma::nGamma; ++i)
+  {
+    checkAdj(i);
+  }
+  std::cout << GridLogMessage << std::endl;
   std::cout << GridLogMessage << "======== Spin projectors check" << std::endl;
   checkProject(sRNG);
+  std::cout << GridLogMessage << std::endl;
   
   Grid_finalize();
   

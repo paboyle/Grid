@@ -44,12 +44,24 @@ class Gamma {
                            MinusSigmaZT     , 30,
                            SigmaZT          , 31);
     static constexpr unsigned int nGamma = 32;
-    static const std::array<const char *, nGamma>                      name;
+    static const std::array<const char *, nGamma>                name;
     static const std::array<std::array<Algebra, nGamma>, nGamma> mul;
+    static const std::array<Algebra, nGamma>                     adj;
     Algebra                                                      g;
   public:
     Gamma(Algebra initg): g(initg) {}  
 };
+
+inline Gamma operator*(const Gamma &g1, const Gamma &g2)
+{
+  return Gamma(Gamma::mul[g1.g][g2.g]);
+}
+
+inline Gamma adj(const Gamma &g)
+{
+  return Gamma(Gamma::adj[g.g]);
+}
+
 template<class vtype>
 inline void multMinusGamma5(iVector<vtype, Ns> &ret, const iVector<vtype, Ns> &rhs)
 {
@@ -1401,11 +1413,6 @@ inline auto operator*(const iMatrix<vtype, Ns> &arg, const Gamma &G)
   }
   
   return ret;
-}
-
-inline Gamma operator*(const Gamma &g1, const Gamma &g2)
-{
-  return Gamma(Gamma::mul[g1.g][g2.g]);
 }
 
 }}
