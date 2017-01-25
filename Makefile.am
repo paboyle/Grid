@@ -1,5 +1,5 @@
 # additional include paths necessary to compile the C++ library
-SUBDIRS = lib benchmarks tests
+SUBDIRS = lib benchmarks tests extras
 
 include $(top_srcdir)/doxygen.inc
 

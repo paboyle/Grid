@@ -113,6 +113,36 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "Called " #A " "<< (t1-t0)/ncall<<" us"<<std::endl;\
     std::cout<<GridLogMessage << "******************"<<std::endl;
 
+#define BENCH_ZDW(A,in,out)			\
+    zDw.CayleyZeroCounters();			\
+    zDw. A (in,out);				\
+    FGrid->Barrier();				\
+    t0=usecond();				\
+    for(int i=0;i<ncall;i++){			\
+      zDw. A (in,out);				\
+    }						\
+    t1=usecond();				\
+    FGrid->Barrier();				\
+    zDw.CayleyReport();							\
+    std::cout<<GridLogMessage << "Called ZDw " #A " "<< (t1-t0)/ncall<<" us"<<std::endl;\
+    std::cout<<GridLogMessage << "******************"<<std::endl;
+
+#define BENCH_DW_SSC(A,in,out)			\
+    Dw.CayleyZeroCounters();			\
+    Dw. A (in,out);				\
+    FGrid->Barrier();				\
+    t0=usecond();				\
+    for(int i=0;i<ncall;i++){			\
+      __SSC_START ;				\
+      Dw. A (in,out);				\
+      __SSC_STOP ;				\
+    }						\
+    t1=usecond();				\
+    FGrid->Barrier();				\
+    Dw.CayleyReport();					\
+    std::cout<<GridLogMessage << "Called " #A " "<< (t1-t0)/ncall<<" us"<<std::endl;\
+    std::cout<<GridLogMessage << "******************"<<std::endl;
+
 #define BENCH_DW_MEO(A,in,out)			\
     Dw.CayleyZeroCounters();			\
     Dw. A (in,out,0);				\
@@ -148,8 +178,14 @@ int main (int argc, char ** argv)
     LatticeFermion sref(sFGrid);
     LatticeFermion result(sFGrid);
 
+
     std::cout<<GridLogMessage << "Constructing Vec5D Dw "<<std::endl;
     DomainWallFermionVec5dR Dw(Umu,*sFGrid,*sFrbGrid,*sUGrid,*sUrbGrid,mass,M5);
+
+    RealD b=1.5;// Scale factor b+c=2, b-c=1
+    RealD c=0.5;
+    std::vector<ComplexD> gamma(Ls,std::complex<double>(1.0,0.0));
+    ZMobiusFermionVec5dR zDw(Umu,*sFGrid,*sFrbGrid,*sUGrid,*sUrbGrid,mass,M5,gamma,b,c);
 
     std::cout<<GridLogMessage << "Calling Dhop "<<std::endl;
     FGrid->Barrier();
@@ -173,9 +209,12 @@ int main (int argc, char ** argv)
 
     BENCH_DW_MEO(Dhop    ,src,result);
     BENCH_DW_MEO(DhopEO  ,src_o,r_e);
-    BENCH_DW(Meooe   ,src_o,r_e);
+    BENCH_DW_SSC(Meooe   ,src_o,r_e);
     BENCH_DW(Mooee   ,src_o,r_o);
     BENCH_DW(MooeeInv,src_o,r_o);
+
+    BENCH_ZDW(Mooee   ,src_o,r_o);
+    BENCH_ZDW(MooeeInv,src_o,r_o);
 
   }
 

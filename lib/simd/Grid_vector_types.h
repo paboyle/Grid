@@ -101,6 +101,11 @@ template <typename T> using IfNotInteger = Invoke<std::enable_if<!std::is_integr
 // general forms to allow for vsplat syntax
 // need explicit declaration of types when used since
 // clang cannot automatically determine the output type sometimes
+template <class Out, class Input1, class Input2, class Input3, class Operation>
+Out trinary(Input1 src_1, Input2 src_2, Input3 src_3, Operation op) {
+  return op(src_1, src_2, src_3);
+}
+
 template <class Out, class Input1, class Input2, class Operation>
 Out binary(Input1 src_1, Input2 src_2, Operation op) {
   return op(src_1, src_2);
@@ -178,6 +183,7 @@ class Grid_simd {
                           const Grid_simd *__restrict__ r) {
     *y = (*l) * (*r);
   }
+
   friend inline void sub(Grid_simd *__restrict__ y,
                          const Grid_simd *__restrict__ l,
                          const Grid_simd *__restrict__ r) {
@@ -188,7 +194,6 @@ class Grid_simd {
                          const Grid_simd *__restrict__ r) {
     *y = (*l) + (*r);
   }
-
   friend inline void mac(Grid_simd *__restrict__ y,
                          const Scalar_type *__restrict__ a,
                          const Grid_simd *__restrict__ x) {
@@ -260,7 +265,7 @@ class Grid_simd {
   }
 
   ////////////////////////////
-  // opreator scalar * simd
+  // operator scalar * simd
   ////////////////////////////
   friend inline Grid_simd operator*(const Scalar_type &a, Grid_simd b) {
     Grid_simd va;
@@ -446,6 +451,11 @@ inline void vbroadcast(Grid_simd<S,V> &ret,const Grid_simd<S,V> &src,int lane){
   S* typepun =(S*) &src;
   vsplat(ret,typepun[lane]);
 }    
+template <class S, class V, IfComplex<S> =0> 
+inline void rbroadcast(Grid_simd<S,V> &ret,const Grid_simd<S,V> &src,int lane){
+  S* typepun =(S*) &src;
+  ret.v = unary<V>(real(typepun[lane]), VsplatSIMD());
+}    
 
 ///////////////////////
 // Splat
@@ -461,6 +471,10 @@ inline void vsplat(Grid_simd<S, V> &ret, ABtype a, ABtype b) {
 template <class S, class V>
 inline void vsplat(Grid_simd<S, V> &ret, EnableIf<is_complex<S>, S> c) {
   vsplat(ret, real(c), imag(c));
+}
+template <class S, class V>
+inline void rsplat(Grid_simd<S, V> &ret, EnableIf<is_complex<S>, S> c) {
+  vsplat(ret, real(c), real(c));
 }
 
 // if real fill with a, if complex fill with a in the real part (first function
@@ -562,6 +576,21 @@ inline Grid_simd<S, V> operator-(Grid_simd<S, V> a, Grid_simd<S, V> b) {
   ret.v = binary<V>(a.v, b.v, SubSIMD());
   return ret;
 };
+
+// Distinguish between complex types and others
+template <class S, class V, IfComplex<S> = 0>
+inline Grid_simd<S, V> real_mult(Grid_simd<S, V> a, Grid_simd<S, V> b) {
+  Grid_simd<S, V> ret;
+  ret.v = binary<V>(a.v, b.v, MultRealPartSIMD());
+  return ret;
+};
+template <class S, class V, IfComplex<S> = 0>
+inline Grid_simd<S, V> real_madd(Grid_simd<S, V> a, Grid_simd<S, V> b, Grid_simd<S,V> c) {
+  Grid_simd<S, V> ret;
+  ret.v = trinary<V>(a.v, b.v, c.v, MaddRealPartSIMD());
+  return ret;
+};
+
 
 // Distinguish between complex types and others
 template <class S, class V, IfComplex<S> = 0>

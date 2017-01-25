@@ -33,6 +33,31 @@ namespace Grid {
 
   namespace QCD {
 
+     template<typename T> struct switcheroo   {  
+       static inline int iscomplex()  { return 0; } 
+
+       template<class vec>
+       static inline vec mult(vec a, vec b) {
+	 return real_mult(a,b);
+       }
+     };
+     template<> struct switcheroo<ComplexD> {  
+       static inline int iscomplex()  { return 1; } 
+
+       template<class vec>
+       static inline vec mult(vec a, vec b) {
+	 return a*b;
+       }
+     };
+     template<> struct switcheroo<ComplexF> {  
+       static inline int iscomplex()  { return 1; } 
+       template<class vec>
+       static inline vec mult(vec a, vec b) {
+	 return a*b;
+       }
+     };
+
+
     template<class Impl>
     class CayleyFermion5D : public WilsonFermion5D<Impl>
     {
@@ -75,7 +100,19 @@ namespace Grid {
 		  std::vector<Coeff_t> &lower,
 		  std::vector<Coeff_t> &diag,
 		  std::vector<Coeff_t> &upper);
+
       void MooeeInternal(const FermionField &in, FermionField &out,int dag,int inv);
+      void MooeeInternalCompute(int dag, int inv, Vector<iSinglet<Simd> > & Matp, Vector<iSinglet<Simd> > & Matm);
+
+      void MooeeInternalAsm(const FermionField &in, FermionField &out,
+			    int LLs, int site,
+			    Vector<iSinglet<Simd> > &Matp,
+			    Vector<iSinglet<Simd> > &Matm);
+      void MooeeInternalZAsm(const FermionField &in, FermionField &out,
+			    int LLs, int site,
+			    Vector<iSinglet<Simd> > &Matp,
+			    Vector<iSinglet<Simd> > &Matm);
+
 
       virtual void   Instantiatable(void)=0;
 
@@ -111,6 +148,12 @@ namespace Grid {
       std::vector<Coeff_t> uee;    
       std::vector<Coeff_t> ueem;    
       std::vector<Coeff_t> dee;    
+
+      // Matrices of 5d ee inverse params
+      Vector<iSinglet<Simd> >  MatpInv;
+      Vector<iSinglet<Simd> >  MatmInv;
+      Vector<iSinglet<Simd> >  MatpInvDag;
+      Vector<iSinglet<Simd> >  MatmInvDag;
 
       // Constructors
       CayleyFermion5D(GaugeField &_Umu,

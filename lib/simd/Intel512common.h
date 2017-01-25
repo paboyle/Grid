@@ -87,7 +87,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   VACCTIMESMINUSI1d(A,ACC,tmp)				\
   VACCTIMESMINUSI2d(A,ACC,tmp)			
 
-#define LOAD64i(A,ptr)  __asm__ ( "movq %0, %" #A :  : "r"(ptr)  : #A  );
+#define LOAD64a(A,ptr)  "movq %0, %" #A :  : "r"(ptr)  : #A  
+#define LOAD64i(A,ptr)  __asm__ ( LOAD64a(A,ptr));
 #define LOAD64(A,ptr)  LOAD64i(A,ptr)
 
 #define VMOVf(A,DEST)   "vmovaps  " #A ", " #DEST  ";\n"
@@ -108,8 +109,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 //"vprefetche0 "#O"*64("#A");\n" "vprefetche1 ("#O"+12)*64("#A");\n"
 //  "clevict0 "#O"*64("#A");\n" 
 
-#define VLOADf(OFF,PTR,DEST)   "vmovaps  " #OFF "*64(" #PTR "), " #DEST  ";\n"
-#define VLOADd(OFF,PTR,DEST)   "vmovapd  " #OFF "*64(" #PTR "), " #DEST  ";\n"
+#define VLOADf(OFF,PTR,DEST)   "vmovups  " #OFF "*64(" #PTR "), " #DEST  ";\n"
+#define VLOADd(OFF,PTR,DEST)   "vmovupd  " #OFF "*64(" #PTR "), " #DEST  ";\n"
 
 #define VADDf(A,B,DEST)        "vaddps   " #A "," #B "," #DEST  ";\n"
 #define VADDd(A,B,DEST)        "vaddpd   " #A "," #B "," #DEST  ";\n"
@@ -143,8 +144,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define VSTOREf(OFF,PTR,SRC)   "vmovntps " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
 #define VSTOREd(OFF,PTR,SRC)   "vmovntpd " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
 #else
-#define VSTOREf(OFF,PTR,SRC)   "vmovaps " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
-#define VSTOREd(OFF,PTR,SRC)   "vmovapd " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
+#define VSTOREf(OFF,PTR,SRC)   "vmovups " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
+#define VSTOREd(OFF,PTR,SRC)   "vmovupd " #SRC "," #OFF "*64(" #PTR ")"  ";\n"
 #endif
 
 // Swaps Re/Im ; could unify this with IMCI

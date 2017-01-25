@@ -37,6 +37,11 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include "TextIO.h"
 #include "XmlIO.h"
 #include "JSON_IO.h"
+
+#ifdef HAVE_HDF5
+#include "Hdf5IO.h"
+#endif
+
 //////////////////////////////////////////
 // Todo:
 //////////////////////////////////////////

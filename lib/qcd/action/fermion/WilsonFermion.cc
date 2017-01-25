@@ -61,7 +61,9 @@ WilsonFermion<Impl>::WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
       LebesgueEvenOdd(_cbgrid),
       Umu(&Fgrid),
       UmuEven(&Hgrid),
-      UmuOdd(&Hgrid) {
+      UmuOdd(&Hgrid),
+      _tmp(&Hgrid)
+{
   // Allocate the required comms buffer
   ImportGauge(_Umu);
 }
