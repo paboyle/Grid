@@ -239,7 +239,7 @@ class TwoFlavourFModule: public PseudoFermionModuleBase<Impl, TwoFlavourPseudoFe
 
    // constructor
    template <class ReaderClass>
-   TwoFlavourFModule(Reader<ReaderClass>& R): PseudoFermionModuleBase<Impl, TwoFlavourPseudoFermionAction>(R) {
+   TwoFlavourFModule(Reader<ReaderClass>& R): Base(R) {
     this->getSolverOperator(R, solver_mod, "Solver");
     this->getFermionOperator(R, fop_mod, "Operator");
    } 

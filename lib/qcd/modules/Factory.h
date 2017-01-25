@@ -35,11 +35,11 @@ namespace Grid{
 /******************************************************************************
  *                        abstract factory class                              *
  ******************************************************************************/
-template <typename T, typename ProductCreator>
+template <typename T, typename CreatorInput>
 class Factory
 {
 public:
-    typedef std::function< std::unique_ptr<T> (const ProductCreator&) > Func;
+    typedef std::function< std::unique_ptr<T> (const CreatorInput&) > Func;
 
     // constructor
     Factory(void) = default;
@@ -51,7 +51,7 @@ public:
     std::vector<std::string> getBuilderList(void) const;
     // factory
     std::unique_ptr<T> create(const std::string type,
-              								const ProductCreator& input) const;
+              								const CreatorInput& input) const;
 private:
     std::map<std::string, Func> builder_;
     virtual std::string obj_type() const = 0;
@@ -61,15 +61,15 @@ private:
  *                         template implementation                            *
  ******************************************************************************/
 // registration ////////////////////////////////////////////////////////////////
-template <typename T, typename ProductCreator>
-void Factory<T, ProductCreator>::registerBuilder(const std::string type, const Func &f)
+template <typename T, typename CreatorInput>
+void Factory<T, CreatorInput>::registerBuilder(const std::string type, const Func &f)
 {
     builder_[type] = f;
 }
 
 // get module list /////////////////////////////////////////////////////////////
-template <typename T, typename ProductCreator>
-std::vector<std::string> Factory<T, ProductCreator>::getBuilderList(void) const
+template <typename T, typename CreatorInput>
+std::vector<std::string> Factory<T, CreatorInput>::getBuilderList(void) const
 {
     std::vector<std::string> list;
     
@@ -82,9 +82,9 @@ std::vector<std::string> Factory<T, ProductCreator>::getBuilderList(void) const
 }
 
 // factory /////////////////////////////////////////////////////////////////////
-template <typename T, typename ProductCreator>
-std::unique_ptr<T> Factory<T, ProductCreator>::create(const std::string type,
-                                      								const ProductCreator& input) const
+template <typename T, typename CreatorInput>
+std::unique_ptr<T> Factory<T, CreatorInput>::create(const std::string type,
+                                      							const CreatorInput& input) const
 {
     Func func;
     

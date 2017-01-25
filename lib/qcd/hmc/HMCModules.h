@@ -115,6 +115,7 @@ class GridFourDimModule : public GridModule {
   }
 };
 
+
 ////////////////////////////////////////////////////////////////////
 class RNGModuleParameters: Serializable {
 

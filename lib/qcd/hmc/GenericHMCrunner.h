@@ -36,7 +36,7 @@ namespace Grid {
 namespace QCD {
 
 
-// very ugly here but possibly resolved if we have a base Reader class
+// very ugly here but possibly resolved if we had a base Reader class
 template < class ReaderClass >
 class HMCRunnerBase {
 public:

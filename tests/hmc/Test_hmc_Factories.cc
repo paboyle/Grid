@@ -37,7 +37,8 @@ typedef QCD::PeriodicGimplR ImplementationPolicy;
 typedef QCD::NoHirep RepresentationPolicy;
 typedef QCD::WilsonFermionR FermionImplementation;
 
-
+///////////////////////////////////////////////////////////////////////
+// Put all registrations in an header file
 static Registrar< HMCLeapFrog<ImplementationPolicy, RepresentationPolicy, XmlReader>      , HMCRunnerModuleFactory<hmc_string, XmlReader> > __HMCLFmodXMLInit("LeapFrog");
 static Registrar< HMCMinimumNorm2<ImplementationPolicy, RepresentationPolicy, XmlReader>  , HMCRunnerModuleFactory<hmc_string, XmlReader> > __HMCMN2modXMLInit("MinimumNorm2");
 static Registrar< HMCForceGradient<ImplementationPolicy, RepresentationPolicy, XmlReader> , HMCRunnerModuleFactory<hmc_string, XmlReader> > __HMCFGmodXMLInit("ForceGradient");
@@ -58,51 +59,17 @@ int main(int argc, char **argv) {
   // Reader, file should come from command line
   InputFileReader Reader("input.wilson_gauge.params.xml");
 
-
-
   // Test HMC factory (put in an external file)
   auto &HMCfactory = HMCRunnerModuleFactory<hmc_string, InputFileReader >::getInstance();
   // Simplify this step (IntergratorName field?)
   HMCparameters HMCpar(Reader);
   
   // Construct the module
-  auto myHMCmodule = HMCfactory.create(HMCpar.MD.name, Reader);
+  auto HMCmodule = HMCfactory.create(HMCpar.MD.name, Reader);
 
-  myHMCmodule->getPtr()->initialize(Reader);
-  myHMCmodule->getPtr()->Run();
+  HMCmodule->getPtr()->initialize(Reader);
+  HMCmodule->getPtr()->Run();
 
   Grid_finalize();
-
-
-/*
-// Test solver creation
-  auto &SolverFactory = HMC_SolverModuleFactory<solver_string, FermionImplementation::FermionField, XmlReader>::getInstance();
-  Reader.push("Solver");
-  std::string name;
-  read(Reader, "name",name);
-  auto SModule = SolverFactory.create(name, Reader);
-  std::cout << "Registered types " << std::endl;
-  std::cout << SolverFactory.getBuilderList() << std::endl;
-  SModule->print_parameters();
-  Reader.pop();
-*/
-
-/*
- // Test fermion operator module creation
-  auto &FOFactory = HMC_FermionOperatorModuleFactory<fermionop_string, WilsonImplR, XmlReader>::getInstance();
-  Reader.push("Operator");
-  std::string op_name;
-  Reader.readDefault("name",op_name);
-  auto FOModule = FOFactory.create(op_name, Reader);
-  std::cout << "Registered types " << std::endl;
-  std::cout << FOFactory.getBuilderList() << std::endl;
-  GridFourDimModule GMod;
-  FOModule->AddGridPair(GMod);
-  FOModule->print_parameters();
-  Reader.pop();  
-*/
-  
-
-
 
 } // main

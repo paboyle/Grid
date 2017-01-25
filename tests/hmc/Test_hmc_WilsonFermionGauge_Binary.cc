@@ -84,11 +84,11 @@ int main(int argc, char **argv) {
   // standard
   RealD beta = 5.6 ;
   WilsonGaugeActionR Waction(beta);
-  
-  // temporarily need a gauge field
+    
   auto GridPtr = TheHMC.Resources.GetCartesian();
   auto GridRBPtr = TheHMC.Resources.GetRBCartesian();
 
+  // temporarily need a gauge field
   LatticeGaugeField U(GridPtr);
 
   Real mass = -0.77;
@@ -100,6 +100,13 @@ int main(int argc, char **argv) {
   ConjugateGradient<FermionField> CG(1.0e-8, 2000);
 
   TwoFlavourPseudoFermionAction<FermionImplPolicy> Nf2(FermOp, CG, CG);
+
+  // With modules
+  /*
+
+  TwoFlavourFmodule<FermionImplPolicy> TwoFMod(Reader);
+  
+  */
 
     // Set smearing (true/false), default: false
   Nf2.is_smeared = false;

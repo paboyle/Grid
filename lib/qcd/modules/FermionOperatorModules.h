@@ -47,7 +47,7 @@ class FermionOperatorModule
 
 protected:
   std::unique_ptr< FOType<FermionImpl> > FOPtr;
-  std::vector< std::reference_wrapper<QCD::GridModule> >    GridRefs;
+  std::vector< QCD::GridModule* >    GridRefs;
  public:
   typedef HMCModuleBase< QCD::FermionOperator<FermionImpl> > Base;
   typedef typename Base::Product Product;
@@ -58,11 +58,21 @@ protected:
   FermionOperatorModule(Reader<ReaderClass>& Reader) : Parametrized<FOPar>(Reader){};
 
   void AddGridPair(QCD::GridModule &Mod){
-    if (GridRefs.size()>2){
+    if (GridRefs.size()>1){
       std::cout << GridLogError << "Adding too many Grids to the FermionOperatorModule" << std::endl;
       exit(1);
     }
-    GridRefs.push_back(Mod);
+    GridRefs.push_back(&Mod);
+
+    if (Ls()){
+      GridRefs.push_back(new QCD::GridModule());
+      GridRefs[1]->set_full(QCD::SpaceTimeGrid::makeFiveDimGrid(Ls(),GridRefs[0]->get_full()));
+      GridRefs[1]->set_rb(QCD::SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls(),GridRefs[0]->get_full()));
+    }
+  }
+
+  virtual unsigned int Ls(){
+    return 0;  
   }
 
   virtual void print_parameters(){
@@ -124,16 +134,86 @@ class WilsonFermionModule: public FermionOperatorModule<WilsonFermion, FermionIm
 
   // acquire resource
   virtual void initialize(){
-    auto &GridMod = this->GridRefs[0].get();
-    typename FermionImpl::GaugeField U(GridMod.get_full());
-    this->FOPtr.reset(new WilsonFermion<FermionImpl>(U, *(GridMod.get_full()), *(GridMod.get_rb()), this->Par_.mass));
+    auto GridMod = this->GridRefs[0];
+    typename FermionImpl::GaugeField U(GridMod->get_full());
+    this->FOPtr.reset(new WilsonFermion<FermionImpl>(U, *(GridMod->get_full()), *(GridMod->get_rb()), this->Par_.mass));
   }
 };
+
+
+
+class MobiusFermionParameters : Serializable {
+ public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(MobiusFermionParameters, 
+    RealD, mass,
+    RealD, M5,
+    RealD, b,
+    RealD, c,
+    unsigned int, Ls);
+};
+
+template <class FermionImpl >
+class MobiusFermionModule: public FermionOperatorModule<MobiusFermion, FermionImpl, MobiusFermionParameters> {
+  typedef FermionOperatorModule<MobiusFermion, FermionImpl, MobiusFermionParameters> FermBase;
+  using FermBase::FermBase; // for constructors
+
+  virtual unsigned int Ls(){
+    return this->Par_.Ls;
+  }
+
+  // acquire resource
+  virtual void initialize(){
+    auto GridMod = this->GridRefs[0];
+    auto GridMod5d = this->GridRefs[1];
+    typename FermionImpl::GaugeField U(GridMod->get_full());
+    this->FOPtr.reset(new MobiusFermion<FermionImpl>( U, *(GridMod->get_full()), *(GridMod->get_rb()), 
+                                                      *(GridMod5d->get_full()), *(GridMod5d->get_rb()),
+                                                      this->Par_.mass, this->Par_.M5, this->Par_.b, this->Par_.c));
+  }
+};
+
+
+class DomainWallFermionParameters : Serializable {
+ public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(DomainWallFermionParameters, 
+    RealD, mass,
+    RealD, M5,
+    unsigned int, Ls);
+};
+
+template <class FermionImpl >
+class DomainWallFermionModule: public FermionOperatorModule<DomainWallFermion, FermionImpl, DomainWallFermionParameters> {
+  typedef FermionOperatorModule<DomainWallFermion, FermionImpl, DomainWallFermionParameters> FermBase;
+  using FermBase::FermBase; // for constructors
+
+  virtual unsigned int Ls(){
+    return this->Par_.Ls;
+  }
+
+  // acquire resource
+  virtual void initialize(){
+    auto GridMod = this->GridRefs[0];
+    auto GridMod5d = this->GridRefs[1];
+    typename FermionImpl::GaugeField U(GridMod->get_full());
+    this->FOPtr.reset(new DomainWallFermion<FermionImpl>( U, *(GridMod->get_full()), *(GridMod->get_rb()), 
+                                                      *(GridMod5d->get_full()), *(GridMod5d->get_rb()),
+                                                      this->Par_.mass, this->Par_.M5));
+  }
+};
+
 
 
 // Now a specific registration with a fermion field
 static Registrar< WilsonFermionModule<WilsonImplR>,   
                   HMC_FermionOperatorModuleFactory<fermionop_string, WilsonImplR, XmlReader> > __WilsonFOPmodXMLInit("Wilson"); 
+static Registrar< MobiusFermionModule<WilsonImplR>,   
+                  HMC_FermionOperatorModuleFactory<fermionop_string, WilsonImplR, XmlReader> > __MobiusFOPmodXMLInit("Mobius");
+static Registrar< DomainWallFermionModule<WilsonImplR>,   
+                  HMC_FermionOperatorModuleFactory<fermionop_string, WilsonImplR, XmlReader> > __DWFOPmodXMLInit("DomainWall");
+
+
+
+
 
 
 } // QCD
