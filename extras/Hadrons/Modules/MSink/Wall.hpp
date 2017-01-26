@@ -121,7 +121,7 @@ void TWall<FImpl>::execute(void)
     LOG(Message) << "Wall smearing " << par().q << std::endl;
     
     PropagatorField &q = *env().template getObject<PropagatorField>(par().q);
-    std::vector<SitePropagator::scalar_object> prop;
+    std::vector<typename SitePropagator::scalar_object> prop;
     LatticeComplex              ph(env().getGrid()), coor(env().getGrid());
     std::vector<Real>           p;
     Complex                     i(0.0,1.0);
