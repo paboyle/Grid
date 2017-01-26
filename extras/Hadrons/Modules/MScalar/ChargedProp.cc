@@ -151,7 +151,7 @@ void TChargedProp::execute(void)
         LOG(Message) << "Saving zero-momentum projection to '"
                      << filename << "'..." << std::endl;
         
-        TextWriter            writer(filename);
+        Hdf5Writer            writer(filename);
         std::vector<TComplex> vecBuf;
         std::vector<Complex>  result;
         
@@ -161,6 +161,7 @@ void TChargedProp::execute(void)
         {
             result[t] = TensorRemove(vecBuf[t]);
         }
+        write(writer, "charge", q);
         write(writer, "prop", result);
     }
 }
