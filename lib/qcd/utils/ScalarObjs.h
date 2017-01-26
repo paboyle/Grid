@@ -6,10 +6,7 @@
 
     Copyright (C) 2015
 
-Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: neo <cossu@post.kek.jp>
-Author: paboyle <paboyle@ph.ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,7 +29,9 @@ directory
 #ifndef SCALAR_OBJS_H
 #define SCALAR_OBJS_H
 namespace Grid {
-namespace QCD {
+
+  // FIXME drop the QCD namespace in Nd
+  
 
 // Scalar field obs
 template <class Impl>
@@ -62,7 +61,7 @@ class ScalarObs {
   static void phider(typename Impl::Field &fsq,
                      const typename Impl::Field &f) {
     fsq = Cshift(f, 0, -1) * f;
-    for (int mu = 1; mu < Nd; mu++) fsq += Cshift(f, mu, -1) * f;
+    for (int mu = 1; mu < QCD::Nd; mu++) fsq += Cshift(f, mu, -1) * f;
   }
 
   //////////////////////////////////////////////////
@@ -72,7 +71,7 @@ class ScalarObs {
   static RealD sumphider(const typename Impl::Field &f) {
     typename Impl::Field tmp(f._grid);
     tmp = Cshift(f, 0, -1) * f;
-    for (int mu = 1; mu < Nd; mu++) {
+    for (int mu = 1; mu < QCD::Nd; mu++) {
       tmp += Cshift(f, mu, -1) * f;
     }
     return -sum(trace(tmp));
@@ -90,7 +89,8 @@ class ScalarObs {
     return sum(trace(tmp));
   }
 };
-}
+
+
 }
 
 #endif

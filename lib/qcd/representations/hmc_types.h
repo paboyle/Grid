@@ -4,7 +4,7 @@
 #include <Grid/qcd/representations/adjoint.h>
 #include <Grid/qcd/representations/two_index.h>
 #include <Grid/qcd/representations/fundamental.h>
-#include <Grid/qcd/action/scalar/scalarImpl.h>
+#include <Grid/qcd/action/scalar/ScalarImpl.h>
 
 #include <tuple>
 #include <utility>

@@ -29,51 +29,48 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 directory
   *************************************************************************************/
 /*  END LEGAL */
+
 #ifndef SCALAR_ACTION_H
 #define SCALAR_ACTION_H
 
 namespace Grid {
-namespace QCD {
-
-////////////////////////////////////////////////////////////////////////
-// Wilson Gauge Action .. should I template the Nc etc..
-////////////////////////////////////////////////////////////////////////
-
-template <class Impl>
-class ScalarAction : public Action<typename Impl::Field> {
- public:
-  INHERIT_FIELD_TYPES(Impl);
-
- private:
-  RealD mass_square;
-  RealD lambda;
-
- public:
-  ScalarAction(RealD ms, RealD l) : mass_square(ms), lambda(l){};
-
-  virtual std::string action_name(){return "ScalarAction";}
+  // FIXME drop the QCD namespace everywhere here
   
-  virtual void refresh(const Field &U,
-                       GridParallelRNG &pRNG){};  // noop as no pseudoferms
-
-  virtual RealD S(const Field &p) {
-    return (mass_square * 0.5 + Nd) * ScalarObs<Impl>::sumphisquared(p) +
-           (lambda / 24.) * ScalarObs<Impl>::sumphifourth(p) +
-           ScalarObs<Impl>::sumphider(p);
+  template <class Impl>
+  class ScalarAction : public QCD::Action<typename Impl::Field> {
+  public:
+    INHERIT_FIELD_TYPES(Impl);
+    
+  private:
+    RealD mass_square;
+    RealD lambda;
+    
+  public:
+    ScalarAction(RealD ms, RealD l) : mass_square(ms), lambda(l){};
+    
+    virtual std::string action_name(){return "ScalarAction";}
+    
+    virtual void refresh(const Field &U,
+			 GridParallelRNG &pRNG){};  // noop as no pseudoferms
+    
+    virtual RealD S(const Field &p) {
+      return (mass_square * 0.5 + QCD::Nd) * ScalarObs<Impl>::sumphisquared(p) +
+	(lambda / 24.) * ScalarObs<Impl>::sumphifourth(p) +
+	ScalarObs<Impl>::sumphider(p);
+    };
+    
+    virtual void deriv(const Field &p,
+		       Field &force) {
+      Field tmp(p._grid);
+      Field p2(p._grid);
+      ScalarObs<Impl>::phisquared(p2, p);
+      tmp = -(Cshift(p, 0, -1) + Cshift(p, 0, 1));
+      for (int mu = 1; mu < QCD::Nd; mu++) tmp -= Cshift(p, mu, -1) + Cshift(p, mu, 1);
+      
+      force=+(mass_square + 2. * QCD::Nd) * p + (lambda / 6.) * p2 * p + tmp;
+    };
   };
+  
+} // Grid
 
-  virtual void deriv(const Field &p,
-                     Field &force) {
-    Field tmp(p._grid);
-    Field p2(p._grid);
-    ScalarObs<Impl>::phisquared(p2, p);
-    tmp = -(Cshift(p, 0, -1) + Cshift(p, 0, 1));
-    for (int mu = 1; mu < Nd; mu++) tmp -= Cshift(p, mu, -1) + Cshift(p, mu, 1);
-
-    force=+(mass_square + 2. * Nd) * p + (lambda / 6.) * p2 * p + tmp;
-  };
-};
-}
-}
-
-#endif
+#endif // SCALAR_ACTION_H

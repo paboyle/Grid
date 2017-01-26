@@ -31,36 +31,35 @@ directory
 namespace Grid{
 
 // Put this section in a separate header
-
 // ifdefs ?? Local makefile suggestion , policy as make parameter
-typedef QCD::PeriodicGimplR ImplementationPolicy;
-typedef QCD::NoHirep RepresentationPolicy;
-typedef QCD::WilsonFermionR FermionImplementation;
+typedef QCD::PeriodicGimplR   ImplementationPolicy;
+typedef QCD::WilsonImplR      FermionImplementationPolicy;
+typedef QCD::NoHirep          RepresentationPolicy;
+typedef Grid::XmlReader       Serialiser;
 
-///////////////////////////////////////////////////////////////////////
-// Put all registrations in an header file
-static Registrar< HMCLeapFrog<ImplementationPolicy, RepresentationPolicy, XmlReader>      , HMCRunnerModuleFactory<hmc_string, XmlReader> > __HMCLFmodXMLInit("LeapFrog");
-static Registrar< HMCMinimumNorm2<ImplementationPolicy, RepresentationPolicy, XmlReader>  , HMCRunnerModuleFactory<hmc_string, XmlReader> > __HMCMN2modXMLInit("MinimumNorm2");
-static Registrar< HMCForceGradient<ImplementationPolicy, RepresentationPolicy, XmlReader> , HMCRunnerModuleFactory<hmc_string, XmlReader> > __HMCFGmodXMLInit("ForceGradient");
-}
+// Register all object names
+#include "Grid/qcd/modules/Registration.h"
+
+} // Grid
 
 int main(int argc, char **argv) {
   using namespace Grid;
   using namespace Grid::QCD;
 
   Grid_init(&argc, &argv);
+
   int threads = GridThread::GetThreads();
   // here make a routine to print all the relevant information on the run
   std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
    // Typedefs to simplify notation 
-  typedef Grid::XmlReader InputFileReader; 
+  //typedef XmlReader InputFileReader; 
 
   // Reader, file should come from command line
-  InputFileReader Reader("input.wilson_gauge.params.xml");
+  Serialiser Reader("input.wilson_gauge.params.xml");
 
   // Test HMC factory (put in an external file)
-  auto &HMCfactory = HMCRunnerModuleFactory<hmc_string, InputFileReader >::getInstance();
+  auto &HMCfactory = HMCModuleFactory::getInstance();
   // Simplify this step (IntergratorName field?)
   HMCparameters HMCpar(Reader);
   
@@ -71,5 +70,7 @@ int main(int argc, char **argv) {
   HMCmodule->getPtr()->Run();
 
   Grid_finalize();
+  return 0;
 
 } // main
+

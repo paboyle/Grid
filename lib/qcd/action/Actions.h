@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -29,7 +29,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
-    /*  END LEGAL */
+/*  END LEGAL */
+
 #ifndef GRID_QCD_ACTIONS_H
 #define GRID_QCD_ACTIONS_H
 
@@ -41,12 +42,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 // Abstract base interface
 ////////////////////////////////////////////
 #include <Grid/qcd/action/ActionBase.h>
+#include <Grid/qcd/action/ActionSet.h>
 #include <Grid/qcd/action/ActionParams.h>
 
 ////////////////////////////////////////////
 // Utility functions
 ////////////////////////////////////////////
-#include <Grid/qcd/action/gauge/GaugeImpl.h>
+//#include <Grid/qcd/action/gauge/GaugeImplTypes.h>
+#include <Grid/qcd/action/gauge/GaugeImplementations.h>
 #include <Grid/qcd/utils/WilsonLoops.h>
 
 #include <Grid/qcd/action/fermion/WilsonCompressor.h>     //used by all wilson type fermions
@@ -63,7 +66,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 ////////////////////////////////////////////
 // Scalar Actions
 ////////////////////////////////////////////
-#include <Grid/qcd/action/scalar/scalarImpl.h>
+#include <Grid/qcd/action/scalar/ScalarImpl.h>
 #include <Grid/qcd/action/scalar/ScalarAction.h>
 
 namespace Grid {
