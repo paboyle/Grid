@@ -26,8 +26,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 
-#include <Grid.h>
-#include <PerfCount.h>
+#include <Grid/Grid.h>
+#include <Grid/PerfCount.h>
 
 namespace Grid {
 
