@@ -467,16 +467,6 @@ class OneFlavourRatioEOFModule:
 
 };
 
-
-
-
-typedef WilsonGModule<PeriodicGimplR> WilsonGMod;
-typedef SymanzikGModule<PeriodicGimplR> SymanzikGMod;
-typedef IwasakiGModule<PeriodicGimplR> IwasakiGMod;
-typedef DBW2GModule<PeriodicGimplR> DBW2GMod;
-typedef RBCGModule<PeriodicGimplR> RBCGMod;
-typedef PlaqPlusRectangleGModule<PeriodicGimplR> PlaqPlusRectangleGMod;
-
 }// QCD temporarily here
 
 
@@ -521,31 +511,6 @@ class HMC_LGTActionModuleFactory
 
 
 extern char gauge_string[];
-/*
-static Registrar<QCD::WilsonGMod,            HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __WGmodXMLInit("Wilson"); 
-static Registrar<QCD::SymanzikGMod,          HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __SymGmodXMLInit("Symanzik"); 
-static Registrar<QCD::IwasakiGMod,           HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __IwGmodXMLInit("Iwasaki"); 
-static Registrar<QCD::DBW2GMod,              HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __DBW2GmodXMLInit("DBW2"); 
-static Registrar<QCD::RBCGMod,               HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __RBCGmodXMLInit("RBC"); 
-static Registrar<QCD::PlaqPlusRectangleGMod, HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __PPRectGmodXMLInit("PlaqPlusRect"); 
-
-
-// FIXME more general implementation
-static Registrar<QCD::TwoFlavourFModule<QCD::WilsonImplR> , HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __TwoFlavourFmodXMLInit("TwoFlavours"); 
-static Registrar<QCD::TwoFlavourRatioFModule<QCD::WilsonImplR> , HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __TwoFlavourRatioFmodXMLInit("TwoFlavoursRatio"); 
-static Registrar<QCD::TwoFlavourEOFModule<QCD::WilsonImplR> , HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __TwoFlavourEOFmodXMLInit("TwoFlavoursEvenOdd"); 
-static Registrar<QCD::TwoFlavourRatioEOFModule<QCD::WilsonImplR> , HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __TwoFlavourRatioEOFmodXMLInit("TwoFlavoursEvenOddRatio"); 
-static Registrar<QCD::OneFlavourFModule<QCD::WilsonImplR> , HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __OneFlavourFmodXMLInit("OneFlavour"); 
-static Registrar<QCD::OneFlavourEOFModule<QCD::WilsonImplR> , HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __OneFlavourEOFmodXMLInit("OneFlavourEvenOdd"); 
-static Registrar<QCD::OneFlavourRatioFModule<QCD::WilsonImplR> , HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __OneFlavourRatioFmodXMLInit("OneFlavourRatio"); 
-static Registrar<QCD::OneFlavourRatioEOFModule<QCD::WilsonImplR> , HMC_LGTActionModuleFactory<gauge_string, XmlReader> > __OneFlavourRatioEOFmodXMLInit("OneFlavourEvenOddRatio"); 
-
-
-*/
-
-// add here the registration for other implementations and readers
-
-
 } // Grid
 
 

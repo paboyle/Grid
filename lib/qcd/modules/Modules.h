@@ -88,9 +88,9 @@ class Parametrized<NoParameters>{
 
 
 
-/*
-Lowest level abstract module class
-*/
+////////////////////////////////////////
+// Lowest level abstract module class
+////////////////////////////////////////
 template <class Prod>
 class HMCModuleBase {
  public:
@@ -103,103 +103,10 @@ class HMCModuleBase {
   virtual void print_parameters(){};  // default to nothing
 };
 
-/////////////////////////////
-// Observables
-/////////////////////////////
-// explicit gauge field here....
-template <class ObservableType, class OPar>
-class ObservableModule
-    : public Parametrized<OPar>,
-      public HMCModuleBase< QCD::HmcObservable<typename ObservableType::GaugeField> > {
- public:
-  typedef HMCModuleBase< QCD::HmcObservable< typename ObservableType::GaugeField> > Base;
-  typedef typename Base::Product Product;
 
-  std::unique_ptr<ObservableType> ObservablePtr;
-
-  ObservableModule(OPar Par) : Parametrized<OPar>(Par) {}
-
-  virtual void print_parameters(){
-    std::cout << this->Par_ << std::endl;
-  }
-
-  template <class ReaderClass>
-  ObservableModule(Reader<ReaderClass>& Reader) : Parametrized<OPar>(Reader){};
-
-  Product* getPtr() {
-    if (!ObservablePtr) initialize();
-
-    return ObservablePtr.get();
-  }
-
- private:
-  virtual void initialize() = 0;
-};
-
-
-
-////////////////
-// Modules
-////////////////
-
-namespace QCD{
-
-//// Observables module
-class PlaquetteObsParameters : Serializable {
- public:
-  GRID_SERIALIZABLE_CLASS_MEMBERS(PlaquetteObsParameters, 
-    std::string, output_prefix);
-};
-
-template < class Impl >
-class PlaquetteMod: public ObservableModule<PlaquetteLogger<Impl>, PlaquetteObsParameters>{
-  typedef ObservableModule<PlaquetteLogger<Impl>, PlaquetteObsParameters> ObsBase;
-  using ObsBase::ObsBase; // for constructors
-
-  // acquire resource
-  virtual void initialize(){
-    this->ObservablePtr.reset(new PlaquetteLogger<Impl>(this->Par_.output_prefix));
-  }
-};
-
-
-}// QCD temporarily here
-
-
-
-
-
-
-
-////////////////////////////////////////
-// Factories specialisations
-////////////////////////////////////////
-
-
-// explicit ref to LatticeGaugeField must be changed of put in the factory
-typedef HMCModuleBase< QCD::HmcObservable<QCD::LatticeGaugeField> > HMC_ObsModBase;
-
-template <char const *str, class ReaderClass >
-class HMC_ObservablesModuleFactory
-    : public Factory < HMC_ObsModBase , Reader<ReaderClass> > {
- public:
-  typedef Reader<ReaderClass> TheReader; 
-  // use SINGLETON FUNCTOR MACRO HERE
-  HMC_ObservablesModuleFactory(const HMC_ObservablesModuleFactory& e) = delete;
-  void operator=(const HMC_ObservablesModuleFactory& e) = delete;
-  static HMC_ObservablesModuleFactory& getInstance(void) {
-    static HMC_ObservablesModuleFactory e;
-    return e;
-  }
-
- private:
-  HMC_ObservablesModuleFactory(void) = default;
-    std::string obj_type() const {
-    return std::string(str);
-  }
-};
-
-
+/////////////////////////////////////////////
+// Registration class
+/////////////////////////////////////////////
 
 template <class T, class TheFactory>
 class Registrar {
@@ -216,10 +123,6 @@ class Registrar {
 };
 
 
-
-extern char observable_string[];
-
-//static Registrar<QCD::PlaquetteMod<QCD::PeriodicGimplR>, HMC_ObservablesModuleFactory<observable_string, XmlReader> > __OBSPLmodXMLInit("Plaquette"); 
 
 }
 

@@ -52,9 +52,6 @@ int main(int argc, char **argv) {
   // here make a routine to print all the relevant information on the run
   std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
-   // Typedefs to simplify notation 
-  //typedef XmlReader InputFileReader; 
-
   // Reader, file should come from command line
   Serialiser Reader("input.wilson_gauge.params.xml");
 

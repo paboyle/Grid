@@ -105,7 +105,6 @@ class HMCMinimumNorm2: public HMCModule< QCD::GenericHMCRunnerTemplate<Implement
 
   // aquire resource
   virtual void initialize(){
-  	std::cout << "Initializing the pointer" << std::endl;  	
     this->HMCPtr.reset(new QCD::GenericHMCRunnerTemplate<ImplementationPolicy, RepresentationPolicy, QCD::MinimumNorm2>(this->Par_));
   }
 };

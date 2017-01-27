@@ -33,9 +33,14 @@ directory
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Actions
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+typedef QCD::WilsonGModule<ImplementationPolicy> WilsonGMod;
+typedef QCD::SymanzikGModule<ImplementationPolicy> SymanzikGMod;
+typedef QCD::IwasakiGModule<ImplementationPolicy> IwasakiGMod;
+typedef QCD::DBW2GModule<ImplementationPolicy> DBW2GMod;
+typedef QCD::RBCGModule<ImplementationPolicy> RBCGMod;
+typedef QCD::PlaqPlusRectangleGModule<ImplementationPolicy> PlaqPlusRectangleGMod;
 
-
-static Registrar<QCD::WilsonGMod,            HMC_LGTActionModuleFactory<gauge_string, Serialiser > > __WGmodXMLInit("Wilson"); 
+static Registrar<QCD::WilsonGMod,            HMC_LGTActionModuleFactory<gauge_string, Serialiser> > __WGmodXMLInit("Wilson"); 
 static Registrar<QCD::SymanzikGMod,          HMC_LGTActionModuleFactory<gauge_string, Serialiser> > __SymGmodXMLInit("Symanzik"); 
 static Registrar<QCD::IwasakiGMod,           HMC_LGTActionModuleFactory<gauge_string, Serialiser> > __IwGmodXMLInit("Iwasaki"); 
 static Registrar<QCD::DBW2GMod,              HMC_LGTActionModuleFactory<gauge_string, Serialiser> > __DBW2GmodXMLInit("DBW2"); 
@@ -72,9 +77,9 @@ static Registrar<QCD::OneFlavourRatioEOFModule<FermionImplementationPolicy>,
 // here must instantiate CG and CR for every new fermion field type (macro!!)
 
 static Registrar< ConjugateGradientModule<QCD::WilsonFermionR::FermionField>,   
-                  HMC_SolverModuleFactory<solver_string, QCD::WilsonFermionR::FermionField, Serialiser> > __CGWFmodXMLInit("ConjugateGradientWF"); 
+                  HMC_SolverModuleFactory<solver_string, QCD::WilsonFermionR::FermionField, Serialiser> > __CGWFmodXMLInit("ConjugateGradient"); 
 static Registrar< ConjugateResidualModule<QCD::WilsonFermionR::FermionField>,   
-                  HMC_SolverModuleFactory<solver_string, QCD::WilsonFermionR::FermionField, Serialiser> > __CRWFmodXMLInit("ConjugateResidualWF"); 
+                  HMC_SolverModuleFactory<solver_string, QCD::WilsonFermionR::FermionField, Serialiser> > __CRWFmodXMLInit("ConjugateResidual"); 
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -93,7 +98,7 @@ static Registrar< QCD::DomainWallFermionModule<FermionImplementationPolicy>,
 // Observables
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static Registrar<QCD::PlaquetteMod<ImplementationPolicy>, HMC_ObservablesModuleFactory<observable_string, Serialiser> > __OBSPLmodXMLInit("Plaquette"); 
+static Registrar<QCD::PlaquetteMod<ImplementationPolicy>, HMC_ObservablesModuleFactory<observable_string, typename ImplementationPolicy::Field, Serialiser> > __OBSPLmodXMLInit("Plaquette"); 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Checkpointers

@@ -39,6 +39,7 @@ directory
 #include <Grid/qcd/modules/SolverModules.h>
 #include <Grid/qcd/modules/FermionOperatorModules.h>
 #include <Grid/qcd/modules/ActionModules.h>
+#include <Grid/qcd/modules/ObservableModules.h>
 
 
 

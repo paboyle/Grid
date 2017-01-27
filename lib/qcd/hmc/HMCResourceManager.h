@@ -104,7 +104,7 @@ class HMCResourceManager {
     SetRNGSeeds(RNGpar);
 
     // Observables
-    auto &ObsFactory = HMC_ObservablesModuleFactory<observable_string, ReaderClass>::getInstance(); 
+    auto &ObsFactory = HMC_ObservablesModuleFactory<observable_string, typename ImplementationPolicy::Field, ReaderClass>::getInstance(); 
     Read.push(observable_string);// here must check if existing...
     do {
       std::string obs_type;

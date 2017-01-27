@@ -46,13 +46,12 @@ namespace QCD {
 
 struct HMCparameters: Serializable {
 	GRID_SERIALIZABLE_CLASS_MEMBERS(HMCparameters,
-  Integer, StartTrajectory,
-  Integer, Trajectories, /* @brief Number of sweeps in this run */
-  bool, MetropolisTest,
-  Integer, NoMetropolisUntil,
-  std::string, StartingType,
-  IntegratorParameters, MD,
-  )
+                                  Integer, StartTrajectory,
+                                  Integer, Trajectories, /* @brief Number of sweeps in this run */
+                                  bool, MetropolisTest,
+                                  Integer, NoMetropolisUntil,
+                                  std::string, StartingType,
+                                  IntegratorParameters, MD)
 
   HMCparameters() {
     ////////////////////////////// Default values
@@ -103,10 +102,15 @@ class PlaquetteLogger : public HmcObservable<typename Impl::Field> {
   std::string Stem;
 
  public:
-  INHERIT_GIMPL_TYPES(Impl);
+ 	// here forces the Impl to be of gauge fields
+ 	// if not the compiler will complain
+  INHERIT_GIMPL_TYPES(Impl); 
+  typedef typename Impl::Field Field; // necessary for HmcObservable compatibility
   PlaquetteLogger(std::string cf) { Stem = cf; };
 
-  void TrajectoryComplete(int traj, GaugeField &U, GridSerialRNG &sRNG,
+  void TrajectoryComplete(int traj, 
+                          Field &U, 
+                          GridSerialRNG &sRNG, 
                           GridParallelRNG &pRNG) {
     std::string file;
     {
