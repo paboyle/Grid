@@ -30,6 +30,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define GRID_LATTICE_RNG_H
 
 #include <random>
+#include <Grid/sitmo_rng/sitmo_prng_engine.hpp>
 
 namespace Grid {
 
@@ -114,10 +115,14 @@ namespace Grid {
     typedef uint64_t      RngStateType;
     typedef std::ranlux48 RngEngine;
     static const int RngStateCount = 15;
-#else
+#elif RNG_MT19937 
     typedef std::mt19937 RngEngine;
     typedef uint32_t     RngStateType;
     static const int     RngStateCount = std::mt19937::state_size;
+#elif RNG_SITMO
+    typedef sitmo::prng_engine 	RngEngine;
+    typedef uint64_t    	RngStateType;
+    static const int    	RngStateCount = 4;
 #endif
     std::vector<RngEngine>                             _generators;
     std::vector<std::uniform_real_distribution<RealD>> _uniform;

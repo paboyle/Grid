@@ -386,6 +386,7 @@ void InsertSlice(Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int 
   }
 
   // the above should guarantee that the operations are local
+  // Guido: check the threading here
   //PARALLEL_FOR_LOOP
   for(int idx=0;idx<lg->lSites();idx++){
     std::vector<int> lcoor(nl);

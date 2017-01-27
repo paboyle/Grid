@@ -106,6 +106,7 @@ public:
     void                    createGrid(const unsigned int Ls);
     GridCartesian *         getGrid(const unsigned int Ls = 1) const;
     GridRedBlackCartesian * getRbGrid(const unsigned int Ls = 1) const;
+    unsigned int            getNd(void) const;
     // random number generator
     void                    setSeed(const std::vector<int> &seed);
     GridParallelRNG *       get4dRng(void) const;
@@ -137,7 +138,7 @@ public:
     Size                    executeProgram(const std::vector<std::string> &p);
     // general memory management
     void                    addObject(const std::string name,
-                                      const int moduleAddress);
+                                      const int moduleAddress = -1);
     void                    registerObject(const unsigned int address,
                                            const unsigned int size,
                                            const unsigned int Ls = 1);
@@ -176,6 +177,8 @@ public:
     bool                    hasObject(const std::string name) const;
     bool                    hasRegisteredObject(const unsigned int address) const;
     bool                    hasRegisteredObject(const std::string name) const;
+    bool                    hasCreatedObject(const unsigned int address) const;
+    bool                    hasCreatedObject(const std::string name) const;
     bool                    isObject5d(const unsigned int address) const;
     bool                    isObject5d(const std::string name) const;
     Environment::Size       getTotalSize(void) const;
@@ -198,6 +201,7 @@ private:
     std::map<unsigned int, GridPt>         grid5d_;
     GridRbPt                               gridRb4d_;
     std::map<unsigned int, GridRbPt>       gridRb5d_;
+    unsigned int                           nd_;
     // random number generator
     RngPt                                  rng4d_;
     // module and related maps

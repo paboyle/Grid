@@ -30,7 +30,7 @@ Author: Guido Cossu <guido.cossu@ed.ac.uk>
 *************************************************************************************/
 /*  END LEGAL */
 
-#include <Grid.h>
+#include <Grid/Grid.h>
 
 
 namespace Grid {
