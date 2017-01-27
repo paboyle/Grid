@@ -169,19 +169,12 @@ void TChargedProp::execute(void)
 void TChargedProp::momD1(ScalarField &s, FFT &fft)
 {
     EmField     &A = *env().getObject<EmField>(par().emField);
-    ScalarField buf(env().getGrid()), fs(env().getGrid()), result(env().getGrid()), Amu(env().getGrid());
+    ScalarField buf(env().getGrid()), result(env().getGrid()),
+                Amu(env().getGrid());
     Complex     ci(0.0,1.0);
 
     result = zero;
 
-    fft.FFT_all_dim(fs, s, FFT::backward);
-    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-    {
-        Amu = peekLorentz(A, mu);
-        buf = Amu*fs;
-        fft.FFT_all_dim(buf, buf, FFT::forward);
-        result = result + ci*adj(*phase_[mu])*buf;
-    }
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
         Amu = peekLorentz(A, mu);
@@ -191,6 +184,14 @@ void TChargedProp::momD1(ScalarField &s, FFT &fft)
         fft.FFT_all_dim(buf, buf, FFT::forward);
         result = result - ci*buf;
     }
+    fft.FFT_all_dim(s, s, FFT::backward);
+    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+    {
+        Amu = peekLorentz(A, mu);
+        buf = Amu*s;
+        fft.FFT_all_dim(buf, buf, FFT::forward);
+        result = result + ci*adj(*phase_[mu])*buf;
+    }
 
     s = result;
 }
@@ -198,18 +199,11 @@ void TChargedProp::momD1(ScalarField &s, FFT &fft)
 void TChargedProp::momD2(ScalarField &s, FFT &fft)
 {
     EmField     &A = *env().getObject<EmField>(par().emField);
-    ScalarField buf(env().getGrid()), fs(env().getGrid()), result(env().getGrid()), Amu(env().getGrid());
+    ScalarField buf(env().getGrid()), result(env().getGrid()),
+                Amu(env().getGrid());
 
     result = zero;
     
-    fft.FFT_all_dim(fs, s, FFT::backward);
-    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-    {
-        Amu = peekLorentz(A, mu);        
-        buf = Amu*Amu*fs;
-        fft.FFT_all_dim(buf, buf, FFT::forward);
-        result = result + .5*adj(*phase_[mu])*buf;
-    }
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
         Amu = peekLorentz(A, mu);
@@ -218,6 +212,14 @@ void TChargedProp::momD2(ScalarField &s, FFT &fft)
         buf = Amu*Amu*buf;
         fft.FFT_all_dim(buf, buf, FFT::forward);
         result = result + .5*buf;
+    }
+    fft.FFT_all_dim(s, s, FFT::backward);
+    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+    {
+        Amu = peekLorentz(A, mu);        
+        buf = Amu*Amu*s;
+        fft.FFT_all_dim(buf, buf, FFT::forward);
+        result = result + .5*adj(*phase_[mu])*buf;
     }
 
     s = result;
