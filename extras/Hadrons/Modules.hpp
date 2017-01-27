@@ -30,6 +30,9 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MAction/Wilson.hpp>
 #include <Grid/Hadrons/Modules/MContraction/Baryon.hpp>
 #include <Grid/Hadrons/Modules/MContraction/Meson.hpp>
+#include <Grid/Hadrons/Modules/MContraction/WeakHamiltonian.hpp>
+#include <Grid/Hadrons/Modules/MContraction/WeakHamiltonianEye.hpp>
+#include <Grid/Hadrons/Modules/MContraction/WeakHamiltonianNonEye.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Load.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Random.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Unit.hpp>

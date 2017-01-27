@@ -1,4 +1,6 @@
 modules_cc =\
+  Modules/MContraction/WeakHamiltonianEye.cc \
+  Modules/MContraction/WeakHamiltonianNonEye.cc \
   Modules/MGauge/Load.cc \
   Modules/MGauge/Random.cc \
   Modules/MGauge/Unit.cc
@@ -8,6 +10,9 @@ modules_hpp =\
   Modules/MAction/Wilson.hpp \
   Modules/MContraction/Baryon.hpp \
   Modules/MContraction/Meson.hpp \
+  Modules/MContraction/WeakHamiltonian.hpp \
+  Modules/MContraction/WeakHamiltonianEye.hpp \
+  Modules/MContraction/WeakHamiltonianNonEye.hpp \
   Modules/MGauge/Load.hpp \
   Modules/MGauge/Random.hpp \
   Modules/MGauge/Unit.hpp \
