@@ -81,6 +81,8 @@ static Registrar< ConjugateGradientModule<QCD::WilsonFermionR::FermionField>,
 static Registrar< ConjugateResidualModule<QCD::WilsonFermionR::FermionField>,   
                   HMC_SolverModuleFactory<solver_string, QCD::WilsonFermionR::FermionField, Serialiser> > __CRWFmodXMLInit("ConjugateResidual"); 
 
+// add the staggered, scalar versions here
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Fermion operators

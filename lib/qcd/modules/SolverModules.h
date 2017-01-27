@@ -35,10 +35,6 @@ namespace Grid {
 //       Operator Functions (Solvers)
 //////////////////////////////////////////////
 
-
-
-
-
 template <template <typename> class SolverType, class Field, class SPar>
 class SolverModule
     : public Parametrized<SPar>,
