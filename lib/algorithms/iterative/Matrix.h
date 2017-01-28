@@ -36,7 +36,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <iomanip>
 #include <complex>
 #include <typeinfo>
-#include <Grid.h>
+#include <Grid/Grid.h>
 
 
 /** Sign function **/

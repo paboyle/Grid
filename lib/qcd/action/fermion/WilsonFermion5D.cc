@@ -29,8 +29,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#include <Grid.h>
-#include <PerfCount.h>
+#include <Grid/Grid.h>
+#include <Grid/PerfCount.h>
 
 namespace Grid {
 namespace QCD {

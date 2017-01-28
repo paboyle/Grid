@@ -105,3 +105,10 @@ lib/fftw/*
 ##################
 m4/lt*
 m4/libtool.m4
+
+# Buck files #
+##############
+.buck*
+buck-out
+BUCK
+make-bin-BUCK.sh
