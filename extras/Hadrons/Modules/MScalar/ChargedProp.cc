@@ -123,18 +123,22 @@ void TChargedProp::execute(void)
     
     // G*F*Src
     prop = GFSrc;
+
     // - q*G*momD1*G*F*Src (momD1 = F*D1*Finv)
     buf = GFSrc;
     momD1(buf, fft);
     buf = G*buf;
     prop = prop - q*buf;
+
     // + q^2*G*momD1*G*momD1*G*F*Src (here buf = G*momD1*G*F*Src)
     momD1(buf, fft);
     prop = prop + q*q*G*buf;
-    // + q^2*G*momD2*G*F*Src (momD1 = F*D2*Finv)
+
+    // - q^2*G*momD2*G*F*Src (momD2 = F*D2*Finv)
     buf = GFSrc;
     momD2(buf, fft);
-    prop = prop + q*q*G*buf;
+    prop = prop - q*q*G*buf;
+
     // final FT
     fft.FFT_all_dim(prop, prop, FFT::backward);
     
@@ -147,7 +151,7 @@ void TChargedProp::execute(void)
         LOG(Message) << "Saving zero-momentum projection to '"
                      << filename << "'..." << std::endl;
         
-        TextWriter            writer(filename);
+        Hdf5Writer            writer(filename);
         std::vector<TComplex> vecBuf;
         std::vector<Complex>  result;
         
@@ -157,6 +161,7 @@ void TChargedProp::execute(void)
         {
             result[t] = TensorRemove(vecBuf[t]);
         }
+        write(writer, "charge", q);
         write(writer, "prop", result);
     }
 }
@@ -164,16 +169,18 @@ void TChargedProp::execute(void)
 void TChargedProp::momD1(ScalarField &s, FFT &fft)
 {
     EmField     &A = *env().getObject<EmField>(par().emField);
-    ScalarField buf(env().getGrid()), Amu(env().getGrid());
+    ScalarField buf(env().getGrid()), fs(env().getGrid()), result(env().getGrid()), Amu(env().getGrid());
     Complex     ci(0.0,1.0);
-    
+
+    result = zero;
+
+    fft.FFT_all_dim(fs, s, FFT::backward);
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
         Amu = peekLorentz(A, mu);
-        fft.FFT_all_dim(buf, s, FFT::backward);
-        buf = Amu*buf;
+        buf = Amu*fs;
         fft.FFT_all_dim(buf, buf, FFT::forward);
-        s = s + ci*adj(*phase_[mu])*buf;
+        result = result + ci*adj(*phase_[mu])*buf;
     }
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
@@ -182,22 +189,26 @@ void TChargedProp::momD1(ScalarField &s, FFT &fft)
         fft.FFT_all_dim(buf, buf, FFT::backward);
         buf = Amu*buf;
         fft.FFT_all_dim(buf, buf, FFT::forward);
-        s = s - ci*buf;
+        result = result - ci*buf;
     }
+
+    s = result;
 }
 
 void TChargedProp::momD2(ScalarField &s, FFT &fft)
 {
     EmField     &A = *env().getObject<EmField>(par().emField);
-    ScalarField buf(env().getGrid()), Amu(env().getGrid());
+    ScalarField buf(env().getGrid()), fs(env().getGrid()), result(env().getGrid()), Amu(env().getGrid());
+
+    result = zero;
     
+    fft.FFT_all_dim(fs, s, FFT::backward);
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
-        Amu = peekLorentz(A, mu);
-        fft.FFT_all_dim(buf, s, FFT::backward);
-        buf = Amu*Amu*buf;
+        Amu = peekLorentz(A, mu);        
+        buf = Amu*Amu*fs;
         fft.FFT_all_dim(buf, buf, FFT::forward);
-        s = s + .5*adj(*phase_[mu])*buf;
+        result = result + .5*adj(*phase_[mu])*buf;
     }
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
@@ -206,6 +217,8 @@ void TChargedProp::momD2(ScalarField &s, FFT &fft)
         fft.FFT_all_dim(buf, buf, FFT::backward);
         buf = Amu*Amu*buf;
         fft.FFT_all_dim(buf, buf, FFT::forward);
-        s = s + .5*buf;
+        result = result + .5*buf;
     }
+
+    s = result;
 }
