@@ -36,7 +36,7 @@ static Gamma::Algebra gmu[4] =
     Gamma::Algebra::GammaY,
     Gamma::Algebra::GammaZ,
     Gamma::Algebra::GammaT
-}
+};
 
 int main(int argc, char *argv[])
 {
