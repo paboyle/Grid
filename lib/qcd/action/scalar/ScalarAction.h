@@ -47,6 +47,14 @@ namespace Grid {
     
   public:
     ScalarAction(RealD ms, RealD l) : mass_square(ms), lambda(l){};
+
+    virtual std::string LogParameters(){
+      std::stringstream sstream;
+      sstream << GridLogMessage << "[ScalarAction] lambda      : " << lambda      << std::endl;
+      sstream << GridLogMessage << "[ScalarAction] mass_square : " << mass_square << std::endl;
+      return sstream.str();
+      
+    }
     
     virtual std::string action_name(){return "ScalarAction";}
     

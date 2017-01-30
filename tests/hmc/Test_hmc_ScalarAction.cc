@@ -4,12 +4,9 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: ./tests/Test_hmc_WilsonFermionGauge.cc
 
-Copyright (C) 2015
+Copyright (C) 2016
 
-Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: neo <cossu@post.kek.jp>
-Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -30,57 +27,73 @@ See the full license in the file "LICENSE" in the top level distribution directo
 /*  END LEGAL */
 #include <Grid/Grid.h>
 
-using namespace std;
-using namespace Grid;
-using namespace Grid::QCD;
-
-namespace Grid {
-namespace QCD {
-
-// Derive from the BinaryHmcRunner (templated for gauge fields)
-class HmcRunner : public ScalarBinaryHmcRunner {
- public:
-  void BuildTheAction(int argc, char **argv)
-
-  {
-    // Notice that the Grid is for reals now
-    UGrid = SpaceTimeGrid::makeFourDimGrid(
-        GridDefaultLatt(), GridDefaultSimd(Nd, vReal::Nsimd()),
-        GridDefaultMpi());
-    UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
-
-    // Real Scalar action
-    ScalarActionR Saction(0.11,0.);
-
-    // Collect actions
-    ActionLevel<Field, ScalarFields> Level1(1);
-    Level1.push_back(&Saction);
-
-    TheAction.push_back(Level1);
-
-
-    // Add observables and checkpointers
-    int SaveInterval = 1;
-    std::string format = std::string("IEEE64BIG");
-    std::string conf_prefix = std::string("ckpoint_scalar_lat");
-    std::string rng_prefix = std::string("ckpoint_scalar_rng");
-    BinaryHmcCheckpointer<ScalarBinaryHmcRunner::ImplPolicy> Checkpoint(conf_prefix, rng_prefix, SaveInterval, format);
-    ObservablesList.push_back(&Checkpoint);
-
-    Run(argc, argv, Checkpoint);
-  };  
-};
-}
-}
-
 int main(int argc, char **argv) {
+  using namespace Grid;
+  using namespace Grid::QCD;
+
   Grid_init(&argc, &argv);
-
   int threads = GridThread::GetThreads();
-  std::cout << GridLogMessage << "Grid is setup to use " << threads
-            << " threads" << std::endl;
+  // here make a routine to print all the relevant information on the run
+  std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
-  HmcRunner TheHMC;
+   // Typedefs to simplify notation
+  typedef ScalarGenericHMCRunner HMCWrapper;  // Uses the default minimum norm
 
-  TheHMC.BuildTheAction(argc, argv);
-}
+  //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+  HMCWrapper TheHMC;
+
+  // Grid from the command line
+  GridModule ScalarGrid;
+  ScalarGrid.set_full( SpaceTimeGrid::makeFourDimGrid(
+        GridDefaultLatt(), GridDefaultSimd(Nd, vReal::Nsimd()),
+        GridDefaultMpi()));
+  ScalarGrid.set_rb(SpaceTimeGrid::makeFourDimRedBlackGrid(ScalarGrid.get_full()));
+  TheHMC.Resources.AddGrid("scalar", ScalarGrid);
+  // Possibile to create the module by hand 
+  // hardcoding parameters or using a Reader
+
+  // Checkpointer definition
+  CheckpointerParameters CPparams;  
+  CPparams.config_prefix = "ckpoint_scalar_lat";
+  CPparams.rng_prefix = "ckpoint_scalar_rng";
+  CPparams.saveInterval = 5;
+  CPparams.format = "IEEE64BIG";
+  
+  TheHMC.Resources.LoadBinaryCheckpointer(CPparams);
+
+  RNGModuleParameters RNGpar;
+  RNGpar.SerialSeed = {1,2,3,4,5};
+  RNGpar.ParallelSeed = {6,7,8,9,10};
+  TheHMC.Resources.SetRNGSeeds(RNGpar);
+
+  //////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////////////
+  // Collect actions, here use more encapsulation
+  // need wrappers of the fermionic classes 
+  // that have a complex construction
+  // standard
+
+  // Real Scalar action
+  ScalarActionR Saction(0.11,0.);
+
+  // Collect actions
+  ActionLevel<ScalarActionR::Field, ScalarFields> Level1(1);
+  Level1.push_back(&Saction);
+
+  TheHMC.TheAction.push_back(Level1);
+  /////////////////////////////////////////////////////////////
+
+
+  // HMC parameters are serialisable 
+  TheHMC.Parameters.MD.MDsteps = 20;
+  TheHMC.Parameters.MD.trajL   = 1.0;
+
+  TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
+  TheHMC.Run(); 
+
+  Grid_finalize();
+
+} // main
+
+

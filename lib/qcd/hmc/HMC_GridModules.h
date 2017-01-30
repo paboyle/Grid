@@ -85,6 +85,7 @@ class GridModule {
 };
 
 // helpers
+// FIXME define a class accepting also real vtypes
 class GridFourDimModule : public GridModule {
  public:
   // add a function to create the module from a Reader
