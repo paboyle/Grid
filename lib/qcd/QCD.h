@@ -51,14 +51,6 @@ namespace QCD {
     static const int Nhs=2; // half spinor
     static const int Nds=8; // double stored gauge field
     static const int Ngp=2; // gparity index range
-    
-    // if no adj funtion in QCD:: redirect to Grid::
-    // this avoids QCD:: adj functions to screen the Grid:: ones
-    template <typename T>
-    inline auto adj(T x)->decltype(Grid::adj(x))
-    {
-        return Grid::adj(x);
-    }
 
     //////////////////////////////////////////////////////////////////////////////
     // QCD iMatrix types
