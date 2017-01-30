@@ -52,6 +52,13 @@ class TWeakHamiltonianEye: public Module<WeakHamiltonianPar>
 {
 public:
     TYPE_ALIASES(FIMPL,)
+    class Result: Serializable
+    {
+    public:
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
+                                        std::string, name,
+                                        std::vector<Complex>, corr);
+    };
 public:
     // constructor
     TWeakHamiltonianEye(const std::string name);

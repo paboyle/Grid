@@ -69,7 +69,7 @@ TWeakHamiltonianNonEye::TWeakHamiltonianNonEye(const std::string name)
 // dependencies/products ///////////////////////////////////////////////////////
 std::vector<std::string> TWeakHamiltonianNonEye::getInput(void)
 {
-    std::vector<std::string> in;
+    std::vector<std::string> in = {par().q1, par().q2, par().q3, par().q4};
     
     return in;
 }
@@ -99,28 +99,29 @@ void TWeakHamiltonianNonEye::execute(void)
     LatticeComplex        expbuf(env().getGrid());
     std::vector<TComplex> corrbuf;
     std::vector<Result>   result;
+    unsigned int ndim   = env().getNd();
 
     PropagatorField              tmp1(env().getGrid());
     LatticeComplex               tmp2(env().getGrid());
-    std::vector<PropagatorField> C_i_side_loop(Nd, tmp1);
-    std::vector<PropagatorField> C_f_side_loop(Nd, tmp1);
-    std::vector<LatticeComplex>  W_i_side_loop(Nd, tmp2);
-    std::vector<LatticeComplex>  W_f_side_loop(Nd, tmp2);
+    std::vector<PropagatorField> C_i_side_loop(ndim, tmp1);
+    std::vector<PropagatorField> C_f_side_loop(ndim, tmp1);
+    std::vector<LatticeComplex>  W_i_side_loop(ndim, tmp2);
+    std::vector<LatticeComplex>  W_f_side_loop(ndim, tmp2);
 
     // Soon to be deprecated. Keeping V and A parts distinct to take advantage
     // of zero-flop gamma products, when implemented.
     std::vector<std::vector<SpinMatrix>> gL;
     gL.resize(n_i);
-    gL[i_V].resize(Nd);
-    gL[i_A].resize(Nd);
-    for (unsigned int mu = 0; mu < Nd; ++mu)
+    gL[i_V].resize(ndim);
+    gL[i_A].resize(ndim);
+    for (unsigned int mu = 0; mu < ndim; ++mu)
     {
         gL[i_V][mu] = makeGammaProd(mu);
         gL[i_A][mu] = g5*makeGammaProd(mu);
     }
 
     // Setup for C-type contractions.
-    for (int mu = 0; mu < Nd; ++mu)
+    for (int mu = 0; mu < ndim; ++mu)
     {
         C_i_side_loop[mu] = MAKE_CW_SUBDIAG(q1, q2, gL[i_V][mu]) -
                             MAKE_CW_SUBDIAG(q1, q2, gL[i_A][mu]);
@@ -133,7 +134,7 @@ void TWeakHamiltonianNonEye::execute(void)
     MAKE_DIAG(expbuf, corrbuf, result[C_diag], "3pt_HW_C")
 
     // Recycle sub-expressions for W-type contractions.
-    for (unsigned int mu = 0; mu < Nd; ++mu)
+    for (unsigned int mu = 0; mu < ndim; ++mu)
     {
         W_i_side_loop[mu] = trace(C_i_side_loop[mu]);
         W_f_side_loop[mu] = trace(C_f_side_loop[mu]);
