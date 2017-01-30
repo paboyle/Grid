@@ -486,31 +486,31 @@ class OneFlavourRatioEOFModule:
 // Registar must be changed because I do not want to use the ModuleFactory
 
 // explicit ref to LatticeGaugeField must be changed or put in the factory
-typedef ActionModuleBase< QCD::Action< QCD::LatticeGaugeField >, QCD::GridModule > HMC_LGTActionModBase;
-typedef ActionModuleBase< QCD::Action< QCD::LatticeReal >, QCD::GridModule > HMC_ScalarActionModBase;
+//typedef ActionModuleBase< QCD::Action< QCD::LatticeGaugeField >, QCD::GridModule > HMC_LGTActionModBase;
+//typedef ActionModuleBase< QCD::Action< QCD::LatticeReal >, QCD::GridModule > HMC_ScalarActionModBase;
 
-template <char const *str, class ReaderClass >
-class HMC_LGTActionModuleFactory
-    : public Factory < HMC_LGTActionModBase , Reader<ReaderClass> > {
+template <char const *str, class Field, class ReaderClass >
+class HMC_ActionModuleFactory
+    : public Factory < ActionModuleBase< QCD::Action< Field >, QCD::GridModule > , Reader<ReaderClass> > {
  public:
   typedef Reader<ReaderClass> TheReader; 
   // use SINGLETON FUNCTOR MACRO HERE
-  HMC_LGTActionModuleFactory(const HMC_LGTActionModuleFactory& e) = delete;
-  void operator=(const HMC_LGTActionModuleFactory& e) = delete;
-  static HMC_LGTActionModuleFactory& getInstance(void) {
-    static HMC_LGTActionModuleFactory e;
+  HMC_ActionModuleFactory(const HMC_ActionModuleFactory& e) = delete;
+  void operator=(const HMC_ActionModuleFactory& e) = delete;
+  static HMC_ActionModuleFactory& getInstance(void) {
+    static HMC_ActionModuleFactory e;
     return e;
   }
 
  private:
-  HMC_LGTActionModuleFactory(void) = default;
+  HMC_ActionModuleFactory(void) = default;
     std::string obj_type() const {
         return std::string(str);
   }
 };
 
 
-
+/*
 template <char const *str, class ReaderClass >
 class HMC_ScalarActionModuleFactory
     : public Factory < HMC_ScalarActionModBase , Reader<ReaderClass> > {
@@ -530,8 +530,7 @@ class HMC_ScalarActionModuleFactory
         return std::string(str);
   }
 };
-
-
+*/
 
 extern char gauge_string[];
 } // Grid

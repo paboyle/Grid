@@ -269,10 +269,7 @@ private:
     // here gauge
     Read.push("Action");
     do{
-      // I need to modify the Factory generator depending on the Implementation
-      // Solution: pass the field as a template parameter 
-      //auto &ActionFactory = HMC_ScalarActionModuleFactory<gauge_string, ReaderClass>::getInstance(); 
-      auto &ActionFactory = HMC_LGTActionModuleFactory<gauge_string, ReaderClass>::getInstance(); 
+      auto &ActionFactory = HMC_ActionModuleFactory<gauge_string, typename ImplementationPolicy::Field, ReaderClass>::getInstance(); 
       std::string action_type;
       Read.readDefault("name", action_type);
       std::cout << ActionFactory.getBuilderList() << std::endl;  // temporary

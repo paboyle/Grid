@@ -30,6 +30,8 @@ directory
 #ifndef MODULES_REGISTRATION_H
 #define MODULES_REGISTRATION_H
 
+// simplify with macros
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Actions
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -40,31 +42,31 @@ typedef QCD::DBW2GModule<ImplementationPolicy> DBW2GMod;
 typedef QCD::RBCGModule<ImplementationPolicy> RBCGMod;
 typedef QCD::PlaqPlusRectangleGModule<ImplementationPolicy> PlaqPlusRectangleGMod;
 
-static Registrar<QCD::WilsonGMod,            HMC_LGTActionModuleFactory<gauge_string, Serialiser> > __WGmodXMLInit("Wilson"); 
-static Registrar<QCD::SymanzikGMod,          HMC_LGTActionModuleFactory<gauge_string, Serialiser> > __SymGmodXMLInit("Symanzik"); 
-static Registrar<QCD::IwasakiGMod,           HMC_LGTActionModuleFactory<gauge_string, Serialiser> > __IwGmodXMLInit("Iwasaki"); 
-static Registrar<QCD::DBW2GMod,              HMC_LGTActionModuleFactory<gauge_string, Serialiser> > __DBW2GmodXMLInit("DBW2"); 
-static Registrar<QCD::RBCGMod,               HMC_LGTActionModuleFactory<gauge_string, Serialiser> > __RBCGmodXMLInit("RBC"); 
-static Registrar<QCD::PlaqPlusRectangleGMod, HMC_LGTActionModuleFactory<gauge_string, Serialiser> > __PPRectGmodXMLInit("PlaqPlusRect"); 
+static Registrar<QCD::WilsonGMod,            HMC_ActionModuleFactory<gauge_string, typename ImplementationPolicy::Field, Serialiser> > __WGmodXMLInit("Wilson"); 
+static Registrar<QCD::SymanzikGMod,          HMC_ActionModuleFactory<gauge_string, typename ImplementationPolicy::Field, Serialiser> > __SymGmodXMLInit("Symanzik"); 
+static Registrar<QCD::IwasakiGMod,           HMC_ActionModuleFactory<gauge_string, typename ImplementationPolicy::Field, Serialiser> > __IwGmodXMLInit("Iwasaki"); 
+static Registrar<QCD::DBW2GMod,              HMC_ActionModuleFactory<gauge_string, typename ImplementationPolicy::Field, Serialiser> > __DBW2GmodXMLInit("DBW2"); 
+static Registrar<QCD::RBCGMod,               HMC_ActionModuleFactory<gauge_string, typename ImplementationPolicy::Field, Serialiser> > __RBCGmodXMLInit("RBC"); 
+static Registrar<QCD::PlaqPlusRectangleGMod, HMC_ActionModuleFactory<gauge_string, typename ImplementationPolicy::Field, Serialiser> > __PPRectGmodXMLInit("PlaqPlusRect"); 
 
 
 // FIXME more general implementation
 static Registrar<QCD::TwoFlavourFModule<FermionImplementationPolicy> ,      
-	HMC_LGTActionModuleFactory<gauge_string, Serialiser> > __TwoFlavourFmodXMLInit("TwoFlavours"); 
+	HMC_ActionModuleFactory<gauge_string, typename ImplementationPolicy::Field, Serialiser> > __TwoFlavourFmodXMLInit("TwoFlavours"); 
 static Registrar<QCD::TwoFlavourRatioFModule<FermionImplementationPolicy> , 
-	HMC_LGTActionModuleFactory<gauge_string, Serialiser> > __TwoFlavourRatioFmodXMLInit("TwoFlavoursRatio"); 
+	HMC_ActionModuleFactory<gauge_string, typename ImplementationPolicy::Field, Serialiser> > __TwoFlavourRatioFmodXMLInit("TwoFlavoursRatio"); 
 static Registrar<QCD::TwoFlavourEOFModule<FermionImplementationPolicy> ,    
-	HMC_LGTActionModuleFactory<gauge_string, Serialiser> > __TwoFlavourEOFmodXMLInit("TwoFlavoursEvenOdd"); 
+	HMC_ActionModuleFactory<gauge_string, typename ImplementationPolicy::Field, Serialiser> > __TwoFlavourEOFmodXMLInit("TwoFlavoursEvenOdd"); 
 static Registrar<QCD::TwoFlavourRatioEOFModule<FermionImplementationPolicy>,
-	HMC_LGTActionModuleFactory<gauge_string, Serialiser> > __TwoFlavourRatioEOFmodXMLInit("TwoFlavoursEvenOddRatio"); 
+	HMC_ActionModuleFactory<gauge_string, typename ImplementationPolicy::Field, Serialiser> > __TwoFlavourRatioEOFmodXMLInit("TwoFlavoursEvenOddRatio"); 
 static Registrar<QCD::OneFlavourFModule<FermionImplementationPolicy> ,      
-	HMC_LGTActionModuleFactory<gauge_string, Serialiser> > __OneFlavourFmodXMLInit("OneFlavour"); 
+	HMC_ActionModuleFactory<gauge_string, typename ImplementationPolicy::Field, Serialiser> > __OneFlavourFmodXMLInit("OneFlavour"); 
 static Registrar<QCD::OneFlavourEOFModule<FermionImplementationPolicy> ,    
-	HMC_LGTActionModuleFactory<gauge_string, Serialiser> > __OneFlavourEOFmodXMLInit("OneFlavourEvenOdd"); 
+	HMC_ActionModuleFactory<gauge_string, typename ImplementationPolicy::Field, Serialiser> > __OneFlavourEOFmodXMLInit("OneFlavourEvenOdd"); 
 static Registrar<QCD::OneFlavourRatioFModule<FermionImplementationPolicy> , 
-	HMC_LGTActionModuleFactory<gauge_string, Serialiser> > __OneFlavourRatioFmodXMLInit("OneFlavourRatio"); 
+	HMC_ActionModuleFactory<gauge_string, typename ImplementationPolicy::Field, Serialiser> > __OneFlavourRatioFmodXMLInit("OneFlavourRatio"); 
 static Registrar<QCD::OneFlavourRatioEOFModule<FermionImplementationPolicy>,
-	HMC_LGTActionModuleFactory<gauge_string, Serialiser> > __OneFlavourRatioEOFmodXMLInit("OneFlavourEvenOddRatio"); 
+	HMC_ActionModuleFactory<gauge_string, typename ImplementationPolicy::Field, Serialiser> > __OneFlavourRatioEOFmodXMLInit("OneFlavourEvenOddRatio"); 
 
 
 
