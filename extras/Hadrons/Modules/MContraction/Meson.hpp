@@ -6,6 +6,7 @@ Source file: extras/Hadrons/Modules/MContraction/Meson.hpp
 
 Copyright (C) 2015
 Copyright (C) 2016
+Copyright (C) 2017
 
 Author: Antonin Portelli <antonin.portelli@me.com>
         Andrew Lawson    <andrew.lawson1991@gmail.com>
@@ -66,8 +67,9 @@ BEGIN_HADRONS_NAMESPACE
            in a sequence (e.g. "[15 7][7 15][7 7]").
 
            Special values: "all" - perform all possible contractions.
- 
- */
+ - mom: momentum insertion, space-separated float sequence (e.g ".1 .2 1. 0."),
+        given as multiples of (2*pi) / L.
+*/
 
 /******************************************************************************
  *                                TMeson                                       *
@@ -83,6 +85,7 @@ public:
                                     std::string, q1,
                                     std::string, q2,
                                     std::string, gammas,
+                                    std::string, mom,
                                     std::string, output);
 };
 
@@ -182,7 +185,19 @@ void TMeson<FImpl1, FImpl2>::execute(void)
     std::vector<GammaPair> gammaList;
     std::vector<TComplex>  buf;
     std::vector<Result>    result;
+    std::vector<Real>      p;
 
+    p  = strToVec<Real>(par().mom);
+    LatticeComplex         ph(env().getGrid()), coor(env().getGrid());
+    Complex                i(0.0,1.0);
+    ph = zero;
+    for(unsigned int mu = 0; mu < env().getNd(); mu++)
+    {
+        LatticeCoordinate(coor, mu);
+        ph = ph + p[mu]*coor*((1./(env().getGrid()->_fdimensions[mu])));
+    }
+    ph = exp(-2*M_PI*i*ph);
+    
     g5 = makeGammaProd(Ns*Ns - 1);
     for (int i = 0; i < Ns*Ns; ++i)
     {
@@ -193,7 +208,7 @@ void TMeson<FImpl1, FImpl2>::execute(void)
     result.resize(gammaList.size());
     for (unsigned int i = 0; i < result.size(); ++i)
     {
-        c = trace(g[gammaList[i].first]*q1*g[gammaList[i].second]*g5*adj(q2)*g5);
+        c = trace(g[gammaList[i].first]*q1*g[gammaList[i].second]*g5*adj(q2)*g5*ph);
         sliceSum(c, buf, Tp);
 
         result[i].gamma_snk = gammaList[i].first;
