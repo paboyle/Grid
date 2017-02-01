@@ -29,7 +29,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 
-#include <Grid.h>
+#include <Grid/Grid.h>
 
 
 namespace Grid {

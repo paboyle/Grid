@@ -6,6 +6,7 @@ Source file: extras/Hadrons/Modules/MSource/SeqGamma.hpp
 
 Copyright (C) 2015
 Copyright (C) 2016
+Copyright (C) 2017
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -60,11 +61,11 @@ class SeqGammaPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(SeqGammaPar,
-                                    std::string,  q,
-                                    unsigned int, tA,
-                                    unsigned int, tB,
-                                    unsigned int, gamma,
-                                    std::string,  mom);
+                                    std::string,    q,
+                                    unsigned int,   tA,
+                                    unsigned int,   tB,
+                                    Gamma::Algebra, gamma,
+                                    std::string,    mom);
 };
 
 template <typename FImpl>
@@ -140,21 +141,20 @@ void TSeqGamma<FImpl>::execute(void)
     PropagatorField &q   = *env().template getObject<PropagatorField>(par().q);
     Lattice<iScalar<vInteger>> t(env().getGrid());
     LatticeComplex             ph(env().getGrid()), coor(env().getGrid());
-    SpinMatrix                 g;
+    Gamma                      g(par().gamma);
     std::vector<Real>          p;
     Complex                    i(0.0,1.0);
     
-    g  = makeGammaProd(par().gamma);
     p  = strToVec<Real>(par().mom);
     ph = zero;
     for(unsigned int mu = 0; mu < env().getNd(); mu++)
     {
         LatticeCoordinate(coor, mu);
-        ph = ph + p[mu]*coor;
+        ph = ph + p[mu]*coor*((1./(env().getGrid()->_fdimensions[mu])));
     }
-    ph = exp(i*ph);
+    ph = exp(2*M_PI*i*ph);
     LatticeCoordinate(t, Tp);
-    src = where((t >= par().tA) and (t <= par().tB), g*ph*q, 0.*q);
+    src = where((t >= par().tA) and (t <= par().tB), ph*(g*q), 0.*q);
 }
 
 END_MODULE_NAMESPACE

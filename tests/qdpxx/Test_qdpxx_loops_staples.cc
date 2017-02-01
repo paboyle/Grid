@@ -25,7 +25,7 @@ Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#include <Grid.h>
+#include <Grid/Grid.h>
 
 double calc_grid_p      (Grid::QCD::LatticeGaugeField & lat);
 double calc_chroma_p    (Grid::QCD::LatticeGaugeField & lat);

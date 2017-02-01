@@ -6,6 +6,7 @@ Source file: extras/Hadrons/Modules/MContraction/Meson.hpp
 
 Copyright (C) 2015
 Copyright (C) 2016
+Copyright (C) 2017
 
 Author: Antonin Portelli <antonin.portelli@me.com>
         Andrew Lawson    <andrew.lawson1991@gmail.com>
@@ -36,17 +37,17 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/ModuleFactory.hpp>
 
 namespace Grid {
-    // Overload >> to extract gamma pair from "[g1 g2]" string.
+    // Overload >> to extract gamma pair from "<g1 g2>" string.
     template <typename T1, typename T2>
     inline std::istringstream &operator>>(std::istringstream &sstr,
                                           std::pair<T1, T2> &buf)
     {
-        T1 buf1;
-        T2 buf2;
+        unsigned int buf1;
+        unsigned int buf2;
         char c;
         sstr >> c >> buf1 >> buf2 >> c;
         sstr.peek();
-        buf = std::make_pair(buf1, buf2);
+        buf = std::make_pair((T1)buf1, (T2)buf2);
         return sstr;
     }
 }
@@ -66,15 +67,16 @@ BEGIN_HADRONS_NAMESPACE
            in a sequence (e.g. "[15 7][7 15][7 7]").
 
            Special values: "all" - perform all possible contractions.
- 
- */
+ - mom: momentum insertion, space-separated float sequence (e.g ".1 .2 1. 0."),
+        given as multiples of (2*pi) / L.
+*/
 
 /******************************************************************************
  *                                TMeson                                       *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MContraction)
 
-typedef std::pair<unsigned int, unsigned int> GammaPair;
+typedef std::pair<Gamma::Algebra, Gamma::Algebra> GammaPair;
 
 class MesonPar: Serializable
 {
@@ -83,6 +85,7 @@ public:
                                     std::string, q1,
                                     std::string, q2,
                                     std::string, gammas,
+                                    std::string, mom,
                                     std::string, output);
 };
 
@@ -96,8 +99,8 @@ public:
     {
     public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        unsigned int, gamma_snk,
-                                        unsigned int, gamma_src,
+                                        Gamma::Algebra, gamma_snk,
+                                        Gamma::Algebra, gamma_src,
                                         std::vector<Complex>, corr);
     };
 public:
@@ -148,13 +151,14 @@ void TMeson<FImpl1, FImpl2>::parseGammaString(std::vector<GammaPair> &gammaList)
     if (par().gammas.compare("all") == 0)
     {
         // Do all contractions.
-        unsigned int n_gam = Ns*Ns;
+        unsigned int n_gam = Ns * Ns;
         gammaList.resize(n_gam*n_gam);
-        for (unsigned int i = 0; i < n_gam; ++i)
+        for (unsigned int i = 1; i < Gamma::nGamma; i += 2)
         {
-            for (unsigned int j = 0; j < n_gam; ++j)
+            for (unsigned int j = 1; j < Gamma::nGamma; j += 2)
             {
-                gammaList.push_back(std::make_pair(i, j));
+                gammaList.push_back(std::make_pair((Gamma::Algebra)i, 
+                                                   (Gamma::Algebra)j));
             }
         }
     }
@@ -178,22 +182,31 @@ void TMeson<FImpl1, FImpl2>::execute(void)
     PropagatorField1       &q1 = *env().template getObject<PropagatorField1>(par().q1);
     PropagatorField2       &q2 = *env().template getObject<PropagatorField2>(par().q2);
     LatticeComplex         c(env().getGrid());
-    SpinMatrix             g[Ns*Ns], g5;
+    Gamma                  g5(Gamma::Algebra::Gamma5);
     std::vector<GammaPair> gammaList;
     std::vector<TComplex>  buf;
     std::vector<Result>    result;
+    std::vector<Real>      p;
 
-    g5 = makeGammaProd(Ns*Ns - 1);
-    for (int i = 0; i < Ns*Ns; ++i)
+    p  = strToVec<Real>(par().mom);
+    LatticeComplex         ph(env().getGrid()), coor(env().getGrid());
+    Complex                i(0.0,1.0);
+    ph = zero;
+    for(unsigned int mu = 0; mu < env().getNd(); mu++)
     {
-        g[i] = makeGammaProd(i);
+        LatticeCoordinate(coor, mu);
+        ph = ph + p[mu]*coor*((1./(env().getGrid()->_fdimensions[mu])));
     }
+    ph = exp(-2*M_PI*i*ph);
+    
     parseGammaString(gammaList);
 
     result.resize(gammaList.size());
     for (unsigned int i = 0; i < result.size(); ++i)
     {
-        c = trace(g[gammaList[i].first]*q1*g[gammaList[i].second]*g5*adj(q2)*g5);
+        Gamma gSnk(gammaList[i].first);
+        Gamma gSrc(gammaList[i].second);
+        c = trace((g5*gSnk)*q1*(gSrc*g5)*adj(q2))*ph;
         sliceSum(c, buf, Tp);
 
         result[i].gamma_snk = gammaList[i].first;

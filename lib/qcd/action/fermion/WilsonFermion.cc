@@ -29,7 +29,7 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
-#include <Grid.h>
+#include <Grid/Grid.h>
 
 namespace Grid {
 namespace QCD {
@@ -149,11 +149,11 @@ void WilsonFermion<Impl>::MeooeDag(const FermionField &in, FermionField &out) {
 
     typedef Lattice<iSinglet<vector_type> > LatComplex;
 
-    Gamma::GammaMatrix Gmu [] = {
-      Gamma::GammaX,
-      Gamma::GammaY,
-      Gamma::GammaZ,
-      Gamma::GammaT
+    Gamma::Algebra Gmu [] = {
+      Gamma::Algebra::GammaX,
+      Gamma::Algebra::GammaY,
+      Gamma::Algebra::GammaZ,
+      Gamma::Algebra::GammaT
     };
 
     std::vector<int> latt_size   = _grid->_fdimensions;

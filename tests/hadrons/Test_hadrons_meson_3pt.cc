@@ -131,6 +131,7 @@ int main(int argc, char *argv[])
             mesPar.q1     = qName[i];
             mesPar.q2     = qName[j];
             mesPar.gammas = "all";
+            mesPar.mom    = "0. 0. 0. 0.";
             application.createModule<MContraction::Meson>("meson_Z2_"
                                                           + std::to_string(t)
                                                           + "_"
@@ -149,6 +150,7 @@ int main(int argc, char *argv[])
             mesPar.q1     = qName[i];
             mesPar.q2     = seqName[j][mu];
             mesPar.gammas = "all";
+            mesPar.mom    = "0. 0. 0. 0.";
             application.createModule<MContraction::Meson>("3pt_Z2_"
                                                           + std::to_string(t)
                                                           + "_"

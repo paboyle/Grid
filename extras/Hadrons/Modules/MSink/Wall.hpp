@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MSink/Wall.hpp
 
-Copyright (C) 2016
+Copyright (C) 2017
 
 Author: Andrew Lawson <andrew.lawson1991@gmail.com>
 
@@ -131,9 +131,9 @@ void TWall<FImpl>::execute(void)
     for(unsigned int mu = 0; mu < Nd; mu++)
     {
         LatticeCoordinate(coor, mu);
-        ph = ph + p[mu]*coor;
+        ph = ph + p[mu]*coor*((1./(env().getGrid()->_fdimensions[mu])));
     }
-    ph = exp(-i*ph);
+    ph = exp(-2*M_PI*i*ph);
     sliceSum<SitePropagator>(ph*q, prop, Tp);
 }
 

@@ -97,6 +97,7 @@ int main(int argc, char *argv[])
         mesPar.q1     = "Qpt_" + flavour[i];
         mesPar.q2     = "Qpt_" + flavour[j];
         mesPar.gammas = "all";
+        mesPar.mom    = "0. 0. 0. 0.";
         application.createModule<MContraction::Meson>("meson_pt_"
                                                       + flavour[i] + flavour[j],
                                                       mesPar);
@@ -104,6 +105,7 @@ int main(int argc, char *argv[])
         mesPar.q1     = "QZ2_" + flavour[i];
         mesPar.q2     = "QZ2_" + flavour[j];
         mesPar.gammas = "all";
+        mesPar.mom    = "0. 0. 0. 0.";
         application.createModule<MContraction::Meson>("meson_Z2_"
                                                       + flavour[i] + flavour[j],
                                                       mesPar);
