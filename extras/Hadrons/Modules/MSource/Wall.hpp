@@ -26,8 +26,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_Wall_hpp_
-#define Hadrons_Wall_hpp_
+#ifndef Hadrons_WallSource_hpp_
+#define Hadrons_WallSource_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -144,4 +144,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_Wall_hpp_
+#endif // Hadrons_WallSource_hpp_
