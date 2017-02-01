@@ -88,5 +88,57 @@ void TWeakHamiltonianEye::setup(void)
 // execution ///////////////////////////////////////////////////////////////////
 void TWeakHamiltonianEye::execute(void)
 {
+    XmlWriter             writer(par().output);
+    PropagatorField &q1 = *env().template getObject<PropagatorField>(par().q1);
+    PropagatorField &q2 = *env().template getObject<PropagatorField>(par().q2);
+    PropagatorField &q3 = *env().template getObject<PropagatorField>(par().q3);
+    PropagatorField &q4 = *env().template getObject<PropagatorField>(par().q4);
+    Gamma g5            = Gamma(Gamma::Algebra::Gamma5);
+    LatticeComplex        expbuf(env().getGrid());
+    std::vector<TComplex> corrbuf;
+    std::vector<Result>   result;
+    unsigned int ndim   = env().getNd();
 
+    PropagatorField              tmp1(env().getGrid());
+    LatticeComplex               tmp2(env().getGrid());
+    std::vector<PropagatorField> S_body(ndim, tmp1);
+    std::vector<PropagatorField> S_loop(ndim, tmp1);
+    std::vector<LatticeComplex>  E_body(ndim, tmp2);
+    std::vector<LatticeComplex>  E_loop(ndim, tmp2);
+
+    std::vector<std::vector<Gamma>> gL = {{Gamma(Gamma::Algebra::GammaX),
+                                          Gamma(Gamma::Algebra::GammaY),
+                                          Gamma(Gamma::Algebra::GammaZ),
+                                          Gamma(Gamma::Algebra::GammaT)},
+                                         {Gamma(Gamma::Algebra::GammaXGamma5),
+                                          Gamma(Gamma::Algebra::GammaYGamma5),
+                                          Gamma(Gamma::Algebra::GammaZGamma5),
+                                          Gamma(Gamma::Algebra::GammaTGamma5)}};
+
+    // Setup for S-type contractions.
+    for (int mu = 0; mu < ndim; ++mu)
+    {
+        S_body[mu] = MAKE_SE_BODY(q1, q2, q3, gL[i_V][mu]) -
+                     MAKE_SE_BODY(q1, q2, q3, gL[i_A][mu]);
+        S_loop[mu] = MAKE_SE_LOOP(q4, gL[i_V][mu]) -
+                     MAKE_SE_LOOP(q4, gL[i_A][mu]);
+    }
+
+    // Perform S-type contractions.    
+    SUM_MU(expbuf, trace(S_body[mu]*S_loop[mu]))
+    MAKE_DIAG(expbuf, corrbuf, result[S_diag], "HW_S")
+
+    // Recycle sub-expressions for E-type contractions.
+    for (unsigned int mu = 0; mu < ndim; ++mu)
+    {
+        E_body[mu] = trace(S_body[mu]);
+        E_loop[mu] = trace(S_loop[mu]);
+    }
+
+    // Perform E-type contractions.
+    SUM_MU(expbuf, E_body[mu]*E_loop[mu])
+    MAKE_DIAG(expbuf, corrbuf, result[E_diag], "HW_E")
+
+    write(writer, "HW_Eye", result[S_diag]);
+    write(writer, "HW_Eye", result[E_diag]);
 }
