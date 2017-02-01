@@ -95,7 +95,7 @@ void TWeakHamiltonianNonEye::execute(void)
     PropagatorField &q2 = *env().template getObject<PropagatorField>(par().q2);
     PropagatorField &q3 = *env().template getObject<PropagatorField>(par().q3);
     PropagatorField &q4 = *env().template getObject<PropagatorField>(par().q4);
-    SpinMatrix g5       = makeGammaProd(Ns*Ns - 1); // Soon to be deprecated.
+    Gamma g5            = Gamma(Gamma::Algebra::Gamma5);
     LatticeComplex        expbuf(env().getGrid());
     std::vector<TComplex> corrbuf;
     std::vector<Result>   result;
@@ -108,17 +108,14 @@ void TWeakHamiltonianNonEye::execute(void)
     std::vector<LatticeComplex>  W_i_side_loop(ndim, tmp2);
     std::vector<LatticeComplex>  W_f_side_loop(ndim, tmp2);
 
-    // Soon to be deprecated. Keeping V and A parts distinct to take advantage
-    // of zero-flop gamma products, when implemented.
-    std::vector<std::vector<SpinMatrix>> gL;
-    gL.resize(n_i);
-    gL[i_V].resize(ndim);
-    gL[i_A].resize(ndim);
-    for (unsigned int mu = 0; mu < ndim; ++mu)
-    {
-        gL[i_V][mu] = makeGammaProd(mu);
-        gL[i_A][mu] = g5*makeGammaProd(mu);
-    }
+    std::vector<std::vector<Gamma>> gL = {{Gamma(Gamma::Algebra::GammaX),
+                                          Gamma(Gamma::Algebra::GammaY),
+                                          Gamma(Gamma::Algebra::GammaZ),
+                                          Gamma(Gamma::Algebra::GammaT)},
+                                         {Gamma(Gamma::Algebra::GammaXGamma5),
+                                          Gamma(Gamma::Algebra::GammaYGamma5),
+                                          Gamma(Gamma::Algebra::GammaZGamma5),
+                                          Gamma(Gamma::Algebra::GammaTGamma5)}};
 
     // Setup for C-type contractions.
     for (int mu = 0; mu < ndim; ++mu)
