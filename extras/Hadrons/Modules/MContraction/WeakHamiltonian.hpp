@@ -56,7 +56,7 @@ for (unsigned int t = 0; t < buf.size(); ++t)\
 //// Contraction of mu index: use 'mu' variable in exp.
 #define SUM_MU(buf,exp)\
 buf = zero;\
-for (unsigned int mu = 0; mu < Nd; ++mu)\
+for (unsigned int mu = 0; mu < ndim; ++mu)\
 {\
     buf += exp;\
 }
