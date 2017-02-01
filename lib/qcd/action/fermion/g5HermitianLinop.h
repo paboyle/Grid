@@ -80,7 +80,7 @@ class Gamma5HermitianLinearOperator : public LinearOperatorBase<Field> {
   Matrix &_Mat;
   Gamma g5;
 public:
-    Gamma5HermitianLinearOperator(Matrix &Mat): _Mat(Mat), g5(Gamma::Gamma5) {};
+    Gamma5HermitianLinearOperator(Matrix &Mat): _Mat(Mat), g5(Gamma::Algebra::Gamma5) {};
   void Op     (const Field &in, Field &out){
     HermOp(in,out);
   }

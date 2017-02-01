@@ -319,7 +319,7 @@ AM_CONDITIONAL(BUILD_COMMS_MPI3L, [ test "${comms_type}X" == "mpi3lX" ] )
 AM_CONDITIONAL(BUILD_COMMS_NONE,  [ test "${comms_type}X" == "noneX" ])
 
 ############### RNG selection
-AC_ARG_ENABLE([rng],[AC_HELP_STRING([--enable-rng=ranlux48|mt19937],\
+AC_ARG_ENABLE([rng],[AC_HELP_STRING([--enable-rng=ranlux48|mt19937|sitmo],\
 	            [Select Random Number Generator to be used])],\
 	            [ac_RNG=${enable_rng}],[ac_RNG=ranlux48])
 
@@ -329,6 +329,9 @@ case ${ac_RNG} in
      ;;
      mt19937)
       AC_DEFINE([RNG_MT19937],[1],[RNG_MT19937] )
+     ;;
+     sitmo)
+      AC_DEFINE([RNG_SITMO],[1],[RNG_SITMO] )
      ;;
      *)
       AC_MSG_ERROR([${ac_RNG} unsupported --enable-rng option]); 

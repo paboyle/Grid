@@ -150,14 +150,14 @@ friend inline bool operator==(const cname &lhs, const cname &rhs) {\
 class name: public Grid::Serializable\
 {\
 public:\
-  enum EnumType\
+  enum\
   {\
     GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_ENUMVAL,__VA_ARGS__))\
     undefname = -1\
   };\
 public:\
   name(void): value_(undefname) {};\
-  name(EnumType value): value_(value) {};\
+  name(int value): value_(value) {};\
   template <typename T>\
   static inline void write(Grid::Writer<T> &WR,const std::string &s, const name &obj)\
   {\
@@ -177,7 +177,7 @@ public:\
     GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_ENUMTEST,__VA_ARGS__))\
     else {obj = name::undefname;}\
   }\
-  inline operator EnumType(void) const\
+  inline operator int(void) const\
   {\
     return value_;\
   }\
@@ -189,8 +189,17 @@ public:\
     }\
     return os;\
   }\
+  inline friend std::istream & operator>>(std::istream &is, name &obj)\
+  {\
+    std::string buf;\
+    is >> buf;\
+    if (buf == #undefname) {obj = name::undefname;}\
+    GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_ENUMTEST,__VA_ARGS__))\
+    else {obj = name::undefname;}\
+    return is;\
+  }\
 private:\
-  EnumType value_;\
+  int value_;\
 };
 
 
