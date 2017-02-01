@@ -86,6 +86,7 @@ public:
     void createModule(const std::string name);
     template <typename M>
     void createModule(const std::string name, const typename M::Par &par);
+    bool hasModule(const std::string name);
     // execute
     void run(void);
     // XML parameter file I/O
