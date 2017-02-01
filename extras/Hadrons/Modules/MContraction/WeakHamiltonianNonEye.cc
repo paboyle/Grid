@@ -128,7 +128,7 @@ void TWeakHamiltonianNonEye::execute(void)
 
     // Perform C-type contractions.    
     SUM_MU(expbuf, trace(C_i_side_loop[mu]*C_f_side_loop[mu]))
-    MAKE_DIAG(expbuf, corrbuf, result[C_diag], "3pt_HW_C")
+    MAKE_DIAG(expbuf, corrbuf, result[C_diag], "HW_C")
 
     // Recycle sub-expressions for W-type contractions.
     for (unsigned int mu = 0; mu < ndim; ++mu)
@@ -139,8 +139,8 @@ void TWeakHamiltonianNonEye::execute(void)
 
     // Perform W-type contractions.
     SUM_MU(expbuf, W_i_side_loop[mu]*W_f_side_loop[mu])
-    MAKE_DIAG(expbuf, corrbuf, result[W_diag], "3pt_HW_W")
+    MAKE_DIAG(expbuf, corrbuf, result[W_diag], "HW_W")
 
-    write(writer, "HW_3pt_NonEye", result[C_diag]);
-    write(writer, "HW_3pt_NonEye", result[W_diag]);
+    write(writer, "HW_NonEye", result[C_diag]);
+    write(writer, "HW_NonEye", result[W_diag]);
 }
