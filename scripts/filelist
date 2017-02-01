@@ -4,8 +4,9 @@ home=`pwd`
 
 # library Make.inc
 cd $home/lib
-HFILES=`find . -type f -name '*.h' -not -name '*Hdf5*' -not -path '*/Old/*' -not -path '*/Eigen/*'`
-CCFILES=`find . -type f -name '*.cc' -not -name '*Communicator*.cc' -not -name '*Hdf5*'`
+HFILES=`find . -type f -name '*.h' -not -name '*Hdf5*' -not -path '*/gamma-gen/*' -not -path '*/Old/*' -not -path '*/Eigen/*'`
+HFILES="$HFILES"
+CCFILES=`find . -type f -name '*.cc' -not -path '*/gamma-gen/*' -not -name '*Communicator*.cc' -not -name '*Hdf5*'`
 echo HFILES=$HFILES > Make.inc
 echo >> Make.inc
 echo CCFILES=$CCFILES >> Make.inc
