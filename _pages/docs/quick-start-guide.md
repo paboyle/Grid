@@ -73,7 +73,7 @@ Here we report the more common ones.
 - `--enable-simd=<code>`: setup Grid for the SIMD target `<code>` (default: `GEN`). [List of possible SIMD targets](/Grid/docs/simd_targets/).
 - `--enable-precision={single|double}`: set the default precision (default: `double`).
 - `--enable-precision=<comm>`: Use `<comm>` for message passing (default: `none`). [List of possible comm targets](/Grid/docs/comm_interfaces/). 
-- `--enable-rng={ranlux48|mt19937}`: choose the RNG (default: `ranlux48 `).
+- `--enable-rng={ranlux48|mt19937|sitmo}`: choose the RNG (default: `ranlux48`).
 - `--disable-timers`: disable system dependent high-resolution timers.
 - `--enable-chroma`: enable Chroma regression tests. A compiled version of Chroma is assumed to be present. 
 
