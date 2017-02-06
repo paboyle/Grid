@@ -36,22 +36,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Module.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
 
-namespace Grid {
-    // Overload >> to extract gamma pair from "<g1 g2>" string.
-    template <typename T1, typename T2>
-    inline std::istringstream &operator>>(std::istringstream &sstr,
-                                          std::pair<T1, T2> &buf)
-    {
-        unsigned int buf1;
-        unsigned int buf2;
-        char c;
-        sstr >> c >> buf1 >> buf2 >> c;
-        sstr.peek();
-        buf = std::make_pair((T1)buf1, (T2)buf2);
-        return sstr;
-    }
-}
-
 BEGIN_HADRONS_NAMESPACE
 
 /*
@@ -63,8 +47,8 @@ BEGIN_HADRONS_NAMESPACE
  - q1: input propagator 1 (string)
  - q2: input propagator 2 (string)
  - gammas: gamma products to insert at sink & source, pairs of gamma matrices 
-           (space-separated integers) in square brackets (i.e. [g_sink g_src]),
-           in a sequence (e.g. "[15 7][7 15][7 7]").
+           (space-separated strings) in angled brackets (i.e. <g_sink g_src>),
+           in a sequence (e.g. "<Gamma5 Gamma5><Gamma5 GammaT>").
 
            Special values: "all" - perform all possible contractions.
  - mom: momentum insertion, space-separated float sequence (e.g ".1 .2 1. 0."),
