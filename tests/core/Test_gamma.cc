@@ -137,7 +137,7 @@ void test(const Expr &a, const Expr &b)
   }
 }
 
-void checkMat(const Gamma::Algebra a, GridSerialRNG &rng)
+void checkGamma(const Gamma::Algebra a, GridSerialRNG &rng)
 {
   SpinVector v;
   SpinMatrix m, &testg = testAlgebra[a];
@@ -212,6 +212,28 @@ std::cout << std::endl;
 #undef CHECK_PROJ
 }
 
+void checkGammaL(const Gamma::Algebra a, GridSerialRNG &rng)
+{
+  SpinVector v;
+  SpinMatrix m, &testg = testAlgebra[a], pl;
+  GammaL     gl(a);
+  bool       pass = true;
+  
+  random(rng, v);
+  random(rng, m);
+  
+  pl = testAlgebra[Gamma::Algebra::Identity]
+       - testAlgebra[Gamma::Algebra::Gamma5];
+  std::cout << GridLogMessage << "Checking left-projected " << Gamma::name[a] << ": ";
+  std::cout << "vecmul ";
+  test(gl*v, testg*pl*v);
+  std::cout << "matlmul ";
+  test(gl*m, testg*pl*m);
+  std::cout << "matrmul ";
+  test(m*gl, m*testg*pl);
+  std::cout << std::endl;
+}
+
 int main(int argc, char *argv[])
 {
   Grid_init(&argc,&argv);
@@ -230,7 +252,7 @@ int main(int argc, char *argv[])
   std::cout << GridLogMessage << "======== Multiplication operators check" << std::endl;
   for (int i = 0; i < Gamma::nGamma; ++i)
   {
-    checkMat(i, sRNG);
+    checkGamma(i, sRNG);
   }
   std::cout << GridLogMessage << std::endl;
   std::cout << GridLogMessage << "======== Algebra multiplication table check" << std::endl;
@@ -249,6 +271,11 @@ int main(int argc, char *argv[])
   std::cout << GridLogMessage << "======== Spin projectors check" << std::endl;
   checkProject(sRNG);
   std::cout << GridLogMessage << std::endl;
+  std::cout << GridLogMessage << "======== Gamma-left matrices check" << std::endl;
+  for (int i = 0; i < Gamma::nGamma; ++i)
+  {
+    checkGammaL(i, sRNG);
+  }
   
   Grid_finalize();
   

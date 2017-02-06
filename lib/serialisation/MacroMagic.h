@@ -189,6 +189,15 @@ public:\
     }\
     return os;\
   }\
+  inline friend std::istream & operator>>(std::istream &is, name &obj)\
+  {\
+    std::string buf;\
+    is >> buf;\
+    if (buf == #undefname) {obj = name::undefname;}\
+    GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_ENUMTEST,__VA_ARGS__))\
+    else {obj = name::undefname;}\
+    return is;\
+  }\
 private:\
   int value_;\
 };
