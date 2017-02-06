@@ -88,6 +88,7 @@ inline void makeSequentialSource(Application &application, std::string srcName,
         seqPar.tA  = tS;
         seqPar.tB  = tS;
         seqPar.mom = mom;
+        seqPar.gamma = Gamma::Algebra::GammaT;
         application.createModule<MSource::SeqGamma>(srcName, seqPar);
     }
 }
@@ -184,7 +185,7 @@ inline void mesonContraction(Application &application, unsigned int npt,
         mesPar.output = std::to_string(npt) + "pt/" + label;
         mesPar.q1 = q1;
         mesPar.q2 = q2;
-        mesPar.gammas = "[1 1]";
+        mesPar.gammas = "<Gamma5 Gamma5>";
         application.createModule<MContraction::Meson>(modName, mesPar);
     }
  }
