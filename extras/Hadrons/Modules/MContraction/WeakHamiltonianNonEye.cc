@@ -90,6 +90,11 @@ void TWeakHamiltonianNonEye::setup(void)
 // execution ///////////////////////////////////////////////////////////////////
 void TWeakHamiltonianNonEye::execute(void)
 {
+    LOG(Message) << "Computing Weak Hamiltonian (Non-Eye type) contractions '" 
+                 << getName() << "' using quarks '" << par().q1 << "', '" 
+                 << par().q2 << ", '" << par().q3 << "' and '" << par().q4 
+                 << "'." << std::endl;
+    
     XmlWriter             writer(par().output);
     PropagatorField &q1 = *env().template getObject<PropagatorField>(par().q1);
     PropagatorField &q2 = *env().template getObject<PropagatorField>(par().q2);
@@ -108,22 +113,13 @@ void TWeakHamiltonianNonEye::execute(void)
     std::vector<LatticeComplex>  W_i_side_loop(ndim, tmp2);
     std::vector<LatticeComplex>  W_f_side_loop(ndim, tmp2);
 
-    std::vector<std::vector<Gamma>> gL = {{Gamma(Gamma::Algebra::GammaX),
-                                          Gamma(Gamma::Algebra::GammaY),
-                                          Gamma(Gamma::Algebra::GammaZ),
-                                          Gamma(Gamma::Algebra::GammaT)},
-                                         {Gamma(Gamma::Algebra::GammaXGamma5),
-                                          Gamma(Gamma::Algebra::GammaYGamma5),
-                                          Gamma(Gamma::Algebra::GammaZGamma5),
-                                          Gamma(Gamma::Algebra::GammaTGamma5)}};
-
     // Setup for C-type contractions.
     for (int mu = 0; mu < ndim; ++mu)
     {
-        C_i_side_loop[mu] = MAKE_CW_SUBDIAG(q1, q2, gL[i_V][mu]) -
-                            MAKE_CW_SUBDIAG(q1, q2, gL[i_A][mu]);
-        C_f_side_loop[mu] = MAKE_CW_SUBDIAG(q3, q4, gL[i_V][mu]) -
-                            MAKE_CW_SUBDIAG(q3, q4, gL[i_A][mu]);
+        C_i_side_loop[mu] = MAKE_CW_SUBDIAG(q1, q2, Gamma::gmu[mu]) -
+                            MAKE_CW_SUBDIAG(q1, q2, Gamma::gmu[mu]*g5);
+        C_f_side_loop[mu] = MAKE_CW_SUBDIAG(q3, q4, Gamma::gmu[mu]) -
+                            MAKE_CW_SUBDIAG(q3, q4, Gamma::gmu[mu]*g5);
     }
 
     // Perform C-type contractions.    

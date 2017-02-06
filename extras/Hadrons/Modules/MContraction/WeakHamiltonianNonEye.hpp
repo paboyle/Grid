@@ -45,7 +45,7 @@ enum
 };
 
 // Wing and Connected subdiagram contractions
-#define MAKE_CW_SUBDIAG(Q_1, Q_2, gamma) (Q_1*adj(Q_2)*g5*gamma)
+#define MAKE_CW_SUBDIAG(Q_1, Q_2, gamma) (Q_1*adj(Q_2)*(g5*gamma))
 
 class TWeakHamiltonianNonEye: public Module<WeakHamiltonianPar>
 {

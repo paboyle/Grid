@@ -88,6 +88,11 @@ void TWeakHamiltonianEye::setup(void)
 // execution ///////////////////////////////////////////////////////////////////
 void TWeakHamiltonianEye::execute(void)
 {
+    LOG(Message) << "Computing Weak Hamiltonian (Eye type) contractions '" 
+                 << getName() << "' using quarks '" << par().q1 << "', '" 
+                 << par().q2 << ", '" << par().q3 << "' and '" << par().q4 
+                 << "'." << std::endl;
+
     XmlWriter             writer(par().output);
     PropagatorField &q1 = *env().template getObject<PropagatorField>(par().q1);
     PropagatorField &q2 = *env().template getObject<PropagatorField>(par().q2);
@@ -106,22 +111,13 @@ void TWeakHamiltonianEye::execute(void)
     std::vector<LatticeComplex>  E_body(ndim, tmp2);
     std::vector<LatticeComplex>  E_loop(ndim, tmp2);
 
-    std::vector<std::vector<Gamma>> gL = {{Gamma(Gamma::Algebra::GammaX),
-                                          Gamma(Gamma::Algebra::GammaY),
-                                          Gamma(Gamma::Algebra::GammaZ),
-                                          Gamma(Gamma::Algebra::GammaT)},
-                                         {Gamma(Gamma::Algebra::GammaXGamma5),
-                                          Gamma(Gamma::Algebra::GammaYGamma5),
-                                          Gamma(Gamma::Algebra::GammaZGamma5),
-                                          Gamma(Gamma::Algebra::GammaTGamma5)}};
-
     // Setup for S-type contractions.
     for (int mu = 0; mu < ndim; ++mu)
     {
-        S_body[mu] = MAKE_SE_BODY(q1, q2, q3, gL[i_V][mu]) -
-                     MAKE_SE_BODY(q1, q2, q3, gL[i_A][mu]);
-        S_loop[mu] = MAKE_SE_LOOP(q4, gL[i_V][mu]) -
-                     MAKE_SE_LOOP(q4, gL[i_A][mu]);
+        S_body[mu] = MAKE_SE_BODY(q1, q2, q3, Gamma::gmu[mu]) -
+                     MAKE_SE_BODY(q1, q2, q3, Gamma::gmu[mu]*g5);
+        S_loop[mu] = MAKE_SE_LOOP(q4, Gamma::gmu[mu]) -
+                     MAKE_SE_LOOP(q4, Gamma::gmu[mu]*g5);
     }
 
     // Perform S-type contractions.    
