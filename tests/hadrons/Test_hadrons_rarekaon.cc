@@ -185,6 +185,7 @@ inline void mesonContraction(Application &application, unsigned int npt,
         mesPar.output = std::to_string(npt) + "pt/" + label;
         mesPar.q1 = q1;
         mesPar.q2 = q2;
+        mesPar.mom = mom;
         mesPar.gammas = "<Gamma5 Gamma5>";
         application.createModule<MContraction::Meson>(modName, mesPar);
     }
