@@ -39,9 +39,13 @@ MPI_Comm CartesianCommunicator::communicator_world;
 // Should error check all MPI calls.
 void CartesianCommunicator::Init(int *argc, char ***argv) {
   int flag;
+  int provided;
   MPI_Initialized(&flag); // needed to coexist with other libs apparently
   if ( !flag ) {
-    MPI_Init(argc,argv);
+    //    MPI_Init_thread(argc,argv,MPI_THREAD_SERIALIZED,&provided);
+    //    assert (provided == MPI_THREAD_SERIALIZED);
+    MPI_Init_thread(argc,argv,MPI_THREAD_MULTIPLE,&provided);
+    assert (provided == MPI_THREAD_MULTIPLE);
   }
   MPI_Comm_dup (MPI_COMM_WORLD,&communicator_world);
   ShmInitGeneric();
@@ -152,24 +156,34 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 						int from,
 						int bytes)
 {
-  MPI_Request xrq;
-  MPI_Request rrq;
-  int rank = _processor;
+  int myrank = _processor;
   int ierr;
-  ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator,&xrq);
-  ierr|=MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator,&rrq);
-  
-  assert(ierr==0);
+  if ( CommunicatorPolicy == CommunicatorPolicyIsend ) { 
+    MPI_Request xrq;
+    MPI_Request rrq;
 
-  list.push_back(xrq);
-  list.push_back(rrq);
+    ierr =MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator,&rrq);
+    ierr|=MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator,&xrq);
+    
+    assert(ierr==0);
+    list.push_back(xrq);
+    list.push_back(rrq);
+  } else { 
+    // Give the CPU to MPI immediately; can use threads to overlap optionally
+    ierr=MPI_Sendrecv(xmit,bytes,MPI_CHAR,dest,myrank,
+		      recv,bytes,MPI_CHAR,from, from,
+		      communicator,MPI_STATUS_IGNORE);
+    assert(ierr==0);
+  }
 }
 void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
 {
-  int nreq=list.size();
-  std::vector<MPI_Status> status(nreq);
-  int ierr = MPI_Waitall(nreq,&list[0],&status[0]);
-  assert(ierr==0);
+  if ( CommunicatorPolicy == CommunicatorPolicyIsend ) { 
+    int nreq=list.size();
+    std::vector<MPI_Status> status(nreq);
+    int ierr = MPI_Waitall(nreq,&list[0],&status[0]);
+    assert(ierr==0);
+  }
 }
 
 void CartesianCommunicator::Barrier(void)
