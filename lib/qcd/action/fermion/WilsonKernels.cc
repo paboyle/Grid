@@ -32,8 +32,8 @@ directory
 namespace Grid {
 namespace QCD {
 
-int WilsonKernelsStatic::Opt;
-
+  int WilsonKernelsStatic::Opt   = WilsonKernelsStatic::OptGeneric;
+  int WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsAndCompute;
 
 #ifdef QPX
 #include <spi/include/kernel/location.h>
@@ -87,9 +87,10 @@ WilsonKernels<Impl>::WilsonKernels(const ImplParams &p) : Base(p){};
 ////////////////////////////////////////////
 
 template <class Impl>
-void WilsonKernels<Impl>::DiracOptGenericDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+void WilsonKernels<Impl>::GenericDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
 						     SiteHalfSpinor *buf, int sF,
-						     int sU, const FermionField &in, FermionField &out) {
+						     int sU, const FermionField &in, FermionField &out,
+						     int interior,int exterior) {
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
   SiteHalfSpinor *chi_p;
@@ -263,9 +264,9 @@ void WilsonKernels<Impl>::DiracOptGenericDhopSiteDag(StencilImpl &st, LebesgueOr
 
 // Need controls to do interior, exterior, or both
 template <class Impl>
-void WilsonKernels<Impl>::DiracOptGenericDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+void WilsonKernels<Impl>::GenericDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
 						  SiteHalfSpinor *buf, int sF,
-						  int sU, const FermionField &in, FermionField &out) {
+						  int sU, const FermionField &in, FermionField &out,int interior,int exterior) {
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
   SiteHalfSpinor *chi_p;
@@ -438,7 +439,7 @@ void WilsonKernels<Impl>::DiracOptGenericDhopSite(StencilImpl &st, LebesgueOrder
 };
 
 template <class Impl>
-void WilsonKernels<Impl>::DiracOptDhopDir( StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor *buf, int sF,
+void WilsonKernels<Impl>::DhopDir( StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor *buf, int sF,
 					   int sU, const FermionField &in, FermionField &out, int dir, int gamma) {
 
   SiteHalfSpinor tmp;

@@ -52,13 +52,37 @@ static Vector<vComplexF> signsF;
 #define MAYBEPERM(A,perm) if (perm) { A ; }
 #define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN(ptr,pf)
 #define COMPLEX_SIGNS(isigns) vComplexF *isigns = &signsF[0];  
+
+
+#define INTERIOR_AND_EXTERIOR    
+#undef  INTERIOR
+#undef  EXTERIOR
   
 /////////////////////////////////////////////////////////////////
 // XYZT vectorised, undag Kernel, single
 /////////////////////////////////////////////////////////////////
 #undef KERNEL_DAG
+#define INTERIOR_AND_EXTERIOR
+#undef INTERIOR
+#undef EXTERIOR
 template<> void 
-WilsonKernels<WilsonImplF>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+WilsonKernels<WilsonImplF>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+
+#undef INTERIOR_AND_EXTERIOR
+#define INTERIOR
+#undef EXTERIOR
+template<> void 
+WilsonKernels<WilsonImplF>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+
+#undef INTERIOR_AND_EXTERIOR
+#undef INTERIOR
+#define EXTERIOR
+template<> void 
+WilsonKernels<WilsonImplF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
 						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
       
@@ -66,9 +90,28 @@ WilsonKernels<WilsonImplF>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & 
 // XYZT vectorised, dag Kernel, single
 /////////////////////////////////////////////////////////////////
 #define KERNEL_DAG
+#define INTERIOR_AND_EXTERIOR
+#undef INTERIOR
+#undef EXTERIOR
 template<> void 
-WilsonKernels<WilsonImplF>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-						   int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplF>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+
+#undef INTERIOR_AND_EXTERIOR
+#define INTERIOR
+#undef EXTERIOR
+template<> void 
+WilsonKernels<WilsonImplF>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+
+#undef INTERIOR_AND_EXTERIOR
+#undef INTERIOR
+#define EXTERIOR
+template<> void 
+WilsonKernels<WilsonImplF>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
 #undef MAYBEPERM
@@ -80,8 +123,29 @@ WilsonKernels<WilsonImplF>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder
 // Ls vectorised, undag Kernel, single
 /////////////////////////////////////////////////////////////////
 #undef KERNEL_DAG
+#define INTERIOR_AND_EXTERIOR
+#undef INTERIOR
+#undef EXTERIOR
 template<> void 
-WilsonKernels<DomainWallVec5dImplF>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+WilsonKernels<DomainWallVec5dImplF>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+
+#undef INTERIOR_AND_EXTERIOR
+#define INTERIOR
+#undef EXTERIOR
+template<> void 
+WilsonKernels<DomainWallVec5dImplF>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+
+#undef INTERIOR_AND_EXTERIOR
+#undef INTERIOR
+#define EXTERIOR
+#undef  MULT_2SPIN
+#define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN_LSNOPF(ptr,pf)
+template<> void 
+WilsonKernels<DomainWallVec5dImplF>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
 							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
 				    
@@ -89,10 +153,30 @@ WilsonKernels<DomainWallVec5dImplF>::DiracOptAsmDhopSite(StencilImpl &st,Lebesgu
 // Ls vectorised, dag Kernel, single
 /////////////////////////////////////////////////////////////////
 #define KERNEL_DAG
+#define INTERIOR_AND_EXTERIOR
+#undef INTERIOR
+#undef EXTERIOR
 template<> void 
-WilsonKernels<DomainWallVec5dImplF>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+WilsonKernels<DomainWallVec5dImplF>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
 							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+
+#undef INTERIOR_AND_EXTERIOR
+#define INTERIOR
+#undef EXTERIOR
+template<> void 
+WilsonKernels<DomainWallVec5dImplF>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+
+#undef INTERIOR_AND_EXTERIOR
+#undef INTERIOR
+#define EXTERIOR
+template<> void 
+WilsonKernels<DomainWallVec5dImplF>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+
 #undef COMPLEX_SIGNS
 #undef MAYBEPERM
 #undef MULT_2SPIN
@@ -110,51 +194,130 @@ static int signInitD = setupSigns(signsD);
 #define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN(ptr,pf)
 #define COMPLEX_SIGNS(isigns) vComplexD *isigns = &signsD[0];  
 
+
+#define INTERIOR_AND_EXTERIOR    
+#undef  INTERIOR
+#undef  EXTERIOR
+  
 /////////////////////////////////////////////////////////////////
-// XYZT Vectorised, undag Kernel, double
+// XYZT vectorised, undag Kernel, single
 /////////////////////////////////////////////////////////////////
 #undef KERNEL_DAG
+#define INTERIOR_AND_EXTERIOR
+#undef INTERIOR
+#undef EXTERIOR
 template<> void 
-WilsonKernels<WilsonImplD>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+WilsonKernels<WilsonImplD>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
 						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
-/////////////////////////////////////////////////////////////////
-      
 
+#undef INTERIOR_AND_EXTERIOR
+#define INTERIOR
+#undef EXTERIOR
+template<> void 
+WilsonKernels<WilsonImplD>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+
+#undef INTERIOR_AND_EXTERIOR
+#undef INTERIOR
+#define EXTERIOR
+template<> void 
+WilsonKernels<WilsonImplD>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+      
 /////////////////////////////////////////////////////////////////
-// XYZT Vectorised, dag Kernel, double
+// XYZT vectorised, dag Kernel, single
 /////////////////////////////////////////////////////////////////
 #define KERNEL_DAG
+#define INTERIOR_AND_EXTERIOR
+#undef INTERIOR
+#undef EXTERIOR
 template<> void 
-WilsonKernels<WilsonImplD>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-						   int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+WilsonKernels<WilsonImplD>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
-/////////////////////////////////////////////////////////////////
 
+#undef INTERIOR_AND_EXTERIOR
+#define INTERIOR
+#undef EXTERIOR
+template<> void 
+WilsonKernels<WilsonImplD>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+
+#undef INTERIOR_AND_EXTERIOR
+#undef INTERIOR
+#define EXTERIOR
+template<> void 
+WilsonKernels<WilsonImplD>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+						int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+				    
 #undef MAYBEPERM
 #undef MULT_2SPIN
 #define MAYBEPERM(A,B) 
 #define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN_LS(ptr,pf)
-/////////////////////////////////////////////////////////////////
-// Ls vectorised, undag Kernel, double
-/////////////////////////////////////////////////////////////////
-#undef KERNEL_DAG
-template<> void 
-WilsonKernels<DomainWallVec5dImplD>::DiracOptAsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
-							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
-#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
-/////////////////////////////////////////////////////////////////
 				    
 /////////////////////////////////////////////////////////////////
-// Ls vectorised, dag Kernel, double
+// Ls vectorised, undag Kernel, single
+/////////////////////////////////////////////////////////////////
+#undef KERNEL_DAG
+#define INTERIOR_AND_EXTERIOR
+#undef INTERIOR
+#undef EXTERIOR
+template<> void 
+WilsonKernels<DomainWallVec5dImplD>::AsmDhopSite(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+
+#undef INTERIOR_AND_EXTERIOR
+#define INTERIOR
+#undef EXTERIOR
+template<> void 
+WilsonKernels<DomainWallVec5dImplD>::AsmDhopSiteInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+
+#undef INTERIOR_AND_EXTERIOR
+#undef INTERIOR
+#define EXTERIOR
+#undef  MULT_2SPIN
+#define MULT_2SPIN(ptr,pf) MULT_ADDSUB_2SPIN_LSNOPF(ptr,pf)
+template<> void 
+WilsonKernels<DomainWallVec5dImplD>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,
+							 int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+				    
+/////////////////////////////////////////////////////////////////
+// Ls vectorised, dag Kernel, single
 /////////////////////////////////////////////////////////////////
 #define KERNEL_DAG
+#define INTERIOR_AND_EXTERIOR
+#undef INTERIOR
+#undef EXTERIOR
 template<> void 
-WilsonKernels<DomainWallVec5dImplD>::DiracOptAsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+WilsonKernels<DomainWallVec5dImplD>::AsmDhopSiteDag(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
 							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
 #include <qcd/action/fermion/WilsonKernelsAsmBody.h>
-/////////////////////////////////////////////////////////////////
-	
+
+#undef INTERIOR_AND_EXTERIOR
+#define INTERIOR
+#undef EXTERIOR
+template<> void 
+WilsonKernels<DomainWallVec5dImplD>::AsmDhopSiteDagInt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+
+#undef INTERIOR_AND_EXTERIOR
+#undef INTERIOR
+#define EXTERIOR
+template<> void 
+WilsonKernels<DomainWallVec5dImplD>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+							    int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out)
+#include <qcd/action/fermion/WilsonKernelsAsmBody.h>
+
 #undef COMPLEX_SIGNS
 #undef MAYBEPERM
 #undef MULT_2SPIN

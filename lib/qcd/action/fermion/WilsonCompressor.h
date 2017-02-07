@@ -180,26 +180,31 @@ namespace QCD {
 		const std::vector<int> &distances)  : CartesianStencil<vobj,cobj> (grid,npoints,checkerboard,directions,distances) 
       {    };
 
-
     template < class compressor>
     void HaloExchangeOpt(const Lattice<vobj> &source,compressor &compress) 
     {
       std::vector<std::vector<CommsRequest_t> > reqs;
+      HaloExchangeOptGather(source,compress);
+      this->CommunicateBegin(reqs);
+      this->calls++;
+      this->CommunicateComplete(reqs);
+      this->CommsMerge();
+    }
+
+    template < class compressor>
+    void HaloExchangeOptGather(const Lattice<vobj> &source,compressor &compress) 
+    {
+      this->calls++;
       this->Mergers.resize(0); 
       this->Packets.resize(0);
       this->HaloGatherOpt(source,compress);
-      this->CommunicateBegin(reqs);
-      this->CommunicateComplete(reqs);
-      this->CommsMerge(); // spins
-      this->calls++;
     }
 
 
     template < class compressor>
     void HaloGatherOpt(const Lattice<vobj> &source,compressor &compress)
     {
-      int face_idx=0;
-
+      this->_grid->StencilBarrier();
       // conformable(source._grid,_grid);
       assert(source._grid==this->_grid);
       this->halogtime-=usecond();
@@ -222,7 +227,9 @@ namespace QCD {
       //      compress.Point(point);
       //      HaloGatherDir(source,compress,point,face_idx);
       //    }
+      int face_idx=0;
       if ( dag ) { 
+	std::cout << " Optimised Dagger compress " <<std::endl;
 	this->HaloGatherDir(source,XpCompress,Xp,face_idx);
 	this->HaloGatherDir(source,YpCompress,Yp,face_idx);
 	this->HaloGatherDir(source,ZpCompress,Zp,face_idx);

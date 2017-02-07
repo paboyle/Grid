@@ -312,8 +312,8 @@ namespace QCD {
 
 
 template<class Impl> void 
-WilsonKernels<Impl>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf,
-					  int ss,int sU,const FermionField &in, FermionField &out)
+WilsonKernels<Impl>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf,
+					  int ss,int sU,const FermionField &in, FermionField &out,int interior,int exterior)
 {
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -554,8 +554,8 @@ WilsonKernels<Impl>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,Doub
 }
 
 template<class Impl>
-void WilsonKernels<Impl>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-						  int ss,int sU,const FermionField &in, FermionField &out)
+void WilsonKernels<Impl>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+						  int ss,int sU,const FermionField &in, FermionField &out,int interior,int exterior)
 {
   //  std::cout << "Hand op Dhop "<<std::endl;
   typedef typename Simd::scalar_type S;
@@ -800,31 +800,31 @@ void WilsonKernels<Impl>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder 
   // Specialise Gparity to simple implementation
   ////////////////////////////////////////////////
 template<> void 
-WilsonKernels<GparityWilsonImplF>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
+WilsonKernels<GparityWilsonImplF>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
 							SiteHalfSpinor *buf,
-							int sF,int sU,const FermionField &in, FermionField &out)
+							int sF,int sU,const FermionField &in, FermionField &out,int internal,int external)
 {
   assert(0);
 }
 
 template<> void 
-WilsonKernels<GparityWilsonImplF>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
+WilsonKernels<GparityWilsonImplF>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
 							   SiteHalfSpinor *buf,
-							   int sF,int sU,const FermionField &in, FermionField &out)
+							   int sF,int sU,const FermionField &in, FermionField &out,int internal,int external)
 {
   assert(0);
 }
 
 template<> void 
-WilsonKernels<GparityWilsonImplD>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							int sF,int sU,const FermionField &in, FermionField &out)
+WilsonKernels<GparityWilsonImplD>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+							int sF,int sU,const FermionField &in, FermionField &out,int internal,int external)
 {
   assert(0);
 }
 
 template<> void 
-WilsonKernels<GparityWilsonImplD>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							   int sF,int sU,const FermionField &in, FermionField &out)
+WilsonKernels<GparityWilsonImplD>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+							   int sF,int sU,const FermionField &in, FermionField &out,int internal,int external)
 {
   assert(0);
 }
@@ -835,10 +835,10 @@ WilsonKernels<GparityWilsonImplD>::DiracOptHandDhopSiteDag(StencilImpl &st,Lebes
 // Need Nc=3 though //
 
 #define INSTANTIATE_THEM(A) \
-template void WilsonKernels<A>::DiracOptHandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,\
-						     int ss,int sU,const FermionField &in, FermionField &out); \
-template void WilsonKernels<A>::DiracOptHandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,\
-							int ss,int sU,const FermionField &in, FermionField &out);
+template void WilsonKernels<A>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,\
+						     int ss,int sU,const FermionField &in, FermionField &out,int interior,int exterior); \
+template void WilsonKernels<A>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,\
+							int ss,int sU,const FermionField &in, FermionField &out,int interior,int exterior);
 
 INSTANTIATE_THEM(WilsonImplF);
 INSTANTIATE_THEM(WilsonImplD);
