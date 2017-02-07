@@ -33,6 +33,7 @@ namespace Grid {
 ///////////////////////////////////////////////////////////////
 void *              CartesianCommunicator::ShmCommBuf;
 uint64_t            CartesianCommunicator::MAX_MPI_SHM_BYTES   = 128*1024*1024; 
+CartesianCommunicator::CommunicatorPolicy_t  CartesianCommunicator::CommunicatorPolicy= CartesianCommunicator::CommunicatorPolicySendrecv;
 
 /////////////////////////////////
 // Alloc, free shmem region
@@ -87,6 +88,8 @@ void CartesianCommunicator::GlobalSumVector(ComplexD *c,int N)
 }
 
 #if !defined( GRID_COMMS_MPI3) && !defined (GRID_COMMS_MPI3L)
+
+int                      CartesianCommunicator::NodeCount(void)    { return ProcessorCount();};
 
 void CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 						       void *xmit,
