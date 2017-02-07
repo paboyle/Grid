@@ -153,7 +153,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 /*********************************************************
  * Macro sequences encoding QCD
  *********************************************************/
-#define LOCK_GAUGEa(dir)							
 #define LOCK_GAUGE(dir)							\
   {									\
     uint64_t byte_addr = (uint64_t)&U._odata[sU];			\
@@ -167,8 +166,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	 "  bdnz 0b\n"						\
 	 : : "b" (count), "b" (byte_addr) );					\
   }
-
-#define UNLOCK_GAUGEa(dir)						
 
 #define UNLOCK_GAUGE(dir)						\
   {									\
@@ -184,19 +181,24 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	 : : "b" (count), "b" (byte_addr) );					\
   }
 
+#define ZERO_PSI				\
+  VZERO(psi_00)					\
+  VZERO(psi_01)					\
+  VZERO(psi_02)					\
+  VZERO(psi_10)					\
+  VZERO(psi_11)					\
+  VZERO(psi_12)					\
+  VZERO(psi_20)					\
+  VZERO(psi_21)					\
+  VZERO(psi_22)					\
+  VZERO(psi_30)					\
+  VZERO(psi_31)					\
+  VZERO(psi_32)
+
 #define MULT_2SPIN_QPX_LSd(ptr,p) MULT_2SPIN_QPX_INTERNAL(ptr,p,VSPLAT,16) 
 #define MULT_2SPIN_QPX_LSf(ptr,p) MULT_2SPIN_QPX_INTERNAL(ptr,p,VSPLAT,8) 
 #define MULT_2SPIN_QPXd(ptr,p)    MULT_2SPIN_QPX_INTERNAL(ptr,p,VLOAD,32) 
 #define MULT_2SPIN_QPXf(ptr,p)    MULT_2SPIN_QPX_INTERNAL(ptr,p,VLOAD,16) 
-
-#define MULT_2SPIN_QPX_INTERNALa(ptr,p,ULOAD,USKIP) { \
-    asm (VMOV(UChi_00,Chi_00)			     \
-	 VMOV(UChi_01,Chi_01)			     \
-	 VMOV(UChi_02,Chi_02)			     \
-	 VMOV(UChi_10,Chi_10)			     \
-	 VMOV(UChi_11,Chi_11)			     \
-	 VMOV(UChi_12,Chi_12) );		     \
-  }
 
 #define MULT_2SPIN_QPX_INTERNAL(ptr,p,ULOAD,USKIP) {			\
     uint64_t ub = ((uint64_t)ptr);				\
@@ -253,14 +255,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	 : : "b" (USKIP*2), "b" (USKIP*5), "b" (USKIP*8), "b" (ub ));		\
   }
 
-#define MULT_2SPIN_DIR_PFXP(A,p) MULT_2SPIN(&U._odata[sU](A),p)
-#define MULT_2SPIN_DIR_PFYP(A,p) MULT_2SPIN(&U._odata[sU](A),p)
-#define MULT_2SPIN_DIR_PFZP(A,p) MULT_2SPIN(&U._odata[sU](A),p)
-#define MULT_2SPIN_DIR_PFTP(A,p) MULT_2SPIN(&U._odata[sU](A),p)
-#define MULT_2SPIN_DIR_PFXM(A,p) MULT_2SPIN(&U._odata[sU](A),p)
-#define MULT_2SPIN_DIR_PFYM(A,p) MULT_2SPIN(&U._odata[sU](A),p)
-#define MULT_2SPIN_DIR_PFZM(A,p) MULT_2SPIN(&U._odata[sU](A),p)
-#define MULT_2SPIN_DIR_PFTM(A,p) MULT_2SPIN(&U._odata[sU](A),p)
+
+#define MULT_2SPIN_DIR_PF(A,p) MULT_2SPIN_PF(&U._odata[sU](A),p)
+#define MULT_2SPIN_PF(ptr,pf) MULT_2SPIN(ptr,pf)
 
 #define SAVE_RESULT(base,basep) {\
     uint64_t ub = ((uint64_t)base)  - (VSIZE);			\
@@ -281,6 +278,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	: : "b" (ub) : HASH(pIMM), HASH(pREP) );				\
   }
 
+
 /*
  *Annoying BG/Q loads with no immediat indexing and big performance hit
  *when second miss to a L1 line occurs
@@ -298,36 +296,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	VLOADu(IMM,REP,Chi_01)						\
 	VLOADu(IMM,REP,Chi_10)						\
 	VLOADu(IMM,REP,Chi_12)	: : "b" (ub)  : HASH(pIMM), HASH(pREP) );	\
-  }
-
-#define LOAD_CHIa(base) {						\
-    uint64_t ub = ((uint64_t)base)  - (VSIZE);			\
-    asm("mr  " HASH(REP) ",%0 ;\n"					\
-	"li  " HASH(IMM) "," HASH(VSIZE) ";\n"			\
-	VLOADu(IMM,REP,Chi_00)						\
-	VLOADu(IMM,REP,Chi_01)						\
-	VLOADu(IMM,REP,Chi_02)						\
-	VLOADu(IMM,REP,Chi_10)						\
-	VLOADu(IMM,REP,Chi_11)						\
-	VLOADu(IMM,REP,Chi_12) : : "b" (ub)  : HASH(pIMM), HASH(pREP)  ); \
-  }
-
-#define LOAD_CHIMUa(base) {						\
-    uint64_t ub = ((uint64_t)base)  - (VSIZE);			\
-    asm("mr  " HASH(REP) ",%0 ;\n"					\
-	"li  " HASH(IMM) "," HASH(VSIZE) ";\n"			\
-	VLOADu(IMM,REP,Chi_00)						\
-	VLOADu(IMM,REP,Chi_01)						\
-	VLOADu(IMM,REP,Chi_02)						\
-	VLOADu(IMM,REP,Chi_10)						\
-	VLOADu(IMM,REP,Chi_11)						\
-	VLOADu(IMM,REP,Chi_12)						\
-	VLOADu(IMM,REP,Chi_20)						\
-	VLOADu(IMM,REP,Chi_21)						\
-	VLOADu(IMM,REP,Chi_22)						\
-	VLOADu(IMM,REP,Chi_30)						\
-	VLOADu(IMM,REP,Chi_31)						\
-	VLOADu(IMM,REP,Chi_32) : : "b" (ub)  : HASH(pIMM), HASH(pREP)  ); \
   }
 
 #define LOAD_CHIMU(base) {						\
@@ -604,6 +572,17 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	VSUB(psi_30,psi_30,UChi_10) 	VSUB(psi_31,psi_31,UChi_11)	VSUB(psi_32,psi_32,UChi_12) \
 	);\
  }
+
+
+#define ADD_RESULTi(PTR,pf)						\
+  LOAD_CHIMU(PTR)							\
+  asm(									\
+  VADD(psi_00,chi_00,psi_00)  VADD(psi_01,chi_01,psi_01)  VADD(psi_02,chi_02,psi_02) \
+  VADD(psi_10,chi_10,psi_10)  VADD(psi_11,chi_11,psi_11)  VADD(psi_12,chi_12,psi_12) \
+  VADD(psi_20,chi_20,psi_20)  VADD(psi_21,chi_21,psi_21)  VADD(psi_22,chi_22,psi_22) \
+  VADD(psi_30,chi_30,psi_30)  VADD(psi_31,chi_31,psi_31)  VADD(psi_32,chi_32,psi_32) ); \
+  SAVE_RESULT(PTR,pf);
+
 
 #define PERMUTE_DIR3
 #define PERMUTE_DIR2
