@@ -41,7 +41,8 @@ BEGIN_MODULE_NAMESPACE(MContraction)
 enum
 {
     S_diag = 0,
-    E_diag = 1
+    E_diag = 1,
+    n_eye_diag = 2
 };
 
 // Saucer and Eye subdiagram contractions.

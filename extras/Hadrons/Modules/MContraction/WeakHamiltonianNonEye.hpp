@@ -41,7 +41,8 @@ BEGIN_MODULE_NAMESPACE(MContraction)
 enum
 {
     W_diag = 0,
-    C_diag = 1
+    C_diag = 1,
+    n_noneye_diag = 2
 };
 
 // Wing and Connected subdiagram contractions

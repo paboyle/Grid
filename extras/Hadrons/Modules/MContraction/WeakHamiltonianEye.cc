@@ -101,7 +101,7 @@ void TWeakHamiltonianEye::execute(void)
     Gamma g5            = Gamma(Gamma::Algebra::Gamma5);
     LatticeComplex        expbuf(env().getGrid());
     std::vector<TComplex> corrbuf;
-    std::vector<Result>   result;
+    std::vector<Result>   result(n_eye_diag);
     unsigned int ndim   = env().getNd();
 
     PropagatorField              tmp1(env().getGrid());
