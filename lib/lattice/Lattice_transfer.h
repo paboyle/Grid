@@ -333,9 +333,6 @@ void localConvert(const Lattice<vobj> &in,Lattice<vvobj> &out)
   typedef typename vobj::scalar_object sobj;
   typedef typename vvobj::scalar_object ssobj;
 
-  sobj s;
-  ssobj ss;
-
   GridBase *ig = in._grid;
   GridBase *og = out._grid;
 
@@ -347,10 +344,14 @@ void localConvert(const Lattice<vobj> &in,Lattice<vvobj> &out)
   for(int d=0;d<no;d++){
     assert(ig->_processors[d]  == og->_processors[d]);
     assert(ig->_ldimensions[d] == og->_ldimensions[d]);
+    assert(ig->lSites() == og->lSites());
   }
 
-  //PARALLEL_FOR_LOOP
+  PARALLEL_FOR_LOOP
   for(int idx=0;idx<ig->lSites();idx++){
+    sobj s;
+    ssobj ss;
+
     std::vector<int> lcoor(ni);
     ig->LocalIndexToLocalCoor(idx,lcoor);
     peekLocalSite(s,in,lcoor);
@@ -364,7 +365,6 @@ template<class vobj>
 void InsertSlice(Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int orthog)
 {
   typedef typename vobj::scalar_object sobj;
-  sobj s;
 
   GridBase *lg = lowDim._grid;
   GridBase *hg = higherDim._grid;
@@ -386,8 +386,9 @@ void InsertSlice(Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int 
   }
 
   // the above should guarantee that the operations are local
-  //PARALLEL_FOR_LOOP
+  PARALLEL_FOR_LOOP
   for(int idx=0;idx<lg->lSites();idx++){
+    sobj s;
     std::vector<int> lcoor(nl);
     std::vector<int> hcoor(nh);
     lg->LocalIndexToLocalCoor(idx,lcoor);
@@ -407,7 +408,6 @@ template<class vobj>
 void ExtractSlice(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice, int orthog)
 {
   typedef typename vobj::scalar_object sobj;
-  sobj s;
 
   GridBase *lg = lowDim._grid;
   GridBase *hg = higherDim._grid;
@@ -428,8 +428,9 @@ void ExtractSlice(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice, in
     }
   }
   // the above should guarantee that the operations are local
-  //PARALLEL_FOR_LOOP
+  PARALLEL_FOR_LOOP
   for(int idx=0;idx<lg->lSites();idx++){
+    sobj s;
     std::vector<int> lcoor(nl);
     std::vector<int> hcoor(nh);
     lg->LocalIndexToLocalCoor(idx,lcoor);
@@ -451,7 +452,6 @@ template<class vobj>
 void InsertSliceLocal(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice_lo,int slice_hi, int orthog)
 {
   typedef typename vobj::scalar_object sobj;
-  sobj s;
 
   GridBase *lg = lowDim._grid;
   GridBase *hg = higherDim._grid;
@@ -468,8 +468,9 @@ void InsertSliceLocal(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice
   }
 
   // the above should guarantee that the operations are local
-  //PARALLEL_FOR_LOOP
+  PARALLEL_FOR_LOOP
   for(int idx=0;idx<lg->lSites();idx++){
+    sobj s;
     std::vector<int> lcoor(nl);
     std::vector<int> hcoor(nh);
     lg->LocalIndexToLocalCoor(idx,lcoor);
@@ -487,7 +488,6 @@ template<class vobj>
 void ExtractSliceLocal(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice_lo,int slice_hi, int orthog)
 {
   typedef typename vobj::scalar_object sobj;
-  sobj s;
 
   GridBase *lg = lowDim._grid;
   GridBase *hg = higherDim._grid;
@@ -504,8 +504,9 @@ void ExtractSliceLocal(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slic
   }
 
   // the above should guarantee that the operations are local
-  //PARALLEL_FOR_LOOP
+  PARALLEL_FOR_LOOP
   for(int idx=0;idx<lg->lSites();idx++){
+    sobj s;
     std::vector<int> lcoor(nl);
     std::vector<int> hcoor(nh);
     lg->LocalIndexToLocalCoor(idx,lcoor);
