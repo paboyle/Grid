@@ -66,7 +66,7 @@ int main (int argc, char ** argv)
   random(fRNG,Foo);
   gaussian(fRNG,Bar);
 
-  /*
+
   Integer stride =1000;
   {
     double nrm;
@@ -79,7 +79,6 @@ int main (int argc, char ** argv)
     }
     Foo=lex;
   }
-  */
 
   typedef CartesianStencil<vobj,vobj> Stencil;
     for(int dir=0;dir<4;dir++){
@@ -92,7 +91,6 @@ int main (int argc, char ** argv)
 	std::vector<int> displacements(npoint,disp);
 
 	Stencil myStencil(&Fine,npoint,0,directions,displacements);
-
 	std::vector<int> ocoor(4);
 	for(int o=0;o<Fine.oSites();o++){
 	  Fine.oCoorFromOindex(ocoor,o);
@@ -147,7 +145,7 @@ int main (int argc, char ** argv)
 	 
 	}}}}
 
-
+	if (nrm > 1.0e-4) exit(-1);
 
       }
     }
@@ -182,8 +180,6 @@ int main (int argc, char ** argv)
 	
 	SimpleCompressor<vobj> compress;
 
-	EStencil.HaloExchange(EFoo,compress);
-	OStencil.HaloExchange(OFoo,compress);
 	
 	Bar = Cshift(Foo,dir,disp);
 
@@ -196,6 +192,7 @@ int main (int argc, char ** argv)
 	}
 
 	// Implement a stencil code that should agree with that darn cshift!
+	EStencil.HaloExchange(EFoo,compress);
 	for(int i=0;i<OCheck._grid->oSites();i++){
 	  int permute_type;
 	  StencilEntry *SE;
@@ -209,6 +206,7 @@ int main (int argc, char ** argv)
 	  else 
 	    OCheck._odata[i] = EStencil.CommBuf()[SE->_offset];
 	}
+	OStencil.HaloExchange(OFoo,compress);
 	for(int i=0;i<ECheck._grid->oSites();i++){
 	  int permute_type;
 	  StencilEntry *SE;
@@ -254,6 +252,7 @@ int main (int argc, char ** argv)
 	 
 	}}}}
 
+	if (nrm > 1.0e-4) exit(-1);
 
       }
     }
