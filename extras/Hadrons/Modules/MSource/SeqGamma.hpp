@@ -152,7 +152,7 @@ void TSeqGamma<FImpl>::execute(void)
         LatticeCoordinate(coor, mu);
         ph = ph + p[mu]*coor*((1./(env().getGrid()->_fdimensions[mu])));
     }
-    ph = exp(2*M_PI*i*ph);
+    ph = exp((Real)(2*M_PI)*i*ph);
     LatticeCoordinate(t, Tp);
     src = where((t >= par().tA) and (t <= par().tB), ph*(g*q), 0.*q);
 }

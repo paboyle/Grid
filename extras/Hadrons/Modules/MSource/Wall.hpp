@@ -134,7 +134,7 @@ void TWall<FImpl>::execute(void)
         LatticeCoordinate(coor, mu);
         ph = ph + p[mu]*coor*((1./(env().getGrid()->_fdimensions[mu])));
     }
-    ph = exp(2*M_PI*i*ph);
+    ph = exp((Real)(2*M_PI)*i*ph);
     LatticeCoordinate(t, Tp);
     src = 1.;
     src = where((t == par().tW), src*ph, 0.*src);

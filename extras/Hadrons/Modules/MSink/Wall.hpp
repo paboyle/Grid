@@ -133,7 +133,7 @@ void TWall<FImpl>::execute(void)
         LatticeCoordinate(coor, mu);
         ph = ph + p[mu]*coor*((1./(env().getGrid()->_fdimensions[mu])));
     }
-    ph = exp(-2*M_PI*i*ph);
+    ph = exp(-(Real)(2*M_PI)*i*ph);
     sliceSum<SitePropagator>(ph*q, prop, Tp);
 }
 
