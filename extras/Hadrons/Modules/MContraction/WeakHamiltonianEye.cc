@@ -135,6 +135,5 @@ void TWeakHamiltonianEye::execute(void)
     SUM_MU(expbuf, E_body[mu]*E_loop[mu])
     MAKE_DIAG(expbuf, corrbuf, result[E_diag], "HW_E")
 
-    write(writer, "HW_Eye", result[S_diag]);
-    write(writer, "HW_Eye", result[E_diag]);
+    write(writer, "HW_Eye", result);
 }

@@ -137,6 +137,5 @@ void TWeakHamiltonianNonEye::execute(void)
     SUM_MU(expbuf, W_i_side_loop[mu]*W_f_side_loop[mu])
     MAKE_DIAG(expbuf, corrbuf, result[W_diag], "HW_W")
 
-    write(writer, "HW_NonEye", result[C_diag]);
-    write(writer, "HW_NonEye", result[W_diag]);
+    write(writer, "HW_NonEye", result);
 }
