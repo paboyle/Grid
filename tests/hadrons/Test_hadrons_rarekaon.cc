@@ -81,7 +81,7 @@ inline void makeSequentialSource(Application &application, std::string srcName,
                                  std::string mom = ZERO_MOM)
 {
     // If the source already exists, don't make the module again.
-    if (!(application.hasModule(srcName)))
+    if (!(Environment::getInstance().hasModule(srcName)))
     {
         MSource::SeqGamma::Par seqPar;
         seqPar.q   = qSrc;
@@ -106,7 +106,7 @@ inline void makeWallSource(Application &application, std::string srcName,
                            unsigned int tW, std::string mom = ZERO_MOM)
 {
     // If the source already exists, don't make the module again.
-    if (!(application.hasModule(srcName)))
+    if (!(Environment::getInstance().hasModule(srcName)))
     {
         MSource::Wall::Par wallPar;
         wallPar.tW  = tW;
@@ -128,7 +128,7 @@ inline void makeWallSink(Application &application, std::string propName,
                          std::string wallName, std::string mom = ZERO_MOM)
 {
     // If the propagator has already been smeared, don't smear it again.
-    if (!(application.hasModule(wallName)))
+    if (!(Environment::getInstance().hasModule(wallName)))
     {
         MSink::Wall::Par wallPar;
         wallPar.q   = propName;
@@ -150,7 +150,7 @@ inline void makePropagator(Application &application, std::string &propName,
                            std::string &srcName, std::string &solver)
 {
     // If the propagator already exists, don't make the module again.
-    if (!(application.hasModule(propName)))
+    if (!(Environment::getInstance().hasModule(propName)))
     {
         Quark::Par         quarkPar;
         quarkPar.source = srcName;
@@ -179,7 +179,7 @@ inline void mesonContraction(Application &application, unsigned int npt,
                              std::string &label, std::string mom = ZERO_MOM)
 {
     std::string modName = std::to_string(npt) + "pt_" + label;
-    if (!(application.hasModule(modName)))
+    if (!(Environment::getInstance().hasModule(modName)))
     {
         MContraction::Meson::Par mesPar;
         mesPar.output = std::to_string(npt) + "pt/" + label;
@@ -211,7 +211,7 @@ inline void weakContraction##top(Application &application, unsigned int npt,\
                                  std::string &label)\
 {\
     std::string modName = std::to_string(npt) + "pt_" + label;\
-    if (!(application.hasModule(modName)))\
+    if (!(Environment::getInstance().hasModule(modName)))\
     {\
         MContraction::WeakHamiltonian##top::Par weakPar;\
         weakPar.output = std::to_string(npt) + "pt/" + label;\
@@ -452,7 +452,7 @@ int main(int argc, char *argv[])
         }
     }
     // execution
-    application.saveParameterFile("rarekaon_000_100_tK0_tpi28_tJ14_noloop_mc0.2.xml");
+    application.saveParameterFile("rarekaon_000_100_tK0_tpi16_tJ8_noloop_mc0.2.xml");
     application.run();
 
     // epilogue
