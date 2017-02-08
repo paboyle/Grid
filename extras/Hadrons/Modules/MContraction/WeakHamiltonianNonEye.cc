@@ -95,7 +95,7 @@ void TWeakHamiltonianNonEye::execute(void)
                  << par().q2 << ", '" << par().q3 << "' and '" << par().q4 
                  << "'." << std::endl;
     
-    XmlWriter             writer(par().output);
+    CorrWriter             writer(par().output);
     PropagatorField &q1 = *env().template getObject<PropagatorField>(par().q1);
     PropagatorField &q2 = *env().template getObject<PropagatorField>(par().q2);
     PropagatorField &q3 = *env().template getObject<PropagatorField>(par().q3);

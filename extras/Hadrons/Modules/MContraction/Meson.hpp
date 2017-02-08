@@ -162,7 +162,7 @@ void TMeson<FImpl1, FImpl2>::execute(void)
                  << " quarks '" << par().q1 << "' and '" << par().q2 << "'"
                  << std::endl;
     
-    XmlWriter              writer(par().output);
+    CorrWriter              writer(par().output);
     PropagatorField1       &q1 = *env().template getObject<PropagatorField1>(par().q1);
     PropagatorField2       &q2 = *env().template getObject<PropagatorField2>(par().q2);
     LatticeComplex         c(env().getGrid());
