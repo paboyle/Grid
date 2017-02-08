@@ -181,7 +181,7 @@ void TMeson<FImpl1, FImpl2>::execute(void)
         LatticeCoordinate(coor, mu);
         ph = ph + p[mu]*coor*((1./(env().getGrid()->_fdimensions[mu])));
     }
-    ph = exp(-(Real)(2*M_PI)*i*ph);
+    ph = exp((Real)(2*M_PI)*i*ph);
     
     parseGammaString(gammaList);
 
@@ -190,7 +190,7 @@ void TMeson<FImpl1, FImpl2>::execute(void)
     {
         Gamma gSnk(gammaList[i].first);
         Gamma gSrc(gammaList[i].second);
-        c = trace((g5*gSnk)*q1*(gSrc*g5)*adj(q2))*ph;
+        c = trace((g5*gSnk)*q1*(adj(gSrc)*g5)*adj(q2))*ph;
         sliceSum(c, buf, Tp);
 
         result[i].gamma_snk = gammaList[i].first;
@@ -200,8 +200,8 @@ void TMeson<FImpl1, FImpl2>::execute(void)
         {
             result[i].corr[t] = TensorRemove(buf[t]);
         }
-        write(writer, "meson", result[i]);
     }
+    write(writer, "meson", result);
 }
 
 END_MODULE_NAMESPACE
