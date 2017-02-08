@@ -114,10 +114,8 @@ void TWeakHamiltonianEye::execute(void)
     // Setup for S-type contractions.
     for (int mu = 0; mu < ndim; ++mu)
     {
-        S_body[mu] = MAKE_SE_BODY(q1, q2, q3, Gamma::gmu[mu]) -
-                     MAKE_SE_BODY(q1, q2, q3, Gamma::gmu[mu]*g5);
-        S_loop[mu] = MAKE_SE_LOOP(q4, Gamma::gmu[mu]) -
-                     MAKE_SE_LOOP(q4, Gamma::gmu[mu]*g5);
+        S_body[mu] = MAKE_SE_BODY(q1, q2, q3, GammaL(Gamma::gmu[mu]));
+        S_loop[mu] = MAKE_SE_LOOP(q4, GammaL(Gamma::gmu[mu]));
     }
 
     // Perform S-type contractions.    

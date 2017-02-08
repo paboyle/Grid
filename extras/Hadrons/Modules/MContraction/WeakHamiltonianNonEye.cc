@@ -116,10 +116,8 @@ void TWeakHamiltonianNonEye::execute(void)
     // Setup for C-type contractions.
     for (int mu = 0; mu < ndim; ++mu)
     {
-        C_i_side_loop[mu] = MAKE_CW_SUBDIAG(q1, q2, Gamma::gmu[mu]) -
-                            MAKE_CW_SUBDIAG(q1, q2, Gamma::gmu[mu]*g5);
-        C_f_side_loop[mu] = MAKE_CW_SUBDIAG(q3, q4, Gamma::gmu[mu]) -
-                            MAKE_CW_SUBDIAG(q3, q4, Gamma::gmu[mu]*g5);
+        C_i_side_loop[mu] = MAKE_CW_SUBDIAG(q1, q2, GammaL(Gamma::gmu[mu]));
+        C_f_side_loop[mu] = MAKE_CW_SUBDIAG(q3, q4, GammaL(Gamma::gmu[mu]));
     }
 
     // Perform C-type contractions.    

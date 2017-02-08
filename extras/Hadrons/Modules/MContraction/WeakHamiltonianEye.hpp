@@ -46,7 +46,7 @@ enum
 };
 
 // Saucer and Eye subdiagram contractions.
-#define MAKE_SE_BODY(Q_1, Q_2, Q_3, gamma) (Q_3*g5*Q_1*adj(Q_2)*(g5*gamma))
+#define MAKE_SE_BODY(Q_1, Q_2, Q_3, gamma) (Q_3*g5*Q_1*adj(Q_2)*g5*gamma)
 #define MAKE_SE_LOOP(Q_loop, gamma) (Q_loop*gamma)
 
 class TWeakHamiltonianEye: public Module<WeakHamiltonianPar>
