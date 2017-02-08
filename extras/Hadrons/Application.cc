@@ -91,11 +91,6 @@ const Application::GlobalPar & Application::getPar(void)
     return par_;
 }
 
-bool Application::hasModule(const std::string name)
-{
-    return env().hasModule(name);
-}
-
 // execute /////////////////////////////////////////////////////////////////////
 void Application::run(void)
 {
