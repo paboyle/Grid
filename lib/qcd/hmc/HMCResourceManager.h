@@ -75,6 +75,13 @@ class HMCResourceManager {
   bool have_RNG;
   bool have_CheckPointer;
 
+  void output_vector_string(const std::vector<std::string> &vs){
+    for (auto &i: vs)
+      std::cout << i << " ";
+    std::cout << std::endl;
+  }
+
+
  public:
   HMCResourceManager() : have_RNG(false), have_CheckPointer(false) {}
 
@@ -93,7 +100,11 @@ class HMCResourceManager {
     std::string cp_type;
     read(Read,"name", cp_type);
     std::cout << "Registered types " << std::endl;
-    std::cout << CPfactory.getBuilderList() << std::endl;
+    // NOTE: operator << is not overloaded for std::vector<string> 
+    // so it complains here
+    //std::cout << CPfactory.getBuilderList() << std::endl;
+    output_vector_string(CPfactory.getBuilderList());
+
 
     CP = CPfactory.create(cp_type, Read);
     CP->print_parameters();
@@ -110,7 +121,7 @@ class HMCResourceManager {
       std::string obs_type;
       read(Read,"name", obs_type);
       std::cout << "Registered types " << std::endl;
-      std::cout << ObsFactory.getBuilderList() << std::endl;
+      output_vector_string(ObsFactory.getBuilderList() );
 
       ObservablesList.emplace_back(ObsFactory.create(obs_type, Read));
       ObservablesList[ObservablesList.size() - 1]->print_parameters();
@@ -271,8 +282,8 @@ private:
     do{
       auto &ActionFactory = HMC_ActionModuleFactory<gauge_string, typename ImplementationPolicy::Field, ReaderClass>::getInstance(); 
       std::string action_type;
-      Read.readDefault("name", action_type);
-      std::cout << ActionFactory.getBuilderList() << std::endl;  // temporary
+      Read.readDefault("name", action_type); 
+      output_vector_string(ActionFactory.getBuilderList() );
       ActionsList.emplace(m, ActionFactory.create(action_type, Read));
     } while (Read.nextElement("Action"));
     ActionsList.find(m)->second->print_parameters();    

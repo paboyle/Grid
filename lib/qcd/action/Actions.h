@@ -101,11 +101,10 @@ typedef SymanzikGaugeAction<ConjugateGimplF>        ConjugateSymanzikGaugeAction
 typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeActionD;
 
 
-  typedef ScalarAction<ScalarImplR>                 ScalarActionR;
-  typedef ScalarAction<ScalarImplF>                 ScalarActionF;
-  typedef ScalarAction<ScalarImplD>                 ScalarActionD;
-  
-  
+typedef ScalarAction<ScalarImplR>                 ScalarActionR;
+typedef ScalarAction<ScalarImplF>                 ScalarActionF;
+typedef ScalarAction<ScalarImplD>                 ScalarActionD;
+
 }}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -510,28 +510,6 @@ class HMC_ActionModuleFactory
 };
 
 
-/*
-template <char const *str, class ReaderClass >
-class HMC_ScalarActionModuleFactory
-    : public Factory < HMC_ScalarActionModBase , Reader<ReaderClass> > {
- public:
-  typedef Reader<ReaderClass> TheReader; 
-  // use SINGLETON FUNCTOR MACRO HERE
-  HMC_ScalarActionModuleFactory(const HMC_ScalarActionModuleFactory& e) = delete;
-  void operator=(const HMC_ScalarActionModuleFactory& e) = delete;
-  static HMC_ScalarActionModuleFactory& getInstance(void) {
-    static HMC_ScalarActionModuleFactory e;
-    return e;
-  }
-
- private:
-  HMC_ScalarActionModuleFactory(void) = default;
-    std::string obj_type() const {
-        return std::string(str);
-  }
-};
-*/
-
 extern char gauge_string[];
 } // Grid
 

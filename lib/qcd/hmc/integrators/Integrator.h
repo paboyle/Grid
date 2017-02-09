@@ -39,8 +39,8 @@ namespace QCD {
 
 class IntegratorParameters: Serializable {
 public:
-	GRID_SERIALIZABLE_CLASS_MEMBERS(IntegratorParameters,
-		std::string, name,      // name of the integrator
+        GRID_SERIALIZABLE_CLASS_MEMBERS(IntegratorParameters,
+                std::string, name,      // name of the integrator
     unsigned int, MDsteps,  // number of outer steps
     RealD, trajL,           // trajectory length
   )
@@ -55,7 +55,7 @@ public:
   template <class ReaderClass, typename std::enable_if<isReader<ReaderClass>::value, int >::type = 0 >
   IntegratorParameters(ReaderClass & Reader){
     std::cout << "Reading integrator\n";
-  	read(Reader, "Integrator", *this);
+        read(Reader, "Integrator", *this);
   }
 
   void print_parameters() const {
@@ -177,16 +177,16 @@ class Integrator {
   }
 
   void print_actions(){
-  	std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::" << std::endl;
-  	std::cout << GridLogMessage << "[Integrator] Action summary: "<<std::endl;
-  	for (int level = 0; level < as.size(); ++level) {
-  		std::cout << GridLogMessage << "[Integrator] ---- Level: "<< level << std::endl;
-  		for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
-  			std::cout << GridLogMessage << "["<< as[level].actions.at(actionID)->action_name() << "] ID: " << actionID << std::endl;
-  			std::cout << as[level].actions.at(actionID)->LogParameters();
-  		}
-  	}
-  	std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::"<< std::endl;
+        std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::" << std::endl;
+        std::cout << GridLogMessage << "[Integrator] Action summary: "<<std::endl;
+        for (int level = 0; level < as.size(); ++level) {
+                std::cout << GridLogMessage << "[Integrator] ---- Level: "<< level << std::endl;
+                for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
+                        std::cout << GridLogMessage << "["<< as[level].actions.at(actionID)->action_name() << "] ID: " << actionID << std::endl;
+                        std::cout << as[level].actions.at(actionID)->LogParameters();
+                }
+        }
+        std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::"<< std::endl;
 
   }
 
@@ -209,7 +209,7 @@ class Integrator {
     assert(P._grid == U._grid);
     std::cout << GridLogIntegrator << "Integrator refresh\n";
     FieldImplementation::generate_momenta(P, pRNG);
- 
+     
     // Update the smeared fields, can be implemented as observer
     // necessary to keep the fields updated even after a reject
     // of the Metropolis

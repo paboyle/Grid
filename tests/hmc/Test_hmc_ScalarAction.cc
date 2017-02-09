@@ -37,8 +37,9 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
    // Typedefs to simplify notation
-  typedef ScalarGenericHMCRunner HMCWrapper;  // Uses the default minimum norm
-
+  typedef ScalarGenericHMCRunner HMCWrapper;  // Uses the default minimum norm, real scalar fields
+  //typedef Representations<EmptyRep<typename ScalarMatrixImplTypes<vComplex, 3>::Field> > ScalarMatrixFields;
+  //typedef HMCWrapperTemplate<ScalarMatrixImplTypes<vComplex, 3>, MinimumNorm2, ScalarMatrixFields> HMCWrapper;
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   HMCWrapper TheHMC;
 
@@ -76,6 +77,9 @@ int main(int argc, char **argv) {
 
   // Real Scalar action
   ScalarActionR Saction(0.11,0.);
+  
+  //typedef ScalarAction<ScalarMatrixImplTypes<vComplex, 3>> ScalarMatrixActionR;
+  //ScalarMatrixActionR Saction(0.11,0.);
 
   // Collect actions
   ActionLevel<ScalarActionR::Field, ScalarFields> Level1(1);

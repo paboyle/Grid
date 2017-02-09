@@ -94,8 +94,8 @@ class HMCWrapperTemplate: public HMCRunnerBase<ReaderClass> {
       Parameters.StartingType = arg;
     }
 
-    if (GridCmdOptionExists(argv, argv + argc, "--StartTrajectory")) {
-      arg = GridCmdOptionPayload(argv, argv + argc, "--StartTrajectory");
+    if (GridCmdOptionExists(argv, argv + argc, "--StartingTrajectory")) {
+      arg = GridCmdOptionPayload(argv, argv + argc, "--StartingTrajectory");
       std::vector<int> ivec(0);
       GridCmdOptionIntVector(arg, ivec);
       Parameters.StartTrajectory = ivec[0];

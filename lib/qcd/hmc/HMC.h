@@ -40,6 +40,7 @@ directory
 #define HMC_INCLUDED
 
 #include <string>
+#include <list>
 
 namespace Grid {
 namespace QCD {
@@ -158,7 +159,7 @@ class HybridMonteCarlo {
   GridParallelRNG &pRNG; 
 
   Field &Ucur;
-
+  
   IntegratorType &TheIntegrator;
 	ObsListType Observables;
 
@@ -195,7 +196,7 @@ class HybridMonteCarlo {
   /////////////////////////////////////////////////////////
   // Evolution
   /////////////////////////////////////////////////////////
-  RealD evolve_step(Field &U) {
+  RealD evolve_hmc_step(Field &U) {
     TheIntegrator.refresh(U, pRNG);  // set U and initialize P and phi's
 
     RealD H0 = TheIntegrator.S(U);  // initial state action
@@ -211,11 +212,14 @@ class HybridMonteCarlo {
 
     std::cout.precision(17);
     std::cout << GridLogMessage << "Total H after trajectory  = " << H1
-              << "  dH = " << H1 - H0 << "\n";
+	      << "  dH = " << H1 - H0 << "\n";
     std::cout.precision(current_precision);
-
+    
     return (H1 - H0);
   }
+  
+
+  
 
  public:
   /////////////////////////////////////////
@@ -224,7 +228,7 @@ class HybridMonteCarlo {
   HybridMonteCarlo(HMCparameters _Pams, IntegratorType &_Int,
                    GridSerialRNG &_sRNG, GridParallelRNG &_pRNG, 
                    ObsListType _Obs, Field &_U)
-      : Params(_Pams), TheIntegrator(_Int), sRNG(_sRNG), pRNG(_pRNG), Observables(_Obs), Ucur(_U) {}
+    : Params(_Pams), TheIntegrator(_Int), sRNG(_sRNG), pRNG(_pRNG), Observables(_Obs), Ucur(_U) {}
   ~HybridMonteCarlo(){};
 
   void evolve(void) {
@@ -241,13 +245,13 @@ class HybridMonteCarlo {
       std::cout << GridLogMessage << "-- # Trajectory = " << traj << "\n";
       if (traj < Params.StartTrajectory + Params.NoMetropolisUntil) {
       	std::cout << GridLogMessage << "-- Thermalization" << std::endl;
-    	}
-
-    	double t0=usecond();
+      }
+      
+      double t0=usecond();
       Ucopy = Ucur;
 
-      DeltaH = evolve_step(Ucopy);
-
+      DeltaH = evolve_hmc_step(Ucopy);
+      // Metropolis-Hastings test
       bool accept = true;
       if (traj >= Params.StartTrajectory + Params.NoMetropolisUntil) {
         accept = metropolis_test(DeltaH);
@@ -255,9 +259,11 @@ class HybridMonteCarlo {
       	std::cout << GridLogMessage << "Skipping Metropolis test" << std::endl;
       }
 
-      if (accept) {
-        Ucur = Ucopy;
-      }
+      if (accept)
+        Ucur = Ucopy; 
+      
+     
+      
       double t1=usecond();
       std::cout << GridLogMessage << "Total time for trajectory (s): " << (t1-t0)/1e6 << std::endl;
 

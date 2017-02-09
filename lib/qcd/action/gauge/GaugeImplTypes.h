@@ -81,7 +81,7 @@ public:
   ///////////////////////////////////////////////////////////
   // Move these to another class
   // HMC auxiliary functions
-  static inline void generate_momenta(Field& P, GridParallelRNG& pRNG){
+  static inline void generate_momenta(Field &P, GridParallelRNG &pRNG) {
     // specific for SU gauge fields
     LinkField Pmu(P._grid);
     Pmu = zero;
@@ -91,9 +91,7 @@ public:
     }
   }
 
-   static inline Field projectForce(Field& P){
-    return Ta(P);
-   }
+  static inline Field projectForce(Field &P) { return Ta(P); }
   
   static inline void update_field(Field& P, Field& U, double ep){
     for (int mu = 0; mu < Nd; mu++) {
