@@ -30,8 +30,8 @@ Author: Guido Cossu <guido.cossu@ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#include <Grid.h>
-#include <PerfCount.h>
+#include <Grid/Grid.h>
+#include <Grid/PerfCount.h>
 
 namespace Grid {
 namespace QCD {
@@ -464,11 +464,11 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const Fe
   typedef iSinglet<ScalComplex> Tcomplex;
   typedef Lattice<iSinglet<vector_type> > LatComplex;
   
-  Gamma::GammaMatrix Gmu [] = {
-    Gamma::GammaX,
-    Gamma::GammaY,
-    Gamma::GammaZ,
-    Gamma::GammaT
+  Gamma::Algebra Gmu [] = {
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT
   };
 
   std::vector<int> latt_size   = _grid->_fdimensions;
@@ -535,11 +535,11 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const Fe
 template<class Impl>
 void WilsonFermion5D<Impl>::MomentumSpacePropagatorHw(FermionField &out,const FermionField &in,RealD mass) 
 {
-    Gamma::GammaMatrix Gmu [] = {
-      Gamma::GammaX,
-      Gamma::GammaY,
-      Gamma::GammaZ,
-      Gamma::GammaT
+    Gamma::Algebra Gmu [] = {
+      Gamma::Algebra::GammaX,
+      Gamma::Algebra::GammaY,
+      Gamma::Algebra::GammaZ,
+      Gamma::Algebra::GammaT
     };
 
     GridBase *_grid = _FourDimGrid;

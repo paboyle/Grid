@@ -37,11 +37,11 @@ struct scal {
   d internal;
 };
 
-  Gamma::GammaMatrix Gmu [] = {
-    Gamma::GammaX,
-    Gamma::GammaY,
-    Gamma::GammaZ,
-    Gamma::GammaT
+  Gamma::Algebra Gmu [] = {
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT
   };
 
 typedef WilsonFermion5D<DomainWallVec5dImplR> WilsonFermion5DR;
@@ -380,6 +380,13 @@ int main (int argc, char ** argv)
         setCheckerboard(ssrc,ssrc_e);
         std::cout<< ssrc << std::endl;
       } 
+
+
+      //    ref =  src - Gamma(Gamma::Algebra::GammaX)* src ; // 1+gamma_x
+      tmp = U[mu]*Cshift(src,mu+1,1);
+      for(int i=0;i<ref._odata.size();i++){
+	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
+      }
 
 
     }
