@@ -1348,6 +1348,7 @@ class basic_json
 
     @since version 1.0.0
     */
+#pragma warning disable 488   //disables and intel compiler specific warning
     template<typename T, typename std::enable_if<
                  not (std::is_same<T, int>::value) and
                  std::is_same<T, number_integer_t>::value, int>::type = 0>
@@ -1356,7 +1357,8 @@ class basic_json
     {
         assert_invariant();
     }
-
+  
+  
     /*!
     @brief create an integer number from an enum type (explicit)
 
