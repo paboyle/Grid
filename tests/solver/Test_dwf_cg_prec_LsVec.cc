@@ -37,9 +37,6 @@ struct scal {
   d internal;
 };
 
-Gamma::GammaMatrix Gmu[] = {Gamma::GammaX, Gamma::GammaY, Gamma::GammaZ,
-                            Gamma::GammaT};
-
 int main(int argc, char** argv) {
   Grid_init(&argc, &argv);
 

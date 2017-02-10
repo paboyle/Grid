@@ -60,6 +60,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 // Grid headers
 ///////////////////
 #include "Config.h"
+#include <Grid/DisableWarnings.h>
 #include <Grid/Timer.h>
 #include <Grid/PerfCount.h>
 #include <Grid/Log.h>

@@ -179,6 +179,17 @@ using GenericHMCRunnerF = HMCWrapperTemplate<PeriodicGimplF, Integrator>;
 template <template <typename, typename, typename> class Integrator>
 using GenericHMCRunnerD = HMCWrapperTemplate<PeriodicGimplD, Integrator>;
 
+
+// These are for gauge fields, default integrator MinimumNorm2
+template <template <typename, typename, typename> class Integrator>
+using ConjugateHMCRunner = HMCWrapperTemplate<ConjugateGimplR, Integrator>;
+template <template <typename, typename, typename> class Integrator>
+using ConjugateHMCRunnerF = HMCWrapperTemplate<ConjugateGimplF, Integrator>;
+template <template <typename, typename, typename> class Integrator>
+using ConjugateHMCRunnerD = HMCWrapperTemplate<ConjugateGimplD, Integrator>;
+
+
+
 template <class RepresentationsPolicy,
           template <typename, typename, typename> class Integrator>
 using GenericHMCRunnerHirep =
@@ -187,7 +198,6 @@ using GenericHMCRunnerHirep =
 template <class Implementation, class RepresentationsPolicy, 
           template <typename, typename, typename> class Integrator>
 using GenericHMCRunnerTemplate = HMCWrapperTemplate<Implementation, Integrator, RepresentationsPolicy>;
-
 
 typedef HMCWrapperTemplate<ScalarImplR, MinimumNorm2, ScalarFields>
     ScalarGenericHMCRunner;
