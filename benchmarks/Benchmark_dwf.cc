@@ -52,8 +52,6 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
-  CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicySendrecv);
-  WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsAndCompute;
 
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;

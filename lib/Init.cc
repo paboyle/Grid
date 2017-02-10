@@ -294,33 +294,39 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"  --help : this message"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Geometry:"<<std::endl;
+    std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"  --mpi n.n.n.n   : default MPI decomposition"<<std::endl;    
     std::cout<<GridLogMessage<<"  --threads n     : default number of OMP threads"<<std::endl;
     std::cout<<GridLogMessage<<"  --grid n.n.n.n  : default Grid size"<<std::endl;    
     std::cout<<GridLogMessage<<"  --shm  M        : allocate M megabytes of shared memory for comms"<<std::endl;    
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Verbose and debug:"<<std::endl;
-    std::cout<<GridLogMessage<<"  --log list      : comma separted list of streams from Error,Warning,Message,Performance,Iterative,Integrator,Debug,Colours"<<std::endl;
+    std::cout<<GridLogMessage<<std::endl;
+    std::cout<<GridLogMessage<<"  --log list      : comma separated list from Error,Warning,Message,Performance,Iterative,Integrator,Debug,Colours"<<std::endl;
     std::cout<<GridLogMessage<<"  --decomposition : report on default omp,mpi and simd decomposition"<<std::endl;    
     std::cout<<GridLogMessage<<"  --debug-signals : catch sigsegv and print a blame report"<<std::endl;
     std::cout<<GridLogMessage<<"  --debug-stdout  : print stdout from EVERY node"<<std::endl;    
     std::cout<<GridLogMessage<<"  --notimestamp   : suppress millisecond resolution stamps"<<std::endl;    
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Performance:"<<std::endl;
+    std::cout<<GridLogMessage<<std::endl;
+    std::cout<<GridLogMessage<<"  --comms-isend   : Asynchronous MPI calls; several dirs at a time "<<std::endl;    
+    std::cout<<GridLogMessage<<"  --comms-sendrecv: Synchronous MPI calls; one dirs at a time "<<std::endl;    
+    std::cout<<GridLogMessage<<"  --comms-overlap : Overlap comms with compute "<<std::endl;    
+    std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"  --dslash-generic: Wilson kernel for generic Nc"<<std::endl;    
     std::cout<<GridLogMessage<<"  --dslash-unroll : Wilson kernel for Nc=3"<<std::endl;    
     std::cout<<GridLogMessage<<"  --dslash-asm    : Wilson kernel for AVX512"<<std::endl;    
+    std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"  --lebesgue      : Cache oblivious Lebesgue curve/Morton order/Z-graph stencil looping"<<std::endl;    
     std::cout<<GridLogMessage<<"  --cacheblocking n.m.o.p : Hypercuboidal cache blocking"<<std::endl;    
     std::cout<<GridLogMessage<<std::endl;
     exit(EXIT_SUCCESS);
   }
 
-
   ////////////////////////////////////
   // Debug and performance options
   ////////////////////////////////////
-
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-unroll") ){
     QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptHandUnroll;
@@ -331,10 +337,20 @@ void Grid_init(int *argc,char ***argv)
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-generic") ){
     QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptGeneric;
   }
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-overlap") ){
+    WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsAndCompute;
+  } else {
+    WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsThenCompute;
+  }
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-isend") ){
+    CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicyIsend);
+  }
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-sendrecv") ){
+    CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicySendrecv);
+  }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--lebesgue") ){
     LebesgueOrder::UseLebesgueOrder=1;
   }
-
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--cacheblocking") ){
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--cacheblocking");
