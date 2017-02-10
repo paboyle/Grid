@@ -25,6 +25,7 @@ matrix:
             - binutils-dev
       env: VERSION=-4.9
     - compiler: gcc
+      sudo: required
       addons:
         apt:
           sources:
