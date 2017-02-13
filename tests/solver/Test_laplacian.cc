@@ -50,15 +50,34 @@ int main (int argc, char ** argv)
 
   typedef SU<Nc>::LatticeAlgebraVector AVector;
   // Source and result in the algebra
-  AVector src(&Grid); random(pRNG,src);
-  AVector result(&Grid); result=zero;
+  AVector src_vec(&Grid); random(pRNG, src_vec);
+  AVector result_vec(&Grid); result_vec = zero;
+  LatticeColourMatrix src(&Grid); 
+  SU<Nc>::FundamentalLieAlgebraMatrix(src_vec, src);
+  LatticeColourMatrix result(&Grid); result=zero;
 
   LaplacianAdjointField<PeriodicGimplR> Laplacian(&Grid);
   Laplacian.ImportGauge(Umu);
 
-  HermitianLinearOperator<LaplacianAdjointField<PeriodicGimplR>,AVector> HermOp(Laplacian);
-  ConjugateGradient<AVector> CG(1.0e-8,10000);
-  CG(HermOp,src,result);
+  HermitianLinearOperator<LaplacianAdjointField<PeriodicGimplR>,LatticeColourMatrix> HermOp(Laplacian);
+  ConjugateGradient<LatticeColourMatrix> CG(1.0e-8,10000);
+  CG(HermOp,src,result); // fastest
   
+
+  // Tests also the version using the algebra decomposition
+  LaplacianAlgebraField<PeriodicGimplR> LaplacianAlgebra(&Grid);
+  LaplacianAlgebra.ImportGauge(Umu);
+
+  HermitianLinearOperator<LaplacianAlgebraField<PeriodicGimplR>,AVector> HermOpAlg(LaplacianAlgebra);
+  ConjugateGradient<AVector> CG_Algebra(1.0e-8,10000);
+  CG_Algebra(HermOpAlg,src_vec,result_vec);
+  
+  LatticeColourMatrix result2(&Grid);
+  SU<Nc>::FundamentalLieAlgebraMatrix(result_vec, result2);
+
+  result2 -= result;
+  std::cout << GridLogMessage << "Results difference " << norm2(result2) << std::endl;
+
+
   Grid_finalize();
 }
