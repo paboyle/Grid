@@ -48,9 +48,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 ////////////////////////////////////////////
 // Utility functions
 ////////////////////////////////////////////
-//#include <Grid/qcd/action/gauge/GaugeImplTypes.h>
 #include <Grid/qcd/action/gauge/GaugeImplementations.h>
 #include <Grid/qcd/utils/WilsonLoops.h>
+#include <Grid/qcd/utils/CovariantLaplacian.h>
 
 #include <Grid/qcd/action/fermion/WilsonCompressor.h>     //used by all wilson type fermions
 #include <Grid/qcd/action/fermion/FermionOperatorImpl.h>
