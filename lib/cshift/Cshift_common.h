@@ -103,6 +103,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename cobj::scalar_
   int e1=rhs._grid->_slice_nblock[dimension];
   int e2=rhs._grid->_slice_block[dimension];
   int n1=rhs._grid->_slice_stride[dimension];
+
   if ( cbmask ==0x3){
 PARALLEL_NESTED_LOOP2
     for(int n=0;n<e1;n++){
@@ -110,6 +111,7 @@ PARALLEL_NESTED_LOOP2
 
 	int o      =   n*n1;
 	int offset = b+n*e2;
+	
 	cobj temp =compress(rhs._odata[so+o+b]);
 	extract<cobj>(temp,pointers,offset);
 
@@ -134,6 +136,62 @@ PARALLEL_NESTED_LOOP2
 	}
       }
     }
+  }
+}
+
+///////////////////////////////////////////////////////////////////
+// Gather for when there *is* need to SIMD split with compression
+///////////////////////////////////////////////////////////////////
+template<class cobj,class vobj,class compressor> void 
+Gather_plane_exchange(const Lattice<vobj> &rhs,
+		      std::vector<cobj *> pointers,int dimension,int plane,int cbmask,compressor &compress,int type)
+{
+  int rd = rhs._grid->_rdimensions[dimension];
+
+  if ( !rhs._grid->CheckerBoarded(dimension) ) {
+    cbmask = 0x3;
+  }
+
+  int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+
+  int e1=rhs._grid->_slice_nblock[dimension];
+  int e2=rhs._grid->_slice_block[dimension];
+  int n1=rhs._grid->_slice_stride[dimension];
+
+  // Need to switch to a table loop
+  std::vector<std::pair<int,int> > table;
+
+  if ( cbmask ==0x3){
+    for(int n=0;n<e1;n++){
+      for(int b=0;b<e2;b++){
+	int o      =   n*n1;
+	int offset = b+n*e2;
+	table.push_back(std::pair<int,int> (offset,o+b));
+      }
+    }
+  } else { 
+    // Case of SIMD split AND checker dim cannot currently be hit, except in 
+    // Test_cshift_red_black code.
+    for(int n=0;n<e1;n++){
+      for(int b=0;b<e2;b++){
+	int o=n*n1;
+	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
+	int offset = b+n*e2;
+
+	if ( ocb & cbmask ) {
+	  table.push_back(std::pair<int,int> (offset,o+b));
+	}
+      }
+    }
+  }
+
+  assert( (table.size()&0x1)==0);
+PARALLEL_FOR_LOOP     
+  for(int j=0;j<table.size()/2;j++){
+    //    buffer[off+table[i].first]=compress(rhs._odata[so+table[i].second]);
+    cobj temp1 =compress(rhs._odata[so+table[2*j].second]);
+    cobj temp2 =compress(rhs._odata[so+table[2*j+1].second]);
+    exchange(pointers[0][j],pointers[1][j],temp1,temp2,type);
   }
 }
 

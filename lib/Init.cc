@@ -338,9 +338,9 @@ void Grid_init(int *argc,char ***argv)
     QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptGeneric;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-overlap") ){
-    WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsAndCompute;
+    QCD::WilsonKernelsStatic::Comms = QCD::WilsonKernelsStatic::CommsAndCompute;
   } else {
-    WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsThenCompute;
+    QCD::WilsonKernelsStatic::Comms = QCD::WilsonKernelsStatic::CommsThenCompute;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-isend") ){
     CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicyIsend);

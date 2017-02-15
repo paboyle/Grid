@@ -469,8 +469,46 @@ namespace Optimization {
     static inline __m256d Permute3(__m256d in){
       return in;
     };
-
   };
+
+  struct Exchange{
+    // 3210 ordering
+    static inline void Exchange0(__m256 &out1,__m256 &out2,__m256 in1,__m256 in2){
+      out1= _mm256_permute2f128_ps(in1,in2,0x20);
+      out2= _mm256_permute2f128_ps(in1,in2,0x31);
+    };
+    static inline void Exchange1(__m256 &out1,__m256 &out2,__m256 in1,__m256 in2){
+      out1= _mm256_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(1,0,1,0));
+      out2= _mm256_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(3,2,3,2));
+    };
+    static inline void Exchange2(__m256 &out1,__m256 &out2,__m256 in1,__m256 in2){
+      out1= _mm256_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(2,0,2,0));
+      out2= _mm256_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(3,1,3,1));
+    };
+    static inline void Exchange3(__m256 &out1,__m256 &out2,__m256 in1,__m256 in2){
+      assert(0);
+      return;
+    };
+
+    static inline void Exchange0(__m256d &out1,__m256d &out2,__m256d in1,__m256d in2){
+      out1= _mm256_permute2f128_pd(in1,in2,0x20);
+      out2= _mm256_permute2f128_pd(in1,in2,0x31);
+      return;
+    };
+    static inline void Exchange1(__m256d &out1,__m256d &out2,__m256d in1,__m256d in2){
+      out1= _mm256_shuffle_pd(in1,in2,0x0);
+      out2= _mm256_shuffle_pd(in1,in2,0xF);
+    };
+    static inline void Exchange2(__m256d &out1,__m256d &out2,__m256d in1,__m256d in2){
+      assert(0);
+      return;
+    };
+    static inline void Exchange3(__m256d &out1,__m256d &out2,__m256d in1,__m256d in2){
+      assert(0);
+      return;
+    };
+  };
+
 
 #if defined (AVX2)
 #define _mm256_alignr_epi32_grid(ret,a,b,n) ret=(__m256)  _mm256_alignr_epi8((__m256i)a,(__m256i)b,(n*4)%16)

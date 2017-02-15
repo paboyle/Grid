@@ -42,10 +42,10 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
   int provided;
   MPI_Initialized(&flag); // needed to coexist with other libs apparently
   if ( !flag ) {
-    //    MPI_Init_thread(argc,argv,MPI_THREAD_SERIALIZED,&provided);
-    //    assert (provided == MPI_THREAD_SERIALIZED);
     MPI_Init_thread(argc,argv,MPI_THREAD_MULTIPLE,&provided);
-    assert (provided == MPI_THREAD_MULTIPLE);
+    if ( provided != MPI_THREAD_MULTIPLE ) {
+      QCD::WilsonKernelsStatic::Comms = QCD::WilsonKernelsStatic::CommsThenCompute;
+    }
   }
   MPI_Comm_dup (MPI_COMM_WORLD,&communicator_world);
   ShmInitGeneric();
