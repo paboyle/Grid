@@ -142,12 +142,12 @@ PARALLEL_NESTED_LOOP2
 ///////////////////////////////////////////////////////////////////
 // Gather for when there *is* need to SIMD split with compression
 ///////////////////////////////////////////////////////////////////
-template<class cobj,class vobj,class compressor> void 
+template<class cobj,class vobj,class compressor> double
 Gather_plane_exchange(const Lattice<vobj> &rhs,
 		      std::vector<cobj *> pointers,int dimension,int plane,int cbmask,compressor &compress,int type)
 {
   int rd = rhs._grid->_rdimensions[dimension];
-
+  double t1,t2;
   if ( !rhs._grid->CheckerBoarded(dimension) ) {
     cbmask = 0x3;
   }
@@ -186,13 +186,20 @@ Gather_plane_exchange(const Lattice<vobj> &rhs,
   }
 
   assert( (table.size()&0x1)==0);
+  t1=usecond();
 PARALLEL_FOR_LOOP     
   for(int j=0;j<table.size()/2;j++){
     //    buffer[off+table[i].first]=compress(rhs._odata[so+table[i].second]);
     cobj temp1 =compress(rhs._odata[so+table[2*j].second]);
     cobj temp2 =compress(rhs._odata[so+table[2*j+1].second]);
-    exchange(pointers[0][j],pointers[1][j],temp1,temp2,type);
+    cobj temp3;
+    cobj temp4;
+    exchange(temp3,temp4,temp1,temp2,type);
+    vstream(pointers[0][j],temp3);
+    vstream(pointers[1][j],temp4);
   }
+  t2=usecond();
+ return t2-t1;
 }
 
 //////////////////////////////////////////////////////
