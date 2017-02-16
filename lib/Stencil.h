@@ -155,7 +155,7 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
     }
     _grid->StencilBarrier();// Synch shared memory on a single nodes
     commtime+=usecond();
-    /*
+    int dump=1;
     if(dump){
       for(int i=0;i<Packets.size();i++){
 	cobj * ptr  = (cobj *) Packets[i].recv_buf;
@@ -175,7 +175,7 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
       }
     }
     dump =0;
-    */
+
   }
 
   ///////////////////////////////////////////
