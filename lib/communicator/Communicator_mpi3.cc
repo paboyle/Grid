@@ -100,7 +100,7 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
 
   int flag;
   int provided;
-  mtrace();
+  //  mtrace();
 
   MPI_Initialized(&flag); // needed to coexist with other libs apparently
   if ( !flag ) {
@@ -511,7 +511,7 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
   int myrank = _processor;
   int ierr;
 
-  if ( (CommunicatorPolicy == CommunicatorPolicyIsend) ) { 
+  if ( CommunicatorPolicy == CommunicatorPolicyIsend ) { 
     MPI_Request xrq;
     MPI_Request rrq;
 

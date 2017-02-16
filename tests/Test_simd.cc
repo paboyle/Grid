@@ -419,8 +419,10 @@ void ExchangeTester(const functor &func)
     assert(found==1);
   }
 
-  //  for(int i=0;i<Nsimd;i++){
-    //    std::cout << " i "<< i<<" test1"<<test1[i]<<" "<<input1[i]<<std::endl;
+  for(int i=0;i<Nsimd;i++){
+    assert(test1[i]==input1[i]);
+    assert(test2[i]==input2[i]);
+  }//    std::cout << " i "<< i<<" test1"<<test1[i]<<" "<<input1[i]<<std::endl;
     //    std::cout << " i "<< i<<" test2"<<test2[i]<<" "<<input2[i]<<std::endl;
   //  }
 }

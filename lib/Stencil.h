@@ -240,6 +240,10 @@ PARALLEL_FOR_LOOP
         for(int o=0;o<Mergers[i].buffer_size/2;o++){
 	  exchange(Mergers[i].mpointer[2*o],Mergers[i].mpointer[2*o+1],
 		   Mergers[i].vpointers[0][o],Mergers[i].vpointers[1][o],Mergers[i].type);
+	  //	  cobj temp1,temp2;
+	  //	  exchange(temp1,temp2,Mergers[i].vpointers[0][o],Mergers[i].vpointers[1][o],Mergers[i].type);
+	  //	  vstream(Mergers[i].mpointer[2*o],temp1);
+	  //	  vstream(Mergers[i].mpointer[2*o+1],temp2);
 	}
       }
       mergetime+=usecond();
@@ -1037,9 +1041,7 @@ PARALLEL_FOR_LOOP
 	
 	int sx   = (x+sshift)%rd;
 	
-	gathermtime-=usecond();
-	Gather_plane_exchange(rhs,spointers,dimension,sx,cbmask,compress,permute_type);
-	gathermtime+=usecond();
+	gathermtime+=Gather_plane_exchange(rhs,spointers,dimension,sx,cbmask,compress,permute_type);
 
 	//spointers[0] -- low
 	//spointers[1] -- high

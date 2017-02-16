@@ -474,16 +474,31 @@ namespace Optimization {
   struct Exchange{
     // 3210 ordering
     static inline void Exchange0(__m256 &out1,__m256 &out2,__m256 in1,__m256 in2){
+      //Invertible
+      //AB CD ->  AC BD
+      //AC BD ->  AB CD
       out1= _mm256_permute2f128_ps(in1,in2,0x20);
       out2= _mm256_permute2f128_ps(in1,in2,0x31);
     };
     static inline void Exchange1(__m256 &out1,__m256 &out2,__m256 in1,__m256 in2){
+      //Invertible
+      // ABCD EFGH  ->ABEF CDGH
+      // ABEF CDGH  ->ABCD EFGH
       out1= _mm256_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(1,0,1,0));
       out2= _mm256_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(3,2,3,2));
     };
     static inline void Exchange2(__m256 &out1,__m256 &out2,__m256 in1,__m256 in2){
-      out1= _mm256_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(2,0,2,0));
-      out2= _mm256_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(3,1,3,1));
+      // Invertible ? 
+      // ABCD EFGH -> ACEG BDFH
+      // ACEG BDFH -> AEBF CGDH
+      //      out1= _mm256_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(2,0,2,0));
+      //      out2= _mm256_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(3,1,3,1));
+      // Bollocks; need 
+      // AECG BFDH -> ABCD EFGH
+      out1= _mm256_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(2,0,2,0)); /*ACEG*/
+      out2= _mm256_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(3,1,3,1)); /*BDFH*/
+      out1= _mm256_shuffle_ps(out1,out1,_MM_SELECT_FOUR_FOUR(3,1,2,0)); /*AECG*/
+      out2= _mm256_shuffle_ps(out2,out2,_MM_SELECT_FOUR_FOUR(3,1,2,0)); /*AECG*/
     };
     static inline void Exchange3(__m256 &out1,__m256 &out2,__m256 in1,__m256 in2){
       assert(0);
