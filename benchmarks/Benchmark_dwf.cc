@@ -168,7 +168,7 @@ int main (int argc, char ** argv)
   if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
 
-  int ncall =100;
+  int ncall =1000;
   if (1) {
     FGrid->Barrier();
     Dw.ZeroCounters();
