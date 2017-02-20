@@ -29,19 +29,18 @@
 
 namespace Grid {
 
-void Gather_plane_simple_table_compute (GridBase *grid,int dimension,int plane,int cbmask,
+void Gather_plane_table_compute (GridBase *grid,int dimension,int plane,int cbmask,
 					int off,std::vector<std::pair<int,int> > & table)
 {
   table.resize(0);
-  int rd = grid->_rdimensions[dimension];
 
   if ( !grid->CheckerBoarded(dimension) ) {
     cbmask = 0x3;
   }
+  int rd = grid->_rdimensions[dimension];
   int so= plane*grid->_ostride[dimension]; // base offset for start of plane 
   int e1=grid->_slice_nblock[dimension];
   int e2=grid->_slice_block[dimension];
-
   int stride=grid->_slice_stride[dimension];
   if ( cbmask == 0x3 ) { 
     table.resize(e1*e2);
@@ -66,4 +65,5 @@ void Gather_plane_simple_table_compute (GridBase *grid,int dimension,int plane,i
      }
   }
 }
+
 }
