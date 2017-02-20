@@ -37,25 +37,19 @@ namespace Grid {
 namespace QCD {
 
 ////////////////////////////////////////////////////////////////////
-class RNGModuleParameters: Serializable {
-
+struct RNGModuleParameters: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(RNGModuleParameters,
   std::string, serial_seeds,
   std::string, parallel_seeds,);
-public:
-  std::vector<int> SerialSeed;
-  std::vector<int> ParallelSeed;
 
-  RNGModuleParameters(const std::vector<int> S = std::vector<int>(),
-                      const std::vector<int> P = std::vector<int>())
-      : SerialSeed(S), ParallelSeed(P) {}
+  std::vector<int> getSerialSeeds(){return strToVec<int>(serial_seeds);}
+  std::vector<int> getParallelSeeds(){return strToVec<int>(parallel_seeds);}
 
+  RNGModuleParameters(): serial_seeds("1"), parallel_seeds("1"){}
 
   template <class ReaderClass >
   RNGModuleParameters(Reader<ReaderClass>& Reader){
     read(Reader, "RandomNumberGenerator", *this); 
-    SerialSeed = strToVec<int>(serial_seeds);
-    ParallelSeed = strToVec<int>(parallel_seeds);
   }
   
 };
@@ -82,12 +76,14 @@ public:
   GridParallelRNG& get_pRNG() { return *pRNG_.get(); }
 
   void seed() {
-    if (Params_.SerialSeed.size() == 0 && Params_.ParallelSeed.size() == 0) {
-      std::cout << "Seeds not initialized" << std::endl;
+    auto SerialSeeds   = Params_.getSerialSeeds();
+    auto ParallelSeeds = Params_.getParallelSeeds();
+    if (SerialSeeds.size() == 0 && ParallelSeeds.size() == 0) {
+      std::cout << GridLogError << "Seeds not initialized" << std::endl;
       exit(1);
     }
-    sRNG_.SeedFixedIntegers(Params_.SerialSeed);
-    pRNG_->SeedFixedIntegers(Params_.ParallelSeed);
+    sRNG_.SeedFixedIntegers(SerialSeeds);
+    pRNG_->SeedFixedIntegers(ParallelSeeds);
   }
 };
 

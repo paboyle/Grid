@@ -41,6 +41,12 @@ int main(int argc, char **argv) {
 
    // Typedefs to simplify notation
   typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
+  typedef WilsonImplR FermionImplPolicy;
+  typedef WilsonTMFermionR FermionAction;
+  typedef typename FermionAction::FermionField FermionField;
+
+
+  //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   HMCWrapper TheHMC;
 
   // Grid from the command line
@@ -53,14 +59,14 @@ int main(int argc, char **argv) {
   CheckpointerParameters CPparams;  
   CPparams.config_prefix = "ckpoint_lat";
   CPparams.rng_prefix = "ckpoint_rng";
-  CPparams.saveInterval = 20;
+  CPparams.saveInterval = 5;
   CPparams.format = "IEEE64BIG";
   
   TheHMC.Resources.LoadBinaryCheckpointer(CPparams);
 
   RNGModuleParameters RNGpar;
-  RNGpar.serial_seeds = "1 2 3 4 5";
-  RNGpar.parallel_seeds = "6 7 8 9 10";
+  RNGpar.SerialSeed = {1,2,3,4,5};
+  RNGpar.ParallelSeed = {6,7,8,9,10};
   TheHMC.Resources.SetRNGSeeds(RNGpar);
 
   // Construct observables
@@ -76,14 +82,55 @@ int main(int argc, char **argv) {
   // need wrappers of the fermionic classes 
   // that have a complex construction
   // standard
-  RealD beta = 5.6 ;
-  WilsonGaugeActionR Waction(beta);
+  RealD beta = 3.9 ;
+  SymanzikGaugeActionR Waction(beta);
+    
+  auto GridPtr = TheHMC.Resources.GetCartesian();
+  auto GridRBPtr = TheHMC.Resources.GetRBCartesian();
+
+  // temporarily need a gauge field
+  LatticeGaugeField U(GridPtr);
+
+  Real mass = -0.89163;
+  Real mu   = 0.01;
+
+  // Can we define an overloaded operator that does not need U and initialises
+  // it with zeroes?
+  FermionAction FermOp(U, *GridPtr, *GridRBPtr, mass, mu);
+
+  ConjugateGradient<FermionField> CG(1.0e-8, 2000);
+
+  TwoFlavourPseudoFermionAction<FermionImplPolicy> Nf2(FermOp, CG, CG);
+
+  // With modules
+  /*
+
+  TwoFlavourFmodule<FermionImplPolicy> TwoFMod(Reader);
   
+  */
+
+    // Set smearing (true/false), default: false
+  Nf2.is_smeared = false;
+
+
+    // Collect actions
   ActionLevel<HMCWrapper::Field> Level1(1);
-  Level1.push_back(&Waction);
-  //Level1.push_back(WGMod.getPtr());
+  Level1.push_back(&Nf2);
+
+  ActionLevel<HMCWrapper::Field> Level2(4);
+  Level2.push_back(&Waction);
+
   TheHMC.TheAction.push_back(Level1);
+  TheHMC.TheAction.push_back(Level2);
   /////////////////////////////////////////////////////////////
+
+  /*
+    double rho = 0.1;  // smearing parameter
+    int Nsmear = 2;    // number of smearing levels
+    Smear_Stout<HMCWrapper::ImplPolicy> Stout(rho);
+    SmearedConfiguration<HMCWrapper::ImplPolicy> SmearingPolicy(
+        UGrid, Nsmear, Stout);
+  */
 
   // HMC parameters are serialisable 
   TheHMC.Parameters.MD.MDsteps = 20;
@@ -91,7 +138,10 @@ int main(int argc, char **argv) {
 
   TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
   TheHMC.Run();  // no smearing
+  // TheHMC.Run(SmearingPolicy); // for smearing
 
   Grid_finalize();
 
 } // main
+
+

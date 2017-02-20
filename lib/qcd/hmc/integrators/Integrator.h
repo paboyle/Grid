@@ -131,6 +131,49 @@ class Integrator {
     as[level].apply(update_P_hireps, Representations, Mom, U, ep);
   }
 
+  void implicit_update_P(MomentaField& Mom, Field& U, int level, double ep) {
+    // Fundamental updates, include smearing
+    MomentaField Msum(Mom._grid);
+    Msum = zero;
+    for (int a = 0; a < as[level].actions.size(); ++a) {
+      // Compute the force 
+      // We need to compute the derivative of the actions
+      // only once
+      Field force(U._grid);
+      conformable(U._grid, Mom._grid);
+      Field& Us = Smearer.get_U(as[level].actions.at(a)->is_smeared);
+      as[level].actions.at(a)->deriv(Us, force);  // deriv should NOT include Ta
+
+      std::cout << GridLogIntegrator << "Smearing (on/off): " << as[level].actions.at(a)->is_smeared << std::endl;
+      if (as[level].actions.at(a)->is_smeared) Smearer.smeared_force(force);
+      force = FieldImplementation::projectForce(force); // Ta for gauge fields
+      Real force_abs = std::sqrt(norm2(force)/U._grid->gSites());
+      std::cout << GridLogIntegrator << "Force average: " << force_abs << std::endl;
+      Msum += force;
+    }
+
+    MomentaField NewMom = Mom;
+    MomentaField OldMom = Mom;
+    double threshold = 1e-6;
+    // Here run recursively
+    do{
+      MomentaField MomDer(Mom._grid);
+      OldMom = NewMom;
+      // Compute the derivative of the kinetic term
+      // with respect to the gauge field
+
+      // Laplacian.Mder(NewMom, MomDer);
+      // NewMom = Mom - ep*(MomDer + Msum);
+
+    } while (norm2(NewMom - OldMom) > threshold);
+
+    Mom = NewMom;
+
+
+    // update the auxiliary fields momenta
+  }
+
+
   void update_U(Field& U, double ep) {
     update_U(P, U, ep);
 

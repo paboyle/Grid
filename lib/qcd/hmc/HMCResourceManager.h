@@ -75,6 +75,8 @@ class HMCResourceManager {
   bool have_RNG;
   bool have_CheckPointer;
 
+  // NOTE: operator << is not overloaded for std::vector<string> 
+  // so thsi function is necessary
   void output_vector_string(const std::vector<std::string> &vs){
     for (auto &i: vs)
       std::cout << i << " ";
@@ -85,13 +87,13 @@ class HMCResourceManager {
  public:
   HMCResourceManager() : have_RNG(false), have_CheckPointer(false) {}
 
-  template <class ReaderClass >
+  template <class ReaderClass, class vector_type = vComplex >
   void initialize(ReaderClass &Read){
     // assumes we are starting from the main node
 
     // Geometry
     GridModuleParameters GridPar(Read);
-    GridFourDimModule GridMod( GridPar) ;
+    GridFourDimModule<vector_type> GridMod( GridPar) ;
     AddGrid("gauge", GridMod);
 
     // Checkpointer
@@ -100,9 +102,6 @@ class HMCResourceManager {
     std::string cp_type;
     read(Read,"name", cp_type);
     std::cout << "Registered types " << std::endl;
-    // NOTE: operator << is not overloaded for std::vector<string> 
-    // so it complains here
-    //std::cout << CPfactory.getBuilderList() << std::endl;
     output_vector_string(CPfactory.getBuilderList());
 
 
@@ -178,7 +177,7 @@ class HMCResourceManager {
 
   // Add a named grid set, 4d shortcut
   void AddFourDimGrid(std::string s) {
-    GridFourDimModule Mod;
+    GridFourDimModule<vComplex> Mod;
     AddGrid(s, Mod);
   }
 

@@ -48,28 +48,33 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu(&Grid); 
   SU<Nc>::HotConfiguration(pRNG,Umu);
 
+  double Kappa = 0.9999;
+
   typedef SU<Nc>::LatticeAlgebraVector AVector;
   // Source and result in the algebra
   AVector src_vec(&Grid); random(pRNG, src_vec);
   AVector result_vec(&Grid); result_vec = zero;
+  
   LatticeColourMatrix src(&Grid); 
   SU<Nc>::FundamentalLieAlgebraMatrix(src_vec, src);
   LatticeColourMatrix result(&Grid); result=zero;
 
-  LaplacianAdjointField<PeriodicGimplR> Laplacian(&Grid);
+  LaplacianAdjointField<PeriodicGimplR> Laplacian(&Grid, Kappa);
   Laplacian.ImportGauge(Umu);
 
   HermitianLinearOperator<LaplacianAdjointField<PeriodicGimplR>,LatticeColourMatrix> HermOp(Laplacian);
   ConjugateGradient<LatticeColourMatrix> CG(1.0e-8,10000);
+  std::cout << GridLogMessage << "Testing the Laplacian using the full matrix" <<std::endl;
   CG(HermOp,src,result); // fastest
   
 
   // Tests also the version using the algebra decomposition
-  LaplacianAlgebraField<PeriodicGimplR> LaplacianAlgebra(&Grid);
+  LaplacianAlgebraField<PeriodicGimplR> LaplacianAlgebra(&Grid, Kappa);
   LaplacianAlgebra.ImportGauge(Umu);
 
   HermitianLinearOperator<LaplacianAlgebraField<PeriodicGimplR>,AVector> HermOpAlg(LaplacianAlgebra);
   ConjugateGradient<AVector> CG_Algebra(1.0e-8,10000);
+  std::cout << GridLogMessage << "Testing the Laplacian using the algebra vectors" <<std::endl;
   CG_Algebra(HermOpAlg,src_vec,result_vec);
   
   LatticeColourMatrix result2(&Grid);

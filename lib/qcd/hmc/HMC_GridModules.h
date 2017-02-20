@@ -31,41 +31,48 @@ directory
 #define HMC_GRID_MODULES
 
 namespace Grid {
-namespace QCD {
 
 // Resources
 // Modules for grids 
 
-class GridModuleParameters: Serializable{
-  
+// Introduce another namespace HMCModules?
+
+class GridModuleParameters: Serializable{   
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(GridModuleParameters,
   std::string, lattice,
-  std::string,  mpi);
+  std::string, mpi);
 
-public: 
-  // these namings are ugly
-  // also ugly the distinction between the serializable members
-  // and this
-  std::vector<int> lattice_v;
-  std::vector<int> mpi_v;
+  std::vector<int> getLattice(){return strToVec<int>(lattice);}
+  std::vector<int> getMpi()    {return strToVec<int>(mpi);}
 
-  GridModuleParameters(const std::vector<int> l_ = std::vector<int>(),
-    const std::vector<int> mpi_ = std::vector<int>()):lattice_v(l_), mpi_v(mpi_){}
-
-  template <class ReaderClass>
-  GridModuleParameters(Reader<ReaderClass>& Reader) {
-    read(Reader, "LatticeGrid", *this);
-    lattice_v = strToVec<int>(lattice);
-    mpi_v = strToVec<int>(mpi);
-    if (mpi_v.size() != lattice_v.size()) {
-      std::cout << "Error in GridModuleParameters: lattice and mpi dimensions "
+  void check(){
+    if (getLattice().size() != getMpi().size()) {
+      std::cout << GridLogError 
+                << "Error in GridModuleParameters: lattice and mpi dimensions "
                    "do not match"
                 << std::endl;
       exit(1);
     }
+  }    
+
+  template <class ReaderClass>
+  GridModuleParameters(Reader<ReaderClass>& Reader) {
+    read(Reader, name, *this);
+    check();
   }
+
+  // Save on file
+  template< class WriterClass>
+  void save(Writer<WriterClass>& Writer){
+    check();
+    write(Writer, name, *this);
+  }
+private:
+    std::string name = "LatticeGrid";
 };
 
+// Lower level class
 class GridModule {
  public:
   GridCartesian* get_full() { 
@@ -84,27 +91,33 @@ class GridModule {
   
 };
 
-// helpers
-// FIXME define a class accepting also real vtypes
+////////////////////////////////////
+// Classes for the user
+////////////////////////////////////
+// Note: the space time grid must be out of the QCD namespace
+template< class vector_type>
 class GridFourDimModule : public GridModule {
  public:
-  // add a function to create the module from a Reader
   GridFourDimModule() {
+    using namespace QCD;
     set_full(SpaceTimeGrid::makeFourDimGrid(
-        GridDefaultLatt(), GridDefaultSimd(4, vComplex::Nsimd()),
+        GridDefaultLatt(), GridDefaultSimd(4, vector_type::Nsimd()),
         GridDefaultMpi()));
     set_rb(SpaceTimeGrid::makeFourDimRedBlackGrid(grid_.get()));
   }
 
-  template <class vector_type = vComplex>
   GridFourDimModule(GridModuleParameters Params) {
-    if (Params.lattice_v.size() == 4) {
+    using namespace QCD;
+    Params.check();
+    std::vector<int> lattice_v = Params.getLattice();
+    std::vector<int> mpi_v = Params.getMpi();
+    if (lattice_v.size() == 4) {
       set_full(SpaceTimeGrid::makeFourDimGrid(
-          Params.lattice_v, GridDefaultSimd(4, vector_type::Nsimd()),
-          Params.mpi_v));
+          lattice_v, GridDefaultSimd(4, vector_type::Nsimd()),
+          mpi_v));
       set_rb(SpaceTimeGrid::makeFourDimRedBlackGrid(grid_.get()));
     } else {
-      std::cout
+      std::cout << GridLogError 
           << "Error in GridFourDimModule: lattice dimension different from 4"
           << std::endl;
       exit(1);
@@ -112,10 +125,9 @@ class GridFourDimModule : public GridModule {
   }
 };
 
+typedef GridFourDimModule<vComplex> GridDefaultFourDimModule;
 
 
-
-}  // namespace QCD
 }  // namespace Grid
 
 #endif  // HMC_GRID_MODULES

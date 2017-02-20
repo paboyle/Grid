@@ -285,6 +285,74 @@ class ForceGradient : public Integrator<FieldImplementation, SmearingPolicy,
     }
   }
 };
+
+
+////////////////////////////////
+// Riemannian Manifold HMC
+// Girolami et al
+////////////////////////////////
+
+
+
+
+template <class FieldImplementation, class SmearingPolicy,
+          class RepresentationPolicy =
+              Representations<FundamentalRepresentation> >
+class ImplicitLeapFrog : public Integrator<FieldImplementation, SmearingPolicy,
+                                           RepresentationPolicy> {
+ public:
+  typedef ImplicitLeapFrog<FieldImplementation, SmearingPolicy, RepresentationPolicy>
+      Algorithm;
+  INHERIT_FIELD_TYPES(FieldImplementation);
+
+  // Riemannian manifold metric operator
+  // Hermitian operator Fisher
+
+  std::string integrator_name(){return "ImplicitLeapFrog";}
+
+  ImplicitLeapFrog(GridBase* grid, IntegratorParameters Par,
+           ActionSet<Field, RepresentationPolicy>& Aset, SmearingPolicy& Sm)
+      : Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy>(
+            grid, Par, Aset, Sm){};
+
+  void step(Field& U, int level, int _first, int _last) {
+    int fl = this->as.size() - 1;
+    // level  : current level
+    // fl     : final level
+    // eps    : current step size
+
+    // Get current level step size
+    RealD eps = this->Params.trajL/this->Params.MDsteps;
+    for (int l = 0; l <= level; ++l) eps /= this->as[l].multiplier;
+
+    int multiplier = this->as[level].multiplier;
+    for (int e = 0; e < multiplier; ++e) {
+      int first_step = _first && (e == 0);
+      int last_step = _last && (e == multiplier - 1);
+
+      if (first_step) {  // initial half step
+       this->implicit_update_P(U, level, eps / 2.0);
+      }
+
+      if (level == fl) {  // lowest level
+        this->update_U(U, eps);
+      } else {  // recursive function call
+        this->step(U, level + 1, first_step, last_step);
+      }
+
+      int mm = last_step ? 1 : 2;
+      this->update_P(U, level, mm * eps / 2.0);
+    }
+  }
+};
+
+
+
+
+
+
+
+
 }
 }
 
