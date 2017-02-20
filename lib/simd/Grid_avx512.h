@@ -355,6 +355,8 @@ namespace Optimization {
     static inline void Exchange1(__m512 &out1,__m512 &out2,__m512 in1,__m512 in2){
       out1= _mm512_shuffle_f32x4(in1,in2,_MM_SELECT_FOUR_FOUR(2,0,2,0));
       out2= _mm512_shuffle_f32x4(in1,in2,_MM_SELECT_FOUR_FOUR(3,1,3,1));
+      out1= _mm512_shuffle_f32x4(out1,out1,_MM_SELECT_FOUR_FOUR(3,1,2,0)); /*AECG*/
+      out2= _mm512_shuffle_f32x4(out2,out2,_MM_SELECT_FOUR_FOUR(3,1,2,0)); /*AECG*/
     };
     static inline void Exchange2(__m512 &out1,__m512 &out2,__m512 in1,__m512 in2){
       out1= _mm512_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(1,0,1,0));
@@ -363,6 +365,8 @@ namespace Optimization {
     static inline void Exchange3(__m512 &out1,__m512 &out2,__m512 in1,__m512 in2){
       out1= _mm512_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(2,0,2,0));
       out2= _mm512_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(3,1,3,1));
+      out1= _mm512_shuffle_ps(out1,out1,_MM_SELECT_FOUR_FOUR(3,1,2,0)); /*AECG*/
+      out2= _mm512_shuffle_ps(out2,out2,_MM_SELECT_FOUR_FOUR(3,1,2,0)); /*AECG*/
     };
  
     static inline void Exchange0(__m512d &out1,__m512d &out2,__m512d in1,__m512d in2){
@@ -372,6 +376,8 @@ namespace Optimization {
     static inline void Exchange1(__m512d &out1,__m512d &out2,__m512d in1,__m512d in2){
       out1= _mm512_shuffle_f64x2(in1,in2,_MM_SELECT_FOUR_FOUR(2,0,2,0));
       out2= _mm512_shuffle_f64x2(in1,in2,_MM_SELECT_FOUR_FOUR(3,1,3,1));
+      out1= _mm512_shuffle_f64x2(out1,out1,_MM_SELECT_FOUR_FOUR(3,1,2,0)); /*AECG*/
+      out2= _mm512_shuffle_f64x2(out2,out2,_MM_SELECT_FOUR_FOUR(3,1,2,0)); /*AECG*/
     };
     static inline void Exchange2(__m512d &out1,__m512d &out2,__m512d in1,__m512d in2){
       out1 = _mm512_shuffle_pd(in1,in2,0x00);

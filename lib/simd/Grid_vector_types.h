@@ -356,10 +356,19 @@ class Grid_simd {
   ///////////////////////
   friend inline void exchange(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2,int n)
   {
-    if     (n==3) Optimization::Exchange::Exchange3(out1.v,out2.v,in1.v,in2.v);
-    else if(n==2) Optimization::Exchange::Exchange2(out1.v,out2.v,in1.v,in2.v);
-    else if(n==1) Optimization::Exchange::Exchange1(out1.v,out2.v,in1.v,in2.v);
-    else if(n==0) Optimization::Exchange::Exchange0(out1.v,out2.v,in1.v,in2.v);
+    if       (n==3) {
+      Optimization::Exchange::Exchange3(out1.v,out2.v,in1.v,in2.v);
+      //      std::cout << " Exchange3 "<< out1<<" "<< out2<<" <- " << in1 << " "<<in2<<std::endl;
+    } else if(n==2) {
+      Optimization::Exchange::Exchange2(out1.v,out2.v,in1.v,in2.v);
+      //      std::cout << " Exchange2 "<< out1<<" "<< out2<<" <- " << in1 << " "<<in2<<std::endl;
+    } else if(n==1) {
+      Optimization::Exchange::Exchange1(out1.v,out2.v,in1.v,in2.v);
+      //      std::cout << " Exchange1 "<< out1<<" "<< out2<<" <- " << in1 << " "<<in2<<std::endl;
+    } else if(n==0) { 
+      Optimization::Exchange::Exchange0(out1.v,out2.v,in1.v,in2.v);
+      //      std::cout << " Exchange0 "<< out1<<" "<< out2<<" <- " << in1 << " "<<in2<<std::endl;
+    }
   }
 
   ////////////////////////////////////////////////////////////////////
