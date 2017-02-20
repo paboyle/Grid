@@ -66,7 +66,9 @@ int main (int argc, char ** argv)
   random(fRNG,Foo);
   gaussian(fRNG,Bar);
 
-
+  for (int i=0;i<simd_layout.size();i++){
+    std::cout <<" simd layout "<<i<<" = "<<simd_layout[i]<<std::endl;
+  }
   Integer stride =1000;
   {
     double nrm;
@@ -113,8 +115,11 @@ int main (int argc, char ** argv)
 	    permute(Check._odata[i],Foo._odata[SE->_offset],permute_type);
 	  else if (SE->_is_local)
 	    Check._odata[i] = Foo._odata[SE->_offset];
-	  else 
+	  else { 
 	    Check._odata[i] = myStencil.CommBuf()[SE->_offset];
+	    //	    std::cout << " receive "<<i<<" " << Check._odata[i]<<std::endl;
+	    //	    std::cout << " Foo     "<<i<<" " <<   Foo._odata[i]<<std::endl;
+	  }
 	}
 
 	Real nrmC = norm2(Check);
@@ -145,6 +150,11 @@ int main (int argc, char ** argv)
 	 
 	}}}}
 
+	if (nrm > 1.0e-4) {
+	  for(int i=0;i<Check._odata.size();i++){
+	    std::cout << i<<" Check.odata "<<Check._odata[i]<< "\n"<<i<<" Bar.odata "<<Bar._odata[i]<<std::endl;
+	  }
+	}
 	if (nrm > 1.0e-4) exit(-1);
 
       }
