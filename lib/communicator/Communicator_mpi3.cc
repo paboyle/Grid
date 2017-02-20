@@ -530,7 +530,7 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
   }
 }
 
-void CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
+double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 						       void *xmit,
 						       int dest,
 						       void *recv,
@@ -548,6 +548,7 @@ void CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_
   assert(dest != _processor);
   assert(from != _processor);
   assert(gme  == ShmRank);
+  double off_node_bytes=0.0;
 
 #ifdef FORCE_COMMS
   gdest = MPI_UNDEFINED;
@@ -557,13 +558,16 @@ void CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_
     ierr=MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator,&rrq);
     assert(ierr==0);
     list.push_back(rrq);
+    off_node_bytes+=bytes;
   }
 
   if ( gdest == MPI_UNDEFINED ) {
     ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator,&xrq);
     assert(ierr==0);
     list.push_back(xrq);
+    off_node_bytes+=bytes;
   }
+  return off_node_bytes;
 }
 void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall)
 {

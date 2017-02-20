@@ -207,7 +207,7 @@ class CartesianCommunicator {
   
   void SendToRecvFromComplete(std::vector<CommsRequest_t> &waitall);
 
-  void StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
+  double StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 				  void *xmit,
 				  int xmit_to_rank,
 				  void *recv,

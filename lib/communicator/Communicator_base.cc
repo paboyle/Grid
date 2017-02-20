@@ -91,7 +91,7 @@ void CartesianCommunicator::GlobalSumVector(ComplexD *c,int N)
 
 int                      CartesianCommunicator::NodeCount(void)    { return ProcessorCount();};
 
-void CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
+double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 						       void *xmit,
 						       int xmit_to_rank,
 						       void *recv,
@@ -99,6 +99,7 @@ void CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_
 						       int bytes)
 {
   SendToRecvFromBegin(list,xmit,xmit_to_rank,recv,recv_from_rank,bytes);
+  return 2.0*bytes;
 }
 void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall)
 {
