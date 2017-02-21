@@ -335,7 +335,7 @@ class ImplicitLeapFrog : public Integrator<FieldImplementation, SmearingPolicy,
       }
 
       if (level == fl) {  // lowest level
-        this->update_U(U, eps);
+        this->implicit_update_U(U, eps / 2.0);
       } else {  // recursive function call
         this->step(U, level + 1, first_step, last_step);
       }

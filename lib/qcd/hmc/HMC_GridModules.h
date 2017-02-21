@@ -57,7 +57,7 @@ public:
   }    
 
   template <class ReaderClass>
-  GridModuleParameters(Reader<ReaderClass>& Reader) {
+  GridModuleParameters(Reader<ReaderClass>& Reader, std::string n = "LatticeGrid"):name(n) {
     read(Reader, name, *this);
     check();
   }
@@ -69,7 +69,7 @@ public:
     write(Writer, name, *this);
   }
 private:
-    std::string name = "LatticeGrid";
+    std::string name;
 };
 
 // Lower level class
@@ -94,7 +94,7 @@ class GridModule {
 ////////////////////////////////////
 // Classes for the user
 ////////////////////////////////////
-// Note: the space time grid must be out of the QCD namespace
+// Note: the space time grid should be out of the QCD namespace
 template< class vector_type>
 class GridFourDimModule : public GridModule {
  public:

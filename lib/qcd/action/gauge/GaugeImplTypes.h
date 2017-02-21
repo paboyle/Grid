@@ -80,7 +80,7 @@ public:
 
   ///////////////////////////////////////////////////////////
   // Move these to another class
-  // HMC auxiliary functions
+  // HMC auxiliary functions 
   static inline void generate_momenta(Field &P, GridParallelRNG &pRNG) {
     // specific for SU gauge fields
     LinkField Pmu(P._grid);

@@ -33,6 +33,32 @@ directory
 namespace Grid {
 namespace QCD {
 
+struct LaplacianParams : Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(LaplacianParams, 
+                                  RealD, lo, 
+                                  RealD, hi, 
+                                  int,   MaxIter, 
+                                  RealD, tolerance, 
+                                  int,   degree, 
+                                  int,   precision);
+  
+  // constructor 
+  LaplacianParams(RealD lo      = 0.0, 
+                  RealD hi      = 1.0, 
+                  int maxit     = 1000,
+                  RealD tol     = 1.0e-8, 
+                  int degree    = 10,
+                  int precision = 64)
+    : lo(lo),
+      hi(hi),
+      MaxIter(maxit),
+      tolerance(tol),
+      degree(degree),
+      precision(precision){};
+};
+
+
+
 ////////////////////////////////////////////////////////////
 // Laplacian operator L on adjoint fields
 //
@@ -48,12 +74,22 @@ namespace QCD {
 ////////////////////////////////////////////////////////////
 
 template <class Impl>
-class LaplacianAdjointField {
+class LaplacianAdjointField: public Metric<typename Impl::Field> {
+  OperatorFunction<typename Impl::Field> &Solver;
+  LaplacianParams param;
+  MultiShiftFunction PowerNegHalf;    
+
  public:
   INHERIT_GIMPL_TYPES(Impl);
-  
-  LaplacianAdjointField(GridBase* grid, const RealD k = 1.0) : 
-    U(Nd, grid), kappa(k){};
+
+  LaplacianAdjointField(GridBase* grid, OperatorFunction<GaugeField>& S, LaplacianParams& p, const RealD k = 1.0)
+      : U(Nd, grid), Solver(S), param(p), kappa(k){
+        AlgRemez remez(param.lo,param.hi,param.precision);
+        std::cout<<GridLogMessage << "Generating degree "<<param.degree<<" for x^(1/2)"<<std::endl;
+        remez.generateApprox(param.degree,1,2);
+        PowerNegHalf.Init(remez,param.tolerance,true);
+
+      };
 
   void ImportGauge(const GaugeField& _U) {
     for (int mu = 0; mu < Nd; mu++) {
@@ -61,32 +97,54 @@ class LaplacianAdjointField {
     }
   }
 
-  void Mdiag(const GaugeLinkField& in, GaugeLinkField& out) { assert(0); }
-
-  void Mdir(const GaugeLinkField& in, GaugeLinkField& out, int dir, int disp) {
-    assert(0);
-  }
-
-  void M(const GaugeLinkField& in, GaugeLinkField& out) {
+  void M(const GaugeField& in, GaugeField& out) {
     GaugeLinkField tmp(in._grid);
     GaugeLinkField tmp2(in._grid);
     GaugeLinkField sum(in._grid);
-    sum = zero;
-    for (int mu = 0; mu < Nd; mu++) {
-      tmp = U[mu] * Cshift(in, mu, +1) * adj(U[mu]);
-      tmp2 = adj(U[mu]) * in * U[mu];
-      sum += tmp + Cshift(tmp2, mu, -1) - 2.0 * in;
+
+    for (int nu = 0; nu < Nd; nu++) {
+      sum = zero;
+      GaugeLinkField in_nu = PeekIndex<LorentzIndex>(in, nu);
+      GaugeLinkField out_nu(out._grid);
+      for (int mu = 0; mu < Nd; mu++) {
+        tmp = U[mu] * Cshift(in_nu, mu, +1) * adj(U[mu]);
+        tmp2 = adj(U[mu]) * in_nu * U[mu];
+        sum += tmp + Cshift(tmp2, mu, -1) - 2.0 * in_nu;
+      }
+      out_nu = (1.0 - kappa) * in_nu - kappa / (double(4 * Nd)) * sum;
+      PokeIndex<LorentzIndex>(out, out_nu, nu);
     }
-    out = (1.0 - kappa) * in - kappa / (double(4 * Nd)) * sum;
   }
 
-  void MDeriv(const GaugeLinkField& in, GaugeLinkField& out, bool dag){
-    RealD factor = - kappa / (double(4 * Nd))
-    if (!dag)
-      out = factor * Cshift(in, mu, +1) * adj(U[mu]) + adj(U[mu]) * in;
-    else
-      out = factor * U[mu] * Cshift(in, mu, +1) + in * U[mu];
+  void MDeriv(const GaugeField& in, GaugeField& der, bool dag) {
+    RealD factor = -kappa / (double(4 * Nd));
+    for (int mu = 0; mu < Nd; mu++) {
+      GaugeLinkField in_mu = PeekIndex<LorentzIndex>(in, mu);
+      GaugeLinkField der_mu(der._grid);
+      if (!dag)
+        der_mu =
+            factor * Cshift(in_mu, mu, +1) * adj(U[mu]) + adj(U[mu]) * in_mu;
+      else
+        der_mu = factor * U[mu] * Cshift(in_mu, mu, +1) + in_mu * U[mu];
+    }
   }
+
+  void Minv(const GaugeField& in, GaugeField& inverted){
+    HermitianLinearOperator<LaplacianAdjointField<Impl>,GaugeField> HermOp(*this);
+    Solver(HermOp, in, inverted);
+  }
+
+  void MInvSquareRoot(GaugeField& P){
+    // Takes a gaussian gauge field and multiplies by the metric
+    // need the rational approximation for the square root 
+    GaugeField Gp(P._grid);
+    HermitianLinearOperator<LaplacianAdjointField<Impl>,GaugeField> HermOp(*this);
+    ConjugateGradientMultiShift<GaugeField> msCG(param.MaxIter,PowerNegHalf);
+    msCG(HermOp,P,Gp);
+    P = Gp; // now P has the correct distribution
+  }
+
+
 
  private:
   RealD kappa;
@@ -94,8 +152,8 @@ class LaplacianAdjointField {
 };
 
 
-// This is just a debug tests
-// not meant to be used 
+// This is just for debuggin purposes
+// not meant to be used by the final users
 
 template <class Impl>
 class LaplacianAlgebraField {
