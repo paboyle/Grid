@@ -228,9 +228,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOr
 						    const FermionField &in, FermionField &out,int dag)
 {
   Compressor compressor;
-
   int LLs = in._grid->_rdimensions[0];
-  
   st.HaloExchange(in,compressor);
   
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
@@ -241,28 +239,11 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOr
       Kernels::DhopSiteDag(st, lo, U, UUU, st.CommBuf(), LLs, sU,in, out);
     }
   } else {
-#if 1
     PARALLEL_FOR_LOOP
     for (int ss = 0; ss < U._grid->oSites(); ss++) {
       int sU=ss;
 	Kernels::DhopSite(st,lo,U,UUU,st.CommBuf(),LLs,sU,in,out);
     }
-#else
-#pragma omp parallel 
-  {
-    for(int i=0;i<10;i++){
-      int len = U._grid->oSites();
-      int me,mywork,myoff;
-      GridThread::GetWorkBarrier(len,me, mywork,myoff);
-      for (int ss = myoff; ss < myoff+mywork; ss++) {
-	int sU=ss;
-	int sF=LLs*sU; 
-	  Kernels::DhopSite(st,lo,U,UUU,st.CommBuf(),LLs,sU,in,out);
-      }
-      GridThread::ThreadBarrier();
-    }
-  }
-#endif
   }
 }
 

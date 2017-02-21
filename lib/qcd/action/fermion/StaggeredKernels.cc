@@ -186,32 +186,31 @@ template <class Impl>
 void StaggeredKernels<Impl>::DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU,
 						  SiteSpinor *buf, int LLs, int sU,
 						  const FermionField &in, FermionField &out) {
-  int dag(1);
   SiteSpinor naik;
   SiteSpinor naive;
   int oneLink  =0;
   int threeLink=1;
-  Real scale;
-  if(dag) scale = -1.0;
-  else    scale = 1.0;
-
+  int dag=1;
   switch(Opt) {
 #ifdef AVX512
+  //FIXME; move the sign into the Asm routine
   case OptInlineAsm:
     DhopSiteAsm(st,lo,U,UUU,buf,LLs,sU,in,out);
+    for(int s=0;s<LLs;s++) {
+      int sF=s+LLs*sU;
+      out._odata[sF]=-out._odata[sF];
+    }
     break;
 #endif
   case OptHandUnroll:
-    DhopSiteDepthHand(st,lo,U,UUU,buf,LLs,sU,in,out,dag);
+    DhopSiteHand(st,lo,U,UUU,buf,LLs,sU,in,out,dag);
     break;
   case OptGeneric:
     for(int s=0;s<LLs;s++){
-
        int sF=s+LLs*sU;
-
        DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
        DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
-       out._odata[sF] =scale*(naive+naik); 
+       out._odata[sF] =-naive-naik; 
      }
     break;
   default:
@@ -223,17 +222,13 @@ void StaggeredKernels<Impl>::DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, Dou
 template <class Impl>
 void StaggeredKernels<Impl>::DhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU,
 				      SiteSpinor *buf, int LLs,
-				      int sU, const FermionField &in, FermionField &out) {
-
-   int dag(0);
-
-     int oneLink  =0;
-     int threeLink=1;
-     SiteSpinor naik;
-     SiteSpinor naive;
-     static int once;
-     int sF=LLs*sU; 
-
+				      int sU, const FermionField &in, FermionField &out) 
+{
+  int oneLink  =0;
+  int threeLink=1;
+  SiteSpinor naik;
+  SiteSpinor naive;
+  int dag=0;
   switch(Opt) {
 #ifdef AVX512
   case OptInlineAsm:
@@ -241,22 +236,23 @@ void StaggeredKernels<Impl>::DhopSite(StencilImpl &st, LebesgueOrder &lo, Double
     break;
 #endif
   case OptHandUnroll:
-       DhopSiteDepthHand(st,lo,U,UUU,buf,LLs,sU,in,out,dag);
-  break;
+    DhopSiteHand(st,lo,U,UUU,buf,LLs,sU,in,out,dag);
+    break;
   case OptGeneric:
-
-     for(int s=0;s<LLs;s++){
-         DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
-         DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
-         out._odata[sF] =naive+naik;
-      }
-
+    for(int s=0;s<LLs;s++){
+      int sF=LLs*sU+s;
+      //      assert(sF<in._odata.size());
+      //      assert(sU< U._odata.size());
+      //      assert(sF>=0);      assert(sU>=0);
+      DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
+      DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
+      out._odata[sF] =naive+naik;
+    }
     break;
   default:
     assert(0);
     break;
   }
-
 };
 
 template <class Impl>

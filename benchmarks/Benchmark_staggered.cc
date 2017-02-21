@@ -115,7 +115,7 @@ int main (int argc, char ** argv)
   ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass,c1,c2,u0,params);
   
   std::cout<<GridLogMessage << "Calling Ds"<<std::endl;
-  int ncall=100000;
+  int ncall=1000;
   double t0=usecond();
   for(int i=0;i<ncall;i++){
     Ds.Dhop(src,result,0);

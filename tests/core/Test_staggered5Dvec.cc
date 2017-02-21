@@ -57,34 +57,33 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   std::vector<int> seeds({1,2,3,4});
-  /*
+
   GridParallelRNG          pRNG4(UGrid);
   GridParallelRNG          pRNG5(FGrid);
   pRNG4.SeedFixedIntegers(seeds);
   pRNG5.SeedFixedIntegers(seeds);
-  */
+
   typedef typename ImprovedStaggeredFermion5DR::FermionField FermionField; 
   typedef typename ImprovedStaggeredFermion5DR::ComplexField ComplexField; 
   typename ImprovedStaggeredFermion5DR::ImplParams params; 
 
-  FermionField src   (FGrid); src=zero;
-
-  //  random(pRNG5,src);
+  FermionField src   (FGrid);
+  random(pRNG5,src);
   /*
-  std::vector<int> site({0,0,0,0,0});
+  std::vector<int> site({0,1,2,0,0});
   ColourVector cv = zero;
   cv()()(0)=1.0;
   src = zero;
   pokeSite(cv,src,site);
   */
-
   FermionField result(FGrid); result=zero;
   FermionField    tmp(FGrid);    tmp=zero;
   FermionField    err(FGrid);    tmp=zero;
-  FermionField phi   (FGrid); phi=1.0;//random(pRNG5,phi);
-  FermionField chi   (FGrid); chi=1.0;//random(pRNG5,chi);
+  FermionField phi   (FGrid); random(pRNG5,phi);
+  FermionField chi   (FGrid); random(pRNG5,chi);
 
-  LatticeGaugeField Umu(UGrid); Umu=1.0; //SU3::HotConfiguration(pRNG4,Umu);
+  LatticeGaugeField Umu(UGrid);
+  SU3::HotConfiguration(pRNG4,Umu);
 
   /*
   for(int mu=1;mu<4;mu++){
@@ -103,7 +102,7 @@ int main (int argc, char ** argv)
   RealD c2=-1.0/24.0;
   RealD u0=1.0;
 
-  ImprovedStaggeredFermion5DR  Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,c1,c2,u0,params);
+  ImprovedStaggeredFermion5DR     Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,c1,c2,u0,params);
   ImprovedStaggeredFermionVec5dR sDs(Umu,Umu,*sFGrid,*sFrbGrid,*sUGrid,*sUrbGrid,mass,c1,c2,u0,params);
 
   std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
@@ -126,7 +125,6 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Called Ds"<<std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
   std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
-
 
   std::cout<<GridLogMessage << "Calling vectorised staggered operator"<<std::endl;
 

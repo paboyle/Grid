@@ -338,12 +338,12 @@ void ImprovedStaggeredFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder
   if (dag == DaggerYes) {
     PARALLEL_FOR_LOOP
     for (int sss = 0; sss < in._grid->oSites(); sss++) {
-      Kernels::DhopSiteDag(st, lo, U, UUU, st.CommBuf(), sss, sss, in, out);
+      Kernels::DhopSiteDag(st, lo, U, UUU, st.CommBuf(), 1, sss, in, out);
     }
   } else {
     PARALLEL_FOR_LOOP
     for (int sss = 0; sss < in._grid->oSites(); sss++) {
-      Kernels::DhopSite(st, lo, U, UUU, st.CommBuf(), sss, sss, in, out);
+      Kernels::DhopSite(st, lo, U, UUU, st.CommBuf(), 1, sss, in, out);
     }
   }
 };
