@@ -39,10 +39,10 @@ namespace QCD {
 ////////////////////////////////////////////////////////////////////
 class RNGModuleParameters: Serializable {
 
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(RNGModuleParameters,
   std::string, serial_seeds,
   std::string, parallel_seeds,);
-public:
   std::vector<int> SerialSeed;
   std::vector<int> ParallelSeed;
 
