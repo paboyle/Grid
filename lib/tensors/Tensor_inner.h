@@ -28,6 +28,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #ifndef GRID_MATH_INNER_H
 #define GRID_MATH_INNER_H
+
+#if defined __GNUC__
+ #pragma GCC diagnostic push
+ #pragma GCC diagnostic ignored "-Wunused-local-typedefs"
+#endif
+
 namespace Grid {
     ///////////////////////////////////////////////////////////////////////////////////////
     // innerProduct Scalar x Scalar -> Scalar
@@ -74,6 +80,10 @@ namespace Grid {
         ret._internal = innerProduct(lhs._internal,rhs._internal);
         return ret;
     }
-
 }
+
+#if defined __GNUC__
+ #pragma GCC diagnostic pop
+#endif
+
 #endif

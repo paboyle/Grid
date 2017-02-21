@@ -225,11 +225,20 @@ public:
     void discard(uint64_t z)
     {
         // check if we stay in the current block
-        if (z < 8 - _o_counter) {
+
+#if defined __GNUC__
+ #pragma GCC diagnostic push
+ #pragma GCC diagnostic ignored "-Wsign-compare"
+#endif
+      if (z < 8 - _o_counter) {
             _o_counter += static_cast<unsigned short>(z);
             return;
         }
 
+#if defined __GNUC__
+ #pragma GCC diagnostic pop
+#endif
+      
         // we will have to generate a new block...
         z -= (8 - _o_counter);  // discard the remainder of the current blok
         _o_counter = z % 8;     // set the pointer in the correct element in the new block

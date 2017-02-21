@@ -540,6 +540,10 @@ namespace Optimization {
     template<int n>
     static inline __m256d tRotate(__m256d in){
       __m256d tmp = Permute::Permute0(in);
+#if defined __GNUC__
+ #pragma GCC diagnostic push
+ #pragma GCC diagnostic ignored "-Wuninitialized"
+#endif
       __m256d ret;
       if ( n > 1 ) {
 	_mm256_alignr_epi64_grid(ret,in,tmp,n);
@@ -547,6 +551,9 @@ namespace Optimization {
         _mm256_alignr_epi64_grid(ret,tmp,in,n);
       }
       return ret;
+#if defined __GNUC__
+ #pragma GCC diagnostic pop
+#endif
     };
 
   };

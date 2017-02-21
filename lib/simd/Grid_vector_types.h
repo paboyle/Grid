@@ -38,6 +38,11 @@ directory
 #ifndef GRID_VECTOR_TYPES
 #define GRID_VECTOR_TYPES
 
+#if defined __GNUC__ && __GNUC__>=6
+ #pragma GCC diagnostic push
+ #pragma GCC diagnostic ignored "-Wignored-attributes"
+#endif
+
 #ifdef GEN
 #include "Grid_generic.h"
 #endif
@@ -781,5 +786,9 @@ using IfSimd = Invoke<std::enable_if<is_simd<T>::value, int> >;
 template <typename T>
 using IfNotSimd = Invoke<std::enable_if<!is_simd<T>::value, unsigned> >;
 }
+
+#if defined __GNUC__ && __GNUC__>=6
+ #pragma GCC diagnostic pop
+#endif
 
 #endif

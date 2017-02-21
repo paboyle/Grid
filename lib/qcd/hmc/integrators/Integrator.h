@@ -113,7 +113,7 @@ class Integrator {
   void update_P(MomentaField& Mom, Field& U, int level, double ep) {
     // input U actually not used in the fundamental case
     // Fundamental updates, include smearing
-    for (int a = 0; a < as[level].actions.size(); ++a) {
+    for (int a = 0; a < (int)as[level].actions.size(); ++a) {
       Field force(U._grid);
       conformable(U._grid, Mom._grid);
       Field& Us = Smearer.get_U(as[level].actions.at(a)->is_smeared);
@@ -152,16 +152,17 @@ class Integrator {
 
   virtual void step(Field& U, int level, int first, int last) = 0;
 
- public:
+public:
   Integrator(GridBase* grid, IntegratorParameters Par,
              ActionSet<Field, RepresentationPolicy>& Aset,
-             SmearingPolicy& Sm)
-      : Params(Par),
-        as(Aset),
-        P(grid),
-        levels(Aset.size()),
-        Smearer(Sm),
-        Representations(grid) {
+             SmearingPolicy& Sm) :
+    levels(Aset.size()),
+    P(grid),
+    Smearer(Sm),
+    Representations(grid),
+    Params(Par),
+    as(Aset)
+  {
     t_P.resize(levels, 0.0);
     t_U = 0.0;
     // initialization of smearer delegated outside of Integrator
@@ -179,9 +180,9 @@ class Integrator {
   void print_actions(){
         std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::" << std::endl;
         std::cout << GridLogMessage << "[Integrator] Action summary: "<<std::endl;
-        for (int level = 0; level < as.size(); ++level) {
+        for (int level = 0; level < (int)as.size(); ++level) {
                 std::cout << GridLogMessage << "[Integrator] ---- Level: "<< level << std::endl;
-                for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
+                for (int actionID = 0; actionID < (int)as[level].actions.size(); ++actionID) {
                         std::cout << GridLogMessage << "["<< as[level].actions.at(actionID)->action_name() << "] ID: " << actionID << std::endl;
                         std::cout << as[level].actions.at(actionID)->LogParameters();
                 }
@@ -220,8 +221,8 @@ class Integrator {
     // The Smearer is attached to a pointer of the gauge field
     // automatically gets the correct field
     // whether or not has been accepted in the previous sweep
-    for (int level = 0; level < as.size(); ++level) {
-      for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
+    for (int level = 0; level < (int)as.size(); ++level) {
+      for (int actionID = 0; actionID < (int)as[level].actions.size(); ++actionID) {
         // get gauge field from the SmearingPolicy and
         // based on the boolean is_smeared in actionID
         Field& Us =
@@ -259,8 +260,8 @@ class Integrator {
     std::cout << GridLogMessage << "Momentum action H_p = " << H << "\n";
 
     // Actions
-    for (int level = 0; level < as.size(); ++level) {
-      for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
+    for (int level = 0; level < (int)as.size(); ++level) {
+      for (int actionID = 0; actionID < (int)as[level].actions.size(); ++actionID) {
         // get gauge field from the SmearingPolicy and
         // based on the boolean is_smeared in actionID
         Field& Us =
@@ -279,18 +280,18 @@ class Integrator {
   void integrate(Field& U) {
     // reset the clocks
     t_U = 0;
-    for (int level = 0; level < as.size(); ++level) {
+    for (int level = 0; level < (int)as.size(); ++level) {
       t_P[level] = 0;
     }
 
-    for (int step = 0; step < Params.MDsteps; ++step) {  // MD step
+    for (int step = 0; step < (int)Params.MDsteps; ++step) {  // MD step
       int first_step = (step == 0);
-      int last_step = (step == Params.MDsteps - 1);
+      int last_step = (step == (int)Params.MDsteps - 1);
       this->step(U, 0, first_step, last_step);
     }
 
     // Check the clocks all match on all levels
-    for (int level = 0; level < as.size(); ++level) {
+    for (int level = 0; level < (int)as.size(); ++level) {
       assert(fabs(t_U - t_P[level]) < 1.0e-6);  // must be the same
       std::cout << GridLogIntegrator << " times[" << level
                 << "]= " << t_P[level] << " " << t_U << std::endl;

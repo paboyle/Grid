@@ -485,7 +485,7 @@ class BinaryIO {
     uint64_t slice_vol = 1;
 
     int IOnode = 1;
-    for(int d=0;d<grid->_ndimension;d++) {
+    for(int d=0;d<(int)grid->_ndimension;d++) {
 
       if ( d == 0 ) parallel[d] = 0;
       if (parallel[d]) {
@@ -507,9 +507,9 @@ class BinaryIO {
       grid->GlobalSum(tmp);
       std::cout<< std::dec ;
       std::cout<< GridLogMessage<< "Parallel read I/O to "<< file << " with " <<tmp<< " IOnodes for subslice ";
-      for(int d=0;d<grid->_ndimension;d++){
+      for(int d=0;d<(int)grid->_ndimension;d++){
         std::cout<< range[d];
-        if( d< grid->_ndimension-1 ) 
+        if( d< (int)grid->_ndimension-1 ) 
           std::cout<< " x ";
       }
       std::cout << std::endl;
@@ -538,7 +538,7 @@ class BinaryIO {
     static sobj siteObj; // Static to place in symmetric region for SHMEM
 
       // need to implement these loops in Nd independent way with a lexico conversion
-    for(int tlex=0;tlex<slice_vol;tlex++){
+    for(uint64_t tlex=0;tlex<slice_vol;tlex++){
 
       std::vector<int> tsite(nd); // temporary mixed up site
       std::vector<int> gsite(nd);
@@ -572,7 +572,8 @@ class BinaryIO {
           #ifdef HAVE_LIME
           size_t sizeFO = sizeof(fileObj);
           limeReaderSeek(ILDG.LR, g_idx*sizeFO, SEEK_SET);
-          int status = limeReaderReadData((void *)&fileObj, &sizeFO, ILDG.LR);
+          // int status = 
+	    limeReaderReadData((void *)&fileObj, &sizeFO, ILDG.LR);
           #endif
         } else{
           fin.seekg(offset+g_idx*sizeof(fileObj));
@@ -653,8 +654,8 @@ class BinaryIO {
 
     int IOnode = 1;
 
-    for (int d = 0; d < grid->_ndimension; d++) {
-      if (d != grid->_ndimension - 1) parallel[d] = 0;
+    for (int d = 0; d < (int)grid->_ndimension; d++) {
+      if (d != (int)grid->_ndimension - 1) parallel[d] = 0;
 
       if (parallel[d]) {
         range[d] = grid->_ldimensions[d];
@@ -676,9 +677,9 @@ class BinaryIO {
       grid->GlobalSum(tmp);
       std::cout << GridLogMessage << "Parallel write I/O from " << file
                 << " with " << tmp << " IOnodes for subslice ";
-      for (int d = 0; d < grid->_ndimension; d++) {
+      for (int d = 0; d < (int)grid->_ndimension; d++) {
         std::cout << range[d];
-        if (d < grid->_ndimension - 1) std::cout << " x ";
+        if (d < (int)grid->_ndimension - 1) std::cout << " x ";
       }
       std::cout << std::endl;
     }
@@ -721,7 +722,7 @@ class BinaryIO {
     // should aggregate a whole chunk and then write.
     // need to implement these loops in Nd independent way with a lexico
     // conversion
-    for (int tlex = 0; tlex < slice_vol; tlex++) {
+    for (uint64_t tlex = 0; tlex < slice_vol; tlex++) {
       std::vector<int> tsite(nd);  // temporary mixed up site
       std::vector<int> gsite(nd);
       std::vector<int> lsite(nd);
@@ -772,7 +773,8 @@ class BinaryIO {
           #ifdef HAVE_LIME
           size_t sizeFO = sizeof(fileObj);
  					limeWriterSeek(ILDG.LW, g_idx*sizeFO, SEEK_SET);
-          int status = limeWriteRecordData((void *)&fileObj, &sizeFO, ILDG.LW);
+          // int status = 
+	    limeWriteRecordData((void *)&fileObj, &sizeFO, ILDG.LW);
           #endif
         } 
 

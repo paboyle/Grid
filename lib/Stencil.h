@@ -32,7 +32,12 @@
 
  #include <Grid/stencil/Lebesgue.h>   // subdir aggregate
 
- //////////////////////////////////////////////////////////////////////////////////////////
+#if defined __GNUC__
+ #pragma GCC diagnostic push
+ #pragma GCC diagnostic ignored "-Wunused-local-typedefs"
+#endif
+
+//////////////////////////////////////////////////////////////////////////////////////////
  // Must not lose sight that goal is to be able to construct really efficient
  // gather to a point stencil code. CSHIFT is not the best way, so need
  // additional stencil support.
@@ -74,12 +79,12 @@ inline void Gather_plane_simple_table_compute (GridBase *grid,int dimension,int 
 					       int off,std::vector<std::pair<int,int> > & table)
 {
   table.resize(0);
-  int rd = grid->_rdimensions[dimension];
+  //int rd = grid->_rdimensions[dimension];
 
   if ( !grid->CheckerBoarded(dimension) ) {
     cbmask = 0x3;
   }
-  int so= plane*grid->_ostride[dimension]; // base offset for start of plane 
+  //int so= plane*grid->_ostride[dimension]; // base offset for start of plane 
   int e1=grid->_slice_nblock[dimension];
   int e2=grid->_slice_block[dimension];
 
@@ -958,4 +963,9 @@ PARALLEL_FOR_LOOP
   
 };
 }
+
+#if defined __GNUC__
+ #pragma GCC diagnostic pop
+#endif
+
 #endif

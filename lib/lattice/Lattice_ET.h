@@ -36,6 +36,11 @@ directory
 #include <typeinfo>
 #include <vector>
 
+#if defined __GNUC__
+ #pragma GCC diagnostic push
+ #pragma GCC diagnostic ignored "-Wunused-local-typedefs"
+#endif
+
 namespace Grid {
 
 ////////////////////////////////////////////////////
@@ -461,6 +466,10 @@ void testit(Lattice<double> &v1,Lattice<double> &v2,Lattice<double> &v3)
 {
    v3=v1+v2+v1*v2;
 }
+#endif
+
+#if defined __GNUC__
+ #pragma GCC diagnostic pop
 #endif
 
 #endif

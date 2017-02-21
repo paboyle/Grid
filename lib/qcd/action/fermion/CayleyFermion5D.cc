@@ -29,7 +29,17 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 
+#if defined __GNUC__
+ #pragma GCC diagnostic push
+ #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 #include <Grid/Eigen/Dense>
+
+#if defined __GNUC__
+ #pragma GCC diagnostic pop
+#endif
+
 #include <Grid/Grid.h>
 
 

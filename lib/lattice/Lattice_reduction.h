@@ -61,7 +61,8 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,
 
   PARALLEL_FOR_LOOP
   for (int thr = 0; thr < grid->SumArraySize(); thr++) {
-    int nwork, mywork, myoff;
+    int // nwork, 
+      mywork, myoff;
     GridThread::GetWork(left._grid->oSites(), thr, mywork, myoff);
 
     decltype(innerProduct(left._odata[0], right._odata[0])) vnrm =
@@ -121,7 +122,8 @@ inline auto sum(const LatticeUnaryExpression<Op, T1> &expr) ->
 
 PARALLEL_FOR_LOOP
       for(int thr=0;thr<grid->SumArraySize();thr++){
-  int nwork, mywork, myoff;
+  int // nwork, 
+    mywork, myoff;
   GridThread::GetWork(grid->oSites(),thr,mywork,myoff);
 
   vobj vvsum=zero;

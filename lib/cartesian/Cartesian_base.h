@@ -101,13 +101,13 @@ public:
     {
         int idx=0;
         // Works with either global or local coordinates
-        for(int d=0;d<_ndimension;d++) idx+=_ostride[d]*(coor[d]%_rdimensions[d]);
+        for(int d=0;d<(int)_ndimension;d++) idx+=_ostride[d]*(coor[d]%_rdimensions[d]);
         return idx;
     }
     virtual int iIndex(std::vector<int> &lcoor)
     {
         int idx=0;
-        for(int d=0;d<_ndimension;d++) idx+=_istride[d]*(lcoor[d]/_rdimensions[d]);
+        for(int d=0;d<(int)_ndimension;d++) idx+=_istride[d]*(lcoor[d]/_rdimensions[d]);
         return idx;
     }
     inline int oIndexReduced(std::vector<int> &ocoor)
@@ -115,7 +115,7 @@ public:
       int idx=0; 
       // ocoor is already reduced so can eliminate the modulo operation
       // for fast indexing and inline the routine
-      for(int d=0;d<_ndimension;d++) idx+=_ostride[d]*ocoor[d];
+      for(int d=0;d<(int)_ndimension;d++) idx+=_ostride[d]*ocoor[d];
       return idx;
     }
     inline void oCoorFromOindex (std::vector<int>& coor,int Oindex){
@@ -125,7 +125,7 @@ public:
 
     inline void InOutCoorToLocalCoor (std::vector<int> &ocoor, std::vector<int> &icoor, std::vector<int> &lcoor) {
       lcoor.resize(_ndimension);
-      for (int d = 0; d < _ndimension; d++)
+      for (int d = 0; d < (int)_ndimension; d++)
         lcoor[d] = ocoor[d] + _rdimensions[d] * icoor[d];
     }
 
@@ -154,7 +154,7 @@ public:
       // Distance should be either 0,1,2..
       //
       if ( _simd_layout[dimension] > 2 ) { 
-        for(int d=0;d<_ndimension;d++){
+        for(int d=0;d<(int)_ndimension;d++){
           if ( d != dimension ) assert ( (_simd_layout[d]==1)  );
         }
         permute_type = RotateBit; // How to specify distance; this is not just direction.
@@ -215,7 +215,7 @@ public:
     void GlobalCoorToGlobalIndex(const std::vector<int> & gcoor,int & gidx){
       gidx=0;
       int mult=1;
-      for(int mu=0;mu<_ndimension;mu++) {
+      for(size_t mu=0;mu<_ndimension;mu++) {
         gidx+=mult*gcoor[mu];
         mult*=_gdimensions[mu];
       }
@@ -224,7 +224,7 @@ public:
     {
       pcoor.resize(_ndimension);
       lcoor.resize(_ndimension);
-      for(int mu=0;mu<_ndimension;mu++){
+      for(int mu=0;mu<(int)_ndimension;mu++){
         int _fld  = _fdimensions[mu]/_processors[mu];
         pcoor[mu] = gcoor[mu]/_fld;
         lcoor[mu] = gcoor[mu]%_fld;
@@ -238,7 +238,7 @@ public:
       rank = RankFromProcessorCoor(pcoor);
 
       std::vector<int> cblcoor(lcoor);
-      for(int d=0;d<cblcoor.size();d++){
+      for(size_t d=0;d<cblcoor.size();d++){
         if( this->CheckerBoarded(d) ) {
           cblcoor[d] = lcoor[d]/2;
         }
@@ -254,13 +254,13 @@ public:
       std::vector<int> coor(_ndimension);
 
       ProcessorCoorFromRank(rank,coor);
-      for(int mu=0;mu<_ndimension;mu++) gcoor[mu] = _ldimensions[mu]*coor[mu];
+      for(int mu=0;mu<(int)_ndimension;mu++) gcoor[mu] = _ldimensions[mu]*coor[mu];
 
       iCoorFromIindex(coor,i_idx);
-      for(int mu=0;mu<_ndimension;mu++) gcoor[mu] += _rdimensions[mu]*coor[mu];
+      for(int mu=0;mu<(int)_ndimension;mu++) gcoor[mu] += _rdimensions[mu]*coor[mu];
 
       oCoorFromOindex (coor,o_idx);
-      for(int mu=0;mu<_ndimension;mu++) gcoor[mu] += coor[mu];
+      for(int mu=0;mu<(int)_ndimension;mu++) gcoor[mu] += coor[mu];
       
     }
     void RankIndexCbToFullGlobalCoor(int rank, int o_idx, int i_idx, int cb,std::vector<int> &fcoor)
@@ -273,7 +273,7 @@ public:
     void ProcessorCoorLocalCoorToGlobalCoor(std::vector<int> &Pcoor,std::vector<int> &Lcoor,std::vector<int> &gcoor)
     {
       gcoor.resize(_ndimension);
-      for(int mu=0;mu<_ndimension;mu++) gcoor[mu] = Pcoor[mu]*_ldimensions[mu]+Lcoor[mu];
+      for(int mu=0;mu<(int)_ndimension;mu++) gcoor[mu] = Pcoor[mu]*_ldimensions[mu]+Lcoor[mu];
     }
 };
 

@@ -77,7 +77,7 @@ struct ActionLevel {
   std::vector<ActPtr>& actions;
 
   explicit ActionLevel(unsigned int mul = 1) : 
-  actions(std::get<0>(actions_hirep)), multiplier(mul) {
+    multiplier(mul), actions(std::get<0>(actions_hirep))  {
     // initialize the hirep vectors to zero.
     // apply(this->resize, actions_hirep, 0); //need a working resize
     assert(mul >= 1);

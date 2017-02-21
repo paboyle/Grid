@@ -47,10 +47,11 @@ class ConjugateGradient : public OperatorFunction<Field> {
   Integer MaxIterations;
   Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion
   
-  ConjugateGradient(RealD tol, Integer maxit, bool err_on_no_conv = true)
-      : Tolerance(tol),
-        MaxIterations(maxit),
-        ErrorOnNoConverge(err_on_no_conv){};
+  ConjugateGradient(RealD tol, Integer maxit, bool err_on_no_conv = true) :
+    ErrorOnNoConverge(err_on_no_conv),
+    Tolerance(tol),
+    MaxIterations(maxit)
+  {};
 
   void operator()(LinearOperatorBase<Field> &Linop, const Field &src,
                   Field &psi) {
@@ -108,7 +109,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
 
     SolverTimer.Start();
     int k;
-    for (k = 1; k <= MaxIterations; k++) {
+    for (k = 1; k <= (int)MaxIterations; k++) {
       c = cp;
 
       MatrixTimer.Start();
@@ -142,8 +143,8 @@ class ConjugateGradient : public OperatorFunction<Field> {
         Linop.HermOpAndNorm(psi, mmp, d, qq);
         p = mmp - src;
 
-        RealD mmpnorm = sqrt(norm2(mmp));
-        RealD psinorm = sqrt(norm2(psi));
+        //RealD mmpnorm = sqrt(norm2(mmp));
+        //RealD psinorm = sqrt(norm2(psi));
         RealD srcnorm = sqrt(norm2(src));
         RealD resnorm = sqrt(norm2(p));
         RealD true_residual = resnorm / srcnorm;
