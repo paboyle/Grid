@@ -91,7 +91,32 @@ namespace QCD {
 
 
 template <class Impl>
-void StaggeredKernels<Impl>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+void StaggeredKernels<Impl>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,DoubledGaugeField &UUU,
+					   SiteSpinor *buf, int LLs,
+					   int sU, const FermionField &in, FermionField &out, int dag) {
+
+    SiteSpinor naik; 
+    SiteSpinor naive;
+    int oneLink  =0;
+    int threeLink=1;
+    int skew(0);
+    Real scale(1.0);
+
+    if(dag) scale = -1.0;
+
+   for(int s=0;s<LLs;s++){
+   
+     int sF=s+LLs*sU;
+       DhopSiteDepthHandLocal(st,lo,U,buf,sF,sU,in,naive,oneLink);
+       DhopSiteDepthHandLocal(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
+       out._odata[sF] =scale*(naive+naik);
+   }
+   
+
+}
+
+template <class Impl>
+void StaggeredKernels<Impl>::DhopSiteDepthHandLocal(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
 					   SiteSpinor *buf, int sF,
 					   int sU, const FermionField &in, SiteSpinor &out,int threeLink) {
 {

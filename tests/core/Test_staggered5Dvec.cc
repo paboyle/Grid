@@ -57,18 +57,19 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   std::vector<int> seeds({1,2,3,4});
+  /*
   GridParallelRNG          pRNG4(UGrid);
   GridParallelRNG          pRNG5(FGrid);
   pRNG4.SeedFixedIntegers(seeds);
   pRNG5.SeedFixedIntegers(seeds);
-
+  */
   typedef typename ImprovedStaggeredFermion5DR::FermionField FermionField; 
   typedef typename ImprovedStaggeredFermion5DR::ComplexField ComplexField; 
   typename ImprovedStaggeredFermion5DR::ImplParams params; 
 
-  FermionField src   (FGrid);
+  FermionField src   (FGrid); src=zero;
 
-  random(pRNG5,src);
+  //  random(pRNG5,src);
   /*
   std::vector<int> site({0,0,0,0,0});
   ColourVector cv = zero;
@@ -80,10 +81,10 @@ int main (int argc, char ** argv)
   FermionField result(FGrid); result=zero;
   FermionField    tmp(FGrid);    tmp=zero;
   FermionField    err(FGrid);    tmp=zero;
-  FermionField phi   (FGrid); random(pRNG5,phi);
-  FermionField chi   (FGrid); random(pRNG5,chi);
+  FermionField phi   (FGrid); phi=1.0;//random(pRNG5,phi);
+  FermionField chi   (FGrid); chi=1.0;//random(pRNG5,chi);
 
-  LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG4,Umu);
+  LatticeGaugeField Umu(UGrid); Umu=1.0; //SU3::HotConfiguration(pRNG4,Umu);
 
   /*
   for(int mu=1;mu<4;mu++){
@@ -109,15 +110,18 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"= Testing Dhop against cshift implementation         "<<std::endl;
   std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
 
-  std::cout<<GridLogMessage << "Calling staggered operator"<<std::endl;
   int ncall=1000;
-  double t0=usecond();
-  for(int i=0;i<ncall;i++){
+  int ncall1=1000;
+  double t0(0),t1(0);
+  double flops=(16*(3*(6+8+8)) + 15*3*2)*volume*ncall; // == 66*16 +  == 1146
+
+  std::cout<<GridLogMessage << "Calling staggered operator"<<std::endl;
+  t0=usecond();
+  for(int i=0;i<ncall1;i++){
     Ds.Dhop(src,result,0);
   }
-  double t1=usecond();
+  t1=usecond();
 
-  double flops=(16*(3*(6+8+8)) + 15*3*2)*volume*ncall; // == 66*16 +  == 1146
   
   std::cout<<GridLogMessage << "Called Ds"<<std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
@@ -128,7 +132,7 @@ int main (int argc, char ** argv)
 
   QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptInlineAsm;
   t0=usecond();
-  for(int i=0;i<ncall;i++){
+  for(int i=0;i<ncall1;i++){
     Ds.Dhop(src,tmp,0);
   }
   t1=usecond();
@@ -139,19 +143,20 @@ int main (int argc, char ** argv)
 
   err = tmp-result; 
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
+
   
   FermionField ssrc  (sFGrid);  localConvert(src,ssrc);
   FermionField sresult(sFGrid); sresult=zero;
 
   QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptHandUnroll;
   t0=usecond();
-  for(int i=0;i<ncall;i++){
+  for(int i=0;i<ncall1;i++){
     sDs.Dhop(ssrc,sresult,0);
   }
   t1=usecond();
   localConvert(sresult,tmp);
  
-  std::cout<<GridLogMessage << "Called sDs"<<std::endl;
+  std::cout<<GridLogMessage << "Called sDs unroll"<<std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(sresult)<<std::endl;
   std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
 
@@ -160,9 +165,9 @@ int main (int argc, char ** argv)
 
   err = tmp-result; 
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
-
+  int extra=1;
   t0=usecond();
-  for(int i=0;i<ncall;i++){
+  for(int i=0;i<ncall1*extra;i++){
     sDs.Dhop(ssrc,sresult,0);
   }
   t1=usecond();
@@ -170,10 +175,11 @@ int main (int argc, char ** argv)
  
   std::cout<<GridLogMessage << "Called sDs asm"<<std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(sresult)<<std::endl;
-  std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
+  std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)*extra<<std::endl;
 
   err = tmp-result; 
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
+
 
 
   Grid_finalize();

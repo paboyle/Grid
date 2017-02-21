@@ -237,19 +237,32 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOr
   if (dag == DaggerYes) {
     PARALLEL_FOR_LOOP
     for (int ss = 0; ss < U._grid->oSites(); ss++) {
-    for(int s=0;s<LLs;s++){
       int sU=ss;
-      int sF=s+LLs*sU; 
-      Kernels::DhopSiteDag(st, lo, U, UUU, st.CommBuf(), sF, sU, in, out);
-    }}
+      Kernels::DhopSiteDag(st, lo, U, UUU, st.CommBuf(), LLs, sU,in, out);
+    }
   } else {
+#if 1
     PARALLEL_FOR_LOOP
     for (int ss = 0; ss < U._grid->oSites(); ss++) {
-    for(int s=0;s<LLs;s++){
       int sU=ss;
-      int sF=s+LLs*sU; 
-      Kernels::DhopSite(st,lo,U,UUU,st.CommBuf(),sF,sU,in,out);
-    }}
+	Kernels::DhopSite(st,lo,U,UUU,st.CommBuf(),LLs,sU,in,out);
+    }
+#else
+#pragma omp parallel 
+  {
+    for(int i=0;i<10;i++){
+      int len = U._grid->oSites();
+      int me,mywork,myoff;
+      GridThread::GetWorkBarrier(len,me, mywork,myoff);
+      for (int ss = myoff; ss < myoff+mywork; ss++) {
+	int sU=ss;
+	int sF=LLs*sU; 
+	  Kernels::DhopSite(st,lo,U,UUU,st.CommBuf(),LLs,sU,in,out);
+      }
+      GridThread::ThreadBarrier();
+    }
+  }
+#endif
   }
 }
 

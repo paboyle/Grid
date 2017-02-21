@@ -182,65 +182,81 @@ void StaggeredKernels<Impl>::DhopSiteDepth(StencilImpl &st, LebesgueOrder &lo, D
   vstream(out, Uchi);
 };
 
-// Need controls to do interior, exterior, or both
 template <class Impl>
 void StaggeredKernels<Impl>::DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU,
-						  SiteSpinor *buf, int sF,
-						  int sU, const FermionField &in, FermionField &out) {
+						  SiteSpinor *buf, int LLs, int sU,
+						  const FermionField &in, FermionField &out) {
+  int dag(1);
   SiteSpinor naik;
   SiteSpinor naive;
   int oneLink  =0;
   int threeLink=1;
+  Real scale;
+  if(dag) scale = -1.0;
+  else    scale = 1.0;
+
   switch(Opt) {
 #ifdef AVX512
   case OptInlineAsm:
-    DhopSiteAsm(st,lo,U,UUU,buf,sF,sU,in,out._odata[sF]);
+    DhopSiteAsm(st,lo,U,UUU,buf,LLs,sU,in,out);
     break;
 #endif
   case OptHandUnroll:
-    DhopSiteDepthHand(st,lo,U,buf,sF,sU,in,naive,oneLink);
-    DhopSiteDepthHand(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
-    out._odata[sF] =-naive-naik;
+    DhopSiteDepthHand(st,lo,U,UUU,buf,LLs,sU,in,out,dag);
     break;
   case OptGeneric:
-    DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
-    DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
-    out._odata[sF] =-naive-naik;
+    for(int s=0;s<LLs;s++){
+
+       int sF=s+LLs*sU;
+
+       DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
+       DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
+       out._odata[sF] =scale*(naive+naik); 
+     }
     break;
   default:
     assert(0);
     break;
   }
 };
+
 template <class Impl>
 void StaggeredKernels<Impl>::DhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU,
-				      SiteSpinor *buf, int sF,
+				      SiteSpinor *buf, int LLs,
 				      int sU, const FermionField &in, FermionField &out) {
-  int oneLink  =0;
-  int threeLink=1;
-  SiteSpinor naik;
-  SiteSpinor naive;
-  static int once;
+
+   int dag(0);
+
+     int oneLink  =0;
+     int threeLink=1;
+     SiteSpinor naik;
+     SiteSpinor naive;
+     static int once;
+     int sF=LLs*sU; 
+
   switch(Opt) {
 #ifdef AVX512
   case OptInlineAsm:
-    DhopSiteAsm(st,lo,U,UUU,buf,sF,sU,in,out._odata[sF]);
+    DhopSiteAsm(st,lo,U,UUU,buf,LLs,sU,in,out);
     break;
 #endif
   case OptHandUnroll:
-    DhopSiteDepthHand(st,lo,U,buf,sF,sU,in,naive,oneLink);
-    DhopSiteDepthHand(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
-    out._odata[sF] =naive+naik;
-    break;
+       DhopSiteDepthHand(st,lo,U,UUU,buf,LLs,sU,in,out,dag);
+  break;
   case OptGeneric:
-    DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
-    DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
-    out._odata[sF] =naive+naik;
+
+     for(int s=0;s<LLs;s++){
+         DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
+         DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
+         out._odata[sF] =naive+naik;
+      }
+
     break;
   default:
     assert(0);
     break;
   }
+
 };
 
 template <class Impl>

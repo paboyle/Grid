@@ -56,17 +56,21 @@ public:
    void DhopSiteDepth(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteSpinor * buf,
 		     int sF, int sU, const FermionField &in, SiteSpinor &out,int threeLink);
 
-   void DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteSpinor * buf,
-		     int sF, int sU, const FermionField &in, SiteSpinor &out,int threeLink);
+
+   void DhopSiteDepthHandLocal(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteSpinor * buf,
+		     int sF, int sU, const FermionField &in, SiteSpinor&out,int threeLink);
+
+   void DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU,SiteSpinor * buf,
+		     int Lls, int sU, const FermionField &in, FermionField &out, int dag);
 
    void DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,DoubledGaugeField &UUU, SiteSpinor * buf,
-			 int sF, int sU, const FermionField &in, SiteSpinor &out);
+			 int LLs, int sU, const FermionField &in, FermionField &out);
       
    void DhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU, SiteSpinor * buf,
 		int sF, int sU, const FermionField &in, FermionField &out);
 
-   void DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU, SiteSpinor * buf,
-		   int sF, int sU, const FermionField &in, FermionField &out);
+   void DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU, SiteSpinor *buf, 
+                   int LLs, int sU, const FermionField &in, FermionField &out);
   
 public:
 

@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -507,12 +507,36 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
        VLOAD(2,%%r8,pChi_12)						\
        : : "r" (a1) : "%r8" );						
 
-#define PF_CHI(a0)							\
+#define PF_CHI(a0)							
+#define PF_CHIa(a0)							\
   asm (									\
        "movq %0, %%r8 \n\t"						\
        VPREFETCH1(0,%%r8)						\
        VPREFETCH1(1,%%r8)						\
        VPREFETCH1(2,%%r8)						\
+       : : "r" (a0) : "%r8" );						\
+
+#define PF_GAUGE_XYZT(a0)							
+#define PF_GAUGE_XYZTa(a0)							\
+  asm (									\
+       "movq %0, %%r8 \n\t"						\
+       VPREFETCH1(0,%%r8)						\
+       VPREFETCH1(1,%%r8)						\
+       VPREFETCH1(2,%%r8)						\
+       VPREFETCH1(3,%%r8)						\
+       VPREFETCH1(4,%%r8)						\
+       VPREFETCH1(5,%%r8)						\
+       VPREFETCH1(6,%%r8)						\
+       VPREFETCH1(7,%%r8)						\
+       VPREFETCH1(8,%%r8)						\
+       : : "r" (a0) : "%r8" );						\
+
+#define PF_GAUGE_LS(a0)							
+#define PF_GAUGE_LSa(a0)							\
+  asm (									\
+       "movq %0, %%r8 \n\t"						\
+       VPREFETCH1(0,%%r8)						\
+       VPREFETCH1(1,%%r8)						\
        : : "r" (a0) : "%r8" );						\
   
 
@@ -556,40 +580,59 @@ template <class Impl>
 void StaggeredKernels<Impl>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
 					      DoubledGaugeField &U,
 					      DoubledGaugeField &UUU,
-					      SiteSpinor *buf, int sF,
-					      int sU, const FermionField &in, SiteSpinor &out) 
+					      SiteSpinor *buf, int LLs,
+					      int sU, const FermionField &in, FermionField &out) 
 {
   assert(0);
 
-}
+};
 
-#define PREPARE(X,Y,Z,T,skew,UU)			\
-  SE0=st.GetEntry(ptype,X+skew,sF);			\
-  o0 = SE0->_offset;					\
-  l0 = SE0->_is_local;					\
-  p0 = SE0->_permute;					\
-  addr0 = l0 ?  (uint64_t) &in._odata[o0] : (uint64_t) &buf[o0];	\
+
+//#define CONDITIONAL_MOVE(l,o,out) if ( l ) { out = (uint64_t) &in._odata[o] ; } else { out =(uint64_t) &buf[o]; }
+
+#define CONDITIONAL_MOVE(l,o,out) { const SiteSpinor *ptr = l? in_p : buf; out = (uint64_t) &ptr[o]; }
+
+#define PREPARE_XYZT(X,Y,Z,T,skew,UU)			\
+  PREPARE(X,Y,Z,T,skew,UU);				\
+  PF_GAUGE_XYZT(gauge0);					\
+  PF_GAUGE_XYZT(gauge1);					\
+  PF_GAUGE_XYZT(gauge2);					\
+  PF_GAUGE_XYZT(gauge3);					
+
+#define PREPARE_LS(X,Y,Z,T,skew,UU)			\
+  PREPARE(X,Y,Z,T,skew,UU);				\
+  PF_GAUGE_LS(gauge0);					\
+  PF_GAUGE_LS(gauge1);					\
+  PF_GAUGE_LS(gauge2);					\
+  PF_GAUGE_LS(gauge3);					
+
+#define PREPARE(X,Y,Z,T,skew,UU)					\
+  SE0=st.GetEntry(ptype,X+skew,sF);					\
+  o0 = SE0->_offset;							\
+  l0 = SE0->_is_local;							\
+  p0 = SE0->_permute;							\
+  CONDITIONAL_MOVE(l0,o0,addr0);							\
   PF_CHI(addr0);							\
 									\
   SE1=st.GetEntry(ptype,Y+skew,sF);			\
   o1 = SE1->_offset;					\
   l1 = SE1->_is_local;					\
   p1 = SE1->_permute;					\
-  addr1 = l1 ?  (uint64_t) &in._odata[o1] : (uint64_t) &buf[o1];	\
+  CONDITIONAL_MOVE(l1,o1,addr1);							\
   PF_CHI(addr1);							\
 									\
   SE2=st.GetEntry(ptype,Z+skew,sF);			\
   o2 = SE2->_offset;					\
   l2 = SE2->_is_local;					\
   p2 = SE2->_permute;					\
-  addr2 = l2 ?  (uint64_t) &in._odata[o2] : (uint64_t) &buf[o2];	\
+  CONDITIONAL_MOVE(l2,o2,addr2);							\
   PF_CHI(addr2);							\
 									\
   SE3=st.GetEntry(ptype,T+skew,sF);			\
   o3 = SE3->_offset;					\
   l3 = SE3->_is_local;					\
   p3 = SE3->_permute;					\
-  addr3 = l3 ?  (uint64_t) &in._odata[o3] : (uint64_t) &buf[o3];	\
+  CONDITIONAL_MOVE(l3,o3,addr3);							\
   PF_CHI(addr3);							\
   									\
   gauge0 =(uint64_t)&UU._odata[sU]( X ); \
@@ -602,12 +645,13 @@ void StaggeredKernels<Impl>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo,
 template <> void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
 								    DoubledGaugeField &U,
 								    DoubledGaugeField &UUU,
-								    SiteSpinor *buf, int sF,
-								    int sU, const FermionField &in, SiteSpinor &out) 
+								    SiteSpinor *buf, int LLs,
+								    int sU, const FermionField &in, FermionField &out) 
 {
 #ifdef AVX512
   uint64_t gauge0,gauge1,gauge2,gauge3;
   uint64_t addr0,addr1,addr2,addr3;
+  const SiteSpinor *in_p; in_p = &in._odata[0];
 
   int o0,o1,o2,o3; // offsets
   int l0,l1,l2,l3; // local 
@@ -618,42 +662,46 @@ template <> void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(StencilImpl 
   StencilEntry *SE2;
   StencilEntry *SE3;
 
-  // Xp, Yp, Zp, Tp
+   for(int s=0;s<LLs;s++){
 
-  PREPARE(Xp,Yp,Zp,Tp,0,U);
-  LOAD_CHI(addr0,addr1,addr2,addr3);
-  MULT_LS(gauge0,gauge1,gauge2,gauge3);  
+    int sF=s+LLs*sU;
+    // Xp, Yp, Zp, Tp
+    PREPARE(Xp,Yp,Zp,Tp,0,U);
+    LOAD_CHI(addr0,addr1,addr2,addr3);
+    MULT_LS(gauge0,gauge1,gauge2,gauge3);  
 
-  PREPARE(Xm,Ym,Zm,Tm,0,U);
-  LOAD_CHI(addr0,addr1,addr2,addr3);
-  MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);  
+    PREPARE(Xm,Ym,Zm,Tm,0,U);
+    LOAD_CHI(addr0,addr1,addr2,addr3);
+    MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);  
 
-  PREPARE(Xp,Yp,Zp,Tp,8,UUU);
-  LOAD_CHI(addr0,addr1,addr2,addr3);
-  MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);
+    PREPARE(Xp,Yp,Zp,Tp,8,UUU);
+    LOAD_CHI(addr0,addr1,addr2,addr3);
+    MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);
 
-  PREPARE(Xm,Ym,Zm,Tm,8,UUU);
-  LOAD_CHI(addr0,addr1,addr2,addr3);
-  MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);
+    PREPARE(Xm,Ym,Zm,Tm,8,UUU);
+    LOAD_CHI(addr0,addr1,addr2,addr3);
+    MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);
 
-  addr0 = (uint64_t) &out;
-  REDUCE(addr0);
+    addr0 = (uint64_t) &out._odata[sF];
+    REDUCE(addr0);
+   }
 #else 
-  assert(0);
+    assert(0);
 #endif
+   
 }
 
-  // This is the single precision 5th direction vectorised kernel
 #include <simd/Intel512double.h>
 template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
 								    DoubledGaugeField &U,
 								    DoubledGaugeField &UUU,
-								    SiteSpinor *buf, int sF,
-								    int sU, const FermionField &in, SiteSpinor &out) 
+								    SiteSpinor *buf, int LLs,
+								    int sU, const FermionField &in, FermionField &out) 
 {
 #ifdef AVX512
   uint64_t gauge0,gauge1,gauge2,gauge3;
   uint64_t addr0,addr1,addr2,addr3;
+  const SiteSpinor *in_p; in_p = &in._odata[0];
 
   int o0,o1,o2,o3; // offsets
   int l0,l1,l2,l3; // local 
@@ -664,30 +712,34 @@ template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilImpl 
   StencilEntry *SE2;
   StencilEntry *SE3;
 
-  // Xp, Yp, Zp, Tp
+  for(int s=0;s<LLs;s++){
+    int sF=s+LLs*sU;
+    // Xp, Yp, Zp, Tp
+    PREPARE(Xp,Yp,Zp,Tp,0,U);
+    LOAD_CHI(addr0,addr1,addr2,addr3);
+    MULT_LS(gauge0,gauge1,gauge2,gauge3);  
 
-  PREPARE(Xp,Yp,Zp,Tp,0,U);
-  LOAD_CHI(addr0,addr1,addr2,addr3);
-  MULT_LS(gauge0,gauge1,gauge2,gauge3);  
+    PREPARE(Xm,Ym,Zm,Tm,0,U);
+    LOAD_CHI(addr0,addr1,addr2,addr3);
+    MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);  
 
-  PREPARE(Xm,Ym,Zm,Tm,0,U);
-  LOAD_CHI(addr0,addr1,addr2,addr3);
-  MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);  
+    PREPARE(Xp,Yp,Zp,Tp,8,UUU);
+    LOAD_CHI(addr0,addr1,addr2,addr3);
+    MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);
 
-  PREPARE(Xp,Yp,Zp,Tp,8,UUU);
-  LOAD_CHI(addr0,addr1,addr2,addr3);
-  MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);
+    PREPARE(Xm,Ym,Zm,Tm,8,UUU);
+    LOAD_CHI(addr0,addr1,addr2,addr3);
+    MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);
 
-  PREPARE(Xm,Ym,Zm,Tm,8,UUU);
-  LOAD_CHI(addr0,addr1,addr2,addr3);
-  MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);
-
-  addr0 = (uint64_t) &out;
-  REDUCE(addr0);
+    addr0 = (uint64_t) &out._odata[sF];
+    REDUCE(addr0);
+  }
 #else 
   assert(0);
 #endif
 }
+   
+   
 
 
 #define PERMUTE_DIR3 __asm__ (	\
@@ -711,16 +763,18 @@ template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilImpl 
   VPERM0(Chi_12,Chi_12) );
 
   // This is the single precision 5th direction vectorised kernel
+
 #include <simd/Intel512single.h>
 template <> void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
-							       DoubledGaugeField &U,
-							       DoubledGaugeField &UUU,
-							       SiteSpinor *buf, int sF,
-							       int sU, const FermionField &in, SiteSpinor &out) 
+								    DoubledGaugeField &U,
+								    DoubledGaugeField &UUU,
+								    SiteSpinor *buf, int LLs,
+								    int sU, const FermionField &in, FermionField &out) 
 {
 #ifdef AVX512
   uint64_t gauge0,gauge1,gauge2,gauge3;
   uint64_t addr0,addr1,addr2,addr3;
+  const SiteSpinor *in_p; in_p = &in._odata[0];
 
   int o0,o1,o2,o3; // offsets
   int l0,l1,l2,l3; // local 
@@ -731,66 +785,46 @@ template <> void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(StencilImpl &st, 
   StencilEntry *SE2;
   StencilEntry *SE3;
 
-  // Xp, Yp, Zp, Tp
-  PREPARE(Xp,Yp,Zp,Tp,0,U);
-  LOAD_CHIa(addr0,addr1);
-  if (l0&&p0) {     PERMUTE_DIR3;  }
-  if (l1&&p1) {     PERMUTE_DIR2;  }
-  MULT_XYZT(gauge0,gauge1);  
-  LOAD_CHIa(addr2,addr3);
-  if (l2&&p2) {     PERMUTE_DIR1;  }
-  if (l3&&p3) {     PERMUTE_DIR0;  }
-  MULT_ADD_XYZT(gauge2,gauge3);  
+   for(int s=0;s<LLs;s++){
 
-  PREPARE(Xm,Ym,Zm,Tm,0,U);
-  LOAD_CHIa(addr0,addr1);
-  if (l0&&p0) {     PERMUTE_DIR3;  }
-  if (l1&&p1) {     PERMUTE_DIR2;  }
-  MULT_ADD_XYZT(gauge0,gauge1);  
-  LOAD_CHIa(addr2,addr3);
-  if (l2&&p2) {     PERMUTE_DIR1;  }
-  if (l3&&p3) {     PERMUTE_DIR0;  }
-  MULT_ADD_XYZT(gauge2,gauge3);  
+    int sF=s+LLs*sU;
+    // Xp, Yp, Zp, Tp
+    PREPARE(Xp,Yp,Zp,Tp,0,U);
+    LOAD_CHI(addr0,addr1,addr2,addr3);
+    MULT_LS(gauge0,gauge1,gauge2,gauge3);  
 
-  PREPARE(Xp,Yp,Zp,Tp,8,UUU);
-  LOAD_CHIa(addr0,addr1);
-  if (l0&&p0) {     PERMUTE_DIR3;  }
-  if (l1&&p1) {     PERMUTE_DIR2;  }
-  MULT_ADD_XYZT(gauge0,gauge1);  
-  LOAD_CHIa(addr2,addr3);
-  if (l2&&p2) {     PERMUTE_DIR1;  }
-  if (l3&&p3) {     PERMUTE_DIR0;  }
-  MULT_ADD_XYZT(gauge2,gauge3);  
+    PREPARE(Xm,Ym,Zm,Tm,0,U);
+    LOAD_CHI(addr0,addr1,addr2,addr3);
+    MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);  
 
-  PREPARE(Xm,Ym,Zm,Tm,8,UUU);
-  LOAD_CHIa(addr0,addr1);
-  if (l0&&p0) {     PERMUTE_DIR3;  }
-  if (l1&&p1) {     PERMUTE_DIR2;  }
-  MULT_ADD_XYZT(gauge0,gauge1);  
-  LOAD_CHIa(addr2,addr3);
-  if (l2&&p2) {     PERMUTE_DIR1;  }
-  if (l3&&p3) {     PERMUTE_DIR0;  }
-  MULT_ADD_XYZT(gauge2,gauge3);  
+    PREPARE(Xp,Yp,Zp,Tp,8,UUU);
+    LOAD_CHI(addr0,addr1,addr2,addr3);
+    MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);
 
-  addr0 = (uint64_t) &out;
-  REDUCEa(addr0);
+    PREPARE(Xm,Ym,Zm,Tm,8,UUU);
+    LOAD_CHI(addr0,addr1,addr2,addr3);
+    MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);
+
+    addr0 = (uint64_t) &out._odata[sF];
+    REDUCE(addr0);
+   }
 #else 
-  assert(0);
+    assert(0);
 #endif
 }
 
 
-  // This is the single precision 5th direction vectorised kernel
 #include <simd/Intel512double.h>
 template <> void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
-							       DoubledGaugeField &U,
-							       DoubledGaugeField &UUU,
-							       SiteSpinor *buf, int sF,
-							       int sU, const FermionField &in, SiteSpinor &out) 
+								    DoubledGaugeField &U,
+								    DoubledGaugeField &UUU,
+								    SiteSpinor *buf, int LLs,
+								    int sU, const FermionField &in, FermionField &out) 
 {
 #ifdef AVX512
   uint64_t gauge0,gauge1,gauge2,gauge3;
   uint64_t addr0,addr1,addr2,addr3;
+  const SiteSpinor *in_p; in_p = &in._odata[0];
 
   int o0,o1,o2,o3; // offsets
   int l0,l1,l2,l3; // local 
@@ -801,55 +835,33 @@ template <> void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(StencilImpl &st, 
   StencilEntry *SE2;
   StencilEntry *SE3;
 
-  // Xp, Yp, Zp, Tp
+   for(int s=0;s<LLs;s++){
 
-  PREPARE(Xp,Yp,Zp,Tp,0,U);
-  LOAD_CHIa(addr0,addr1);
-  if (p0) {     PERMUTE_DIR3;  }
-  if (p1) {     PERMUTE_DIR2;  }
-  MULT_XYZT(gauge0,gauge1);  
-  LOAD_CHIa(addr2,addr3);
-  if (p2) {     PERMUTE_DIR1;  }
-  if (p3) {     PERMUTE_DIR0;  }
-  MULT_ADD_XYZT(gauge2,gauge3);  
+    int sF=s+LLs*sU;
+    // Xp, Yp, Zp, Tp
+    PREPARE(Xp,Yp,Zp,Tp,0,U);
+    LOAD_CHI(addr0,addr1,addr2,addr3);
+    MULT_LS(gauge0,gauge1,gauge2,gauge3);  
 
-  PREPARE(Xm,Ym,Zm,Tm,0,U);
-  LOAD_CHIa(addr0,addr1);
-  if (p0) {     PERMUTE_DIR3;  }
-  if (p1) {     PERMUTE_DIR2;  }
-  MULT_ADD_XYZT(gauge0,gauge1);  
-  LOAD_CHIa(addr2,addr3);
-  if (p2) {     PERMUTE_DIR1;  }
-  if (p3) {     PERMUTE_DIR0;  }
-  MULT_ADD_XYZT(gauge2,gauge3);  
+    PREPARE(Xm,Ym,Zm,Tm,0,U);
+    LOAD_CHI(addr0,addr1,addr2,addr3);
+    MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);  
 
-  PREPARE(Xp,Yp,Zp,Tp,8,UUU);
-  LOAD_CHIa(addr0,addr1);
-  if (p0) {     PERMUTE_DIR3;  }
-  if (p1) {     PERMUTE_DIR2;  }
-  MULT_ADD_XYZT(gauge0,gauge1);  
-  LOAD_CHIa(addr2,addr3);
-  if (p2) {     PERMUTE_DIR1;  }
-  if (p3) {     PERMUTE_DIR0;  }
-  MULT_ADD_XYZT(gauge2,gauge3);  
+    PREPARE(Xp,Yp,Zp,Tp,8,UUU);
+    LOAD_CHI(addr0,addr1,addr2,addr3);
+    MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);
 
-  PREPARE(Xm,Ym,Zm,Tm,8,UUU);
-  LOAD_CHIa(addr0,addr1);
-  if (p0) {     PERMUTE_DIR3;  }
-  if (p1) {     PERMUTE_DIR2;  }
-  MULT_ADD_XYZT(gauge0,gauge1);  
-  LOAD_CHIa(addr2,addr3);
-  if (p2) {     PERMUTE_DIR1;  }
-  if (p3) {     PERMUTE_DIR0;  }
-  MULT_ADD_XYZT(gauge2,gauge3);  
+    PREPARE(Xm,Ym,Zm,Tm,8,UUU);
+    LOAD_CHI(addr0,addr1,addr2,addr3);
+    MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);
 
-  addr0 = (uint64_t) &out;
-  REDUCEa(addr0);
+    addr0 = (uint64_t) &out._odata[sF];
+    REDUCE(addr0);
+   }
 #else 
-  assert(0);
+    assert(0);
 #endif
 }
-
 
 
 FermOpStaggeredTemplateInstantiate(StaggeredKernels);
