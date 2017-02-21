@@ -302,8 +302,7 @@ namespace Grid {
       int words=sizeof(scalar_object)/sizeof(scalar_type);
 
 
-PARALLEL_FOR_LOOP
-      for(int ss=0;ss<osites;ss++){
+      parallel_for(int ss=0;ss<osites;ss++){
 
 	std::vector<scalar_object> buf(Nsimd);
 	for(int m=0;m<multiplicity;m++) {// Draw from same generator multiplicity times

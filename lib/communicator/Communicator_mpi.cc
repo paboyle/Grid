@@ -158,7 +158,7 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 {
   int myrank = _processor;
   int ierr;
-  if ( CommunicatorPolicy == CommunicatorPolicyIsend ) { 
+  if ( CommunicatorPolicy == CommunicatorPolicyConcurrent ) { 
     MPI_Request xrq;
     MPI_Request rrq;
 
@@ -178,7 +178,7 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 }
 void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
 {
-  if ( CommunicatorPolicy == CommunicatorPolicyIsend ) { 
+  if ( CommunicatorPolicy == CommunicatorPolicyConcurrent ) { 
     int nreq=list.size();
     std::vector<MPI_Status> status(nreq);
     int ierr = MPI_Waitall(nreq,&list[0],&status[0]);

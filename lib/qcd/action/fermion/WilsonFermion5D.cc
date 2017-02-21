@@ -275,8 +275,7 @@ void WilsonFermion5D<Impl>::DhopDir(const FermionField &in, FermionField &out,in
   assert(dirdisp<=7);
   assert(dirdisp>=0);
 
-PARALLEL_FOR_LOOP
-  for(int ss=0;ss<Umu._grid->oSites();ss++){
+  parallel_for(int ss=0;ss<Umu._grid->oSites();ss++){
     for(int s=0;s<Ls;s++){
       int sU=ss;
       int sF = s+Ls*sU; 
@@ -323,8 +322,7 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
     ////////////////////////
 
     DerivDhopComputeTime -= usecond();
-    PARALLEL_FOR_LOOP
-    for (int sss = 0; sss < U._grid->oSites(); sss++) {
+    parallel_for (int sss = 0; sss < U._grid->oSites(); sss++) {
       for (int s = 0; s < Ls; s++) {
         int sU = sss;
         int sF = s + Ls * sU;
@@ -493,73 +491,18 @@ void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOr
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
 
   if (dag == DaggerYes) {
-    PARALLEL_FOR_LOOP
-    for (int ss = 0; ss < U._grid->oSites(); ss++) {
+    parallel_for (int ss = 0; ss < U._grid->oSites(); ss++) {
       int sU = ss;
       int sF = LLs * sU;
       Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
     }
   } else {
-    PARALLEL_FOR_LOOP
-    for (int ss = 0; ss < U._grid->oSites(); ss++) {
+    parallel_for (int ss = 0; ss < U._grid->oSites(); ss++) {
       int sU = ss;
       int sF = LLs * sU;
       Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
     }
   }
-  /*
-
-  if (dag == DaggerYes) {
-    PARALLEL_FOR_LOOP
-    for (int ss = 0; ss < U._grid->oSites(); ss++) {
-      int sU = ss;
-      int sF = LLs * sU;
-      Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
-    }
-#ifdef AVX512_SWITCHOFF
-  } else if (stat.is_init() ) {
-
-    int nthreads;
-    stat.start();
-#pragma omp parallel
-    {
-#pragma omp master
-    nthreads = omp_get_num_threads();
-    int mythread = omp_get_thread_num();
-    stat.enter(mythread);
-#pragma omp for nowait
-    for(int ss=0;ss<U._grid->oSites();ss++) {
-      int sU=ss;
-      int sF=LLs*sU;
-      Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
-    }
-    stat.exit(mythread);
-    }
-    stat.accum(nthreads);
-#endif
-  } else {
-#if 1
-    PARALLEL_FOR_LOOP
-    for (int ss = 0; ss < U._grid->oSites(); ss++) {
-      int sU = ss;
-      int sF = LLs * sU;
-      Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out);
-    }
-#else
-#ifdef GRID_OMP
-#pragma omp parallel 
-#endif
-    {
-      int len = U._grid->oSites();
-      int me, myoff,mywork;
-      GridThread::GetWorkBarrier(len,me, mywork,myoff);
-      int sF = LLs * myoff;
-      Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,myoff,LLs,mywork,in,out);
-    }
-#endif
-  }
-  */
-
   DhopComputeTime+=usecond();
 }
 

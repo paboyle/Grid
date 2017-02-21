@@ -51,6 +51,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define PARALLEL_CRITICAL
 #endif
 
+#define parallel_for       PARALLEL_FOR_LOOP for
+#define parallel_for_nest2 PARALLEL_NESTED_LOOP2 for
+
 namespace Grid {
 
   // Introduce a class to gain deterministic bit reproducible reduction.

@@ -33,7 +33,7 @@ namespace Grid {
 ///////////////////////////////////////////////////////////////
 void *              CartesianCommunicator::ShmCommBuf;
 uint64_t            CartesianCommunicator::MAX_MPI_SHM_BYTES   = 128*1024*1024; 
-CartesianCommunicator::CommunicatorPolicy_t  CartesianCommunicator::CommunicatorPolicy= CartesianCommunicator::CommunicatorPolicySendrecv;
+CartesianCommunicator::CommunicatorPolicy_t  CartesianCommunicator::CommunicatorPolicy= CartesianCommunicator::CommunicatorPolicyConcurrent;
 
 /////////////////////////////////
 // Alloc, free shmem region

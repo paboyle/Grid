@@ -194,8 +194,7 @@ namespace QCD {
       GaugeLinkField tmp(mat._grid);
       tmp = zero;
       
-      PARALLEL_FOR_LOOP
-      for(int sss=0;sss<tmp._grid->oSites();sss++){
+      parallel_for(int sss=0;sss<tmp._grid->oSites();sss++){
 	int sU=sss;
 	for(int s=0;s<Ls;s++){
 	  int sF = s+Ls*sU;
@@ -445,8 +444,7 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
        Uconj = where(coor==neglink,-Uconj,Uconj);
      }
 	  
-PARALLEL_FOR_LOOP
-     for(auto ss=U.begin();ss<U.end();ss++){
+     parallel_for(auto ss=U.begin();ss<U.end();ss++){
        Uds[ss](0)(mu) = U[ss]();
        Uds[ss](1)(mu) = Uconj[ss]();
      }
@@ -459,8 +457,7 @@ PARALLEL_FOR_LOOP
        Utmp = where(coor==0,Uconj,Utmp);
      }
 	  
-PARALLEL_FOR_LOOP
-     for(auto ss=U.begin();ss<U.end();ss++){
+     parallel_for(auto ss=U.begin();ss<U.end();ss++){
        Uds[ss](0)(mu+4) = Utmp[ss]();
      }
 	  
@@ -469,8 +466,7 @@ PARALLEL_FOR_LOOP
        Utmp = where(coor==0,U,Utmp);
      }
 	  
-PARALLEL_FOR_LOOP
-     for(auto ss=U.begin();ss<U.end();ss++){
+     parallel_for(auto ss=U.begin();ss<U.end();ss++){
        Uds[ss](1)(mu+4) = Utmp[ss]();
      }
 	  
@@ -484,8 +480,7 @@ PARALLEL_FOR_LOOP
    GaugeLinkField link(mat._grid);
    // use lorentz for flavour as hack.
    auto tmp = TraceIndex<SpinIndex>(outerProduct(Btilde, A));
-PARALLEL_FOR_LOOP
-   for (auto ss = tmp.begin(); ss < tmp.end(); ss++) {
+   parallel_for(auto ss = tmp.begin(); ss < tmp.end(); ss++) {
      link[ss]() = tmp[ss](0, 0) - conjugate(tmp[ss](1, 1));
    }
    PokeIndex<LorentzIndex>(mat, link, mu);
@@ -498,8 +493,7 @@ PARALLEL_FOR_LOOP
 	
    GaugeLinkField tmp(mat._grid);
    tmp = zero;
-PARALLEL_FOR_LOOP
-   for (int ss = 0; ss < tmp._grid->oSites(); ss++) {
+   parallel_for(int ss = 0; ss < tmp._grid->oSites(); ss++) {
      for (int s = 0; s < Ls; s++) {
        int sF = s + Ls * ss;
        auto ttmp = traceIndex<SpinIndex>(outerProduct(Btilde[sF], Atilde[sF]));

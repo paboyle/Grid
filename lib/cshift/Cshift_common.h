@@ -58,8 +58,7 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<cobj> &buffer,int dimen
 
   int stride=rhs._grid->_slice_stride[dimension];
   if ( cbmask == 0x3 ) { 
-PARALLEL_NESTED_LOOP2
-    for(int n=0;n<e1;n++){
+    parallel_for_nest2(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int o  = n*stride;
 	int bo = n*e2;
@@ -78,8 +77,7 @@ PARALLEL_NESTED_LOOP2
 	 }
        }
      }
-PARALLEL_FOR_LOOP     
-     for(int i=0;i<table.size();i++){
+     parallel_for(int i=0;i<table.size();i++){
        buffer[off+table[i].first]=compress(rhs._odata[so+table[i].second]);
      }
   }
@@ -105,8 +103,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename cobj::scalar_
   int n1=rhs._grid->_slice_stride[dimension];
 
   if ( cbmask ==0x3){
-PARALLEL_NESTED_LOOP2
-    for(int n=0;n<e1;n++){
+    parallel_for_nest2(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 
 	int o      =   n*n1;
@@ -122,8 +119,7 @@ PARALLEL_NESTED_LOOP2
     // Case of SIMD split AND checker dim cannot currently be hit, except in 
     // Test_cshift_red_black code.
     std::cout << " Dense packed buffer WARNING " <<std::endl;
-PARALLEL_NESTED_LOOP2
-    for(int n=0;n<e1;n++){
+    parallel_for_nest2(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 
 	int o=n*n1;
@@ -175,8 +171,7 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
   int stride=rhs._grid->_slice_stride[dimension];
   
   if ( cbmask ==0x3 ) {
-PARALLEL_NESTED_LOOP2
-    for(int n=0;n<e1;n++){
+    parallel_for_nest2(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int o   =n*rhs._grid->_slice_stride[dimension];
 	int bo  =n*rhs._grid->_slice_block[dimension];
@@ -195,8 +190,7 @@ PARALLEL_NESTED_LOOP2
 	}
       }
     }
-PARALLEL_FOR_LOOP     
-     for(int i=0;i<table.size();i++){
+    parallel_for(int i=0;i<table.size();i++){
        //       std::cout << "Rcv"<< table[i].first << " " << table[i].second << " " <<buffer[table[i].second]<<std::endl;
        rhs._odata[table[i].first]=buffer[table[i].second];
      }
@@ -220,8 +214,7 @@ PARALLEL_FOR_LOOP
   int e2=rhs._grid->_slice_block[dimension];
 
   if(cbmask ==0x3 ) {
-PARALLEL_NESTED_LOOP2
-    for(int n=0;n<e1;n++){
+    parallel_for_nest2(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int o      = n*rhs._grid->_slice_stride[dimension];
 	int offset = b+n*rhs._grid->_slice_block[dimension];
@@ -265,8 +258,7 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
   int e2=rhs._grid->_slice_block[dimension];
   int stride = rhs._grid->_slice_stride[dimension];
   if(cbmask == 0x3 ){
-PARALLEL_NESTED_LOOP2
-    for(int n=0;n<e1;n++){
+    parallel_for_nest2(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
  
         int o =n*stride+b;
@@ -275,8 +267,7 @@ PARALLEL_NESTED_LOOP2
       }
     }
   } else { 
-PARALLEL_NESTED_LOOP2
-    for(int n=0;n<e1;n++){
+    parallel_for_nest2(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
  
         int o =n*stride+b;
@@ -306,8 +297,8 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
   int e1=rhs._grid->_slice_nblock[dimension];
   int e2=rhs._grid->_slice_block [dimension];
   int stride = rhs._grid->_slice_stride[dimension];
-PARALLEL_NESTED_LOOP2
-  for(int n=0;n<e1;n++){
+
+  parallel_for_nest2(int n=0;n<e1;n++){
   for(int b=0;b<e2;b++){
 
       int o  =n*stride;

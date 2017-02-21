@@ -81,77 +81,14 @@ template<class vobj,class cobj,class compressor>
 void Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so)
 {
   int num=table.size();
-PARALLEL_FOR_LOOP
-  for(int i=0;i<num;i++){
+  parallel_for(int i=0;i<num;i++){
     vstream(buffer[off+table[i].first],compress(rhs._odata[so+table[i].second]));
-    //    buffer[off+table[i].first]=compress(rhs._odata[so+table[i].second]);
   }
 }
 
 ///////////////////////////////////////////////////////////////////
 // Gather for when there *is* need to SIMD split with compression
 ///////////////////////////////////////////////////////////////////
-/*
-template<class cobj,class vobj,class compressor> double
-Gather_plane_exchange(const Lattice<vobj> &rhs,
-		      std::vector<cobj *> pointers,int dimension,int plane,int cbmask,compressor &compress,int type)
-{
-  int rd = rhs._grid->_rdimensions[dimension];
-  double t1,t2;
-  if ( !rhs._grid->CheckerBoarded(dimension) ) {
-    cbmask = 0x3;
-  }
-
-  int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-  int e1  =rhs._grid->_slice_nblock[dimension];
-  int e2  =rhs._grid->_slice_block [dimension];
-  int n1  =rhs._grid->_slice_stride[dimension];
-
-  // Need to switch to a table loop
-  std::vector<std::pair<int,int> > table;
-
-  if ( cbmask ==0x3){
-    for(int n=0;n<e1;n++){
-      for(int b=0;b<e2;b++){
-	int o      =   n*n1;
-	int offset = b+n*e2;
-	table.push_back(std::pair<int,int> (offset,o+b));
-      }
-    }
-  } else { 
-    // Case of SIMD split AND checker dim cannot currently be hit, except in 
-    // Test_cshift_red_black code.
-    for(int n=0;n<e1;n++){
-      for(int b=0;b<e2;b++){
-	int o=n*n1;
-	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
-	int offset = b+n*e2;
-
-	if ( ocb & cbmask ) {
-	  table.push_back(std::pair<int,int> (offset,o+b));
-	}
-      }
-    }
-  }
-
-  assert( (table.size()&0x1)==0);
-  t1=usecond();
-PARALLEL_FOR_LOOP     
-  for(int j=0;j<table.size()/2;j++){
-    //    buffer[off+table[i].first]=compress(rhs._odata[so+table[i].second]);
-    cobj temp1 =compress(rhs._odata[so+table[2*j].second]);
-    cobj temp2 =compress(rhs._odata[so+table[2*j+1].second]);
-    cobj temp3;
-    cobj temp4;
-    exchange(temp3,temp4,temp1,temp2,type);
-    vstream(pointers[0][j],temp3);
-    vstream(pointers[1][j],temp4);
-  }
-  t2=usecond();
-  return t2-t1;
-}
-*/
-
 template<class cobj,class vobj,class compressor>
 void Gather_plane_exchange_table(const Lattice<vobj> &rhs,
 				 std::vector<cobj *> pointers,int dimension,int plane,int cbmask,compressor &compress,int type) __attribute__((noinline));
@@ -164,8 +101,7 @@ void Gather_plane_exchange_table(std::vector<std::pair<int,int> >& table,const L
   assert( (table.size()&0x1)==0);
   int num=table.size()/2;
   int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-PARALLEL_FOR_LOOP     
-  for(int j=0;j<num;j++){
+  parallel_for(int j=0;j<num;j++){
     //    buffer[off+table[i].first]=compress(rhs._odata[so+table[i].second]);
     cobj temp1 =compress(rhs._odata[so+table[2*j].second]);
     cobj temp2 =compress(rhs._odata[so+table[2*j+1].second]);
@@ -235,19 +171,14 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
 					  Packets[i].recv_buf,
 					  Packets[i].from_rank,
 					  Packets[i].bytes);
-      if( _grid->CommunicatorPolicy == CartesianCommunicator::CommunicatorPolicySendrecv ) {
-	_grid->StencilSendToRecvFromComplete(reqs[i]);
-      }
     }
     commtime+=usecond();
   }
   void CommunicateComplete(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
     commtime-=usecond();
-    if( _grid->CommunicatorPolicy == CartesianCommunicator::CommunicatorPolicyIsend ) {
-      for(int i=0;i<Packets.size();i++){
-	_grid->StencilSendToRecvFromComplete(reqs[i]);
-      }
+    for(int i=0;i<Packets.size();i++){
+      _grid->StencilSendToRecvFromComplete(reqs[i]);
     }
     _grid->StencilBarrier();// Synch shared memory on a single nodes
     commtime+=usecond();
@@ -327,14 +258,12 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
       //      std::ofstream fout(fname);
 
       if ( Mergers[i].exchange == 0 ) { 
-PARALLEL_FOR_LOOP
-        for(int o=0;o<Mergers[i].buffer_size;o++){
+	parallel_for(int o=0;o<Mergers[i].buffer_size;o++){
 	  merge1(Mergers[i].mpointer[o],Mergers[i].rpointers,o);
 	  //	fout<<o<<" "<<Mergers[i].mpointer[o]<<std::endl;
 	}
       } else { 
-PARALLEL_FOR_LOOP
-        for(int o=0;o<Mergers[i].buffer_size/2;o++){
+	parallel_for(int o=0;o<Mergers[i].buffer_size/2;o++){
 	  exchange(Mergers[i].mpointer[2*o],Mergers[i].mpointer[2*o+1],
 		   Mergers[i].vpointers[0][o],Mergers[i].vpointers[1][o],Mergers[i].type);
 	  //	  cobj temp1,temp2;

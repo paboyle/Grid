@@ -121,8 +121,7 @@ public:
     assert( (cb==Odd) || (cb==Even));
     checkerboard=cb;
 
-PARALLEL_FOR_LOOP
-    for(int ss=0;ss<_grid->oSites();ss++){
+    parallel_for(int ss=0;ss<_grid->oSites();ss++){
 #ifdef STREAMING_STORES
       vobj tmp = eval(ss,expr);
       vstream(_odata[ss] ,tmp);
@@ -144,8 +143,7 @@ PARALLEL_FOR_LOOP
     assert( (cb==Odd) || (cb==Even));
     checkerboard=cb;
 
-PARALLEL_FOR_LOOP
-    for(int ss=0;ss<_grid->oSites();ss++){
+    parallel_for(int ss=0;ss<_grid->oSites();ss++){
 #ifdef STREAMING_STORES
       vobj tmp = eval(ss,expr);
       vstream(_odata[ss] ,tmp);
@@ -167,8 +165,7 @@ PARALLEL_FOR_LOOP
     assert( (cb==Odd) || (cb==Even));
     checkerboard=cb;
 
-PARALLEL_FOR_LOOP
-    for(int ss=0;ss<_grid->oSites();ss++){
+    parallel_for(int ss=0;ss<_grid->oSites();ss++){
 #ifdef STREAMING_STORES
       //vobj tmp = eval(ss,expr);
       vstream(_odata[ss] ,eval(ss,expr));
@@ -191,8 +188,7 @@ PARALLEL_FOR_LOOP
     checkerboard=cb;
 
     _odata.resize(_grid->oSites());
-PARALLEL_FOR_LOOP
-    for(int ss=0;ss<_grid->oSites();ss++){
+    parallel_for(int ss=0;ss<_grid->oSites();ss++){
 #ifdef STREAMING_STORES
       vobj tmp = eval(ss,expr);
       vstream(_odata[ss] ,tmp);
@@ -213,8 +209,7 @@ PARALLEL_FOR_LOOP
     checkerboard=cb;
 
     _odata.resize(_grid->oSites());
-PARALLEL_FOR_LOOP
-    for(int ss=0;ss<_grid->oSites();ss++){
+    parallel_for(int ss=0;ss<_grid->oSites();ss++){
 #ifdef STREAMING_STORES
       vobj tmp = eval(ss,expr);
       vstream(_odata[ss] ,tmp);
@@ -235,8 +230,7 @@ PARALLEL_FOR_LOOP
     checkerboard=cb;
 
     _odata.resize(_grid->oSites());
-PARALLEL_FOR_LOOP
-    for(int ss=0;ss<_grid->oSites();ss++){
+    parallel_for(int ss=0;ss<_grid->oSites();ss++){
       vstream(_odata[ss] ,eval(ss,expr));
     }
   };
@@ -258,8 +252,7 @@ PARALLEL_FOR_LOOP
     	_grid = r._grid;
     	checkerboard = r.checkerboard;
     	_odata.resize(_grid->oSites());// essential
-  		PARALLEL_FOR_LOOP
-        for(int ss=0;ss<_grid->oSites();ss++){
+	parallel_for(int ss=0;ss<_grid->oSites();ss++){
             _odata[ss]=r._odata[ss];
         }  	
     }
@@ -269,8 +262,7 @@ PARALLEL_FOR_LOOP
     virtual ~Lattice(void) = default;
     
     template<class sobj> strong_inline Lattice<vobj> & operator = (const sobj & r){
-PARALLEL_FOR_LOOP
-        for(int ss=0;ss<_grid->oSites();ss++){
+      parallel_for(int ss=0;ss<_grid->oSites();ss++){
             this->_odata[ss]=r;
         }
         return *this;
@@ -279,8 +271,7 @@ PARALLEL_FOR_LOOP
       this->checkerboard = r.checkerboard;
       conformable(*this,r);
       
-PARALLEL_FOR_LOOP
-        for(int ss=0;ss<_grid->oSites();ss++){
+      parallel_for(int ss=0;ss<_grid->oSites();ss++){
             this->_odata[ss]=r._odata[ss];
         }
         return *this;

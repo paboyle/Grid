@@ -222,8 +222,7 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
     ////////////////////////
     // Call the single hop
     ////////////////////////
-    PARALLEL_FOR_LOOP
-    for (int sss = 0; sss < B._grid->oSites(); sss++) {
+    parallel_for (int sss = 0; sss < B._grid->oSites(); sss++) {
       Kernels::DhopDir(st, U, st.CommBuf(), sss, sss, B, Btilde, mu,
                                gamma);
     }
@@ -333,8 +332,7 @@ void WilsonFermion<Impl>::DhopDirDisp(const FermionField &in, FermionField &out,
 
   Stencil.HaloExchange(in, compressor);
 
-  PARALLEL_FOR_LOOP
-  for (int sss = 0; sss < in._grid->oSites(); sss++) {
+  parallel_for (int sss = 0; sss < in._grid->oSites(); sss++) {
     Kernels::DhopDir(Stencil, Umu, Stencil.CommBuf(), sss, sss, in, out, dirdisp, gamma);
   }
 };
@@ -350,13 +348,11 @@ void WilsonFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
   st.HaloExchange(in, compressor);
 
   if (dag == DaggerYes) {
-    PARALLEL_FOR_LOOP
-    for (int sss = 0; sss < in._grid->oSites(); sss++) {
+    parallel_for (int sss = 0; sss < in._grid->oSites(); sss++) {
       Kernels::DhopSiteDag(st, lo, U, st.CommBuf(), sss, sss, 1, 1, in, out);
     }
   } else {
-    PARALLEL_FOR_LOOP
-    for (int sss = 0; sss < in._grid->oSites(); sss++) {
+    parallel_for (int sss = 0; sss < in._grid->oSites(); sss++) {
       Kernels::DhopSite(st, lo, U, st.CommBuf(), sss, sss, 1, 1, in, out);
     }
   }

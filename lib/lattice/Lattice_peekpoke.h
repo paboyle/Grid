@@ -44,22 +44,20 @@ namespace Grid {
     {
       Lattice<decltype(peekIndex<Index>(lhs._odata[0],i))> ret(lhs._grid);
       ret.checkerboard=lhs.checkerboard;
-PARALLEL_FOR_LOOP
-        for(int ss=0;ss<lhs._grid->oSites();ss++){
-	  ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i);
-        }
-        return ret;
+      parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+	ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i);
+      }
+      return ret;
     };
     template<int Index,class vobj>
-       auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))>
+      auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))>
     {
       Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))> ret(lhs._grid);
       ret.checkerboard=lhs.checkerboard;
-PARALLEL_FOR_LOOP
-        for(int ss=0;ss<lhs._grid->oSites();ss++){
-	  ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i,j);
-        }
-        return ret;
+      parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+	ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i,j);
+      }
+      return ret;
     };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -68,18 +66,16 @@ PARALLEL_FOR_LOOP
     template<int Index,class vobj> 
     void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0],0))> & rhs,int i)
     {
-PARALLEL_FOR_LOOP
-        for(int ss=0;ss<lhs._grid->oSites();ss++){
-	  pokeIndex<Index>(lhs._odata[ss],rhs._odata[ss],i);
-	}      
+      parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+	pokeIndex<Index>(lhs._odata[ss],rhs._odata[ss],i);
+      }      
     }
     template<int Index,class vobj>
       void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0],0,0))> & rhs,int i,int j)
     {
-PARALLEL_FOR_LOOP
-        for(int ss=0;ss<lhs._grid->oSites();ss++){
-	  pokeIndex<Index>(lhs._odata[ss],rhs._odata[ss],i,j);
-	}      
+      parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+	pokeIndex<Index>(lhs._odata[ss],rhs._odata[ss],i,j);
+      }      
     }
 
     //////////////////////////////////////////////////////
@@ -130,9 +126,6 @@ PARALLEL_FOR_LOOP
       int Nsimd = grid->Nsimd();
 
       assert( l.checkerboard == l._grid->CheckerBoard(site));
-
-      // FIXME
-      //      assert( sizeof(sobj)*Nsimd == sizeof(vobj));
 
       int rank,odx,idx;
       grid->GlobalCoorToRankIndex(rank,odx,idx,site);

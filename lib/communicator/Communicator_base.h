@@ -118,7 +118,7 @@ class CartesianCommunicator {
   static void * ShmCommBuf;
 
   // Isend/Irecv/Wait, or Sendrecv blocking
-  enum CommunicatorPolicy_t { CommunicatorPolicyIsend , CommunicatorPolicySendrecv };
+  enum CommunicatorPolicy_t { CommunicatorPolicyConcurrent, CommunicatorPolicySequential };
   static CommunicatorPolicy_t CommunicatorPolicy;
   static void SetCommunicatorPolicy(CommunicatorPolicy_t policy ) { CommunicatorPolicy = policy; }
 

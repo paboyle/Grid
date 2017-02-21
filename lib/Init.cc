@@ -342,11 +342,11 @@ void Grid_init(int *argc,char ***argv)
   } else {
     QCD::WilsonKernelsStatic::Comms = QCD::WilsonKernelsStatic::CommsThenCompute;
   }
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-isend") ){
-    CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicyIsend);
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-concurrent") ){
+    CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicyConcurrent);
   }
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-sendrecv") ){
-    CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicySendrecv);
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-sequential") ){
+    CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicySequential);
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--lebesgue") ){
     LebesgueOrder::UseLebesgueOrder=1;
