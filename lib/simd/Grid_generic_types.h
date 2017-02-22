@@ -75,6 +75,6 @@ namespace Optimization {
 
   typedef vec<float>   vecf;
   typedef vec<double>  vecd;
-  typedef vec<Integer>     veci;
+  typedef vec<Integer> veci;
   
 }}

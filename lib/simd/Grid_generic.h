@@ -163,13 +163,26 @@ namespace Optimization {
       
       VECTOR_FOR(i, W<T>::c, 1)
       {
-         out.v[2*i]   = a[2*i]*b[2*i];
-         out.v[2*i+1] = a[2*i]*b[2*i+1];
+         out.v[2*i]   = a.v[2*i]*b.v[2*i];
+         out.v[2*i+1] = a.v[2*i]*b.v[2*i+1];
       }      
       return out;
-    };
+    }
   };
 
+  struct MaddRealPart{
+    template <typename T>
+    inline vec<T> operator()(vec<T> a, vec<T> b, vec<T> c){
+      vec<T> out;
+      
+      VECTOR_FOR(i, W<T>::c, 1)
+      {
+         out.v[2*i]   = a.v[2*i]*b.v[2*i] + c.v[2*i];
+         out.v[2*i+1] = a.v[2*i]*b.v[2*i+1] + c.v[2*i+1];
+      }      
+      return out;
+    }
+  };
   
   struct MultComplex{
     // Complex
@@ -300,6 +313,11 @@ namespace Optimization {
   }
   
   struct Rotate{
+      
+    template <int n, typename T> static inline vec<T> tRotate(vec<T> in){
+      return rotate(in, n);
+    }
+    
     template <typename T>
     static inline vec<T> rotate(vec<T> in, int n){
       vec<T> out;
@@ -407,6 +425,7 @@ namespace Optimization {
   typedef Optimization::Mult        MultSIMD;
   typedef Optimization::MultComplex MultComplexSIMD;
   typedef Optimization::MultRealPart MultRealPartSIMD;
+  typedef Optimization::MaddRealPart MaddRealPartSIMD;
   typedef Optimization::Conj        ConjSIMD;
   typedef Optimization::TimesMinusI TimesMinusISIMD;
   typedef Optimization::TimesI      TimesISIMD;
