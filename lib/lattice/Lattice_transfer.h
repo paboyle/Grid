@@ -388,11 +388,11 @@ void InsertSlice(Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int 
     std::vector<int> lcoor(nl);
     std::vector<int> hcoor(nh);
     lg->LocalIndexToLocalCoor(idx,lcoor);
-    dl=0;
+    int ddl=0;
     hcoor[orthog] = slice;
     for(int d=0;d<nh;d++){
       if ( d!=orthog ) { 
-	hcoor[d]=lcoor[dl++];
+	hcoor[d]=lcoor[ddl++];
       }
     }
     peekLocalSite(s,lowDim,lcoor);
@@ -429,11 +429,11 @@ void ExtractSlice(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice, in
     std::vector<int> lcoor(nl);
     std::vector<int> hcoor(nh);
     lg->LocalIndexToLocalCoor(idx,lcoor);
-    dl=0;
+    ddl=0;
     hcoor[orthog] = slice;
     for(int d=0;d<nh;d++){
       if ( d!=orthog ) { 
-	hcoor[d]=lcoor[dl++];
+	hcoor[d]=lcoor[ddl++];
       }
     }
     peekLocalSite(s,higherDim,hcoor);
