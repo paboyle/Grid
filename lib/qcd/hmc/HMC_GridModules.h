@@ -38,11 +38,11 @@ namespace QCD {
 
 class GridModuleParameters: Serializable{
   
+public: 
   GRID_SERIALIZABLE_CLASS_MEMBERS(GridModuleParameters,
   std::string, lattice,
   std::string,  mpi);
-
-public: 
+  
   // these namings are ugly
   // also ugly the distinction between the serializable members
   // and this
