@@ -70,6 +70,13 @@ AC_ARG_WITH([fftw],
             [AM_CXXFLAGS="-I$with_fftw/include $AM_CXXFLAGS"]
             [AM_LDFLAGS="-L$with_fftw/lib $AM_LDFLAGS"])
 
+############### LIME
+AC_ARG_WITH([lime],
+            [AS_HELP_STRING([--with-lime=prefix],
+            [try this for a non-standard install prefix of the LIME library])],
+            [AM_CXXFLAGS="-I$with_lime/include $AM_CXXFLAGS"]
+            [AM_LDFLAGS="-L$with_lime/lib $AM_LDFLAGS"])
+
 ############### lapack 
 AC_ARG_ENABLE([lapack],
     [AC_HELP_STRING([--enable-lapack=yes|no|prefix], [enable LAPACK])], 
@@ -155,6 +162,14 @@ AC_SEARCH_LIBS([fftw_execute], [fftw3],
                [AC_DEFINE([HAVE_FFTW], [1], [Define to 1 if you have the `FFTW' library])]
                [have_fftw=true])
 
+AC_SEARCH_LIBS([limeCreateReader], [lime],
+               [AC_DEFINE([HAVE_LIME], [1], [Define to 1 if you have the `LIME' library])]
+               [have_lime=true],
+	       [AC_MSG_WARN(C-LIME library was not found in your system.
+In order to use ILGG file format please install or provide the correct path to your installation
+Info at: http://usqcd.jlab.org/usqcd-docs/c-lime/)])
+
+
 AC_SEARCH_LIBS([H5Fopen], [hdf5_cpp],
                [AC_DEFINE([HAVE_HDF5], [1], [Define to 1 if you have the `HDF5' library])]
                [have_hdf5=true]
@@ -163,15 +178,6 @@ AM_CONDITIONAL(BUILD_HDF5, [ test "${have_hdf5}X" == "trueX" ])
 
 CXXFLAGS=$CXXFLAGS_CPY
 LDFLAGS=$LDFLAGS_CPY
-
-AC_CHECK_LIB([lime],[limeCreateReader],
-  [AC_DEFINE([HAVE_LIME],[1],[Define to 1 if you have the `LIME' library (-llime).])]
-  [have_lime=true]
-  [LIBS="$LIBS -llime"],
-  [AC_MSG_WARN(C-LIME library was not found in your system.
-In order to use ILGG file format please install or provide the correct path to your installation [default search path ~/lime/]
-Info at: http://usqcd.jlab.org/usqcd-docs/c-lime/)])
-
 
 ############### SIMD instruction selection
 AC_ARG_ENABLE([simd],[AC_HELP_STRING([--enable-simd=code],
