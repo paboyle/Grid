@@ -30,6 +30,11 @@ Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
 #ifndef GRID_LATTICE_PEEK_H
 #define GRID_LATTICE_PEEK_H
 
+#if defined __GNUC__
+ #pragma GCC diagnostic push
+ #pragma GCC diagnostic ignored "-Wunused-local-typedefs"
+#endif
+
 ///////////////////////////////////////////////
 // Peeking and poking around
 ///////////////////////////////////////////////
@@ -208,5 +213,10 @@ PARALLEL_FOR_LOOP
     };
 
 }
+
+#if defined __GNUC__
+ #pragma GCC diagnostic pop
+#endif
+
 #endif
 

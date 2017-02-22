@@ -61,7 +61,9 @@ public:
     virtual int CheckerBoardShift(int source_cb,int dim,int shift, int osite){
       return shift;
     }
-    GridCartesian(const std::vector<int> &dimensions,
+  
+  virtual ~GridCartesian() {}
+  GridCartesian(const std::vector<int> &dimensions,
 		  const std::vector<int> &simd_layout,
 		  const std::vector<int> &processor_grid
 		  ) : GridBase(processor_grid)
@@ -82,7 +84,7 @@ public:
             
         _fsites = _gsites = _osites = _isites = 1;
 
-        for(int d=0;d<_ndimension;d++){
+        for(int d=0;d<(int)_ndimension;d++){
 	  _fdimensions[d] = dimensions[d]; // Global dimensions
 	  _gdimensions[d] = _fdimensions[d]; // Global dimensions
 	  _simd_layout[d] = simd_layout[d];
@@ -116,9 +118,9 @@ public:
             
         int block =1;
         int nblock=1;
-        for(int d=0;d<_ndimension;d++) nblock*=_rdimensions[d];
+        for(int d=0;d<(int)_ndimension;d++) nblock*=_rdimensions[d];
             
-        for(int d=0;d<_ndimension;d++){
+        for(int d=0;d<(int)_ndimension;d++){
             nblock/=_rdimensions[d];
             _slice_block[d] =block;
             _slice_stride[d]=_ostride[d]*_rdimensions[d];

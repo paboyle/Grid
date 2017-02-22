@@ -43,6 +43,11 @@ extern "C" {  // for linkage
 #include "lime.h"
 }
 
+#if defined __GNUC__
+ #pragma GCC diagnostic push
+ #pragma GCC diagnostic ignored "-Wunused-local-typedefs"
+#endif
+
 namespace Grid {
 namespace QCD {
 
@@ -175,7 +180,7 @@ class ILDGIO : public BinaryIO {
     typedef LorentzColourMatrixF sobjf;
     typedef iLorentzColourMatrix<vsimd> itype;
     typedef LorentzColourMatrix sobj;
-    GridBase *grid = Umu._grid;
+    //GridBase *grid = Umu._grid;
 
     ILDGField header;
     readHeader(header);
@@ -185,7 +190,8 @@ class ILDGIO : public BinaryIO {
     do {limeReaderNextRecord(LimeR);}
     while (strncmp(limeReaderType(LimeR), "ildg-binary-data",16));
 
-    n_uint64_t nbytes = limeReaderBytes(LimeR);//size of this record (configuration)
+    // n_uint64_t nbytes = 
+      limeReaderBytes(LimeR);//size of this record (configuration)
 
 
     ILDGtype ILDGt(true, LimeR);
@@ -211,7 +217,8 @@ class ILDGIO : public BinaryIO {
     header.floating_point = format;
 
     ILDGUnmunger<fobj, sobj> munge;
-    unsigned int offset = writeHeader(header);
+    // unsigned int offset = 
+      writeHeader(header);
 
     BinaryIO::Uint32Checksum<vobj, fobj>(Umu, munge, header.checksum);
 
@@ -244,6 +251,10 @@ class ILDGIO : public BinaryIO {
 };
 }
 }
+
+#if defined __GNUC__
+ #pragma GCC diagnostic pop
+#endif
 
 //HAVE_LIME
 #endif

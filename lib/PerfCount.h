@@ -205,7 +205,14 @@ public:
   void Stop(void) {
     count=0;
     cycles=0;
+#if defined __GNUC__
+ #pragma GCC diagnostic push
+ #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
     size_t ign;
+#if defined __GNUC__
+ #pragma GCC diagnostic pop
+#endif
 #ifdef __linux__
     if ( fd!= -1) {
       ::ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);

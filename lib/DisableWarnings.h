@@ -31,7 +31,8 @@ directory
 #define DISABLE_WARNINGS_H
 
  //disables and intel compiler specific warning (in json.hpp)
+#if defined(__ICC)
 #pragma warning disable 488  
-
+#endif
 
 #endif

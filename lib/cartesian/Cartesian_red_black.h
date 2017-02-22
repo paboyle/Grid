@@ -52,7 +52,7 @@ public:
     virtual int CheckerBoard(std::vector<int> &site){
       int linear=0;
       assert(site.size()==_ndimension);
-      for(int d=0;d<_ndimension;d++){ 
+      for(int d=0;d<(int)_ndimension;d++){ 
 	if(_checker_dim_mask[d])
 	  linear=linear+site[d];
       }
@@ -159,7 +159,7 @@ public:
 	
       _checker_dim_mask=checker_dim_mask;
 
-      for(int d=0;d<_ndimension;d++){
+      for(int d=0;d<(int)_ndimension;d++){
 	_fdimensions[d] = dimensions[d];
 	_gdimensions[d] = _fdimensions[d];
 	_fsites = _fsites * _fdimensions[d];
@@ -207,9 +207,9 @@ public:
         
       int block =1;
       int nblock=1;
-      for(int d=0;d<_ndimension;d++) nblock*=_rdimensions[d];
+      for(int d=0;d<(int)_ndimension;d++) nblock*=_rdimensions[d];
       
-      for(int d=0;d<_ndimension;d++){
+      for(int d=0;d<(int)_ndimension;d++){
 	nblock/=_rdimensions[d];
 	_slice_block[d] =block;
 	_slice_stride[d]=_ostride[d]*_rdimensions[d];
@@ -221,7 +221,7 @@ public:
       // Create a checkerboard lookup table
       ////////////////////////////////////////////////
       int rvol = 1;
-      for(int d=0;d<_ndimension;d++){
+      for(int d=0;d<(int)_ndimension;d++){
 	rvol=rvol * _rdimensions[d];
       }
       _checker_board.resize(rvol);
@@ -234,7 +234,7 @@ protected:
     virtual int oIndex(std::vector<int> &coor)
     {
       int idx=0;
-      for(int d=0;d<_ndimension;d++) {
+      for(int d=0;d<(int)_ndimension;d++) {
 	if( d==_checker_dim ) {
 	  idx+=_ostride[d]*((coor[d]/2)%_rdimensions[d]);
 	} else {
@@ -247,7 +247,7 @@ protected:
     virtual int iIndex(std::vector<int> &lcoor)
     {
         int idx=0;
-        for(int d=0;d<_ndimension;d++) {
+        for(int d=0;d<(int)_ndimension;d++) {
 	  if( d==_checker_dim ) {
 	    idx+=_istride[d]*(lcoor[d]/(2*_rdimensions[d]));
 	  } else { 

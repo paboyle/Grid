@@ -130,10 +130,10 @@ template<class vobj> inline void extract(const vobj &vec,std::vector<typename vo
   typedef typename vobj::scalar_type scalar_type ;
   typedef typename vobj::vector_type vector_type ;
 
-  static const int Nsimd=sizeof(vector_type)/sizeof(scalar_type);
+  //static const int Nsimd=sizeof(vector_type)/sizeof(scalar_type);
   static const int words=sizeof(vobj)/sizeof(vector_type);
   int Nextr=extracted.size();
-  int s=Nsimd/Nextr;
+  //int s=Nsimd/Nextr;
 
   std::vector<scalar_type *> pointers(Nextr);
   for(int i=0;i<Nextr;i++) 
@@ -204,11 +204,11 @@ void merge(vobj &vec,std::vector<typename vobj::scalar_object> &extracted)
   typedef typename vobj::scalar_type scalar_type ;
   typedef typename vobj::vector_type vector_type ;
   
-  static const int Nsimd=sizeof(vector_type)/sizeof(scalar_type);
+  //static const int Nsimd=sizeof(vector_type)/sizeof(scalar_type);
   static const int words=sizeof(vobj)/sizeof(vector_type);
 
   int Nextr = extracted.size();
-  int splat=Nsimd/Nextr;
+  //int splat=Nsimd/Nextr;
 
   std::vector<scalar_type *> pointers(Nextr);
   for(int i=0;i<Nextr;i++) 

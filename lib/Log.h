@@ -97,10 +97,11 @@ public:
   std::string evidence() {return Painter.colour["YELLOW"];}
   std::string colour() {return Painter.colour[COLOUR];}
 
-  Logger(std::string topNm, int on, std::string nm, Colours& col_class, std::string col)  : active(on),
+  Logger(std::string topNm, int on, std::string nm, Colours& col_class, std::string col)  :
+    Painter(col_class),
+    active(on),
     name(nm),
     topName(topNm),
-    Painter(col_class),
     COLOUR(col) {} ;
   
   void Active(int on) {active = on;};

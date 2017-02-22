@@ -228,7 +228,7 @@ class HybridMonteCarlo {
   HybridMonteCarlo(HMCparameters _Pams, IntegratorType &_Int,
                    GridSerialRNG &_sRNG, GridParallelRNG &_pRNG, 
                    ObsListType _Obs, Field &_U)
-    : Params(_Pams), TheIntegrator(_Int), sRNG(_sRNG), pRNG(_pRNG), Observables(_Obs), Ucur(_U) {}
+    : Params(_Pams), sRNG(_sRNG), pRNG(_pRNG), Ucur(_U), TheIntegrator(_Int), Observables(_Obs) {}
   ~HybridMonteCarlo(){};
 
   void evolve(void) {
@@ -241,9 +241,9 @@ class HybridMonteCarlo {
 
     // Actual updates (evolve a copy Ucopy then copy back eventually)
     unsigned int FinalTrajectory = Params.Trajectories + Params.NoMetropolisUntil + Params.StartTrajectory;
-    for (int traj = Params.StartTrajectory; traj < FinalTrajectory; ++traj) {
+    for (int traj = Params.StartTrajectory; traj < (int)FinalTrajectory; ++traj) {
       std::cout << GridLogMessage << "-- # Trajectory = " << traj << "\n";
-      if (traj < Params.StartTrajectory + Params.NoMetropolisUntil) {
+      if (traj < (int)(Params.StartTrajectory + Params.NoMetropolisUntil)) {
       	std::cout << GridLogMessage << "-- Thermalization" << std::endl;
       }
       
@@ -253,7 +253,7 @@ class HybridMonteCarlo {
       DeltaH = evolve_hmc_step(Ucopy);
       // Metropolis-Hastings test
       bool accept = true;
-      if (traj >= Params.StartTrajectory + Params.NoMetropolisUntil) {
+      if (traj >= (int)(Params.StartTrajectory + Params.NoMetropolisUntil)) {
         accept = metropolis_test(DeltaH);
       } else {
       	std::cout << GridLogMessage << "Skipping Metropolis test" << std::endl;
@@ -268,7 +268,7 @@ class HybridMonteCarlo {
       std::cout << GridLogMessage << "Total time for trajectory (s): " << (t1-t0)/1e6 << std::endl;
 
 
-      for (int obs = 0; obs < Observables.size(); obs++) {
+      for (int obs = 0; obs < (int)Observables.size(); obs++) {
       	std::cout << GridLogDebug << "Observables # " << obs << std::endl;
       	std::cout << GridLogDebug << "Observables total " << Observables.size() << std::endl;
       	std::cout << GridLogDebug << "Observables pointer " << Observables[obs] << std::endl;

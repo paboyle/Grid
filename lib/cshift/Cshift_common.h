@@ -241,7 +241,7 @@ PARALLEL_NESTED_LOOP2
 //////////////////////////////////////////////////////
 template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs, int dimension,int lplane,int rplane,int cbmask)
 {
-  int rd = rhs._grid->_rdimensions[dimension];
+  //int rd = rhs._grid->_rdimensions[dimension];
 
   if ( !rhs._grid->CheckerBoarded(dimension) ) {
     cbmask=0x3;
@@ -283,7 +283,7 @@ PARALLEL_NESTED_LOOP2
 template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vobj> &rhs, int dimension,int lplane,int rplane,int cbmask,int permute_type)
 {
  
-  int rd = rhs._grid->_rdimensions[dimension];
+  //int rd = rhs._grid->_rdimensions[dimension];
 
   if ( !rhs._grid->CheckerBoarded(dimension) ) {
     cbmask=0x3;
@@ -331,8 +331,8 @@ template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice
   GridBase *grid = rhs._grid;
   int fd = grid->_fdimensions[dimension];
   int rd = grid->_rdimensions[dimension];
-  int ld = grid->_ldimensions[dimension];
-  int gd = grid->_gdimensions[dimension];
+  //int ld = grid->_ldimensions[dimension];
+  //int gd = grid->_gdimensions[dimension];
   int ly = grid->_simd_layout[dimension];
 
   // Map to always positive shift modulo global full dimension.
@@ -346,8 +346,8 @@ template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice
 
   for(int x=0;x<rd;x++){       
 
-    int o   = 0;
-    int bo  = x * grid->_ostride[dimension];
+    //int o   = 0;
+    //int bo  = x * grid->_ostride[dimension];
     
     int cb= (cbmask==0x2)? Odd : Even;
 

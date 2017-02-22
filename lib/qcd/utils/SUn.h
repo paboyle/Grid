@@ -32,6 +32,11 @@ directory
 #ifndef QCD_UTIL_SUN_H
 #define QCD_UTIL_SUN_H
 
+#if defined __GNUC__
+ #pragma GCC diagnostic push
+ #pragma GCC diagnostic ignored "-Wunused-local-typedefs"
+#endif
+
 namespace Grid {
 namespace QCD {
 
@@ -794,4 +799,9 @@ typedef SU<Nc> FundamentalMatrices;
 
 }
 }
+
+#if defined __GNUC__
+ #pragma GCC diagnostic pop
+#endif
+
 #endif

@@ -29,6 +29,12 @@ Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
     /*  END LEGAL */
 #ifndef GRID_LATTICE_WHERE_H
 #define GRID_LATTICE_WHERE_H
+
+#if defined __GNUC__
+ #pragma GCC diagnostic push
+ #pragma GCC diagnostic ignored "-Wunused-local-typedefs"
+#endif
+
 namespace Grid {
 // Must implement the predicate gating the 
 // Must be able to reduce the predicate down to a single vInteger per site.
@@ -84,4 +90,9 @@ inline Lattice<vobj> whereWolf(const Lattice<iobj> &predicate,Lattice<vobj> &ift
   return ret;
 }
 }
+
+#if defined __GNUC__
+ #pragma GCC diagnostic pop
+#endif
+
 #endif

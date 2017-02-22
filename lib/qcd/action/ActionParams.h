@@ -39,7 +39,7 @@ namespace QCD {
 struct GparityWilsonImplParams {
   bool overlapCommsCompute;
   std::vector<int> twists;
-  GparityWilsonImplParams() : twists(Nd, 0), overlapCommsCompute(false){};
+  GparityWilsonImplParams() : overlapCommsCompute(false),twists(Nd, 0){};
 };
 
 struct WilsonImplParams {

@@ -40,6 +40,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <sys/utsname.h>
 #include <pwd.h>
 
+#if defined __GNUC__
+ #pragma GCC diagnostic push
+ #pragma GCC diagnostic ignored "-Wunused-local-typedefs"
+#endif
+
 namespace Grid {
 namespace QCD {
 
@@ -109,8 +114,8 @@ inline void NerscMachineCharacteristics(NerscField &header)
   if (pw) header.creator = std::string(pw->pw_name); 
 
   // When
-  std::time_t t = std::time(nullptr);
-  std::tm tm = *std::localtime(&t);
+  //std::time_t t = std::time(nullptr);
+  //std::tm tm = *std::localtime(&t);
   std::ostringstream oss; 
   //  oss << std::put_time(&tm, "%c %Z");
   header.creation_date = oss.str();
@@ -254,7 +259,7 @@ class NerscIO : public BinaryIO {
 // for the header-reader
 static inline int readHeader(std::string file,GridBase *grid,  NerscField &field)
 {
-  int offset=0;
+  //int offset=0;
   std::map<std::string,std::string> header;
   std::string line;
 
@@ -517,6 +522,9 @@ static inline void readRNGState(GridSerialRNG &serial,GridParallelRNG & parallel
 
 };
 
+#if defined __GNUC__
+ #pragma GCC diagnostic pop
+#endif
 
 }}
 #endif

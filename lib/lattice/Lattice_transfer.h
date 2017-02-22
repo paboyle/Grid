@@ -28,6 +28,11 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_LATTICE_TRANSFER_H
 #define GRID_LATTICE_TRANSFER_H
 
+#if defined __GNUC__
+ #pragma GCC diagnostic push
+ #pragma GCC diagnostic ignored "-Wunused-local-typedefs"
+#endif
+
 namespace Grid {
 
 inline void subdivides(GridBase *coarse,GridBase *fine)
@@ -641,11 +646,11 @@ void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
     }
     merge(out._odata[out_oidx], ptrs, 0);
   }
+} 
 }
 
+#if defined __GNUC__
+ #pragma GCC diagnostic pop
+#endif
 
-  
-
- 
-}
 #endif

@@ -32,6 +32,11 @@
 #include <random>
 #include <Grid/sitmo_rng/sitmo_prng_engine.hpp>
 
+#if defined __GNUC__
+ #pragma GCC diagnostic push
+ #pragma GCC diagnostic ignored "-Wunused-local-typedefs"
+#endif
+
 namespace Grid {
 
 
@@ -328,7 +333,7 @@ namespace Grid {
 
         const int num_rand_seed=16;
         std::vector<int> site_seeds(num_rand_seed);
-        for(int i=0;i<site_seeds.size();i++){
+        for(int i=0;i<(int)site_seeds.size();i++){
           site_seeds[i]= ui(pseeder);
         }
 
@@ -427,4 +432,9 @@ namespace Grid {
   }
 
 }
+
+#if defined __GNUC__
+ #pragma GCC diagnostic pop
+#endif
+
 #endif
