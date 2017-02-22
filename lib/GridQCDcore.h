@@ -2,12 +2,12 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./lib/qcd/hmc/HMC.cc
+    Source file: ./lib/Grid.h
 
     Copyright (C) 2015
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: neo <cossu@post.kek.jp>
+Author: azusayamaguchi <ayamaguc@YAMAKAZE.local>
 Author: paboyle <paboyle@ph.ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
@@ -27,10 +27,17 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#include <Grid.h>
 
-namespace Grid{
-  namespace QCD{
+#ifndef GRID_QCD_CORE_H
+#define GRID_QCD_CORE_H
 
-  }
-}
+/////////////////////////
+// Core Grid QCD headers
+/////////////////////////
+#include <Grid/GridCore.h>
+#include <Grid/qcd/QCD.h>
+#include <Grid/qcd/spin/Spin.h>
+#include <Grid/qcd/utils/Utils.h>
+#include <Grid/qcd/representations/Representations.h>
+
+#endif

@@ -25,8 +25,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#include "Grid.h"
-//#include <mcheck.h>
+#include <Grid/GridCore.h>
+
 #include <mpi.h>
 
 #include <semaphore.h>

@@ -31,7 +31,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef  GRID_QCD_WILSON_FERMION_5D_H
 #define  GRID_QCD_WILSON_FERMION_5D_H
 
-#include <Grid/Stat.h>
+#include <Grid/perfmon/Stat.h>
 
 namespace Grid {
 namespace QCD {

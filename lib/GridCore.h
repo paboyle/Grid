@@ -35,13 +35,47 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 //  Copyright (c) 2014 University of Edinburgh. All rights reserved.
 //
 
-#ifndef GRID_H
-#define GRID_H
+#ifndef GRID_BASE_H
+#define GRID_BASE_H
 
-#include <Grid/GridCore.h>
-#include <Grid/GridQCDcore.h>
-#include <Grid/qcd/action/Actions.h>
-#include <Grid/qcd/smearing/Smearing.h>
-#include <Grid/qcd/hmc/HMC_aggregate.h>
+///////////////////
+// Std C++ dependencies
+///////////////////
+#include <cassert>
+#include <complex>
+#include <vector>
+#include <iostream>
+#include <iomanip>
+#include <random>
+#include <functional>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <signal.h>
+#include <ctime>
+#include <sys/time.h>
+#include <chrono>
+
+///////////////////
+// Grid headers
+///////////////////
+#include "Config.h"
+
+#include <Grid/serialisation/Serialisation.h>
+#include <Grid/perfmon/Timer.h>
+#include <Grid/perfmon/PerfCount.h>
+#include <Grid/log/Log.h>
+#include <Grid/allocator/AlignedAllocator.h>
+#include <Grid/simd/Simd.h>
+#include <Grid/threads/Threads.h>
+#include <Grid/util/Util.h>
+#include <Grid/communicator/Communicator.h> 
+#include <Grid/cartesian/Cartesian.h>    
+#include <Grid/tensors/Tensors.h>      
+#include <Grid/lattice/Lattice.h>      
+#include <Grid/cshift/Cshift.h>       
+#include <Grid/stencil/Stencil.h>      
+#include <Grid/parallelIO/BinaryIO.h>
+#include <Grid/algorithms/Algorithms.h>   
 
 #endif

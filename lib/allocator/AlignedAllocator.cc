@@ -1,7 +1,7 @@
 
 
 
-#include <Grid/Grid.h>
+#include <Grid/GridCore.h>
 
 namespace Grid {
 

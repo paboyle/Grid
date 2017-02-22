@@ -30,7 +30,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 
 #include <Grid/Eigen/Dense>
-#include <Grid.h>
+#include <Grid/qcd/action/fermion/FermionCore.h>
+#include <Grid/qcd/action/fermion/CayleyFermion5D.h>
 
 
 namespace Grid {

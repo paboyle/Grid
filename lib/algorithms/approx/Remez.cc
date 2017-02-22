@@ -20,7 +20,7 @@
 #include<iomanip>
 #include<cassert>
 
-#include<algorithms/approx/Remez.h>
+#include<Grid/algorithms/approx/Remez.h>
 
 // Constructor
 AlgRemez::AlgRemez(double lower, double upper, long precision) 

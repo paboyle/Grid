@@ -29,15 +29,14 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
-#include <Grid.h>
+#include <Grid/qcd/action/fermion/FermionCore.h>
+#include <Grid/qcd/action/fermion/WilsonFermion.h>
 
 namespace Grid {
 namespace QCD {
 
-const std::vector<int> WilsonFermionStatic::directions({0, 1, 2, 3, 0, 1, 2,
-                                                        3});
-const std::vector<int> WilsonFermionStatic::displacements({1, 1, 1, 1, -1, -1,
-                                                           -1, -1});
+const std::vector<int> WilsonFermionStatic::directions({0, 1, 2, 3, 0, 1, 2, 3});
+const std::vector<int> WilsonFermionStatic::displacements({1, 1, 1, 1, -1, -1, -1, -1});
 int WilsonFermionStatic::HandOptDslash;
 
 /////////////////////////////////
@@ -52,10 +51,8 @@ WilsonFermion<Impl>::WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
       _grid(&Fgrid),
       _cbgrid(&Hgrid),
       Stencil(&Fgrid, npoint, Even, directions, displacements),
-      StencilEven(&Hgrid, npoint, Even, directions,
-                  displacements),  // source is Even
-      StencilOdd(&Hgrid, npoint, Odd, directions,
-                 displacements),  // source is Odd
+      StencilEven(&Hgrid, npoint, Even, directions,displacements),  // source is Even
+      StencilOdd(&Hgrid, npoint, Odd, directions,displacements),  // source is Odd
       mass(_mass),
       Lebesgue(_grid),
       LebesgueEvenOdd(_cbgrid),
@@ -113,86 +110,85 @@ void WilsonFermion<Impl>::MeooeDag(const FermionField &in, FermionField &out) {
   }
 }
   
-  template <class Impl>
-  void WilsonFermion<Impl>::Mooee(const FermionField &in, FermionField &out) {
-    out.checkerboard = in.checkerboard;
-    typename FermionField::scalar_type scal(4.0 + mass);
-    out = scal * in;
-  }
+template <class Impl>
+void WilsonFermion<Impl>::Mooee(const FermionField &in, FermionField &out) {
+  out.checkerboard = in.checkerboard;
+  typename FermionField::scalar_type scal(4.0 + mass);
+  out = scal * in;
+}
 
-  template <class Impl>
-  void WilsonFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out) {
-    out.checkerboard = in.checkerboard;
-    Mooee(in, out);
-  }
+template <class Impl>
+void WilsonFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out) {
+  out.checkerboard = in.checkerboard;
+  Mooee(in, out);
+}
 
-  template<class Impl>
-  void WilsonFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out) {
-    out.checkerboard = in.checkerboard;
-    out = (1.0/(4.0+mass))*in;
+template<class Impl>
+void WilsonFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out) {
+  out.checkerboard = in.checkerboard;
+  out = (1.0/(4.0+mass))*in;
+}
+  
+template<class Impl>
+void WilsonFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out) {
+  out.checkerboard = in.checkerboard;
+  MooeeInv(in,out);
+}
+
+template<class Impl>
+void WilsonFermion<Impl>::MomentumSpacePropagator(FermionField &out, const FermionField &in,RealD _m) 
+{  
+  typedef typename FermionField::vector_type vector_type;
+  typedef typename FermionField::scalar_type ScalComplex;
+  typedef Lattice<iSinglet<vector_type> > LatComplex;
+  
+  // what type LatticeComplex 
+  conformable(_grid,out._grid);
+  
+  Gamma::GammaMatrix Gmu [] = {
+    Gamma::GammaX,
+    Gamma::GammaY,
+    Gamma::GammaZ,
+    Gamma::GammaT
+  };
+  
+  std::vector<int> latt_size   = _grid->_fdimensions;
+  
+  FermionField   num  (_grid); num  = zero;
+  LatComplex    wilson(_grid); wilson= zero;
+  LatComplex     one  (_grid); one = ScalComplex(1.0,0.0);
+  
+  LatComplex denom(_grid); denom= zero;
+  LatComplex kmu(_grid); 
+  ScalComplex ci(0.0,1.0);
+  // momphase = n * 2pi / L
+  for(int mu=0;mu<Nd;mu++) {
+    
+    LatticeCoordinate(kmu,mu);
+    
+    RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
+    
+    kmu = TwoPiL * kmu;
+    
+    wilson = wilson + 2.0*sin(kmu*0.5)*sin(kmu*0.5); // Wilson term
+    
+    num = num - sin(kmu)*ci*(Gamma(Gmu[mu])*in);    // derivative term
+    
+    denom=denom + sin(kmu)*sin(kmu);
   }
   
-  template<class Impl>
-  void WilsonFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out) {
-    out.checkerboard = in.checkerboard;
-    MooeeInv(in,out);
-  }
-
-  template<class Impl>
-  void WilsonFermion<Impl>::MomentumSpacePropagator(FermionField &out, const FermionField &in,RealD _m) {
-
-    // what type LatticeComplex 
-    conformable(_grid,out._grid);
-
-    typedef typename FermionField::vector_type vector_type;
-    typedef typename FermionField::scalar_type ScalComplex;
-
-    typedef Lattice<iSinglet<vector_type> > LatComplex;
-
-    Gamma::GammaMatrix Gmu [] = {
-      Gamma::GammaX,
-      Gamma::GammaY,
-      Gamma::GammaZ,
-      Gamma::GammaT
-    };
-
-    std::vector<int> latt_size   = _grid->_fdimensions;
-
-    FermionField   num  (_grid); num  = zero;
-    LatComplex    wilson(_grid); wilson= zero;
-    LatComplex     one  (_grid); one = ScalComplex(1.0,0.0);
-
-    LatComplex denom(_grid); denom= zero;
-    LatComplex kmu(_grid); 
-    ScalComplex ci(0.0,1.0);
-    // momphase = n * 2pi / L
-    for(int mu=0;mu<Nd;mu++) {
-
-      LatticeCoordinate(kmu,mu);
-
-      RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
-
-      kmu = TwoPiL * kmu;
-
-      wilson = wilson + 2.0*sin(kmu*0.5)*sin(kmu*0.5); // Wilson term
-
-      num = num - sin(kmu)*ci*(Gamma(Gmu[mu])*in);    // derivative term
-
-      denom=denom + sin(kmu)*sin(kmu);
-    }
-
-    wilson = wilson + _m;     // 2 sin^2 k/2 + m
-
-    num   = num + wilson*in;     // -i gmu sin k + 2 sin^2 k/2 + m
-
-    denom= denom+wilson*wilson; // sin^2 k + (2 sin^2 k/2 + m)^2
-
-    denom= one/denom;
-
-    out = num*denom; // [ -i gmu sin k + 2 sin^2 k/2 + m] / [ sin^2 k + (2 sin^2 k/2 + m)^2 ]
-
-  }
- 
+  wilson = wilson + _m;     // 2 sin^2 k/2 + m
+  
+  num   = num + wilson*in;     // -i gmu sin k + 2 sin^2 k/2 + m
+  
+  denom= denom+wilson*wilson; // sin^2 k + (2 sin^2 k/2 + m)^2
+  
+  denom= one/denom;
+  
+  out = num*denom; // [ -i gmu sin k + 2 sin^2 k/2 + m] / [ sin^2 k + (2 sin^2 k/2 + m)^2 ]
+  
+}
+  
 
 ///////////////////////////////////
 // Internal
@@ -223,8 +219,7 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
     // Call the single hop
     ////////////////////////
     parallel_for (int sss = 0; sss < B._grid->oSites(); sss++) {
-      Kernels::DhopDir(st, U, st.CommBuf(), sss, sss, B, Btilde, mu,
-                               gamma);
+      Kernels::DhopDir(st, U, st.CommBuf(), sss, sss, B, Btilde, mu, gamma);
     }
 
     //////////////////////////////////////////////////
@@ -275,8 +270,7 @@ void WilsonFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U,
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::Dhop(const FermionField &in, FermionField &out,
-                               int dag) {
+void WilsonFermion<Impl>::Dhop(const FermionField &in, FermionField &out, int dag) {
   conformable(in._grid, _grid);  // verifies full grid
   conformable(in._grid, out._grid);
 
@@ -286,8 +280,7 @@ void WilsonFermion<Impl>::Dhop(const FermionField &in, FermionField &out,
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out,
-                                 int dag) {
+void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out, int dag) {
   conformable(in._grid, _cbgrid);    // verifies half grid
   conformable(in._grid, out._grid);  // drops the cb check
 
@@ -298,8 +291,7 @@ void WilsonFermion<Impl>::DhopOE(const FermionField &in, FermionField &out,
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopEO(const FermionField &in, FermionField &out,
-                                 int dag) {
+void WilsonFermion<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag) {
   conformable(in._grid, _cbgrid);    // verifies half grid
   conformable(in._grid, out._grid);  // drops the cb check
 
@@ -310,14 +302,12 @@ void WilsonFermion<Impl>::DhopEO(const FermionField &in, FermionField &out,
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::Mdir(const FermionField &in, FermionField &out,
-                               int dir, int disp) {
+void WilsonFermion<Impl>::Mdir(const FermionField &in, FermionField &out, int dir, int disp) {
   DhopDir(in, out, dir, disp);
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDir(const FermionField &in, FermionField &out,
-                                  int dir, int disp) {
+void WilsonFermion<Impl>::DhopDir(const FermionField &in, FermionField &out, int dir, int disp) {
   int skip = (disp == 1) ? 0 : 1;
   int dirdisp = dir + skip * 4;
   int gamma = dir + (1 - skip) * 4;
@@ -326,8 +316,7 @@ void WilsonFermion<Impl>::DhopDir(const FermionField &in, FermionField &out,
 };
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDirDisp(const FermionField &in, FermionField &out,
-                                      int dirdisp, int gamma, int dag) {
+void WilsonFermion<Impl>::DhopDirDisp(const FermionField &in, FermionField &out,int dirdisp, int gamma, int dag) {
   Compressor compressor(dag);
 
   Stencil.HaloExchange(in, compressor);

@@ -1,6 +1,6 @@
-#include <Grid.h>
-#include <PerfCount.h>
-#include <Stat.h>
+#include <Grid/GridCore.h>
+#include <Grid/perfmon/PerfCount.h>
+#include <Grid/perfmon/Stat.h>
 
 
 namespace Grid { 

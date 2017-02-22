@@ -2,12 +2,16 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./lib/qcd/action/fermion/OverlapWilsonCayleyZolotarevFermion.h
+    Source file: ./lib/qcd/action/Actions.h
 
     Copyright (C) 2015
 
+Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
+Author: neo <cossu@post.kek.jp>
+Author: paboyle <paboyle@ph.ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,43 +30,26 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#ifndef  OVERLAP_WILSON_CAYLEY_ZOLOTAREV_FERMION_H
-#define  OVERLAP_WILSON_CAYLEY_ZOLOTAREV_FERMION_H
+#ifndef GRID_QCD_ACTIONS_H
+#define GRID_QCD_ACTIONS_H
 
-#include <Grid/qcd/action/fermion/FermionCore.h>
+// * Linear operators             (Hermitian and non-hermitian)  .. my LinearOperator
+// * System solvers               (Hermitian and non-hermitian)  .. my OperatorFunction
+// * MultiShift System solvers    (Hermitian and non-hermitian)  .. my OperatorFunction
 
-namespace Grid {
+////////////////////////////////////////////
+// Abstract base interface
+////////////////////////////////////////////
+#include <Grid/qcd/action/ActionCore.h>
 
-  namespace QCD {
+////////////////////////////////////////////////////////////////////////
+// Fermion actions; prevent coupling fermion.cc files to other headers
+////////////////////////////////////////////////////////////////////////
+#include <Grid/qcd/action/fermion/Fermion.h>
 
-    template<class Impl>
-    class OverlapWilsonCayleyZolotarevFermion : public MobiusZolotarevFermion<Impl>
-    {
-    public:
-     INHERIT_IMPL_TYPES(Impl);
-    public:
-
-      // Constructors
-
-    OverlapWilsonCayleyZolotarevFermion(GaugeField &_Umu,
-					GridCartesian         &FiveDimGrid,
-					GridRedBlackCartesian &FiveDimRedBlackGrid,
-					GridCartesian         &FourDimGrid,
-					GridRedBlackCartesian &FourDimRedBlackGrid,
-					RealD _mass,RealD _M5,
-					RealD lo, RealD hi,const ImplParams &p= ImplParams()) : 
-      // b+c=1.0, b-c = 0 <=> b =c = 1/2
-      MobiusZolotarevFermion<Impl>(_Umu,
-				   FiveDimGrid,
-				   FiveDimRedBlackGrid,
-				   FourDimGrid,
-				   FourDimRedBlackGrid,_mass,_M5,0.5,0.5,lo,hi,p)
-
-      {}
-
-    };
-
-  }
-}
+////////////////////////////////////////
+// Pseudo fermion combinations for HMC
+////////////////////////////////////////
+#include <Grid/qcd/action/pseudofermion/PseudoFermion.h>
 
 #endif

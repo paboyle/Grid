@@ -29,6 +29,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef  GRID_QCD_CAYLEY_FERMION_H
 #define  GRID_QCD_CAYLEY_FERMION_H
 
+#include <Grid/qcd/action/fermion/WilsonFermion5D.h>
+
 namespace Grid {
 
   namespace QCD {

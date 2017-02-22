@@ -41,11 +41,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <signal.h>
 #include <iostream>
 #include <iterator>
-#include <Grid.h>
 #include <algorithm>
 #include <iterator>
 #include <cstdlib>
 #include <memory>
+
+#include <Grid/Grid.h>
 
 
 #include <fenv.h>
