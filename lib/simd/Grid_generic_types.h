@@ -63,7 +63,7 @@ namespace Optimization {
     constexpr static unsigned int c = GEN_SIMD_WIDTH/8u;
     constexpr static unsigned int r = GEN_SIMD_WIDTH/4u;
   };
-  template <> struct W<int> {
+  template <> struct W<Integer> {
     constexpr static unsigned int r = GEN_SIMD_WIDTH/4u;
   };
   
@@ -75,6 +75,6 @@ namespace Optimization {
 
   typedef vec<float>   vecf;
   typedef vec<double>  vecd;
-  typedef vec<int>     veci;
+  typedef vec<Integer>     veci;
   
 }}

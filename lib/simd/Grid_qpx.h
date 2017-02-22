@@ -72,7 +72,7 @@ namespace Optimization {
     inline veci operator()(Integer a){
       veci out;
       
-      VECTOR_FOR(i, W<int>::r, 1)
+      VECTOR_FOR(i, W<Integer>::r, 1)
       {
         out.v[i] = a;
       }
@@ -220,7 +220,7 @@ namespace Optimization {
     inline veci operator()(veci a, veci b){
       veci out;
       
-      VECTOR_FOR(i, W<int>::r, 1)
+      VECTOR_FOR(i, W<Integer>::r, 1)
       {
         out.v[i] = a.v[i] + b.v[i];
       }
@@ -242,7 +242,7 @@ namespace Optimization {
     inline veci operator()(veci a, veci b){
       veci out;
       
-      VECTOR_FOR(i, W<int>::r, 1)
+      VECTOR_FOR(i, W<Integer>::r, 1)
       {
         out.v[i] = a.v[i] - b.v[i];
       }
@@ -282,7 +282,7 @@ namespace Optimization {
     inline veci operator()(veci a, veci b){
       veci out;
       
-      VECTOR_FOR(i, W<int>::r, 1)
+      VECTOR_FOR(i, W<Integer>::r, 1)
       {
         out.v[i] = a.v[i]*b.v[i];
       }
@@ -304,7 +304,7 @@ namespace Optimization {
     inline veci operator()(veci a, veci b){
       veci out;
       
-      VECTOR_FOR(i, W<int>::r, 1)
+      VECTOR_FOR(i, W<Integer>::r, 1)
       {
         out.v[i] = a.v[i]/b.v[i];
       }
