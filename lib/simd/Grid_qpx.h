@@ -28,7 +28,7 @@
  ******************************************************************************/
 
 #ifndef GEN_SIMD_WIDTH
-#define GEN_SIMD_WIDTH 64u
+#define GEN_SIMD_WIDTH 32u
 #endif
 #include "Grid_generic_types.h" // Definitions for simulated integer SIMD.
 
