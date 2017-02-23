@@ -429,7 +429,7 @@ void ExtractSlice(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice, in
     std::vector<int> lcoor(nl);
     std::vector<int> hcoor(nh);
     lg->LocalIndexToLocalCoor(idx,lcoor);
-    ddl=0;
+    int ddl=0;
     hcoor[orthog] = slice;
     for(int d=0;d<nh;d++){
       if ( d!=orthog ) { 

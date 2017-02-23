@@ -30,23 +30,18 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#ifndef GRID_QCD_ACTIONS_H
-#define GRID_QCD_ACTIONS_H
-
-// * Linear operators             (Hermitian and non-hermitian)  .. my LinearOperator
-// * System solvers               (Hermitian and non-hermitian)  .. my OperatorFunction
-// * MultiShift System solvers    (Hermitian and non-hermitian)  .. my OperatorFunction
+#ifndef GRID_QCD_ACTION_H
+#define GRID_QCD_ACTION_H
 
 ////////////////////////////////////////////
 // Abstract base interface
 ////////////////////////////////////////////
 #include <Grid/qcd/action/ActionCore.h>
-
 ////////////////////////////////////////////////////////////////////////
 // Fermion actions; prevent coupling fermion.cc files to other headers
 ////////////////////////////////////////////////////////////////////////
+#include <Grid/qcd/action/fermion/FermionCore.h>
 #include <Grid/qcd/action/fermion/Fermion.h>
-
 ////////////////////////////////////////
 // Pseudo fermion combinations for HMC
 ////////////////////////////////////////

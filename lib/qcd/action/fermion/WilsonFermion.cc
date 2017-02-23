@@ -134,7 +134,6 @@ void WilsonFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out)
   out.checkerboard = in.checkerboard;
   MooeeInv(in,out);
 }
-
 template<class Impl>
 void WilsonFermion<Impl>::MomentumSpacePropagator(FermionField &out, const FermionField &in,RealD _m) 
 {  
@@ -145,11 +144,11 @@ void WilsonFermion<Impl>::MomentumSpacePropagator(FermionField &out, const Fermi
   // what type LatticeComplex 
   conformable(_grid,out._grid);
   
-  Gamma::GammaMatrix Gmu [] = {
-    Gamma::GammaX,
-    Gamma::GammaY,
-    Gamma::GammaZ,
-    Gamma::GammaT
+  Gamma::Algebra Gmu [] = {
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT
   };
   
   std::vector<int> latt_size   = _grid->_fdimensions;

@@ -25,8 +25,8 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#ifndef  GRID_QCD_FERMION_ACTIONS_H
-#define  GRID_QCD_FERMION_ACTIONS_H
+#ifndef  GRID_QCD_FERMION_H
+#define  GRID_QCD_FERMION_H
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Explicit explicit template instantiation is still required in the .cc files

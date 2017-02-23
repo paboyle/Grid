@@ -47,7 +47,7 @@ void axpibg5x(Lattice<vobj> &z,const Lattice<vobj> &x,Coeff a,Coeff b)
 
   GridBase *grid=x._grid;
 
-  Gamma G5(Gamma::Gamma5);
+  Gamma G5(Gamma::Algebra::Gamma5);
   parallel_for(int ss=0;ss<grid->oSites();ss++){
     vobj tmp;
     tmp = a*x._odata[ss];
@@ -78,7 +78,8 @@ void ag5xpby_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const L
   conformable(x,z);
   GridBase *grid=x._grid;
   int Ls = grid->_rdimensions[0];
-  Gamma G5(Gamma::Gamma5);
+
+  Gamma G5(Gamma::Algebra::Gamma5);
   parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     vobj tmp;
     tmp = G5*x._odata[ss+s]*a;
@@ -95,7 +96,7 @@ void axpbg5y_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const L
   conformable(x,z);
   GridBase *grid=x._grid;
   int Ls = grid->_rdimensions[0];
-  Gamma G5(Gamma::Gamma5);
+  Gamma G5(Gamma::Algebra::Gamma5);
   parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     vobj tmp;
     tmp = G5*y._odata[ss+sp]*b;
@@ -112,7 +113,8 @@ void ag5xpbg5y_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const
   conformable(x,z);
   GridBase *grid=x._grid;
   int Ls = grid->_rdimensions[0];
-  Gamma G5(Gamma::Gamma5);
+
+  Gamma G5(Gamma::Algebra::Gamma5);
   parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     vobj tmp1;
     vobj tmp2;
@@ -161,8 +163,8 @@ void G5R5(Lattice<vobj> &z,const Lattice<vobj> &x)
   z.checkerboard = x.checkerboard;
   conformable(x,z);
   int Ls = grid->_rdimensions[0];
-  Gamma G5(Gamma::Gamma5);
-  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
+  Gamma G5(Gamma::Algebra::Gamma5);
+  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls) {
     vobj tmp;
     for(int s=0;s<Ls;s++){
       int sp = Ls-1-s;

@@ -32,7 +32,6 @@ Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
 #include <Grid/qcd/action/fermion/FermionCore.h>
 
-
 namespace Grid {
 namespace QCD {
 

@@ -2,9 +2,7 @@
 #include <Grid/perfmon/PerfCount.h>
 #include <Grid/perfmon/Stat.h>
 
-
 namespace Grid { 
-
 
 bool PmuStat::pmu_initialized=false;
 

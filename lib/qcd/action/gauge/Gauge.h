@@ -26,8 +26,8 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef GRID_QCD_GAUGE_AGGREGATE_H
-#define GRID_QCD_GAUGE_AGGREGATE_H
+#ifndef GRID_QCD_GAUGE_H
+#define GRID_QCD_GAUGE_H
 
 #include <Grid/qcd/action/gauge/GaugeImpl.h>
 #include <Grid/qcd/utils/WilsonLoops.h>

@@ -26,7 +26,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-
 #include <Grid/GridCore.h>
 
 using namespace Grid;

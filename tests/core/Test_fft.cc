@@ -177,7 +177,7 @@ int main (int argc, char ** argv)
     const int sdir=0;
     RealD mass=0.01;
     RealD M5  =1.0;
-    Gamma G5(Gamma::Gamma5);
+    Gamma G5(Gamma::Algebra::Gamma5);
 
     GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,&GRID);
     GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,&GRID);
@@ -218,12 +218,12 @@ int main (int argc, char ** argv)
     /////////////////////////////////////////////////////////////////
     // work out the predicted from Fourier
     /////////////////////////////////////////////////////////////////
-    Gamma::GammaMatrix Gmu [] = {
-      Gamma::GammaX,
-      Gamma::GammaY,
-      Gamma::GammaZ,
-      Gamma::GammaT,
-      Gamma::Gamma5
+    Gamma::Algebra Gmu [] = {
+      Gamma::Algebra::GammaX,
+      Gamma::Algebra::GammaY,
+      Gamma::Algebra::GammaZ,
+      Gamma::Algebra::GammaT,
+      Gamma::Algebra::Gamma5
     };
     LatticeFermionD    Kinetic(FGrid); Kinetic = zero;
     LatticeComplexD    kmu(FGrid); 
@@ -311,7 +311,7 @@ int main (int argc, char ** argv)
     std::cout << " Solving by FFT and Feynman rules" <<std::endl;
     Ddwf.FreePropagator(src,ref,mass) ;
 
-    Gamma G5(Gamma::Gamma5);
+    Gamma G5(Gamma::Algebra::Gamma5);
 
     LatticeFermionD    src5(FGrid); src5=zero;
     LatticeFermionD    tmp5(FGrid); 
@@ -391,7 +391,7 @@ int main (int argc, char ** argv)
     std::cout << " Solving by FFT and Feynman rules" <<std::endl;
     Dov.FreePropagator(src,ref,mass) ;
 
-    Gamma G5(Gamma::Gamma5);
+    Gamma G5(Gamma::Algebra::Gamma5);
 
     LatticeFermionD    src5(FGrid); src5=zero;
     LatticeFermionD    tmp5(FGrid); 

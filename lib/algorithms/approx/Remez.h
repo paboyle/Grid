@@ -16,7 +16,7 @@
 #define INCLUDED_ALG_REMEZ_H
 
 #include <stddef.h>
-#include <Grid/Config.h>
+#include <Config.h>
 
 #ifdef HAVE_LIBGMP
 #include "bigfloat.h"

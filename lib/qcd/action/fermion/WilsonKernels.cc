@@ -29,6 +29,7 @@ directory
 *************************************************************************************/
 /*  END LEGAL */
 #include <Grid/qcd/action/fermion/FermionCore.h>
+
 namespace Grid {
 namespace QCD {
 
