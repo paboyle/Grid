@@ -747,6 +747,15 @@ typedef Grid_simd<std::complex<float>, SIMD_Ftype> vComplexF;
 typedef Grid_simd<std::complex<double>, SIMD_Dtype> vComplexD;
 typedef Grid_simd<Integer, SIMD_Itype> vInteger;
 
+// Check our vector types are of an appropriate size.
+#if defined QPX
+static_assert(2*sizeof(SIMD_Ftype) == sizeof(SIMD_Dtype), "SIMD vector lengths incorrect");
+static_assert(2*sizeof(SIMD_Ftype) == sizeof(SIMD_Itype), "SIMD vector lengths incorrect");
+#else
+static_assert(sizeof(SIMD_Ftype) == sizeof(SIMD_Dtype), "SIMD vector lengths incorrect");
+static_assert(sizeof(SIMD_Ftype) == sizeof(SIMD_Itype), "SIMD vector lengths incorrect");
+#endif
+
 /////////////////////////////////////////
 // Some traits to recognise the types
 /////////////////////////////////////////
