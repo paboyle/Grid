@@ -202,7 +202,7 @@ class HybridMonteCarlo {
     RealD H0 = TheIntegrator.S(U);  // initial state action
 
     std::streamsize current_precision = std::cout.precision();
-    std::cout.precision(17);
+    std::cout.precision(15);
     std::cout << GridLogMessage << "Total H before trajectory = " << H0 << "\n";
     std::cout.precision(current_precision);
 
@@ -210,7 +210,19 @@ class HybridMonteCarlo {
 
     RealD H1 = TheIntegrator.S(U);  // updated state action
 
-    std::cout.precision(17);
+    ///////////////////////////////////////////////////////////
+    if(0){
+      std::cout << "------------------------- Reversibility test" << std::endl;
+      TheIntegrator.reverse_momenta();
+      TheIntegrator.integrate(U);
+
+      H1 = TheIntegrator.S(U);  // updated state action
+      std::cout << "--------------------------------------------" << std::endl;
+    }
+    ///////////////////////////////////////////////////////////
+
+
+    std::cout.precision(15);
     std::cout << GridLogMessage << "Total H after trajectory  = " << H1
 	      << "  dH = " << H1 - H0 << "\n";
     std::cout.precision(current_precision);

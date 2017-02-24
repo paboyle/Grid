@@ -39,7 +39,8 @@ public:
   virtual void ImportGauge(const Field&)   = 0;
   virtual void M(const Field&, Field&)     = 0;
   virtual void Minv(const Field&, Field&)  = 0;
-  virtual void MInvSquareRoot(Field&) = 0;
+  virtual void MSquareRoot(Field&) = 0;
+  virtual void MDeriv(const Field&, Field&) = 0;
 };
 
 
@@ -54,8 +55,11 @@ public:
   virtual void Minv(const Field& in, Field& out){
     out = in;
   }
-  virtual void MInvSquareRoot(Field& P){
+  virtual void MSquareRoot(Field& P){
     // do nothing
+  }
+  virtual void MDeriv(const Field& in, Field& out){
+    out = zero;
   }
 
 };
@@ -64,17 +68,17 @@ public:
 // Generalised momenta
 ///////////////////////////////
 
-template <typename Implementation, typename Metric>
+template <typename Implementation>
 class GeneralisedMomenta{
 public:
   typedef typename Implementation::Field MomentaField;  //for readability
-
-  Metric M;
+  typedef typename Implementation::GaugeLinkField MomentaLinkField;  //for readability
+  Metric<MomentaField>& M;
   MomentaField Mom;
 
-  GeneralisedMomenta(GridBase* grid): Mom(grid){}
+  GeneralisedMomenta(GridBase* grid, Metric<MomentaField>& M): M(M), Mom(grid){}
 
-
+  // Correct
   void MomentaDistribution(GridParallelRNG& pRNG){
     // Generate a distribution for
     // 1/2 P^dag G P
@@ -83,26 +87,45 @@ public:
     // Generate gaussian momenta
     Implementation::generate_momenta(Mom, pRNG);
     // Modify the distribution with the metric
-    M.MInvSquareRoot(Mom);
+    M.MSquareRoot(Mom);
   }
 
-  void Derivative(MomentaField& in, MomentaField& der){
+  // Correct
+  RealD MomentaAction(){
+    MomentaField inv(Mom._grid);
+    inv = zero;
+    M.Minv(Mom, inv);
+    LatticeComplex Hloc(Mom._grid);
+    Hloc = zero;
+    for (int mu = 0; mu < Nd; mu++) {
+      // This is not very general
+      // hide in the operators
+      auto Mom_mu = PeekIndex<LorentzIndex>(Mom, mu);
+      auto inv_mu = PeekIndex<LorentzIndex>(inv, mu);
+      Hloc += trace(Mom_mu * inv_mu);
+    }
+    Complex Hsum = sum(Hloc);
+    return Hsum.real();
+  }
+
+  // Correct
+  void DerivativeU(MomentaField& in, MomentaField& der){
     // Compute the derivative of the kinetic term
     // with respect to the gauge field
-    MomentaField MomDer(in._grid);
+    MomentaField MDer(in._grid);
     MomentaField X(in._grid);
-
-    M.Minv(in, X); // X = G in
-    M.MDeriv(X, MomDer, DaggerNo); // MomDer = dM/dU X
-    // MomDer is just the derivative
-    MomDer = adj(X)* MomDer;
-    // Traceless Antihermitian
-    // assuming we are in the algebra
-    der = Implementation::projectForce(MomDer);
+    X = zero;
+    M.Minv(in, X);  // X = G in
+    M.MDeriv(X, MDer);  // MDer = U * dS/dU
+    der = Implementation::projectForce(MDer);  // Ta if gauge fields
   }
 
+
+  //   
   void DerivativeP(MomentaField& der){
+    der = zero;
     M.Minv(Mom, der);
+    der = Implementation::projectForce(der); 
   }
 
 };

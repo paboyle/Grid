@@ -70,13 +70,13 @@ int main (int argc, char ** argv)
   LatticeColourMatrix src_mu(&Grid);
   for (int mu = 0; mu < Nd; mu++) {
     SU<Nc>::GaussianFundamentalLieAlgebraMatrix(pRNG, src_mu);
-    PokeIndex<LorentzIndex>(src_f, src_mu, mu);
+    PokeIndex<LorentzIndex>(src_f, timesI(src_mu), mu);
   }
   LatticeGaugeField result_f(&Grid);
 
   // Definition of the Laplacian operator
   ConjugateGradient<LatticeGaugeField> CG(1.0e-8,10000);
-  LaplacianParams LapPar(0.001, 1.0, 1000, 1e-8, 10, 64);
+  LaplacianParams LapPar(0.00001, 1.0, 1000, 1e-8, 10, 64);
   LaplacianAdjointField<PeriodicGimplR> Laplacian(&Grid, CG, LapPar, Kappa);
   Laplacian.ImportGauge(Umu);
   std::cout << GridLogMessage << "Testing the Laplacian using the full matrix" <<std::endl;
@@ -84,7 +84,7 @@ int main (int argc, char ** argv)
   
 
 
-  Laplacian.MomentaDistribution(src_f);
+  Laplacian.MSquareRoot(src_f);
 
 
   // Tests also the version using the algebra decomposition

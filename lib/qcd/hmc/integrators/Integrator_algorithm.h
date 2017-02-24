@@ -294,7 +294,7 @@ class ForceGradient : public Integrator<FieldImplementation, SmearingPolicy,
 
 
 
-
+// correct
 template <class FieldImplementation, class SmearingPolicy,
           class RepresentationPolicy =
               Representations<FundamentalRepresentation> >
@@ -311,9 +311,9 @@ class ImplicitLeapFrog : public Integrator<FieldImplementation, SmearingPolicy,
   std::string integrator_name(){return "ImplicitLeapFrog";}
 
   ImplicitLeapFrog(GridBase* grid, IntegratorParameters Par,
-           ActionSet<Field, RepresentationPolicy>& Aset, SmearingPolicy& Sm)
+           ActionSet<Field, RepresentationPolicy>& Aset, SmearingPolicy& Sm, Metric<Field>& M)
       : Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy>(
-            grid, Par, Aset, Sm){};
+            grid, Par, Aset, Sm, M){};
 
   void step(Field& U, int level, int _first, int _last) {
     int fl = this->as.size() - 1;
@@ -335,19 +335,89 @@ class ImplicitLeapFrog : public Integrator<FieldImplementation, SmearingPolicy,
       }
 
       if (level == fl) {  // lowest level
-        this->implicit_update_U(U, eps / 2.0);
+        this->implicit_update_U(U, eps);
       } else {  // recursive function call
         this->step(U, level + 1, first_step, last_step);
       }
 
-      int mm = last_step ? 1 : 2;
-      this->update_P(U, level, mm * eps / 2.0);
+      //int mm = last_step ? 1 : 2;
+      if (last_step){
+        this->update_P(U, level, eps / 2.0);
+      } else {
+      this->implicit_update_P(U, level, eps);
+      }
     }
   }
 };
 
 
+// This is not completely tested
+template <class FieldImplementation, class SmearingPolicy,
+          class RepresentationPolicy =
+              Representations<FundamentalRepresentation> >
+class ImplicitMinimumNorm2 : public Integrator<FieldImplementation, SmearingPolicy,
+                                       RepresentationPolicy> {
+ private:
+  const RealD lambda = 0.1931833275037836;
 
+ public:
+  INHERIT_FIELD_TYPES(FieldImplementation);
+
+  ImplicitMinimumNorm2(GridBase* grid, IntegratorParameters Par,
+               ActionSet<Field, RepresentationPolicy>& Aset, SmearingPolicy& Sm, Metric<Field>& M)
+      : Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy>(
+            grid, Par, Aset, Sm, M){};
+
+  std::string integrator_name(){return "ImplicitMininumNorm2";}
+
+  void step(Field& U, int level, int _first, int _last) {
+    // level  : current level
+    // fl     : final level
+    // eps    : current step size
+
+    int fl = this->as.size() - 1;
+
+    RealD eps = this->Params.trajL/this->Params.MDsteps * 2.0;
+    for (int l = 0; l <= level; ++l) eps /= 2.0 * this->as[l].multiplier;
+
+    // Nesting:  2xupdate_U of size eps/2
+    // Next level is eps/2/multiplier
+
+    int multiplier = this->as[level].multiplier;
+    for (int e = 0; e < multiplier; ++e) {  // steps per step
+
+      int first_step = _first && (e == 0);
+      int last_step = _last && (e == multiplier - 1);
+
+      if (first_step) {  // initial half step
+        this->implicit_update_P(U, level, lambda * eps);
+      }
+
+      if (level == fl) {  // lowest level
+        this->implicit_update_U(U, 0.5 * eps);
+      } else {  // recursive function call
+        this->step(U, level + 1, first_step, 0);
+      }
+
+      this->implicit_update_P(U, level, (1.0 - 2.0 * lambda) * eps);
+
+      if (level == fl) {  // lowest level
+        this->implicit_update_U(U, 0.5 * eps);
+      } else {  // recursive function call
+        this->step(U, level + 1, 0, last_step);
+      }
+
+      //int mm = (last_step) ? 1 : 2;
+      //this->update_P(U, level, lambda * eps * mm);
+
+      if (last_step) {
+        this->update_P(U, level, eps * lambda);
+      } else {
+        this->implicit_update_P(U, level, lambda * eps*2.0);
+      }
+    }
+  }
+};
 
 
 
