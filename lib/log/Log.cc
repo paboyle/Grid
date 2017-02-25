@@ -32,6 +32,7 @@ directory
 #include <Grid/GridCore.h>
 
 #include <cxxabi.h>
+#include <memory>
 
 namespace Grid {
 
