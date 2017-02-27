@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
   // need wrappers of the fermionic classes 
   // that have a complex construction
   // standard
-  RealD beta = 5.6;
+  RealD beta = 0.0;
   WilsonGaugeActionR Waction(beta);
   
   ActionLevel<HMCWrapper::Field> Level1(1);

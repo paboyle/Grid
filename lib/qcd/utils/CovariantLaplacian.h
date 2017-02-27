@@ -144,6 +144,25 @@ class LaplacianAdjointField: public Metric<typename Impl::Field> {
     } 
   }
 
+  // separating this temporarily
+  void MDeriv(const GaugeField& left, const GaugeField& right,
+              GaugeField& der) {
+    // in is anti-hermitian
+    RealD factor = -kappa / (double(4 * Nd));
+
+    for (int mu = 0; mu < Nd; mu++) {
+      GaugeLinkField der_mu(der._grid);
+      der_mu = zero;
+      for (int nu = 0; nu < Nd; nu++) {
+        GaugeLinkField left_nu = PeekIndex<LorentzIndex>(left, nu);
+        GaugeLinkField right_nu = PeekIndex<LorentzIndex>(right, nu);
+        der_mu += U[mu] * Cshift(left_nu, mu, 1) * adj(U[mu]) * right_nu;
+        der_mu += U[mu] * Cshift(right_nu, mu, 1) * adj(U[mu]) * left_nu;
+      }
+      PokeIndex<LorentzIndex>(der, -factor * der_mu, mu);
+    }
+  }
+
   void Minv(const GaugeField& in, GaugeField& inverted){
     HermitianLinearOperator<LaplacianAdjointField<Impl>,GaugeField> HermOp(*this);
     Solver(HermOp, in, inverted);
@@ -153,6 +172,14 @@ class LaplacianAdjointField: public Metric<typename Impl::Field> {
     GaugeField Gp(P._grid);
     HermitianLinearOperator<LaplacianAdjointField<Impl>,GaugeField> HermOp(*this);
     ConjugateGradientMultiShift<GaugeField> msCG(param.MaxIter,PowerHalf);
+    msCG(HermOp,P,Gp);
+    P = Gp; 
+  }
+
+  void MInvSquareRoot(GaugeField& P){
+    GaugeField Gp(P._grid);
+    HermitianLinearOperator<LaplacianAdjointField<Impl>,GaugeField> HermOp(*this);
+    ConjugateGradientMultiShift<GaugeField> msCG(param.MaxIter,PowerInvHalf);
     msCG(HermOp,P,Gp);
     P = Gp; 
   }

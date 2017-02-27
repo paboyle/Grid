@@ -128,17 +128,23 @@ class Integrator {
       Mom -= force * ep; 
     }
 
-
+    // Generalised momenta
     MomentaField MomDer(P.Mom._grid);
     P.M.ImportGauge(U);
     P.DerivativeU(P.Mom, MomDer);
     Mom -= MomDer * ep;
 
+    // Auxiliary fields
+    //P.update_auxiliary_momenta(ep*0.5);
+    //P.AuxiliaryFieldsDerivative(MomDer);
+    //Mom -= MomDer * ep;
+    //P.update_auxiliary_momenta(ep*0.5);
+
     // Force from the other representations
     as[level].apply(update_P_hireps, Representations, Mom, U, ep);
   }
 
-  void implicit_update_P(Field& U, int level, double ep) {
+  void implicit_update_P(Field& U, int level, double ep, bool intermediate = false) {
     t_P[level] += ep;
 
     std::cout << GridLogIntegrator << "[" << level << "] P "
@@ -170,16 +176,18 @@ class Integrator {
     P.M.ImportGauge(U);
     MomentaField MomDer(P.Mom._grid);
     MomentaField MomDer1(P.Mom._grid);
+    MomentaField AuxDer(P.Mom._grid);
     MomDer1 = zero;
     MomentaField diff(P.Mom._grid);
 
-    // be careful here, we need the first step
-    // in every trajectory
-    static int call = 0;
-    if (call == 1)
+    if (intermediate)
       P.DerivativeU(P.Mom, MomDer1);
 
-    call = 1;
+    // Auxiliary fields
+    //P.update_auxiliary_momenta(ep*0.5);
+    //P.AuxiliaryFieldsDerivative(AuxDer);
+    //Msum += AuxDer;
+    
 
     // Here run recursively
     int counter = 1;
@@ -194,7 +202,7 @@ class Integrator {
       std::cout << GridLogIntegrator << "|Force| laplacian site average: " << force_abs
                 << std::endl;
 
-      NewMom = P.Mom - ep* 0.5 * (2.0*Msum + MomDer + MomDer1);
+      NewMom = P.Mom - ep* 0.5 * (2.0*Msum + MomDer + MomDer1);// simplify
       diff = NewMom - OldMom;
       counter++;
       RelativeError = std::sqrt(norm2(diff))/std::sqrt(norm2(NewMom));
@@ -204,8 +212,8 @@ class Integrator {
 
     P.Mom = NewMom;
 
-    // update the auxiliary fields momenta
-    // todo
+    // update the auxiliary fields momenta    
+    //P.update_auxiliary_momenta(ep*0.5);
   }
 
 
@@ -239,13 +247,17 @@ class Integrator {
     Field diff(U._grid);
     Real threshold = 1e-6;
     int counter = 1;
-    int MaxCounter = 1000;
+    int MaxCounter = 100;
 
     Field OldU = U;
     Field NewU = U;
 
     P.M.ImportGauge(U);
     P.DerivativeP(Mom1); // first term in the derivative 
+
+ 
+    //P.update_auxiliary_fields(ep*0.5);
+
 
     do {
       std::cout << GridLogIntegrator << "UpdateU implicit step "<< counter << std::endl;
@@ -271,6 +283,9 @@ class Integrator {
     } while (RelativeError > threshold && counter < MaxCounter);
 
     U = NewU;
+
+    //P.update_auxiliary_fields(ep*0.5);
+
   }
 
 

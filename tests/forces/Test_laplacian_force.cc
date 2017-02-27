@@ -79,14 +79,16 @@ int main (int argc, char ** argv)
 
   // get the deriv with respect to "U"
   LatticeGaugeField UdSdU(&Grid);
+  LatticeGaugeField AuxDer(&Grid);
   std::cout << GridLogMessage<< "DerivativeU" << std::endl;
   LaplacianMomenta.DerivativeU(LaplacianMomenta.Mom, UdSdU);
-
+  LaplacianMomenta.AuxiliaryFieldsDerivative(AuxDer);
+  UdSdU += AuxDer;
 
   ////////////////////////////////////
   // Modify the gauge field a little 
   ////////////////////////////////////
-  RealD dt = 0.001;
+  RealD dt = 0.0001;
 
   LatticeColourMatrix mommu(&Grid); 
   LatticeColourMatrix forcemu(&Grid); 

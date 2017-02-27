@@ -144,7 +144,7 @@ class HMCWrapperTemplate: public HMCRunnerBase<ReaderClass> {
     LaplacianParams LapPar(0.0001, 1.0, 1000, 1e-8, 12, 64);
     RealD Kappa = 0.9;
 
-
+    // Better to pass the generalised momenta to the integrator
     LaplacianAdjointField<PeriodicGimplR> Laplacian(UGrid, CG, LapPar, Kappa);
     TheIntegrator MDynamics(UGrid, Parameters.MD, TheAction, Smearing, Laplacian);
 
