@@ -194,6 +194,9 @@ void WilsonFermion5D<Impl>::Report(void)
     std::cout << GridLogMessage << "WilsonFermion5D ComputeTime1/Calls        : " << DhopComputeTime / DhopCalls << " us" << std::endl;
     std::cout << GridLogMessage << "WilsonFermion5D ComputeTime2/Calls        : " << DhopComputeTime2/ DhopCalls << " us" << std::endl;
 
+    // Average the compute time
+    _FourDimGrid->GlobalSum(DhopComputeTime);
+    DhopComputeTime/=NP;
     RealD mflops = 1344*volume*DhopCalls/DhopComputeTime/2; // 2 for red black counting
     std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
     std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
