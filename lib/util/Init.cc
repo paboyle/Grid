@@ -390,6 +390,9 @@ void Grid_finalize(void)
   MPI_Finalize();
   Grid_unquiesce_nodes();
 #endif
+#if defined (GRID_COMMS_SHMEM)
+  shmem_finalize();
+#endif
 }
 
 void * Grid_backtrace_buffer[_NBACKTRACE];
