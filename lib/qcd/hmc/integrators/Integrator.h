@@ -114,6 +114,23 @@ class Integrator {
   void update_P(MomentaField& Mom, Field& U, int level, double ep) {
     // input U actually not used in the fundamental case
     // Fundamental updates, include smearing
+
+    // Generalised momenta  
+    // Derivative of the kinetic term must be computed before
+    // Mom is the momenta and gets updated by the 
+    // actions derivatives
+    MomentaField MomDer(P.Mom._grid);
+    P.M.ImportGauge(U);
+    P.DerivativeU(P.Mom, MomDer);
+    Mom -= MomDer * ep;
+
+    // Auxiliary fields
+    //P.update_auxiliary_momenta(ep*0.5);
+    //P.AuxiliaryFieldsDerivative(MomDer);
+    //Mom -= MomDer * ep;
+    //P.update_auxiliary_momenta(ep*0.5);
+
+
     for (int a = 0; a < as[level].actions.size(); ++a) {
       Field force(U._grid);
       conformable(U._grid, Mom._grid);
@@ -128,17 +145,7 @@ class Integrator {
       Mom -= force * ep; 
     }
 
-    // Generalised momenta
-    MomentaField MomDer(P.Mom._grid);
-    P.M.ImportGauge(U);
-    P.DerivativeU(P.Mom, MomDer);
-    Mom -= MomDer * ep;
 
-    // Auxiliary fields
-    //P.update_auxiliary_momenta(ep*0.5);
-    //P.AuxiliaryFieldsDerivative(MomDer);
-    //Mom -= MomDer * ep;
-    //P.update_auxiliary_momenta(ep*0.5);
 
     // Force from the other representations
     as[level].apply(update_P_hireps, Representations, Mom, U, ep);
@@ -179,9 +186,11 @@ class Integrator {
     MomentaField AuxDer(P.Mom._grid);
     MomDer1 = zero;
     MomentaField diff(P.Mom._grid);
-
-    if (intermediate)
+    double factor = 2.0;
+    if (intermediate){
       P.DerivativeU(P.Mom, MomDer1);
+      factor = 1.0;
+    }
 
     // Auxiliary fields
     //P.update_auxiliary_momenta(ep*0.5);
@@ -202,7 +211,7 @@ class Integrator {
       std::cout << GridLogIntegrator << "|Force| laplacian site average: " << force_abs
                 << std::endl;
 
-      NewMom = P.Mom - ep* 0.5 * (2.0*Msum + MomDer + MomDer1);// simplify
+      NewMom = P.Mom - ep* 0.5 * (2.0*Msum + factor*MomDer + MomDer1);// simplify
       diff = NewMom - OldMom;
       counter++;
       RelativeError = std::sqrt(norm2(diff))/std::sqrt(norm2(NewMom));
@@ -245,7 +254,7 @@ class Integrator {
     MomentaField Mom2(P.Mom._grid);
     RealD RelativeError;
     Field diff(U._grid);
-    Real threshold = 1e-6;
+    Real threshold = 1e-8;
     int counter = 1;
     int MaxCounter = 100;
 
@@ -269,7 +278,7 @@ class Integrator {
       for (int mu = 0; mu < Nd; mu++) {
         auto Umu = PeekIndex<LorentzIndex>(U, mu);
         auto Pmu = PeekIndex<LorentzIndex>(sum, mu);
-        Umu = expMat(Pmu, ep * 0.5, 12) * Umu;
+        Umu = expMat(Pmu, ep * 0.5, 24) * Umu;
         PokeIndex<LorentzIndex>(NewU, ProjectOnGroup(Umu), mu);
       }
 
@@ -330,7 +339,7 @@ class Integrator {
   }
 
   void reverse_momenta(){
-    P.Mom *= 1.0;
+    P.Mom *= -1.0;
   }
 
   // to be used by the actionlevel class to iterate

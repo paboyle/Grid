@@ -53,14 +53,14 @@ int main(int argc, char **argv) {
   CheckpointerParameters CPparams;  
   CPparams.config_prefix = "ckpoint_lat";
   CPparams.rng_prefix = "ckpoint_rng";
-  CPparams.saveInterval = 20;
+  CPparams.saveInterval = 10;
   CPparams.format = "IEEE64BIG";
   
   TheHMC.Resources.LoadBinaryCheckpointer(CPparams);
 
   RNGModuleParameters RNGpar;
   RNGpar.serial_seeds = "1 2 3 4 5";
-  RNGpar.parallel_seeds = "6 7 8 9 10 12";
+  RNGpar.parallel_seeds = "6 7 8 9 10";
   TheHMC.Resources.SetRNGSeeds(RNGpar);
 
   // Construct observables
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
   // need wrappers of the fermionic classes 
   // that have a complex construction
   // standard
-  RealD beta = 0.0;
+  RealD beta = 5.6;
   WilsonGaugeActionR Waction(beta);
   
   ActionLevel<HMCWrapper::Field> Level1(1);
@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
   /////////////////////////////////////////////////////////////
 
   // HMC parameters are serialisable 
-  TheHMC.Parameters.MD.MDsteps = 60;
+  TheHMC.Parameters.MD.MDsteps = 40;
   TheHMC.Parameters.MD.trajL   = 1.0;
 
   TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
