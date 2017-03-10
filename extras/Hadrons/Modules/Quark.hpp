@@ -37,6 +37,27 @@ See the full license in the file "LICENSE" in the top level distribution directo
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
+ * 5D -> 4D and 4D -> 5D conversions.                                         *
+ ******************************************************************************/
+template<class vobj> // Note that 5D object is modified.
+inline void make_4D(Lattice<vobj> &in_5d, Lattice<vobj> &out_4d, int Ls)
+{
+    axpby_ssp_pminus(in_5d, 0., in_5d, 1., in_5d, 0, 0);
+    axpby_ssp_pplus(in_5d, 1., in_5d, 1., in_5d, 0, Ls-1);
+    ExtractSlice(out_4d, in_5d, 0, 0);
+}
+
+template<class vobj>
+inline void make_5D(const Lattice<vobj> &in_4d, Lattice<vobj> &out_5d, int Ls)
+{
+    out_5d = zero;
+    InsertSlice(in_4d, out_5d, 0, 0);
+    InsertSlice(in_4d, out_5d, Ls-1, 0);
+    axpby_ssp_pplus(out_5d, 0., out_5d, 1., out_5d, 0, 0);
+    axpby_ssp_pminus(out_5d, 0., out_5d, 1., out_5d, Ls-1, Ls-1);
+}
+
+/******************************************************************************
  *                               TQuark                                       *
  ******************************************************************************/
 class QuarkPar: Serializable
@@ -143,12 +164,8 @@ void TQuark<FImpl>::execute(void)
             }
             else
             {
-                source = zero;
                 PropToFerm(tmp, fullSrc, s, c);
-                InsertSlice(tmp, source, 0, 0);
-                InsertSlice(tmp, source, Ls_-1, 0);
-                axpby_ssp_pplus(source, 0., source, 1., source, 0, 0);
-                axpby_ssp_pminus(source, 0., source, 1., source, Ls_-1, Ls_-1);
+                make_5D(tmp, source, Ls_);
             }
         }
         // source conversion for 5D sources
@@ -171,10 +188,7 @@ void TQuark<FImpl>::execute(void)
         {
             PropagatorField &p4d =
                 *env().template getObject<PropagatorField>(getName());
-            
-            axpby_ssp_pminus(sol, 0., sol, 1., sol, 0, 0);
-            axpby_ssp_pplus(sol, 1., sol, 1., sol, 0, Ls_-1);
-            ExtractSlice(tmp, sol, 0, 0);
+            make_4D(sol, tmp, Ls_);
             FermToProp(p4d, tmp, s, c);
         }
     }
