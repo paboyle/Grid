@@ -86,7 +86,7 @@ PARALLEL_FOR_LOOP
     // Poke a scalar object into the SIMD array
     //////////////////////////////////////////////////////
     template<class vobj,class sobj>
-    void pokeSite(const sobj &s,Lattice<vobj> &l,std::vector<int> &site){
+    void pokeSite(const sobj &s,Lattice<vobj> &l,const std::vector<int> &site){
 
       GridBase *grid=l._grid;
 
@@ -120,7 +120,7 @@ PARALLEL_FOR_LOOP
     // Peek a scalar object from the SIMD array
     //////////////////////////////////////////////////////////
     template<class vobj,class sobj>
-      void peekSite(sobj &s,const Lattice<vobj> &l,std::vector<int> &site){
+      void peekSite(sobj &s,const Lattice<vobj> &l,const std::vector<int> &site){
         
       GridBase *grid=l._grid;
 
