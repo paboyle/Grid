@@ -142,12 +142,12 @@ int main(int argc, char **argv)
         for (int s2 = 0; s2 < Ns; ++s2)
         for (int c2 = 0; c2 < Nc; ++c2)
         {
-            //if (propSite()(s2, s)(c2, c) != fermSite()(s2)(c2))
-            //{
+            if (propSite()(s2, s)(c2, c) != fermSite()(s2)(c2))
+            {
                 std::cout << propSite()(s2, s)(c2, c) << " != "
                           << fermSite()(s2)(c2) << " for spin = " << s2
                           << ", col = " << c2 << std::endl;
-            //}
+            }
         }
     }
 
