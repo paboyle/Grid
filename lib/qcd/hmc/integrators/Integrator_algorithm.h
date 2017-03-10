@@ -344,7 +344,8 @@ class ImplicitLeapFrog : public Integrator<FieldImplementation, SmearingPolicy,
       if (last_step){
         this->update_P(U, level, eps / 2.0);
       } else {
-      this->implicit_update_P(U, level, eps, true);// intermediate step
+      this->implicit_update_P(U, level, eps, true);// works intermediate step
+      //  this->update_P(U, level, eps); // looks not reversible
       }
     }
   }

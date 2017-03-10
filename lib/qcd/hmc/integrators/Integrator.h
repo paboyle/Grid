@@ -125,10 +125,10 @@ class Integrator {
     Mom -= MomDer * ep;
 
     // Auxiliary fields
-    //P.update_auxiliary_momenta(ep*0.5);
-    //P.AuxiliaryFieldsDerivative(MomDer);
-    //Mom -= MomDer * ep;
-    //P.update_auxiliary_momenta(ep*0.5);
+    P.update_auxiliary_momenta(ep*0.5);
+    P.AuxiliaryFieldsDerivative(MomDer);
+    Mom -= MomDer * ep;
+    P.update_auxiliary_momenta(ep*0.5);
 
 
     for (int a = 0; a < as[level].actions.size(); ++a) {
@@ -193,9 +193,9 @@ class Integrator {
     }
 
     // Auxiliary fields
-    //P.update_auxiliary_momenta(ep*0.5);
-    //P.AuxiliaryFieldsDerivative(AuxDer);
-    //Msum += AuxDer;
+    P.update_auxiliary_momenta(ep*0.5);
+    P.AuxiliaryFieldsDerivative(AuxDer);
+    Msum += AuxDer;
     
 
     // Here run recursively
@@ -222,7 +222,7 @@ class Integrator {
     P.Mom = NewMom;
 
     // update the auxiliary fields momenta    
-    //P.update_auxiliary_momenta(ep*0.5);
+    P.update_auxiliary_momenta(ep*0.5);
   }
 
 
@@ -265,7 +265,7 @@ class Integrator {
     P.DerivativeP(Mom1); // first term in the derivative 
 
  
-    //P.update_auxiliary_fields(ep*0.5);
+    P.update_auxiliary_fields(ep*0.5);
 
 
     do {
@@ -293,7 +293,7 @@ class Integrator {
 
     U = NewU;
 
-    //P.update_auxiliary_fields(ep*0.5);
+    P.update_auxiliary_fields(ep*0.5);
 
   }
 
@@ -340,6 +340,7 @@ class Integrator {
 
   void reverse_momenta(){
     P.Mom *= -1.0;
+    P.AuxMom *= -1.0;
   }
 
   // to be used by the actionlevel class to iterate

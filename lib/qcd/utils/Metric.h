@@ -105,7 +105,7 @@ public:
     // Modify the distribution with the metric
     M.MSquareRoot(Mom);
 
-    if (0) {
+    if (1) {
       // Auxiliary momenta
       // do nothing if trivial, so hide in the metric
       MomentaField AuxMomTemp(Mom._grid);
@@ -132,7 +132,7 @@ public:
       Hloc += trace(Mom_mu * inv_mu);
     }
 
-    if (0) {
+    if (1) {
       // Auxiliary Fields
       // hide in the metric
       M.M(AuxMom, inv);
@@ -167,7 +167,7 @@ public:
 
   void AuxiliaryFieldsDerivative(MomentaField& der){
     der = zero;
-    if (0){
+    if (1){
     // Auxiliary fields
     MomentaField der_temp(der._grid);
     MomentaField X(der._grid);
@@ -194,13 +194,13 @@ public:
   }
 
   void update_auxiliary_momenta(RealD ep){
-    if(0){
+    if(1){
       AuxMom -= ep * AuxField;
     }
   }
 
   void update_auxiliary_fields(RealD ep){
-    if (0) {
+    if (1) {
       MomentaField tmp(AuxMom._grid);
       MomentaField tmp2(AuxMom._grid);
       M.M(AuxMom, tmp);
