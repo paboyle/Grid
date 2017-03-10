@@ -86,23 +86,5 @@ int main (int argc, char ** argv)
 
   Laplacian.MSquareRoot(src_f);
 
-
-  // Tests also the version using the algebra decomposition
-  /*
-  LaplacianAlgebraField<PeriodicGimplR> LaplacianAlgebra(&Grid, Kappa);
-  LaplacianAlgebra.ImportGauge(Umu);
-
-  HermitianLinearOperator<LaplacianAlgebraField<PeriodicGimplR>,AVector> HermOpAlg(LaplacianAlgebra);
-  ConjugateGradient<AVector> CG_Algebra(1.0e-8,10000);
-  std::cout << GridLogMessage << "Testing the Laplacian using the algebra vectors" <<std::endl;
-  CG_Algebra(HermOpAlg,src_vec,result_vec);
-  
-  LatticeColourMatrix result2(&Grid);
-  SU<Nc>::FundamentalLieAlgebraMatrix(result_vec, result2);
-
-  result2 -= result;
-  std::cout << GridLogMessage << "Results difference " << norm2(result2) << std::endl;
-  */
-
   Grid_finalize();
 }

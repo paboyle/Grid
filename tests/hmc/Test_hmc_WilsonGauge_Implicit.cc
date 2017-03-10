@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
    // Typedefs to simplify notation
-  typedef GenericHMCRunner<ImplicitLeapFrog> HMCWrapper;  // Uses the default minimum norm
+  typedef GenericHMCRunner<LeapFrog> HMCWrapper;  // Uses the default minimum norm
   HMCWrapper TheHMC;
 
   // Grid from the command line

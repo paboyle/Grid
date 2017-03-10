@@ -67,8 +67,8 @@ int main(int argc, char **argv) {
   TheHMC.Resources.LoadBinaryCheckpointer(CPparams);
 
   RNGModuleParameters RNGpar;
-  RNGpar.SerialSeed = {1,2,3,4,5};
-  RNGpar.ParallelSeed = {6,7,8,9,10};
+  RNGpar.serial_seeds = "1 2 3 4 5";
+  RNGpar.parallel_seeds = "6 7 8 9 10";
   TheHMC.Resources.SetRNGSeeds(RNGpar);
 
   // Construct observables

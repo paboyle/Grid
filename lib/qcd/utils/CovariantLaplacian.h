@@ -191,57 +191,6 @@ class LaplacianAdjointField: public Metric<typename Impl::Field> {
   std::vector<GaugeLinkField> U;
 };
 
-
-// This is just for debuggin purposes
-// not meant to be used by the final users
-
-template <class Impl>
-class LaplacianAlgebraField {
- public:
-  INHERIT_GIMPL_TYPES(Impl);
-  typedef SU<Nc>::LatticeAlgebraVector AVector;
-
-  LaplacianAlgebraField(GridBase* grid, const RealD k) : 
-    U(Nd, grid), kappa(k){};
-
-  void ImportGauge(const GaugeField& _U) {
-    for (int mu = 0; mu < Nd; mu++) {
-      U[mu] = PeekIndex<LorentzIndex>(_U, mu);
-    }
-  }
-
-  void Mdiag(const AVector& in, AVector& out) { assert(0); }
-
-  void Mdir(const AVector& in, AVector& out, int dir, int disp) { assert(0); }
-
-  // Operator with algebra vector inputs and outputs
-  void M(const AVector& in, AVector& out) {
-    GaugeLinkField tmp(in._grid);
-    GaugeLinkField tmp2(in._grid);
-    GaugeLinkField sum(in._grid);
-    GaugeLinkField out_mat(in._grid);
-    GaugeLinkField in_mat(in._grid);
-
-    // Reconstruct matrix
-    SU<Nc>::FundamentalLieAlgebraMatrix(in, in_mat);
-
-    sum = zero;
-    for (int mu = 0; mu < Nd; mu++) {
-      tmp = U[mu] * Cshift(in_mat, mu, +1) * adj(U[mu]);
-      tmp2 = adj(U[mu]) * in_mat * U[mu];
-      sum += tmp + Cshift(tmp2, mu, -1) - 2.0 * in_mat;
-    }
-    out_mat = (1.0 - kappa) * in_mat - kappa / (double(4 * Nd)) * sum;
-    // Project
-    SU<Nc>::projectOnAlgebra(out, out_mat);
-  }
-
- private:
-  RealD kappa;
-  std::vector<GaugeLinkField> U;
-};
-
-
 }
 }
 
