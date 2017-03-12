@@ -26,6 +26,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/GridCore.h>
+#include <Grid/GridQCDcore.h>
+#include <Grid/qcd/action/ActionCore.h>
 #include <mpi.h>
 
 namespace Grid {

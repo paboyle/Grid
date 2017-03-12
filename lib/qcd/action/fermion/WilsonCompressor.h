@@ -229,7 +229,7 @@ namespace QCD {
       //    }
       int face_idx=0;
       if ( dag ) { 
-	std::cout << " Optimised Dagger compress " <<std::endl;
+	//	std::cout << " Optimised Dagger compress " <<std::endl;
 	this->HaloGatherDir(source,XpCompress,Xp,face_idx);
 	this->HaloGatherDir(source,YpCompress,Yp,face_idx);
 	this->HaloGatherDir(source,ZpCompress,Zp,face_idx);
