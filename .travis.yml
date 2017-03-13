@@ -102,5 +102,5 @@ script:
     - ../configure --enable-precision=single --enable-simd=SSE4 --enable-comms=mpi-auto
     - make -j4
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then mpirun.openmpi -n 2 ./benchmarks/Benchmark_dwf --threads 1 --mpi 2.1.1.1; fi
-    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./benchmarks/Benchmark_dwf --threads 1 ; fi
+
 
