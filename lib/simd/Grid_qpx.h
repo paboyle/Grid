@@ -5,8 +5,10 @@
  Source file: ./lib/simd/Grid_qpx.h
  
  Copyright (C) 2016
+ Copyright (C) 2017
  
  Author: Antonin Portelli <antonin.portelli@me.com>
+         Andrew Lawson    <andrew.lawson1991@gmail.com>
  
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -24,6 +26,11 @@
  
  See the full license in the file "LICENSE" in the top level distribution directory
  ******************************************************************************/
+
+#ifndef GEN_SIMD_WIDTH
+#define GEN_SIMD_WIDTH 32u
+#endif
+#include "Grid_generic_types.h" // Definitions for simulated integer SIMD.
 
 namespace Grid {
 namespace Optimization {
@@ -62,8 +69,15 @@ namespace Optimization {
       return (vector4double){a, a, a, a};
     }
     //Integer
-    inline int operator()(Integer a){
-      return a;
+    inline veci operator()(Integer a){
+      veci out;
+      
+      VECTOR_FOR(i, W<Integer>::r, 1)
+      {
+        out.v[i] = a;
+      }
+      
+      return out;
     }
   };
   
@@ -88,10 +102,10 @@ namespace Optimization {
     inline void operator()(vector4double a, double *d){
       vec_st(a, 0, d);
     }
+
     //Integer
-    // PAB: fixme -- is this right ; just looks like scalar not vector
-    inline void operator()(int a, Integer *i){
-      i[0] = a;
+    inline void operator()(veci a, Integer *i){
+      *((veci *)i) = a;
     }
   };
   
@@ -143,11 +157,13 @@ namespace Optimization {
       return vec_ld(0, a);
     }
     // Integer
-    inline int operator()(Integer *a){
-      return a[0];
-    }
-    
-    
+    inline veci operator()(Integer *a){
+      veci out;
+      
+      out = *((veci *)a);
+      
+      return out;
+    }    
   };
   
   template <typename Out_type, typename In_type>
@@ -217,8 +233,15 @@ namespace Optimization {
     FLOAT_WRAP_2(operator(), inline)
 
     //Integer
-    inline int operator()(int a, int b){
-      return a + b;
+    inline veci operator()(veci a, veci b){
+      veci out;
+      
+      VECTOR_FOR(i, W<Integer>::r, 1)
+      {
+        out.v[i] = a.v[i] + b.v[i];
+      }
+      
+      return out;
     }
   };
   
@@ -232,8 +255,15 @@ namespace Optimization {
     FLOAT_WRAP_2(operator(), inline)
 
     //Integer
-    inline int operator()(int a, int b){
-      return a - b;
+    inline veci operator()(veci a, veci b){
+      veci out;
+      
+      VECTOR_FOR(i, W<Integer>::r, 1)
+      {
+        out.v[i] = a.v[i] - b.v[i];
+      }
+      
+      return out;
     }
   };
   
@@ -272,8 +302,15 @@ namespace Optimization {
     FLOAT_WRAP_2(operator(), inline)
 
     // Integer
-    inline int operator()(int a, int b){
-      return a*b;
+    inline veci operator()(veci a, veci b){
+      veci out;
+      
+      VECTOR_FOR(i, W<Integer>::r, 1)
+      {
+        out.v[i] = a.v[i]*b.v[i];
+      }
+      
+      return out;
     }
   };
 
@@ -287,8 +324,15 @@ namespace Optimization {
     FLOAT_WRAP_2(operator(), inline)
 
     // Integer
-    inline int operator()(int a, int b){
-      return a/b;
+    inline veci operator()(veci a, veci b){
+      veci out;
+      
+      VECTOR_FOR(i, W<Integer>::r, 1)
+      {
+        out.v[i] = a.v[i]/b.v[i];
+      }
+      
+      return out;
     }
   };
 
@@ -457,7 +501,7 @@ namespace Optimization {
 // Here assign types
 typedef Optimization::vector4float SIMD_Ftype;  // Single precision type
 typedef vector4double              SIMD_Dtype; // Double precision type
-typedef int                        SIMD_Itype; // Integer type
+typedef Optimization::veci         SIMD_Itype; // Integer type
 
 // prefetch utilities
 inline void v_prefetch0(int size, const char *ptr){};

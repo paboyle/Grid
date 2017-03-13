@@ -178,6 +178,65 @@ void Tester(const functor &func)
   assert(ok==0);
 }
 
+template<class functor>
+void IntTester(const functor &func)
+{
+  typedef Integer  scal;
+  typedef vInteger vec;
+  GridSerialRNG          sRNG;
+  sRNG.SeedRandomDevice();
+
+  int Nsimd = vec::Nsimd();
+
+  std::vector<scal> input1(Nsimd);
+  std::vector<scal> input2(Nsimd);
+  std::vector<scal> result(Nsimd);
+  std::vector<scal> reference(Nsimd);
+
+  std::vector<vec,alignedAllocator<vec> > buf(3);
+  vec & v_input1 = buf[0];
+  vec & v_input2 = buf[1];
+  vec & v_result = buf[2];
+
+
+  for(int i=0;i<Nsimd;i++){
+    input1[i] = (i + 1) * 30;
+    input2[i] = (i + 1) * 20;
+    result[i] = (i + 1) * 10;
+  }
+
+  merge<vec,scal>(v_input1,input1);
+  merge<vec,scal>(v_input2,input2);
+  merge<vec,scal>(v_result,result);
+
+  func(v_result,v_input1,v_input2);
+
+  for(int i=0;i<Nsimd;i++) {
+    func(reference[i],input1[i],input2[i]);
+  }
+
+  extract<vec,scal>(v_result,result);
+
+  std::cout << GridLogMessage << " " << func.name() << std::endl;
+
+  std::cout << GridLogDebug << v_input1 << std::endl;
+  std::cout << GridLogDebug << v_input2 << std::endl;
+  std::cout << GridLogDebug << v_result << std::endl;
+
+  int ok=0;
+  for(int i=0;i<Nsimd;i++){
+    if ( reference[i]-result[i] != 0){
+      std::cout<<GridLogMessage<< "*****" << std::endl;
+      std::cout<<GridLogMessage<< "["<<i<<"] "<< reference[i]-result[i] << " " <<reference[i]<< " " << result[i]<<std::endl;
+      ok++;
+    }
+  }
+  if ( ok==0 ) {
+    std::cout<<GridLogMessage << " OK!" <<std::endl;
+  }
+  assert(ok==0);
+}
+
 
 template<class reduced,class scal, class vec,class functor > 
 void ReductionTester(const functor &func)
@@ -611,6 +670,13 @@ int main (int argc, char ** argv)
   for(int r=0;r<vComplexD::Nsimd();r++){
     PermTester<ComplexD,vComplexD>(funcRotate(r));
   }
+  
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "Testing vInteger                   "<<  std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  IntTester(funcPlus());
+  IntTester(funcMinus());
+  IntTester(funcTimes());
 
   Grid_finalize();
 }
