@@ -26,7 +26,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 #include <Grid/Grid.h>
-#include <Grid/PerfCount.h>
 
 #ifdef TEST_ZMM
 

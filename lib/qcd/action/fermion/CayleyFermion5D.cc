@@ -190,7 +190,12 @@ void CayleyFermion5D<Impl>::MooeeDag    (const FermionField &psi, FermionField &
       lower[s]=-cee[s-1];
     }
   }
-
+  // Conjugate the terms ?
+  for (int s=0;s<Ls;s++){
+    diag[s] =conjugate(diag[s]);
+    upper[s]=conjugate(upper[s]);
+    lower[s]=conjugate(lower[s]);
+  }
   M5Ddag(psi,psi,chi,lower,diag,upper);
 }
 
@@ -215,6 +220,12 @@ void CayleyFermion5D<Impl>::MeooeDag5D    (const FermionField &psi, FermionField
   std::vector<Coeff_t> lower=cs;
   upper[Ls-1]=-mass*upper[Ls-1];
   lower[0]   =-mass*lower[0];
+  // Conjugate the terms ?
+  for (int s=0;s<Ls;s++){
+    diag[s] =conjugate(diag[s]);
+    upper[s]=conjugate(upper[s]);
+    lower[s]=conjugate(lower[s]);
+  }
   M5Ddag(psi,psi,Din,lower,diag,upper);
 }
 
