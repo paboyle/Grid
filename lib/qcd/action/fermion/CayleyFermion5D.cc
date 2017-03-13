@@ -64,6 +64,18 @@ void CayleyFermion5D<Impl>::Dminus(const FermionField &psi, FermionField &chi)
     axpby_ssp(chi,Coeff_t(1.0),psi,-cs[s],tmp_f,s,s);// chi = (1-c[s] D_W) psi
   }
 }
+template<class Impl>  
+void CayleyFermion5D<Impl>::DminusDag(const FermionField &psi, FermionField &chi)
+{
+  int Ls=this->Ls;
+
+  FermionField tmp_f(this->FermionGrid());
+  this->DW(psi,tmp_f,DaggerYes);
+
+  for(int s=0;s<Ls;s++){
+    axpby_ssp(chi,Coeff_t(1.0),psi,-cs[s],tmp_f,s,s);// chi = (1-c[s] D_W) psi
+  }
+}
 
 
 template<class Impl> void CayleyFermion5D<Impl>::CayleyReport(void)
@@ -108,18 +120,6 @@ template<class Impl> void CayleyFermion5D<Impl>::CayleyZeroCounters(void)
 }
 
 
-template<class Impl>  
-void CayleyFermion5D<Impl>::DminusDag(const FermionField &psi, FermionField &chi)
-{
-  int Ls=this->Ls;
-
-  FermionField tmp_f(this->FermionGrid());
-  this->DW(psi,tmp_f,DaggerYes);
-
-  for(int s=0;s<Ls;s++){
-    axpby_ssp(chi,Coeff_t(1.0),psi,-cs[s],tmp_f,s,s);// chi = (1-c[s] D_W) psi
-  }
-}
 template<class Impl>  
 void CayleyFermion5D<Impl>::M5D   (const FermionField &psi, FermionField &chi)
 {
