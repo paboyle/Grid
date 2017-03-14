@@ -202,6 +202,9 @@ using GenericHMCRunnerTemplate = HMCWrapperTemplate<Implementation, Integrator, 
 typedef HMCWrapperTemplate<ScalarImplR, MinimumNorm2, ScalarFields>
     ScalarGenericHMCRunner;
 
+typedef HMCWrapperTemplate<ScalarAdjImplR, MinimumNorm2, ScalarMatrixFields>
+    ScalarAdjGenericHMCRunner;
+
 }  // namespace QCD
 }  // namespace Grid
 

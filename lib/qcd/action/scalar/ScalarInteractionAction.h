@@ -6,10 +6,7 @@
 
   Copyright (C) 2015
 
-Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: neo <cossu@post.kek.jp>
-Author: paboyle <paboyle@ph.ed.ac.uk>
+  Author: Guido Cossu <guido,cossu@ed.ac.uk>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,55 +27,54 @@ directory
   *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef SCALAR_ACTION_H
-#define SCALAR_ACTION_H
+#ifndef SCALAR_INT_ACTION_H
+#define SCALAR_INT_ACTION_H
 
 namespace Grid {
   // FIXME drop the QCD namespace everywhere here
-  
-  template <class Impl>
-  class ScalarInteractionAction : public QCD::Action<typename Impl::Field> {
-  public:
-    INHERIT_FIELD_TYPES(Impl);
-    
-  private:
+
+template <class Impl>
+class ScalarInteractionAction : public QCD::Action<typename Impl::Field> {
     RealD mass_square;
     RealD lambda;
-    
-  public:
-    ScalarAction(RealD ms, RealD l) : mass_square(ms), lambda(l){};
 
-    virtual std::string LogParameters(){
+ public:
+    INHERIT_FIELD_TYPES(Impl);
+    ScalarInteractionAction(RealD ms, RealD l) : mass_square(ms), lambda(l) {}
+
+    virtual std::string LogParameters() {
       std::stringstream sstream;
       sstream << GridLogMessage << "[ScalarAction] lambda      : " << lambda      << std::endl;
       sstream << GridLogMessage << "[ScalarAction] mass_square : " << mass_square << std::endl;
       return sstream.str();
-      
     }
-    
-    virtual std::string action_name(){return "ScalarAction";}
-    
-    virtual void refresh(const Field &U,
-			 GridParallelRNG &pRNG){};  // noop as no pseudoferms
-    
-    virtual RealD S(const Field &p) {
-      return (mass_square * 0.5 + QCD::Nd) * ScalarObs<Impl>::sumphisquared(p) +
-	(lambda / 24.) * ScalarObs<Impl>::sumphifourth(p) +
-	ScalarObs<Impl>::sumphider(p);
-    };
-    
-    virtual void deriv(const Field &p,
-		       Field &force) {
-      Field tmp(p._grid);
-      Field p2(p._grid);
-      ScalarObs<Impl>::phisquared(p2, p);
-      tmp = -(Cshift(p, 0, -1) + Cshift(p, 0, 1));
-      for (int mu = 1; mu < QCD::Nd; mu++) tmp -= Cshift(p, mu, -1) + Cshift(p, mu, 1);
-      
-      force=+(mass_square + 2. * QCD::Nd) * p + (lambda / 6.) * p2 * p + tmp;
-    };
-  };
-  
-} // Grid
 
-#endif // SCALAR_ACTION_H
+    virtual std::string action_name() {return "ScalarAction";}
+
+    virtual void refresh(const Field &U,
+                         GridParallelRNG &pRNG) {}  // noop as no pseudoferms
+
+    virtual RealD S(const Field &p) {
+        Field action(p._grid);
+        Field pshift(p._grid);
+        Field phisquared(p._grid);
+        phisquared = p*p;
+        action = (2.0*QCD::Nd + mass_square)*phisquared + lambda*phisquared*phisquared;
+        for (int mu = 0; mu < QCD::Nd; mu++) {
+            pshift = Cshift(p, mu, +1);  // not efficient implement with stencils
+            action -= pshift*p + p*pshift;
+        }
+        return -(TensorRemove(sum(trace(action)))).real();
+    };
+
+    virtual void deriv(const Field &p,
+                       Field &force) {
+        force = (2.0*QCD::Nd + mass_square)*p + 2.0*lambda*p*p*p;
+        // following is inefficient
+        for (int mu = 0; mu < QCD::Nd; mu++) force -= Cshift(p, mu, -1) + Cshift(p, mu, 1);
+    }
+};
+
+}  // namespace Grid
+
+#endif  // SCALAR_INT_ACTION_H

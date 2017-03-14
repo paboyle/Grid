@@ -69,6 +69,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 ////////////////////////////////////////////
 #include <Grid/qcd/action/scalar/ScalarImpl.h>
 #include <Grid/qcd/action/scalar/ScalarAction.h>
+#include <Grid/qcd/action/scalar/ScalarInteractionAction.h>
 
 namespace Grid {
 namespace QCD {
@@ -105,6 +106,10 @@ typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeAction
 typedef ScalarAction<ScalarImplR>                 ScalarActionR;
 typedef ScalarAction<ScalarImplF>                 ScalarActionF;
 typedef ScalarAction<ScalarImplD>                 ScalarActionD;
+
+typedef ScalarInteractionAction<ScalarAdjImplR>                 ScalarAdjActionR;
+typedef ScalarInteractionAction<ScalarAdjImplF>                 ScalarAdjActionF;
+typedef ScalarInteractionAction<ScalarAdjImplD>                 ScalarAdjActionD;
 
 }}
 
