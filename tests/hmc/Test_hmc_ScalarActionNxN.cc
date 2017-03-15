@@ -26,7 +26,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 #include <Grid/Grid.h>
-namespace Grid{
+namespace Grid {
 class ScalarActionParameters : Serializable {
  public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(ScalarActionParameters,
@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
   // here make a routine to print all the relevant information on the run
   std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
-   // Typedefs to simplify notation
+  // Typedefs to simplify notation
   typedef ScalarAdjGenericHMCRunner HMCWrapper;  // Uses the default minimum norm, real scalar fields
 
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 
   // Grid from the command line
   GridModule ScalarGrid;
-  ScalarGrid.set_full( SpaceTimeGrid::makeFourDimGrid(
+  ScalarGrid.set_full(SpaceTimeGrid::makeFourDimGrid(
         GridDefaultLatt(), GridDefaultSimd(Nd, vComplex::Nsimd()),
         GridDefaultMpi()));
   ScalarGrid.set_rb(SpaceTimeGrid::makeFourDimRedBlackGrid(ScalarGrid.get_full()));
@@ -89,12 +89,11 @@ int main(int argc, char **argv) {
   /////////////////////////////////////////////////////////////
 
   // HMC parameters are serialisable
-  TheHMC.Parameters.MD.MDsteps = 10;
+  TheHMC.Parameters.MD.MDsteps = 20;
   TheHMC.Parameters.MD.trajL   = 1.0;
 
   TheHMC.ReadCommandLine(argc, argv);
   TheHMC.Run();
 
   Grid_finalize();
-
-} // main
+}  // main
