@@ -101,7 +101,6 @@ template void WilsonKernels<A>::AsmDhopSiteExt(StencilImpl &st,LebesgueOrder & l
 template void WilsonKernels<A>::AsmDhopSiteDagExt(StencilImpl &st,LebesgueOrder & lo,DoubledGaugeField &U, SiteHalfSpinor *buf,\
                                   int ss,int ssU,int Ls,int Ns,const FermionField &in, FermionField &out);\
 
-
 INSTANTIATE_ASM(WilsonImplF);
 INSTANTIATE_ASM(WilsonImplD);
 INSTANTIATE_ASM(ZWilsonImplF);
