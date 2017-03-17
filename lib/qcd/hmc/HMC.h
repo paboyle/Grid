@@ -42,6 +42,8 @@ directory
 #include <string>
 #include <list>
 
+
+
 namespace Grid {
 namespace QCD {
 
@@ -87,7 +89,7 @@ struct HMCparameters: Serializable {
   
 };
 
-
+/*
 // Move this to a different file
 template <class Field>
 class HmcObservable {
@@ -144,7 +146,7 @@ class PlaquetteLogger : public HmcObservable<typename Impl::Field> {
   }
 };
 //////////////////////////////////////////////////////////////
-
+*/
 
 template <class IntegratorType>
 class HybridMonteCarlo {

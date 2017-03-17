@@ -513,6 +513,7 @@ namespace QCD {
 
 #include <Grid/qcd/hmc/integrators/Integrator.h>
 #include <Grid/qcd/hmc/integrators/Integrator_algorithm.h>
+#include <Grid/qcd/observables/hmc_observable.h>
 #include <Grid/qcd/hmc/HMC.h>
 
 
