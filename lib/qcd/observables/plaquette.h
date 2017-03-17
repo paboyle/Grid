@@ -30,10 +30,10 @@ directory
 #ifndef HMC_PLAQUETTE_H
 #define HMC_PLAQUETTE_H
 
-namespace Grid{
-    namespace QCD{
+namespace Grid {
+namespace QCD {
 
-  // this is only defined for a gauge theory
+// this is only defined for a gauge theory
 template <class Impl>
 class PlaquetteLogger : public HmcObservable<typename Impl::Field> {
  private:
@@ -43,8 +43,8 @@ class PlaquetteLogger : public HmcObservable<typename Impl::Field> {
   // here forces the Impl to be of gauge fields
   // if not the compiler will complain
   INHERIT_GIMPL_TYPES(Impl);
-  typedef typename Impl::Field Field; // necessary for HmcObservable compatibility
-  PlaquetteLogger(std::string cf) { Stem = cf; };
+  typedef typename Impl::Field Field;  // necessary for HmcObservable compatibility
+  explicit PlaquetteLogger(std::string cf) { Stem = cf; }
 
   void TrajectoryComplete(int traj,
                           Field &U,
@@ -80,9 +80,8 @@ class PlaquetteLogger : public HmcObservable<typename Impl::Field> {
               << "  " << peri_plaq << " " << peri_rect << std::endl;
   }
 };
-//////////////////////////////////////////////////////////////
 
 }  // namespace QCD
 }  // namespace Grid
 
-#endif  //HMC_PLAQUETTE_H
+#endif  // HMC_PLAQUETTE_H

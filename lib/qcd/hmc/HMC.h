@@ -88,66 +88,7 @@ struct HMCparameters: Serializable {
   }
   
 };
-
-/*
-// Move this to a different file
-template <class Field>
-class HmcObservable {
- public:
-  virtual void TrajectoryComplete(int traj, Field &U, GridSerialRNG &sRNG,
-                                  GridParallelRNG &pRNG) = 0;
-};
-
-  // this is only defined for a gauge theory
-template <class Impl>
-class PlaquetteLogger : public HmcObservable<typename Impl::Field> {
- private:
-  std::string Stem;
-
- public:
- 	// here forces the Impl to be of gauge fields
- 	// if not the compiler will complain
-  INHERIT_GIMPL_TYPES(Impl); 
-  typedef typename Impl::Field Field; // necessary for HmcObservable compatibility
-  PlaquetteLogger(std::string cf) { Stem = cf; };
-
-  void TrajectoryComplete(int traj, 
-                          Field &U, 
-                          GridSerialRNG &sRNG, 
-                          GridParallelRNG &pRNG) {
-    std::string file;
-    {
-      std::ostringstream os;
-      os << Stem << "." << traj;
-      file = os.str();
-    }
-    std::ofstream of(file);
-
-    RealD peri_plaq = WilsonLoops<PeriodicGimplR>::avgPlaquette(U);
-    RealD peri_rect = WilsonLoops<PeriodicGimplR>::avgRectangle(U);
-
-    RealD impl_plaq = WilsonLoops<Impl>::avgPlaquette(U);
-    RealD impl_rect = WilsonLoops<Impl>::avgRectangle(U);
-
-    // Fixme reorganise this output
-    of << traj << " " << impl_plaq << " " << impl_rect << "  " << peri_plaq
-       << " " << peri_rect << std::endl;
-    std::cout << GridLogMessage << "traj"
-              << " "
-              << "plaq "
-              << " "
-              << " rect  "
-              << "  "
-              << "peri_plaq"
-              << " "
-              << "peri_rect" << std::endl;
-    std::cout << GridLogMessage << traj << " " << impl_plaq << " " << impl_rect
-              << "  " << peri_plaq << " " << peri_rect << std::endl;
-  }
-};
-//////////////////////////////////////////////////////////////
-*/
-
+	
 template <class IntegratorType>
 class HybridMonteCarlo {
  private:
