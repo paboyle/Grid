@@ -36,9 +36,6 @@ namespace QCD {
 // this is only defined for a gauge theory
 template <class Impl>
 class PlaquetteLogger : public HmcObservable<typename Impl::Field> {
- private:
-  std::string Stem;
-
  public:
   // here forces the Impl to be of gauge fields
   // if not the compiler will complain

@@ -94,6 +94,22 @@ class PlaquetteMod: public ObservableModule<PlaquetteLogger<Impl>, NoParameters>
   PlaquetteMod(): ObsBase(NoParameters()){}
 };
 
+template < class Impl >
+class TopologicalChargeMod: public ObservableModule<TopologicalCharge<Impl>, NoParameters>{
+  typedef ObservableModule<TopologicalCharge<Impl>, NoParameters> ObsBase;
+  using ObsBase::ObsBase; // for constructors
+
+
+
+  // acquire resource
+  virtual void initialize(){
+    this->ObservablePtr.reset(new TopologicalCharge<Impl>());
+  }
+  public:
+  TopologicalChargeMod(): ObsBase(NoParameters()){}
+};
+
+
 
 }// QCD temporarily here
 

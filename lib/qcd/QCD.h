@@ -34,6 +34,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 namespace Grid{
 namespace QCD {
 
+    static const int Xdir = 0;
+    static const int Ydir = 1;
+    static const int Zdir = 2;
+    static const int Tdir = 3;
 
     static const int Xp = 0;
     static const int Yp = 1;

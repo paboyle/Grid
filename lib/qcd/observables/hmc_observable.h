@@ -44,5 +44,6 @@ class HmcObservable {
 }  // namespace Grid
 
 #include "plaquette.h"
+#include "topological_charge.h"
 
 #endif  //  HMC_OBSERVABLE_H

@@ -31,19 +31,54 @@ directory
 #define HMC_TOP_CHARGE_H
 
 namespace Grid {
-namespace QCD (
+namespace QCD {
 
 // this is only defined for a gauge theory
 template <class Impl>
 class TopologicalCharge : public HmcObservable<typename Impl::Field> {
- private:
-  std::string Stem;
-
  public:
+    // here forces the Impl to be of gauge fields
+    // if not the compiler will complain
+    INHERIT_GIMPL_TYPES(Impl);
+
+    // necessary for HmcObservable compatibility
+    typedef typename Impl::Field Field;
+
+    void TrajectoryComplete(int traj,
+                            Field &U,
+                            GridSerialRNG &sRNG,
+                            GridParallelRNG &pRNG) {
+
+    // 4d topological charge
+    // Bx = -iF(y,z), By = -iF(z,y), Bz = -iF(x,y)
+    GaugeLinkField Bx(U._grid), By(U._grid), Bz(U._grid);
+    WilsonLoops<Impl>::FieldStrength(Bx, U, Ydir, Zdir);
+    WilsonLoops<Impl>::FieldStrength(By, U, Zdir, Xdir);
+    WilsonLoops<Impl>::FieldStrength(Bz, U, Xdir, Ydir);
+
+    // Ex = -iF(t,x), Ey = -iF(t,y), Ez = -iF(t,z)
+    GaugeLinkField Ex(U._grid), Ey(U._grid), Ez(U._grid);
+    WilsonLoops<Impl>::FieldStrength(Ex, U, Tdir, Xdir);
+    WilsonLoops<Impl>::FieldStrength(Ey, U, Tdir, Ydir);
+    WilsonLoops<Impl>::FieldStrength(Ez, U, Tdir, Zdir);
+
+    double coeff = 8.0/(32.0*M_PI*M_PI);
+
+    LatticeComplex qfield = coeff*trace(Bx*Ex + By*Ey + Bz*Ez);
+    TComplex Tq = sum(qfield);
+    Real q = TensorRemove(Tq).real();
+
+    int def_prec = std::cout.precision();
+
+    std::cout << GridLogMessage
+        << std::setprecision(std::numeric_limits<Real>::digits10 + 1)
+        << "Topological Charge: [ " << traj << " ] "<< q << std::endl;
+
+    std::cout.precision(def_prec);
+    }
 
 };
-
-)
+}
 }
 
 #endif  //  HMC_TOP_CHARGE_H

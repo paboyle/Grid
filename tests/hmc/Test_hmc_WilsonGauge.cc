@@ -66,7 +66,9 @@ int main(int argc, char **argv) {
   // Construct observables
   // here there is too much indirection 
   typedef PlaquetteMod<HMCWrapper::ImplPolicy> PlaqObs;
+  typedef TopologicalChargeMod<HMCWrapper::ImplPolicy> QObs;
   TheHMC.Resources.AddObservable<PlaqObs>();
+  TheHMC.Resources.AddObservable<QObs>();
   //////////////////////////////////////////////
 
   /////////////////////////////////////////////////////////////
