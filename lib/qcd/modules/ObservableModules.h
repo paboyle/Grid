@@ -41,13 +41,14 @@ class ObservableModule
  public:
   typedef HMCModuleBase< QCD::HmcObservable< typename ObservableType::Field> > Base;
   typedef typename Base::Product Product;
+  typedef OPar Parameters;
 
   std::unique_ptr<ObservableType> ObservablePtr;
 
   ObservableModule(OPar Par) : Parametrized<OPar>(Par) {}
 
   virtual void print_parameters(){
-    std::cout << this->Par_ << std::endl;
+    Parametrized<OPar>::print_parameters();
   }
 
   template <class ReaderClass>
@@ -79,14 +80,18 @@ class PlaquetteObsParameters : Serializable {
 };
 
 template < class Impl >
-class PlaquetteMod: public ObservableModule<PlaquetteLogger<Impl>, PlaquetteObsParameters>{
-  typedef ObservableModule<PlaquetteLogger<Impl>, PlaquetteObsParameters> ObsBase;
+class PlaquetteMod: public ObservableModule<PlaquetteLogger<Impl>, NoParameters>{
+  typedef ObservableModule<PlaquetteLogger<Impl>, NoParameters> ObsBase;
   using ObsBase::ObsBase; // for constructors
+
+
 
   // acquire resource
   virtual void initialize(){
-    this->ObservablePtr.reset(new PlaquetteLogger<Impl>(this->Par_.output_prefix));
+    this->ObservablePtr.reset(new PlaquetteLogger<Impl>());
   }
+  public:
+  PlaquetteMod(): ObsBase(NoParameters()){}
 };
 
 

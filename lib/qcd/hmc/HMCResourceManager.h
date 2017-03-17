@@ -68,6 +68,7 @@ class HMCResourceManager {
   // A vector of HmcObservable modules
   std::vector<std::unique_ptr<ObservableBaseModule> > ObservablesList;
 
+
   // A vector of HmcObservable modules
   std::multimap<int, std::unique_ptr<ActionBaseModule> > ActionsList;
   std::vector<int> multipliers;
@@ -249,9 +250,9 @@ class HMCResourceManager {
   // Observables
   ////////////////////////////////////////////////////////
 
-  void AddObservable(ObservableBaseModule *O){
-    // acquire resource
-    ObservablesList.push_back(std::unique_ptr<ObservableBaseModule>(std::move(O)));
+  template<class T, class... Types>
+  void AddObservable(Types&&... Args){
+    ObservablesList.push_back(std::unique_ptr<T>(new T(std::forward<Types>(Args)...)));
   }
 
   std::vector<HmcObservable<typename ImplementationPolicy::Field>* > GetObservables(){

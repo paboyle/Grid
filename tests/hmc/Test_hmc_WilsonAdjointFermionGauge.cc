@@ -73,11 +73,8 @@ int main(int argc, char **argv) {
   TheHMC.Resources.SetRNGSeeds(RNGpar);
 
   // Construct observables
-  // here there is too much indirection 
-  PlaquetteObsParameters PlPar;
-  PlPar.output_prefix = "Plaquette";
-  PlaquetteMod<HMCWrapper::ImplPolicy> PlaqModule(PlPar);
-  TheHMC.Resources.AddObservable(&PlaqModule);
+  typedef PlaquetteMod<HMCWrapper::ImplPolicy> PlaqObs;
+  TheHMC.Resources.AddObservable<PlaqObs>();
   //////////////////////////////////////////////
 
   /////////////////////////////////////////////////////////////
