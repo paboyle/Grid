@@ -8,7 +8,6 @@
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
-Author: Chulwoo Jung <chulwoo@bnl.gov>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,11 +31,16 @@ Author: Chulwoo Jung <chulwoo@bnl.gov>
 
 #include <string.h> //memset
 #ifdef USE_LAPACK
+#ifdef USE_MKL
+#include<mkl_lapack.h>
+#else
 void LAPACK_dstegr(char *jobz, char *range, int *n, double *d, double *e,
                    double *vl, double *vu, int *il, int *iu, double *abstol,
                    int *m, double *w, double *z, int *ldz, int *isuppz,
                    double *work, int *lwork, int *iwork, int *liwork,
                    int *info);
+//#include <lapacke/lapacke.h>
+#endif
 #endif
 #include "DenseMatrix.h"
 #include "EigenSort.h"
@@ -63,11 +67,12 @@ public:
     int Np;      // Np -- Number of spare vecs in kryloc space
     int Nm;      // Nm -- total number of vectors
 
+
+    RealD OrthoTime;
+
     RealD eresid;
 
     SortEigen<Field> _sort;
-
-//    GridCartesian &_fgrid;
 
     LinearOperatorBase<Field> &_Linop;
 
@@ -125,23 +130,23 @@ public:
 
       GridBase *grid = evec[0]._grid;
       Field w(grid);
-      std::cout << "RitzMatrix "<<std::endl;
+      std::cout<<GridLogMessage << "RitzMatrix "<<std::endl;
       for(int i=0;i<k;i++){
 	_poly(_Linop,evec[i],w);
-	std::cout << "["<<i<<"] ";
+	std::cout<<GridLogMessage << "["<<i<<"] ";
 	for(int j=0;j<k;j++){
 	  ComplexD in = innerProduct(evec[j],w);
 	  if ( fabs((double)i-j)>1 ) { 
 	    if (abs(in) >1.0e-9 )  { 
-	      std::cout<<"oops"<<std::endl;
+	      std::cout<<GridLogMessage<<"oops"<<std::endl;
 	      abort();
 	    } else 
-	      std::cout << " 0 ";
+	      std::cout<<GridLogMessage << " 0 ";
 	  } else { 
-	    std::cout << " "<<in<<" ";
+	    std::cout<<GridLogMessage << " "<<in<<" ";
 	  }
 	}
-	std::cout << std::endl;
+	std::cout<<GridLogMessage << std::endl;
       }
     }
 
@@ -175,10 +180,10 @@ public:
       RealD beta = normalise(w); // 6. βk+1 := ∥wk∥2. If βk+1 = 0 then Stop
                                  // 7. vk+1 := wk/βk+1
 
-//	std::cout << "alpha = " << zalph << " beta "<<beta<<std::endl;
+	std::cout<<GridLogMessage << "alpha = " << zalph << " beta "<<beta<<std::endl;
       const RealD tiny = 1.0e-20;
       if ( beta < tiny ) { 
-	std::cout << " beta is tiny "<<beta<<std::endl;
+	std::cout<<GridLogMessage << " beta is tiny "<<beta<<std::endl;
      }
       lmd[k] = alph;
       lme[k]  = beta;
@@ -254,6 +259,7 @@ public:
     }
 
 #ifdef USE_LAPACK
+#define LAPACK_INT long long
     void diagonalize_lapack(DenseVector<RealD>& lmd,
 		     DenseVector<RealD>& lme, 
 		     int N1,
@@ -263,7 +269,7 @@ public:
   const int size = Nm;
 //  tevals.resize(size);
 //  tevecs.resize(size);
-  int NN = N1;
+  LAPACK_INT NN = N1;
   double evals_tmp[NN];
   double evec_tmp[NN][NN];
   memset(evec_tmp[0],0,sizeof(double)*NN*NN);
@@ -277,19 +283,19 @@ public:
         if (i==j) evals_tmp[i] = lmd[i];
         if (j==(i-1)) EE[j] = lme[j];
       }
-  int evals_found;
-  int lwork = ( (18*NN) > (1+4*NN+NN*NN)? (18*NN):(1+4*NN+NN*NN)) ;
-  int liwork =  3+NN*10 ;
-  int iwork[liwork];
+  LAPACK_INT evals_found;
+  LAPACK_INT lwork = ( (18*NN) > (1+4*NN+NN*NN)? (18*NN):(1+4*NN+NN*NN)) ;
+  LAPACK_INT liwork =  3+NN*10 ;
+  LAPACK_INT iwork[liwork];
   double work[lwork];
-  int isuppz[2*NN];
+  LAPACK_INT isuppz[2*NN];
   char jobz = 'V'; // calculate evals & evecs
   char range = 'I'; // calculate all evals
   //    char range = 'A'; // calculate all evals
   char uplo = 'U'; // refer to upper half of original matrix
   char compz = 'I'; // Compute eigenvectors of tridiagonal matrix
   int ifail[NN];
-  int info;
+  long long info;
 //  int total = QMP_get_number_of_nodes();
 //  int node = QMP_get_node_number();
 //  GridBase *grid = evec[0]._grid;
@@ -297,14 +303,18 @@ public:
   int node = grid->_processor;
   int interval = (NN/total)+1;
   double vl = 0.0, vu = 0.0;
-  int il = interval*node+1 , iu = interval*(node+1);
+  LAPACK_INT il = interval*node+1 , iu = interval*(node+1);
   if (iu > NN)  iu=NN;
   double tol = 0.0;
     if (1) {
       memset(evals_tmp,0,sizeof(double)*NN);
       if ( il <= NN){
         printf("total=%d node=%d il=%d iu=%d\n",total,node,il,iu);
+#ifdef USE_MKL
+        dstegr(&jobz, &range, &NN,
+#else
         LAPACK_dstegr(&jobz, &range, &NN,
+#endif
             (double*)DD, (double*)EE,
             &vl, &vu, &il, &iu, // these four are ignored if second parameteris 'A'
             &tol, // tolerance
@@ -336,6 +346,7 @@ public:
       lmd [NN-1-i]=evals_tmp[i];
   }
 }
+#undef LAPACK_INT 
 #endif
 
 
@@ -366,12 +377,14 @@ public:
 //	diagonalize_lapack(lmd2,lme2,Nm2,Nm,Qt,grid);
 #endif
 
-      int Niter = 100*N1;
+      int Niter = 10000*N1;
       int kmin = 1;
       int kmax = N2;
       // (this should be more sophisticated)
 
-      for(int iter=0; iter<Niter; ++iter){
+      for(int iter=0; ; ++iter){
+      if ( (iter+1)%(100*N1)==0) 
+      std::cout<<GridLogMessage << "[QL method] Not converged - iteration "<<iter+1<<"\n";
 
 	// determination of 2x2 leading submatrix
 	RealD dsub = lmd[kmax-1]-lmd[kmax-2];
@@ -400,11 +413,11 @@ public:
         _sort.push(lmd3,N2);
         _sort.push(lmd2,N2);
          for(int k=0; k<N2; ++k){
-	    if (fabs(lmd2[k] - lmd3[k]) >SMALL)  std::cout <<"lmd(qr) lmd(lapack) "<< k << ": " << lmd2[k] <<" "<< lmd3[k] <<std::endl;
-//	    if (fabs(lme2[k] - lme[k]) >SMALL)  std::cout <<"lme(qr)-lme(lapack) "<< k << ": " << lme2[k] - lme[k] <<std::endl;
+	    if (fabs(lmd2[k] - lmd3[k]) >SMALL)  std::cout<<GridLogMessage <<"lmd(qr) lmd(lapack) "<< k << ": " << lmd2[k] <<" "<< lmd3[k] <<std::endl;
+//	    if (fabs(lme2[k] - lme[k]) >SMALL)  std::cout<<GridLogMessage <<"lme(qr)-lme(lapack) "<< k << ": " << lme2[k] - lme[k] <<std::endl;
 	  }
          for(int k=0; k<N1*N1; ++k){
-//	    if (fabs(Qt2[k] - Qt[k]) >SMALL)  std::cout <<"Qt(qr)-Qt(lapack) "<< k << ": " << Qt2[k] - Qt[k] <<std::endl;
+//	    if (fabs(Qt2[k] - Qt[k]) >SMALL)  std::cout<<GridLogMessage <<"Qt(qr)-Qt(lapack) "<< k << ": " << Qt2[k] - Qt[k] <<std::endl;
 	}
     }
 #endif
@@ -419,7 +432,7 @@ public:
 	  }
 	}
       }
-      std::cout << "[QL method] Error - Too many iteration: "<<Niter<<"\n";
+      std::cout<<GridLogMessage << "[QL method] Error - Too many iteration: "<<Niter<<"\n";
       abort();
     }
 
@@ -436,6 +449,7 @@ public:
 		       DenseVector<Field>& evec,
 		       int k)
     {
+      double t0=-usecond()/1e6;
       typedef typename Field::scalar_type MyComplex;
       MyComplex ip;
 
@@ -454,6 +468,8 @@ public:
 	w = w - ip * evec[j];
       }
       normalise(w);
+      t0+=usecond()/1e6;
+      OrthoTime +=t0;
     }
 
     void setUnit_Qt(int Nm, DenseVector<RealD> &Qt) {
@@ -487,10 +503,10 @@ until convergence
 	GridBase *grid = evec[0]._grid;
 	assert(grid == src._grid);
 
-	std::cout << " -- Nk = " << Nk << " Np = "<< Np << std::endl;
-	std::cout << " -- Nm = " << Nm << std::endl;
-	std::cout << " -- size of eval   = " << eval.size() << std::endl;
-	std::cout << " -- size of evec  = " << evec.size() << std::endl;
+	std::cout<<GridLogMessage << " -- Nk = " << Nk << " Np = "<< Np << std::endl;
+	std::cout<<GridLogMessage << " -- Nm = " << Nm << std::endl;
+	std::cout<<GridLogMessage << " -- size of eval   = " << eval.size() << std::endl;
+	std::cout<<GridLogMessage << " -- size of evec  = " << evec.size() << std::endl;
 	
 	assert(Nm == evec.size() && Nm == eval.size());
 	
@@ -501,6 +517,7 @@ until convergence
 	DenseVector<int>   Iconv(Nm);
 
 	DenseVector<Field>  B(Nm,grid); // waste of space replicating
+//	DenseVector<Field>  Btemp(Nm,grid); // waste of space replicating
 	
 	Field f(grid);
 	Field v(grid);
@@ -516,35 +533,48 @@ until convergence
 	// (uniform vector) Why not src??
 	//	evec[0] = 1.0;
 	evec[0] = src;
-	std:: cout <<"norm2(src)= " << norm2(src)<<std::endl;
+	std:: cout<<GridLogMessage <<"norm2(src)= " << norm2(src)<<std::endl;
 // << src._grid  << std::endl;
 	normalise(evec[0]);
-	std:: cout <<"norm2(evec[0])= " << norm2(evec[0]) <<std::endl;
+	std:: cout<<GridLogMessage <<"norm2(evec[0])= " << norm2(evec[0]) <<std::endl;
 // << evec[0]._grid << std::endl;
 	
 	// Initial Nk steps
+	OrthoTime=0.;
+	double t0=usecond()/1e6;
 	for(int k=0; k<Nk; ++k) step(eval,lme,evec,f,Nm,k);
-//	std:: cout <<"norm2(evec[1])= " << norm2(evec[1]) << std::endl;
-//	std:: cout <<"norm2(evec[2])= " << norm2(evec[2]) << std::endl;
+	double t1=usecond()/1e6;
+	std::cout<<GridLogMessage <<"IRL::Initial steps: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
+	std::cout<<GridLogMessage <<"IRL::Initial steps:OrthoTime "<<OrthoTime<< "seconds"<<std::endl;
+//	std:: cout<<GridLogMessage <<"norm2(evec[1])= " << norm2(evec[1]) << std::endl;
+//	std:: cout<<GridLogMessage <<"norm2(evec[2])= " << norm2(evec[2]) << std::endl;
 	RitzMatrix(evec,Nk);
+	t1=usecond()/1e6;
+	std::cout<<GridLogMessage <<"IRL::RitzMatrix: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
 	for(int k=0; k<Nk; ++k){
-//	std:: cout <<"eval " << k << " " <<eval[k] << std::endl;
-//	std:: cout <<"lme " << k << " " << lme[k] << std::endl;
+//	std:: cout<<GridLogMessage <<"eval " << k << " " <<eval[k] << std::endl;
+//	std:: cout<<GridLogMessage <<"lme " << k << " " << lme[k] << std::endl;
 	}
 
 	// Restarting loop begins
 	for(int iter = 0; iter<Niter; ++iter){
 
-	  std::cout<<"\n Restart iteration = "<< iter << std::endl;
+	  std::cout<<GridLogMessage<<"\n Restart iteration = "<< iter << std::endl;
 
 	  // 
 	  // Rudy does a sort first which looks very different. Getting fed up with sorting out the algo defs.
 	  // We loop over 
 	  //
+	OrthoTime=0.;
 	  for(int k=Nk; k<Nm; ++k) step(eval,lme,evec,f,Nm,k);
+	t1=usecond()/1e6;
+	std::cout<<GridLogMessage <<"IRL:: "<<Np <<" steps: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
+	std::cout<<GridLogMessage <<"IRL::Initial steps:OrthoTime "<<OrthoTime<< "seconds"<<std::endl;
 	  f *= lme[Nm-1];
 
 	  RitzMatrix(evec,k2);
+	t1=usecond()/1e6;
+	std::cout<<GridLogMessage <<"IRL:: RitzMatrix: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
 	  
 	  // getting eigenvalues
 	  for(int k=0; k<Nm; ++k){
@@ -553,18 +583,27 @@ until convergence
 	  }
 	  setUnit_Qt(Nm,Qt);
 	  diagonalize(eval2,lme2,Nm,Nm,Qt,grid);
+	t1=usecond()/1e6;
+	std::cout<<GridLogMessage <<"IRL:: diagonalize: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
 
 	  // sorting
 	  _sort.push(eval2,Nm);
+	t1=usecond()/1e6;
+	std::cout<<GridLogMessage <<"IRL:: eval sorting: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
 	  
 	  // Implicitly shifted QR transformations
 	  setUnit_Qt(Nm,Qt);
+	  for(int ip=0; ip<k2; ++ip){
+	std::cout<<GridLogMessage << "eval "<< ip << " "<< eval2[ip] << std::endl;
+	}
 	  for(int ip=k2; ip<Nm; ++ip){ 
-	std::cout << "qr_decomp "<< ip << " "<< eval2[ip] << std::endl;
+	std::cout<<GridLogMessage << "qr_decomp "<< ip << " "<< eval2[ip] << std::endl;
 	    qr_decomp(eval,lme,Nm,Nm,Qt,eval2[ip],k1,Nm);
 		
 	}
-    
+	t1=usecond()/1e6;
+	std::cout<<GridLogMessage <<"IRL::qr_decomp: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
+if (0) {  
 	  for(int i=0; i<(Nk+1); ++i) B[i] = 0.0;
 	  
 	  for(int j=k1-1; j<k2+1; ++j){
@@ -573,14 +612,38 @@ until convergence
 	      B[j] += Qt[k+Nm*j] * evec[k];
 	    }
 	  }
-	  for(int j=k1-1; j<k2+1; ++j) evec[j] = B[j];
+	t1=usecond()/1e6;
+	std::cout<<GridLogMessage <<"IRL::QR Rotate: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
+}
+
+if (1) {
+	for(int i=0; i<(Nk+1); ++i) {
+		B[i] = 0.0;
+	  	B[i].checkerboard = evec[0].checkerboard;
+	}
+
+	int j_block = 24; int k_block=24;
+PARALLEL_FOR_LOOP
+	for(int ss=0;ss < grid->oSites();ss++){
+	for(int jj=k1-1; jj<k2+1; jj += j_block)
+	for(int kk=0; kk<Nm; kk += k_block)
+	for(int j=jj; (j<(k2+1)) && j<(jj+j_block); ++j){
+	for(int k=kk; (k<Nm) && k<(kk+k_block) ; ++k){
+	    B[j]._odata[ss] +=Qt[k+Nm*j] * evec[k]._odata[ss]; 
+	}
+	}
+	}
+	t1=usecond()/1e6;
+	std::cout<<GridLogMessage <<"IRL::QR rotation: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
+}
+	for(int j=k1-1; j<k2+1; ++j) evec[j] = B[j];
 
 	  // Compressed vector f and beta(k2)
 	  f *= Qt[Nm-1+Nm*(k2-1)];
 	  f += lme[k2-1] * evec[k2];
 	  beta_k = norm2(f);
 	  beta_k = sqrt(beta_k);
-	  std::cout<<" beta(k) = "<<beta_k<<std::endl;
+	  std::cout<<GridLogMessage<<" beta(k) = "<<beta_k<<std::endl;
 
 	  RealD betar = 1.0/beta_k;
 	  evec[k2] = betar * f;
@@ -593,7 +656,10 @@ until convergence
 	  }
 	  setUnit_Qt(Nm,Qt);
 	  diagonalize(eval2,lme2,Nk,Nm,Qt,grid);
+	t1=usecond()/1e6;
+	std::cout<<GridLogMessage <<"IRL::diagonalize: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
 	  
+if (0) {
 	  for(int k = 0; k<Nk; ++k) B[k]=0.0;
 	  
 	  for(int j = 0; j<Nk; ++j){
@@ -601,12 +667,34 @@ until convergence
 	    B[j].checkerboard = evec[k].checkerboard;
 	      B[j] += Qt[k+j*Nm] * evec[k];
 	    }
-//	    std::cout << "norm(B["<<j<<"])="<<norm2(B[j])<<std::endl;
+	    std::cout<<GridLogMessage << "norm(B["<<j<<"])="<<norm2(B[j])<<std::endl;
 	  }
-//	_sort.push(eval2,B,Nk);
+	t1=usecond()/1e6;
+	std::cout<<GridLogMessage <<"IRL::Convergence rotation: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
+}
+if (1) {
+	for(int i=0; i<(Nk+1); ++i) {
+		B[i] = 0.0;
+	  	B[i].checkerboard = evec[0].checkerboard;
+	}
+
+	int j_block = 24; int k_block=24;
+PARALLEL_FOR_LOOP
+	for(int ss=0;ss < grid->oSites();ss++){
+	for(int jj=0; jj<Nk; jj += j_block)
+	for(int kk=0; kk<Nk; kk += k_block)
+	for(int j=jj; (j<Nk) && j<(jj+j_block); ++j){
+	for(int k=kk; (k<Nk) && k<(kk+k_block) ; ++k){
+	    B[j]._odata[ss] +=Qt[k+Nm*j] * evec[k]._odata[ss]; 
+	}
+	}
+	}
+	t1=usecond()/1e6;
+	std::cout<<GridLogMessage <<"IRL::convergence rotation : "<<t1-t0<< "seconds"<<std::endl; t0=t1;
+}
 
 	  Nconv = 0;
-	  //	  std::cout << std::setiosflags(std::ios_base::scientific);
+	  //	  std::cout<<GridLogMessage << std::setiosflags(std::ios_base::scientific);
 	  for(int i=0; i<Nk; ++i){
 
 //	    _poly(_Linop,B[i],v);
@@ -614,14 +702,16 @@ until convergence
 	    
 	    RealD vnum = real(innerProduct(B[i],v)); // HermOp.
 	    RealD vden = norm2(B[i]);
+	    RealD vv0 = norm2(v);
 	    eval2[i] = vnum/vden;
 	    v -= eval2[i]*B[i];
 	    RealD vv = norm2(v);
 	    
 	    std::cout.precision(13);
-	    std::cout << "[" << std::setw(3)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
-	    std::cout << "eval = "<<std::setw(25)<< std::setiosflags(std::ios_base::left)<< eval2[i];
-	    std::cout <<" |H B[i] - eval[i]B[i]|^2 "<< std::setw(25)<< std::setiosflags(std::ios_base::right)<< vv<< std::endl;
+	    std::cout<<GridLogMessage << "[" << std::setw(3)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
+	    std::cout<<"eval = "<<std::setw(25)<< std::setiosflags(std::ios_base::left)<< eval2[i];
+	    std::cout<<"|H B[i] - eval[i]B[i]|^2 "<< std::setw(25)<< std::setiosflags(std::ios_base::right)<< vv;
+	    std::cout<<" "<< vnum/(sqrt(vden)*sqrt(vv0)) << std::endl;
 	    
 	// change the criteria as evals are supposed to be sorted, all evals smaller(larger) than Nstop should have converged
 	    if((vv<eresid*eresid) && (i == Nconv) ){
@@ -630,17 +720,19 @@ until convergence
 	    }
 
 	  }  // i-loop end
-	  //	  std::cout << std::resetiosflags(std::ios_base::scientific);
+	  //	  std::cout<<GridLogMessage << std::resetiosflags(std::ios_base::scientific);
+	t1=usecond()/1e6;
+	std::cout<<GridLogMessage <<"IRL::convergence testing: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
 
 
-	  std::cout<<" #modes converged: "<<Nconv<<std::endl;
+	  std::cout<<GridLogMessage<<" #modes converged: "<<Nconv<<std::endl;
 
 	  if( Nconv>=Nstop ){
 	    goto converged;
 	  }
 	} // end of iter loop
 	
-	std::cout<<"\n NOT converged.\n";
+	std::cout<<GridLogMessage<<"\n NOT converged.\n";
 	abort();
 	
       converged:
@@ -653,10 +745,10 @@ until convergence
        }
       _sort.push(eval,evec,Nconv);
 
-      std::cout << "\n Converged\n Summary :\n";
-      std::cout << " -- Iterations  = "<< Nconv  << "\n";
-      std::cout << " -- beta(k)     = "<< beta_k << "\n";
-      std::cout << " -- Nconv       = "<< Nconv  << "\n";
+      std::cout<<GridLogMessage << "\n Converged\n Summary :\n";
+      std::cout<<GridLogMessage << " -- Iterations  = "<< Nconv  << "\n";
+      std::cout<<GridLogMessage << " -- beta(k)     = "<< beta_k << "\n";
+      std::cout<<GridLogMessage << " -- Nconv       = "<< Nconv  << "\n";
      }
 
     /////////////////////////////////////////////////
@@ -679,25 +771,25 @@ until convergence
 	}
       }
 
-      std::cout<<"Lanczos_Factor start/end " <<start <<"/"<<end<<std::endl;
+      std::cout<<GridLogMessage<<"Lanczos_Factor start/end " <<start <<"/"<<end<<std::endl;
 
       // Starting from scratch, bq[0] contains a random vector and |bq[0]| = 1
       int first;
       if(start == 0){
 
-	std::cout << "start == 0\n"; //TESTING
+	std::cout<<GridLogMessage << "start == 0\n"; //TESTING
 
 	_poly(_Linop,bq[0],bf);
 
 	alpha = real(innerProduct(bq[0],bf));//alpha =  bq[0]^dag A bq[0]
 
-	std::cout << "alpha = " << alpha << std::endl;
+	std::cout<<GridLogMessage << "alpha = " << alpha << std::endl;
 	
 	bf = bf - alpha * bq[0];  //bf =  A bq[0] - alpha bq[0]
 
 	H[0][0]=alpha;
 
-	std::cout << "Set H(0,0) to " << H[0][0] << std::endl;
+	std::cout<<GridLogMessage << "Set H(0,0) to " << H[0][0] << std::endl;
 
 	first = 1;
 
@@ -717,19 +809,19 @@ until convergence
 
 	beta = 0;sqbt = 0;
 
-	std::cout << "cont is true so setting beta to zero\n";
+	std::cout<<GridLogMessage << "cont is true so setting beta to zero\n";
 
       }	else {
 
 	beta = norm2(bf);
 	sqbt = sqrt(beta);
 
-	std::cout << "beta = " << beta << std::endl;
+	std::cout<<GridLogMessage << "beta = " << beta << std::endl;
       }
 
       for(int j=first;j<end;j++){
 
-	std::cout << "Factor j " << j <<std::endl;
+	std::cout<<GridLogMessage << "Factor j " << j <<std::endl;
 
 	if(cont){ // switches to factoring; understand start!=0 and initial bf value is right.
 	  bq[j] = bf; cont = false;
@@ -752,7 +844,7 @@ until convergence
 
 	beta = fnorm;
 	sqbt = sqrt(beta);
-	std::cout << "alpha = " << alpha << " fnorm = " << fnorm << '\n';
+	std::cout<<GridLogMessage << "alpha = " << alpha << " fnorm = " << fnorm << '\n';
 
 	///Iterative refinement of orthogonality V = [ bq[0]  bq[1]  ...  bq[M] ]
 	int re = 0;
@@ -787,8 +879,8 @@ until convergence
 	  bck = sqrt( nmbex );
 	  re++;
 	}
-	std::cout << "Iteratively refined orthogonality, changes alpha\n";
-	if(re > 1) std::cout << "orthagonality refined " << re << " times" <<std::endl;
+	std::cout<<GridLogMessage << "Iteratively refined orthogonality, changes alpha\n";
+	if(re > 1) std::cout<<GridLogMessage << "orthagonality refined " << re << " times" <<std::endl;
 	H[j][j]=alpha;
       }
 
@@ -803,11 +895,13 @@ until convergence
 
     void ImplicitRestart(int TM, DenseVector<RealD> &evals,  DenseVector<DenseVector<RealD> > &evecs, DenseVector<Field> &bq, Field &bf, int cont)
     {
-      std::cout << "ImplicitRestart begin. Eigensort starting\n";
+      std::cout<<GridLogMessage << "ImplicitRestart begin. Eigensort starting\n";
 
       DenseMatrix<RealD> H; Resize(H,Nm,Nm);
 
+#ifndef USE_LAPACK
       EigenSort(evals, evecs);
+#endif
 
       ///Assign shifts
       int K=Nk;
@@ -830,15 +924,15 @@ until convergence
       /// Shifted H defines a new K step Arnoldi factorization
       RealD  beta = H[ff][ff-1]; 
       RealD  sig  = Q[TM - 1][ff - 1];
-      std::cout << "beta = " << beta << " sig = " << real(sig) <<std::endl;
+      std::cout<<GridLogMessage << "beta = " << beta << " sig = " << real(sig) <<std::endl;
 
-      std::cout << "TM = " << TM << " ";
-      std::cout << norm2(bq[0]) << " -- before" <<std::endl;
+      std::cout<<GridLogMessage << "TM = " << TM << " ";
+      std::cout<<GridLogMessage << norm2(bq[0]) << " -- before" <<std::endl;
 
       /// q -> q Q
       times_real(bq, Q, TM);
 
-      std::cout << norm2(bq[0]) << " -- after " << ff <<std::endl;
+      std::cout<<GridLogMessage << norm2(bq[0]) << " -- after " << ff <<std::endl;
       bf =  beta* bq[ff] + sig* bf;
 
       /// Do the rest of the factorization
@@ -862,7 +956,7 @@ until convergence
       int ff = Lanczos_Factor(0, M, cont, bq,bf,H); // 0--M to begin with
 
       if(ff < M) {
-	std::cout << "Krylov: aborting ff "<<ff <<" "<<M<<std::endl;
+	std::cout<<GridLogMessage << "Krylov: aborting ff "<<ff <<" "<<M<<std::endl;
 	abort(); // Why would this happen?
       }
 
@@ -871,7 +965,7 @@ until convergence
 
       for(int it = 0; it < Niter && (converged < Nk); ++it) {
 
-	std::cout << "Krylov: Iteration --> " << it << std::endl;
+	std::cout<<GridLogMessage << "Krylov: Iteration --> " << it << std::endl;
 	int lock_num = lock ? converged : 0;
 	DenseVector<RealD> tevals(M - lock_num );
 	DenseMatrix<RealD> tevecs; Resize(tevecs,M - lock_num,M - lock_num);
@@ -887,7 +981,7 @@ until convergence
       Wilkinson<RealD>(H, evals, evecs, small); 
       //      Check();
 
-      std::cout << "Done  "<<std::endl;
+      std::cout<<GridLogMessage << "Done  "<<std::endl;
 
     }
 
@@ -952,7 +1046,7 @@ until convergence
 		  DenseVector<RealD> &tevals, DenseVector<DenseVector<RealD> > &tevecs, 
 		  int lock, int converged)
     {
-      std::cout << "Converged " << converged << " so far." << std::endl;
+      std::cout<<GridLogMessage << "Converged " << converged << " so far." << std::endl;
       int lock_num = lock ? converged : 0;
       int M = Nm;
 
@@ -967,7 +1061,9 @@ until convergence
       RealD small=1.0e-16;
       Wilkinson<RealD>(AH, tevals, tevecs, small);
 
+#ifndef USE_LAPACK
       EigenSort(tevals, tevecs);
+#endif
 
       RealD resid_nrm=  norm2(bf);
 
@@ -978,7 +1074,7 @@ until convergence
 	RealD diff = 0;
 	diff = abs( tevecs[i][Nm - 1 - lock_num] ) * resid_nrm;
 
-	std::cout << "residual estimate " << SS-1-i << " " << diff << " of (" << tevals[i] << ")" << std::endl;
+	std::cout<<GridLogMessage << "residual estimate " << SS-1-i << " " << diff << " of (" << tevals[i] << ")" << std::endl;
 
 	if(diff < converged) {
 
@@ -994,13 +1090,13 @@ until convergence
 	    lock_num++;
 	  }
 	  converged++;
-	  std::cout << " converged on eval " << converged << " of " << Nk << std::endl;
+	  std::cout<<GridLogMessage << " converged on eval " << converged << " of " << Nk << std::endl;
 	} else {
 	  break;
 	}
       }
 #endif
-      std::cout << "Got " << converged << " so far " <<std::endl;	
+      std::cout<<GridLogMessage << "Got " << converged << " so far " <<std::endl;	
     }
 
     ///Check
@@ -1009,7 +1105,9 @@ until convergence
 
       DenseVector<RealD> goodval(this->get);
 
+#ifndef USE_LAPACK
       EigenSort(evals,evecs);
+#endif
 
       int NM = Nm;
 
@@ -1081,10 +1179,10 @@ say con = 2
 **/
 
 template<class T>
-static void Lock(DenseMatrix<T> &H, 	// Hess mtx	
-		 DenseMatrix<T> &Q, 	// Lock Transform
-		 T val, 		// value to be locked
-		 int con, 	// number already locked
+static void Lock(DenseMatrix<T> &H, 	///Hess mtx	
+		 DenseMatrix<T> &Q, 	///Lock Transform
+		 T val, 		///value to be locked
+		 int con, 	///number already locked
 		 RealD small,
 		 int dfg,
 		 bool herm)
