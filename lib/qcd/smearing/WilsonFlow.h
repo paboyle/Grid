@@ -38,9 +38,9 @@ class WilsonFlow: public Smear<Gimpl>{
     unsigned int Nstep;
     RealD epsilon;
 
-    WilsonGaugeAction &SG;
+    WilsonGaugeAction<Gimpl> &SG;
 
-    void evolve_step();
+    void evolve_step(typename Gimpl::GaugeField&);
     RealD tau(unsigned int t)const {return epsilon*(t+1.0); }
 
 
@@ -74,7 +74,8 @@ class WilsonFlow: public Smear<Gimpl>{
     RealD energyDensityPlaquette(unsigned int step, const GaugeField& U) const;
 };
 
-void WilsonFlow::evolve_step(GaugeField &U) {
+template <class Gimpl>
+void WilsonFlow<Gimpl>::evolve_step(typename Gimpl::GaugeField &U) {
     GaugeField Z(U._grid);
     GaugeField tmp(U._grid);
     SG.deriv(U, Z);
@@ -92,15 +93,15 @@ void WilsonFlow::evolve_step(GaugeField &U) {
     Gimpl::update_field(Z, U, -2.0*epsilon);    // V(t+e) = exp(ep*Z)*W2
 }
 
-RealD energyDensityPlaquette(unsigned int step, const GaugeField& U) const {
+template <class Gimpl>
+RealD WilsonFlow<Gimpl>::energyDensityPlaquette(unsigned int step, const GaugeField& U) const {
     RealD td = tau(step);
-    return 2.0 * td * td * SG.S(Uflow)/volume;
+    return 2.0 * td * td * SG.S(U)/U._grid->gSites();
 }
 
-void WilsonFlow::smear(GaugeField& out, const GaugeField& in) const {
+template <class Gimpl>
+void WilsonFlow<Gimpl>::smear(GaugeField& out, const GaugeField& in) const {
     out = in;
-    RealD volume = out._grid->gSites();
-
     for (unsigned int step = 0; step < Nstep; step++) {
         evolve_step(out);
         // Energy density, plaquette
@@ -109,6 +110,7 @@ void WilsonFlow::smear(GaugeField& out, const GaugeField& in) const {
             << step
             << " " << energyDensityPlaquette(step, out)
             << std::endl;
+}
 }
 
 }  // namespace QCD
