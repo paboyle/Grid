@@ -39,6 +39,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/approx/MultiShiftFunction.h>
 
 #include <Grid/algorithms/iterative/ConjugateGradient.h>
+#include <Grid/algorithms/iterative/ConjugateGradientShifted.h>
 #include <Grid/algorithms/iterative/ConjugateResidual.h>
 #include <Grid/algorithms/iterative/NormalEquations.h>
 #include <Grid/algorithms/iterative/SchurRedBlack.h>

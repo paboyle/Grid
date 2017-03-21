@@ -45,6 +45,7 @@ public:
     Integer MaxIterations;
     int verbose;
     MultiShiftFunction shifts;
+    int iter;
 
     ConjugateGradientMultiShift(Integer maxit,MultiShiftFunction &_shifts) : 
 	MaxIterations(maxit),
@@ -60,6 +61,7 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, Field &psi)
   std::vector<Field> results(nshift,grid);
   (*this)(Linop,src,results,psi);
 }
+
 void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector<Field> &results, Field &psi)
 {
   int nshift = shifts.order;
@@ -105,11 +107,12 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
   RealD a,b,c,d;
   RealD cp,bp,qq; //prev
   
+  int cb=src.checkerboard;
   // Matrix mult fields
   Field r(grid);
-  Field p(grid);
+  Field p(grid); p.checkerboard = src.checkerboard;
   Field tmp(grid);
-  Field mmp(grid);
+  Field mmp(grid);mmp.checkerboard = src.checkerboard;
   
   // Check lightest mass
   for(int s=0;s<nshift;s++){
@@ -132,6 +135,9 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
   p=src;
   
   //MdagM+m[0]
+  std::cout << "p.checkerboard " << p.checkerboard
+  << "mmp.checkerboard " << mmp.checkerboard << std::endl;
+
   Linop.HermOpAndNorm(p,mmp,d,qq);
   axpy(mmp,mass[0],p,mmp);
   RealD rn = norm2(p);
@@ -269,6 +275,7 @@ void operator() (LinearOperatorBase<Field> &Linop, const Field &src, std::vector
 	RealD cn = norm2(src);
 	std::cout<<GridLogMessage<<"CGMultiShift: shift["<<s<<"] true residual "<<std::sqrt(rn/cn)<<std::endl;
       }
+      iter = k;
       return;
     }
   }

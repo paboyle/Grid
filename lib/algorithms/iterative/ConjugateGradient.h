@@ -45,8 +45,6 @@ class ConjugateGradient : public OperatorFunction<Field> {
                            // Defaults true.
   RealD Tolerance;
   Integer MaxIterations;
-  Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion
-  
   ConjugateGradient(RealD tol, Integer maxit, bool err_on_no_conv = true)
       : Tolerance(tol),
         MaxIterations(maxit),
@@ -157,14 +155,13 @@ class ConjugateGradient : public OperatorFunction<Field> {
         std::cout << std::endl;
 
         if (ErrorOnNoConverge) assert(true_residual / Tolerance < 10000.0);
-	IterationsToComplete = k;	
+
         return;
       }
     }
     std::cout << GridLogMessage << "ConjugateGradient did NOT converge"
               << std::endl;
     if (ErrorOnNoConverge) assert(0);
-    IterationsToComplete = k;
   }
 };
 }
