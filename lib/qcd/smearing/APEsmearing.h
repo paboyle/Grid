@@ -1,3 +1,31 @@
+/*************************************************************************************
+
+Grid physics library, www.github.com/paboyle/Grid
+
+Source file: ./lib/qcd/modules/plaquette.h
+
+Copyright (C) 2017
+
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+See the full license in the file "LICENSE" in the top level distribution
+directory
+*************************************************************************************/
+/*  END LEGAL */
 /*!
   @brief Declaration of Smear_APE class for APE smearing
 */
@@ -10,12 +38,12 @@
 
 
     /*!  @brief APE type smearing of link variables. */
-    template <class Gimpl> 
+    template <class Gimpl>
   		class Smear_APE: public Smear<Gimpl>{
   		private:
       	const std::vector<double> rho;/*!< Array of weights */
 
-//This member must be private - we do not want to control from outside 
+//This member must be private - we do not want to control from outside
   			std::vector<double> set_rho(const double common_rho) const {
   				std::vector<double> res;
 
@@ -40,7 +68,7 @@
   					GridBase *grid = U._grid;
   					GaugeLinkField Cup(grid), tmp_stpl(grid);
   					WilsonLoops<Gimpl> WL;
-  					u_smr = zero; 
+  					u_smr = zero;
 
   					for(int mu=0; mu<Nd; ++mu){
   						Cup = zero;
@@ -61,7 +89,7 @@
 	  				const GaugeField& iLambda,
 	  				const GaugeField& U)const{
 
-	// Reference 
+	// Reference
 	// Morningstar, Peardon, Phys.Rev.D69,054501(2004)
 	// Equation 75
     // Computing Sigma_mu, derivative of S[fat links] with respect to the thin links
@@ -127,4 +155,4 @@
 
   }// namespace QCD
 }//namespace Grid
-#endif  
+#endif
