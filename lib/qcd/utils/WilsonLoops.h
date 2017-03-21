@@ -99,6 +99,7 @@ public:
   //////////////////////////////////////////////////
   static RealD sumPlaquette(const GaugeLorentz &Umu) {
     std::vector<GaugeMat> U(Nd, Umu._grid);
+    // inefficient here
     for (int mu = 0; mu < Nd; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
     }

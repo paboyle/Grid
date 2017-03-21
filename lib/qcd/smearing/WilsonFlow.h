@@ -38,9 +38,9 @@ class WilsonFlow: public Smear<Gimpl>{
     unsigned int Nstep;
     RealD epsilon;
 
-    WilsonGaugeAction<Gimpl> &SG;
+    mutable WilsonGaugeAction<Gimpl> SG;
 
-    void evolve_step(typename Gimpl::GaugeField&);
+    void evolve_step(typename Gimpl::GaugeField&) const;
     RealD tau(unsigned int t)const {return epsilon*(t+1.0); }
 
 
@@ -50,7 +50,7 @@ class WilsonFlow: public Smear<Gimpl>{
     explicit WilsonFlow(unsigned int Nstep, RealD epsilon):
         Nstep(Nstep),
         epsilon(epsilon),
-        SG(3.0) {
+        SG(WilsonGaugeAction<Gimpl>(3.0)) {
             // WilsonGaugeAction with beta 3.0
             assert(epsilon > 0.0);
             LogMessage();
@@ -58,24 +58,29 @@ class WilsonFlow: public Smear<Gimpl>{
 
     void LogMessage() {
         std::cout << GridLogMessage
-            << "[WilsonFlow] Nstep   : " << Nstep
-            << "[WilsonFlow] epsilon : " << epsilon
-            << "[WilsonFlow] full trajectory : " << Nstep * epsilon
-            << std::endl;
+            << "[WilsonFlow] Nstep   : " << Nstep << std::endl;
+        std::cout << GridLogMessage
+            << "[WilsonFlow] epsilon : " << epsilon << std::endl;
+        std::cout << GridLogMessage
+            << "[WilsonFlow] full trajectory : " << Nstep * epsilon << std::endl;
     }
 
     virtual void smear(GaugeField&, const GaugeField&) const;
 
     virtual void derivative(GaugeField&, const GaugeField&, const GaugeField&) const {
-                  assert(0);
-                  // undefined for WilsonFlow
+        assert(0);
+        // undefined for WilsonFlow
     }
 
     RealD energyDensityPlaquette(unsigned int step, const GaugeField& U) const;
 };
 
+
+////////////////////////////////////////////////////////////////////////////////
+// Implementations
+////////////////////////////////////////////////////////////////////////////////
 template <class Gimpl>
-void WilsonFlow<Gimpl>::evolve_step(typename Gimpl::GaugeField &U) {
+void WilsonFlow<Gimpl>::evolve_step(typename Gimpl::GaugeField &U) const{
     GaugeField Z(U._grid);
     GaugeField tmp(U._grid);
     SG.deriv(U, Z);
@@ -104,13 +109,11 @@ void WilsonFlow<Gimpl>::smear(GaugeField& out, const GaugeField& in) const {
     out = in;
     for (unsigned int step = 0; step < Nstep; step++) {
         evolve_step(out);
-        // Energy density, plaquette
-        std::cout << GridLogMessage
-            << "[WilsonFlow] Energy Density (step) : "
-            << step
-            << " " << energyDensityPlaquette(step, out)
-            << std::endl;
-}
+        std::cout << "[WilsonFlow] Energy density (plaq) : "
+            << step << " "
+            << energyDensityPlaquette(step,out) << std::endl;
+    }
+
 }
 
 }  // namespace QCD

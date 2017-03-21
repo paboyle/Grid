@@ -1,6 +1,6 @@
     /*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
 
     Source file: ./lib/Init.cc
 
@@ -36,7 +36,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <stdint.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include <sys/stat.h> 
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <signal.h>
 #include <iostream>
@@ -92,14 +92,14 @@ const std::vector<int> GridDefaultSimd(int dims,int nsimd)
       if ( nn>=2) {
 	layout[d]=2;
 	nn/=2;
-      } else { 
+      } else {
 	layout[d]=1;
       }
     }
     assert(nn==1);
     return layout;
 }
-  
+
 ////////////////////////////////////////////////////////////
 // Command line parsing assist for stock controls
 ////////////////////////////////////////////////////////////
@@ -143,7 +143,7 @@ void GridCmdOptionIntVector(std::string &str,std::vector<int> & vec)
     vec.push_back(i);
     if(std::ispunct(ss.peek()))
       ss.ignore();
-  }    
+  }
   return;
 }
 
@@ -248,24 +248,24 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"  --help : this message"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Geometry:"<<std::endl;
-    std::cout<<GridLogMessage<<"  --mpi n.n.n.n   : default MPI decomposition"<<std::endl;    
+    std::cout<<GridLogMessage<<"  --mpi n.n.n.n   : default MPI decomposition"<<std::endl;
     std::cout<<GridLogMessage<<"  --threads n     : default number of OMP threads"<<std::endl;
-    std::cout<<GridLogMessage<<"  --grid n.n.n.n  : default Grid size"<<std::endl;    
-    std::cout<<GridLogMessage<<"  --shm  M        : allocate M megabytes of shared memory for comms"<<std::endl;    
+    std::cout<<GridLogMessage<<"  --grid n.n.n.n  : default Grid size"<<std::endl;
+    std::cout<<GridLogMessage<<"  --shm  M        : allocate M megabytes of shared memory for comms"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Verbose and debug:"<<std::endl;
     std::cout<<GridLogMessage<<"  --log list      : comma separted list of streams from Error,Warning,Message,Performance,Iterative,Integrator,Debug,Colours"<<std::endl;
-    std::cout<<GridLogMessage<<"  --decomposition : report on default omp,mpi and simd decomposition"<<std::endl;    
+    std::cout<<GridLogMessage<<"  --decomposition : report on default omp,mpi and simd decomposition"<<std::endl;
     std::cout<<GridLogMessage<<"  --debug-signals : catch sigsegv and print a blame report"<<std::endl;
-    std::cout<<GridLogMessage<<"  --debug-stdout  : print stdout from EVERY node"<<std::endl;    
-    std::cout<<GridLogMessage<<"  --notimestamp   : suppress millisecond resolution stamps"<<std::endl;    
+    std::cout<<GridLogMessage<<"  --debug-stdout  : print stdout from EVERY node"<<std::endl;
+    std::cout<<GridLogMessage<<"  --notimestamp   : suppress millisecond resolution stamps"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Performance:"<<std::endl;
-    std::cout<<GridLogMessage<<"  --dslash-generic: Wilson kernel for generic Nc"<<std::endl;    
-    std::cout<<GridLogMessage<<"  --dslash-unroll : Wilson kernel for Nc=3"<<std::endl;    
-    std::cout<<GridLogMessage<<"  --dslash-asm    : Wilson kernel for AVX512"<<std::endl;    
-    std::cout<<GridLogMessage<<"  --lebesgue      : Cache oblivious Lebesgue curve/Morton order/Z-graph stencil looping"<<std::endl;    
-    std::cout<<GridLogMessage<<"  --cacheblocking n.m.o.p : Hypercuboidal cache blocking"<<std::endl;    
+    std::cout<<GridLogMessage<<"  --dslash-generic: Wilson kernel for generic Nc"<<std::endl;
+    std::cout<<GridLogMessage<<"  --dslash-unroll : Wilson kernel for Nc=3"<<std::endl;
+    std::cout<<GridLogMessage<<"  --dslash-asm    : Wilson kernel for AVX512"<<std::endl;
+    std::cout<<GridLogMessage<<"  --lebesgue      : Cache oblivious Lebesgue curve/Morton order/Z-graph stencil looping"<<std::endl;
+    std::cout<<GridLogMessage<<"  --cacheblocking n.m.o.p : Hypercuboidal cache blocking"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
     exit(EXIT_SUCCESS);
   }
@@ -281,22 +281,22 @@ void Grid_init(int *argc,char ***argv)
   std::string COL_BLUE   = GridLogColours.colour["BLUE"];
   std::string COL_YELLOW = GridLogColours.colour["YELLOW"];
   std::string COL_BACKGROUND = GridLogColours.colour["NORMAL"];
-  
+
   std::cout <<std::endl;
-  std::cout <<COL_RED  << "__|__|__|__|__"<<             "|__|__|_"<<COL_PURPLE<<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
-  std::cout <<COL_RED  << "__|__|__|__|__"<<             "|__|__|_"<<COL_PURPLE<<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
-  std::cout <<COL_RED  << "__|_ |  |  |  "<<             "|  |  | "<<COL_PURPLE<<" |  |  |"<<                "  |  |  | _|__"<<std::endl; 
-  std::cout <<COL_RED  << "__|_          "<<             "        "<<COL_PURPLE<<"        "<<                "          _|__"<<std::endl; 
+  std::cout <<COL_RED  << "__|__|__|__|__"<<             "|__|__|_"<<COL_PURPLE<<"_|__|__|"<<                "__|__|__|__|__"<<std::endl;
+  std::cout <<COL_RED  << "__|__|__|__|__"<<             "|__|__|_"<<COL_PURPLE<<"_|__|__|"<<                "__|__|__|__|__"<<std::endl;
+  std::cout <<COL_RED  << "__|_ |  |  |  "<<             "|  |  | "<<COL_PURPLE<<" |  |  |"<<                "  |  |  | _|__"<<std::endl;
+  std::cout <<COL_RED  << "__|_          "<<             "        "<<COL_PURPLE<<"        "<<                "          _|__"<<std::endl;
   std::cout <<COL_RED  << "__|_  "<<COL_GREEN<<" GGGG   "<<COL_RED<<" RRRR   "<<COL_BLUE  <<" III    "<<COL_PURPLE<<"DDDD  "<<COL_PURPLE<<"    _|__"<<std::endl;
   std::cout <<COL_RED  << "__|_  "<<COL_GREEN<<"G       "<<COL_RED<<" R   R  "<<COL_BLUE  <<"  I     "<<COL_PURPLE<<"D   D "<<COL_PURPLE<<"    _|__"<<std::endl;
   std::cout <<COL_RED  << "__|_  "<<COL_GREEN<<"G       "<<COL_RED<<" R   R  "<<COL_BLUE  <<"  I     "<<COL_PURPLE<<"D    D"<<COL_PURPLE<<"    _|__"<<std::endl;
   std::cout <<COL_BLUE << "__|_  "<<COL_GREEN<<"G  GG   "<<COL_RED<<" RRRR   "<<COL_BLUE  <<"  I     "<<COL_PURPLE<<"D    D"<<COL_GREEN <<"    _|__"<<std::endl;
   std::cout <<COL_BLUE << "__|_  "<<COL_GREEN<<"G   G   "<<COL_RED<<" R  R   "<<COL_BLUE  <<"  I     "<<COL_PURPLE<<"D   D "<<COL_GREEN <<"    _|__"<<std::endl;
   std::cout <<COL_BLUE << "__|_  "<<COL_GREEN<<" GGGG   "<<COL_RED<<" R   R  "<<COL_BLUE  <<" III    "<<COL_PURPLE<<"DDDD  "<<COL_GREEN <<"    _|__"<<std::endl;
-  std::cout <<COL_BLUE << "__|_          "<<             "        "<<COL_GREEN <<"        "<<                "          _|__"<<std::endl; 
-  std::cout <<COL_BLUE << "__|__|__|__|__"<<             "|__|__|_"<<COL_GREEN <<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
-  std::cout <<COL_BLUE << "__|__|__|__|__"<<             "|__|__|_"<<COL_GREEN <<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
-  std::cout <<COL_BLUE << "  |  |  |  |  "<<             "|  |  | "<<COL_GREEN <<" |  |  |"<<                "  |  |  |  |  "<<std::endl; 
+  std::cout <<COL_BLUE << "__|_          "<<             "        "<<COL_GREEN <<"        "<<                "          _|__"<<std::endl;
+  std::cout <<COL_BLUE << "__|__|__|__|__"<<             "|__|__|_"<<COL_GREEN <<"_|__|__|"<<                "__|__|__|__|__"<<std::endl;
+  std::cout <<COL_BLUE << "__|__|__|__|__"<<             "|__|__|_"<<COL_GREEN <<"_|__|__|"<<                "__|__|__|__|__"<<std::endl;
+  std::cout <<COL_BLUE << "  |  |  |  |  "<<             "|  |  | "<<COL_GREEN <<" |  |  |"<<                "  |  |  |  |  "<<std::endl;
   std::cout << std::endl;
   std::cout << std::endl;
   std::cout <<COL_YELLOW<< std::endl;
@@ -342,7 +342,7 @@ void Grid_init(int *argc,char ***argv)
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--notimestamp") ){
     GridLogTimestamp(0);
-  } else { 
+  } else {
     GridLogTimestamp(1);
   }
 
@@ -350,7 +350,7 @@ void Grid_init(int *argc,char ***argv)
 		  Grid_default_latt,
 		  Grid_default_mpi);
 
-  std::cout << GridLogMessage << "Requesting "<< CartesianCommunicator::MAX_MPI_SHM_BYTES <<" byte stencil comms buffers "<<std::endl;
+  std::cout << GridLogDebug << "Requesting "<< CartesianCommunicator::MAX_MPI_SHM_BYTES <<" byte stencil comms buffers "<<std::endl;
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--decomposition") ){
     std::cout<<GridLogMessage<<"Grid Decomposition\n";
@@ -366,13 +366,20 @@ void Grid_init(int *argc,char ***argv)
   Grid_is_initialised = 1;
 }
 
-  
+
 void Grid_finalize(void)
 {
-#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3) 
+#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3)
   MPI_Finalize();
   Grid_unquiesce_nodes();
 #endif
+}
+
+void GridLogLayout() {
+    std::cout << GridLogMessage << "Grid Layout\n";
+    std::cout << GridLogMessage << "\tGlobal lattice size  : "<< GridCmdVectorIntToString(GridDefaultLatt()) << std::endl;
+    std::cout << GridLogMessage << "\tOpenMP threads       : "<< GridThread::GetThreads() <<std::endl;
+    std::cout << GridLogMessage << "\tMPI tasks            : "<< GridCmdVectorIntToString(GridDefaultMpi()) << std::endl;
 }
 
 void * Grid_backtrace_buffer[_NBACKTRACE];

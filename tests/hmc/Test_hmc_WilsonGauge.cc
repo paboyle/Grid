@@ -35,9 +35,7 @@ int main(int argc, char **argv) {
   using namespace Grid::QCD;
 
   Grid_init(&argc, &argv);
-  int threads = GridThread::GetThreads();
-  // here make a routine to print all the relevant information on the run
-  std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
+  GridLogLayout();
 
    // Typedefs to simplify notation
   typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
