@@ -388,6 +388,7 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
     RealD NP = _grid->_Nprocessors;
     RealD NN = _grid->NodeCount();
 
+    _grid->GlobalSum(commtime);    commtime/=NP;
     if ( calls > 0. ) {
       std::cout << GridLogMessage << " Stencil calls "<<calls<<std::endl;
       PRINTIT(halogtime);
