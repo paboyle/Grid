@@ -33,8 +33,14 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <fcntl.h>
 #include <unistd.h>
 #include <limits.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 #include <sys/mman.h>
 //#include <zlib.h>
+#ifndef SHM_HUGETLB
+#define SHM_HUGETLB 04000
+#endif
 
 namespace Grid {
 
@@ -189,8 +195,9 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
 
   ShmCommBuf = 0;
   ShmCommBufs.resize(ShmSize);
-  char shm_name [NAME_MAX];
 
+#if 1
+  char shm_name [NAME_MAX];
   if ( ShmRank == 0 ) {
     for(int r=0;r<ShmSize;r++){
 
@@ -228,6 +235,44 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
       ShmCommBufs[r] =ptr;
     }
   }
+
+#else
+  std::vector<int> shmids(ShmSize);
+
+  if ( ShmRank == 0 ) {
+    for(int r=0;r<ShmSize;r++){
+      size_t size = CartesianCommunicator::MAX_MPI_SHM_BYTES;
+      key_t key   = 0x4545 + r;
+      if ((shmids[r]= shmget(key,size, SHM_HUGETLB | IPC_CREAT | SHM_R | SHM_W)) < 0) {
+	int errsv = errno;
+	printf("Errno %d\n",errsv);
+	perror("shmget");
+	exit(1);
+      }
+      printf("shmid: 0x%x\n", shmids[r]);
+    }
+  }
+  MPI_Barrier(ShmComm);
+  MPI_Bcast(&shmids[0],ShmSize*sizeof(int),MPI_BYTE,0,ShmComm);
+  MPI_Barrier(ShmComm);
+
+  for(int r=0;r<ShmSize;r++){
+    ShmCommBufs[r] = (uint64_t *)shmat(shmids[r], NULL,0);
+    if (ShmCommBufs[r] == (uint64_t *)-1) {
+      perror("Shared memory attach failure");
+      shmctl(shmids[r], IPC_RMID, NULL);
+      exit(2);
+    }
+    printf("shmaddr: %p\n", ShmCommBufs[r]);
+  }
+  MPI_Barrier(ShmComm);
+  // Mark for clean up
+  for(int r=0;r<ShmSize;r++){
+    shmctl(shmids[r], IPC_RMID,(struct shmid_ds *)NULL);
+  }
+  MPI_Barrier(ShmComm);
+
+#endif
   ShmCommBuf         = ShmCommBufs[ShmRank];
 
   MPI_Barrier(ShmComm);
@@ -239,6 +284,7 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
       check[2] = 0x5A5A5A;
     }
   }
+
   MPI_Barrier(ShmComm);
   for(int r=0;r<ShmSize;r++){
     uint64_t * check = (uint64_t *) ShmCommBufs[r];
