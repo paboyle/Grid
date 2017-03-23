@@ -39,7 +39,6 @@ public:
 
   virtual ~Smear(){}
   virtual void smear     (GaugeField&,const GaugeField&)const = 0;
-  virtual void derivative(GaugeField&,
-			  const GaugeField&,const GaugeField&) const = 0;
+  virtual void derivative(GaugeField&, const GaugeField&,const GaugeField&) const = 0;
 };
 #endif

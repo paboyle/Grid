@@ -92,6 +92,7 @@ build*/*
 #####################
 *.xcodeproj/*
 build.sh
+.vscode
 
 # Eigen source #
 ################

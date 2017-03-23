@@ -109,11 +109,10 @@ void WilsonFlow<Gimpl>::smear(GaugeField& out, const GaugeField& in) const {
     out = in;
     for (unsigned int step = 0; step < Nstep; step++) {
         evolve_step(out);
-        std::cout << "[WilsonFlow] Energy density (plaq) : "
+        std::cout << GridLogMessage << "[WilsonFlow] Energy density (plaq) : "
             << step << " "
             << energyDensityPlaquette(step,out) << std::endl;
     }
-
 }
 
 }  // namespace QCD
