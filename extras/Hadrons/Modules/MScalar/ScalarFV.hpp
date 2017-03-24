@@ -16,6 +16,11 @@ class ScalarFVPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(ScalarFVPar,
+                                    std::string, emField,
+                                    std::string, source,
+                                    double,      mass,
+                                    double,      charge,
+                                    std::string, output,
                                     unsigned int, i);
 };
 
