@@ -15,7 +15,7 @@ TScalarFV::TScalarFV(const std::string name)
 // dependencies/products ///////////////////////////////////////////////////////
 std::vector<std::string> TScalarFV::getInput(void)
 {
-    std::vector<std::string> in;
+    std::vector<std::string> in = {par().source, par().emField};
     
     return in;
 }
