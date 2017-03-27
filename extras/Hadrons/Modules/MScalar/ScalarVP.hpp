@@ -42,7 +42,12 @@ public:
     // execution
     virtual void execute(void);
 private:
+    void momD1(ScalarField &s, EmField &A, FFT &fft);
+    void momD2(ScalarField &s, EmField &Asquared, FFT &fft);
+private:
     std::string  prop0Name_, propD1Name_, propD1D1Name_, propD2Name_;
+    std::vector<std::string>   phaseName_;
+    std::vector<ScalarField *> phase_;
 };
 
 MODULE_REGISTER_NS(ScalarVP, TScalarVP, MScalar);
