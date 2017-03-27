@@ -5,7 +5,7 @@ modules_cc =\
   Modules/MGauge/Unit.cc \
   Modules/MScalar/ChargedProp.cc \
   Modules/MScalar/FreeProp.cc \
-  Modules/MScalar/ScalarFV.cc
+  Modules/MScalar/ScalarVP.cc
 
 modules_hpp =\
   Modules/MAction/DWF.hpp \
@@ -19,7 +19,7 @@ modules_hpp =\
   Modules/MScalar/ChargedProp.hpp \
   Modules/MScalar/FreeProp.hpp \
   Modules/MScalar/Scalar.hpp \
-  Modules/MScalar/ScalarFV.hpp \
+  Modules/MScalar/ScalarVP.hpp \
   Modules/MSolver/RBPrecCG.hpp \
   Modules/MSource/Point.hpp \
   Modules/MSource/SeqGamma.hpp \

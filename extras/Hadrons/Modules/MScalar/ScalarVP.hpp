@@ -1,5 +1,5 @@
-#ifndef Hadrons_ScalarFV_hpp_
-#define Hadrons_ScalarFV_hpp_
+#ifndef Hadrons_ScalarVP_hpp_
+#define Hadrons_ScalarVP_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -8,14 +8,14 @@
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         ScalarFV                                 *
+ *                         ScalarVP                                 *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MScalar)
 
-class ScalarFVPar: Serializable
+class ScalarVPPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(ScalarFVPar,
+    GRID_SERIALIZABLE_CLASS_MEMBERS(ScalarVPPar,
                                     std::string, emField,
                                     std::string, source,
                                     std::string, scalarProp,
@@ -23,7 +23,7 @@ public:
                                     std::string, output);
 };
 
-class TScalarFV: public Module<ScalarFVPar>
+class TScalarVP: public Module<ScalarVPPar>
 {
 public:
     SCALAR_TYPE_ALIASES(SIMPL,);
@@ -31,9 +31,9 @@ public:
     typedef PhotonR::GaugeLinkField EmComp;
 public:
     // constructor
-    TScalarFV(const std::string name);
+    TScalarVP(const std::string name);
     // destructor
-    virtual ~TScalarFV(void) = default;
+    virtual ~TScalarVP(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -41,12 +41,14 @@ public:
     virtual void setup(void);
     // execution
     virtual void execute(void);
+private:
+    std::string  prop0Name_, propD1Name_, propD1D1Name_, propD2Name_;
 };
 
-MODULE_REGISTER_NS(ScalarFV, TScalarFV, MScalar);
+MODULE_REGISTER_NS(ScalarVP, TScalarVP, MScalar);
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_ScalarFV_hpp_
+#endif // Hadrons_ScalarVP_hpp_

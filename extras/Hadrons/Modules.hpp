@@ -9,7 +9,7 @@
 #include <Grid/Hadrons/Modules/MScalar/ChargedProp.hpp>
 #include <Grid/Hadrons/Modules/MScalar/FreeProp.hpp>
 #include <Grid/Hadrons/Modules/MScalar/Scalar.hpp>
-#include <Grid/Hadrons/Modules/MScalar/ScalarFV.hpp>
+#include <Grid/Hadrons/Modules/MScalar/ScalarVP.hpp>
 #include <Grid/Hadrons/Modules/MSolver/RBPrecCG.hpp>
 #include <Grid/Hadrons/Modules/MSource/Point.hpp>
 #include <Grid/Hadrons/Modules/MSource/SeqGamma.hpp>
