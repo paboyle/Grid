@@ -15,7 +15,12 @@ TScalarFV::TScalarFV(const std::string name)
 // dependencies/products ///////////////////////////////////////////////////////
 std::vector<std::string> TScalarFV::getInput(void)
 {
-    std::vector<std::string> in = {par().source, par().emField};
+	std::string prop0Name = par().scalarProp + "_0";
+	std::string propD1Name = par().scalarProp + "_D1";
+    std::string propD1D1Name = par().scalarProp + "_D1D1";
+    std::string propD2Name = par().scalarProp + "_D2";
+    std::vector<std::string> in = {par().source, par().emField, par().scalarProp,
+    								prop0Name, propD1Name, propD1D1Name, propD2Name};
     
     return in;
 }

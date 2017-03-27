@@ -18,14 +18,17 @@ public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(ScalarFVPar,
                                     std::string, emField,
                                     std::string, source,
-                                    double,      mass,
+                                    std::string, scalarProp,
                                     double,      charge,
-                                    std::string, output,
-                                    unsigned int, i);
+                                    std::string, output);
 };
 
 class TScalarFV: public Module<ScalarFVPar>
 {
+public:
+    SCALAR_TYPE_ALIASES(SIMPL,);
+    typedef PhotonR::GaugeField     EmField;
+    typedef PhotonR::GaugeLinkField EmComp;
 public:
     // constructor
     TScalarFV(const std::string name);
