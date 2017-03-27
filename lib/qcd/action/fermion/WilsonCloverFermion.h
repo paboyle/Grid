@@ -61,7 +61,6 @@ public:
   {
     csw = _csw;
     assert(Nd == 4); // require 4 dimensions
-
   }
 
   virtual RealD M(const FermionField& in, FermionField& out);
@@ -71,6 +70,11 @@ public:
   virtual void MooeeDag(const FermionField &in, FermionField &out);
   virtual void MooeeInv(const FermionField &in, FermionField &out);
   virtual void MooeeInvDag(const FermionField &in, FermionField &out);
+
+  virtual void MDeriv(GaugeField&mat, const FermionField&U, const FermionField&V, int dag);
+  virtual void MooDeriv(GaugeField&mat, const FermionField&U, const FermionField&V, int dag);
+  virtual void MeeDeriv(GaugeField&mat, const FermionField&U, const FermionField&V, int dag);
+
 
   void ImportGauge(const GaugeField &_Umu);
 private:

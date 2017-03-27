@@ -256,6 +256,56 @@ public:
     }
   }
 
+  ////////////////////////////////////////////////////////////////////////
+  // the sum over all staples on each site in direction mu,nu, lower part
+  ////////////////////////////////////////////////////////////////////////
+  static void StapleLower(GaugeMat &staple, const GaugeLorentz &Umu, int mu,
+                          int nu) {
+    if (nu != mu) {
+      GridBase *grid = Umu._grid;
+
+      std::vector<GaugeMat> U(Nd, grid);
+      for (int d = 0; d < Nd; d++) {
+        U[d] = PeekIndex<LorentzIndex>(Umu, d);// some redundant copies
+      }
+
+      // mu
+      // ^
+      // |__>  nu
+
+      //  __
+      // |
+      // |__
+      //
+      //
+      staple = Gimpl::ShiftStaple(
+          Gimpl::CovShiftBackward(U[nu], nu,
+                                  Gimpl::CovShiftBackward(U[mu], mu, U[nu])),
+          mu);
+    }
+  }
+
+  //////////////////////////////////////////////////////
+  //  Field Strength
+  //////////////////////////////////////////////////////
+  static void FieldStrength(GaugeMat &FS, const GaugeLorentz &Umu, int mu, int nu){
+      // Fmn +--<--+  Ut +--<--+
+      //     |     |     |     |
+      //  (x)+-->--+     +-->--+(x)
+      //     |     |     |     |
+      //     +--<--+     +--<--+
+
+      GaugeMat Vup(Umu._grid), Vdn(Umu._grid);
+      StapleUpper(Vup, Umu, mu, nu);// coalesce these two (up low)
+      StapleLower(Vdn, Umu, mu, nu);
+      GaugeMat v = adj(Vup) - adj(Vdn);
+      GaugeMat u = PeekIndex<LorentzIndex>(Umu, mu);  // some redundant copies
+      GaugeMat vu = v*u;
+      FS = 0.25*Ta(u*v - Cshift(vu, mu, +1));
+  }
+
+
+
   //////////////////////////////////////////////////////
   // Similar to above for rectangle is required
   //////////////////////////////////////////////////////

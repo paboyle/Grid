@@ -76,6 +76,12 @@ namespace QCD {
   void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField& _Umu) {
     this->ImportGauge(_Umu);
     // Compute the field strength terms
+    WilsonLoops<Impl>::FieldStrength(Bx, _Umu, Ydir, Zdir);
+    WilsonLoops<Impl>::FieldStrength(By, _Umu, Zdir, Xdir);
+    WilsonLoops<Impl>::FieldStrength(Bz, _Umu, Xdir, Ydir);
+    WilsonLoops<Impl>::FieldStrength(Ex, _Umu, Tdir, Xdir);
+    WilsonLoops<Impl>::FieldStrength(Ey, _Umu, Tdir, Ydir);
+    WilsonLoops<Impl>::FieldStrength(Ez, _Umu, Tdir, Zdir);
 
     // Invert the Moo, Mee terms (?)
   }
@@ -84,7 +90,7 @@ namespace QCD {
   template<class Impl>
   void WilsonCloverFermion<Impl>::Mooee(const FermionField &in, FermionField &out) {
     out.checkerboard = in.checkerboard;
-
+    assert(0); // to be completed
   }
 
   template<class Impl>
@@ -97,6 +103,27 @@ namespace QCD {
   }
   template<class Impl>
   void WilsonCloverFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out) {
+    assert(0); // not implemented yet
+  }
+
+  // Derivative parts
+  template<class Impl>
+  void WilsonCloverFermion<Impl>::MDeriv(GaugeField&mat, const FermionField&U, const FermionField&V, int dag){
+    GaugeField tmp(mat._grid);
+    this->DhopDeriv(mat, U, V, dag);
+    MooDeriv(tmp, U, V, dag);
+    mat += tmp;
+  }
+
+ // Derivative parts
+  template<class Impl>
+  void WilsonCloverFermion<Impl>::MooDeriv(GaugeField&mat, const FermionField&U, const FermionField&V, int dag){
+    assert(0); // not implemented yet
+  }
+
+   // Derivative parts
+  template<class Impl>
+  void WilsonCloverFermion<Impl>::MeeDeriv(GaugeField&mat, const FermionField&U, const FermionField&V, int dag){
     assert(0); // not implemented yet
   }
 
