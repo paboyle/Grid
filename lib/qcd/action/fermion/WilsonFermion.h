@@ -65,8 +65,8 @@ class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
   // override multiply; cut number routines if pass dagger argument
   // and also make interface more uniformly consistent
   //////////////////////////////////////////////////////////////////
-  RealD M(const FermionField &in, FermionField &out);
-  RealD Mdag(const FermionField &in, FermionField &out);
+  virtual RealD M(const FermionField &in, FermionField &out);
+  virtual RealD Mdag(const FermionField &in, FermionField &out);
 
   /////////////////////////////////////////////////////////
   // half checkerboard operations

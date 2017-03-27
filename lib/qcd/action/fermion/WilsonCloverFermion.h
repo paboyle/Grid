@@ -1,12 +1,13 @@
-    /*************************************************************************************
+/*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
 
     Source file: ./lib/qcd/action/fermion/WilsonTMFermion.h
 
-    Copyright (C) 2015
+    Copyright (C) 2017
 
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,53 +25,47 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
-    /*  END LEGAL */
-#ifndef  GRID_QCD_WILSON_TM_FERMION_H
-#define  GRID_QCD_WILSON_TM_FERMION_H
+/*  END LEGAL */
+#ifndef GRID_QCD_WILSON_CLOVER_FERMION_H
+#define GRID_QCD_WILSON_CLOVER_FERMION_H
 
 #include <Grid/Grid.h>
 
 namespace Grid {
+namespace QCD {
 
-  namespace QCD {
+template <class Impl>
+class WilsonCloverFermion : public WilsonFermion<Impl> {
+public:
+  INHERIT_IMPL_TYPES(Impl);
 
-    template<class Impl>
-    class WilsonTMFermion : public WilsonFermion<Impl>
-    {
-    public:
-      INHERIT_IMPL_TYPES(Impl);
-    public:
+public:
+  virtual void Instantiatable(void){};
+  // Constructors
+  WilsonCloverFermion(GaugeField &_Umu, GridCartesian &Fgrid,
+                      GridRedBlackCartesian &Hgrid,
+                      RealD _mass,
+                      RealD _csw,
+                      const ImplParams &p = ImplParams()) : WilsonFermion<Impl>(_Umu,
+                                                                                Fgrid,
+                                                                                Hgrid,
+                                                                                _mass, p)
+  {
+    csw = _csw;
+  }
 
-      virtual void   Instantiatable(void) {};
-      // Constructors
-      WilsonTMFermion(GaugeField &_Umu,
-		    GridCartesian         &Fgrid,
-		    GridRedBlackCartesian &Hgrid, 
-		    RealD _mass,
-		    RealD _mu,
-		    const ImplParams &p= ImplParams()
-		      ) :
-	WilsonFermion<Impl>(_Umu,
-			    Fgrid,
-			    Hgrid,
-			    _mass,p)
+  virtual RealD M(const FermionField& in, FermionField& out);
+  virtual RealD Mdag(const FermionField& in, FermionField& out);
 
-      {
-	mu = _mu;
-      }
+  virtual void Mooee(const FermionField &in, FermionField &out);
+  virtual void MooeeDag(const FermionField &in, FermionField &out);
+  virtual void MooeeInv(const FermionField &in, FermionField &out);
+  virtual void MooeeInvDag(const FermionField &in, FermionField &out);
 
+private:
+  RealD csw; // Clover coefficient
+};
+}
+}
 
-    // allow override for twisted mass and clover
-    virtual void Mooee(const FermionField &in, FermionField &out) ;
-    virtual void MooeeDag(const FermionField &in, FermionField &out) ;
-    virtual void MooeeInv(const FermionField &in, FermionField &out) ;
-    virtual void MooeeInvDag(const FermionField &in, FermionField &out) ;
-
-  private:
-     RealD mu; // TwistedMass parameter
-
-  };
-
-}}
-
-#endif
+#endif  // GRID_QCD_WILSON_CLOVER_FERMION_H
