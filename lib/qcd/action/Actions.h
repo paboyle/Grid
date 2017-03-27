@@ -142,10 +142,9 @@ typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeAction
 ////////////////////////////////////////////
 
 #include <Grid/qcd/action/fermion/WilsonFermion.h>       // 4d wilson like
-#include <Grid/qcd/action/fermion/WilsonTMFermion.h>       // 4d wilson like
+#include <Grid/qcd/action/fermion/WilsonTMFermion.h>     // 4d wilson like
+#include <Grid/qcd/action/fermion/WilsonCloverFermion.h> // 4d wilson like
 #include <Grid/qcd/action/fermion/WilsonFermion5D.h>     // 5d base used by all 5d overlap types
-
-//#include <Grid/qcd/action/fermion/CloverFermion.h>
 
 #include <Grid/qcd/action/fermion/CayleyFermion5D.h>     // Cayley types
 #include <Grid/qcd/action/fermion/DomainWallFermion.h>
@@ -188,9 +187,15 @@ typedef WilsonFermion<WilsonTwoIndexSymmetricImplR> WilsonTwoIndexSymmetricFermi
 typedef WilsonFermion<WilsonTwoIndexSymmetricImplF> WilsonTwoIndexSymmetricFermionF;
 typedef WilsonFermion<WilsonTwoIndexSymmetricImplD> WilsonTwoIndexSymmetricFermionD;
 
+// Twisted mass fermion
 typedef WilsonTMFermion<WilsonImplR> WilsonTMFermionR;
 typedef WilsonTMFermion<WilsonImplF> WilsonTMFermionF;
 typedef WilsonTMFermion<WilsonImplD> WilsonTMFermionD;
+
+// Clover fermions
+typedef WilsonCloverFermion<WilsonImplR> WilsonCloverFermionR;
+typedef WilsonCloverFermion<WilsonImplF> WilsonCloverFermionF;
+typedef WilsonCloverFermion<WilsonImplD> WilsonCloverFermionD;
 
 typedef DomainWallFermion<WilsonImplR> DomainWallFermionR;
 typedef DomainWallFermion<WilsonImplF> DomainWallFermionF;

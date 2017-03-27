@@ -2,12 +2,12 @@
 
     Grid physics library, www.github.com/paboyle/Grid
 
-    Source file: ./lib/qcd/action/fermion/WilsonTMFermion.h
+    Source file: ./lib/qcd/action/fermion/WilsonCloverFermion.h
 
     Copyright (C) 2017
 
-Author: paboyle <paboyle@ph.ed.ac.uk>
-Author: Guido Cossu <guido.cossu@ed.ac.uk>
+    Author: paboyle <paboyle@ph.ed.ac.uk>
+    Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -40,6 +40,8 @@ public:
   INHERIT_IMPL_TYPES(Impl);
 
 public:
+  typedef WilsonFermion<Impl> WilsonBase;
+
   virtual void Instantiatable(void){};
   // Constructors
   WilsonCloverFermion(GaugeField &_Umu, GridCartesian &Fgrid,
@@ -49,9 +51,17 @@ public:
                       const ImplParams &p = ImplParams()) : WilsonFermion<Impl>(_Umu,
                                                                                 Fgrid,
                                                                                 Hgrid,
-                                                                                _mass, p)
+                                                                                _mass, p), 
+                                                                                Bx(_Umu._grid),
+                                                                                By(_Umu._grid),
+                                                                                Bz(_Umu._grid),
+                                                                                Ex(_Umu._grid),
+                                                                                Ey(_Umu._grid),
+                                                                                Ez(_Umu._grid)
   {
     csw = _csw;
+    assert(Nd == 4); // require 4 dimensions
+
   }
 
   virtual RealD M(const FermionField& in, FermionField& out);
@@ -62,8 +72,18 @@ public:
   virtual void MooeeInv(const FermionField &in, FermionField &out);
   virtual void MooeeInvDag(const FermionField &in, FermionField &out);
 
+  void ImportGauge(const GaugeField &_Umu);
 private:
+  // here fixing the 4 dimensions, make it more general?
+
+  // Field strengths
+  GaugeLinkField Bx, By, Bz, Ex, Ey, Ez;
+
   RealD csw; // Clover coefficient
+
+
+  // Methods
+  void AddCloverTerm(const FermionField& in, FermionField& out);
 };
 }
 }
