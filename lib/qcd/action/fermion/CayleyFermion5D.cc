@@ -215,8 +215,14 @@ void CayleyFermion5D<Impl>::MeooeDag5D    (const FermionField &psi, FermionField
   std::vector<Coeff_t> diag =bs;
   std::vector<Coeff_t> upper=cs;
   std::vector<Coeff_t> lower=cs;
-  upper[Ls-1]=-mass*upper[Ls-1];
-  lower[0]   =-mass*lower[0];
+  for(int i=0;i<(Ls-1);i++){
+    diag[i] = conjugate(bs[i]);
+    upper[i] = conjugate(cs[i+1]);
+    lower[i+1] = conjugate(cs[i]);
+  }
+  diag[Ls-1]=conjugate(bs[Ls-1]);
+  upper[Ls-1]=-mass*conjugate(cs[0]);
+  lower[0]   =-mass*conjugate(cs[Ls-1]);
   M5Ddag(psi,psi,Din,lower,diag,upper);
 }
 
