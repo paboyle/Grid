@@ -324,12 +324,15 @@ void Grid_init(int *argc,char ***argv)
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-unroll") ){
     QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptHandUnroll;
+    QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptHandUnroll;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-asm") ){
     QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptInlineAsm;
+    QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptInlineAsm;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-generic") ){
     QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptGeneric;
+    QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptGeneric;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--lebesgue") ){
     LebesgueOrder::UseLebesgueOrder=1;
@@ -413,7 +416,7 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
 #endif
 #endif
   BACKTRACE();
-  exit(0);
+  if ( si->si_signo != SIGTRAP )   exit(0);
   return;
 };
 

@@ -53,6 +53,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/qcd/action/fermion/FermionOperatorImpl.h>
 #include <Grid/qcd/action/fermion/FermionOperator.h>
 #include <Grid/qcd/action/fermion/WilsonKernels.h>        //used by all wilson type fermions
+#include <Grid/qcd/action/fermion/StaggeredKernels.h>        //used by all wilson type fermions
 
 ////////////////////////////////////////////
 // Gauge Actions
@@ -108,6 +109,14 @@ typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeAction
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+#define FermOpStaggeredTemplateInstantiate(A) \
+  template class A<StaggeredImplF>;		\
+  template class A<StaggeredImplD>;		
+
+#define FermOpStaggeredVec5dTemplateInstantiate(A) \
+  template class A<StaggeredVec5dImplF>;		\
+  template class A<StaggeredVec5dImplD>;		
+
 #define FermOp4dVecTemplateInstantiate(A) \
   template class A<WilsonImplF>;		\
   template class A<WilsonImplD>;		\
@@ -146,6 +155,9 @@ typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeAction
 #include <Grid/qcd/action/fermion/WilsonFermion5D.h>     // 5d base used by all 5d overlap types
 
 //#include <Grid/qcd/action/fermion/CloverFermion.h>
+
+#include <Grid/qcd/action/fermion/ImprovedStaggeredFermion.h>
+#include <Grid/qcd/action/fermion/ImprovedStaggeredFermion5D.h>
 
 #include <Grid/qcd/action/fermion/CayleyFermion5D.h>     // Cayley types
 #include <Grid/qcd/action/fermion/DomainWallFermion.h>
@@ -268,6 +280,17 @@ typedef MobiusFermion<GparityWilsonImplR> GparityMobiusFermionR;
 typedef MobiusFermion<GparityWilsonImplF> GparityMobiusFermionF;
 typedef MobiusFermion<GparityWilsonImplD> GparityMobiusFermionD;
 
+typedef ImprovedStaggeredFermion<StaggeredImplR> ImprovedStaggeredFermionR;
+typedef ImprovedStaggeredFermion<StaggeredImplF> ImprovedStaggeredFermionF;
+typedef ImprovedStaggeredFermion<StaggeredImplD> ImprovedStaggeredFermionD;
+
+typedef ImprovedStaggeredFermion5D<StaggeredImplR> ImprovedStaggeredFermion5DR;
+typedef ImprovedStaggeredFermion5D<StaggeredImplF> ImprovedStaggeredFermion5DF;
+typedef ImprovedStaggeredFermion5D<StaggeredImplD> ImprovedStaggeredFermion5DD;
+
+typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplR> ImprovedStaggeredFermionVec5dR;
+typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplF> ImprovedStaggeredFermionVec5dF;
+typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplD> ImprovedStaggeredFermionVec5dD;
 
 
   }}

@@ -34,10 +34,9 @@ directory
 namespace Grid {
 namespace QCD {
 
-const std::vector<int> WilsonFermionStatic::directions({0, 1, 2, 3, 0, 1, 2,
-                                                        3});
-const std::vector<int> WilsonFermionStatic::displacements({1, 1, 1, 1, -1, -1,
-                                                           -1, -1});
+const std::vector<int> WilsonFermionStatic::directions({0, 1, 2, 3, 0, 1, 2, 3});
+const std::vector<int> WilsonFermionStatic::displacements({1, 1, 1, 1, -1, -1, -1, -1});
+
 int WilsonFermionStatic::HandOptDslash;
 
 /////////////////////////////////
@@ -224,8 +223,7 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
     ////////////////////////
     PARALLEL_FOR_LOOP
     for (int sss = 0; sss < B._grid->oSites(); sss++) {
-      Kernels::DiracOptDhopDir(st, U, st.CommBuf(), sss, sss, B, Btilde, mu,
-                               gamma);
+      Kernels::DiracOptDhopDir(st, U, st.CommBuf(), sss, sss, B, Btilde, mu, gamma);
     }
 
     //////////////////////////////////////////////////
@@ -335,8 +333,7 @@ void WilsonFermion<Impl>::DhopDirDisp(const FermionField &in, FermionField &out,
 
   PARALLEL_FOR_LOOP
   for (int sss = 0; sss < in._grid->oSites(); sss++) {
-    Kernels::DiracOptDhopDir(Stencil, Umu, Stencil.CommBuf(), sss, sss, in, out,
-                             dirdisp, gamma);
+    Kernels::DiracOptDhopDir(Stencil, Umu, Stencil.CommBuf(), sss, sss, in, out, dirdisp, gamma);
   }
 };
 
@@ -353,14 +350,12 @@ void WilsonFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
   if (dag == DaggerYes) {
     PARALLEL_FOR_LOOP
     for (int sss = 0; sss < in._grid->oSites(); sss++) {
-      Kernels::DiracOptDhopSiteDag(st, lo, U, st.CommBuf(), sss, sss, 1, 1, in,
-                                   out);
+      Kernels::DiracOptDhopSiteDag(st, lo, U, st.CommBuf(), sss, sss, 1, 1, in, out);
     }
   } else {
     PARALLEL_FOR_LOOP
     for (int sss = 0; sss < in._grid->oSites(); sss++) {
-      Kernels::DiracOptDhopSite(st, lo, U, st.CommBuf(), sss, sss, 1, 1, in,
-                                out);
+      Kernels::DiracOptDhopSite(st, lo, U, st.CommBuf(), sss, sss, 1, 1, in, out);
     }
   }
 };

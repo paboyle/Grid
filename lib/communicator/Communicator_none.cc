@@ -87,6 +87,7 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 {
   assert(0);
 }
+
 void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
 {
   assert(0);
@@ -97,7 +98,7 @@ void CartesianCommunicator::Barrier(void){}
 void CartesianCommunicator::Broadcast(int root,void* data, int bytes) {}
 void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes) { }
 int  CartesianCommunicator::RankFromProcessorCoor(std::vector<int> &coor) {  return 0;}
-void CartesianCommunicator::ProcessorCoorFromRank(int rank, std::vector<int> &coor){ coor = _processor_coor ;}
+void CartesianCommunicator::ProcessorCoorFromRank(int rank, std::vector<int> &coor){  coor = _processor_coor; }
 void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest)
 {
   source =0;
