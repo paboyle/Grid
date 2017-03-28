@@ -242,7 +242,6 @@ class NerscIO : public BinaryIO {
   static inline unsigned int writeHeader(NerscField &field,std::string file)
   {
     std::ofstream fout(file,std::ios::out|std::ios::in);
-  
     fout.seekp(0,std::ios::beg);
     dump_nersc_header(field, fout);
     field.data_start = fout.tellp();
@@ -264,10 +263,13 @@ static inline int readHeader(std::string file,GridBase *grid,  NerscField &field
   getline(fin,line); // read one line and insist is 
 
   removeWhitespace(line);
+  std::cout << "* " << line << std::endl;
+
   assert(line==std::string("BEGIN_HEADER"));
 
   do {
     getline(fin,line); // read one line
+    std::cout << "* "<<line<< std::endl;
     int eq = line.find("=");
     if(eq >0) {
       std::string key=line.substr(0,eq);
@@ -345,24 +347,24 @@ static inline void readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,
   // munger is a function of <floating point, Real, data_type>
   if ( header.data_type == std::string("4D_SU3_GAUGE") ) {
     if ( ieee32 || ieee32big ) {
-      //      csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>, LorentzColour2x3F> 
-	csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>, LorentzColour2x3F> 
+      csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>, LorentzColour2x3F> 
+	//	csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>, LorentzColour2x3F> 
 	(Umu,file,Nersc3x2munger<LorentzColour2x3F,LorentzColourMatrix>(), offset,format);
     }
     if ( ieee64 || ieee64big ) {
-      //csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>, LorentzColour2x3D> 
-      csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>, LorentzColour2x3D> 
+      csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>, LorentzColour2x3D> 
+	//   csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>, LorentzColour2x3D> 
       	(Umu,file,Nersc3x2munger<LorentzColour2x3D,LorentzColourMatrix>(),offset,format);
     }
   } else if ( header.data_type == std::string("4D_SU3_GAUGE_3x3") ) {
     if ( ieee32 || ieee32big ) {
-      //csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>,LorentzColourMatrixF>
-      csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>,LorentzColourMatrixF>
+      csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>,LorentzColourMatrixF>
+	//csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>,LorentzColourMatrixF>
 	(Umu,file,NerscSimpleMunger<LorentzColourMatrixF,LorentzColourMatrix>(),offset,format);
     }
     if ( ieee64 || ieee64big ) {
-      //      csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>,LorentzColourMatrixD>
-      csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>,LorentzColourMatrixD>
+      csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>,LorentzColourMatrixD>
+	// csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>,LorentzColourMatrixD>
 	(Umu,file,NerscSimpleMunger<LorentzColourMatrixD,LorentzColourMatrix>(),offset,format);
     }
   } else {
@@ -371,12 +373,17 @@ static inline void readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,
 
   NerscStatistics<GaugeField>(Umu,clone);
 
+  std::cout<<GridLogMessage <<"NERSC Configuration "<<file<<" checksum "<<std::hex<<            csum<< std::dec
+	                                                  <<" header   "<<std::hex<<header.checksum<<std::dec <<std::endl;
+  std::cout<<GridLogMessage <<"NERSC Configuration "<<file<<" plaquette "<<clone.plaquette
+	                                                  <<" header    "<<header.plaquette<<std::endl;
+  std::cout<<GridLogMessage <<"NERSC Configuration "<<file<<" link_trace "<<clone.link_trace
+	                                                  <<" header    "<<header.link_trace<<std::endl;
   assert(fabs(clone.plaquette -header.plaquette ) < 1.0e-5 );
   assert(fabs(clone.link_trace-header.link_trace) < 1.0e-6 );
-
   assert(csum == header.checksum );
 
-  std::cout<<GridLogMessage <<"Read NERSC Configuration "<<file<< " and plaquette, link trace, and checksum agree"<<std::endl;
+  std::cout<<GridLogMessage <<"NERSC Configuration "<<file<< " and plaquette, link trace, and checksum agree"<<std::endl;
 }
 
 template<class vsimd>
@@ -416,19 +423,8 @@ static inline void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu
     Nersc3x2unmunger<fobj2D,sobj> munge;
     BinaryIO::Uint32Checksum<vobj,fobj2D>(Umu, munge,header.checksum);
     offset = writeHeader(header,file);
-    csum=BinaryIO::writeObjectSerial<vobj,fobj2D>(Umu,file,munge,offset,header.floating_point);
-
-    std::string file1 = file+"para";
-    int offset1 = writeHeader(header,file1);
-    int csum1=BinaryIO::writeObjectParallel<vobj,fobj2D>(Umu,file1,munge,offset,header.floating_point);
-    //int csum1=BinaryIO::writeObjectSerial<vobj,fobj2D>(Umu,file1,munge,offset,header.floating_point);
-
-    
-    std::cout << GridLogMessage << " TESTING PARALLEL WRITE offsets " << offset1 << " "<< offset << std::endl;
-    std::cout << GridLogMessage << " TESTING PARALLEL WRITE csums   " << csum1 << " "<<std::hex<< csum << std::dec<< std::endl;
-
-    assert(offset1==offset);  
-    assert(csum1==csum);  
+    //    csum=BinaryIO::writeObjectSerial<vobj,fobj2D>(Umu,file,munge,offset,header.floating_point);
+    csum=BinaryIO::writeObjectParallel<vobj,fobj2D>(Umu,file,munge,offset,header.floating_point);
 
   } else { 
     header.floating_point = std::string("IEEE64BIG");
