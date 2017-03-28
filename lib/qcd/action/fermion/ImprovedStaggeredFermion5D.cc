@@ -54,22 +54,22 @@ ImprovedStaggeredFermion5D<Impl>::ImprovedStaggeredFermion5D(GaugeField &_Uthin,
   _FiveDimRedBlackGrid(&FiveDimRedBlackGrid),
   _FourDimGrid        (&FourDimGrid),
   _FourDimRedBlackGrid(&FourDimRedBlackGrid),
-  Stencil    (_FiveDimGrid,npoint,Even,directions,displacements),
-  StencilEven(_FiveDimRedBlackGrid,npoint,Even,directions,displacements), // source is Even
-  StencilOdd (_FiveDimRedBlackGrid,npoint,Odd ,directions,displacements), // source is Odd
+  Stencil    (&FiveDimGrid,npoint,Even,directions,displacements),
+  StencilEven(&FiveDimRedBlackGrid,npoint,Even,directions,displacements), // source is Even
+  StencilOdd (&FiveDimRedBlackGrid,npoint,Odd ,directions,displacements), // source is Odd
   mass(_mass),
   c1(_c1),
   c2(_c2),
   u0(_u0),
-  Umu(_FourDimGrid),
-  UmuEven(_FourDimRedBlackGrid),
-  UmuOdd (_FourDimRedBlackGrid),
-  UUUmu(_FourDimGrid),
-  UUUmuEven(_FourDimRedBlackGrid),
-  UUUmuOdd(_FourDimRedBlackGrid),
-  _tmp(&FiveDimRedBlackGrid),
-  Lebesgue(_FourDimGrid),
-  LebesgueEvenOdd(_FourDimRedBlackGrid)
+  Umu(&FourDimGrid),
+  UmuEven(&FourDimRedBlackGrid),
+  UmuOdd (&FourDimRedBlackGrid),
+  UUUmu(&FourDimGrid),
+  UUUmuEven(&FourDimRedBlackGrid),
+  UUUmuOdd(&FourDimRedBlackGrid),
+  Lebesgue(&FourDimGrid),
+  LebesgueEvenOdd(&FourDimRedBlackGrid),
+  _tmp(&FiveDimRedBlackGrid)
 {
 
   // some assertions
@@ -173,8 +173,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopDir(const FermionField &in, FermionFi
   Compressor compressor;
   Stencil.HaloExchange(in,compressor);
 
-  PARALLEL_FOR_LOOP
-  for(int ss=0;ss<Umu._grid->oSites();ss++){
+  parallel_for(int ss=0;ss<Umu._grid->oSites();ss++){
     for(int s=0;s<Ls;s++){
       int sU=ss;
       int sF = s+Ls*sU; 
@@ -235,14 +234,12 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOr
   
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
   if (dag == DaggerYes) {
-    PARALLEL_FOR_LOOP
-    for (int ss = 0; ss < U._grid->oSites(); ss++) {
+    parallel_for (int ss = 0; ss < U._grid->oSites(); ss++) {
       int sU=ss;
       Kernels::DhopSiteDag(st, lo, U, UUU, st.CommBuf(), LLs, sU,in, out);
     }
   } else {
-    PARALLEL_FOR_LOOP
-    for (int ss = 0; ss < U._grid->oSites(); ss++) {
+    parallel_for (int ss = 0; ss < U._grid->oSites(); ss++) {
       int sU=ss;
 	Kernels::DhopSite(st,lo,U,UUU,st.CommBuf(),LLs,sU,in,out);
     }
