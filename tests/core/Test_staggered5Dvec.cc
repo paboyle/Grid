@@ -128,7 +128,12 @@ int main (int argc, char ** argv)
 
   std::cout<<GridLogMessage << "Calling vectorised staggered operator"<<std::endl;
 
+#ifdef AVX512
   QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptInlineAsm;
+#else
+  QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptGeneric;
+#endif
+
   t0=usecond();
   for(int i=0;i<ncall1;i++){
     Ds.Dhop(src,tmp,0);
@@ -159,7 +164,11 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
 
 
+#ifdef AVX512
   QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptInlineAsm;
+#else
+  QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptGeneric;
+#endif
 
   err = tmp-result; 
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;

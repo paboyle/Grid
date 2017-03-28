@@ -31,7 +31,7 @@ directory
 namespace Grid {
 namespace QCD {
 
-int StaggeredKernelsStatic::Opt;
+int StaggeredKernelsStatic::Opt= StaggeredKernelsStatic::OptGeneric;
 
 template <class Impl>
 StaggeredKernels<Impl>::StaggeredKernels(const ImplParams &p) : Base(p){};
@@ -215,6 +215,7 @@ void StaggeredKernels<Impl>::DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, Dou
      }
     break;
   default:
+    std::cout<<"Oops Opt = "<<Opt<<std::endl;
     assert(0);
     break;
   }
@@ -251,6 +252,7 @@ void StaggeredKernels<Impl>::DhopSite(StencilImpl &st, LebesgueOrder &lo, Double
     }
     break;
   default:
+    std::cout<<"Oops Opt = "<<Opt<<std::endl;
     assert(0);
     break;
   }
