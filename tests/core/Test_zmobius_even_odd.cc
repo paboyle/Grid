@@ -91,7 +91,7 @@ int main (int argc, char ** argv)
         double imag = 0.;
         if (i==0) imag=1.;
         if (i==Ls-1) imag=-1.;
-        std::complex<double> temp (0.25+0.01*i, imag*0.00);
+        std::complex<double> temp (0.25+0.01*i, imag*0.01);
         omegas.push_back(temp);
   }
   ZMobiusFermionR Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, omegas,1.,0.);
