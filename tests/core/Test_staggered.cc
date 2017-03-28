@@ -2,10 +2,11 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./tests/Test_wilson_tm_even_odd.cc
+    Source file: ./benchmarks/Benchmark_wilson.cc
 
     Copyright (C) 2015
 
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
@@ -31,18 +32,6 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-template<class d>
-struct scal {
-  d internal;
-};
-
-  Gamma::Algebra Gmu [] = {
-    Gamma::Algebra::GammaX,
-    Gamma::Algebra::GammaY,
-    Gamma::Algebra::GammaZ,
-    Gamma::Algebra::GammaT
-  };
-
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
@@ -55,23 +44,29 @@ int main (int argc, char ** argv)
 
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
+  std::cout<<GridLogMessage << "Grid floating point word size is REALF"<< sizeof(RealF)<<std::endl;
+  std::cout<<GridLogMessage << "Grid floating point word size is REALD"<< sizeof(RealD)<<std::endl;
+  std::cout<<GridLogMessage << "Grid floating point word size is REAL"<< sizeof(Real)<<std::endl;
 
   std::vector<int> seeds({1,2,3,4});
-
   GridParallelRNG          pRNG(&Grid);
-  //  std::vector<int> seeds({1,2,3,4});
-  //  pRNG.SeedFixedIntegers(seeds);
-  pRNG.SeedRandomDevice();
+  pRNG.SeedFixedIntegers(seeds);
+  //  pRNG.SeedRandomDevice();
 
-  LatticeFermion src   (&Grid); random(pRNG,src);
-  LatticeFermion phi   (&Grid); random(pRNG,phi);
-  LatticeFermion chi   (&Grid); random(pRNG,chi);
-  LatticeFermion result(&Grid); result=zero;
-  LatticeFermion    ref(&Grid);    ref=zero;
-  LatticeFermion    tmp(&Grid);    tmp=zero;
-  LatticeFermion    err(&Grid);    tmp=zero;
+  typedef typename ImprovedStaggeredFermionR::FermionField FermionField; 
+  typedef typename ImprovedStaggeredFermionR::ComplexField ComplexField; 
+  typename ImprovedStaggeredFermionR::ImplParams params; 
+
+  FermionField src   (&Grid); random(pRNG,src);
+  FermionField result(&Grid); result=zero;
+  FermionField    ref(&Grid);    ref=zero;
+  FermionField    tmp(&Grid);    tmp=zero;
+  FermionField    err(&Grid);    tmp=zero;
+  FermionField phi   (&Grid); random(pRNG,phi);
+  FermionField chi   (&Grid); random(pRNG,chi);
   LatticeGaugeField Umu(&Grid); SU3::HotConfiguration(pRNG,Umu);
   std::vector<LatticeColourMatrix> U(4,&Grid);
+
 
   double volume=1;
   for(int mu=0;mu<Nd;mu++){
@@ -79,34 +74,102 @@ int main (int argc, char ** argv)
   }  
 
   // Only one non-zero (y)
-  Umu=zero;
-  for(int nn=0;nn<Nd;nn++){
-    random(pRNG,U[nn]);
-    std::cout<<GridLogMessage<<"U[nn]"<<norm2(U[nn])<<std::endl;
-    PokeIndex<LorentzIndex>(Umu,U[nn],nn);
-    std::cout<<GridLogMessage<<"Umu"<<norm2(Umu)<<std::endl;
+  for(int mu=0;mu<Nd;mu++){
+    U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
+  /* Debug force unit
+    U[mu] = 1.0;
+    PokeIndex<LorentzIndex>(Umu,U[mu],mu);
+  */
   }
 
+  ref = zero;
+
   RealD mass=0.1;
+  RealD c1=9.0/8.0;
+  RealD c2=-1.0/24.0;
+  RealD u0=1.0;
 
-  WilsonFermionR Dw(Umu,Grid,RBGrid,mass);
+  { // Simple improved staggered implementation
+    ref = zero;
+    RealD c1tad = 0.5*c1/u0;
+    RealD c2tad = 0.5*c2/u0/u0/u0;
 
-  LatticeFermion src_e   (&RBGrid);
-  LatticeFermion src_o   (&RBGrid);
-  LatticeFermion r_e   (&RBGrid);
-  LatticeFermion r_o   (&RBGrid);
-  LatticeFermion r_eo  (&Grid);
+    Lattice<iScalar<vInteger> > coor(&Grid);
+
+    Lattice<iScalar<vInteger> > x(&Grid); LatticeCoordinate(x,0);
+    Lattice<iScalar<vInteger> > y(&Grid); LatticeCoordinate(y,1);
+    Lattice<iScalar<vInteger> > z(&Grid); LatticeCoordinate(z,2);
+    Lattice<iScalar<vInteger> > t(&Grid); LatticeCoordinate(t,3);
+
+    Lattice<iScalar<vInteger> > lin_z(&Grid); lin_z=x+y;
+    Lattice<iScalar<vInteger> > lin_t(&Grid); lin_t=x+y+z;
+
+    for(int mu=0;mu<Nd;mu++){
+
+      // Staggered Phase.
+      ComplexField phases(&Grid);	phases=1.0;
+  
+      if ( mu == 1 ) phases = where( mod(x    ,2)==(Integer)0, phases,-phases);
+      if ( mu == 2 ) phases = where( mod(lin_z,2)==(Integer)0, phases,-phases);
+      if ( mu == 3 ) phases = where( mod(lin_t,2)==(Integer)0, phases,-phases);
+
+      tmp = PeriodicBC::CovShiftForward(U[mu],mu,src);
+      ref = ref +c1tad*tmp*phases; // Forward 1 hop
+
+      tmp = PeriodicBC::CovShiftForward(U[mu],mu,tmp); // 2 hop
+      tmp = PeriodicBC::CovShiftForward(U[mu],mu,tmp); // 3 hop
+      ref = ref +c2tad*tmp*phases; // Forward 3 hop
+
+      tmp = PeriodicBC::CovShiftBackward(U[mu],mu,src);
+      ref = ref -c1tad*tmp*phases; // Forward 3 hop
+
+      tmp = PeriodicBC::CovShiftBackward(U[mu],mu,tmp);
+      tmp = PeriodicBC::CovShiftBackward(U[mu],mu,tmp);
+      ref = ref -c2tad*tmp*phases; // Forward 3 hop
+    }
+    //    ref = ref + mass * src;
+  }
+
+  ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass,c1,c2,u0,params);
+  
+
+  std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"= Testing Dhop against cshift implementation         "<<std::endl;
+  std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
+
+  std::cout<<GridLogMessage << "Calling Ds"<<std::endl;
+  int ncall=1000;
+  double t0=usecond();
+  for(int i=0;i<ncall;i++){
+    Ds.Dhop(src,result,0);
+  }
+  double t1=usecond();
+  double t2;
+  double flops=(16*(3*(6+8+8)) + 15*3*2)*volume*ncall; // == 66*16 +  == 1146
+  
+  std::cout<<GridLogMessage << "Called Ds"<<std::endl;
+  std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
+  std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
+  std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
+
+  err = ref-result; 
+  std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
 
   std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
   std::cout<<GridLogMessage<<"= Testing that Deo + Doe = Dunprec "<<std::endl;
   std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
 
+  FermionField src_e   (&RBGrid);
+  FermionField src_o   (&RBGrid);
+  FermionField r_e   (&RBGrid);
+  FermionField r_o   (&RBGrid);
+  FermionField r_eo  (&Grid);
   pickCheckerboard(Even,src_e,src);
   pickCheckerboard(Odd,src_o,src);
 
-  Dw.Meooe(src_e,r_o);  std::cout<<GridLogMessage<<"Applied Meo"<<std::endl;
-  Dw.Meooe(src_o,r_e);  std::cout<<GridLogMessage<<"Applied Moe"<<std::endl;
-  Dw.Dhop (src,ref,DaggerNo);
+  Ds.Meooe(src_e,r_o);  std::cout<<GridLogMessage<<"Applied Meo"<<std::endl;
+  Ds.Meooe(src_o,r_e);  std::cout<<GridLogMessage<<"Applied Moe"<<std::endl;
+  Ds.Dhop (src,ref,DaggerNo);
 
   setCheckerboard(r_eo,r_o);
   setCheckerboard(r_eo,r_e);
@@ -114,42 +177,43 @@ int main (int argc, char ** argv)
   err= ref - r_eo;
   std::cout<<GridLogMessage << "EO norm diff   "<< norm2(err)<< " "<<norm2(ref)<< " " << norm2(r_eo) <<std::endl;
 
-  LatticeComplex cerr(&Grid);
-  cerr = localInnerProduct(err,err);
-
   std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
   std::cout<<GridLogMessage<<"= Test Ddagger is the dagger of D by requiring                "<<std::endl;
   std::cout<<GridLogMessage<<"=  < phi | Deo | chi > * = < chi | Deo^dag| phi>  "<<std::endl;
   std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
-  
-  LatticeFermion chi_e   (&RBGrid);
-  LatticeFermion chi_o   (&RBGrid);
 
-  LatticeFermion dchi_e  (&RBGrid);
-  LatticeFermion dchi_o  (&RBGrid);
+  FermionField chi_e   (&RBGrid);
+  FermionField chi_o   (&RBGrid);
 
-  LatticeFermion phi_e   (&RBGrid);
-  LatticeFermion phi_o   (&RBGrid);
+  FermionField dchi_e  (&RBGrid);
+  FermionField dchi_o  (&RBGrid);
 
-  LatticeFermion dphi_e  (&RBGrid);
-  LatticeFermion dphi_o  (&RBGrid);
+  FermionField phi_e   (&RBGrid);
+  FermionField phi_o   (&RBGrid);
 
+  FermionField dphi_e  (&RBGrid);
+  FermionField dphi_o  (&RBGrid);
 
   pickCheckerboard(Even,chi_e,chi);
   pickCheckerboard(Odd ,chi_o,chi);
   pickCheckerboard(Even,phi_e,phi);
   pickCheckerboard(Odd ,phi_o,phi);
 
-  Dw.Meooe(chi_e,dchi_o);
-  Dw.Meooe(chi_o,dchi_e);
-  Dw.MeooeDag(phi_e,dphi_o);
-  Dw.MeooeDag(phi_o,dphi_e);
+  Ds.Meooe(chi_e,dchi_o);
+  Ds.Meooe(chi_o,dchi_e);
+  Ds.MeooeDag(phi_e,dphi_o);
+  Ds.MeooeDag(phi_o,dphi_e);
 
   ComplexD pDce = innerProduct(phi_e,dchi_e);
   ComplexD pDco = innerProduct(phi_o,dchi_o);
   ComplexD cDpe = innerProduct(chi_e,dphi_e);
   ComplexD cDpo = innerProduct(chi_o,dphi_o);
 
+  std::cout<<GridLogMessage <<"e "<<pDce<<" "<<cDpe <<std::endl;
+  std::cout<<GridLogMessage <<"o "<<pDco<<" "<<cDpo <<std::endl;
+
+  std::cout<<GridLogMessage <<"pDce - conj(cDpo) "<< pDce-conj(cDpo) <<std::endl;
+  std::cout<<GridLogMessage <<"pDco - conj(cDpe) "<< pDco-conj(cDpe) <<std::endl;
   std::cout<<GridLogMessage <<"e "<<pDce<<" "<<cDpe <<std::endl;
   std::cout<<GridLogMessage <<"o "<<pDco<<" "<<cDpo <<std::endl;
 
@@ -163,11 +227,11 @@ int main (int argc, char ** argv)
   pickCheckerboard(Even,chi_e,chi);
   pickCheckerboard(Odd ,chi_o,chi);
 
-  Dw.Mooee(chi_e,src_e);
-  Dw.MooeeInv(src_e,phi_e);
+  Ds.Mooee(chi_e,src_e);
+  Ds.MooeeInv(src_e,phi_e);
 
-  Dw.Mooee(chi_o,src_o);
-  Dw.MooeeInv(src_o,phi_o);
+  Ds.Mooee(chi_o,src_o);
+  Ds.MooeeInv(src_o,phi_o);
   
   setCheckerboard(phi,phi_e);
   setCheckerboard(phi,phi_o);
@@ -182,11 +246,11 @@ int main (int argc, char ** argv)
   pickCheckerboard(Even,chi_e,chi);
   pickCheckerboard(Odd ,chi_o,chi);
 
-  Dw.MooeeDag(chi_e,src_e);
-  Dw.MooeeInvDag(src_e,phi_e);
+  Ds.MooeeDag(chi_e,src_e);
+  Ds.MooeeInvDag(src_e,phi_e);
 
-  Dw.MooeeDag(chi_o,src_o);
-  Dw.MooeeInvDag(src_o,phi_o);
+  Ds.MooeeDag(chi_o,src_o);
+  Ds.MooeeInvDag(src_o,phi_o);
   
   setCheckerboard(phi,phi_e);
   setCheckerboard(phi,phi_o);
@@ -204,9 +268,8 @@ int main (int argc, char ** argv)
   pickCheckerboard(Odd ,chi_o,chi);
   pickCheckerboard(Even,phi_e,phi);
   pickCheckerboard(Odd ,phi_o,phi);
-  RealD t1,t2;
 
-  SchurDiagMooeeOperator<WilsonFermionR,LatticeFermion> HermOpEO(Dw);
+  SchurDiagMooeeOperator<ImprovedStaggeredFermionR,FermionField> HermOpEO(Ds);
   HermOpEO.MpcDagMpc(chi_e,dchi_e,t1,t2);
   HermOpEO.MpcDagMpc(chi_o,dchi_o,t1,t2);
 
@@ -223,6 +286,6 @@ int main (int argc, char ** argv)
 
   std::cout<<GridLogMessage <<"pDce - conj(cDpo) "<< pDco-conj(cDpo) <<std::endl;
   std::cout<<GridLogMessage <<"pDco - conj(cDpe) "<< pDce-conj(cDpe) <<std::endl;
-  
+
   Grid_finalize();
 }

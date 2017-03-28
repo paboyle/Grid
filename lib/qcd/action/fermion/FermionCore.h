@@ -39,6 +39,15 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 #include <Grid/qcd/action/fermion/FermionOperatorImpl.h>
 #include <Grid/qcd/action/fermion/FermionOperator.h>
 #include <Grid/qcd/action/fermion/WilsonKernels.h>        //used by all wilson type fermions
+#include <Grid/qcd/action/fermion/StaggeredKernels.h>        //used by all wilson type fermions
+
+#define FermOpStaggeredTemplateInstantiate(A) \
+  template class A<StaggeredImplF>; \
+  template class A<StaggeredImplD>; 
+
+#define FermOpStaggeredVec5dTemplateInstantiate(A) \
+  template class A<StaggeredVec5dImplF>; \
+  template class A<StaggeredVec5dImplD>; 
 
 #define FermOp4dVecTemplateInstantiate(A) \
   template class A<WilsonImplF>;		\

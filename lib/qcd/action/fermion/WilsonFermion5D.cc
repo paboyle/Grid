@@ -64,71 +64,55 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   LebesgueEvenOdd(_FourDimRedBlackGrid),
   _tmp(&FiveDimRedBlackGrid)
 {
+  // some assertions
+  assert(FiveDimGrid._ndimension==5);
+  assert(FourDimGrid._ndimension==4);
+  assert(FourDimRedBlackGrid._ndimension==4);
+  assert(FiveDimRedBlackGrid._ndimension==5);
+  assert(FiveDimRedBlackGrid._checker_dim==1); // Don't checker the s direction
+
+  // extent of fifth dim and not spread out
+  Ls=FiveDimGrid._fdimensions[0];
+  assert(FiveDimRedBlackGrid._fdimensions[0]==Ls);
+  assert(FiveDimGrid._processors[0]         ==1);
+  assert(FiveDimRedBlackGrid._processors[0] ==1);
+
+  // Other dimensions must match the decomposition of the four-D fields 
+  for(int d=0;d<4;d++){
+
+    assert(FiveDimGrid._processors[d+1]         ==FourDimGrid._processors[d]);
+    assert(FiveDimRedBlackGrid._processors[d+1] ==FourDimGrid._processors[d]);
+    assert(FourDimRedBlackGrid._processors[d]   ==FourDimGrid._processors[d]);
+
+    assert(FiveDimGrid._fdimensions[d+1]        ==FourDimGrid._fdimensions[d]);
+    assert(FiveDimRedBlackGrid._fdimensions[d+1]==FourDimGrid._fdimensions[d]);
+    assert(FourDimRedBlackGrid._fdimensions[d]  ==FourDimGrid._fdimensions[d]);
+
+    assert(FiveDimGrid._simd_layout[d+1]        ==FourDimGrid._simd_layout[d]);
+    assert(FiveDimRedBlackGrid._simd_layout[d+1]==FourDimGrid._simd_layout[d]);
+    assert(FourDimRedBlackGrid._simd_layout[d]  ==FourDimGrid._simd_layout[d]);
+  }
+
   if (Impl::LsVectorised) { 
 
     int nsimd = Simd::Nsimd();
     
-    // some assertions
-    assert(FiveDimGrid._ndimension==5);
-    assert(FiveDimRedBlackGrid._ndimension==5);
-    assert(FiveDimRedBlackGrid._checker_dim==1); // Don't checker the s direction
-    assert(FourDimGrid._ndimension==4);
-
     // Dimension zero of the five-d is the Ls direction
-    Ls=FiveDimGrid._fdimensions[0];
-    assert(FiveDimGrid._processors[0]         ==1);
     assert(FiveDimGrid._simd_layout[0]        ==nsimd);
-
-    assert(FiveDimRedBlackGrid._fdimensions[0]==Ls);
-    assert(FiveDimRedBlackGrid._processors[0] ==1);
     assert(FiveDimRedBlackGrid._simd_layout[0]==nsimd);
 
-    // Other dimensions must match the decomposition of the four-D fields 
     for(int d=0;d<4;d++){
-      assert(FiveDimRedBlackGrid._fdimensions[d+1]==FourDimGrid._fdimensions[d]);
-      assert(FiveDimRedBlackGrid._processors[d+1] ==FourDimGrid._processors[d]);
-      
       assert(FourDimGrid._simd_layout[d]=1);
       assert(FourDimRedBlackGrid._simd_layout[d]=1);
       assert(FiveDimRedBlackGrid._simd_layout[d+1]==1);
-
-      assert(FiveDimGrid._fdimensions[d+1]        ==FourDimGrid._fdimensions[d]);
-      assert(FiveDimGrid._processors[d+1]         ==FourDimGrid._processors[d]);
-      assert(FiveDimGrid._simd_layout[d+1]        ==FourDimGrid._simd_layout[d]);
     }
 
   } else {
-
-    // some assertions
-    assert(FiveDimGrid._ndimension==5);
-    assert(FourDimGrid._ndimension==4);
-    assert(FiveDimRedBlackGrid._ndimension==5);
-    assert(FourDimRedBlackGrid._ndimension==4);
-    assert(FiveDimRedBlackGrid._checker_dim==1);
     
     // Dimension zero of the five-d is the Ls direction
-    Ls=FiveDimGrid._fdimensions[0];
-    assert(FiveDimRedBlackGrid._fdimensions[0]==Ls);
-    assert(FiveDimRedBlackGrid._processors[0] ==1);
     assert(FiveDimRedBlackGrid._simd_layout[0]==1);
-    assert(FiveDimGrid._processors[0]         ==1);
     assert(FiveDimGrid._simd_layout[0]        ==1);
-    
-    // Other dimensions must match the decomposition of the four-D fields 
-    for(int d=0;d<4;d++){
-      assert(FourDimRedBlackGrid._fdimensions[d]  ==FourDimGrid._fdimensions[d]);
-      assert(FiveDimRedBlackGrid._fdimensions[d+1]==FourDimGrid._fdimensions[d]);
-      
-      assert(FourDimRedBlackGrid._processors[d]   ==FourDimGrid._processors[d]);
-      assert(FiveDimRedBlackGrid._processors[d+1] ==FourDimGrid._processors[d]);
-      
-      assert(FourDimRedBlackGrid._simd_layout[d]  ==FourDimGrid._simd_layout[d]);
-      assert(FiveDimRedBlackGrid._simd_layout[d+1]==FourDimGrid._simd_layout[d]);
-      
-      assert(FiveDimGrid._fdimensions[d+1]        ==FourDimGrid._fdimensions[d]);
-      assert(FiveDimGrid._processors[d+1]         ==FourDimGrid._processors[d]);
-      assert(FiveDimGrid._simd_layout[d+1]        ==FourDimGrid._simd_layout[d]);
-    }
+
   }
     
   // Allocate the required comms buffer
