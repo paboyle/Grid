@@ -67,7 +67,7 @@ std::vector<void *> CartesianCommunicator::ShmCommBufs;
 int CartesianCommunicator::NodeCount(void)    { return GroupSize;};
 
 
-#define FORCE_COMMS
+#undef FORCE_COMMS
 void *CartesianCommunicator::ShmBufferSelf(void)
 {
   return ShmCommBufs[ShmRank];
@@ -484,13 +484,13 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 	assert(coor[j] == _processor_coor[j]);
       }
     }
-
+    /*
     std::cout << GridLogMessage<< " Lexicographic "<<i;
     std::cout << " MPI rank      "<<wr;
     std::cout << " Coor          ";
     for(int j=0;j<coor.size();j++) std::cout << coor[j];
     std::cout<< std::endl;
-
+    */
     /////////////////////////////////////////////////////
     // Check everyone agrees on everyone elses coords
     /////////////////////////////////////////////////////
