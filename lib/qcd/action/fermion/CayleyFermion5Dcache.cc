@@ -29,7 +29,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 
-#include <Grid/Grid.h>
+#include <Grid/qcd/action/fermion/FermionCore.h>
+#include <Grid/qcd/action/fermion/CayleyFermion5D.h>
 
 
 namespace Grid {
@@ -54,8 +55,8 @@ void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   M5Dcalls++;
   M5Dtime-=usecond();
-PARALLEL_FOR_LOOP
-  for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
+
+  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     for(int s=0;s<Ls;s++){
       auto tmp = psi._odata[0];
       if ( s==0 ) {
@@ -98,8 +99,8 @@ void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   M5Dcalls++;
   M5Dtime-=usecond();
-PARALLEL_FOR_LOOP
-  for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
+
+  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     auto tmp = psi._odata[0];
     for(int s=0;s<Ls;s++){
       if ( s==0 ) {
@@ -137,8 +138,7 @@ void CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi, FermionField &
   MooeeInvCalls++;
   MooeeInvTime-=usecond();
 
-PARALLEL_FOR_LOOP
-  for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
+  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     auto tmp = psi._odata[0];
 
     // flops = 12*2*Ls + 12*2*Ls + 3*12*Ls + 12*2*Ls  = 12*Ls * (9) = 108*Ls flops
@@ -184,8 +184,7 @@ void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &
   MooeeInvCalls++;
   MooeeInvTime-=usecond();
 
-PARALLEL_FOR_LOOP
-  for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
+  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
 
     auto tmp = psi._odata[0];
 

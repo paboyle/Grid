@@ -30,8 +30,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 
 #include <Grid/Eigen/Dense>
-#include <Grid/Grid.h>
-
+#include <Grid/qcd/action/fermion/FermionCore.h>
+#include <Grid/qcd/action/fermion/CayleyFermion5D.h>
 
 namespace Grid {
 namespace QCD {
@@ -57,10 +57,23 @@ void CayleyFermion5D<Impl>::Dminus(const FermionField &psi, FermionField &chi)
 {
   int Ls=this->Ls;
 
-  this->DW(psi,this->tmp(),DaggerNo);
+  FermionField tmp_f(this->FermionGrid());
+  this->DW(psi,tmp_f,DaggerNo);
 
   for(int s=0;s<Ls;s++){
-    axpby_ssp(chi,Coeff_t(1.0),psi,-cs[s],this->tmp(),s,s);// chi = (1-c[s] D_W) psi
+    axpby_ssp(chi,Coeff_t(1.0),psi,-cs[s],tmp_f,s,s);// chi = (1-c[s] D_W) psi
+  }
+}
+template<class Impl>  
+void CayleyFermion5D<Impl>::DminusDag(const FermionField &psi, FermionField &chi)
+{
+  int Ls=this->Ls;
+
+  FermionField tmp_f(this->FermionGrid());
+  this->DW(psi,tmp_f,DaggerYes);
+
+  for(int s=0;s<Ls;s++){
+    axpby_ssp(chi,Coeff_t(1.0),psi,-cs[s],tmp_f,s,s);// chi = (1-c[s] D_W) psi
   }
 }
 
@@ -107,17 +120,6 @@ template<class Impl> void CayleyFermion5D<Impl>::CayleyZeroCounters(void)
 }
 
 
-template<class Impl>  
-void CayleyFermion5D<Impl>::DminusDag(const FermionField &psi, FermionField &chi)
-{
-  int Ls=this->Ls;
-
-  this->DW(psi,this->tmp(),DaggerYes);
-
-  for(int s=0;s<Ls;s++){
-    axpby_ssp(chi,Coeff_t(1.0),psi,-cs[s],this->tmp(),s,s);// chi = (1-c[s] D_W) psi
-  }
-}
 template<class Impl>  
 void CayleyFermion5D<Impl>::M5D   (const FermionField &psi, FermionField &chi)
 {
@@ -190,7 +192,12 @@ void CayleyFermion5D<Impl>::MooeeDag    (const FermionField &psi, FermionField &
       lower[s]=-cee[s-1];
     }
   }
-
+  // Conjugate the terms ?
+  for (int s=0;s<Ls;s++){
+    diag[s] =conjugate(diag[s]);
+    upper[s]=conjugate(upper[s]);
+    lower[s]=conjugate(lower[s]);
+  }
   M5Ddag(psi,psi,chi,lower,diag,upper);
 }
 
@@ -215,6 +222,12 @@ void CayleyFermion5D<Impl>::MeooeDag5D    (const FermionField &psi, FermionField
   std::vector<Coeff_t> lower=cs;
   upper[Ls-1]=-mass*upper[Ls-1];
   lower[0]   =-mass*lower[0];
+  // Conjugate the terms ?
+  for (int s=0;s<Ls;s++){
+    diag[s] =conjugate(diag[s]);
+    upper[s]=conjugate(upper[s]);
+    lower[s]=conjugate(lower[s]);
+  }
   M5Ddag(psi,psi,Din,lower,diag,upper);
 }
 

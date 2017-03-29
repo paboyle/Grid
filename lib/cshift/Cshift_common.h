@@ -1,5 +1,4 @@
-
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -53,15 +52,13 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<cobj> &buffer,int dimen
     cbmask = 0x3;
   }
   
-  int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
-  
+  int so=plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
   int e1=rhs._grid->_slice_nblock[dimension];
   int e2=rhs._grid->_slice_block[dimension];
 
   int stride=rhs._grid->_slice_stride[dimension];
   if ( cbmask == 0x3 ) { 
-PARALLEL_NESTED_LOOP2
-    for(int n=0;n<e1;n++){
+    parallel_for_nest2(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int o  = n*stride;
 	int bo = n*e2;
@@ -74,14 +71,13 @@ PARALLEL_NESTED_LOOP2
      for(int n=0;n<e1;n++){
        for(int b=0;b<e2;b++){
 	 int o  = n*stride;
-	 int ocb=1<<rhs._grid->CheckerBoardFromOindexTable(o+b);
+	 int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
 	 if ( ocb &cbmask ) {
 	   table.push_back(std::pair<int,int> (bo++,o+b));
 	 }
        }
      }
-PARALLEL_FOR_LOOP     
-     for(int i=0;i<table.size();i++){
+     parallel_for(int i=0;i<table.size();i++){
        buffer[off+table[i].first]=compress(rhs._odata[so+table[i].second]);
      }
   }
@@ -105,29 +101,30 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename cobj::scalar_
   int e1=rhs._grid->_slice_nblock[dimension];
   int e2=rhs._grid->_slice_block[dimension];
   int n1=rhs._grid->_slice_stride[dimension];
-  int n2=rhs._grid->_slice_block[dimension];
+
   if ( cbmask ==0x3){
-PARALLEL_NESTED_LOOP2
-    for(int n=0;n<e1;n++){
+    parallel_for_nest2(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 
 	int o      =   n*n1;
-	int offset = b+n*n2;
+	int offset = b+n*e2;
+	
 	cobj temp =compress(rhs._odata[so+o+b]);
-
 	extract<cobj>(temp,pointers,offset);
 
       }
     }
   } else { 
 
-    assert(0); //Fixme think this is buggy
-
-    for(int n=0;n<e1;n++){
+    // Case of SIMD split AND checker dim cannot currently be hit, except in 
+    // Test_cshift_red_black code.
+    std::cout << " Dense packed buffer WARNING " <<std::endl;
+    parallel_for_nest2(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
-	int o=n*rhs._grid->_slice_stride[dimension];
+
+	int o=n*n1;
 	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
-	int offset = b+n*rhs._grid->_slice_block[dimension];
+	int offset = b+n*e2;
 
 	if ( ocb & cbmask ) {
 	  cobj temp =compress(rhs._odata[so+o+b]);
@@ -171,10 +168,10 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
     
   int e1=rhs._grid->_slice_nblock[dimension];
   int e2=rhs._grid->_slice_block[dimension];
+  int stride=rhs._grid->_slice_stride[dimension];
   
   if ( cbmask ==0x3 ) {
-PARALLEL_NESTED_LOOP2
-    for(int n=0;n<e1;n++){
+    parallel_for_nest2(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int o   =n*rhs._grid->_slice_stride[dimension];
 	int bo  =n*rhs._grid->_slice_block[dimension];
@@ -182,17 +179,21 @@ PARALLEL_NESTED_LOOP2
       }
     }
   } else { 
+    std::vector<std::pair<int,int> > table;
     int bo=0;
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int o   =n*rhs._grid->_slice_stride[dimension];
-	int bo  =n*rhs._grid->_slice_block[dimension];
 	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);// Could easily be a table lookup
 	if ( ocb & cbmask ) {
-	  rhs._odata[so+o+b]=buffer[bo++];
+	  table.push_back(std::pair<int,int> (so+o+b,bo++));
 	}
       }
     }
+    parallel_for(int i=0;i<table.size();i++){
+       //       std::cout << "Rcv"<< table[i].first << " " << table[i].second << " " <<buffer[table[i].second]<<std::endl;
+       rhs._odata[table[i].first]=buffer[table[i].second];
+     }
   }
 }
 
@@ -213,8 +214,7 @@ PARALLEL_NESTED_LOOP2
   int e2=rhs._grid->_slice_block[dimension];
 
   if(cbmask ==0x3 ) {
-PARALLEL_NESTED_LOOP2
-    for(int n=0;n<e1;n++){
+    parallel_for_nest2(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int o      = n*rhs._grid->_slice_stride[dimension];
 	int offset = b+n*rhs._grid->_slice_block[dimension];
@@ -222,7 +222,11 @@ PARALLEL_NESTED_LOOP2
       }
     }
   } else { 
-    assert(0); // think this is buggy FIXME
+
+    // Case of SIMD split AND checker dim cannot currently be hit, except in 
+    // Test_cshift_red_black code.
+    //    std::cout << "Scatter_plane merge assert(0); think this is buggy FIXME "<< std::endl;// think this is buggy FIXME
+    std::cout<<" Unthreaded warning -- buffer is not densely packed ??"<<std::endl;
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int o      = n*rhs._grid->_slice_stride[dimension];
@@ -254,8 +258,7 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
   int e2=rhs._grid->_slice_block[dimension];
   int stride = rhs._grid->_slice_stride[dimension];
   if(cbmask == 0x3 ){
-PARALLEL_NESTED_LOOP2
-    for(int n=0;n<e1;n++){
+    parallel_for_nest2(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
  
         int o =n*stride+b;
@@ -264,8 +267,7 @@ PARALLEL_NESTED_LOOP2
       }
     }
   } else { 
-PARALLEL_NESTED_LOOP2
-    for(int n=0;n<e1;n++){
+    parallel_for_nest2(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
  
         int o =n*stride+b;
@@ -295,8 +297,8 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
   int e1=rhs._grid->_slice_nblock[dimension];
   int e2=rhs._grid->_slice_block [dimension];
   int stride = rhs._grid->_slice_stride[dimension];
-PARALLEL_NESTED_LOOP2
-  for(int n=0;n<e1;n++){
+
+  parallel_for_nest2(int n=0;n<e1;n++){
   for(int b=0;b<e2;b++){
 
       int o  =n*stride;
@@ -338,8 +340,8 @@ template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice
   // Map to always positive shift modulo global full dimension.
   shift = (shift+fd)%fd;
 
-  ret.checkerboard = grid->CheckerBoardDestination(rhs.checkerboard,shift,dimension);
   // the permute type
+  ret.checkerboard = grid->CheckerBoardDestination(rhs.checkerboard,shift,dimension);
   int permute_dim =grid->PermuteDim(dimension);
   int permute_type=grid->PermuteType(dimension);
   int permute_type_dist;
@@ -348,7 +350,6 @@ template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice
 
     int o   = 0;
     int bo  = x * grid->_ostride[dimension];
-    
     int cb= (cbmask==0x2)? Odd : Even;
 
     int sshift = grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,cb);
@@ -361,9 +362,23 @@ template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice
     // wrap is whether sshift > rd.
     //  num is sshift mod rd.
     // 
+    //  shift 7
+    //
+    //  XoXo YcYc 
+    //  oXoX cYcY
+    //  XoXo YcYc
+    //  oXoX cYcY
+    //
+    //  sshift -- 
+    //
+    //  XX YY ; 3
+    //  XX YY ; 0
+    //  XX YY ; 3
+    //  XX YY ; 0
+    //
     int permute_slice=0;
     if(permute_dim){
-      int wrap = sshift/rd;
+      int wrap = sshift/rd; wrap=wrap % ly;
       int  num = sshift%rd;
 
       if ( x< rd-num ) permute_slice=wrap;
@@ -375,7 +390,6 @@ template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice
       } else {
 	permute_type_dist = permute_type;
       }
-      
     }
 
     if ( permute_slice ) Copy_plane_permute(ret,rhs,dimension,x,sx,cbmask,permute_type_dist);

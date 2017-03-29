@@ -52,6 +52,9 @@ namespace QCD {
       INHERIT_IMPL_TYPES(Impl);
       typedef StaggeredKernels<Impl> Kernels;
 
+      FermionField _tmp;
+      FermionField &tmp(void) { return _tmp; }
+
       ///////////////////////////////////////////////////////////////
       // Implement the abstract base
       ///////////////////////////////////////////////////////////////

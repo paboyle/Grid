@@ -66,8 +66,7 @@ public:
   // Move this elsewhere? FIXME
   static inline void AddGaugeLink(GaugeField &U, GaugeLinkField &W,
                                   int mu) { // U[mu] += W
-    PARALLEL_FOR_LOOP
-    for (auto ss = 0; ss < U._grid->oSites(); ss++) {
+    parallel_for (auto ss = 0; ss < U._grid->oSites(); ss++) {
       U._odata[ss]._internal[mu] =
           U._odata[ss]._internal[mu] + W._odata[ss]._internal;
     }

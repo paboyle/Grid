@@ -81,9 +81,15 @@ int main (int argc, char ** argv)
 
   RealD b=1.5;// Scale factor b+c=2, b-c=1
   RealD c=0.5;
+  std::vector<ComplexD> gamma(Ls,ComplexD(1.0,0.1));
+  
   std::cout<<GridLogMessage <<"MobiusFermion test"<<std::endl;
   MobiusFermionR Dmob(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c);
   TestWhat<MobiusFermionR>(Dmob,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
+
+  std::cout<<GridLogMessage <<"ZMobiusFermion test"<<std::endl;
+  ZMobiusFermionR ZDmob(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,gamma,b,c);
+  TestWhat<ZMobiusFermionR>(ZDmob,FGrid,FrbGrid,UGrid,UrbGrid,mass,M5,&RNG4,&RNG5);
 
   std::cout<<GridLogMessage <<"MobiusZolotarevFermion test"<<std::endl;
   MobiusZolotarevFermionR Dzolo(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c,0.1,2.0);

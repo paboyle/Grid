@@ -194,8 +194,7 @@ namespace QCD {
       GaugeLinkField tmp(mat._grid);
       tmp = zero;
       
-      PARALLEL_FOR_LOOP
-      for(int sss=0;sss<tmp._grid->oSites();sss++){
+      parallel_for(int sss=0;sss<tmp._grid->oSites();sss++){
 	int sU=sss;
 	for(int s=0;s<Ls;s++){
 	  int sF = s+Ls*sU;
@@ -335,7 +334,7 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
  typedef iImplPropagator<Simd> SitePropagator;
  typedef iImplHalfSpinor<Simd> SiteHalfSpinor;
  typedef iImplDoubledGaugeField<Simd> SiteDoubledGaugeField;
- 
+
  typedef Lattice<SiteSpinor> FermionField;
  typedef Lattice<SitePropagator> PropagatorField;
  typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
@@ -447,8 +446,7 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
        Uconj = where(coor==neglink,-Uconj,Uconj);
      }
 	  
-PARALLEL_FOR_LOOP
-     for(auto ss=U.begin();ss<U.end();ss++){
+     parallel_for(auto ss=U.begin();ss<U.end();ss++){
        Uds[ss](0)(mu) = U[ss]();
        Uds[ss](1)(mu) = Uconj[ss]();
      }
@@ -461,8 +459,7 @@ PARALLEL_FOR_LOOP
        Utmp = where(coor==0,Uconj,Utmp);
      }
 	  
-PARALLEL_FOR_LOOP
-     for(auto ss=U.begin();ss<U.end();ss++){
+     parallel_for(auto ss=U.begin();ss<U.end();ss++){
        Uds[ss](0)(mu+4) = Utmp[ss]();
      }
 	  
@@ -471,8 +468,7 @@ PARALLEL_FOR_LOOP
        Utmp = where(coor==0,U,Utmp);
      }
 	  
-PARALLEL_FOR_LOOP
-     for(auto ss=U.begin();ss<U.end();ss++){
+     parallel_for(auto ss=U.begin();ss<U.end();ss++){
        Uds[ss](1)(mu+4) = Utmp[ss]();
      }
 	  
@@ -486,8 +482,7 @@ PARALLEL_FOR_LOOP
    GaugeLinkField link(mat._grid);
    // use lorentz for flavour as hack.
    auto tmp = TraceIndex<SpinIndex>(outerProduct(Btilde, A));
-PARALLEL_FOR_LOOP
-   for (auto ss = tmp.begin(); ss < tmp.end(); ss++) {
+   parallel_for(auto ss = tmp.begin(); ss < tmp.end(); ss++) {
      link[ss]() = tmp[ss](0, 0) - conjugate(tmp[ss](1, 1));
    }
    PokeIndex<LorentzIndex>(mat, link, mu);
@@ -500,8 +495,7 @@ PARALLEL_FOR_LOOP
 	
    GaugeLinkField tmp(mat._grid);
    tmp = zero;
-PARALLEL_FOR_LOOP
-   for (int ss = 0; ss < tmp._grid->oSites(); ss++) {
+   parallel_for(int ss = 0; ss < tmp._grid->oSites(); ss++) {
      for (int s = 0; s < Ls; s++) {
        int sF = s + Ls * ss;
        auto ttmp = traceIndex<SpinIndex>(outerProduct(Btilde[sF], Atilde[sF]));
@@ -537,17 +531,20 @@ PARALLEL_FOR_LOOP
       
     template <typename vtype> using iImplScalar            = iScalar<iScalar<iScalar<vtype> > >;
     template <typename vtype> using iImplSpinor            = iScalar<iScalar<iVector<vtype, Dimension> > >;
-    template <typename vtype> using iImplHalfSpinor        = iVector<iScalar<iVector<vtype, Dimension> >, Ngp>;
+    template <typename vtype> using iImplHalfSpinor        = iScalar<iScalar<iVector<vtype, Dimension> > >;
     template <typename vtype> using iImplDoubledGaugeField = iVector<iScalar<iMatrix<vtype, Dimension> >, Nds>;
+    template <typename vtype> using iImplPropagator        = iScalar<iScalar<iMatrix<vtype, Dimension> > >;
     
     typedef iImplScalar<Simd>            SiteComplex;
     typedef iImplSpinor<Simd>            SiteSpinor;
     typedef iImplHalfSpinor<Simd>        SiteHalfSpinor;
     typedef iImplDoubledGaugeField<Simd> SiteDoubledGaugeField;
+    typedef iImplPropagator<Simd>        SitePropagator;
     
     typedef Lattice<SiteComplex>           ComplexField;
     typedef Lattice<SiteSpinor>            FermionField;
     typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
+    typedef Lattice<SitePropagator> PropagatorField;
     
     typedef SimpleCompressor<SiteSpinor> Compressor;
     typedef StaggeredImplParams ImplParams;
@@ -673,12 +670,16 @@ PARALLEL_FOR_LOOP
     template <typename vtype> using iImplDoubledGaugeField = iVector<iScalar<iMatrix<vtype, Dimension> >, Nds>;
     template <typename vtype> using iImplGaugeField        = iVector<iScalar<iMatrix<vtype, Dimension> >, Nd>;
     template <typename vtype> using iImplGaugeLink         = iScalar<iScalar<iMatrix<vtype, Dimension> > >;
+    template <typename vtype> using iImplPropagator        = iScalar<iScalar<iMatrix<vtype, Dimension> > >;
 
     // Make the doubled gauge field a *scalar*
     typedef iImplDoubledGaugeField<typename Simd::scalar_type>  SiteDoubledGaugeField;  // This is a scalar
     typedef iImplGaugeField<typename Simd::scalar_type>         SiteScalarGaugeField;  // scalar
     typedef iImplGaugeLink<typename Simd::scalar_type>          SiteScalarGaugeLink;  // scalar
+    typedef iImplPropagator<Simd>        SitePropagator;
+
     typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
+    typedef Lattice<SitePropagator> PropagatorField;
     
     typedef iImplScalar<Simd>            SiteComplex;
     typedef iImplSpinor<Simd>            SiteSpinor;

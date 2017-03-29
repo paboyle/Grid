@@ -62,7 +62,8 @@ ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Uthin, Gau
       UmuOdd(&Hgrid),
       UUUmu(&Fgrid),
       UUUmuEven(&Hgrid),
-      UUUmuOdd(&Hgrid) 
+      UUUmuOdd(&Hgrid) ,
+      _tmp(&Hgrid)
 {
   // Allocate the required comms buffer
   ImportGauge(_Uthin,_Ufat);
@@ -93,7 +94,6 @@ void ImprovedStaggeredFermion<Impl>::ImportGauge(const GaugeField &_Uthin,const 
   // Double Store should take two fields for Naik and one hop separately.
   ////////////////////////////////////////////////////////
   Impl::DoubleStore(GaugeGrid(), UUUmu, Umu, _Uthin, _Ufat );
-
 
   ////////////////////////////////////////////////////////
   // Apply scale factors to get the right fermion Kinetic term
