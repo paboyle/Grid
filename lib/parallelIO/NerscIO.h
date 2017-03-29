@@ -263,13 +263,13 @@ static inline int readHeader(std::string file,GridBase *grid,  NerscField &field
   getline(fin,line); // read one line and insist is 
 
   removeWhitespace(line);
-  std::cout << "* " << line << std::endl;
+  std::cout << GridLogMessage << "* " << line << std::endl;
 
   assert(line==std::string("BEGIN_HEADER"));
 
   do {
     getline(fin,line); // read one line
-    std::cout << "* "<<line<< std::endl;
+    std::cout << GridLogMessage << "* "<<line<< std::endl;
     int eq = line.find("=");
     if(eq >0) {
       std::string key=line.substr(0,eq);
