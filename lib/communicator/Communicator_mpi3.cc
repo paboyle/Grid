@@ -67,7 +67,7 @@ std::vector<void *> CartesianCommunicator::ShmCommBufs;
 int CartesianCommunicator::NodeCount(void)    { return GroupSize;};
 
 
-#undef FORCE_COMMS
+#define FORCE_COMMS
 void *CartesianCommunicator::ShmBufferSelf(void)
 {
   return ShmCommBufs[ShmRank];
@@ -303,7 +303,7 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
     std::cout<<GridLogMessage<< "Grid MPI-3 configuration: detected ";
     std::cout<< WorldSize << " Ranks " ;
     std::cout<< GroupSize << " Nodes " ;
-    std::cout<<  ShmSize  << " with ranks-per-node "<<std::endl;
+    std::cout<< " with "<< ShmSize  << " ranks-per-node "<<std::endl;
     
     std::cout<<GridLogMessage     <<"Grid MPI-3 configuration: allocated shared memory region of size ";
     std::cout<<std::hex << MAX_MPI_SHM_BYTES <<" ShmCommBuf address = "<<ShmCommBuf << std::dec<<std::endl;
@@ -338,7 +338,7 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Want to implement some magic ... Group sub-cubes into those on same node
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest)
+void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &dest,int &source)
 {
   std::vector<int> coor = _processor_coor; // my coord
   assert(std::abs(shift) <_processors[dim]);
@@ -350,6 +350,7 @@ void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest
   coor[dim] = (_processor_coor[dim] - shift + _processors[dim])%_processors[dim];
   Lexicographic::IndexFromCoor(coor,dest,_processors);
   dest = LexicographicToWorldRank[dest];
+
 }// rank is world rank.
 
 int CartesianCommunicator::RankFromProcessorCoor(std::vector<int> &coor)
@@ -471,11 +472,24 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
   for(int i=0;i<WorldSize;i++){
 
     int wr = LexicographicToWorldRank[i];
+    //    int wr = i;
 
     std::vector<int> coor(_ndimension);
     ProcessorCoorFromRank(wr,coor); // from world rank
     int ck = RankFromProcessorCoor(coor);
     assert(ck==wr);
+
+    if ( wr == WorldRank ) { 
+      for(int j=0;j<coor.size();j++) {
+	assert(coor[j] == _processor_coor[j]);
+      }
+    }
+
+    std::cout << GridLogMessage<< " Lexicographic "<<i;
+    std::cout << " MPI rank      "<<wr;
+    std::cout << " Coor          ";
+    for(int j=0;j<coor.size();j++) std::cout << coor[j];
+    std::cout<< std::endl;
 
     /////////////////////////////////////////////////////
     // Check everyone agrees on everyone elses coords
