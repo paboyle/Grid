@@ -27,8 +27,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid.h>
+
+#ifdef AVX512
 #include <simd/Intel512common.h>
 #include <simd/Intel512avx.h>
+#endif
 
 // Interleave operations from two directions
 // This looks just like a 2 spin multiply and reuse same sequence from the Wilson
