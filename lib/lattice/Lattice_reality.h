@@ -40,8 +40,7 @@ namespace Grid {
 
     template<class vobj> inline Lattice<vobj> adj(const Lattice<vobj> &lhs){
         Lattice<vobj> ret(lhs._grid);
-PARALLEL_FOR_LOOP
-        for(int ss=0;ss<lhs._grid->oSites();ss++){
+	parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
             ret._odata[ss] = adj(lhs._odata[ss]);
         }
         return ret;
@@ -49,13 +48,10 @@ PARALLEL_FOR_LOOP
 
     template<class vobj> inline Lattice<vobj> conjugate(const Lattice<vobj> &lhs){
         Lattice<vobj> ret(lhs._grid);
-PARALLEL_FOR_LOOP
-        for(int ss=0;ss<lhs._grid->oSites();ss++){
-            ret._odata[ss] = conjugate(lhs._odata[ss]);
+	parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+	  ret._odata[ss] = conjugate(lhs._odata[ss]);
         }
         return ret;
     };
-
-
 }
 #endif

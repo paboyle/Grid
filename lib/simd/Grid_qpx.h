@@ -180,6 +180,22 @@ namespace Optimization {
   /////////////////////////////////////////////////////
   // Arithmetic operations
   /////////////////////////////////////////////////////
+
+  #define FLOAT_WRAP_3(fn, pref)\
+  pref vector4float fn(vector4float a, vector4float b, vector4float c)	\
+  {\
+    vector4double ad, bd, rd, cd;			\
+    vector4float  r;\
+    \
+    ad = Vset()(a);\
+    bd = Vset()(b);\
+    cd = Vset()(c);\
+    rd = fn(ad, bd, cd);				\
+    Vstore()(rd, r);\
+    \
+    return r;\
+  }
+
   #define FLOAT_WRAP_2(fn, pref)\
   pref vector4float fn(vector4float a, vector4float b)\
   {\
@@ -258,6 +274,13 @@ namespace Optimization {
         return vec_xmul(a, b);
     }
     FLOAT_WRAP_2(operator(), inline)
+  };
+  struct MaddRealPart{
+    // Complex double
+    inline vector4double operator()(vector4double a, vector4double b,vector4double c){
+      return vec_xmadd(a, b, c);
+    }
+    FLOAT_WRAP_3(operator(), inline)
   };
   struct MultComplex{
     // Complex double
@@ -368,19 +391,36 @@ namespace Optimization {
   };
   
   struct Rotate{
+
+    template<int n> static inline vector4double tRotate(vector4double v){ 
+      if ( n==1 ) return vec_perm(v, v, vec_gpci(01230));
+      if ( n==2 ) return vec_perm(v, v, vec_gpci(02301));
+      if ( n==3 ) return vec_perm(v, v, vec_gpci(03012));
+      return v;
+    };
+    template<int n> static inline vector4float tRotate(vector4float a)	
+    {					       
+      vector4double ad, rd;
+      vector4float  r;
+      ad = Vset()(a);
+      rd = tRotate<n>(ad);
+      Vstore()(rd, r);
+      return r;
+    };
+
     static inline vector4double rotate(vector4double v, int n){
       switch(n){
         case 0:
           return v;
           break;
         case 1:
-          return vec_perm(v, v, vec_gpci(01230));
+          return tRotate<1>(v);
           break;
         case 2:
-          return vec_perm(v, v, vec_gpci(02301));
+          return tRotate<2>(v);
           break;
         case 3:
-          return vec_perm(v, v, vec_gpci(03012));
+          return tRotate<3>(v);
           break;
         default: assert(0);
       }
@@ -389,11 +429,9 @@ namespace Optimization {
     static inline vector4float rotate(vector4float v, int n){
       vector4double vd, rd;
       vector4float  r;
-
       vd = Vset()(v);
       rd = rotate(vd, n);
       Vstore()(rd, r);
-
       return r;
     }
   };
@@ -484,6 +522,7 @@ typedef Optimization::Mult        MultSIMD;
 typedef Optimization::Div         DivSIMD;
 typedef Optimization::MultComplex MultComplexSIMD;
 typedef Optimization::MultRealPart MultRealPartSIMD;
+typedef Optimization::MaddRealPart MaddRealPartSIMD;
 typedef Optimization::Conj        ConjSIMD;
 typedef Optimization::TimesMinusI TimesMinusISIMD;
 typedef Optimization::TimesI      TimesISIMD;
