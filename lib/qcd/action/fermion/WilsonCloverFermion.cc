@@ -82,8 +82,10 @@ namespace QCD {
     WilsonLoops<Impl>::FieldStrength(Ex, _Umu, Tdir, Xdir);
     WilsonLoops<Impl>::FieldStrength(Ey, _Umu, Tdir, Ydir);
     WilsonLoops<Impl>::FieldStrength(Ez, _Umu, Tdir, Zdir);
+    // Save the contracted term with sigma 
+    // into a dense matrix site by site
 
-    // Invert the Moo, Mee terms (?)
+    // Invert the Moo, Mee terms (using Eigen)
   }
 
 
@@ -110,6 +112,14 @@ namespace QCD {
   template<class Impl>
   void WilsonCloverFermion<Impl>::MDeriv(GaugeField&mat, const FermionField&U, const FermionField&V, int dag){
     GaugeField tmp(mat._grid);
+
+    conformable(U._grid, _grid);
+    conformable(U._grid, V._grid);
+    conformable(U._grid, mat._grid);
+
+    mat.checkerboard = U.checkerboard;
+    tmp.checkerboard = U.checkerboard;
+
     this->DhopDeriv(mat, U, V, dag);
     MooDeriv(tmp, U, V, dag);
     mat += tmp;
@@ -118,6 +128,7 @@ namespace QCD {
  // Derivative parts
   template<class Impl>
   void WilsonCloverFermion<Impl>::MooDeriv(GaugeField&mat, const FermionField&U, const FermionField&V, int dag){
+    
     assert(0); // not implemented yet
   }
 
