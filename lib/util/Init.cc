@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -41,11 +41,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <signal.h>
 #include <iostream>
 #include <iterator>
-#include <Grid/Grid.h>
 #include <algorithm>
 #include <iterator>
 #include <cstdlib>
 #include <memory>
+
+#include <Grid/Grid.h>
 
 
 #include <fenv.h>
@@ -219,7 +220,56 @@ void Grid_init(int *argc,char ***argv)
     CartesianCommunicator::MAX_MPI_SHM_BYTES = MB*1024*1024;
   }
 
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-signals") ){
+    Grid_debug_handler_init();
+  }
+
   CartesianCommunicator::Init(argc,argv);
+
+  if( !GridCmdOptionExists(*argv,*argv+*argc,"--debug-stdout") ){
+    Grid_quiesce_nodes();
+  } else { 
+    std::ostringstream fname;
+    fname<<"Grid.stdout.";
+    fname<<CartesianCommunicator::RankWorld();
+    freopen(fname.str().c_str(),"w",stdout);
+  }
+
+  ////////////////////////////////////
+  // Banner
+  ////////////////////////////////////
+  if ( CartesianCommunicator::RankWorld() == 0 ) { 
+    std::cout <<std::endl;
+    std::cout  << "__|__|__|__|__|__|__|__|__|__|__|__|__|__|__"<<std::endl; 
+    std::cout  << "__|__|__|__|__|__|__|__|__|__|__|__|__|__|__"<<std::endl; 
+    std::cout  << "__|_ |  |  |  |  |  |  |  |  |  |  |  | _|__"<<std::endl; 
+    std::cout  << "__|_                                    _|__"<<std::endl; 
+    std::cout  << "__|_   GGGG    RRRR    III    DDDD      _|__"<<std::endl;
+    std::cout  << "__|_  G        R   R    I     D   D     _|__"<<std::endl;
+    std::cout  << "__|_  G        R   R    I     D    D    _|__"<<std::endl;
+    std::cout  << "__|_  G  GG    RRRR     I     D    D    _|__"<<std::endl;
+    std::cout  << "__|_  G   G    R  R     I     D   D     _|__"<<std::endl;
+    std::cout  << "__|_   GGGG    R   R   III    DDDD      _|__"<<std::endl;
+    std::cout  << "__|_                                    _|__"<<std::endl; 
+    std::cout  << "__|__|__|__|__|__|__|__|__|__|__|__|__|__|__"<<std::endl; 
+    std::cout  << "__|__|__|__|__|__|__|__|__|__|__|__|__|__|__"<<std::endl; 
+    std::cout  << "  |  |  |  |  |  |  |  |  |  |  |  |  |  |  "<<std::endl; 
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << "Copyright (C) 2015 Peter Boyle, Azusa Yamaguchi, Guido Cossu, Antonin Portelli and other authors"<<std::endl;
+    std::cout << std::endl;
+    std::cout << "This program is free software; you can redistribute it and/or modify"<<std::endl;
+    std::cout << "it under the terms of the GNU General Public License as published by"<<std::endl;
+    std::cout << "the Free Software Foundation; either version 2 of the License, or"<<std::endl;
+    std::cout << "(at your option) any later version."<<std::endl;
+    std::cout << std::endl;
+    std::cout << "This program is distributed in the hope that it will be useful,"<<std::endl;
+    std::cout << "but WITHOUT ANY WARRANTY; without even the implied warranty of"<<std::endl;
+    std::cout << "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"<<std::endl;
+    std::cout << "GNU General Public License for more details."<<std::endl;
+    std::cout << std::endl;
+  }
+
 
   ////////////////////////////////////
   // Logging
@@ -230,9 +280,6 @@ void Grid_init(int *argc,char ***argv)
   GridCmdOptionCSL(defaultLog,logstreams);
   GridLogConfigure(logstreams);
 
-  if( !GridCmdOptionExists(*argv,*argv+*argc,"--debug-stdout") ){
-    Grid_quiesce_nodes();
-  }
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--log") ){
     arg = GridCmdOptionPayload(*argv,*argv+*argc,"--log");
@@ -248,22 +295,30 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"  --help : this message"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Geometry:"<<std::endl;
+    std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"  --mpi n.n.n.n   : default MPI decomposition"<<std::endl;    
     std::cout<<GridLogMessage<<"  --threads n     : default number of OMP threads"<<std::endl;
     std::cout<<GridLogMessage<<"  --grid n.n.n.n  : default Grid size"<<std::endl;    
     std::cout<<GridLogMessage<<"  --shm  M        : allocate M megabytes of shared memory for comms"<<std::endl;    
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Verbose and debug:"<<std::endl;
-    std::cout<<GridLogMessage<<"  --log list      : comma separted list of streams from Error,Warning,Message,Performance,Iterative,Integrator,Debug,Colours"<<std::endl;
+    std::cout<<GridLogMessage<<std::endl;
+    std::cout<<GridLogMessage<<"  --log list      : comma separated list from Error,Warning,Message,Performance,Iterative,Integrator,Debug,Colours"<<std::endl;
     std::cout<<GridLogMessage<<"  --decomposition : report on default omp,mpi and simd decomposition"<<std::endl;    
     std::cout<<GridLogMessage<<"  --debug-signals : catch sigsegv and print a blame report"<<std::endl;
     std::cout<<GridLogMessage<<"  --debug-stdout  : print stdout from EVERY node"<<std::endl;    
     std::cout<<GridLogMessage<<"  --notimestamp   : suppress millisecond resolution stamps"<<std::endl;    
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Performance:"<<std::endl;
+    std::cout<<GridLogMessage<<std::endl;
+    std::cout<<GridLogMessage<<"  --comms-isend   : Asynchronous MPI calls; several dirs at a time "<<std::endl;    
+    std::cout<<GridLogMessage<<"  --comms-sendrecv: Synchronous MPI calls; one dirs at a time "<<std::endl;    
+    std::cout<<GridLogMessage<<"  --comms-overlap : Overlap comms with compute "<<std::endl;    
+    std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"  --dslash-generic: Wilson kernel for generic Nc"<<std::endl;    
     std::cout<<GridLogMessage<<"  --dslash-unroll : Wilson kernel for Nc=3"<<std::endl;    
     std::cout<<GridLogMessage<<"  --dslash-asm    : Wilson kernel for AVX512"<<std::endl;    
+    std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"  --lebesgue      : Cache oblivious Lebesgue curve/Morton order/Z-graph stencil looping"<<std::endl;    
     std::cout<<GridLogMessage<<"  --cacheblocking n.m.o.p : Hypercuboidal cache blocking"<<std::endl;    
     std::cout<<GridLogMessage<<std::endl;
@@ -271,70 +326,35 @@ void Grid_init(int *argc,char ***argv)
   }
 
   ////////////////////////////////////
-  // Banner
-  ////////////////////////////////////
-
-  std::string COL_RED    = GridLogColours.colour["RED"];
-  std::string COL_PURPLE = GridLogColours.colour["PURPLE"];
-  std::string COL_BLACK  = GridLogColours.colour["BLACK"];
-  std::string COL_GREEN  = GridLogColours.colour["GREEN"];
-  std::string COL_BLUE   = GridLogColours.colour["BLUE"];
-  std::string COL_YELLOW = GridLogColours.colour["YELLOW"];
-  std::string COL_BACKGROUND = GridLogColours.colour["NORMAL"];
-  
-  std::cout <<std::endl;
-  std::cout <<COL_RED  << "__|__|__|__|__"<<             "|__|__|_"<<COL_PURPLE<<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
-  std::cout <<COL_RED  << "__|__|__|__|__"<<             "|__|__|_"<<COL_PURPLE<<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
-  std::cout <<COL_RED  << "__|_ |  |  |  "<<             "|  |  | "<<COL_PURPLE<<" |  |  |"<<                "  |  |  | _|__"<<std::endl; 
-  std::cout <<COL_RED  << "__|_          "<<             "        "<<COL_PURPLE<<"        "<<                "          _|__"<<std::endl; 
-  std::cout <<COL_RED  << "__|_  "<<COL_GREEN<<" GGGG   "<<COL_RED<<" RRRR   "<<COL_BLUE  <<" III    "<<COL_PURPLE<<"DDDD  "<<COL_PURPLE<<"    _|__"<<std::endl;
-  std::cout <<COL_RED  << "__|_  "<<COL_GREEN<<"G       "<<COL_RED<<" R   R  "<<COL_BLUE  <<"  I     "<<COL_PURPLE<<"D   D "<<COL_PURPLE<<"    _|__"<<std::endl;
-  std::cout <<COL_RED  << "__|_  "<<COL_GREEN<<"G       "<<COL_RED<<" R   R  "<<COL_BLUE  <<"  I     "<<COL_PURPLE<<"D    D"<<COL_PURPLE<<"    _|__"<<std::endl;
-  std::cout <<COL_BLUE << "__|_  "<<COL_GREEN<<"G  GG   "<<COL_RED<<" RRRR   "<<COL_BLUE  <<"  I     "<<COL_PURPLE<<"D    D"<<COL_GREEN <<"    _|__"<<std::endl;
-  std::cout <<COL_BLUE << "__|_  "<<COL_GREEN<<"G   G   "<<COL_RED<<" R  R   "<<COL_BLUE  <<"  I     "<<COL_PURPLE<<"D   D "<<COL_GREEN <<"    _|__"<<std::endl;
-  std::cout <<COL_BLUE << "__|_  "<<COL_GREEN<<" GGGG   "<<COL_RED<<" R   R  "<<COL_BLUE  <<" III    "<<COL_PURPLE<<"DDDD  "<<COL_GREEN <<"    _|__"<<std::endl;
-  std::cout <<COL_BLUE << "__|_          "<<             "        "<<COL_GREEN <<"        "<<                "          _|__"<<std::endl; 
-  std::cout <<COL_BLUE << "__|__|__|__|__"<<             "|__|__|_"<<COL_GREEN <<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
-  std::cout <<COL_BLUE << "__|__|__|__|__"<<             "|__|__|_"<<COL_GREEN <<"_|__|__|"<<                "__|__|__|__|__"<<std::endl; 
-  std::cout <<COL_BLUE << "  |  |  |  |  "<<             "|  |  | "<<COL_GREEN <<" |  |  |"<<                "  |  |  |  |  "<<std::endl; 
-  std::cout << std::endl;
-  std::cout << std::endl;
-  std::cout <<COL_YELLOW<< std::endl;
-  std::cout << "Copyright (C) 2015 Peter Boyle, Azusa Yamaguchi, Guido Cossu, Antonin Portelli and other authors"<<std::endl;
-  std::cout << std::endl;
-  std::cout << "This program is free software; you can redistribute it and/or modify"<<std::endl;
-  std::cout << "it under the terms of the GNU General Public License as published by"<<std::endl;
-  std::cout << "the Free Software Foundation; either version 2 of the License, or"<<std::endl;
-  std::cout << "(at your option) any later version."<<std::endl;
-  std::cout << std::endl;
-  std::cout << "This program is distributed in the hope that it will be useful,"<<std::endl;
-  std::cout << "but WITHOUT ANY WARRANTY; without even the implied warranty of"<<std::endl;
-  std::cout << "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"<<std::endl;
-  std::cout << "GNU General Public License for more details."<<std::endl;
-  std::cout << COL_BACKGROUND <<std::endl;
-  std::cout << std::endl;
-
-  ////////////////////////////////////
   // Debug and performance options
   ////////////////////////////////////
 
-
-  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-signals") ){
-    Grid_debug_handler_init();
-  }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-unroll") ){
     QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptHandUnroll;
+    QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptHandUnroll;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-asm") ){
     QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptInlineAsm;
+    QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptInlineAsm;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-generic") ){
     QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptGeneric;
+    QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptGeneric;
+  }
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-overlap") ){
+    QCD::WilsonKernelsStatic::Comms = QCD::WilsonKernelsStatic::CommsAndCompute;
+  } else {
+    QCD::WilsonKernelsStatic::Comms = QCD::WilsonKernelsStatic::CommsThenCompute;
+  }
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-concurrent") ){
+    CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicyConcurrent);
+  }
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-sequential") ){
+    CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicySequential);
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--lebesgue") ){
     LebesgueOrder::UseLebesgueOrder=1;
   }
-
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--cacheblocking") ){
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--cacheblocking");
@@ -373,23 +393,25 @@ void Grid_finalize(void)
   MPI_Finalize();
   Grid_unquiesce_nodes();
 #endif
+#if defined (GRID_COMMS_SHMEM)
+  shmem_finalize();
+#endif
 }
 
 void * Grid_backtrace_buffer[_NBACKTRACE];
 
 void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
 {
-  printf("Caught signal %d\n",si->si_signo);
-  printf("  mem address %llx\n",(unsigned long long)si->si_addr);
-  printf("         code %d\n",si->si_code);
-
+  fprintf(stderr,"Caught signal %d\n",si->si_signo);
+  fprintf(stderr,"  mem address %llx\n",(unsigned long long)si->si_addr);
+  fprintf(stderr,"         code %d\n",si->si_code);
   // Linux/Posix
 #ifdef __linux__
   // And x86 64bit
 #ifdef __x86_64__
   ucontext_t * uc= (ucontext_t *)ptr;
   struct sigcontext *sc = (struct sigcontext *)&uc->uc_mcontext;
-  printf("  instruction %llx\n",(unsigned long long)sc->rip);
+  fprintf(stderr,"  instruction %llx\n",(unsigned long long)sc->rip);
 #define REG(A)  printf("  %s %lx\n",#A,sc-> A);
   REG(rdi);
   REG(rsi);
@@ -412,7 +434,11 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   REG(r15);
 #endif
 #endif
-  BACKTRACE();
+  fflush(stderr);
+  BACKTRACEFP(stderr);
+  fprintf(stderr,"Called backtrace\n");
+  fflush(stdout);
+  fflush(stderr);
   exit(0);
   return;
 };
@@ -425,9 +451,11 @@ void Grid_debug_handler_init(void)
   sa.sa_flags    = SA_SIGINFO;
   sigaction(SIGSEGV,&sa,NULL);
   sigaction(SIGTRAP,&sa,NULL);
+  sigaction(SIGBUS,&sa,NULL);
 
   feenableexcept( FE_INVALID|FE_OVERFLOW|FE_DIVBYZERO);
 
   sigaction(SIGFPE,&sa,NULL);
+  sigaction(SIGKILL,&sa,NULL);
 }
 }

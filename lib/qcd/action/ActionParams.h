@@ -45,6 +45,10 @@ namespace QCD {
       WilsonImplParams() : overlapCommsCompute(false) {};
     };
 
+    struct StaggeredImplParams {
+      StaggeredImplParams()  {};
+    };
+
     struct OneFlavourRationalParams { 
       RealD  lo;
       RealD  hi;

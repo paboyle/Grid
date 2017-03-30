@@ -30,8 +30,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 
 #include <Grid/Eigen/Dense>
-#include <Grid/Grid.h>
-
+#include <Grid/qcd/action/fermion/FermionCore.h>
+#include <Grid/qcd/action/fermion/CayleyFermion5D.h>
 
 namespace Grid {
 namespace QCD {
@@ -59,6 +59,18 @@ void CayleyFermion5D<Impl>::Dminus(const FermionField &psi, FermionField &chi)
 
   FermionField tmp_f(this->FermionGrid());
   this->DW(psi,tmp_f,DaggerNo);
+
+  for(int s=0;s<Ls;s++){
+    axpby_ssp(chi,Coeff_t(1.0),psi,-cs[s],tmp_f,s,s);// chi = (1-c[s] D_W) psi
+  }
+}
+template<class Impl>  
+void CayleyFermion5D<Impl>::DminusDag(const FermionField &psi, FermionField &chi)
+{
+  int Ls=this->Ls;
+
+  FermionField tmp_f(this->FermionGrid());
+  this->DW(psi,tmp_f,DaggerYes);
 
   for(int s=0;s<Ls;s++){
     axpby_ssp(chi,Coeff_t(1.0),psi,-cs[s],tmp_f,s,s);// chi = (1-c[s] D_W) psi
@@ -109,18 +121,6 @@ template<class Impl> void CayleyFermion5D<Impl>::CayleyZeroCounters(void)
 
 
 template<class Impl>  
-void CayleyFermion5D<Impl>::DminusDag(const FermionField &psi, FermionField &chi)
-{
-  int Ls=this->Ls;
-
-  FermionField tmp_f(this->FermionGrid());
-  this->DW(psi,tmp_f,DaggerYes);
-
-  for(int s=0;s<Ls;s++){
-    axpby_ssp(chi,Coeff_t(1.0),psi,-cs[s],tmp_f,s,s);// chi = (1-c[s] D_W) psi
-  }
-}
-template<class Impl>  
 void CayleyFermion5D<Impl>::M5D   (const FermionField &psi, FermionField &chi)
 {
   int Ls=this->Ls;
@@ -170,7 +170,6 @@ void CayleyFermion5D<Impl>::Mooee       (const FermionField &psi, FermionField &
   lower[0]   =-mass*lower[0];
   M5D(psi,psi,chi,lower,diag,upper);
 }
-
 template<class Impl>
 void CayleyFermion5D<Impl>::MooeeDag    (const FermionField &psi, FermionField &chi)
 {
@@ -192,7 +191,12 @@ void CayleyFermion5D<Impl>::MooeeDag    (const FermionField &psi, FermionField &
       lower[s]=-cee[s-1];
     }
   }
-
+  // Conjugate the terms 
+  for (int s=0;s<Ls;s++){
+    diag[s] =conjugate(diag[s]);
+    upper[s]=conjugate(upper[s]);
+    lower[s]=conjugate(lower[s]);
+  }
   M5Ddag(psi,psi,chi,lower,diag,upper);
 }
 
@@ -214,15 +218,23 @@ void CayleyFermion5D<Impl>::MeooeDag5D    (const FermionField &psi, FermionField
   int Ls=this->Ls;
   std::vector<Coeff_t> diag =bs;
   std::vector<Coeff_t> upper=cs;
-  std::vector<Coeff_t> lower=cs;
-  for(int i=0;i<(Ls-1);i++){
-    diag[i] = conjugate(bs[i]);
-    upper[i] = conjugate(cs[i+1]);
-    lower[i+1] = conjugate(cs[i]);
+  std::vector<Coeff_t> lower=cs; 
+
+  for (int s=0;s<Ls;s++){
+    if ( s== 0 ) {
+      upper[s] = cs[s+1];
+      lower[s] =-mass*cs[Ls-1];
+    } else if ( s==(Ls-1) ) { 
+      upper[s] =-mass*cs[0];
+      lower[s] = cs[s-1];
+    } else { 
+      upper[s] = cs[s+1];
+      lower[s] = cs[s-1];
+    }
+    upper[s] = conjugate(upper[s]);
+    lower[s] = conjugate(lower[s]);
+    diag[s]  = conjugate(diag[s]);
   }
-  diag[Ls-1]=conjugate(bs[Ls-1]);
-  upper[Ls-1]=-mass*conjugate(cs[0]);
-  lower[0]   =-mass*conjugate(cs[Ls-1]);
   M5Ddag(psi,psi,Din,lower,diag,upper);
 }
 
@@ -308,7 +320,7 @@ void CayleyFermion5D<Impl>::MDeriv  (GaugeField &mat,const FermionField &U,const
     this->DhopDeriv(mat,U,Din,dag);
   } else {
     //      U d/du [D_w D5]^dag V = U D5^dag d/du DW^dag Y // implicit adj on U in call
-    Meooe5D(U,Din);
+    MeooeDag5D(U,Din);
     this->DhopDeriv(mat,Din,V,dag);
   }
 };
@@ -323,7 +335,7 @@ void CayleyFermion5D<Impl>::MoeDeriv(GaugeField &mat,const FermionField &U,const
     this->DhopDerivOE(mat,U,Din,dag);
   } else {
     //      U d/du [D_w D5]^dag V = U D5^dag d/du DW^dag Y // implicit adj on U in call
-      Meooe5D(U,Din);
+      MeooeDag5D(U,Din);
       this->DhopDerivOE(mat,Din,V,dag);
   }
 };
@@ -338,7 +350,7 @@ void CayleyFermion5D<Impl>::MeoDeriv(GaugeField &mat,const FermionField &U,const
     this->DhopDerivEO(mat,U,Din,dag);
   } else {
     //      U d/du [D_w D5]^dag V = U D5^dag d/du DW^dag Y // implicit adj on U in call
-    Meooe5D(U,Din);
+    MeooeDag5D(U,Din);
     this->DhopDerivEO(mat,Din,V,dag);
   }
 };

@@ -91,7 +91,7 @@ int main (int argc, char ** argv)
         double imag = 0.;
         if (i==0) imag=1.;
         if (i==Ls-1) imag=-1.;
-        std::complex<double> temp (0.25+0.01*i, imag*0.01);
+        std::complex<double> temp (0.25+0.01*i, imag*0.1);
         omegas.push_back(temp);
   }
   ZMobiusFermionR Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, omegas,1.,0.);
@@ -135,10 +135,10 @@ int main (int argc, char ** argv)
   //  std::cout<<GridLogMessage << cerr<<std::endl;
 
   std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
-  std::cout<<GridLogMessage<<"= Test Ddagger is the dagger of D by requiring                "<<std::endl;
+  std::cout<<GridLogMessage<<"= Test MooeeDagger is the dagger of Mooee by requiring                "<<std::endl;
   std::cout<<GridLogMessage<<"=  < phi | Deo | chi > * = < chi | Deo^dag| phi>  "<<std::endl;
   std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
-  
+
   LatticeFermion chi_e   (FrbGrid);
   LatticeFermion chi_o   (FrbGrid);
 
@@ -151,6 +151,33 @@ int main (int argc, char ** argv)
   LatticeFermion dphi_e  (FrbGrid);
   LatticeFermion dphi_o  (FrbGrid);
 
+  pickCheckerboard(Even,chi_e,chi);
+  pickCheckerboard(Odd ,chi_o,chi);
+  pickCheckerboard(Even,phi_e,phi);
+  pickCheckerboard(Odd ,phi_o,phi);
+
+  Ddwf.Mooee(chi_e,dchi_o);
+  Ddwf.Mooee(chi_o,dchi_e);
+  Ddwf.MooeeDag(phi_e,dphi_o);
+  Ddwf.MooeeDag(phi_o,dphi_e);
+
+  ComplexD pDce = innerProduct(phi_e,dchi_e);
+  ComplexD pDco = innerProduct(phi_o,dchi_o);
+  ComplexD cDpe = innerProduct(chi_e,dphi_e);
+  ComplexD cDpo = innerProduct(chi_o,dphi_o);
+
+
+  std::cout<<GridLogMessage <<"e "<<pDce<<" "<<cDpe <<std::endl;
+  std::cout<<GridLogMessage <<"o "<<pDco<<" "<<cDpo <<std::endl;
+
+  std::cout<<GridLogMessage <<"pDce - conj(cDpo) "<< pDce-conj(cDpo) <<std::endl;
+  std::cout<<GridLogMessage <<"pDco - conj(cDpe) "<< pDco-conj(cDpe) <<std::endl;
+
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
+  std::cout<<GridLogMessage<<"= Test Ddagger is the dagger of D by requiring                "<<std::endl;
+  std::cout<<GridLogMessage<<"=  < phi | Deo | chi > * = < chi | Deo^dag| phi>  "<<std::endl;
+  std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
+  
 
   pickCheckerboard(Even,chi_e,chi);
   pickCheckerboard(Odd ,chi_o,chi);
@@ -162,10 +189,10 @@ int main (int argc, char ** argv)
   Ddwf.MeooeDag(phi_e,dphi_o);
   Ddwf.MeooeDag(phi_o,dphi_e);
 
-  ComplexD pDce = innerProduct(phi_e,dchi_e);
-  ComplexD pDco = innerProduct(phi_o,dchi_o);
-  ComplexD cDpe = innerProduct(chi_e,dphi_e);
-  ComplexD cDpo = innerProduct(chi_o,dphi_o);
+  pDce = innerProduct(phi_e,dchi_e);
+  pDco = innerProduct(phi_o,dchi_o);
+  cDpe = innerProduct(chi_e,dphi_e);
+  cDpo = innerProduct(chi_o,dphi_o);
 
   std::cout<<GridLogMessage <<"e "<<pDce<<" "<<cDpe <<std::endl;
   std::cout<<GridLogMessage <<"o "<<pDco<<" "<<cDpo <<std::endl;

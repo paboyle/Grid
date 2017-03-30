@@ -29,7 +29,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef  OVERLAP_WILSON_CAYLEY_ZOLOTAREV_FERMION_H
 #define  OVERLAP_WILSON_CAYLEY_ZOLOTAREV_FERMION_H
 
-#include <Grid/Grid.h>
+#include <Grid/qcd/action/fermion/FermionCore.h>
 
 namespace Grid {
 

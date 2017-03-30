@@ -350,6 +350,27 @@ class Grid_simd {
     return ret;
   }
 
+  ///////////////////////
+  // Exchange 
+  // Al Ah , Bl Bh -> Al Bl Ah,Bh
+  ///////////////////////
+  friend inline void exchange(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2,int n)
+  {
+    if       (n==3) {
+      Optimization::Exchange::Exchange3(out1.v,out2.v,in1.v,in2.v);
+      //      std::cout << " Exchange3 "<< out1<<" "<< out2<<" <- " << in1 << " "<<in2<<std::endl;
+    } else if(n==2) {
+      Optimization::Exchange::Exchange2(out1.v,out2.v,in1.v,in2.v);
+      //      std::cout << " Exchange2 "<< out1<<" "<< out2<<" <- " << in1 << " "<<in2<<std::endl;
+    } else if(n==1) {
+      Optimization::Exchange::Exchange1(out1.v,out2.v,in1.v,in2.v);
+      //      std::cout << " Exchange1 "<< out1<<" "<< out2<<" <- " << in1 << " "<<in2<<std::endl;
+    } else if(n==0) { 
+      Optimization::Exchange::Exchange0(out1.v,out2.v,in1.v,in2.v);
+      //      std::cout << " Exchange0 "<< out1<<" "<< out2<<" <- " << in1 << " "<<in2<<std::endl;
+    }
+  }
+
   ////////////////////////////////////////////////////////////////////
   // General permute; assumes vector length is same across
   // all subtypes; may not be a good assumption, but could
@@ -372,23 +393,11 @@ class Grid_simd {
       int dist = perm & 0xF;
       y = rotate(b, dist);
       return;
-    }
-    switch (perm) {
-      case 3:
-        permute3(y, b);
-        break;
-      case 2:
-        permute2(y, b);
-        break;
-      case 1:
-        permute1(y, b);
-        break;
-      case 0:
-        permute0(y, b);
-        break;
-      default:
-        assert(0);
-    }
+    } 
+    else if(perm==3) permute3(y, b);
+    else if(perm==2) permute2(y, b);
+    else if(perm==1) permute1(y, b);
+    else if(perm==0) permute0(y, b);
   }
 
 };  // end of Grid_simd class definition
@@ -443,6 +452,8 @@ inline void rbroadcast(Grid_simd<S,V> &ret,const Grid_simd<S,V> &src,int lane){
   S* typepun =(S*) &src;
   ret.v = unary<V>(real(typepun[lane]), VsplatSIMD());
 }    
+
+
 
 ///////////////////////
 // Splat

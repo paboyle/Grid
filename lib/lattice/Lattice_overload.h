@@ -37,8 +37,7 @@ namespace Grid {
   inline Lattice<vobj> operator -(const Lattice<vobj> &r)
   {
     Lattice<vobj> ret(r._grid);
-PARALLEL_FOR_LOOP
-    for(int ss=0;ss<r._grid->oSites();ss++){
+    parallel_for(int ss=0;ss<r._grid->oSites();ss++){
       vstream(ret._odata[ss], -r._odata[ss]);
     }
     return ret;
@@ -74,8 +73,7 @@ PARALLEL_FOR_LOOP
   inline auto operator * (const left &lhs,const Lattice<right> &rhs) -> Lattice<decltype(lhs*rhs._odata[0])>
   {
     Lattice<decltype(lhs*rhs._odata[0])> ret(rhs._grid);
-PARALLEL_FOR_LOOP
-    for(int ss=0;ss<rhs._grid->oSites(); ss++){
+    parallel_for(int ss=0;ss<rhs._grid->oSites(); ss++){
       decltype(lhs*rhs._odata[0]) tmp=lhs*rhs._odata[ss]; 
       vstream(ret._odata[ss],tmp);
 	   //      ret._odata[ss]=lhs*rhs._odata[ss];
@@ -86,8 +84,7 @@ PARALLEL_FOR_LOOP
     inline auto operator + (const left &lhs,const Lattice<right> &rhs) -> Lattice<decltype(lhs+rhs._odata[0])>
     {
       Lattice<decltype(lhs+rhs._odata[0])> ret(rhs._grid);
-PARALLEL_FOR_LOOP
-      for(int ss=0;ss<rhs._grid->oSites(); ss++){
+      parallel_for(int ss=0;ss<rhs._grid->oSites(); ss++){
 	decltype(lhs+rhs._odata[0]) tmp =lhs-rhs._odata[ss];  
 	vstream(ret._odata[ss],tmp);
 	//	ret._odata[ss]=lhs+rhs._odata[ss];
@@ -98,11 +95,9 @@ PARALLEL_FOR_LOOP
     inline auto operator - (const left &lhs,const Lattice<right> &rhs) -> Lattice<decltype(lhs-rhs._odata[0])>
   {
     Lattice<decltype(lhs-rhs._odata[0])> ret(rhs._grid);
-PARALLEL_FOR_LOOP
-    for(int ss=0;ss<rhs._grid->oSites(); ss++){
+    parallel_for(int ss=0;ss<rhs._grid->oSites(); ss++){
       decltype(lhs-rhs._odata[0]) tmp=lhs-rhs._odata[ss];  
       vstream(ret._odata[ss],tmp);
-      //      ret._odata[ss]=lhs-rhs._odata[ss];
     }
     return ret;
   }
@@ -110,8 +105,7 @@ PARALLEL_FOR_LOOP
       inline auto operator * (const Lattice<left> &lhs,const right &rhs) -> Lattice<decltype(lhs._odata[0]*rhs)>
     {
       Lattice<decltype(lhs._odata[0]*rhs)> ret(lhs._grid);
-PARALLEL_FOR_LOOP
-      for(int ss=0;ss<lhs._grid->oSites(); ss++){
+      parallel_for(int ss=0;ss<lhs._grid->oSites(); ss++){
 	decltype(lhs._odata[0]*rhs) tmp =lhs._odata[ss]*rhs;
 	vstream(ret._odata[ss],tmp);
 	//            ret._odata[ss]=lhs._odata[ss]*rhs;
@@ -122,8 +116,7 @@ PARALLEL_FOR_LOOP
       inline auto operator + (const Lattice<left> &lhs,const right &rhs) -> Lattice<decltype(lhs._odata[0]+rhs)>
     {
         Lattice<decltype(lhs._odata[0]+rhs)> ret(lhs._grid);
-PARALLEL_FOR_LOOP
-        for(int ss=0;ss<rhs._grid->oSites(); ss++){
+	parallel_for(int ss=0;ss<rhs._grid->oSites(); ss++){
 	  decltype(lhs._odata[0]+rhs) tmp=lhs._odata[ss]+rhs; 
 	  vstream(ret._odata[ss],tmp);
 	  //	  ret._odata[ss]=lhs._odata[ss]+rhs;
@@ -134,15 +127,12 @@ PARALLEL_FOR_LOOP
       inline auto operator - (const Lattice<left> &lhs,const right &rhs) -> Lattice<decltype(lhs._odata[0]-rhs)>
     {
       Lattice<decltype(lhs._odata[0]-rhs)> ret(lhs._grid);
-PARALLEL_FOR_LOOP
-      for(int ss=0;ss<rhs._grid->oSites(); ss++){
+      parallel_for(int ss=0;ss<rhs._grid->oSites(); ss++){
 	  decltype(lhs._odata[0]-rhs) tmp=lhs._odata[ss]-rhs;
 	  vstream(ret._odata[ss],tmp);
 	  //	ret._odata[ss]=lhs._odata[ss]-rhs;
       }
       return ret;
     }
-
-
 }
 #endif

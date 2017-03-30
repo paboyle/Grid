@@ -116,6 +116,12 @@ class CartesianCommunicator {
   // Implemented in Communicator_base.C
   /////////////////////////////////
   static void * ShmCommBuf;
+
+  // Isend/Irecv/Wait, or Sendrecv blocking
+  enum CommunicatorPolicy_t { CommunicatorPolicyConcurrent, CommunicatorPolicySequential };
+  static CommunicatorPolicy_t CommunicatorPolicy;
+  static void SetCommunicatorPolicy(CommunicatorPolicy_t policy ) { CommunicatorPolicy = policy; }
+
   size_t heap_top;
   size_t heap_bytes;
 
@@ -148,6 +154,7 @@ class CartesianCommunicator {
   const std::vector<int> & ThisProcessorCoor(void) ;
   const std::vector<int> & ProcessorGrid(void)     ;
   int                      ProcessorCount(void)    ;
+  int                      NodeCount(void)    ;
 
   ////////////////////////////////////////////////////////////////////////////////
   // very VERY rarely (Log, serial RNG) we need world without a grid
@@ -200,7 +207,7 @@ class CartesianCommunicator {
   
   void SendToRecvFromComplete(std::vector<CommsRequest_t> &waitall);
 
-  void StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
+  double StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 				  void *xmit,
 				  int xmit_to_rank,
 				  void *recv,

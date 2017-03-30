@@ -150,4 +150,5 @@ using ActionSet = std::vector<ActionLevel<GaugeField, R> >;
 
 }
 }
+
 #endif

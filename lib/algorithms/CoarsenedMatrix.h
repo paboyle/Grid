@@ -267,8 +267,7 @@ namespace Grid {
       SimpleCompressor<siteVector> compressor;
       Stencil.HaloExchange(in,compressor);
 
-PARALLEL_FOR_LOOP
-      for(int ss=0;ss<Grid()->oSites();ss++){
+      parallel_for(int ss=0;ss<Grid()->oSites();ss++){
         siteVector res = zero;
 	siteVector nbr;
 	int ptype;
@@ -380,8 +379,7 @@ PARALLEL_FOR_LOOP
 	  Subspace.ProjectToSubspace(oProj,oblock);
 	  //	  blockProject(iProj,iblock,Subspace.subspace);
 	  //	  blockProject(oProj,oblock,Subspace.subspace);
-PARALLEL_FOR_LOOP
-	  for(int ss=0;ss<Grid()->oSites();ss++){
+	  parallel_for(int ss=0;ss<Grid()->oSites();ss++){
 	    for(int j=0;j<nbasis;j++){
 	      if( disp!= 0 ) {
 		A[p]._odata[ss](j,i) = oProj._odata[ss](j);
