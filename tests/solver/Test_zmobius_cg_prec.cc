@@ -81,10 +81,12 @@ int main(int argc, char** argv) {
   RealD M5 = 1.8;
   std::vector < std::complex<double>  > omegas;
   for(int i=0;i<Ls;i++){
-  	std::complex<double> temp (0.25+0.00*i, 0.0+0.00*i);
- 	 omegas.push_back(temp);
+	double imag = 0.;
+	if (i==0) imag=1.;
+	if (i==Ls-1) imag=-1.;
+	std::complex<double> temp (0.25+0.01*i, imag*0.01);
+	omegas.push_back(temp);
   }
-//  DomainWallFermionR Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5);
   ZMobiusFermionR Ddwf(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mass, M5, omegas,1.,0.);
 
   LatticeFermion src_o(FrbGrid);
