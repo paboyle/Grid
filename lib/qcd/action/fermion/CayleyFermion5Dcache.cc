@@ -181,6 +181,18 @@ void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &
   assert(psi.checkerboard == psi.checkerboard);
   chi.checkerboard=psi.checkerboard;
 
+  std::vector<Coeff_t> ueec(Ls);
+  std::vector<Coeff_t> deec(Ls);
+  std::vector<Coeff_t> leec(Ls);
+  std::vector<Coeff_t> ueemc(Ls);
+  std::vector<Coeff_t> leemc(Ls);
+  for(int s=0;s<ueec.size();s++){
+    ueec[s] = conjugate(uee[s]);
+    deec[s] = conjugate(dee[s]);
+    leec[s] = conjugate(lee[s]);
+    ueemc[s]= conjugate(ueem[s]);
+    leemc[s]= conjugate(leem[s]);
+  }
   MooeeInvCalls++;
   MooeeInvTime-=usecond();
 
@@ -192,25 +204,25 @@ void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &
     chi[ss]=psi[ss];
     for (int s=1;s<Ls;s++){
                             spProj5m(tmp,chi[ss+s-1]);
-      chi[ss+s] = psi[ss+s]-uee[s-1]*tmp;
+      chi[ss+s] = psi[ss+s]-ueec[s-1]*tmp;
     }
     // U_m^{-\dagger} 
     for (int s=0;s<Ls-1;s++){
                                    spProj5p(tmp,chi[ss+s]);
-      chi[ss+Ls-1] = chi[ss+Ls-1] - ueem[s]*tmp;
+      chi[ss+Ls-1] = chi[ss+Ls-1] - ueemc[s]*tmp;
     }
 
     // L_m^{-\dagger} D^{-dagger}
     for (int s=0;s<Ls-1;s++){
       spProj5m(tmp,chi[ss+Ls-1]);
-      chi[ss+s] = (1.0/dee[s])*chi[ss+s]-(leem[s]/dee[Ls-1])*tmp;
+      chi[ss+s] = (1.0/deec[s])*chi[ss+s]-(leemc[s]/deec[Ls-1])*tmp;
     }	
-    chi[ss+Ls-1]= (1.0/dee[Ls-1])*chi[ss+Ls-1];
+    chi[ss+Ls-1]= (1.0/deec[Ls-1])*chi[ss+Ls-1];
   
     // Apply L^{-dagger}
     for (int s=Ls-2;s>=0;s--){
       spProj5p(tmp,chi[ss+s+1]);
-      chi[ss+s] = chi[ss+s] - lee[s]*tmp;
+      chi[ss+s] = chi[ss+s] - leec[s]*tmp;
     }
   }
 
