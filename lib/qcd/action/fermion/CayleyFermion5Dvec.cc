@@ -35,7 +35,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 
 namespace Grid {
-namespace QCD {  /*
+namespace QCD {  
+  /*
    * Dense matrix versions of routines
    */
 template<class Impl>
