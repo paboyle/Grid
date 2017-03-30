@@ -305,7 +305,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   VRDUP(Chi_00,T0)           VIDUP(Chi_00,Chi_00)	          \
    VRDUP(Chi_10,T1)           VIDUP(Chi_10,Chi_10)		  \
    VMUL(Z00,Chi_00,Z1)        VMUL(Z10,Chi_10,Z2)		  \
-   VSHUFMEM(3,%r8,Z00)	      VSHUFMEM(3,%r9,Z10)		  \    
+   VSHUFMEM(3,%r8,Z00)	      VSHUFMEM(3,%r9,Z10)		  \
    VMUL(Z00,Chi_00,Z3)        VMUL(Z10,Chi_10,Z4)		  \
    VSHUFMEM(6,%r8,Z00)	      VSHUFMEM(6,%r9,Z10)		  \
    VMUL(Z00,Chi_00,Z5)        VMUL(Z10,Chi_10,Z6)		  \
