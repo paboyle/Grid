@@ -50,32 +50,7 @@ enum
 #define MAKE_DISC_LOOP(Q_LOOP, gamma) (Q_LOOP*gamma)
 #define MAKE_DISC_CURR(Q_c, gamma) (trace(Q_c*gamma))
 
-class TWeakNeutral4ptDisc: public Module<WeakHamiltonianPar>
-{
-public:
-    TYPE_ALIASES(FIMPL,)
-    class Result: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        std::string, name,
-                                        std::vector<Complex>, corr);
-    };
-public:
-    // constructor
-    TWeakNeutral4ptDisc(const std::string name);
-    // destructor
-    virtual ~TWeakNeutral4ptDisc(void) = default;
-    // dependency relation
-    virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getOutput(void);
-    // setup
-    virtual void setup(void);
-    // execution
-    virtual void execute(void);
-};
-
-MODULE_REGISTER_NS(WeakNeutral4ptDisc, TWeakNeutral4ptDisc, MContraction);
+MAKE_WEAK_MODULE(WeakNeutral4ptDisc)
 
 END_MODULE_NAMESPACE
 

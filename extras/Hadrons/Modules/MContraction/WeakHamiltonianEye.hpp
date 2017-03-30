@@ -49,32 +49,7 @@ enum
 #define MAKE_SE_BODY(Q_1, Q_2, Q_3, gamma) (Q_3*g5*Q_1*adj(Q_2)*g5*gamma)
 #define MAKE_SE_LOOP(Q_loop, gamma) (Q_loop*gamma)
 
-class TWeakHamiltonianEye: public Module<WeakHamiltonianPar>
-{
-public:
-    TYPE_ALIASES(FIMPL,)
-    class Result: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        std::string, name,
-                                        std::vector<Complex>, corr);
-    };
-public:
-    // constructor
-    TWeakHamiltonianEye(const std::string name);
-    // destructor
-    virtual ~TWeakHamiltonianEye(void) = default;
-    // dependency relation
-    virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getOutput(void);
-    // setup
-    virtual void setup(void);
-    // execution
-    virtual void execute(void);
-};
-
-MODULE_REGISTER_NS(WeakHamiltonianEye, TWeakHamiltonianEye, MContraction);
+MAKE_WEAK_MODULE(WeakHamiltonianEye)
 
 END_MODULE_NAMESPACE
 
