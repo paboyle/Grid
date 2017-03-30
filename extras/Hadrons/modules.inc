@@ -9,6 +9,7 @@ modules_hpp =\
   Modules/MAction/DWF.hpp \
   Modules/MAction/Wilson.hpp \
   Modules/MContraction/Baryon.hpp \
+  Modules/MContraction/DiscLoop.hpp \
   Modules/MContraction/Gamma3pt.hpp \
   Modules/MContraction/Meson.hpp \
   Modules/MContraction/WeakHamiltonian.hpp \
