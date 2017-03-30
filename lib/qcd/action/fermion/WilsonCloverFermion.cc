@@ -113,7 +113,6 @@ namespace QCD {
   void WilsonCloverFermion<Impl>::MDeriv(GaugeField&mat, const FermionField&U, const FermionField&V, int dag){
     GaugeField tmp(mat._grid);
 
-    conformable(U._grid, _grid);
     conformable(U._grid, V._grid);
     conformable(U._grid, mat._grid);
 
