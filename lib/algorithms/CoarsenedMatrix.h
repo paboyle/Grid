@@ -425,7 +425,7 @@ namespace Grid {
 	A[p]=zero;
       }
 
-      GridParallelRNG  RNG(Grid()); RNG.SeedRandomDevice();
+      GridParallelRNG  RNG(Grid()); RNG.SeedFixedIntegers(std::vector<int>({55,72,19,17,34}));
       Lattice<iScalar<CComplex> > val(Grid()); random(RNG,val);
 
       Complex one(1.0);
