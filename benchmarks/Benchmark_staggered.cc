@@ -51,7 +51,7 @@ int main (int argc, char ** argv)
   std::vector<int> seeds({1,2,3,4});
   GridParallelRNG          pRNG(&Grid);
   pRNG.SeedFixedIntegers(seeds);
-  //  pRNG.SeedRandomDevice();
+  //  pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
 
   typedef typename ImprovedStaggeredFermionR::FermionField FermionField; 
   typename ImprovedStaggeredFermionR::ImplParams params; 
