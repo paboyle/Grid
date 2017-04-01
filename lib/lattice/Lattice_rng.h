@@ -69,40 +69,6 @@ namespace Grid {
     return multiplicity;
   }
 
-  // Wrap seed_seq to give common interface with random_device
-  // Should rather wrap random_device and have a generate
-  class fixedSeed {
-  public:
-
-    typedef std::seed_seq::result_type result_type;
-
-    std::seed_seq src;
-    
-    template<class int_type> fixedSeed(const std::vector<int_type> &seeds) : src(seeds.begin(),seeds.end()) {};
-
-    template< class RandomIt > void generate( RandomIt begin, RandomIt end ) {
-      src.generate(begin,end);
-    }
-
-  };
-
-
-  class deviceSeed {
-  public:
-
-    std::random_device rd;
-
-    typedef std::random_device::result_type result_type;
-    
-    deviceSeed(void) : rd(){};
-
-    template< class RandomIt > void generate( RandomIt begin, RandomIt end ) {
-      for(RandomIt it=begin; it!=end;it++){
-	*it = rd();
-      }
-    }
-  };
-
   // real scalars are one component
   template<class scalar,class distribution,class generator> void fillScalar(scalar &s,distribution &dist,generator & gen)
   {
@@ -118,66 +84,99 @@ namespace Grid {
   }
   
   class GridRNGbase {
-
   public:
-
-    int _seeded;
     // One generator per site.
     // Uniform and Gaussian distributions from these generators.
 #ifdef RNG_RANLUX
-    typedef uint64_t      RngStateType;
     typedef std::ranlux48 RngEngine;
+    typedef uint64_t      RngStateType;
     static const int RngStateCount = 15;
-#elif RNG_MT19937 
+#endif 
+#ifdef RNG_MT19937 
     typedef std::mt19937 RngEngine;
     typedef uint32_t     RngStateType;
     static const int     RngStateCount = std::mt19937::state_size;
-#elif RNG_SITMO
+#endif
+#ifdef RNG_SITMO
     typedef sitmo::prng_engine 	RngEngine;
     typedef uint64_t    	RngStateType;
     static const int    	RngStateCount = 4;
 #endif
-    std::vector<RngEngine>                             _generators;
-    std::vector<std::uniform_real_distribution<RealD>> _uniform;
-    std::vector<std::normal_distribution<RealD>>       _gaussian;
-    std::vector<std::discrete_distribution<int32_t>>   _bernoulli;
+    ///////////////////////
+    // support for parallel init
+    ///////////////////////
+#ifdef RNG_SITMO
+    static void Skip(RngEngine &eng)
+    {
+      uint64_t skip = 0x1; skip = skip<<40;
+      eng.discard(skip);
+    } 
+#endif
+    static RngEngine Reseed(RngEngine &eng)
+    {
+      const int reseeds=4;
+      std::uniform_int_distribution<uint32_t> uid;
+      std::vector<uint32_t> newseed(reseeds);
+      for(int i=0;i<reseeds;i++){
+	newseed[i] = uid(eng);
+      }
+      std::seed_seq sseq(newseed.begin(),newseed.end());
+      return RngEngine(sseq);
+    }    
 
-    void GetState(std::vector<RngStateType> & saved,int gen) {
+    std::vector<RngEngine>                             _generators;
+    std::vector<std::uniform_real_distribution<RealD> > _uniform;
+    std::vector<std::normal_distribution<RealD> >       _gaussian;
+    std::vector<std::discrete_distribution<int32_t> >   _bernoulli;
+    std::vector<std::uniform_int_distribution<uint32_t> > _uid;
+
+    void GetState(std::vector<RngStateType> & saved,RngEngine &eng) {
       saved.resize(RngStateCount);
       std::stringstream ss;
-      ss<<_generators[gen];
+      ss<<eng;
       ss.seekg(0,ss.beg);
       for(int i=0;i<RngStateCount;i++){
 	ss>>saved[i];
       }
     }
-    void SetState(std::vector<RngStateType> & saved,int gen){
+    void GetState(std::vector<RngStateType> & saved,int gen) {
+      GetState(saved,_generators[gen]);
+    }
+    void SetState(std::vector<RngStateType> & saved,RngEngine &eng){
       assert(saved.size()==RngStateCount);
       std::stringstream ss;
       for(int i=0;i<RngStateCount;i++){
 	ss<< saved[i]<<" ";
       }
       ss.seekg(0,ss.beg);
-      ss>>_generators[gen];
+      ss>>eng;
     }
+    void SetState(std::vector<RngStateType> & saved,int gen){
+      SetState(saved,_generators[gen]);
+    }
+    void SetEngine(RngEngine &Eng, int gen){
+      _generators[gen]=Eng;
+    }
+    void GetEngine(RngEngine &Eng, int gen){
+      Eng=_generators[gen];
+    }
+
+    template<class source> void Seed(source &src, int gen)
+    {
+      _generators[gen] = RngEngine(src);
+    }    
   };
 
   class GridSerialRNG : public GridRNGbase {
   public:
-
-    // FIXME ... do we require lockstep draws of randoms 
-    // from all nodes keeping seeds consistent.
-    // place a barrier/broadcast in the fill routine
 
     GridSerialRNG() : GridRNGbase() {
       _generators.resize(1);
       _uniform.resize(1,std::uniform_real_distribution<RealD>{0,1});
       _gaussian.resize(1,std::normal_distribution<RealD>(0.0,1.0) );
       _bernoulli.resize(1,std::discrete_distribution<int32_t>{1,1});
-      _seeded=0;
+      _uid.resize(1,std::uniform_int_distribution<uint32_t>() );
     }
-
-
 
     template <class sobj,class distribution> inline void fill(sobj &l,std::vector<distribution> &dist){
 
@@ -195,7 +194,6 @@ namespace Grid {
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
 
     };
-
     template <class distribution>  inline void fill(ComplexF &l,std::vector<distribution> &dist){
       dist[0].reset();
       fillScalar(l,dist[0],_generators[0]);
@@ -250,19 +248,10 @@ namespace Grid {
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
 
-    template<class source> void Seed(source &src)
-    {
-      _generators[0] = RngEngine(src);
-      _seeded=1;
-    }    
-    void SeedRandomDevice(void){
-      deviceSeed src;
-      Seed(src);
-    }
     void SeedFixedIntegers(const std::vector<int> &seeds){
       CartesianCommunicator::BroadcastWorld(0,(void *)&seeds[0],sizeof(int)*seeds.size());
-      fixedSeed src(seeds);
-      Seed(src);
+      std::seed_seq src(seeds.begin(),seeds.end());
+      Seed(src,0);
     }
 
   };
@@ -285,14 +274,8 @@ namespace Grid {
       _uniform.resize(_vol,std::uniform_real_distribution<RealD>{0,1});
       _gaussian.resize(_vol,std::normal_distribution<RealD>(0.0,1.0) );
       _bernoulli.resize(_vol,std::discrete_distribution<int32_t>{1,1});
-      _seeded=0;
+      _uid.resize(_vol,std::uniform_int_distribution<uint32_t>() );
     }
-
-
-
-    //FIXME implement generic IO and create state save/restore
-    //void SaveState(const std::string<char> &file);
-    //void LoadState(const std::string<char> &file);
 
     template <class vobj,class distribution> inline void fill(Lattice<vobj> &l,std::vector<distribution> &dist){
 
@@ -329,78 +312,87 @@ namespace Grid {
       }
     };
 
-    // This loop could be made faster to avoid the Ahmdahl by
-    // i)  seed generators on each timeslice, for x=y=z=0;
-    // ii) seed generators on each z for x=y=0
-    // iii)seed generators on each y,z for x=0
-    // iv) seed generators on each y,z,x 
-    // made possible by physical indexing.
-    template<class source> void Seed(source &src)
-    {
+    void SeedFixedIntegers(const std::vector<int> &seeds){
 
-      typedef typename source::result_type seed_t;
-      std::uniform_int_distribution<seed_t> uid;
+      CartesianCommunicator::BroadcastWorld(0,(void *)&seeds[0],sizeof(int)*seeds.size());
 
-      int numseed=4;
-      int gsites = _grid->_gsites;
-      std::vector<seed_t> site_init(numseed);
+      std::seed_seq source(seeds.begin(),seeds.end());
+
+      RngEngine master_engine(source);
+
+#ifdef RNG_SITMO
       std::vector<int> gcoor;
 
+      for(int gidx=0;gidx<_grid->_gsites;gidx++){
 
-      // Master RngEngine
-      std::vector<seed_t> master_init(numseed);  src.generate(master_init.begin(),master_init.end());
-      _grid->Broadcast(0,(void *)&master_init[0],sizeof(seed_t)*numseed);
-      fixedSeed master_seed(master_init);
-      RngEngine master_engine(master_seed);
+	Skip(master_engine); // advance the state; does this work?
 
-      // Per node RngEngine
-      std::vector<seed_t> node_init(numseed);
-      for(int r=0;r<_grid->ProcessorCount();r++) {
-
-	std::vector<seed_t> rank_init(numseed);
-	for(int i=0;i<numseed;i++) rank_init[i] = uid(master_engine);
-
-	std::cout << GridLogMessage << "SeedSeq for rank "<<r;
-	for(int i=0;i<numseed;i++) std::cout<<" "<<rank_init[i];
-	std::cout <<std::endl;
-
-	if ( r==_grid->ThisRank() ) { 
-	  for(int i=0;i<numseed;i++) node_init[i] = rank_init[i];
-	}
-
-      }
-
-      ////////////////////////////////////////////////////
-      // Set up a seed_seq wrapper with these 8 words
-      // and draw for each site within node.
-      ////////////////////////////////////////////////////
-      fixedSeed node_seed(node_init);
-      RngEngine node_engine(node_seed);
-
-      for(int gidx=0;gidx<gsites;gidx++){
 	int rank,o_idx,i_idx;
-
 	_grid->GlobalIndexToGlobalCoor(gidx,gcoor);
 	_grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
 
 	if( rank == _grid->ThisRank() ){
 	  int l_idx=generator_idx(o_idx,i_idx);
-	  for(int i=0;i<numseed;i++)  site_init[i] = uid(node_engine);
-	  fixedSeed site_seed(site_init);
-	  _generators[l_idx] = RngEngine(site_seed);
+	  _generators[l_idx] = master_engine;
+	}
+
+      }
+#else 
+      // Machine and thread decomposition dependent seeding
+      // is efficient and maximally parallel; but not
+      // reproducible from machine to machine. Not ideal, but fast.
+      // Different seed for each node.
+      {
+	int Nproc = _grid->ProcessorCount();
+	int me= _grid->ThisRank();
+	std::vector<RngEngine> seeders(Nproc);
+	
+	for(int p=0;p<Nproc;p++){
+	  seeders[p] = Reseed(master_engine);
+	}
+	master_engine = seeders[me];
+      }
+
+      // Different seed for each thread
+      {
+	int Nthread = GridThread::GetThreads();
+	std::vector<RngEngine> seeders(Nthread);
+	for(int t=0;t<Nthread;t++){
+	  seeders[t] = Reseed(master_engine);
+	}
+
+	parallel_for(int t=0;t<Nthread;t++) {
+	  master_engine = seeders[t];
+	  for(int l=0;l<_grid->lSites();l++) {
+	    if ( (l%Nthread)==t ) {
+	      _generators[l] = Reseed(master_engine);
+	    }
+	  }
 	}
       }
-      _seeded=1;
-    }    
-    void SeedRandomDevice(void){
-      deviceSeed src;
-      Seed(src);
+#endif
     }
-    void SeedFixedIntegers(const std::vector<int> &seeds){
-      CartesianCommunicator::BroadcastWorld(0,(void *)&seeds[0],sizeof(int)*seeds.size());
-      fixedSeed src(seeds);
-      Seed(src);
+
+    uint32_t GlobalU01(int gsite){
+
+      std::vector<int> gcoor;
+      _grid->GlobalIndexToGlobalCoor(gsite,gcoor);
+
+      int rank,o_idx,i_idx;
+      _grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
+
+      int l_idx=generator_idx(o_idx,i_idx);
+
+      uint32_t the_number;
+      if( rank == _grid->ThisRank() ){
+	the_number = _uid[l_idx](_generators[l_idx]);
+      }
+
+      _grid->Broadcast(rank,(void *)&the_number,sizeof(the_number));
+
+      return the_number;
     }
+
 
   };
 
