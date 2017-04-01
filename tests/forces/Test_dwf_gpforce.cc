@@ -54,8 +54,8 @@ int main (int argc, char ** argv)
 
   std::vector<int> seeds({1,2,3,4});
 
-  GridParallelRNG          RNG5(FGrid);  RNG5.SeedRandomDevice();
-  GridParallelRNG          RNG4(UGrid);  RNG4.SeedRandomDevice();
+  GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
+  GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
   
   FermionField phi        (FGrid); gaussian(RNG5,phi);
   FermionField Mphi       (FGrid); 
