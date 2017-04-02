@@ -30,11 +30,18 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define GRID_LATTICE_RNG_H
 
 #include <random>
+
+#ifdef RNG_SITMO
 #include <Grid/sitmo_rng/sitmo_prng_engine.hpp>
+#endif 
+
+#if defined(RNG_SITMO)
+#define RNG_FAST_DISCARD
+#else 
+#undef  RNG_FAST_DISCARD
+#endif
 
 namespace Grid {
-
-  //http://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-90Ar1.pdf ?
 
   //////////////////////////////////////////////////////////////
   // Allow the RNG state to be less dense than the fine grid
@@ -65,20 +72,22 @@ namespace Grid {
 
       multiplicity = multiplicity *fine->_rdimensions[fd] / coarse->_rdimensions[d]; 
     }
-
     return multiplicity;
   }
 
   // real scalars are one component
-  template<class scalar,class distribution,class generator> void fillScalar(scalar &s,distribution &dist,generator & gen)
+  template<class scalar,class distribution,class generator> 
+  void fillScalar(scalar &s,distribution &dist,generator & gen)
   {
     s=dist(gen);
   }
-  template<class distribution,class generator> void fillScalar(ComplexF &s,distribution &dist, generator &gen)
+  template<class distribution,class generator> 
+  void fillScalar(ComplexF &s,distribution &dist, generator &gen)
   {
     s=ComplexF(dist(gen),dist(gen));
   }
-  template<class distribution,class generator> void fillScalar(ComplexD &s,distribution &dist,generator &gen)
+  template<class distribution,class generator> 
+  void fillScalar(ComplexD &s,distribution &dist,generator &gen)
   {
     s=ComplexD(dist(gen),dist(gen));
   }
@@ -102,33 +111,52 @@ namespace Grid {
     typedef uint64_t    	RngStateType;
     static const int    	RngStateCount = 4;
 #endif
-    ///////////////////////
-    // support for parallel init
-    ///////////////////////
-#ifdef RNG_SITMO
-    static void Skip(RngEngine &eng)
-    {
-      uint64_t skip = 0x1; skip = skip<<40;
-      eng.discard(skip);
-    } 
-#endif
-    static RngEngine Reseed(RngEngine &eng)
-    {
-      const int reseeds=4;
-      std::uniform_int_distribution<uint32_t> uid;
-      std::vector<uint32_t> newseed(reseeds);
-      for(int i=0;i<reseeds;i++){
-	newseed[i] = uid(eng);
-      }
-      std::seed_seq sseq(newseed.begin(),newseed.end());
-      return RngEngine(sseq);
-    }    
 
     std::vector<RngEngine>                             _generators;
     std::vector<std::uniform_real_distribution<RealD> > _uniform;
     std::vector<std::normal_distribution<RealD> >       _gaussian;
     std::vector<std::discrete_distribution<int32_t> >   _bernoulli;
     std::vector<std::uniform_int_distribution<uint32_t> > _uid;
+
+    ///////////////////////
+    // support for parallel init
+    ///////////////////////
+#ifdef RNG_FAST_DISCARD
+    static void Skip(RngEngine &eng)
+    {
+      /////////////////////////////////////////////////////////////////////////////////////
+      // Skip by 2^40 elements between successive lattice sites
+      // This goes by 10^12.
+      // Consider quenched updating; likely never exceeding rate of 1000 sweeps
+      // per second on any machine. This gives us of order 10^9 seconds, or 100 years
+      // skip ahead.
+      // For HMC unlikely to go at faster than a solve per second, and 
+      // tens of seconds per trajectory so this is clean in all reasonable cases,
+      // and margin of safety is orders of magnitude.
+      // We could hack Sitmo to skip in the higher order words of state if necessary
+      /////////////////////////////////////////////////////////////////////////////////////
+      uint64_t skip = 0x1; skip = skip<<40;
+      eng.discard(skip);
+    } 
+#endif
+    static RngEngine Reseed(RngEngine &eng)
+    {
+      std::vector<uint32_t> newseed;
+      std::uniform_int_distribution<uint32_t> uid;
+      return Reseed(eng,newseed,uid);
+    }
+    static RngEngine Reseed(RngEngine &eng,std::vector<uint32_t> & newseed,
+			    std::uniform_int_distribution<uint32_t> &uid)
+    {
+      const int reseeds=4;
+      
+      newseed.resize(reseeds);
+      for(int i=0;i<reseeds;i++){
+	newseed[i] = uid(eng);
+      }
+      std::seed_seq sseq(newseed.begin(),newseed.end());
+      return RngEngine(sseq);
+    }    
 
     void GetState(std::vector<RngStateType> & saved,RngEngine &eng) {
       saved.resize(RngStateCount);
@@ -160,7 +188,6 @@ namespace Grid {
     void GetEngine(RngEngine &Eng, int gen){
       Eng=_generators[gen];
     }
-
     template<class source> void Seed(source &src, int gen)
     {
       _generators[gen] = RngEngine(src);
@@ -190,10 +217,11 @@ namespace Grid {
       for(int idx=0;idx<words;idx++){
 	fillScalar(buf[idx],dist[0],_generators[0]);
       }
-      
+
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
 
     };
+
     template <class distribution>  inline void fill(ComplexF &l,std::vector<distribution> &dist){
       dist[0].reset();
       fillScalar(l,dist[0],_generators[0]);
@@ -253,14 +281,13 @@ namespace Grid {
       std::seed_seq src(seeds.begin(),seeds.end());
       Seed(src,0);
     }
-
   };
 
   class GridParallelRNG : public GridRNGbase {
   public:
-
     GridBase *_grid;
     int _vol;
+  public:
 
     int generator_idx(int os,int is){
       return is*_grid->oSites()+os;
@@ -289,7 +316,6 @@ namespace Grid {
       int     osites=_grid->oSites();
       int words=sizeof(scalar_object)/sizeof(scalar_type);
 
-
       parallel_for(int ss=0;ss<osites;ss++){
 
 	std::vector<scalar_object> buf(Nsimd);
@@ -314,23 +340,34 @@ namespace Grid {
 
     void SeedFixedIntegers(const std::vector<int> &seeds){
 
+      // Everyone generates the same seed_seq based on input seeds
       CartesianCommunicator::BroadcastWorld(0,(void *)&seeds[0],sizeof(int)*seeds.size());
 
       std::seed_seq source(seeds.begin(),seeds.end());
 
       RngEngine master_engine(source);
 
-#ifdef RNG_SITMO
+#ifdef RNG_FAST_DISCARD
+      ////////////////////////////////////////////////
+      // Skip ahead through a single stream.
+      // Applicable to SITMO and other has based/crypto RNGs
+      // Should be applicable to Mersenne Twister, but the C++11
+      // MT implementation does not implement fast discard even though
+      // in principle this is possible
+      ////////////////////////////////////////////////
       std::vector<int> gcoor;
+      int rank,o_idx,i_idx;
 
+      // Everybody loops over global volume.
       for(int gidx=0;gidx<_grid->_gsites;gidx++){
 
-	Skip(master_engine); // advance the state; does this work?
+	Skip(master_engine); // Skip to next RNG sequence
 
-	int rank,o_idx,i_idx;
+	// Where is it?
 	_grid->GlobalIndexToGlobalCoor(gidx,gcoor);
 	_grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
 
+	// If this is one of mine we take it
 	if( rank == _grid->ThisRank() ){
 	  int l_idx=generator_idx(o_idx,i_idx);
 	  _generators[l_idx] = master_engine;
@@ -338,23 +375,24 @@ namespace Grid {
 
       }
 #else 
-      // Machine and thread decomposition dependent seeding
-      // is efficient and maximally parallel; but not
-      // reproducible from machine to machine. Not ideal, but fast.
-      // Different seed for each node.
+      ////////////////////////////////////////////////////////////////
+      // Machine and thread decomposition dependent seeding is efficient
+      // and maximally parallel; but NOT reproducible from machine to machine. 
+      // Not ideal, but fastest way to reseed all nodes.
+      ////////////////////////////////////////////////////////////////
       {
+	// Obtain one Reseed per processor
 	int Nproc = _grid->ProcessorCount();
-	int me= _grid->ThisRank();
 	std::vector<RngEngine> seeders(Nproc);
-	
+	int me= _grid->ThisRank();
 	for(int p=0;p<Nproc;p++){
 	  seeders[p] = Reseed(master_engine);
 	}
 	master_engine = seeders[me];
       }
 
-      // Different seed for each thread
       {
+	// Obtain one reseeded generator per thread
 	int Nthread = GridThread::GetThreads();
 	std::vector<RngEngine> seeders(Nthread);
 	for(int t=0;t<Nthread;t++){
@@ -362,63 +400,52 @@ namespace Grid {
 	}
 
 	parallel_for(int t=0;t<Nthread;t++) {
-	  master_engine = seeders[t];
+	  // set up one per local site in threaded fashion
+	  std::vector<uint32_t> newseeds;
+	  std::uniform_int_distribution<uint32_t> uid;	
 	  for(int l=0;l<_grid->lSites();l++) {
 	    if ( (l%Nthread)==t ) {
-	      _generators[l] = Reseed(master_engine);
+	      _generators[l] = Reseed(seeders[t],newseeds,uid);
 	    }
 	  }
 	}
       }
 #endif
     }
-
+    ////////////////////////////////////////////////////////////////////////
+    // Support for rigorous test of RNG's
+    // Return uniform random uint32_t from requested site generator
+    ////////////////////////////////////////////////////////////////////////
     uint32_t GlobalU01(int gsite){
 
-      std::vector<int> gcoor;
-      _grid->GlobalIndexToGlobalCoor(gsite,gcoor);
+      uint32_t the_number;
 
+      // who
+      std::vector<int> gcoor;
       int rank,o_idx,i_idx;
+      _grid->GlobalIndexToGlobalCoor(gsite,gcoor);
       _grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
 
+      // draw
       int l_idx=generator_idx(o_idx,i_idx);
-
-      uint32_t the_number;
       if( rank == _grid->ThisRank() ){
 	the_number = _uid[l_idx](_generators[l_idx]);
       }
-
+      
+      // share & return
       _grid->Broadcast(rank,(void *)&the_number,sizeof(the_number));
-
       return the_number;
     }
 
-
   };
 
-  template <class vobj> inline void random(GridParallelRNG &rng,Lattice<vobj> &l){
-    rng.fill(l,rng._uniform);
-  }
+  template <class vobj> inline void random(GridParallelRNG &rng,Lattice<vobj> &l)   { rng.fill(l,rng._uniform);  }
+  template <class vobj> inline void gaussian(GridParallelRNG &rng,Lattice<vobj> &l) { rng.fill(l,rng._gaussian); }
+  template <class vobj> inline void bernoulli(GridParallelRNG &rng,Lattice<vobj> &l){ rng.fill(l,rng._bernoulli);}
 
-  template <class vobj> inline void gaussian(GridParallelRNG &rng,Lattice<vobj> &l){
-    rng.fill(l,rng._gaussian);
-  }
-  
-  template <class vobj> inline void bernoulli(GridParallelRNG &rng,Lattice<vobj> &l){
-    rng.fill(l,rng._bernoulli);
-  }
-
-  template <class sobj> inline void random(GridSerialRNG &rng,sobj &l){
-    rng.fill(l,rng._uniform);
-  }
-  
-  template <class sobj> inline void gaussian(GridSerialRNG &rng,sobj &l){
-    rng.fill(l,rng._gaussian);
-  }
-  
-  template <class sobj> inline void bernoulli(GridSerialRNG &rng,sobj &l){
-    rng.fill(l,rng._bernoulli);
-  }
+  template <class sobj> inline void random(GridSerialRNG &rng,sobj &l)   { rng.fill(l,rng._uniform  ); }
+  template <class sobj> inline void gaussian(GridSerialRNG &rng,sobj &l) { rng.fill(l,rng._gaussian ); }
+  template <class sobj> inline void bernoulli(GridSerialRNG &rng,sobj &l){ rng.fill(l,rng._bernoulli); }
 
 }
 #endif

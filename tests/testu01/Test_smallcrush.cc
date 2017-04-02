@@ -32,17 +32,17 @@ using namespace Grid;
 using namespace Grid::QCD;
 
 // Wrap Grid's parallel RNG for testU01
+#define BIG_CRUSH             // Big crush enable (long running)
+#undef TEST_RNG_STANDALONE   // Test serial RNGs in isolation
 
 extern "C" { 
 #include "TestU01.h"
-#include "gdef.h"
-#include "unif01.h"
-#include "ucarry.h"
-#include "bbattery.h"
 }
 
 std::vector<std::ranlux48>      EngineRanlux;
 std::vector<std::mt19937>       EngineMT;
+
+#include <Grid/sitmo_rng/sitmo_prng_engine.hpp>
 std::vector<sitmo::prng_engine> EngineSitmo;
 
 std::uniform_int_distribution<uint32_t> uid;
@@ -74,21 +74,13 @@ public:
     sRNG = _sRNG;
     _grid= grid;
     gsites= grid->_gsites;
-    std::cout << "Init: Global sites is " <<gsites<<std::endl;
     site = 0;
   }
   static uint32_t GetU01(void) { 
-    //    std::uniform_int_distribution<uint32_t> uid;
     uint32_t ret_val;
-#if 0
-    ret_val = sRNG->_uid[0](sRNG->_generators[0]);
-#else
     ret_val = pRNG->GlobalU01(site);
     site=(site+1)%gsites;
-#endif
-    //    std::cout << "site "<<site <<" "<<std::hex << ret_val <<std::dec<<std::endl; 
     return ret_val;
-
   }
 };
 
@@ -134,24 +126,17 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage<< "Initialised Grid RNGs "<<std::endl; 
 
   TestRNG::Init(&pRNG,&sRNG,&Grid);
-  std::cout << GridLogMessage<< "Grid RNG's are  "<< std::string(TestRNG::name) <<std::endl; 
+  std::cout << GridLogMessage<< "Grid RNG's are "<< std::string(TestRNG::name) <<std::endl; 
 
   unif01_Gen * gen;
 
-  //  gen = ulcg_CreateLCG (2147483647, 397204094, 0, 12345);
-  //  bbattery_SmallCrush (gen);
-
-  //  gen =  ucarry_CreateRanlux (48, 0x12345);
-  //  bbattery_SmallCrush (gen);
-
-  /*
+#ifdef TEST_RNG_STANDALONE
   std::cout << GridLogMessage<< "Testing Standalone Ranlux" <<std::endl; 
   gen = unif01_CreateExternGenBits ((char *)"GridRanlux",GetU01Ranlux);
   bbattery_SmallCrush (gen);
   unif01_DeleteExternGenBits(gen);
   std::cout << GridLogMessage<< "Testing Standalone Ranlux is complete" <<std::endl; 
-  */
-  /*
+
   std::cout << GridLogMessage<< "Testing Standalone Mersenne Twister" <<std::endl; 
   gen = unif01_CreateExternGenBits ((char *)"GridMT",GetU01MT);
   bbattery_SmallCrush (gen);
@@ -163,14 +148,19 @@ int main (int argc, char ** argv)
   bbattery_SmallCrush (gen);
   unif01_DeleteExternGenBits(gen);
   std::cout << GridLogMessage<< "Testing Standalone Sitmo is complete" <<std::endl; 
-  */
+#endif
 
-  //  gen = unif01_CreateExternGenBits ((char *)"xorshift", xorshift);
-  std::cout << GridLogMessage<< "Testing Grid "<< std::string(TestRNG::name) <<std::endl; 
+#ifdef BIG_CRUSH
+  std::cout << GridLogMessage<< "Testing Grid BigCrush for "<< std::string(TestRNG::name) <<std::endl; 
+  gen = unif01_CreateExternGenBits(TestRNG::name,TestRNG::GetU01);
+  bbattery_BigCrush (gen);
+  std::cout << GridLogMessage<< "Testing Grid "<< std::string(TestRNG::name)<<" is complete" <<std::endl; 
+#else
+  std::cout << GridLogMessage<< "Testing Grid SmallCrush for "<< std::string(TestRNG::name) <<std::endl; 
   gen = unif01_CreateExternGenBits(TestRNG::name,TestRNG::GetU01);
   bbattery_SmallCrush (gen);
   std::cout << GridLogMessage<< "Testing Grid "<< std::string(TestRNG::name)<<" is complete" <<std::endl; 
-
+#endif
   Grid_finalize();
 }
 
