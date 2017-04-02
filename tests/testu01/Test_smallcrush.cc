@@ -32,7 +32,9 @@ using namespace Grid;
 using namespace Grid::QCD;
 
 // Wrap Grid's parallel RNG for testU01
-#define BIG_CRUSH             // Big crush enable (long running)
+#undef BIG_CRUSH             // Big crush enable (long running)
+#define MIDDLE_CRUSH             // Big crush enable (long running)
+#undef SMALL_CRUSH             // Big crush enable (long running)
 #undef TEST_RNG_STANDALONE   // Test serial RNGs in isolation
 
 extern "C" { 
@@ -154,12 +156,19 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage<< "Testing Grid BigCrush for "<< std::string(TestRNG::name) <<std::endl; 
   gen = unif01_CreateExternGenBits(TestRNG::name,TestRNG::GetU01);
   bbattery_BigCrush (gen);
-  std::cout << GridLogMessage<< "Testing Grid "<< std::string(TestRNG::name)<<" is complete" <<std::endl; 
-#else
+  std::cout << GridLogMessage<< "Testing Grid BigCrush "<< std::string(TestRNG::name)<<" is complete" <<std::endl; 
+#endif
+#ifdef MIDDLE_CRUSH
+  std::cout << GridLogMessage<< "Testing Grid Crush for "<< std::string(TestRNG::name) <<std::endl; 
+  gen = unif01_CreateExternGenBits(TestRNG::name,TestRNG::GetU01);
+  bbattery_Crush (gen);
+  std::cout << GridLogMessage<< "Testing Grid Crush "<< std::string(TestRNG::name)<<" is complete" <<std::endl; 
+#endif
+#ifdef SMALL_CRUSH
   std::cout << GridLogMessage<< "Testing Grid SmallCrush for "<< std::string(TestRNG::name) <<std::endl; 
   gen = unif01_CreateExternGenBits(TestRNG::name,TestRNG::GetU01);
   bbattery_SmallCrush (gen);
-  std::cout << GridLogMessage<< "Testing Grid "<< std::string(TestRNG::name)<<" is complete" <<std::endl; 
+  std::cout << GridLogMessage<< "Testing Grid SmallCrush "<< std::string(TestRNG::name)<<" is complete" <<std::endl; 
 #endif
   Grid_finalize();
 }
