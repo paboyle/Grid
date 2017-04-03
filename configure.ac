@@ -6,7 +6,7 @@ AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE(subdir-objects)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([lib/Grid.h])
-AC_CONFIG_HEADERS([lib/Config.h])
+AC_CONFIG_HEADERS([lib/Config.h],[sed -i 's|PACKAGE_|GRID_|' lib/Config.h])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 ############### Checks for programs
