@@ -31,8 +31,6 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-#define parallel_for PARALLEL_FOR_LOOP for
-
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);

@@ -5,8 +5,10 @@
     Source file: ./lib/simd/Grid_generic.h
 
     Copyright (C) 2015
+    Copyright (C) 2017
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+        Andrew Lawson    <andrew.lawson1991@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,51 +28,10 @@ Author: Antonin Portelli <antonin.portelli@me.com>
     *************************************************************************************/
     /*  END LEGAL */
 
-static_assert(GEN_SIMD_WIDTH % 16u == 0, "SIMD vector size is not an integer multiple of 16 bytes");
-
-//#define VECTOR_LOOPS
-
-// playing with compiler pragmas
-#ifdef VECTOR_LOOPS
-#ifdef __clang__
-#define VECTOR_FOR(i, w, inc)\
-_Pragma("clang loop unroll(full) vectorize(enable) interleave(enable) vectorize_width(w)")\
-for (unsigned int i = 0; i < w; i += inc)
-#elif defined __INTEL_COMPILER
-#define VECTOR_FOR(i, w, inc)\
-_Pragma("simd vectorlength(w*8)")\
-for (unsigned int i = 0; i < w; i += inc)
-#else
-#define VECTOR_FOR(i, w, inc)\
-for (unsigned int i = 0; i < w; i += inc)
-#endif
-#else
-#define VECTOR_FOR(i, w, inc)\
-for (unsigned int i = 0; i < w; i += inc)
-#endif
+#include "Grid_generic_types.h"
 
 namespace Grid {
 namespace Optimization {
-
-  // type traits giving the number of elements for each vector type
-  template <typename T> struct W;
-  template <> struct W<double> {
-    constexpr static unsigned int c = GEN_SIMD_WIDTH/16u;
-    constexpr static unsigned int r = GEN_SIMD_WIDTH/8u;
-  };
-  template <> struct W<float> {
-    constexpr static unsigned int c = GEN_SIMD_WIDTH/8u;
-    constexpr static unsigned int r = GEN_SIMD_WIDTH/4u;
-  };
-  
-  // SIMD vector types
-  template <typename T>
-  struct vec {
-    alignas(GEN_SIMD_WIDTH) T v[W<T>::r];
-  };
-  
-  typedef vec<float>   vecf;
-  typedef vec<double>  vecd;
   
   struct Vsplat{
     // Complex
@@ -99,11 +60,6 @@ namespace Optimization {
       
       return out;
     }
-    
-    // Integer
-    inline int operator()(Integer a){
-      return a;
-    }
   };
 
   struct Vstore{
@@ -112,11 +68,6 @@ namespace Optimization {
     inline void operator()(vec<T> a, T *D){
       *((vec<T> *)D) = a;
     }
-    //Integer
-    inline void operator()(int a, Integer *I){
-      *I = a;
-    }
-
   };
 
   struct Vstream{
@@ -151,11 +102,6 @@ namespace Optimization {
       
       return out;
     }
-
-    // Integer
-    inline int operator()(Integer *a){
-      return *a;
-    }
   };
 
   /////////////////////////////////////////////////////
@@ -174,11 +120,6 @@ namespace Optimization {
       
       return out;
     }
-    
-    //I nteger
-    inline int operator()(int a, int b){
-      return a + b;
-    }
   };
 
   struct Sub{
@@ -193,11 +134,6 @@ namespace Optimization {
       }
       
       return out;
-    }
-    
-    //Integer
-    inline int operator()(int a, int b){
-      return a-b;
     }
   };
 
@@ -214,11 +150,6 @@ namespace Optimization {
       
       return out;
     }
-    
-    // Integer
-    inline int operator()(int a, int b){
-      return a*b;
-    }
   };
   
   #define cmul(a, b, c, i)\
@@ -232,13 +163,26 @@ namespace Optimization {
       
       VECTOR_FOR(i, W<T>::c, 1)
       {
-         out.v[2*i]   = a[2*i]*b[2*i];
-         out.v[2*i+1] = a[2*i]*b[2*i+1];
+         out.v[2*i]   = a.v[2*i]*b.v[2*i];
+         out.v[2*i+1] = a.v[2*i]*b.v[2*i+1];
       }      
       return out;
-    };
+    }
   };
 
+  struct MaddRealPart{
+    template <typename T>
+    inline vec<T> operator()(vec<T> a, vec<T> b, vec<T> c){
+      vec<T> out;
+      
+      VECTOR_FOR(i, W<T>::c, 1)
+      {
+         out.v[2*i]   = a.v[2*i]*b.v[2*i] + c.v[2*i];
+         out.v[2*i+1] = a.v[2*i]*b.v[2*i+1] + c.v[2*i+1];
+      }      
+      return out;
+    }
+  };
   
   struct MultComplex{
     // Complex
@@ -369,6 +313,11 @@ namespace Optimization {
   }
   
   struct Rotate{
+      
+    template <int n, typename T> static inline vec<T> tRotate(vec<T> in){
+      return rotate(in, n);
+    }
+    
     template <typename T>
     static inline vec<T> rotate(vec<T> in, int n){
       vec<T> out;
@@ -442,8 +391,12 @@ namespace Optimization {
 
   //Integer Reduce
   template<>
-  inline Integer Reduce<Integer, int>::operator()(int in){
-    return in;
+  inline Integer Reduce<Integer, veci>::operator()(veci in){
+    Integer a = 0;
+    
+    acc(in.v, a, 0, 1, W<Integer>::r);
+    
+    return a;
   }
 }
 
@@ -452,7 +405,7 @@ namespace Optimization {
 
   typedef Optimization::vecf SIMD_Ftype; // Single precision type
   typedef Optimization::vecd SIMD_Dtype; // Double precision type
-  typedef int SIMD_Itype; // Integer type
+  typedef Optimization::veci SIMD_Itype; // Integer type
 
   // prefetch utilities
   inline void v_prefetch0(int size, const char *ptr){};
@@ -472,6 +425,7 @@ namespace Optimization {
   typedef Optimization::Mult        MultSIMD;
   typedef Optimization::MultComplex MultComplexSIMD;
   typedef Optimization::MultRealPart MultRealPartSIMD;
+  typedef Optimization::MaddRealPart MaddRealPartSIMD;
   typedef Optimization::Conj        ConjSIMD;
   typedef Optimization::TimesMinusI TimesMinusISIMD;
   typedef Optimization::TimesI      TimesISIMD;

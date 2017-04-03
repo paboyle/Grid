@@ -56,8 +56,7 @@ inline void whereWolf(Lattice<vobj> &ret,const Lattice<iobj> &predicate,Lattice<
   std::vector<scalar_object> truevals (Nsimd);
   std::vector<scalar_object> falsevals(Nsimd);
 
-PARALLEL_FOR_LOOP
-  for(int ss=0;ss<iftrue._grid->oSites(); ss++){
+  parallel_for(int ss=0;ss<iftrue._grid->oSites(); ss++){
 
     extract(iftrue._odata[ss]   ,truevals);
     extract(iffalse._odata[ss]  ,falsevals);

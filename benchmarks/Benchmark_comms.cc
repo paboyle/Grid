@@ -48,9 +48,9 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "= Benchmarking concurrent halo exchange in "<<nmu<<" dimensions"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
-  int maxlat=16;
-  for(int lat=4;lat<=maxlat;lat+=2){
-    for(int Ls=1;Ls<=16;Ls*=2){
+  int maxlat=24;
+  for(int lat=4;lat<=maxlat;lat+=4){
+    for(int Ls=8;Ls<=32;Ls*=2){
 
       std::vector<int> latt_size  ({lat*mpi_layout[0],
       				    lat*mpi_layout[1],
@@ -124,8 +124,8 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
 
 
-  for(int lat=4;lat<=maxlat;lat+=2){
-    for(int Ls=1;Ls<=16;Ls*=2){
+  for(int lat=4;lat<=maxlat;lat+=4){
+    for(int Ls=8;Ls<=32;Ls*=2){
 
       std::vector<int> latt_size  ({lat,lat,lat,lat});
 
@@ -194,14 +194,14 @@ int main (int argc, char ** argv)
   }  
 
 
-  Nloop=100;
+  Nloop=10;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking concurrent STENCIL halo exchange in "<<nmu<<" dimensions"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
 
-  for(int lat=4;lat<=maxlat;lat+=2){
-    for(int Ls=1;Ls<=16;Ls*=2){
+  for(int lat=4;lat<=maxlat;lat+=4){
+    for(int Ls=8;Ls<=32;Ls*=2){
 
       std::vector<int> latt_size  ({lat*mpi_layout[0],
       				    lat*mpi_layout[1],
@@ -281,8 +281,8 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
 
-  for(int lat=4;lat<=maxlat;lat+=2){
-    for(int Ls=1;Ls<=16;Ls*=2){
+  for(int lat=4;lat<=maxlat;lat+=4){
+    for(int Ls=8;Ls<=32;Ls*=2){
 
       std::vector<int> latt_size  ({lat*mpi_layout[0],
       				    lat*mpi_layout[1],
@@ -324,8 +324,8 @@ int main (int argc, char ** argv)
 					    (void *)&rbuf[mu][0],
 					    recv_from_rank,
 					    bytes);
-	    //	    Grid.StencilSendToRecvFromComplete(requests);
-	    //	    requests.resize(0);
+	    Grid.StencilSendToRecvFromComplete(requests);
+	    requests.resize(0);
 
 	    comm_proc = mpi_layout[mu]-1;
 	  

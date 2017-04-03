@@ -49,7 +49,7 @@ public:
       if( dim==_checker_dim) return 1;
       else return 0;
     }
-    virtual int CheckerBoard(std::vector<int> &site){
+    virtual int CheckerBoard(const std::vector<int> &site){
       int linear=0;
       assert(site.size()==_ndimension);
       for(int d=0;d<_ndimension;d++){ 

@@ -30,7 +30,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 
 #include <Grid/Eigen/Dense>
-#include <Grid/Grid.h>
+#include <Grid/qcd/action/fermion/FermionCore.h>
+#include <Grid/qcd/action/fermion/CayleyFermion5D.h>
 
 
 namespace Grid {
@@ -38,20 +39,17 @@ namespace QCD {
   /*
    * Dense matrix versions of routines
    */
-
-  /*
 template<class Impl>
 void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &chi)
 {
   this->MooeeInternal(psi,chi,DaggerYes,InverseYes);
 }
-  
 template<class Impl>
 void CayleyFermion5D<Impl>::MooeeInv(const FermionField &psi, FermionField &chi)
 {
   this->MooeeInternal(psi,chi,DaggerNo,InverseYes);
 }
-  */
+
 template<class Impl>
 void CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv)
 {
@@ -125,9 +123,20 @@ void CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField 
   }
 }
 
+#ifdef CAYLEY_DPERP_DENSE
+INSTANTIATE_DPERP(GparityWilsonImplF);
+INSTANTIATE_DPERP(GparityWilsonImplD);
+INSTANTIATE_DPERP(WilsonImplF);
+INSTANTIATE_DPERP(WilsonImplD);
+INSTANTIATE_DPERP(ZWilsonImplF);
+INSTANTIATE_DPERP(ZWilsonImplD);
+
 template void CayleyFermion5D<GparityWilsonImplF>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
 template void CayleyFermion5D<GparityWilsonImplD>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
 template void CayleyFermion5D<WilsonImplF>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
 template void CayleyFermion5D<WilsonImplD>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
+template void CayleyFermion5D<ZWilsonImplF>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
+template void CayleyFermion5D<ZWilsonImplD>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
+#endif
 
 }}
