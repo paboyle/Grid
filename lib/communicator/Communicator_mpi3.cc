@@ -203,7 +203,7 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
 
       size_t size = CartesianCommunicator::MAX_MPI_SHM_BYTES;
 
-      sprintf(shm_name,"/Grid_mpi3_shm_%d_%d",GroupRank,r);
+      sprintf(shm_name,"/Grid_mpi3_uid%d_shm_%d_%d",getuid(),GroupRank,r);
 
       shm_unlink(shm_name);
       int fd=shm_open(shm_name,O_RDWR|O_CREAT,0660);
@@ -224,7 +224,7 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
     for(int r=0;r<ShmSize;r++){
       size_t size = CartesianCommunicator::MAX_MPI_SHM_BYTES ;
     
-      sprintf(shm_name,"/Grid_mpi3_shm_%d_%d",GroupRank,r);
+      sprintf(shm_name,"/Grid_mpi3_uid%d_shm_%d_%d",getuid(),GroupRank,r);
 
       int fd=shm_open(shm_name,O_RDWR,0660);
       if ( fd<0 ) {	perror("failed shm_open");	assert(0);      }
