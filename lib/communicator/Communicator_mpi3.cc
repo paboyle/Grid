@@ -203,10 +203,10 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
 
       size_t size = CartesianCommunicator::MAX_MPI_SHM_BYTES;
 
-      sprintf(shm_name,"/Grid_mpi3_uid%d_shm_%d_%d",getuid(),GroupRank,r);
+      sprintf(shm_name,"/Grid_mpi3_shm_%d_%d",GroupRank,r);
 
       shm_unlink(shm_name);
-      int fd=shm_open(shm_name,O_RDWR|O_CREAT,0660);
+      int fd=shm_open(shm_name,O_RDWR|O_CREAT,0666);
       if ( fd < 0 ) {	perror("failed shm_open");	assert(0);      }
       ftruncate(fd, size);
 
@@ -224,9 +224,9 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
     for(int r=0;r<ShmSize;r++){
       size_t size = CartesianCommunicator::MAX_MPI_SHM_BYTES ;
     
-      sprintf(shm_name,"/Grid_mpi3_uid%d_shm_%d_%d",getuid(),GroupRank,r);
+      sprintf(shm_name,"/Grid_mpi3_shm_%d_%d",GroupRank,r);
 
-      int fd=shm_open(shm_name,O_RDWR,0660);
+      int fd=shm_open(shm_name,O_RDWR,0666);
       if ( fd<0 ) {	perror("failed shm_open");	assert(0);      }
 
       void * ptr =  mmap(NULL,size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
