@@ -491,9 +491,14 @@ static inline void writeRNGState(GridSerialRNG &serial,GridParallelRNG &parallel
 #ifdef RNG_RANLUX
     header.floating_point = std::string("UINT64");
     header.data_type      = std::string("RANLUX48");
-#else
+#endif
+#ifdef RNG_MT19937
     header.floating_point = std::string("UINT32");
     header.data_type      = std::string("MT19937");
+#endif
+#ifdef RNG_SITMO
+    header.floating_point = std::string("UINT64");
+    header.data_type      = std::string("SITMO");
 #endif
 
   truncate(file);
@@ -522,9 +527,14 @@ static inline void readRNGState(GridSerialRNG &serial,GridParallelRNG & parallel
 #ifdef RNG_RANLUX
   assert(format == std::string("UINT64"));
   assert(data_type == std::string("RANLUX48"));
-#else
+#endif
+#ifdef RNG_MT19937
   assert(format == std::string("UINT32"));
   assert(data_type == std::string("MT19937"));
+#endif
+#ifdef RNG_SITMO
+  assert(format == std::string("UINT64"));
+  assert(data_type == std::string("SITMO"));
 #endif
 
   // depending on datatype, set up munger;

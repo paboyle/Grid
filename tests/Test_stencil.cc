@@ -52,7 +52,7 @@ int main (int argc, char ** argv)
   GridRedBlackCartesian rbFine(latt_size,simd_layout,mpi_layout);
   GridParallelRNG       fRNG(&Fine);
 
-  //  fRNG.SeedRandomDevice();
+  //  fRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
   std::vector<int> seeds({1,2,3,4});
   fRNG.SeedFixedIntegers(seeds);
   
