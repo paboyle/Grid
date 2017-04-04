@@ -587,7 +587,6 @@ void StaggeredKernels<Impl>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo,
 					 int sU, const FermionField &in, FermionField &out) 
 {
   assert(0);
-
 };
 
 
@@ -905,9 +904,17 @@ template <> void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(StencilImpl &st, 
 #endif
 }
 
+#define KERNEL_INSTANTIATE(CLASS,FUNC,IMPL)			    \
+  template void CLASS<IMPL>::FUNC(StencilImpl &st, LebesgueOrder &lo,	\
+				  DoubledGaugeField &U,			\
+				  DoubledGaugeField &UUU,		\
+				  SiteSpinor *buf, int LLs,		\
+				  int sU, const FermionField &in, FermionField &out);
 
-FermOpStaggeredTemplateInstantiate(StaggeredKernels);
-FermOpStaggeredVec5dTemplateInstantiate(StaggeredKernels);
+KERNEL_INSTANTIATE(StaggeredKernels,DhopSiteAsm,StaggeredImplD);
+KERNEL_INSTANTIATE(StaggeredKernels,DhopSiteAsm,StaggeredImplF);
+KERNEL_INSTANTIATE(StaggeredKernels,DhopSiteAsm,StaggeredVec5dImplD);
+KERNEL_INSTANTIATE(StaggeredKernels,DhopSiteAsm,StaggeredVec5dImplF);
 
 }}
 
