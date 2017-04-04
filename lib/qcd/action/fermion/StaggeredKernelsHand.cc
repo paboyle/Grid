@@ -299,7 +299,24 @@ void StaggeredKernels<Impl>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &l
 
 }
 
-FermOpStaggeredTemplateInstantiate(StaggeredKernels);
-FermOpStaggeredVec5dTemplateInstantiate(StaggeredKernels);
+#define DHOP_SITE_HAND_INSTANTIATE(IMPL)				\
+  template void StaggeredKernels<IMPL>::DhopSiteHand(StencilImpl &st, LebesgueOrder &lo, \
+						     DoubledGaugeField &U,DoubledGaugeField &UUU, \
+						     SiteSpinor *buf, int LLs, \
+						     int sU, const FermionField &in, FermionField &out, int dag);
+
+#define DHOP_SITE_DEPTH_HAND_INSTANTIATE(IMPL)				\
+  template void StaggeredKernels<IMPL>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, \
+							  SiteSpinor *buf, int sF, \
+							  int sU, const FermionField &in, SiteSpinor &out,int threeLink) ;
+DHOP_SITE_HAND_INSTANTIATE(StaggeredImplD);
+DHOP_SITE_HAND_INSTANTIATE(StaggeredImplF);
+DHOP_SITE_HAND_INSTANTIATE(StaggeredVec5dImplD);
+DHOP_SITE_HAND_INSTANTIATE(StaggeredVec5dImplF);
+
+DHOP_SITE_DEPTH_HAND_INSTANTIATE(StaggeredImplD);
+DHOP_SITE_DEPTH_HAND_INSTANTIATE(StaggeredImplF);
+DHOP_SITE_DEPTH_HAND_INSTANTIATE(StaggeredVec5dImplD);
+DHOP_SITE_DEPTH_HAND_INSTANTIATE(StaggeredVec5dImplF);
 
 }}

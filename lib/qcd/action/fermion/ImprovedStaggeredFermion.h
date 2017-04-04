@@ -112,7 +112,16 @@ class ImprovedStaggeredFermion : public StaggeredKernels<Impl>, public ImprovedS
 			   RealD _c1=9.0/8.0, RealD _c2=-1.0/24.0,RealD _u0=1.0,
 			   const ImplParams &p = ImplParams());
 
+  ImprovedStaggeredFermion(GaugeField &_Uthin, GaugeField &_Utriple, GaugeField &_Ufat, GridCartesian &Fgrid,
+			   GridRedBlackCartesian &Hgrid, RealD _mass,
+			   const ImplParams &p = ImplParams());
+
+  ImprovedStaggeredFermion(GridCartesian &Fgrid, GridRedBlackCartesian &Hgrid, RealD _mass,
+			   const ImplParams &p = ImplParams());
+
+
   // DoubleStore impl dependent
+  void ImportGaugeSimple(const GaugeField &_Utriple, const GaugeField &_Ufat);
   void ImportGauge(const GaugeField &_Uthin, const GaugeField &_Ufat);
   void ImportGauge(const GaugeField &_Uthin);
 
