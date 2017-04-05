@@ -125,7 +125,7 @@ template<class scal, class vec,class functor >
 void Tester(const functor &func)
 {
   GridSerialRNG          sRNG;
-  sRNG.SeedRandomDevice();
+  sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
   
   int Nsimd = vec::Nsimd();
 
@@ -184,7 +184,7 @@ void IntTester(const functor &func)
   typedef Integer  scal;
   typedef vInteger vec;
   GridSerialRNG          sRNG;
-  sRNG.SeedRandomDevice();
+  sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
   int Nsimd = vec::Nsimd();
 
@@ -242,7 +242,7 @@ template<class reduced,class scal, class vec,class functor >
 void ReductionTester(const functor &func)
 {
   GridSerialRNG          sRNG;
-  sRNG.SeedRandomDevice();
+  sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
   
   int Nsimd = vec::Nsimd();
 
@@ -343,7 +343,7 @@ template<class scal, class vec,class functor >
 void PermTester(const functor &func)
 {
   GridSerialRNG          sRNG;
-  sRNG.SeedRandomDevice();
+  sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
   
   int Nsimd = vec::Nsimd();
 
@@ -409,7 +409,7 @@ template<class scal, class vec,class functor >
 void ExchangeTester(const functor &func)
 {
   GridSerialRNG          sRNG;
-  sRNG.SeedRandomDevice();
+  sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
   
   int Nsimd = vec::Nsimd();
 
