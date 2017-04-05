@@ -127,7 +127,7 @@ namespace QCD {
  // Derivative parts
   template<class Impl>
   void WilsonCloverFermion<Impl>::MooDeriv(GaugeField&mat, const FermionField&U, const FermionField&V, int dag){
-    
+    // Compute the 8 terms of the derivative 
     assert(0); // not implemented yet
   }
 
