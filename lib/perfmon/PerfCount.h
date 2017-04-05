@@ -172,7 +172,7 @@ public:
     const char * name = PerformanceCounterConfigs[PCT].name;
     fd = perf_event_open(&pe, 0, -1, -1, 0); // pid 0, cpu -1 current process any cpu. group -1
     if (fd == -1) {
-      fprintf(stderr, "Error opening leader %llx for event %s\n", pe.config,name);
+      fprintf(stderr, "Error opening leader %llx for event %s\n",(long long) pe.config,name);
       perror("Error is");
     }
     int norm = PerformanceCounterConfigs[PCT].normalisation;
@@ -181,7 +181,7 @@ public:
     name = PerformanceCounterConfigs[norm].name;
     cyclefd = perf_event_open(&pe, 0, -1, -1, 0); // pid 0, cpu -1 current process any cpu. group -1
     if (cyclefd == -1) {
-      fprintf(stderr, "Error opening leader %llx for event %s\n", pe.config,name);
+      fprintf(stderr, "Error opening leader %llx for event %s\n",(long long) pe.config,name);
       perror("Error is");
     }
 #endif

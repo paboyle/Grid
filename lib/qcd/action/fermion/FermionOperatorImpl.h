@@ -194,13 +194,12 @@ namespace QCD {
       GaugeLinkField tmp(mat._grid);
       tmp = zero;
       
-      PARALLEL_FOR_LOOP
-      for(int sss=0;sss<tmp._grid->oSites();sss++){
-        int sU=sss;
-        for(int s=0;s<Ls;s++){
-          int sF = s+Ls*sU;
-          tmp[sU] = tmp[sU]+ traceIndex<SpinIndex>(outerProduct(Btilde[sF],Atilde[sF])); // ordering here
-        }
+      parallel_for(int sss=0;sss<tmp._grid->oSites();sss++){
+	int sU=sss;
+	for(int s=0;s<Ls;s++){
+	  int sF = s+Ls*sU;
+	  tmp[sU] = tmp[sU]+ traceIndex<SpinIndex>(outerProduct(Btilde[sF],Atilde[sF])); // ordering here
+	}
       }
       PokeIndex<LorentzIndex>(mat,tmp,mu);
       
@@ -235,11 +234,13 @@ class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepres
   typedef Lattice<SiteSpinor> FermionField;
   typedef Lattice<SitePropagator> PropagatorField;
   
+
+  /////////////////////////////////////////////////
   // Make the doubled gauge field a *scalar*
+  /////////////////////////////////////////////////
   typedef iImplDoubledGaugeField<typename Simd::scalar_type>  SiteDoubledGaugeField;  // This is a scalar
   typedef iImplGaugeField<typename Simd::scalar_type>         SiteScalarGaugeField;  // scalar
   typedef iImplGaugeLink<typename Simd::scalar_type>          SiteScalarGaugeLink;  // scalar
-      
   typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
       
   typedef WilsonCompressor<SiteHalfSpinor, SiteSpinor> Compressor;
@@ -271,11 +272,11 @@ class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepres
       
   inline void DoubleStore(GridBase *GaugeGrid, DoubledGaugeField &Uds,const GaugeField &Umu) 
   {
-    SiteScalarGaugeField ScalarUmu;
+    SiteScalarGaugeField  ScalarUmu;
     SiteDoubledGaugeField ScalarUds;
     
     GaugeLinkField U(Umu._grid);
-    GaugeField Uadj(Umu._grid);
+    GaugeField  Uadj(Umu._grid);
     for (int mu = 0; mu < Nd; mu++) {
       U = PeekIndex<LorentzIndex>(Umu, mu);
       U = adj(Cshift(U, mu, -1));
@@ -370,7 +371,7 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
  typedef iImplPropagator<Simd> SitePropagator;
  typedef iImplHalfSpinor<Simd> SiteHalfSpinor;
  typedef iImplDoubledGaugeField<Simd> SiteDoubledGaugeField;
- 
+
  typedef Lattice<SiteSpinor> FermionField;
  typedef Lattice<SitePropagator> PropagatorField;
  typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
@@ -393,8 +394,8 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
                       StencilImpl &St) {
 
   typedef SiteHalfSpinor vobj;
-   typedef typename SiteHalfSpinor::scalar_object sobj;
-        
+  typedef typename SiteHalfSpinor::scalar_object sobj;
+	
    vobj vtmp;
    sobj stmp;
         
@@ -481,9 +482,8 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
      if ( Params.twists[mu] ) { 
        Uconj = where(coor==neglink,-Uconj,Uconj);
      }
-          
-PARALLEL_FOR_LOOP
-     for(auto ss=U.begin();ss<U.end();ss++){
+	  
+     parallel_for(auto ss=U.begin();ss<U.end();ss++){
        Uds[ss](0)(mu) = U[ss]();
        Uds[ss](1)(mu) = Uconj[ss]();
      }
@@ -495,9 +495,9 @@ PARALLEL_FOR_LOOP
      if ( Params.twists[mu] ) { 
        Utmp = where(coor==0,Uconj,Utmp);
      }
-          
-PARALLEL_FOR_LOOP
-     for(auto ss=U.begin();ss<U.end();ss++){
+
+	  
+     parallel_for(auto ss=U.begin();ss<U.end();ss++){
        Uds[ss](0)(mu+4) = Utmp[ss]();
      }
           
@@ -505,9 +505,8 @@ PARALLEL_FOR_LOOP
      if ( Params.twists[mu] ) { 
        Utmp = where(coor==0,U,Utmp);
      }
-          
-PARALLEL_FOR_LOOP
-     for(auto ss=U.begin();ss<U.end();ss++){
+	  
+     parallel_for(auto ss=U.begin();ss<U.end();ss++){
        Uds[ss](1)(mu+4) = Utmp[ss]();
      }
           
@@ -521,8 +520,7 @@ PARALLEL_FOR_LOOP
    GaugeLinkField link(mat._grid);
    // use lorentz for flavour as hack.
    auto tmp = TraceIndex<SpinIndex>(outerProduct(Btilde, A));
-PARALLEL_FOR_LOOP
-   for (auto ss = tmp.begin(); ss < tmp.end(); ss++) {
+   parallel_for(auto ss = tmp.begin(); ss < tmp.end(); ss++) {
      link[ss]() = tmp[ss](0, 0) - conjugate(tmp[ss](1, 1));
    }
    PokeIndex<LorentzIndex>(mat, link, mu);
@@ -535,8 +533,7 @@ PARALLEL_FOR_LOOP
         
    GaugeLinkField tmp(mat._grid);
    tmp = zero;
-PARALLEL_FOR_LOOP
-   for (int ss = 0; ss < tmp._grid->oSites(); ss++) {
+   parallel_for(int ss = 0; ss < tmp._grid->oSites(); ss++) {
      for (int s = 0; s < Ls; s++) {
        int sF = s + Ls * ss;
        auto ttmp = traceIndex<SpinIndex>(outerProduct(Btilde[sF], Atilde[sF]));
@@ -548,6 +545,323 @@ PARALLEL_FOR_LOOP
  }
 
 };
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Single flavour one component spinors with colour index
+  /////////////////////////////////////////////////////////////////////////////
+  template <class S, class Representation = FundamentalRepresentation >
+  class StaggeredImpl : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation::Dimension > > {
+
+    public:
+
+    typedef RealD  _Coeff_t ;
+    static const int Dimension = Representation::Dimension;
+    typedef PeriodicGaugeImpl<GaugeImplTypes<S, Dimension > > Gimpl;
+      
+    //Necessary?
+    constexpr bool is_fundamental() const{return Dimension == Nc ? 1 : 0;}
+    
+    const bool LsVectorised=false;
+    typedef _Coeff_t Coeff_t;
+
+    INHERIT_GIMPL_TYPES(Gimpl);
+      
+    template <typename vtype> using iImplScalar            = iScalar<iScalar<iScalar<vtype> > >;
+    template <typename vtype> using iImplSpinor            = iScalar<iScalar<iVector<vtype, Dimension> > >;
+    template <typename vtype> using iImplHalfSpinor        = iScalar<iScalar<iVector<vtype, Dimension> > >;
+    template <typename vtype> using iImplDoubledGaugeField = iVector<iScalar<iMatrix<vtype, Dimension> >, Nds>;
+    template <typename vtype> using iImplPropagator        = iScalar<iScalar<iMatrix<vtype, Dimension> > >;
+    
+    typedef iImplScalar<Simd>            SiteComplex;
+    typedef iImplSpinor<Simd>            SiteSpinor;
+    typedef iImplHalfSpinor<Simd>        SiteHalfSpinor;
+    typedef iImplDoubledGaugeField<Simd> SiteDoubledGaugeField;
+    typedef iImplPropagator<Simd>        SitePropagator;
+    
+    typedef Lattice<SiteComplex>           ComplexField;
+    typedef Lattice<SiteSpinor>            FermionField;
+    typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
+    typedef Lattice<SitePropagator> PropagatorField;
+    
+    typedef SimpleCompressor<SiteSpinor> Compressor;
+    typedef StaggeredImplParams ImplParams;
+    typedef CartesianStencil<SiteSpinor, SiteSpinor> StencilImpl;
+    
+    ImplParams Params;
+    
+    StaggeredImpl(const ImplParams &p = ImplParams()) : Params(p){};
+      
+    inline void multLink(SiteSpinor &phi,
+			 const SiteDoubledGaugeField &U,
+			 const SiteSpinor &chi,
+			 int mu){
+      mult(&phi(), &U(mu), &chi());
+    }
+    inline void multLinkAdd(SiteSpinor &phi,
+			    const SiteDoubledGaugeField &U,
+			    const SiteSpinor &chi,
+			    int mu){
+      mac(&phi(), &U(mu), &chi());
+    }
+      
+    template <class ref>
+    inline void loadLinkElement(Simd &reg, ref &memory) {
+      reg = memory;
+    }
+      
+    inline void DoubleStore(GridBase *GaugeGrid,
+			    DoubledGaugeField &UUUds, // for Naik term
+			    DoubledGaugeField &Uds,
+			    const GaugeField &Uthin,
+			    const GaugeField &Ufat) {
+      conformable(Uds._grid, GaugeGrid);
+      conformable(Uthin._grid, GaugeGrid);
+      conformable(Ufat._grid, GaugeGrid);
+      GaugeLinkField U(GaugeGrid);
+      GaugeLinkField UU(GaugeGrid);
+      GaugeLinkField UUU(GaugeGrid);
+      GaugeLinkField Udag(GaugeGrid);
+      GaugeLinkField UUUdag(GaugeGrid);
+      for (int mu = 0; mu < Nd; mu++) {
+
+	// Staggered Phase.
+	Lattice<iScalar<vInteger> > coor(GaugeGrid);
+	Lattice<iScalar<vInteger> > x(GaugeGrid); LatticeCoordinate(x,0);
+	Lattice<iScalar<vInteger> > y(GaugeGrid); LatticeCoordinate(y,1);
+	Lattice<iScalar<vInteger> > z(GaugeGrid); LatticeCoordinate(z,2);
+	Lattice<iScalar<vInteger> > t(GaugeGrid); LatticeCoordinate(t,3);
+
+	Lattice<iScalar<vInteger> > lin_z(GaugeGrid); lin_z=x+y;
+	Lattice<iScalar<vInteger> > lin_t(GaugeGrid); lin_t=x+y+z;
+
+	ComplexField phases(GaugeGrid);	phases=1.0;
+
+	if ( mu == 1 ) phases = where( mod(x    ,2)==(Integer)0, phases,-phases);
+	if ( mu == 2 ) phases = where( mod(lin_z,2)==(Integer)0, phases,-phases);
+	if ( mu == 3 ) phases = where( mod(lin_t,2)==(Integer)0, phases,-phases);
+
+	// 1 hop based on fat links
+	U      = PeekIndex<LorentzIndex>(Ufat, mu);
+	Udag   = adj( Cshift(U, mu, -1));
+
+	U    = U    *phases;
+	Udag = Udag *phases;
+
+	PokeIndex<LorentzIndex>(Uds, U, mu);
+	PokeIndex<LorentzIndex>(Uds, Udag, mu + 4);
+
+	// 3 hop based on thin links. Crazy huh ?
+	U  = PeekIndex<LorentzIndex>(Uthin, mu);
+	UU = Gimpl::CovShiftForward(U,mu,U);
+	UUU= Gimpl::CovShiftForward(U,mu,UU);
+	
+	UUUdag = adj( Cshift(UUU, mu, -3));
+
+	UUU    = UUU    *phases;
+	UUUdag = UUUdag *phases;
+
+	PokeIndex<LorentzIndex>(UUUds, UUU, mu);
+	PokeIndex<LorentzIndex>(UUUds, UUUdag, mu+4);
+
+      }
+    }
+
+    inline void InsertForce4D(GaugeField &mat, FermionField &Btilde, FermionField &A,int mu){
+      GaugeLinkField link(mat._grid);
+      link = TraceIndex<SpinIndex>(outerProduct(Btilde,A)); 
+      PokeIndex<LorentzIndex>(mat,link,mu);
+    }   
+      
+    inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde,int mu){
+      assert (0); 
+      // Must never hit
+    }
+  };
+
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Single flavour one component spinors with colour index. 5d vec
+  /////////////////////////////////////////////////////////////////////////////
+  template <class S, class Representation = FundamentalRepresentation >
+  class StaggeredVec5dImpl : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation::Dimension > > {
+
+    public:
+
+    typedef RealD  _Coeff_t ;
+    static const int Dimension = Representation::Dimension;
+    typedef PeriodicGaugeImpl<GaugeImplTypes<S, Dimension > > Gimpl;
+      
+    //Necessary?
+    constexpr bool is_fundamental() const{return Dimension == Nc ? 1 : 0;}
+    
+    const bool LsVectorised=true;
+
+    typedef _Coeff_t Coeff_t;
+
+    INHERIT_GIMPL_TYPES(Gimpl);
+
+    template <typename vtype> using iImplScalar            = iScalar<iScalar<iScalar<vtype> > >;
+    template <typename vtype> using iImplSpinor            = iScalar<iScalar<iVector<vtype, Dimension> > >;
+    template <typename vtype> using iImplHalfSpinor        = iScalar<iScalar<iVector<vtype, Dimension> > >;
+    template <typename vtype> using iImplDoubledGaugeField = iVector<iScalar<iMatrix<vtype, Dimension> >, Nds>;
+    template <typename vtype> using iImplGaugeField        = iVector<iScalar<iMatrix<vtype, Dimension> >, Nd>;
+    template <typename vtype> using iImplGaugeLink         = iScalar<iScalar<iMatrix<vtype, Dimension> > >;
+    template <typename vtype> using iImplPropagator        = iScalar<iScalar<iMatrix<vtype, Dimension> > >;
+
+    // Make the doubled gauge field a *scalar*
+    typedef iImplDoubledGaugeField<typename Simd::scalar_type>  SiteDoubledGaugeField;  // This is a scalar
+    typedef iImplGaugeField<typename Simd::scalar_type>         SiteScalarGaugeField;  // scalar
+    typedef iImplGaugeLink<typename Simd::scalar_type>          SiteScalarGaugeLink;  // scalar
+    typedef iImplPropagator<Simd>        SitePropagator;
+
+    typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
+    typedef Lattice<SitePropagator> PropagatorField;
+    
+    typedef iImplScalar<Simd>            SiteComplex;
+    typedef iImplSpinor<Simd>            SiteSpinor;
+    typedef iImplHalfSpinor<Simd>        SiteHalfSpinor;
+
+    
+    typedef Lattice<SiteComplex>           ComplexField;
+    typedef Lattice<SiteSpinor>            FermionField;
+    
+    typedef SimpleCompressor<SiteSpinor> Compressor;
+    typedef StaggeredImplParams ImplParams;
+    typedef CartesianStencil<SiteSpinor, SiteSpinor> StencilImpl;
+    
+    ImplParams Params;
+    
+    StaggeredVec5dImpl(const ImplParams &p = ImplParams()) : Params(p){};
+
+    template <class ref>
+    inline void loadLinkElement(Simd &reg, ref &memory) {
+      vsplat(reg, memory);
+    }
+
+    inline void multLink(SiteHalfSpinor &phi, const SiteDoubledGaugeField &U,
+			 const SiteHalfSpinor &chi, int mu) {
+      SiteGaugeLink UU;
+      for (int i = 0; i < Dimension; i++) {
+	for (int j = 0; j < Dimension; j++) {
+	  vsplat(UU()()(i, j), U(mu)()(i, j));
+	}
+      }
+      mult(&phi(), &UU(), &chi());
+    }
+    inline void multLinkAdd(SiteHalfSpinor &phi, const SiteDoubledGaugeField &U,
+			    const SiteHalfSpinor &chi, int mu) {
+      SiteGaugeLink UU;
+      for (int i = 0; i < Dimension; i++) {
+	for (int j = 0; j < Dimension; j++) {
+	  vsplat(UU()()(i, j), U(mu)()(i, j));
+	}
+      }
+      mac(&phi(), &UU(), &chi());
+    }
+      
+    inline void DoubleStore(GridBase *GaugeGrid,
+			    DoubledGaugeField &UUUds, // for Naik term
+			    DoubledGaugeField &Uds,
+			    const GaugeField &Uthin,
+			    const GaugeField &Ufat) 
+    {
+
+      GridBase * InputGrid = Uthin._grid;
+      conformable(InputGrid,Ufat._grid);
+
+      GaugeLinkField U(InputGrid);
+      GaugeLinkField UU(InputGrid);
+      GaugeLinkField UUU(InputGrid);
+      GaugeLinkField Udag(InputGrid);
+      GaugeLinkField UUUdag(InputGrid);
+
+      for (int mu = 0; mu < Nd; mu++) {
+
+	// Staggered Phase.
+	Lattice<iScalar<vInteger> > coor(InputGrid);
+	Lattice<iScalar<vInteger> > x(InputGrid); LatticeCoordinate(x,0);
+	Lattice<iScalar<vInteger> > y(InputGrid); LatticeCoordinate(y,1);
+	Lattice<iScalar<vInteger> > z(InputGrid); LatticeCoordinate(z,2);
+	Lattice<iScalar<vInteger> > t(InputGrid); LatticeCoordinate(t,3);
+
+	Lattice<iScalar<vInteger> > lin_z(InputGrid); lin_z=x+y;
+	Lattice<iScalar<vInteger> > lin_t(InputGrid); lin_t=x+y+z;
+
+	ComplexField phases(InputGrid);	phases=1.0;
+
+	if ( mu == 1 ) phases = where( mod(x    ,2)==(Integer)0, phases,-phases);
+	if ( mu == 2 ) phases = where( mod(lin_z,2)==(Integer)0, phases,-phases);
+	if ( mu == 3 ) phases = where( mod(lin_t,2)==(Integer)0, phases,-phases);
+
+	// 1 hop based on fat links
+	U      = PeekIndex<LorentzIndex>(Ufat, mu);
+	Udag   = adj( Cshift(U, mu, -1));
+
+	U    = U    *phases;
+	Udag = Udag *phases;
+
+
+	for (int lidx = 0; lidx < GaugeGrid->lSites(); lidx++) {
+	  SiteScalarGaugeLink   ScalarU;
+	  SiteDoubledGaugeField ScalarUds;
+	  
+	  std::vector<int> lcoor;
+	  GaugeGrid->LocalIndexToLocalCoor(lidx, lcoor);
+	  peekLocalSite(ScalarUds, Uds, lcoor);
+
+	  peekLocalSite(ScalarU, U, lcoor);
+	  ScalarUds(mu) = ScalarU();
+
+	  peekLocalSite(ScalarU, Udag, lcoor);
+	  ScalarUds(mu + 4) = ScalarU();
+
+	  pokeLocalSite(ScalarUds, Uds, lcoor);
+	}
+
+	// 3 hop based on thin links. Crazy huh ?
+	U  = PeekIndex<LorentzIndex>(Uthin, mu);
+	UU = Gimpl::CovShiftForward(U,mu,U);
+	UUU= Gimpl::CovShiftForward(U,mu,UU);
+	
+	UUUdag = adj( Cshift(UUU, mu, -3));
+
+	UUU    = UUU    *phases;
+	UUUdag = UUUdag *phases;
+
+	for (int lidx = 0; lidx < GaugeGrid->lSites(); lidx++) {
+
+	  SiteScalarGaugeLink  ScalarU;
+	  SiteDoubledGaugeField ScalarUds;
+	  
+	  std::vector<int> lcoor;
+	  GaugeGrid->LocalIndexToLocalCoor(lidx, lcoor);
+      
+	  peekLocalSite(ScalarUds, UUUds, lcoor);
+
+	  peekLocalSite(ScalarU, UUU, lcoor);
+	  ScalarUds(mu) = ScalarU();
+
+	  peekLocalSite(ScalarU, UUUdag, lcoor);
+	  ScalarUds(mu + 4) = ScalarU();
+	  
+	  pokeLocalSite(ScalarUds, UUUds, lcoor);
+	}
+
+      }
+    }
+
+    inline void InsertForce4D(GaugeField &mat, FermionField &Btilde, FermionField &A,int mu){
+      assert(0);
+    }   
+      
+    inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde,int mu){
+      assert (0); 
+    }
+  };
+
+
 
  typedef WilsonImpl<vComplex,  FundamentalRepresentation > WilsonImplR;   // Real.. whichever prec
  typedef WilsonImpl<vComplexF, FundamentalRepresentation > WilsonImplF;  // Float
@@ -576,6 +890,14 @@ PARALLEL_FOR_LOOP
  typedef GparityWilsonImpl<vComplex , Nc> GparityWilsonImplR;  // Real.. whichever prec
  typedef GparityWilsonImpl<vComplexF, Nc> GparityWilsonImplF;  // Float
  typedef GparityWilsonImpl<vComplexD, Nc> GparityWilsonImplD;  // Double
+
+ typedef StaggeredImpl<vComplex,  FundamentalRepresentation > StaggeredImplR;   // Real.. whichever prec
+ typedef StaggeredImpl<vComplexF, FundamentalRepresentation > StaggeredImplF;  // Float
+ typedef StaggeredImpl<vComplexD, FundamentalRepresentation > StaggeredImplD;  // Double
+
+ typedef StaggeredVec5dImpl<vComplex,  FundamentalRepresentation > StaggeredVec5dImplR;   // Real.. whichever prec
+ typedef StaggeredVec5dImpl<vComplexF, FundamentalRepresentation > StaggeredVec5dImplF;  // Float
+ typedef StaggeredVec5dImpl<vComplexD, FundamentalRepresentation > StaggeredVec5dImplD;  // Double
 
 }}
 

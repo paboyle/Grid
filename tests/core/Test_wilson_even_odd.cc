@@ -62,7 +62,7 @@ int main (int argc, char ** argv)
   GridParallelRNG          pRNG(&Grid);
   //  std::vector<int> seeds({1,2,3,4});
   //  pRNG.SeedFixedIntegers(seeds);
-  pRNG.SeedRandomDevice();
+  pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
   LatticeFermion src   (&Grid); random(pRNG,src);
   LatticeFermion phi   (&Grid); random(pRNG,phi);
@@ -71,7 +71,7 @@ int main (int argc, char ** argv)
   LatticeFermion    ref(&Grid);    ref=zero;
   LatticeFermion    tmp(&Grid);    tmp=zero;
   LatticeFermion    err(&Grid);    tmp=zero;
-  LatticeGaugeField Umu(&Grid); random(pRNG,Umu);
+  LatticeGaugeField Umu(&Grid); SU3::HotConfiguration(pRNG,Umu);
   std::vector<LatticeColourMatrix> U(4,&Grid);
 
   double volume=1;

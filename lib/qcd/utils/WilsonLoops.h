@@ -310,7 +310,7 @@ public:
       GaugeMat v = adj(Vup) - adj(Vdn);
       GaugeMat u = PeekIndex<LorentzIndex>(Umu, mu);  // some redundant copies
       GaugeMat vu = v*u;
-      FS = 0.25*Ta(u*v - Cshift(vu, mu, +1));
+      FS = 0.25*Ta(u*v + Cshift(vu, mu, +1));
   }
 
 

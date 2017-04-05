@@ -1,4 +1,4 @@
-   /*************************************************************************************
+/*************************************************************************************
 
      Grid physics library, www.github.com/paboyle/Grid 
 
@@ -25,13 +25,11 @@
      See the full license in the file "LICENSE" in the top level distribution directory
      *************************************************************************************/
      /*  END LEGAL */
- #ifndef GRID_STENCIL_H
- #define GRID_STENCIL_H
+#ifndef GRID_STENCIL_H
+#define GRID_STENCIL_H
 
- #include <thread>
-
- #include <Grid/stencil/Lebesgue.h>   // subdir aggregate
-
+#include <Grid/stencil/Lebesgue.h>   // subdir aggregate
+#define NEW_XYZT_GATHER
  //////////////////////////////////////////////////////////////////////////////////////////
  // Must not lose sight that goal is to be able to construct really efficient
  // gather to a point stencil code. CSHIFT is not the best way, so need
@@ -70,51 +68,49 @@
 
 namespace Grid {
 
-inline void Gather_plane_simple_table_compute (GridBase *grid,int dimension,int plane,int cbmask,
-					       int off,std::vector<std::pair<int,int> > & table)
+///////////////////////////////////////////////////////////////////
+// Gather for when there *is* need to SIMD split with compression
+///////////////////////////////////////////////////////////////////
+void Gather_plane_table_compute (GridBase *grid,int dimension,int plane,int cbmask,
+					int off,std::vector<std::pair<int,int> > & table);
+
+template<class vobj,class cobj,class compressor> 
+void Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so)   __attribute__((noinline));
+
+template<class vobj,class cobj,class compressor> 
+void Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so)
 {
-  table.resize(0);
-  int rd = grid->_rdimensions[dimension];
-
-  if ( !grid->CheckerBoarded(dimension) ) {
-    cbmask = 0x3;
-  }
-  int so= plane*grid->_ostride[dimension]; // base offset for start of plane 
-  int e1=grid->_slice_nblock[dimension];
-  int e2=grid->_slice_block[dimension];
-
-  int stride=grid->_slice_stride[dimension];
-  if ( cbmask == 0x3 ) { 
-    table.resize(e1*e2);
-    for(int n=0;n<e1;n++){
-      for(int b=0;b<e2;b++){
-	int o  = n*stride;
-	int bo = n*e2;
-	table[bo+b]=std::pair<int,int>(bo+b,o+b);
-      }
-    }
-  } else { 
-     int bo=0;
-     table.resize(e1*e2/2);
-     for(int n=0;n<e1;n++){
-       for(int b=0;b<e2;b++){
-	 int o  = n*stride;
-	 int ocb=1<<grid->CheckerBoardFromOindexTable(o+b);
-	 if ( ocb &cbmask ) {
-	   table[bo]=std::pair<int,int>(bo,o+b); bo++;
-	 }
-       }
-     }
+  int num=table.size();
+  parallel_for(int i=0;i<num;i++){
+    vstream(buffer[off+table[i].first],compress(rhs._odata[so+table[i].second]));
   }
 }
 
-template<class vobj,class cobj,class compressor> void 
-Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so)
+///////////////////////////////////////////////////////////////////
+// Gather for when there *is* need to SIMD split with compression
+///////////////////////////////////////////////////////////////////
+template<class cobj,class vobj,class compressor>
+void Gather_plane_exchange_table(const Lattice<vobj> &rhs,
+				 std::vector<cobj *> pointers,int dimension,int plane,int cbmask,compressor &compress,int type) __attribute__((noinline));
+
+template<class cobj,class vobj,class compressor>
+void Gather_plane_exchange_table(std::vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,
+				 std::vector<cobj *> pointers,int dimension,int plane,int cbmask,
+				 compressor &compress,int type)
 {
-PARALLEL_FOR_LOOP     
-     for(int i=0;i<table.size();i++){
-       vstream(buffer[off+table[i].first],compress(rhs._odata[so+table[i].second]));
-     }
+  assert( (table.size()&0x1)==0);
+  int num=table.size()/2;
+  int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
+  parallel_for(int j=0;j<num;j++){
+    //    buffer[off+table[i].first]=compress(rhs._odata[so+table[i].second]);
+    cobj temp1 =compress(rhs._odata[so+table[2*j].second]);
+    cobj temp2 =compress(rhs._odata[so+table[2*j+1].second]);
+    cobj temp3;
+    cobj temp4;
+    exchange(temp3,temp4,temp1,temp2,type);
+    vstream(pointers[0][j],temp3);
+    vstream(pointers[1][j],temp4);
+  }
 }
 
 struct StencilEntry { 
@@ -124,6 +120,8 @@ struct StencilEntry {
   uint16_t _permute;
   uint32_t _around_the_world; //256 bits, 32 bytes, 1/2 cacheline
 };
+
+//extern int dump;
 
 template<class vobj,class cobj>
 class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal fill in.
@@ -159,7 +157,6 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
     p.to_rank  = to;
     p.from_rank= from;
     p.bytes    = bytes;
-    comms_bytes+=2.0*bytes;
     Packets.push_back(p);
   }
 
@@ -168,36 +165,45 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
     reqs.resize(Packets.size());
     commtime-=usecond();
     for(int i=0;i<Packets.size();i++){
-	_grid->StencilSendToRecvFromBegin(reqs[i],
+      comms_bytes+=_grid->StencilSendToRecvFromBegin(reqs[i],
 					  Packets[i].send_buf,
 					  Packets[i].to_rank,
 					  Packets[i].recv_buf,
 					  Packets[i].from_rank,
 					  Packets[i].bytes);
-	/*
-      }else{
-	_grid->SendToRecvFromBegin(reqs[i],
-				   Packets[i].send_buf,
-				   Packets[i].to_rank,
-				   Packets[i].recv_buf,
-				   Packets[i].from_rank,
-				   Packets[i].bytes);
-      }
-	*/
     }
     commtime+=usecond();
   }
   void CommunicateComplete(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
     commtime-=usecond();
-
     for(int i=0;i<Packets.size();i++){
-      //      if( ShmDirectCopy ) 
-	_grid->StencilSendToRecvFromComplete(reqs[i]);
-	//      else 
-	//	_grid->SendToRecvFromComplete(reqs[i]);
+      _grid->StencilSendToRecvFromComplete(reqs[i]);
     }
+    _grid->StencilBarrier();// Synch shared memory on a single nodes
     commtime+=usecond();
+    /*
+    int dump=1;
+    if(dump){
+      for(int i=0;i<Packets.size();i++){
+	cobj * ptr  = (cobj *) Packets[i].recv_buf;
+	uint64_t num=Packets[i].bytes/sizeof(cobj);
+	  std::cout << " CommunicateComplete " << i<< " / " << Packets.size()<< " num " << num <<std::endl;
+	  std::stringstream ss;
+	  ss<<"recvbuf";
+	  for(int d=0;d<_grid->_ndimension;d++){
+	    ss<<"."<<_grid->_processor_coor[d];
+	  }
+	  ss<<"_mu_"<<i;
+	  std::string fname(ss.str());
+	  std::ofstream fout(fname);
+	  for(int k=0;k<num;k++) {
+	    fout << i<<" "<<k<<" "<<ptr[k]<<std::endl;
+	  }
+      }
+    }
+    dump =0;
+*/
   }
 
   ///////////////////////////////////////////
@@ -206,16 +212,31 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
   struct Merge {
     cobj * mpointer;
     std::vector<scalar_object *> rpointers;
+    std::vector<cobj *> vpointers;
     Integer buffer_size;
     Integer packet_id;
+    Integer exchange;
+    Integer type;
   };
   
   std::vector<Merge> Mergers;
 
   void AddMerge(cobj *merge_p,std::vector<scalar_object *> &rpointers,Integer buffer_size,Integer packet_id) {
     Merge m;
+    m.exchange = 0;
     m.mpointer = merge_p;
     m.rpointers= rpointers;
+    m.buffer_size = buffer_size;
+    m.packet_id   = packet_id;
+    Mergers.push_back(m);
+  }
+
+  void AddMergeNew(cobj *merge_p,std::vector<cobj *> &rpointers,Integer buffer_size,Integer packet_id,Integer type) {
+    Merge m;
+    m.exchange = 1;
+    m.type     = type;
+    m.mpointer = merge_p;
+    m.vpointers= rpointers;
     m.buffer_size = buffer_size;
     m.packet_id   = packet_id;
     Mergers.push_back(m);
@@ -224,14 +245,34 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
   void CommsMerge(void ) { 
 
     for(int i=0;i<Mergers.size();i++){	
-      
       mergetime-=usecond();
-PARALLEL_FOR_LOOP
-      for(int o=0;o<Mergers[i].buffer_size;o++){
-	merge1(Mergers[i].mpointer[o],Mergers[i].rpointers,o);
+
+      //      std::cout << "Merge " <<i << std::endl;
+      //      std::stringstream ss;
+      //      ss<<"mergebuf";
+      //      for(int d=0;d<_grid->_ndimension;d++){
+      //	ss<<"."<<_grid->_processor_coor[d];
+      //      }
+      //      ss<<"_m_"<<i;
+      //      std::string fname(ss.str());
+      //      std::ofstream fout(fname);
+
+      if ( Mergers[i].exchange == 0 ) { 
+	parallel_for(int o=0;o<Mergers[i].buffer_size;o++){
+	  merge1(Mergers[i].mpointer[o],Mergers[i].rpointers,o);
+	  //	fout<<o<<" "<<Mergers[i].mpointer[o]<<std::endl;
+	}
+      } else { 
+	parallel_for(int o=0;o<Mergers[i].buffer_size/2;o++){
+	  exchange(Mergers[i].mpointer[2*o],Mergers[i].mpointer[2*o+1],
+		   Mergers[i].vpointers[0][o],Mergers[i].vpointers[1][o],Mergers[i].type);
+	  //	  cobj temp1,temp2;
+	  //	  exchange(temp1,temp2,Mergers[i].vpointers[0][o],Mergers[i].vpointers[1][o],Mergers[i].type);
+	  //	  vstream(Mergers[i].mpointer[2*o],temp1);
+	  //	  vstream(Mergers[i].mpointer[2*o+1],temp2);
+	}
       }
       mergetime+=usecond();
-
     }
   }
 
@@ -295,6 +336,8 @@ PARALLEL_FOR_LOOP
   // depending on comms target
   cobj* u_recv_buf_p;
   cobj* u_send_buf_p;
+  std::vector<cobj *> new_simd_send_buf;
+  std::vector<cobj *> new_simd_recv_buf;
   std::vector<scalar_object *> u_simd_send_buf;
   std::vector<scalar_object *> u_simd_recv_buf;
 
@@ -306,8 +349,8 @@ PARALLEL_FOR_LOOP
   /////////////////////////////////////////
   // Timing info; ugly; possibly temporary
   /////////////////////////////////////////
- #define TIMING_HACK
- #ifdef TIMING_HACK
+#define TIMING_HACK
+#ifdef TIMING_HACK
   double jointime;
   double gathertime;
   double commtime;
@@ -341,6 +384,11 @@ PARALLEL_FOR_LOOP
   void Report(void) {
 #define PRINTIT(A)	\
  std::cout << GridLogMessage << " Stencil " << #A << " "<< A/calls<<std::endl;
+
+    RealD NP = _grid->_Nprocessors;
+    RealD NN = _grid->NodeCount();
+
+    _grid->GlobalSum(commtime);    commtime/=NP;
     if ( calls > 0. ) {
       std::cout << GridLogMessage << " Stencil calls "<<calls<<std::endl;
       PRINTIT(halogtime);
@@ -350,7 +398,8 @@ PARALLEL_FOR_LOOP
       if(comms_bytes>1.0){
 	PRINTIT(comms_bytes);
 	PRINTIT(commtime);
-	std::cout << GridLogMessage << " Stencil " << comms_bytes/commtime/1000. << " GB/s "<<std::endl;
+	std::cout << GridLogMessage << " Stencil " << comms_bytes/commtime/1000. << " GB/s per rank"<<std::endl;
+	std::cout << GridLogMessage << " Stencil " << comms_bytes/commtime/1000.*NP/NN << " GB/s per node"<<std::endl;
       }
       PRINTIT(jointime);
       PRINTIT(spintime);
@@ -394,7 +443,9 @@ PARALLEL_FOR_LOOP
       
       _checkerboard = checkerboard;
       
+      //////////////////////////
       // the permute type
+      //////////////////////////
       int simd_layout     = _grid->_simd_layout[dimension];
       int comm_dim        = _grid->_processors[dimension] >1 ;
       int splice_dim      = _grid->_simd_layout[dimension]>1 && (comm_dim);
@@ -404,9 +455,11 @@ PARALLEL_FOR_LOOP
       
       int sshift[2];
       
+      //////////////////////////
       // Underlying approach. For each local site build
       // up a table containing the npoint "neighbours" and whether they 
       // live in lattice or a comms buffer.
+      //////////////////////////
       if ( !comm_dim ) {
 	sshift[0] = _grid->CheckerBoardShiftForCB(_checkerboard,dimension,shift,Even);
 	sshift[1] = _grid->CheckerBoardShiftForCB(_checkerboard,dimension,shift,Odd);
@@ -417,11 +470,11 @@ PARALLEL_FOR_LOOP
 	  Local(point,dimension,shift,0x1);// if checkerboard is unfavourable take two passes
 	  Local(point,dimension,shift,0x2);// both with block stride loop iteration
 	}
-      } else { // All permute extract done in comms phase prior to Stencil application
+      } else { 
+	// All permute extract done in comms phase prior to Stencil application
 	//        So tables are the same whether comm_dim or splice_dim
 	sshift[0] = _grid->CheckerBoardShiftForCB(_checkerboard,dimension,shift,Even);
 	sshift[1] = _grid->CheckerBoardShiftForCB(_checkerboard,dimension,shift,Odd);
-	
 	if ( sshift[0] == sshift[1] ) {
 	  Comms(point,dimension,shift,0x3);
 	} else {
@@ -440,13 +493,21 @@ PARALLEL_FOR_LOOP
 
     u_simd_send_buf.resize(Nsimd);
     u_simd_recv_buf.resize(Nsimd);
-
+    new_simd_send_buf.resize(Nsimd);
+    new_simd_recv_buf.resize(Nsimd);
     u_send_buf_p=(cobj *)_grid->ShmBufferMalloc(_unified_buffer_size*sizeof(cobj));
     u_recv_buf_p=(cobj *)_grid->ShmBufferMalloc(_unified_buffer_size*sizeof(cobj));
+#ifdef NEW_XYZT_GATHER
+    for(int l=0;l<2;l++){
+      new_simd_recv_buf[l] = (cobj *)_grid->ShmBufferMalloc(_unified_buffer_size*sizeof(cobj));
+      new_simd_send_buf[l] = (cobj *)_grid->ShmBufferMalloc(_unified_buffer_size*sizeof(cobj));
+    }
+#else
     for(int l=0;l<Nsimd;l++){
       u_simd_recv_buf[l] = (scalar_object *)_grid->ShmBufferMalloc(_unified_buffer_size*sizeof(scalar_object));
       u_simd_send_buf[l] = (scalar_object *)_grid->ShmBufferMalloc(_unified_buffer_size*sizeof(scalar_object));
     }
+#endif
 
     PrecomputeByteOffsets();
   }
@@ -513,9 +574,11 @@ PARALLEL_FOR_LOOP
     assert(shift>=0);
     assert(shift<fd);
     
-    int buffer_size = _grid->_slice_nblock[dimension]*_grid->_slice_block[dimension]; // done in reduced dims, so SIMD factored
-    
+    // done in reduced dims, so SIMD factored
+    int buffer_size = _grid->_slice_nblock[dimension]*_grid->_slice_block[dimension]; 
+
     _comm_buf_size[point] = buffer_size; // Size of _one_ plane. Multiple planes may be gathered and
+
     // send to one or more remote nodes.
     
     int cb= (cbmask==0x2)? Odd : Even;
@@ -678,13 +741,10 @@ PARALLEL_FOR_LOOP
     calls++;
     Mergers.resize(0);
     Packets.resize(0);
-    _grid->StencilBarrier();
     HaloGather(source,compress);
     this->CommunicateBegin(reqs);
-    _grid->StencilBarrier();
     this->CommunicateComplete(reqs);
-    _grid->StencilBarrier();
-    CommsMerge(); // spins
+    CommsMerge(); 
   }
   
   template<class compressor> void HaloGatherDir(const Lattice<vobj> &source,compressor &compress,int point,int & face_idx)
@@ -715,7 +775,13 @@ PARALLEL_FOR_LOOP
       if ( sshift[0] == sshift[1] ) {
 	if (splice_dim) {
 	  splicetime-=usecond();
+	  //	  GatherSimd(source,dimension,shift,0x3,compress,face_idx);
+	  //	  std::cout << "GatherSimdNew"<<std::endl;
+#ifdef NEW_XYZT_GATHER
+	  GatherSimdNew(source,dimension,shift,0x3,compress,face_idx);
+#else 
 	  GatherSimd(source,dimension,shift,0x3,compress,face_idx);
+#endif
 	  splicetime+=usecond();
 	} else { 
 	  nosplicetime-=usecond();
@@ -725,8 +791,14 @@ PARALLEL_FOR_LOOP
       } else {
 	if(splice_dim){
 	  splicetime-=usecond();
+	  //	  std::cout << "GatherSimdNew2calls"<<std::endl;
+#ifdef NEW_XYZT_GATHER
+	  GatherSimdNew(source,dimension,shift,0x1,compress,face_idx);// if checkerboard is unfavourable take two passes
+	  GatherSimdNew(source,dimension,shift,0x2,compress,face_idx);// both with block stride loop iteration
+#else 
 	  GatherSimd(source,dimension,shift,0x1,compress,face_idx);// if checkerboard is unfavourable take two passes
 	  GatherSimd(source,dimension,shift,0x2,compress,face_idx);// both with block stride loop iteration
+#endif
 	  splicetime+=usecond();
 	} else {
 	  nosplicetime-=usecond();
@@ -741,6 +813,8 @@ PARALLEL_FOR_LOOP
   template<class compressor>
   void HaloGather(const Lattice<vobj> &source,compressor &compress)
   {
+    _grid->StencilBarrier();// Synch shared memory on a single nodes
+
     // conformable(source._grid,_grid);
     assert(source._grid==_grid);
     halogtime-=usecond();
@@ -801,13 +875,13 @@ PARALLEL_FOR_LOOP
 	if ( !face_table_computed ) {
 	  t_table-=usecond();
 	  face_table.resize(face_idx+1);
-	  Gather_plane_simple_table_compute ((GridBase *)_grid,dimension,sx,cbmask,u_comm_offset,
-					     face_table[face_idx]);
+	  Gather_plane_table_compute ((GridBase *)_grid,dimension,sx,cbmask,u_comm_offset,face_table[face_idx]);
+	  //	  std::cout << " face table size "<<face_idx <<" " <<  face_table[face_idx].size() <<" computed buffer size "<< words <<
+	  //		    " bytes = " << bytes <<std::endl;
 	  t_table+=usecond();
 	}
 	
-	
-	int rank           = _grid->_processor;
+      	int rank           = _grid->_processor;
 	int recv_from_rank;
 	int xmit_to_rank;
 	_grid->ShiftedRanks(dimension,comm_proc,xmit_to_rank,recv_from_rank);
@@ -818,17 +892,14 @@ PARALLEL_FOR_LOOP
 	/////////////////////////////////////////////////////////
 	// try the direct copy if possible
 	/////////////////////////////////////////////////////////
-
-
 	cobj *send_buf = (cobj *)_grid->ShmBufferTranslate(xmit_to_rank,u_recv_buf_p);
 	if ( send_buf==NULL ) { 
 	  send_buf = u_send_buf_p;
-	}
-	//	std::cout << " send_bufs  "<<std::hex<< send_buf <<" ubp "<<u_send_buf_p <<std::dec<<std::endl;
+	} 
+	
 	t_data-=usecond();
-	assert(u_send_buf_p!=NULL);
 	assert(send_buf!=NULL);
-	Gather_plane_simple_table         (face_table[face_idx],rhs,send_buf,compress,u_comm_offset,so);  face_idx++;
+	Gather_plane_simple_table(face_table[face_idx],rhs,send_buf,compress,u_comm_offset,so);  face_idx++;
 	t_data+=usecond();
 	
 	AddPacket((void *)&send_buf[u_comm_offset],
@@ -875,7 +946,9 @@ PARALLEL_FOR_LOOP
     
     std::vector<scalar_object *> rpointers(Nsimd);
     std::vector<scalar_object *> spointers(Nsimd);
-    
+
+    //    std::cout << "GatherSimd " << dimension << " shift "<<shift<<std::endl;
+
     ///////////////////////////////////////////
     // Work out what to send where
     ///////////////////////////////////////////
@@ -887,7 +960,7 @@ PARALLEL_FOR_LOOP
     for(int x=0;x<rd;x++){       
       
       int any_offnode = ( ((x+sshift)%fd) >= rd );
-      
+
       if ( any_offnode ) {
 	
 	for(int i=0;i<Nsimd;i++){       
@@ -902,15 +975,15 @@ PARALLEL_FOR_LOOP
 
 	for(int i=0;i<Nsimd;i++){
 	  
-	  // FIXME 
-	  // This logic is hard coded to simd_layout ==2 and not allowing >2
-	  //		std::cout << "GatherSimd : lane 1st elem " << i << u_simd_send_buf[i ][u_comm_offset]<<std::endl;
-	  
+	  // FIXME -  This logic is hard coded to simd_layout==2 and not allowing >2
+	  //	  for(int w=0;w<buffer_size;w++){
+	  //	    std::cout << "GatherSimd<"<<Nsimd<<"> : lane " << i <<" elem "<<w<<" "<< u_simd_send_buf[i ][u_comm_offset+w]<<std::endl;
+	  //	  }
 	  int inner_bit = (Nsimd>>(permute_type+1));
 	  int ic= (i&inner_bit)? 1:0;
 	  
-	  int my_coor          = rd*ic + x;
-	  int nbr_coor         = my_coor+sshift;
+	  int my_coor  = rd*ic + x;
+	  int nbr_coor = my_coor+sshift;
 	  int nbr_proc = ((nbr_coor)/ld) % pd;// relative shift in processors
 	  int nbr_lcoor= (nbr_coor%ld);
 	  int nbr_ic   = (nbr_lcoor)/rd;    // inner coord of peer
@@ -919,10 +992,10 @@ PARALLEL_FOR_LOOP
 	  
 	  if (nbr_ic) nbr_lane|=inner_bit;
 	  assert (sx == nbr_ox);
-	  
+
 	  auto rp = &u_simd_recv_buf[i       ][u_comm_offset];
 	  auto sp = &u_simd_send_buf[nbr_lane][u_comm_offset];
-	  
+
 	  if(nbr_proc){
 	    
 	    int recv_from_rank;
@@ -930,16 +1003,17 @@ PARALLEL_FOR_LOOP
 	    
 	    _grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank); 
  
+	    // shm == receive pointer         if offnode
+	    // shm == Translate[send pointer] if on node -- my view of his send pointer
 	    scalar_object *shm = (scalar_object *) _grid->ShmBufferTranslate(recv_from_rank,sp);
-	    //	    if ((ShmDirectCopy==0)||(shm==NULL)) { 
 	    if (shm==NULL) { 
 	      shm = rp;
-	    } 
-	    
+	    }
+
 	    // if Direct, StencilSendToRecvFrom will suppress copy to a peer on node
 	    // assuming above pointer flip
 	    AddPacket((void *)sp,(void *)rp,xmit_to_rank,recv_from_rank,bytes);
-	    
+
 	    rpointers[i] = shm;
 	    
 	  } else { 
@@ -951,6 +1025,133 @@ PARALLEL_FOR_LOOP
 
 	AddMerge(&u_recv_buf_p[u_comm_offset],rpointers,buffer_size,Packets.size()-1);
 	
+	u_comm_offset     +=buffer_size;
+      }
+    }
+  }
+
+
+  template<class compressor>
+  void  GatherSimdNew(const Lattice<vobj> &rhs,int dimension,int shift,int cbmask,compressor &compress,int & face_idx)
+  {
+    const int Nsimd = _grid->Nsimd();
+
+    const int maxl =2;// max layout in a direction
+    int fd = _grid->_fdimensions[dimension];
+    int rd = _grid->_rdimensions[dimension];
+    int ld = _grid->_ldimensions[dimension];
+    int pd              = _grid->_processors[dimension];
+    int simd_layout     = _grid->_simd_layout[dimension];
+    int comm_dim        = _grid->_processors[dimension] >1 ;
+    assert(comm_dim==1);
+    // This will not work with a rotate dim
+    assert(simd_layout==maxl);
+    assert(shift>=0);
+    assert(shift<fd);
+
+    int permute_type=_grid->PermuteType(dimension);
+    //    std::cout << "SimdNew permute type "<<permute_type<<std::endl;
+
+    ///////////////////////////////////////////////
+    // Simd direction uses an extract/merge pair
+    ///////////////////////////////////////////////
+    int buffer_size = _grid->_slice_nblock[dimension]*_grid->_slice_block[dimension];
+    int words = sizeof(cobj)/sizeof(vector_type);
+    
+    assert(cbmask==0x3); // Fixme think there is a latent bug if not true
+    
+    int reduced_buffer_size = buffer_size;
+    if (cbmask != 0x3) reduced_buffer_size=buffer_size>>1;
+
+    int bytes = (reduced_buffer_size*sizeof(cobj))/simd_layout;
+    assert(bytes*simd_layout == reduced_buffer_size*sizeof(cobj));
+
+    std::vector<cobj *> rpointers(maxl);
+    std::vector<cobj *> spointers(maxl);
+
+    ///////////////////////////////////////////
+    // Work out what to send where
+    ///////////////////////////////////////////
+    
+    int cb    = (cbmask==0x2)? Odd : Even;
+    int sshift= _grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,cb);
+    
+    // loop over outer coord planes orthog to dim
+    for(int x=0;x<rd;x++){       
+      
+      int any_offnode = ( ((x+sshift)%fd) >= rd );
+
+      if ( any_offnode ) {
+
+	
+	for(int i=0;i<maxl;i++){       
+	  spointers[i] = (cobj *) &new_simd_send_buf[i][u_comm_offset];
+	}
+	
+	int sx   = (x+sshift)%rd;
+
+	//	if ( cbmask==0x3 ) { 
+	//	  std::vector<std::pair<int,int> > table;
+	t_table-=usecond();
+	if ( !face_table_computed ) {
+	  face_table.resize(face_idx+1);
+	  Gather_plane_table_compute ((GridBase *)_grid,dimension,sx,cbmask,u_comm_offset,face_table[face_idx]);
+	  //	  std::cout << " face table size "<<face_idx <<" " <<  face_table[face_idx].size() <<" computed buffer size "<< reduced_buffer_size <<
+	  //		    " bytes = "<<bytes <<std::endl;
+	}
+	t_table+=usecond();
+	gathermtime-=usecond();
+	Gather_plane_exchange_table(face_table[face_idx],rhs,spointers,dimension,sx,cbmask,compress,permute_type);  face_idx++;
+	gathermtime+=usecond();
+      
+	//spointers[0] -- low
+	//spointers[1] -- high
+
+	for(int i=0;i<maxl;i++){
+
+	  int my_coor  = rd*i + x;            // self explanatory
+	  int nbr_coor = my_coor+sshift;      // self explanatory
+
+	  int nbr_proc = ((nbr_coor)/ld) % pd;// relative shift in processors
+	  int nbr_lcoor= (nbr_coor%ld);       // local plane coor on neighbour node
+	  int nbr_ic   = (nbr_lcoor)/rd;      // inner coord of peer simd lane "i"
+	  int nbr_ox   = (nbr_lcoor%rd);      // outer coord of peer "x"
+
+	  int nbr_plane = nbr_ic;
+	  assert (sx == nbr_ox);
+
+	  auto rp = &new_simd_recv_buf[i        ][u_comm_offset];
+	  auto sp = &new_simd_send_buf[nbr_plane][u_comm_offset];
+
+	  if(nbr_proc){
+
+	    int recv_from_rank;
+	    int xmit_to_rank;
+	    
+	    _grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank); 
+ 
+	    // shm == receive pointer         if offnode
+	    // shm == Translate[send pointer] if on node -- my view of his send pointer
+	    cobj *shm = (cobj *) _grid->ShmBufferTranslate(recv_from_rank,sp);
+	    if (shm==NULL) { 
+	      shm = rp;
+	    }
+
+	    // if Direct, StencilSendToRecvFrom will suppress copy to a peer on node
+	    // assuming above pointer flip
+	    AddPacket((void *)sp,(void *)rp,xmit_to_rank,recv_from_rank,bytes);
+
+	    rpointers[i] = shm;
+	    
+	  } else { 
+	    
+	    rpointers[i] = sp;
+	    
+	  }
+	}
+
+	AddMergeNew(&u_recv_buf_p[u_comm_offset],rpointers,reduced_buffer_size,Packets.size()-1,permute_type);
+
 	u_comm_offset     +=buffer_size;
       }
     }

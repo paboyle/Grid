@@ -29,7 +29,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef  GRID_QCD_ZMOBIUS_FERMION_H
 #define  GRID_QCD_ZMOBIUS_FERMION_H
 
-#include <Grid/Grid.h>
+#include <Grid/qcd/action/fermion/FermionCore.h>
 
 namespace Grid {
 

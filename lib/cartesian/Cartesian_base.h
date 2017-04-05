@@ -6,9 +6,9 @@
 
     Copyright (C) 2015
 
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: paboyle <paboyle@ph.ed.ac.uk>
-Author: Guido Cossu <guido.cossu@ed.ac.uk>
+    Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+    Author: paboyle <paboyle@ph.ed.ac.uk>
+    Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ public:
 
     // Physics Grid information.
     std::vector<int> _simd_layout;// Which dimensions get relayed out over simd lanes.
-    std::vector<int> _fdimensions;// Global dimensions of array prior to cb removal
+    std::vector<int> _fdimensions;// (full) Global dimensions of array prior to cb removal
     std::vector<int> _gdimensions;// Global dimensions of array after cb removal
     std::vector<int> _ldimensions;// local dimensions of array with processor images removed
     std::vector<int> _rdimensions;// Reduced local dimensions with simd lane images and processor images removed 
@@ -121,7 +121,6 @@ public:
     inline void oCoorFromOindex (std::vector<int>& coor,int Oindex){
       Lexicographic::CoorFromIndex(coor,Oindex,_rdimensions);
     }
-
 
     inline void InOutCoorToLocalCoor (std::vector<int> &ocoor, std::vector<int> &icoor, std::vector<int> &lcoor) {
       lcoor.resize(_ndimension);
@@ -204,9 +203,11 @@ public:
     // Global addressing
     ////////////////////////////////////////////////////////////////
     void GlobalIndexToGlobalCoor(int gidx,std::vector<int> &gcoor){
+      assert(gidx< gSites());
       Lexicographic::CoorFromIndex(gcoor,gidx,_gdimensions);
     }
     void LocalIndexToLocalCoor(int lidx,std::vector<int> &lcoor){
+      assert(lidx<lSites());
       Lexicographic::CoorFromIndex(lcoor,lidx,_ldimensions);
     }
 
@@ -236,16 +237,16 @@ public:
       std::vector<int> lcoor;
       GlobalCoorToProcessorCoorLocalCoor(pcoor,lcoor,gcoor);
       rank = RankFromProcessorCoor(pcoor);
-
+      /*
       std::vector<int> cblcoor(lcoor);
       for(int d=0;d<cblcoor.size();d++){
         if( this->CheckerBoarded(d) ) {
           cblcoor[d] = lcoor[d]/2;
         }
       }
-
-      i_idx= iIndex(cblcoor);// this does not imply divide by 2 on checker dim
-      o_idx= oIndex(lcoor);  // this implies divide by 2 on checkerdim
+      */
+      i_idx= iIndex(lcoor);
+      o_idx= oIndex(lcoor);
     }
 
     void RankIndexToGlobalCoor(int rank, int o_idx, int i_idx , std::vector<int> &gcoor)

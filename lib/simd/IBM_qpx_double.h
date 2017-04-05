@@ -2,12 +2,11 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./lib/stencil/Stencil_common.cc
+    Source file: ./lib/simd/Avx512Asm.h
 
     Copyright (C) 2015
 
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
+Author: paboyle <paboyle@ph.ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,9 +25,22 @@ Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#include <Grid/Grid.h>
+// No guard; ok multi-include
+#undef VSIZE
+#undef VLOAD
+#undef VLOADu
+#undef VSPLAT
+#undef VSTORE
+#undef VSTOREu
+#undef MULT_2SPIN_QPX_LS
+#undef MULT_2SPIN_QPX
 
-namespace Grid {
-}
-
+#define VSIZE VSIZEd
+#define VLOAD(A,B,C)     VLOADd(A,B,C)
+#define VLOADu(A,B,C)    VLOADud(A,B,C)
+#define VSPLAT(A,B,DEST) VSPLATd(A,B,DEST)
+#define VSTORE(A,B,C)    VSTOREd(A,B,C)
+#define VSTOREu(A,B,C)   VSTOREud(A,B,C)
+#define MULT_2SPIN_QPX_LS(ptr,p) MULT_2SPIN_QPX_LSd(ptr,p)
+#define MULT_2SPIN_QPX(ptr,p)    MULT_2SPIN_QPXd(ptr,p)
 

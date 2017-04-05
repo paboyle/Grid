@@ -44,6 +44,9 @@ directory
 
 
 
+#include <Grid/qcd/hmc/integrators/Integrator.h>
+#include <Grid/qcd/hmc/integrators/Integrator_algorithm.h>
+
 namespace Grid {
 namespace QCD {
 
@@ -235,7 +238,14 @@ class HybridMonteCarlo {
 
 };
 
+
 }  // QCD
 }  // Grid
+
+
+// april 11 2017 merge, Guido, commenting out
+//#include <Grid/parallelIO/NerscIO.h>
+//#include <Grid/qcd/hmc/NerscCheckpointer.h>
+//#include <Grid/qcd/hmc/HmcRunner.h>
 
 #endif
