@@ -42,8 +42,7 @@ namespace Grid {
       -> Lattice<decltype(trace(lhs._odata[0]))>
     {
       Lattice<decltype(trace(lhs._odata[0]))> ret(lhs._grid);
-PARALLEL_FOR_LOOP
-        for(int ss=0;ss<lhs._grid->oSites();ss++){
+      parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
             ret._odata[ss] = trace(lhs._odata[ss]);
         }
         return ret;
@@ -56,8 +55,7 @@ PARALLEL_FOR_LOOP
     inline auto TraceIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(traceIndex<Index>(lhs._odata[0]))>
     {
       Lattice<decltype(traceIndex<Index>(lhs._odata[0]))> ret(lhs._grid);
-PARALLEL_FOR_LOOP
-      for(int ss=0;ss<lhs._grid->oSites();ss++){
+      parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
 	ret._odata[ss] = traceIndex<Index>(lhs._odata[ss]);
       }
       return ret;

@@ -70,11 +70,8 @@ int main(int argc, char **argv) {
   TheHMC.Resources.SetRNGSeeds(RNGpar);
 
   // Construct observables
-  // here there is too much indirection 
-  PlaquetteObsParameters PlPar;
-  PlPar.output_prefix = "Plaquette";
-  PlaquetteMod<HMCWrapper::ImplPolicy> PlaqModule(PlPar);
-  TheHMC.Resources.AddObservable(&PlaqModule);
+  typedef PlaquetteMod<HMCWrapper::ImplPolicy> PlaqObs;
+  TheHMC.Resources.AddObservable<PlaqObs>();
   //////////////////////////////////////////////
 
   /////////////////////////////////////////////////////////////
@@ -100,7 +97,7 @@ int main(int argc, char **argv) {
 
   ConjugateGradient<FermionField> CG(1.0e-8, 2000);
 
-  TwoFlavourPseudoFermionAction<FermionImplPolicy> Nf2(FermOp, CG, CG);
+  TwoFlavourEvenOddPseudoFermionAction<FermionImplPolicy> Nf2(FermOp, CG, CG);
 
   // With modules
   /*

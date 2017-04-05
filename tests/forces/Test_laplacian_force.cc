@@ -50,7 +50,7 @@ int main (int argc, char ** argv)
   std::vector<int> seeds({1,2,3,4});
 
   GridParallelRNG          pRNG(&Grid);
-  pRNG.SeedRandomDevice();
+  pRNG.SeedFixedIntegers(std::vector<int>({15,91,21,3}));
 
   LatticeGaugeField U(&Grid);
   LatticeGaugeField P(&Grid);

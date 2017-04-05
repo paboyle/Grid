@@ -29,11 +29,15 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#ifndef GRID_QCD_H
-#define GRID_QCD_H
+#ifndef GRID_QCD_BASE_H
+#define GRID_QCD_BASE_H
 namespace Grid{
 namespace QCD {
 
+    static const int Xdir = 0;
+    static const int Ydir = 1;
+    static const int Zdir = 2;
+    static const int Tdir = 3;
 
     static const int Xp = 0;
     static const int Yp = 1;
@@ -61,7 +65,6 @@ namespace QCD {
     #define SpinIndex    1
     #define LorentzIndex 0
 
-  
     // Also should make these a named enum type
     static const int DaggerNo=0;
     static const int DaggerYes=1;
@@ -492,6 +495,8 @@ namespace QCD {
 }   //namespace QCD
 } // Grid
 
+/*
+<<<<<<< HEAD
 #include <Grid/qcd/utils/SpaceTimeGrid.h>
 #include <Grid/qcd/spin/Dirac.h>
 #include <Grid/qcd/spin/TwoSpinor.h>
@@ -513,9 +518,15 @@ namespace QCD {
 
 #include <Grid/qcd/hmc/integrators/Integrator.h>
 #include <Grid/qcd/hmc/integrators/Integrator_algorithm.h>
+#include <Grid/qcd/observables/hmc_observable.h>
 #include <Grid/qcd/hmc/HMC.h>
 
 
 //#include <Grid/qcd/modules/mods.h>
+=======
+
+>>>>>>> develop
+*/
+
 
 #endif

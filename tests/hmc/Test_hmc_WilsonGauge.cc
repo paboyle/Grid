@@ -35,9 +35,7 @@ int main(int argc, char **argv) {
   using namespace Grid::QCD;
 
   Grid_init(&argc, &argv);
-  int threads = GridThread::GetThreads();
-  // here make a routine to print all the relevant information on the run
-  std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
+  GridLogLayout();
 
    // Typedefs to simplify notation
   typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
@@ -65,10 +63,10 @@ int main(int argc, char **argv) {
 
   // Construct observables
   // here there is too much indirection 
-  PlaquetteObsParameters PlPar;
-  PlPar.output_prefix = "Plaquette";
-  PlaquetteMod<HMCWrapper::ImplPolicy> PlaqModule(PlPar);
-  TheHMC.Resources.AddObservable(&PlaqModule);
+  typedef PlaquetteMod<HMCWrapper::ImplPolicy> PlaqObs;
+  typedef TopologicalChargeMod<HMCWrapper::ImplPolicy> QObs;
+  TheHMC.Resources.AddObservable<PlaqObs>();
+  TheHMC.Resources.AddObservable<QObs>();
   //////////////////////////////////////////////
 
   /////////////////////////////////////////////////////////////

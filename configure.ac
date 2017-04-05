@@ -339,7 +339,7 @@ AM_CONDITIONAL(BUILD_COMMS_NONE,  [ test "${comms_type}X" == "noneX" ])
 ############### RNG selection
 AC_ARG_ENABLE([rng],[AC_HELP_STRING([--enable-rng=ranlux48|mt19937|sitmo],\
 	            [Select Random Number Generator to be used])],\
-	            [ac_RNG=${enable_rng}],[ac_RNG=ranlux48])
+	            [ac_RNG=${enable_rng}],[ac_RNG=sitmo])
 
 case ${ac_RNG} in
      ranlux48)
@@ -419,6 +419,8 @@ AC_CONFIG_FILES(tests/hadrons/Makefile)
 AC_CONFIG_FILES(tests/hmc/Makefile)
 AC_CONFIG_FILES(tests/solver/Makefile)
 AC_CONFIG_FILES(tests/qdpxx/Makefile)
+AC_CONFIG_FILES(tests/smearing/Makefile)
+AC_CONFIG_FILES(tests/testu01/Makefile)
 AC_CONFIG_FILES(benchmarks/Makefile)
 AC_CONFIG_FILES(extras/Makefile)
 AC_CONFIG_FILES(extras/Hadrons/Makefile)

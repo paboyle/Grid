@@ -35,46 +35,53 @@ directory
 namespace Grid {
 namespace QCD {
 
-// These can move into a params header and be given MacroMagic serialisation
-struct GparityWilsonImplParams {
-  bool overlapCommsCompute;
-  std::vector<int> twists;
-  GparityWilsonImplParams() : twists(Nd, 0), overlapCommsCompute(false){};
-};
-
-struct WilsonImplParams {
-  bool overlapCommsCompute;
-  WilsonImplParams() : overlapCommsCompute(false){};
-};
-
-struct OneFlavourRationalParams : Serializable {
-  GRID_SERIALIZABLE_CLASS_MEMBERS(OneFlavourRationalParams, 
-				  RealD, lo, 
-				  RealD, hi, 
-				  int,   MaxIter, 
-				  RealD, tolerance, 
-				  int,   degree, 
-				  int,   precision);
+  // These can move into a params header and be given MacroMagic serialisation
+  struct GparityWilsonImplParams {
+    bool overlapCommsCompute;
+    std::vector<int> twists;
+    GparityWilsonImplParams() : twists(Nd, 0), overlapCommsCompute(false){};
+  };
   
-  // MaxIter and tolerance, vectors??
+  struct WilsonImplParams {
+    bool overlapCommsCompute;
+    WilsonImplParams() : overlapCommsCompute(false){};
+  };
+
+  struct StaggeredImplParams {
+    StaggeredImplParams()  {};
+  };
   
-  // constructor 
-  OneFlavourRationalParams(	RealD _lo      = 0.0, 
+  struct OneFlavourRationalParams : Serializable {
+    GRID_SERIALIZABLE_CLASS_MEMBERS(OneFlavourRationalParams, 
+				    RealD, lo, 
+				    RealD, hi, 
+				    int,   MaxIter, 
+				    RealD, tolerance, 
+				    int,   degree, 
+				    int,   precision);
+    
+    // MaxIter and tolerance, vectors??
+    
+    // constructor 
+    OneFlavourRationalParams(	RealD _lo      = 0.0, 
 				RealD _hi      = 1.0, 
 				int _maxit     = 1000,
 				RealD tol      = 1.0e-8, 
                            	int _degree    = 10,
 				int _precision = 64)
-    : lo(_lo),
-      hi(_hi),
-      MaxIter(_maxit),
-      tolerance(tol),
-      degree(_degree),
-      precision(_precision){};
-};
+      : lo(_lo),
+	hi(_hi),
+	MaxIter(_maxit),
+	tolerance(tol),
+	degree(_degree),
+	precision(_precision){};
+  };
   
   
 }
 }
+
+
+
 
 #endif

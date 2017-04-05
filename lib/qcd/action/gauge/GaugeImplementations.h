@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./lib/qcd/action/gauge/GaugeImpl.h
+Source file: ./lib/qcd/action/gauge/GaugeImplementations.h
 
 Copyright (C) 2015
 

@@ -41,7 +41,7 @@ int main (int argc, char ** argv)
 
   GridCartesian        Fine(latt_size,simd_layout,mpi_layout);
 
-  GridParallelRNG      FineRNG(&Fine);  FineRNG.SeedRandomDevice();
+  GridParallelRNG      FineRNG(&Fine);  FineRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
   LatticeComplex U(&Fine);
   LatticeComplex ShiftU(&Fine);
@@ -61,7 +61,15 @@ int main (int argc, char ** argv)
     U=lex;
   }
 
-
+  std::stringstream ss;
+  ss<<"error";
+  for(int d=0;d<Fine._ndimension;d++){
+    ss<<"."<<Fine._processor_coor[d];
+  }
+  ss<<"_wr_"<<Fine._processor;
+  std::string fname(ss.str());
+  std::ofstream ferr(fname);
+  
   TComplex cm;
   
   for(int dir=0;dir<4;dir++){
@@ -99,11 +107,13 @@ int main (int argc, char ** argv)
 	  Lexicographic::CoorFromIndex(peer,index,latt_size);
 
 	  if (nrm > 0){
-	    std::cerr<<"FAIL shift "<< shift<<" in dir "<< dir<<" ["<<coor[0]<<","<<coor[1]<<","<<coor[2]<<","<<coor[3]<<"] = "<< cm()()()<<" expect "<<scm<<"  "<<nrm<<std::endl;
-	    std::cerr<<"Got    "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
+
+
+	    ferr<<"FAIL shift "<< shift<<" in dir "<< dir<<" ["<<coor[0]<<","<<coor[1]<<","<<coor[2]<<","<<coor[3]<<"] = "<< cm()()()<<" expect "<<scm<<"  "<<nrm<<std::endl;
+	    ferr<<"Got    "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	    index=real(scm);
 	    Lexicographic::CoorFromIndex(peer,index,latt_size);
-	    std::cerr<<"Expect "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
+	    ferr<<"Expect "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	  }
 	}}}}
     }

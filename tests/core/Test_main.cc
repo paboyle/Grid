@@ -89,8 +89,8 @@ int main(int argc, char **argv) {
       GridSerialRNG SerialRNG;
       GridSerialRNG SerialRNG1;
 
-      FineRNG.SeedRandomDevice();
-      SerialRNG.SeedRandomDevice();
+      FineRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
+      SerialRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
       std::cout << "SerialRNG" << SerialRNG._generators[0] << std::endl;
 

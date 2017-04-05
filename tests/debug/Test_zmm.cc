@@ -26,7 +26,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 #include <Grid/Grid.h>
-#include <Grid/PerfCount.h>
 
 #ifdef TEST_ZMM
 
@@ -187,7 +186,7 @@ int main(int argc,char **argv)
   GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
   random(RNG5,src);
 #if 1
-  random(RNG4,Umu);
+  SU3::HotConfiguration(RNG4,Umu);
 #else
   int mmu=2;
   std::vector<LatticeColourMatrix> U(4,UGrid);
