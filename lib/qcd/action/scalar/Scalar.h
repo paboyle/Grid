@@ -31,6 +31,7 @@ directory
 
 #include <Grid/qcd/action/scalar/ScalarImpl.h>
 #include <Grid/qcd/action/scalar/ScalarAction.h>
+#include <Grid/qcd/action/scalar/ScalarInteractionAction.h>
 
 namespace Grid {
 namespace QCD {
@@ -39,6 +40,10 @@ namespace QCD {
   typedef ScalarAction<ScalarImplF>                 ScalarActionF;
   typedef ScalarAction<ScalarImplD>                 ScalarActionD;
 
+  typedef ScalarInteractionAction<ScalarAdjImplR>   ScalarAdjActionR;
+  typedef ScalarInteractionAction<ScalarAdjImplF>   ScalarAdjActionF;
+  typedef ScalarInteractionAction<ScalarAdjImplD>   ScalarAdjActionD;
+  
 }
 }
 

@@ -189,13 +189,6 @@ int main(int argc, char ** argv) {
 
 	SimpleCompressor<vobj> compress;
 
-<<<<<<< HEAD
-	EStencil.HaloExchange(EFoo,compress);
-	OStencil.HaloExchange(OFoo,compress);
-
-=======
-	
->>>>>>> feature/hmc_generalise
 	Bar = Cshift(Foo,dir,disp);
 
 	if ( disp & 0x1 ) {
