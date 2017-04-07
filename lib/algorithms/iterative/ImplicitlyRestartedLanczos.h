@@ -494,6 +494,10 @@ repeat
   →AVK =VKHK +fKe†K † Extend to an M = K + P step factorization AVM = VMHM + fMeM
 until convergence
  */
+
+// alternate implementation for minimizing memory usage.  May affect the performance
+#define MEM_SAVE
+#undef MEM_SAVE2
     void calc(DenseVector<RealD>& eval,
 	      DenseVector<Field>& evec,
 	      const Field& src,
@@ -516,11 +520,13 @@ until convergence
 	DenseVector<RealD> Qt(Nm*Nm);
 	DenseVector<int>   Iconv(Nm);
 
+#if (!defined MEM_SAVE ) || (!defined MEM_SAVE2)
 	DenseVector<Field>  B(Nm,grid); // waste of space replicating
-//	DenseVector<Field>  Btemp(Nm,grid); // waste of space replicating
+#endif
 	
 	Field f(grid);
 	Field v(grid);
+//	auto B2 = evec[0]._odata[0];
   
 	int k1 = 1;
 	int k2 = Nk;
@@ -603,6 +609,9 @@ until convergence
 	}
 	t1=usecond()/1e6;
 	std::cout<<GridLogMessage <<"IRL::qr_decomp: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
+	assert(k2<Nm);
+
+#ifndef MEM_SAVE
 if (0) {  
 	  for(int i=0; i<(Nk+1); ++i) B[i] = 0.0;
 	  
@@ -615,28 +624,57 @@ if (0) {
 	t1=usecond()/1e6;
 	std::cout<<GridLogMessage <<"IRL::QR Rotate: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
 }
+#endif
 
-if (1) {
+#ifndef MEM_SAVE
+{
 	for(int i=0; i<(Nk+1); ++i) {
 		B[i] = 0.0;
 	  	B[i].checkerboard = evec[0].checkerboard;
 	}
-
 	int j_block = 24; int k_block=24;
 PARALLEL_FOR_LOOP
 	for(int ss=0;ss < grid->oSites();ss++){
-	for(int jj=k1-1; jj<k2+1; jj += j_block)
-	for(int kk=0; kk<Nm; kk += k_block)
-	for(int j=jj; (j<(k2+1)) && j<(jj+j_block); ++j){
-	for(int k=kk; (k<Nm) && k<(kk+k_block) ; ++k){
-	    B[j]._odata[ss] +=Qt[k+Nm*j] * evec[k]._odata[ss]; 
+		for(int jj=k1-1; jj<k2+1; jj += j_block)
+		for(int kk=0; kk<Nm; kk += k_block)
+		for(int j=jj; (j<(k2+1)) && j<(jj+j_block); ++j){
+			for(int k=kk; (k<Nm) && k<(kk+k_block) ; ++k){
+			    B[j]._odata[ss] +=Qt[k+Nm*j] * evec[k]._odata[ss]; 
+			}
+		}
 	}
-	}
-	}
-	t1=usecond()/1e6;
-	std::cout<<GridLogMessage <<"IRL::QR rotation: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
 }
 	for(int j=k1-1; j<k2+1; ++j) evec[j] = B[j];
+#else
+{
+	int j_block = 24; int k_block=24;
+	
+	assert(k2<Nm);
+	assert(k1>0);
+//	DenseVector < decltype(B2) > B(Nm);
+//	std::vector < decltype( B2 ) > B(Nm*thr,B2);
+	Field B(grid);
+PARALLEL_FOR_LOOP
+	for(int ss=0;ss < grid->oSites();ss++){
+		int thr=GridThread::GetThreads();
+		int me = GridThread::ThreadBarrier();
+		printf("thr=%d ss=%d me=%d\n",thr,ss,me);fflush(stdout);
+		for(int j=0; j<Nm; ++j) B._odata[j+Nm*me]=0.;
+		for(int j=k1-1; j<(k2+1); ++j){
+			for(int k=0; k<Nm ; ++k){
+			    B._odata[j+Nm*me] +=Qt[k+Nm*j] * evec[k]._odata[ss]; 
+			}
+		}
+#if 1
+		for(int j=k1-1; j<(k2+1); ++j){
+			evec[j]._odata[ss] = B._odata[j+Nm*me];
+		}
+#endif
+	}
+}
+#endif
+	t1=usecond()/1e6;
+	std::cout<<GridLogMessage <<"IRL::QR rotation: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
 
 	  // Compressed vector f and beta(k2)
 	  f *= Qt[Nm-1+Nm*(k2-1)];
@@ -659,6 +697,7 @@ PARALLEL_FOR_LOOP
 	t1=usecond()/1e6;
 	std::cout<<GridLogMessage <<"IRL::diagonalize: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
 	  
+#ifndef MEM_SAVE2
 if (0) {
 	  for(int k = 0; k<Nk; ++k) B[k]=0.0;
 	  
@@ -721,6 +760,44 @@ PARALLEL_FOR_LOOP
 
 	  }  // i-loop end
 	  //	  std::cout<<GridLogMessage << std::resetiosflags(std::ios_base::scientific);
+#else
+{
+
+	Field B(grid);
+	for(int j = 0; j<Nk; ++j){
+		B=0.;
+		B.checkerboard = evec[0].checkerboard;
+	    for(int k = 0; k<Nk; ++k){
+	    	B += Qt[k+j*Nm] * evec[k];
+//		B[Iconv[j]] +=Qt[k+Nm*Iconv[j]] * evec[k]._odata[ss]; 
+	    }
+	    std::cout<<GridLogMessage << "norm(B["<<j<<"])="<<norm2(B)<<std::endl;
+//	    _poly(_Linop,B,v);
+	    _Linop.HermOp(B,v);
+	    
+	    RealD vnum = real(innerProduct(B,v)); // HermOp.
+	    RealD vden = norm2(B);
+	    RealD vv0 = norm2(v);
+	    eval2[j] = vnum/vden;
+	    v -= eval2[j]*B;
+	    RealD vv = norm2(v);
+	    
+	    std::cout.precision(13);
+	    std::cout<<GridLogMessage << "[" << std::setw(3)<< std::setiosflags(std::ios_base::right) <<j<<"] ";
+	    std::cout<<"eval = "<<std::setw(25)<< std::setiosflags(std::ios_base::left)<< eval2[j];
+	    std::cout<<"|H B[i] - eval[i]B[i]|^2 "<< std::setw(25)<< std::setiosflags(std::ios_base::right)<< vv;
+	    std::cout<<" "<< vnum/(sqrt(vden)*sqrt(vv0)) << std::endl;
+	    
+	// change the criteria as evals are supposed to be sorted, all evals smaller(larger) than Nstop should have converged
+	    if((vv<eresid*eresid) && (j == Nconv) ){
+	      Iconv[Nconv] = j;
+	      ++Nconv;
+	    }
+	  }
+//	t1=usecond()/1e6;
+//	std::cout<<GridLogMessage <<"IRL::Convergence rotation: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
+}
+#endif
 	t1=usecond()/1e6;
 	std::cout<<GridLogMessage <<"IRL::convergence testing: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
 
@@ -739,10 +816,39 @@ PARALLEL_FOR_LOOP
        // Sorting
        eval.resize(Nconv);
        evec.resize(Nconv,grid);
+#ifndef MEM_SAVE2
        for(int i=0; i<Nconv; ++i){
          eval[i] = eval2[Iconv[i]];
          evec[i] = B[Iconv[i]];
        }
+#else
+#if 0
+	Field B(grid);
+	int thr=GridThread::GetThreads();
+	int me = GridThread::ThreadBarrier();
+	printf("thr=%d ss=%d me=%d\n",thr,ss,me);fflush(stdout);
+#endif
+{
+       for(int i=0; i<Nconv; ++i)
+         eval[i] = eval2[Iconv[i]];
+//	int thr=GridThread::GetThreads();
+//	printf("thr=%d\n",thr);
+PARALLEL_FOR_LOOP
+	for(int ss=0;ss < grid->oSites();ss++){
+		auto B2 = evec[0]._odata[0];
+		std::vector < decltype( B2 ) > B(Nm,B2);
+		for(int j=0; j<Nconv; ++j) B[Iconv[j]]=0.;
+		for(int j=0; j<Nconv; ++j){
+			for(int k=0; k<Nm ; ++k){
+			    B[Iconv[j]] +=Qt[k+Nm*Iconv[j]] * evec[k]._odata[ss]; 
+			}
+		}
+		for(int j=0; j<Nconv; ++j){
+			evec[Iconv[j]]._odata[ss] = B[Iconv[j]];
+		}
+	}
+}
+#endif
       _sort.push(eval,evec,Nconv);
 
       std::cout<<GridLogMessage << "\n Converged\n Summary :\n";
