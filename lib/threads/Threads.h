@@ -37,13 +37,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #ifdef GRID_OMP
 #include <omp.h>
-#ifdef GRID_NUMA
+
 #define PARALLEL_FOR_LOOP        _Pragma("omp parallel for schedule(static)")
 #define PARALLEL_FOR_LOOP_INTERN _Pragma("omp for schedule(static)")
-#else
-#define PARALLEL_FOR_LOOP        _Pragma("omp parallel for schedule(runtime)")
-#define PARALLEL_FOR_LOOP_INTERN _Pragma("omp for schedule(runtime)")
-#endif
 #define PARALLEL_NESTED_LOOP2 _Pragma("omp parallel for collapse(2)")
 #define PARALLEL_REGION       _Pragma("omp parallel")
 #define PARALLEL_CRITICAL     _Pragma("omp critical")
@@ -54,6 +50,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define PARALLEL_REGION
 #define PARALLEL_CRITICAL
 #endif
+
+#define parallel_for       PARALLEL_FOR_LOOP for
+#define parallel_for_nest2 PARALLEL_NESTED_LOOP2 for
 
 namespace Grid {
 

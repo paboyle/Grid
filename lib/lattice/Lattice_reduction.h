@@ -57,8 +57,7 @@ namespace Grid {
 	sumarray[i]=zero;
       }
 
-PARALLEL_FOR_LOOP
-      for(int thr=0;thr<grid->SumArraySize();thr++){
+      parallel_for(int thr=0;thr<grid->SumArraySize();thr++){
 	int nwork, mywork, myoff;
 	GridThread::GetWork(left._grid->oSites(),thr,mywork,myoff);
 	
@@ -68,7 +67,7 @@ PARALLEL_FOR_LOOP
 	}
 	sumarray[thr]=TensorRemove(vnrm) ;
       }
-    
+      
       vector_type vvnrm; vvnrm=zero;  // sum across threads
       for(int i=0;i<grid->SumArraySize();i++){
 	vvnrm = vvnrm+sumarray[i];
@@ -114,18 +113,17 @@ PARALLEL_FOR_LOOP
 	sumarray[i]=zero;
       }
 
-PARALLEL_FOR_LOOP
-      for(int thr=0;thr<grid->SumArraySize();thr++){
+      parallel_for(int thr=0;thr<grid->SumArraySize();thr++){
 	int nwork, mywork, myoff;
 	GridThread::GetWork(grid->oSites(),thr,mywork,myoff);
-
+	
 	vobj vvsum=zero;
         for(int ss=myoff;ss<mywork+myoff; ss++){
 	  vvsum = vvsum + arg._odata[ss];
 	}
 	sumarray[thr]=vvsum;
       }
-
+      
       vobj vsum=zero;  // sum across threads
       for(int i=0;i<grid->SumArraySize();i++){
 	vsum = vsum+sumarray[i];

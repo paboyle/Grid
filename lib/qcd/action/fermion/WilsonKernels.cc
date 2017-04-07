@@ -28,11 +28,57 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
-#include <Grid/Grid.h>
+#include <Grid/qcd/action/fermion/FermionCore.h>
+
 namespace Grid {
 namespace QCD {
 
-int WilsonKernelsStatic::Opt;
+  int WilsonKernelsStatic::Opt   = WilsonKernelsStatic::OptGeneric;
+  int WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsAndCompute;
+
+#ifdef QPX
+#include <spi/include/kernel/location.h>
+#include <spi/include/l1p/types.h>
+#include <hwi/include/bqc/l1p_mmio.h>
+#include <hwi/include/bqc/A2_inlines.h>
+#endif
+
+void bgq_l1p_optimisation(int mode)
+{
+#ifdef QPX
+#undef L1P_CFG_PF_USR
+#define L1P_CFG_PF_USR  (0x3fde8000108ll)   /*  (64 bit reg, 23 bits wide, user/unpriv) */
+
+  uint64_t cfg_pf_usr;
+  if ( mode ) { 
+    cfg_pf_usr =
+        L1P_CFG_PF_USR_ifetch_depth(0)       
+      | L1P_CFG_PF_USR_ifetch_max_footprint(1)   
+      | L1P_CFG_PF_USR_pf_stream_est_on_dcbt 
+      | L1P_CFG_PF_USR_pf_stream_establish_enable
+      | L1P_CFG_PF_USR_pf_stream_optimistic
+      | L1P_CFG_PF_USR_pf_adaptive_throttle(0xF) ;
+    //    if ( sizeof(Float) == sizeof(double) ) {
+      cfg_pf_usr |=  L1P_CFG_PF_USR_dfetch_depth(2)| L1P_CFG_PF_USR_dfetch_max_footprint(3)   ;
+      //    } else {
+      //      cfg_pf_usr |=  L1P_CFG_PF_USR_dfetch_depth(1)| L1P_CFG_PF_USR_dfetch_max_footprint(2)   ;
+      //    }
+  } else { 
+    cfg_pf_usr = L1P_CFG_PF_USR_dfetch_depth(1)
+      | L1P_CFG_PF_USR_dfetch_max_footprint(2)   
+      | L1P_CFG_PF_USR_ifetch_depth(0)       
+      | L1P_CFG_PF_USR_ifetch_max_footprint(1)   
+      | L1P_CFG_PF_USR_pf_stream_est_on_dcbt 
+      | L1P_CFG_PF_USR_pf_stream_establish_enable
+      | L1P_CFG_PF_USR_pf_stream_optimistic
+      | L1P_CFG_PF_USR_pf_stream_prefetch_enable;
+  }
+  *((uint64_t *)L1P_CFG_PF_USR) = cfg_pf_usr;
+
+#endif
+
+}
+
 
 template <class Impl>
 WilsonKernels<Impl>::WilsonKernels(const ImplParams &p) : Base(p){};
@@ -42,9 +88,10 @@ WilsonKernels<Impl>::WilsonKernels(const ImplParams &p) : Base(p){};
 ////////////////////////////////////////////
 
 template <class Impl>
-void WilsonKernels<Impl>::DiracOptGenericDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+void WilsonKernels<Impl>::GenericDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
 						     SiteHalfSpinor *buf, int sF,
-						     int sU, const FermionField &in, FermionField &out) {
+						     int sU, const FermionField &in, FermionField &out,
+						     int interior,int exterior) {
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
   SiteHalfSpinor *chi_p;
@@ -218,9 +265,9 @@ void WilsonKernels<Impl>::DiracOptGenericDhopSiteDag(StencilImpl &st, LebesgueOr
 
 // Need controls to do interior, exterior, or both
 template <class Impl>
-void WilsonKernels<Impl>::DiracOptGenericDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
+void WilsonKernels<Impl>::GenericDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
 						  SiteHalfSpinor *buf, int sF,
-						  int sU, const FermionField &in, FermionField &out) {
+						  int sU, const FermionField &in, FermionField &out,int interior,int exterior) {
   SiteHalfSpinor tmp;
   SiteHalfSpinor chi;
   SiteHalfSpinor *chi_p;
@@ -393,7 +440,7 @@ void WilsonKernels<Impl>::DiracOptGenericDhopSite(StencilImpl &st, LebesgueOrder
 };
 
 template <class Impl>
-void WilsonKernels<Impl>::DiracOptDhopDir( StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor *buf, int sF,
+void WilsonKernels<Impl>::DhopDir( StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor *buf, int sF,
 					   int sU, const FermionField &in, FermionField &out, int dir, int gamma) {
 
   SiteHalfSpinor tmp;

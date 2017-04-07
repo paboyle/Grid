@@ -1,7 +1,7 @@
 
 
 
-#include <Grid/Grid.h>
+#include <Grid/GridCore.h>
 
 namespace Grid {
 
@@ -13,9 +13,10 @@ void *PointerCache::Insert(void *ptr,size_t bytes) {
 
   if (bytes < 4096 ) return NULL;
 
-#ifdef _OPENMP
+#ifdef GRID_OMP
   assert(omp_in_parallel()==0);
 #endif 
+
   void * ret = NULL;
   int v = -1;
 
