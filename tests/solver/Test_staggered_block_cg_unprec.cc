@@ -81,10 +81,15 @@ int main (int argc, char ** argv)
 
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
   BlockConjugateGradient<FermionField> BCG(1.0e-8,10000);
+  MultiRHSConjugateGradient<FermionField> mCG(1.0e-8,10000);
 
   std::cout << GridLogMessage << " Calling CG "<<std::endl;
   result=zero;
   CG(HermOp,src,result);
+
+  std::cout << GridLogMessage << " Calling multiRHS CG "<<std::endl;
+  result=zero;
+  mCG(HermOp,src,result);
 
   std::cout << GridLogMessage << " Calling Block CG "<<std::endl;
   result=zero;
