@@ -110,10 +110,10 @@ int main(int argc, char *argv[])
 
         // solvers
         // RBPrecCG -> CG
-        MSolver::CG::Par solverPar;
+        MSolver::RBPrecCG::Par solverPar;
         solverPar.action   = "DWF_" + flavour[i];
         solverPar.residual = 1.0e-8;
-        application.createModule<MSolver::CG>(solvers[i],
+        application.createModule<MSolver::RBPrecCG>(solvers[i],
                                                     solverPar);
     }
 
