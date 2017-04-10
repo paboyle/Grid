@@ -100,7 +100,7 @@ void TChargedProp::execute(void)
     {
         GFSrc_ = env().getObject<ScalarField>(GFSrcName_);
     }
-    // cache free scalar propagator
+    // cache position-space free scalar propagator
     if (!env().hasCreatedObject(prop0Name_))
     {
         prop0_ = env().createLattice<ScalarField>(prop0Name_);

@@ -18,7 +18,7 @@ public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(ScalarVPPar,
                                     std::string, emField,
                                     std::string, source,
-                                    std::string, scalarProp,
+                                    double,      mass,
                                     double,      charge,
                                     std::string, output);
 };
@@ -42,12 +42,16 @@ public:
     // execution
     virtual void execute(void);
 private:
-    void momD1(ScalarField &s, EmField &A, FFT &fft);
-    void momD2(ScalarField &s, EmField &Asquared, FFT &fft);
+    void momD1(ScalarField &s, FFT &fft);
+    void momD2(ScalarField &s, FFT &fft);
 private:
-    std::string  prop0Name_, propD1Name_, propD1D1Name_, propD2Name_;
-    std::vector<std::string>   phaseName_;
-    std::vector<ScalarField *> phase_;
+    std::string                 freeMomPropName_, GFSrcName_, prop0Name_,
+                                propQName_, propSunName_, propTadName_;
+    std::vector<std::string>    phaseName_, muGFSrcName_, muProp0Name_,
+                                muPropQName, muPropSunName_, muPropTadName_;
+    ScalarField                 *freeMomProp_, *GFSrc_, *prop0_;
+    std::vector<ScalarField *>  phase_, muGFSrc_, muProp0_;
+    emField                     *A;
 };
 
 MODULE_REGISTER_NS(ScalarVP, TScalarVP, MScalar);
