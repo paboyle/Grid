@@ -36,12 +36,12 @@ struct scal {
   d internal;
 };
 
-  Gamma::GammaMatrix Gmu [] = {
-    Gamma::GammaX,
-    Gamma::GammaY,
-    Gamma::GammaZ,
-    Gamma::GammaT
-  };
+    Gamma::Algebra Gmu [] = {
+        Gamma::Algebra::GammaX,
+        Gamma::Algebra::GammaY,
+        Gamma::Algebra::GammaZ,
+        Gamma::Algebra::GammaT
+    };
 
 typedef DomainWallFermion<DomainWallVec5dImplR>                      DomainWallVecFermionR;
 typedef ZMobiusFermion<ZDomainWallVec5dImplR>                        ZMobiusVecFermionR;
@@ -91,7 +91,8 @@ int main (int argc, char ** argv)
   GridParallelRNG          sRNG4(sUGrid);  sRNG4.SeedFixedIntegers(seeds4);
   GridParallelRNG          sRNG5(sFGrid);  sRNG5.SeedFixedIntegers(seeds5);
 
-  LatticeGaugeField Umu(UGrid); random(RNG4,Umu);
+  LatticeGaugeField Umu(UGrid);
+  SU3::HotConfiguration(RNG4,Umu);
 
   RealD mass=0.1;
   RealD M5  =1.8;
@@ -339,7 +340,7 @@ void  TestMoo(This & Dw, That &sDw)
   LatticeFermion ndiff(ngrid);
   LatticeFermion sdiff(sgrid);
 
-  Gamma g5( Gamma::Gamma5 );
+    Gamma g5( Gamma::Algebra::Gamma5 );
 
   std::vector<int> seeds({1,2,3,4,5,7,8});
   GridParallelRNG    RNG5(ngrid);  

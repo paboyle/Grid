@@ -1,4 +1,4 @@
-#include <Grid.h>
+#include <Grid/Grid.h>
 
 using namespace Grid;
 #ifndef H5_NO_NAMESPACE

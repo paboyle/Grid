@@ -45,9 +45,11 @@ class MesonPar: Serializable
 {
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(MesonPar,
-                                    std::string, q1,
-                                    std::string, q2,
-                                    std::string, output);
+                                    std::string,    q1,
+                                    std::string,    q2,
+                                    std::string,    output,
+                                    Gamma::Algebra, gammaSource,
+                                    Gamma::Algebra, gammaSink);
 };
 
 template <typename FImpl1, typename FImpl2>
@@ -59,8 +61,7 @@ public:
     class Result: Serializable
     {
     public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        std::vector<std::vector<std::vector<Complex>>>, corr);
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Result, std::vector<Complex>, corr);
     };
 public:
     // constructor
@@ -114,29 +115,17 @@ void TMeson<FImpl1, FImpl2>::execute(void)
     PropagatorField1      &q1 = *env().template getObject<PropagatorField1>(par().q1);
     PropagatorField2      &q2 = *env().template getObject<PropagatorField2>(par().q2);
     LatticeComplex        c(env().getGrid());
-    SpinMatrix            g[Ns*Ns], g5;
+    Gamma                 gSrc(par().gammaSource), gSnk(par().gammaSink);
+    Gamma                 g5(Gamma::Algebra::Gamma5);
     std::vector<TComplex> buf;
     Result                result;
     
-    g5 = makeGammaProd(Ns*Ns - 1);
-    result.corr.resize(Ns*Ns);
-    for (unsigned int i = 0; i < Ns*Ns; ++i)
+    c = trace(gSnk*q1*adj(gSrc)*g5*adj(q2)*g5);
+    sliceSum(c, buf, Tp);
+    result.corr.resize(buf.size());
+    for (unsigned int t = 0; t < buf.size(); ++t)
     {
-        g[i] = makeGammaProd(i);
-    }
-    for (unsigned int iSink = 0; iSink < Ns*Ns; ++iSink)
-    {
-        result.corr[iSink].resize(Ns*Ns);
-        for (unsigned int iSrc = 0; iSrc < Ns*Ns; ++iSrc)
-        {
-            c = trace(g[iSink]*q1*g[iSrc]*g5*adj(q2)*g5);
-            sliceSum(c, buf, Tp);
-            result.corr[iSink][iSrc].resize(buf.size());
-            for (unsigned int t = 0; t < buf.size(); ++t)
-            {
-                result.corr[iSink][iSrc][t] = TensorRemove(buf[t]);
-            }
-        }
+        result.corr[t] = TensorRemove(buf[t]);
     }
     write(writer, "meson", result);
 }

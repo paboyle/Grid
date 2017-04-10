@@ -37,11 +37,11 @@ struct scal {
   d internal;
 };
 
-  Gamma::GammaMatrix Gmu [] = {
-    Gamma::GammaX,
-    Gamma::GammaY,
-    Gamma::GammaZ,
-    Gamma::GammaT
+  Gamma::Algebra Gmu [] = {
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT
   };
 
 int main (int argc, char ** argv)
@@ -71,7 +71,7 @@ int main (int argc, char ** argv)
   LatticeFermion    ref(&Grid);    ref=zero;
   LatticeFermion    tmp(&Grid);    tmp=zero;
   LatticeFermion    err(&Grid);    tmp=zero;
-  LatticeGaugeField Umu(&Grid); random(pRNG,Umu);
+  LatticeGaugeField Umu(&Grid); SU3::HotConfiguration(pRNG,Umu);
   std::vector<LatticeColourMatrix> U(4,&Grid);
 
   double volume=1;

@@ -25,7 +25,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#include "Grid.h"
+#include <Grid/GridCore.h>
+
 namespace Grid {
 
 ///////////////////////////////////////////////////////////////
@@ -33,6 +34,7 @@ namespace Grid {
 ///////////////////////////////////////////////////////////////
 void *              CartesianCommunicator::ShmCommBuf;
 uint64_t            CartesianCommunicator::MAX_MPI_SHM_BYTES   = 128*1024*1024; 
+CartesianCommunicator::CommunicatorPolicy_t  CartesianCommunicator::CommunicatorPolicy= CartesianCommunicator::CommunicatorPolicyConcurrent;
 
 /////////////////////////////////
 // Alloc, free shmem region
@@ -88,7 +90,9 @@ void CartesianCommunicator::GlobalSumVector(ComplexD *c,int N)
 
 #if !defined( GRID_COMMS_MPI3) && !defined (GRID_COMMS_MPI3L)
 
-void CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
+int                      CartesianCommunicator::NodeCount(void)    { return ProcessorCount();};
+
+double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 						       void *xmit,
 						       int xmit_to_rank,
 						       void *recv,
@@ -96,6 +100,7 @@ void CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_
 						       int bytes)
 {
   SendToRecvFromBegin(list,xmit,xmit_to_rank,recv,recv_from_rank,bytes);
+  return 2.0*bytes;
 }
 void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall)
 {

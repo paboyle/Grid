@@ -177,7 +177,7 @@ void TChargedProp::execute(void)
         LOG(Message) << "Saving zero-momentum projection to '"
                      << filename << "'..." << std::endl;
         
-        Hdf5Writer            writer(filename);
+        CorrWriter            writer(filename);
         std::vector<TComplex> vecBuf;
         std::vector<Complex>  result;
         

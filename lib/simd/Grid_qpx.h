@@ -5,8 +5,10 @@
  Source file: ./lib/simd/Grid_qpx.h
  
  Copyright (C) 2016
+ Copyright (C) 2017
  
  Author: Antonin Portelli <antonin.portelli@me.com>
+         Andrew Lawson    <andrew.lawson1991@gmail.com>
  
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -24,6 +26,11 @@
  
  See the full license in the file "LICENSE" in the top level distribution directory
  ******************************************************************************/
+
+#ifndef GEN_SIMD_WIDTH
+#define GEN_SIMD_WIDTH 32u
+#endif
+#include "Grid_generic_types.h" // Definitions for simulated integer SIMD.
 
 namespace Grid {
 namespace Optimization {
@@ -62,8 +69,15 @@ namespace Optimization {
       return (vector4double){a, a, a, a};
     }
     //Integer
-    inline int operator()(Integer a){
-      return a;
+    inline veci operator()(Integer a){
+      veci out;
+      
+      VECTOR_FOR(i, W<Integer>::r, 1)
+      {
+        out.v[i] = a;
+      }
+      
+      return out;
     }
   };
   
@@ -88,9 +102,10 @@ namespace Optimization {
     inline void operator()(vector4double a, double *d){
       vec_st(a, 0, d);
     }
+
     //Integer
-    inline void operator()(int a, Integer *i){
-      i[0] = a;
+    inline void operator()(veci a, Integer *i){
+      *((veci *)i) = a;
     }
   };
   
@@ -142,11 +157,13 @@ namespace Optimization {
       return vec_ld(0, a);
     }
     // Integer
-    inline int operator()(Integer *a){
-      return a[0];
-    }
-    
-    
+    inline veci operator()(Integer *a){
+      veci out;
+      
+      out = *((veci *)a);
+      
+      return out;
+    }    
   };
   
   template <typename Out_type, typename In_type>
@@ -163,6 +180,22 @@ namespace Optimization {
   /////////////////////////////////////////////////////
   // Arithmetic operations
   /////////////////////////////////////////////////////
+
+  #define FLOAT_WRAP_3(fn, pref)\
+  pref vector4float fn(vector4float a, vector4float b, vector4float c)	\
+  {\
+    vector4double ad, bd, rd, cd;			\
+    vector4float  r;\
+    \
+    ad = Vset()(a);\
+    bd = Vset()(b);\
+    cd = Vset()(c);\
+    rd = fn(ad, bd, cd);				\
+    Vstore()(rd, r);\
+    \
+    return r;\
+  }
+
   #define FLOAT_WRAP_2(fn, pref)\
   pref vector4float fn(vector4float a, vector4float b)\
   {\
@@ -200,8 +233,15 @@ namespace Optimization {
     FLOAT_WRAP_2(operator(), inline)
 
     //Integer
-    inline int operator()(int a, int b){
-      return a + b;
+    inline veci operator()(veci a, veci b){
+      veci out;
+      
+      VECTOR_FOR(i, W<Integer>::r, 1)
+      {
+        out.v[i] = a.v[i] + b.v[i];
+      }
+      
+      return out;
     }
   };
   
@@ -215,8 +255,15 @@ namespace Optimization {
     FLOAT_WRAP_2(operator(), inline)
 
     //Integer
-    inline int operator()(int a, int b){
-      return a - b;
+    inline veci operator()(veci a, veci b){
+      veci out;
+      
+      VECTOR_FOR(i, W<Integer>::r, 1)
+      {
+        out.v[i] = a.v[i] - b.v[i];
+      }
+      
+      return out;
     }
   };
   
@@ -227,6 +274,13 @@ namespace Optimization {
         return vec_xmul(a, b);
     }
     FLOAT_WRAP_2(operator(), inline)
+  };
+  struct MaddRealPart{
+    // Complex double
+    inline vector4double operator()(vector4double a, vector4double b,vector4double c){
+      return vec_xmadd(a, b, c);
+    }
+    FLOAT_WRAP_3(operator(), inline)
   };
   struct MultComplex{
     // Complex double
@@ -248,8 +302,15 @@ namespace Optimization {
     FLOAT_WRAP_2(operator(), inline)
 
     // Integer
-    inline int operator()(int a, int b){
-      return a*b;
+    inline veci operator()(veci a, veci b){
+      veci out;
+      
+      VECTOR_FOR(i, W<Integer>::r, 1)
+      {
+        out.v[i] = a.v[i]*b.v[i];
+      }
+      
+      return out;
     }
   };
 
@@ -263,8 +324,15 @@ namespace Optimization {
     FLOAT_WRAP_2(operator(), inline)
 
     // Integer
-    inline int operator()(int a, int b){
-      return a/b;
+    inline veci operator()(veci a, veci b){
+      veci out;
+      
+      VECTOR_FOR(i, W<Integer>::r, 1)
+      {
+        out.v[i] = a.v[i]/b.v[i];
+      }
+      
+      return out;
     }
   };
 
@@ -323,19 +391,36 @@ namespace Optimization {
   };
   
   struct Rotate{
+
+    template<int n> static inline vector4double tRotate(vector4double v){ 
+      if ( n==1 ) return vec_perm(v, v, vec_gpci(01230));
+      if ( n==2 ) return vec_perm(v, v, vec_gpci(02301));
+      if ( n==3 ) return vec_perm(v, v, vec_gpci(03012));
+      return v;
+    };
+    template<int n> static inline vector4float tRotate(vector4float a)	
+    {					       
+      vector4double ad, rd;
+      vector4float  r;
+      ad = Vset()(a);
+      rd = tRotate<n>(ad);
+      Vstore()(rd, r);
+      return r;
+    };
+
     static inline vector4double rotate(vector4double v, int n){
       switch(n){
         case 0:
           return v;
           break;
         case 1:
-          return vec_perm(v, v, vec_gpci(01230));
+          return tRotate<1>(v);
           break;
         case 2:
-          return vec_perm(v, v, vec_gpci(02301));
+          return tRotate<2>(v);
           break;
         case 3:
-          return vec_perm(v, v, vec_gpci(03012));
+          return tRotate<3>(v);
           break;
         default: assert(0);
       }
@@ -344,11 +429,9 @@ namespace Optimization {
     static inline vector4float rotate(vector4float v, int n){
       vector4double vd, rd;
       vector4float  r;
-
       vd = Vset()(v);
       rd = rotate(vd, n);
       Vstore()(rd, r);
-
       return r;
     }
   };
@@ -418,7 +501,7 @@ namespace Optimization {
 // Here assign types
 typedef Optimization::vector4float SIMD_Ftype;  // Single precision type
 typedef vector4double              SIMD_Dtype; // Double precision type
-typedef int                        SIMD_Itype; // Integer type
+typedef Optimization::veci         SIMD_Itype; // Integer type
 
 // prefetch utilities
 inline void v_prefetch0(int size, const char *ptr){};
@@ -439,6 +522,7 @@ typedef Optimization::Mult        MultSIMD;
 typedef Optimization::Div         DivSIMD;
 typedef Optimization::MultComplex MultComplexSIMD;
 typedef Optimization::MultRealPart MultRealPartSIMD;
+typedef Optimization::MaddRealPart MaddRealPartSIMD;
 typedef Optimization::Conj        ConjSIMD;
 typedef Optimization::TimesMinusI TimesMinusISIMD;
 typedef Optimization::TimesI      TimesISIMD;

@@ -326,7 +326,43 @@ namespace Optimization {
     static inline __m128d Permute3(__m128d in){
       return in;
     };
+  };
 
+  struct Exchange{
+    // 3210 ordering
+    static inline void Exchange0(__m128 &out1,__m128 &out2,__m128 in1,__m128 in2){
+      out1= _mm_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(1,0,1,0));
+      out2= _mm_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(3,2,3,2));
+    };
+    static inline void Exchange1(__m128 &out1,__m128 &out2,__m128 in1,__m128 in2){
+      out1= _mm_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(2,0,2,0));
+      out2= _mm_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(3,1,3,1));
+    };
+    static inline void Exchange2(__m128 &out1,__m128 &out2,__m128 in1,__m128 in2){
+      assert(0);
+      return;
+    };
+    static inline void Exchange3(__m128 &out1,__m128 &out2,__m128 in1,__m128 in2){
+      assert(0);
+      return;
+    };
+
+    static inline void Exchange0(__m128d &out1,__m128d &out2,__m128d in1,__m128d in2){
+      out1= _mm_shuffle_pd(in1,in2,0x0);
+      out2= _mm_shuffle_pd(in1,in2,0x3);
+    };
+    static inline void Exchange1(__m128d &out1,__m128d &out2,__m128d in1,__m128d in2){
+      assert(0);
+      return;
+    };
+    static inline void Exchange2(__m128d &out1,__m128d &out2,__m128d in1,__m128d in2){
+      assert(0);
+      return;
+    };
+    static inline void Exchange3(__m128d &out1,__m128d &out2,__m128d in1,__m128d in2){
+      assert(0);
+      return;
+    };
   };
 
   struct Rotate{

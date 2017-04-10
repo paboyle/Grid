@@ -51,7 +51,7 @@ inline void subdivides(GridBase *coarse,GridBase *fine)
   template<class vobj> inline void pickCheckerboard(int cb,Lattice<vobj> &half,const Lattice<vobj> &full){
     half.checkerboard = cb;
     int ssh=0;
-    //PARALLEL_FOR_LOOP
+    //parallel_for
     for(int ss=0;ss<full._grid->oSites();ss++){
       std::vector<int> coor;
       int cbos;
@@ -68,7 +68,7 @@ inline void subdivides(GridBase *coarse,GridBase *fine)
   template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Lattice<vobj> &half){
     int cb = half.checkerboard;
     int ssh=0;
-    //PARALLEL_FOR_LOOP
+    //parallel_for
     for(int ss=0;ss<full._grid->oSites();ss++){
       std::vector<int> coor;
       int cbos;
@@ -153,8 +153,7 @@ inline void blockZAXPY(Lattice<vobj> &fineZ,
     assert(block_r[d]*coarse->_rdimensions[d]==fine->_rdimensions[d]);
   }
 
-PARALLEL_FOR_LOOP
-  for(int sf=0;sf<fine->oSites();sf++){
+  parallel_for(int sf=0;sf<fine->oSites();sf++){
     
     int sc;
     std::vector<int> coor_c(_ndimension);
@@ -186,8 +185,7 @@ template<class vobj,class CComplex>
 
   fine_inner = localInnerProduct(fineX,fineY);
   blockSum(coarse_inner,fine_inner);
-PARALLEL_FOR_LOOP
-  for(int ss=0;ss<coarse->oSites();ss++){
+  parallel_for(int ss=0;ss<coarse->oSites();ss++){
     CoarseInner._odata[ss] = coarse_inner._odata[ss];
   }
 }
@@ -333,9 +331,6 @@ void localConvert(const Lattice<vobj> &in,Lattice<vvobj> &out)
   typedef typename vobj::scalar_object sobj;
   typedef typename vvobj::scalar_object ssobj;
 
-  sobj s;
-  ssobj ss;
-
   GridBase *ig = in._grid;
   GridBase *og = out._grid;
 
@@ -347,10 +342,13 @@ void localConvert(const Lattice<vobj> &in,Lattice<vvobj> &out)
   for(int d=0;d<no;d++){
     assert(ig->_processors[d]  == og->_processors[d]);
     assert(ig->_ldimensions[d] == og->_ldimensions[d]);
+    assert(ig->lSites() == og->lSites());
   }
 
-  //PARALLEL_FOR_LOOP
-  for(int idx=0;idx<ig->lSites();idx++){
+  parallel_for(int idx=0;idx<ig->lSites();idx++){
+    sobj s;
+    ssobj ss;
+
     std::vector<int> lcoor(ni);
     ig->LocalIndexToLocalCoor(idx,lcoor);
     peekLocalSite(s,in,lcoor);
@@ -364,7 +362,6 @@ template<class vobj>
 void InsertSlice(Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int orthog)
 {
   typedef typename vobj::scalar_object sobj;
-  sobj s;
 
   GridBase *lg = lowDim._grid;
   GridBase *hg = higherDim._grid;
@@ -386,16 +383,16 @@ void InsertSlice(Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int 
   }
 
   // the above should guarantee that the operations are local
-  PARALLEL_FOR_LOOP
-  for(int idx=0;idx<lg->lSites();idx++){
+  parallel_for(int idx=0;idx<lg->lSites();idx++){
+    sobj s;
     std::vector<int> lcoor(nl);
     std::vector<int> hcoor(nh);
     lg->LocalIndexToLocalCoor(idx,lcoor);
-    dl=0;
+    int ddl=0;
     hcoor[orthog] = slice;
     for(int d=0;d<nh;d++){
       if ( d!=orthog ) { 
-	hcoor[d]=lcoor[dl++];
+	hcoor[d]=lcoor[ddl++];
       }
     }
     peekLocalSite(s,lowDim,lcoor);
@@ -407,7 +404,6 @@ template<class vobj>
 void ExtractSlice(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice, int orthog)
 {
   typedef typename vobj::scalar_object sobj;
-  sobj s;
 
   GridBase *lg = lowDim._grid;
   GridBase *hg = higherDim._grid;
@@ -428,16 +424,16 @@ void ExtractSlice(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice, in
     }
   }
   // the above should guarantee that the operations are local
-  PARALLEL_FOR_LOOP
-  for(int idx=0;idx<lg->lSites();idx++){
+  parallel_for(int idx=0;idx<lg->lSites();idx++){
+    sobj s;
     std::vector<int> lcoor(nl);
     std::vector<int> hcoor(nh);
     lg->LocalIndexToLocalCoor(idx,lcoor);
-    dl=0;
+    int ddl=0;
     hcoor[orthog] = slice;
     for(int d=0;d<nh;d++){
       if ( d!=orthog ) { 
-	hcoor[d]=lcoor[dl++];
+	hcoor[d]=lcoor[ddl++];
       }
     }
     peekLocalSite(s,higherDim,hcoor);
@@ -451,7 +447,6 @@ template<class vobj>
 void InsertSliceLocal(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice_lo,int slice_hi, int orthog)
 {
   typedef typename vobj::scalar_object sobj;
-  sobj s;
 
   GridBase *lg = lowDim._grid;
   GridBase *hg = higherDim._grid;
@@ -468,8 +463,8 @@ void InsertSliceLocal(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice
   }
 
   // the above should guarantee that the operations are local
-  //PARALLEL_FOR_LOOP
-  for(int idx=0;idx<lg->lSites();idx++){
+  parallel_for(int idx=0;idx<lg->lSites();idx++){
+    sobj s;
     std::vector<int> lcoor(nl);
     std::vector<int> hcoor(nh);
     lg->LocalIndexToLocalCoor(idx,lcoor);
@@ -487,7 +482,6 @@ template<class vobj>
 void ExtractSliceLocal(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice_lo,int slice_hi, int orthog)
 {
   typedef typename vobj::scalar_object sobj;
-  sobj s;
 
   GridBase *lg = lowDim._grid;
   GridBase *hg = higherDim._grid;
@@ -504,8 +498,8 @@ void ExtractSliceLocal(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slic
   }
 
   // the above should guarantee that the operations are local
-  //PARALLEL_FOR_LOOP
-  for(int idx=0;idx<lg->lSites();idx++){
+  parallel_for(int idx=0;idx<lg->lSites();idx++){
+    sobj s;
     std::vector<int> lcoor(nl);
     std::vector<int> hcoor(nh);
     lg->LocalIndexToLocalCoor(idx,lcoor);
@@ -573,8 +567,7 @@ typename std::enable_if<isSIMDvectorized<vobj>::value && !isSIMDvectorized<sobj>
     in_grid->iCoorFromIindex(in_icoor[lane], lane);
   }
   
-PARALLEL_FOR_LOOP
-  for(int in_oidx = 0; in_oidx < in_grid->oSites(); in_oidx++){ //loop over outer index
+  parallel_for(int in_oidx = 0; in_oidx < in_grid->oSites(); in_oidx++){ //loop over outer index
     //Assemble vector of pointers to output elements
     std::vector<sobj*> out_ptrs(in_nsimd);
 
@@ -622,8 +615,7 @@ void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
   std::vector<SobjOut> in_slex_conv(in_grid->lSites());
   unvectorizeToLexOrdArray(in_slex_conv, in);
     
-  PARALLEL_FOR_LOOP
-  for(int out_oidx=0;out_oidx<out_grid->oSites();out_oidx++){
+  parallel_for(int out_oidx=0;out_oidx<out_grid->oSites();out_oidx++){
     std::vector<int> out_ocoor(ndim);
     out_grid->oCoorFromOindex(out_ocoor, out_oidx);
 
@@ -641,10 +633,6 @@ void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
     merge(out._odata[out_oidx], ptrs, 0);
   }
 }
-
-
-  
-
  
 }
 #endif
