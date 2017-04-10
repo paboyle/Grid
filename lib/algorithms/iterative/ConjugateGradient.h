@@ -99,8 +99,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
     }
 
     std::cout << GridLogIterative << std::setprecision(4)
-              << "ConjugateGradient: k=0 residual " << cp << " target " << rsq
-              << std::endl;
+              << "ConjugateGradient: k=0 residual " << cp << " target " << rsq << std::endl;
 
     GridStopWatch LinalgTimer;
     GridStopWatch MatrixTimer;

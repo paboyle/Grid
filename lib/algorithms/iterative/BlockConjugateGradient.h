@@ -69,8 +69,14 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
   
   Lattice<vobj> Xslice(SliceGrid);
   Lattice<vobj> Rslice(SliceGrid);
+  // FIXME: Implementation is slow
   // If we based this on Cshift it would work for spread out
   // but it would be even slower
+  //
+  // Repeated extract slice is inefficient
+  //
+  // Best base the linear combination by constructing a 
+  // set of vectors of size grid->_rdimensions[Orthog].
   for(int i=0;i<Nblock;i++){
     ExtractSlice(Rslice,Y,i,Orthog);
     for(int j=0;j<Nblock;j++){
@@ -84,6 +90,9 @@ template<class vobj>
 static void sliceMaddVector (Lattice<vobj> &R,std::vector<RealD> &a,const Lattice<vobj> &X,const Lattice<vobj> &Y,
 			     int Orthog,RealD scale=1.0) 
 {    
+  // FIXME: Implementation is slow
+  // Best base the linear combination by constructing a 
+  // set of vectors of size grid->_rdimensions[Orthog].
   typedef typename vobj::scalar_object sobj;
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
@@ -107,6 +116,8 @@ static void sliceMaddVector (Lattice<vobj> &R,std::vector<RealD> &a,const Lattic
 template<class vobj>
 static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int Orthog) 
 {
+  // FIXME: Implementation is slow
+  // Not sure of best solution.. think about it
   typedef typename vobj::scalar_object sobj;
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
@@ -141,6 +152,9 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
 template<class vobj>
 static void sliceInnerProductVector( std::vector<ComplexD> & vec, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int Orthog) 
 {
+  // FIXME: Implementation is slow
+  // Look at localInnerProduct implementation,
+  // and do inside a site loop with block strided iterators
   typedef typename vobj::scalar_object sobj;
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
@@ -257,6 +271,10 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
   Field AP(Src);
   Field R(Src);
   
+  GridStopWatch LinalgTimer;
+  GridStopWatch MatrixTimer;
+  GridStopWatch SolverTimer;
+
   Eigen::MatrixXcd m_pAp    = Eigen::MatrixXcd::Identity(Nblock,Nblock);
   Eigen::MatrixXcd m_pAp_inv= Eigen::MatrixXcd::Identity(Nblock,Nblock);
   Eigen::MatrixXcd m_rr     = Eigen::MatrixXcd::Zero(Nblock,Nblock);
@@ -339,8 +357,10 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
     }
     
     if ( max_resid < Tolerance*Tolerance ) { 
+
       std::cout << GridLogMessage<<" Block solver has converged in "
 		<<k<<" iterations; max residual is "<<std::sqrt(max_resid)<<std::endl;
+
       for(int b=0;b<Nblock;b++){
 	std::cout << GridLogMessage<< " block "<<b<<" resid "<< std::sqrt(real(m_rr(b,b))/ssq[b])<<std::endl;
       }
