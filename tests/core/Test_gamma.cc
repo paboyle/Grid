@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
   GridCartesian Grid(latt_size,simd_layout,mpi_layout);
   GridSerialRNG sRNG;
   
-  sRNG.SeedRandomDevice();
+  sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
   
   std::cout << GridLogMessage << "======== Test algebra" << std::endl;
   createTestAlgebra();

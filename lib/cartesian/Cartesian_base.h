@@ -177,9 +177,11 @@ public:
     // Global addressing
     ////////////////////////////////////////////////////////////////
     void GlobalIndexToGlobalCoor(int gidx,std::vector<int> &gcoor){
+      assert(gidx< gSites());
       Lexicographic::CoorFromIndex(gcoor,gidx,_gdimensions);
     }
     void LocalIndexToLocalCoor(int lidx,std::vector<int> &lcoor){
+      assert(lidx<lSites());
       Lexicographic::CoorFromIndex(lcoor,lidx,_ldimensions);
     }
     void GlobalCoorToGlobalIndex(const std::vector<int> & gcoor,int & gidx){
