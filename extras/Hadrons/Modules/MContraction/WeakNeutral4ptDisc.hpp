@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MContraction/WeakHamiltonianEye.hpp
+Source file: extras/Hadrons/Modules/MContraction/WeakNeutral4ptDisc.hpp
 
 Copyright (C) 2017
 
@@ -26,33 +26,34 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_WeakHamiltonianEye_hpp_
-#define Hadrons_WeakHamiltonianEye_hpp_
+#ifndef Hadrons_WeakNeutral4ptDisc_hpp_
+#define Hadrons_WeakNeutral4ptDisc_hpp_
 
 #include <Grid/Hadrons/Modules/MContraction/WeakHamiltonian.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         WeakHamiltonianEye                                 *
+ *                         WeakNeutral4ptDisc                                 *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MContraction)
 
 enum
 {
-    S_diag = 0,
-    E_diag = 1,
-    n_eye_diag = 2
+    neut_disc_1_diag = 0,
+    neut_disc_2_diag = 1,
+    n_neut_disc_diag = 2
 };
 
-// Saucer and Eye subdiagram contractions.
-#define MAKE_SE_BODY(Q_1, Q_2, Q_3, gamma) (Q_3*g5*Q_1*adj(Q_2)*g5*gamma)
-#define MAKE_SE_LOOP(Q_loop, gamma) (Q_loop*gamma)
+// Neutral 4pt disconnected subdiagram contractions.
+#define MAKE_DISC_MESON(Q_1, Q_2, gamma) (Q_1*adj(Q_2)*g5*gamma)
+#define MAKE_DISC_LOOP(Q_LOOP, gamma) (Q_LOOP*gamma)
+#define MAKE_DISC_CURR(Q_c, gamma) (trace(Q_c*gamma))
 
-MAKE_WEAK_MODULE(WeakHamiltonianEye)
+MAKE_WEAK_MODULE(WeakNeutral4ptDisc)
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_WeakHamiltonianEye_hpp_
+#endif // Hadrons_WeakNeutral4ptDisc_hpp_
