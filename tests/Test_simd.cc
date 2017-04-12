@@ -478,12 +478,19 @@ void ExchangeTester(const functor &func)
     assert(found==1);
   }
 
+    /*
+  for(int i=0;i<Nsimd;i++){
+    std::cout << " i "<< i
+	      <<" test1  "<<test1[i]
+	      <<" test2  "<<test2[i]
+	      <<" input1 "<<input1[i]
+	      <<" input2 "<<input2[i]<<std::endl;
+  }
+    */
   for(int i=0;i<Nsimd;i++){
     assert(test1[i]==input1[i]);
     assert(test2[i]==input2[i]);
-  }//    std::cout << " i "<< i<<" test1"<<test1[i]<<" "<<input1[i]<<std::endl;
-    //    std::cout << " i "<< i<<" test2"<<test2[i]<<" "<<input2[i]<<std::endl;
-  //  }
+  }
 }
 
 
@@ -678,5 +685,68 @@ int main (int argc, char ** argv)
   IntTester(funcMinus());
   IntTester(funcTimes());
 
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  std::cout<<GridLogMessage << "Testing precisionChange            "<<  std::endl;
+  std::cout<<GridLogMessage << "==================================="<<  std::endl;
+  {
+    GridSerialRNG          sRNG;
+    sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
+    const int Ndp = 16;
+    const int Nsp = Ndp/2;
+    const int Nhp = Ndp/4;
+    std::vector<vRealH,alignedAllocator<vRealH> > H (Nhp);
+    std::vector<vRealF,alignedAllocator<vRealF> > F (Nsp);
+    std::vector<vRealF,alignedAllocator<vRealF> > FF(Nsp);
+    std::vector<vRealD,alignedAllocator<vRealD> > D (Ndp);
+    std::vector<vRealD,alignedAllocator<vRealD> > DD(Ndp);
+    for(int i=0;i<16;i++){
+      random(sRNG,D[i]);
+    }
+    // Double to Single
+    precisionChange(&F[0],&D[0],Ndp);
+    precisionChange(&DD[0],&F[0],Ndp);
+    std::cout << GridLogMessage<<"Double to single";
+    for(int i=0;i<Ndp;i++){
+      //      std::cout << "DD["<<i<<"] = "<< DD[i]<<" "<<D[i]<<" "<<DD[i]-D[i] <<std::endl; 
+      DD[i] = DD[i] - D[i];
+      decltype(innerProduct(DD[0],DD[0])) nrm;
+      nrm = innerProduct(DD[i],DD[i]);
+      auto tmp = Reduce(nrm);
+      //      std::cout << tmp << std::endl;
+      assert( tmp < 1.0e-14 ); 
+    }
+    std::cout <<" OK ! "<<std::endl;
+
+    // Double to Half
+    std::cout << GridLogMessage<< "Double to half" ;
+    precisionChange(&H[0],&D[0],Ndp);
+    precisionChange(&DD[0],&H[0],Ndp);
+    for(int i=0;i<Ndp;i++){
+      //      std::cout << "DD["<<i<<"] = "<< DD[i]<<" "<<D[i]<<" "<<DD[i]-D[i]<<std::endl; 
+      DD[i] = DD[i] - D[i];
+      decltype(innerProduct(DD[0],DD[0])) nrm;
+      nrm = innerProduct(DD[i],DD[i]);
+      auto tmp = Reduce(nrm);
+      //      std::cout << tmp << std::endl;
+      assert( tmp < 1.0e-6 ); 
+    }
+    std::cout <<" OK ! "<<std::endl;
+
+    std::cout << GridLogMessage<< "Single to half";
+    // Single to Half
+    precisionChange(&H[0] ,&F[0],Nsp);
+    precisionChange(&FF[0],&H[0],Nsp);
+    for(int i=0;i<Nsp;i++){
+      //      std::cout << "FF["<<i<<"] = "<< FF[i]<<" "<<F[i]<<" "<<FF[i]-F[i]<<std::endl; 
+      FF[i] = FF[i] - F[i];
+      decltype(innerProduct(FF[0],FF[0])) nrm;
+      nrm = innerProduct(FF[i],FF[i]);
+      auto tmp = Reduce(nrm);
+      //      std::cout << tmp << std::endl;
+      assert( tmp < 1.0e-6 ); 
+    }
+    std::cout <<" OK ! "<<std::endl;
+
+  }
   Grid_finalize();
 }

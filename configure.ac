@@ -176,19 +176,19 @@ case ${ax_cv_cxx_compiler_vendor} in
     case ${ac_SIMD} in
       SSE4)
         AC_DEFINE([SSE4],[1],[SSE4 intrinsics])
-        SIMD_FLAGS='-msse4.2';;
+        SIMD_FLAGS='-msse4.2 -mf16c';;
       AVX)
         AC_DEFINE([AVX1],[1],[AVX intrinsics])
-        SIMD_FLAGS='-mavx';;
+        SIMD_FLAGS='-mavx -mf16c';;
       AVXFMA4)
         AC_DEFINE([AVXFMA4],[1],[AVX intrinsics with FMA4])
-        SIMD_FLAGS='-mavx -mfma4';;
+        SIMD_FLAGS='-mavx -mfma4 -mf16c';;
       AVXFMA)
         AC_DEFINE([AVXFMA],[1],[AVX intrinsics with FMA3])
-        SIMD_FLAGS='-mavx -mfma';;
+        SIMD_FLAGS='-mavx -mfma -mf16c';;
       AVX2)
         AC_DEFINE([AVX2],[1],[AVX2 intrinsics])
-        SIMD_FLAGS='-mavx2 -mfma';;
+        SIMD_FLAGS='-mavx2 -mfma -mf16c';;
       AVX512)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-mavx512f -mavx512pf -mavx512er -mavx512cd';;

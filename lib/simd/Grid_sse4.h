@@ -38,6 +38,7 @@ Author: neo <cossu@post.kek.jp>
 
 #include <pmmintrin.h>
 
+
 namespace Grid {
 namespace Optimization {
 
@@ -328,6 +329,48 @@ namespace Optimization {
     };
   };
 
+  
+#ifndef _mm_alignr_epi64
+#define _mm_alignr_epi32(a,b,n) _mm_alignr_epi8(a,b,(n*4)%16)
+#define _mm_alignr_epi64(a,b,n) _mm_alignr_epi8(a,b,(n*8)%16)
+#endif 
+  struct PrecisionChange {
+    static inline __m128i StoH (__m128 a,__m128 b) {
+      __m128i ha = _mm_cvtps_ph(a,0);
+      __m128i hb = _mm_cvtps_ph(b,0);
+      __m128i h =(__m128i) _mm_shuffle_ps((__m128)ha,(__m128)hb,_MM_SELECT_FOUR_FOUR(1,0,1,0));
+      return h;
+    }
+    static inline void  HtoS (__m128i h,__m128 &sa,__m128 &sb) {
+      sa = _mm_cvtph_ps(h); 
+      h = (__m128)_mm_alignr_epi32((__m128i)h,(__m128i)h,2);
+      sb = _mm_cvtph_ps(h);
+    }
+    static inline __m128 DtoS (__m128d a,__m128d b) {
+      __m128 sa = _mm_cvtpd_ps(a);
+      __m128 sb = _mm_cvtpd_ps(b);
+      __m128 s = _mm_shuffle_ps(sa,sb,_MM_SELECT_FOUR_FOUR(1,0,1,0));
+      return s;
+    }
+    static inline void StoD (__m128 s,__m128d &a,__m128d &b) {
+      a = _mm_cvtps_pd(s);
+      s = (__m128)_mm_alignr_epi32((__m128i)s,(__m128i)s,2);
+      b = _mm_cvtps_pd(s);
+    }
+    static inline __m128 DtoH (__m128i a,__m128 b,__m128 c,__m128 d) {
+      __m128 sa,sb;
+      sa = DtoS(a,b);
+      sb = DtoS(c,d);
+      return StoH(sa,sb);
+    }
+    static inline void HtoD (__m128i h,__m128d &a,__m128d &b,__m128d &c,__m128d &d) {
+      __m128 sa,sb;
+      HtoS(h,sa,sb);
+      StoD(sa,a,b);
+      StoD(sb,c,d);
+    }
+  };
+
   struct Exchange{
     // 3210 ordering
     static inline void Exchange0(__m128 &out1,__m128 &out2,__m128 in1,__m128 in2){
@@ -335,8 +378,10 @@ namespace Optimization {
       out2= _mm_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(3,2,3,2));
     };
     static inline void Exchange1(__m128 &out1,__m128 &out2,__m128 in1,__m128 in2){
-      out1= _mm_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(2,0,2,0));
-      out2= _mm_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(3,1,3,1));
+      out1= _mm_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(2,0,2,0)); /*ACEG*/
+      out2= _mm_shuffle_ps(in1,in2,_MM_SELECT_FOUR_FOUR(3,1,3,1)); /*BDFH*/
+      out1= _mm_shuffle_ps(out1,out1,_MM_SELECT_FOUR_FOUR(3,1,2,0)); /*AECG*/
+      out2= _mm_shuffle_ps(out2,out2,_MM_SELECT_FOUR_FOUR(3,1,2,0)); /*AECG*/
     };
     static inline void Exchange2(__m128 &out1,__m128 &out2,__m128 in1,__m128 in2){
       assert(0);
@@ -383,11 +428,6 @@ namespace Optimization {
       default: assert(0);
       }
     }
-  
-#ifndef _mm_alignr_epi64
-#define _mm_alignr_epi32(a,b,n) _mm_alignr_epi8(a,b,(n*4)%16)
-#define _mm_alignr_epi64(a,b,n) _mm_alignr_epi8(a,b,(n*8)%16)
-#endif 
 
     template<int n> static inline __m128  tRotate(__m128  in){ return (__m128)_mm_alignr_epi32((__m128i)in,(__m128i)in,n); };
     template<int n> static inline __m128d tRotate(__m128d in){ return (__m128d)_mm_alignr_epi64((__m128i)in,(__m128i)in,n); };
@@ -450,7 +490,8 @@ namespace Optimization {
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types 
 
-  typedef __m128 SIMD_Ftype;  // Single precision type
+  typedef __m128i SIMD_Htype;  // Single precision type
+  typedef __m128  SIMD_Ftype;  // Single precision type
   typedef __m128d SIMD_Dtype; // Double precision type
   typedef __m128i SIMD_Itype; // Integer type
 

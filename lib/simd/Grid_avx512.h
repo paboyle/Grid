@@ -343,6 +343,42 @@ namespace Optimization {
 
   };
 
+  struct PrecisionChange {
+    static inline __m512i StoH (__m512 a,__m512 b) {
+      __m256i ha = _mm512_cvtps_ph(a,0);
+      __m256i hb = _mm512_cvtps_ph(b,0);
+      __m512 h = _mm512_castps256_ps512(ha);
+      h = _mm512_insertf256_ps(h,hb,1);
+      return h;
+    }
+    static inline void  HtoS (__m512i h,__m512 &sa,__m512 &sb) {
+      sa = _mm512_cvtph_ps(_mm512_extractf256_ps(h,0));
+      sb = _mm512_cvtph_ps(_mm512_extractf256_ps(h,1));
+    }
+    static inline __m512 DtoS (__m512d a,__m512d b) {
+      __m256 sa = _mm512_cvtpd_ps(a);
+      __m256 sb = _mm512_cvtpd_ps(b);
+      __m512 s = _mm512_castps256_ps512(sa);
+      s = _mm512_insertf256_ps(s,sb,1);
+      return s;
+    }
+    static inline void StoD (__m512 s,__m512d &a,__m512d &b) {
+      a = _mm512_cvtps_pd(_mm512_extractf256_ps(s,0));
+      b = _mm512_cvtps_pd(_mm512_extractf256_ps(s,1));
+    }
+    static inline __m512 DtoH (__m512i a,__m512 b,__m512 c,__m512 d) {
+      __m512 sa,sb;
+      sa = DtoS(a,b);
+      sb = DtoS(c,d);
+      return StoH(sa,sb);
+    }
+    static inline void HtoD (__m512i h,__m512d &a,__m512d &b,__m512d &c,__m512d &d) {
+      __m512 sa,sb;
+      HtoS(h,sa,sb);
+      StoD(sa,a,b);
+      StoD(sb,c,d);
+    }
+  };
   // On extracting face: Ah Al , Bh Bl -> Ah Bh, Al Bl
   // On merging buffers: Ah,Bh , Al Bl -> Ah Al, Bh, Bl
   // The operation is its own inverse
