@@ -1,1 +1,1 @@
-SUBDIRS = Hadrons qed-fvol
+SUBDIRS = Hadrons

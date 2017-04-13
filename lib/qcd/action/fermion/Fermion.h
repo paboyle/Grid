@@ -28,66 +28,6 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 #ifndef  GRID_QCD_FERMION_H
 #define  GRID_QCD_FERMION_H
 
-// * Linear operators             (Hermitian and non-hermitian)  .. my LinearOperator
-// * System solvers               (Hermitian and non-hermitian)  .. my OperatorFunction
-// * MultiShift System solvers    (Hermitian and non-hermitian)  .. my OperatorFunction
-
-////////////////////////////////////////////
-// Abstract base interface
-////////////////////////////////////////////
-#include <Grid/qcd/action/ActionBase.h>
-#include <Grid/qcd/action/ActionParams.h>
-
-////////////////////////////////////////////
-// Utility functions
-////////////////////////////////////////////
-#include <Grid/qcd/action/gauge/GaugeImpl.h>
-#include <Grid/qcd/utils/WilsonLoops.h>
-
-#include <Grid/qcd/action/fermion/WilsonCompressor.h>     //used by all wilson type fermions
-#include <Grid/qcd/action/fermion/FermionOperatorImpl.h>
-#include <Grid/qcd/action/fermion/FermionOperator.h>
-#include <Grid/qcd/action/fermion/WilsonKernels.h>        //used by all wilson type fermions
-
-////////////////////////////////////////////
-// Gauge Actions
-////////////////////////////////////////////
-#include <Grid/qcd/action/gauge/Photon.h>
-#include <Grid/qcd/action/gauge/WilsonGaugeAction.h>
-#include <Grid/qcd/action/gauge/PlaqPlusRectangleAction.h>
-
-namespace Grid {
-namespace QCD {
-
-typedef WilsonGaugeAction<PeriodicGimplR>          WilsonGaugeActionR;
-typedef WilsonGaugeAction<PeriodicGimplF>          WilsonGaugeActionF;
-typedef WilsonGaugeAction<PeriodicGimplD>          WilsonGaugeActionD;
-typedef PlaqPlusRectangleAction<PeriodicGimplR>    PlaqPlusRectangleActionR;
-typedef PlaqPlusRectangleAction<PeriodicGimplF>    PlaqPlusRectangleActionF;
-typedef PlaqPlusRectangleAction<PeriodicGimplD>    PlaqPlusRectangleActionD;
-typedef IwasakiGaugeAction<PeriodicGimplR>         IwasakiGaugeActionR;
-typedef IwasakiGaugeAction<PeriodicGimplF>         IwasakiGaugeActionF;
-typedef IwasakiGaugeAction<PeriodicGimplD>         IwasakiGaugeActionD;
-typedef SymanzikGaugeAction<PeriodicGimplR>        SymanzikGaugeActionR;
-typedef SymanzikGaugeAction<PeriodicGimplF>        SymanzikGaugeActionF;
-typedef SymanzikGaugeAction<PeriodicGimplD>        SymanzikGaugeActionD;
-
-
-typedef WilsonGaugeAction<ConjugateGimplR>          ConjugateWilsonGaugeActionR;
-typedef WilsonGaugeAction<ConjugateGimplF>          ConjugateWilsonGaugeActionF;
-typedef WilsonGaugeAction<ConjugateGimplD>          ConjugateWilsonGaugeActionD;
-typedef PlaqPlusRectangleAction<ConjugateGimplR>    ConjugatePlaqPlusRectangleActionR;
-typedef PlaqPlusRectangleAction<ConjugateGimplF>    ConjugatePlaqPlusRectangleActionF;
-typedef PlaqPlusRectangleAction<ConjugateGimplD>    ConjugatePlaqPlusRectangleActionD;
-typedef IwasakiGaugeAction<ConjugateGimplR>         ConjugateIwasakiGaugeActionR;
-typedef IwasakiGaugeAction<ConjugateGimplF>         ConjugateIwasakiGaugeActionF;
-typedef IwasakiGaugeAction<ConjugateGimplD>         ConjugateIwasakiGaugeActionD;
-typedef SymanzikGaugeAction<ConjugateGimplR>        ConjugateSymanzikGaugeActionR;
-typedef SymanzikGaugeAction<ConjugateGimplF>        ConjugateSymanzikGaugeActionF;
-typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeActionD;
-
-}}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Explicit explicit template instantiation is still required in the .cc files
 //
@@ -118,6 +58,7 @@ typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeAction
 #include <Grid/qcd/action/fermion/DomainWallFermion.h>
 #include <Grid/qcd/action/fermion/MobiusFermion.h>
 #include <Grid/qcd/action/fermion/ZMobiusFermion.h>
+#include <Grid/qcd/action/fermion/SchurDiagTwoKappa.h>
 #include <Grid/qcd/action/fermion/ScaledShamirFermion.h>
 #include <Grid/qcd/action/fermion/MobiusZolotarevFermion.h>
 #include <Grid/qcd/action/fermion/ShamirZolotarevFermion.h>
@@ -251,14 +192,11 @@ typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplD> ImprovedStaggeredFermion
 
   }}
 
-#include <Grid/qcd/action/pseudofermion/OneFlavourRational.h>
-#include <Grid/qcd/action/pseudofermion/OneFlavourRationalRatio.h>
-#include <Grid/qcd/action/pseudofermion/OneFlavourEvenOddRational.h>
-#include <Grid/qcd/action/pseudofermion/OneFlavourEvenOddRationalRatio.h>
-
 ////////////////////
-// Scalar actions
+// Scalar QED actions
+// TODO: this needs to move to another header after rename to Fermion.h
 ////////////////////
 #include <Grid/qcd/action/scalar/Scalar.h>
+#include <Grid/qcd/action/gauge/Photon.h>
 
 #endif
