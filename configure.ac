@@ -83,6 +83,19 @@ case ${ac_LAPACK} in
         AC_DEFINE([USE_LAPACK],[1],[use LAPACK]);;
 esac
 
+############### FP16 conversions
+AC_ARG_ENABLE([fp16],
+    [AC_HELP_STRING([--enable-fp16=yes|no], [enable fp16 comms])], 
+    [ac_FP16=${enable_fp16}], [ac_FP16=no])
+case ${ac_FP16} in
+    no)
+        ;;
+    yes)
+        AC_DEFINE([USE_FP16],[1],[conversion to fp16]);;
+    *)
+	;;
+esac
+
 ############### MKL
 AC_ARG_ENABLE([mkl],
     [AC_HELP_STRING([--enable-mkl=yes|no|prefix], [enable Intel MKL for LAPACK & FFTW])],

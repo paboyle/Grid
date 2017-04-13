@@ -334,20 +334,27 @@ namespace Optimization {
 #define _mm_alignr_epi32(a,b,n) _mm_alignr_epi8(a,b,(n*4)%16)
 #define _mm_alignr_epi64(a,b,n) _mm_alignr_epi8(a,b,(n*8)%16)
 #endif 
+
   struct PrecisionChange {
     static inline __m128i StoH (__m128 a,__m128 b) {
-      //      __m128i ha = _mm_cvtps_ph(a,0);
-      //      __m128i hb = _mm_cvtps_ph(b,0);
-      //      __m128i h =(__m128i) _mm_shuffle_ps((__m128)ha,(__m128)hb,_MM_SELECT_FOUR_FOUR(1,0,1,0));
+#ifdef USE_FP16
+      __m128i ha = _mm_cvtps_ph(a,0);
+      __m128i hb = _mm_cvtps_ph(b,0);
+      __m128i h =(__m128i) _mm_shuffle_ps((__m128)ha,(__m128)hb,_MM_SELECT_FOUR_FOUR(1,0,1,0));
+#else
       __m128i h = (__m128i)a;
       assert(0);
+#endif
       return h;
     }
     static inline void  HtoS (__m128i h,__m128 &sa,__m128 &sb) {
-      //      sa = _mm_cvtph_ps(h); 
-      //      h =  (__m128i)_mm_alignr_epi32((__m128i)h,(__m128i)h,2);
-      //      sb = _mm_cvtph_ps(h);
+#ifdef USE_FP16
+      sa = _mm_cvtph_ps(h); 
+      h =  (__m128i)_mm_alignr_epi32((__m128i)h,(__m128i)h,2);
+      sb = _mm_cvtph_ps(h);
+#else
       assert(0);
+#endif
     }
     static inline __m128 DtoS (__m128d a,__m128d b) {
       __m128 sa = _mm_cvtpd_ps(a);

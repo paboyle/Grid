@@ -281,6 +281,7 @@ namespace Optimization {
 
   struct PrecisionChange {
     static inline vech StoH (const vecf &a,const vecf &b) {
+#ifdef USE_FP16
       vech ret;
       vech *ha = (vech *)&a;
       vech *hb = (vech *)&b;
@@ -289,9 +290,13 @@ namespace Optimization {
       //      VECTOR_FOR(i, nf,1){ ret.v[i+nf] = ( (uint16_t *) &b.v[i])[1] ; }
       VECTOR_FOR(i, nf,1){ ret.v[i]    = ha->v[2*i+1]; }
       VECTOR_FOR(i, nf,1){ ret.v[i+nf] = hb->v[2*i+1]; }
+#else
+      assert(0);
+#endif
       return ret;
     }
     static inline void  HtoS (vech h,vecf &sa,vecf &sb) {
+#ifdef USE_FP16
       const int nf = W<float>::r;
       const int nh = W<uint16_t>::r;
       vech *ha = (vech *)&sa;
@@ -301,6 +306,9 @@ namespace Optimization {
       //      VECTOR_FOR(i, nf, 1){ ( (uint16_t *) (&sb.v[i]))[1] = h.v[i+nf];}
       VECTOR_FOR(i, nf, 1){ ha->v[2*i+1]=h.v[i]; }
       VECTOR_FOR(i, nf, 1){ hb->v[2*i+1]=h.v[i+nf]; }
+#else
+      assert(0);
+#endif
     }
     static inline vecf DtoS (vecd a,vecd b) {
       const int nd = W<double>::r;

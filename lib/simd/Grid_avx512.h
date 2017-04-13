@@ -343,15 +343,23 @@ namespace Optimization {
 
   struct PrecisionChange {
     static inline __m512i StoH (__m512 a,__m512 b) {
+#ifdef USE_FP16
       __m256i ha = _mm512_cvtps_ph(a,0);
       __m256i hb = _mm512_cvtps_ph(b,0);
       __m512 h = _mm512_castps256_ps512(ha);
       h = _mm512_insertf256_ps(h,hb,1);
+#else
+      assert(0);
+#endif
       return h;
     }
     static inline void  HtoS (__m512i h,__m512 &sa,__m512 &sb) {
+#ifdef USE_FP16
       sa = _mm512_cvtph_ps(_mm512_extractf256_ps(h,0));
       sb = _mm512_cvtph_ps(_mm512_extractf256_ps(h,1));
+#else
+      assert(0);
+#endif
     }
     static inline __m512 DtoS (__m512d a,__m512d b) {
       __m256 sa = _mm512_cvtpd_ps(a);
