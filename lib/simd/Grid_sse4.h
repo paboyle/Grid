@@ -336,15 +336,18 @@ namespace Optimization {
 #endif 
   struct PrecisionChange {
     static inline __m128i StoH (__m128 a,__m128 b) {
-      __m128i ha = _mm_cvtps_ph(a,0);
-      __m128i hb = _mm_cvtps_ph(b,0);
-      __m128i h =(__m128i) _mm_shuffle_ps((__m128)ha,(__m128)hb,_MM_SELECT_FOUR_FOUR(1,0,1,0));
+      //      __m128i ha = _mm_cvtps_ph(a,0);
+      //      __m128i hb = _mm_cvtps_ph(b,0);
+      //      __m128i h =(__m128i) _mm_shuffle_ps((__m128)ha,(__m128)hb,_MM_SELECT_FOUR_FOUR(1,0,1,0));
+      __m128i h = (__m128i)a;
+      assert(0);
       return h;
     }
     static inline void  HtoS (__m128i h,__m128 &sa,__m128 &sb) {
-      sa = _mm_cvtph_ps(h); 
-      h =  (__m128i)_mm_alignr_epi32((__m128i)h,(__m128i)h,2);
-      sb = _mm_cvtph_ps(h);
+      //      sa = _mm_cvtph_ps(h); 
+      //      h =  (__m128i)_mm_alignr_epi32((__m128i)h,(__m128i)h,2);
+      //      sb = _mm_cvtph_ps(h);
+      assert(0);
     }
     static inline __m128 DtoS (__m128d a,__m128d b) {
       __m128 sa = _mm_cvtpd_ps(a);
