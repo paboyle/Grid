@@ -42,16 +42,19 @@ public:
     // execution
     virtual void execute(void);
 private:
+    void chargedProp(ScalarField &prop_q, ScalarField &prop_sun,
+                            ScalarField &prop_tad, ScalarField &GFSrc,
+                            FFT &fft);
     void momD1(ScalarField &s, FFT &fft);
     void momD2(ScalarField &s, FFT &fft);
 private:
     std::string                 freeMomPropName_, GFSrcName_, prop0Name_,
                                 propQName_, propSunName_, propTadName_;
     std::vector<std::string>    phaseName_, muGFSrcName_, muProp0Name_,
-                                muPropQName, muPropSunName_, muPropTadName_;
+                                muPropQName_, muPropSunName_, muPropTadName_;
     ScalarField                 *freeMomProp_, *GFSrc_, *prop0_;
     std::vector<ScalarField *>  phase_, muGFSrc_, muProp0_;
-    emField                     *A;
+    EmField                     *A;
 };
 
 MODULE_REGISTER_NS(ScalarVP, TScalarVP, MScalar);

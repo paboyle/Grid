@@ -1,4 +1,5 @@
 #include <Grid/Hadrons/Modules/MScalar/ScalarVP.hpp>
+#include <Grid/Hadrons/Modules/MScalar/Scalar.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
@@ -46,7 +47,7 @@ void TScalarVP::setup(void)
 	for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
         phaseName_.push_back("_shiftphase_" + std::to_string(mu));
-        muGFSrcName.push_back("_" + getName() + "_DinvSrc_" + std::to_string(mu));
+        muGFSrcName_.push_back("_" + getName() + "_DinvSrc_" + std::to_string(mu));
         muProp0Name_.push_back(getName() + "_prop0_" + std::to_string(mu));
         muPropQName_.push_back(getName() + "_propQ_" + std::to_string(mu));
         muPropSunName_.push_back(getName() + "_propSun_" + std::to_string(mu));
