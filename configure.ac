@@ -189,7 +189,7 @@ case ${ax_cv_cxx_compiler_vendor} in
     case ${ac_SIMD} in
       SSE4)
         AC_DEFINE([SSE4],[1],[SSE4 intrinsics])
-        SIMD_FLAGS='-msse4.2 -mf16c';;
+        SIMD_FLAGS='-msse4.2';;
       AVX)
         AC_DEFINE([AVX1],[1],[AVX intrinsics])
         SIMD_FLAGS='-mavx -mf16c';;
