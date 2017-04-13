@@ -343,7 +343,7 @@ namespace Optimization {
     }
     static inline void  HtoS (__m128i h,__m128 &sa,__m128 &sb) {
       sa = _mm_cvtph_ps(h); 
-      h = (__m128)_mm_alignr_epi32((__m128i)h,(__m128i)h,2);
+      h =  (__m128i)_mm_alignr_epi32((__m128i)h,(__m128i)h,2);
       sb = _mm_cvtph_ps(h);
     }
     static inline __m128 DtoS (__m128d a,__m128d b) {
