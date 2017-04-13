@@ -96,8 +96,7 @@ script:
     - make -j4
     - ./benchmarks/Benchmark_dwf --threads 1 --debug-signals
     - echo make clean
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
-    -  export CXXFLAGS='-DMPI_UINT32_T=MPI_UNSIGNED -DMPI_UINT64_T=MPI_UNSIGNED_LONG'; 
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then  export CXXFLAGS='-DMPI_UINT32_T=MPI_UNSIGNED -DMPI_UINT64_T=MPI_UNSIGNED_LONG'; 
     -  ../configure --enable-precision=single --enable-simd=SSE4 --enable-comms=mpi-auto;
     -  make -j4;
     -  mpirun.openmpi -n 2 ./benchmarks/Benchmark_dwf --threads 1 --mpi 2.1.1.1; 
