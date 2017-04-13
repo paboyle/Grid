@@ -125,7 +125,6 @@ namespace Optimization {
       f[2] = a.v2;
       f[3] = a.v3;
     }
-
     //Double
     inline void operator()(double *d, vector4double a){
       vec_st(a, 0, d);

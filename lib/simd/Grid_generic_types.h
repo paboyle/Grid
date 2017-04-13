@@ -66,6 +66,10 @@ namespace Optimization {
   template <> struct W<Integer> {
     constexpr static unsigned int r = GEN_SIMD_WIDTH/4u;
   };
+  template <> struct W<uint16_t> {
+    constexpr static unsigned int c = GEN_SIMD_WIDTH/4u;
+    constexpr static unsigned int r = GEN_SIMD_WIDTH/2u;
+  };
   
   // SIMD vector types
   template <typename T>
@@ -73,8 +77,9 @@ namespace Optimization {
     alignas(GEN_SIMD_WIDTH) T v[W<T>::r];
   };
 
-  typedef vec<float>   vecf;
-  typedef vec<double>  vecd;
-  typedef vec<Integer> veci;
+  typedef vec<float>     vecf;
+  typedef vec<double>    vecd;
+  typedef vec<uint16_t>  vech; // half precision comms
+  typedef vec<Integer>   veci;
   
 }}

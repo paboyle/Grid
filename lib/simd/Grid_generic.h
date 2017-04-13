@@ -279,6 +279,101 @@ namespace Optimization {
   
   #undef timesi
 
+  struct PrecisionChange {
+    static inline vech StoH (const vecf &a,const vecf &b) {
+#ifdef USE_FP16
+      vech ret;
+      vech *ha = (vech *)&a;
+      vech *hb = (vech *)&b;
+      const int nf = W<float>::r;
+      //      VECTOR_FOR(i, nf,1){ ret.v[i]    = ( (uint16_t *) &a.v[i])[1] ; }
+      //      VECTOR_FOR(i, nf,1){ ret.v[i+nf] = ( (uint16_t *) &b.v[i])[1] ; }
+      VECTOR_FOR(i, nf,1){ ret.v[i]    = ha->v[2*i+1]; }
+      VECTOR_FOR(i, nf,1){ ret.v[i+nf] = hb->v[2*i+1]; }
+#else
+      assert(0);
+#endif
+      return ret;
+    }
+    static inline void  HtoS (vech h,vecf &sa,vecf &sb) {
+#ifdef USE_FP16
+      const int nf = W<float>::r;
+      const int nh = W<uint16_t>::r;
+      vech *ha = (vech *)&sa;
+      vech *hb = (vech *)&sb;
+      VECTOR_FOR(i, nf, 1){ sb.v[i]= sa.v[i] = 0; }
+      //      VECTOR_FOR(i, nf, 1){ ( (uint16_t *) (&sa.v[i]))[1] = h.v[i];}
+      //      VECTOR_FOR(i, nf, 1){ ( (uint16_t *) (&sb.v[i]))[1] = h.v[i+nf];}
+      VECTOR_FOR(i, nf, 1){ ha->v[2*i+1]=h.v[i]; }
+      VECTOR_FOR(i, nf, 1){ hb->v[2*i+1]=h.v[i+nf]; }
+#else
+      assert(0);
+#endif
+    }
+    static inline vecf DtoS (vecd a,vecd b) {
+      const int nd = W<double>::r;
+      const int nf = W<float>::r;
+      vecf ret;
+      VECTOR_FOR(i, nd,1){ ret.v[i]    = a.v[i] ; }
+      VECTOR_FOR(i, nd,1){ ret.v[i+nd] = b.v[i] ; }
+      return ret;
+    }
+    static inline void StoD (vecf s,vecd &a,vecd &b) {
+      const int nd = W<double>::r;
+      VECTOR_FOR(i, nd,1){ a.v[i] = s.v[i] ; }
+      VECTOR_FOR(i, nd,1){ b.v[i] = s.v[i+nd] ; }
+    }
+    static inline vech DtoH (vecd a,vecd b,vecd c,vecd d) {
+      vecf sa,sb;
+      sa = DtoS(a,b);
+      sb = DtoS(c,d);
+      return StoH(sa,sb);
+    }
+    static inline void HtoD (vech h,vecd &a,vecd &b,vecd &c,vecd &d) {
+      vecf sa,sb;
+      HtoS(h,sa,sb);
+      StoD(sa,a,b);
+      StoD(sb,c,d);
+    }
+  };
+
+  //////////////////////////////////////////////
+  // Exchange support
+  struct Exchange{
+
+    template <typename T,int n>
+    static inline void ExchangeN(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+      const int w = W<T>::r;
+      unsigned int mask = w >> (n + 1);
+      //      std::cout << " Exchange "<<n<<" nsimd "<<w<<" mask 0x" <<std::hex<<mask<<std::dec<<std::endl;
+      VECTOR_FOR(i, w, 1) {	
+	int j1 = i&(~mask);
+	if  ( (i&mask) == 0 ) { out1.v[i]=in1.v[j1];}
+	else                  { out1.v[i]=in2.v[j1];}
+	int j2 = i|mask;
+	if  ( (i&mask) == 0 ) { out2.v[i]=in1.v[j2];}
+	else                  { out2.v[i]=in2.v[j2];}
+      }      
+    }
+    template <typename T>
+    static inline void Exchange0(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+      ExchangeN<T,0>(out1,out2,in1,in2);
+    };
+    template <typename T>
+    static inline void Exchange1(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+      ExchangeN<T,1>(out1,out2,in1,in2);
+    };
+    template <typename T>
+    static inline void Exchange2(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+      ExchangeN<T,2>(out1,out2,in1,in2);
+    };
+    template <typename T>
+    static inline void Exchange3(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+      ExchangeN<T,3>(out1,out2,in1,in2);
+    };
+  };
+
+
   //////////////////////////////////////////////
   // Some Template specialization
   #define perm(a, b, n, w)\
@@ -403,6 +498,7 @@ namespace Optimization {
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types 
 
+  typedef Optimization::vech SIMD_Htype; // Reduced precision type
   typedef Optimization::vecf SIMD_Ftype; // Single precision type
   typedef Optimization::vecd SIMD_Dtype; // Double precision type
   typedef Optimization::veci SIMD_Itype; // Integer type

@@ -457,5 +457,6 @@ void Grid_debug_handler_init(void)
 
   sigaction(SIGFPE,&sa,NULL);
   sigaction(SIGKILL,&sa,NULL);
+  sigaction(SIGILL,&sa,NULL);
 }
 }
