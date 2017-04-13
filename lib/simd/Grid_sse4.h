@@ -330,10 +330,8 @@ namespace Optimization {
   };
 
   
-#ifndef _mm_alignr_epi64
-#define _mm_alignr_epi32(a,b,n) _mm_alignr_epi8(a,b,(n*4)%16)
-#define _mm_alignr_epi64(a,b,n) _mm_alignr_epi8(a,b,(n*8)%16)
-#endif 
+#define _my_alignr_epi32(a,b,n) _mm_alignr_epi8(a,b,(n*4)%16)
+#define _my_alignr_epi64(a,b,n) _mm_alignr_epi8(a,b,(n*8)%16)
 
   struct PrecisionChange {
     static inline __m128i StoH (__m128 a,__m128 b) {
@@ -350,7 +348,7 @@ namespace Optimization {
     static inline void  HtoS (__m128i h,__m128 &sa,__m128 &sb) {
 #ifdef USE_FP16
       sa = _mm_cvtph_ps(h); 
-      h =  (__m128i)_mm_alignr_epi32((__m128i)h,(__m128i)h,2);
+      h =  (__m128i)_my_alignr_epi32((__m128i)h,(__m128i)h,2);
       sb = _mm_cvtph_ps(h);
 #else
       assert(0);
@@ -364,7 +362,7 @@ namespace Optimization {
     }
     static inline void StoD (__m128 s,__m128d &a,__m128d &b) {
       a = _mm_cvtps_pd(s);
-      s = (__m128)_mm_alignr_epi32((__m128i)s,(__m128i)s,2);
+      s = (__m128)_my_alignr_epi32((__m128i)s,(__m128i)s,2);
       b = _mm_cvtps_pd(s);
     }
     static inline __m128i DtoH (__m128d a,__m128d b,__m128d c,__m128d d) {
@@ -439,8 +437,8 @@ namespace Optimization {
       }
     }
 
-    template<int n> static inline __m128  tRotate(__m128  in){ return (__m128)_mm_alignr_epi32((__m128i)in,(__m128i)in,n); };
-    template<int n> static inline __m128d tRotate(__m128d in){ return (__m128d)_mm_alignr_epi64((__m128i)in,(__m128i)in,n); };
+    template<int n> static inline __m128  tRotate(__m128  in){ return (__m128)_my_alignr_epi32((__m128i)in,(__m128i)in,n); };
+    template<int n> static inline __m128d tRotate(__m128d in){ return (__m128d)_my_alignr_epi64((__m128i)in,(__m128i)in,n); };
 
   };
   //////////////////////////////////////////////

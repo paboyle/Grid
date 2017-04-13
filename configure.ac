@@ -86,7 +86,7 @@ esac
 ############### FP16 conversions
 AC_ARG_ENABLE([fp16],
     [AC_HELP_STRING([--enable-fp16=yes|no], [enable fp16 comms])], 
-    [ac_FP16=${enable_fp16}], [ac_FP16=no])
+    [ac_FP16=${enable_fp16}], [ac_FP16=yes])
 case ${ac_FP16} in
     no)
         ;;
@@ -189,8 +189,7 @@ case ${ax_cv_cxx_compiler_vendor} in
     case ${ac_SIMD} in
       SSE4)
         AC_DEFINE([SSE4],[1],[SSE4 intrinsics])
-#        SIMD_FLAGS='-msse4.2 -mf16c';;
-        SIMD_FLAGS='-msse4.2';;
+        SIMD_FLAGS='-msse4.2 -mf16c';;
       AVX)
         AC_DEFINE([AVX1],[1],[AVX intrinsics])
         SIMD_FLAGS='-mavx -mf16c';;
