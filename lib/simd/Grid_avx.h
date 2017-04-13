@@ -377,8 +377,8 @@ namespace Optimization {
       b0 = _mm256_extractf128_si256(b,0);
       a1 = _mm256_extractf128_si256(a,1);
       b1 = _mm256_extractf128_si256(b,1);
-      a0 = _mm_mul_epi32(a0,b0);
-      a1 = _mm_mul_epi32(a1,b1);
+      a0 = _mm_mullo_epi32(a0,b0);
+      a1 = _mm_mullo_epi32(a1,b1);
       return _mm256_set_m128i(a1,a0);
 #endif
 #if defined (AVX2)
@@ -494,7 +494,7 @@ namespace Optimization {
       a = _mm256_cvtps_pd(_mm256_extractf128_ps(s,0));
       b = _mm256_cvtps_pd(_mm256_extractf128_ps(s,1));
     }
-    static inline __m256 DtoH (__m256i a,__m256 b,__m256 c,__m256 d) {
+    static inline __m256i DtoH (__m256d a,__m256d b,__m256d c,__m256d d) {
       __m256 sa,sb;
       sa = DtoS(a,b);
       sb = DtoS(c,d);

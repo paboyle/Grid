@@ -235,11 +235,9 @@ namespace Optimization {
     inline void mac(__m512 &a, __m512 b, __m512 c){         
        a= _mm512_fmadd_ps( b, c, a);                         
     }
-
     inline void mac(__m512d &a, __m512d b, __m512d c){
       a= _mm512_fmadd_pd( b, c, a);                   
     }                                             
-
     // Real float
     inline __m512 operator()(__m512 a, __m512 b){
       return _mm512_mul_ps(a,b);
@@ -366,7 +364,7 @@ namespace Optimization {
       a = _mm512_cvtps_pd(_mm512_extractf256_ps(s,0));
       b = _mm512_cvtps_pd(_mm512_extractf256_ps(s,1));
     }
-    static inline __m512 DtoH (__m512i a,__m512 b,__m512 c,__m512 d) {
+    static inline __m512i DtoH (__m512d a,__m512d b,__m512d c,__m512d d) {
       __m512 sa,sb;
       sa = DtoS(a,b);
       sb = DtoS(c,d);

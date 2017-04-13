@@ -10,7 +10,7 @@ AC_CONFIG_HEADERS([lib/Config.h],[sed -i 's|PACKAGE_|GRID_|' lib/Config.h])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 ############### Checks for programs
-CXXFLAGS="-O3 $CXXFLAGS"
+CXXFLAGS="-g $CXXFLAGS"
 AC_PROG_CXX
 AC_PROG_RANLIB
 
