@@ -52,7 +52,7 @@ public:
 
     // Physics Grid information.
     std::vector<int> _simd_layout;// Which dimensions get relayed out over simd lanes.
-    std::vector<int> _fdimensions;// Global dimensions of array prior to cb removal
+    std::vector<int> _fdimensions;// (full) Global dimensions of array prior to cb removal
     std::vector<int> _gdimensions;// Global dimensions of array after cb removal
     std::vector<int> _ldimensions;// local dimensions of array with processor images removed
     std::vector<int> _rdimensions;// Reduced local dimensions with simd lane images and processor images removed 
@@ -77,7 +77,7 @@ public:
     // GridCartesian / GridRedBlackCartesian
     ////////////////////////////////////////////////////////////////
     virtual int CheckerBoarded(int dim)=0;
-    virtual int CheckerBoard(std::vector<int> &site)=0;
+    virtual int CheckerBoard(const std::vector<int> &site)=0;
     virtual int CheckerBoardDestination(int source_cb,int shift,int dim)=0;
     virtual int CheckerBoardShift(int source_cb,int dim,int shift,int osite)=0;
     virtual int CheckerBoardShiftForCB(int source_cb,int dim,int shift,int cb)=0;
@@ -120,7 +120,6 @@ public:
     inline void oCoorFromOindex (std::vector<int>& coor,int Oindex){
       Lexicographic::CoorFromIndex(coor,Oindex,_rdimensions);
     }
-
 
     //////////////////////////////////////////////////////////
     // SIMD lane addressing
@@ -178,9 +177,11 @@ public:
     // Global addressing
     ////////////////////////////////////////////////////////////////
     void GlobalIndexToGlobalCoor(int gidx,std::vector<int> &gcoor){
+      assert(gidx< gSites());
       Lexicographic::CoorFromIndex(gcoor,gidx,_gdimensions);
     }
     void LocalIndexToLocalCoor(int lidx,std::vector<int> &lcoor){
+      assert(lidx<lSites());
       Lexicographic::CoorFromIndex(lcoor,lidx,_ldimensions);
     }
     void GlobalCoorToGlobalIndex(const std::vector<int> & gcoor,int & gidx){
@@ -207,16 +208,16 @@ public:
       std::vector<int> lcoor;
       GlobalCoorToProcessorCoorLocalCoor(pcoor,lcoor,gcoor);
       rank = RankFromProcessorCoor(pcoor);
-
+      /*
       std::vector<int> cblcoor(lcoor);
       for(int d=0;d<cblcoor.size();d++){
 	if( this->CheckerBoarded(d) ) {
 	  cblcoor[d] = lcoor[d]/2;
 	}
       }
-
-      i_idx= iIndex(cblcoor);// this does not imply divide by 2 on checker dim
-      o_idx= oIndex(lcoor);  // this implies divide by 2 on checkerdim
+      */
+      i_idx= iIndex(lcoor);
+      o_idx= oIndex(lcoor);
     }
 
     void RankIndexToGlobalCoor(int rank, int o_idx, int i_idx , std::vector<int> &gcoor)

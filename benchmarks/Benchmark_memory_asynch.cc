@@ -66,7 +66,8 @@ int main (int argc, char ** argv)
 
     Vec tsum; tsum = zero;
 
-    GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
+    GridParallelRNG          pRNG(&Grid);      
+    pRNG.SeedFixedIntegers(std::vector<int>({56,17,89,101}));
 
     std::vector<double> stop(threads);
     Vector<Vec> sum(threads);
@@ -77,8 +78,7 @@ int main (int argc, char ** argv)
     }
 
     double start=usecond();
-PARALLEL_FOR_LOOP
-    for(int t=0;t<threads;t++){
+    parallel_for(int t=0;t<threads;t++){
 
       sum[t] = x[t]._odata[0];
       for(int i=0;i<Nloop;i++){

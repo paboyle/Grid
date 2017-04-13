@@ -41,11 +41,10 @@ int main (int argc, char ** argv)
 
   GridCartesian        Fine(latt_size,simd_layout,mpi_layout);
 
-  GridParallelRNG      FineRNG(&Fine);  FineRNG.SeedRandomDevice();
+  GridParallelRNG      FineRNG(&Fine);  FineRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
   LatticeComplex U(&Fine);
   LatticeComplex ShiftU(&Fine);
-
   LatticeComplex lex(&Fine);
   lex=zero;
   Integer stride =1;

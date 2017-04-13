@@ -29,8 +29,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#ifndef GRID_QCD_H
-#define GRID_QCD_H
+#ifndef GRID_QCD_BASE_H
+#define GRID_QCD_BASE_H
 namespace Grid{
 
 namespace QCD {
@@ -62,7 +62,6 @@ namespace QCD {
     #define SpinIndex    1
     #define LorentzIndex 0
 
-  
     // Also should make these a named enum type
     static const int DaggerNo=0;
     static const int DaggerYes=1;
@@ -492,27 +491,6 @@ namespace QCD {
 
 }   //namespace QCD
 } // Grid
-
-
-#include <Grid/qcd/utils/SpaceTimeGrid.h>
-#include <Grid/qcd/spin/Dirac.h>
-#include <Grid/qcd/spin/TwoSpinor.h>
-#include <Grid/qcd/utils/LinalgUtils.h>
-#include <Grid/qcd/utils/CovariantCshift.h>
-
-// Include representations 	
-#include <Grid/qcd/utils/SUn.h>
-#include <Grid/qcd/utils/SUnAdjoint.h>
-#include <Grid/qcd/utils/SUnTwoIndex.h>
-#include <Grid/qcd/representations/hmc_types.h>
-
-#include <Grid/qcd/action/Actions.h>
-
-#include <Grid/qcd/smearing/Smearing.h>
-
-#include <Grid/qcd/hmc/integrators/Integrator.h>
-#include <Grid/qcd/hmc/integrators/Integrator_algorithm.h>
-#include <Grid/qcd/hmc/HMC.h>
 
 
 

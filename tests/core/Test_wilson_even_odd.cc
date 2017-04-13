@@ -2,11 +2,10 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./tests/Test_wilson_even_odd.cc
+    Source file: ./tests/Test_wilson_tm_even_odd.cc
 
     Copyright (C) 2015
 
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
@@ -62,7 +61,7 @@ int main (int argc, char ** argv)
   GridParallelRNG          pRNG(&Grid);
   //  std::vector<int> seeds({1,2,3,4});
   //  pRNG.SeedFixedIntegers(seeds);
-  pRNG.SeedRandomDevice();
+  pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
   LatticeFermion src   (&Grid); random(pRNG,src);
   LatticeFermion phi   (&Grid); random(pRNG,phi);
@@ -71,7 +70,7 @@ int main (int argc, char ** argv)
   LatticeFermion    ref(&Grid);    ref=zero;
   LatticeFermion    tmp(&Grid);    tmp=zero;
   LatticeFermion    err(&Grid);    tmp=zero;
-  LatticeGaugeField Umu(&Grid); random(pRNG,Umu);
+  LatticeGaugeField Umu(&Grid); SU3::HotConfiguration(pRNG,Umu);
   std::vector<LatticeColourMatrix> U(4,&Grid);
 
   double volume=1;
@@ -89,8 +88,8 @@ int main (int argc, char ** argv)
   }
 
   RealD mass=0.1;
-  RealD mu  = 0.1;
-  WilsonTMFermionR Dw(Umu,Grid,RBGrid,mass,mu);
+
+  WilsonFermionR Dw(Umu,Grid,RBGrid,mass);
 
   LatticeFermion src_e   (&RBGrid);
   LatticeFermion src_o   (&RBGrid);
@@ -207,7 +206,7 @@ int main (int argc, char ** argv)
   pickCheckerboard(Odd ,phi_o,phi);
   RealD t1,t2;
 
-  SchurDiagMooeeOperator<WilsonTMFermionR,LatticeFermion> HermOpEO(Dw);
+  SchurDiagMooeeOperator<WilsonFermionR,LatticeFermion> HermOpEO(Dw);
   HermOpEO.MpcDagMpc(chi_e,dchi_e,t1,t2);
   HermOpEO.MpcDagMpc(chi_o,dchi_o,t1,t2);
 

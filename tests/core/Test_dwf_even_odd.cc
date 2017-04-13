@@ -72,7 +72,7 @@ int main (int argc, char ** argv)
   LatticeFermion    ref(FGrid);    ref=zero;
   LatticeFermion    tmp(FGrid);    tmp=zero;
   LatticeFermion    err(FGrid);    tmp=zero;
-  LatticeGaugeField Umu(UGrid); random(RNG4,Umu);
+  LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(RNG4,Umu);
   std::vector<LatticeColourMatrix> U(4,UGrid);
 
   // Only one non-zero (y)

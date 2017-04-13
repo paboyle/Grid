@@ -65,7 +65,7 @@ int main (int argc, char ** argv)
 
       uint64_t Nloop=NLOOP;
 
-      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
+      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
 
       LatticeVec z(&Grid); //random(pRNG,z);
       LatticeVec x(&Grid); //random(pRNG,x);
@@ -100,7 +100,7 @@ int main (int argc, char ** argv)
       int vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
-      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
+      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
 
       LatticeVec z(&Grid); //random(pRNG,z);
       LatticeVec x(&Grid); //random(pRNG,x);
@@ -138,7 +138,7 @@ int main (int argc, char ** argv)
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
-      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
+      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
 
       LatticeVec z(&Grid); //random(pRNG,z);
       LatticeVec x(&Grid); //random(pRNG,x);
@@ -173,7 +173,7 @@ int main (int argc, char ** argv)
       uint64_t Nloop=NLOOP;
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
-      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
+      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
       LatticeVec z(&Grid); //random(pRNG,z);
       LatticeVec x(&Grid); //random(pRNG,x);
       LatticeVec y(&Grid); //random(pRNG,y);

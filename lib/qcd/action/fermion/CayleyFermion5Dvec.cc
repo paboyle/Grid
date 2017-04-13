@@ -30,11 +30,13 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 
 
-#include <Grid/Grid.h>
+#include <Grid/qcd/action/fermion/FermionCore.h>
+#include <Grid/qcd/action/fermion/CayleyFermion5D.h>
 
 
 namespace Grid {
-namespace QCD {  /*
+namespace QCD {  
+  /*
    * Dense matrix versions of routines
    */
 template<class Impl>
@@ -91,8 +93,7 @@ void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
 
   assert(Nc==3);
 
-PARALLEL_FOR_LOOP
-  for(int ss=0;ss<grid->oSites();ss+=LLs){ // adds LLs
+  parallel_for(int ss=0;ss<grid->oSites();ss+=LLs){ // adds LLs
 #if 0
       alignas(64) SiteHalfSpinor hp;
       alignas(64) SiteHalfSpinor hm;
@@ -232,8 +233,7 @@ void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
 
   M5Dcalls++;
   M5Dtime-=usecond();
-PARALLEL_FOR_LOOP
-  for(int ss=0;ss<grid->oSites();ss+=LLs){ // adds LLs
+  parallel_for(int ss=0;ss<grid->oSites();ss+=LLs){ // adds LLs
 #if 0
     alignas(64) SiteHalfSpinor hp;
     alignas(64) SiteHalfSpinor hm;
@@ -792,13 +792,11 @@ void CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField 
   MooeeInvTime-=usecond();
 
   if ( switcheroo<Coeff_t>::iscomplex() ) {
-  PARALLEL_FOR_LOOP
-    for(auto site=0;site<vol;site++){
+    parallel_for(auto site=0;site<vol;site++){
       MooeeInternalZAsm(psi,chi,LLs,site,*_Matp,*_Matm);
     }
   } else { 
-  PARALLEL_FOR_LOOP
-    for(auto site=0;site<vol;site++){
+    parallel_for(auto site=0;site<vol;site++){
       MooeeInternalAsm(psi,chi,LLs,site,*_Matp,*_Matm);
     }
   }
