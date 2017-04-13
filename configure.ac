@@ -86,7 +86,7 @@ esac
 ############### FP16 conversions
 AC_ARG_ENABLE([fp16],
     [AC_HELP_STRING([--enable-fp16=yes|no], [enable fp16 comms])], 
-    [ac_FP16=${enable_fp16}], [ac_FP16=yes])
+    [ac_FP16=${enable_fp16}], [ac_FP16=no])
 case ${ac_FP16} in
     no)
         ;;
