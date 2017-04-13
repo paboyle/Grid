@@ -347,8 +347,8 @@ namespace Optimization {
 #ifdef USE_FP16
       __m256i ha = _mm512_cvtps_ph(a,0);
       __m256i hb = _mm512_cvtps_ph(b,0);
-      h =(__m512i) _mm512_castps256_ps512(ha);
-      h =(__m512i) _mm512_insertf64x4((__m512d)h,(__m512d)hb,1);
+      h =(__m512i) _mm512_castps256_ps512((__m256)ha);
+      h =(__m512i) _mm512_insertf64x4((__m512d)h,(__m256d)hb,1);
 #else
       assert(0);
 #endif
@@ -356,8 +356,8 @@ namespace Optimization {
     }
     static inline void  HtoS (__m512i h,__m512 &sa,__m512 &sb) {
 #ifdef USE_FP16
-      sa = _mm512_cvtph_ps(_mm512_extractf256_ps(h,0));
-      sb = _mm512_cvtph_ps(_mm512_extractf256_ps(h,1));
+      sa = _mm512_cvtph_ps((__m256i)_mm512_extractf64x4_pd((__m512d)h,0));
+      sb = _mm512_cvtph_ps((__m256i)_mm512_extractf64x4_pd((__m512d)h,1));
 #else
       assert(0);
 #endif
