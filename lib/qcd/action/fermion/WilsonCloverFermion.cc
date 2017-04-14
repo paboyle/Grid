@@ -128,6 +128,17 @@ namespace QCD {
   template<class Impl>
   void WilsonCloverFermion<Impl>::MooDeriv(GaugeField&mat, const FermionField&U, const FermionField&V, int dag){
     // Compute the 8 terms of the derivative 
+
+    // Pseudocode
+    // Using Chroma as a template 
+
+    // for loop on mu and nu, but upper matrix
+    // take the outer product factor * U x (sigma_mu_nu V) 
+
+    // derivative of loops
+    //  end of loop
+
+
     assert(0); // not implemented yet
   }
 
