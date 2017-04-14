@@ -470,13 +470,14 @@ namespace Optimization {
       return in;
     };
   };
-
+#define USE_FP16
   struct PrecisionChange {
     static inline __m256i StoH (__m256 a,__m256 b) {
+      __m256 h;
 #ifdef USE_FP16
       __m128i ha = _mm256_cvtps_ph(a,0);
       __m128i hb = _mm256_cvtps_ph(b,0);
-      __m256 h = _mm256_castps128_ps256(ha);
+      h = _mm256_castps128_ps256(ha);
       h = _mm256_insertf128_ps(h,hb,1);
 #else 
       assert(0);

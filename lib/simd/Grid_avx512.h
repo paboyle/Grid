@@ -340,7 +340,7 @@ namespace Optimization {
     };
 
   };
-
+#define USE_FP16
   struct PrecisionChange {
     static inline __m512i StoH (__m512 a,__m512 b) {
       __m512i h;
