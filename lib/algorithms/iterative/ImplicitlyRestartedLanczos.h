@@ -167,7 +167,7 @@ public:
     void step(DenseVector<RealD>& lmd,
 	      DenseVector<RealD>& lme, 
 	      DenseVector<Field>& evec,
-	      Field& w,int Nm,int k)
+	      Field& w,int Nm,int k, RealD &norm)
     {
       assert( k< Nm );
       
@@ -183,6 +183,7 @@ public:
 
       RealD beta = normalise(w); // 6. βk+1 := ∥wk∥2. If βk+1 = 0 then Stop
                                  // 7. vk+1 := wk/βk+1
+	 norm=beta;
 
 	std::cout<<GridLogMessage << "alpha = " << zalph << " beta "<<beta<<std::endl;
       const RealD tiny = 1.0e-20;
@@ -549,7 +550,8 @@ until convergence
 	// Initial Nk steps
 	OrthoTime=0.;
 	double t0=usecond()/1e6;
-	for(int k=0; k<Nk; ++k) step(eval,lme,evec,f,Nm,k);
+	RealD norm; // sqrt norm of last vector
+	for(int k=0; k<Nk; ++k) step(eval,lme,evec,f,Nm,k,norm);
 	double t1=usecond()/1e6;
 	std::cout<<GridLogMessage <<"IRL::Initial steps: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
 	std::cout<<GridLogMessage <<"IRL::Initial steps:OrthoTime "<<OrthoTime<< "seconds"<<std::endl;
@@ -573,7 +575,7 @@ until convergence
 	  // We loop over 
 	  //
 	OrthoTime=0.;
-	  for(int k=Nk; k<Nm; ++k) step(eval,lme,evec,f,Nm,k);
+        for(int k=Nk; k<Nm; ++k) step(eval,lme,evec,f,Nm,k,norm);
 	t1=usecond()/1e6;
 	std::cout<<GridLogMessage <<"IRL:: "<<Np <<" steps: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
 	std::cout<<GridLogMessage <<"IRL::Initial steps:OrthoTime "<<OrthoTime<< "seconds"<<std::endl;
@@ -592,6 +594,12 @@ until convergence
 	  diagonalize(eval2,lme2,Nm,Nm,Qt,grid);
 	t1=usecond()/1e6;
 	std::cout<<GridLogMessage <<"IRL:: diagonalize: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
+ 	int prelNconv=0;
+        for(int k=0; k<Nm; ++k){ //check all k's because QR can permutate eigenvectors
+	std::cout<<GridLogMessage <<"IRL:: Prel. conv. Test"<<k <<" " << norm<<" "<< fabs(Qt[Nm-1+Nm*k])<<std::endl;
+	// Arbitrarily add factor of 10 for now, to be conservative
+	if ( norm*fabs(Qt[Nm-1+Nm*k]) < eresid*10 ) prelNconv++;
+        }
 
 	  // sorting
 	  _sort.push(eval2,Nm);
@@ -610,6 +618,8 @@ until convergence
 	}
 	t1=usecond()/1e6;
 	std::cout<<GridLogMessage <<"IRL::qr_decomp: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
+
+	
 	assert(k2<Nm);
 
 #ifndef MEM_SAVE
@@ -642,6 +652,28 @@ PARALLEL_FOR_LOOP
 	}
 	for(int j=k1-1; j<k2+1; ++j) evec[j] = B[j];
 #else
+#if 0
+/Christoph's version. Still fails on CJ's workstation for some reason
+{
+#pragma omp parallel
+	{
+		typedef typename Field::vector_object vobj;
+		std::vector < vobj > B(Nm);
+#pragma omp for
+		for(int ss=0;ss < grid->oSites();ss++){
+			for(int j=0; j<Nm; ++j) B[j]=0.;
+			for(int j=k1-1; j<(k2+1); ++j){
+				for(int k=0; k<Nm ; ++k){
+					B[j] +=Qt[k+Nm*j] * evec[k]._odata[ss];
+				}
+			}
+			for(int j=k1-1; j<(k2+1); ++j){
+				evec[j]._odata[ss] = B[j];
+			}
+		}
+	}
+}
+#else
 {
 	int j_block = 24; int k_block=24;
 	
@@ -667,6 +699,7 @@ PARALLEL_FOR_LOOP
 		}
 	}
 }
+#endif
 #endif
 	t1=usecond()/1e6;
 	std::cout<<GridLogMessage <<"IRL::QR rotation: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
@@ -756,9 +789,12 @@ PARALLEL_FOR_LOOP
 	  }  // i-loop end
 	  //	  std::cout<<GridLogMessage << std::resetiosflags(std::ios_base::scientific);
 #else
+	if(prelNconv < Nstop)
+		    std::cout<<GridLogMessage << "Prel. Convergence test ("<<prelNconv<<") failed, skipping a real(and expnesive) one" <<std::endl;
+    else
 	{
-
 		Field B(grid);
+		Nconv = 0;
 		for(int j = 0; j<Nk; ++j){
 			B=0.;
 			B.checkerboard = evec[0].checkerboard;
@@ -807,8 +843,8 @@ PARALLEL_FOR_LOOP
       converged:
        // Sorting
        eval.resize(Nconv);
-       evec.resize(Nconv,grid);
 #ifndef MEM_SAVE
+       evec.resize(Nconv,grid);
        for(int i=0; i<Nconv; ++i){
          eval[i] = eval2[Iconv[i]];
          evec[i] = B[Iconv[i]];
@@ -830,15 +866,16 @@ PARALLEL_FOR_LOOP
 		assert( (Nm*thr)<grid->oSites());
 		for(int j=0; j<Nconv; ++j) B._odata[Iconv[j]+Nm*me]=0.;
 		for(int j=0; j<Nconv; ++j){
-			for(int k=0; k<Nm ; ++k){
+			for(int k=0; k<Nk ; ++k){
 			    B._odata[Iconv[j]+Nm*me] +=Qt[k+Nm*Iconv[j]] * evec[k]._odata[ss]; 
 			}
 		}
 		for(int j=0; j<Nconv; ++j){
-			evec[Iconv[j]]._odata[ss] = B._odata[Iconv[j]+Nm*me];
+			evec[j]._odata[ss] = B._odata[Iconv[j]+Nm*me];
 		}
 	}
 }
+       evec.resize(Nconv,grid);
 #endif
       _sort.push(eval,evec,Nconv);
 
@@ -1169,7 +1206,7 @@ PARALLEL_FOR_LOOP
       for(int i = SS - lock_num - 1; i >= SS - Nk && i >= 0; --i){
 
 	RealD diff = 0;
-	diff = abs( tevecs[i][Nm - 1 - lock_num] ) * resid_nrm;
+	diff = fabs( tevecs[i][Nm - 1 - lock_num] ) * resid_nrm;
 
 	std::cout<<GridLogMessage << "residual estimate " << SS-1-i << " " << diff << " of (" << tevals[i] << ")" << std::endl;
 
@@ -1232,7 +1269,7 @@ PARALLEL_FOR_LOOP
       Q[i][0]=y[i];
     }
     T sig = conj(y[0])*y[0];
-    T tau0 = abs(sqrt(sig));
+    T tau0 = fabs(sqrt(sig));
     
     for(int j=1;j<N;j++){
       sig += conj(y[j])*y[j]; 
