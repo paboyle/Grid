@@ -56,6 +56,7 @@ class iScalar {
   typedef vtype element;
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
+  typedef typename GridTypeMapper<vtype>::vector_typeD vector_typeD;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
   typedef iScalar<tensor_reduced_v> tensor_reduced;
   typedef typename GridTypeMapper<vtype>::scalar_object recurse_scalar_object;
@@ -193,6 +194,7 @@ class iVector {
   typedef vtype element;
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
+  typedef typename GridTypeMapper<vtype>::vector_typeD vector_typeD;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
   typedef typename GridTypeMapper<vtype>::scalar_object recurse_scalar_object;
   typedef iScalar<tensor_reduced_v> tensor_reduced;
@@ -305,6 +307,7 @@ class iMatrix {
   typedef vtype element;
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
+  typedef typename GridTypeMapper<vtype>::vector_typeD vector_typeD;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
   typedef typename GridTypeMapper<vtype>::scalar_object recurse_scalar_object;
 

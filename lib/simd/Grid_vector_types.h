@@ -694,7 +694,6 @@ inline Grid_simd<S, V> innerProduct(const Grid_simd<S, V> &l,
                                     const Grid_simd<S, V> &r) {
   return conjugate(l) * r;
 }
-
 template <class S, class V>
 inline Grid_simd<S, V> outerProduct(const Grid_simd<S, V> &l,
                                     const Grid_simd<S, V> &r) {

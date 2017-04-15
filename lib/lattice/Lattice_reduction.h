@@ -38,110 +38,108 @@ namespace Grid {
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     // Deterministic Reduction operations
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-  template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
-    ComplexD nrm = innerProduct(arg,arg);
-    return std::real(nrm); 
+template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
+  ComplexD nrm = innerProduct(arg,arg);
+  return std::real(nrm); 
+}
+
+template<class vobj>
+inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right) 
+{
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_typeD vector_type;
+  scalar_type  nrm;
+  
+  GridBase *grid = left._grid;
+  
+  std::vector<vector_type,alignedAllocator<vector_type> > sumarray(grid->SumArraySize());
+  for(int i=0;i<grid->SumArraySize();i++){
+    sumarray[i]=zero;
   }
-
-    template<class vobj>
-    inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right) 
-    {
-      typedef typename vobj::scalar_type scalar_type;
-      typedef typename vobj::vector_type vector_type;
-      scalar_type  nrm;
-
-      GridBase *grid = left._grid;
-
-      std::vector<vector_type,alignedAllocator<vector_type> > sumarray(grid->SumArraySize());
-      for(int i=0;i<grid->SumArraySize();i++){
-	sumarray[i]=zero;
-      }
-
-      parallel_for(int thr=0;thr<grid->SumArraySize();thr++){
-	int nwork, mywork, myoff;
-	GridThread::GetWork(left._grid->oSites(),thr,mywork,myoff);
-	
-	decltype(innerProduct(left._odata[0],right._odata[0])) vnrm=zero; // private to thread; sub summation
-        for(int ss=myoff;ss<mywork+myoff; ss++){
-	  vnrm = vnrm + innerProduct(left._odata[ss],right._odata[ss]);
-	}
-	sumarray[thr]=TensorRemove(vnrm) ;
-      }
-      
-      vector_type vvnrm; vvnrm=zero;  // sum across threads
-      for(int i=0;i<grid->SumArraySize();i++){
-	vvnrm = vvnrm+sumarray[i];
-      } 
-      nrm = Reduce(vvnrm);// sum across simd
-      right._grid->GlobalSum(nrm);
-      return nrm;
+  
+  parallel_for(int thr=0;thr<grid->SumArraySize();thr++){
+    int nwork, mywork, myoff;
+    GridThread::GetWork(left._grid->oSites(),thr,mywork,myoff);
+    
+    decltype(innerProductD(left._odata[0],right._odata[0])) vnrm=zero; // private to thread; sub summation
+    for(int ss=myoff;ss<mywork+myoff; ss++){
+      vnrm = vnrm + innerProductD(left._odata[ss],right._odata[ss]);
     }
+    sumarray[thr]=TensorRemove(vnrm) ;
+  }
+  
+  vector_type vvnrm; vvnrm=zero;  // sum across threads
+  for(int i=0;i<grid->SumArraySize();i++){
+    vvnrm = vvnrm+sumarray[i];
+  } 
+  nrm = Reduce(vvnrm);// sum across simd
+  right._grid->GlobalSum(nrm);
+  return nrm;
+}
+ 
+template<class Op,class T1>
+inline auto sum(const LatticeUnaryExpression<Op,T1> & expr)
+  ->typename decltype(expr.first.func(eval(0,std::get<0>(expr.second))))::scalar_object
+{
+  return sum(closure(expr));
+}
 
-    template<class Op,class T1>
-      inline auto sum(const LatticeUnaryExpression<Op,T1> & expr)
-      ->typename decltype(expr.first.func(eval(0,std::get<0>(expr.second))))::scalar_object
-    {
-      return sum(closure(expr));
-    }
-
-    template<class Op,class T1,class T2>
-      inline auto sum(const LatticeBinaryExpression<Op,T1,T2> & expr)
+template<class Op,class T1,class T2>
+inline auto sum(const LatticeBinaryExpression<Op,T1,T2> & expr)
       ->typename decltype(expr.first.func(eval(0,std::get<0>(expr.second)),eval(0,std::get<1>(expr.second))))::scalar_object
-    {
-      return sum(closure(expr));
+{
+  return sum(closure(expr));
+}
+
+
+template<class Op,class T1,class T2,class T3>
+inline auto sum(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr)
+  ->typename decltype(expr.first.func(eval(0,std::get<0>(expr.second)),
+				      eval(0,std::get<1>(expr.second)),
+				      eval(0,std::get<2>(expr.second))
+				      ))::scalar_object
+{
+  return sum(closure(expr));
+}
+
+template<class vobj>
+inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
+{
+  GridBase *grid=arg._grid;
+  int Nsimd = grid->Nsimd();
+  
+  std::vector<vobj,alignedAllocator<vobj> > sumarray(grid->SumArraySize());
+  for(int i=0;i<grid->SumArraySize();i++){
+    sumarray[i]=zero;
+  }
+  
+  parallel_for(int thr=0;thr<grid->SumArraySize();thr++){
+    int nwork, mywork, myoff;
+    GridThread::GetWork(grid->oSites(),thr,mywork,myoff);
+    
+    vobj vvsum=zero;
+    for(int ss=myoff;ss<mywork+myoff; ss++){
+      vvsum = vvsum + arg._odata[ss];
     }
-
-
-    template<class Op,class T1,class T2,class T3>
-      inline auto sum(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr)
-      ->typename decltype(expr.first.func(eval(0,std::get<0>(expr.second)),
-				 eval(0,std::get<1>(expr.second)),
-				 eval(0,std::get<2>(expr.second))
-				 ))::scalar_object
-    {
-      return sum(closure(expr));
-    }
-
-    template<class vobj>
-    inline typename vobj::scalar_object sum(const Lattice<vobj> &arg){
-
-      GridBase *grid=arg._grid;
-      int Nsimd = grid->Nsimd();
-
-      std::vector<vobj,alignedAllocator<vobj> > sumarray(grid->SumArraySize());
-      for(int i=0;i<grid->SumArraySize();i++){
-	sumarray[i]=zero;
-      }
-
-      parallel_for(int thr=0;thr<grid->SumArraySize();thr++){
-	int nwork, mywork, myoff;
-	GridThread::GetWork(grid->oSites(),thr,mywork,myoff);
-	
-	vobj vvsum=zero;
-        for(int ss=myoff;ss<mywork+myoff; ss++){
-	  vvsum = vvsum + arg._odata[ss];
-	}
-	sumarray[thr]=vvsum;
-      }
-      
-      vobj vsum=zero;  // sum across threads
-      for(int i=0;i<grid->SumArraySize();i++){
-	vsum = vsum+sumarray[i];
-      } 
-
-      typedef typename vobj::scalar_object sobj;
-      sobj ssum=zero;
-
-      std::vector<sobj>               buf(Nsimd);
-      extract(vsum,buf);
-
-      for(int i=0;i<Nsimd;i++) ssum = ssum + buf[i];
-      arg._grid->GlobalSum(ssum);
-
-      return ssum;
-    }
-
-
+    sumarray[thr]=vvsum;
+  }
+  
+  vobj vsum=zero;  // sum across threads
+  for(int i=0;i<grid->SumArraySize();i++){
+    vsum = vsum+sumarray[i];
+  } 
+  
+  typedef typename vobj::scalar_object sobj;
+  sobj ssum=zero;
+  
+  std::vector<sobj>               buf(Nsimd);
+  extract(vsum,buf);
+  
+  for(int i=0;i<Nsimd;i++) ssum = ssum + buf[i];
+  arg._grid->GlobalSum(ssum);
+  
+  return ssum;
+}
 
 template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<typename vobj::scalar_object> &result,int orthogdim)
 {
@@ -214,7 +212,6 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
 
     result[t]=gsum;
   }
-
 }
 
 
