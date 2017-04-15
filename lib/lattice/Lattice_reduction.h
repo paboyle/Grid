@@ -42,7 +42,7 @@ template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
   ComplexD nrm = innerProduct(arg,arg);
   return std::real(nrm); 
 }
-
+// Double inner product
 template<class vobj>
 inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &right) 
 {
@@ -102,6 +102,7 @@ inline auto sum(const LatticeTrinaryExpression<Op,T1,T2,T3> & expr)
   return sum(closure(expr));
 }
 
+// FIXME precision promoted summation
 template<class vobj>
 inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
 {

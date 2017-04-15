@@ -73,7 +73,7 @@ int main (int argc, char ** argv)
   DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
   MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
-  ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
+  ConjugateGradient<LatticeFermion> CG(1.0e-6,10000);
   CG(HermOp,src,result);
 
   Grid_finalize();
