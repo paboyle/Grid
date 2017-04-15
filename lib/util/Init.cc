@@ -311,8 +311,8 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Performance:"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
-    std::cout<<GridLogMessage<<"  --comms-isend   : Asynchronous MPI calls; several dirs at a time "<<std::endl;    
-    std::cout<<GridLogMessage<<"  --comms-sendrecv: Synchronous MPI calls; one dirs at a time "<<std::endl;    
+    std::cout<<GridLogMessage<<"  --comms-concurrent : Asynchronous MPI calls; several dirs at a time "<<std::endl;    
+    std::cout<<GridLogMessage<<"  --comms-sequential : Synchronous MPI calls; one dirs at a time "<<std::endl;    
     std::cout<<GridLogMessage<<"  --comms-overlap : Overlap comms with compute "<<std::endl;    
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"  --dslash-generic: Wilson kernel for generic Nc"<<std::endl;    
