@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./lib/simd/Grid_vector_types.h
+Source file: ./lib/simd/Grid_vector_type.h
 
 Copyright (C) 2015
 

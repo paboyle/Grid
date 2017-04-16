@@ -112,6 +112,7 @@ namespace Grid {
   public:
     typedef Integer scalar_type;
     typedef Integer vector_type;
+    typedef Integer vector_typeD;
     typedef Integer tensor_reduced;
     typedef Integer scalar_object;
     typedef void Complexified;

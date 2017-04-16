@@ -3,19 +3,20 @@ TODO:
 
 Peter's work list:
 
--- Merge high precision reduction into develop
+-- Remove DenseVector, DenseMatrix; Use Eigen instead. <-- started
+-- Merge high precision reduction into develop         <-- done
+-- Precision conversion and sort out localConvert      <-- 
 -- Physical propagator interface
--- Precision conversion and sort out localConvert
--- slice* linalg routines for multiRHS, BlockCG
+
+-- multiRHS DWF; benchmark on Cori/BNL for comms elimination
+   -- slice* linalg routines for multiRHS, BlockCG        <-- started
+
 -- Profile CG, BlockCG, etc... Flop count/rate
 -- Binary I/O speed up & x-strips
--- Half-precision comms
--- multiRHS DWF; benchmark on Cori/BNL for comms elimination
+-- Half-precision comms                                <-- started
 -- GaugeFix into central location
--- Help Julia with NPR code
--- Switch to measurements
+-- FFTfix in sensible place
 -- Multigrid Wilson and DWF, compare to other Multigrid implementations
--- Remove DenseVector, DenseMatrix; Use Eigen instead.
 -- quaternions                 -- Might not need
 
 
