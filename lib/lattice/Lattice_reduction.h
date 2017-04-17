@@ -55,9 +55,6 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
   GridBase *grid = left._grid;
   
   std::vector<vector_type,alignedAllocator<vector_type> > sumarray(grid->SumArraySize());
-  for(int i=0;i<grid->SumArraySize();i++){
-    sumarray[i]=zero;
-  }
   
   parallel_for(int thr=0;thr<grid->SumArraySize();thr++){
     int nwork, mywork, myoff;
@@ -152,7 +149,6 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
 
   // FIXME
   // std::cout<<GridLogMessage<<"WARNING ! SliceSum is unthreaded "<<grid->SumArraySize()<<" threads "<<std::endl;
-
   const int    Nd = grid->_ndimension;
   const int Nsimd = grid->Nsimd();
 
@@ -164,8 +160,8 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
   int rd=grid->_rdimensions[orthogdim];
 
   std::vector<vobj,alignedAllocator<vobj> > lvSum(rd); // will locally sum vectors first
-  std::vector<sobj> lsSum(ld,zero); // sum across these down to scalars
-  std::vector<sobj> extracted(Nsimd);     // splitting the SIMD
+  std::vector<sobj> lsSum(ld,zero);                    // sum across these down to scalars
+  std::vector<sobj> extracted(Nsimd);                  // splitting the SIMD
 
   result.resize(fd); // And then global sum to return the same vector to every node for IO to file
   for(int r=0;r<rd;r++){
@@ -175,12 +171,11 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
   std::vector<int>  coor(Nd);  
 
   // sum over reduced dimension planes, breaking out orthog dir
-
   for(int ss=0;ss<grid->oSites();ss++){
     Lexicographic::CoorFromIndex(coor,ss,grid->_rdimensions);
     int r = coor[orthogdim];
     lvSum[r]=lvSum[r]+Data._odata[ss];
-  }  
+  }
 
   // Sum across simd lanes in the plane, breaking out orthog dir.
   std::vector<int> icoor(Nd);
@@ -216,6 +211,171 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
     result[t]=gsum;
   }
 }
+
+template<class vobj>
+  static void sliceInnerProductVectorSlow( std::vector<ComplexD> & vec, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int Orthog) 
+  {
+    // FIXME: Implementation is slow
+    // Look at localInnerProduct implementation,
+    // and do inside a site loop with block strided iterators
+    typedef typename vobj::scalar_object sobj;
+    typedef typename vobj::scalar_type scalar_type;
+    typedef typename vobj::vector_type vector_type;
+    typedef typename vobj::tensor_reduced scalar;
+    typedef typename scalar::scalar_object  scomplex;
+  
+    int Nblock = lhs._grid->GlobalDimensions()[Orthog];
+
+    vec.resize(Nblock);
+    std::vector<scomplex> sip(Nblock);
+    Lattice<scalar> IP(lhs._grid); 
+
+    IP=localInnerProduct(lhs,rhs);
+    sliceSum(IP,sip,Orthog);
+  
+    for(int ss=0;ss<Nblock;ss++){
+      vec[ss] = TensorRemove(sip[ss]);
+    }
+  }
+
+template<class vobj>
+static void sliceInnerProductVector( std::vector<ComplexD> & result, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int orthogdim) 
+{
+  typedef typename vobj::vector_type   vector_type;
+  typedef typename vobj::scalar_type   scalar_type;
+  GridBase  *grid = lhs._grid;
+  assert(grid!=NULL);
+  conformable(grid,rhs._grid);
+
+  // FIXME
+  // std::cout<<GridLogMessage<<"WARNING ! SliceSum is unthreaded "<<grid->SumArraySize()<<" threads "<<std::endl;
+  const int    Nd = grid->_ndimension;
+  const int Nsimd = grid->Nsimd();
+
+  assert(orthogdim >= 0);
+  assert(orthogdim < Nd);
+
+  int fd=grid->_fdimensions[orthogdim];
+  int ld=grid->_ldimensions[orthogdim];
+  int rd=grid->_rdimensions[orthogdim];
+
+  std::vector<vector_type,alignedAllocator<vector_type> > lvSum(rd); // will locally sum vectors first
+  std::vector<scalar_type > lsSum(ld,scalar_type(0.0));                    // sum across these down to scalars
+  std::vector<iScalar<scalar_type> > extracted(Nsimd);                  // splitting the SIMD
+
+  result.resize(fd); // And then global sum to return the same vector to every node for IO to file
+  for(int r=0;r<rd;r++){
+    lvSum[r]=zero;
+  }
+
+  // sum over reduced dimension planes, breaking out orthog dir
+  PARALLEL_REGION {
+    std::vector<int>  coor(Nd);  
+    vector_type vv;
+    PARALLEL_FOR_LOOP_INTERN
+    for(int ss=0;ss<grid->oSites();ss++){
+      Lexicographic::CoorFromIndex(coor,ss,grid->_rdimensions);
+      int r = coor[orthogdim];
+      vv = TensorRemove(innerProduct(lhs._odata[ss],rhs._odata[ss]));
+      PARALLEL_CRITICAL { // ouch slow rfo thrashing atomic fp add
+	lvSum[r]=lvSum[r]+vv;
+      }
+    }
+  }
+
+  // Sum across simd lanes in the plane, breaking out orthog dir.
+  std::vector<int> icoor(Nd);
+  for(int rt=0;rt<rd;rt++){
+
+    iScalar<vector_type> temp; temp._internal = lvSum[rt];
+    extract(temp,extracted);
+
+    for(int idx=0;idx<Nsimd;idx++){
+
+      grid->iCoorFromIindex(icoor,idx);
+
+      int ldx =rt+icoor[orthogdim]*rd;
+
+      lsSum[ldx]=lsSum[ldx]+extracted[idx]._internal;
+
+    }
+  }
+  
+  // sum over nodes.
+  scalar_type gsum;
+  for(int t=0;t<fd;t++){
+    int pt = t/ld; // processor plane
+    int lt = t%ld;
+    if ( pt == grid->_processor_coor[orthogdim] ) {
+      gsum=lsSum[lt];
+    } else {
+      gsum=scalar_type(0.0);
+    }
+
+    grid->GlobalSum(gsum);
+
+    result[t]=gsum;
+  }
+}
+#if 0
+template<class vobj>
+static void sliceInnerProductVector( std::vector<ComplexD> & vec, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int Orthog) 
+{
+    // FIXME: Implementation is slow
+    // Look at sliceSum implementation,
+    // and do inside a site loop with block strided iterators
+    typedef typename vobj::scalar_object sobj;
+    typedef typename vobj::scalar_type scalar_type;
+    typedef typename vobj::vector_type vector_type;
+    typedef typename vobj::tensor_reduced scalar;
+    typedef typename scalar::scalar_object  scomplex;
+
+    GridBase * grid = lhs._grid;
+
+
+  const int    Nd = grid->_ndimension;
+  const int Nsimd = grid->Nsimd();
+
+  assert(orthogdim >= 0);
+  assert(orthogdim < Nd);
+
+  int fd=grid->_fdimensions[orthogdim];
+  int ld=grid->_ldimensions[orthogdim];
+  int rd=grid->_rdimensions[orthogdim];
+
+    int Nblock  = grid->GlobalDimensions()[Orthog];
+    int Nrblock = grid->_rdimensions[Orthog];
+    int Nthr    = grid->SumArraySize();
+
+    std::vector<vector_type,alignedAllocator<vector_type> > sumarray(Nrblock*Nthr);
+
+    parallel_for(int thr=0;thr<grid->SumArraySize();thr++){
+
+      int nwork, mywork, myoff;
+
+      for(int rb=0;rb<Nrblock;rb++){
+	GridThread::GetWork((left._grid->oSites()/Nrblock),thr,mywork,myoff);
+	int off = rb * grid->_slice_
+	vector_type vnrm=zero; // private to thread; sub summation
+	for(int ss=myoff;ss<mywork+myoff; ss++){
+	  vnrm = vnrm + TensorRemove(innerProductD(left._odata[ss],right._odata[ss]));
+	}
+      }
+      sumarray[thr+Nthr*rb]=vnrm ;
+    }
+
+    vec.resize(Nblock);
+    std::vector<scomplex> sip(Nblock);
+    Lattice<scalar> IP(lhs._grid); 
+
+    IP=localInnerProduct(lhs,rhs);
+    sliceSum(IP,sip,Orthog);
+  
+    for(int ss=0;ss<Nblock;ss++){
+      vec[ss] = TensorRemove(sip[ss]);
+    }
+  }
+#endif
 
 inline GridBase         *makeSubSliceGrid(const GridBase *BlockSolverGrid,int Orthog)
  {
@@ -322,40 +482,7 @@ template<class vobj>
 	mat(i,j) = innerProduct(Lslice,Rslice);
       }
     }
-#undef FORCE_DIAG
-#ifdef FORCE_DIAG
-    for(int i=0;i<Nblock;i++){
-      for(int j=0;j<Nblock;j++){
-	if ( i != j ) mat(i,j)=0.0;
-      }
-    }
-#endif
     return;
-  }
-template<class vobj>
-  static void sliceInnerProductVector( std::vector<ComplexD> & vec, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int Orthog) 
-  {
-    // FIXME: Implementation is slow
-    // Look at localInnerProduct implementation,
-    // and do inside a site loop with block strided iterators
-    typedef typename vobj::scalar_object sobj;
-    typedef typename vobj::scalar_type scalar_type;
-    typedef typename vobj::vector_type vector_type;
-    typedef typename vobj::tensor_reduced scalar;
-    typedef typename scalar::scalar_object  scomplex;
-  
-    int Nblock = lhs._grid->GlobalDimensions()[Orthog];
-
-    vec.resize(Nblock);
-    std::vector<scomplex> sip(Nblock);
-    Lattice<scalar> IP(lhs._grid); 
-
-    IP=localInnerProduct(lhs,rhs);
-    sliceSum(IP,sip,Orthog);
-  
-    for(int ss=0;ss<Nblock;ss++){
-      vec[ss] = TensorRemove(sip[ss]);
-    }
   }
 template<class vobj>
   static void sliceNorm (std::vector<RealD> &sn,const Lattice<vobj> &rhs,int Orthog) {

@@ -256,8 +256,10 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
     Linop.HermOp(P, AP);
 
     // Alpha
+    //    sliceInnerProductVectorTest(v_pAp_test,P,AP,Orthog);
     sliceInnerProductVector(v_pAp,P,AP,Orthog);
     for(int b=0;b<Nblock;b++){
+      //      std::cout << " "<< v_pAp[b]<<" "<< v_pAp_test[b]<<std::endl;
       v_alpha[b] = v_rr[b]/real(v_pAp[b]);
     }
 
