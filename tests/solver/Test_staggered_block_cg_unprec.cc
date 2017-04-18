@@ -51,7 +51,7 @@ int main (int argc, char ** argv)
   typedef typename ImprovedStaggeredFermion5DR::ComplexField ComplexField; 
   typename ImprovedStaggeredFermion5DR::ImplParams params; 
 
-  const int Ls=8;
+  const int Ls=4;
 
   Grid_init(&argc,&argv);
 
@@ -76,24 +76,44 @@ int main (int argc, char ** argv)
 
   RealD mass=0.01;
   ImprovedStaggeredFermion5DR Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass);
-
   MdagMLinearOperator<ImprovedStaggeredFermion5DR,FermionField> HermOp(Ds);
 
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
   BlockConjugateGradient<FermionField> BCG(1.0e-8,10000);
   MultiRHSConjugateGradient<FermionField> mCG(1.0e-8,10000);
 
-  std::cout << GridLogMessage << " Calling CG "<<std::endl;
+  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
+  std::cout << GridLogMessage << " Calling 4d CG "<<std::endl;
+  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
+  ImprovedStaggeredFermionR Ds4d(Umu,Umu,*UGrid,*UrbGrid,mass);
+  MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> HermOp4d(Ds4d);
+  FermionField src4d(UGrid); random(pRNG,src4d);
+  FermionField result4d(UGrid); result4d=zero;
+  CG(HermOp4d,src4d,result4d);
+  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
+
+
+  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
+  std::cout << GridLogMessage << " Calling 5d CG for "<<Ls <<" right hand sides" <<std::endl;
+  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   result=zero;
   CG(HermOp,src,result);
+  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
-  std::cout << GridLogMessage << " Calling multiRHS CG "<<std::endl;
+  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
+  std::cout << GridLogMessage << " Calling multiRHS CG for "<<Ls <<" right hand sides" <<std::endl;
+  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   result=zero;
   mCG(HermOp,src,result);
+  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
-  std::cout << GridLogMessage << " Calling Block CG "<<std::endl;
+  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
+  std::cout << GridLogMessage << " Calling Block CG for "<<Ls <<" right hand sides" <<std::endl;
+  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   result=zero;
   BCG(HermOp,src,result);
+  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
+
 
   Grid_finalize();
 }

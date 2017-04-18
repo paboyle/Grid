@@ -343,12 +343,12 @@ namespace Optimization {
 #define USE_FP16
   struct PrecisionChange {
     static inline __m512i StoH (__m512 a,__m512 b) {
-      __m512 h ;
+      __m512i h;
 #ifdef USE_FP16
       __m256i ha = _mm512_cvtps_ph(a,0);
       __m256i hb = _mm512_cvtps_ph(b,0);
-      h = _mm512_castps256_ps512(ha);
-      h = _mm512_insertf256_ps(h,hb,1);
+      h =(__m512i) _mm512_castps256_ps512((__m256)ha);
+      h =(__m512i) _mm512_insertf64x4((__m512d)h,(__m256d)hb,1);
 #else
       assert(0);
 #endif
@@ -356,8 +356,8 @@ namespace Optimization {
     }
     static inline void  HtoS (__m512i h,__m512 &sa,__m512 &sb) {
 #ifdef USE_FP16
-      sa = _mm512_cvtph_ps(_mm512_extractf256_ps(h,0));
-      sb = _mm512_cvtph_ps(_mm512_extractf256_ps(h,1));
+      sa = _mm512_cvtph_ps((__m256i)_mm512_extractf64x4_pd((__m512d)h,0));
+      sb = _mm512_cvtph_ps((__m256i)_mm512_extractf64x4_pd((__m512d)h,1));
 #else
       assert(0);
 #endif
@@ -366,12 +366,12 @@ namespace Optimization {
       __m256 sa = _mm512_cvtpd_ps(a);
       __m256 sb = _mm512_cvtpd_ps(b);
       __m512 s = _mm512_castps256_ps512(sa);
-      s = _mm512_insertf256_ps(s,sb,1);
+      s =(__m512) _mm512_insertf64x4((__m512d)s,(__m256d)sb,1);
       return s;
     }
     static inline void StoD (__m512 s,__m512d &a,__m512d &b) {
-      a = _mm512_cvtps_pd(_mm512_extractf256_ps(s,0));
-      b = _mm512_cvtps_pd(_mm512_extractf256_ps(s,1));
+      a = _mm512_cvtps_pd((__m256)_mm512_extractf64x4_pd((__m512d)s,0));
+      b = _mm512_cvtps_pd((__m256)_mm512_extractf64x4_pd((__m512d)s,1));
     }
     static inline __m512i DtoH (__m512d a,__m512d b,__m512d c,__m512d d) {
       __m512 sa,sb;
@@ -582,7 +582,9 @@ namespace Optimization {
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types 
 
-  typedef __m512 SIMD_Ftype;  // Single precision type
+
+  typedef __m512i SIMD_Htype;  // Single precision type
+  typedef __m512  SIMD_Ftype;  // Single precision type
   typedef __m512d SIMD_Dtype; // Double precision type
   typedef __m512i SIMD_Itype; // Integer type
 

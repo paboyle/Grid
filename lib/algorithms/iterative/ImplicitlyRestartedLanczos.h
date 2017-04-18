@@ -30,6 +30,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define GRID_IRL_H
 
 #include <string.h> //memset
+
 #ifdef USE_LAPACK
 void LAPACK_dstegr(char *jobz, char *range, int *n, double *d, double *e,
                    double *vl, double *vu, int *il, int *iu, double *abstol,
@@ -37,8 +38,9 @@ void LAPACK_dstegr(char *jobz, char *range, int *n, double *d, double *e,
                    double *work, int *lwork, int *iwork, int *liwork,
                    int *info);
 #endif
-#include "DenseMatrix.h"
-#include "EigenSort.h"
+
+#include <Grid/algorithms/densematrix/DenseMatrix.h>
+#include <Grid/algorithms/iterative/EigenSort.h>
 
 namespace Grid {
 
@@ -1088,8 +1090,6 @@ static void Lock(DenseMatrix<T> &H, 	// Hess mtx
 		 int dfg,
 		 bool herm)
 {	
-
-
   //ForceTridiagonal(H);
 
   int M = H.dim;
@@ -1121,7 +1121,6 @@ static void Lock(DenseMatrix<T> &H, 	// Hess mtx
 
   AH = Hermitian(QQ)*AH;
   AH = AH*QQ;
-	
 
   for(int i=con;i<M;i++){
     for(int j=con;j<M;j++){
