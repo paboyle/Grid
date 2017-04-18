@@ -76,7 +76,6 @@ int main (int argc, char ** argv)
   ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass);
 
   MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> HermOp(Ds);
-  ConjugateGradient<FermionField> CG(1.0e-8,10000);
   CG(HermOp,src,result);
 
   Grid_finalize();

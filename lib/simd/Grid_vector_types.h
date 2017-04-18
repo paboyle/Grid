@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./lib/simd/Grid_vector_types.h
+Source file: ./lib/simd/Grid_vector_type.h
 
 Copyright (C) 2015
 
@@ -411,7 +411,6 @@ template <class S, class V, IfNotComplex<S> = 0>
 inline Grid_simd<S, V> rotate(Grid_simd<S, V> b, int nrot) {
   nrot = nrot % Grid_simd<S, V>::Nsimd();
   Grid_simd<S, V> ret;
-  //    std::cout << "Rotate Real by "<<nrot<<std::endl;
   ret.v = Optimization::Rotate::rotate(b.v, nrot);
   return ret;
 }
@@ -419,7 +418,6 @@ template <class S, class V, IfComplex<S> = 0>
 inline Grid_simd<S, V> rotate(Grid_simd<S, V> b, int nrot) {
   nrot = nrot % Grid_simd<S, V>::Nsimd();
   Grid_simd<S, V> ret;
-  //    std::cout << "Rotate Complex by "<<nrot<<std::endl;
   ret.v = Optimization::Rotate::rotate(b.v, 2 * nrot);
   return ret;
 }
@@ -427,14 +425,12 @@ template <class S, class V, IfNotComplex<S> =0>
 inline void rotate( Grid_simd<S,V> &ret,Grid_simd<S,V> b,int nrot)
 {
   nrot = nrot % Grid_simd<S,V>::Nsimd();
-  //    std::cout << "Rotate Real by "<<nrot<<std::endl;
   ret.v = Optimization::Rotate::rotate(b.v,nrot);
 }
 template <class S, class V, IfComplex<S> =0> 
 inline void rotate(Grid_simd<S,V> &ret,Grid_simd<S,V> b,int nrot)
 {
   nrot = nrot % Grid_simd<S,V>::Nsimd();
-  //    std::cout << "Rotate Complex by "<<nrot<<std::endl;
   ret.v = Optimization::Rotate::rotate(b.v,2*nrot);
 }
 
@@ -694,7 +690,6 @@ inline Grid_simd<S, V> innerProduct(const Grid_simd<S, V> &l,
                                     const Grid_simd<S, V> &r) {
   return conjugate(l) * r;
 }
-
 template <class S, class V>
 inline Grid_simd<S, V> outerProduct(const Grid_simd<S, V> &l,
                                     const Grid_simd<S, V> &r) {
