@@ -60,8 +60,8 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
 {
   int Orthog = 0; // First dimension is block dim
   Nblock = Src._grid->_fdimensions[Orthog];
-  std::cout<<GridLogMessage<<" Block Conjugate Gradient : Orthog "<<Orthog<<std::endl;
-  std::cout<<GridLogMessage<<" Block Conjugate Gradient : Nblock "<<Nblock<<std::endl;
+
+  std::cout<<GridLogMessage<<" Block Conjugate Gradient : Orthog "<<Orthog<<" Nblock "<<Nblock<<std::endl;
 
   Psi.checkerboard = Src.checkerboard;
   conformable(Psi, Src);
@@ -70,10 +70,6 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
   Field AP(Src);
   Field R(Src);
   
-  GridStopWatch LinalgTimer;
-  GridStopWatch MatrixTimer;
-  GridStopWatch SolverTimer;
-
   Eigen::MatrixXcd m_pAp    = Eigen::MatrixXcd::Identity(Nblock,Nblock);
   Eigen::MatrixXcd m_pAp_inv= Eigen::MatrixXcd::Identity(Nblock,Nblock);
   Eigen::MatrixXcd m_rr     = Eigen::MatrixXcd::Zero(Nblock,Nblock);
@@ -116,33 +112,49 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
   P = R;
   sliceInnerProductMatrix(m_rr,R,R,Orthog);
 
+  GridStopWatch sliceInnerTimer;
+  GridStopWatch sliceMaddTimer;
+  GridStopWatch MatrixTimer;
+  GridStopWatch SolverTimer;
+  SolverTimer.Start();
+
   int k;
   for (k = 1; k <= MaxIterations; k++) {
 
     RealD rrsum=0;
     for(int b=0;b<Nblock;b++) rrsum+=real(m_rr(b,b));
 
-    std::cout << GridLogIterative << " iteration "<<k<<" rr_sum "<<rrsum<<" ssq_sum "<< sssum
+    std::cout << GridLogIterative << "\titeration "<<k<<" rr_sum "<<rrsum<<" ssq_sum "<< sssum
 	      <<" / "<<std::sqrt(rrsum/sssum) <<std::endl;
 
+    MatrixTimer.Start();
     Linop.HermOp(P, AP);
+    MatrixTimer.Stop();
 
     // Alpha
+    sliceInnerTimer.Start();
     sliceInnerProductMatrix(m_pAp,P,AP,Orthog);
+    sliceInnerTimer.Stop();
     m_pAp_inv = m_pAp.inverse();
     m_alpha   = m_pAp_inv * m_rr ;
 
     // Psi, R update
+    sliceMaddTimer.Start();
     sliceMaddMatrix(Psi,m_alpha, P,Psi,Orthog);     // add alpha *  P to psi
     sliceMaddMatrix(R  ,m_alpha,AP,  R,Orthog,-1.0);// sub alpha * AP to resid
+    sliceMaddTimer.Stop();
 
     // Beta
     m_rr_inv = m_rr.inverse();
+    sliceInnerTimer.Start();
     sliceInnerProductMatrix(m_rr,R,R,Orthog);
+    sliceInnerTimer.Stop();
     m_beta = m_rr_inv *m_rr;
 
     // Search update
+    sliceMaddTimer.Start();
     sliceMaddMatrix(AP,m_beta,P,R,Orthog);
+    sliceMaddTimer.Stop();
     P= AP;
 
     /*********************
@@ -157,16 +169,24 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
     
     if ( max_resid < Tolerance*Tolerance ) { 
 
-      std::cout << GridLogMessage<<" Block solver has converged in "
-		<<k<<" iterations; max residual is "<<std::sqrt(max_resid)<<std::endl;
+      SolverTimer.Stop();
 
+      std::cout << GridLogMessage<<"BlockCG converged in "<<k<<" iterations"<<std::endl;
       for(int b=0;b<Nblock;b++){
-	std::cout << GridLogMessage<< " block "<<b<<" resid "<< std::sqrt(real(m_rr(b,b))/ssq[b])<<std::endl;
+	std::cout << GridLogMessage<< "\t\tblock "<<b<<" resid "<< std::sqrt(real(m_rr(b,b))/ssq[b])<<std::endl;
       }
+      std::cout << GridLogMessage<<"\tMax residual is "<<std::sqrt(max_resid)<<std::endl;
 
       Linop.HermOp(Psi, AP);
       AP = AP-Src;
-      std::cout << " Block solver true residual is " << std::sqrt(norm2(AP)/norm2(Src)) <<std::endl;
+      std::cout << GridLogMessage <<"\tTrue residual is " << std::sqrt(norm2(AP)/norm2(Src)) <<std::endl;
+
+      std::cout << GridLogMessage << "Time Breakdown "<<std::endl;
+      std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed()     <<std::endl;
+      std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed()     <<std::endl;
+      std::cout << GridLogMessage << "\tInnerProd  " << sliceInnerTimer.Elapsed() <<std::endl;
+      std::cout << GridLogMessage << "\tMaddMatrix " << sliceMaddTimer.Elapsed()  <<std::endl;
+	    
       IterationsToComplete = k;
       return;
     }
@@ -207,8 +227,8 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
 {
   int Orthog = 0; // First dimension is block dim
   Nblock = Src._grid->_fdimensions[Orthog];
-  std::cout<<GridLogMessage<<" MultiRHS Conjugate Gradient : Orthog "<<Orthog<<std::endl;
-  std::cout<<GridLogMessage<<" MultiRHS Conjugate Gradient : Nblock "<<Nblock<<std::endl;
+
+  std::cout<<GridLogMessage<<"MultiRHS Conjugate Gradient : Orthog "<<Orthog<<" Nblock "<<Nblock<<std::endl;
 
   Psi.checkerboard = Src.checkerboard;
   conformable(Psi, Src);
@@ -244,40 +264,57 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
   P = R;
   sliceNorm(v_rr,R,Orthog);
 
+  GridStopWatch sliceInnerTimer;
+  GridStopWatch sliceMaddTimer;
+  GridStopWatch sliceNormTimer;
+  GridStopWatch MatrixTimer;
+  GridStopWatch SolverTimer;
+
+  SolverTimer.Start();
   int k;
   for (k = 1; k <= MaxIterations; k++) {
 
     RealD rrsum=0;
     for(int b=0;b<Nblock;b++) rrsum+=real(v_rr[b]);
 
-    std::cout << GridLogIterative << " iteration "<<k<<" rr_sum "<<rrsum<<" ssq_sum "<< sssum
+    std::cout << GridLogIterative << "\titeration "<<k<<" rr_sum "<<rrsum<<" ssq_sum "<< sssum
 	      <<" / "<<std::sqrt(rrsum/sssum) <<std::endl;
 
+    MatrixTimer.Start();
     Linop.HermOp(P, AP);
+    MatrixTimer.Stop();
 
     // Alpha
     //    sliceInnerProductVectorTest(v_pAp_test,P,AP,Orthog);
+    sliceInnerTimer.Start();
     sliceInnerProductVector(v_pAp,P,AP,Orthog);
+    sliceInnerTimer.Stop();
     for(int b=0;b<Nblock;b++){
       //      std::cout << " "<< v_pAp[b]<<" "<< v_pAp_test[b]<<std::endl;
       v_alpha[b] = v_rr[b]/real(v_pAp[b]);
     }
 
     // Psi, R update
+    sliceMaddTimer.Start();
     sliceMaddVector(Psi,v_alpha, P,Psi,Orthog);     // add alpha *  P to psi
     sliceMaddVector(R  ,v_alpha,AP,  R,Orthog,-1.0);// sub alpha * AP to resid
+    sliceMaddTimer.Stop();
 
     // Beta
     for(int b=0;b<Nblock;b++){
       v_rr_inv[b] = 1.0/v_rr[b];
     }
+    sliceNormTimer.Start();
     sliceNorm(v_rr,R,Orthog);
+    sliceNormTimer.Stop();
     for(int b=0;b<Nblock;b++){
       v_beta[b] = v_rr_inv[b] *v_rr[b];
     }
 
     // Search update
+    sliceMaddTimer.Start();
     sliceMaddVector(P,v_beta,P,R,Orthog);
+    sliceMaddTimer.Stop();
 
     /*********************
      * convergence monitor
@@ -290,15 +327,27 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
     }
     
     if ( max_resid < Tolerance*Tolerance ) { 
-      std::cout << GridLogMessage<<" MultiRHS solver has converged in "
-		<<k<<" iterations; max residual is "<<std::sqrt(max_resid)<<std::endl;
+
+      SolverTimer.Stop();
+
+      std::cout << GridLogMessage<<"MultiRHS solver converged in " <<k<<" iterations"<<std::endl;
       for(int b=0;b<Nblock;b++){
-	std::cout << GridLogMessage<< " block "<<b<<" resid "<< std::sqrt(v_rr[b]/ssq[b])<<std::endl;
+	std::cout << GridLogMessage<< "\t\tBlock "<<b<<" resid "<< std::sqrt(v_rr[b]/ssq[b])<<std::endl;
       }
+      std::cout << GridLogMessage<<"\tMax residual is "<<std::sqrt(max_resid)<<std::endl;
 
       Linop.HermOp(Psi, AP);
       AP = AP-Src;
-      std::cout << " MultiRHS solver true residual is " << std::sqrt(norm2(AP)/norm2(Src)) <<std::endl;
+      std::cout <<GridLogMessage << "\tTrue residual is " << std::sqrt(norm2(AP)/norm2(Src)) <<std::endl;
+
+      std::cout << GridLogMessage << "Time Breakdown "<<std::endl;
+      std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed()     <<std::endl;
+      std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed()     <<std::endl;
+      std::cout << GridLogMessage << "\tInnerProd  " << sliceInnerTimer.Elapsed() <<std::endl;
+      std::cout << GridLogMessage << "\tNorm       " << sliceNormTimer.Elapsed() <<std::endl;
+      std::cout << GridLogMessage << "\tMaddMatrix " << sliceMaddTimer.Elapsed()  <<std::endl;
+
+
       IterationsToComplete = k;
       return;
     }
