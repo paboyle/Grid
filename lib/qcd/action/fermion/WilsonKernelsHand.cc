@@ -829,6 +829,36 @@ WilsonKernels<GparityWilsonImplD>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder
   assert(0);
 }
 
+template<> void 
+WilsonKernels<GparityWilsonImplFH>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
+							SiteHalfSpinor *buf,
+							int sF,int sU,const FermionField &in, FermionField &out,int internal,int external)
+{
+  assert(0);
+}
+
+template<> void 
+WilsonKernels<GparityWilsonImplFH>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
+							   SiteHalfSpinor *buf,
+							   int sF,int sU,const FermionField &in, FermionField &out,int internal,int external)
+{
+  assert(0);
+}
+
+template<> void 
+WilsonKernels<GparityWilsonImplDF>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+							int sF,int sU,const FermionField &in, FermionField &out,int internal,int external)
+{
+  assert(0);
+}
+
+template<> void 
+WilsonKernels<GparityWilsonImplDF>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+							   int sF,int sU,const FermionField &in, FermionField &out,int internal,int external)
+{
+  assert(0);
+}
+
 
 
 ////////////// Wilson ; uses this implementation /////////////////////
@@ -850,5 +880,15 @@ INSTANTIATE_THEM(DomainWallVec5dImplF);
 INSTANTIATE_THEM(DomainWallVec5dImplD);
 INSTANTIATE_THEM(ZDomainWallVec5dImplF);
 INSTANTIATE_THEM(ZDomainWallVec5dImplD);
+INSTANTIATE_THEM(WilsonImplFH);
+INSTANTIATE_THEM(WilsonImplDF);
+INSTANTIATE_THEM(ZWilsonImplFH);
+INSTANTIATE_THEM(ZWilsonImplDF);
+INSTANTIATE_THEM(GparityWilsonImplFH);
+INSTANTIATE_THEM(GparityWilsonImplDF);
+INSTANTIATE_THEM(DomainWallVec5dImplFH);
+INSTANTIATE_THEM(DomainWallVec5dImplDF);
+INSTANTIATE_THEM(ZDomainWallVec5dImplFH);
+INSTANTIATE_THEM(ZDomainWallVec5dImplDF);
 
 }}

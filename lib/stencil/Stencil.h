@@ -901,8 +901,9 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
     int reduced_buffer_size = buffer_size;
     if (cbmask != 0x3) reduced_buffer_size=buffer_size>>1;
 
-    int bytes = (reduced_buffer_size*sizeof(cobj))/simd_layout;
-    assert(bytes*simd_layout == reduced_buffer_size*sizeof(cobj));
+    int datum_bytes = compress.CommDatumSize();
+    int bytes = (reduced_buffer_size*datum_bytes)/simd_layout;
+    assert(bytes*simd_layout == reduced_buffer_size*datum_bytes);
 
     std::vector<cobj *> rpointers(maxl);
     std::vector<cobj *> spointers(maxl);

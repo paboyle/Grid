@@ -874,17 +874,17 @@ typedef WilsonImpl<vComplex,  FundamentalRepresentation, CoeffReal > WilsonImplR
 typedef WilsonImpl<vComplexF, FundamentalRepresentation, CoeffReal > WilsonImplF;  // Float
 typedef WilsonImpl<vComplexD, FundamentalRepresentation, CoeffReal > WilsonImplD;  // Double
 
-typedef WilsonImpl<vComplex,  FundamentalRepresentation, CoeffRealHalfComms > WilsonImplRH;  // Real.. whichever prec
+typedef WilsonImpl<vComplex,  FundamentalRepresentation, CoeffRealHalfComms > WilsonImplRL;  // Real.. whichever prec
 typedef WilsonImpl<vComplexF, FundamentalRepresentation, CoeffRealHalfComms > WilsonImplFH;  // Float
-typedef WilsonImpl<vComplexD, FundamentalRepresentation, CoeffRealHalfComms > WilsonImplDH;  // Double
+typedef WilsonImpl<vComplexD, FundamentalRepresentation, CoeffRealHalfComms > WilsonImplDF;  // Double
 
 typedef WilsonImpl<vComplex,  FundamentalRepresentation, CoeffComplex > ZWilsonImplR; // Real.. whichever prec
 typedef WilsonImpl<vComplexF, FundamentalRepresentation, CoeffComplex > ZWilsonImplF; // Float
 typedef WilsonImpl<vComplexD, FundamentalRepresentation, CoeffComplex > ZWilsonImplD; // Double
 
-typedef WilsonImpl<vComplex,  FundamentalRepresentation, CoeffComplexHalfComms > ZWilsonImplRH; // Real.. whichever prec
+typedef WilsonImpl<vComplex,  FundamentalRepresentation, CoeffComplexHalfComms > ZWilsonImplRL; // Real.. whichever prec
 typedef WilsonImpl<vComplexF, FundamentalRepresentation, CoeffComplexHalfComms > ZWilsonImplFH; // Float
-typedef WilsonImpl<vComplexD, FundamentalRepresentation, CoeffComplexHalfComms > ZWilsonImplDH; // Double
+typedef WilsonImpl<vComplexD, FundamentalRepresentation, CoeffComplexHalfComms > ZWilsonImplDF; // Double
  
 typedef WilsonImpl<vComplex,  AdjointRepresentation, CoeffReal > WilsonAdjImplR;   // Real.. whichever prec
 typedef WilsonImpl<vComplexF, AdjointRepresentation, CoeffReal > WilsonAdjImplF;  // Float
@@ -898,25 +898,25 @@ typedef DomainWallVec5dImpl<vComplex ,Nc, CoeffReal> DomainWallVec5dImplR; // Re
 typedef DomainWallVec5dImpl<vComplexF,Nc, CoeffReal> DomainWallVec5dImplF; // Float
 typedef DomainWallVec5dImpl<vComplexD,Nc, CoeffReal> DomainWallVec5dImplD; // Double
  
-typedef DomainWallVec5dImpl<vComplex ,Nc, CoeffRealHalfComms> DomainWallVec5dImplRH; // Real.. whichever prec
+typedef DomainWallVec5dImpl<vComplex ,Nc, CoeffRealHalfComms> DomainWallVec5dImplRL; // Real.. whichever prec
 typedef DomainWallVec5dImpl<vComplexF,Nc, CoeffRealHalfComms> DomainWallVec5dImplFH; // Float
-typedef DomainWallVec5dImpl<vComplexD,Nc, CoeffRealHalfComms> DomainWallVec5dImplDH; // Double
+typedef DomainWallVec5dImpl<vComplexD,Nc, CoeffRealHalfComms> DomainWallVec5dImplDF; // Double
  
 typedef DomainWallVec5dImpl<vComplex ,Nc,CoeffComplex> ZDomainWallVec5dImplR; // Real.. whichever prec
 typedef DomainWallVec5dImpl<vComplexF,Nc,CoeffComplex> ZDomainWallVec5dImplF; // Float
 typedef DomainWallVec5dImpl<vComplexD,Nc,CoeffComplex> ZDomainWallVec5dImplD; // Double
  
-typedef DomainWallVec5dImpl<vComplex ,Nc,CoeffComplexHalfComms> ZDomainWallVec5dImplRH; // Real.. whichever prec
+typedef DomainWallVec5dImpl<vComplex ,Nc,CoeffComplexHalfComms> ZDomainWallVec5dImplRL; // Real.. whichever prec
 typedef DomainWallVec5dImpl<vComplexF,Nc,CoeffComplexHalfComms> ZDomainWallVec5dImplFH; // Float
-typedef DomainWallVec5dImpl<vComplexD,Nc,CoeffComplexHalfComms> ZDomainWallVec5dImplDH; // Double
+typedef DomainWallVec5dImpl<vComplexD,Nc,CoeffComplexHalfComms> ZDomainWallVec5dImplDF; // Double
  
 typedef GparityWilsonImpl<vComplex , Nc,CoeffReal> GparityWilsonImplR;  // Real.. whichever prec
 typedef GparityWilsonImpl<vComplexF, Nc,CoeffReal> GparityWilsonImplF;  // Float
 typedef GparityWilsonImpl<vComplexD, Nc,CoeffReal> GparityWilsonImplD;  // Double
  
-typedef GparityWilsonImpl<vComplex , Nc,CoeffRealHalfComms> GparityWilsonImplRH;  // Real.. whichever prec
+typedef GparityWilsonImpl<vComplex , Nc,CoeffRealHalfComms> GparityWilsonImplRL;  // Real.. whichever prec
 typedef GparityWilsonImpl<vComplexF, Nc,CoeffRealHalfComms> GparityWilsonImplFH;  // Float
-typedef GparityWilsonImpl<vComplexD, Nc,CoeffRealHalfComms> GparityWilsonImplDH;  // Double
+typedef GparityWilsonImpl<vComplexD, Nc,CoeffRealHalfComms> GparityWilsonImplDF;  // Double
 
 typedef StaggeredImpl<vComplex,  FundamentalRepresentation > StaggeredImplR;   // Real.. whichever prec
 typedef StaggeredImpl<vComplexF, FundamentalRepresentation > StaggeredImplF;  // Float

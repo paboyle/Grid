@@ -679,7 +679,6 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHw(FermionField &out,const Fe
 
 }
 
-
 FermOpTemplateInstantiate(WilsonFermion5D);
 GparityFermOpTemplateInstantiate(WilsonFermion5D);
   
