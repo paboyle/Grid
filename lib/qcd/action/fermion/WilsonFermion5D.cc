@@ -439,7 +439,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   }
 
   DhopFaceTime-=usecond();
-  st.CommsMerge();
+  st.CommsMerge(compressor);
   DhopFaceTime+=usecond();
 
 #pragma omp parallel 
