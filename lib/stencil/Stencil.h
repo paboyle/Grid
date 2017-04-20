@@ -28,6 +28,7 @@
 #ifndef GRID_STENCIL_H
 #define GRID_STENCIL_H
 
+#include <Grid/stencil/SimpleCompressor.h>   // subdir aggregate
 #include <Grid/stencil/Lebesgue.h>   // subdir aggregate
 
  //////////////////////////////////////////////////////////////////////////////////////////
