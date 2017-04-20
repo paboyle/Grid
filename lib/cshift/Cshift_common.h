@@ -30,33 +30,11 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 namespace Grid {
 
-template<class vobj>
-class SimpleCompressor {
-public:
-  void Point(int) {};
-  inline int  CommDatumSize(void) { return sizeof(vobj); }
-  inline bool DecompressionStep(void) { return false; }
-  inline void Compress(vobj *buf,int o,const vobj &in) { buf[o]=in; }
-  inline void Exchange(vobj *mp,vobj *vp0,vobj *vp1,Integer type,Integer o){
-    exchange(mp[2*o],mp[2*o+1],vp0[o],vp1[o],type);
-  }
-  inline void Decompress(vobj *out,vobj *in, int o){ assert(0); }
-  inline void CompressExchange(vobj *out0,vobj *out1,const vobj *in,
-			       int j,int k, int m,int type){
-    exchange(out0[j],out1[j],in[k],in[m],type);
-  }
-  // For cshift. Cshift should drop compressor coupling altogether 
-  // because I had to decouple the code from the Stencil anyway
-  inline vobj operator() (const vobj &arg) {
-    return arg;
-  }
-};
-
 ///////////////////////////////////////////////////////////////////
-// Gather for when there is no need to SIMD split with compression
+// Gather for when there is no need to SIMD split 
 ///////////////////////////////////////////////////////////////////
-template<class vobj,class cobj,class compressor> void 
-Gather_plane_simple (const Lattice<vobj> &rhs,commVector<cobj> &buffer,int dimension,int plane,int cbmask,compressor &compress, int off=0)
+template<class vobj> void 
+Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer,int dimension,int plane,int cbmask, int off=0)
 {
   int rd = rhs._grid->_rdimensions[dimension];
 
@@ -74,7 +52,7 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<cobj> &buffer,int dimen
       for(int b=0;b<e2;b++){
 	int o  = n*stride;
 	int bo = n*e2;
-	buffer[off+bo+b]=compress(rhs._odata[so+o+b]);
+	buffer[off+bo+b]=rhs._odata[so+o+b];
       }
     }
   } else { 
@@ -90,17 +68,16 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<cobj> &buffer,int dimen
        }
      }
      parallel_for(int i=0;i<table.size();i++){
-       buffer[off+table[i].first]=compress(rhs._odata[so+table[i].second]);
+       buffer[off+table[i].first]=rhs._odata[so+table[i].second];
      }
   }
 }
 
-
 ///////////////////////////////////////////////////////////////////
-// Gather for when there *is* need to SIMD split with compression
+// Gather for when there *is* need to SIMD split 
 ///////////////////////////////////////////////////////////////////
-template<class cobj,class vobj,class compressor> void 
-Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename cobj::scalar_object *> pointers,int dimension,int plane,int cbmask,compressor &compress)
+template<class vobj> void 
+Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename vobj::scalar_object *> pointers,int dimension,int plane,int cbmask)
 {
   int rd = rhs._grid->_rdimensions[dimension];
 
@@ -121,8 +98,8 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename cobj::scalar_
 	int o      =   n*n1;
 	int offset = b+n*e2;
 	
-	cobj temp =compress(rhs._odata[so+o+b]);
-	extract<cobj>(temp,pointers,offset);
+	vobj temp =rhs._odata[so+o+b];
+	extract<vobj>(temp,pointers,offset);
 
       }
     }
@@ -139,30 +116,12 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename cobj::scalar_
 	int offset = b+n*e2;
 
 	if ( ocb & cbmask ) {
-	  cobj temp =compress(rhs._odata[so+o+b]);
-	  extract<cobj>(temp,pointers,offset);
+	  vobj temp =rhs._odata[so+o+b];
+	  extract<vobj>(temp,pointers,offset);
 	}
       }
     }
   }
-}
-
-//////////////////////////////////////////////////////
-// Gather for when there is no need to SIMD split
-//////////////////////////////////////////////////////
-template<class vobj> void Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer, int dimension,int plane,int cbmask)
-{
-  SimpleCompressor<vobj> dontcompress;
-  Gather_plane_simple (rhs,buffer,dimension,plane,cbmask,dontcompress);
-}
-
-//////////////////////////////////////////////////////
-// Gather for when there *is* need to SIMD split
-//////////////////////////////////////////////////////
-template<class vobj> void Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename vobj::scalar_object *> pointers,int dimension,int plane,int cbmask)
-{
-  SimpleCompressor<vobj> dontcompress;
-  Gather_plane_extract<vobj,vobj,decltype(dontcompress)>(rhs,pointers,dimension,plane,cbmask,dontcompress);
 }
 
 //////////////////////////////////////////////////////
@@ -212,7 +171,7 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
 //////////////////////////////////////////////////////
 // Scatter for when there *is* need to SIMD split
 //////////////////////////////////////////////////////
- template<class vobj,class cobj> void Scatter_plane_merge(Lattice<vobj> &rhs,std::vector<cobj *> pointers,int dimension,int plane,int cbmask)
+template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,std::vector<typename vobj::scalar_object *> pointers,int dimension,int plane,int cbmask)
 {
   int rd = rhs._grid->_rdimensions[dimension];
 
