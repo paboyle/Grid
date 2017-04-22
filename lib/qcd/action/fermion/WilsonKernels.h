@@ -34,8 +34,6 @@ directory
 namespace Grid {
 namespace QCD {
 
-void bgq_l1p_optimisation(int mode);
-
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Helper routines that implement Wilson stencil for a single site.
   // Common to both the WilsonFermion and WilsonFermion5D
@@ -44,9 +42,8 @@ class WilsonKernelsStatic {
  public:
   enum { OptGeneric, OptHandUnroll, OptInlineAsm };
   enum { CommsAndCompute, CommsThenCompute };
-  // S-direction is INNERMOST and takes no part in the parity.
-  static int Opt;  // these are a temporary hack
-  static int Comms;  // these are a temporary hack
+  static int Opt;  
+  static int Comms;
 };
  
 template<class Impl> class WilsonKernels : public FermionOperator<Impl> , public WilsonKernelsStatic { 
@@ -75,7 +72,7 @@ public:
     case OptHandUnroll:
       for (int site = 0; site < Ns; site++) {
 	for (int s = 0; s < Ls; s++) {
-	  if( exterior) WilsonKernels<Impl>::HandDhopSite(st,lo,U,buf,sF,sU,in,out,interior,exterior);
+	  if( exterior) WilsonKernels<Impl>::HandDhopSite(st,lo,U,buf,sF,sU,in,out);
 	  sF++;
 	}
 	sU++;
@@ -84,7 +81,10 @@ public:
     case OptGeneric:
       for (int site = 0; site < Ns; site++) {
 	for (int s = 0; s < Ls; s++) {
-	  if( exterior) WilsonKernels<Impl>::GenericDhopSite(st,lo,U,buf,sF,sU,in,out,interior,exterior);
+	  if(interior&&exterior) WilsonKernels<Impl>::GenericDhopSite(st,lo,U,buf,sF,sU,in,out);
+	  else if (interior)     WilsonKernels<Impl>::GenericDhopSiteInt(st,lo,U,buf,sF,sU,in,out);
+	  else if (exterior)     WilsonKernels<Impl>::GenericDhopSiteExt(st,lo,U,buf,sF,sU,in,out);
+	  else assert(0);
 	  sF++;
 	}
 	sU++;
@@ -99,11 +99,14 @@ public:
   template <bool EnableBool = true>
   typename std::enable_if<(Impl::Dimension != 3 || (Impl::Dimension == 3 && Nc != 3)) && EnableBool, void>::type
   DhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-		   int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out,int interior=1,int exterior=1 ) {
+	   int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out,int interior=1,int exterior=1 ) {
     // no kernel choice  
     for (int site = 0; site < Ns; site++) {
       for (int s = 0; s < Ls; s++) {
-	if( exterior) WilsonKernels<Impl>::GenericDhopSite(st, lo, U, buf, sF, sU, in, out,interior,exterior);
+	if(interior&&exterior) WilsonKernels<Impl>::GenericDhopSite(st,lo,U,buf,sF,sU,in,out);
+	else if (interior)     WilsonKernels<Impl>::GenericDhopSiteInt(st,lo,U,buf,sF,sU,in,out);
+	else if (exterior)     WilsonKernels<Impl>::GenericDhopSiteExt(st,lo,U,buf,sF,sU,in,out);
+	else assert(0);
 	sF++;
       }
       sU++;
@@ -113,8 +116,8 @@ public:
   template <bool EnableBool = true>
   typename std::enable_if<Impl::Dimension == 3 && Nc == 3 && EnableBool,void>::type
   DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-		      int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out,int interior=1,int exterior=1) {
-
+	      int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out,int interior=1,int exterior=1) 
+{
     bgq_l1p_optimisation(1);
     switch(Opt) {
 #if defined(AVX512) || defined (QPX)
@@ -128,7 +131,7 @@ public:
     case OptHandUnroll:
       for (int site = 0; site < Ns; site++) {
 	for (int s = 0; s < Ls; s++) {
-	  if( exterior) WilsonKernels<Impl>::HandDhopSiteDag(st,lo,U,buf,sF,sU,in,out,interior,exterior);
+	  if( exterior) WilsonKernels<Impl>::HandDhopSiteDag(st,lo,U,buf,sF,sU,in,out);
 	  sF++;
 	}
 	sU++;
@@ -137,7 +140,10 @@ public:
     case OptGeneric:
       for (int site = 0; site < Ns; site++) {
 	for (int s = 0; s < Ls; s++) {
-	  if( exterior) WilsonKernels<Impl>::GenericDhopSiteDag(st,lo,U,buf,sF,sU,in,out,interior,exterior);
+	  if(interior&&exterior) WilsonKernels<Impl>::GenericDhopSiteDag(st,lo,U,buf,sF,sU,in,out);
+	  else if (interior)     WilsonKernels<Impl>::GenericDhopSiteDagInt(st,lo,U,buf,sF,sU,in,out);
+	  else if (exterior)     WilsonKernels<Impl>::GenericDhopSiteDagExt(st,lo,U,buf,sF,sU,in,out);
+	  else assert(0);
 	  sF++;
 	}
 	sU++;
@@ -156,7 +162,10 @@ public:
 
     for (int site = 0; site < Ns; site++) {
       for (int s = 0; s < Ls; s++) {
-	if( exterior) WilsonKernels<Impl>::GenericDhopSiteDag(st,lo,U,buf,sF,sU,in,out,interior,exterior);
+	if(interior&&exterior) WilsonKernels<Impl>::GenericDhopSiteDag(st,lo,U,buf,sF,sU,in,out);
+	else if (interior)     WilsonKernels<Impl>::GenericDhopSiteDagInt(st,lo,U,buf,sF,sU,in,out);
+	else if (exterior)     WilsonKernels<Impl>::GenericDhopSiteDagExt(st,lo,U,buf,sF,sU,in,out);
+	else assert(0);
 	sF++;
       }
       sU++;
@@ -169,35 +178,47 @@ public:
 private:
      // Specialised variants
   void GenericDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-			       int sF, int sU, const FermionField &in, FermionField &out,int interior,int exterior);
+		       int sF, int sU, const FermionField &in, FermionField &out);
       
   void GenericDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-				  int sF, int sU, const FermionField &in, FermionField &out,int interior,int exterior);
+			  int sF, int sU, const FermionField &in, FermionField &out);
+
+  void GenericDhopSiteInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
+			  int sF, int sU, const FermionField &in, FermionField &out);
+      
+  void GenericDhopSiteDagInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
+			     int sF, int sU, const FermionField &in, FermionField &out);
+
+  void GenericDhopSiteExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
+			  int sF, int sU, const FermionField &in, FermionField &out);
+      
+  void GenericDhopSiteDagExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
+			     int sF, int sU, const FermionField &in, FermionField &out);
 
   void AsmDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-			   int sF, int sU, int Ls, int Ns, const FermionField &in,FermionField &out);
+		   int sF, int sU, int Ls, int Ns, const FermionField &in,FermionField &out);
 
   void AsmDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-			      int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out);
+		      int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out);
 
   void AsmDhopSiteInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-			   int sF, int sU, int Ls, int Ns, const FermionField &in,FermionField &out);
+		      int sF, int sU, int Ls, int Ns, const FermionField &in,FermionField &out);
 
   void AsmDhopSiteDagInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-			      int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out);
+			 int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out);
 
   void AsmDhopSiteExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-			      int sF, int sU, int Ls, int Ns, const FermionField &in,FermionField &out);
+		      int sF, int sU, int Ls, int Ns, const FermionField &in,FermionField &out);
 
   void AsmDhopSiteDagExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-				 int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out);
+			 int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out);
 
 
   void HandDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-			    int sF, int sU, const FermionField &in, FermionField &out,int interior,int exterior);
+		    int sF, int sU, const FermionField &in, FermionField &out);
 
   void HandDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-			       int sF, int sU, const FermionField &in, FermionField &out,int interior,int exterior);
+		       int sF, int sU, const FermionField &in, FermionField &out);
       
 public:
 

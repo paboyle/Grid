@@ -53,12 +53,14 @@ directory
 #if defined IMCI
 #include "Grid_imci.h"
 #endif
-#if defined QPX
-#include "Grid_qpx.h"
-#endif
 #ifdef NEONv8
 #include "Grid_neon.h"
 #endif
+#if defined QPX
+#include "Grid_qpx.h"
+#endif
+
+#include "l1p.h"
 
 namespace Grid {
 

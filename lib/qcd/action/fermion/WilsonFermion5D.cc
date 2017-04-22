@@ -118,48 +118,6 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   // Allocate the required comms buffer
   ImportGauge(_Umu);
 }
-  /*
-template<class Impl>
-WilsonFermion5D<Impl>::WilsonFermion5D(int simd,GaugeField &_Umu,
-               GridCartesian         &FiveDimGrid,
-               GridRedBlackCartesian &FiveDimRedBlackGrid,
-               GridCartesian         &FourDimGrid,
-               RealD _M5,const ImplParams &p) :
-{
-  int nsimd = Simd::Nsimd();
-
-  // some assertions
-  assert(FiveDimGrid._ndimension==5);
-  assert(FiveDimRedBlackGrid._ndimension==5);
-  assert(FiveDimRedBlackGrid._checker_dim==0); // Checkerboard the s-direction
-  assert(FourDimGrid._ndimension==4);
-
-  // Dimension zero of the five-d is the Ls direction
-  Ls=FiveDimGrid._fdimensions[0];
-  assert(FiveDimGrid._processors[0]         ==1);
-  assert(FiveDimGrid._simd_layout[0]        ==nsimd);
-
-  assert(FiveDimRedBlackGrid._fdimensions[0]==Ls);
-  assert(FiveDimRedBlackGrid._processors[0] ==1);
-  assert(FiveDimRedBlackGrid._simd_layout[0]==nsimd);
-
-  // Other dimensions must match the decomposition of the four-D fields 
-  for(int d=0;d<4;d++){
-    assert(FiveDimRedBlackGrid._fdimensions[d+1]==FourDimGrid._fdimensions[d]);
-    assert(FiveDimRedBlackGrid._processors[d+1] ==FourDimGrid._processors[d]);
-
-    assert(FourDimGrid._simd_layout[d]=1);
-    assert(FiveDimRedBlackGrid._simd_layout[d+1]==1);
-
-    assert(FiveDimGrid._fdimensions[d+1]        ==FourDimGrid._fdimensions[d]);
-    assert(FiveDimGrid._processors[d+1]         ==FourDimGrid._processors[d]);
-    assert(FiveDimGrid._simd_layout[d+1]        ==FourDimGrid._simd_layout[d]);
-  }
-
-  {
-  }
-}  
-  */
      
 template<class Impl>
 void WilsonFermion5D<Impl>::Report(void)
@@ -415,6 +373,10 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   DhopFaceTime+=usecond();
   std::vector<std::vector<CommsRequest_t> > reqs;
 
+  // Rely on async comms; start comms before merge of local data
+  st.CommunicateBegin(reqs);
+  st.CommsMergeSHM(compressor);
+
 #pragma omp parallel 
   { 
     int nthreads = omp_get_num_threads();
@@ -426,7 +388,6 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
 
     if ( me == 0 ) {
       DhopCommTime-=usecond();
-      st.CommunicateBegin(reqs);
       st.CommunicateComplete(reqs);
       DhopCommTime+=usecond();
     } else { 
@@ -442,10 +403,13 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   st.CommsMerge(compressor);
   DhopFaceTime+=usecond();
 
+  // Load imbalance alert. Should use dynamic schedule OMP for loop
+  // Perhaps create a list of only those sites with face work, and 
+  // load balance process the list.
 #pragma omp parallel 
   {
     int nthreads = omp_get_num_threads();
-    int me = omp_get_thread_num();
+    int me       = omp_get_thread_num();
     int myoff, mywork;
 
     GridThread::GetWork(len,me,mywork,myoff,nthreads);

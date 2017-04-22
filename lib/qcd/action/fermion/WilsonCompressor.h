@@ -241,13 +241,18 @@ public:
 
   typedef CartesianCommunicator::CommsRequest_t CommsRequest_t;
 
+  std::vector<int> same_node;
+
   WilsonStencil(GridBase *grid,
 		int npoints,
 		int checkerboard,
 		const std::vector<int> &directions,
 		const std::vector<int> &distances)  
-   : CartesianStencil<vobj,cobj> (grid,npoints,checkerboard,directions,distances) 
-  { /*Do nothing*/ };
+    : CartesianStencil<vobj,cobj> (grid,npoints,checkerboard,directions,distances) ,
+      same_node(npoints)
+  { 
+    assert(npoints==8);// or 10 if do naive DWF 5d red black ?
+  };
 
   template < class compressor>
   void HaloExchangeOpt(const Lattice<vobj> &source,compressor &compress) 
@@ -257,6 +262,7 @@ public:
     this->CommunicateBegin(reqs);
     this->CommunicateComplete(reqs);
     this->CommsMerge(compress);
+    this->CommsMergeSHM(compress);
   }
   
   template <class compressor>
@@ -295,23 +301,23 @@ public:
     int face_idx=0;
     if ( dag ) { 
       //	std::cout << " Optimised Dagger compress " <<std::endl;
-      this->HaloGatherDir(source,XpCompress,Xp,face_idx);
-      this->HaloGatherDir(source,YpCompress,Yp,face_idx);
-      this->HaloGatherDir(source,ZpCompress,Zp,face_idx);
-      this->HaloGatherDir(source,TpCompress,Tp,face_idx);
-      this->HaloGatherDir(source,XmCompress,Xm,face_idx);
-      this->HaloGatherDir(source,YmCompress,Ym,face_idx);
-      this->HaloGatherDir(source,ZmCompress,Zm,face_idx);
-      this->HaloGatherDir(source,TmCompress,Tm,face_idx);
+      same_node[Xp]=this->HaloGatherDir(source,XpCompress,Xp,face_idx);
+      same_node[Yp]=this->HaloGatherDir(source,YpCompress,Yp,face_idx);
+      same_node[Zp]=this->HaloGatherDir(source,ZpCompress,Zp,face_idx);
+      same_node[Tp]=this->HaloGatherDir(source,TpCompress,Tp,face_idx);
+      same_node[Xm]=this->HaloGatherDir(source,XmCompress,Xm,face_idx);
+      same_node[Ym]=this->HaloGatherDir(source,YmCompress,Ym,face_idx);
+      same_node[Zm]=this->HaloGatherDir(source,ZmCompress,Zm,face_idx);
+      same_node[Tm]=this->HaloGatherDir(source,TmCompress,Tm,face_idx);
     } else {
-      this->HaloGatherDir(source,XmCompress,Xp,face_idx);
-      this->HaloGatherDir(source,YmCompress,Yp,face_idx);
-      this->HaloGatherDir(source,ZmCompress,Zp,face_idx);
-      this->HaloGatherDir(source,TmCompress,Tp,face_idx);
-      this->HaloGatherDir(source,XpCompress,Xm,face_idx);
-      this->HaloGatherDir(source,YpCompress,Ym,face_idx);
-      this->HaloGatherDir(source,ZpCompress,Zm,face_idx);
-      this->HaloGatherDir(source,TpCompress,Tm,face_idx);
+      same_node[Xp]=this->HaloGatherDir(source,XmCompress,Xp,face_idx);
+      same_node[Yp]=this->HaloGatherDir(source,YmCompress,Yp,face_idx);
+      same_node[Zp]=this->HaloGatherDir(source,ZmCompress,Zp,face_idx);
+      same_node[Tp]=this->HaloGatherDir(source,TmCompress,Tp,face_idx);
+      same_node[Xm]=this->HaloGatherDir(source,XpCompress,Xm,face_idx);
+      same_node[Ym]=this->HaloGatherDir(source,YpCompress,Ym,face_idx);
+      same_node[Zm]=this->HaloGatherDir(source,ZpCompress,Zm,face_idx);
+      same_node[Tm]=this->HaloGatherDir(source,TpCompress,Tm,face_idx);
     }
     this->face_table_computed=1;
     assert(this->u_comm_offset==this->_unified_buffer_size);

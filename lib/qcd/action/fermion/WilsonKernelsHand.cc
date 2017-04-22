@@ -307,55 +307,106 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   result_31-= UChi_11;	\
   result_32-= UChi_12;
 
-namespace Grid {
-namespace QCD {
+#define HAND_STENCIL_LEG(PROJ,PERM,DIR,RECON)	\
+  SE=st.GetEntry(ptype,DIR,ss);			\
+  offset = SE->_offset;				\
+  local  = SE->_is_local;			\
+  perm   = SE->_permute;			\
+  if ( local ) {				\
+    LOAD_CHIMU;					\
+    PROJ;					\
+    if ( perm) {				\
+      PERMUTE_DIR(PERM);			\
+    }						\
+  } else {					\
+    LOAD_CHI;					\
+  }						\
+  {						\
+    MULT_2SPIN(DIR);				\
+  }						\
+  RECON;					
+
+#define HAND_STENCIL_LEG_INT(PROJ,PERM,DIR,RECON)	\
+  SE=st.GetEntry(ptype,DIR,ss);			\
+  offset = SE->_offset;				\
+  local  = SE->_is_local;			\
+  perm   = SE->_permute;			\
+  if ( local ) {				\
+    LOAD_CHIMU;					\
+    PROJ;					\
+    if ( perm) {				\
+      PERMUTE_DIR(PERM);			\
+    }						\
+  } else {					\
+    if ( st.same_node[DIR] ) {			\
+      LOAD_CHI;					\
+    }						\
+  }						\
+  if (local || st.same_node[DIR] ) {		\
+    MULT_2SPIN(DIR);				\
+    RECON;					\
+  }
+
+#define HAND_STENCIL_LEG_EXT(PROJ,PERM,DIR,RECON)	\
+  SE=st.GetEntry(ptype,Dir,ss);			\
+  offset = SE->_offset;				\
+  local  = SE->_is_local;			\
+  perm   = SE->_permute;			\
+  if((!SE->_is_local)&&(!st.same_node[Dir]) ) {	\
+    LOAD_CHI;					\
+    MULT_2SPIN(DIR);				\
+    RECON;					\
+  }
+
+#define HAND_RESULT(ss)				\
+  {						\
+    SiteSpinor & ref (out._odata[ss]);		\
+    vstream(ref()(0)(0),result_00);		\
+    vstream(ref()(0)(1),result_01);		\
+    vstream(ref()(0)(2),result_02);		\
+    vstream(ref()(1)(0),result_10);		\
+    vstream(ref()(1)(1),result_11);		\
+    vstream(ref()(1)(2),result_12);		\
+    vstream(ref()(2)(0),result_20);		\
+    vstream(ref()(2)(1),result_21);		\
+    vstream(ref()(2)(2),result_22);		\
+    vstream(ref()(3)(0),result_30);		\
+    vstream(ref()(3)(1),result_31);		\
+    vstream(ref()(3)(2),result_32);		\
+  }
 
 
-template<class Impl> void 
-WilsonKernels<Impl>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf,
-					  int ss,int sU,const FermionField &in, FermionField &out,int interior,int exterior)
-{
-  typedef typename Simd::scalar_type S;
-  typedef typename Simd::vector_type V;
-
-  REGISTER Simd result_00; // 12 regs on knc
-  REGISTER Simd result_01;
-  REGISTER Simd result_02;
-
-  REGISTER Simd result_10;
-  REGISTER Simd result_11;
-  REGISTER Simd result_12;
-
-  REGISTER Simd result_20;
-  REGISTER Simd result_21;
-  REGISTER Simd result_22;
-
-  REGISTER Simd result_30;
-  REGISTER Simd result_31;
-  REGISTER Simd result_32; // 20 left
-
-  REGISTER Simd Chi_00;    // two spinor; 6 regs
-  REGISTER Simd Chi_01;
-  REGISTER Simd Chi_02;
-
-  REGISTER Simd Chi_10;
-  REGISTER Simd Chi_11;
-  REGISTER Simd Chi_12;   // 14 left
-
-  REGISTER Simd UChi_00;  // two spinor; 6 regs
-  REGISTER Simd UChi_01;
-  REGISTER Simd UChi_02;
-
-  REGISTER Simd UChi_10;
-  REGISTER Simd UChi_11;
-  REGISTER Simd UChi_12;  // 8 left
-
-  REGISTER Simd U_00;  // two rows of U matrix
-  REGISTER Simd U_10;
-  REGISTER Simd U_20;  
-  REGISTER Simd U_01;
-  REGISTER Simd U_11;
-  REGISTER Simd U_21;  // 2 reg left.
+#define HAND_DECLARATIONS(a)			\
+  Simd result_00;				\
+  Simd result_01;				\
+  Simd result_02;				\
+  Simd result_10;				\
+  Simd result_11;				\
+  Simd result_12;				\
+  Simd result_20;				\
+  Simd result_21;				\
+  Simd result_22;				\
+  Simd result_30;				\
+  Simd result_31;				\
+  Simd result_32;				\
+  Simd Chi_00;					\
+  Simd Chi_01;					\
+  Simd Chi_02;					\
+  Simd Chi_10;					\
+  Simd Chi_11;					\
+  Simd Chi_12;					\
+  Simd UChi_00;					\
+  Simd UChi_01;					\
+  Simd UChi_02;					\
+  Simd UChi_10;					\
+  Simd UChi_11;					\
+  Simd UChi_12;					\
+  Simd U_00;					\
+  Simd U_10;					\
+  Simd U_20;					\
+  Simd U_01;					\
+  Simd U_11;					\
+  Simd U_21; 
 
 #define Chimu_00 Chi_00
 #define Chimu_01 Chi_01
@@ -370,430 +421,54 @@ WilsonKernels<Impl>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGauge
 #define Chimu_31 UChi_11
 #define Chimu_32 UChi_12
 
+namespace Grid {
+namespace QCD {
+
+template<class Impl> void 
+WilsonKernels<Impl>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf,
+					  int ss,int sU,const FermionField &in, FermionField &out)
+{
+// T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
+  typedef typename Simd::scalar_type S;
+  typedef typename Simd::vector_type V;
+
+  HAND_DECLARATIONS(ignore);
 
   int offset,local,perm, ptype;
   StencilEntry *SE;
 
-  // Xp
-  SE=st.GetEntry(ptype,Xp,ss);
-  offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
-  
-  if ( local ) {
-    LOAD_CHIMU;
-    XM_PROJ;
-    if ( perm) {
-      PERMUTE_DIR(3); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
-    }
-  } else { 
-    LOAD_CHI;
-  }
-  {
-    MULT_2SPIN(Xp);
-  }
-  XM_RECON;
-  
-  // Yp
-  SE=st.GetEntry(ptype,Yp,ss);
-  offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
-  
-  if ( local ) {
-    LOAD_CHIMU;
-    YM_PROJ;
-    if ( perm) {
-      PERMUTE_DIR(2); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
-    }
-  } else { 
-    LOAD_CHI;
-  }
-  {
-    MULT_2SPIN(Yp);
-  }
-  YM_RECON_ACCUM;
-
-
-  // Zp
-  SE=st.GetEntry(ptype,Zp,ss);
-  offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
-  
-  if ( local ) {
-    LOAD_CHIMU;
-    ZM_PROJ;
-    if ( perm) {
-      PERMUTE_DIR(1); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
-    }
-  } else { 
-    LOAD_CHI;
-  }
-  {
-    MULT_2SPIN(Zp);
-  }
-  ZM_RECON_ACCUM;
-
-  // Tp
-  SE=st.GetEntry(ptype,Tp,ss);
-  offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
-  
-  if ( local ) {
-    LOAD_CHIMU;
-    TM_PROJ;
-    if ( perm) {
-      PERMUTE_DIR(0); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
-    }
-  } else { 
-    LOAD_CHI;
-  }
-  {
-    MULT_2SPIN(Tp);
-  }
-  TM_RECON_ACCUM;
-  
-  // Xm
-  SE=st.GetEntry(ptype,Xm,ss);
-  offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
-  
-  if ( local ) {
-    LOAD_CHIMU;
-    XP_PROJ;
-    if ( perm) {
-      PERMUTE_DIR(3); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
-    }
-  } else { 
-    LOAD_CHI;
-  }
-  {
-    MULT_2SPIN(Xm);
-  }
-  XP_RECON_ACCUM;
-  
-  
-  // Ym
-  SE=st.GetEntry(ptype,Ym,ss);
-  offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
-  
-  if ( local ) {
-    LOAD_CHIMU;
-    YP_PROJ;
-    if ( perm) {
-      PERMUTE_DIR(2); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
-    }
-  } else { 
-    LOAD_CHI;
-  }
-  {
-    MULT_2SPIN(Ym);
-  }
-  YP_RECON_ACCUM;
-
-  // Zm
-  SE=st.GetEntry(ptype,Zm,ss);
-  offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
-  
-  if ( local ) {
-    LOAD_CHIMU;
-    ZP_PROJ;
-    if ( perm) {
-      PERMUTE_DIR(1); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
-    }
-  } else { 
-    LOAD_CHI;
-  }
-  {
-    MULT_2SPIN(Zm);
-  }
-  ZP_RECON_ACCUM;
-
-  // Tm
-  SE=st.GetEntry(ptype,Tm,ss);
-  offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
-  
-  if ( local ) {
-    LOAD_CHIMU;
-    TP_PROJ;
-    if ( perm) {
-      PERMUTE_DIR(0); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
-    }
-  } else { 
-    LOAD_CHI;
-  }
-  {
-    MULT_2SPIN(Tm);
-  }
-  TP_RECON_ACCUM;
-
-  {
-    SiteSpinor & ref (out._odata[ss]);
-    vstream(ref()(0)(0),result_00);
-    vstream(ref()(0)(1),result_01);
-    vstream(ref()(0)(2),result_02);
-    vstream(ref()(1)(0),result_10);
-    vstream(ref()(1)(1),result_11);
-    vstream(ref()(1)(2),result_12);
-    vstream(ref()(2)(0),result_20);
-    vstream(ref()(2)(1),result_21);
-    vstream(ref()(2)(2),result_22);
-    vstream(ref()(3)(0),result_30);
-    vstream(ref()(3)(1),result_31);
-    vstream(ref()(3)(2),result_32);
-  }
+  HAND_STENCIL_LEG(XM_PROJ,3,Xp,XM_RECON);
+  HAND_STENCIL_LEG(YM_PROJ,2,Yp,YM_RECON_ACCUM);
+  HAND_STENCIL_LEG(ZM_PROJ,1,Zp,ZM_RECON_ACCUM);
+  HAND_STENCIL_LEG(TM_PROJ,0,Tp,TM_RECON_ACCUM);
+  HAND_STENCIL_LEG(XP_PROJ,3,Xm,XP_RECON_ACCUM);
+  HAND_STENCIL_LEG(YP_PROJ,2,Ym,YP_RECON_ACCUM);
+  HAND_STENCIL_LEG(ZP_PROJ,1,Zm,ZP_RECON_ACCUM);
+  HAND_STENCIL_LEG(TP_PROJ,0,Tm,TP_RECON_ACCUM);
+  HAND_RESULT(ss);
 }
 
 template<class Impl>
 void WilsonKernels<Impl>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-						  int ss,int sU,const FermionField &in, FermionField &out,int interior,int exterior)
+						  int ss,int sU,const FermionField &in, FermionField &out)
 {
-  //  std::cout << "Hand op Dhop "<<std::endl;
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
 
-  REGISTER Simd result_00; // 12 regs on knc
-  REGISTER Simd result_01;
-  REGISTER Simd result_02;
-  
-  REGISTER Simd result_10;
-  REGISTER Simd result_11;
-  REGISTER Simd result_12;
-
-  REGISTER Simd result_20;
-  REGISTER Simd result_21;
-  REGISTER Simd result_22;
-
-  REGISTER Simd result_30;
-  REGISTER Simd result_31;
-  REGISTER Simd result_32; // 20 left
-
-  REGISTER Simd Chi_00;    // two spinor; 6 regs
-  REGISTER Simd Chi_01;
-  REGISTER Simd Chi_02;
-
-  REGISTER Simd Chi_10;
-  REGISTER Simd Chi_11;
-  REGISTER Simd Chi_12;   // 14 left
-
-  REGISTER Simd UChi_00;  // two spinor; 6 regs
-  REGISTER Simd UChi_01;
-  REGISTER Simd UChi_02;
-
-  REGISTER Simd UChi_10;
-  REGISTER Simd UChi_11;
-  REGISTER Simd UChi_12;  // 8 left
-
-  REGISTER Simd U_00;  // two rows of U matrix
-  REGISTER Simd U_10;
-  REGISTER Simd U_20;  
-  REGISTER Simd U_01;
-  REGISTER Simd U_11;
-  REGISTER Simd U_21;  // 2 reg left.
-
-#define Chimu_00 Chi_00
-#define Chimu_01 Chi_01
-#define Chimu_02 Chi_02
-#define Chimu_10 Chi_10
-#define Chimu_11 Chi_11
-#define Chimu_12 Chi_12
-#define Chimu_20 UChi_00
-#define Chimu_21 UChi_01
-#define Chimu_22 UChi_02
-#define Chimu_30 UChi_10
-#define Chimu_31 UChi_11
-#define Chimu_32 UChi_12
-
+  HAND_DECLARATIONS(ignore);
 
   StencilEntry *SE;
   int offset,local,perm, ptype;
   
-  // Xp
-  SE=st.GetEntry(ptype,Xp,ss);
-  offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
-  
-  if ( local ) {
-    LOAD_CHIMU;
-    XP_PROJ;
-    if ( perm) {
-      PERMUTE_DIR(3); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
-    }
-  } else { 
-    LOAD_CHI;
-  }
-
-  {
-    MULT_2SPIN(Xp);
-  }
-  XP_RECON;
-
-  // Yp
-  SE=st.GetEntry(ptype,Yp,ss);
-  offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
-  
-  if ( local ) {
-    LOAD_CHIMU;
-    YP_PROJ;
-    if ( perm) {
-      PERMUTE_DIR(2); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
-    }
-  } else { 
-    LOAD_CHI;
-  }
-  {
-    MULT_2SPIN(Yp);
-  }
-  YP_RECON_ACCUM;
-
-
-  // Zp
-  SE=st.GetEntry(ptype,Zp,ss);
-  offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
-  
-  if ( local ) {
-    LOAD_CHIMU;
-    ZP_PROJ;
-    if ( perm) {
-      PERMUTE_DIR(1); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
-    }
-  } else { 
-    LOAD_CHI;
-  }
-  {
-    MULT_2SPIN(Zp);
-  }
-  ZP_RECON_ACCUM;
-
-  // Tp
-  SE=st.GetEntry(ptype,Tp,ss);
-  offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
-  
-  if ( local ) {
-    LOAD_CHIMU;
-    TP_PROJ;
-    if ( perm) {
-      PERMUTE_DIR(0); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
-    }
-  } else { 
-    LOAD_CHI;
-  }
-  {
-    MULT_2SPIN(Tp);
-  }
-  TP_RECON_ACCUM;
-  
-  // Xm
-  SE=st.GetEntry(ptype,Xm,ss);
-  offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
-  
-  if ( local ) {
-    LOAD_CHIMU;
-    XM_PROJ;
-    if ( perm) {
-      PERMUTE_DIR(3); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
-    }
-  } else { 
-    LOAD_CHI;
-  }
-  {
-    MULT_2SPIN(Xm);
-  }
-  XM_RECON_ACCUM;
-  
-  // Ym
-  SE=st.GetEntry(ptype,Ym,ss);
-  offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
-  
-  if ( local ) {
-    LOAD_CHIMU;
-    YM_PROJ;
-    if ( perm) {
-      PERMUTE_DIR(2); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
-    }
-  } else { 
-    LOAD_CHI;
-  }
-  {
-    MULT_2SPIN(Ym);
-  }
-  YM_RECON_ACCUM;
-
-  // Zm
-  SE=st.GetEntry(ptype,Zm,ss);
-  offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
-
-  if ( local ) {
-    LOAD_CHIMU;
-    ZM_PROJ;
-    if ( perm) {
-      PERMUTE_DIR(1); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
-    }
-  } else { 
-    LOAD_CHI;
-  }
-  {
-    MULT_2SPIN(Zm);
-  }
-  ZM_RECON_ACCUM;
-
-  // Tm
-  SE=st.GetEntry(ptype,Tm,ss);
-  offset = SE->_offset;
-  local  = SE->_is_local;
-  perm   = SE->_permute;
-
-  if ( local ) {
-    LOAD_CHIMU;
-    TM_PROJ;
-    if ( perm) {
-      PERMUTE_DIR(0); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
-    }
-  } else { 
-    LOAD_CHI;
-  }
-  {
-    MULT_2SPIN(Tm);
-  }
-  TM_RECON_ACCUM;
-
-  {
-    SiteSpinor & ref (out._odata[ss]);
-    vstream(ref()(0)(0),result_00);
-    vstream(ref()(0)(1),result_01);
-    vstream(ref()(0)(2),result_02);
-    vstream(ref()(1)(0),result_10);
-    vstream(ref()(1)(1),result_11);
-    vstream(ref()(1)(2),result_12);
-    vstream(ref()(2)(0),result_20);
-    vstream(ref()(2)(1),result_21);
-    vstream(ref()(2)(2),result_22);
-    vstream(ref()(3)(0),result_30);
-    vstream(ref()(3)(1),result_31);
-    vstream(ref()(3)(2),result_32);
-  }
+  HAND_STENCIL_LEG(XP_PROJ,3,Xp,XP_RECON);
+  HAND_STENCIL_LEG(YP_PROJ,2,Yp,YP_RECON_ACCUM);
+  HAND_STENCIL_LEG(ZP_PROJ,1,Zp,ZP_RECON_ACCUM);
+  HAND_STENCIL_LEG(TP_PROJ,0,Tp,TP_RECON_ACCUM);
+  HAND_STENCIL_LEG(XM_PROJ,3,Xm,XM_RECON_ACCUM);
+  HAND_STENCIL_LEG(YM_PROJ,2,Ym,YM_RECON_ACCUM);
+  HAND_STENCIL_LEG(ZM_PROJ,1,Zm,ZM_RECON_ACCUM);
+  HAND_STENCIL_LEG(TM_PROJ,0,Tm,TM_RECON_ACCUM);
+  HAND_RESULT(ss);
 }
 
   ////////////////////////////////////////////////
@@ -801,74 +476,71 @@ void WilsonKernels<Impl>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,Doub
   ////////////////////////////////////////////////
 template<> void 
 WilsonKernels<GparityWilsonImplF>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-							SiteHalfSpinor *buf,
-							int sF,int sU,const FermionField &in, FermionField &out,int internal,int external)
+						SiteHalfSpinor *buf,
+						int sF,int sU,const FermionField &in, FermionField &out)
 {
   assert(0);
 }
 
 template<> void 
 WilsonKernels<GparityWilsonImplF>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-							   SiteHalfSpinor *buf,
-							   int sF,int sU,const FermionField &in, FermionField &out,int internal,int external)
+						   SiteHalfSpinor *buf,
+						   int sF,int sU,const FermionField &in, FermionField &out)
 {
   assert(0);
 }
 
 template<> void 
 WilsonKernels<GparityWilsonImplD>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							int sF,int sU,const FermionField &in, FermionField &out,int internal,int external)
+						int sF,int sU,const FermionField &in, FermionField &out)
 {
   assert(0);
 }
 
 template<> void 
 WilsonKernels<GparityWilsonImplD>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							   int sF,int sU,const FermionField &in, FermionField &out,int internal,int external)
+						   int sF,int sU,const FermionField &in, FermionField &out)
 {
   assert(0);
 }
 
 template<> void 
 WilsonKernels<GparityWilsonImplFH>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-							SiteHalfSpinor *buf,
-							int sF,int sU,const FermionField &in, FermionField &out,int internal,int external)
+						 SiteHalfSpinor *buf,
+						 int sF,int sU,const FermionField &in, FermionField &out)
 {
   assert(0);
 }
 
 template<> void 
 WilsonKernels<GparityWilsonImplFH>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-							   SiteHalfSpinor *buf,
-							   int sF,int sU,const FermionField &in, FermionField &out,int internal,int external)
+						    SiteHalfSpinor *buf,
+						    int sF,int sU,const FermionField &in, FermionField &out)
 {
   assert(0);
 }
 
 template<> void 
 WilsonKernels<GparityWilsonImplDF>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							int sF,int sU,const FermionField &in, FermionField &out,int internal,int external)
+						 int sF,int sU,const FermionField &in, FermionField &out)
 {
   assert(0);
 }
 
 template<> void 
 WilsonKernels<GparityWilsonImplDF>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-							   int sF,int sU,const FermionField &in, FermionField &out,int internal,int external)
+						    int sF,int sU,const FermionField &in, FermionField &out)
 {
   assert(0);
 }
 
-
-
 ////////////// Wilson ; uses this implementation /////////////////////
-// Need Nc=3 though //
 
 #define INSTANTIATE_THEM(A) \
 template void WilsonKernels<A>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,\
-						     int ss,int sU,const FermionField &in, FermionField &out,int interior,int exterior); \
-template void WilsonKernels<A>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,\
-							int ss,int sU,const FermionField &in, FermionField &out,int interior,int exterior);
+					     int ss,int sU,const FermionField &in, FermionField &out); \
+template void WilsonKernels<A>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf, \
+						int ss,int sU,const FermionField &in, FermionField &out);
 
 INSTANTIATE_THEM(WilsonImplF);
 INSTANTIATE_THEM(WilsonImplD);

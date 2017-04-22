@@ -411,7 +411,7 @@ namespace Optimization {
     hp[3] = sfw_float_to_half(fp[3]);
     return ret;
   }
-  static inline __m128i Grid_mm_cvtph_ps(__m128i h,int discard) {
+  static inline __m128 Grid_mm_cvtph_ps(__m128i h,int discard) {
     __m128 ret=_mm_setzero_ps();
     float *fp = (float *)&ret;
     Grid_half  *hp = (Grid_half *)&h;
