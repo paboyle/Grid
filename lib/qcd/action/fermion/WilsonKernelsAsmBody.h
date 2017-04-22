@@ -55,7 +55,7 @@
       RECON;								\
 
 #define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
-  base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;		\
+  base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
   PF_GAUGE(Xp);								\
   PREFETCH1_CHIMU(base);						\
   ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON) 
@@ -75,38 +75,34 @@
 	LOAD64(%r10,isigns);						\
 	PROJ(base);							\
 	MAYBEPERM(PERMUTE_DIR,perm);					\
-      } else if ( st.same_dir[Dir] ) {							\
+      } else if ( st.same_node[Dir] ) {					\
 	LOAD_CHI(base);							\
       }									\
       base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;	\
+      PREFETCH_CHIMU(base);						\
       if ( local || st.same_node[Dir] ) {				\
-	PREFETCH_CHIMU(base);						\
 	MULT_2SPIN_DIR_PF(Dir,basep);					\
 	LOAD64(%r10,isigns);						\
 	RECON;								\
       }
 
 #define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
-  base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;		\
+  base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
   PF_GAUGE(Xp);								\
   PREFETCH1_CHIMU(base);						\
-  ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON) else {   ZERO_PSI;  }
+  ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON) else { ZERO_PSI; }
 
 #define RESULT(base,basep) SAVE_RESULT(base,basep);
 
-#define ZERO_NMU(A) 
-
 #endif
-
 ////////////////////////////////////////////////////////////////////////////////
 // Post comms kernel
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef EXTERIOR
 
-
 #define ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
-  base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;		\
-  if((!SE->_is_local)&&(!st.same_node[DIR]) ) {				\
+  base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
+  if((!local)&&(!st.same_node[Dir]) ) {					\
     LOAD_CHI(base);							\
     MULT_2SPIN_DIR_PF(Dir,base);					\
     LOAD64(%r10,isigns);						\
@@ -114,11 +110,11 @@
     nmu++;								\
   }									
 
-#define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON) ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)				
+#define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
+  nmu=0;								\
+  ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON) else { ZERO_PSI; }
 
-#define ZERO_NMU(A) nmu=0;
-    
-#define RESULT(base,basep) if (nmu){  ADD_RESULT(base,base);}
+#define RESULT(base,basep) if (nmu){ ADD_RESULT(base,base);}
 
 #endif
 {
@@ -144,9 +140,7 @@
       int  ent=ss*8;// 2*Ndim
       int nent=ssn*8;
 
-      ZERO_NMU(0);
-
-      ASM_LEG_XP(Xp,Yp,PERMUTE_DIR3,DIR0_PROJMEM,DIR0_RECON);
+   ASM_LEG_XP(Xp,Yp,PERMUTE_DIR3,DIR0_PROJMEM,DIR0_RECON);
       ASM_LEG(Yp,Zp,PERMUTE_DIR2,DIR1_PROJMEM,DIR1_RECON);
       ASM_LEG(Zp,Tp,PERMUTE_DIR1,DIR2_PROJMEM,DIR2_RECON);
       ASM_LEG(Tp,Xm,PERMUTE_DIR0,DIR3_PROJMEM,DIR3_RECON);
@@ -156,10 +150,10 @@
       ASM_LEG(Zm,Tm,PERMUTE_DIR1,DIR6_PROJMEM,DIR6_RECON);
       ASM_LEG(Tm,Xp,PERMUTE_DIR0,DIR7_PROJMEM,DIR7_RECON);
 
-#ifdef EXTERIOR
-      if( nmu == 0 ) break;
-#endif   
-
+#ifndef EXTERIOR
+      //Early out if no work
+      //if (nmu==0) break;
+#endif
       base = (uint64_t) &out._odata[ss];
       basep= st.GetPFInfo(nent,plocal); nent++;
       RESULT(base,basep);
@@ -185,10 +179,6 @@
 #undef DIR5_RECON
 #undef DIR6_RECON
 #undef DIR7_RECON
-#undef EXTERIOR_BLOCK
-#undef INTERIOR_BLOCK
-#undef EXTERIOR_BLOCK_XP
-#undef INTERIOR_BLOCK_XP
-#undef COMMON_BLOCK
-#undef ZERO_NMU
+#undef ASM_LEG
+#undef ASM_LEG_XP
 #undef RESULT
