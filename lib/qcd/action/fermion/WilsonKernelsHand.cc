@@ -31,7 +31,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define REGISTER
 
 #define LOAD_CHIMU \
-  const SiteSpinor & ref (in._odata[offset]);	\
+  {const SiteSpinor & ref (in._odata[offset]);	\
     Chimu_00=ref()(0)(0);\
     Chimu_01=ref()(0)(1);\
     Chimu_02=ref()(0)(2);\
@@ -43,20 +43,20 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     Chimu_22=ref()(2)(2);\
     Chimu_30=ref()(3)(0);\
     Chimu_31=ref()(3)(1);\
-    Chimu_32=ref()(3)(2);
+    Chimu_32=ref()(3)(2);}
 
 #define LOAD_CHI\
-  const SiteHalfSpinor &ref(buf[offset]);	\
+  {const SiteHalfSpinor &ref(buf[offset]);	\
     Chi_00 = ref()(0)(0);\
     Chi_01 = ref()(0)(1);\
     Chi_02 = ref()(0)(2);\
     Chi_10 = ref()(1)(0);\
     Chi_11 = ref()(1)(1);\
-    Chi_12 = ref()(1)(2);
+    Chi_12 = ref()(1)(2);}
 
 // To splat or not to splat depends on the implementation
 #define MULT_2SPIN(A)\
-   auto & ref(U._odata[sU](A));	\
+  {auto & ref(U._odata[sU](A));			\
    Impl::loadLinkElement(U_00,ref()(0,0));	\
    Impl::loadLinkElement(U_10,ref()(1,0));	\
    Impl::loadLinkElement(U_20,ref()(2,0));	\
@@ -83,7 +83,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     UChi_01+= U_10*Chi_02;\
     UChi_11+= U_10*Chi_12;\
     UChi_02+= U_20*Chi_02;\
-    UChi_12+= U_20*Chi_12;
+    UChi_12+= U_20*Chi_12;}
 
 
 #define PERMUTE_DIR(dir)			\
@@ -321,9 +321,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   } else {					\
     LOAD_CHI;					\
   }						\
-  {						\
-    MULT_2SPIN(DIR);				\
-  }						\
+  MULT_2SPIN(DIR);				\
   RECON;					
 
 #define HAND_STENCIL_LEG_INT(PROJ,PERM,DIR,RECON)	\
@@ -337,10 +335,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     if ( perm) {				\
       PERMUTE_DIR(PERM);			\
     }						\
-  } else {					\
-    if ( st.same_node[DIR] ) {			\
-      LOAD_CHI;					\
-    }						\
+  } else if ( st.same_node[DIR] ) {		\
+    LOAD_CHI;					\
   }						\
   if (local || st.same_node[DIR] ) {		\
     MULT_2SPIN(DIR);				\
@@ -348,11 +344,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   }
 
 #define HAND_STENCIL_LEG_EXT(PROJ,PERM,DIR,RECON)	\
-  SE=st.GetEntry(ptype,Dir,ss);			\
+  SE=st.GetEntry(ptype,DIR,ss);			\
   offset = SE->_offset;				\
-  local  = SE->_is_local;			\
-  perm   = SE->_permute;			\
-  if((!SE->_is_local)&&(!st.same_node[Dir]) ) {	\
+  if((!SE->_is_local)&&(!st.same_node[DIR]) ) {	\
     LOAD_CHI;					\
     MULT_2SPIN(DIR);				\
     RECON;					\
@@ -424,7 +418,21 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   Simd U_20;					\
   Simd U_01;					\
   Simd U_11;					\
-  Simd U_21; 
+  Simd U_21;
+
+#define ZERO_RESULT				\
+  result_00=zero;				\
+  result_01=zero;				\
+  result_02=zero;				\
+  result_10=zero;				\
+  result_11=zero;				\
+  result_12=zero;				\
+  result_20=zero;				\
+  result_21=zero;				\
+  result_22=zero;				\
+  result_30=zero;				\
+  result_31=zero;				\
+  result_32=zero;			
 
 #define Chimu_00 Chi_00
 #define Chimu_01 Chi_01
@@ -501,8 +509,7 @@ WilsonKernels<Impl>::HandDhopSiteInt(StencilImpl &st,LebesgueOrder &lo,DoubledGa
 
   int offset,local,perm, ptype;
   StencilEntry *SE;
-
-  result=zero;
+  ZERO_RESULT;
   HAND_STENCIL_LEG_INT(XM_PROJ,3,Xp,XM_RECON_ACCUM);
   HAND_STENCIL_LEG_INT(YM_PROJ,2,Yp,YM_RECON_ACCUM);
   HAND_STENCIL_LEG_INT(ZM_PROJ,1,Zp,ZM_RECON_ACCUM);
@@ -525,7 +532,7 @@ void WilsonKernels<Impl>::HandDhopSiteDagInt(StencilImpl &st,LebesgueOrder &lo,D
 
   StencilEntry *SE;
   int offset,local,perm, ptype;
-  result=zero;
+  ZERO_RESULT;
   HAND_STENCIL_LEG_INT(XP_PROJ,3,Xp,XP_RECON_ACCUM);
   HAND_STENCIL_LEG_INT(YP_PROJ,2,Yp,YP_RECON_ACCUM);
   HAND_STENCIL_LEG_INT(ZP_PROJ,1,Zp,ZP_RECON_ACCUM);
@@ -550,7 +557,7 @@ WilsonKernels<Impl>::HandDhopSiteExt(StencilImpl &st,LebesgueOrder &lo,DoubledGa
   int offset,local,perm, ptype;
   StencilEntry *SE;
   int nmu=0;
-  result=zero;
+  ZERO_RESULT;
   HAND_STENCIL_LEG_EXT(XM_PROJ,3,Xp,XM_RECON_ACCUM);
   HAND_STENCIL_LEG_EXT(YM_PROJ,2,Yp,YM_RECON_ACCUM);
   HAND_STENCIL_LEG_EXT(ZM_PROJ,1,Zp,ZM_RECON_ACCUM);
@@ -574,7 +581,7 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,D
   StencilEntry *SE;
   int offset,local,perm, ptype;
   int nmu=0;
-  result=zero;
+  ZERO_RESULT;
   HAND_STENCIL_LEG_EXT(XP_PROJ,3,Xp,XP_RECON_ACCUM);
   HAND_STENCIL_LEG_EXT(YP_PROJ,2,Yp,YP_RECON_ACCUM);
   HAND_STENCIL_LEG_EXT(ZP_PROJ,1,Zp,ZP_RECON_ACCUM);
@@ -589,65 +596,60 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,D
   ////////////////////////////////////////////////
   // Specialise Gparity to simple implementation
   ////////////////////////////////////////////////
-template<> void 
-WilsonKernels<GparityWilsonImplF>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-						SiteHalfSpinor *buf,
-						int sF,int sU,const FermionField &in, FermionField &out)
-{
-  assert(0);
-}
+#define HAND_SPECIALISE_EMPTY(IMPL)					\
+  template<> void							\
+  WilsonKernels<IMPL>::HandDhopSite(StencilImpl &st,			\
+				    LebesgueOrder &lo,			\
+				    DoubledGaugeField &U,		\
+				    SiteHalfSpinor *buf,		\
+				    int sF,int sU,			\
+				    const FermionField &in,		\
+				    FermionField &out){ assert(0); }	\
+  template<> void							\
+  WilsonKernels<IMPL>::HandDhopSiteDag(StencilImpl &st,			\
+				    LebesgueOrder &lo,			\
+				    DoubledGaugeField &U,		\
+				    SiteHalfSpinor *buf,		\
+				    int sF,int sU,			\
+				    const FermionField &in,		\
+				    FermionField &out){ assert(0); }	\
+  template<> void							\
+  WilsonKernels<IMPL>::HandDhopSiteInt(StencilImpl &st,			\
+				    LebesgueOrder &lo,			\
+				    DoubledGaugeField &U,		\
+				    SiteHalfSpinor *buf,		\
+				    int sF,int sU,			\
+				    const FermionField &in,		\
+				    FermionField &out){ assert(0); }	\
+  template<> void							\
+  WilsonKernels<IMPL>::HandDhopSiteExt(StencilImpl &st,			\
+				    LebesgueOrder &lo,			\
+				    DoubledGaugeField &U,		\
+				    SiteHalfSpinor *buf,		\
+				    int sF,int sU,			\
+				    const FermionField &in,		\
+				    FermionField &out){ assert(0); }	\
+  template<> void							\
+  WilsonKernels<IMPL>::HandDhopSiteDagInt(StencilImpl &st,	       	\
+				    LebesgueOrder &lo,			\
+				    DoubledGaugeField &U,		\
+				    SiteHalfSpinor *buf,		\
+				    int sF,int sU,			\
+				    const FermionField &in,		\
+				    FermionField &out){ assert(0); }	\
+  template<> void							\
+  WilsonKernels<IMPL>::HandDhopSiteDagExt(StencilImpl &st,	       	\
+				    LebesgueOrder &lo,			\
+				    DoubledGaugeField &U,		\
+				    SiteHalfSpinor *buf,		\
+				    int sF,int sU,			\
+				    const FermionField &in,		\
+				    FermionField &out){ assert(0); }	\
 
-template<> void 
-WilsonKernels<GparityWilsonImplF>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-						   SiteHalfSpinor *buf,
-						   int sF,int sU,const FermionField &in, FermionField &out)
-{
-  assert(0);
-}
-
-template<> void 
-WilsonKernels<GparityWilsonImplD>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-						int sF,int sU,const FermionField &in, FermionField &out)
-{
-  assert(0);
-}
-
-template<> void 
-WilsonKernels<GparityWilsonImplD>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-						   int sF,int sU,const FermionField &in, FermionField &out)
-{
-  assert(0);
-}
-
-template<> void 
-WilsonKernels<GparityWilsonImplFH>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-						 SiteHalfSpinor *buf,
-						 int sF,int sU,const FermionField &in, FermionField &out)
-{
-  assert(0);
-}
-
-template<> void 
-WilsonKernels<GparityWilsonImplFH>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,
-						    SiteHalfSpinor *buf,
-						    int sF,int sU,const FermionField &in, FermionField &out)
-{
-  assert(0);
-}
-
-template<> void 
-WilsonKernels<GparityWilsonImplDF>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-						 int sF,int sU,const FermionField &in, FermionField &out)
-{
-  assert(0);
-}
-
-template<> void 
-WilsonKernels<GparityWilsonImplDF>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-						    int sF,int sU,const FermionField &in, FermionField &out)
-{
-  assert(0);
-}
+  HAND_SPECIALISE_EMPTY(GparityWilsonImplF);
+  HAND_SPECIALISE_EMPTY(GparityWilsonImplD);
+  HAND_SPECIALISE_EMPTY(GparityWilsonImplFH);
+  HAND_SPECIALISE_EMPTY(GparityWilsonImplDF);
 
 ////////////// Wilson ; uses this implementation /////////////////////
 
@@ -655,7 +657,15 @@ WilsonKernels<GparityWilsonImplDF>::HandDhopSiteDag(StencilImpl &st,LebesgueOrde
 template void WilsonKernels<A>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,\
 					     int ss,int sU,const FermionField &in, FermionField &out); \
 template void WilsonKernels<A>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf, \
-						int ss,int sU,const FermionField &in, FermionField &out);
+						int ss,int sU,const FermionField &in, FermionField &out);\
+template void WilsonKernels<A>::HandDhopSiteInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,\
+						int ss,int sU,const FermionField &in, FermionField &out); \
+template void WilsonKernels<A>::HandDhopSiteDagInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf, \
+						   int ss,int sU,const FermionField &in, FermionField &out); \
+template void WilsonKernels<A>::HandDhopSiteExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,\
+						int ss,int sU,const FermionField &in, FermionField &out); \
+template void WilsonKernels<A>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf, \
+						   int ss,int sU,const FermionField &in, FermionField &out); 
 
 INSTANTIATE_THEM(WilsonImplF);
 INSTANTIATE_THEM(WilsonImplD);
