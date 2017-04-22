@@ -406,7 +406,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   // Load imbalance alert. Should use dynamic schedule OMP for loop
   // Perhaps create a list of only those sites with face work, and 
   // load balance process the list.
-#if 1
+#if 0
 #pragma omp parallel 
   {
     int nthreads = omp_get_num_threads();
