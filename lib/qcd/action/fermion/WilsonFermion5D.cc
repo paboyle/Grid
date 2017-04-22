@@ -406,6 +406,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   // Load imbalance alert. Should use dynamic schedule OMP for loop
   // Perhaps create a list of only those sites with face work, and 
   // load balance process the list.
+#if 1
 #pragma omp parallel 
   {
     int nthreads = omp_get_num_threads();
@@ -422,8 +423,27 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
     if ( me==0 ) DhopComputeTime2+=usecond();
   }// end parallel region
 #else 
+DhopComputeTime2-=usecond();
+  if (dag == DaggerYes) {
+    parallel_for (int ss = 0; ss < U._grid->oSites(); ss++) {
+      int sU = ss;
+      int sF = LLs * sU;
+      Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,0,1);
+    }
+  } else {
+    parallel_for (int ss = 0; ss < U._grid->oSites(); ss++) {
+      int sU = ss;
+      int sF = LLs * sU;
+      Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,0,1);
+    }
+  }
+DhopComputeTime2+=usecond();
+#endif
+
+#else 
   assert(0);
 #endif
+
 }
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOrder &lo,
