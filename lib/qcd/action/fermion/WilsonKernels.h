@@ -72,7 +72,9 @@ public:
     case OptHandUnroll:
       for (int site = 0; site < Ns; site++) {
 	for (int s = 0; s < Ls; s++) {
-	  if( exterior) WilsonKernels<Impl>::HandDhopSite(st,lo,U,buf,sF,sU,in,out);
+	  if(interior&&exterior) WilsonKernels<Impl>::HandDhopSite(st,lo,U,buf,sF,sU,in,out);
+	  else if (interior)     WilsonKernels<Impl>::HandDhopSiteInt(st,lo,U,buf,sF,sU,in,out);
+	  else if (exterior)     WilsonKernels<Impl>::HandDhopSiteExt(st,lo,U,buf,sF,sU,in,out);
 	  sF++;
 	}
 	sU++;
@@ -131,7 +133,10 @@ public:
     case OptHandUnroll:
       for (int site = 0; site < Ns; site++) {
 	for (int s = 0; s < Ls; s++) {
-	  if( exterior) WilsonKernels<Impl>::HandDhopSiteDag(st,lo,U,buf,sF,sU,in,out);
+	  if(interior&&exterior) WilsonKernels<Impl>::HandDhopSiteDag(st,lo,U,buf,sF,sU,in,out);
+	  else if (interior)     WilsonKernels<Impl>::HandDhopSiteDagInt(st,lo,U,buf,sF,sU,in,out);
+	  else if (exterior)     WilsonKernels<Impl>::HandDhopSiteDagExt(st,lo,U,buf,sF,sU,in,out);
+	  else assert(0);
 	  sF++;
 	}
 	sU++;
