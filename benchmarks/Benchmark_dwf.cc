@@ -166,11 +166,12 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
 
   DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  int ncall =1000;
+  int ncall =100;
   if (1) {
     FGrid->Barrier();
     Dw.ZeroCounters();
     Dw.Dhop(src,result,0);
+    std::cout<<GridLogMessage<<"Called warmup"<<std::endl;
     double t0=usecond();
     for(int i=0;i<ncall;i++){
       __SSC_START;

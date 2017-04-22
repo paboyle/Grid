@@ -220,6 +220,18 @@ private:
   void HandDhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
 		       int sF, int sU, const FermionField &in, FermionField &out);
       
+  void HandDhopSiteInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
+		       int sF, int sU, const FermionField &in, FermionField &out);
+  
+  void HandDhopSiteDagInt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
+			  int sF, int sU, const FermionField &in, FermionField &out);
+  
+  void HandDhopSiteExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
+		       int sF, int sU, const FermionField &in, FermionField &out);
+  
+  void HandDhopSiteDagExt(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
+			  int sF, int sU, const FermionField &in, FermionField &out);
+  
 public:
 
   WilsonKernels(const ImplParams &p = ImplParams());

@@ -356,6 +356,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     LOAD_CHI;					\
     MULT_2SPIN(DIR);				\
     RECON;					\
+    nmu++;					\
   }
 
 #define HAND_RESULT(ss)				\
@@ -373,6 +374,23 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     vstream(ref()(3)(0),result_30);		\
     vstream(ref()(3)(1),result_31);		\
     vstream(ref()(3)(2),result_32);		\
+  }
+
+#define HAND_RESULT_EXT(ss)			\
+  if (nmu){					\
+    SiteSpinor & ref (out._odata[ss]);		\
+    ref()(0)(0)+=result_00;		\
+    ref()(0)(1)+=result_01;		\
+    ref()(0)(2)+=result_02;		\
+    ref()(1)(0)+=result_10;		\
+    ref()(1)(1)+=result_11;		\
+    ref()(1)(2)+=result_12;		\
+    ref()(2)(0)+=result_20;		\
+    ref()(2)(1)+=result_21;		\
+    ref()(2)(2)+=result_22;		\
+    ref()(3)(0)+=result_30;		\
+    ref()(3)(1)+=result_31;		\
+    ref()(3)(2)+=result_32;		\
   }
 
 
@@ -469,6 +487,103 @@ void WilsonKernels<Impl>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,Doub
   HAND_STENCIL_LEG(ZM_PROJ,1,Zm,ZM_RECON_ACCUM);
   HAND_STENCIL_LEG(TM_PROJ,0,Tm,TM_RECON_ACCUM);
   HAND_RESULT(ss);
+}
+
+template<class Impl> void 
+WilsonKernels<Impl>::HandDhopSiteInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf,
+					  int ss,int sU,const FermionField &in, FermionField &out)
+{
+// T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
+  typedef typename Simd::scalar_type S;
+  typedef typename Simd::vector_type V;
+
+  HAND_DECLARATIONS(ignore);
+
+  int offset,local,perm, ptype;
+  StencilEntry *SE;
+
+  result=zero;
+  HAND_STENCIL_LEG_INT(XM_PROJ,3,Xp,XM_RECON_ACCUM);
+  HAND_STENCIL_LEG_INT(YM_PROJ,2,Yp,YM_RECON_ACCUM);
+  HAND_STENCIL_LEG_INT(ZM_PROJ,1,Zp,ZM_RECON_ACCUM);
+  HAND_STENCIL_LEG_INT(TM_PROJ,0,Tp,TM_RECON_ACCUM);
+  HAND_STENCIL_LEG_INT(XP_PROJ,3,Xm,XP_RECON_ACCUM);
+  HAND_STENCIL_LEG_INT(YP_PROJ,2,Ym,YP_RECON_ACCUM);
+  HAND_STENCIL_LEG_INT(ZP_PROJ,1,Zm,ZP_RECON_ACCUM);
+  HAND_STENCIL_LEG_INT(TP_PROJ,0,Tm,TP_RECON_ACCUM);
+  HAND_RESULT(ss);
+}
+
+template<class Impl>
+void WilsonKernels<Impl>::HandDhopSiteDagInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+						  int ss,int sU,const FermionField &in, FermionField &out)
+{
+  typedef typename Simd::scalar_type S;
+  typedef typename Simd::vector_type V;
+
+  HAND_DECLARATIONS(ignore);
+
+  StencilEntry *SE;
+  int offset,local,perm, ptype;
+  result=zero;
+  HAND_STENCIL_LEG_INT(XP_PROJ,3,Xp,XP_RECON_ACCUM);
+  HAND_STENCIL_LEG_INT(YP_PROJ,2,Yp,YP_RECON_ACCUM);
+  HAND_STENCIL_LEG_INT(ZP_PROJ,1,Zp,ZP_RECON_ACCUM);
+  HAND_STENCIL_LEG_INT(TP_PROJ,0,Tp,TP_RECON_ACCUM);
+  HAND_STENCIL_LEG_INT(XM_PROJ,3,Xm,XM_RECON_ACCUM);
+  HAND_STENCIL_LEG_INT(YM_PROJ,2,Ym,YM_RECON_ACCUM);
+  HAND_STENCIL_LEG_INT(ZM_PROJ,1,Zm,ZM_RECON_ACCUM);
+  HAND_STENCIL_LEG_INT(TM_PROJ,0,Tm,TM_RECON_ACCUM);
+  HAND_RESULT(ss);
+}
+
+template<class Impl> void 
+WilsonKernels<Impl>::HandDhopSiteExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf,
+					  int ss,int sU,const FermionField &in, FermionField &out)
+{
+// T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
+  typedef typename Simd::scalar_type S;
+  typedef typename Simd::vector_type V;
+
+  HAND_DECLARATIONS(ignore);
+
+  int offset,local,perm, ptype;
+  StencilEntry *SE;
+  int nmu=0;
+  result=zero;
+  HAND_STENCIL_LEG_EXT(XM_PROJ,3,Xp,XM_RECON_ACCUM);
+  HAND_STENCIL_LEG_EXT(YM_PROJ,2,Yp,YM_RECON_ACCUM);
+  HAND_STENCIL_LEG_EXT(ZM_PROJ,1,Zp,ZM_RECON_ACCUM);
+  HAND_STENCIL_LEG_EXT(TM_PROJ,0,Tp,TM_RECON_ACCUM);
+  HAND_STENCIL_LEG_EXT(XP_PROJ,3,Xm,XP_RECON_ACCUM);
+  HAND_STENCIL_LEG_EXT(YP_PROJ,2,Ym,YP_RECON_ACCUM);
+  HAND_STENCIL_LEG_EXT(ZP_PROJ,1,Zm,ZP_RECON_ACCUM);
+  HAND_STENCIL_LEG_EXT(TP_PROJ,0,Tm,TP_RECON_ACCUM);
+  HAND_RESULT_EXT(ss);
+}
+
+template<class Impl>
+void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
+						  int ss,int sU,const FermionField &in, FermionField &out)
+{
+  typedef typename Simd::scalar_type S;
+  typedef typename Simd::vector_type V;
+
+  HAND_DECLARATIONS(ignore);
+
+  StencilEntry *SE;
+  int offset,local,perm, ptype;
+  int nmu=0;
+  result=zero;
+  HAND_STENCIL_LEG_EXT(XP_PROJ,3,Xp,XP_RECON_ACCUM);
+  HAND_STENCIL_LEG_EXT(YP_PROJ,2,Yp,YP_RECON_ACCUM);
+  HAND_STENCIL_LEG_EXT(ZP_PROJ,1,Zp,ZP_RECON_ACCUM);
+  HAND_STENCIL_LEG_EXT(TP_PROJ,0,Tp,TP_RECON_ACCUM);
+  HAND_STENCIL_LEG_EXT(XM_PROJ,3,Xm,XM_RECON_ACCUM);
+  HAND_STENCIL_LEG_EXT(YM_PROJ,2,Ym,YM_RECON_ACCUM);
+  HAND_STENCIL_LEG_EXT(ZM_PROJ,1,Zm,ZM_RECON_ACCUM);
+  HAND_STENCIL_LEG_EXT(TM_PROJ,0,Tm,TM_RECON_ACCUM);
+  HAND_RESULT_EXT(ss);
 }
 
   ////////////////////////////////////////////////
