@@ -94,7 +94,8 @@ void Gather_plane_exchange_table(std::vector<std::pair<int,int> >& table,const L
    uint64_t _byte_offset;
    uint16_t _is_local;
    uint16_t _permute;
-   uint32_t _around_the_world; //256 bits, 32 bytes, 1/2 cacheline
+   uint16_t _around_the_world; //256 bits, 32 bytes, 1/2 cacheline
+   uint16_t _node_local;
  };
 
 ////////////////////////////////////////
@@ -170,15 +171,6 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
 
   int u_comm_offset;
   int _unified_buffer_size;
-/*
-  std::vector<int> compute2sites;
-  const std::vector<int> &Compute2Sites(void) { return compute2sites; }
-  void CalculateCompute2Sites(void) { 
-    for(int i=0;i< _entries.size();i++){
-
-    }
-  }
-*/
   cobj *CommBuf(void) { return u_recv_buf_p; }
 
   /////////////////////////////////////////
@@ -198,7 +190,9 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
   ////////////////////////////////////////
   // Stencil query
   ////////////////////////////////////////
-
+  inline int GetNodeLocal(int osite) { 
+    return _entries[_npoints*osite]._node_local;
+  }
   inline StencilEntry * GetEntry(int &ptype,int point,int osite) { 
     ptype = _permute_type[point]; return & _entries[point+_npoints*osite]; 
   }
@@ -246,7 +240,6 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
     for(int i=0;i<Packets.size();i++){
       _grid->StencilSendToRecvFromComplete(reqs[i]);
     }
-    _grid->StencilBarrier();// Synch shared memory on a single nodes
     commtime+=usecond();
   }
   
@@ -373,8 +366,13 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
     m.buffer_size = buffer_size;
     mv.push_back(m);
   }
-  template<class decompressor>  void CommsMerge(decompressor decompress)    { CommsMerge(decompress,Mergers,Decompressions); }
-  template<class decompressor>  void CommsMergeSHM(decompressor decompress) { CommsMerge(decompress,MergersSHM,DecompressionsSHM);}
+  template<class decompressor>  void CommsMerge(decompressor decompress)    {
+    CommsMerge(decompress,Mergers,Decompressions); 
+  }
+  template<class decompressor>  void CommsMergeSHM(decompressor decompress) {
+    _grid->StencilBarrier();// Synch shared memory on a single nodes
+    CommsMerge(decompress,MergersSHM,DecompressionsSHM);
+  }
 
   template<class decompressor>
   void CommsMerge(decompressor decompress,std::vector<Merge> &mm,std::vector<Decompress> &dd) { 
@@ -408,6 +406,18 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
 	_entries[i]._byte_offset = _entries[i]._offset*sizeof(vobj);
       } else { 
 	_entries[i]._byte_offset = _entries[i]._offset*sizeof(cobj);
+      }
+    }
+    int osites  = _grid->oSites();
+    for(int o=0;o<osites;o++){
+      int node_local=1;
+      for(int p=0;p<_npoints;p++){
+	if (!_entries[p+o*_npoints]._is_local ){
+	  node_local = 0;
+	}
+      }
+      for(int p=0;p<_npoints;p++){
+	_entries[p+o*_npoints]._node_local = node_local;
       }
     }
   };
@@ -937,7 +947,10 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
 	    cobj *shm = (cobj *) _grid->ShmBufferTranslate(recv_from_rank,sp);
 	    if (shm==NULL) { 
 	      shm = rp;
-	      shm_receive_only = 0; // we found a packet that comes from MPI and contributes to this
+	      // we found a packet that comes from MPI and contributes to this shift.
+	      // same_node is only used in the WilsonStencil, and gets set for this point in the stencil.
+	      // Kernel will add the exterior_terms except if same_node.
+	      shm_receive_only = 0;
 	      // leg of stencil
 	    }
 	    // if Direct, StencilSendToRecvFrom will suppress copy to a peer on node
