@@ -33,8 +33,8 @@ directory
 namespace Grid {
 namespace QCD {
 
-  int WilsonKernelsStatic::Opt   = WilsonKernelsStatic::OptGeneric;
-  int WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsAndCompute;
+int WilsonKernelsStatic::Opt   = WilsonKernelsStatic::OptGeneric;
+int WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsAndCompute;
 
 template <class Impl>
 WilsonKernels<Impl>::WilsonKernels(const ImplParams &p) : Base(p){};
