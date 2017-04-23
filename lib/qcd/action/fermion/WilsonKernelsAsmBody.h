@@ -75,22 +75,20 @@
 	LOAD64(%r10,isigns);						\
 	PROJ(base);							\
 	MAYBEPERM(PERMUTE_DIR,perm);					\
-      } else if ( st.same_node[Dir] ) {					\
-	LOAD_CHI(base);							\
-      }									\
-      base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;	\
-      PREFETCH_CHIMU(base);						\
+      }else if ( st.same_node[Dir] ) {LOAD_CHI(base);}			\
       if ( local || st.same_node[Dir] ) {				\
 	MULT_2SPIN_DIR_PF(Dir,basep);					\
 	LOAD64(%r10,isigns);						\
 	RECON;								\
-      }
+      }									\
+      base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;	\
+      PREFETCH_CHIMU(base);						\
 
 #define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
   base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
   PF_GAUGE(Xp);								\
-  PREFETCH1_CHIMU(base);						\
-  ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON) else { ZERO_PSI; }
+  PREFETCH1_CHIMU(base);{ ZERO_PSI; }					\
+  ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON) 
 
 #define RESULT(base,basep) SAVE_RESULT(base,basep);
 
@@ -100,8 +98,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef EXTERIOR
 
+
 #define ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
   base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
+  /*if((!local) ) {*/							\
   if((!local)&&(!st.same_node[Dir]) ) {					\
     LOAD_CHI(base);							\
     MULT_2SPIN_DIR_PF(Dir,base);					\
@@ -111,8 +111,8 @@
   }									
 
 #define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
-  nmu=0;								\
-  ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON) else { ZERO_PSI; }
+  nmu=0;{ ZERO_PSI; }							\
+  ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)
 
 #define RESULT(base,basep) if (nmu){ ADD_RESULT(base,base);}
 
@@ -151,8 +151,7 @@
       ASM_LEG(Tm,Xp,PERMUTE_DIR0,DIR7_PROJMEM,DIR7_RECON);
 
 #ifndef EXTERIOR
-      //Early out if no work
-      //if (nmu==0) break;
+      if (nmu==0) break;      //Early out if no work
 #endif
       base = (uint64_t) &out._odata[ss];
       basep= st.GetPFInfo(nent,plocal); nent++;
