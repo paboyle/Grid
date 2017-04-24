@@ -101,7 +101,6 @@
 
 #define ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
   base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
-  /*if((!local) ) {*/							\
   if((!local)&&(!st.same_node[Dir]) ) {					\
     LOAD_CHI(base);							\
     MULT_2SPIN_DIR_PF(Dir,base);					\
@@ -111,8 +110,15 @@
   }									
 
 #define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
-  nmu=0;{ ZERO_PSI; }							\
-  ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)
+  nmu=0;								\
+  base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
+  if((!local)&&(!st.same_node[Dir]) ) {					\
+    LOAD_CHI(base);							\
+    MULT_2SPIN_DIR_PF(Dir,base);					\
+    LOAD64(%r10,isigns);						\
+    RECON;								\
+    nmu++;								\
+  } else { ZERO_PSI; };
 
 #define RESULT(base,basep) if (nmu){ ADD_RESULT(base,base);}
 
