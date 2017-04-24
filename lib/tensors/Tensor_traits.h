@@ -53,6 +53,7 @@ namespace Grid {
   public:
     typedef typename T::scalar_type scalar_type;
     typedef typename T::vector_type vector_type;
+    typedef typename T::vector_typeD vector_typeD;
     typedef typename T::tensor_reduced tensor_reduced;
     typedef typename T::scalar_object scalar_object;
     typedef typename T::Complexified Complexified;
@@ -67,6 +68,7 @@ namespace Grid {
   public:
     typedef RealF scalar_type;
     typedef RealF vector_type;
+    typedef RealD vector_typeD;
     typedef RealF tensor_reduced ;
     typedef RealF scalar_object;
     typedef ComplexF Complexified;
@@ -77,6 +79,7 @@ namespace Grid {
   public:
     typedef RealD scalar_type;
     typedef RealD vector_type;
+    typedef RealD vector_typeD;
     typedef RealD tensor_reduced;
     typedef RealD scalar_object;
     typedef ComplexD Complexified;
@@ -87,6 +90,7 @@ namespace Grid {
   public:
     typedef ComplexF scalar_type;
     typedef ComplexF vector_type;
+    typedef ComplexD vector_typeD;
     typedef ComplexF tensor_reduced;
     typedef ComplexF scalar_object;
     typedef ComplexF Complexified;
@@ -97,6 +101,7 @@ namespace Grid {
   public:
     typedef ComplexD scalar_type;
     typedef ComplexD vector_type;
+    typedef ComplexD vector_typeD;
     typedef ComplexD tensor_reduced;
     typedef ComplexD scalar_object;
     typedef ComplexD Complexified;
@@ -107,6 +112,7 @@ namespace Grid {
   public:
     typedef Integer scalar_type;
     typedef Integer vector_type;
+    typedef Integer vector_typeD;
     typedef Integer tensor_reduced;
     typedef Integer scalar_object;
     typedef void Complexified;
@@ -118,6 +124,7 @@ namespace Grid {
   public:
     typedef RealF  scalar_type;
     typedef vRealF vector_type;
+    typedef vRealD vector_typeD;
     typedef vRealF tensor_reduced;
     typedef RealF  scalar_object;
     typedef vComplexF Complexified;
@@ -128,6 +135,7 @@ namespace Grid {
   public:
     typedef RealD  scalar_type;
     typedef vRealD vector_type;
+    typedef vRealD vector_typeD;
     typedef vRealD tensor_reduced;
     typedef RealD  scalar_object;
     typedef vComplexD Complexified;
@@ -138,6 +146,7 @@ namespace Grid {
   public:
     typedef ComplexF  scalar_type;
     typedef vComplexF vector_type;
+    typedef vComplexD vector_typeD;
     typedef vComplexF tensor_reduced;
     typedef ComplexF  scalar_object;
     typedef vComplexF Complexified;
@@ -148,6 +157,7 @@ namespace Grid {
   public:
     typedef ComplexD  scalar_type;
     typedef vComplexD vector_type;
+    typedef vComplexD vector_typeD;
     typedef vComplexD tensor_reduced;
     typedef ComplexD  scalar_object;
     typedef vComplexD Complexified;
@@ -158,6 +168,7 @@ namespace Grid {
   public:
     typedef  Integer scalar_type;
     typedef vInteger vector_type;
+    typedef vInteger vector_typeD;
     typedef vInteger tensor_reduced;
     typedef  Integer scalar_object;
     typedef void Complexified;
@@ -241,7 +252,8 @@ namespace Grid {
   template<typename T>
   class isSIMDvectorized{
     template<typename U>
-    static typename std::enable_if< !std::is_same< typename GridTypeMapper<typename getVectorType<U>::type>::scalar_type,   typename GridTypeMapper<typename getVectorType<U>::type>::vector_type>::value, char>::type test(void *);
+    static typename std::enable_if< !std::is_same< typename GridTypeMapper<typename getVectorType<U>::type>::scalar_type,   
+      typename GridTypeMapper<typename getVectorType<U>::type>::vector_type>::value, char>::type test(void *);
 
     template<typename U>
     static double test(...);
