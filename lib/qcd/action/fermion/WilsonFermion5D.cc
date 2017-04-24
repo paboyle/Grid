@@ -117,6 +117,19 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
     
   // Allocate the required comms buffer
   ImportGauge(_Umu);
+
+  // Build lists of exterior only nodes
+  int LLs = FourDimGrid._rdimensions[0];
+  int vol4;
+  vol4=FourDimGrid.oSites();
+  Stencil.BuildSurfaceList(LLs,vol4);
+  vol4=FourDimRedBlackGrid.oSites();
+  StencilEven.BuildSurfaceList(LLs,vol4);
+   StencilOdd.BuildSurfaceList(LLs,vol4);
+
+   std::cout << GridLogMessage << " SurfaceLists "<< Stencil.surface_list.size()
+                       <<" " << StencilEven.surface_list.size()<<std::endl;
+
 }
      
 template<class Impl>
@@ -406,6 +419,8 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   // Load imbalance alert. Should use dynamic schedule OMP for loop
   // Perhaps create a list of only those sites with face work, and 
   // load balance process the list.
+#if 1
+
 #if 0
 #pragma omp parallel 
   {
@@ -422,6 +437,27 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
     else                  Kernels::DhopSite   (st,lo,U,st.CommBuf(),sF,myoff,LLs,mywork,in,out,0,1);
     if ( me==0 ) DhopComputeTime2+=usecond();
   }// end parallel region
+#else
+  DhopComputeTime2-=usecond();
+  if (dag == DaggerYes) {
+#pragma omp parallel for schedule(static,1)
+    for (int ss = 0; ss < st.surface_list.size(); ss++) {
+      int sU = st.surface_list[ss];
+      int sF = LLs * sU;
+      Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,0,1);
+    }
+  } else {
+#pragma omp parallel for schedule(static,1)
+    for (int ss = 0; ss < st.surface_list.size(); ss++) {
+      int sU = st.surface_list[ss];
+      int sF = LLs * sU;
+      Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,0,1);
+    }
+  }
+  DhopComputeTime2+=usecond();
+#endif 
+
+
 #else 
 DhopComputeTime2-=usecond();
   if (dag == DaggerYes) {

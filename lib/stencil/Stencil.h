@@ -190,8 +190,38 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
   ////////////////////////////////////////
   // Stencil query
   ////////////////////////////////////////
-  inline int GetNodeLocal(int osite) { 
-    return _entries[_npoints*osite]._node_local;
+  inline int SameNode(int point) { 
+
+    int dimension    = _directions[point];
+    int displacement = _distances[point];
+    assert( (displacement==1) || (displacement==-1));
+
+    int pd              = _grid->_processors[dimension];
+    int fd              = _grid->_fdimensions[dimension];
+    int ld              = _grid->_ldimensions[dimension];
+    int rd              = _grid->_rdimensions[dimension];
+    int simd_layout     = _grid->_simd_layout[dimension];
+    int comm_dim        = _grid->_processors[dimension] >1 ;
+
+    int recv_from_rank;
+    int xmit_to_rank;
+
+    if ( ! comm_dim ) return 1;
+
+    int nbr_proc;
+    if (displacement==1) nbr_proc = 1;
+    else                 nbr_proc = pd-1;
+
+    _grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank); 
+
+    void *shm = (void *) _grid->ShmBufferTranslate(recv_from_rank,u_recv_buf_p);
+
+    if ( shm==NULL ) return 0;
+
+    return 1;
+  }
+  inline int GetNodeLocal(int osite,int point) { 
+    return _entries[point+_npoints*osite]._node_local;
   }
   inline StencilEntry * GetEntry(int &ptype,int point,int osite) { 
     ptype = _permute_type[point]; return & _entries[point+_npoints*osite]; 

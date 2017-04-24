@@ -242,6 +242,7 @@ public:
   typedef CartesianCommunicator::CommsRequest_t CommsRequest_t;
 
   std::vector<int> same_node;
+  std::vector<int> surface_list;
 
   WilsonStencil(GridBase *grid,
 		int npoints,
@@ -249,10 +250,32 @@ public:
 		const std::vector<int> &directions,
 		const std::vector<int> &distances)  
     : CartesianStencil<vobj,cobj> (grid,npoints,checkerboard,directions,distances) ,
-      same_node(npoints)
+    same_node(npoints)
   { 
-    assert(npoints==8);// or 10 if do naive DWF 5d red black ?
+    surface_list.resize(0);
   };
+
+  void BuildSurfaceList(int Ls,int vol4){
+
+    // find same node for SHM
+    // Here we know the distance is 1 for WilsonStencil
+    for(int point=0;point<this->_npoints;point++){
+      same_node[point] = this->SameNode(point);
+      std::cout << " dir " <<point<<" same_node " <<same_node[point]<<std::endl;
+    }
+    
+    for(int site = 0 ;site< vol4;site++){
+      int local = 1;
+      for(int point=0;point<this->_npoints;point++){
+	if( (!this->GetNodeLocal(site*Ls,point)) && (!same_node[point]) ){ 
+	  local = 0;
+	}
+      }
+      if(local == 0) { 
+	surface_list.push_back(site);
+      }
+    }
+  }
 
   template < class compressor>
   void HaloExchangeOpt(const Lattice<vobj> &source,compressor &compress) 
