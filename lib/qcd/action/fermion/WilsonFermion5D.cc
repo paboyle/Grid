@@ -425,13 +425,15 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
 #else 
 DhopComputeTime2-=usecond();
   if (dag == DaggerYes) {
-    parallel_for (int ss = 0; ss < U._grid->oSites(); ss++) {
+#pragma omp parallel for schedule(static,4)
+    for (int ss = 0; ss < U._grid->oSites(); ss++) {
       int sU = ss;
       int sF = LLs * sU;
       Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,0,1);
     }
   } else {
-    parallel_for (int ss = 0; ss < U._grid->oSites(); ss++) {
+#pragma omp parallel for schedule(static,1)
+    for (int ss = 0; ss < U._grid->oSites(); ss++) {
       int sU = ss;
       int sF = LLs * sU;
       Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,0,1);
