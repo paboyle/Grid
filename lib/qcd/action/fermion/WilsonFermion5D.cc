@@ -119,7 +119,7 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   ImportGauge(_Umu);
 
   // Build lists of exterior only nodes
-  int LLs = FourDimGrid._rdimensions[0];
+  int LLs = FiveDimGrid._rdimensions[0];
   int vol4;
   vol4=FourDimGrid.oSites();
   Stencil.BuildSurfaceList(LLs,vol4);
@@ -127,7 +127,7 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   StencilEven.BuildSurfaceList(LLs,vol4);
    StencilOdd.BuildSurfaceList(LLs,vol4);
 
-   std::cout << GridLogMessage << " SurfaceLists "<< Stencil.surface_list.size()
+  std::cout << GridLogMessage << " SurfaceLists "<< Stencil.surface_list.size()
                        <<" " << StencilEven.surface_list.size()<<std::endl;
 
 }

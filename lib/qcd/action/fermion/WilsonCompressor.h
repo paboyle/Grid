@@ -261,7 +261,7 @@ public:
     // Here we know the distance is 1 for WilsonStencil
     for(int point=0;point<this->_npoints;point++){
       same_node[point] = this->SameNode(point);
-      std::cout << " dir " <<point<<" same_node " <<same_node[point]<<std::endl;
+      //      std::cout << " dir " <<point<<" same_node " <<same_node[point]<<std::endl;
     }
     
     for(int site = 0 ;site< vol4;site++){
@@ -324,23 +324,23 @@ public:
     int face_idx=0;
     if ( dag ) { 
       //	std::cout << " Optimised Dagger compress " <<std::endl;
-      same_node[Xp]=this->HaloGatherDir(source,XpCompress,Xp,face_idx);
-      same_node[Yp]=this->HaloGatherDir(source,YpCompress,Yp,face_idx);
-      same_node[Zp]=this->HaloGatherDir(source,ZpCompress,Zp,face_idx);
-      same_node[Tp]=this->HaloGatherDir(source,TpCompress,Tp,face_idx);
-      same_node[Xm]=this->HaloGatherDir(source,XmCompress,Xm,face_idx);
-      same_node[Ym]=this->HaloGatherDir(source,YmCompress,Ym,face_idx);
-      same_node[Zm]=this->HaloGatherDir(source,ZmCompress,Zm,face_idx);
-      same_node[Tm]=this->HaloGatherDir(source,TmCompress,Tm,face_idx);
+      assert(same_node[Xp]==this->HaloGatherDir(source,XpCompress,Xp,face_idx));
+      assert(same_node[Yp]==this->HaloGatherDir(source,YpCompress,Yp,face_idx));
+      assert(same_node[Zp]==this->HaloGatherDir(source,ZpCompress,Zp,face_idx));
+      assert(same_node[Tp]==this->HaloGatherDir(source,TpCompress,Tp,face_idx));
+      assert(same_node[Xm]==this->HaloGatherDir(source,XmCompress,Xm,face_idx));
+      assert(same_node[Ym]==this->HaloGatherDir(source,YmCompress,Ym,face_idx));
+      assert(same_node[Zm]==this->HaloGatherDir(source,ZmCompress,Zm,face_idx));
+      assert(same_node[Tm]==this->HaloGatherDir(source,TmCompress,Tm,face_idx));
     } else {
-      same_node[Xp]=this->HaloGatherDir(source,XmCompress,Xp,face_idx);
-      same_node[Yp]=this->HaloGatherDir(source,YmCompress,Yp,face_idx);
-      same_node[Zp]=this->HaloGatherDir(source,ZmCompress,Zp,face_idx);
-      same_node[Tp]=this->HaloGatherDir(source,TmCompress,Tp,face_idx);
-      same_node[Xm]=this->HaloGatherDir(source,XpCompress,Xm,face_idx);
-      same_node[Ym]=this->HaloGatherDir(source,YpCompress,Ym,face_idx);
-      same_node[Zm]=this->HaloGatherDir(source,ZpCompress,Zm,face_idx);
-      same_node[Tm]=this->HaloGatherDir(source,TpCompress,Tm,face_idx);
+      assert(same_node[Xp]==this->HaloGatherDir(source,XmCompress,Xp,face_idx));
+      assert(same_node[Yp]==this->HaloGatherDir(source,YmCompress,Yp,face_idx));
+      assert(same_node[Zp]==this->HaloGatherDir(source,ZmCompress,Zp,face_idx));
+      assert(same_node[Tp]==this->HaloGatherDir(source,TmCompress,Tp,face_idx));
+      assert(same_node[Xm]==this->HaloGatherDir(source,XpCompress,Xm,face_idx));
+      assert(same_node[Ym]==this->HaloGatherDir(source,YpCompress,Ym,face_idx));
+      assert(same_node[Zm]==this->HaloGatherDir(source,ZpCompress,Zm,face_idx));
+      assert(same_node[Tm]==this->HaloGatherDir(source,TpCompress,Tm,face_idx));
     }
     this->face_table_computed=1;
     assert(this->u_comm_offset==this->_unified_buffer_size);

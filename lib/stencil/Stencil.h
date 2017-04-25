@@ -95,7 +95,7 @@ void Gather_plane_exchange_table(std::vector<std::pair<int,int> >& table,const L
    uint16_t _is_local;
    uint16_t _permute;
    uint16_t _around_the_world; //256 bits, 32 bytes, 1/2 cacheline
-   uint16_t _node_local;
+   uint16_t _pad;
  };
 
 ////////////////////////////////////////
@@ -221,7 +221,7 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
     return 1;
   }
   inline int GetNodeLocal(int osite,int point) { 
-    return _entries[point+_npoints*osite]._node_local;
+    return _entries[point+_npoints*osite]._is_local;
   }
   inline StencilEntry * GetEntry(int &ptype,int point,int osite) { 
     ptype = _permute_type[point]; return & _entries[point+_npoints*osite]; 
@@ -436,18 +436,6 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
 	_entries[i]._byte_offset = _entries[i]._offset*sizeof(vobj);
       } else { 
 	_entries[i]._byte_offset = _entries[i]._offset*sizeof(cobj);
-      }
-    }
-    int osites  = _grid->oSites();
-    for(int o=0;o<osites;o++){
-      int node_local=1;
-      for(int p=0;p<_npoints;p++){
-	if (!_entries[p+o*_npoints]._is_local ){
-	  node_local = 0;
-	}
-      }
-      for(int p=0;p<_npoints;p++){
-	_entries[p+o*_npoints]._node_local = node_local;
       }
     }
   };
