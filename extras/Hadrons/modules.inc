@@ -13,6 +13,8 @@ modules_hpp =\
   Modules/MContraction/DiscLoop.hpp \
   Modules/MContraction/Gamma3pt.hpp \
   Modules/MContraction/Meson.hpp \
+  Modules/MContraction/WardIdentity.hpp \
+  Modules/MContraction/WardIdentitySeq.hpp \
   Modules/MContraction/WeakHamiltonian.hpp \
   Modules/MContraction/WeakHamiltonianEye.hpp \
   Modules/MContraction/WeakHamiltonianNonEye.hpp \
@@ -23,6 +25,7 @@ modules_hpp =\
   Modules/MLoop/NoiseLoop.hpp \
   Modules/MSolver/RBPrecCG.hpp \
   Modules/MSource/Point.hpp \
+  Modules/MSource/SeqConserved.hpp \
   Modules/MSource/SeqGamma.hpp \
   Modules/MSource/Wall.hpp \
   Modules/MSource/Z2.hpp \

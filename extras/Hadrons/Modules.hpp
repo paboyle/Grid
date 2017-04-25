@@ -32,6 +32,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MContraction/DiscLoop.hpp>
 #include <Grid/Hadrons/Modules/MContraction/Gamma3pt.hpp>
 #include <Grid/Hadrons/Modules/MContraction/Meson.hpp>
+#include <Grid/Hadrons/Modules/MContraction/WardIdentity.hpp>
+#include <Grid/Hadrons/Modules/MContraction/WardIdentitySeq.hpp>
 #include <Grid/Hadrons/Modules/MContraction/WeakHamiltonian.hpp>
 #include <Grid/Hadrons/Modules/MContraction/WeakHamiltonianEye.hpp>
 #include <Grid/Hadrons/Modules/MContraction/WeakHamiltonianNonEye.hpp>
@@ -42,6 +44,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MLoop/NoiseLoop.hpp>
 #include <Grid/Hadrons/Modules/MSolver/RBPrecCG.hpp>
 #include <Grid/Hadrons/Modules/MSource/Point.hpp>
+#include <Grid/Hadrons/Modules/MSource/SeqConserved.hpp>
 #include <Grid/Hadrons/Modules/MSource/SeqGamma.hpp>
 #include <Grid/Hadrons/Modules/MSource/Wall.hpp>
 #include <Grid/Hadrons/Modules/MSource/Z2.hpp>
