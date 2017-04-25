@@ -23,8 +23,17 @@ std::vector<std::string> TScalarVP::getInput(void)
 
 std::vector<std::string> TScalarVP::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {getName(), getName()+"_propQ",
+                                    getName()+"_propSun",
+                                    getName()+"_propTad"};
     
+    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+    {
+        out.push_back(getName() + "_propQ_" + std::to_string(mu));
+        out.push_back(getName() + "_propSun_" + std::to_string(mu));
+        out.push_back(getName() + "_propTad_" + std::to_string(mu));
+    }
+
     return out;
 }
 
@@ -112,6 +121,7 @@ void TScalarVP::execute(void)
     ScalarField &source = *env().getObject<ScalarField>(par().source);
     Complex     ci(0.0,1.0);
     FFT         fft(env().getGrid());
+    double      q = par().charge;
 
     // cache momentum-space free scalar propagator
     if (!env().hasCreatedObject(freeMomPropName_))
@@ -227,28 +237,28 @@ void TScalarVP::chargedProp(ScalarField &prop_q, ScalarField &prop_sun,
 							FFT &fft)
 {
 	Complex     ci(0.0,1.0);
-	double      q = par().charge;
-    ScalarField &G = *freeMomProp_;
+	ScalarField &G = *freeMomProp_;
     ScalarField buf(env().getGrid());
 
     LOG(Message) << "Computing charged scalar propagator"
                  << " (mass= " << par().mass
-                 << ", charge= " << q << ")..." << std::endl;
+                 << ", charge= " << par().charge << ")..."
+                 << std::endl;
 	
-	// -q*G*momD1*G*F*Src (momD1 = F*D1*Finv)
+	// -G*momD1*G*F*Src (momD1 = F*D1*Finv)
     buf = GFSrc;
     momD1(buf, fft);
     buf = G*buf;
-    prop_q = -q*buf;
+    prop_q = -buf;
 
-    // q*q*G*momD1*G*momD1*G*F*Src
+    // G*momD1*G*momD1*G*F*Src
     momD1(buf, fft);
-    prop_sun = q*q*G*buf;
+    prop_sun = G*buf;
 
-    // -q*q*G*momD2*G*F*Src (momD2 = F*D2*Finv)
+    // -G*momD2*G*F*Src (momD2 = F*D2*Finv)
     buf = GFSrc;
     momD2(buf, fft);
-    prop_tad = -q*q*G*buf;
+    prop_tad = -G*buf;
 }
 
 void TScalarVP::momD1(ScalarField &s, FFT &fft)
