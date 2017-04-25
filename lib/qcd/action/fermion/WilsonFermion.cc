@@ -347,6 +347,53 @@ void WilsonFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder &lo,
   }
 };
 
+/*******************************************************************************
+ * Conserved current utilities for Wilson fermions, for contracting propagators
+ * to make a conserved current sink or inserting the conserved current 
+ * sequentially.
+ ******************************************************************************/
+template <class Impl>
+void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
+                                                   PropagatorField &q_in_2,
+                                                   PropagatorField &q_out,
+                                                   Current curr_type,
+                                                   unsigned int mu)
+{
+    Gamma g5(Gamma::Algebra::Gamma5);
+    conformable(_grid, q_in_1._grid);
+    conformable(_grid, q_in_2._grid);
+    conformable(_grid, q_out._grid);
+    Kernels::ContractConservedCurrentInternal(q_in_1, q_in_2, q_out, 
+                                              Umu, curr_type, mu);
+}
+
+template <class Impl>
+void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in, 
+                                              PropagatorField &q_out,
+                                              Current curr_type,
+                                              unsigned int mu,
+                                              std::vector<Real> mom,
+                                              unsigned int tmin, 
+                                              unsigned int tmax)
+{
+    conformable(_grid, q_in._grid);
+    conformable(_grid, q_out._grid);
+    Lattice<iSinglet<Simd>> ph(_grid), coor(_grid);
+    Complex i(0.0,1.0);
+
+    // Momentum projection
+    ph = zero;
+    for(unsigned int mu = 0; mu < Nd - 1; mu++)
+    {
+        LatticeCoordinate(coor, mu);
+        ph = ph + mom[mu]*coor*((1./(_grid->_fdimensions[mu])));
+    }
+    ph = exp((Real)(2*M_PI)*i*ph);
+
+    Kernels::SeqConservedCurrentInternal(q_in, q_out, Umu, curr_type, mu, ph,
+                                         tmin, tmax);
+}
+
 FermOpTemplateInstantiate(WilsonFermion);
 AdjointFermOpTemplateInstantiate(WilsonFermion);
 TwoIndexFermOpTemplateInstantiate(WilsonFermion);

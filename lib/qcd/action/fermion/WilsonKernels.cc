@@ -567,6 +567,95 @@ void WilsonKernels<Impl>::DhopDir( StencilImpl &st, DoubledGaugeField &U,SiteHal
   vstream(out._odata[sF], result);
 }
 
+/*******************************************************************************
+ * Conserved current utilities for Wilson fermions, for contracting propagators
+ * to make a conserved current sink or inserting the conserved current 
+ * sequentially. Common to both 4D and 5D.
+ ******************************************************************************/
+#define WilsonCurrentFwd(expr, mu) (0.5*(Gamma::gmu[mu]*expr - expr))
+#define WilsonCurrentBwd(expr, mu) (0.5*(Gamma::gmu[mu]*expr + expr))
+
+template<class Impl>
+void WilsonKernels<Impl>::ContractConservedCurrentInternal(const PropagatorField &q_in_1,
+                                                           const PropagatorField &q_in_2,
+                                                           PropagatorField &q_out,
+                                                           DoubledGaugeField &U,
+                                                           Current curr_type,
+                                                           unsigned int mu)
+{
+    Gamma g5(Gamma::Algebra::Gamma5);
+    PropagatorField tmp(q_out._grid);
+    GaugeLinkField Umu(U._grid);
+    Umu = PeekIndex<LorentzIndex>(U, mu);
+
+    tmp    = this->CovShiftForward(Umu, mu, q_in_1);
+    q_out  = (g5*adj(q_in_2)*g5)*WilsonCurrentFwd(tmp, mu);
+
+    tmp    = adj(Umu)*q_in_1;
+    q_out += (g5*adj(this->CovShiftForward(Umu, mu, q_in_2))*g5)*WilsonCurrentBwd(q_in_1, mu);
+}
+
+
+template <class Impl>
+void WilsonKernels<Impl>::SeqConservedCurrentInternal(const PropagatorField &q_in, 
+                                                      PropagatorField &q_out,
+                                                      DoubledGaugeField &U,
+                                                      Current curr_type,
+                                                      unsigned int mu,
+                                                      Lattice<iSinglet<Simd>> &ph,
+                                                      unsigned int tmin,
+                                                      unsigned int tmax)
+{
+    int tshift = (mu == Nd - 1) ? 1 : 0;
+    Real G_T = (curr_type == Current::Tadpole) ? -1. : 1.;
+    PropagatorField tmp(q_in._grid);
+    GaugeLinkField Umu(U._grid);
+    Umu = PeekIndex<LorentzIndex>(U, mu);
+    Lattice<iScalar<vInteger>> t(q_in._grid);
+
+    tmp = this->CovShiftForward(Umu, mu, q_in)*ph;
+    where((t >= tmin) and (t <= tmax), tmp, 0.*tmp);
+    q_out = G_T*WilsonCurrentFwd(tmp, mu);
+
+    tmp = q_in*ph;
+    tmp = this->CovShiftBackward(Umu, mu, tmp);
+    where((t >= tmin + tshift) and (t <= tmax + tshift), tmp, 0.*tmp);
+    q_out += WilsonCurrentBwd(tmp, mu);
+}
+
+
+// GParity, (Z)DomainWallVec5D -> require special implementation
+#define NO_CURR(Impl) \
+template <> void \
+WilsonKernels<Impl>::ContractConservedCurrentInternal(const PropagatorField &q_in_1, \
+                                                      const PropagatorField &q_in_2, \
+                                                      PropagatorField &q_out,        \
+                                                      DoubledGaugeField &U,          \
+                                                      Current curr_type,             \
+                                                      unsigned int mu)               \
+{ \
+    assert(0); \
+} \
+template <> void  \
+WilsonKernels<Impl>::SeqConservedCurrentInternal(const PropagatorField &q_in,       \
+                                                 PropagatorField &q_out,            \
+                                                 DoubledGaugeField &U,              \
+                                                 Current curr_type,                 \
+                                                 unsigned int mu,                   \
+                                                 Lattice<iSinglet<Simd>> &ph,       \
+                                                 unsigned int tmin,                 \
+                                                 unsigned int tmax)                 \
+{ \
+    assert(0); \
+}
+
+NO_CURR(GparityWilsonImplF);
+NO_CURR(GparityWilsonImplD);
+NO_CURR(DomainWallVec5dImplF);
+NO_CURR(DomainWallVec5dImplD);
+NO_CURR(ZDomainWallVec5dImplF);
+NO_CURR(ZDomainWallVec5dImplD);
+
 FermOpTemplateInstantiate(WilsonKernels);
 AdjointFermOpTemplateInstantiate(WilsonKernels);
 TwoIndexFermOpTemplateInstantiate(WilsonKernels);

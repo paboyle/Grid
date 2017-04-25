@@ -679,6 +679,83 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHw(FermionField &out,const Fe
 
 }
 
+/*******************************************************************************
+ * Conserved current utilities for Wilson fermions, for contracting propagators
+ * to make a conserved current sink or inserting the conserved current 
+ * sequentially.
+ ******************************************************************************/
+template <class Impl>
+void WilsonFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
+                                                     PropagatorField &q_in_2,
+                                                     PropagatorField &q_out,
+                                                     Current curr_type,
+                                                     unsigned int mu)
+{
+    conformable(q_in_1._grid, FermionGrid());
+    conformable(q_in_1._grid, q_in_2._grid);
+    conformable(_FourDimGrid, q_out._grid);
+
+    PropagatorField q1_s(_FourDimGrid);
+    PropagatorField q2_s(_FourDimGrid);
+    PropagatorField tmp(_FourDimGrid);
+
+    // Contract across 5th dimension.
+    q_out = zero;
+    for (int s = 0; s < Ls; ++s)
+    {
+        ExtractSlice(q1_s, q_in_1, 0, s);
+        ExtractSlice(q2_s, q_in_2, 0, Ls - s - 1);
+        Kernels::ContractConservedCurrentInternal(q1_s, q2_s, tmp, Umu, curr_type, mu);
+
+        // Axial current sign
+        Real G_s = (curr_type == Current::Axial) ? ((s < Ls/2) ? -1. : 1.) : 1.;
+        q_out += G_s*tmp;
+    }
+}
+
+
+template <class Impl>
+void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in, 
+                                                PropagatorField &q_out,
+                                                Current curr_type, 
+                                                unsigned int mu,
+                                                std::vector<Real> mom,
+                                                unsigned int tmin, 
+                                                unsigned int tmax)
+{
+    conformable(q_in._grid, FermionGrid());
+    conformable(q_in._grid, q_out._grid);
+    Lattice<iSinglet<Simd>> ph(_FourDimGrid), coor(_FourDimGrid);
+    Complex i(0.0, 1.0);
+
+    // Momentum projection
+    ph = zero;
+    for(unsigned int nu = 0; nu < Nd - 1; nu++)
+    {
+        LatticeCoordinate(coor, nu);
+        ph = ph + mom[nu]*coor*((1./(_FourDimGrid->_fdimensions[nu])));
+    }
+    ph = exp((Real)(2*M_PI)*i*ph);
+
+    // Sequential insertion
+    Kernels::SeqConservedCurrentInternal(q_in, q_out, Umu, curr_type,
+                                         mu, ph, tmin, tmax);
+
+    // Axial current sign.
+    if (curr_type == Current::Axial)
+    {
+        SitePropagator result;
+        parallel_for(int sU = 0; sU < Umu._grid->oSites(); sU++)
+        {
+            int sF = sU * Ls;
+            for (int s = 0; s < Ls/2; s++)
+            {
+                vstream(q_out._odata[sF], -q_out._odata[sF]);
+                sF++;
+            }
+        }
+    }
+}
 
 FermOpTemplateInstantiate(WilsonFermion5D);
 GparityFermOpTemplateInstantiate(WilsonFermion5D);

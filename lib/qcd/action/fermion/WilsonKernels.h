@@ -166,6 +166,24 @@ public:
   void DhopDir(StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor * buf,
 		       int sF, int sU, const FermionField &in, FermionField &out, int dirdisp, int gamma);
       
+  //////////////////////////////////////////////////////////////////////////////
+  // Utilities for inserting Wilson conserved current.
+  //////////////////////////////////////////////////////////////////////////////
+  void ContractConservedCurrentInternal(const PropagatorField &q_in_1,
+                                        const PropagatorField &q_in_2,
+                                        PropagatorField &q_out,
+                                        DoubledGaugeField &U,
+                                        Current curr_type,
+                                        unsigned int mu);
+  void SeqConservedCurrentInternal(const PropagatorField &q_in, 
+                                   PropagatorField &q_out,
+                                   DoubledGaugeField &U,
+                                   Current curr_type,
+                                   unsigned int mu,
+                                   Lattice<iSinglet<Simd>> &ph,
+                                   unsigned int tmin, 
+                                   unsigned int tmax);
+
 private:
      // Specialised variants
   void GenericDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
