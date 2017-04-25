@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
         application.createModule<MAction::DWF>("DWF_" + flavour[i], actionPar);
 
         // solvers
-        MSolver::CG::Par solverPar;
+        MSolver::RBPrecCG::Par solverPar;
         solverPar.action   = "DWF_" + flavour[i];
         solverPar.residual = 1.0e-8;
         application.createModule<MSolver::RBPrecCG>(solvers[i],
