@@ -261,12 +261,10 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
 					  Packets[i].from_rank,
 					  Packets[i].bytes);
     }
-    commtime+=usecond();
   }
 
   void CommunicateComplete(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
-    commtime-=usecond();
     for(int i=0;i<Packets.size();i++){
       _grid->StencilSendToRecvFromComplete(reqs[i]);
     }
@@ -821,7 +819,6 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
 	send_buf = (cobj *)_grid->ShmBufferTranslate(xmit_to_rank,recv_buf);
 	if ( send_buf==NULL ) { 
 	  send_buf = u_send_buf_p;
-	  shm_receive_only = 0;
 	} 
 	
 	// Find out if we get the direct copy.

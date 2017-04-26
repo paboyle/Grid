@@ -388,8 +388,12 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   std::vector<std::vector<CommsRequest_t> > reqs;
 
   // Rely on async comms; start comms before merge of local data
+  DhopCommTime-=usecond();
   st.CommunicateBegin(reqs);
+
+  DhopFaceTime-=usecond();
   st.CommsMergeSHM(compressor);
+  DhopFaceTime+=usecond();
 
   // Perhaps use omp task and region
 #pragma omp parallel 
@@ -402,7 +406,6 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
     int sF = LLs * myoff;
 
     if ( me == 0 ) {
-      DhopCommTime-=usecond();
       st.CommunicateComplete(reqs);
       DhopCommTime+=usecond();
     } else { 
