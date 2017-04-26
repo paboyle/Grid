@@ -10,6 +10,7 @@ matrix:
       osx_image: xcode8.3
       compiler: clang
     - compiler: gcc
+      sudo: required
       addons:
         apt:
           sources:
@@ -23,8 +24,8 @@ matrix:
             - openmpi-bin
             - binutils-dev
       env: VERSION=-4.9
-      sudo: required
     - compiler: gcc
+      sudo: required
       addons:
         apt:
           sources:
@@ -38,7 +39,6 @@ matrix:
             - openmpi-bin
             - binutils-dev
       env: VERSION=-5
-      sudo: required
     - compiler: clang
       addons:
         apt:
