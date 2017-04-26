@@ -48,7 +48,7 @@ inline void make_4D(Lattice<vobj> &in_5d, Lattice<vobj> &out_4d, int Ls)
 }
 
 template<class vobj>
-inline void make_5D(const Lattice<vobj> &in_4d, Lattice<vobj> &out_5d, int Ls)
+inline void make_5D(Lattice<vobj> &in_4d, Lattice<vobj> &out_5d, int Ls)
 {
     out_5d = zero;
     InsertSlice(in_4d, out_5d, 0, 0);
