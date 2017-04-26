@@ -215,7 +215,6 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
     _grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank); 
 
     void *shm = (void *) _grid->ShmBufferTranslate(recv_from_rank,u_recv_buf_p);
-
     if ( shm==NULL ) return 0;
 
     return 1;
@@ -821,7 +820,6 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
 	send_buf = (cobj *)_grid->ShmBufferTranslate(xmit_to_rank,recv_buf);
 	if ( send_buf==NULL ) { 
 	  send_buf = u_send_buf_p;
-	  shm_receive_only = 0;
 	} 
 	
 	// Find out if we get the direct copy.
