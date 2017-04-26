@@ -87,7 +87,8 @@
 #define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
   base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
   PF_GAUGE(Xp);								\
-  PREFETCH1_CHIMU(base);{ ZERO_PSI; }					\
+  PREFETCH1_CHIMU(base);						\
+  { ZERO_PSI; }								\
   ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON) 
 
 #define RESULT(base,basep) SAVE_RESULT(base,basep);
@@ -111,6 +112,7 @@
 
 #define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
   nmu=0;								\
+  { ZERO_PSI;}								\
   base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
   if((!local)&&(!st.same_node[Dir]) ) {					\
     LOAD_CHI(base);							\
@@ -118,7 +120,7 @@
     LOAD64(%r10,isigns);						\
     RECON;								\
     nmu++;								\
-  } else { ZERO_PSI; };
+  }
 
 #define RESULT(base,basep) if (nmu){ ADD_RESULT(base,base);}
 
@@ -134,11 +136,15 @@
   MASK_REGS;
   int nmax=U._grid->oSites();
   for(int site=0;site<Ns;site++) {
+#ifndef EXTERIOR
     int sU =lo.Reorder(ssU);
     int ssn=ssU+1;     if(ssn>=nmax) ssn=0;
     int sUn=lo.Reorder(ssn);
-#ifndef EXTERIOR
     LOCK_GAUGE(0);
+#else
+    int sU =ssU;
+    int ssn=ssU+1;     if(ssn>=nmax) ssn=0;
+    int sUn=ssn;
 #endif
     for(int s=0;s<Ls;s++) {
       ss =sU*Ls+s;
@@ -156,8 +162,9 @@
       ASM_LEG(Zm,Tm,PERMUTE_DIR1,DIR6_PROJMEM,DIR6_RECON);
       ASM_LEG(Tm,Xp,PERMUTE_DIR0,DIR7_PROJMEM,DIR7_RECON);
 
-#ifndef EXTERIOR
-      if (nmu==0) break;      //Early out if no work
+#ifdef EXTERIOR
+      if (nmu==0) break;
+      //      if (nmu!=0) std::cout << "EXT "<<sU<<std::endl;
 #endif
       base = (uint64_t) &out._odata[ss];
       basep= st.GetPFInfo(nent,plocal); nent++;
