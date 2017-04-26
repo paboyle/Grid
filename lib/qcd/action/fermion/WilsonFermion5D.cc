@@ -367,6 +367,7 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
   DhopTotalTime+=usecond();
 }
 
+
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, LebesgueOrder &lo,
 							DoubledGaugeField & U,
@@ -380,7 +381,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
 
   int LLs = in._grid->_rdimensions[0];
   int len =  U._grid->oSites();
-  
+
   DhopFaceTime-=usecond();
   st.HaloExchangeOptGather(in,compressor);
   DhopFaceTime+=usecond();
@@ -390,6 +391,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   st.CommunicateBegin(reqs);
   st.CommsMergeSHM(compressor);
 
+  // Perhaps use omp task and region
 #pragma omp parallel 
   { 
     int nthreads = omp_get_num_threads();
@@ -419,70 +421,31 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   // Load imbalance alert. Should use dynamic schedule OMP for loop
   // Perhaps create a list of only those sites with face work, and 
   // load balance process the list.
-#if 1
-
-#if 0
-#pragma omp parallel 
-  {
-    int nthreads = omp_get_num_threads();
-    int me       = omp_get_thread_num();
-    int myoff, mywork;
-
-    GridThread::GetWork(len,me,mywork,myoff,nthreads);
-    int sF = LLs * myoff;
-
-    // Exterior links in stencil
-    if ( me==0 ) DhopComputeTime2-=usecond();
-    if (dag == DaggerYes) Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,myoff,LLs,mywork,in,out,0,1);
-    else                  Kernels::DhopSite   (st,lo,U,st.CommBuf(),sF,myoff,LLs,mywork,in,out,0,1);
-    if ( me==0 ) DhopComputeTime2+=usecond();
-  }// end parallel region
-#else
   DhopComputeTime2-=usecond();
   if (dag == DaggerYes) {
-#pragma omp parallel for schedule(static,1)
-    for (int ss = 0; ss < st.surface_list.size(); ss++) {
+    int sz=st.surface_list.size();
+    parallel_for (int ss = 0; ss < sz; ss++) {
       int sU = st.surface_list[ss];
       int sF = LLs * sU;
       Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,0,1);
     }
   } else {
-#pragma omp parallel for schedule(static,1)
-    for (int ss = 0; ss < st.surface_list.size(); ss++) {
+    int sz=st.surface_list.size();
+    parallel_for (int ss = 0; ss < sz; ss++) {
       int sU = st.surface_list[ss];
       int sF = LLs * sU;
       Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,0,1);
     }
   }
   DhopComputeTime2+=usecond();
-#endif 
-
-
-#else 
-DhopComputeTime2-=usecond();
-  if (dag == DaggerYes) {
-#pragma omp parallel for schedule(static,4)
-    for (int ss = 0; ss < U._grid->oSites(); ss++) {
-      int sU = ss;
-      int sF = LLs * sU;
-      Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,0,1);
-    }
-  } else {
-#pragma omp parallel for schedule(static,1)
-    for (int ss = 0; ss < U._grid->oSites(); ss++) {
-      int sU = ss;
-      int sF = LLs * sU;
-      Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,0,1);
-    }
-  }
-DhopComputeTime2+=usecond();
-#endif
-
 #else 
   assert(0);
 #endif
 
 }
+
+
+
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOrder &lo,
 					 DoubledGaugeField & U,
