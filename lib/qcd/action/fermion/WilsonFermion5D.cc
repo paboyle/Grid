@@ -703,8 +703,8 @@ void WilsonFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
     q_out = zero;
     for (int s = 0; s < Ls; ++s)
     {
-        ExtractSlice(q1_s, q_in_1, 0, s);
-        ExtractSlice(q2_s, q_in_2, 0, Ls - s - 1);
+        ExtractSlice(q1_s, q_in_1, s, 0);
+        ExtractSlice(q2_s, q_in_2, Ls - s - 1, 0);
         Kernels::ContractConservedCurrentInternal(q1_s, q2_s, tmp, Umu, curr_type, mu);
 
         // Axial current sign

@@ -150,9 +150,9 @@ void TWardIdentity<FImpl>::execute(void)
     // Get PJ5q for 5D (zero for 4D).
     if (Ls_ > 1)
     {
-        ExtractSlice(psi, q, 0, Ls_/2 - 1);
+        ExtractSlice(psi, q, Ls_/2 - 1, 0);
         psi  = 0.5 * (psi + g5*psi);
-        ExtractSlice(tmp, q, 0, Ls_/2);
+        ExtractSlice(tmp, q, Ls_/2, 0);
         psi += 0.5 * (tmp - g5*tmp);
         PJ5q = trace(adj(psi)*psi);
     }
