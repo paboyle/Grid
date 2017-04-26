@@ -473,12 +473,12 @@ namespace Optimization {
 #define USE_FP16
   struct PrecisionChange {
     static inline __m256i StoH (__m256 a,__m256 b) {
-      __m256 h;
+      __m256i h;
 #ifdef USE_FP16
       __m128i ha = _mm256_cvtps_ph(a,0);
       __m128i hb = _mm256_cvtps_ph(b,0);
-      h = _mm256_castps128_ps256(ha);
-      h = _mm256_insertf128_ps(h,hb,1);
+      h =(__m256i) _mm256_castps128_ps256((__m128)ha);
+      h =(__m256i) _mm256_insertf128_ps((__m256)h,(__m128)hb,1);
 #else 
       assert(0);
 #endif
@@ -486,8 +486,8 @@ namespace Optimization {
     }
     static inline void  HtoS (__m256i h,__m256 &sa,__m256 &sb) {
 #ifdef USE_FP16
-      sa = _mm256_cvtph_ps(_mm256_extractf128_ps(h,0));
-      sb = _mm256_cvtph_ps(_mm256_extractf128_ps(h,1));
+      sa = _mm256_cvtph_ps((__m128i)_mm256_extractf128_ps((__m256)h,0));
+      sb = _mm256_cvtph_ps((__m128i)_mm256_extractf128_ps((__m256)h,1));
 #else 
       assert(0);
 #endif

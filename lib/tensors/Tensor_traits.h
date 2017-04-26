@@ -142,6 +142,17 @@ namespace Grid {
     typedef vRealD Realified;
     enum { TensorLevel = 0 };
   };
+  template<> class GridTypeMapper<vComplexH> {
+  public:
+    typedef ComplexF  scalar_type;
+    typedef vComplexH vector_type;
+    typedef vComplexD vector_typeD;
+    typedef vComplexH tensor_reduced;
+    typedef ComplexF  scalar_object;
+    typedef vComplexH Complexified;
+    typedef vRealH Realified;
+    enum { TensorLevel = 0 };
+  };
   template<> class GridTypeMapper<vComplexF> {
   public:
     typedef ComplexF  scalar_type;

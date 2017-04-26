@@ -164,11 +164,12 @@ class iScalar {
     return *this;
   }
 
-  friend std::ostream &operator<<(std::ostream &stream,
-                                  const iScalar<vtype> &o) {
+  friend std::ostream &operator<<(std::ostream &stream,const iScalar<vtype> &o) {
     stream << "S {" << o._internal << "}";
     return stream;
   };
+
+
 };
 ///////////////////////////////////////////////////////////
 // Allows to turn scalar<scalar<scalar<double>>>> back to double.

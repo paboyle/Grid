@@ -38,7 +38,6 @@ Author: neo <cossu@post.kek.jp>
 
 #include <pmmintrin.h>
 
-
 namespace Grid {
 namespace Optimization {
 
@@ -333,26 +332,110 @@ namespace Optimization {
 #define _my_alignr_epi32(a,b,n) _mm_alignr_epi8(a,b,(n*4)%16)
 #define _my_alignr_epi64(a,b,n) _mm_alignr_epi8(a,b,(n*8)%16)
 
+#ifdef SFW_FP16
+
+  struct Grid_half {
+    Grid_half(){}
+    Grid_half(uint16_t raw) : x(raw) {}
+    uint16_t x;
+  };
+  union FP32 {
+    unsigned int u;
+    float f;
+  };
+
+  // PAB - Lifted and adapted from Eigen, which is GPL V2
+  inline float sfw_half_to_float(Grid_half h) {
+    const FP32 magic = { 113 << 23 };
+    const unsigned int shifted_exp = 0x7c00 << 13; // exponent mask after shift
+    FP32 o;
+    o.u = (h.x & 0x7fff) << 13;             // exponent/mantissa bits
+    unsigned int exp = shifted_exp & o.u;   // just the exponent
+    o.u += (127 - 15) << 23;                // exponent adjust
+    // handle exponent special cases
+    if (exp == shifted_exp) {     // Inf/NaN?
+      o.u += (128 - 16) << 23;    // extra exp adjust
+    } else if (exp == 0) {        // Zero/Denormal?
+      o.u += 1 << 23;             // extra exp adjust
+      o.f -= magic.f;             // renormalize
+    }
+    o.u |= (h.x & 0x8000) << 16;    // sign bit
+    return o.f;
+  }
+  inline Grid_half sfw_float_to_half(float ff) {
+    FP32 f; f.f = ff;
+    const FP32 f32infty = { 255 << 23 };
+    const FP32 f16max = { (127 + 16) << 23 };
+    const FP32 denorm_magic = { ((127 - 15) + (23 - 10) + 1) << 23 };
+    unsigned int sign_mask = 0x80000000u;
+    Grid_half o;
+    
+    o.x = static_cast<unsigned short>(0x0u);
+    unsigned int sign = f.u & sign_mask;
+    f.u ^= sign;
+    // NOTE all the integer compares in this function can be safely
+    // compiled into signed compares since all operands are below
+    // 0x80000000. Important if you want fast straight SSE2 code
+    // (since there's no unsigned PCMPGTD).
+    if (f.u >= f16max.u) {  // result is Inf or NaN (all exponent bits set)
+      o.x = (f.u > f32infty.u) ? 0x7e00 : 0x7c00; // NaN->qNaN and Inf->Inf
+    } else {  // (De)normalized number or zero
+      if (f.u < (113 << 23)) {  // resulting FP16 is subnormal or zero
+	// use a magic value to align our 10 mantissa bits at the bottom of
+	// the float. as long as FP addition is round-to-nearest-even this
+	// just works.
+	f.f += denorm_magic.f;
+	// and one integer subtract of the bias later, we have our final float!
+	o.x = static_cast<unsigned short>(f.u - denorm_magic.u);
+      } else {
+	unsigned int mant_odd = (f.u >> 13) & 1; // resulting mantissa is odd
+	
+	// update exponent, rounding bias part 1
+	f.u += ((unsigned int)(15 - 127) << 23) + 0xfff;
+	// rounding bias part 2
+	f.u += mant_odd;
+	// take the bits!
+	o.x = static_cast<unsigned short>(f.u >> 13);
+      }
+    } 
+    o.x |= static_cast<unsigned short>(sign >> 16);
+    return o;
+  }
+  static inline __m128i Grid_mm_cvtps_ph(__m128 f,int discard) {
+    __m128i ret=(__m128i)_mm_setzero_ps();
+    float *fp = (float *)&f;
+    Grid_half *hp = (Grid_half *)&ret;
+    hp[0] = sfw_float_to_half(fp[0]);
+    hp[1] = sfw_float_to_half(fp[1]);
+    hp[2] = sfw_float_to_half(fp[2]);
+    hp[3] = sfw_float_to_half(fp[3]);
+    return ret;
+  }
+  static inline __m128 Grid_mm_cvtph_ps(__m128i h,int discard) {
+    __m128 ret=_mm_setzero_ps();
+    float *fp = (float *)&ret;
+    Grid_half  *hp = (Grid_half *)&h;
+    fp[0] = sfw_half_to_float(hp[0]);
+    fp[1] = sfw_half_to_float(hp[1]);
+    fp[2] = sfw_half_to_float(hp[2]);
+    fp[3] = sfw_half_to_float(hp[3]);
+    return ret;
+  }
+#else 
+#define Grid_mm_cvtps_ph _mm_cvtps_ph
+#define Grid_mm_cvtph_ps _mm_cvtph_ps
+#endif
   struct PrecisionChange {
     static inline __m128i StoH (__m128 a,__m128 b) {
-#ifdef USE_FP16
-      __m128i ha = _mm_cvtps_ph(a,0);
-      __m128i hb = _mm_cvtps_ph(b,0);
+      __m128i ha = Grid_mm_cvtps_ph(a,0);
+      __m128i hb = Grid_mm_cvtps_ph(b,0);
       __m128i h =(__m128i) _mm_shuffle_ps((__m128)ha,(__m128)hb,_MM_SELECT_FOUR_FOUR(1,0,1,0));
-#else
-      __m128i h = (__m128i)a;
-      assert(0);
-#endif
       return h;
     }
     static inline void  HtoS (__m128i h,__m128 &sa,__m128 &sb) {
-#ifdef USE_FP16
-      sa = _mm_cvtph_ps(h); 
+      sa = Grid_mm_cvtph_ps(h,0); 
       h =  (__m128i)_my_alignr_epi32((__m128i)h,(__m128i)h,2);
-      sb = _mm_cvtph_ps(h);
-#else
-      assert(0);
-#endif
+      sb = Grid_mm_cvtph_ps(h,0);
     }
     static inline __m128 DtoS (__m128d a,__m128d b) {
       __m128 sa = _mm_cvtpd_ps(a);

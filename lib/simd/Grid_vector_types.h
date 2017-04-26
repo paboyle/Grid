@@ -53,12 +53,14 @@ directory
 #if defined IMCI
 #include "Grid_imci.h"
 #endif
-#if defined QPX
-#include "Grid_qpx.h"
-#endif
 #ifdef NEONv8
 #include "Grid_neon.h"
 #endif
+#if defined QPX
+#include "Grid_qpx.h"
+#endif
+
+#include "l1p.h"
 
 namespace Grid {
 
@@ -74,12 +76,14 @@ struct RealPart<std::complex<T> > {
   typedef T type;
 };
 
+#include <type_traits>
+
 //////////////////////////////////////
 // demote a vector to real type
 //////////////////////////////////////
 // type alias used to simplify the syntax of std::enable_if
 template <typename T> using Invoke = typename T::type;
-template <typename Condition, typename ReturnType> using EnableIf = Invoke<std::enable_if<Condition::value, ReturnType> >;
+template <typename Condition, typename ReturnType> using EnableIf    = Invoke<std::enable_if<Condition::value, ReturnType> >;
 template <typename Condition, typename ReturnType> using NotEnableIf = Invoke<std::enable_if<!Condition::value, ReturnType> >;
 
 ////////////////////////////////////////////////////////
@@ -88,13 +92,15 @@ template <typename T> struct is_complex : public std::false_type {};
 template <> struct is_complex<std::complex<double> > : public std::true_type {};
 template <> struct is_complex<std::complex<float> > : public std::true_type {};
 
-template <typename T> using IfReal       = Invoke<std::enable_if<std::is_floating_point<T>::value, int> >;
-template <typename T> using IfComplex    = Invoke<std::enable_if<is_complex<T>::value, int> >;
-template <typename T> using IfInteger    = Invoke<std::enable_if<std::is_integral<T>::value, int> >;
+template <typename T>              using IfReal    = Invoke<std::enable_if<std::is_floating_point<T>::value, int> >;
+template <typename T>              using IfComplex = Invoke<std::enable_if<is_complex<T>::value, int> >;
+template <typename T>              using IfInteger = Invoke<std::enable_if<std::is_integral<T>::value, int> >;
+template <typename T1,typename T2> using IfSame    = Invoke<std::enable_if<std::is_same<T1,T2>::value, int> >;
 
-template <typename T> using IfNotReal    = Invoke<std::enable_if<!std::is_floating_point<T>::value, int> >;
-template <typename T> using IfNotComplex = Invoke<std::enable_if<!is_complex<T>::value, int> >;
-template <typename T> using IfNotInteger = Invoke<std::enable_if<!std::is_integral<T>::value, int> >;
+template <typename T>              using IfNotReal    = Invoke<std::enable_if<!std::is_floating_point<T>::value, int> >;
+template <typename T>              using IfNotComplex = Invoke<std::enable_if<!is_complex<T>::value, int> >;
+template <typename T>              using IfNotInteger = Invoke<std::enable_if<!std::is_integral<T>::value, int> >;
+template <typename T1,typename T2> using IfNotSame    = Invoke<std::enable_if<!std::is_same<T1,T2>::value, int> >;
 
 ////////////////////////////////////////////////////////
 // Define the operation templates functors

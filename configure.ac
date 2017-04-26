@@ -84,16 +84,15 @@ case ${ac_LAPACK} in
 esac
 
 ############### FP16 conversions
-AC_ARG_ENABLE([fp16],
-    [AC_HELP_STRING([--enable-fp16=yes|no], [enable fp16 comms])], 
-    [ac_FP16=${enable_fp16}], [ac_FP16=no])
-case ${ac_FP16} in
-    no)
-        ;;
+AC_ARG_ENABLE([sfw-fp16],
+    [AC_HELP_STRING([--enable-sfw-fp16=yes|no], [enable software fp16 comms])], 
+    [ac_SFW_FP16=${enable_sfw_fp16}], [ac_SFW_FP16=yes])
+case ${ac_SFW_FP16} in
     yes)
-        AC_DEFINE([USE_FP16],[1],[conversion to fp16]);;
+      AC_DEFINE([SFW_FP16],[1],[software conversion to fp16]);;
+    no);;
     *)
-	;;
+      AC_MSG_ERROR(["SFW FP16 option not supported ${ac_SFW_FP16}"]);;
 esac
 
 ############### MKL
@@ -189,7 +188,14 @@ case ${ax_cv_cxx_compiler_vendor} in
     case ${ac_SIMD} in
       SSE4)
         AC_DEFINE([SSE4],[1],[SSE4 intrinsics])
-        SIMD_FLAGS='-msse4.2';;
+	case ${ac_SFW_FP16} in
+	  yes)
+	  SIMD_FLAGS='-msse4.2';;
+	  no)
+	  SIMD_FLAGS='-msse4.2 -mf16c';;
+	  *)
+          AC_MSG_ERROR(["SFW_FP16 must be either yes or no value ${ac_SFW_FP16} "]);;
+	esac;;
       AVX)
         AC_DEFINE([AVX1],[1],[AVX intrinsics])
         SIMD_FLAGS='-mavx -mf16c';;
@@ -423,7 +429,6 @@ AC_OUTPUT
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Summary of configuration for $PACKAGE v$VERSION
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 ----- PLATFORM ----------------------------------------
 architecture (build)        : $build_cpu
 os (build)                  : $build_os
@@ -436,6 +441,7 @@ SIMD                        : ${ac_SIMD}${SIMD_GEN_WIDTH_MSG}
 Threading                   : ${ac_openmp} 
 Communications type         : ${comms_type}
 Default precision           : ${ac_PRECISION}
+Software FP16 conversion    : ${ac_SFW_FP16}
 RNG choice                  : ${ac_RNG} 
 GMP                         : `if test "x$have_gmp" = xtrue; then echo yes; else echo no; fi`
 LAPACK                      : ${ac_LAPACK}

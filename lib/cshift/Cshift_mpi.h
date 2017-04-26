@@ -154,13 +154,7 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
 			   recv_from_rank,
 			   bytes);
       grid->Barrier();
-      /*
-      for(int i=0;i<send_buf.size();i++){
-	assert(recv_buf.size()==buffer_size);
-	assert(send_buf.size()==buffer_size);
-	std::cout << "SendRecv_Cshift_comms ["<<i<<" "<< dimension<<"] snd "<<send_buf[i]<<" rcv " << recv_buf[i] << "  0x" << cbmask<<std::endl;
-      }
-      */
+
       Scatter_plane_simple (ret,recv_buf,dimension,x,cbmask);
     }
   }
@@ -246,13 +240,6 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
 			     (void *)&recv_buf_extract[i][0],
 			     recv_from_rank,
 			     bytes);
-	/*
-	for(int w=0;w<recv_buf_extract[i].size();w++){
-	  assert(recv_buf_extract[i].size()==buffer_size);
-	  assert(send_buf_extract[i].size()==buffer_size);
-	  std::cout << "SendRecv_Cshift_comms ["<<w<<" "<< dimension<<"] recv "<<recv_buf_extract[i][w]<<" send " << send_buf_extract[nbr_lane][w]  << cbmask<<std::endl;
-	}
-	*/	
 	grid->Barrier();
 	rpointers[i] = &recv_buf_extract[i][0];
       } else { 
