@@ -23,6 +23,7 @@ matrix:
             - openmpi-bin
             - binutils-dev
       env: VERSION=-4.9
+      sudo: required
     - compiler: gcc
       addons:
         apt:
@@ -37,6 +38,7 @@ matrix:
             - openmpi-bin
             - binutils-dev
       env: VERSION=-5
+      sudo: required
     - compiler: clang
       addons:
         apt:
