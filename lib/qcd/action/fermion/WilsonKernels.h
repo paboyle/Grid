@@ -63,7 +63,7 @@ public:
     switch(Opt) {
 #if defined(AVX512) || defined (QPX)
     case OptInlineAsm:
-      if(interior&&exterior) WilsonKernels<Impl>::AsmDhopSite(st,lo,U,buf,sF,sU,Ls,Ns,in,out);
+      if(interior&&exterior) WilsonKernels<Impl>::AsmDhopSite   (st,lo,U,buf,sF,sU,Ls,Ns,in,out);
       else if (interior)     WilsonKernels<Impl>::AsmDhopSiteInt(st,lo,U,buf,sF,sU,Ls,Ns,in,out);
       else if (exterior)     WilsonKernels<Impl>::AsmDhopSiteExt(st,lo,U,buf,sF,sU,Ls,Ns,in,out);
       else assert(0);
@@ -124,7 +124,7 @@ public:
     switch(Opt) {
 #if defined(AVX512) || defined (QPX)
     case OptInlineAsm:
-      if(interior&&exterior) WilsonKernels<Impl>::AsmDhopSiteDag(st,lo,U,buf,sF,sU,Ls,Ns,in,out);
+      if(interior&&exterior) WilsonKernels<Impl>::AsmDhopSiteDag   (st,lo,U,buf,sF,sU,Ls,Ns,in,out);
       else if (interior)     WilsonKernels<Impl>::AsmDhopSiteDagInt(st,lo,U,buf,sF,sU,Ls,Ns,in,out);
       else if (exterior)     WilsonKernels<Impl>::AsmDhopSiteDagExt(st,lo,U,buf,sF,sU,Ls,Ns,in,out);
       else assert(0);
