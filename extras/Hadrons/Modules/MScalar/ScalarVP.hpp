@@ -50,10 +50,10 @@ private:
 private:
     std::string                 freeMomPropName_, GFSrcName_, prop0Name_,
                                 propQName_, propSunName_, propTadName_;
-    std::vector<std::string>    phaseName_, muGFSrcName_, muProp0Name_,
-                                muPropQName_, muPropSunName_, muPropTadName_;
+    std::vector<std::string>    phaseName_, muPropQName_, muPropSunName_,
+                                muPropTadName_;
     ScalarField                 *freeMomProp_, *GFSrc_, *prop0_;
-    std::vector<ScalarField *>  phase_, muGFSrc_, muProp0_;
+    std::vector<ScalarField *>  phase_;
     EmField                     *A;
 };
 

@@ -48,16 +48,12 @@ void TScalarVP::setup(void)
     propTadName_ = getName() + "_propTad";
 
 	phaseName_.clear();
-	muGFSrcName_.clear();
-	muProp0Name_.clear();
 	muPropQName_.clear();
 	muPropSunName_.clear();
 	muPropTadName_.clear();
 	for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
         phaseName_.push_back("_shiftphase_" + std::to_string(mu));
-        muGFSrcName_.push_back("_" + getName() + "_DinvSrc_" + std::to_string(mu));
-        muProp0Name_.push_back(getName() + "_prop0_" + std::to_string(mu));
         muPropQName_.push_back(getName() + "_propQ_" + std::to_string(mu));
         muPropSunName_.push_back(getName() + "_propSun_" + std::to_string(mu));
         muPropTadName_.push_back(getName() + "_propTad_" + std::to_string(mu));
@@ -78,23 +74,9 @@ void TScalarVP::setup(void)
     {
         env().registerLattice<ScalarField>(GFSrcName_);
     }
-    if (!env().hasRegisteredObject(muGFSrcName_[0]))
-    {
-    	for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-    	{
-    		env().registerLattice<ScalarField>(muGFSrcName_[mu]);
-    	}
-    }
     if (!env().hasRegisteredObject(prop0Name_))
     {
         env().registerLattice<ScalarField>(prop0Name_);
-    }
-    if (!env().hasRegisteredObject(muProp0Name_[0]))
-    {
-    	for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-    	{
-    		env().registerLattice<ScalarField>(muProp0Name_[mu]);
-    	}
     }
     env().registerLattice<ScalarField>(propQName_);
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
@@ -168,23 +150,6 @@ void TScalarVP::execute(void)
     {
         GFSrc_ = env().getObject<ScalarField>(GFSrcName_);
     }
-    // cache G*exp(i*k_mu)*F*src
-    if (!env().hasCreatedObject(muGFSrcName_[0]))
-    {
-    	for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-        {
-            muGFSrc_.push_back(env().createLattice<ScalarField>(muGFSrcName_[mu]));
-            fft.FFT_all_dim(*(muGFSrc_[mu]), source, FFT::forward);
-            *(muGFSrc_[mu]) = (*freeMomProp_)*(*phase_[mu])*(*muGFSrc_[mu]);
-        }
-    }
-    else
-    {
-    	for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-        {
-            muGFSrc_.push_back(env().getObject<ScalarField>(muGFSrcName_[mu]));
-        }
-    }
     // cache position-space free scalar propagators
     if (!env().hasCreatedObject(prop0Name_))
     {
@@ -194,21 +159,6 @@ void TScalarVP::execute(void)
     else
     {
         prop0_ = env().getObject<ScalarField>(prop0Name_);
-    }
-    if (!env().hasCreatedObject(muProp0Name_[0]))
-    {
-    	for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-        {
-            muProp0_.push_back(env().createLattice<ScalarField>(muProp0Name_[mu]));
-            fft.FFT_all_dim(*(muProp0_[mu]), *(muGFSrc_[mu]), FFT::backward);
-        }
-    }
-    else
-    {
-    	for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-        {
-            muProp0_.push_back(env().getObject<ScalarField>(muProp0Name_[mu]));
-        }
     }
 
     // PROPAGATOR CALCULATION
@@ -220,15 +170,18 @@ void TScalarVP::execute(void)
 
     // Propagators from shifted sources
     std::vector<ScalarField *> muPropQ_, muPropSun_, muPropTad_;
+    ScalarField buf(env().getGrid());
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
         muPropQ_.push_back(env().createLattice<ScalarField>(muPropQName_[mu]));
         muPropSun_.push_back(env().createLattice<ScalarField>(muPropSunName_[mu]));
         muPropTad_.push_back(env().createLattice<ScalarField>(muPropTadName_[mu]));
+
+        buf = adj(*phase_[mu])*(*GFSrc_);
         chargedProp(*(muPropQ_[mu]), *(muPropSun_[mu]), *(muPropTad_[mu]),
-        			*(muGFSrc_[mu]), fft);
+        			buf, fft);
     }
-    
+
 }
 
 // Calculate O(q) and O(q^2) terms of momentum-space charged propagator
