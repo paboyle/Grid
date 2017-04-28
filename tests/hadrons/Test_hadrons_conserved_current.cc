@@ -45,6 +45,7 @@ int main(int argc, char *argv[])
     Application  application;
     unsigned int nt = GridDefaultLatt()[Tp];
     double       mass = 0.04;
+    unsigned int Ls = 12;
 
     // global parameters
     Application::GlobalPar globalPar;
@@ -65,7 +66,7 @@ int main(int argc, char *argv[])
     std::string actionName = "DWF";
     MAction::DWF::Par actionPar;
     actionPar.gauge = "gauge";
-    actionPar.Ls    = 12;
+    actionPar.Ls    = Ls;
     actionPar.M5    = 1.8;
     actionPar.mass  = mass;
     application.createModule<MAction::DWF>(actionName, actionPar);
@@ -83,37 +84,30 @@ int main(int argc, char *argv[])
     std::string pos = "0 0 0 0";
     std::string modName = "Ward Identity Test";
     MAKE_POINT_PROP(pos, pointProp, solverName);
-    if (!(Environment::getInstance().hasModule(modName)))
-    {
-        MContraction::WardIdentity::Par wiPar;
-        wiPar.q      = pointProp + "_5d";
-        wiPar.q4d    = pointProp;
-        wiPar.action = actionName;
-        wiPar.mass   = mass;
-        application.createModule<MContraction::WardIdentity>(modName, wiPar);
-    }
+    makeWITest(application, modName, pointProp, actionName, mass, Ls);
 
-    // Conserved current contractions with sequential insertion of vector
+    // Conserved current contractions with sequential insertion of vector/axial
     // current.
-    std::string q_x = "q_x";
-    std::string q_y = "q_y";
-    std::string q_z = "q_z";
-    std::string q_t = "q_t";
-    std::string mom = ZERO_MOM;
-    modName         = "Sequential Ward Identity Test";
-    MAKE_SEQUENTIAL_PROP(nt/2, pointProp, mom, q_x, solverName);
-    MAKE_SEQUENTIAL_PROP(nt/2, pointProp, mom, q_y, solverName);
-    MAKE_SEQUENTIAL_PROP(nt/2, pointProp, mom, q_z, solverName);
-    MAKE_SEQUENTIAL_PROP(nt/2, pointProp, mom, q_t, solverName);
-    if (!(Environment::getInstance().hasModule(modName)))
-    {
-        MContraction::WardIdentitySeq::Par wiPar;
-        wiPar.q_x = q_x;
-        wiPar.q_y = q_y;
-        wiPar.q_z = q_z;
-        wiPar.q_t = q_t;
-        application.createModule<MContraction::WardIdentitySeq>(modName, wiPar);
-    }
+    std::string mom      = ZERO_MOM;
+    unsigned int t_J     = nt/2;
+    std::string seqPropA = ADD_INDEX(pointProp + "_seq_A", t_J);
+    std::string seqPropV = ADD_INDEX(pointProp + "_seq_V", t_J);
+    std::string seqSrcA  = seqPropA + "_src";
+    std::string seqSrcV  = seqPropV + "_src";
+    std::string point5d  = LABEL_5D(pointProp);
+    makeConservedSequentialSource(application, seqSrcA, point5d, 
+                                  actionName, t_J, Current::Axial, Tp, mom);
+    makePropagator(application, seqPropA, seqSrcA, solverName);
+    makeConservedSequentialSource(application, seqSrcV, point5d, 
+                                  actionName, t_J, Current::Vector, Tp, mom);
+    makePropagator(application, seqPropV, seqSrcV, solverName);
+
+    std::string modNameA = "Axial Sequential Test";
+    std::string modNameV = "Vector Sequential Test";
+    makeSeqTest(application, modNameA, pointProp, seqPropA, 
+                actionName, pos, t_J, Tp, Current::Axial, Ls);
+    makeSeqTest(application, modNameV, pointProp, seqPropV, 
+                actionName, pos, t_J, Tp, Current::Vector, Ls);
 
     // execution
     application.saveParameterFile("ConservedCurrentTest.xml");

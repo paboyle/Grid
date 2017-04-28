@@ -40,6 +40,7 @@ using namespace Hadrons;
 #define LABEL_3PT(s, t1, t2) ADD_INDEX(INIT_INDEX(s, t1), t2)
 #define LABEL_4PT(s, t1, t2, t3) ADD_INDEX(ADD_INDEX(INIT_INDEX(s, t1), t2), t3)
 #define LABEL_4PT_NOISE(s, t1, t2, t3, nn) ADD_INDEX(ADD_INDEX(ADD_INDEX(INIT_INDEX(s, t1), t2), t3), nn)
+#define LABEL_5D(s) s + "_5d";
 
 // Wall source/sink macros
 #define NAME_3MOM_WALL_SOURCE(t, mom) ("wall_" + std::to_string(t) + "_" + mom)
@@ -124,6 +125,44 @@ inline void makeSequentialSource(Application &application, std::string srcName,
 }
 
 /*******************************************************************************
+ * Name: makeConservedSequentialSource
+ * Purpose: Construct sequential source with conserved current insertion and 
+ *          add to application module.
+ * Parameters: application - main application that stores modules.
+ *             srcName     - name of source module to create.
+ *             qSrc        - Input quark for sequential inversion.
+ *             actionName  - action corresponding to quark.
+ *             tS          - sequential source timeslice.
+ *             curr        - conserved current type to insert.
+ *             mu          - Lorentz index of current to insert.
+ *             mom         - momentum insertion (default is zero).
+ * Returns: None.
+ ******************************************************************************/
+inline void makeConservedSequentialSource(Application &application,
+                                          std::string &srcName,
+                                          std::string &qSrc, 
+                                          std::string &actionName,
+                                          unsigned int tS,
+                                          Current curr,
+                                          unsigned int mu,
+                                          std::string mom = ZERO_MOM)
+{
+    // If the source already exists, don't make the module again.
+    if (!(Environment::getInstance().hasModule(srcName)))
+    {
+        MSource::SeqConserved::Par seqPar;
+        seqPar.q         = qSrc;
+        seqPar.action    = actionName;
+        seqPar.tA        = tS;
+        seqPar.tB        = tS;
+        seqPar.curr_type = curr;
+        seqPar.mu        = mu;
+        seqPar.mom       = mom;
+        application.createModule<MSource::SeqConserved>(srcName, seqPar);
+    }
+}
+
+/*******************************************************************************
  * Name: makeWallSource
  * Purpose: Construct wall source and add to application module.
  * Parameters: application - main application that stores modules.
@@ -132,7 +171,7 @@ inline void makeSequentialSource(Application &application, std::string srcName,
  *             mom         - momentum insertion (default is zero).
  * Returns: None.
  ******************************************************************************/
-inline void makeWallSource(Application &application, std::string srcName,
+inline void makeWallSource(Application &application, std::string &srcName,
                            unsigned int tW, std::string mom = ZERO_MOM)
 {
     // If the source already exists, don't make the module again.
@@ -154,8 +193,8 @@ inline void makeWallSource(Application &application, std::string srcName,
  *             mom         - momentum insertion (default is zero).
  * Returns: None.
  ******************************************************************************/
-inline void makeWallSink(Application &application, std::string propName,
-                         std::string wallName, std::string mom = ZERO_MOM)
+inline void makeWallSink(Application &application, std::string &propName,
+                         std::string &wallName, std::string mom = ZERO_MOM)
 {
     // If the propagator has already been smeared, don't smear it again.
     // Temporarily removed, strategy for sink smearing likely to change.
@@ -365,4 +404,82 @@ inline void discLoopContraction(Application &application,
         discPar.gamma  = gamma;
         application.createModule<MContraction::DiscLoop>(modName, discPar);
     }
- }
+}
+
+/*******************************************************************************
+ * Name: makeWITest
+ * Purpose: Create module to test Ward Identities for conserved current
+ *          contractions and add to application module.
+ * Parameters: application - main application that stores modules.
+ *             modName     - name of module to create.
+ *             propName    - 4D quark propagator.
+ *             actionName  - action used to compute quark propagator.
+ *             mass        - mass of quark.
+ *             Ls          - length of 5th dimension (default = 1).
+ * Returns: None.
+ ******************************************************************************/
+inline void makeWITest(Application &application, std::string &modName,
+                       std::string &propName, std::string &actionName, 
+                       double mass, unsigned int Ls = 1)
+{
+    if (!(Environment::getInstance().hasModule(modName)))
+    {
+        MContraction::WardIdentity::Par wiPar;
+        if (Ls > 1)
+        {
+            wiPar.q  = LABEL_5D(propName);
+        }
+        else
+        {
+            wiPar.q  = propName;
+        }
+        wiPar.q4d    = propName;
+        wiPar.action = actionName;
+        wiPar.mass   = mass;
+        application.createModule<MContraction::WardIdentity>(modName, wiPar);
+    }
+}
+
+/*******************************************************************************
+ * Name: makeSeqTest
+ * Purpose: Create module to test sequential insertion of conserved current
+ *          and add to application module.
+ * Parameters: application - main application that stores modules.
+ *             modName     - name of module to create.
+ *             propName    - 4D quark propagator.
+ *             seqProp     - 4D quark propagator with sequential insertion of
+ *                           conserved current.
+ *             actionName  - action used to compute quark propagators.
+ *             t_J         - time at which sequential current is inserted.
+ *             mu          - Lorentz index of sequential current.
+ *             curr        - type of conserved current inserted.
+ *             Ls          - length of 5th dimension (default = 1).
+ * Returns: None.
+ ******************************************************************************/
+inline void makeSeqTest(Application &application, std::string &modName,
+                        std::string &propName, std::string &seqName,
+                        std::string &actionName, std::string &origin,
+                        unsigned int t_J, unsigned int mu, Current curr,
+                        unsigned int Ls = 1)
+{
+    if (!(Environment::getInstance().hasModule(modName)))
+    {
+        MUtilities::TestSeqConserved::Par seqPar;
+        if (Ls > 1)
+        {
+            seqPar.q  = LABEL_5D(propName);
+        }
+        else
+        {
+            seqPar.q  = propName;
+        }
+        seqPar.q4d    = propName;
+        seqPar.qSeq   = seqName;
+        seqPar.action = actionName;
+        seqPar.origin = origin;
+        seqPar.t_J    = t_J;
+        seqPar.mu     = mu;
+        seqPar.curr   = curr;
+        application.createModule<MUtilities::TestSeqConserved>(modName, seqPar);
+    }
+}
