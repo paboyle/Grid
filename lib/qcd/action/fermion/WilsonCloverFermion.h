@@ -31,14 +31,20 @@
 
 #include <Grid/Grid.h>
 
-namespace Grid {
-namespace QCD {
+namespace Grid
+{
+namespace QCD
+{
 
 template <class Impl>
-class WilsonCloverFermion : public WilsonFermion<Impl> {
+class WilsonCloverFermion : public WilsonFermion<Impl>
+{
 public:
+  // Types definitions
   INHERIT_IMPL_TYPES(Impl);
-
+  template <typename vtype> using iImplClover        = iScalar<iMatrix<iMatrix<vtype, Impl::Dimension>, Ns> >;
+  typedef iImplClover<Simd>        SiteCloverType;
+  typedef Lattice<SiteCloverType>        CloverFieldType;
 public:
   typedef WilsonFermion<Impl> WilsonBase;
 
@@ -51,43 +57,48 @@ public:
                       const ImplParams &p = ImplParams()) : WilsonFermion<Impl>(_Umu,
                                                                                 Fgrid,
                                                                                 Hgrid,
-                                                                                _mass, p), 
-                                                                                Bx(_Umu._grid),
-                                                                                By(_Umu._grid),
-                                                                                Bz(_Umu._grid),
-                                                                                Ex(_Umu._grid),
-                                                                                Ey(_Umu._grid),
-                                                                                Ez(_Umu._grid)
+                                                                                _mass, p),
+                                                                                CloverTerm(&Fgrid),
+                                                                                CloverTermInv(&Fgrid)
   {
     csw = _csw;
     assert(Nd == 4); // require 4 dimensions
   }
 
-  virtual RealD M(const FermionField& in, FermionField& out);
-  virtual RealD Mdag(const FermionField& in, FermionField& out);
+  virtual RealD M(const FermionField &in, FermionField &out);
+  virtual RealD Mdag(const FermionField &in, FermionField &out);
 
   virtual void Mooee(const FermionField &in, FermionField &out);
   virtual void MooeeDag(const FermionField &in, FermionField &out);
   virtual void MooeeInv(const FermionField &in, FermionField &out);
   virtual void MooeeInvDag(const FermionField &in, FermionField &out);
+  virtual void MooeeInternal(const FermionField &in, FermionField &out, int dag, int inv);
 
-  virtual void MDeriv(GaugeField&mat, const FermionField&U, const FermionField&V, int dag);
-  virtual void MooDeriv(GaugeField&mat, const FermionField&U, const FermionField&V, int dag);
-  virtual void MeeDeriv(GaugeField&mat, const FermionField&U, const FermionField&V, int dag);
-
+  virtual void MDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag);
+  virtual void MooDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag);
+  virtual void MeeDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag);
 
   void ImportGauge(const GaugeField &_Umu);
+
 private:
   // here fixing the 4 dimensions, make it more general?
 
-  // Field strengths
-  GaugeLinkField Bx, By, Bz, Ex, Ey, Ez;
+  RealD csw;                                         // Clover coefficient
+  CloverFieldType CloverTerm, CloverTermInv; // Clover term
+  // eventually these two can be compressed into 6x6 blocks instead of the 12x12
+  // using the DeGrand-Rossi basis for the gamma matrices
 
-  RealD csw; // Clover coefficient
-
-
-  // Methods
-  void AddCloverTerm(const FermionField& in, FermionField& out);
+  CloverFieldType fillClover(const GaugeLinkField& F){
+    CloverFieldType T(F._grid);
+    PARALLEL_FOR_LOOP
+    for (int i = 0; i < CloverTerm._grid->oSites(); i++){
+      for (int s1 = 0; s1 < Nc; s1++)
+      for (int s2 = 0; s2 < Nc; s2++)
+      T._odata[i]()(s1,s2) = F._odata[i]()();
+    }
+  return T;
+  }
+  
 };
 }
 }
