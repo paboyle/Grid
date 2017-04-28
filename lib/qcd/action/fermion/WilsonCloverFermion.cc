@@ -30,13 +30,15 @@
 #include <Grid/Eigen/Dense>
 #include <Grid/qcd/spin/Dirac.h>
 
-namespace Grid {
-namespace QCD {
+namespace Grid
+{
+namespace QCD
+{
 
-//WilsonLoop::CloverPlaquette   
-/////////////////////////////////////////////////////                                                                                                                                                        
-//// Clover plaquette combination in mu,nu plane with Double Stored U                                                                                                                                          
-////////////////////////////////////////////////////              
+//WilsonLoop::CloverPlaquette
+/////////////////////////////////////////////////////
+//// Clover plaquette combination in mu,nu plane with Double Stored U
+////////////////////////////////////////////////////
 //static void CloverPlaquette(GaugeMat &Q, const std::vector<GaugeMat> &U,
 //                             const int mu, const int nu){
 //   Q = zero;
@@ -54,149 +56,162 @@ namespace QCD {
 //             U[nu], nu, Gimpl::CovShiftBackward(U[mu], mu, U[nu] )));
 // }
 
+// *NOT* EO
+template <class Impl>
+RealD WilsonCloverFermion<Impl>::M(const FermionField &in, FermionField &out)
+{
+  // Wilson term
+  out.checkerboard = in.checkerboard;
+  this->Dhop(in, out, DaggerNo);
+  // Clover term
+  // apply the sigma and Fmunu
+  FermionField temp(out._grid);
+  Mooee(in, temp);
+  // overall factor
+  out += temp;
+  return axpy_norm(out, 4 + this->mass, in, out);
+}
 
-// *NOT* EO 
-  template <class Impl>
-  RealD WilsonCloverFermion<Impl>::M(const FermionField& in, FermionField& out) {
-    // Wilson term
-    out.checkerboard = in.checkerboard;
-    this->Dhop(in, out, DaggerNo);
-    // Clover term
-    // apply the sigma and Fmunu
-    Mooee(in, out);
-    // overall factor
-    return axpy_norm(out, 4 + this->mass, in, out);
+template <class Impl>
+RealD WilsonCloverFermion<Impl>::Mdag(const FermionField &in, FermionField &out)
+{
+  // Wilson term
+  out.checkerboard = in.checkerboard;
+  this->Dhop(in, out, DaggerYes);
+  // Clover term
+  // apply the sigma and Fmunu
+  FermionField temp(out._grid);
+  MooeeDag(in, temp);
+  out+=temp;
+  return axpy_norm(out, 4 + this->mass, in, out);
+}
+
+template <class Impl>
+void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
+{
+  this->ImportGauge(_Umu);
+  GridBase *grid = _Umu._grid;
+  assert(Nd == 4);  // only works in 4 dim
+  typename Impl::GaugeLinkField Bx(grid), By(grid), Bz(grid), Ex(grid), Ey(grid), Ez(grid);
+  
+  // Compute the field strength terms
+  WilsonLoops<Impl>::FieldStrength(Bx, _Umu, Ydir, Zdir);
+  WilsonLoops<Impl>::FieldStrength(By, _Umu, Zdir, Xdir);
+  WilsonLoops<Impl>::FieldStrength(Bz, _Umu, Xdir, Ydir);
+  WilsonLoops<Impl>::FieldStrength(Ex, _Umu, Tdir, Xdir);
+  WilsonLoops<Impl>::FieldStrength(Ey, _Umu, Tdir, Ydir);
+  WilsonLoops<Impl>::FieldStrength(Ez, _Umu, Tdir, Zdir);
+
+  // Compute the Clover Operator acting on Colour and Spin
+  CloverTerm  = fillClover(Bx) * (Gamma(Gamma::Algebra::SigmaYZ));
+  CloverTerm += fillClover(By) * (Gamma(Gamma::Algebra::MinusSigmaXZ));
+  CloverTerm += fillClover(Bz) * (Gamma(Gamma::Algebra::SigmaXY));
+  CloverTerm += fillClover(Ex) * (Gamma(Gamma::Algebra::MinusSigmaXT));
+  CloverTerm += fillClover(Ey) * (Gamma(Gamma::Algebra::MinusSigmaYT));
+  CloverTerm += fillClover(Ez) * (Gamma(Gamma::Algebra::MinusSigmaZT));
+  CloverTerm *= csw;
+
+  int lvol = _Umu._grid->lSites();
+  int DimRep = Impl::Dimension;
+
+  Eigen::MatrixXcd EigenCloverOp = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
+  Eigen::MatrixXcd EigenInvCloverOp = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
+
+  std::vector<int> lcoor;
+  typename SiteCloverType::scalar_object Qx = zero, Qxinv = zero;
+
+  for (int site = 0; site < lvol; site++)
+  {
+    grid->LocalIndexToLocalCoor(site, lcoor);
+    EigenCloverOp = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
+    peekLocalSite(Qx, CloverTerm, lcoor);
+    Qxinv = zero;
+    for (int j = 0; j < Ns; j++)
+      for (int k = 0; k < Ns; k++)
+        for (int a = 0; a < DimRep; a++)
+          for (int b = 0; b < DimRep; b++)
+            EigenCloverOp(a + j * DimRep, b + k * DimRep) = Qx()(j, k)(a, b);
+
+    EigenInvCloverOp = EigenCloverOp.inverse();
+    for (int j = 0; j < Ns; j++)
+      for (int k = 0; k < Ns; k++)
+        for (int a = 0; a < DimRep; a++)
+          for (int b = 0; b < DimRep; b++)
+            Qxinv()(j, k)(a, b) = EigenInvCloverOp(a + j * DimRep, b + k * DimRep);
+
+    pokeLocalSite(Qxinv, CloverTermInv, lcoor);
   }
+}
 
-  template <class Impl>
-  RealD WilsonCloverFermion<Impl>::Mdag(const FermionField& in, FermionField& out) {
-    // Wilson term
-    out.checkerboard = in.checkerboard;
-    this->Dhop(in, out, DaggerYes);
-    // Clover term
-    // apply the sigma and Fmunu
-    MooeeDag(in, out);
-    return axpy_norm(out, 4 + this->mass, in, out);
-  }
+template <class Impl>
+void WilsonCloverFermion<Impl>::Mooee(const FermionField &in, FermionField &out)
+{
+  this->MooeeInternal(in, out, DaggerNo, InverseNo);
+}
 
-  template <class Impl>
-  void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField& _Umu) {
-    this->ImportGauge(_Umu);
-    GridBase* grid = _Umu._grid;
-    assert(Nd==4); //only works in 4 dim
-    typename Impl::GaugeLinkField Bx(grid), By(grid), Bz(grid), Ex(grid), Ey(grid), Ez(grid);
-    // Compute the field strength terms
-    WilsonLoops<Impl>::FieldStrength(Bx, _Umu, Ydir, Zdir);
-    WilsonLoops<Impl>::FieldStrength(By, _Umu, Zdir, Xdir);
-    WilsonLoops<Impl>::FieldStrength(Bz, _Umu, Xdir, Ydir);
-    WilsonLoops<Impl>::FieldStrength(Ex, _Umu, Tdir, Xdir);
-    WilsonLoops<Impl>::FieldStrength(Ey, _Umu, Tdir, Ydir);
-    WilsonLoops<Impl>::FieldStrength(Ez, _Umu, Tdir, Zdir);
+template <class Impl>
+void WilsonCloverFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out)
+{
+  this->MooeeInternal(in, out, DaggerNo, InverseYes);
+}
 
-    // Compute the Clover Operator acting on Colour and Spin 
-    CloverTerm  = fillClover(Bx)*(Gamma(Gamma::Algebra::SigmaYZ));
-    CloverTerm += fillClover(By)*(Gamma(Gamma::Algebra::MinusSigmaXZ));
-    CloverTerm += fillClover(Bz)*(Gamma(Gamma::Algebra::SigmaXY));
-    CloverTerm += fillClover(Ex)*(Gamma(Gamma::Algebra::MinusSigmaXT));
-    CloverTerm += fillClover(Ey)*(Gamma(Gamma::Algebra::MinusSigmaYT));
-    CloverTerm += fillClover(Ez)*(Gamma(Gamma::Algebra::MinusSigmaZT));
-    CloverTerm *= csw;
+template <class Impl>
+void WilsonCloverFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out)
+{
+  this->MooeeInternal(in, out, DaggerNo, InverseYes);
+}
 
+template <class Impl>
+void WilsonCloverFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out)
+{
+  this->MooeeInternal(in, out, DaggerNo, InverseYes);
+}
 
-    int lvol = _Umu._grid->lSites(); 
-    int DimRep = Impl::Dimension;
+template <class Impl>
+void WilsonCloverFermion<Impl>::MooeeInternal(const FermionField &in, FermionField &out, int dag, int inv)
+{
+  out.checkerboard = in.checkerboard;
+  CloverFieldType *Clover;
 
-    Eigen::MatrixXcd EigenCloverOp = Eigen::MatrixXcd::Zero(Ns*DimRep,Ns*DimRep);
-    Eigen::MatrixXcd EigenInvCloverOp = Eigen::MatrixXcd::Zero(Ns*DimRep,Ns*DimRep);
-    
-    std::vector <int> lcoor;
-    typename SiteCloverType::scalar_object  Qx = zero, Qxinv = zero;
+  Clover = (inv) ? &CloverTermInv : &CloverTerm;
+  if (dag){ out = adj(*Clover) * in;} else { out = *Clover * in;}
+} // MooeeInternal
 
-    for (int site = 0; site < lvol; site++){
-      grid->LocalIndexToLocalCoor(site,lcoor);
-      EigenCloverOp=Eigen::MatrixXcd::Zero(Ns*DimRep,Ns*DimRep);
-      peekLocalSite(Qx,CloverTerm,lcoor);
-      Qxinv = zero;
-      for(int j = 0; j < Ns; j++)
-        for (int k = 0; k < Ns; k++)
-          for(int a = 0; a < DimRep; a++)
-            for(int b = 0; b < DimRep; b++)
-              EigenCloverOp(a+j*DimRep,b+k*DimRep) = Qx()(j,k)(a,b);
+// Derivative parts
+template <class Impl>
+void WilsonCloverFermion<Impl>::MDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag)
+{
+  GaugeField tmp(mat._grid);
 
-            EigenInvCloverOp = EigenCloverOp.inverse();
-            for(int j = 0; j < Ns; j++)
-              for (int k = 0; k < Ns; k++)
-                for(int a = 0; a < DimRep; a++)
-                  for(int b = 0; b < DimRep; b++)
-                    Qxinv()(j,k)(a,b) = EigenInvCloverOp(a+j*DimRep,b+k*DimRep);
+  conformable(U._grid, V._grid);
+  conformable(U._grid, mat._grid);
 
-                  pokeLocalSite(Qxinv,CloverTermInv,lcoor);
-    }
-  }
+  mat.checkerboard = U.checkerboard;
+  tmp.checkerboard = U.checkerboard;
 
-  template<class Impl>
-  void WilsonCloverFermion<Impl>::Mooee(const FermionField &in, FermionField &out){
-    this -> MooeeInternal(in, out, DaggerNo, InverseNo);
-  }
+  this->DhopDeriv(mat, U, V, dag);
+  MooDeriv(tmp, U, V, dag);
+  mat += tmp;
+}
 
-  template<class Impl>
-  void WilsonCloverFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out){
-    this -> MooeeInternal(in, out, DaggerNo, InverseYes);
-  }
+// Derivative parts
+template <class Impl>
+void WilsonCloverFermion<Impl>::MooDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag)
+{
+  // Compute the 8 terms of the derivative
+  assert(0); // not implemented yet
+}
 
-  template<class Impl>
-  void WilsonCloverFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out){
-    this -> MooeeInternal(in, out, DaggerNo, InverseYes);
-  }
-
-  template<class Impl>
-  void WilsonCloverFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out){
-    this -> MooeeInternal(in, out, DaggerNo, InverseYes);
-  }
-
-
-  template<class Impl>
-  void WilsonCloverFermion<Impl>::MooeeInternal(const FermionField &in, FermionField &out, int dag, int inv){
-    out.checkerboard = in.checkerboard;   
-    CloverFieldType *Clover;
-
-    Clover = (inv) ? &CloverTermInv : &CloverTerm; 
-    if(dag){ out = adj(*Clover)*in;} else {out = *Clover*in;}
-  } // MooeeInternal
-
-  // Derivative parts
-  template<class Impl>
-  void WilsonCloverFermion<Impl>::MDeriv(GaugeField&mat, const FermionField&U, const FermionField&V, int dag){
-    GaugeField tmp(mat._grid);
-
-    conformable(U._grid, V._grid);
-    conformable(U._grid, mat._grid);
-
-    mat.checkerboard = U.checkerboard;
-    tmp.checkerboard = U.checkerboard;
-
-    this->DhopDeriv(mat, U, V, dag);
-    MooDeriv(tmp, U, V, dag);
-    mat += tmp;
-  }
-
- // Derivative parts
-  template<class Impl>
-  void WilsonCloverFermion<Impl>::MooDeriv(GaugeField&mat, const FermionField&U, const FermionField&V, int dag){
-    // Compute the 8 terms of the derivative 
-    assert(0); // not implemented yet
-  }
-
-   // Derivative parts
-  template<class Impl>
-  void WilsonCloverFermion<Impl>::MeeDeriv(GaugeField&mat, const FermionField&U, const FermionField&V, int dag){
-    assert(0); // not implemented yet
-  }
+// Derivative parts
+template <class Impl>
+void WilsonCloverFermion<Impl>::MeeDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag)
+{
+  assert(0); // not implemented yet
+}
 
 FermOpTemplateInstantiate(WilsonCloverFermion); // now only for the fundamental representation
 //AdjointFermOpTemplateInstantiate(WilsonCloverFermion);
 //TwoIndexFermOpTemplateInstantiate(WilsonCloverFermion);
 //GparityFermOpTemplateInstantiate(WilsonCloverFermion);
-
 }
 }
