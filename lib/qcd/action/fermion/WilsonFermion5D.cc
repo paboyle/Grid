@@ -726,6 +726,8 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
     conformable(q_in._grid, FermionGrid());
     conformable(q_in._grid, q_out._grid);
     Lattice<iSinglet<Simd>> ph(_FourDimGrid), coor(_FourDimGrid);
+    PropagatorField q_in_s(_FourDimGrid);
+    PropagatorField q_out_s(_FourDimGrid);
     Complex i(0.0, 1.0);
 
     // Momentum projection
@@ -737,23 +739,17 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
     }
     ph = exp((Real)(2*M_PI)*i*ph);
 
-    // Sequential insertion
-    Kernels::SeqConservedCurrentInternal(q_in, q_out, Umu, curr_type,
-                                         mu, ph, tmin, tmax);
-
-    // Axial current sign.
-    if (curr_type == Current::Axial)
+    // Sequential insertion across 5th dimension
+    for (int s = 0; s < Ls; s++)
     {
-        SitePropagator result;
-        parallel_for(int sU = 0; sU < Umu._grid->oSites(); sU++)
+        ExtractSlice(q_in_s, q_in, s, 0);
+        Kernels::SeqConservedCurrentInternal(q_in_s, q_out_s, Umu, curr_type,
+                                             mu, ph, tmin, tmax);
+        if ((curr_type == Current::Axial) && (s < Ls/2))
         {
-            int sF = sU * Ls;
-            for (int s = 0; s < Ls/2; s++)
-            {
-                vstream(q_out._odata[sF], -q_out._odata[sF]);
-                sF++;
-            }
+            q_out_s = -q_out_s;
         }
+        InsertSlice(q_out_s, q_out, s, 0);
     }
 }
 
