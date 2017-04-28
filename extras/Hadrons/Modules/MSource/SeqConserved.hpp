@@ -104,7 +104,7 @@ TSeqConserved<FImpl>::TSeqConserved(const std::string name)
 template <typename FImpl>
 std::vector<std::string> TSeqConserved<FImpl>::getInput(void)
 {
-    std::vector<std::string> in;
+    std::vector<std::string> in = {par().q, par().action};
     
     return in;
 }
@@ -121,7 +121,8 @@ std::vector<std::string> TSeqConserved<FImpl>::getOutput(void)
 template <typename FImpl>
 void TSeqConserved<FImpl>::setup(void)
 {
-    
+    auto Ls_ = env().getObjectLs(par().action);
+    env().template registerLattice<PropagatorField>(getName(), Ls_);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
