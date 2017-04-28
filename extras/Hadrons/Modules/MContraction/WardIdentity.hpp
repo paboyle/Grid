@@ -115,6 +115,10 @@ template <typename FImpl>
 void TWardIdentity<FImpl>::setup(void)
 {
     Ls_ = env().getObjectLs(par().q);
+    if (Ls_ != env().getObjectLs(par().action))
+    {
+        HADRON_ERROR("Ls mismatch between quark action and propagator");
+    }
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -125,8 +129,8 @@ void TWardIdentity<FImpl>::execute(void)
                  << "'." << std::endl;
 
     PropagatorField psi(env().getGrid()), tmp(env().getGrid());
-    PropagatorField q    = *env().template getObject<PropagatorField>(par().q);
-    PropagatorField q4d  = *env().template getObject<PropagatorField>(par().q4d);
+    PropagatorField &q    = *env().template getObject<PropagatorField>(par().q);
+    PropagatorField &q4d  = *env().template getObject<PropagatorField>(par().q4d);
     FMat            &act = *(env().template getObject<FMat>(par().action));
     Gamma           g5(Gamma::Algebra::Gamma5);
     LatticeComplex  PP(env().getGrid()), PA(env().getGrid()),
@@ -142,7 +146,7 @@ void TWardIdentity<FImpl>::execute(void)
     for (unsigned int mu = 0; mu < Nd; ++mu)
     {
         act.ContractConservedCurrent(q, q, tmp, Current::Vector, mu);
-        Vmu[mu] = trace(g5*tmp);
+        Vmu[mu] = trace(tmp);
         act.ContractConservedCurrent(q, q, tmp, Current::Axial, mu);
         Amu[mu] = trace(g5*tmp);
     }
@@ -170,6 +174,9 @@ void TWardIdentity<FImpl>::execute(void)
                  << norm2(vector_WI) << std::endl;
     LOG(Message) << "Axial Ward Identity defect Delta_mu A_mu = "
                  << norm2(defect) << std::endl;
+    LOG(Message) << "norm2(PP) = " << norm2(PP) << std::endl; 
+    LOG(Message) << "norm2(PA) = " << norm2(PA) << std::endl; 
+    LOG(Message) << "norm2(PJ5q) = " << norm2(PJ5q) << std::endl; 
 }
 
 END_MODULE_NAMESPACE
