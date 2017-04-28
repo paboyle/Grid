@@ -48,4 +48,5 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MSource/SeqGamma.hpp>
 #include <Grid/Hadrons/Modules/MSource/Wall.hpp>
 #include <Grid/Hadrons/Modules/MSource/Z2.hpp>
+#include <Grid/Hadrons/Modules/MUtilities/TestSeqConserved.hpp>
 #include <Grid/Hadrons/Modules/Quark.hpp>
