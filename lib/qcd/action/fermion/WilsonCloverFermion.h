@@ -59,7 +59,11 @@ public:
                                                                                 Hgrid,
                                                                                 _mass, p),
                                                                                 CloverTerm(&Fgrid),
-                                                                                CloverTermInv(&Fgrid)
+                                                                                CloverTermInv(&Fgrid),
+                                                                                CloverTermEven(&Hgrid),
+                                                                                CloverTermOdd(&Hgrid),
+                                                                                CloverTermInvEven(&Hgrid),
+                                                                                CloverTermInvOdd(&Hgrid)                                                                                
   {
     csw = _csw;
     assert(Nd == 4); // require 4 dimensions
@@ -85,6 +89,8 @@ private:
 
   RealD csw;                                         // Clover coefficient
   CloverFieldType CloverTerm, CloverTermInv; // Clover term
+  CloverFieldType CloverTermEven, CloverTermOdd;
+  CloverFieldType CloverTermInvEven, CloverTermInvOdd; // Clover term
   // eventually these two can be compressed into 6x6 blocks instead of the 12x12
   // using the DeGrand-Rossi basis for the gamma matrices
 

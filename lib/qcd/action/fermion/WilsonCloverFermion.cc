@@ -91,7 +91,6 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
 {
   this->ImportGauge(_Umu);
   GridBase *grid = _Umu._grid;
-  assert(Nd == 4);  // only works in 4 dim
   typename Impl::GaugeLinkField Bx(grid), By(grid), Bz(grid), Ex(grid), Ey(grid), Ez(grid);
   
   // Compute the field strength terms
@@ -140,6 +139,11 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
             Qxinv()(j, k)(a, b) = EigenInvCloverOp(a + j * DimRep, b + k * DimRep);
 
     pokeLocalSite(Qxinv, CloverTermInv, lcoor);
+    // Separate the even and odd parts.
+    pickCheckerboard(Even, CloverTermEven, CloverTerm);
+    pickCheckerboard( Odd,  CloverTermOdd, CloverTerm);
+    pickCheckerboard(Even, CloverTermInvEven, CloverTermInv);
+    pickCheckerboard( Odd,  CloverTermInvOdd, CloverTermInv);
   }
 }
 
@@ -172,8 +176,15 @@ void WilsonCloverFermion<Impl>::MooeeInternal(const FermionField &in, FermionFie
 {
   out.checkerboard = in.checkerboard;
   CloverFieldType *Clover;
+  if (in.checkerboard == Odd){
+    std::cout << "Calling clover term Odd" << std::endl;
+    Clover = (inv) ? &CloverTermInvOdd : &CloverTermOdd;
+  }
+  if (in.checkerboard == Even){
+    std::cout << "Calling clover term Even" << std::endl;
+    Clover = (inv) ? &CloverTermInvEven : &CloverTermEven;
+  }
 
-  Clover = (inv) ? &CloverTermInv : &CloverTerm;
   if (dag){ out = adj(*Clover) * in;} else { out = *Clover * in;}
 } // MooeeInternal
 
