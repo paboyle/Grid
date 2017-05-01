@@ -368,8 +368,8 @@ namespace Optimization {
       b0 = _mm256_extractf128_si256(b,0);
       a1 = _mm256_extractf128_si256(a,1);
       b1 = _mm256_extractf128_si256(b,1);
-      a0 = _mm_mul_epi32(a0,b0);
-      a1 = _mm_mul_epi32(a1,b1);
+      a0 = _mm_mullo_epi32(a0,b0);
+      a1 = _mm_mullo_epi32(a1,b1);
       return _mm256_set_m128i(a1,a0);
 #endif
 #if defined (AVX2)
@@ -461,7 +461,52 @@ namespace Optimization {
       return in;
     };
   };
-
+#define USE_FP16
+  struct PrecisionChange {
+    static inline __m256i StoH (__m256 a,__m256 b) {
+      __m256i h;
+#ifdef USE_FP16
+      __m128i ha = _mm256_cvtps_ph(a,0);
+      __m128i hb = _mm256_cvtps_ph(b,0);
+      h =(__m256i) _mm256_castps128_ps256((__m128)ha);
+      h =(__m256i) _mm256_insertf128_ps((__m256)h,(__m128)hb,1);
+#else 
+      assert(0);
+#endif
+      return h;
+    }
+    static inline void  HtoS (__m256i h,__m256 &sa,__m256 &sb) {
+#ifdef USE_FP16
+      sa = _mm256_cvtph_ps((__m128i)_mm256_extractf128_ps((__m256)h,0));
+      sb = _mm256_cvtph_ps((__m128i)_mm256_extractf128_ps((__m256)h,1));
+#else 
+      assert(0);
+#endif
+    }
+    static inline __m256 DtoS (__m256d a,__m256d b) {
+      __m128 sa = _mm256_cvtpd_ps(a);
+      __m128 sb = _mm256_cvtpd_ps(b);
+      __m256 s = _mm256_castps128_ps256(sa);
+      s = _mm256_insertf128_ps(s,sb,1);
+      return s;
+    }
+    static inline void StoD (__m256 s,__m256d &a,__m256d &b) {
+      a = _mm256_cvtps_pd(_mm256_extractf128_ps(s,0));
+      b = _mm256_cvtps_pd(_mm256_extractf128_ps(s,1));
+    }
+    static inline __m256i DtoH (__m256d a,__m256d b,__m256d c,__m256d d) {
+      __m256 sa,sb;
+      sa = DtoS(a,b);
+      sb = DtoS(c,d);
+      return StoH(sa,sb);
+    }
+    static inline void HtoD (__m256i h,__m256d &a,__m256d &b,__m256d &c,__m256d &d) {
+      __m256 sa,sb;
+      HtoS(h,sa,sb);
+      StoD(sa,a,b);
+      StoD(sb,c,d);
+    }
+  };
   struct Exchange{
     // 3210 ordering
     static inline void Exchange0(__m256 &out1,__m256 &out2,__m256 in1,__m256 in2){
@@ -666,6 +711,7 @@ namespace Optimization {
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types
 
+  typedef __m256i SIMD_Htype;  // Single precision type
   typedef __m256  SIMD_Ftype; // Single precision type
   typedef __m256d SIMD_Dtype; // Double precision type
   typedef __m256i SIMD_Itype; // Integer type

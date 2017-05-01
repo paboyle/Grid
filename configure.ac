@@ -93,6 +93,18 @@ case ${ac_LAPACK} in
         AC_DEFINE([USE_LAPACK],[1],[use LAPACK]);;
 esac
 
+############### FP16 conversions
+AC_ARG_ENABLE([sfw-fp16],
+    [AC_HELP_STRING([--enable-sfw-fp16=yes|no], [enable software fp16 comms])], 
+    [ac_SFW_FP16=${enable_sfw_fp16}], [ac_SFW_FP16=yes])
+case ${ac_SFW_FP16} in
+    yes)
+      AC_DEFINE([SFW_FP16],[1],[software conversion to fp16]);;
+    no);;
+    *)
+      AC_MSG_ERROR(["SFW FP16 option not supported ${ac_SFW_FP16}"]);;
+esac
+
 ############### MKL
 AC_ARG_ENABLE([mkl],
     [AC_HELP_STRING([--enable-mkl=yes|no|prefix], [enable Intel MKL for LAPACK & FFTW])],
@@ -194,19 +206,26 @@ case ${ax_cv_cxx_compiler_vendor} in
     case ${ac_SIMD} in
       SSE4)
         AC_DEFINE([SSE4],[1],[SSE4 intrinsics])
-        SIMD_FLAGS='-msse4.2';;
+	case ${ac_SFW_FP16} in
+	  yes)
+	  SIMD_FLAGS='-msse4.2';;
+	  no)
+	  SIMD_FLAGS='-msse4.2 -mf16c';;
+	  *)
+          AC_MSG_ERROR(["SFW_FP16 must be either yes or no value ${ac_SFW_FP16} "]);;
+	esac;;
       AVX)
         AC_DEFINE([AVX1],[1],[AVX intrinsics])
-        SIMD_FLAGS='-mavx';;
+        SIMD_FLAGS='-mavx -mf16c';;
       AVXFMA4)
         AC_DEFINE([AVXFMA4],[1],[AVX intrinsics with FMA4])
-        SIMD_FLAGS='-mavx -mfma4';;
+        SIMD_FLAGS='-mavx -mfma4 -mf16c';;
       AVXFMA)
         AC_DEFINE([AVXFMA],[1],[AVX intrinsics with FMA3])
-        SIMD_FLAGS='-mavx -mfma';;
+        SIMD_FLAGS='-mavx -mfma -mf16c';;
       AVX2)
         AC_DEFINE([AVX2],[1],[AVX2 intrinsics])
-        SIMD_FLAGS='-mavx2 -mfma';;
+        SIMD_FLAGS='-mavx2 -mfma -mf16c';;
       AVX512)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-mavx512f -mavx512pf -mavx512er -mavx512cd';;
@@ -431,7 +450,6 @@ git_commit=`cd $srcdir && ./scripts/configure.commit`
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Summary of configuration for $PACKAGE v$VERSION
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 ----- GIT VERSION -------------------------------------
 $git_commit
 
@@ -447,6 +465,7 @@ SIMD                        : ${ac_SIMD}${SIMD_GEN_WIDTH_MSG}
 Threading                   : ${ac_openmp} 
 Communications type         : ${comms_type}
 Default precision           : ${ac_PRECISION}
+Software FP16 conversion    : ${ac_SFW_FP16}
 RNG choice                  : ${ac_RNG} 
 GMP                         : `if test "x$have_gmp" = xtrue; then echo yes; else echo no; fi`
 LAPACK                      : ${ac_LAPACK}

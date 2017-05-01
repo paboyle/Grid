@@ -153,9 +153,6 @@ int main (int argc, char ** argv)
   
   RealD NP = UGrid->_Nprocessors;
   
-  std::cout << GridLogMessage << "Creating action operator " << std::endl;
-  DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
   std::cout << GridLogMessage<< "* Kernel options --dslash-generic, --dslash-unroll, --dslash-asm" <<std::endl;
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
@@ -168,12 +165,15 @@ int main (int argc, char ** argv)
   if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
   if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptInlineAsm ) std::cout << GridLogMessage<< "* Using Asm Nc=3   WilsonKernels" <<std::endl;
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
-  
+
+  DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+
   int ncall =1000;
   if (1) {
     FGrid->Barrier();
     Dw.ZeroCounters();
     Dw.Dhop(src,result,0);
+    std::cout<<GridLogMessage<<"Called warmup"<<std::endl;
     double t0=usecond();
     for(int i=0;i<ncall;i++){
       __SSC_START;
@@ -206,27 +206,39 @@ int main (int argc, char ** argv)
     assert (norm2(err)< 1.0e-4 );
     Dw.Report();
   }
-  
-  if (1) {  // Naive wilson dag implementation
-    refDag = zero;
-    for (int mu = 0; mu < Nd; mu++) {
-      //    ref =  src - Gamma(Gamma::GammaX)* src ; // 1+gamma_x
-      tmp = U[mu] * Cshift(src, mu + 1, 1);
-      for (int i = 0; i < refDag._odata.size(); i++) {
-        refDag._odata[i] += tmp._odata[i] + Gamma(Gmu[mu]) * tmp._odata[i];
-      }
-      
-      tmp = adj(U[mu]) * src;
-      tmp = Cshift(tmp, mu + 1, -1);
-      for (int i = 0; i < refDag._odata.size(); i++) {
-        refDag._odata[i] += tmp._odata[i] - Gamma(Gmu[mu]) * tmp._odata[i];
-      }
-    }
-    refDag = -0.5 * refDag;
-  }
-  
+
+
+
+  DomainWallFermionRL DwH(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
   if (1) {
+    FGrid->Barrier();
+    DwH.ZeroCounters();
+    DwH.Dhop(src,result,0);
+    double t0=usecond();
+    for(int i=0;i<ncall;i++){
+      __SSC_START;
+      DwH.Dhop(src,result,0);
+      __SSC_STOP;
+    }
+    double t1=usecond();
+    FGrid->Barrier();
     
+    double volume=Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt4[mu];
+    double flops=1344*volume*ncall;
+
+    std::cout<<GridLogMessage << "Called half prec comms Dw "<<ncall<<" times in "<<t1-t0<<" us"<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
+    std::cout<<GridLogMessage << "mflop/s per rank =  "<< flops/(t1-t0)/NP<<std::endl;
+    err = ref-result; 
+    std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
+
+    assert (norm2(err)< 1.0e-3 );
+    DwH.Report();
+  }
+
+  if (1)
+  {
+
     std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
     std::cout << GridLogMessage<< "* Benchmarking WilsonFermion5D<DomainWallVec5dImplR>::Dhop "<<std::endl;
     std::cout << GridLogMessage<< "* Vectorising fifth dimension by "<<vComplex::Nsimd()<<std::endl;

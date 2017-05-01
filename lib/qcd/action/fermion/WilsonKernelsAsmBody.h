@@ -39,24 +39,26 @@
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef INTERIOR_AND_EXTERIOR
 
-#define ZERO_NMU(A) 
-#define INTERIOR_BLOCK_XP(a,b,PERMUTE_DIR,PROJMEM,RECON) INTERIOR_BLOCK(a,b,PERMUTE_DIR,PROJMEM,RECON)
-#define EXTERIOR_BLOCK_XP(a,b,RECON) EXTERIOR_BLOCK(a,b,RECON)
+#define ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
+      basep = st.GetPFInfo(nent,plocal); nent++;			\
+      if ( local ) {							\
+	LOAD64(%r10,isigns);						\
+	PROJ(base);							\
+	MAYBEPERM(PERMUTE_DIR,perm);					\
+      } else {								\
+	LOAD_CHI(base);							\
+      }									\
+      base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;	\
+      PREFETCH_CHIMU(base);						\
+      MULT_2SPIN_DIR_PF(Dir,basep);					\
+      LOAD64(%r10,isigns);						\
+      RECON;								\
 
-#define INTERIOR_BLOCK(a,b,PERMUTE_DIR,PROJMEM,RECON)	\
-  LOAD64(%r10,isigns);                                  \
-  PROJMEM(base);                                        \
-  MAYBEPERM(PERMUTE_DIR,perm);                                  
-
-#define EXTERIOR_BLOCK(a,b,RECON)             \
-  LOAD_CHI(base);
-
-#define COMMON_BLOCK(a,b,RECON)               \
-  base = st.GetInfo(ptype,local,perm,b,ent,plocal); ent++;     \
-  PREFETCH_CHIMU(base);                                         \
-  MULT_2SPIN_DIR_PF(a,basep);					\
-  LOAD64(%r10,isigns);                                          \
-  RECON;                                                        
+#define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
+  base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
+  PF_GAUGE(Xp);								\
+  PREFETCH1_CHIMU(base);						\
+  ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON) 
 
 #define RESULT(base,basep) SAVE_RESULT(base,basep);
 
@@ -67,62 +69,62 @@
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef INTERIOR
 
-#define COMMON_BLOCK(a,b,RECON)       
-#define ZERO_NMU(A) 
+#define ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
+      basep = st.GetPFInfo(nent,plocal); nent++;			\
+      if ( local ) {							\
+	LOAD64(%r10,isigns);						\
+	PROJ(base);							\
+	MAYBEPERM(PERMUTE_DIR,perm);					\
+      }else if ( st.same_node[Dir] ) {LOAD_CHI(base);}			\
+      if ( local || st.same_node[Dir] ) {				\
+	MULT_2SPIN_DIR_PF(Dir,basep);					\
+	LOAD64(%r10,isigns);						\
+	RECON;								\
+      }									\
+      base = st.GetInfo(ptype,local,perm,NxtDir,ent,plocal); ent++;	\
+      PREFETCH_CHIMU(base);						\
 
-// No accumulate for DIR0
-#define EXTERIOR_BLOCK_XP(a,b,RECON)				\
-  ZERO_PSI;							\
-  base = st.GetInfo(ptype,local,perm,b,ent,plocal); ent++;	
-
-#define EXTERIOR_BLOCK(a,b,RECON)  \
-  base = st.GetInfo(ptype,local,perm,b,ent,plocal); ent++;     
-
-#define INTERIOR_BLOCK_XP(a,b,PERMUTE_DIR,PROJMEM,RECON) INTERIOR_BLOCK(a,b,PERMUTE_DIR,PROJMEM,RECON)
-
-#define INTERIOR_BLOCK(a,b,PERMUTE_DIR,PROJMEM,RECON)		\
-  LOAD64(%r10,isigns);						\
-  PROJMEM(base);                                                \
-  MAYBEPERM(PERMUTE_DIR,perm);                                  \
-  base = st.GetInfo(ptype,local,perm,b,ent,plocal); ent++;	\
-  PREFETCH_CHIMU(base);						\
-  MULT_2SPIN_DIR_PF(a,basep);					\
-  LOAD64(%r10,isigns);                                          \
-  RECON;                                                        
+#define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
+  base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
+  PF_GAUGE(Xp);								\
+  PREFETCH1_CHIMU(base);						\
+  { ZERO_PSI; }								\
+  ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON) 
 
 #define RESULT(base,basep) SAVE_RESULT(base,basep);
 
 #endif
-
 ////////////////////////////////////////////////////////////////////////////////
 // Post comms kernel
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef EXTERIOR
 
-#define ZERO_NMU(A) nmu=0;
 
-#define INTERIOR_BLOCK_XP(a,b,PERMUTE_DIR,PROJMEM,RECON) \
-  ZERO_PSI;   base = st.GetInfo(ptype,local,perm,b,ent,plocal); ent++;		
+#define ASM_LEG(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
+  base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
+  if((!local)&&(!st.same_node[Dir]) ) {					\
+    LOAD_CHI(base);							\
+    MULT_2SPIN_DIR_PF(Dir,base);					\
+    LOAD64(%r10,isigns);						\
+    RECON;								\
+    nmu++;								\
+  }									
 
-#define EXTERIOR_BLOCK_XP(a,b,RECON) EXTERIOR_BLOCK(a,b,RECON)
+#define ASM_LEG_XP(Dir,NxtDir,PERMUTE_DIR,PROJ,RECON)			\
+  nmu=0;								\
+  { ZERO_PSI;}								\
+  base = st.GetInfo(ptype,local,perm,Dir,ent,plocal); ent++;		\
+  if((!local)&&(!st.same_node[Dir]) ) {					\
+    LOAD_CHI(base);							\
+    MULT_2SPIN_DIR_PF(Dir,base);					\
+    LOAD64(%r10,isigns);						\
+    RECON;								\
+    nmu++;								\
+  }
 
-#define INTERIOR_BLOCK(a,b,PERMUTE_DIR,PROJMEM,RECON)			\
-  base = st.GetInfo(ptype,local,perm,b,ent,plocal); ent++;		
-
-#define EXTERIOR_BLOCK(a,b,RECON)				\
-    nmu++;							\
-    LOAD_CHI(base);						\
-    MULT_2SPIN_DIR_PF(a,base);					\
-    base = st.GetInfo(ptype,local,perm,b,ent,plocal); ent++;	\
-    LOAD64(%r10,isigns);					\
-    RECON;                                                        
-
-#define COMMON_BLOCK(a,b,RECON)			
-
-#define RESULT(base,basep) if (nmu){  ADD_RESULT(base,base);}
+#define RESULT(base,basep) if (nmu){ ADD_RESULT(base,base);}
 
 #endif
-
 {
   int nmu;
   int local,perm, ptype;
@@ -134,11 +136,15 @@
   MASK_REGS;
   int nmax=U._grid->oSites();
   for(int site=0;site<Ns;site++) {
+#ifndef EXTERIOR
     int sU =lo.Reorder(ssU);
     int ssn=ssU+1;     if(ssn>=nmax) ssn=0;
     int sUn=lo.Reorder(ssn);
-#ifndef EXTERIOR
     LOCK_GAUGE(0);
+#else
+    int sU =ssU;
+    int ssn=ssU+1;     if(ssn>=nmax) ssn=0;
+    int sUn=ssn;
 #endif
     for(int s=0;s<Ls;s++) {
       ss =sU*Ls+s;
@@ -146,93 +152,20 @@
       int  ent=ss*8;// 2*Ndim
       int nent=ssn*8;
 
-      ZERO_NMU(0);
-      base  = st.GetInfo(ptype,local,perm,Xp,ent,plocal); ent++;
-#ifndef EXTERIOR
-      PF_GAUGE(Xp); 
-      PREFETCH1_CHIMU(base);
-#endif
-      ////////////////////////////////
-      // Xp
-      ////////////////////////////////
-      basep = st.GetPFInfo(nent,plocal); nent++;
-      if ( local ) {
-	INTERIOR_BLOCK_XP(Xp,Yp,PERMUTE_DIR3,DIR0_PROJMEM,DIR0_RECON);
-      } else { 
-	EXTERIOR_BLOCK_XP(Xp,Yp,DIR0_RECON);
-      }
-      COMMON_BLOCK(Xp,Yp,DIR0_RECON);
-      ////////////////////////////////
-      // Yp
-      ////////////////////////////////
-      basep = st.GetPFInfo(nent,plocal); nent++;
-      if ( local ) {
-	INTERIOR_BLOCK(Yp,Zp,PERMUTE_DIR2,DIR1_PROJMEM,DIR1_RECON);
-      } else { 
-	EXTERIOR_BLOCK(Yp,Zp,DIR1_RECON);
-      }
-      COMMON_BLOCK(Yp,Zp,DIR1_RECON);
-      ////////////////////////////////
-      // Zp
-      ////////////////////////////////
-      basep = st.GetPFInfo(nent,plocal); nent++;
-      if ( local ) {
-	INTERIOR_BLOCK(Zp,Tp,PERMUTE_DIR1,DIR2_PROJMEM,DIR2_RECON);
-      } else { 
-	EXTERIOR_BLOCK(Zp,Tp,DIR2_RECON);
-      }
-      COMMON_BLOCK(Zp,Tp,DIR2_RECON);
-      ////////////////////////////////
-      // Tp
-      ////////////////////////////////
-      basep = st.GetPFInfo(nent,plocal); nent++;
-      if ( local ) {
-	INTERIOR_BLOCK(Tp,Xm,PERMUTE_DIR0,DIR3_PROJMEM,DIR3_RECON);
-      } else { 
-	EXTERIOR_BLOCK(Tp,Xm,DIR3_RECON);
-      }
-      COMMON_BLOCK(Tp,Xm,DIR3_RECON);
-      ////////////////////////////////
-      // Xm
-      ////////////////////////////////
-      //  basep= st.GetPFInfo(nent,plocal); nent++;
-      if ( local ) {
-	INTERIOR_BLOCK(Xm,Ym,PERMUTE_DIR3,DIR4_PROJMEM,DIR4_RECON);
-      } else { 
-	EXTERIOR_BLOCK(Xm,Ym,DIR4_RECON);
-      }
-      COMMON_BLOCK(Xm,Ym,DIR4_RECON);
-      ////////////////////////////////
-      // Ym
-      ////////////////////////////////
-      basep= st.GetPFInfo(nent,plocal); nent++;
-      if ( local ) {
-	INTERIOR_BLOCK(Ym,Zm,PERMUTE_DIR2,DIR5_PROJMEM,DIR5_RECON);
-      } else { 
-	EXTERIOR_BLOCK(Ym,Zm,DIR5_RECON);
-      }
-      COMMON_BLOCK(Ym,Zm,DIR5_RECON);
-      ////////////////////////////////
-      // Zm
-      ////////////////////////////////
-      basep= st.GetPFInfo(nent,plocal); nent++;
-      if ( local ) {
-	INTERIOR_BLOCK(Zm,Tm,PERMUTE_DIR1,DIR6_PROJMEM,DIR6_RECON);
-      } else { 
-	EXTERIOR_BLOCK(Zm,Tm,DIR6_RECON);
-      }
-      COMMON_BLOCK(Zm,Tm,DIR6_RECON);
-      ////////////////////////////////
-      // Tm
-      ////////////////////////////////
-      basep= st.GetPFInfo(nent,plocal); nent++;
-      if ( local ) {
-	INTERIOR_BLOCK(Tm,Xp,PERMUTE_DIR0,DIR7_PROJMEM,DIR7_RECON);
-      } else { 
-	EXTERIOR_BLOCK(Tm,Xp,DIR7_RECON);
-      }
-      COMMON_BLOCK(Tm,Xp,DIR7_RECON);
+   ASM_LEG_XP(Xp,Yp,PERMUTE_DIR3,DIR0_PROJMEM,DIR0_RECON);
+      ASM_LEG(Yp,Zp,PERMUTE_DIR2,DIR1_PROJMEM,DIR1_RECON);
+      ASM_LEG(Zp,Tp,PERMUTE_DIR1,DIR2_PROJMEM,DIR2_RECON);
+      ASM_LEG(Tp,Xm,PERMUTE_DIR0,DIR3_PROJMEM,DIR3_RECON);
 
+      ASM_LEG(Xm,Ym,PERMUTE_DIR3,DIR4_PROJMEM,DIR4_RECON);
+      ASM_LEG(Ym,Zm,PERMUTE_DIR2,DIR5_PROJMEM,DIR5_RECON);
+      ASM_LEG(Zm,Tm,PERMUTE_DIR1,DIR6_PROJMEM,DIR6_RECON);
+      ASM_LEG(Tm,Xp,PERMUTE_DIR0,DIR7_PROJMEM,DIR7_RECON);
+
+#ifdef EXTERIOR
+      if (nmu==0) break;
+      //      if (nmu!=0) std::cout << "EXT "<<sU<<std::endl;
+#endif
       base = (uint64_t) &out._odata[ss];
       basep= st.GetPFInfo(nent,plocal); nent++;
       RESULT(base,basep);
@@ -258,10 +191,6 @@
 #undef DIR5_RECON
 #undef DIR6_RECON
 #undef DIR7_RECON
-#undef EXTERIOR_BLOCK
-#undef INTERIOR_BLOCK
-#undef EXTERIOR_BLOCK_XP
-#undef INTERIOR_BLOCK_XP
-#undef COMMON_BLOCK
-#undef ZERO_NMU
+#undef ASM_LEG
+#undef ASM_LEG_XP
 #undef RESULT

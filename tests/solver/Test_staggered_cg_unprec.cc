@@ -2,10 +2,11 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./tests/Test_dwf_cg_unprec.cc
+    Source file: ./tests/Test_wilson_cg_unprec.cc
 
     Copyright (C) 2015
 
+Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
@@ -26,6 +27,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
+#include <Grid/algorithms/iterative/BlockConjugateGradient.h>
 
 using namespace std;
 using namespace Grid;
@@ -45,35 +47,35 @@ struct scal {
 
 int main (int argc, char ** argv)
 {
+  typedef typename ImprovedStaggeredFermionR::FermionField FermionField; 
+  typedef typename ImprovedStaggeredFermionR::ComplexField ComplexField; 
+  typename ImprovedStaggeredFermionR::ImplParams params; 
+
   Grid_init(&argc,&argv);
 
-  const int Ls=8;
+  std::vector<int> latt_size   = GridDefaultLatt();
+  std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
+  std::vector<int> mpi_layout  = GridDefaultMpi();
+  GridCartesian               Grid(latt_size,simd_layout,mpi_layout);
+  GridRedBlackCartesian     RBGrid(latt_size,simd_layout,mpi_layout);
 
-  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
-  GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
-  GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
-  GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
+  std::vector<int> seeds({1,2,3,4});
+  GridParallelRNG          pRNG(&Grid);  pRNG.SeedFixedIntegers(seeds);
 
-  std::vector<int> seeds4({1,2,3,4});
-  std::vector<int> seeds5({5,6,7,8});
-  GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
-  GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
+  FermionField src(&Grid); random(pRNG,src);
+  RealD nrm = norm2(src);
+  FermionField result(&Grid); result=zero;
+  LatticeGaugeField Umu(&Grid); SU3::HotConfiguration(pRNG,Umu);
 
-  LatticeFermion    src(FGrid); random(RNG5,src);
-  LatticeFermion result(FGrid); result=zero;
-  LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(RNG4,Umu);
-
-  std::vector<LatticeColourMatrix> U(4,UGrid);
+  double volume=1;
   for(int mu=0;mu<Nd;mu++){
-    U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
-  }
+    volume=volume*latt_size[mu];
+  }  
   
   RealD mass=0.1;
-  RealD M5=1.8;
-  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass);
 
-  MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
-  ConjugateGradient<LatticeFermion> CG(1.0e-6,10000);
+  MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> HermOp(Ds);
   CG(HermOp,src,result);
 
   Grid_finalize();
