@@ -166,8 +166,12 @@ int main(int argc, char **argv) {
   RealD b   = MyParams.Mobius.b; //  3./2.;
   RealD c   = MyParams.Mobius.c; //  1./2.;
 
-  FermionAction DenOp(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,mass,M5,b,c);
-  FermionAction NumOp(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,pv,  M5,b,c);
+  // These lines are unecessary if BC are all periodic
+  std::vector<Complex> boundary = {1,1,1,-1};
+  FermionAction::ImplParams Params(boundary);
+  
+  FermionAction DenOp(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,mass,M5,b,c, Params);
+  FermionAction NumOp(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,pv,  M5,b,c, Params);
 
   //double StoppingCondition = 1e-8;
   //double MaxCGIterations = 10000;
