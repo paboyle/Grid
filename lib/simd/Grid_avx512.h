@@ -235,11 +235,9 @@ namespace Optimization {
     inline void mac(__m512 &a, __m512 b, __m512 c){         
        a= _mm512_fmadd_ps( b, c, a);                         
     }
-
     inline void mac(__m512d &a, __m512d b, __m512d c){
       a= _mm512_fmadd_pd( b, c, a);                   
     }                                             
-
     // Real float
     inline __m512 operator()(__m512 a, __m512 b){
       return _mm512_mul_ps(a,b);
@@ -342,7 +340,52 @@ namespace Optimization {
     };
 
   };
-
+#define USE_FP16
+  struct PrecisionChange {
+    static inline __m512i StoH (__m512 a,__m512 b) {
+      __m512i h;
+#ifdef USE_FP16
+      __m256i ha = _mm512_cvtps_ph(a,0);
+      __m256i hb = _mm512_cvtps_ph(b,0);
+      h =(__m512i) _mm512_castps256_ps512((__m256)ha);
+      h =(__m512i) _mm512_insertf64x4((__m512d)h,(__m256d)hb,1);
+#else
+      assert(0);
+#endif
+      return h;
+    }
+    static inline void  HtoS (__m512i h,__m512 &sa,__m512 &sb) {
+#ifdef USE_FP16
+      sa = _mm512_cvtph_ps((__m256i)_mm512_extractf64x4_pd((__m512d)h,0));
+      sb = _mm512_cvtph_ps((__m256i)_mm512_extractf64x4_pd((__m512d)h,1));
+#else
+      assert(0);
+#endif
+    }
+    static inline __m512 DtoS (__m512d a,__m512d b) {
+      __m256 sa = _mm512_cvtpd_ps(a);
+      __m256 sb = _mm512_cvtpd_ps(b);
+      __m512 s = _mm512_castps256_ps512(sa);
+      s =(__m512) _mm512_insertf64x4((__m512d)s,(__m256d)sb,1);
+      return s;
+    }
+    static inline void StoD (__m512 s,__m512d &a,__m512d &b) {
+      a = _mm512_cvtps_pd((__m256)_mm512_extractf64x4_pd((__m512d)s,0));
+      b = _mm512_cvtps_pd((__m256)_mm512_extractf64x4_pd((__m512d)s,1));
+    }
+    static inline __m512i DtoH (__m512d a,__m512d b,__m512d c,__m512d d) {
+      __m512 sa,sb;
+      sa = DtoS(a,b);
+      sb = DtoS(c,d);
+      return StoH(sa,sb);
+    }
+    static inline void HtoD (__m512i h,__m512d &a,__m512d &b,__m512d &c,__m512d &d) {
+      __m512 sa,sb;
+      HtoS(h,sa,sb);
+      StoD(sa,a,b);
+      StoD(sb,c,d);
+    }
+  };
   // On extracting face: Ah Al , Bh Bl -> Ah Bh, Al Bl
   // On merging buffers: Ah,Bh , Al Bl -> Ah Al, Bh, Bl
   // The operation is its own inverse
@@ -539,7 +582,9 @@ namespace Optimization {
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types 
 
-  typedef __m512 SIMD_Ftype;  // Single precision type
+
+  typedef __m512i SIMD_Htype;  // Single precision type
+  typedef __m512  SIMD_Ftype;  // Single precision type
   typedef __m512d SIMD_Dtype; // Double precision type
   typedef __m512i SIMD_Itype; // Integer type
 

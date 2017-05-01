@@ -808,10 +808,21 @@ INSTANTIATE_DPERP(DomainWallVec5dImplF);
 INSTANTIATE_DPERP(ZDomainWallVec5dImplD);
 INSTANTIATE_DPERP(ZDomainWallVec5dImplF);
 
+INSTANTIATE_DPERP(DomainWallVec5dImplDF);
+INSTANTIATE_DPERP(DomainWallVec5dImplFH);
+INSTANTIATE_DPERP(ZDomainWallVec5dImplDF);
+INSTANTIATE_DPERP(ZDomainWallVec5dImplFH);
+
 template void CayleyFermion5D<DomainWallVec5dImplF>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
 template void CayleyFermion5D<DomainWallVec5dImplD>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
 template void CayleyFermion5D<ZDomainWallVec5dImplF>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
 template void CayleyFermion5D<ZDomainWallVec5dImplD>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
+
+template void CayleyFermion5D<DomainWallVec5dImplFH>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
+template void CayleyFermion5D<DomainWallVec5dImplDF>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
+template void CayleyFermion5D<ZDomainWallVec5dImplFH>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
+template void CayleyFermion5D<ZDomainWallVec5dImplDF>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
+
 
 
 }}

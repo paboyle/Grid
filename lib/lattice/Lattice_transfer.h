@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -359,7 +359,7 @@ void localConvert(const Lattice<vobj> &in,Lattice<vvobj> &out)
 
 
 template<class vobj>
-void InsertSlice(Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int orthog)
+void InsertSlice(const Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int orthog)
 {
   typedef typename vobj::scalar_object sobj;
 
@@ -401,7 +401,7 @@ void InsertSlice(Lattice<vobj> &lowDim,Lattice<vobj> & higherDim,int slice, int 
 }
 
 template<class vobj>
-void ExtractSlice(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice, int orthog)
+void ExtractSlice(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int slice, int orthog)
 {
   typedef typename vobj::scalar_object sobj;
 
@@ -444,7 +444,7 @@ void ExtractSlice(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice, in
 
 
 template<class vobj>
-void InsertSliceLocal(Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice_lo,int slice_hi, int orthog)
+void InsertSliceLocal(const Lattice<vobj> &lowDim, Lattice<vobj> & higherDim,int slice_lo,int slice_hi, int orthog)
 {
   typedef typename vobj::scalar_object sobj;
 

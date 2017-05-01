@@ -56,11 +56,11 @@ class iScalar {
   typedef vtype element;
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
+  typedef typename GridTypeMapper<vtype>::vector_typeD vector_typeD;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
-  typedef iScalar<tensor_reduced_v> tensor_reduced;
   typedef typename GridTypeMapper<vtype>::scalar_object recurse_scalar_object;
+  typedef iScalar<tensor_reduced_v> tensor_reduced;
   typedef iScalar<recurse_scalar_object> scalar_object;
-
   // substitutes a real or complex version with same tensor structure
   typedef iScalar<typename GridTypeMapper<vtype>::Complexified> Complexified;
   typedef iScalar<typename GridTypeMapper<vtype>::Realified> Realified;
@@ -77,8 +77,12 @@ class iScalar {
   iScalar<vtype> & operator= (const iScalar<vtype> &copyme) = default;
   iScalar<vtype> & operator= (iScalar<vtype> &&copyme) = default;
   */
-  iScalar(scalar_type s)
-      : _internal(s){};  // recurse down and hit the constructor for vector_type
+
+  //  template<int N=0>
+  //  iScalar(EnableIf<isSIMDvectorized<vector_type>, vector_type> s) : _internal(s){};  // recurse down and hit the constructor for vector_type
+
+  iScalar(scalar_type s) : _internal(s){};  // recurse down and hit the constructor for vector_type
+
   iScalar(const Zero &z) { *this = zero; };
 
   iScalar<vtype> &operator=(const Zero &hero) {
@@ -134,42 +138,38 @@ class iScalar {
   strong_inline const vtype &operator()(void) const { return _internal; }
 
   // Type casts meta programmed, must be pure scalar to match TensorRemove
-  template <class U = vtype, class V = scalar_type, IfComplex<V> = 0,
-            IfNotSimd<U> = 0>
+  template <class U = vtype, class V = scalar_type, IfComplex<V> = 0, IfNotSimd<U> = 0>
   operator ComplexF() const {
     return (TensorRemove(_internal));
   };
-  template <class U = vtype, class V = scalar_type, IfComplex<V> = 0,
-            IfNotSimd<U> = 0>
+  template <class U = vtype, class V = scalar_type, IfComplex<V> = 0, IfNotSimd<U> = 0>
   operator ComplexD() const {
     return (TensorRemove(_internal));
   };
   //  template<class U=vtype,class V=scalar_type,IfComplex<V> = 0,IfNotSimd<U> =
   //  0> operator RealD    () const { return(real(TensorRemove(_internal))); }
-  template <class U = vtype, class V = scalar_type, IfReal<V> = 0,
-            IfNotSimd<U> = 0>
+  template <class U = vtype, class V = scalar_type, IfReal<V> = 0,IfNotSimd<U> = 0>
   operator RealD() const {
     return TensorRemove(_internal);
   }
-  template <class U = vtype, class V = scalar_type, IfInteger<V> = 0,
-            IfNotSimd<U> = 0>
+  template <class U = vtype, class V = scalar_type, IfInteger<V> = 0, IfNotSimd<U> = 0>
   operator Integer() const {
     return Integer(TensorRemove(_internal));
   }
 
   // convert from a something to a scalar via constructor of something arg
-  template <class T, typename std::enable_if<!isGridTensor<T>::value, T>::type
-                         * = nullptr>
-  strong_inline iScalar<vtype> operator=(T arg) {
+  template <class T, typename std::enable_if<!isGridTensor<T>::value, T>::type * = nullptr>
+    strong_inline iScalar<vtype> operator=(T arg) {
     _internal = arg;
     return *this;
   }
 
-  friend std::ostream &operator<<(std::ostream &stream,
-                                  const iScalar<vtype> &o) {
+  friend std::ostream &operator<<(std::ostream &stream,const iScalar<vtype> &o) {
     stream << "S {" << o._internal << "}";
     return stream;
   };
+
+
 };
 ///////////////////////////////////////////////////////////
 // Allows to turn scalar<scalar<scalar<double>>>> back to double.
@@ -193,6 +193,7 @@ class iVector {
   typedef vtype element;
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
+  typedef typename GridTypeMapper<vtype>::vector_typeD vector_typeD;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
   typedef typename GridTypeMapper<vtype>::scalar_object recurse_scalar_object;
   typedef iScalar<tensor_reduced_v> tensor_reduced;
@@ -305,6 +306,7 @@ class iMatrix {
   typedef vtype element;
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
+  typedef typename GridTypeMapper<vtype>::vector_typeD vector_typeD;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
   typedef typename GridTypeMapper<vtype>::scalar_object recurse_scalar_object;
 

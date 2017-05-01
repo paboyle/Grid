@@ -31,6 +31,7 @@ Author: Chulwoo Jung <chulwoo@bnl.gov>
 #define GRID_IRL_H
 
 #include <string.h> //memset
+
 #ifdef USE_LAPACK
 #ifdef USE_MKL
 #include<mkl_lapack.h>
@@ -43,8 +44,9 @@ void LAPACK_dstegr(char *jobz, char *range, int *n, double *d, double *e,
 //#include <lapacke/lapacke.h>
 #endif
 #endif
-#include "DenseMatrix.h"
-#include "EigenSort.h"
+
+#include <Grid/algorithms/densematrix/DenseMatrix.h>
+#include <Grid/algorithms/iterative/EigenSort.h>
 
 // eliminate temorary vector in calc()
 #define MEM_SAVE
@@ -1321,8 +1323,6 @@ static void Lock(DenseMatrix<T> &H, 	///Hess mtx
 		 int dfg,
 		 bool herm)
 {	
-
-
   //ForceTridiagonal(H);
 
   int M = H.dim;
@@ -1354,7 +1354,6 @@ static void Lock(DenseMatrix<T> &H, 	///Hess mtx
 
   AH = Hermitian(QQ)*AH;
   AH = AH*QQ;
-	
 
   for(int i=con;i<M;i++){
     for(int j=con;j<M;j++){
