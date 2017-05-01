@@ -198,7 +198,9 @@ namespace QCD {
     
     ImplParams Params;
     
-    WilsonImpl(const ImplParams &p = ImplParams()) : Params(p){};
+    WilsonImpl(const ImplParams &p = ImplParams()) : Params(p){
+      assert(Params.boundary_phases.size() == Nd);
+    };
       
     bool overlapCommsCompute(void) { return Params.overlapCommsCompute; };
       
@@ -222,10 +224,16 @@ namespace QCD {
       conformable(Uds._grid, GaugeGrid);
       conformable(Umu._grid, GaugeGrid);
       GaugeLinkField U(GaugeGrid);
+      GaugeLinkField tmp(GaugeGrid);
+      Lattice<iScalar<vInteger> > coor(GaugeGrid);
       for (int mu = 0; mu < Nd; mu++) {
+        LatticeCoordinate(coor, mu);
+        int Lmu = GaugeGrid->GlobalDimensions()[mu] - 1;
         U = PeekIndex<LorentzIndex>(Umu, mu);
-        PokeIndex<LorentzIndex>(Uds, U, mu);
+        tmp = where(coor == Lmu, Params.boundary_phases[mu] * U, U);
+        PokeIndex<LorentzIndex>(Uds, tmp, mu);
         U = adj(Cshift(U, mu, -1));
+        U = where(coor == 0, Params.boundary_phases[mu] * U, U);
         PokeIndex<LorentzIndex>(Uds, U, mu + 4);
       }
     }
