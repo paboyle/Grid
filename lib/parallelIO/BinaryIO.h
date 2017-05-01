@@ -563,7 +563,7 @@ class BinaryIO {
       	if (ILDG.is_ILDG){
       		// use C-LIME to populate the record
           #ifdef HAVE_LIME
-          size_t sizeFO = sizeof(fileObj);
+          uint64_t sizeFO = sizeof(fileObj);
           limeReaderSeek(ILDG.LR, g_idx*sizeFO, SEEK_SET);
           int status = limeReaderReadData((void *)&fileObj, &sizeFO, ILDG.LR);
           #endif
@@ -762,7 +762,7 @@ class BinaryIO {
 
         if (ILDG.is_ILDG) {
           #ifdef HAVE_LIME
-          size_t sizeFO = sizeof(fileObj);
+          uint64_t sizeFO = sizeof(fileObj);
  					limeWriterSeek(ILDG.LW, g_idx*sizeFO, SEEK_SET);
           int status = limeWriteRecordData((void *)&fileObj, &sizeFO, ILDG.LW);
           #endif
