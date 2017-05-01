@@ -45,7 +45,7 @@ int main (int argc, char ** argv)
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
-  
+
   // Want a different conf at every run
   // First create an instance of an engine.
   std::random_device rnd_device;
@@ -58,7 +58,7 @@ int main (int argc, char ** argv)
   generate(begin(seeds4), end(seeds4), gen);
   
   //std::vector<int> seeds4({1,2,3,5});
-  std::vector<int> seeds5({5,6,7,8});
+  std::vector<int> seeds5({5,6,7,1});
   GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
 
@@ -76,11 +76,15 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   // Unmodified matrix element
   ////////////////////////////////////
-  RealD mass=0.01; 
-  RealD M5=1.8; 
-  DomainWallFermionR Ddwf(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
+  RealD mass = 0.01; 
+  RealD M5   = 1.8;
+  RealD b    = 2.0;
+  RealD c    = 1.0;
+  MobiusFermionR Ddwf(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c);
   Ddwf.M   (phi,Mphi);
 
+
+  
   ComplexD S    = innerProduct(Mphi,Mphi); // pdag MdagM p
 
   // get the deriv of phidag MdagM phi with respect to "U"
@@ -152,9 +156,9 @@ int main (int argc, char ** argv)
 
   Complex dSpred    = sum(dS);
 
-  std::cout << GridLogMessage << " S      "<<S<<std::endl;
-  std::cout << GridLogMessage << " Sprime "<<Sprime<<std::endl;
-  std::cout << GridLogMessage << "dS      "<<Sprime-S<<std::endl;
+  std::cout << GridLogMessage << " -- S         "<<S<<std::endl;
+  std::cout << GridLogMessage << " -- Sprime    "<<Sprime<<std::endl;
+  std::cout << GridLogMessage << "dS            "<<Sprime-S<<std::endl;
   std::cout << GridLogMessage << "predict dS    "<< dSpred <<std::endl;
 
   std::cout<< GridLogMessage << "Done" <<std::endl;

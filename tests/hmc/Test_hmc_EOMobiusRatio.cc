@@ -101,8 +101,8 @@ int main(int argc, char **argv) {
   Real pv   = 1.0;
   RealD M5  = 1.5;
   // Note: IroIro and Grid notation for b and c differ
-  RealD b   = 3./2.;
-  RealD c   = 1./2.;
+  RealD b   = 2.;//3./2.;
+  RealD c   = 1.;//1./2.;
 
   FermionAction DenOp(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,mass,M5,b,c);
   FermionAction NumOp(U,*FGrid,*FrbGrid,*GridPtr,*GridRBPtr,pv,  M5,b,c);
@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
   NumOp.ZeroCounters();
   DenOp.ZeroCounters();
 
-  if (ApplySmearing){
+  if (0){
     double rho = 0.1;  // smearing parameter
     int Nsmear = 3;    // number of smearing levels
     Smear_Stout<HMCWrapper::ImplPolicy> Stout(rho);
