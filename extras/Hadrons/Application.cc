@@ -162,7 +162,8 @@ void Application::saveParameterFile(const std::string parameterFileName)
 sizeString((size)*locVol_) << " (" << sizeString(size)  << "/site)"
 
 #define DEFINE_MEMPEAK \
-auto memPeak = [this](const std::vector<unsigned int> &program)\
+GeneticScheduler<unsigned int>::ObjFunc memPeak = \
+[this](const std::vector<unsigned int> &program)\
 {\
     unsigned int memPeak;\
     bool         msg;\
