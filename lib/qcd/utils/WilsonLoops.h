@@ -313,6 +313,27 @@ public:
       FS = 0.25*Ta(u*v + Cshift(vu, mu, +1));
   }
 
+  static Real TopologicalCharge(GaugeLorentz &U){
+    // 4d topological charge
+    assert(Nd==4);
+    // Bx = -iF(y,z), By = -iF(z,y), Bz = -iF(x,y)
+    GaugeMat Bx(U._grid), By(U._grid), Bz(U._grid);
+    FieldStrength(Bx, U, Ydir, Zdir);
+    FieldStrength(By, U, Zdir, Xdir);
+    FieldStrength(Bz, U, Xdir, Ydir);
+
+    // Ex = -iF(t,x), Ey = -iF(t,y), Ez = -iF(t,z)
+    GaugeMat Ex(U._grid), Ey(U._grid), Ez(U._grid);
+    FieldStrength(Ex, U, Tdir, Xdir);
+    FieldStrength(Ey, U, Tdir, Ydir);
+    FieldStrength(Ez, U, Tdir, Zdir);
+
+    double coeff = 8.0/(32.0*M_PI*M_PI);
+
+    LatticeComplex qfield = coeff*trace(Bx*Ex + By*Ey + Bz*Ez);
+    TComplex Tq = sum(qfield);
+    return TensorRemove(Tq).real();
+  }
 
   //////////////////////////////////////////////////////
   // Similar to above for rectangle is required

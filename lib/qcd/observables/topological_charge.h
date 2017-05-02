@@ -49,24 +49,7 @@ class TopologicalCharge : public HmcObservable<typename Impl::Field> {
                             GridSerialRNG &sRNG,
                             GridParallelRNG &pRNG) {
 
-    // 4d topological charge
-    // Bx = -iF(y,z), By = -iF(z,y), Bz = -iF(x,y)
-    GaugeLinkField Bx(U._grid), By(U._grid), Bz(U._grid);
-    WilsonLoops<Impl>::FieldStrength(Bx, U, Ydir, Zdir);
-    WilsonLoops<Impl>::FieldStrength(By, U, Zdir, Xdir);
-    WilsonLoops<Impl>::FieldStrength(Bz, U, Xdir, Ydir);
-
-    // Ex = -iF(t,x), Ey = -iF(t,y), Ez = -iF(t,z)
-    GaugeLinkField Ex(U._grid), Ey(U._grid), Ez(U._grid);
-    WilsonLoops<Impl>::FieldStrength(Ex, U, Tdir, Xdir);
-    WilsonLoops<Impl>::FieldStrength(Ey, U, Tdir, Ydir);
-    WilsonLoops<Impl>::FieldStrength(Ez, U, Tdir, Zdir);
-
-    double coeff = 8.0/(32.0*M_PI*M_PI);
-
-    LatticeComplex qfield = coeff*trace(Bx*Ex + By*Ey + Bz*Ez);
-    TComplex Tq = sum(qfield);
-    Real q = TensorRemove(Tq).real();
+    Real q = WilsonLoops<Impl>::TopologicalCharge(U);
 
     int def_prec = std::cout.precision();
 
