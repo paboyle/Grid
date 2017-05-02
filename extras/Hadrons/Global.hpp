@@ -145,6 +145,15 @@ std::string typeName(void)
     return typeName(typeIdPt<T>());
 }
 
+// default writers/readers
+#ifdef HAVE_HDF5
+typedef Hdf5Reader CorrReader;
+typedef Hdf5Writer CorrWriter;
+#else
+typedef XmlReader CorrReader;
+typedef XmlWriter CorrWriter;
+#endif
+
 END_HADRONS_NAMESPACE
 
 #endif // Hadrons_Global_hpp_

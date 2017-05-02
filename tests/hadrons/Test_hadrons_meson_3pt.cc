@@ -30,14 +30,6 @@
 using namespace Grid;
 using namespace Hadrons;
 
-static Gamma::Algebra gmu[4] =
-{
-    Gamma::Algebra::GammaX,
-    Gamma::Algebra::GammaY,
-    Gamma::Algebra::GammaZ,
-    Gamma::Algebra::GammaT
-};
-
 int main(int argc, char *argv[])
 {
     // initialization //////////////////////////////////////////////////////////
@@ -110,7 +102,7 @@ int main(int argc, char *argv[])
             seqName.push_back(std::vector<std::string>(Nd));
             for (unsigned int mu = 0; mu < Nd; ++mu)
             {
-                seqPar.gamma   = gmu[mu];
+                seqPar.gamma   = 0x1 << mu;
                 seqName[i][mu] = "G" + std::to_string(seqPar.gamma)
                                  + "_" + std::to_string(seqPar.tA) + "-"
                                  + qName[i];
@@ -135,11 +127,11 @@ int main(int argc, char *argv[])
         for (unsigned int i = 0; i < flavour.size(); ++i)
         for (unsigned int j = i; j < flavour.size(); ++j)
         {
-            mesPar.output      = "mesons/Z2_" + flavour[i] + flavour[j];
-            mesPar.q1          = qName[i];
-            mesPar.q2          = qName[j];
-            mesPar.gammaSource = Gamma::Algebra::Gamma5;
-            mesPar.gammaSink   = Gamma::Algebra::Gamma5;
+            mesPar.output = "mesons/Z2_" + flavour[i] + flavour[j];
+            mesPar.q1     = qName[i];
+            mesPar.q2     = qName[j];
+            mesPar.gammas = "all";
+            mesPar.mom    = "0. 0. 0. 0.";
             application.createModule<MContraction::Meson>("meson_Z2_"
                                                           + std::to_string(t)
                                                           + "_"
@@ -157,6 +149,8 @@ int main(int argc, char *argv[])
                             + std::to_string(mu);
             mesPar.q1     = qName[i];
             mesPar.q2     = seqName[j][mu];
+            mesPar.gammas = "all";
+            mesPar.mom    = "0. 0. 0. 0.";
             application.createModule<MContraction::Meson>("3pt_Z2_"
                                                           + std::to_string(t)
                                                           + "_"
