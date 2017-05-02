@@ -91,19 +91,28 @@ int main(int argc, char **argv) {
   typedef WilsonImplR FermionImplPolicy;
   typedef MobiusFermionR FermionAction;
   typedef typename FermionAction::FermionField FermionField;
-
   // Serialiser
   //typedef Grid::XmlReader       Serialiser;
   typedef Grid::JSONReader       Serialiser;
+  
+  //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+  HMCWrapper TheHMC;
+  TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
+ 
   // Reader, file should come from command line
-  Serialiser Reader("input.json");
+  if (TheHMC.ParameterFile.empty()){
+    std::cout << "Input file not specified."
+              << "Use --ParameterFile option in the command line.\nAborting" 
+              << std::endl;
+    exit(1);
+  }
+  Serialiser Reader(TheHMC.ParameterFile);
 
   MobiusHMCParameters MyParams(Reader);  
   // Apply smearing to the fermionic action
   bool ApplySmearing = MyParams.Mobius.ApplySmearing;
   
-  //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-  HMCWrapper TheHMC;
+  
 
   // Grid from the command line
   TheHMC.Resources.AddFourDimGrid("gauge");
@@ -199,7 +208,6 @@ int main(int argc, char **argv) {
   TheHMC.Parameters.MD.trajL   = 1.0;
   */
 
-  TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
   // Reset performance counters 
   NumOp.ZeroCounters();
   DenOp.ZeroCounters();
