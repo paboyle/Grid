@@ -15,6 +15,7 @@ Known values for OPTION are:
   --cxxflags   print pre-processor and compiler flags
   --ldflags    print library linking flags
   --libs       print library linking information
+  --summary    full build summary
   --help       display this help and exit
   --version    output version information
 
@@ -61,6 +62,12 @@ while test $# -gt 0; do
     
     --libs)
       echo @GRID_LIBS@
+    ;;
+    
+    --summary)
+      echo "" 
+      echo "@GRID_SUMMARY@"
+      echo ""
     ;;
     
     *)

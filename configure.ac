@@ -419,23 +419,6 @@ AC_SUBST([GRID_LDFLAGS])
 AC_SUBST([GRID_LIBS])
 AC_SUBST([GRID_SHA])
 AC_SUBST([GRID_BRANCH])
-AC_CONFIG_FILES([grid-config], [chmod +x grid-config])
-AC_CONFIG_FILES(Makefile)
-AC_CONFIG_FILES(lib/Makefile)
-AC_CONFIG_FILES(tests/Makefile)
-AC_CONFIG_FILES(tests/IO/Makefile)
-AC_CONFIG_FILES(tests/core/Makefile)
-AC_CONFIG_FILES(tests/debug/Makefile)
-AC_CONFIG_FILES(tests/forces/Makefile)
-AC_CONFIG_FILES(tests/hadrons/Makefile)
-AC_CONFIG_FILES(tests/hmc/Makefile)
-AC_CONFIG_FILES(tests/solver/Makefile)
-AC_CONFIG_FILES(tests/qdpxx/Makefile)
-AC_CONFIG_FILES(tests/testu01/Makefile)
-AC_CONFIG_FILES(benchmarks/Makefile)
-AC_CONFIG_FILES(extras/Makefile)
-AC_CONFIG_FILES(extras/Hadrons/Makefile)
-AC_OUTPUT
 
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Summary of configuration for $PACKAGE v$VERSION
@@ -467,6 +450,29 @@ LDFLAGS:
 LIBS:
 `echo ${LIBS} | tr ' ' '\n' | sed 's/^-/    -/g'`
 -------------------------------------------------------" > config.summary
+
+GRID_SUMMARY="`cat config.summary`"
+AM_SUBST_NOTMAKE([GRID_SUMMARY])
+AC_SUBST([GRID_SUMMARY])
+
+AC_CONFIG_FILES([grid-config], [chmod +x grid-config])
+AC_CONFIG_FILES(Makefile)
+AC_CONFIG_FILES(lib/Makefile)
+AC_CONFIG_FILES(tests/Makefile)
+AC_CONFIG_FILES(tests/IO/Makefile)
+AC_CONFIG_FILES(tests/core/Makefile)
+AC_CONFIG_FILES(tests/debug/Makefile)
+AC_CONFIG_FILES(tests/forces/Makefile)
+AC_CONFIG_FILES(tests/hadrons/Makefile)
+AC_CONFIG_FILES(tests/hmc/Makefile)
+AC_CONFIG_FILES(tests/solver/Makefile)
+AC_CONFIG_FILES(tests/qdpxx/Makefile)
+AC_CONFIG_FILES(tests/testu01/Makefile)
+AC_CONFIG_FILES(benchmarks/Makefile)
+AC_CONFIG_FILES(extras/Makefile)
+AC_CONFIG_FILES(extras/Hadrons/Makefile)
+AC_OUTPUT
+
 echo ""
 cat config.summary
 echo ""
