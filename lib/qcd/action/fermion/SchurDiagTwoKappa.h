@@ -1,3 +1,4 @@
+#if 1
     /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -97,6 +98,117 @@ namespace Grid {
     }
   };
 
+#if 0
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Copied from DiagTwoSolve
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////
+  template<class Field> class SchurRedBlackDiagTwoSolve {
+  private:
+    OperatorFunction<Field> & _HermitianRBSolver;
+    int CBfactorise;
+  public:
+
+    /////////////////////////////////////////////////////
+    // Wrap the usual normal equations Schur trick
+    /////////////////////////////////////////////////////
+  SchurRedBlackDiagTwoSolve(OperatorFunction<Field> &HermitianRBSolver)  :
+     _HermitianRBSolver(HermitianRBSolver) 
+    { 
+      CBfactorise=0;
+    };
+
+    template<class Matrix>
+      void operator() (Matrix & _Matrix,const Field &in, Field &out){
+
+      // FIXME CGdiagonalMee not implemented virtual function
+      // FIXME use CBfactorise to control schur decomp
+      GridBase *grid = _Matrix.RedBlackGrid();
+      GridBase *fgrid= _Matrix.Grid();
+
+      SchurDiagTwoOperator<Matrix,Field> _HermOpEO(_Matrix);
+ 
+      Field src_e(grid);
+      Field src_o(grid);
+      Field sol_e(grid);
+      Field sol_o(grid);
+      Field   tmp(grid);
+      Field  Mtmp(grid);
+      Field resid(fgrid);
+
+      pickCheckerboard(Even,src_e,in);
+      pickCheckerboard(Odd ,src_o,in);
+      pickCheckerboard(Even,sol_e,out);
+      pickCheckerboard(Odd ,sol_o,out);
+    
+      /////////////////////////////////////////////////////
+      // src_o = Mdag * (source_o - Moe MeeInv source_e)
+      /////////////////////////////////////////////////////
+      _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.checkerboard ==Even);
+      _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.checkerboard ==Odd);     
+      tmp=src_o-Mtmp;                  assert(  tmp.checkerboard ==Odd);     
+
+      // get the right MpcDag
+      _HermOpEO.MpcDag(tmp,src_o);     assert(src_o.checkerboard ==Odd);       
+
+      //////////////////////////////////////////////////////////////
+      // Call the red-black solver
+      //////////////////////////////////////////////////////////////
+      std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
+//      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
+      _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
+      _Matrix.MooeeInv(tmp,sol_o);        assert(  sol_o.checkerboard   ==Odd);
+
+      ///////////////////////////////////////////////////
+      // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
+      ///////////////////////////////////////////////////
+      _Matrix.Meooe(sol_o,tmp);        assert(  tmp.checkerboard   ==Even);
+      src_e = src_e-tmp;               assert(  src_e.checkerboard ==Even);
+      _Matrix.MooeeInv(src_e,sol_e);   assert(  sol_e.checkerboard ==Even);
+     
+      setCheckerboard(out,sol_e); assert(  sol_e.checkerboard ==Even);
+      setCheckerboard(out,sol_o); assert(  sol_o.checkerboard ==Odd );
+
+      // Verify the unprec residual
+      _Matrix.M(out,resid); 
+      resid = resid-in;
+      RealD ns = norm2(in);
+      RealD nr = norm2(resid);
+
+      std::cout<<GridLogMessage << "SchurRedBlackDiagTwoKappa solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
+    }     
+  };
+#endif
+namespace QCD{
+    //
+    // Determinant is det of middle factor
+    // This assumes Mee is indept of U.
+    //
+    //
+    template<class Impl>
+    class SchurDifferentiableDiagTwo:  public SchurDiagTwoOperator<FermionOperator<Impl>,typename Impl::FermionField> 
+      {
+      public:
+      INHERIT_IMPL_TYPES(Impl);
+
+ 	typedef FermionOperator<Impl> Matrix;
+
+	SchurDifferentiableDiagTwo (Matrix &Mat) : SchurDiagTwoOperator<Matrix,FermionField>(Mat) {};
+    };
+#if 0
+    template<class Impl>
+    class SchurDifferentiableDiagTwoKappa :  public SchurDiagTwoKappaOperator<FermionOperator<Impl>,typename Impl::FermionField> 
+      {
+      public:
+      INHERIT_IMPL_TYPES(Impl);
+
+ 	typedef FermionOperator<Impl> Matrix;
+
+	SchurDifferentiableDiagTwoKappa (Matrix &Mat) : SchurDiagTwoKappaOperator<Matrix,FermionField>(Mat) {};
+    };
+#endif
 }
 
+}
+
+#endif
 #endif

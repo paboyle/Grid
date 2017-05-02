@@ -654,8 +654,8 @@ PARALLEL_FOR_LOOP
 	}
 	for(int j=k1-1; j<k2+1; ++j) evec[j] = B[j];
 #else
-#if 0
-/Christoph's version. Still fails on CJ's workstation for some reason
+#if 1
+//Christoph's version. Still fails on CJ's workstation for some reason
 {
 #pragma omp parallel
 	{
