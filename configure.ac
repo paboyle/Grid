@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([Grid], [0.6.0], [https://github.com/paboyle/Grid], [Grid])
+AC_INIT([Grid], [0.6.0-dev], [https://github.com/paboyle/Grid], [Grid])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -403,12 +403,23 @@ DX_INIT_DOXYGEN([$PACKAGE_NAME], [doxygen.cfg])
 
 ############### Ouput
 cwd=`pwd -P`; cd ${srcdir}; abs_srcdir=`pwd -P`; cd ${cwd}
+GRID_CXXFLAGS="$AM_CXXFLAGS $CXXFLAGS"
+GRID_LDFLAGS="$AM_LDFLAGS $LDFLAGS"
+GRID_LIBS=$LIBS
+GRID_SHA=`git rev-parse HEAD`
+GRID_BRANCH=`git rev-parse --abbrev-ref HEAD`
 AM_CXXFLAGS="-I${abs_srcdir}/include $AM_CXXFLAGS"
 AM_CFLAGS="-I${abs_srcdir}/include $AM_CFLAGS"
 AM_LDFLAGS="-L${cwd}/lib $AM_LDFLAGS"
 AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_CXXFLAGS])
 AC_SUBST([AM_LDFLAGS])
+AC_SUBST([GRID_CXXFLAGS])
+AC_SUBST([GRID_LDFLAGS])
+AC_SUBST([GRID_LIBS])
+AC_SUBST([GRID_SHA])
+AC_SUBST([GRID_BRANCH])
+AC_CONFIG_FILES([grid-config], [chmod +x grid-config])
 AC_CONFIG_FILES(Makefile)
 AC_CONFIG_FILES(lib/Makefile)
 AC_CONFIG_FILES(tests/Makefile)
