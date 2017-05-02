@@ -406,6 +406,7 @@ cwd=`pwd -P`; cd ${srcdir}; abs_srcdir=`pwd -P`; cd ${cwd}
 GRID_CXXFLAGS="$AM_CXXFLAGS $CXXFLAGS"
 GRID_LDFLAGS="$AM_LDFLAGS $LDFLAGS"
 GRID_LIBS=$LIBS
+GRID_SHORT_SHA=`git rev-parse --short HEAD`
 GRID_SHA=`git rev-parse HEAD`
 GRID_BRANCH=`git rev-parse --abbrev-ref HEAD`
 AM_CXXFLAGS="-I${abs_srcdir}/include $AM_CXXFLAGS"
@@ -423,6 +424,7 @@ AC_SUBST([GRID_BRANCH])
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Summary of configuration for $PACKAGE v$VERSION
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+git: $GRID_BRANCH $GRID_SHORT_SHA
 ----- PLATFORM ----------------------------------------
 architecture (build)        : $build_cpu
 os (build)                  : $build_os
