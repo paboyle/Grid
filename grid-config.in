@@ -15,9 +15,10 @@ Known values for OPTION are:
   --cxxflags   print pre-processor and compiler flags
   --ldflags    print library linking flags
   --libs       print library linking information
-  --summary    full build summary
+  --summary    print full build summary
   --help       display this help and exit
   --version    output version information
+  --git        print git revision
 
 EOF
   
@@ -43,8 +44,12 @@ while test $# -gt 0; do
     ;;
     
     --version)
-      echo v@VERSION@
-      echo "(@GRID_BRANCH@ @GRID_SHA@)"
+      echo @VERSION@
+      exit 0
+    ;;
+    
+    --git)
+      echo "@GRID_BRANCH@ @GRID_SHA@"
       exit 0
     ;;
     
@@ -65,7 +70,7 @@ while test $# -gt 0; do
     ;;
     
     --summary)
-      echo "" 
+      echo ""
       echo "@GRID_SUMMARY@"
       echo ""
     ;;
