@@ -125,7 +125,7 @@ void TScalarVP::execute(void)
     ScalarField &source = *env().getObject<ScalarField>(par().source);
     Complex     ci(0.0,1.0);
     FFT         fft(env().getGrid());
-    double      q = par().charge;
+    Real        q = par().charge;
 
     // cache momentum-space free scalar propagator
     if (!env().hasCreatedObject(freeMomPropName_))
