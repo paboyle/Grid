@@ -48,13 +48,17 @@ private:
     void momD1(ScalarField &s, FFT &fft);
     void momD2(ScalarField &s, FFT &fft);
 private:
-    std::string                 freeMomPropName_, GFSrcName_, prop0Name_,
-                                propQName_, propSunName_, propTadName_;
-    std::vector<std::string>    phaseName_, muPropQName_, muPropSunName_,
-                                muPropTadName_;
-    ScalarField                 *freeMomProp_, *GFSrc_, *prop0_;
-    std::vector<ScalarField *>  phase_;
-    EmField                     *A;
+    std::string                                 freeMomPropName_, GFSrcName_,
+                                                prop0Name_, propQName_,
+                                                propSunName_, propTadName_;
+    std::vector<std::string>                    phaseName_, muPropQName_,
+                                                muPropSunName_, muPropTadName_;
+    std::vector<std::vector<std::string> >      vpTensorName_;
+    ScalarField                                 *freeMomProp_, *GFSrc_,
+                                                *prop0_;
+    std::vector<ScalarField *>                  phase_;
+    std::vector<std::vector<ScalarField *> >    vpTensor_;
+    EmField                                     *A;
 };
 
 MODULE_REGISTER_NS(ScalarVP, TScalarVP, MScalar);

@@ -32,6 +32,11 @@ std::vector<std::string> TScalarVP::getOutput(void)
         out.push_back(getName() + "_propQ_" + std::to_string(mu));
         out.push_back(getName() + "_propSun_" + std::to_string(mu));
         out.push_back(getName() + "_propTad_" + std::to_string(mu));
+
+        for (unsigned int nu = 0; nu < env().getNd(); ++nu)
+        {
+            out.push_back(getName() + "_" + std::to_string(mu) + "_" + std::to_string(nu));
+        }
     }
 
     return out;
@@ -51,12 +56,22 @@ void TScalarVP::setup(void)
 	muPropQName_.clear();
 	muPropSunName_.clear();
 	muPropTadName_.clear();
+    vpTensorName_.clear();
+    
 	for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
         phaseName_.push_back("_shiftphase_" + std::to_string(mu));
         muPropQName_.push_back(getName() + "_propQ_" + std::to_string(mu));
         muPropSunName_.push_back(getName() + "_propSun_" + std::to_string(mu));
         muPropTadName_.push_back(getName() + "_propTad_" + std::to_string(mu));
+
+        std::vector<std::string> vpTensorName_mu;
+        for (unsigned int nu = 0; nu < env().getNd(); ++nu)
+        {
+            vpTensorName_mu.push_back(getName() + "_" + std::to_string(mu)
+                                      + "_" + std::to_string(nu));
+        }
+        vpTensorName_.push_back(vpTensorName_mu);
     }
 
     if (!env().hasRegisteredObject(freeMomPropName_))
@@ -93,6 +108,13 @@ void TScalarVP::setup(void)
     {
 		env().registerLattice<ScalarField>(muPropTadName_[mu]);
 	}
+    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+    {
+        for (unsigned int nu = 0; nu < env().getNd(); ++nu)
+        {
+            env().registerLattice<ScalarField>(vpTensorName_[mu][nu]);
+        }
+    }
     env().registerLattice<ScalarField>(getName());
 }
 
@@ -182,6 +204,115 @@ void TScalarVP::execute(void)
         			buf, fft);
     }
 
+    // CONTRACTIONS
+    vpTensor_.clear();
+    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+    {
+        std::vector<ScalarField *> vpTensor_mu;
+        for (unsigned int nu = 0; nu < env().getNd(); ++nu)
+        {
+            vpTensor_mu.push_back(env().createLattice<ScalarField>(vpTensorName_[mu][nu]));
+        }
+        vpTensor_.push_back(vpTensor_mu);
+    }
+    ScalarField prop1(env().getGrid()), prop2(env().getGrid());
+    EmField     &A = *env().getObject<EmField>(par().emField);
+    ScalarField Amu(env().getGrid());
+    TComplex    Anu0;
+    std::vector<int> coor0 = {0, 0, 0, 0};
+
+    // Position-space implementation
+    prop1 = *GFSrc_ + q*propQ + q*q*propSun + q*q*propTad;
+    fft.FFT_all_dim(prop1, prop1, FFT::backward);
+    for (unsigned int nu = 0; nu < env().getNd(); ++nu)
+    {
+        peekSite(Anu0, peekLorentz(A, nu), coor0);
+        prop2 = adj(*phase_[nu])*(*GFSrc_) + q*(*(muPropQ_[nu]))
+                + q*q*(*(muPropSun_[nu]) + *(muPropTad_[nu]));
+        fft.FFT_all_dim(prop2, prop2, FFT::backward);
+
+        for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+        {
+            LOG(Message) << "Computing Pi[" << mu << "][" << nu << "]..."
+                         << std::endl;
+            Amu = peekLorentz(A, mu);
+            ScalarField &pi_mu_nu = *(vpTensor_[mu][nu]);
+            pi_mu_nu = adj(prop2)
+                       * (1.0 + ci*q*Amu - 0.5*q*q*Amu*Amu)
+                       * Cshift(prop1, mu, 1)
+                       * (1.0 + ci*q*Anu0 - 0.5*q*q*Anu0*Anu0);
+            pi_mu_nu -= Cshift(adj(prop2), mu, 1)
+                        * (1.0 - ci*q*Amu - 0.5*q*q*Amu*Amu)
+                        * prop1
+                        * (1.0 + ci*q*Anu0 - 0.5*q*q*Anu0*Anu0);
+            pi_mu_nu = 2.0*real(pi_mu_nu);
+        }
+    }
+
+    // // Momentum-space implementation
+    // ScalarField propbuf1(env().getGrid()), propbuf2(env().getGrid());
+    // prop1 = *GFSrc_ + q*propQ + q*q*propSun + q*q*propTad;
+    // for (unsigned int nu = 0; nu < env().getNd(); ++nu)
+    // {
+    //     peekSite(Anu0, peekLorentz(A, nu), coor0);
+    //     prop2 = adj(*phase_[nu])*(*GFSrc_) + q*(*(muPropQ_[nu]))
+    //             + q*q*(*(muPropSun_[nu]) + *(muPropTad_[nu]));
+
+    //     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+    //     {
+    //         LOG(Message) << "Computing Pi[" << mu << "][" << nu << "]..."
+    //                      << std::endl;
+    //         Amu = peekLorentz(A, mu);
+    //         ScalarField &pi_mu_nu = *(vpTensor_[mu][nu]);
+    //         propbuf1 = (*phase_[mu])*prop1;
+    //         fft.FFT_all_dim(propbuf1, propbuf1, FFT::backward);
+    //         fft.FFT_all_dim(propbuf2, prop2, FFT::backward);
+    //         pi_mu_nu = adj(propbuf2)
+    //                    * (1.0 + ci*q*Amu - 0.5*q*q*Amu*Amu)
+    //                    * propbuf1
+    //                    * (1.0 + ci*q*Anu0 - 0.5*q*q*Anu0*Anu0);
+    //         propbuf2 = (*phase_[mu])*prop2;
+    //         fft.FFT_all_dim(propbuf1, prop1, FFT::backward);
+    //         fft.FFT_all_dim(propbuf2, propbuf2, FFT::backward);
+    //         pi_mu_nu -= adj(propbuf2)
+    //                     * (1.0 - ci*q*Amu - 0.5*q*q*Amu*Amu)
+    //                     * propbuf1
+    //                     * (1.0 + ci*q*Anu0 - 0.5*q*q*Anu0*Anu0);
+    //         pi_mu_nu = 2.0*real(pi_mu_nu);
+    //     }
+    // }
+
+    // OUTPUT IF NECESSARY
+    if (!par().output.empty())
+    {
+        std::string           filename = par().output + "." +
+                                         std::to_string(env().getTrajectory());
+        
+        LOG(Message) << "Saving zero-momentum projection to '"
+                     << filename << "'..." << std::endl;
+        
+        CorrWriter              writer(filename);
+        std::vector<TComplex>   vecBuf;
+        std::vector<Complex>    result;
+        
+        write(writer, "charge", q);
+        write(writer, "mass", par().mass);
+
+        for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+        {
+            for (unsigned int nu = 0; nu < env().getNd(); ++nu)
+            {
+                sliceSum(*(vpTensor_[mu][nu]), vecBuf, Tp);
+                result.resize(vecBuf.size());
+                for (unsigned int t = 0; t < vecBuf.size(); ++t)
+                {
+                    result[t] = TensorRemove(vecBuf[t]);
+                }
+                write(writer, "Pi_"+std::to_string(mu)+"_"+std::to_string(nu),
+                      result);
+            }
+        }
+    }
 }
 
 // Calculate O(q) and O(q^2) terms of momentum-space charged propagator
