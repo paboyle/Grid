@@ -380,6 +380,8 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
   ///////////////////////////////////////////////////////////
   // The Cayley coeffs (unprec)
   ///////////////////////////////////////////////////////////
+  assert(gamma.size()==Ls);
+
   omega.resize(Ls);
   bs.resize(Ls);
   cs.resize(Ls);
@@ -412,10 +414,11 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
   for(int i=0; i < Ls; i++){
     as[i] = 1.0;
     omega[i] = gamma[i]*zolo_hi; //NB reciprocal relative to Chroma NEF code
+    //    assert(fabs(omega[i])>0.0);
     bs[i] = 0.5*(bpc/omega[i] + bmc);
     cs[i] = 0.5*(bpc/omega[i] - bmc);
   }
-  
+
   ////////////////////////////////////////////////////////
   // Constants for the preconditioned matrix Cayley form
   ////////////////////////////////////////////////////////
@@ -425,12 +428,12 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
   ceo.resize(Ls);
   
   for(int i=0;i<Ls;i++){
-    bee[i]=as[i]*(bs[i]*(4.0-this->M5) +1.0);
+    bee[i]=as[i]*(bs[i]*(4.0-this->M5) +1.0);     
+    //    assert(fabs(bee[i])>0.0);
     cee[i]=as[i]*(1.0-cs[i]*(4.0-this->M5));
     beo[i]=as[i]*bs[i];
     ceo[i]=-as[i]*cs[i];
   }
-  
   aee.resize(Ls);
   aeo.resize(Ls);
   for(int i=0;i<Ls;i++){
@@ -474,14 +477,16 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
 	
   { 
     Coeff_t delta_d=mass*cee[Ls-1];
-    for(int j=0;j<Ls-1;j++) delta_d *= cee[j]/bee[j];
+    for(int j=0;j<Ls-1;j++) {
+      //      assert(fabs(bee[j])>0.0);
+      delta_d *= cee[j]/bee[j];
+    }
     dee[Ls-1] += delta_d;
   }  
 
   int inv=1;
   this->MooeeInternalCompute(0,inv,MatpInv,MatmInv);
   this->MooeeInternalCompute(1,inv,MatpInvDag,MatmInvDag);
-
 }
 
 
@@ -495,7 +500,9 @@ void CayleyFermion5D<Impl>::MooeeInternalCompute(int dag, int inv,
   GridBase *grid = this->FermionRedBlackGrid();
   int LLs = grid->_rdimensions[0];
 
-  if ( LLs == Ls ) return; // Not vectorised in 5th direction
+  if ( LLs == Ls ) {
+    return; // Not vectorised in 5th direction
+  }
 
   Eigen::MatrixXcd Pplus  = Eigen::MatrixXcd::Zero(Ls,Ls);
   Eigen::MatrixXcd Pminus = Eigen::MatrixXcd::Zero(Ls,Ls);

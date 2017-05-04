@@ -33,6 +33,14 @@
 #include "Grid_generic_types.h" // Definitions for simulated integer SIMD.
 
 namespace Grid {
+
+#ifdef QPX
+#include <spi/include/kernel/location.h>
+#include <spi/include/l1p/types.h>
+#include <hwi/include/bqc/l1p_mmio.h>
+#include <hwi/include/bqc/A2_inlines.h>
+#endif
+
 namespace Optimization {
   typedef struct 
   {
@@ -125,7 +133,6 @@ namespace Optimization {
       f[2] = a.v2;
       f[3] = a.v3;
     }
-
     //Double
     inline void operator()(double *d, vector4double a){
       vec_st(a, 0, d);

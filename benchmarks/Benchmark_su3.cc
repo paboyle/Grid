@@ -55,7 +55,7 @@ int main (int argc, char ** argv)
       std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
       int vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
-      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
+      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
 
       LatticeColourMatrix z(&Grid);// random(pRNG,z);
       LatticeColourMatrix x(&Grid);// random(pRNG,x);
@@ -88,7 +88,7 @@ int main (int argc, char ** argv)
       int vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
-      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
+      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
 
       LatticeColourMatrix z(&Grid); //random(pRNG,z);
       LatticeColourMatrix x(&Grid); //random(pRNG,x);
@@ -119,7 +119,7 @@ int main (int argc, char ** argv)
       int vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
-      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
+      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
 
       LatticeColourMatrix z(&Grid); //random(pRNG,z);
       LatticeColourMatrix x(&Grid); //random(pRNG,x);
@@ -150,7 +150,7 @@ int main (int argc, char ** argv)
       int vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
-      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
+      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
 
       LatticeColourMatrix z(&Grid); //random(pRNG,z);
       LatticeColourMatrix x(&Grid); //random(pRNG,x);

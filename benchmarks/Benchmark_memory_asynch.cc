@@ -66,7 +66,8 @@ int main (int argc, char ** argv)
 
     Vec tsum; tsum = zero;
 
-    GridParallelRNG          pRNG(&Grid);      pRNG.SeedRandomDevice();
+    GridParallelRNG          pRNG(&Grid);      
+    pRNG.SeedFixedIntegers(std::vector<int>({56,17,89,101}));
 
     std::vector<double> stop(threads);
     Vector<Vec> sum(threads);

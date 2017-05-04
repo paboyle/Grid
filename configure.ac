@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([Grid], [0.6.0], [https://github.com/paboyle/Grid], [Grid])
+AC_INIT([Grid], [0.6.0-dev], [https://github.com/paboyle/Grid], [Grid])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -81,6 +81,18 @@ case ${ac_LAPACK} in
         AM_CXXFLAGS="-I$ac_LAPACK/include $AM_CXXFLAGS"
         AM_LDFLAGS="-L$ac_LAPACK/lib $AM_LDFLAGS"
         AC_DEFINE([USE_LAPACK],[1],[use LAPACK]);;
+esac
+
+############### FP16 conversions
+AC_ARG_ENABLE([sfw-fp16],
+    [AC_HELP_STRING([--enable-sfw-fp16=yes|no], [enable software fp16 comms])], 
+    [ac_SFW_FP16=${enable_sfw_fp16}], [ac_SFW_FP16=yes])
+case ${ac_SFW_FP16} in
+    yes)
+      AC_DEFINE([SFW_FP16],[1],[software conversion to fp16]);;
+    no);;
+    *)
+      AC_MSG_ERROR(["SFW FP16 option not supported ${ac_SFW_FP16}"]);;
 esac
 
 ############### MKL
@@ -176,19 +188,26 @@ case ${ax_cv_cxx_compiler_vendor} in
     case ${ac_SIMD} in
       SSE4)
         AC_DEFINE([SSE4],[1],[SSE4 intrinsics])
-        SIMD_FLAGS='-msse4.2';;
+	case ${ac_SFW_FP16} in
+	  yes)
+	  SIMD_FLAGS='-msse4.2';;
+	  no)
+	  SIMD_FLAGS='-msse4.2 -mf16c';;
+	  *)
+          AC_MSG_ERROR(["SFW_FP16 must be either yes or no value ${ac_SFW_FP16} "]);;
+	esac;;
       AVX)
         AC_DEFINE([AVX1],[1],[AVX intrinsics])
-        SIMD_FLAGS='-mavx';;
+        SIMD_FLAGS='-mavx -mf16c';;
       AVXFMA4)
         AC_DEFINE([AVXFMA4],[1],[AVX intrinsics with FMA4])
-        SIMD_FLAGS='-mavx -mfma4';;
+        SIMD_FLAGS='-mavx -mfma4 -mf16c';;
       AVXFMA)
         AC_DEFINE([AVXFMA],[1],[AVX intrinsics with FMA3])
-        SIMD_FLAGS='-mavx -mfma';;
+        SIMD_FLAGS='-mavx -mfma -mf16c';;
       AVX2)
         AC_DEFINE([AVX2],[1],[AVX2 intrinsics])
-        SIMD_FLAGS='-mavx2 -mfma';;
+        SIMD_FLAGS='-mavx2 -mfma -mf16c';;
       AVX512)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
         SIMD_FLAGS='-mavx512f -mavx512pf -mavx512er -mavx512cd';;
@@ -321,7 +340,7 @@ AM_CONDITIONAL(BUILD_COMMS_NONE,  [ test "${comms_type}X" == "noneX" ])
 ############### RNG selection
 AC_ARG_ENABLE([rng],[AC_HELP_STRING([--enable-rng=ranlux48|mt19937|sitmo],\
 	            [Select Random Number Generator to be used])],\
-	            [ac_RNG=${enable_rng}],[ac_RNG=ranlux48])
+	            [ac_RNG=${enable_rng}],[ac_RNG=sitmo])
 
 case ${ac_RNG} in
      ranlux48)
@@ -384,32 +403,28 @@ DX_INIT_DOXYGEN([$PACKAGE_NAME], [doxygen.cfg])
 
 ############### Ouput
 cwd=`pwd -P`; cd ${srcdir}; abs_srcdir=`pwd -P`; cd ${cwd}
+GRID_CXXFLAGS="$AM_CXXFLAGS $CXXFLAGS"
+GRID_LDFLAGS="$AM_LDFLAGS $LDFLAGS"
+GRID_LIBS=$LIBS
+GRID_SHORT_SHA=`git rev-parse --short HEAD`
+GRID_SHA=`git rev-parse HEAD`
+GRID_BRANCH=`git rev-parse --abbrev-ref HEAD`
 AM_CXXFLAGS="-I${abs_srcdir}/include $AM_CXXFLAGS"
 AM_CFLAGS="-I${abs_srcdir}/include $AM_CFLAGS"
 AM_LDFLAGS="-L${cwd}/lib $AM_LDFLAGS"
 AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_CXXFLAGS])
 AC_SUBST([AM_LDFLAGS])
-AC_CONFIG_FILES(Makefile)
-AC_CONFIG_FILES(lib/Makefile)
-AC_CONFIG_FILES(tests/Makefile)
-AC_CONFIG_FILES(tests/IO/Makefile)
-AC_CONFIG_FILES(tests/core/Makefile)
-AC_CONFIG_FILES(tests/debug/Makefile)
-AC_CONFIG_FILES(tests/forces/Makefile)
-AC_CONFIG_FILES(tests/hadrons/Makefile)
-AC_CONFIG_FILES(tests/hmc/Makefile)
-AC_CONFIG_FILES(tests/solver/Makefile)
-AC_CONFIG_FILES(tests/qdpxx/Makefile)
-AC_CONFIG_FILES(benchmarks/Makefile)
-AC_CONFIG_FILES(extras/Makefile)
-AC_CONFIG_FILES(extras/Hadrons/Makefile)
-AC_OUTPUT
+AC_SUBST([GRID_CXXFLAGS])
+AC_SUBST([GRID_LDFLAGS])
+AC_SUBST([GRID_LIBS])
+AC_SUBST([GRID_SHA])
+AC_SUBST([GRID_BRANCH])
 
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Summary of configuration for $PACKAGE v$VERSION
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+git: $GRID_BRANCH $GRID_SHORT_SHA
 ----- PLATFORM ----------------------------------------
 architecture (build)        : $build_cpu
 os (build)                  : $build_os
@@ -422,6 +437,7 @@ SIMD                        : ${ac_SIMD}${SIMD_GEN_WIDTH_MSG}
 Threading                   : ${ac_openmp} 
 Communications type         : ${comms_type}
 Default precision           : ${ac_PRECISION}
+Software FP16 conversion    : ${ac_SFW_FP16}
 RNG choice                  : ${ac_RNG} 
 GMP                         : `if test "x$have_gmp" = xtrue; then echo yes; else echo no; fi`
 LAPACK                      : ${ac_LAPACK}
@@ -436,6 +452,29 @@ LDFLAGS:
 LIBS:
 `echo ${LIBS} | tr ' ' '\n' | sed 's/^-/    -/g'`
 -------------------------------------------------------" > config.summary
+
+GRID_SUMMARY="`cat config.summary`"
+AM_SUBST_NOTMAKE([GRID_SUMMARY])
+AC_SUBST([GRID_SUMMARY])
+
+AC_CONFIG_FILES([grid-config], [chmod +x grid-config])
+AC_CONFIG_FILES(Makefile)
+AC_CONFIG_FILES(lib/Makefile)
+AC_CONFIG_FILES(tests/Makefile)
+AC_CONFIG_FILES(tests/IO/Makefile)
+AC_CONFIG_FILES(tests/core/Makefile)
+AC_CONFIG_FILES(tests/debug/Makefile)
+AC_CONFIG_FILES(tests/forces/Makefile)
+AC_CONFIG_FILES(tests/hadrons/Makefile)
+AC_CONFIG_FILES(tests/hmc/Makefile)
+AC_CONFIG_FILES(tests/solver/Makefile)
+AC_CONFIG_FILES(tests/qdpxx/Makefile)
+AC_CONFIG_FILES(tests/testu01/Makefile)
+AC_CONFIG_FILES(benchmarks/Makefile)
+AC_CONFIG_FILES(extras/Makefile)
+AC_CONFIG_FILES(extras/Hadrons/Makefile)
+AC_OUTPUT
+
 echo ""
 cat config.summary
 echo ""

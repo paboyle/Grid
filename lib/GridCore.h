@@ -38,28 +38,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_BASE_H
 #define GRID_BASE_H
 
-///////////////////
-// Std C++ dependencies
-///////////////////
-#include <cassert>
-#include <complex>
-#include <vector>
-#include <iostream>
-#include <iomanip>
-#include <random>
-#include <functional>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <signal.h>
-#include <ctime>
-#include <sys/time.h>
-#include <chrono>
-
-///////////////////
-// Grid headers
-///////////////////
-#include "Config.h"
+#include <Grid/GridStd.h>
 
 #include <Grid/perfmon/Timer.h>
 #include <Grid/perfmon/PerfCount.h>
