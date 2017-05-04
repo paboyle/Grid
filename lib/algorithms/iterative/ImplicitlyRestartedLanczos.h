@@ -530,15 +530,23 @@ PARALLEL_FOR_LOOP
 	DenseVector<Field>& evec,
 	int k1, int k2
 	)
-//Christoph's version. Still fails on CJ's workstation for some reason
 {
 	GridBase *grid = evec[0]._grid;
+	typedef typename Field::vector_object vobj;
+	assert(k1>0);
+	assert(k2<Nm);
+
 #pragma omp parallel
 	{
-		typedef typename Field::vector_object vobj;
+//		int thr=GridThread::GetThreads();
+//		printf("thr=%d ss=%d me=%d\n",thr,ss,me);fflush(stdout);
+//		std::cout<<GridLogMessage << "GridThread::GetThreads() = " << thr << std::endl;
 		std::vector < vobj > B(Nm);
+//		std::cout<<GridLogMessage << "GridThread::GetThreads() = " << thr << "B.size()= "<< B.size() << std::endl;
 #pragma omp for
 		for(int ss=0;ss < grid->oSites();ss++){
+//			int me = GridThread::ThreadBarrier();
+//			assert(me <thr);
 			for(int j=0; j<Nm; ++j) B[j]=0.;
 			for(int j=k1-1; j<(k2+1); ++j){
 				for(int k=0; k<Nm ; ++k){
@@ -564,25 +572,210 @@ PARALLEL_FOR_LOOP
 	
 	assert(k2<Nm);
 	assert(k1>0);
-	Field B(grid);
+	int thr=GridThread::GetThreads();
+	int n_field = 1;
+	int each = 1;
+	if( (Nm*thr)>(grid->oSites()) ) {
+		each = (grid->oSites())/Nm ;
+		n_field = thr/each + 1;
+	}
+	std::cout<<GridLogMessage << "thr = " << thr << " n_field= "<< n_field << " each= "<<each << std::endl;
+	DenseVector<Field>  B(n_field,grid); 
 PARALLEL_FOR_LOOP
 	for(int ss=0;ss < grid->oSites();ss++){
-//		auto B2 = evec[0]._odata[0];
-//		std::vector < decltype( B2 ) > B(Nm*thr,B2);
-		int thr=GridThread::GetThreads();
 		int me = GridThread::ThreadBarrier();
+		int i_field = me / each;
+		int k_field = me % each;
+		assert(i_field < n_field);
+		std::cout<<GridLogMessage << "me = " << me << " i_field= "<< i_field << " k_field= "<<k_field << std::endl;
 //		printf("thr=%d ss=%d me=%d\n",thr,ss,me);fflush(stdout);
-		assert(Nm*thr<grid->oSites());
-		for(int j=0; j<Nm; ++j) B._odata[j+Nm*me]=0.;
+//		assert(Nm*thr<grid->oSites());
+		for(int j=0; j<Nm; ++j) B[i_field]._odata[j+Nm*k_field]=0.;
 		for(int j=k1-1; j<(k2+1); ++j){
 			for(int k=0; k<Nm ; ++k){
-			    B._odata[j+Nm*me] +=Qt[k+Nm*j] * evec[k]._odata[ss]; 
+			    B[i_field]._odata[j+Nm*k_field] +=Qt[k+Nm*j] * evec[k]._odata[ss]; 
 			}
 		}
 		for(int j=k1-1; j<(k2+1); ++j){
-			evec[j]._odata[ss] = B._odata[j+Nm*me];
+			evec[j]._odata[ss] = B[i_field]._odata[j+Nm*k_field];
 		}
 	}
+}
+
+void ConvCheck0( int Nk, int Nm,
+	DenseVector<RealD>& Qt,
+	DenseVector<Field>& evec,
+	DenseVector<RealD> &eval2,
+	DenseVector<int>   &Iconv,
+	int &Nconv)
+{
+
+	GridBase *grid = evec[0]._grid;
+	DenseVector<Field>  B(Nm,grid); // waste of space replicating
+	Field v(grid);
+if (0) {
+	  for(int k = 0; k<Nk; ++k) B[k]=0.0;
+	  
+	  for(int j = 0; j<Nk; ++j){
+	    for(int k = 0; k<Nk; ++k){
+	    B[j].checkerboard = evec[k].checkerboard;
+	      B[j] += Qt[k+j*Nm] * evec[k];
+	    }
+	    std::cout<<GridLogMessage << "norm(B["<<j<<"])="<<norm2(B[j])<<std::endl;
+	  }
+}
+if (1) {
+	for(int i=0; i<(Nk+1); ++i) {
+		B[i] = 0.0;
+	  	B[i].checkerboard = evec[0].checkerboard;
+	}
+
+	int j_block = 24; int k_block=24;
+PARALLEL_FOR_LOOP
+	for(int ss=0;ss < grid->oSites();ss++){
+	for(int jj=0; jj<Nk; jj += j_block)
+	for(int kk=0; kk<Nk; kk += k_block)
+	for(int j=jj; (j<Nk) && j<(jj+j_block); ++j){
+	for(int k=kk; (k<Nk) && k<(kk+k_block) ; ++k){
+	    B[j]._odata[ss] +=Qt[k+Nm*j] * evec[k]._odata[ss]; 
+	}
+	}
+	}
+}
+
+	  Nconv = 0;
+	  //	  std::cout<<GridLogMessage << std::setiosflags(std::ios_base::scientific);
+	  for(int i=0; i<Nk; ++i){
+
+//	    _poly(_Linop,B[i],v);
+	    _Linop.HermOp(B[i],v);
+	    
+	    RealD vnum = real(innerProduct(B[i],v)); // HermOp.
+	    RealD vden = norm2(B[i]);
+	    RealD vv0 = norm2(v);
+	    eval2[i] = vnum/vden;
+	    v -= eval2[i]*B[i];
+	    RealD vv = norm2(v);
+	    
+	    std::cout.precision(13);
+	    std::cout<<GridLogMessage << "[" << std::setw(3)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
+	    std::cout<<"eval = "<<std::setw(25)<< std::setiosflags(std::ios_base::left)<< eval2[i];
+	    std::cout<<"|H B[i] - eval[i]B[i]|^2 "<< std::setw(25)<< std::setiosflags(std::ios_base::right)<< vv;
+	    std::cout<<" "<< vnum/(sqrt(vden)*sqrt(vv0)) << std::endl;
+	    
+	// change the criteria as evals are supposed to be sorted, all evals smaller(larger) than Nstop should have converged
+	    if((vv<eresid*eresid) && (i == Nconv) ){
+	      Iconv[Nconv] = i;
+	      ++Nconv;
+	    }
+
+	  }  // i-loop end
+	  //	  std::cout<<GridLogMessage << std::resetiosflags(std::ios_base::scientific);
+}
+
+void ConvCheck( int Nk, int Nm,
+	DenseVector<RealD>& Qt,
+	DenseVector<Field>& evec,
+	DenseVector<RealD> &eval2,
+	DenseVector<int>   &Iconv,
+	int &Nconv)
+	{
+	GridBase *grid = evec[0]._grid;
+	Field v(grid);
+		Field B(grid);
+		Nconv = 0;
+		for(int j = 0; j<Nk; ++j){
+			B=0.;
+			B.checkerboard = evec[0].checkerboard;
+		    for(int k = 0; k<Nk; ++k){
+		    	B += Qt[k+j*Nm] * evec[k];
+		    }
+		    std::cout<<GridLogMessage << "norm(B["<<j<<"])="<<norm2(B)<<std::endl;
+//		    _poly(_Linop,B,v);
+		    _Linop.HermOp(B,v);
+		    
+		    RealD vnum = real(innerProduct(B,v)); // HermOp.
+		    RealD vden = norm2(B);
+		    RealD vv0 = norm2(v);
+		    eval2[j] = vnum/vden;
+		    v -= eval2[j]*B;
+		    RealD vv = norm2(v);
+	    
+		    std::cout.precision(13);
+		    std::cout<<GridLogMessage << "[" << std::setw(3)<< std::setiosflags(std::ios_base::right) <<j<<"] ";
+		    std::cout<<"eval = "<<std::setw(25)<< std::setiosflags(std::ios_base::left)<< eval2[j];
+		    std::cout<<"|H B[i] - eval[i]B[i]|^2 "<< std::setw(25)<< std::setiosflags(std::ios_base::right)<< vv;
+		    std::cout<<" "<< vnum/(sqrt(vden)*sqrt(vv0)) << std::endl;
+	    
+// change the criteria as evals are supposed to be sorted, all evals smaller(larger) than Nstop should have converged
+		    if((vv<eresid*eresid) && (j == Nconv) ){
+		      Iconv[Nconv] = j;
+		      ++Nconv;
+		    }
+		}
+	}
+
+void ConvRotate2( int Nk, int Nm,
+	DenseVector<RealD>& Qt,
+	DenseVector<Field>& evec,
+	DenseVector<RealD> &eval,
+	DenseVector<RealD> &eval2,
+	DenseVector<int>   &Iconv,
+	int &Nconv)
+{
+	GridBase *grid = evec[0]._grid;
+	int thr=GridThread::GetThreads();
+       for(int i=0; i<Nconv; ++i)
+         eval[i] = eval2[Iconv[i]];
+//	int thr=GridThread::GetThreads();
+//	printf("thr=%d\n",thr);
+	Field B(grid);
+PARALLEL_FOR_LOOP
+	for(int ss=0;ss < grid->oSites();ss++){
+		int me = GridThread::ThreadBarrier();
+		printf("thr=%d ss=%d me=%d\n",thr,ss,me);fflush(stdout);
+		assert( (Nm*thr)<grid->oSites());
+//		auto B2 = evec[0]._odata[0];
+//		std::vector < decltype( B2 ) > B(Nm,B2);
+		for(int j=0; j<Nconv; ++j) B._odata[Iconv[j]+Nm*me]=0.;
+		for(int j=0; j<Nconv; ++j){
+			for(int k=0; k<Nk ; ++k){
+			    B._odata[Iconv[j]+Nm*me] +=Qt[k+Nm*Iconv[j]] * evec[k]._odata[ss]; 
+			}
+		}
+		for(int j=0; j<Nconv; ++j){
+			evec[j]._odata[ss] = B._odata[Iconv[j]+Nm*me];
+		}
+	}
+}
+
+void ConvRotate( int Nk, int Nm,
+	DenseVector<RealD>& Qt,
+	DenseVector<Field>& evec,
+	DenseVector<RealD> &eval,
+	DenseVector<RealD> &eval2,
+	DenseVector<int>   &Iconv,
+	int &Nconv)
+{
+	GridBase *grid = evec[0]._grid;
+	typedef typename Field::vector_object vobj;
+#pragma omp parallel
+	{
+		std::vector < vobj > B(Nm);
+#pragma omp for
+	for(int ss=0;ss < grid->oSites();ss++){
+//		for(int j=0; j<Nconv; ++j) B[j]=0.;
+		for(int j=0; j<Nconv; ++j){
+			for(int k=0; k<Nk ; ++k){
+			    B[j] +=Qt[k+Nm*Iconv[j]] * evec[k]._odata[ss]; 
+			}
+		}
+		for(int j=0; j<Nconv; ++j){
+			evec[j]._odata[ss] = B[j];
+		}
+	}
+	}
+	for(int i=0; i<Nconv; ++i) eval[i] = eval2[Iconv[i]];
 }
 
 /* Rudy Arthur's thesis pp.137
@@ -722,9 +915,12 @@ until convergence
 	
 	assert(k2<Nm);
 
-//    Rotate0(Nm,Qt,evec,k1,k2);
-    Rotate(Nm,Qt,evec,k1,k2);
-//    Rotater2(Nm,Qt,evec,k1,k2);
+//	Uses more temorary
+//	Rotate0(Nm,Qt,evec,k1,k2);
+// 	Uses minimal temporary, possibly with less speed
+	Rotate(Nm,Qt,evec,k1,k2);
+// 	Try if Rotate() doesn't work
+//	Rotate2(Nm,Qt,evec,k1,k2);
 	t1=usecond()/1e6;
 	std::cout<<GridLogMessage <<"IRL::QR rotation: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
 
@@ -749,107 +945,11 @@ until convergence
 	t1=usecond()/1e6;
 	std::cout<<GridLogMessage <<"IRL::diagonalize: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
 	  
-#ifndef MEM_SAVE
-if (0) {
-	  for(int k = 0; k<Nk; ++k) B[k]=0.0;
-	  
-	  for(int j = 0; j<Nk; ++j){
-	    for(int k = 0; k<Nk; ++k){
-	    B[j].checkerboard = evec[k].checkerboard;
-	      B[j] += Qt[k+j*Nm] * evec[k];
-	    }
-	    std::cout<<GridLogMessage << "norm(B["<<j<<"])="<<norm2(B[j])<<std::endl;
-	  }
-	t1=usecond()/1e6;
-	std::cout<<GridLogMessage <<"IRL::Convergence rotation: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
-}
-if (1) {
-	for(int i=0; i<(Nk+1); ++i) {
-		B[i] = 0.0;
-	  	B[i].checkerboard = evec[0].checkerboard;
-	}
-
-	int j_block = 24; int k_block=24;
-PARALLEL_FOR_LOOP
-	for(int ss=0;ss < grid->oSites();ss++){
-	for(int jj=0; jj<Nk; jj += j_block)
-	for(int kk=0; kk<Nk; kk += k_block)
-	for(int j=jj; (j<Nk) && j<(jj+j_block); ++j){
-	for(int k=kk; (k<Nk) && k<(kk+k_block) ; ++k){
-	    B[j]._odata[ss] +=Qt[k+Nm*j] * evec[k]._odata[ss]; 
-	}
-	}
-	}
-	t1=usecond()/1e6;
-	std::cout<<GridLogMessage <<"IRL::convergence rotation : "<<t1-t0<< "seconds"<<std::endl; t0=t1;
-}
-
-	  Nconv = 0;
-	  //	  std::cout<<GridLogMessage << std::setiosflags(std::ios_base::scientific);
-	  for(int i=0; i<Nk; ++i){
-
-//	    _poly(_Linop,B[i],v);
-	    _Linop.HermOp(B[i],v);
-	    
-	    RealD vnum = real(innerProduct(B[i],v)); // HermOp.
-	    RealD vden = norm2(B[i]);
-	    RealD vv0 = norm2(v);
-	    eval2[i] = vnum/vden;
-	    v -= eval2[i]*B[i];
-	    RealD vv = norm2(v);
-	    
-	    std::cout.precision(13);
-	    std::cout<<GridLogMessage << "[" << std::setw(3)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
-	    std::cout<<"eval = "<<std::setw(25)<< std::setiosflags(std::ios_base::left)<< eval2[i];
-	    std::cout<<"|H B[i] - eval[i]B[i]|^2 "<< std::setw(25)<< std::setiosflags(std::ios_base::right)<< vv;
-	    std::cout<<" "<< vnum/(sqrt(vden)*sqrt(vv0)) << std::endl;
-	    
-	// change the criteria as evals are supposed to be sorted, all evals smaller(larger) than Nstop should have converged
-	    if((vv<eresid*eresid) && (i == Nconv) ){
-	      Iconv[Nconv] = i;
-	      ++Nconv;
-	    }
-
-	  }  // i-loop end
-	  //	  std::cout<<GridLogMessage << std::resetiosflags(std::ios_base::scientific);
-#else
 	if(prelNconv < Nstop)
 		    std::cout<<GridLogMessage << "Prel. Convergence test ("<<prelNconv<<") failed, skipping a real(and expnesive) one" <<std::endl;
     else
-	{
-		Field B(grid);
-		Nconv = 0;
-		for(int j = 0; j<Nk; ++j){
-			B=0.;
-			B.checkerboard = evec[0].checkerboard;
-		    for(int k = 0; k<Nk; ++k){
-		    	B += Qt[k+j*Nm] * evec[k];
-		    }
-		    std::cout<<GridLogMessage << "norm(B["<<j<<"])="<<norm2(B)<<std::endl;
-//		    _poly(_Linop,B,v);
-		    _Linop.HermOp(B,v);
-		    
-		    RealD vnum = real(innerProduct(B,v)); // HermOp.
-		    RealD vden = norm2(B);
-		    RealD vv0 = norm2(v);
-		    eval2[j] = vnum/vden;
-		    v -= eval2[j]*B;
-		    RealD vv = norm2(v);
-	    
-		    std::cout.precision(13);
-		    std::cout<<GridLogMessage << "[" << std::setw(3)<< std::setiosflags(std::ios_base::right) <<j<<"] ";
-		    std::cout<<"eval = "<<std::setw(25)<< std::setiosflags(std::ios_base::left)<< eval2[j];
-		    std::cout<<"|H B[i] - eval[i]B[i]|^2 "<< std::setw(25)<< std::setiosflags(std::ios_base::right)<< vv;
-		    std::cout<<" "<< vnum/(sqrt(vden)*sqrt(vv0)) << std::endl;
-	    
-// change the criteria as evals are supposed to be sorted, all evals smaller(larger) than Nstop should have converged
-		    if((vv<eresid*eresid) && (j == Nconv) ){
-		      Iconv[Nconv] = j;
-		      ++Nconv;
-		    }
-		}
-	}
-#endif
+//	ConvCheck0( Nk, Nm, Qt, evec, eval2, Iconv, Nconv);
+	ConvCheck( Nk, Nm, Qt, evec, eval2, Iconv, Nconv);
 	t1=usecond()/1e6;
 	std::cout<<GridLogMessage <<"IRL::convergence testing: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
 
@@ -874,32 +974,9 @@ PARALLEL_FOR_LOOP
          evec[i] = B[Iconv[i]];
        }
 #else
-{
-       for(int i=0; i<Nconv; ++i)
-         eval[i] = eval2[Iconv[i]];
-//	int thr=GridThread::GetThreads();
-//	printf("thr=%d\n",thr);
-	Field B(grid);
-PARALLEL_FOR_LOOP
-	for(int ss=0;ss < grid->oSites();ss++){
-		int thr=GridThread::GetThreads();
-		int me = GridThread::ThreadBarrier();
-//		printf("thr=%d ss=%d me=%d\n",thr,ss,me);fflush(stdout);
-//		auto B2 = evec[0]._odata[0];
-//		std::vector < decltype( B2 ) > B(Nm,B2);
-		assert( (Nm*thr)<grid->oSites());
-		for(int j=0; j<Nconv; ++j) B._odata[Iconv[j]+Nm*me]=0.;
-		for(int j=0; j<Nconv; ++j){
-			for(int k=0; k<Nk ; ++k){
-			    B._odata[Iconv[j]+Nm*me] +=Qt[k+Nm*Iconv[j]] * evec[k]._odata[ss]; 
-			}
-		}
-		for(int j=0; j<Nconv; ++j){
-			evec[j]._odata[ss] = B._odata[Iconv[j]+Nm*me];
-		}
-	}
-}
-       evec.resize(Nconv,grid);
+//	ConvRotate0( Nk, Nm, Qt, evec, eval,eval2,Iconv,Nconv);
+	ConvRotate( Nk, Nm, Qt, evec, eval,eval2,Iconv,Nconv);
+//	ConvRotate2( Nk, Nm, Qt, evec, eval,eval2,Iconv,Nconv);
 #endif
       _sort.push(eval,evec,Nconv);
 
