@@ -320,7 +320,7 @@ void CayleyFermion5D<Impl>::MDeriv  (GaugeField &mat,const FermionField &U,const
     this->DhopDeriv(mat,U,Din,dag);
   } else {
     //      U d/du [D_w D5]^dag V = U D5^dag d/du DW^dag Y // implicit adj on U in call
-    MeooeDag5D(U,Din);
+    Meooe5D(U,Din);
     this->DhopDeriv(mat,Din,V,dag);
   }
 };
@@ -335,8 +335,8 @@ void CayleyFermion5D<Impl>::MoeDeriv(GaugeField &mat,const FermionField &U,const
     this->DhopDerivOE(mat,U,Din,dag);
   } else {
     //      U d/du [D_w D5]^dag V = U D5^dag d/du DW^dag Y // implicit adj on U in call
-      MeooeDag5D(U,Din);
-      this->DhopDerivOE(mat,Din,V,dag);
+    Meooe5D(U,Din);
+    this->DhopDerivOE(mat,Din,V,dag);
   }
 };
 template<class Impl>
@@ -350,7 +350,7 @@ void CayleyFermion5D<Impl>::MeoDeriv(GaugeField &mat,const FermionField &U,const
     this->DhopDerivEO(mat,U,Din,dag);
   } else {
     //      U d/du [D_w D5]^dag V = U D5^dag d/du DW^dag Y // implicit adj on U in call
-    MeooeDag5D(U,Din);
+    Meooe5D(U,Din);
     this->DhopDerivEO(mat,Din,V,dag);
   }
 };
