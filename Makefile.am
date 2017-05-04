@@ -3,6 +3,8 @@ SUBDIRS = lib benchmarks tests extras
 
 include $(top_srcdir)/doxygen.inc
 
+bin_SCRIPTS=grid-config
+
 tests: all
 	$(MAKE) -C tests tests
 

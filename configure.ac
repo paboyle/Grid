@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([Grid], [0.6.0], [https://github.com/paboyle/Grid], [Grid])
+AC_INIT([Grid], [0.6.0-dev], [https://github.com/paboyle/Grid], [Grid])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -403,32 +403,28 @@ DX_INIT_DOXYGEN([$PACKAGE_NAME], [doxygen.cfg])
 
 ############### Ouput
 cwd=`pwd -P`; cd ${srcdir}; abs_srcdir=`pwd -P`; cd ${cwd}
+GRID_CXXFLAGS="$AM_CXXFLAGS $CXXFLAGS"
+GRID_LDFLAGS="$AM_LDFLAGS $LDFLAGS"
+GRID_LIBS=$LIBS
+GRID_SHORT_SHA=`git rev-parse --short HEAD`
+GRID_SHA=`git rev-parse HEAD`
+GRID_BRANCH=`git rev-parse --abbrev-ref HEAD`
 AM_CXXFLAGS="-I${abs_srcdir}/include $AM_CXXFLAGS"
 AM_CFLAGS="-I${abs_srcdir}/include $AM_CFLAGS"
 AM_LDFLAGS="-L${cwd}/lib $AM_LDFLAGS"
 AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_CXXFLAGS])
 AC_SUBST([AM_LDFLAGS])
-AC_CONFIG_FILES(Makefile)
-AC_CONFIG_FILES(lib/Makefile)
-AC_CONFIG_FILES(tests/Makefile)
-AC_CONFIG_FILES(tests/IO/Makefile)
-AC_CONFIG_FILES(tests/core/Makefile)
-AC_CONFIG_FILES(tests/debug/Makefile)
-AC_CONFIG_FILES(tests/forces/Makefile)
-AC_CONFIG_FILES(tests/hadrons/Makefile)
-AC_CONFIG_FILES(tests/hmc/Makefile)
-AC_CONFIG_FILES(tests/solver/Makefile)
-AC_CONFIG_FILES(tests/qdpxx/Makefile)
-AC_CONFIG_FILES(tests/testu01/Makefile)
-AC_CONFIG_FILES(benchmarks/Makefile)
-AC_CONFIG_FILES(extras/Makefile)
-AC_CONFIG_FILES(extras/Hadrons/Makefile)
-AC_OUTPUT
+AC_SUBST([GRID_CXXFLAGS])
+AC_SUBST([GRID_LDFLAGS])
+AC_SUBST([GRID_LIBS])
+AC_SUBST([GRID_SHA])
+AC_SUBST([GRID_BRANCH])
 
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Summary of configuration for $PACKAGE v$VERSION
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+git: $GRID_BRANCH $GRID_SHORT_SHA
 ----- PLATFORM ----------------------------------------
 architecture (build)        : $build_cpu
 os (build)                  : $build_os
@@ -456,6 +452,29 @@ LDFLAGS:
 LIBS:
 `echo ${LIBS} | tr ' ' '\n' | sed 's/^-/    -/g'`
 -------------------------------------------------------" > config.summary
+
+GRID_SUMMARY="`cat config.summary`"
+AM_SUBST_NOTMAKE([GRID_SUMMARY])
+AC_SUBST([GRID_SUMMARY])
+
+AC_CONFIG_FILES([grid-config], [chmod +x grid-config])
+AC_CONFIG_FILES(Makefile)
+AC_CONFIG_FILES(lib/Makefile)
+AC_CONFIG_FILES(tests/Makefile)
+AC_CONFIG_FILES(tests/IO/Makefile)
+AC_CONFIG_FILES(tests/core/Makefile)
+AC_CONFIG_FILES(tests/debug/Makefile)
+AC_CONFIG_FILES(tests/forces/Makefile)
+AC_CONFIG_FILES(tests/hadrons/Makefile)
+AC_CONFIG_FILES(tests/hmc/Makefile)
+AC_CONFIG_FILES(tests/solver/Makefile)
+AC_CONFIG_FILES(tests/qdpxx/Makefile)
+AC_CONFIG_FILES(tests/testu01/Makefile)
+AC_CONFIG_FILES(benchmarks/Makefile)
+AC_CONFIG_FILES(extras/Makefile)
+AC_CONFIG_FILES(extras/Hadrons/Makefile)
+AC_OUTPUT
+
 echo ""
 cat config.summary
 echo ""
