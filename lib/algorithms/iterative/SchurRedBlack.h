@@ -141,6 +141,7 @@ namespace Grid {
     }     
   };
 
+#if 1
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   // Take a matrix and form a Red Black solver calling a Herm solver
   // Use of RB info prevents making SchurRedBlackSolve conform to standard interface
@@ -220,6 +221,7 @@ namespace Grid {
       std::cout<<GridLogMessage << "SchurRedBlackDiagTwo solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
     }     
   };
+#endif
 
 
 }

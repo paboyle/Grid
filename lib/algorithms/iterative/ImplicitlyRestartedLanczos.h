@@ -485,75 +485,81 @@ public:
     }
 
 // needs more memory
-    void Rotate0( 
-	int Nm,
+void Rotate0( 
+	int _Nm,
 	DenseVector<RealD>& Qt,
 	DenseVector<Field>& evec,
-	int k1, int k2
+//int k1, int k2
+	int j0, int j1,
+	int _Nk
 	)
+//    void Rotate0( int Nm, DenseVector<RealD>& Qt, DenseVector<Field>& evec, int k1, int k2)
 {
 	GridBase *grid = evec[0]._grid;
-	DenseVector<Field>  B(Nm,grid); // waste of space replicating
+	DenseVector<Field>  B(_Nm,grid); // waste of space replicating
 	if (0) {   // old implementation without blocking
-	  for(int i=0; i<(Nk+1); ++i) B[i] = 0.0;
+	  for(int i=0; i<(_Nm); ++i) B[i] = 0.0;
 	  
-	  for(int j=k1-1; j<k2+1; ++j){
-	    for(int k=0; k<Nm; ++k){
+	  for(int j=j0; j<j1; ++j){
+	    for(int k=0; k<_Nm; ++k){
 	    B[j].checkerboard = evec[k].checkerboard;
-	      B[j] += Qt[k+Nm*j] * evec[k];
+	      B[j] += Qt[k+_Nm*j] * evec[k];
 	    }
 	  }
 	}
 	{
-	for(int i=0; i<(Nk+1); ++i) {
+	for(int i=0; i<(_Nm); ++i) {
 		B[i] = 0.0;
 	  	B[i].checkerboard = evec[0].checkerboard;
 	}
 	int j_block = 24; int k_block=24;
 PARALLEL_FOR_LOOP
 	for(int ss=0;ss < grid->oSites();ss++){
-		for(int jj=k1-1; jj<k2+1; jj += j_block)
-		for(int kk=0; kk<Nm; kk += k_block)
-		for(int j=jj; (j<(k2+1)) && j<(jj+j_block); ++j){
-			for(int k=kk; (k<Nm) && k<(kk+k_block) ; ++k){
-			    B[j]._odata[ss] +=Qt[k+Nm*j] * evec[k]._odata[ss]; 
+		for(int jj=j0; jj<j1; jj += j_block)
+		for(int kk=0; kk<_Nm; kk += k_block)
+		for(int j=jj; (j<(j1)) && j<(jj+j_block); ++j){
+			for(int k=kk; (k<_Nm) && k<(kk+k_block) ; ++k){
+			    B[j]._odata[ss] +=Qt[k+_Nm*j] * evec[k]._odata[ss]; 
 			}
 		}
 	}
 	}
-	for(int j=k1-1; j<k2+1; ++j) evec[j] = B[j];
+	for(int j=j0; j<j1; ++j) evec[j] = B[j];
 }
 
-    void Rotate( 
-	int Nm,
+void Rotate( 
+	int _Nm,
 	DenseVector<RealD>& Qt,
 	DenseVector<Field>& evec,
-	int k1, int k2
+//int k1, int k2
+	int j0, int j1,
+	int _Nk
 	)
 {
 	GridBase *grid = evec[0]._grid;
 	typedef typename Field::vector_object vobj;
-	assert(k1>0);
-	assert(k2<Nm);
+	assert(j0>=0);
+	assert(j1<_Nm);
 
 #pragma omp parallel
 	{
 //		int thr=GridThread::GetThreads();
 //		printf("thr=%d ss=%d me=%d\n",thr,ss,me);fflush(stdout);
 //		std::cout<<GridLogMessage << "GridThread::GetThreads() = " << thr << std::endl;
-		std::vector < vobj > B(Nm);
+		std::vector < vobj > B(_Nm);
 //		std::cout<<GridLogMessage << "GridThread::GetThreads() = " << thr << "B.size()= "<< B.size() << std::endl;
 #pragma omp for
 		for(int ss=0;ss < grid->oSites();ss++){
 //			int me = GridThread::ThreadBarrier();
 //			assert(me <thr);
-			for(int j=0; j<Nm; ++j) B[j]=0.;
-			for(int j=k1-1; j<(k2+1); ++j){
-				for(int k=0; k<Nm ; ++k){
-					B[j] +=Qt[k+Nm*j] * evec[k]._odata[ss];
+//			for(int j=0; j<_Nm; ++j) B[j]=0.;
+			for(int j=j0; j<j1; ++j){
+				B[j]=0.;
+				for(int k=0; k<_Nk ; ++k){
+					B[j] +=Qt[k+_Nm*j] * evec[k]._odata[ss];
 				}
 			}
-			for(int j=k1-1; j<(k2+1); ++j){
+			for(int j=j0; j<j1; ++j){
 				evec[j]._odata[ss] = B[j];
 			}
 		}
@@ -672,6 +678,33 @@ PARALLEL_FOR_LOOP
 	  }  // i-loop end
 	  //	  std::cout<<GridLogMessage << std::resetiosflags(std::ios_base::scientific);
 }
+
+void FinalCheck( int Nk, int Nm,
+	DenseVector<Field>& evec
+	)
+	{
+	GridBase *grid = evec[0]._grid;
+	Field v(grid);
+	Field B(grid);
+		for(int j = 0; j<Nk; ++j){
+		    std::cout<<GridLogMessage << "norm(evec["<<j<<"])="<<norm2(evec[j])<<std::endl;
+		    _Linop.HermOp(evec[j],v);
+		    
+		    RealD vnum = real(innerProduct(evec[j],v)); // HermOp.
+		    RealD vden = norm2(evec[j]);
+		    RealD vv0 = norm2(v);
+		    RealD eval2 = vnum/vden;
+		    v -= eval2*evec[j];
+		    RealD vv = norm2(v);
+	    
+		    std::cout.precision(13);
+		    std::cout<<GridLogMessage << "[" << std::setw(3)<< std::setiosflags(std::ios_base::right) <<j<<"] ";
+		    std::cout<<"eval = "<<std::setw(25)<< std::setiosflags(std::ios_base::left)<< eval2;
+		    std::cout<<"|H B[i] - eval[i]B[i]|^2 "<< std::setw(25)<< std::setiosflags(std::ios_base::right)<< vv;
+		    std::cout<<" "<< vnum/(sqrt(vden)*sqrt(vv0)) << std::endl;
+	    
+		}
+	}
 
 void ConvCheck( int Nk, int Nm,
 	DenseVector<RealD>& Qt,
@@ -918,7 +951,8 @@ until convergence
 //	Uses more temorary
 //	Rotate0(Nm,Qt,evec,k1,k2);
 // 	Uses minimal temporary, possibly with less speed
-	Rotate(Nm,Qt,evec,k1,k2);
+//	Rotate(Nm,Qt,evec,k1,k2);
+	Rotate(Nm,Qt,evec,k1-1,k2+1,Nm);
 // 	Try if Rotate() doesn't work
 //	Rotate2(Nm,Qt,evec,k1,k2);
 	t1=usecond()/1e6;
@@ -975,7 +1009,11 @@ until convergence
        }
 #else
 //	ConvRotate0( Nk, Nm, Qt, evec, eval,eval2,Iconv,Nconv);
-	ConvRotate( Nk, Nm, Qt, evec, eval,eval2,Iconv,Nconv);
+//	ConvRotate( Nk, Nm, Qt, evec, eval,eval2,Iconv,Nconv);
+//	ConvCheck only counts Iconv[j]=j. ignore Iconv[]
+	Rotate(Nm,Qt,evec,0,Nk,Nk);
+	FinalCheck( Nk, Nm, evec);
+exit(-1);
 //	ConvRotate2( Nk, Nm, Qt, evec, eval,eval2,Iconv,Nconv);
 #endif
       _sort.push(eval,evec,Nconv);
