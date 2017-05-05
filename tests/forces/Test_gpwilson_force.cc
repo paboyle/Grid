@@ -91,7 +91,7 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   // Modify the gauge field a little 
   ////////////////////////////////////
-  RealD dt = 0.00001;
+  RealD dt = 0.0001;
 
   LatticeColourMatrix mommu(UGrid); 
   LatticeColourMatrix forcemu(UGrid); 
@@ -100,7 +100,8 @@ int main (int argc, char ** argv)
 
   for(int mu=0;mu<Nd;mu++){
 
-    SU3::GaussianFundamentalLieAlgebraMatrix(RNG4, mommu); // Traceless antihermitian momentum; gaussian in lie alg
+    // Traceless antihermitian momentum; gaussian in lie alg
+    SU3::GaussianFundamentalLieAlgebraMatrix(RNG4, mommu); 
 
     PokeIndex<LorentzIndex>(mom,mommu,mu);
 
@@ -116,7 +117,6 @@ int main (int argc, char ** argv)
 	+ mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *mom[i](mu) *U[i](mu)*(dt*dt*dt*dt*dt*dt/720.0)
 	;
     }
-
   }
   
   Wil.ImportGauge(Uprime);
@@ -128,41 +128,29 @@ int main (int argc, char ** argv)
   // Use derivative to estimate dS
   //////////////////////////////////////////////
 
-
-  LatticeComplex dS(UGrid); dS = zero;
   for(int mu=0;mu<Nd;mu++){
     mommu   = PeekIndex<LorentzIndex>(UdSdU,mu);
     mommu=Ta(mommu)*2.0;
     PokeIndex<LorentzIndex>(UdSdU,mommu,mu);
   }
 
+  LatticeComplex dS(UGrid); dS = zero;
   for(int mu=0;mu<Nd;mu++){
     forcemu = PeekIndex<LorentzIndex>(UdSdU,mu);
     mommu   = PeekIndex<LorentzIndex>(mom,mu);
 
     // Update PF action density
     dS = dS+trace(mommu*forcemu)*dt;
-
   }
 
   Complex dSpred    = sum(dS);
-
-  // From TwoFlavourPseudoFermion:
-  //////////////////////////////////////////////////////
-  // dS/du = - phi^dag  (Mdag M)^-1 [ Mdag dM + dMdag M ]  (Mdag M)^-1 phi
-  //       = - phi^dag M^-1 dM (MdagM)^-1 phi -  phi^dag (MdagM)^-1 dMdag dM (Mdag)^-1 phi 
-  //
-  //       = - Ydag dM X  - Xdag dMdag Y
-  //
-  //////////////////////////////////////////////////////
-  // So must take dSdU - adj(dSdU) and left multiply by mom to get dS/dt.
-  //
-  // 
 
   std::cout << GridLogMessage << " S      "<<S<<std::endl;
   std::cout << GridLogMessage << " Sprime "<<Sprime<<std::endl;
   std::cout << GridLogMessage << "dS      "<<Sprime-S<<std::endl;
   std::cout << GridLogMessage << "predict dS    "<< dSpred <<std::endl;
+
+  assert( fabs(real(Sprime-S-dSpred)) < 1.0e-2 ) ;
 
   std::cout<< GridLogMessage << "Done" <<std::endl;
   Grid_finalize();

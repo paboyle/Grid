@@ -157,6 +157,8 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "dS      "<<Sprime-S<<std::endl;
   std::cout << GridLogMessage << "predict dS    "<< dSpred <<std::endl;
 
+  assert( fabs(real(Sprime-S-dSpred)) < 1.0e-2 ) ;
+
   std::cout<< GridLogMessage << "Done" <<std::endl;
   Grid_finalize();
 }

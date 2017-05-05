@@ -10,7 +10,6 @@ check-local: all
 	./Test_simd
 	./Test_cshift
 	./Test_stencil
-	./Test_cayley_even_odd_vec
 	./Test_dwf_mixedcg_prec
 
 

@@ -587,7 +587,7 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
    // use lorentz for flavour as hack.
    auto tmp = TraceIndex<SpinIndex>(outerProduct(Btilde, A));
    parallel_for(auto ss = tmp.begin(); ss < tmp.end(); ss++) {
-     link[ss]() = tmp[ss](0, 0) - conjugate(tmp[ss](1, 1));
+     link[ss]() = tmp[ss](0, 0) + conjugate(tmp[ss](1, 1));
    }
    PokeIndex<LorentzIndex>(mat, link, mu);
    return;
