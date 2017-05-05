@@ -2,7 +2,7 @@
 
 include Make.inc
 
-check: all
+check: tests
 	./Test_rect_force
 	./Test_gp_rect_force
 	./Test_laplacian_force

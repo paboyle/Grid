@@ -10,7 +10,7 @@ bin_SCRIPTS=grid-config
 
 tests-local: all
 bench-local: all
-check-local: tests
+check-local: all
 
 AM_CXXFLAGS += -I$(top_builddir)/include
 
