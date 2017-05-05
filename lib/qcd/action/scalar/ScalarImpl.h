@@ -96,7 +96,10 @@ class ScalarImplTypes {
   typedef ScalarAdjMatrixImplTypes<vComplexF, QCD::Nc> ScalarAdjImplF;
   typedef ScalarAdjMatrixImplTypes<vComplexD, QCD::Nc> ScalarAdjImplD;
 
-
+  template <int Colours > using ScalarNxNAdjImplR = ScalarAdjMatrixImplTypes<vComplex,   Colours >;
+  template <int Colours > using ScalarNxNAdjImplF = ScalarAdjMatrixImplTypes<vComplexF,  Colours >;
+  template <int Colours > using ScalarNxNAdjImplD = ScalarAdjMatrixImplTypes<vComplexD,  Colours >;
+  
   //}
 }
 

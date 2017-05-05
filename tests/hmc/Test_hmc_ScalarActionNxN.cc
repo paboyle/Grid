@@ -32,68 +32,116 @@ class ScalarActionParameters : Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(ScalarActionParameters,
     double, mass_squared,
     double, lambda);
+
+    template <class ReaderClass >
+  ScalarActionParameters(Reader<ReaderClass>& Reader){
+    read(Reader, "ScalarAction", *this);
+  }
+
 };
 
 }
 int main(int argc, char **argv) {
   using namespace Grid;
   using namespace Grid::QCD;
-
+  typedef Grid::JSONReader       Serialiser;
+  
   Grid_init(&argc, &argv);
   int threads = GridThread::GetThreads();
   // here make a routine to print all the relevant information on the run
   std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
   // Typedefs to simplify notation
-  typedef ScalarAdjGenericHMCRunner HMCWrapper;  // Uses the default minimum norm, real scalar fields
-
+  constexpr int Ncolours    = 4;
+  constexpr int Ndimensions = 3;
+  typedef ScalarNxNAdjGenericHMCRunner<Ncolours> HMCWrapper;  // Uses the default minimum norm, real scalar fields
+  typedef ScalarAdjActionR<Ncolours, Ndimensions> ScalarAction;
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   HMCWrapper TheHMC;
+  TheHMC.ReadCommandLine(argc, argv);
+
+  if (TheHMC.ParameterFile.empty()){
+    std::cout << "Input file not specified."
+              << "Use --ParameterFile option in the command line.\nAborting" 
+              << std::endl;
+    exit(1);
+  }
+  Serialiser Reader(TheHMC.ParameterFile);
 
   // Grid from the command line
   GridModule ScalarGrid;
-  ScalarGrid.set_full(SpaceTimeGrid::makeFourDimGrid(
-        GridDefaultLatt(), GridDefaultSimd(Nd, vComplex::Nsimd()),
-        GridDefaultMpi()));
-  ScalarGrid.set_rb(SpaceTimeGrid::makeFourDimRedBlackGrid(ScalarGrid.get_full()));
+  if (GridDefaultLatt().size() != Ndimensions){
+    std::cout << "Incorrect dimension of the grid\n. Expected dim="<< Ndimensions << std::endl;
+    exit(1);
+  }
+  if (GridDefaultMpi().size() != Ndimensions){
+    std::cout << "Incorrect dimension of the mpi grid\n. Expected dim="<< Ndimensions << std::endl;
+    exit(1);
+  }
+  ScalarGrid.set_full(new GridCartesian(GridDefaultLatt(),GridDefaultSimd(Ndimensions, vComplex::Nsimd()),GridDefaultMpi()));
+  ScalarGrid.set_rb(new GridRedBlackCartesian(ScalarGrid.get_full()));
   TheHMC.Resources.AddGrid("scalar", ScalarGrid);
-  // Possibile to create the module by hand
-  // hardcoding parameters or using a Reader
+  std::cout << "Lattice size : " << GridDefaultLatt() << std::endl;
 
   // Checkpointer definition
-  CheckpointerParameters CPparams;
-  CPparams.config_prefix = "ckpoint_scalar_lat";
-  CPparams.rng_prefix = "ckpoint_scalar_rng";
-  CPparams.saveInterval = 50;
-  CPparams.format = "IEEE64BIG";
-
+  CheckpointerParameters CPparams(Reader);
   TheHMC.Resources.LoadBinaryCheckpointer(CPparams);
 
-  RNGModuleParameters RNGpar;
-  RNGpar.serial_seeds = "1 2 3 4 5";
-  RNGpar.parallel_seeds = "6 7 8 9 10";
+  RNGModuleParameters RNGpar(Reader);
   TheHMC.Resources.SetRNGSeeds(RNGpar);
   /////////////////////////////////////////////////////////////
   // Collect actions, here use more encapsulation
 
   // Scalar action in adjoint representation
-  ScalarActionParameters SPar;
-  SPar.mass_squared = 0.5;
-  SPar.lambda       = 0.1;
-  ScalarAdjActionR Saction(SPar.mass_squared, SPar.lambda);
+  ScalarActionParameters SPar(Reader);
+  ScalarAction Saction(SPar.mass_squared, SPar.lambda);
 
   // Collect actions
-  ActionLevel<ScalarAdjActionR::Field, ScalarMatrixFields> Level1(1);
+  ActionLevel<ScalarAction::Field, ScalarNxNMatrixFields<Ncolours>> Level1(1);
   Level1.push_back(&Saction);
   TheHMC.TheAction.push_back(Level1);
   /////////////////////////////////////////////////////////////
+  TheHMC.Parameters.initialize(Reader);
 
-  // HMC parameters are serialisable
-  TheHMC.Parameters.MD.MDsteps = 20;
-  TheHMC.Parameters.MD.trajL   = 1.0;
-
-  TheHMC.ReadCommandLine(argc, argv);
   TheHMC.Run();
 
   Grid_finalize();
 }  // main
+
+/* Examples for input files
+
+JSON
+
+{
+    "Checkpointer": {
+    "config_prefix": "ckpoint_scalar_lat",
+    "rng_prefix": "ckpoint_scalar_rng",
+    "saveInterval": 1,
+    "format": "IEEE64BIG"
+    },
+    "RandomNumberGenerator": {
+    "serial_seeds": "1 2 3 4 6",
+    "parallel_seeds": "6 7 8 9 11"
+    },
+    "ScalarAction":{
+      "mass_squared": 0.5,
+      "lambda": 0.1
+    },
+    "HMC":{
+    "StartTrajectory": 0,
+    "Trajectories": 100,
+    "MetropolisTest": true,
+    "NoMetropolisUntil": 10,
+    "StartingType": "HotStart",
+    "MD":{
+        "name": "MinimumNorm2",
+	      "MDsteps": 15,
+	      "trajL": 2.0
+	    }
+    }
+}
+
+
+XML example not provided yet
+
+*/

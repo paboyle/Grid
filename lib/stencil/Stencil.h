@@ -286,7 +286,7 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
   {
     int dimension    = _directions[point];
     int displacement = _distances[point];
-
+    
     int fd = _grid->_fdimensions[dimension];
     int rd = _grid->_rdimensions[dimension];
     

@@ -40,9 +40,9 @@ namespace QCD {
   typedef ScalarAction<ScalarImplF>                 ScalarActionF;
   typedef ScalarAction<ScalarImplD>                 ScalarActionD;
 
-  typedef ScalarInteractionAction<ScalarAdjImplR>   ScalarAdjActionR;
-  typedef ScalarInteractionAction<ScalarAdjImplF>   ScalarAdjActionF;
-  typedef ScalarInteractionAction<ScalarAdjImplD>   ScalarAdjActionD;
+  template <int Colours, int Dimensions> using ScalarAdjActionR = ScalarInteractionAction<ScalarNxNAdjImplR<Colours>, Dimensions>;
+  template <int Colours, int Dimensions> using ScalarAdjActionF = ScalarInteractionAction<ScalarNxNAdjImplF<Colours>, Dimensions>;
+  template <int Colours, int Dimensions> using ScalarAdjActionD = ScalarInteractionAction<ScalarNxNAdjImplD<Colours>, Dimensions>;
   
 }
 }
