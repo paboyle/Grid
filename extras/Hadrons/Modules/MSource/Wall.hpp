@@ -2,13 +2,11 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MSource/SeqGamma.hpp
+Source file: extras/Hadrons/Modules/MSource/Wall.hpp
 
-Copyright (C) 2015
-Copyright (C) 2016
 Copyright (C) 2017
 
-Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Andrew Lawson <andrew.lawson1991@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,8 +26,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_SeqGamma_hpp_
-#define Hadrons_SeqGamma_hpp_
+#ifndef Hadrons_WallSource_hpp_
+#define Hadrons_WallSource_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -39,45 +37,39 @@ BEGIN_HADRONS_NAMESPACE
 
 /*
  
- Sequential source
+ Wall source
  -----------------------------
- * src_x = q_x * theta(x_3 - tA) * theta(tB - x_3) * gamma * exp(i x.mom)
+ * src_x = delta(x_3 - tW) * exp(i x.mom)
  
  * options:
- - q: input propagator (string)
- - tA: begin timeslice (integer)
- - tB: end timesilce (integer)
- - gamma: gamma product to insert (integer)
+ - tW: source timeslice (integer)
  - mom: momentum insertion, space-separated float sequence (e.g ".1 .2 1. 0.")
  
  */
 
 /******************************************************************************
- *                         SeqGamma                                 *
+ *                         Wall                                               *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MSource)
 
-class SeqGammaPar: Serializable
+class WallPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(SeqGammaPar,
-                                    std::string,    q,
-                                    unsigned int,   tA,
-                                    unsigned int,   tB,
-                                    Gamma::Algebra, gamma,
-                                    std::string,    mom);
+    GRID_SERIALIZABLE_CLASS_MEMBERS(WallPar,
+                                    unsigned int, tW,
+                                    std::string, mom);
 };
 
 template <typename FImpl>
-class TSeqGamma: public Module<SeqGammaPar>
+class TWall: public Module<WallPar>
 {
 public:
     TYPE_ALIASES(FImpl,);
 public:
     // constructor
-    TSeqGamma(const std::string name);
+    TWall(const std::string name);
     // destructor
-    virtual ~TSeqGamma(void) = default;
+    virtual ~TWall(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -87,28 +79,28 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(SeqGamma, TSeqGamma<FIMPL>, MSource);
+MODULE_REGISTER_NS(Wall, TWall<FIMPL>, MSource);
 
 /******************************************************************************
- *                         TSeqGamma implementation                           *
+ *                 TWall implementation                                       *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TSeqGamma<FImpl>::TSeqGamma(const std::string name)
-: Module<SeqGammaPar>(name)
+TWall<FImpl>::TWall(const std::string name)
+: Module<WallPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
-std::vector<std::string> TSeqGamma<FImpl>::getInput(void)
+std::vector<std::string> TWall<FImpl>::getInput(void)
 {
-    std::vector<std::string> in = {par().q};
+    std::vector<std::string> in;
     
     return in;
 }
 
 template <typename FImpl>
-std::vector<std::string> TSeqGamma<FImpl>::getOutput(void)
+std::vector<std::string> TWall<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -117,48 +109,39 @@ std::vector<std::string> TSeqGamma<FImpl>::getOutput(void)
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TSeqGamma<FImpl>::setup(void)
+void TWall<FImpl>::setup(void)
 {
     env().template registerLattice<PropagatorField>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TSeqGamma<FImpl>::execute(void)
-{
-    if (par().tA == par().tB)
-    {
-        LOG(Message) << "Generating gamma_" << par().gamma
-                     << " sequential source at t= " << par().tA << std::endl;
-    }
-    else
-    {
-        LOG(Message) << "Generating gamma_" << par().gamma
-                     << " sequential source for "
-                     << par().tA << " <= t <= " << par().tB << std::endl;
-    }
+void TWall<FImpl>::execute(void)
+{    
+    LOG(Message) << "Generating wall source at t = " << par().tW 
+                 << " with momentum " << par().mom << std::endl;
+    
     PropagatorField &src = *env().template createLattice<PropagatorField>(getName());
-    PropagatorField &q   = *env().template getObject<PropagatorField>(par().q);
     Lattice<iScalar<vInteger>> t(env().getGrid());
     LatticeComplex             ph(env().getGrid()), coor(env().getGrid());
-    Gamma                      g(par().gamma);
     std::vector<Real>          p;
     Complex                    i(0.0,1.0);
     
     p  = strToVec<Real>(par().mom);
     ph = zero;
-    for(unsigned int mu = 0; mu < env().getNd(); mu++)
+    for(unsigned int mu = 0; mu < Nd; mu++)
     {
         LatticeCoordinate(coor, mu);
         ph = ph + p[mu]*coor*((1./(env().getGrid()->_fdimensions[mu])));
     }
     ph = exp((Real)(2*M_PI)*i*ph);
     LatticeCoordinate(t, Tp);
-    src = where((t >= par().tA) and (t <= par().tB), ph*(g*q), 0.*q);
+    src = 1.;
+    src = where((t == par().tW), src*ph, 0.*src);
 }
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_SeqGamma_hpp_
+#endif // Hadrons_WallSource_hpp_

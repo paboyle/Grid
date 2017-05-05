@@ -16,4 +16,4 @@ else # configure.ac is modified
   printf 'commit: %s-dirty\n' `git rev-parse --short HEAD`
   printf 'branch: %s\n' `git rev-parse --abbrev-ref HEAD`
   printf 'date  : %s\n' `git log -1 --date=short --pretty=format:%cd`
- fi
+fi

@@ -138,6 +138,54 @@ namespace Grid {
     unsigned int               dimInd_{0};
   };
   
+  // Pair IO utilities /////////////////////////////////////////////////////////
+  // helper function to parse input in the format "<obj1 obj2>"
+  template <typename T1, typename T2>
+  inline std::istream & operator>>(std::istream &is, std::pair<T1, T2> &buf)
+  {
+    T1 buf1;
+    T2 buf2;
+    char c;
+
+    // Search for "pair" delimiters.
+    do
+    {
+      is.get(c);
+    } while (c != '<' && !is.eof());
+    if (c == '<')
+    {
+      int start = is.tellg();
+      do
+      {
+        is.get(c);
+      } while (c != '>' && !is.eof());
+      if (c == '>')
+      {
+        int end = is.tellg();
+        int psize = end - start - 1;
+
+        // Only read data between pair limiters.
+        is.seekg(start);
+        std::string tmpstr(psize, ' ');
+        is.read(&tmpstr[0], psize);
+        std::istringstream temp(tmpstr);
+        temp >> buf1 >> buf2;
+        buf = std::make_pair(buf1, buf2);
+        is.seekg(end);
+      }
+    }
+    is.peek();
+    return is;
+  }
+  
+  // output to streams for pairs
+  template <class T1, class T2>
+  inline std::ostream & operator<<(std::ostream &os, const std::pair<T1, T2> &p)
+  {
+    os << "<" << p.first << " " << p.second << ">";
+    return os;
+  }
+
   // Abstract writer/reader classes ////////////////////////////////////////////
   // static polymorphism implemented using CRTP idiom
   class Serializable;

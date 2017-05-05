@@ -46,19 +46,8 @@ int main (int argc, char ** argv)
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
-  // Want a different conf at every run
-  // First create an instance of an engine.
-  std::random_device rnd_device;
-  // Specify the engine and distribution.
-  std::mt19937 mersenne_engine(rnd_device());
-  std::uniform_int_distribution<int> dist(1, 100);
-  
-  auto gen = std::bind(dist, mersenne_engine);
-  std::vector<int> seeds4(4);
-  generate(begin(seeds4), end(seeds4), gen);
-  
-  //std::vector<int> seeds4({1,2,3,5});
-  std::vector<int> seeds5({5,6,7,1});
+  std::vector<int> seeds4({1,2,3,4});
+  std::vector<int> seeds5({5,6,7,8});
   GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
 
@@ -76,15 +65,13 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   // Unmodified matrix element
   ////////////////////////////////////
-  RealD mass = 0.01; 
-  RealD M5   = 1.8;
-  RealD b    = 2.0;
-  RealD c    = 1.0;
+  RealD mass=0.01; 
+  RealD M5=1.8; 
+  RealD b=0.5;
+  RealD c=0.5;
   MobiusFermionR Ddwf(U,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5,b,c);
   Ddwf.M   (phi,Mphi);
 
-
-  
   ComplexD S    = innerProduct(Mphi,Mphi); // pdag MdagM p
 
   // get the deriv of phidag MdagM phi with respect to "U"
