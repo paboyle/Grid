@@ -57,7 +57,6 @@ private:
     ScalarField                                 *freeMomProp_, *GFSrc_,
                                                 *prop0_;
     std::vector<ScalarField *>                  phase_;
-    std::vector<std::vector<ScalarField *> >    vpTensor_;
     EmField                                     *A;
 };
 
