@@ -365,10 +365,16 @@ WilsonKernels<Impl>::SeqConservedCurrentInternal(const PropagatorField &q_in,   
 
 NO_CURR(GparityWilsonImplF);
 NO_CURR(GparityWilsonImplD);
+NO_CURR(GparityWilsonImplFH);
+NO_CURR(GparityWilsonImplDF);
 NO_CURR(DomainWallVec5dImplF);
 NO_CURR(DomainWallVec5dImplD);
+NO_CURR(DomainWallVec5dImplFH);
+NO_CURR(DomainWallVec5dImplDF);
 NO_CURR(ZDomainWallVec5dImplF);
 NO_CURR(ZDomainWallVec5dImplD);
+NO_CURR(ZDomainWallVec5dImplFH);
+NO_CURR(ZDomainWallVec5dImplDF);
 
 FermOpTemplateInstantiate(WilsonKernels);
 AdjointFermOpTemplateInstantiate(WilsonKernels);
