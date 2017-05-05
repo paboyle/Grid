@@ -115,6 +115,7 @@ int main(int argc,char **argv)
   // test serializable class writing
   myclass              obj(1234); // non-trivial constructor
   std::vector<myclass> vec;
+  std::pair<myenum, myenum> pair;
   
   std::cout << "-- serialisable class writing to 'bother.xml'..." << std::endl;
   write(WR,"obj",obj);
@@ -122,6 +123,8 @@ int main(int argc,char **argv)
   vec.push_back(myclass(1234));
   vec.push_back(myclass(5678));
   vec.push_back(myclass(3838));
+  pair = std::make_pair(myenum::red, myenum::blue);
+
   write(WR, "objvec", vec);
   std::cout << "-- serialisable class writing to std::cout:" << std::endl;
   std::cout << obj << std::endl;
@@ -129,21 +132,30 @@ int main(int argc,char **argv)
   std::cout << "vec[0] == obj: " << ((vec[0] == obj) ? "true" : "false") << std::endl;
   std::cout << "vec[1] == obj: " << ((vec[1] == obj) ? "true" : "false") << std::endl;
   
+  write(WR, "objpair", pair);
+  std::cout << "-- pair writing to std::cout:" << std::endl;
+  std::cout << pair << std::endl;
+  
   // read tests
   std::cout << "\n==== IO self-consistency tests" << std::endl;
   //// XML
   ioTest<XmlWriter, XmlReader>("iotest.xml", obj, "XML    (object)           ");
   ioTest<XmlWriter, XmlReader>("iotest.xml", vec, "XML    (vector of objects)");
+  ioTest<XmlWriter, XmlReader>("iotest.xml", pair, "XML    (pair of objects)");
   //// binary
   ioTest<BinaryWriter, BinaryReader>("iotest.bin", obj, "binary (object)           ");
   ioTest<BinaryWriter, BinaryReader>("iotest.bin", vec, "binary (vector of objects)");
+  ioTest<BinaryWriter, BinaryReader>("iotest.bin", pair, "binary (pair of objects)");
   //// text
   ioTest<TextWriter, TextReader>("iotest.dat", obj, "text   (object)           ");
   ioTest<TextWriter, TextReader>("iotest.dat", vec, "text   (vector of objects)");
+  ioTest<TextWriter, TextReader>("iotest.dat", pair, "text   (pair of objects)");
   //// HDF5
+#undef HAVE_HDF5
 #ifdef HAVE_HDF5
   ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", obj, "HDF5   (object)           ");
   ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", vec, "HDF5   (vector of objects)");
+  ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", pair, "HDF5   (pair of objects)");
 #endif
   
   std::cout << "\n==== vector flattening/reconstruction" << std::endl;

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+export LANG=C
+find . -name "*.cc"  -exec grep -H $@ {} \;
+find . -name "*.h"   -exec grep -H $@ {} \;
+

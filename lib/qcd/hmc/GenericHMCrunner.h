@@ -56,6 +56,7 @@ class HMCWrapperTemplate: public HMCRunnerBase<ReaderClass> {
   using IntegratorType = Integrator<Implementation, S, RepresentationsPolicy>;
 
   HMCparameters Parameters;
+  std::string ParameterFile;
   HMCResourceManager<Implementation> Resources;
 
   // The set of actions (keep here for lower level users, for now)
@@ -113,6 +114,10 @@ class HMCWrapperTemplate: public HMCRunnerBase<ReaderClass> {
       std::vector<int> ivec(0);
       GridCmdOptionIntVector(arg, ivec);
       Parameters.NoMetropolisUntil = ivec[0];
+    }
+    if (GridCmdOptionExists(argv, argv + argc, "--ParameterFile")) {
+      arg = GridCmdOptionPayload(argv, argv + argc, "--ParameterFile");
+      ParameterFile = arg;
     }
   }
 

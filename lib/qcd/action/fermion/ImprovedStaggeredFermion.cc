@@ -160,8 +160,6 @@ void ImprovedStaggeredFermion<Impl>::ImportGauge(const GaugeField &_Uthin,const 
     PokeIndex<LorentzIndex>(UUUmu, U*(-0.5*c2/u0/u0/u0), mu+4);
   }
 
-  std::cout << " Umu " << Umu._odata[0]<<std::endl;
-  std::cout << " UUUmu " << UUUmu._odata[0]<<std::endl;
   pickCheckerboard(Even, UmuEven, Umu);
   pickCheckerboard(Odd,  UmuOdd , Umu);
   pickCheckerboard(Even, UUUmuEven, UUUmu);
