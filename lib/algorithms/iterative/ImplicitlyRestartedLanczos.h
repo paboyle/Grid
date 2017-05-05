@@ -546,15 +546,17 @@ void Rotate(
 //		int thr=GridThread::GetThreads();
 //		printf("thr=%d ss=%d me=%d\n",thr,ss,me);fflush(stdout);
 //		std::cout<<GridLogMessage << "GridThread::GetThreads() = " << thr << std::endl;
-		std::vector < vobj > B(_Nm);
 //		std::cout<<GridLogMessage << "GridThread::GetThreads() = " << thr << "B.size()= "<< B.size() << std::endl;
+		std::vector < vobj > B(_Nm);
 #pragma omp for
 		for(int ss=0;ss < grid->oSites();ss++){
 //			int me = GridThread::ThreadBarrier();
 //			assert(me <thr);
 //			for(int j=0; j<_Nm; ++j) B[j]=0.;
+//			zeroit(B);
+			for(int j=j0; j<j1; ++j)
+				zeroit(B[j]);
 			for(int j=j0; j<j1; ++j){
-				B[j]=0.;
 				for(int k=0; k<_Nk ; ++k){
 					B[j] +=Qt[k+_Nm*j] * evec[k]._odata[ss];
 				}
@@ -1011,9 +1013,9 @@ until convergence
 //	ConvRotate0( Nk, Nm, Qt, evec, eval,eval2,Iconv,Nconv);
 //	ConvRotate( Nk, Nm, Qt, evec, eval,eval2,Iconv,Nconv);
 //	ConvCheck only counts Iconv[j]=j. ignore Iconv[]
-	Rotate(Nm,Qt,evec,0,Nk,Nk);
+	Rotate0(Nm,Qt,evec,0,Nk,Nk);
 	FinalCheck( Nk, Nm, evec);
-exit(-1);
+//exit(-1);
 //	ConvRotate2( Nk, Nm, Qt, evec, eval,eval2,Iconv,Nconv);
 #endif
       _sort.push(eval,evec,Nconv);
