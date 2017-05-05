@@ -158,7 +158,7 @@ namespace Grid {
 #ifdef RNG_SITMO
     typedef sitmo::prng_engine 	RngEngine;
     typedef uint64_t    	RngStateType;
-    static const int    	RngStateCount = 4;
+    static const int    	RngStateCount = 13;
 #endif
 
     std::vector<RngEngine>                             _generators;

@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
   CPparams.format = "IEEE64BIG";
   */
   
-  TheHMC.Resources.LoadBinaryCheckpointer(CPparams);
+  TheHMC.Resources.LoadNerscCheckpointer(CPparams);
 
   // RNG definition (Name: RandomNumberGenerator)
   RNGModuleParameters RNGpar(Reader);
