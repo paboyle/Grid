@@ -235,7 +235,7 @@ namespace Grid {
 	Field tmp(in._grid);
 
 	_Mat.MeooeDag(in,tmp);
-	_Mat.MooeeInvDag(tmp,out);
+        _Mat.MooeeInvDag(tmp,out);
 	_Mat.MeooeDag(out,tmp);
 
 	_Mat.MooeeDag(in,out);

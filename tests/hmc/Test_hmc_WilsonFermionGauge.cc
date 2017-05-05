@@ -7,9 +7,8 @@ Source file: ./tests/Test_hmc_WilsonFermionGauge.cc
 Copyright (C) 2015
 
 Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: neo <cossu@post.kek.jp>
-Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -25,75 +24,120 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-See the full license in the file "LICENSE" in the top level distribution directory
+See the full license in the file "LICENSE" in the top level distribution
+directory
 *************************************************************************************/
 /*  END LEGAL */
 #include <Grid/Grid.h>
 
-using namespace std;
-using namespace Grid;
-using namespace Grid::QCD;
+int main(int argc, char **argv) {
+  using namespace Grid;
+  using namespace Grid::QCD;
 
-namespace Grid {
-namespace QCD {
+  Grid_init(&argc, &argv);
+  int threads = GridThread::GetThreads();
+  // here make a routine to print all the relevant information on the run
+  std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
-class HmcRunner : public NerscHmcRunner {
- public:
-  void BuildTheAction(int argc, char **argv)
+   // Typedefs to simplify notation
+  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
+  typedef WilsonImplR FermionImplPolicy;
+  typedef WilsonFermionR FermionAction;
+  typedef typename FermionAction::FermionField FermionField;
 
-  {
-    typedef WilsonImplR ImplPolicy;
-    typedef WilsonFermionR FermionAction;
-    typedef typename FermionAction::FermionField FermionField;
 
-    UGrid = SpaceTimeGrid::makeFourDimGrid(
-        GridDefaultLatt(), GridDefaultSimd(Nd, vComplex::Nsimd()),
-        GridDefaultMpi());
-    UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
+  //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+  HMCWrapper TheHMC;
 
-    FGrid = UGrid;
-    FrbGrid = UrbGrid;
+  // Grid from the command line
+  TheHMC.Resources.AddFourDimGrid("gauge");
+  // Possibile to create the module by hand 
+  // hardcoding parameters or using a Reader
 
-    // temporarily need a gauge field
-    LatticeGaugeField U(UGrid);
 
-    // Gauge action
-    WilsonGaugeActionR Waction(5.6);
+  // Checkpointer definition
+  CheckpointerParameters CPparams;  
+  CPparams.config_prefix = "ckpoint_lat";
+  CPparams.rng_prefix = "ckpoint_rng";
+  CPparams.saveInterval = 5;
+  CPparams.format = "IEEE64BIG";
+  
+  TheHMC.Resources.LoadBinaryCheckpointer(CPparams);
 
-    Real mass = -0.77;
-    FermionAction FermOp(U, *FGrid, *FrbGrid, mass);
+  RNGModuleParameters RNGpar;
+  RNGpar.serial_seeds = "1 2 3 4 5";
+  RNGpar.parallel_seeds = "6 7 8 9 10";
+  TheHMC.Resources.SetRNGSeeds(RNGpar);
 
-    ConjugateGradient<FermionField> CG(1.0e-8, 10000);
+  // Construct observables
+  typedef PlaquetteMod<HMCWrapper::ImplPolicy> PlaqObs;
+  TheHMC.Resources.AddObservable<PlaqObs>();
+  //////////////////////////////////////////////
 
-    TwoFlavourPseudoFermionAction<ImplPolicy> Nf2(FermOp, CG, CG);
+  /////////////////////////////////////////////////////////////
+  // Collect actions, here use more encapsulation
+  // need wrappers of the fermionic classes 
+  // that have a complex construction
+  // standard
+  RealD beta = 5.6 ;
+  WilsonGaugeActionR Waction(beta);
+    
+  auto GridPtr = TheHMC.Resources.GetCartesian();
+  auto GridRBPtr = TheHMC.Resources.GetRBCartesian();
+
+  // temporarily need a gauge field
+  LatticeGaugeField U(GridPtr);
+
+  Real mass = -0.77;
+
+  // Can we define an overloaded operator that does not need U and initialises
+  // it with zeroes?
+  FermionAction FermOp(U, *GridPtr, *GridRBPtr, mass);
+
+  ConjugateGradient<FermionField> CG(1.0e-8, 2000);
+
+  TwoFlavourPseudoFermionAction<FermionImplPolicy> Nf2(FermOp, CG, CG);
+
+  // With modules
+  /*
+
+  TwoFlavourFmodule<FermionImplPolicy> TwoFMod(Reader);
+  
+  */
 
     // Set smearing (true/false), default: false
-    Nf2.is_smeared = false;
+  Nf2.is_smeared = false;
+
 
     // Collect actions
-    ActionLevel<LatticeGaugeField> Level1(1);
-    Level1.push_back(&Nf2);
+  ActionLevel<HMCWrapper::Field> Level1(1);
+  Level1.push_back(&Nf2);
 
-    ActionLevel<LatticeGaugeField> Level2(4);
-    Level2.push_back(&Waction);
+  ActionLevel<HMCWrapper::Field> Level2(4);
+  Level2.push_back(&Waction);
 
-    TheAction.push_back(Level1);
-    TheAction.push_back(Level2);
+  TheHMC.TheAction.push_back(Level1);
+  TheHMC.TheAction.push_back(Level2);
+  /////////////////////////////////////////////////////////////
 
-    Run(argc, argv);
-  };
-};
-}
-}
+  /*
+    double rho = 0.1;  // smearing parameter
+    int Nsmear = 2;    // number of smearing levels
+    Smear_Stout<HMCWrapper::ImplPolicy> Stout(rho);
+    SmearedConfiguration<HMCWrapper::ImplPolicy> SmearingPolicy(
+        UGrid, Nsmear, Stout);
+  */
 
-int main(int argc, char **argv) {
-  Grid_init(&argc, &argv);
+  // HMC parameters are serialisable 
+  TheHMC.Parameters.MD.MDsteps = 20;
+  TheHMC.Parameters.MD.trajL   = 1.0;
 
-  int threads = GridThread::GetThreads();
-  std::cout << GridLogMessage << "Grid is setup to use " << threads
-            << " threads" << std::endl;
+  TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
+  TheHMC.Run();  // no smearing
+  // TheHMC.Run(SmearingPolicy); // for smearing
 
-  HmcRunner TheHMC;
+  Grid_finalize();
 
-  TheHMC.BuildTheAction(argc, argv);
-}
+} // main
+
+

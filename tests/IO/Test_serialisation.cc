@@ -4,8 +4,9 @@
 
     Source file: ./tests/Test_serialisation.cc
 
-    Copyright (C) 2015
+    Copyright (C) 2015-2016
 
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
@@ -27,6 +28,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
+
 
 using namespace Grid;
 
@@ -188,4 +190,62 @@ int main(int argc,char **argv)
   Reconstruct<vec3d> rec(flatdv.getFlatVector(), flatdv.getDim());
   std::cout << "\nreconstructed vector:" << std::endl;
   std::cout << flatdv.getVector() << std::endl;
+  std::cout << std::endl;
+
+
+  std::cout << ".:::::: Testing JSON classes "<< std::endl;
+
+
+  {
+    JSONWriter JW("bother.json");
+    
+    // test basic type writing
+    push(JW,"BasicTypes");
+    write(JW,std::string("i16"),i16);
+    write(JW,"u16",u16);
+    write(JW,"i32",i32);
+    write(JW,"u32",u32);
+    write(JW,"i64",i64);
+    write(JW,"u64",u64);
+    write(JW,"f",f);
+    write(JW,"d",d);
+    write(JW,"b",b);
+    pop(JW);
+    
+    // test serializable class writing
+    myclass obj(1234); // non-trivial constructor
+    write(JW,"obj",obj);
+    JW.write("obj2", obj);
+    
+    std::cout << obj << std::endl;
+    
+    std::vector<myclass> vec;
+    vec.push_back(myclass(1234));
+    vec.push_back(myclass(5678));
+    vec.push_back(myclass(3838));
+    write(JW, "objvec", vec);
+    
+  }
+
+  {
+    JSONReader RD("bother.json");
+    myclass jcopy1;
+    std::vector<myclass> jveccopy1;
+    read(RD,"obj",jcopy1);
+    read(RD,"objvec", jveccopy1);
+    std::cout << "Loaded (JSON) -----------------" << std::endl;
+    std::cout << jcopy1 << std::endl << jveccopy1 << std::endl;
+  }
+  
+  {
+    // Testing the next element function
+    JSONReader RD("test.json");
+    RD.push("grid");
+    RD.push("Observable");
+    std::string name;
+    read(RD,"name", name);
+  }
+  
+
+
 }

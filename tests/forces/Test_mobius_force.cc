@@ -143,9 +143,9 @@ int main (int argc, char ** argv)
 
   Complex dSpred    = sum(dS);
 
-  std::cout << GridLogMessage << " S      "<<S<<std::endl;
-  std::cout << GridLogMessage << " Sprime "<<Sprime<<std::endl;
-  std::cout << GridLogMessage << "dS      "<<Sprime-S<<std::endl;
+  std::cout << GridLogMessage << " -- S         "<<S<<std::endl;
+  std::cout << GridLogMessage << " -- Sprime    "<<Sprime<<std::endl;
+  std::cout << GridLogMessage << "dS            "<<Sprime-S<<std::endl;
   std::cout << GridLogMessage << "predict dS    "<< dSpred <<std::endl;
 
   std::cout<< GridLogMessage << "Done" <<std::endl;

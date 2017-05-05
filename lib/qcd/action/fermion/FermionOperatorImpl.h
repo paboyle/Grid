@@ -43,7 +43,7 @@ namespace QCD {
   // Ultimately need Impl to always define types where XXX is opaque
   //
   //    typedef typename XXX               Simd;
-  //    typedef typename XXX     GaugeLinkField;	
+  //    typedef typename XXX     GaugeLinkField;        
   //    typedef typename XXX         GaugeField;
   //    typedef typename XXX      GaugeActField;
   //    typedef typename XXX       FermionField;
@@ -153,7 +153,7 @@ namespace QCD {
   typedef typename Impl::Coeff_t                     Coeff_t;           \
   
 #define INHERIT_IMPL_TYPES(Base) \
-  INHERIT_GIMPL_TYPES(Base)	 \
+  INHERIT_GIMPL_TYPES(Base)      \
   INHERIT_FIMPL_TYPES(Base)
   
   /////////////////////////////////////////////////////////////////////////////
@@ -198,16 +198,18 @@ namespace QCD {
     
     ImplParams Params;
     
-    WilsonImpl(const ImplParams &p = ImplParams()) : Params(p){};
+    WilsonImpl(const ImplParams &p = ImplParams()) : Params(p){
+      assert(Params.boundary_phases.size() == Nd);
+    };
       
     bool overlapCommsCompute(void) { return Params.overlapCommsCompute; };
       
     inline void multLink(SiteHalfSpinor &phi,
-			 const SiteDoubledGaugeField &U,
-			 const SiteHalfSpinor &chi,
-			 int mu,
-			 StencilEntry *SE,
-			 StencilImpl &St) {
+                         const SiteDoubledGaugeField &U,
+                         const SiteHalfSpinor &chi,
+                         int mu,
+                         StencilEntry *SE,
+                         StencilImpl &St) {
       mult(&phi(), &U(mu), &chi());
     }
       
@@ -217,16 +219,22 @@ namespace QCD {
     }
       
     inline void DoubleStore(GridBase *GaugeGrid,
-			    DoubledGaugeField &Uds,
-			    const GaugeField &Umu) {
+                            DoubledGaugeField &Uds,
+                            const GaugeField &Umu) {
       conformable(Uds._grid, GaugeGrid);
       conformable(Umu._grid, GaugeGrid);
       GaugeLinkField U(GaugeGrid);
+      GaugeLinkField tmp(GaugeGrid);
+      Lattice<iScalar<vInteger> > coor(GaugeGrid);
       for (int mu = 0; mu < Nd; mu++) {
-	U = PeekIndex<LorentzIndex>(Umu, mu);
-	PokeIndex<LorentzIndex>(Uds, U, mu);
-	U = adj(Cshift(U, mu, -1));
-	PokeIndex<LorentzIndex>(Uds, U, mu + 4);
+        LatticeCoordinate(coor, mu);
+        int Lmu = GaugeGrid->GlobalDimensions()[mu] - 1;
+        U = PeekIndex<LorentzIndex>(Umu, mu);
+        tmp = where(coor == Lmu, Params.boundary_phases[mu] * U, U);
+        PokeIndex<LorentzIndex>(Uds, tmp, mu);
+        U = adj(Cshift(U, mu, -1));
+        U = where(coor == 0, Params.boundary_phases[mu] * U, U);
+        PokeIndex<LorentzIndex>(Uds, U, mu + 4);
       }
     }
 
@@ -310,12 +318,12 @@ class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepres
   }
 
   inline void multLink(SiteHalfSpinor &phi, const SiteDoubledGaugeField &U,
-		       const SiteHalfSpinor &chi, int mu, StencilEntry *SE,
-		       StencilImpl &St) {
+                       const SiteHalfSpinor &chi, int mu, StencilEntry *SE,
+                       StencilImpl &St) {
     SiteGaugeLink UU;
     for (int i = 0; i < Nrepresentation; i++) {
       for (int j = 0; j < Nrepresentation; j++) {
-	vsplat(UU()()(i, j), U(mu)()(i, j));
+        vsplat(UU()()(i, j), U(mu)()(i, j));
       }
     }
     mult(&phi(), &UU(), &chi());
@@ -352,10 +360,53 @@ class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepres
   {
     assert(0);
   }
-      
-  inline void InsertForce5D(GaugeField &mat, FermionField &Btilde,FermionField &Atilde, int mu) 
-  {
-	assert(0);
+
+  inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde, int mu) {
+
+    assert(0);
+    // Following lines to be revised after Peter's addition of half prec
+    // missing put lane...
+    /*
+    typedef decltype(traceIndex<SpinIndex>(outerProduct(Btilde[0], Atilde[0]))) result_type;
+    unsigned int LLs = Btilde._grid->_rdimensions[0];
+    conformable(Atilde._grid,Btilde._grid);
+    GridBase* grid = mat._grid;
+    GridBase* Bgrid = Btilde._grid;
+    unsigned int dimU = grid->Nd();
+    unsigned int dimF = Bgrid->Nd();
+    GaugeLinkField tmp(grid); 
+    tmp = zero;
+    
+    // FIXME 
+    // Current implementation works, thread safe, probably suboptimal
+    // Passing through the local coordinate for grid transformation
+    // the force grid is in general very different from the Ls vectorized grid
+
+    PARALLEL_FOR_LOOP
+    for (int so = 0; so < grid->oSites(); so++) {
+      std::vector<typename result_type::scalar_object> vres(Bgrid->Nsimd());
+      std::vector<int> ocoor;  grid->oCoorFromOindex(ocoor,so); 
+      for (int si = 0; si < tmp._grid->iSites(); si++){
+        typename result_type::scalar_object scalar_object; scalar_object = zero;
+        std::vector<int> local_coor;      
+        std::vector<int> icoor; grid->iCoorFromIindex(icoor,si);
+        grid->InOutCoorToLocalCoor(ocoor, icoor, local_coor);
+        for (int s = 0; s < LLs; s++) {
+          std::vector<int> slocal_coor(dimF);
+          slocal_coor[0] = s;
+          for (int s4d = 1; s4d< dimF; s4d++) slocal_coor[s4d] = local_coor[s4d-1];
+          int sF = Bgrid->oIndexReduced(slocal_coor);  
+          assert(sF < Bgrid->oSites());
+
+          extract(traceIndex<SpinIndex>(outerProduct(Btilde[sF], Atilde[sF])), vres); 
+          // sum across the 5d dimension
+          for (auto v : vres) scalar_object += v;  
+        }
+        tmp._odata[so].putlane(scalar_object, si);
+      }
+    }
+    PokeIndex<LorentzIndex>(mat, tmp, mu);
+    */
   }
 };
     
@@ -406,19 +457,19 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
  // provide the multiply by link that is differentiated between Gparity (with
  // flavour index) and non-Gparity
  inline void multLink(SiteHalfSpinor &phi, const SiteDoubledGaugeField &U,
-		      const SiteHalfSpinor &chi, int mu, StencilEntry *SE,
-		      StencilImpl &St) {
+                      const SiteHalfSpinor &chi, int mu, StencilEntry *SE,
+                      StencilImpl &St) {
 
    typedef SiteHalfSpinor vobj;
    typedef typename SiteHalfSpinor::scalar_object sobj;
 	
    vobj vtmp;
    sobj stmp;
-	
+        
    GridBase *grid = St._grid;
-	
+        
    const int Nsimd = grid->Nsimd();
-	
+        
    int direction = St._directions[mu];
    int distance = St._distances[mu];
    int ptype = St._permute_type[mu];
@@ -426,13 +477,13 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
    
    // Fixme X.Y.Z.T hardcode in stencil
    int mmu = mu % Nd;
-	
+        
    // assert our assumptions
    assert((distance == 1) || (distance == -1));  // nearest neighbour stencil hard code
    assert((sl == 1) || (sl == 2));
    
    std::vector<int> icoor;
-	
+        
    if ( SE->_around_the_world && Params.twists[mmu] ) {
 
      if ( sl == 2 ) {
@@ -442,25 +493,25 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
        extract(chi,vals);
        for(int s=0;s<Nsimd;s++){
 
-	 grid->iCoorFromIindex(icoor,s);
-	      
-	 assert((icoor[direction]==0)||(icoor[direction]==1));
-	      
-	 int permute_lane;
-	 if ( distance == 1) {
-	   permute_lane = icoor[direction]?1:0;
-	 } else {
-	   permute_lane = icoor[direction]?0:1;
-	 }
-	      
-	 if ( permute_lane ) { 
-	   stmp(0) = vals[s](1);
-	   stmp(1) = vals[s](0);
-	   vals[s] = stmp;
-	      }
+         grid->iCoorFromIindex(icoor,s);
+              
+         assert((icoor[direction]==0)||(icoor[direction]==1));
+              
+         int permute_lane;
+         if ( distance == 1) {
+           permute_lane = icoor[direction]?1:0;
+         } else {
+           permute_lane = icoor[direction]?0:1;
+         }
+              
+         if ( permute_lane ) { 
+           stmp(0) = vals[s](1);
+           stmp(1) = vals[s](0);
+           vals[s] = stmp;
+              }
        }
        merge(vtmp,vals);
-	    
+            
      } else { 
        vtmp(0) = chi(1);
        vtmp(1) = chi(0);
@@ -485,11 +536,11 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
    GaugeLinkField Uconj(GaugeGrid);
    
    Lattice<iScalar<vInteger> > coor(GaugeGrid);
-	
+        
    for(int mu=0;mu<Nd;mu++){
-	  
+          
      LatticeCoordinate(coor,mu);
-	  
+          
      U     = PeekIndex<LorentzIndex>(Umu,mu);
      Uconj = conjugate(U);
      
@@ -503,7 +554,7 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
        Uds[ss](0)(mu) = U[ss]();
        Uds[ss](1)(mu) = Uconj[ss]();
      }
-	  
+          
      U     = adj(Cshift(U    ,mu,-1));      // correct except for spanning the boundary
      Uconj = adj(Cshift(Uconj,mu,-1));
  
@@ -511,11 +562,12 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
      if ( Params.twists[mu] ) { 
        Utmp = where(coor==0,Uconj,Utmp);
      }
+
 	  
      parallel_for(auto ss=U.begin();ss<U.end();ss++){
        Uds[ss](0)(mu+4) = Utmp[ss]();
      }
-	  
+          
      Utmp = Uconj;
      if ( Params.twists[mu] ) { 
        Utmp = where(coor==0,U,Utmp);
@@ -524,7 +576,7 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
      parallel_for(auto ss=U.begin();ss<U.end();ss++){
        Uds[ss](1)(mu+4) = Utmp[ss]();
      }
-	  
+          
    }
  }
       
@@ -544,7 +596,7 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
  inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde, int mu) {
 
    int Ls = Btilde._grid->_fdimensions[0];
-	
+        
    GaugeLinkField tmp(mat._grid);
    tmp = zero;
    parallel_for(int ss = 0; ss < tmp._grid->oSites(); ss++) {

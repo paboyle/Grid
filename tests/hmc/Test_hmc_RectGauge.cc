@@ -1,84 +1,96 @@
-    /*************************************************************************************
+/*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+Grid physics library, www.github.com/paboyle/Grid
 
-    Source file: ./tests/Test_hmc_RectGauge.cc
+Source file: ./tests/Test_hmc_RectGauge.cc
 
-    Copyright (C) 2015
+Copyright (C) 2015-2016
 
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-    See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+See the full license in the file "LICENSE" in the top level distribution
+directory
+*************************************************************************************/
+/*  END LEGAL */
 #include <Grid/Grid.h>
 
-using namespace std;
-using namespace Grid;
-using namespace Grid::QCD;
+int main(int argc, char **argv) {
+  using namespace Grid;
+  using namespace Grid::QCD;
 
-namespace Grid { 
-  namespace QCD { 
-
-
-class HmcRunner : public NerscHmcRunner {
-public:
-
-  void BuildTheAction (int argc, char **argv)
-
-  {
-    typedef WilsonImplR ImplPolicy;
-    typedef WilsonFermionR FermionAction;
-    typedef typename FermionAction::FermionField FermionField;
-
-    UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
-    UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
-  
-    FGrid   = UGrid;
-    FrbGrid = UrbGrid;
-
-    // temporarily need a gauge field
-    LatticeGaugeField  U(UGrid);
-
-    // Gauge action
-    PlaqPlusRectangleActionR Gaction(2.0,0.331);
-
-    //Collect actions
-    ActionLevel<LatticeGaugeField> Level1(1);
-    Level1.push_back(&Gaction);
-    TheAction.push_back(Level1);
-
-    Run(argc,argv);
-  };
-
-};
-
-}}
-
-int main (int argc, char ** argv)
-{
-  Grid_init(&argc,&argv);
-
+  Grid_init(&argc, &argv);
   int threads = GridThread::GetThreads();
-  std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
+  // here make a routine to print all the relevant information on the run
+  std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
-  HmcRunner TheHMC;
+   // Typedefs to simplify notation
+  typedef GenericHMCRunner<MinimumNorm2> HMCWrapper;  // Uses the default minimum norm
+  HMCWrapper TheHMC;
+
+  // Grid from the command line
+  TheHMC.Resources.AddFourDimGrid("gauge");
+  // Possibile to create the module by hand 
+  // hardcoding parameters or using a Reader
+
+
+  // Checkpointer definition
+  CheckpointerParameters CPparams;  
+  CPparams.config_prefix = "ckpoint_lat";
+  CPparams.rng_prefix = "ckpoint_rng";
+  CPparams.saveInterval = 20;
+  CPparams.format = "IEEE64BIG";
   
-  TheHMC.BuildTheAction(argc,argv);
+  TheHMC.Resources.LoadBinaryCheckpointer(CPparams);
 
-}
+  RNGModuleParameters RNGpar;
+  RNGpar.serial_seeds = "1 2 3 4 5";
+  RNGpar.parallel_seeds = "6 7 8 9 10";
+  TheHMC.Resources.SetRNGSeeds(RNGpar);
+
+  // Construct observables
+  typedef PlaquetteMod<HMCWrapper::ImplPolicy> PlaqObs;
+  TheHMC.Resources.AddObservable<PlaqObs>();
+  //////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////////////
+  // Collect actions, here use more encapsulation
+  // need wrappers of the fermionic classes 
+  // that have a complex construction
+  // standard
+  RealD beta = 2.0 ;
+  RealD c_rect = 0.331;
+  PlaqPlusRectangleActionR Gaction(beta, c_rect);
+  
+  ActionLevel<HMCWrapper::Field> Level1(1);
+  Level1.push_back(&Gaction);
+  //Level1.push_back(WGMod.getPtr());
+  TheHMC.TheAction.push_back(Level1);
+  /////////////////////////////////////////////////////////////
+
+  // HMC parameters are serialisable 
+  TheHMC.Parameters.MD.MDsteps = 20;
+  TheHMC.Parameters.MD.trajL   = 1.0;
+
+  TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
+  TheHMC.Run();  // no smearing
+
+  Grid_finalize();
+
+} // main
+
 

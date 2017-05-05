@@ -402,6 +402,19 @@ class Grid_simd {
     else if(perm==0) permute0(y, b);
   }
 
+  ///////////////////////////////
+  // Getting single lanes
+  ///////////////////////////////
+  inline Scalar_type getlane(int lane) {
+    return ((Scalar_type*)&v)[lane];
+  }
+
+  inline void putlane(const Scalar_type &S, int lane){
+    ((Scalar_type*)&v)[lane] = S;
+  }
+
+
+  
 };  // end of Grid_simd class definition
 
 
