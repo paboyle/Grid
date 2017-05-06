@@ -229,10 +229,12 @@ void Grid_init(int *argc,char ***argv)
   if( !GridCmdOptionExists(*argv,*argv+*argc,"--debug-stdout") ){
     Grid_quiesce_nodes();
   } else { 
+    FILE *fp;
     std::ostringstream fname;
     fname<<"Grid.stdout.";
     fname<<CartesianCommunicator::RankWorld();
-    freopen(fname.str().c_str(),"w",stdout);
+    fp=freopen(fname.str().c_str(),"w",stdout);
+    assert(fp!=(FILE *)NULL);
   }
 
   ////////////////////////////////////
