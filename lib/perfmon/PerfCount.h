@@ -212,7 +212,7 @@ public:
       ::ioctl(cyclefd, PERF_EVENT_IOC_DISABLE, 0);
       ign=::read(fd, &count, sizeof(long long));
       ign+=::read(cyclefd, &cycles, sizeof(long long));
-      assert(ign=2*sizeof(longlong));
+      assert(ign=2*sizeof(long long));
     }
     elapsed = cyclecount() - begin;
 #else
