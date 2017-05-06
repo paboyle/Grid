@@ -148,11 +148,13 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
     Complex psqMax(16.0);
     Fp =  psqMax*one/psq;
 
+    /*
     static int once;
     if ( once == 0 ) { 
       std::cout << " Fp " << Fp <<std::endl;
       once ++;
-    }
+      }*/
+
     pokeSite(TComplex(1.0),Fp,coor);
 
     dmuAmu_p  = dmuAmu_p * Fp; 

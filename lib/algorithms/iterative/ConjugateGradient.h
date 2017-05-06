@@ -45,6 +45,8 @@ class ConjugateGradient : public OperatorFunction<Field> {
                            // Defaults true.
   RealD Tolerance;
   Integer MaxIterations;
+  Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion
+  
   ConjugateGradient(RealD tol, Integer maxit, bool err_on_no_conv = true)
       : Tolerance(tol),
         MaxIterations(maxit),
@@ -76,18 +78,12 @@ class ConjugateGradient : public OperatorFunction<Field> {
     cp = a;
     ssq = norm2(src);
 
-    std::cout << GridLogIterative << std::setprecision(4)
-              << "ConjugateGradient: guess " << guess << std::endl;
-    std::cout << GridLogIterative << std::setprecision(4)
-              << "ConjugateGradient:   src " << ssq << std::endl;
-    std::cout << GridLogIterative << std::setprecision(4)
-              << "ConjugateGradient:    mp " << d << std::endl;
-    std::cout << GridLogIterative << std::setprecision(4)
-              << "ConjugateGradient:   mmp " << b << std::endl;
-    std::cout << GridLogIterative << std::setprecision(4)
-              << "ConjugateGradient:  cp,r " << cp << std::endl;
-    std::cout << GridLogIterative << std::setprecision(4)
-              << "ConjugateGradient:     p " << a << std::endl;
+    std::cout << GridLogIterative << std::setprecision(4) << "ConjugateGradient: guess " << guess << std::endl;
+    std::cout << GridLogIterative << std::setprecision(4) << "ConjugateGradient:   src " << ssq << std::endl;
+    std::cout << GridLogIterative << std::setprecision(4) << "ConjugateGradient:    mp " << d << std::endl;
+    std::cout << GridLogIterative << std::setprecision(4) << "ConjugateGradient:   mmp " << b << std::endl;
+    std::cout << GridLogIterative << std::setprecision(4) << "ConjugateGradient:  cp,r " << cp << std::endl;
+    std::cout << GridLogIterative << std::setprecision(4) << "ConjugateGradient:     p " << a << std::endl;
 
     RealD rsq = Tolerance * Tolerance * ssq;
 
@@ -97,8 +93,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
     }
 
     std::cout << GridLogIterative << std::setprecision(4)
-              << "ConjugateGradient: k=0 residual " << cp << " target " << rsq
-              << std::endl;
+              << "ConjugateGradient: k=0 residual " << cp << " target " << rsq << std::endl;
 
     GridStopWatch LinalgTimer;
     GridStopWatch MatrixTimer;
@@ -128,8 +123,11 @@ class ConjugateGradient : public OperatorFunction<Field> {
       p = p * b + r;
 
       LinalgTimer.Stop();
+
       std::cout << GridLogIterative << "ConjugateGradient: Iteration " << k
                 << " residual " << cp << " target " << rsq << std::endl;
+      std::cout << GridLogDebug << "a = "<< a << " b_pred = "<< b_pred << "  b = "<< b << std::endl;
+      std::cout << GridLogDebug << "qq = "<< qq << " d = "<< d << "  c = "<< c << std::endl;
 
       // Stopping condition
       if (cp <= rsq) {
@@ -137,31 +135,33 @@ class ConjugateGradient : public OperatorFunction<Field> {
         Linop.HermOpAndNorm(psi, mmp, d, qq);
         p = mmp - src;
 
-        RealD mmpnorm = sqrt(norm2(mmp));
-        RealD psinorm = sqrt(norm2(psi));
         RealD srcnorm = sqrt(norm2(src));
         RealD resnorm = sqrt(norm2(p));
         RealD true_residual = resnorm / srcnorm;
 
-        std::cout << GridLogMessage
-                  << "ConjugateGradient: Converged on iteration " << k << std::endl;
-        std::cout << GridLogMessage << "Computed residual " << sqrt(cp / ssq)
-                  << " true residual " << true_residual << " target "
-                  << Tolerance << std::endl;
-        std::cout << GridLogMessage << "Time elapsed: Iterations "
-                  << SolverTimer.Elapsed() << " Matrix  "
-                  << MatrixTimer.Elapsed() << " Linalg "
-                  << LinalgTimer.Elapsed();
-        std::cout << std::endl;
+        std::cout << GridLogMessage << "ConjugateGradient Converged on iteration " << k << std::endl;
+        std::cout << GridLogMessage << "\tComputed residual " << sqrt(cp / ssq)<<std::endl;
+	std::cout << GridLogMessage << "\tTrue residual " << true_residual<<std::endl;
+	std::cout << GridLogMessage << "\tTarget " << Tolerance << std::endl;
+
+        std::cout << GridLogMessage << "Time breakdown "<<std::endl;
+	std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed() <<std::endl;
+	std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
+	std::cout << GridLogMessage << "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
 
         if (ErrorOnNoConverge) assert(true_residual / Tolerance < 10000.0);
+
+	IterationsToComplete = k;	
 
         return;
       }
     }
     std::cout << GridLogMessage << "ConjugateGradient did NOT converge"
               << std::endl;
+
     if (ErrorOnNoConverge) assert(0);
+    IterationsToComplete = k;
+
   }
 };
 }

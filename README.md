@@ -22,6 +22,26 @@ Last update Nov 2016.
 
 _Please do not send pull requests to the `master` branch which is reserved for releases._
 
+### Compilers
+
+Intel ICPC v16 and later
+
+Clang v3.5 and later (need 3.8 and later for OpenMP)
+
+GCC   v4.9.x (recommended)
+
+GCC   v6.3 and later
+
+### Important: 
+
+Some versions of GCC appear to have a bug under high optimisation (-O2, -O3).
+
+The safety of these compiler versions cannot be guaranteed at this time. Follow Issue 100 for details and updates.
+
+GCC   v5.x
+
+GCC   v6.1, v6.2
+
 ### Bug report
 
 _To help us tracking and solving more efficiently issues with Grid, please report problems using the issue system of GitHub rather than sending emails to Grid developers._
@@ -95,10 +115,10 @@ install Grid. Other options are detailed in the next section, you can also use `
 `CXX`, `CXXFLAGS`, `LDFLAGS`, ... environment variables can be modified to
 customise the build.
 
-Finally, you can build and install Grid:
+Finally, you can build, check, and install Grid:
 
 ``` bash
-make; make install
+make; make check; make install
 ```
 
 To minimise the build time, only the tests at the root of the `tests` directory are built by default. If you want to build tests in the sub-directory `<subdir>` you can execute:
@@ -116,13 +136,15 @@ If you want to build all the tests at once just use `make tests`.
 - `--with-fftw=<path>`: look for FFTW in the UNIX prefix `<path>`
 - `--enable-lapack[=<path>]`: enable LAPACK support in Lanczos eigensolver. A UNIX prefix containing the library can be specified (optional).
 - `--enable-mkl[=<path>]`: use Intel MKL for FFT (and LAPACK if enabled) routines. A UNIX prefix containing the library can be specified (optional).
-- `--enable-numa`: ???
+- `--enable-numa`: enable NUMA first touch optimisation
 - `--enable-simd=<code>`: setup Grid for the SIMD target `<code>` (default: `GEN`). A list of possible SIMD targets is detailed in a section below.
+- `--enable-gen-simd-width=<size>`: select the size (in bytes) of the generic SIMD vector type (default: 32 bytes).
 - `--enable-precision={single|double}`: set the default precision (default: `double`).
 - `--enable-precision=<comm>`: Use `<comm>` for message passing (default: `none`). A list of possible SIMD targets is detailed in a section below.
-- `--enable-rng={ranlux48|mt19937}`: choose the RNG (default: `ranlux48 `).
+- `--enable-rng={sitmo|ranlux48|mt19937}`: choose the RNG (default: `sitmo `).
 - `--disable-timers`: disable system dependent high-resolution timers.
 - `--enable-chroma`: enable Chroma regression tests.
+- `--enable-doxygen-doc`: enable the Doxygen documentation generation (build with `make doxygen-doc`)
 
 ### Possible communication interfaces
 
@@ -136,7 +158,7 @@ The following options can be use with the `--enable-comms=` option to target dif
 | `mpi3l[-auto]` | MPI communications using MPI 3 shared memory and leader model |
 | `shmem `       | Cray SHMEM communications                                     |
 
-For the MPI interfaces the optional `-auto` suffix instructs the `configure` scripts to determine all the necessary compilation and linking flags. This is done by extracting the informations from the MPI wrapper specified in the environment variable `MPICXX` (if not specified `configure` will scan though a list of default names).
+For the MPI interfaces the optional `-auto` suffix instructs the `configure` scripts to determine all the necessary compilation and linking flags. This is done by extracting the informations from the MPI wrapper specified in the environment variable `MPICXX` (if not specified `configure` will scan though a list of default names). The `-auto` suffix is not supported by the Cray environment wrapper scripts. Use the standard versions instead.  
 
 ### Possible SIMD types
 
@@ -157,7 +179,6 @@ Alternatively, some CPU codenames can be directly used:
 
 | `<code>`    | Description                            |
 | ----------- | -------------------------------------- |
-| `KNC`       | [Intel Xeon Phi codename Knights Corner](http://ark.intel.com/products/codename/57721/Knights-Corner) |
 | `KNL`       | [Intel Xeon Phi codename Knights Landing](http://ark.intel.com/products/codename/48999/Knights-Landing) |
 | `BGQ`       | Blue Gene/Q                            |
 
@@ -165,6 +186,7 @@ Alternatively, some CPU codenames can be directly used:
 - We currently support AVX512 only for the Intel compiler. Support for GCC and clang will appear in future versions of Grid when the AVX512 support within GCC and clang will be more advanced.
 - For BG/Q only [bgclang](http://trac.alcf.anl.gov/projects/llvm-bgq) is supported. We do not presently plan to support more compilers for this platform.
 - BG/Q performances are currently rather poor. This is being investigated for future versions.
+- The vector size for the `GEN` target can be specified with the `configure` script option `--enable-gen-simd-width`.
 
 ### Build setup for Intel Knights Landing platform
 

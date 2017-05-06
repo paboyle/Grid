@@ -31,8 +31,6 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-#define parallel_for PARALLEL_FOR_LOOP for
-
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
@@ -47,8 +45,19 @@ int main (int argc, char ** argv)
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
-
-  std::vector<int> seeds4({1,2,3,4});
+  
+  // Want a different conf at every run
+  // First create an instance of an engine.
+  std::random_device rnd_device;
+  // Specify the engine and distribution.
+  std::mt19937 mersenne_engine(rnd_device());
+  std::uniform_int_distribution<int> dist(1, 100);
+  
+  auto gen = std::bind(dist, mersenne_engine);
+  std::vector<int> seeds4(4);
+  generate(begin(seeds4), end(seeds4), gen);
+  
+  //std::vector<int> seeds4({1,2,3,5});
   std::vector<int> seeds5({5,6,7,8});
   GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
@@ -147,6 +156,8 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Sprime "<<Sprime<<std::endl;
   std::cout << GridLogMessage << "dS      "<<Sprime-S<<std::endl;
   std::cout << GridLogMessage << "predict dS    "<< dSpred <<std::endl;
+
+  assert( fabs(real(Sprime-S-dSpred)) < 1.0e-2 ) ;
 
   std::cout<< GridLogMessage << "Done" <<std::endl;
   Grid_finalize();

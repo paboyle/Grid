@@ -37,8 +37,7 @@ namespace Grid {
     Lattice<obj> ret(rhs._grid);
     ret.checkerboard = rhs.checkerboard;
     conformable(ret,rhs);
-PARALLEL_FOR_LOOP
-    for(int ss=0;ss<rhs._grid->oSites();ss++){
+    parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
       ret._odata[ss]=pow(rhs._odata[ss],y);
     }
     return ret;
@@ -47,8 +46,7 @@ PARALLEL_FOR_LOOP
     Lattice<obj> ret(rhs._grid);
     ret.checkerboard = rhs.checkerboard;
     conformable(ret,rhs);
-PARALLEL_FOR_LOOP
-    for(int ss=0;ss<rhs._grid->oSites();ss++){
+    parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
       ret._odata[ss]=mod(rhs._odata[ss],y);
     }
     return ret;
@@ -58,8 +56,7 @@ PARALLEL_FOR_LOOP
     Lattice<obj> ret(rhs._grid);
     ret.checkerboard = rhs.checkerboard;
     conformable(ret,rhs);
-PARALLEL_FOR_LOOP
-    for(int ss=0;ss<rhs._grid->oSites();ss++){
+    parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
       ret._odata[ss]=div(rhs._odata[ss],y);
     }
     return ret;
@@ -69,8 +66,7 @@ PARALLEL_FOR_LOOP
     Lattice<obj> ret(rhs._grid);
     ret.checkerboard = rhs.checkerboard;
     conformable(ret,rhs);
-PARALLEL_FOR_LOOP
-    for(int ss=0;ss<rhs._grid->oSites();ss++){
+    parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
       ret._odata[ss]=Exponentiate(rhs._odata[ss],alpha, Nexp);
     }
     return ret;

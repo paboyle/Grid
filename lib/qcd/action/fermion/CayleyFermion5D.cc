@@ -29,8 +29,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 
-#include <Grid.h>
-
+#include <Grid/Grid_Eigen_Dense.h>
+#include <Grid/qcd/action/fermion/FermionCore.h>
+#include <Grid/qcd/action/fermion/CayleyFermion5D.h>
 
 namespace Grid {
 namespace QCD {
@@ -48,32 +49,77 @@ namespace QCD {
 		   FourDimGrid,
  	 	   FourDimRedBlackGrid,_M5,p),
    mass(_mass)
- { }
+ { 
+ }
 
 template<class Impl>  
 void CayleyFermion5D<Impl>::Dminus(const FermionField &psi, FermionField &chi)
 {
   int Ls=this->Ls;
-  FermionField tmp(psi._grid);
 
-  this->DW(psi,tmp,DaggerNo);
+  FermionField tmp_f(this->FermionGrid());
+  this->DW(psi,tmp_f,DaggerNo);
 
   for(int s=0;s<Ls;s++){
-    axpby_ssp(chi,Coeff_t(1.0),psi,-cs[s],tmp,s,s);// chi = (1-c[s] D_W) psi
+    axpby_ssp(chi,Coeff_t(1.0),psi,-cs[s],tmp_f,s,s);// chi = (1-c[s] D_W) psi
   }
 }
 template<class Impl>  
 void CayleyFermion5D<Impl>::DminusDag(const FermionField &psi, FermionField &chi)
 {
   int Ls=this->Ls;
-  FermionField tmp(psi._grid);
 
-  this->DW(psi,tmp,DaggerYes);
+  FermionField tmp_f(this->FermionGrid());
+  this->DW(psi,tmp_f,DaggerYes);
 
   for(int s=0;s<Ls;s++){
-    axpby_ssp(chi,Coeff_t(1.0),psi,-cs[s],tmp,s,s);// chi = (1-c[s] D_W) psi
+    axpby_ssp(chi,Coeff_t(1.0),psi,-cs[s],tmp_f,s,s);// chi = (1-c[s] D_W) psi
   }
 }
+
+
+template<class Impl> void CayleyFermion5D<Impl>::CayleyReport(void)
+{
+  this->Report();
+  std::vector<int> latt = GridDefaultLatt();          
+  RealD volume = this->Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt[mu];
+  RealD NP     = this->_FourDimGrid->_Nprocessors;
+  if ( M5Dcalls > 0 ) {
+    std::cout << GridLogMessage << "#### M5D calls report " << std::endl;
+    std::cout << GridLogMessage << "CayleyFermion5D Number of M5D Calls     : " << M5Dcalls   << std::endl;
+    std::cout << GridLogMessage << "CayleyFermion5D ComputeTime/Calls       : " << M5Dtime / M5Dcalls << " us" << std::endl;
+
+    // Flops = 6.0*(Nc*Ns) *Ls*vol
+    RealD mflops = 6.0*12*volume*M5Dcalls/M5Dtime/2; // 2 for red black counting
+    std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
+    std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
+  }
+
+  if ( MooeeInvCalls > 0 ) {
+
+    std::cout << GridLogMessage << "#### MooeeInv calls report " << std::endl;
+    std::cout << GridLogMessage << "CayleyFermion5D Number of MooeeInv Calls     : " << MooeeInvCalls   << std::endl;
+    std::cout << GridLogMessage << "CayleyFermion5D ComputeTime/Calls            : " << MooeeInvTime / MooeeInvCalls << " us" << std::endl;
+
+    // Flops = MADD * Ls *Ls *4dvol * spin/colour/complex
+    RealD mflops = 2.0*24*this->Ls*volume*MooeeInvCalls/MooeeInvTime/2; // 2 for red black counting
+    std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
+    std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
+  }
+
+}
+template<class Impl> void CayleyFermion5D<Impl>::CayleyZeroCounters(void)
+{
+  this->ZeroCounters();
+  M5Dflops=0;
+  M5Dcalls=0;
+  M5Dtime=0;
+  MooeeInvFlops=0;
+  MooeeInvCalls=0;
+  MooeeInvTime=0;
+}
+
+
 template<class Impl>  
 void CayleyFermion5D<Impl>::M5D   (const FermionField &psi, FermionField &chi)
 {
@@ -94,6 +140,7 @@ void CayleyFermion5D<Impl>::Meooe5D    (const FermionField &psi, FermionField &D
   lower[0]   =-mass*lower[0];
   M5D(psi,psi,Din,lower,diag,upper);
 }
+// FIXME Redunant with the above routine; check this and eliminate
 template<class Impl> void CayleyFermion5D<Impl>::Meo5D     (const FermionField &psi, FermionField &chi)
 {
   int Ls=this->Ls;
@@ -123,7 +170,6 @@ void CayleyFermion5D<Impl>::Mooee       (const FermionField &psi, FermionField &
   lower[0]   =-mass*lower[0];
   M5D(psi,psi,chi,lower,diag,upper);
 }
-
 template<class Impl>
 void CayleyFermion5D<Impl>::MooeeDag    (const FermionField &psi, FermionField &chi)
 {
@@ -145,7 +191,12 @@ void CayleyFermion5D<Impl>::MooeeDag    (const FermionField &psi, FermionField &
       lower[s]=-cee[s-1];
     }
   }
-
+  // Conjugate the terms 
+  for (int s=0;s<Ls;s++){
+    diag[s] =conjugate(diag[s]);
+    upper[s]=conjugate(upper[s]);
+    lower[s]=conjugate(lower[s]);
+  }
   M5Ddag(psi,psi,chi,lower,diag,upper);
 }
 
@@ -167,9 +218,23 @@ void CayleyFermion5D<Impl>::MeooeDag5D    (const FermionField &psi, FermionField
   int Ls=this->Ls;
   std::vector<Coeff_t> diag =bs;
   std::vector<Coeff_t> upper=cs;
-  std::vector<Coeff_t> lower=cs;
-  upper[Ls-1]=-mass*upper[Ls-1];
-  lower[0]   =-mass*lower[0];
+  std::vector<Coeff_t> lower=cs; 
+
+  for (int s=0;s<Ls;s++){
+    if ( s== 0 ) {
+      upper[s] = cs[s+1];
+      lower[s] =-mass*cs[Ls-1];
+    } else if ( s==(Ls-1) ) { 
+      upper[s] =-mass*cs[0];
+      lower[s] = cs[s-1];
+    } else { 
+      upper[s] = cs[s+1];
+      lower[s] = cs[s-1];
+    }
+    upper[s] = conjugate(upper[s]);
+    lower[s] = conjugate(lower[s]);
+    diag[s]  = conjugate(diag[s]);
+  }
   M5Ddag(psi,psi,Din,lower,diag,upper);
 }
 
@@ -215,36 +280,33 @@ template<class Impl>
 void CayleyFermion5D<Impl>::Meooe       (const FermionField &psi, FermionField &chi)
 {
   int Ls=this->Ls;
-  FermionField tmp(psi._grid);
 
-  Meooe5D(psi,tmp); 
+  Meooe5D(psi,this->tmp()); 
 
   if ( psi.checkerboard == Odd ) {
-    this->DhopEO(tmp,chi,DaggerNo);
+    this->DhopEO(this->tmp(),chi,DaggerNo);
   } else {
-    this->DhopOE(tmp,chi,DaggerNo);
+    this->DhopOE(this->tmp(),chi,DaggerNo);
   }
 }
 
 template<class Impl>
 void CayleyFermion5D<Impl>::MeooeDag    (const FermionField &psi, FermionField &chi)
 {
-  FermionField tmp(psi._grid);
   // Apply 4d dslash
   if ( psi.checkerboard == Odd ) {
-    this->DhopEO(psi,tmp,DaggerYes);
+    this->DhopEO(psi,this->tmp(),DaggerYes);
   } else {
-    this->DhopOE(psi,tmp,DaggerYes);
+    this->DhopOE(psi,this->tmp(),DaggerYes);
   }
-  MeooeDag5D(tmp,chi); 
+  MeooeDag5D(this->tmp(),chi); 
 }
 
 template<class Impl>
 void  CayleyFermion5D<Impl>::Mdir (const FermionField &psi, FermionField &chi,int dir,int disp){
-  FermionField tmp(psi._grid);
-  Meo5D(psi,tmp);
+  Meo5D(psi,this->tmp());
   // Apply 4d dslash fragment
-  this->DhopDir(tmp,chi,dir,disp);
+  this->DhopDir(this->tmp(),chi,dir,disp);
 }
 // force terms; five routines; default to Dhop on diagonal
 template<class Impl>
@@ -273,8 +335,8 @@ void CayleyFermion5D<Impl>::MoeDeriv(GaugeField &mat,const FermionField &U,const
     this->DhopDerivOE(mat,U,Din,dag);
   } else {
     //      U d/du [D_w D5]^dag V = U D5^dag d/du DW^dag Y // implicit adj on U in call
-      Meooe5D(U,Din);
-      this->DhopDerivOE(mat,Din,V,dag);
+    Meooe5D(U,Din);
+    this->DhopDerivOE(mat,Din,V,dag);
   }
 };
 template<class Impl>
@@ -318,6 +380,8 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
   ///////////////////////////////////////////////////////////
   // The Cayley coeffs (unprec)
   ///////////////////////////////////////////////////////////
+  assert(gamma.size()==Ls);
+
   omega.resize(Ls);
   bs.resize(Ls);
   cs.resize(Ls);
@@ -350,10 +414,11 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
   for(int i=0; i < Ls; i++){
     as[i] = 1.0;
     omega[i] = gamma[i]*zolo_hi; //NB reciprocal relative to Chroma NEF code
+    //    assert(fabs(omega[i])>0.0);
     bs[i] = 0.5*(bpc/omega[i] + bmc);
     cs[i] = 0.5*(bpc/omega[i] - bmc);
   }
-  
+
   ////////////////////////////////////////////////////////
   // Constants for the preconditioned matrix Cayley form
   ////////////////////////////////////////////////////////
@@ -363,12 +428,12 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
   ceo.resize(Ls);
   
   for(int i=0;i<Ls;i++){
-    bee[i]=as[i]*(bs[i]*(4.0-this->M5) +1.0);
+    bee[i]=as[i]*(bs[i]*(4.0-this->M5) +1.0);     
+    //    assert(fabs(bee[i])>0.0);
     cee[i]=as[i]*(1.0-cs[i]*(4.0-this->M5));
     beo[i]=as[i]*bs[i];
     ceo[i]=-as[i]*cs[i];
   }
-  
   aee.resize(Ls);
   aeo.resize(Ls);
   for(int i=0;i<Ls;i++){
@@ -412,11 +477,97 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
 	
   { 
     Coeff_t delta_d=mass*cee[Ls-1];
-    for(int j=0;j<Ls-1;j++) delta_d *= cee[j]/bee[j];
+    for(int j=0;j<Ls-1;j++) {
+      //      assert(fabs(bee[j])>0.0);
+      delta_d *= cee[j]/bee[j];
+    }
     dee[Ls-1] += delta_d;
   }  
+
+  int inv=1;
+  this->MooeeInternalCompute(0,inv,MatpInv,MatmInv);
+  this->MooeeInternalCompute(1,inv,MatpInvDag,MatmInvDag);
 }
 
+
+template<class Impl>
+void CayleyFermion5D<Impl>::MooeeInternalCompute(int dag, int inv,
+						 Vector<iSinglet<Simd> > & Matp,
+						 Vector<iSinglet<Simd> > & Matm)
+{
+  int Ls=this->Ls;
+
+  GridBase *grid = this->FermionRedBlackGrid();
+  int LLs = grid->_rdimensions[0];
+
+  if ( LLs == Ls ) {
+    return; // Not vectorised in 5th direction
+  }
+
+  Eigen::MatrixXcd Pplus  = Eigen::MatrixXcd::Zero(Ls,Ls);
+  Eigen::MatrixXcd Pminus = Eigen::MatrixXcd::Zero(Ls,Ls);
+  
+  for(int s=0;s<Ls;s++){
+    Pplus(s,s) = bee[s];
+    Pminus(s,s)= bee[s];
+  }
+  
+  for(int s=0;s<Ls-1;s++){
+    Pminus(s,s+1) = -cee[s];
+  }
+  
+  for(int s=0;s<Ls-1;s++){
+    Pplus(s+1,s) = -cee[s+1];
+  }
+  Pplus (0,Ls-1) = mass*cee[0];
+  Pminus(Ls-1,0) = mass*cee[Ls-1];
+  
+  Eigen::MatrixXcd PplusMat ;
+  Eigen::MatrixXcd PminusMat;
+  
+  if ( inv ) {
+    PplusMat =Pplus.inverse();
+    PminusMat=Pminus.inverse();
+  } else { 
+    PplusMat =Pplus;
+    PminusMat=Pminus;
+  }
+  
+  if(dag){
+    PplusMat.adjointInPlace();
+    PminusMat.adjointInPlace();
+  }
+  
+  typedef typename SiteHalfSpinor::scalar_type scalar_type;
+  const int Nsimd=Simd::Nsimd();
+  Matp.resize(Ls*LLs);
+  Matm.resize(Ls*LLs);
+
+  for(int s2=0;s2<Ls;s2++){
+  for(int s1=0;s1<LLs;s1++){
+    int istride = LLs;
+    int ostride = 1;
+    Simd Vp;
+    Simd Vm;
+    scalar_type *sp = (scalar_type *)&Vp;
+    scalar_type *sm = (scalar_type *)&Vm;
+    for(int l=0;l<Nsimd;l++){
+      if ( switcheroo<Coeff_t>::iscomplex() ) {
+	sp[l] = PplusMat (l*istride+s1*ostride,s2);
+	sm[l] = PminusMat(l*istride+s1*ostride,s2);
+      } else { 
+      // if real
+	scalar_type tmp;
+	tmp = PplusMat (l*istride+s1*ostride,s2);
+	sp[l] = scalar_type(tmp.real(),tmp.real());
+	tmp = PminusMat(l*istride+s1*ostride,s2);
+	sm[l] = scalar_type(tmp.real(),tmp.real());
+      }
+    }
+    Matp[LLs*s2+s1] = Vp;
+    Matm[LLs*s2+s1] = Vm;
+  }}
+}
 
 
   FermOpTemplateInstantiate(CayleyFermion5D);

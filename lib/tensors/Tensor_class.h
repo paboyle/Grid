@@ -1,9 +1,6 @@
 /*************************************************************************************
-
 Grid physics library, www.github.com/paboyle/Grid
-
 Source file: ./lib/tensors/Tensor_class.h
-
 Copyright (C) 2015
 
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
@@ -13,16 +10,13 @@ This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 2 of the License, or
 (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
@@ -56,15 +50,18 @@ class iScalar {
   typedef vtype element;
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
+  typedef typename GridTypeMapper<vtype>::vector_typeD vector_typeD;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
-  typedef iScalar<tensor_reduced_v> tensor_reduced;
   typedef typename GridTypeMapper<vtype>::scalar_object recurse_scalar_object;
+  typedef iScalar<tensor_reduced_v> tensor_reduced;
   typedef iScalar<recurse_scalar_object> scalar_object;
-
   // substitutes a real or complex version with same tensor structure
   typedef iScalar<typename GridTypeMapper<vtype>::Complexified> Complexified;
   typedef iScalar<typename GridTypeMapper<vtype>::Realified> Realified;
 
+  // get double precision version
+  typedef iScalar<typename GridTypeMapper<vtype>::DoublePrecision> DoublePrecision;
+  
   enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1 };
 
   // Scalar no action
@@ -77,8 +74,12 @@ class iScalar {
   iScalar<vtype> & operator= (const iScalar<vtype> &copyme) = default;
   iScalar<vtype> & operator= (iScalar<vtype> &&copyme) = default;
   */
-  iScalar(scalar_type s)
-      : _internal(s){};  // recurse down and hit the constructor for vector_type
+
+  //  template<int N=0>
+  //  iScalar(EnableIf<isSIMDvectorized<vector_type>, vector_type> s) : _internal(s){};  // recurse down and hit the constructor for vector_type
+
+  iScalar(scalar_type s) : _internal(s){};  // recurse down and hit the constructor for vector_type
+
   iScalar(const Zero &z) { *this = zero; };
 
   iScalar<vtype> &operator=(const Zero &hero) {
@@ -105,6 +106,11 @@ class iScalar {
   friend strong_inline void rotate(iScalar<vtype> &out,const iScalar<vtype> &in,int rot){
     rotate(out._internal,in._internal,rot);
   }
+  friend strong_inline void exchange(iScalar<vtype> &out1,iScalar<vtype> &out2,
+				     const iScalar<vtype> &in1,const iScalar<vtype> &in2,int type){
+    exchange(out1._internal,out2._internal,
+	      in1._internal, in2._internal,type);
+  }
 
   // Unary negation
   friend strong_inline iScalar<vtype> operator-(const iScalar<vtype> &r) {
@@ -129,42 +135,38 @@ class iScalar {
   strong_inline const vtype &operator()(void) const { return _internal; }
 
   // Type casts meta programmed, must be pure scalar to match TensorRemove
-  template <class U = vtype, class V = scalar_type, IfComplex<V> = 0,
-            IfNotSimd<U> = 0>
+  template <class U = vtype, class V = scalar_type, IfComplex<V> = 0, IfNotSimd<U> = 0>
   operator ComplexF() const {
     return (TensorRemove(_internal));
   };
-  template <class U = vtype, class V = scalar_type, IfComplex<V> = 0,
-            IfNotSimd<U> = 0>
+  template <class U = vtype, class V = scalar_type, IfComplex<V> = 0, IfNotSimd<U> = 0>
   operator ComplexD() const {
     return (TensorRemove(_internal));
   };
   //  template<class U=vtype,class V=scalar_type,IfComplex<V> = 0,IfNotSimd<U> =
   //  0> operator RealD    () const { return(real(TensorRemove(_internal))); }
-  template <class U = vtype, class V = scalar_type, IfReal<V> = 0,
-            IfNotSimd<U> = 0>
+  template <class U = vtype, class V = scalar_type, IfReal<V> = 0,IfNotSimd<U> = 0>
   operator RealD() const {
     return TensorRemove(_internal);
   }
-  template <class U = vtype, class V = scalar_type, IfInteger<V> = 0,
-            IfNotSimd<U> = 0>
+  template <class U = vtype, class V = scalar_type, IfInteger<V> = 0, IfNotSimd<U> = 0>
   operator Integer() const {
     return Integer(TensorRemove(_internal));
   }
 
   // convert from a something to a scalar via constructor of something arg
-  template <class T, typename std::enable_if<!isGridTensor<T>::value, T>::type
-                         * = nullptr>
-  strong_inline iScalar<vtype> operator=(T arg) {
+  template <class T, typename std::enable_if<!isGridTensor<T>::value, T>::type * = nullptr>
+    strong_inline iScalar<vtype> operator=(T arg) {
     _internal = arg;
     return *this;
   }
 
-  friend std::ostream &operator<<(std::ostream &stream,
-                                  const iScalar<vtype> &o) {
+  friend std::ostream &operator<<(std::ostream &stream,const iScalar<vtype> &o) {
     stream << "S {" << o._internal << "}";
     return stream;
   };
+
+
 };
 ///////////////////////////////////////////////////////////
 // Allows to turn scalar<scalar<scalar<double>>>> back to double.
@@ -188,6 +190,7 @@ class iVector {
   typedef vtype element;
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
+  typedef typename GridTypeMapper<vtype>::vector_typeD vector_typeD;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
   typedef typename GridTypeMapper<vtype>::scalar_object recurse_scalar_object;
   typedef iScalar<tensor_reduced_v> tensor_reduced;
@@ -197,6 +200,9 @@ class iVector {
   typedef iVector<typename GridTypeMapper<vtype>::Complexified, N> Complexified;
   typedef iVector<typename GridTypeMapper<vtype>::Realified, N> Realified;
 
+  // get double precision version
+  typedef iVector<typename GridTypeMapper<vtype>::DoublePrecision, N> DoublePrecision;
+  
   template <class T, typename std::enable_if<!isGridTensor<T>::value, T>::type
                          * = nullptr>
   strong_inline auto operator=(T arg) -> iVector<vtype, N> {
@@ -248,6 +254,13 @@ class iVector {
       rotate(out._internal[i],in._internal[i],rot);
     }
   }
+  friend strong_inline void exchange(iVector<vtype,N> &out1,iVector<vtype,N> &out2,
+				     const iVector<vtype,N> &in1,const iVector<vtype,N> &in2,int type){
+    for(int i=0;i<N;i++){
+      exchange(out1._internal[i],out2._internal[i],
+	        in1._internal[i], in2._internal[i],type);
+    }
+  }
 
   // Unary negation
   friend strong_inline iVector<vtype, N> operator-(const iVector<vtype, N> &r) {
@@ -293,6 +306,7 @@ class iMatrix {
   typedef vtype element;
   typedef typename GridTypeMapper<vtype>::scalar_type scalar_type;
   typedef typename GridTypeMapper<vtype>::vector_type vector_type;
+  typedef typename GridTypeMapper<vtype>::vector_typeD vector_typeD;
   typedef typename GridTypeMapper<vtype>::tensor_reduced tensor_reduced_v;
   typedef typename GridTypeMapper<vtype>::scalar_object recurse_scalar_object;
 
@@ -300,7 +314,10 @@ class iMatrix {
   typedef iMatrix<typename GridTypeMapper<vtype>::Complexified, N> Complexified;
   typedef iMatrix<typename GridTypeMapper<vtype>::Realified, N> Realified;
 
-  // Tensure removal
+  // get double precision version
+  typedef iMatrix<typename GridTypeMapper<vtype>::DoublePrecision, N> DoublePrecision;
+  
+  // Tensor removal
   typedef iScalar<tensor_reduced_v> tensor_reduced;
   typedef iMatrix<recurse_scalar_object, N> scalar_object;
 
@@ -372,6 +389,14 @@ class iMatrix {
     for(int i=0;i<N;i++){
       for(int j=0;j<N;j++){
 	rotate(out._internal[i][j],in._internal[i][j],rot);
+    }}
+  }
+  friend strong_inline void exchange(iMatrix<vtype,N> &out1,iMatrix<vtype,N> &out2,
+				     const iMatrix<vtype,N> &in1,const iMatrix<vtype,N> &in2,int type){
+    for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+	exchange(out1._internal[i][j],out2._internal[i][j],
+		  in1._internal[i][j], in2._internal[i][j],type);
     }}
   }
 
@@ -448,3 +473,6 @@ void vprefetch(const iMatrix<v, N> &vv) {
 }
 }
 #endif
+
+
+

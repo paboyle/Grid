@@ -504,7 +504,7 @@ int main (int argc, char ** argv)
   GridParallelRNG          RNG4(UGrid);   RNG4.SeedFixedIntegers(seeds4);
   GridParallelRNG          CRNG(Coarse5d);CRNG.SeedFixedIntegers(cseeds);
 
-  Gamma g5(Gamma::Gamma5);
+  Gamma g5(Gamma::Algebra::Gamma5);
 
   LatticeFermion    src(FGrid); gaussian(RNG5,src);// src=src+g5*src;
   LatticeFermion result(FGrid); result=zero;

@@ -9,6 +9,7 @@
 ################
 *~
 *#
+*.sublime-*
 
 # Precompiled Headers #
 #######################
@@ -47,7 +48,9 @@ Config.h.in
 config.log
 config.status
 .deps
-*.inc
+Make.inc
+eigen.inc
+Eigen.inc
 
 # http://www.gnu.org/software/autoconf #
 ########################################
@@ -89,6 +92,7 @@ build*/*
 #####################
 *.xcodeproj/*
 build.sh
+.vscode
 
 # Eigen source #
 ################
@@ -102,3 +106,20 @@ lib/fftw/*
 ##################
 m4/lt*
 m4/libtool.m4
+
+# github pages #
+################
+gh-pages/
+
+# Buck files #
+##############
+.buck*
+buck-out
+BUCK
+make-bin-BUCK.sh
+
+# generated sources #
+#####################
+lib/qcd/spin/gamma-gen/*.h
+lib/qcd/spin/gamma-gen/*.cc
+

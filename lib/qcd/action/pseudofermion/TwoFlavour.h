@@ -62,9 +62,17 @@ class TwoFlavourPseudoFermionAction : public Action<typename Impl::GaugeField> {
         ActionSolver(AS),
         Phi(Op.FermionGrid()){};
 
+
+  virtual std::string action_name(){return "TwoFlavourPseudoFermionAction";}
+
+  virtual std::string LogParameters(){
+    std::stringstream sstream;
+    sstream << GridLogMessage << "["<<action_name()<<"] has no parameters" << std::endl;
+    return sstream.str();
+  }  
+  
   //////////////////////////////////////////////////////////////////////////////////////
-  // Push the gauge field in to the dops. Assume any BC's and smearing already
-  // applied
+  // Push the gauge field in to the dops. Assume any BC's and smearing already applied
   //////////////////////////////////////////////////////////////////////////////////////
   virtual void refresh(const GaugeField &U, GridParallelRNG &pRNG) {
     // P(phi) = e^{- phi^dag (MdagM)^-1 phi}
@@ -81,7 +89,9 @@ class TwoFlavourPseudoFermionAction : public Action<typename Impl::GaugeField> {
     //         in the Phi integral, and thus is only an irrelevant prefactor for
     //         the partition function.
     //
+
     RealD scale = std::sqrt(0.5);
+
     FermionField eta(FermOp.FermionGrid());
 
     gaussian(pRNG, eta);
@@ -107,8 +117,7 @@ class TwoFlavourPseudoFermionAction : public Action<typename Impl::GaugeField> {
     MdagMOp.Op(X, Y);
 
     RealD action = norm2(Y);
-    std::cout << GridLogMessage << "Pseudofermion action " << action
-              << std::endl;
+    std::cout << GridLogMessage << "Pseudofermion action " << action << std::endl;
     return action;
   };
 
@@ -119,6 +128,7 @@ class TwoFlavourPseudoFermionAction : public Action<typename Impl::GaugeField> {
   //
   //       = - Ydag dM X  - Xdag dMdag Y
   //
+  // 
   //////////////////////////////////////////////////////
   virtual void deriv(const GaugeField &U, GaugeField &dSdU) {
     FermOp.ImportGauge(U);
@@ -133,8 +143,7 @@ class TwoFlavourPseudoFermionAction : public Action<typename Impl::GaugeField> {
     DerivativeSolver(MdagMOp, Phi, X); // X = (MdagM)^-1 phi    
     MdagMOp.Op(X, Y);                  // Y = M X = (Mdag)^-1 phi
 
-    // Our conventions really make this UdSdU; We do not differentiate wrt Udag
-    // here.
+    // Our conventions really make this UdSdU; We do not differentiate wrt Udag here.
     // So must take dSdU - adj(dSdU) and left multiply by mom to get dS/dt.
 
     FermOp.MDeriv(tmp, Y, X, DaggerNo);

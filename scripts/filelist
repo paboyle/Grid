@@ -4,12 +4,15 @@ home=`pwd`
 
 # library Make.inc
 cd $home/lib
-HFILES=`find . -type f -name '*.h' -not -path '*/Old/*' -not -path '*/Eigen/*'`
+HFILES=`find . -type f -name '*.h' -not -name '*Hdf5*' -not -path '*/gamma-gen/*' -not -path '*/Old/*' -not -path '*/Eigen/*'`
 HFILES="$HFILES"
-CCFILES=`find . -type f -name '*.cc' -not  -name '*ommunicator*.cc'`
-echo HFILES=$HFILES > Make.inc
+CCFILES=`find . -type f -name '*.cc' -not -path '*/gamma-gen/*' -not -name '*Communicator*.cc' -not -name '*Hdf5*'`
+HPPFILES=`find . -type f -name '*.hpp'`
+echo HFILES=$HFILES $HPPFILES > Make.inc
 echo >> Make.inc
 echo CCFILES=$CCFILES >> Make.inc
+
+
 
 # tests Make.inc
 cd $home/tests
@@ -20,14 +23,14 @@ for subdir in $dirs; do
     TESTS=`ls T*.cc`
     TESTLIST=`echo ${TESTS} | sed s/.cc//g `
     PREF=`[ $subdir = '.' ] && echo noinst || echo EXTRA`
-    SUB=`[ $subdir = '.' ] && echo subtests`
-    echo "tests: ${TESTLIST} ${SUB}" > Make.inc
+    echo "tests-local: ${TESTLIST} " > Make.inc
     echo ${PREF}_PROGRAMS = ${TESTLIST} >> Make.inc
     echo >> Make.inc
+    HADLINK=`[ $subdir = './hadrons' ] && echo '-lHadrons '`
     for f in $TESTS; do
 	   BNAME=`basename $f .cc`
-	   echo ${BNAME}_SOURCES=$f  >> Make.inc
-	   echo ${BNAME}_LDADD=-lGrid>> Make.inc
+	   echo ${BNAME}_SOURCES=$f >> Make.inc
+	   echo ${BNAME}_LDADD=${HADLINK}-lGrid  >> Make.inc
 	   echo >> Make.inc
     done
     if [ $subdir != '.' ]; then

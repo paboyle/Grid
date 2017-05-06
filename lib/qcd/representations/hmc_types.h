@@ -4,6 +4,8 @@
 #include <Grid/qcd/representations/adjoint.h>
 #include <Grid/qcd/representations/two_index.h>
 #include <Grid/qcd/representations/fundamental.h>
+#include <Grid/qcd/action/scalar/ScalarImpl.h>
+
 #include <tuple>
 #include <utility>
 
@@ -39,13 +41,17 @@ class Representations {
   int size() { return tuple_size; }
 
   // update the fields
+  // fields in the main representation always the first in the list
+  // get the field type
+  typedef typename std::tuple_element<0,Representation_Fields>::type LatticeSourceField;
+  
   template <std::size_t I = 0>
   inline typename std::enable_if<(I == tuple_size), void>::type update(
-      LatticeGaugeField& U) {}
+      LatticeSourceField& U) {}
 
   template <std::size_t I = 0>
   inline typename std::enable_if<(I < tuple_size), void>::type update(
-      LatticeGaugeField& U) {
+      LatticeSourceField& U) {
     std::get<I>(rep).update_representation(U);
     update<I + 1>(U);
   }
@@ -55,6 +61,8 @@ class Representations {
 };
 
 typedef Representations<FundamentalRepresentation> NoHirep;
+typedef Representations<EmptyRep<typename ScalarImplR::Field> > ScalarFields;
+  //typedef Representations<EmptyRep<typename ScalarMatrixImplR::Field> > ScalarMatrixFields;
 
 // Helper classes to access the elements
 // Strips the first N parameters from the tuple

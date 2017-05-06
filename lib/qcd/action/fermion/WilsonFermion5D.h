@@ -31,7 +31,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef  GRID_QCD_WILSON_FERMION_5D_H
 #define  GRID_QCD_WILSON_FERMION_5D_H
 
-#include <Grid/Stat.h>
+#include <Grid/perfmon/Stat.h>
 
 namespace Grid {
 namespace QCD {
@@ -74,11 +74,17 @@ namespace QCD {
      typedef WilsonKernels<Impl> Kernels;
      PmuStat stat;
 
+     FermionField _tmp;
+     FermionField &tmp(void) { return _tmp; }
+
      void Report(void);
      void ZeroCounters(void);
      double DhopCalls;
      double DhopCommTime;
      double DhopComputeTime;
+     double DhopComputeTime2;
+     double DhopFaceTime;
+     double DhopTotalTime;
 
      double DerivCalls;
      double DerivCommTime;
@@ -142,6 +148,20 @@ namespace QCD {
 		      const FermionField &in, 
 		      FermionField &out,
 		      int dag);
+
+    void DhopInternalOverlappedComms(StencilImpl & st,
+				     LebesgueOrder &lo,
+				     DoubledGaugeField &U,
+				     const FermionField &in, 
+				     FermionField &out,
+				     int dag);
+
+    void DhopInternalSerialComms(StencilImpl & st,
+				 LebesgueOrder &lo,
+				 DoubledGaugeField &U,
+				 const FermionField &in, 
+				 FermionField &out,
+				 int dag);
     
     // Constructors
     WilsonFermion5D(GaugeField &_Umu,

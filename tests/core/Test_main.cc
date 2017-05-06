@@ -89,8 +89,8 @@ int main(int argc, char **argv) {
       GridSerialRNG SerialRNG;
       GridSerialRNG SerialRNG1;
 
-      FineRNG.SeedRandomDevice();
-      SerialRNG.SeedRandomDevice();
+      FineRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
+      SerialRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
       std::cout << "SerialRNG" << SerialRNG._generators[0] << std::endl;
 
@@ -143,6 +143,7 @@ int main(int argc, char **argv) {
 
       random(FineRNG, Foo);
       gaussian(FineRNG, Bar);
+
       random(FineRNG, scFoo);
       random(FineRNG, scBar);
 
@@ -168,6 +169,18 @@ int main(int argc, char **argv) {
         std::cout << "fail\n";
         abort();
     }
+
+      // Norm2 check
+      LatticeReal BarReal(&Fine);
+      LatticeComplex BarComplex(&Fine);
+      BarReal = 1.0;
+      BarComplex = 1.0;
+
+      
+      std::cout << "Norm2 LatticeReal : "<< norm2(BarReal) << std::endl;
+      std::cout << "Norm2 LatticeComplex : "<< norm2(BarComplex) << std::endl;
+
+      exit(0);
 
       TComplex tr = trace(cmat);
 

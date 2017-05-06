@@ -26,7 +26,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#include <Grid.h>
+#include <Grid/GridCore.h>
 
 using namespace Grid;
 using namespace std;
@@ -70,9 +70,15 @@ XmlReader::XmlReader(const string &fileName)
   node_ = doc_.child("grid");
 }
 
-void XmlReader::push(const string &s)
+bool XmlReader::push(const string &s)
 {
+
+  if (node_.child(s.c_str()) == NULL )
+    return false;
+
   node_ = node_.child(s.c_str());
+  return true;
+    
 }
 
 void XmlReader::pop(void)
@@ -83,15 +89,16 @@ void XmlReader::pop(void)
 bool XmlReader::nextElement(const std::string &s)
 {
   if (node_.next_sibling(s.c_str()))
-  {
-    node_ = node_.next_sibling(s.c_str());
-    
-    return true;
-  }
+    {
+      node_ = node_.next_sibling(s.c_str());
+      
+      return true;
+    }
   else
-  {
-    return false;
-  }
+    {
+      return false;
+    }
+
 }
 
 template <>

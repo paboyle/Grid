@@ -26,7 +26,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#include <Grid.h>
+#include <Grid/GridCore.h>
 #include <algorithm>
 
 namespace Grid {
@@ -65,7 +65,7 @@ void LebesgueOrder::CartesianBlocking(void)
 {
   _LebesgueReorder.resize(0);
 
-  std::cout << GridLogDebug << " CartesianBlocking ";
+  //    std::cout << GridLogDebug << " CartesianBlocking ";
   //    for(int d=0;d<Block.size();d++) std::cout <<Block[d]<<" ";
   //    std::cout<<std::endl; 
 

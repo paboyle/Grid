@@ -29,7 +29,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 
-#include <Grid.h>
+#include <Grid/qcd/action/fermion/FermionCore.h>
+#include <Grid/qcd/action/fermion/CayleyFermion5D.h>
 
 
 namespace Grid {
@@ -51,8 +52,11 @@ void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
   GridBase *grid=psi._grid;
   assert(phi.checkerboard == psi.checkerboard);
   chi.checkerboard=psi.checkerboard;
-PARALLEL_FOR_LOOP
-  for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
+  // Flops = 6.0*(Nc*Ns) *Ls*vol
+  M5Dcalls++;
+  M5Dtime-=usecond();
+
+  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     for(int s=0;s<Ls;s++){
       auto tmp = psi._odata[0];
       if ( s==0 ) {
@@ -76,6 +80,7 @@ PARALLEL_FOR_LOOP
       }
     }
   }
+  M5Dtime+=usecond();
 }
 
 template<class Impl>  
@@ -91,8 +96,11 @@ void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
   assert(phi.checkerboard == psi.checkerboard);
   chi.checkerboard=psi.checkerboard;
 
-PARALLEL_FOR_LOOP
-  for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
+  // Flops = 6.0*(Nc*Ns) *Ls*vol
+  M5Dcalls++;
+  M5Dtime-=usecond();
+
+  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     auto tmp = psi._odata[0];
     for(int s=0;s<Ls;s++){
       if ( s==0 ) {
@@ -116,6 +124,7 @@ PARALLEL_FOR_LOOP
       }
     }
   }
+  M5Dtime+=usecond();
 }
 
 template<class Impl>
@@ -126,10 +135,13 @@ void CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi, FermionField &
 
   chi.checkerboard=psi.checkerboard;
 
-PARALLEL_FOR_LOOP
-  for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
+  MooeeInvCalls++;
+  MooeeInvTime-=usecond();
+
+  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     auto tmp = psi._odata[0];
 
+    // flops = 12*2*Ls + 12*2*Ls + 3*12*Ls + 12*2*Ls  = 12*Ls * (9) = 108*Ls flops
     // Apply (L^{\prime})^{-1}
     chi[ss]=psi[ss]; // chi[0]=psi[0]
     for(int s=1;s<Ls;s++){
@@ -155,6 +167,9 @@ PARALLEL_FOR_LOOP
       chi[ss+s] = chi[ss+s] - uee[s]*tmp;
     }
   }
+
+  MooeeInvTime+=usecond();
+
 }
 
 template<class Impl>
@@ -166,9 +181,22 @@ void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &
   assert(psi.checkerboard == psi.checkerboard);
   chi.checkerboard=psi.checkerboard;
 
+  std::vector<Coeff_t> ueec(Ls);
+  std::vector<Coeff_t> deec(Ls);
+  std::vector<Coeff_t> leec(Ls);
+  std::vector<Coeff_t> ueemc(Ls);
+  std::vector<Coeff_t> leemc(Ls);
+  for(int s=0;s<ueec.size();s++){
+    ueec[s] = conjugate(uee[s]);
+    deec[s] = conjugate(dee[s]);
+    leec[s] = conjugate(lee[s]);
+    ueemc[s]= conjugate(ueem[s]);
+    leemc[s]= conjugate(leem[s]);
+  }
+  MooeeInvCalls++;
+  MooeeInvTime-=usecond();
 
-PARALLEL_FOR_LOOP
-  for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
+  parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
 
     auto tmp = psi._odata[0];
 
@@ -176,27 +204,30 @@ PARALLEL_FOR_LOOP
     chi[ss]=psi[ss];
     for (int s=1;s<Ls;s++){
                             spProj5m(tmp,chi[ss+s-1]);
-      chi[ss+s] = psi[ss+s]-uee[s-1]*tmp;
+      chi[ss+s] = psi[ss+s]-ueec[s-1]*tmp;
     }
     // U_m^{-\dagger} 
     for (int s=0;s<Ls-1;s++){
                                    spProj5p(tmp,chi[ss+s]);
-      chi[ss+Ls-1] = chi[ss+Ls-1] - ueem[s]*tmp;
+      chi[ss+Ls-1] = chi[ss+Ls-1] - ueemc[s]*tmp;
     }
 
     // L_m^{-\dagger} D^{-dagger}
     for (int s=0;s<Ls-1;s++){
       spProj5m(tmp,chi[ss+Ls-1]);
-      chi[ss+s] = (1.0/dee[s])*chi[ss+s]-(leem[s]/dee[Ls-1])*tmp;
+      chi[ss+s] = (1.0/deec[s])*chi[ss+s]-(leemc[s]/deec[Ls-1])*tmp;
     }	
-    chi[ss+Ls-1]= (1.0/dee[Ls-1])*chi[ss+Ls-1];
+    chi[ss+Ls-1]= (1.0/deec[Ls-1])*chi[ss+Ls-1];
   
     // Apply L^{-dagger}
     for (int s=Ls-2;s>=0;s--){
       spProj5p(tmp,chi[ss+s+1]);
-      chi[ss+s] = chi[ss+s] - lee[s]*tmp;
+      chi[ss+s] = chi[ss+s] - leec[s]*tmp;
     }
   }
+
+  MooeeInvTime+=usecond();
+
 }
 
 #ifdef CAYLEY_DPERP_CACHE
@@ -206,6 +237,13 @@ PARALLEL_FOR_LOOP
   INSTANTIATE_DPERP(GparityWilsonImplD);
   INSTANTIATE_DPERP(ZWilsonImplF);
   INSTANTIATE_DPERP(ZWilsonImplD);
+
+  INSTANTIATE_DPERP(WilsonImplFH);
+  INSTANTIATE_DPERP(WilsonImplDF);
+  INSTANTIATE_DPERP(GparityWilsonImplFH);
+  INSTANTIATE_DPERP(GparityWilsonImplDF);
+  INSTANTIATE_DPERP(ZWilsonImplFH);
+  INSTANTIATE_DPERP(ZWilsonImplDF);
 #endif
 
 }}

@@ -37,8 +37,8 @@ struct scal {
   d internal;
 };
 
-Gamma::GammaMatrix Gmu[] = {Gamma::GammaX, Gamma::GammaY, Gamma::GammaZ,
-                            Gamma::GammaT};
+Gamma::Algebra Gmu[] = {Gamma::Algebra::GammaX, Gamma::Algebra::GammaY, Gamma::Algebra::GammaZ,
+                            Gamma::Algebra::GammaT};
 
 int main(int argc, char** argv) {
   Grid_init(&argc, &argv);
@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
   GridStopWatch CGTimer;
 
   SchurDiagMooeeOperator<DomainWallFermionR, LatticeFermion> HermOpEO(Ddwf);
-  ConjugateGradient<LatticeFermion> CG(1.0e-8, 10000, 0);// switch off the assert
+  ConjugateGradient<LatticeFermion> CG(1.0e-5, 10000, 0);// switch off the assert
 
   CGTimer.Start();
   CG(HermOpEO, src_o, result_o);

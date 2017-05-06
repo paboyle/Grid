@@ -5,9 +5,10 @@
     Source file: ./lib/simd/Grid_generic.h
 
     Copyright (C) 2015
+    Copyright (C) 2017
 
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: neo <cossu@post.kek.jp>
+Author: Antonin Portelli <antonin.portelli@me.com>
+        Andrew Lawson    <andrew.lawson1991@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,133 +28,409 @@ Author: neo <cossu@post.kek.jp>
     *************************************************************************************/
     /*  END LEGAL */
 
+#include "Grid_generic_types.h"
+
 namespace Grid {
 namespace Optimization {
-
-  template<class vtype>
-  union uconv {
-    float f;
-    vtype v;
-  };
-
-  union u128f {
-    float v;
-    float f[4];
-  };
-  union u128d {
-    double v;
-    double f[2];
-  };
   
   struct Vsplat{
-    //Complex float
-    inline u128f operator()(float a, float b){
-      u128f out; 
-      out.f[0] = a;
-      out.f[1] = b;
-      out.f[2] = a;
-      out.f[3] = b;
+    // Complex
+    template <typename T>
+    inline vec<T> operator()(T a, T b){
+      vec<T> out;
+      
+      VECTOR_FOR(i, W<T>::r, 2)
+      {
+        out.v[i]   = a;
+        out.v[i+1] = b;
+      }
+
       return out;
     }
-    // Real float
-    inline u128f operator()(float a){
-      u128f out; 
-      out.f[0] = a;
-      out.f[1] = a;
-      out.f[2] = a;
-      out.f[3] = a;
+    
+    // Real
+    template <typename T>
+    inline vec<T> operator()(T a){
+      vec<T> out;
+      
+      VECTOR_FOR(i, W<T>::r, 1)
+      {
+        out.v[i] = a;
+      }
+      
       return out;
-    }
-    //Complex double
-    inline u128d operator()(double a, double b){
-      u128d out; 
-      out.f[0] = a;
-      out.f[1] = b;
-      return out;
-    }
-    //Real double
-    inline u128d operator()(double a){
-      u128d out; 
-      out.f[0] = a;
-      out.f[1] = a;
-      return out;
-    }
-    //Integer
-    inline int operator()(Integer a){
-      return a;
     }
   };
 
   struct Vstore{
-    //Float 
-    inline void operator()(u128f a, float* F){
-      memcpy(F,a.f,4*sizeof(float));
+    // Real
+    template <typename T>
+    inline void operator()(vec<T> a, T *D){
+      *((vec<T> *)D) = a;
     }
-    //Double
-    inline void operator()(u128d a, double* D){
-      memcpy(D,a.f,2*sizeof(double));
-    }
-    //Integer
-    inline void operator()(int a, Integer* I){
-      I[0] = a;
-    }
-
   };
 
   struct Vstream{
-    //Float
-    inline void operator()(float * a, u128f b){
-      memcpy(a,b.f,4*sizeof(float));
+    // Real
+    template <typename T>
+    inline void operator()(T * a, vec<T> b){
+      *((vec<T> *)a) = b;
     }
-    //Double
-    inline void operator()(double * a, u128d b){
-      memcpy(a,b.f,2*sizeof(double));
-    }
-
-
   };
 
   struct Vset{
-    // Complex float 
-    inline u128f operator()(Grid::ComplexF *a){
-      u128f out; 
-      out.f[0] = a[0].real();
-      out.f[1] = a[0].imag();
-      out.f[2] = a[1].real();
-      out.f[3] = a[1].imag();
+    // Complex
+    template <typename T>
+    inline vec<T> operator()(std::complex<T> *a){
+      vec<T> out;
+      
+      VECTOR_FOR(i, W<T>::c, 1)
+      {
+        out.v[2*i]   = a[i].real();
+        out.v[2*i+1] = a[i].imag();
+      }
+      
       return out;
     }
-    // Complex double 
-    inline u128d operator()(Grid::ComplexD *a){
-      u128d out; 
-      out.f[0] = a[0].real();
-      out.f[1] = a[0].imag();
+    
+    // Real
+    template <typename T>
+    inline vec<T> operator()(T *a){
+      vec<T> out;
+      
+      out = *((vec<T> *)a);
+      
       return out;
     }
-    // Real float 
-    inline u128f operator()(float *a){
-      u128f out; 
-      out.f[0] = a[0];
-      out.f[1] = a[1];
-      out.f[2] = a[2];
-      out.f[3] = a[3];
-      return out;
-    }
-    // Real double
-    inline u128d operator()(double *a){
-      u128d out; 
-      out.f[0] = a[0];
-      out.f[1] = a[1];
-      return out;
-    }
-    // Integer
-    inline int operator()(Integer *a){
-      return a[0];
-    }
-
-
   };
 
+  /////////////////////////////////////////////////////
+  // Arithmetic operations
+  /////////////////////////////////////////////////////
+  struct Sum{
+    // Complex/Real
+    template <typename T>
+    inline vec<T> operator()(vec<T> a, vec<T> b){
+      vec<T> out;
+      
+      VECTOR_FOR(i, W<T>::r, 1)
+      {
+        out.v[i] = a.v[i] + b.v[i];
+      }
+      
+      return out;
+    }
+  };
+
+  struct Sub{
+    // Complex/Real
+    template <typename T>
+    inline vec<T> operator()(vec<T> a, vec<T> b){
+      vec<T> out;
+      
+      VECTOR_FOR(i, W<T>::r, 1)
+      {
+        out.v[i] = a.v[i] - b.v[i];
+      }
+      
+      return out;
+    }
+  };
+
+  struct Mult{
+    // Real
+    template <typename T>
+    inline vec<T> operator()(vec<T> a, vec<T> b){
+      vec<T> out;
+      
+      VECTOR_FOR(i, W<T>::r, 1)
+      {
+        out.v[i] = a.v[i]*b.v[i];
+      }
+      
+      return out;
+    }
+  };
+  
+  #define cmul(a, b, c, i)\
+  c[i]   = a[i]*b[i]   - a[i+1]*b[i+1];\
+  c[i+1] = a[i]*b[i+1] + a[i+1]*b[i];
+
+  struct MultRealPart{
+    template <typename T>
+    inline vec<T> operator()(vec<T> a, vec<T> b){
+      vec<T> out;
+      
+      VECTOR_FOR(i, W<T>::c, 1)
+      {
+         out.v[2*i]   = a.v[2*i]*b.v[2*i];
+         out.v[2*i+1] = a.v[2*i]*b.v[2*i+1];
+      }      
+      return out;
+    }
+  };
+
+  struct MaddRealPart{
+    template <typename T>
+    inline vec<T> operator()(vec<T> a, vec<T> b, vec<T> c){
+      vec<T> out;
+      
+      VECTOR_FOR(i, W<T>::c, 1)
+      {
+         out.v[2*i]   = a.v[2*i]*b.v[2*i] + c.v[2*i];
+         out.v[2*i+1] = a.v[2*i]*b.v[2*i+1] + c.v[2*i+1];
+      }      
+      return out;
+    }
+  };
+  
+  struct MultComplex{
+    // Complex
+    template <typename T>
+    inline vec<T> operator()(vec<T> a, vec<T> b){
+      vec<T> out;
+      
+      VECTOR_FOR(i, W<T>::c, 1)
+      {
+        cmul(a.v, b.v, out.v, 2*i);
+      }      
+      
+      return out;
+    }
+  };
+  
+  #undef cmul
+
+  struct Div{
+    // Real
+    template <typename T>
+    inline vec<T> operator()(vec<T> a, vec<T> b){
+      vec<T> out;
+      
+      VECTOR_FOR(i, W<T>::r, 1)
+      {
+        out.v[i] = a.v[i]/b.v[i];
+      }
+      
+      return out;
+    }
+  };
+  
+  #define conj(a, b, i)\
+  b[i]   = a[i];\
+  b[i+1] = -a[i+1];
+  
+  struct Conj{
+    // Complex
+    template <typename T>
+    inline vec<T> operator()(vec<T> a){
+      vec<T> out;
+      
+      VECTOR_FOR(i, W<T>::c, 1)
+      {
+        conj(a.v, out.v, 2*i);
+      }
+      
+      return out;
+    }
+  };
+  
+  #undef conj
+
+  #define timesmi(a, b, i)\
+  b[i]   = a[i+1];\
+  b[i+1] = -a[i];
+  
+  struct TimesMinusI{
+    // Complex
+    template <typename T>
+    inline vec<T> operator()(vec<T> a, vec<T> b){
+      vec<T> out;
+      
+      VECTOR_FOR(i, W<T>::c, 1)
+      {
+        timesmi(a.v, out.v, 2*i);
+      }
+      
+      return out;
+    }
+  };
+
+  #undef timesmi
+  
+  #define timesi(a, b, i)\
+  b[i]   = -a[i+1];\
+  b[i+1] = a[i];
+  
+  struct TimesI{
+    // Complex
+    template <typename T>
+    inline vec<T> operator()(vec<T> a, vec<T> b){
+      vec<T> out;
+      
+      VECTOR_FOR(i, W<T>::c, 1)
+      {
+        timesi(a.v, out.v, 2*i);
+      }
+      
+      return out;
+    }
+  };
+  
+  #undef timesi
+
+  struct PrecisionChange {
+    static inline vech StoH (const vecf &a,const vecf &b) {
+#ifdef USE_FP16
+      vech ret;
+      vech *ha = (vech *)&a;
+      vech *hb = (vech *)&b;
+      const int nf = W<float>::r;
+      //      VECTOR_FOR(i, nf,1){ ret.v[i]    = ( (uint16_t *) &a.v[i])[1] ; }
+      //      VECTOR_FOR(i, nf,1){ ret.v[i+nf] = ( (uint16_t *) &b.v[i])[1] ; }
+      VECTOR_FOR(i, nf,1){ ret.v[i]    = ha->v[2*i+1]; }
+      VECTOR_FOR(i, nf,1){ ret.v[i+nf] = hb->v[2*i+1]; }
+#else
+      assert(0);
+#endif
+      return ret;
+    }
+    static inline void  HtoS (vech h,vecf &sa,vecf &sb) {
+#ifdef USE_FP16
+      const int nf = W<float>::r;
+      const int nh = W<uint16_t>::r;
+      vech *ha = (vech *)&sa;
+      vech *hb = (vech *)&sb;
+      VECTOR_FOR(i, nf, 1){ sb.v[i]= sa.v[i] = 0; }
+      //      VECTOR_FOR(i, nf, 1){ ( (uint16_t *) (&sa.v[i]))[1] = h.v[i];}
+      //      VECTOR_FOR(i, nf, 1){ ( (uint16_t *) (&sb.v[i]))[1] = h.v[i+nf];}
+      VECTOR_FOR(i, nf, 1){ ha->v[2*i+1]=h.v[i]; }
+      VECTOR_FOR(i, nf, 1){ hb->v[2*i+1]=h.v[i+nf]; }
+#else
+      assert(0);
+#endif
+    }
+    static inline vecf DtoS (vecd a,vecd b) {
+      const int nd = W<double>::r;
+      const int nf = W<float>::r;
+      vecf ret;
+      VECTOR_FOR(i, nd,1){ ret.v[i]    = a.v[i] ; }
+      VECTOR_FOR(i, nd,1){ ret.v[i+nd] = b.v[i] ; }
+      return ret;
+    }
+    static inline void StoD (vecf s,vecd &a,vecd &b) {
+      const int nd = W<double>::r;
+      VECTOR_FOR(i, nd,1){ a.v[i] = s.v[i] ; }
+      VECTOR_FOR(i, nd,1){ b.v[i] = s.v[i+nd] ; }
+    }
+    static inline vech DtoH (vecd a,vecd b,vecd c,vecd d) {
+      vecf sa,sb;
+      sa = DtoS(a,b);
+      sb = DtoS(c,d);
+      return StoH(sa,sb);
+    }
+    static inline void HtoD (vech h,vecd &a,vecd &b,vecd &c,vecd &d) {
+      vecf sa,sb;
+      HtoS(h,sa,sb);
+      StoD(sa,a,b);
+      StoD(sb,c,d);
+    }
+  };
+
+  //////////////////////////////////////////////
+  // Exchange support
+  struct Exchange{
+
+    template <typename T,int n>
+    static inline void ExchangeN(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+      const int w = W<T>::r;
+      unsigned int mask = w >> (n + 1);
+      //      std::cout << " Exchange "<<n<<" nsimd "<<w<<" mask 0x" <<std::hex<<mask<<std::dec<<std::endl;
+      VECTOR_FOR(i, w, 1) {	
+	int j1 = i&(~mask);
+	if  ( (i&mask) == 0 ) { out1.v[i]=in1.v[j1];}
+	else                  { out1.v[i]=in2.v[j1];}
+	int j2 = i|mask;
+	if  ( (i&mask) == 0 ) { out2.v[i]=in1.v[j2];}
+	else                  { out2.v[i]=in2.v[j2];}
+      }      
+    }
+    template <typename T>
+    static inline void Exchange0(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+      ExchangeN<T,0>(out1,out2,in1,in2);
+    };
+    template <typename T>
+    static inline void Exchange1(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+      ExchangeN<T,1>(out1,out2,in1,in2);
+    };
+    template <typename T>
+    static inline void Exchange2(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+      ExchangeN<T,2>(out1,out2,in1,in2);
+    };
+    template <typename T>
+    static inline void Exchange3(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+      ExchangeN<T,3>(out1,out2,in1,in2);
+    };
+  };
+
+
+  //////////////////////////////////////////////
+  // Some Template specialization
+  #define perm(a, b, n, w)\
+  unsigned int _mask = w >> (n + 1);\
+  VECTOR_FOR(i, w, 1)\
+  {\
+    b[i] = a[i^_mask];\
+  }
+  
+  #define DECL_PERMUTE_N(n)\
+  template <typename T>\
+  static inline vec<T> Permute##n(vec<T> in) {\
+    vec<T> out;\
+    perm(in.v, out.v, n, W<T>::r);\
+    return out;\
+  }
+  
+  struct Permute{
+    DECL_PERMUTE_N(0);
+    DECL_PERMUTE_N(1);
+    DECL_PERMUTE_N(2);
+    DECL_PERMUTE_N(3);
+  };
+  
+  #undef perm
+  #undef DECL_PERMUTE_N
+  
+  #define rot(a, b, n, w)\
+  VECTOR_FOR(i, w, 1)\
+  {\
+    b[i] = a[(i + n)%w];\
+  }
+  
+  struct Rotate{
+      
+    template <int n, typename T> static inline vec<T> tRotate(vec<T> in){
+      return rotate(in, n);
+    }
+    
+    template <typename T>
+    static inline vec<T> rotate(vec<T> in, int n){
+      vec<T> out;
+      
+      rot(in.v, out.v, n, W<T>::r);
+      
+      return out;
+    }
+  };
+
+  #undef rot
+  
+  #define acc(v, a, off, step, n)\
+  for (unsigned int i = off; i < n; i += step)\
+  {\
+    a += v[i];\
+  }
+  
   template <typename Out_type, typename In_type>
   struct Reduce{
     //Need templated class to overload output type
@@ -164,315 +441,71 @@ namespace Optimization {
       return 0;
     }
   };
-
-  /////////////////////////////////////////////////////
-  // Arithmetic operations
-  /////////////////////////////////////////////////////
-  struct Sum{
-    //Complex/Real float
-    inline u128f operator()(u128f a, u128f b){
-      u128f out;
-      out.f[0] = a.f[0] + b.f[0];
-      out.f[1] = a.f[1] + b.f[1];
-      out.f[2] = a.f[2] + b.f[2];
-      out.f[3] = a.f[3] + b.f[3];
-      return out;
-    }
-    //Complex/Real double
-    inline u128d operator()(u128d a, u128d b){
-      u128d out;
-      out.f[0] = a.f[0] + b.f[0];
-      out.f[1] = a.f[1] + b.f[1];
-      return out;
-    }
-    //Integer
-    inline int operator()(int a, int b){
-      return a + b;
-    }
-  };
-
-  struct Sub{
-    //Complex/Real float
-    inline u128f operator()(u128f a, u128f b){
-      u128f out;
-      out.f[0] = a.f[0] - b.f[0];
-      out.f[1] = a.f[1] - b.f[1];
-      out.f[2] = a.f[2] - b.f[2];
-      out.f[3] = a.f[3] - b.f[3];
-      return out;
-    }
-    //Complex/Real double
-    inline u128d operator()(u128d a, u128d b){
-      u128d out;
-      out.f[0] = a.f[0] - b.f[0];
-      out.f[1] = a.f[1] - b.f[1];
-      return out;
-    }
-    //Integer
-    inline int operator()(int a, int b){
-      return a-b;
-    }
-  };
-
-  struct MultComplex{
-    // Complex float
-    inline u128f operator()(u128f a, u128f b){
-      u128f out;
-      out.f[0] = a.f[0]*b.f[0] - a.f[1]*b.f[1];
-      out.f[1] = a.f[0]*b.f[1] + a.f[1]*b.f[0];
-      out.f[2] = a.f[2]*b.f[2] - a.f[3]*b.f[3];
-      out.f[3] = a.f[2]*b.f[3] + a.f[3]*b.f[2];
-      return out;
-    }
-    // Complex double
-    inline u128d operator()(u128d a, u128d b){
-      u128d out;
-      out.f[0] = a.f[0]*b.f[0] - a.f[1]*b.f[1];
-      out.f[1] = a.f[0]*b.f[1] + a.f[1]*b.f[0];
-      return out;
-    }
-  };
-
-  struct Mult{
-    //CK: Appear unneeded
-    // inline float  mac(float a, float b,double c){
-    //   return 0;
-    // }
-    // inline double mac(double a, double b,double c){
-    //   return 0;
-    // }
-
-    // Real float
-    inline u128f operator()(u128f a, u128f b){
-      u128f out;
-      out.f[0] = a.f[0]*b.f[0];
-      out.f[1] = a.f[1]*b.f[1];
-      out.f[2] = a.f[2]*b.f[2];
-      out.f[3] = a.f[3]*b.f[3];
-      return out;
-    }
-    // Real double
-    inline u128d operator()(u128d a, u128d b){
-      u128d out;
-      out.f[0] = a.f[0]*b.f[0];
-      out.f[1] = a.f[1]*b.f[1];
-      return out;
-    }
-    // Integer
-    inline int operator()(int a, int b){
-      return a*b;
-    }
-  };
-
-  struct Conj{
-    // Complex single
-    inline u128f operator()(u128f in){
-      u128f out;
-      out.f[0] = in.f[0];
-      out.f[1] = -in.f[1];
-      out.f[2] = in.f[2];
-      out.f[3] = -in.f[3];
-      return out;
-    }
-    // Complex double
-    inline u128d operator()(u128d in){
-      u128d out;
-      out.f[0] = in.f[0];
-      out.f[1] = -in.f[1];
-      return out;
-    }
-    // do not define for integer input
-  };
-
-  struct TimesMinusI{
-    //Complex single
-    inline u128f operator()(u128f in, u128f ret){ //note ret is ignored
-      u128f out;
-      out.f[0] = in.f[1];
-      out.f[1] = -in.f[0];
-      out.f[2] = in.f[3];
-      out.f[3] = -in.f[2];
-      return out;
-    }
-    //Complex double
-    inline u128d operator()(u128d in, u128d ret){
-      u128d out;
-      out.f[0] = in.f[1];
-      out.f[1] = -in.f[0];
-      return out;
-    }
-  };
-
-  struct TimesI{
-    //Complex single
-    inline u128f operator()(u128f in, u128f ret){ //note ret is ignored
-      u128f out;
-      out.f[0] = -in.f[1];
-      out.f[1] = in.f[0];
-      out.f[2] = -in.f[3];
-      out.f[3] = in.f[2];
-      return out;
-    }
-    //Complex double
-    inline u128d operator()(u128d in, u128d ret){
-      u128d out;
-      out.f[0] = -in.f[1];
-      out.f[1] = in.f[0];
-      return out;
-    }
-  };
-
-  //////////////////////////////////////////////
-  // Some Template specialization
-  struct Permute{
-    //We just have to mirror the permutes of Grid_sse4.h
-    static inline u128f Permute0(u128f in){ //AB CD -> CD AB
-      u128f out;
-      out.f[0] = in.f[2];
-      out.f[1] = in.f[3];
-      out.f[2] = in.f[0];
-      out.f[3] = in.f[1];
-      return out;
-    };
-    static inline u128f Permute1(u128f in){ //AB CD -> BA DC
-      u128f out;
-      out.f[0] = in.f[1];
-      out.f[1] = in.f[0];
-      out.f[2] = in.f[3];
-      out.f[3] = in.f[2];
-      return out;
-    };
-    static inline u128f Permute2(u128f in){
-      return in;
-    };
-    static inline u128f Permute3(u128f in){
-      return in;
-    };
-
-    static inline u128d Permute0(u128d in){ //AB -> BA
-      u128d out;
-      out.f[0] = in.f[1];
-      out.f[1] = in.f[0];
-      return out;      
-    };
-    static inline u128d Permute1(u128d in){
-      return in;
-    };
-    static inline u128d Permute2(u128d in){
-      return in;
-    };
-    static inline u128d Permute3(u128d in){
-      return in;
-    };
-
-  };
   
-  template < typename vtype > 
-    void permute(vtype &a, vtype b, int perm) {
-   };
-    
-  struct Rotate{
-
-    static inline u128f rotate(u128f in,int n){
-      u128f out;
-      switch(n){
-      case 0:
-        out.f[0] = in.f[0];
-        out.f[1] = in.f[1];
-        out.f[2] = in.f[2];
-        out.f[3] = in.f[3];
-        break;
-      case 1:
-        out.f[0] = in.f[1];
-        out.f[1] = in.f[2];
-        out.f[2] = in.f[3];
-        out.f[3] = in.f[0];
-        break;
-      case 2:
-        out.f[0] = in.f[2];
-        out.f[1] = in.f[3];
-        out.f[2] = in.f[0];
-        out.f[3] = in.f[1];
-        break;
-      case 3:
-        out.f[0] = in.f[3];
-        out.f[1] = in.f[0];
-        out.f[2] = in.f[1];
-        out.f[3] = in.f[2];
-        break;
-      default: assert(0);
-      }
-      return out;
-    }
-    static inline u128d rotate(u128d in,int n){
-      u128d out;
-      switch(n){
-      case 0:
-        out.f[0] = in.f[0];
-        out.f[1] = in.f[1];
-        break;
-      case 1:
-        out.f[0] = in.f[1];
-        out.f[1] = in.f[0];
-        break;
-      default: assert(0);
-      }
-      return out;
-    }
-  };
-
   //Complex float Reduce
-  template<>
-  inline Grid::ComplexF Reduce<Grid::ComplexF, u128f>::operator()(u128f in){ //2 complex
-    return Grid::ComplexF(in.f[0] + in.f[2], in.f[1] + in.f[3]);
+  template <>
+  inline Grid::ComplexF Reduce<Grid::ComplexF, vecf>::operator()(vecf in){
+    float a = 0.f, b = 0.f;
+    
+    acc(in.v, a, 0, 2, W<float>::r);
+    acc(in.v, b, 1, 2, W<float>::r);
+    
+    return Grid::ComplexF(a, b);
   }
+  
   //Real float Reduce
   template<>
-  inline Grid::RealF Reduce<Grid::RealF, u128f>::operator()(u128f in){ //4 floats
-    return in.f[0] + in.f[1] + in.f[2] + in.f[3];
+  inline Grid::RealF Reduce<Grid::RealF, vecf>::operator()(vecf in){
+    float a = 0.;
+    
+    acc(in.v, a, 0, 1, W<float>::r);
+    
+    return a;
   }
-  
   
   //Complex double Reduce
   template<>
-  inline Grid::ComplexD Reduce<Grid::ComplexD, u128d>::operator()(u128d in){ //1 complex
-    return Grid::ComplexD(in.f[0],in.f[1]);
+  inline Grid::ComplexD Reduce<Grid::ComplexD, vecd>::operator()(vecd in){
+    double a = 0., b = 0.;
+    
+    acc(in.v, a, 0, 2, W<double>::r);
+    acc(in.v, b, 1, 2, W<double>::r);
+    
+    return Grid::ComplexD(a, b);
   }
   
   //Real double Reduce
   template<>
-  inline Grid::RealD Reduce<Grid::RealD, u128d>::operator()(u128d in){ //2 doubles
-    return in.f[0] + in.f[1];
+  inline Grid::RealD Reduce<Grid::RealD, vecd>::operator()(vecd in){
+    double a = 0.f;
+    
+    acc(in.v, a, 0, 1, W<double>::r);
+    
+    return a;
   }
 
   //Integer Reduce
   template<>
-  inline Integer Reduce<Integer, int>::operator()(int in){
-    // FIXME unimplemented
-   printf("Reduce : Missing integer implementation -> FIX\n");
-    assert(0);
+  inline Integer Reduce<Integer, veci>::operator()(veci in){
+    Integer a = 0;
+    
+    acc(in.v, a, 0, 1, W<Integer>::r);
+    
+    return a;
   }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types 
 
-  typedef Optimization::u128f SIMD_Ftype;  // Single precision type
-  typedef Optimization::u128d SIMD_Dtype; // Double precision type
-  typedef int SIMD_Itype; // Integer type
+  typedef Optimization::vech SIMD_Htype; // Reduced precision type
+  typedef Optimization::vecf SIMD_Ftype; // Single precision type
+  typedef Optimization::vecd SIMD_Dtype; // Double precision type
+  typedef Optimization::veci SIMD_Itype; // Integer type
 
   // prefetch utilities
   inline void v_prefetch0(int size, const char *ptr){};
   inline void prefetch_HINT_T0(const char *ptr){};
-
-
-
-  // Gpermute function
-  template < typename VectorSIMD > 
-    inline void Gpermute(VectorSIMD &y,const VectorSIMD &b, int perm ) {
-    Optimization::permute(y.v,b.v,perm);
-  }
-
 
   // Function name aliases
   typedef Optimization::Vsplat   VsplatSIMD;
@@ -481,16 +514,15 @@ namespace Optimization {
   typedef Optimization::Vstream  VstreamSIMD;
   template <typename S, typename T> using ReduceSIMD = Optimization::Reduce<S,T>;
 
- 
-
-
   // Arithmetic operations
   typedef Optimization::Sum         SumSIMD;
   typedef Optimization::Sub         SubSIMD;
+  typedef Optimization::Div         DivSIMD;
   typedef Optimization::Mult        MultSIMD;
   typedef Optimization::MultComplex MultComplexSIMD;
+  typedef Optimization::MultRealPart MultRealPartSIMD;
+  typedef Optimization::MaddRealPart MaddRealPartSIMD;
   typedef Optimization::Conj        ConjSIMD;
   typedef Optimization::TimesMinusI TimesMinusISIMD;
   typedef Optimization::TimesI      TimesISIMD;
-
 }
