@@ -22,7 +22,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_LATTICE_REDUCTION_H
 #define GRID_LATTICE_REDUCTION_H
 
-#include <Grid/Eigen/Dense>
+#include <Grid/Grid_Eigen_Dense.h>
 
 namespace Grid {
 #ifdef GRID_WARN_SUBOPTIMAL

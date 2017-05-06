@@ -14,7 +14,6 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 #AC_REVISION([m4_esyscmd_s([./scripts/configure.commit])])
 
 ############### Checks for programs
-CXXFLAGS="-O3 $CXXFLAGS"
 AC_PROG_CXX
 AC_PROG_RANLIB
 
@@ -28,6 +27,12 @@ AX_GXX_VERSION
 AC_DEFINE_UNQUOTED([GXX_VERSION],["$GXX_VERSION"],
       [version of g++ that will compile the code])
 
+CXXFLAGS="-O3 $CXXFLAGS"
+case ${GXX_VERSION} in
+     6.0.0|6.1.0|6.2.0|5.4.1|5.4.0|5.3.0|5.2.0|5.1.0|5.0.0)
+     CXXFLAGS="-O3 $CXXFLAGS"
+        ;;
+esac
 ############### Checks for typedefs, structures, and compiler characteristics
 AC_TYPE_SIZE_T
 AC_TYPE_UINT32_T
