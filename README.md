@@ -25,15 +25,21 @@ _Please do not send pull requests to the `master` branch which is reserved for r
 ### Compilers
 
 Intel ICPC v16 and later
+
 Clang v3.5 and later (need 3.8 and later for OpenMP)
+
 GCC   v4.9.x (recommended)
+
 GCC   v6.3 and later
 
 ###Important: 
 
 Some versions of GCC appear to have a bug under high optimisation (-O2, -O3)
+
 The safety of these compiler versions cannot be guaranteed at this time.
+
 GCC   v5.x
+
 GCC   v6.1, v6.2
 
 ### Bug report
