@@ -206,11 +206,13 @@ public:
     count=0;
     cycles=0;
 #ifdef __linux__
+    ssize_t ign;
     if ( fd!= -1) {
       ::ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
       ::ioctl(cyclefd, PERF_EVENT_IOC_DISABLE, 0);
-      ::read(fd, &count, sizeof(long long));
-      ::read(cyclefd, &cycles, sizeof(long long));
+      ign=::read(fd, &count, sizeof(long long));
+      ign+=::read(cyclefd, &cycles, sizeof(long long));
+      assert(ign=2*sizeof(longlong));
     }
     elapsed = cyclecount() - begin;
 #else
