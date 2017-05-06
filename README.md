@@ -34,9 +34,9 @@ GCC   v6.3 and later
 
 ### Important: 
 
-Some versions of GCC appear to have a bug under high optimisation (-O2, -O3)
+Some versions of GCC appear to have a bug under high optimisation (-O2, -O3).
 
-The safety of these compiler versions cannot be guaranteed at this time.
+The safety of these compiler versions cannot be guaranteed at this time. Follow Issue 100 for details and updates.
 
 GCC   v5.x
 
