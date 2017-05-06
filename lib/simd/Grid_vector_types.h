@@ -327,6 +327,10 @@ class Grid_simd {
   // provides support
   ///////////////////////////////////////
 
+#if (__GNUC__ == 5 ) || ( ( __GNUC__ == 6 ) && __GNUC_MINOR__ < 3 )
+#pragma GCC push_options 
+#pragma GCC optimize ("O0") 
+#endif
   template <class functor>
   friend inline Grid_simd SimdApply(const functor &func, const Grid_simd &v) {
     Grid_simd ret;
@@ -355,7 +359,9 @@ class Grid_simd {
     ret.v = cx.v;
     return ret;
   }
-
+#if (__GNUC__ == 5 ) || ( ( __GNUC__ == 6 ) && __GNUC_MINOR__ < 3 )
+#pragma GCC pop_options
+#endif
   ///////////////////////
   // Exchange 
   // Al Ah , Bl Bh -> Al Bl Ah,Bh

@@ -28,11 +28,7 @@ AC_DEFINE_UNQUOTED([GXX_VERSION],["$GXX_VERSION"],
       [version of g++ that will compile the code])
 
 CXXFLAGS="-O3 $CXXFLAGS"
-case ${GXX_VERSION} in
-     6.0.0|6.1.0|6.2.0|5.4.1|5.4.0|5.3.0|5.2.0|5.1.0|5.0.0)
-     CXXFLAGS="-O3 $CXXFLAGS"
-        ;;
-esac
+
 ############### Checks for typedefs, structures, and compiler characteristics
 AC_TYPE_SIZE_T
 AC_TYPE_UINT32_T
