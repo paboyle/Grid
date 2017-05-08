@@ -233,11 +233,13 @@ int main(int argc,char **argv)
     myclass jcopy1;
     std::vector<myclass> jveccopy1;
     read(RD,"obj",jcopy1);
-    //read(RD,"objvec", jveccopy1);
-    //std::cout << "Loaded (JSON) -----------------" << std::endl;
-    //std::cout << jcopy1 << std::endl << jveccopy1 << std::endl;
+    read(RD,"objvec", jveccopy1);
+    std::cout << "Loaded (JSON) -----------------" << std::endl;
+    std::cout << jcopy1 << std::endl << jveccopy1 << std::endl;
   }
-  /*
+
+/* 
+  // This is still work in progress
   {
     // Testing the next element function
     JSONReader RD("test.json");
