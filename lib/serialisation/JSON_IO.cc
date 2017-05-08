@@ -43,6 +43,7 @@ JSONWriter::~JSONWriter(void)
   cout  << ss_.str() << endl;
   // write prettified JSON to file
   std::ofstream os(fileName_);
+  std::cout << "Writing on file" << std::endl;
   os << std::setw(2) << json::parse(ss_.str()) << std::endl;
 }
 

@@ -1,6 +1,6 @@
     /*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
 
     Source file: ./lib/serialisation/JSON_IO.h
 
@@ -43,10 +43,10 @@ using json = nlohmann::json;
 
 namespace Grid
 {
-  
+
   class JSONWriter: public Writer<JSONWriter>
   {
-    
+
   public:
     JSONWriter(const std::string &fileName);
     virtual ~JSONWriter(void);
@@ -54,6 +54,8 @@ namespace Grid
     void pop(void);
     template <typename U>
     void writeDefault(const std::string &s, const U &x);
+    template <typename U>
+    void writeDefault(const std::string &s, const std::complex<U> &x);
     template <typename U>
     void writeDefault(const std::string &s, const std::vector<U> &x);
 
@@ -65,7 +67,7 @@ namespace Grid
     std::string         fileName_;
     std::ostringstream  ss_;
   };
-  
+
   class JSONReader: public Reader<JSONReader>
   {
   public:
@@ -76,6 +78,8 @@ namespace Grid
     bool nextElement(const std::string &s);
     template <typename U>
     void readDefault(const std::string &s, U &output);
+    template <typename U>
+    void readDefault(const std::string &s, std::complex<U> &output);
     template <typename U>
     void readDefault(const std::string &s, std::vector<U> &output);
   private:
@@ -97,11 +101,12 @@ namespace Grid
   struct isWriter< JSONWriter > {
     static const bool value = true;
   };
-  
+
   // Writer template implementation ////////////////////////////////////////////
   template <typename U>
   void JSONWriter::writeDefault(const std::string &s, const U &x)
   {
+    std::cout << "JSONReader::writeDefault(U) : " << s <<  std::endl;
     std::ostringstream os;
     os << std::boolalpha << x;
     if (s.size())
@@ -111,8 +116,22 @@ namespace Grid
   }
 
   template <typename U>
+  void JSONWriter::writeDefault(const std::string &s, const std::complex<U> &x)
+  {
+    std::cout << "JSONReader::writeDefault(complex) : " << s <<  std::endl;
+    std::ostringstream os;
+    os << "["<< std::boolalpha << x.real() << ", " << x.imag() << "]";
+    if (s.size())
+      ss_ << "\""<< s << "\" : " << os.str() << " ," ;
+    else
+     ss_ << os.str() << " ," ;
+  }
+
+  template <typename U>
   void JSONWriter::writeDefault(const std::string &s, const std::vector<U> &x)
   {
+    std::cout << "JSONReader::writeDefault(vec U) : " << s <<  std::endl;
+
     if (s.size())
       ss_ << " \""<<s<<"\" : [";
     else
@@ -124,13 +143,15 @@ namespace Grid
     delete_comma();
     ss_<< "],";
   }
-  
+
   template<std::size_t N>
   void JSONWriter::writeDefault(const std::string &s, const char(&x)[N]){
+    std::cout << "JSONReader::writeDefault(char U) : " << s <<  std::endl;
+
     if (s.size())
     ss_ << "\""<< s << "\" : \"" << x << "\" ," ;
     else
-    ss_ << "\"" << x << "\" ," ; 
+    ss_ << "\"" << x << "\" ," ;
   }
 
   // Reader template implementation ////////////////////////////////////////////
@@ -138,7 +159,7 @@ namespace Grid
   void JSONReader::readDefault(const std::string &s, U &output)
   {
     std::cout << "JSONReader::readDefault(U) : " << s << "  :  "<< jcur_ << std::endl;
-  
+
     if (s.size()){
       std::cout << "String: "<< jcur_[s] << std::endl;
       output = jcur_[s];
@@ -146,15 +167,31 @@ namespace Grid
     else
     {
       std::cout << "String: "<< jcur_ << std::endl;
-      output = jcur_;    
+      output = jcur_;
     }
 
 
   }
-  
+
+  template <typename U>
+  void JSONReader::readDefault(const std::string &s, std::complex<U> &output)
+  {
+    U tmp1, tmp2;
+    std::cout << "JSONReader::readDefault( complex U) : " << s << "  :  "<< jcur_ << std::endl;
+    json j = jcur_;
+    json::iterator it = j.begin();
+    jcur_ = *it;
+    read("", tmp1);
+    it++;
+    jcur_ = *it;
+    read("", tmp2);
+    output = std::complex<U>(tmp1,tmp2);
+  }
+
+
   template <>
   void JSONReader::readDefault(const std::string &s, std::string &output);
-  
+
   template <typename U>
   void JSONReader::readDefault(const std::string &s, std::vector<U> &output)
   {
@@ -163,7 +200,7 @@ namespace Grid
     std::cout << "JSONReader::readDefault(vec) : " << jcur_ << std::endl;
     if (s.size())
       push(s);
-    
+
     json j = jcur_;
     for (json::iterator it = j.begin(); it != j.end(); ++it) {
       jcur_ = *it;
@@ -171,12 +208,12 @@ namespace Grid
       output.resize(i + 1);
       read("", output[i++]);
     }
-    
+
 
     jcur_ = j;
     if (s.size())
       pop();
   }
-  
+
 }
 #endif
