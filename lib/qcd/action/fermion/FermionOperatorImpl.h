@@ -220,20 +220,34 @@ namespace QCD {
       
     inline void DoubleStore(GridBase *GaugeGrid,
                             DoubledGaugeField &Uds,
-                            const GaugeField &Umu) {
+                            const GaugeField &Umu) 
+    {
+      typedef typename Simd::scalar_type scalar_type;
+
       conformable(Uds._grid, GaugeGrid);
       conformable(Umu._grid, GaugeGrid);
+
       GaugeLinkField U(GaugeGrid);
       GaugeLinkField tmp(GaugeGrid);
+
       Lattice<iScalar<vInteger> > coor(GaugeGrid);
       for (int mu = 0; mu < Nd; mu++) {
-        LatticeCoordinate(coor, mu);
+
+	auto pha = Params.boundary_phases[mu];
+	scalar_type phase( real(pha),imag(pha) );
+
         int Lmu = GaugeGrid->GlobalDimensions()[mu] - 1;
+
+        LatticeCoordinate(coor, mu);
+
         U = PeekIndex<LorentzIndex>(Umu, mu);
-        tmp = where(coor == Lmu, Params.boundary_phases[mu] * U, U);
+        tmp = where(coor == Lmu, phase * U, U);
         PokeIndex<LorentzIndex>(Uds, tmp, mu);
+
         U = adj(Cshift(U, mu, -1));
-        U = where(coor == 0, Params.boundary_phases[mu] * U, U);
+	// FIXME -- PAB ; this looked like phase should be conjugated so I changed it.
+	// Should we really support these being complex?
+        U = where(coor == 0, conjugate(phase) * U, U); 
         PokeIndex<LorentzIndex>(Uds, U, mu + 4);
       }
     }

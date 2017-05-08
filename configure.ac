@@ -1,9 +1,9 @@
 AC_PREREQ([2.63])
-AC_INIT([Grid], [0.6.0-dev], [https://github.com/paboyle/Grid], [Grid])
+AC_INIT([Grid], [0.7.0], [https://github.com/paboyle/Grid], [Grid])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE(subdir-objects)
+AM_INIT_AUTOMAKE([subdir-objects 1.13])
 AM_EXTRA_RECURSIVE_TARGETS([tests bench])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([lib/Grid.h])
