@@ -23,7 +23,7 @@ std::vector<std::string> TScalarVP::getInput(void)
 
 std::vector<std::string> TScalarVP::getOutput(void)
 {
-    std::vector<std::string> out = {getName(), getName()+"_propQ",
+    std::vector<std::string> out = {getName()+"_propQ",
                                     getName()+"_propSun",
                                     getName()+"_propTad"};
     
@@ -34,6 +34,7 @@ std::vector<std::string> TScalarVP::getOutput(void)
         for (unsigned int nu = 0; nu < env().getNd(); ++nu)
         {
             out.push_back(getName() + "_" + std::to_string(mu) + "_" + std::to_string(nu));
+            out.push_back(getName() + "_free_" + std::to_string(mu) + "_" + std::to_string(nu));
         }
     }
 
@@ -53,6 +54,7 @@ void TScalarVP::setup(void)
 	phaseName_.clear();
 	muPropQName_.clear();
     vpTensorName_.clear();
+    freeVpTensorName_.clear();
     
 	for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
@@ -60,12 +62,16 @@ void TScalarVP::setup(void)
         muPropQName_.push_back(getName() + "_propQ_" + std::to_string(mu));
 
         std::vector<std::string> vpTensorName_mu;
+        std::vector<std::string> freeVpTensorName_mu;
         for (unsigned int nu = 0; nu < env().getNd(); ++nu)
         {
             vpTensorName_mu.push_back(getName() + "_" + std::to_string(mu)
                                       + "_" + std::to_string(nu));
+            freeVpTensorName_mu.push_back(getName() + "_free_" + std::to_string(mu)
+                                       + "_" + std::to_string(nu));
         }
         vpTensorName_.push_back(vpTensorName_mu);
+        freeVpTensorName_.push_back(freeVpTensorName_mu);
     }
 
     if (!env().hasRegisteredObject(freeMomPropName_))
@@ -90,7 +96,7 @@ void TScalarVP::setup(void)
     env().registerLattice<ScalarField>(propQName_);
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
 	{
-		env().registerLattice<ScalarField>(muPropQName_[mu]);
+	    env().registerLattice<ScalarField>(muPropQName_[mu]);
 	}
     env().registerLattice<ScalarField>(propSunName_);
     env().registerLattice<ScalarField>(propTadName_);
@@ -99,9 +105,9 @@ void TScalarVP::setup(void)
         for (unsigned int nu = 0; nu < env().getNd(); ++nu)
         {
             env().registerLattice<ScalarField>(vpTensorName_[mu][nu]);
+            env().registerLattice<ScalarField>(freeVpTensorName_[mu][nu]);
         }
     }
-    env().registerLattice<ScalarField>(getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -171,12 +177,18 @@ void TScalarVP::execute(void)
 
     // PROPAGATOR CALCULATION
     // Propagator from unshifted source
+    LOG(Message) << "Computing O(alpha) charged scalar propagator"
+                 << " (mass= " << par().mass
+                 << ", charge= " << q << ")..."
+                 << std::endl;
 	ScalarField &propQ   = *env().createLattice<ScalarField>(propQName_);
     ScalarField &propSun   = *env().createLattice<ScalarField>(propSunName_);
     ScalarField &propTad   = *env().createLattice<ScalarField>(propTadName_);
     chargedProp(propQ, propSun, propTad, *GFSrc_, fft);
 
     // Propagators from shifted sources
+    LOG(Message) << "Computing O(q) charged scalar propagators..."
+                 << std::endl;
     std::vector<ScalarField> muPropQ;
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
@@ -190,25 +202,25 @@ void TScalarVP::execute(void)
     }
 
     // CONTRACTIONS
-    std::vector<std::vector<ScalarField> > vpTensor;
-    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-    {
-        std::vector<ScalarField> vpTensor_mu;
-        for (unsigned int nu = 0; nu < env().getNd(); ++nu)
-        {
-            vpTensor_mu.push_back(*env().createLattice<ScalarField>(vpTensorName_[mu][nu]));
-        }
-        vpTensor.push_back(vpTensor_mu);
-    }
     ScalarField prop1(env().getGrid()), prop2(env().getGrid());
     EmField     &A = *env().getObject<EmField>(par().emField);
     ScalarField Amu(env().getGrid());
     TComplex    Anu0;
     std::vector<int> coor0 = {0, 0, 0, 0};
+    std::vector<std::vector<ScalarField> > vpTensor, freeVpTensor;
+    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+    {
+        std::vector<ScalarField> vpTensor_mu;
+        std::vector<ScalarField> freeVpTensor_mu;
+        for (unsigned int nu = 0; nu < env().getNd(); ++nu)
+        {
+            vpTensor_mu.push_back(*env().createLattice<ScalarField>(vpTensorName_[mu][nu]));
+            freeVpTensor_mu.push_back(*env().createLattice<ScalarField>(freeVpTensorName_[mu][nu]));
+        }
+        vpTensor.push_back(vpTensor_mu);
+        freeVpTensor.push_back(freeVpTensor_mu);
+    }
 
-    // Free VP
-
-    // Charged VP
     for (unsigned int nu = 0; nu < env().getNd(); ++nu)
     {
         peekSite(Anu0, peekLorentz(A, nu), coor0);
@@ -219,9 +231,15 @@ void TScalarVP::execute(void)
                          << std::endl;
             Amu = peekLorentz(A, mu);
 
+            // Free VP
+            prop1 = *prop0_;
+            prop2 = Cshift(*prop0_, nu, -1);
+            freeVpTensor[mu][nu] = adj(prop2) * Cshift(prop1, mu, 1);
+            freeVpTensor[mu][nu] -= Cshift(adj(prop2), mu, 1) * prop1;
+
             // "Exchange" terms
-            prop1 = *prop0_ + q*propQ;
-            prop2 = Cshift(*prop0_, nu, -1) + q*muPropQ[nu];
+            prop1 += q*propQ;
+            prop2 += q*muPropQ[nu];
             vpTensor[mu][nu] = adj(prop2) * (1.0 + ci*q*Amu)
                                * Cshift(prop1, mu, 1) * (1.0 + ci*q*Anu0);
             vpTensor[mu][nu] -= Cshift(adj(prop2), mu, 1) * (1.0 - ci*q*Amu)
@@ -267,33 +285,6 @@ void TScalarVP::execute(void)
         }
     }
 
-    // prop1 = *GFSrc_ + q*propQ + q*q*propSun + q*q*propTad;
-    // fft.FFT_all_dim(prop1, prop1, FFT::backward);
-    // for (unsigned int nu = 0; nu < env().getNd(); ++nu)
-    // {
-    //     peekSite(Anu0, peekLorentz(A, nu), coor0);
-    //     prop2 = adj(*phase_[nu])*(*GFSrc_) + q*(*(muPropQ_[nu]))
-    //             + q*q*(*(muPropSun_[nu]) + *(muPropTad_[nu]));
-    //     fft.FFT_all_dim(prop2, prop2, FFT::backward);
-
-    //     std::vector<ScalarField> pi_nu;
-    //     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-    //     {
-    //         LOG(Message) << "Computing Pi[" << mu << "][" << nu << "]..."
-    //                      << std::endl;
-    //         Amu = peekLorentz(A, mu);
-    //         vpTensor[mu][nu] = adj(prop2)
-    //                            * (1.0 + ci*q*Amu - 0.5*q*q*Amu*Amu)
-    //                            * Cshift(prop1, mu, 1)
-    //                            * (1.0 + ci*q*Anu0 - 0.5*q*q*Anu0*Anu0);
-    //         vpTensor[mu][nu] -= Cshift(adj(prop2), mu, 1)
-    //                             * (1.0 - ci*q*Amu - 0.5*q*q*Amu*Amu)
-    //                             * prop1
-    //                             * (1.0 + ci*q*Anu0 - 0.5*q*q*Anu0*Anu0);
-    //         vpTensor[mu][nu] = 2.0*real(vpTensor[mu][nu]);
-    //     }
-    // }
-
     // OUTPUT IF NECESSARY
     if (!par().output.empty())
     {
@@ -322,6 +313,16 @@ void TScalarVP::execute(void)
                 }
                 write(writer, "Pi_"+std::to_string(mu)+"_"+std::to_string(nu),
                       result);
+
+                sliceSum(freeVpTensor[mu][nu], vecBuf, Tp);
+                result.resize(vecBuf.size());
+                for (unsigned int t = 0; t < vecBuf.size(); ++t)
+                {
+                    result[t] = TensorRemove(vecBuf[t]);
+                }
+                write(writer,
+                      "Pi_"+std::to_string(mu)+"_"+std::to_string(nu)+"_free",
+                      result);
             }
         }
     }
@@ -335,11 +336,6 @@ void TScalarVP::chargedProp(ScalarField &prop_q, ScalarField &prop_sun,
 	Complex     ci(0.0,1.0);
 	ScalarField &G = *freeMomProp_;
     ScalarField buf(env().getGrid());
-
-    LOG(Message) << "Computing charged scalar propagator"
-                 << " (mass= " << par().mass
-                 << ", charge= " << par().charge << ")..."
-                 << std::endl;
 	
 	// -G*momD1*G*F*Src (momD1 = F*D1*Finv)
     buf = GFSrc;
