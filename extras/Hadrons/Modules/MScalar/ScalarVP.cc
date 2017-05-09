@@ -30,8 +30,6 @@ std::vector<std::string> TScalarVP::getOutput(void)
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
         out.push_back(getName() + "_propQ_" + std::to_string(mu));
-        out.push_back(getName() + "_propSun_" + std::to_string(mu));
-        out.push_back(getName() + "_propTad_" + std::to_string(mu));
 
         for (unsigned int nu = 0; nu < env().getNd(); ++nu)
         {
@@ -54,16 +52,12 @@ void TScalarVP::setup(void)
 
 	phaseName_.clear();
 	muPropQName_.clear();
-	muPropSunName_.clear();
-	muPropTadName_.clear();
     vpTensorName_.clear();
     
 	for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
         phaseName_.push_back("_shiftphase_" + std::to_string(mu));
         muPropQName_.push_back(getName() + "_propQ_" + std::to_string(mu));
-        muPropSunName_.push_back(getName() + "_propSun_" + std::to_string(mu));
-        muPropTadName_.push_back(getName() + "_propTad_" + std::to_string(mu));
 
         std::vector<std::string> vpTensorName_mu;
         for (unsigned int nu = 0; nu < env().getNd(); ++nu)
@@ -99,15 +93,7 @@ void TScalarVP::setup(void)
 		env().registerLattice<ScalarField>(muPropQName_[mu]);
 	}
     env().registerLattice<ScalarField>(propSunName_);
-    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-    {
-		env().registerLattice<ScalarField>(muPropSunName_[mu]);
-	}
     env().registerLattice<ScalarField>(propTadName_);
-    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-    {
-		env().registerLattice<ScalarField>(muPropTadName_[mu]);
-	}
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
         for (unsigned int nu = 0; nu < env().getNd(); ++nu)
@@ -191,17 +177,16 @@ void TScalarVP::execute(void)
     chargedProp(propQ, propSun, propTad, *GFSrc_, fft);
 
     // Propagators from shifted sources
-    std::vector<ScalarField *> muPropQ_, muPropSun_, muPropTad_;
-    ScalarField buf(env().getGrid());
+    std::vector<ScalarField> muPropQ;
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
-        muPropQ_.push_back(env().createLattice<ScalarField>(muPropQName_[mu]));
-        muPropSun_.push_back(env().createLattice<ScalarField>(muPropSunName_[mu]));
-        muPropTad_.push_back(env().createLattice<ScalarField>(muPropTadName_[mu]));
+        muPropQ.push_back(*env().createLattice<ScalarField>(muPropQName_[mu]));
 
-        buf = adj(*phase_[mu])*(*GFSrc_);
-        chargedProp(*(muPropQ_[mu]), *(muPropSun_[mu]), *(muPropTad_[mu]),
-        			buf, fft);
+        // -G*momD1*G*F*tau_mu*Src (momD1 = F*D1*Finv)
+        muPropQ[mu] = adj(*phase_[mu])*(*GFSrc_);
+        momD1(muPropQ[mu], fft);
+        muPropQ[mu] = -(*freeMomProp_)*muPropQ[mu];
+        fft.FFT_all_dim(muPropQ[mu], muPropQ[mu], FFT::backward);
     }
 
     // CONTRACTIONS
@@ -221,32 +206,93 @@ void TScalarVP::execute(void)
     TComplex    Anu0;
     std::vector<int> coor0 = {0, 0, 0, 0};
 
-    prop1 = *GFSrc_ + q*propQ + q*q*propSun + q*q*propTad;
-    fft.FFT_all_dim(prop1, prop1, FFT::backward);
+    // Free VP
+
+    // Charged VP
     for (unsigned int nu = 0; nu < env().getNd(); ++nu)
     {
         peekSite(Anu0, peekLorentz(A, nu), coor0);
-        prop2 = adj(*phase_[nu])*(*GFSrc_) + q*(*(muPropQ_[nu]))
-                + q*q*(*(muPropSun_[nu]) + *(muPropTad_[nu]));
-        fft.FFT_all_dim(prop2, prop2, FFT::backward);
 
-        std::vector<ScalarField> pi_nu;
         for (unsigned int mu = 0; mu < env().getNd(); ++mu)
         {
             LOG(Message) << "Computing Pi[" << mu << "][" << nu << "]..."
                          << std::endl;
             Amu = peekLorentz(A, mu);
-            vpTensor[mu][nu] = adj(prop2)
-                               * (1.0 + ci*q*Amu - 0.5*q*q*Amu*Amu)
-                               * Cshift(prop1, mu, 1)
-                               * (1.0 + ci*q*Anu0 - 0.5*q*q*Anu0*Anu0);
+
+            // "Exchange" terms
+            prop1 = *prop0_ + q*propQ;
+            prop2 = Cshift(*prop0_, nu, -1) + q*muPropQ[nu];
+            vpTensor[mu][nu] = adj(prop2) * (1.0 + ci*q*Amu)
+                               * Cshift(prop1, mu, 1) * (1.0 + ci*q*Anu0);
+            vpTensor[mu][nu] -= Cshift(adj(prop2), mu, 1) * (1.0 - ci*q*Amu)
+                                * prop1 * (1.0 + ci*q*Anu0);
+
+            // Subtract O(alpha^2) term
+            prop1 = q*propQ;
+            prop2 = q*muPropQ[nu];
+            vpTensor[mu][nu] -= adj(prop2) * ci*q*Amu
+                                * Cshift(prop1, mu, 1) * ci*q*Anu0;
+            vpTensor[mu][nu] += Cshift(adj(prop2), mu, 1) * (-ci)*q*Amu
+                                * prop1 * ci*q*Anu0;
+
+            // Sunset+tadpole from source
+            prop1 = q*q*(propSun + propTad);
+            prop2 = Cshift(*prop0_, nu, -1);
+            vpTensor[mu][nu] += adj(prop2) * Cshift(prop1, mu, 1);
+            vpTensor[mu][nu] -= Cshift(adj(prop2), mu, 1) * prop1;
+
+            // Sunset+tadpole from shifted source
+            prop1 = Cshift(prop1, nu, -1);
+            vpTensor[mu][nu] += Cshift(adj(*prop0_), mu, 1) * prop1;
+            vpTensor[mu][nu] -= adj(*prop0_) * Cshift(prop1, mu, 1);
+
+            // Source tadpole
+            prop1 = *prop0_;
+            vpTensor[mu][nu] += adj(prop2)
+                                * Cshift(prop1, mu, 1)
+                                * (-0.5)*q*q*Anu0*Anu0;
             vpTensor[mu][nu] -= Cshift(adj(prop2), mu, 1)
-                                * (1.0 - ci*q*Amu - 0.5*q*q*Amu*Amu)
                                 * prop1
-                                * (1.0 + ci*q*Anu0 - 0.5*q*q*Anu0*Anu0);
+                                * (-0.5)*q*q*Anu0*Anu0;
+
+            // Sink tadpole
+            vpTensor[mu][nu] += adj(prop2)
+                                * (-0.5)*q*q*Amu*Amu
+                                * Cshift(prop1, mu, 1);
+            vpTensor[mu][nu] -= Cshift(adj(prop2), mu, 1)
+                                * (-0.5)*q*q*Amu*Amu
+                                * prop1;
+
             vpTensor[mu][nu] = 2.0*real(vpTensor[mu][nu]);
         }
     }
+
+    // prop1 = *GFSrc_ + q*propQ + q*q*propSun + q*q*propTad;
+    // fft.FFT_all_dim(prop1, prop1, FFT::backward);
+    // for (unsigned int nu = 0; nu < env().getNd(); ++nu)
+    // {
+    //     peekSite(Anu0, peekLorentz(A, nu), coor0);
+    //     prop2 = adj(*phase_[nu])*(*GFSrc_) + q*(*(muPropQ_[nu]))
+    //             + q*q*(*(muPropSun_[nu]) + *(muPropTad_[nu]));
+    //     fft.FFT_all_dim(prop2, prop2, FFT::backward);
+
+    //     std::vector<ScalarField> pi_nu;
+    //     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
+    //     {
+    //         LOG(Message) << "Computing Pi[" << mu << "][" << nu << "]..."
+    //                      << std::endl;
+    //         Amu = peekLorentz(A, mu);
+    //         vpTensor[mu][nu] = adj(prop2)
+    //                            * (1.0 + ci*q*Amu - 0.5*q*q*Amu*Amu)
+    //                            * Cshift(prop1, mu, 1)
+    //                            * (1.0 + ci*q*Anu0 - 0.5*q*q*Anu0*Anu0);
+    //         vpTensor[mu][nu] -= Cshift(adj(prop2), mu, 1)
+    //                             * (1.0 - ci*q*Amu - 0.5*q*q*Amu*Amu)
+    //                             * prop1
+    //                             * (1.0 + ci*q*Anu0 - 0.5*q*q*Anu0*Anu0);
+    //         vpTensor[mu][nu] = 2.0*real(vpTensor[mu][nu]);
+    //     }
+    // }
 
     // OUTPUT IF NECESSARY
     if (!par().output.empty())
@@ -281,7 +327,7 @@ void TScalarVP::execute(void)
     }
 }
 
-// Calculate O(q) and O(q^2) terms of momentum-space charged propagator
+// Calculate O(q) and O(q^2) terms of position-space charged propagator
 void TScalarVP::chargedProp(ScalarField &prop_q, ScalarField &prop_sun,
 							ScalarField &prop_tad, ScalarField &GFSrc,
 							FFT &fft)
@@ -300,15 +346,18 @@ void TScalarVP::chargedProp(ScalarField &prop_q, ScalarField &prop_sun,
     momD1(buf, fft);
     buf = G*buf;
     prop_q = -buf;
+    fft.FFT_all_dim(prop_q, prop_q, FFT::backward);
 
     // G*momD1*G*momD1*G*F*Src
     momD1(buf, fft);
     prop_sun = G*buf;
+    fft.FFT_all_dim(prop_sun, prop_sun, FFT::backward);
 
     // -G*momD2*G*F*Src (momD2 = F*D2*Finv)
     buf = GFSrc;
     momD2(buf, fft);
     prop_tad = -G*buf;
+    fft.FFT_all_dim(prop_tad, prop_tad, FFT::backward);
 }
 
 void TScalarVP::momD1(ScalarField &s, FFT &fft)

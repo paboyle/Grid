@@ -51,8 +51,7 @@ private:
     std::string                                 freeMomPropName_, GFSrcName_,
                                                 prop0Name_, propQName_,
                                                 propSunName_, propTadName_;
-    std::vector<std::string>                    phaseName_, muPropQName_,
-                                                muPropSunName_, muPropTadName_;
+    std::vector<std::string>                    phaseName_, muPropQName_;
     std::vector<std::vector<std::string> >      vpTensorName_;
     ScalarField                                 *freeMomProp_, *GFSrc_,
                                                 *prop0_;
