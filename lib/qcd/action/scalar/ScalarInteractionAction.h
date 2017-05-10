@@ -88,8 +88,7 @@ namespace Grid {
 	  int permute_type;
 	  StencilEntry *SE;
 	  vobj temp2;
-	  vobj *temp;
-	  vobj *t_p;
+	  const vobj *temp, *t_p;
 	    
 	  SE = phiStencil.GetEntry(permute_type, mu, i);
 	  t_p  = &p._odata[i];
@@ -122,7 +121,7 @@ namespace Grid {
       //for (int mu = 0; mu < QCD::Nd; mu++) force -= Cshift(p, mu, -1) + Cshift(p, mu, 1);
       for (int point = 0; point < npoint; point++) {
 	parallel_for (int i = 0; i < p._grid->oSites(); i++) {
-	  vobj *temp;
+	  const vobj *temp;
 	  vobj temp2;
 	  int permute_type;
 	  StencilEntry *SE;
