@@ -1,9 +1,5 @@
 #pragma once 
 
-
-#define COMPILER_FATAL     
-#define COMPILER_GCC_WARN  "Compiler" COMPILER_STRING " is known to not work with Grid under -O3 due to compiler bugs"
-
 #if defined(__clang__)
 
   #if __clang_major < 3
@@ -16,14 +12,12 @@
     #endif
   #endif 
 
-#endif
-
 // Intel compiler *ALSO* has __GNUC__ defined so must if/else GCC checks
-#ifdef __INTEL_COMPILER
+#elif defined(__INTEL_COMPILER)
 
-#if __INTEL_COMPILER < 1600
-  #error "This icpc version is known to not work with Grid due to compiler bugs"
-#endif
+  #if __INTEL_COMPILER < 1603
+    #error "This icpc version is known to not work with Grid due to compiler bugs"
+  #endif
 
 #else 
 
@@ -50,6 +44,10 @@
     #endif
 
   #endif
+#else
+
+  #warning "Unknown compiler detected: cannot guarantee compatability since Grid tends to break compilers"
+  #warning "Ensure to run :  make check"
 
 #endif
 
