@@ -29,6 +29,7 @@ AC_DEFINE_UNQUOTED([GXX_VERSION],["$GXX_VERSION"],
 
 CXXFLAGS="-O3 $CXXFLAGS"
 
+
 ############### Checks for typedefs, structures, and compiler characteristics
 AC_TYPE_SIZE_T
 AC_TYPE_UINT32_T
@@ -190,6 +191,7 @@ AC_SEARCH_LIBS([H5Fopen], [hdf5_cpp],
                [LIBS="${LIBS} -lhdf5"], [], [-lhdf5])
 AM_CONDITIONAL(BUILD_HDF5, [ test "${have_hdf5}X" == "trueX" ])
 
+$CXX -dM -E -x c /dev/null
 CXXFLAGS=$CXXFLAGS_CPY
 LDFLAGS=$LDFLAGS_CPY
 
