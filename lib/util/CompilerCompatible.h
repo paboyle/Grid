@@ -21,6 +21,8 @@
 
 #else 
 
+// This macro is annoying many other compilers just define __GNUC__ and claim GCC compat
+// but this defeats the use of __GNUC__ to really detect G++
   #if defined(__GNUC__)
 
     #if __GNUC__ < 4 
@@ -43,11 +45,12 @@
       #endif
     #endif
 
-  #endif
-#else
+  #else
 
-  #warning "Unknown compiler detected: cannot guarantee compatability since Grid tends to break compilers"
-  #warning "Ensure to run :  make check"
+    #warning "Unknown compiler detected: cannot guarantee compatability since Grid tends to break compilers"
+    #warning "Ensure to run :  make check"
+
+  #endif
 
 #endif
 
