@@ -33,22 +33,6 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - g++-4.8
-            - libmpfr-dev
-            - libgmp-dev
-            - libmpc-dev
-            - libopenmpi-dev
-            - openmpi-bin
-            - binutils-dev
-      env: VERSION=-4.8
-    - compiler: gcc
-      dist: trusty
-      sudo: required
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
             - g++-5
             - libmpfr-dev
             - libgmp-dev
