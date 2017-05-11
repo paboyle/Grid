@@ -2,12 +2,12 @@
 
 #if defined(__clang__)
 
-  #if __clang_major < 3
+  #if __clang_major__ < 3
     #error "This clang++ version is known to not work with Grid due to compiler bugs"
   #endif
 
-  #if __clang_major == 3
-    #if __clang_minor < 5
+  #if __clang_major__ == 3
+    #if __clang_minor__ < 5
     #error "This clang++ version is known to not work with Grid due to compiler bugs"
     #endif
   #endif 
