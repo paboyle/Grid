@@ -39,11 +39,50 @@ class ScalarActionParameters : Serializable {
   }
 
 };
-
 }
+
+using namespace Grid;
+using namespace Grid::QCD;
+
+template <class Impl>
+class MagLogger : public HmcObservable<typename Impl::Field> {
+public:
+  typedef typename Impl::Field Field;
+  typedef typename Impl::Simd::scalar_type Trace;
+  
+  void TrajectoryComplete(int traj,
+                          Field &U,
+                          GridSerialRNG &sRNG,
+                          GridParallelRNG &pRNG) {
+    
+    int def_prec = std::cout.precision();
+    
+    std::cout << std::setprecision(std::numeric_limits<Real>::digits10 + 1);
+    std::cout << GridLogMessage
+              << "m= " << TensorRemove(trace(sum(U))) << std::endl;
+    std::cout << GridLogMessage
+              << "m^2= " << TensorRemove(trace(sum(U)*sum(U))) << std::endl;
+    std::cout.precision(def_prec);
+    
+  }
+private:
+  
+};
+
+template <class Impl>
+class MagMod: public ObservableModule<MagLogger<Impl>, NoParameters>{
+  typedef ObservableModule<MagLogger<Impl>, NoParameters> ObsBase;
+  using ObsBase::ObsBase; // for constructors
+  
+  // acquire resource
+  virtual void initialize(){
+    this->ObservablePtr.reset(new MagLogger<Impl>());
+  }
+public:
+  MagMod(): ObsBase(NoParameters()){}
+};
+
 int main(int argc, char **argv) {
-  using namespace Grid;
-  using namespace Grid::QCD;
   typedef Grid::JSONReader       Serialiser;
   
   Grid_init(&argc, &argv);
@@ -52,7 +91,7 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
   // Typedefs to simplify notation
-  constexpr int Ncolours    = 4;
+  constexpr int Ncolours    = 2;
   constexpr int Ndimensions = 3;
   typedef ScalarNxNAdjGenericHMCRunner<Ncolours> HMCWrapper;  // Uses the default minimum norm, real scalar fields
   typedef ScalarAdjActionR<Ncolours, Ndimensions> ScalarAction;
@@ -89,6 +128,11 @@ int main(int argc, char **argv) {
 
   RNGModuleParameters RNGpar(Reader);
   TheHMC.Resources.SetRNGSeeds(RNGpar);
+  
+  // Construct observables
+  typedef MagMod<HMCWrapper::ImplPolicy> MagObs;
+  TheHMC.Resources.AddObservable<MagObs>();
+  
   /////////////////////////////////////////////////////////////
   // Collect actions, here use more encapsulation
 
