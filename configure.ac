@@ -29,6 +29,7 @@ AC_DEFINE_UNQUOTED([GXX_VERSION],["$GXX_VERSION"],
 
 CXXFLAGS="-O3 $CXXFLAGS"
 
+
 ############### Checks for typedefs, structures, and compiler characteristics
 AC_TYPE_SIZE_T
 AC_TYPE_UINT32_T

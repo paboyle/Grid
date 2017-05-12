@@ -233,8 +233,8 @@ namespace QCD {
       Lattice<iScalar<vInteger> > coor(GaugeGrid);
       for (int mu = 0; mu < Nd; mu++) {
 
-	auto pha = Params.boundary_phases[mu];
-	scalar_type phase( real(pha),imag(pha) );
+	      auto pha = Params.boundary_phases[mu];
+	      scalar_type phase( real(pha),imag(pha) );
 
         int Lmu = GaugeGrid->GlobalDimensions()[mu] - 1;
 
@@ -245,8 +245,6 @@ namespace QCD {
         PokeIndex<LorentzIndex>(Uds, tmp, mu);
 
         U = adj(Cshift(U, mu, -1));
-	// FIXME -- PAB ; this looked like phase should be conjugated so I changed it.
-	// Should we really support these being complex?
         U = where(coor == 0, conjugate(phase) * U, U); 
         PokeIndex<LorentzIndex>(Uds, U, mu + 4);
       }
@@ -265,11 +263,11 @@ namespace QCD {
       tmp = zero;
       
       parallel_for(int sss=0;sss<tmp._grid->oSites();sss++){
-	int sU=sss;
-	for(int s=0;s<Ls;s++){
-	  int sF = s+Ls*sU;
-	  tmp[sU] = tmp[sU]+ traceIndex<SpinIndex>(outerProduct(Btilde[sF],Atilde[sF])); // ordering here
-	}
+	    int sU=sss;
+	    for(int s=0;s<Ls;s++){
+	        int sF = s+Ls*sU;
+	        tmp[sU] = tmp[sU]+ traceIndex<SpinIndex>(outerProduct(Btilde[sF],Atilde[sF])); // ordering here
+	    }
       }
       PokeIndex<LorentzIndex>(mat,tmp,mu);
       
