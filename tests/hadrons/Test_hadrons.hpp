@@ -538,39 +538,30 @@ inline void makeWITest(Application &application, std::string &modName,
 }
 
 /*******************************************************************************
- * Name: makeSeqTest
- * Purpose: Create module to test sequential insertion of conserved current
- *          and add to application module.
+ * Name: makeSeqCurrComparison
+ * Purpose: Create module to compare sequential insertion of conserved current
+ *          against sink contraction and add to application module.
  * Parameters: application - main application that stores modules.
  *             modName     - name of module to create.
- *             propName    - 4D quark propagator.
- *             seqProp     - 4D quark propagator with sequential insertion of
+ *             propName    - quark propagator (point source), 5D if available.
+ *             seqName     - 4D quark propagator with sequential insertion of
  *                           conserved current.
  *             actionName  - action used to compute quark propagators.
+ *             origin      - origin of point source propagator.
  *             t_J         - time at which sequential current is inserted.
  *             mu          - Lorentz index of sequential current.
  *             curr        - type of conserved current inserted.
- *             Ls          - length of 5th dimension (default = 1).
  * Returns: None.
  ******************************************************************************/
-inline void makeSeqTest(Application &application, std::string &modName,
-                        std::string &propName, std::string &seqName,
-                        std::string &actionName, std::string &origin,
-                        unsigned int t_J, unsigned int mu, Current curr,
-                        unsigned int Ls = 1)
+inline void makeSeqCurrComparison(Application &application, std::string &modName,
+                                 std::string &propName, std::string &seqName,
+                                 std::string &actionName, std::string &origin,
+                                 unsigned int t_J, unsigned int mu, Current curr)
 {
     if (!(Environment::getInstance().hasModule(modName)))
     {
         MUtilities::TestSeqConserved::Par seqPar;
-        if (Ls > 1)
-        {
-            seqPar.q  = LABEL_5D(propName);
-        }
-        else
-        {
-            seqPar.q  = propName;
-        }
-        seqPar.q4d    = propName;
+        seqPar.q      = propName;
         seqPar.qSeq   = seqName;
         seqPar.action = actionName;
         seqPar.origin = origin;

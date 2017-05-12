@@ -41,7 +41,6 @@ BEGIN_HADRONS_NAMESPACE
  
  * options:
  - q:      point source propagator, 5D if available (string)
- - q4d:    4D point source propagator, duplicate of q if q is 4D (string)
  - qSeq:   result of sequential insertion of conserved current using q (string)
  - action: action used for computation of q (string)
  - origin: string giving point source origin of q (string)
@@ -60,7 +59,6 @@ class TestSeqConservedPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(TestSeqConservedPar,
                                     std::string,  q,
-                                    std::string,  q4d,
                                     std::string,  qSeq,
                                     std::string,  action,
                                     std::string,  origin,
@@ -103,8 +101,7 @@ TTestSeqConserved<FImpl>::TTestSeqConserved(const std::string name)
 template <typename FImpl>
 std::vector<std::string> TTestSeqConserved<FImpl>::getInput(void)
 {
-    std::vector<std::string> in = {par().q, par().q4d, 
-                                   par().qSeq, par().action};
+    std::vector<std::string> in = {par().q, par().qSeq, par().action};
     
     return in;
 }
@@ -121,7 +118,11 @@ std::vector<std::string> TTestSeqConserved<FImpl>::getOutput(void)
 template <typename FImpl>
 void TTestSeqConserved<FImpl>::setup(void)
 {
-    
+    auto Ls = env().getObjectLs(par().q);
+    if (Ls != env().getObjectLs(par().action))
+    {
+        HADRON_ERROR("Ls mismatch between quark action and propagator");
+    }
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -130,33 +131,43 @@ void TTestSeqConserved<FImpl>::execute(void)
 {
     PropagatorField tmp(env().getGrid());
     PropagatorField &q    = *env().template getObject<PropagatorField>(par().q);
-    PropagatorField &q4d  = *env().template getObject<PropagatorField>(par().q4d);
     PropagatorField &qSeq = *env().template getObject<PropagatorField>(par().qSeq);
     FMat            &act  = *(env().template getObject<FMat>(par().action));
     Gamma           g5(Gamma::Algebra::Gamma5);
+    Gamma::Algebra  gA = (par().curr == Current::Axial) ?
+                         Gamma::Algebra::Gamma5 :
+                         Gamma::Algebra::Identity;
+    Gamma           g(gA);
     SitePropagator  qSite;
-    LatticeComplex  c(env().getGrid());
-    Complex         seq_res, check_res;
-    std::vector<TComplex> check_buf;
+    Complex         test_S, test_V, check_S, check_V;
+    std::vector<SitePropagator> check_buf;
 
     // Check sequential insertion of current gives same result as conserved 
     // current sink upon contraction. Assume q uses a point source.
     std::vector<int> siteCoord;
     siteCoord = strToVec<int>(par().origin);
-    peekSite(qSite, q, siteCoord);
-    seq_res = trace(g5*qSite);
+    peekSite(qSite, qSeq, siteCoord);
+    test_S = trace(qSite*g);
+    test_V = trace(qSite*g*Gamma::gmu[par().mu]);
 
     act.ContractConservedCurrent(q, q, tmp, par().curr, par().mu);
-    c = trace(tmp);
-    sliceSum(c, check_buf, Tp);
-    check_res = TensorRemove(check_buf[par().t_J]);
+    sliceSum(tmp, check_buf, Tp);
+    check_S = TensorRemove(trace(check_buf[par().t_J]*g));
+    check_V = TensorRemove(trace(check_buf[par().t_J]*g*Gamma::gmu[par().mu]));
+
+    LOG(Message) << "Test S  = " << abs(test_S)   << std::endl;
+    LOG(Message) << "Test V  = " << abs(test_V) << std::endl;
+    LOG(Message) << "Check S = " << abs(check_S) << std::endl;
+    LOG(Message) << "Check V = " << abs(check_V) << std::endl;
 
     // Check difference = 0
-    check_res -= seq_res;
+    check_S -= test_S;
+    check_V -= test_V;
 
     LOG(Message) << "Consistency check for sequential conserved " 
-                 << par().curr << " current insertion = " << abs(check_res) 
-                 << std::endl;
+                 << par().curr << " current insertion: " << std::endl; 
+    LOG(Message) << "Check S = " << abs(check_S) << std::endl;
+    LOG(Message) << "Check V = " << abs(check_V) << std::endl;
 }
 
 END_MODULE_NAMESPACE

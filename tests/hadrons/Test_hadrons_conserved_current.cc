@@ -30,84 +30,112 @@
 using namespace Grid;
 using namespace Hadrons;
 
+inline void setupSeqCurrTests(Application &application, std::string modStem, 
+                              std::string &pointProp, std::string &seqStem,
+                              std::string &actionName, std::string &solverName,
+                              std::string &origin, Current curr, 
+                              unsigned int t_J, unsigned int mu,
+                              unsigned int Ls = 1)
+{
+    std::string modName = ADD_INDEX(modStem, mu);
+    std::string seqProp = ADD_INDEX(seqStem, mu);
+    std::string seqSrc  = seqProp + "_src";
+
+    // 5D actions require 5D propagator as input for conserved current
+    // insertions.
+    std::string propIn;
+    if (Ls > 1) 
+    {
+        propIn = LABEL_5D(pointProp); 
+    }
+    else
+    { 
+        propIn = pointProp; 
+    }
+
+    makeConservedSequentialSource(application, seqSrc, propIn,
+                                  actionName, t_J, curr, mu);
+    makePropagator(application, seqProp, seqSrc, solverName);
+    makeSeqCurrComparison(application, modName, propIn, seqProp, 
+                          actionName, origin, t_J, mu, curr);
+}
+
+inline void setupWardIdentityTests(Application &application,
+                                   std::string &actionName, 
+                                   double mass,
+                                   unsigned int Ls = 1, 
+                                   bool perform_axial_tests = false)
+{
+    // solver
+    std::string solverName = actionName + "_CG";
+    makeRBPrecCGSolver(application, solverName, actionName);
+
+    unsigned int nt = GridDefaultLatt()[Tp];
+    unsigned int t_J = nt/2;
+
+    /***************************************************************************
+     * Conserved current sink contractions: use a single point propagator for
+     * the Ward Identity test.
+     **************************************************************************/
+    std::string pointProp = actionName + "_q_0";
+    std::string origin    = "0 0 0 0";
+    std::string modName   = actionName + " Ward Identity Test";
+    MAKE_POINT_PROP(origin, pointProp, solverName);
+    makeWITest(application, modName, pointProp, actionName, mass, Ls);
+
+    /***************************************************************************
+     * Conserved current tests with sequential insertion of vector/axial 
+     * current. If above Ward Identity passes, sufficient to test sequential
+     * insertion of conserved current agrees with contracted version.
+     **************************************************************************/
+    // Compare sequential insertion to contraction. Should be enough to perform 
+    // for time and one space component.
+    std::string seqStem = ADD_INDEX(pointProp + "seq_V", t_J);
+    std::string modStem = actionName + " Vector Sequential Test mu";
+    setupSeqCurrTests(application, modStem, pointProp, seqStem, actionName, 
+                      solverName, origin, Current::Vector, t_J, Tp, Ls);
+    setupSeqCurrTests(application, modStem, pointProp, seqStem, actionName, 
+                      solverName, origin, Current::Vector, t_J, Xp, Ls);
+
+    // Perform axial tests only if partially-conserved axial current exists for
+    // the action.
+    if (perform_axial_tests)
+    {
+        seqStem = ADD_INDEX(pointProp + "seq_A", t_J);
+        modStem = actionName + " Axial Sequential Test mu";
+        setupSeqCurrTests(application, modStem, pointProp, seqStem, actionName, 
+                          solverName, origin, Current::Axial, t_J, Tp, Ls);
+        setupSeqCurrTests(application, modStem, pointProp, seqStem, actionName, 
+                          solverName, origin, Current::Axial, t_J, Xp, Ls);
+    }
+}
+
 int main(int argc, char *argv[])
 {
     // initialization //////////////////////////////////////////////////////////
-    Grid_init(&argc, &argv);
-    HadronsLogError.Active(GridLogError.isActive());
-    HadronsLogWarning.Active(GridLogWarning.isActive());
-    HadronsLogMessage.Active(GridLogMessage.isActive());
-    HadronsLogIterative.Active(GridLogIterative.isActive());
-    HadronsLogDebug.Active(GridLogDebug.isActive());
-    LOG(Message) << "Grid initialized" << std::endl;
-    
+    HADRONS_DEFAULT_INIT;
+
     // run setup ///////////////////////////////////////////////////////////////
     Application  application;
-    unsigned int nt = GridDefaultLatt()[Tp];
     double       mass = 0.04;
+    double       M5 = 1.8;
     unsigned int Ls = 12;
 
     // global parameters
-    Application::GlobalPar globalPar;
-    globalPar.trajCounter.start    = 1500;
-    globalPar.trajCounter.end      = 1520;
-    globalPar.trajCounter.step     = 20;
-    globalPar.seed                 = "1 2 3 4";
-    globalPar.genetic.maxGen       = 1000;
-    globalPar.genetic.maxCstGen    = 200;
-    globalPar.genetic.popSize      = 20;
-    globalPar.genetic.mutationRate = .1;
-    application.setPar(globalPar);
+    HADRONS_DEFAULT_GLOBALS(application);
 
     // gauge field
-    application.createModule<MGauge::Unit>("gauge");
+    std::string gaugeField = "gauge";
+    application.createModule<MGauge::Unit>(gaugeField);
 
-    // action
+    // Setup each action and the conserved current tests relevant to it.
     std::string actionName = "DWF";
-    MAction::DWF::Par actionPar;
-    actionPar.gauge = "gauge";
-    actionPar.Ls    = Ls;
-    actionPar.M5    = 1.8;
-    actionPar.mass  = mass;
-    application.createModule<MAction::DWF>(actionName, actionPar);
+    makeDWFAction(application, actionName, gaugeField, mass, M5, Ls);
+    setupWardIdentityTests(application, actionName, mass, Ls, true);
 
-    // solver
-    std::string solverName = "CG";
-    MSolver::RBPrecCG::Par solverPar;
-    solverPar.action   = actionName;
-    solverPar.residual = 1.0e-8;
-    application.createModule<MSolver::RBPrecCG>(solverName,
-                                                solverPar);
-
-    // Conserved current sink contractions: use a single point propagator.
-    std::string pointProp = "q_0";
-    std::string pos = "0 0 0 0";
-    std::string modName = "Ward Identity Test";
-    MAKE_POINT_PROP(pos, pointProp, solverName);
-    makeWITest(application, modName, pointProp, actionName, mass, Ls);
-
-    // Conserved current contractions with sequential insertion of vector/axial
-    // current.
-    std::string mom      = ZERO_MOM;
-    unsigned int t_J     = nt/2;
-    std::string seqPropA = ADD_INDEX(pointProp + "_seq_A", t_J);
-    std::string seqPropV = ADD_INDEX(pointProp + "_seq_V", t_J);
-    std::string seqSrcA  = seqPropA + "_src";
-    std::string seqSrcV  = seqPropV + "_src";
-    std::string point5d  = LABEL_5D(pointProp);
-    makeConservedSequentialSource(application, seqSrcA, point5d, 
-                                  actionName, t_J, Current::Axial, Tp, mom);
-    makePropagator(application, seqPropA, seqSrcA, solverName);
-    makeConservedSequentialSource(application, seqSrcV, point5d, 
-                                  actionName, t_J, Current::Vector, Tp, mom);
-    makePropagator(application, seqPropV, seqSrcV, solverName);
-
-    std::string modNameA = "Axial Sequential Test";
-    std::string modNameV = "Vector Sequential Test";
-    makeSeqTest(application, modNameA, pointProp, seqPropA, 
-                actionName, pos, t_J, Tp, Current::Axial, Ls);
-    makeSeqTest(application, modNameV, pointProp, seqPropV, 
-                actionName, pos, t_J, Tp, Current::Vector, Ls);
+    actionName = "Wilson";
+    makeWilsonAction(application, actionName, gaugeField, mass);
+    setupWardIdentityTests(application, actionName, mass);
 
     // execution
     application.saveParameterFile("ConservedCurrentTest.xml");
