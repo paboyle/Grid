@@ -47,31 +47,15 @@ The filename for the input parameters deserialisation.
 
 All of them, except the starting trajectory, can be overridden by the input file (but this behaviour can be easily changed by the user writing the source file).
 
-HMC controls
-===========
-
-The lines 
-
-  std::vector<int> SerSeed({1, 2, 3, 4, 5});
-  std::vector<int> ParSeed({6, 7, 8, 9, 10});
-
-define the seeds for the serial and the parallel RNG.
-
-The line 
-
-  TheHMC.MDparameters.set(20, 1.0);// MDsteps, traj length
-
-declares the number of molecular dynamics steps and the total trajectory length.
-
-
 Actions
 ======
 
 Action names are defined in the file
 lib/qcd/Actions.h
 
-Gauge actions list:
+Gauge action names list:
 
+```
 WilsonGaugeActionR;
 WilsonGaugeActionF;
 WilsonGaugeActionD;
@@ -85,7 +69,6 @@ SymanzikGaugeActionR;
 SymanzikGaugeActionF;
 SymanzikGaugeActionD;
 
-
 ConjugateWilsonGaugeActionR;
 ConjugateWilsonGaugeActionF;
 ConjugateWilsonGaugeActionD;
@@ -98,12 +81,15 @@ ConjugateIwasakiGaugeActionD;
 ConjugateSymanzikGaugeActionR;
 ConjugateSymanzikGaugeActionF;
 ConjugateSymanzikGaugeActionD;
+```
 
+Scalar action names list
 
+```
 ScalarActionR;
 ScalarActionF;
 ScalarActionD;
-
+```
 
 each of these action accept one single parameter at creation time (beta).
 Example for creating a Symanzik action with beta=4.0
