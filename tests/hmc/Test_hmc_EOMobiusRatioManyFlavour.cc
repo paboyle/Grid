@@ -131,6 +131,7 @@ int main(int argc, char **argv) {
   */
   
   TheHMC.Resources.LoadNerscCheckpointer(CPparams);
+  //  TheHMC.Resources.LoadBinaryCheckpointer(CPparams);
 
   // RNG definition (Name: RandomNumberGenerator)
   RNGModuleParameters RNGpar(Reader);
@@ -154,7 +155,8 @@ int main(int argc, char **argv) {
   // standard
 
   //RealD beta = 5.6 ;
-  WilsonGaugeActionR Waction(MyParams.gauge_beta);
+  //WilsonGaugeActionR Waction(MyParams.gauge_beta);
+  SymanzikGaugeActionR Syzaction(MyParams.gauge_beta);
     
 
   //const int Ls = 8;
@@ -185,17 +187,32 @@ int main(int argc, char **argv) {
   //double StoppingCondition = 1e-8;
   //double MaxCGIterations = 10000;
   ConjugateGradient<FermionField>  CG(MyParams.Mobius.StoppingCondition,MyParams.Mobius.MaxCGIterations);
-  TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> Nf2(NumOp, DenOp,CG,CG);
+  TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> Nf2a(NumOp, DenOp,CG,CG);
+  TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> Nf2b(NumOp, DenOp,CG,CG);
+  TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> Nf2c(NumOp, DenOp,CG,CG);
+  TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> Nf2d(NumOp, DenOp,CG,CG);
+  TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> Nf2e(NumOp, DenOp,CG,CG);
+  //  TwoFlavourEvenOddRatioPseudoFermionAction<FermionImplPolicy> Nf2f(NumOp, DenOp,CG,CG);
 
   // Set smearing (true/false), default: false
-  Nf2.is_smeared = ApplySmearing;
+  Nf2a.is_smeared = ApplySmearing;
+  Nf2b.is_smeared = ApplySmearing;
+  Nf2c.is_smeared = ApplySmearing;
+  Nf2d.is_smeared = ApplySmearing;
+  Nf2e.is_smeared = ApplySmearing;
+  //Nf2f.is_smeared = ApplySmearing;
   
   // Collect actions
   ActionLevel<HMCWrapper::Field> Level1(1);
-  Level1.push_back(&Nf2);
+  Level1.push_back(&Nf2a);
+  Level1.push_back(&Nf2b);
+  Level1.push_back(&Nf2c);
+  Level1.push_back(&Nf2d);
+  Level1.push_back(&Nf2e);
+  //Level1.push_back(&Nf2f);
 
   ActionLevel<HMCWrapper::Field> Level2(4);
-  Level2.push_back(&Waction);
+  Level2.push_back(&Syzaction);
 
   TheHMC.TheAction.push_back(Level1);
   TheHMC.TheAction.push_back(Level2);

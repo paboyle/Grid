@@ -106,7 +106,6 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
  public:
 
   typedef CartesianCommunicator::CommsRequest_t CommsRequest_t;
-  typedef uint32_t StencilInteger;
   typedef typename cobj::vector_type vector_type;
   typedef typename cobj::scalar_type scalar_type;
   typedef typename cobj::scalar_object scalar_object;

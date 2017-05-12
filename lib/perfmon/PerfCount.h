@@ -205,13 +205,14 @@ public:
   void Stop(void) {
     count=0;
     cycles=0;
-    size_t ign;
 #ifdef __linux__
+    ssize_t ign;
     if ( fd!= -1) {
       ::ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
       ::ioctl(cyclefd, PERF_EVENT_IOC_DISABLE, 0);
       ign=::read(fd, &count, sizeof(long long));
-      ign=::read(cyclefd, &cycles, sizeof(long long));
+      ign+=::read(cyclefd, &cycles, sizeof(long long));
+      assert(ign=2*sizeof(long long));
     }
     elapsed = cyclecount() - begin;
 #else

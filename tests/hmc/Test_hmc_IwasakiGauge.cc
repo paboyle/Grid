@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
   CPparams.saveInterval = 20;
   CPparams.format = "IEEE64BIG";
   
-  TheHMC.Resources.LoadBinaryCheckpointer(CPparams);
+  TheHMC.Resources.LoadNerscCheckpointer(CPparams);
 
   RNGModuleParameters RNGpar;
   RNGpar.serial_seeds = "1 2 3 4 5";

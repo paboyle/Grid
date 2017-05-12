@@ -1,9 +1,10 @@
 AC_PREREQ([2.63])
-AC_INIT([Grid], [0.6.0-dev], [https://github.com/paboyle/Grid], [Grid])
+AC_INIT([Grid], [0.7.0], [https://github.com/paboyle/Grid], [Grid])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE(subdir-objects)
+AM_INIT_AUTOMAKE([subdir-objects 1.13])
+AM_EXTRA_RECURSIVE_TARGETS([tests bench])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([lib/Grid.h])
 AC_CONFIG_HEADERS([lib/Config.h],[sed -i 's|PACKAGE_|GRID_|' lib/Config.h])
@@ -13,7 +14,6 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 #AC_REVISION([m4_esyscmd_s([./scripts/configure.commit])])
 
 ############### Checks for programs
-CXXFLAGS="-O3 $CXXFLAGS"
 AC_PROG_CXX
 AC_PROG_RANLIB
 
@@ -26,6 +26,9 @@ AC_DEFINE_UNQUOTED([CXX_COMP_VENDOR],["$ax_cv_cxx_compiler_vendor"],
 AX_GXX_VERSION
 AC_DEFINE_UNQUOTED([GXX_VERSION],["$GXX_VERSION"],
       [version of g++ that will compile the code])
+
+CXXFLAGS="-O3 $CXXFLAGS"
+
 
 ############### Checks for typedefs, structures, and compiler characteristics
 AC_TYPE_SIZE_T

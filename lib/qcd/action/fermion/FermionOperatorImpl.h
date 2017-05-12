@@ -220,20 +220,32 @@ namespace QCD {
       
     inline void DoubleStore(GridBase *GaugeGrid,
                             DoubledGaugeField &Uds,
-                            const GaugeField &Umu) {
+                            const GaugeField &Umu) 
+    {
+      typedef typename Simd::scalar_type scalar_type;
+
       conformable(Uds._grid, GaugeGrid);
       conformable(Umu._grid, GaugeGrid);
+
       GaugeLinkField U(GaugeGrid);
       GaugeLinkField tmp(GaugeGrid);
+
       Lattice<iScalar<vInteger> > coor(GaugeGrid);
       for (int mu = 0; mu < Nd; mu++) {
-        LatticeCoordinate(coor, mu);
+
+	      auto pha = Params.boundary_phases[mu];
+	      scalar_type phase( real(pha),imag(pha) );
+
         int Lmu = GaugeGrid->GlobalDimensions()[mu] - 1;
+
+        LatticeCoordinate(coor, mu);
+
         U = PeekIndex<LorentzIndex>(Umu, mu);
-        tmp = where(coor == Lmu, Params.boundary_phases[mu] * U, U);
+        tmp = where(coor == Lmu, phase * U, U);
         PokeIndex<LorentzIndex>(Uds, tmp, mu);
+
         U = adj(Cshift(U, mu, -1));
-        U = where(coor == 0, Params.boundary_phases[mu] * U, U);
+        U = where(coor == 0, conjugate(phase) * U, U); 
         PokeIndex<LorentzIndex>(Uds, U, mu + 4);
       }
     }
@@ -251,11 +263,11 @@ namespace QCD {
       tmp = zero;
       
       parallel_for(int sss=0;sss<tmp._grid->oSites();sss++){
-	int sU=sss;
-	for(int s=0;s<Ls;s++){
-	  int sF = s+Ls*sU;
-	  tmp[sU] = tmp[sU]+ traceIndex<SpinIndex>(outerProduct(Btilde[sF],Atilde[sF])); // ordering here
-	}
+	    int sU=sss;
+	    for(int s=0;s<Ls;s++){
+	        int sF = s+Ls*sU;
+	        tmp[sU] = tmp[sU]+ traceIndex<SpinIndex>(outerProduct(Btilde[sF],Atilde[sF])); // ordering here
+	    }
       }
       PokeIndex<LorentzIndex>(mat,tmp,mu);
       
@@ -587,7 +599,7 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
    // use lorentz for flavour as hack.
    auto tmp = TraceIndex<SpinIndex>(outerProduct(Btilde, A));
    parallel_for(auto ss = tmp.begin(); ss < tmp.end(); ss++) {
-     link[ss]() = tmp[ss](0, 0) - conjugate(tmp[ss](1, 1));
+     link[ss]() = tmp[ss](0, 0) + conjugate(tmp[ss](1, 1));
    }
    PokeIndex<LorentzIndex>(mat, link, mu);
    return;

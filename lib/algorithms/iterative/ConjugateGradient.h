@@ -135,8 +135,6 @@ class ConjugateGradient : public OperatorFunction<Field> {
         Linop.HermOpAndNorm(psi, mmp, d, qq);
         p = mmp - src;
 
-        RealD mmpnorm = sqrt(norm2(mmp));
-        RealD psinorm = sqrt(norm2(psi));
         RealD srcnorm = sqrt(norm2(src));
         RealD resnorm = sqrt(norm2(p));
         RealD true_residual = resnorm / srcnorm;

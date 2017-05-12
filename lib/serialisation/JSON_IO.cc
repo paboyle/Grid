@@ -40,7 +40,6 @@ JSONWriter::~JSONWriter(void)
   delete_comma();
   ss_ << "}";  
 
-  cout  << ss_.str() << endl;
   // write prettified JSON to file
   std::ofstream os(fileName_);
   os << std::setw(2) << json::parse(ss_.str()) << std::endl;
@@ -95,7 +94,7 @@ JSONReader::JSONReader(const string &fileName)
 
   // test
   // serialize to standard output
-  std::cout << "JSONReader::JSONReader : " << jobject_ << endl; 
+  //std::cout << "JSONReader::JSONReader : " << jobject_ << endl; 
   jcur_ = jobject_;
 }
 
@@ -113,7 +112,7 @@ bool JSONReader::push(const string &s)
       std::cout << "out of range: " << e.what() << '\n';
       return false;
     }
-    cout << "JSONReader::push : " << s << " : "<< jcur_ << endl;
+    //cout << "JSONReader::push : " << s << " : "<< jcur_ << endl;
   }
   else
   {
@@ -134,7 +133,7 @@ void JSONReader::pop(void)
   else
     do_pop.pop_back();
 
-  cout << "JSONReader::pop : " << jcur_ << endl;
+  //cout << "JSONReader::pop : " << jcur_ << endl;
 }
 
 bool JSONReader::nextElement(const std::string &s)
@@ -157,14 +156,14 @@ bool JSONReader::nextElement(const std::string &s)
 template <>
 void JSONReader::readDefault(const string &s, string &output)
 {
-  cout << "JSONReader::readDefault(string) : " << s<< " " << jcur_ << endl;
+  //cout << "JSONReader::readDefault(string) : " << s<< " " << jcur_ << endl;
   if (s.size()){
-    std::cout << "String: "<< jcur_[s] << std::endl;
+    //std::cout << "String: "<< jcur_[s] << std::endl;
     output = jcur_[s];
   }
   else
   {
-    std::cout << "String: "<< jcur_ << std::endl;
+    //std::cout << "String: "<< jcur_ << std::endl;
     output = jcur_;    
   }
 }
