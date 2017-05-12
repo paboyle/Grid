@@ -82,11 +82,11 @@ using namespace Hadrons;
         MAKE_3MOM_WALL_PROP(tW, ZERO_MOM, propName, solver)
 
 // Sequential source macros
-#define MAKE_SEQUENTIAL_PROP(tS, qSrc, mom, propName, solver)\
+#define MAKE_SEQUENTIAL_PROP(tS, qSrc, mom, seqPropName, solver, gamma)\
 {\
-    std::string srcName = ADD_INDEX(qSrc + "_seq", tS);\
-    makeSequentialSource(application, srcName, qSrc, tS, mom);\
-    makePropagator(application, propName, srcName, solver);\
+    std::string srcName = seqPropName + "_src";\
+    makeSequentialSource(application, srcName, qSrc, tS, gamma, mom);\
+    makePropagator(application, seqPropName, srcName, solver);\
 }
 
 // Point source macros
@@ -205,6 +205,7 @@ inline void makePointSource(Application &application, std::string srcName,
  ******************************************************************************/
 inline void makeSequentialSource(Application &application, std::string srcName,
                                  std::string qSrc, unsigned int tS,
+                                 Gamma::Algebra gamma = Gamma::Algebra::GammaT,
                                  std::string mom = ZERO_MOM)
 {
     // If the source already exists, don't make the module again.
@@ -215,7 +216,7 @@ inline void makeSequentialSource(Application &application, std::string srcName,
         seqPar.tA  = tS;
         seqPar.tB  = tS;
         seqPar.mom = mom;
-        seqPar.gamma = Gamma::Algebra::GammaT;
+        seqPar.gamma = gamma;
         application.createModule<MSource::SeqGamma>(srcName, seqPar);
     }
 }
@@ -577,5 +578,36 @@ inline void makeSeqTest(Application &application, std::string &modName,
         seqPar.mu     = mu;
         seqPar.curr   = curr;
         application.createModule<MUtilities::TestSeqConserved>(modName, seqPar);
+    }
+}
+
+/*******************************************************************************
+ * Name: makeSeqGamComparison
+ * Purpose: Create module to compare sequential insertion of gamma matrix
+ *          against sink contraction and add to application module.
+ * Parameters: application - main application that stores modules.
+ *             modName     - name of module to create.
+ *             propName    - 4D quark propagator.
+ *             seqProp     - 4D quark propagator with sequential insertion of
+ *                           gamma matrix.
+ *             gamma       - Inserted gamma matrix.
+ *             t_g         - time at which gamma matrix is inserted 
+ *                           sequentially.
+ * Returns: None.
+ ******************************************************************************/
+inline void makeSeqGamComparison(Application &application, std::string &modName,
+                                 std::string &propName, std::string &seqProp,
+                                 std::string &origin, Gamma::Algebra gamma, 
+                                 unsigned int t_g)
+{
+    if (!(Environment::getInstance().hasModule(modName)))
+    {
+        MUtilities::TestSeqGamma::Par seqPar;
+        seqPar.q      = propName;
+        seqPar.qSeq   = seqProp;
+        seqPar.origin = origin;
+        seqPar.t_g    = t_g;
+        seqPar.gamma  = gamma;
+        application.createModule<MUtilities::TestSeqGamma>(modName, seqPar);
     }
 }

@@ -212,10 +212,10 @@ int main(int argc, char *argv[])
             std::string q_KsCs_mq  = LABEL_3PT("Q_KsCs_mq", tK, tJ);
             std::string q_pilCl_q  = LABEL_3PT("Q_pilCl_q", tpi, tJ);
             std::string q_pilCl_mq = LABEL_3PT("Q_pilCl_mq", tpi, tJ);
-            MAKE_SEQUENTIAL_PROP(tJ, q_Kl_0, qmom, q_KlCl_q, solvers[light]);
-            MAKE_SEQUENTIAL_PROP(tJ, q_Ks_k, mqmom, q_KsCs_mq, solvers[strange]);
-            MAKE_SEQUENTIAL_PROP(tJ, q_pil_p, qmom, q_pilCl_q, solvers[light]);
-            MAKE_SEQUENTIAL_PROP(tJ, q_pil_0, mqmom, q_pilCl_mq, solvers[light]);
+            MAKE_SEQUENTIAL_PROP(tJ, q_Kl_0, qmom, q_KlCl_q, solvers[light], gT);
+            MAKE_SEQUENTIAL_PROP(tJ, q_Ks_k, mqmom, q_KsCs_mq, solvers[strange], gT);
+            MAKE_SEQUENTIAL_PROP(tJ, q_pil_p, qmom, q_pilCl_q, solvers[light], gT);
+            MAKE_SEQUENTIAL_PROP(tJ, q_pil_0, mqmom, q_pilCl_mq, solvers[light], gT);
 
             /*******************************************************************
              * CONTRACTIONS: pi and K 3pt contractions with current insertion.
@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
                         std::string loop_qCq = LABEL_3PT(loop_stem + flavour[f], tJ, nn);
                         std::string loop_qCq_res = loop_qCq + "_res";
                         MAKE_SEQUENTIAL_PROP(tJ, noiseRes[f][nn], qmom, 
-                                             loop_qCq_res, solvers[f]);
+                                             loop_qCq_res, solvers[f], gT);
                         makeLoop(application, loop_qCq, eta, loop_qCq_res);
 
                         /*******************************************************
