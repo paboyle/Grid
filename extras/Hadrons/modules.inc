@@ -30,5 +30,6 @@ modules_hpp =\
   Modules/MSource/Wall.hpp \
   Modules/MSource/Z2.hpp \
   Modules/MUtilities/TestSeqConserved.hpp \
+  Modules/MUtilities/TestSeqGamma.hpp \
   Modules/Quark.hpp
 
