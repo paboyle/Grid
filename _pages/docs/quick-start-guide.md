@@ -37,7 +37,7 @@ cd build
 ```
 
 where `--enable-precision=` sets the default precision,
-`--enable-simd=` sets the SIMD type, `--enable-
+`--enable-simd=` sets the [SIMD type](/Grid/docs/simd_targets/), `--enable-
 comms=`, and `<path>` should be replaced by the prefix path where you want to
 install Grid (optional). Other options are detailed in the next section, you can also use `configure
 --help` to display them. Like with any other program using GNU autotool, the
@@ -56,6 +56,7 @@ To minimise the build time, only the tests at the root of the `tests` directory 
 ``` bash
 make -C tests/<subdir> tests
 ```
+If you want to build all the tests at once just use `make tests`.
 
 ## Build configuration options
 
@@ -73,7 +74,7 @@ Here we report the more common ones.
 - `--enable-simd=<code>`: setup Grid for the SIMD target `<code>` (default: `GEN`). [List of possible SIMD targets](/Grid/docs/simd_targets/).
 - `--enable-precision={single|double}`: set the default precision (default: `double`).
 - `--enable-precision=<comm>`: Use `<comm>` for message passing (default: `none`). [List of possible comm targets](/Grid/docs/comm_interfaces/). 
-- `--enable-rng={ranlux48|mt19937|sitmo}`: choose the RNG (default: `ranlux48`).
+- `--enable-rng={sitmo|ranlux48|mt19937}`: choose the RNG (default: `sitmo`).
 - `--disable-timers`: disable system dependent high-resolution timers.
 - `--enable-chroma`: enable Chroma regression tests. A compiled version of Chroma is assumed to be present. 
 
@@ -81,6 +82,6 @@ Here we report the more common ones.
 More details on the *Getting started* menu entries on the left. 
 
 
-This document was updated on November 2016. 
+This document was updated on May 2017. 
 {: .notice}
 

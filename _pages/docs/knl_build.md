@@ -10,7 +10,7 @@ sidebar:
   nav : docs
 ---
 {% include base_path %}
-The information included in this page has been updated on *November 2016* and it is valid for the release version 0.6.0.
+The information included in this page has been updated on *May 2017* and it is valid for the [release version 0.7.0](https://github.com/paboyle/Grid/tree/release/v0.7.0).
 
 
 The following configuration is recommended for the [Intel Knights Landing](http://ark.intel.com/products/codename/48999/Knights-Landing) platform:
