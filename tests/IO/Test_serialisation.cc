@@ -214,6 +214,7 @@ int main(int argc,char **argv)
     
     // test serializable class writing
     myclass obj(1234); // non-trivial constructor
+    std::cout << "-- serialisable class writing to 'bother.json'..." << std::endl;
     write(JW,"obj",obj);
     JW.write("obj2", obj);
     
@@ -236,7 +237,9 @@ int main(int argc,char **argv)
     std::cout << "Loaded (JSON) -----------------" << std::endl;
     std::cout << jcopy1 << std::endl << jveccopy1 << std::endl;
   }
-  
+
+/* 
+  // This is still work in progress
   {
     // Testing the next element function
     JSONReader RD("test.json");
@@ -245,7 +248,7 @@ int main(int argc,char **argv)
     std::string name;
     read(RD,"name", name);
   }
-  
+*/
 
 
 }

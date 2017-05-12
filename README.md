@@ -24,7 +24,7 @@ _Please do not send pull requests to the `master` branch which is reserved for r
 
 ### Compilers
 
-Intel ICPC v16 and later
+Intel ICPC v16.0.3 and later
 
 Clang v3.5 and later (need 3.8 and later for OpenMP)
 
@@ -52,7 +52,7 @@ When you file an issue, please go though the following checklist:
 2. Give a description of the target platform (CPU, network, compiler). Please give the full CPU part description, using for example `cat /proc/cpuinfo | grep 'model name' | uniq` (Linux) or `sysctl machdep.cpu.brand_string` (macOS) and the full output the `--version` option of your compiler.
 3. Give the exact `configure` command used.
 4. Attach `config.log`.
-5. Attach `config.summary`.
+5. Attach `grid.config.summary`.
 6. Attach the output of `make V=1`.
 7. Describe the issue and any previous attempt to solve it. If relevant, show how to reproduce the issue using a minimal working example.
 

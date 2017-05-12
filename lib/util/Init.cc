@@ -48,6 +48,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #include <Grid/Grid.h>
 
+#include <Grid/util/CompilerCompatible.h>
+
 
 #include <fenv.h>
 #ifdef __APPLE__
