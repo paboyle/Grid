@@ -51,13 +51,7 @@ int main(int argc, char *argv[])
     configStem = argv[1];
     
     // initialization //////////////////////////////////////////////////////////
-    Grid_init(&argc, &argv);
-    HadronsLogError.Active(GridLogError.isActive());
-    HadronsLogWarning.Active(GridLogWarning.isActive());
-    HadronsLogMessage.Active(GridLogMessage.isActive());
-    HadronsLogIterative.Active(GridLogIterative.isActive());
-    HadronsLogDebug.Active(GridLogDebug.isActive());
-    LOG(Message) << "Grid initialized" << std::endl;
+    HADRONS_DEFAULT_INIT;
 
     // run setup ///////////////////////////////////////////////////////////////
     Application              application;
@@ -74,46 +68,33 @@ int main(int argc, char *argv[])
     unsigned int              n_noise = 1;
     unsigned int              nt      = 32;
     bool                      do_disconnected(false);
+    Gamma::Algebra            gT = Gamma::Algebra::GammaT;
+    unsigned int              Ls = 16;
+    double                    M5 = 1.8;
 
     // Global parameters.
-    Application::GlobalPar globalPar;
-    globalPar.trajCounter.start    = 1500;
-    globalPar.trajCounter.end      = 1520;
-    globalPar.trajCounter.step     = 20;
-    globalPar.seed                 = "1 2 3 4";
-    globalPar.genetic.maxGen       = 1000;
-    globalPar.genetic.maxCstGen    = 200;
-    globalPar.genetic.popSize      = 20;
-    globalPar.genetic.mutationRate = .1;
-    application.setPar(globalPar);
+    HADRONS_DEFAULT_GLOBALS(application);
 
     // gauge field
+    std::string gaugeField = "gauge";
     if (configStem == "None")
     {
-        application.createModule<MGauge::Unit>("gauge");
+        application.createModule<MGauge::Unit>(gaugeField);
     }
     else
     {
         MGauge::Load::Par gaugePar;
         gaugePar.file = configStem;
-        application.createModule<MGauge::Load>("gauge", gaugePar);
+        application.createModule<MGauge::Load>(gaugeField, gaugePar);
     }
     for (unsigned int i = 0; i < flavour.size(); ++i)
     {
         // actions
-        MAction::DWF::Par actionPar;
-        actionPar.gauge = "gauge";
-        actionPar.Ls    = 16;
-        actionPar.M5    = 1.8;
-        actionPar.mass  = mass[i];
-        application.createModule<MAction::DWF>("DWF_" + flavour[i], actionPar);
+        std::string actionName = "DWF_" + flavour[i];
+        makeDWFAction(application, actionName, gaugeField, mass[i], M5, Ls);
 
         // solvers
-        MSolver::RBPrecCG::Par solverPar;
-        solverPar.action   = "DWF_" + flavour[i];
-        solverPar.residual = 1.0e-8;
-        application.createModule<MSolver::RBPrecCG>(solvers[i],
-                                                    solverPar);
+        makeRBPrecCGSolver(application, solvers[i], actionName);
     }
 
     // Create noise propagators for loops.

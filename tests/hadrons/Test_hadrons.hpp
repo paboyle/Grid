@@ -33,6 +33,30 @@ using namespace Hadrons;
 /*******************************************************************************
  * Macros to reduce code duplication.
  ******************************************************************************/
+// Common initialisation
+#define HADRONS_DEFAULT_INIT \
+    Grid_init(&argc, &argv); \
+    HadronsLogError.Active(GridLogError.isActive()); \
+    HadronsLogWarning.Active(GridLogWarning.isActive()); \
+    HadronsLogMessage.Active(GridLogMessage.isActive()); \
+    HadronsLogIterative.Active(GridLogIterative.isActive()); \
+    HadronsLogDebug.Active(GridLogDebug.isActive()); \
+    LOG(Message) << "Grid initialized" << std::endl;
+
+#define HADRONS_DEFAULT_GLOBALS(application) \
+{ \
+    Application::GlobalPar globalPar;           \
+    globalPar.trajCounter.start    = 1500;      \
+    globalPar.trajCounter.end      = 1520;      \
+    globalPar.trajCounter.step     = 20;        \
+    globalPar.seed                 = "1 2 3 4"; \
+    globalPar.genetic.maxGen       = 1000;      \
+    globalPar.genetic.maxCstGen    = 200;       \
+    globalPar.genetic.popSize      = 20;        \
+    globalPar.genetic.mutationRate = .1;        \
+    application.setPar(globalPar);              \
+}
+
 // Useful definitions
 #define ZERO_MOM "0. 0. 0. 0."
 #define INIT_INDEX(s, n) (std::string(s) + "_" + std::to_string(n))
@@ -74,9 +98,81 @@ using namespace Hadrons;
 }
 
 /*******************************************************************************
+ * Action setups.
+ ******************************************************************************/
+
+/*******************************************************************************
+ * Name: makeWilsonAction
+ * Parameters: application - main application that stores modules.
+ *             actionName  - name of action module to create.
+ *             gaugeField  - gauge field module.     
+ *             mass        - quark mass.
+ * Returns: None.
+ ******************************************************************************/
+inline void makeWilsonAction(Application &application, std::string actionName,
+                             std::string &gaugeField, double mass)
+{
+    if (!(Environment::getInstance().hasModule(actionName)))
+    {
+        MAction::Wilson::Par actionPar;
+        actionPar.gauge = gaugeField;
+        actionPar.mass  = mass;
+        application.createModule<MAction::Wilson>(actionName, actionPar);
+    }
+}
+
+/*******************************************************************************
+ * Name: makeDWFAction
+ * Parameters: application - main application that stores modules.
+ *             actionName  - name of action module to create.
+ *             gaugeField  - gauge field module.     
+ *             mass        - quark mass.
+ *             M5          - domain wall height.
+ *             Ls          - fifth dimension extent.
+ * Returns: None.
+ ******************************************************************************/
+inline void makeDWFAction(Application &application, std::string actionName,
+                          std::string &gaugeField, double mass, double M5,
+                          unsigned int Ls)
+{
+    if (!(Environment::getInstance().hasModule(actionName)))
+    {
+        MAction::DWF::Par actionPar;
+        actionPar.gauge = gaugeField;
+        actionPar.Ls    = Ls;
+        actionPar.M5    = M5;
+        actionPar.mass  = mass;
+        application.createModule<MAction::DWF>(actionName, actionPar);
+    }
+}
+
+/*******************************************************************************
  * Functions for propagator construction.
  ******************************************************************************/
  
+/*******************************************************************************
+ * Name: makeRBPrecCGSolver
+ * Purpose: Make RBPrecCG solver module for specified action.
+ * Parameters: application - main application that stores modules.
+ *             solverName  - name of solver module to create.
+ *             actionName  - action module corresponding to propagators to be
+ *                           computed.
+ *             residual    - CG target residual.
+ * Returns: None.
+ ******************************************************************************/
+inline void makeRBPrecCGSolver(Application &application, std::string &solverName,
+                               std::string &actionName, double residual = 1e-8)
+{
+    if (!(Environment::getInstance().hasModule(solverName)))
+    {
+        MSolver::RBPrecCG::Par solverPar;
+        solverPar.action   = actionName;
+        solverPar.residual = residual;
+        application.createModule<MSolver::RBPrecCG>(solverName,
+                                                    solverPar);
+    }
+}
+
 /*******************************************************************************
  * Name: makePointSource
  * Purpose: Construct point source and add to application module.
