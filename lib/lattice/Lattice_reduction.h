@@ -328,6 +328,8 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::tensor_reduced tensor_reduced;
   
+  scalar_type zscale(scale);
+
   GridBase *grid  = X._grid;
 
   int Nsimd  =grid->Nsimd();
@@ -353,7 +355,7 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
       grid->iCoorFromIindex(icoor,l);
       int ldx =r+icoor[orthogdim]*rd;
       scalar_type *as =(scalar_type *)&av;
-      as[l] = scalar_type(a[ldx])*scale;
+      as[l] = scalar_type(a[ldx])*zscale;
     }
 
     tensor_reduced at; at=av;
