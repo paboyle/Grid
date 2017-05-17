@@ -62,6 +62,8 @@ public:
               << "m= " << TensorRemove(trace(sum(U))) << std::endl;
     std::cout << GridLogMessage
               << "m^2= " << TensorRemove(trace(sum(U)*sum(U))) << std::endl;
+    std::cout << GridLogMessage
+    << "phi^2= " << TensorRemove(sum(trace(U*U))) << std::endl;
     std::cout.precision(def_prec);
     
   }
