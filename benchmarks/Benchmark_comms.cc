@@ -40,7 +40,7 @@ int main (int argc, char ** argv)
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
-  int Nloop=200;
+  int Nloop=300;
   int nmu=0;
   int maxlat=24;
   for(int mu=0;mu<Nd;mu++) if (mpi_layout[mu]>1) nmu++;
@@ -213,7 +213,6 @@ int main (int argc, char ** argv)
 
       std::vector<HalfSpinColourVectorD *> xbuf(8);
       std::vector<HalfSpinColourVectorD *> rbuf(8);
-      Grid.ShmInitGeneric();
       Grid.ShmBufferFreeAll();
       for(int d=0;d<8;d++){
 	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
@@ -293,7 +292,6 @@ int main (int argc, char ** argv)
 
       std::vector<HalfSpinColourVectorD *> xbuf(8);
       std::vector<HalfSpinColourVectorD *> rbuf(8);
-      Grid.ShmInitGeneric();
       Grid.ShmBufferFreeAll();
       for(int d=0;d<8;d++){
 	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
