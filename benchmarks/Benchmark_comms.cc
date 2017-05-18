@@ -31,6 +31,17 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
+void statistics(std::vector<double> v, double &mean, double &std_err){
+      double sum = std::accumulate(v.begin(), v.end(), 0.0);
+      mean = sum / v.size();
+
+      std::vector<double> diff(v.size());
+      std::transform(v.begin(), v.end(), diff.begin(), [mean](double x) { return x - mean; });
+      double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+      std_err = std::sqrt(sq_sum / (v.size()*(v.size() - 1)));
+}
+
+
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
@@ -40,12 +51,14 @@ int main (int argc, char ** argv)
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
-  int Nloop=300;
+  int Nloop=500;
   int nmu=0;
   int maxlat=24;
   for(int mu=0;mu<Nd;mu++) if (mpi_layout[mu]>1) nmu++;
 
-
+  std::cout << GridLogMessage << "Number of iterations to average: "<< Nloop << std::endl;
+  std::vector<double> t_time(Nloop);
+  double mean_time, std_err_time;
 
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking concurrent halo exchange in "<<nmu<<" dimensions"<<std::endl;
@@ -67,8 +80,8 @@ int main (int argc, char ** argv)
       int ncomm;
       int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
 
-      double start=usecond();
       for(int i=0;i<Nloop;i++){
+      double start=usecond();
 
 	std::vector<CartesianCommunicator::CommsRequest_t> requests;
 
@@ -104,18 +117,21 @@ int main (int argc, char ** argv)
 	}
 	Grid.SendToRecvFromComplete(requests);
 	Grid.Barrier();
-
+  double stop=usecond();
+  t_time[i] = stop-start; // microseconds
       }
-      double stop=usecond();
+
+      statistics(t_time, mean_time, std_err_time);
 
       double dbytes    = bytes;
-      double xbytes    = Nloop*dbytes*2.0*ncomm;
+      double xbytes    = dbytes*2.0*ncomm;
       double rbytes    = xbytes;
       double bidibytes = xbytes+rbytes;
 
-      double time = stop-start; // microseconds
+      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<< std::setw(15) <<bytes<<"\t"
+               <<xbytes/mean_time<<" +- "<< xbytes*std_err_time/(mean_time*mean_time)
+               << "\t\t"<<bidibytes/mean_time<< " +- " << bidibytes*std_err_time/(mean_time*mean_time) << std::endl;
 
-      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<< std::setw(15) <<bytes<<"\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
     }
   }    
 
@@ -140,8 +156,8 @@ int main (int argc, char ** argv)
       int ncomm;
       int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
 
-      double start=usecond();
       for(int i=0;i<Nloop;i++){
+      double start=usecond();
     
 	ncomm=0;
 	for(int mu=0;mu<4;mu++){
@@ -180,18 +196,21 @@ int main (int argc, char ** argv)
 	  }
 	}
 	Grid.Barrier();
+      double stop=usecond();
+    t_time[i] = stop-start; // microseconds
+
       }
 
-      double stop=usecond();
+      statistics(t_time, mean_time, std_err_time);
       
       double dbytes    = bytes;
       double xbytes    = Nloop*dbytes*2.0*ncomm;
       double rbytes    = xbytes;
       double bidibytes = xbytes+rbytes;
 
-      double time = stop-start;
-
-      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<< std::setw(15) <<bytes<<"\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
+     std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<< std::setw(15) <<bytes<<"\t"
+               <<xbytes/mean_time<<" +- "<< xbytes*std_err_time/(mean_time*mean_time)
+               << "\t\t"<<bidibytes/mean_time<< " +- " << bidibytes*std_err_time/(mean_time*mean_time) << std::endl;
     }
   }  
 
@@ -222,8 +241,8 @@ int main (int argc, char ** argv)
       int ncomm;
       int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
 
-      double start=usecond();
       for(int i=0;i<Nloop;i++){
+      double start=usecond();
 
 	std::vector<CartesianCommunicator::CommsRequest_t> requests;
 
@@ -259,18 +278,19 @@ int main (int argc, char ** argv)
 	}
 	Grid.StencilSendToRecvFromComplete(requests);
 	Grid.Barrier();
+      double stop=usecond();
+    t_time[i] = stop-start; // microseconds
 
       }
-      double stop=usecond();
 
       double dbytes    = bytes;
       double xbytes    = Nloop*dbytes*2.0*ncomm;
       double rbytes    = xbytes;
       double bidibytes = xbytes+rbytes;
 
-      double time = stop-start; // microseconds
-
-      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<< std::setw(15) <<bytes<<"\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
+   std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<< std::setw(15) <<bytes<<"\t"
+               <<xbytes/mean_time<<" +- "<< xbytes*std_err_time/(mean_time*mean_time)
+               << "\t\t"<<bidibytes/mean_time<< " +- " << bidibytes*std_err_time/(mean_time*mean_time) << std::endl;
     }
   }    
 
@@ -301,8 +321,8 @@ int main (int argc, char ** argv)
       int ncomm;
       int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
 
-      double start=usecond();
       for(int i=0;i<Nloop;i++){
+      double start=usecond();
 
 	std::vector<CartesianCommunicator::CommsRequest_t> requests;
 
@@ -340,19 +360,22 @@ int main (int argc, char ** argv)
 	  
 	  }
 	}
-	Grid.Barrier();
+	    Grid.Barrier();
+      double stop=usecond();
+      t_time[i] = stop-start; // microseconds
 
       }
-      double stop=usecond();
 
       double dbytes    = bytes;
       double xbytes    = Nloop*dbytes*2.0*ncomm;
       double rbytes    = xbytes;
       double bidibytes = xbytes+rbytes;
 
-      double time = stop-start; // microseconds
 
-      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<< std::setw(15) <<bytes<<"\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
+      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<< std::setw(15) <<bytes<<"\t"
+               <<xbytes/mean_time<<" +- "<< xbytes*std_err_time/(mean_time*mean_time)
+               << "\t\t"<<bidibytes/mean_time<< " +- " << bidibytes*std_err_time/(mean_time*mean_time) << std::endl;
+ 
     }
   }    
 
