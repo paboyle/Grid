@@ -40,15 +40,17 @@ int main (int argc, char ** argv)
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
-  int Nloop=10;
+  int Nloop=200;
   int nmu=0;
+  int maxlat=24;
   for(int mu=0;mu<Nd;mu++) if (mpi_layout[mu]>1) nmu++;
+
+
 
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking concurrent halo exchange in "<<nmu<<" dimensions"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
-  int maxlat=24;
   for(int lat=4;lat<=maxlat;lat+=4){
     for(int Ls=8;Ls<=32;Ls*=2){
 
@@ -113,7 +115,7 @@ int main (int argc, char ** argv)
 
       double time = stop-start; // microseconds
 
-      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<<bytes<<"\t\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
+      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<< std::setw(15) <<bytes<<"\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
     }
   }    
 
@@ -189,12 +191,11 @@ int main (int argc, char ** argv)
 
       double time = stop-start;
 
-      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<<bytes<<"\t\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
+      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<< std::setw(15) <<bytes<<"\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
     }
   }  
 
 
-  Nloop=10;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking concurrent STENCIL halo exchange in "<<nmu<<" dimensions"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
@@ -212,6 +213,7 @@ int main (int argc, char ** argv)
 
       std::vector<HalfSpinColourVectorD *> xbuf(8);
       std::vector<HalfSpinColourVectorD *> rbuf(8);
+      Grid.ShmInitGeneric();
       Grid.ShmBufferFreeAll();
       for(int d=0;d<8;d++){
 	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
@@ -269,13 +271,11 @@ int main (int argc, char ** argv)
 
       double time = stop-start; // microseconds
 
-      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<<bytes<<"\t\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
+      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<< std::setw(15) <<bytes<<"\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
     }
   }    
 
 
-
-  Nloop=100;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking sequential STENCIL halo exchange in "<<nmu<<" dimensions"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
@@ -293,6 +293,7 @@ int main (int argc, char ** argv)
 
       std::vector<HalfSpinColourVectorD *> xbuf(8);
       std::vector<HalfSpinColourVectorD *> rbuf(8);
+      Grid.ShmInitGeneric();
       Grid.ShmBufferFreeAll();
       for(int d=0;d<8;d++){
 	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
@@ -353,7 +354,7 @@ int main (int argc, char ** argv)
 
       double time = stop-start; // microseconds
 
-      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<<bytes<<"\t\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
+      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<< std::setw(15) <<bytes<<"\t"<<xbytes/time<<"\t\t"<<bidibytes/time<<std::endl;
     }
   }    
 
