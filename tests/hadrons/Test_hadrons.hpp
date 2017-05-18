@@ -513,26 +513,27 @@ inline void discLoopContraction(Application &application,
  *             actionName  - action used to compute quark propagator.
  *             mass        - mass of quark.
  *             Ls          - length of 5th dimension (default = 1).
+ *             test_axial  - whether or not to check PCAC relation.
  * Returns: None.
  ******************************************************************************/
 inline void makeWITest(Application &application, std::string &modName,
                        std::string &propName, std::string &actionName, 
-                       double mass, unsigned int Ls = 1)
+                       double mass, unsigned int Ls = 1, bool test_axial = false)
 {
     if (!(Environment::getInstance().hasModule(modName)))
     {
         MContraction::WardIdentity::Par wiPar;
         if (Ls > 1)
         {
-            wiPar.q  = LABEL_5D(propName);
+            wiPar.q = LABEL_5D(propName);
         }
         else
         {
-            wiPar.q  = propName;
+            wiPar.q = propName;
         }
-        wiPar.q4d    = propName;
-        wiPar.action = actionName;
-        wiPar.mass   = mass;
+        wiPar.action     = actionName;
+        wiPar.mass       = mass;
+        wiPar.test_axial = test_axial;
         application.createModule<MContraction::WardIdentity>(modName, wiPar);
     }
 }

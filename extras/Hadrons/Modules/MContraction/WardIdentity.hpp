@@ -40,10 +40,10 @@ BEGIN_HADRONS_NAMESPACE
  -----------------------------
  
  * options:
- - q:      propagator, 5D if available (string)
- - q4d:    4D propagator, duplicate of q if q is not 5D (string)
- - action: action module used for propagator solution (string)
- - mass:   mass of quark (double)
+ - q:          propagator, 5D if available (string)
+ - action:     action module used for propagator solution (string)
+ - mass:       mass of quark (double)
+ - test_axial: whether or not to test PCAC relation.
 */
 
 /******************************************************************************
@@ -56,9 +56,9 @@ class WardIdentityPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(WardIdentityPar,
                                     std::string, q,
-                                    std::string, q4d,
                                     std::string, action,
-                                    double,      mass);
+                                    double,      mass,
+                                    bool,        test_axial);
 };
 
 template <typename FImpl>
@@ -97,7 +97,7 @@ TWardIdentity<FImpl>::TWardIdentity(const std::string name)
 template <typename FImpl>
 std::vector<std::string> TWardIdentity<FImpl>::getInput(void)
 {
-    std::vector<std::string> in = {par().q, par().q4d, par().action};
+    std::vector<std::string> in = {par().q, par().action};
     
     return in;
 }
@@ -128,55 +128,69 @@ void TWardIdentity<FImpl>::execute(void)
     LOG(Message) << "Performing Ward Identity checks for quark '" << par().q
                  << "'." << std::endl;
 
-    PropagatorField psi(env().getGrid()), tmp(env().getGrid());
+    PropagatorField psi(env().getGrid()), tmp(env().getGrid()),
+                    vector_WI(env().getGrid());
     PropagatorField &q    = *env().template getObject<PropagatorField>(par().q);
-    PropagatorField &q4d  = *env().template getObject<PropagatorField>(par().q4d);
     FMat            &act = *(env().template getObject<FMat>(par().action));
     Gamma           g5(Gamma::Algebra::Gamma5);
-    LatticeComplex  PP(env().getGrid()), PA(env().getGrid()),
-                    c(env().getGrid()), PJ5q(env().getGrid()),
-                    vector_WI(env().getGrid()), defect(env().getGrid());
-    c = zero; PJ5q = zero; vector_WI = zero; defect = zero;
-    std::vector<LatticeComplex> Vmu(Nd, c);
-    std::vector<LatticeComplex> Amu(Nd, c);
-
-    // Get PP, PA, V_mu, A_mu for 4D.
-    PP = trace(adj(q4d)*q4d);
-    PA = trace(adj(q4d)*g5*q4d);
+    
+    // Compute D_mu V_mu, D here is backward derivative.
+    vector_WI    = zero;
     for (unsigned int mu = 0; mu < Nd; ++mu)
     {
         act.ContractConservedCurrent(q, q, tmp, Current::Vector, mu);
-        Vmu[mu] = trace(tmp);
-        act.ContractConservedCurrent(q, q, tmp, Current::Axial, mu);
-        Amu[mu] = trace(g5*tmp);
+        tmp -= Cshift(tmp, mu, -1);
+        vector_WI += tmp;
     }
-
-    // Get PJ5q for 5D (zero for 4D).
-    if (Ls_ > 1)
-    {
-        ExtractSlice(psi, q, Ls_/2 - 1, 0);
-        psi  = 0.5 * (psi + g5*psi);
-        ExtractSlice(tmp, q, Ls_/2, 0);
-        psi += 0.5 * (tmp - g5*tmp);
-        PJ5q = trace(adj(psi)*psi);
-    }
-
-    // Test ward identities, D_mu V_mu = 0; D_mu A_mu = 2m<PP> + 2 PJ5q
-    for (unsigned int mu = 0; mu < Nd; ++mu)
-    {
-        vector_WI += Vmu[mu] - Cshift(Vmu[mu], mu, -1); 
-        defect    += Amu[mu] - Cshift(Amu[mu], mu, -1);
-    }
-    defect -= 2.*PJ5q;
-    defect -= 2.*(par().mass)*PP;
 
     LOG(Message) << "Vector Ward Identity check Delta_mu V_mu = " 
                  << norm2(vector_WI) << std::endl;
-    LOG(Message) << "Axial Ward Identity defect Delta_mu A_mu = "
-                 << norm2(defect) << std::endl;
-    LOG(Message) << "norm2(PP) = " << norm2(PP) << std::endl; 
-    LOG(Message) << "norm2(PA) = " << norm2(PA) << std::endl; 
-    LOG(Message) << "norm2(PJ5q) = " << norm2(PJ5q) << std::endl; 
+
+    if (par().test_axial)
+    {
+        LatticeComplex PP(env().getGrid()), axial_defect(env().getGrid()),
+                       PJ5q(env().getGrid());
+
+        // Compute D_mu A_mu, D is backwards derivative.
+        axial_defect = zero;
+        for (unsigned int mu = 0; mu < Nd; ++mu)
+        {
+            act.ContractConservedCurrent(q, q, tmp, Current::Axial, mu);
+            tmp -= Cshift(tmp, mu, -1);
+            axial_defect += trace(g5*tmp);
+        }
+
+        // Get PJ5q for 5D (zero for 4D) and PP.
+        PJ5q = zero;
+        if (Ls_ > 1)
+        {
+            // PP
+            ExtractSlice(tmp, q, 0, 0);
+            psi  = (tmp - g5*tmp);
+            ExtractSlice(tmp, q, Ls_ - 1, 0);
+            psi += (tmp + g5*tmp);
+            PP = trace(adj(psi)*psi);
+
+            // P5Jq
+            ExtractSlice(tmp, q, Ls_/2 - 1, 0);
+            psi  = 0.5 * (tmp + g5*tmp);
+            ExtractSlice(tmp, q, Ls_/2, 0);
+            psi += 0.5 * (tmp - g5*tmp);
+            PJ5q = trace(adj(psi)*psi);
+        }
+        else
+        {
+            PP = trace(adj(q)*q);
+        }
+
+        // Test ward identities, D_mu V_mu = 0; D_mu A_mu = 2m<PP> + 2 PJ5q
+        axial_defect -= 2.*PJ5q;
+        axial_defect -= 2.*(par().mass)*PP;
+        LOG(Message) << "Axial Ward Identity defect Delta_mu A_mu = "
+                     << norm2(axial_defect) << std::endl;
+        LOG(Message) << "norm2(PP) = " << norm2(PP) << std::endl; 
+        LOG(Message) << "norm2(PJ5q) = " << norm2(PJ5q) << std::endl; 
+    }
 }
 
 END_MODULE_NAMESPACE

@@ -81,7 +81,8 @@ inline void setupWardIdentityTests(Application &application,
     std::string origin    = "0 0 0 0";
     std::string modName   = actionName + " Ward Identity Test";
     MAKE_POINT_PROP(origin, pointProp, solverName);
-    makeWITest(application, modName, pointProp, actionName, mass, Ls);
+    makeWITest(application, modName, pointProp, actionName, mass, Ls,
+               perform_axial_tests);
 
     /***************************************************************************
      * Conserved current tests with sequential insertion of vector/axial 
