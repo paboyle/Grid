@@ -31,16 +31,31 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-void statistics(std::vector<double> v, double &mean, double &std_err){
+struct time_statistics{
+  double mean;
+  double err;
+  double min;
+  double max;
+
+  void statistics(std::vector<double> v){
       double sum = std::accumulate(v.begin(), v.end(), 0.0);
       mean = sum / v.size();
 
       std::vector<double> diff(v.size());
-      std::transform(v.begin(), v.end(), diff.begin(), [mean](double x) { return x - mean; });
+      std::transform(v.begin(), v.end(), diff.begin(), [=](double x) { return x - mean; });
       double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
-      std_err = std::sqrt(sq_sum / (v.size()*(v.size() - 1)));
-}
+      err = std::sqrt(sq_sum / (v.size()*(v.size() - 1)));
 
+      auto result = std::minmax_element(v.begin(), v.end());
+      min = *result.first;
+      max = *result.second;
+}
+};
+
+void header(){
+  std::cout <<GridLogMessage << " L  "<<"\t"<<" Ls  "<<"\t"
+            <<std::setw(11)<<"bytes"<<"MB/s uni (err/min/max)"<<"\t\t"<<"MB/s bidi (err/min/max)"<<std::endl;
+};
 
 int main (int argc, char ** argv)
 {
@@ -58,12 +73,12 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << "Number of iterations to average: "<< Nloop << std::endl;
   std::vector<double> t_time(Nloop);
-  double mean_time, std_err_time;
+  time_statistics timestat;
 
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking concurrent halo exchange in "<<nmu<<" dimensions"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
+  header();
   for(int lat=4;lat<=maxlat;lat+=4){
     for(int Ls=8;Ls<=32;Ls*=2){
 
@@ -121,16 +136,19 @@ int main (int argc, char ** argv)
   t_time[i] = stop-start; // microseconds
       }
 
-      statistics(t_time, mean_time, std_err_time);
+      timestat.statistics(t_time);
 
       double dbytes    = bytes;
       double xbytes    = dbytes*2.0*ncomm;
       double rbytes    = xbytes;
       double bidibytes = xbytes+rbytes;
 
-      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<< std::setw(15) <<bytes<<"\t"
-               <<xbytes/mean_time<<" +- "<< xbytes*std_err_time/(mean_time*mean_time)
-               << "\t\t"<<bidibytes/mean_time<< " +- " << bidibytes*std_err_time/(mean_time*mean_time) << std::endl;
+      std::cout<<GridLogMessage << std::setw(4) << lat<<"\t"<<Ls<<"\t"
+               <<std::setw(11) << bytes<< std::fixed << std::setprecision(1) << std::setw(7)
+               <<std::right<< xbytes/timestat.mean<<"  "<< xbytes*timestat.err/(timestat.mean*timestat.mean)<< " "
+               <<xbytes/timestat.max <<" "<< xbytes/timestat.min  
+               << "\t\t"<<std::setw(7)<< bidibytes/timestat.mean<< "  " << bidibytes*timestat.err/(timestat.mean*timestat.mean) << " "
+               << bidibytes/timestat.max << " " << bidibytes/timestat.min << std::endl;
 
     }
   }    
@@ -139,8 +157,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking sequential halo exchange in "<<nmu<<" dimensions"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
-
+  header();
 
   for(int lat=4;lat<=maxlat;lat+=4){
     for(int Ls=8;Ls<=32;Ls*=2){
@@ -201,16 +218,21 @@ int main (int argc, char ** argv)
 
       }
 
-      statistics(t_time, mean_time, std_err_time);
+      timestat.statistics(t_time);
       
       double dbytes    = bytes;
-      double xbytes    = Nloop*dbytes*2.0*ncomm;
+      double xbytes    = dbytes*2.0*ncomm;
       double rbytes    = xbytes;
       double bidibytes = xbytes+rbytes;
 
-     std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<< std::setw(15) <<bytes<<"\t"
-               <<xbytes/mean_time<<" +- "<< xbytes*std_err_time/(mean_time*mean_time)
-               << "\t\t"<<bidibytes/mean_time<< " +- " << bidibytes*std_err_time/(mean_time*mean_time) << std::endl;
+    std::cout<<GridLogMessage << std::setw(4) << lat<<"\t"<<Ls<<"\t"
+               <<std::setw(11) << bytes<< std::fixed << std::setprecision(1) << std::setw(7)
+               <<std::right<< xbytes/timestat.mean<<"  "<< xbytes*timestat.err/(timestat.mean*timestat.mean)<< " "
+               <<xbytes/timestat.max <<" "<< xbytes/timestat.min  
+               << "\t\t"<<std::setw(7)<< bidibytes/timestat.mean<< "  " << bidibytes*timestat.err/(timestat.mean*timestat.mean) << " "
+               << bidibytes/timestat.max << " " << bidibytes/timestat.min << std::endl;
+
+      
     }
   }  
 
@@ -218,7 +240,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking concurrent STENCIL halo exchange in "<<nmu<<" dimensions"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
+  header();
 
   for(int lat=4;lat<=maxlat;lat+=4){
     for(int Ls=8;Ls<=32;Ls*=2){
@@ -283,14 +305,21 @@ int main (int argc, char ** argv)
 
       }
 
+      timestat.statistics(t_time);
+
       double dbytes    = bytes;
-      double xbytes    = Nloop*dbytes*2.0*ncomm;
+      double xbytes    = dbytes*2.0*ncomm;
       double rbytes    = xbytes;
       double bidibytes = xbytes+rbytes;
 
-   std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<< std::setw(15) <<bytes<<"\t"
-               <<xbytes/mean_time<<" +- "<< xbytes*std_err_time/(mean_time*mean_time)
-               << "\t\t"<<bidibytes/mean_time<< " +- " << bidibytes*std_err_time/(mean_time*mean_time) << std::endl;
+      std::cout<<GridLogMessage << std::setw(4) << lat<<"\t"<<Ls<<"\t"
+               <<std::setw(11) << bytes<< std::fixed << std::setprecision(1) << std::setw(7)
+               <<std::right<< xbytes/timestat.mean<<"  "<< xbytes*timestat.err/(timestat.mean*timestat.mean)<< " "
+               <<xbytes/timestat.max <<" "<< xbytes/timestat.min  
+               << "\t\t"<<std::setw(7)<< bidibytes/timestat.mean<< "  " << bidibytes*timestat.err/(timestat.mean*timestat.mean) << " "
+               << bidibytes/timestat.max << " " << bidibytes/timestat.min << std::endl;
+
+
     }
   }    
 
@@ -298,7 +327,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "= Benchmarking sequential STENCIL halo exchange in "<<nmu<<" dimensions"<<std::endl;
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << "  L  "<<"\t\t"<<" Ls  "<<"\t\t"<<"bytes"<<"\t\t"<<"MB/s uni"<<"\t\t"<<"MB/s bidi"<<std::endl;
+  header();
 
   for(int lat=4;lat<=maxlat;lat+=4){
     for(int Ls=8;Ls<=32;Ls*=2){
@@ -366,15 +395,20 @@ int main (int argc, char ** argv)
 
       }
 
+      timestat.statistics(t_time);
+
       double dbytes    = bytes;
-      double xbytes    = Nloop*dbytes*2.0*ncomm;
+      double xbytes    = dbytes*2.0*ncomm;
       double rbytes    = xbytes;
       double bidibytes = xbytes+rbytes;
 
 
-      std::cout<<GridLogMessage << lat<<"\t\t"<<Ls<<"\t\t"<< std::setw(15) <<bytes<<"\t"
-               <<xbytes/mean_time<<" +- "<< xbytes*std_err_time/(mean_time*mean_time)
-               << "\t\t"<<bidibytes/mean_time<< " +- " << bidibytes*std_err_time/(mean_time*mean_time) << std::endl;
+      std::cout<<GridLogMessage << std::setw(4) << lat<<"\t"<<Ls<<"\t"
+               <<std::setw(11) << bytes<< std::fixed << std::setprecision(1) << std::setw(7)
+               <<std::right<< xbytes/timestat.mean<<"  "<< xbytes*timestat.err/(timestat.mean*timestat.mean)<< " "
+               <<xbytes/timestat.max <<" "<< xbytes/timestat.min  
+               << "\t\t"<<std::setw(7)<< bidibytes/timestat.mean<< "  " << bidibytes*timestat.err/(timestat.mean*timestat.mean) << " "
+               << bidibytes/timestat.max << " " << bidibytes/timestat.min << std::endl;
  
     }
   }    
