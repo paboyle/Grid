@@ -1025,7 +1025,9 @@ until convergence
 //exit(-1);
 //	ConvRotate2( Nk, Nm, Qt, evec, eval,eval2,Iconv,Nconv);
 #endif
-      _sort.push(eval,evec,Nconv);
+// Skip sorting, as it doubles the memory usage(!) and can be avoided by diagonalizing "right away"
+
+//      _sort.push(eval,evec,Nconv);
 
       std::cout<<GridLogMessage << "\n Converged\n Summary :\n";
       std::cout<<GridLogMessage << " -- Iterations  = "<< Nconv  << "\n";
