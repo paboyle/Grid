@@ -48,6 +48,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 // Lanczos support
 //#include <Grid/algorithms/iterative/MatrixUtils.h>
 #include <Grid/algorithms/iterative/ImplicitlyRestartedLanczos.h>
+#include <Grid/algorithms/iterative/SimpleLanczos.h>
 #include <Grid/algorithms/CoarsenedMatrix.h>
 #include <Grid/algorithms/FFT.h>
 
