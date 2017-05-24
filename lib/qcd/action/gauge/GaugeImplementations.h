@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./lib/qcd/action/gauge/GaugeImpl.h
+Source file: ./lib/qcd/action/gauge/GaugeImplementations.h
 
 Copyright (C) 2015
 
@@ -26,52 +26,13 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef GRID_QCD_GAUGE_IMPL_H
-#define GRID_QCD_GAUGE_IMPL_H
+#ifndef GRID_QCD_GAUGE_IMPLEMENTATIONS_H
+#define GRID_QCD_GAUGE_IMPLEMENTATIONS_H
+
+#include "GaugeImplTypes.h"
 
 namespace Grid {
 namespace QCD {
-
-////////////////////////////////////////////////////////////////////////
-// Implementation dependent gauge types
-////////////////////////////////////////////////////////////////////////
-
-template <class Gimpl> class WilsonLoops;
-
-#define INHERIT_GIMPL_TYPES(GImpl)                                             \
-  typedef typename GImpl::Simd Simd;                                           \
-  typedef typename GImpl::GaugeLinkField GaugeLinkField;                       \
-  typedef typename GImpl::GaugeField GaugeField;                               \
-  typedef typename GImpl::SiteGaugeField SiteGaugeField;                       \
-  typedef typename GImpl::SiteGaugeLink SiteGaugeLink;
-
-//
-template <class S, int Nrepresentation = Nc> class GaugeImplTypes {
-public:
-  typedef S Simd;
-
-  template <typename vtype>
-  using iImplGaugeLink  = iScalar<iScalar<iMatrix<vtype, Nrepresentation>>>;
-  template <typename vtype>
-  using iImplGaugeField = iVector<iScalar<iMatrix<vtype, Nrepresentation>>, Nd>;
-
-  typedef iImplGaugeLink<Simd> SiteGaugeLink;
-  typedef iImplGaugeField<Simd> SiteGaugeField;
-
-  typedef Lattice<SiteGaugeLink> GaugeLinkField; // bit ugly naming; polarised
-                                                 // gauge field, lorentz... all
-                                                 // ugly
-  typedef Lattice<SiteGaugeField> GaugeField;
-
-  // Move this elsewhere? FIXME
-  static inline void AddGaugeLink(GaugeField &U, GaugeLinkField &W,
-                                  int mu) { // U[mu] += W
-    parallel_for (auto ss = 0; ss < U._grid->oSites(); ss++) {
-      U._odata[ss]._internal[mu] =
-          U._odata[ss]._internal[mu] + W._odata[ss]._internal;
-    }
-  }
-};
 
 // Composition with smeared link, bc's etc.. probably need multiple inheritance
 // Variable precision "S" and variable Nc
@@ -168,14 +129,6 @@ public:
   static inline bool isPeriodicGaugeField(void) { return false; }
 };
 
-typedef GaugeImplTypes<vComplex, Nc> GimplTypesR;
-typedef GaugeImplTypes<vComplexF, Nc> GimplTypesF;
-typedef GaugeImplTypes<vComplexD, Nc> GimplTypesD;
-
-typedef GaugeImplTypes<vComplex, SU<Nc>::AdjointDimension> GimplAdjointTypesR;
-typedef GaugeImplTypes<vComplexF, SU<Nc>::AdjointDimension> GimplAdjointTypesF;
-typedef GaugeImplTypes<vComplexD, SU<Nc>::AdjointDimension> GimplAdjointTypesD;
-
 typedef PeriodicGaugeImpl<GimplTypesR> PeriodicGimplR; // Real.. whichever prec
 typedef PeriodicGaugeImpl<GimplTypesF> PeriodicGimplF; // Float
 typedef PeriodicGaugeImpl<GimplTypesD> PeriodicGimplD; // Double
@@ -187,6 +140,8 @@ typedef PeriodicGaugeImpl<GimplAdjointTypesD> PeriodicGimplAdjD; // Double
 typedef ConjugateGaugeImpl<GimplTypesR> ConjugateGimplR; // Real.. whichever prec
 typedef ConjugateGaugeImpl<GimplTypesF> ConjugateGimplF; // Float
 typedef ConjugateGaugeImpl<GimplTypesD> ConjugateGimplD; // Double
+
+
 }
 }
 

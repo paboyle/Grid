@@ -173,7 +173,7 @@ void TQuark<FImpl>::execute(void)
                 *env().template getObject<PropagatorField>(getName());
             
             axpby_ssp_pminus(sol, 0., sol, 1., sol, 0, 0);
-            axpby_ssp_pplus(sol, 0., sol, 1., sol, 0, Ls_-1);
+            axpby_ssp_pplus(sol, 1., sol, 1., sol, 0, Ls_-1);
             ExtractSlice(tmp, sol, 0, 0);
             FermToProp(p4d, tmp, s, c);
         }

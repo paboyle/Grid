@@ -235,64 +235,74 @@ public:
     }
   };
 
-    //////////////////////////////////////////////////////////////////
-    // Constructor requires "grid" passed.
-    // what about a default grid?
-    //////////////////////////////////////////////////////////////////
-    Lattice(GridBase *grid) : _odata(grid->oSites()) {
-        _grid = grid;
+  //////////////////////////////////////////////////////////////////
+  // Constructor requires "grid" passed.
+  // what about a default grid?
+  //////////////////////////////////////////////////////////////////
+  Lattice(GridBase *grid) : _odata(grid->oSites()) {
+    _grid = grid;
     //        _odata.reserve(_grid->oSites());
     //        _odata.resize(_grid->oSites());
     //      std::cout << "Constructing lattice object with Grid pointer "<<_grid<<std::endl;
-        assert((((uint64_t)&_odata[0])&0xF) ==0);
-        checkerboard=0;
-    }
-
-    Lattice(const Lattice& r){ // copy constructor
-    	_grid = r._grid;
-    	checkerboard = r.checkerboard;
-    	_odata.resize(_grid->oSites());// essential
-	parallel_for(int ss=0;ss<_grid->oSites();ss++){
-            _odata[ss]=r._odata[ss];
-        }  	
-    }
-
-
-
-    virtual ~Lattice(void) = default;
+    assert((((uint64_t)&_odata[0])&0xF) ==0);
+    checkerboard=0;
+  }
+  
+  Lattice(const Lattice& r){ // copy constructor
+    _grid = r._grid;
+    checkerboard = r.checkerboard;
+    _odata.resize(_grid->oSites());// essential
+    parallel_for(int ss=0;ss<_grid->oSites();ss++){
+      _odata[ss]=r._odata[ss];
+    }  	
+  }
+  
+  
+  
+  virtual ~Lattice(void) = default;
     
-    template<class sobj> strong_inline Lattice<vobj> & operator = (const sobj & r){
-      parallel_for(int ss=0;ss<_grid->oSites();ss++){
-            this->_odata[ss]=r;
-        }
-        return *this;
+  void reset(GridBase* grid) {
+    if (_grid != grid) {
+      _grid = grid;
+      _odata.resize(grid->oSites());
+      checkerboard = 0;
     }
-    template<class robj> strong_inline Lattice<vobj> & operator = (const Lattice<robj> & r){
-      this->checkerboard = r.checkerboard;
-      conformable(*this,r);
-      
-      parallel_for(int ss=0;ss<_grid->oSites();ss++){
-            this->_odata[ss]=r._odata[ss];
-        }
-        return *this;
-    }
+  }
+  
 
-    // *=,+=,-= operators inherit behvour from correspond */+/- operation
-    template<class T> strong_inline Lattice<vobj> &operator *=(const T &r) {
-        *this = (*this)*r;
-        return *this;
+  template<class sobj> strong_inline Lattice<vobj> & operator = (const sobj & r){
+    parallel_for(int ss=0;ss<_grid->oSites();ss++){
+      this->_odata[ss]=r;
     }
-
-    template<class T> strong_inline Lattice<vobj> &operator -=(const T &r) {
-        *this = (*this)-r;
-        return *this;
+    return *this;
+  }
+  
+  template<class robj> strong_inline Lattice<vobj> & operator = (const Lattice<robj> & r){
+    this->checkerboard = r.checkerboard;
+    conformable(*this,r);
+    
+    parallel_for(int ss=0;ss<_grid->oSites();ss++){
+      this->_odata[ss]=r._odata[ss];
     }
-    template<class T> strong_inline Lattice<vobj> &operator +=(const T &r) {
-        *this = (*this)+r;
-        return *this;
-    }
- }; // class Lattice
-
+    return *this;
+  }
+  
+  // *=,+=,-= operators inherit behvour from correspond */+/- operation
+  template<class T> strong_inline Lattice<vobj> &operator *=(const T &r) {
+    *this = (*this)*r;
+    return *this;
+  }
+  
+  template<class T> strong_inline Lattice<vobj> &operator -=(const T &r) {
+    *this = (*this)-r;
+    return *this;
+  }
+  template<class T> strong_inline Lattice<vobj> &operator +=(const T &r) {
+    *this = (*this)+r;
+    return *this;
+  }
+}; // class Lattice
+  
   template<class vobj> std::ostream& operator<< (std::ostream& stream, const Lattice<vobj> &o){
     std::vector<int> gcoor;
     typedef typename vobj::scalar_object sobj;
@@ -310,7 +320,7 @@ public:
     }
     return stream;
   }
-
+  
 }
 
 

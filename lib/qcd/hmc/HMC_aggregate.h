@@ -33,10 +33,20 @@ directory
 
 #include <string>
 
+#include <Grid/qcd/observables/hmc_observable.h>
 #include <Grid/qcd/hmc/HMC.h>
+
+
 // annoying location; should move this ?
+#include <Grid/parallelIO/IldgIOtypes.h>
+#include <Grid/parallelIO/IldgIO.h>
 #include <Grid/parallelIO/NerscIO.h>
-#include <Grid/qcd/hmc/NerscCheckpointer.h>
-#include <Grid/qcd/hmc/HmcRunner.h>
+
+#include <Grid/qcd/hmc/checkpointers/CheckPointers.h>
+#include <Grid/qcd/hmc/HMCModules.h>
+#include <Grid/qcd/modules/mods.h>
+#include <Grid/qcd/hmc/HMCResourceManager.h>
+#include <Grid/qcd/hmc/GenericHMCrunner.h>
+#include <Grid/qcd/hmc/HMCRunnerModule.h>
 
 #endif

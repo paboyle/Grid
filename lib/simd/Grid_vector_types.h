@@ -327,14 +327,20 @@ class Grid_simd {
   // provides support
   ///////////////////////////////////////
 
+  //#if (__GNUC__ == 5 ) || ( ( __GNUC__ == 6 ) && __GNUC_MINOR__ < 3 )
+  //#pragma GCC push_options 
+  //#pragma GCC optimize ("O0") 
+  //#endif
   template <class functor>
   friend inline Grid_simd SimdApply(const functor &func, const Grid_simd &v) {
     Grid_simd ret;
     Grid_simd::conv_t conv;
-
+    Grid_simd::scalar_type s;
+    
     conv.v = v.v;
     for (int i = 0; i < Nsimd(); i++) {
-      conv.s[i] = func(conv.s[i]);
+      s = conv.s[i];
+      conv.s[i] = func(s);
     }
     ret.v = conv.v;
     return ret;
@@ -346,16 +352,21 @@ class Grid_simd {
     Grid_simd ret;
     Grid_simd::conv_t cx;
     Grid_simd::conv_t cy;
+    Grid_simd::scalar_type sx,sy;
 
     cx.v = x.v;
     cy.v = y.v;
     for (int i = 0; i < Nsimd(); i++) {
-      cx.s[i] = func(cx.s[i], cy.s[i]);
+      sx = cx.s[i];
+      sy = cy.s[i];
+      cx.s[i] = func(sx,sy);
     }
     ret.v = cx.v;
     return ret;
   }
-
+  //#if (__GNUC__ == 5 ) || ( ( __GNUC__ == 6 ) && __GNUC_MINOR__ < 3 )
+  //#pragma GCC pop_options
+  //#endif
   ///////////////////////
   // Exchange 
   // Al Ah , Bl Bh -> Al Bl Ah,Bh
@@ -402,6 +413,19 @@ class Grid_simd {
     else if(perm==0) permute0(y, b);
   }
 
+  ///////////////////////////////
+  // Getting single lanes
+  ///////////////////////////////
+  inline Scalar_type getlane(int lane) {
+    return ((Scalar_type*)&v)[lane];
+  }
+
+  inline void putlane(const Scalar_type &S, int lane){
+    ((Scalar_type*)&v)[lane] = S;
+  }
+
+
+  
 };  // end of Grid_simd class definition
 
 

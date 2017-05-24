@@ -6,8 +6,9 @@
 
     Copyright (C) 2015
 
-Author: Antonin Portelli <antonin.portelli@me.com>
-Author: paboyle <paboyle@ph.ed.ac.uk>
+    Author: Antonin Portelli <antonin.portelli@me.com>
+    Author: paboyle <paboyle@ph.ed.ac.uk>
+    Author: Guido Cossu<guido.cossu@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,6 +32,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 using namespace Grid;
 using namespace std;
 
+#define GRID_TEXT_INDENT 2      //number of spaces for indentation of levels
+
+
 // Writer implementation ///////////////////////////////////////////////////////
 TextWriter::TextWriter(const string &fileName)
 : file_(fileName, ios::out)
@@ -49,19 +53,24 @@ void TextWriter::pop(void)
 void TextWriter::indent(void)
 {
   for (int i = 0; i < level_; ++i)
-  {
-    file_ << '\t';
-  }
+    for (int t = 0; t < GRID_TEXT_INDENT; t++)
+      file_ << ' ';
 };
 
 // Reader implementation ///////////////////////////////////////////////////////
-TextReader::TextReader(const string &fileName)
-: file_(fileName, ios::in)
-{}
+TextReader::TextReader(const string &fileName) 
+{
+    file_.open(fileName, ios::in);
+    if (!file_.is_open()) {
+        std::cout << GridLogMessage << "TextReader: Error opening file " << fileName << std::endl;
+        exit(1);// write better error handling
+    } 
+}
 
-void TextReader::push(const string &s)
+bool TextReader::push(const string &s)
 {
   level_++;
+  return true;
 };
 
 void TextReader::pop(void)
@@ -75,12 +84,15 @@ void TextReader::checkIndent(void)
   
   for (int i = 0; i < level_; ++i)
   {
+    bool check = true;
+    for (int t = 0; t< GRID_TEXT_INDENT; t++){
     file_.get(c);
-    if (c != '\t')
+    check = check && isspace(c);
+  }
+    if (!check)
     {
-      cerr << "mismatch on tab " << c << " level " << level_;
-      cerr << " i "<< i << endl;
-      abort();
+      cerr << "TextReader: mismatch on level " << level_ << std::endl;
+      exit(1);
     }
   }
 }

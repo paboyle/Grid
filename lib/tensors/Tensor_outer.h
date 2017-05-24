@@ -44,6 +44,8 @@ auto outerProduct (const iVector<l,N>& lhs,const iVector<r,N>& rhs) -> iMatrix<d
     }}
     return ret;
 }
+
+
 template<class l,class r> inline
 auto outerProduct (const iScalar<l>& lhs,const iScalar<r>& rhs) -> iScalar<decltype(outerProduct(lhs._internal,rhs._internal))>
 {
@@ -53,6 +55,7 @@ auto outerProduct (const iScalar<l>& lhs,const iScalar<r>& rhs) -> iScalar<declt
     return ret;
 }
 
+  
 inline ComplexF outerProduct(const ComplexF &l, const ComplexF& r)
 {
   std::cout << "outer product taking conj "<<r<<" "<<conj(r)<<std::endl;

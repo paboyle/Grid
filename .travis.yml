@@ -10,6 +10,7 @@ matrix:
       osx_image: xcode8.3
       compiler: clang
     - compiler: gcc
+      dist: trusty
       sudo: required
       addons:
         apt:
@@ -25,6 +26,7 @@ matrix:
             - binutils-dev
       env: VERSION=-4.9
     - compiler: gcc
+      dist: trusty
       sudo: required
       addons:
         apt:
@@ -40,6 +42,7 @@ matrix:
             - binutils-dev
       env: VERSION=-5
     - compiler: clang
+      dist: trusty
       addons:
         apt:
           sources:
@@ -54,6 +57,7 @@ matrix:
             - binutils-dev
       env: CLANG_LINK=http://llvm.org/releases/3.8.0/clang+llvm-3.8.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
     - compiler: clang
+      dist: trusty
       addons:
         apt:
           sources:
@@ -80,6 +84,10 @@ install:
     - export CC=$CC$VERSION
     - export CXX=$CXX$VERSION
     - echo $PATH
+    - which autoconf
+    - autoconf  --version
+    - which automake
+    - automake  --version
     - which $CC
     - $CC  --version
     - which $CXX
@@ -97,9 +105,10 @@ script:
     - ../configure --enable-precision=double --enable-simd=SSE4 --enable-comms=none
     - make -j4
     - ./benchmarks/Benchmark_dwf --threads 1 --debug-signals
+    - make check
     - echo make clean
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ../configure --enable-precision=single --enable-simd=SSE4 --enable-comms=mpi-auto CXXFLAGS='-DMPI_UINT32_T=MPI_UNSIGNED -DMPI_UINT64_T=MPI_UNSIGNED_LONG'; fi
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then make -j4; fi
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then mpirun.openmpi -n 2 ./benchmarks/Benchmark_dwf --threads 1 --mpi 2.1.1.1; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]] && [[ "$CC" == "clang" ]]; then ../configure --enable-precision=single --enable-simd=SSE4 --enable-comms=mpi-auto ; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]] && [[ "$CC" == "clang" ]]; then make -j4; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]] && [[ "$CC" == "clang" ]]; then mpirun.openmpi -n 2 ./benchmarks/Benchmark_dwf --threads 1 --mpi 2.1.1.1; fi
 
 

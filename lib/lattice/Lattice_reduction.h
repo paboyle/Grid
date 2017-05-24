@@ -1,45 +1,37 @@
-    /*************************************************************************************
-
+ /*************************************************************************************
     Grid physics library, www.github.com/paboyle/Grid 
-
     Source file: ./lib/lattice/Lattice_reduction.h
-
     Copyright (C) 2015
-
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
-
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
-
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
 #ifndef GRID_LATTICE_REDUCTION_H
 #define GRID_LATTICE_REDUCTION_H
 
-#include <Grid/Eigen/Dense>
+#include <Grid/Grid_Eigen_Dense.h>
 
 namespace Grid {
 #ifdef GRID_WARN_SUBOPTIMAL
 #warning "Optimisation alert all these reduction loops are NOT threaded "
 #endif     
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Deterministic Reduction operations
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Deterministic Reduction operations
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
   ComplexD nrm = innerProduct(arg,arg);
   return std::real(nrm); 
@@ -336,6 +328,8 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
   typedef typename vobj::vector_type vector_type;
   typedef typename vobj::tensor_reduced tensor_reduced;
   
+  scalar_type zscale(scale);
+
   GridBase *grid  = X._grid;
 
   int Nsimd  =grid->Nsimd();
@@ -361,7 +355,7 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
       grid->iCoorFromIindex(icoor,l);
       int ldx =r+icoor[orthogdim]*rd;
       scalar_type *as =(scalar_type *)&av;
-      as[l] = scalar_type(a[ldx])*scale;
+      as[l] = scalar_type(a[ldx])*zscale;
     }
 
     tensor_reduced at; at=av;
@@ -404,7 +398,6 @@ static void sliceMaddVectorSlow (Lattice<vobj> &R,std::vector<RealD> &a,const La
     InsertSlice(Rslice,R,i,Orthog);
   }
 };
-
 template<class vobj>
 static void sliceInnerProductVectorSlow( std::vector<ComplexD> & vec, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int Orthog) 
   {
@@ -418,11 +411,9 @@ static void sliceInnerProductVectorSlow( std::vector<ComplexD> & vec, const Latt
     typedef typename scalar::scalar_object  scomplex;
   
     int Nblock = lhs._grid->GlobalDimensions()[Orthog];
-
     vec.resize(Nblock);
     std::vector<scomplex> sip(Nblock);
     Lattice<scalar> IP(lhs._grid); 
-
     IP=localInnerProduct(lhs,rhs);
     sliceSum(IP,sip,Orthog);
   
@@ -527,4 +518,6 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
 
 } /*END NAMESPACE GRID*/
 #endif
+
+
 

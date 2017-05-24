@@ -317,6 +317,7 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
   Grid::QCD::LatticeComplex rect(UGrid);
   Grid::QCD::TComplex trect;
   Grid::QCD::Complex  crect;
+  Grid::RealD rrect;
   Grid::RealD vol = UGrid->gSites();
   for(int mu=0;mu<Grid::QCD::Nd;mu++){
   for(int nu=0;nu<Grid::QCD::Nd;nu++){
@@ -325,7 +326,8 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
       Grid::QCD::ColourWilsonLoops::traceDirRectangle(rect,U,mu,nu);
       trect = Grid::sum(rect);
       crect = Grid::TensorRemove(trect);
-      std::cout<< "mu/nu = "<<mu<<"/"<<nu<<" ; rect = "<<crect/vol/2.0/3.0<<std::endl;
+      rrect = real(crect);
+      std::cout<< "mu/nu = "<<mu<<"/"<<nu<<" ; rect = "<<rrect/vol/2.0/3.0<<std::endl;
 
       Grid::GridStopWatch Peter;
       Grid::GridStopWatch Azusa;
@@ -355,7 +357,8 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 
 	trect = Grid::sum(TrStap);
 	crect = Grid::TensorRemove(trect);
-	std::cout<< "mu/nu inline trace 2x1 code = "<<mu<<"/"<<nu<<" ; rect = "<<crect/vol/1.0/3.0<<std::endl;
+	rrect=real(crect);
+	std::cout<< "mu/nu inline trace 2x1 code = "<<mu<<"/"<<nu<<" ; rect = "<<rrect/vol/1.0/3.0<<std::endl;
 
 
 	//              __ 
@@ -370,7 +373,8 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 
 	trect = Grid::sum(TrStap);
 	crect = Grid::TensorRemove(trect);
-	std::cout<< "mu/nu inline trace 2x1 code = "<<mu<<"/"<<nu<<" ; rect = "<<crect/vol/1.0/3.0<<std::endl;
+	rrect=real(crect);
+	std::cout<< "mu/nu inline trace 2x1 code = "<<mu<<"/"<<nu<<" ; rect = "<<rrect/vol/1.0/3.0<<std::endl;
 
 	//           __ 
 	//          |__ __ |
@@ -384,7 +388,8 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 
 	trect = Grid::sum(TrStap);
 	crect = Grid::TensorRemove(trect);
-	std::cout<< "mu/nu inline trace 2x1 code = "<<mu<<"/"<<nu<<" ; rect = "<<crect/vol/1.0/3.0<<std::endl;
+	rrect = real(crect);
+	std::cout<< "mu/nu inline trace 2x1 code = "<<mu<<"/"<<nu<<" ; rect = "<<rrect/vol/1.0/3.0<<std::endl;
 
 
 	//           __ ___ 
@@ -399,7 +404,8 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 	TrStap = Grid::trace (U[mu]*Stap);
 	trect = Grid::sum(TrStap);
 	crect = Grid::TensorRemove(trect);
-	std::cout<< "mu/nu inline trace 2x1 code = "<<mu<<"/"<<nu<<" ; rect = "<<crect/vol/1.0/3.0<<std::endl;
+	rrect = real(crect);
+	std::cout<< "mu/nu inline trace 2x1 code = "<<mu<<"/"<<nu<<" ; rect = "<<rrect/vol/1.0/3.0<<std::endl;
 
   
 	//       --    
@@ -423,7 +429,8 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 	SumTrStap += TrStap;
 	trect = Grid::sum(TrStap);
 	crect = Grid::TensorRemove(trect);
-	std::cout<< "mu/nu inline trace 1x2 code = "<<mu<<"/"<<nu<<" ; rect = "<<crect/vol/1.0/3.0<<std::endl;
+	rrect = real(crect);
+	std::cout<< "mu/nu inline trace 1x2 code = "<<mu<<"/"<<nu<<" ; rect = "<<rrect/vol/1.0/3.0<<std::endl;
   
 
 
@@ -441,11 +448,13 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 	TrStap = Grid::trace (U[mu]*Stap);
 	trect = Grid::sum(TrStap);
 	crect = Grid::TensorRemove(trect);
-	std::cout<< "mu/nu inline trace 1x2 code = "<<mu<<"/"<<nu<<" ; rect = "<<crect/vol/1.0/3.0<<std::endl;
+	rrect = real(crect);
+	std::cout<< "mu/nu inline trace 1x2 code = "<<mu<<"/"<<nu<<" ; rect = "<<rrect/vol/1.0/3.0<<std::endl;
 
 	trect = Grid::sum(SumTrStap);
 	crect = Grid::TensorRemove(trect);
-	std::cout<< "mu/nu inline trace 2x1+1x2 code = "<<mu<<"/"<<nu<<" ; rect = "<<crect/vol/2.0/3.0<<std::endl;
+	rrect = real(crect);
+	std::cout<< "mu/nu inline trace 2x1+1x2 code = "<<mu<<"/"<<nu<<" ; rect = "<<rrect/vol/2.0/3.0<<std::endl;
       }
       Peter.Stop();
       Azusa.Start();
@@ -489,7 +498,8 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 	RectPlaq_d = Grid::trace(U[mu]*ds_U);
 	trect = Grid::sum(RectPlaq_d);
 	crect = Grid::TensorRemove(trect);
-	std::cout<< "mu/nu inline AZUSA trace 2x1 code = "<<mu<<"/"<<nu<<" ; rect = "<<crect/vol/1.0/3.0<<std::endl;
+	rrect = real(crect);
+	std::cout<< "mu/nu inline AZUSA trace 2x1 code = "<<mu<<"/"<<nu<<" ; rect = "<<rrect/vol/1.0/3.0<<std::endl;
 
 	//  __  __
 	// |__    |
@@ -501,7 +511,8 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 	RectPlaq_d = Grid::trace(U[mu]*ds_U);
 	trect = Grid::sum(RectPlaq_d);
 	crect = Grid::TensorRemove(trect);
-	std::cout<< "mu/nu inline AZUSA trace 2x1 code = "<<mu<<"/"<<nu<<" ; rect = "<<crect/vol/1.0/3.0<<std::endl;
+	rrect = real(crect);
+	std::cout<< "mu/nu inline AZUSA trace 2x1 code = "<<mu<<"/"<<nu<<" ; rect = "<<rrect/vol/1.0/3.0<<std::endl;
 
 	//      __
 	//  |__ __ |
@@ -513,7 +524,8 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 	RectPlaq_d = Grid::trace(U[mu]*ds_U);
 	trect = Grid::sum(RectPlaq_d);
 	crect = Grid::TensorRemove(trect);
-	std::cout<< "mu/nu inline AZUSA trace 2x1 code = "<<mu<<"/"<<nu<<" ; rect = "<<crect/vol/1.0/3.0<<std::endl;
+	rrect = real(crect);
+	std::cout<< "mu/nu inline AZUSA trace 2x1 code = "<<mu<<"/"<<nu<<" ; rect = "<<rrect/vol/1.0/3.0<<std::endl;
 
 
 	//   __
@@ -526,7 +538,8 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 	RectPlaq_d = Grid::trace(U[mu]*ds_U);
 	trect = Grid::sum(RectPlaq_d);
 	crect = Grid::TensorRemove(trect);
-	std::cout<< "mu/nu inline AZUSA trace 2x1 code = "<<mu<<"/"<<nu<<" ; rect = "<<crect/vol/1.0/3.0<<std::endl;
+	rrect = real(crect);
+	std::cout<< "mu/nu inline AZUSA trace 2x1 code = "<<mu<<"/"<<nu<<" ; rect = "<<rrect/vol/1.0/3.0<<std::endl;
 
 	   
 	// 1(mu) x 2 (nu)  ** this was ok
@@ -542,7 +555,8 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 	trect = Grid::sum(RectPlaq_d);
 	crect = Grid::TensorRemove(trect);
 
-	std::cout<< "mu/nu inline AZUSA trace 1x2 code = "<<mu<<"/"<<nu<<" ; rect = "<<crect/vol/1.0/3.0<<std::endl;
+	rrect = real(crect);
+	std::cout<< "mu/nu inline AZUSA trace 1x2 code = "<<mu<<"/"<<nu<<" ; rect = "<<rrect/vol/1.0/3.0<<std::endl;
 
 	// 1(mu) x 2 (nu) ** this was ok
 	//   
@@ -570,8 +584,8 @@ double calc_grid_r_dir(Grid::QCD::LatticeGaugeField & Umu)
 	RectPlaq_d = Grid::trace(U[mu]*ds_U);
 	trect = Grid::sum(RectPlaq_d);
 	crect = Grid::TensorRemove(trect);
-
-	std::cout<< "mu/nu inline AZUSA trace 1x2 code = "<<mu<<"/"<<nu<<" ; rect = "<<crect/vol/1.0/3.0<<std::endl;
+	rrect = real(crect);
+	std::cout<< "mu/nu inline AZUSA trace 1x2 code = "<<mu<<"/"<<nu<<" ; rect = "<<rrect/vol/1.0/3.0<<std::endl;
 	
       }
       Azusa.Stop();

@@ -8,6 +8,7 @@
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -110,7 +111,6 @@ namespace Grid {
     std::vector<size_t>  dim_;
   };
   
-  
   // Class to reconstruct a multidimensional std::vector
   template <typename V>
   class Reconstruct
@@ -138,6 +138,54 @@ namespace Grid {
     unsigned int               dimInd_{0};
   };
   
+  // Pair IO utilities /////////////////////////////////////////////////////////
+  // helper function to parse input in the format "<obj1 obj2>"
+  template <typename T1, typename T2>
+  inline std::istream & operator>>(std::istream &is, std::pair<T1, T2> &buf)
+  {
+    T1 buf1;
+    T2 buf2;
+    char c;
+
+    // Search for "pair" delimiters.
+    do
+    {
+      is.get(c);
+    } while (c != '<' && !is.eof());
+    if (c == '<')
+    {
+      int start = is.tellg();
+      do
+      {
+        is.get(c);
+      } while (c != '>' && !is.eof());
+      if (c == '>')
+      {
+        int end = is.tellg();
+        int psize = end - start - 1;
+
+        // Only read data between pair limiters.
+        is.seekg(start);
+        std::string tmpstr(psize, ' ');
+        is.read(&tmpstr[0], psize);
+        std::istringstream temp(tmpstr);
+        temp >> buf1 >> buf2;
+        buf = std::make_pair(buf1, buf2);
+        is.seekg(end);
+      }
+    }
+    is.peek();
+    return is;
+  }
+  
+  // output to streams for pairs
+  template <class T1, class T2>
+  inline std::ostream & operator<<(std::ostream &os, const std::pair<T1, T2> &p)
+  {
+    os << "<" << p.first << " " << p.second << ">";
+    return os;
+  }
+
   // Abstract writer/reader classes ////////////////////////////////////////////
   // static polymorphism implemented using CRTP idiom
   class Serializable;
@@ -168,7 +216,7 @@ namespace Grid {
   public:
     Reader(void);
     virtual ~Reader(void) = default;
-    void push(const std::string &s);
+    bool push(const std::string &s);
     void pop(void);
     template <typename U>
     typename std::enable_if<std::is_base_of<Serializable, U>::value, void>::type
@@ -182,7 +230,18 @@ namespace Grid {
   private:
     T *upcast;
   };
-  
+
+   // What is the vtype
+  template<typename T> struct isReader {
+    static const bool value = false;
+  };
+  template<typename T> struct isWriter {
+    static const bool value = false;
+  }; 
+
+
+
+  // Generic writer interface
   // serializable base class
   class Serializable
   {
@@ -327,8 +386,7 @@ namespace Grid {
   
   // Generic writer interface //////////////////////////////////////////////////
   template <typename T>
-  inline void push(Writer<T> &w, const std::string &s)
-  {
+  inline void push(Writer<T> &w, const std::string &s) {
     w.push(s);
   }
   
@@ -352,15 +410,15 @@ namespace Grid {
   
   // Generic reader interface
   template <typename T>
-  inline void push(Reader<T> &r, const std::string &s)
+  inline bool push(Reader<T> &r, const std::string &s)
   {
-    r.push(s);
+    return r.push(s);
   }
   
   template <typename T>
-  inline void push(Reader<T> &r, const char *s)
+  inline bool push(Reader<T> &r, const char *s)
   {
-    r.push(std::string(s));
+    return r.push(std::string(s));
   }
   
   template <typename T>
@@ -418,9 +476,9 @@ namespace Grid {
   }
   
   template <typename T>
-  void Reader<T>::push(const std::string &s)
+  bool Reader<T>::push(const std::string &s)
   {
-    upcast->push(s);
+    return upcast->push(s);
   }
   
   template <typename T>

@@ -66,7 +66,7 @@ namespace Grid
   public:
     XmlReader(const std::string &fileName);
     virtual ~XmlReader(void) = default;
-    void push(const std::string &s);
+    bool push(const std::string &s);
     void pop(void);
     bool nextElement(const std::string &s);
     template <typename U>
@@ -77,6 +77,16 @@ namespace Grid
     pugi::xml_document doc_;
     pugi::xml_node     node_;
     std::string        fileName_;
+  };
+
+  template <>
+  struct isReader< XmlReader > {
+    static const bool value = true;
+  };
+
+  template <>
+  struct isWriter<XmlWriter > {
+    static const bool value = true;
   };
   
   // Writer template implementation ////////////////////////////////////////////
@@ -108,6 +118,7 @@ namespace Grid
     std::string buf;
     
     readDefault(s, buf);
+    std::cout << s << "   " << buf << std::endl;
     fromString(output, buf);
   }
   

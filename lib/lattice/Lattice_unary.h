@@ -66,10 +66,21 @@ namespace Grid {
     Lattice<obj> ret(rhs._grid);
     ret.checkerboard = rhs.checkerboard;
     conformable(ret,rhs);
+    obj unit(1.0);
     parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
-      ret._odata[ss]=Exponentiate(rhs._odata[ss],alpha, Nexp);
+      //ret._odata[ss]=Exponentiate(rhs._odata[ss],alpha, Nexp);
+      ret._odata[ss] = unit;
+      for(int i=Nexp; i>=1;--i)
+	ret._odata[ss] = unit + ret._odata[ss]*rhs._odata[ss]*(alpha/RealD(i));
+
     }
+
     return ret;
+
+    
+    
+
+    
   }
 
 

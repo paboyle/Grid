@@ -123,8 +123,11 @@ class ConjugateGradient : public OperatorFunction<Field> {
       p = p * b + r;
 
       LinalgTimer.Stop();
+
       std::cout << GridLogIterative << "ConjugateGradient: Iteration " << k
                 << " residual " << cp << " target " << rsq << std::endl;
+      std::cout << GridLogDebug << "a = "<< a << " b_pred = "<< b_pred << "  b = "<< b << std::endl;
+      std::cout << GridLogDebug << "qq = "<< qq << " d = "<< d << "  c = "<< c << std::endl;
 
       // Stopping condition
       if (cp <= rsq) {
@@ -132,8 +135,6 @@ class ConjugateGradient : public OperatorFunction<Field> {
         Linop.HermOpAndNorm(psi, mmp, d, qq);
         p = mmp - src;
 
-        RealD mmpnorm = sqrt(norm2(mmp));
-        RealD psinorm = sqrt(norm2(psi));
         RealD srcnorm = sqrt(norm2(src));
         RealD resnorm = sqrt(norm2(p));
         RealD true_residual = resnorm / srcnorm;
@@ -157,8 +158,10 @@ class ConjugateGradient : public OperatorFunction<Field> {
     }
     std::cout << GridLogMessage << "ConjugateGradient did NOT converge"
               << std::endl;
+
     if (ErrorOnNoConverge) assert(0);
     IterationsToComplete = k;
+
   }
 };
 }

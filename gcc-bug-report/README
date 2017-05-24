@@ -21,3 +21,16 @@ problem. The test case works with icpc and with clang++, but fails consistently 
 current variants.
 
 Peter
+
+
+************
+
+Second GCC bug reported, see Issue 100.
+
+https://wandbox.org/permlink/tzssJza6R9XnqANw
+https://gcc.gnu.org/bugzilla/show_bug.cgi?id=80652
+
+Getting Travis fails under gcc-5 for Test_simd, now that I added more comprehensive testing to the
+CI test suite. The limitations of Travis runtime limits & weak cores are being shown.
+
+Travis uses 5.4.1 for g++-5.
