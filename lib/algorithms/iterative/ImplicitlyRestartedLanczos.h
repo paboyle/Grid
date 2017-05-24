@@ -1018,9 +1018,9 @@ until convergence
        }
 #else
 //	ConvRotate0( Nk, Nm, Qt, evec, eval,eval2,Iconv,Nconv);
-//	ConvRotate( Nk, Nm, Qt, evec, eval,eval2,Iconv,Nconv);
+	ConvRotate( Nk, Nm, Qt, evec, eval,eval2,Iconv,Nconv);
 //	ConvCheck only counts Iconv[j]=j. ignore Iconv[]
-	Rotate0(Nm,Qt,evec,0,Nk,Nk);
+//	Rotate0(Nm,Qt,evec,0,Nk,Nk);
 	FinalCheck( Nk, Nm, eval,evec);
 //exit(-1);
 //	ConvRotate2( Nk, Nm, Qt, evec, eval,eval2,Iconv,Nconv);
