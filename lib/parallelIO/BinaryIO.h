@@ -217,32 +217,34 @@ class BinaryIO {
     Umu = zero;
     uint32_t csum=0;
     uint64_t bytes=0;
-    fobj file_object;
-    sobj munged;
-    
+
+    int lx = grid->_fdimensions[0];
+    std::vector<fobj> file_object(lx);
+    std::vector<sobj> munged(lx);
     for(int t=0;t<grid->_fdimensions[3];t++){
     for(int z=0;z<grid->_fdimensions[2];z++){
     for(int y=0;y<grid->_fdimensions[1];y++){
-    for(int x=0;x<grid->_fdimensions[0];x++){
-
-      std::vector<int> site({x,y,z,t});
-
+    {
+      bytes += sizeof(fobj)*lx;
       if (grid->IsBoss()) {
-        fin.read((char *)&file_object, sizeof(file_object));assert( fin.fail()==0);
-        bytes += sizeof(file_object);
-        if (ieee32big) be32toh_v((void *)&file_object, sizeof(file_object));
-        if (ieee32)    le32toh_v((void *)&file_object, sizeof(file_object));
-        if (ieee64big) be64toh_v((void *)&file_object, sizeof(file_object));
-        if (ieee64)    le64toh_v((void *)&file_object, sizeof(file_object));
-
-        munge(file_object, munged, csum);
+        fin.read((char *)&file_object[0], sizeof(fobj)*lx); assert( fin.fail()==0);
+	for(int x=0;x<lx;x++){
+	  if (ieee32big) be32toh_v((void *)&file_object[x], sizeof(fobj));
+	  if (ieee32)    le32toh_v((void *)&file_object[x], sizeof(fobj));
+	  if (ieee64big) be64toh_v((void *)&file_object[x], sizeof(fobj));
+	  if (ieee64)    le64toh_v((void *)&file_object[x], sizeof(fobj));
+	  munge(file_object[x], munged[x], csum);
+	}
       }
-      // The boss who read the file has their value poked
-      pokeSite(munged,Umu,site);
+      for(int x=0;x<lx;x++){
+	std::vector<int> site({x,y,z,t});
+	// The boss who read the file has their value poked
+	pokeSite(munged[x],Umu,site);
+      }
     }}}}
     timer.Stop();
     std::cout<<GridLogPerformance<<"readObjectSerial: read "<< bytes <<" bytes in "<<timer.Elapsed() <<" "
-       << (double)bytes/ (double)timer.useconds() <<" MB/s "  <<std::endl;
+	     << (double)bytes/ (double)timer.useconds() <<" MB/s "  <<std::endl;
 
     grid->Broadcast(0,(void *)&csum,sizeof(csum));
     return csum;
@@ -274,31 +276,34 @@ class BinaryIO {
     }
     uint64_t bytes=0;
     uint32_t csum=0;
-    fobj file_object;
-    sobj unmunged;
+    int lx = grid->_fdimensions[0];
+    std::vector<fobj> file_object(lx);
+    std::vector<sobj> unmunged(lx);
     for(int t=0;t<grid->_fdimensions[3];t++){
     for(int z=0;z<grid->_fdimensions[2];z++){
     for(int y=0;y<grid->_fdimensions[1];y++){
-    for(int x=0;x<grid->_fdimensions[0];x++){
+    {
 
-      std::vector<int> site({x,y,z,t});
+      std::vector<int> site({0,y,z,t});
       // peek & write
-      peekSite(unmunged,Umu,site);
-
-      munge(unmunged,file_object,csum);
-
+      for(int x=0;x<lx;x++){
+	site[0]=x;
+	peekSite(unmunged[x],Umu,site);
+      }
       
       if ( grid->IsBoss() ) {
-	if(ieee32big) htobe32_v((void *)&file_object,sizeof(file_object));
-	if(ieee32)    htole32_v((void *)&file_object,sizeof(file_object));
-	if(ieee64big) htobe64_v((void *)&file_object,sizeof(file_object));
-	if(ieee64)    htole64_v((void *)&file_object,sizeof(file_object));
-
-	// NB could gather an xstrip as an optimisation.
-	fout.write((char *)&file_object,sizeof(file_object));assert( fout.fail()==0);
-	bytes+=sizeof(file_object);
+	for(int x=0;x<lx;x++){
+	  munge(unmunged[x],file_object[x],csum);
+	  if(ieee32big) htobe32_v((void *)&file_object[x],sizeof(fobj));
+	  if(ieee32)    htole32_v((void *)&file_object[x],sizeof(fobj));
+	  if(ieee64big) htobe64_v((void *)&file_object[x],sizeof(fobj));
+	  if(ieee64)    htole64_v((void *)&file_object[x],sizeof(fobj));
+	}
+	fout.write((char *)&file_object[0],sizeof(fobj)*lx);assert( fout.fail()==0);
+	bytes+=sizeof(fobj)*lx;
       }
     }}}}
+
     timer.Stop();
     std::cout<<GridLogPerformance<<"writeObjectSerial: wrote "<< bytes <<" bytes in "<<timer.Elapsed() <<" "
 	     << (double)bytes/timer.useconds() <<" MB/s "  <<std::endl;
@@ -370,7 +375,7 @@ class BinaryIO {
 
     timer.Stop();
 
-    std::cout << GridLogMessage   << "RNG file checksum " << std::hex << csum << std::dec << std::endl;
+    std::cout << GridLogMessage << "RNG file checksum " << std::hex << csum << std::dec << std::endl;
     std::cout << GridLogMessage << "RNG state saved in " << timer.Elapsed() << std::endl;
     return csum;
   }
@@ -414,8 +419,6 @@ class BinaryIO {
       grid->GlobalIndexToGlobalCoor(gidx,gcoor);
       grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
       int l_idx=parallel.generator_idx(o_idx,i_idx);
-      //std::cout << GridLogDebug << "l_idx " << l_idx << " o_idx " << o_idx
-      //          << " i_idx " << i_idx << " rank " << rank << std::endl;
 
       if ( grid->IsBoss() ) {
 	fin.read((char *)&saved[0],bytes);assert( fin.fail()==0);
@@ -460,14 +463,12 @@ class BinaryIO {
     int ieee64    = (format == std::string("IEEE64"));
 
 
-    // Take into account block size of parallel file systems want about
-    // 4-16MB chunks.
     // Ideally one reader/writer per xy plane and read these contiguously
     // with comms from nominated I/O nodes.
     std::ifstream fin;
 
     int nd = grid->_ndimension;
-    std::vector<int> parallel(nd,1);
+    std::vector<int> parallel(nd,1); parallel[0] = 0;
     std::vector<int> ioproc  (nd);
     std::vector<int> start(nd);
     std::vector<int> range(nd);
@@ -479,9 +480,15 @@ class BinaryIO {
     uint64_t slice_vol = 1;
 
     int IOnode = 1;
-    for(int d=0;d<grid->_ndimension;d++) {
+    int gstrip = grid->_gdimensions[0];
+    int lstrip = grid->_ldimensions[0];
 
-      if ( d == 0 ) parallel[d] = 0;
+    int chunk ;
+    if ( nd==1) chunk = gstrip;
+    else        chunk = gstrip*grid->_ldimensions[1];
+
+    for(int d=0;d<grid->_ndimension;d++) {
+      
       if (parallel[d]) {
 	range[d] = grid->_ldimensions[d];
 	start[d] = grid->_processor_coor[d]*range[d];
@@ -500,13 +507,16 @@ class BinaryIO {
       uint32_t tmp = IOnode;
       grid->GlobalSum(tmp);
       std::cout<< std::dec ;
-      std::cout<< GridLogMessage<< "Parallel read I/O to "<< file << " with " <<tmp<< " IOnodes for subslice ";
+      std::cout<< GridLogMessage<< "Parallel read I/O from "<< file << " with " <<tmp<< " IOnodes for subslice ";
       for(int d=0;d<grid->_ndimension;d++){
 	std::cout<< range[d];
 	if( d< grid->_ndimension-1 ) 
 	  std::cout<< " x ";
       }
       std::cout << std::endl;
+      std::cout<< GridLogMessage<< "Parallel I/O local  strip size is "<< lstrip <<std::endl;
+      std::cout<< GridLogMessage<< "Parallel I/O global strip size is "<< gstrip <<std::endl;
+      std::cout<< GridLogMessage<< "Parallel I/O chunk size is "<< chunk  <<std::endl;
     }
 
     GridStopWatch timer; timer.Start();
@@ -515,10 +525,11 @@ class BinaryIO {
     int myrank = grid->ThisRank();
     int iorank = grid->RankFromProcessorCoor(ioproc);
 
-    if (!ILDG.is_ILDG)
-    	if ( IOnode ) { 
-    		fin.open(file,std::ios::binary|std::ios::in);
-    	}
+    if (!ILDG.is_ILDG) {
+      if ( IOnode ) { 
+	fin.open(file,std::ios::binary|std::ios::in);
+      }
+    }
 
     //////////////////////////////////////////////////////////
     // Find the location of each site and send to primary node
@@ -528,16 +539,15 @@ class BinaryIO {
     Umu = zero;
     static uint32_t csum; csum=0;//static for SHMEM
 
-    fobj fileObj;
-    static sobj siteObj; // Static to place in symmetric region for SHMEM
+    std::vector<fobj> fileObj(chunk); // FIXME
+    std::vector<sobj> siteObj(chunk); // Use comm allocator to place in symmetric region for SHMEM
 
-      // need to implement these loops in Nd independent way with a lexico conversion
-    for(int tlex=0;tlex<slice_vol;tlex++){
+    // need to implement these loops in Nd independent way with a lexico conversion
+    for(int tlex=0;tlex<slice_vol;tlex+=chunk){
 
       std::vector<int> tsite(nd); // temporary mixed up site
       std::vector<int> gsite(nd);
       std::vector<int> lsite(nd);
-      std::vector<int> iosite(nd);
 
       Lexicographic::CoorFromIndex(tsite,tlex,range);
 
@@ -546,53 +556,68 @@ class BinaryIO {
 	gsite[d] = tsite[d]+start[d];               // global site
       }
 
-
-      /////////////////////////
-      // Get the rank of owner of data
-      /////////////////////////
+      ///////////////////////////////////////////
+      // Get the global lexico base of the chunk
+      ///////////////////////////////////////////
       int rank, o_idx,i_idx, g_idx;
       grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gsite);
       grid->GlobalCoorToGlobalIndex(gsite,g_idx);
-      
+
       ////////////////////////////////
       // iorank reads from the seek
       ////////////////////////////////
       if (myrank == iorank) {
 
-
       	if (ILDG.is_ILDG){
-      		// use C-LIME to populate the record
-          #ifdef HAVE_LIME
-          uint64_t sizeFO = sizeof(fileObj);
+#ifdef HAVE_LIME
+	  // use C-LIME to populate the record
+          uint64_t sizeFO = sizeof(fobj)*chunk;
           limeReaderSeek(ILDG.LR, g_idx*sizeFO, SEEK_SET);
-          int status = limeReaderReadData((void *)&fileObj, &sizeFO, ILDG.LR);
-          #endif
+          int status = limeReaderReadData((void *)&fileObj[0], &sizeFO, ILDG.LR);
+#endif
         } else{
-          fin.seekg(offset+g_idx*sizeof(fileObj));
-          fin.read((char *)&fileObj,sizeof(fileObj));
+          fin.seekg(offset+g_idx*sizeof(fobj));
+          fin.read((char *)&fileObj[0],sizeof(fobj)*chunk);
         }
-        bytes+=sizeof(fileObj);
+        bytes+=sizeof(fobj)*chunk;
 
-        if(ieee32big) be32toh_v((void *)&fileObj,sizeof(fileObj));
-        if(ieee32)    le32toh_v((void *)&fileObj,sizeof(fileObj));
-        if(ieee64big) be64toh_v((void *)&fileObj,sizeof(fileObj));
-        if(ieee64)    le64toh_v((void *)&fileObj,sizeof(fileObj));
+        if(ieee32big) be32toh_v((void *)&fileObj[0],sizeof(fobj)*chunk);
+        if(ieee32)    le32toh_v((void *)&fileObj[0],sizeof(fobj)*chunk);
+        if(ieee64big) be64toh_v((void *)&fileObj[0],sizeof(fobj)*chunk);
+        if(ieee64)    le64toh_v((void *)&fileObj[0],sizeof(fobj)*chunk);
 
-        munge(fileObj,siteObj,csum);
+	for(int c=0;c<chunk;c++) munge(fileObj[c],siteObj[c],csum);
 
       } 
-      
+     
       // Possibly do transport through pt2pt 
-      if ( rank != iorank ) { 
-	if ( (myrank == rank) || (myrank==iorank) ) {
-	  grid->SendRecvPacket((void *)&siteObj,(void *)&siteObj,iorank,rank,sizeof(siteObj));
+      for(int cc=0;cc<chunk;cc+=lstrip){
+
+	/////////////////////////////////
+	// Get the rank of owner of strip
+	/////////////////////////////////
+	Lexicographic::CoorFromIndex(tsite,tlex+cc,range);
+
+	for(int d=0;d<nd;d++){
+	  lsite[d] = tsite[d]%grid->_ldimensions[d];  // local site
+	  gsite[d] = tsite[d]+start[d];               // global site
 	}
+	grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gsite);
+
+	if ( rank != iorank ) { 
+	  if ( (myrank == rank) || (myrank==iorank) ) {
+	    grid->SendRecvPacket((void *)&siteObj[cc],(void *)&siteObj[cc],iorank,rank,sizeof(sobj)*lstrip);
+	  }
+	}
+	// Poke at destination
+	if ( myrank == rank ) {
+	  for(int x=0;x<lstrip;x++){
+	    lsite[0]=x;
+	    pokeLocalSite(siteObj[cc+x],Umu,lsite);
+	  }
+	}
+	grid->Barrier(); // necessary?
       }
-      // Poke at destination
-      if ( myrank == rank ) {
-	pokeLocalSite(siteObj,Umu,lsite);
-      }
-      grid->Barrier(); // necessary?
     }
 
     grid->GlobalSum(csum);
@@ -601,7 +626,7 @@ class BinaryIO {
 
     timer.Stop();
     std::cout<<GridLogPerformance<<"readObjectParallel: read "<< bytes <<" bytes in "<<timer.Elapsed() <<" "
-	     << (double)bytes/timer.useconds() <<" MB/s "  <<std::endl;
+	     <<(double)bytes/timer.useconds() <<" MB/s "  <<std::endl;
     return csum;
   }
 
@@ -623,11 +648,8 @@ class BinaryIO {
     int ieee64 = (format == std::string("IEEE64"));
 
     if (!(ieee32big || ieee32 || ieee64big || ieee64)) {
-      std::cout << GridLogError << "Unrecognized file format " << format
-                << std::endl;
-      std::cout << GridLogError
-                << "Allowed: IEEE32BIG | IEEE32 | IEEE64BIG | IEEE64"
-                << std::endl;
+      std::cout << GridLogError << "Unrecognized file format " << format << std::endl;
+      std::cout << GridLogError << "Allowed: IEEE32BIG | IEEE32 | IEEE64BIG | IEEE64" << std::endl;
       exit(0);
     }
 
@@ -715,10 +737,10 @@ class BinaryIO {
     // need to implement these loops in Nd independent way with a lexico
     // conversion
     for (int tlex = 0; tlex < slice_vol; tlex++) {
+
       std::vector<int> tsite(nd);  // temporary mixed up site
       std::vector<int> gsite(nd);
       std::vector<int> lsite(nd);
-      std::vector<int> iosite(nd);
 
       Lexicographic::CoorFromIndex(tsite, tlex, range);
 

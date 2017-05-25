@@ -30,6 +30,9 @@
 #ifndef GRID_NERSC_IO_H
 #define GRID_NERSC_IO_H
 
+#define PARALLEL_READ
+#undef PARALLEL_WRITE
+
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
@@ -326,8 +329,6 @@ namespace Grid {
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       // Now the meat: the object readers
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define PARALLEL_READ
-#define PARALLEL_WRITE
 
       template<class vsimd>
       static inline void readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,NerscField& header,std::string file)
@@ -399,6 +400,7 @@ namespace Grid {
 	       <<" header    "<<header.plaquette<<std::endl;
       std::cout<<GridLogMessage <<"NERSC Configuration "<<file<<" link_trace "<<clone.link_trace
 	       <<" header    "<<header.link_trace<<std::endl;
+
       assert(fabs(clone.plaquette -header.plaquette ) < 1.0e-5 );
       assert(fabs(clone.link_trace-header.link_trace) < 1.0e-6 );
       assert(csum == header.checksum );
