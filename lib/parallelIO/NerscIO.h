@@ -31,7 +31,7 @@
 #define GRID_NERSC_IO_H
 
 #define PARALLEL_READ
-#undef PARALLEL_WRITE
+#define PARALLEL_WRITE
 
 #include <algorithm>
 #include <iostream>
@@ -401,6 +401,18 @@ namespace Grid {
       std::cout<<GridLogMessage <<"NERSC Configuration "<<file<<" link_trace "<<clone.link_trace
 	       <<" header    "<<header.link_trace<<std::endl;
 
+      if ( fabs(clone.plaquette -header.plaquette ) >=  1.0e-5 ) { 
+	std::cout << " Plaquette mismatch "<<std::endl;
+	std::cout << Umu[0]<<std::endl;
+	std::cout << Umu[1]<<std::endl;
+      }
+      if ( csum != header.checksum ) { 
+	std::cerr << " checksum mismatch " << std::endl;
+	std::cerr << " plaqs " << clone.plaquette << " " << header.plaquette << std::endl;
+	std::cerr << " trace " << clone.link_trace<< " " << header.link_trace<< std::endl;
+	std::cerr << " csum  " <<std::hex<< csum << " " << header.checksum<< std::dec<< std::endl;
+	exit(0);
+      }
       assert(fabs(clone.plaquette -header.plaquette ) < 1.0e-5 );
       assert(fabs(clone.link_trace-header.link_trace) < 1.0e-6 );
       assert(csum == header.checksum );
@@ -542,6 +554,10 @@ namespace Grid {
 	// munger is a function of <floating point, Real, data_type>
 	uint32_t csum=BinaryIO::readRNGSerial(serial,parallel,file,offset);
 
+	if ( csum != header.checksum ) { 
+	  std::cerr << "checksum mismatch "<<std::hex<< csum <<" "<<header.checksum<<std::dec<<std::endl;
+	  exit(0);
+	}
 	assert(csum == header.checksum );
 
 	std::cout<<GridLogMessage <<"Read NERSC RNG file "<<file<< " format "<< data_type <<std::endl;

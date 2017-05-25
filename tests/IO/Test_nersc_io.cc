@@ -80,7 +80,7 @@ int main (int argc, char ** argv)
 
   std::vector<LatticeColourMatrix> U(4,&Fine);
   
-  SU3::ColdConfiguration(pRNGa,Umu);
+  SU3::HotConfiguration(pRNGa,Umu);
 
   NerscField header;
   std::string file("./ckpoint_lat.4000");
