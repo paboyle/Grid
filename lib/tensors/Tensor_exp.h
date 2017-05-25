@@ -127,7 +127,7 @@ template<class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::Tens
       mat unit(1.0);
       mat temp(unit);
       for(int i=Nexp; i>=1;--i){
-	      temp *= alpha/ReadD(i);
+	      temp *= alpha/RealD(i);
 	      temp = unit + temp*arg;
       }
       return temp;
