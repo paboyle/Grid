@@ -1,4 +1,4 @@
-]#!/usr/bin/env bash
+#!/usr/bin/env bash
 
 EIGEN_URL='http://bitbucket.org/eigen/eigen/get/3.3.3.tar.bz2'
 
