@@ -8,6 +8,7 @@
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -109,7 +110,6 @@ namespace Grid {
     std::vector<Element> flatVector_;
     std::vector<size_t>  dim_;
   };
-  
   
   // Class to reconstruct a multidimensional std::vector
   template <typename V>
@@ -216,7 +216,7 @@ namespace Grid {
   public:
     Reader(void);
     virtual ~Reader(void) = default;
-    void push(const std::string &s);
+    bool push(const std::string &s);
     void pop(void);
     template <typename U>
     typename std::enable_if<std::is_base_of<Serializable, U>::value, void>::type
@@ -230,7 +230,18 @@ namespace Grid {
   private:
     T *upcast;
   };
-  
+
+   // What is the vtype
+  template<typename T> struct isReader {
+    static const bool value = false;
+  };
+  template<typename T> struct isWriter {
+    static const bool value = false;
+  }; 
+
+
+
+  // Generic writer interface
   // serializable base class
   class Serializable
   {
@@ -375,8 +386,7 @@ namespace Grid {
   
   // Generic writer interface //////////////////////////////////////////////////
   template <typename T>
-  inline void push(Writer<T> &w, const std::string &s)
-  {
+  inline void push(Writer<T> &w, const std::string &s) {
     w.push(s);
   }
   
@@ -400,15 +410,15 @@ namespace Grid {
   
   // Generic reader interface
   template <typename T>
-  inline void push(Reader<T> &r, const std::string &s)
+  inline bool push(Reader<T> &r, const std::string &s)
   {
-    r.push(s);
+    return r.push(s);
   }
   
   template <typename T>
-  inline void push(Reader<T> &r, const char *s)
+  inline bool push(Reader<T> &r, const char *s)
   {
-    r.push(std::string(s));
+    return r.push(std::string(s));
   }
   
   template <typename T>
@@ -466,9 +476,9 @@ namespace Grid {
   }
   
   template <typename T>
-  void Reader<T>::push(const std::string &s)
+  bool Reader<T>::push(const std::string &s)
   {
-    upcast->push(s);
+    return upcast->push(s);
   }
   
   template <typename T>

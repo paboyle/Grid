@@ -31,77 +31,99 @@ directory
 /*  END LEGAL */
 #include "Grid/Grid.h"
 
-using namespace std;
-using namespace Grid;
-using namespace Grid::QCD;
+int main(int argc, char **argv) {
+  using namespace Grid;
+  using namespace Grid::QCD;
 
-namespace Grid {
-namespace QCD {
+  // Here change the allowed (higher) representations
+  typedef Representations< FundamentalRepresentation, AdjointRepresentation > TheRepresentations;
 
-// Here change the allowed (higher) representations
-typedef Representations< FundamentalRepresentation, AdjointRepresentation > TheRepresentations;
+  Grid_init(&argc, &argv);
+  int threads = GridThread::GetThreads();
+  // here make a routine to print all the relevant information on the run
+  std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
+
+   // Typedefs to simplify notation
+  typedef GenericHMCRunnerHirep<TheRepresentations, MinimumNorm2> HMCWrapper;
+  typedef WilsonAdjImplR FermionImplPolicy; // gauge field implemetation for the pseudofermions
+  typedef WilsonAdjFermionR FermionAction; // type of lattice fermions (Wilson, DW, ...)
+  typedef typename FermionAction::FermionField FermionField;
+
+  //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+  HMCWrapper TheHMC;
+
+  // Grid from the command line
+  TheHMC.Resources.AddFourDimGrid("gauge");
+  // Possibile to create the module by hand 
+  // hardcoding parameters or using a Reader
 
 
-class HmcRunner : public NerscHmcRunnerHirep< TheRepresentations > {
- public:
-  void BuildTheAction(int argc, char **argv)
+  // Checkpointer definition
+  CheckpointerParameters CPparams;  
+  CPparams.config_prefix = "ckpoint_lat";
+  CPparams.rng_prefix = "ckpoint_rng";
+  CPparams.saveInterval = 5;
+  CPparams.format = "IEEE64BIG";
+  
+  TheHMC.Resources.LoadNerscCheckpointer(CPparams);
 
-  {
-    typedef WilsonAdjImplR ImplPolicy; // gauge field implemetation for the pseudofermions
-    typedef WilsonAdjFermionR FermionAction; // type of lattice fermions (Wilson, DW, ...)
-    typedef typename FermionAction::FermionField FermionField;
+  RNGModuleParameters RNGpar;
+  RNGpar.serial_seeds = "1 2 3 4 5";
+  RNGpar.parallel_seeds = "6 7 8 9 10";
+  TheHMC.Resources.SetRNGSeeds(RNGpar);
 
-    UGrid = SpaceTimeGrid::makeFourDimGrid(
-        GridDefaultLatt(), GridDefaultSimd(Nd, vComplex::Nsimd()),
-        GridDefaultMpi());
-    UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
+  // Construct observables
+  typedef PlaquetteMod<HMCWrapper::ImplPolicy> PlaqObs;
+  TheHMC.Resources.AddObservable<PlaqObs>();
+  //////////////////////////////////////////////
 
-    FGrid = UGrid;
-    FrbGrid = UrbGrid;
+  /////////////////////////////////////////////////////////////
+  // Collect actions, here use more encapsulation
+  // need wrappers of the fermionic classes 
+  // that have a complex construction
+  // standard
+  RealD beta = 2.25 ;
+  WilsonGaugeActionR Waction(beta);
+    
+  auto GridPtr = TheHMC.Resources.GetCartesian();
+  auto GridRBPtr = TheHMC.Resources.GetRBCartesian();
 
-    // temporarily need a gauge field
-    //LatticeGaugeField U(UGrid);
-    AdjointRepresentation::LatticeField U(UGrid);
+  // temporarily need a gauge field
+  AdjointRepresentation::LatticeField U(GridPtr);
 
-    // Gauge action
-    WilsonGaugeActionR Waction(2.25);
+  Real mass = -0.95;
 
-    Real mass = -0.95;
-    FermionAction FermOp(U, *FGrid, *FrbGrid, mass);
+  // Can we define an overloaded operator that does not need U and initialises
+  // it with zeroes?
+  FermionAction FermOp(U, *GridPtr, *GridRBPtr, mass);
 
-    ConjugateGradient<FermionField> CG(1.0e-8, 10000, false);
-    ConjugateResidual<FermionField> CR(1.0e-8, 10000);
+  ConjugateGradient<FermionField> CG(1.0e-8, 2000, false);
 
-    // Pass two solvers: one for the force computation and one for the action
-    TwoFlavourPseudoFermionAction<ImplPolicy> Nf2(FermOp, CG, CG);
+  TwoFlavourPseudoFermionAction<FermionImplPolicy> Nf2(FermOp, CG, CG);
 
-    // Set smearing (true/false), default: false
-    Nf2.is_smeared = false;
+  // Set smearing (true/false), default: false
+  Nf2.is_smeared = false;
+
 
     // Collect actions
-    ActionLevel<LatticeGaugeField, TheRepresentations > Level1(1);
-    Level1.push_back(&Nf2);
+  ActionLevel<LatticeGaugeField, TheRepresentations > Level1(1);
+  Level1.push_back(&Nf2);
 
-    ActionLevel<LatticeGaugeField, TheRepresentations > Level2(4);
-    Level2.push_back(&Waction);
+  ActionLevel<LatticeGaugeField, TheRepresentations > Level2(4);
+  Level2.push_back(&Waction);
 
-    TheAction.push_back(Level1);
-    TheAction.push_back(Level2);
+  TheHMC.TheAction.push_back(Level1);
+  TheHMC.TheAction.push_back(Level2);
 
-    Run(argc, argv);
-  };
-};
-}
-}
+  // HMC parameters are serialisable 
+  TheHMC.Parameters.MD.MDsteps = 20;
+  TheHMC.Parameters.MD.trajL   = 1.0;
 
-int main(int argc, char **argv) {
-  Grid_init(&argc, &argv);
+  TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
+  TheHMC.Run();  // no smearing
+  // TheHMC.Run(SmearingPolicy); // for smearing
 
-  int threads = GridThread::GetThreads();
-  std::cout << GridLogMessage << "Grid is setup to use " << threads
-            << " threads" << std::endl;
+  Grid_finalize();
 
-  HmcRunner TheHMC;
+} // main
 
-  TheHMC.BuildTheAction(argc, argv);
-}

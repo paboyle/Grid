@@ -1,6 +1,6 @@
     /*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
 
     Source file: ./lib/Init.h
 
@@ -46,6 +46,7 @@ namespace Grid {
   const int              &GridThreads(void)  ;
   void                    GridSetThreads(int t) ;
   void GridLogTimestamp(int);
+  void GridLogLayout();
 
   // Common parsing chores
   std::string GridCmdOptionPayload(char ** begin, char ** end, const std::string & option);

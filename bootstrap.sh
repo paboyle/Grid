@@ -1,6 +1,6 @@
-#!/usr/bin/env bash
+]#!/usr/bin/env bash
 
-EIGEN_URL='http://bitbucket.org/eigen/eigen/get/3.2.9.tar.bz2'
+EIGEN_URL='http://bitbucket.org/eigen/eigen/get/3.3.3.tar.bz2'
 
 echo "-- deploying Eigen source..."
 wget ${EIGEN_URL} --no-check-certificate

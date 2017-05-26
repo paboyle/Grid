@@ -230,8 +230,7 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U,
-                                    const FermionField &V, int dag) {
+void WilsonFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
   conformable(U._grid, _grid);
   conformable(U._grid, V._grid);
   conformable(U._grid, mat._grid);
@@ -242,12 +241,12 @@ void WilsonFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionField &U,
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U,
-                                      const FermionField &V, int dag) {
+void WilsonFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
   conformable(U._grid, _cbgrid);
   conformable(U._grid, V._grid);
-  conformable(U._grid, mat._grid);
-
+  //conformable(U._grid, mat._grid); not general, leaving as a comment (Guido)
+  // Motivation: look at the SchurDiff operator
+  
   assert(V.checkerboard == Even);
   assert(U.checkerboard == Odd);
   mat.checkerboard = Odd;
@@ -256,11 +255,10 @@ void WilsonFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionField &U,
 }
 
 template <class Impl>
-void WilsonFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U,
-                                      const FermionField &V, int dag) {
+void WilsonFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionField &U, const FermionField &V, int dag) {
   conformable(U._grid, _cbgrid);
   conformable(U._grid, V._grid);
-  conformable(U._grid, mat._grid);
+  //conformable(U._grid, mat._grid);
 
   assert(V.checkerboard == Odd);
   assert(U.checkerboard == Even);

@@ -1,0 +1,19 @@
+#! /bin/sh
+# Display the SHA1 of the commit in which configure.ac was last modified.
+# If it's not checked in yet, use the SHA1 of HEAD plus -dirty.
+
+#
+
+if [ ! -d .git ] ; then
+  # if no .git directory, assume they're not using Git
+  printf 'unknown commit'
+elif git diff --quiet HEAD -- configure.ac ; then
+  # configure.ac is not modified
+  printf 'commit: %s\n' `git rev-parse --short HEAD -- configure.ac`
+  printf 'branch: %s\n' `git rev-parse --abbrev-ref HEAD`
+  printf 'date  : %s\n' `git log -1 --date=short --pretty=format:%cd`
+else # configure.ac is modified
+  printf 'commit: %s-dirty\n' `git rev-parse --short HEAD`
+  printf 'branch: %s\n' `git rev-parse --abbrev-ref HEAD`
+  printf 'date  : %s\n' `git log -1 --date=short --pretty=format:%cd`
+fi
