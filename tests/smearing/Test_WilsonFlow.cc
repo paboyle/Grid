@@ -42,22 +42,29 @@ int main(int argc, char **argv) {
   GridRedBlackCartesian     RBGrid(latt_size, simd_layout, mpi_layout);
 
   std::vector<int> seeds({1, 2, 3, 4, 5});
+  GridSerialRNG sRNG;
   GridParallelRNG pRNG(&Grid);
   pRNG.SeedFixedIntegers(seeds);
 
   LatticeGaugeField Umu(&Grid), Uflow(&Grid);
   SU<Nc>::HotConfiguration(pRNG, Umu);
+  CheckpointerParameters CPPar("ckpoint_lat", "ckpoint_rng");
+  BinaryHmcCheckpointer<PeriodicGimplR> CPBin(CPPar);
+
+  CPBin.CheckpointRestore(3000, Umu, sRNG, pRNG);
 
   std::cout << std::setprecision(15);
   std::cout << GridLogMessage << "Plaquette: "
     << WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu) << std::endl;
 
-  WilsonFlow<PeriodicGimplR> WF(200, 0.01);
+  WilsonFlow<PeriodicGimplR> WF(200, 0.01, 50);
 
   WF.smear(Uflow, Umu);
 
   RealD WFlow_plaq = WilsonLoops<PeriodicGimplR>::avgPlaquette(Uflow);
-  std::cout << GridLogMessage << "Plaquette: "<< WFlow_plaq << std::endl;
+  RealD WFlow_TC   = WilsonLoops<PeriodicGimplR>::TopologicalCharge(Uflow);
+  std::cout << GridLogMessage << "Plaquette         : "<< WFlow_plaq << std::endl;
+  std::cout << GridLogMessage << "TopologicalCharge : "<< WFlow_TC   << std::endl;
 
   std::cout<< GridLogMessage << " Admissibility check:\n";
   const double sp_adm = 0.067;                // admissible threshold

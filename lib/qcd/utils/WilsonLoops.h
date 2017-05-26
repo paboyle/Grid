@@ -197,10 +197,13 @@ public:
 
     std::vector<GaugeMat> U(Nd, grid);
     for (int d = 0; d < Nd; d++) {
+      // this operation is taking too much time
       U[d] = PeekIndex<LorentzIndex>(Umu, d);
     }
     staple = zero;
-    GaugeMat tmp(grid);
+    GaugeMat tmp1(grid);
+    GaugeMat tmp2(grid);
+
 
     for (int nu = 0; nu < Nd; nu++) {
 
@@ -214,22 +217,34 @@ public:
         //      |
         //    __|
         //
+        tmp1 = Cshift(U[nu], mu, 1);
+        tmp2 = Cshift(U[mu], nu, 1);
 
+        staple += tmp1*adj(U[nu] * tmp2);
+
+
+/*
         staple += Gimpl::ShiftStaple(
             Gimpl::CovShiftForward(
                 U[nu], nu,
                 Gimpl::CovShiftBackward(
                     U[mu], mu, Gimpl::CovShiftIdentityBackward(U[nu], nu))),
             mu);
-
+*/
         //  __
         // |
         // |__
         //
         //
+
+        tmp2 = adj(U[mu]*tmp1)*U[nu];
+        staple += Cshift(tmp2, nu, -1);
+
+ /*       
         staple += Gimpl::ShiftStaple(
             Gimpl::CovShiftBackward(U[nu], nu,
                                     Gimpl::CovShiftBackward(U[mu], mu, U[nu])), mu);
+*/
       }
     }
   }
@@ -289,8 +304,7 @@ public:
       //
       staple = Gimpl::ShiftStaple(
           Gimpl::CovShiftBackward(U[nu], nu,
-                                  Gimpl::CovShiftBackward(U[mu], mu, U[nu])),
-          mu);
+                                  Gimpl::CovShiftBackward(U[mu], mu, U[nu])), mu);
     }
   }
 
@@ -307,10 +321,10 @@ public:
       GaugeMat Vup(Umu._grid), Vdn(Umu._grid);
       StapleUpper(Vup, Umu, mu, nu);
       StapleLower(Vdn, Umu, mu, nu);
-      GaugeMat v = adj(Vup) - adj(Vdn);
+      GaugeMat v = Vup - Vdn;
       GaugeMat u = PeekIndex<LorentzIndex>(Umu, mu);  // some redundant copies
       GaugeMat vu = v*u;
-      FS = 0.25*Ta(u*v + Cshift(vu, mu, +1));
+      FS = 0.25*Ta(u*v + Cshift(vu, mu, -1));
   }
 
   static Real TopologicalCharge(GaugeLorentz &U){

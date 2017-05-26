@@ -36,7 +36,9 @@ namespace QCD {
 template <class Gimpl>
 class WilsonFlow: public Smear<Gimpl>{
     unsigned int Nstep;
+    unsigned int measure_interval;
     RealD epsilon;
+
 
     mutable WilsonGaugeAction<Gimpl> SG;
 
@@ -47,9 +49,10 @@ class WilsonFlow: public Smear<Gimpl>{
  public:
     INHERIT_GIMPL_TYPES(Gimpl)
 
-    explicit WilsonFlow(unsigned int Nstep, RealD epsilon):
+    explicit WilsonFlow(unsigned int Nstep, RealD epsilon, unsigned int interval = 1):
         Nstep(Nstep),
         epsilon(epsilon),
+        measure_interval(interval),
         SG(WilsonGaugeAction<Gimpl>(3.0)) {
             // WilsonGaugeAction with beta 3.0
             assert(epsilon > 0.0);
@@ -107,11 +110,20 @@ RealD WilsonFlow<Gimpl>::energyDensityPlaquette(unsigned int step, const GaugeFi
 template <class Gimpl>
 void WilsonFlow<Gimpl>::smear(GaugeField& out, const GaugeField& in) const {
     out = in;
-    for (unsigned int step = 0; step < Nstep; step++) {
+    for (unsigned int step = 1; step <= Nstep; step++) {
+        auto start = std::chrono::high_resolution_clock::now();
         evolve_step(out);
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> diff = end - start;
+        std::cout << "Time to evolve " << diff.count() << " s\n";
         std::cout << GridLogMessage << "[WilsonFlow] Energy density (plaq) : "
-            << step << " "
+            << step << "  "
             << energyDensityPlaquette(step,out) << std::endl;
+         if( step % measure_interval == 0){
+         std::cout << GridLogMessage << "[WilsonFlow] Top. charge           : "
+            << step << "  " 
+            << WilsonLoops<PeriodicGimplR>::TopologicalCharge(out) << std::endl;
+        }
     }
 }
 
