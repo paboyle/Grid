@@ -281,12 +281,14 @@ public:
 //  tevals.resize(size);
 //  tevecs.resize(size);
   LAPACK_INT NN = N1;
-  double evals_tmp[NN];
-  double evec_tmp[NN][NN];
-  memset(evec_tmp[0],0,sizeof(double)*NN*NN);
-//  double AA[NN][NN];
-  double DD[NN];
-  double EE[NN];
+//  double evals_tmp[NN];
+//  double evec_tmp[NN][NN];
+  std::vector<double> evals_tmp(NN);
+  std::vector<double> evec_tmp(NN*NN);
+  memset(evec_tmp.data(),0,sizeof(double)*NN*NN);
+
+  std::vector<double> DD(NN);
+  std::vector<double> EE(NN);
   for (int i = 0; i< NN; i++)
     for (int j = i - 1; j <= i + 1; j++)
       if ( j < NN && j >= 0 ) {
@@ -318,7 +320,7 @@ public:
   if (iu > NN)  iu=NN;
   double tol = 0.0;
     if (1) {
-      memset(evals_tmp,0,sizeof(double)*NN);
+      memset(evals_tmp.data(),0,sizeof(double)*NN);
       if ( il <= NN){
         printf("total=%d node=%d il=%d iu=%d\n",total,node,il,iu);
 #ifdef USE_MKL
@@ -326,10 +328,10 @@ public:
 #else
         LAPACK_dstegr(&jobz, &range, &NN,
 #endif
-            (double*)DD, (double*)EE,
+            DD.data(), EE.data(),
             &vl, &vu, &il, &iu, // these four are ignored if second parameteris 'A'
             &tol, // tolerance
-            &evals_found, evals_tmp, (double*)evec_tmp, &NN,
+            &evals_found, evals_tmp.data(), evec_tmp.data(), &NN,
             isuppz,
             work, &lwork, iwork, &liwork,
             &info);
@@ -338,22 +340,20 @@ public:
           evals_tmp[i] = evals_tmp[i - (il-1)];
           if (il>1) evals_tmp[i-(il-1)]=0.;
           for (int j = 0; j< NN; j++){
-            evec_tmp[i][j] = evec_tmp[i - (il-1)][j];
-            if (il>1) evec_tmp[i-(il-1)][j]=0.;
+            evec_tmp[i*NN+j] = evec_tmp[(i - (il-1))*NN+j];
+            if (il>1) evec_tmp[(i-(il-1))*NN+j]=0.;
           }
         }
       }
       {
-//        QMP_sum_double_array(evals_tmp,NN);
-//        QMP_sum_double_array((double *)evec_tmp,NN*NN);
-         grid->GlobalSumVector(evals_tmp,NN);
-         grid->GlobalSumVector((double*)evec_tmp,NN*NN);
+         grid->GlobalSumVector(evals_tmp.data(),NN);
+         grid->GlobalSumVector(evec_tmp.data(),NN*NN);
       }
     } 
 // cheating a bit. It is better to sort instead of just reversing it, but the document of the routine says evals are sorted in increasing order. qr gives evals in decreasing order.
   for(int i=0;i<NN;i++){
     for(int j=0;j<NN;j++)
-      Qt[(NN-1-i)*N2+j]=evec_tmp[i][j];
+      Qt[(NN-1-i)*N2+j]=evec_tmp[i*NN+j];
       lmd [NN-1-i]=evals_tmp[i];
   }
 }
