@@ -107,6 +107,9 @@ RealD WilsonFlow<Gimpl>::energyDensityPlaquette(unsigned int step, const GaugeFi
     return 2.0 * td * td * SG.S(U)/U._grid->gSites();
 }
 
+
+//#define WF_TIMING 
+
 template <class Gimpl>
 void WilsonFlow<Gimpl>::smear(GaugeField& out, const GaugeField& in) const {
     out = in;
@@ -115,7 +118,9 @@ void WilsonFlow<Gimpl>::smear(GaugeField& out, const GaugeField& in) const {
         evolve_step(out);
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> diff = end - start;
+        #ifdef WF_TIMING
         std::cout << "Time to evolve " << diff.count() << " s\n";
+        #endif
         std::cout << GridLogMessage << "[WilsonFlow] Energy density (plaq) : "
             << step << "  "
             << energyDensityPlaquette(step,out) << std::endl;
