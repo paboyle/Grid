@@ -59,7 +59,7 @@ public:
   typedef iImplGaugeLink<Simd>  SiteLink;
   typedef iImplGaugeField<Simd> SiteField;
 
-  typedef Lattice<SiteLink>  LinkField; 
+  typedef Lattice<SiteLink>  LinkField;
   typedef Lattice<SiteField> Field;
 
   // Guido: we can probably separate the types from the HMC functions
@@ -80,7 +80,7 @@ public:
 
   ///////////////////////////////////////////////////////////
   // Move these to another class
-  // HMC auxiliary functions 
+  // HMC auxiliary functions
   static inline void generate_momenta(Field &P, GridParallelRNG &pRNG) {
     // specific for SU gauge fields
     LinkField Pmu(P._grid);
@@ -92,14 +92,19 @@ public:
   }
 
   static inline Field projectForce(Field &P) { return Ta(P); }
-  
+
   static inline void update_field(Field& P, Field& U, double ep){
-    for (int mu = 0; mu < Nd; mu++) {
-      auto Umu = PeekIndex<LorentzIndex>(U, mu);
-      auto Pmu = PeekIndex<LorentzIndex>(P, mu);
-      Umu = expMat(Pmu, ep, Nexp) * Umu;
-      PokeIndex<LorentzIndex>(U, ProjectOnGroup(Umu), mu);
+    //static std::chrono::duration<double> diff;
+
+    //auto start = std::chrono::high_resolution_clock::now();
+    parallel_for(int ss=0;ss<P._grid->oSites();ss++){
+      for (int mu = 0; mu < Nd; mu++) 
+        U[ss]._internal[mu] = ProjectOnGroup(Exponentiate(P[ss]._internal[mu], ep, Nexp) * U[ss]._internal[mu]);
     }
+    
+    //auto end = std::chrono::high_resolution_clock::now();
+   // diff += end - start;
+   // std::cout << "Time to exponentiate matrix " << diff.count() << " s\n";
   }
 
   static inline RealD FieldSquareNorm(Field& U){
