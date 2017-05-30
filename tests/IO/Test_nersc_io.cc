@@ -88,7 +88,12 @@ int main (int argc, char ** argv)
   int precision32 = 0;
   int tworow      = 0;
   NerscIO::writeConfiguration(Umu,file,tworow,precision32);
+  Umu_saved = Umu;
   NerscIO::readConfiguration(Umu,header,file);
+  Umu_diff = Umu - Umu_saved;
+  //std::cout << "Umu_save "<<Umu_saved[0]<<std::endl;
+  //std::cout << "Umu_read "<<Umu[0]<<std::endl;
+  std::cout << "norm2 Gauge Diff = "<<norm2(Umu_diff)<<std::endl;
 
   for(int mu=0;mu<Nd;mu++){
     U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
@@ -138,7 +143,6 @@ int main (int argc, char ** argv)
   TComplex Tp = sum(Plaq);
   Complex p  = TensorRemove(Tp);
   std::cout<<GridLogMessage << "calculated plaquettes " <<p*PlaqScale<<std::endl;
-
 
   Complex LinkTraceScale(1.0/vol/4.0/3.0);
   TComplex Tl = sum(LinkTrace);
