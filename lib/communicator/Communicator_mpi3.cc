@@ -65,6 +65,7 @@ std::vector<int> CartesianCommunicator::MyGroup;
 std::vector<void *> CartesianCommunicator::ShmCommBufs;
 
 int CartesianCommunicator::NodeCount(void)    { return GroupSize;};
+int CartesianCommunicator::RankCount(void)    { return WorldSize;};
 
 
 #undef FORCE_COMMS

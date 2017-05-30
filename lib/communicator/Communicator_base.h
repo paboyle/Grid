@@ -148,6 +148,7 @@ class CartesianCommunicator {
   int  RankFromProcessorCoor(std::vector<int> &coor);
   void ProcessorCoorFromRank(int rank,std::vector<int> &coor);
   
+  int                      Dimensions(void)        ;
   int                      IsBoss(void)            ;
   int                      BossRank(void)          ;
   int                      ThisRank(void)          ;
@@ -155,6 +156,7 @@ class CartesianCommunicator {
   const std::vector<int> & ProcessorGrid(void)     ;
   int                      ProcessorCount(void)    ;
   int                      NodeCount(void)    ;
+  int                      RankCount(void)    ;
 
   ////////////////////////////////////////////////////////////////////////////////
   // very VERY rarely (Log, serial RNG) we need world without a grid
