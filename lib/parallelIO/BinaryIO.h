@@ -250,6 +250,149 @@ class BinaryIO {
     return csum;
   }
 
+  template<class vobj,class fobj,class munger>
+  static inline uint32_t readObjectMPI(Lattice<vobj> &Umu,std::string file,munger munge,int offset,const std::string &format)
+  {
+    typedef typename vobj::scalar_object sobj;
+
+    GridBase *grid = Umu._grid;
+
+    std::cout<< GridLogMessage<< "MPI read I/O "<< file<< std::endl;
+    GridStopWatch timer; timer.Start();
+
+    Umu = zero;
+    uint32_t csum=0;
+    uint64_t bytes=0;
+
+    int ndim                 = grid->Dimensions();
+    int nrank                = grid->ProcessorCount();
+    int myrank               = grid->ThisRank();
+
+    std::vector<int>  psizes = grid->ProcessorGrid(); 
+    std::vector<int>  pcoor  = grid->ThisProcessorCoor();
+    std::vector<int> gLattice= grid->GlobalDimensions();
+    std::vector<int> lLattice= grid->LocalDimensions();
+
+    std::vector<int> distribs(ndim,MPI_DISTRIBUTE_BLOCK);
+    std::vector<int> dargs   (ndim,MPI_DISTRIBUTE_DFLT_DARG);
+
+    std::vector<int> lStart(ndim);
+    std::vector<int> gStart(ndim);
+
+    // Flatten the file
+    int lsites = grid->lSites();
+    std::vector<sobj> scalardata(lsites); 
+    std::vector<fobj>     iodata(lsites); // Munge, checksum, byte order in here
+
+    for(int d=0;d<ndim;d++){
+      gStart[d] = lLattice[d]*pcoor[d];
+      lStart[d] = 0;
+    }
+
+    MPI_Datatype mpiObject;
+    MPI_Datatype fileArray;
+    MPI_Datatype localArray;
+    MPI_Datatype mpiword;
+    MPI_Offset disp = offset;
+    MPI_File fh ;
+    MPI_Status status;
+    int numword;
+
+    if ( sizeof( typename vobj::Realified::scalar_type ) == sizeof(float ) ) {
+      numword = sizeof(fobj)/sizeof(float);
+      mpiword = MPI_FLOAT;
+    } else {
+      numword = sizeof(fobj)/sizeof(double);
+      mpiword = MPI_DOUBLE;
+    }
+    
+    bytes = sizeof(fobj)*lsites*nrank;
+
+    //////////////////////////////////////////////////////////////////////////////
+    // Sobj in MPI phrasing
+    //////////////////////////////////////////////////////////////////////////////
+    int ierr;
+    ierr = MPI_Type_contiguous(numword,mpiword,&mpiObject);
+    assert(ierr==0);
+    ierr=MPI_Type_commit(&mpiObject);
+
+    //////////////////////////////////////////////////////////////////////////////
+    // File global array data type
+    //////////////////////////////////////////////////////////////////////////////
+    ierr=MPI_Type_create_subarray(ndim,&gLattice[0],&lLattice[0],&gStart[0],MPI_ORDER_FORTRAN, mpiObject,&fileArray);
+    assert(ierr==0);
+    ierr=MPI_Type_commit(&fileArray);
+    assert(ierr==0);
+
+    //////////////////////////////////////////////////////////////////////////////
+    // local lattice array
+    //////////////////////////////////////////////////////////////////////////////
+    ierr=MPI_Type_create_subarray(ndim,&lLattice[0],&lLattice[0],&lStart[0],MPI_ORDER_FORTRAN, mpiObject,&localArray);
+    assert(ierr==0);
+    ierr=MPI_Type_commit(&localArray);
+    assert(ierr==0);
+
+    //////////////////////////////////////////////////////////////////////////////
+    // Do the MPI I/O read
+    //////////////////////////////////////////////////////////////////////////////
+    //    std::cout << "MPI IO read from " <<file<<std::endl;
+    ierr=MPI_File_open(grid->communicator, file.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
+    assert(ierr==0);
+    ierr=MPI_File_set_view(fh, disp, mpiObject, fileArray, "native", MPI_INFO_NULL);
+    //    std::cout<< "MPI File set view returned " <<ierr<<std::endl;
+    /*
+    if ( ierr ) { 
+      char buf[MPI_MAX_ERROR_STRING];
+      int blen;
+      MPI_Error_string(ierr,buf,&blen);
+      std::cout << " Error string " <<buf<<std::endl;
+    }
+    */
+    assert(ierr==0);
+
+    ierr=MPI_File_read_all(fh, &iodata[0], 1, localArray, &status);
+    assert(ierr==0);
+
+    //////////////////////////////////////////////////////////////////////////////
+    // Finish up MPI I/O
+    //////////////////////////////////////////////////////////////////////////////
+    MPI_File_close(&fh);
+    MPI_Type_free(&fileArray);
+    MPI_Type_free(&localArray);
+
+    //////////////////////////////////////////////////////////////////////////////
+    // Byte order
+    //////////////////////////////////////////////////////////////////////////////
+    int ieee32big = (format == std::string("IEEE32BIG"));
+    int ieee32    = (format == std::string("IEEE32"));
+    int ieee64big = (format == std::string("IEEE64BIG"));
+    int ieee64    = (format == std::string("IEEE64"));
+
+    if (ieee32big) be32toh_v((void *)&iodata[0], sizeof(fobj)*lsites);
+    if (ieee32)    le32toh_v((void *)&iodata[0], sizeof(fobj)*lsites);
+    if (ieee64big) be64toh_v((void *)&iodata[0], sizeof(fobj)*lsites);
+    if (ieee64)    le64toh_v((void *)&iodata[0], sizeof(fobj)*lsites);
+
+    //////////////////////////////////////////////////////////////////////////////
+    // Munge [ .e.g 3rd row recon ]
+    //////////////////////////////////////////////////////////////////////////////
+    for(int x=0;x<lsites;x++) munge(iodata[x], scalardata[x], csum);
+
+    //////////////////////////////////////////////////////////////////////////////
+    // Safety check
+    //////////////////////////////////////////////////////////////////////////////
+    grid->GlobalSum(csum);
+    grid->Barrier();
+
+    vectorizeFromLexOrdArray(scalardata,Umu);    
+
+    timer.Stop();
+    std::cout<<GridLogMessage<<"readObjectMPI: read "<< bytes <<" bytes in "<<timer.Elapsed() <<" "
+	     << (double)bytes/ (double)timer.useconds() <<" MB/s "  <<std::endl;
+
+    return csum;
+  }
+
   template<class vobj,class fobj,class munger> 
   static inline uint32_t writeObjectSerial(Lattice<vobj> &Umu,std::string file,munger munge,int offset,
 					   const std::string & format)
@@ -597,7 +740,7 @@ class BinaryIO {
 
 	for(int c=0;c<chunk;c++) munge(fileObj[c],siteObj[c],csum);
 
-      } 
+      }
      
       // Possibly do transport through pt2pt 
       for(int cc=0;cc<chunk;cc+=lstrip){
