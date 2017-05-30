@@ -551,7 +551,10 @@ void Replicate(Lattice<vobj> &coarse,Lattice<vobj> & fine)
 
 //Copy SIMD-vectorized lattice to array of scalar objects in lexicographic order
 template<typename vobj, typename sobj>
-typename std::enable_if<isSIMDvectorized<vobj>::value && !isSIMDvectorized<sobj>::value, void>::type unvectorizeToLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in){
+typename std::enable_if<isSIMDvectorized<vobj>::value && !isSIMDvectorized<sobj>::value, void>::type 
+unvectorizeToLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in)
+{
+
   typedef typename vobj::vector_type vtype;
   
   GridBase* in_grid = in._grid;
@@ -588,6 +591,51 @@ typename std::enable_if<isSIMDvectorized<vobj>::value && !isSIMDvectorized<sobj>
     //Unpack into those ptrs
     const vobj & in_vobj = in._odata[in_oidx];
     extract1(in_vobj, out_ptrs, 0);
+  }
+}
+//Copy SIMD-vectorized lattice to array of scalar objects in lexicographic order
+template<typename vobj, typename sobj>
+typename std::enable_if<isSIMDvectorized<vobj>::value && !isSIMDvectorized<sobj>::value, void>::type 
+vectorizeFromLexOrdArray(std::vector<sobj> &in, const Lattice<vobj> &out)
+{
+
+  typedef typename vobj::vector_type vtype;
+  
+  GridBase* grid = out._grid;
+  assert(in.size()==grid->lSites());
+  
+  int ndim     = grid->Nd();
+  int nsimd    = vtype::Nsimd();
+
+  std::vector<std::vector<int> > icoor(nsimd);
+      
+  for(int lane=0; lane < nsimd; lane++){
+    icoor[lane].resize(ndim);
+    grid->iCoorFromIindex(icoor[lane],lane);
+  }
+  
+  parallel_for(int oidx = 0; oidx < grid->oSites(); oidx++){ //loop over outer index
+    //Assemble vector of pointers to output elements
+    std::vector<sobj*> ptrs(nsimd);
+
+    std::vector<int> ocoor(ndim);
+    grid->oCoorFromOindex(ocoor, oidx);
+
+    std::vector<int> lcoor(grid->Nd());
+      
+    for(int lane=0; lane < nsimd; lane++){
+      for(int mu=0;mu<ndim;mu++)
+	lcoor[mu] = ocoor[mu] + grid->_rdimensions[mu]*icoor[lane][mu];
+
+      int lex;
+      Lexicographic::IndexFromCoor(lcoor, lex, grid->_ldimensions);
+      ptrs[lane] = &in[lex];
+    }
+    
+    //pack from those ptrs
+    vobj vecobj;
+    merge1(vecobj, ptrs, 0);
+    out._odata[oidx] = vecobj; 
   }
 }
 
