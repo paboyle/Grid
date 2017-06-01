@@ -30,12 +30,6 @@
 #ifndef GRID_NERSC_IO_H
 #define GRID_NERSC_IO_H
 
-#undef PARALLEL_READ
-#undef SERIAL_READ
-#define MPI_READ
-
-#define PARALLEL_WRITE
-
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
@@ -133,10 +127,6 @@ namespace Grid {
     //////////////////////////////////////////////////////////////////////
     // Utilities ; these are QCD aware
     //////////////////////////////////////////////////////////////////////
-    inline void NerscChecksum(uint32_t *buf,uint32_t buf_size_bytes,uint32_t &csum)
-    {
-      BinaryIO::Uint32Checksum(buf,buf_size_bytes,csum);
-    }
     inline void reconstruct3(LorentzColourMatrix & cm)
     {
       const int x=0;
@@ -151,43 +141,38 @@ namespace Grid {
 
     template<class fobj,class sobj>
     struct NerscSimpleMunger{
-      void operator()(fobj &in, sobj &out, uint32_t &csum) {
+      void operator()(fobj &in, sobj &out) {
         for (int mu = 0; mu < Nd; mu++) {
           for (int i = 0; i < Nc; i++) {
-            for (int j = 0; j < Nc; j++) {
-              out(mu)()(i, j) = in(mu)()(i, j);
-            }
-          }
+          for (int j = 0; j < Nc; j++) {
+	    out(mu)()(i, j) = in(mu)()(i, j);
+	  }}
         }
-        NerscChecksum((uint32_t *)&in, sizeof(in), csum);
       };
     };
 
     template <class fobj, class sobj>
     struct NerscSimpleUnmunger {
-      void operator()(sobj &in, fobj &out, uint32_t &csum) {
+
+      void operator()(sobj &in, fobj &out) {
         for (int mu = 0; mu < Nd; mu++) {
           for (int i = 0; i < Nc; i++) {
-            for (int j = 0; j < Nc; j++) {
-              out(mu)()(i, j) = in(mu)()(i, j);
-            }
-          }
+          for (int j = 0; j < Nc; j++) {
+	    out(mu)()(i, j) = in(mu)()(i, j);
+	  }}
         }
-        NerscChecksum((uint32_t *)&out, sizeof(out), csum);
       };
     };
 
     template<class fobj,class sobj>
     struct Nersc3x2munger{
-      void operator() (fobj &in,sobj &out,uint32_t &csum){
-     
-	NerscChecksum((uint32_t *)&in,sizeof(in),csum); 
 
+      void operator() (fobj &in,sobj &out){
 	for(int mu=0;mu<4;mu++){
 	  for(int i=0;i<2;i++){
-	    for(int j=0;j<3;j++){
-	      out(mu)()(i,j) = in(mu)(i)(j);
-	    }}
+	  for(int j=0;j<3;j++){
+	    out(mu)()(i,j) = in(mu)(i)(j);
+	  }}
 	}
 	reconstruct3(out);
       }
@@ -196,18 +181,13 @@ namespace Grid {
     template<class fobj,class sobj>
     struct Nersc3x2unmunger{
 
-      void operator() (sobj &in,fobj &out,uint32_t &csum){
-
-
+      void operator() (sobj &in,fobj &out){
 	for(int mu=0;mu<4;mu++){
 	  for(int i=0;i<2;i++){
-	    for(int j=0;j<3;j++){
-	      out(mu)(i)(j) = in(mu)()(i,j);
-	    }}
+	  for(int j=0;j<3;j++){
+	    out(mu)(i)(j) = in(mu)()(i,j);
+	  }}
 	}
-
-	NerscChecksum((uint32_t *)&out,sizeof(out),csum); 
-
       }
     };
 
@@ -333,9 +313,9 @@ namespace Grid {
       // Now the meat: the object readers
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-      template<class vsimd>
-      static inline void readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,NerscField& header,std::string file)
-      {
+    template<class vsimd>
+    static inline void readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,NerscField& header,std::string file)
+    {
       typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
 
       GridBase *grid = Umu._grid;
@@ -354,62 +334,22 @@ namespace Grid {
       // depending on datatype, set up munger;
       // munger is a function of <floating point, Real, data_type>
       if ( header.data_type == std::string("4D_SU3_GAUGE") ) {
-      if ( ieee32 || ieee32big ) {
-#ifdef PARALLEL_READ
-	csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>, LorentzColour2x3F> 
-	  (Umu,file,Nersc3x2munger<LorentzColour2x3F,LorentzColourMatrix>(), offset,format);
-#endif
-#ifdef MPI_READ
-	csum=BinaryIO::readObjectMPI<iLorentzColourMatrix<vsimd>, LorentzColour2x3F> 
-	  (Umu,file,Nersc3x2munger<LorentzColour2x3F,LorentzColourMatrix>(), offset,format);
-#endif
-#ifdef SERIAL_READ
-	csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>, LorentzColour2x3F> 
-	  (Umu,file,Nersc3x2munger<LorentzColour2x3F,LorentzColourMatrix>(), offset,format);
-#endif
-      }
-      if ( ieee64 || ieee64big ) {
-#ifdef PARALLEL_READ
-	csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>, LorentzColour2x3D> 
-	  (Umu,file,Nersc3x2munger<LorentzColour2x3D,LorentzColourMatrix>(),offset,format);
-#endif
-#ifdef MPI_READ
-	csum=BinaryIO::readObjectMPI<iLorentzColourMatrix<vsimd>, LorentzColour2x3D> 
-	  (Umu,file,Nersc3x2munger<LorentzColour2x3D,LorentzColourMatrix>(),offset,format);
-#endif
-#ifdef SERIAL_READ
-	csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>, LorentzColour2x3D> 
-	  (Umu,file,Nersc3x2munger<LorentzColour2x3D,LorentzColourMatrix>(),offset,format);
-#endif
-      }
-      } else if ( header.data_type == std::string("4D_SU3_GAUGE_3x3") ) {
 	if ( ieee32 || ieee32big ) {
-#ifdef PARALLEL_READ
-	  csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>,LorentzColourMatrixF>
-	    (Umu,file,NerscSimpleMunger<LorentzColourMatrixF,LorentzColourMatrix>(),offset,format);
-#endif
-#ifdef MPI_READ
-	  csum=BinaryIO::readObjectMPI<iLorentzColourMatrix<vsimd>,LorentzColourMatrixF>
-	    (Umu,file,NerscSimpleMunger<LorentzColourMatrixF,LorentzColourMatrix>(),offset,format);
-#endif
-#ifdef SERIAL_READ
-	  csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>,LorentzColourMatrixF>
-	    (Umu,file,NerscSimpleMunger<LorentzColourMatrixF,LorentzColourMatrix>(),offset,format);
-#endif
+	  csum=BinaryIO::readLatticeObject<iLorentzColourMatrix<vsimd>, LorentzColour2x3F> 
+	    (Umu,file,Nersc3x2munger<LorentzColour2x3F,LorentzColourMatrix>(), offset,format);
 	}
 	if ( ieee64 || ieee64big ) {
-#ifdef PARALLEL_READ
-	  csum=BinaryIO::readObjectParallel<iLorentzColourMatrix<vsimd>,LorentzColourMatrixD>
+	  csum=BinaryIO::readLatticeObject<iLorentzColourMatrix<vsimd>, LorentzColour2x3D> 
+	    (Umu,file,Nersc3x2munger<LorentzColour2x3D,LorentzColourMatrix>(),offset,format);
+	}
+      } else if ( header.data_type == std::string("4D_SU3_GAUGE_3x3") ) {
+	if ( ieee32 || ieee32big ) {
+	  csum=BinaryIO::readLatticeObject<iLorentzColourMatrix<vsimd>,LorentzColourMatrixF>
+	    (Umu,file,NerscSimpleMunger<LorentzColourMatrixF,LorentzColourMatrix>(),offset,format);
+	}
+	if ( ieee64 || ieee64big ) {
+	  csum=BinaryIO::readLatticeObject<iLorentzColourMatrix<vsimd>,LorentzColourMatrixD>
 	    (Umu,file,NerscSimpleMunger<LorentzColourMatrixD,LorentzColourMatrix>(),offset,format);
-#endif
-#ifdef MPI_READ
-	  csum=BinaryIO::readObjectMPI<iLorentzColourMatrix<vsimd>,LorentzColourMatrixD>
-	    (Umu,file,NerscSimpleMunger<LorentzColourMatrixD,LorentzColourMatrix>(),offset,format);
-#endif
-#ifdef SERIAL_READ
-	  csum=BinaryIO::readObjectSerial<iLorentzColourMatrix<vsimd>,LorentzColourMatrixD>
-	    (Umu,file,NerscSimpleMunger<LorentzColourMatrixD,LorentzColourMatrix>(),offset,format);
-#endif
 	}
       } else {
 	assert(0);
@@ -434,14 +374,14 @@ namespace Grid {
 	std::cerr << " plaqs " << clone.plaquette << " " << header.plaquette << std::endl;
 	std::cerr << " trace " << clone.link_trace<< " " << header.link_trace<< std::endl;
 	std::cerr << " csum  " <<std::hex<< csum << " " << header.checksum<< std::dec<< std::endl;
-	//	exit(0);
+	exit(0);
       }
-      //      assert(fabs(clone.plaquette -header.plaquette ) < 1.0e-5 );
-      //      assert(fabs(clone.link_trace-header.link_trace) < 1.0e-6 );
-      //      assert(csum == header.checksum );
-
-      //      std::cout<<GridLogMessage <<"NERSC Configuration "<<file<< " and plaquette, link trace, and checksum agree"<<std::endl;
-      }
+      assert(fabs(clone.plaquette -header.plaquette ) < 1.0e-5 );
+      assert(fabs(clone.link_trace-header.link_trace) < 1.0e-6 );
+      assert(csum == header.checksum );
+      
+      std::cout<<GridLogMessage <<"NERSC Configuration "<<file<< " and plaquette, link trace, and checksum agree"<<std::endl;
+    }
 
       template<class vsimd>
       static inline void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,std::string file, int two_row,int bits32)
@@ -466,41 +406,29 @@ namespace Grid {
 	NerscStatistics<GaugeField>(Umu,header);
 	NerscMachineCharacteristics(header);
 
-	uint32_t csum;
 	int offset;
   
 	truncate(file);
 
 	if ( two_row ) { 
-
 	  header.floating_point = std::string("IEEE64BIG");
 	  header.data_type      = std::string("4D_SU3_GAUGE");
 	  Nersc3x2unmunger<fobj2D,sobj> munge;
-	  BinaryIO::Uint32Checksum<vobj,fobj2D>(Umu, munge,header.checksum);
 	  offset = writeHeader(header,file);
-#ifdef PARALLEL_WRITE
-	  csum=BinaryIO::writeObjectParallel<vobj,fobj2D>(Umu,file,munge,offset,header.floating_point);
-#else
-	  csum=BinaryIO::writeObjectSerial<vobj,fobj2D>(Umu,file,munge,offset,header.floating_point);
-#endif
+	  header.checksum=BinaryIO::writeLatticeObject<vobj,fobj2D>(Umu,file,munge,offset,header.floating_point);
+	  writeHeader(header,file);
 	} else { 
 	  header.floating_point = std::string("IEEE64BIG");
 	  header.data_type      = std::string("4D_SU3_GAUGE_3x3");
 	  NerscSimpleUnmunger<fobj3D,sobj> munge;
-	  BinaryIO::Uint32Checksum<vobj,fobj3D>(Umu, munge,header.checksum);
 	  offset = writeHeader(header,file);
-#ifdef PARALLEL_WRITE
-	  csum=BinaryIO::writeObjectParallel<vobj,fobj3D>(Umu,file,munge,offset,header.floating_point);
-#else
-	  csum=BinaryIO::writeObjectSerial<vobj,fobj3D>(Umu,file,munge,offset,header.floating_point);
-#endif
+	  header.checksum=BinaryIO::writeLatticeObject<vobj,fobj3D>(Umu,file,munge,offset,header.floating_point);
+	  writeHeader(header,file);
 	}
-
-	std::cout<<GridLogMessage <<"Written NERSC Configuration on "<< file << " checksum "<<std::hex<<csum<< std::dec<<" plaq "<< header.plaquette <<std::endl;
-
+	std::cout<<GridLogMessage <<"Written NERSC Configuration on "<< file << " checksum "
+		 <<std::hex<<header.checksum
+		 <<std::dec<<" plaq "<< header.plaquette <<std::endl;
       }
-
-
       ///////////////////////////////
       // RNG state
       ///////////////////////////////
@@ -521,7 +449,6 @@ namespace Grid {
 	header.plaquette=0.0;
 	NerscMachineCharacteristics(header);
 
-	uint32_t csum;
 	int offset;
   
 #ifdef RNG_RANLUX
@@ -539,11 +466,13 @@ namespace Grid {
 
 	truncate(file);
 	offset = writeHeader(header,file);
-	csum=BinaryIO::writeRNGSerial(serial,parallel,file,offset);
-	header.checksum = csum;
+	header.checksum = BinaryIO::writeRNG(serial,parallel,file,offset);
 	offset = writeHeader(header,file);
 
-	std::cout<<GridLogMessage <<"Written NERSC RNG STATE "<<file<< " checksum "<<std::hex<<csum<<std::dec<<std::endl;
+	std::cout<<GridLogMessage 
+		 <<"Written NERSC RNG STATE "<<file<< " checksum "
+		 <<std::hex<<header.checksum
+		 <<std::dec<<std::endl;
 
       }
     
@@ -575,7 +504,7 @@ namespace Grid {
 
 	// depending on datatype, set up munger;
 	// munger is a function of <floating point, Real, data_type>
-	uint32_t csum=BinaryIO::readRNGSerial(serial,parallel,file,offset);
+	uint32_t csum=BinaryIO::readRNG(serial,parallel,file,offset);
 
 	if ( csum != header.checksum ) { 
 	  std::cerr << "checksum mismatch "<<std::hex<< csum <<" "<<header.checksum<<std::dec<<std::endl;
