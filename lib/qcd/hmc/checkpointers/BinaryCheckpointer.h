@@ -68,11 +68,11 @@ class BinaryHmcCheckpointer : public BaseHmcCheckpointer<Impl> {
       std::string config, rng;
       this->build_filenames(traj, Params, config, rng);
 
-      BinaryIO::BinarySimpleUnmunger<sobj_double, sobj> munge;
+      BinarySimpleUnmunger<sobj_double, sobj> munge;
       truncate(rng);
-      BinaryIO::writeRNGSerial(sRNG, pRNG, rng, 0);
+      BinaryIO::writeRNG(sRNG, pRNG, rng, 0);
       truncate(config);
-      uint32_t csum = BinaryIO::writeObjectParallel<vobj, sobj_double>(
+      uint32_t csum = BinaryIO::writeLatticeObject<vobj, sobj_double>(
           U, config, munge, 0, Params.format);
 
       std::cout << GridLogMessage << "Written Binary Configuration " << config
@@ -85,9 +85,9 @@ class BinaryHmcCheckpointer : public BaseHmcCheckpointer<Impl> {
     std::string config, rng;
     this->build_filenames(traj, Params, config, rng);
 
-    BinaryIO::BinarySimpleMunger<sobj_double, sobj> munge;
-    BinaryIO::readRNGSerial(sRNG, pRNG, rng, 0);
-    uint32_t csum = BinaryIO::readObjectParallel<vobj, sobj_double>(
+    BinarySimpleMunger<sobj_double, sobj> munge;
+    BinaryIO::readRNG(sRNG, pRNG, rng, 0);
+    uint32_t csum = BinaryIO::readLatticeObject<vobj, sobj_double>(
         U, config, munge, 0, Params.format);
 
     std::cout << GridLogMessage << "Read Binary Configuration " << config
