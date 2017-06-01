@@ -595,8 +595,9 @@ unvectorizeToLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in)
 }
 //Copy SIMD-vectorized lattice to array of scalar objects in lexicographic order
 template<typename vobj, typename sobj>
-typename std::enable_if<isSIMDvectorized<vobj>::value && !isSIMDvectorized<sobj>::value, void>::type 
-vectorizeFromLexOrdArray(std::vector<sobj> &in, const Lattice<vobj> &out)
+typename std::enable_if<isSIMDvectorized<vobj>::value 
+                    && !isSIMDvectorized<sobj>::value, void>::type 
+vectorizeFromLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
 {
 
   typedef typename vobj::vector_type vtype;
@@ -614,7 +615,7 @@ vectorizeFromLexOrdArray(std::vector<sobj> &in, const Lattice<vobj> &out)
     grid->iCoorFromIindex(icoor[lane],lane);
   }
   
-  parallel_for(int oidx = 0; oidx < grid->oSites(); oidx++){ //loop over outer index
+  parallel_for(uint64_t oidx = 0; oidx < grid->oSites(); oidx++){ //loop over outer index
     //Assemble vector of pointers to output elements
     std::vector<sobj*> ptrs(nsimd);
 
@@ -624,8 +625,10 @@ vectorizeFromLexOrdArray(std::vector<sobj> &in, const Lattice<vobj> &out)
     std::vector<int> lcoor(grid->Nd());
       
     for(int lane=0; lane < nsimd; lane++){
-      for(int mu=0;mu<ndim;mu++)
+
+      for(int mu=0;mu<ndim;mu++){
 	lcoor[mu] = ocoor[mu] + grid->_rdimensions[mu]*icoor[lane][mu];
+      }
 
       int lex;
       Lexicographic::IndexFromCoor(lcoor, lex, grid->_ldimensions);
@@ -663,7 +666,7 @@ void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
   std::vector<SobjOut> in_slex_conv(in_grid->lSites());
   unvectorizeToLexOrdArray(in_slex_conv, in);
     
-  parallel_for(int out_oidx=0;out_oidx<out_grid->oSites();out_oidx++){
+  parallel_for(uint64_t out_oidx=0;out_oidx<out_grid->oSites();out_oidx++){
     std::vector<int> out_ocoor(ndim);
     out_grid->oCoorFromOindex(out_ocoor, out_oidx);
 
