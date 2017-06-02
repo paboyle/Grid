@@ -43,7 +43,7 @@ class WilsonFlow: public Smear<Gimpl>{
     mutable WilsonGaugeAction<Gimpl> SG;
 
     void evolve_step(typename Gimpl::GaugeField&) const;
-    void evolve_step_adaptive(typename Gimpl::GaugeField&) const;
+    void evolve_step_adaptive(typename Gimpl::GaugeField&, RealD);
     RealD tau(unsigned int t)const {return epsilon*(t+1.0); }
 
  public:
@@ -75,7 +75,9 @@ class WilsonFlow: public Smear<Gimpl>{
         // undefined for WilsonFlow
     }
 
+    void smear_adaptive(GaugeField&, const GaugeField&, RealD maxTau);
     RealD energyDensityPlaquette(unsigned int step, const GaugeField& U) const;
+    RealD energyDensityPlaquette(const GaugeField& U) const;
 };
 
 
@@ -102,7 +104,11 @@ void WilsonFlow<Gimpl>::evolve_step(typename Gimpl::GaugeField &U) const{
 }
 
 template <class Gimpl>
-void WilsonFlow<Gimpl>::evolve_step_adaptive(typename Gimpl::GaugeField &U) const {
+void WilsonFlow<Gimpl>::evolve_step_adaptive(typename Gimpl::GaugeField &U, RealD maxTau) {
+    if (maxTau - taus < epsilon){
+        epsilon = maxTau-taus;
+    }
+    std::cout << GridLogMessage << "Integration epsilon : " << epsilon << std::endl;
     GaugeField Z(U._grid);
     GaugeField Zprime(U._grid);
     GaugeField tmp(U._grid), Uprime(U._grid);
@@ -142,8 +148,12 @@ void WilsonFlow<Gimpl>::evolve_step_adaptive(typename Gimpl::GaugeField &U) cons
 template <class Gimpl>
 RealD WilsonFlow<Gimpl>::energyDensityPlaquette(unsigned int step, const GaugeField& U) const {
     RealD td = tau(step);
-    //RealD td = tau;
     return 2.0 * td * td * SG.S(U)/U._grid->gSites();
+}
+
+template <class Gimpl>
+RealD WilsonFlow<Gimpl>::energyDensityPlaquette(const GaugeField& U) const {
+    return 2.0 * taus * taus * SG.S(U)/U._grid->gSites();
 }
 
 
@@ -154,7 +164,6 @@ RealD WilsonFlow<Gimpl>::energyDensityPlaquette(unsigned int step, const GaugeFi
 template <class Gimpl>
 void WilsonFlow<Gimpl>::smear(GaugeField& out, const GaugeField& in) const {
     out = in;
-    taus = epsilon;
     for (unsigned int step = 1; step <= Nstep; step++) {
         auto start = std::chrono::high_resolution_clock::now();
         std::cout << GridLogMessage << "Evolution time :"<< tau(step) << std::endl;
@@ -173,13 +182,31 @@ void WilsonFlow<Gimpl>::smear(GaugeField& out, const GaugeField& in) const {
             << WilsonLoops<PeriodicGimplR>::TopologicalCharge(out) << std::endl;
         }
     }
-    std::cout << GridLogMessage << "[WilsonFlow] Energy density (plaq) : "
-              << step << "  "
-              << energyDensityPlaquette(Nstep,out) << std::endl;
-    std::cout << GridLogMessage << "[WilsonFlow] Top. charge           : "
-              << step << "  " 
-              << WilsonLoops<PeriodicGimplR>::TopologicalCharge(out) << std::endl;
 }
+
+template <class Gimpl>
+void WilsonFlow<Gimpl>::smear_adaptive(GaugeField& out, const GaugeField& in, RealD maxTau){
+    out = in;
+    taus = epsilon;
+    unsigned int step = 0;
+    do{
+        step++;
+        std::cout << GridLogMessage << "Evolution time :"<< taus << std::endl;
+        evolve_step_adaptive(out, maxTau);
+        std::cout << GridLogMessage << "[WilsonFlow] Energy density (plaq) : "
+            << step << "  "
+            << energyDensityPlaquette(out) << std::endl;
+         if( step % measure_interval == 0){
+         std::cout << GridLogMessage << "[WilsonFlow] Top. charge           : "
+            << step << "  " 
+            << WilsonLoops<PeriodicGimplR>::TopologicalCharge(out) << std::endl;
+        }
+    } while (taus < maxTau);
+
+
+
+}
+
 
 }  // namespace QCD
 }  // namespace Grid
