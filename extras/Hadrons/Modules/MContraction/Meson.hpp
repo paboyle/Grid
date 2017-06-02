@@ -131,12 +131,11 @@ std::vector<std::string> TMeson<FImpl1, FImpl2>::getOutput(void)
 template <typename FImpl1, typename FImpl2>
 void TMeson<FImpl1, FImpl2>::parseGammaString(std::vector<GammaPair> &gammaList)
 {
+    gammaList.clear();
     // Determine gamma matrices to insert at source/sink.
     if (par().gammas.compare("all") == 0)
     {
         // Do all contractions.
-        unsigned int n_gam = Ns * Ns;
-        gammaList.resize(n_gam*n_gam);
         for (unsigned int i = 1; i < Gamma::nGamma; i += 2)
         {
             for (unsigned int j = 1; j < Gamma::nGamma; j += 2)
