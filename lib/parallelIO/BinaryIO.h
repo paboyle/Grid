@@ -29,12 +29,16 @@
 #ifndef GRID_BINARY_IO_H
 #define GRID_BINARY_IO_H
 
-
-#include "IldgIOtypes.h"
+#if defined(GRID_COMMS_MPI) || defined(GRID_COMMS_MPI3) 
+#define USE_MPI_IO
+#else
+#undef  USE_MPI_IO
+#endif
 
 #ifdef HAVE_ENDIAN_H
 #include <endian.h>
 #endif
+
 #include <arpa/inet.h>
 #include <algorithm>
 
