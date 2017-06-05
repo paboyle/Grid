@@ -128,12 +128,11 @@ void TWardIdentity<FImpl>::execute(void)
     LOG(Message) << "Performing Ward Identity checks for quark '" << par().q
                  << "'." << std::endl;
 
-    PropagatorField psi(env().getGrid()), tmp(env().getGrid()),
-                    vector_WI(env().getGrid());
+    PropagatorField tmp(env().getGrid()), vector_WI(env().getGrid());
     PropagatorField &q    = *env().template getObject<PropagatorField>(par().q);
     FMat            &act = *(env().template getObject<FMat>(par().action));
     Gamma           g5(Gamma::Algebra::Gamma5);
-    
+
     // Compute D_mu V_mu, D here is backward derivative.
     vector_WI    = zero;
     for (unsigned int mu = 0; mu < Nd; ++mu)
@@ -149,6 +148,7 @@ void TWardIdentity<FImpl>::execute(void)
 
     if (par().test_axial)
     {
+        PropagatorField psi(env().getGrid());
         LatticeComplex PP(env().getGrid()), axial_defect(env().getGrid()),
                        PJ5q(env().getGrid());
         std::vector<TComplex> axial_buf;
@@ -159,7 +159,7 @@ void TWardIdentity<FImpl>::execute(void)
         {
             act.ContractConservedCurrent(q, q, tmp, Current::Axial, mu);
             tmp -= Cshift(tmp, mu, -1);
-            axial_defect += 2.*trace(g5*tmp);
+            axial_defect += trace(g5*tmp);
         }
 
         // Get <P|J5q> for 5D (zero for 4D) and <P|P>.
@@ -191,7 +191,7 @@ void TWardIdentity<FImpl>::execute(void)
         LOG(Message) << "|PJ5q|^2      = " << norm2(PJ5q) << std::endl;
         LOG(Message) << "Axial Ward Identity defect Delta_mu A_mu = "
                      << norm2(axial_defect) << std::endl;
-
+    
         // Axial defect by timeslice.
         axial_defect -= 2.*(par().mass*PP + PJ5q);
         LOG(Message) << "Check Axial defect by timeslice" << std::endl;
