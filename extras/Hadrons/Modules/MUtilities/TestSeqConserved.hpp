@@ -140,7 +140,8 @@ void TTestSeqConserved<FImpl>::execute(void)
     Gamma           g(gA);
     SitePropagator  qSite;
     Complex         test_S, test_V, check_S, check_V;
-    std::vector<SitePropagator> check_buf;
+    std::vector<TComplex> check_buf;
+    LatticeComplex  c(env().getGrid());
 
     // Check sequential insertion of current gives same result as conserved 
     // current sink upon contraction. Assume q uses a point source.
@@ -151,9 +152,14 @@ void TTestSeqConserved<FImpl>::execute(void)
     test_V = trace(qSite*g*Gamma::gmu[par().mu]);
 
     act.ContractConservedCurrent(q, q, tmp, par().curr, par().mu);
-    sliceSum(tmp, check_buf, Tp);
-    check_S = TensorRemove(trace(check_buf[par().t_J]*g));
-    check_V = TensorRemove(trace(check_buf[par().t_J]*g*Gamma::gmu[par().mu]));
+
+    c = trace(tmp*g);
+    sliceSum(c, check_buf, Tp);
+    check_S = TensorRemove(check_buf[par().t_J]);
+
+    c = trace(tmp*g*Gamma::gmu[par().mu]);
+    sliceSum(c, check_buf, Tp);
+    check_V = TensorRemove(check_buf[par().t_J]);
 
     LOG(Message) << "Test S  = " << abs(test_S)   << std::endl;
     LOG(Message) << "Test V  = " << abs(test_V) << std::endl;
@@ -166,8 +172,8 @@ void TTestSeqConserved<FImpl>::execute(void)
 
     LOG(Message) << "Consistency check for sequential conserved " 
                  << par().curr << " current insertion: " << std::endl; 
-    LOG(Message) << "Check S = " << abs(check_S) << std::endl;
-    LOG(Message) << "Check V = " << abs(check_V) << std::endl;
+    LOG(Message) << "Diff S  = " << abs(check_S) << std::endl;
+    LOG(Message) << "Diff V  = " << abs(check_V) << std::endl;
 }
 
 END_MODULE_NAMESPACE
