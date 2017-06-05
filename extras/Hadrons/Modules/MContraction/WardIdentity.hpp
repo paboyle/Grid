@@ -143,6 +143,7 @@ void TWardIdentity<FImpl>::execute(void)
         vector_WI += tmp;
     }
 
+    // Test ward identity D_mu V_mu = 0;
     LOG(Message) << "Vector Ward Identity check Delta_mu V_mu = " 
                  << norm2(vector_WI) << std::endl;
 
@@ -150,28 +151,29 @@ void TWardIdentity<FImpl>::execute(void)
     {
         LatticeComplex PP(env().getGrid()), axial_defect(env().getGrid()),
                        PJ5q(env().getGrid());
+        std::vector<TComplex> axial_buf;
 
-        // Compute D_mu A_mu, D is backwards derivative.
+        // Compute <P|D_mu A_mu>, D is backwards derivative.
         axial_defect = zero;
         for (unsigned int mu = 0; mu < Nd; ++mu)
         {
             act.ContractConservedCurrent(q, q, tmp, Current::Axial, mu);
             tmp -= Cshift(tmp, mu, -1);
-            axial_defect += trace(g5*tmp);
+            axial_defect += 2.*trace(g5*tmp);
         }
 
-        // Get PJ5q for 5D (zero for 4D) and PP.
+        // Get <P|J5q> for 5D (zero for 4D) and <P|P>.
         PJ5q = zero;
         if (Ls_ > 1)
         {
-            // PP
+            // <P|P>
             ExtractSlice(tmp, q, 0, 0);
-            psi  = (tmp - g5*tmp);
+            psi  = 0.5 * (tmp - g5*tmp);
             ExtractSlice(tmp, q, Ls_ - 1, 0);
-            psi += (tmp + g5*tmp);
+            psi += 0.5 * (tmp + g5*tmp);
             PP = trace(adj(psi)*psi);
 
-            // P5Jq
+            // <P|5Jq>
             ExtractSlice(tmp, q, Ls_/2 - 1, 0);
             psi  = 0.5 * (tmp + g5*tmp);
             ExtractSlice(tmp, q, Ls_/2, 0);
@@ -183,13 +185,22 @@ void TWardIdentity<FImpl>::execute(void)
             PP = trace(adj(q)*q);
         }
 
-        // Test ward identities, D_mu V_mu = 0; D_mu A_mu = 2m<PP> + 2 PJ5q
-        axial_defect -= 2.*PJ5q;
-        axial_defect -= 2.*(par().mass)*PP;
+        // Test ward identity <P|D_mu A_mu> = 2m<P|P> + 2<P|J5q>
+        LOG(Message) << "|D_mu A_mu|^2 = " << norm2(axial_defect) << std::endl;
+        LOG(Message) << "|PP|^2        = " << norm2(PP) << std::endl;
+        LOG(Message) << "|PJ5q|^2      = " << norm2(PJ5q) << std::endl;
         LOG(Message) << "Axial Ward Identity defect Delta_mu A_mu = "
                      << norm2(axial_defect) << std::endl;
-        LOG(Message) << "norm2(PP) = " << norm2(PP) << std::endl; 
-        LOG(Message) << "norm2(PJ5q) = " << norm2(PJ5q) << std::endl; 
+
+        // Axial defect by timeslice.
+        axial_defect -= 2.*(par().mass*PP + PJ5q);
+        LOG(Message) << "Check Axial defect by timeslice" << std::endl;
+        sliceSum(axial_defect, axial_buf, Tp);
+        for (int t = 0; t < axial_buf.size(); ++t)
+        {
+            LOG(Message) << "t = " << t << ": " 
+                         << TensorRemove(axial_buf[t]) << std::endl;
+        }
     }
 }
 

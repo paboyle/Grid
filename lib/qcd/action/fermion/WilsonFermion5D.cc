@@ -700,8 +700,14 @@ void WilsonFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
         Kernels::ContractConservedCurrentInternal(q1_s, q2_s, tmp, Umu, curr_type, mu);
 
         // Axial current sign
-        Real G_s = (curr_type == Current::Axial) ? ((s < Ls/2) ? -1. : 1.) : 1.;
-        q_out += G_s*tmp;
+        if ((curr_type == Current::Axial) && (s < (Ls / 2)))
+        {
+            q_out -= tmp;
+        }
+        else
+        {
+            q_out += tmp;
+        }
     }
 }
 
