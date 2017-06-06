@@ -297,11 +297,15 @@ public:
         if (j==(i-1)) EE[j] = lme[j];
       }
   LAPACK_INT evals_found;
-  LAPACK_INT lwork = ( (18*NN) > (1+4*NN+NN*NN)? (18*NN):(1+4*NN+NN*NN)) ;
+//  LAPACK_INT lwork = ( (18*NN) > (1+4*NN+NN*NN)? (18*NN):(1+4*NN+NN*NN)) ;
+  LAPACK_INT lwork =  1+(18*NN) ;
   LAPACK_INT liwork =  3+NN*10 ;
-  LAPACK_INT iwork[liwork];
-  double work[lwork];
-  LAPACK_INT isuppz[2*NN];
+//  LAPACK_INT iwork[liwork];
+//  double work[lwork];
+//  LAPACK_INT isuppz[2*NN];
+  std::vector<LAPACK_INT> iwork(liwork);
+  std::vector<double> work(lwork);
+  std::vector<LAPACK_INT> isuppz(2*NN);
   char jobz = 'V'; // calculate evals & evecs
   char range = 'I'; // calculate all evals
   //    char range = 'A'; // calculate all evals
@@ -332,8 +336,8 @@ public:
             &vl, &vu, &il, &iu, // these four are ignored if second parameteris 'A'
             &tol, // tolerance
             &evals_found, evals_tmp.data(), evec_tmp.data(), &NN,
-            isuppz,
-            work, &lwork, iwork, &liwork,
+            isuppz.data(),
+            work.data(), &lwork, iwork.data(), &liwork,
             &info);
         for (int i = iu-1; i>= il-1; i--){
           printf("node=%d evals_found=%d evals_tmp[%d] = %g\n",node,evals_found, i - (il-1),evals_tmp[i - (il-1)]);
