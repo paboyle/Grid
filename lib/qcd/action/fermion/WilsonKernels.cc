@@ -327,7 +327,7 @@ void WilsonKernels<Impl>::SeqConservedCurrentInternal(const PropagatorField &q_i
     GaugeLinkField Umu(U._grid);
     Umu  = PeekIndex<LorentzIndex>(U, mu);
     Lattice<iScalar<vInteger>> t(q_in._grid);
-    LatticeCoordinate(t, mu);
+    LatticeCoordinate(t, Tp);
 
     tmp = this->CovShiftForward(Umu, mu, q_in)*ph;
     tmp = where((t >= tmin) and (t <= tmax), tmp, 0.*tmp);
