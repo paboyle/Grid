@@ -493,11 +493,9 @@ void Rotate0(
 	int _Nm,
 	DenseVector<RealD>& Qt,
 	DenseVector<Field>& evec,
-//int k1, int k2
 	int j0, int j1,
 	int _Nk
 	)
-//    void Rotate0( int Nm, DenseVector<RealD>& Qt, DenseVector<Field>& evec, int k1, int k2)
 {
 	GridBase *grid = evec[0]._grid;
 	DenseVector<Field>  B(_Nm,grid); // waste of space replicating
@@ -547,17 +545,9 @@ void Rotate(
 
 #pragma omp parallel
 	{
-//		int thr=GridThread::GetThreads();
-//		printf("thr=%d ss=%d me=%d\n",thr,ss,me);fflush(stdout);
-//		std::cout<<GridLogMessage << "GridThread::GetThreads() = " << thr << std::endl;
-//		std::cout<<GridLogMessage << "GridThread::GetThreads() = " << thr << "B.size()= "<< B.size() << std::endl;
 		std::vector < vobj > B(_Nm);
 #pragma omp for
 		for(int ss=0;ss < grid->oSites();ss++){
-//			int me = GridThread::ThreadBarrier();
-//			assert(me <thr);
-//			for(int j=0; j<_Nm; ++j) B[j]=0.;
-//			zeroit(B);
 			for(int j=j0; j<j1; ++j)
 				zeroit(B[j]);
 			for(int j=j0; j<j1; ++j){
@@ -685,7 +675,7 @@ PARALLEL_FOR_LOOP
 	  //	  std::cout<<GridLogMessage << std::resetiosflags(std::ios_base::scientific);
 }
 
-void FinalCheck( int Nk, int Nm,
+void FinalCheck( int Nk, int _Nm,
 	DenseVector<RealD>& eval,
 	DenseVector<Field>& evec
 	)
@@ -714,7 +704,7 @@ void FinalCheck( int Nk, int Nm,
 		}
 	}
 
-void ConvCheck( int Nk, int Nm,
+void ConvCheck( int Nk, int _Nm,
 	DenseVector<RealD>& Qt,
 	DenseVector<Field>& evec,
 	DenseVector<RealD> &eval2,
@@ -729,7 +719,7 @@ void ConvCheck( int Nk, int Nm,
 			B=0.;
 			B.checkerboard = evec[0].checkerboard;
 		    for(int k = 0; k<Nk; ++k){
-		    	B += Qt[k+j*Nm] * evec[k];
+		    	B += Qt[k+j*_Nm] * evec[k];
 		    }
 		    std::cout<<GridLogMessage << "norm(B["<<j<<"])="<<norm2(B)<<std::endl;
 //		    _poly(_Linop,B,v);
@@ -756,7 +746,7 @@ void ConvCheck( int Nk, int Nm,
 		}
 	}
 
-void ConvRotate2( int Nk, int Nm,
+void ConvRotate2( int Nk, int _Nm,
 	DenseVector<RealD>& Qt,
 	DenseVector<Field>& evec,
 	DenseVector<RealD> &eval,
@@ -775,22 +765,22 @@ PARALLEL_FOR_LOOP
 	for(int ss=0;ss < grid->oSites();ss++){
 		int me = GridThread::ThreadBarrier();
 		printf("thr=%d ss=%d me=%d\n",thr,ss,me);fflush(stdout);
-		assert( (Nm*thr)<grid->oSites());
+		assert( (_Nm*thr)<grid->oSites());
 //		auto B2 = evec[0]._odata[0];
-//		std::vector < decltype( B2 ) > B(Nm,B2);
-		for(int j=0; j<Nconv; ++j) B._odata[Iconv[j]+Nm*me]=0.;
+//		std::vector < decltype( B2 ) > B(_Nm,B2);
+		for(int j=0; j<Nconv; ++j) B._odata[Iconv[j]+_Nm*me]=0.;
 		for(int j=0; j<Nconv; ++j){
 			for(int k=0; k<Nk ; ++k){
-			    B._odata[Iconv[j]+Nm*me] +=Qt[k+Nm*Iconv[j]] * evec[k]._odata[ss]; 
+			    B._odata[Iconv[j]+_Nm*me] +=Qt[k+_Nm*Iconv[j]] * evec[k]._odata[ss]; 
 			}
 		}
 		for(int j=0; j<Nconv; ++j){
-			evec[j]._odata[ss] = B._odata[Iconv[j]+Nm*me];
+			evec[j]._odata[ss] = B._odata[Iconv[j]+_Nm*me];
 		}
 	}
 }
 
-void ConvRotate( int Nk, int Nm,
+void ConvRotate( int Nk, int _Nm,
 	DenseVector<RealD>& Qt,
 	DenseVector<Field>& evec,
 	DenseVector<RealD> &eval,
@@ -802,13 +792,13 @@ void ConvRotate( int Nk, int Nm,
 	typedef typename Field::vector_object vobj;
 #pragma omp parallel
 	{
-		std::vector < vobj > B(Nm);
+		std::vector < vobj > B(_Nm);
 #pragma omp for
 	for(int ss=0;ss < grid->oSites();ss++){
 //		for(int j=0; j<Nconv; ++j) B[j]=0.;
 		for(int j=0; j<Nconv; ++j){
 			for(int k=0; k<Nk ; ++k){
-			    B[j] +=Qt[k+Nm*Iconv[j]] * evec[k]._odata[ss]; 
+			    B[j] +=Qt[k+_Nm*Iconv[j]] * evec[k]._odata[ss]; 
 			}
 		}
 		for(int j=0; j<Nconv; ++j){
@@ -960,7 +950,6 @@ until convergence
 //	Uses more temorary
 //	Rotate0(Nm,Qt,evec,k1,k2);
 // 	Uses minimal temporary, possibly with less speed
-//	Rotate(Nm,Qt,evec,k1,k2);
 	Rotate(Nm,Qt,evec,k1-1,k2+1,Nm);
 // 	Try if Rotate() doesn't work
 //	Rotate2(Nm,Qt,evec,k1,k2);
@@ -1017,10 +1006,7 @@ until convergence
          evec[i] = B[Iconv[i]];
        }
 #else
-//	ConvRotate0( Nk, Nm, Qt, evec, eval,eval2,Iconv,Nconv);
-//	ConvRotate( Nk, Nm, Qt, evec, eval,eval2,Iconv,Nconv);
-//	ConvCheck only counts Iconv[j]=j. ignore Iconv[]
-	Rotate0(Nm,Qt,evec,0,Nk,Nk);
+	Rotate(Nm,Qt,evec,0,Nk,Nm);
 	FinalCheck( Nk, Nm, eval,evec);
 //exit(-1);
 //	ConvRotate2( Nk, Nm, Qt, evec, eval,eval2,Iconv,Nconv);
