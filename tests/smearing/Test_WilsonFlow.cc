@@ -33,7 +33,8 @@ namespace Grid{
     GRID_SERIALIZABLE_CLASS_MEMBERS(WFParameters,
             int, steps,
             double, step_size,
-            int, meas_interval);
+            int, meas_interval,
+            double, maxTau); // for the adaptive algorithm
        
 
     template <class ReaderClass >
@@ -97,11 +98,13 @@ int main(int argc, char **argv) {
 
   WilsonFlow<PeriodicGimplR> WF(WFPar.steps, WFPar.step_size, WFPar.meas_interval);
 
-  WF.smear(Uflow, Umu);
+  WF.smear_adaptive(Uflow, Umu, WFPar.maxTau);
 
   RealD WFlow_plaq = WilsonLoops<PeriodicGimplR>::avgPlaquette(Uflow);
   RealD WFlow_TC   = WilsonLoops<PeriodicGimplR>::TopologicalCharge(Uflow);
+  RealD WFlow_T0   = WF.energyDensityPlaquette(Uflow);
   std::cout << GridLogMessage << "Plaquette          "<< conf << "   " << WFlow_plaq << std::endl;
+  std::cout << GridLogMessage << "T0                 "<< conf << "   " << WFlow_T0 << std::endl;
   std::cout << GridLogMessage << "TopologicalCharge  "<< conf << "   " << WFlow_TC   << std::endl;
 
   std::cout<< GridLogMessage << " Admissibility check:\n";
@@ -121,3 +124,29 @@ int main(int argc, char **argv) {
   }
   Grid_finalize();
 }  // main
+
+
+/*
+Input file example
+
+
+JSON
+
+{
+    "WilsonFlow":{
+	"steps": 200,
+	"step_size": 0.01,
+	"meas_interval": 50,
+  "maxTau": 2.0
+    },
+    "Configurations":{
+	"conf_prefix": "ckpoint_lat",
+	"rng_prefix": "ckpoint_rng",
+	"StartConfiguration": 3000,
+	"EndConfiguration": 3000,
+	"Skip": 5
+    }
+}
+
+
+*/
