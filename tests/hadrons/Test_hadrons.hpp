@@ -107,16 +107,20 @@ using namespace Hadrons;
  *             actionName  - name of action module to create.
  *             gaugeField  - gauge field module.     
  *             mass        - quark mass.
+ *             boundary    - fermion boundary conditions (default to periodic
+ *                           space, antiperiodic time).
  * Returns: None.
  ******************************************************************************/
 inline void makeWilsonAction(Application &application, std::string actionName,
-                             std::string &gaugeField, double mass)
+                             std::string &gaugeField, double mass,
+                             std::string boundary = "1 1 1 -1")
 {
     if (!(Environment::getInstance().hasModule(actionName)))
     {
         MAction::Wilson::Par actionPar;
         actionPar.gauge = gaugeField;
         actionPar.mass  = mass;
+        actionPar.boundary = boundary;
         application.createModule<MAction::Wilson>(actionName, actionPar);
     }
 }
@@ -129,11 +133,13 @@ inline void makeWilsonAction(Application &application, std::string actionName,
  *             mass        - quark mass.
  *             M5          - domain wall height.
  *             Ls          - fifth dimension extent.
+ *             boundary    - fermion boundary conditions (default to periodic
+ *                           space, antiperiodic time).
  * Returns: None.
  ******************************************************************************/
 inline void makeDWFAction(Application &application, std::string actionName,
                           std::string &gaugeField, double mass, double M5,
-                          unsigned int Ls)
+                          unsigned int Ls, std::string boundary = "1 1 1 -1")
 {
     if (!(Environment::getInstance().hasModule(actionName)))
     {
@@ -142,6 +148,7 @@ inline void makeDWFAction(Application &application, std::string actionName,
         actionPar.Ls    = Ls;
         actionPar.M5    = M5;
         actionPar.mass  = mass;
+        actionPar.boundary = boundary;
         application.createModule<MAction::DWF>(actionName, actionPar);
     }
 }
