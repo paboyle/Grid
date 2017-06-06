@@ -106,6 +106,8 @@ public:
     void                    createGrid(const unsigned int Ls);
     GridCartesian *         getGrid(const unsigned int Ls = 1) const;
     GridRedBlackCartesian * getRbGrid(const unsigned int Ls = 1) const;
+    std::vector<int>        getDim(void) const;
+    int                     getDim(const unsigned int mu) const;
     unsigned int            getNd(void) const;
     // random number generator
     void                    setSeed(const std::vector<int> &seed);
@@ -131,6 +133,8 @@ public:
     std::string             getModuleName(const unsigned int address) const;
     std::string             getModuleType(const unsigned int address) const;
     std::string             getModuleType(const std::string name) const;
+    std::string             getModuleNamespace(const unsigned int address) const;
+    std::string             getModuleNamespace(const std::string name) const;
     bool                    hasModule(const unsigned int address) const;
     bool                    hasModule(const std::string name) const;
     Graph<unsigned int>     makeModuleGraph(void) const;
@@ -171,6 +175,8 @@ public:
     std::string             getObjectType(const std::string name) const;
     Size                    getObjectSize(const unsigned int address) const;
     Size                    getObjectSize(const std::string name) const;
+    unsigned int            getObjectModule(const unsigned int address) const;
+    unsigned int            getObjectModule(const std::string name) const;
     unsigned int            getObjectLs(const unsigned int address) const;
     unsigned int            getObjectLs(const std::string name) const;
     bool                    hasObject(const unsigned int address) const;
@@ -181,6 +187,10 @@ public:
     bool                    hasCreatedObject(const std::string name) const;
     bool                    isObject5d(const unsigned int address) const;
     bool                    isObject5d(const std::string name) const;
+    template <typename T>
+    bool                    isObjectOfType(const unsigned int address) const;
+    template <typename T>
+    bool                    isObjectOfType(const std::string name) const;
     Environment::Size       getTotalSize(void) const;
     void                    addOwnership(const unsigned int owner,
                                          const unsigned int property);
@@ -197,6 +207,7 @@ private:
     bool                                   dryRun_{false};
     unsigned int                           traj_, locVol_;
     // grids
+    std::vector<int>                       dim_;
     GridPt                                 grid4d_;
     std::map<unsigned int, GridPt>         grid5d_;
     GridRbPt                               gridRb4d_;
@@ -343,7 +354,7 @@ T * Environment::getObject(const unsigned int address) const
         else
         {
             HADRON_ERROR("object with address " + std::to_string(address) +
-                         " does not have type '" + typeid(T).name() +
+                         " does not have type '" + typeName(&typeid(T)) +
                          "' (has type '" + getObjectType(address) + "')");
         }
     }
@@ -378,6 +389,37 @@ template <typename T>
 T * Environment::createLattice(const std::string name)
 {
     return createLattice<T>(getObjectAddress(name));
+}
+
+template <typename T>
+bool Environment::isObjectOfType(const unsigned int address) const
+{
+    if (hasRegisteredObject(address))
+    {
+        if (auto h = dynamic_cast<Holder<T> *>(object_[address].data.get()))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else if (hasObject(address))
+    {
+        HADRON_ERROR("object with address " + std::to_string(address) +
+                     " exists but is not registered");
+    }
+    else
+    {
+        HADRON_ERROR("no object with address " + std::to_string(address));
+    }
+}
+
+template <typename T>
+bool Environment::isObjectOfType(const std::string name) const
+{
+    return isObjectOfType<T>(getObjectAddress(name));
 }
 
 END_HADRONS_NAMESPACE

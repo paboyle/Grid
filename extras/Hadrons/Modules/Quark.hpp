@@ -51,7 +51,7 @@ template <typename FImpl>
 class TQuark: public Module<QuarkPar>
 {
 public:
-    TYPE_ALIASES(FImpl,);
+    FGS_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TQuark(const std::string name);

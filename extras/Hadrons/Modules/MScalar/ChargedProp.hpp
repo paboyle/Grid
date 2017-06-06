@@ -1,5 +1,5 @@
-#ifndef Hadrons_ChargedProp_hpp_
-#define Hadrons_ChargedProp_hpp_
+#ifndef Hadrons_MScalar_ChargedProp_hpp_
+#define Hadrons_MScalar_ChargedProp_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -58,4 +58,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_ChargedProp_hpp_
+#endif // Hadrons_MScalar_ChargedProp_hpp_

@@ -65,7 +65,9 @@ BEGIN_HADRONS_NAMESPACE
 typedef FermionOperator<FImpl>                       FMat##suffix;             \
 typedef typename FImpl::FermionField                 FermionField##suffix;     \
 typedef typename FImpl::PropagatorField              PropagatorField##suffix;  \
-typedef typename FImpl::SitePropagator               SitePropagator##suffix;
+typedef typename FImpl::SitePropagator               SitePropagator##suffix;   \
+typedef std::vector<typename FImpl::SitePropagator::scalar_object>             \
+                                                     SlicedPropagator##suffix;
 
 #define GAUGE_TYPE_ALIASES(FImpl, suffix)\
 typedef typename FImpl::DoubledGaugeField DoubledGaugeField##suffix;
@@ -78,7 +80,10 @@ typedef typename SImpl::Field PropagatorField##suffix;
 typedef std::function<void(FermionField##suffix &,\
                       const FermionField##suffix &)> SolverFn##suffix;
 
-#define TYPE_ALIASES(FImpl, suffix)\
+#define SINK_TYPE_ALIASES(suffix)\
+typedef std::function<SlicedPropagator##suffix(const PropagatorField##suffix &)> SinkFn##suffix;
+
+#define FGS_TYPE_ALIASES(FImpl, suffix)\
 FERM_TYPE_ALIASES(FImpl, suffix)\
 GAUGE_TYPE_ALIASES(FImpl, suffix)\
 SOLVER_TYPE_ALIASES(FImpl, suffix)

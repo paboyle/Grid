@@ -25,8 +25,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-#ifndef Hadrons_StochEm_hpp_
-#define Hadrons_StochEm_hpp_
+#ifndef Hadrons_MGauge_StochEm_hpp_
+#define Hadrons_MGauge_StochEm_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -72,4 +72,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_StochEm_hpp_
+#endif // Hadrons_MGauge_StochEm_hpp_

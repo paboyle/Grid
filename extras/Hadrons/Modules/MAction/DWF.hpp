@@ -27,8 +27,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_DWF_hpp_
-#define Hadrons_DWF_hpp_
+#ifndef Hadrons_MAction_DWF_hpp_
+#define Hadrons_MAction_DWF_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -56,7 +56,7 @@ template <typename FImpl>
 class TDWF: public Module<DWFPar>
 {
 public:
-    TYPE_ALIASES(FImpl,);
+    FGS_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TDWF(const std::string name);
@@ -137,4 +137,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_DWF_hpp_
+#endif // Hadrons_MAction_DWF_hpp_
