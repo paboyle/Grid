@@ -185,6 +185,63 @@ void TScalarVP::execute(void)
     ScalarField &propSun   = *env().createLattice<ScalarField>(propSunName_);
     ScalarField &propTad   = *env().createLattice<ScalarField>(propTadName_);
     chargedProp(propQ, propSun, propTad, *GFSrc_, fft);
+    // // OUTPUT IF NECESSARY
+    // if (!par().output.empty())
+    // {
+    //     ScalarField fullProp = (*prop0_) + q*propQ + q*q*propSun + q*q*propTad;
+    //     std::string           filename = par().output + "_prop_000." +
+    //                                      std::to_string(env().getTrajectory());
+        
+    //     LOG(Message) << "Saving zero-momentum projection to '"
+    //                  << filename << "'..." << std::endl;
+        
+    //     CorrWriter            writer(filename);
+    //     std::vector<TComplex> vecBuf;
+    //     std::vector<Complex>  result;
+        
+    //     write(writer, "charge", q);
+
+    //     // Write full propagator
+    //     sliceSum(fullProp, vecBuf, Tp);
+    //     result.resize(vecBuf.size());
+    //     for (unsigned int t = 0; t < vecBuf.size(); ++t)
+    //     {
+    //         result[t] = TensorRemove(vecBuf[t]);
+    //     }
+    //     write(writer, "prop", result);
+
+    //     // Write free propagator
+    //     sliceSum(*prop0_, vecBuf, Tp);
+    //     for (unsigned int t = 0; t < vecBuf.size(); ++t)
+    //     {
+    //         result[t] = TensorRemove(vecBuf[t]);
+    //     }
+    //     write(writer, "prop_0", result);
+
+    //     // Write propagator D1 term
+    //     sliceSum(propD1, vecBuf, Tp);
+    //     for (unsigned int t = 0; t < vecBuf.size(); ++t)
+    //     {
+    //         result[t] = TensorRemove(vecBuf[t]);
+    //     }
+    //     write(writer, "prop_q", result);
+
+    //     // Write propagator D1D1 term
+    //     sliceSum(propD1D1, vecBuf, Tp);
+    //     for (unsigned int t = 0; t < vecBuf.size(); ++t)
+    //     {
+    //         result[t] = TensorRemove(vecBuf[t]);
+    //     }
+    //     write(writer, "prop_sun", result);
+
+    //     // Write propagator D2 term
+    //     sliceSum(propD2, vecBuf, Tp);
+    //     for (unsigned int t = 0; t < vecBuf.size(); ++t)
+    //     {
+    //         result[t] = TensorRemove(vecBuf[t]);
+    //     }
+    //     write(writer, "prop_tad", result);
+    // }
 
     // Propagators from shifted sources
     LOG(Message) << "Computing O(q) charged scalar propagators..."
@@ -281,6 +338,7 @@ void TScalarVP::execute(void)
                                 * (-0.5)*q*q*Amu*Amu
                                 * prop1;
 
+            freeVpTensor[mu][nu] = 2.0*real(freeVpTensor[mu][nu]);
             vpTensor[mu][nu] = 2.0*real(vpTensor[mu][nu]);
         }
     }
