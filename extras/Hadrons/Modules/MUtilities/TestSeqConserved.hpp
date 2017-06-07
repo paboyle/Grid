@@ -71,7 +71,7 @@ template <typename FImpl>
 class TTestSeqConserved: public Module<TestSeqConservedPar>
 {
 public:
-    TYPE_ALIASES(FImpl,);
+    FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TTestSeqConserved(const std::string name);

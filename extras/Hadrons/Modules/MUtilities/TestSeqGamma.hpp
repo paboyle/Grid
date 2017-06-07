@@ -27,7 +27,7 @@ template <typename FImpl>
 class TTestSeqGamma: public Module<TestSeqGammaPar>
 {
 public:
-    TYPE_ALIASES(FImpl,);
+    FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TTestSeqGamma(const std::string name);

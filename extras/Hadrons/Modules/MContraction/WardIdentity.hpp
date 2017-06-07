@@ -65,7 +65,7 @@ template <typename FImpl>
 class TWardIdentity: public Module<WardIdentityPar>
 {
 public:
-    TYPE_ALIASES(FImpl,);
+    FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TWardIdentity(const std::string name);
