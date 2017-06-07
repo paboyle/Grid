@@ -14,9 +14,11 @@ namespace Grid {
     using iImplField = iScalar<iScalar<iScalar<vtype> > >;
     
     typedef iImplField<Simd> SiteField;
-    
+    typedef SiteField        SitePropagator;
     
     typedef Lattice<SiteField> Field;
+    typedef Field              FermionField;
+    typedef Field              PropagatorField;
     
     static inline void generate_momenta(Field& P, GridParallelRNG& pRNG){
       gaussian(pRNG, P);
@@ -42,6 +44,45 @@ namespace Grid {
     
     static inline void ColdConfiguration(GridParallelRNG &pRNG, Field &U) {
       U = 1.0;
+    }
+    
+    static void MomentumSpacePropagator(Field &out, RealD m)
+    {
+      GridBase           *grid = out._grid;
+      Field              kmu(grid), one(grid);
+      const unsigned int nd    = grid->_ndimension;
+      std::vector<int>   &l    = grid->_fdimensions;
+      
+      one = Complex(1.0,0.0);
+      out = m*m;
+      for(int mu = 0; mu < nd; mu++)
+      {
+        Real twoPiL = M_PI*2./l[mu];
+        
+        LatticeCoordinate(kmu,mu);
+        kmu = 2.*sin(.5*twoPiL*kmu);
+        out = out + kmu*kmu;
+      }
+      out = one/out;
+    }
+    
+    static void FreePropagator(const Field &in, Field &out,
+                               const Field &momKernel)
+    {
+      FFT   fft((GridCartesian *)in._grid);
+      Field inFT(in._grid);
+      
+      fft.FFT_all_dim(inFT, in, FFT::forward);
+      inFT = inFT*momKernel;
+      fft.FFT_all_dim(out, inFT, FFT::backward);
+    }
+    
+    static void FreePropagator(const Field &in, Field &out, RealD m)
+    {
+      Field momKernel(in._grid);
+      
+      MomentumSpacePropagator(momKernel, m);
+      FreePropagator(in, out, momKernel);
     }
     
   };
@@ -93,6 +134,9 @@ namespace Grid {
   typedef ScalarImplTypes<vReal> ScalarImplR;
   typedef ScalarImplTypes<vRealF> ScalarImplF;
   typedef ScalarImplTypes<vRealD> ScalarImplD;
+  typedef ScalarImplTypes<vComplex> ScalarImplCR;
+  typedef ScalarImplTypes<vComplexF> ScalarImplCF;
+  typedef ScalarImplTypes<vComplexD> ScalarImplCD;
   
   //} 
 } 

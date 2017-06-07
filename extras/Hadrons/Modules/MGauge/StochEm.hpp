@@ -2,11 +2,11 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MContraction/WeakHamiltonianEye.hpp
+Source file: extras/Hadrons/Modules/MGauge/StochEm.hpp
 
-Copyright (C) 2017
+Copyright (C) 2015
+Copyright (C) 2016
 
-Author: Andrew Lawson    <andrew.lawson1991@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -25,34 +25,51 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
+#ifndef Hadrons_MGauge_StochEm_hpp_
+#define Hadrons_MGauge_StochEm_hpp_
 
-#ifndef Hadrons_MContraction_WeakHamiltonianEye_hpp_
-#define Hadrons_MContraction_WeakHamiltonianEye_hpp_
-
-#include <Grid/Hadrons/Modules/MContraction/WeakHamiltonian.hpp>
+#include <Grid/Hadrons/Global.hpp>
+#include <Grid/Hadrons/Module.hpp>
+#include <Grid/Hadrons/ModuleFactory.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         WeakHamiltonianEye                                 *
+ *                         StochEm                                 *
  ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MContraction)
+BEGIN_MODULE_NAMESPACE(MGauge)
 
-enum
+class StochEmPar: Serializable
 {
-    S_diag = 0,
-    E_diag = 1,
-    n_eye_diag = 2
+public:
+    GRID_SERIALIZABLE_CLASS_MEMBERS(StochEmPar,
+                                    PhotonR::Gauge,    gauge,
+                                    PhotonR::ZmScheme, zmScheme);
 };
 
-// Saucer and Eye subdiagram contractions.
-#define MAKE_SE_BODY(Q_1, Q_2, Q_3, gamma) (Q_3*g5*Q_1*adj(Q_2)*g5*gamma)
-#define MAKE_SE_LOOP(Q_loop, gamma) (Q_loop*gamma)
+class TStochEm: public Module<StochEmPar>
+{
+public:
+    typedef PhotonR::GaugeField     EmField;
+    typedef PhotonR::GaugeLinkField EmComp;
+public:
+    // constructor
+    TStochEm(const std::string name);
+    // destructor
+    virtual ~TStochEm(void) = default;
+    // dependency relation
+    virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getOutput(void);
+    // setup
+    virtual void setup(void);
+    // execution
+    virtual void execute(void);
+};
 
-MAKE_WEAK_MODULE(WeakHamiltonianEye)
+MODULE_REGISTER_NS(StochEm, TStochEm, MGauge);
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MContraction_WeakHamiltonianEye_hpp_
+#endif // Hadrons_MGauge_StochEm_hpp_

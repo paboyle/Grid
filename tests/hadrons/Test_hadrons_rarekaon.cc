@@ -87,6 +87,10 @@ int main(int argc, char *argv[])
         gaugePar.file = configStem;
         application.createModule<MGauge::Load>(gaugeField, gaugePar);
     }
+    
+    // set fermion boundary conditions to be periodic space, antiperiodic time.
+    std::string boundary = "1 1 1 -1";
+
     for (unsigned int i = 0; i < flavour.size(); ++i)
     {
         // actions

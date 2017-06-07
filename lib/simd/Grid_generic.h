@@ -281,8 +281,8 @@ namespace Optimization {
 
   struct PrecisionChange {
     static inline vech StoH (const vecf &a,const vecf &b) {
-#ifdef USE_FP16
       vech ret;
+#ifdef USE_FP16
       vech *ha = (vech *)&a;
       vech *hb = (vech *)&b;
       const int nf = W<float>::r;
@@ -493,6 +493,8 @@ namespace Optimization {
     
     return a;
   }
+
+  #undef acc  // EIGEN compatibility
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

@@ -72,7 +72,7 @@ template <typename FImpl>
 class TQuark: public Module<QuarkPar>
 {
 public:
-    TYPE_ALIASES(FImpl,);
+    FGS_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TQuark(const std::string name);
@@ -154,7 +154,7 @@ void TQuark<FImpl>::execute(void)
     for (unsigned int c = 0; c < Nc; ++c)
     {
         LOG(Message) << "Inversion for spin= " << s << ", color= " << c
-        << std::endl;
+                     << std::endl;
         // source conversion for 4D sources
         if (!env().isObject5d(par().source))
         {

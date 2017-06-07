@@ -27,8 +27,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_Wilson_hpp_
-#define Hadrons_Wilson_hpp_
+#ifndef Hadrons_MAction_Wilson_hpp_
+#define Hadrons_MAction_Wilson_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -46,14 +46,15 @@ class WilsonPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(WilsonPar,
                                     std::string, gauge,
-                                    double     , mass);
+                                    double     , mass,
+                                    std::string, boundary);
 };
 
 template <typename FImpl>
 class TWilson: public Module<WilsonPar>
 {
 public:
-    TYPE_ALIASES(FImpl,);
+    FGS_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TWilson(const std::string name);
@@ -112,10 +113,15 @@ void TWilson<FImpl>::execute()
 {
     LOG(Message) << "Setting up TWilson fermion matrix with m= " << par().mass
                  << " using gauge field '" << par().gauge << "'" << std::endl;
+    LOG(Message) << "Fermion boundary conditions: " << par().boundary 
+                 << std::endl;
     auto &U      = *env().template getObject<LatticeGaugeField>(par().gauge);
     auto &grid   = *env().getGrid();
     auto &gridRb = *env().getRbGrid();
-    FMat *fMatPt = new WilsonFermion<FImpl>(U, grid, gridRb, par().mass);
+    std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
+    typename WilsonFermion<FImpl>::ImplParams implParams(boundary);
+    FMat *fMatPt = new WilsonFermion<FImpl>(U, grid, gridRb, par().mass,
+                                            implParams);
     env().setObject(getName(), fMatPt);
 }
 
