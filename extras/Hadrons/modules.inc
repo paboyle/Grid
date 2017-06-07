@@ -14,7 +14,6 @@ modules_hpp =\
   Modules/MContraction/Gamma3pt.hpp \
   Modules/MContraction/Meson.hpp \
   Modules/MContraction/WardIdentity.hpp \
-  Modules/MContraction/WardIdentitySeq.hpp \
   Modules/MContraction/WeakHamiltonian.hpp \
   Modules/MContraction/WeakHamiltonianEye.hpp \
   Modules/MContraction/WeakHamiltonianNonEye.hpp \

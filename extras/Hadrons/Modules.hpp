@@ -33,7 +33,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MContraction/Gamma3pt.hpp>
 #include <Grid/Hadrons/Modules/MContraction/Meson.hpp>
 #include <Grid/Hadrons/Modules/MContraction/WardIdentity.hpp>
-#include <Grid/Hadrons/Modules/MContraction/WardIdentitySeq.hpp>
 #include <Grid/Hadrons/Modules/MContraction/WeakHamiltonian.hpp>
 #include <Grid/Hadrons/Modules/MContraction/WeakHamiltonianEye.hpp>
 #include <Grid/Hadrons/Modules/MContraction/WeakHamiltonianNonEye.hpp>
