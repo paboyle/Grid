@@ -27,8 +27,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_Z2_hpp_
-#define Hadrons_Z2_hpp_
+#ifndef Hadrons_MSource_Z2_hpp_
+#define Hadrons_MSource_Z2_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -82,8 +82,8 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(Z2,       TZ2<FIMPL>,       MSource);
-MODULE_REGISTER_NS(ScalarZ2, TZ2<ScalarImplR>, MSource);
+MODULE_REGISTER_NS(Z2,       TZ2<FIMPL>,        MSource);
+MODULE_REGISTER_NS(ScalarZ2, TZ2<ScalarImplCR>, MSource);
 
 /******************************************************************************
  *                       TZ2 template implementation                          *
@@ -149,4 +149,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_Z2_hpp_
+#endif // Hadrons_MSource_Z2_hpp_

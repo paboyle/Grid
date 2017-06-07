@@ -92,6 +92,7 @@ build*/*
 #####################
 *.xcodeproj/*
 build.sh
+.vscode
 
 # Eigen source #
 ################
@@ -106,6 +107,10 @@ lib/fftw/*
 m4/lt*
 m4/libtool.m4
 
+# github pages #
+################
+gh-pages/
+
 # Buck files #
 ##############
 .buck*
@@ -117,3 +122,4 @@ make-bin-BUCK.sh
 #####################
 lib/qcd/spin/gamma-gen/*.h
 lib/qcd/spin/gamma-gen/*.cc
+

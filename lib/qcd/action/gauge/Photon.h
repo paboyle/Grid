@@ -41,11 +41,11 @@ namespace QCD{
     template <typename vtype>
     using iImplGaugeField = iVector<iScalar<iScalar<vtype>>, Nd>;
     
-    typedef iImplGaugeLink<Simd> SiteGaugeLink;
-    typedef iImplGaugeField<Simd> SiteGaugeField;
+    typedef iImplGaugeLink<Simd> SiteLink;
+    typedef iImplGaugeField<Simd> SiteField;
     
-    typedef Lattice<SiteGaugeLink> GaugeLinkField;
-    typedef Lattice<SiteGaugeField> GaugeField;
+    typedef Lattice<SiteLink> LinkField;
+    typedef Lattice<SiteField> Field;
   };
   
   typedef QedGimpl<vComplex> QedGimplR;

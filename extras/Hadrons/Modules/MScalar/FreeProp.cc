@@ -52,14 +52,14 @@ void TFreeProp::execute(void)
         LOG(Message) << "Caching momentum space free scalar propagator"
                      << " (mass= " << par().mass << ")..." << std::endl;
         freeMomProp = env().createLattice<ScalarField>(freeMomPropName_);
-        Scalar<SIMPL>::MomentumSpacePropagator(*freeMomProp, par().mass);
+        SIMPL::MomentumSpacePropagator(*freeMomProp, par().mass);
     }
     else
     {
         freeMomProp = env().getObject<ScalarField>(freeMomPropName_);
     }
     LOG(Message) << "Computing free scalar propagator..." << std::endl;
-    Scalar<SIMPL>::FreePropagator(source, prop, *freeMomProp);
+    SIMPL::FreePropagator(source, prop, *freeMomProp);
     
     if (!par().output.empty())
     {

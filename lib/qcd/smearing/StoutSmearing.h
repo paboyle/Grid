@@ -58,6 +58,8 @@ class Smear_Stout : public Smear<Gimpl> {
     SmearBase->smear(C, U);
   };
 
+
+  // Repetion of code here (use the Tensor_exp.h function)
   void exponentiate_iQ(GaugeLinkField& e_iQ, const GaugeLinkField& iQ) const {
     // Put this outside
     // only valid for SU(3) matrices

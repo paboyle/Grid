@@ -26,8 +26,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_WeakHamiltonian_hpp_
-#define Hadrons_WeakHamiltonian_hpp_
+#ifndef Hadrons_MContraction_WeakHamiltonian_hpp_
+#define Hadrons_MContraction_WeakHamiltonian_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -79,8 +79,36 @@ public:
                                     std::string, output);
 };
 
+#define MAKE_WEAK_MODULE(modname)\
+class T##modname: public Module<WeakHamiltonianPar>\
+{\
+public:\
+    FERM_TYPE_ALIASES(FIMPL,)\
+    class Result: Serializable\
+    {\
+    public:\
+        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,\
+                                        std::string, name,\
+                                        std::vector<Complex>, corr);\
+    };\
+public:\
+    /* constructor */ \
+    T##modname(const std::string name);\
+    /* destructor */ \
+    virtual ~T##modname(void) = default;\
+    /* dependency relation */ \
+    virtual std::vector<std::string> getInput(void);\
+    virtual std::vector<std::string> getOutput(void);\
+    /* setup */ \
+    virtual void setup(void);\
+    /* execution */ \
+    virtual void execute(void);\
+    std::vector<std::string> VA_label = {"V", "A"};\
+};\
+MODULE_REGISTER_NS(modname, T##modname, MContraction);
+
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_WeakHamiltonian_hpp_
+#endif // Hadrons_MContraction_WeakHamiltonian_hpp_

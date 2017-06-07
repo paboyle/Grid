@@ -55,7 +55,14 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
   template class A<ZWilsonImplF>;		\
   template class A<ZWilsonImplD>;		\
   template class A<GparityWilsonImplF>;		\
-  template class A<GparityWilsonImplD>;		
+  template class A<GparityWilsonImplD>;		\
+  template class A<WilsonImplFH>;		\
+  template class A<WilsonImplDF>;		\
+  template class A<ZWilsonImplFH>;		\
+  template class A<ZWilsonImplDF>;		\
+  template class A<GparityWilsonImplFH>;		\
+  template class A<GparityWilsonImplDF>;		
+
 
 #define AdjointFermOpTemplateInstantiate(A) \
   template class A<WilsonAdjImplF>; \
@@ -69,7 +76,11 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
   template class A<DomainWallVec5dImplF>;	\
   template class A<DomainWallVec5dImplD>;	\
   template class A<ZDomainWallVec5dImplF>;	\
-  template class A<ZDomainWallVec5dImplD>;	
+  template class A<ZDomainWallVec5dImplD>;	\
+  template class A<DomainWallVec5dImplFH>;	\
+  template class A<DomainWallVec5dImplDF>;	\
+  template class A<ZDomainWallVec5dImplFH>;	\
+  template class A<ZDomainWallVec5dImplDF>;	
 
 #define FermOpTemplateInstantiate(A) \
  FermOp4dVecTemplateInstantiate(A) \

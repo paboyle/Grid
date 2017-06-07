@@ -1,6 +1,6 @@
 /*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
 
     Source file: ./lib/Init.cc
 
@@ -36,7 +36,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <stdint.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include <sys/stat.h> 
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <signal.h>
 #include <iostream>
@@ -47,6 +47,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <memory>
 
 #include <Grid/Grid.h>
+
+#include <Grid/util/CompilerCompatible.h>
 
 
 #include <fenv.h>
@@ -93,14 +95,14 @@ const std::vector<int> GridDefaultSimd(int dims,int nsimd)
       if ( nn>=2) {
 	layout[d]=2;
 	nn/=2;
-      } else { 
+      } else {
 	layout[d]=1;
       }
     }
     assert(nn==1);
     return layout;
 }
-  
+
 ////////////////////////////////////////////////////////////
 // Command line parsing assist for stock controls
 ////////////////////////////////////////////////////////////
@@ -144,7 +146,7 @@ void GridCmdOptionIntVector(std::string &str,std::vector<int> & vec)
     vec.push_back(i);
     if(std::ispunct(ss.peek()))
       ss.ignore();
-  }    
+  }
   return;
 }
 
@@ -229,10 +231,12 @@ void Grid_init(int *argc,char ***argv)
   if( !GridCmdOptionExists(*argv,*argv+*argc,"--debug-stdout") ){
     Grid_quiesce_nodes();
   } else { 
+    FILE *fp;
     std::ostringstream fname;
     fname<<"Grid.stdout.";
     fname<<CartesianCommunicator::RankWorld();
-    freopen(fname.str().c_str(),"w",stdout);
+    fp=freopen(fname.str().c_str(),"w",stdout);
+    assert(fp!=(FILE *)NULL);
   }
 
   ////////////////////////////////////
@@ -298,21 +302,21 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"  --mpi n.n.n.n   : default MPI decomposition"<<std::endl;    
     std::cout<<GridLogMessage<<"  --threads n     : default number of OMP threads"<<std::endl;
-    std::cout<<GridLogMessage<<"  --grid n.n.n.n  : default Grid size"<<std::endl;    
-    std::cout<<GridLogMessage<<"  --shm  M        : allocate M megabytes of shared memory for comms"<<std::endl;    
+    std::cout<<GridLogMessage<<"  --grid n.n.n.n  : default Grid size"<<std::endl;
+    std::cout<<GridLogMessage<<"  --shm  M        : allocate M megabytes of shared memory for comms"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Verbose and debug:"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"  --log list      : comma separated list from Error,Warning,Message,Performance,Iterative,Integrator,Debug,Colours"<<std::endl;
     std::cout<<GridLogMessage<<"  --decomposition : report on default omp,mpi and simd decomposition"<<std::endl;    
     std::cout<<GridLogMessage<<"  --debug-signals : catch sigsegv and print a blame report"<<std::endl;
-    std::cout<<GridLogMessage<<"  --debug-stdout  : print stdout from EVERY node"<<std::endl;    
-    std::cout<<GridLogMessage<<"  --notimestamp   : suppress millisecond resolution stamps"<<std::endl;    
+    std::cout<<GridLogMessage<<"  --debug-stdout  : print stdout from EVERY node"<<std::endl;
+    std::cout<<GridLogMessage<<"  --notimestamp   : suppress millisecond resolution stamps"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Performance:"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
-    std::cout<<GridLogMessage<<"  --comms-isend   : Asynchronous MPI calls; several dirs at a time "<<std::endl;    
-    std::cout<<GridLogMessage<<"  --comms-sendrecv: Synchronous MPI calls; one dirs at a time "<<std::endl;    
+    std::cout<<GridLogMessage<<"  --comms-concurrent : Asynchronous MPI calls; several dirs at a time "<<std::endl;    
+    std::cout<<GridLogMessage<<"  --comms-sequential : Synchronous MPI calls; one dirs at a time "<<std::endl;    
     std::cout<<GridLogMessage<<"  --comms-overlap : Overlap comms with compute "<<std::endl;    
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"  --dslash-generic: Wilson kernel for generic Nc"<<std::endl;    
@@ -362,7 +366,7 @@ void Grid_init(int *argc,char ***argv)
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--notimestamp") ){
     GridLogTimestamp(0);
-  } else { 
+  } else {
     GridLogTimestamp(1);
   }
 
@@ -370,7 +374,7 @@ void Grid_init(int *argc,char ***argv)
 		  Grid_default_latt,
 		  Grid_default_mpi);
 
-  std::cout << GridLogMessage << "Requesting "<< CartesianCommunicator::MAX_MPI_SHM_BYTES <<" byte stencil comms buffers "<<std::endl;
+  std::cout << GridLogDebug << "Requesting "<< CartesianCommunicator::MAX_MPI_SHM_BYTES <<" byte stencil comms buffers "<<std::endl;
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--decomposition") ){
     std::cout<<GridLogMessage<<"Grid Decomposition\n";
@@ -386,16 +390,23 @@ void Grid_init(int *argc,char ***argv)
   Grid_is_initialised = 1;
 }
 
-  
+
 void Grid_finalize(void)
 {
-#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3) 
+#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3)
   MPI_Finalize();
   Grid_unquiesce_nodes();
 #endif
 #if defined (GRID_COMMS_SHMEM)
   shmem_finalize();
 #endif
+}
+
+void GridLogLayout() {
+    std::cout << GridLogMessage << "Grid Layout\n";
+    std::cout << GridLogMessage << "\tGlobal lattice size  : "<< GridCmdVectorIntToString(GridDefaultLatt()) << std::endl;
+    std::cout << GridLogMessage << "\tOpenMP threads       : "<< GridThread::GetThreads() <<std::endl;
+    std::cout << GridLogMessage << "\tMPI tasks            : "<< GridCmdVectorIntToString(GridDefaultMpi()) << std::endl;
 }
 
 void * Grid_backtrace_buffer[_NBACKTRACE];
@@ -457,5 +468,6 @@ void Grid_debug_handler_init(void)
 
   sigaction(SIGFPE,&sa,NULL);
   sigaction(SIGKILL,&sa,NULL);
+  sigaction(SIGILL,&sa,NULL);
 }
 }

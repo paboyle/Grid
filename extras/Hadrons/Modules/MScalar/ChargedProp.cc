@@ -82,7 +82,7 @@ void TChargedProp::execute(void)
         LOG(Message) << "Caching momentum space free scalar propagator"
                      << " (mass= " << par().mass << ")..." << std::endl;
         freeMomProp_ = env().createLattice<ScalarField>(freeMomPropName_);
-        Scalar<SIMPL>::MomentumSpacePropagator(*freeMomProp_, par().mass);
+        SIMPL::MomentumSpacePropagator(*freeMomProp_, par().mass);
     }
     else
     {

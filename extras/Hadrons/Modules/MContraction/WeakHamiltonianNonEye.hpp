@@ -26,8 +26,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_WeakHamiltonianNonEye_hpp_
-#define Hadrons_WeakHamiltonianNonEye_hpp_
+#ifndef Hadrons_MContraction_WeakHamiltonianNonEye_hpp_
+#define Hadrons_MContraction_WeakHamiltonianNonEye_hpp_
 
 #include <Grid/Hadrons/Modules/MContraction/WeakHamiltonian.hpp>
 
@@ -48,35 +48,10 @@ enum
 // Wing and Connected subdiagram contractions
 #define MAKE_CW_SUBDIAG(Q_1, Q_2, gamma) (Q_1*adj(Q_2)*g5*gamma)
 
-class TWeakHamiltonianNonEye: public Module<WeakHamiltonianPar>
-{
-public:
-    TYPE_ALIASES(FIMPL,)
-    class Result: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        std::string, name,
-                                        std::vector<Complex>, corr);
-    };
-public:
-    // constructor
-    TWeakHamiltonianNonEye(const std::string name);
-    // destructor
-    virtual ~TWeakHamiltonianNonEye(void) = default;
-    // dependency relation
-    virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getOutput(void);
-    // setup
-    virtual void setup(void);
-    // execution
-    virtual void execute(void);
-};
-
-MODULE_REGISTER_NS(WeakHamiltonianNonEye, TWeakHamiltonianNonEye, MContraction);
+MAKE_WEAK_MODULE(WeakHamiltonianNonEye)
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_WeakHamiltonianNonEye_hpp_
+#endif // Hadrons_MContraction_WeakHamiltonianNonEye_hpp_

@@ -1,5 +1,5 @@
-#ifndef Hadrons_FreeProp_hpp_
-#define Hadrons_FreeProp_hpp_
+#ifndef Hadrons_MScalar_FreeProp_hpp_
+#define Hadrons_MScalar_FreeProp_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -47,4 +47,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_FreeProp_hpp_
+#endif // Hadrons_MScalar_FreeProp_hpp_

@@ -27,8 +27,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_Point_hpp_
-#define Hadrons_Point_hpp_
+#ifndef Hadrons_MSource_Point_hpp_
+#define Hadrons_MSource_Point_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -78,8 +78,8 @@ public:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(Point,       TPoint<FIMPL>,       MSource);
-MODULE_REGISTER_NS(ScalarPoint, TPoint<ScalarImplR>, MSource);
+MODULE_REGISTER_NS(Point,       TPoint<FIMPL>,        MSource);
+MODULE_REGISTER_NS(ScalarPoint, TPoint<ScalarImplCR>, MSource);
 
 /******************************************************************************
  *                       TPoint template implementation                       *
@@ -133,4 +133,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_Point_hpp_
+#endif // Hadrons_MSource_Point_hpp_

@@ -30,6 +30,7 @@ directory
 *************************************************************************************/
 /*  END LEGAL */
 #include <Grid/GridCore.h>
+#include <Grid/util/CompilerCompatible.h>
 
 #include <cxxabi.h>
 #include <memory>

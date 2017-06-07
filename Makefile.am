@@ -3,10 +3,15 @@ SUBDIRS = lib benchmarks tests extras
 
 include $(top_srcdir)/doxygen.inc
 
-tests: all
-	$(MAKE) -C tests tests
+bin_SCRIPTS=grid-config
 
-.PHONY: tests doxygen-run doxygen-doc $(DX_PS_GOAL) $(DX_PDF_GOAL)
+
+.PHONY: bench check tests doxygen-run doxygen-doc $(DX_PS_GOAL) $(DX_PDF_GOAL)
+
+tests-local: all
+bench-local: all
+check-local: all
 
 AM_CXXFLAGS += -I$(top_builddir)/include
+
 ACLOCAL_AMFLAGS = -I m4
