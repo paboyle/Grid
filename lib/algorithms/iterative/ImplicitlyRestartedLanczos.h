@@ -265,6 +265,7 @@ public:
       }
     }
 
+
 #ifdef USE_LAPACK
 #ifdef USE_MKL
 #define LAPACK_INT MKL_INT
@@ -281,12 +282,14 @@ public:
 //  tevals.resize(size);
 //  tevecs.resize(size);
   LAPACK_INT NN = N1;
-  double evals_tmp[NN];
-  double evec_tmp[NN][NN];
-  memset(evec_tmp[0],0,sizeof(double)*NN*NN);
-//  double AA[NN][NN];
-  double DD[NN];
-  double EE[NN];
+//  double evals_tmp[NN];
+//  double evec_tmp[NN][NN];
+  std::vector<double> evals_tmp(NN);
+  std::vector<double> evec_tmp(NN*NN);
+  memset(evec_tmp.data(),0,sizeof(double)*NN*NN);
+
+  std::vector<double> DD(NN);
+  std::vector<double> EE(NN);
   for (int i = 0; i< NN; i++)
     for (int j = i - 1; j <= i + 1; j++)
       if ( j < NN && j >= 0 ) {
@@ -295,11 +298,15 @@ public:
         if (j==(i-1)) EE[j] = lme[j];
       }
   LAPACK_INT evals_found;
-  LAPACK_INT lwork = ( (18*NN) > (1+4*NN+NN*NN)? (18*NN):(1+4*NN+NN*NN)) ;
+//  LAPACK_INT lwork = ( (18*NN) > (1+4*NN+NN*NN)? (18*NN):(1+4*NN+NN*NN)) ;
+  LAPACK_INT lwork =  1+(18*NN) ;
   LAPACK_INT liwork =  3+NN*10 ;
-  LAPACK_INT iwork[liwork];
-  double work[lwork];
-  LAPACK_INT isuppz[2*NN];
+//  LAPACK_INT iwork[liwork];
+//  double work[lwork];
+//  LAPACK_INT isuppz[2*NN];
+  std::vector<LAPACK_INT> iwork(liwork);
+  std::vector<double> work(lwork);
+  std::vector<LAPACK_INT> isuppz(2*NN);
   char jobz = 'V'; // calculate evals & evecs
   char range = 'I'; // calculate all evals
   //    char range = 'A'; // calculate all evals
@@ -318,7 +325,7 @@ public:
   if (iu > NN)  iu=NN;
   double tol = 0.0;
     if (1) {
-      memset(evals_tmp,0,sizeof(double)*NN);
+      memset(evals_tmp.data(),0,sizeof(double)*NN);
       if ( il <= NN){
         printf("total=%d node=%d il=%d iu=%d\n",total,node,il,iu);
 #ifdef USE_MKL
@@ -326,41 +333,37 @@ public:
 #else
         LAPACK_dstegr(&jobz, &range, &NN,
 #endif
-            (double*)DD, (double*)EE,
+            DD.data(), EE.data(),
             &vl, &vu, &il, &iu, // these four are ignored if second parameteris 'A'
             &tol, // tolerance
-            &evals_found, evals_tmp, (double*)evec_tmp, &NN,
-            isuppz,
-            work, &lwork, iwork, &liwork,
+            &evals_found, evals_tmp.data(), evec_tmp.data(), &NN,
+            isuppz.data(),
+            work.data(), &lwork, iwork.data(), &liwork,
             &info);
         for (int i = iu-1; i>= il-1; i--){
           printf("node=%d evals_found=%d evals_tmp[%d] = %g\n",node,evals_found, i - (il-1),evals_tmp[i - (il-1)]);
           evals_tmp[i] = evals_tmp[i - (il-1)];
           if (il>1) evals_tmp[i-(il-1)]=0.;
           for (int j = 0; j< NN; j++){
-            evec_tmp[i][j] = evec_tmp[i - (il-1)][j];
-            if (il>1) evec_tmp[i-(il-1)][j]=0.;
+            evec_tmp[i*NN+j] = evec_tmp[(i - (il-1))*NN+j];
+            if (il>1) evec_tmp[(i-(il-1))*NN+j]=0.;
           }
         }
       }
       {
-//        QMP_sum_double_array(evals_tmp,NN);
-//        QMP_sum_double_array((double *)evec_tmp,NN*NN);
-         grid->GlobalSumVector(evals_tmp,NN);
-         grid->GlobalSumVector((double*)evec_tmp,NN*NN);
+         grid->GlobalSumVector(evals_tmp.data(),NN);
+         grid->GlobalSumVector(evec_tmp.data(),NN*NN);
       }
     } 
 // cheating a bit. It is better to sort instead of just reversing it, but the document of the routine says evals are sorted in increasing order. qr gives evals in decreasing order.
   for(int i=0;i<NN;i++){
     for(int j=0;j<NN;j++)
-      Qt[(NN-1-i)*N2+j]=evec_tmp[i][j];
+      Qt[(NN-1-i)*N2+j]=evec_tmp[i*NN+j];
       lmd [NN-1-i]=evals_tmp[i];
   }
 }
 #undef LAPACK_INT 
 #endif
-
-
     void diagonalize(DenseVector<RealD>& lmd,
 		     DenseVector<RealD>& lme, 
 		     int N2,
