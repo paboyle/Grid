@@ -1,3 +1,4 @@
+#include <Grid/Hadrons/Modules/MScalar/ChargedProp.hpp>
 #include <Grid/Hadrons/Modules/MScalar/ScalarVP.hpp>
 #include <Grid/Hadrons/Modules/MScalar/Scalar.hpp>
 
@@ -16,16 +17,19 @@ TScalarVP::TScalarVP(const std::string name)
 // dependencies/products ///////////////////////////////////////////////////////
 std::vector<std::string> TScalarVP::getInput(void)
 {
-	std::vector<std::string> in = {par().source, par().emField};
+    propQName_ = par().scalarProp + "_Q";
+    propSunName_ = par().scalarProp + "_Sun";
+    propTadName_ = par().scalarProp + "_Tad";
+
+	std::vector<std::string> in = {par().emField, propQName_, propSunName_,
+                                   propTadName_};
     
     return in;
 }
 
 std::vector<std::string> TScalarVP::getOutput(void)
 {
-    std::vector<std::string> out = {getName()+"_propQ",
-                                    getName()+"_propSun",
-                                    getName()+"_propTad"};
+    std::vector<std::string> out;
     
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
@@ -44,12 +48,9 @@ std::vector<std::string> TScalarVP::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void TScalarVP::setup(void)
 {
-	freeMomPropName_ = FREEMOMPROP(par().mass);
-	GFSrcName_ = "_" + getName() + "_DinvSrc";
-    prop0Name_ = getName() + "_prop0";
-    propQName_ = getName() + "_propQ";
-    propSunName_ = getName() + "_propSun";
-    propTadName_ = getName() + "_propTad";
+	freeMomPropName_ = FREEMOMPROP(static_cast<TChargedProp *>(env().getModule(par().scalarProp))->par().mass);
+	GFSrcName_ = "_" + par().scalarProp + "_DinvSrc";
+    prop0Name_ = par().scalarProp + "_0";
 
 	phaseName_.clear();
 	muPropQName_.clear();
@@ -74,174 +75,38 @@ void TScalarVP::setup(void)
         freeVpTensorName_.push_back(freeVpTensorName_mu);
     }
 
-    if (!env().hasRegisteredObject(freeMomPropName_))
-    {
-        env().registerLattice<ScalarField>(freeMomPropName_);
-    }
-    if (!env().hasRegisteredObject(phaseName_[0]))
-    {
-        for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-        {
-            env().registerLattice<ScalarField>(phaseName_[mu]);
-        }
-    }
-    if (!env().hasRegisteredObject(GFSrcName_))
-    {
-        env().registerLattice<ScalarField>(GFSrcName_);
-    }
-    if (!env().hasRegisteredObject(prop0Name_))
-    {
-        env().registerLattice<ScalarField>(prop0Name_);
-    }
-    env().registerLattice<ScalarField>(propQName_);
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
 	{
 	    env().registerLattice<ScalarField>(muPropQName_[mu]);
-	}
-    env().registerLattice<ScalarField>(propSunName_);
-    env().registerLattice<ScalarField>(propTadName_);
-    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-    {
+
         for (unsigned int nu = 0; nu < env().getNd(); ++nu)
         {
             env().registerLattice<ScalarField>(vpTensorName_[mu][nu]);
             env().registerLattice<ScalarField>(freeVpTensorName_[mu][nu]);
         }
-    }
+	}
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 void TScalarVP::execute(void)
 {
-	// CACHING ANALYTIC EXPRESSIONS
-    ScalarField &source = *env().getObject<ScalarField>(par().source);
+	// Get objects cached by ChargedProp module
     Complex     ci(0.0,1.0);
     FFT         fft(env().getGrid());
-    Real        q = par().charge;
+    Real        q = static_cast<TChargedProp *>(env().getModule(par().scalarProp))->par().charge;
 
-    // cache momentum-space free scalar propagator
-    if (!env().hasCreatedObject(freeMomPropName_))
+    freeMomProp_ = env().getObject<ScalarField>(freeMomPropName_);
+    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
-        LOG(Message) << "Caching momentum space free scalar propagator"
-                     << " (mass= " << par().mass << ")..." << std::endl;
-        freeMomProp_ = env().createLattice<ScalarField>(freeMomPropName_);
-        SIMPL::MomentumSpacePropagator(*freeMomProp_, par().mass);
+        phase_.push_back(env().getObject<ScalarField>(phaseName_[mu]));
     }
-    else
-    {
-        freeMomProp_ = env().getObject<ScalarField>(freeMomPropName_);
-    }
-    // cache phases
-    if (!env().hasCreatedObject(phaseName_[0]))
-    {
-        std::vector<int> &l = env().getGrid()->_fdimensions;
-        
-        LOG(Message) << "Caching shift phases..." << std::endl;
-        for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-        {
-            Real    twoPiL = M_PI*2./l[mu];
-            
-            phase_.push_back(env().createLattice<ScalarField>(phaseName_[mu]));
-            LatticeCoordinate(*(phase_[mu]), mu);
-            *(phase_[mu]) = exp(ci*twoPiL*(*(phase_[mu])));
-        }
-    }
-    else
-    {
-        for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-        {
-            phase_.push_back(env().getObject<ScalarField>(phaseName_[mu]));
-        }
-    }
-    // cache G*F*src
-    if (!env().hasCreatedObject(GFSrcName_))
-    {
-        GFSrc_ = env().createLattice<ScalarField>(GFSrcName_);
-        fft.FFT_all_dim(*GFSrc_, source, FFT::forward);
-        *GFSrc_ = (*freeMomProp_)*(*GFSrc_);
-    }
-    else
-    {
-        GFSrc_ = env().getObject<ScalarField>(GFSrcName_);
-    }
-    // cache position-space free scalar propagators
-    if (!env().hasCreatedObject(prop0Name_))
-    {
-        prop0_ = env().createLattice<ScalarField>(prop0Name_);
-        fft.FFT_all_dim(*prop0_, *GFSrc_, FFT::backward);
-    }
-    else
-    {
-        prop0_ = env().getObject<ScalarField>(prop0Name_);
-    }
+    GFSrc_ = env().getObject<ScalarField>(GFSrcName_);
+    prop0_ = env().getObject<ScalarField>(prop0Name_);
 
-    // PROPAGATOR CALCULATION
     // Propagator from unshifted source
-    LOG(Message) << "Computing O(alpha) charged scalar propagator"
-                 << " (mass= " << par().mass
-                 << ", charge= " << q << ")..."
-                 << std::endl;
-	ScalarField &propQ   = *env().createLattice<ScalarField>(propQName_);
-    ScalarField &propSun   = *env().createLattice<ScalarField>(propSunName_);
-    ScalarField &propTad   = *env().createLattice<ScalarField>(propTadName_);
-    chargedProp(propQ, propSun, propTad, *GFSrc_, fft);
-    // // OUTPUT IF NECESSARY
-    // if (!par().output.empty())
-    // {
-    //     ScalarField fullProp = (*prop0_) + q*propQ + q*q*propSun + q*q*propTad;
-    //     std::string           filename = par().output + "_prop_000." +
-    //                                      std::to_string(env().getTrajectory());
-        
-    //     LOG(Message) << "Saving zero-momentum projection to '"
-    //                  << filename << "'..." << std::endl;
-        
-    //     CorrWriter            writer(filename);
-    //     std::vector<TComplex> vecBuf;
-    //     std::vector<Complex>  result;
-        
-    //     write(writer, "charge", q);
-
-    //     // Write full propagator
-    //     sliceSum(fullProp, vecBuf, Tp);
-    //     result.resize(vecBuf.size());
-    //     for (unsigned int t = 0; t < vecBuf.size(); ++t)
-    //     {
-    //         result[t] = TensorRemove(vecBuf[t]);
-    //     }
-    //     write(writer, "prop", result);
-
-    //     // Write free propagator
-    //     sliceSum(*prop0_, vecBuf, Tp);
-    //     for (unsigned int t = 0; t < vecBuf.size(); ++t)
-    //     {
-    //         result[t] = TensorRemove(vecBuf[t]);
-    //     }
-    //     write(writer, "prop_0", result);
-
-    //     // Write propagator D1 term
-    //     sliceSum(propD1, vecBuf, Tp);
-    //     for (unsigned int t = 0; t < vecBuf.size(); ++t)
-    //     {
-    //         result[t] = TensorRemove(vecBuf[t]);
-    //     }
-    //     write(writer, "prop_q", result);
-
-    //     // Write propagator D1D1 term
-    //     sliceSum(propD1D1, vecBuf, Tp);
-    //     for (unsigned int t = 0; t < vecBuf.size(); ++t)
-    //     {
-    //         result[t] = TensorRemove(vecBuf[t]);
-    //     }
-    //     write(writer, "prop_sun", result);
-
-    //     // Write propagator D2 term
-    //     sliceSum(propD2, vecBuf, Tp);
-    //     for (unsigned int t = 0; t < vecBuf.size(); ++t)
-    //     {
-    //         result[t] = TensorRemove(vecBuf[t]);
-    //     }
-    //     write(writer, "prop_tad", result);
-    // }
+	ScalarField &propQ   = *env().getObject<ScalarField>(propQName_);
+    ScalarField &propSun   = *env().getObject<ScalarField>(propSunName_);
+    ScalarField &propTad   = *env().getObject<ScalarField>(propTadName_);
 
     // Propagators from shifted sources
     LOG(Message) << "Computing O(q) charged scalar propagators..."
@@ -357,7 +222,7 @@ void TScalarVP::execute(void)
         std::vector<Complex>    result;
         
         write(writer, "charge", q);
-        write(writer, "mass", par().mass);
+        write(writer, "mass", static_cast<TChargedProp *>(env().getModule(par().scalarProp))->par().mass);
 
         for (unsigned int mu = 0; mu < env().getNd(); ++mu)
         {
@@ -386,34 +251,6 @@ void TScalarVP::execute(void)
     }
 }
 
-// Calculate O(q) and O(q^2) terms of position-space charged propagator
-void TScalarVP::chargedProp(ScalarField &prop_q, ScalarField &prop_sun,
-							ScalarField &prop_tad, ScalarField &GFSrc,
-							FFT &fft)
-{
-	Complex     ci(0.0,1.0);
-	ScalarField &G = *freeMomProp_;
-    ScalarField buf(env().getGrid());
-	
-	// -G*momD1*G*F*Src (momD1 = F*D1*Finv)
-    buf = GFSrc;
-    momD1(buf, fft);
-    buf = G*buf;
-    prop_q = -buf;
-    fft.FFT_all_dim(prop_q, prop_q, FFT::backward);
-
-    // G*momD1*G*momD1*G*F*Src
-    momD1(buf, fft);
-    prop_sun = G*buf;
-    fft.FFT_all_dim(prop_sun, prop_sun, FFT::backward);
-
-    // -G*momD2*G*F*Src (momD2 = F*D2*Finv)
-    buf = GFSrc;
-    momD2(buf, fft);
-    prop_tad = -G*buf;
-    fft.FFT_all_dim(prop_tad, prop_tad, FFT::backward);
-}
-
 void TScalarVP::momD1(ScalarField &s, FFT &fft)
 {
     EmField     &A = *env().getObject<EmField>(par().emField);
@@ -439,35 +276,6 @@ void TScalarVP::momD1(ScalarField &s, FFT &fft)
         buf = Amu*s;
         fft.FFT_all_dim(buf, buf, FFT::forward);
         result = result + ci*adj(*phase_[mu])*buf;
-    }
-
-    s = result;
-}
-
-void TScalarVP::momD2(ScalarField &s, FFT &fft)
-{
-    EmField     &A = *env().getObject<EmField>(par().emField);
-    ScalarField buf(env().getGrid()), result(env().getGrid()),
-                Amu(env().getGrid());
-
-    result = zero;
-    
-    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-    {
-        Amu = peekLorentz(A, mu);
-        buf = (*phase_[mu])*s;
-        fft.FFT_all_dim(buf, buf, FFT::backward);
-        buf = Amu*Amu*buf;
-        fft.FFT_all_dim(buf, buf, FFT::forward);
-        result = result + .5*buf;
-    }
-    fft.FFT_all_dim(s, s, FFT::backward);
-    for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-    {
-        Amu = peekLorentz(A, mu);        
-        buf = Amu*Amu*s;
-        fft.FFT_all_dim(buf, buf, FFT::forward);
-        result = result + .5*adj(*phase_[mu])*buf;
     }
 
     s = result;

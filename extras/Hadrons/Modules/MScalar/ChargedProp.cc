@@ -23,8 +23,8 @@ std::vector<std::string> TChargedProp::getInput(void)
 
 std::vector<std::string> TChargedProp::getOutput(void)
 {
-    std::vector<std::string> out = {getName(), getName()+"_0", getName()+"_D1",
-                                    getName()+"_D1D1", getName()+"_D2"};
+    std::vector<std::string> out = {getName(), getName()+"_Q",
+                                    getName()+"_Sun", getName()+"_Tad"};
     
     return out;
 }
@@ -40,9 +40,9 @@ void TChargedProp::setup(void)
     }
     GFSrcName_ = "_" + getName() + "_DinvSrc";
     prop0Name_ = getName() + "_0";
-    propD1Name_ = getName() + "_D1";
-    propD1D1Name_ = getName() + "_D1D1";
-    propD2Name_ = getName() + "_D2";
+    propQName_ = getName() + "_Q";
+    propSunName_ = getName() + "_Sun";
+    propTadName_ = getName() + "_Tad";
     if (!env().hasRegisteredObject(freeMomPropName_))
     {
         env().registerLattice<ScalarField>(freeMomPropName_);
@@ -63,9 +63,9 @@ void TChargedProp::setup(void)
         env().registerLattice<ScalarField>(prop0Name_);
     }
     env().registerLattice<ScalarField>(getName());
-    env().registerLattice<ScalarField>(propD1Name_);
-    env().registerLattice<ScalarField>(propD1D1Name_);
-    env().registerLattice<ScalarField>(propD2Name_);
+    env().registerLattice<ScalarField>(propQName_);
+    env().registerLattice<ScalarField>(propSunName_);
+    env().registerLattice<ScalarField>(propTadName_);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -140,9 +140,9 @@ void TChargedProp::execute(void)
                  << ", charge= " << par().charge << ")..." << std::endl;
     
     ScalarField &prop   = *env().createLattice<ScalarField>(getName());
-    ScalarField &propD1   = *env().createLattice<ScalarField>(propD1Name_);
-    ScalarField &propD1D1   = *env().createLattice<ScalarField>(propD1D1Name_);
-    ScalarField &propD2   = *env().createLattice<ScalarField>(propD2Name_);
+    ScalarField &propQ   = *env().createLattice<ScalarField>(propQName_);
+    ScalarField &propSun   = *env().createLattice<ScalarField>(propSunName_);
+    ScalarField &propTad   = *env().createLattice<ScalarField>(propTadName_);
     ScalarField buf(env().getGrid());
     ScalarField &GFSrc = *GFSrc_, &G = *freeMomProp_;
     double      q = par().charge;
@@ -151,22 +151,22 @@ void TChargedProp::execute(void)
     buf = GFSrc;
     momD1(buf, fft);
     buf = -G*buf;
-    fft.FFT_all_dim(propD1, buf, FFT::backward);
+    fft.FFT_all_dim(propQ, buf, FFT::backward);
 
     // G*momD1*G*momD1*G*F*Src (here buf = G*momD1*G*F*Src)
     buf = -buf;
     momD1(buf, fft);
-    propD1D1 = G*buf;
-    fft.FFT_all_dim(propD1D1, propD1D1, FFT::backward);
+    propSun = G*buf;
+    fft.FFT_all_dim(propSun, propSun, FFT::backward);
 
     // -G*momD2*G*F*Src (momD2 = F*D2*Finv)
     buf = GFSrc;
     momD2(buf, fft);
     buf = -G*buf;
-    fft.FFT_all_dim(propD2, buf, FFT::backward);
+    fft.FFT_all_dim(propTad, buf, FFT::backward);
 
     // full charged scalar propagator
-    prop = (*prop0_) + q*propD1 + q*q*propD1D1 + q*q*propD2;
+    prop = (*prop0_) + q*propQ + q*q*propSun + q*q*propTad;
     
     // OUTPUT IF NECESSARY
     if (!par().output.empty())
@@ -200,29 +200,29 @@ void TChargedProp::execute(void)
         }
         write(writer, "prop_0", result);
 
-        // Write propagator D1 term
-        sliceSum(propD1, vecBuf, Tp);
+        // Write propagator O(q) term
+        sliceSum(propQ, vecBuf, Tp);
         for (unsigned int t = 0; t < vecBuf.size(); ++t)
         {
             result[t] = TensorRemove(vecBuf[t]);
         }
-        write(writer, "prop_D1", result);
+        write(writer, "prop_Q", result);
 
-        // Write propagator D1D1 term
-        sliceSum(propD1D1, vecBuf, Tp);
+        // Write propagator sunset term
+        sliceSum(propSun, vecBuf, Tp);
         for (unsigned int t = 0; t < vecBuf.size(); ++t)
         {
             result[t] = TensorRemove(vecBuf[t]);
         }
-        write(writer, "prop_D1D1", result);
+        write(writer, "prop_Sun", result);
 
-        // Write propagator D2 term
-        sliceSum(propD2, vecBuf, Tp);
+        // Write propagator tadpole term
+        sliceSum(propTad, vecBuf, Tp);
         for (unsigned int t = 0; t < vecBuf.size(); ++t)
         {
             result[t] = TensorRemove(vecBuf[t]);
         }
-        write(writer, "prop_D2", result);
+        write(writer, "prop_Tad", result);
     }
 }
 

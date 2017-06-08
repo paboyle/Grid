@@ -17,9 +17,7 @@ class ScalarVPPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(ScalarVPPar,
                                     std::string, emField,
-                                    std::string, source,
-                                    double,      mass,
-                                    double,      charge,
+                                    std::string, scalarProp,
                                     std::string, output);
 };
 
@@ -42,11 +40,7 @@ public:
     // execution
     virtual void execute(void);
 private:
-    void chargedProp(ScalarField &prop_q, ScalarField &prop_sun,
-                            ScalarField &prop_tad, ScalarField &GFSrc,
-                            FFT &fft);
     void momD1(ScalarField &s, FFT &fft);
-    void momD2(ScalarField &s, FFT &fft);
 private:
     std::string                                 freeMomPropName_, GFSrcName_,
                                                 prop0Name_, propQName_,

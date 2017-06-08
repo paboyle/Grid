@@ -46,7 +46,7 @@ private:
     void momD2(ScalarField &s, FFT &fft);
 private:
     std::string                freeMomPropName_, GFSrcName_, prop0Name_,
-                               propD1Name_, propD1D1Name_, propD2Name_;
+                               propQName_, propSunName_, propTadName_;
     std::vector<std::string>   phaseName_;
     ScalarField                *freeMomProp_, *GFSrc_, *prop0_;
     std::vector<ScalarField *> phase_;
