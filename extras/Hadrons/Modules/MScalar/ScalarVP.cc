@@ -126,7 +126,7 @@ void TScalarVP::execute(void)
     // CONTRACTIONS
     ScalarField prop1(env().getGrid()), prop2(env().getGrid());
     EmField     &A = *env().getObject<EmField>(par().emField);
-    ScalarField Amu(env().getGrid());
+    ScalarField Amu(env().getGrid()), tmp_vp(env().getGrid());
     TComplex    Anu0;
     std::vector<int> coor0 = {0, 0, 0, 0};
     std::vector<std::vector<ScalarField> > vpTensor, freeVpTensor;
@@ -141,6 +141,33 @@ void TScalarVP::execute(void)
         }
         vpTensor.push_back(vpTensor_mu);
         freeVpTensor.push_back(freeVpTensor_mu);
+    }
+
+    // Open output files if necessary
+    CorrWriter              *writer, *writer0, *writerD;
+    std::vector<TComplex>   vecBuf;
+    std::vector<Complex>    result;
+    if (!par().output.empty())
+    {
+        std::string           filename = par().output + "." +
+                                         std::to_string(env().getTrajectory());
+        std::string           filename0 = par().output + "_free." +
+                                         std::to_string(env().getTrajectory());
+        std::string           filenameD = par().output + "_diagrams." +
+                                         std::to_string(env().getTrajectory());
+        
+        // LOG(Message) << "Saving zero-momentum projection to '"
+        //              << filename << "'..." << std::endl;
+        writer = new CorrWriter(filename);
+        writer0 = new CorrWriter(filename0);
+        writerD = new CorrWriter(filenameD);
+        
+        write(*writer, "charge", q);
+        write(*writer, "mass", static_cast<TChargedProp *>(env().getModule(par().scalarProp))->par().mass);
+        write(*writer0, "charge", 0.0);
+        write(*writer0, "mass", static_cast<TChargedProp *>(env().getModule(par().scalarProp))->par().mass);
+        write(*writerD, "charge", q);
+        write(*writerD, "mass", static_cast<TChargedProp *>(env().getModule(par().scalarProp))->par().mass);
     }
 
     for (unsigned int nu = 0; nu < env().getNd(); ++nu)
@@ -158,75 +185,207 @@ void TScalarVP::execute(void)
             prop2 = Cshift(*prop0_, nu, -1);
             freeVpTensor[mu][nu] = adj(prop2) * Cshift(prop1, mu, 1);
             freeVpTensor[mu][nu] -= Cshift(adj(prop2), mu, 1) * prop1;
+            freeVpTensor[mu][nu] = 2.0*real(freeVpTensor[mu][nu]);
+
+            // Output if necessary
+            if (!par().output.empty())
+            {
+                sliceSum(freeVpTensor[mu][nu], vecBuf, Tp);
+                result.resize(vecBuf.size());
+                for (unsigned int t = 0; t < vecBuf.size(); ++t)
+                {
+                    result[t] = TensorRemove(vecBuf[t]);
+                }
+                write(*writer0,
+                      "Pi_"+std::to_string(mu)+"_"+std::to_string(nu),
+                      result);
+            }
 
             // "Exchange" terms
             prop1 += q*propQ;
             prop2 += q*muPropQ[nu];
-            vpTensor[mu][nu] = adj(prop2) * (1.0 + ci*q*Amu)
-                               * Cshift(prop1, mu, 1) * (1.0 + ci*q*Anu0);
-            vpTensor[mu][nu] -= Cshift(adj(prop2), mu, 1) * (1.0 - ci*q*Amu)
-                                * prop1 * (1.0 + ci*q*Anu0);
+            tmp_vp = adj(prop2) * (1.0 + ci*q*Amu)
+                     * Cshift(prop1, mu, 1) * (1.0 + ci*q*Anu0);
+            tmp_vp -= Cshift(adj(prop2), mu, 1) * (1.0 - ci*q*Amu)
+                      * prop1 * (1.0 + ci*q*Anu0);
+            tmp_vp = 2.0*real(tmp_vp);
+            vpTensor[mu][nu] = tmp_vp*1.0;
+
+            // Output if necessary
+            if (!par().output.empty())
+            {
+                sliceSum(tmp_vp, vecBuf, Tp);
+                result.resize(vecBuf.size());
+                for (unsigned int t = 0; t < vecBuf.size(); ++t)
+                {
+                    result[t] = TensorRemove(vecBuf[t]);
+                }
+                write(*writerD,
+                      "Pi_exchange_"+std::to_string(mu)+"_"+std::to_string(nu),
+                      result);
+            }
 
             // Subtract O(alpha^2) term
             prop1 = q*propQ;
             prop2 = q*muPropQ[nu];
-            vpTensor[mu][nu] -= adj(prop2) * ci*q*Amu
-                                * Cshift(prop1, mu, 1) * ci*q*Anu0;
-            vpTensor[mu][nu] += Cshift(adj(prop2), mu, 1) * (-ci)*q*Amu
-                                * prop1 * ci*q*Anu0;
+            tmp_vp = Cshift(adj(prop2), mu, 1) * (-ci)*q*Amu
+                     * prop1 * ci*q*Anu0;
+            tmp_vp -= adj(prop2) * ci*q*Amu
+                      * Cshift(prop1, mu, 1) * ci*q*Anu0;
+            tmp_vp = 2.0*real(tmp_vp);
+            vpTensor[mu][nu] += tmp_vp;
 
-            // Sunset+tadpole from source
-            prop1 = q*q*(propSun + propTad);
+            // Output if necessary
+            if (!par().output.empty())
+            {
+                sliceSum(tmp_vp, vecBuf, Tp);
+                result.resize(vecBuf.size());
+                for (unsigned int t = 0; t < vecBuf.size(); ++t)
+                {
+                    result[t] = TensorRemove(vecBuf[t]);
+                }
+                write(*writerD,
+                      "Pi_alpha2_"+std::to_string(mu)+"_"+std::to_string(nu),
+                      result);
+            }
+
+            // Sunset from unshifted source
+            prop1 = q*q*propSun;
             prop2 = Cshift(*prop0_, nu, -1);
-            vpTensor[mu][nu] += adj(prop2) * Cshift(prop1, mu, 1);
-            vpTensor[mu][nu] -= Cshift(adj(prop2), mu, 1) * prop1;
+            tmp_vp = adj(prop2) * Cshift(prop1, mu, 1);
+            tmp_vp -= Cshift(adj(prop2), mu, 1) * prop1;
+            tmp_vp = 2.0*real(tmp_vp);
+            vpTensor[mu][nu] += tmp_vp;
 
-            // Sunset+tadpole from shifted source
+            // Output if necessary
+            if (!par().output.empty())
+            {
+                sliceSum(tmp_vp, vecBuf, Tp);
+                result.resize(vecBuf.size());
+                for (unsigned int t = 0; t < vecBuf.size(); ++t)
+                {
+                    result[t] = TensorRemove(vecBuf[t]);
+                }
+                write(*writerD,
+                      "Pi_sunset_unshifted_"+std::to_string(mu)+"_"+std::to_string(nu),
+                      result);
+            }
+
+            // Sunset from shifted source
             prop1 = Cshift(prop1, nu, -1);
-            vpTensor[mu][nu] += Cshift(adj(*prop0_), mu, 1) * prop1;
-            vpTensor[mu][nu] -= adj(*prop0_) * Cshift(prop1, mu, 1);
+            tmp_vp = Cshift(adj(*prop0_), mu, 1) * prop1;
+            tmp_vp -= adj(*prop0_) * Cshift(prop1, mu, 1);
+            tmp_vp = 2.0*real(tmp_vp);
+            vpTensor[mu][nu] += tmp_vp;
+
+            // Output if necessary
+            if (!par().output.empty())
+            {
+                sliceSum(tmp_vp, vecBuf, Tp);
+                result.resize(vecBuf.size());
+                for (unsigned int t = 0; t < vecBuf.size(); ++t)
+                {
+                    result[t] = TensorRemove(vecBuf[t]);
+                }
+                write(*writerD,
+                      "Pi_sunset_shifted_"+std::to_string(mu)+"_"+std::to_string(nu),
+                      result);
+            }
+
+            // Tadpole from unshifted source
+            prop1 = q*q*propTad;
+            prop2 = Cshift(*prop0_, nu, -1);
+            tmp_vp = adj(prop2) * Cshift(prop1, mu, 1);
+            tmp_vp -= Cshift(adj(prop2), mu, 1) * prop1;
+            tmp_vp = 2.0*real(tmp_vp);
+            vpTensor[mu][nu] += tmp_vp;
+
+            // Output if necessary
+            if (!par().output.empty())
+            {
+                sliceSum(tmp_vp, vecBuf, Tp);
+                result.resize(vecBuf.size());
+                for (unsigned int t = 0; t < vecBuf.size(); ++t)
+                {
+                    result[t] = TensorRemove(vecBuf[t]);
+                }
+                write(*writerD,
+                      "Pi_tadpole_unshifted_"+std::to_string(mu)+"_"+std::to_string(nu),
+                      result);
+            }
+
+            // Tadpole from shifted source
+            prop1 = Cshift(prop1, nu, -1);
+            tmp_vp = Cshift(adj(*prop0_), mu, 1) * prop1;
+            tmp_vp -= adj(*prop0_) * Cshift(prop1, mu, 1);
+            tmp_vp = 2.0*real(tmp_vp);
+            vpTensor[mu][nu] += tmp_vp;
+
+            // Output if necessary
+            if (!par().output.empty())
+            {
+                sliceSum(tmp_vp, vecBuf, Tp);
+                result.resize(vecBuf.size());
+                for (unsigned int t = 0; t < vecBuf.size(); ++t)
+                {
+                    result[t] = TensorRemove(vecBuf[t]);
+                }
+                write(*writerD,
+                      "Pi_tadpole_shifted_"+std::to_string(mu)+"_"+std::to_string(nu),
+                      result);
+            }
 
             // Source tadpole
             prop1 = *prop0_;
-            vpTensor[mu][nu] += adj(prop2)
-                                * Cshift(prop1, mu, 1)
-                                * (-0.5)*q*q*Anu0*Anu0;
-            vpTensor[mu][nu] -= Cshift(adj(prop2), mu, 1)
-                                * prop1
-                                * (-0.5)*q*q*Anu0*Anu0;
+            tmp_vp = adj(prop2)
+                     * Cshift(prop1, mu, 1)
+                     * (-0.5)*q*q*Anu0*Anu0;
+            tmp_vp -= Cshift(adj(prop2), mu, 1)
+                      * prop1
+                      * (-0.5)*q*q*Anu0*Anu0;
+            tmp_vp = 2.0*real(tmp_vp);
+            vpTensor[mu][nu] += tmp_vp;
+
+            // Output if necessary
+            if (!par().output.empty())
+            {
+                sliceSum(tmp_vp, vecBuf, Tp);
+                result.resize(vecBuf.size());
+                for (unsigned int t = 0; t < vecBuf.size(); ++t)
+                {
+                    result[t] = TensorRemove(vecBuf[t]);
+                }
+                write(*writerD,
+                      "Pi_sourcetadpole_"+std::to_string(mu)+"_"+std::to_string(nu),
+                      result);
+            }
 
             // Sink tadpole
-            vpTensor[mu][nu] += adj(prop2)
-                                * (-0.5)*q*q*Amu*Amu
-                                * Cshift(prop1, mu, 1);
-            vpTensor[mu][nu] -= Cshift(adj(prop2), mu, 1)
-                                * (-0.5)*q*q*Amu*Amu
-                                * prop1;
+            tmp_vp = adj(prop2)
+                     * (-0.5)*q*q*Amu*Amu
+                     * Cshift(prop1, mu, 1);
+            tmp_vp -= Cshift(adj(prop2), mu, 1)
+                      * (-0.5)*q*q*Amu*Amu
+                      * prop1;
+            tmp_vp = 2.0*real(tmp_vp);
+            vpTensor[mu][nu] += tmp_vp;
 
-            freeVpTensor[mu][nu] = 2.0*real(freeVpTensor[mu][nu]);
-            vpTensor[mu][nu] = 2.0*real(vpTensor[mu][nu]);
-        }
-    }
+            // Output if necessary
+            if (!par().output.empty())
+            {
+                sliceSum(tmp_vp, vecBuf, Tp);
+                result.resize(vecBuf.size());
+                for (unsigned int t = 0; t < vecBuf.size(); ++t)
+                {
+                    result[t] = TensorRemove(vecBuf[t]);
+                }
+                write(*writerD,
+                      "Pi_sinktadpole_"+std::to_string(mu)+"_"+std::to_string(nu),
+                      result);
+            }
 
-    // OUTPUT IF NECESSARY
-    if (!par().output.empty())
-    {
-        std::string           filename = par().output + "." +
-                                         std::to_string(env().getTrajectory());
-        
-        LOG(Message) << "Saving zero-momentum projection to '"
-                     << filename << "'..." << std::endl;
-        
-        CorrWriter              writer(filename);
-        std::vector<TComplex>   vecBuf;
-        std::vector<Complex>    result;
-        
-        write(writer, "charge", q);
-        write(writer, "mass", static_cast<TChargedProp *>(env().getModule(par().scalarProp))->par().mass);
-
-        for (unsigned int mu = 0; mu < env().getNd(); ++mu)
-        {
-            for (unsigned int nu = 0; nu < env().getNd(); ++nu)
+            // Output if necessary
+            if (!par().output.empty())
             {
                 sliceSum(vpTensor[mu][nu], vecBuf, Tp);
                 result.resize(vecBuf.size());
@@ -234,21 +393,14 @@ void TScalarVP::execute(void)
                 {
                     result[t] = TensorRemove(vecBuf[t]);
                 }
-                write(writer, "Pi_"+std::to_string(mu)+"_"+std::to_string(nu),
-                      result);
-
-                sliceSum(freeVpTensor[mu][nu], vecBuf, Tp);
-                result.resize(vecBuf.size());
-                for (unsigned int t = 0; t < vecBuf.size(); ++t)
-                {
-                    result[t] = TensorRemove(vecBuf[t]);
-                }
-                write(writer,
-                      "Pi_"+std::to_string(mu)+"_"+std::to_string(nu)+"_free",
+                write(*writer, "Pi_"+std::to_string(mu)+"_"+std::to_string(nu),
                       result);
             }
         }
     }
+    delete writer;
+    delete writer0;
+    delete writerD;
 }
 
 void TScalarVP::momD1(ScalarField &s, FFT &fft)
