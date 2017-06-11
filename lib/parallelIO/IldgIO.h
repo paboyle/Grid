@@ -242,7 +242,7 @@ class IldgIO : public BinaryIO {
     while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
 
       uint64_t nbytes = limeReaderBytes(LimeR);//size of this record (configuration)
-
+      
       //////////////////////////////////////////////////////////////////
       // If not BINARY_DATA read a string and parse
       //////////////////////////////////////////////////////////////////
