@@ -27,7 +27,7 @@ AX_GXX_VERSION
 AC_DEFINE_UNQUOTED([GXX_VERSION],["$GXX_VERSION"],
       [version of g++ that will compile the code])
 
-CXXFLAGS="-O3 $CXXFLAGS"
+CXXFLAGS="-g $CXXFLAGS"
 
 
 ############### Checks for typedefs, structures, and compiler characteristics

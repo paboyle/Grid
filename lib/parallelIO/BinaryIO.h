@@ -125,57 +125,94 @@ class BinaryIO {
   /////////////////////////////////////////////////////////////////////////////
   // more byte manipulation helpers
   /////////////////////////////////////////////////////////////////////////////
-  static inline void Uint32Checksum(uint32_t *buf,uint64_t buf_size_bytes,uint32_t &csum)
+
+  template<class vobj> static inline void Uint32Checksum(Lattice<vobj> &lat,				      
+							 uint32_t &nersc_csum,
+							 uint32_t &scidac_csuma,
+							 uint32_t &scidac_csumb)
+
   {
+    typedef typename vobj::scalar_object sobj;
+
+    GridBase *grid = lat._grid;
+    int lsites = grid->lSites();
+
+    std::vector<sobj> scalardata(lsites); 
+    unvectorizeToLexOrdArray(scalardata,lat);    
+
+    Uint32Checksum(grid,scalardata,nersc_csum,scidac_csuma,scidac_csumb);
+  }
+  
+  template<class fobj>
+    static inline void Uint32Checksum(GridBase *grid,
+				      std::vector<fobj> &fbuf,
+				      uint32_t &nersc_csum,
+				      uint32_t &scidac_csuma,
+				      uint32_t &scidac_csumb)
+  {
+    const uint64_t size32 = sizeof(fobj)/sizeof(uint32_t);
+
+
+    int nd = grid->_ndimension;
+
+    uint64_t lsites              =grid->lSites();
+    std::vector<int> local_vol   =grid->LocalDimensions();
+    std::vector<int> local_start =grid->LocalStarts();
+    std::vector<int> global_vol  =grid->FullDimensions();
+
 #pragma omp parallel
     { 
-      uint32_t csum_thr=0;
-      uint64_t count = buf_size_bytes/sizeof(uint32_t);
+      std::vector<int> coor(nd);
+      uint32_t nersc_csum_thr=0;
+      uint32_t scidac_csuma_thr=0;
+      uint32_t scidac_csumb_thr=0;
+      uint32_t site_crc=0;
+      uint32_t zcrc = crc32(0L, Z_NULL, 0);
+
 #pragma omp for
-      for(uint64_t i=0;i<count;i++){
-	csum_thr=csum_thr+buf[i];
+      for(uint64_t local_site=0;local_site<lsites;local_site++){
+
+	uint32_t * site_buf = (uint32_t *)&fbuf[local_site];
+
+	for(uint64_t j=0;j<size32;j++){
+	  nersc_csum_thr=nersc_csum_thr+site_buf[j];
+	}
+
+	/* 
+	 * Scidac csum  is rather more heavyweight
+	 */
+	int global_site;
+
+	Lexicographic::CoorFromIndex(coor,local_site,local_vol);
+
+	for(int d=0;d<nd;d++) 
+	  coor[d] = coor[d]+local_start[d];
+
+	Lexicographic::IndexFromCoor(coor,global_site,global_vol);
+
+	uint32_t gsite29   = global_site%29;
+	uint32_t gsite31   = global_site%31;
+
+	site_crc = crc32(zcrc,(unsigned char *)site_buf,sizeof(fobj));
+
+	scidac_csuma_thr ^= site_crc<<gsite29 | site_crc>>(32-gsite29);
+	scidac_csumb_thr ^= site_crc<<gsite31 | site_crc>>(32-gsite31);
       }
+
 #pragma omp critical
-      csum = csum + csum_thr;
+      {
+	nersc_csum  += nersc_csum_thr;
+	scidac_csuma^= scidac_csuma_thr;
+	scidac_csumb^= scidac_csumb_thr;
+      }
     }
   }
+
   // Network is big endian
-  static inline void htobe32_v(void *file_object,uint64_t bytes,uint32_t &csum){ 
-    Uint32Checksum((uint32_t *)file_object,bytes,csum); 
-    htobe32_v(file_object,bytes); 
-  }
-  static inline void htobe64_v(void *file_object,uint64_t bytes,uint32_t &csum){
-    Uint32Checksum((uint32_t *)file_object,bytes,csum); 
-    htobe64_v(file_object,bytes);
-  }
-  static inline void htole32_v(void *file_object,uint64_t bytes,uint32_t &csum){ 
-    Uint32Checksum((uint32_t *)file_object,bytes,csum);
-    htole32_v(file_object,bytes);
-  }
-  static inline void htole64_v(void *file_object,uint64_t bytes,uint32_t &csum){ 
-    Uint32Checksum((uint32_t *)file_object,bytes,csum);
-    htole64_v(file_object,bytes);
-  }
-  static inline void be32toh_v(void *file_object,uint64_t bytes,uint32_t &csum){ 
-    be32toh_v(file_object,bytes); 
-    Uint32Checksum((uint32_t *)file_object,bytes,csum); 
-  }
-  static inline void be64toh_v(void *file_object,uint64_t bytes,uint32_t &csum){
-    be64toh_v(file_object,bytes);
-    Uint32Checksum((uint32_t *)file_object,bytes,csum); 
-  }
-  static inline void le32toh_v(void *file_object,uint64_t bytes,uint32_t &csum){ 
-    le32toh_v(file_object,bytes);
-    Uint32Checksum((uint32_t *)file_object,bytes,csum);
-  }
-  static inline void le64toh_v(void *file_object,uint64_t bytes,uint32_t &csum){ 
-    le64toh_v(file_object,bytes);
-    Uint32Checksum((uint32_t *)file_object,bytes,csum);
-  }
-  static inline void htobe32_v(void *file_object,uint64_t bytes){ be32toh_v(file_object,bytes);} 
-  static inline void htobe64_v(void *file_object,uint64_t bytes){ be64toh_v(file_object,bytes);} 
-  static inline void htole32_v(void *file_object,uint64_t bytes){ le32toh_v(file_object,bytes);} 
-  static inline void htole64_v(void *file_object,uint64_t bytes){ le64toh_v(file_object,bytes);} 
+  static inline void htobe32_v(void *file_object,uint32_t bytes){ be32toh_v(file_object,bytes);} 
+  static inline void htobe64_v(void *file_object,uint32_t bytes){ be64toh_v(file_object,bytes);} 
+  static inline void htole32_v(void *file_object,uint32_t bytes){ le32toh_v(file_object,bytes);} 
+  static inline void htole64_v(void *file_object,uint32_t bytes){ le64toh_v(file_object,bytes);} 
 
   static inline void be32toh_v(void *file_object,uint64_t bytes)
   {
@@ -199,6 +236,7 @@ class BinaryIO {
       fp[i] = ntohl(f);
     }
   }
+
   // BE is same as network
   static inline void be64toh_v(void *file_object,uint64_t bytes)
   {
@@ -238,18 +276,23 @@ class BinaryIO {
   static const int BINARYIO_WRITE         = 0x01;
 
   template<class word,class fobj>
-  static inline uint32_t IOobject(word w,
-				  GridBase *grid,
-				  std::vector<fobj> &iodata,
-				  std::string file,
-				  int offset,
-				  const std::string &format, int control)
+  static inline void IOobject(word w,
+			      GridBase *grid,
+			      std::vector<fobj> &iodata,
+			      std::string file,
+			      int offset,
+			      const std::string &format, int control,
+			      uint32_t &nersc_csum,
+			      uint32_t &scidac_csuma,
+			      uint32_t &scidac_csumb)
   {
     grid->Barrier();
     GridStopWatch timer; 
     GridStopWatch bstimer;
 
-    uint32_t csum=0;
+    nersc_csum=0;
+    scidac_csuma=0;
+    scidac_csumb=0;
 
     int ndim                 = grid->Dimensions();
     int nrank                = grid->ProcessorCount();
@@ -359,20 +402,22 @@ class BinaryIO {
       grid->Barrier();
 
       bstimer.Start();
-      if (ieee32big) be32toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size(),csum);
-      if (ieee32)    le32toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size(),csum);
-      if (ieee64big) be64toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size(),csum);
-      if (ieee64)    le64toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size(),csum);
+      if (ieee32big) be32toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
+      if (ieee32)    le32toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
+      if (ieee64big) be64toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
+      if (ieee64)    le64toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
+      Uint32Checksum(grid,iodata,nersc_csum,scidac_csuma,scidac_csumb);
       bstimer.Stop();
     }
     
     if ( control & BINARYIO_WRITE ) { 
 
       bstimer.Start();
-      if (ieee32big) htobe32_v((void *)&iodata[0], sizeof(fobj)*iodata.size(),csum);
-      if (ieee32)    htole32_v((void *)&iodata[0], sizeof(fobj)*iodata.size(),csum);
-      if (ieee64big) htobe64_v((void *)&iodata[0], sizeof(fobj)*iodata.size(),csum);
-      if (ieee64)    htole64_v((void *)&iodata[0], sizeof(fobj)*iodata.size(),csum);
+      Uint32Checksum(grid,iodata,nersc_csum,scidac_csuma,scidac_csumb);
+      if (ieee32big) htobe32_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
+      if (ieee32)    htole32_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
+      if (ieee64big) htobe64_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
+      if (ieee64)    htole64_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
       bstimer.Stop();
 
       grid->Barrier();
@@ -418,17 +463,27 @@ class BinaryIO {
     // Safety check
     //////////////////////////////////////////////////////////////////////////////
     grid->Barrier();
-    grid->GlobalSum(csum);
+    grid->GlobalSum(nersc_csum);
+    grid->GlobalXOR(scidac_csuma);
+    grid->GlobalXOR(scidac_csumb);
     grid->Barrier();
-
-    return csum;
+    //    std::cout << "Binary IO NERSC  checksum  0x"<<std::hex<<nersc_csum  <<std::dec<<std::endl;
+    //    std::cout << "Binary IO SCIDAC checksuma 0x"<<std::hex<<scidac_csuma<<std::dec<<std::endl;
+    //    std::cout << "Binary IO SCIDAC checksumb 0x"<<std::hex<<scidac_csumb<<std::dec<<std::endl;
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Read a Lattice of object
   //////////////////////////////////////////////////////////////////////////////////////
   template<class vobj,class fobj,class munger>
-  static inline uint32_t readLatticeObject(Lattice<vobj> &Umu,std::string file,munger munge,int offset,const std::string &format)
+  static inline void readLatticeObject(Lattice<vobj> &Umu,
+				       std::string file,
+				       munger munge,
+				       int offset,
+				       const std::string &format,
+				       uint32_t &nersc_csum,
+				       uint32_t &scidac_csuma,
+				       uint32_t &scidac_csumb)
   {
     typedef typename vobj::scalar_object sobj;
     typedef typename vobj::Realified::scalar_type word;    word w=0;
@@ -439,7 +494,8 @@ class BinaryIO {
     std::vector<sobj> scalardata(lsites); 
     std::vector<fobj>     iodata(lsites); // Munge, checksum, byte order in here
     
-    uint32_t csum= IOobject(w,grid,iodata,file,offset,format,BINARYIO_READ|BINARYIO_LEXICOGRAPHIC);
+    IOobject(w,grid,iodata,file,offset,format,BINARYIO_READ|BINARYIO_LEXICOGRAPHIC,
+	     nersc_csum,scidac_csuma,scidac_csumb);
 
     GridStopWatch timer; 
     timer.Start();
@@ -451,15 +507,20 @@ class BinaryIO {
 
     timer.Stop();
     std::cout<<GridLogMessage<<"readLatticeObject: vectorize overhead "<<timer.Elapsed()  <<std::endl;
-
-    return csum;
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Write a Lattice of object
   //////////////////////////////////////////////////////////////////////////////////////
   template<class vobj,class fobj,class munger>
-  static inline uint32_t writeLatticeObject(Lattice<vobj> &Umu,std::string file,munger munge,int offset,const std::string &format)
+    static inline void writeLatticeObject(Lattice<vobj> &Umu,
+					  std::string file,
+					  munger munge,
+					  int offset,
+					  const std::string &format,
+					  uint32_t &nersc_csum,
+					  uint32_t &scidac_csuma,
+					  uint32_t &scidac_csumb)
   {
     typedef typename vobj::scalar_object sobj;
     typedef typename vobj::Realified::scalar_type word;    word w=0;
@@ -480,36 +541,45 @@ class BinaryIO {
     grid->Barrier();
     timer.Stop();
 
-    uint32_t csum= IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_LEXICOGRAPHIC);
+    IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_LEXICOGRAPHIC,
+	     nersc_csum,scidac_csuma,scidac_csumb);
 
     std::cout<<GridLogMessage<<"writeLatticeObject: unvectorize overhead "<<timer.Elapsed()  <<std::endl;
-
-    return csum;
   }
   
   /////////////////////////////////////////////////////////////////////////////
   // Read a RNG;  use IOobject and lexico map to an array of state 
   //////////////////////////////////////////////////////////////////////////////////////
-  static inline uint32_t readRNG(GridSerialRNG &serial,GridParallelRNG &parallel,std::string file,int offset)
+  static inline void readRNG(GridSerialRNG &serial,
+			     GridParallelRNG &parallel,
+			     std::string file,
+			     int offset,
+			     uint32_t &nersc_csum,
+			     uint32_t &scidac_csuma,
+			     uint32_t &scidac_csumb)
   {
     typedef typename GridSerialRNG::RngStateType RngStateType;
     const int RngStateCount = GridSerialRNG::RngStateCount;
     typedef std::array<RngStateType,RngStateCount> RNGstate;
     typedef RngStateType word;    word w=0;
 
-    uint32_t csum = 0;
     std::string format = "IEEE32BIG";
 
     GridBase *grid = parallel._grid;
     int gsites = grid->gSites();
     int lsites = grid->lSites();
 
+    uint32_t nersc_csum_tmp;
+    uint32_t scidac_csuma_tmp;
+    uint32_t scidac_csumb_tmp;
+
     GridStopWatch timer;
 
     std::cout << GridLogMessage << "RNG read I/O on file " << file << std::endl;
 
     std::vector<RNGstate> iodata(lsites);
-    csum= IOobject(w,grid,iodata,file,offset,format,BINARYIO_READ|BINARYIO_LEXICOGRAPHIC);
+    IOobject(w,grid,iodata,file,offset,format,BINARYIO_READ|BINARYIO_LEXICOGRAPHIC,
+	     nersc_csum,scidac_csuma,scidac_csumb);
 
     timer.Start();
     parallel_for(int lidx=0;lidx<lsites;lidx++){
@@ -520,32 +590,48 @@ class BinaryIO {
     timer.Stop();
 
     iodata.resize(1);
-    csum+= IOobject(w,grid,iodata,file,offset,format,BINARYIO_READ|BINARYIO_MASTER_APPEND);
+    IOobject(w,grid,iodata,file,offset,format,BINARYIO_READ|BINARYIO_MASTER_APPEND,
+	     nersc_csum_tmp,scidac_csuma_tmp,scidac_csumb_tmp);
+
     {
       std::vector<RngStateType> tmp(RngStateCount);
       std::copy(iodata[0].begin(),iodata[0].end(),tmp.begin());
       serial.SetState(tmp,0);
     }
 
-    std::cout << GridLogMessage << "RNG file checksum " << std::hex << csum << std::dec << std::endl;
+    nersc_csum   = nersc_csum   + nersc_csum_tmp;
+    scidac_csuma = scidac_csuma ^ scidac_csuma_tmp;
+    scidac_csumb = scidac_csumb ^ scidac_csumb_tmp;
+
+    //    std::cout << GridLogMessage << "RNG file nersc_checksum   " << std::hex << nersc_csum << std::dec << std::endl;
+    //    std::cout << GridLogMessage << "RNG file scidac_checksuma " << std::hex << scidac_csuma << std::dec << std::endl;
+    //    std::cout << GridLogMessage << "RNG file scidac_checksumb " << std::hex << scidac_csumb << std::dec << std::endl;
+
     std::cout << GridLogMessage << "RNG state overhead " << timer.Elapsed() << std::endl;
-    return csum;
   }
   /////////////////////////////////////////////////////////////////////////////
   // Write a RNG; lexico map to an array of state and use IOobject
   //////////////////////////////////////////////////////////////////////////////////////
-  static inline uint32_t writeRNG(GridSerialRNG &serial,GridParallelRNG &parallel,std::string file,int offset)
+  static inline void writeRNG(GridSerialRNG &serial,
+			      GridParallelRNG &parallel,
+			      std::string file,
+			      int offset,
+			      uint32_t &nersc_csum,
+			      uint32_t &scidac_csuma,
+			      uint32_t &scidac_csumb)
   {
     typedef typename GridSerialRNG::RngStateType RngStateType;
     typedef RngStateType word; word w=0;
     const int RngStateCount = GridSerialRNG::RngStateCount;
     typedef std::array<RngStateType,RngStateCount> RNGstate;
 
-    uint32_t csum = 0;
-
     GridBase *grid = parallel._grid;
     int gsites = grid->gSites();
     int lsites = grid->lSites();
+
+    uint32_t nersc_csum_tmp;
+    uint32_t scidac_csuma_tmp;
+    uint32_t scidac_csumb_tmp;
 
     GridStopWatch timer;
     std::string format = "IEEE32BIG";
@@ -561,7 +647,8 @@ class BinaryIO {
     }
     timer.Stop();
 
-    csum= IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_LEXICOGRAPHIC);
+    IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_LEXICOGRAPHIC,
+	     nersc_csum,scidac_csuma,scidac_csumb);
 
     iodata.resize(1);
     {
@@ -569,11 +656,11 @@ class BinaryIO {
       serial.GetState(tmp,0);
       std::copy(tmp.begin(),tmp.end(),iodata[0].begin());
     }
-    csum+= IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_MASTER_APPEND);
+    IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_MASTER_APPEND,
+	     nersc_csum_tmp,scidac_csuma_tmp,scidac_csumb_tmp);
     
-    std::cout << GridLogMessage << "RNG file checksum " << std::hex << csum << std::dec << std::endl;
+    //    std::cout << GridLogMessage << "RNG file checksum " << std::hex << csum << std::dec << std::endl;
     std::cout << GridLogMessage << "RNG state overhead " << timer.Elapsed() << std::endl;
-    return csum;
   }
 };
 }

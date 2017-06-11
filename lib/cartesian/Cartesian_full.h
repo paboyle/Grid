@@ -76,6 +76,8 @@ public:
         _ldimensions.resize(_ndimension);
         _rdimensions.resize(_ndimension);
         _simd_layout.resize(_ndimension);
+	_lstart.resize(_ndimension);
+	_lend.resize(_ndimension);
             
         _ostride.resize(_ndimension);
         _istride.resize(_ndimension);
@@ -94,8 +96,10 @@ public:
 	  // Use a reduced simd grid
 	  _ldimensions[d]= _gdimensions[d]/_processors[d];  //local dimensions
 	  _rdimensions[d]= _ldimensions[d]/_simd_layout[d]; //overdecomposition
-	  _osites *= _rdimensions[d];
-	  _isites *= _simd_layout[d];
+	  _lstart[d]     = _processor_coor[d]*_ldimensions[d];
+	  _lend[d]       = _processor_coor[d]*_ldimensions[d]+_ldimensions[d]-1;
+	  _osites  *= _rdimensions[d];
+	  _isites  *= _simd_layout[d];
                 
 	  // Addressing support
 	  if ( d==0 ) {

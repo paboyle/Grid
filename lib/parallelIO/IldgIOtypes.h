@@ -34,47 +34,83 @@ extern "C" { // for linkage
 
 namespace Grid {
 
-struct ILDGtype {
-  bool is_ILDG;
-  LimeWriter* LW;
-  LimeReader* LR;
+#define GRID_FORMAT      "grid-format"
+#define ILDG_FORMAT      "ildg-format"
+#define ILDG_BINARY_DATA "ildg-binary-data"
+#define ILDG_DATA_LFN    "ildg-data-lfn"
+#define USQCD_INFO       "usqcdInfo"
+#define SCIDAC_CHECKSUM  "scidac-checksum"
 
-  ILDGtype(bool is, LimeWriter* L) : is_ILDG(is), LW(L), LR(NULL) {}
-  ILDGtype(bool is, LimeReader* L) : is_ILDG(is), LW(NULL), LR(L) {}
-  ILDGtype() : is_ILDG(false), LW(NULL), LR(NULL) {}
+/////////////////////////////////////////////////////////////////////////////////
+// Data representation of records that enter ILDG and SciDac formats
+/////////////////////////////////////////////////////////////////////////////////
+struct ildgFormat : Serializable {
+public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(ildgFormat,
+				  double, version,
+				  std::string, field,
+				  int, precision,
+				  int, lx,
+				  int, ly,
+				  int, lz,
+				  int, lt);
+  ildgFormat() { 
+    version=1.0; 
+  };
 };
-
-class ILDGField {
+struct usqcdInfo : Serializable { 
  public:
-  // header strings (not in order)
-  std::vector<int> dimension;
-  std::vector<std::string> boundary;
-  int data_start;
-  std::string hdr_version;
-  std::string storage_format;
-  // Checks on data
-  double link_trace;
-  double plaquette;
-  uint32_t checksum;
-  unsigned int sequence_number;
-  std::string data_type;
-  std::string ensemble_id;
-  std::string ensemble_label;
-  std::string creator;
-  std::string creator_hardware;
-  std::string creation_date;
-  std::string archive_date;
-  std::string floating_point;
+  GRID_SERIALIZABLE_CLASS_MEMBERS(usqcdInfo,
+				  double, version,
+				  double, plaq,
+				  double, linktr,
+				  std::string, info);
+  usqcdInfo() { 
+    version=1.0; 
+  };
+};
+
+struct usqcdPropFile : Serializable { 
+ public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(usqcdPropFile,
+				  double, version,
+				  std::string, type,
+				  std::string, info);
+  usqcdPropFile() { 
+    version=1.0; 
+  };
+};
+struct usqcdSourceInfo : Serializable { 
+ public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(usqcdSourceInfo,
+				  double, version,
+				  std::string, info);
+  usqcdSourceInfo() { 
+    version=1.0; 
+  };
+};
+struct usqcdPropInfo : Serializable { 
+ public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(usqcdPropInfo,
+				  double, version,
+				  int, spin,
+				  int, color,
+				  std::string, info);
+  usqcdPropInfo() { 
+    version=1.0; 
+  };
+};
+struct scidacChecksum : Serializable { 
+ public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(scidacChecksum,
+				  double, version,
+				  uint32_t, suma,
+				  uint32_t, sumb);
+  scidacChecksum() { 
+    version=1.0; 
+    suma=sumb=0;
+  };
 };
 }
-#else
-namespace Grid {
-
-struct ILDGtype {
-  bool is_ILDG;
-  ILDGtype() : is_ILDG(false) {}
-};
-}
-
 #endif
 #endif

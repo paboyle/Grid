@@ -64,8 +64,8 @@ int main (int argc, char ** argv)
   std::cout <<GridLogMessage<< " ...done "<<std::endl;
 
   std::string rfile("./ckpoint_rng.4000");
+  FieldMetaData rngheader;
   NerscIO::writeRNGState(sRNGa,pRNGa,rfile);
-  NerscField rngheader;
   NerscIO::readRNGState (sRNGb,pRNGb,rngheader,rfile);
 
   LatticeComplex tmpa(&Fine); random(pRNGa,tmpa);
@@ -87,7 +87,7 @@ int main (int argc, char ** argv)
   
   SU3::HotConfiguration(pRNGa,Umu);
 
-  NerscField header;
+  FieldMetaData header;
   std::string file("./ckpoint_lat.4000");
 
   int precision32 = 0;

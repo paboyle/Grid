@@ -31,6 +31,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 
 using namespace Grid;
+using namespace Grid::QCD;
 
 GRID_SERIALIZABLE_ENUM(myenum, undef, red, 1, blue, 2, green, 3);
   
@@ -61,6 +62,7 @@ public:
     name="bother said pooh";
   }
 };
+
 
 int16_t  i16 = 1;
 uint16_t u16 = 2;
@@ -237,7 +239,22 @@ int main(int argc,char **argv)
     std::cout << "Loaded (JSON) -----------------" << std::endl;
     std::cout << jcopy1 << std::endl << jveccopy1 << std::endl;
   }
-
+  
+  { 
+    ildgFormat format;
+    format.version   =1.0;
+    format.field     =std::string("su3gauge");
+    format.precision =32;
+    format.lx        =24;
+    format.ly        =24;
+    format.lz        =24;
+    format.lt        =48;
+    XmlWriter WR("ildg-format.xml","");
+    XmlWriter WRs("","");
+    write(WR,"ildgFormat",format);
+    write(WRs,"ildgFormat",format);
+    std::cout << " XmlString: " <<WRs.XmlString()<<std::endl;
+  }
 /* 
   // This is still work in progress
   {

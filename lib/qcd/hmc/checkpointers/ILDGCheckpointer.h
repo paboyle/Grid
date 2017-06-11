@@ -54,9 +54,9 @@ class ILDGHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
 
     // check here that the format is valid
     int ieee32big = (Params.format == std::string("IEEE32BIG"));
-    int ieee32 = (Params.format == std::string("IEEE32"));
+    int ieee32    = (Params.format == std::string("IEEE32"));
     int ieee64big = (Params.format == std::string("IEEE64BIG"));
-    int ieee64 = (Params.format == std::string("IEEE64"));
+    int ieee64    = (Params.format == std::string("IEEE64"));
 
     if (!(ieee64big || ieee32 || ieee32big || ieee64)) {
       std::cout << GridLogError << "Unrecognized file format " << Params.format
@@ -74,13 +74,17 @@ class ILDGHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
     if ((traj % Params.saveInterval) == 0) {
       std::string config, rng;
       this->build_filenames(traj, Params, config, rng);
-
-      ILDGIO IO(config, ILDGwrite);
-      BinaryIO::writeRNGSerial(sRNG, pRNG, rng, 0);
-      uint32_t csum = IO.writeConfiguration(U, Params.format);
+      
+      uint32_t nersc_csum,scidac_csuma,scidac_csumb;
+      BinaryIO::writeRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
+      IldgIO::writeConfiguration(config,U, Params.format);
 
       std::cout << GridLogMessage << "Written ILDG Configuration on " << config
-                << " checksum " << std::hex << csum << std::dec << std::endl;
+                << " checksum " << std::hex 
+		<< nersc_csum<<"/"
+		<< scidac_csuma<<"/"
+		<< scidac_csumb
+		<< std::dec << std::endl;
     }
   };
 
@@ -89,12 +93,18 @@ class ILDGHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
     std::string config, rng;
     this->build_filenames(traj, Params, config, rng);
 
-    ILDGIO IO(config, ILDGread);
-    BinaryIO::readRNGSerial(sRNG, pRNG, rng, 0);
-    uint32_t csum = IO.readConfiguration(U);  // format from the header
+    uint32_t nersc_csum,scidac_csuma,scidac_csumb;
+    BinaryIO::readRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
+
+    FieldMetaData header;
+    IldgIO::readConfiguration(config,U,header);  // format from the header
 
     std::cout << GridLogMessage << "Read ILDG Configuration from " << config
-              << " checksum " << std::hex << csum << std::dec << std::endl;
+              << " checksum " << std::hex 
+	      << nersc_csum<<"/"
+	      << scidac_csuma<<"/"
+	      << scidac_csumb
+	      << std::dec << std::endl;
   };
 };
 }

@@ -177,6 +177,8 @@ class CartesianCommunicator {
   void GlobalSumVector(ComplexF *c,int N);
   void GlobalSum(ComplexD &c);
   void GlobalSumVector(ComplexD *c,int N);
+  void GlobalXOR(uint32_t &);
+  void GlobalXOR(uint64_t &);
   
   template<class obj> void GlobalSum(obj &o){
     typedef typename obj::scalar_type scalar_type;

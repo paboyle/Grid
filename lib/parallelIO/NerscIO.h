@@ -30,167 +30,10 @@
 #ifndef GRID_NERSC_IO_H
 #define GRID_NERSC_IO_H
 
-#include <algorithm>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <map>
-
-#include <unistd.h>
-#include <sys/utsname.h>
-#include <pwd.h>
-
 namespace Grid {
   namespace QCD {
 
     using namespace Grid;
-
-    ////////////////////////////////////////////////////////////////////////////////
-    // Some data types for intermediate storage
-    ////////////////////////////////////////////////////////////////////////////////
-    template<typename vtype> using iLorentzColour2x3 = iVector<iVector<iVector<vtype, Nc>, 2>, 4 >;
-
-    typedef iLorentzColour2x3<Complex>  LorentzColour2x3;
-    typedef iLorentzColour2x3<ComplexF> LorentzColour2x3F;
-    typedef iLorentzColour2x3<ComplexD> LorentzColour2x3D;
-
-    ////////////////////////////////////////////////////////////////////////////////
-    // header specification/interpretation
-    ////////////////////////////////////////////////////////////////////////////////
-    class NerscField {
-    public:
-      // header strings (not in order)
-      int dimension[4];
-      std::string boundary[4]; 
-      int data_start;
-      std::string hdr_version;
-      std::string storage_format;
-      // Checks on data
-      double link_trace;
-      double plaquette;
-      uint32_t checksum;
-      unsigned int sequence_number;
-      std::string data_type;
-      std::string ensemble_id ;
-      std::string ensemble_label ;
-      std::string creator ;
-      std::string creator_hardware ;
-      std::string creation_date ;
-      std::string archive_date ;
-      std::string floating_point;
-    };
-
-    //////////////////////////////////////////////////////////////////////
-    // Bit and Physical Checksumming and QA of data
-    //////////////////////////////////////////////////////////////////////
-
-    inline void NerscGrid(GridBase *grid,NerscField &header)
-    {
-      assert(grid->_ndimension==4);
-      for(int d=0;d<4;d++) {
-	header.dimension[d] = grid->_fdimensions[d];
-      }
-      for(int d=0;d<4;d++) {
-	header.boundary[d] = std::string("PERIODIC");
-      }
-    }
-    template<class GaugeField>
-    inline void NerscStatistics(GaugeField & data,NerscField &header)
-    {
-      // How to convert data precision etc...
-      header.link_trace=Grid::QCD::WilsonLoops<PeriodicGimplR>::linkTrace(data);
-      header.plaquette =Grid::QCD::WilsonLoops<PeriodicGimplR>::avgPlaquette(data);
-    }
-
-    inline void NerscMachineCharacteristics(NerscField &header)
-    {
-      // Who
-      struct passwd *pw = getpwuid (getuid());
-      if (pw) header.creator = std::string(pw->pw_name); 
-
-      // When
-      std::time_t t = std::time(nullptr);
-      std::tm tm = *std::localtime(&t);
-      std::ostringstream oss; 
-      //  oss << std::put_time(&tm, "%c %Z");
-      header.creation_date = oss.str();
-      header.archive_date  = header.creation_date;
-
-      // What
-      struct utsname name;  uname(&name);
-      header.creator_hardware = std::string(name.nodename)+"-";
-      header.creator_hardware+= std::string(name.machine)+"-";
-      header.creator_hardware+= std::string(name.sysname)+"-";
-      header.creator_hardware+= std::string(name.release);
-
-    }
-    //////////////////////////////////////////////////////////////////////
-    // Utilities ; these are QCD aware
-    //////////////////////////////////////////////////////////////////////
-    inline void reconstruct3(LorentzColourMatrix & cm)
-    {
-      const int x=0;
-      const int y=1;
-      const int z=2;
-      for(int mu=0;mu<4;mu++){
-	cm(mu)()(2,x) = adj(cm(mu)()(0,y)*cm(mu)()(1,z)-cm(mu)()(0,z)*cm(mu)()(1,y)); //x= yz-zy
-	cm(mu)()(2,y) = adj(cm(mu)()(0,z)*cm(mu)()(1,x)-cm(mu)()(0,x)*cm(mu)()(1,z)); //y= zx-xz
-	cm(mu)()(2,z) = adj(cm(mu)()(0,x)*cm(mu)()(1,y)-cm(mu)()(0,y)*cm(mu)()(1,x)); //z= xy-yx
-      }
-    }
-
-    template<class fobj,class sobj>
-    struct NerscSimpleMunger{
-      void operator()(fobj &in, sobj &out) {
-        for (int mu = 0; mu < Nd; mu++) {
-          for (int i = 0; i < Nc; i++) {
-          for (int j = 0; j < Nc; j++) {
-	    out(mu)()(i, j) = in(mu)()(i, j);
-	  }}
-        }
-      };
-    };
-
-    template <class fobj, class sobj>
-    struct NerscSimpleUnmunger {
-
-      void operator()(sobj &in, fobj &out) {
-        for (int mu = 0; mu < Nd; mu++) {
-          for (int i = 0; i < Nc; i++) {
-          for (int j = 0; j < Nc; j++) {
-	    out(mu)()(i, j) = in(mu)()(i, j);
-	  }}
-        }
-      };
-    };
-
-    template<class fobj,class sobj>
-    struct Nersc3x2munger{
-
-      void operator() (fobj &in,sobj &out){
-	for(int mu=0;mu<4;mu++){
-	  for(int i=0;i<2;i++){
-	  for(int j=0;j<3;j++){
-	    out(mu)()(i,j) = in(mu)(i)(j);
-	  }}
-	}
-	reconstruct3(out);
-      }
-    };
-
-    template<class fobj,class sobj>
-    struct Nersc3x2unmunger{
-
-      void operator() (sobj &in,fobj &out){
-	for(int mu=0;mu<4;mu++){
-	  for(int i=0;i<2;i++){
-	  for(int j=0;j<3;j++){
-	    out(mu)(i)(j) = in(mu)()(i,j);
-	  }}
-	}
-      }
-    };
-
 
     ////////////////////////////////////////////////////////////////////////////////
     // Write and read from fstream; comput header offset for payload
@@ -202,42 +45,17 @@ namespace Grid {
 	std::ofstream fout(file,std::ios::out);
       }
   
-#define dump_nersc_header(field, s)					\
-      s << "BEGIN_HEADER"      << std::endl;				\
-      s << "HDR_VERSION = "    << field.hdr_version    << std::endl;	\
-      s << "DATATYPE = "       << field.data_type      << std::endl;	\
-      s << "STORAGE_FORMAT = " << field.storage_format << std::endl;	\
-      for(int i=0;i<4;i++){						\
-	s << "DIMENSION_" << i+1 << " = " << field.dimension[i] << std::endl ; \
-      }									\
-      s << "LINK_TRACE = " << std::setprecision(10) << field.link_trace << std::endl; \
-      s << "PLAQUETTE  = " << std::setprecision(10) << field.plaquette  << std::endl; \
-      for(int i=0;i<4;i++){						\
-	s << "BOUNDARY_"<<i+1<<" = " << field.boundary[i] << std::endl;	\
-      }									\
-									\
-      s << "CHECKSUM = "<< std::hex << std::setw(10) << field.checksum << std::dec<<std::endl; \
-      s << "ENSEMBLE_ID = "     << field.ensemble_id      << std::endl;	\
-      s << "ENSEMBLE_LABEL = "  << field.ensemble_label   << std::endl;	\
-      s << "SEQUENCE_NUMBER = " << field.sequence_number  << std::endl;	\
-      s << "CREATOR = "         << field.creator          << std::endl;	\
-      s << "CREATOR_HARDWARE = "<< field.creator_hardware << std::endl;	\
-      s << "CREATION_DATE = "   << field.creation_date    << std::endl;	\
-      s << "ARCHIVE_DATE = "    << field.archive_date     << std::endl;	\
-      s << "FLOATING_POINT = "  << field.floating_point   << std::endl;	\
-      s << "END_HEADER"         << std::endl;
-  
-      static inline unsigned int writeHeader(NerscField &field,std::string file)
+      static inline unsigned int writeHeader(FieldMetaData &field,std::string file)
       {
       std::ofstream fout(file,std::ios::out|std::ios::in);
       fout.seekp(0,std::ios::beg);
-      dump_nersc_header(field, fout);
+      dump_meta_data(field, fout);
       field.data_start = fout.tellp();
       return field.data_start;
     }
 
       // for the header-reader
-      static inline int readHeader(std::string file,GridBase *grid,  NerscField &field)
+      static inline int readHeader(std::string file,GridBase *grid,  FieldMetaData &field)
       {
       int offset=0;
       std::map<std::string,std::string> header;
@@ -309,19 +127,21 @@ namespace Grid {
       return field.data_start;
     }
 
-      /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      // Now the meat: the object readers
-      /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Now the meat: the object readers
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     template<class vsimd>
-    static inline void readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,NerscField& header,std::string file)
+    static inline void readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,
+					 FieldMetaData& header,
+					 std::string file)
     {
       typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
 
       GridBase *grid = Umu._grid;
       int offset = readHeader(file,Umu._grid,header);
 
-      NerscField clone(header);
+      FieldMetaData clone(header);
 
       std::string format(header.floating_point);
 
@@ -330,34 +150,38 @@ namespace Grid {
       int ieee64big = (format == std::string("IEEE64BIG"));
       int ieee64    = (format == std::string("IEEE64"));
 
-      uint32_t csum;
+      uint32_t nersc_csum,scidac_csuma,scidac_csumb;
       // depending on datatype, set up munger;
       // munger is a function of <floating point, Real, data_type>
       if ( header.data_type == std::string("4D_SU3_GAUGE") ) {
 	if ( ieee32 || ieee32big ) {
-	  csum=BinaryIO::readLatticeObject<iLorentzColourMatrix<vsimd>, LorentzColour2x3F> 
-	    (Umu,file,Nersc3x2munger<LorentzColour2x3F,LorentzColourMatrix>(), offset,format);
+	  BinaryIO::readLatticeObject<iLorentzColourMatrix<vsimd>, LorentzColour2x3F> 
+	    (Umu,file,Gauge3x2munger<LorentzColour2x3F,LorentzColourMatrix>(), offset,format,
+	     nersc_csum,scidac_csuma,scidac_csumb);
 	}
 	if ( ieee64 || ieee64big ) {
-	  csum=BinaryIO::readLatticeObject<iLorentzColourMatrix<vsimd>, LorentzColour2x3D> 
-	    (Umu,file,Nersc3x2munger<LorentzColour2x3D,LorentzColourMatrix>(),offset,format);
+	  BinaryIO::readLatticeObject<iLorentzColourMatrix<vsimd>, LorentzColour2x3D> 
+	    (Umu,file,Gauge3x2munger<LorentzColour2x3D,LorentzColourMatrix>(),offset,format,
+	     nersc_csum,scidac_csuma,scidac_csumb);
 	}
       } else if ( header.data_type == std::string("4D_SU3_GAUGE_3x3") ) {
 	if ( ieee32 || ieee32big ) {
-	  csum=BinaryIO::readLatticeObject<iLorentzColourMatrix<vsimd>,LorentzColourMatrixF>
-	    (Umu,file,NerscSimpleMunger<LorentzColourMatrixF,LorentzColourMatrix>(),offset,format);
+	  BinaryIO::readLatticeObject<iLorentzColourMatrix<vsimd>,LorentzColourMatrixF>
+	    (Umu,file,GaugeSimpleMunger<LorentzColourMatrixF,LorentzColourMatrix>(),offset,format,
+	     nersc_csum,scidac_csuma,scidac_csumb);
 	}
 	if ( ieee64 || ieee64big ) {
-	  csum=BinaryIO::readLatticeObject<iLorentzColourMatrix<vsimd>,LorentzColourMatrixD>
-	    (Umu,file,NerscSimpleMunger<LorentzColourMatrixD,LorentzColourMatrix>(),offset,format);
+	  BinaryIO::readLatticeObject<iLorentzColourMatrix<vsimd>,LorentzColourMatrixD>
+	    (Umu,file,GaugeSimpleMunger<LorentzColourMatrixD,LorentzColourMatrix>(),offset,format,
+	     nersc_csum,scidac_csuma,scidac_csumb);
 	}
       } else {
 	assert(0);
       }
 
-      NerscStatistics<GaugeField>(Umu,clone);
+      GaugeStatistics<GaugeField>(Umu,clone);
 
-      std::cout<<GridLogMessage <<"NERSC Configuration "<<file<<" checksum "<<std::hex<<            csum<< std::dec
+      std::cout<<GridLogMessage <<"NERSC Configuration "<<file<<" checksum "<<std::hex<<nersc_csum<< std::dec
 	       <<" header   "<<std::hex<<header.checksum<<std::dec <<std::endl;
       std::cout<<GridLogMessage <<"NERSC Configuration "<<file<<" plaquette "<<clone.plaquette
 	       <<" header    "<<header.plaquette<<std::endl;
@@ -369,30 +193,35 @@ namespace Grid {
 	std::cout << Umu[0]<<std::endl;
 	std::cout << Umu[1]<<std::endl;
       }
-      if ( csum != header.checksum ) { 
+      if ( nersc_csum != header.checksum ) { 
 	std::cerr << " checksum mismatch " << std::endl;
 	std::cerr << " plaqs " << clone.plaquette << " " << header.plaquette << std::endl;
 	std::cerr << " trace " << clone.link_trace<< " " << header.link_trace<< std::endl;
-	std::cerr << " csum  " <<std::hex<< csum << " " << header.checksum<< std::dec<< std::endl;
+	std::cerr << " nersc_csum  " <<std::hex<< nersc_csum << " " << header.checksum<< std::dec<< std::endl;
 	exit(0);
       }
       assert(fabs(clone.plaquette -header.plaquette ) < 1.0e-5 );
       assert(fabs(clone.link_trace-header.link_trace) < 1.0e-6 );
-      assert(csum == header.checksum );
+      assert(nersc_csum == header.checksum );
       
       std::cout<<GridLogMessage <<"NERSC Configuration "<<file<< " and plaquette, link trace, and checksum agree"<<std::endl;
     }
 
       template<class vsimd>
-      static inline void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,std::string file, int two_row,int bits32)
+      static inline void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,
+					    std::string file, 
+					    int two_row,
+					    int bits32)
       {
 	typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
 
 	typedef iLorentzColourMatrix<vsimd> vobj;
 	typedef typename vobj::scalar_object sobj;
 
+	FieldMetaData header;
+	///////////////////////////////////////////
 	// Following should become arguments
-	NerscField header;
+	///////////////////////////////////////////
 	header.sequence_number = 1;
 	header.ensemble_id     = "UKQCD";
 	header.ensemble_label  = "DWF";
@@ -402,32 +231,31 @@ namespace Grid {
   
 	GridBase *grid = Umu._grid;
 
-	NerscGrid(grid,header);
-	NerscStatistics<GaugeField>(Umu,header);
-	NerscMachineCharacteristics(header);
+	GridMetaData(grid,header);
+	assert(header.nd==4);
+	GaugeStatistics<GaugeField>(Umu,header);
+	MachineCharacteristics(header);
 
 	int offset;
   
 	truncate(file);
 
-	if ( two_row ) { 
-	  header.floating_point = std::string("IEEE64BIG");
-	  header.data_type      = std::string("4D_SU3_GAUGE");
-	  Nersc3x2unmunger<fobj2D,sobj> munge;
-	  offset = writeHeader(header,file);
-	  header.checksum=BinaryIO::writeLatticeObject<vobj,fobj2D>(Umu,file,munge,offset,header.floating_point);
-	  writeHeader(header,file);
-	} else { 
-	  header.floating_point = std::string("IEEE64BIG");
-	  header.data_type      = std::string("4D_SU3_GAUGE_3x3");
-	  NerscSimpleUnmunger<fobj3D,sobj> munge;
-	  offset = writeHeader(header,file);
-	  header.checksum=BinaryIO::writeLatticeObject<vobj,fobj3D>(Umu,file,munge,offset,header.floating_point);
-	  writeHeader(header,file);
-	}
+	// Sod it -- always write 3x3 double
+	header.floating_point = std::string("IEEE64BIG");
+	header.data_type      = std::string("4D_SU3_GAUGE_3x3");
+	GaugeSimpleUnmunger<fobj3D,sobj> munge;
+	offset = writeHeader(header,file);
+
+	uint32_t nersc_csum,scidac_csuma,scidac_csumb;
+	BinaryIO::writeLatticeObject<vobj,fobj3D>(Umu,file,munge,offset,header.floating_point,
+								  nersc_csum,scidac_csuma,scidac_csumb);
+	header.checksum = nersc_csum;
+	writeHeader(header,file);
+
 	std::cout<<GridLogMessage <<"Written NERSC Configuration on "<< file << " checksum "
 		 <<std::hex<<header.checksum
 		 <<std::dec<<" plaq "<< header.plaquette <<std::endl;
+
       }
       ///////////////////////////////
       // RNG state
@@ -437,17 +265,18 @@ namespace Grid {
 	typedef typename GridParallelRNG::RngStateType RngStateType;
 
 	// Following should become arguments
-	NerscField header;
+	FieldMetaData header;
 	header.sequence_number = 1;
 	header.ensemble_id     = "UKQCD";
 	header.ensemble_label  = "DWF";
 
 	GridBase *grid = parallel._grid;
 
-	NerscGrid(grid,header);
+	GridMetaData(grid,header);
+	assert(header.nd==4);
 	header.link_trace=0.0;
 	header.plaquette=0.0;
-	NerscMachineCharacteristics(header);
+	MachineCharacteristics(header);
 
 	int offset;
   
@@ -466,7 +295,9 @@ namespace Grid {
 
 	truncate(file);
 	offset = writeHeader(header,file);
-	header.checksum = BinaryIO::writeRNG(serial,parallel,file,offset);
+	uint32_t nersc_csum,scidac_csuma,scidac_csumb;
+	BinaryIO::writeRNG(serial,parallel,file,offset,nersc_csum,scidac_csuma,scidac_csumb);
+	header.checksum = nersc_csum;
 	offset = writeHeader(header,file);
 
 	std::cout<<GridLogMessage 
@@ -476,7 +307,7 @@ namespace Grid {
 
       }
     
-      static inline void readRNGState(GridSerialRNG &serial,GridParallelRNG & parallel,NerscField& header,std::string file)
+      static inline void readRNGState(GridSerialRNG &serial,GridParallelRNG & parallel,FieldMetaData& header,std::string file)
       {
 	typedef typename GridParallelRNG::RngStateType RngStateType;
 
@@ -484,7 +315,7 @@ namespace Grid {
 
 	int offset = readHeader(file,grid,header);
 
-	NerscField clone(header);
+	FieldMetaData clone(header);
 
 	std::string format(header.floating_point);
 	std::string data_type(header.data_type);
@@ -504,19 +335,19 @@ namespace Grid {
 
 	// depending on datatype, set up munger;
 	// munger is a function of <floating point, Real, data_type>
-	uint32_t csum=BinaryIO::readRNG(serial,parallel,file,offset);
+	uint32_t nersc_csum,scidac_csuma,scidac_csumb;
+	BinaryIO::readRNG(serial,parallel,file,offset,nersc_csum,scidac_csuma,scidac_csumb);
 
-	if ( csum != header.checksum ) { 
-	  std::cerr << "checksum mismatch "<<std::hex<< csum <<" "<<header.checksum<<std::dec<<std::endl;
+	if ( nersc_csum != header.checksum ) { 
+	  std::cerr << "checksum mismatch "<<std::hex<< nersc_csum <<" "<<header.checksum<<std::dec<<std::endl;
 	  exit(0);
 	}
-	assert(csum == header.checksum );
+	assert(nersc_csum == header.checksum );
 
 	std::cout<<GridLogMessage <<"Read NERSC RNG file "<<file<< " format "<< data_type <<std::endl;
       }
 
     };
-
 
   }}
 #endif
