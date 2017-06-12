@@ -18,7 +18,8 @@ public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(ScalarVPPar,
                                     std::string, emField,
                                     std::string, scalarProp,
-                                    std::string, output);
+                                    std::string, output,
+                                    std::vector<std::string>, outputMom);
 };
 
 class TScalarVP: public Module<ScalarVPPar>

@@ -171,58 +171,91 @@ void TChargedProp::execute(void)
     // OUTPUT IF NECESSARY
     if (!par().output.empty())
     {
-        std::string           filename = par().output + "." +
+        for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
+        {
+            std::vector<int> mom = strToVec<int>(par().outputMom[i_p]);
+            std::string           filename = par().output + "_" + std::to_string(mom[0])
+                                                          + std::to_string(mom[1])
+                                                          + std::to_string(mom[2])
+                                                          + "." +
                                          std::to_string(env().getTrajectory());
-        
-        LOG(Message) << "Saving zero-momentum projection to '"
+
+            LOG(Message) << "Saving (" << par().outputMom[i_p] << ") momentum projection to '"
                      << filename << "'..." << std::endl;
-        
-        CorrWriter            writer(filename);
-        std::vector<TComplex> vecBuf;
-        std::vector<Complex>  result;
-        
-        write(writer, "charge", q);
 
-        // Write full propagator
-        sliceSum(prop, vecBuf, Tp);
-        result.resize(vecBuf.size());
-        for (unsigned int t = 0; t < vecBuf.size(); ++t)
-        {
-            result[t] = TensorRemove(vecBuf[t]);
-        }
-        write(writer, "prop", result);
+            CorrWriter            writer(filename);
+            std::vector<TComplex> vecBuf;
+            std::vector<Complex>  result;
 
-        // Write free propagator
-        sliceSum(*prop0_, vecBuf, Tp);
-        for (unsigned int t = 0; t < vecBuf.size(); ++t)
-        {
-            result[t] = TensorRemove(vecBuf[t]);
-        }
-        write(writer, "prop_0", result);
+            write(writer, "charge", q);
+            write(writer, "mass", par().mass);
 
-        // Write propagator O(q) term
-        sliceSum(propQ, vecBuf, Tp);
-        for (unsigned int t = 0; t < vecBuf.size(); ++t)
-        {
-            result[t] = TensorRemove(vecBuf[t]);
-        }
-        write(writer, "prop_Q", result);
+            // Write full propagator
+            buf = prop;
+            for (unsigned int j = 0; j < env().getNd()-1; ++j)
+            {
+                buf = buf*pow(adj(*phase_[j]), mom[j]);
+            }
+            sliceSum(buf, vecBuf, Tp);
+            result.resize(vecBuf.size());
+            for (unsigned int t = 0; t < vecBuf.size(); ++t)
+            {
+                result[t] = TensorRemove(vecBuf[t]);
+            }
+            write(writer, "prop", result);
 
-        // Write propagator sunset term
-        sliceSum(propSun, vecBuf, Tp);
-        for (unsigned int t = 0; t < vecBuf.size(); ++t)
-        {
-            result[t] = TensorRemove(vecBuf[t]);
-        }
-        write(writer, "prop_Sun", result);
+            // Write free propagator
+            buf = *prop0_;
+            for (unsigned int j = 0; j < env().getNd()-1; ++j)
+            {
+                buf = buf*pow(adj(*phase_[j]), mom[j]);
+            }
+            sliceSum(buf, vecBuf, Tp);
+            for (unsigned int t = 0; t < vecBuf.size(); ++t)
+            {
+                result[t] = TensorRemove(vecBuf[t]);
+            }
+            write(writer, "prop_0", result);
 
-        // Write propagator tadpole term
-        sliceSum(propTad, vecBuf, Tp);
-        for (unsigned int t = 0; t < vecBuf.size(); ++t)
-        {
-            result[t] = TensorRemove(vecBuf[t]);
+            // Write propagator O(q) term
+            buf = propQ;
+            for (unsigned int j = 0; j < env().getNd()-1; ++j)
+            {
+                buf = buf*pow(adj(*phase_[j]), mom[j]);
+            }
+            sliceSum(buf, vecBuf, Tp);
+            for (unsigned int t = 0; t < vecBuf.size(); ++t)
+            {
+                result[t] = TensorRemove(vecBuf[t]);
+            }
+            write(writer, "prop_Q", result);
+
+            // Write propagator sunset term
+            buf = propSun;
+            for (unsigned int j = 0; j < env().getNd()-1; ++j)
+            {
+                buf = buf*pow(adj(*phase_[j]), mom[j]);
+            }
+            sliceSum(buf, vecBuf, Tp);
+            for (unsigned int t = 0; t < vecBuf.size(); ++t)
+            {
+                result[t] = TensorRemove(vecBuf[t]);
+            }
+            write(writer, "prop_Sun", result);
+
+            // Write propagator tadpole term
+            buf = propTad;
+            for (unsigned int j = 0; j < env().getNd()-1; ++j)
+            {
+                buf = buf*pow(adj(*phase_[j]), mom[j]);
+            }
+            sliceSum(buf, vecBuf, Tp);
+            for (unsigned int t = 0; t < vecBuf.size(); ++t)
+            {
+                result[t] = TensorRemove(vecBuf[t]);
+            }
+            write(writer, "prop_Tad", result);
         }
-        write(writer, "prop_Tad", result);
     }
 }
 

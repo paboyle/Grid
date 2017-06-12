@@ -20,7 +20,8 @@ public:
                                     std::string, source,
                                     double,      mass,
                                     double,      charge,
-                                    std::string, output);
+                                    std::string, output,
+                                    std::vector<std::string>, outputMom);
 };
 
 class TChargedProp: public Module<ChargedPropPar>
