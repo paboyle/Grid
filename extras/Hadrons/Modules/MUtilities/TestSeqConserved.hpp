@@ -26,8 +26,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_TestSeqConserved_hpp_
-#define Hadrons_TestSeqConserved_hpp_
+#ifndef Hadrons_MUtilities_TestSeqConserved_hpp_
+#define Hadrons_MUtilities_TestSeqConserved_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>

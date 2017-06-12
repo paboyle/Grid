@@ -1,5 +1,5 @@
-#ifndef Hadrons_TestSeqGamma_hpp_
-#define Hadrons_TestSeqGamma_hpp_
+#ifndef Hadrons_MUtilities_TestSeqGamma_hpp_
+#define Hadrons_MUtilities_TestSeqGamma_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>

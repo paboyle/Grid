@@ -26,8 +26,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_WardIdentity_hpp_
-#define Hadrons_WardIdentity_hpp_
+#ifndef Hadrons_MContraction_WardIdentity_hpp_
+#define Hadrons_MContraction_WardIdentity_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
