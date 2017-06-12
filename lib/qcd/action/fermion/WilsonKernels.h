@@ -183,12 +183,26 @@ public:
   //////////////////////////////////////////////////////////////////////////////
   // Utilities for inserting Wilson conserved current.
   //////////////////////////////////////////////////////////////////////////////
-  void ContractConservedCurrentInternal(const PropagatorField &q_in_1,
-                                        const PropagatorField &q_in_2,
-                                        PropagatorField &q_out,
-                                        DoubledGaugeField &U,
-                                        Current curr_type,
-                                        unsigned int mu);
+  void ContractConservedCurrentSiteFwd(const PropagatorField &q_in_1,
+                                       const PropagatorField &q_in_2,
+                                       PropagatorField &q_out,
+                                       DoubledGaugeField &U,
+                                       unsigned int mu,
+                                       unsigned int sF_in_1,
+                                       unsigned int sF_in_2,
+                                       unsigned int sF_out,
+                                       unsigned int sU,
+                                       bool switch_sign = false);
+  void ContractConservedCurrentSiteBwd(const PropagatorField &q_in_1,
+                                       const PropagatorField &q_in_2,
+                                       PropagatorField &q_out,
+                                       DoubledGaugeField &U,
+                                       unsigned int mu,
+                                       unsigned int sF_in_1,
+                                       unsigned int sF_in_2,
+                                       unsigned int sF_out,
+                                       unsigned int sU,
+                                       bool switch_sign = false);
   void SeqConservedCurrentInternal(const PropagatorField &q_in, 
                                    PropagatorField &q_out,
                                    DoubledGaugeField &U,

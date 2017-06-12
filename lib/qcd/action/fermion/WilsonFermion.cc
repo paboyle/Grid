@@ -361,8 +361,24 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
     conformable(_grid, q_in_1._grid);
     conformable(_grid, q_in_2._grid);
     conformable(_grid, q_out._grid);
-    Kernels::ContractConservedCurrentInternal(q_in_1, q_in_2, q_out, 
-                                              Umu, curr_type, mu);
+    PropagatorField tmp(_grid);
+    q_out = zero;
+
+    // Forward, need q1(x + mu), q2(x)
+    tmp = Cshift(q_in_1, mu, 1);
+    parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
+    {
+        Kernels::ContractConservedCurrentSiteFwd(tmp, q_in_2, q_out, Umu,
+                                                 mu, sU, sU, sU, sU);
+    }
+
+    // Backward, need q1(x), q2(x + mu)
+    tmp = Cshift(q_in_2, mu, 1);
+    parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
+    {
+        Kernels::ContractConservedCurrentSiteBwd(q_in_1, tmp, q_out, Umu,
+                                                 mu, sU, sU, sU, sU);
+    }
 }
 
 template <class Impl>

@@ -290,25 +290,109 @@ void WilsonKernels<Impl>::DhopDir( StencilImpl &st, DoubledGaugeField &U,SiteHal
 #define WilsonCurrentFwd(expr, mu) ((expr - Gamma::gmu[mu]*expr))
 #define WilsonCurrentBwd(expr, mu) ((expr + Gamma::gmu[mu]*expr))
 
+/*******************************************************************************
+ * Name: ContractConservedCurrentSiteFwd
+ * Operation: (1/2) * q2[x] * U(x) * (g[mu] - 1) * q1[x + mu]
+ * Notes: - DoubledGaugeField U assumed to contain -1/2 factor.
+ *        - Pass in q_in_1 shifted in +ve mu direction.
+ ******************************************************************************/
 template<class Impl>
-void WilsonKernels<Impl>::ContractConservedCurrentInternal(const PropagatorField &q_in_1,
-                                                           const PropagatorField &q_in_2,
-                                                           PropagatorField &q_out,
-                                                           DoubledGaugeField &U,
-                                                           Current curr_type,
-                                                           unsigned int mu)
+void WilsonKernels<Impl>::ContractConservedCurrentSiteFwd(
+                                                  const PropagatorField &q_in_1,
+                                                  const PropagatorField &q_in_2,
+                                                  PropagatorField &q_out,
+                                                  DoubledGaugeField &U,
+                                                  unsigned int mu,
+                                                  unsigned int sF_in_1,
+                                                  unsigned int sF_in_2,
+                                                  unsigned int sF_out,
+                                                  unsigned int sU,
+                                                  bool switch_sign)
 {
+    SitePropagator result, tmp;
     Gamma g5(Gamma::Algebra::Gamma5);
-    PropagatorField tmp(q_out._grid);
-    GaugeLinkField Umu(U._grid);
-    Umu  = PeekIndex<LorentzIndex>(U, mu);
-
-    tmp    = this->CovShiftForward(Umu, mu, q_in_1);
-    q_out  = (g5*adj(q_in_2)*g5)*WilsonCurrentFwd(tmp, mu);
-
-    tmp    = this->CovShiftForward(Umu, mu, q_in_2);
-    q_out -= (g5*adj(tmp)*g5)*WilsonCurrentBwd(q_in_1, mu);
+    multLinkProp(tmp, U._odata[sU], q_in_1._odata[sF_in_1], mu);
+    result = g5 * adj(q_in_2._odata[sF_in_2]) * g5 * WilsonCurrentFwd(tmp, mu);
+    if (switch_sign)
+    {
+        q_out._odata[sF_out] -= result;
+    }
+    else
+    {
+        q_out._odata[sF_out] += result;
+    }
 }
+
+/*******************************************************************************
+ * Name: ContractConservedCurrentSiteBwd
+ * Operation: (1/2) * q2[x + mu] * U^dag(x) * (g[mu] + 1) * q1[x]
+ * Notes: - DoubledGaugeField U assumed to contain -1/2 factor.
+ *        - Pass in q_in_2 shifted in +ve mu direction.
+ ******************************************************************************/
+template<class Impl>
+void WilsonKernels<Impl>::ContractConservedCurrentSiteBwd(
+                                                  const PropagatorField &q_in_1,
+                                                  const PropagatorField &q_in_2,
+                                                  PropagatorField &q_out,
+                                                  DoubledGaugeField &U,
+                                                  unsigned int mu,
+                                                  unsigned int sF_in_1,
+                                                  unsigned int sF_in_2,
+                                                  unsigned int sF_out,
+                                                  unsigned int sU,
+                                                  bool switch_sign)
+{
+    SitePropagator result, tmp;
+    Gamma g5(Gamma::Algebra::Gamma5);
+    multLinkProp(tmp, U._odata[sU], q_in_1._odata[sF_in_1], mu + Nd);
+    result = g5 * adj(q_in_2._odata[sF_in_2]) * g5 * WilsonCurrentBwd(tmp, mu);
+    if (switch_sign)
+    {
+        q_out._odata[sF_out] += result;
+    }
+    else
+    {
+        q_out._odata[sF_out] -= result;
+    }
+}
+
+// G-parity requires more specialised implementation.
+#define NO_CURR_SITE(Impl) \
+template <> \
+void WilsonKernels<Impl>::ContractConservedCurrentSiteFwd( \
+                                                  const PropagatorField &q_in_1, \
+                                                  const PropagatorField &q_in_2, \
+                                                  PropagatorField &q_out,        \
+                                                  DoubledGaugeField &U,          \
+                                                  unsigned int mu,               \
+                                                  unsigned int sF_in_1,          \
+                                                  unsigned int sF_in_2,          \
+                                                  unsigned int sF_out,           \
+                                                  unsigned int sU,               \
+                                                  bool switch_sign)              \
+{ \
+    assert(0); \
+} \
+template <> \
+void WilsonKernels<Impl>::ContractConservedCurrentSiteBwd( \
+                                                  const PropagatorField &q_in_1, \
+                                                  const PropagatorField &q_in_2, \
+                                                  PropagatorField &q_out,        \
+                                                  DoubledGaugeField &U,          \
+                                                  unsigned int mu,               \
+                                                  unsigned int sF_in_1,          \
+                                                  unsigned int sF_in_2,          \
+                                                  unsigned int sF_out,           \
+                                                  unsigned int sU,               \
+                                                  bool switch_sign)              \
+{ \
+    assert(0); \
+}
+
+NO_CURR_SITE(GparityWilsonImplF);
+NO_CURR_SITE(GparityWilsonImplD);
+NO_CURR_SITE(GparityWilsonImplFH);
+NO_CURR_SITE(GparityWilsonImplDF);
 
 
 template <class Impl>
@@ -342,16 +426,6 @@ void WilsonKernels<Impl>::SeqConservedCurrentInternal(const PropagatorField &q_i
 
 // GParity, (Z)DomainWallVec5D -> require special implementation
 #define NO_CURR(Impl) \
-template <> void \
-WilsonKernels<Impl>::ContractConservedCurrentInternal(const PropagatorField &q_in_1, \
-                                                      const PropagatorField &q_in_2, \
-                                                      PropagatorField &q_out,        \
-                                                      DoubledGaugeField &U,          \
-                                                      Current curr_type,             \
-                                                      unsigned int mu)               \
-{ \
-    assert(0); \
-} \
 template <> void  \
 WilsonKernels<Impl>::SeqConservedCurrentInternal(const PropagatorField &q_in,       \
                                                  PropagatorField &q_out,            \

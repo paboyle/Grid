@@ -687,26 +687,44 @@ void WilsonFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
     conformable(q_in_1._grid, q_in_2._grid);
     conformable(_FourDimGrid, q_out._grid);
 
-    PropagatorField q1_s(_FourDimGrid);
-    PropagatorField q2_s(_FourDimGrid);
-    PropagatorField tmp(_FourDimGrid);
-
-    // Contract across 5th dimension.
+    PropagatorField tmp(FermionGrid());
     q_out = zero;
-    for (int s = 0; s < Ls; ++s)
-    {
-        ExtractSlice(q1_s, q_in_1, s, 0);
-        ExtractSlice(q2_s, q_in_2, Ls - s - 1, 0);
-        Kernels::ContractConservedCurrentInternal(q1_s, q2_s, tmp, Umu, curr_type, mu);
 
-        // Axial current sign
-        if ((curr_type == Current::Axial) && (s < (Ls / 2)))
+    // Forward, need q1(x + mu, s), q2(x, Ls - 1 - s). 5D lattice so shift
+    // 4D coordinate mu by one.
+    tmp = Cshift(q_in_1, mu + 1, 1);
+    parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
+    {
+        unsigned int sF1 = sU * Ls;
+        unsigned int sF2 = (sU + 1) * Ls - 1;
+        for (int s = 0; s < Ls; ++s)
         {
-            q_out -= tmp;
+            bool axial_sign = ((curr_type == Current::Axial) && (s < (Ls / 2))) ? \
+                              true : false;
+            Kernels::ContractConservedCurrentSiteFwd(tmp, q_in_2, q_out, Umu,
+                                                     mu, sF1, sF2, sU, sU,
+                                                     axial_sign);
+            sF1++;
+            sF2--;
         }
-        else
+    }
+
+    // Backward, need q1(x, s), q2(x + mu, Ls - 1 - s). 5D lattice so shift
+    // 4D coordinate mu by one.
+    tmp = Cshift(q_in_2, mu + 1, 1);
+    parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
+    {
+        unsigned int sF1 = sU * Ls;
+        unsigned int sF2 = (sU + 1) * Ls - 1;
+        for (int s = 0; s < Ls; ++s)
         {
-            q_out += tmp;
+            bool axial_sign = ((curr_type == Current::Axial) && (s < (Ls / 2))) ? \
+                              true : false;
+            Kernels::ContractConservedCurrentSiteBwd(q_in_1, tmp, q_out, Umu,
+                                                     mu, sF1, sF2, sU, sU,
+                                                     axial_sign);
+            sF1++;
+            sF2--;
         }
     }
 }
