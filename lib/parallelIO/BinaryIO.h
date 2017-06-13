@@ -376,7 +376,7 @@ class BinaryIO {
       if ( (control & BINARYIO_LEXICOGRAPHIC) && (nrank > 1) ) {
 #ifdef USE_MPI_IO
 	std::cout<< GridLogMessage<< "MPI read I/O "<< file<< std::endl;
-	ierr=MPI_File_open(grid->communicator, file.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);    assert(ierr==0);
+	ierr=MPI_File_open(grid->communicator,(char *) file.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);    assert(ierr==0);
 	ierr=MPI_File_set_view(fh, disp, mpiObject, fileArray, "native", MPI_INFO_NULL);    assert(ierr==0);
 	ierr=MPI_File_read_all(fh, &iodata[0], 1, localArray, &status);    assert(ierr==0);
 	MPI_File_close(&fh);
@@ -426,7 +426,7 @@ class BinaryIO {
       if ( (control & BINARYIO_LEXICOGRAPHIC) && (nrank > 1) ) {
 #ifdef USE_MPI_IO
 	std::cout<< GridLogMessage<< "MPI write I/O "<< file<< std::endl;
-	ierr=MPI_File_open(grid->communicator, file.c_str(), MPI_MODE_RDWR|MPI_MODE_CREATE,MPI_INFO_NULL, &fh); assert(ierr==0);
+	ierr=MPI_File_open(grid->communicator,(char *) file.c_str(), MPI_MODE_RDWR|MPI_MODE_CREATE,MPI_INFO_NULL, &fh); assert(ierr==0);
 	ierr=MPI_File_set_view(fh, disp, mpiObject, fileArray, "native", MPI_INFO_NULL);                        assert(ierr==0);
 	ierr=MPI_File_write_all(fh, &iodata[0], 1, localArray, &status);                                        assert(ierr==0);
 	MPI_File_close(&fh);
