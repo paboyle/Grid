@@ -184,6 +184,10 @@ AC_SEARCH_LIBS([limeCreateReader], [lime],
 In order to use ILGG file format please install or provide the correct path to your installation
 Info at: http://usqcd.jlab.org/usqcd-docs/c-lime/)])
 
+AC_SEARCH_LIBS([crc32], [z],
+               [AC_DEFINE([HAVE_ZLIB], [1], [Define to 1 if you have the `LIBZ' library])]
+               [have_zlib=true],
+	       [AC_MSG_ERROR(zlib library was not found in your system.)])
 
 AC_SEARCH_LIBS([H5Fopen], [hdf5_cpp],
                [AC_DEFINE([HAVE_HDF5], [1], [Define to 1 if you have the `HDF5' library])]

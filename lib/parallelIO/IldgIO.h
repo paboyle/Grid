@@ -379,6 +379,9 @@ class IldgIO : public BinaryIO {
       assert( scidac_csuma ==FieldMetaData_.scidac_checksuma);
       assert( scidac_csumb ==FieldMetaData_.scidac_checksumb);
       std::cout << GridLogMessage<<"SciDAC checksums match " << std::endl;
+    } else { 
+      std::cout << GridLogWarning<<"SciDAC checksums not found. This is unsafe. " << std::endl;
+      //Could choose to fail ?
     }
 
     if ( found_FieldMetaData || found_usqcdInfo ) {
