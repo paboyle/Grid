@@ -244,6 +244,9 @@ case ${ax_cv_cxx_compiler_vendor} in
                            [generic SIMD vector width (in bytes)])
         SIMD_GEN_WIDTH_MSG=" (width= $ac_gen_simd_width)"
         SIMD_FLAGS='';;
+      NEONv8)
+        AC_DEFINE([NEONV8],[1],[ARMv8 NEON])
+        SIMD_FLAGS='';;
       QPX|BGQ)
         AC_DEFINE([QPX],[1],[QPX intrinsics for BG/Q])
         SIMD_FLAGS='';;
