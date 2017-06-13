@@ -37,9 +37,6 @@
 #include <pwd.h>
 
 namespace Grid {
-  namespace QCD {
-
-    using namespace Grid;
 
     ////////////////////////////////////////////////////////////////////////////////
     // header specification/interpretation
@@ -70,6 +67,11 @@ namespace Grid {
 				      std::string, archive_date,
 				      std::string, floating_point);
     };
+
+  namespace QCD {
+
+    using namespace Grid;
+
 
     //////////////////////////////////////////////////////////////////////
     // Bit and Physical Checksumming and QA of data

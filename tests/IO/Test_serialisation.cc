@@ -45,8 +45,8 @@ public:
                           double, y,
                           bool , b,
                           std::vector<double>, array,
-                          std::vector<std::vector<double>>, twodimarray,
-                          std::vector<std::vector<std::vector<Complex>>>, cmplx3darray
+                          std::vector<std::vector<double> >, twodimarray,
+                          std::vector<std::vector<std::vector<Complex> > >, cmplx3darray
                           );
   myclass() {}
   myclass(int i)
@@ -62,7 +62,6 @@ public:
     name="bother said pooh";
   }
 };
-
 
 int16_t  i16 = 1;
 uint16_t u16 = 2;
