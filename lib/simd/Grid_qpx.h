@@ -540,10 +540,13 @@ namespace Optimization {
   
   //Integer Reduce
   template<>
-  inline Integer Reduce<Integer, int>::operator()(int in){
-    // FIXME unimplemented
-    printf("Reduce : Missing integer implementation -> FIX\n");
-    assert(0);
+  inline Integer Reduce<Integer, veci>::operator()(veci in){
+    Integer a = 0;
+    for (unsigned int i = 0; i < W<Integer>::r; ++i)
+    {
+        a += in.v[i];
+    }
+    return a;
   }
 }
 
