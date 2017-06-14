@@ -375,6 +375,49 @@ namespace Optimization {
     FLOAT_WRAP_2(operator(), inline)
   };
 
+  //////////////////////////////////////////////
+  // Exchange support
+#define FLOAT_WRAP_EXCHANGE(fn) \
+  static inline void fn(vector4float &out1, vector4float &out2, \
+                        vector4float in1,  vector4float in2) \
+  { \
+    vector4double out1d, out2d, in1d, in2d; \
+    in1d  = Vset()(in1);   \
+    in2d  = Vset()(in2);   \
+    fn(out1d, out2d, in1d, in2d); \
+    Vstore()(out1d, out1); \
+    Vstore()(out2d, out2); \
+  }
+
+  struct Exchange{
+
+    // double precision
+    static inline void Exchange0(vector4double &out1, vector4double &out2,
+                                 vector4double in1,  vector4double in2) {
+      out1 = vec_perm(in1, in2, vec_gpci(0145));
+      out2 = vec_perm(in1, in2, vec_gpci(02367));
+    }
+    static inline void Exchange1(vector4double &out1, vector4double &out2,
+                                 vector4double in1,  vector4double in2) {
+      out1 = vec_perm(in1, in2, vec_gpci(0426));
+      out2 = vec_perm(in1, in2, vec_gpci(01537));
+    }
+    static inline void Exchange2(vector4double &out1, vector4double &out2,
+                                 vector4double in1,  vector4double in2) {
+      assert(0);
+    }
+    static inline void Exchange3(vector4double &out1, vector4double &out2,
+                                 vector4double in1,  vector4double in2) {
+      assert(0);
+    }
+
+    // single precision
+    FLOAT_WRAP_EXCHANGE(Exchange0);
+    FLOAT_WRAP_EXCHANGE(Exchange1);
+    FLOAT_WRAP_EXCHANGE(Exchange2);
+    FLOAT_WRAP_EXCHANGE(Exchange3);
+  };
+
   struct Permute{
     //Complex double
     static inline vector4double Permute0(vector4double v){ //0123 -> 2301
