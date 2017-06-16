@@ -6,10 +6,7 @@
 
   Copyright (C) 2015
 
-Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: neo <cossu@post.kek.jp>
-Author: paboyle <paboyle@ph.ed.ac.uk>
+  Author: Guido Cossu <guido,cossu@ed.ac.uk>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,55 +27,122 @@ directory
   *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef SCALAR_ACTION_H
-#define SCALAR_ACTION_H
+#ifndef SCALAR_INT_ACTION_H
+#define SCALAR_INT_ACTION_H
+
+
+// Note: this action can completely absorb the ScalarAction for real float fields
+// use the scalarObjs to generalise the structure
 
 namespace Grid {
   // FIXME drop the QCD namespace everywhere here
-  
-  template <class Impl>
+
+  template <class Impl, int Ndim >
   class ScalarInteractionAction : public QCD::Action<typename Impl::Field> {
   public:
     INHERIT_FIELD_TYPES(Impl);
-    
   private:
     RealD mass_square;
     RealD lambda;
-    
-  public:
-    ScalarAction(RealD ms, RealD l) : mass_square(ms), lambda(l){};
 
-    virtual std::string LogParameters(){
+
+    typedef typename Field::vector_object vobj;
+    typedef CartesianStencil<vobj,vobj> Stencil;
+
+    SimpleCompressor<vobj> compressor;
+    int npoint = 2*Ndim;
+    std::vector<int> directions;//    = {0,1,2,3,0,1,2,3};  // forcing 4 dimensions
+    std::vector<int> displacements;//  = {1,1,1,1, -1,-1,-1,-1};
+
+
+  public:
+
+    ScalarInteractionAction(RealD ms, RealD l) : mass_square(ms), lambda(l), displacements(2*Ndim,0), directions(2*Ndim,0){
+      for (int mu = 0 ; mu < Ndim; mu++){
+		directions[mu]         = mu; directions[mu+Ndim]    = mu;
+		displacements[mu]      =  1; displacements[mu+Ndim] = -1;
+      }
+    }
+
+    virtual std::string LogParameters() {
       std::stringstream sstream;
       sstream << GridLogMessage << "[ScalarAction] lambda      : " << lambda      << std::endl;
       sstream << GridLogMessage << "[ScalarAction] mass_square : " << mass_square << std::endl;
       return sstream.str();
-      
     }
-    
-    virtual std::string action_name(){return "ScalarAction";}
-    
-    virtual void refresh(const Field &U,
-			 GridParallelRNG &pRNG){};  // noop as no pseudoferms
-    
+
+    virtual std::string action_name() {return "ScalarAction";}
+
+    virtual void refresh(const Field &U, GridParallelRNG &pRNG) {}
+
     virtual RealD S(const Field &p) {
-      return (mass_square * 0.5 + QCD::Nd) * ScalarObs<Impl>::sumphisquared(p) +
-	(lambda / 24.) * ScalarObs<Impl>::sumphifourth(p) +
-	ScalarObs<Impl>::sumphider(p);
+      assert(p._grid->Nd() == Ndim);
+      static Stencil phiStencil(p._grid, npoint, 0, directions, displacements);
+      phiStencil.HaloExchange(p, compressor);
+      Field action(p._grid), pshift(p._grid), phisquared(p._grid);
+      phisquared = p*p;
+      action = (2.0*Ndim + mass_square)*phisquared + lambda*phisquared*phisquared;
+      for (int mu = 0; mu < Ndim; mu++) {
+	//  pshift = Cshift(p, mu, +1);  // not efficient, implement with stencils
+	parallel_for (int i = 0; i < p._grid->oSites(); i++) {
+	  int permute_type;
+	  StencilEntry *SE;
+	  vobj temp2;
+	  const vobj *temp, *t_p;
+	    
+	  SE = phiStencil.GetEntry(permute_type, mu, i);
+	  t_p  = &p._odata[i];
+	  if ( SE->_is_local ) {
+	    temp = &p._odata[SE->_offset];
+	    if ( SE->_permute ) {
+	      permute(temp2, *temp, permute_type);
+	      action._odata[i] -= temp2*(*t_p) + (*t_p)*temp2;
+	    } else {
+	      action._odata[i] -= *temp*(*t_p) + (*t_p)*(*temp);
+	    }
+	  } else {
+	    action._odata[i] -= phiStencil.CommBuf()[SE->_offset]*(*t_p) + (*t_p)*phiStencil.CommBuf()[SE->_offset];
+	  }
+	}
+	//  action -= pshift*p + p*pshift;
+      }
+      // NB the trace in the algebra is normalised to 1/2
+      // minus sign coming from the antihermitian fields
+      return -(TensorRemove(sum(trace(action)))).real();
     };
-    
-    virtual void deriv(const Field &p,
-		       Field &force) {
-      Field tmp(p._grid);
-      Field p2(p._grid);
-      ScalarObs<Impl>::phisquared(p2, p);
-      tmp = -(Cshift(p, 0, -1) + Cshift(p, 0, 1));
-      for (int mu = 1; mu < QCD::Nd; mu++) tmp -= Cshift(p, mu, -1) + Cshift(p, mu, 1);
+
+    virtual void deriv(const Field &p, Field &force) {
+      assert(p._grid->Nd() == Ndim);
+      force = (2.0*Ndim + mass_square)*p + 2.0*lambda*p*p*p;
+      // move this outside
+      static Stencil phiStencil(p._grid, npoint, 0, directions, displacements);
+      phiStencil.HaloExchange(p, compressor);
       
-      force=+(mass_square + 2. * QCD::Nd) * p + (lambda / 6.) * p2 * p + tmp;
-    };
+      //for (int mu = 0; mu < QCD::Nd; mu++) force -= Cshift(p, mu, -1) + Cshift(p, mu, 1);
+      for (int point = 0; point < npoint; point++) {
+	parallel_for (int i = 0; i < p._grid->oSites(); i++) {
+	  const vobj *temp;
+	  vobj temp2;
+	  int permute_type;
+	  StencilEntry *SE;
+	  SE = phiStencil.GetEntry(permute_type, point, i);
+	  
+	  if ( SE->_is_local ) {
+	    temp = &p._odata[SE->_offset];
+	    if ( SE->_permute ) {
+	      permute(temp2, *temp, permute_type);
+	      force._odata[i] -= temp2;
+	    } else {
+	      force._odata[i] -= *temp;
+	    }
+	  } else {
+	    force._odata[i] -= phiStencil.CommBuf()[SE->_offset];
+	  }
+	}
+      }
+    }
   };
   
-} // Grid
+}  // namespace Grid
 
-#endif // SCALAR_ACTION_H
+#endif  // SCALAR_INT_ACTION_H

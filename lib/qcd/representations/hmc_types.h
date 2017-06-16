@@ -62,7 +62,10 @@ class Representations {
 
 typedef Representations<FundamentalRepresentation> NoHirep;
 typedef Representations<EmptyRep<typename ScalarImplR::Field> > ScalarFields;
-  //typedef Representations<EmptyRep<typename ScalarMatrixImplR::Field> > ScalarMatrixFields;
+typedef Representations<EmptyRep<typename ScalarAdjImplR::Field> > ScalarMatrixFields;
+
+template < int Colours> 
+using ScalarNxNMatrixFields = Representations<EmptyRep<typename ScalarNxNAdjImplR<Colours>::Field> >;
 
 // Helper classes to access the elements
 // Strips the first N parameters from the tuple
