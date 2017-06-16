@@ -361,23 +361,23 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
     conformable(_grid, q_in_1._grid);
     conformable(_grid, q_in_2._grid);
     conformable(_grid, q_out._grid);
-    PropagatorField tmp(_grid);
+    PropagatorField tmp1(_grid), tmp2(_grid);
     q_out = zero;
 
-    // Forward, need q1(x + mu), q2(x)
-    tmp = Cshift(q_in_1, mu, 1);
+    // Forward, need q1(x + mu), q2(x). Backward, need q1(x), q2(x + mu).
+    // Inefficient comms method but not performance critical.
+    tmp1 = Cshift(q_in_1, mu, 1);
+    tmp2 = Cshift(q_in_2, mu, 1);
     parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
     {
-        Kernels::ContractConservedCurrentSiteFwd(tmp, q_in_2, q_out, Umu,
-                                                 mu, sU, sU, sU, sU);
-    }
-
-    // Backward, need q1(x), q2(x + mu)
-    tmp = Cshift(q_in_2, mu, 1);
-    parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
-    {
-        Kernels::ContractConservedCurrentSiteBwd(q_in_1, tmp, q_out, Umu,
-                                                 mu, sU, sU, sU, sU);
+        Kernels::ContractConservedCurrentSiteFwd(tmp1._odata[sU],
+                                                 q_in_2._odata[sU],
+                                                 q_out._odata[sU],
+                                                 Umu, sU, mu);
+        Kernels::ContractConservedCurrentSiteBwd(q_in_1._odata[sU],
+                                                 tmp2._odata[sU],
+                                                 q_out._odata[sU],
+                                                 Umu, sU, mu);
     }
 }
 

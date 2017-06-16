@@ -298,28 +298,25 @@ void WilsonKernels<Impl>::DhopDir( StencilImpl &st, DoubledGaugeField &U,SiteHal
  ******************************************************************************/
 template<class Impl>
 void WilsonKernels<Impl>::ContractConservedCurrentSiteFwd(
-                                                  const PropagatorField &q_in_1,
-                                                  const PropagatorField &q_in_2,
-                                                  PropagatorField &q_out,
+                                                  const SitePropagator &q_in_1,
+                                                  const SitePropagator &q_in_2,
+                                                  SitePropagator &q_out,
                                                   DoubledGaugeField &U,
-                                                  unsigned int mu,
-                                                  unsigned int sF_in_1,
-                                                  unsigned int sF_in_2,
-                                                  unsigned int sF_out,
                                                   unsigned int sU,
+                                                  unsigned int mu,
                                                   bool switch_sign)
 {
     SitePropagator result, tmp;
     Gamma g5(Gamma::Algebra::Gamma5);
-    multLinkProp(tmp, U._odata[sU], q_in_1._odata[sF_in_1], mu);
-    result = g5 * adj(q_in_2._odata[sF_in_2]) * g5 * WilsonCurrentFwd(tmp, mu);
+    Impl::multLinkProp(tmp, U._odata[sU], q_in_1, mu);
+    result = g5 * adj(q_in_2) * g5 * WilsonCurrentFwd(tmp, mu);
     if (switch_sign)
     {
-        q_out._odata[sF_out] -= result;
+        q_out -= result;
     }
     else
     {
-        q_out._odata[sF_out] += result;
+        q_out += result;
     }
 }
 
@@ -331,28 +328,25 @@ void WilsonKernels<Impl>::ContractConservedCurrentSiteFwd(
  ******************************************************************************/
 template<class Impl>
 void WilsonKernels<Impl>::ContractConservedCurrentSiteBwd(
-                                                  const PropagatorField &q_in_1,
-                                                  const PropagatorField &q_in_2,
-                                                  PropagatorField &q_out,
+                                                  const SitePropagator &q_in_1,
+                                                  const SitePropagator &q_in_2,
+                                                  SitePropagator &q_out,
                                                   DoubledGaugeField &U,
-                                                  unsigned int mu,
-                                                  unsigned int sF_in_1,
-                                                  unsigned int sF_in_2,
-                                                  unsigned int sF_out,
                                                   unsigned int sU,
+                                                  unsigned int mu,
                                                   bool switch_sign)
 {
     SitePropagator result, tmp;
     Gamma g5(Gamma::Algebra::Gamma5);
-    multLinkProp(tmp, U._odata[sU], q_in_1._odata[sF_in_1], mu + Nd);
-    result = g5 * adj(q_in_2._odata[sF_in_2]) * g5 * WilsonCurrentBwd(tmp, mu);
+    Impl::multLinkProp(tmp, U._odata[sU], q_in_1, mu + Nd);
+    result = g5 * adj(q_in_2) * g5 * WilsonCurrentBwd(tmp, mu);
     if (switch_sign)
     {
-        q_out._odata[sF_out] += result;
+        q_out += result;
     }
     else
     {
-        q_out._odata[sF_out] -= result;
+        q_out -= result;
     }
 }
 
@@ -360,31 +354,25 @@ void WilsonKernels<Impl>::ContractConservedCurrentSiteBwd(
 #define NO_CURR_SITE(Impl) \
 template <> \
 void WilsonKernels<Impl>::ContractConservedCurrentSiteFwd( \
-                                                  const PropagatorField &q_in_1, \
-                                                  const PropagatorField &q_in_2, \
-                                                  PropagatorField &q_out,        \
-                                                  DoubledGaugeField &U,          \
-                                                  unsigned int mu,               \
-                                                  unsigned int sF_in_1,          \
-                                                  unsigned int sF_in_2,          \
-                                                  unsigned int sF_out,           \
-                                                  unsigned int sU,               \
-                                                  bool switch_sign)              \
+                                                  const SitePropagator &q_in_1, \
+                                                  const SitePropagator &q_in_2, \
+                                                  SitePropagator &q_out,        \
+                                                  DoubledGaugeField &U,         \
+                                                  unsigned int sU,              \
+                                                  unsigned int mu,              \
+                                                  bool switch_sign)             \
 { \
     assert(0); \
 } \
 template <> \
 void WilsonKernels<Impl>::ContractConservedCurrentSiteBwd( \
-                                                  const PropagatorField &q_in_1, \
-                                                  const PropagatorField &q_in_2, \
-                                                  PropagatorField &q_out,        \
-                                                  DoubledGaugeField &U,          \
-                                                  unsigned int mu,               \
-                                                  unsigned int sF_in_1,          \
-                                                  unsigned int sF_in_2,          \
-                                                  unsigned int sF_out,           \
-                                                  unsigned int sU,               \
-                                                  bool switch_sign)              \
+                                                  const SitePropagator &q_in_1, \
+                                                  const SitePropagator &q_in_2, \
+                                                  SitePropagator &q_out,        \
+                                                  DoubledGaugeField &U,         \
+                                                  unsigned int mu,              \
+                                                  unsigned int sU,              \
+                                                  bool switch_sign)             \
 { \
     assert(0); \
 }

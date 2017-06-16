@@ -183,25 +183,19 @@ public:
   //////////////////////////////////////////////////////////////////////////////
   // Utilities for inserting Wilson conserved current.
   //////////////////////////////////////////////////////////////////////////////
-  void ContractConservedCurrentSiteFwd(const PropagatorField &q_in_1,
-                                       const PropagatorField &q_in_2,
-                                       PropagatorField &q_out,
+  void ContractConservedCurrentSiteFwd(const SitePropagator &q_in_1,
+                                       const SitePropagator &q_in_2,
+                                       SitePropagator &q_out,
                                        DoubledGaugeField &U,
-                                       unsigned int mu,
-                                       unsigned int sF_in_1,
-                                       unsigned int sF_in_2,
-                                       unsigned int sF_out,
                                        unsigned int sU,
+                                       unsigned int mu,
                                        bool switch_sign = false);
-  void ContractConservedCurrentSiteBwd(const PropagatorField &q_in_1,
-                                       const PropagatorField &q_in_2,
-                                       PropagatorField &q_out,
+  void ContractConservedCurrentSiteBwd(const SitePropagator &q_in_1,
+                                       const SitePropagator &q_in_2,
+                                       SitePropagator &q_out,
                                        DoubledGaugeField &U,
-                                       unsigned int mu,
-                                       unsigned int sF_in_1,
-                                       unsigned int sF_in_2,
-                                       unsigned int sF_out,
                                        unsigned int sU,
+                                       unsigned int mu,
                                        bool switch_sign = false);
   void SeqConservedCurrentInternal(const PropagatorField &q_in, 
                                    PropagatorField &q_out,
