@@ -374,6 +374,41 @@ namespace Optimization {
     // Complex float
     FLOAT_WRAP_2(operator(), inline)
   };
+#define USE_FP16
+  struct PrecisionChange {
+    static inline vech StoH (const vector4float &a, const vector4float &b) {
+      vech ret;
+      std::cout << GridLogError << "QPX single to half precision conversion not yet supported." << std::endl;
+      assert(0);
+      return ret;
+    }
+    static inline void  HtoS (vech h, vector4float &sa, vector4float &sb) {
+      std::cout << GridLogError << "QPX half to single precision conversion not yet supported." << std::endl;
+      assert(0);
+    }
+    static inline vector4float DtoS (vector4double a, vector4double b) {
+      vector4float ret;
+      std::cout << GridLogError << "QPX double to single precision conversion not yet supported." << std::endl;
+      assert(0);
+      return ret;
+    }
+    static inline void StoD (vector4float s, vector4double &a, vector4double &b) {
+      std::cout << GridLogError << "QPX single to double precision conversion not yet supported." << std::endl;
+      assert(0);
+    }
+    static inline vech DtoH (vector4double a, vector4double b, 
+                             vector4double c, vector4double d) {
+      vech ret;
+      std::cout << GridLogError << "QPX double to half precision conversion not yet supported." << std::endl;
+      assert(0);
+      return ret;
+    }
+    static inline void HtoD (vech h, vector4double &a, vector4double &b, 
+                                     vector4double &c, vector4double &d) {
+      std::cout << GridLogError << "QPX half to double precision conversion not yet supported." << std::endl;
+      assert(0);
+    }
+  };
 
   //////////////////////////////////////////////
   // Exchange support
@@ -552,6 +587,7 @@ namespace Optimization {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Here assign types
+typedef Optimization::vech         SIMD_Htype;  // Half precision type
 typedef Optimization::vector4float SIMD_Ftype;  // Single precision type
 typedef vector4double              SIMD_Dtype; // Double precision type
 typedef Optimization::veci         SIMD_Itype; // Integer type
