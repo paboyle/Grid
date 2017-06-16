@@ -727,31 +727,73 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 {
     conformable(q_in._grid, FermionGrid());
     conformable(q_in._grid, q_out._grid);
-    Lattice<iSinglet<Simd>> ph(_FourDimGrid), coor(_FourDimGrid);
-    PropagatorField q_in_s(_FourDimGrid);
-    PropagatorField q_out_s(_FourDimGrid);
+    Lattice<iSinglet<Simd>> ph(FermionGrid()), coor(FermionGrid());
+    PropagatorField tmpFwd(FermionGrid()), tmpBwd(FermionGrid()),
+                    tmp(FermionGrid());
     Complex i(0.0, 1.0);
+    int tshift = (mu == Tp) ? 1 : 0;
 
-    // Momentum projection
+    // Momentum projection.
     ph = zero;
     for(unsigned int nu = 0; nu < Nd - 1; nu++)
     {
-        LatticeCoordinate(coor, nu);
+        // Shift coordinate lattice index by 1 to account for 5th dimension.
+        LatticeCoordinate(coor, nu + 1);
         ph = ph + mom[nu]*coor*((1./(_FourDimGrid->_fdimensions[nu])));
     }
     ph = exp((Real)(2*M_PI)*i*ph);
 
-    // Sequential insertion across 5th dimension
-    for (int s = 0; s < Ls; s++)
+    q_out = zero;
+    LatticeInteger coords(_FourDimGrid);
+    LatticeCoordinate(coords, Tp);
+
+    // Need q(x + mu, s) and q(x - mu, s). 5D lattice so shift 4D coordinate mu
+    // by one.
+    tmp = Cshift(q_in, mu + 1, 1);
+    tmpFwd = tmp*ph;
+    tmp = ph*q_in;
+    tmpBwd = Cshift(tmp, mu + 1, -1);
+
+    parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
     {
-        ExtractSlice(q_in_s, q_in, s, 0);
-        Kernels::SeqConservedCurrentInternal(q_in_s, q_out_s, Umu, curr_type,
-                                             mu, ph, tmin, tmax);
-        if ((curr_type == Current::Axial) && (s < Ls/2))
+        // Compute the sequential conserved current insertion only if our simd
+        // object contains a timeslice we need.
+        vInteger t_mask   = ((coords._odata[sU] >= tmin) &&
+                             (coords._odata[sU] <= tmax));
+        Integer timeSlices = Reduce(t_mask);
+
+        if (timeSlices > 0)
         {
-            q_out_s = -q_out_s;
+            unsigned int sF = sU * Ls;
+            for (unsigned int s = 0; s < Ls; ++s)
+            {
+                bool axial_sign = ((curr_type == Current::Axial) && (s < (Ls / 2))) ? \
+                                  true : false;
+                Kernels::SeqConservedCurrentSiteFwd(tmpFwd._odata[sF], 
+                                                    q_out._odata[sF], Umu, sU,
+                                                    mu, t_mask, axial_sign);
+                ++sF;
+            }
         }
-        InsertSlice(q_out_s, q_out, s, 0);
+
+        // Repeat for backward direction.
+        t_mask     = ((coords._odata[sU] >= (tmin + tshift)) && 
+                      (coords._odata[sU] <= (tmax + tshift)));
+        timeSlices = Reduce(t_mask);
+
+        if (timeSlices > 0)
+        {
+            unsigned int sF = sU * Ls;
+            for (unsigned int s = 0; s < Ls; ++s)
+            {
+                bool axial_sign = ((curr_type == Current::Axial) && (s < (Ls / 2))) ? \
+                                  true : false;
+                Kernels::SeqConservedCurrentSiteBwd(tmpBwd._odata[sF], 
+                                                    q_out._odata[sF], Umu, sU,
+                                                    mu, t_mask, axial_sign);
+                ++sF;
+            }
+        }
     }
 }
 

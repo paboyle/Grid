@@ -197,14 +197,20 @@ public:
                                        unsigned int sU,
                                        unsigned int mu,
                                        bool switch_sign = false);
-  void SeqConservedCurrentInternal(const PropagatorField &q_in, 
-                                   PropagatorField &q_out,
-                                   DoubledGaugeField &U,
-                                   Current curr_type,
-                                   unsigned int mu,
-                                   Lattice<iSinglet<Simd>> &ph,
-                                   unsigned int tmin, 
-                                   unsigned int tmax);
+  void SeqConservedCurrentSiteFwd(const SitePropagator &q_in, 
+                                  SitePropagator &q_out,
+                                  DoubledGaugeField &U,
+                                  unsigned int sU,
+                                  unsigned int mu,
+                                  vInteger t_mask,
+                                  bool switch_sign = false);
+  void SeqConservedCurrentSiteBwd(const SitePropagator &q_in,
+                                  SitePropagator &q_out,
+                                  DoubledGaugeField &U,
+                                  unsigned int sU,
+                                  unsigned int mu,
+                                  vInteger t_mask,
+                                  bool switch_sign = false);
 
 private:
      // Specialised variants

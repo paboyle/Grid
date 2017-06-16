@@ -383,62 +383,69 @@ NO_CURR_SITE(GparityWilsonImplFH);
 NO_CURR_SITE(GparityWilsonImplDF);
 
 
-template <class Impl>
-void WilsonKernels<Impl>::SeqConservedCurrentInternal(const PropagatorField &q_in, 
-                                                      PropagatorField &q_out,
-                                                      DoubledGaugeField &U,
-                                                      Current curr_type,
-                                                      unsigned int mu,
-                                                      Lattice<iSinglet<Simd>> &ph,
-                                                      unsigned int tmin,
-                                                      unsigned int tmax)
+/*******************************************************************************
+ * Name: SeqConservedCurrentSiteFwd
+ * Operation: (1/2) * U(x) * (g[mu] - 1) * q[x + mu]
+ * Notes: - DoubledGaugeField U assumed to contain -1/2 factor.
+ *        - Pass in q_in shifted in +ve mu direction.
+ ******************************************************************************/
+template<class Impl>
+void WilsonKernels<Impl>::SeqConservedCurrentSiteFwd(const SitePropagator &q_in,
+                                                     SitePropagator &q_out,
+                                                     DoubledGaugeField &U,
+                                                     unsigned int sU,
+                                                     unsigned int mu,
+                                                     vInteger t_mask,
+                                                     bool switch_sign)
 {
-    int tshift = (mu == Tp) ? 1 : 0;
-    Real G_T = (curr_type == Current::Tadpole) ? -1. : 1.;
-    PropagatorField tmp(q_in._grid);
-    GaugeLinkField Umu(U._grid);
-    Umu  = PeekIndex<LorentzIndex>(U, mu);
-    Lattice<iScalar<vInteger>> t(q_in._grid);
-    LatticeCoordinate(t, Tp);
+    SitePropagator result;
+    Impl::multLinkProp(result, U._odata[sU], q_in, mu);
+    result = WilsonCurrentFwd(result, mu);
 
-    tmp = this->CovShiftForward(Umu, mu, q_in)*ph;
-    tmp = where((t >= tmin) and (t <= tmax), tmp, 0.*tmp);
-    q_out = G_T*WilsonCurrentFwd(tmp, mu);
+    // Zero any unwanted timeslice entries.
+    result = predicatedWhere(t_mask, result, 0.*result);
 
-    tmp = q_in*ph;
-    tmp = this->CovShiftBackward(Umu, mu, tmp);
-    tmp = where((t >= tmin + tshift) and (t <= tmax + tshift), tmp, 0.*tmp);
-    q_out -= WilsonCurrentBwd(tmp, mu);
+    if (switch_sign)
+    {
+        q_out -= result;
+    }
+    else
+    {
+        q_out += result;
+    }
 }
 
+/*******************************************************************************
+ * Name: SeqConservedCurrentSiteFwd
+ * Operation: (1/2) * U^dag(x) * (g[mu] + 1) * q[x - mu]
+ * Notes: - DoubledGaugeField U assumed to contain -1/2 factor.
+ *        - Pass in q_in shifted in -ve mu direction.
+ ******************************************************************************/
+template<class Impl>
+void WilsonKernels<Impl>::SeqConservedCurrentSiteBwd(const SitePropagator &q_in, 
+                                                     SitePropagator &q_out,
+                                                     DoubledGaugeField &U,
+                                                     unsigned int sU,
+                                                     unsigned int mu,
+                                                     vInteger t_mask,
+                                                     bool switch_sign)
+{
+    SitePropagator result;
+    Impl::multLinkProp(result, U._odata[sU], q_in, mu + Nd);
+    result = WilsonCurrentBwd(result, mu);
 
-// GParity, (Z)DomainWallVec5D -> require special implementation
-#define NO_CURR(Impl) \
-template <> void  \
-WilsonKernels<Impl>::SeqConservedCurrentInternal(const PropagatorField &q_in,       \
-                                                 PropagatorField &q_out,            \
-                                                 DoubledGaugeField &U,              \
-                                                 Current curr_type,                 \
-                                                 unsigned int mu,                   \
-                                                 Lattice<iSinglet<Simd>> &ph,       \
-                                                 unsigned int tmin,                 \
-                                                 unsigned int tmax)                 \
-{ \
-    assert(0); \
+    // Zero any unwanted timeslice entries.
+    result = predicatedWhere(t_mask, result, 0.*result);
+
+    if (switch_sign)
+    {
+        q_out += result;
+    }
+    else
+    {
+        q_out -= result;
+    }
 }
-
-NO_CURR(GparityWilsonImplF);
-NO_CURR(GparityWilsonImplD);
-NO_CURR(GparityWilsonImplFH);
-NO_CURR(GparityWilsonImplDF);
-NO_CURR(DomainWallVec5dImplF);
-NO_CURR(DomainWallVec5dImplD);
-NO_CURR(DomainWallVec5dImplFH);
-NO_CURR(DomainWallVec5dImplDF);
-NO_CURR(ZDomainWallVec5dImplF);
-NO_CURR(ZDomainWallVec5dImplD);
-NO_CURR(ZDomainWallVec5dImplFH);
-NO_CURR(ZDomainWallVec5dImplDF);
 
 FermOpTemplateInstantiate(WilsonKernels);
 AdjointFermOpTemplateInstantiate(WilsonKernels);
