@@ -69,46 +69,6 @@ inline uint64_t Grid_ntohll(uint64_t A) {
 }
 #endif
 
-/////////////////////////////////////////////////////////////////////////////////
-// Simple classes for precision conversion
-/////////////////////////////////////////////////////////////////////////////////
-template <class fobj, class sobj>
-struct BinarySimpleUnmunger {
-  typedef typename getPrecision<fobj>::real_scalar_type fobj_stype;
-  typedef typename getPrecision<sobj>::real_scalar_type sobj_stype;
-  
-  void operator()(sobj &in, fobj &out) {
-    // take word by word and transform accoding to the status
-    fobj_stype *out_buffer = (fobj_stype *)&out;
-    sobj_stype *in_buffer = (sobj_stype *)&in;
-    size_t fobj_words = sizeof(out) / sizeof(fobj_stype);
-    size_t sobj_words = sizeof(in) / sizeof(sobj_stype);
-    assert(fobj_words == sobj_words);
-    
-    for (unsigned int word = 0; word < sobj_words; word++)
-      out_buffer[word] = in_buffer[word];  // type conversion on the fly
-    
-  }
-};
-
-template <class fobj, class sobj>
-struct BinarySimpleMunger {
-  typedef typename getPrecision<fobj>::real_scalar_type fobj_stype;
-  typedef typename getPrecision<sobj>::real_scalar_type sobj_stype;
-
-  void operator()(fobj &in, sobj &out) {
-    // take word by word and transform accoding to the status
-    fobj_stype *in_buffer = (fobj_stype *)&in;
-    sobj_stype *out_buffer = (sobj_stype *)&out;
-    size_t fobj_words = sizeof(in) / sizeof(fobj_stype);
-    size_t sobj_words = sizeof(out) / sizeof(sobj_stype);
-    assert(fobj_words == sobj_words);
-    
-    for (unsigned int word = 0; word < sobj_words; word++)
-      out_buffer[word] = in_buffer[word];  // type conversion on the fly
-    
-  }
-};
 // A little helper
 inline void removeWhitespace(std::string &key)
 {
@@ -126,11 +86,7 @@ class BinaryIO {
   // more byte manipulation helpers
   /////////////////////////////////////////////////////////////////////////////
 
-  template<class vobj> static inline void Uint32Checksum(Lattice<vobj> &lat,				      
-							 uint32_t &nersc_csum,
-							 uint32_t &scidac_csuma,
-							 uint32_t &scidac_csumb)
-
+  template<class vobj> static inline void Uint32Checksum(Lattice<vobj> &lat,uint32_t &nersc_csum)
   {
     typedef typename vobj::scalar_object sobj;
 
@@ -140,15 +96,38 @@ class BinaryIO {
     std::vector<sobj> scalardata(lsites); 
     unvectorizeToLexOrdArray(scalardata,lat);    
 
-    Uint32Checksum(grid,scalardata,nersc_csum,scidac_csuma,scidac_csumb);
+    NerscChecksum(grid,scalardata,nersc_csum);
   }
   
-  template<class fobj>
-    static inline void Uint32Checksum(GridBase *grid,
-				      std::vector<fobj> &fbuf,
-				      uint32_t &nersc_csum,
-				      uint32_t &scidac_csuma,
-				      uint32_t &scidac_csumb)
+  template<class fobj> static inline void NerscChecksum(GridBase *grid,std::vector<fobj> &fbuf,uint32_t &nersc_csum)
+  {
+    const uint64_t size32 = sizeof(fobj)/sizeof(uint32_t);
+
+
+    uint64_t lsites              =grid->lSites();
+    if (fbuf.size()==1) {
+      lsites=1;
+    }
+
+#pragma omp parallel
+    { 
+      uint32_t nersc_csum_thr=0;
+
+#pragma omp for
+      for(uint64_t local_site=0;local_site<lsites;local_site++){
+	uint32_t * site_buf = (uint32_t *)&fbuf[local_site];
+	for(uint64_t j=0;j<size32;j++){
+	  nersc_csum_thr=nersc_csum_thr+site_buf[j];
+	}
+      }
+
+#pragma omp critical
+      {
+	nersc_csum  += nersc_csum_thr;
+      }
+    }
+  }
+  template<class fobj> static inline void ScidacChecksum(GridBase *grid,std::vector<fobj> &fbuf,uint32_t &scidac_csuma,uint32_t &scidac_csumb)
   {
     const uint64_t size32 = sizeof(fobj)/sizeof(uint32_t);
 
@@ -156,6 +135,9 @@ class BinaryIO {
     int nd = grid->_ndimension;
 
     uint64_t lsites              =grid->lSites();
+    if (fbuf.size()==1) {
+      lsites=1;
+    }
     std::vector<int> local_vol   =grid->LocalDimensions();
     std::vector<int> local_start =grid->LocalStarts();
     std::vector<int> global_vol  =grid->FullDimensions();
@@ -163,20 +145,14 @@ class BinaryIO {
 #pragma omp parallel
     { 
       std::vector<int> coor(nd);
-      uint32_t nersc_csum_thr=0;
       uint32_t scidac_csuma_thr=0;
       uint32_t scidac_csumb_thr=0;
       uint32_t site_crc=0;
-      uint32_t zcrc = crc32(0L, Z_NULL, 0);
 
 #pragma omp for
       for(uint64_t local_site=0;local_site<lsites;local_site++){
 
 	uint32_t * site_buf = (uint32_t *)&fbuf[local_site];
-
-	for(uint64_t j=0;j<size32;j++){
-	  nersc_csum_thr=nersc_csum_thr+site_buf[j];
-	}
 
 	/* 
 	 * Scidac csum  is rather more heavyweight
@@ -185,23 +161,24 @@ class BinaryIO {
 
 	Lexicographic::CoorFromIndex(coor,local_site,local_vol);
 
-	for(int d=0;d<nd;d++) 
+	for(int d=0;d<nd;d++) {
 	  coor[d] = coor[d]+local_start[d];
+	}
 
 	Lexicographic::IndexFromCoor(coor,global_site,global_vol);
 
 	uint32_t gsite29   = global_site%29;
 	uint32_t gsite31   = global_site%31;
-
-	site_crc = crc32(zcrc,(unsigned char *)site_buf,sizeof(fobj));
-
+	
+	site_crc = crc32(0,(unsigned char *)site_buf,sizeof(fobj));
+	//	std::cout << "Site "<<local_site << " crc "<<std::hex<<site_crc<<std::dec<<std::endl;
+	//	std::cout << "Site "<<local_site << std::hex<<site_buf[0] <<site_buf[1]<<std::dec <<std::endl;
 	scidac_csuma_thr ^= site_crc<<gsite29 | site_crc>>(32-gsite29);
 	scidac_csumb_thr ^= site_crc<<gsite31 | site_crc>>(32-gsite31);
       }
 
 #pragma omp critical
       {
-	nersc_csum  += nersc_csum_thr;
 	scidac_csuma^= scidac_csuma_thr;
 	scidac_csumb^= scidac_csumb_thr;
       }
@@ -386,7 +363,8 @@ class BinaryIO {
 	assert(0);
 #endif
       } else { 
-	std::cout<< GridLogMessage<< "C++ read I/O "<< file<< std::endl;
+	std::cout<< GridLogMessage<< "C++ read I/O "<< file<<" : "
+		 << iodata.size()*sizeof(fobj)<<" bytes"<<std::endl;
 	std::ifstream fin;
 	fin.open(file,std::ios::binary|std::ios::in);
 	if ( control & BINARYIO_MASTER_APPEND )  {
@@ -402,22 +380,24 @@ class BinaryIO {
       grid->Barrier();
 
       bstimer.Start();
+      ScidacChecksum(grid,iodata,scidac_csuma,scidac_csumb);
       if (ieee32big) be32toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
       if (ieee32)    le32toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
       if (ieee64big) be64toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
       if (ieee64)    le64toh_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
-      Uint32Checksum(grid,iodata,nersc_csum,scidac_csuma,scidac_csumb);
+      NerscChecksum(grid,iodata,nersc_csum);
       bstimer.Stop();
     }
     
     if ( control & BINARYIO_WRITE ) { 
 
       bstimer.Start();
-      Uint32Checksum(grid,iodata,nersc_csum,scidac_csuma,scidac_csumb);
+      NerscChecksum(grid,iodata,nersc_csum);
       if (ieee32big) htobe32_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
       if (ieee32)    htole32_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
       if (ieee64big) htobe64_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
       if (ieee64)    htole64_v((void *)&iodata[0], sizeof(fobj)*iodata.size());
+      ScidacChecksum(grid,iodata,scidac_csuma,scidac_csumb);
       bstimer.Stop();
 
       grid->Barrier();
@@ -436,9 +416,9 @@ class BinaryIO {
 	assert(0);
 #endif
       } else { 
-	std::cout<< GridLogMessage<< "C++ write I/O "<< file<< std::endl;
-	std::ofstream fout;
-	fout.open(file,std::ios::binary|std::ios::out|std::ios::in);
+	std::ofstream fout; fout.open(file,std::ios::binary|std::ios::out|std::ios::in);
+	std::cout<< GridLogMessage<< "C++ write I/O "<< file<<" : "
+		 << iodata.size()*sizeof(fobj)<<" bytes"<<std::endl;
 	if ( control & BINARYIO_MASTER_APPEND )  {
 	  fout.seekp(0,fout.end);
 	} else {
@@ -467,9 +447,6 @@ class BinaryIO {
     grid->GlobalXOR(scidac_csuma);
     grid->GlobalXOR(scidac_csumb);
     grid->Barrier();
-    //    std::cout << "Binary IO NERSC  checksum  0x"<<std::hex<<nersc_csum  <<std::dec<<std::endl;
-    //    std::cout << "Binary IO SCIDAC checksuma 0x"<<std::hex<<scidac_csuma<<std::dec<<std::endl;
-    //    std::cout << "Binary IO SCIDAC checksumb 0x"<<std::hex<<scidac_csumb<<std::dec<<std::endl;
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -603,9 +580,9 @@ class BinaryIO {
     scidac_csuma = scidac_csuma ^ scidac_csuma_tmp;
     scidac_csumb = scidac_csumb ^ scidac_csumb_tmp;
 
-    //    std::cout << GridLogMessage << "RNG file nersc_checksum   " << std::hex << nersc_csum << std::dec << std::endl;
-    //    std::cout << GridLogMessage << "RNG file scidac_checksuma " << std::hex << scidac_csuma << std::dec << std::endl;
-    //    std::cout << GridLogMessage << "RNG file scidac_checksumb " << std::hex << scidac_csumb << std::dec << std::endl;
+    std::cout << GridLogMessage << "RNG file nersc_checksum   " << std::hex << nersc_csum << std::dec << std::endl;
+    std::cout << GridLogMessage << "RNG file scidac_checksuma " << std::hex << scidac_csuma << std::dec << std::endl;
+    std::cout << GridLogMessage << "RNG file scidac_checksumb " << std::hex << scidac_csumb << std::dec << std::endl;
 
     std::cout << GridLogMessage << "RNG state overhead " << timer.Elapsed() << std::endl;
   }
@@ -658,8 +635,14 @@ class BinaryIO {
     }
     IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_MASTER_APPEND,
 	     nersc_csum_tmp,scidac_csuma_tmp,scidac_csumb_tmp);
+
+    nersc_csum   = nersc_csum   + nersc_csum_tmp;
+    scidac_csuma = scidac_csuma ^ scidac_csuma_tmp;
+    scidac_csumb = scidac_csumb ^ scidac_csumb_tmp;
     
-    //    std::cout << GridLogMessage << "RNG file checksum " << std::hex << csum << std::dec << std::endl;
+    std::cout << GridLogMessage << "RNG file checksum " << std::hex << nersc_csum    << std::dec << std::endl;
+    std::cout << GridLogMessage << "RNG file checksuma " << std::hex << scidac_csuma << std::dec << std::endl;
+    std::cout << GridLogMessage << "RNG file checksumb " << std::hex << scidac_csumb << std::dec << std::endl;
     std::cout << GridLogMessage << "RNG state overhead " << timer.Elapsed() << std::endl;
   }
 };
