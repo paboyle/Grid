@@ -51,7 +51,7 @@ int main (int argc, char ** argv)
   std::vector<LatticeColourMatrix> U(4,&Fine);
   
   FieldMetaData header;
-  std::string file("./ckpoint_lat");
+  std::string file("./ildg.file");
   IldgIO::readConfiguration(file,Umu,header);
 
   for(int mu=0;mu<Nd;mu++){

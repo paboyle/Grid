@@ -78,7 +78,7 @@ int main (int argc, char ** argv)
   std::cout <<GridLogMessage<<"** Writing out  ILDG conf    *********"<<std::endl;
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
   std::string file("./ckpoint_ildg.4000");
-  IldgIO::writeConfiguration(file,Umu, "IEEE64BIG");
+  IldgIO::writeConfiguration(file,Umu);
 
   Umu_saved = Umu;
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
