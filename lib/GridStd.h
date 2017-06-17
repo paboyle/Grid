@@ -7,6 +7,7 @@
 #include <cassert>
 #include <complex>
 #include <vector>
+#include <string>
 #include <iostream>
 #include <iomanip>
 #include <random>
