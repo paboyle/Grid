@@ -73,7 +73,7 @@ public:
   //////////////////////////////////////////////////
   // trace of directed plaquette oriented in mu,nu plane
   //////////////////////////////////////////////////
-  static void traceDirPlaquette(LatticeComplex &plaq,
+  static void traceDirPlaquette(ComplexField &plaq,
                                 const std::vector<GaugeMat> &U, const int mu,
                                 const int nu) {
     GaugeMat sp(U[0]._grid);
@@ -83,9 +83,9 @@ public:
   //////////////////////////////////////////////////
   // sum over all planes of plaquette
   //////////////////////////////////////////////////
-  static void sitePlaquette(LatticeComplex &Plaq,
+  static void sitePlaquette(ComplexField &Plaq,
                             const std::vector<GaugeMat> &U) {
-    LatticeComplex sitePlaq(U[0]._grid);
+    ComplexField sitePlaq(U[0]._grid);
     Plaq = zero;
     for (int mu = 1; mu < Nd; mu++) {
       for (int nu = 0; nu < mu; nu++) {
@@ -104,11 +104,11 @@ public:
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
     }
 
-    LatticeComplex Plaq(Umu._grid);
+    ComplexField Plaq(Umu._grid);
 
     sitePlaquette(Plaq, U);
-    TComplex Tp = sum(Plaq);
-    Complex p = TensorRemove(Tp);
+    auto Tp = sum(Plaq);
+    auto p = TensorRemove(Tp);
     return p.real();
   }
 
@@ -129,15 +129,15 @@ public:
   static RealD linkTrace(const GaugeLorentz &Umu) {
     std::vector<GaugeMat> U(Nd, Umu._grid);
 
-    LatticeComplex Tr(Umu._grid);
+    ComplexField Tr(Umu._grid);
     Tr = zero;
     for (int mu = 0; mu < Nd; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
       Tr = Tr + trace(U[mu]);
     }
 
-    TComplex Tp = sum(Tr);
-    Complex p = TensorRemove(Tp);
+    auto Tp = sum(Tr);
+    auto p = TensorRemove(Tp);
 
     double vol = Umu._grid->gSites();
 
@@ -330,8 +330,8 @@ public:
 
     double coeff = 8.0/(32.0*M_PI*M_PI);
 
-    LatticeComplex qfield = coeff*trace(Bx*Ex + By*Ey + Bz*Ez);
-    TComplex Tq = sum(qfield);
+    ComplexField qfield = coeff*trace(Bx*Ex + By*Ey + Bz*Ez);
+    auto Tq = sum(qfield);
     return TensorRemove(Tq).real();
   }
 
@@ -350,16 +350,16 @@ public:
                adj(Gimpl::CovShiftForward(
                    U[nu], nu, Gimpl::CovShiftForward(U[nu], nu, U[mu])));
   }
-  static void traceDirRectangle(LatticeComplex &rect,
+  static void traceDirRectangle(ComplexField &rect,
                                 const std::vector<GaugeMat> &U, const int mu,
                                 const int nu) {
     GaugeMat sp(U[0]._grid);
     dirRectangle(sp, U, mu, nu);
     rect = trace(sp);
   }
-  static void siteRectangle(LatticeComplex &Rect,
+  static void siteRectangle(ComplexField &Rect,
                             const std::vector<GaugeMat> &U) {
-    LatticeComplex siteRect(U[0]._grid);
+    ComplexField siteRect(U[0]._grid);
     Rect = zero;
     for (int mu = 1; mu < Nd; mu++) {
       for (int nu = 0; nu < mu; nu++) {
@@ -379,12 +379,12 @@ public:
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
     }
 
-    LatticeComplex Rect(Umu._grid);
+    ComplexField Rect(Umu._grid);
 
     siteRectangle(Rect, U);
 
-    TComplex Tp = sum(Rect);
-    Complex p = TensorRemove(Tp);
+    auto Tp = sum(Rect);
+    auto p = TensorRemove(Tp);
     return p.real();
   }
   //////////////////////////////////////////////////
