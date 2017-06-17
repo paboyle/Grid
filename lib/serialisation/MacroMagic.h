@@ -115,6 +115,7 @@ THE SOFTWARE.
 #define GRID_MACRO_WRITE_MEMBER(A,B) Grid::write(WR,#B,obj. B);
 
 #define GRID_SERIALIZABLE_CLASS_MEMBERS(cname,...)\
+  std::string SerialisableClassName(void) {return std::string(#cname);}	\
 GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_MEMBER,__VA_ARGS__))\
 template <typename T>\
 static inline void write(Writer<T> &WR,const std::string &s, const cname &obj){ \
