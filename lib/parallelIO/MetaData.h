@@ -38,9 +38,24 @@
 
 namespace Grid {
 
-    ////////////////////////////////////////////////////////////////////////////////
-    // header specification/interpretation
-    ////////////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////
+  // Precision mapping
+  ///////////////////////////////////////////////////////
+  template<class vobj> static std::string getFormatString (void)
+  {
+    std::string format;
+    typedef typename getPrecision<vobj>::real_scalar_type stype;
+    if ( sizeof(stype) == sizeof(float) ) {
+      format = std::string("IEEE32BIG");
+    }
+    if ( sizeof(stype) == sizeof(double) ) {
+      format = std::string("IEEE64BIG");
+    }
+    return format;
+  }
+  ////////////////////////////////////////////////////////////////////////////////
+  // header specification/interpretation
+  ////////////////////////////////////////////////////////////////////////////////
     class FieldMetaData : Serializable {
     public:
 
@@ -66,7 +81,14 @@ namespace Grid {
 				      std::string, creation_date,
 				      std::string, archive_date,
 				      std::string, floating_point);
+      FieldMetaData(void) { 
+	nd=4;
+	dimension.resize(4);
+	boundary.resize(4);
+      }
     };
+
+
 
   namespace QCD {
 
@@ -88,13 +110,6 @@ namespace Grid {
       for(int d=0;d<nd;d++) {
 	header.boundary[d] = std::string("PERIODIC");
       }
-    }
-    template<class GaugeField>
-    inline void GaugeStatistics(GaugeField & data,FieldMetaData &header)
-    {
-      // How to convert data precision etc...
-      header.link_trace=Grid::QCD::WilsonLoops<PeriodicGimplR>::linkTrace(data);
-      header.plaquette =Grid::QCD::WilsonLoops<PeriodicGimplR>::avgPlaquette(data);
     }
 
     inline void MachineCharacteristics(FieldMetaData &header)
@@ -133,7 +148,7 @@ namespace Grid {
 	s << "BOUNDARY_"<<i+1<<" = " << field.boundary[i] << std::endl;	\
       }									\
 									\
-      s << "CHECKSUM (NERSC) = "<< std::hex << std::setw(10) << field.checksum << std::dec<<std::endl; \
+      s << "CHECKSUM = "<< std::hex << std::setw(10) << field.checksum << std::dec<<std::endl; \
       s << "SCIDAC_CHECKSUMA = "<< std::hex << std::setw(10) << field.scidac_checksuma << std::dec<<std::endl; \
       s << "SCIDAC_CHECKSUMB = "<< std::hex << std::setw(10) << field.scidac_checksumb << std::dec<<std::endl; \
       s << "ENSEMBLE_ID = "     << field.ensemble_id      << std::endl;	\
@@ -146,6 +161,48 @@ namespace Grid {
       s << "FLOATING_POINT = "  << field.floating_point   << std::endl;	\
       s << "END_HEADER"         << std::endl;
 
+template<class vobj> inline void PrepareMetaData(Lattice<vobj> & field, FieldMetaData &header)
+{
+  GridBase *grid = field._grid;
+  std::string format = getFormatString<vobj>();
+   header.floating_point = format;
+   header.checksum = 0x0; // Nersc checksum unused in ILDG, Scidac
+   GridMetaData(grid,header); 
+   MachineCharacteristics(header);
+ }
+ inline void GaugeStatistics(Lattice<vLorentzColourMatrixF> & data,FieldMetaData &header)
+ {
+   // How to convert data precision etc...
+   header.link_trace=Grid::QCD::WilsonLoops<PeriodicGimplF>::linkTrace(data);
+   header.plaquette =Grid::QCD::WilsonLoops<PeriodicGimplF>::avgPlaquette(data);
+ }
+ inline void GaugeStatistics(Lattice<vLorentzColourMatrixD> & data,FieldMetaData &header)
+ {
+   // How to convert data precision etc...
+   header.link_trace=Grid::QCD::WilsonLoops<PeriodicGimplD>::linkTrace(data);
+   header.plaquette =Grid::QCD::WilsonLoops<PeriodicGimplD>::avgPlaquette(data);
+ }
+ template<> inline void PrepareMetaData<vLorentzColourMatrixF>(Lattice<vLorentzColourMatrixF> & field, FieldMetaData &header)
+ {
+   
+   GridBase *grid = field._grid;
+   std::string format = getFormatString<vLorentzColourMatrixF>();
+   header.floating_point = format;
+   header.checksum = 0x0; // Nersc checksum unused in ILDG, Scidac
+   GridMetaData(grid,header); 
+   GaugeStatistics(field,header);
+   MachineCharacteristics(header);
+ }
+ template<> inline void PrepareMetaData<vLorentzColourMatrixD>(Lattice<vLorentzColourMatrixD> & field, FieldMetaData &header)
+ {
+   GridBase *grid = field._grid;
+   std::string format = getFormatString<vLorentzColourMatrixD>();
+   header.floating_point = format;
+   header.checksum = 0x0; // Nersc checksum unused in ILDG, Scidac
+   GridMetaData(grid,header); 
+   GaugeStatistics(field,header);
+   MachineCharacteristics(header);
+ }
 
     //////////////////////////////////////////////////////////////////////
     // Utilities ; these are QCD aware
@@ -170,6 +227,48 @@ namespace Grid {
     typedef iLorentzColour2x3<Complex>  LorentzColour2x3;
     typedef iLorentzColour2x3<ComplexF> LorentzColour2x3F;
     typedef iLorentzColour2x3<ComplexD> LorentzColour2x3D;
+
+/////////////////////////////////////////////////////////////////////////////////
+// Simple classes for precision conversion
+/////////////////////////////////////////////////////////////////////////////////
+template <class fobj, class sobj>
+struct BinarySimpleUnmunger {
+  typedef typename getPrecision<fobj>::real_scalar_type fobj_stype;
+  typedef typename getPrecision<sobj>::real_scalar_type sobj_stype;
+  
+  void operator()(sobj &in, fobj &out) {
+    // take word by word and transform accoding to the status
+    fobj_stype *out_buffer = (fobj_stype *)&out;
+    sobj_stype *in_buffer = (sobj_stype *)&in;
+    size_t fobj_words = sizeof(out) / sizeof(fobj_stype);
+    size_t sobj_words = sizeof(in) / sizeof(sobj_stype);
+    assert(fobj_words == sobj_words);
+    
+    for (unsigned int word = 0; word < sobj_words; word++)
+      out_buffer[word] = in_buffer[word];  // type conversion on the fly
+    
+  }
+};
+
+template <class fobj, class sobj>
+struct BinarySimpleMunger {
+  typedef typename getPrecision<fobj>::real_scalar_type fobj_stype;
+  typedef typename getPrecision<sobj>::real_scalar_type sobj_stype;
+
+  void operator()(fobj &in, sobj &out) {
+    // take word by word and transform accoding to the status
+    fobj_stype *in_buffer = (fobj_stype *)&in;
+    sobj_stype *out_buffer = (sobj_stype *)&out;
+    size_t fobj_words = sizeof(in) / sizeof(fobj_stype);
+    size_t sobj_words = sizeof(out) / sizeof(sobj_stype);
+    assert(fobj_words == sobj_words);
+    
+    for (unsigned int word = 0; word < sobj_words; word++)
+      out_buffer[word] = in_buffer[word];  // type conversion on the fly
+    
+  }
+};
+
 
     template<class fobj,class sobj>
     struct GaugeSimpleMunger{
@@ -220,6 +319,7 @@ namespace Grid {
 	}
       }
     };
-
   }
+
+
 }

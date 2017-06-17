@@ -179,7 +179,7 @@ namespace Grid {
 	assert(0);
       }
 
-      GaugeStatistics<GaugeField>(Umu,clone);
+      GaugeStatistics(Umu,clone);
 
       std::cout<<GridLogMessage <<"NERSC Configuration "<<file<<" checksum "<<std::hex<<nersc_csum<< std::dec
 	       <<" header   "<<std::hex<<header.checksum<<std::dec <<std::endl;
@@ -233,7 +233,7 @@ namespace Grid {
 
 	GridMetaData(grid,header);
 	assert(header.nd==4);
-	GaugeStatistics<GaugeField>(Umu,header);
+	GaugeStatistics(Umu,header);
 	MachineCharacteristics(header);
 
 	int offset;
