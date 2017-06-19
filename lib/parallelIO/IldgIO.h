@@ -598,9 +598,14 @@ class IldgReader : public GridLimeReader {
 	}
 
 	if ( !strncmp(limeReaderType(LimeR), SCIDAC_RECORD_XML,strlen(SCIDAC_RECORD_XML)) ) { 
-	  XmlReader RD(&xmlc[0],"");
-	  read(RD,"usqcdInfo",usqcdInfo_);
-	  found_usqcdInfo = 1;
+	  std::string xmls(&xmlc[0]);
+	  // is it a USQCD info field
+	  if ( xmls.find(std::string("usqcdInfo")) != std::string::npos ) { 
+	    std::cout << GridLogMessage<<"...found a usqcdInfo field"<<std::endl;
+	    XmlReader RD(&xmlc[0],"");
+	    read(RD,"usqcdInfo",usqcdInfo_);
+	    found_usqcdInfo = 1;
+	  }
 	}
 
 	if ( !strncmp(limeReaderType(LimeR), SCIDAC_CHECKSUM,strlen(SCIDAC_CHECKSUM)) ) { 
