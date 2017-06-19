@@ -336,7 +336,7 @@ int main(int argc, char **argv) {
 
       std::cout << GridLogMessage << "norm cMmat : " << norm2(cMat)
                 << std::endl;
-      cMat = expMat(cMat, ComplexD(1.0, 0.0));
+      cMat = expMat(cMat,1.0);// ComplexD(1.0, 0.0));
       std::cout << GridLogMessage << "norm expMat: " << norm2(cMat)
                 << std::endl;
       peekSite(cm, cMat, mysite);
