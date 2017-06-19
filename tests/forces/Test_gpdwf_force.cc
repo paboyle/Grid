@@ -143,7 +143,7 @@ int main (int argc, char ** argv)
     dS = dS+trace(mommu*forcemu)*dt;
   }
 
-  Complex dSpred    = sum(dS);
+  ComplexD dSpred    = sum(dS);
 
   // From TwoFlavourPseudoFermion:
   //////////////////////////////////////////////////////

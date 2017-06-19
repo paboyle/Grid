@@ -51,8 +51,11 @@ int main (int argc, char ** argv)
   std::vector<LatticeColourMatrix> U(4,&Fine);
   
   FieldMetaData header;
-  std::string file("./ckpoint_lat");
-  NerscIO::readConfiguration(Umu,header,file);
+  std::string file("./ildg.file");
+  IldgReader IR;
+  IR.open(file);
+  IR.readConfiguration(Umu,header);
+  IR.close();
 
   for(int mu=0;mu<Nd;mu++){
     U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
@@ -69,13 +72,13 @@ int main (int argc, char ** argv)
   LatticeComplex Plaq(&Fine);
 
   Plaq = zero;
-#if 1
+
   for(int mu=1;mu<Nd;mu++){
     for(int nu=0;nu<mu;nu++){
       Plaq = Plaq + trace(U[mu]*Cshift(U[nu],mu,1)*adj(Cshift(U[mu],nu,1))*adj(U[nu]));
     }
   }
-#endif
+
   double vol = Fine.gSites();
   Complex PlaqScale(1.0/vol/6.0/3.0);
   std::cout<<GridLogMessage <<"PlaqScale" << PlaqScale<<std::endl;
