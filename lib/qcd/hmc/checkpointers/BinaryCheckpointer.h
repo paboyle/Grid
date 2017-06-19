@@ -62,36 +62,50 @@ class BinaryHmcCheckpointer : public BaseHmcCheckpointer<Impl> {
     fout.close();
   }
 
-  void TrajectoryComplete(int traj, Field &U, GridSerialRNG &sRNG,
-                          GridParallelRNG &pRNG) {
+  void TrajectoryComplete(int traj, Field &U, GridSerialRNG &sRNG, GridParallelRNG &pRNG) {
+
     if ((traj % Params.saveInterval) == 0) {
       std::string config, rng;
       this->build_filenames(traj, Params, config, rng);
 
-      BinaryIO::BinarySimpleUnmunger<sobj_double, sobj> munge;
+      uint32_t nersc_csum;
+      uint32_t scidac_csuma;
+      uint32_t scidac_csumb;
+      
+      BinarySimpleUnmunger<sobj_double, sobj> munge;
       truncate(rng);
-      BinaryIO::writeRNGSerial(sRNG, pRNG, rng, 0);
+      BinaryIO::writeRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
       truncate(config);
-      uint32_t csum = BinaryIO::writeObjectParallel<vobj, sobj_double>(
-          U, config, munge, 0, Params.format);
+
+      BinaryIO::writeLatticeObject<vobj, sobj_double>(U, config, munge, 0, Params.format,
+						      nersc_csum,scidac_csuma,scidac_csumb);
 
       std::cout << GridLogMessage << "Written Binary Configuration " << config
-                << " checksum " << std::hex << csum << std::dec << std::endl;
+                << " checksum " << std::hex 
+		<< nersc_csum   <<"/"
+		<< scidac_csuma   <<"/"
+		<< scidac_csumb 
+		<< std::dec << std::endl;
     }
+
   };
 
-  void CheckpointRestore(int traj, Field &U, GridSerialRNG &sRNG,
-                         GridParallelRNG &pRNG) {
+  void CheckpointRestore(int traj, Field &U, GridSerialRNG &sRNG, GridParallelRNG &pRNG) {
     std::string config, rng;
     this->build_filenames(traj, Params, config, rng);
 
-    BinaryIO::BinarySimpleMunger<sobj_double, sobj> munge;
-    BinaryIO::readRNGSerial(sRNG, pRNG, rng, 0);
-    uint32_t csum = BinaryIO::readObjectParallel<vobj, sobj_double>(
-        U, config, munge, 0, Params.format);
+    BinarySimpleMunger<sobj_double, sobj> munge;
 
+    uint32_t nersc_csum;
+    uint32_t scidac_csuma;
+    uint32_t scidac_csumb;
+    BinaryIO::readRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
+    BinaryIO::readLatticeObject<vobj, sobj_double>(U, config, munge, 0, Params.format,
+						   nersc_csum,scidac_csuma,scidac_csumb);
+    
     std::cout << GridLogMessage << "Read Binary Configuration " << config
-              << " checksum " << std::hex << csum << std::dec << std::endl;
+              << " checksums " << std::hex << nersc_csum<<"/"<<scidac_csuma<<"/"<<scidac_csumb 
+	      << std::dec << std::endl;
   };
 };
 }

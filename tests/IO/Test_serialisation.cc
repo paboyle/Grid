@@ -31,6 +31,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 
 using namespace Grid;
+using namespace Grid::QCD;
 
 GRID_SERIALIZABLE_ENUM(myenum, undef, red, 1, blue, 2, green, 3);
   
@@ -44,8 +45,8 @@ public:
                           double, y,
                           bool , b,
                           std::vector<double>, array,
-                          std::vector<std::vector<double>>, twodimarray,
-                          std::vector<std::vector<std::vector<Complex>>>, cmplx3darray
+                          std::vector<std::vector<double> >, twodimarray,
+                          std::vector<std::vector<std::vector<Complex> > >, cmplx3darray
                           );
   myclass() {}
   myclass(int i)
@@ -237,7 +238,7 @@ int main(int argc,char **argv)
     std::cout << "Loaded (JSON) -----------------" << std::endl;
     std::cout << jcopy1 << std::endl << jveccopy1 << std::endl;
   }
-
+  
 /* 
   // This is still work in progress
   {

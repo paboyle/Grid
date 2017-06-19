@@ -48,7 +48,8 @@ public:
                                     std::string, gauge,
                                     unsigned int, Ls,
                                     double      , mass,
-                                    double      , M5);
+                                    double      , M5,
+                                    std::string , boundary);
 };
 
 template <typename FImpl>
@@ -116,14 +117,19 @@ void TDWF<FImpl>::execute(void)
                  << par().mass << ", M5= " << par().M5 << " and Ls= "
                  << par().Ls << " using gauge field '" << par().gauge << "'"
                  << std::endl;
+    LOG(Message) << "Fermion boundary conditions: " << par().boundary 
+                 << std::endl;
     env().createGrid(par().Ls);
     auto &U      = *env().template getObject<LatticeGaugeField>(par().gauge);
     auto &g4     = *env().getGrid();
     auto &grb4   = *env().getRbGrid();
     auto &g5     = *env().getGrid(par().Ls);
     auto &grb5   = *env().getRbGrid(par().Ls);
+    std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
+    typename DomainWallFermion<FImpl>::ImplParams implParams(boundary);
     FMat *fMatPt = new DomainWallFermion<FImpl>(U, g5, grb5, g4, grb4,
-                                                par().mass, par().M5);
+                                                par().mass, par().M5,
+                                                implParams);
     env().setObject(getName(), fMatPt);
 }
 

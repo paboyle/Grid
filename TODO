@@ -2,9 +2,9 @@ TODO:
 ---------------
 
 Peter's work list:
-2)- Precision conversion and sort out localConvert      <-- 
-3)- Remove DenseVector, DenseMatrix; Use Eigen instead. <-- started 
-4)- Binary I/O speed up & x-strips
+1)- Precision conversion and sort out localConvert      <-- 
+2)- Remove DenseVector, DenseMatrix; Use Eigen instead. <-- 
+
 -- Profile CG, BlockCG, etc... Flop count/rate -- PARTIAL, time but no flop/s yet
 -- Physical propagator interface
 -- Conserved currents
@@ -13,6 +13,7 @@ Peter's work list:
 -- HDCR resume
 
 Recent DONE 
+-- Binary I/O speed up & x-strips                      <-- DONE
 -- Cut down the exterior overhead                      <-- DONE
 -- Interior legs from SHM comms                        <-- DONE
 -- Half-precision comms                                <-- DONE

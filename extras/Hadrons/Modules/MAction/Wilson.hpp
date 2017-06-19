@@ -46,7 +46,8 @@ class WilsonPar: Serializable
 public:
     GRID_SERIALIZABLE_CLASS_MEMBERS(WilsonPar,
                                     std::string, gauge,
-                                    double     , mass);
+                                    double     , mass,
+                                    std::string, boundary);
 };
 
 template <typename FImpl>
@@ -112,10 +113,15 @@ void TWilson<FImpl>::execute()
 {
     LOG(Message) << "Setting up TWilson fermion matrix with m= " << par().mass
                  << " using gauge field '" << par().gauge << "'" << std::endl;
+    LOG(Message) << "Fermion boundary conditions: " << par().boundary 
+                 << std::endl;
     auto &U      = *env().template getObject<LatticeGaugeField>(par().gauge);
     auto &grid   = *env().getGrid();
     auto &gridRb = *env().getRbGrid();
-    FMat *fMatPt = new WilsonFermion<FImpl>(U, grid, gridRb, par().mass);
+    std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
+    typename WilsonFermion<FImpl>::ImplParams implParams(boundary);
+    FMat *fMatPt = new WilsonFermion<FImpl>(U, grid, gridRb, par().mass,
+                                            implParams);
     env().setObject(getName(), fMatPt);
 }
 

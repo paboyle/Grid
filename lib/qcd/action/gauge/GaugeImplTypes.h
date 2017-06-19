@@ -40,12 +40,15 @@ namespace QCD {
   typedef typename GImpl::Simd Simd;                \
   typedef typename GImpl::LinkField GaugeLinkField; \
   typedef typename GImpl::Field GaugeField;         \
+  typedef typename GImpl::ComplexField ComplexField;\
   typedef typename GImpl::SiteField SiteGaugeField; \
+  typedef typename GImpl::SiteComplex SiteComplex;  \
   typedef typename GImpl::SiteLink SiteGaugeLink;
 
-#define INHERIT_FIELD_TYPES(Impl)             \
-  typedef typename Impl::Simd Simd;           \
-  typedef typename Impl::SiteField SiteField; \
+#define INHERIT_FIELD_TYPES(Impl)		    \
+  typedef typename Impl::Simd Simd;		    \
+  typedef typename Impl::ComplexField ComplexField; \
+  typedef typename Impl::SiteField SiteField;	    \
   typedef typename Impl::Field Field;
 
 // hardcodes the exponential approximation in the template
@@ -53,14 +56,17 @@ template <class S, int Nrepresentation = Nc, int Nexp = 12 > class GaugeImplType
 public:
   typedef S Simd;
 
-  template <typename vtype> using iImplGaugeLink  = iScalar<iScalar<iMatrix<vtype, Nrepresentation>>>;
-  template <typename vtype> using iImplGaugeField = iVector<iScalar<iMatrix<vtype, Nrepresentation>>, Nd>;
+  template <typename vtype> using iImplScalar     = iScalar<iScalar<iScalar<vtype> > >;
+  template <typename vtype> using iImplGaugeLink  = iScalar<iScalar<iMatrix<vtype, Nrepresentation> > >;
+  template <typename vtype> using iImplGaugeField = iVector<iScalar<iMatrix<vtype, Nrepresentation> >, Nd>;
 
+  typedef iImplScalar<Simd>     SiteComplex;
   typedef iImplGaugeLink<Simd>  SiteLink;
   typedef iImplGaugeField<Simd> SiteField;
 
-  typedef Lattice<SiteLink>  LinkField; 
-  typedef Lattice<SiteField> Field;
+  typedef Lattice<SiteComplex> ComplexField;
+  typedef Lattice<SiteLink>    LinkField; 
+  typedef Lattice<SiteField>   Field;
 
   // Guido: we can probably separate the types from the HMC functions
   // this will create 2 kind of implementations
@@ -80,7 +86,7 @@ public:
 
   ///////////////////////////////////////////////////////////
   // Move these to another class
-  // HMC auxiliary functions 
+  // HMC auxiliary functions
   static inline void generate_momenta(Field &P, GridParallelRNG &pRNG) {
     // specific for SU gauge fields
     LinkField Pmu(P._grid);
@@ -92,14 +98,19 @@ public:
   }
 
   static inline Field projectForce(Field &P) { return Ta(P); }
-  
+
   static inline void update_field(Field& P, Field& U, double ep){
-    for (int mu = 0; mu < Nd; mu++) {
-      auto Umu = PeekIndex<LorentzIndex>(U, mu);
-      auto Pmu = PeekIndex<LorentzIndex>(P, mu);
-      Umu = expMat(Pmu, ep, Nexp) * Umu;
-      PokeIndex<LorentzIndex>(U, ProjectOnGroup(Umu), mu);
+    //static std::chrono::duration<double> diff;
+
+    //auto start = std::chrono::high_resolution_clock::now();
+    parallel_for(int ss=0;ss<P._grid->oSites();ss++){
+      for (int mu = 0; mu < Nd; mu++) 
+        U[ss]._internal[mu] = ProjectOnGroup(Exponentiate(P[ss]._internal[mu], ep, Nexp) * U[ss]._internal[mu]);
     }
+    
+    //auto end = std::chrono::high_resolution_clock::now();
+   // diff += end - start;
+   // std::cout << "Time to exponentiate matrix " << diff.count() << " s\n";
   }
 
   static inline RealD FieldSquareNorm(Field& U){

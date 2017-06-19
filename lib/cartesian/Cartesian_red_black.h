@@ -151,6 +151,8 @@ public:
       _ldimensions.resize(_ndimension);
       _rdimensions.resize(_ndimension);
       _simd_layout.resize(_ndimension);
+      _lstart.resize(_ndimension);
+      _lend.resize(_ndimension);
       
       _ostride.resize(_ndimension);
       _istride.resize(_ndimension);
@@ -169,6 +171,8 @@ public:
 	  _gdimensions[d] = _gdimensions[d]/2; // Remove a checkerboard
 	}
 	_ldimensions[d] = _gdimensions[d]/_processors[d];
+	_lstart[d]     = _processor_coor[d]*_ldimensions[d];
+	_lend[d]       = _processor_coor[d]*_ldimensions[d]+_ldimensions[d]-1;
 
 	// Use a reduced simd grid
 	_simd_layout[d] = simd_layout[d];

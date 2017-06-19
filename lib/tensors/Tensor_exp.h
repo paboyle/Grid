@@ -37,28 +37,103 @@ namespace Grid {
   /////////////////////////////////////////////// 
 
 
-  template<class vtype> inline iScalar<vtype> Exponentiate(const iScalar<vtype>&r, ComplexD alpha ,  Integer Nexp = DEFAULT_MAT_EXP)
+  template<class vtype> inline iScalar<vtype> Exponentiate(const iScalar<vtype>&r, RealD alpha ,  Integer Nexp = DEFAULT_MAT_EXP)
     {
       iScalar<vtype> ret;
       ret._internal = Exponentiate(r._internal, alpha, Nexp);
       return ret;
     }
 
-
-  template<class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr> 
-    inline iMatrix<vtype,N> Exponentiate(const iMatrix<vtype,N> &arg, ComplexD alpha  , Integer Nexp = DEFAULT_MAT_EXP )
+template<class vtype, int N> inline iVector<vtype, N> Exponentiate(const iVector<vtype,N>&r, RealD alpha ,  Integer Nexp = DEFAULT_MAT_EXP)
     {
-      iMatrix<vtype,N> unit(1.0);
-      iMatrix<vtype,N> temp(unit);
-      
-      for(int i=Nexp; i>=1;--i){
-	temp *= alpha/ComplexD(i);
-	temp = unit + temp*arg;
-      }
-      
-      return temp;
-      
+      iVector<vtype, N> ret;
+      for (int i = 0; i < N; i++)
+        ret._internal[i] = Exponentiate(r._internal[i], alpha, Nexp);
+      return ret;
     }
+
+
+
+    // Specialisation: Cayley-Hamilton exponential for SU(3)
+    template<class vtype, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0>::type * =nullptr> 
+    inline iMatrix<vtype,3> Exponentiate(const iMatrix<vtype,3> &arg, RealD alpha  , Integer Nexp = DEFAULT_MAT_EXP )
+    {
+    // for SU(3) 2x faster than the std implementation using Nexp=12
+    // notice that it actually computes
+    // exp ( input matrix )
+    // the i sign is coming from outside
+    // input matrix is anti-hermitian NOT hermitian
+      typedef iMatrix<vtype,3> mat;
+      typedef iScalar<vtype> scalar;
+      mat unit(1.0);
+      mat temp(unit);
+      const Complex one_over_three = 1.0 / 3.0;
+      const Complex one_over_two = 1.0 / 2.0;
+
+      scalar c0, c1, tmp, c0max, theta, u, w;
+      scalar xi0, u2, w2, cosw;
+      scalar fden, h0, h1, h2;
+      scalar e2iu, emiu, ixi0, qt;
+      scalar f0, f1, f2;
+      scalar unity(1.0);
+      
+      mat iQ2 = arg*arg*alpha*alpha;
+      mat iQ3 = arg*iQ2*alpha;   
+      // sign in c0 from the conventions on the Ta
+      c0 = -imag( trace(iQ3) ) * one_over_three;  
+      c1 = -real( trace(iQ2) ) * one_over_two;
+
+      // Cayley Hamilton checks to machine precision, tested
+      tmp = c1 * one_over_three;
+      c0max = 2.0 * pow(tmp, 1.5);
+
+      theta = acos(c0 / c0max) * one_over_three;
+      u = sqrt(tmp) * cos(theta);
+      w = sqrt(c1) * sin(theta);
+
+      xi0 = sin(w) / w;
+      u2 = u * u;
+      w2 = w * w;
+      cosw = cos(w);
+
+      ixi0 = timesI(xi0);
+      emiu = cos(u) - timesI(sin(u));
+      e2iu = cos(2.0 * u) + timesI(sin(2.0 * u));
+
+      h0 = e2iu * (u2 - w2) +
+           emiu * ((8.0 * u2 * cosw) + (2.0 * u * (3.0 * u2 + w2) * ixi0));
+      h1 = e2iu * (2.0 * u) - emiu * ((2.0 * u * cosw) - (3.0 * u2 - w2) * ixi0);
+      h2 = e2iu - emiu * (cosw + (3.0 * u) * ixi0);
+
+      fden = unity / (9.0 * u2 - w2);  // reals
+      f0 = h0 * fden;
+      f1 = h1 * fden;
+      f2 = h2 * fden;
+
+      return (f0 * unit + timesMinusI(f1) * arg*alpha - f2 * iQ2);
+    }
+
+
+
+// General exponential
+template<class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr> 
+    inline iMatrix<vtype,N> Exponentiate(const iMatrix<vtype,N> &arg, RealD alpha  , Integer Nexp = DEFAULT_MAT_EXP )
+    {
+    // notice that it actually computes
+    // exp ( input matrix )
+    // the i sign is coming from outside
+    // input matrix is anti-hermitian NOT hermitian
+      typedef iMatrix<vtype,N> mat;
+      mat unit(1.0);
+      mat temp(unit);
+      for(int i=Nexp; i>=1;--i){
+	      temp *= alpha/RealD(i);
+	      temp = unit + temp*arg;
+      }
+      return temp;
+
+    }
+
 
 
 

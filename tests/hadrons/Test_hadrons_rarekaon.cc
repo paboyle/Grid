@@ -98,6 +98,10 @@ int main(int argc, char *argv[])
         gaugePar.file = configStem;
         application.createModule<MGauge::Load>("gauge", gaugePar);
     }
+    
+    // set fermion boundary conditions to be periodic space, antiperiodic time.
+    std::string boundary = "1 1 1 -1";
+
     for (unsigned int i = 0; i < flavour.size(); ++i)
     {
         // actions
@@ -106,6 +110,7 @@ int main(int argc, char *argv[])
         actionPar.Ls    = 16;
         actionPar.M5    = 1.8;
         actionPar.mass  = mass[i];
+        actionPar.boundary = boundary;
         application.createModule<MAction::DWF>("DWF_" + flavour[i], actionPar);
 
         // solvers
