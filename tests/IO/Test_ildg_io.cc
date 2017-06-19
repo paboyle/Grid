@@ -78,13 +78,19 @@ int main (int argc, char ** argv)
   std::cout <<GridLogMessage<<"** Writing out  ILDG conf    *********"<<std::endl;
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
   std::string file("./ckpoint_ildg.4000");
-  IldgIO::writeConfiguration(file,Umu);
+  IldgWriter _IldgWriter;
+  _IldgWriter.open(file);
+  _IldgWriter.writeConfiguration(Umu,4000,std::string("dummy_ildg_LFN"),std::string("dummy_config"));
+  _IldgWriter.close();
 
   Umu_saved = Umu;
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
   std::cout <<GridLogMessage<<"** Reading back ILDG conf    *********"<<std::endl;
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
-  IldgIO::readConfiguration(file,Umu,header);
+  IldgReader _IldgReader;
+  _IldgReader.open(file);
+  _IldgReader.readConfiguration(Umu,header);
+  _IldgReader.close();
   Umu_diff = Umu - Umu_saved;
 
   std::cout <<GridLogMessage<< "norm2 Gauge Diff = "<<norm2(Umu_diff)<<std::endl;

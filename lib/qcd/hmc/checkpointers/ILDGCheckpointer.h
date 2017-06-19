@@ -77,7 +77,10 @@ class ILDGHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
       
       uint32_t nersc_csum,scidac_csuma,scidac_csumb;
       BinaryIO::writeRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
-      IldgIO::writeConfiguration(config,U, Params.format);
+      IldgWriter _IldgWriter;
+      _IldgWriter.open(config);
+      _IldgWriter.writeConfiguration(U, traj, config, config);
+      _IldgWriter.close();
 
       std::cout << GridLogMessage << "Written ILDG Configuration on " << config
                 << " checksum " << std::hex 
@@ -97,7 +100,10 @@ class ILDGHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
     BinaryIO::readRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
 
     FieldMetaData header;
-    IldgIO::readConfiguration(config,U,header);  // format from the header
+    IldgReader _IldgReader;
+    _IldgReader.open(config);
+    _IldgReader.readConfiguration(config,U,header);  // format from the header
+    _IldgReader.close();
 
     std::cout << GridLogMessage << "Read ILDG Configuration from " << config
               << " checksum " << std::hex 

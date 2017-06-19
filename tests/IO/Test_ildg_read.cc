@@ -52,7 +52,10 @@ int main (int argc, char ** argv)
   
   FieldMetaData header;
   std::string file("./ildg.file");
-  IldgIO::readConfiguration(file,Umu,header);
+  IldgReader IR;
+  IR.open(file);
+  IR.readConfiguration(Umu,header);
+  IR.close();
 
   for(int mu=0;mu<Nd;mu++){
     U[mu] = PeekIndex<LorentzIndex>(Umu,mu);

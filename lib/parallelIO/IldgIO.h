@@ -38,14 +38,17 @@ directory
 #include <sys/utsname.h>
 #include <unistd.h>
 
-//Lime is a must have for this functionality
-extern "C" {  // for linkage
+//C-Lime is a must have for this functionality
+extern "C" {  
 #include "lime.h"
 }
 
 namespace Grid {
 namespace QCD {
 
+  /////////////////////////////////
+  // Encode word types as strings
+  /////////////////////////////////
  template<class word> inline std::string ScidacWordMnemonic(void){ return std::string("unknown"); }
  template<> inline std::string ScidacWordMnemonic<double>  (void){ return std::string("D"); }
  template<> inline std::string ScidacWordMnemonic<float>   (void){ return std::string("F"); }
@@ -54,6 +57,9 @@ namespace QCD {
  template<> inline std::string ScidacWordMnemonic< int64_t>(void){ return std::string("I64_t"); }
  template<> inline std::string ScidacWordMnemonic<uint64_t>(void){ return std::string("U64_t"); }
 
+  /////////////////////////////////////////
+  // Encode a generic tensor as a string
+  /////////////////////////////////////////
  template<class vobj> std::string ScidacRecordTypeString(int &colors, int &spins, int & typesize,int &datacount) { 
 
    typedef typename getPrecision<vobj>::real_scalar_type stype;
@@ -113,6 +119,10 @@ namespace QCD {
    return ScidacRecordTypeString<vobj>(colors,spins,typesize,datacount);
  };
 
+
+ ////////////////////////////////////////////////////////////
+ // Helper to fill out metadata
+ ////////////////////////////////////////////////////////////
  template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
 					  FieldMetaData &header,
 					  scidacRecord & _scidacRecord,
@@ -159,88 +169,38 @@ namespace QCD {
 ////////////////////////////////////////////////////////////////////////////////////
 // Lime, ILDG and Scidac I/O classes
 ////////////////////////////////////////////////////////////////////////////////////
-class LimeIO : public BinaryIO {
+class GridLimeReader : public BinaryIO {
  public:
-
    ///////////////////////////////////////////////////
    // FIXME: format for RNG? Now just binary out instead
-   // FIXME: Make interface able to write multiple records
-   // FIXME: Split into LimeReader and LimeWriter
    ///////////////////////////////////////////////////
-   /*
-   FILE * File;
-   LimeWriter LimeW;
-   LimeReader LimeR;
-   template<class serialisable_object>
-   int readObject(serialisable_object &object,std::string object_name,std::string record_name)
 
-  int createLimeRecordHeader(std::string message, int MB, int ME, size_t PayloadSize);
-  template<class serialisable_object>
-  int writeObject(int MB,int ME,serialisable_object &object,std::string object_name,std::string record_name)
-  template<class vobj>
-  int writeLimeLatticeBinaryObject(Lattice<vobj> &field,std::string filename,std::string record_name)
-   */
-  ///////////////////////////////////////////////////////
-  // Lime utility functions
-  ///////////////////////////////////////////////////////
+   FILE       *File;
+   LimeReader *LimeR;
+   std::string filename;
 
-  static int createLimeRecordHeader(std::string message, int MB, int ME, size_t PayloadSize, LimeWriter* L)
-  {
-    LimeRecordHeader *h;
-    h = limeCreateHeader(MB, ME, const_cast<char *>(message.c_str()), PayloadSize);
-    assert(limeWriteRecordHeader(h, L) >= 0);
-    limeDestroyHeader(h);
-    return LIME_SUCCESS;
-  }
-
-  ////////////////////////////////////////////
-  // Write a generic serialisable object
-  ////////////////////////////////////////////
-  template<class serialisable_object>
-  static void writeLimeObject(int MB,int ME,serialisable_object &object,std::string object_name,std::string record_name, LimeWriter *LimeW)
-  {
-    std::string xmlstring;
-    {
-      XmlWriter WR("","");
-      write(WR,object_name,object);
-      xmlstring = WR.XmlString();
-    }
-    uint64_t nbytes = xmlstring.size();
-    LimeRecordHeader *h = limeCreateHeader(MB, ME,(char *)record_name.c_str(), nbytes);
-    int err=limeWriteRecordHeader(h, LimeW); assert(err>=0);
-    err=limeWriteRecordData(&xmlstring[0], &nbytes, LimeW); assert(err>=0);
-    err=limeWriterCloseRecord(LimeW);  assert(err>=0);
-    limeDestroyHeader(h);
-  }
-  ////////////////////////////////////////////
-  // Read a generic serialisable object
-  ////////////////////////////////////////////
-  template<class serialisable_object>
-  static void readLimeObject(serialisable_object &object,std::string object_name,std::string record_name, LimeReader *LimeR)
-  {
-    std::string xmlstring;
-    // should this be a do while; can we miss a first record??
-    while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
-
-      uint64_t nbytes = limeReaderBytes(LimeR);//size of this record (configuration)
-
-      if ( strncmp(limeReaderType(LimeR), record_name.c_str(),strlen(record_name.c_str()) )  ) {
-	std::vector<char> xmlc(nbytes+1,'\0');
-	limeReaderReadData((void *)&xmlc[0], &nbytes, LimeR);    
-	XmlReader RD(&xmlc[0],"");
-	read(RD,object_name,object);
-	return;
-      }
-
-    }  
-    assert(0);
-  }
+   /////////////////////////////////////////////
+   // Open the file
+   /////////////////////////////////////////////
+   void open(std::string &_filename) 
+   {
+     filename= _filename;
+     File = fopen(filename.c_str(), "r");
+     LimeR = limeCreateReader(File);
+   }
+   /////////////////////////////////////////////
+   // Close the file
+   /////////////////////////////////////////////
+   void close(void){
+     fclose(File);
+     //     limeDestroyReader(LimeR);
+   }
 
   ////////////////////////////////////////////
   // Read a generic lattice field and verify checksum
   ////////////////////////////////////////////
   template<class vobj>
-  static void readLimeLatticeBinaryObject(Lattice<vobj> &field,std::string filename,std::string record_name,FILE *File, LimeReader *LimeR)
+  void readLimeLatticeBinaryObject(Lattice<vobj> &field,std::string record_name)
   {
     typedef typename vobj::scalar_object sobj;
     scidacChecksum scidacChecksum_;
@@ -262,7 +222,7 @@ class LimeIO : public BinaryIO {
 	/////////////////////////////////////////////
 	// Insist checksum is next record
 	/////////////////////////////////////////////
-	readLimeObject(scidacChecksum_,std::string("scidacChecksum"),record_name,LimeR);
+	readLimeObject(scidacChecksum_,std::string("scidacChecksum"),record_name);
 
 	/////////////////////////////////////////////
 	// Verify checksums
@@ -272,14 +232,91 @@ class LimeIO : public BinaryIO {
       }
     }
   }
+  ////////////////////////////////////////////
+  // Read a generic serialisable object
+  ////////////////////////////////////////////
+  template<class serialisable_object>
+  void readLimeObject(serialisable_object &object,std::string object_name,std::string record_name)
+  {
+    std::string xmlstring;
+    // should this be a do while; can we miss a first record??
+    while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
 
+      uint64_t nbytes = limeReaderBytes(LimeR);//size of this record (configuration)
+
+      if ( strncmp(limeReaderType(LimeR), record_name.c_str(),strlen(record_name.c_str()) )  ) {
+	std::vector<char> xmlc(nbytes+1,'\0');
+	limeReaderReadData((void *)&xmlc[0], &nbytes, LimeR);    
+	XmlReader RD(&xmlc[0],"");
+	read(RD,object_name,object);
+	return;
+      }
+
+    }  
+    assert(0);
+  }
+};
+
+class GridLimeWriter : public BinaryIO {
+ public:
+   ///////////////////////////////////////////////////
+   // FIXME: format for RNG? Now just binary out instead
+   ///////////////////////////////////////////////////
+
+   FILE       *File;
+   LimeWriter *LimeW;
+   std::string filename;
+
+   void open(std::string &_filename) { 
+     filename= _filename;
+     File = fopen(filename.c_str(), "w");
+     LimeW = limeCreateWriter(File); assert(LimeW != NULL );
+   }
+   /////////////////////////////////////////////
+   // Close the file
+   /////////////////////////////////////////////
+   void close(void) {
+     fclose(File);
+     //  limeDestroyWriter(LimeW);
+   }
+  ///////////////////////////////////////////////////////
+  // Lime utility functions
+  ///////////////////////////////////////////////////////
+  int createLimeRecordHeader(std::string message, int MB, int ME, size_t PayloadSize)
+  {
+    LimeRecordHeader *h;
+    h = limeCreateHeader(MB, ME, const_cast<char *>(message.c_str()), PayloadSize);
+    assert(limeWriteRecordHeader(h, LimeW) >= 0);
+    limeDestroyHeader(h);
+    return LIME_SUCCESS;
+  }
+  ////////////////////////////////////////////
+  // Write a generic serialisable object
+  ////////////////////////////////////////////
+  template<class serialisable_object>
+  void writeLimeObject(int MB,int ME,serialisable_object &object,std::string object_name,std::string record_name)
+  {
+    std::string xmlstring;
+    {
+      XmlWriter WR("","");
+      write(WR,object_name,object);
+      xmlstring = WR.XmlString();
+    }
+    uint64_t nbytes = xmlstring.size();
+    int err;
+    LimeRecordHeader *h = limeCreateHeader(MB, ME,(char *)record_name.c_str(), nbytes); assert(h!= NULL);
+
+    err=limeWriteRecordHeader(h, LimeW);                    assert(err>=0);
+    err=limeWriteRecordData(&xmlstring[0], &nbytes, LimeW); assert(err>=0);
+    err=limeWriterCloseRecord(LimeW);                       assert(err>=0);
+    limeDestroyHeader(h);
+  }
   ////////////////////////////////////////////
   // Write a generic lattice field and csum
   ////////////////////////////////////////////
   template<class vobj>
-  static void writeLimeLatticeBinaryObject(Lattice<vobj> &field,std::string filename,std::string record_name,FILE *File, LimeWriter *LimeW)
+  void writeLimeLatticeBinaryObject(Lattice<vobj> &field,std::string record_name)
   {
-
     ////////////////////////////////////////////
     // Create record header
     ////////////////////////////////////////////
@@ -287,7 +324,7 @@ class LimeIO : public BinaryIO {
     int err;
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
     uint64_t PayloadSize = sizeof(sobj) * field._grid->_gsites;
-    createLimeRecordHeader(record_name, 0, 0, PayloadSize, LimeW);
+    createLimeRecordHeader(record_name, 0, 0, PayloadSize);
 
     ////////////////////////////////////////////////////////////////////
     // NB: FILE and iostream are jointly writing disjoint sequences in the
@@ -317,34 +354,25 @@ class LimeIO : public BinaryIO {
     checksum.suma= streama.str();
     checksum.sumb= streamb.str();
     std::cout << GridLogMessage<<" writing scidac checksums "<<std::hex<<scidac_csuma<<"/"<<scidac_csumb<<std::dec<<std::endl;
-    writeLimeObject(0,1,checksum,std::string("scidacChecksum"    ),std::string(SCIDAC_CHECKSUM),LimeW);
+    writeLimeObject(0,1,checksum,std::string("scidacChecksum"    ),std::string(SCIDAC_CHECKSUM));
   }
-  // Could end the LIME base class here
 };
 
-class ScidacIO : public LimeIO {
+class ScidacWriter : public GridLimeWriter {
  public:
-   /*
-    LimeWriter *LimeW;
-    LimeReader *LimeR;
-    FILE *File;
-  template<class userFile>
-  int open(std::string filename,GridBase *grid,userFile &_userFile,int volfmt) {
- 
-  }
-  void close(void) {
- 
-  }
-  template<class vobj,class userRecord>
-  int writeScidacField(Lattice<vobj> &field,userRecord &_userRecord,int volfmt) 
-  template<class vobj,class userRecord>
-  int  readScidacField(Lattice<vobj> &field,userRecord &_userRecord,int volfmt) 
-   */
+
+   template<class SerialisableUserFile>
+   void writeScidacFileRecord(GridBase *grid,SerialisableUserFile &_userFile)
+   {
+     scidacFile    _scidacFile(grid);
+     writeLimeObject(1,0,_scidacFile,_scidacFile.SerialisableClassName(),std::string(SCIDAC_PRIVATE_FILE_XML));
+     writeLimeObject(0,1,_userFile,_userFile.SerialisableClassName(),std::string(SCIDAC_FILE_XML));
+   }
   ////////////////////////////////////////////////
   // Write generic lattice field in scidac format
   ////////////////////////////////////////////////
-  template <class vobj,class userFile, class userRecord>
-  static void writeScidacField(std::string filename,Lattice<vobj> &field,userFile _userFile,userRecord _userRecord) 
+   template <class vobj, class userRecord>
+  void writeScidacFieldRecord(Lattice<vobj> &field,userRecord _userRecord) 
   {
     typedef typename vobj::scalar_object sobj;
     uint64_t nbytes;
@@ -362,34 +390,25 @@ class ScidacIO : public LimeIO {
     //////////////////////////////////////////////
     // Fill the Lime file record by record
     //////////////////////////////////////////////
-    FILE *File = fopen(filename.c_str(), "w");
-    LimeWriter *LimeW = limeCreateWriter(File);
-    assert(LimeW != NULL );
-
-    writeLimeObject(1,0,header ,std::string("FieldMetaData"),std::string(GRID_FORMAT),LimeW); // Open message 
-    writeLimeObject(0,0,_userFile,_userFile.SerialisableClassName(),std::string(SCIDAC_FILE_XML),LimeW);
-    writeLimeObject(0,0,_scidacFile,_scidacFile.SerialisableClassName(),std::string(SCIDAC_PRIVATE_FILE_XML),LimeW);
-    writeLimeObject(0,0,_userRecord,_userRecord.SerialisableClassName(),std::string(SCIDAC_RECORD_XML),LimeW);
-    writeLimeObject(0,0,_scidacRecord,_scidacRecord.SerialisableClassName(),std::string(SCIDAC_PRIVATE_RECORD_XML),LimeW);
-    writeLimeLatticeBinaryObject(field,filename,std::string(ILDG_BINARY_DATA),File,LimeW);      // Closes message with checksum
-
-    limeDestroyWriter(LimeW);
-    fclose(File);
+    writeLimeObject(1,0,header ,std::string("FieldMetaData"),std::string(GRID_FORMAT)); // Open message 
+    writeLimeObject(0,0,_userRecord,_userRecord.SerialisableClassName(),std::string(SCIDAC_RECORD_XML));
+    writeLimeObject(0,0,_scidacRecord,_scidacRecord.SerialisableClassName(),std::string(SCIDAC_PRIVATE_RECORD_XML));
+    writeLimeLatticeBinaryObject(field,std::string(ILDG_BINARY_DATA));      // Closes message with checksum
   }
 };
 
-class IldgIO : public ScidacIO {
+class IldgWriter : public ScidacWriter {
  public:
 
   ///////////////////////////////////
   // A little helper
   ///////////////////////////////////
-  static void writeLimeIldgLFN(std::string &LFN,LimeWriter *LimeW)
+  void writeLimeIldgLFN(std::string &LFN)
   {
     uint64_t PayloadSize = LFN.size();
     int err;
-    createLimeRecordHeader(ILDG_DATA_LFN, 0 , 0, PayloadSize, LimeW);
-    err=limeWriteRecordData(const_cast<char*>(LFN.c_str()), &PayloadSize, LimeW); assert(err>=0);
+    createLimeRecordHeader(ILDG_DATA_LFN, 0 , 0, PayloadSize);
+    err=limeWriteRecordData(const_cast<char*>(LFN.c_str()), &PayloadSize,LimeW); assert(err>=0);
     err=limeWriterCloseRecord(LimeW); assert(err>=0);
   }
 
@@ -399,7 +418,7 @@ class IldgIO : public ScidacIO {
   // Use Grid MetaData object if present.
   ////////////////////////////////////////////////////////////////
   template <class vsimd>
-  static void writeConfiguration(std::string filename,Lattice<iLorentzColourMatrix<vsimd> > &Umu) 
+  void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,int sequence,std::string LFN,std::string description) 
   {
     GridBase * grid = Umu._grid;
     typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
@@ -418,6 +437,10 @@ class IldgIO : public ScidacIO {
     ScidacMetaData(Umu,header,_scidacRecord,_scidacFile);
 
     std::string format = header.floating_point;
+    header.ensemble_id    = description;
+    header.ensemble_label = description;
+    header.sequence_number = sequence;
+    header.ildg_lfn = LFN;
 
     assert ( (format == std::string("IEEE32BIG"))  
            ||(format == std::string("IEEE64BIG")) );
@@ -453,20 +476,21 @@ class IldgIO : public ScidacIO {
     //////////////////////////////////////////////
     // Fill the Lime file record by record
     //////////////////////////////////////////////
-
-    FILE *File = fopen(filename.c_str(), "w");
-    LimeWriter *LimeW = limeCreateWriter(File); assert(LimeW != NULL);
-    writeLimeObject(1,0,header ,std::string("FieldMetaData"),std::string(GRID_FORMAT),LimeW); // Open message 
-    writeLimeObject(0,0,info,info.SerialisableClassName(),std::string(SCIDAC_FILE_XML),LimeW);
-    writeLimeObject(0,0,_scidacFile,_scidacFile.SerialisableClassName(),std::string(SCIDAC_PRIVATE_FILE_XML),LimeW);
-    writeLimeObject(0,0,info,info.SerialisableClassName(),std::string(SCIDAC_RECORD_XML),LimeW);
-    writeLimeObject(0,0,_scidacRecord,_scidacRecord.SerialisableClassName(),std::string(SCIDAC_PRIVATE_RECORD_XML),LimeW);
-    writeLimeObject(0,0,ildgfmt,std::string("ildgFormat")   ,std::string(ILDG_FORMAT),LimeW); // rec
-    writeLimeIldgLFN(header.ildg_lfn, LimeW);                                                 // rec
-    writeLimeLatticeBinaryObject(Umu,filename,std::string(ILDG_BINARY_DATA),File,LimeW);      // Closes message with checksum
-    limeDestroyWriter(LimeW);
+    writeLimeObject(1,0,header ,std::string("FieldMetaData"),std::string(GRID_FORMAT)); // Open message 
+    writeLimeObject(0,0,_scidacFile,_scidacFile.SerialisableClassName(),std::string(SCIDAC_PRIVATE_FILE_XML));
+    writeLimeObject(0,1,info,info.SerialisableClassName(),std::string(SCIDAC_FILE_XML));
+    writeLimeObject(1,0,_scidacRecord,_scidacRecord.SerialisableClassName(),std::string(SCIDAC_PRIVATE_RECORD_XML));
+    writeLimeObject(0,0,info,info.SerialisableClassName(),std::string(SCIDAC_RECORD_XML));
+    writeLimeObject(0,0,ildgfmt,std::string("ildgFormat")   ,std::string(ILDG_FORMAT)); // rec
+    writeLimeIldgLFN(header.ildg_lfn);                                                 // rec
+    writeLimeLatticeBinaryObject(Umu,std::string(ILDG_BINARY_DATA));      // Closes message with checksum
+    //    limeDestroyWriter(LimeW);
     fclose(File);
   }
+};
+
+class IldgReader : public GridLimeReader {
+ public:
 
   ////////////////////////////////////////////////////////////////
   // Read either Grid/SciDAC/ILDG configuration
@@ -476,7 +500,7 @@ class IldgIO : public ScidacIO {
   // Else use SciDAC MetaData object if present.
   ////////////////////////////////////////////////////////////////
   template <class vsimd>
-  static void readConfiguration(std::string filename,Lattice<iLorentzColourMatrix<vsimd> > &Umu, FieldMetaData &FieldMetaData_) {
+  void readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu, FieldMetaData &FieldMetaData_) {
 
     typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
     typedef typename GaugeField::vector_object  vobj;
@@ -490,9 +514,6 @@ class IldgIO : public ScidacIO {
     std::vector<int> dims = Umu._grid->FullDimensions();
 
     assert(dims.size()==4);
-
-    FILE *File = fopen(filename.c_str(), "r");
-    LimeReader *LimeR = limeCreateReader(File);
 
     // Metadata holders
     ildgFormat     ildgFormat_    ;
