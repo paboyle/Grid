@@ -1,4 +1,4 @@
- /*************************************************************************************
+/*************************************************************************************
     Grid physics library, www.github.com/paboyle/Grid 
     Source file: ./lib/lattice/Lattice_reduction.h
     Copyright (C) 2015
@@ -462,13 +462,15 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
   typedef typename vobj::vector_type vector_type;
 
   int Nblock = X._grid->GlobalDimensions()[Orthog];
-  
+
   GridBase *FullGrid  = X._grid;
   GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
-  
+
   Lattice<vobj> Xslice(SliceGrid);
   Lattice<vobj> Rslice(SliceGrid);
-  
+
+#if 0
+  // R[i] = Y[i] + X[j] a(j,i) 
   for(int i=0;i<Nblock;i++){
     ExtractSlice(Rslice,Y,i,Orthog);
     for(int j=0;j<Nblock;j++){
@@ -477,7 +479,89 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
     }
     InsertSlice(Rslice,R,i,Orthog);
   }
+#endif
+#if 0
+  int nh =  FullGrid->_ndimension;
+  int nl = SliceGrid->_ndimension;
+
+#pragma omp parallel 
+{ 
+
+  std::vector<int> lcoor(nl); // sliced coor
+  std::vector<int> hcoor(nh); // unsliced coor
+  std::vector<sobj> s_x(Nblock);
+
+#pragma omp for
+  for(int idx=0;idx<SliceGrid->lSites();idx++){
+
+    SliceGrid->LocalIndexToLocalCoor(idx,lcoor); 
+
+    int ddl=0;
+    for(int d=0;d<nh;d++){
+      if ( d!=Orthog ) { 
+	hcoor[d]=lcoor[ddl++];
+      }
+    }
+
+    sobj dot;
+    for(int i=0;i<Nblock;i++){
+      hcoor[Orthog] = i;
+      peekLocalSite(s_x[i],X,hcoor);
+    }
+
+    for(int i=0;i<Nblock;i++){
+      hcoor[Orthog] = i;
+      peekLocalSite(dot,Y,hcoor);
+      for(int j=0;j<Nblock;j++){
+	dot = dot + s_x[j]*(scale*aa(j,i));
+      }
+      pokeLocalSite(dot,R,hcoor);
+    }
+  }
+}
+#endif
+
+#if 1
+  assert( FullGrid->_simd_layout[Orthog]==1);
+  int nh =  FullGrid->_ndimension;
+  int nl = SliceGrid->_ndimension;
+
+
+  //FIXME package in a convenient iterator
+  //Should loop over a plane orthogonal to direction "Orthog"
+  int stride=FullGrid->_slice_stride[Orthog];
+  int block =FullGrid->_slice_block [Orthog];
+  int nblock=FullGrid->_slice_nblock[Orthog];
+  int ostride=FullGrid->_ostride[Orthog];
+#pragma omp parallel 
+  {
+
+    std::vector<vobj> s_x(Nblock);
+
+#pragma omp for collapse(2)
+    for(int n=0;n<nblock;n++){
+    for(int b=0;b<block;b++){
+      int o  = n*stride + b;
+
+
+      for(int i=0;i<Nblock;i++){
+	s_x[i] = X[o+i*ostride];
+      }
+
+      vobj dot;
+
+      for(int i=0;i<Nblock;i++){
+	dot = Y[o+i*ostride];
+	for(int j=0;j<Nblock;j++){
+	  dot = dot + s_x[j]*(scale*aa(j,i));
+	}
+	R[o+i*ostride]=dot;
+      }
+    }}
+  }
+#endif
 };
+
 
 template<class vobj>
 static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int Orthog) 
@@ -497,7 +581,8 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
   Lattice<vobj> Rslice(SliceGrid);
   
   mat = Eigen::MatrixXcd::Zero(Nblock,Nblock);
-  
+
+#if 0  
   for(int i=0;i<Nblock;i++){
     ExtractSlice(Lslice,lhs,i,Orthog);
     for(int j=0;j<Nblock;j++){
@@ -505,12 +590,96 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
       mat(i,j) = innerProduct(Lslice,Rslice);
     }
   }
-#undef FORCE_DIAG
-#ifdef FORCE_DIAG
-  for(int i=0;i<Nblock;i++){
-    for(int j=0;j<Nblock;j++){
-      if ( i != j ) mat(i,j)=0.0;
+#endif
+
+#if 0
+  int nh =  FullGrid->_ndimension;
+  int nl = SliceGrid->_ndimension;
+
+#pragma omp parallel 
+{ 
+  std::vector<int> lcoor(nl); // sliced coor
+  std::vector<int> hcoor(nh); // unsliced coor
+  std::vector<sobj> Left(Nblock);
+  std::vector<sobj> Right(Nblock);
+  Eigen::MatrixXcd  mat_thread = Eigen::MatrixXcd::Zero(Nblock,Nblock);
+
+#pragma omp for
+  for(int idx=0;idx<SliceGrid->lSites();idx++){
+
+    SliceGrid->LocalIndexToLocalCoor(idx,lcoor); 
+
+    int ddl=0;
+    for(int d=0;d<nh;d++){
+      if ( d!=Orthog ) { 
+	hcoor[d]=lcoor[ddl++];
+      }
     }
+
+    // Get the scalar objects
+    for(int i=0;i<Nblock;i++){
+      hcoor[Orthog] = i;
+      peekLocalSite(Left[i] ,lhs,hcoor);
+      peekLocalSite(Right[i],rhs,hcoor);
+    }
+
+    for(int i=0;i<Nblock;i++){
+    for(int j=0;j<Nblock;j++){
+      std::complex<double> ip = innerProduct(Left[i],Right[j]);
+      mat_thread(i,j) += ip;
+    }}
+  }
+
+#pragma omp critical
+  {
+    mat += mat_thread;
+  }  
+
+}
+#endif
+
+#if 1
+  assert( FullGrid->_simd_layout[Orthog]==1);
+  int nh =  FullGrid->_ndimension;
+  int nl = SliceGrid->_ndimension;
+
+  //FIXME package in a convenient iterator
+  //Should loop over a plane orthogonal to direction "Orthog"
+  int stride=FullGrid->_slice_stride[Orthog];
+  int block =FullGrid->_slice_block [Orthog];
+  int nblock=FullGrid->_slice_nblock[Orthog];
+  int ostride=FullGrid->_ostride[Orthog];
+
+  typedef typename vobj::vector_typeD vector_typeD;
+
+#pragma omp parallel 
+  {
+    std::vector<vobj> Left(Nblock);
+    std::vector<vobj> Right(Nblock);
+    Eigen::MatrixXcd  mat_thread = Eigen::MatrixXcd::Zero(Nblock,Nblock);
+
+#pragma omp for collapse(2)
+    for(int n=0;n<nblock;n++){
+    for(int b=0;b<block;b++){
+
+      int o  = n*stride + b;
+
+      for(int i=0;i<Nblock;i++){
+	Left [i] = lhs[o+i*ostride];
+	Right[i] = rhs[o+i*ostride];
+      }
+
+      for(int i=0;i<Nblock;i++){
+      for(int j=0;j<Nblock;j++){
+	auto tmp = innerProduct(Left[i],Right[j]);
+	vector_typeD rtmp = TensorRemove(tmp);
+	mat_thread(i,j) += Reduce(rtmp);
+      }}
+    }}
+#pragma omp critical
+    {
+      mat += mat_thread;
+    }  
   }
 #endif
   return;

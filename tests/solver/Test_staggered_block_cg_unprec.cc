@@ -74,13 +74,14 @@ int main (int argc, char ** argv)
 
   LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
 
-  RealD mass=0.01;
+  RealD mass=0.003;
   ImprovedStaggeredFermion5DR Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass);
   MdagMLinearOperator<ImprovedStaggeredFermion5DR,FermionField> HermOp(Ds);
 
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
-  BlockConjugateGradient<FermionField> BCG(1.0e-8,10000);
-  MultiRHSConjugateGradient<FermionField> mCG(1.0e-8,10000);
+  int blockDim = 0;
+  BlockConjugateGradient<FermionField>    BCG(blockDim,1.0e-8,10000);
+  MultiRHSConjugateGradient<FermionField> mCG(blockDim,1.0e-8,10000);
 
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   std::cout << GridLogMessage << " Calling 4d CG "<<std::endl;

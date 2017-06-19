@@ -42,7 +42,7 @@ class BlockConjugateGradient : public OperatorFunction<Field> {
 
   typedef typename Field::scalar_type scomplex;
 
-  const int blockDim = 0;
+  int blockDim ;
 
   int Nblock;
   bool ErrorOnNoConverge;  // throw an assert when the CG fails to converge.
@@ -51,14 +51,15 @@ class BlockConjugateGradient : public OperatorFunction<Field> {
   Integer MaxIterations;
   Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion
   
-  BlockConjugateGradient(RealD tol, Integer maxit, bool err_on_no_conv = true)
+  BlockConjugateGradient(int _Orthog,RealD tol, Integer maxit, bool err_on_no_conv = true)
     : Tolerance(tol),
+    blockDim(_Orthog),
     MaxIterations(maxit),
     ErrorOnNoConverge(err_on_no_conv){};
 
 void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi) 
 {
-  int Orthog = 0; // First dimension is block dim
+  int Orthog = blockDim; // First dimension is block dim; this is an assumption
   Nblock = Src._grid->_fdimensions[Orthog];
 
   std::cout<<GridLogMessage<<" Block Conjugate Gradient : Orthog "<<Orthog<<" Nblock "<<Nblock<<std::endl;
@@ -179,7 +180,7 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
 
       Linop.HermOp(Psi, AP);
       AP = AP-Src;
-      std::cout << GridLogMessage <<"\tTrue residual is " << std::sqrt(norm2(AP)/norm2(Src)) <<std::endl;
+      std::cout << GridLogMessage <<"\t A__ True residual is " << std::sqrt(norm2(AP)/norm2(Src)) <<std::endl;
 
       std::cout << GridLogMessage << "Time Breakdown "<<std::endl;
       std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed()     <<std::endl;
@@ -209,8 +210,7 @@ class MultiRHSConjugateGradient : public OperatorFunction<Field> {
 
   typedef typename Field::scalar_type scomplex;
 
-  const int blockDim = 0;
-
+  int blockDim;
   int Nblock;
   bool ErrorOnNoConverge;  // throw an assert when the CG fails to converge.
                            // Defaults true.
@@ -218,14 +218,15 @@ class MultiRHSConjugateGradient : public OperatorFunction<Field> {
   Integer MaxIterations;
   Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion
   
-   MultiRHSConjugateGradient(RealD tol, Integer maxit, bool err_on_no_conv = true)
+  MultiRHSConjugateGradient(int Orthog,RealD tol, Integer maxit, bool err_on_no_conv = true)
     : Tolerance(tol),
+    blockDim(Orthog),
     MaxIterations(maxit),
     ErrorOnNoConverge(err_on_no_conv){};
 
 void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi) 
 {
-  int Orthog = 0; // First dimension is block dim
+  int Orthog = blockDim; // First dimension is block dim
   Nblock = Src._grid->_fdimensions[Orthog];
 
   std::cout<<GridLogMessage<<"MultiRHS Conjugate Gradient : Orthog "<<Orthog<<" Nblock "<<Nblock<<std::endl;
@@ -285,12 +286,10 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
     MatrixTimer.Stop();
 
     // Alpha
-    //    sliceInnerProductVectorTest(v_pAp_test,P,AP,Orthog);
     sliceInnerTimer.Start();
     sliceInnerProductVector(v_pAp,P,AP,Orthog);
     sliceInnerTimer.Stop();
     for(int b=0;b<Nblock;b++){
-      //      std::cout << " "<< v_pAp[b]<<" "<< v_pAp_test[b]<<std::endl;
       v_alpha[b] = v_rr[b]/real(v_pAp[b]);
     }
 
