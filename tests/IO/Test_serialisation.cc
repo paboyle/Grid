@@ -151,6 +151,11 @@ int main(int argc,char **argv)
   ioTest<TextWriter, TextReader>("iotest.dat", obj, "text   (object)           ");
   ioTest<TextWriter, TextReader>("iotest.dat", vec, "text   (vector of objects)");
   ioTest<TextWriter, TextReader>("iotest.dat", pair, "text   (pair of objects)");
+  //// text
+  ioTest<JSONWriter, JSONReader>("iotest.json", obj, "JSON   (object)           ");
+  ioTest<JSONWriter, JSONReader>("iotest.json", vec, "JSON   (vector of objects)");
+  ioTest<JSONWriter, JSONReader>("iotest.json", pair, "JSON   (pair of objects)");
+
   //// HDF5
 #undef HAVE_HDF5
 #ifdef HAVE_HDF5
@@ -194,50 +199,50 @@ int main(int argc,char **argv)
   std::cout << std::endl;
 
 
-  std::cout << ".:::::: Testing JSON classes "<< std::endl;
-
-
-  {
-    JSONWriter JW("bother.json");
-    
-    // test basic type writing
-    push(JW,"BasicTypes");
-    write(JW,std::string("i16"),i16);
-    write(JW,"u16",u16);
-    write(JW,"i32",i32);
-    write(JW,"u32",u32);
-    write(JW,"i64",i64);
-    write(JW,"u64",u64);
-    write(JW,"f",f);
-    write(JW,"d",d);
-    write(JW,"b",b);
-    pop(JW);
-    
-    // test serializable class writing
-    myclass obj(1234); // non-trivial constructor
-    std::cout << "-- serialisable class writing to 'bother.json'..." << std::endl;
-    write(JW,"obj",obj);
-    JW.write("obj2", obj);
-    
-    std::cout << obj << std::endl;
-    
-    std::vector<myclass> vec;
-    vec.push_back(myclass(1234));
-    vec.push_back(myclass(5678));
-    vec.push_back(myclass(3838));
-    write(JW, "objvec", vec);
-    
-  }
-
-  {
-    JSONReader RD("bother.json");
-    myclass jcopy1;
-    std::vector<myclass> jveccopy1;
-    read(RD,"obj",jcopy1);
-    read(RD,"objvec", jveccopy1);
-    std::cout << "Loaded (JSON) -----------------" << std::endl;
-    std::cout << jcopy1 << std::endl << jveccopy1 << std::endl;
-  }
+//  std::cout << ".:::::: Testing JSON classes "<< std::endl;
+//
+//
+//  {
+//    JSONWriter JW("bother.json");
+//    
+//    // test basic type writing
+//    push(JW,"BasicTypes");
+//    write(JW,std::string("i16"),i16);
+//    write(JW,"u16",u16);
+//    write(JW,"i32",i32);
+//    write(JW,"u32",u32);
+//    write(JW,"i64",i64);
+//    write(JW,"u64",u64);
+//    write(JW,"f",f);
+//    write(JW,"d",d);
+//    write(JW,"b",b);
+//    pop(JW);
+//    
+//    // test serializable class writing
+//    myclass obj(1234); // non-trivial constructor
+//    std::cout << "-- serialisable class writing to 'bother.json'..." << std::endl;
+//    write(JW,"obj",obj);
+//    JW.write("obj2", obj);
+//    
+//    std::cout << obj << std::endl;
+//    
+//    std::vector<myclass> vec;
+//    vec.push_back(myclass(1234));
+//    vec.push_back(myclass(5678));
+//    vec.push_back(myclass(3838));
+//    write(JW, "objvec", vec);
+//    
+//  }
+//
+//  {
+//    JSONReader RD("bother.json");
+//    myclass jcopy1;
+//    std::vector<myclass> jveccopy1;
+//    read(RD,"obj",jcopy1);
+//    read(RD,"objvec", jveccopy1);
+//    std::cout << "Loaded (JSON) -----------------" << std::endl;
+//    std::cout << jcopy1 << std::endl << jveccopy1 << std::endl;
+//  }
   
 /* 
   // This is still work in progress
