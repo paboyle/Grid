@@ -15,6 +15,8 @@ namespace Grid {
     
     typedef iImplField<Simd> SiteField;
     
+    template <typename vtype> using iImplScalar= iScalar<iScalar<iScalar<vtype   > > >;
+    typedef iImplScalar<Simd> ComplexField;
     
     typedef Lattice<SiteField> Field;
     
@@ -51,13 +53,14 @@ namespace Grid {
   public:
     typedef S Simd;
     
-    template <typename vtype>
-    using iImplField = iScalar<iScalar<iMatrix<vtype, N> > >;
-    
+    template <typename vtype> using iImplField = iScalar<iScalar<iMatrix<vtype, N> > >;
+
     typedef iImplField<Simd> SiteField;
-    
-    
     typedef Lattice<SiteField> Field;
+
+    template <typename vtype> using iImplScalar= iScalar<iScalar<iScalar<vtype   > > >;
+    typedef iImplScalar<Simd> ComplexField;
+    
     
     static inline void generate_momenta(Field& P, GridParallelRNG& pRNG){
       gaussian(pRNG, P);
