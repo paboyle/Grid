@@ -60,6 +60,7 @@ void CartesianCommunicator::ShmBufferFreeAll(void) {
 /////////////////////////////////
 // Grid information queries
 /////////////////////////////////
+int                      CartesianCommunicator::Dimensions(void)         { return _ndimension; };
 int                      CartesianCommunicator::IsBoss(void)            { return _processor==0; };
 int                      CartesianCommunicator::BossRank(void)          { return 0; };
 int                      CartesianCommunicator::ThisRank(void)          { return _processor; };
@@ -91,6 +92,7 @@ void CartesianCommunicator::GlobalSumVector(ComplexD *c,int N)
 #if !defined( GRID_COMMS_MPI3) && !defined (GRID_COMMS_MPI3L)
 
 int                      CartesianCommunicator::NodeCount(void)    { return ProcessorCount();};
+int                      CartesianCommunicator::RankCount(void)    { return ProcessorCount();};
 
 double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 						       void *xmit,

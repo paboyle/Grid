@@ -66,7 +66,7 @@ int main (int argc, char ** argv)
   int threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
-  int Nloop=500;
+  int Nloop=100;
   int nmu=0;
   int maxlat=24;
   for(int mu=0;mu<Nd;mu++) if (mpi_layout[mu]>1) nmu++;
@@ -88,6 +88,9 @@ int main (int argc, char ** argv)
       				    lat*mpi_layout[3]});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
+      RealD Nrank = Grid._Nprocessors;
+      RealD Nnode = Grid.NodeCount();
+      RealD ppn = Nrank/Nnode;
 
       std::vector<std::vector<HalfSpinColourVectorD> > xbuf(8,std::vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
       std::vector<std::vector<HalfSpinColourVectorD> > rbuf(8,std::vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
@@ -132,13 +135,13 @@ int main (int argc, char ** argv)
 	}
 	Grid.SendToRecvFromComplete(requests);
 	Grid.Barrier();
-  double stop=usecond();
-  t_time[i] = stop-start; // microseconds
+	double stop=usecond();
+	t_time[i] = stop-start; // microseconds
       }
 
       timestat.statistics(t_time);
 
-      double dbytes    = bytes;
+      double dbytes    = bytes*ppn;
       double xbytes    = dbytes*2.0*ncomm;
       double rbytes    = xbytes;
       double bidibytes = xbytes+rbytes;
@@ -165,6 +168,9 @@ int main (int argc, char ** argv)
       std::vector<int> latt_size  ({lat,lat,lat,lat});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
+      RealD Nrank = Grid._Nprocessors;
+      RealD Nnode = Grid.NodeCount();
+      RealD ppn = Nrank/Nnode;
 
       std::vector<std::vector<HalfSpinColourVectorD> > xbuf(8,std::vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
       std::vector<std::vector<HalfSpinColourVectorD> > rbuf(8,std::vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
@@ -213,14 +219,14 @@ int main (int argc, char ** argv)
 	  }
 	}
 	Grid.Barrier();
-      double stop=usecond();
-    t_time[i] = stop-start; // microseconds
+	double stop=usecond();
+	t_time[i] = stop-start; // microseconds
 
       }
 
       timestat.statistics(t_time);
       
-      double dbytes    = bytes;
+      double dbytes    = bytes*ppn;
       double xbytes    = dbytes*2.0*ncomm;
       double rbytes    = xbytes;
       double bidibytes = xbytes+rbytes;
@@ -251,6 +257,9 @@ int main (int argc, char ** argv)
       				    lat*mpi_layout[3]});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
+      RealD Nrank = Grid._Nprocessors;
+      RealD Nnode = Grid.NodeCount();
+      RealD ppn = Nrank/Nnode;
 
       std::vector<HalfSpinColourVectorD *> xbuf(8);
       std::vector<HalfSpinColourVectorD *> rbuf(8);
@@ -258,59 +267,66 @@ int main (int argc, char ** argv)
       for(int d=0;d<8;d++){
 	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
 	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+	bzero((void *)xbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+	bzero((void *)rbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
       }
 
       int ncomm;
       int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
 
+      double dbytes;
       for(int i=0;i<Nloop;i++){
-      double start=usecond();
+	double start=usecond();
+
+	dbytes=0;
+	ncomm=0;
 
 	std::vector<CartesianCommunicator::CommsRequest_t> requests;
 
-	ncomm=0;
 	for(int mu=0;mu<4;mu++){
 	
+
 	  if (mpi_layout[mu]>1 ) {
 	  
 	    ncomm++;
 	    int comm_proc=1;
 	    int xmit_to_rank;
 	    int recv_from_rank;
-	    
 	    Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
-	    Grid.StencilSendToRecvFromBegin(requests,
-					    (void *)&xbuf[mu][0],
-					    xmit_to_rank,
-					    (void *)&rbuf[mu][0],
-					    recv_from_rank,
-					    bytes);
+	    dbytes+=
+	      Grid.StencilSendToRecvFromBegin(requests,
+					      (void *)&xbuf[mu][0],
+					      xmit_to_rank,
+					      (void *)&rbuf[mu][0],
+					      recv_from_rank,
+					      bytes);
 	
 	    comm_proc = mpi_layout[mu]-1;
 	  
 	    Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
-	    Grid.StencilSendToRecvFromBegin(requests,
-					    (void *)&xbuf[mu+4][0],
-					    xmit_to_rank,
-					    (void *)&rbuf[mu+4][0],
-					    recv_from_rank,
-					    bytes);
+	    dbytes+=
+	      Grid.StencilSendToRecvFromBegin(requests,
+					      (void *)&xbuf[mu+4][0],
+					      xmit_to_rank,
+					      (void *)&rbuf[mu+4][0],
+					      recv_from_rank,
+					      bytes);
 	  
 	  }
 	}
 	Grid.StencilSendToRecvFromComplete(requests);
 	Grid.Barrier();
-      double stop=usecond();
-    t_time[i] = stop-start; // microseconds
-
+	double stop=usecond();
+	t_time[i] = stop-start; // microseconds
+	
       }
 
       timestat.statistics(t_time);
 
-      double dbytes    = bytes;
-      double xbytes    = dbytes*2.0*ncomm;
-      double rbytes    = xbytes;
-      double bidibytes = xbytes+rbytes;
+      dbytes=dbytes*ppn;
+      double xbytes    = dbytes*0.5;
+      double rbytes    = dbytes*0.5;
+      double bidibytes = dbytes;
 
       std::cout<<GridLogMessage << std::setw(4) << lat<<"\t"<<Ls<<"\t"
                <<std::setw(11) << bytes<< std::fixed << std::setprecision(1) << std::setw(7)
@@ -338,6 +354,9 @@ int main (int argc, char ** argv)
       				    lat*mpi_layout[3]});
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
+      RealD Nrank = Grid._Nprocessors;
+      RealD Nnode = Grid.NodeCount();
+      RealD ppn = Nrank/Nnode;
 
       std::vector<HalfSpinColourVectorD *> xbuf(8);
       std::vector<HalfSpinColourVectorD *> rbuf(8);
@@ -345,16 +364,18 @@ int main (int argc, char ** argv)
       for(int d=0;d<8;d++){
 	xbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
 	rbuf[d] = (HalfSpinColourVectorD *)Grid.ShmBufferMalloc(lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+	bzero((void *)xbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
+	bzero((void *)rbuf[d],lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD));
       }
 
       int ncomm;
       int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
-
+      double dbytes;
       for(int i=0;i<Nloop;i++){
-      double start=usecond();
+	double start=usecond();
 
 	std::vector<CartesianCommunicator::CommsRequest_t> requests;
-
+	dbytes=0;
 	ncomm=0;
 	for(int mu=0;mu<4;mu++){
 	
@@ -366,41 +387,43 @@ int main (int argc, char ** argv)
 	    int recv_from_rank;
 	    
 	    Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
-	    Grid.StencilSendToRecvFromBegin(requests,
-					    (void *)&xbuf[mu][0],
-					    xmit_to_rank,
-					    (void *)&rbuf[mu][0],
-					    recv_from_rank,
-					    bytes);
+	    dbytes+=
+	      Grid.StencilSendToRecvFromBegin(requests,
+					      (void *)&xbuf[mu][0],
+					      xmit_to_rank,
+					      (void *)&rbuf[mu][0],
+					      recv_from_rank,
+					      bytes);
 	    Grid.StencilSendToRecvFromComplete(requests);
 	    requests.resize(0);
 
 	    comm_proc = mpi_layout[mu]-1;
 	  
 	    Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
-	    Grid.StencilSendToRecvFromBegin(requests,
-					    (void *)&xbuf[mu+4][0],
-					    xmit_to_rank,
-					    (void *)&rbuf[mu+4][0],
-					    recv_from_rank,
-					    bytes);
+	    dbytes+=
+	      Grid.StencilSendToRecvFromBegin(requests,
+					      (void *)&xbuf[mu+4][0],
+					      xmit_to_rank,
+					      (void *)&rbuf[mu+4][0],
+					      recv_from_rank,
+					      bytes);
 	    Grid.StencilSendToRecvFromComplete(requests);
 	    requests.resize(0);
 	  
 	  }
 	}
-	    Grid.Barrier();
-      double stop=usecond();
-      t_time[i] = stop-start; // microseconds
-
+	Grid.Barrier();
+	double stop=usecond();
+	t_time[i] = stop-start; // microseconds
+	
       }
 
       timestat.statistics(t_time);
 
-      double dbytes    = bytes;
-      double xbytes    = dbytes*2.0*ncomm;
-      double rbytes    = xbytes;
-      double bidibytes = xbytes+rbytes;
+      dbytes=dbytes*ppn;
+      double xbytes    = dbytes*0.5;
+      double rbytes    = dbytes*0.5;
+      double bidibytes = dbytes;
 
 
       std::cout<<GridLogMessage << std::setw(4) << lat<<"\t"<<Ls<<"\t"

@@ -40,12 +40,15 @@ namespace QCD {
   typedef typename GImpl::Simd Simd;                \
   typedef typename GImpl::LinkField GaugeLinkField; \
   typedef typename GImpl::Field GaugeField;         \
+  typedef typename GImpl::ComplexField ComplexField;\
   typedef typename GImpl::SiteField SiteGaugeField; \
+  typedef typename GImpl::SiteComplex SiteComplex;  \
   typedef typename GImpl::SiteLink SiteGaugeLink;
 
-#define INHERIT_FIELD_TYPES(Impl)             \
-  typedef typename Impl::Simd Simd;           \
-  typedef typename Impl::SiteField SiteField; \
+#define INHERIT_FIELD_TYPES(Impl)		    \
+  typedef typename Impl::Simd Simd;		    \
+  typedef typename Impl::ComplexField ComplexField; \
+  typedef typename Impl::SiteField SiteField;	    \
   typedef typename Impl::Field Field;
 
 // hardcodes the exponential approximation in the template
@@ -53,14 +56,17 @@ template <class S, int Nrepresentation = Nc, int Nexp = 12 > class GaugeImplType
 public:
   typedef S Simd;
 
-  template <typename vtype> using iImplGaugeLink  = iScalar<iScalar<iMatrix<vtype, Nrepresentation>>>;
-  template <typename vtype> using iImplGaugeField = iVector<iScalar<iMatrix<vtype, Nrepresentation>>, Nd>;
+  template <typename vtype> using iImplScalar     = iScalar<iScalar<iScalar<vtype> > >;
+  template <typename vtype> using iImplGaugeLink  = iScalar<iScalar<iMatrix<vtype, Nrepresentation> > >;
+  template <typename vtype> using iImplGaugeField = iVector<iScalar<iMatrix<vtype, Nrepresentation> >, Nd>;
 
+  typedef iImplScalar<Simd>     SiteComplex;
   typedef iImplGaugeLink<Simd>  SiteLink;
   typedef iImplGaugeField<Simd> SiteField;
 
-  typedef Lattice<SiteLink>  LinkField;
-  typedef Lattice<SiteField> Field;
+  typedef Lattice<SiteComplex> ComplexField;
+  typedef Lattice<SiteLink>    LinkField; 
+  typedef Lattice<SiteField>   Field;
 
   // Guido: we can probably separate the types from the HMC functions
   // this will create 2 kind of implementations
