@@ -15,8 +15,10 @@ class ScalarImplTypes {
 
     typedef iImplField<Simd> SiteField;
     typedef SiteField        SitePropagator;
+    typedef SiteField        SiteComplex;
     
     typedef Lattice<SiteField> Field;
+    typedef Field              ComplexField;
     typedef Field              FermionField;
     typedef Field              PropagatorField;
     
@@ -92,11 +94,18 @@ class ScalarImplTypes {
   public:
     typedef S Simd;
     template <typename vtype>
-    using iImplField = iScalar<iScalar<iMatrix<vtype, N> > >;
+    using iImplField   = iScalar<iScalar<iMatrix<vtype, N>>>;
+    template <typename vtype>
+    using iImplComplex = iScalar<iScalar<iScalar<vtype>>>;
 
-    typedef iImplField<Simd> SiteField;
-
-    typedef Lattice<SiteField> Field;
+    typedef iImplField<Simd>   SiteField;
+    typedef SiteField          SitePropagator;
+    typedef iImplComplex<Simd> SiteComplex;
+    
+    typedef Lattice<SiteField>   Field;
+    typedef Lattice<SiteComplex> ComplexField;
+    typedef Field                FermionField;
+    typedef Field                PropagatorField;
 
     static inline void generate_momenta(Field& P, GridParallelRNG& pRNG) {
       QCD::SU<N>::GaussianFundamentalLieAlgebraMatrix(pRNG, P);
