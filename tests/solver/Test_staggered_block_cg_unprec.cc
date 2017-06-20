@@ -51,7 +51,7 @@ int main (int argc, char ** argv)
   typedef typename ImprovedStaggeredFermion5DR::ComplexField ComplexField; 
   typename ImprovedStaggeredFermion5DR::ImplParams params; 
 
-  const int Ls=4;
+  const int Ls=8;
 
   Grid_init(&argc,&argv);
 
@@ -80,12 +80,13 @@ int main (int argc, char ** argv)
 
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
   int blockDim = 0;
-  BlockConjugateGradient<FermionField>    BCG(blockDim,1.0e-8,10000);
-  MultiRHSConjugateGradient<FermionField> mCG(blockDim,1.0e-8,10000);
+  BlockConjugateGradient<FermionField>    BCGrQ(BlockCGrQ,blockDim,1.0e-8,10000);
+  BlockConjugateGradient<FermionField>    BCG  (BlockCG,blockDim,1.0e-8,10000);
+  BlockConjugateGradient<FermionField>    mCG  (CGmultiRHS,blockDim,1.0e-8,10000);
 
-  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
+  std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
   std::cout << GridLogMessage << " Calling 4d CG "<<std::endl;
-  std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
+  std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
   ImprovedStaggeredFermionR Ds4d(Umu,Umu,*UGrid,*UrbGrid,mass);
   MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> HermOp4d(Ds4d);
   FermionField src4d(UGrid); random(pRNG,src4d);
@@ -112,7 +113,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Calling Block CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   result=zero;
-  BCG(HermOp,src,result);
+  BCGrQ(HermOp,src,result);
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
 
