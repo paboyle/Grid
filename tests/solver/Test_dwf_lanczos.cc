@@ -54,7 +54,7 @@ int main (int argc, char ** argv)
   GridParallelRNG          RNG5rb(FrbGrid);  RNG5.SeedFixedIntegers(seeds5);
 
   LatticeGaugeField Umu(UGrid); 
-  SU3::TepidConfiguration(RNG4, Umu);
+  SU3::HotConfiguration(RNG4, Umu);
 
   std::vector<LatticeColourMatrix> U(4,UGrid);
   for(int mu=0;mu<Nd;mu++){

@@ -102,7 +102,7 @@ class ILDGHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
     FieldMetaData header;
     IldgReader _IldgReader;
     _IldgReader.open(config);
-    _IldgReader.readConfiguration(config,U,header);  // format from the header
+    _IldgReader.readConfiguration(U,header);  // format from the header
     _IldgReader.close();
 
     std::cout << GridLogMessage << "Read ILDG Configuration from " << config
