@@ -27,7 +27,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
-#include <Grid/algorithms/iterative/BlockConjugateGradient.h>
 
 using namespace std;
 using namespace Grid;
