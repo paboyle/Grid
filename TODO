@@ -2,8 +2,8 @@ TODO:
 ---------------
 
 Large item work list:
-1)- Lanczos Remove DenseVector, DenseMatrix; Use Eigen instead. <-- 
-2)- MultiRHS with spread out extra dim
+1)- MultiRHS with spread out extra dim
+2)- Christoph's local basis expansion Lanczos
 3)- BG/Q port and check
 4)- Precision conversion and sort out localConvert      <-- partial
   - Consistent linear solver flop count/rate -- PARTIAL, time but no flop/s yet
@@ -13,6 +13,7 @@ Large item work list:
 8)- HDCR resume
 
 Recent DONE 
+-- Lanczos Remove DenseVector, DenseMatrix; Use Eigen instead. <-- DONE
 -- GaugeFix into central location                      <-- DONE
 -- Scidac and Ildg metadata handling                   <-- DONE
 -- Binary I/O MPI2 IO                                  <-- DONE
