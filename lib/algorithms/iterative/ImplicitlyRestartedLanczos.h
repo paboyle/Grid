@@ -39,10 +39,11 @@ namespace Grid {
     IRLdiagonaliseWithQR,
     IRLdiagonaliseWithEigen
   };
-  ////////////////////////////////////////////////////////////////////////////////
-  // Helper class for sorting the evalues AND evectors by Field
-  // Use pointer swizzle on vectors
-  ////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+// Helper class for sorting the evalues AND evectors by Field
+// Use pointer swizzle on vectors
+////////////////////////////////////////////////////////////////////////////////
 template<class Field>
 class SortEigen {
  private:
@@ -90,7 +91,9 @@ class SortEigen {
 /////////////////////////////////////////////////////////////
 template<class Field> 
 class ImplicitlyRestartedLanczos {
+
 private:       
+
   int MaxIter;   // Max iterations
   int Nstop;     // Number of evecs checked for convergence
   int Nk;        // Number of converged sought
@@ -121,6 +124,29 @@ public:
       eresid(_eresid),  MaxIter(_MaxIter),
       diagonalisation(_diagonalisation)
       { };
+
+  ////////////////////////////////
+  // Helpers
+  ////////////////////////////////
+  static RealD normalise(Field& v) 
+  {
+    RealD nn = norm2(v);
+    nn = sqrt(nn);
+    v = v * (1.0/nn);
+    return nn;
+  }
+  
+  void orthogonalize(Field& w, std::vector<Field>& evec, int k)
+  {
+    typedef typename Field::scalar_type MyComplex;
+    MyComplex ip;
+    
+    for(int j=0; j<k; ++j){
+      ip = innerProduct(evec[j],w); 
+      w = w - ip * evec[j];
+    }
+    normalise(w);
+  }
 
 /* Rudy Arthur's thesis pp.137
 ------------------------
@@ -167,9 +193,10 @@ until convergence
     std::vector<RealD> lme(Nm);  
     std::vector<RealD> lme2(Nm);
     std::vector<RealD> eval2(Nm);
-    Eigen::MatrixXd    Qt = Eigen::MatrixXd::Zero(Nm,Nm);
-    std::vector<int>   Iconv(Nm);
 
+    Eigen::MatrixXd    Qt = Eigen::MatrixXd::Zero(Nm,Nm);
+
+    std::vector<int>   Iconv(Nm);
     std::vector<Field>  B(Nm,grid); // waste of space replicating
     
     Field f(grid);
@@ -218,6 +245,7 @@ until convergence
       // Implicitly shifted QR transformations
       Qt = Eigen::MatrixXd::Identity(Nm,Nm);
       for(int ip=k2; ip<Nm; ++ip){ 
+	// Eigen replacement for qr_decomp ???
 	qr_decomp(eval,lme,Nm,Nm,Qt,eval2[ip],k1,Nm);
       }
     
@@ -354,10 +382,32 @@ private:
     if ( beta < tiny ) std::cout << GridLogMessage << " beta is tiny "<<beta<<std::endl;
   }
       
-  ///////////////////////////////////////////////////////////////////
-  // 
-  //
-  ///////////////////////////////////////////////////////////////////
+  void diagonalize_Eigen(std::vector<RealD>& lmd, std::vector<RealD>& lme, 
+			 int Nk, int Nm,  
+			 Eigen::MatrixXd & Qt, // Nm x Nm
+			 GridBase *grid)
+  {
+    Eigen::MatrixXd TriDiag = Eigen::MatrixXd::Zero(Nk,Nk);
+
+    for(int i=0;i<Nk;i++)   TriDiag(i,i)   = lmd[i];
+    for(int i=0;i<Nk-1;i++) TriDiag(i,i+1) = lme[i];
+    for(int i=0;i<Nk-1;i++) TriDiag(i+1,i) = lme[i];
+    
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(TriDiag);
+
+    for (int i = 0; i < Nk; i++) {
+      lmd[Nk-1-i] = eigensolver.eigenvalues()(i);
+    }
+    for (int i = 0; i < Nk; i++) {
+      for (int j = 0; j < Nk; j++) {
+	Qt(Nk-1-i,j) = eigensolver.eigenvectors()(j,i);
+      }
+    }
+  }
+  ///////////////////////////////////////////////////////////////////////////
+  // File could end here if settle on Eigen ???
+  ///////////////////////////////////////////////////////////////////////////
+
   void qr_decomp(std::vector<RealD>& lmd,   // Nm 
 		 std::vector<RealD>& lme,   // Nm 
 		 int Nk, int Nm,            // Nk, Nm
@@ -568,50 +618,6 @@ void diagonalize_lapack(std::vector<RealD>& lmd,
     }
     std::cout << GridLogError << "[QL method] Error - Too many iteration: "<<Niter<<"\n";
     abort();
-  }
-
-  void diagonalize_Eigen(std::vector<RealD>& lmd, std::vector<RealD>& lme, 
-			 int Nk, int Nm,  
-			 Eigen::MatrixXd & Qt, // Nm x Nm
-			 GridBase *grid)
-  {
-    Eigen::MatrixXd TriDiag = Eigen::MatrixXd::Zero(Nk,Nk);
-
-    for(int i=0;i<Nk;i++)   TriDiag(i,i)   = lmd[i];
-    for(int i=0;i<Nk-1;i++) TriDiag(i,i+1) = lme[i];
-    for(int i=0;i<Nk-1;i++) TriDiag(i+1,i) = lme[i];
-    
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(TriDiag);
-
-    for (int i = 0; i < Nk; i++) {
-      lmd[Nk-1-i] = eigensolver.eigenvalues()(i);
-    }
-    for (int i = 0; i < Nk; i++) {
-      for (int j = 0; j < Nk; j++) {
-	Qt(Nk-1-i,j) = eigensolver.eigenvectors()(j,i);
-      }
-    }
-  }
-
-
-  static RealD normalise(Field& v) 
-  {
-    RealD nn = norm2(v);
-    nn = sqrt(nn);
-    v = v * (1.0/nn);
-    return nn;
-  }
-  
-  void orthogonalize(Field& w, std::vector<Field>& evec, int k)
-  {
-    typedef typename Field::scalar_type MyComplex;
-    MyComplex ip;
-    
-    for(int j=0; j<k; ++j){
-      ip = innerProduct(evec[j],w); // are the evecs normalised? ; this assumes so.
-      w = w - ip * evec[j];
-    }
-    normalise(w);
   }
 
  };
