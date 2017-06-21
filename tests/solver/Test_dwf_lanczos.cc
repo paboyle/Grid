@@ -92,16 +92,15 @@ int main (int argc, char ** argv)
 
   
   std::vector<RealD>          eval(Nm);
-  FermionField    src(FrbGrid); gaussian(RNG5rb,src);
+  FermionField    src(FrbGrid); 
+  gaussian(RNG5rb,src);
   std::vector<FermionField> evec(Nm,FrbGrid);
   for(int i=0;i<1;i++){
-    std::cout << i<<" / "<< Nm<< " grid pointer "<<evec[i]._grid<<std::endl;
+    std::cout << GridLogMessage <<i<<" / "<< Nm<< " grid pointer "<<evec[i]._grid<<std::endl;
   };
 
   int Nconv;
-  IRL.calc(eval,evec,
-	   src,
-	   Nconv);
+  IRL.calc(eval,evec,src,Nconv);
 
 
   Grid_finalize();
