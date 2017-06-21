@@ -1,24 +1,30 @@
 TODO:
 ---------------
 
-Peter's work list:
-1)- Precision conversion and sort out localConvert      <-- 
-2)- Remove DenseVector, DenseMatrix; Use Eigen instead. <-- 
+Large item work list:
+1)- MultiRHS with spread out extra dim -- Go through filesystem with SciDAC I/O
 
--- Profile CG, BlockCG, etc... Flop count/rate -- PARTIAL, time but no flop/s yet
--- Physical propagator interface
--- Conserved currents
--- GaugeFix into central location
--- Multigrid Wilson and DWF, compare to other Multigrid implementations
--- HDCR resume
+2)- Christoph's local basis expansion Lanczos
+3)- BG/Q port and check
+4)- Precision conversion and sort out localConvert      <-- partial
+  - Consistent linear solver flop count/rate -- PARTIAL, time but no flop/s yet
+5)- Physical propagator interface
+6)- Conserved currents
+7)- Multigrid Wilson and DWF, compare to other Multigrid implementations
+8)- HDCR resume
 
 Recent DONE 
+-- Lanczos Remove DenseVector, DenseMatrix; Use Eigen instead. <-- DONE
+-- GaugeFix into central location                      <-- DONE
+-- Scidac and Ildg metadata handling                   <-- DONE
+-- Binary I/O MPI2 IO                                  <-- DONE
 -- Binary I/O speed up & x-strips                      <-- DONE
 -- Cut down the exterior overhead                      <-- DONE
 -- Interior legs from SHM comms                        <-- DONE
 -- Half-precision comms                                <-- DONE
--- Merge high precision reduction into develop        
--- multiRHS DWF; benchmark on Cori/BNL for comms elimination
+-- Merge high precision reduction into develop         <-- DONE
+-- BlockCG, BCGrQ                                      <-- DONE
+-- multiRHS DWF; benchmark on Cori/BNL for comms elimination <-- DONE
    -- slice* linalg routines for multiRHS, BlockCG    
 
 -----
