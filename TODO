@@ -2,7 +2,8 @@ TODO:
 ---------------
 
 Large item work list:
-1)- MultiRHS with spread out extra dim
+1)- MultiRHS with spread out extra dim -- Go through filesystem with SciDAC I/O
+
 2)- Christoph's local basis expansion Lanczos
 3)- BG/Q port and check
 4)- Precision conversion and sort out localConvert      <-- partial
