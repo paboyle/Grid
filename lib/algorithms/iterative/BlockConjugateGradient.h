@@ -56,11 +56,8 @@ class BlockConjugateGradient : public OperatorFunction<Field> {
   Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion
   
   BlockConjugateGradient(BlockCGtype cgtype,int _Orthog,RealD tol, Integer maxit, bool err_on_no_conv = true)
-    : Tolerance(tol),
-    CGtype(cgtype),
-    blockDim(_Orthog),
-    MaxIterations(maxit),
-    ErrorOnNoConverge(err_on_no_conv){};
+    : Tolerance(tol), CGtype(cgtype),   blockDim(_Orthog),  MaxIterations(maxit), ErrorOnNoConverge(err_on_no_conv)
+  {};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Thin QR factorisation (google it)
