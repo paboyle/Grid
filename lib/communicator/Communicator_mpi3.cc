@@ -375,7 +375,7 @@ void  CartesianCommunicator::ProcessorCoorFromRank(int rank, std::vector<int> &c
 //////////////////////////////////
 // Try to subdivide communicator
 //////////////////////////////////
-CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,CartesianCommunicator &parent) 
+CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent) 
   : CartesianCommunicator(processors) 
 {
   std::cout << "Attempts to split MPI3 communicators will fail until implemented" <<std::endl;
