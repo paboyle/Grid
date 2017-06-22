@@ -329,10 +329,10 @@ inline void makePropagator(Application &application, std::string &propName,
     // If the propagator already exists, don't make the module again.
     if (!(Environment::getInstance().hasModule(propName)))
     {
-        Quark::Par         quarkPar;
+        MFermion::GaugeProp::Par quarkPar;
         quarkPar.source = srcName;
         quarkPar.solver = solver;
-        application.createModule<Quark>(propName, quarkPar);
+        application.createModule<MFermion::GaugeProp>(propName, quarkPar);
     }
 }
 
