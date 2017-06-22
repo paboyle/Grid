@@ -133,8 +133,8 @@ int main (int argc, char ** argv)
   int Nconv;
   RealD eresid = 1.0e-6;
 
-  ImplicitlyRestartedLanczos<LatticeComplex> IRL(HermOp,X,Nk,Nm,eresid,Nit);
-  ImplicitlyRestartedLanczos<LatticeComplex> ChebyIRL(HermOp,Cheby,Nk,Nm,eresid,Nit);
+  ImplicitlyRestartedLanczos<LatticeComplex> IRL(HermOp,X,Nk,Nk,Nm,eresid,Nit);
+  ImplicitlyRestartedLanczos<LatticeComplex> ChebyIRL(HermOp,Cheby,Nk,Nk,Nm,eresid,Nit);
 
   LatticeComplex src(grid); gaussian(RNG,src);
   {

@@ -25,7 +25,7 @@
  directory.
  *******************************************************************************/
 
-#include "Test_hadrons.hpp"
+#include <Grid/Hadrons/Application.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
@@ -65,6 +65,10 @@ int main(int argc, char *argv[])
     // set fermion boundary conditions to be periodic space, antiperiodic time.
     std::string boundary = "1 1 1 -1";
 
+    // sink
+    MSink::Point::Par sinkPar;
+    sinkPar.mom = "0 0 0";
+    application.createModule<MSink::ScalarPoint>("sink", sinkPar);
     for (unsigned int i = 0; i < flavour.size(); ++i)
     {
         // actions
@@ -115,46 +119,55 @@ int main(int argc, char *argv[])
             }
             
             // propagators
-            Quark::Par quarkPar;
+            MFermion::GaugeProp::Par quarkPar;
             quarkPar.solver = "CG_" + flavour[i];
             quarkPar.source = srcName;
-            application.createModule<Quark>(qName[i], quarkPar);
+            application.createModule<MFermion::GaugeProp>(qName[i], quarkPar);
             for (unsigned int mu = 0; mu < Nd; ++mu)
             {
                 quarkPar.source = seqName[i][mu];
                 seqName[i][mu]  = "Q_" + flavour[i] + "-" + seqName[i][mu];
-                application.createModule<Quark>(seqName[i][mu], quarkPar);
+                application.createModule<MFermion::GaugeProp>(seqName[i][mu], quarkPar);
             }
         }
-        
-        // Point sink.
-        std::string sink = "sink";
-        MSink::Point::Par sinkPar;
-        sinkPar.mom = ZERO_MOM;
-        application.createModule<MSink::ScalarPoint>(sink, sinkPar);
         
         // contractions
         MContraction::Meson::Par mesPar;
         for (unsigned int i = 0; i < flavour.size(); ++i)
         for (unsigned int j = i; j < flavour.size(); ++j)
         {
-            std::string modName = "meson_Z2_" + std::to_string(t) + "_" + \
-                                                        flavour[i] + flavour[j];
-            std::string output  = "mesons/Z2_" + flavour[i] + flavour[j];
-            mesonContraction(application, modName, output, qName[i], qName[j],
-                             sink, ALL_GAMMAS);
+            mesPar.output = "mesons/Z2_" + flavour[i] + flavour[j];
+            mesPar.q1     = qName[i];
+            mesPar.q2     = qName[j];
+            mesPar.gammas = "all";
+            mesPar.sink   = "sink";
+            application.createModule<MContraction::Meson>("meson_Z2_"
+                                                          + std::to_string(t)
+                                                          + "_"
+                                                          + flavour[i]
+                                                          + flavour[j],
+                                                          mesPar);
         }
         for (unsigned int i = 0; i < flavour.size(); ++i)
         for (unsigned int j = 0; j < flavour.size(); ++j)
         for (unsigned int mu = 0; mu < Nd; ++mu)
         {
-            std::string modName = "3pt_Z2_" + std::to_string(t) + "_" + \
-                                  flavour[i] + flavour[j] + "_" + \
-                                  std::to_string(mu);
-            std::string output  = "3pt/Z2_" + flavour[i] + \
-                                  flavour[j] + "_" + std::to_string(mu);
-            mesonContraction(application, modName, output, 
-                             qName[i], seqName[j][mu], sink, ALL_GAMMAS);
+            MContraction::Meson::Par mesPar;
+            
+            mesPar.output = "3pt/Z2_" + flavour[i] + flavour[j] + "_"
+                            + std::to_string(mu);
+            mesPar.q1     = qName[i];
+            mesPar.q2     = seqName[j][mu];
+            mesPar.gammas = "all";
+            mesPar.sink   = "sink";
+            application.createModule<MContraction::Meson>("3pt_Z2_"
+                                                          + std::to_string(t)
+                                                          + "_"
+                                                          + flavour[i]
+                                                          + flavour[j]
+                                                          + "_"
+                                                          + std::to_string(mu),
+                                                          mesPar);
         }
     }
     

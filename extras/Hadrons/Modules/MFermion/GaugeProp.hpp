@@ -1,34 +1,5 @@
-/*************************************************************************************
-
-Grid physics library, www.github.com/paboyle/Grid 
-
-Source file: extras/Hadrons/Modules/Quark.hpp
-
-Copyright (C) 2015
-Copyright (C) 2016
-
-Author: Antonin Portelli <antonin.portelli@me.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
-See the full license in the file "LICENSE" in the top level distribution directory
-*************************************************************************************/
-/*  END LEGAL */
-
-#ifndef Hadrons_Quark_hpp_
-#define Hadrons_Quark_hpp_
+#ifndef Hadrons_MFermion_GaugeProp_hpp_
+#define Hadrons_MFermion_GaugeProp_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -58,27 +29,29 @@ inline void make_5D(Lattice<vobj> &in_4d, Lattice<vobj> &out_5d, int Ls)
 }
 
 /******************************************************************************
- *                               TQuark                                       *
+ *                                GaugeProp                                   *
  ******************************************************************************/
-class QuarkPar: Serializable
+BEGIN_MODULE_NAMESPACE(MFermion)
+
+class GaugePropPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(QuarkPar,
+    GRID_SERIALIZABLE_CLASS_MEMBERS(GaugePropPar,
                                     std::string, source,
                                     std::string, solver);
 };
 
 template <typename FImpl>
-class TQuark: public Module<QuarkPar>
+class TGaugeProp: public Module<GaugePropPar>
 {
 public:
     FGS_TYPE_ALIASES(FImpl,);
 public:
     // constructor
-    TQuark(const std::string name);
+    TGaugeProp(const std::string name);
     // destructor
-    virtual ~TQuark(void) = default;
-    // dependencies/products
+    virtual ~TGaugeProp(void) = default;
+    // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
     // setup
@@ -90,20 +63,20 @@ private:
     SolverFn     *solver_{nullptr};
 };
 
-MODULE_REGISTER(Quark, TQuark<FIMPL>);
+MODULE_REGISTER_NS(GaugeProp, TGaugeProp<FIMPL>, MFermion);
 
 /******************************************************************************
- *                          TQuark implementation                             *
+ *                      TGaugeProp implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TQuark<FImpl>::TQuark(const std::string name)
-: Module(name)
+TGaugeProp<FImpl>::TGaugeProp(const std::string name)
+: Module<GaugePropPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
-std::vector<std::string> TQuark<FImpl>::getInput(void)
+std::vector<std::string> TGaugeProp<FImpl>::getInput(void)
 {
     std::vector<std::string> in = {par().source, par().solver};
     
@@ -111,7 +84,7 @@ std::vector<std::string> TQuark<FImpl>::getInput(void)
 }
 
 template <typename FImpl>
-std::vector<std::string> TQuark<FImpl>::getOutput(void)
+std::vector<std::string> TGaugeProp<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName(), getName() + "_5d"};
     
@@ -120,7 +93,7 @@ std::vector<std::string> TQuark<FImpl>::getOutput(void)
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TQuark<FImpl>::setup(void)
+void TGaugeProp<FImpl>::setup(void)
 {
     Ls_ = env().getObjectLs(par().solver);
     env().template registerLattice<PropagatorField>(getName());
@@ -132,13 +105,13 @@ void TQuark<FImpl>::setup(void)
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TQuark<FImpl>::execute(void)
+void TGaugeProp<FImpl>::execute(void)
 {
     LOG(Message) << "Computing quark propagator '" << getName() << "'"
-                 << std::endl;
+    << std::endl;
     
     FermionField    source(env().getGrid(Ls_)), sol(env().getGrid(Ls_)),
-                    tmp(env().getGrid());
+    tmp(env().getGrid());
     std::string     propName = (Ls_ == 1) ? getName() : (getName() + "_5d");
     PropagatorField &prop    = *env().template createLattice<PropagatorField>(propName);
     PropagatorField &fullSrc = *env().template getObject<PropagatorField>(par().source);
@@ -149,12 +122,12 @@ void TQuark<FImpl>::execute(void)
     }
     
     LOG(Message) << "Inverting using solver '" << par().solver
-                 << "' on source '" << par().source << "'" << std::endl;
+    << "' on source '" << par().source << "'" << std::endl;
     for (unsigned int s = 0; s < Ns; ++s)
     for (unsigned int c = 0; c < Nc; ++c)
     {
         LOG(Message) << "Inversion for spin= " << s << ", color= " << c
-                     << std::endl;
+        << std::endl;
         // source conversion for 4D sources
         if (!env().isObject5d(par().source))
         {
@@ -194,6 +167,8 @@ void TQuark<FImpl>::execute(void)
     }
 }
 
+END_MODULE_NAMESPACE
+
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_Quark_hpp_
+#endif // Hadrons_MFermion_GaugeProp_hpp_

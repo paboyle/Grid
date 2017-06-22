@@ -50,7 +50,6 @@ public:
 
     GridBase(const std::vector<int> & processor_grid) : CartesianCommunicator(processor_grid) {};
 
-
     // Physics Grid information.
     std::vector<int> _simd_layout;// Which dimensions get relayed out over simd lanes.
     std::vector<int> _fdimensions;// (full) Global dimensions of array prior to cb removal
@@ -63,13 +62,12 @@ public:
     int _isites;
     int _fsites;                  // _isites*_osites = product(dimensions).
     int _gsites;
-    std::vector<int> _slice_block;   // subslice information
+    std::vector<int> _slice_block;// subslice information
     std::vector<int> _slice_stride;
     std::vector<int> _slice_nblock;
 
-    // Might need these at some point
-    //    std::vector<int> _lstart;     // local start of array in gcoors. _processor_coor[d]*_ldimensions[d]
-    //    std::vector<int> _lend;       // local end of array in gcoors    _processor_coor[d]*_ldimensions[d]+_ldimensions_[d]-1
+    std::vector<int> _lstart;     // local start of array in gcoors _processor_coor[d]*_ldimensions[d]
+    std::vector<int> _lend  ;     // local end of array in gcoors   _processor_coor[d]*_ldimensions[d]+_ldimensions_[d]-1
 
 public:
 
@@ -176,6 +174,7 @@ public:
     inline int gSites(void) const { return _isites*_osites*_Nprocessors; }; 
     inline int Nd    (void) const { return _ndimension;};
 
+    inline const std::vector<int> LocalStarts(void)             { return _lstart;    };
     inline const std::vector<int> &FullDimensions(void)         { return _fdimensions;};
     inline const std::vector<int> &GlobalDimensions(void)       { return _gdimensions;};
     inline const std::vector<int> &LocalDimensions(void)        { return _ldimensions;};

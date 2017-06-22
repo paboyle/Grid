@@ -21,6 +21,7 @@ modules_hpp =\
   Modules/MContraction/WeakHamiltonianEye.hpp \
   Modules/MContraction/WeakHamiltonianNonEye.hpp \
   Modules/MContraction/WeakNeutral4ptDisc.hpp \
+  Modules/MFermion/GaugeProp.hpp \
   Modules/MGauge/Load.hpp \
   Modules/MGauge/Random.hpp \
   Modules/MGauge/StochEm.hpp \
@@ -37,6 +38,4 @@ modules_hpp =\
   Modules/MSource/Wall.hpp \
   Modules/MSource/Z2.hpp \
   Modules/MUtilities/TestSeqConserved.hpp \
-  Modules/MUtilities/TestSeqGamma.hpp \
-  Modules/Quark.hpp
-
+  Modules/MUtilities/TestSeqGamma.hpp

@@ -9,6 +9,7 @@
 #include <Grid/Hadrons/Modules/MContraction/WeakHamiltonianEye.hpp>
 #include <Grid/Hadrons/Modules/MContraction/WeakHamiltonianNonEye.hpp>
 #include <Grid/Hadrons/Modules/MContraction/WeakNeutral4ptDisc.hpp>
+#include <Grid/Hadrons/Modules/MFermion/GaugeProp.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Load.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Random.hpp>
 #include <Grid/Hadrons/Modules/MGauge/StochEm.hpp>
@@ -26,4 +27,3 @@
 #include <Grid/Hadrons/Modules/MSource/Z2.hpp>
 #include <Grid/Hadrons/Modules/MUtilities/TestSeqConserved.hpp>
 #include <Grid/Hadrons/Modules/MUtilities/TestSeqGamma.hpp>
-#include <Grid/Hadrons/Modules/Quark.hpp>

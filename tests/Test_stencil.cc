@@ -1,6 +1,6 @@
     /*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
 
     Source file: ./tests/Test_stencil.cc
 
@@ -33,9 +33,8 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-int main (int argc, char ** argv)
-{
-  Grid_init(&argc,&argv);
+int main(int argc, char ** argv) {
+  Grid_init(&argc, &argv);
 
   //  typedef LatticeColourMatrix Field;
   typedef LatticeComplex Field;
@@ -47,7 +46,7 @@ int main (int argc, char ** argv)
   std::vector<int> mpi_layout  = GridDefaultMpi();
 
   double volume = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
-    
+
   GridCartesian Fine(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian rbFine(latt_size,simd_layout,mpi_layout);
   GridParallelRNG       fRNG(&Fine);
@@ -55,14 +54,14 @@ int main (int argc, char ** argv)
   //  fRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
   std::vector<int> seeds({1,2,3,4});
   fRNG.SeedFixedIntegers(seeds);
-  
+
   Field Foo(&Fine);
   Field Bar(&Fine);
   Field Check(&Fine);
   Field Diff(&Fine);
   LatticeComplex lex(&Fine);
 
-  lex = zero;  
+  lex = zero;
   random(fRNG,Foo);
   gaussian(fRNG,Bar);
 
@@ -98,7 +97,7 @@ int main (int argc, char ** argv)
 	  Fine.oCoorFromOindex(ocoor,o);
 	  ocoor[dir]=(ocoor[dir]+disp)%Fine._rdimensions[dir];
 	}
-	
+
 	SimpleCompressor<vobj> compress;
 	myStencil.HaloExchange(Foo,compress);
 
@@ -147,7 +146,7 @@ int main (int argc, char ** argv)
 		      <<") " <<check<<" vs "<<bar<<std::endl;
 	  }
 
-	 
+
 	}}}}
 
 	if (nrm > 1.0e-4) {
@@ -187,16 +186,15 @@ int main (int argc, char ** argv)
 	  Fine.oCoorFromOindex(ocoor,o);
 	  ocoor[dir]=(ocoor[dir]+disp)%Fine._rdimensions[dir];
 	}
-	
+
 	SimpleCompressor<vobj> compress;
 
-	
 	Bar = Cshift(Foo,dir,disp);
 
 	if ( disp & 0x1 ) {
 	  ECheck.checkerboard = Even;
 	  OCheck.checkerboard = Odd;
-	} else { 
+	} else {
 	  ECheck.checkerboard = Odd;
 	  OCheck.checkerboard = Even;
 	}
@@ -213,7 +211,7 @@ int main (int argc, char ** argv)
 	    permute(OCheck._odata[i],EFoo._odata[SE->_offset],permute_type);
 	  else if (SE->_is_local)
 	    OCheck._odata[i] = EFoo._odata[SE->_offset];
-	  else 
+	  else
 	    OCheck._odata[i] = EStencil.CommBuf()[SE->_offset];
 	}
 	OStencil.HaloExchange(OFoo,compress);
@@ -222,18 +220,18 @@ int main (int argc, char ** argv)
 	  StencilEntry *SE;
 	  SE = OStencil.GetEntry(permute_type,0,i);
 	  //	  std::cout << "ODD source "<< i<<" -> " <<SE->_offset << " "<< SE->_is_local<<std::endl;
-	  
+
 	  if ( SE->_is_local && SE->_permute )
 	    permute(ECheck._odata[i],OFoo._odata[SE->_offset],permute_type);
 	  else if (SE->_is_local)
 	    ECheck._odata[i] = OFoo._odata[SE->_offset];
-	  else 
+	  else
 	    ECheck._odata[i] = OStencil.CommBuf()[SE->_offset];
 	}
-	
+
 	setCheckerboard(Check,ECheck);
 	setCheckerboard(Check,OCheck);
-	
+
 	Real nrmC = norm2(Check);
 	Real nrmB = norm2(Bar);
 	Diff = Check-Bar;
@@ -256,10 +254,10 @@ int main (int argc, char ** argv)
 	  diff =norm2(ddiff);
 	  if ( diff > 0){
 	    std::cout <<"Coor (" << coor[0]<<","<<coor[1]<<","<<coor[2]<<","<<coor[3] <<") "
-		      <<"shift "<<disp<<" dir "<< dir 
+		      <<"shift "<<disp<<" dir "<< dir
 		      << "  stencil impl " <<check<<" vs cshift impl "<<bar<<std::endl;
 	  }
-	 
+
 	}}}}
 
 	if (nrm > 1.0e-4) exit(-1);
