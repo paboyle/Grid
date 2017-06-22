@@ -53,24 +53,80 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
   ShmInitGeneric();
 }
 
-CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
+CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors) 
+{
+  InitFromMPICommunicator(processors,communicator_world);
+  std::cout << "Passed communicator world to a new communicator" <<std::endl;
+}
+CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent) 
 {
   _ndimension = processors.size();
-  std::vector<int> periodic(_ndimension,1);
+  assert(_ndimension = parent._ndimension);
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  // split the communicator
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  std::vector<int> ratio(_ndimension);
+  std::vector<int> rcoor(_ndimension);
+  std::vector<int> scoor(_ndimension);
+
+  int Nsubcomm=1;
+  int Nsubrank=1;
+  for(int d=0;d<_ndimension;d++) {
+    ratio[d] = parent._processors[d] / processors[d];
+    rcoor[d] = parent._processor_coor[d] / processors[d];
+    scoor[d] = parent._processor_coor[d] % processors[d];
+    assert(ratio[d] * processors[d] == parent._processors[d]); // must exactly subdivide
+    Nsubcomm *= ratio[d];
+    Nsubrank *= processors[d];
+  }
+
+  int rlex, slex;
+  Lexicographic::IndexFromCoor(rcoor,rlex,ratio);
+  Lexicographic::IndexFromCoor(scoor,slex,processors);
+
+  MPI_Comm comm_split;
+  int ierr= MPI_Comm_split(communicator_world, rlex, slex,&comm_split);
+  assert(ierr==0);
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Set up from the new split communicator
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  InitFromMPICommunicator(processors,comm_split);
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Declare victory
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  std::cout << "Divided communicator "<< parent._Nprocessors<<" into "
+	    <<Nsubcomm <<" communicators with " << Nsubrank << " ranks"<<std::endl;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// Take an MPI_Comm and self assemble
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+void CartesianCommunicator::InitFromMPICommunicator(const std::vector<int> &processors, MPI_Comm communicator_base)
+{
+  if ( communicator_base != communicator_world ) {
+    std::cout << "Cartesian communicator created with a non-world communicator"<<std::endl;
+  }
+  _ndimension = processors.size();
+  _processor_coor.resize(_ndimension);
+
+  /////////////////////////////////
+  // Count the requested nodes
+  /////////////////////////////////
   _Nprocessors=1;
   _processors = processors;
-  _processor_coor.resize(_ndimension);
-  
-  MPI_Cart_create(communicator_world, _ndimension,&_processors[0],&periodic[0],1,&communicator);
-  MPI_Comm_rank(communicator,&_processor);
-  MPI_Cart_coords(communicator,_processor,_ndimension,&_processor_coor[0]);
-
   for(int i=0;i<_ndimension;i++){
     _Nprocessors*=_processors[i];
   }
-  
-  int Size; 
+
+  std::vector<int> periodic(_ndimension,1);
+  MPI_Cart_create(communicator_base, _ndimension,&_processors[0],&periodic[0],1,&communicator);
+  MPI_Comm_rank(communicator,&_processor);
+  MPI_Cart_coords(communicator,_processor,_ndimension,&_processor_coor[0]);
+
+  int Size;
   MPI_Comm_size(communicator,&Size);
   
   assert(Size==_Nprocessors);

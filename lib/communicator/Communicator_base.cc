@@ -60,7 +60,7 @@ void CartesianCommunicator::ShmBufferFreeAll(void) {
 /////////////////////////////////
 // Grid information queries
 /////////////////////////////////
-int                      CartesianCommunicator::Dimensions(void)         { return _ndimension; };
+int                      CartesianCommunicator::Dimensions(void)        { return _ndimension; };
 int                      CartesianCommunicator::IsBoss(void)            { return _processor==0; };
 int                      CartesianCommunicator::BossRank(void)          { return 0; };
 int                      CartesianCommunicator::ThisRank(void)          { return _processor; };
