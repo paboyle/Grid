@@ -148,6 +148,7 @@ class CartesianCommunicator {
   int  RankFromProcessorCoor(std::vector<int> &coor);
   void ProcessorCoorFromRank(int rank,std::vector<int> &coor);
   
+  int                      Dimensions(void)        ;
   int                      IsBoss(void)            ;
   int                      BossRank(void)          ;
   int                      ThisRank(void)          ;
@@ -155,6 +156,7 @@ class CartesianCommunicator {
   const std::vector<int> & ProcessorGrid(void)     ;
   int                      ProcessorCount(void)    ;
   int                      NodeCount(void)    ;
+  int                      RankCount(void)    ;
 
   ////////////////////////////////////////////////////////////////////////////////
   // very VERY rarely (Log, serial RNG) we need world without a grid
@@ -175,6 +177,8 @@ class CartesianCommunicator {
   void GlobalSumVector(ComplexF *c,int N);
   void GlobalSum(ComplexD &c);
   void GlobalSumVector(ComplexD *c,int N);
+  void GlobalXOR(uint32_t &);
+  void GlobalXOR(uint64_t &);
   
   template<class obj> void GlobalSum(obj &o){
     typedef typename obj::scalar_type scalar_type;

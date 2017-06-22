@@ -143,7 +143,7 @@ int main (int argc, char ** argv)
     dS = dS+trace(mommu*forcemu)*dt;
   }
 
-  Complex dSpred    = sum(dS);
+  ComplexD dSpred    = sum(dS);
 
   std::cout << GridLogMessage << " S      "<<S<<std::endl;
   std::cout << GridLogMessage << " Sprime "<<Sprime<<std::endl;

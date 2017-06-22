@@ -27,8 +27,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_Wilson_hpp_
-#define Hadrons_Wilson_hpp_
+#ifndef Hadrons_MAction_Wilson_hpp_
+#define Hadrons_MAction_Wilson_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -54,7 +54,7 @@ template <typename FImpl>
 class TWilson: public Module<WilsonPar>
 {
 public:
-    TYPE_ALIASES(FImpl,);
+    FGS_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TWilson(const std::string name);

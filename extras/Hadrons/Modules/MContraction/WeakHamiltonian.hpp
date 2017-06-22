@@ -26,8 +26,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_WeakHamiltonian_hpp_
-#define Hadrons_WeakHamiltonian_hpp_
+#ifndef Hadrons_MContraction_WeakHamiltonian_hpp_
+#define Hadrons_MContraction_WeakHamiltonian_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -83,7 +83,7 @@ public:
 class T##modname: public Module<WeakHamiltonianPar>\
 {\
 public:\
-    TYPE_ALIASES(FIMPL,)\
+    FERM_TYPE_ALIASES(FIMPL,)\
     class Result: Serializable\
     {\
     public:\
@@ -111,4 +111,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_WeakHamiltonian_hpp_
+#endif // Hadrons_MContraction_WeakHamiltonian_hpp_

@@ -51,22 +51,42 @@ using Grid::operator<<;
  * error with GCC 5 (clang & GCC 6 compile fine without it).
  */
 
-// FIXME: find a way to do that in a more general fashion
 #ifndef FIMPL
 #define FIMPL WilsonImplR
+#endif
+#ifndef SIMPL
+#define SIMPL ScalarImplCR
 #endif
 
 BEGIN_HADRONS_NAMESPACE
 
 // type aliases
-#define TYPE_ALIASES(FImpl, suffix)\
+#define FERM_TYPE_ALIASES(FImpl, suffix)\
 typedef FermionOperator<FImpl>                       FMat##suffix;             \
 typedef typename FImpl::FermionField                 FermionField##suffix;     \
 typedef typename FImpl::PropagatorField              PropagatorField##suffix;  \
 typedef typename FImpl::SitePropagator               SitePropagator##suffix;   \
-typedef typename FImpl::DoubledGaugeField            DoubledGaugeField##suffix;\
-typedef std::function<void(FermionField##suffix &,                             \
+typedef std::vector<typename FImpl::SitePropagator::scalar_object>             \
+                                                     SlicedPropagator##suffix;
+
+#define GAUGE_TYPE_ALIASES(FImpl, suffix)\
+typedef typename FImpl::DoubledGaugeField DoubledGaugeField##suffix;
+
+#define SCALAR_TYPE_ALIASES(SImpl, suffix)\
+typedef typename SImpl::Field ScalarField##suffix;\
+typedef typename SImpl::Field PropagatorField##suffix;
+
+#define SOLVER_TYPE_ALIASES(FImpl, suffix)\
+typedef std::function<void(FermionField##suffix &,\
                       const FermionField##suffix &)> SolverFn##suffix;
+
+#define SINK_TYPE_ALIASES(suffix)\
+typedef std::function<SlicedPropagator##suffix(const PropagatorField##suffix &)> SinkFn##suffix;
+
+#define FGS_TYPE_ALIASES(FImpl, suffix)\
+FERM_TYPE_ALIASES(FImpl, suffix)\
+GAUGE_TYPE_ALIASES(FImpl, suffix)\
+SOLVER_TYPE_ALIASES(FImpl, suffix)
 
 // logger
 class HadronsLogger: public Logger

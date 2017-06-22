@@ -50,7 +50,7 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu(&Fine);
   std::vector<LatticeColourMatrix> U(4,&Fine);
   
-  NerscField header;
+  FieldMetaData header;
   std::string file("./ckpoint_lat");
   NerscIO::readConfiguration(Umu,header,file);
 

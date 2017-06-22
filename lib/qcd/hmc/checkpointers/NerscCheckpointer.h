@@ -70,7 +70,7 @@ class NerscHmcCheckpointer : public BaseHmcCheckpointer<Gimpl> {
     std::string config, rng;
     this->build_filenames(traj, Params, config, rng);
 
-    NerscField header;
+    FieldMetaData header;
     NerscIO::readRNGState(sRNG, pRNG, header, rng);
     NerscIO::readConfiguration(U, header, config);
   };

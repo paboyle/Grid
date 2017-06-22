@@ -29,8 +29,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_Meson_hpp_
-#define Hadrons_Meson_hpp_
+#ifndef Hadrons_MContraction_Meson_hpp_
+#define Hadrons_MContraction_Meson_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -69,7 +69,7 @@ public:
                                     std::string, q1,
                                     std::string, q2,
                                     std::string, gammas,
-                                    std::string, mom,
+                                    std::string, sink,
                                     std::string, output);
 };
 
@@ -77,8 +77,10 @@ template <typename FImpl1, typename FImpl2>
 class TMeson: public Module<MesonPar>
 {
 public:
-    TYPE_ALIASES(FImpl1, 1);
-    TYPE_ALIASES(FImpl2, 2);
+    FERM_TYPE_ALIASES(FImpl1, 1);
+    FERM_TYPE_ALIASES(FImpl2, 2);
+    FERM_TYPE_ALIASES(ScalarImplCR, Scalar);
+    SINK_TYPE_ALIASES(Scalar);
     class Result: Serializable
     {
     public:
@@ -115,7 +117,7 @@ TMeson<FImpl1, FImpl2>::TMeson(const std::string name)
 template <typename FImpl1, typename FImpl2>
 std::vector<std::string> TMeson<FImpl1, FImpl2>::getInput(void)
 {
-    std::vector<std::string> input = {par().q1, par().q2};
+    std::vector<std::string> input = {par().q1, par().q2, par().sink};
     
     return input;
 }
@@ -154,6 +156,9 @@ void TMeson<FImpl1, FImpl2>::parseGammaString(std::vector<GammaPair> &gammaList)
 
 
 // execution ///////////////////////////////////////////////////////////////////
+#define mesonConnected(q1, q2, gSnk, gSrc) \
+(g5*(gSnk))*(q1)*(adj(gSrc)*g5)*adj(q2)
+
 template <typename FImpl1, typename FImpl2>
 void TMeson<FImpl1, FImpl2>::execute(void)
 {
@@ -161,43 +166,72 @@ void TMeson<FImpl1, FImpl2>::execute(void)
                  << " quarks '" << par().q1 << "' and '" << par().q2 << "'"
                  << std::endl;
     
-    CorrWriter              writer(par().output);
-    PropagatorField1       &q1 = *env().template getObject<PropagatorField1>(par().q1);
-    PropagatorField2       &q2 = *env().template getObject<PropagatorField2>(par().q2);
-    LatticeComplex         c(env().getGrid());
-    Gamma                  g5(Gamma::Algebra::Gamma5);
-    std::vector<GammaPair> gammaList;
+    CorrWriter             writer(par().output);
     std::vector<TComplex>  buf;
     std::vector<Result>    result;
-    std::vector<Real>      p;
-
-    p  = strToVec<Real>(par().mom);
-    LatticeComplex         ph(env().getGrid()), coor(env().getGrid());
-    Complex                i(0.0,1.0);
-    ph = zero;
-    for(unsigned int mu = 0; mu < env().getNd(); mu++)
-    {
-        LatticeCoordinate(coor, mu);
-        ph = ph + p[mu]*coor*((1./(env().getGrid()->_fdimensions[mu])));
-    }
-    ph = exp((Real)(2*M_PI)*i*ph);
+    Gamma                  g5(Gamma::Algebra::Gamma5);
+    std::vector<GammaPair> gammaList;
+    int                    nt = env().getDim(Tp);
     
     parseGammaString(gammaList);
-
     result.resize(gammaList.size());
     for (unsigned int i = 0; i < result.size(); ++i)
     {
-        Gamma gSnk(gammaList[i].first);
-        Gamma gSrc(gammaList[i].second);
-        c = trace((g5*gSnk)*q1*(adj(gSrc)*g5)*adj(q2))*ph;
-        sliceSum(c, buf, Tp);
-
         result[i].gamma_snk = gammaList[i].first;
         result[i].gamma_src = gammaList[i].second;
-        result[i].corr.resize(buf.size());
-        for (unsigned int t = 0; t < buf.size(); ++t)
+        result[i].corr.resize(nt);
+    }
+    if (env().template isObjectOfType<SlicedPropagator1>(par().q1) and
+        env().template isObjectOfType<SlicedPropagator2>(par().q2))
+    {
+        SlicedPropagator1 &q1 = *env().template getObject<SlicedPropagator1>(par().q1);
+        SlicedPropagator2 &q2 = *env().template getObject<SlicedPropagator2>(par().q2);
+        
+        LOG(Message) << "(propagator already sinked)" << std::endl;
+        for (unsigned int i = 0; i < result.size(); ++i)
         {
-            result[i].corr[t] = TensorRemove(buf[t]);
+            Gamma gSnk(gammaList[i].first);
+            Gamma gSrc(gammaList[i].second);
+            
+            for (unsigned int t = 0; t < buf.size(); ++t)
+            {
+                result[i].corr[t] = TensorRemove(trace(mesonConnected(q1[t], q2[t], gSnk, gSrc)));
+            }
+        }
+    }
+    else
+    {
+        PropagatorField1 &q1   = *env().template getObject<PropagatorField1>(par().q1);
+        PropagatorField2 &q2   = *env().template getObject<PropagatorField2>(par().q2);
+        LatticeComplex   c(env().getGrid());
+        
+        LOG(Message) << "(using sink '" << par().sink << "')" << std::endl;
+        for (unsigned int i = 0; i < result.size(); ++i)
+        {
+            Gamma       gSnk(gammaList[i].first);
+            Gamma       gSrc(gammaList[i].second);
+            std::string ns;
+                
+            ns = env().getModuleNamespace(env().getObjectModule(par().sink));
+            if (ns == "MSource")
+            {
+                PropagatorField1 &sink =
+                    *env().template getObject<PropagatorField1>(par().sink);
+                
+                c = trace(mesonConnected(q1, q2, gSnk, gSrc)*sink);
+                sliceSum(c, buf, Tp);
+            }
+            else if (ns == "MSink")
+            {
+                SinkFnScalar &sink = *env().template getObject<SinkFnScalar>(par().sink);
+                
+                c   = trace(mesonConnected(q1, q2, gSnk, gSrc));
+                buf = sink(c);
+            }
+            for (unsigned int t = 0; t < buf.size(); ++t)
+            {
+                result[i].corr[t] = TensorRemove(buf[t]);
+            }
         }
     }
     write(writer, "meson", result);
@@ -207,4 +241,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_Meson_hpp_
+#endif // Hadrons_MContraction_Meson_hpp_
