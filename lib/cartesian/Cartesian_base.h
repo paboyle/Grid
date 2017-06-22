@@ -211,9 +211,6 @@ public:
       assert(lidx<lSites());
       Lexicographic::CoorFromIndex(lcoor,lidx,_ldimensions);
     }
-
-
-
     void GlobalCoorToGlobalIndex(const std::vector<int> & gcoor,int & gidx){
       gidx=0;
       int mult=1;

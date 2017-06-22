@@ -60,7 +60,7 @@ GridCartesian         *SpaceTimeGrid::makeFiveDimGrid(int Ls,const GridCartesian
     simd5.push_back(FourDimGrid->_simd_layout[d]);
      mpi5.push_back(FourDimGrid->_processors[d]);
   }
-  return new GridCartesian(latt5,simd5,mpi5); 
+  return new GridCartesian(latt5,simd5,mpi5,*FourDimGrid); 
 }
 
 
@@ -68,15 +68,8 @@ GridRedBlackCartesian *SpaceTimeGrid::makeFiveDimRedBlackGrid(int Ls,const GridC
 {
   int N4=FourDimGrid->_ndimension;
   int cbd=1;
-  //  std::vector<int> latt5(1,Ls);
-  //  std::vector<int> simd5(1,1);
-  //  std::vector<int>  mpi5(1,1);
   std::vector<int>   cb5(1,0);
-    
   for(int d=0;d<N4;d++){
-    //    latt5.push_back(FourDimGrid->_fdimensions[d]);
-    //    simd5.push_back(FourDimGrid->_simd_layout[d]);
-    //     mpi5.push_back(FourDimGrid->_processors[d]);
       cb5.push_back(  1);
   }
   GridCartesian *tmp = makeFiveDimGrid(Ls,FourDimGrid);
@@ -100,7 +93,7 @@ GridCartesian         *SpaceTimeGrid::makeFiveDimDWFGrid(int Ls,const GridCartes
     simd5.push_back(1);
      mpi5.push_back(FourDimGrid->_processors[d]);
   }
-  return new GridCartesian(latt5,simd5,mpi5); 
+  return new GridCartesian(latt5,simd5,mpi5,*FourDimGrid); 
 }
 ///////////////////////////////////////////////////
 // Interface is inefficient and forces the deletion
@@ -111,15 +104,7 @@ GridRedBlackCartesian *SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(int Ls,const Gr
   int N4=FourDimGrid->_ndimension;
   int cbd=1;
   std::vector<int>   cb5(1,0);
-  //  int nsimd = FourDimGrid->Nsimd();
-  //  std::vector<int> latt5(1,Ls);
-  //  std::vector<int> simd5(1,nsimd);
-  //  std::vector<int>  mpi5(1,1);
-    
   for(int d=0;d<N4;d++){
-    //    latt5.push_back(FourDimGrid->_fdimensions[d]);
-    //    simd5.push_back(1);
-    //     mpi5.push_back(FourDimGrid->_processors[d]);
       cb5.push_back(1);
   }
   GridCartesian *tmp         = makeFiveDimDWFGrid(Ls,FourDimGrid);

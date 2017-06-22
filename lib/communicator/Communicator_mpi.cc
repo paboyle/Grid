@@ -56,46 +56,52 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors) 
 {
   InitFromMPICommunicator(processors,communicator_world);
-  std::cout << "Passed communicator world to a new communicator" <<std::endl;
+  //  std::cout << "Passed communicator world to a new communicator" <<communicator<<std::endl;
 }
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent) 
 {
   _ndimension = processors.size();
   assert(_ndimension = parent._ndimension);
-
+  
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   // split the communicator
   //////////////////////////////////////////////////////////////////////////////////////////////////////
-  std::vector<int> ratio(_ndimension);
-  std::vector<int> rcoor(_ndimension);
-  std::vector<int> scoor(_ndimension);
+  int Nparent;
+  MPI_Comm_size(parent.communicator,&Nparent);
 
-  int Nsubcomm=1;
-  int Nsubrank=1;
+  int childsize=1;
   for(int d=0;d<_ndimension;d++) {
-    ratio[d] = parent._processors[d] / processors[d];
-    rcoor[d] = parent._processor_coor[d] / processors[d];
-    scoor[d] = parent._processor_coor[d] % processors[d];
-    assert(ratio[d] * processors[d] == parent._processors[d]); // must exactly subdivide
-    Nsubcomm *= ratio[d];
-    Nsubrank *= processors[d];
+    childsize *= processors[d];
   }
+  int Nchild = Nparent/childsize;
+  assert (childsize * Nchild == Nparent);
 
-  int rlex, slex;
-  Lexicographic::IndexFromCoor(rcoor,rlex,ratio);
-  Lexicographic::IndexFromCoor(scoor,slex,processors);
+  int prank;  MPI_Comm_rank(parent.communicator,&prank);
+  int crank = prank % childsize;
+  int ccomm = prank / childsize;
 
   MPI_Comm comm_split;
-  if ( Nsubcomm > 1 ) { 
-    int ierr= MPI_Comm_split(communicator_world, rlex, slex,&comm_split);
+  if ( Nchild > 1 ) { 
+
+    std::cout << GridLogMessage<<"Child communicator of "<< parent.communicator<<std::endl;
+    std::cout << GridLogMessage<<" parent grid    ";
+    for(int d=0;d<parent._processors.size();d++)  std::cout << parent._processors[d] << " ";
+    std::cout<<std::endl;
+
+    std::cout << GridLogMessage<<" child grid    ";
+    for(int d=0;d<processors.size();d++)  std::cout << processors[d] << " ";
+    std::cout<<std::endl;
+
+    int ierr= MPI_Comm_split(parent.communicator, ccomm,crank,&comm_split);
     assert(ierr==0);
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // Declare victory
     //////////////////////////////////////////////////////////////////////////////////////////////////////
-    std::cout << "Divided communicator "<< parent._Nprocessors<<" into "
-	      <<Nsubcomm <<" communicators with " << Nsubrank << " ranks"<<std::endl;
+    std::cout << GridLogMessage<<"Divided communicator "<< parent._Nprocessors<<" into "
+	      <<Nchild <<" communicators with " << childsize << " ranks"<<std::endl;
   } else {
-    comm_split = communicator_world;
+    comm_split=parent.communicator;
+    //    std::cout << "Passed parental communicator to a new communicator" <<std::endl;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -110,9 +116,9 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 void CartesianCommunicator::InitFromMPICommunicator(const std::vector<int> &processors, MPI_Comm communicator_base)
 {
-  if ( communicator_base != communicator_world ) {
-    std::cout << "Cartesian communicator created with a non-world communicator"<<std::endl;
-  }
+  //  if ( communicator_base != communicator_world ) {
+  //    std::cout << "Cartesian communicator created with a non-world communicator"<<std::endl;
+  //  }
   _ndimension = processors.size();
   _processor_coor.resize(_ndimension);
 

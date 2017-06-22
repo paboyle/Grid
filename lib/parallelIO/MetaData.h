@@ -104,6 +104,7 @@ namespace Grid {
       header.nd = nd;
       header.dimension.resize(nd);
       header.boundary.resize(nd);
+      header.data_start = 0;
       for(int d=0;d<nd;d++) {
 	header.dimension[d] = grid->_fdimensions[d];
       }
