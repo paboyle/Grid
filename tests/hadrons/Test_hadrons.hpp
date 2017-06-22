@@ -71,6 +71,9 @@ using namespace Hadrons;
 #define NAME_WALL_SOURCE(t) NAME_3MOM_WALL_SOURCE(t, ZERO_MOM)
 #define NAME_POINT_SOURCE(pos) ("point_" + pos)
 
+// Meson module "gammas" special values
+#define ALL_GAMMAS "all"
+
 #define MAKE_3MOM_WALL_PROP(tW, mom, propName, solver)\
 {\
     std::string srcName = NAME_3MOM_WALL_SOURCE(tW, mom);\
@@ -364,28 +367,27 @@ inline void makeLoop(Application &application, std::string &propName,
  * Name: mesonContraction
  * Purpose: Create meson contraction module and add to application module.
  * Parameters: application - main application that stores modules.
- *             npt         - specify n-point correlator (for labelling).
+ *             modName     - unique module name.
+ *             output      - name of output files.
  *             q1          - quark propagator 1.
  *             q2          - quark propagator 2.
- *             label       - unique label to construct module name.
- *             mom         - momentum to project (default is zero)
+ *             sink        - sink smearing module.
  *             gammas      - gamma insertions at source and sink.
  * Returns: None.
  ******************************************************************************/
-inline void mesonContraction(Application &application, unsigned int npt, 
+inline void mesonContraction(Application &application, 
+                             std::string &modName, std::string &output, 
                              std::string &q1, std::string &q2,
-                             std::string &label, 
-                             std::string mom = ZERO_MOM,
+                             std::string &sink,
                              std::string gammas = "<Gamma5 Gamma5>")
 {
-    std::string modName = std::to_string(npt) + "pt_" + label;
     if (!(Environment::getInstance().hasModule(modName)))
     {
         MContraction::Meson::Par mesPar;
-        mesPar.output = std::to_string(npt) + "pt/" + label;
+        mesPar.output = output;
         mesPar.q1 = q1;
         mesPar.q2 = q2;
-        mesPar.mom = mom;
+        mesPar.sink = sink;
         mesPar.gammas = gammas;
         application.createModule<MContraction::Meson>(modName, mesPar);
     }

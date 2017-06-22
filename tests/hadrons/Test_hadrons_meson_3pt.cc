@@ -25,7 +25,7 @@
  directory.
  *******************************************************************************/
 
-#include <Grid/Hadrons/Application.hpp>
+#include "Test_hadrons.hpp"
 
 using namespace Grid;
 using namespace Hadrons;
@@ -127,43 +127,34 @@ int main(int argc, char *argv[])
             }
         }
         
+        // Point sink.
+        std::string sink = "sink";
+        MSink::Point::Par sinkPar;
+        sinkPar.mom = ZERO_MOM;
+        application.createModule<MSink::ScalarPoint>(sink, sinkPar);
+        
         // contractions
         MContraction::Meson::Par mesPar;
         for (unsigned int i = 0; i < flavour.size(); ++i)
         for (unsigned int j = i; j < flavour.size(); ++j)
         {
-            mesPar.output = "mesons/Z2_" + flavour[i] + flavour[j];
-            mesPar.q1     = qName[i];
-            mesPar.q2     = qName[j];
-            mesPar.gammas = "all";
-            mesPar.mom    = "0. 0. 0. 0.";
-            application.createModule<MContraction::Meson>("meson_Z2_"
-                                                          + std::to_string(t)
-                                                          + "_"
-                                                          + flavour[i]
-                                                          + flavour[j],
-                                                          mesPar);
+            std::string modName = "meson_Z2_" + std::to_string(t) + "_" + \
+                                                        flavour[i] + flavour[j];
+            std::string output  = "mesons/Z2_" + flavour[i] + flavour[j];
+            mesonContraction(application, modName, output, qName[i], qName[j],
+                             sink, ALL_GAMMAS);
         }
         for (unsigned int i = 0; i < flavour.size(); ++i)
         for (unsigned int j = 0; j < flavour.size(); ++j)
         for (unsigned int mu = 0; mu < Nd; ++mu)
         {
-            MContraction::Meson::Par mesPar;
-            
-            mesPar.output = "3pt/Z2_" + flavour[i] + flavour[j] + "_"
-                            + std::to_string(mu);
-            mesPar.q1     = qName[i];
-            mesPar.q2     = seqName[j][mu];
-            mesPar.gammas = "all";
-            mesPar.mom    = "0. 0. 0. 0.";
-            application.createModule<MContraction::Meson>("3pt_Z2_"
-                                                          + std::to_string(t)
-                                                          + "_"
-                                                          + flavour[i]
-                                                          + flavour[j]
-                                                          + "_"
-                                                          + std::to_string(mu),
-                                                          mesPar);
+            std::string modName = "3pt_Z2_" + std::to_string(t) + "_" + \
+                                  flavour[i] + flavour[j] + "_" + \
+                                  std::to_string(mu);
+            std::string output  = "3pt/Z2_" + flavour[i] + \
+                                  flavour[j] + "_" + std::to_string(mu);
+            mesonContraction(application, modName, output, 
+                             qName[i], seqName[j][mu], sink, ALL_GAMMAS);
         }
     }
     
