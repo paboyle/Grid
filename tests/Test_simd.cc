@@ -183,8 +183,6 @@ void IntTester(const functor &func)
 {
   typedef Integer  scal;
   typedef vInteger vec;
-  GridSerialRNG          sRNG;
-  sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
   int Nsimd = vec::Nsimd();
 
@@ -286,6 +284,50 @@ void ReductionTester(const functor &func)
   assert(ok==0);
 }
 
+
+template<class reduced,class scal, class vec,class functor > 
+void IntReductionTester(const functor &func)
+{
+  int Nsimd = vec::Nsimd();
+
+  std::vector<scal> input1(Nsimd);
+  std::vector<scal> input2(Nsimd);
+  reduced result(0);
+  reduced reference(0);
+  reduced tmp;
+
+  std::vector<vec,alignedAllocator<vec> > buf(3);
+  vec & v_input1 = buf[0];
+  vec & v_input2 = buf[1];
+
+  for(int i=0;i<Nsimd;i++){
+    input1[i] = (i + 1) * 30;
+    input2[i] = (i + 1) * 20;
+  }
+
+  merge<vec,scal>(v_input1,input1);
+  merge<vec,scal>(v_input2,input2);
+
+  func.template vfunc<reduced,vec>(result,v_input1,v_input2);
+
+  for(int i=0;i<Nsimd;i++) {
+    func.template sfunc<reduced,scal>(tmp,input1[i],input2[i]);
+    reference+=tmp;
+  }
+
+  std::cout<<GridLogMessage << " " << func.name()<<std::endl;
+
+  int ok=0;
+  if ( reference-result != 0 ){
+    std::cout<<GridLogMessage<< "*****" << std::endl;
+    std::cout<<GridLogMessage<< reference-result << " " <<reference<< " " << result<<std::endl;
+    ok++;
+  }
+  if ( ok==0 ) {
+    std::cout<<GridLogMessage << " OK!" <<std::endl;
+  }
+  assert(ok==0);
+}
 
 
 class funcPermute {
@@ -691,6 +733,7 @@ int main (int argc, char ** argv)
   IntTester(funcPlus());
   IntTester(funcMinus());
   IntTester(funcTimes());
+  IntReductionTester<Integer, Integer, vInteger>(funcReduce());
 
   std::cout<<GridLogMessage << "==================================="<<  std::endl;
   std::cout<<GridLogMessage << "Testing precisionChange            "<<  std::endl;
