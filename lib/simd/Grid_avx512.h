@@ -558,7 +558,7 @@ namespace Optimization {
     v2  = _mm256_hadd_epi32(v1, v1);
     u1  = _mm256_castsi256_si128(v2)        // upper half
     u2  = _mm256_extracti128_si256(v2, 1);  // lower half
-    ret = _mm256_add_epi32(u1, u2);
+    ret = _mm_add_epi32(u1, u2);
     return _mm_cvtsi128_si32(ret);
   }
 #else
