@@ -68,7 +68,7 @@ int main (int argc, char ** argv)
 
   int Nloop=100;
   int nmu=0;
-  int maxlat=24;
+  int maxlat=32;
   for(int mu=0;mu<Nd;mu++) if (mpi_layout[mu]>1) nmu++;
 
   std::cout << GridLogMessage << "Number of iterations to average: "<< Nloop << std::endl;
@@ -80,7 +80,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   header();
   for(int lat=4;lat<=maxlat;lat+=4){
-    for(int Ls=8;Ls<=32;Ls*=2){
+    for(int Ls=8;Ls<=8;Ls*=2){
 
       std::vector<int> latt_size  ({lat*mpi_layout[0],
       				    lat*mpi_layout[1],
@@ -163,7 +163,7 @@ int main (int argc, char ** argv)
   header();
 
   for(int lat=4;lat<=maxlat;lat+=4){
-    for(int Ls=8;Ls<=32;Ls*=2){
+    for(int Ls=8;Ls<=8;Ls*=2){
 
       std::vector<int> latt_size  ({lat,lat,lat,lat});
 
@@ -249,7 +249,7 @@ int main (int argc, char ** argv)
   header();
 
   for(int lat=4;lat<=maxlat;lat+=4){
-    for(int Ls=8;Ls<=32;Ls*=2){
+    for(int Ls=8;Ls<=8;Ls*=2){
 
       std::vector<int> latt_size  ({lat*mpi_layout[0],
       				    lat*mpi_layout[1],
@@ -299,7 +299,7 @@ int main (int argc, char ** argv)
 					      xmit_to_rank,
 					      (void *)&rbuf[mu][0],
 					      recv_from_rank,
-					      bytes);
+					      bytes,mu);
 	
 	    comm_proc = mpi_layout[mu]-1;
 	  
@@ -310,11 +310,11 @@ int main (int argc, char ** argv)
 					      xmit_to_rank,
 					      (void *)&rbuf[mu+4][0],
 					      recv_from_rank,
-					      bytes);
+					      bytes,mu+4);
 	  
 	  }
 	}
-	Grid.StencilSendToRecvFromComplete(requests);
+	Grid.StencilSendToRecvFromComplete(requests,0);
 	Grid.Barrier();
 	double stop=usecond();
 	t_time[i] = stop-start; // microseconds
@@ -346,7 +346,7 @@ int main (int argc, char ** argv)
   header();
 
   for(int lat=4;lat<=maxlat;lat+=4){
-    for(int Ls=8;Ls<=32;Ls*=2){
+    for(int Ls=8;Ls<=8;Ls*=2){
 
       std::vector<int> latt_size  ({lat*mpi_layout[0],
       				    lat*mpi_layout[1],
@@ -393,8 +393,8 @@ int main (int argc, char ** argv)
 					      xmit_to_rank,
 					      (void *)&rbuf[mu][0],
 					      recv_from_rank,
-					      bytes);
-	    Grid.StencilSendToRecvFromComplete(requests);
+					      bytes,mu);
+	    Grid.StencilSendToRecvFromComplete(requests,mu);
 	    requests.resize(0);
 
 	    comm_proc = mpi_layout[mu]-1;
@@ -406,8 +406,8 @@ int main (int argc, char ** argv)
 					      xmit_to_rank,
 					      (void *)&rbuf[mu+4][0],
 					      recv_from_rank,
-					      bytes);
-	    Grid.StencilSendToRecvFromComplete(requests);
+					      bytes,mu+4);
+	    Grid.StencilSendToRecvFromComplete(requests,mu+4);
 	    requests.resize(0);
 	  
 	  }
@@ -435,6 +435,9 @@ int main (int argc, char ** argv)
  
     }
   }    
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
+  std::cout<<GridLogMessage << "= All done; Bye Bye"<<std::endl;
+  std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
 
   Grid_finalize();
 }

@@ -600,11 +600,11 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 }
 
 double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
-						       void *xmit,
-						       int dest,
-						       void *recv,
-						       int from,
-						       int bytes)
+							 void *xmit,
+							 int dest,
+							 void *recv,
+							 int from,
+							 int bytes,int dir)
 {
   MPI_Request xrq;
   MPI_Request rrq;
@@ -643,7 +643,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 
   return off_node_bytes;
 }
-void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall)
+void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int dir)
 {
   SendToRecvFromComplete(waitall);
 }

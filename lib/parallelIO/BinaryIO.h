@@ -29,7 +29,7 @@
 #ifndef GRID_BINARY_IO_H
 #define GRID_BINARY_IO_H
 
-#if defined(GRID_COMMS_MPI) || defined(GRID_COMMS_MPI3) 
+#if defined(GRID_COMMS_MPI) || defined(GRID_COMMS_MPI3) || defined(GRID_COMMS_MPIT) 
 #define USE_MPI_IO
 #else
 #undef  USE_MPI_IO

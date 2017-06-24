@@ -38,7 +38,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifdef GRID_COMMS_MPI3
 #include <mpi.h>
 #endif
-#ifdef GRID_COMMS_MPI3L
+#ifdef GRID_COMMS_MPIT
 #include <mpi.h>
 #endif
 #ifdef GRID_COMMS_SHMEM
@@ -64,12 +64,16 @@ class CartesianCommunicator {
   std::vector<int> _processor_coor;  // linear processor coordinate
   unsigned long _ndimension;
 
-#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3) || defined (GRID_COMMS_MPI3L)
+#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3) || defined (GRID_COMMS_MPIT)
   static MPI_Comm communicator_world;
          MPI_Comm communicator;
   typedef MPI_Request CommsRequest_t;
 #else 
   typedef int CommsRequest_t;
+#endif
+
+#if defined (GRID_COMMS_MPIT)
+  std::vector<MPI_Comm> communicator_halo;
 #endif
 
   ////////////////////////////////////////////////////////////////////
@@ -212,13 +216,13 @@ class CartesianCommunicator {
   void SendToRecvFromComplete(std::vector<CommsRequest_t> &waitall);
 
   double StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
-				  void *xmit,
-				  int xmit_to_rank,
-				  void *recv,
-				  int recv_from_rank,
-				  int bytes);
+				    void *xmit,
+				    int xmit_to_rank,
+				    void *recv,
+				    int recv_from_rank,
+				    int bytes,int dir);
   
-  void StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall);
+  void StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int i);
   void StencilBarrier(void);
 
   ////////////////////////////////////////////////////////////

@@ -248,24 +248,57 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
   //////////////////////////////////////////
   // Comms packet queue for asynch thread
   //////////////////////////////////////////
+  void CommunicateThreaded()
+  {
+    for(int i=0;i<Packets.size();i++){
+#pragma omp task 
+      {
+	double start;
+	double stop;
+	start = usecond();
+	uint64_t bytes;
+	std::vector<CommsRequest_t> reqs;
+	bytes=_grid->StencilSendToRecvFromBegin(reqs,
+					  Packets[i].send_buf,
+					  Packets[i].to_rank,
+					  Packets[i].recv_buf,
+					  Packets[i].from_rank,
+					  Packets[i].bytes,i);
+	_grid->StencilSendToRecvFromComplete(reqs,i);
+	// Last task logged; this is approximate but hard to catch
+	// the last to complete
+	stop = usecond();
+	stop = stop - start;
+
+	if ( i==0 ) commtime+=stop;
+
+#pragma omp critical
+	{
+	  comms_bytes+=bytes;
+	}
+
+      }
+    }
+    
+  }
   void CommunicateBegin(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
     reqs.resize(Packets.size());
     commtime-=usecond();
     for(int i=0;i<Packets.size();i++){
       comms_bytes+=_grid->StencilSendToRecvFromBegin(reqs[i],
-					  Packets[i].send_buf,
-					  Packets[i].to_rank,
-					  Packets[i].recv_buf,
-					  Packets[i].from_rank,
-					  Packets[i].bytes);
+						     Packets[i].send_buf,
+						     Packets[i].to_rank,
+						     Packets[i].recv_buf,
+						     Packets[i].from_rank,
+						     Packets[i].bytes,i);
     }
   }
 
   void CommunicateComplete(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
     for(int i=0;i<Packets.size();i++){
-      _grid->StencilSendToRecvFromComplete(reqs[i]);
+      _grid->StencilSendToRecvFromComplete(reqs[i],i);
     }
     commtime+=usecond();
   }

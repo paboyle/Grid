@@ -89,25 +89,31 @@ void CartesianCommunicator::GlobalSumVector(ComplexD *c,int N)
   GlobalSumVector((double *)c,2*N);
 }
 
-#if !defined( GRID_COMMS_MPI3) && !defined (GRID_COMMS_MPI3L)
+#if !defined( GRID_COMMS_MPI3) 
 
 int                      CartesianCommunicator::NodeCount(void)    { return ProcessorCount();};
 int                      CartesianCommunicator::RankCount(void)    { return ProcessorCount();};
-
+#endif
+#if !defined( GRID_COMMS_MPI3) && !defined (GRID_COMMS_MPIT)
 double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
-						       void *xmit,
-						       int xmit_to_rank,
-						       void *recv,
-						       int recv_from_rank,
-						       int bytes)
+							 void *xmit,
+							 int xmit_to_rank,
+							 void *recv,
+							 int recv_from_rank,
+							 int bytes, int dir)
 {
+  // Discard the "dir"
   SendToRecvFromBegin(list,xmit,xmit_to_rank,recv,recv_from_rank,bytes);
   return 2.0*bytes;
 }
-void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall)
+void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int dir)
 {
   SendToRecvFromComplete(waitall);
 }
+#endif
+
+#if !defined( GRID_COMMS_MPI3) 
+
 void CartesianCommunicator::StencilBarrier(void){};
 
 commVector<uint8_t> CartesianCommunicator::ShmBufStorageVector;

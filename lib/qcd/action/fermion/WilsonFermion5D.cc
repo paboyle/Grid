@@ -379,7 +379,6 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
 {
 #ifdef GRID_OMP
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
-  typedef CartesianCommunicator::CommsRequest_t CommsRequest_t;
 
   Compressor compressor(dag);
 
@@ -388,46 +387,46 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
 
   DhopFaceTime-=usecond();
   st.HaloExchangeOptGather(in,compressor);
+  st.CommsMergeSHM(compressor);// Could do this inside parallel region overlapped with comms
   DhopFaceTime+=usecond();
-  std::vector<std::vector<CommsRequest_t> > reqs;
 
   // Rely on async comms; start comms before merge of local data
+  DhopComputeTime-=usecond();
   DhopCommTime-=usecond();
-  st.CommunicateBegin(reqs);
-
-  DhopFaceTime-=usecond();
-  st.CommsMergeSHM(compressor);
-  DhopFaceTime+=usecond();
-
-  // Perhaps use omp task and region
 #pragma omp parallel 
   { 
-    int nthreads = omp_get_num_threads();
-    int me = omp_get_thread_num();
-    int myoff, mywork;
+    // Should time this somehow; hard as the threads fork nowait
+    st.CommunicateThreaded();
 
-    GridThread::GetWork(len,me-1,mywork,myoff,nthreads-1);
-    int sF = LLs * myoff;
-
-    if ( me == 0 ) {
-      st.CommunicateComplete(reqs);
-      DhopCommTime+=usecond();
-    } else { 
-      // Interior links in stencil
-      if ( me==1 ) DhopComputeTime-=usecond();
-      if (dag == DaggerYes) Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,myoff,LLs,mywork,in,out,1,0);
-      else      	    Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,myoff,LLs,mywork,in,out,1,0);
-      if ( me==1 ) DhopComputeTime+=usecond();
+  if (dag == DaggerYes) {
+#pragma omp for
+    for (int ss = 0; ss < U._grid->oSites(); ss++) {
+      int sU = ss;
+      int sF = LLs * sU;
+      Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,1,0);
+    }
+  } else {
+#pragma omp for
+    for (int ss = 0; ss < U._grid->oSites(); ss++) {
+      int sU = ss;
+      int sF = LLs * sU;
+      Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,1,0);
     }
   }
+#pragma omp single
+  DhopComputeTime+=usecond();
+
+#pragma omp taskwait 
+
+#pragma omp single
+  DhopCommTime+=usecond();
+  } // Closes parallel region and waits the comms (I hope)
+
 
   DhopFaceTime-=usecond();
   st.CommsMerge(compressor);
   DhopFaceTime+=usecond();
 
-  // Load imbalance alert. Should use dynamic schedule OMP for loop
-  // Perhaps create a list of only those sites with face work, and 
-  // load balance process the list.
   DhopComputeTime2-=usecond();
   if (dag == DaggerYes) {
     int sz=st.surface_list.size();
@@ -448,9 +447,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
 #else 
   assert(0);
 #endif
-
 }
-
 
 
 template<class Impl>

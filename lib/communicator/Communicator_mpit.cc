@@ -235,24 +235,30 @@ void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
   assert(ierr==0);
 }
 
-  double CartesianCommunicator::StencilSendToRecvFromBegin(int dir,
-							   std::vector<CommsRequest_t> &list,
-							   void *xmit,
-							   int xmit_to_rank,
-							   void *recv,
-							   int recv_from_rank,
-							   int bytes)
+double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
+							 void *xmit,
+							 int xmit_to_rank,
+							 void *recv,
+							 int recv_from_rank,
+							 int bytes,int dir)
 {
+
   int myrank = _processor;
   int ierr;
+  assert(dir < communicator_halo.size());
+
+  //  std::cout << " sending on communicator "<<dir<<" " <<communicator_halo[dir]<<std::endl;
   // Give the CPU to MPI immediately; can use threads to overlap optionally
-  ierr=MPI_Sendrecv(xmit,bytes,MPI_CHAR,dest,myrank,
-		    recv,bytes,MPI_CHAR,from, from,
+  ierr=MPI_Sendrecv(xmit,bytes,MPI_CHAR,xmit_to_rank,myrank,
+		    recv,bytes,MPI_CHAR,recv_from_rank, recv_from_rank,
 		    communicator_halo[dir],MPI_STATUS_IGNORE);
   assert(ierr==0);
   return 2.0*bytes;
 }
-void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall){ };
+void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int dir)
+{ 
+  // Do nothing
+};
 
 
 
