@@ -98,7 +98,7 @@ namespace Grid {
 	      permute(temp2, *temp, permute_type);
 	      action._odata[i] -= temp2*(*t_p) + (*t_p)*temp2;
 	    } else {
-	      action._odata[i] -= *temp*(*t_p) + (*t_p)*(*temp);
+	      action._odata[i] -= (*temp)*(*t_p) + (*t_p)*(*temp);
 	    }
 	  } else {
 	    action._odata[i] -= phiStencil.CommBuf()[SE->_offset]*(*t_p) + (*t_p)*phiStencil.CommBuf()[SE->_offset];

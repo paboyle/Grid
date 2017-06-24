@@ -93,6 +93,8 @@ class ScalarImplTypes {
   class ScalarAdjMatrixImplTypes {
   public:
     typedef S Simd;
+    typedef QCD::SU<N> Group;
+    
     template <typename vtype>
     using iImplField   = iScalar<iScalar<iMatrix<vtype, N>>>;
     template <typename vtype>
@@ -108,7 +110,7 @@ class ScalarImplTypes {
     typedef Field                PropagatorField;
 
     static inline void generate_momenta(Field& P, GridParallelRNG& pRNG) {
-      QCD::SU<N>::GaussianFundamentalLieAlgebraMatrix(pRNG, P);
+      Group::GaussianFundamentalLieAlgebraMatrix(pRNG, P);
     }
 
     static inline Field projectForce(Field& P) {return P;}
@@ -122,11 +124,11 @@ class ScalarImplTypes {
     }
 
     static inline void HotConfiguration(GridParallelRNG &pRNG, Field &U) {
-      QCD::SU<N>::LieRandomize(pRNG, U);
+      Group::LieRandomize(pRNG, U);
     }
 
     static inline void TepidConfiguration(GridParallelRNG &pRNG, Field &U) {
-      QCD::SU<N>::LieRandomize(pRNG, U, 0.01);
+      Group::LieRandomize(pRNG, U, 0.01);
     }
 
     static inline void ColdConfiguration(GridParallelRNG &pRNG, Field &U) {
