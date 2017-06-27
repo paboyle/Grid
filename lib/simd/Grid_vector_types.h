@@ -327,16 +327,12 @@ class Grid_simd {
   // provides support
   ///////////////////////////////////////
 
-  //#if (__GNUC__ == 5 ) || ( ( __GNUC__ == 6 ) && __GNUC_MINOR__ < 3 )
-  //#pragma GCC push_options
-  //#pragma GCC optimize ("O0")
-  //#endif
   template <class functor>
   friend inline Grid_simd SimdApply(const functor &func, const Grid_simd &v) {
     Grid_simd ret;
     Grid_simd::conv_t conv;
     Grid_simd::scalar_type s;
-
+    
     conv.v = v.v;
     for (int i = 0; i < Nsimd(); i++) {
       s = conv.s[i];
@@ -364,11 +360,8 @@ class Grid_simd {
     ret.v = cx.v;
     return ret;
   }
-  //#if (__GNUC__ == 5 ) || ( ( __GNUC__ == 6 ) && __GNUC_MINOR__ < 3 )
-  //#pragma GCC pop_options
-  //#endif
   ///////////////////////
-  // Exchange
+  // Exchange 
   // Al Ah , Bl Bh -> Al Bl Ah,Bh
   ///////////////////////
   friend inline void exchange(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2,int n)
@@ -379,7 +372,7 @@ class Grid_simd {
       Optimization::Exchange::Exchange2(out1.v,out2.v,in1.v,in2.v);
     } else if(n==1) {
       Optimization::Exchange::Exchange1(out1.v,out2.v,in1.v,in2.v);
-    } else if(n==0) {
+    } else if(n==0) { 
       Optimization::Exchange::Exchange0(out1.v,out2.v,in1.v,in2.v);
     }
   }
@@ -406,7 +399,7 @@ class Grid_simd {
       int dist = perm & 0xF;
       y = rotate(b, dist);
       return;
-    }
+    } 
     else if(perm==3) permute3(y, b);
     else if(perm==2) permute2(y, b);
     else if(perm==1) permute1(y, b);
@@ -425,9 +418,8 @@ class Grid_simd {
   }
 
 
-
+  
 };  // end of Grid_simd class definition
-
 
 inline void permute(ComplexD &y,ComplexD b, int perm) {  y=b; }
 inline void permute(ComplexF &y,ComplexF b, int perm) {  y=b; }
@@ -451,29 +443,29 @@ inline Grid_simd<S, V> rotate(Grid_simd<S, V> b, int nrot) {
   ret.v = Optimization::Rotate::rotate(b.v, 2 * nrot);
   return ret;
 }
-template <class S, class V, IfNotComplex<S> =0>
+template <class S, class V, IfNotComplex<S> =0> 
 inline void rotate( Grid_simd<S,V> &ret,Grid_simd<S,V> b,int nrot)
 {
   nrot = nrot % Grid_simd<S,V>::Nsimd();
   ret.v = Optimization::Rotate::rotate(b.v,nrot);
 }
-template <class S, class V, IfComplex<S> =0>
+template <class S, class V, IfComplex<S> =0> 
 inline void rotate(Grid_simd<S,V> &ret,Grid_simd<S,V> b,int nrot)
 {
   nrot = nrot % Grid_simd<S,V>::Nsimd();
   ret.v = Optimization::Rotate::rotate(b.v,2*nrot);
 }
 
-template <class S, class V>
+template <class S, class V> 
 inline void vbroadcast(Grid_simd<S,V> &ret,const Grid_simd<S,V> &src,int lane){
   S* typepun =(S*) &src;
   vsplat(ret,typepun[lane]);
-}
-template <class S, class V, IfComplex<S> =0>
+}    
+template <class S, class V, IfComplex<S> =0> 
 inline void rbroadcast(Grid_simd<S,V> &ret,const Grid_simd<S,V> &src,int lane){
   S* typepun =(S*) &src;
   ret.v = unary<V>(real(typepun[lane]), VsplatSIMD());
-}
+}    
 
 
 
@@ -604,27 +596,13 @@ inline Grid_simd<S, V> real_mult(Grid_simd<S, V> a, Grid_simd<S, V> b) {
   ret.v = binary<V>(a.v, b.v, MultRealPartSIMD());
   return ret;
 };
-// TEST for Test_simd
-template <class S, class V, IfComplex<S> = 0>
-inline Grid_simd<S, V> real_mult(std::complex<S> a, std::complex<S> b) {
-  Grid_simd<S, V> ret;
-  //ret.v = binary<V>(a.v, b.v, MultRealPartSIMD());
-  return ret;
-};
-
 template <class S, class V, IfComplex<S> = 0>
 inline Grid_simd<S, V> real_madd(Grid_simd<S, V> a, Grid_simd<S, V> b, Grid_simd<S,V> c) {
   Grid_simd<S, V> ret;
   ret.v = trinary<V>(a.v, b.v, c.v, MaddRealPartSIMD());
   return ret;
 };
-// TEST for Test_simd
-template <class S, class V, IfComplex<S> = 0>
-inline Grid_simd<S, V> real_madd(std::complex<S> a, std::complex<S> b) {
-  Grid_simd<S, V> ret;
-  //ret.v = binary<V>(a.v, b.v, MultRealPartSIMD());
-  return ret;
-};
+
 
 // Distinguish between complex types and others
 template <class S, class V, IfComplex<S> = 0>
@@ -654,7 +632,7 @@ inline Grid_simd<S, V> operator/(Grid_simd<S, V> a, Grid_simd<S, V> b) {
   ret = a * conjugate(b) ;
   den = b * conjugate(b) ;
 
-
+  
   auto real_den = toReal(den);
 
   ret.v=binary<V>(ret.v, real_den.v, DivSIMD());
@@ -773,8 +751,8 @@ inline Grid_simd<std::complex<R>, V> toComplex(const Grid_simd<R, V> &in) {
 
   conv.v = in.v;
   for (int i = 0; i < Rsimd::Nsimd(); i += 2) {
-    assert(conv.s[i + 1] ==
-           conv.s[i]);  // trap any cases where real was not duplicated
+    assert(conv.s[i + 1] == conv.s[i]);  
+    // trap any cases where real was not duplicated
     // indicating the SIMD grids of real and imag assignment did not correctly
     // match
     conv.s[i + 1] = 0.0;  // zero imaginary parts
@@ -852,8 +830,6 @@ inline void precisionChange(vComplexD *out,vComplexF *in,int nvec){ precisionCha
 inline void precisionChange(vComplexD *out,vComplexH *in,int nvec){ precisionChange((vRealD *)out,(vRealH *)in,nvec);}
 inline void precisionChange(vComplexF *out,vComplexH *in,int nvec){ precisionChange((vRealF *)out,(vRealH *)in,nvec);}
 
-
-
 // Check our vector types are of an appropriate size.
 #if defined QPX
 static_assert(2*sizeof(SIMD_Ftype) == sizeof(SIMD_Dtype), "SIMD vector lengths incorrect");
@@ -868,21 +844,14 @@ static_assert(sizeof(SIMD_Ftype) == sizeof(SIMD_Itype), "SIMD vector lengths inc
 /////////////////////////////////////////
 template <typename T>
 struct is_simd : public std::false_type {};
-template <>
-struct is_simd<vRealF> : public std::true_type {};
-template <>
-struct is_simd<vRealD> : public std::true_type {};
-template <>
-struct is_simd<vComplexF> : public std::true_type {};
-template <>
-struct is_simd<vComplexD> : public std::true_type {};
-template <>
-struct is_simd<vInteger> : public std::true_type {};
+template <> struct is_simd<vRealF>     : public std::true_type {};
+template <> struct is_simd<vRealD>     : public std::true_type {};
+template <> struct is_simd<vComplexF>  : public std::true_type {};
+template <> struct is_simd<vComplexD>  : public std::true_type {};
+template <> struct is_simd<vInteger>   : public std::true_type {};
 
-template <typename T>
-using IfSimd = Invoke<std::enable_if<is_simd<T>::value, int> >;
-template <typename T>
-using IfNotSimd = Invoke<std::enable_if<!is_simd<T>::value, unsigned> >;
+template <typename T> using IfSimd    = Invoke<std::enable_if<is_simd<T>::value, int> >;
+template <typename T> using IfNotSimd = Invoke<std::enable_if<!is_simd<T>::value, unsigned> >;
 }
 
 #endif
