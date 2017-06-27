@@ -45,7 +45,7 @@ using namespace Grid;
 using namespace Grid::QCD;
 
 template <class Impl>
-class MagLogger : public HmcObservable<typename Impl::Field> {
+class MagMeas : public HmcObservable<typename Impl::Field> {
 public:
   typedef typename Impl::Field Field;
   typedef typename Impl::Simd::scalar_type Trace;
@@ -72,13 +72,13 @@ private:
 };
 
 template <class Impl>
-class MagMod: public ObservableModule<MagLogger<Impl>, NoParameters>{
-  typedef ObservableModule<MagLogger<Impl>, NoParameters> ObsBase;
+class MagMod: public ObservableModule<MagMeas<Impl>, NoParameters>{
+  typedef ObservableModule<MagMeas<Impl>, NoParameters> ObsBase;
   using ObsBase::ObsBase; // for constructors
   
   // acquire resource
   virtual void initialize(){
-    this->ObservablePtr.reset(new MagLogger<Impl>());
+    this->ObservablePtr.reset(new MagMeas<Impl>());
   }
 public:
   MagMod(): ObsBase(NoParameters()){}
