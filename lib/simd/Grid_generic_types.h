@@ -26,7 +26,7 @@ Author: Antonin Portelli <antonin.portelli@me.com>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#define GEN_SIMD_WIDTH 16
+
 static_assert(GEN_SIMD_WIDTH % 16u == 0, "SIMD vector size is not an integer multiple of 16 bytes");
 
 //#define VECTOR_LOOPS
