@@ -81,7 +81,7 @@ namespace Grid {
       phiStencil.HaloExchange(p, compressor);
       Field action(p._grid), pshift(p._grid), phisquared(p._grid);
       phisquared = p*p;
-      action = (2.0*Ndim + mass_square)*phisquared + lambda/24.*phisquared*phisquared;
+      action = (2.0*Ndim + mass_square)*phisquared - lambda/24.*phisquared*phisquared;
       for (int mu = 0; mu < Ndim; mu++) {
 	//  pshift = Cshift(p, mu, +1);  // not efficient, implement with stencils
 	parallel_for (int i = 0; i < p._grid->oSites(); i++) {
@@ -113,7 +113,7 @@ namespace Grid {
 
     virtual void deriv(const Field &p, Field &force) {
       assert(p._grid->Nd() == Ndim);
-      force = (2.0*Ndim + mass_square)*p + lambda/12.*p*p*p;
+      force = (2.0*Ndim + mass_square)*p - lambda/12.*p*p*p;
       // move this outside
       static Stencil phiStencil(p._grid, npoint, 0, directions, displacements);
       phiStencil.HaloExchange(p, compressor);
