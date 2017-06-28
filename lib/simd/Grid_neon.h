@@ -41,6 +41,10 @@ Author: neo <cossu@post.kek.jp>
 //#ifndef ARM_NEON
 //#define ARM_NEON
 
+#ifndef GEN_SIMD_WIDTH
+#define GEN_SIMD_WIDTH 16u
+#endif
+
 #include "Grid_generic_types.h"
 #include <arm_neon.h>
 
