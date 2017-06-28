@@ -124,11 +124,11 @@ class ScalarImplTypes {
     }
 
     static inline void HotConfiguration(GridParallelRNG &pRNG, Field &U) {
-      Group::LieRandomize(pRNG, U);
+      Group::GaussianFundamentalLieAlgebraMatrix(pRNG, U);
     }
 
     static inline void TepidConfiguration(GridParallelRNG &pRNG, Field &U) {
-      Group::LieRandomize(pRNG, U, 0.01);
+      Group::GaussianFundamentalLieAlgebraMatrix(pRNG, U, 0.01);
     }
 
     static inline void ColdConfiguration(GridParallelRNG &pRNG, Field &U) {
