@@ -2,10 +2,13 @@ TODO:
 ---------------
 
 Large item work list:
-1)- MultiRHS with spread out extra dim -- Go through filesystem with SciDAC I/O
+1)- I/O;    There appear to be issues with MPI IO and NERSC with large files.
+            Possible 2GB limit reappeared. GPFS driver in Intel MPI.
 
-2)- Christoph's local basis expansion Lanczos
-3)- BG/Q port and check
+2)- BG/Q port and check
+
+3)- Christoph's local basis expansion Lanczos; port to use Lattice_transfer features
+
 4)- Precision conversion and sort out localConvert      <-- partial
   - Consistent linear solver flop count/rate -- PARTIAL, time but no flop/s yet
 5)- Physical propagator interface
@@ -14,6 +17,8 @@ Large item work list:
 8)- HDCR resume
 
 Recent DONE 
+
+-- MultiRHS with spread out extra dim -- Go through filesystem with SciDAC I/O.  <--- DONE
 -- Lanczos Remove DenseVector, DenseMatrix; Use Eigen instead. <-- DONE
 -- GaugeFix into central location                      <-- DONE
 -- Scidac and Ildg metadata handling                   <-- DONE
