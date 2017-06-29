@@ -250,7 +250,7 @@ case ${ax_cv_cxx_compiler_vendor} in
         SIMD_FLAGS='';;
       NEONv8)
         AC_DEFINE([NEONV8],[1],[ARMv8 NEON])
-        SIMD_FLAGS='';;
+        SIMD_FLAGS='-march=armv8-a';;
       QPX|BGQ)
         AC_DEFINE([QPX],[1],[QPX intrinsics for BG/Q])
         SIMD_FLAGS='';;

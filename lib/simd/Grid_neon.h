@@ -6,9 +6,9 @@
 
     Copyright (C) 2015
 
-Author: Nils Meyer <nils.meyer@ur.de>
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: neo <cossu@post.kek.jp>
+    Author: Nils Meyer <nils.meyer@ur.de>
+    Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+    Author: neo <cossu@post.kek.jp>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ Author: neo <cossu@post.kek.jp>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-//----------------------------------------------------------------------
+
 /*
 
   ARMv8 NEON intrinsics layer by
@@ -37,9 +37,6 @@ Author: neo <cossu@post.kek.jp>
   SFB/TRR55
 
 */
-//----------------------------------------------------------------------
-//#ifndef ARM_NEON
-//#define ARM_NEON
 
 #ifndef GEN_SIMD_WIDTH
 #define GEN_SIMD_WIDTH 16u
@@ -607,5 +604,3 @@ namespace Optimization {
   typedef Optimization::TimesI      TimesISIMD;
 
 }
-
-//#endif // ARM_NEON
