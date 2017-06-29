@@ -18,7 +18,7 @@
 
 License: GPL v2.
 
-Last update Nov 2016.
+Last update June 2017.
 
 _Please do not send pull requests to the `master` branch which is reserved for releases._
 
@@ -78,13 +78,16 @@ optimally use MPI, OpenMP and SIMD parallelism under the hood. This is a signifi
 for most programmers.
 
 The layout transformations are parametrised by the SIMD vector length. This adapts according to the architecture.
-Presently SSE4 (128 bit) AVX, AVX2, QPX (256 bit), IMCI, and AVX512 (512 bit) targets are supported (ARM NEON on the way).
+Presently SSE4, ARM NEON (128 bits) AVX, AVX2, QPX (256 bits), IMCI and AVX512 (512 bits) targets are supported.
 
-These are presented as `vRealF`, `vRealD`, `vComplexF`, and `vComplexD` internal vector data types. These may be useful in themselves for other programmers.
+These are presented as `vRealF`, `vRealD`, `vComplexF`, and `vComplexD` internal vector data types. 
 The corresponding scalar types are named `RealF`, `RealD`, `ComplexF` and `ComplexD`.
 
 MPI, OpenMP, and SIMD parallelism are present in the library.
 Please see https://arxiv.org/abs/1512.03487 for more detail.
+
+### Required libraries
+Grid requires [GMP](https://gmplib.org/), [MPFR](http://www.mpfr.org/) and optionally [HDF5](https://support.hdfgroup.org/HDF5/) and [LIME](http://usqcd-software.github.io/c-lime/) (for ILDG file format support) to be installed.
 
 ### Quick start
 First, start by cloning the repository:
@@ -173,7 +176,8 @@ The following options can be use with the `--enable-simd=` option to target diff
 | `AVXFMA4`   | AVX (256 bit) + FMA4                   |
 | `AVX2`      | AVX 2 (256 bit)                        |
 | `AVX512`    | AVX 512 bit                            |
-| `QPX`       | QPX (256 bit)                          |
+| `NEONv8`    | ARM NEON (128 bit)                     |
+| `QPX`       | IBM QPX (256 bit)                      |
 
 Alternatively, some CPU codenames can be directly used:
 
