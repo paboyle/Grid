@@ -84,7 +84,7 @@ These are presented as `vRealF`, `vRealD`, `vComplexF`, and `vComplexD` internal
 The corresponding scalar types are named `RealF`, `RealD`, `ComplexF` and `ComplexD`.
 
 MPI, OpenMP, and SIMD parallelism are present in the library.
-Please see https://arxiv.org/abs/1512.03487 for more detail.
+Please see [this paper](https://arxiv.org/abs/1512.03487) for more detail.
 
 ### Required libraries
 Grid requires [GMP](https://gmplib.org/), [MPFR](http://www.mpfr.org/) and optionally [HDF5](https://support.hdfgroup.org/HDF5/) and [LIME](http://usqcd-software.github.io/c-lime/) (for ILDG file format support) to be installed.
@@ -176,7 +176,7 @@ The following options can be use with the `--enable-simd=` option to target diff
 | `AVXFMA4`   | AVX (256 bit) + FMA4                   |
 | `AVX2`      | AVX 2 (256 bit)                        |
 | `AVX512`    | AVX 512 bit                            |
-| `NEONv8`    | ARM NEON (128 bit)                     |
+| `NEONv8`    | [ARM NEON](http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.den0024a/ch07s03.html) (128 bit)                     |
 | `QPX`       | IBM QPX (256 bit)                      |
 
 Alternatively, some CPU codenames can be directly used:
