@@ -165,7 +165,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage<< "*****************************************************************" <<std::endl;
 
   DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
-  int ncall =1000;
+  int ncall =500;
   if (1) {
     FGrid->Barrier();
     Dw.ZeroCounters();
@@ -302,6 +302,7 @@ int main (int argc, char ** argv)
       std::cout<< "sD ERR   \n " << err  <<std::endl;
     }
     assert(sum < 1.0e-4);
+
     
     if(1){
       std::cout << GridLogMessage<< "*********************************************************" <<std::endl;
@@ -381,7 +382,22 @@ int main (int argc, char ** argv)
       }
       assert(error<1.0e-4);
     }
+
+  if(1){
+    std::cout << "Single cache warm call to sDw.Dhop " <<std::endl;
+    for(int i=0;i< PerformanceCounter::NumTypes(); i++ ){
+      sDw.Dhop(ssrc,sresult,0);
+      PerformanceCounter Counter(i);
+      Counter.Start();
+      sDw.Dhop(ssrc,sresult,0);
+      Counter.Stop();
+      Counter.Report();
+    }
   }
+
+  }
+
+
 
   if (1)
   { // Naive wilson dag implementation
