@@ -53,7 +53,7 @@ directory
 #if defined IMCI
 #include "Grid_imci.h"
 #endif
-#ifdef NEONv8
+#ifdef NEONV8
 #include "Grid_neon.h"
 #endif
 #if defined QPX
