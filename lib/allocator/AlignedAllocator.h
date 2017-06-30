@@ -98,7 +98,12 @@ public:
 #else
     if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) memalign(128,bytes);
 #endif
-
+    // First touch optimise in threaded loop
+    uint8_t *cp = (uint8_t *)ptr;
+#pragma omp parallel for
+    for(size_type n=0;n<bytes;n+=4096){
+      cp[n]=0;
+    }
     return ptr;
   }
 
@@ -186,6 +191,12 @@ public:
 #else
     _Tp * ptr = (_Tp *) memalign(128,__n*sizeof(_Tp));
 #endif
+    size_type bytes = __n*sizeof(_Tp);
+    uint8_t *cp = (uint8_t *)ptr;
+#pragma omp parallel for
+    for(size_type n=0;n<bytes;n+=4096){
+      cp[n]=0;
+    }
     return ptr;
   }
   void deallocate(pointer __p, size_type) { 
