@@ -32,8 +32,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 namespace Grid {
 
 int LebesgueOrder::UseLebesgueOrder;
+#ifdef KNL
 std::vector<int> LebesgueOrder::Block({8,2,2,2});
-
+#else
+std::vector<int> LebesgueOrder::Block({2,2,2,2});
+#endif
 LebesgueOrder::IndexInteger LebesgueOrder::alignup(IndexInteger n){
   n--;           // 1000 0011 --> 1000 0010
   n |= n >> 1;   // 1000 0010 | 0100 0001 = 1100 0011
