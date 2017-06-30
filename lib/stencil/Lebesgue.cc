@@ -51,8 +51,31 @@ LebesgueOrder::LebesgueOrder(GridBase *_grid)
   if ( Block[0]==0) ZGraph();
   else if ( Block[1]==0) NoBlocking();
   else CartesianBlocking();
-}
 
+  if (0) {
+    std::cout << "Thread Interleaving"<<std::endl;
+    ThreadInterleave();
+  } 
+}
+void LebesgueOrder::ThreadInterleave(void)
+{
+  std::vector<IndexInteger> reorder = _LebesgueReorder;
+  std::vector<IndexInteger> throrder;
+  int vol = _LebesgueReorder.size();
+  int threads = GridThread::GetThreads();
+  int blockbits=3;
+  int blocklen = 8;
+  int msk      = 0x7;
+
+  for(int t=0;t<threads;t++){
+    for(int ss=0;ss<vol;ss++){
+       if ( ( ss >> blockbits) % threads == t ) { 
+         throrder.push_back(reorder[ss]);
+       }
+    }
+  }
+  _LebesgueReorder = throrder;
+}
 void LebesgueOrder::NoBlocking(void) 
 {
   std::cout<<GridLogDebug<<"Lexicographic : no cache blocking"<<std::endl;
