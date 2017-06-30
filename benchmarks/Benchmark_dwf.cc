@@ -383,7 +383,7 @@ int main (int argc, char ** argv)
       assert(error<1.0e-4);
     }
 
-  if(1){
+  if(0){
     std::cout << "Single cache warm call to sDw.Dhop " <<std::endl;
     for(int i=0;i< PerformanceCounter::NumTypes(); i++ ){
       sDw.Dhop(ssrc,sresult,0);
