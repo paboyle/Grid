@@ -100,7 +100,9 @@ public:
 #endif
     // First touch optimise in threaded loop
     uint8_t *cp = (uint8_t *)ptr;
+#ifdef GRID_OMP
 #pragma omp parallel for
+#endif
     for(size_type n=0;n<bytes;n+=4096){
       cp[n]=0;
     }
