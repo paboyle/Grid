@@ -306,6 +306,14 @@ one rank per socket. If using the Intel MPI library, threads should be pinned to
 ```
 This is the default. 
 
+### Build setup for BlueGene/Q
+
+To be written...
+
+### Build setup for ARM Neon
+
+To be written..
+
 ### Build setup for laptops, other compilers, non-cluster builds
 
 Many versions of g++ and clang++ work with Grid, and involve merely replacing CXX (and MPICXX),
