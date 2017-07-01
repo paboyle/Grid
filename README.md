@@ -306,4 +306,20 @@ one rank per socket. If using the Intel MPI library, threads should be pinned to
 ```
 This is the default. 
 
+### Build setup for laptops, other compilers, non-cluster builds
+
+Many versions of g++ and clang++ work with Grid, and involve merely replacing CXX (and MPICXX),
+and omit the enable-mkl flag. 
+
+Single node builds are enabled with 
+```
+            --enable-comms=none
+```
+
+FFTW support that is not in the default search path may then enabled with
+```
+    --with-fftw=<installpath>
+```
+
+BLAS will not be compiled in by default, and Lanczos will default to Eigen diagonalisation.
 
