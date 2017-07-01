@@ -158,7 +158,6 @@ The following options can be use with the `--enable-comms=` option to target dif
 | `none`         | no communications                                             |
 | `mpi[-auto]`   | MPI communications                                            |
 | `mpi3[-auto]`  | MPI communications using MPI 3 shared memory                  |
-| `mpi3l[-auto]` | MPI communications using MPI 3 shared memory and leader model |
 | `shmem `       | Cray SHMEM communications                                     |
 
 For the MPI interfaces the optional `-auto` suffix instructs the `configure` scripts to determine all the necessary compilation and linking flags. This is done by extracting the informations from the MPI wrapper specified in the environment variable `MPICXX` (if not specified `configure` will scan though a list of default names). The `-auto` suffix is not supported by the Cray environment wrapper scripts. Use the standard versions instead.  
@@ -199,21 +198,109 @@ The following configuration is recommended for the Intel Knights Landing platfor
 ``` bash
 ../configure --enable-precision=double\
              --enable-simd=KNL        \
-             --enable-comms=mpi-auto \
-             --with-gmp=<path>        \
-             --with-mpfr=<path>       \
+             --enable-comms=mpi-auto  \
              --enable-mkl             \
              CXX=icpc MPICXX=mpiicpc
 ```
+The MKL flag enables use of BLAS and FFTW from the Intel Math Kernels Library.
 
-where `<path>` is the UNIX prefix where GMP and MPFR are installed. If you are working on a Cray machine that does not use the `mpiicpc` wrapper, please use:
+If you are working on a Cray machine that does not use the `mpiicpc` wrapper, please use:
 
 ``` bash
 ../configure --enable-precision=double\
              --enable-simd=KNL        \
              --enable-comms=mpi       \
-             --with-gmp=<path>        \
-             --with-mpfr=<path>       \
              --enable-mkl             \
              CXX=CC CC=cc
 ```
+
+If gmp and mpfr are NOT in standard places (/usr/) these flags may be needed:
+```            --with-gmp=<path>        \
+               --with-mpfr=<path>       \
+```
+where `<path>` is the UNIX prefix where GMP and MPFR are installed. 
+
+Knight's Landing with Intel Omnipath adapters with two adapters per node 
+presently performs better with use of more than one rank per node, using shared memory 
+for interior communication. This is the mpi3 communications implementation. 
+We recommend four ranks per node for best performance, but optimum is local volume dependent.
+
+``` bash
+../configure --enable-precision=double\
+             --enable-simd=KNL        \
+             --enable-comms=mpi3      \
+             --enable-mkl             \
+             CXX=mpiicpc
+```
+
+### Build setup for Intel Haswell Xeon platform
+
+The following configuration is recommended for the Intel Knights Landing platform:
+
+``` bash
+../configure --enable-precision=double\
+             --enable-simd=AVX2       \
+             --enable-comms=mpi3      \
+             --enable-mkl             \
+             CXX=mpiicpc
+```
+The MKL flag enables use of BLAS and FFTW from the Intel Math Kernels Library.
+
+If gmp and mpfr are NOT in standard places (/usr/) these flags may be needed:
+```            --with-gmp=<path>        \
+               --with-mpfr=<path>       \
+```
+where `<path>` is the UNIX prefix where GMP and MPFR are installed. 
+
+If you are working on a Cray machine that does not use the `mpiicpc` wrapper, please use:
+
+``` bash
+../configure --enable-precision=double\
+             --enable-simd=AVX2       \
+             --enable-comms=mpi3      \
+             --enable-mkl             \
+             CXX=CC CC=cc
+```
+Since Dual socket nodes are commonplace, we recommend MPI-3 as the default with the use of 
+one rank per socket. If using the Intel MPI library, threads should be pinned to NUMA domains using
+```
+        export I_MPI_PIN=1
+```
+This is the default.
+
+### Build setup for Intel Skylake Xeon platform
+
+The following configuration is recommended for the Intel Knights Landing platform:
+
+``` bash
+../configure --enable-precision=double\
+             --enable-simd=AVX512     \
+             --enable-comms=mpi3      \
+             --enable-mkl             \
+             CXX=mpiicpc
+```
+The MKL flag enables use of BLAS and FFTW from the Intel Math Kernels Library.
+
+If gmp and mpfr are NOT in standard places (/usr/) these flags may be needed:
+```            --with-gmp=<path>        \
+               --with-mpfr=<path>       \
+```
+where `<path>` is the UNIX prefix where GMP and MPFR are installed. 
+
+If you are working on a Cray machine that does not use the `mpiicpc` wrapper, please use:
+
+``` bash
+../configure --enable-precision=double\
+             --enable-simd=AVX512     \
+             --enable-comms=mpi3      \
+             --enable-mkl             \
+             CXX=CC CC=cc
+```
+Since Dual socket nodes are commonplace, we recommend MPI-3 as the default with the use of 
+one rank per socket. If using the Intel MPI library, threads should be pinned to NUMA domains using
+```
+        export I_MPI_PIN=1
+```
+This is the default. 
+
+
