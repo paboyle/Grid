@@ -89,16 +89,22 @@ When you file an issue, please go though the following checklist:
 
 ### Required libraries
 Grid requires:
+
 [GMP](https://gmplib.org/), 
+
 [MPFR](http://www.mpfr.org/) 
 
 Bootstrapping grid downloads and uses for internal dense matrix (non-QCD operations) the Eigen library.
 
 Grid optionally uses:
+
 [HDF5](https://support.hdfgroup.org/HDF5/)  
-[LIME](http://usqcd-software.github.io/c-lime/) (for ILDG file format support) 
-[FFTW](http://www.fftw.org) (Either generic or via the Intel MKL library)
-[LAPACK]( either generic or Intel MKL library)
+
+[LIME](http://usqcd-software.github.io/c-lime/) for ILDG and SciDAC file format support. 
+
+[FFTW](http://www.fftw.org) either generic version or via the Intel MKL library.
+
+LAPACK either generic version or Intel MKL library.
 
 
 ### Quick start
