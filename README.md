@@ -22,6 +22,37 @@ Last update June 2017.
 
 _Please do not send pull requests to the `master` branch which is reserved for releases._
 
+
+
+### Description
+This library provides data parallel C++ container classes with internal memory layout
+that is transformed to map efficiently to SIMD architectures. CSHIFT facilities
+are provided, similar to HPF and cmfortran, and user control is given over the mapping of
+array indices to both MPI tasks and SIMD processing elements.
+
+* Identically shaped arrays then be processed with perfect data parallelisation.
+* Such identically shaped arrays are called conformable arrays.
+
+The transformation is based on the observation that Cartesian array processing involves
+identical processing to be performed on different regions of the Cartesian array.
+
+The library will both geometrically decompose into MPI tasks and across SIMD lanes.
+Local vector loops are parallelised with OpenMP pragmas.
+
+Data parallel array operations can then be specified with a SINGLE data parallel paradigm, but
+optimally use MPI, OpenMP and SIMD parallelism under the hood. This is a significant simplification
+for most programmers.
+
+The layout transformations are parametrised by the SIMD vector length. This adapts according to the architecture.
+Presently SSE4, ARM NEON (128 bits) AVX, AVX2, QPX (256 bits), IMCI and AVX512 (512 bits) targets are supported.
+
+These are presented as `vRealF`, `vRealD`, `vComplexF`, and `vComplexD` internal vector data types. 
+The corresponding scalar types are named `RealF`, `RealD`, `ComplexF` and `ComplexD`.
+
+MPI, OpenMP, and SIMD parallelism are present in the library.
+Please see [this paper](https://arxiv.org/abs/1512.03487) for more detail.
+
+
 ### Compilers
 
 Intel ICPC v16.0.3 and later
@@ -56,38 +87,19 @@ When you file an issue, please go though the following checklist:
 6. Attach the output of `make V=1`.
 7. Describe the issue and any previous attempt to solve it. If relevant, show how to reproduce the issue using a minimal working example.
 
-
-
-### Description
-This library provides data parallel C++ container classes with internal memory layout
-that is transformed to map efficiently to SIMD architectures. CSHIFT facilities
-are provided, similar to HPF and cmfortran, and user control is given over the mapping of
-array indices to both MPI tasks and SIMD processing elements.
-
-* Identically shaped arrays then be processed with perfect data parallelisation.
-* Such identically shaped arrays are called conformable arrays.
-
-The transformation is based on the observation that Cartesian array processing involves
-identical processing to be performed on different regions of the Cartesian array.
-
-The library will both geometrically decompose into MPI tasks and across SIMD lanes.
-Local vector loops are parallelised with OpenMP pragmas.
-
-Data parallel array operations can then be specified with a SINGLE data parallel paradigm, but
-optimally use MPI, OpenMP and SIMD parallelism under the hood. This is a significant simplification
-for most programmers.
-
-The layout transformations are parametrised by the SIMD vector length. This adapts according to the architecture.
-Presently SSE4, ARM NEON (128 bits) AVX, AVX2, QPX (256 bits), IMCI and AVX512 (512 bits) targets are supported.
-
-These are presented as `vRealF`, `vRealD`, `vComplexF`, and `vComplexD` internal vector data types. 
-The corresponding scalar types are named `RealF`, `RealD`, `ComplexF` and `ComplexD`.
-
-MPI, OpenMP, and SIMD parallelism are present in the library.
-Please see [this paper](https://arxiv.org/abs/1512.03487) for more detail.
-
 ### Required libraries
-Grid requires [GMP](https://gmplib.org/), [MPFR](http://www.mpfr.org/) and optionally [HDF5](https://support.hdfgroup.org/HDF5/) and [LIME](http://usqcd-software.github.io/c-lime/) (for ILDG file format support) to be installed.
+Grid requires:
+[GMP](https://gmplib.org/), 
+[MPFR](http://www.mpfr.org/) 
+
+Bootstrapping grid downloads and uses for internal dense matrix (non-QCD operations) the Eigen library.
+
+Grid optionally uses:
+[HDF5](https://support.hdfgroup.org/HDF5/)  
+[LIME](http://usqcd-software.github.io/c-lime/) (for ILDG file format support) 
+[FFTW](http://www.fftw.org) (Either generic or via the Intel MKL library)
+[LAPACK]( either generic or Intel MKL library)
+
 
 ### Quick start
 First, start by cloning the repository:
