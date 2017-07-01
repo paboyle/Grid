@@ -215,7 +215,8 @@ If you are working on a Cray machine that does not use the `mpiicpc` wrapper, pl
 ```
 
 If gmp and mpfr are NOT in standard places (/usr/) these flags may be needed:
-```            --with-gmp=<path>        \
+``` bash
+               --with-gmp=<path>        \
                --with-mpfr=<path>       \
 ```
 where `<path>` is the UNIX prefix where GMP and MPFR are installed. 
@@ -228,26 +229,27 @@ We recommend four ranks per node for best performance, but optimum is local volu
 ``` bash
 ../configure --enable-precision=double\
              --enable-simd=KNL        \
-             --enable-comms=mpi3      \
+             --enable-comms=mpi3-auto \
              --enable-mkl             \
-             CXX=mpiicpc
+             CC=icpc MPICXX=mpiicpc 
 ```
 
 ### Build setup for Intel Haswell Xeon platform
 
-The following configuration is recommended for the Intel Knights Landing platform:
+The following configuration is recommended for the Intel Haswell platform:
 
 ``` bash
 ../configure --enable-precision=double\
              --enable-simd=AVX2       \
-             --enable-comms=mpi3      \
+             --enable-comms=mpi3-auto \
              --enable-mkl             \
-             CXX=mpiicpc
+             CXX=icpc MPICXX=mpiicpc
 ```
 The MKL flag enables use of BLAS and FFTW from the Intel Math Kernels Library.
 
 If gmp and mpfr are NOT in standard places (/usr/) these flags may be needed:
-```            --with-gmp=<path>        \
+``` bash
+               --with-gmp=<path>        \
                --with-mpfr=<path>       \
 ```
 where `<path>` is the UNIX prefix where GMP and MPFR are installed. 
@@ -270,7 +272,7 @@ This is the default.
 
 ### Build setup for Intel Skylake Xeon platform
 
-The following configuration is recommended for the Intel Knights Landing platform:
+The following configuration is recommended for the Intel Skylake platform:
 
 ``` bash
 ../configure --enable-precision=double\
@@ -282,7 +284,8 @@ The following configuration is recommended for the Intel Knights Landing platfor
 The MKL flag enables use of BLAS and FFTW from the Intel Math Kernels Library.
 
 If gmp and mpfr are NOT in standard places (/usr/) these flags may be needed:
-```            --with-gmp=<path>        \
+``` bash
+               --with-gmp=<path>        \
                --with-mpfr=<path>       \
 ```
 where `<path>` is the UNIX prefix where GMP and MPFR are installed. 
@@ -298,7 +301,7 @@ If you are working on a Cray machine that does not use the `mpiicpc` wrapper, pl
 ```
 Since Dual socket nodes are commonplace, we recommend MPI-3 as the default with the use of 
 one rank per socket. If using the Intel MPI library, threads should be pinned to NUMA domains using
-```
+``` bash
         export I_MPI_PIN=1
 ```
 This is the default. 
