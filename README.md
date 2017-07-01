@@ -312,7 +312,7 @@ To be written...
 
 ### Build setup for ARM Neon
 
-To be written..
+To be written...
 
 ### Build setup for laptops, other compilers, non-cluster builds
 
