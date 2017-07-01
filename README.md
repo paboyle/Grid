@@ -301,7 +301,7 @@ If you are working on a Cray machine that does not use the `mpiicpc` wrapper, pl
 ```
 Since Dual socket nodes are commonplace, we recommend MPI-3 as the default with the use of 
 one rank per socket. If using the Intel MPI library, threads should be pinned to NUMA domains using
-``` bash
+``` 
         export I_MPI_PIN=1
 ```
 This is the default. 
