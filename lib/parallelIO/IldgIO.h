@@ -178,7 +178,7 @@ class GridLimeReader : public BinaryIO {
    /////////////////////////////////////////////
    // Open the file
    /////////////////////////////////////////////
-   void open(std::string &_filename) 
+   void open(const std::string &_filename) 
    {
      filename= _filename;
      File = fopen(filename.c_str(), "r");
@@ -258,12 +258,12 @@ class GridLimeReader : public BinaryIO {
 
       if ( !strncmp(limeReaderType(LimeR), record_name.c_str(),strlen(record_name.c_str()) )  ) {
 
-	std::cout << GridLogMessage<< " readLimeObject matches ! " << record_name <<std::endl;
+	//	std::cout << GridLogMessage<< " readLimeObject matches ! " << record_name <<std::endl;
 
 	std::vector<char> xmlc(nbytes+1,'\0');
 	limeReaderReadData((void *)&xmlc[0], &nbytes, LimeR);    
 
-	std::cout << GridLogMessage<< " readLimeObject matches XML " << &xmlc[0] <<std::endl;
+	//	std::cout << GridLogMessage<< " readLimeObject matches XML " << &xmlc[0] <<std::endl;
 
 	XmlReader RD(&xmlc[0],"");
 	read(RD,object_name,object);
@@ -286,7 +286,7 @@ class GridLimeWriter : public BinaryIO {
    LimeWriter *LimeW;
    std::string filename;
 
-   void open(std::string &_filename) { 
+   void open(const std::string &_filename) { 
      filename= _filename;
      File = fopen(filename.c_str(), "w");
      LimeW = limeCreateWriter(File); assert(LimeW != NULL );
