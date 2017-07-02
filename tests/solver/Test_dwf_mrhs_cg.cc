@@ -95,42 +95,57 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
   emptyUserRecord record;
   std::string file("./scratch.scidac");
+  std::string filef("./scratch.scidac.ferm");
   int me = UGrid->ThisRank();
   LatticeGaugeField s_Umu(SGrid);
   FermionField s_src(SFGrid);
   FermionField s_res(SFGrid);
 
   {
+    FGrid->Barrier();
     ScidacWriter _ScidacWriter;
     _ScidacWriter.open(file);
+    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
     std::cout << GridLogMessage << " Writing out gauge field "<<std::endl;
+    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
     _ScidacWriter.writeScidacFieldRecord(Umu,record);
     _ScidacWriter.close();
-
+    FGrid->Barrier();
+    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
     std::cout << GridLogMessage << " Reading in gauge field "<<std::endl;
+    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
     ScidacReader  _ScidacReader;
     _ScidacReader.open(file);
     _ScidacReader.readScidacFieldRecord(s_Umu,record);
     _ScidacReader.close();
+    FGrid->Barrier();
+    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
+    std::cout << GridLogMessage << " Read in gauge field "<<std::endl;
+    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
   }
 
 
   {
     for(int n=0;n<nrhs;n++){
 
+      FGrid->Barrier();
+      std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
       std::cout << GridLogMessage << " Writing out record "<<n<<std::endl;
+      std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
       ScidacWriter _ScidacWriter;
-      _ScidacWriter.open(file);
+      _ScidacWriter.open(filef);
       _ScidacWriter.writeScidacFieldRecord(src[n],record);
       _ScidacWriter.close();
       
+      FGrid->Barrier();
+
       std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
       std::cout << GridLogMessage << " Reading back in the single process view "<<std::endl;
       std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
       
       if ( n==me ) { 
 	ScidacReader  _ScidacReader;
-	_ScidacReader.open(file);
+	_ScidacReader.open(filef);
 	_ScidacReader.readScidacFieldRecord(s_src,record);
 	_ScidacReader.close();
       }

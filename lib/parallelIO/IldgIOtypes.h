@@ -66,6 +66,7 @@ namespace Grid {
 
 struct emptyUserRecord : Serializable { 
   GRID_SERIALIZABLE_CLASS_MEMBERS(emptyUserRecord,int,dummy);
+  emptyUserRecord() { dummy=0; };
 };
 
 ////////////////////////

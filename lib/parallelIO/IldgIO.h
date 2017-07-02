@@ -258,10 +258,13 @@ class GridLimeReader : public BinaryIO {
 
       if ( !strncmp(limeReaderType(LimeR), record_name.c_str(),strlen(record_name.c_str()) )  ) {
 
-	//	std::cout << GridLogMessage<< " readLimeObject matches ! " <<std::endl;
+	std::cout << GridLogMessage<< " readLimeObject matches ! " << record_name <<std::endl;
 
 	std::vector<char> xmlc(nbytes+1,'\0');
 	limeReaderReadData((void *)&xmlc[0], &nbytes, LimeR);    
+
+	std::cout << GridLogMessage<< " readLimeObject matches XML " << &xmlc[0] <<std::endl;
+
 	XmlReader RD(&xmlc[0],"");
 	read(RD,object_name,object);
 	return;
@@ -276,8 +279,9 @@ class GridLimeWriter : public BinaryIO {
  public:
    ///////////////////////////////////////////////////
    // FIXME: format for RNG? Now just binary out instead
+   // FIXME: collective calls or not ?
+   //      : must know if I am the I/O boss
    ///////////////////////////////////////////////////
-
    FILE       *File;
    LimeWriter *LimeW;
    std::string filename;
