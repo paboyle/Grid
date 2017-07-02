@@ -70,7 +70,7 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   MPI_Comm_size(parent.communicator,&Nparent);
 
   int childsize=1;
-  for(int d=0;d<_ndimension;d++) {
+  for(int d=0;d<processors.size();d++) {
     childsize *= processors[d];
   }
   int Nchild = Nparent/childsize;
@@ -83,12 +83,12 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   MPI_Comm comm_split;
   if ( Nchild > 1 ) { 
 
-    std::cout << GridLogMessage<<"Child communicator of "<< parent.communicator<<std::endl;
-    std::cout << GridLogMessage<<" parent grid    ";
+    std::cout << GridLogMessage<<"Child communicator of "<< std::hex << parent.communicator << std::dec<<std::endl;
+    std::cout << GridLogMessage<<" parent grid["<< parent._ndimension<<"]    ";
     for(int d=0;d<parent._processors.size();d++)  std::cout << parent._processors[d] << " ";
     std::cout<<std::endl;
 
-    std::cout << GridLogMessage<<" child grid    ";
+    std::cout << GridLogMessage<<" child grid["<< _ndimension <<"]    ";
     for(int d=0;d<processors.size();d++)  std::cout << processors[d] << " ";
     std::cout<<std::endl;
 
