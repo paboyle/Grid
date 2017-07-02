@@ -128,29 +128,36 @@ int main (int argc, char ** argv)
   {
     for(int n=0;n<nrhs;n++){
 
-      FGrid->Barrier();
+      std::stringstream filefn;
+      filefn << filef << "."<< n;
+
       std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
       std::cout << GridLogMessage << " Writing out record "<<n<<std::endl;
       std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
       ScidacWriter _ScidacWriter;
-      _ScidacWriter.open(filef);
+      _ScidacWriter.open(filefn.str());
       _ScidacWriter.writeScidacFieldRecord(src[n],record);
       _ScidacWriter.close();
+    }
       
-      FGrid->Barrier();
+    FGrid->Barrier();
 
-      std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-      std::cout << GridLogMessage << " Reading back in the single process view "<<std::endl;
-      std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
+    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
+    std::cout << GridLogMessage << " Reading back in the single process view "<<std::endl;
+    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
       
+    for(int n=0;n<nrhs;n++){
+
+      std::stringstream filefn;
+      filefn << filef << "."<< n;
       if ( n==me ) { 
 	ScidacReader  _ScidacReader;
-	_ScidacReader.open(filef);
+	_ScidacReader.open(filefn.str());
 	_ScidacReader.readScidacFieldRecord(s_src,record);
 	_ScidacReader.close();
       }
-      FGrid->Barrier();
     }
+    FGrid->Barrier();
   }
 
 
@@ -185,7 +192,7 @@ int main (int argc, char ** argv)
   // Report how long they all took
   /////////////////////////////////////////////////////////////
   for(int r=0;r<nrhs;r++){
-    std::cout << " Rank "<<r<<" "<< iterations[r]<<" CG iterations"<<std::endl;
+    std::cout << GridLogMessage<<" Rank "<<r<<" "<< iterations[r]<<" CG iterations"<<std::endl;
   }
   Grid_finalize();
 }
