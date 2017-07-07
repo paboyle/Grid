@@ -80,8 +80,11 @@ template<class vtype, int N> inline iVector<vtype, N> Exponentiate(const iVector
       mat iQ2 = arg*arg*alpha*alpha;
       mat iQ3 = arg*iQ2*alpha;   
       // sign in c0 from the conventions on the Ta
-      c0 = -imag( trace(iQ3) ) * one_over_three;  
-      c1 = -real( trace(iQ2) ) * one_over_two;
+      scalar imQ3, reQ2;
+      imQ3 = imag( trace(iQ3) );
+      reQ2 = real( trace(iQ2) );
+      c0 = -imQ3 * one_over_three;  
+      c1 = -reQ2 * one_over_two;
 
       // Cayley Hamilton checks to machine precision, tested
       tmp = c1 * one_over_three;

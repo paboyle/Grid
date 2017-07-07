@@ -53,7 +53,7 @@ directory
 #if defined IMCI
 #include "Grid_imci.h"
 #endif
-#ifdef NEONv8
+#ifdef NEONV8
 #include "Grid_neon.h"
 #endif
 #if defined QPX
@@ -751,8 +751,8 @@ inline Grid_simd<std::complex<R>, V> toComplex(const Grid_simd<R, V> &in) {
 
   conv.v = in.v;
   for (int i = 0; i < Rsimd::Nsimd(); i += 2) {
-    assert(conv.s[i + 1] ==
-           conv.s[i]);  // trap any cases where real was not duplicated
+    assert(conv.s[i + 1] == conv.s[i]);  
+    // trap any cases where real was not duplicated
     // indicating the SIMD grids of real and imag assignment did not correctly
     // match
     conv.s[i + 1] = 0.0;  // zero imaginary parts

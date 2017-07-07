@@ -36,6 +36,7 @@ using namespace Grid::QCD;
 
 int main (int argc, char ** argv)
 {
+#ifdef HAVE_LIME
   Grid_init(&argc,&argv);
 
 
@@ -112,4 +113,5 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "calculated link trace " <<l*LinkTraceScale<<std::endl;
 
   Grid_finalize();
+#endif
 }

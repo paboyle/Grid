@@ -18,9 +18,40 @@
 
 License: GPL v2.
 
-Last update Nov 2016.
+Last update June 2017.
 
 _Please do not send pull requests to the `master` branch which is reserved for releases._
+
+
+
+### Description
+This library provides data parallel C++ container classes with internal memory layout
+that is transformed to map efficiently to SIMD architectures. CSHIFT facilities
+are provided, similar to HPF and cmfortran, and user control is given over the mapping of
+array indices to both MPI tasks and SIMD processing elements.
+
+* Identically shaped arrays then be processed with perfect data parallelisation.
+* Such identically shaped arrays are called conformable arrays.
+
+The transformation is based on the observation that Cartesian array processing involves
+identical processing to be performed on different regions of the Cartesian array.
+
+The library will both geometrically decompose into MPI tasks and across SIMD lanes.
+Local vector loops are parallelised with OpenMP pragmas.
+
+Data parallel array operations can then be specified with a SINGLE data parallel paradigm, but
+optimally use MPI, OpenMP and SIMD parallelism under the hood. This is a significant simplification
+for most programmers.
+
+The layout transformations are parametrised by the SIMD vector length. This adapts according to the architecture.
+Presently SSE4, ARM NEON (128 bits) AVX, AVX2, QPX (256 bits), IMCI and AVX512 (512 bits) targets are supported.
+
+These are presented as `vRealF`, `vRealD`, `vComplexF`, and `vComplexD` internal vector data types. 
+The corresponding scalar types are named `RealF`, `RealD`, `ComplexF` and `ComplexD`.
+
+MPI, OpenMP, and SIMD parallelism are present in the library.
+Please see [this paper](https://arxiv.org/abs/1512.03487) for more detail.
+
 
 ### Compilers
 
@@ -56,35 +87,25 @@ When you file an issue, please go though the following checklist:
 6. Attach the output of `make V=1`.
 7. Describe the issue and any previous attempt to solve it. If relevant, show how to reproduce the issue using a minimal working example.
 
+### Required libraries
+Grid requires:
 
+[GMP](https://gmplib.org/), 
 
-### Description
-This library provides data parallel C++ container classes with internal memory layout
-that is transformed to map efficiently to SIMD architectures. CSHIFT facilities
-are provided, similar to HPF and cmfortran, and user control is given over the mapping of
-array indices to both MPI tasks and SIMD processing elements.
+[MPFR](http://www.mpfr.org/) 
 
-* Identically shaped arrays then be processed with perfect data parallelisation.
-* Such identically shaped arrays are called conformable arrays.
+Bootstrapping grid downloads and uses for internal dense matrix (non-QCD operations) the Eigen library.
 
-The transformation is based on the observation that Cartesian array processing involves
-identical processing to be performed on different regions of the Cartesian array.
+Grid optionally uses:
 
-The library will both geometrically decompose into MPI tasks and across SIMD lanes.
-Local vector loops are parallelised with OpenMP pragmas.
+[HDF5](https://support.hdfgroup.org/HDF5/)  
 
-Data parallel array operations can then be specified with a SINGLE data parallel paradigm, but
-optimally use MPI, OpenMP and SIMD parallelism under the hood. This is a significant simplification
-for most programmers.
+[LIME](http://usqcd-software.github.io/c-lime/) for ILDG and SciDAC file format support. 
 
-The layout transformations are parametrised by the SIMD vector length. This adapts according to the architecture.
-Presently SSE4 (128 bit) AVX, AVX2, QPX (256 bit), IMCI, and AVX512 (512 bit) targets are supported (ARM NEON on the way).
+[FFTW](http://www.fftw.org) either generic version or via the Intel MKL library.
 
-These are presented as `vRealF`, `vRealD`, `vComplexF`, and `vComplexD` internal vector data types. These may be useful in themselves for other programmers.
-The corresponding scalar types are named `RealF`, `RealD`, `ComplexF` and `ComplexD`.
+LAPACK either generic version or Intel MKL library.
 
-MPI, OpenMP, and SIMD parallelism are present in the library.
-Please see https://arxiv.org/abs/1512.03487 for more detail.
 
 ### Quick start
 First, start by cloning the repository:
@@ -155,7 +176,6 @@ The following options can be use with the `--enable-comms=` option to target dif
 | `none`         | no communications                                             |
 | `mpi[-auto]`   | MPI communications                                            |
 | `mpi3[-auto]`  | MPI communications using MPI 3 shared memory                  |
-| `mpi3l[-auto]` | MPI communications using MPI 3 shared memory and leader model |
 | `shmem `       | Cray SHMEM communications                                     |
 
 For the MPI interfaces the optional `-auto` suffix instructs the `configure` scripts to determine all the necessary compilation and linking flags. This is done by extracting the informations from the MPI wrapper specified in the environment variable `MPICXX` (if not specified `configure` will scan though a list of default names). The `-auto` suffix is not supported by the Cray environment wrapper scripts. Use the standard versions instead.  
@@ -173,7 +193,8 @@ The following options can be use with the `--enable-simd=` option to target diff
 | `AVXFMA4`   | AVX (256 bit) + FMA4                   |
 | `AVX2`      | AVX 2 (256 bit)                        |
 | `AVX512`    | AVX 512 bit                            |
-| `QPX`       | QPX (256 bit)                          |
+| `NEONv8`    | [ARM NEON](http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.den0024a/ch07s03.html) (128 bit)                     |
+| `QPX`       | IBM QPX (256 bit)                      |
 
 Alternatively, some CPU codenames can be directly used:
 
@@ -195,21 +216,136 @@ The following configuration is recommended for the Intel Knights Landing platfor
 ``` bash
 ../configure --enable-precision=double\
              --enable-simd=KNL        \
-             --enable-comms=mpi-auto \
-             --with-gmp=<path>        \
-             --with-mpfr=<path>       \
+             --enable-comms=mpi-auto  \
              --enable-mkl             \
              CXX=icpc MPICXX=mpiicpc
 ```
+The MKL flag enables use of BLAS and FFTW from the Intel Math Kernels Library.
 
-where `<path>` is the UNIX prefix where GMP and MPFR are installed. If you are working on a Cray machine that does not use the `mpiicpc` wrapper, please use:
+If you are working on a Cray machine that does not use the `mpiicpc` wrapper, please use:
 
 ``` bash
 ../configure --enable-precision=double\
              --enable-simd=KNL        \
              --enable-comms=mpi       \
-             --with-gmp=<path>        \
-             --with-mpfr=<path>       \
              --enable-mkl             \
              CXX=CC CC=cc
 ```
+
+If gmp and mpfr are NOT in standard places (/usr/) these flags may be needed:
+``` bash
+               --with-gmp=<path>        \
+               --with-mpfr=<path>       \
+```
+where `<path>` is the UNIX prefix where GMP and MPFR are installed. 
+
+Knight's Landing with Intel Omnipath adapters with two adapters per node 
+presently performs better with use of more than one rank per node, using shared memory 
+for interior communication. This is the mpi3 communications implementation. 
+We recommend four ranks per node for best performance, but optimum is local volume dependent.
+
+``` bash
+../configure --enable-precision=double\
+             --enable-simd=KNL        \
+             --enable-comms=mpi3-auto \
+             --enable-mkl             \
+             CC=icpc MPICXX=mpiicpc 
+```
+
+### Build setup for Intel Haswell Xeon platform
+
+The following configuration is recommended for the Intel Haswell platform:
+
+``` bash
+../configure --enable-precision=double\
+             --enable-simd=AVX2       \
+             --enable-comms=mpi3-auto \
+             --enable-mkl             \
+             CXX=icpc MPICXX=mpiicpc
+```
+The MKL flag enables use of BLAS and FFTW from the Intel Math Kernels Library.
+
+If gmp and mpfr are NOT in standard places (/usr/) these flags may be needed:
+``` bash
+               --with-gmp=<path>        \
+               --with-mpfr=<path>       \
+```
+where `<path>` is the UNIX prefix where GMP and MPFR are installed. 
+
+If you are working on a Cray machine that does not use the `mpiicpc` wrapper, please use:
+
+``` bash
+../configure --enable-precision=double\
+             --enable-simd=AVX2       \
+             --enable-comms=mpi3      \
+             --enable-mkl             \
+             CXX=CC CC=cc
+```
+Since Dual socket nodes are commonplace, we recommend MPI-3 as the default with the use of 
+one rank per socket. If using the Intel MPI library, threads should be pinned to NUMA domains using
+```
+        export I_MPI_PIN=1
+```
+This is the default.
+
+### Build setup for Intel Skylake Xeon platform
+
+The following configuration is recommended for the Intel Skylake platform:
+
+``` bash
+../configure --enable-precision=double\
+             --enable-simd=AVX512     \
+             --enable-comms=mpi3      \
+             --enable-mkl             \
+             CXX=mpiicpc
+```
+The MKL flag enables use of BLAS and FFTW from the Intel Math Kernels Library.
+
+If gmp and mpfr are NOT in standard places (/usr/) these flags may be needed:
+``` bash
+               --with-gmp=<path>        \
+               --with-mpfr=<path>       \
+```
+where `<path>` is the UNIX prefix where GMP and MPFR are installed. 
+
+If you are working on a Cray machine that does not use the `mpiicpc` wrapper, please use:
+
+``` bash
+../configure --enable-precision=double\
+             --enable-simd=AVX512     \
+             --enable-comms=mpi3      \
+             --enable-mkl             \
+             CXX=CC CC=cc
+```
+Since Dual socket nodes are commonplace, we recommend MPI-3 as the default with the use of 
+one rank per socket. If using the Intel MPI library, threads should be pinned to NUMA domains using
+``` 
+        export I_MPI_PIN=1
+```
+This is the default. 
+
+### Build setup for BlueGene/Q
+
+To be written...
+
+### Build setup for ARM Neon
+
+To be written...
+
+### Build setup for laptops, other compilers, non-cluster builds
+
+Many versions of g++ and clang++ work with Grid, and involve merely replacing CXX (and MPICXX),
+and omit the enable-mkl flag. 
+
+Single node builds are enabled with 
+```
+            --enable-comms=none
+```
+
+FFTW support that is not in the default search path may then enabled with
+```
+    --with-fftw=<installpath>
+```
+
+BLAS will not be compiled in by default, and Lanczos will default to Eigen diagonalisation.
+

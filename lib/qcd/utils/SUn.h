@@ -716,8 +716,7 @@ template<typename GaugeField,typename GaugeMat>
 
     for (int a = 0; a < AdjointDimension; a++) {
       generator(a, Ta);
-      auto tmp = - 2.0 * (trace(timesI(Ta) * in)) * scale;// 2.0 for the normalization of the trace in the fundamental rep
-      pokeColour(h_out, tmp, a);
+      pokeColour(h_out, - 2.0 * (trace(timesI(Ta) * in)) * scale, a);
     }
   }
 

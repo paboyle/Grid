@@ -36,6 +36,7 @@ using namespace Grid::QCD;
 
 int main (int argc, char ** argv)
 {
+#ifdef HAVE_LIME
   Grid_init(&argc,&argv);
 
   std::cout <<GridLogMessage<< " main "<<std::endl;
@@ -96,4 +97,5 @@ int main (int argc, char ** argv)
   std::cout <<GridLogMessage<< "norm2 Gauge Diff = "<<norm2(Umu_diff)<<std::endl;
 
   Grid_finalize();
+#endif
 }

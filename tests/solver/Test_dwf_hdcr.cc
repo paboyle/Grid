@@ -516,7 +516,7 @@ int main (int argc, char ** argv)
   LatticeColourMatrix U(UGrid);
   LatticeColourMatrix zz(UGrid);
 
-  NerscField header;
+  FieldMetaData header;
   std::string file("./ckpoint_lat.4000");
   NerscIO::readConfiguration(Umu,header,file);
 

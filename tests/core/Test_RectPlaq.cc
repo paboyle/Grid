@@ -90,7 +90,7 @@ int main (int argc, char ** argv)
 
   std::vector<LatticeColourMatrix> U(4,&Fine);
   
-  NerscField header;
+  FieldMetaData header;
   
   std::string file("./ckpoint_lat.4000");
   NerscIO::readConfiguration(Umu,header,file);

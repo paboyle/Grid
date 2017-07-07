@@ -27,7 +27,7 @@ AX_GXX_VERSION
 AC_DEFINE_UNQUOTED([GXX_VERSION],["$GXX_VERSION"],
       [version of g++ that will compile the code])
 
-CXXFLAGS="-g $CXXFLAGS"
+CXXFLAGS="-O3 $CXXFLAGS"
 
 
 ############### Checks for typedefs, structures, and compiler characteristics
@@ -241,6 +241,7 @@ case ${ax_cv_cxx_compiler_vendor} in
         SIMD_FLAGS='';;
       KNL)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
+        AC_DEFINE([KNL],[1],[Knights landing processor])
         SIMD_FLAGS='-march=knl';;
       GEN)
         AC_DEFINE([GEN],[1],[generic vector code])
@@ -248,6 +249,9 @@ case ${ax_cv_cxx_compiler_vendor} in
                            [generic SIMD vector width (in bytes)])
         SIMD_GEN_WIDTH_MSG=" (width= $ac_gen_simd_width)"
         SIMD_FLAGS='';;
+      NEONv8)
+        AC_DEFINE([NEONV8],[1],[ARMv8 NEON])
+        SIMD_FLAGS='-march=armv8-a';;
       QPX|BGQ)
         AC_DEFINE([QPX],[1],[QPX intrinsics for BG/Q])
         SIMD_FLAGS='';;
@@ -276,6 +280,7 @@ case ${ax_cv_cxx_compiler_vendor} in
         SIMD_FLAGS='';;
       KNL)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics for Knights Landing])
+        AC_DEFINE([KNL],[1],[Knights landing processor])
         SIMD_FLAGS='-xmic-avx512';;
       GEN)
         AC_DEFINE([GEN],[1],[generic vector code])

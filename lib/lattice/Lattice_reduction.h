@@ -1,4 +1,4 @@
- /*************************************************************************************
+/*************************************************************************************
     Grid physics library, www.github.com/paboyle/Grid 
     Source file: ./lib/lattice/Lattice_reduction.h
     Copyright (C) 2015
@@ -369,71 +369,6 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
   }
 };
 
-
-/*
-template<class vobj>
-static void sliceMaddVectorSlow (Lattice<vobj> &R,std::vector<RealD> &a,const Lattice<vobj> &X,const Lattice<vobj> &Y,
-			     int Orthog,RealD scale=1.0) 
-{    
-  // FIXME: Implementation is slow
-  // Best base the linear combination by constructing a 
-  // set of vectors of size grid->_rdimensions[Orthog].
-  typedef typename vobj::scalar_object sobj;
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_type vector_type;
-  
-  int Nblock = X._grid->GlobalDimensions()[Orthog];
-  
-  GridBase *FullGrid  = X._grid;
-  GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
-  
-  Lattice<vobj> Xslice(SliceGrid);
-  Lattice<vobj> Rslice(SliceGrid);
-  // If we based this on Cshift it would work for spread out
-  // but it would be even slower
-  for(int i=0;i<Nblock;i++){
-    ExtractSlice(Rslice,Y,i,Orthog);
-    ExtractSlice(Xslice,X,i,Orthog);
-    Rslice = Rslice + Xslice*(scale*a[i]);
-    InsertSlice(Rslice,R,i,Orthog);
-  }
-};
-template<class vobj>
-static void sliceInnerProductVectorSlow( std::vector<ComplexD> & vec, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int Orthog) 
-  {
-    // FIXME: Implementation is slow
-    // Look at localInnerProduct implementation,
-    // and do inside a site loop with block strided iterators
-    typedef typename vobj::scalar_object sobj;
-    typedef typename vobj::scalar_type scalar_type;
-    typedef typename vobj::vector_type vector_type;
-    typedef typename vobj::tensor_reduced scalar;
-    typedef typename scalar::scalar_object  scomplex;
-  
-    int Nblock = lhs._grid->GlobalDimensions()[Orthog];
-    vec.resize(Nblock);
-    std::vector<scomplex> sip(Nblock);
-    Lattice<scalar> IP(lhs._grid); 
-    IP=localInnerProduct(lhs,rhs);
-    sliceSum(IP,sip,Orthog);
-  
-    for(int ss=0;ss<Nblock;ss++){
-      vec[ss] = TensorRemove(sip[ss]);
-    }
-  }
-*/
-
-//////////////////////////////////////////////////////////////////////////////////////////
-// FIXME: Implementation is slow
-// If we based this on Cshift it would work for spread out
-// but it would be even slower
-//
-// Repeated extract slice is inefficient
-//
-// Best base the linear combination by constructing a 
-// set of vectors of size grid->_rdimensions[Orthog].
-//////////////////////////////////////////////////////////////////////////////////////////
-
 inline GridBase         *makeSubSliceGrid(const GridBase *BlockSolverGrid,int Orthog)
 {
   int NN    = BlockSolverGrid->_ndimension;
@@ -453,7 +388,6 @@ inline GridBase         *makeSubSliceGrid(const GridBase *BlockSolverGrid,int Or
   return (GridBase *)new GridCartesian(latt_phys,simd_phys,mpi_phys); 
 }
 
-
 template<class vobj>
 static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<vobj> &X,const Lattice<vobj> &Y,int Orthog,RealD scale=1.0) 
 {    
@@ -462,28 +396,103 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
   typedef typename vobj::vector_type vector_type;
 
   int Nblock = X._grid->GlobalDimensions()[Orthog];
-  
+
   GridBase *FullGrid  = X._grid;
   GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
-  
+
   Lattice<vobj> Xslice(SliceGrid);
   Lattice<vobj> Rslice(SliceGrid);
-  
-  for(int i=0;i<Nblock;i++){
-    ExtractSlice(Rslice,Y,i,Orthog);
-    for(int j=0;j<Nblock;j++){
-      ExtractSlice(Xslice,X,j,Orthog);
-      Rslice = Rslice + Xslice*(scale*aa(j,i));
-    }
-    InsertSlice(Rslice,R,i,Orthog);
+
+  assert( FullGrid->_simd_layout[Orthog]==1);
+  int nh =  FullGrid->_ndimension;
+  int nl = SliceGrid->_ndimension;
+
+  //FIXME package in a convenient iterator
+  //Should loop over a plane orthogonal to direction "Orthog"
+  int stride=FullGrid->_slice_stride[Orthog];
+  int block =FullGrid->_slice_block [Orthog];
+  int nblock=FullGrid->_slice_nblock[Orthog];
+  int ostride=FullGrid->_ostride[Orthog];
+#pragma omp parallel 
+  {
+    std::vector<vobj> s_x(Nblock);
+
+#pragma omp for collapse(2)
+    for(int n=0;n<nblock;n++){
+    for(int b=0;b<block;b++){
+      int o  = n*stride + b;
+
+      for(int i=0;i<Nblock;i++){
+	s_x[i] = X[o+i*ostride];
+      }
+
+      vobj dot;
+      for(int i=0;i<Nblock;i++){
+	dot = Y[o+i*ostride];
+	for(int j=0;j<Nblock;j++){
+	  dot = dot + s_x[j]*(scale*aa(j,i));
+	}
+	R[o+i*ostride]=dot;
+      }
+    }}
   }
 };
 
 template<class vobj>
+static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<vobj> &X,int Orthog,RealD scale=1.0) 
+{    
+  typedef typename vobj::scalar_object sobj;
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+
+  int Nblock = X._grid->GlobalDimensions()[Orthog];
+
+  GridBase *FullGrid  = X._grid;
+  GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
+
+  Lattice<vobj> Xslice(SliceGrid);
+  Lattice<vobj> Rslice(SliceGrid);
+
+  assert( FullGrid->_simd_layout[Orthog]==1);
+  int nh =  FullGrid->_ndimension;
+  int nl = SliceGrid->_ndimension;
+
+  //FIXME package in a convenient iterator
+  //Should loop over a plane orthogonal to direction "Orthog"
+  int stride=FullGrid->_slice_stride[Orthog];
+  int block =FullGrid->_slice_block [Orthog];
+  int nblock=FullGrid->_slice_nblock[Orthog];
+  int ostride=FullGrid->_ostride[Orthog];
+#pragma omp parallel 
+  {
+    std::vector<vobj> s_x(Nblock);
+
+#pragma omp for collapse(2)
+    for(int n=0;n<nblock;n++){
+    for(int b=0;b<block;b++){
+      int o  = n*stride + b;
+
+      for(int i=0;i<Nblock;i++){
+	s_x[i] = X[o+i*ostride];
+      }
+
+      vobj dot;
+      for(int i=0;i<Nblock;i++){
+	dot = s_x[0]*(scale*aa(0,i));
+	for(int j=1;j<Nblock;j++){
+	  dot = dot + s_x[j]*(scale*aa(j,i));
+	}
+	R[o+i*ostride]=dot;
+      }
+    }}
+  }
+
+};
+
+
+template<class vobj>
 static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj> &lhs,const Lattice<vobj> &rhs,int Orthog) 
 {
-  // FIXME: Implementation is slow
-  // Not sure of best solution.. think about it
   typedef typename vobj::scalar_object sobj;
   typedef typename vobj::scalar_type scalar_type;
   typedef typename vobj::vector_type vector_type;
@@ -497,22 +506,49 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
   Lattice<vobj> Rslice(SliceGrid);
   
   mat = Eigen::MatrixXcd::Zero(Nblock,Nblock);
-  
-  for(int i=0;i<Nblock;i++){
-    ExtractSlice(Lslice,lhs,i,Orthog);
-    for(int j=0;j<Nblock;j++){
-      ExtractSlice(Rslice,rhs,j,Orthog);
-      mat(i,j) = innerProduct(Lslice,Rslice);
-    }
+
+  assert( FullGrid->_simd_layout[Orthog]==1);
+  int nh =  FullGrid->_ndimension;
+  int nl = SliceGrid->_ndimension;
+
+  //FIXME package in a convenient iterator
+  //Should loop over a plane orthogonal to direction "Orthog"
+  int stride=FullGrid->_slice_stride[Orthog];
+  int block =FullGrid->_slice_block [Orthog];
+  int nblock=FullGrid->_slice_nblock[Orthog];
+  int ostride=FullGrid->_ostride[Orthog];
+
+  typedef typename vobj::vector_typeD vector_typeD;
+
+#pragma omp parallel 
+  {
+    std::vector<vobj> Left(Nblock);
+    std::vector<vobj> Right(Nblock);
+    Eigen::MatrixXcd  mat_thread = Eigen::MatrixXcd::Zero(Nblock,Nblock);
+
+#pragma omp for collapse(2)
+    for(int n=0;n<nblock;n++){
+    for(int b=0;b<block;b++){
+
+      int o  = n*stride + b;
+
+      for(int i=0;i<Nblock;i++){
+	Left [i] = lhs[o+i*ostride];
+	Right[i] = rhs[o+i*ostride];
+      }
+
+      for(int i=0;i<Nblock;i++){
+      for(int j=0;j<Nblock;j++){
+	auto tmp = innerProduct(Left[i],Right[j]);
+	vector_typeD rtmp = TensorRemove(tmp);
+	mat_thread(i,j) += Reduce(rtmp);
+      }}
+    }}
+#pragma omp critical
+    {
+      mat += mat_thread;
+    }  
   }
-#undef FORCE_DIAG
-#ifdef FORCE_DIAG
-  for(int i=0;i<Nblock;i++){
-    for(int j=0;j<Nblock;j++){
-      if ( i != j ) mat(i,j)=0.0;
-    }
-  }
-#endif
   return;
 }
 
