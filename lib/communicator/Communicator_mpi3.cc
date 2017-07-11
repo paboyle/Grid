@@ -38,7 +38,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <sys/shm.h>
 #include <sys/mman.h>
 #include <zlib.h>
+#ifdef HAVE_NUMAIF_H
 #include <numaif.h>
+#endif
 #ifndef SHM_HUGETLB
 #define SHM_HUGETLB 04000
 #endif
@@ -216,6 +218,8 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
       if ( ptr == MAP_FAILED ) {       perror("failed mmap");      assert(0);    }
       assert(((uint64_t)ptr&0x3F)==0);
 
+      // Try to force numa domain on the shm segment if we have numaif.h
+#ifdef HAVE_NUMAIF_H
 	int status;
 	int flags=MPOL_MF_MOVE;
 #ifdef KNL
@@ -225,13 +229,13 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
 	int nodes=r; // numa domain == MPI ID
 #endif
 	unsigned long count=1;
-      for(uint64_t page=0;page<size;page+=4096){
-	void *pages = (void *) ( page + (uint64_t)ptr );
-	uint64_t *cow_it = (uint64_t *)pages;	*cow_it = 1;
-	ierr= move_pages(0,count, &pages,&nodes,&status,flags);
-	if (ierr && (page==0)) perror("numa relocate command failed");
-      }
-
+	for(uint64_t page=0;page<size;page+=4096){
+	  void *pages = (void *) ( page + (uint64_t)ptr );
+	  uint64_t *cow_it = (uint64_t *)pages;	*cow_it = 1;
+	  ierr= move_pages(0,count, &pages,&nodes,&status,flags);
+	  if (ierr && (page==0)) perror("numa relocate command failed");
+	}
+#endif
       ShmCommBufs[r] =ptr;
       
     }

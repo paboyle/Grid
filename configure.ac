@@ -51,6 +51,7 @@ AC_CHECK_HEADERS(malloc/malloc.h)
 AC_CHECK_HEADERS(malloc.h)
 AC_CHECK_HEADERS(endian.h)
 AC_CHECK_HEADERS(execinfo.h)
+AC_CHECK_HEADERS(numaif.h)
 AC_CHECK_DECLS([ntohll],[], [], [[#include <arpa/inet.h>]])
 AC_CHECK_DECLS([be64toh],[], [], [[#include <arpa/inet.h>]])
 
@@ -186,8 +187,13 @@ Info at: http://usqcd.jlab.org/usqcd-docs/c-lime/)])
 
 AC_SEARCH_LIBS([crc32], [z],
                [AC_DEFINE([HAVE_ZLIB], [1], [Define to 1 if you have the `LIBZ' library])]
-               [have_zlib=true],
+               [have_zlib=true] [LIBS="${LIBS} -lz"],
 	       [AC_MSG_ERROR(zlib library was not found in your system.)])
+
+AC_SEARCH_LIBS([move_pages], [numa],
+               [AC_DEFINE([HAVE_LIBNUMA], [1], [Define to 1 if you have the `LIBNUMA' library])]
+               [have_libnuma=true] [LIBS="${LIBS} -lnuma"],
+	       [AC_MSG_WARN(libnuma library was not found in your system. Some optimisations will not apply)])
 
 AC_SEARCH_LIBS([H5Fopen], [hdf5_cpp],
                [AC_DEFINE([HAVE_HDF5], [1], [Define to 1 if you have the `HDF5' library])]
