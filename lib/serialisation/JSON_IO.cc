@@ -42,6 +42,7 @@ JSONWriter::~JSONWriter(void)
 
   // write prettified JSON to file
   std::ofstream os(fileName_);
+  std::cout << "JSONWriter::~JSONWriter" << std::endl;
   os << std::setw(2) << json::parse(ss_.str()) << std::endl;
 }
 
@@ -56,6 +57,7 @@ void JSONWriter::push(const string &s)
 
 void JSONWriter::pop(void)
 {
+  std::cout << "JSONWriter::pop" << std::endl;
   delete_comma();
   ss_ << "},";
 }
