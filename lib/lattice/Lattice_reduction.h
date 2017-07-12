@@ -540,7 +540,8 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
       for(int i=0;i<Nblock;i++){
       for(int j=0;j<Nblock;j++){
 	auto tmp = innerProduct(Left[i],Right[j]);
-	vector_typeD rtmp = TensorRemove(tmp);
+	//	vector_typeD rtmp = TensorRemove(tmp);
+	auto rtmp = TensorRemove(tmp);
 	mat_thread(i,j) += Reduce(rtmp);
       }}
     }}
