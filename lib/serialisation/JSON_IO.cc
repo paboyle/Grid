@@ -42,7 +42,7 @@ JSONWriter::~JSONWriter(void)
 
   // write prettified JSON to file
   std::ofstream os(fileName_);
-  std::cout << "JSONWriter::~JSONWriter" << std::endl;
+  //std::cout << "JSONWriter::~JSONWriter" << std::endl;
   os << std::setw(2) << json::parse(ss_.str()) << std::endl;
 }
 
@@ -57,7 +57,7 @@ void JSONWriter::push(const string &s)
 
 void JSONWriter::pop(void)
 {
-  std::cout << "JSONWriter::pop" << std::endl;
+  //std::cout << "JSONWriter::pop" << std::endl;
   delete_comma();
   ss_ << "},";
 }
@@ -69,6 +69,7 @@ void JSONWriter::delete_comma()
   ss_.str(dlast);
 }
 
+/*
 // here we are hitting a g++ bug (Bug 56480)
 // compiles fine with clang
 // have to wrap in the Grid namespace
@@ -76,8 +77,7 @@ void JSONWriter::delete_comma()
 namespace Grid
 {
   template<>
-  void JSONWriter::writeDefault(const std::string &s,
-				const std::string &x)
+  void JSONWriter::writeDefault(const std::string &s,	const std::string &x)
   {
     if (s.size())
       ss_ << "\""<< s << "\" : \"" << x << "\" ," ; 
@@ -85,7 +85,7 @@ namespace Grid
       ss_ << "\"" << x << "\" ," ;
   }
 }// namespace Grid 
-
+*/
 
 // Reader implementation ///////////////////////////////////////////////////////
 JSONReader::JSONReader(const string &fileName)
@@ -140,6 +140,7 @@ void JSONReader::pop(void)
 
 bool JSONReader::nextElement(const std::string &s)
 {
+  // Work in progress
   // JSON dictionaries do not support multiple names 
   // Same name objects must be packed in vectors
   ++it_;

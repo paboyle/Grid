@@ -58,9 +58,12 @@ namespace Grid
     void writeDefault(const std::string &s, const std::complex<U> &x);
     template <typename U>
     void writeDefault(const std::string &s, const std::vector<U> &x);
+    template <typename U, typename P>
+    void writeDefault(const std::string &s, const std::pair<U,P> &x);
 
     template<std::size_t N>
     void writeDefault(const std::string &s, const char(&x)[N]);
+
 
   private:
     void delete_comma();
@@ -82,6 +85,8 @@ namespace Grid
     void readDefault(const std::string &s, std::complex<U> &output);
     template <typename U>
     void readDefault(const std::string &s, std::vector<U> &output);
+    template <typename U, typename P>
+    void readDefault(const std::string &s, std::pair<U,P> &output);
   private:
     json                jobject_; // main object
     json                jcur_;  // current json object
@@ -106,7 +111,7 @@ namespace Grid
   template <typename U>
   void JSONWriter::writeDefault(const std::string &s, const U &x)
   {
-    //std::cout << "JSONWriter::writeDefault(U) : " << s <<  std::endl;
+    //std::cout << "JSONWriter::writeDefault(U) : " << s <<  " " << x <<std::endl;
     std::ostringstream os;
     os << std::boolalpha << x;
     if (s.size())
@@ -119,7 +124,7 @@ namespace Grid
   template <>
   void JSONWriter::writeDefault(const std::string &s, const std::string &x)
   {
-    //std::cout << "JSONWriter::writeDefault(U) : " << s <<  std::endl;
+    //std::cout << "JSONWriter::writeDefault(string) : " << s <<  std::endl;
     std::ostringstream os;
     os << std::boolalpha << x;
     if (s.size())
@@ -136,6 +141,18 @@ namespace Grid
     //std::cout << "JSONWriter::writeDefault(complex) : " << s <<  " " << x <<  std::endl;
     std::ostringstream os;
     os << "["<< std::boolalpha << x.real() << ", " << x.imag() << "]";
+    if (s.size())
+      ss_ << "\""<< s << "\" : " << os.str() << " ," ;
+    else
+     ss_ << os.str() << " ," ;
+  }
+
+  template <typename U, typename P>
+  void JSONWriter::writeDefault(const std::string &s, const std::pair<U,P> &x)
+  {
+    //std::cout << "JSONWriter::writeDefault(pair) : " << s <<  " " << x <<  std::endl;
+    std::ostringstream os;
+    os << "["<< std::boolalpha << "\""<< x.first << "\" , \"" << x.second << "\" ]";
     if (s.size())
       ss_ << "\""<< s << "\" : " << os.str() << " ," ;
     else
@@ -187,6 +204,30 @@ namespace Grid
 
 
   }
+
+  // Reader template implementation ////////////////////////////////////////////
+  template <typename U, typename P>
+  void JSONReader::readDefault(const std::string &s, std::pair<U,P> &output)
+  {
+    U first;
+    P second;
+    json j;
+    if (s.size()){
+      //std::cout << "JSONReader::readDefault(pair) : " << s << "  |  "<< jcur_[s] << std::endl;
+      j = jcur_[s];
+    } else {
+      j = jcur_;
+    }
+    json::iterator it = j.begin();
+    jcur_ = *it;
+    read("", first);
+    it++;
+    jcur_ = *it;
+    read("", second);
+    output = std::pair<U,P>(first,second);
+  }
+
+
 
   template <typename U>
   void JSONReader::readDefault(const std::string &s, std::complex<U> &output)

@@ -29,7 +29,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid/Grid.h>
 
-
 using namespace Grid;
 using namespace Grid::QCD;
 
@@ -152,9 +151,9 @@ int main(int argc,char **argv)
   ioTest<TextWriter, TextReader>("iotest.dat", vec, "text   (vector of objects)");
   ioTest<TextWriter, TextReader>("iotest.dat", pair, "text   (pair of objects)");
   //// text
-  ioTest<JSONWriter, JSONReader>("iotest.json", obj, "JSON   (object)           ");
-  ioTest<JSONWriter, JSONReader>("iotest.json", vec, "JSON   (vector of objects)");
-  //ioTest<JSONWriter, JSONReader>("iotest.json", pair, "JSON   (pair of objects)");
+  ioTest<JSONWriter, JSONReader>("iotest.json", obj,  "JSON   (object)           ");
+  ioTest<JSONWriter, JSONReader>("iotest.json", vec,  "JSON   (vector of objects)");
+  ioTest<JSONWriter, JSONReader>("iotest.json", pair, "JSON   (pair of objects)");
 
   //// HDF5
 #undef HAVE_HDF5
