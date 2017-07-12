@@ -324,6 +324,60 @@ one rank per socket. If using the Intel MPI library, threads should be pinned to
 ```
 This is the default. 
 
+### Build setup for AMD EPYC / RYZEN
+
+The AMD EPYC is a multichip module comprising 32 cores spread over four distinct chips each with 8 cores.
+So, even with a single socket node there is a quad-chip module. Dual socket nodes with 64 cores total
+are common. Each chip within the module exposes a separate NUMA domain.
+There are four NUMA domains per socket and we recommend one MPI rank per NUMA domain.
+MPI-3 is recommended with the use of four ranks per socket,
+and 8 threads per rank. 
+
+The following configuration is recommended for the AMD EPYC platform.
+
+``` bash
+../configure --enable-precision=double\
+             --enable-simd=AVX2       \
+             --enable-comms=mpi3 \
+             CXX=mpicxx 
+```
+
+If gmp and mpfr are NOT in standard places (/usr/) these flags may be needed:
+``` bash
+               --with-gmp=<path>        \
+               --with-mpfr=<path>       \
+```
+where `<path>` is the UNIX prefix where GMP and MPFR are installed. 
+
+Using MPICH and g++ v4.9.2, best performance can be obtained using explicit GOMP_CPU_AFFINITY flags for each MPI rank.
+This can be done by invoking MPI on a wrapper script omp_bind.sh to handle this. 
+
+It is recommended to run 8 MPI ranks on a single dual socket AMD EPYC, with 8 threads per rank using MPI3 and
+shared memory to communicate within this node:
+
+mpirun -np 8 ./omp_bind.sh ./Benchmark_dwf --mpi 2.2.2.1 --dslash-unroll --threads 8 --grid 16.16.16.16 --cacheblocking 4.4.4.4 
+
+Where omp_bind.sh does the following:
+```
+#!/bin/bash
+
+numanode=` expr $PMI_RANK % 8 `
+basecore=`expr $numanode \* 16`
+core0=`expr $basecore + 0 `
+core1=`expr $basecore + 2 `
+core2=`expr $basecore + 4 `
+core3=`expr $basecore + 6 `
+core4=`expr $basecore + 8 `
+core5=`expr $basecore + 10 `
+core6=`expr $basecore + 12 `
+core7=`expr $basecore + 14 `
+
+export GOMP_CPU_AFFINITY="$core0 $core1 $core2 $core3 $core4 $core5 $core6 $core7"
+echo GOMP_CUP_AFFINITY $GOMP_CPU_AFFINITY
+
+$@
+```
+
 ### Build setup for BlueGene/Q
 
 To be written...
