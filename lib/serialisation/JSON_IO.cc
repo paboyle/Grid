@@ -69,7 +69,7 @@ void JSONWriter::delete_comma()
   ss_.str(dlast);
 }
 
-/*
+
 // here we are hitting a g++ bug (Bug 56480)
 // compiles fine with clang
 // have to wrap in the Grid namespace
@@ -79,13 +79,16 @@ namespace Grid
   template<>
   void JSONWriter::writeDefault(const std::string &s,	const std::string &x)
   {
+  //std::cout << "JSONWriter::writeDefault(string) : " << s <<  std::endl;
+    std::ostringstream os;
+    os << std::boolalpha << x;
     if (s.size())
-      ss_ << "\""<< s << "\" : \"" << x << "\" ," ; 
+      ss_ << "\""<< s << "\" : \"" << os.str() << "\" ," ;
     else
-      ss_ << "\"" << x << "\" ," ;
+     ss_ << os.str() << " ," ;
   }
 }// namespace Grid 
-*/
+
 
 // Reader implementation ///////////////////////////////////////////////////////
 JSONReader::JSONReader(const string &fileName)

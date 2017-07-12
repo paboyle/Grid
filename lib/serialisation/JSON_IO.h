@@ -120,6 +120,7 @@ namespace Grid
      ss_ << os.str() << " ," ;
   }
 
+/*
   // specialize for string
   template <>
   void JSONWriter::writeDefault(const std::string &s, const std::string &x)
@@ -132,7 +133,7 @@ namespace Grid
     else
      ss_ << os.str() << " ," ;
   }
-
+*/
 
 
   template <typename U>
