@@ -324,7 +324,7 @@ one rank per socket. If using the Intel MPI library, threads should be pinned to
 ```
 This is the default. 
 
-** Expected Skylake Gold 6148 dual socket (single prec, single node 20+20 cores) performance using NUMA MPI mapping): **
+#### Expected Skylake Gold 6148 dual socket (single prec, single node 20+20 cores) performance using NUMA MPI mapping): 
 
 mpirun -n 2 benchmarks/Benchmark_dwf --grid 16.16.16.16 --mpi 2.1.1.1 --cacheblocking 2.2.2.2 --dslash-asm --shm 1024 --threads 18 
 - Average mflops/s per call per node (full):  498739 : 4d vec
@@ -391,7 +391,7 @@ $@
 
 Performance:
 
-### Expected EPYC 7601 Gold 6148 dual socket (single prec, single node 20+20 cores) performance using NUMA MPI mapping): **
+#### Expected AMD EPYC 7601 dual socket (single prec, single node 32+32 cores) performance using NUMA MPI mapping): 
 
 mpirun  -np 8 ./omp_bind.sh ./Benchmark_dwf --threads 8 --mpi 2.2.2.1 --dslash-unroll --grid 16.16.16.16 --cacheblocking 4.4.4.4
 - Average mflops/s per call per node (full): 420235 : 4d vec
