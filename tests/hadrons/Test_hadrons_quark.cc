@@ -26,7 +26,7 @@
  *******************************************************************************/
 
 #include "Test_hadrons.hpp"
-#include <Grid/Hadrons/Modules/Quark.hpp>
+#include <Grid/Hadrons/Modules/MFermion/GaugeProp.hpp>
 
 using namespace Grid;
 using namespace QCD;
