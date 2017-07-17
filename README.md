@@ -327,12 +327,8 @@ This is the default.
 #### Expected Skylake Gold 6148 dual socket (single prec, single node 20+20 cores) performance using NUMA MPI mapping): 
 
 mpirun -n 2 benchmarks/Benchmark_dwf --grid 16.16.16.16 --mpi 2.1.1.1 --cacheblocking 2.2.2.2 --dslash-asm --shm 1024 --threads 18 
-- Average mflops/s per call per node (full):  498739 : 4d vec
-- Average mflops/s per call per node (full):  457786 : 4d vec, fp16 comms
-- Average mflops/s per call per node (full):  572645 : 5d vec
-- Average mflops/s per call per node (full):  721206 : 5d vec, red black
-- Average mflops/s per call per node (full):  634542 : 4d vec, red black
 
+TBA
 
 
 ### Build setup for AMD EPYC / RYZEN
@@ -394,11 +390,8 @@ Performance:
 #### Expected AMD EPYC 7601 dual socket (single prec, single node 32+32 cores) performance using NUMA MPI mapping): 
 
 mpirun  -np 8 ./omp_bind.sh ./Benchmark_dwf --threads 8 --mpi 2.2.2.1 --dslash-unroll --grid 16.16.16.16 --cacheblocking 4.4.4.4
-- Average mflops/s per call per node (full): 420235 : 4d vec
-- Average mflops/s per call per node (full): 437617 : 4d vec, fp16 comms
-- Average mflops/s per call per node (full): 522988 : 5d vec
-- Average mflops/s per call per node (full): 588984 : 5d vec, red black
-- Average mflops/s per call per node (full): 508423 : 4d vec, red black
+
+TBA
 
 ### Build setup for BlueGene/Q
 
