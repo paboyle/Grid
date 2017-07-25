@@ -45,8 +45,8 @@ void LAPACK_dstegr(char *jobz, char *range, int *n, double *d, double *e,
 #endif
 #endif
 
-#include <Grid/algorithms/densematrix/DenseMatrix.h>
-#include <Grid/algorithms/iterative/EigenSort.h>
+//#include <Grid/algorithms/densematrix/DenseMatrix.h>
+//#include <Grid/algorithms/iterative/EigenSort.h>
 
 // eliminate temorary vector in calc()
 #define MEM_SAVE
