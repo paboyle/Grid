@@ -35,14 +35,14 @@ using namespace Grid::QCD;
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
-#define LMAX (32)
+#define LMAX (64)
 
-  int Nloop=200;
+  int64_t Nloop=20;
 
   std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
 
-  int threads = GridThread::GetThreads();
+  int64_t threads = GridThread::GetThreads();
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
@@ -54,16 +54,16 @@ int main (int argc, char ** argv)
   for(int lat=2;lat<=LMAX;lat+=2){
 
       std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
-      int vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
+      int64_t vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
-      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
+      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
-      LatticeColourMatrix z(&Grid);// random(pRNG,z);
-      LatticeColourMatrix x(&Grid);// random(pRNG,x);
-      LatticeColourMatrix y(&Grid);// random(pRNG,y);
+      LatticeColourMatrix z(&Grid); random(pRNG,z);
+      LatticeColourMatrix x(&Grid); random(pRNG,x);
+      LatticeColourMatrix y(&Grid); random(pRNG,y);
 
       double start=usecond();
-      for(int i=0;i<Nloop;i++){
+      for(int64_t i=0;i<Nloop;i++){
 	x=x*y;
       }
       double stop=usecond();
@@ -86,17 +86,17 @@ int main (int argc, char ** argv)
   for(int lat=2;lat<=LMAX;lat+=2){
 
       std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
-      int vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
+      int64_t vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
-      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
+      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
-      LatticeColourMatrix z(&Grid); //random(pRNG,z);
-      LatticeColourMatrix x(&Grid); //random(pRNG,x);
-      LatticeColourMatrix y(&Grid); //random(pRNG,y);
+      LatticeColourMatrix z(&Grid); random(pRNG,z);
+      LatticeColourMatrix x(&Grid); random(pRNG,x);
+      LatticeColourMatrix y(&Grid); random(pRNG,y);
 
       double start=usecond();
-      for(int i=0;i<Nloop;i++){
+      for(int64_t i=0;i<Nloop;i++){
 	z=x*y;
       }
       double stop=usecond();
@@ -117,17 +117,17 @@ int main (int argc, char ** argv)
   for(int lat=2;lat<=LMAX;lat+=2){
 
       std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
-      int vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
+      int64_t vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
-      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
+      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
-      LatticeColourMatrix z(&Grid); //random(pRNG,z);
-      LatticeColourMatrix x(&Grid); //random(pRNG,x);
-      LatticeColourMatrix y(&Grid); //random(pRNG,y);
+      LatticeColourMatrix z(&Grid); random(pRNG,z);
+      LatticeColourMatrix x(&Grid); random(pRNG,x);
+      LatticeColourMatrix y(&Grid); random(pRNG,y);
 
       double start=usecond();
-      for(int i=0;i<Nloop;i++){
+      for(int64_t i=0;i<Nloop;i++){
 	mult(z,x,y);
       }
       double stop=usecond();
@@ -148,17 +148,17 @@ int main (int argc, char ** argv)
   for(int lat=2;lat<=LMAX;lat+=2){
 
       std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
-      int vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
+      int64_t vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
-      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
+      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
-      LatticeColourMatrix z(&Grid); //random(pRNG,z);
-      LatticeColourMatrix x(&Grid); //random(pRNG,x);
-      LatticeColourMatrix y(&Grid); //random(pRNG,y);
+      LatticeColourMatrix z(&Grid); random(pRNG,z);
+      LatticeColourMatrix x(&Grid); random(pRNG,x);
+      LatticeColourMatrix y(&Grid); random(pRNG,y);
 
       double start=usecond();
-      for(int i=0;i<Nloop;i++){
+      for(int64_t i=0;i<Nloop;i++){
 	mac(z,x,y);
       }
       double stop=usecond();

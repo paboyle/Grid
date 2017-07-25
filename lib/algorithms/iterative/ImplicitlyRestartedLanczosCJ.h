@@ -57,9 +57,10 @@ namespace Grid {
 // Implicitly restarted lanczos
 /////////////////////////////////////////////////////////////
 
+// creating a seaprate instance to avoid conflicts for the time being
 
 template<class Field> 
-    class ImplicitlyRestartedLanczos {
+    class ImplicitlyRestartedLanczosCJ {
 
     const RealD small = 1.0e-16;
 public:       

@@ -253,6 +253,7 @@ class HMCResourceManager {
   template<class T, class... Types>
   void AddObservable(Types&&... Args){
     ObservablesList.push_back(std::unique_ptr<T>(new T(std::forward<Types>(Args)...)));
+    ObservablesList.back()->print_parameters();
   }
 
   std::vector<HmcObservable<typename ImplementationPolicy::Field>* > GetObservables(){

@@ -26,8 +26,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_WallSource_hpp_
-#define Hadrons_WallSource_hpp_
+#ifndef Hadrons_MSource_WallSource_hpp_
+#define Hadrons_MSource_WallSource_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -64,7 +64,7 @@ template <typename FImpl>
 class TWall: public Module<WallPar>
 {
 public:
-    TYPE_ALIASES(FImpl,);
+    FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TWall(const std::string name);
@@ -144,4 +144,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_WallSource_hpp_
+#endif // Hadrons_MSource_WallSource_hpp_

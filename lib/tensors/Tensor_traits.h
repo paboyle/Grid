@@ -281,8 +281,8 @@ namespace Grid {
   template<typename T>
   class getPrecision{
   public:
-    typedef typename getVectorType<T>::type vector_obj; //get the vector_obj (i.e. a grid Tensor) if its a Lattice<vobj>, do nothing otherwise (i.e. if fundamental or grid Tensor)
-  
+    //get the vector_obj (i.e. a grid Tensor) if its a Lattice<vobj>, do nothing otherwise (i.e. if fundamental or grid Tensor)
+    typedef typename getVectorType<T>::type vector_obj; 
     typedef typename GridTypeMapper<vector_obj>::scalar_type scalar_type; //get the associated scalar type. Works on fundamental and tensor types
     typedef typename GridTypeMapper<scalar_type>::Realified real_scalar_type; //remove any std::complex wrapper, should get us to the fundamental type
 

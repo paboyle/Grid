@@ -26,8 +26,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_DiscLoop_hpp_
-#define Hadrons_DiscLoop_hpp_
+#ifndef Hadrons_MContraction_DiscLoop_hpp_
+#define Hadrons_MContraction_DiscLoop_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -52,7 +52,7 @@ public:
 template <typename FImpl>
 class TDiscLoop: public Module<DiscLoopPar>
 {
-    TYPE_ALIASES(FImpl,);
+    FERM_TYPE_ALIASES(FImpl,);
     class Result: Serializable
     {
     public:
@@ -141,4 +141,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_DiscLoop_hpp_
+#endif // Hadrons_MContraction_DiscLoop_hpp_
