@@ -99,7 +99,6 @@ class TopologicalCharge : public HmcObservable<typename Impl::Field> {
         
         if (Pars.do_smearing){
             // using wilson flow by default here
-            std::cout << "1. " << Pars.Smearing.step_size << std::endl;
             WilsonFlow<PeriodicGimplR> WF(Pars.Smearing.steps, Pars.Smearing.step_size, Pars.Smearing.meas_interval);
             WF.smear_adaptive(Usmear, U, Pars.Smearing.maxTau);
             Real T0   = WF.energyDensityPlaquette(Usmear);
