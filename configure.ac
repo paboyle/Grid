@@ -13,6 +13,10 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 ################ Get git info
 #AC_REVISION([m4_esyscmd_s([./scripts/configure.commit])])
 
+################ Set flags
+# do not move!
+CXXFLAGS="-O3 $CXXFLAGS"
+
 ############### Checks for programs
 AC_PROG_CXX
 AC_PROG_RANLIB
@@ -27,7 +31,6 @@ AX_GXX_VERSION
 AC_DEFINE_UNQUOTED([GXX_VERSION],["$GXX_VERSION"],
       [version of g++ that will compile the code])
 
-CXXFLAGS="-O3 $CXXFLAGS"
 
 
 ############### Checks for typedefs, structures, and compiler characteristics
