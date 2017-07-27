@@ -58,6 +58,10 @@ AC_CHECK_HEADERS(numaif.h)
 AC_CHECK_DECLS([ntohll],[], [], [[#include <arpa/inet.h>]])
 AC_CHECK_DECLS([be64toh],[], [], [[#include <arpa/inet.h>]])
 
+############## Standard libraries
+AC_CHECK_LIB([m],[cos])
+AC_CHECK_LIB([stdc++],[abort])
+
 ############### GMP and MPFR
 AC_ARG_WITH([gmp],
     [AS_HELP_STRING([--with-gmp=prefix],
