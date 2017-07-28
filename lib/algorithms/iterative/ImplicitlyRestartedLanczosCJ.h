@@ -27,8 +27,8 @@ Author: Chulwoo Jung <chulwoo@bnl.gov>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#ifndef GRID_IRL_H
-#define GRID_IRL_H
+#ifndef GRID_IRL_CJ_H
+#define GRID_IRL_CJ_H
 
 #include <string.h> //memset
 
@@ -91,7 +91,7 @@ public:
     void init(void){};
     void Abort(int ff, DenseVector<RealD> &evals,  DenseVector<DenseVector<RealD> > &evecs);
 
-    ImplicitlyRestartedLanczos(
+    ImplicitlyRestartedLanczosCJ(
 				LinearOperatorBase<Field> &Linop, // op
 			       OperatorFunction<Field> & poly,   // polynmial
 			       int _Nstop, // sought vecs
@@ -110,7 +110,7 @@ public:
       Np = Nm-Nk; assert(Np>0);
     };
 
-    ImplicitlyRestartedLanczos(
+    ImplicitlyRestartedLanczosCJ(
 				LinearOperatorBase<Field> &Linop, // op
 			       OperatorFunction<Field> & poly,   // polynmial
 			       int _Nk, // sought vecs

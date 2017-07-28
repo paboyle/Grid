@@ -38,6 +38,10 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/approx/Remez.h>
 #include <Grid/algorithms/approx/MultiShiftFunction.h>
 
+#include <Grid/algorithms/densematrix/DenseMatrix.h>
+#include <Grid/algorithms/densematrix/Francis.h>
+#include <Grid/algorithms/densematrix/Householder.h>
+
 #include <Grid/algorithms/iterative/ConjugateGradient.h>
 #include <Grid/algorithms/iterative/ConjugateResidual.h>
 #include <Grid/algorithms/iterative/NormalEquations.h>
@@ -48,6 +52,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 // Lanczos support
 //#include <Grid/algorithms/iterative/MatrixUtils.h>
 #include <Grid/algorithms/iterative/ImplicitlyRestartedLanczos.h>
+#include <Grid/algorithms/iterative/ImplicitlyRestartedLanczosCJ.h>
 #include <Grid/algorithms/iterative/SimpleLanczos.h>
 #include <Grid/algorithms/CoarsenedMatrix.h>
 #include <Grid/algorithms/FFT.h>
