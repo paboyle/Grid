@@ -185,6 +185,8 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
   double splicetime;
   double nosplicetime;
   double calls;
+  std::vector<double> comms_bytesthr;
+  std::vector<double> commtimethr;
 
   ////////////////////////////////////////
   // Stencil query
@@ -250,36 +252,22 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
   //////////////////////////////////////////
   void CommunicateThreaded()
   {
-    for(int i=0;i<Packets.size();i++){
-#pragma omp task 
-      {
-	double start;
-	double stop;
-	start = usecond();
-	uint64_t bytes;
-	std::vector<CommsRequest_t> reqs;
-	bytes=_grid->StencilSendToRecvFromBegin(reqs,
-					  Packets[i].send_buf,
-					  Packets[i].to_rank,
-					  Packets[i].recv_buf,
-					  Packets[i].from_rank,
-					  Packets[i].bytes,i);
-	_grid->StencilSendToRecvFromComplete(reqs,i);
-	// Last task logged; this is approximate but hard to catch
-	// the last to complete
-	stop = usecond();
-	stop = stop - start;
-
-	if ( i==0 ) commtime+=stop;
-
-#pragma omp critical
-	{
-	  comms_bytes+=bytes;
-	}
-
+    // must be called in parallel region
+    int mythread = omp_get_thread_num();
+    int nthreads = CartesianCommunicator::nCommThreads;
+    if (nthreads == -1) nthreads = Packets.size();
+    if (mythread < nthreads) {
+      for (int i = mythread; i < Packets.size(); i += nthreads) {
+	double start = usecond();
+	uint64_t bytes = _grid->StencilSendToRecvFrom(Packets[i].send_buf,
+						      Packets[i].to_rank,
+						      Packets[i].recv_buf,
+						      Packets[i].from_rank,
+						      Packets[i].bytes,i);
+	comms_bytesthr[mythread] += bytes;
+	commtimethr[mythread] += usecond() - start;
       }
     }
-    
   }
   void CommunicateBegin(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
@@ -475,7 +463,10 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
 		  int checkerboard,
 		  const std::vector<int> &directions,
 		  const std::vector<int> &distances) 
-   :   _permute_type(npoints), _comm_buf_size(npoints)
+   : _permute_type(npoints), 
+    _comm_buf_size(npoints),
+    comms_bytesthr(npoints), 
+       commtimethr(npoints)
   {
     face_table_computed=0;
     _npoints = npoints;
@@ -1029,6 +1020,8 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
   void ZeroCounters(void) {
     gathertime = 0.;
     commtime = 0.;
+    memset(&commtimethr[0], 0, sizeof(commtimethr));
+    memset(&comms_bytesthr[0], 0, sizeof(comms_bytesthr));
     halogtime = 0.;
     mergetime = 0.;
     decompresstime = 0.;
@@ -1044,6 +1037,14 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
 #define PRINTIT(A) AVERAGE(A); std::cout << GridLogMessage << " Stencil " << #A << " "<< A/calls<<std::endl;
     RealD NP = _grid->_Nprocessors;
     RealD NN = _grid->NodeCount();
+    double t = 0;
+    // if commtimethr is set they were all done in parallel so take the max
+    // but add up the bytes
+    for (int i = 0; i < 8; ++i) {
+      comms_bytes += comms_bytesthr[i];
+      if (t < commtimethr[i]) t = commtimethr[i];
+    }
+    commtime += t;
     
     _grid->GlobalSum(commtime);    commtime/=NP;
     if ( calls > 0. ) {

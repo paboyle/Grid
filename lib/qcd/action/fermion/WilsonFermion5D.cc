@@ -391,37 +391,57 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   DhopFaceTime+=usecond();
 
   // Rely on async comms; start comms before merge of local data
-  DhopComputeTime-=usecond();
-  DhopCommTime-=usecond();
-#pragma omp parallel 
+  double ctime=0;
+  double ptime=0;
+  //  DhopComputeTime-=usecond();
+  //  DhopCommTime-=usecond();
+#pragma omp parallel reduction(max:ctime) reduction(max:ptime)
   { 
-    // Should time this somehow; hard as the threads fork nowait
-    st.CommunicateThreaded();
-
-  if (dag == DaggerYes) {
-#pragma omp for
-    for (int ss = 0; ss < U._grid->oSites(); ss++) {
-      int sU = ss;
-      int sF = LLs * sU;
-      Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,1,0);
+    int tid = omp_get_thread_num();
+    int nthreads = omp_get_num_threads();
+    int ncomms = CartesianCommunicator::nCommThreads;
+    if (ncomms == -1) ncomms = st.Packets.size(); 
+    assert(nthreads > ncomms);
+    if (tid >= ncomms) {
+      double start = usecond();
+      nthreads -= ncomms;
+      int ttid = tid - ncomms;
+      int n = U._grid->oSites();
+      int chunk = n / nthreads;
+      int rem = n % nthreads;
+      int myblock, myn;
+      if (ttid < rem) {
+	myblock = ttid * chunk + ttid;
+	myn = chunk+1;
+      } else {
+	myblock = ttid*chunk + rem;
+	myn = chunk;
+      }
+      
+      // do the compute
+      if (dag == DaggerYes) {
+	for (int ss = myblock; ss < myblock+myn; ++ss) {
+	  int sU = ss;
+	  int sF = LLs * sU;
+	  Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,1,0);
+	}
+      } else {
+	for (int ss = myblock; ss < myblock+myn; ++ss) {
+	  int sU = ss;
+	  int sF = LLs * sU;
+	  Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,1,0);
+	}
+      }
+	ptime = usecond() - start;
     }
-  } else {
-#pragma omp for
-    for (int ss = 0; ss < U._grid->oSites(); ss++) {
-      int sU = ss;
-      int sF = LLs * sU;
-      Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,1,0);
+    {
+      double start = usecond();
+      st.CommunicateThreaded();
+      ctime = usecond() - start;
     }
   }
-#pragma omp single
-  DhopComputeTime+=usecond();
-
-#pragma omp taskwait 
-
-#pragma omp single
-  DhopCommTime+=usecond();
-  } // Closes parallel region and waits the comms (I hope)
-
+  DhopCommTime += ctime;
+  DhopComputeTime+=ptime;
 
   DhopFaceTime-=usecond();
   st.CommsMerge(compressor);

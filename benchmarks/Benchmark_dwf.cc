@@ -489,7 +489,7 @@ int main (int argc, char ** argv)
 
   //assert(norm2(src_e)<1.0e-4);
   //assert(norm2(src_o)<1.0e-4);
-
+  exit(0);
   Grid_finalize();
 }
 

@@ -359,7 +359,11 @@ void Grid_init(int *argc,char ***argv)
   if( GridCmdOptionExists(*argv,*argv+*argc,"--lebesgue") ){
     LebesgueOrder::UseLebesgueOrder=1;
   }
-
+  CartesianCommunicator::nCommThreads = -1;
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--commthreads") ){
+    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--commthreads");
+    GridCmdOptionInt(arg,CartesianCommunicator::nCommThreads);
+  }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--cacheblocking") ){
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--cacheblocking");
     GridCmdOptionIntVector(arg,LebesgueOrder::Block);

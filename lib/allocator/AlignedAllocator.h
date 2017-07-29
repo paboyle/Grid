@@ -92,11 +92,15 @@ public:
     size_type bytes = __n*sizeof(_Tp);
 
     _Tp *ptr = (_Tp *) PointerCache::Lookup(bytes);
-    
+    //////////////////
+    // Hack 2MB align; could make option probably doesn't need configurability
+    //////////////////
+//define GRID_ALLOC_ALIGN (128)
+#define GRID_ALLOC_ALIGN (2*1024*1024)
 #ifdef HAVE_MM_MALLOC_H
-    if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) _mm_malloc(bytes,128);
+    if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) _mm_malloc(bytes,GRID_ALLOC_ALIGN);
 #else
-    if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) memalign(128,bytes);
+    if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) memalign(GRID_ALLOC_ALIGN,bytes);
 #endif
 
     return ptr;

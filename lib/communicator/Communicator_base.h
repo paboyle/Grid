@@ -54,8 +54,9 @@ class CartesianCommunicator {
   // 128MB shared memory for comms enought for 48^4 local vol comms
   // Give external control (command line override?) of this
 
-  static const int      MAXLOG2RANKSPERNODE = 16;            
-  static uint64_t MAX_MPI_SHM_BYTES;
+  static const int MAXLOG2RANKSPERNODE = 16;            
+  static uint64_t  MAX_MPI_SHM_BYTES;
+  static int       nCommThreads;
 
   // Communicator should know nothing of the physics grid, only processor grid.
   int              _Nprocessors;     // How many in all
@@ -125,7 +126,7 @@ class CartesianCommunicator {
   enum CommunicatorPolicy_t { CommunicatorPolicyConcurrent, CommunicatorPolicySequential };
   static CommunicatorPolicy_t CommunicatorPolicy;
   static void SetCommunicatorPolicy(CommunicatorPolicy_t policy ) { CommunicatorPolicy = policy; }
-
+  
   size_t heap_top;
   size_t heap_bytes;
 
@@ -215,12 +216,19 @@ class CartesianCommunicator {
   
   void SendToRecvFromComplete(std::vector<CommsRequest_t> &waitall);
 
+  double StencilSendToRecvFrom(void *xmit,
+			       int xmit_to_rank,
+			       void *recv,
+			       int recv_from_rank,
+			       int bytes,int dir);
+
   double StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 				    void *xmit,
 				    int xmit_to_rank,
 				    void *recv,
 				    int recv_from_rank,
 				    int bytes,int dir);
+  
   
   void StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int i);
   void StencilBarrier(void);
