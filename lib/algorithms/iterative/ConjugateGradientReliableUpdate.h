@@ -47,6 +47,11 @@ namespace Grid {
     LinearOperatorBase<FieldD> &Linop_d;
     GridBase* SinglePrecGrid;
     RealD Delta; //reliable update parameter
+
+    //Optional ability to switch to a different linear operator once the tolerance reaches a certain point. Useful for single/half -> single/single
+    LinearOperatorBase<FieldF> *Linop_fallback;
+    RealD fallback_transition_tol;
+
     
     ConjugateGradientReliableUpdate(RealD tol, Integer maxit, RealD _delta, GridBase* _sp_grid, LinearOperatorBase<FieldF> &_Linop_f, LinearOperatorBase<FieldD> &_Linop_d, bool err_on_no_conv = true)
       : Tolerance(tol),
@@ -56,10 +61,19 @@ namespace Grid {
 	Linop_d(_Linop_d),
 	SinglePrecGrid(_sp_grid),
         ErrorOnNoConverge(err_on_no_conv),
-	DoFinalCleanup(true)
+	DoFinalCleanup(true),
+	Linop_fallback(NULL)
     {};
 
+    void setFallbackLinop(LinearOperatorBase<FieldF> &_Linop_fallback, const RealD _fallback_transition_tol){
+      Linop_fallback = &_Linop_fallback;
+      fallback_transition_tol = _fallback_transition_tol;      
+    }
+    
     void operator()(const FieldD &src, FieldD &psi) {
+      LinearOperatorBase<FieldF> *Linop_f_use = &Linop_f;
+      bool using_fallback = false;
+      
       psi.checkerboard = src.checkerboard;
       conformable(psi, src);
 
@@ -93,6 +107,8 @@ namespace Grid {
 
       // Check if guess is really REALLY good :)
       if (cp <= rsq) {
+	std::cout << GridLogMessage << "ConjugateGradientReliableUpdate guess was REALLY good\n";
+	std::cout << GridLogMessage << "\tComputed residual " << sqrt(cp / ssq)<<std::endl;
 	return;
       }
 
@@ -124,7 +140,7 @@ namespace Grid {
 	c = cp;
 
 	MatrixTimer.Start();
-	Linop_f.HermOpAndNorm(p_f, mmp_f, d, qq);
+	Linop_f_use->HermOpAndNorm(p_f, mmp_f, d, qq);
 	MatrixTimer.Stop();
 
 	LinalgTimer.Start();
@@ -206,12 +222,21 @@ namespace Grid {
 	  cp = norm2(r);
 	  MaxResidSinceLastRelUp = cp;
 
+	  b = cp/c;
+	  
 	  std::cout << GridLogMessage << "ConjugateGradientReliableUpdate new residual " << cp << std::endl;
 	  
 	  l = l+1;
 	}
 
 	p_f = p_f * b + r_f; //update search vector after reliable update appears to help convergence
+
+	if(!using_fallback && Linop_fallback != NULL && cp < fallback_transition_tol){
+	  std::cout << GridLogMessage << "ConjugateGradientReliableUpdate switching to fallback linear operator on iteration " << k << " at residual " << cp << std::endl;
+	  Linop_f_use = Linop_fallback;
+	  using_fallback = true;
+	}
+
 	
       }
       std::cout << GridLogMessage << "ConjugateGradientReliableUpdate did NOT converge"
