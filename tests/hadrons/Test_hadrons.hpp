@@ -270,6 +270,26 @@ inline void makeConservedSequentialSource(Application &application,
 }
 
 /*******************************************************************************
+ * Name: makeNoiseSource
+ * Parameters: application - main application that stores modules.
+ *             srcName     - name of source module to create.
+ *             tA          - lower source timeslice limit.
+ *             tB          - upper source timeslice limit.
+ * Returns: None.
+ ******************************************************************************/
+inline void makeNoiseSource(Application &application, std::string &srcName,
+                            unsigned int tA, unsigned int tB)
+{
+    if (!(Environment::getInstance().hasModule(srcName)))
+    {
+        MSource::Z2::Par noisePar;
+        noisePar.tA = tA;
+        noisePar.tB = tB;
+        application.createModule<MSource::Z2>(srcName, noisePar);
+    }
+ }
+
+/*******************************************************************************
  * Name: makeWallSource
  * Purpose: Construct wall source and add to application module.
  * Parameters: application - main application that stores modules.
@@ -292,26 +312,46 @@ inline void makeWallSource(Application &application, std::string &srcName,
 }
 
 /*******************************************************************************
- * Name: makeWallSink
- * Purpose: Wall sink smearing of a propagator.
+ * Name: makePointSink
+ * Purpose: Create function for point sink smearing of a propagator.
  * Parameters: application - main application that stores modules.
  *             propName    - name of input propagator.
- *             wallName    - name of smeared propagator.
+ *             sinkFnct    - name of output sink smearing module.
  *             mom         - momentum insertion (default is zero).
  * Returns: None.
  ******************************************************************************/
-inline void makeWallSink(Application &application, std::string &propName,
-                         std::string &wallName, std::string mom = ZERO_MOM)
+inline void makePointSink(Application &application, std::string &sinkFnct,
+                          std::string mom = ZERO_MOM)
+{
+    // If the sink function already exists, don't make it again.
+    if (!(Environment::getInstance().hasModule(sinkFnct)))
+    {
+        MSink::Point::Par pointPar;
+        pointPar.mom = mom;
+        application.createModule<MSink::Point>(sinkFnct, pointPar);
+    }
+}
+
+/*******************************************************************************
+ * Name: sinkSmear
+ * Purpose: Perform sink smearing of a propagator.
+ * Parameters: application - main application that stores modules.
+ *             sinkFnct    - sink smearing module.
+ *             propName    - propagator to smear.
+ *             smearedProp - name of output smeared propagator.
+ * Returns: None.
+ ******************************************************************************/
+inline void sinkSmear(Application &application, std::string &sinkFnct,
+                      std::string &propName, std::string &smearedProp)
 {
     // If the propagator has already been smeared, don't smear it again.
-    // Temporarily removed, strategy for sink smearing likely to change.
-    /*if (!(Environment::getInstance().hasModule(wallName)))
+    if (!(Environment::getInstance().hasModule(smearedProp)))
     {
-        MSink::Wall::Par wallPar;
-        wallPar.q   = propName;
-        wallPar.mom = mom;
-        application.createModule<MSink::Wall>(wallName, wallPar);
-    }*/
+        MSink::Smear::Par smearPar;
+        smearPar.q    = propName;
+        smearPar.sink = sinkFnct;
+        application.createModule<MSink::Smear>(smearedProp, smearPar);
+    }
 }
 
 /*******************************************************************************
@@ -398,16 +438,18 @@ inline void mesonContraction(Application &application,
  * Purpose: Create gamma3pt contraction module and add to application module.
  * Parameters: application - main application that stores modules.
  *             npt         - specify n-point correlator (for labelling).
- *             q1          - quark propagator 1.
+ *             q1          - quark propagator 1, sink smeared.
  *             q2          - quark propagator 2.
  *             q3          - quark propagator 3.
  *             label       - unique label to construct module name.
+ *             tSnk        - sink position of sink for q1.
  *             gamma       - gamma insertions between q2 and q3.
  * Returns: None.
  ******************************************************************************/
 inline void gamma3ptContraction(Application &application, unsigned int npt, 
                                 std::string &q1, std::string &q2,
-                                std::string &q3, std::string &label, 
+                                std::string &q3, std::string &label,
+                                unsigned int tSnk = 0,
                                 Gamma::Algebra gamma = Gamma::Algebra::Identity)
 {
     std::string modName = std::to_string(npt) + "pt_" + label;
@@ -418,6 +460,7 @@ inline void gamma3ptContraction(Application &application, unsigned int npt,
         gamma3ptPar.q1 = q1;
         gamma3ptPar.q2 = q2;
         gamma3ptPar.q3 = q3;
+        gamma3ptPar.tSnk = tSnk;
         gamma3ptPar.gamma = gamma;
         application.createModule<MContraction::Gamma3pt>(modName, gamma3ptPar);
     }
@@ -434,13 +477,14 @@ inline void gamma3ptContraction(Application &application, unsigned int npt,
  *             q3          - quark propagator 3.
  *             q4          - quark propagator 4.
  *             label       - unique label to construct module name.
+ *             tSnk        - time position of sink (for sink smearing).
  * Returns: None.
  ******************************************************************************/
 #define HW_CONTRACTION(top) \
 inline void weakContraction##top(Application &application, unsigned int npt,\
                                  std::string &q1, std::string &q2, \
                                  std::string &q3, std::string &q4, \
-                                 std::string &label)\
+                                 std::string &label, unsigned int tSnk = 0)\
 {\
     std::string modName = std::to_string(npt) + "pt_" + label;\
     if (!(Environment::getInstance().hasModule(modName)))\
@@ -451,6 +495,7 @@ inline void weakContraction##top(Application &application, unsigned int npt,\
         weakPar.q2 = q2;\
         weakPar.q3 = q3;\
         weakPar.q4 = q4;\
+        weakPar.tSnk = tSnk;\
         application.createModule<MContraction::WeakHamiltonian##top>(modName, weakPar);\
     }\
 }

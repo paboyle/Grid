@@ -31,6 +31,7 @@ modules_hpp =\
   Modules/MScalar/FreeProp.hpp \
   Modules/MScalar/Scalar.hpp \
   Modules/MSink/Point.hpp \
+  Modules/MSink/Smear.hpp \
   Modules/MSolver/RBPrecCG.hpp \
   Modules/MSource/Point.hpp \
   Modules/MSource/SeqConserved.hpp \
