@@ -12,6 +12,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
 Author: paboyle <paboyle@ph.ed.ac.uk>
 Author: Guido Cossu <guido.cossu@ed.ac.uk>
+Author: Andrew Lawson <andrew.lawson1991@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -676,6 +677,21 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHw(FermionField &out,const Fe
  * to make a conserved current sink or inserting the conserved current 
  * sequentially.
  ******************************************************************************/
+
+// Helper macro to reverse Simd vector. Fixme: slow, generic implementation.
+#define REVERSE_LS(qSite, qSiteRev, Nsimd) \
+{ \
+    std::vector<typename SitePropagator::scalar_object> qSiteVec(Nsimd); \
+    extract(qSite, qSiteVec); \
+    for (int i = 0; i < Nsimd / 2; ++i) \
+    { \
+        typename SitePropagator::scalar_object tmp = qSiteVec[i]; \
+        qSiteVec[i] = qSiteVec[Nsimd - i - 1]; \
+        qSiteVec[Nsimd - i - 1] = tmp; \
+    } \
+    merge(qSiteRev, qSiteVec); \
+}
+
 template <class Impl>
 void WilsonFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
                                                      PropagatorField &q_in_2,
@@ -687,6 +703,7 @@ void WilsonFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
     conformable(q_in_1._grid, q_in_2._grid);
     conformable(_FourDimGrid, q_out._grid);
     PropagatorField tmp1(FermionGrid()), tmp2(FermionGrid());
+    unsigned int LLs = q_in_1._grid->_rdimensions[0];
     q_out = zero;
 
     // Forward, need q1(x + mu, s), q2(x, Ls - 1 - s). Backward, need q1(x, s), 
@@ -695,18 +712,33 @@ void WilsonFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
     tmp2 = Cshift(q_in_2, mu + 1, 1);
     parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
     {
-        unsigned int sF1 = sU * Ls;
-        unsigned int sF2 = (sU + 1) * Ls - 1;
-        for (int s = 0; s < Ls; ++s)
+        unsigned int sF1 = sU * LLs;
+        unsigned int sF2 = (sU + 1) * LLs - 1;
+
+        for (unsigned int s = 0; s < LLs; ++s)
         {
-            bool axial_sign = ((curr_type == Current::Axial) && (s < (Ls / 2))) ? \
-                              true : false;
+            bool axial_sign = ((curr_type == Current::Axial) && \
+                               (s < (LLs / 2)));
+            SitePropagator qSite2, qmuSite2;
+
+            // If vectorised in 5th dimension, reverse q2 vector to match up
+            // sites correctly.
+            if (Impl::LsVectorised)
+            {
+                REVERSE_LS(q_in_2._odata[sF2], qSite2, Ls / LLs);
+                REVERSE_LS(tmp2._odata[sF2], qmuSite2, Ls / LLs);
+            }
+            else
+            {
+                qSite2   = q_in_2._odata[sF2];
+                qmuSite2 = tmp2._odata[sF2];
+            }
             Kernels::ContractConservedCurrentSiteFwd(tmp1._odata[sF1], 
-                                                     q_in_2._odata[sF2], 
+                                                     qSite2, 
                                                      q_out._odata[sU],
                                                      Umu, sU, mu, axial_sign);
             Kernels::ContractConservedCurrentSiteBwd(q_in_1._odata[sF1],
-                                                     tmp2._odata[sF2],
+                                                     qmuSite2,
                                                      q_out._odata[sU],
                                                      Umu, sU, mu, axial_sign);
             sF1++;
@@ -732,6 +764,7 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
                     tmp(FermionGrid());
     Complex i(0.0, 1.0);
     int tshift = (mu == Tp) ? 1 : 0;
+    unsigned int LLs = q_in._grid->_rdimensions[0];
 
     // Momentum projection.
     ph = zero;
@@ -764,11 +797,10 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 
         if (timeSlices > 0)
         {
-            unsigned int sF = sU * Ls;
-            for (unsigned int s = 0; s < Ls; ++s)
+            unsigned int sF = sU * LLs;
+            for (unsigned int s = 0; s < LLs; ++s)
             {
-                bool axial_sign = ((curr_type == Current::Axial) && (s < (Ls / 2))) ? \
-                                  true : false;
+                bool axial_sign = ((curr_type == Current::Axial) && (s < (LLs / 2)));
                 Kernels::SeqConservedCurrentSiteFwd(tmpFwd._odata[sF], 
                                                     q_out._odata[sF], Umu, sU,
                                                     mu, t_mask, axial_sign);
@@ -783,11 +815,10 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 
         if (timeSlices > 0)
         {
-            unsigned int sF = sU * Ls;
-            for (unsigned int s = 0; s < Ls; ++s)
+            unsigned int sF = sU * LLs;
+            for (unsigned int s = 0; s < LLs; ++s)
             {
-                bool axial_sign = ((curr_type == Current::Axial) && (s < (Ls / 2))) ? \
-                                  true : false;
+                bool axial_sign = ((curr_type == Current::Axial) && (s < (LLs / 2)));
                 Kernels::SeqConservedCurrentSiteBwd(tmpBwd._odata[sF], 
                                                     q_out._odata[sF], Umu, sU,
                                                     mu, t_mask, axial_sign);
