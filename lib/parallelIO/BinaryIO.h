@@ -98,35 +98,39 @@ class BinaryIO {
 
     NerscChecksum(grid,scalardata,nersc_csum);
   }
-  
-  template<class fobj> static inline void NerscChecksum(GridBase *grid,std::vector<fobj> &fbuf,uint32_t &nersc_csum)
+
+  template <class fobj>
+  static inline void NerscChecksum(GridBase *grid, std::vector<fobj> &fbuf, uint32_t &nersc_csum)
   {
-    const uint64_t size32 = sizeof(fobj)/sizeof(uint32_t);
+    const uint64_t size32 = sizeof(fobj) / sizeof(uint32_t);
 
-
-    uint64_t lsites              =grid->lSites();
-    if (fbuf.size()==1) {
-      lsites=1;
+    uint64_t lsites = grid->lSites();
+    if (fbuf.size() == 1)
+    {
+      lsites = 1;
     }
 
-#pragma omp parallel
-    { 
-      uint32_t nersc_csum_thr=0;
+    #pragma omp parallel
+    {
+      uint32_t nersc_csum_thr = 0;
 
-#pragma omp for
-      for(uint64_t local_site=0;local_site<lsites;local_site++){
-	uint32_t * site_buf = (uint32_t *)&fbuf[local_site];
-	for(uint64_t j=0;j<size32;j++){
-	  nersc_csum_thr=nersc_csum_thr+site_buf[j];
-	}
+      #pragma omp for
+      for (uint64_t local_site = 0; local_site < lsites; local_site++)
+      {
+        uint32_t *site_buf = (uint32_t *)&fbuf[local_site];
+        for (uint64_t j = 0; j < size32; j++)
+        {
+          nersc_csum_thr = nersc_csum_thr + site_buf[j];
+        }
       }
 
-#pragma omp critical
+      #pragma omp critical
       {
-	nersc_csum  += nersc_csum_thr;
+        nersc_csum += nersc_csum_thr;
       }
     }
   }
+
   template<class fobj> static inline void ScidacChecksum(GridBase *grid,std::vector<fobj> &fbuf,uint32_t &scidac_csuma,uint32_t &scidac_csumb)
   {
     const uint64_t size32 = sizeof(fobj)/sizeof(uint32_t);
@@ -266,7 +270,7 @@ class BinaryIO {
     grid->Barrier();
     GridStopWatch timer; 
     GridStopWatch bstimer;
-
+    
     nersc_csum=0;
     scidac_csuma=0;
     scidac_csumb=0;
@@ -362,18 +366,22 @@ class BinaryIO {
 #else 
 	assert(0);
 #endif
-      } else { 
-	std::cout<< GridLogMessage<< "C++ read I/O "<< file<<" : "
-		 << iodata.size()*sizeof(fobj)<<" bytes"<<std::endl;
-	std::ifstream fin;
-	fin.open(file,std::ios::binary|std::ios::in);
-	if ( control & BINARYIO_MASTER_APPEND )  {
-	  fin.seekg(-sizeof(fobj),fin.end);
-	} else { 
-	  fin.seekg(offset+myrank*lsites*sizeof(fobj));
-	}
-	fin.read((char *)&iodata[0],iodata.size()*sizeof(fobj));assert( fin.fail()==0);
-	fin.close();
+      } else {
+        std::cout << GridLogMessage << "C++ read I/O " << file << " : "
+                  << iodata.size() * sizeof(fobj) << " bytes" << std::endl;
+        std::ifstream fin;
+        fin.open(file, std::ios::binary | std::ios::in);
+        if (control & BINARYIO_MASTER_APPEND)
+        {
+          fin.seekg(-sizeof(fobj), fin.end);
+        }
+        else
+        {
+          fin.seekg(offset + myrank * lsites * sizeof(fobj));
+        }
+        fin.read((char *)&iodata[0], iodata.size() * sizeof(fobj));
+        assert(fin.fail() == 0);
+        fin.close();
       }
       timer.Stop();
 
@@ -416,19 +424,47 @@ class BinaryIO {
 	assert(0);
 #endif
       } else { 
-	std::ofstream fout; fout.open(file,std::ios::binary|std::ios::out|std::ios::in);
-	std::cout<< GridLogMessage<< "C++ write I/O "<< file<<" : "
-		 << iodata.size()*sizeof(fobj)<<" bytes"<<std::endl;
-	if ( control & BINARYIO_MASTER_APPEND )  {
+        
+	std::ofstream fout; 
+  fout.exceptions ( std::fstream::failbit | std::fstream::badbit );
+  try {
+    fout.open(file,std::ios::binary|std::ios::out|std::ios::in);
+  } catch (const std::fstream::failure& exc) {
+    std::cout << GridLogError << "Error in opening the file " << file << " for output" <<std::endl;
+    std::cout << GridLogError << "Exception description: " << exc.what() << std::endl;
+    std::cout << GridLogError << "Probable cause: wrong path, inaccessible location "<< std::endl;
+    #ifdef USE_MPI_IO
+    MPI_Abort(MPI_COMM_WORLD,1);
+    #else
+    exit(1);
+    #endif
+  }
+	std::cout << GridLogMessage<< "C++ write I/O "<< file<<" : "
+		        << iodata.size()*sizeof(fobj)<<" bytes"<<std::endl;
+	
+  if ( control & BINARYIO_MASTER_APPEND )  {
 	  fout.seekp(0,fout.end);
 	} else {
 	  fout.seekp(offset+myrank*lsites*sizeof(fobj));
 	}
-	fout.write((char *)&iodata[0],iodata.size()*sizeof(fobj));assert( fout.fail()==0);
+  
+  try {
+  	fout.write((char *)&iodata[0],iodata.size()*sizeof(fobj));//assert( fout.fail()==0);
+  }
+  catch (const std::fstream::failure& exc) {
+    std::cout << "Exception in writing file " << file << std::endl;
+    std::cout << GridLogError << "Exception description: "<< exc.what() << std::endl;
+    #ifdef USE_MPI_IO
+    MPI_Abort(MPI_COMM_WORLD,1);
+    #else
+    exit(1);
+    #endif
+  }
+
 	fout.close();
-      }
-      timer.Stop();
-    }
+  }
+  timer.Stop();
+  }
 
     std::cout<<GridLogMessage<<"IOobject: ";
     if ( control & BINARYIO_READ) std::cout << " read  ";
@@ -442,11 +478,14 @@ class BinaryIO {
     //////////////////////////////////////////////////////////////////////////////
     // Safety check
     //////////////////////////////////////////////////////////////////////////////
-    grid->Barrier();
-    grid->GlobalSum(nersc_csum);
-    grid->GlobalXOR(scidac_csuma);
-    grid->GlobalXOR(scidac_csumb);
-    grid->Barrier();
+    // if the data size is 1 we do not want to sum over the MPI ranks
+    if (iodata.size() != 1){
+      grid->Barrier();
+      grid->GlobalSum(nersc_csum);
+      grid->GlobalXOR(scidac_csuma);
+      grid->GlobalXOR(scidac_csumb);
+      grid->Barrier();
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -546,9 +585,9 @@ class BinaryIO {
     int gsites = grid->gSites();
     int lsites = grid->lSites();
 
-    uint32_t nersc_csum_tmp;
-    uint32_t scidac_csuma_tmp;
-    uint32_t scidac_csumb_tmp;
+    uint32_t nersc_csum_tmp   = 0;
+    uint32_t scidac_csuma_tmp = 0;
+    uint32_t scidac_csumb_tmp = 0;
 
     GridStopWatch timer;
 
