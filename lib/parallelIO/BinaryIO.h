@@ -413,13 +413,33 @@ class BinaryIO {
       timer.Start();
       if ( (control & BINARYIO_LEXICOGRAPHIC) && (nrank > 1) ) {
 #ifdef USE_MPI_IO
-	std::cout<< GridLogMessage<< "MPI write I/O "<< file<< std::endl;
-	ierr=MPI_File_open(grid->communicator,(char *) file.c_str(), MPI_MODE_RDWR|MPI_MODE_CREATE,MPI_INFO_NULL, &fh); assert(ierr==0);
-	ierr=MPI_File_set_view(fh, disp, mpiObject, fileArray, "native", MPI_INFO_NULL);                        assert(ierr==0);
-	ierr=MPI_File_write_all(fh, &iodata[0], 1, localArray, &status);                                        assert(ierr==0);
-	MPI_File_close(&fh);
-	MPI_Type_free(&fileArray);
-	MPI_Type_free(&localArray);
+        std::cout << GridLogMessage << "MPI write I/O " << file << std::endl;
+        ierr = MPI_File_open(grid->communicator, (char *)file.c_str(), MPI_MODE_RDWR | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
+        std::cout << GridLogMessage << "Checking for errors" << std::endl;
+        if (ierr != MPI_SUCCESS)
+        {
+          char error_string[BUFSIZ];
+          int length_of_error_string, error_class;
+
+          MPI_Error_class(ierr, &error_class);
+          MPI_Error_string(error_class, error_string, &length_of_error_string);
+          fprintf(stderr, "%3d: %s\n", myrank, error_string);
+          MPI_Error_string(ierr, error_string, &length_of_error_string);
+          fprintf(stderr, "%3d: %s\n", myrank, error_string);
+          MPI_Abort(MPI_COMM_WORLD, 1); //assert(ierr == 0);
+        }
+
+        std::cout << GridLogDebug << "MPI read I/O set view " << file << std::endl;
+        ierr = MPI_File_set_view(fh, disp, mpiObject, fileArray, "native", MPI_INFO_NULL);
+        assert(ierr == 0);
+
+        std::cout << GridLogDebug << "MPI read I/O write all " << file << std::endl;
+        ierr = MPI_File_write_all(fh, &iodata[0], 1, localArray, &status);
+        assert(ierr == 0);
+
+        MPI_File_close(&fh);
+        MPI_Type_free(&fileArray);
+        MPI_Type_free(&localArray);
 #else 
 	assert(0);
 #endif
