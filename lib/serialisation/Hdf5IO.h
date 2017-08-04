@@ -54,7 +54,7 @@ namespace Grid
   public:
     Hdf5Reader(const std::string &fileName);
     virtual ~Hdf5Reader(void) = default;
-    void push(const std::string &s);
+    bool push(const std::string &s);
     void pop(void);
     template <typename U>
     void readDefault(const std::string &s, U &output);

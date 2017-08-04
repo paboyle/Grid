@@ -11,6 +11,7 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -117,49 +118,19 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
     
   // Allocate the required comms buffer
   ImportGauge(_Umu);
+  // Build lists of exterior only nodes
+  int LLs = FiveDimGrid._rdimensions[0];
+  int vol4;
+  vol4=FourDimGrid.oSites();
+  Stencil.BuildSurfaceList(LLs,vol4);
+  vol4=FourDimRedBlackGrid.oSites();
+  StencilEven.BuildSurfaceList(LLs,vol4);
+   StencilOdd.BuildSurfaceList(LLs,vol4);
+
+  std::cout << GridLogMessage << " SurfaceLists "<< Stencil.surface_list.size()
+                       <<" " << StencilEven.surface_list.size()<<std::endl;
+
 }
-  /*
-template<class Impl>
-WilsonFermion5D<Impl>::WilsonFermion5D(int simd,GaugeField &_Umu,
-               GridCartesian         &FiveDimGrid,
-               GridRedBlackCartesian &FiveDimRedBlackGrid,
-               GridCartesian         &FourDimGrid,
-               RealD _M5,const ImplParams &p) :
-{
-  int nsimd = Simd::Nsimd();
-
-  // some assertions
-  assert(FiveDimGrid._ndimension==5);
-  assert(FiveDimRedBlackGrid._ndimension==5);
-  assert(FiveDimRedBlackGrid._checker_dim==0); // Checkerboard the s-direction
-  assert(FourDimGrid._ndimension==4);
-
-  // Dimension zero of the five-d is the Ls direction
-  Ls=FiveDimGrid._fdimensions[0];
-  assert(FiveDimGrid._processors[0]         ==1);
-  assert(FiveDimGrid._simd_layout[0]        ==nsimd);
-
-  assert(FiveDimRedBlackGrid._fdimensions[0]==Ls);
-  assert(FiveDimRedBlackGrid._processors[0] ==1);
-  assert(FiveDimRedBlackGrid._simd_layout[0]==nsimd);
-
-  // Other dimensions must match the decomposition of the four-D fields 
-  for(int d=0;d<4;d++){
-    assert(FiveDimRedBlackGrid._fdimensions[d+1]==FourDimGrid._fdimensions[d]);
-    assert(FiveDimRedBlackGrid._processors[d+1] ==FourDimGrid._processors[d]);
-
-    assert(FourDimGrid._simd_layout[d]=1);
-    assert(FiveDimRedBlackGrid._simd_layout[d+1]==1);
-
-    assert(FiveDimGrid._fdimensions[d+1]        ==FourDimGrid._fdimensions[d]);
-    assert(FiveDimGrid._processors[d+1]         ==FourDimGrid._processors[d]);
-    assert(FiveDimGrid._simd_layout[d+1]        ==FourDimGrid._simd_layout[d]);
-  }
-
-  {
-  }
-}  
-  */
      
 template<class Impl>
 void WilsonFermion5D<Impl>::Report(void)
@@ -296,6 +267,8 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
   DerivCommTime+=usecond();
 
   Atilde=A;
+  int LLs = B._grid->_rdimensions[0];
+
 
   DerivComputeTime-=usecond();
   for (int mu = 0; mu < Nd; mu++) {
@@ -325,6 +298,9 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
         ////////////////////////////
       }
     }
+    ////////////////////////////
+    // spin trace outer product
+    ////////////////////////////
     DerivDhopComputeTime += usecond();
     Impl::InsertForce5D(mat, Btilde, Atilde, mu);
   }
@@ -333,13 +309,14 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopDeriv(GaugeField &mat,
-				      const FermionField &A,
-				      const FermionField &B,
-				      int dag)
+                                      const FermionField &A,
+                                      const FermionField &B,
+                                      int dag)
 {
   conformable(A._grid,FermionGrid());  
   conformable(A._grid,B._grid);
-  conformable(GaugeGrid(),mat._grid);
+
+  //conformable(GaugeGrid(),mat._grid);// this is not general! leaving as a comment
 
   mat.checkerboard = A.checkerboard;
 
@@ -348,12 +325,11 @@ void WilsonFermion5D<Impl>::DhopDeriv(GaugeField &mat,
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
-					const FermionField &A,
-					const FermionField &B,
-					int dag)
+                                        const FermionField &A,
+                                        const FermionField &B,
+                                        int dag)
 {
   conformable(A._grid,FermionRedBlackGrid());
-  conformable(GaugeRedBlackGrid(),mat._grid);
   conformable(A._grid,B._grid);
 
   assert(B.checkerboard==Odd);
@@ -366,12 +342,11 @@ void WilsonFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
-					const FermionField &A,
-					const FermionField &B,
-					int dag)
+                                        const FermionField &A,
+                                        const FermionField &B,
+                                        int dag)
 {
   conformable(A._grid,FermionRedBlackGrid());
-  conformable(GaugeRedBlackGrid(),mat._grid);
   conformable(A._grid,B._grid);
 
   assert(B.checkerboard==Even);
@@ -383,8 +358,8 @@ void WilsonFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
-					 DoubledGaugeField & U,
-					 const FermionField &in, FermionField &out,int dag)
+                                         DoubledGaugeField & U,
+                                         const FermionField &in, FermionField &out,int dag)
 {
   DhopTotalTime-=usecond();
 #ifdef GRID_OMP
@@ -395,6 +370,7 @@ void WilsonFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
     DhopInternalSerialComms(st,lo,U,in,out,dag);
   DhopTotalTime+=usecond();
 }
+
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, LebesgueOrder &lo,
@@ -409,12 +385,21 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
 
   int LLs = in._grid->_rdimensions[0];
   int len =  U._grid->oSites();
-  
+
   DhopFaceTime-=usecond();
   st.HaloExchangeOptGather(in,compressor);
   DhopFaceTime+=usecond();
   std::vector<std::vector<CommsRequest_t> > reqs;
 
+  // Rely on async comms; start comms before merge of local data
+  DhopCommTime-=usecond();
+  st.CommunicateBegin(reqs);
+
+  DhopFaceTime-=usecond();
+  st.CommsMergeSHM(compressor);
+  DhopFaceTime+=usecond();
+
+  // Perhaps use omp task and region
 #pragma omp parallel 
   { 
     int nthreads = omp_get_num_threads();
@@ -425,8 +410,6 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
     int sF = LLs * myoff;
 
     if ( me == 0 ) {
-      DhopCommTime-=usecond();
-      st.CommunicateBegin(reqs);
       st.CommunicateComplete(reqs);
       DhopCommTime+=usecond();
     } else { 
@@ -439,28 +422,37 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   }
 
   DhopFaceTime-=usecond();
-  st.CommsMerge();
+  st.CommsMerge(compressor);
   DhopFaceTime+=usecond();
 
-#pragma omp parallel 
-  {
-    int nthreads = omp_get_num_threads();
-    int me = omp_get_thread_num();
-    int myoff, mywork;
-
-    GridThread::GetWork(len,me,mywork,myoff,nthreads);
-    int sF = LLs * myoff;
-
-    // Exterior links in stencil
-    if ( me==0 ) DhopComputeTime2-=usecond();
-    if (dag == DaggerYes) Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,myoff,LLs,mywork,in,out,0,1);
-    else                  Kernels::DhopSite   (st,lo,U,st.CommBuf(),sF,myoff,LLs,mywork,in,out,0,1);
-    if ( me==0 ) DhopComputeTime2+=usecond();
-  }// end parallel region
+  // Load imbalance alert. Should use dynamic schedule OMP for loop
+  // Perhaps create a list of only those sites with face work, and 
+  // load balance process the list.
+  DhopComputeTime2-=usecond();
+  if (dag == DaggerYes) {
+    int sz=st.surface_list.size();
+    parallel_for (int ss = 0; ss < sz; ss++) {
+      int sU = st.surface_list[ss];
+      int sF = LLs * sU;
+      Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,0,1);
+    }
+  } else {
+    int sz=st.surface_list.size();
+    parallel_for (int ss = 0; ss < sz; ss++) {
+      int sU = st.surface_list[ss];
+      int sF = LLs * sU;
+      Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,0,1);
+    }
+  }
+  DhopComputeTime2+=usecond();
 #else 
   assert(0);
 #endif
+
 }
+
+
+
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOrder &lo,
 					 DoubledGaugeField & U,
@@ -678,7 +670,6 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHw(FermionField &out,const Fe
     out = num*denom;
 
 }
-
 
 FermOpTemplateInstantiate(WilsonFermion5D);
 GparityFermOpTemplateInstantiate(WilsonFermion5D);

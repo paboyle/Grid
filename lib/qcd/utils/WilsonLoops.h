@@ -54,14 +54,26 @@ public:
     // resolution throughout the usage in this file, and rather defeats the
     // purpose of deriving
     // from Gimpl.
+    /*
     plaq = Gimpl::CovShiftBackward(
         U[mu], mu, Gimpl::CovShiftBackward(
                        U[nu], nu, Gimpl::CovShiftForward(U[mu], mu, U[nu])));
+                       */
+    // _
+    //|< _|
+    plaq = Gimpl::CovShiftForward(U[mu],mu,
+           Gimpl::CovShiftForward(U[nu],nu,
+           Gimpl::CovShiftBackward(U[mu],mu,
+           Gimpl::CovShiftIdentityBackward(U[nu], nu))));
+
+
+
+
   }
   //////////////////////////////////////////////////
   // trace of directed plaquette oriented in mu,nu plane
   //////////////////////////////////////////////////
-  static void traceDirPlaquette(LatticeComplex &plaq,
+  static void traceDirPlaquette(ComplexField &plaq,
                                 const std::vector<GaugeMat> &U, const int mu,
                                 const int nu) {
     GaugeMat sp(U[0]._grid);
@@ -71,9 +83,9 @@ public:
   //////////////////////////////////////////////////
   // sum over all planes of plaquette
   //////////////////////////////////////////////////
-  static void sitePlaquette(LatticeComplex &Plaq,
+  static void sitePlaquette(ComplexField &Plaq,
                             const std::vector<GaugeMat> &U) {
-    LatticeComplex sitePlaq(U[0]._grid);
+    ComplexField sitePlaq(U[0]._grid);
     Plaq = zero;
     for (int mu = 1; mu < Nd; mu++) {
       for (int nu = 0; nu < mu; nu++) {
@@ -86,20 +98,21 @@ public:
   // sum over all x,y,z,t and over all planes of plaquette
   //////////////////////////////////////////////////
   static RealD sumPlaquette(const GaugeLorentz &Umu) {
-    std::vector<GaugeMat> U(4, Umu._grid);
-
+    std::vector<GaugeMat> U(Nd, Umu._grid);
+    // inefficient here
     for (int mu = 0; mu < Nd; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
     }
 
-    LatticeComplex Plaq(Umu._grid);
+    ComplexField Plaq(Umu._grid);
 
     sitePlaquette(Plaq, U);
-
-    TComplex Tp = sum(Plaq);
-    Complex p = TensorRemove(Tp);
+    auto Tp = sum(Plaq);
+    auto p = TensorRemove(Tp);
     return p.real();
   }
+
+
   //////////////////////////////////////////////////
   // average over all x,y,z,t and over all planes of plaquette
   //////////////////////////////////////////////////
@@ -114,17 +127,17 @@ public:
   // average over traced single links
   //////////////////////////////////////////////////
   static RealD linkTrace(const GaugeLorentz &Umu) {
-    std::vector<GaugeMat> U(4, Umu._grid);
+    std::vector<GaugeMat> U(Nd, Umu._grid);
 
-    LatticeComplex Tr(Umu._grid);
+    ComplexField Tr(Umu._grid);
     Tr = zero;
     for (int mu = 0; mu < Nd; mu++) {
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
       Tr = Tr + trace(U[mu]);
     }
 
-    TComplex Tp = sum(Tr);
-    Complex p = TensorRemove(Tp);
+    auto Tp = sum(Tr);
+    auto p = TensorRemove(Tp);
 
     double vol = Umu._grid->gSites();
 
@@ -139,7 +152,7 @@ public:
 
     GridBase *grid = Umu._grid;
 
-    std::vector<GaugeMat> U(4, grid);
+    std::vector<GaugeMat> U(Nd, grid);
     for (int d = 0; d < Nd; d++) {
       U[d] = PeekIndex<LorentzIndex>(Umu, d);
     }
@@ -175,6 +188,32 @@ public:
     }
   }
 
+
+// For the force term
+static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
+    GridBase *grid = Umu._grid;
+    std::vector<GaugeMat> U(Nd, grid);
+    for (int d = 0; d < Nd; d++) {
+      // this operation is taking too much time
+      U[d] = PeekIndex<LorentzIndex>(Umu, d);
+    }
+    staple = zero;
+    GaugeMat tmp1(grid);
+    GaugeMat tmp2(grid);
+
+    for (int nu = 0; nu < Nd; nu++) {
+      if (nu != mu) {
+        // this is ~10% faster than the Staple
+        tmp1 = Cshift(U[nu], mu, 1);
+        tmp2 = Cshift(U[mu], nu, 1);
+        staple += tmp1* adj(U[nu]*tmp2);
+        tmp2 = adj(U[mu]*tmp1)*U[nu];
+        staple += Cshift(tmp2, nu, -1);
+      }
+    }
+    staple = U[mu]*staple;
+}
+
   //////////////////////////////////////////////////
   // the sum over all staples on each site
   //////////////////////////////////////////////////
@@ -187,7 +226,6 @@ public:
       U[d] = PeekIndex<LorentzIndex>(Umu, d);
     }
     staple = zero;
-    GaugeMat tmp(grid);
 
     for (int nu = 0; nu < Nd; nu++) {
 
@@ -201,7 +239,7 @@ public:
         //      |
         //    __|
         //
-
+     
         staple += Gimpl::ShiftStaple(
             Gimpl::CovShiftForward(
                 U[nu], nu,
@@ -214,10 +252,10 @@ public:
         // |__
         //
         //
+
         staple += Gimpl::ShiftStaple(
             Gimpl::CovShiftBackward(U[nu], nu,
-                                    Gimpl::CovShiftBackward(U[mu], mu, U[nu])),
-            mu);
+                                    Gimpl::CovShiftBackward(U[mu], mu, U[nu])), mu);
       }
     }
   }
@@ -227,15 +265,12 @@ public:
   //////////////////////////////////////////////////
   static void StapleUpper(GaugeMat &staple, const GaugeLorentz &Umu, int mu,
                           int nu) {
-
-    staple = zero;
-
     if (nu != mu) {
       GridBase *grid = Umu._grid;
 
-      std::vector<GaugeMat> U(4, grid);
+      std::vector<GaugeMat> U(Nd, grid);
       for (int d = 0; d < Nd; d++) {
-        U[d] = PeekIndex<LorentzIndex>(Umu, d);
+        U[d] = PeekIndex<LorentzIndex>(Umu, d);// some redundant copies
       }
 
       // mu
@@ -247,7 +282,7 @@ public:
       //    __|
       //
 
-      staple += Gimpl::ShiftStaple(
+      staple = Gimpl::ShiftStaple(
           Gimpl::CovShiftForward(
               U[nu], nu,
               Gimpl::CovShiftBackward(
@@ -282,6 +317,7 @@ public:
           Gimpl::CovShiftBackward(U[nu], nu,
                                   Gimpl::CovShiftBackward(U[mu], mu, U[nu])),
           mu);
+
     }
   }
 
@@ -296,14 +332,35 @@ public:
       //     +--<--+     +--<--+
 
       GaugeMat Vup(Umu._grid), Vdn(Umu._grid);
-      StapleUpper(Vup, Umu, mu, nu);// coalesce these two (up low)
+      StapleUpper(Vup, Umu, mu, nu);
       StapleLower(Vdn, Umu, mu, nu);
-      GaugeMat v = adj(Vup) - adj(Vdn);
+      GaugeMat v = Vup - Vdn;
       GaugeMat u = PeekIndex<LorentzIndex>(Umu, mu);  // some redundant copies
       GaugeMat vu = v*u;
-      FS = 0.25*Ta(u*v + Cshift(vu, mu, +1));
+      FS = 0.25*Ta(u*v + Cshift(vu, mu, -1));
   }
 
+  static Real TopologicalCharge(GaugeLorentz &U){
+    // 4d topological charge
+    assert(Nd==4);
+    // Bx = -iF(y,z), By = -iF(z,y), Bz = -iF(x,y)
+    GaugeMat Bx(U._grid), By(U._grid), Bz(U._grid);
+    FieldStrength(Bx, U, Ydir, Zdir);
+    FieldStrength(By, U, Zdir, Xdir);
+    FieldStrength(Bz, U, Xdir, Ydir);
+
+    // Ex = -iF(t,x), Ey = -iF(t,y), Ez = -iF(t,z)
+    GaugeMat Ex(U._grid), Ey(U._grid), Ez(U._grid);
+    FieldStrength(Ex, U, Tdir, Xdir);
+    FieldStrength(Ey, U, Tdir, Ydir);
+    FieldStrength(Ez, U, Tdir, Zdir);
+
+    double coeff = 8.0/(32.0*M_PI*M_PI);
+
+    ComplexField qfield = coeff*trace(Bx*Ex + By*Ey + Bz*Ez);
+    auto Tq = sum(qfield);
+    return TensorRemove(Tq).real();
+  }
 
 
   //////////////////////////////////////////////////////
@@ -321,16 +378,16 @@ public:
                adj(Gimpl::CovShiftForward(
                    U[nu], nu, Gimpl::CovShiftForward(U[nu], nu, U[mu])));
   }
-  static void traceDirRectangle(LatticeComplex &rect,
+  static void traceDirRectangle(ComplexField &rect,
                                 const std::vector<GaugeMat> &U, const int mu,
                                 const int nu) {
     GaugeMat sp(U[0]._grid);
     dirRectangle(sp, U, mu, nu);
     rect = trace(sp);
   }
-  static void siteRectangle(LatticeComplex &Rect,
+  static void siteRectangle(ComplexField &Rect,
                             const std::vector<GaugeMat> &U) {
-    LatticeComplex siteRect(U[0]._grid);
+    ComplexField siteRect(U[0]._grid);
     Rect = zero;
     for (int mu = 1; mu < Nd; mu++) {
       for (int nu = 0; nu < mu; nu++) {
@@ -350,12 +407,12 @@ public:
       U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
     }
 
-    LatticeComplex Rect(Umu._grid);
+    ComplexField Rect(Umu._grid);
 
     siteRectangle(Rect, U);
 
-    TComplex Tp = sum(Rect);
-    Complex p = TensorRemove(Tp);
+    auto Tp = sum(Rect);
+    auto p = TensorRemove(Tp);
     return p.real();
   }
   //////////////////////////////////////////////////
@@ -425,8 +482,8 @@ public:
         //             |___ ___|
         //
 
-        //	tmp= Staple2x1* Cshift(U[mu],mu,-2);
-        //	Stap+= Cshift(tmp,mu,1) ;
+        //  tmp= Staple2x1* Cshift(U[mu],mu,-2);
+        //  Stap+= Cshift(tmp,mu,1) ;
         Stap += Cshift(Staple2x1, mu, 1) * Cshift(U[mu], mu, -1);
         ;
 

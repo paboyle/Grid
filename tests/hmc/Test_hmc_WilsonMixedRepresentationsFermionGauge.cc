@@ -31,83 +31,109 @@ directory
 /*  END LEGAL */
 #include "Grid/Grid.h"
 
-using namespace std;
-using namespace Grid;
-using namespace Grid::QCD;
 
-namespace Grid {
-namespace QCD {
 
-// Here change the allowed (higher) representations
-typedef Representations< FundamentalRepresentation, AdjointRepresentation , TwoIndexSymmetricRepresentation> TheRepresentations;
-
-class HmcRunner : public NerscHmcRunnerHirep< TheRepresentations > {
- public:
-  void BuildTheAction(int argc, char **argv)
-
-  {
-    typedef WilsonAdjImplR AdjImplPolicy; // gauge field implemetation for the pseudofermions
-    typedef WilsonAdjFermionR AdjFermionAction; // type of lattice fermions (Wilson, DW, ...)
-    typedef WilsonTwoIndexSymmetricImplR SymmImplPolicy; 
-    typedef WilsonTwoIndexSymmetricFermionR SymmFermionAction; 
-
- 
-    typedef typename AdjFermionAction::FermionField AdjFermionField;
-    typedef typename SymmFermionAction::FermionField SymmFermionField;
-
-    UGrid = SpaceTimeGrid::makeFourDimGrid(
-        GridDefaultLatt(), GridDefaultSimd(Nd, vComplex::Nsimd()),
-        GridDefaultMpi());
-    UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
-
-    FGrid = UGrid;
-    FrbGrid = UrbGrid;
-
-    // temporarily need a gauge field
-    //LatticeGaugeField U(UGrid);
-    AdjointRepresentation::LatticeField UA(UGrid);
-    TwoIndexSymmetricRepresentation::LatticeField US(UGrid);
-
-    // Gauge action
-    WilsonGaugeActionR Waction(5.6);
-
-    Real adjoint_mass = -0.1;
-    Real symm_mass = -0.5;
-    AdjFermionAction AdjFermOp(UA, *FGrid, *FrbGrid, adjoint_mass);
-    SymmFermionAction SymmFermOp(US, *FGrid, *FrbGrid, symm_mass);
-
-    ConjugateGradient<AdjFermionField> CG_adj(1.0e-8, 10000, false);
-    ConjugateGradient<SymmFermionField> CG_symm(1.0e-8, 10000, false);
-
-    // Pass two solvers: one for the force computation and one for the action
-    TwoFlavourPseudoFermionAction<AdjImplPolicy> Nf2_Adj(AdjFermOp, CG_adj, CG_adj);
-    TwoFlavourPseudoFermionAction<SymmImplPolicy> Nf2_Symm(SymmFermOp, CG_symm, CG_symm);
-
-    // Collect actions
-    ActionLevel<LatticeGaugeField, TheRepresentations > Level1(1);
-    Level1.push_back(&Nf2_Adj);
-    Level1.push_back(&Nf2_Symm);
-
-    ActionLevel<LatticeGaugeField, TheRepresentations > Level2(4);
-    Level2.push_back(&Waction);
-
-    TheAction.push_back(Level1);
-    TheAction.push_back(Level2);
-
-    Run(argc, argv);
-  };
-};
-}
-}
 
 int main(int argc, char **argv) {
+  using namespace Grid;
+  using namespace Grid::QCD;
+
+  // Here change the allowed (higher) representations
+  typedef Representations< FundamentalRepresentation, AdjointRepresentation , TwoIndexSymmetricRepresentation> TheRepresentations;
+
   Grid_init(&argc, &argv);
-
   int threads = GridThread::GetThreads();
-  std::cout << GridLogMessage << "Grid is setup to use " << threads
-            << " threads" << std::endl;
+  // here make a routine to print all the relevant information on the run
+  std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
-  HmcRunner TheHMC;
+   // Typedefs to simplify notation
+  typedef GenericHMCRunnerHirep<TheRepresentations, MinimumNorm2> HMCWrapper;
 
-  TheHMC.BuildTheAction(argc, argv);
-}
+  typedef WilsonAdjImplR AdjImplPolicy; // gauge field implemetation for the pseudofermions
+  typedef WilsonAdjFermionR AdjFermionAction; // type of lattice fermions (Wilson, DW, ...)
+  typedef WilsonTwoIndexSymmetricImplR SymmImplPolicy; 
+  typedef WilsonTwoIndexSymmetricFermionR SymmFermionAction; 
+
+
+  typedef typename AdjFermionAction::FermionField AdjFermionField;
+  typedef typename SymmFermionAction::FermionField SymmFermionField;
+
+  //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+  HMCWrapper TheHMC;
+
+  // Grid from the command line
+  TheHMC.Resources.AddFourDimGrid("gauge");
+  // Possibile to create the module by hand 
+  // hardcoding parameters or using a Reader
+
+
+  // Checkpointer definition
+  CheckpointerParameters CPparams;  
+  CPparams.config_prefix = "ckpoint_lat";
+  CPparams.rng_prefix = "ckpoint_rng";
+  CPparams.saveInterval = 5;
+  CPparams.format = "IEEE64BIG";
+  
+  TheHMC.Resources.LoadNerscCheckpointer(CPparams);
+
+  RNGModuleParameters RNGpar;
+  RNGpar.serial_seeds = "1 2 3 4 5";
+  RNGpar.parallel_seeds = "6 7 8 9 10";
+  TheHMC.Resources.SetRNGSeeds(RNGpar);
+
+  // Construct observables
+  typedef PlaquetteMod<HMCWrapper::ImplPolicy> PlaqObs;
+  TheHMC.Resources.AddObservable<PlaqObs>();
+  //////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////////////
+  // Collect actions, here use more encapsulation
+  // need wrappers of the fermionic classes 
+  // that have a complex construction
+  // standard
+  RealD beta = 2.25 ;
+  WilsonGaugeActionR Waction(beta);
+    
+  auto GridPtr = TheHMC.Resources.GetCartesian();
+  auto GridRBPtr = TheHMC.Resources.GetRBCartesian();
+
+  // temporarily need a gauge field
+  AdjointRepresentation::LatticeField UA(GridPtr);
+  TwoIndexSymmetricRepresentation::LatticeField US(GridPtr);
+
+  Real adjoint_mass = -0.1;
+  Real symm_mass = -0.5;
+  AdjFermionAction AdjFermOp(UA, *GridPtr, *GridRBPtr, adjoint_mass);
+  SymmFermionAction SymmFermOp(US, *GridPtr, *GridRBPtr, symm_mass);
+
+  ConjugateGradient<AdjFermionField> CG_adj(1.0e-8, 10000, false);
+  ConjugateGradient<SymmFermionField> CG_symm(1.0e-8, 10000, false);
+
+  // Pass two solvers: one for the force computation and one for the action
+  TwoFlavourPseudoFermionAction<AdjImplPolicy> Nf2_Adj(AdjFermOp, CG_adj, CG_adj);
+  TwoFlavourPseudoFermionAction<SymmImplPolicy> Nf2_Symm(SymmFermOp, CG_symm, CG_symm);
+
+  // Collect actions
+  ActionLevel<LatticeGaugeField, TheRepresentations > Level1(1);
+  Level1.push_back(&Nf2_Adj);
+  Level1.push_back(&Nf2_Symm);
+
+
+  ActionLevel<LatticeGaugeField, TheRepresentations > Level2(4);
+  Level2.push_back(&Waction);
+
+  TheHMC.TheAction.push_back(Level1);
+  TheHMC.TheAction.push_back(Level2);
+
+  // HMC parameters are serialisable 
+  TheHMC.Parameters.MD.MDsteps = 20;
+  TheHMC.Parameters.MD.trajL   = 1.0;
+
+  TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
+  TheHMC.Run();  // no smearing
+
+  Grid_finalize();
+
+} // main
+
+

@@ -63,6 +63,14 @@ int main(int argc, char *argv[])
     MSource::Point::Par ptPar;
     ptPar.position = "0 0 0 0";
     application.createModule<MSource::Point>("pt", ptPar);
+    // sink
+    MSink::Point::Par sinkPar;
+    sinkPar.mom = "0 0 0";
+    application.createModule<MSink::ScalarPoint>("sink", sinkPar);
+    
+    // set fermion boundary conditions to be periodic space, antiperiodic time.
+    std::string boundary = "1 1 1 -1";
+
     for (unsigned int i = 0; i < flavour.size(); ++i)
     {
         // actions
@@ -71,6 +79,7 @@ int main(int argc, char *argv[])
         actionPar.Ls    = 12;
         actionPar.M5    = 1.8;
         actionPar.mass  = mass[i];
+        actionPar.boundary = boundary;
         application.createModule<MAction::DWF>("DWF_" + flavour[i], actionPar);
         
         // solvers
@@ -81,27 +90,31 @@ int main(int argc, char *argv[])
                                                     solverPar);
         
         // propagators
-        Quark::Par quarkPar;
+        MFermion::GaugeProp::Par quarkPar;
         quarkPar.solver = "CG_" + flavour[i];
         quarkPar.source = "pt";
-        application.createModule<Quark>("Qpt_" + flavour[i], quarkPar);
+        application.createModule<MFermion::GaugeProp>("Qpt_" + flavour[i], quarkPar);
         quarkPar.source = "z2";
-        application.createModule<Quark>("QZ2_" + flavour[i], quarkPar);
+        application.createModule<MFermion::GaugeProp>("QZ2_" + flavour[i], quarkPar);
     }
     for (unsigned int i = 0; i < flavour.size(); ++i)
     for (unsigned int j = i; j < flavour.size(); ++j)
     {
         MContraction::Meson::Par mesPar;
         
-        mesPar.output = "mesons/pt_" + flavour[i] + flavour[j];
-        mesPar.q1     = "Qpt_" + flavour[i];
-        mesPar.q2     = "Qpt_" + flavour[j];
+        mesPar.output  = "mesons/pt_" + flavour[i] + flavour[j];
+        mesPar.q1      = "Qpt_" + flavour[i];
+        mesPar.q2      = "Qpt_" + flavour[j];
+        mesPar.gammas  = "all";
+        mesPar.sink    = "sink";
         application.createModule<MContraction::Meson>("meson_pt_"
                                                       + flavour[i] + flavour[j],
                                                       mesPar);
-        mesPar.output = "mesons/Z2_" + flavour[i] + flavour[j];
-        mesPar.q1     = "QZ2_" + flavour[i];
-        mesPar.q2     = "QZ2_" + flavour[j];
+        mesPar.output  = "mesons/Z2_" + flavour[i] + flavour[j];
+        mesPar.q1      = "QZ2_" + flavour[i];
+        mesPar.q2      = "QZ2_" + flavour[j];
+        mesPar.gammas  = "all";
+        mesPar.sink    = "sink";
         application.createModule<MContraction::Meson>("meson_Z2_"
                                                       + flavour[i] + flavour[j],
                                                       mesPar);

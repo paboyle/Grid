@@ -55,21 +55,21 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<"\t\t seconds"<<std::endl;
   std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
-  uint64_t lmax=44;
-#define NLOOP (1*lmax*lmax*lmax*lmax/vol)
-  for(int lat=4;lat<=lmax;lat+=4){
+  uint64_t lmax=96;
+#define NLOOP (10*lmax*lmax*lmax*lmax/vol)
+  for(int lat=8;lat<=lmax;lat+=8){
 
       std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
-      int vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
+      int64_t vol= latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
       uint64_t Nloop=NLOOP;
 
-      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
+      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
-      LatticeVec z(&Grid); //random(pRNG,z);
-      LatticeVec x(&Grid); //random(pRNG,x);
-      LatticeVec y(&Grid); //random(pRNG,y);
+      LatticeVec z(&Grid);// random(pRNG,z);
+      LatticeVec x(&Grid);// random(pRNG,x);
+      LatticeVec y(&Grid);// random(pRNG,y);
       double a=2.0;
 
 
@@ -83,7 +83,7 @@ int main (int argc, char ** argv)
       double time = (stop-start)/Nloop*1000;
       
       double flops=vol*Nvec*2;// mul,add
-      double bytes=3*vol*Nvec*sizeof(Real);
+      double bytes=3.0*vol*Nvec*sizeof(Real);
       std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<"\t\t"<<(stop-start)/1000./1000.<<std::endl;
 
     }
@@ -94,17 +94,17 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<"\t\t seconds"<<std::endl;
   std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
   
-  for(int lat=4;lat<=lmax;lat+=4){
+  for(int lat=8;lat<=lmax;lat+=8){
 
       std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
-      int vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
+      int64_t vol= latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
-      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
+      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
-      LatticeVec z(&Grid); //random(pRNG,z);
-      LatticeVec x(&Grid); //random(pRNG,x);
-      LatticeVec y(&Grid); //random(pRNG,y);
+      LatticeVec z(&Grid);// random(pRNG,z);
+      LatticeVec x(&Grid);// random(pRNG,x);
+      LatticeVec y(&Grid);// random(pRNG,y);
       double a=2.0;
 
       uint64_t Nloop=NLOOP;
@@ -119,7 +119,7 @@ int main (int argc, char ** argv)
       double time = (stop-start)/Nloop*1000;
      
       double flops=vol*Nvec*2;// mul,add
-      double bytes=3*vol*Nvec*sizeof(Real);
+      double bytes=3.0*vol*Nvec*sizeof(Real);
       std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<"\t\t"<<(stop-start)/1000./1000.<<std::endl;
 
     }
@@ -129,20 +129,20 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "===================================================================================================="<<std::endl;
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<"\t\t seconds"<<std::endl;
 
-  for(int lat=4;lat<=lmax;lat+=4){
+  for(int lat=8;lat<=lmax;lat+=8){
 
 
       std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
-      int vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
+      int64_t vol= latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
       uint64_t Nloop=NLOOP;
 
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
-      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
+      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
-      LatticeVec z(&Grid); //random(pRNG,z);
-      LatticeVec x(&Grid); //random(pRNG,x);
-      LatticeVec y(&Grid); //random(pRNG,y);
+      LatticeVec z(&Grid);// random(pRNG,z);
+      LatticeVec x(&Grid);// random(pRNG,x);
+      LatticeVec y(&Grid);// random(pRNG,y);
       RealD a=2.0;
 
 
@@ -154,7 +154,7 @@ int main (int argc, char ** argv)
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
       
-      double bytes=2*vol*Nvec*sizeof(Real);
+      double bytes=2.0*vol*Nvec*sizeof(Real);
       double flops=vol*Nvec*1;// mul
       std::cout<<GridLogMessage <<std::setprecision(3) << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<"\t\t"<<(stop-start)/1000./1000.<<std::endl;
 
@@ -166,17 +166,17 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<"\t\t seconds"<<std::endl;
   std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
 
-  for(int lat=4;lat<=lmax;lat+=4){
+  for(int lat=8;lat<=lmax;lat+=8){
 
       std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
-      int vol = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
+      int64_t vol= latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
       uint64_t Nloop=NLOOP;
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
-      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
-      LatticeVec z(&Grid); //random(pRNG,z);
-      LatticeVec x(&Grid); //random(pRNG,x);
-      LatticeVec y(&Grid); //random(pRNG,y);
+      //      GridParallelRNG          pRNG(&Grid);      pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
+      LatticeVec z(&Grid);// random(pRNG,z);
+      LatticeVec x(&Grid);// random(pRNG,x);
+      LatticeVec y(&Grid);// random(pRNG,y);
       RealD a=2.0;
       Real nn;      
       double start=usecond();
@@ -187,7 +187,7 @@ int main (int argc, char ** argv)
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
       
-      double bytes=vol*Nvec*sizeof(Real);
+      double bytes=1.0*vol*Nvec*sizeof(Real);
       double flops=vol*Nvec*2;// mul,add
       std::cout<<GridLogMessage<<std::setprecision(3) << lat<<"\t\t"<<bytes<<"  \t\t"<<bytes/time<<"\t\t"<<flops/time<< "\t\t"<<(stop-start)/1000./1000.<< "\t\t " <<std::endl;
 

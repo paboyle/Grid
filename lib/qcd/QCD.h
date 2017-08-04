@@ -32,14 +32,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_QCD_BASE_H
 #define GRID_QCD_BASE_H
 namespace Grid{
-
 namespace QCD {
 
     static const int Xdir = 0;
     static const int Ydir = 1;
     static const int Zdir = 2;
     static const int Tdir = 3;
-    
+
+  
     static const int Xp = 0;
     static const int Yp = 1;
     static const int Zp = 2;
@@ -358,36 +358,36 @@ namespace QCD {
     //////////////////////////////////////////////
     template<class vobj> 
       void pokeColour(Lattice<vobj> &lhs,
-		      const Lattice<decltype(peekIndex<ColourIndex>(lhs._odata[0],0))> & rhs,
-		      int i)
+              const Lattice<decltype(peekIndex<ColourIndex>(lhs._odata[0],0))> & rhs,
+              int i)
     {
       PokeIndex<ColourIndex>(lhs,rhs,i);
     }
     template<class vobj> 
       void pokeColour(Lattice<vobj> &lhs,
-		      const Lattice<decltype(peekIndex<ColourIndex>(lhs._odata[0],0,0))> & rhs,
-		      int i,int j)
+              const Lattice<decltype(peekIndex<ColourIndex>(lhs._odata[0],0,0))> & rhs,
+              int i,int j)
     {
       PokeIndex<ColourIndex>(lhs,rhs,i,j);
     }
     template<class vobj> 
       void pokeSpin(Lattice<vobj> &lhs,
-		      const Lattice<decltype(peekIndex<SpinIndex>(lhs._odata[0],0))> & rhs,
-		      int i)
+              const Lattice<decltype(peekIndex<SpinIndex>(lhs._odata[0],0))> & rhs,
+              int i)
     {
       PokeIndex<SpinIndex>(lhs,rhs,i);
     }
     template<class vobj> 
       void pokeSpin(Lattice<vobj> &lhs,
-		      const Lattice<decltype(peekIndex<SpinIndex>(lhs._odata[0],0,0))> & rhs,
-		      int i,int j)
+              const Lattice<decltype(peekIndex<SpinIndex>(lhs._odata[0],0,0))> & rhs,
+              int i,int j)
     {
       PokeIndex<SpinIndex>(lhs,rhs,i,j);
     }
     template<class vobj> 
       void pokeLorentz(Lattice<vobj> &lhs,
-		      const Lattice<decltype(peekIndex<LorentzIndex>(lhs._odata[0],0))> & rhs,
-		      int i)
+              const Lattice<decltype(peekIndex<LorentzIndex>(lhs._odata[0],0))> & rhs,
+              int i)
     {
       PokeIndex<LorentzIndex>(lhs,rhs,i);
     }

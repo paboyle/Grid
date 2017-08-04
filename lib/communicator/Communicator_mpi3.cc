@@ -37,7 +37,10 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/mman.h>
-//#include <zlib.h>
+#include <zlib.h>
+#ifdef HAVE_NUMAIF_H
+#include <numaif.h>
+#endif
 #ifndef SHM_HUGETLB
 #define SHM_HUGETLB 04000
 #endif
@@ -65,6 +68,7 @@ std::vector<int> CartesianCommunicator::MyGroup;
 std::vector<void *> CartesianCommunicator::ShmCommBufs;
 
 int CartesianCommunicator::NodeCount(void)    { return GroupSize;};
+int CartesianCommunicator::RankCount(void)    { return WorldSize;};
 
 
 #undef FORCE_COMMS
@@ -213,6 +217,25 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
       void * ptr =  mmap(NULL,size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
       if ( ptr == MAP_FAILED ) {       perror("failed mmap");      assert(0);    }
       assert(((uint64_t)ptr&0x3F)==0);
+
+      // Try to force numa domain on the shm segment if we have numaif.h
+#ifdef HAVE_NUMAIF_H
+	int status;
+	int flags=MPOL_MF_MOVE;
+#ifdef KNL
+	int nodes=1; // numa domain == MCDRAM
+	// Find out if in SNC2,SNC4 mode ?
+#else
+	int nodes=r; // numa domain == MPI ID
+#endif
+	unsigned long count=1;
+	for(uint64_t page=0;page<size;page+=4096){
+	  void *pages = (void *) ( page + (uint64_t)ptr );
+	  uint64_t *cow_it = (uint64_t *)pages;	*cow_it = 1;
+	  ierr= move_pages(0,count, &pages,&nodes,&status,flags);
+	  if (ierr && (page==0)) perror("numa relocate command failed");
+	}
+#endif
       ShmCommBufs[r] =ptr;
       
     }
@@ -507,6 +530,14 @@ void CartesianCommunicator::GlobalSum(uint32_t &u){
 }
 void CartesianCommunicator::GlobalSum(uint64_t &u){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT64_T,MPI_SUM,communicator);
+  assert(ierr==0);
+}
+void CartesianCommunicator::GlobalXOR(uint32_t &u){
+  int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_BXOR,communicator);
+  assert(ierr==0);
+}
+void CartesianCommunicator::GlobalXOR(uint64_t &u){
+  int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT64_T,MPI_BXOR,communicator);
   assert(ierr==0);
 }
 void CartesianCommunicator::GlobalSum(float &f){

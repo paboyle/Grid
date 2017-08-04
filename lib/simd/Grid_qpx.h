@@ -33,6 +33,14 @@
 #include "Grid_generic_types.h" // Definitions for simulated integer SIMD.
 
 namespace Grid {
+
+#ifdef QPX
+#include <spi/include/kernel/location.h>
+#include <spi/include/l1p/types.h>
+#include <hwi/include/bqc/l1p_mmio.h>
+#include <hwi/include/bqc/A2_inlines.h>
+#endif
+
 namespace Optimization {
   typedef struct 
   {
@@ -366,6 +374,84 @@ namespace Optimization {
     // Complex float
     FLOAT_WRAP_2(operator(), inline)
   };
+#define USE_FP16
+  struct PrecisionChange {
+    static inline vech StoH (const vector4float &a, const vector4float &b) {
+      vech ret;
+      std::cout << GridLogError << "QPX single to half precision conversion not yet supported." << std::endl;
+      assert(0);
+      return ret;
+    }
+    static inline void  HtoS (vech h, vector4float &sa, vector4float &sb) {
+      std::cout << GridLogError << "QPX half to single precision conversion not yet supported." << std::endl;
+      assert(0);
+    }
+    static inline vector4float DtoS (vector4double a, vector4double b) {
+      vector4float ret;
+      std::cout << GridLogError << "QPX double to single precision conversion not yet supported." << std::endl;
+      assert(0);
+      return ret;
+    }
+    static inline void StoD (vector4float s, vector4double &a, vector4double &b) {
+      std::cout << GridLogError << "QPX single to double precision conversion not yet supported." << std::endl;
+      assert(0);
+    }
+    static inline vech DtoH (vector4double a, vector4double b, 
+                             vector4double c, vector4double d) {
+      vech ret;
+      std::cout << GridLogError << "QPX double to half precision conversion not yet supported." << std::endl;
+      assert(0);
+      return ret;
+    }
+    static inline void HtoD (vech h, vector4double &a, vector4double &b, 
+                                     vector4double &c, vector4double &d) {
+      std::cout << GridLogError << "QPX half to double precision conversion not yet supported." << std::endl;
+      assert(0);
+    }
+  };
+
+  //////////////////////////////////////////////
+  // Exchange support
+#define FLOAT_WRAP_EXCHANGE(fn) \
+  static inline void fn(vector4float &out1, vector4float &out2, \
+                        vector4float in1,  vector4float in2) \
+  { \
+    vector4double out1d, out2d, in1d, in2d; \
+    in1d  = Vset()(in1);   \
+    in2d  = Vset()(in2);   \
+    fn(out1d, out2d, in1d, in2d); \
+    Vstore()(out1d, out1); \
+    Vstore()(out2d, out2); \
+  }
+
+  struct Exchange{
+
+    // double precision
+    static inline void Exchange0(vector4double &out1, vector4double &out2,
+                                 vector4double in1,  vector4double in2) {
+      out1 = vec_perm(in1, in2, vec_gpci(0145));
+      out2 = vec_perm(in1, in2, vec_gpci(02367));
+    }
+    static inline void Exchange1(vector4double &out1, vector4double &out2,
+                                 vector4double in1,  vector4double in2) {
+      out1 = vec_perm(in1, in2, vec_gpci(0426));
+      out2 = vec_perm(in1, in2, vec_gpci(01537));
+    }
+    static inline void Exchange2(vector4double &out1, vector4double &out2,
+                                 vector4double in1,  vector4double in2) {
+      assert(0);
+    }
+    static inline void Exchange3(vector4double &out1, vector4double &out2,
+                                 vector4double in1,  vector4double in2) {
+      assert(0);
+    }
+
+    // single precision
+    FLOAT_WRAP_EXCHANGE(Exchange0);
+    FLOAT_WRAP_EXCHANGE(Exchange1);
+    FLOAT_WRAP_EXCHANGE(Exchange2);
+    FLOAT_WRAP_EXCHANGE(Exchange3);
+  };
 
   struct Permute{
     //Complex double
@@ -489,15 +575,19 @@ namespace Optimization {
   
   //Integer Reduce
   template<>
-  inline Integer Reduce<Integer, int>::operator()(int in){
-    // FIXME unimplemented
-    printf("Reduce : Missing integer implementation -> FIX\n");
-    assert(0);
+  inline Integer Reduce<Integer, veci>::operator()(veci in){
+    Integer a = 0;
+    for (unsigned int i = 0; i < W<Integer>::r; ++i)
+    {
+        a += in.v[i];
+    }
+    return a;
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Here assign types
+typedef Optimization::vech         SIMD_Htype;  // Half precision type
 typedef Optimization::vector4float SIMD_Ftype;  // Single precision type
 typedef vector4double              SIMD_Dtype; // Double precision type
 typedef Optimization::veci         SIMD_Itype; // Integer type

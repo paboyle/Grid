@@ -1,9 +1,6 @@
 /*************************************************************************************
-
 Grid physics library, www.github.com/paboyle/Grid
-
 Source file: ./lib/tensors/Tensor_class.h
-
 Copyright (C) 2015
 
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
@@ -13,16 +10,13 @@ This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 2 of the License, or
 (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
@@ -65,6 +59,9 @@ class iScalar {
   typedef iScalar<typename GridTypeMapper<vtype>::Complexified> Complexified;
   typedef iScalar<typename GridTypeMapper<vtype>::Realified> Realified;
 
+  // get double precision version
+  typedef iScalar<typename GridTypeMapper<vtype>::DoublePrecision> DoublePrecision;
+  
   enum { TensorLevel = GridTypeMapper<vtype>::TensorLevel + 1 };
 
   // Scalar no action
@@ -159,16 +156,24 @@ class iScalar {
 
   // convert from a something to a scalar via constructor of something arg
   template <class T, typename std::enable_if<!isGridTensor<T>::value, T>::type * = nullptr>
-    strong_inline iScalar<vtype> operator=(T arg) {
+  strong_inline iScalar<vtype> operator=(T arg) {
     _internal = arg;
     return *this;
   }
 
-  friend std::ostream &operator<<(std::ostream &stream,
-                                  const iScalar<vtype> &o) {
+  // Convert elements
+  template <class ttype>
+  strong_inline iScalar<vtype> operator=(iScalar<ttype> &&arg) {
+    _internal = arg._internal;
+    return *this;
+  }
+
+  friend std::ostream &operator<<(std::ostream &stream,const iScalar<vtype> &o) {
     stream << "S {" << o._internal << "}";
     return stream;
   };
+
+
 };
 ///////////////////////////////////////////////////////////
 // Allows to turn scalar<scalar<scalar<double>>>> back to double.
@@ -202,6 +207,9 @@ class iVector {
   typedef iVector<typename GridTypeMapper<vtype>::Complexified, N> Complexified;
   typedef iVector<typename GridTypeMapper<vtype>::Realified, N> Realified;
 
+  // get double precision version
+  typedef iVector<typename GridTypeMapper<vtype>::DoublePrecision, N> DoublePrecision;
+  
   template <class T, typename std::enable_if<!isGridTensor<T>::value, T>::type
                          * = nullptr>
   strong_inline auto operator=(T arg) -> iVector<vtype, N> {
@@ -313,7 +321,10 @@ class iMatrix {
   typedef iMatrix<typename GridTypeMapper<vtype>::Complexified, N> Complexified;
   typedef iMatrix<typename GridTypeMapper<vtype>::Realified, N> Realified;
 
-  // Tensure removal
+  // get double precision version
+  typedef iMatrix<typename GridTypeMapper<vtype>::DoublePrecision, N> DoublePrecision;
+  
+  // Tensor removal
   typedef iScalar<tensor_reduced_v> tensor_reduced;
   typedef iMatrix<recurse_scalar_object, N> scalar_object;
 
@@ -469,3 +480,6 @@ void vprefetch(const iMatrix<v, N> &vv) {
 }
 }
 #endif
+
+
+

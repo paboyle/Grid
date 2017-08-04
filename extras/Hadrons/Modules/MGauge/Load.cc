@@ -65,7 +65,7 @@ void TLoad::setup(void)
 // execution ///////////////////////////////////////////////////////////////////
 void TLoad::execute(void)
 {
-    NerscField  header;
+    FieldMetaData  header;
     std::string fileName = par().file + "."
                            + std::to_string(env().getTrajectory());
     
@@ -74,5 +74,5 @@ void TLoad::execute(void)
     LatticeGaugeField &U = *env().createLattice<LatticeGaugeField>(getName());
     NerscIO::readConfiguration(U, header, fileName);
     LOG(Message) << "NERSC header:" << std::endl;
-    dump_nersc_header(header, LOG(Message));
+    dump_meta_data(header, LOG(Message));
 }

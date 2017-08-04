@@ -62,6 +62,15 @@ class TwoFlavourPseudoFermionAction : public Action<typename Impl::GaugeField> {
         ActionSolver(AS),
         Phi(Op.FermionGrid()){};
 
+
+  virtual std::string action_name(){return "TwoFlavourPseudoFermionAction";}
+
+  virtual std::string LogParameters(){
+    std::stringstream sstream;
+    sstream << GridLogMessage << "["<<action_name()<<"] has no parameters" << std::endl;
+    return sstream.str();
+  }  
+  
   //////////////////////////////////////////////////////////////////////////////////////
   // Push the gauge field in to the dops. Assume any BC's and smearing already applied
   //////////////////////////////////////////////////////////////////////////////////////
@@ -80,7 +89,9 @@ class TwoFlavourPseudoFermionAction : public Action<typename Impl::GaugeField> {
     //         in the Phi integral, and thus is only an irrelevant prefactor for
     //         the partition function.
     //
+
     RealD scale = std::sqrt(0.5);
+
     FermionField eta(FermOp.FermionGrid());
 
     gaussian(pRNG, eta);

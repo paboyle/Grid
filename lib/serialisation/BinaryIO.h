@@ -60,7 +60,7 @@ namespace Grid {
   public:
     BinaryReader(const std::string &fileName);
     virtual ~BinaryReader(void) = default;
-    void push(const std::string &s) {};
+    bool push(const std::string &s) {return true;}
     void pop(void) {};
     template <typename U>
     void readDefault(const std::string &s, U &output);

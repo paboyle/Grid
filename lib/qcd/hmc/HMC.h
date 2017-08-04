@@ -34,13 +34,15 @@ directory
  * @brief Classes for Hybrid Monte Carlo update
  *
  * @author Guido Cossu
- * Time-stamp: <2015-07-30 16:58:26 neo>
  */
 //--------------------------------------------------------------------
 #ifndef HMC_INCLUDED
 #define HMC_INCLUDED
 
 #include <string>
+#include <list>
+
+
 
 #include <Grid/qcd/hmc/integrators/Integrator.h>
 #include <Grid/qcd/hmc/integrators/Integrator_algorithm.h>
@@ -48,91 +50,64 @@ directory
 namespace Grid {
 namespace QCD {
 
-struct HMCparameters {
-  Integer StartTrajectory;
-  Integer Trajectories; /* @brief Number of sweeps in this run */
-  bool MetropolisTest;
-  Integer NoMetropolisUntil;
+struct HMCparameters: Serializable {
+	GRID_SERIALIZABLE_CLASS_MEMBERS(HMCparameters,
+                                  Integer, StartTrajectory,
+                                  Integer, Trajectories, /* @brief Number of sweeps in this run */
+                                  bool, MetropolisTest,
+                                  Integer, NoMetropolisUntil,
+                                  std::string, StartingType,
+                                  IntegratorParameters, MD)
 
   HMCparameters() {
     ////////////////////////////// Default values
-    MetropolisTest = true;
+    MetropolisTest    = true;
     NoMetropolisUntil = 10;
-    StartTrajectory = 0;
-    Trajectories = 200;
+    StartTrajectory   = 0;
+    Trajectories      = 10;
+    StartingType      = "HotStart";
     /////////////////////////////////
   }
 
-  void print() const {
-    std::cout << GridLogMessage << "[HMC parameter] Trajectories            : " << Trajectories << "\n";
-    std::cout << GridLogMessage << "[HMC parameter] Start trajectory        : " << StartTrajectory << "\n";
-    std::cout << GridLogMessage << "[HMC parameter] Metropolis test (on/off): " << MetropolisTest << "\n";
-    std::cout << GridLogMessage << "[HMC parameter] Thermalization trajs    : " << NoMetropolisUntil << "\n";
+  template <class ReaderClass >
+  HMCparameters(Reader<ReaderClass> & TheReader){
+  	initialize(TheReader);
+  }
+
+  template < class ReaderClass > 
+  void initialize(Reader<ReaderClass> &TheReader){
+  	std::cout << GridLogMessage << "Reading HMC\n";
+  	read(TheReader, "HMC", *this);
+  }
+
+
+  void print_parameters() const {
+    std::cout << GridLogMessage << "[HMC parameters] Trajectories            : " << Trajectories << "\n";
+    std::cout << GridLogMessage << "[HMC parameters] Start trajectory        : " << StartTrajectory << "\n";
+    std::cout << GridLogMessage << "[HMC parameters] Metropolis test (on/off): " << std::boolalpha << MetropolisTest << "\n";
+    std::cout << GridLogMessage << "[HMC parameters] Thermalization trajs    : " << NoMetropolisUntil << "\n";
+    std::cout << GridLogMessage << "[HMC parameters] Starting type           : " << StartingType << "\n";
+    MD.print_parameters();
   }
   
 };
-
-template <class GaugeField>
-class HmcObservable {
- public:
-  virtual void TrajectoryComplete(int traj, GaugeField &U, GridSerialRNG &sRNG,
-                                  GridParallelRNG &pRNG) = 0;
-};
-
-template <class Gimpl>
-class PlaquetteLogger : public HmcObservable<typename Gimpl::GaugeField> {
- private:
-  std::string Stem;
-
- public:
-  INHERIT_GIMPL_TYPES(Gimpl);
-  PlaquetteLogger(std::string cf) { Stem = cf; };
-
-  void TrajectoryComplete(int traj, GaugeField &U, GridSerialRNG &sRNG,
-                          GridParallelRNG &pRNG) {
-    std::string file;
-    {
-      std::ostringstream os;
-      os << Stem << "." << traj;
-      file = os.str();
-    }
-    std::ofstream of(file);
-
-    RealD peri_plaq = WilsonLoops<PeriodicGimplR>::avgPlaquette(U);
-    RealD peri_rect = WilsonLoops<PeriodicGimplR>::avgRectangle(U);
-
-    RealD impl_plaq = WilsonLoops<Gimpl>::avgPlaquette(U);
-    RealD impl_rect = WilsonLoops<Gimpl>::avgRectangle(U);
-
-    of << traj << " " << impl_plaq << " " << impl_rect << "  " << peri_plaq
-       << " " << peri_rect << std::endl;
-    std::cout << GridLogMessage << "traj"
-              << " "
-              << "plaq "
-              << " "
-              << " rect  "
-              << "  "
-              << "peri_plaq"
-              << " "
-              << "peri_rect" << std::endl;
-    std::cout << GridLogMessage << traj << " " << impl_plaq << " " << impl_rect
-              << "  " << peri_plaq << " " << peri_rect << std::endl;
-  }
-};
-
-//    template <class GaugeField, class Integrator, class Smearer, class
-//    Boundary>
-template <class GaugeField, class IntegratorType>
+	
+template <class IntegratorType>
 class HybridMonteCarlo {
  private:
   const HMCparameters Params;
 
-  GridSerialRNG &sRNG;    // Fixme: need a RNG management strategy.
-  GridParallelRNG &pRNG;  // Fixme: need a RNG management strategy.
-  GaugeField &Ucur;
+  typedef typename IntegratorType::Field Field;
+  typedef std::vector< HmcObservable<Field> * > ObsListType;
+  
+  	//pass these from the resource manager
+  GridSerialRNG &sRNG;   
+  GridParallelRNG &pRNG; 
 
+  Field &Ucur;
+  
   IntegratorType &TheIntegrator;
-  std::vector<HmcObservable<GaugeField> *> Observables;
+	ObsListType Observables;
 
   /////////////////////////////////////////////////////////
   // Metropolis step
@@ -167,13 +142,13 @@ class HybridMonteCarlo {
   /////////////////////////////////////////////////////////
   // Evolution
   /////////////////////////////////////////////////////////
-  RealD evolve_step(GaugeField &U) {
+  RealD evolve_hmc_step(Field &U) {
     TheIntegrator.refresh(U, pRNG);  // set U and initialize P and phi's
 
     RealD H0 = TheIntegrator.S(U);  // initial state action
 
     std::streamsize current_precision = std::cout.precision();
-    std::cout.precision(17);
+    std::cout.precision(15);
     std::cout << GridLogMessage << "Total H before trajectory = " << H0 << "\n";
     std::cout.precision(current_precision);
 
@@ -181,64 +156,96 @@ class HybridMonteCarlo {
 
     RealD H1 = TheIntegrator.S(U);  // updated state action
 
-    std::cout.precision(17);
-    std::cout << GridLogMessage << "Total H after trajectory  = " << H1
-              << "  dH = " << H1 - H0 << "\n";
-    std::cout.precision(current_precision);
+    ///////////////////////////////////////////////////////////
+    if(0){
+      std::cout << "------------------------- Reversibility test" << std::endl;
+      TheIntegrator.reverse_momenta();
+      TheIntegrator.integrate(U);
 
+      H1 = TheIntegrator.S(U);  // updated state action
+      std::cout << "--------------------------------------------" << std::endl;
+    }
+    ///////////////////////////////////////////////////////////
+
+
+    std::cout.precision(15);
+    std::cout << GridLogMessage << "Total H after trajectory  = " << H1
+	      << "  dH = " << H1 - H0 << "\n";
+    std::cout.precision(current_precision);
+    
     return (H1 - H0);
   }
+  
+
+  
 
  public:
   /////////////////////////////////////////
   // Constructor
   /////////////////////////////////////////
-  HybridMonteCarlo(HMCparameters Pams, IntegratorType &_Int,
-                   GridSerialRNG &_sRNG, GridParallelRNG &_pRNG, GaugeField &_U)
-      : Params(Pams), TheIntegrator(_Int), sRNG(_sRNG), pRNG(_pRNG), Ucur(_U) {}
+  HybridMonteCarlo(HMCparameters _Pams, IntegratorType &_Int,
+                   GridSerialRNG &_sRNG, GridParallelRNG &_pRNG, 
+                   ObsListType _Obs, Field &_U)
+    : Params(_Pams), TheIntegrator(_Int), sRNG(_sRNG), pRNG(_pRNG), Observables(_Obs), Ucur(_U) {}
   ~HybridMonteCarlo(){};
-
-  void AddObservable(HmcObservable<GaugeField> *obs) {
-    Observables.push_back(obs);
-  }
 
   void evolve(void) {
     Real DeltaH;
 
-    GaugeField Ucopy(Ucur._grid);
+    Field Ucopy(Ucur._grid);
 
-    Params.print();
+    Params.print_parameters();
+    TheIntegrator.print_actions();
 
     // Actual updates (evolve a copy Ucopy then copy back eventually)
-    for (int traj = Params.StartTrajectory;
-         traj < Params.Trajectories + Params.StartTrajectory; ++traj) {
+    unsigned int FinalTrajectory = Params.Trajectories + Params.NoMetropolisUntil + Params.StartTrajectory;
+    for (int traj = Params.StartTrajectory; traj < FinalTrajectory; ++traj) {
       std::cout << GridLogMessage << "-- # Trajectory = " << traj << "\n";
+      if (traj < Params.StartTrajectory + Params.NoMetropolisUntil) {
+      	std::cout << GridLogMessage << "-- Thermalization" << std::endl;
+      }
+      
+      double t0=usecond();
       Ucopy = Ucur;
 
-      DeltaH = evolve_step(Ucopy);
-
+      DeltaH = evolve_hmc_step(Ucopy);
+      // Metropolis-Hastings test
       bool accept = true;
-      if (traj >= Params.NoMetropolisUntil) {
+      if (traj >= Params.StartTrajectory + Params.NoMetropolisUntil) {
         accept = metropolis_test(DeltaH);
+      } else {
+      	std::cout << GridLogMessage << "Skipping Metropolis test" << std::endl;
       }
 
-      if (accept) {
-        Ucur = Ucopy;
-      }
+      if (accept)
+        Ucur = Ucopy; 
+      
+     
+      
+      double t1=usecond();
+      std::cout << GridLogMessage << "Total time for trajectory (s): " << (t1-t0)/1e6 << std::endl;
+
 
       for (int obs = 0; obs < Observables.size(); obs++) {
+      	std::cout << GridLogDebug << "Observables # " << obs << std::endl;
+      	std::cout << GridLogDebug << "Observables total " << Observables.size() << std::endl;
+      	std::cout << GridLogDebug << "Observables pointer " << Observables[obs] << std::endl;
         Observables[obs]->TrajectoryComplete(traj + 1, Ucur, sRNG, pRNG);
       }
+      std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::::" << std::endl;
     }
   }
+
 };
 
 
 }  // QCD
 }  // Grid
 
-#include <Grid/parallelIO/NerscIO.h>
-#include <Grid/qcd/hmc/NerscCheckpointer.h>
-#include <Grid/qcd/hmc/HmcRunner.h>
+
+// april 11 2017 merge, Guido, commenting out
+//#include <Grid/parallelIO/NerscIO.h>
+//#include <Grid/qcd/hmc/NerscCheckpointer.h>
+//#include <Grid/qcd/hmc/HmcRunner.h>
 
 #endif

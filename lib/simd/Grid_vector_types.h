@@ -53,12 +53,14 @@ directory
 #if defined IMCI
 #include "Grid_imci.h"
 #endif
+#ifdef NEONV8
+#include "Grid_neon.h"
+#endif
 #if defined QPX
 #include "Grid_qpx.h"
 #endif
-#ifdef NEONv8
-#include "Grid_neon.h"
-#endif
+
+#include "l1p.h"
 
 namespace Grid {
 
@@ -74,12 +76,14 @@ struct RealPart<std::complex<T> > {
   typedef T type;
 };
 
+#include <type_traits>
+
 //////////////////////////////////////
 // demote a vector to real type
 //////////////////////////////////////
 // type alias used to simplify the syntax of std::enable_if
 template <typename T> using Invoke = typename T::type;
-template <typename Condition, typename ReturnType> using EnableIf = Invoke<std::enable_if<Condition::value, ReturnType> >;
+template <typename Condition, typename ReturnType> using EnableIf    = Invoke<std::enable_if<Condition::value, ReturnType> >;
 template <typename Condition, typename ReturnType> using NotEnableIf = Invoke<std::enable_if<!Condition::value, ReturnType> >;
 
 ////////////////////////////////////////////////////////
@@ -88,13 +92,15 @@ template <typename T> struct is_complex : public std::false_type {};
 template <> struct is_complex<std::complex<double> > : public std::true_type {};
 template <> struct is_complex<std::complex<float> > : public std::true_type {};
 
-template <typename T> using IfReal       = Invoke<std::enable_if<std::is_floating_point<T>::value, int> >;
-template <typename T> using IfComplex    = Invoke<std::enable_if<is_complex<T>::value, int> >;
-template <typename T> using IfInteger    = Invoke<std::enable_if<std::is_integral<T>::value, int> >;
+template <typename T>              using IfReal    = Invoke<std::enable_if<std::is_floating_point<T>::value, int> >;
+template <typename T>              using IfComplex = Invoke<std::enable_if<is_complex<T>::value, int> >;
+template <typename T>              using IfInteger = Invoke<std::enable_if<std::is_integral<T>::value, int> >;
+template <typename T1,typename T2> using IfSame    = Invoke<std::enable_if<std::is_same<T1,T2>::value, int> >;
 
-template <typename T> using IfNotReal    = Invoke<std::enable_if<!std::is_floating_point<T>::value, int> >;
-template <typename T> using IfNotComplex = Invoke<std::enable_if<!is_complex<T>::value, int> >;
-template <typename T> using IfNotInteger = Invoke<std::enable_if<!std::is_integral<T>::value, int> >;
+template <typename T>              using IfNotReal    = Invoke<std::enable_if<!std::is_floating_point<T>::value, int> >;
+template <typename T>              using IfNotComplex = Invoke<std::enable_if<!is_complex<T>::value, int> >;
+template <typename T>              using IfNotInteger = Invoke<std::enable_if<!std::is_integral<T>::value, int> >;
+template <typename T1,typename T2> using IfNotSame    = Invoke<std::enable_if<!std::is_same<T1,T2>::value, int> >;
 
 ////////////////////////////////////////////////////////
 // Define the operation templates functors
@@ -325,10 +331,12 @@ class Grid_simd {
   friend inline Grid_simd SimdApply(const functor &func, const Grid_simd &v) {
     Grid_simd ret;
     Grid_simd::conv_t conv;
-
+    Grid_simd::scalar_type s;
+    
     conv.v = v.v;
     for (int i = 0; i < Nsimd(); i++) {
-      conv.s[i] = func(conv.s[i]);
+      s = conv.s[i];
+      conv.s[i] = func(s);
     }
     ret.v = conv.v;
     return ret;
@@ -340,16 +348,18 @@ class Grid_simd {
     Grid_simd ret;
     Grid_simd::conv_t cx;
     Grid_simd::conv_t cy;
+    Grid_simd::scalar_type sx,sy;
 
     cx.v = x.v;
     cy.v = y.v;
     for (int i = 0; i < Nsimd(); i++) {
-      cx.s[i] = func(cx.s[i], cy.s[i]);
+      sx = cx.s[i];
+      sy = cy.s[i];
+      cx.s[i] = func(sx,sy);
     }
     ret.v = cx.v;
     return ret;
   }
-
   ///////////////////////
   // Exchange 
   // Al Ah , Bl Bh -> Al Bl Ah,Bh
@@ -396,8 +406,20 @@ class Grid_simd {
     else if(perm==0) permute0(y, b);
   }
 
-};  // end of Grid_simd class definition
+  ///////////////////////////////
+  // Getting single lanes
+  ///////////////////////////////
+  inline Scalar_type getlane(int lane) {
+    return ((Scalar_type*)&v)[lane];
+  }
 
+  inline void putlane(const Scalar_type &S, int lane){
+    ((Scalar_type*)&v)[lane] = S;
+  }
+
+
+  
+};  // end of Grid_simd class definition
 
 inline void permute(ComplexD &y,ComplexD b, int perm) {  y=b; }
 inline void permute(ComplexF &y,ComplexF b, int perm) {  y=b; }
@@ -729,8 +751,8 @@ inline Grid_simd<std::complex<R>, V> toComplex(const Grid_simd<R, V> &in) {
 
   conv.v = in.v;
   for (int i = 0; i < Rsimd::Nsimd(); i += 2) {
-    assert(conv.s[i + 1] ==
-           conv.s[i]);  // trap any cases where real was not duplicated
+    assert(conv.s[i + 1] == conv.s[i]);  
+    // trap any cases where real was not duplicated
     // indicating the SIMD grids of real and imag assignment did not correctly
     // match
     conv.s[i + 1] = 0.0;  // zero imaginary parts
@@ -808,8 +830,6 @@ inline void precisionChange(vComplexD *out,vComplexF *in,int nvec){ precisionCha
 inline void precisionChange(vComplexD *out,vComplexH *in,int nvec){ precisionChange((vRealD *)out,(vRealH *)in,nvec);}
 inline void precisionChange(vComplexF *out,vComplexH *in,int nvec){ precisionChange((vRealF *)out,(vRealH *)in,nvec);}
 
-
-
 // Check our vector types are of an appropriate size.
 #if defined QPX
 static_assert(2*sizeof(SIMD_Ftype) == sizeof(SIMD_Dtype), "SIMD vector lengths incorrect");
@@ -824,21 +844,14 @@ static_assert(sizeof(SIMD_Ftype) == sizeof(SIMD_Itype), "SIMD vector lengths inc
 /////////////////////////////////////////
 template <typename T>
 struct is_simd : public std::false_type {};
-template <>
-struct is_simd<vRealF> : public std::true_type {};
-template <>
-struct is_simd<vRealD> : public std::true_type {};
-template <>
-struct is_simd<vComplexF> : public std::true_type {};
-template <>
-struct is_simd<vComplexD> : public std::true_type {};
-template <>
-struct is_simd<vInteger> : public std::true_type {};
+template <> struct is_simd<vRealF>     : public std::true_type {};
+template <> struct is_simd<vRealD>     : public std::true_type {};
+template <> struct is_simd<vComplexF>  : public std::true_type {};
+template <> struct is_simd<vComplexD>  : public std::true_type {};
+template <> struct is_simd<vInteger>   : public std::true_type {};
 
-template <typename T>
-using IfSimd = Invoke<std::enable_if<is_simd<T>::value, int> >;
-template <typename T>
-using IfNotSimd = Invoke<std::enable_if<!is_simd<T>::value, unsigned> >;
+template <typename T> using IfSimd    = Invoke<std::enable_if<is_simd<T>::value, int> >;
+template <typename T> using IfNotSimd = Invoke<std::enable_if<!is_simd<T>::value, unsigned> >;
 }
 
 #endif

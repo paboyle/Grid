@@ -194,9 +194,9 @@ int main (int argc, char ** argv)
 
   }
 
-  Complex dSpred    = sum(dS);
-  Complex dSm       = sum(dSmom);
-  Complex dSm2      = sum(dSmom2);
+  ComplexD dSpred    = sum(dS);
+  ComplexD dSm       = sum(dSmom);
+  ComplexD dSm2      = sum(dSmom2);
 
 
   std::cout << GridLogMessage <<"Initial mom hamiltonian is "<< Hmom <<std::endl;
@@ -212,6 +212,7 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << "Total dS    "<< Hmomprime - Hmom + Sprime - S <<std::endl;
 
+  assert( fabs(real(Sprime-S-dSpred)) < 5.0 ) ;
 
   std::cout<< GridLogMessage << "Done" <<std::endl;
   Grid_finalize();

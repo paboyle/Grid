@@ -44,10 +44,9 @@ namespace Grid
 {
   
   class XmlWriter: public Writer<XmlWriter>
-  {
-    
+  {    
   public:
-    XmlWriter(const std::string &fileName);
+    XmlWriter(const std::string &fileName,std::string toplev = std::string("grid") );
     virtual ~XmlWriter(void);
     void push(const std::string &s);
     void pop(void);
@@ -55,6 +54,7 @@ namespace Grid
     void writeDefault(const std::string &s, const U &x);
     template <typename U>
     void writeDefault(const std::string &s, const std::vector<U> &x);
+    std::string XmlString(void);
   private:
     pugi::xml_document doc_;
     pugi::xml_node     node_;
@@ -64,9 +64,10 @@ namespace Grid
   class XmlReader: public Reader<XmlReader>
   {
   public:
-    XmlReader(const std::string &fileName);
+    XmlReader(const char *xmlstring,std::string toplev = std::string("grid") );
+    XmlReader(const std::string &fileName,std::string toplev = std::string("grid") );
     virtual ~XmlReader(void) = default;
-    void push(const std::string &s);
+    bool push(const std::string &s);
     void pop(void);
     bool nextElement(const std::string &s);
     template <typename U>
@@ -77,6 +78,16 @@ namespace Grid
     pugi::xml_document doc_;
     pugi::xml_node     node_;
     std::string        fileName_;
+  };
+
+  template <>
+  struct isReader< XmlReader > {
+    static const bool value = true;
+  };
+
+  template <>
+  struct isWriter<XmlWriter > {
+    static const bool value = true;
   };
   
   // Writer template implementation ////////////////////////////////////////////
@@ -108,6 +119,7 @@ namespace Grid
     std::string buf;
     
     readDefault(s, buf);
+    //    std::cout << s << "   " << buf << std::endl;
     fromString(output, buf);
   }
   

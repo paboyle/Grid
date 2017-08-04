@@ -6,6 +6,7 @@ Source file: extras/Hadrons/Modules/MSource/SeqGamma.hpp
 
 Copyright (C) 2015
 Copyright (C) 2016
+Copyright (C) 2017
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -27,8 +28,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_SeqGamma_hpp_
-#define Hadrons_SeqGamma_hpp_
+#ifndef Hadrons_MSource_SeqGamma_hpp_
+#define Hadrons_MSource_SeqGamma_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -71,7 +72,7 @@ template <typename FImpl>
 class TSeqGamma: public Module<SeqGammaPar>
 {
 public:
-    TYPE_ALIASES(FImpl,);
+    FGS_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TSeqGamma(const std::string name);
@@ -149,9 +150,9 @@ void TSeqGamma<FImpl>::execute(void)
     for(unsigned int mu = 0; mu < env().getNd(); mu++)
     {
         LatticeCoordinate(coor, mu);
-        ph = ph + p[mu]*coor;
+        ph = ph + p[mu]*coor*((1./(env().getGrid()->_fdimensions[mu])));
     }
-    ph = exp(i*ph);
+    ph = exp((Real)(2*M_PI)*i*ph);
     LatticeCoordinate(t, Tp);
     src = where((t >= par().tA) and (t <= par().tB), ph*(g*q), 0.*q);
 }
@@ -160,4 +161,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_SeqGamma_hpp_
+#endif // Hadrons_MSource_SeqGamma_hpp_

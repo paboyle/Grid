@@ -6,8 +6,8 @@
 
     Copyright (C) 2015
 
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: paboyle <paboyle@ph.ed.ac.uk>
+    Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+    Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -75,6 +75,55 @@ namespace Grid {
     return multiplicity;
   }
 
+  
+// merge of April 11 2017
+//<<<<<<< HEAD
+
+
+  // this function is necessary for the LS vectorised field
+  inline int RNGfillable_general(GridBase *coarse,GridBase *fine)
+  {
+    int rngdims = coarse->_ndimension;
+    
+    // trivially extended in higher dims, with locality guaranteeing RNG state is local to node
+    int lowerdims   = fine->_ndimension - coarse->_ndimension;  assert(lowerdims >= 0);
+    // assumes that the higher dimensions are not using more processors
+    // all further divisions are local
+    for(int d=0;d<lowerdims;d++) assert(fine->_processors[d]==1);
+    for(int d=0;d<rngdims;d++) assert(coarse->_processors[d] == fine->_processors[d+lowerdims]);
+    
+
+    // then divide the number of local sites
+    // check that the total number of sims agree, meanse the iSites are the same
+    assert(fine->Nsimd() == coarse->Nsimd());
+
+    // check that the two grids divide cleanly
+    assert( (fine->lSites() / coarse->lSites() ) * coarse->lSites() == fine->lSites() );
+
+    return fine->lSites() / coarse->lSites();
+  }
+
+  /*
+  // Wrap seed_seq to give common interface with random_device
+  class fixedSeed {
+  public:
+    typedef std::seed_seq::result_type result_type;
+    std::seed_seq src;
+    
+    fixedSeed(const std::vector<int> &seeds) : src(seeds.begin(),seeds.end()) {};
+
+    result_type operator () (void){
+      std::vector<result_type> list(1);
+      src.generate(list.begin(),list.end());
+      return list[0];
+    }
+
+  };
+
+=======
+>>>>>>> develop
+  */
+  
   // real scalars are one component
   template<class scalar,class distribution,class generator> 
   void fillScalar(scalar &s,distribution &dist,generator & gen)
@@ -109,7 +158,7 @@ namespace Grid {
 #ifdef RNG_SITMO
     typedef sitmo::prng_engine 	RngEngine;
     typedef uint64_t    	RngStateType;
-    static const int    	RngStateCount = 4;
+    static const int    	RngStateCount = 13;
 #endif
 
     std::vector<RngEngine>                             _generators;
@@ -164,7 +213,7 @@ namespace Grid {
       ss<<eng;
       ss.seekg(0,ss.beg);
       for(int i=0;i<RngStateCount;i++){
-	ss>>saved[i];
+        ss>>saved[i];
       }
     }
     void GetState(std::vector<RngStateType> & saved,int gen) {
@@ -174,7 +223,7 @@ namespace Grid {
       assert(saved.size()==RngStateCount);
       std::stringstream ss;
       for(int i=0;i<RngStateCount;i++){
-	ss<< saved[i]<<" ";
+        ss<< saved[i]<<" ";
       }
       ss.seekg(0,ss.beg);
       ss>>eng;
@@ -215,7 +264,7 @@ namespace Grid {
 
       dist[0].reset();
       for(int idx=0;idx<words;idx++){
-	fillScalar(buf[idx],dist[0],_generators[0]);
+  fillScalar(buf[idx],dist[0],_generators[0]);
       }
 
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
@@ -247,7 +296,7 @@ namespace Grid {
       RealF *pointer=(RealF *)&l;
       dist[0].reset();
       for(int i=0;i<2*vComplexF::Nsimd();i++){
-	fillScalar(pointer[i],dist[0],_generators[0]);
+  fillScalar(pointer[i],dist[0],_generators[0]);
       }
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
@@ -255,7 +304,7 @@ namespace Grid {
       RealD *pointer=(RealD *)&l;
       dist[0].reset();
       for(int i=0;i<2*vComplexD::Nsimd();i++){
-	fillScalar(pointer[i],dist[0],_generators[0]);
+  fillScalar(pointer[i],dist[0],_generators[0]);
       }
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
@@ -263,7 +312,7 @@ namespace Grid {
       RealF *pointer=(RealF *)&l;
       dist[0].reset();
       for(int i=0;i<vRealF::Nsimd();i++){
-	fillScalar(pointer[i],dist[0],_generators[0]);
+  fillScalar(pointer[i],dist[0],_generators[0]);
       }
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
@@ -275,7 +324,7 @@ namespace Grid {
       }
       CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
     }
-
+    
     void SeedFixedIntegers(const std::vector<int> &seeds){
       CartesianCommunicator::BroadcastWorld(0,(void *)&seeds[0],sizeof(int)*seeds.size());
       std::seed_seq src(seeds.begin(),seeds.end());
@@ -284,18 +333,20 @@ namespace Grid {
   };
 
   class GridParallelRNG : public GridRNGbase {
+
+    double _time_counter;
+
   public:
     GridBase *_grid;
-    int _vol;
-  public:
+    unsigned int _vol;
 
-    int generator_idx(int os,int is){
+    int generator_idx(int os,int is) {
       return is*_grid->oSites()+os;
     }
 
     GridParallelRNG(GridBase *grid) : GridRNGbase() {
-      _grid=grid;
-      _vol =_grid->iSites()*_grid->oSites();
+      _grid = grid;
+      _vol  =_grid->iSites()*_grid->oSites();
 
       _generators.resize(_vol);
       _uniform.resize(_vol,std::uniform_real_distribution<RealD>{0,1});
@@ -309,33 +360,34 @@ namespace Grid {
       typedef typename vobj::scalar_object scalar_object;
       typedef typename vobj::scalar_type scalar_type;
       typedef typename vobj::vector_type vector_type;
-      
-      int multiplicity = RNGfillable(_grid,l._grid);
 
-      int     Nsimd =_grid->Nsimd();
-      int     osites=_grid->oSites();
-      int words=sizeof(scalar_object)/sizeof(scalar_type);
+      double inner_time_counter = usecond();
+
+      int multiplicity = RNGfillable_general(_grid, l._grid); // l has finer or same grid
+      int Nsimd  = _grid->Nsimd();  // guaranteed to be the same for l._grid too
+      int osites = _grid->oSites();  // guaranteed to be <= l._grid->oSites() by a factor multiplicity
+      int words  = sizeof(scalar_object) / sizeof(scalar_type);
 
       parallel_for(int ss=0;ss<osites;ss++){
+        std::vector<scalar_object> buf(Nsimd);
+        for (int m = 0; m < multiplicity; m++) {  // Draw from same generator multiplicity times
 
-	std::vector<scalar_object> buf(Nsimd);
-	for(int m=0;m<multiplicity;m++) {// Draw from same generator multiplicity times
+          int sm = multiplicity * ss + m;  // Maps the generator site to the fine site
 
-	  int sm=multiplicity*ss+m;      // Maps the generator site to the fine site
-
-	  for(int si=0;si<Nsimd;si++){
-	    int gdx = generator_idx(ss,si); // index of generator state
-	    scalar_type *pointer = (scalar_type *)&buf[si];
-	    dist[gdx].reset();
-	    for(int idx=0;idx<words;idx++){
-	      fillScalar(pointer[idx],dist[gdx],_generators[gdx]);
-	    }
-	  }
-
-	  // merge into SIMD lanes
-	  merge(l._odata[sm],buf);
-	}
+          for (int si = 0; si < Nsimd; si++) {
+            
+            int gdx = generator_idx(ss, si);  // index of generator state
+            scalar_type *pointer = (scalar_type *)&buf[si];
+            dist[gdx].reset();
+            for (int idx = 0; idx < words; idx++) 
+              fillScalar(pointer[idx], dist[gdx], _generators[gdx]);
+          }
+          // merge into SIMD lanes, FIXME suboptimal implementation
+          merge(l._odata[sm], buf);
+        }
       }
+
+      _time_counter += usecond()- inner_time_counter;
     };
 
     void SeedFixedIntegers(const std::vector<int> &seeds){
@@ -412,6 +464,12 @@ namespace Grid {
       }
 #endif
     }
+
+    void Report(){
+      std::cout << GridLogMessage << "Time spent in the fill() routine by GridParallelRNG: "<< _time_counter/1e3 << " ms" << std::endl;
+    }
+
+
     ////////////////////////////////////////////////////////////////////////
     // Support for rigorous test of RNG's
     // Return uniform random uint32_t from requested site generator
@@ -419,7 +477,6 @@ namespace Grid {
     uint32_t GlobalU01(int gsite){
 
       uint32_t the_number;
-
       // who
       std::vector<int> gcoor;
       int rank,o_idx,i_idx;

@@ -30,14 +30,6 @@
 using namespace Grid;
 using namespace Hadrons;
 
-static Gamma::Algebra gmu[4] =
-{
-    Gamma::Algebra::GammaX,
-    Gamma::Algebra::GammaY,
-    Gamma::Algebra::GammaZ,
-    Gamma::Algebra::GammaT
-};
-
 int main(int argc, char *argv[])
 {
     // initialization //////////////////////////////////////////////////////////
@@ -69,6 +61,14 @@ int main(int argc, char *argv[])
     
     // gauge field
     application.createModule<MGauge::Unit>("gauge");
+    
+    // set fermion boundary conditions to be periodic space, antiperiodic time.
+    std::string boundary = "1 1 1 -1";
+
+    // sink
+    MSink::Point::Par sinkPar;
+    sinkPar.mom = "0 0 0";
+    application.createModule<MSink::ScalarPoint>("sink", sinkPar);
     for (unsigned int i = 0; i < flavour.size(); ++i)
     {
         // actions
@@ -77,6 +77,7 @@ int main(int argc, char *argv[])
         actionPar.Ls    = 12;
         actionPar.M5    = 1.8;
         actionPar.mass  = mass[i];
+        actionPar.boundary = boundary;
         application.createModule<MAction::DWF>("DWF_" + flavour[i], actionPar);
         
         // solvers
@@ -110,7 +111,7 @@ int main(int argc, char *argv[])
             seqName.push_back(std::vector<std::string>(Nd));
             for (unsigned int mu = 0; mu < Nd; ++mu)
             {
-                seqPar.gamma   = gmu[mu];
+                seqPar.gamma   = 0x1 << mu;
                 seqName[i][mu] = "G" + std::to_string(seqPar.gamma)
                                  + "_" + std::to_string(seqPar.tA) + "-"
                                  + qName[i];
@@ -118,15 +119,15 @@ int main(int argc, char *argv[])
             }
             
             // propagators
-            Quark::Par quarkPar;
+            MFermion::GaugeProp::Par quarkPar;
             quarkPar.solver = "CG_" + flavour[i];
             quarkPar.source = srcName;
-            application.createModule<Quark>(qName[i], quarkPar);
+            application.createModule<MFermion::GaugeProp>(qName[i], quarkPar);
             for (unsigned int mu = 0; mu < Nd; ++mu)
             {
                 quarkPar.source = seqName[i][mu];
                 seqName[i][mu]  = "Q_" + flavour[i] + "-" + seqName[i][mu];
-                application.createModule<Quark>(seqName[i][mu], quarkPar);
+                application.createModule<MFermion::GaugeProp>(seqName[i][mu], quarkPar);
             }
         }
         
@@ -135,11 +136,11 @@ int main(int argc, char *argv[])
         for (unsigned int i = 0; i < flavour.size(); ++i)
         for (unsigned int j = i; j < flavour.size(); ++j)
         {
-            mesPar.output      = "mesons/Z2_" + flavour[i] + flavour[j];
-            mesPar.q1          = qName[i];
-            mesPar.q2          = qName[j];
-            mesPar.gammaSource = Gamma::Algebra::Gamma5;
-            mesPar.gammaSink   = Gamma::Algebra::Gamma5;
+            mesPar.output = "mesons/Z2_" + flavour[i] + flavour[j];
+            mesPar.q1     = qName[i];
+            mesPar.q2     = qName[j];
+            mesPar.gammas = "all";
+            mesPar.sink   = "sink";
             application.createModule<MContraction::Meson>("meson_Z2_"
                                                           + std::to_string(t)
                                                           + "_"
@@ -157,6 +158,8 @@ int main(int argc, char *argv[])
                             + std::to_string(mu);
             mesPar.q1     = qName[i];
             mesPar.q2     = seqName[j][mu];
+            mesPar.gammas = "all";
+            mesPar.sink   = "sink";
             application.createModule<MContraction::Meson>("3pt_Z2_"
                                                           + std::to_string(t)
                                                           + "_"

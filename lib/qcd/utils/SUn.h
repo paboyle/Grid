@@ -170,6 +170,7 @@ class SU {
     ta()()(i2, i1) = 1.0;
     ta = ta * 0.5;
   }
+  
   template <class cplx>
   static void generatorSigmaX(int su2Index, iSUnMatrix<cplx> &ta) {
     ta = zero;
@@ -193,6 +194,8 @@ class SU {
     RealD nrm = 1.0 / std::sqrt(2.0 * k * (k + 1));
     ta = ta * nrm;
   }
+
+
 
   ////////////////////////////////////////////////////////////////////////
   // Map a su2 subgroup number to the pair of rows that are non zero
@@ -713,8 +716,7 @@ template<typename GaugeField,typename GaugeMat>
 
     for (int a = 0; a < AdjointDimension; a++) {
       generator(a, Ta);
-      auto tmp = - 2.0 * (trace(timesI(Ta) * in)) * scale;// 2.0 for the normalization of the trace in the fundamental rep
-      pokeColour(h_out, tmp, a);
+      pokeColour(h_out, - 2.0 * (trace(timesI(Ta) * in)) * scale, a);
     }
   }
 
