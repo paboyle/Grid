@@ -139,6 +139,7 @@ public:
     ///////////////////////
     // Grid information
     ///////////////////////
+      _isCheckerBoarded = true;
       _checker_dim = checker_dim;
       assert(checker_dim_mask[checker_dim]==1);
       _ndimension = dimensions.size();

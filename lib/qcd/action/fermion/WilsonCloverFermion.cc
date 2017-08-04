@@ -35,27 +35,6 @@ namespace Grid
 namespace QCD
 {
 
-//WilsonLoop::CloverPlaquette
-/////////////////////////////////////////////////////
-//// Clover plaquette combination in mu,nu plane with Double Stored U
-////////////////////////////////////////////////////
-//static void CloverPlaquette(GaugeMat &Q, const std::vector<GaugeMat> &U,
-//                             const int mu, const int nu){
-//   Q = zero;
-//   Q += Gimpl::CovShiftBackward(
-//    U[mu], mu, Gimpl::CovShiftBackward(
-//             U[nu], nu, Gimpl::CovShiftForward(U[mu], mu, U[nu] )));
-//   Q += Gimpl::CovShiftForward(
-//    U[mu], mu, Gimpl::CovShiftForward(
-//         U[nu], nu, Gimpl::CovShiftBackward(U[mu], mu, U[nu+Nd] )));
-//   Q += Gimpl::CovShiftBackward(
-//    U[nu], nu, Gimpl::CovShiftForward(
-//         U[mu], mu, Gimpl::CovShiftForward(U[nu], nu, U[mu+Nd] )));
-//   Q += Gimpl::CovShiftForward(
-//    U[mu], mu, Gimpl::CovShiftBackward(
-//             U[nu], nu, Gimpl::CovShiftBackward(U[mu], mu, U[nu] )));
-// }
-
 // *NOT* EO
 template <class Impl>
 RealD WilsonCloverFermion<Impl>::M(const FermionField &in, FermionField &out)
@@ -89,10 +68,10 @@ RealD WilsonCloverFermion<Impl>::Mdag(const FermionField &in, FermionField &out)
 template <class Impl>
 void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
 {
-  this->ImportGauge(_Umu);
+  WilsonFermion<Impl>::ImportGauge(_Umu);
   GridBase *grid = _Umu._grid;
   typename Impl::GaugeLinkField Bx(grid), By(grid), Bz(grid), Ex(grid), Ey(grid), Ez(grid);
-  
+
   // Compute the field strength terms
   WilsonLoops<Impl>::FieldStrength(Bx, _Umu, Ydir, Zdir);
   WilsonLoops<Impl>::FieldStrength(By, _Umu, Zdir, Xdir);
@@ -102,12 +81,12 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
   WilsonLoops<Impl>::FieldStrength(Ez, _Umu, Tdir, Zdir);
 
   // Compute the Clover Operator acting on Colour and Spin
-  CloverTerm  = fillClover(Bx) * (Gamma(Gamma::Algebra::SigmaYZ));
-  CloverTerm += fillClover(By) * (Gamma(Gamma::Algebra::MinusSigmaXZ));
-  CloverTerm += fillClover(Bz) * (Gamma(Gamma::Algebra::SigmaXY));
-  CloverTerm += fillClover(Ex) * (Gamma(Gamma::Algebra::MinusSigmaXT));
-  CloverTerm += fillClover(Ey) * (Gamma(Gamma::Algebra::MinusSigmaYT));
-  CloverTerm += fillClover(Ez) * (Gamma(Gamma::Algebra::MinusSigmaZT));
+  CloverTerm  = fillCloverYZ(Bx);
+  CloverTerm += fillCloverXZ(By);
+  CloverTerm += fillCloverXY(Bz);
+  CloverTerm += fillCloverXT(Ex);
+  CloverTerm += fillCloverYT(Ey);
+  CloverTerm += fillCloverZT(Ez) ;
   CloverTerm *= csw;
 
   int lvol = _Umu._grid->lSites();
@@ -130,8 +109,11 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
         for (int a = 0; a < DimRep; a++)
           for (int b = 0; b < DimRep; b++)
             EigenCloverOp(a + j * DimRep, b + k * DimRep) = Qx()(j, k)(a, b);
+    //std::cout << EigenCloverOp << std::endl;
+
 
     EigenInvCloverOp = EigenCloverOp.inverse();
+    //std::cout << EigenInvCloverOp << std::endl;
     for (int j = 0; j < Ns; j++)
       for (int k = 0; k < Ns; k++)
         for (int a = 0; a < DimRep; a++)
@@ -139,17 +121,21 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
             Qxinv()(j, k)(a, b) = EigenInvCloverOp(a + j * DimRep, b + k * DimRep);
 
     pokeLocalSite(Qxinv, CloverTermInv, lcoor);
-    // Separate the even and odd parts.
-    pickCheckerboard(Even, CloverTermEven, CloverTerm);
-    pickCheckerboard( Odd,  CloverTermOdd, CloverTerm);
-    pickCheckerboard(Even, CloverTermInvEven, CloverTermInv);
-    pickCheckerboard( Odd,  CloverTermInvOdd, CloverTermInv);
   }
+
+  // Separate the even and odd parts.
+  pickCheckerboard(Even, CloverTermEven, CloverTerm);
+  pickCheckerboard( Odd,  CloverTermOdd, CloverTerm);
+
+  pickCheckerboard(Even, CloverTermInvEven, CloverTermInv);
+  pickCheckerboard( Odd,  CloverTermInvOdd, CloverTermInv);
+
 }
 
 template <class Impl>
 void WilsonCloverFermion<Impl>::Mooee(const FermionField &in, FermionField &out)
 {
+  conformable(in,out);
   this->MooeeInternal(in, out, DaggerNo, InverseNo);
 }
 
@@ -176,15 +162,27 @@ void WilsonCloverFermion<Impl>::MooeeInternal(const FermionField &in, FermionFie
 {
   out.checkerboard = in.checkerboard;
   CloverFieldType *Clover;
-  if (in.checkerboard == Odd){
-    std::cout << "Calling clover term Odd" << std::endl;
-    Clover = (inv) ? &CloverTermInvOdd : &CloverTermOdd;
+  assert(in.checkerboard == Odd || in.checkerboard == Even);
+
+  if (in._grid->_isCheckerBoarded)
+  {
+    if (in.checkerboard == Odd)
+    {
+      std::cout << "Calling clover term Odd" << std::endl;
+      Clover = (inv) ? &CloverTermInvOdd : &CloverTermOdd;
+    }
+    else
+    {
+      std::cout << "Calling clover term Even" << std::endl;
+      Clover = (inv) ? &CloverTermInvEven : &CloverTermEven;
+    }
   }
-  if (in.checkerboard == Even){
-    std::cout << "Calling clover term Even" << std::endl;
-    Clover = (inv) ? &CloverTermInvEven : &CloverTermEven;
+  else
+  {
+    Clover = (inv) ? &CloverTermInv : &CloverTerm;
   }
 
+  std::cout << GridLogMessage << "*Clover.checkerboard "  << (*Clover).checkerboard << std::endl;
   if (dag){ out = adj(*Clover) * in;} else { out = *Clover * in;}
 } // MooeeInternal
 

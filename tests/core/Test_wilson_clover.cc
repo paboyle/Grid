@@ -91,7 +91,7 @@ int main (int argc, char ** argv)
   }
 
   WilsonCloverFermionR Dwc(Umu,Grid,RBGrid,mass,csw,params);
-  
+  Dwc.ImportGauge(Umu); 
 
   std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
   std::cout<<GridLogMessage<<"= Testing Dhop against cshift implementation         "<<std::endl;
@@ -191,7 +191,6 @@ int main (int argc, char ** argv)
   Dwc.MooeeInv(src_e,phi_e);
 
   Dwc.Mooee(chi_o,src_o);
-exit(1);
   Dwc.MooeeInv(src_o,phi_o);
 
   setCheckerboard(phi,phi_e);

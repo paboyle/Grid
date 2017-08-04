@@ -69,6 +69,7 @@ public:
         ///////////////////////
         // Grid information
         ///////////////////////
+        _isCheckerBoarded = false;
         _ndimension = dimensions.size();
             
         _fdimensions.resize(_ndimension);
@@ -76,8 +77,8 @@ public:
         _ldimensions.resize(_ndimension);
         _rdimensions.resize(_ndimension);
         _simd_layout.resize(_ndimension);
-	_lstart.resize(_ndimension);
-	_lend.resize(_ndimension);
+	      _lstart.resize(_ndimension);
+	      _lend.resize(_ndimension);
             
         _ostride.resize(_ndimension);
         _istride.resize(_ndimension);

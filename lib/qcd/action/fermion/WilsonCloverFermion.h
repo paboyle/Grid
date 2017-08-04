@@ -94,17 +94,102 @@ private:
   // eventually these two can be compressed into 6x6 blocks instead of the 12x12
   // using the DeGrand-Rossi basis for the gamma matrices
 
-  CloverFieldType fillClover(const GaugeLinkField& F){
+  CloverFieldType fillCloverYZ(const GaugeLinkField &F)
+  {
     CloverFieldType T(F._grid);
+    T = zero;
     PARALLEL_FOR_LOOP
-    for (int i = 0; i < CloverTerm._grid->oSites(); i++){
-      for (int s1 = 0; s1 < Nc; s1++)
-      for (int s2 = 0; s2 < Nc; s2++)
-      T._odata[i]()(s1,s2) = F._odata[i]()();
+    for (int i = 0; i < CloverTerm._grid->oSites(); i++)
+    {
+      T._odata[i]()(0, 1) = timesMinusI(F._odata[i]()());
+      T._odata[i]()(1, 0) = timesMinusI(F._odata[i]()());
+      T._odata[i]()(2, 3) = timesMinusI(F._odata[i]()());
+      T._odata[i]()(3, 2) = timesMinusI(F._odata[i]()());
     }
-  return T;
-  }
   
+  return T;
+}
+
+  CloverFieldType fillCloverXZ(const GaugeLinkField &F)
+  {
+    CloverFieldType T(F._grid);
+    T = zero;
+    PARALLEL_FOR_LOOP
+    for (int i = 0; i < CloverTerm._grid->oSites(); i++)
+    {
+      T._odata[i]()(0, 1) = -F._odata[i]()();
+      T._odata[i]()(1, 0) = F._odata[i]()();
+      T._odata[i]()(2, 3) = -F._odata[i]()();
+      T._odata[i]()(3, 2) = F._odata[i]()();
+    }
+  
+  return T;
+}
+
+  CloverFieldType fillCloverXY(const GaugeLinkField &F)
+  {
+    CloverFieldType T(F._grid);
+    T = zero;
+    PARALLEL_FOR_LOOP
+    for (int i = 0; i < CloverTerm._grid->oSites(); i++)
+    {
+      T._odata[i]()(0, 0) = timesMinusI(F._odata[i]()());
+      T._odata[i]()(1, 1) = timesI(F._odata[i]()());
+      T._odata[i]()(2, 2) = timesMinusI(F._odata[i]()());
+      T._odata[i]()(3, 3) = timesI(F._odata[i]()());
+    }
+  
+  return T;
+}
+
+  CloverFieldType fillCloverXT(const GaugeLinkField &F)
+  {
+    CloverFieldType T(F._grid);
+    T = zero;
+    PARALLEL_FOR_LOOP
+    for (int i = 0; i < CloverTerm._grid->oSites(); i++)
+    {
+      T._odata[i]()(0, 1) = timesMinusI(F._odata[i]()());
+      T._odata[i]()(1, 0) = timesMinusI(F._odata[i]()());
+      T._odata[i]()(2, 3) = timesI(F._odata[i]()());
+      T._odata[i]()(3, 2) = timesI(F._odata[i]()());
+    }
+  
+  return T;
+}
+
+  CloverFieldType fillCloverYT(const GaugeLinkField &F)
+  {
+    CloverFieldType T(F._grid);
+    T = zero;
+    PARALLEL_FOR_LOOP
+    for (int i = 0; i < CloverTerm._grid->oSites(); i++)
+    {
+      T._odata[i]()(0, 1) = (F._odata[i]()());
+      T._odata[i]()(1, 0) = -(F._odata[i]()());
+      T._odata[i]()(2, 3) = -(F._odata[i]()());
+      T._odata[i]()(3, 2) = (F._odata[i]()());
+    }
+  
+  return T;
+}
+
+  CloverFieldType fillCloverZT(const GaugeLinkField &F)
+  {
+    CloverFieldType T(F._grid);
+    T = zero;
+    PARALLEL_FOR_LOOP
+    for (int i = 0; i < CloverTerm._grid->oSites(); i++)
+    {
+      T._odata[i]()(0, 0) = timesMinusI(F._odata[i]()());
+      T._odata[i]()(1, 1) = timesI(F._odata[i]()());
+      T._odata[i]()(2, 2) = timesI(F._odata[i]()());
+      T._odata[i]()(3, 3) = timesMinusI(F._odata[i]()());
+    }
+  
+  return T;
+}
+
 };
 }
 }
