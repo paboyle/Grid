@@ -185,17 +185,18 @@ public:
     ////////////////////////////////////////////////////////////////
 
     void show_decomposition(){
-      std::cout << GridLogMessage << "Full Dimensions    : " << _fdimensions << std::endl;
-      std::cout << GridLogMessage << "Global Dimensions  : " << _gdimensions << std::endl;
-      std::cout << GridLogMessage << "Local Dimensions   : " << _ldimensions << std::endl;
-      std::cout << GridLogMessage << "Reduced Dimensions : " << _rdimensions << std::endl;
-      std::cout << GridLogMessage << "Outer strides      : " << _ostride << std::endl;
-      std::cout << GridLogMessage << "Inner strides      : " << _istride << std::endl;
-      std::cout << GridLogMessage << "iSites             : " << _isites << std::endl;
-      std::cout << GridLogMessage << "oSites             : " << _osites << std::endl;
-      std::cout << GridLogMessage << "lSites             : " << lSites() << std::endl;        
-      std::cout << GridLogMessage << "gSites             : " << gSites() << std::endl;
-      std::cout << GridLogMessage << "Nd                 : " << _ndimension << std::endl;             
+      std::cout << GridLogMessage << "\tFull Dimensions    : " << _fdimensions << std::endl;
+      std::cout << GridLogMessage << "\tSIMD layout        : " << _simd_layout << std::endl;
+      std::cout << GridLogMessage << "\tGlobal Dimensions  : " << _gdimensions << std::endl;
+      std::cout << GridLogMessage << "\tLocal Dimensions   : " << _ldimensions << std::endl;
+      std::cout << GridLogMessage << "\tReduced Dimensions : " << _rdimensions << std::endl;
+      std::cout << GridLogMessage << "\tOuter strides      : " << _ostride << std::endl;
+      std::cout << GridLogMessage << "\tInner strides      : " << _istride << std::endl;
+      std::cout << GridLogMessage << "\tiSites             : " << _isites << std::endl;
+      std::cout << GridLogMessage << "\toSites             : " << _osites << std::endl;
+      std::cout << GridLogMessage << "\tlSites             : " << lSites() << std::endl;        
+      std::cout << GridLogMessage << "\tgSites             : " << gSites() << std::endl;
+      std::cout << GridLogMessage << "\tNd                 : " << _ndimension << std::endl;             
     } 
 
     ////////////////////////////////////////////////////////////////

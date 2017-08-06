@@ -377,7 +377,7 @@ void Grid_init(int *argc,char ***argv)
   std::cout << GridLogDebug << "Requesting "<< CartesianCommunicator::MAX_MPI_SHM_BYTES <<" byte stencil comms buffers "<<std::endl;
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--decomposition") ){
-    std::cout<<GridLogMessage<<"Grid Decomposition\n";
+    std::cout<<GridLogMessage<<"Grid Default Decomposition patterns\n";
     std::cout<<GridLogMessage<<"\tOpenMP threads : "<<GridThread::GetThreads()<<std::endl;
     std::cout<<GridLogMessage<<"\tMPI tasks      : "<<GridCmdVectorIntToString(GridDefaultMpi())<<std::endl;
     std::cout<<GridLogMessage<<"\tvRealF         : "<<sizeof(vRealF)*8    <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vRealF::Nsimd()))<<std::endl;
