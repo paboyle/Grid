@@ -108,11 +108,16 @@ int main(int argc, char **argv) {
   
   
   // Use this if you want to tweak the default decomposition
-  std::vector<int> simd_lanes({2,2,1,1});
+  // commented out as very architecture speficic
+  
+  //std::vector<int> simd_lanes({2,2,1,1});
 
   // Grid from the command line arguments --grid and --mpi
   // drop the simd_lanes argument to fall back to the default decomposition for the SIMD lanes
-  TheHMC.Resources.AddFourDimGrid("gauge", simd_lanes);
+  
+  //TheHMC.Resources.AddFourDimGrid("gauge", simd_lanes); // tweak the SIMD lanes
+  TheHMC.Resources.AddFourDimGrid("gauge"); // use default simd lanes decomposition
+  
   // Possibile to create the module by hand 
   // hardcoding parameters or using a Reader
 
