@@ -954,7 +954,7 @@ until convergence
 //	Uses more temorary
 //	Rotate0(Qt,evec,k1,k2,Nm);
 // 	Uses minimal temporary, possibly with less speed
-	Rotate(Qt,evec,k1-1,k2+1,Nm);
+	Rotate0(Qt,evec,k1-1,k2+1,Nm);
 // 	Try if Rotate() doesn't work
 //	Rotate2(Qt,evec,k1,k2);
 	t1=usecond()/1e6;
@@ -1010,10 +1010,8 @@ until convergence
          evec[i] = B[Iconv[i]];
        }
 #else
-	Rotate(Qt,evec,0,Nk,Nm);
+	Rotate0(Qt,evec,0,Nk,Nm);
 	FinalCheck( Nk, eval,evec);
-//exit(-1);
-//	ConvRotate2( Nk, Nm, Qt, evec, eval,eval2,Iconv,Nconv);
 #endif
 // Skip sorting, as it doubles the memory usage(!) and can be avoided by diagonalizing "right away"
 
