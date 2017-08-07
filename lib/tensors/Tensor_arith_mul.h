@@ -98,7 +98,9 @@ template<class rtype,class vtype,class mtype,int N>
 strong_inline void mult(iVector<rtype,N> * __restrict__ ret,
                  const iVector<vtype,N> * __restrict__ rhs,
                  const iScalar<mtype> * __restrict__ lhs){
-    mult(ret,lhs,rhs);
+    for(int c1=0;c1<N;c1++){
+        mult(&ret->_internal[c1],&rhs->_internal[c1],&lhs->_internal);
+    }                 
 }
     
 
