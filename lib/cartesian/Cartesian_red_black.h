@@ -131,21 +131,21 @@ public:
       Init(dimensions,simd_layout,processor_grid,checker_dim_mask,0);
     }
     void Init(const std::vector<int> &dimensions,
-	      const std::vector<int> &simd_layout,
-	      const std::vector<int> &processor_grid,
-	      const std::vector<int> &checker_dim_mask,
-	      int checker_dim)
+              const std::vector<int> &simd_layout,
+              const std::vector<int> &processor_grid,
+              const std::vector<int> &checker_dim_mask,
+              int checker_dim)
     {
-    ///////////////////////
-    // Grid information
-    ///////////////////////
+      ///////////////////////
+      // Grid information
+      ///////////////////////
       _checker_dim = checker_dim;
-      assert(checker_dim_mask[checker_dim]==1);
+      assert(checker_dim_mask[checker_dim] == 1);
       _ndimension = dimensions.size();
-      assert(checker_dim_mask.size()==_ndimension);
-      assert(processor_grid.size()==_ndimension);
-      assert(simd_layout.size()==_ndimension);
-      
+      assert(checker_dim_mask.size() == _ndimension);
+      assert(processor_grid.size() == _ndimension);
+      assert(simd_layout.size() == _ndimension);
+
       _fdimensions.resize(_ndimension);
       _gdimensions.resize(_ndimension);
       _ldimensions.resize(_ndimension);
@@ -153,115 +153,133 @@ public:
       _simd_layout.resize(_ndimension);
       _lstart.resize(_ndimension);
       _lend.resize(_ndimension);
-      
+
       _ostride.resize(_ndimension);
       _istride.resize(_ndimension);
-      
+
       _fsites = _gsites = _osites = _isites = 1;
-	
-      _checker_dim_mask=checker_dim_mask;
 
-      for(int d=0;d<_ndimension;d++){
-	_fdimensions[d] = dimensions[d];
-	_gdimensions[d] = _fdimensions[d];
-	_fsites = _fsites * _fdimensions[d];
-	_gsites = _gsites * _gdimensions[d];
-        
-	if (d==_checker_dim) {
-	  _gdimensions[d] = _gdimensions[d]/2; // Remove a checkerboard
-	}
-	_ldimensions[d] = _gdimensions[d]/_processors[d];
-	_lstart[d]     = _processor_coor[d]*_ldimensions[d];
-	_lend[d]       = _processor_coor[d]*_ldimensions[d]+_ldimensions[d]-1;
+      _checker_dim_mask = checker_dim_mask;
 
-	// Use a reduced simd grid
-	_simd_layout[d] = simd_layout[d];
-	_rdimensions[d]= _ldimensions[d]/_simd_layout[d]; // this is not checking if this is integer
-  assert(_rdimensions[d]*_simd_layout[d] == _ldimensions[d]);
-	assert(_rdimensions[d]>0);
+      for (int d = 0; d < _ndimension; d++)
+      {
+        _fdimensions[d] = dimensions[d];
+        _gdimensions[d] = _fdimensions[d];
+        _fsites = _fsites * _fdimensions[d];
+        _gsites = _gsites * _gdimensions[d];
 
-	// all elements of a simd vector must have same checkerboard.
-	// If Ls vectorised, this must still be the case; e.g. dwf rb5d
-	if ( _simd_layout[d]>1 ) {
-	  if ( checker_dim_mask[d] ) { 
-	    assert( (_rdimensions[d]&0x1) == 0 );
-	  }
-	}
+        if (d == _checker_dim)
+        {
+          assert((_gdimensions[d] & 0x1) == 0);
+          _gdimensions[d] = _gdimensions[d] / 2; // Remove a checkerboard
+        }
+        _ldimensions[d] = _gdimensions[d] / _processors[d];
+        assert(_ldimensions[d] * _processors[d] == _gdimensions[d]);
+        _lstart[d] = _processor_coor[d] * _ldimensions[d];
+        _lend[d] = _processor_coor[d] * _ldimensions[d] + _ldimensions[d] - 1;
 
-	_osites *= _rdimensions[d];
-	_isites *= _simd_layout[d];
-        
-	// Addressing support
-	if ( d==0 ) {
-	  _ostride[d] = 1;
-	  _istride[d] = 1;
-	} else {
-	  _ostride[d] = _ostride[d-1]*_rdimensions[d-1];
-	  _istride[d] = _istride[d-1]*_simd_layout[d-1];
-	}
+        // Use a reduced simd grid
+        _simd_layout[d] = simd_layout[d];
+        _rdimensions[d] = _ldimensions[d] / _simd_layout[d]; // this is not checking if this is integer
+        assert(_rdimensions[d] * _simd_layout[d] == _ldimensions[d]);
+        assert(_rdimensions[d] > 0);
 
+        // all elements of a simd vector must have same checkerboard.
+        // If Ls vectorised, this must still be the case; e.g. dwf rb5d
+        if (_simd_layout[d] > 1)
+        {
+          if (checker_dim_mask[d])
+          {
+            assert((_rdimensions[d] & 0x1) == 0);
+          }
+        }
 
+        _osites *= _rdimensions[d];
+        _isites *= _simd_layout[d];
+
+        // Addressing support
+        if (d == 0)
+        {
+          _ostride[d] = 1;
+          _istride[d] = 1;
+        }
+        else
+        {
+          _ostride[d] = _ostride[d - 1] * _rdimensions[d - 1];
+          _istride[d] = _istride[d - 1] * _simd_layout[d - 1];
+        }
       }
-            
+
       ////////////////////////////////////////////////////////////////////////////////////////////
       // subplane information
       ////////////////////////////////////////////////////////////////////////////////////////////
       _slice_block.resize(_ndimension);
       _slice_stride.resize(_ndimension);
       _slice_nblock.resize(_ndimension);
-        
-      int block =1;
-      int nblock=1;
-      for(int d=0;d<_ndimension;d++) nblock*=_rdimensions[d];
-      
-      for(int d=0;d<_ndimension;d++){
-	nblock/=_rdimensions[d];
-	_slice_block[d] =block;
-	_slice_stride[d]=_ostride[d]*_rdimensions[d];
-	_slice_nblock[d]=nblock;
-	block = block*_rdimensions[d];
+
+      int block = 1;
+      int nblock = 1;
+      for (int d = 0; d < _ndimension; d++)
+        nblock *= _rdimensions[d];
+
+      for (int d = 0; d < _ndimension; d++)
+      {
+        nblock /= _rdimensions[d];
+        _slice_block[d] = block;
+        _slice_stride[d] = _ostride[d] * _rdimensions[d];
+        _slice_nblock[d] = nblock;
+        block = block * _rdimensions[d];
       }
 
       ////////////////////////////////////////////////
       // Create a checkerboard lookup table
       ////////////////////////////////////////////////
       int rvol = 1;
-      for(int d=0;d<_ndimension;d++){
-	rvol=rvol * _rdimensions[d];
+      for (int d = 0; d < _ndimension; d++)
+      {
+        rvol = rvol * _rdimensions[d];
       }
       _checker_board.resize(rvol);
-      for(int osite=0;osite<_osites;osite++){
-	_checker_board[osite] = CheckerBoardFromOindex (osite);
+      for (int osite = 0; osite < _osites; osite++)
+      {
+        _checker_board[osite] = CheckerBoardFromOindex(osite);
       }
-      
     };
-protected:
+
+  protected:
     virtual int oIndex(std::vector<int> &coor)
     {
-      int idx=0;
-      for(int d=0;d<_ndimension;d++) {
-	if( d==_checker_dim ) {
-	  idx+=_ostride[d]*((coor[d]/2)%_rdimensions[d]);
-	} else {
-	  idx+=_ostride[d]*(coor[d]%_rdimensions[d]);
-	}
+      int idx = 0;
+      for (int d = 0; d < _ndimension; d++)
+      {
+        if (d == _checker_dim)
+        {
+          idx += _ostride[d] * ((coor[d] / 2) % _rdimensions[d]);
+        }
+        else
+        {
+          idx += _ostride[d] * (coor[d] % _rdimensions[d]);
+        }
       }
       return idx;
     };
-        
+
     virtual int iIndex(std::vector<int> &lcoor)
     {
-        int idx=0;
-        for(int d=0;d<_ndimension;d++) {
-	  if( d==_checker_dim ) {
-	    idx+=_istride[d]*(lcoor[d]/(2*_rdimensions[d]));
-	  } else { 
-	    idx+=_istride[d]*(lcoor[d]/_rdimensions[d]);
-	  }
-	}
-        return idx;
+      int idx = 0;
+      for (int d = 0; d < _ndimension; d++)
+      {
+        if (d == _checker_dim)
+        {
+          idx += _istride[d] * (lcoor[d] / (2 * _rdimensions[d]));
+        }
+        else
+        {
+          idx += _istride[d] * (lcoor[d] / _rdimensions[d]);
+        }
+      }
+      return idx;
     }
 };
-
 }
 #endif
