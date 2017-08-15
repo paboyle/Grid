@@ -142,19 +142,22 @@ void WilsonCloverFermion<Impl>::Mooee(const FermionField &in, FermionField &out)
 template <class Impl>
 void WilsonCloverFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out)
 {
-  this->MooeeInternal(in, out, DaggerNo, InverseYes);
+  conformable(in,out);
+  this->MooeeInternal(in, out, DaggerYes, InverseYes);
 }
 
 template <class Impl>
 void WilsonCloverFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out)
 {
+  conformable(in,out);
   this->MooeeInternal(in, out, DaggerNo, InverseYes);
 }
 
 template <class Impl>
 void WilsonCloverFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out)
 {
-  this->MooeeInternal(in, out, DaggerNo, InverseYes);
+  conformable(in,out);
+  this->MooeeInternal(in, out, DaggerYes, InverseYes);
 }
 
 template <class Impl>
@@ -183,7 +186,10 @@ void WilsonCloverFermion<Impl>::MooeeInternal(const FermionField &in, FermionFie
   }
 
   std::cout << GridLogMessage << "*Clover.checkerboard "  << (*Clover).checkerboard << std::endl;
-  if (dag){ out = adj(*Clover) * in;} else { out = *Clover * in;}
+  std::cout << GridLogMessage << "in.checkerboard "  << in.checkerboard << std::endl;
+  std::cout << GridLogMessage << "out.checkerboard "  << out.checkerboard << std::endl;
+  out = *Clover * in;
+  //if (dag){ out = adj(*Clover) * in;} else { out = *Clover * in;}
 } // MooeeInternal
 
 // Derivative parts
