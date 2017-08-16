@@ -118,7 +118,7 @@ namespace QCD{
         RealD scale = std::sqrt(0.5);
         gaussian(pRNG,eta);
         eta = eta * scale;
-        printf("Heatbath source vector: <\eta|\eta> = %1.15e\n", norm2(eta));
+        printf("Heatbath source vector: <\\eta|\\eta> = %1.15e\n", norm2(eta));
 
         // \Phi = ( \alpha_{0} + \sum_{k=1}^{N_{p}} \alpha_{l} * \gamma_{l} ) * \eta
         RealD N(PowerNegHalf.norm);
@@ -223,6 +223,40 @@ namespace QCD{
       // EOFA pseudofermion force: see Eqns. (34)-(36) of arXiv:1706.05843
       virtual void deriv(const GaugeField& U, GaugeField& dSdU)
       {
+        Lop.ImportGauge(U);
+        Rop.ImportGauge(U);
+
+        FermionField spProj_Phi      (Lop.FermionGrid());
+        FermionField Omega_spProj_Phi(Lop.FermionGrid());
+        FermionField CG_src          (Lop.FermionGrid());
+        FermionField Chi             (Lop.FermionGrid());
+        FermionField g5_R5_Chi       (Lop.FermionGrid());
+
+        GaugeField force(Lop.GaugeGrid());
+
+        // LH: dSdU = k \chi_{L}^{\dagger} \gamma_{5} R_{5} ( \partial_{x,\mu} D_{w} ) \chi_{L}
+        //     \chi_{L} = H(mf)^{-1} \Omega_{-} P_{-} \Phi
+        spProj(Phi, spProj_Phi, -1, Lop.Ls);
+        Lop.Omega(spProj_Phi, Omega_spProj_Phi, -1, 0);
+        G5R5(CG_src, Omega_spProj_Phi);
+        spProj_Phi = zero;
+        Solver(Lop, CG_src, spProj_Phi);
+        Lop.Dtilde(spProj_Phi, Chi);
+        G5R5(g5_R5_Chi, Chi);
+        Lop.MDeriv(force, g5_R5_Chi, Chi, DaggerNo);
+        dSdU = Lop.k * force;
+
+        // RH: dSdU = dSdU - k \chi_{R}^{\dagger} \gamma_{5} R_{5} ( \partial_{x,\mu} D_{w} ) \chi_{}
+        //     \chi_{R} = ( H(mb) - \Delta_{+}(mf,mb) P_{+} )^{-1} \Omega_{+} P_{+} \Phi
+        spProj(Phi, spProj_Phi, 1, Rop.Ls);
+        Rop.Omega(spProj_Phi, Omega_spProj_Phi, 1, 0);
+        G5R5(CG_src, Omega_spProj_Phi);
+        spProj_Phi = zero;
+        Solver(Rop, CG_src, spProj_Phi);
+        Rop.Dtilde(spProj_Phi, Chi);
+        G5R5(g5_R5_Chi, Chi);
+        Lop.MDeriv(force, g5_R5_Chi, Chi, DaggerNo);
+        dSdU = dSdU - Rop.k * force;
       };
   };
 }}
