@@ -35,24 +35,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 namespace Grid {
 namespace QCD {
 
-  /*template<typename T> struct switcheroo {
-    static inline int iscomplex() { return 0; }
-    template<class vec>
-    static inline vec mult(vec a, vec b){ return real_mult(a,b); }
-  };
-
-  template<> struct switcheroo<ComplexD> {
-    static inline int iscomplex() { return 1; }
-    template<class vec>
-    static inline vec mult(vec a, vec b){ return a*b; }
-  };
-
-  template<> struct switcheroo<ComplexF> {
-    static inline int iscomplex() { return 1; }
-    template<class vec>
-    static inline vec mult(vec a, vec b) { return a*b; }
-  };*/
-
   template<class Impl>
   class DomainWallEOFAFermion : public AbstractEOFAFermion<Impl>
   {
