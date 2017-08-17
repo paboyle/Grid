@@ -347,9 +347,7 @@ namespace QCD {
         GridBase* grid = this->FermionRedBlackGrid();
         int LLs = grid->_rdimensions[0];
 
-        if(LLs == Ls){
-            return; // Not vectorised in 5th direction
-        }
+        if(LLs == Ls){ return; } // Not vectorised in 5th direction
 
         Eigen::MatrixXcd Pplus  = Eigen::MatrixXcd::Zero(Ls,Ls);
         Eigen::MatrixXcd Pminus = Eigen::MatrixXcd::Zero(Ls,Ls);
