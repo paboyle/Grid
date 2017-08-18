@@ -300,6 +300,58 @@ namespace Grid {
       }
     };
 
+    template<class Matrix,class Field>
+      class SchurStagOperator :  public LinearOperatorBase<Field> {
+    protected:
+      Matrix &_Mat;
+    public:
+      SchurStagOperator (Matrix &Mat): _Mat(Mat){};
+      virtual  RealD Mpc      (const Field &in, Field &out) {
+	Field tmp(in._grid);
+	Field tmp2(in._grid);
+
+	_Mat.Mooee(in,out);
+	_Mat.Mooee(out,tmp);
+
+	_Mat.Meooe(in,out);
+	_Mat.Meooe(out,tmp2);
+
+	return axpy_norm(out,-1.0,tmp2,tmp);
+      }
+      virtual  RealD MpcDag   (const Field &in, Field &out){
+
+	return Mpc(in,out);
+      }
+#if 0
+      virtual void MpcDagMpc(const Field &in, Field &out,RealD &ni,RealD &no) {
+	Field tmp(in._grid);
+	ni=Mpc(in,tmp);
+	no=MpcDag(tmp,out);
+      }
+#endif
+      void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
+	n1 = Mpc(in,out);n2=0.;
+      }
+      void HermOp(const Field &in, Field &out){
+	RealD n1,n2;
+	HermOpAndNorm(in,out,n1,n2);
+      }
+      void Op     (const Field &in, Field &out){
+	Mpc(in,out);
+      }
+      void AdjOp     (const Field &in, Field &out){ 
+	MpcDag(in,out);
+      }
+      // Support for coarsening to a multigrid
+      void OpDiag (const Field &in, Field &out) {
+	assert(0); // must coarsen the unpreconditioned system
+      }
+      void OpDir  (const Field &in, Field &out,int dir,int disp) {
+	assert(0);
+      }
+
+    };
+
 #if 0
   // This is specific to (Z)mobius fermions
   template<class Matrix, class Field>

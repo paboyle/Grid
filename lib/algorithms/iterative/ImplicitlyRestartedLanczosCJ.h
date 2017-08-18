@@ -661,12 +661,12 @@ PARALLEL_FOR_LOOP
 	    RealD vv0 = norm2(v);
 	    eval2[i] = vnum/vden;
 	    v -= eval2[i]*B[i];
-	    RealD vv = norm2(v);
+	    RealD vv = norm2(v)/vv0;
 	    
 	    std::cout.precision(13);
 	    std::cout<<GridLogMessage << "[" << std::setw(3)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
 	    std::cout<<"eval = "<<std::setw(25)<< std::setiosflags(std::ios_base::left)<< eval2[i];
-	    std::cout<<"|H B[i] - eval[i]B[i]|^2 "<< std::setw(25)<< std::setiosflags(std::ios_base::right)<< vv;
+	    std::cout<<"|H B[i] - eval[i]B[i]|^2/|H B[i]|^2 "<< std::setw(25)<< std::setiosflags(std::ios_base::right)<< vv;
 	    std::cout<<" "<< vnum/(sqrt(vden)*sqrt(vv0)) << std::endl;
 	    
 	// change the criteria as evals are supposed to be sorted, all evals smaller(larger) than Nstop should have converged
@@ -696,12 +696,12 @@ void FinalCheck( int _Nk,
 		    RealD vv0 = norm2(v);
 		    RealD eval2 = vnum/vden;
 		    v -= eval2*evec[j];
-		    RealD vv = norm2(v);
+		    RealD vv = norm2(v)/vv0;
 	    
 		    std::cout.precision(13);
 		    std::cout<<GridLogMessage << "[" << std::setw(3)<< std::setiosflags(std::ios_base::right) <<j<<"] ";
 		    std::cout<<"eval = "<<std::setw(25)<< std::setiosflags(std::ios_base::left)<< eval2;
-		    std::cout<<"|H B[i] - eval[i]B[i]|^2 "<< std::setw(25)<< std::setiosflags(std::ios_base::right)<< vv;
+	    	std::cout<<"|H B[i] - eval[i]B[i]|^2/|H B[i]|^2 "<< std::setw(25)<< std::setiosflags(std::ios_base::right)<< vv;
 		    std::cout<<" "<< vnum/(sqrt(vden)*sqrt(vv0)) << std::endl;
 			eval[j] = eval2;
 	    
