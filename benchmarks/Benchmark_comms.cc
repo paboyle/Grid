@@ -92,8 +92,8 @@ int main (int argc, char ** argv)
       RealD Nnode = Grid.NodeCount();
       RealD ppn = Nrank/Nnode;
 
-      std::vector<std::vector<HalfSpinColourVectorD> > xbuf(8,std::vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
-      std::vector<std::vector<HalfSpinColourVectorD> > rbuf(8,std::vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
+      Vector<Vector<HalfSpinColourVectorD> > xbuf(8,Vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
+      Vector<Vector<HalfSpinColourVectorD> > rbuf(8,Vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
 
       int ncomm;
       int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
@@ -172,8 +172,8 @@ int main (int argc, char ** argv)
       RealD Nnode = Grid.NodeCount();
       RealD ppn = Nrank/Nnode;
 
-      std::vector<std::vector<HalfSpinColourVectorD> > xbuf(8,std::vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
-      std::vector<std::vector<HalfSpinColourVectorD> > rbuf(8,std::vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
+      Vector<Vector<HalfSpinColourVectorD> > xbuf(8,Vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
+      Vector<Vector<HalfSpinColourVectorD> > rbuf(8,Vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
 
 
       int ncomm;
