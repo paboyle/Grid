@@ -70,6 +70,8 @@ namespace Grid {
 		  std::vector<IndexInteger> & xi,
 		  std::vector<IndexInteger> &dims);
 
+    void ThreadInterleave(void);
+
   private:
     std::vector<IndexInteger> _LebesgueReorder;
 

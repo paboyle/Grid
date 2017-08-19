@@ -65,10 +65,12 @@ Hdf5Reader::Hdf5Reader(const std::string &fileName)
                       Hdf5Type<unsigned int>::type());
 }
 
-void Hdf5Reader::push(const std::string &s)
+bool Hdf5Reader::push(const std::string &s)
 {
   group_ = group_.openGroup(s);
   path_.push_back(s);
+  
+  return true;
 }
 
 void Hdf5Reader::pop(void)
