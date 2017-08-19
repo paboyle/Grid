@@ -186,9 +186,9 @@ public:
   pointer allocate(size_type __n, const void* _p= 0) 
   {
 #ifdef HAVE_MM_MALLOC_H
-    _Tp * ptr = (_Tp *) _mm_malloc(__n*sizeof(_Tp),128);
+    _Tp * ptr = (_Tp *) _mm_malloc(__n*sizeof(_Tp),GRID_ALLOC_ALIGN);
 #else
-    _Tp * ptr = (_Tp *) memalign(128,__n*sizeof(_Tp));
+    _Tp * ptr = (_Tp *) memalign(GRID_ALLOC_ALIGN,__n*sizeof(_Tp));
 #endif
     return ptr;
   }
