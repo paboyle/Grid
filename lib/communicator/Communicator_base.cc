@@ -26,6 +26,10 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/GridCore.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <limits.h>
+#include <sys/mman.h>
 
 namespace Grid {
 
@@ -129,8 +133,15 @@ void *CartesianCommunicator::ShmBufferTranslate(int rank,void * local_p) {
   return NULL;
 }
 void CartesianCommunicator::ShmInitGeneric(void){
+#if 1
+  ShmCommBuf =(void *) mmap(NULL, MAX_MPI_SHM_BYTES, PROT_READ | PROT_WRITE,  MAP_HUGETLB| MAP_SHARED | MAP_ANONYMOUS, -1, 0); 
+  if (ShmCommBuf == (void *)MAP_FAILED) exit(EXIT_FAILURE);  
+  std::cout << "ShmCommBuf "<<ShmCommBuf<<std::endl;
+#else 
   ShmBufStorageVector.resize(MAX_MPI_SHM_BYTES);
   ShmCommBuf=(void *)&ShmBufStorageVector[0];
+#endif
+  bzero(ShmCommBuf,MAX_MPI_SHM_BYTES);
 }
 
 #endif
