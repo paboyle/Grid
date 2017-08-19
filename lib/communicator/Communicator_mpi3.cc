@@ -621,6 +621,17 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
   }
 }
 
+double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
+						     int dest,
+						     void *recv,
+						     int from,
+						     int bytes,int dir)
+{
+  std::vector<CommsRequest_t> list;
+  StencilSendToRecvFromBegin(list,xmit,dest,recv,from,bytes,dir);
+  StencilSendToRecvFromComplete(list,dir);
+}
+
 double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 							 void *xmit,
 							 int dest,
