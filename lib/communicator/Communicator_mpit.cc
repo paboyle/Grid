@@ -242,20 +242,15 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 							 int recv_from_rank,
 							 int bytes,int dir)
 {
-  assert(false);
-  /*
   int myrank = _processor;
   int ierr;
   assert(dir < communicator_halo.size());
 
-  //  std::cout << " sending on communicator "<<dir<<" " <<communicator_halo[dir]<<std::endl;
-  // Give the CPU to MPI immediately; can use threads to overlap optionally
   ierr=MPI_Sendrecv(xmit,bytes,MPI_CHAR,xmit_to_rank,myrank,
 		    recv,bytes,MPI_CHAR,recv_from_rank, recv_from_rank,
 		    communicator_halo[dir],MPI_STATUS_IGNORE);
   assert(ierr==0);
   return 2.0*bytes;
-  */
 }
 
 double CartesianCommunicator::StencilSendToRecvFrom(void *xmit,
