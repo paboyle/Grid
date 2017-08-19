@@ -2,19 +2,16 @@ TODO:
 ---------------
 
 Large item work list:
-1)- I/O;    There appear to be issues with MPI IO and NERSC with large files.
-            Possible 2GB limit reappeared. GPFS driver in Intel MPI.
 
-2)- BG/Q port and check
+1)- BG/Q port and check
+2)- Christoph's local basis expansion Lanczos
+3)- Precision conversion and sort out localConvert      <-- partial
 
-3)- Christoph's local basis expansion Lanczos; port to use Lattice_transfer features
-
-4)- Precision conversion and sort out localConvert      <-- partial
   - Consistent linear solver flop count/rate -- PARTIAL, time but no flop/s yet
-5)- Physical propagator interface
-6)- Conserved currents
-7)- Multigrid Wilson and DWF, compare to other Multigrid implementations
-8)- HDCR resume
+4)- Physical propagator interface
+5)- Conserved currents
+6)- Multigrid Wilson and DWF, compare to other Multigrid implementations
+7)- HDCR resume
 
 Recent DONE 
 
