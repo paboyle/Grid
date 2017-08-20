@@ -42,13 +42,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <numaif.h>
 #endif
 
-// Make up for linex deficiencies
-#ifndef SHM_HUGETLB
-#define SHM_HUGETLB 0x0
-#endif
-#ifndef MAP_HUGETLB
-#define MAP_HUGETLB 0x0
-#endif
 
 namespace Grid {
 
@@ -220,7 +213,9 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
       ftruncate(fd, size);
       
       int mmap_flag = MAP_SHARED;
+#ifdef MAP_HUGETLB
       if (Hugepages) mmap_flag |= MAP_HUGETLB;
+#endif
       void * ptr =  mmap(NULL,size, PROT_READ | PROT_WRITE, mmap_flag, fd, 0);
 
       if ( ptr == MAP_FAILED ) {       perror("failed mmap");      assert(0);    }
@@ -274,7 +269,11 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
     for(int r=0;r<ShmSize;r++){
       size_t size = CartesianCommunicator::MAX_MPI_SHM_BYTES;
       key_t key   = 0x4545 + r;
-      if ((shmids[r]= shmget(key,size, SHM_HUGETLB | IPC_CREAT | SHM_R | SHM_W)) < 0) {
+      int flags = IPC_CREAT | SHM_R | SHM_W;
+#ifdef SHM_HUGETLB
+      flags|=SHM_HUGETLB;
+#endif
+      if ((shmids[r]= shmget(key,size, flags)) < 0) {
 	int errsv = errno;
 	printf("Errno %d\n",errsv);
 	perror("shmget");
