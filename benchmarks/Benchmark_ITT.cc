@@ -160,7 +160,7 @@ public:
 		int comm_proc = mpi_layout[mu]-1;
 		Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
 	      }
-#if 1
+#if 0
 	      tbytes= Grid.StencilSendToRecvFromBegin(requests,
 						      (void *)&xbuf[dir][0],
 						      xmit_to_rank,
