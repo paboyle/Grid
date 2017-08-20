@@ -405,7 +405,13 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 { 
   int ierr;
   communicator=communicator_world;
+
   _ndimension = processors.size();
+
+  communicator_halo.resize (2*_ndimension);
+  for(int i=0;i<_ndimension*2;i++){
+    MPI_Comm_dup(communicator,&communicator_halo[i]);
+  }
 
   ////////////////////////////////////////////////////////////////
   // Assert power of two shm_size.
@@ -648,6 +654,8 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 							 int from,
 							 int bytes,int dir)
 {
+  assert(dir < communicator_halo.size());
+
   MPI_Request xrq;
   MPI_Request rrq;
 
@@ -666,14 +674,14 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
   gfrom = MPI_UNDEFINED;
 #endif
   if ( gfrom ==MPI_UNDEFINED) {
-    ierr=MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator,&rrq);
+    ierr=MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator_halo[dir],&rrq);
     assert(ierr==0);
     list.push_back(rrq);
     off_node_bytes+=bytes;
   }
 
   if ( gdest == MPI_UNDEFINED ) {
-    ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator,&xrq);
+    ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator_halo[dir],&xrq);
     assert(ierr==0);
     list.push_back(xrq);
     off_node_bytes+=bytes;

@@ -78,15 +78,15 @@ class CartesianCommunicator {
 
 #if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3) || defined (GRID_COMMS_MPIT)
   static MPI_Comm communicator_world;
-         MPI_Comm communicator;
+
+  MPI_Comm              communicator;
+  std::vector<MPI_Comm> communicator_halo;
+
   typedef MPI_Request CommsRequest_t;
 #else 
   typedef int CommsRequest_t;
 #endif
 
-#if defined (GRID_COMMS_MPIT)
-  std::vector<MPI_Comm> communicator_halo;
-#endif
 
   ////////////////////////////////////////////////////////////////////
   // Helper functionality for SHM Windows common to all other impls
