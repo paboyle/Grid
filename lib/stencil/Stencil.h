@@ -252,10 +252,15 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
   //////////////////////////////////////////
   void CommunicateThreaded()
   {
+#ifdef GRID_OMP
     // must be called in parallel region
     int mythread = omp_get_thread_num();
     int nthreads = CartesianCommunicator::nCommThreads;
-    if (nthreads == -1) nthreads = Packets.size();
+#else
+    int mythread = 0;
+    int nthreads = 1;
+#endif
+    if (nthreads == -1) nthreads = 1;
     if (mythread < nthreads) {
       for (int i = mythread; i < Packets.size(); i += nthreads) {
 	double start = usecond();

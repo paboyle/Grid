@@ -41,8 +41,13 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifdef HAVE_NUMAIF_H
 #include <numaif.h>
 #endif
+
+// Make up for linex deficiencies
 #ifndef SHM_HUGETLB
-#define SHM_HUGETLB 04000
+#define SHM_HUGETLB 0x0
+#endif
+#ifndef MAP_HUGETLB
+#define MAP_HUGETLB 0x0
 #endif
 
 namespace Grid {
@@ -213,8 +218,11 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
       int fd=shm_open(shm_name,O_RDWR|O_CREAT,0666);
       if ( fd < 0 ) {	perror("failed shm_open");	assert(0);      }
       ftruncate(fd, size);
+      
+      int mmap_flag = MAP_SHARED;
+      if (Hugepages) mmap_flag |= MAP_HUGETLB;
+      void * ptr =  mmap(NULL,size, PROT_READ | PROT_WRITE, mmap_flag, fd, 0);
 
-      void * ptr =  mmap(NULL,size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
       if ( ptr == MAP_FAILED ) {       perror("failed mmap");      assert(0);    }
       assert(((uint64_t)ptr&0x3F)==0);
 
@@ -628,8 +636,9 @@ double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
 						     int bytes,int dir)
 {
   std::vector<CommsRequest_t> list;
-  StencilSendToRecvFromBegin(list,xmit,dest,recv,from,bytes,dir);
+  double offbytes = StencilSendToRecvFromBegin(list,xmit,dest,recv,from,bytes,dir);
   StencilSendToRecvFromComplete(list,dir);
+  return offbytes;
 }
 
 double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
@@ -671,7 +680,7 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
   }
 
   if ( CommunicatorPolicy == CommunicatorPolicySequential ) { 
-    this->StencilSendToRecvFromComplete(list);
+    this->StencilSendToRecvFromComplete(list,dir);
   }
 
   return off_node_bytes;

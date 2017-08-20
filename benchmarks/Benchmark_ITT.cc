@@ -218,7 +218,7 @@ public:
     std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
   
   uint64_t lmax=48;
-#define NLOOP (10*lmax*lmax*lmax*lmax/lat/lat/lat/lat)
+#define NLOOP (50*lmax*lmax*lmax*lmax/lat/lat/lat/lat)
 
     GridSerialRNG          sRNG;      sRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
     for(int lat=8;lat<=lmax;lat+=4){
@@ -368,7 +368,7 @@ public:
       const int num_cases = 4;
 #endif
       controls Cases [] = {
-#if defined(AVX512) 
+#ifdef AVX512
 	{ QCD::WilsonKernelsStatic::OptInlineAsm , QCD::WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  },
 	{ QCD::WilsonKernelsStatic::OptInlineAsm , QCD::WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
 #endif
@@ -380,6 +380,10 @@ public:
 
       for(int c=0;c<num_cases;c++) {
 
+	QCD::WilsonKernelsStatic::Comms = Cases[c].CommsOverlap;
+	QCD::WilsonKernelsStatic::Opt   = Cases[c].Opt;
+	CartesianCommunicator::SetCommunicatorPolicy(Cases[c].CommsAsynch);
+
 	std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 	if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptGeneric   ) std::cout << GridLogMessage<< "* Using GENERIC Nc WilsonKernels" <<std::endl;
 	if ( WilsonKernelsStatic::Opt == WilsonKernelsStatic::OptHandUnroll) std::cout << GridLogMessage<< "* Using Nc=3       WilsonKernels" <<std::endl;
@@ -390,10 +394,6 @@ public:
 	if ( sizeof(Real)==8 )   std::cout << GridLogMessage<< "* DOUBLE precision "<<std::endl;
 	std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 
-
-	QCD::WilsonKernelsStatic::Comms = Cases[c].CommsOverlap;
-	QCD::WilsonKernelsStatic::Opt   = Cases[c].Opt;
-	CartesianCommunicator::SetCommunicatorPolicy(Cases[c].CommsAsynch);
 	int nwarm = 10;
 	double t0=usecond();
 	FGrid->Barrier();

@@ -135,10 +135,11 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
 template<class Impl>
 void WilsonFermion5D<Impl>::Report(void)
 {
-    std::vector<int> latt = GridDefaultLatt();          
-    RealD volume = Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt[mu];
-    RealD NP = _FourDimGrid->_Nprocessors;
-    RealD NN = _FourDimGrid->NodeCount();
+  RealD NP     = _FourDimGrid->_Nprocessors;
+  RealD NN     = _FourDimGrid->NodeCount();
+  RealD volume = Ls;  
+  std::vector<int> latt = _FourDimGrid->GlobalDimensions();
+  for(int mu=0;mu<Nd;mu++) volume=volume*latt[mu];
 
   if ( DhopCalls > 0 ) {
     std::cout << GridLogMessage << "#### Dhop calls report " << std::endl;
@@ -390,17 +391,18 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   st.CommsMergeSHM(compressor);// Could do this inside parallel region overlapped with comms
   DhopFaceTime+=usecond();
 
-  // Rely on async comms; start comms before merge of local data
   double ctime=0;
   double ptime=0;
-  //  DhopComputeTime-=usecond();
-  //  DhopCommTime-=usecond();
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Ugly explicit thread mapping introduced for OPA reasons.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
 #pragma omp parallel reduction(max:ctime) reduction(max:ptime)
   { 
     int tid = omp_get_thread_num();
     int nthreads = omp_get_num_threads();
     int ncomms = CartesianCommunicator::nCommThreads;
-    if (ncomms == -1) ncomms = st.Packets.size(); 
+    if (ncomms == -1) ncomms = 1;
     assert(nthreads > ncomms);
     if (tid >= ncomms) {
       double start = usecond();
