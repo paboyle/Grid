@@ -102,6 +102,18 @@ int                      CartesianCommunicator::NodeCount(void)    { return Proc
 int                      CartesianCommunicator::RankCount(void)    { return ProcessorCount();};
 #endif
 #if !defined( GRID_COMMS_MPI3) && !defined (GRID_COMMS_MPIT)
+double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
+						     int xmit_to_rank,
+						     void *recv,
+						     int recv_from_rank,
+						     int bytes, int dir)
+{
+  std::vector<CommsRequest_t> list;
+  // Discard the "dir"
+  SendToRecvFromBegin   (list,xmit,xmit_to_rank,recv,recv_from_rank,bytes);
+  SendToRecvFromComplete(list);
+  return 2.0*bytes;
+}
 double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
 							 void *xmit,
 							 int xmit_to_rank,
