@@ -565,6 +565,7 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
 
  template<typename SiteSpinorType>
  void GparityTwistPermute(SiteSpinorType &into,  const SiteSpinorType &from, const int direction, const int distance, const int perm, GridBase* grid){
+#if 0
    typedef typename SiteSpinorType::scalar_object sobj;
    sobj stmp;
    std::vector<sobj> vals(grid->Nsimd());
@@ -589,6 +590,31 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
      }
    }
    merge(into,vals);
+#else
+   int permute_type = grid->PermuteType(direction);
+   typedef typename SiteSpinorType::vector_type vtype;
+   vtype tmp1, tmp2, tmp3, tmp4;
+
+   for(int s=0;s<Ns;s++){
+     for(int c=0;c<Nrepresentation;c++){
+       permute(tmp1, from(1)(s)(c), permute_type); //1l 1h -> 1h 1l
+       exchange(tmp2,tmp3, from(0)(s)(c), tmp1, permute_type); // 0l 0h , 1h 1l -> 0l 1h 0h,1l
+       permute(tmp4, tmp3, permute_type); //0h,1l -> 1l,0h
+              
+       if( (distance == 1 && !perm) || (distance == -1 && perm) ){
+	 //Pulled fermion through forwards face, GPBC on upper component
+	 //Need 0= 0l 1h   1= 1l 0h
+	 into(0)(s)(c) = tmp2;
+	 into(1)(s)(c) = tmp4;
+       }else if( (distance == -1 && !perm) || (distance == 1 && perm) ){
+	 //Pulled fermion through backwards face, GPBC on lower component
+	 //Need 0= 1l 0h   1= 0l 1h	 
+	 into(0)(s)(c) = tmp4;
+	 into(1)(s)(c) = tmp2;
+       }else assert(0);
+     }
+   }
+#endif
  }
 
 
