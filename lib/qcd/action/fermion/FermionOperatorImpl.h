@@ -425,6 +425,22 @@ class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepres
     ////////////////////////////////////////////////////////////////////////////////////////
     // Flavour doubled spinors; is Gparity the only? what about C*?
     ////////////////////////////////////////////////////////////////////////////////////////
+namespace GparityWilsonImpl_helper{
+  template<typename Get, typename A,typename B>
+  struct getAB;
+  
+  template<typename A,typename B>
+  struct getAB<A,A,B>{
+    static inline A & ref(A &a, B &b){ return a; }
+  };
+  template<typename A,typename B>
+  struct getAB<B,A,B>{
+    static inline B & ref(A &a, B &b){ return b; }
+  };
+};
+  
+
+  
 template <class S, int Nrepresentation, class Options=CoeffReal>
 class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresentation> > {
  public:
@@ -462,7 +478,10 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
       
  ImplParams Params;
 
- GparityWilsonImpl(const ImplParams &p = ImplParams()) : Params(p){};
+ std::vector<SiteSpinor, alignedAllocator<SiteSpinor> > tmp_full;
+ std::vector<SiteHalfSpinor, alignedAllocator<SiteHalfSpinor> > tmp_half;
+
+ GparityWilsonImpl(const ImplParams &p = ImplParams()) : Params(p), tmp_full(GridThread::GetThreads()), tmp_half(GridThread::GetThreads()){};
 
  bool overlapCommsCompute(void) { return Params.overlapCommsCompute; };
 
@@ -538,6 +557,66 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
    
  }
 
+
+ template <class ref>
+ inline void loadLinkElement(Simd &reg, ref &memory) {
+   reg = memory;
+ }
+
+ template<typename SiteSpinorType>
+ void GparityTwistPermute(SiteSpinorType &into,  const SiteSpinorType &from, const int direction, const int distance, const int perm, GridBase* grid){
+   typedef typename SiteSpinorType::scalar_object sobj;
+   sobj stmp;
+   std::vector<sobj> vals(grid->Nsimd());
+   extract(from,vals);
+   std::vector<int> icoor;
+   for(int s=0;s<grid->Nsimd();s++){
+     grid->iCoorFromIindex(icoor,s);
+     assert((icoor[direction]==0)||(icoor[direction]==1));
+
+     int permute_lane;
+     if ( distance == 1) {
+       permute_lane = icoor[direction]?1:0;
+     } else {
+       permute_lane = icoor[direction]?0:1;
+     }
+     if(perm) permute_lane = !permute_lane;                                                                                                                                                                                                
+
+     if ( permute_lane ) {
+       stmp(0) = vals[s](1);
+       stmp(1) = vals[s](0);
+       vals[s] = stmp;
+     }
+   }
+   merge(into,vals);
+ }
+
+
+ template<typename SiteSpinorType>
+ const SiteSpinorType & GparityGetChi(int &g, SiteSpinorType const* in, const int dir, const int f, StencilEntry *SE, StencilImpl &st){
+   const int mmu = dir % 4;
+   const int direction = st._directions[dir];
+   const int sl = st._grid->_simd_layout[direction];
+   const int perm = SE->_permute;
+   g = f;
+   
+   if(SE->_around_the_world && Params.twists[mmu]){
+     if(sl == 1){ //not SIMD vectorized in G-parity direction so just change the flavor index accessed to implement the twist
+       g = (f+1) % 2;
+       return in[SE->_offset];
+     }else{ //SIMD vectorized in Gparity direction
+       const int me = omp_get_thread_num();
+       const int distance = st._distances[dir];
+       assert(distance == -1 || distance == 1);
+       SiteSpinorType &tmp = GparityWilsonImpl_helper::getAB<SiteSpinorType, SiteSpinor, SiteHalfSpinor>::ref(tmp_full[me], tmp_half[me]);
+       GparityTwistPermute<SiteSpinorType>(tmp, in[SE->_offset], direction, distance, perm, st._grid);
+       return tmp;
+     }
+   }else return in[SE->_offset];
+ }
+
+
+ 
  inline void DoubleStore(GridBase *GaugeGrid,DoubledGaugeField &Uds,const GaugeField &Umu)
  {
    conformable(Uds._grid,GaugeGrid);
