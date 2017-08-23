@@ -47,9 +47,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define LOAD_CHIMU(DIR,F)						\
   { const SiteSpinor & ref (in._odata[offset]); LOAD_CHIMU_BODY(F); }
 
-#define LOAD_CHIMU_GPARITY(DIR,F)					\
-  { int g; const SiteSpinor & ref = GparityGetChi<SiteSpinor>(g,in._odata.data(),DIR,F,SE,st); LOAD_CHIMU_BODY(g); }
-
 #define LOAD_CHI_BODY(F)				\
     Chi_00 = ref(F)(0)(0);\
     Chi_01 = ref(F)(0)(1);\
@@ -61,9 +58,94 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define LOAD_CHI(DIR,F)						\
   {const SiteHalfSpinor &ref(buf[offset]); LOAD_CHI_BODY(F); }
 
-#define LOAD_CHI_GPARITY(DIR,F)						\
+
+//G-parity implementations using implementation method
+#define LOAD_CHIMU_GPARITY_IMPL(DIR,F)					\
+  { int g; const SiteSpinor & ref = GparityGetChi<SiteSpinor>(g,in._odata.data(),DIR,F,SE,st); LOAD_CHIMU_BODY(g); }
+
+#define LOAD_CHI_GPARITY_IMPL(DIR,F)					\
   { int g; const SiteHalfSpinor &ref = GparityGetChi<SiteHalfSpinor>(g,buf,DIR,F,SE,st); LOAD_CHI_BODY(g); }
 
+
+//G-parity implementations using in-place intrinsic ops
+
+//1l 1h -> 1h 1l
+//0l 0h , 1h 1l -> 0l 1h 0h,1l
+//0h,1l -> 1l,0h
+//if( (distance == 1 && !perm_will_occur) || (distance == -1 && perm_will_occur) )
+//Pulled fermion through forwards face, GPBC on upper component
+//Need 0= 0l 1h   1= 1l 0h
+//else if( (distance == -1 && !perm) || (distance == 1 && perm) )
+//Pulled fermion through backwards face, GPBC on lower component
+//Need 0= 1l 0h   1= 0l 1h
+#define DO_TWIST(INTO,S,C,F, tmp1, tmp2, tmp3, tmp4)			\
+  permute(tmp1, ref(1)(S)(C), permute_type);				\
+  exchange(tmp2,tmp3, ref(0)(S)(C), tmp1, permute_type);		\
+  permute(tmp4, tmp3, permute_type);					\
+  if( (distance == 1 && !perm) || (distance == -1 && perm) ){		\
+    INTO = F == 0 ? tmp2 : tmp4;					\
+  }else if( (distance == -1 && !perm) || (distance == 1 && perm) ){	\
+    INTO = F == 0 ? tmp4 : tmp2;					\
+  }
+
+#define LOAD_CHI_SETUP(DIR,F)						\
+  int g = F;								\
+  const int direction = st._directions[DIR];				\
+  const int distance = st._distances[DIR];				\
+  const int sl = st._grid->_simd_layout[direction];			\
+  int inplace_twist = 0;						\
+  if(SE->_around_the_world && this->Params.twists[DIR % 4]){		\
+    if(sl == 1){							\
+      g = (F+1) % 2;							\
+    }else{								\
+      inplace_twist = 1;						\
+    }									\
+  }  
+
+#define LOAD_CHIMU_GPARITY_INPLACE_TWIST(DIR,F)				\
+  { const SiteSpinor &ref(in._odata[offset]);				\
+    LOAD_CHI_SETUP(DIR,F);						\
+    if(!inplace_twist){							\
+      LOAD_CHIMU_BODY(g);						\
+    }else{								\
+      const int permute_type = st._grid->PermuteType(direction);	\
+      DO_TWIST(Chimu_00,0,0,F,  U_00,U_01,U_10,U_11);			\
+      DO_TWIST(Chimu_01,0,1,F,  U_20,U_21,U_00,U_01);			\
+      DO_TWIST(Chimu_02,0,2,F,  U_10,U_11,U_20,U_21);			\
+      DO_TWIST(Chimu_10,1,0,F,  U_00,U_01,U_10,U_11);			\
+      DO_TWIST(Chimu_11,1,1,F,  U_20,U_21,U_00,U_01);			\
+      DO_TWIST(Chimu_12,1,2,F,  U_10,U_11,U_20,U_21);			\
+      DO_TWIST(Chimu_20,2,0,F,  U_00,U_01,U_10,U_11);			\
+      DO_TWIST(Chimu_21,2,1,F,  U_20,U_21,U_00,U_01);			\
+      DO_TWIST(Chimu_22,2,2,F,  U_10,U_11,U_20,U_21);			\
+      DO_TWIST(Chimu_30,3,0,F,  U_00,U_01,U_10,U_11);			\
+      DO_TWIST(Chimu_31,3,1,F,  U_20,U_21,U_00,U_01);			\
+      DO_TWIST(Chimu_32,3,2,F,  U_10,U_11,U_20,U_21);			\
+    } \
+  }
+
+
+#define LOAD_CHI_GPARITY_INPLACE_TWIST(DIR,F)				\
+  { const SiteHalfSpinor &ref(buf[offset]);				\
+    LOAD_CHI_SETUP(DIR,F);						\
+    if(!inplace_twist){							\
+      LOAD_CHI_BODY(g);							\
+    }else{								\
+      const int permute_type = st._grid->PermuteType(direction);	\
+      DO_TWIST(Chi_00,0,0,F,  U_00,U_01,U_10,U_11);			\
+      DO_TWIST(Chi_01,0,1,F,  U_20,U_21,UChi_00,UChi_01);		\
+      DO_TWIST(Chi_02,0,2,F,  UChi_02,UChi_10,UChi_11,UChi_12);		\
+      DO_TWIST(Chi_10,1,0,F,  U_00,U_01,U_10,U_11);			\
+      DO_TWIST(Chi_11,1,1,F,  U_20,U_21,UChi_00,UChi_01);		\
+      DO_TWIST(Chi_12,1,2,F,  UChi_02,UChi_10,UChi_11,UChi_12);		\
+    }									\
+  }
+
+//#define LOAD_CHI_GPARITY(DIR,F) LOAD_CHI_GPARITY_IMPL(DIR,F)
+#define LOAD_CHI_GPARITY(DIR,F) LOAD_CHI_GPARITY_INPLACE_TWIST(DIR,F)
+
+//#define LOAD_CHIMU_GPARITY(DIR,F) LOAD_CHIMU_GPARITY_IMPL(DIR,F)
+#define LOAD_CHIMU_GPARITY(DIR,F) LOAD_CHIMU_GPARITY_INPLACE_TWIST(DIR,F)
 
 // To splat or not to splat depends on the implementation
 #define MULT_2SPIN_BODY \
