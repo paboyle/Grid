@@ -786,120 +786,113 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,D
 				    const FermionField &in,		\
 				    FermionField &out){ assert(0); }	\
 
-  HAND_SPECIALISE_EMPTY(GparityWilsonImplF);
-  //HAND_SPECIALISE_EMPTY(GparityWilsonImplD);
-  HAND_SPECIALISE_EMPTY(GparityWilsonImplFH);
-  HAND_SPECIALISE_EMPTY(GparityWilsonImplDF);
 
 
+#define HAND_SPECIALISE_GPARITY(IMPL)					\
+  template<> void							\
+  WilsonKernels<IMPL>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf, \
+				    int ss,int sU,const FermionField &in, FermionField &out) \
+  {									\
+    typedef IMPL Impl;							\
+    typedef typename Simd::scalar_type S;				\
+    typedef typename Simd::vector_type V;				\
+									\
+    HAND_DECLARATIONS(ignore);						\
+									\
+    int offset,local,perm, ptype;					\
+    StencilEntry *SE;							\
+    HAND_DOP_SITE(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
+    HAND_DOP_SITE(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
+  }									\
+									\
+  template<>								\
+  void WilsonKernels<IMPL>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf, \
+					    int ss,int sU,const FermionField &in, FermionField &out) \
+  {									\
+    typedef IMPL Impl;							\
+    typedef typename Simd::scalar_type S;				\
+    typedef typename Simd::vector_type V;				\
+									\
+    HAND_DECLARATIONS(ignore);						\
+									\
+    StencilEntry *SE;							\
+    int offset,local,perm, ptype;					\
+    HAND_DOP_SITE_DAG(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
+    HAND_DOP_SITE_DAG(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
+  }									\
+									\
+  template<> void							\
+  WilsonKernels<IMPL>::HandDhopSiteInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf, \
+						     int ss,int sU,const FermionField &in, FermionField &out) \
+  {									\
+    typedef IMPL Impl;							\
+    typedef typename Simd::scalar_type S;				\
+    typedef typename Simd::vector_type V;				\
+									\
+    HAND_DECLARATIONS(ignore);						\
+									\
+    int offset,local,perm, ptype;					\
+    StencilEntry *SE;							\
+    HAND_DOP_SITE_INT(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
+    HAND_DOP_SITE_INT(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
+  }									\
+									\
+  template<>								\
+  void WilsonKernels<IMPL>::HandDhopSiteDagInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf, \
+							     int ss,int sU,const FermionField &in, FermionField &out) \
+  {									\
+    typedef IMPL Impl;							\
+    typedef typename Simd::scalar_type S;				\
+    typedef typename Simd::vector_type V;				\
+									\
+    HAND_DECLARATIONS(ignore);						\
+									\
+    StencilEntry *SE;							\
+    int offset,local,perm, ptype;					\
+    HAND_DOP_SITE_DAG_INT(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
+    HAND_DOP_SITE_DAG_INT(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
+  }									\
+									\
+  template<> void							\
+  WilsonKernels<IMPL>::HandDhopSiteExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf, \
+						     int ss,int sU,const FermionField &in, FermionField &out) \
+  {									\
+    typedef IMPL Impl;							\
+    typedef typename Simd::scalar_type S;				\
+    typedef typename Simd::vector_type V;				\
+									\
+    HAND_DECLARATIONS(ignore);						\
+									\
+    int offset,local,perm, ptype;					\
+    StencilEntry *SE;							\
+    int nmu=0;								\
+    HAND_DOP_SITE_EXT(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
+    nmu = 0;								\
+    HAND_DOP_SITE_EXT(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
+  }									\
+  template<>								\
+  void WilsonKernels<IMPL>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf, \
+							     int ss,int sU,const FermionField &in, FermionField &out) \
+  {									\
+    typedef IMPL Impl;							\
+    typedef typename Simd::scalar_type S;				\
+    typedef typename Simd::vector_type V;				\
+									\
+    HAND_DECLARATIONS(ignore);						\
+									\
+    StencilEntry *SE;							\
+    int offset,local,perm, ptype;					\
+    int nmu=0;								\
+    HAND_DOP_SITE_DAG_EXT(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
+    nmu = 0;								\
+    HAND_DOP_SITE_DAG_EXT(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
+  }
 
 
-
-template<> void 
-WilsonKernels<GparityWilsonImplD>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf,
-					  int ss,int sU,const FermionField &in, FermionField &out)
-{
-// T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
-  typedef GparityWilsonImplD Impl;
-  typedef typename Simd::scalar_type S;
-  typedef typename Simd::vector_type V;
-
-  HAND_DECLARATIONS(ignore);
-
-  int offset,local,perm, ptype;
-  StencilEntry *SE;
-  HAND_DOP_SITE(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY);
-  HAND_DOP_SITE(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY);
-}
-
-template<>
-void WilsonKernels<GparityWilsonImplD>::HandDhopSiteDag(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-						  int ss,int sU,const FermionField &in, FermionField &out)
-{
-  typedef GparityWilsonImplD Impl;
-  typedef typename Simd::scalar_type S;
-  typedef typename Simd::vector_type V;
-
-  HAND_DECLARATIONS(ignore);
-
-  StencilEntry *SE;
-  int offset,local,perm, ptype;
-  HAND_DOP_SITE_DAG(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY);
-  HAND_DOP_SITE_DAG(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY);
-}
-
-template<> void 
-WilsonKernels<GparityWilsonImplD>::HandDhopSiteInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf,
-					  int ss,int sU,const FermionField &in, FermionField &out)
-{
-// T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
-  typedef GparityWilsonImplD Impl;
-  typedef typename Simd::scalar_type S;
-  typedef typename Simd::vector_type V;
-
-  HAND_DECLARATIONS(ignore);
-
-  int offset,local,perm, ptype;
-  StencilEntry *SE;
-  HAND_DOP_SITE_INT(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY);
-  HAND_DOP_SITE_INT(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY);
-}
-
-template<>
-void WilsonKernels<GparityWilsonImplD>::HandDhopSiteDagInt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-						  int ss,int sU,const FermionField &in, FermionField &out)
-{
-  typedef GparityWilsonImplD Impl;
-  typedef typename Simd::scalar_type S;
-  typedef typename Simd::vector_type V;
-
-  HAND_DECLARATIONS(ignore);
-
-  StencilEntry *SE;
-  int offset,local,perm, ptype;  
-  HAND_DOP_SITE_DAG_INT(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY);
-  HAND_DOP_SITE_DAG_INT(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY);
-}
-
-template<> void 
-WilsonKernels<GparityWilsonImplD>::HandDhopSiteExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf,
-					  int ss,int sU,const FermionField &in, FermionField &out)
-{
-// T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
-  typedef GparityWilsonImplD Impl;
-  typedef typename Simd::scalar_type S;
-  typedef typename Simd::vector_type V;
-
-  HAND_DECLARATIONS(ignore);
-
-  int offset,local,perm, ptype;
-  StencilEntry *SE;
-  int nmu=0;
-  HAND_DOP_SITE_EXT(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY);
-  nmu = 0;
-  HAND_DOP_SITE_EXT(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY);  
-}
-
-template<>
-void WilsonKernels<GparityWilsonImplD>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor *buf,
-						  int ss,int sU,const FermionField &in, FermionField &out)
-{
-  typedef GparityWilsonImplD Impl;
-  typedef typename Simd::scalar_type S;
-  typedef typename Simd::vector_type V;
-
-  HAND_DECLARATIONS(ignore);
-
-  StencilEntry *SE;
-  int offset,local,perm, ptype;
-  int nmu=0;
-  HAND_DOP_SITE_DAG_EXT(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY);
-  nmu = 0;
-  HAND_DOP_SITE_DAG_EXT(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY);
-}
-
-
-
+HAND_SPECIALISE_GPARITY(GparityWilsonImplF);
+HAND_SPECIALISE_GPARITY(GparityWilsonImplD);
+HAND_SPECIALISE_GPARITY(GparityWilsonImplFH);
+HAND_SPECIALISE_GPARITY(GparityWilsonImplDF);
 
 
 
