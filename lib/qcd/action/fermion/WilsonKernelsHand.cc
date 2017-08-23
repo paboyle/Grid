@@ -78,15 +78,29 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 //else if( (distance == -1 && !perm) || (distance == 1 && perm) )
 //Pulled fermion through backwards face, GPBC on lower component
 //Need 0= 1l 0h   1= 0l 1h
-#define DO_TWIST(INTO,S,C,F, tmp1, tmp2, tmp3, tmp4)			\
+
+//1l 1h -> 1h 1l
+//0l 0h , 1h 1l -> 0l 1h 0h,1l
+#define DO_TWIST_0L_1H(INTO,S,C,F, tmp1, tmp2, tmp3) \
   permute(tmp1, ref(1)(S)(C), permute_type);				\
   exchange(tmp2,tmp3, ref(0)(S)(C), tmp1, permute_type);		\
-  permute(tmp4, tmp3, permute_type);					\
-  if( (distance == 1 && !perm) || (distance == -1 && perm) ){		\
-    INTO = F == 0 ? tmp2 : tmp4;					\
-  }else if( (distance == -1 && !perm) || (distance == 1 && perm) ){	\
-    INTO = F == 0 ? tmp4 : tmp2;					\
+  INTO = tmp2;
+
+//0l 0h -> 0h 0l
+//1l 1h, 0h 0l -> 1l 0h, 1h 0l
+#define DO_TWIST_1L_0H(INTO,S,C,F, tmp1, tmp2, tmp3)			\
+  permute(tmp1, ref(0)(S)(C), permute_type);				\
+  exchange(tmp2,tmp3, ref(1)(S)(C), tmp1, permute_type);		\
+  INTO = tmp2;
+
+#define DO_TWIST(INTO,S,C,F, tmp1, tmp2, tmp3)				\
+  if(  ( F==0 && ((distance == 1 && !perm) || (distance == -1 && perm)) ) || \
+       ( F==1 && ((distance == -1 && !perm) || (distance == 1 && perm)) ) ){ \
+    DO_TWIST_0L_1H(INTO,S,C,F,tmp1,tmp2,tmp3);				\
+  }else{								\
+    DO_TWIST_1L_0H(INTO,S,C,F,tmp1,tmp2,tmp3);				\
   }
+
 
 #define LOAD_CHI_SETUP(DIR,F)						\
   int g = F;								\
@@ -109,18 +123,18 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
       LOAD_CHIMU_BODY(g);						\
     }else{								\
       const int permute_type = st._grid->PermuteType(direction);	\
-      DO_TWIST(Chimu_00,0,0,F,  U_00,U_01,U_10,U_11);			\
-      DO_TWIST(Chimu_01,0,1,F,  U_20,U_21,U_00,U_01);			\
-      DO_TWIST(Chimu_02,0,2,F,  U_10,U_11,U_20,U_21);			\
-      DO_TWIST(Chimu_10,1,0,F,  U_00,U_01,U_10,U_11);			\
-      DO_TWIST(Chimu_11,1,1,F,  U_20,U_21,U_00,U_01);			\
-      DO_TWIST(Chimu_12,1,2,F,  U_10,U_11,U_20,U_21);			\
-      DO_TWIST(Chimu_20,2,0,F,  U_00,U_01,U_10,U_11);			\
-      DO_TWIST(Chimu_21,2,1,F,  U_20,U_21,U_00,U_01);			\
-      DO_TWIST(Chimu_22,2,2,F,  U_10,U_11,U_20,U_21);			\
-      DO_TWIST(Chimu_30,3,0,F,  U_00,U_01,U_10,U_11);			\
-      DO_TWIST(Chimu_31,3,1,F,  U_20,U_21,U_00,U_01);			\
-      DO_TWIST(Chimu_32,3,2,F,  U_10,U_11,U_20,U_21);			\
+      DO_TWIST(Chimu_00,0,0,F,  U_00,U_01,U_10);			\
+      DO_TWIST(Chimu_01,0,1,F,  U_11,U_20,U_21);			\
+      DO_TWIST(Chimu_02,0,2,F,  U_00,U_01,U_10);			\
+      DO_TWIST(Chimu_10,1,0,F,  U_11,U_20,U_21);			\
+      DO_TWIST(Chimu_11,1,1,F,  U_00,U_01,U_10);			\
+      DO_TWIST(Chimu_12,1,2,F,  U_11,U_20,U_21);			\
+      DO_TWIST(Chimu_20,2,0,F,  U_00,U_01,U_10);			\
+      DO_TWIST(Chimu_21,2,1,F,  U_11,U_20,U_21);			\
+      DO_TWIST(Chimu_22,2,2,F,  U_00,U_01,U_10);			\
+      DO_TWIST(Chimu_30,3,0,F,  U_11,U_20,U_21);			\
+      DO_TWIST(Chimu_31,3,1,F,  U_00,U_01,U_10);			\
+      DO_TWIST(Chimu_32,3,2,F,  U_11,U_20,U_21);			\
     } \
   }
 
@@ -132,14 +146,18 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
       LOAD_CHI_BODY(g);							\
     }else{								\
       const int permute_type = st._grid->PermuteType(direction);	\
-      DO_TWIST(Chi_00,0,0,F,  U_00,U_01,U_10,U_11);			\
-      DO_TWIST(Chi_01,0,1,F,  U_20,U_21,UChi_00,UChi_01);		\
-      DO_TWIST(Chi_02,0,2,F,  UChi_02,UChi_10,UChi_11,UChi_12);		\
-      DO_TWIST(Chi_10,1,0,F,  U_00,U_01,U_10,U_11);			\
-      DO_TWIST(Chi_11,1,1,F,  U_20,U_21,UChi_00,UChi_01);		\
-      DO_TWIST(Chi_12,1,2,F,  UChi_02,UChi_10,UChi_11,UChi_12);		\
+      DO_TWIST(Chi_00,0,0,F,  U_00,U_01,U_10);				\
+      DO_TWIST(Chi_01,0,1,F,  U_11,U_20,U_21);				\
+      DO_TWIST(Chi_02,0,2,F,  UChi_00,UChi_01,UChi_02);			\
+      DO_TWIST(Chi_10,1,0,F,  UChi_10,UChi_11,UChi_12);			\
+      DO_TWIST(Chi_11,1,1,F,  U_00,U_01,U_10);				\
+      DO_TWIST(Chi_12,1,2,F,  U_11,U_20,U_21);				\
     }									\
   }
+
+
+
+
 
 //#define LOAD_CHI_GPARITY(DIR,F) LOAD_CHI_GPARITY_IMPL(DIR,F)
 #define LOAD_CHI_GPARITY(DIR,F) LOAD_CHI_GPARITY_INPLACE_TWIST(DIR,F)
