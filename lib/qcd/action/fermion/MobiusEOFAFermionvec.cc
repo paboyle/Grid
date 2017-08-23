@@ -213,15 +213,180 @@ namespace QCD {
     FermionField& chi, std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper,
     std::vector<Coeff_t>& shift_coeffs)
   {
-    this->M5D(psi, phi, chi, lower, diag, upper);
+    #if 0
 
-    // FIXME: possible gain from vectorizing shift operation as well?
-    Coeff_t one(1.0);
-    int Ls = this->Ls;
-    for(int s=0; s<Ls; s++){
-      if(this->pm == 1){ axpby_ssp_pplus(chi, one, chi, shift_coeffs[s], psi, s, Ls-1); }
-      else{ axpby_ssp_pminus(chi, one, chi, shift_coeffs[s], psi, s, 0); }
-    }
+      this->M5D(psi, phi, chi, lower, diag, upper);
+
+      // FIXME: possible gain from vectorizing shift operation as well?
+      Coeff_t one(1.0);
+      int Ls = this->Ls;
+      for(int s=0; s<Ls; s++){
+        if(this->pm == 1){ axpby_ssp_pplus(chi, one, chi, shift_coeffs[s], psi, s, Ls-1); }
+        else{ axpby_ssp_pminus(chi, one, chi, shift_coeffs[s], psi, s, 0); }
+      }
+
+    #else
+
+      GridBase* grid  = psi._grid;
+      int Ls          = this->Ls;
+      int LLs         = grid->_rdimensions[0];
+      const int nsimd = Simd::Nsimd();
+
+      Vector<iSinglet<Simd>> u(LLs);
+      Vector<iSinglet<Simd>> l(LLs);
+      Vector<iSinglet<Simd>> d(LLs);
+      Vector<iSinglet<Simd>> s(LLs);
+
+      assert(Ls/LLs == nsimd);
+      assert(phi.checkerboard == psi.checkerboard);
+
+      chi.checkerboard = psi.checkerboard;
+
+      // just directly address via type pun
+      typedef typename Simd::scalar_type scalar_type;
+      scalar_type* u_p = (scalar_type*) &u[0];
+      scalar_type* l_p = (scalar_type*) &l[0];
+      scalar_type* d_p = (scalar_type*) &d[0];
+      scalar_type* s_p = (scalar_type*) &s[0];
+
+      for(int o=0; o<LLs; o++){ // outer
+      for(int i=0; i<nsimd; i++){ //inner
+        int s   = o + i*LLs;
+        int ss  = o*nsimd + i;
+        u_p[ss] = upper[s];
+        l_p[ss] = lower[s];
+        d_p[ss] = diag[s];
+        s_p[ss] = shift_coeffs[s];
+      }}
+
+      this->M5Dcalls++;
+      this->M5Dtime -= usecond();
+
+      assert(Nc == 3);
+
+      parallel_for(int ss=0; ss<grid->oSites(); ss+=LLs){ // adds LLs
+
+        int vs     = (this->pm == 1) ? LLs-1 : 0;
+        Simd hs_00 = (this->pm == 1) ? psi[ss+vs]()(2)(0) : psi[ss+vs]()(0)(0);
+        Simd hs_01 = (this->pm == 1) ? psi[ss+vs]()(2)(1) : psi[ss+vs]()(0)(1);
+        Simd hs_02 = (this->pm == 1) ? psi[ss+vs]()(2)(2) : psi[ss+vs]()(0)(2);
+        Simd hs_10 = (this->pm == 1) ? psi[ss+vs]()(3)(0) : psi[ss+vs]()(1)(0);
+        Simd hs_11 = (this->pm == 1) ? psi[ss+vs]()(3)(1) : psi[ss+vs]()(1)(1);
+        Simd hs_12 = (this->pm == 1) ? psi[ss+vs]()(3)(2) : psi[ss+vs]()(1)(2);
+
+        for(int v=0; v<LLs; v++){
+
+          vprefetch(psi[ss+v+LLs]);
+
+          int vp = (v == LLs-1) ? 0     : v+1;
+          int vm = (v == 0)     ? LLs-1 : v-1;
+
+          Simd hp_00 = psi[ss+vp]()(2)(0);
+          Simd hp_01 = psi[ss+vp]()(2)(1);
+          Simd hp_02 = psi[ss+vp]()(2)(2);
+          Simd hp_10 = psi[ss+vp]()(3)(0);
+          Simd hp_11 = psi[ss+vp]()(3)(1);
+          Simd hp_12 = psi[ss+vp]()(3)(2);
+
+          Simd hm_00 = psi[ss+vm]()(0)(0);
+          Simd hm_01 = psi[ss+vm]()(0)(1);
+          Simd hm_02 = psi[ss+vm]()(0)(2);
+          Simd hm_10 = psi[ss+vm]()(1)(0);
+          Simd hm_11 = psi[ss+vm]()(1)(1);
+          Simd hm_12 = psi[ss+vm]()(1)(2);
+
+          if(vp <= v){
+            hp_00.v = Optimization::Rotate::tRotate<2>(hp_00.v);
+            hp_01.v = Optimization::Rotate::tRotate<2>(hp_01.v);
+            hp_02.v = Optimization::Rotate::tRotate<2>(hp_02.v);
+            hp_10.v = Optimization::Rotate::tRotate<2>(hp_10.v);
+            hp_11.v = Optimization::Rotate::tRotate<2>(hp_11.v);
+            hp_12.v = Optimization::Rotate::tRotate<2>(hp_12.v);
+          }
+
+          if(this->pm == 1 && vs <= v){
+            hs_00.v = Optimization::Rotate::tRotate<2>(hs_00.v);
+            hs_01.v = Optimization::Rotate::tRotate<2>(hs_01.v);
+            hs_02.v = Optimization::Rotate::tRotate<2>(hs_02.v);
+            hs_10.v = Optimization::Rotate::tRotate<2>(hs_10.v);
+            hs_11.v = Optimization::Rotate::tRotate<2>(hs_11.v);
+            hs_12.v = Optimization::Rotate::tRotate<2>(hs_12.v);
+          }
+
+          if(vm >= v){
+            hm_00.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hm_00.v);
+            hm_01.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hm_01.v);
+            hm_02.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hm_02.v);
+            hm_10.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hm_10.v);
+            hm_11.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hm_11.v);
+            hm_12.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hm_12.v);
+          }
+
+          if(this->pm == -1 && vs >= v){
+            hs_00.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hs_00.v);
+            hs_01.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hs_01.v);
+            hs_02.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hs_02.v);
+            hs_10.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hs_10.v);
+            hs_11.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hs_11.v);
+            hs_12.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hs_12.v);
+          }
+
+          // Can force these to real arithmetic and save 2x.
+          Simd p_00 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(0)(0)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_00)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(0)(0)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_00)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_00);
+          Simd p_01 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(0)(1)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_01)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(0)(1)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_01)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_01);
+          Simd p_02 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(0)(2)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_02)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(0)(2)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_02)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_02);
+          Simd p_10 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(1)(0)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_10)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(1)(0)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_10)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_10);
+          Simd p_11 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(1)(1)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_11)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(1)(1)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_11)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_11);
+          Simd p_12 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(1)(2)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_12)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(1)(2)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_12)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_12);
+          Simd p_20 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(2)(0)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_00)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_00)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(2)(0)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_00);
+          Simd p_21 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(2)(1)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_01)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_01)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(2)(1)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_01);
+          Simd p_22 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(2)(2)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_02)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_02)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(2)(2)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_02);
+          Simd p_30 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(3)(0)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_10)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_10)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(3)(0)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_10);
+          Simd p_31 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(3)(1)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_11)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_11)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(3)(1)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_11);
+          Simd p_32 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(3)(2)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_12)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_12)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(3)(2)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_12);
+
+          vstream(chi[ss+v]()(0)(0), p_00);
+          vstream(chi[ss+v]()(0)(1), p_01);
+          vstream(chi[ss+v]()(0)(2), p_02);
+          vstream(chi[ss+v]()(1)(0), p_10);
+          vstream(chi[ss+v]()(1)(1), p_11);
+          vstream(chi[ss+v]()(1)(2), p_12);
+          vstream(chi[ss+v]()(2)(0), p_20);
+          vstream(chi[ss+v]()(2)(1), p_21);
+          vstream(chi[ss+v]()(2)(2), p_22);
+          vstream(chi[ss+v]()(3)(0), p_30);
+          vstream(chi[ss+v]()(3)(1), p_31);
+          vstream(chi[ss+v]()(3)(2), p_32);
+        }
+      }
+
+      this->M5Dtime += usecond();
+
+    #endif
   }
 
   template<class Impl>
@@ -233,9 +398,9 @@ namespace QCD {
     int LLs = grid->_rdimensions[0];
     int nsimd = Simd::Nsimd();
 
-    Vector<iSinglet<Simd> > u(LLs);
-    Vector<iSinglet<Simd> > l(LLs);
-    Vector<iSinglet<Simd> > d(LLs);
+    Vector<iSinglet<Simd>> u(LLs);
+    Vector<iSinglet<Simd>> l(LLs);
+    Vector<iSinglet<Simd>> d(LLs);
 
     assert(Ls/LLs == nsimd);
     assert(phi.checkerboard == psi.checkerboard);
@@ -371,15 +536,179 @@ namespace QCD {
     FermionField& chi, std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper,
     std::vector<Coeff_t>& shift_coeffs)
   {
-    this->M5Ddag(psi, phi, chi, lower, diag, upper);
+    #if 0
 
-    // FIXME: possible gain from vectorizing shift operation as well?
-    Coeff_t one(1.0);
-    int Ls = this->Ls;
-    for(int s=0; s<Ls; s++){
-      if(this->pm == 1){ axpby_ssp_pplus(chi, one, chi, shift_coeffs[s], psi, Ls-1, s); }
-      else{ axpby_ssp_pminus(chi, one, chi, shift_coeffs[s], psi, 0, s); }
-    }
+      this->M5Ddag(psi, phi, chi, lower, diag, upper);
+
+      // FIXME: possible gain from vectorizing shift operation as well?
+      Coeff_t one(1.0);
+      int Ls = this->Ls;
+      for(int s=0; s<Ls; s++){
+        if(this->pm == 1){ axpby_ssp_pplus(chi, one, chi, shift_coeffs[s], psi, Ls-1, s); }
+        else{ axpby_ssp_pminus(chi, one, chi, shift_coeffs[s], psi, 0, s); }
+      }
+
+    #else
+
+      GridBase* grid = psi._grid;
+      int Ls  = this->Ls;
+      int LLs = grid->_rdimensions[0];
+      int nsimd = Simd::Nsimd();
+
+      Vector<iSinglet<Simd>> u(LLs);
+      Vector<iSinglet<Simd>> l(LLs);
+      Vector<iSinglet<Simd>> d(LLs);
+      Vector<iSinglet<Simd>> s(LLs);
+
+      assert(Ls/LLs == nsimd);
+      assert(phi.checkerboard == psi.checkerboard);
+
+      chi.checkerboard = psi.checkerboard;
+
+      // just directly address via type pun
+      typedef typename Simd::scalar_type scalar_type;
+      scalar_type* u_p = (scalar_type*) &u[0];
+      scalar_type* l_p = (scalar_type*) &l[0];
+      scalar_type* d_p = (scalar_type*) &d[0];
+      scalar_type* s_p = (scalar_type*) &s[0];
+
+      for(int o=0; o<LLs; o++){ // outer
+      for(int i=0; i<nsimd; i++){ //inner
+        int s  = o + i*LLs;
+        int ss = o*nsimd + i;
+        u_p[ss] = upper[s];
+        l_p[ss] = lower[s];
+        d_p[ss] = diag[s];
+        s_p[ss] = shift_coeffs[s];
+      }}
+
+      this->M5Dcalls++;
+      this->M5Dtime -= usecond();
+
+      parallel_for(int ss=0; ss<grid->oSites(); ss+=LLs){ // adds LLs
+
+        int vs     = (this->pm == 1) ? LLs-1 : 0;
+        Simd hs_00 = (this->pm == 1) ? psi[ss+vs]()(0)(0) : psi[ss+vs]()(2)(0);
+        Simd hs_01 = (this->pm == 1) ? psi[ss+vs]()(0)(1) : psi[ss+vs]()(2)(1);
+        Simd hs_02 = (this->pm == 1) ? psi[ss+vs]()(0)(2) : psi[ss+vs]()(2)(2);
+        Simd hs_10 = (this->pm == 1) ? psi[ss+vs]()(1)(0) : psi[ss+vs]()(3)(0);
+        Simd hs_11 = (this->pm == 1) ? psi[ss+vs]()(1)(1) : psi[ss+vs]()(3)(1);
+        Simd hs_12 = (this->pm == 1) ? psi[ss+vs]()(1)(2) : psi[ss+vs]()(3)(2);
+
+        for(int v=0; v<LLs; v++){
+
+          vprefetch(psi[ss+v+LLs]);
+
+          int vp = (v == LLs-1) ? 0     : v+1;
+          int vm = (v == 0    ) ? LLs-1 : v-1;
+
+          Simd hp_00 = psi[ss+vp]()(0)(0);
+          Simd hp_01 = psi[ss+vp]()(0)(1);
+          Simd hp_02 = psi[ss+vp]()(0)(2);
+          Simd hp_10 = psi[ss+vp]()(1)(0);
+          Simd hp_11 = psi[ss+vp]()(1)(1);
+          Simd hp_12 = psi[ss+vp]()(1)(2);
+
+          Simd hm_00 = psi[ss+vm]()(2)(0);
+          Simd hm_01 = psi[ss+vm]()(2)(1);
+          Simd hm_02 = psi[ss+vm]()(2)(2);
+          Simd hm_10 = psi[ss+vm]()(3)(0);
+          Simd hm_11 = psi[ss+vm]()(3)(1);
+          Simd hm_12 = psi[ss+vm]()(3)(2);
+
+          if (vp <= v){
+            hp_00.v = Optimization::Rotate::tRotate<2>(hp_00.v);
+            hp_01.v = Optimization::Rotate::tRotate<2>(hp_01.v);
+            hp_02.v = Optimization::Rotate::tRotate<2>(hp_02.v);
+            hp_10.v = Optimization::Rotate::tRotate<2>(hp_10.v);
+            hp_11.v = Optimization::Rotate::tRotate<2>(hp_11.v);
+            hp_12.v = Optimization::Rotate::tRotate<2>(hp_12.v);
+          }
+
+          if(this->pm == 1 && vs <= v){
+            hs_00.v = Optimization::Rotate::tRotate<2>(hs_00.v);
+            hs_01.v = Optimization::Rotate::tRotate<2>(hs_01.v);
+            hs_02.v = Optimization::Rotate::tRotate<2>(hs_02.v);
+            hs_10.v = Optimization::Rotate::tRotate<2>(hs_10.v);
+            hs_11.v = Optimization::Rotate::tRotate<2>(hs_11.v);
+            hs_12.v = Optimization::Rotate::tRotate<2>(hs_12.v);
+          }
+
+          if(vm >= v){
+            hm_00.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hm_00.v);
+            hm_01.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hm_01.v);
+            hm_02.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hm_02.v);
+            hm_10.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hm_10.v);
+            hm_11.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hm_11.v);
+            hm_12.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hm_12.v);
+          }
+
+          if(this->pm == -1 && vs >= v){
+            hs_00.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hs_00.v);
+            hs_01.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hs_01.v);
+            hs_02.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hs_02.v);
+            hs_10.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hs_10.v);
+            hs_11.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hs_11.v);
+            hs_12.v = Optimization::Rotate::tRotate<2*Simd::Nsimd()-2>(hs_12.v);
+          }
+
+          Simd p_00 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(0)(0)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_00)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_00)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(0)(0)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_00);
+          Simd p_01 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(0)(1)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_01)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_01)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(0)(1)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_01);
+          Simd p_02 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(0)(2)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_02)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_02)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(0)(2)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_02);
+          Simd p_10 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(1)(0)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_10)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_10)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(1)(0)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_10);
+          Simd p_11 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(1)(1)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_11)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_11)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(1)(1)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_11);
+          Simd p_12 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(1)(2)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_12)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_12)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(1)(2)) + switcheroo<Coeff_t>::mult(u[v]()()(), hp_12);
+          Simd p_20 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(2)(0)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_00)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(2)(0)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_00)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_00);
+          Simd p_21 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(2)(1)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_01)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(2)(1)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_01)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_01);
+          Simd p_22 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(2)(2)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_02)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(2)(2)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_02)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_02);
+          Simd p_30 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(3)(0)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_10)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(3)(0)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_10)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_10);
+          Simd p_31 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(3)(1)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_11)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(3)(1)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_11)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_11);
+          Simd p_32 = (this->pm == 1) ? switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(3)(2)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_12)
+                                      : switcheroo<Coeff_t>::mult(d[v]()()(), phi[ss+v]()(3)(2)) + switcheroo<Coeff_t>::mult(l[v]()()(), hm_12)
+                                                                                                 + switcheroo<Coeff_t>::mult(s[v]()()(), hs_12);
+
+          vstream(chi[ss+v]()(0)(0), p_00);
+          vstream(chi[ss+v]()(0)(1), p_01);
+          vstream(chi[ss+v]()(0)(2), p_02);
+          vstream(chi[ss+v]()(1)(0), p_10);
+          vstream(chi[ss+v]()(1)(1), p_11);
+          vstream(chi[ss+v]()(1)(2), p_12);
+          vstream(chi[ss+v]()(2)(0), p_20);
+          vstream(chi[ss+v]()(2)(1), p_21);
+          vstream(chi[ss+v]()(2)(2), p_22);
+          vstream(chi[ss+v]()(3)(0), p_30);
+          vstream(chi[ss+v]()(3)(1), p_31);
+          vstream(chi[ss+v]()(3)(2), p_32);
+
+        }
+
+      }
+
+      this->M5Dtime += usecond();
+
+    #endif
   }
 
   #ifdef AVX512
