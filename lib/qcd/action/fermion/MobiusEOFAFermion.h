@@ -111,7 +111,7 @@ namespace QCD {
   };
 }}
 
-#define INSTANTIATE_DPERP_DWF_EOFA(A)\
+#define INSTANTIATE_DPERP_MOBIUS_EOFA(A)\
 template void MobiusEOFAFermion<A>::M5D(const FermionField& psi, const FermionField& phi, FermionField& chi, \
   std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper); \
 template void MobiusEOFAFermion<A>::M5D_shift(const FermionField& psi, const FermionField& phi, FermionField& chi, \
@@ -122,7 +122,7 @@ template void MobiusEOFAFermion<A>::M5Ddag_shift(const FermionField& psi, const 
   std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper, std::vector<Coeff_t>& shift_coeffs); \
 template void MobiusEOFAFermion<A>::MooeeInv(const FermionField& psi, FermionField& chi); \
 template void MobiusEOFAFermion<A>::MooeeInv_shift(const FermionField& psi, FermionField& chi); \
-template void MobiusEOFAFermion<A>::MooeeInvDag(const FermionField& psi, FermionField& chi);
+template void MobiusEOFAFermion<A>::MooeeInvDag(const FermionField& psi, FermionField& chi); \
 template void MobiusEOFAFermion<A>::MooeeInvDag_shift(const FermionField& psi, FermionField& chi);
 
 #undef  MOBIUS_EOFA_DPERP_DENSE

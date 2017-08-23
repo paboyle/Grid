@@ -142,7 +142,7 @@ namespace QCD {
 
       RealD DtInv_p(0.0), DtInv_m(0.0);
       RealD N = std::pow(c+d,Ls) + m*std::pow(c-d,Ls);
-      FermionField tmp = zero;
+      FermionField tmp(this->FermionGrid());
 
       for(int s=0; s<Ls; ++s){
       for(int sp=0; sp<Ls; ++sp){
@@ -152,14 +152,13 @@ namespace QCD {
         DtInv_m = m * std::pow(-1.0,sp-s+1) * std::pow(c-d,Ls+sp-s) / std::pow(c+d,sp-s+1) / N;
         DtInv_m += (s > sp) ? 0.0 : std::pow(-1.0,sp-s) * std::pow(c-d,sp-s) / std::pow(c+d,sp-s+1);
 
-        if(dag){
-          RealD tmp(DtInv_p);
-          DtInv_p = DtInv_m;
-          DtInv_m = tmp;
+        if(sp == 0){
+          axpby_ssp_pplus (tmp, 0.0, tmp, DtInv_p, psi, s, sp);
+          axpby_ssp_pminus(tmp, 0.0, tmp, DtInv_m, psi, s, sp);
+        } else {
+          axpby_ssp_pplus (tmp, 1.0, tmp, DtInv_p, psi, s, sp);
+          axpby_ssp_pminus(tmp, 1.0, tmp, DtInv_m, psi, s, sp);
         }
-
-        axpby_ssp_pplus (tmp, 1.0, tmp, DtInv_p, psi, s, sp);
-        axpby_ssp_pminus(tmp, 1.0, tmp, DtInv_m, psi, s, sp);
 
       }}
     }
@@ -217,11 +216,11 @@ namespace QCD {
     template<class Impl>
     void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField& psi, FermionField& chi)
     {
-      int   Ls    = this->Ls;
+      int Ls = this->Ls;
 
       std::vector<Coeff_t> diag(Ls,1.0);
-      std::vector<Coeff_t> upper(Ls,-1.0); upper[Ls-1] = this->mq1 + shiftp;
-      std::vector<Coeff_t> lower(Ls,-1.0); lower[0]    = this->mq1 + shiftm;
+      std::vector<Coeff_t> upper(Ls,-1.0);  upper[Ls-1] = this->mq1;
+      std::vector<Coeff_t> lower(Ls,-1.0);  lower[0]    = this->mq1;
 
       // no shift term
       if(this->shift == 0.0){ this->M5Ddag(psi, chi, chi, lower, diag, upper); }

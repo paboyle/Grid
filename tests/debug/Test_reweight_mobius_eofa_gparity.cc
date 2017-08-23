@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./tests/debug/Test_reweight_dwf_eofa_gparity.cc
+Source file: ./tests/debug/Test_reweight_dwf_eofa.cc
 
 Copyright (C) 2017
 
@@ -40,6 +40,8 @@ const std::vector<int> grid_dim = { 8, 8, 8, 8 };
 const int Ls = 8;
 const int Nhits = 10;
 const int max_iter = 5000;
+const RealD b  = 2.5;
+const RealD c  = 1.5;
 const RealD mf = 0.1;
 const RealD mb = 0.11;
 const RealD M5 = 1.8;
@@ -108,10 +110,10 @@ int main(int argc, char **argv)
 
   // Initialize RHMC fermion operators
   GparityDomainWallFermionR::ImplParams params;
-  GparityDomainWallFermionR Ddwf_f(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf, M5, params);
-  GparityDomainWallFermionR Ddwf_b(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, M5, params);
-  SchurDiagMooeeOperator<GparityDomainWallFermionR, FermionField> MdagM(Ddwf_f);
-  SchurDiagMooeeOperator<GparityDomainWallFermionR, FermionField> VdagV(Ddwf_b);
+  GparityMobiusFermionR Ddwf_f(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf, M5, b, c, params);
+  GparityMobiusFermionR Ddwf_b(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, M5, b, c, params);
+  SchurDiagMooeeOperator<GparityMobiusFermionR, FermionField> MdagM(Ddwf_f);
+  SchurDiagMooeeOperator<GparityMobiusFermionR, FermionField> VdagV(Ddwf_b);
 
   // Degree 12 rational approximations to x^(1/4) and x^(-1/4)
   double     lo = 0.0001;
@@ -156,16 +158,21 @@ int main(int argc, char **argv)
   RealD shift_L = 0.0;
   RealD shift_R = -1.0;
   int pm = 1;
-  GparityDomainWallEOFAFermionR Deofa_L(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf, mf, mb, shift_L, pm, M5, params);
-  GparityDomainWallEOFAFermionR Deofa_R(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, mf, mb, shift_R, pm, M5, params);
-  MdagMLinearOperator<GparityDomainWallEOFAFermionR, FermionField> LdagL(Deofa_L);
-  MdagMLinearOperator<GparityDomainWallEOFAFermionR, FermionField> RdagR(Deofa_R);
+  GparityMobiusEOFAFermionR Deofa_L(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf, mf, mb, shift_L, pm, M5, b, c, params);
+  GparityMobiusEOFAFermionR Deofa_R(Umu, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, mf, mb, shift_R, pm, M5, b, c, params);
+  MdagMLinearOperator<GparityMobiusEOFAFermionR, FermionField> LdagL(Deofa_L);
+  MdagMLinearOperator<GparityMobiusEOFAFermionR, FermionField> RdagR(Deofa_R);
 
   // Stochastically estimate reweighting factor via EOFA
   RealD k = Deofa_L.k;
   std::vector<RealD> rw_eofa(Nhits);
   ConjugateGradient<FermionField> CG(stop_tol, max_iter);
   SchurRedBlackDiagMooeeSolve<FermionField> SchurSolver(CG);
+
+  // Compute -log(Z), where: ( RHMC det ratio ) = Z * ( EOFA det ratio )
+  RealD Z = std::pow(b+c+1.0,Ls) + mf*std::pow(b+c-1.0,Ls);
+  Z /= std::pow(b+c+1.0,Ls) + mb*std::pow(b+c-1.0,Ls);
+  Z = -12.0*grid_dim[0]*grid_dim[1]*grid_dim[2]*grid_dim[3]*std::log(Z);
 
   for(int hit=0; hit<Nhits; hit++){
 
@@ -183,8 +190,9 @@ int main(int argc, char **argv)
     G5R5(tmp[1], tmp[0]);
     tmp[0] = zero;
     SchurSolver(Deofa_L, tmp[1], tmp[0]);
-    Deofa_L.Omega(tmp[0], tmp[1], -1, 1);
-    rw_eofa[hit] = -k*innerProduct(spProj_Phi,tmp[1]).real();
+    Deofa_L.Dtilde(tmp[0], tmp[1]);
+    Deofa_L.Omega(tmp[1], tmp[0], -1, 1);
+    rw_eofa[hit] = 2.0*Z - k*innerProduct(spProj_Phi,tmp[0]).real();
 
     // RH term
     for(int s=0; s<Ls; ++s){ axpby_ssp_pplus(spProj_Phi, 0.0, Phi, 1.0, Phi, s, s); }
@@ -192,8 +200,9 @@ int main(int argc, char **argv)
     G5R5(tmp[1], tmp[0]);
     tmp[0] = zero;
     SchurSolver(Deofa_R, tmp[1], tmp[0]);
-    Deofa_R.Omega(tmp[0], tmp[1], 1, 1);
-    rw_eofa[hit] += k*innerProduct(spProj_Phi,tmp[1]).real();
+    Deofa_R.Dtilde(tmp[0], tmp[1]);
+    Deofa_R.Omega(tmp[1], tmp[0], 1, 1);
+    rw_eofa[hit] += k*innerProduct(spProj_Phi,tmp[0]).real();
     std::cout << std::endl << "==================================================" << std::endl;
     std::cout << " --- EOFA: Hit " << hit << ": rw = " << rw_eofa[hit];
     std::cout << std::endl << "==================================================" << std::endl << std::endl;

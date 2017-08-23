@@ -33,10 +33,6 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-typedef GparityWilsonImplR FermionImplPolicy;
-typedef GparityDomainWallEOFAFermionR FermionAction;
-typedef typename FermionAction::FermionField FermionField;
-
 int main (int argc, char** argv)
 {
   Grid_init(&argc, &argv);
@@ -71,9 +67,9 @@ int main (int argc, char** argv)
   int threads = GridThread::GetThreads();
   std::cout << GridLogMessage << "Grid is setup to use " << threads << " threads" << std::endl;
 
-  FermionField phi        (FGrid);  gaussian(RNG5, phi);
-  FermionField Mphi       (FGrid);
-  FermionField MphiPrime  (FGrid);
+  LatticeFermion phi        (FGrid);  gaussian(RNG5, phi);
+  LatticeFermion Mphi       (FGrid);
+  LatticeFermion MphiPrime  (FGrid);
 
   LatticeGaugeField U(UGrid);
   SU3::HotConfiguration(RNG4,U);
@@ -81,15 +77,16 @@ int main (int argc, char** argv)
   ////////////////////////////////////
   // Unmodified matrix element
   ////////////////////////////////////
+  RealD b  = 2.5;
+  RealD c  = 1.5;
   RealD mf = 0.01;
   RealD mb = 1.0;
   RealD M5 = 1.8;
-  FermionAction::ImplParams params;
-  FermionAction Lop(U, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf, mf, mb, 0.0, -1, M5, params);
-  FermionAction Rop(U, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, mf, mb, -1.0, 1, M5, params);
+  MobiusEOFAFermionR Lop(U, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mf, mf, mb, 0.0, -1, M5, b, c);
+  MobiusEOFAFermionR Rop(U, *FGrid, *FrbGrid, *UGrid, *UrbGrid, mb, mf, mb, -1.0, 1, M5, b, c);
   OneFlavourRationalParams Params(0.95, 100.0, 5000, 1.0e-12, 12);
-  ConjugateGradient<FermionField> CG(1.0e-12, 5000);
-  ExactOneFlavourRatioPseudoFermionAction<FermionImplPolicy> Meofa(Lop, Rop, CG, Params, true);
+  ConjugateGradient<LatticeFermion> CG(1.0e-12, 5000);
+  ExactOneFlavourRatioPseudoFermionAction<WilsonImplR> Meofa(Lop, Rop, CG, Params, false);
 
   Meofa.refresh(U, RNG5);
   RealD S = Meofa.S(U); // pdag M p

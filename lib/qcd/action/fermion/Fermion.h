@@ -265,9 +265,9 @@ typedef MobiusFermion<GparityWilsonImplRL> GparityMobiusFermionRL;
 typedef MobiusFermion<GparityWilsonImplFH> GparityMobiusFermionFH;
 typedef MobiusFermion<GparityWilsonImplDF> GparityMobiusFermionDF;
 
-typedef MobiusEOFAFermion<GparityWilsonImplR> GparityMobiusFermionR;
-typedef MobiusEOFAFermion<GparityWilsonImplF> GparityMobiusFermionF;
-typedef MobiusEOFAFermion<GparityWilsonImplD> GparityMobiusFermionD;
+typedef MobiusEOFAFermion<GparityWilsonImplR> GparityMobiusEOFAFermionR;
+typedef MobiusEOFAFermion<GparityWilsonImplF> GparityMobiusEOFAFermionF;
+typedef MobiusEOFAFermion<GparityWilsonImplD> GparityMobiusEOFAFermionD;
 
 typedef MobiusEOFAFermion<GparityWilsonImplRL> GparityMobiusEOFAFermionRL;
 typedef MobiusEOFAFermion<GparityWilsonImplFH> GparityMobiusEOFAFermionFH;
