@@ -59,14 +59,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   {const SiteHalfSpinor &ref(buf[offset]); LOAD_CHI_BODY(F); }
 
 
-//G-parity implementations using implementation method
-#define LOAD_CHIMU_GPARITY_IMPL(DIR,F)					\
-  { int g; const SiteSpinor & ref = GparityGetChi<SiteSpinor>(g,in._odata.data(),DIR,F,SE,st); LOAD_CHIMU_BODY(g); }
-
-#define LOAD_CHI_GPARITY_IMPL(DIR,F)					\
-  { int g; const SiteHalfSpinor &ref = GparityGetChi<SiteHalfSpinor>(g,buf,DIR,F,SE,st); LOAD_CHI_BODY(g); }
-
-
 //G-parity implementations using in-place intrinsic ops
 
 //1l 1h -> 1h 1l
@@ -156,13 +148,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   }
 
 
-
-
-
-//#define LOAD_CHI_GPARITY(DIR,F) LOAD_CHI_GPARITY_IMPL(DIR,F)
 #define LOAD_CHI_GPARITY(DIR,F) LOAD_CHI_GPARITY_INPLACE_TWIST(DIR,F)
-
-//#define LOAD_CHIMU_GPARITY(DIR,F) LOAD_CHIMU_GPARITY_IMPL(DIR,F)
 #define LOAD_CHIMU_GPARITY(DIR,F) LOAD_CHIMU_GPARITY_INPLACE_TWIST(DIR,F)
 
 // To splat or not to splat depends on the implementation
