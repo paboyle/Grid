@@ -119,7 +119,7 @@ template <typename FImpl>
 void TPoint<FImpl>::execute(void)
 {
     std::vector<int> position = strToVec<int>(par().position);
-    typename SitePropagator::scalar_object id;
+    SitePropagator id;
     
     LOG(Message) << "Creating point source at position [" << par().position
                  << "]" << std::endl;

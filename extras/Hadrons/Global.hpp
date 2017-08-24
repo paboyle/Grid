@@ -62,12 +62,11 @@ BEGIN_HADRONS_NAMESPACE
 
 // type aliases
 #define FERM_TYPE_ALIASES(FImpl, suffix)\
-typedef FermionOperator<FImpl>                       FMat##suffix;             \
-typedef typename FImpl::FermionField                 FermionField##suffix;     \
-typedef typename FImpl::PropagatorField              PropagatorField##suffix;  \
-typedef typename FImpl::SitePropagator               SitePropagator##suffix;   \
-typedef std::vector<typename FImpl::SitePropagator::scalar_object>             \
-                                                     SlicedPropagator##suffix;
+typedef FermionOperator<FImpl>                        FMat##suffix;            \
+typedef typename FImpl::FermionField                  FermionField##suffix;    \
+typedef typename FImpl::PropagatorField               PropagatorField##suffix; \
+typedef typename FImpl::SitePropagator::scalar_object SitePropagator##suffix;  \
+typedef std::vector<SitePropagator##suffix>           SlicedPropagator##suffix;
 
 #define GAUGE_TYPE_ALIASES(FImpl, suffix)\
 typedef typename FImpl::DoubledGaugeField DoubledGaugeField##suffix;

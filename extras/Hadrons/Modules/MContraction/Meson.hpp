@@ -51,8 +51,7 @@ BEGIN_HADRONS_NAMESPACE
            in a sequence (e.g. "<Gamma5 Gamma5><Gamma5 GammaT>").
 
            Special values: "all" - perform all possible contractions.
- - mom: momentum insertion, space-separated float sequence (e.g ".1 .2 1. 0."),
-        given as multiples of (2*pi) / L.
+ - sink: module to compute the sink to use in contraction (string).
 */
 
 /******************************************************************************

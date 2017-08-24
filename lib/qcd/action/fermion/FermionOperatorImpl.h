@@ -212,6 +212,13 @@ namespace QCD {
                          StencilImpl &St) {
       mult(&phi(), &U(mu), &chi());
     }
+    
+    inline void multLinkProp(SitePropagator &phi,
+                             const SiteDoubledGaugeField &U,
+                             const SitePropagator &chi,
+                             int mu) {
+       mult(&phi(), &U(mu), &chi());
+    }
       
     template <class ref>
     inline void loadLinkElement(Simd &reg, ref &memory) {
@@ -340,7 +347,20 @@ class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepres
     }
     mult(&phi(), &UU(), &chi());
   }
-      
+
+  inline void multLinkProp(SitePropagator &phi,
+                           const SiteDoubledGaugeField &U,
+                           const SitePropagator &chi,
+                           int mu) {
+    SiteGaugeLink UU;
+    for (int i = 0; i < Nrepresentation; i++) {
+      for (int j = 0; j < Nrepresentation; j++) {
+        vsplat(UU()()(i, j), U(mu)()(i, j));
+      }
+    }
+    mult(&phi(), &UU(), &chi());
+  }
+
   inline void DoubleStore(GridBase *GaugeGrid, DoubledGaugeField &Uds,const GaugeField &Umu) 
   {
     SiteScalarGaugeField  ScalarUmu;
@@ -536,6 +556,13 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
      mult(&phi(1),&U(1)(mu),&chi(1));
    }
    
+ }
+
+ // Fixme: Gparity prop * link
+ inline void multLinkProp(SitePropagator &phi, const SiteDoubledGaugeField &U,
+                          const SitePropagator &chi, int mu)
+ {
+   assert(0);
  }
 
  inline void DoubleStore(GridBase *GaugeGrid,DoubledGaugeField &Uds,const GaugeField &Umu)

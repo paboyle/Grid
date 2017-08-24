@@ -16,6 +16,7 @@ modules_hpp =\
   Modules/MContraction/DiscLoop.hpp \
   Modules/MContraction/Gamma3pt.hpp \
   Modules/MContraction/Meson.hpp \
+  Modules/MContraction/WardIdentity.hpp \
   Modules/MContraction/WeakHamiltonian.hpp \
   Modules/MContraction/WeakHamiltonianEye.hpp \
   Modules/MContraction/WeakHamiltonianNonEye.hpp \
@@ -30,9 +31,12 @@ modules_hpp =\
   Modules/MScalar/FreeProp.hpp \
   Modules/MScalar/Scalar.hpp \
   Modules/MSink/Point.hpp \
+  Modules/MSink/Smear.hpp \
   Modules/MSolver/RBPrecCG.hpp \
   Modules/MSource/Point.hpp \
+  Modules/MSource/SeqConserved.hpp \
   Modules/MSource/SeqGamma.hpp \
   Modules/MSource/Wall.hpp \
-  Modules/MSource/Z2.hpp
-
+  Modules/MSource/Z2.hpp \
+  Modules/MUtilities/TestSeqConserved.hpp \
+  Modules/MUtilities/TestSeqGamma.hpp

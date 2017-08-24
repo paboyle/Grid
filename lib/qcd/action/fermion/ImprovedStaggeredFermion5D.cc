@@ -345,6 +345,30 @@ void ImprovedStaggeredFermion5D<Impl>::MooeeInvDag(const FermionField &in,
   MooeeInv(in, out);
 }
 
+//////////////////////////////////////////////////////// 
+// Conserved current - not yet implemented.
+////////////////////////////////////////////////////////
+template <class Impl>
+void ImprovedStaggeredFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
+                                                         PropagatorField &q_in_2,
+                                                         PropagatorField &q_out,
+                                                         Current curr_type,
+                                                         unsigned int mu)
+{
+    assert(0);
+}
+
+template <class Impl>
+void ImprovedStaggeredFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
+                                                          PropagatorField &q_out,
+                                                          Current curr_type,
+                                                          unsigned int mu, 
+                                                          std::vector<Real> mom,
+                                                          unsigned int tmin,
+                                                          unsigned int tmax)
+{
+    assert(0);
+}
 
 FermOpStaggeredTemplateInstantiate(ImprovedStaggeredFermion5D);
 FermOpStaggeredVec5dTemplateInstantiate(ImprovedStaggeredFermion5D);

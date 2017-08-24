@@ -492,6 +492,14 @@ namespace QCD {
       return traceIndex<ColourIndex>(lhs);
     }
 
+    //////////////////////////////////////////
+    // Current types
+    //////////////////////////////////////////
+    GRID_SERIALIZABLE_ENUM(Current, undef,
+                           Vector,  0,
+                           Axial,   1,
+                           Tadpole, 2);
+
 }   //namespace QCD
 } // Grid
 

@@ -51,6 +51,14 @@ BEGIN_HADRONS_NAMESPACE
  *                   q1
  *
  *      trace(g5*q1*adj(q2)*g5*gamma*q3)
+ * 
+ *  options:
+ *   - q1: sink smeared propagator, source at i
+ *   - q2: propagator, source at i
+ *   - q3: propagator, source at f
+ *   - gamma: gamma matrix to insert
+ *   - tSnk: sink position for propagator q1.
+ *
  */
 
 /******************************************************************************
@@ -66,6 +74,7 @@ public:
                                     std::string,    q2,
                                     std::string,    q3,
                                     Gamma::Algebra, gamma,
+                                    unsigned int,   tSnk,
                                     std::string,    output);
 };
 
@@ -140,17 +149,22 @@ void TGamma3pt<FImpl1, FImpl2, FImpl3>::execute(void)
                  << par().q3 << "', with " << par().gamma << " insertion." 
                  << std::endl;
 
+    // Initialise variables. q2 and q3 are normal propagators, q1 may be 
+    // sink smeared.
     CorrWriter            writer(par().output);
-    PropagatorField1      &q1 = *env().template getObject<PropagatorField1>(par().q1);
+    SlicedPropagator1     &q1 = *env().template getObject<SlicedPropagator1>(par().q1);
     PropagatorField2      &q2 = *env().template getObject<PropagatorField2>(par().q2);
-    PropagatorField3      &q3 = *env().template getObject<PropagatorField3>(par().q3);
+    PropagatorField3      &q3 = *env().template getObject<PropagatorField2>(par().q3);
     LatticeComplex        c(env().getGrid());
     Gamma                 g5(Gamma::Algebra::Gamma5);
     Gamma                 gamma(par().gamma);
     std::vector<TComplex> buf;
     Result                result;
-
-    c = trace(g5*q1*adj(q2)*(g5*gamma)*q3);
+    
+    // Extract relevant timeslice of sinked propagator q1, then contract &
+    // sum over all spacial positions of gamma insertion.
+    SitePropagator1 q1Snk = q1[par().tSnk];
+    c = trace(g5*q1Snk*adj(q2)*(g5*gamma)*q3);
     sliceSum(c, buf, Tp);
 
     result.gamma = par().gamma;

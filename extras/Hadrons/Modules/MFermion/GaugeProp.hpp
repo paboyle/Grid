@@ -1,3 +1,34 @@
+/*************************************************************************************
+
+Grid physics library, www.github.com/paboyle/Grid 
+
+Source file: extras/Hadrons/Modules/MFermion/GaugeProp.hpp
+
+Copyright (C) 2015
+Copyright (C) 2016
+Copyright (C) 2017
+
+Author: Antonin Portelli <antonin.portelli@me.com>
+        Andrew Lawson    <andrew.lawson1991@gmail.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+See the full license in the file "LICENSE" in the top level distribution directory
+*************************************************************************************/
+/*  END LEGAL */
+
 #ifndef Hadrons_MFermion_GaugeProp_hpp_
 #define Hadrons_MFermion_GaugeProp_hpp_
 
@@ -6,6 +37,27 @@
 #include <Grid/Hadrons/ModuleFactory.hpp>
 
 BEGIN_HADRONS_NAMESPACE
+
+/******************************************************************************
+ * 5D -> 4D and 4D -> 5D conversions.                                         *
+ ******************************************************************************/
+template<class vobj> // Note that 5D object is modified.
+inline void make_4D(Lattice<vobj> &in_5d, Lattice<vobj> &out_4d, int Ls)
+{
+    axpby_ssp_pminus(in_5d, 0., in_5d, 1., in_5d, 0, 0);
+    axpby_ssp_pplus(in_5d, 1., in_5d, 1., in_5d, 0, Ls-1);
+    ExtractSlice(out_4d, in_5d, 0, 0);
+}
+
+template<class vobj>
+inline void make_5D(Lattice<vobj> &in_4d, Lattice<vobj> &out_5d, int Ls)
+{
+    out_5d = zero;
+    InsertSlice(in_4d, out_5d, 0, 0);
+    InsertSlice(in_4d, out_5d, Ls-1, 0);
+    axpby_ssp_pplus(out_5d, 0., out_5d, 1., out_5d, 0, 0);
+    axpby_ssp_pminus(out_5d, 0., out_5d, 1., out_5d, Ls-1, Ls-1);
+}
 
 /******************************************************************************
  *                                GaugeProp                                   *
@@ -116,12 +168,8 @@ void TGaugeProp<FImpl>::execute(void)
             }
             else
             {
-                source = zero;
                 PropToFerm(tmp, fullSrc, s, c);
-                InsertSlice(tmp, source, 0, 0);
-                InsertSlice(tmp, source, Ls_-1, 0);
-                axpby_ssp_pplus(source, 0., source, 1., source, 0, 0);
-                axpby_ssp_pminus(source, 0., source, 1., source, Ls_-1, Ls_-1);
+                make_5D(tmp, source, Ls_);
             }
         }
         // source conversion for 5D sources
@@ -143,11 +191,8 @@ void TGaugeProp<FImpl>::execute(void)
         if (Ls_ > 1)
         {
             PropagatorField &p4d =
-            *env().template getObject<PropagatorField>(getName());
-            
-            axpby_ssp_pminus(sol, 0., sol, 1., sol, 0, 0);
-            axpby_ssp_pplus(sol, 1., sol, 1., sol, 0, Ls_-1);
-            ExtractSlice(tmp, sol, 0, 0);
+                *env().template getObject<PropagatorField>(getName());
+            make_4D(sol, tmp, Ls_);
             FermToProp(p4d, tmp, s, c);
         }
     }

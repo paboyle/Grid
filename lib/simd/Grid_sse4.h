@@ -570,9 +570,9 @@ namespace Optimization {
   //Integer Reduce
   template<>
   inline Integer Reduce<Integer, __m128i>::operator()(__m128i in){
-    // FIXME unimplemented
-   printf("Reduce : Missing integer implementation -> FIX\n");
-    assert(0);
+    __m128i v1 = _mm_hadd_epi32(in, in);
+    __m128i v2 = _mm_hadd_epi32(v1, v1);
+    return _mm_cvtsi128_si32(v2);
   }
 }
 
