@@ -1,18 +1,4 @@
-# Grid
-<table>
-<tr>
-    <td>Last stable release</td>
-    <td><a href="https://travis-ci.org/paboyle/Grid">
-    <img src="https://travis-ci.org/paboyle/Grid.svg?branch=master"></a>
-    </td>
-</tr>
-<tr>
-    <td>Development branch</td>
-    <td><a href="https://travis-ci.org/paboyle/Grid">
-    <img src="https://travis-ci.org/paboyle/Grid.svg?branch=develop"></a>
-    </td>
-</tr>
-</table>
+# Grid [![Teamcity status](http://ci.cliath.ph.ed.ac.uk/app/rest/builds/aggregated/strob:(buildType:(affectedProject(id:Grid)),branch:name:develop)/statusIcon.svg)](http://ci.cliath.ph.ed.ac.uk/project.html?projectId=Grid&tab=projectOverview) [![Travis status](https://travis-ci.org/paboyle/Grid.svg?branch=develop)](https://travis-ci.org/paboyle/Grid)
 
 **Data parallel C++ mathematical object library.**
 
