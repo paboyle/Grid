@@ -194,7 +194,10 @@ void TChargedProp::execute(void)
             buf = prop;
             for (unsigned int j = 0; j < env().getNd()-1; ++j)
             {
-                buf = buf*pow(adj(*phase_[j]), mom[j]);
+                for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                {
+                    buf = buf*adj(*phase_[j]);
+                }
             }
             sliceSum(buf, vecBuf, Tp);
             result.resize(vecBuf.size());
@@ -208,7 +211,10 @@ void TChargedProp::execute(void)
             buf = *prop0_;
             for (unsigned int j = 0; j < env().getNd()-1; ++j)
             {
-                buf = buf*pow(adj(*phase_[j]), mom[j]);
+                for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                {
+                    buf = buf*adj(*phase_[j]);
+                }
             }
             sliceSum(buf, vecBuf, Tp);
             for (unsigned int t = 0; t < vecBuf.size(); ++t)
@@ -221,7 +227,10 @@ void TChargedProp::execute(void)
             buf = propQ;
             for (unsigned int j = 0; j < env().getNd()-1; ++j)
             {
-                buf = buf*pow(adj(*phase_[j]), mom[j]);
+                for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                {
+                    buf = buf*adj(*phase_[j]);
+                }
             }
             sliceSum(buf, vecBuf, Tp);
             for (unsigned int t = 0; t < vecBuf.size(); ++t)
@@ -234,7 +243,10 @@ void TChargedProp::execute(void)
             buf = propSun;
             for (unsigned int j = 0; j < env().getNd()-1; ++j)
             {
-                buf = buf*pow(adj(*phase_[j]), mom[j]);
+                for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                {
+                    buf = buf*adj(*phase_[j]);
+                }
             }
             sliceSum(buf, vecBuf, Tp);
             for (unsigned int t = 0; t < vecBuf.size(); ++t)
@@ -247,7 +259,10 @@ void TChargedProp::execute(void)
             buf = propTad;
             for (unsigned int j = 0; j < env().getNd()-1; ++j)
             {
-                buf = buf*pow(adj(*phase_[j]), mom[j]);
+                for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                {
+                    buf = buf*adj(*phase_[j]);
+                }
             }
             sliceSum(buf, vecBuf, Tp);
             for (unsigned int t = 0; t < vecBuf.size(); ++t)

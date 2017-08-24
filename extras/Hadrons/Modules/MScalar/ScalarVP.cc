@@ -214,7 +214,10 @@ void TScalarVP::execute(void)
                     vpPhase = freeVpTensor[mu][nu];
                     for (unsigned int j = 0; j < env().getNd()-1; ++j)
                     {
-                        vpPhase = vpPhase*pow(adj(*phase_[j]), mom[j]);
+                        for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                        {
+                            vpPhase = vpPhase*adj(*phase_[j]);
+                        }
                     }
                     sliceSum(vpPhase, vecBuf, Tp);
                     result.resize(vecBuf.size());
@@ -248,7 +251,10 @@ void TScalarVP::execute(void)
                     vpPhase = tmp_vp;
                     for (unsigned int j = 0; j < env().getNd()-1; ++j)
                     {
-                        vpPhase = vpPhase*pow(adj(*phase_[j]), mom[j]);
+                        for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                        {
+                            vpPhase = vpPhase*adj(*phase_[j]);
+                        }
                     }
                     sliceSum(vpPhase, vecBuf, Tp);
                     result.resize(vecBuf.size());
@@ -282,7 +288,10 @@ void TScalarVP::execute(void)
                     vpPhase = tmp_vp;
                     for (unsigned int j = 0; j < env().getNd()-1; ++j)
                     {
-                        vpPhase = vpPhase*pow(adj(*phase_[j]), mom[j]);
+                        for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                        {
+                            vpPhase = vpPhase*adj(*phase_[j]);
+                        }
                     }
                     sliceSum(vpPhase, vecBuf, Tp);
                     result.resize(vecBuf.size());
@@ -314,7 +323,10 @@ void TScalarVP::execute(void)
                     vpPhase = tmp_vp;
                     for (unsigned int j = 0; j < env().getNd()-1; ++j)
                     {
-                        vpPhase = vpPhase*pow(adj(*phase_[j]), mom[j]);
+                        for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                        {
+                            vpPhase = vpPhase*adj(*phase_[j]);
+                        }
                     }
                     sliceSum(vpPhase, vecBuf, Tp);
                     result.resize(vecBuf.size());
@@ -345,7 +357,10 @@ void TScalarVP::execute(void)
                     vpPhase = tmp_vp;
                     for (unsigned int j = 0; j < env().getNd()-1; ++j)
                     {
-                        vpPhase = vpPhase*pow(adj(*phase_[j]), mom[j]);
+                        for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                        {
+                            vpPhase = vpPhase*adj(*phase_[j]);
+                        }
                     }
                     sliceSum(vpPhase, vecBuf, Tp);
                     result.resize(vecBuf.size());
@@ -377,7 +392,10 @@ void TScalarVP::execute(void)
                     vpPhase = tmp_vp;
                     for (unsigned int j = 0; j < env().getNd()-1; ++j)
                     {
-                        vpPhase = vpPhase*pow(adj(*phase_[j]), mom[j]);
+                        for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                        {
+                            vpPhase = vpPhase*adj(*phase_[j]);
+                        }
                     }
                     sliceSum(vpPhase, vecBuf, Tp);
                     result.resize(vecBuf.size());
@@ -408,7 +426,10 @@ void TScalarVP::execute(void)
                     vpPhase = tmp_vp;
                     for (unsigned int j = 0; j < env().getNd()-1; ++j)
                     {
-                        vpPhase = vpPhase*pow(adj(*phase_[j]), mom[j]);
+                        for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                        {
+                            vpPhase = vpPhase*adj(*phase_[j]);
+                        }
                     }
                     sliceSum(vpPhase, vecBuf, Tp);
                     result.resize(vecBuf.size());
@@ -443,7 +464,10 @@ void TScalarVP::execute(void)
                     vpPhase = tmp_vp;
                     for (unsigned int j = 0; j < env().getNd()-1; ++j)
                     {
-                        vpPhase = vpPhase*pow(adj(*phase_[j]), mom[j]);
+                        for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                        {
+                            vpPhase = vpPhase*adj(*phase_[j]);
+                        }
                     }
                     sliceSum(vpPhase, vecBuf, Tp);
                     result.resize(vecBuf.size());
@@ -477,7 +501,10 @@ void TScalarVP::execute(void)
                     vpPhase = tmp_vp;
                     for (unsigned int j = 0; j < env().getNd()-1; ++j)
                     {
-                        vpPhase = vpPhase*pow(adj(*phase_[j]), mom[j]);
+                        for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                        {
+                            vpPhase = vpPhase*adj(*phase_[j]);
+                        }
                     }
                     sliceSum(vpPhase, vecBuf, Tp);
                     result.resize(vecBuf.size());
@@ -501,7 +528,10 @@ void TScalarVP::execute(void)
                     vpPhase = vpTensor[mu][nu];
                     for (unsigned int j = 0; j < env().getNd()-1; ++j)
                     {
-                        vpPhase = vpPhase*pow(adj(*phase_[j]), mom[j]);
+                        for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                        {
+                            vpPhase = vpPhase*adj(*phase_[j]);
+                        }
                     }
                     sliceSum(vpPhase, vecBuf, Tp);
                     result.resize(vecBuf.size());
