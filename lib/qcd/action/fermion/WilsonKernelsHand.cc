@@ -115,18 +115,34 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
       LOAD_CHIMU_BODY(g);						\
     }else{								\
       const int permute_type = st._grid->PermuteType(direction);	\
-      DO_TWIST(Chimu_00,0,0,F,  U_00,U_01,U_10);			\
-      DO_TWIST(Chimu_01,0,1,F,  U_11,U_20,U_21);			\
-      DO_TWIST(Chimu_02,0,2,F,  U_00,U_01,U_10);			\
-      DO_TWIST(Chimu_10,1,0,F,  U_11,U_20,U_21);			\
-      DO_TWIST(Chimu_11,1,1,F,  U_00,U_01,U_10);			\
-      DO_TWIST(Chimu_12,1,2,F,  U_11,U_20,U_21);			\
-      DO_TWIST(Chimu_20,2,0,F,  U_00,U_01,U_10);			\
-      DO_TWIST(Chimu_21,2,1,F,  U_11,U_20,U_21);			\
-      DO_TWIST(Chimu_22,2,2,F,  U_00,U_01,U_10);			\
-      DO_TWIST(Chimu_30,3,0,F,  U_11,U_20,U_21);			\
-      DO_TWIST(Chimu_31,3,1,F,  U_00,U_01,U_10);			\
-      DO_TWIST(Chimu_32,3,2,F,  U_11,U_20,U_21);			\
+      if(  ( F==0 && ((distance == 1 && !perm) || (distance == -1 && perm)) ) || \
+	   ( F==1 && ((distance == -1 && !perm) || (distance == 1 && perm)) ) ){ \
+	DO_TWIST_0L_1H(Chimu_00,0,0,F,  U_00,U_01,U_10);		\
+	DO_TWIST_0L_1H(Chimu_01,0,1,F,  U_11,U_20,U_21);		\
+	DO_TWIST_0L_1H(Chimu_02,0,2,F,  U_00,U_01,U_10);		\
+	DO_TWIST_0L_1H(Chimu_10,1,0,F,  U_11,U_20,U_21);		\
+	DO_TWIST_0L_1H(Chimu_11,1,1,F,  U_00,U_01,U_10);		\
+	DO_TWIST_0L_1H(Chimu_12,1,2,F,  U_11,U_20,U_21);		\
+	DO_TWIST_0L_1H(Chimu_20,2,0,F,  U_00,U_01,U_10);		\
+	DO_TWIST_0L_1H(Chimu_21,2,1,F,  U_11,U_20,U_21);		\
+	DO_TWIST_0L_1H(Chimu_22,2,2,F,  U_00,U_01,U_10);		\
+	DO_TWIST_0L_1H(Chimu_30,3,0,F,  U_11,U_20,U_21);		\
+	DO_TWIST_0L_1H(Chimu_31,3,1,F,  U_00,U_01,U_10);		\
+	DO_TWIST_0L_1H(Chimu_32,3,2,F,  U_11,U_20,U_21);		\
+      }else{								\
+	DO_TWIST_1L_0H(Chimu_00,0,0,F,  U_00,U_01,U_10);		\
+	DO_TWIST_1L_0H(Chimu_01,0,1,F,  U_11,U_20,U_21);		\
+	DO_TWIST_1L_0H(Chimu_02,0,2,F,  U_00,U_01,U_10);		\
+	DO_TWIST_1L_0H(Chimu_10,1,0,F,  U_11,U_20,U_21);		\
+	DO_TWIST_1L_0H(Chimu_11,1,1,F,  U_00,U_01,U_10);		\
+	DO_TWIST_1L_0H(Chimu_12,1,2,F,  U_11,U_20,U_21);		\
+	DO_TWIST_1L_0H(Chimu_20,2,0,F,  U_00,U_01,U_10);		\
+	DO_TWIST_1L_0H(Chimu_21,2,1,F,  U_11,U_20,U_21);		\
+	DO_TWIST_1L_0H(Chimu_22,2,2,F,  U_00,U_01,U_10);		\
+	DO_TWIST_1L_0H(Chimu_30,3,0,F,  U_11,U_20,U_21);		\
+	DO_TWIST_1L_0H(Chimu_31,3,1,F,  U_00,U_01,U_10);		\
+	DO_TWIST_1L_0H(Chimu_32,3,2,F,  U_11,U_20,U_21);		\
+      } \
     } \
   }
 
@@ -138,12 +154,22 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
       LOAD_CHI_BODY(g);							\
     }else{								\
       const int permute_type = st._grid->PermuteType(direction);	\
-      DO_TWIST(Chi_00,0,0,F,  U_00,U_01,U_10);				\
-      DO_TWIST(Chi_01,0,1,F,  U_11,U_20,U_21);				\
-      DO_TWIST(Chi_02,0,2,F,  UChi_00,UChi_01,UChi_02);			\
-      DO_TWIST(Chi_10,1,0,F,  UChi_10,UChi_11,UChi_12);			\
-      DO_TWIST(Chi_11,1,1,F,  U_00,U_01,U_10);				\
-      DO_TWIST(Chi_12,1,2,F,  U_11,U_20,U_21);				\
+      if(  ( F==0 && ((distance == 1 && !perm) || (distance == -1 && perm)) ) || \
+	   ( F==1 && ((distance == -1 && !perm) || (distance == 1 && perm)) ) ){ \
+	DO_TWIST_0L_1H(Chi_00,0,0,F,  U_00,U_01,U_10);			\
+	DO_TWIST_0L_1H(Chi_01,0,1,F,  U_11,U_20,U_21);			\
+	DO_TWIST_0L_1H(Chi_02,0,2,F,  UChi_00,UChi_01,UChi_02);		\
+	DO_TWIST_0L_1H(Chi_10,1,0,F,  UChi_10,UChi_11,UChi_12);		\
+	DO_TWIST_0L_1H(Chi_11,1,1,F,  U_00,U_01,U_10);			\
+	DO_TWIST_0L_1H(Chi_12,1,2,F,  U_11,U_20,U_21);			\
+      }else{								\
+	DO_TWIST_1L_0H(Chi_00,0,0,F,  U_00,U_01,U_10);			\
+	DO_TWIST_1L_0H(Chi_01,0,1,F,  U_11,U_20,U_21);			\
+	DO_TWIST_1L_0H(Chi_02,0,2,F,  UChi_00,UChi_01,UChi_02);		\
+	DO_TWIST_1L_0H(Chi_10,1,0,F,  UChi_10,UChi_11,UChi_12);		\
+	DO_TWIST_1L_0H(Chi_11,1,1,F,  U_00,U_01,U_10);			\
+	DO_TWIST_1L_0H(Chi_12,1,2,F,  U_11,U_20,U_21);			\
+      }									\
     }									\
   }
 
