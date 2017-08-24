@@ -28,6 +28,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid/Grid.h>
 
+using namespace Grid;
+using namespace Grid::QCD;
+
 int main (int argc, char ** argv)
 {
   std::vector<int> seeds({1,2,3,4});
@@ -82,6 +85,7 @@ int main (int argc, char ** argv)
 
   Uorg = Uorg - Umu;
   std::cout << " Norm Difference "<< norm2(Uorg) << std::endl;
+  std::cout << " Norm "<< norm2(Umu) << std::endl;
 
 
   std::cout<< "*****************************************************************" <<std::endl;

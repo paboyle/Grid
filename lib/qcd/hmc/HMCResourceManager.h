@@ -165,7 +165,7 @@ class HMCResourceManager {
   // Grids
   //////////////////////////////////////////////////////////////
 
-  void AddGrid(std::string s, GridModule& M) {
+  void AddGrid(const std::string s, GridModule& M) {
     // Check for name clashes
     auto search = Grids.find(s);
     if (search != Grids.end()) {
@@ -174,14 +174,24 @@ class HMCResourceManager {
       exit(1);
     }
     Grids[s] = std::move(M);
+    std::cout << GridLogMessage << "::::::::::::::::::::::::::::::::::::::::" <<std::endl;
+    std::cout << GridLogMessage << "HMCResourceManager:" << std::endl;
+    std::cout << GridLogMessage << "Created grid set with name '" << s << "' and decomposition for the full cartesian " << std::endl;
+    Grids[s].show_full_decomposition();
+    std::cout << GridLogMessage << "::::::::::::::::::::::::::::::::::::::::" <<std::endl;
   }
 
   // Add a named grid set, 4d shortcut
-  void AddFourDimGrid(std::string s) {
+  void AddFourDimGrid(const std::string s) {
     GridFourDimModule<vComplex> Mod;
     AddGrid(s, Mod);
   }
 
+  // Add a named grid set, 4d shortcut + tweak simd lanes
+  void AddFourDimGrid(const std::string s, const std::vector<int> simd_decomposition) {
+    GridFourDimModule<vComplex> Mod(simd_decomposition);
+    AddGrid(s, Mod);
+  }
 
 
   GridCartesian* GetCartesian(std::string s = "") {
@@ -253,6 +263,7 @@ class HMCResourceManager {
   template<class T, class... Types>
   void AddObservable(Types&&... Args){
     ObservablesList.push_back(std::unique_ptr<T>(new T(std::forward<Types>(Args)...)));
+    ObservablesList.back()->print_parameters();
   }
 
   std::vector<HmcObservable<typename ImplementationPolicy::Field>* > GetObservables(){

@@ -55,6 +55,16 @@ namespace QCD {
       FermionField _tmp;
       FermionField &tmp(void) { return _tmp; }
 
+      ////////////////////////////////////////
+      // Performance monitoring
+      ////////////////////////////////////////
+      void Report(void);
+      void ZeroCounters(void);
+      double DhopTotalTime;
+      double DhopCalls;
+      double DhopCommTime;
+      double DhopComputeTime;
+
       ///////////////////////////////////////////////////////////////
       // Implement the abstract base
       ///////////////////////////////////////////////////////////////

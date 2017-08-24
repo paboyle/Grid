@@ -369,6 +369,7 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
   }
 };
 
+/*
 inline GridBase         *makeSubSliceGrid(const GridBase *BlockSolverGrid,int Orthog)
 {
   int NN    = BlockSolverGrid->_ndimension;
@@ -387,6 +388,7 @@ inline GridBase         *makeSubSliceGrid(const GridBase *BlockSolverGrid,int Or
   }
   return (GridBase *)new GridCartesian(latt_phys,simd_phys,mpi_phys); 
 }
+*/
 
 template<class vobj>
 static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<vobj> &X,const Lattice<vobj> &Y,int Orthog,RealD scale=1.0) 
@@ -398,14 +400,15 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
   int Nblock = X._grid->GlobalDimensions()[Orthog];
 
   GridBase *FullGrid  = X._grid;
-  GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
+  //  GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
 
-  Lattice<vobj> Xslice(SliceGrid);
-  Lattice<vobj> Rslice(SliceGrid);
+  //  Lattice<vobj> Xslice(SliceGrid);
+  //  Lattice<vobj> Rslice(SliceGrid);
 
   assert( FullGrid->_simd_layout[Orthog]==1);
   int nh =  FullGrid->_ndimension;
-  int nl = SliceGrid->_ndimension;
+  //  int nl = SliceGrid->_ndimension;
+  int nl = nh-1;
 
   //FIXME package in a convenient iterator
   //Should loop over a plane orthogonal to direction "Orthog"
@@ -448,14 +451,14 @@ static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<
   int Nblock = X._grid->GlobalDimensions()[Orthog];
 
   GridBase *FullGrid  = X._grid;
-  GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
-
-  Lattice<vobj> Xslice(SliceGrid);
-  Lattice<vobj> Rslice(SliceGrid);
+  //  GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
+  //  Lattice<vobj> Xslice(SliceGrid);
+  //  Lattice<vobj> Rslice(SliceGrid);
 
   assert( FullGrid->_simd_layout[Orthog]==1);
   int nh =  FullGrid->_ndimension;
-  int nl = SliceGrid->_ndimension;
+  //  int nl = SliceGrid->_ndimension;
+  int nl=1;
 
   //FIXME package in a convenient iterator
   //Should loop over a plane orthogonal to direction "Orthog"
@@ -498,18 +501,19 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
   typedef typename vobj::vector_type vector_type;
   
   GridBase *FullGrid  = lhs._grid;
-  GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
+  //  GridBase *SliceGrid = makeSubSliceGrid(FullGrid,Orthog);
   
   int Nblock = FullGrid->GlobalDimensions()[Orthog];
   
-  Lattice<vobj> Lslice(SliceGrid);
-  Lattice<vobj> Rslice(SliceGrid);
+  //  Lattice<vobj> Lslice(SliceGrid);
+  //  Lattice<vobj> Rslice(SliceGrid);
   
   mat = Eigen::MatrixXcd::Zero(Nblock,Nblock);
 
   assert( FullGrid->_simd_layout[Orthog]==1);
   int nh =  FullGrid->_ndimension;
-  int nl = SliceGrid->_ndimension;
+  //  int nl = SliceGrid->_ndimension;
+  int nl = nh-1;
 
   //FIXME package in a convenient iterator
   //Should loop over a plane orthogonal to direction "Orthog"
@@ -540,7 +544,8 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
       for(int i=0;i<Nblock;i++){
       for(int j=0;j<Nblock;j++){
 	auto tmp = innerProduct(Left[i],Right[j]);
-	vector_typeD rtmp = TensorRemove(tmp);
+	//	vector_typeD rtmp = TensorRemove(tmp);
+	auto rtmp = TensorRemove(tmp);
 	mat_thread(i,j) += Reduce(rtmp);
       }}
     }}
@@ -549,6 +554,14 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
       mat += mat_thread;
     }  
   }
+
+  for(int i=0;i<Nblock;i++){
+  for(int j=0;j<Nblock;j++){
+    ComplexD sum = mat(i,j);
+    FullGrid->GlobalSum(sum);
+    mat(i,j)=sum;
+  }}
+
   return;
 }
 

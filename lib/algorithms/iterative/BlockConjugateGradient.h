@@ -199,7 +199,12 @@ void BlockCGrQsolve(LinearOperatorBase<Field> &Linop, const Field &B, Field &X)
 
   Linop.HermOp(X, AD);
   tmp = B - AD;  
+  //std::cout << GridLogMessage << " initial tmp " << norm2(tmp)<< std::endl;
   ThinQRfact (m_rr, m_C, m_Cinv, Q, tmp);
+  //std::cout << GridLogMessage << " initial Q " << norm2(Q)<< std::endl;
+  //std::cout << GridLogMessage << " m_rr " << m_rr<<std::endl;
+  //std::cout << GridLogMessage << " m_C " << m_C<<std::endl;
+  //std::cout << GridLogMessage << " m_Cinv " << m_Cinv<<std::endl;
   D=Q;
 
   std::cout << GridLogMessage<<"BlockCGrQ computed initial residual and QR fact " <<std::endl;
@@ -221,13 +226,15 @@ void BlockCGrQsolve(LinearOperatorBase<Field> &Linop, const Field &B, Field &X)
     MatrixTimer.Start();
     Linop.HermOp(D, Z);      
     MatrixTimer.Stop();
+    //std::cout << GridLogMessage << " norm2 Z " <<norm2(Z)<<std::endl;
 
     //4. M  = [D^dag Z]^{-1}
     sliceInnerTimer.Start();
     sliceInnerProductMatrix(m_DZ,D,Z,Orthog);
     sliceInnerTimer.Stop();
     m_M       = m_DZ.inverse();
-
+    //std::cout << GridLogMessage << " m_DZ " <<m_DZ<<std::endl;
+    
     //5. X  = X + D MC
     m_tmp     = m_M * m_C;
     sliceMaddTimer.Start();
