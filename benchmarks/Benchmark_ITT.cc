@@ -181,6 +181,7 @@ public:
 	  
 #ifdef GRID_OMP
 #pragma omp atomic
+#endif
 	      ncomm++;
 
 #ifdef GRID_OMP
