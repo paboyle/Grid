@@ -248,7 +248,6 @@ public:
   uint64_t callsi;
   void ZeroCountersi(void)
   {
-    std::cout << GridLogMessage << " ZeroCountersi()"<<std::endl;
     timer0=0;
     timer1=0;
     timer2=0;
@@ -260,7 +259,6 @@ public:
   }
   void Reporti(int calls)
   {
-    std::cout << GridLogMessage << " Reporti() calls " <<callsi << calls<<std::endl;
     if ( timer0 ) std::cout << GridLogMessage << " timer0 (HaloGatherOpt) " <<timer0/calls <<std::endl;
     if ( timer1 ) std::cout << GridLogMessage << " timer1 (Communicate)   " <<timer1/calls <<std::endl;
     if ( timer2 ) std::cout << GridLogMessage << " timer2 (CommsMerge )   " <<timer2/calls <<std::endl;
@@ -290,7 +288,6 @@ public:
     // Here we know the distance is 1 for WilsonStencil
     for(int point=0;point<this->_npoints;point++){
       same_node[point] = this->SameNode(point);
-      //      std::cout << " dir " <<point<<" same_node " <<same_node[point]<<std::endl;
     }
     
     for(int site = 0 ;site< vol4;site++){
@@ -365,7 +362,6 @@ public:
     int dag = compress.dag;
     int face_idx=0;
     if ( dag ) { 
-      //	std::cout << " Optimised Dagger compress " <<std::endl;
       assert(same_node[Xp]==this->HaloGatherDir(source,XpCompress,Xp,face_idx));
       assert(same_node[Yp]==this->HaloGatherDir(source,YpCompress,Yp,face_idx));
       assert(same_node[Zp]==this->HaloGatherDir(source,ZpCompress,Zp,face_idx));
