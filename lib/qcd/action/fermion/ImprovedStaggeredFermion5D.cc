@@ -230,8 +230,15 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOr
 {
   Compressor compressor;
   int LLs = in._grid->_rdimensions[0];
+
+
+
+  DhopTotalTime -= usecond();
+  DhopCommTime -= usecond();
   st.HaloExchange(in,compressor);
+  DhopCommTime += usecond();
   
+  DhopComputeTime -= usecond();
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
   if (dag == DaggerYes) {
     parallel_for (int ss = 0; ss < U._grid->oSites(); ss++) {
@@ -244,12 +251,15 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOr
 	Kernels::DhopSite(st,lo,U,UUU,st.CommBuf(),LLs,sU,in,out);
     }
   }
+  DhopComputeTime += usecond();
+  DhopTotalTime   += usecond();
 }
 
 
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int dag)
 {
+  DhopCalls+=1;
   conformable(in._grid,FermionRedBlackGrid());    // verifies half grid
   conformable(in._grid,out._grid); // drops the cb check
 
@@ -261,6 +271,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopOE(const FermionField &in, FermionFie
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag)
 {
+  DhopCalls+=1;
   conformable(in._grid,FermionRedBlackGrid());    // verifies half grid
   conformable(in._grid,out._grid); // drops the cb check
 
@@ -272,6 +283,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopEO(const FermionField &in, FermionFie
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::Dhop(const FermionField &in, FermionField &out,int dag)
 {
+  DhopCalls+=2;
   conformable(in._grid,FermionGrid()); // verifies full grid
   conformable(in._grid,out._grid);
 
@@ -280,6 +292,54 @@ void ImprovedStaggeredFermion5D<Impl>::Dhop(const FermionField &in, FermionField
   DhopInternal(Stencil,Lebesgue,Umu,UUUmu,in,out,dag);
 }
 
+template<class Impl>
+void ImprovedStaggeredFermion5D<Impl>::Report(void) 
+{
+  std::vector<int> latt = GridDefaultLatt();          
+  RealD volume = Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt[mu];
+  RealD NP = _FourDimGrid->_Nprocessors;
+  RealD NN = _FourDimGrid->NodeCount();
+
+  std::cout << GridLogMessage << "#### Dhop calls report " << std::endl;
+
+  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D Number of DhopEO Calls   : " 
+	    << DhopCalls   << std::endl;
+  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D TotalTime   /Calls       : " 
+	    << DhopTotalTime   / DhopCalls << " us" << std::endl;
+  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D CommTime    /Calls       : " 
+	    << DhopCommTime    / DhopCalls << " us" << std::endl;
+  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D ComputeTime/Calls        : " 
+	    << DhopComputeTime / DhopCalls << " us" << std::endl;
+
+  // Average the compute time
+  _FourDimGrid->GlobalSum(DhopComputeTime);
+  DhopComputeTime/=NP;
+
+  RealD mflops = 1154*volume*DhopCalls/DhopComputeTime/2; // 2 for red black counting
+  std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
+  std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
+  std::cout << GridLogMessage << "Average mflops/s per call per node       : " << mflops/NN << std::endl;
+  
+  RealD Fullmflops = 1154*volume*DhopCalls/(DhopTotalTime)/2; // 2 for red black counting
+  std::cout << GridLogMessage << "Average mflops/s per call (full)         : " << Fullmflops << std::endl;
+  std::cout << GridLogMessage << "Average mflops/s per call per rank (full): " << Fullmflops/NP << std::endl;
+  std::cout << GridLogMessage << "Average mflops/s per call per node (full): " << Fullmflops/NN << std::endl;
+
+  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D Stencil"    <<std::endl;  Stencil.Report();
+  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D StencilEven"<<std::endl;  StencilEven.Report();
+  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D StencilOdd" <<std::endl;  StencilOdd.Report();
+}
+template<class Impl>
+void ImprovedStaggeredFermion5D<Impl>::ZeroCounters(void) 
+{
+  DhopCalls       = 0;
+  DhopTotalTime    = 0;
+  DhopCommTime    = 0;
+  DhopComputeTime = 0;
+  Stencil.ZeroCounters();
+  StencilEven.ZeroCounters();
+  StencilOdd.ZeroCounters();
+}
 
 /////////////////////////////////////////////////////////////////////////
 // Implement the general interface. Here we use SAME mass on all slices
