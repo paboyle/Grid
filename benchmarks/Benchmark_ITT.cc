@@ -386,7 +386,7 @@ public:
 	if ( sizeof(Real)==8 )   std::cout << GridLogMessage<< "* DOUBLE precision "<<std::endl;
 	std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 
-	int nwarm = 200;
+	int nwarm = 100;
 	double t0=usecond();
 	sFGrid->Barrier();
 	for(int i=0;i<nwarm;i++){
@@ -396,7 +396,7 @@ public:
 	double t1=usecond();
 	//	uint64_t ncall = (uint64_t) 2.5*1000.0*1000.0*nwarm/(t1-t0);
 	//	if (ncall < 500) ncall = 500;
-	uint64_t ncall = 1000;
+	uint64_t ncall = 500;
 
 	sFGrid->Broadcast(0,&ncall,sizeof(ncall));
 
