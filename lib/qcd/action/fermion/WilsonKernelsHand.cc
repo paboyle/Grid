@@ -44,7 +44,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   Chimu_31=ref(F)(3)(1);			\
   Chimu_32=ref(F)(3)(2)
 
-#define LOAD_CHIMU(DIR,F)						\
+#define LOAD_CHIMU(DIR,F,PERM)						\
   { const SiteSpinor & ref (in._odata[offset]); LOAD_CHIMU_BODY(F); }
 
 #define LOAD_CHI_BODY(F)				\
@@ -55,7 +55,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     Chi_11 = ref(F)(1)(1);\
     Chi_12 = ref(F)(1)(2)
 
-#define LOAD_CHI(DIR,F)						\
+#define LOAD_CHI(DIR,F,PERM)					\
   {const SiteHalfSpinor &ref(buf[offset]); LOAD_CHI_BODY(F); }
 
 
@@ -73,33 +73,27 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 //1l 1h -> 1h 1l
 //0l 0h , 1h 1l -> 0l 1h 0h,1l
-#define DO_TWIST_0L_1H(INTO,S,C,F, tmp1, tmp2, tmp3) \
-  permute(tmp1, ref(1)(S)(C), permute_type);				\
-  exchange(tmp2,tmp3, ref(0)(S)(C), tmp1, permute_type);		\
+#define DO_TWIST_0L_1H(INTO,S,C,F, PERM, tmp1, tmp2, tmp3)			\
+  permute##PERM(tmp1, ref(1)(S)(C));				\
+  exchange##PERM(tmp2,tmp3, ref(0)(S)(C), tmp1);		\
   INTO = tmp2;
 
 //0l 0h -> 0h 0l
 //1l 1h, 0h 0l -> 1l 0h, 1h 0l
-#define DO_TWIST_1L_0H(INTO,S,C,F, tmp1, tmp2, tmp3)			\
-  permute(tmp1, ref(0)(S)(C), permute_type);				\
-  exchange(tmp2,tmp3, ref(1)(S)(C), tmp1, permute_type);		\
+#define DO_TWIST_1L_0H(INTO,S,C,F, PERM, tmp1, tmp2, tmp3)			\
+  permute##PERM(tmp1, ref(0)(S)(C));				\
+  exchange##PERM(tmp2,tmp3, ref(1)(S)(C), tmp1);		\
   INTO = tmp2;
 
-#define DO_TWIST(INTO,S,C,F, tmp1, tmp2, tmp3)				\
-  if(  ( F==0 && ((distance == 1 && !perm) || (distance == -1 && perm)) ) || \
-       ( F==1 && ((distance == -1 && !perm) || (distance == 1 && perm)) ) ){ \
-    DO_TWIST_0L_1H(INTO,S,C,F,tmp1,tmp2,tmp3);				\
-  }else{								\
-    DO_TWIST_1L_0H(INTO,S,C,F,tmp1,tmp2,tmp3);				\
-  }
+
 
 
 #define LOAD_CHI_SETUP(DIR,F)						\
-  int g = F;								\
-  const int direction = st._directions[DIR];				\
-  const int distance = st._distances[DIR];				\
-  const int sl = st._grid->_simd_layout[direction];			\
-  int inplace_twist = 0;						\
+  g = F;								\
+  direction = st._directions[DIR];				\
+  distance = st._distances[DIR];				\
+  sl = st._grid->_simd_layout[direction];			\
+  inplace_twist = 0;						\
   if(SE->_around_the_world && this->Params.twists[DIR % 4]){		\
     if(sl == 1){							\
       g = (F+1) % 2;							\
@@ -108,74 +102,72 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     }									\
   }  
 
-#define LOAD_CHIMU_GPARITY_INPLACE_TWIST(DIR,F)				\
+#define LOAD_CHIMU_GPARITY_INPLACE_TWIST(DIR,F,PERM)			\
   { const SiteSpinor &ref(in._odata[offset]);				\
     LOAD_CHI_SETUP(DIR,F);						\
     if(!inplace_twist){							\
       LOAD_CHIMU_BODY(g);						\
     }else{								\
-      const int permute_type = st._grid->PermuteType(direction);	\
       if(  ( F==0 && ((distance == 1 && !perm) || (distance == -1 && perm)) ) || \
 	   ( F==1 && ((distance == -1 && !perm) || (distance == 1 && perm)) ) ){ \
-	DO_TWIST_0L_1H(Chimu_00,0,0,F,  U_00,U_01,U_10);		\
-	DO_TWIST_0L_1H(Chimu_01,0,1,F,  U_11,U_20,U_21);		\
-	DO_TWIST_0L_1H(Chimu_02,0,2,F,  U_00,U_01,U_10);		\
-	DO_TWIST_0L_1H(Chimu_10,1,0,F,  U_11,U_20,U_21);		\
-	DO_TWIST_0L_1H(Chimu_11,1,1,F,  U_00,U_01,U_10);		\
-	DO_TWIST_0L_1H(Chimu_12,1,2,F,  U_11,U_20,U_21);		\
-	DO_TWIST_0L_1H(Chimu_20,2,0,F,  U_00,U_01,U_10);		\
-	DO_TWIST_0L_1H(Chimu_21,2,1,F,  U_11,U_20,U_21);		\
-	DO_TWIST_0L_1H(Chimu_22,2,2,F,  U_00,U_01,U_10);		\
-	DO_TWIST_0L_1H(Chimu_30,3,0,F,  U_11,U_20,U_21);		\
-	DO_TWIST_0L_1H(Chimu_31,3,1,F,  U_00,U_01,U_10);		\
-	DO_TWIST_0L_1H(Chimu_32,3,2,F,  U_11,U_20,U_21);		\
+	DO_TWIST_0L_1H(Chimu_00,0,0,F,PERM,  U_00,U_01,U_10);		\
+	DO_TWIST_0L_1H(Chimu_01,0,1,F,PERM,  U_11,U_20,U_21);		\
+	DO_TWIST_0L_1H(Chimu_02,0,2,F,PERM,  U_00,U_01,U_10);		\
+	DO_TWIST_0L_1H(Chimu_10,1,0,F,PERM,  U_11,U_20,U_21);		\
+	DO_TWIST_0L_1H(Chimu_11,1,1,F,PERM,  U_00,U_01,U_10);		\
+	DO_TWIST_0L_1H(Chimu_12,1,2,F,PERM,  U_11,U_20,U_21);		\
+	DO_TWIST_0L_1H(Chimu_20,2,0,F,PERM,  U_00,U_01,U_10);		\
+	DO_TWIST_0L_1H(Chimu_21,2,1,F,PERM,  U_11,U_20,U_21);		\
+	DO_TWIST_0L_1H(Chimu_22,2,2,F,PERM,  U_00,U_01,U_10);		\
+	DO_TWIST_0L_1H(Chimu_30,3,0,F,PERM,  U_11,U_20,U_21);		\
+	DO_TWIST_0L_1H(Chimu_31,3,1,F,PERM,  U_00,U_01,U_10);		\
+	DO_TWIST_0L_1H(Chimu_32,3,2,F,PERM,  U_11,U_20,U_21);		\
       }else{								\
-	DO_TWIST_1L_0H(Chimu_00,0,0,F,  U_00,U_01,U_10);		\
-	DO_TWIST_1L_0H(Chimu_01,0,1,F,  U_11,U_20,U_21);		\
-	DO_TWIST_1L_0H(Chimu_02,0,2,F,  U_00,U_01,U_10);		\
-	DO_TWIST_1L_0H(Chimu_10,1,0,F,  U_11,U_20,U_21);		\
-	DO_TWIST_1L_0H(Chimu_11,1,1,F,  U_00,U_01,U_10);		\
-	DO_TWIST_1L_0H(Chimu_12,1,2,F,  U_11,U_20,U_21);		\
-	DO_TWIST_1L_0H(Chimu_20,2,0,F,  U_00,U_01,U_10);		\
-	DO_TWIST_1L_0H(Chimu_21,2,1,F,  U_11,U_20,U_21);		\
-	DO_TWIST_1L_0H(Chimu_22,2,2,F,  U_00,U_01,U_10);		\
-	DO_TWIST_1L_0H(Chimu_30,3,0,F,  U_11,U_20,U_21);		\
-	DO_TWIST_1L_0H(Chimu_31,3,1,F,  U_00,U_01,U_10);		\
-	DO_TWIST_1L_0H(Chimu_32,3,2,F,  U_11,U_20,U_21);		\
+	DO_TWIST_1L_0H(Chimu_00,0,0,F,PERM,  U_00,U_01,U_10);		\
+	DO_TWIST_1L_0H(Chimu_01,0,1,F,PERM,  U_11,U_20,U_21);		\
+	DO_TWIST_1L_0H(Chimu_02,0,2,F,PERM,  U_00,U_01,U_10);		\
+	DO_TWIST_1L_0H(Chimu_10,1,0,F,PERM,  U_11,U_20,U_21);		\
+	DO_TWIST_1L_0H(Chimu_11,1,1,F,PERM,  U_00,U_01,U_10);		\
+	DO_TWIST_1L_0H(Chimu_12,1,2,F,PERM,  U_11,U_20,U_21);		\
+	DO_TWIST_1L_0H(Chimu_20,2,0,F,PERM,  U_00,U_01,U_10);		\
+	DO_TWIST_1L_0H(Chimu_21,2,1,F,PERM,  U_11,U_20,U_21);		\
+	DO_TWIST_1L_0H(Chimu_22,2,2,F,PERM,  U_00,U_01,U_10);		\
+	DO_TWIST_1L_0H(Chimu_30,3,0,F,PERM,  U_11,U_20,U_21);		\
+	DO_TWIST_1L_0H(Chimu_31,3,1,F,PERM,  U_00,U_01,U_10);		\
+	DO_TWIST_1L_0H(Chimu_32,3,2,F,PERM,  U_11,U_20,U_21);		\
       } \
     } \
   }
 
 
-#define LOAD_CHI_GPARITY_INPLACE_TWIST(DIR,F)				\
+#define LOAD_CHI_GPARITY_INPLACE_TWIST(DIR,F,PERM)				\
   { const SiteHalfSpinor &ref(buf[offset]);				\
     LOAD_CHI_SETUP(DIR,F);						\
     if(!inplace_twist){							\
       LOAD_CHI_BODY(g);							\
     }else{								\
-      const int permute_type = st._grid->PermuteType(direction);	\
       if(  ( F==0 && ((distance == 1 && !perm) || (distance == -1 && perm)) ) || \
 	   ( F==1 && ((distance == -1 && !perm) || (distance == 1 && perm)) ) ){ \
-	DO_TWIST_0L_1H(Chi_00,0,0,F,  U_00,U_01,U_10);			\
-	DO_TWIST_0L_1H(Chi_01,0,1,F,  U_11,U_20,U_21);			\
-	DO_TWIST_0L_1H(Chi_02,0,2,F,  UChi_00,UChi_01,UChi_02);		\
-	DO_TWIST_0L_1H(Chi_10,1,0,F,  UChi_10,UChi_11,UChi_12);		\
-	DO_TWIST_0L_1H(Chi_11,1,1,F,  U_00,U_01,U_10);			\
-	DO_TWIST_0L_1H(Chi_12,1,2,F,  U_11,U_20,U_21);			\
+	DO_TWIST_0L_1H(Chi_00,0,0,F,PERM,  U_00,U_01,U_10);			\
+	DO_TWIST_0L_1H(Chi_01,0,1,F,PERM,  U_11,U_20,U_21);			\
+	DO_TWIST_0L_1H(Chi_02,0,2,F,PERM,  UChi_00,UChi_01,UChi_02);		\
+	DO_TWIST_0L_1H(Chi_10,1,0,F,PERM,  UChi_10,UChi_11,UChi_12);		\
+	DO_TWIST_0L_1H(Chi_11,1,1,F,PERM,  U_00,U_01,U_10);			\
+	DO_TWIST_0L_1H(Chi_12,1,2,F,PERM,  U_11,U_20,U_21);			\
       }else{								\
-	DO_TWIST_1L_0H(Chi_00,0,0,F,  U_00,U_01,U_10);			\
-	DO_TWIST_1L_0H(Chi_01,0,1,F,  U_11,U_20,U_21);			\
-	DO_TWIST_1L_0H(Chi_02,0,2,F,  UChi_00,UChi_01,UChi_02);		\
-	DO_TWIST_1L_0H(Chi_10,1,0,F,  UChi_10,UChi_11,UChi_12);		\
-	DO_TWIST_1L_0H(Chi_11,1,1,F,  U_00,U_01,U_10);			\
-	DO_TWIST_1L_0H(Chi_12,1,2,F,  U_11,U_20,U_21);			\
+	DO_TWIST_1L_0H(Chi_00,0,0,F,PERM,  U_00,U_01,U_10);			\
+	DO_TWIST_1L_0H(Chi_01,0,1,F,PERM,  U_11,U_20,U_21);			\
+	DO_TWIST_1L_0H(Chi_02,0,2,F,PERM,  UChi_00,UChi_01,UChi_02);		\
+	DO_TWIST_1L_0H(Chi_10,1,0,F,PERM,  UChi_10,UChi_11,UChi_12);		\
+	DO_TWIST_1L_0H(Chi_11,1,1,F,PERM,  U_00,U_01,U_10);			\
+	DO_TWIST_1L_0H(Chi_12,1,2,F,PERM,  U_11,U_20,U_21);			\
       }									\
     }									\
   }
 
 
-#define LOAD_CHI_GPARITY(DIR,F) LOAD_CHI_GPARITY_INPLACE_TWIST(DIR,F)
-#define LOAD_CHIMU_GPARITY(DIR,F) LOAD_CHIMU_GPARITY_INPLACE_TWIST(DIR,F)
+#define LOAD_CHI_GPARITY(DIR,F,PERM) LOAD_CHI_GPARITY_INPLACE_TWIST(DIR,F,PERM)
+#define LOAD_CHIMU_GPARITY(DIR,F,PERM) LOAD_CHIMU_GPARITY_INPLACE_TWIST(DIR,F,PERM)
 
 // To splat or not to splat depends on the implementation
 #define MULT_2SPIN_BODY \
@@ -442,13 +434,13 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   local  = SE->_is_local;			\
   perm   = SE->_permute;			\
   if ( local ) {				\
-    LOAD_CHIMU_IMPL(DIR,F);			\
+    LOAD_CHIMU_IMPL(DIR,F,PERM);			\
     PROJ;					\
     if ( perm) {				\
       PERMUTE_DIR(PERM);			\
     }						\
   } else {					\
-    LOAD_CHI_IMPL(DIR,F);			\
+    LOAD_CHI_IMPL(DIR,F,PERM);			\
   }						\
   MULT_2SPIN_IMPL(DIR,F);			\
   RECON;					
@@ -460,13 +452,13 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   local  = SE->_is_local;			\
   perm   = SE->_permute;			\
   if ( local ) {				\
-    LOAD_CHIMU_IMPL(DIR,F);			\
+    LOAD_CHIMU_IMPL(DIR,F,PERM);			\
     PROJ;					\
     if ( perm) {				\
       PERMUTE_DIR(PERM);			\
     }						\
   } else if ( st.same_node[DIR] ) {		\
-    LOAD_CHI_IMPL(DIR,F);			\
+    LOAD_CHI_IMPL(DIR,F,PERM);			\
   }						\
   if (local || st.same_node[DIR] ) {		\
     MULT_2SPIN_IMPL(DIR,F);			\
@@ -477,7 +469,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   SE=st.GetEntry(ptype,DIR,ss);			\
   offset = SE->_offset;				\
   if((!SE->_is_local)&&(!st.same_node[DIR]) ) {	\
-    LOAD_CHI_IMPL(DIR,F);			\
+    LOAD_CHI_IMPL(DIR,F,PERM);			\
     MULT_2SPIN_IMPL(DIR,F);			\
     RECON;					\
     nmu++;					\
@@ -811,7 +803,7 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,D
 									\
     HAND_DECLARATIONS(ignore);						\
 									\
-    int offset,local,perm, ptype;					\
+    int offset,local,perm, ptype, g, direction, distance, sl, inplace_twist; \
     StencilEntry *SE;							\
     HAND_DOP_SITE(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
     HAND_DOP_SITE(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
@@ -828,7 +820,7 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,D
     HAND_DECLARATIONS(ignore);						\
 									\
     StencilEntry *SE;							\
-    int offset,local,perm, ptype;					\
+    int offset,local,perm, ptype, g, direction, distance, sl, inplace_twist;					\
     HAND_DOP_SITE_DAG(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
     HAND_DOP_SITE_DAG(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
   }									\
@@ -843,7 +835,7 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,D
 									\
     HAND_DECLARATIONS(ignore);						\
 									\
-    int offset,local,perm, ptype;					\
+    int offset,local,perm, ptype, g, direction, distance, sl, inplace_twist;					\
     StencilEntry *SE;							\
     HAND_DOP_SITE_INT(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
     HAND_DOP_SITE_INT(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
@@ -860,7 +852,7 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,D
     HAND_DECLARATIONS(ignore);						\
 									\
     StencilEntry *SE;							\
-    int offset,local,perm, ptype;					\
+    int offset,local,perm, ptype, g, direction, distance, sl, inplace_twist; \
     HAND_DOP_SITE_DAG_INT(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
     HAND_DOP_SITE_DAG_INT(1, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
   }									\
@@ -875,7 +867,7 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,D
 									\
     HAND_DECLARATIONS(ignore);						\
 									\
-    int offset,local,perm, ptype;					\
+    int offset,local,perm, ptype, g, direction, distance, sl, inplace_twist; \
     StencilEntry *SE;							\
     int nmu=0;								\
     HAND_DOP_SITE_EXT(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
@@ -893,7 +885,7 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,D
     HAND_DECLARATIONS(ignore);						\
 									\
     StencilEntry *SE;							\
-    int offset,local,perm, ptype;					\
+    int offset,local,perm, ptype, g, direction, distance, sl, inplace_twist; \
     int nmu=0;								\
     HAND_DOP_SITE_DAG_EXT(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
     nmu = 0;								\
