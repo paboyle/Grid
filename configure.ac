@@ -342,13 +342,13 @@ case ${ac_COMMS} in
         AC_DEFINE([GRID_COMMS_NONE],[1],[GRID_COMMS_NONE] )
         comms_type='none'
      ;;
-     mpi3l*)
-       AC_DEFINE([GRID_COMMS_MPI3L],[1],[GRID_COMMS_MPI3L] )
-       comms_type='mpi3l'
-     ;;
      mpi3*)
         AC_DEFINE([GRID_COMMS_MPI3],[1],[GRID_COMMS_MPI3] )
         comms_type='mpi3'
+     ;;
+     mpit)
+        AC_DEFINE([GRID_COMMS_MPIT],[1],[GRID_COMMS_MPIT] )
+        comms_type='mpit'
      ;;
      mpi*)
         AC_DEFINE([GRID_COMMS_MPI],[1],[GRID_COMMS_MPI] )
@@ -377,7 +377,7 @@ esac
 AM_CONDITIONAL(BUILD_COMMS_SHMEM, [ test "${comms_type}X" == "shmemX" ])
 AM_CONDITIONAL(BUILD_COMMS_MPI,   [ test "${comms_type}X" == "mpiX" ])
 AM_CONDITIONAL(BUILD_COMMS_MPI3,  [ test "${comms_type}X" == "mpi3X" ] )
-AM_CONDITIONAL(BUILD_COMMS_MPI3L, [ test "${comms_type}X" == "mpi3lX" ] )
+AM_CONDITIONAL(BUILD_COMMS_MPIT,  [ test "${comms_type}X" == "mpitX" ] )
 AM_CONDITIONAL(BUILD_COMMS_NONE,  [ test "${comms_type}X" == "noneX" ])
 
 ############### RNG selection

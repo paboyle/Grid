@@ -6,6 +6,7 @@ Large item work list:
 1)- BG/Q port and check
 2)- Christoph's local basis expansion Lanczos
 3)- Precision conversion and sort out localConvert      <-- partial
+
   - Consistent linear solver flop count/rate -- PARTIAL, time but no flop/s yet
 4)- Physical propagator interface
 5)- Conserved currents
@@ -13,7 +14,8 @@ Large item work list:
 7)- HDCR resume
 
 Recent DONE 
--- MultiRHS with spread out extra dim -- Go through filesystem with SciDAC I/O
+
+-- MultiRHS with spread out extra dim -- Go through filesystem with SciDAC I/O.  <--- DONE
 -- Lanczos Remove DenseVector, DenseMatrix; Use Eigen instead. <-- DONE
 -- GaugeFix into central location                      <-- DONE
 -- Scidac and Ildg metadata handling                   <-- DONE

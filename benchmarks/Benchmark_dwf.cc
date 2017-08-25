@@ -503,9 +503,9 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "norm diff even  "<< norm2(src_e)<<std::endl;
   std::cout<<GridLogMessage << "norm diff odd   "<< norm2(src_o)<<std::endl;
 
-  //assert(norm2(src_e)<1.0e-4);
-  //assert(norm2(src_o)<1.0e-4);
-
+  assert(norm2(src_e)<1.0e-4);
+  assert(norm2(src_o)<1.0e-4);
   Grid_finalize();
+  exit(0);
 }
 
