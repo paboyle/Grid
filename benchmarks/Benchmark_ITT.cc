@@ -108,7 +108,7 @@ public:
 
   static void Comms(void)
   {
-    int Nloop=1000;
+    int Nloop=200;
     int nmu=0;
     int maxlat=32;
 
@@ -197,7 +197,7 @@ public:
 
 	timestat.statistics(t_time);
 	//	for(int i=0;i<t_time.size();i++){
-	  //	  std::cout << i<<" "<<t_time[i]<<std::endl;
+	//	  std::cout << i<<" "<<t_time[i]<<std::endl;
 	//	}
 
 	dbytes=dbytes*ppn;

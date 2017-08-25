@@ -365,10 +365,10 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
     Prepare();
     HaloGather(source,compress);
     // Concurrent
-    CommunicateBegin(reqs);
-    CommunicateComplete(reqs);
-    // Sequential
-    // Communicate();
+    //CommunicateBegin(reqs);
+    //CommunicateComplete(reqs);
+    // Sequential, possibly threaded
+    Communicate();
     CommsMergeSHM(compress); 
     CommsMerge(compress); 
   }

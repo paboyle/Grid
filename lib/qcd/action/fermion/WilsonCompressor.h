@@ -312,8 +312,11 @@ public:
     std::vector<std::vector<CommsRequest_t> > reqs;
     this->HaloExchangeOptGather(source,compress);
     double t1=usecond();
-    this->CommunicateBegin(reqs);
-    this->CommunicateComplete(reqs);
+    // Asynchronous MPI calls multidirectional, Isend etc...
+    //    this->CommunicateBegin(reqs);
+    //    this->CommunicateComplete(reqs);
+    // Non-overlapped directions within a thread. Asynchronous calls except MPI3, threaded up to comm threads ways.
+    this->Communicate();
     double t2=usecond(); timer1 += t2-t1;
     this->CommsMerge(compress);
     double t3=usecond(); timer2 += t3-t2;
