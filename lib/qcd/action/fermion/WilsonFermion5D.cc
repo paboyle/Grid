@@ -185,6 +185,11 @@ void WilsonFermion5D<Impl>::Report(void)
     std::cout << GridLogMessage << "WilsonFermion5D StencilEven"<<std::endl;  StencilEven.Report();
     std::cout << GridLogMessage << "WilsonFermion5D StencilOdd" <<std::endl;  StencilOdd.Report();
   }
+  if ( DhopCalls > 0){
+    std::cout << GridLogMessage << "WilsonFermion5D Stencil     Reporti()"    <<std::endl;  Stencil.Reporti(DhopCalls);
+    std::cout << GridLogMessage << "WilsonFermion5D StencilEven Reporti()"<<std::endl;  StencilEven.Reporti(DhopCalls);
+    std::cout << GridLogMessage << "WilsonFermion5D StencilOdd  Reporti()" <<std::endl;  StencilOdd.Reporti(DhopCalls);
+  }
 }
 
 template<class Impl>
@@ -204,6 +209,9 @@ void WilsonFermion5D<Impl>::ZeroCounters(void) {
   Stencil.ZeroCounters();
   StencilEven.ZeroCounters();
   StencilOdd.ZeroCounters();
+  Stencil.ZeroCountersi();
+  StencilEven.ZeroCountersi();
+  StencilOdd.ZeroCountersi();
 }
 
 
@@ -444,6 +452,9 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
   }
   DhopCommTime += ctime;
   DhopComputeTime+=ptime;
+
+  // First to enter, last to leave timing
+  st.CollateThreads();
 
   DhopFaceTime-=usecond();
   st.CommsMerge(compressor);

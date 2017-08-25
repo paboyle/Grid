@@ -92,11 +92,16 @@ int main (int argc, char ** argv)
       RealD Nnode = Grid.NodeCount();
       RealD ppn = Nrank/Nnode;
 
-      Vector<Vector<HalfSpinColourVectorD> > xbuf(8,Vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
-      Vector<Vector<HalfSpinColourVectorD> > rbuf(8,Vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
+      std::vector<Vector<HalfSpinColourVectorD> > xbuf(8);	
+      std::vector<Vector<HalfSpinColourVectorD> > rbuf(8);
 
       int ncomm;
       int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
+      for(int mu=0;mu<8;mu++){
+	xbuf[mu].resize(lat*lat*lat*Ls);
+	rbuf[mu].resize(lat*lat*lat*Ls);
+	//	std::cout << " buffers " << std::hex << (uint64_t)&xbuf[mu][0] <<" " << (uint64_t)&rbuf[mu][0] <<std::endl;
+      }
 
       for(int i=0;i<Nloop;i++){
       double start=usecond();
@@ -112,7 +117,6 @@ int main (int argc, char ** argv)
 	    int comm_proc=1;
 	    int xmit_to_rank;
 	    int recv_from_rank;
-	    
 	    Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
 	    Grid.SendToRecvFromBegin(requests,
 				   (void *)&xbuf[mu][0],
@@ -172,9 +176,14 @@ int main (int argc, char ** argv)
       RealD Nnode = Grid.NodeCount();
       RealD ppn = Nrank/Nnode;
 
-      Vector<Vector<HalfSpinColourVectorD> > xbuf(8,Vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
-      Vector<Vector<HalfSpinColourVectorD> > rbuf(8,Vector<HalfSpinColourVectorD>(lat*lat*lat*Ls));
+      std::vector<Vector<HalfSpinColourVectorD> > xbuf(8);
+      std::vector<Vector<HalfSpinColourVectorD> > rbuf(8);
 
+      for(int mu=0;mu<8;mu++){
+	xbuf[mu].resize(lat*lat*lat*Ls);
+	rbuf[mu].resize(lat*lat*lat*Ls);
+	//	std::cout << " buffers " << std::hex << (uint64_t)&xbuf[mu][0] <<" " << (uint64_t)&rbuf[mu][0] <<std::endl;
+      }
 
       int ncomm;
       int bytes=lat*lat*lat*Ls*sizeof(HalfSpinColourVectorD);
@@ -493,14 +502,9 @@ int main (int argc, char ** argv)
 	      int comm_proc = mpi_layout[mu]-1;
 	      Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
 	    }
-	    tbytes= Grid.StencilSendToRecvFromBegin(requests,
-						    (void *)&xbuf[dir][0],
-						    xmit_to_rank,
-						    (void *)&rbuf[dir][0],
-						    recv_from_rank,
-						    bytes,dir);
-	    Grid.StencilSendToRecvFromComplete(requests,dir);
-	    requests.resize(0);
+
+	    tbytes= Grid.StencilSendToRecvFrom((void *)&xbuf[dir][0], xmit_to_rank,
+					       (void *)&rbuf[dir][0], recv_from_rank, bytes,dir);
 
 #pragma omp atomic
 	    dbytes+=tbytes;

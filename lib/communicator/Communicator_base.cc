@@ -153,8 +153,10 @@ void CartesianCommunicator::ShmInitGeneric(void){
   if ( Hugepages ) mmap_flag |= MAP_HUGETLB;
 #endif
   ShmCommBuf =(void *) mmap(NULL, MAX_MPI_SHM_BYTES, PROT_READ | PROT_WRITE, mmap_flag, -1, 0); 
-  if (ShmCommBuf == (void *)MAP_FAILED) exit(EXIT_FAILURE);  
-  std::cout << "ShmCommBuf "<<ShmCommBuf<<std::endl;
+  if (ShmCommBuf == (void *)MAP_FAILED) {
+    perror("mmap failed ");
+    exit(EXIT_FAILURE);  
+  }
 #else 
   ShmBufStorageVector.resize(MAX_MPI_SHM_BYTES);
   ShmCommBuf=(void *)&ShmBufStorageVector[0];

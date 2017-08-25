@@ -176,6 +176,9 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
   // Timing info; ugly; possibly temporary
   /////////////////////////////////////////
   double commtime;
+  double mpi3synctime;
+  double mpi3synctime_g;
+  double shmmergetime;
   double gathertime;
   double gathermtime;
   double halogtime;
@@ -185,8 +188,10 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
   double splicetime;
   double nosplicetime;
   double calls;
-  std::vector<double> comms_bytesthr;
-  std::vector<double> commtimethr;
+  std::vector<double> comm_bytes_thr;
+  std::vector<double> comm_time_thr;
+  std::vector<double> comm_enter_thr;
+  std::vector<double> comm_leave_thr;
 
   ////////////////////////////////////////
   // Stencil query
@@ -262,17 +267,44 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
 #endif
     if (nthreads == -1) nthreads = 1;
     if (mythread < nthreads) {
+      comm_enter_thr[mythread] = usecond();
       for (int i = mythread; i < Packets.size(); i += nthreads) {
-	double start = usecond();
 	uint64_t bytes = _grid->StencilSendToRecvFrom(Packets[i].send_buf,
 						      Packets[i].to_rank,
 						      Packets[i].recv_buf,
 						      Packets[i].from_rank,
 						      Packets[i].bytes,i);
-	comms_bytesthr[mythread] += bytes;
-	commtimethr[mythread] += usecond() - start;
+	comm_bytes_thr[mythread] += bytes;
       }
+      comm_leave_thr[mythread]= usecond();
+      comm_time_thr[mythread] += comm_leave_thr[mythread] - comm_enter_thr[mythread];
     }
+  }
+  
+  void CollateThreads(void)
+  {
+    int nthreads = CartesianCommunicator::nCommThreads;
+    double first=0.0;
+    double last =0.0;
+
+    for(int t=0;t<nthreads;t++) {
+
+      double t0 = comm_enter_thr[t];
+      double t1 = comm_leave_thr[t];
+      comms_bytes+=comm_bytes_thr[t];
+
+      comm_enter_thr[t] = 0.0;
+      comm_leave_thr[t] = 0.0;
+      comm_time_thr[t]   = 0.0;
+      comm_bytes_thr[t]=0;
+
+      if ( first == 0.0 ) first = t0;                   // first is t0
+      if ( (t0 > 0.0) && ( t0 < first ) ) first = t0;   // min time seen
+
+      if ( t1 > last ) last = t1;                       // max time seen
+      
+    }
+    commtime+= last-first;
   }
   void CommunicateBegin(std::vector<std::vector<CommsRequest_t> > &reqs)
   {
@@ -295,14 +327,48 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
     }
     commtime+=usecond();
   }
+  void Communicate(void)
+  {
+#ifdef GRID_OMP
+#pragma omp parallel 
+    {
+      // must be called in parallel region
+      int mythread  = omp_get_thread_num();
+      int maxthreads= omp_get_max_threads();
+      int nthreads = CartesianCommunicator::nCommThreads;
+      assert(nthreads <= maxthreads);
+
+      if (nthreads == -1) nthreads = 1;
+#else
+      int mythread = 0;
+      int nthreads = 1;
+#endif
+      if (mythread < nthreads) {
+	for (int i = mythread; i < Packets.size(); i += nthreads) {
+	  double start = usecond();
+	  comm_bytes_thr[mythread] += _grid->StencilSendToRecvFrom(Packets[i].send_buf,
+								   Packets[i].to_rank,
+								   Packets[i].recv_buf,
+								   Packets[i].from_rank,
+								   Packets[i].bytes,i);
+	  comm_time_thr[mythread] += usecond() - start;
+	}
+      }
+#ifdef GRID_OMP
+    }
+#endif
+  }
   
   template<class compressor> void HaloExchange(const Lattice<vobj> &source,compressor &compress) 
   {
     std::vector<std::vector<CommsRequest_t> > reqs;
     Prepare();
     HaloGather(source,compress);
+    // Concurrent
     CommunicateBegin(reqs);
     CommunicateComplete(reqs);
+    // Sequential
+    // Communicate();
     CommsMergeSHM(compress); 
     CommsMerge(compress); 
   }
@@ -363,7 +429,9 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
   template<class compressor>
   void HaloGather(const Lattice<vobj> &source,compressor &compress)
   {
+    mpi3synctime_g-=usecond();
     _grid->StencilBarrier();// Synch shared memory on a single nodes
+    mpi3synctime_g+=usecond();
 
     // conformable(source._grid,_grid);
     assert(source._grid==_grid);
@@ -423,8 +491,12 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
     CommsMerge(decompress,Mergers,Decompressions); 
   }
   template<class decompressor>  void CommsMergeSHM(decompressor decompress) {
+    mpi3synctime-=usecond();    
     _grid->StencilBarrier();// Synch shared memory on a single nodes
+    mpi3synctime+=usecond();    
+    shmmergetime-=usecond();    
     CommsMerge(decompress,MergersSHM,DecompressionsSHM);
+    shmmergetime+=usecond();    
   }
 
   template<class decompressor>
@@ -470,8 +542,10 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
 		  const std::vector<int> &distances) 
    : _permute_type(npoints), 
     _comm_buf_size(npoints),
-    comms_bytesthr(npoints), 
-       commtimethr(npoints)
+    comm_bytes_thr(npoints), 
+    comm_enter_thr(npoints),
+    comm_leave_thr(npoints), 
+       comm_time_thr(npoints)
   {
     face_table_computed=0;
     _npoints = npoints;
@@ -1025,8 +1099,15 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
   void ZeroCounters(void) {
     gathertime = 0.;
     commtime = 0.;
-    memset(&commtimethr[0], 0, sizeof(commtimethr));
-    memset(&comms_bytesthr[0], 0, sizeof(comms_bytesthr));
+    mpi3synctime=0.;
+    mpi3synctime_g=0.;
+    shmmergetime=0.;
+    for(int i=0;i<_npoints;i++){
+      comm_time_thr[i]=0;
+      comm_bytes_thr[i]=0;
+      comm_enter_thr[i]=0;
+      comm_leave_thr[i]=0;
+    }
     halogtime = 0.;
     mergetime = 0.;
     decompresstime = 0.;
@@ -1043,13 +1124,17 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
     RealD NP = _grid->_Nprocessors;
     RealD NN = _grid->NodeCount();
     double t = 0;
-    // if commtimethr is set they were all done in parallel so take the max
+    // if comm_time_thr is set they were all done in parallel so take the max
     // but add up the bytes
+    int threaded = 0 ;
     for (int i = 0; i < 8; ++i) {
-      comms_bytes += comms_bytesthr[i];
-      if (t < commtimethr[i]) t = commtimethr[i];
+      if ( comm_time_thr[i]>0.0 ) {
+	threaded = 1;
+	comms_bytes += comm_bytes_thr[i];
+	if (t < comm_time_thr[i]) t = comm_time_thr[i];
+      }
     }
-    commtime += t;
+    if (threaded) commtime += t;
     
     _grid->GlobalSum(commtime);    commtime/=NP;
     if ( calls > 0. ) {
@@ -1065,6 +1150,9 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
 	std::cout << GridLogMessage << " Stencil " << comms_bytes/commtime/1000. << " GB/s per rank"<<std::endl;
 	std::cout << GridLogMessage << " Stencil " << comms_bytes/commtime/1000.*NP/NN << " GB/s per node"<<std::endl;
       }
+      PRINTIT(mpi3synctime);
+      PRINTIT(mpi3synctime_g);
+      PRINTIT(shmmergetime);
       PRINTIT(splicetime);
       PRINTIT(nosplicetime);
     }

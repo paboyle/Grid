@@ -221,8 +221,9 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
       if ( ptr == MAP_FAILED ) {       perror("failed mmap");      assert(0);    }
       assert(((uint64_t)ptr&0x3F)==0);
 
-      // Try to force numa domain on the shm segment if we have numaif.h
-#ifdef HAVE_NUMAIF_H
+// Experiments; Experiments; Try to force numa domain on the shm segment if we have numaif.h
+#if 0
+//#ifdef HAVE_NUMAIF_H
 	int status;
 	int flags=MPOL_MF_MOVE;
 #ifdef KNL

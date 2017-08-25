@@ -238,7 +238,35 @@ template<typename HCS,typename HS,typename S> using WilsonCompressor = WilsonCom
 template<class vobj,class cobj>
 class WilsonStencil : public CartesianStencil<vobj,cobj> {
 public:
-
+  double timer0;
+  double timer1;
+  double timer2;
+  double timer3;
+  double timer4;
+  double timer5;
+  double timer6;
+  uint64_t callsi;
+  void ZeroCountersi(void)
+  {
+    std::cout << GridLogMessage << " ZeroCountersi()"<<std::endl;
+    timer0=0;
+    timer1=0;
+    timer2=0;
+    timer3=0;
+    timer4=0;
+    timer5=0;
+    timer6=0;
+    callsi=0;
+  }
+  void Reporti(int calls)
+  {
+    std::cout << GridLogMessage << " Reporti() calls " <<callsi << calls<<std::endl;
+    if ( timer0 ) std::cout << GridLogMessage << " timer0 (HaloGatherOpt) " <<timer0/calls <<std::endl;
+    if ( timer1 ) std::cout << GridLogMessage << " timer1 (Communicate)   " <<timer1/calls <<std::endl;
+    if ( timer2 ) std::cout << GridLogMessage << " timer2 (CommsMerge )   " <<timer2/calls <<std::endl;
+    if ( timer3 ) std::cout << GridLogMessage << " timer3 (commsMergeShm) " <<timer3/calls <<std::endl;
+    if ( timer4 ) std::cout << GridLogMessage << " timer4 " <<timer4 <<std::endl;
+  }
   typedef CartesianCommunicator::CommsRequest_t CommsRequest_t;
 
   std::vector<int> same_node;
@@ -252,6 +280,7 @@ public:
     : CartesianStencil<vobj,cobj> (grid,npoints,checkerboard,directions,distances) ,
     same_node(npoints)
   { 
+    ZeroCountersi();
     surface_list.resize(0);
   };
 
@@ -282,17 +311,25 @@ public:
   {
     std::vector<std::vector<CommsRequest_t> > reqs;
     this->HaloExchangeOptGather(source,compress);
+    double t1=usecond();
     this->CommunicateBegin(reqs);
     this->CommunicateComplete(reqs);
+    double t2=usecond(); timer1 += t2-t1;
     this->CommsMerge(compress);
+    double t3=usecond(); timer2 += t3-t2;
     this->CommsMergeSHM(compress);
+    double t4=usecond(); timer3 += t4-t3;
   }
   
   template <class compressor>
   void HaloExchangeOptGather(const Lattice<vobj> &source,compressor &compress) 
   {
     this->Prepare();
+    double t0=usecond();
     this->HaloGatherOpt(source,compress);
+    double t1=usecond();
+    timer0 += t1-t0;
+    callsi++;
   }
 
   template <class compressor>
@@ -304,7 +341,9 @@ public:
     typedef typename compressor::SiteHalfSpinor     SiteHalfSpinor;
     typedef typename compressor::SiteHalfCommSpinor SiteHalfCommSpinor;
 
+    this->mpi3synctime_g-=usecond();
     this->_grid->StencilBarrier();
+    this->mpi3synctime_g+=usecond();
 
     assert(source._grid==this->_grid);
     this->halogtime-=usecond();

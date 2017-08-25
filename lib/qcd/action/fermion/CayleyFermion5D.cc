@@ -429,7 +429,7 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
   
   for(int i=0;i<Ls;i++){
     bee[i]=as[i]*(bs[i]*(4.0-this->M5) +1.0);     
-    //    assert(fabs(bee[i])>0.0);
+    assert(fabs(bee[i])>0.0);
     cee[i]=as[i]*(1.0-cs[i]*(4.0-this->M5));
     beo[i]=as[i]*bs[i];
     ceo[i]=-as[i]*cs[i];
@@ -455,11 +455,17 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
     dee[i] = bee[i];
     
     if ( i < Ls-1 ) {
+
+      assert(fabs(bee[i])>0.0);
+      assert(fabs(bee[0])>0.0);
       
       lee[i] =-cee[i+1]/bee[i]; // sub-diag entry on the ith column
       
       leem[i]=mass*cee[Ls-1]/bee[0];
-      for(int j=0;j<i;j++)  leem[i]*= aee[j]/bee[j+1];
+      for(int j=0;j<i;j++) {
+	assert(fabs(bee[j+1])>0.0);
+	leem[i]*= aee[j]/bee[j+1];
+      }
       
       uee[i] =-aee[i]/bee[i];   // up-diag entry on the ith row
       
@@ -478,7 +484,7 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
   { 
     Coeff_t delta_d=mass*cee[Ls-1];
     for(int j=0;j<Ls-1;j++) {
-      //      assert(fabs(bee[j])>0.0);
+      assert(fabs(bee[j])>0.0);
       delta_d *= cee[j]/bee[j];
     }
     dee[Ls-1] += delta_d;

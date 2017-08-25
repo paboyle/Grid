@@ -92,6 +92,9 @@ public:
     size_type bytes = __n*sizeof(_Tp);
 
     _Tp *ptr = (_Tp *) PointerCache::Lookup(bytes);
+    //    if ( ptr != NULL ) 
+    //      std::cout << "alignedAllocator "<<__n << " cache hit "<< std::hex << ptr <<std::dec <<std::endl;
+
     //////////////////
     // Hack 2MB align; could make option probably doesn't need configurability
     //////////////////
@@ -102,6 +105,7 @@ public:
 #else
     if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) memalign(GRID_ALLOC_ALIGN,bytes);
 #endif
+    //    std::cout << "alignedAllocator " << std::hex << ptr <<std::dec <<std::endl;
     // First touch optimise in threaded loop
     uint8_t *cp = (uint8_t *)ptr;
 #ifdef GRID_OMP
@@ -115,6 +119,7 @@ public:
 
   void deallocate(pointer __p, size_type __n) { 
     size_type bytes = __n * sizeof(_Tp);
+
     pointer __freeme = (pointer)PointerCache::Insert((void *)__p,bytes);
 
 #ifdef HAVE_MM_MALLOC_H
