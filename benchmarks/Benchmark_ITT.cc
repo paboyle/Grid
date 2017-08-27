@@ -748,6 +748,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   }
 
+  int NN=NN_global;
   if ( do_memory ) {
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     std::cout<<GridLogMessage << " Memory benchmark " <<std::endl;
@@ -755,7 +756,7 @@ int main (int argc, char ** argv)
     Benchmark::Memory();
   }
 
-  if ( do_comms ) {
+  if ( do_comms && (NN>1) ) {
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     std::cout<<GridLogMessage << " Communications benchmark " <<std::endl;
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
@@ -767,7 +768,6 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   std::cout<<GridLogMessage << " Per Node Summary table Ls="<<Ls <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-  int NN=NN_global;
   std::cout<<GridLogMessage << " L \t\t Wilson\t\t DWF4  \t\t DWF5 " <<std::endl;
   for(int l=0;l<L_list.size();l++){
     std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]/NN<<" \t "<<dwf4[l]/NN<<" \t "<<dwf5[l] /NN<<std::endl;
