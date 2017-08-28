@@ -51,7 +51,13 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   std::vector<int> latt4 = GridDefaultLatt();
-  const int Ls=16;
+  int Ls=16;
+  for(int i=0;i<argc;i++)
+    if(std::string(argv[i]) == "-Ls"){
+      std::stringstream ss(argv[i+1]); ss >> Ls;
+    }
+
+
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
