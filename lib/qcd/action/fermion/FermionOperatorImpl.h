@@ -425,22 +425,6 @@ class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepres
     ////////////////////////////////////////////////////////////////////////////////////////
     // Flavour doubled spinors; is Gparity the only? what about C*?
     ////////////////////////////////////////////////////////////////////////////////////////
-namespace GparityWilsonImpl_helper{
-  template<typename Get, typename A,typename B>
-  struct getAB;
-  
-  template<typename A,typename B>
-  struct getAB<A,A,B>{
-    static inline A & ref(A &a, B &b){ return a; }
-  };
-  template<typename A,typename B>
-  struct getAB<B,A,B>{
-    static inline B & ref(A &a, B &b){ return b; }
-  };
-};
-  
-
-  
 template <class S, int Nrepresentation, class Options=CoeffReal>
 class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresentation> > {
  public:
