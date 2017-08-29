@@ -468,6 +468,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define HAND_STENCIL_LEG_EXT(PROJ,PERM,DIR,RECON,F,LOAD_CHI_IMPL,LOAD_CHIMU_IMPL,MULT_2SPIN_IMPL)	\
   SE=st.GetEntry(ptype,DIR,ss);			\
   offset = SE->_offset;				\
+  local  = SE->_is_local;			\
+  perm   = SE->_permute;			\
   if((!SE->_is_local)&&(!st.same_node[DIR]) ) {	\
     LOAD_CHI_IMPL(DIR,F,PERM);			\
     MULT_2SPIN_IMPL(DIR,F);			\
