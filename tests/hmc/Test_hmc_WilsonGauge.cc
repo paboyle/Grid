@@ -66,7 +66,14 @@ int main(int argc, char **argv) {
   typedef PlaquetteMod<HMCWrapper::ImplPolicy> PlaqObs;
   typedef TopologicalChargeMod<HMCWrapper::ImplPolicy> QObs;
   TheHMC.Resources.AddObservable<PlaqObs>();
-  TheHMC.Resources.AddObservable<QObs>();
+  TopologyObsParameters TopParams;
+  TopParams.interval = 5;
+  TopParams.do_smearing = true;
+  TopParams.Smearing.steps = 200;
+  TopParams.Smearing.step_size = 0.01;
+  TopParams.Smearing.meas_interval = 50;
+  TopParams.Smearing.maxTau = 2.0; 
+  TheHMC.Resources.AddObservable<QObs>(TopParams);
   //////////////////////////////////////////////
 
   /////////////////////////////////////////////////////////////

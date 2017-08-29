@@ -33,6 +33,8 @@ directory
 
 namespace Grid {
 
+enum BlockCGtype { BlockCG, BlockCGrQ, CGmultiRHS };
+
 //////////////////////////////////////////////////////////////////////////
 // Block conjugate gradient. Dimension zero should be the block direction
 //////////////////////////////////////////////////////////////////////////
@@ -40,25 +42,280 @@ template <class Field>
 class BlockConjugateGradient : public OperatorFunction<Field> {
  public:
 
+
   typedef typename Field::scalar_type scomplex;
 
-  const int blockDim = 0;
-
+  int blockDim ;
   int Nblock;
+
+  BlockCGtype CGtype;
   bool ErrorOnNoConverge;  // throw an assert when the CG fails to converge.
                            // Defaults true.
   RealD Tolerance;
   Integer MaxIterations;
   Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion
   
-  BlockConjugateGradient(RealD tol, Integer maxit, bool err_on_no_conv = true)
-    : Tolerance(tol),
-    MaxIterations(maxit),
-    ErrorOnNoConverge(err_on_no_conv){};
+  BlockConjugateGradient(BlockCGtype cgtype,int _Orthog,RealD tol, Integer maxit, bool err_on_no_conv = true)
+    : Tolerance(tol), CGtype(cgtype),   blockDim(_Orthog),  MaxIterations(maxit), ErrorOnNoConverge(err_on_no_conv)
+  {};
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Thin QR factorisation (google it)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void ThinQRfact (Eigen::MatrixXcd &m_rr,
+		 Eigen::MatrixXcd &C,
+		 Eigen::MatrixXcd &Cinv,
+		 Field & Q,
+		 const Field & R)
+{
+  int Orthog = blockDim; // First dimension is block dim; this is an assumption
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
+  //Dimensions
+  // R_{ferm x Nblock} =  Q_{ferm x Nblock} x  C_{Nblock x Nblock} -> ferm x Nblock
+  //
+  // Rdag R = m_rr = Herm = L L^dag        <-- Cholesky decomposition (LLT routine in Eigen)
+  //
+  //   Q  C = R => Q = R C^{-1}
+  //
+  // Want  Ident = Q^dag Q = C^{-dag} R^dag R C^{-1} = C^{-dag} L L^dag C^{-1} = 1_{Nblock x Nblock} 
+  //
+  // Set C = L^{dag}, and then Q^dag Q = ident 
+  //
+  // Checks:
+  // Cdag C = Rdag R ; passes.
+  // QdagQ  = 1      ; passes
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
+  sliceInnerProductMatrix(m_rr,R,R,Orthog);
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Cholesky from Eigen
+  // There exists a ldlt that is documented as more stable
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
+  Eigen::MatrixXcd L    = m_rr.llt().matrixL(); 
+
+  C    = L.adjoint();
+  Cinv = C.inverse();
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Q = R C^{-1}
+  //
+  // Q_j  = R_i Cinv(i,j) 
+  //
+  // NB maddMatrix conventions are Right multiplication X[j] a[j,i] already
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
+  // FIXME:: make a sliceMulMatrix to avoid zero vector
+  sliceMulMatrix(Q,Cinv,R,Orthog);
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Call one of several implementations
+////////////////////////////////////////////////////////////////////////////////////////////////////
 void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi) 
 {
-  int Orthog = 0; // First dimension is block dim
+  if ( CGtype == BlockCGrQ ) {
+    BlockCGrQsolve(Linop,Src,Psi);
+  } else if (CGtype == BlockCG ) {
+    BlockCGsolve(Linop,Src,Psi);
+  } else if (CGtype == CGmultiRHS ) {
+    CGmultiRHSsolve(Linop,Src,Psi);
+  } else {
+    assert(0);
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////
+// BlockCGrQ implementation:
+//--------------------------
+// X is guess/Solution
+// B is RHS
+// Solve A X_i = B_i    ;        i refers to Nblock index
+////////////////////////////////////////////////////////////////////////////
+void BlockCGrQsolve(LinearOperatorBase<Field> &Linop, const Field &B, Field &X) 
+{
+  int Orthog = blockDim; // First dimension is block dim; this is an assumption
+  Nblock = B._grid->_fdimensions[Orthog];
+
+  std::cout<<GridLogMessage<<" Block Conjugate Gradient : Orthog "<<Orthog<<" Nblock "<<Nblock<<std::endl;
+
+  X.checkerboard = B.checkerboard;
+  conformable(X, B);
+
+  Field tmp(B);
+  Field Q(B);
+  Field D(B);
+  Field Z(B);
+  Field AD(B);
+
+  Eigen::MatrixXcd m_DZ     = Eigen::MatrixXcd::Identity(Nblock,Nblock);
+  Eigen::MatrixXcd m_M      = Eigen::MatrixXcd::Identity(Nblock,Nblock);
+  Eigen::MatrixXcd m_rr     = Eigen::MatrixXcd::Zero(Nblock,Nblock);
+
+  Eigen::MatrixXcd m_C      = Eigen::MatrixXcd::Zero(Nblock,Nblock);
+  Eigen::MatrixXcd m_Cinv   = Eigen::MatrixXcd::Zero(Nblock,Nblock);
+  Eigen::MatrixXcd m_S      = Eigen::MatrixXcd::Zero(Nblock,Nblock);
+  Eigen::MatrixXcd m_Sinv   = Eigen::MatrixXcd::Zero(Nblock,Nblock);
+
+  Eigen::MatrixXcd m_tmp    = Eigen::MatrixXcd::Identity(Nblock,Nblock);
+  Eigen::MatrixXcd m_tmp1   = Eigen::MatrixXcd::Identity(Nblock,Nblock);
+
+  // Initial residual computation & set up
+  std::vector<RealD> residuals(Nblock);
+  std::vector<RealD> ssq(Nblock);
+
+  sliceNorm(ssq,B,Orthog);
+  RealD sssum=0;
+  for(int b=0;b<Nblock;b++) sssum+=ssq[b];
+
+  sliceNorm(residuals,B,Orthog);
+  for(int b=0;b<Nblock;b++){ assert(std::isnan(residuals[b])==0); }
+
+  sliceNorm(residuals,X,Orthog);
+  for(int b=0;b<Nblock;b++){ assert(std::isnan(residuals[b])==0); }
+
+  /************************************************************************
+   * Block conjugate gradient rQ (Sebastien Birk Thesis, after Dubrulle 2001)
+   ************************************************************************
+   * Dimensions:
+   *
+   *   X,B==(Nferm x Nblock)
+   *   A==(Nferm x Nferm)
+   *  
+   * Nferm = Nspin x Ncolour x Ncomplex x Nlattice_site
+   * 
+   * QC = R = B-AX, D = Q     ; QC => Thin QR factorisation (google it)
+   * for k: 
+   *   Z  = AD
+   *   M  = [D^dag Z]^{-1}
+   *   X  = X + D MC
+   *   QS = Q - ZM
+   *   D  = Q + D S^dag
+   *   C  = S C
+   */
+  ///////////////////////////////////////
+  // Initial block: initial search dir is guess
+  ///////////////////////////////////////
+  std::cout << GridLogMessage<<"BlockCGrQ algorithm initialisation " <<std::endl;
+
+  //1.  QC = R = B-AX, D = Q     ; QC => Thin QR factorisation (google it)
+
+  Linop.HermOp(X, AD);
+  tmp = B - AD;  
+  //std::cout << GridLogMessage << " initial tmp " << norm2(tmp)<< std::endl;
+  ThinQRfact (m_rr, m_C, m_Cinv, Q, tmp);
+  //std::cout << GridLogMessage << " initial Q " << norm2(Q)<< std::endl;
+  //std::cout << GridLogMessage << " m_rr " << m_rr<<std::endl;
+  //std::cout << GridLogMessage << " m_C " << m_C<<std::endl;
+  //std::cout << GridLogMessage << " m_Cinv " << m_Cinv<<std::endl;
+  D=Q;
+
+  std::cout << GridLogMessage<<"BlockCGrQ computed initial residual and QR fact " <<std::endl;
+
+  ///////////////////////////////////////
+  // Timers
+  ///////////////////////////////////////
+  GridStopWatch sliceInnerTimer;
+  GridStopWatch sliceMaddTimer;
+  GridStopWatch QRTimer;
+  GridStopWatch MatrixTimer;
+  GridStopWatch SolverTimer;
+  SolverTimer.Start();
+
+  int k;
+  for (k = 1; k <= MaxIterations; k++) {
+
+    //3. Z  = AD
+    MatrixTimer.Start();
+    Linop.HermOp(D, Z);      
+    MatrixTimer.Stop();
+    //std::cout << GridLogMessage << " norm2 Z " <<norm2(Z)<<std::endl;
+
+    //4. M  = [D^dag Z]^{-1}
+    sliceInnerTimer.Start();
+    sliceInnerProductMatrix(m_DZ,D,Z,Orthog);
+    sliceInnerTimer.Stop();
+    m_M       = m_DZ.inverse();
+    //std::cout << GridLogMessage << " m_DZ " <<m_DZ<<std::endl;
+    
+    //5. X  = X + D MC
+    m_tmp     = m_M * m_C;
+    sliceMaddTimer.Start();
+    sliceMaddMatrix(X,m_tmp, D,X,Orthog);     
+    sliceMaddTimer.Stop();
+
+    //6. QS = Q - ZM
+    sliceMaddTimer.Start();
+    sliceMaddMatrix(tmp,m_M,Z,Q,Orthog,-1.0);
+    sliceMaddTimer.Stop();
+    QRTimer.Start();
+    ThinQRfact (m_rr, m_S, m_Sinv, Q, tmp);
+    QRTimer.Stop();
+    
+    //7. D  = Q + D S^dag
+    m_tmp = m_S.adjoint();
+    sliceMaddTimer.Start();
+    sliceMaddMatrix(D,m_tmp,D,Q,Orthog);
+    sliceMaddTimer.Stop();
+
+    //8. C  = S C
+    m_C = m_S*m_C;
+    
+    /*********************
+     * convergence monitor
+     *********************
+     */
+    m_rr = m_C.adjoint() * m_C;
+
+    RealD max_resid=0;
+    RealD rrsum=0;
+    RealD rr;
+
+    for(int b=0;b<Nblock;b++) {
+      rrsum+=real(m_rr(b,b));
+      rr = real(m_rr(b,b))/ssq[b];
+      if ( rr > max_resid ) max_resid = rr;
+    }
+
+    std::cout << GridLogIterative << "\titeration "<<k<<" rr_sum "<<rrsum<<" ssq_sum "<< sssum
+	      <<" ave "<<std::sqrt(rrsum/sssum) << " max "<< max_resid <<std::endl;
+
+    if ( max_resid < Tolerance*Tolerance ) { 
+
+      SolverTimer.Stop();
+
+      std::cout << GridLogMessage<<"BlockCGrQ converged in "<<k<<" iterations"<<std::endl;
+
+      for(int b=0;b<Nblock;b++){
+	std::cout << GridLogMessage<< "\t\tblock "<<b<<" computed resid "
+		  << std::sqrt(real(m_rr(b,b))/ssq[b])<<std::endl;
+      }
+      std::cout << GridLogMessage<<"\tMax residual is "<<std::sqrt(max_resid)<<std::endl;
+
+      Linop.HermOp(X, AD);
+      AD = AD-B;
+      std::cout << GridLogMessage <<"\t True residual is " << std::sqrt(norm2(AD)/norm2(B)) <<std::endl;
+
+      std::cout << GridLogMessage << "Time Breakdown "<<std::endl;
+      std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed()     <<std::endl;
+      std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed()     <<std::endl;
+      std::cout << GridLogMessage << "\tInnerProd  " << sliceInnerTimer.Elapsed() <<std::endl;
+      std::cout << GridLogMessage << "\tMaddMatrix " << sliceMaddTimer.Elapsed()  <<std::endl;
+      std::cout << GridLogMessage << "\tThinQRfact " << QRTimer.Elapsed()  <<std::endl;
+	    
+      IterationsToComplete = k;
+      return;
+    }
+
+  }
+  std::cout << GridLogMessage << "BlockConjugateGradient(rQ) did NOT converge" << std::endl;
+
+  if (ErrorOnNoConverge) assert(0);
+  IterationsToComplete = k;
+}
+//////////////////////////////////////////////////////////////////////////
+// Block conjugate gradient; Original O'Leary Dimension zero should be the block direction
+//////////////////////////////////////////////////////////////////////////
+void BlockCGsolve(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi) 
+{
+  int Orthog = blockDim; // First dimension is block dim; this is an assumption
   Nblock = Src._grid->_fdimensions[Orthog];
 
   std::cout<<GridLogMessage<<" Block Conjugate Gradient : Orthog "<<Orthog<<" Nblock "<<Nblock<<std::endl;
@@ -162,8 +419,9 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
      *********************
      */
     RealD max_resid=0;
+    RealD rr;
     for(int b=0;b<Nblock;b++){
-      RealD rr = real(m_rr(b,b))/ssq[b];
+      rr = real(m_rr(b,b))/ssq[b];
       if ( rr > max_resid ) max_resid = rr;
     }
     
@@ -173,13 +431,14 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
 
       std::cout << GridLogMessage<<"BlockCG converged in "<<k<<" iterations"<<std::endl;
       for(int b=0;b<Nblock;b++){
-	std::cout << GridLogMessage<< "\t\tblock "<<b<<" resid "<< std::sqrt(real(m_rr(b,b))/ssq[b])<<std::endl;
+	std::cout << GridLogMessage<< "\t\tblock "<<b<<" computed resid "
+		  << std::sqrt(real(m_rr(b,b))/ssq[b])<<std::endl;
       }
       std::cout << GridLogMessage<<"\tMax residual is "<<std::sqrt(max_resid)<<std::endl;
 
       Linop.HermOp(Psi, AP);
       AP = AP-Src;
-      std::cout << GridLogMessage <<"\tTrue residual is " << std::sqrt(norm2(AP)/norm2(Src)) <<std::endl;
+      std::cout << GridLogMessage <<"\t True residual is " << std::sqrt(norm2(AP)/norm2(Src)) <<std::endl;
 
       std::cout << GridLogMessage << "Time Breakdown "<<std::endl;
       std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed()     <<std::endl;
@@ -197,35 +456,13 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
   if (ErrorOnNoConverge) assert(0);
   IterationsToComplete = k;
 }
-};
-
-
 //////////////////////////////////////////////////////////////////////////
 // multiRHS conjugate gradient. Dimension zero should be the block direction
+// Use this for spread out across nodes
 //////////////////////////////////////////////////////////////////////////
-template <class Field>
-class MultiRHSConjugateGradient : public OperatorFunction<Field> {
- public:
-
-  typedef typename Field::scalar_type scomplex;
-
-  const int blockDim = 0;
-
-  int Nblock;
-  bool ErrorOnNoConverge;  // throw an assert when the CG fails to converge.
-                           // Defaults true.
-  RealD Tolerance;
-  Integer MaxIterations;
-  Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion
-  
-   MultiRHSConjugateGradient(RealD tol, Integer maxit, bool err_on_no_conv = true)
-    : Tolerance(tol),
-    MaxIterations(maxit),
-    ErrorOnNoConverge(err_on_no_conv){};
-
-void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi) 
+void CGmultiRHSsolve(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi) 
 {
-  int Orthog = 0; // First dimension is block dim
+  int Orthog = blockDim; // First dimension is block dim
   Nblock = Src._grid->_fdimensions[Orthog];
 
   std::cout<<GridLogMessage<<"MultiRHS Conjugate Gradient : Orthog "<<Orthog<<" Nblock "<<Nblock<<std::endl;
@@ -285,12 +522,10 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
     MatrixTimer.Stop();
 
     // Alpha
-    //    sliceInnerProductVectorTest(v_pAp_test,P,AP,Orthog);
     sliceInnerTimer.Start();
     sliceInnerProductVector(v_pAp,P,AP,Orthog);
     sliceInnerTimer.Stop();
     for(int b=0;b<Nblock;b++){
-      //      std::cout << " "<< v_pAp[b]<<" "<< v_pAp_test[b]<<std::endl;
       v_alpha[b] = v_rr[b]/real(v_pAp[b]);
     }
 
@@ -332,7 +567,7 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
 
       std::cout << GridLogMessage<<"MultiRHS solver converged in " <<k<<" iterations"<<std::endl;
       for(int b=0;b<Nblock;b++){
-	std::cout << GridLogMessage<< "\t\tBlock "<<b<<" resid "<< std::sqrt(v_rr[b]/ssq[b])<<std::endl;
+	std::cout << GridLogMessage<< "\t\tBlock "<<b<<" computed resid "<< std::sqrt(v_rr[b]/ssq[b])<<std::endl;
       }
       std::cout << GridLogMessage<<"\tMax residual is "<<std::sqrt(max_resid)<<std::endl;
 
@@ -358,9 +593,8 @@ void operator()(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi)
   if (ErrorOnNoConverge) assert(0);
   IterationsToComplete = k;
 }
+
 };
-
-
 
 }
 #endif

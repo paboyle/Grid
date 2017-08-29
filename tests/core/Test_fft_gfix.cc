@@ -31,209 +31,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 using namespace Grid;
 using namespace Grid::QCD;
 
-template <class Gimpl> 
-class FourierAcceleratedGaugeFixer  : public Gimpl {
-  public:
-  INHERIT_GIMPL_TYPES(Gimpl);
-
-  typedef typename Gimpl::GaugeLinkField GaugeMat;
-  typedef typename Gimpl::GaugeField GaugeLorentz;
-
-  static void GaugeLinkToLieAlgebraField(const std::vector<GaugeMat> &U,std::vector<GaugeMat> &A) {
-    for(int mu=0;mu<Nd;mu++){
-//      ImplComplex cmi(0.0,-1.0);
-      Complex cmi(0.0,-1.0);
-      A[mu] = Ta(U[mu]) * cmi;
-    }
-  }
-  static void DmuAmu(const std::vector<GaugeMat> &A,GaugeMat &dmuAmu) {
-    dmuAmu=zero;
-    for(int mu=0;mu<Nd;mu++){
-      dmuAmu = dmuAmu + A[mu] - Cshift(A[mu],mu,-1);
-    }
-  }  
-  static void SteepestDescentGaugeFix(GaugeLorentz &Umu,Real & alpha,int maxiter,Real Omega_tol, Real Phi_tol) {
-    GridBase *grid = Umu._grid;
-
-    Real org_plaq      =WilsonLoops<Gimpl>::avgPlaquette(Umu);
-    Real org_link_trace=WilsonLoops<Gimpl>::linkTrace(Umu); 
-    Real old_trace = org_link_trace;
-    Real trG;
-
-    std::vector<GaugeMat> U(Nd,grid);
-                 GaugeMat dmuAmu(grid);
-
-    for(int i=0;i<maxiter;i++){
-      for(int mu=0;mu<Nd;mu++) U[mu]= PeekIndex<LorentzIndex>(Umu,mu);
-      //trG = SteepestDescentStep(U,alpha,dmuAmu);
-      trG = FourierAccelSteepestDescentStep(U,alpha,dmuAmu);
-      for(int mu=0;mu<Nd;mu++) PokeIndex<LorentzIndex>(Umu,U[mu],mu);
-      // Monitor progress and convergence test 
-      // infrequently to minimise cost overhead
-      if ( i %20 == 0 ) { 
-	Real plaq      =WilsonLoops<Gimpl>::avgPlaquette(Umu);
-	Real link_trace=WilsonLoops<Gimpl>::linkTrace(Umu); 
-
-	std::cout << GridLogMessage << " Iteration "<<i<< " plaq= "<<plaq<< " dmuAmu " << norm2(dmuAmu)<< std::endl;
-	
-	Real Phi  = 1.0 - old_trace / link_trace ;
-	Real Omega= 1.0 - trG;
-
-
-	std::cout << GridLogMessage << " Iteration "<<i<< " Phi= "<<Phi<< " Omega= " << Omega<< " trG " << trG <<std::endl;
-	if ( (Omega < Omega_tol) && ( ::fabs(Phi) < Phi_tol) ) {
-	  std::cout << GridLogMessage << "Converged ! "<<std::endl;
-	  return;
-	}
-
-	old_trace = link_trace;
-
-      }
-    }
-  };
-  static Real SteepestDescentStep(std::vector<GaugeMat> &U,Real & alpha, GaugeMat & dmuAmu) {
-    GridBase *grid = U[0]._grid;
-
-    std::vector<GaugeMat> A(Nd,grid);
-    GaugeMat g(grid);
-
-    GaugeLinkToLieAlgebraField(U,A);
-    ExpiAlphaDmuAmu(A,g,alpha,dmuAmu);
-
-
-    Real vol = grid->gSites();
-    Real trG = TensorRemove(sum(trace(g))).real()/vol/Nc;
-
-    SU<Nc>::GaugeTransform(U,g);
-
-    return trG;
-  }
-
-  static Real FourierAccelSteepestDescentStep(std::vector<GaugeMat> &U,Real & alpha, GaugeMat & dmuAmu) {
-
-    GridBase *grid = U[0]._grid;
-
-    Real vol = grid->gSites();
-
-    FFT theFFT((GridCartesian *)grid);
-
-    LatticeComplex  Fp(grid);
-    LatticeComplex  psq(grid); psq=zero;
-    LatticeComplex  pmu(grid); 
-    LatticeComplex   one(grid); one = Complex(1.0,0.0);
-
-    GaugeMat g(grid);
-    GaugeMat dmuAmu_p(grid);
-    std::vector<GaugeMat> A(Nd,grid);
-
-    GaugeLinkToLieAlgebraField(U,A);
-
-    DmuAmu(A,dmuAmu);
-
-    theFFT.FFT_all_dim(dmuAmu_p,dmuAmu,FFT::forward);
-
-    //////////////////////////////////
-    // Work out Fp = psq_max/ psq...
-    //////////////////////////////////
-    std::vector<int> latt_size = grid->GlobalDimensions();
-    std::vector<int> coor(grid->_ndimension,0);
-    for(int mu=0;mu<Nd;mu++) {
-
-      Real TwoPiL =  M_PI * 2.0/ latt_size[mu];
-      LatticeCoordinate(pmu,mu);
-      pmu = TwoPiL * pmu ;
-      psq = psq + 4.0*sin(pmu*0.5)*sin(pmu*0.5); 
-    }
-
-    Complex psqMax(16.0);
-    Fp =  psqMax*one/psq;
-
-    /*
-    static int once;
-    if ( once == 0 ) { 
-      std::cout << " Fp " << Fp <<std::endl;
-      once ++;
-      }*/
-
-    pokeSite(TComplex(1.0),Fp,coor);
-
-    dmuAmu_p  = dmuAmu_p * Fp; 
-
-    theFFT.FFT_all_dim(dmuAmu,dmuAmu_p,FFT::backward);
-
-    GaugeMat ciadmam(grid);
-    Complex cialpha(0.0,-alpha);
-    ciadmam = dmuAmu*cialpha;
-    SU<Nc>::taExp(ciadmam,g);
-
-    Real trG = TensorRemove(sum(trace(g))).real()/vol/Nc;
-
-    SU<Nc>::GaugeTransform(U,g);
-
-    return trG;
-  }
-
-  static void ExpiAlphaDmuAmu(const std::vector<GaugeMat> &A,GaugeMat &g,Real & alpha, GaugeMat &dmuAmu) {
-    GridBase *grid = g._grid;
-    Complex cialpha(0.0,-alpha);
-    GaugeMat ciadmam(grid);
-    DmuAmu(A,dmuAmu);
-    ciadmam = dmuAmu*cialpha;
-    SU<Nc>::taExp(ciadmam,g);
-  }  
-/*
-  ////////////////////////////////////////////////////////////////
-  // NB The FT for fields living on links has an extra phase in it
-  // Could add these to the FFT class as a later task since this code
-  // might be reused elsewhere ????
-  ////////////////////////////////////////////////////////////////
-  static void InverseFourierTransformAmu(FFT &theFFT,const std::vector<GaugeMat> &Ap,std::vector<GaugeMat> &Ax) {
-    GridBase * grid = theFFT.Grid();
-    std::vector<int> latt_size = grid->GlobalDimensions();
-
-    ComplexField  pmu(grid);
-    ComplexField  pha(grid);
-    GaugeMat      Apha(grid);
-
-    Complex ci(0.0,1.0);
-
-    for(int mu=0;mu<Nd;mu++){
-
-      Real TwoPiL =  M_PI * 2.0/ latt_size[mu];
-      LatticeCoordinate(pmu,mu);
-      pmu = TwoPiL * pmu ;
-      pha = exp(pmu *  (0.5 *ci)); // e(ipmu/2) since Amu(x+mu/2)
-
-      Apha = Ap[mu] * pha;
-
-      theFFT.FFT_all_dim(Apha,Ax[mu],FFT::backward);
-    }
-  }
-  static void FourierTransformAmu(FFT & theFFT,const std::vector<GaugeMat> &Ax,std::vector<GaugeMat> &Ap) {
-    GridBase * grid = theFFT.Grid();
-    std::vector<int> latt_size = grid->GlobalDimensions();
-
-    ComplexField  pmu(grid);
-    ComplexField  pha(grid);
-    Complex ci(0.0,1.0);
-    
-    // Sign convention for FFTW calls:
-    // A(x)= Sum_p e^ipx A(p) / V
-    // A(p)= Sum_p e^-ipx A(x)
-
-    for(int mu=0;mu<Nd;mu++){
-      Real TwoPiL =  M_PI * 2.0/ latt_size[mu];
-      LatticeCoordinate(pmu,mu);
-      pmu = TwoPiL * pmu ;
-      pha = exp(-pmu *  (0.5 *ci)); // e(+ipmu/2) since Amu(x+mu/2)
-
-      theFFT.FFT_all_dim(Ax[mu],Ap[mu],FFT::backward);
-      Ap[mu] = Ap[mu] * pha;
-    }
-  }
-*/
-};
-
 int main (int argc, char ** argv)
 {
   std::vector<int> seeds({1,2,3,4});
@@ -264,38 +61,55 @@ int main (int argc, char ** argv)
   std::cout<< "*****************************************************************" <<std::endl;
 
   LatticeGaugeField   Umu(&GRID);
+  LatticeGaugeField   Urnd(&GRID);
   LatticeGaugeField   Uorg(&GRID);
   LatticeColourMatrix   g(&GRID); // Gauge xform
 
   
   SU3::ColdConfiguration(pRNG,Umu); // Unit gauge
   Uorg=Umu;
+  Urnd=Umu;
 
-  SU3::RandomGaugeTransform(pRNG,Umu,g); // Unit gauge
+  SU3::RandomGaugeTransform(pRNG,Urnd,g); // Unit gauge
+
   Real plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
   std::cout << " Initial plaquette "<<plaq << std::endl;
 
-
-
   Real alpha=0.1;
-  FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(Umu,alpha,10000,1.0e-10, 1.0e-10);
 
+  Umu = Urnd;
+  FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(Umu,alpha,10000,1.0e-12, 1.0e-12,false);
 
   plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
   std::cout << " Final plaquette "<<plaq << std::endl;
 
   Uorg = Uorg - Umu;
   std::cout << " Norm Difference "<< norm2(Uorg) << std::endl;
+  std::cout << " Norm "<< norm2(Umu) << std::endl;
 
 
-  //  std::cout<< "*****************************************************************" <<std::endl;
-  //  std::cout<< "* Testing Fourier accelerated fixing                            *" <<std::endl;
-  //  std::cout<< "*****************************************************************" <<std::endl;
+  std::cout<< "*****************************************************************" <<std::endl;
+  std::cout<< "* Testing Fourier accelerated fixing                            *" <<std::endl;
+  std::cout<< "*****************************************************************" <<std::endl;
+  Umu=Urnd;
+  FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(Umu,alpha,10000,1.0e-12, 1.0e-12,true);
 
-  //  std::cout<< "*****************************************************************" <<std::endl;
-  //  std::cout<< "* Testing non-unit configuration                                *" <<std::endl;
-  //  std::cout<< "*****************************************************************" <<std::endl;
+  plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
+  std::cout << " Final plaquette "<<plaq << std::endl;
 
+  std::cout<< "*****************************************************************" <<std::endl;
+  std::cout<< "* Testing non-unit configuration                                *" <<std::endl;
+  std::cout<< "*****************************************************************" <<std::endl;
+
+  SU3::HotConfiguration(pRNG,Umu); // Unit gauge
+
+  plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
+  std::cout << " Initial plaquette "<<plaq << std::endl;
+
+  FourierAcceleratedGaugeFixer<PeriodicGimplR>::SteepestDescentGaugeFix(Umu,alpha,10000,1.0e-12, 1.0e-12,true);
+
+  plaq=WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu);
+  std::cout << " Final plaquette "<<plaq << std::endl;
 
 
   Grid_finalize();

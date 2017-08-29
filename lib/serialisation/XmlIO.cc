@@ -32,16 +32,21 @@ using namespace Grid;
 using namespace std;
 
 // Writer implementation ///////////////////////////////////////////////////////
-XmlWriter::XmlWriter(const string &fileName)
-: fileName_(fileName)
+XmlWriter::XmlWriter(const string &fileName, string toplev) : fileName_(fileName)
 {
-  node_ = doc_.append_child();
-  node_.set_name("grid");
+  if ( toplev == std::string("") ) {
+    node_=doc_;
+  } else { 
+    node_=doc_.append_child();
+    node_.set_name(toplev.c_str());
+  }
 }
 
 XmlWriter::~XmlWriter(void)
 {
-  doc_.save_file(fileName_.c_str(), "  ");
+  if ( fileName_ != std::string("") ) { 
+    doc_.save_file(fileName_.c_str(), "  ");
+  }
 }
 
 void XmlWriter::push(const string &s)
@@ -53,21 +58,44 @@ void XmlWriter::pop(void)
 {
   node_ = node_.parent();
 }
-
-// Reader implementation ///////////////////////////////////////////////////////
-XmlReader::XmlReader(const string &fileName)
-: fileName_(fileName)
+std::string XmlWriter::XmlString(void)
 {
-  pugi::xml_parse_result result = doc_.load_file(fileName_.c_str());
-  
-  if ( !result )
-  {
+  std::ostringstream oss; 
+  doc_.save(oss);
+  return oss.str();
+}
+
+XmlReader::XmlReader(const char *xmlstring,string toplev) : fileName_("")
+{
+  pugi::xml_parse_result result;
+  result = doc_.load_string(xmlstring);
+  if ( !result ) {
     cerr << "XML error description: " << result.description() << "\n";
     cerr << "XML error offset     : " << result.offset        << "\n";
     abort();
   }
-  
-  node_ = doc_.child("grid");
+  if ( toplev == std::string("") ) {
+    node_ = doc_;
+  } else { 
+    node_ = doc_.child(toplev.c_str());
+  }
+}
+
+// Reader implementation ///////////////////////////////////////////////////////
+XmlReader::XmlReader(const string &fileName,string toplev) : fileName_(fileName)
+{
+  pugi::xml_parse_result result;
+  result = doc_.load_file(fileName_.c_str());
+  if ( !result ) {
+    cerr << "XML error description: " << result.description() << "\n";
+    cerr << "XML error offset     : " << result.offset        << "\n";
+    abort();
+  }
+  if ( toplev == std::string("") ) {
+    node_ = doc_;
+  } else { 
+    node_ = doc_.child(toplev.c_str());
+  }
 }
 
 bool XmlReader::push(const string &s)

@@ -7,6 +7,7 @@
 #include <cassert>
 #include <complex>
 #include <vector>
+#include <string>
 #include <iostream>
 #include <iomanip>
 #include <random>
@@ -18,6 +19,7 @@
 #include <ctime>
 #include <sys/time.h>
 #include <chrono>
+#include <zlib.h>
 
 ///////////////////
 // Grid config

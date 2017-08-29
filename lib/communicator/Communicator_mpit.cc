@@ -69,6 +69,11 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
   for(int i=0;i<_ndimension;i++){
     _Nprocessors*=_processors[i];
   }
+
+  communicator_halo.resize (2*_ndimension);
+  for(int i=0;i<_ndimension*2;i++){
+    MPI_Comm_dup(communicator,&communicator_halo[i]);
+  }
   
   int Size; 
   MPI_Comm_size(communicator,&Size);
@@ -229,6 +234,53 @@ void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
 		      communicator_world);
   assert(ierr==0);
 }
+
+double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
+							 void *xmit,
+							 int xmit_to_rank,
+							 void *recv,
+							 int recv_from_rank,
+							 int bytes,int dir)
+{
+  int myrank = _processor;
+  int ierr;
+  assert(dir < communicator_halo.size());
+  
+  //  std::cout << " sending on communicator "<<dir<<" " <<communicator_halo[dir]<<std::endl;
+  // Give the CPU to MPI immediately; can use threads to overlap optionally
+  MPI_Request req[2];
+  MPI_Irecv(recv,bytes,MPI_CHAR,recv_from_rank,recv_from_rank, communicator_halo[dir],&req[1]);
+  MPI_Isend(xmit,bytes,MPI_CHAR,xmit_to_rank  ,myrank        , communicator_halo[dir],&req[0]);
+
+  list.push_back(req[0]);
+  list.push_back(req[1]);
+  return 2.0*bytes;
+}
+void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int dir)
+{ 
+  int nreq=waitall.size();
+  MPI_Waitall(nreq, &waitall[0], MPI_STATUSES_IGNORE);
+};
+double CartesianCommunicator::StencilSendToRecvFrom(void *xmit,
+						    int xmit_to_rank,
+						    void *recv,
+						    int recv_from_rank,
+						    int bytes,int dir)
+{
+  int myrank = _processor;
+  int ierr;
+  assert(dir < communicator_halo.size());
+  
+  //  std::cout << " sending on communicator "<<dir<<" " <<communicator_halo[dir]<<std::endl;
+  // Give the CPU to MPI immediately; can use threads to overlap optionally
+  MPI_Request req[2];
+  MPI_Irecv(recv,bytes,MPI_CHAR,recv_from_rank,recv_from_rank, communicator_halo[dir],&req[1]);
+  MPI_Isend(xmit,bytes,MPI_CHAR,xmit_to_rank  ,myrank        , communicator_halo[dir],&req[0]);
+  MPI_Waitall(2, req, MPI_STATUSES_IGNORE);
+  return 2.0*bytes;
+}
+
+
 
 }
 

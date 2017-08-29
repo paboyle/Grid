@@ -156,8 +156,15 @@ class iScalar {
 
   // convert from a something to a scalar via constructor of something arg
   template <class T, typename std::enable_if<!isGridTensor<T>::value, T>::type * = nullptr>
-    strong_inline iScalar<vtype> operator=(T arg) {
+  strong_inline iScalar<vtype> operator=(T arg) {
     _internal = arg;
+    return *this;
+  }
+
+  // Convert elements
+  template <class ttype>
+  strong_inline iScalar<vtype> operator=(iScalar<ttype> &&arg) {
+    _internal = arg._internal;
     return *this;
   }
 

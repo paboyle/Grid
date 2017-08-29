@@ -13,6 +13,10 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 ################ Get git info
 #AC_REVISION([m4_esyscmd_s([./scripts/configure.commit])])
 
+################ Set flags
+# do not move!
+CXXFLAGS="-O3 $CXXFLAGS"
+
 ############### Checks for programs
 AC_PROG_CXX
 AC_PROG_RANLIB
@@ -27,7 +31,6 @@ AX_GXX_VERSION
 AC_DEFINE_UNQUOTED([GXX_VERSION],["$GXX_VERSION"],
       [version of g++ that will compile the code])
 
-CXXFLAGS="-O3 $CXXFLAGS"
 
 
 ############### Checks for typedefs, structures, and compiler characteristics
@@ -51,8 +54,13 @@ AC_CHECK_HEADERS(malloc/malloc.h)
 AC_CHECK_HEADERS(malloc.h)
 AC_CHECK_HEADERS(endian.h)
 AC_CHECK_HEADERS(execinfo.h)
+AC_CHECK_HEADERS(numaif.h)
 AC_CHECK_DECLS([ntohll],[], [], [[#include <arpa/inet.h>]])
 AC_CHECK_DECLS([be64toh],[], [], [[#include <arpa/inet.h>]])
+
+############## Standard libraries
+AC_CHECK_LIB([m],[cos])
+AC_CHECK_LIB([stdc++],[abort])
 
 ############### GMP and MPFR
 AC_ARG_WITH([gmp],
@@ -184,6 +192,15 @@ AC_SEARCH_LIBS([limeCreateReader], [lime],
 In order to use ILGG file format please install or provide the correct path to your installation
 Info at: http://usqcd.jlab.org/usqcd-docs/c-lime/)])
 
+AC_SEARCH_LIBS([crc32], [z],
+               [AC_DEFINE([HAVE_ZLIB], [1], [Define to 1 if you have the `LIBZ' library])]
+               [have_zlib=true] [LIBS="${LIBS} -lz"],
+	       [AC_MSG_ERROR(zlib library was not found in your system.)])
+
+AC_SEARCH_LIBS([move_pages], [numa],
+               [AC_DEFINE([HAVE_LIBNUMA], [1], [Define to 1 if you have the `LIBNUMA' library])]
+               [have_libnuma=true] [LIBS="${LIBS} -lnuma"],
+	       [AC_MSG_WARN(libnuma library was not found in your system. Some optimisations will not apply)])
 
 AC_SEARCH_LIBS([H5Fopen], [hdf5_cpp],
                [AC_DEFINE([HAVE_HDF5], [1], [Define to 1 if you have the `HDF5' library])]
@@ -237,6 +254,7 @@ case ${ax_cv_cxx_compiler_vendor} in
         SIMD_FLAGS='';;
       KNL)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics])
+        AC_DEFINE([KNL],[1],[Knights landing processor])
         SIMD_FLAGS='-march=knl';;
       GEN)
         AC_DEFINE([GEN],[1],[generic vector code])
@@ -244,6 +262,9 @@ case ${ax_cv_cxx_compiler_vendor} in
                            [generic SIMD vector width (in bytes)])
         SIMD_GEN_WIDTH_MSG=" (width= $ac_gen_simd_width)"
         SIMD_FLAGS='';;
+      NEONv8)
+        AC_DEFINE([NEONV8],[1],[ARMv8 NEON])
+        SIMD_FLAGS='-march=armv8-a';;
       QPX|BGQ)
         AC_DEFINE([QPX],[1],[QPX intrinsics for BG/Q])
         SIMD_FLAGS='';;
@@ -272,6 +293,7 @@ case ${ax_cv_cxx_compiler_vendor} in
         SIMD_FLAGS='';;
       KNL)
         AC_DEFINE([AVX512],[1],[AVX512 intrinsics for Knights Landing])
+        AC_DEFINE([KNL],[1],[Knights landing processor])
         SIMD_FLAGS='-xmic-avx512';;
       GEN)
         AC_DEFINE([GEN],[1],[generic vector code])
@@ -320,13 +342,13 @@ case ${ac_COMMS} in
         AC_DEFINE([GRID_COMMS_NONE],[1],[GRID_COMMS_NONE] )
         comms_type='none'
      ;;
-     mpi3l*)
-       AC_DEFINE([GRID_COMMS_MPI3L],[1],[GRID_COMMS_MPI3L] )
-       comms_type='mpi3l'
-     ;;
      mpi3*)
         AC_DEFINE([GRID_COMMS_MPI3],[1],[GRID_COMMS_MPI3] )
         comms_type='mpi3'
+     ;;
+     mpit)
+        AC_DEFINE([GRID_COMMS_MPIT],[1],[GRID_COMMS_MPIT] )
+        comms_type='mpit'
      ;;
      mpi*)
         AC_DEFINE([GRID_COMMS_MPI],[1],[GRID_COMMS_MPI] )
@@ -355,7 +377,7 @@ esac
 AM_CONDITIONAL(BUILD_COMMS_SHMEM, [ test "${comms_type}X" == "shmemX" ])
 AM_CONDITIONAL(BUILD_COMMS_MPI,   [ test "${comms_type}X" == "mpiX" ])
 AM_CONDITIONAL(BUILD_COMMS_MPI3,  [ test "${comms_type}X" == "mpi3X" ] )
-AM_CONDITIONAL(BUILD_COMMS_MPI3L, [ test "${comms_type}X" == "mpi3lX" ] )
+AM_CONDITIONAL(BUILD_COMMS_MPIT,  [ test "${comms_type}X" == "mpitX" ] )
 AM_CONDITIONAL(BUILD_COMMS_NONE,  [ test "${comms_type}X" == "noneX" ])
 
 ############### RNG selection

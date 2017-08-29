@@ -90,12 +90,12 @@ int main(int argc, char *argv[])
                                                     solverPar);
         
         // propagators
-        Quark::Par quarkPar;
+        MFermion::GaugeProp::Par quarkPar;
         quarkPar.solver = "CG_" + flavour[i];
         quarkPar.source = "pt";
-        application.createModule<Quark>("Qpt_" + flavour[i], quarkPar);
+        application.createModule<MFermion::GaugeProp>("Qpt_" + flavour[i], quarkPar);
         quarkPar.source = "z2";
-        application.createModule<Quark>("QZ2_" + flavour[i], quarkPar);
+        application.createModule<MFermion::GaugeProp>("QZ2_" + flavour[i], quarkPar);
     }
     for (unsigned int i = 0; i < flavour.size(); ++i)
     for (unsigned int j = i; j < flavour.size(); ++j)

@@ -37,10 +37,11 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/mman.h>
-//#include <zlib.h>
-#ifndef SHM_HUGETLB
-#define SHM_HUGETLB 04000
+#include <zlib.h>
+#ifdef HAVE_NUMAIF_H
+#include <numaif.h>
 #endif
+
 
 namespace Grid {
 
@@ -65,6 +66,7 @@ std::vector<int> CartesianCommunicator::MyGroup;
 std::vector<void *> CartesianCommunicator::ShmCommBufs;
 
 int CartesianCommunicator::NodeCount(void)    { return GroupSize;};
+int CartesianCommunicator::RankCount(void)    { return WorldSize;};
 
 
 #undef FORCE_COMMS
@@ -209,10 +211,35 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
       int fd=shm_open(shm_name,O_RDWR|O_CREAT,0666);
       if ( fd < 0 ) {	perror("failed shm_open");	assert(0);      }
       ftruncate(fd, size);
+      
+      int mmap_flag = MAP_SHARED;
+#ifdef MAP_HUGETLB
+      if (Hugepages) mmap_flag |= MAP_HUGETLB;
+#endif
+      void * ptr =  mmap(NULL,size, PROT_READ | PROT_WRITE, mmap_flag, fd, 0);
 
-      void * ptr =  mmap(NULL,size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
       if ( ptr == MAP_FAILED ) {       perror("failed mmap");      assert(0);    }
       assert(((uint64_t)ptr&0x3F)==0);
+
+// Experiments; Experiments; Try to force numa domain on the shm segment if we have numaif.h
+#if 0
+//#ifdef HAVE_NUMAIF_H
+	int status;
+	int flags=MPOL_MF_MOVE;
+#ifdef KNL
+	int nodes=1; // numa domain == MCDRAM
+	// Find out if in SNC2,SNC4 mode ?
+#else
+	int nodes=r; // numa domain == MPI ID
+#endif
+	unsigned long count=1;
+	for(uint64_t page=0;page<size;page+=4096){
+	  void *pages = (void *) ( page + (uint64_t)ptr );
+	  uint64_t *cow_it = (uint64_t *)pages;	*cow_it = 1;
+	  ierr= move_pages(0,count, &pages,&nodes,&status,flags);
+	  if (ierr && (page==0)) perror("numa relocate command failed");
+	}
+#endif
       ShmCommBufs[r] =ptr;
       
     }
@@ -243,7 +270,11 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
     for(int r=0;r<ShmSize;r++){
       size_t size = CartesianCommunicator::MAX_MPI_SHM_BYTES;
       key_t key   = 0x4545 + r;
-      if ((shmids[r]= shmget(key,size, SHM_HUGETLB | IPC_CREAT | SHM_R | SHM_W)) < 0) {
+      int flags = IPC_CREAT | SHM_R | SHM_W;
+#ifdef SHM_HUGETLB
+      flags|=SHM_HUGETLB;
+#endif
+      if ((shmids[r]= shmget(key,size, flags)) < 0) {
 	int errsv = errno;
 	printf("Errno %d\n",errsv);
 	perror("shmget");
@@ -374,7 +405,13 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 { 
   int ierr;
   communicator=communicator_world;
+
   _ndimension = processors.size();
+
+  communicator_halo.resize (2*_ndimension);
+  for(int i=0;i<_ndimension*2;i++){
+    MPI_Comm_dup(communicator,&communicator_halo[i]);
+  }
 
   ////////////////////////////////////////////////////////////////
   // Assert power of two shm_size.
@@ -509,6 +546,14 @@ void CartesianCommunicator::GlobalSum(uint64_t &u){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT64_T,MPI_SUM,communicator);
   assert(ierr==0);
 }
+void CartesianCommunicator::GlobalXOR(uint32_t &u){
+  int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_BXOR,communicator);
+  assert(ierr==0);
+}
+void CartesianCommunicator::GlobalXOR(uint64_t &u){
+  int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT64_T,MPI_BXOR,communicator);
+  assert(ierr==0);
+}
 void CartesianCommunicator::GlobalSum(float &f){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&f,1,MPI_FLOAT,MPI_SUM,communicator);
   assert(ierr==0);
@@ -590,13 +635,27 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
   }
 }
 
-double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
-						       void *xmit,
-						       int dest,
-						       void *recv,
-						       int from,
-						       int bytes)
+double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
+						     int dest,
+						     void *recv,
+						     int from,
+						     int bytes,int dir)
 {
+  std::vector<CommsRequest_t> list;
+  double offbytes = StencilSendToRecvFromBegin(list,xmit,dest,recv,from,bytes,dir);
+  StencilSendToRecvFromComplete(list,dir);
+  return offbytes;
+}
+
+double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsRequest_t> &list,
+							 void *xmit,
+							 int dest,
+							 void *recv,
+							 int from,
+							 int bytes,int dir)
+{
+  assert(dir < communicator_halo.size());
+
   MPI_Request xrq;
   MPI_Request rrq;
 
@@ -615,26 +674,26 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
   gfrom = MPI_UNDEFINED;
 #endif
   if ( gfrom ==MPI_UNDEFINED) {
-    ierr=MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator,&rrq);
+    ierr=MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator_halo[dir],&rrq);
     assert(ierr==0);
     list.push_back(rrq);
     off_node_bytes+=bytes;
   }
 
   if ( gdest == MPI_UNDEFINED ) {
-    ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator,&xrq);
+    ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator_halo[dir],&xrq);
     assert(ierr==0);
     list.push_back(xrq);
     off_node_bytes+=bytes;
   }
 
   if ( CommunicatorPolicy == CommunicatorPolicySequential ) { 
-    this->StencilSendToRecvFromComplete(list);
+    this->StencilSendToRecvFromComplete(list,dir);
   }
 
   return off_node_bytes;
 }
-void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall)
+void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &waitall,int dir)
 {
   SendToRecvFromComplete(waitall);
 }
