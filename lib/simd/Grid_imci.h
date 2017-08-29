@@ -401,9 +401,7 @@ namespace Optimization {
   //Integer Reduce
   template<>
   inline Integer Reduce<Integer, __m512i>::operator()(__m512i in){
-    // FIXME unimplemented
-    printf("Reduce : Missing integer implementation -> FIX\n");
-    assert(0);
+    return _mm512_reduce_add_epi32(in);
   }
   
   

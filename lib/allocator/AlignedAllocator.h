@@ -64,6 +64,8 @@ namespace Grid {
 
   };
 
+  void check_huge_pages(void *Buf,uint64_t BYTES);
+
 ////////////////////////////////////////////////////////////////////
 // A lattice of something, but assume the something is SIMDized.
 ////////////////////////////////////////////////////////////////////
@@ -92,18 +94,34 @@ public:
     size_type bytes = __n*sizeof(_Tp);
 
     _Tp *ptr = (_Tp *) PointerCache::Lookup(bytes);
-    
-#ifdef HAVE_MM_MALLOC_H
-    if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) _mm_malloc(bytes,128);
-#else
-    if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) memalign(128,bytes);
-#endif
+    //    if ( ptr != NULL ) 
+    //      std::cout << "alignedAllocator "<<__n << " cache hit "<< std::hex << ptr <<std::dec <<std::endl;
 
+    //////////////////
+    // Hack 2MB align; could make option probably doesn't need configurability
+    //////////////////
+//define GRID_ALLOC_ALIGN (128)
+#define GRID_ALLOC_ALIGN (2*1024*1024)
+#ifdef HAVE_MM_MALLOC_H
+    if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) _mm_malloc(bytes,GRID_ALLOC_ALIGN);
+#else
+    if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) memalign(GRID_ALLOC_ALIGN,bytes);
+#endif
+    //    std::cout << "alignedAllocator " << std::hex << ptr <<std::dec <<std::endl;
+    // First touch optimise in threaded loop
+    uint8_t *cp = (uint8_t *)ptr;
+#ifdef GRID_OMP
+#pragma omp parallel for
+#endif
+    for(size_type n=0;n<bytes;n+=4096){
+      cp[n]=0;
+    }
     return ptr;
   }
 
   void deallocate(pointer __p, size_type __n) { 
     size_type bytes = __n * sizeof(_Tp);
+
     pointer __freeme = (pointer)PointerCache::Insert((void *)__p,bytes);
 
 #ifdef HAVE_MM_MALLOC_H
@@ -182,10 +200,17 @@ public:
   pointer allocate(size_type __n, const void* _p= 0) 
   {
 #ifdef HAVE_MM_MALLOC_H
-    _Tp * ptr = (_Tp *) _mm_malloc(__n*sizeof(_Tp),128);
+    _Tp * ptr = (_Tp *) _mm_malloc(__n*sizeof(_Tp),GRID_ALLOC_ALIGN);
 #else
-    _Tp * ptr = (_Tp *) memalign(128,__n*sizeof(_Tp));
+    _Tp * ptr = (_Tp *) memalign(GRID_ALLOC_ALIGN,__n*sizeof(_Tp));
 #endif
+    size_type bytes = __n*sizeof(_Tp);
+    uint8_t *cp = (uint8_t *)ptr;
+    // One touch per 4k page, static OMP loop to catch same loop order
+#pragma omp parallel for schedule(static)
+    for(size_type n=0;n<bytes;n+=4096){
+      cp[n]=0;
+    }
     return ptr;
   }
   void deallocate(pointer __p, size_type) { 

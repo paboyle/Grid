@@ -41,7 +41,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/GridCore.h>
 #include <Grid/GridQCDcore.h>
 #include <Grid/qcd/action/Action.h>
+#include <Grid/qcd/utils/GaugeFix.h>
 #include <Grid/qcd/smearing/Smearing.h>
+#include <Grid/parallelIO/MetaData.h>
 #include <Grid/qcd/hmc/HMC_aggregate.h>
 
 #endif

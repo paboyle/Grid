@@ -543,6 +543,24 @@ namespace Optimization {
      u512d conv; conv.v = v1;
      return conv.f[0];
   }
+  
+  //Integer Reduce
+  template<>
+  inline Integer Reduce<Integer, __m512i>::operator()(__m512i in){
+    // No full vector reduce, use AVX to add upper and lower halves of register
+    // and perform AVX reduction.
+    __m256i v1, v2, v3;
+    __m128i u1, u2, ret;
+    v1  = _mm512_castsi512_si256(in);       // upper half
+    v2  = _mm512_extracti32x8_epi32(in, 1); // lower half
+    v3  = _mm256_add_epi32(v1, v2);
+    v1  = _mm256_hadd_epi32(v3, v3);
+    v2  = _mm256_hadd_epi32(v1, v1);
+    u1  = _mm256_castsi256_si128(v2)        // upper half
+    u2  = _mm256_extracti128_si256(v2, 1);  // lower half
+    ret = _mm_add_epi32(u1, u2);
+    return _mm_cvtsi128_si32(ret);
+  }
 #else
   //Complex float Reduce
   template<>
@@ -570,9 +588,7 @@ namespace Optimization {
   //Integer Reduce
   template<>
   inline Integer Reduce<Integer, __m512i>::operator()(__m512i in){
-    // FIXME unimplemented
-    printf("Reduce : Missing integer implementation -> FIX\n");
-    assert(0);
+    return _mm512_reduce_add_epi32(in);
   }
 #endif
   

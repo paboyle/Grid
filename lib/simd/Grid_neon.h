@@ -596,3 +596,4 @@ namespace Optimization {
   typedef Optimization::TimesI      TimesISIMD;
 
 }
+

@@ -28,8 +28,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_SeqGamma_hpp_
-#define Hadrons_SeqGamma_hpp_
+#ifndef Hadrons_MSource_SeqGamma_hpp_
+#define Hadrons_MSource_SeqGamma_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -72,7 +72,7 @@ template <typename FImpl>
 class TSeqGamma: public Module<SeqGammaPar>
 {
 public:
-    TYPE_ALIASES(FImpl,);
+    FGS_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TSeqGamma(const std::string name);
@@ -161,4 +161,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_SeqGamma_hpp_
+#endif // Hadrons_MSource_SeqGamma_hpp_
