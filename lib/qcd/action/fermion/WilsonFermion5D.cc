@@ -124,22 +124,24 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
   int vol4;
   vol4=FourDimGrid.oSites();
   Stencil.BuildSurfaceList(LLs,vol4);
+
   vol4=FourDimRedBlackGrid.oSites();
   StencilEven.BuildSurfaceList(LLs,vol4);
    StencilOdd.BuildSurfaceList(LLs,vol4);
 
-  std::cout << GridLogMessage << " SurfaceLists "<< Stencil.surface_list.size()
-                       <<" " << StencilEven.surface_list.size()<<std::endl;
+   //  std::cout << GridLogMessage << " SurfaceLists "<< Stencil.surface_list.size()
+   //                       <<" " << StencilEven.surface_list.size()<<std::endl;
 
 }
      
 template<class Impl>
 void WilsonFermion5D<Impl>::Report(void)
 {
-    std::vector<int> latt = GridDefaultLatt();          
-    RealD volume = Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt[mu];
-    RealD NP = _FourDimGrid->_Nprocessors;
-    RealD NN = _FourDimGrid->NodeCount();
+  RealD NP     = _FourDimGrid->_Nprocessors;
+  RealD NN     = _FourDimGrid->NodeCount();
+  RealD volume = Ls;  
+  std::vector<int> latt = _FourDimGrid->GlobalDimensions();
+  for(int mu=0;mu<Nd;mu++) volume=volume*latt[mu];
 
   if ( DhopCalls > 0 ) {
     std::cout << GridLogMessage << "#### Dhop calls report " << std::endl;
@@ -185,6 +187,11 @@ void WilsonFermion5D<Impl>::Report(void)
     std::cout << GridLogMessage << "WilsonFermion5D StencilEven"<<std::endl;  StencilEven.Report();
     std::cout << GridLogMessage << "WilsonFermion5D StencilOdd" <<std::endl;  StencilOdd.Report();
   }
+  if ( DhopCalls > 0){
+    std::cout << GridLogMessage << "WilsonFermion5D Stencil     Reporti()"    <<std::endl;  Stencil.Reporti(DhopCalls);
+    std::cout << GridLogMessage << "WilsonFermion5D StencilEven Reporti()"<<std::endl;  StencilEven.Reporti(DhopCalls);
+    std::cout << GridLogMessage << "WilsonFermion5D StencilOdd  Reporti()" <<std::endl;  StencilOdd.Reporti(DhopCalls);
+  }
 }
 
 template<class Impl>
@@ -204,6 +211,9 @@ void WilsonFermion5D<Impl>::ZeroCounters(void) {
   Stencil.ZeroCounters();
   StencilEven.ZeroCounters();
   StencilOdd.ZeroCounters();
+  Stencil.ZeroCountersi();
+  StencilEven.ZeroCountersi();
+  StencilOdd.ZeroCountersi();
 }
 
 
@@ -380,7 +390,6 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
 {
 #ifdef GRID_OMP
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
-  typedef CartesianCommunicator::CommsRequest_t CommsRequest_t;
 
   Compressor compressor(dag);
 
@@ -389,46 +398,70 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
 
   DhopFaceTime-=usecond();
   st.HaloExchangeOptGather(in,compressor);
-  DhopFaceTime+=usecond();
-  std::vector<std::vector<CommsRequest_t> > reqs;
-
-  // Rely on async comms; start comms before merge of local data
-  DhopCommTime-=usecond();
-  st.CommunicateBegin(reqs);
-
-  DhopFaceTime-=usecond();
-  st.CommsMergeSHM(compressor);
+  st.CommsMergeSHM(compressor);// Could do this inside parallel region overlapped with comms
   DhopFaceTime+=usecond();
 
-  // Perhaps use omp task and region
-#pragma omp parallel 
+  double ctime=0;
+  double ptime=0;
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Ugly explicit thread mapping introduced for OPA reasons.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+#pragma omp parallel reduction(max:ctime) reduction(max:ptime)
   { 
+    int tid = omp_get_thread_num();
     int nthreads = omp_get_num_threads();
-    int me = omp_get_thread_num();
-    int myoff, mywork;
-
-    GridThread::GetWork(len,me-1,mywork,myoff,nthreads-1);
-    int sF = LLs * myoff;
-
-    if ( me == 0 ) {
-      st.CommunicateComplete(reqs);
-      DhopCommTime+=usecond();
-    } else { 
-      // Interior links in stencil
-      if ( me==1 ) DhopComputeTime-=usecond();
-      if (dag == DaggerYes) Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,myoff,LLs,mywork,in,out,1,0);
-      else      	    Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,myoff,LLs,mywork,in,out,1,0);
-      if ( me==1 ) DhopComputeTime+=usecond();
+    int ncomms = CartesianCommunicator::nCommThreads;
+    if (ncomms == -1) ncomms = 1;
+    assert(nthreads > ncomms);
+    if (tid >= ncomms) {
+      double start = usecond();
+      nthreads -= ncomms;
+      int ttid = tid - ncomms;
+      int n = U._grid->oSites();
+      int chunk = n / nthreads;
+      int rem = n % nthreads;
+      int myblock, myn;
+      if (ttid < rem) {
+	myblock = ttid * chunk + ttid;
+	myn = chunk+1;
+      } else {
+	myblock = ttid*chunk + rem;
+	myn = chunk;
+      }
+      
+      // do the compute
+      if (dag == DaggerYes) {
+	for (int ss = myblock; ss < myblock+myn; ++ss) {
+	  int sU = ss;
+	  int sF = LLs * sU;
+	  Kernels::DhopSiteDag(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,1,0);
+	}
+      } else {
+	for (int ss = myblock; ss < myblock+myn; ++ss) {
+	  int sU = ss;
+	  int sF = LLs * sU;
+	  Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,1,0);
+	}
+      }
+	ptime = usecond() - start;
+    }
+    {
+      double start = usecond();
+      st.CommunicateThreaded();
+      ctime = usecond() - start;
     }
   }
+  DhopCommTime += ctime;
+  DhopComputeTime+=ptime;
+
+  // First to enter, last to leave timing
+  st.CollateThreads();
 
   DhopFaceTime-=usecond();
   st.CommsMerge(compressor);
   DhopFaceTime+=usecond();
 
-  // Load imbalance alert. Should use dynamic schedule OMP for loop
-  // Perhaps create a list of only those sites with face work, and 
-  // load balance process the list.
   DhopComputeTime2-=usecond();
   if (dag == DaggerYes) {
     int sz=st.surface_list.size();
@@ -449,9 +482,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
 #else 
   assert(0);
 #endif
-
 }
-
 
 
 template<class Impl>
