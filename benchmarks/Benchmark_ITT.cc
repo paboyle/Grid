@@ -439,12 +439,14 @@ public:
 	sDw.Report();
 
       }
+      double robust = mflops_worst/mflops_best;;
       std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
       std::cout<<GridLogMessage << L<<"^4 x "<<Ls<< " sDeo Best  mflop/s        =   "<< mflops_best << " ; " << mflops_best/NN<<" per node " <<std::endl;
       std::cout<<GridLogMessage << L<<"^4 x "<<Ls<< " sDeo Worst mflop/s        =   "<< mflops_worst<< " ; " << mflops_worst/NN<<" per node " <<std::endl;
-      std::cout<<GridLogMessage << L<<"^4 x "<<Ls<< " Performance Robustness   =   "<< mflops_worst/mflops_best <<std::endl;
+
+      std::cout<<GridLogMessage <<std::setprecision(3)<< L<<"^4 x "<<Ls<< " Performance Robustness   =   "<< robust <<std::endl;
       std::cout<<GridLogMessage <<fmt << std::endl;
-      std::cout<<GridLogMessage ;
+      std::cout<<GridLogMessage;
 
       for(int i=0;i<mflops_all.size();i++){
 	std::cout<<mflops_all[i]/NN<<" ; " ;
@@ -456,7 +458,7 @@ public:
     return mflops_best;
   }
 
-  static double DWF(int Ls,int L)
+  static double DWF(int Ls,int L, double & robust)
   {
     RealD mass=0.1;
     RealD M5  =1.8;
@@ -658,10 +660,11 @@ public:
 	assert((norm2(err)<1.0e-4));
 
       }
+      robust = mflops_worst/mflops_best;
       std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
       std::cout<<GridLogMessage << L<<"^4 x "<<Ls<< " Deo Best  mflop/s        =   "<< mflops_best << " ; " << mflops_best/NN<<" per node " <<std::endl;
       std::cout<<GridLogMessage << L<<"^4 x "<<Ls<< " Deo Worst mflop/s        =   "<< mflops_worst<< " ; " << mflops_worst/NN<<" per node " <<std::endl;
-      std::cout<<GridLogMessage << L<<"^4 x "<<Ls<< " Performance Robustness   =   "<< mflops_worst/mflops_best <<std::endl;
+      std::cout<<GridLogMessage << std::fixed<<std::setprecision(3)<< L<<"^4 x "<<Ls<< " Performance Robustness   =   "<< robust  <<std::endl;
       std::cout<<GridLogMessage <<fmt << std::endl;
       std::cout<<GridLogMessage ;
 
@@ -701,7 +704,11 @@ int main (int argc, char ** argv)
 
   int sel=2;
   std::vector<int> L_list({8,12,16,24});
+
+  //int sel=1;
   //  std::vector<int> L_list({8,12});
+  std::vector<double> robust_list;
+
   std::vector<double> wilson;
   std::vector<double> dwf4;
   std::vector<double> dwf5;
@@ -712,7 +719,8 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << " Wilson dslash 4D vectorised" <<std::endl;
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     for(int l=0;l<L_list.size();l++){
-      wilson.push_back(Benchmark::DWF(1,L_list[l]));
+      double robust;
+      wilson.push_back(Benchmark::DWF(1,L_list[l],robust));
     }
   }
 
@@ -722,7 +730,10 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << " Domain wall dslash 4D vectorised" <<std::endl;
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     for(int l=0;l<L_list.size();l++){
-      dwf4.push_back(Benchmark::DWF(Ls,L_list[l]));
+      double robust;
+      double result = Benchmark::DWF(Ls,L_list[l],robust) ;
+      dwf4.push_back(result);
+      robust_list.push_back(robust);
     }
   }
 
@@ -763,7 +774,6 @@ int main (int argc, char ** argv)
     Benchmark::Comms();
   }
 
-
   if ( do_dwf ) {
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   std::cout<<GridLogMessage << " Per Node Summary table Ls="<<Ls <<std::endl;
@@ -775,7 +785,9 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << " Comparison point result: "  << dwf4[sel]/NN <<std::endl;
+  std::cout<<GridLogMessage << " Comparison point     result: "  << dwf4[sel]/NN <<std::endl;
+  std::cout<<std::setprecision(3);
+  std::cout<<GridLogMessage << " Comparison point robustness: "  << robust_list[sel]/NN <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 
   }
