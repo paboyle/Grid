@@ -787,7 +787,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   std::cout<<GridLogMessage << " Comparison point     result: "  << dwf4[sel]/NN <<std::endl;
   std::cout<<std::setprecision(3);
-  std::cout<<GridLogMessage << " Comparison point robustness: "  << robust_list[sel]/NN <<std::endl;
+  std::cout<<GridLogMessage << " Comparison point robustness: "  << robust_list[sel] <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 
   }
