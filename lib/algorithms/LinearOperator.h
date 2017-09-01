@@ -330,7 +330,9 @@ namespace Grid {
       }
 #endif
       void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
-	n1 = Mpc(in,out);n2=0.;
+	n2 = Mpc(in,out);
+	ComplexD dot = innerProduct(in,out);
+	n1 = real(dot);
       }
       void HermOp(const Field &in, Field &out){
 	RealD n1,n2;
