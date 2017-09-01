@@ -148,6 +148,11 @@ void *CartesianCommunicator::ShmBufferTranslate(int rank,void * local_p) {
 void CartesianCommunicator::ShmInitGeneric(void){
 #if 1
 
+#if !defined(MAP_ANONYMOUS)
+  #define NO_MAP_ANONYMOUS
+  #define MAP_ANONYMOUS MAP_ANON
+#endif
+
   int mmap_flag = MAP_SHARED | MAP_ANONYMOUS;
 #ifdef MAP_HUGETLB
   if ( Hugepages ) mmap_flag |= MAP_HUGETLB;
@@ -162,6 +167,11 @@ void CartesianCommunicator::ShmInitGeneric(void){
   ShmCommBuf=(void *)&ShmBufStorageVector[0];
 #endif
   bzero(ShmCommBuf,MAX_MPI_SHM_BYTES);
+
+#if defined(NO_MAP_ANONYMOUS)
+  #undef MAP_ANONYMOUS
+  #undef NO_MAP_ANONYMOUS
+#endif
 }
 
 #endif
