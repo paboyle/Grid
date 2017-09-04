@@ -198,7 +198,7 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
   ShmCommBuf = 0;
   ShmCommBufs.resize(ShmSize);
 
-#if 1
+#if 0
   char shm_name [NAME_MAX];
   if ( ShmRank == 0 ) {
     for(int r=0;r<ShmSize;r++){
@@ -240,7 +240,7 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
 	  if (ierr && (page==0)) perror("numa relocate command failed");
 	}
 #endif
-      ShmCommBufs[r] =ptr;
+	ShmCommBufs[r] =ptr;
       
     }
   }
@@ -269,18 +269,22 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
   if ( ShmRank == 0 ) {
     for(int r=0;r<ShmSize;r++){
       size_t size = CartesianCommunicator::MAX_MPI_SHM_BYTES;
-      key_t key   = 0x4545 + r;
+      key_t key   = IPC_PRIVATE;
       int flags = IPC_CREAT | SHM_R | SHM_W;
 #ifdef SHM_HUGETLB
-      flags|=SHM_HUGETLB;
+      if (Hugepages) flags|=SHM_HUGETLB;
 #endif
-      if ((shmids[r]= shmget(key,size, flags)) < 0) {
+      if ((shmids[r]= shmget(key,size, flags)) ==-1) {
 	int errsv = errno;
 	printf("Errno %d\n",errsv);
+	printf("key   %d\n",key);
+	printf("size  %lld\n",size);
+	printf("flags %d\n",flags);
 	perror("shmget");
 	exit(1);
+      } else { 
+	printf("shmid: 0x%x\n", shmids[r]);
       }
-      printf("shmid: 0x%x\n", shmids[r]);
     }
   }
   MPI_Barrier(ShmComm);

@@ -157,6 +157,7 @@ void CartesianCommunicator::ShmInitGeneric(void){
     perror("mmap failed ");
     exit(EXIT_FAILURE);  
   }
+  if (!Hugepages ) madvise(ShmCommBuf,MAX_MPI_SHM_BYTES,MADV_HUGEPAGE);
 #else 
   ShmBufStorageVector.resize(MAX_MPI_SHM_BYTES);
   ShmCommBuf=(void *)&ShmBufStorageVector[0];
