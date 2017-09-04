@@ -10,8 +10,8 @@ if BUILD_COMMS_MPI3
   extra_sources+=communicator/Communicator_base.cc
 endif
 
-if BUILD_COMMS_MPI3L
-  extra_sources+=communicator/Communicator_mpi3_leader.cc
+if BUILD_COMMS_MPIT
+  extra_sources+=communicator/Communicator_mpit.cc
   extra_sources+=communicator/Communicator_base.cc
 endif
 
