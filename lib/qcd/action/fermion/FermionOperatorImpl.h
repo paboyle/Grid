@@ -644,19 +644,16 @@ class StaggeredImpl : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation:
 
     INHERIT_GIMPL_TYPES(Gimpl);
       
-    template <typename vtype> using iImplScalar            = iScalar<iScalar<iScalar<vtype> > >;
     template <typename vtype> using iImplSpinor            = iScalar<iScalar<iVector<vtype, Dimension> > >;
     template <typename vtype> using iImplHalfSpinor        = iScalar<iScalar<iVector<vtype, Dimension> > >;
     template <typename vtype> using iImplDoubledGaugeField = iVector<iScalar<iMatrix<vtype, Dimension> >, Nds>;
     template <typename vtype> using iImplPropagator        = iScalar<iScalar<iMatrix<vtype, Dimension> > >;
     
-    typedef iImplScalar<Simd>            SiteComplex;
     typedef iImplSpinor<Simd>            SiteSpinor;
     typedef iImplHalfSpinor<Simd>        SiteHalfSpinor;
     typedef iImplDoubledGaugeField<Simd> SiteDoubledGaugeField;
     typedef iImplPropagator<Simd>        SitePropagator;
     
-    typedef Lattice<SiteComplex>           ComplexField;
     typedef Lattice<SiteSpinor>            FermionField;
     typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
     typedef Lattice<SitePropagator> PropagatorField;
@@ -775,7 +772,6 @@ class StaggeredImpl : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation:
 
     INHERIT_GIMPL_TYPES(Gimpl);
 
-    template <typename vtype> using iImplScalar            = iScalar<iScalar<iScalar<vtype> > >;
     template <typename vtype> using iImplSpinor            = iScalar<iScalar<iVector<vtype, Dimension> > >;
     template <typename vtype> using iImplHalfSpinor        = iScalar<iScalar<iVector<vtype, Dimension> > >;
     template <typename vtype> using iImplDoubledGaugeField = iVector<iScalar<iMatrix<vtype, Dimension> >, Nds>;
@@ -792,12 +788,10 @@ class StaggeredImpl : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation:
     typedef Lattice<SiteDoubledGaugeField> DoubledGaugeField;
     typedef Lattice<SitePropagator> PropagatorField;
     
-    typedef iImplScalar<Simd>            SiteComplex;
     typedef iImplSpinor<Simd>            SiteSpinor;
     typedef iImplHalfSpinor<Simd>        SiteHalfSpinor;
 
     
-    typedef Lattice<SiteComplex>           ComplexField;
     typedef Lattice<SiteSpinor>            FermionField;
     
     typedef SimpleCompressor<SiteSpinor> Compressor;

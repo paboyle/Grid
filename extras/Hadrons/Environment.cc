@@ -41,9 +41,10 @@ using namespace Hadrons;
 // constructor /////////////////////////////////////////////////////////////////
 Environment::Environment(void)
 {
-    nd_ = GridDefaultLatt().size();
+    dim_ = GridDefaultLatt();
+    nd_  = dim_.size();
     grid4d_.reset(SpaceTimeGrid::makeFourDimGrid(
-        GridDefaultLatt(), GridDefaultSimd(nd_, vComplex::Nsimd()),
+        dim_, GridDefaultSimd(nd_, vComplex::Nsimd()),
         GridDefaultMpi()));
     gridRb4d_.reset(SpaceTimeGrid::makeFourDimRedBlackGrid(grid4d_.get()));
     auto loc = getGrid()->LocalDimensions();
@@ -130,6 +131,16 @@ GridRedBlackCartesian * Environment::getRbGrid(const unsigned int Ls) const
 unsigned int Environment::getNd(void) const
 {
     return nd_;
+}
+
+std::vector<int> Environment::getDim(void) const
+{
+    return dim_;
+}
+
+int Environment::getDim(const unsigned int mu) const
+{
+    return dim_[mu];
 }
 
 // random number generator /////////////////////////////////////////////////////
@@ -269,6 +280,21 @@ std::string Environment::getModuleType(const unsigned int address) const
 std::string Environment::getModuleType(const std::string name) const
 {
     return getModuleType(getModuleAddress(name));
+}
+
+std::string Environment::getModuleNamespace(const unsigned int address) const
+{
+    std::string type = getModuleType(address), ns;
+    
+    auto pos2 = type.rfind("::");
+    auto pos1 = type.rfind("::", pos2 - 2);
+    
+    return type.substr(pos1 + 2, pos2 - pos1 - 2);
+}
+
+std::string Environment::getModuleNamespace(const std::string name) const
+{
+    return getModuleNamespace(getModuleAddress(name));
 }
 
 bool Environment::hasModule(const unsigned int address) const
@@ -492,7 +518,14 @@ std::string Environment::getObjectType(const unsigned int address) const
 {
     if (hasRegisteredObject(address))
     {
-        return typeName(object_[address].type);
+        if (object_[address].type)
+        {
+            return typeName(object_[address].type);
+        }
+        else
+        {
+            return "<no type>";
+        }
     }
     else if (hasObject(address))
     {
@@ -530,6 +563,23 @@ Environment::Size Environment::getObjectSize(const unsigned int address) const
 Environment::Size Environment::getObjectSize(const std::string name) const
 {
     return getObjectSize(getObjectAddress(name));
+}
+
+unsigned int Environment::getObjectModule(const unsigned int address) const
+{
+    if (hasObject(address))
+    {
+        return object_[address].module;
+    }
+    else
+    {
+        HADRON_ERROR("no object with address " + std::to_string(address));
+    }
+}
+
+unsigned int Environment::getObjectModule(const std::string name) const
+{
+    return getObjectModule(getObjectAddress(name));
 }
 
 unsigned int Environment::getObjectLs(const unsigned int address) const

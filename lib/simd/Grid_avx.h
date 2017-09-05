@@ -701,9 +701,28 @@ namespace Optimization {
   //Integer Reduce
   template<>
   inline Integer Reduce<Integer, __m256i>::operator()(__m256i in){
-    // FIXME unimplemented
-    printf("Reduce : Missing integer implementation -> FIX\n");
-    assert(0);
+    __m128i ret;
+#if defined (AVX2)
+    // AVX2 horizontal adds within upper and lower halves of register; use
+    // SSE to add upper and lower halves for result.
+    __m256i v1, v2;
+    __m128i u1, u2;
+    v1  = _mm256_hadd_epi32(in, in);
+    v2  = _mm256_hadd_epi32(v1, v1);
+    u1  = _mm256_castsi256_si128(v2);      // upper half
+    u2  = _mm256_extracti128_si256(v2, 1); // lower half
+    ret = _mm_add_epi32(u1, u2);
+#else
+    // No AVX horizontal add; extract upper and lower halves of register & use
+    // SSE intrinsics.
+    __m128i u1, u2, u3;
+    u1  = _mm256_extractf128_si256(in, 0); // upper half
+    u2  = _mm256_extractf128_si256(in, 1); // lower half
+    u3  = _mm_add_epi32(u1, u2);
+    u1  = _mm_hadd_epi32(u3, u3);
+    ret = _mm_hadd_epi32(u1, u1);
+#endif
+    return _mm_cvtsi128_si32(ret);
   }
 
 }

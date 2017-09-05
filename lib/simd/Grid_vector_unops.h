@@ -179,13 +179,6 @@ inline Grid_simd<S, V> div(const Grid_simd<S, V> &r, Integer y) {
 ////////////////////////////////////////////////////////////////////////////
 // Allows us to assign into **conformable** real vectors from complex
 ////////////////////////////////////////////////////////////////////////////
-//  template < class S, class V >
-//  inline auto ComplexRemove(const Grid_simd<S,V> &c) ->
-//  Grid_simd<Grid_simd<S,V>::Real,V> {
-//    Grid_simd<Grid_simd<S,V>::Real,V> ret;
-//    ret.v = c.v;
-//    return ret;
-//  }
 template <class scalar>
 struct AndFunctor {
   scalar operator()(const scalar &x, const scalar &y) const { return x & y; }

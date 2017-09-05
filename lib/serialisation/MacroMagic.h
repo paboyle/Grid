@@ -110,11 +110,12 @@ THE SOFTWARE.
 
 #define GRID_MACRO_MEMBER(A,B)        A B;
 #define GRID_MACRO_COMP_MEMBER(A,B) result = (result and (lhs. B == rhs. B));
-#define GRID_MACRO_OS_WRITE_MEMBER(A,B) os<< #A <<" "#B <<" = "<< obj. B <<" ; " <<std::endl;
+#define GRID_MACRO_OS_WRITE_MEMBER(A,B) os<< #A <<" " #B << " = " << obj. B << " ; " <<std::endl;
 #define GRID_MACRO_READ_MEMBER(A,B) Grid::read(RD,#B,obj. B);
 #define GRID_MACRO_WRITE_MEMBER(A,B) Grid::write(WR,#B,obj. B);
 
 #define GRID_SERIALIZABLE_CLASS_MEMBERS(cname,...)\
+  std::string SerialisableClassName(void) {return std::string(#cname);}	\
 GRID_MACRO_EVAL(GRID_MACRO_MAP(GRID_MACRO_MEMBER,__VA_ARGS__))\
 template <typename T>\
 static inline void write(Writer<T> &WR,const std::string &s, const cname &obj){ \

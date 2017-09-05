@@ -1,5 +1,5 @@
-#ifndef Hadrons____FILEBASENAME____hpp_
-#define Hadrons____FILEBASENAME____hpp_
+#ifndef Hadrons____NAMESPACE_______FILEBASENAME____hpp_
+#define Hadrons____NAMESPACE_______FILEBASENAME____hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -41,4 +41,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons____FILEBASENAME____hpp_
+#endif // Hadrons____NAMESPACE_______FILEBASENAME____hpp_

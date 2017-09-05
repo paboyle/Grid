@@ -237,4 +237,11 @@ typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplD> ImprovedStaggeredFermion
 
   }}
 
+////////////////////
+// Scalar QED actions
+// TODO: this needs to move to another header after rename to Fermion.h
+////////////////////
+#include <Grid/qcd/action/scalar/Scalar.h>
+#include <Grid/qcd/action/gauge/Photon.h>
+
 #endif
