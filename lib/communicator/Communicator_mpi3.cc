@@ -198,7 +198,39 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
   ShmCommBuf = 0;
   ShmCommBufs.resize(ShmSize);
 
-#if 0
+  ////////////////////////////////////////////////////////////////////////////////////////////
+  // Hugetlbf and others map filesystems as mappable huge pages
+  ////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef GRID_MPI3_SHMMMAP
+  char shm_name [NAME_MAX];
+  for(int r=0;r<ShmSize;r++){
+    
+    size_t size = CartesianCommunicator::MAX_MPI_SHM_BYTES;
+    sprintf(shm_name,GRID_SHM_PATH "/Grid_mpi3_shm_%d_%d",GroupRank,r);
+    int fd=open(shm_name,O_RDWR|O_CREAT,0666);
+    if ( fd == -1) { 
+      printf("open %s failed\n",shm_name);
+      perror("open hugetlbfs");
+      exit(0);
+    }
+    
+    int mmap_flag = MAP_SHARED ;
+#ifdef MAP_HUGETLB
+    if ( Hugepages ) mmap_flag |= MAP_HUGETLB;
+#endif
+    void *ptr = (void *) mmap(NULL, MAX_MPI_SHM_BYTES, PROT_READ | PROT_WRITE, mmap_flag,fd, 0); 
+    if ( ptr == (void *)MAP_FAILED ) {       perror("failed mmap");      assert(0);    }
+    assert(((uint64_t)ptr&0x3F)==0);
+    ShmCommBufs[r] =ptr;
+    
+  }
+#endif
+  ////////////////////////////////////////////////////////////////////////////////////////////
+  // POSIX SHMOPEN ; as far as I know Linux does not allow EXPLICIT HugePages with this case
+  // tmpfs (Larry Meadows says) does not support explicit huge page, and this is used for 
+  // the posix shm virtual file system
+  ////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef GRID_MPI3_SHMOPEN
   char shm_name [NAME_MAX];
   if ( ShmRank == 0 ) {
     for(int r=0;r<ShmSize;r++){
@@ -218,7 +250,7 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
 #endif
       void * ptr =  mmap(NULL,size, PROT_READ | PROT_WRITE, mmap_flag, fd, 0);
 
-      if ( ptr == MAP_FAILED ) {       perror("failed mmap");      assert(0);    }
+      if ( ptr == (void * )MAP_FAILED ) {       perror("failed mmap");      assert(0);    }
       assert(((uint64_t)ptr&0x3F)==0);
 
 // Experiments; Experiments; Try to force numa domain on the shm segment if we have numaif.h
@@ -262,8 +294,11 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
       ShmCommBufs[r] =ptr;
     }
   }
-
-#else
+#endif
+  ////////////////////////////////////////////////////////////////////////////////////////////
+  // SHMGET SHMAT and SHM_HUGETLB flag
+  ////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef GRID_MPI3_SHMGET
   std::vector<int> shmids(ShmSize);
 
   if ( ShmRank == 0 ) {
