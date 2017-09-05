@@ -215,8 +215,10 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
       perror("open hugetlbfs");
       exit(0);
     }
-    
-    int mmap_flag = MAP_SHARED |MAP_POPULATE;
+    int mmap_flag = MAP_SHARED ;
+#ifdef MAP_POPULATE    
+    mmap_flag|=MAP_POPULATE;
+#endif
 #ifdef MAP_HUGETLB
     if ( Hugepages ) mmap_flag |= MAP_HUGETLB;
 #endif
@@ -249,7 +251,10 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
       if ( fd < 0 ) {	perror("failed shm_open");	assert(0);      }
       ftruncate(fd, size);
       
-      int mmap_flag = MAP_SHARED|MAP_POPULATE;
+      int mmap_flag = MAP_SHARED;
+#ifdef MAP_POPULATE 
+      mmap_flag |= MAP_POPULATE;
+#endif
 #ifdef MAP_HUGETLB
       if (Hugepages) mmap_flag |= MAP_HUGETLB;
 #endif
