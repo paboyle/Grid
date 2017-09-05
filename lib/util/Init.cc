@@ -219,7 +219,8 @@ void Grid_init(int *argc,char ***argv)
     int MB;
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--shm");
     GridCmdOptionInt(arg,MB);
-    CartesianCommunicator::MAX_MPI_SHM_BYTES = MB*1024*1024;
+    uint64_t MB64 = MB;
+    CartesianCommunicator::MAX_MPI_SHM_BYTES = MB64*1024LL*1024LL;
   }
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--shm-hugepages") ){
