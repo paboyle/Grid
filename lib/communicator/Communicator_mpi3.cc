@@ -207,6 +207,8 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
     
     size_t size = CartesianCommunicator::MAX_MPI_SHM_BYTES;
     sprintf(shm_name,GRID_SHM_PATH "/Grid_mpi3_shm_%d_%d",GroupRank,r);
+    //sprintf(shm_name,"/var/lib/hugetlbfs/group/wheel/pagesize-2MB/" "Grid_mpi3_shm_%d_%d",GroupRank,r);
+    //    printf("Opening file %s \n",shm_name);
     int fd=open(shm_name,O_RDWR|O_CREAT,0666);
     if ( fd == -1) { 
       printf("open %s failed\n",shm_name);
@@ -214,12 +216,15 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
       exit(0);
     }
     
-    int mmap_flag = MAP_SHARED ;
+    int mmap_flag = MAP_SHARED |MAP_POPULATE;
 #ifdef MAP_HUGETLB
     if ( Hugepages ) mmap_flag |= MAP_HUGETLB;
 #endif
     void *ptr = (void *) mmap(NULL, MAX_MPI_SHM_BYTES, PROT_READ | PROT_WRITE, mmap_flag,fd, 0); 
-    if ( ptr == (void *)MAP_FAILED ) {       perror("failed mmap");      assert(0);    }
+    if ( ptr == (void *)MAP_FAILED ) {    
+      printf("mmap %s failed\n",shm_name);
+      perror("failed mmap");      assert(0);    
+    }
     assert(((uint64_t)ptr&0x3F)==0);
     ShmCommBufs[r] =ptr;
     
@@ -244,7 +249,7 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
       if ( fd < 0 ) {	perror("failed shm_open");	assert(0);      }
       ftruncate(fd, size);
       
-      int mmap_flag = MAP_SHARED;
+      int mmap_flag = MAP_SHARED|MAP_POPULATE;
 #ifdef MAP_HUGETLB
       if (Hugepages) mmap_flag |= MAP_HUGETLB;
 #endif
