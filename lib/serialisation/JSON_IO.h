@@ -64,6 +64,8 @@ namespace Grid
     template<std::size_t N>
     void writeDefault(const std::string &s, const char(&x)[N]);
 
+    void writeDefault(const std::string &s, const std::string &x);
+
 
   private:
     void delete_comma();
@@ -119,22 +121,6 @@ namespace Grid
     else
      ss_ << os.str() << " ," ;
   }
-
-
-  // specialize for string
-  template <>
-  void JSONWriter::writeDefault(const std::string &s, const std::string &x)
-  {
-    //std::cout << "JSONWriter::writeDefault(string) : " << s <<  std::endl;
-    std::ostringstream os;
-    os << std::boolalpha << x;
-    if (s.size())
-      ss_ << "\""<< s << "\" : \"" << os.str() << "\" ," ;
-    else
-     ss_ << os.str() << " ," ;
-  }
-
-
 
   template <typename U>
   void JSONWriter::writeDefault(const std::string &s, const std::complex<U> &x)

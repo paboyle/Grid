@@ -76,10 +76,9 @@ void JSONWriter::delete_comma()
 // annoying, but necessary for TravisCI
 namespace Grid
 {
-  template<>
   void JSONWriter::writeDefault(const std::string &s,	const std::string &x)
   {
-  //std::cout << "JSONWriter::writeDefault(string) : " << s <<  std::endl;
+    //std::cout << "JSONWriter::writeDefault(string) : " << s <<  std::endl;
     std::ostringstream os;
     os << std::boolalpha << x;
     if (s.size())
