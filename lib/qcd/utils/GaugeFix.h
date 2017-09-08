@@ -26,12 +26,14 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 //#include <Grid/Grid.h>
 
-using namespace Grid;
-using namespace Grid::QCD;
+#ifndef GRID_QCD_GAUGE_FIX_H
+#define GRID_QCD_GAUGE_FIX_H
+namespace Grid {
+namespace QCD {
 
 template <class Gimpl> 
 class FourierAcceleratedGaugeFixer  : public Gimpl {
-  public:
+ public:
   INHERIT_GIMPL_TYPES(Gimpl);
 
   typedef typename Gimpl::GaugeLinkField GaugeMat;
@@ -186,3 +188,6 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
   }  
 };
 
+}
+}
+#endif

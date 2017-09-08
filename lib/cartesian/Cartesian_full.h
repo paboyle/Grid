@@ -62,77 +62,81 @@ public:
       return shift;
     }
     GridCartesian(const std::vector<int> &dimensions,
-		  const std::vector<int> &simd_layout,
-		  const std::vector<int> &processor_grid
-		  ) : GridBase(processor_grid)
+                  const std::vector<int> &simd_layout,
+                  const std::vector<int> &processor_grid) : GridBase(processor_grid)
     {
-        ///////////////////////
-        // Grid information
-        ///////////////////////
-        _ndimension = dimensions.size();
-            
-        _fdimensions.resize(_ndimension);
-        _gdimensions.resize(_ndimension);
-        _ldimensions.resize(_ndimension);
-        _rdimensions.resize(_ndimension);
-        _simd_layout.resize(_ndimension);
-	_lstart.resize(_ndimension);
-	_lend.resize(_ndimension);
-            
-        _ostride.resize(_ndimension);
-        _istride.resize(_ndimension);
-            
-        _fsites = _gsites = _osites = _isites = 1;
+      ///////////////////////
+      // Grid information
+      ///////////////////////
+      _ndimension = dimensions.size();
 
-        for(int d=0;d<_ndimension;d++){
-	  _fdimensions[d] = dimensions[d]; // Global dimensions
-	  _gdimensions[d] = _fdimensions[d]; // Global dimensions
-	  _simd_layout[d] = simd_layout[d];
-	  _fsites = _fsites * _fdimensions[d];
-	  _gsites = _gsites * _gdimensions[d];
+      _fdimensions.resize(_ndimension);
+      _gdimensions.resize(_ndimension);
+      _ldimensions.resize(_ndimension);
+      _rdimensions.resize(_ndimension);
+      _simd_layout.resize(_ndimension);
+      _lstart.resize(_ndimension);
+      _lend.resize(_ndimension);
 
-	  //FIXME check for exact division
+      _ostride.resize(_ndimension);
+      _istride.resize(_ndimension);
 
-	  // Use a reduced simd grid
-	  _ldimensions[d]= _gdimensions[d]/_processors[d];  //local dimensions
-	  _rdimensions[d]= _ldimensions[d]/_simd_layout[d]; //overdecomposition
-	  _lstart[d]     = _processor_coor[d]*_ldimensions[d];
-	  _lend[d]       = _processor_coor[d]*_ldimensions[d]+_ldimensions[d]-1;
-	  _osites  *= _rdimensions[d];
-	  _isites  *= _simd_layout[d];
-                
-	  // Addressing support
-	  if ( d==0 ) {
-	    _ostride[d] = 1;
-	    _istride[d] = 1;
-	  } else {
-	    _ostride[d] = _ostride[d-1]*_rdimensions[d-1];
-	    _istride[d] = _istride[d-1]*_simd_layout[d-1];
-	  }
+      _fsites = _gsites = _osites = _isites = 1;
+
+      for (int d = 0; d < _ndimension; d++)
+      {
+        _fdimensions[d] = dimensions[d];   // Global dimensions
+        _gdimensions[d] = _fdimensions[d]; // Global dimensions
+        _simd_layout[d] = simd_layout[d];
+        _fsites = _fsites * _fdimensions[d];
+        _gsites = _gsites * _gdimensions[d];
+
+        // Use a reduced simd grid
+        _ldimensions[d] = _gdimensions[d] / _processors[d]; //local dimensions
+        assert(_ldimensions[d] * _processors[d] == _gdimensions[d]);
+
+        _rdimensions[d] = _ldimensions[d] / _simd_layout[d]; //overdecomposition
+        assert(_rdimensions[d] * _simd_layout[d] == _ldimensions[d]);
+
+        _lstart[d] = _processor_coor[d] * _ldimensions[d];
+        _lend[d] = _processor_coor[d] * _ldimensions[d] + _ldimensions[d] - 1;
+        _osites *= _rdimensions[d];
+        _isites *= _simd_layout[d];
+
+        // Addressing support
+        if (d == 0)
+        {
+          _ostride[d] = 1;
+          _istride[d] = 1;
         }
-        
-        ///////////////////////
-        // subplane information
-        ///////////////////////
-        _slice_block.resize(_ndimension);
-        _slice_stride.resize(_ndimension);
-        _slice_nblock.resize(_ndimension);
-            
-        int block =1;
-        int nblock=1;
-        for(int d=0;d<_ndimension;d++) nblock*=_rdimensions[d];
-            
-        for(int d=0;d<_ndimension;d++){
-            nblock/=_rdimensions[d];
-            _slice_block[d] =block;
-            _slice_stride[d]=_ostride[d]*_rdimensions[d];
-            _slice_nblock[d]=nblock;
-            block = block*_rdimensions[d];
+        else
+        {
+          _ostride[d] = _ostride[d - 1] * _rdimensions[d - 1];
+          _istride[d] = _istride[d - 1] * _simd_layout[d - 1];
         }
+      }
 
+      ///////////////////////
+      // subplane information
+      ///////////////////////
+      _slice_block.resize(_ndimension);
+      _slice_stride.resize(_ndimension);
+      _slice_nblock.resize(_ndimension);
+
+      int block = 1;
+      int nblock = 1;
+      for (int d = 0; d < _ndimension; d++)
+        nblock *= _rdimensions[d];
+
+      for (int d = 0; d < _ndimension; d++)
+      {
+        nblock /= _rdimensions[d];
+        _slice_block[d] = block;
+        _slice_stride[d] = _ostride[d] * _rdimensions[d];
+        _slice_nblock[d] = nblock;
+        block = block * _rdimensions[d];
+      }
     };
 };
-
-
 }
 #endif

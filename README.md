@@ -1,18 +1,4 @@
-# Grid
-<table>
-<tr>
-    <td>Last stable release</td>
-    <td><a href="https://travis-ci.org/paboyle/Grid">
-    <img src="https://travis-ci.org/paboyle/Grid.svg?branch=master"></a>
-    </td>
-</tr>
-<tr>
-    <td>Development branch</td>
-    <td><a href="https://travis-ci.org/paboyle/Grid">
-    <img src="https://travis-ci.org/paboyle/Grid.svg?branch=develop"></a>
-    </td>
-</tr>
-</table>
+# Grid [![Teamcity status](http://ci.cliath.ph.ed.ac.uk/app/rest/builds/aggregated/strob:(buildType:(affectedProject(id:Grid)),branch:name:develop)/statusIcon.svg)](http://ci.cliath.ph.ed.ac.uk/project.html?projectId=Grid&tab=projectOverview) [![Travis status](https://travis-ci.org/paboyle/Grid.svg?branch=develop)](https://travis-ci.org/paboyle/Grid)
 
 **Data parallel C++ mathematical object library.**
 
@@ -324,6 +310,13 @@ one rank per socket. If using the Intel MPI library, threads should be pinned to
 ```
 This is the default. 
 
+#### Expected Skylake Gold 6148 dual socket (single prec, single node 20+20 cores) performance using NUMA MPI mapping): 
+
+mpirun -n 2 benchmarks/Benchmark_dwf --grid 16.16.16.16 --mpi 2.1.1.1 --cacheblocking 2.2.2.2 --dslash-asm --shm 1024 --threads 18 
+
+TBA
+
+
 ### Build setup for AMD EPYC / RYZEN
 
 The AMD EPYC is a multichip module comprising 32 cores spread over four distinct chips each with 8 cores.
@@ -377,6 +370,14 @@ echo GOMP_CUP_AFFINITY $GOMP_CPU_AFFINITY
 
 $@
 ```
+
+Performance:
+
+#### Expected AMD EPYC 7601 dual socket (single prec, single node 32+32 cores) performance using NUMA MPI mapping): 
+
+mpirun  -np 8 ./omp_bind.sh ./Benchmark_dwf --threads 8 --mpi 2.2.2.1 --dslash-unroll --grid 16.16.16.16 --cacheblocking 4.4.4.4
+
+TBA
 
 ### Build setup for BlueGene/Q
 

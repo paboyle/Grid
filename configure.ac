@@ -13,6 +13,10 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 ################ Get git info
 #AC_REVISION([m4_esyscmd_s([./scripts/configure.commit])])
 
+################ Set flags
+# do not move!
+CXXFLAGS="-O3 $CXXFLAGS"
+
 ############### Checks for programs
 AC_PROG_CXX
 AC_PROG_RANLIB
@@ -27,7 +31,6 @@ AX_GXX_VERSION
 AC_DEFINE_UNQUOTED([GXX_VERSION],["$GXX_VERSION"],
       [version of g++ that will compile the code])
 
-CXXFLAGS="-O3 $CXXFLAGS"
 
 
 ############### Checks for typedefs, structures, and compiler characteristics
@@ -54,6 +57,10 @@ AC_CHECK_HEADERS(execinfo.h)
 AC_CHECK_HEADERS(numaif.h)
 AC_CHECK_DECLS([ntohll],[], [], [[#include <arpa/inet.h>]])
 AC_CHECK_DECLS([be64toh],[], [], [[#include <arpa/inet.h>]])
+
+############## Standard libraries
+AC_CHECK_LIB([m],[cos])
+AC_CHECK_LIB([stdc++],[abort])
 
 ############### GMP and MPFR
 AC_ARG_WITH([gmp],
@@ -324,7 +331,40 @@ case ${ac_PRECISION} in
      double)
        AC_DEFINE([GRID_DEFAULT_PRECISION_DOUBLE],[1],[GRID_DEFAULT_PRECISION is DOUBLE] )
      ;;
+     *)
+     AC_MSG_ERROR([${ac_PRECISION} unsupported --enable-precision option]);
+     ;;
 esac
+
+######################  Shared memory allocation technique under MPI3
+AC_ARG_ENABLE([shm],[AC_HELP_STRING([--enable-shm=shmget|shmopen|hugetlbfs],
+              [Select SHM allocation technique])],[ac_SHM=${enable_shm}],[ac_SHM=shmopen])
+
+case ${ac_SHM} in
+
+     shmget)
+     AC_DEFINE([GRID_MPI3_SHMGET],[1],[GRID_MPI3_SHMGET] )
+     ;;
+
+     shmopen)
+     AC_DEFINE([GRID_MPI3_SHMOPEN],[1],[GRID_MPI3_SHMOPEN] )
+     ;;
+
+     hugetlbfs)
+     AC_DEFINE([GRID_MPI3_SHMMMAP],[1],[GRID_MPI3_SHMMMAP] )
+     ;;
+
+     *)
+     AC_MSG_ERROR([${ac_SHM} unsupported --enable-shm option]);
+     ;;
+esac
+
+######################  Shared base path for SHMMMAP
+AC_ARG_ENABLE([shmpath],[AC_HELP_STRING([--enable-shmpath=path],
+              [Select SHM mmap base path for hugetlbfs])],
+	      [ac_SHMPATH=${enable_shmpath}],
+	      [ac_SHMPATH=/var/lib/hugetlbfs/pagesize-2MB/])
+AC_DEFINE_UNQUOTED([GRID_SHM_PATH],["$ac_SHMPATH"],[Path to a hugetlbfs filesystem for MMAPing])
 
 ############### communication type selection
 AC_ARG_ENABLE([comms],[AC_HELP_STRING([--enable-comms=none|mpi|mpi-auto|mpi3|mpi3-auto|shmem],
@@ -335,13 +375,13 @@ case ${ac_COMMS} in
         AC_DEFINE([GRID_COMMS_NONE],[1],[GRID_COMMS_NONE] )
         comms_type='none'
      ;;
-     mpi3l*)
-       AC_DEFINE([GRID_COMMS_MPI3L],[1],[GRID_COMMS_MPI3L] )
-       comms_type='mpi3l'
-     ;;
      mpi3*)
         AC_DEFINE([GRID_COMMS_MPI3],[1],[GRID_COMMS_MPI3] )
         comms_type='mpi3'
+     ;;
+     mpit)
+        AC_DEFINE([GRID_COMMS_MPIT],[1],[GRID_COMMS_MPIT] )
+        comms_type='mpit'
      ;;
      mpi*)
         AC_DEFINE([GRID_COMMS_MPI],[1],[GRID_COMMS_MPI] )
@@ -370,7 +410,7 @@ esac
 AM_CONDITIONAL(BUILD_COMMS_SHMEM, [ test "${comms_type}X" == "shmemX" ])
 AM_CONDITIONAL(BUILD_COMMS_MPI,   [ test "${comms_type}X" == "mpiX" ])
 AM_CONDITIONAL(BUILD_COMMS_MPI3,  [ test "${comms_type}X" == "mpi3X" ] )
-AM_CONDITIONAL(BUILD_COMMS_MPI3L, [ test "${comms_type}X" == "mpi3lX" ] )
+AM_CONDITIONAL(BUILD_COMMS_MPIT,  [ test "${comms_type}X" == "mpitX" ] )
 AM_CONDITIONAL(BUILD_COMMS_NONE,  [ test "${comms_type}X" == "noneX" ])
 
 ############### RNG selection
@@ -475,6 +515,8 @@ compiler version            : ${ax_cv_gxx_version}
 SIMD                        : ${ac_SIMD}${SIMD_GEN_WIDTH_MSG}
 Threading                   : ${ac_openmp}
 Communications type         : ${comms_type}
+Shared memory allocator     : ${ac_SHM}
+Shared memory mmap path     : ${ac_SHMPATH}
 Default precision           : ${ac_PRECISION}
 Software FP16 conversion    : ${ac_SFW_FP16}
 RNG choice                  : ${ac_RNG}

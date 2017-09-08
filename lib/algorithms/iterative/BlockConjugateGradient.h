@@ -87,15 +87,22 @@ void ThinQRfact (Eigen::MatrixXcd &m_rr,
   ////////////////////////////////////////////////////////////////////////////////////////////////////
   sliceInnerProductMatrix(m_rr,R,R,Orthog);
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Cholesky from Eigen
-  // There exists a ldlt that is documented as more stable
-  ////////////////////////////////////////////////////////////////////////////////////////////////////
-  Eigen::MatrixXcd L    = m_rr.llt().matrixL(); 
+  // Force manifest hermitian to avoid rounding related
+  m_rr = 0.5*(m_rr+m_rr.adjoint());
 
+#if 0
+  std::cout << " Calling Cholesky  ldlt on m_rr "  << m_rr <<std::endl;
+  Eigen::MatrixXcd L_ldlt = m_rr.ldlt().matrixL(); 
+  std::cout << " Called Cholesky  ldlt on m_rr "  << L_ldlt <<std::endl;
+  auto  D_ldlt = m_rr.ldlt().vectorD(); 
+  std::cout << " Called Cholesky  ldlt on m_rr "  << D_ldlt <<std::endl;
+#endif
+
+  //  std::cout << " Calling Cholesky  llt on m_rr "  <<std::endl;
+  Eigen::MatrixXcd L    = m_rr.llt().matrixL(); 
+  //  std::cout << " Called Cholesky  llt on m_rr "  << L <<std::endl;
   C    = L.adjoint();
   Cinv = C.inverse();
-
   ////////////////////////////////////////////////////////////////////////////////////////////////////
   // Q = R C^{-1}
   //
@@ -103,7 +110,6 @@ void ThinQRfact (Eigen::MatrixXcd &m_rr,
   //
   // NB maddMatrix conventions are Right multiplication X[j] a[j,i] already
   ////////////////////////////////////////////////////////////////////////////////////////////////////
-  // FIXME:: make a sliceMulMatrix to avoid zero vector
   sliceMulMatrix(Q,Cinv,R,Orthog);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -199,7 +205,12 @@ void BlockCGrQsolve(LinearOperatorBase<Field> &Linop, const Field &B, Field &X)
 
   Linop.HermOp(X, AD);
   tmp = B - AD;  
+  //std::cout << GridLogMessage << " initial tmp " << norm2(tmp)<< std::endl;
   ThinQRfact (m_rr, m_C, m_Cinv, Q, tmp);
+  //std::cout << GridLogMessage << " initial Q " << norm2(Q)<< std::endl;
+  //std::cout << GridLogMessage << " m_rr " << m_rr<<std::endl;
+  //std::cout << GridLogMessage << " m_C " << m_C<<std::endl;
+  //std::cout << GridLogMessage << " m_Cinv " << m_Cinv<<std::endl;
   D=Q;
 
   std::cout << GridLogMessage<<"BlockCGrQ computed initial residual and QR fact " <<std::endl;
@@ -221,13 +232,15 @@ void BlockCGrQsolve(LinearOperatorBase<Field> &Linop, const Field &B, Field &X)
     MatrixTimer.Start();
     Linop.HermOp(D, Z);      
     MatrixTimer.Stop();
+    //std::cout << GridLogMessage << " norm2 Z " <<norm2(Z)<<std::endl;
 
     //4. M  = [D^dag Z]^{-1}
     sliceInnerTimer.Start();
     sliceInnerProductMatrix(m_DZ,D,Z,Orthog);
     sliceInnerTimer.Stop();
     m_M       = m_DZ.inverse();
-
+    //std::cout << GridLogMessage << " m_DZ " <<m_DZ<<std::endl;
+    
     //5. X  = X + D MC
     m_tmp     = m_M * m_C;
     sliceMaddTimer.Start();
