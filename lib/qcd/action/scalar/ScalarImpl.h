@@ -91,6 +91,9 @@ class ScalarImplTypes {
 
 
   #define USE_FFT_ACCELERATION
+  #ifdef USE_FFT_ACCELERATION
+  #define FFT_MASS 0.707
+  #endif
 
 
   template <class S, unsigned int N>
@@ -113,113 +116,109 @@ class ScalarImplTypes {
     typedef Field                FermionField;
     typedef Field                PropagatorField;
 
+    static void MomentaSquare(ComplexField &out)
+    {
+      GridBase *grid = out._grid;
+      const std::vector<int> &l = grid->FullDimensions();
+      ComplexField kmu(grid);
 
-    static void MomentaSquare(ComplexField& out){
-      GridBase           *grid = out._grid;
-      const std::vector<int>   &l    = grid->FullDimensions();
-      ComplexField              kmu(grid);
-      
-      for(int mu = 0; mu < grid->Nd(); mu++)
+      for (int mu = 0; mu < grid->Nd(); mu++)
       {
-        Real twoPiL = M_PI*2.0/l[mu];
-        LatticeCoordinate(kmu,mu);
-        kmu = 2.0*sin(0.5*twoPiL*kmu);
-        out += kmu*kmu;
+        Real twoPiL = M_PI * 2.0 / l[mu];
+        LatticeCoordinate(kmu, mu);
+        kmu = 2.0 * sin(0.5 * twoPiL * kmu);
+        out += kmu * kmu;
       }
     }
 
     static void MomentumSpacePropagator(ComplexField &out, RealD m)
     {
-      GridBase           *grid = out._grid;
-      ComplexField one(grid); one = Complex(1.0,0.0);
-      out = m*m;
+      GridBase *grid = out._grid;
+      ComplexField one(grid);
+      one = Complex(1.0, 0.0);
+      out = m * m;
       MomentaSquare(out);
-      out = one/out;
+      out = one / out;
     }
 
-
-    static inline void generate_momenta(Field& P, GridParallelRNG& pRNG) {
-      #ifndef USE_FFT_ACCELERATION
+    static inline void generate_momenta(Field &P, GridParallelRNG &pRNG)
+    {
+#ifndef USE_FFT_ACCELERATION
       Group::GaussianFundamentalLieAlgebraMatrix(pRNG, P);
-      #else
-      
-      Field Ptmp(P._grid), Pp(P._grid);
-      Group::GaussianFundamentalLieAlgebraMatrix(pRNG, Ptmp);
-      // if we change the mass I need a renormalization here
-      // transform and multiply by (M*M+p*p)^-1
-      GridCartesian *Grid = dynamic_cast<GridCartesian*>(P._grid);
-      FFT theFFT(Grid);
-      ComplexField p2(Grid);
-      RealD M = 1.0;
-      p2= zero;
+#else
 
-      theFFT.FFT_all_dim(Pp,Ptmp,FFT::forward);
+      Field Pgaussian(P._grid), Pp(P._grid);
+      ComplexField p2(P._grid); p2 = zero;
+      RealD M = FFT_MASS;
+      
+      Group::GaussianFundamentalLieAlgebraMatrix(pRNG, Pgaussian);
+
+      FFT theFFT((GridCartesian*)P._grid);
+      theFFT.FFT_all_dim(Pp, Pgaussian, FFT::forward);
       MomentaSquare(p2);
-      p2 += M*M;
+      p2 += M * M;
       p2 = sqrt(p2);
       Pp *= p2;
-      theFFT.FFT_all_dim(P,Pp,FFT::backward);
-      
-      #endif //USE_FFT_ACCELERATION
+      theFFT.FFT_all_dim(P, Pp, FFT::backward);
+
+#endif //USE_FFT_ACCELERATION
     }
 
     static inline Field projectForce(Field& P) {return P;}
 
-    static inline void update_field(Field& P, Field& U, double ep) {
-      #ifndef USE_FFT_ACCELERATION
-      U += P*ep;
-      #else
-      // Here we can eventually add the Fourier acceleration
+    static inline void update_field(Field &P, Field &U, double ep)
+    {
+#ifndef USE_FFT_ACCELERATION
+      U += P * ep;
+#else
       // FFT transform P(x) -> P(p)
       // divide by (M^2+p^2)  M external parameter (how to pass?)
       // P'(p) = P(p)/(M^2+p^2)
       // Transform back -> P'(x)
       // U += P'(x)*ep
-      
-      // the dynamic cast is safe
-      GridCartesian *Grid = dynamic_cast<GridCartesian*>(U._grid);
-      FFT theFFT(Grid);
-      Field Pp(Grid), Pnew(Grid);
-      std::vector<int> full_dim = Grid->FullDimensions();
 
-      theFFT.FFT_all_dim(Pp,P,FFT::forward);
-      RealD M = 1.0;  
+      Field Pp(U._grid), P_FFT(U._grid);     
+      static ComplexField p2(U._grid);
+      RealD M = FFT_MASS;
+      
+      FFT theFFT((GridCartesian*)U._grid);
+      theFFT.FFT_all_dim(Pp, P, FFT::forward);
+
       static bool first_call = true;
-      static ComplexField p2(Grid);
-      if (first_call){
-      MomentumSpacePropagator(p2,M);
-      first_call = false;
+      if (first_call)
+      {
+        // avoid recomputing
+        MomentumSpacePropagator(p2, M);
+        first_call = false;
       }
       Pp *= p2;
-      theFFT.FFT_all_dim(Pnew,Pp,FFT::backward);     
-      U += Pnew * ep;
-      
-      #endif //USE_FFT_ACCELERATION
+      theFFT.FFT_all_dim(P_FFT, Pp, FFT::backward);
+      U += P_FFT * ep;
+
+#endif //USE_FFT_ACCELERATION
     }
 
     static inline RealD FieldSquareNorm(Field &U)
     {
-      #ifndef USE_FFT_ACCELERATION
-      return (TensorRemove(sum(trace(U*U))).real());
-      #else
+#ifndef USE_FFT_ACCELERATION
+      return (TensorRemove(sum(trace(U * U))).real());
+#else
       // In case of Fourier acceleration we have to:
       // compute U(p)*U(p)/(M^2+p^2))   Parseval theorem
       // 1 FFT needed U(x) -> U(p)
       // M to be passed
-      
-      GridCartesian *Grid = dynamic_cast<GridCartesian *>(U._grid);
-      FFT theFFT(Grid);
-      Field Up(Grid), Utilde(Grid);
-      std::vector<int> full_dim = Grid->FullDimensions();
-      
+
+      FFT theFFT((GridCartesian*)U._grid);
+      Field Up(U._grid);
+
       theFFT.FFT_all_dim(Up, U, FFT::forward);
-      RealD M = 1.0;  
-      ComplexField p2(Grid);
-      MomentumSpacePropagator(p2,M);
-      Field Up2 = Up*p2; 
+      RealD M = FFT_MASS;
+      ComplexField p2(U._grid);
+      MomentumSpacePropagator(p2, M);
+      Field Up2 = Up * p2;
       // from the definition of the DFT we need to divide by the volume
-      return (-TensorRemove(sum(trace(adj(Up)*Up2))).real()/U._grid->gSites());
-      #endif //USE_FFT_ACCELERATION
+      return (-TensorRemove(sum(trace(adj(Up) * Up2))).real() / U._grid->gSites());
+#endif //USE_FFT_ACCELERATION
     }
 
     static inline void HotConfiguration(GridParallelRNG &pRNG, Field &U) {
