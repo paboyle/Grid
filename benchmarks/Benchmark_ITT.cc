@@ -701,12 +701,14 @@ int main (int argc, char ** argv)
   if ( do_su3 ) {
     // empty for now
   }
-
+#if 1
   int sel=2;
   std::vector<int> L_list({8,12,16,24});
-
-  //int sel=1;
-  //  std::vector<int> L_list({8,12});
+#else
+  int sel=1;
+  std::vector<int> L_list({8,12});
+#endif
+  int selm1=sel-1;
   std::vector<double> robust_list;
 
   std::vector<double> wilson;
@@ -785,7 +787,8 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << " Comparison point     result: "  << dwf4[sel]/NN << " Mflop/s per node"<<std::endl;
+  std::cout<<GridLogMessage << " Comparison point     result: "  << 0.5*(dwf4[sel]+dwf4[selm1])/NN << " Mflop/s per node"<<std::endl;
+  std::cout<<GridLogMessage << " Comparison point is 0.5*("<<dwf4[sel]/NN<<"+"<<dwf4[selm1]/NN << ") "<<std::endl;
   std::cout<<std::setprecision(3);
   std::cout<<GridLogMessage << " Comparison point robustness: "  << robust_list[sel] <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
