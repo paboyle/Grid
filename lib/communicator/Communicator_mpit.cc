@@ -80,6 +80,9 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
   
   assert(Size==_Nprocessors);
 }
+
+CartesianCommunicator::~CartesianCommunicator() = default;
+
 void CartesianCommunicator::GlobalSum(uint32_t &u){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_SUM,communicator);
   assert(ierr==0);

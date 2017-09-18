@@ -98,6 +98,9 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
   assert(Size==_Nprocessors);
 }
 
+CartesianCommunicator::~CartesianCommunicator() = default;
+
+
 void CartesianCommunicator::GlobalSum(uint32_t &u){
   static long long source ;
   static long long dest   ;
