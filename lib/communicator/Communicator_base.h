@@ -152,6 +152,7 @@ class CartesianCommunicator {
   // Constructor of any given grid
   ////////////////////////////////////////////////
   CartesianCommunicator(const std::vector<int> &pdimensions_in);
+  virtual ~CartesianCommunicator();
   
   ////////////////////////////////////////////////////////////////////////////////////////
   // Wraps MPI_Cart routines, or implements equivalent on other impls
