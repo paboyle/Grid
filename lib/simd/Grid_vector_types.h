@@ -376,7 +376,18 @@ class Grid_simd {
       Optimization::Exchange::Exchange0(out1.v,out2.v,in1.v,in2.v);
     }
   }
-
+  friend inline void exchange0(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){    
+    Optimization::Exchange::Exchange0(out1.v,out2.v,in1.v,in2.v);
+  }
+  friend inline void exchange1(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){    
+    Optimization::Exchange::Exchange1(out1.v,out2.v,in1.v,in2.v);
+  }
+  friend inline void exchange2(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){    
+    Optimization::Exchange::Exchange2(out1.v,out2.v,in1.v,in2.v);
+  }
+  friend inline void exchange3(Grid_simd &out1,Grid_simd &out2,Grid_simd in1,Grid_simd in2){    
+    Optimization::Exchange::Exchange3(out1.v,out2.v,in1.v,in2.v);
+  }
   ////////////////////////////////////////////////////////////////////
   // General permute; assumes vector length is same across
   // all subtypes; may not be a good assumption, but could
