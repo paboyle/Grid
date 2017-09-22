@@ -3,9 +3,11 @@
 
 namespace Grid {
 
+MemoryStats *MemoryProfiler::stats         = nullptr;
+
 int PointerCache::victim;
 
-  PointerCache::PointerCacheEntry PointerCache::Entries[PointerCache::Ncache];
+PointerCache::PointerCacheEntry PointerCache::Entries[PointerCache::Ncache];
 
 void *PointerCache::Insert(void *ptr,size_t bytes) {
 

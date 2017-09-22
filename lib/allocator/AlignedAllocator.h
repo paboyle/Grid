@@ -63,6 +63,18 @@ namespace Grid {
     static void *Lookup(size_t bytes) ;
 
   };
+  
+  struct MemoryStats
+  {
+    size_t totalAllocated{0}, maxAllocated{0}, 
+           currentlyAllocated{0}, totalFreed{0};
+  };
+    
+  class MemoryProfiler
+  {
+  public:
+    static MemoryStats *stats;
+  };
 
   void check_huge_pages(void *Buf,uint64_t BYTES);
 
@@ -93,6 +105,13 @@ public:
   { 
     size_type bytes = __n*sizeof(_Tp);
 
+    if (auto s = MemoryProfiler::stats)
+    {
+      s->totalAllocated     += bytes;
+      s->currentlyAllocated += bytes;
+      s->maxAllocated        = std::max(s->maxAllocated, s->currentlyAllocated);
+    }
+
     _Tp *ptr = (_Tp *) PointerCache::Lookup(bytes);
     //    if ( ptr != NULL ) 
     //      std::cout << "alignedAllocator "<<__n << " cache hit "<< std::hex << ptr <<std::dec <<std::endl;
@@ -121,6 +140,12 @@ public:
 
   void deallocate(pointer __p, size_type __n) { 
     size_type bytes = __n * sizeof(_Tp);
+
+    if (auto s = MemoryProfiler::stats)
+    {
+      s->totalFreed         += bytes;
+      s->currentlyAllocated -= bytes;
+    }
 
     pointer __freeme = (pointer)PointerCache::Insert((void *)__p,bytes);
 
@@ -172,10 +197,18 @@ public:
 #ifdef GRID_COMMS_SHMEM
   pointer allocate(size_type __n, const void* _p= 0)
   {
+    size_type bytes = __n*sizeof(_Tp);
+
+    if (auto s = MemoryProfiler::stats)
+    {
+      s->totalAllocated     += bytes;
+      s->currentlyAllocated += bytes;
+      s->maxAllocated        = std::max(s->maxAllocated, s->currentlyAllocated);
+    }
 #ifdef CRAY
-    _Tp *ptr = (_Tp *) shmem_align(__n*sizeof(_Tp),64);
+    _Tp *ptr = (_Tp *) shmem_align(bytes,64);
 #else
-    _Tp *ptr = (_Tp *) shmem_align(64,__n*sizeof(_Tp));
+    _Tp *ptr = (_Tp *) shmem_align(64,bytes);
 #endif
 #ifdef PARANOID_SYMMETRIC_HEAP
     static void * bcast;
@@ -193,18 +226,32 @@ public:
 #endif 
     return ptr;
   }
-  void deallocate(pointer __p, size_type) { 
+  void deallocate(pointer __p, size_type __n) { 
+    size_type bytes = __n*sizeof(_Tp);
+
+    if (auto s = MemoryProfiler::stats)
+    {
+      s->totalFreed         += bytes;
+      s->currentlyAllocated -= bytes;
+    }
     shmem_free((void *)__p);
   }
 #else
   pointer allocate(size_type __n, const void* _p= 0) 
   {
-#ifdef HAVE_MM_MALLOC_H
-    _Tp * ptr = (_Tp *) _mm_malloc(__n*sizeof(_Tp),GRID_ALLOC_ALIGN);
-#else
-    _Tp * ptr = (_Tp *) memalign(GRID_ALLOC_ALIGN,__n*sizeof(_Tp));
-#endif
     size_type bytes = __n*sizeof(_Tp);
+    
+    if (auto s = MemoryProfiler::stats)
+    {
+      s->totalAllocated     += bytes;
+      s->currentlyAllocated += bytes;
+      s->maxAllocated        = std::max(s->maxAllocated, s->currentlyAllocated);
+    }
+#ifdef HAVE_MM_MALLOC_H
+    _Tp * ptr = (_Tp *) _mm_malloc(bytes, GRID_ALLOC_ALIGN);
+#else
+    _Tp * ptr = (_Tp *) memalign(GRID_ALLOC_ALIGN, bytes);
+#endif
     uint8_t *cp = (uint8_t *)ptr;
     // One touch per 4k page, static OMP loop to catch same loop order
 #pragma omp parallel for schedule(static)
@@ -213,7 +260,14 @@ public:
     }
     return ptr;
   }
-  void deallocate(pointer __p, size_type) { 
+  void deallocate(pointer __p, size_type __n) {
+    size_type bytes = __n*sizeof(_Tp);
+
+    if (auto s = MemoryProfiler::stats)
+    {
+      s->totalFreed         += bytes;
+      s->currentlyAllocated -= bytes;
+    }
 #ifdef HAVE_MM_MALLOC_H
     _mm_free((void *)__p); 
 #else
