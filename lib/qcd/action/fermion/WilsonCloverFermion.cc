@@ -86,8 +86,8 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
   CloverTerm += fillCloverXY(Bz);
   CloverTerm += fillCloverXT(Ex);
   CloverTerm += fillCloverYT(Ey);
-  CloverTerm += fillCloverZT(Ez) ;
-  CloverTerm *= csw;
+  CloverTerm += fillCloverZT(Ez);
+  CloverTerm *= 0.5 * csw; // FieldStrength normalization? should be ( -i/8  ). Is it the anti-symmetric combination? 
 
   int lvol = _Umu._grid->lSites();
   int DimRep = Impl::Dimension;
@@ -109,7 +109,7 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
         for (int a = 0; a < DimRep; a++)
           for (int b = 0; b < DimRep; b++)
             EigenCloverOp(a + j * DimRep, b + k * DimRep) = Qx()(j, k)(a, b);
-    //std::cout << EigenCloverOp << std::endl;
+        //   if (site==0) std::cout << "site =" << site << "\n" << EigenCloverOp << std::endl;
 
 
     EigenInvCloverOp = EigenCloverOp.inverse();
@@ -119,6 +119,7 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
         for (int a = 0; a < DimRep; a++)
           for (int b = 0; b < DimRep; b++)
             Qxinv()(j, k)(a, b) = EigenInvCloverOp(a + j * DimRep, b + k * DimRep);
+        //    if (site==0) std::cout << "site =" << site << "\n" << EigenInvCloverOp << std::endl;
 
     pokeLocalSite(Qxinv, CloverTermInv, lcoor);
   }
@@ -127,8 +128,17 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
   pickCheckerboard(Even, CloverTermEven, CloverTerm);
   pickCheckerboard( Odd,  CloverTermOdd, CloverTerm);
 
+
+  pickCheckerboard(Even, CloverTermDagEven, adj(CloverTerm));
+  pickCheckerboard( Odd,  CloverTermDagOdd, adj(CloverTerm));
+
+
   pickCheckerboard(Even, CloverTermInvEven, CloverTermInv);
   pickCheckerboard( Odd,  CloverTermInvOdd, CloverTermInv);
+  
+
+  pickCheckerboard(Even, CloverTermInvDagEven, adj(CloverTermInv));
+  pickCheckerboard( Odd,  CloverTermInvDagOdd, adj(CloverTermInv));
 
 }
 
@@ -142,7 +152,7 @@ void WilsonCloverFermion<Impl>::Mooee(const FermionField &in, FermionField &out)
 template <class Impl>
 void WilsonCloverFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out)
 {
-  this->MooeeInternal(in, out, DaggerNo, InverseYes);
+  this->MooeeInternal(in, out, DaggerYes, InverseNo);
 }
 
 template <class Impl>
@@ -154,7 +164,7 @@ void WilsonCloverFermion<Impl>::MooeeInv(const FermionField &in, FermionField &o
 template <class Impl>
 void WilsonCloverFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out)
 {
-  this->MooeeInternal(in, out, DaggerNo, InverseYes);
+  this->MooeeInternal(in, out, DaggerYes, InverseYes);
 }
 
 template <class Impl>
@@ -164,26 +174,98 @@ void WilsonCloverFermion<Impl>::MooeeInternal(const FermionField &in, FermionFie
   CloverFieldType *Clover;
   assert(in.checkerboard == Odd || in.checkerboard == Even);
 
-  if (in._grid->_isCheckerBoarded)
-  {
-    if (in.checkerboard == Odd)
-    {
-      std::cout << "Calling clover term Odd" << std::endl;
-      Clover = (inv) ? &CloverTermInvOdd : &CloverTermOdd;
+
+
+
+ if (dag){ 
+  if (in._grid->_isCheckerBoarded){
+    if (in.checkerboard == Odd){
+      std::cout << "Calling clover term adj Odd" << std::endl;
+      Clover = (inv) ? &CloverTermInvDagOdd : &CloverTermDagOdd;
+
+/* test 
+       int DimRep = Impl::Dimension;
+  Eigen::MatrixXcd A = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
+  std::vector<int> lcoor;
+  typename SiteCloverType::scalar_object Qx2 = zero;
+  GridBase *grid = in._grid;
+    int site = 0 ;
+    grid->LocalIndexToLocalCoor(site, lcoor);
+    peekLocalSite(Qx2, *Clover, lcoor);
+    for (int j = 0; j < Ns; j++)
+      for (int k = 0; k < Ns; k++)
+        for (int a = 0; a < DimRep; a++)
+          for (int b = 0; b < DimRep; b++)
+            A(a + j * DimRep, b + k * DimRep) = Qx2()(j, k)(a, b);
+    std::cout << "adj Odd =" << site << "\n" << A << std::endl;
+ end test */
+
+
+
+    } else {
+      std::cout << "Calling clover term adj Even" << std::endl;
+      Clover = (inv) ? &CloverTermInvDagEven : &CloverTermDagEven;
+
+/* test 
+       int DimRep = Impl::Dimension;
+  Eigen::MatrixXcd A = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
+  std::vector<int> lcoor;
+  typename SiteCloverType::scalar_object Qx2 = zero;
+  GridBase *grid = in._grid;
+    int site = 0 ;
+    grid->LocalIndexToLocalCoor(site, lcoor);
+    peekLocalSite(Qx2, *Clover, lcoor);
+    for (int j = 0; j < Ns; j++)
+      for (int k = 0; k < Ns; k++)
+        for (int a = 0; a < DimRep; a++)
+          for (int b = 0; b < DimRep; b++)
+            A(a + j * DimRep, b + k * DimRep) = Qx2()(j, k)(a, b);
+    std::cout << "adj Odd =" << site << "\n" << A << std::endl;
+ end test */
+
+
     }
-    else
-    {
-      std::cout << "Calling clover term Even" << std::endl;
-      Clover = (inv) ? &CloverTermInvEven : &CloverTermEven;
-    }
-  }
-  else
-  {
-    Clover = (inv) ? &CloverTermInv : &CloverTerm;
+    std::cout << GridLogMessage << "*Clover.checkerboard "  << (*Clover).checkerboard << std::endl;
+    out = *Clover * in;
+  } else { 
+  Clover = (inv) ? &CloverTermInv : &CloverTerm; 
+  out = adj(*Clover) * in;
   }
 
-  std::cout << GridLogMessage << "*Clover.checkerboard "  << (*Clover).checkerboard << std::endl;
-  if (dag){ out = adj(*Clover) * in;} else { out = *Clover * in;}
+  
+
+
+ } else {
+  if (in._grid->_isCheckerBoarded){
+   
+    if (in.checkerboard == Odd){
+      std::cout << "Calling clover term Odd" << std::endl;
+      Clover = (inv) ? &CloverTermInvOdd : &CloverTermOdd;
+    } else {
+      std::cout << "Calling clover term Even" << std::endl;
+      Clover = (inv) ? &CloverTermInvEven : &CloverTermEven;
+    }    
+    out = *Clover * in;
+    std::cout << GridLogMessage << "*Clover.checkerboard "  << (*Clover).checkerboard << std::endl; 
+  } else { 
+    Clover = (inv) ? &CloverTermInv : &CloverTerm; 
+    out = *Clover * in;
+  }
+ }
+
+ 
+
+
+
+ 
+
+/*
+  } else { 
+    out = *Clover * in;
+  }
+  */
+
+
 } // MooeeInternal
 
 // Derivative parts

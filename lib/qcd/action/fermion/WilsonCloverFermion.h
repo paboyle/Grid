@@ -63,7 +63,11 @@ public:
                                                                                 CloverTermEven(&Hgrid),
                                                                                 CloverTermOdd(&Hgrid),
                                                                                 CloverTermInvEven(&Hgrid),
-                                                                                CloverTermInvOdd(&Hgrid)                                                                                
+                                                                                CloverTermInvOdd(&Hgrid),
+                                                                                CloverTermDagEven(&Hgrid),    //test
+                                                                                CloverTermDagOdd(&Hgrid),     //test
+                                                                                CloverTermInvDagEven(&Hgrid), //test
+                                                                                CloverTermInvDagOdd(&Hgrid)   //test                                                                             
   {
     csw = _csw;
     assert(Nd == 4); // require 4 dimensions
@@ -91,6 +95,11 @@ private:
   CloverFieldType CloverTerm, CloverTermInv; // Clover term
   CloverFieldType CloverTermEven, CloverTermOdd;
   CloverFieldType CloverTermInvEven, CloverTermInvOdd; // Clover term
+
+  CloverFieldType CloverTermInvDagEven, CloverTermInvDagOdd; //test
+  CloverFieldType CloverTermDagEven, CloverTermDagOdd; //test
+
+
   // eventually these two can be compressed into 6x6 blocks instead of the 12x12
   // using the DeGrand-Rossi basis for the gamma matrices
 
@@ -149,10 +158,10 @@ private:
     PARALLEL_FOR_LOOP
     for (int i = 0; i < CloverTerm._grid->oSites(); i++)
     {
-      T._odata[i]()(0, 1) = timesMinusI(F._odata[i]()());
-      T._odata[i]()(1, 0) = timesMinusI(F._odata[i]()());
-      T._odata[i]()(2, 3) = timesI(F._odata[i]()());
-      T._odata[i]()(3, 2) = timesI(F._odata[i]()());
+      T._odata[i]()(0, 1) = timesI(F._odata[i]()());           //fixed
+      T._odata[i]()(1, 0) = timesI(F._odata[i]()());           //fixed
+      T._odata[i]()(2, 3) = timesMinusI(F._odata[i]()());      //fixed
+      T._odata[i]()(3, 2) = timesMinusI(F._odata[i]()());      //fixed
     }
   
   return T;
@@ -165,10 +174,10 @@ private:
     PARALLEL_FOR_LOOP
     for (int i = 0; i < CloverTerm._grid->oSites(); i++)
     {
-      T._odata[i]()(0, 1) = (F._odata[i]()());
-      T._odata[i]()(1, 0) = -(F._odata[i]()());
-      T._odata[i]()(2, 3) = -(F._odata[i]()());
-      T._odata[i]()(3, 2) = (F._odata[i]()());
+      T._odata[i]()(0, 1) = -(F._odata[i]()());         //fixed
+      T._odata[i]()(1, 0) = (F._odata[i]()());          //fixed
+      T._odata[i]()(2, 3) = (F._odata[i]()());          //fixed
+      T._odata[i]()(3, 2) = -(F._odata[i]()());         //fixed
     }
   
   return T;
@@ -181,10 +190,10 @@ private:
     PARALLEL_FOR_LOOP
     for (int i = 0; i < CloverTerm._grid->oSites(); i++)
     {
-      T._odata[i]()(0, 0) = timesMinusI(F._odata[i]()());
-      T._odata[i]()(1, 1) = timesI(F._odata[i]()());
-      T._odata[i]()(2, 2) = timesI(F._odata[i]()());
-      T._odata[i]()(3, 3) = timesMinusI(F._odata[i]()());
+      T._odata[i]()(0, 0) = timesI(F._odata[i]()());           //fixed
+      T._odata[i]()(1, 1) = timesMinusI(F._odata[i]()());      //fixed
+      T._odata[i]()(2, 2) = timesMinusI(F._odata[i]()());      //fixed
+      T._odata[i]()(3, 3) = timesI(F._odata[i]()());           //fixed
     }
   
   return T;

@@ -174,11 +174,6 @@ int main (int argc, char ** argv)
 
   std::cout<<GridLogMessage <<"pDce - conj(cDpo) "<< pDce-conj(cDpo) <<std::endl;
   std::cout<<GridLogMessage <<"pDco - conj(cDpe) "<< pDco-conj(cDpe) <<std::endl;
-  std::cout<<GridLogMessage <<"e "<<pDce<<" "<<cDpe <<std::endl;
-  std::cout<<GridLogMessage <<"o "<<pDco<<" "<<cDpo <<std::endl;
-
-  std::cout<<GridLogMessage <<"pDce - conj(cDpo) "<< pDce-conj(cDpo) <<std::endl;
-  std::cout<<GridLogMessage <<"pDco - conj(cDpe) "<< pDco-conj(cDpe) <<std::endl;
 
   std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
   std::cout<<GridLogMessage<<"= Test MeeInv Mee = 1                                         "<<std::endl;
@@ -196,11 +191,12 @@ int main (int argc, char ** argv)
   setCheckerboard(phi,phi_e);
   setCheckerboard(phi,phi_o);
 
+  std::cout<<GridLogMessage << "err   "<< norm2(err)<< std::endl;
   err = phi-chi;
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<< std::endl;
 
   std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
-  std::cout<<GridLogMessage<<"= Test MeeInvDag MeeDag = 1                                   "<<std::endl;
+  std::cout<<GridLogMessage<<"= Test MeeDag MeeInvDag = 1                                   "<<std::endl;
   std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
 
   pickCheckerboard(Even,chi_e,chi);
@@ -215,37 +211,29 @@ int main (int argc, char ** argv)
   setCheckerboard(phi,phi_e);
   setCheckerboard(phi,phi_o);
 
+ std::cout<<GridLogMessage << "err   "<< std::endl;
   err = phi-chi;
   std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<< std::endl;
 
   std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
-  std::cout<<GridLogMessage<<"= Test MpcDagMpc is Hermitian              "<<std::endl;
+  std::cout<<GridLogMessage<<"= Test MeeInv MeeDag = 1                                      "<<std::endl;
   std::cout<<GridLogMessage<<"=============================================================="<<std::endl;
   
-  random(pRNG,phi);
-  random(pRNG,chi);
-  pickCheckerboard(Even,chi_e,chi);
-  pickCheckerboard(Odd ,chi_o,chi);
-  pickCheckerboard(Even,phi_e,phi);
-  pickCheckerboard(Odd ,phi_o,phi);
+ pickCheckerboard(Even,chi_e,chi);
+ pickCheckerboard(Odd ,chi_o,chi);
 
-  SchurDiagMooeeOperator<WilsonCloverFermionR,FermionField> HermOpEO(Dwc);
-  HermOpEO.MpcDagMpc(chi_e,dchi_e,t1,t2);
-  HermOpEO.MpcDagMpc(chi_o,dchi_o,t1,t2);
+  Dwc.MooeeDag(chi_e,src_e);
+  Dwc.MooeeInv(src_e,phi_e);
 
-  HermOpEO.MpcDagMpc(phi_e,dphi_e,t1,t2);
-  HermOpEO.MpcDagMpc(phi_o,dphi_o,t1,t2);
+  Dwc.MooeeDag(chi_o,src_o);
+  Dwc.MooeeInv(src_o,phi_o);
 
-  pDce = innerProduct(phi_e,dchi_e);
-  pDco = innerProduct(phi_o,dchi_o);
-  cDpe = innerProduct(chi_e,dphi_e);
-  cDpo = innerProduct(chi_o,dphi_o);
+  setCheckerboard(phi,phi_e);
+  setCheckerboard(phi,phi_o);
 
-  std::cout<<GridLogMessage <<"e "<<pDce<<" "<<cDpe <<std::endl;
-  std::cout<<GridLogMessage <<"o "<<pDco<<" "<<cDpo <<std::endl;
-
-  std::cout<<GridLogMessage <<"pDce - conj(cDpo) "<< pDco-conj(cDpo) <<std::endl;
-  std::cout<<GridLogMessage <<"pDco - conj(cDpe) "<< pDce-conj(cDpe) <<std::endl;
-
+ std::cout<<GridLogMessage << "err   "<< std::endl;
+  err = phi-chi;
+  std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<< std::endl;
+  
   Grid_finalize();
 }
