@@ -222,6 +222,11 @@ void Grid_init(int *argc,char ***argv)
     CartesianCommunicator::MAX_MPI_SHM_BYTES = MB*1024*1024;
   }
 
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--shm-hugepages") ){
+    CartesianCommunicator::Hugepages = 1;
+  }
+
+
   if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-signals") ){
     Grid_debug_handler_init();
   }
@@ -304,6 +309,7 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"  --threads n     : default number of OMP threads"<<std::endl;
     std::cout<<GridLogMessage<<"  --grid n.n.n.n  : default Grid size"<<std::endl;
     std::cout<<GridLogMessage<<"  --shm  M        : allocate M megabytes of shared memory for comms"<<std::endl;
+    std::cout<<GridLogMessage<<"  --shm-hugepages : use explicit huge pages in mmap call "<<std::endl;    
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Verbose and debug:"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
@@ -317,7 +323,7 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"  --comms-concurrent : Asynchronous MPI calls; several dirs at a time "<<std::endl;    
     std::cout<<GridLogMessage<<"  --comms-sequential : Synchronous MPI calls; one dirs at a time "<<std::endl;    
-    std::cout<<GridLogMessage<<"  --comms-overlap : Overlap comms with compute "<<std::endl;    
+    std::cout<<GridLogMessage<<"  --comms-overlap    : Overlap comms with compute "<<std::endl;    
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"  --dslash-generic: Wilson kernel for generic Nc"<<std::endl;    
     std::cout<<GridLogMessage<<"  --dslash-unroll : Wilson kernel for Nc=3"<<std::endl;    
@@ -356,10 +362,15 @@ void Grid_init(int *argc,char ***argv)
   if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-sequential") ){
     CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicySequential);
   }
+
   if( GridCmdOptionExists(*argv,*argv+*argc,"--lebesgue") ){
     LebesgueOrder::UseLebesgueOrder=1;
   }
-
+  CartesianCommunicator::nCommThreads = -1;
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-threads") ){
+    arg= GridCmdOptionPayload(*argv,*argv+*argc,"--comms-threads");
+    GridCmdOptionInt(arg,CartesianCommunicator::nCommThreads);
+  }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--cacheblocking") ){
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--cacheblocking");
     GridCmdOptionIntVector(arg,LebesgueOrder::Block);
@@ -374,10 +385,13 @@ void Grid_init(int *argc,char ***argv)
 		  Grid_default_latt,
 		  Grid_default_mpi);
 
-  std::cout << GridLogDebug << "Requesting "<< CartesianCommunicator::MAX_MPI_SHM_BYTES <<" byte stencil comms buffers "<<std::endl;
+  std::cout << GridLogMessage << "Requesting "<< CartesianCommunicator::MAX_MPI_SHM_BYTES <<" byte stencil comms buffers "<<std::endl;
+  if ( CartesianCommunicator::Hugepages) {
+    std::cout << GridLogMessage << "Mapped stencil comms buffers as MAP_HUGETLB "<<std::endl;
+  }
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--decomposition") ){
-    std::cout<<GridLogMessage<<"Grid Decomposition\n";
+    std::cout<<GridLogMessage<<"Grid Default Decomposition patterns\n";
     std::cout<<GridLogMessage<<"\tOpenMP threads : "<<GridThread::GetThreads()<<std::endl;
     std::cout<<GridLogMessage<<"\tMPI tasks      : "<<GridCmdVectorIntToString(GridDefaultMpi())<<std::endl;
     std::cout<<GridLogMessage<<"\tvRealF         : "<<sizeof(vRealF)*8    <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vRealF::Nsimd()))<<std::endl;
@@ -393,7 +407,7 @@ void Grid_init(int *argc,char ***argv)
 
 void Grid_finalize(void)
 {
-#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3)
+#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3) || defined (GRID_COMMS_MPIT)
   MPI_Finalize();
   Grid_unquiesce_nodes();
 #endif

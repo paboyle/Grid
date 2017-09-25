@@ -7,7 +7,8 @@ modules_cc =\
   Modules/MGauge/StochEm.cc \
   Modules/MGauge/Unit.cc \
   Modules/MScalar/ChargedProp.cc \
-  Modules/MScalar/FreeProp.cc
+  Modules/MScalar/FreeProp.cc \
+  Modules/MScalar/ScalarVP.cc
 
 modules_hpp =\
   Modules/MAction/DWF.hpp \
@@ -20,6 +21,7 @@ modules_hpp =\
   Modules/MContraction/WeakHamiltonianEye.hpp \
   Modules/MContraction/WeakHamiltonianNonEye.hpp \
   Modules/MContraction/WeakNeutral4ptDisc.hpp \
+  Modules/MFermion/GaugeProp.hpp \
   Modules/MGauge/Load.hpp \
   Modules/MGauge/Random.hpp \
   Modules/MGauge/StochEm.hpp \
@@ -28,11 +30,11 @@ modules_hpp =\
   Modules/MScalar/ChargedProp.hpp \
   Modules/MScalar/FreeProp.hpp \
   Modules/MScalar/Scalar.hpp \
+  Modules/MScalar/ScalarVP.hpp \
   Modules/MSink/Point.hpp \
   Modules/MSolver/RBPrecCG.hpp \
   Modules/MSource/Point.hpp \
   Modules/MSource/SeqGamma.hpp \
   Modules/MSource/Wall.hpp \
-  Modules/MSource/Z2.hpp \
-  Modules/Quark.hpp
+  Modules/MSource/Z2.hpp
 

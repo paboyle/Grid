@@ -50,7 +50,6 @@ public:
 
     GridBase(const std::vector<int> & processor_grid) : CartesianCommunicator(processor_grid) {};
 
-
     // Physics Grid information.
     std::vector<int> _simd_layout;// Which dimensions get relayed out over simd lanes.
     std::vector<int> _fdimensions;// (full) Global dimensions of array prior to cb removal
@@ -63,13 +62,12 @@ public:
     int _isites;
     int _fsites;                  // _isites*_osites = product(dimensions).
     int _gsites;
-    std::vector<int> _slice_block;   // subslice information
+    std::vector<int> _slice_block;// subslice information
     std::vector<int> _slice_stride;
     std::vector<int> _slice_nblock;
 
-    // Might need these at some point
-    //    std::vector<int> _lstart;     // local start of array in gcoors. _processor_coor[d]*_ldimensions[d]
-    //    std::vector<int> _lend;       // local end of array in gcoors    _processor_coor[d]*_ldimensions[d]+_ldimensions_[d]-1
+    std::vector<int> _lstart;     // local start of array in gcoors _processor_coor[d]*_ldimensions[d]
+    std::vector<int> _lend  ;     // local end of array in gcoors   _processor_coor[d]*_ldimensions[d]+_ldimensions_[d]-1
 
 public:
 
@@ -176,6 +174,7 @@ public:
     inline int gSites(void) const { return _isites*_osites*_Nprocessors; }; 
     inline int Nd    (void) const { return _ndimension;};
 
+    inline const std::vector<int> LocalStarts(void)             { return _lstart;    };
     inline const std::vector<int> &FullDimensions(void)         { return _fdimensions;};
     inline const std::vector<int> &GlobalDimensions(void)       { return _gdimensions;};
     inline const std::vector<int> &LocalDimensions(void)        { return _ldimensions;};
@@ -186,17 +185,18 @@ public:
     ////////////////////////////////////////////////////////////////
 
     void show_decomposition(){
-      std::cout << GridLogMessage << "Full Dimensions    : " << _fdimensions << std::endl;
-      std::cout << GridLogMessage << "Global Dimensions  : " << _gdimensions << std::endl;
-      std::cout << GridLogMessage << "Local Dimensions   : " << _ldimensions << std::endl;
-      std::cout << GridLogMessage << "Reduced Dimensions : " << _rdimensions << std::endl;
-      std::cout << GridLogMessage << "Outer strides      : " << _ostride << std::endl;
-      std::cout << GridLogMessage << "Inner strides      : " << _istride << std::endl;
-      std::cout << GridLogMessage << "iSites             : " << _isites << std::endl;
-      std::cout << GridLogMessage << "oSites             : " << _osites << std::endl;
-      std::cout << GridLogMessage << "lSites             : " << lSites() << std::endl;        
-      std::cout << GridLogMessage << "gSites             : " << gSites() << std::endl;
-      std::cout << GridLogMessage << "Nd                 : " << _ndimension << std::endl;             
+      std::cout << GridLogMessage << "\tFull Dimensions    : " << _fdimensions << std::endl;
+      std::cout << GridLogMessage << "\tSIMD layout        : " << _simd_layout << std::endl;
+      std::cout << GridLogMessage << "\tGlobal Dimensions  : " << _gdimensions << std::endl;
+      std::cout << GridLogMessage << "\tLocal Dimensions   : " << _ldimensions << std::endl;
+      std::cout << GridLogMessage << "\tReduced Dimensions : " << _rdimensions << std::endl;
+      std::cout << GridLogMessage << "\tOuter strides      : " << _ostride << std::endl;
+      std::cout << GridLogMessage << "\tInner strides      : " << _istride << std::endl;
+      std::cout << GridLogMessage << "\tiSites             : " << _isites << std::endl;
+      std::cout << GridLogMessage << "\toSites             : " << _osites << std::endl;
+      std::cout << GridLogMessage << "\tlSites             : " << lSites() << std::endl;        
+      std::cout << GridLogMessage << "\tgSites             : " << gSites() << std::endl;
+      std::cout << GridLogMessage << "\tNd                 : " << _ndimension << std::endl;             
     } 
 
     ////////////////////////////////////////////////////////////////

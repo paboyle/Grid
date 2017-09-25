@@ -20,7 +20,8 @@ public:
                                     std::string, source,
                                     double,      mass,
                                     double,      charge,
-                                    std::string, output);
+                                    std::string, output,
+                                    std::vector<std::string>, outputMom);
 };
 
 class TChargedProp: public Module<ChargedPropPar>
@@ -45,9 +46,10 @@ private:
     void momD1(ScalarField &s, FFT &fft);
     void momD2(ScalarField &s, FFT &fft);
 private:
-    std::string                freeMomPropName_, GFSrcName_;
+    std::string                freeMomPropName_, GFSrcName_, prop0Name_,
+                               propQName_, propSunName_, propTadName_;
     std::vector<std::string>   phaseName_;
-    ScalarField                *freeMomProp_, *GFSrc_;
+    ScalarField                *freeMomProp_, *GFSrc_, *prop0_;
     std::vector<ScalarField *> phase_;
     EmField                    *A;
 };

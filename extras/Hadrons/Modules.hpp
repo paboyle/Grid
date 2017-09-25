@@ -8,6 +8,7 @@
 #include <Grid/Hadrons/Modules/MContraction/WeakHamiltonianEye.hpp>
 #include <Grid/Hadrons/Modules/MContraction/WeakHamiltonianNonEye.hpp>
 #include <Grid/Hadrons/Modules/MContraction/WeakNeutral4ptDisc.hpp>
+#include <Grid/Hadrons/Modules/MFermion/GaugeProp.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Load.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Random.hpp>
 #include <Grid/Hadrons/Modules/MGauge/StochEm.hpp>
@@ -16,10 +17,10 @@
 #include <Grid/Hadrons/Modules/MScalar/ChargedProp.hpp>
 #include <Grid/Hadrons/Modules/MScalar/FreeProp.hpp>
 #include <Grid/Hadrons/Modules/MScalar/Scalar.hpp>
+#include <Grid/Hadrons/Modules/MScalar/ScalarVP.hpp>
 #include <Grid/Hadrons/Modules/MSink/Point.hpp>
 #include <Grid/Hadrons/Modules/MSolver/RBPrecCG.hpp>
 #include <Grid/Hadrons/Modules/MSource/Point.hpp>
 #include <Grid/Hadrons/Modules/MSource/SeqGamma.hpp>
 #include <Grid/Hadrons/Modules/MSource/Wall.hpp>
 #include <Grid/Hadrons/Modules/MSource/Z2.hpp>
-#include <Grid/Hadrons/Modules/Quark.hpp>

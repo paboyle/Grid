@@ -67,7 +67,7 @@ int main (int argc, char ** argv)
   LatticeFermion    err(FGrid);
   LatticeGaugeField Umu(UGrid); 
 
-  NerscField header;
+  FieldMetaData header;
   std::string file("./ckpoint_lat.400");
   NerscIO::readConfiguration(Umu,header,file);
 

@@ -65,6 +65,10 @@ int main(int argc, char *argv[])
     // set fermion boundary conditions to be periodic space, antiperiodic time.
     std::string boundary = "1 1 1 -1";
 
+    // sink
+    MSink::Point::Par sinkPar;
+    sinkPar.mom = "0 0 0";
+    application.createModule<MSink::ScalarPoint>("sink", sinkPar);
     for (unsigned int i = 0; i < flavour.size(); ++i)
     {
         // actions
@@ -115,15 +119,15 @@ int main(int argc, char *argv[])
             }
             
             // propagators
-            Quark::Par quarkPar;
+            MFermion::GaugeProp::Par quarkPar;
             quarkPar.solver = "CG_" + flavour[i];
             quarkPar.source = srcName;
-            application.createModule<Quark>(qName[i], quarkPar);
+            application.createModule<MFermion::GaugeProp>(qName[i], quarkPar);
             for (unsigned int mu = 0; mu < Nd; ++mu)
             {
                 quarkPar.source = seqName[i][mu];
                 seqName[i][mu]  = "Q_" + flavour[i] + "-" + seqName[i][mu];
-                application.createModule<Quark>(seqName[i][mu], quarkPar);
+                application.createModule<MFermion::GaugeProp>(seqName[i][mu], quarkPar);
             }
         }
         
@@ -136,7 +140,7 @@ int main(int argc, char *argv[])
             mesPar.q1     = qName[i];
             mesPar.q2     = qName[j];
             mesPar.gammas = "all";
-            mesPar.mom    = "0. 0. 0. 0.";
+            mesPar.sink   = "sink";
             application.createModule<MContraction::Meson>("meson_Z2_"
                                                           + std::to_string(t)
                                                           + "_"
@@ -155,7 +159,7 @@ int main(int argc, char *argv[])
             mesPar.q1     = qName[i];
             mesPar.q2     = seqName[j][mu];
             mesPar.gammas = "all";
-            mesPar.mom    = "0. 0. 0. 0.";
+            mesPar.sink   = "sink";
             application.createModule<MContraction::Meson>("3pt_Z2_"
                                                           + std::to_string(t)
                                                           + "_"

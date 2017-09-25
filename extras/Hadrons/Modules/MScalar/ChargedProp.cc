@@ -23,7 +23,8 @@ std::vector<std::string> TChargedProp::getInput(void)
 
 std::vector<std::string> TChargedProp::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {getName(), getName()+"_Q",
+                                    getName()+"_Sun", getName()+"_Tad"};
     
     return out;
 }
@@ -38,6 +39,10 @@ void TChargedProp::setup(void)
         phaseName_.push_back("_shiftphase_" + std::to_string(mu));
     }
     GFSrcName_ = "_" + getName() + "_DinvSrc";
+    prop0Name_ = getName() + "_0";
+    propQName_ = getName() + "_Q";
+    propSunName_ = getName() + "_Sun";
+    propTadName_ = getName() + "_Tad";
     if (!env().hasRegisteredObject(freeMomPropName_))
     {
         env().registerLattice<ScalarField>(freeMomPropName_);
@@ -53,7 +58,14 @@ void TChargedProp::setup(void)
     {
         env().registerLattice<ScalarField>(GFSrcName_);
     }
+    if (!env().hasRegisteredObject(prop0Name_))
+    {
+        env().registerLattice<ScalarField>(prop0Name_);
+    }
     env().registerLattice<ScalarField>(getName());
+    env().registerLattice<ScalarField>(propQName_);
+    env().registerLattice<ScalarField>(propSunName_);
+    env().registerLattice<ScalarField>(propTadName_);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -64,7 +76,7 @@ void TChargedProp::execute(void)
     Complex     ci(0.0,1.0);
     FFT         fft(env().getGrid());
     
-    // cache free scalar propagator
+    // cache momentum-space free scalar propagator
     if (!env().hasCreatedObject(freeMomPropName_))
     {
         LOG(Message) << "Caching momentum space free scalar propagator"
@@ -87,6 +99,17 @@ void TChargedProp::execute(void)
     else
     {
         GFSrc_ = env().getObject<ScalarField>(GFSrcName_);
+    }
+    // cache position-space free scalar propagator
+    if (!env().hasCreatedObject(prop0Name_))
+    {
+        prop0_ = env().createLattice<ScalarField>(prop0Name_);
+        *prop0_ = *GFSrc_;
+        fft.FFT_all_dim(*prop0_, *prop0_, FFT::backward);
+    }
+    else
+    {
+        prop0_ = env().getObject<ScalarField>(prop0Name_);
     }
     // cache phases
     if (!env().hasCreatedObject(phaseName_[0]))
@@ -117,52 +140,137 @@ void TChargedProp::execute(void)
                  << ", charge= " << par().charge << ")..." << std::endl;
     
     ScalarField &prop   = *env().createLattice<ScalarField>(getName());
+    ScalarField &propQ   = *env().createLattice<ScalarField>(propQName_);
+    ScalarField &propSun   = *env().createLattice<ScalarField>(propSunName_);
+    ScalarField &propTad   = *env().createLattice<ScalarField>(propTadName_);
     ScalarField buf(env().getGrid());
     ScalarField &GFSrc = *GFSrc_, &G = *freeMomProp_;
     double      q = par().charge;
     
-    // G*F*Src
-    prop = GFSrc;
-
-    // - q*G*momD1*G*F*Src (momD1 = F*D1*Finv)
+    // -G*momD1*G*F*Src (momD1 = F*D1*Finv)
     buf = GFSrc;
     momD1(buf, fft);
-    buf = G*buf;
-    prop = prop - q*buf;
+    buf = -G*buf;
+    fft.FFT_all_dim(propQ, buf, FFT::backward);
 
-    // + q^2*G*momD1*G*momD1*G*F*Src (here buf = G*momD1*G*F*Src)
+    // G*momD1*G*momD1*G*F*Src (here buf = G*momD1*G*F*Src)
+    buf = -buf;
     momD1(buf, fft);
-    prop = prop + q*q*G*buf;
+    propSun = G*buf;
+    fft.FFT_all_dim(propSun, propSun, FFT::backward);
 
-    // - q^2*G*momD2*G*F*Src (momD2 = F*D2*Finv)
+    // -G*momD2*G*F*Src (momD2 = F*D2*Finv)
     buf = GFSrc;
     momD2(buf, fft);
-    prop = prop - q*q*G*buf;
+    buf = -G*buf;
+    fft.FFT_all_dim(propTad, buf, FFT::backward);
 
-    // final FT
-    fft.FFT_all_dim(prop, prop, FFT::backward);
+    // full charged scalar propagator
+    prop = (*prop0_) + q*propQ + q*q*propSun + q*q*propTad;
     
     // OUTPUT IF NECESSARY
     if (!par().output.empty())
     {
-        std::string           filename = par().output + "." +
-                                         std::to_string(env().getTrajectory());
-        
-        LOG(Message) << "Saving zero-momentum projection to '"
-                     << filename << "'..." << std::endl;
-        
-        CorrWriter            writer(filename);
-        std::vector<TComplex> vecBuf;
-        std::vector<Complex>  result;
-        
-        sliceSum(prop, vecBuf, Tp);
-        result.resize(vecBuf.size());
-        for (unsigned int t = 0; t < vecBuf.size(); ++t)
+        for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
         {
-            result[t] = TensorRemove(vecBuf[t]);
+            std::vector<int> mom = strToVec<int>(par().outputMom[i_p]);
+            std::string           filename = par().output + "_" + std::to_string(mom[0])
+                                                          + std::to_string(mom[1])
+                                                          + std::to_string(mom[2])
+                                                          + "." +
+                                         std::to_string(env().getTrajectory());
+
+            LOG(Message) << "Saving (" << par().outputMom[i_p] << ") momentum projection to '"
+                     << filename << "'..." << std::endl;
+
+            CorrWriter            writer(filename);
+            std::vector<TComplex> vecBuf;
+            std::vector<Complex>  result;
+
+            write(writer, "charge", q);
+            write(writer, "mass", par().mass);
+
+            // Write full propagator
+            buf = prop;
+            for (unsigned int j = 0; j < env().getNd()-1; ++j)
+            {
+                for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                {
+                    buf = buf*adj(*phase_[j]);
+                }
+            }
+            sliceSum(buf, vecBuf, Tp);
+            result.resize(vecBuf.size());
+            for (unsigned int t = 0; t < vecBuf.size(); ++t)
+            {
+                result[t] = TensorRemove(vecBuf[t]);
+            }
+            write(writer, "prop", result);
+
+            // Write free propagator
+            buf = *prop0_;
+            for (unsigned int j = 0; j < env().getNd()-1; ++j)
+            {
+                for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                {
+                    buf = buf*adj(*phase_[j]);
+                }
+            }
+            sliceSum(buf, vecBuf, Tp);
+            for (unsigned int t = 0; t < vecBuf.size(); ++t)
+            {
+                result[t] = TensorRemove(vecBuf[t]);
+            }
+            write(writer, "prop_0", result);
+
+            // Write propagator O(q) term
+            buf = propQ;
+            for (unsigned int j = 0; j < env().getNd()-1; ++j)
+            {
+                for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                {
+                    buf = buf*adj(*phase_[j]);
+                }
+            }
+            sliceSum(buf, vecBuf, Tp);
+            for (unsigned int t = 0; t < vecBuf.size(); ++t)
+            {
+                result[t] = TensorRemove(vecBuf[t]);
+            }
+            write(writer, "prop_Q", result);
+
+            // Write propagator sunset term
+            buf = propSun;
+            for (unsigned int j = 0; j < env().getNd()-1; ++j)
+            {
+                for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                {
+                    buf = buf*adj(*phase_[j]);
+                }
+            }
+            sliceSum(buf, vecBuf, Tp);
+            for (unsigned int t = 0; t < vecBuf.size(); ++t)
+            {
+                result[t] = TensorRemove(vecBuf[t]);
+            }
+            write(writer, "prop_Sun", result);
+
+            // Write propagator tadpole term
+            buf = propTad;
+            for (unsigned int j = 0; j < env().getNd()-1; ++j)
+            {
+                for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                {
+                    buf = buf*adj(*phase_[j]);
+                }
+            }
+            sliceSum(buf, vecBuf, Tp);
+            for (unsigned int t = 0; t < vecBuf.size(); ++t)
+            {
+                result[t] = TensorRemove(vecBuf[t]);
+            }
+            write(writer, "prop_Tad", result);
         }
-        write(writer, "charge", q);
-        write(writer, "prop", result);
     }
 }
 

@@ -6,10 +6,10 @@
 
   Copyright (C) 2015
 
-Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: neo <cossu@post.kek.jp>
-Author: paboyle <paboyle@ph.ed.ac.uk>
+  Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
+  Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+  Author: neo <cossu@post.kek.jp>
+  Author: paboyle <paboyle@ph.ed.ac.uk>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,50 +35,49 @@ directory
 
 namespace Grid {
   // FIXME drop the QCD namespace everywhere here
-  
-  template <class Impl>
-  class ScalarAction : public QCD::Action<typename Impl::Field> {
-  public:
+
+template <class Impl>
+class ScalarAction : public QCD::Action<typename Impl::Field> {
+ public:
     INHERIT_FIELD_TYPES(Impl);
-    
-  private:
+
+ private:
     RealD mass_square;
     RealD lambda;
-    
-  public:
-    ScalarAction(RealD ms, RealD l) : mass_square(ms), lambda(l){};
 
-    virtual std::string LogParameters(){
+ public:
+    ScalarAction(RealD ms, RealD l) : mass_square(ms), lambda(l) {}
+
+    virtual std::string LogParameters() {
       std::stringstream sstream;
       sstream << GridLogMessage << "[ScalarAction] lambda      : " << lambda      << std::endl;
       sstream << GridLogMessage << "[ScalarAction] mass_square : " << mass_square << std::endl;
       return sstream.str();
-      
     }
-    
-    virtual std::string action_name(){return "ScalarAction";}
-    
-    virtual void refresh(const Field &U,
-			 GridParallelRNG &pRNG){};  // noop as no pseudoferms
-    
+    virtual std::string action_name() {return "ScalarAction";}
+
+    virtual void refresh(const Field &U, GridParallelRNG &pRNG) {}  // noop as no pseudoferms
+
     virtual RealD S(const Field &p) {
       return (mass_square * 0.5 + QCD::Nd) * ScalarObs<Impl>::sumphisquared(p) +
-	(lambda / 24.) * ScalarObs<Impl>::sumphifourth(p) +
-	ScalarObs<Impl>::sumphider(p);
+    (lambda / 24.) * ScalarObs<Impl>::sumphifourth(p) +
+    ScalarObs<Impl>::sumphider(p);
     };
-    
+
     virtual void deriv(const Field &p,
-		       Field &force) {
+                       Field &force) {
       Field tmp(p._grid);
       Field p2(p._grid);
       ScalarObs<Impl>::phisquared(p2, p);
       tmp = -(Cshift(p, 0, -1) + Cshift(p, 0, 1));
       for (int mu = 1; mu < QCD::Nd; mu++) tmp -= Cshift(p, mu, -1) + Cshift(p, mu, 1);
-      
-      force=+(mass_square + 2. * QCD::Nd) * p + (lambda / 6.) * p2 * p + tmp;
-    };
-  };
-  
-} // Grid
+
+      force =+(mass_square + 2. * QCD::Nd) * p + (lambda / 6.) * p2 * p + tmp;
+    }
+};
+
+
+
+}  // namespace Grid
 
 #endif // SCALAR_ACTION_H
