@@ -82,11 +82,11 @@ namespace Optimization {
       double tmp[2]={a,b};
       return vld1q_f64(tmp);
     }
-    //Real double // N:tbc
+    //Real double
     inline float64x2_t operator()(double a){
       return vdupq_n_f64(a);
     }
-    //Integer // N:tbc
+    //Integer
     inline uint32x4_t operator()(Integer a){
       return vdupq_n_u32(a);
     }
@@ -124,33 +124,32 @@ namespace Optimization {
   // Nils: Vset untested; not used currently in Grid at all;
   // git commit 4a8c4ccfba1d05159348d21a9698028ea847e77b
   struct Vset{
-    // Complex float // N:ok
+    // Complex float
     inline float32x4_t operator()(Grid::ComplexF *a){
       float tmp[4]={a[1].imag(),a[1].real(),a[0].imag(),a[0].real()};
       return vld1q_f32(tmp);
     }
-    // Complex double // N:ok
+    // Complex double
     inline float64x2_t operator()(Grid::ComplexD *a){
       double tmp[2]={a[0].imag(),a[0].real()};
       return vld1q_f64(tmp);
     }
-    // Real float // N:ok
+    // Real float
     inline float32x4_t operator()(float *a){
       float tmp[4]={a[3],a[2],a[1],a[0]};
       return vld1q_f32(tmp);
     }
-    // Real double // N:ok
+    // Real double
     inline float64x2_t operator()(double *a){
       double tmp[2]={a[1],a[0]};
       return vld1q_f64(tmp);
     }
-    // Integer // N:ok
+    // Integer
     inline uint32x4_t operator()(Integer *a){
       return vld1q_dup_u32(a);
     }
   };
 
-  // N:leaving as is
   template <typename Out_type, typename In_type>
   struct Reduce{
     //Need templated class to overload output type
@@ -249,9 +248,9 @@ namespace Optimization {
       return vfmaq_f32(r4, r0, a); //  ar*br-ai*bi ai*br+ar*bi ...
 
       // no fma, use mul and add
-      //float32x4_t r5;
-      //r5 = vmulq_f32(r0, a);
-      //return vaddq_f32(r4, r5);
+      // float32x4_t r5;
+      // r5 = vmulq_f32(r0, a);
+      // return vaddq_f32(r4, r5);
     }
     // Complex double
     inline float64x2_t operator()(float64x2_t a, float64x2_t b){
@@ -272,9 +271,9 @@ namespace Optimization {
       return vfmaq_f64(r4, r0, a); //  ar*br-ai*bi ai*br+ar*bi
 
       // no fma, use mul and add
-      //float64x2_t r5;
-      //r5 = vmulq_f64(r0, a);
-      //return vaddq_f64(r4, r5);
+      // float64x2_t r5;
+      // r5 = vmulq_f64(r0, a);
+      // return vaddq_f64(r4, r5);
     }
   };
 
@@ -421,11 +420,6 @@ namespace Optimization {
       }
     }
 
-// working, but no restriction on n
-//    template<int n> static inline float32x4_t tRotate(float32x4_t in){ return vextq_f32(in,in,n); };
-//    template<int n> static inline float64x2_t tRotate(float64x2_t in){ return vextq_f64(in,in,n); };
-
-// restriction on n
     template<int n> static inline float32x4_t tRotate(float32x4_t in){ return vextq_f32(in,in,n%4); };
     template<int n> static inline float64x2_t tRotate(float64x2_t in){ return vextq_f64(in,in,n%2); };
 
@@ -441,7 +435,7 @@ namespace Optimization {
       sb = vcvt_high_f32_f16(h);
       // there is no direct conversion from lower float32x4_t to float64x2_t
       // vextq_f16 not supported by clang 3.8 / 4.0 / arm clang
-      //float16x8_t h1 = vextq_f16(h, h, 4); // correct, but not supported by clang
+      // float16x8_t h1 = vextq_f16(h, h, 4); // correct, but not supported by clang
       // workaround for clang
       uint32x4_t h1u = reinterpret_cast<uint32x4_t>(h);
       float16x8_t h1 = reinterpret_cast<float16x8_t>(vextq_u32(h1u, h1u, 2));
@@ -547,7 +541,7 @@ namespace Optimization {
 
 
   //Complex double Reduce
-  template<> // N:by Boyle
+  template<>
   inline Grid::ComplexD Reduce<Grid::ComplexD, float64x2_t>::operator()(float64x2_t in){
     u128d conv; conv.v = in;
     return Grid::ComplexD(conv.f[0],conv.f[1]);
@@ -562,9 +556,7 @@ namespace Optimization {
   //Integer Reduce
   template<>
   inline Integer Reduce<Integer, uint32x4_t>::operator()(uint32x4_t in){
-    // FIXME unimplemented
-    printf("Reduce : Missing integer implementation -> FIX\n");
-    assert(0);
+    return vaddvq_u32(in);
   }
 }
 
@@ -604,3 +596,4 @@ namespace Optimization {
   typedef Optimization::TimesI      TimesISIMD;
 
 }
+

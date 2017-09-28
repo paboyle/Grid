@@ -1,6 +1,6 @@
     /*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
 
     Source file: ./lib/Algorithms.h
 
@@ -37,6 +37,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/approx/Chebyshev.h>
 #include <Grid/algorithms/approx/Remez.h>
 #include <Grid/algorithms/approx/MultiShiftFunction.h>
+#include <Grid/algorithms/approx/Forecast.h>
 
 #include <Grid/algorithms/iterative/ConjugateGradient.h>
 #include <Grid/algorithms/iterative/ConjugateResidual.h>
@@ -44,6 +45,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/iterative/SchurRedBlack.h>
 #include <Grid/algorithms/iterative/ConjugateGradientMultiShift.h>
 #include <Grid/algorithms/iterative/ConjugateGradientMixedPrec.h>
+#include <Grid/algorithms/iterative/ConjugateGradientReliableUpdate.h>
 
 // Lanczos support
 //#include <Grid/algorithms/iterative/MatrixUtils.h>

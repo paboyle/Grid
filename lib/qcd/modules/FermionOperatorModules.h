@@ -72,7 +72,7 @@ protected:
   }
 
   virtual unsigned int Ls(){
-    return 0;  
+    return 0;
   }
 
   virtual void print_parameters(){
@@ -97,7 +97,7 @@ class HMC_FermionOperatorModuleFactory
     : public Factory < FermionOperatorModuleBase<QCD::FermionOperator<FermionImpl> > ,  Reader<ReaderClass> > {
  public:
   // use SINGLETON FUNCTOR MACRO HERE
-  typedef Reader<ReaderClass> TheReader; 
+  typedef Reader<ReaderClass> TheReader;
 
   HMC_FermionOperatorModuleFactory(const HMC_FermionOperatorModuleFactory& e) = delete;
   void operator=(const HMC_FermionOperatorModuleFactory& e) = delete;
@@ -122,7 +122,7 @@ namespace QCD{
 // Modules
 class WilsonFermionParameters : Serializable {
  public:
-  GRID_SERIALIZABLE_CLASS_MEMBERS(WilsonFermionParameters, 
+  GRID_SERIALIZABLE_CLASS_MEMBERS(WilsonFermionParameters,
     RealD, mass);
 };
 
@@ -144,7 +144,7 @@ class WilsonFermionModule: public FermionOperatorModule<WilsonFermion, FermionIm
 
 class MobiusFermionParameters : Serializable {
  public:
-  GRID_SERIALIZABLE_CLASS_MEMBERS(MobiusFermionParameters, 
+  GRID_SERIALIZABLE_CLASS_MEMBERS(MobiusFermionParameters,
     RealD, mass,
     RealD, M5,
     RealD, b,
@@ -166,7 +166,7 @@ class MobiusFermionModule: public FermionOperatorModule<MobiusFermion, FermionIm
     auto GridMod = this->GridRefs[0];
     auto GridMod5d = this->GridRefs[1];
     typename FermionImpl::GaugeField U(GridMod->get_full());
-    this->FOPtr.reset(new MobiusFermion<FermionImpl>( U, *(GridMod->get_full()), *(GridMod->get_rb()), 
+    this->FOPtr.reset(new MobiusFermion<FermionImpl>( U, *(GridMod->get_full()), *(GridMod->get_rb()),
                                                       *(GridMod5d->get_full()), *(GridMod5d->get_rb()),
                                                       this->Par_.mass, this->Par_.M5, this->Par_.b, this->Par_.c));
   }
@@ -175,7 +175,7 @@ class MobiusFermionModule: public FermionOperatorModule<MobiusFermion, FermionIm
 
 class DomainWallFermionParameters : Serializable {
  public:
-  GRID_SERIALIZABLE_CLASS_MEMBERS(DomainWallFermionParameters, 
+  GRID_SERIALIZABLE_CLASS_MEMBERS(DomainWallFermionParameters,
     RealD, mass,
     RealD, M5,
     unsigned int, Ls);
@@ -195,12 +195,45 @@ class DomainWallFermionModule: public FermionOperatorModule<DomainWallFermion, F
     auto GridMod = this->GridRefs[0];
     auto GridMod5d = this->GridRefs[1];
     typename FermionImpl::GaugeField U(GridMod->get_full());
-    this->FOPtr.reset(new DomainWallFermion<FermionImpl>( U, *(GridMod->get_full()), *(GridMod->get_rb()), 
+    this->FOPtr.reset(new DomainWallFermion<FermionImpl>( U, *(GridMod->get_full()), *(GridMod->get_rb()),
                                                       *(GridMod5d->get_full()), *(GridMod5d->get_rb()),
                                                       this->Par_.mass, this->Par_.M5));
   }
 };
 
+
+class DomainWallEOFAFermionParameters : Serializable {
+ public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(DomainWallEOFAFermionParameters,
+    RealD, mq1,
+    RealD, mq2,
+    RealD, mq3,
+    RealD, shift,
+    int, pm,
+    RealD, M5,
+    unsigned int, Ls);
+};
+
+template <class FermionImpl >
+class DomainWallEOFAFermionModule: public FermionOperatorModule<DomainWallEOFAFermion, FermionImpl, DomainWallEOFAFermionParameters> {
+  typedef FermionOperatorModule<DomainWallEOFAFermion, FermionImpl, DomainWallEOFAFermionParameters> FermBase;
+  using FermBase::FermBase; // for constructors
+
+  virtual unsigned int Ls(){
+    return this->Par_.Ls;
+  }
+
+  // acquire resource
+  virtual void initialize(){
+    auto GridMod = this->GridRefs[0];
+    auto GridMod5d = this->GridRefs[1];
+    typename FermionImpl::GaugeField U(GridMod->get_full());
+    this->FOPtr.reset(new DomainWallEOFAFermion<FermionImpl>( U, *(GridMod->get_full()), *(GridMod->get_rb()),
+                                                      *(GridMod5d->get_full()), *(GridMod5d->get_rb()),
+                                                      this->Par_.mq1, this->Par_.mq2, this->Par_.mq3,
+                                                      this->Par_.shift, this->Par_.pm, this->Par_.M5));
+  }
+};
 
 
 } // QCD

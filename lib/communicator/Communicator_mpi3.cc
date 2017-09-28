@@ -198,7 +198,46 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
   ShmCommBuf = 0;
   ShmCommBufs.resize(ShmSize);
 
-#if 1
+  ////////////////////////////////////////////////////////////////////////////////////////////
+  // Hugetlbf and others map filesystems as mappable huge pages
+  ////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef GRID_MPI3_SHMMMAP
+  char shm_name [NAME_MAX];
+  for(int r=0;r<ShmSize;r++){
+    
+    size_t size = CartesianCommunicator::MAX_MPI_SHM_BYTES;
+    sprintf(shm_name,GRID_SHM_PATH "/Grid_mpi3_shm_%d_%d",GroupRank,r);
+    //sprintf(shm_name,"/var/lib/hugetlbfs/group/wheel/pagesize-2MB/" "Grid_mpi3_shm_%d_%d",GroupRank,r);
+    //    printf("Opening file %s \n",shm_name);
+    int fd=open(shm_name,O_RDWR|O_CREAT,0666);
+    if ( fd == -1) { 
+      printf("open %s failed\n",shm_name);
+      perror("open hugetlbfs");
+      exit(0);
+    }
+    int mmap_flag = MAP_SHARED ;
+#ifdef MAP_POPULATE    
+    mmap_flag|=MAP_POPULATE;
+#endif
+#ifdef MAP_HUGETLB
+    if ( Hugepages ) mmap_flag |= MAP_HUGETLB;
+#endif
+    void *ptr = (void *) mmap(NULL, MAX_MPI_SHM_BYTES, PROT_READ | PROT_WRITE, mmap_flag,fd, 0); 
+    if ( ptr == (void *)MAP_FAILED ) {    
+      printf("mmap %s failed\n",shm_name);
+      perror("failed mmap");      assert(0);    
+    }
+    assert(((uint64_t)ptr&0x3F)==0);
+    ShmCommBufs[r] =ptr;
+    
+  }
+#endif
+  ////////////////////////////////////////////////////////////////////////////////////////////
+  // POSIX SHMOPEN ; as far as I know Linux does not allow EXPLICIT HugePages with this case
+  // tmpfs (Larry Meadows says) does not support explicit huge page, and this is used for 
+  // the posix shm virtual file system
+  ////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef GRID_MPI3_SHMOPEN
   char shm_name [NAME_MAX];
   if ( ShmRank == 0 ) {
     for(int r=0;r<ShmSize;r++){
@@ -213,12 +252,15 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
       ftruncate(fd, size);
       
       int mmap_flag = MAP_SHARED;
+#ifdef MAP_POPULATE 
+      mmap_flag |= MAP_POPULATE;
+#endif
 #ifdef MAP_HUGETLB
       if (Hugepages) mmap_flag |= MAP_HUGETLB;
 #endif
       void * ptr =  mmap(NULL,size, PROT_READ | PROT_WRITE, mmap_flag, fd, 0);
 
-      if ( ptr == MAP_FAILED ) {       perror("failed mmap");      assert(0);    }
+      if ( ptr == (void * )MAP_FAILED ) {       perror("failed mmap");      assert(0);    }
       assert(((uint64_t)ptr&0x3F)==0);
 
 // Experiments; Experiments; Try to force numa domain on the shm segment if we have numaif.h
@@ -240,7 +282,7 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
 	  if (ierr && (page==0)) perror("numa relocate command failed");
 	}
 #endif
-      ShmCommBufs[r] =ptr;
+	ShmCommBufs[r] =ptr;
       
     }
   }
@@ -262,25 +304,32 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
       ShmCommBufs[r] =ptr;
     }
   }
-
-#else
+#endif
+  ////////////////////////////////////////////////////////////////////////////////////////////
+  // SHMGET SHMAT and SHM_HUGETLB flag
+  ////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef GRID_MPI3_SHMGET
   std::vector<int> shmids(ShmSize);
 
   if ( ShmRank == 0 ) {
     for(int r=0;r<ShmSize;r++){
       size_t size = CartesianCommunicator::MAX_MPI_SHM_BYTES;
-      key_t key   = 0x4545 + r;
+      key_t key   = IPC_PRIVATE;
       int flags = IPC_CREAT | SHM_R | SHM_W;
 #ifdef SHM_HUGETLB
-      flags|=SHM_HUGETLB;
+      if (Hugepages) flags|=SHM_HUGETLB;
 #endif
-      if ((shmids[r]= shmget(key,size, flags)) < 0) {
+      if ((shmids[r]= shmget(key,size, flags)) ==-1) {
 	int errsv = errno;
 	printf("Errno %d\n",errsv);
+	printf("key   %d\n",key);
+	printf("size  %lld\n",size);
+	printf("flags %d\n",flags);
 	perror("shmget");
 	exit(1);
+      } else { 
+	printf("shmid: 0x%x\n", shmids[r]);
       }
-      printf("shmid: 0x%x\n", shmids[r]);
     }
   }
   MPI_Barrier(ShmComm);

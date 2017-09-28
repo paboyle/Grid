@@ -538,6 +538,12 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
    
  }
 
+
+ template <class ref>
+ inline void loadLinkElement(Simd &reg, ref &memory) {
+   reg = memory;
+ }
+
  inline void DoubleStore(GridBase *GaugeGrid,DoubledGaugeField &Uds,const GaugeField &Umu)
  {
    conformable(Uds._grid,GaugeGrid);

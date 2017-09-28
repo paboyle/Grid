@@ -37,7 +37,7 @@ namespace Grid {
 // Info that is setup once and indept of cartesian layout
 ///////////////////////////////////////////////////////////////
 void *              CartesianCommunicator::ShmCommBuf;
-uint64_t            CartesianCommunicator::MAX_MPI_SHM_BYTES   = 128*1024*1024; 
+uint64_t            CartesianCommunicator::MAX_MPI_SHM_BYTES   = 1024LL*1024LL*1024LL; 
 CartesianCommunicator::CommunicatorPolicy_t  
 CartesianCommunicator::CommunicatorPolicy= CartesianCommunicator::CommunicatorPolicyConcurrent;
 int CartesianCommunicator::nCommThreads = -1;
@@ -162,6 +162,9 @@ void CartesianCommunicator::ShmInitGeneric(void){
     perror("mmap failed ");
     exit(EXIT_FAILURE);  
   }
+#ifdef MADV_HUGEPAGE
+  if (!Hugepages ) madvise(ShmCommBuf,MAX_MPI_SHM_BYTES,MADV_HUGEPAGE);
+#endif
 #else 
   ShmBufStorageVector.resize(MAX_MPI_SHM_BYTES);
   ShmCommBuf=(void *)&ShmBufStorageVector[0];
