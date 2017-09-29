@@ -44,8 +44,9 @@ public:
   INHERIT_FIELD_TYPES(Impl);
 
 private:
-  RealD mass_square;
-  RealD lambda;
+  RealD              mass_square;
+  RealD              lambda;
+  const unsigned int N = Impl::Group::Dimension; 
 
   typedef typename Field::vector_object vobj;
   typedef CartesianStencil<vobj, vobj> Stencil;
@@ -85,8 +86,8 @@ public:
     static Stencil phiStencil(p._grid, npoint, 0, directions, displacements);
     phiStencil.HaloExchange(p, compressor);
     Field action(p._grid), pshift(p._grid), phisquared(p._grid);
-    phisquared = p * p;
-    action = (2.0 * Ndim + mass_square) * phisquared - lambda / 24. * phisquared * phisquared;
+    phisquared = p*p;
+    action = (2.*Ndim + mass_square) * phisquared - phisquared * phisquared;
     for (int mu = 0; mu < Ndim; mu++)
     {
       //  pshift = Cshift(p, mu, +1);  // not efficient, implement with stencils
@@ -121,13 +122,13 @@ public:
     }
     // NB the trace in the algebra is normalised to 1/2
     // minus sign coming from the antihermitian fields
-    return -(TensorRemove(sum(trace(action)))).real();
+    return -(TensorRemove(sum(trace(action)))).real()*N/lambda;
   };
 
   virtual void deriv(const Field &p, Field &force)
   {
     assert(p._grid->Nd() == Ndim);
-    force = (2.0 * Ndim + mass_square) * p - lambda / 12. * p * p * p;
+    force = (2.0 * Ndim + mass_square) * p - 2. * p * p * p;
     // move this outside
     static Stencil phiStencil(p._grid, npoint, 0, directions, displacements);
     phiStencil.HaloExchange(p, compressor);
@@ -162,6 +163,7 @@ public:
         }
       }
     }
+    force *= N/lambda;
   }
 };
 
