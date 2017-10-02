@@ -128,12 +128,11 @@ int main (int argc, char ** argv)
   {
     for(int n=0;n<nrhs;n++){
 
-      std::stringstream filefn;
-      filefn << filef << "."<< n;
-
       std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
       std::cout << GridLogMessage << " Writing out record "<<n<<std::endl;
       std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
+
+      std::stringstream filefn;      filefn << filef << "."<< n;
       ScidacWriter _ScidacWriter;
       _ScidacWriter.open(filefn.str());
       _ScidacWriter.writeScidacFieldRecord(src[n],record);
@@ -147,10 +146,8 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
       
     for(int n=0;n<nrhs;n++){
-
-      std::stringstream filefn;
-      filefn << filef << "."<< n;
       if ( n==me ) { 
+	std::stringstream filefn;	filefn << filef << "."<< n;
 	ScidacReader  _ScidacReader;
 	_ScidacReader.open(filefn.str());
 	_ScidacReader.readScidacFieldRecord(s_src,record);
