@@ -157,8 +157,7 @@ class CartesianCommunicator {
   CartesianCommunicator(const std::vector<int> &pdimensions_in);
 
  private:
-#if defined (GRID_COMMS_MPI) 
-  //|| defined (GRID_COMMS_MPI3) 
+#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPIT) 
   ////////////////////////////////////////////////
   // Private initialise from an MPI communicator
   // Can use after an MPI_Comm_split, but hidden from user so private
