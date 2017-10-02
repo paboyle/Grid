@@ -147,8 +147,13 @@ void *CartesianCommunicator::ShmBufferTranslate(int rank,void * local_p) {
 }
 void CartesianCommunicator::ShmInitGeneric(void){
 #if 1
-
-  int mmap_flag = MAP_SHARED | MAP_ANONYMOUS;
+  int mmap_flag =0;
+#ifdef MAP_ANONYMOUS
+  mmap_flag = mmap_flag| MAP_SHARED | MAP_ANONYMOUS;
+#endif
+#ifdef MAP_ANON
+  mmap_flag = mmap_flag| MAP_SHARED | MAP_ANON;
+#endif
 #ifdef MAP_HUGETLB
   if ( Hugepages ) mmap_flag |= MAP_HUGETLB;
 #endif
