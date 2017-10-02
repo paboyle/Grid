@@ -42,7 +42,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/cshift/Cshift_mpi.h>
 #endif 
 
-#ifdef GRID_COMMS_MPI3L
+#ifdef GRID_COMMS_MPIT
 #include <Grid/cshift/Cshift_mpi.h>
 #endif 
 

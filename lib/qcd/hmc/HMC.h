@@ -76,7 +76,7 @@ struct HMCparameters: Serializable {
 
   template < class ReaderClass > 
   void initialize(Reader<ReaderClass> &TheReader){
-  	std::cout << "Reading HMC\n";
+  	std::cout << GridLogMessage << "Reading HMC\n";
   	read(TheReader, "HMC", *this);
   }
 

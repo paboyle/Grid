@@ -40,7 +40,7 @@ const PerformanceCounter::PerformanceCounterConfig PerformanceCounter::Performan
   { PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES          ,  "CPUCYCLES.........." , INSTRUCTIONS},
   { PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS        ,  "INSTRUCTIONS......." , CPUCYCLES   },
     // 4
-#ifdef AVX512
+#ifdef KNL
     { PERF_TYPE_RAW, RawConfig(0x40,0x04), "ALL_LOADS..........", CPUCYCLES    },
     { PERF_TYPE_RAW, RawConfig(0x01,0x04), "L1_MISS_LOADS......", L1D_READ_ACCESS  },
     { PERF_TYPE_RAW, RawConfig(0x40,0x04), "ALL_LOADS..........", L1D_READ_ACCESS    },

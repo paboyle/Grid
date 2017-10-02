@@ -26,8 +26,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_NoiseLoop_hpp_
-#define Hadrons_NoiseLoop_hpp_
+#ifndef Hadrons_MLoop_NoiseLoop_hpp_
+#define Hadrons_MLoop_NoiseLoop_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -65,7 +65,7 @@ template <typename FImpl>
 class TNoiseLoop: public Module<NoiseLoopPar>
 {
 public:
-    TYPE_ALIASES(FImpl,);
+    FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
     TNoiseLoop(const std::string name);
@@ -129,4 +129,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_NoiseLoop_hpp_
+#endif // Hadrons_MLoop_NoiseLoop_hpp_

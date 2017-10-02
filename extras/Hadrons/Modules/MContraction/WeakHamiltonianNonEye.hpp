@@ -26,8 +26,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_WeakHamiltonianNonEye_hpp_
-#define Hadrons_WeakHamiltonianNonEye_hpp_
+#ifndef Hadrons_MContraction_WeakHamiltonianNonEye_hpp_
+#define Hadrons_MContraction_WeakHamiltonianNonEye_hpp_
 
 #include <Grid/Hadrons/Modules/MContraction/WeakHamiltonian.hpp>
 
@@ -54,4 +54,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_WeakHamiltonianNonEye_hpp_
+#endif // Hadrons_MContraction_WeakHamiltonianNonEye_hpp_

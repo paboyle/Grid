@@ -9,10 +9,8 @@ Large item work list:
 3a)- RNG I/O in ILDG/SciDAC (minor)
 3b)- Precision conversion and sort out localConvert      <-- partial/easy
 3c)- Consistent linear solver flop count/rate -- PARTIAL, time but no flop/s yet
---
 4)- Physical propagator interface
 5)- Conserved currents
---
 6)- Multigrid Wilson and DWF, compare to other Multigrid implementations
 7)- HDCR resume
 

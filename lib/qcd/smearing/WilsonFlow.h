@@ -108,7 +108,7 @@ void WilsonFlow<Gimpl>::evolve_step_adaptive(typename Gimpl::GaugeField &U, Real
     if (maxTau - taus < epsilon){
         epsilon = maxTau-taus;
     }
-    std::cout << GridLogMessage << "Integration epsilon : " << epsilon << std::endl;
+    //std::cout << GridLogMessage << "Integration epsilon : " << epsilon << std::endl;
     GaugeField Z(U._grid);
     GaugeField Zprime(U._grid);
     GaugeField tmp(U._grid), Uprime(U._grid);
@@ -138,10 +138,10 @@ void WilsonFlow<Gimpl>::evolve_step_adaptive(typename Gimpl::GaugeField &U, Real
     // adjust integration step
     
     taus += epsilon;
-    std::cout << GridLogMessage << "Adjusting integration step with distance: " << diff << std::endl;
+    //std::cout << GridLogMessage << "Adjusting integration step with distance: " << diff << std::endl;
     
     epsilon = epsilon*0.95*std::pow(1e-4/diff,1./3.);
-    std::cout << GridLogMessage << "New epsilon : " << epsilon << std::endl;
+    //std::cout << GridLogMessage << "New epsilon : " << epsilon << std::endl;
 
 }
 
@@ -166,7 +166,6 @@ void WilsonFlow<Gimpl>::smear(GaugeField& out, const GaugeField& in) const {
     out = in;
     for (unsigned int step = 1; step <= Nstep; step++) {
         auto start = std::chrono::high_resolution_clock::now();
-        std::cout << GridLogMessage << "Evolution time :"<< tau(step) << std::endl;
         evolve_step(out);
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> diff = end - start;
@@ -191,7 +190,7 @@ void WilsonFlow<Gimpl>::smear_adaptive(GaugeField& out, const GaugeField& in, Re
     unsigned int step = 0;
     do{
         step++;
-        std::cout << GridLogMessage << "Evolution time :"<< taus << std::endl;
+        //std::cout << GridLogMessage << "Evolution time :"<< taus << std::endl;
         evolve_step_adaptive(out, maxTau);
         std::cout << GridLogMessage << "[WilsonFlow] Energy density (plaq) : "
             << step << "  "

@@ -27,8 +27,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_Baryon_hpp_
-#define Hadrons_Baryon_hpp_
+#ifndef Hadrons_MContraction_Baryon_hpp_
+#define Hadrons_MContraction_Baryon_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -55,9 +55,9 @@ template <typename FImpl1, typename FImpl2, typename FImpl3>
 class TBaryon: public Module<BaryonPar>
 {
 public:
-    TYPE_ALIASES(FImpl1, 1);
-    TYPE_ALIASES(FImpl2, 2);
-    TYPE_ALIASES(FImpl3, 3);
+    FERM_TYPE_ALIASES(FImpl1, 1);
+    FERM_TYPE_ALIASES(FImpl2, 2);
+    FERM_TYPE_ALIASES(FImpl3, 3);
     class Result: Serializable
     {
     public:
@@ -121,11 +121,11 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
     
     // FIXME: do contractions
     
-    write(writer, "meson", result);
+    // write(writer, "meson", result);
 }
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_Baryon_hpp_
+#endif // Hadrons_MContraction_Baryon_hpp_

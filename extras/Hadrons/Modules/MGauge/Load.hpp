@@ -27,8 +27,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_Load_hpp_
-#define Hadrons_Load_hpp_
+#ifndef Hadrons_MGauge_Load_hpp_
+#define Hadrons_MGauge_Load_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -70,4 +70,4 @@ END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_Load_hpp_
+#endif // Hadrons_MGauge_Load_hpp_
