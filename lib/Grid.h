@@ -38,52 +38,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_H
 #define GRID_H
 
-///////////////////
-// Std C++ dependencies
-///////////////////
-#include <cassert>
-#include <complex>
-#include <vector>
-#include <iostream>
-#include <iomanip>
-#include <random>
-#include <functional>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <signal.h>
-#include <ctime>
-#include <sys/time.h>
-#include <chrono>
-
-///////////////////
-// Grid headers
-///////////////////
-#include <Grid/serialisation/Serialisation.h>
-#include "Config.h"
-#include <Grid/Timer.h>
-#include <Grid/PerfCount.h>
-#include <Grid/Log.h>
-#include <Grid/AlignedAllocator.h>
-#include <Grid/Simd.h>
-#include <Grid/Threads.h>
-#include <Grid/Lexicographic.h>
-#include <Grid/Init.h>
-#include <Grid/Communicator.h> 
-#include <Grid/Cartesian.h>    
-#include <Grid/Tensors.h>      
-#include <Grid/Lattice.h>      
-#include <Grid/Cshift.h>       
-#include <Grid/Stencil.h>      
-#include <Grid/Algorithms.h>   
-#include <Grid/parallelIO/BinaryIO.h>
-#include <Grid/FFT.h>
-
-#include <Grid/qcd/QCD.h>
-#include <Grid/parallelIO/NerscIO.h>
-#include <Grid/qcd/hmc/NerscCheckpointer.h>
-#include <Grid/qcd/hmc/HmcRunner.h>
-
-
+#include <Grid/GridCore.h>
+#include <Grid/GridQCDcore.h>
+#include <Grid/qcd/action/Action.h>
+#include <Grid/qcd/utils/GaugeFix.h>
+#include <Grid/qcd/smearing/Smearing.h>
+#include <Grid/parallelIO/MetaData.h>
+#include <Grid/qcd/hmc/HMC_aggregate.h>
 
 #endif

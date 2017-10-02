@@ -31,7 +31,7 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-#define parallel_for PARALLEL_FOR_LOOP for
+ 
 
 int main (int argc, char ** argv)
 {
@@ -50,7 +50,7 @@ int main (int argc, char ** argv)
   std::vector<int> seeds({1,2,3,4});
 
   GridParallelRNG          pRNG(&Grid);
-  pRNG.SeedRandomDevice();
+  pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
   LatticeGaugeField U(&Grid);
 
@@ -112,12 +112,14 @@ int main (int argc, char ** argv)
     dS = dS - trace(mommu*UdSdUmu)*dt*2.0;
 
   }
-  Complex dSpred    = sum(dS);
+  ComplexD dSpred    = sum(dS);
 
   std::cout << GridLogMessage << " S      "<<S<<std::endl;
   std::cout << GridLogMessage << " Sprime "<<Sprime<<std::endl;
   std::cout << GridLogMessage << "dS      "<<Sprime-S<<std::endl;
   std::cout << GridLogMessage << "pred dS "<< dSpred <<std::endl;
+
+  assert( fabs(real(Sprime-S-dSpred)) < 1.0e-2 ) ;
 
   std::cout<< GridLogMessage << "Done" <<std::endl;
   Grid_finalize();

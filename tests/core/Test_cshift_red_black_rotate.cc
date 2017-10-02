@@ -32,6 +32,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 using namespace Grid;
 using namespace Grid::QCD;
 
+#define POWER10
+
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
@@ -47,8 +49,9 @@ int main (int argc, char ** argv)
   GridCartesian         Fine  (latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian RBFine(latt_size,simd_layout,mpi_layout,mask,1);
 
-  GridParallelRNG      FineRNG(&Fine);  FineRNG.SeedRandomDevice();
+  GridParallelRNG      FineRNG(&Fine);  FineRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
+  LatticeComplex err(&Fine);
   LatticeComplex U(&Fine);
   LatticeComplex ShiftU(&Fine);
   LatticeComplex rbShiftU(&Fine);
@@ -66,9 +69,15 @@ int main (int argc, char ** argv)
     for(int d=0;d<Nd;d++){
       //      Integer i=10000;
       Integer i=0;
+#ifdef POWER10
+      LatticeCoordinate(coor,Nd-d-1);
+      lex = lex + coor*stride+i;
+      stride=stride*10;
+#else 
       LatticeCoordinate(coor,d);
       lex = lex + coor*stride+i;
       stride=stride*latt_size[d];
+#endif
     }
     U=lex;
   }
@@ -87,28 +96,30 @@ int main (int argc, char ** argv)
     //    if ( dir!=1 ) continue;
     for(int shift=0;shift<latt_size[dir];shift++){
 
-	std::cout<<GridLogMessage<<"Shifting by "<<shift<<" in direction"<<dir<<std::endl;
+      std::cout<<GridLogMessage<<"Shifting by "<<shift<<" in direction"<<dir;
 
-	std::cout<<GridLogMessage<<"Even grid"<<std::endl;
+	//	std::cout<<GridLogMessage<<"Even grid"<<std::endl;
 	ShiftUe = Cshift(Ue,dir,shift);    // Shift everything cb by cb
-	std::cout<<GridLogMessage << "\tShiftUe " <<norm2(ShiftUe)<<std::endl;
-
-	std::cout<<GridLogMessage<<"Odd grid"<<std::endl;
+	//	std::cout<<GridLogMessage << "\tShiftUe " <<norm2(ShiftUe)<<std::endl;
+	//	std::cout<<GridLogMessage<<"Odd grid"<<std::endl;
 	ShiftUo = Cshift(Uo,dir,shift);    
-	std::cout<<GridLogMessage << "\tShiftUo " <<norm2(ShiftUo)<<std::endl;
+	//	std::cout<<GridLogMessage << "\tShiftUo " <<norm2(ShiftUo)<<std::endl;
 
-	std::cout<<GridLogMessage<<"Recombined Even/Odd grids"<<std::endl;
+	//	std::cout<<GridLogMessage<<"Recombined Even/Odd grids"<<std::endl;
 	setCheckerboard(rbShiftU,ShiftUe);
 	setCheckerboard(rbShiftU,ShiftUo);
-	std::cout<<GridLogMessage << "\trbShiftU " <<norm2(rbShiftU)<<std::endl;
+	//	std::cout<<GridLogMessage << "\trbShiftU " <<norm2(rbShiftU)<<std::endl;
 
-	std::cout<<GridLogMessage<<"Full grid shift"<<std::endl;
+	//	std::cout<<GridLogMessage<<"Full grid shift"<<std::endl;
 	ShiftU  = Cshift(U,dir,shift);    // Shift everything
-	std::cout<<GridLogMessage << "\tShiftU " <<norm2(rbShiftU)<<std::endl;
+	//	std::cout<<GridLogMessage << "\tShiftU " <<norm2(rbShiftU)<<std::endl;
+
+	err = ShiftU - rbShiftU;
+	std::cout<< "\terror " <<norm2(err)<<std::endl;
 
 	std::vector<int> coor(4);
 
-	std::cout<<GridLogMessage << "Checking the non-checkerboard shift"<<std::endl;
+	std::cout<<GridLogMessage << "  Checking the non-checkerboard shift "<< shift << " dir "<<dir  <<"... ";
 	for(coor[3]=0;coor[3]<latt_size[3];coor[3]++){
 	for(coor[2]=0;coor[2]<latt_size[2];coor[2]++){
 	for(coor[1]=0;coor[1]<latt_size[1];coor[1]++){
@@ -120,11 +131,20 @@ int main (int argc, char ** argv)
 
 	  std::vector<int> scoor(coor);
 	  scoor[dir] = (scoor[dir]+shift)%latt_size[dir];
-	  
+
+#ifdef POWER10
+	  std::vector<int> powers({1,10,100,1000});
+	  Integer slex = scoor[3]
+	    + 10        *scoor[2]
+	    + 100       *scoor[1]
+	    + 1000      *scoor[0];
+#else
+	  std::vector<int> powers=latt_size;
 	  Integer slex = scoor[0]
 	    + latt_size[0]*scoor[1]
 	    + latt_size[0]*latt_size[1]*scoor[2]
 	    + latt_size[0]*latt_size[1]*latt_size[2]*scoor[3];
+#endif
 
 	  Complex scm(slex);
 	  
@@ -132,7 +152,7 @@ int main (int argc, char ** argv)
 	  std::vector<int> peer(4);
 	  Complex ctmp = cm;
 	  Integer index=real(ctmp);
-	  Lexicographic::CoorFromIndex(peer,index,latt_size);
+	  Lexicographic::CoorFromIndex(peer,index,powers);
 
 	  if (nrm > 0){
 	    std::cout<<"FAIL shift "<< shift<<" in dir "<< dir
@@ -140,14 +160,16 @@ int main (int argc, char ** argv)
 		     << cm()()()<<" expect "<<scm<<"  "<<nrm<<std::endl;
 	    std::cout<<"Got    "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	    index=real(scm);
-	    Lexicographic::CoorFromIndex(peer,index,latt_size);
+	    Lexicographic::CoorFromIndex(peer,index,powers);
 	    std::cout<<"Expect "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	    exit(-1);
 	  }
+	  
 	}}}}
+	std::cout<< " OK! "<<std::endl ;
 
 	int exx=0;
-	std::cout<<GridLogMessage << "Checking the checkerboard shift"<<std::endl;
+	std::cout<<GridLogMessage << "  Checking the     checkerboard shift "<< shift << " dir " << dir <<"... ";
 	for(coor[3]=0;coor[3]<latt_size[3];coor[3]++){
 	for(coor[2]=0;coor[2]<latt_size[2];coor[2]++){
 	for(coor[1]=0;coor[1]<latt_size[1];coor[1]++){
@@ -169,18 +191,26 @@ int main (int argc, char ** argv)
 
 	  std::vector<int> scoor(coor);
 	  scoor[dir] = (scoor[dir]+shift)%latt_size[dir];
-	  
+
+#ifdef POWER10	  
+	  std::vector<int> powers({1,10,100,1000});
+	  Integer slex = scoor[3]
+	    + 10        *scoor[2]
+	    + 100       *scoor[1]
+	    + 1000      *scoor[0];
+#else
+	  std::vector<int> powers = latt_size;
 	  Integer slex = scoor[0]
 	    + latt_size[0]*scoor[1]
 	    + latt_size[0]*latt_size[1]*scoor[2]
 	    + latt_size[0]*latt_size[1]*latt_size[2]*scoor[3];
-
+#endif
 	  Complex scm(slex);
 
 	  std::vector<int> peer(4);
 	  Complex ctmp=cmeo;
 	  Integer index=real(ctmp);
-	  Lexicographic::CoorFromIndex(peer,index,latt_size);
+	  Lexicographic::CoorFromIndex(peer,index,powers);
 
 	  double nrm = abs(cmeo()()()-scm);
 	  if (nrm != 0) {
@@ -189,10 +219,9 @@ int main (int argc, char ** argv)
 		     << cmeo()()()<<" expect "<<scm<<"  "<<nrm<<std::endl;
 	    std::cout<<"Got    "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	    index=real(scm);
-	    Lexicographic::CoorFromIndex(peer,index,latt_size);
+	    Lexicographic::CoorFromIndex(peer,index,powers);
 	    std::cout<<"Expect "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	    exx=1;
-
 	  }
 
 	  ctmp=cm;
@@ -205,16 +234,17 @@ int main (int argc, char ** argv)
 		     << cm()()()<<" expect "<<scm<<"  "<<nrm<<std::endl;
 	    std::cout<<"Got    "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	    index=real(scm);
-	    Lexicographic::CoorFromIndex(peer,index,latt_size);
+	    Lexicographic::CoorFromIndex(peer,index,powers);
 	    std::cout<<"Expect "<<index<<" " << peer[0]<<","<<peer[1]<<","<<peer[2]<<","<<peer[3]<<std::endl;
 	    exx=1;
-	  } else if (1) { 
+	  } else if (0) { 
 	    std::cout<<GridLogMessage<<"PASS shift "<< shift<<" in dir "<< dir
 		     <<" ["<<coor[0]<<","<<coor[1]<<","<<coor[2]<<","<<coor[3]<<"] = "
 		     << cm()()()<<" expect "<<scm<<"  "<<nrm<<std::endl;
 	  }
 	}}}}
 	if (exx) exit(-1);
+	std::cout<< " OK! "<<std::endl ;
 
     }
   }

@@ -115,8 +115,8 @@ int main (int argc, char ** argv)
   RNG.SeedFixedIntegers(seeds);
 
 
-  RealD alpha = 1.0;
-  RealD beta  = 0.03;
+  RealD alpha = 1.2;
+  RealD beta  = 0.1;
   RealD mu    = 0.0;
   int order = 11;
   ChebyshevLanczos<LatticeComplex> Cheby(alpha,beta,mu,order);
@@ -131,11 +131,10 @@ int main (int argc, char ** argv)
   const int Nit= 10000;
 
   int Nconv;
-  RealD eresid = 1.0e-8;
+  RealD eresid = 1.0e-6;
 
-  ImplicitlyRestartedLanczos<LatticeComplex> IRL(HermOp,X,Nk,Nm,eresid,Nit);
-
-  ImplicitlyRestartedLanczos<LatticeComplex> ChebyIRL(HermOp,Cheby,Nk,Nm,eresid,Nit);
+  ImplicitlyRestartedLanczos<LatticeComplex> IRL(HermOp,X,Nk,Nk,Nm,eresid,Nit);
+  ImplicitlyRestartedLanczos<LatticeComplex> ChebyIRL(HermOp,Cheby,Nk,Nk,Nm,eresid,Nit);
 
   LatticeComplex src(grid); gaussian(RNG,src);
   {
@@ -145,9 +144,9 @@ int main (int argc, char ** argv)
   }
   
   {
-    //    std::vector<RealD>          eval(Nm);
-    //    std::vector<LatticeComplex> evec(Nm,grid);
-    //    ChebyIRL.calc(eval,evec,src, Nconv);
+    std::vector<RealD>          eval(Nm);
+    std::vector<LatticeComplex> evec(Nm,grid);
+    ChebyIRL.calc(eval,evec,src, Nconv);
   }
 
   Grid_finalize();

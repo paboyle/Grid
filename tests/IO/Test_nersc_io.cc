@@ -38,9 +38,12 @@ int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
 
+  std::cout <<GridLogMessage<< " main "<<std::endl;
 
   std::vector<int> simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
+  //std::vector<int> latt_size  ({48,48,48,96});
+  //std::vector<int> latt_size  ({32,32,32,32});
   std::vector<int> latt_size  ({16,16,16,32});
   std::vector<int> clatt_size  ({4,4,4,8});
   int orthodir=3;
@@ -49,29 +52,32 @@ int main (int argc, char ** argv)
   GridCartesian     Fine(latt_size,simd_layout,mpi_layout);
   GridCartesian     Coarse(clatt_size,simd_layout,mpi_layout);
 
+
   GridParallelRNG   pRNGa(&Fine);
   GridParallelRNG   pRNGb(&Fine);
   GridSerialRNG     sRNGa;
   GridSerialRNG     sRNGb;
 
-  pRNGa.SeedRandomDevice();
-  sRNGa.SeedRandomDevice();
-  
+  std::cout <<GridLogMessage<< " seeding... "<<std::endl;
+  pRNGa.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
+  sRNGa.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
+  std::cout <<GridLogMessage<< " ...done "<<std::endl;
+
   std::string rfile("./ckpoint_rng.4000");
+  FieldMetaData rngheader;
   NerscIO::writeRNGState(sRNGa,pRNGa,rfile);
-  NerscField rngheader;
   NerscIO::readRNGState (sRNGb,pRNGb,rngheader,rfile);
 
   LatticeComplex tmpa(&Fine); random(pRNGa,tmpa);
   LatticeComplex tmpb(&Fine); random(pRNGb,tmpb);
   tmpa = tmpa - tmpb;
-  std::cout << " difference between restored randoms and orig "<<norm2( tmpa ) <<" / "<< norm2(tmpb)<<std::endl;
+  std::cout <<GridLogMessage<< " difference between restored randoms and orig "<<norm2( tmpa ) <<" / "<< norm2(tmpb)<<std::endl;
 
   ComplexD a,b;
 
   random(sRNGa,a);
   random(sRNGb,b);
-  std::cout << " serial RNG numbers "<<a<<" "<<b<<std::endl;
+  std::cout <<GridLogMessage<< " serial RNG numbers "<<a<<" "<<b<<std::endl;
 
   LatticeGaugeField Umu(&Fine);
   LatticeGaugeField Umu_diff(&Fine);
@@ -79,9 +85,20 @@ int main (int argc, char ** argv)
 
   std::vector<LatticeColourMatrix> U(4,&Fine);
   
-  NerscField header;
+  SU3::HotConfiguration(pRNGa,Umu);
+
+  FieldMetaData header;
   std::string file("./ckpoint_lat.4000");
+
+  int precision32 = 0;
+  int tworow      = 0;
+  NerscIO::writeConfiguration(Umu,file,tworow,precision32);
+  Umu_saved = Umu;
   NerscIO::readConfiguration(Umu,header,file);
+  Umu_diff = Umu - Umu_saved;
+  //std::cout << "Umu_save "<<Umu_saved[0]<<std::endl;
+  //std::cout << "Umu_read "<<Umu[0]<<std::endl;
+  std::cout <<GridLogMessage<< "norm2 Gauge Diff = "<<norm2(Umu_diff)<<std::endl;
 
   for(int mu=0;mu<Nd;mu++){
     U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
@@ -108,7 +125,6 @@ int main (int argc, char ** argv)
 #endif
   double vol = Fine.gSites();
   Complex PlaqScale(1.0/vol/6.0/3.0);
-  std::cout<<GridLogMessage <<"PlaqScale" << PlaqScale<<std::endl;
 
   std::vector<TComplex> Plaq_T(orthosz);
   sliceSum(Plaq,Plaq_T,Nd-1);
@@ -132,7 +148,6 @@ int main (int argc, char ** argv)
   Complex p  = TensorRemove(Tp);
   std::cout<<GridLogMessage << "calculated plaquettes " <<p*PlaqScale<<std::endl;
 
-
   Complex LinkTraceScale(1.0/vol/4.0/3.0);
   TComplex Tl = sum(LinkTrace);
   Complex l  = TensorRemove(Tl);
@@ -146,8 +161,6 @@ int main (int argc, char ** argv)
   std::string clone2x3("./ckpoint_clone2x3.4000");
   std::string clone3x3("./ckpoint_clone3x3.4000");
 
-  int precision32 = 1;
-  int tworow      = 1;
   NerscIO::writeConfiguration(Umu,clone3x3,0,precision32);
   NerscIO::writeConfiguration(Umu,clone2x3,1,precision32);
   

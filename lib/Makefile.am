@@ -1,4 +1,5 @@
 extra_sources=
+extra_headers=
 if BUILD_COMMS_MPI
   extra_sources+=communicator/Communicator_mpi.cc
   extra_sources+=communicator/Communicator_base.cc
@@ -9,8 +10,8 @@ if BUILD_COMMS_MPI3
   extra_sources+=communicator/Communicator_base.cc
 endif
 
-if BUILD_COMMS_MPI3L
-  extra_sources+=communicator/Communicator_mpi3_leader.cc
+if BUILD_COMMS_MPIT
+  extra_sources+=communicator/Communicator_mpit.cc
   extra_sources+=communicator/Communicator_base.cc
 endif
 
@@ -24,6 +25,12 @@ if BUILD_COMMS_NONE
   extra_sources+=communicator/Communicator_base.cc
 endif
 
+if BUILD_HDF5
+  extra_sources+=serialisation/Hdf5IO.cc 
+  extra_headers+=serialisation/Hdf5IO.h
+  extra_headers+=serialisation/Hdf5Type.h
+endif
+
 #
 # Libraries
 #
@@ -32,6 +39,9 @@ include Eigen.inc
 
 lib_LIBRARIES = libGrid.a
 
-libGrid_a_SOURCES              = $(CCFILES) $(extra_sources)
+CCFILES += $(extra_sources)
+HFILES  += $(extra_headers)
+
+libGrid_a_SOURCES              = $(CCFILES)
 libGrid_adir                   = $(pkgincludedir)
 nobase_dist_pkginclude_HEADERS = $(HFILES) $(eigen_files) Config.h

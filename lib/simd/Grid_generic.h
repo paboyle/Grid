@@ -5,8 +5,10 @@
     Source file: ./lib/simd/Grid_generic.h
 
     Copyright (C) 2015
+    Copyright (C) 2017
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+        Andrew Lawson    <andrew.lawson1991@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,51 +28,10 @@ Author: Antonin Portelli <antonin.portelli@me.com>
     *************************************************************************************/
     /*  END LEGAL */
 
-static_assert(GEN_SIMD_WIDTH % 16u == 0, "SIMD vector size is not an integer multiple of 16 bytes");
-
-//#define VECTOR_LOOPS
-
-// playing with compiler pragmas
-#ifdef VECTOR_LOOPS
-#ifdef __clang__
-#define VECTOR_FOR(i, w, inc)\
-_Pragma("clang loop unroll(full) vectorize(enable) interleave(enable) vectorize_width(w)")\
-for (unsigned int i = 0; i < w; i += inc)
-#elif defined __INTEL_COMPILER
-#define VECTOR_FOR(i, w, inc)\
-_Pragma("simd vectorlength(w*8)")\
-for (unsigned int i = 0; i < w; i += inc)
-#else
-#define VECTOR_FOR(i, w, inc)\
-for (unsigned int i = 0; i < w; i += inc)
-#endif
-#else
-#define VECTOR_FOR(i, w, inc)\
-for (unsigned int i = 0; i < w; i += inc)
-#endif
+#include "Grid_generic_types.h"
 
 namespace Grid {
 namespace Optimization {
-
-  // type traits giving the number of elements for each vector type
-  template <typename T> struct W;
-  template <> struct W<double> {
-    constexpr static unsigned int c = GEN_SIMD_WIDTH/16u;
-    constexpr static unsigned int r = GEN_SIMD_WIDTH/8u;
-  };
-  template <> struct W<float> {
-    constexpr static unsigned int c = GEN_SIMD_WIDTH/8u;
-    constexpr static unsigned int r = GEN_SIMD_WIDTH/4u;
-  };
-  
-  // SIMD vector types
-  template <typename T>
-  struct vec {
-    alignas(GEN_SIMD_WIDTH) T v[W<T>::r];
-  };
-  
-  typedef vec<float>   vecf;
-  typedef vec<double>  vecd;
   
   struct Vsplat{
     // Complex
@@ -99,11 +60,6 @@ namespace Optimization {
       
       return out;
     }
-    
-    // Integer
-    inline int operator()(Integer a){
-      return a;
-    }
   };
 
   struct Vstore{
@@ -112,11 +68,6 @@ namespace Optimization {
     inline void operator()(vec<T> a, T *D){
       *((vec<T> *)D) = a;
     }
-    //Integer
-    inline void operator()(int a, Integer *I){
-      *I = a;
-    }
-
   };
 
   struct Vstream{
@@ -151,11 +102,6 @@ namespace Optimization {
       
       return out;
     }
-
-    // Integer
-    inline int operator()(Integer *a){
-      return *a;
-    }
   };
 
   /////////////////////////////////////////////////////
@@ -174,11 +120,6 @@ namespace Optimization {
       
       return out;
     }
-    
-    //I nteger
-    inline int operator()(int a, int b){
-      return a + b;
-    }
   };
 
   struct Sub{
@@ -193,11 +134,6 @@ namespace Optimization {
       }
       
       return out;
-    }
-    
-    //Integer
-    inline int operator()(int a, int b){
-      return a-b;
     }
   };
 
@@ -214,16 +150,39 @@ namespace Optimization {
       
       return out;
     }
-    
-    // Integer
-    inline int operator()(int a, int b){
-      return a*b;
-    }
   };
   
   #define cmul(a, b, c, i)\
   c[i]   = a[i]*b[i]   - a[i+1]*b[i+1];\
   c[i+1] = a[i]*b[i+1] + a[i+1]*b[i];
+
+  struct MultRealPart{
+    template <typename T>
+    inline vec<T> operator()(vec<T> a, vec<T> b){
+      vec<T> out;
+      
+      VECTOR_FOR(i, W<T>::c, 1)
+      {
+         out.v[2*i]   = a.v[2*i]*b.v[2*i];
+         out.v[2*i+1] = a.v[2*i]*b.v[2*i+1];
+      }      
+      return out;
+    }
+  };
+
+  struct MaddRealPart{
+    template <typename T>
+    inline vec<T> operator()(vec<T> a, vec<T> b, vec<T> c){
+      vec<T> out;
+      
+      VECTOR_FOR(i, W<T>::c, 1)
+      {
+         out.v[2*i]   = a.v[2*i]*b.v[2*i] + c.v[2*i];
+         out.v[2*i+1] = a.v[2*i]*b.v[2*i+1] + c.v[2*i+1];
+      }      
+      return out;
+    }
+  };
   
   struct MultComplex{
     // Complex
@@ -320,6 +279,101 @@ namespace Optimization {
   
   #undef timesi
 
+  struct PrecisionChange {
+    static inline vech StoH (const vecf &a,const vecf &b) {
+      vech ret;
+#ifdef USE_FP16
+      vech *ha = (vech *)&a;
+      vech *hb = (vech *)&b;
+      const int nf = W<float>::r;
+      //      VECTOR_FOR(i, nf,1){ ret.v[i]    = ( (uint16_t *) &a.v[i])[1] ; }
+      //      VECTOR_FOR(i, nf,1){ ret.v[i+nf] = ( (uint16_t *) &b.v[i])[1] ; }
+      VECTOR_FOR(i, nf,1){ ret.v[i]    = ha->v[2*i+1]; }
+      VECTOR_FOR(i, nf,1){ ret.v[i+nf] = hb->v[2*i+1]; }
+#else
+      assert(0);
+#endif
+      return ret;
+    }
+    static inline void  HtoS (vech h,vecf &sa,vecf &sb) {
+#ifdef USE_FP16
+      const int nf = W<float>::r;
+      const int nh = W<uint16_t>::r;
+      vech *ha = (vech *)&sa;
+      vech *hb = (vech *)&sb;
+      VECTOR_FOR(i, nf, 1){ sb.v[i]= sa.v[i] = 0; }
+      //      VECTOR_FOR(i, nf, 1){ ( (uint16_t *) (&sa.v[i]))[1] = h.v[i];}
+      //      VECTOR_FOR(i, nf, 1){ ( (uint16_t *) (&sb.v[i]))[1] = h.v[i+nf];}
+      VECTOR_FOR(i, nf, 1){ ha->v[2*i+1]=h.v[i]; }
+      VECTOR_FOR(i, nf, 1){ hb->v[2*i+1]=h.v[i+nf]; }
+#else
+      assert(0);
+#endif
+    }
+    static inline vecf DtoS (vecd a,vecd b) {
+      const int nd = W<double>::r;
+      const int nf = W<float>::r;
+      vecf ret;
+      VECTOR_FOR(i, nd,1){ ret.v[i]    = a.v[i] ; }
+      VECTOR_FOR(i, nd,1){ ret.v[i+nd] = b.v[i] ; }
+      return ret;
+    }
+    static inline void StoD (vecf s,vecd &a,vecd &b) {
+      const int nd = W<double>::r;
+      VECTOR_FOR(i, nd,1){ a.v[i] = s.v[i] ; }
+      VECTOR_FOR(i, nd,1){ b.v[i] = s.v[i+nd] ; }
+    }
+    static inline vech DtoH (vecd a,vecd b,vecd c,vecd d) {
+      vecf sa,sb;
+      sa = DtoS(a,b);
+      sb = DtoS(c,d);
+      return StoH(sa,sb);
+    }
+    static inline void HtoD (vech h,vecd &a,vecd &b,vecd &c,vecd &d) {
+      vecf sa,sb;
+      HtoS(h,sa,sb);
+      StoD(sa,a,b);
+      StoD(sb,c,d);
+    }
+  };
+
+  //////////////////////////////////////////////
+  // Exchange support
+  struct Exchange{
+
+    template <typename T,int n>
+    static inline void ExchangeN(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+      const int w = W<T>::r;
+      unsigned int mask = w >> (n + 1);
+      //      std::cout << " Exchange "<<n<<" nsimd "<<w<<" mask 0x" <<std::hex<<mask<<std::dec<<std::endl;
+      VECTOR_FOR(i, w, 1) {	
+	int j1 = i&(~mask);
+	if  ( (i&mask) == 0 ) { out1.v[i]=in1.v[j1];}
+	else                  { out1.v[i]=in2.v[j1];}
+	int j2 = i|mask;
+	if  ( (i&mask) == 0 ) { out2.v[i]=in1.v[j2];}
+	else                  { out2.v[i]=in2.v[j2];}
+      }      
+    }
+    template <typename T>
+    static inline void Exchange0(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+      ExchangeN<T,0>(out1,out2,in1,in2);
+    };
+    template <typename T>
+    static inline void Exchange1(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+      ExchangeN<T,1>(out1,out2,in1,in2);
+    };
+    template <typename T>
+    static inline void Exchange2(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+      ExchangeN<T,2>(out1,out2,in1,in2);
+    };
+    template <typename T>
+    static inline void Exchange3(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+      ExchangeN<T,3>(out1,out2,in1,in2);
+    };
+  };
+
+
   //////////////////////////////////////////////
   // Some Template specialization
   #define perm(a, b, n, w)\
@@ -354,6 +408,11 @@ namespace Optimization {
   }
   
   struct Rotate{
+      
+    template <int n, typename T> static inline vec<T> tRotate(vec<T> in){
+      return rotate(in, n);
+    }
+    
     template <typename T>
     static inline vec<T> rotate(vec<T> in, int n){
       vec<T> out;
@@ -427,17 +486,24 @@ namespace Optimization {
 
   //Integer Reduce
   template<>
-  inline Integer Reduce<Integer, int>::operator()(int in){
-    return in;
+  inline Integer Reduce<Integer, veci>::operator()(veci in){
+    Integer a = 0;
+    
+    acc(in.v, a, 0, 1, W<Integer>::r);
+    
+    return a;
   }
+
+  #undef acc  // EIGEN compatibility
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Here assign types 
 
+  typedef Optimization::vech SIMD_Htype; // Reduced precision type
   typedef Optimization::vecf SIMD_Ftype; // Single precision type
   typedef Optimization::vecd SIMD_Dtype; // Double precision type
-  typedef int SIMD_Itype; // Integer type
+  typedef Optimization::veci SIMD_Itype; // Integer type
 
   // prefetch utilities
   inline void v_prefetch0(int size, const char *ptr){};
@@ -456,6 +522,8 @@ namespace Optimization {
   typedef Optimization::Div         DivSIMD;
   typedef Optimization::Mult        MultSIMD;
   typedef Optimization::MultComplex MultComplexSIMD;
+  typedef Optimization::MultRealPart MultRealPartSIMD;
+  typedef Optimization::MaddRealPart MaddRealPartSIMD;
   typedef Optimization::Conj        ConjSIMD;
   typedef Optimization::TimesMinusI TimesMinusISIMD;
   typedef Optimization::TimesI      TimesISIMD;

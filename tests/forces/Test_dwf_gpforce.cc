@@ -31,7 +31,7 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-#define parallel_for PARALLEL_FOR_LOOP for
+ 
 
 int main (int argc, char ** argv)
 {
@@ -54,8 +54,8 @@ int main (int argc, char ** argv)
 
   std::vector<int> seeds({1,2,3,4});
 
-  GridParallelRNG          RNG5(FGrid);  RNG5.SeedRandomDevice();
-  GridParallelRNG          RNG4(UGrid);  RNG4.SeedRandomDevice();
+  GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
+  GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
   
   FermionField phi        (FGrid); gaussian(RNG5,phi);
   FermionField Mphi       (FGrid); 
@@ -194,9 +194,9 @@ int main (int argc, char ** argv)
 
   }
 
-  Complex dSpred    = sum(dS);
-  Complex dSm       = sum(dSmom);
-  Complex dSm2      = sum(dSmom2);
+  ComplexD dSpred    = sum(dS);
+  ComplexD dSm       = sum(dSmom);
+  ComplexD dSm2      = sum(dSmom2);
 
 
   std::cout << GridLogMessage <<"Initial mom hamiltonian is "<< Hmom <<std::endl;
@@ -212,6 +212,7 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << "Total dS    "<< Hmomprime - Hmom + Sprime - S <<std::endl;
 
+  assert( fabs(real(Sprime-S-dSpred)) < 5.0 ) ;
 
   std::cout<< GridLogMessage << "Done" <<std::endl;
   Grid_finalize();

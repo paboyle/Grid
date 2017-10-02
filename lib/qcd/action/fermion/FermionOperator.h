@@ -48,6 +48,8 @@ namespace Grid {
 
       FermionOperator(const ImplParams &p= ImplParams()) : Impl(p) {};
 
+      virtual FermionField &tmp(void) = 0;
+
       GridBase * Grid(void)   { return FermionGrid(); };   // this is all the linalg routines need to know
       GridBase * RedBlackGrid(void) { return FermionRedBlackGrid(); };
 

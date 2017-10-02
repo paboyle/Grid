@@ -26,8 +26,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#include <Grid.h>
-#include <PerfCount.h>
+#include <Grid/qcd/action/fermion/FermionCore.h>
+#include <Grid/qcd/action/fermion/ImprovedStaggeredFermion5D.h>
+#include <Grid/perfmon/PerfCount.h>
 
 namespace Grid {
 namespace QCD {
@@ -53,53 +54,74 @@ ImprovedStaggeredFermion5D<Impl>::ImprovedStaggeredFermion5D(GaugeField &_Uthin,
   _FiveDimRedBlackGrid(&FiveDimRedBlackGrid),
   _FourDimGrid        (&FourDimGrid),
   _FourDimRedBlackGrid(&FourDimRedBlackGrid),
-  Stencil    (_FiveDimGrid,npoint,Even,directions,displacements),
-  StencilEven(_FiveDimRedBlackGrid,npoint,Even,directions,displacements), // source is Even
-  StencilOdd (_FiveDimRedBlackGrid,npoint,Odd ,directions,displacements), // source is Odd
+  Stencil    (&FiveDimGrid,npoint,Even,directions,displacements),
+  StencilEven(&FiveDimRedBlackGrid,npoint,Even,directions,displacements), // source is Even
+  StencilOdd (&FiveDimRedBlackGrid,npoint,Odd ,directions,displacements), // source is Odd
   mass(_mass),
   c1(_c1),
   c2(_c2),
   u0(_u0),
-  Umu(_FourDimGrid),
-  UmuEven(_FourDimRedBlackGrid),
-  UmuOdd (_FourDimRedBlackGrid),
-  UUUmu(_FourDimGrid),
-  UUUmuEven(_FourDimRedBlackGrid),
-  UUUmuOdd(_FourDimRedBlackGrid),
-  Lebesgue(_FourDimGrid),
-  LebesgueEvenOdd(_FourDimRedBlackGrid)
+  Umu(&FourDimGrid),
+  UmuEven(&FourDimRedBlackGrid),
+  UmuOdd (&FourDimRedBlackGrid),
+  UUUmu(&FourDimGrid),
+  UUUmuEven(&FourDimRedBlackGrid),
+  UUUmuOdd(&FourDimRedBlackGrid),
+  Lebesgue(&FourDimGrid),
+  LebesgueEvenOdd(&FourDimRedBlackGrid),
+  _tmp(&FiveDimRedBlackGrid)
 {
+
   // some assertions
   assert(FiveDimGrid._ndimension==5);
   assert(FourDimGrid._ndimension==4);
-  assert(FiveDimRedBlackGrid._ndimension==5);
   assert(FourDimRedBlackGrid._ndimension==4);
-  assert(FiveDimRedBlackGrid._checker_dim==1);
-  
-  // Dimension zero of the five-d is the Ls direction
+  assert(FiveDimRedBlackGrid._ndimension==5);
+  assert(FiveDimRedBlackGrid._checker_dim==1); // Don't checker the s direction
+
+  // extent of fifth dim and not spread out
   Ls=FiveDimGrid._fdimensions[0];
   assert(FiveDimRedBlackGrid._fdimensions[0]==Ls);
-  assert(FiveDimRedBlackGrid._processors[0] ==1);
-  assert(FiveDimRedBlackGrid._simd_layout[0]==1);
   assert(FiveDimGrid._processors[0]         ==1);
-  assert(FiveDimGrid._simd_layout[0]        ==1);
-  
+  assert(FiveDimRedBlackGrid._processors[0] ==1);
+
   // Other dimensions must match the decomposition of the four-D fields 
   for(int d=0;d<4;d++){
-    assert(FourDimRedBlackGrid._fdimensions[d]  ==FourDimGrid._fdimensions[d]);
-    assert(FiveDimRedBlackGrid._fdimensions[d+1]==FourDimGrid._fdimensions[d]);
-    
-    assert(FourDimRedBlackGrid._processors[d]   ==FourDimGrid._processors[d]);
-    assert(FiveDimRedBlackGrid._processors[d+1] ==FourDimGrid._processors[d]);
-    
-    assert(FourDimRedBlackGrid._simd_layout[d]  ==FourDimGrid._simd_layout[d]);
-    assert(FiveDimRedBlackGrid._simd_layout[d+1]==FourDimGrid._simd_layout[d]);
-    
-    assert(FiveDimGrid._fdimensions[d+1]        ==FourDimGrid._fdimensions[d]);
     assert(FiveDimGrid._processors[d+1]         ==FourDimGrid._processors[d]);
+    assert(FiveDimRedBlackGrid._processors[d+1] ==FourDimGrid._processors[d]);
+    assert(FourDimRedBlackGrid._processors[d]   ==FourDimGrid._processors[d]);
+
+    assert(FiveDimGrid._fdimensions[d+1]        ==FourDimGrid._fdimensions[d]);
+    assert(FiveDimRedBlackGrid._fdimensions[d+1]==FourDimGrid._fdimensions[d]);
+    assert(FourDimRedBlackGrid._fdimensions[d]  ==FourDimGrid._fdimensions[d]);
+
     assert(FiveDimGrid._simd_layout[d+1]        ==FourDimGrid._simd_layout[d]);
+    assert(FiveDimRedBlackGrid._simd_layout[d+1]==FourDimGrid._simd_layout[d]);
+    assert(FourDimRedBlackGrid._simd_layout[d]  ==FourDimGrid._simd_layout[d]);
   }
+
+  if (Impl::LsVectorised) { 
+
+    int nsimd = Simd::Nsimd();
     
+    // Dimension zero of the five-d is the Ls direction
+    assert(FiveDimGrid._simd_layout[0]        ==nsimd);
+    assert(FiveDimRedBlackGrid._simd_layout[0]==nsimd);
+
+    for(int d=0;d<4;d++){
+      assert(FourDimGrid._simd_layout[d]=1);
+      assert(FourDimRedBlackGrid._simd_layout[d]=1);
+      assert(FiveDimRedBlackGrid._simd_layout[d+1]==1);
+    }
+
+  } else {
+    
+    // Dimension zero of the five-d is the Ls direction
+    assert(FiveDimRedBlackGrid._simd_layout[0]==1);
+    assert(FiveDimGrid._simd_layout[0]        ==1);
+
+  }
+
   // Allocate the required comms buffer
   ImportGauge(_Uthin,_Ufat);
 }
@@ -112,8 +134,6 @@ void ImprovedStaggeredFermion5D<Impl>::ImportGauge(const GaugeField &_Uthin)
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::ImportGauge(const GaugeField &_Uthin,const GaugeField &_Ufat)
 {
-  GaugeLinkField U(GaugeGrid());
-
   ////////////////////////////////////////////////////////
   // Double Store should take two fields for Naik and one hop separately.
   ////////////////////////////////////////////////////////
@@ -126,7 +146,7 @@ void ImprovedStaggeredFermion5D<Impl>::ImportGauge(const GaugeField &_Uthin,cons
   ////////////////////////////////////////////////////////
   for (int mu = 0; mu < Nd; mu++) {
 
-    U = PeekIndex<LorentzIndex>(Umu, mu);
+    auto U = PeekIndex<LorentzIndex>(Umu, mu);
     PokeIndex<LorentzIndex>(Umu, U*( 0.5*c1/u0), mu );
     
     U = PeekIndex<LorentzIndex>(Umu, mu+4);
@@ -153,8 +173,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopDir(const FermionField &in, FermionFi
   Compressor compressor;
   Stencil.HaloExchange(in,compressor);
 
-  PARALLEL_FOR_LOOP
-  for(int ss=0;ss<Umu._grid->oSites();ss++){
+  parallel_for(int ss=0;ss<Umu._grid->oSites();ss++){
     for(int s=0;s<Ls;s++){
       int sU=ss;
       int sF = s+Ls*sU; 
@@ -210,35 +229,37 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOr
 						    const FermionField &in, FermionField &out,int dag)
 {
   Compressor compressor;
-
   int LLs = in._grid->_rdimensions[0];
-  
+
+
+
+  DhopTotalTime -= usecond();
+  DhopCommTime -= usecond();
   st.HaloExchange(in,compressor);
+  DhopCommTime += usecond();
   
+  DhopComputeTime -= usecond();
   // Dhop takes the 4d grid from U, and makes a 5d index for fermion
   if (dag == DaggerYes) {
-    PARALLEL_FOR_LOOP
-    for (int ss = 0; ss < U._grid->oSites(); ss++) {
-    for(int s=0;s<LLs;s++){
+    parallel_for (int ss = 0; ss < U._grid->oSites(); ss++) {
       int sU=ss;
-      int sF = s+LLs*sU; 
-      Kernels::DhopSiteDag(st, lo, U, UUU, st.CommBuf(), sF, sU, in, out);
-    }}
+      Kernels::DhopSiteDag(st, lo, U, UUU, st.CommBuf(), LLs, sU,in, out);
+    }
   } else {
-    PARALLEL_FOR_LOOP
-    for (int ss = 0; ss < U._grid->oSites(); ss++) {
-    for(int s=0;s<LLs;s++){
+    parallel_for (int ss = 0; ss < U._grid->oSites(); ss++) {
       int sU=ss;
-      int sF = s+LLs*sU; 
-      Kernels::DhopSite(st,lo,U,UUU,st.CommBuf(),sF,sU,in,out);
-    }}
+	Kernels::DhopSite(st,lo,U,UUU,st.CommBuf(),LLs,sU,in,out);
+    }
   }
+  DhopComputeTime += usecond();
+  DhopTotalTime   += usecond();
 }
 
 
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int dag)
 {
+  DhopCalls+=1;
   conformable(in._grid,FermionRedBlackGrid());    // verifies half grid
   conformable(in._grid,out._grid); // drops the cb check
 
@@ -250,6 +271,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopOE(const FermionField &in, FermionFie
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int dag)
 {
+  DhopCalls+=1;
   conformable(in._grid,FermionRedBlackGrid());    // verifies half grid
   conformable(in._grid,out._grid); // drops the cb check
 
@@ -261,6 +283,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopEO(const FermionField &in, FermionFie
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::Dhop(const FermionField &in, FermionField &out,int dag)
 {
+  DhopCalls+=2;
   conformable(in._grid,FermionGrid()); // verifies full grid
   conformable(in._grid,out._grid);
 
@@ -269,6 +292,54 @@ void ImprovedStaggeredFermion5D<Impl>::Dhop(const FermionField &in, FermionField
   DhopInternal(Stencil,Lebesgue,Umu,UUUmu,in,out,dag);
 }
 
+template<class Impl>
+void ImprovedStaggeredFermion5D<Impl>::Report(void) 
+{
+  std::vector<int> latt = GridDefaultLatt();          
+  RealD volume = Ls;  for(int mu=0;mu<Nd;mu++) volume=volume*latt[mu];
+  RealD NP = _FourDimGrid->_Nprocessors;
+  RealD NN = _FourDimGrid->NodeCount();
+
+  std::cout << GridLogMessage << "#### Dhop calls report " << std::endl;
+
+  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D Number of DhopEO Calls   : " 
+	    << DhopCalls   << std::endl;
+  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D TotalTime   /Calls       : " 
+	    << DhopTotalTime   / DhopCalls << " us" << std::endl;
+  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D CommTime    /Calls       : " 
+	    << DhopCommTime    / DhopCalls << " us" << std::endl;
+  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D ComputeTime/Calls        : " 
+	    << DhopComputeTime / DhopCalls << " us" << std::endl;
+
+  // Average the compute time
+  _FourDimGrid->GlobalSum(DhopComputeTime);
+  DhopComputeTime/=NP;
+
+  RealD mflops = 1154*volume*DhopCalls/DhopComputeTime/2; // 2 for red black counting
+  std::cout << GridLogMessage << "Average mflops/s per call                : " << mflops << std::endl;
+  std::cout << GridLogMessage << "Average mflops/s per call per rank       : " << mflops/NP << std::endl;
+  std::cout << GridLogMessage << "Average mflops/s per call per node       : " << mflops/NN << std::endl;
+  
+  RealD Fullmflops = 1154*volume*DhopCalls/(DhopTotalTime)/2; // 2 for red black counting
+  std::cout << GridLogMessage << "Average mflops/s per call (full)         : " << Fullmflops << std::endl;
+  std::cout << GridLogMessage << "Average mflops/s per call per rank (full): " << Fullmflops/NP << std::endl;
+  std::cout << GridLogMessage << "Average mflops/s per call per node (full): " << Fullmflops/NN << std::endl;
+
+  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D Stencil"    <<std::endl;  Stencil.Report();
+  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D StencilEven"<<std::endl;  StencilEven.Report();
+  std::cout << GridLogMessage << "ImprovedStaggeredFermion5D StencilOdd" <<std::endl;  StencilOdd.Report();
+}
+template<class Impl>
+void ImprovedStaggeredFermion5D<Impl>::ZeroCounters(void) 
+{
+  DhopCalls       = 0;
+  DhopTotalTime    = 0;
+  DhopCommTime    = 0;
+  DhopComputeTime = 0;
+  Stencil.ZeroCounters();
+  StencilEven.ZeroCounters();
+  StencilOdd.ZeroCounters();
+}
 
 /////////////////////////////////////////////////////////////////////////
 // Implement the general interface. Here we use SAME mass on all slices
@@ -335,8 +406,8 @@ void ImprovedStaggeredFermion5D<Impl>::MooeeInvDag(const FermionField &in,
 }
 
 
-
 FermOpStaggeredTemplateInstantiate(ImprovedStaggeredFermion5D);
+FermOpStaggeredVec5dTemplateInstantiate(ImprovedStaggeredFermion5D);
   
 }}
 

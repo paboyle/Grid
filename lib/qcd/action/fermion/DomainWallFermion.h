@@ -29,7 +29,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef  GRID_QCD_DOMAIN_WALL_FERMION_H
 #define  GRID_QCD_DOMAIN_WALL_FERMION_H
 
-#include <Grid/Grid.h>
+#include <Grid/qcd/action/fermion/FermionCore.h>
 
 namespace Grid {
 
@@ -68,7 +68,7 @@ namespace Grid {
 	Approx::zolotarev_data *zdata = Approx::higham(eps,this->Ls);// eps is ignored for higham
 	assert(zdata->n==this->Ls);
 	
-	//	std::cout<<GridLogMessage << "DomainWallFermion with Ls="<<this->Ls<<std::endl;
+	std::cout<<GridLogMessage << "DomainWallFermion with Ls="<<this->Ls<<std::endl;
 	// Call base setter
 	this->SetCoefficientsTanh(zdata,1.0,0.0);
 

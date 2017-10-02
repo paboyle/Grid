@@ -1,6 +1,6 @@
     /*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
 
     Source file: ./lib/qcd/action/fermion/CayleyFermion5D.h
 
@@ -29,9 +29,36 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef  GRID_QCD_CAYLEY_FERMION_H
 #define  GRID_QCD_CAYLEY_FERMION_H
 
+#include <Grid/qcd/action/fermion/WilsonFermion5D.h>
+
 namespace Grid {
 
   namespace QCD {
+
+     template<typename T> struct switcheroo   {
+       static inline int iscomplex()  { return 0; }
+
+       template<class vec>
+       static inline vec mult(vec a, vec b) {
+	 return real_mult(a,b);
+       }
+     };
+     template<> struct switcheroo<ComplexD> {
+       static inline int iscomplex()  { return 1; }
+
+       template<class vec>
+       static inline vec mult(vec a, vec b) {
+	 return a*b;
+       }
+     };
+     template<> struct switcheroo<ComplexF> {
+       static inline int iscomplex()  { return 1; }
+       template<class vec>
+       static inline vec mult(vec a, vec b) {
+	 return a*b;
+       }
+     };
+
 
     template<class Impl>
     class CayleyFermion5D : public WilsonFermion5D<Impl>
@@ -63,19 +90,31 @@ namespace Grid {
       // Instantiate different versions depending on Impl
       /////////////////////////////////////////////////////
       void M5D(const FermionField &psi,
-	       const FermionField &phi, 
+	       const FermionField &phi,
 	       FermionField &chi,
 	       std::vector<Coeff_t> &lower,
 	       std::vector<Coeff_t> &diag,
 	       std::vector<Coeff_t> &upper);
 
       void M5Ddag(const FermionField &psi,
-		  const FermionField &phi, 
+		  const FermionField &phi,
 		  FermionField &chi,
 		  std::vector<Coeff_t> &lower,
 		  std::vector<Coeff_t> &diag,
 		  std::vector<Coeff_t> &upper);
+
       void MooeeInternal(const FermionField &in, FermionField &out,int dag,int inv);
+      void MooeeInternalCompute(int dag, int inv, Vector<iSinglet<Simd> > & Matp, Vector<iSinglet<Simd> > & Matm);
+
+      void MooeeInternalAsm(const FermionField &in, FermionField &out,
+			    int LLs, int site,
+			    Vector<iSinglet<Simd> > &Matp,
+			    Vector<iSinglet<Simd> > &Matm);
+      void MooeeInternalZAsm(const FermionField &in, FermionField &out,
+			    int LLs, int site,
+			    Vector<iSinglet<Simd> > &Matp,
+			    Vector<iSinglet<Simd> > &Matm);
+
 
       virtual void   Instantiatable(void)=0;
 
@@ -86,7 +125,7 @@ namespace Grid {
 
       // Efficient support for multigrid coarsening
       virtual void  Mdir (const FermionField &in, FermionField &out,int dir,int disp);
-      
+
       void   Meooe5D       (const FermionField &in, FermionField &out);
       void   MeooeDag5D    (const FermionField &in, FermionField &out);
 
@@ -94,23 +133,29 @@ namespace Grid {
       RealD mass;
 
       // Cayley form Moebius (tanh and zolotarev)
-      std::vector<Coeff_t> omega; 
+      std::vector<Coeff_t> omega;
       std::vector<Coeff_t> bs;    // S dependent coeffs
-      std::vector<Coeff_t> cs;    
-      std::vector<Coeff_t> as;    
+      std::vector<Coeff_t> cs;
+      std::vector<Coeff_t> as;
       // For preconditioning Cayley form
-      std::vector<Coeff_t> bee;    
-      std::vector<Coeff_t> cee;    
-      std::vector<Coeff_t> aee;    
-      std::vector<Coeff_t> beo;    
-      std::vector<Coeff_t> ceo;    
-      std::vector<Coeff_t> aeo;    
+      std::vector<Coeff_t> bee;
+      std::vector<Coeff_t> cee;
+      std::vector<Coeff_t> aee;
+      std::vector<Coeff_t> beo;
+      std::vector<Coeff_t> ceo;
+      std::vector<Coeff_t> aeo;
       // LDU factorisation of the eeoo matrix
-      std::vector<Coeff_t> lee;    
-      std::vector<Coeff_t> leem;    
-      std::vector<Coeff_t> uee;    
-      std::vector<Coeff_t> ueem;    
-      std::vector<Coeff_t> dee;    
+      std::vector<Coeff_t> lee;
+      std::vector<Coeff_t> leem;
+      std::vector<Coeff_t> uee;
+      std::vector<Coeff_t> ueem;
+      std::vector<Coeff_t> dee;
+
+      // Matrices of 5d ee inverse params
+      Vector<iSinglet<Simd> >  MatpInv;
+      Vector<iSinglet<Simd> >  MatmInv;
+      Vector<iSinglet<Simd> >  MatpInvDag;
+      Vector<iSinglet<Simd> >  MatmInvDag;
 
       // Constructors
       CayleyFermion5D(GaugeField &_Umu,
@@ -120,7 +165,7 @@ namespace Grid {
 		      GridRedBlackCartesian &FourDimRedBlackGrid,
 		      RealD _mass,RealD _M5,const ImplParams &p= ImplParams());
 
-      
+
 
      void CayleyReport(void);
      void CayleyZeroCounters(void);
@@ -134,9 +179,9 @@ namespace Grid {
      double MooeeInvTime;
 
     protected:
-      void SetCoefficientsZolotarev(RealD zolohi,Approx::zolotarev_data *zdata,RealD b,RealD c);
-      void SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD b,RealD c);
-      void SetCoefficientsInternal(RealD zolo_hi,std::vector<Coeff_t> & gamma,RealD b,RealD c);
+      virtual void SetCoefficientsZolotarev(RealD zolohi,Approx::zolotarev_data *zdata,RealD b,RealD c);
+      virtual void SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD b,RealD c);
+      virtual void SetCoefficientsInternal(RealD zolo_hi,std::vector<Coeff_t> & gamma,RealD b,RealD c);
     };
 
   }
@@ -149,7 +194,9 @@ template void CayleyFermion5D< A >::M5Ddag(const FermionField &psi,const Fermion
 template void CayleyFermion5D< A >::MooeeInv    (const FermionField &psi, FermionField &chi); \
 template void CayleyFermion5D< A >::MooeeInvDag (const FermionField &psi, FermionField &chi);
 
-#define CAYLEY_DPERP_CACHE
+#undef  CAYLEY_DPERP_DENSE
+#define  CAYLEY_DPERP_CACHE
 #undef  CAYLEY_DPERP_LINALG
+#define CAYLEY_DPERP_VEC
 
 #endif

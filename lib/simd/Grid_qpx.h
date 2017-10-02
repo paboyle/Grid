@@ -5,8 +5,10 @@
  Source file: ./lib/simd/Grid_qpx.h
  
  Copyright (C) 2016
+ Copyright (C) 2017
  
  Author: Antonin Portelli <antonin.portelli@me.com>
+         Andrew Lawson    <andrew.lawson1991@gmail.com>
  
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -25,7 +27,20 @@
  See the full license in the file "LICENSE" in the top level distribution directory
  ******************************************************************************/
 
+#ifndef GEN_SIMD_WIDTH
+#define GEN_SIMD_WIDTH 32u
+#endif
+#include "Grid_generic_types.h" // Definitions for simulated integer SIMD.
+
 namespace Grid {
+
+#ifdef QPX
+#include <spi/include/kernel/location.h>
+#include <spi/include/l1p/types.h>
+#include <hwi/include/bqc/l1p_mmio.h>
+#include <hwi/include/bqc/A2_inlines.h>
+#endif
+
 namespace Optimization {
   typedef struct 
   {
@@ -62,8 +77,15 @@ namespace Optimization {
       return (vector4double){a, a, a, a};
     }
     //Integer
-    inline int operator()(Integer a){
-      return a;
+    inline veci operator()(Integer a){
+      veci out;
+      
+      VECTOR_FOR(i, W<Integer>::r, 1)
+      {
+        out.v[i] = a;
+      }
+      
+      return out;
     }
   };
   
@@ -88,9 +110,10 @@ namespace Optimization {
     inline void operator()(vector4double a, double *d){
       vec_st(a, 0, d);
     }
+
     //Integer
-    inline void operator()(int a, Integer *i){
-      i[0] = a;
+    inline void operator()(veci a, Integer *i){
+      *((veci *)i) = a;
     }
   };
   
@@ -110,7 +133,6 @@ namespace Optimization {
       f[2] = a.v2;
       f[3] = a.v3;
     }
-
     //Double
     inline void operator()(double *d, vector4double a){
       vec_st(a, 0, d);
@@ -142,11 +164,13 @@ namespace Optimization {
       return vec_ld(0, a);
     }
     // Integer
-    inline int operator()(Integer *a){
-      return a[0];
-    }
-    
-    
+    inline veci operator()(Integer *a){
+      veci out;
+      
+      out = *((veci *)a);
+      
+      return out;
+    }    
   };
   
   template <typename Out_type, typename In_type>
@@ -163,6 +187,22 @@ namespace Optimization {
   /////////////////////////////////////////////////////
   // Arithmetic operations
   /////////////////////////////////////////////////////
+
+  #define FLOAT_WRAP_3(fn, pref)\
+  pref vector4float fn(vector4float a, vector4float b, vector4float c)	\
+  {\
+    vector4double ad, bd, rd, cd;			\
+    vector4float  r;\
+    \
+    ad = Vset()(a);\
+    bd = Vset()(b);\
+    cd = Vset()(c);\
+    rd = fn(ad, bd, cd);				\
+    Vstore()(rd, r);\
+    \
+    return r;\
+  }
+
   #define FLOAT_WRAP_2(fn, pref)\
   pref vector4float fn(vector4float a, vector4float b)\
   {\
@@ -200,8 +240,15 @@ namespace Optimization {
     FLOAT_WRAP_2(operator(), inline)
 
     //Integer
-    inline int operator()(int a, int b){
-      return a + b;
+    inline veci operator()(veci a, veci b){
+      veci out;
+      
+      VECTOR_FOR(i, W<Integer>::r, 1)
+      {
+        out.v[i] = a.v[i] + b.v[i];
+      }
+      
+      return out;
     }
   };
   
@@ -215,11 +262,33 @@ namespace Optimization {
     FLOAT_WRAP_2(operator(), inline)
 
     //Integer
-    inline int operator()(int a, int b){
-      return a - b;
+    inline veci operator()(veci a, veci b){
+      veci out;
+      
+      VECTOR_FOR(i, W<Integer>::r, 1)
+      {
+        out.v[i] = a.v[i] - b.v[i];
+      }
+      
+      return out;
     }
   };
   
+  struct MultRealPart{
+    // Complex double
+    inline vector4double operator()(vector4double a, vector4double b){
+  //      return vec_xmul(b, a);
+        return vec_xmul(a, b);
+    }
+    FLOAT_WRAP_2(operator(), inline)
+  };
+  struct MaddRealPart{
+    // Complex double
+    inline vector4double operator()(vector4double a, vector4double b,vector4double c){
+      return vec_xmadd(a, b, c);
+    }
+    FLOAT_WRAP_3(operator(), inline)
+  };
   struct MultComplex{
     // Complex double
     inline vector4double operator()(vector4double a, vector4double b){
@@ -240,8 +309,15 @@ namespace Optimization {
     FLOAT_WRAP_2(operator(), inline)
 
     // Integer
-    inline int operator()(int a, int b){
-      return a*b;
+    inline veci operator()(veci a, veci b){
+      veci out;
+      
+      VECTOR_FOR(i, W<Integer>::r, 1)
+      {
+        out.v[i] = a.v[i]*b.v[i];
+      }
+      
+      return out;
     }
   };
 
@@ -255,8 +331,15 @@ namespace Optimization {
     FLOAT_WRAP_2(operator(), inline)
 
     // Integer
-    inline int operator()(int a, int b){
-      return a/b;
+    inline veci operator()(veci a, veci b){
+      veci out;
+      
+      VECTOR_FOR(i, W<Integer>::r, 1)
+      {
+        out.v[i] = a.v[i]/b.v[i];
+      }
+      
+      return out;
     }
   };
 
@@ -291,6 +374,84 @@ namespace Optimization {
     // Complex float
     FLOAT_WRAP_2(operator(), inline)
   };
+#define USE_FP16
+  struct PrecisionChange {
+    static inline vech StoH (const vector4float &a, const vector4float &b) {
+      vech ret;
+      std::cout << GridLogError << "QPX single to half precision conversion not yet supported." << std::endl;
+      assert(0);
+      return ret;
+    }
+    static inline void  HtoS (vech h, vector4float &sa, vector4float &sb) {
+      std::cout << GridLogError << "QPX half to single precision conversion not yet supported." << std::endl;
+      assert(0);
+    }
+    static inline vector4float DtoS (vector4double a, vector4double b) {
+      vector4float ret;
+      std::cout << GridLogError << "QPX double to single precision conversion not yet supported." << std::endl;
+      assert(0);
+      return ret;
+    }
+    static inline void StoD (vector4float s, vector4double &a, vector4double &b) {
+      std::cout << GridLogError << "QPX single to double precision conversion not yet supported." << std::endl;
+      assert(0);
+    }
+    static inline vech DtoH (vector4double a, vector4double b, 
+                             vector4double c, vector4double d) {
+      vech ret;
+      std::cout << GridLogError << "QPX double to half precision conversion not yet supported." << std::endl;
+      assert(0);
+      return ret;
+    }
+    static inline void HtoD (vech h, vector4double &a, vector4double &b, 
+                                     vector4double &c, vector4double &d) {
+      std::cout << GridLogError << "QPX half to double precision conversion not yet supported." << std::endl;
+      assert(0);
+    }
+  };
+
+  //////////////////////////////////////////////
+  // Exchange support
+#define FLOAT_WRAP_EXCHANGE(fn) \
+  static inline void fn(vector4float &out1, vector4float &out2, \
+                        vector4float in1,  vector4float in2) \
+  { \
+    vector4double out1d, out2d, in1d, in2d; \
+    in1d  = Vset()(in1);   \
+    in2d  = Vset()(in2);   \
+    fn(out1d, out2d, in1d, in2d); \
+    Vstore()(out1d, out1); \
+    Vstore()(out2d, out2); \
+  }
+
+  struct Exchange{
+
+    // double precision
+    static inline void Exchange0(vector4double &out1, vector4double &out2,
+                                 vector4double in1,  vector4double in2) {
+      out1 = vec_perm(in1, in2, vec_gpci(0145));
+      out2 = vec_perm(in1, in2, vec_gpci(02367));
+    }
+    static inline void Exchange1(vector4double &out1, vector4double &out2,
+                                 vector4double in1,  vector4double in2) {
+      out1 = vec_perm(in1, in2, vec_gpci(0426));
+      out2 = vec_perm(in1, in2, vec_gpci(01537));
+    }
+    static inline void Exchange2(vector4double &out1, vector4double &out2,
+                                 vector4double in1,  vector4double in2) {
+      assert(0);
+    }
+    static inline void Exchange3(vector4double &out1, vector4double &out2,
+                                 vector4double in1,  vector4double in2) {
+      assert(0);
+    }
+
+    // single precision
+    FLOAT_WRAP_EXCHANGE(Exchange0);
+    FLOAT_WRAP_EXCHANGE(Exchange1);
+    FLOAT_WRAP_EXCHANGE(Exchange2);
+    FLOAT_WRAP_EXCHANGE(Exchange3);
+  };
 
   struct Permute{
     //Complex double
@@ -315,19 +476,36 @@ namespace Optimization {
   };
   
   struct Rotate{
+
+    template<int n> static inline vector4double tRotate(vector4double v){ 
+      if ( n==1 ) return vec_perm(v, v, vec_gpci(01230));
+      if ( n==2 ) return vec_perm(v, v, vec_gpci(02301));
+      if ( n==3 ) return vec_perm(v, v, vec_gpci(03012));
+      return v;
+    };
+    template<int n> static inline vector4float tRotate(vector4float a)	
+    {					       
+      vector4double ad, rd;
+      vector4float  r;
+      ad = Vset()(a);
+      rd = tRotate<n>(ad);
+      Vstore()(rd, r);
+      return r;
+    };
+
     static inline vector4double rotate(vector4double v, int n){
       switch(n){
         case 0:
           return v;
           break;
         case 1:
-          return vec_perm(v, v, vec_gpci(01230));
+          return tRotate<1>(v);
           break;
         case 2:
-          return vec_perm(v, v, vec_gpci(02301));
+          return tRotate<2>(v);
           break;
         case 3:
-          return vec_perm(v, v, vec_gpci(03012));
+          return tRotate<3>(v);
           break;
         default: assert(0);
       }
@@ -336,11 +514,9 @@ namespace Optimization {
     static inline vector4float rotate(vector4float v, int n){
       vector4double vd, rd;
       vector4float  r;
-
       vd = Vset()(v);
       rd = rotate(vd, n);
       Vstore()(rd, r);
-
       return r;
     }
   };
@@ -399,18 +575,22 @@ namespace Optimization {
   
   //Integer Reduce
   template<>
-  inline Integer Reduce<Integer, int>::operator()(int in){
-    // FIXME unimplemented
-    printf("Reduce : Missing integer implementation -> FIX\n");
-    assert(0);
+  inline Integer Reduce<Integer, veci>::operator()(veci in){
+    Integer a = 0;
+    for (unsigned int i = 0; i < W<Integer>::r; ++i)
+    {
+        a += in.v[i];
+    }
+    return a;
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Here assign types
+typedef Optimization::vech         SIMD_Htype;  // Half precision type
 typedef Optimization::vector4float SIMD_Ftype;  // Single precision type
 typedef vector4double              SIMD_Dtype; // Double precision type
-typedef int                        SIMD_Itype; // Integer type
+typedef Optimization::veci         SIMD_Itype; // Integer type
 
 // prefetch utilities
 inline void v_prefetch0(int size, const char *ptr){};
@@ -430,6 +610,8 @@ typedef Optimization::Sub         SubSIMD;
 typedef Optimization::Mult        MultSIMD;
 typedef Optimization::Div         DivSIMD;
 typedef Optimization::MultComplex MultComplexSIMD;
+typedef Optimization::MultRealPart MultRealPartSIMD;
+typedef Optimization::MaddRealPart MaddRealPartSIMD;
 typedef Optimization::Conj        ConjSIMD;
 typedef Optimization::TimesMinusI TimesMinusISIMD;
 typedef Optimization::TimesI      TimesISIMD;

@@ -31,7 +31,7 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-#define parallel_for PARALLEL_FOR_LOOP for
+ 
 
 int main (int argc, char ** argv)
 {
@@ -91,7 +91,7 @@ int main (int argc, char ** argv)
   ////////////////////////////////////
   // Modify the gauge field a little 
   ////////////////////////////////////
-  RealD dt = 0.001;
+  RealD dt = 0.0001;
 
   LatticeColourMatrix mommu(UGrid); 
   LatticeColourMatrix forcemu(UGrid); 
@@ -128,7 +128,6 @@ int main (int argc, char ** argv)
   // Use derivative to estimate dS
   //////////////////////////////////////////////
 
-
   LatticeComplex dS(UGrid); dS = zero;
   for(int mu=0;mu<Nd;mu++){
     mommu   = PeekIndex<LorentzIndex>(UdSdU,mu);
@@ -142,10 +141,9 @@ int main (int argc, char ** argv)
 
     // Update PF action density
     dS = dS+trace(mommu*forcemu)*dt;
-
   }
 
-  Complex dSpred    = sum(dS);
+  ComplexD dSpred    = sum(dS);
 
   // From TwoFlavourPseudoFermion:
   //////////////////////////////////////////////////////
@@ -200,7 +198,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Sprime "<<Sprime<<std::endl;
   std::cout << GridLogMessage << "dS      "<<Sprime-S<<std::endl;
   std::cout << GridLogMessage << "predict dS    "<< dSpred <<std::endl;
-
+  assert( fabs(real(Sprime-S-dSpred)) < 1.0 ) ;
   std::cout<< GridLogMessage << "Done" <<std::endl;
   Grid_finalize();
 }

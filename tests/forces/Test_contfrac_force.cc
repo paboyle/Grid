@@ -31,8 +31,6 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-#define parallel_for PARALLEL_FOR_LOOP for
-
 int main (int argc, char ** argv)
 {
   Grid_init(&argc,&argv);
@@ -141,12 +139,13 @@ int main (int argc, char ** argv)
 
   }
 
-  Complex dSpred    = sum(dS);
+  ComplexD dSpred    = sum(dS);
 
   std::cout << GridLogMessage << " S      "<<S<<std::endl;
   std::cout << GridLogMessage << " Sprime "<<Sprime<<std::endl;
   std::cout << GridLogMessage << "dS      "<<Sprime-S<<std::endl;
   std::cout << GridLogMessage << "predict dS    "<< dSpred <<std::endl;
+  assert( fabs(real(Sprime-S-dSpred)) < 1.0e-2 ) ;
 
   std::cout<< GridLogMessage << "Done" <<std::endl;
   Grid_finalize();

@@ -91,9 +91,31 @@ namespace QCD {
 
 
 template <class Impl>
+void StaggeredKernels<Impl>::DhopSiteHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,DoubledGaugeField &UUU,
+					  SiteSpinor *buf, int LLs,
+					  int sU, const FermionField &in, FermionField &out, int dag) 
+{
+  SiteSpinor naik; 
+  SiteSpinor naive;
+  int oneLink  =0;
+  int threeLink=1;
+  int skew(0);
+  Real scale(1.0);
+  
+  if(dag) scale = -1.0;
+  
+  for(int s=0;s<LLs;s++){
+    int sF=s+LLs*sU;
+    DhopSiteDepthHand(st,lo,U,buf,sF,sU,in,naive,oneLink);
+    DhopSiteDepthHand(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
+    out._odata[sF] =scale*(naive+naik);
+  }
+}
+
+template <class Impl>
 void StaggeredKernels<Impl>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,
-					   SiteSpinor *buf, int sF,
-					   int sU, const FermionField &in, SiteSpinor &out,int threeLink) {
+					       SiteSpinor *buf, int sF,
+					       int sU, const FermionField &in, SiteSpinor &out,int threeLink) 
 {
   typedef typename Simd::scalar_type S;
   typedef typename Simd::vector_type V;
@@ -275,9 +297,26 @@ void StaggeredKernels<Impl>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &l
   vstream(out()()(1),even_1+odd_1);
   vstream(out()()(2),even_2+odd_2);
 
- }
 }
 
-FermOpStaggeredTemplateInstantiate(StaggeredKernels);
+#define DHOP_SITE_HAND_INSTANTIATE(IMPL)				\
+  template void StaggeredKernels<IMPL>::DhopSiteHand(StencilImpl &st, LebesgueOrder &lo, \
+						     DoubledGaugeField &U,DoubledGaugeField &UUU, \
+						     SiteSpinor *buf, int LLs, \
+						     int sU, const FermionField &in, FermionField &out, int dag);
+
+#define DHOP_SITE_DEPTH_HAND_INSTANTIATE(IMPL)				\
+  template void StaggeredKernels<IMPL>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, \
+							  SiteSpinor *buf, int sF, \
+							  int sU, const FermionField &in, SiteSpinor &out,int threeLink) ;
+DHOP_SITE_HAND_INSTANTIATE(StaggeredImplD);
+DHOP_SITE_HAND_INSTANTIATE(StaggeredImplF);
+DHOP_SITE_HAND_INSTANTIATE(StaggeredVec5dImplD);
+DHOP_SITE_HAND_INSTANTIATE(StaggeredVec5dImplF);
+
+DHOP_SITE_DEPTH_HAND_INSTANTIATE(StaggeredImplD);
+DHOP_SITE_DEPTH_HAND_INSTANTIATE(StaggeredImplF);
+DHOP_SITE_DEPTH_HAND_INSTANTIATE(StaggeredVec5dImplD);
+DHOP_SITE_DEPTH_HAND_INSTANTIATE(StaggeredVec5dImplF);
 
 }}

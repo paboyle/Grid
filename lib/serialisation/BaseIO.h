@@ -8,6 +8,7 @@
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,6 +33,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <type_traits>
 
 namespace Grid {
+  // Vector IO utilities ///////////////////////////////////////////////////////
   // helper function to read space-separated values
   template <typename T>
   std::vector<T> strToVec(const std::string s)
@@ -67,9 +69,126 @@ namespace Grid {
     return os;
   }
   
-  class Serializable {};
+  // Vector element trait //////////////////////////////////////////////////////  
+  template <typename T>
+  struct element
+  {
+    typedef T type;
+    static constexpr bool is_number = false;
+  };
   
+  template <typename T>
+  struct element<std::vector<T>>
+  {
+    typedef typename element<T>::type type;
+    static constexpr bool is_number = std::is_arithmetic<T>::value
+                                      or is_complex<T>::value
+                                      or element<T>::is_number;
+  };
+  
+  // Vector flattening utility class ////////////////////////////////////////////
+  // Class to flatten a multidimensional std::vector
+  template <typename V>
+  class Flatten
+  {
+  public:
+    typedef typename element<V>::type Element;
+  public:
+    explicit                     Flatten(const V &vector);
+    const V &                    getVector(void);
+    const std::vector<Element> & getFlatVector(void);
+    const std::vector<size_t>  & getDim(void);
+  private:
+    void accumulate(const Element &e);
+    template <typename W>
+    void accumulate(const W &v);
+    void accumulateDim(const Element &e);
+    template <typename W>
+    void accumulateDim(const W &v);
+  private:
+    const V              &vector_;
+    std::vector<Element> flatVector_;
+    std::vector<size_t>  dim_;
+  };
+  
+  // Class to reconstruct a multidimensional std::vector
+  template <typename V>
+  class Reconstruct
+  {
+  public:
+    typedef typename element<V>::type Element;
+  public:
+    Reconstruct(const std::vector<Element> &flatVector,
+                const std::vector<size_t> &dim);
+    const V &                    getVector(void);
+    const std::vector<Element> & getFlatVector(void);
+    const std::vector<size_t>  & getDim(void);
+  private:
+    void fill(std::vector<Element> &v);
+    template <typename W>
+    void fill(W &v);
+    void resize(std::vector<Element> &v, const unsigned int dim);
+    template <typename W>
+    void resize(W &v, const unsigned int dim);
+  private:
+    V                          vector_;
+    const std::vector<Element> &flatVector_;
+    std::vector<size_t>        dim_;
+    size_t                     ind_{0};
+    unsigned int               dimInd_{0};
+  };
+  
+  // Pair IO utilities /////////////////////////////////////////////////////////
+  // helper function to parse input in the format "<obj1 obj2>"
+  template <typename T1, typename T2>
+  inline std::istream & operator>>(std::istream &is, std::pair<T1, T2> &buf)
+  {
+    T1 buf1;
+    T2 buf2;
+    char c;
+
+    // Search for "pair" delimiters.
+    do
+    {
+      is.get(c);
+    } while (c != '<' && !is.eof());
+    if (c == '<')
+    {
+      int start = is.tellg();
+      do
+      {
+        is.get(c);
+      } while (c != '>' && !is.eof());
+      if (c == '>')
+      {
+        int end = is.tellg();
+        int psize = end - start - 1;
+
+        // Only read data between pair limiters.
+        is.seekg(start);
+        std::string tmpstr(psize, ' ');
+        is.read(&tmpstr[0], psize);
+        std::istringstream temp(tmpstr);
+        temp >> buf1 >> buf2;
+        buf = std::make_pair(buf1, buf2);
+        is.seekg(end);
+      }
+    }
+    is.peek();
+    return is;
+  }
+  
+  // output to streams for pairs
+  template <class T1, class T2>
+  inline std::ostream & operator<<(std::ostream &os, const std::pair<T1, T2> &p)
+  {
+    os << "<" << p.first << " " << p.second << ">";
+    return os;
+  }
+
+  // Abstract writer/reader classes ////////////////////////////////////////////
   // static polymorphism implemented using CRTP idiom
+  class Serializable;
   
   // Static abstract writer
   template <typename T>
@@ -84,12 +203,7 @@ namespace Grid {
     typename std::enable_if<std::is_base_of<Serializable, U>::value, void>::type
     write(const std::string& s, const U &output);
     template <typename U>
-    typename std::enable_if<std::is_enum<U>::value, void>::type
-    write(const std::string& s, const U &output);
-    template <typename U>
-    typename std::enable_if<
-      !(std::is_base_of<Serializable, U>::value or std::is_enum<U>::value),
-      void>::type
+    typename std::enable_if<!std::is_base_of<Serializable, U>::value, void>::type
     write(const std::string& s, const U &output);
   private:
     T *upcast;
@@ -102,18 +216,13 @@ namespace Grid {
   public:
     Reader(void);
     virtual ~Reader(void) = default;
-    void push(const std::string &s);
+    bool push(const std::string &s);
     void pop(void);
     template <typename U>
     typename std::enable_if<std::is_base_of<Serializable, U>::value, void>::type
     read(const std::string& s, U &output);
     template <typename U>
-    typename std::enable_if<std::is_enum<U>::value, void>::type
-    read(const std::string& s, U &output);
-    template <typename U>
-    typename std::enable_if<
-      !(std::is_base_of<Serializable, U>::value or std::is_enum<U>::value),
-      void>::type
+    typename std::enable_if<!std::is_base_of<Serializable, U>::value, void>::type
     read(const std::string& s, U &output);
   protected:
     template <typename U>
@@ -121,11 +230,163 @@ namespace Grid {
   private:
     T *upcast;
   };
-  
+
+   // What is the vtype
+  template<typename T> struct isReader {
+    static const bool value = false;
+  };
+  template<typename T> struct isWriter {
+    static const bool value = false;
+  }; 
+
+
+
   // Generic writer interface
-  template <typename T>
-  inline void push(Writer<T> &w, const std::string &s)
+  // serializable base class
+  class Serializable
   {
+  public:
+    template <typename T>
+    static inline void write(Writer<T> &WR,const std::string &s,
+                             const Serializable &obj)
+    {}
+    
+    template <typename T>
+    static inline void read(Reader<T> &RD,const std::string &s,
+                            Serializable &obj)
+    {}
+    
+    friend inline std::ostream & operator<<(std::ostream &os,
+                                            const Serializable &obj)
+    {
+      return os;
+    }
+  };
+  
+  // Flatten class template implementation /////////////////////////////////////
+  template <typename V>
+  void Flatten<V>::accumulate(const Element &e)
+  {
+    flatVector_.push_back(e);
+  }
+  
+  template <typename V>
+  template <typename W>
+  void Flatten<V>::accumulate(const W &v)
+  {
+    for (auto &e: v)
+    {
+      accumulate(e);
+    }
+  }
+  
+  template <typename V>
+  void Flatten<V>::accumulateDim(const Element &e) {};
+  
+  template <typename V>
+  template <typename W>
+  void Flatten<V>::accumulateDim(const W &v)
+  {
+    dim_.push_back(v.size());
+    accumulateDim(v[0]);
+  }
+  
+  template <typename V>
+  Flatten<V>::Flatten(const V &vector)
+  : vector_(vector)
+  {
+    accumulate(vector_);
+    accumulateDim(vector_);
+  }
+  
+  template <typename V>
+  const V & Flatten<V>::getVector(void)
+  {
+    return vector_;
+  }
+  
+  template <typename V>
+  const std::vector<typename Flatten<V>::Element> &
+  Flatten<V>::getFlatVector(void)
+  {
+    return flatVector_;
+  }
+  
+  template <typename V>
+  const std::vector<size_t> & Flatten<V>::getDim(void)
+  {
+    return dim_;
+  }
+  
+  // Reconstruct class template implementation /////////////////////////////////
+  template <typename V>
+  void Reconstruct<V>::fill(std::vector<Element> &v)
+  {
+    for (auto &e: v)
+    {
+      e = flatVector_[ind_++];
+    }
+  }
+  
+  template <typename V>
+  template <typename W>
+  void Reconstruct<V>::fill(W &v)
+  {
+    for (auto &e: v)
+    {
+      fill(e);
+    }
+  }
+  
+  template <typename V>
+  void Reconstruct<V>::resize(std::vector<Element> &v, const unsigned int dim)
+  {
+    v.resize(dim_[dim]);
+  }
+  
+  template <typename V>
+  template <typename W>
+  void Reconstruct<V>::resize(W &v, const unsigned int dim)
+  {
+    v.resize(dim_[dim]);
+    for (auto &e: v)
+    {
+      resize(e, dim + 1);
+    }
+  }
+  
+  template <typename V>
+  Reconstruct<V>::Reconstruct(const std::vector<Element> &flatVector,
+                              const std::vector<size_t> &dim)
+  : flatVector_(flatVector)
+  , dim_(dim)
+  {
+    resize(vector_, 0);
+    fill(vector_);
+  }
+  
+  template <typename V>
+  const V & Reconstruct<V>::getVector(void)
+  {
+    return vector_;
+  }
+  
+  template <typename V>
+  const std::vector<typename Reconstruct<V>::Element> &
+  Reconstruct<V>::getFlatVector(void)
+  {
+    return flatVector_;
+  }
+  
+  template <typename V>
+  const std::vector<size_t> & Reconstruct<V>::getDim(void)
+  {
+    return dim_;
+  }
+  
+  // Generic writer interface //////////////////////////////////////////////////
+  template <typename T>
+  inline void push(Writer<T> &w, const std::string &s) {
     w.push(s);
   }
   
@@ -149,15 +410,15 @@ namespace Grid {
   
   // Generic reader interface
   template <typename T>
-  inline void push(Reader<T> &r, const std::string &s)
+  inline bool push(Reader<T> &r, const std::string &s)
   {
-    r.push(s);
+    return r.push(s);
   }
   
   template <typename T>
-  inline void push(Reader<T> &r, const char *s)
+  inline bool push(Reader<T> &r, const char *s)
   {
-    r.push(std::string(s));
+    return r.push(std::string(s));
   }
   
   template <typename T>
@@ -201,23 +462,13 @@ namespace Grid {
   
   template <typename T>
   template <typename U>
-  typename std::enable_if<std::is_enum<U>::value, void>::type
-  Writer<T>::write(const std::string &s, const U &output)
-  {
-    EnumIO<U>::write(*this, s, output);
-  }
-  
-  template <typename T>
-  template <typename U>
-  typename std::enable_if<
-    !(std::is_base_of<Serializable, U>::value or std::is_enum<U>::value),
-    void>::type
+  typename std::enable_if<!std::is_base_of<Serializable, U>::value, void>::type
   Writer<T>::write(const std::string &s, const U &output)
   {
     upcast->writeDefault(s, output);
   }
   
-  // Reader template implementation ////////////////////////////////////////////
+  // Reader template implementation
   template <typename T>
   Reader<T>::Reader(void)
   {
@@ -225,9 +476,9 @@ namespace Grid {
   }
   
   template <typename T>
-  void Reader<T>::push(const std::string &s)
+  bool Reader<T>::push(const std::string &s)
   {
-    upcast->push(s);
+    return upcast->push(s);
   }
   
   template <typename T>
@@ -246,17 +497,7 @@ namespace Grid {
   
   template <typename T>
   template <typename U>
-  typename std::enable_if<std::is_enum<U>::value, void>::type
-  Reader<T>::read(const std::string &s, U &output)
-  {
-    EnumIO<U>::read(*this, s, output);
-  }
-  
-  template <typename T>
-  template <typename U>
-  typename std::enable_if<
-    !(std::is_base_of<Serializable, U>::value or std::is_enum<U>::value),
-    void>::type
+  typename std::enable_if<!std::is_base_of<Serializable, U>::value, void>::type
   Reader<T>::read(const std::string &s, U &output)
   {
     upcast->readDefault(s, output);
@@ -280,7 +521,6 @@ namespace Grid {
       abort();
     }
   }
-
 }
 
 #endif

@@ -31,7 +31,7 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-#define parallel_for PARALLEL_FOR_LOOP for
+ 
 
 int main (int argc, char ** argv)
 {
@@ -50,7 +50,7 @@ int main (int argc, char ** argv)
   std::vector<int> seeds({1,2,3,4});
 
   GridParallelRNG          pRNG(&Grid);
-  pRNG.SeedRandomDevice();
+  pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
   LatticeFermion phi        (&Grid); gaussian(pRNG,phi);
   LatticeFermion Mphi       (&Grid); 
@@ -76,6 +76,7 @@ int main (int argc, char ** argv)
 
   Dw.MDeriv(tmp , Mphi,  phi,DaggerNo );  UdSdU=tmp;
   Dw.MDeriv(tmp , phi,  Mphi,DaggerYes ); UdSdU=(UdSdU+tmp);
+
   // Take the trace
   UdSdU = Ta(UdSdU);
   
@@ -95,7 +96,8 @@ int main (int argc, char ** argv)
 
   for(int mu=0;mu<Nd;mu++){
 
-    SU3::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu); // Traceless antihermitian momentum; gaussian in lie alg
+    // Traceless antihermitian momentum; gaussian in lie alg
+    SU3::GaussianFundamentalLieAlgebraMatrix(pRNG, mommu); 
 
     Hmom -= real(sum(trace(mommu*mommu)));
 
@@ -176,9 +178,9 @@ int main (int argc, char ** argv)
 
   }
 
-  Complex dSpred    = sum(dS);
-  Complex dSm       = sum(dSmom);
-  Complex dSm2      = sum(dSmom2);
+  ComplexD dSpred    = sum(dS);
+  ComplexD dSm       = sum(dSmom);
+  ComplexD dSm2      = sum(dSmom2);
 
 
   std::cout << GridLogMessage <<"Initial mom hamiltonian is "<< Hmom <<std::endl;
@@ -194,6 +196,7 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage << "Total dS    "<< Hmomprime - Hmom + Sprime - S <<std::endl;
 
+  assert( fabs(real(Sprime-S-dSpred)) < 1.0 ) ;
 
   std::cout<< GridLogMessage << "Done" <<std::endl;
   Grid_finalize();

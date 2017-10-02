@@ -1,6 +1,6 @@
     /*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
 
     Source file: ./tests/Test_stencil.cc
 
@@ -33,9 +33,8 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-int main (int argc, char ** argv)
-{
-  Grid_init(&argc,&argv);
+int main(int argc, char ** argv) {
+  Grid_init(&argc, &argv);
 
   //  typedef LatticeColourMatrix Field;
   typedef LatticeComplex Field;
@@ -47,26 +46,28 @@ int main (int argc, char ** argv)
   std::vector<int> mpi_layout  = GridDefaultMpi();
 
   double volume = latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
-    
+
   GridCartesian Fine(latt_size,simd_layout,mpi_layout);
   GridRedBlackCartesian rbFine(latt_size,simd_layout,mpi_layout);
   GridParallelRNG       fRNG(&Fine);
 
-  //  fRNG.SeedRandomDevice();
+  //  fRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9});
   std::vector<int> seeds({1,2,3,4});
   fRNG.SeedFixedIntegers(seeds);
-  
+
   Field Foo(&Fine);
   Field Bar(&Fine);
   Field Check(&Fine);
   Field Diff(&Fine);
   LatticeComplex lex(&Fine);
 
-  lex = zero;  
+  lex = zero;
   random(fRNG,Foo);
   gaussian(fRNG,Bar);
 
-  /*
+  for (int i=0;i<simd_layout.size();i++){
+    std::cout <<" simd layout "<<i<<" = "<<simd_layout[i]<<std::endl;
+  }
   Integer stride =1000;
   {
     double nrm;
@@ -79,7 +80,6 @@ int main (int argc, char ** argv)
     }
     Foo=lex;
   }
-  */
 
   typedef CartesianStencil<vobj,vobj> Stencil;
     for(int dir=0;dir<4;dir++){
@@ -92,13 +92,12 @@ int main (int argc, char ** argv)
 	std::vector<int> displacements(npoint,disp);
 
 	Stencil myStencil(&Fine,npoint,0,directions,displacements);
-
 	std::vector<int> ocoor(4);
 	for(int o=0;o<Fine.oSites();o++){
 	  Fine.oCoorFromOindex(ocoor,o);
 	  ocoor[dir]=(ocoor[dir]+disp)%Fine._rdimensions[dir];
 	}
-	
+
 	SimpleCompressor<vobj> compress;
 	myStencil.HaloExchange(Foo,compress);
 
@@ -115,8 +114,11 @@ int main (int argc, char ** argv)
 	    permute(Check._odata[i],Foo._odata[SE->_offset],permute_type);
 	  else if (SE->_is_local)
 	    Check._odata[i] = Foo._odata[SE->_offset];
-	  else 
+	  else { 
 	    Check._odata[i] = myStencil.CommBuf()[SE->_offset];
+	    //	    std::cout << " receive "<<i<<" " << Check._odata[i]<<std::endl;
+	    //	    std::cout << " Foo     "<<i<<" " <<   Foo._odata[i]<<std::endl;
+	  }
 	}
 
 	Real nrmC = norm2(Check);
@@ -144,10 +146,15 @@ int main (int argc, char ** argv)
 		      <<") " <<check<<" vs "<<bar<<std::endl;
 	  }
 
-	 
+
 	}}}}
 
-
+	if (nrm > 1.0e-4) {
+	  for(int i=0;i<Check._odata.size();i++){
+	    std::cout << i<<" Check.odata "<<Check._odata[i]<< "\n"<<i<<" Bar.odata "<<Bar._odata[i]<<std::endl;
+	  }
+	}
+	if (nrm > 1.0e-4) exit(-1);
 
       }
     }
@@ -179,23 +186,21 @@ int main (int argc, char ** argv)
 	  Fine.oCoorFromOindex(ocoor,o);
 	  ocoor[dir]=(ocoor[dir]+disp)%Fine._rdimensions[dir];
 	}
-	
+
 	SimpleCompressor<vobj> compress;
 
-	EStencil.HaloExchange(EFoo,compress);
-	OStencil.HaloExchange(OFoo,compress);
-	
 	Bar = Cshift(Foo,dir,disp);
 
 	if ( disp & 0x1 ) {
 	  ECheck.checkerboard = Even;
 	  OCheck.checkerboard = Odd;
-	} else { 
+	} else {
 	  ECheck.checkerboard = Odd;
 	  OCheck.checkerboard = Even;
 	}
 
 	// Implement a stencil code that should agree with that darn cshift!
+	EStencil.HaloExchange(EFoo,compress);
 	for(int i=0;i<OCheck._grid->oSites();i++){
 	  int permute_type;
 	  StencilEntry *SE;
@@ -206,26 +211,27 @@ int main (int argc, char ** argv)
 	    permute(OCheck._odata[i],EFoo._odata[SE->_offset],permute_type);
 	  else if (SE->_is_local)
 	    OCheck._odata[i] = EFoo._odata[SE->_offset];
-	  else 
+	  else
 	    OCheck._odata[i] = EStencil.CommBuf()[SE->_offset];
 	}
+	OStencil.HaloExchange(OFoo,compress);
 	for(int i=0;i<ECheck._grid->oSites();i++){
 	  int permute_type;
 	  StencilEntry *SE;
 	  SE = OStencil.GetEntry(permute_type,0,i);
 	  //	  std::cout << "ODD source "<< i<<" -> " <<SE->_offset << " "<< SE->_is_local<<std::endl;
-	  
+
 	  if ( SE->_is_local && SE->_permute )
 	    permute(ECheck._odata[i],OFoo._odata[SE->_offset],permute_type);
 	  else if (SE->_is_local)
 	    ECheck._odata[i] = OFoo._odata[SE->_offset];
-	  else 
+	  else
 	    ECheck._odata[i] = OStencil.CommBuf()[SE->_offset];
 	}
-	
+
 	setCheckerboard(Check,ECheck);
 	setCheckerboard(Check,OCheck);
-	
+
 	Real nrmC = norm2(Check);
 	Real nrmB = norm2(Bar);
 	Diff = Check-Bar;
@@ -248,12 +254,13 @@ int main (int argc, char ** argv)
 	  diff =norm2(ddiff);
 	  if ( diff > 0){
 	    std::cout <<"Coor (" << coor[0]<<","<<coor[1]<<","<<coor[2]<<","<<coor[3] <<") "
-		      <<"shift "<<disp<<" dir "<< dir 
+		      <<"shift "<<disp<<" dir "<< dir
 		      << "  stencil impl " <<check<<" vs cshift impl "<<bar<<std::endl;
 	  }
-	 
+
 	}}}}
 
+	if (nrm > 1.0e-4) exit(-1);
 
       }
     }

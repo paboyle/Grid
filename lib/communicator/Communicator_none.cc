@@ -25,7 +25,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#include "Grid.h"
+#include <Grid/GridCore.h>
+
 namespace Grid {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -58,6 +59,8 @@ void CartesianCommunicator::GlobalSum(double &){}
 void CartesianCommunicator::GlobalSum(uint32_t &){}
 void CartesianCommunicator::GlobalSum(uint64_t &){}
 void CartesianCommunicator::GlobalSumVector(double *,int N){}
+void CartesianCommunicator::GlobalXOR(uint32_t &){}
+void CartesianCommunicator::GlobalXOR(uint64_t &){}
 
 void CartesianCommunicator::SendRecvPacket(void *xmit,
 					   void *recv,

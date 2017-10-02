@@ -1,6 +1,35 @@
 TODO:
 ---------------
 
+Large item work list:
+
+1)- BG/Q port and check
+2)- Christoph's local basis expansion Lanczos
+3)- Precision conversion and sort out localConvert      <-- partial
+
+  - Consistent linear solver flop count/rate -- PARTIAL, time but no flop/s yet
+4)- Physical propagator interface
+5)- Conserved currents
+6)- Multigrid Wilson and DWF, compare to other Multigrid implementations
+7)- HDCR resume
+
+Recent DONE 
+
+-- MultiRHS with spread out extra dim -- Go through filesystem with SciDAC I/O.  <--- DONE
+-- Lanczos Remove DenseVector, DenseMatrix; Use Eigen instead. <-- DONE
+-- GaugeFix into central location                      <-- DONE
+-- Scidac and Ildg metadata handling                   <-- DONE
+-- Binary I/O MPI2 IO                                  <-- DONE
+-- Binary I/O speed up & x-strips                      <-- DONE
+-- Cut down the exterior overhead                      <-- DONE
+-- Interior legs from SHM comms                        <-- DONE
+-- Half-precision comms                                <-- DONE
+-- Merge high precision reduction into develop         <-- DONE
+-- BlockCG, BCGrQ                                      <-- DONE
+-- multiRHS DWF; benchmark on Cori/BNL for comms elimination <-- DONE
+   -- slice* linalg routines for multiRHS, BlockCG    
+
+-----
 * Forces; the UdSdU  term in gauge force term is half of what I think it should
   be. This is a consequence of taking ONLY the first term in:
 
@@ -21,15 +50,7 @@ TODO:
   This means we must double the force in the Test_xxx_force routines, and is the origin of the factor of two.
   This 2x is applied by hand in the fermion routines and in the Test_rect_force routine.
 
-
-Policies:
-
-* Link smearing/boundary conds; Policy class based implementation ; framework more in place
-
 * Support different boundary conditions (finite temp, chem. potential ... )
-
-* Support different fermion representations? 
-  - contained entirely within the integrator presently
 
 - Sign of force term.
 
@@ -41,11 +62,6 @@ Policies:
 
 - Audit oIndex usage for cb behaviour
 
-- Rectangle gauge actions.
-  Iwasaki,
-  Symanzik,
-  ... etc...
-
 - Prepare multigrid for HMC. - Alternate setup schemes.
 
 - Support for ILDG --- ugly, not done
@@ -55,9 +71,11 @@ Policies:
 - FFTnD ?
 
 - Gparity; hand opt use template specialisation elegance to enable the optimised paths ?
+
 - Gparity force term; Gparity (R)HMC.
-- Random number state save restore
+
 - Mobius implementation clean up to rmove #if 0 stale code sequences
+
 - CG -- profile carefully, kernel fusion, whole CG performance measurements.
 
 ================================================================
@@ -90,6 +108,7 @@ Insert/Extract
 Not sure of status of this -- reverify. Things are working nicely now though.
 
 * Make the Tensor types and Complex etc... play more nicely.
+
   - TensorRemove is a hack, come up with a long term rationalised approach to Complex vs. Scalar<Scalar<Scalar<Complex > > >
     QDP forces use of "toDouble" to get back to non tensor scalar. This role is presently taken TensorRemove, but I
     want to introduce a syntax that does not require this.
@@ -112,6 +131,8 @@ Not sure of status of this -- reverify. Things are working nicely now though.
 RECENT
 ---------------
 
+  - Support different fermion representations? -- DONE
+  - contained entirely within the integrator presently
   - Clean up HMC                                                             -- DONE
   - LorentzScalar<GaugeField> gets Gauge link type (cleaner).                -- DONE
   - Simplified the integrators a bit.                                        -- DONE
@@ -123,6 +144,26 @@ RECENT
   - Parallel io improvements                                  -- DONE
   - Plaquette and link trace checks into nersc reader from the Grid_nersc_io.cc test. -- DONE
 
+
+DONE:
+- MultiArray -- MultiRHS done
+- ConjugateGradientMultiShift -- DONE
+- MCR                         -- DONE
+- Remez -- Mike or Boost?     -- DONE
+- Proto (ET)                  -- DONE
+- uBlas                       -- DONE ; Eigen
+- Potentially Useful Boost libraries -- DONE ; Eigen
+- Aligned allocator; memory pool -- DONE
+- Multiprecision              -- DONE
+- Serialization               -- DONE
+- Regex -- Not needed
+- Tokenize -- Why?
+
+- Random number state save restore -- DONE
+- Rectangle gauge actions. -- DONE
+  Iwasaki,
+  Symanzik,
+  ... etc...
 Done: Cayley, Partial , ContFrac force terms.
 
 DONE
@@ -207,6 +248,7 @@ Done
 FUNCTIONALITY: it pleases me to keep track of things I have done (keeps me arguably sane)
 ======================================================================================================
 
+* Link smearing/boundary conds; Policy class based implementation ; framework more in place -- DONE
 * Command line args for geometry, simd, etc. layout. Is it necessary to have -- DONE
   user pass these? Is this a QCD specific?
 

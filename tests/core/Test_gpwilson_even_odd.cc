@@ -50,7 +50,7 @@ int main (int argc, char ** argv)
   GridParallelRNG          pRNG(&Grid);
   //  std::vector<int> seeds({1,2,3,4});
   //  pRNG.SeedFixedIntegers(seeds);
-  pRNG.SeedRandomDevice();
+  pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
   typedef typename GparityWilsonFermionR::FermionField FermionField;
 

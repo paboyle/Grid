@@ -40,10 +40,10 @@ ImprovedStaggeredFermionStatic::displacements({1, 1, 1, 1, -1, -1, -1, -1, 3, 3,
 // Constructor and gauge import
 /////////////////////////////////
 
+
 template <class Impl>
-ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Uthin, GaugeField &_Ufat, GridCartesian &Fgrid,
-							 GridRedBlackCartesian &Hgrid, RealD _mass,
-							 RealD _c1, RealD _c2,RealD _u0,
+ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GridCartesian &Fgrid, GridRedBlackCartesian &Hgrid, 
+							 RealD _mass,
 							 const ImplParams &p)
     : Kernels(p),
       _grid(&Fgrid),
@@ -52,9 +52,6 @@ ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Uthin, Gau
       StencilEven(&Hgrid, npoint, Even, directions, displacements),  // source is Even
       StencilOdd(&Hgrid, npoint, Odd, directions, displacements),  // source is Odd
       mass(_mass),
-      c1(_c1),
-      c2(_c2),
-      u0(_u0),
       Lebesgue(_grid),
       LebesgueEvenOdd(_cbgrid),
       Umu(&Fgrid),
@@ -62,11 +59,32 @@ ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Uthin, Gau
       UmuOdd(&Hgrid),
       UUUmu(&Fgrid),
       UUUmuEven(&Hgrid),
-      UUUmuOdd(&Hgrid) 
+      UUUmuOdd(&Hgrid) ,
+      _tmp(&Hgrid)
 {
-  // Allocate the required comms buffer
+}
+
+template <class Impl>
+ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Uthin, GaugeField &_Ufat, GridCartesian &Fgrid,
+							 GridRedBlackCartesian &Hgrid, RealD _mass,
+							 RealD _c1, RealD _c2,RealD _u0,
+							 const ImplParams &p)
+  : ImprovedStaggeredFermion(Fgrid,Hgrid,_mass,p)
+{
+  c1=_c1;
+  c2=_c2;
+  u0=_u0;
   ImportGauge(_Uthin,_Ufat);
 }
+template <class Impl>
+ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Uthin,GaugeField &_Utriple, GaugeField &_Ufat, GridCartesian &Fgrid,
+							 GridRedBlackCartesian &Hgrid, RealD _mass,
+							 const ImplParams &p)
+  : ImprovedStaggeredFermion(Fgrid,Hgrid,_mass,p)
+{
+  ImportGaugeSimple(_Utriple,_Ufat);
+}
+
 
   ////////////////////////////////////////////////////////////
   // Momentum space propagator should be 
@@ -85,6 +103,34 @@ void ImprovedStaggeredFermion<Impl>::ImportGauge(const GaugeField &_Uthin)
   ImportGauge(_Uthin,_Uthin);
 };
 template <class Impl>
+void ImprovedStaggeredFermion<Impl>::ImportGaugeSimple(const GaugeField &_Utriple,const GaugeField &_Ufat) 
+{
+  /////////////////////////////////////////////////////////////////
+  // Trivial import; phases and fattening and such like preapplied
+  /////////////////////////////////////////////////////////////////
+  GaugeLinkField U(GaugeGrid());
+
+  for (int mu = 0; mu < Nd; mu++) {
+
+    U = PeekIndex<LorentzIndex>(_Utriple, mu);
+    PokeIndex<LorentzIndex>(UUUmu, U, mu );
+
+    U = adj( Cshift(U, mu, -3));
+    PokeIndex<LorentzIndex>(UUUmu, -U, mu+4 );
+
+    U = PeekIndex<LorentzIndex>(_Ufat, mu);
+    PokeIndex<LorentzIndex>(Umu, U, mu);
+
+    U = adj( Cshift(U, mu, -1));
+    PokeIndex<LorentzIndex>(Umu, -U, mu+4);
+
+  }
+  pickCheckerboard(Even, UmuEven,  Umu);
+  pickCheckerboard(Odd,  UmuOdd ,  Umu);
+  pickCheckerboard(Even, UUUmuEven,UUUmu);
+  pickCheckerboard(Odd,  UUUmuOdd, UUUmu);
+}
+template <class Impl>
 void ImprovedStaggeredFermion<Impl>::ImportGauge(const GaugeField &_Uthin,const GaugeField &_Ufat) 
 {
   GaugeLinkField U(GaugeGrid());
@@ -93,7 +139,6 @@ void ImprovedStaggeredFermion<Impl>::ImportGauge(const GaugeField &_Uthin,const 
   // Double Store should take two fields for Naik and one hop separately.
   ////////////////////////////////////////////////////////
   Impl::DoubleStore(GaugeGrid(), UUUmu, Umu, _Uthin, _Ufat );
-
 
   ////////////////////////////////////////////////////////
   // Apply scale factors to get the right fermion Kinetic term
@@ -338,12 +383,12 @@ void ImprovedStaggeredFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder
   if (dag == DaggerYes) {
     PARALLEL_FOR_LOOP
     for (int sss = 0; sss < in._grid->oSites(); sss++) {
-      Kernels::DhopSiteDag(st, lo, U, UUU, st.CommBuf(), sss, sss, in, out);
+      Kernels::DhopSiteDag(st, lo, U, UUU, st.CommBuf(), 1, sss, in, out);
     }
   } else {
     PARALLEL_FOR_LOOP
     for (int sss = 0; sss < in._grid->oSites(); sss++) {
-      Kernels::DhopSite(st, lo, U, UUU, st.CommBuf(), sss, sss, in, out);
+      Kernels::DhopSite(st, lo, U, UUU, st.CommBuf(), 1, sss, in, out);
     }
   }
 };

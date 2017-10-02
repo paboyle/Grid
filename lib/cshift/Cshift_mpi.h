@@ -74,7 +74,6 @@ template<class vobj> void Cshift_comms(Lattice<vobj>& ret,const Lattice<vobj> &r
   sshift[1] = rhs._grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,Odd);
 
   //  std::cout << "Cshift_comms dim "<<dimension<<"cb "<<rhs.checkerboard<<"shift "<<shift<<" sshift " << sshift[0]<<" "<<sshift[1]<<std::endl;
-
   if ( sshift[0] == sshift[1] ) {
     //    std::cout << "Single pass Cshift_comms" <<std::endl;
     Cshift_comms(ret,rhs,dimension,shift,0x3);
@@ -154,10 +153,8 @@ template<class vobj> void Cshift_comms(Lattice<vobj> &ret,const Lattice<vobj> &r
 			   (void *)&recv_buf[0],
 			   recv_from_rank,
 			   bytes);
+      grid->Barrier();
 
-      //      for(int i=0;i<words;i++){
-      //	std::cout << "SendRecv ["<<i<<"] snd "<<send_buf[i]<<" rcv " << recv_buf[i] << "  0x" << cbmask<<std::endl;
-      //      }
       Scatter_plane_simple (ret,recv_buf,dimension,x,cbmask);
     }
   }
@@ -243,7 +240,7 @@ template<class vobj> void  Cshift_comms_simd(Lattice<vobj> &ret,const Lattice<vo
 			     (void *)&recv_buf_extract[i][0],
 			     recv_from_rank,
 			     bytes);
-
+	grid->Barrier();
 	rpointers[i] = &recv_buf_extract[i][0];
       } else { 
 	rpointers[i] = &send_buf_extract[nbr_lane][0];
