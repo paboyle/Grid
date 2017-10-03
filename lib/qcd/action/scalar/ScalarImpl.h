@@ -89,13 +89,12 @@ class ScalarImplTypes {
 
   };
 
-
-  #define USE_FFT_ACCELERATION
-  #ifdef USE_FFT_ACCELERATION
-  #define FFT_MASS 0.707
+  #ifdef  USE_FFT_ACCELERATION
+  #ifndef FFT_MASS
+  #error  "USE_FFT_ACCELERATION is defined but not FFT_MASS"
   #endif
-
-
+  #endif
+  
   template <class S, unsigned int N>
   class ScalarAdjMatrixImplTypes {
   public:
