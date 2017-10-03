@@ -83,6 +83,7 @@ class CartesianCommunicator {
   std::vector<MPI_Comm> communicator_halo;
 
   typedef MPI_Request CommsRequest_t;
+
 #else 
   typedef int CommsRequest_t;
 #endif
@@ -147,12 +148,23 @@ class CartesianCommunicator {
   // Must call in Grid startup
   ////////////////////////////////////////////////
   static void Init(int *argc, char ***argv);
-  
+
   ////////////////////////////////////////////////
-  // Constructor of any given grid
+  // Constructors to sub-divide a parent communicator
+  // and default to comm world
   ////////////////////////////////////////////////
+  CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent);
   CartesianCommunicator(const std::vector<int> &pdimensions_in);
-  virtual ~CartesianCommunicator();
+
+ private:
+#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPIT) 
+  ////////////////////////////////////////////////
+  // Private initialise from an MPI communicator
+  // Can use after an MPI_Comm_split, but hidden from user so private
+  ////////////////////////////////////////////////
+  void InitFromMPICommunicator(const std::vector<int> &processors, MPI_Comm communicator_base);
+#endif
+ public:
   
   ////////////////////////////////////////////////////////////////////////////////////////
   // Wraps MPI_Cart routines, or implements equivalent on other impls

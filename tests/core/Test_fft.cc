@@ -47,7 +47,7 @@ int main (int argc, char ** argv)
     vol = vol * latt_size[d];
   }
   GridCartesian         GRID(latt_size,simd_layout,mpi_layout);
-  GridRedBlackCartesian RBGRID(latt_size,simd_layout,mpi_layout);
+  GridRedBlackCartesian RBGRID(&GRID);
 
   LatticeComplexD     one(&GRID);
   LatticeComplexD      zz(&GRID);

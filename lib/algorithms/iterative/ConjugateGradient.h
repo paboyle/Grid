@@ -52,8 +52,8 @@ class ConjugateGradient : public OperatorFunction<Field> {
         MaxIterations(maxit),
         ErrorOnNoConverge(err_on_no_conv){};
 
-  void operator()(LinearOperatorBase<Field> &Linop, const Field &src,
-                  Field &psi) {
+  void operator()(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi) {
+
     psi.checkerboard = src.checkerboard;
     conformable(psi, src);
 
