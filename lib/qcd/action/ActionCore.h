@@ -53,7 +53,7 @@ directory
 // Utility functions
 ////////////////////////////////////////////
 #include <Grid/qcd/utils/Metric.h>
-#include <Grid/qcd/utils/CovariantLaplacian.h>
+#include <Grid/qcd/utils/CovariantAdjointLaplacian.h>
 
 
 
