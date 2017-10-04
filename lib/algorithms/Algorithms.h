@@ -45,31 +45,16 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/iterative/SchurRedBlack.h>
 #include <Grid/algorithms/iterative/ConjugateGradientMultiShift.h>
 #include <Grid/algorithms/iterative/ConjugateGradientMixedPrec.h>
+#include <Grid/algorithms/iterative/BlockConjugateGradient.h>
 #include <Grid/algorithms/iterative/ConjugateGradientReliableUpdate.h>
-
-// Lanczos support
-//#include <Grid/algorithms/iterative/MatrixUtils.h>
 #include <Grid/algorithms/iterative/ImplicitlyRestartedLanczos.h>
 #include <Grid/algorithms/CoarsenedMatrix.h>
 #include <Grid/algorithms/FFT.h>
 
-// Eigen/lanczos
 // EigCg
-// MCR
 // Pcg
-// Multishift CG
 // Hdcg
 // GCR
 // etc..
-
-// integrator/Leapfrog
-// integrator/Omelyan
-// integrator/ForceGradient
-
-// montecarlo/hmc
-// montecarlo/rhmc
-// montecarlo/metropolis
-// etc...
-
 
 #endif
