@@ -103,13 +103,13 @@ int main(int argc, char *argv[])
         application.createModule<MSource::Z2>(srcName, z2Par);
 
         // Example of smearing of the source 
-        MSource::Laplacian::Par LapPar;
+        MSource::LaplaceSmearing::Par LapPar;
         LapPar.N = 10;
         LapPar.alpha = 0.1;
         LapPar.source = srcName;
         LapPar.gauge = "gauge";
         lapName = "z2smr_" + std::to_string(t);
-        application.createModule<MSource::Laplacian>(lapName, LapPar);
+        application.createModule<MSource::LaplaceSmearing>(lapName, LapPar);
 
         for (unsigned int i = 0; i < flavour.size(); ++i)
         {

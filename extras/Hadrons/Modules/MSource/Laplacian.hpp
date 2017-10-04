@@ -82,7 +82,7 @@ class TLaplacian : public Module<LaplacianPar>
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(Lap, TLaplacian<FIMPL>, MSource);
+MODULE_REGISTER_NS(LaplaceSmearing, TLaplacian<FIMPL>, MSource);
 
 /******************************************************************************
  *                       TLaplacian template implementation                         *
