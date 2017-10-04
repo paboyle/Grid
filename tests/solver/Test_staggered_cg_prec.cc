@@ -83,5 +83,14 @@ int main (int argc, char ** argv)
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
   CG(HermOpEO,src_o,res_o);
 
+  FermionField tmp(&RBGrid);
+
+  HermOpEO.Mpc(res_o,tmp);
+  std::cout << "check Mpc resid " << axpy_norm(tmp,-1.0,src_o,tmp)/norm2(src_o) << "\n";
+
+  RealD n1,n2;
+  HermOpEO.MpcDagMpc(res_o,tmp,n1,n2);
+  std::cout << "check MpcDagMpc resid " << axpy_norm(tmp,-1.0,src_o,tmp)/norm2(src_o) << "\n";
+
   Grid_finalize();
 }
