@@ -155,13 +155,10 @@ class CartesianCommunicator {
   ////////////////////////////////////////////////
   CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent);
   CartesianCommunicator(const std::vector<int> &pdimensions_in);
-
   virtual ~CartesianCommunicator();
 
-
  private:
-#if defined (GRID_COMMS_MPI) 
-  //|| defined (GRID_COMMS_MPI3) 
+#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPIT) 
   ////////////////////////////////////////////////
   // Private initialise from an MPI communicator
   // Can use after an MPI_Comm_split, but hidden from user so private
@@ -169,7 +166,7 @@ class CartesianCommunicator {
   void InitFromMPICommunicator(const std::vector<int> &processors, MPI_Comm communicator_base);
 #endif
  public:
->>>>>>> develop
+
   
   ////////////////////////////////////////////////////////////////////////////////////////
   // Wraps MPI_Cart routines, or implements equivalent on other impls
