@@ -77,7 +77,6 @@ void CayleyFermion5D<Impl>::DminusDag(const FermionField &psi, FermionField &chi
   }
 }
 
-
 template<class Impl> void CayleyFermion5D<Impl>::CayleyReport(void)
 {
   this->Report();
@@ -118,7 +117,6 @@ template<class Impl> void CayleyFermion5D<Impl>::CayleyZeroCounters(void)
   MooeeInvCalls=0;
   MooeeInvTime=0;
 }
-
 
 template<class Impl>  
 void CayleyFermion5D<Impl>::M5D   (const FermionField &psi, FermionField &chi)

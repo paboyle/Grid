@@ -557,12 +557,16 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
    }
    
  }
+    // Fixme: Gparity prop * link
+    inline void multLinkProp(SitePropagator &phi, const SiteDoubledGaugeField &U,
+                             const SitePropagator &chi, int mu)
+    {
+        assert(0);
+    }
 
- // Fixme: Gparity prop * link
- inline void multLinkProp(SitePropagator &phi, const SiteDoubledGaugeField &U,
-                          const SitePropagator &chi, int mu)
- {
-   assert(0);
+ template <class ref>
+ inline void loadLinkElement(Simd &reg, ref &memory) {
+   reg = memory;
  }
 
  inline void DoubleStore(GridBase *GaugeGrid,DoubledGaugeField &Uds,const GaugeField &Umu)

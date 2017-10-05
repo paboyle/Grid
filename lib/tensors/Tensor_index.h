@@ -175,7 +175,7 @@ class TensorIndexRecursion {
       }
     }
   template<class vtype,int N> inline static 
-    void pokeIndex(iVector<vtype,N> &ret, const iVector<decltype(TensorIndexRecursion<Level-1>::peekIndex(ret._internal[0],0)),N> &arg, int i,int j)
+    void pokeIndex(iVector<vtype,N> &ret, const iVector<decltype(TensorIndexRecursion<Level-1>::peekIndex(ret._internal[0],0,0)),N> &arg, int i,int j)
     {
       for(int ii=0;ii<N;ii++){
 	TensorIndexRecursion<Level-1>::pokeIndex(ret._internal[ii],arg._internal[ii],i,j);
@@ -191,7 +191,7 @@ class TensorIndexRecursion {
       }}
     }
   template<class vtype,int N> inline static 
-    void pokeIndex(iMatrix<vtype,N> &ret, const iMatrix<decltype(TensorIndexRecursion<Level-1>::peekIndex(ret._internal[0][0],0)),N> &arg, int i,int j)
+    void pokeIndex(iMatrix<vtype,N> &ret, const iMatrix<decltype(TensorIndexRecursion<Level-1>::peekIndex(ret._internal[0][0],0,0)),N> &arg, int i,int j)
     {
       for(int ii=0;ii<N;ii++){
       for(int jj=0;jj<N;jj++){

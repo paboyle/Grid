@@ -400,11 +400,13 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
       if ( sshift[0] == sshift[1] ) {
 	if (splice_dim) {
 	  splicetime-=usecond();
-	  same_node = same_node && GatherSimd(source,dimension,shift,0x3,compress,face_idx);
+	  auto tmp  = GatherSimd(source,dimension,shift,0x3,compress,face_idx);
+	  same_node = same_node && tmp;
 	  splicetime+=usecond();
 	} else { 
 	  nosplicetime-=usecond();
-	  same_node = same_node && Gather(source,dimension,shift,0x3,compress,face_idx);
+	  auto tmp  = Gather(source,dimension,shift,0x3,compress,face_idx);
+	  same_node = same_node && tmp;
 	  nosplicetime+=usecond();
 	}
       } else {
@@ -412,13 +414,15 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
 	  splicetime-=usecond();
 	  // if checkerboard is unfavourable take two passes
 	  // both with block stride loop iteration
-	  same_node = same_node && GatherSimd(source,dimension,shift,0x1,compress,face_idx);
-	  same_node = same_node && GatherSimd(source,dimension,shift,0x2,compress,face_idx);
+	  auto tmp1 =  GatherSimd(source,dimension,shift,0x1,compress,face_idx);
+	  auto tmp2 =  GatherSimd(source,dimension,shift,0x2,compress,face_idx);
+	  same_node = same_node && tmp1 && tmp2;
 	  splicetime+=usecond();
 	} else {
 	  nosplicetime-=usecond();
-	  same_node = same_node && Gather(source,dimension,shift,0x1,compress,face_idx);
-	  same_node = same_node && Gather(source,dimension,shift,0x2,compress,face_idx);
+	  auto tmp1 = Gather(source,dimension,shift,0x1,compress,face_idx);
+	  auto tmp2 = Gather(source,dimension,shift,0x2,compress,face_idx);
+	  same_node = same_node && tmp1 && tmp2;
 	  nosplicetime+=usecond();
 	}
       }
