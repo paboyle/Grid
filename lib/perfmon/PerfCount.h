@@ -90,9 +90,10 @@ inline uint64_t cyclecount(void){
 }
 #elif defined __x86_64__
 inline uint64_t cyclecount(void){ 
-  return __rdtsc();
+  //return __rdtsc();
   //  unsigned int dummy;
   // return __rdtscp(&dummy);
+return 0;   // <- remove this;
 }
 #else
 

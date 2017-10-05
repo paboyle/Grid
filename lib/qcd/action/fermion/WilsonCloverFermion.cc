@@ -253,25 +253,14 @@ void WilsonCloverFermion<Impl>::MooeeInternal(const FermionField &in, FermionFie
   }
  }
 
- 
-
-
-
- 
-
-/*
-  } else { 
-    out = *Clover * in;
-  }
-  */
-
-
 } // MooeeInternal
 
 // Derivative parts
 template <class Impl>
 void WilsonCloverFermion<Impl>::MDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag)
 {
+
+
   GaugeField tmp(mat._grid);
 
   conformable(U._grid, V._grid);
@@ -287,10 +276,64 @@ void WilsonCloverFermion<Impl>::MDeriv(GaugeField &mat, const FermionField &U, c
 
 // Derivative parts
 template <class Impl>
-void WilsonCloverFermion<Impl>::MooDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag)
+void WilsonCloverFermion<Impl>::MooDeriv(GaugeField &mat, const FermionField &X, const FermionField &Y, int dag)
 {
-  // Compute the 8 terms of the derivative
-  assert(0); // not implemented yet
+  
+GridBase *grid = mat._grid;
+
+GaugeLinkField Lambda(grid), tmp(grid);
+Lambda = zero; //Y*dag(X)+X*dag(Y);  // I have to peek spin and decide the color structure
+
+conformable(mat._grid, X._grid);
+conformable(Y._grid, X._grid);
+
+std::vector<GaugeLinkField> C1p(Nd,grid), C2p(Nd,grid), C3p(Nd,grid), C4p(Nd,grid);
+std::vector<GaugeLinkField> C1m(Nd,grid), C2m(Nd,grid), C3m(Nd,grid), C4m(Nd,grid);
+std::vector<GaugeLinkField> U(Nd, mat._grid);
+
+for (int mu = 0; mu < Nd; mu++) {
+ U[mu] = PeekIndex<LorentzIndex>(mat, mu);   
+ C1p[mu]=zero; C2p[mu]=zero; C3p[mu]=zero; C4p[mu]=zero; 
+ C1m[mu]=zero; C2m[mu]=zero; C3m[mu]=zero; C4m[mu]=zero;
+}
+
+
+for (int mu=0;mu<4;mu++){
+  for (int nu=0;nu<4;nu++){
+// insertion in upper staple
+    tmp = Impl::CovShiftIdentityBackward(Lambda, nu) * U[nu];
+    C1p[mu]+= Cshift(Impl::CovShiftForward(tmp, nu, Impl::CovShiftBackward(U[mu], mu, Cshift(U[nu], nu, -1))), mu, 1);
+
+    tmp = Impl::CovShiftIdentityForward(Lambda, mu) * U[mu];    
+    C2p[mu]+= Cshift(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(tmp, mu, Cshift(U[nu], nu, -1))), mu, 1);
+
+    tmp = Impl::CovShiftIdentityForward(Lambda, nu) * U[nu];    
+    C3p[mu]+= Cshift(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, Cshift(tmp, nu, -1))), mu, 1);
+   
+    tmp = Lambda;    
+    C4p[mu]+= Cshift(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, Cshift(U[nu], nu, -1))),mu,1) * tmp;
+
+// insertion in lower staple               
+    tmp = Impl::CovShiftIdentityForward(Lambda, nu) * U[nu];
+    C1m[mu]+= Cshift(Impl::CovShiftBackward(tmp, nu, Impl::CovShiftBackward(U[mu], mu, U[nu])), mu, 1);
+
+    tmp = Cshift(Cshift(Lambda, nu, 2),mu, 1) * U[mu];
+    C2m[mu]+= Cshift(Impl::CovShiftBackward(U[nu], nu, Impl::CovShiftBackward(tmp, mu, U[nu])), mu ,1);
+
+    tmp = Cshift(Lambda, nu, 2) * U[nu];
+    C3m[mu]+= Cshift(Impl::CovShiftBackward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, tmp)), mu, 1);
+
+    tmp = Lambda;
+    C4m[mu]+= Cshift(Impl::CovShiftBackward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, U[nu])), mu, 1)* tmp;
+  }
+}
+
+
+//Still implementing. Have to be tested, and understood how to project EO
+
+
+
+
 }
 
 // Derivative parts
