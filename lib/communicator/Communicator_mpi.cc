@@ -188,6 +188,21 @@ void CartesianCommunicator::Broadcast(int root,void* data, int bytes)
 		     communicator);
   assert(ierr==0);
 }
+void CartesianCommunicator::AllToAll(int dim,void  *in,void *out,int bytes)
+{
+  std::vector<int> row(_ndimension,1);
+  assert(dim>=0 && dim<_ndimension);
+
+  //  Split the communicator
+  row[dim] = _processors[dim];
+
+  CartesianCommunicator Comm(row,*this);
+  Comm.AllToAll(in,out,bytes);
+}
+void CartesianCommunicator::AllToAll(void  *in,void *out,int bytes)
+{
+  MPI_Alltoall(in ,bytes,MPI_BYTE,out,bytes,MPI_BYTE,communicator);
+}
   ///////////////////////////////////////////////////////
   // Should only be used prior to Grid Init finished.
   // Check for this?
@@ -206,6 +221,8 @@ void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
 		      communicator_world);
   assert(ierr==0);
 }
+
+
 
 }
 
