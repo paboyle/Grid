@@ -48,7 +48,7 @@ BEGIN_HADRONS_NAMESPACE
  */
 
 /******************************************************************************
- *                          Z2 stochastic source                              *
+ *                          Laplace smearing operator                         *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MSource)
 
@@ -85,7 +85,7 @@ class TLaplacian : public Module<LaplacianPar>
 MODULE_REGISTER_NS(LaplaceSmearing, TLaplacian<FIMPL>, MSource);
 
 /******************************************************************************
- *                       TLaplacian template implementation                         *
+ *                       TLaplacian template implementation                   *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>

@@ -4,7 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: ./lib/qcd/action/scalar/CovariantLaplacian.h
 
-Copyright (C) 2016
+Copyright (C) 2017
 
 Author: Guido Cossu <guido.cossu@ed.ac.uk>
 

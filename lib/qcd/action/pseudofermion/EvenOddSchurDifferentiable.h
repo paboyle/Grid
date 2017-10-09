@@ -38,7 +38,7 @@ namespace Grid{
     //         (Moe Moo)    (Moe Mee^-1    1 )   (0   Moo-Moe Mee^-1 Meo)  (0   1         )
     //
     // Determinant is det of middle factor
-    // This assumes Mee is indept of U.
+    // NOTICE: This assumes Mee is indept of U in computing the derivative
     //
     template<class Impl>
     class SchurDifferentiableOperator :  public SchurDiagMooeeOperator<FermionOperator<Impl>,typename Impl::FermionField> 
@@ -77,7 +77,7 @@ namespace Grid{
           //  X^dag Der_oe MeeInv Meo Y
           // Use Mooee as nontrivial but gauge field indept
           this->_Mat.Meooe   (V,tmp1);      // odd->even -- implicit -0.5 factor to be applied
-	  this->_Mat.MooeeInv(tmp1,tmp2);   // even->even 
+	        this->_Mat.MooeeInv(tmp1,tmp2);   // even->even 
           this->_Mat.MoeDeriv(ForceO,U,tmp2,DaggerNo);
           //  Accumulate X^dag M_oe MeeInv Der_eo Y
           this->_Mat.MeooeDag   (U,tmp1);    // even->odd -- implicit -0.5 factor to be applied
