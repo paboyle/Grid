@@ -38,6 +38,9 @@ void CartesianCommunicator::Init(int *argc, char *** arv)
   ShmInitGeneric();
 }
 
+CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent) 
+  : CartesianCommunicator(processors) {}
+
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {
   _processors = processors;
@@ -94,6 +97,10 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
 {
   assert(0);
+}
+void CartesianCommunicator::AllToAll(int dim,void  *in,void *out,int bytes)
+{
+  bcopy(in,out,bytes);
 }
 
 int  CartesianCommunicator::RankWorld(void){return 0;}

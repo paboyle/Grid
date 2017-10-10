@@ -230,6 +230,7 @@ namespace Grid {
       // Barrel shift and collect global pencil
       std::vector<int> lcoor(Nd), gcoor(Nd);
       result = source;
+      int pc = processor_coor[dim];
       for(int p=0;p<processors[dim];p++) {
         PARALLEL_REGION
         {
@@ -240,7 +241,8 @@ namespace Grid {
           for(int idx=0;idx<sgrid->lSites();idx++) {
             sgrid->LocalIndexToLocalCoor(idx,cbuf);
             peekLocalSite(s,result,cbuf);
-            cbuf[dim]+=p*L;
+	    cbuf[dim]+=((pc+p) % processors[dim])*L;
+	    //            cbuf[dim]+=p*L;
             pokeLocalSite(s,pgbuf,cbuf);
           }
         }
@@ -278,7 +280,6 @@ namespace Grid {
       flops+= flops_call*NN;
       
       // writing out result
-      int pc = processor_coor[dim];
       PARALLEL_REGION
       {
         std::vector<int> clbuf(Nd), cgbuf(Nd);
