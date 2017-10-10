@@ -192,10 +192,10 @@ namespace Grid {
 	ni=Mpc(in,tmp);
 	no=MpcDag(tmp,out);
       }
-      void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
+      virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
 	MpcDagMpc(in,out,n1,n2);
       }
-      void HermOp(const Field &in, Field &out){
+      virtual void HermOp(const Field &in, Field &out){
 	RealD n1,n2;
 	HermOpAndNorm(in,out,n1,n2);
       }
@@ -299,6 +299,106 @@ namespace Grid {
 	return axpy_norm(out,-1.0,tmp,in);
       }
     };
+
+      //
+    template<class Matrix,class Field>
+      class SchurStaggeredOperator :  public SchurOperatorBase<Field> {
+    protected:
+      Matrix &_Mat;
+    public:
+      SchurStaggeredOperator (Matrix &Mat): _Mat(Mat){};
+      virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
+	ComplexD dot;
+	n2=Mpc(in,out);
+	dot= innerProduct(in,out);
+	n1= real(dot);
+      }
+      virtual void HermOp(const Field &in, Field &out){
+	Mpc(in,out);
+      }
+      virtual  RealD Mpc      (const Field &in, Field &out) {
+	Field tmp(in._grid);
+	_Mat.Meooe(in,tmp);
+	_Mat.MooeeInv(tmp,out);
+	_Mat.MeooeDag(out,tmp);
+	_Mat.Mooee(in,out);
+        return axpy_norm(out,-1.0,tmp,out);
+      }
+      virtual  RealD MpcDag   (const Field &in, Field &out){
+	return Mpc(in,out);
+      }
+      virtual void MpcDagMpc(const Field &in, Field &out,RealD &ni,RealD &no) {
+	assert(0);// Never need with staggered
+      }
+    };
+    template<class Matrix,class Field> using SchurStagOperator = SchurStaggeredOperator<Matrix,Field>;
+
+  // This is specific to (Z)mobius fermions
+  template<class Matrix, class Field>
+    class KappaSimilarityTransform {
+  public:
+
+    typedef typename Matrix::Coeff_t                     Coeff_t;
+    std::vector<Coeff_t> kappa, kappaDag, kappaInv, kappaInvDag;
+
+    KappaSimilarityTransform (Matrix &zmob) {
+      for (int i=0;i<(int)zmob.bs.size();i++) {
+	Coeff_t k = 1.0 / ( 2.0 * (zmob.bs[i] *(4 - zmob.M5) + 1.0) );
+	kappa.push_back( k );
+	kappaDag.push_back( conj(k) );
+	kappaInv.push_back( 1.0 / k );
+	kappaInvDag.push_back( 1.0 / conj(k) );
+      }
+    }
+
+  template<typename vobj>
+    void sscale(const Lattice<vobj>& in, Lattice<vobj>& out, Coeff_t* s) {
+    GridBase *grid=out._grid;
+    out.checkerboard = in.checkerboard;
+    assert(grid->_simd_layout[0] == 1); // should be fine for ZMobius for now
+    int Ls = grid->_rdimensions[0];
+    parallel_for(int ss=0;ss<grid->oSites();ss++){
+      vobj tmp = s[ss % Ls]*in._odata[ss];
+      vstream(out._odata[ss],tmp);
+    }
+  }
+
+  RealD sscale_norm(const Field& in, Field& out, Coeff_t* s) {
+    sscale(in,out,s);
+    return norm2(out);
+  }
+
+  virtual RealD M       (const Field& in, Field& out) { return sscale_norm(in,out,&kappa[0]);   }
+  virtual RealD MDag    (const Field& in, Field& out) { return sscale_norm(in,out,&kappaDag[0]);}
+  virtual RealD MInv    (const Field& in, Field& out) { return sscale_norm(in,out,&kappaInv[0]);}
+  virtual RealD MInvDag (const Field& in, Field& out) { return sscale_norm(in,out,&kappaInvDag[0]);}
+
+  };
+
+  template<class Matrix,class Field>
+    class SchurDiagTwoKappaOperator :  public SchurOperatorBase<Field> {
+  public:
+    KappaSimilarityTransform<Matrix, Field> _S;
+    SchurDiagTwoOperator<Matrix, Field> _Mat;
+
+    SchurDiagTwoKappaOperator (Matrix &Mat): _S(Mat), _Mat(Mat) {};
+
+    virtual  RealD Mpc      (const Field &in, Field &out) {
+      Field tmp(in._grid);
+
+      _S.MInv(in,out);
+      _Mat.Mpc(out,tmp);
+      return _S.M(tmp,out);
+
+    }
+    virtual  RealD MpcDag   (const Field &in, Field &out){
+      Field tmp(in._grid);
+
+      _S.MDag(in,out);
+      _Mat.MpcDag(out,tmp);
+      return _S.MInvDag(tmp,out);
+    }
+  };
 
 
     /////////////////////////////////////////////////////////////
