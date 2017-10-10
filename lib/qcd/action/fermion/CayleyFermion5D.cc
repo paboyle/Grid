@@ -415,6 +415,8 @@ void CayleyFermion5D<Impl>::SetCoefficientsInternal(RealD zolo_hi,std::vector<Co
     assert(omega[i]!=Coeff_t(0.0));
     bs[i] = 0.5*(bpc/omega[i] + bmc);
     cs[i] = 0.5*(bpc/omega[i] - bmc);
+    std::cout<<GridLogMessage << "CayleyFermion5D "<<i<<" bs="<<bs[i]<<" cs="<<cs[i]<< std::endl;
+
   }
 
   ////////////////////////////////////////////////////////

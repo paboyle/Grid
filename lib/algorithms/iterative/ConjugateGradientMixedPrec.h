@@ -60,6 +60,7 @@ namespace Grid {
     }
   
     void operator() (const FieldD &src_d_in, FieldD &sol_d){
+
       TotalInnerIterations = 0;
 	
       GridStopWatch TotalTimer;

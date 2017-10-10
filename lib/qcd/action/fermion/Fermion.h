@@ -61,8 +61,8 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 #include <Grid/qcd/action/fermion/MobiusFermion.h>
 #include <Grid/qcd/action/fermion/MobiusEOFAFermion.h>
 #include <Grid/qcd/action/fermion/ZMobiusFermion.h>
-#include <Grid/qcd/action/fermion/SchurDiagTwoKappa.h>
 #include <Grid/qcd/action/fermion/ScaledShamirFermion.h>
+//#include <Grid/qcd/action/fermion/SchurDiagTwoKappa.h>
 #include <Grid/qcd/action/fermion/MobiusZolotarevFermion.h>
 #include <Grid/qcd/action/fermion/ShamirZolotarevFermion.h>
 #include <Grid/qcd/action/fermion/OverlapWilsonCayleyTanhFermion.h>
