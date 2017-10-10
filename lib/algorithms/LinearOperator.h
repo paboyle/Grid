@@ -162,15 +162,10 @@ namespace Grid {
 	_Mat.M(in,out);
       }
       void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
-	ComplexD dot;
-
 	_Mat.M(in,out);
 	
-	dot= innerProduct(in,out);
-	n1=real(dot);
-
-	dot = innerProduct(out,out);
-	n2=real(dot);
+	ComplexD dot= innerProduct(in,out); n1=real(dot);
+	n2=norm2(out);
       }
       void HermOp(const Field &in, Field &out){
 	_Mat.M(in,out);
@@ -192,10 +187,10 @@ namespace Grid {
 	ni=Mpc(in,tmp);
 	no=MpcDag(tmp,out);
       }
-      void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
+      virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
 	MpcDagMpc(in,out,n1,n2);
       }
-      void HermOp(const Field &in, Field &out){
+      virtual void HermOp(const Field &in, Field &out){
 	RealD n1,n2;
 	HermOpAndNorm(in,out,n1,n2);
       }
@@ -299,6 +294,39 @@ namespace Grid {
 	return axpy_norm(out,-1.0,tmp,in);
       }
     };
+
+      //
+    template<class Matrix,class Field>
+      class SchurStaggeredOperator :  public SchurOperatorBase<Field> {
+    protected:
+      Matrix &_Mat;
+    public:
+      SchurStaggeredOperator (Matrix &Mat): _Mat(Mat){};
+      virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
+	ComplexD dot;
+	n2 = Mpc(in,out);
+	dot= innerProduct(in,out);
+	n1 = real(dot);
+      }
+      virtual void HermOp(const Field &in, Field &out){
+	Mpc(in,out);
+      }
+      virtual  RealD Mpc      (const Field &in, Field &out) {
+	Field tmp(in._grid);
+	_Mat.Meooe(in,tmp);
+	_Mat.MooeeInv(tmp,out);
+	_Mat.MeooeDag(out,tmp);
+	_Mat.Mooee(in,out);
+        return axpy_norm(out,-1.0,tmp,out);
+      }
+      virtual  RealD MpcDag   (const Field &in, Field &out){
+	return Mpc(in,out);
+      }
+      virtual void MpcDagMpc(const Field &in, Field &out,RealD &ni,RealD &no) {
+	assert(0);// Never need with staggered
+      }
+    };
+    template<class Matrix,class Field> using SchurStagOperator = SchurStaggeredOperator<Matrix,Field>;
 
 
     /////////////////////////////////////////////////////////////
