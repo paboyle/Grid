@@ -76,7 +76,7 @@ int main (int argc, char ** argv)
 
   RealD mass=0.003;
   ImprovedStaggeredFermion5DR Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass); 
-  SchurDiagMooeeOperator<ImprovedStaggeredFermion5DR,FermionField> HermOp(Ds);
+  SchurStaggeredOperator<ImprovedStaggeredFermion5DR,FermionField> HermOp(Ds);
 
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
   int blockDim = 0;
@@ -88,7 +88,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Calling 4d CG "<<std::endl;
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
   ImprovedStaggeredFermionR Ds4d(Umu,Umu,*UGrid,*UrbGrid,mass);
-  SchurDiagMooeeOperator<ImprovedStaggeredFermionR,FermionField> HermOp4d(Ds4d);
+  SchurStaggeredOperator<ImprovedStaggeredFermionR,FermionField> HermOp4d(Ds4d);
   FermionField src4d(UGrid); random(pRNG,src4d);
   FermionField src4d_o(UrbGrid);   pickCheckerboard(Odd,src4d_o,src4d);
   FermionField result4d_o(UrbGrid); 
