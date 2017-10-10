@@ -207,7 +207,6 @@ namespace Grid {
       void OpDir  (const Field &in, Field &out,int dir,int disp) {
 	assert(0);
       }
-
     };
     template<class Matrix,class Field>
       class SchurDiagMooeeOperator :  public SchurOperatorBase<Field> {
@@ -265,7 +264,6 @@ namespace Grid {
 	return axpy_norm(out,-1.0,tmp,in);
       }
     };
-
     template<class Matrix,class Field>
       class SchurDiagTwoOperator :  public SchurOperatorBase<Field> {
     protected:
@@ -294,8 +292,15 @@ namespace Grid {
 	return axpy_norm(out,-1.0,tmp,in);
       }
     };
-
-      //
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    // Left  handed Moo^-1 ; (Moo - Moe Mee^-1 Meo) psi = eta  -->  ( 1 - Moo^-1 Moe Mee^-1 Meo ) psi = Moo^-1 eta
+    // Right handed Moo^-1 ; (Moo - Moe Mee^-1 Meo) Moo^-1 Moo psi = eta  -->  ( 1 - Moe Mee^-1 Meo ) Moo^-1 phi=eta ; psi = Moo^-1 phi
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    template<class Matrix,class Field> using SchurDiagOneRH = SchurDiagTwoOperator<Matrix,Field> ;
+    template<class Matrix,class Field> using SchurDiagOneLH = SchurDiagOneOperator<Matrix,Field> ;
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    //  Staggered use
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
     template<class Matrix,class Field>
       class SchurStaggeredOperator :  public SchurOperatorBase<Field> {
     protected:
@@ -303,9 +308,8 @@ namespace Grid {
     public:
       SchurStaggeredOperator (Matrix &Mat): _Mat(Mat){};
       virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
-	ComplexD dot;
 	n2 = Mpc(in,out);
-	dot= innerProduct(in,out);
+	ComplexD dot= innerProduct(in,out);
 	n1 = real(dot);
       }
       virtual void HermOp(const Field &in, Field &out){
