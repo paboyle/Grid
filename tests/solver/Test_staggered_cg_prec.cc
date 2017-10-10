@@ -79,7 +79,7 @@ int main (int argc, char ** argv)
   pickCheckerboard(Odd,src_o,src);
   res_o=zero;
 
-  SchurDiagMooeeOperator<ImprovedStaggeredFermionR,FermionField> HermOpEO(Ds);
+  SchurStaggeredOperator<ImprovedStaggeredFermionR,FermionField> HermOpEO(Ds);
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
   CG(HermOpEO,src_o,res_o);
 
