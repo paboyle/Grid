@@ -101,6 +101,10 @@ void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &
 {
   assert(0);
 }
+void CartesianCommunicator::AllToAll(int dim,void  *in,void *out,int bytes)
+{
+  bcopy(in,out,bytes);
+}
 
 int  CartesianCommunicator::RankWorld(void){return 0;}
 void CartesianCommunicator::Barrier(void){}

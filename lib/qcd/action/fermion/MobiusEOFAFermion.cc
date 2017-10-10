@@ -77,11 +77,11 @@ namespace QCD {
       }
     }
 
-    /***************************************************************
-    /* Additional EOFA operators only called outside the inverter.
-    /* Since speed is not essential, simple axpby-style
-    /* implementations should be fine.
-    /***************************************************************/
+    /****************************************************************
+     * Additional EOFA operators only called outside the inverter.  
+     * Since speed is not essential, simple axpby-style
+     * implementations should be fine.
+     ***************************************************************/
     template<class Impl>
     void MobiusEOFAFermion<Impl>::Omega(const FermionField& psi, FermionField& Din, int sign, int dag)
     {
@@ -194,8 +194,8 @@ namespace QCD {
     }
 
     /********************************************************************
-    /* Performance critical fermion operators called inside the inverter
-    /********************************************************************/
+     * Performance critical fermion operators called inside the inverter
+     ********************************************************************/
 
     template<class Impl>
     void MobiusEOFAFermion<Impl>::M5D(const FermionField& psi, FermionField& chi)

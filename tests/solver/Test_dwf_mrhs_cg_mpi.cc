@@ -83,102 +83,25 @@ int main (int argc, char ** argv)
 
   LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
 
-  ///////////////////////////////////////////////////////////////
-  // Bounce these fields to disk
-  ///////////////////////////////////////////////////////////////
-
-  std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-  std::cout << GridLogMessage << " Writing out in parallel view "<<std::endl;
-  std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-  emptyUserRecord record;
-  std::string file("./scratch.scidac");
-  std::string filef("./scratch.scidac.ferm");
+  /////////////////
+  // MPI only sends
+  /////////////////
   int me = UGrid->ThisRank();
+
   LatticeGaugeField s_Umu(SGrid);
   FermionField s_src(SFGrid);
-  FermionField s_src_split(SFGrid);
   FermionField s_tmp(SFGrid);
   FermionField s_res(SFGrid);
-
-  {
-    FGrid->Barrier();
-    ScidacWriter _ScidacWriter;
-    _ScidacWriter.open(file);
-    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-    std::cout << GridLogMessage << " Writing out gauge field "<<std::endl;
-    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-    _ScidacWriter.writeScidacFieldRecord(Umu,record);
-    _ScidacWriter.close();
-    FGrid->Barrier();
-    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-    std::cout << GridLogMessage << " Reading in gauge field "<<std::endl;
-    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-    ScidacReader  _ScidacReader;
-    _ScidacReader.open(file);
-    _ScidacReader.readScidacFieldRecord(s_Umu,record);
-    _ScidacReader.close();
-    FGrid->Barrier();
-    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-    std::cout << GridLogMessage << " Read in gauge field "<<std::endl;
-    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-  }
-
-
-  {
-    for(int n=0;n<nrhs;n++){
-
-      std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-      std::cout << GridLogMessage << " Writing out record "<<n<<std::endl;
-      std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-
-      std::stringstream filefn;      filefn << filef << "."<< n;
-      ScidacWriter _ScidacWriter;
-      _ScidacWriter.open(filefn.str());
-      _ScidacWriter.writeScidacFieldRecord(src[n],record);
-      _ScidacWriter.close();
-    }
-      
-    FGrid->Barrier();
-
-    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-    std::cout << GridLogMessage << " Reading back in the single process view "<<std::endl;
-    std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
-      
-    for(int n=0;n<nrhs;n++){
-      if ( n==me ) { 
-	std::stringstream filefn;	filefn << filef << "."<< n;
-	ScidacReader  _ScidacReader;
-	_ScidacReader.open(filefn.str());
-	_ScidacReader.readScidacFieldRecord(s_src,record);
-	_ScidacReader.close();
-      }
-    }
-    FGrid->Barrier();
-  }
 
   ///////////////////////////////////////////////////////////////
   // split the source out using MPI instead of I/O
   ///////////////////////////////////////////////////////////////
-  std::cout << GridLogMessage << " Splitting the grid data "<<std::endl;
-  Grid_split  (src,s_src_split);
-  std::cout << GridLogMessage << " Finished splitting the grid data "<<std::endl;
-  for(int n=0;n<nrhs;n++){
-    std::cout <<GridLogMessage<<"Full "<< n <<" "<< norm2(src[n])<<std::endl;
-  }
-  s_tmp = s_src_split - s_src;
-  for(int n=0;n<nrhs;n++){
-    FGrid->Barrier();
-    if ( n==me ) {
-      std::cerr << GridLogMessage<<"Split "<< me << " " << norm2(s_src_split) << " " << norm2(s_src)<< " diff " << norm2(s_tmp)<<std::endl;
-    }
-    FGrid->Barrier();
-  }
-
+  Grid_split  (Umu,s_Umu);
+  Grid_split  (src,s_src);
 
   ///////////////////////////////////////////////////////////////
   // Set up N-solvers as trivially parallel
   ///////////////////////////////////////////////////////////////
-
   RealD mass=0.01;
   RealD M5=1.8;
   DomainWallFermionR Dchk(Umu,*FGrid,*FrbGrid,*UGrid,*rbGrid,mass,M5);
@@ -210,14 +133,6 @@ int main (int argc, char ** argv)
   /////////////////////////////////////////////////////////////
   std::cout << GridLogMessage<< "Unsplitting the result"<<std::endl;
   Grid_unsplit(result,s_res);
-  /*
-  Grid_unsplit(src_chk,s_src);
-  for(int n=0;n<nrhs;n++){
-    tmp = src[n]-src_chk[n];
-    std::cout << " src_chk "<<n<<" "<<norm2(src_chk[n])<<" " <<norm2(src[n])<<" " <<norm2(tmp)<< std::endl;
-    std::cout << " diff " <<tmp<<std::endl;
-  }
-  */
 
   std::cout << GridLogMessage<< "Checking the residuals"<<std::endl;
   for(int n=0;n<nrhs;n++){

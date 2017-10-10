@@ -264,6 +264,23 @@ class CartesianCommunicator {
   // Broadcast a buffer and composite larger
   ////////////////////////////////////////////////////////////
   void Broadcast(int root,void* data, int bytes);
+
+  ////////////////////////////////////////////////////////////
+  // All2All down one dimension
+  ////////////////////////////////////////////////////////////
+  template<class T> void AllToAll(int dim,std::vector<T> &in, std::vector<T> &out){
+    assert(dim>=0);
+    assert(dim<_ndimension);
+    int numnode = _processors[dim];
+    //    std::cerr << " AllToAll in.size()  "<<in.size()<<std::endl;
+    //    std::cerr << " AllToAll out.size() "<<out.size()<<std::endl;
+    assert(in.size()==out.size());
+    size_t bytes=(in.size()*sizeof(T))/numnode;
+    assert((bytes*numnode) == in.size()*sizeof(T));
+    AllToAll(dim,(void *)&in[0],(void *)&out[0],bytes);
+  }
+  void AllToAll(int dim  ,void *in,void *out,int bytes);
+  void AllToAll(void  *in,void *out,int bytes);
   
   template<class obj> void Broadcast(int root,obj &data)
     {
