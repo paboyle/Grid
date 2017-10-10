@@ -53,13 +53,28 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
    *     M psi = eta
    ***********************
    *Odd
-   * i)   (D_oo)^{\dag} D_oo psi_o = (D_oo)^dag L^{-1}  eta_o
+   * i)                 D_oo psi_o =  L^{-1}  eta_o
    *                        eta_o' = (D_oo)^dag (eta_o - Moe Mee^{-1} eta_e)
+   *      (D_oo)^{\dag} D_oo psi_o = (D_oo)^dag L^{-1}  eta_o
    *Even
    * ii)  Mee psi_e + Meo psi_o = src_e
    *
    *   => sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
    *
+   * 
+   * TODO: Other options:
+   * 
+   * a) change checkerboards for Schur e<->o
+   *
+   * Left precon by Moo^-1
+   * b) Doo^{dag} M_oo^-dag Moo^-1 Doo psi_0 =  (D_oo)^dag M_oo^-dag Moo^-1 L^{-1}  eta_o
+   *                              eta_o'     = (D_oo)^dag  M_oo^-dag Moo^-1 (eta_o - Moe Mee^{-1} eta_e)
+   *
+   * Right precon by Moo^-1
+   * c) M_oo^-dag Doo^{dag} Doo Moo^-1 phi_0 = M_oo^-dag (D_oo)^dag L^{-1}  eta_o
+   *                              eta_o'     = M_oo^-dag (D_oo)^dag (eta_o - Moe Mee^{-1} eta_e)
+   *                              psi_o = M_oo^-1 phi_o
+   * TODO: Deflation 
    */
 namespace Grid {
 
@@ -155,12 +170,10 @@ namespace Grid {
     /////////////////////////////////////////////////////
     // Wrap the usual normal equations Schur trick
     /////////////////////////////////////////////////////
-  SchurRedBlackDiagMooeeSolve(OperatorFunction<Field> &HermitianRBSolver)  :
-     _HermitianRBSolver(HermitianRBSolver) 
-    { 
-      CBfactorise=0;
-    };
-
+  SchurRedBlackDiagMooeeSolve(OperatorFunction<Field> &HermitianRBSolver,int cb=0)  :  _HermitianRBSolver(HermitianRBSolver) 
+  { 
+    CBfactorise=cb;
+  };
     template<class Matrix>
       void operator() (Matrix & _Matrix,const Field &in, Field &out){
 
