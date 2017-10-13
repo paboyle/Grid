@@ -85,6 +85,7 @@ class Logger {
 protected:
   Colours &Painter;
   int active;
+  int timing_mode;
   static int timestamp;
   std::string name, topName;
   std::string COLOUR;
@@ -101,20 +102,24 @@ public:
     name(nm),
     topName(topNm),
     Painter(col_class),
+    timing_mode(0),
     COLOUR(col) {} ;
   
   void Active(int on) {active = on;};
   int  isActive(void) {return active;};
   static void Timestamp(int on) {timestamp = on;};
-  
+  void Reset(void) { StopWatch.Reset(); }
+  void TimingMode(int on) { timing_mode = on; if(on) Reset(); }
+
   friend std::ostream& operator<< (std::ostream& stream, Logger& log){
 
     if ( log.active ) {
-      stream << log.background()<< std::setw(8) << std::left << log.topName << log.background()<< " : ";
-      stream << log.colour() << std::setw(10) << std::left << log.name << log.background() << " : ";
+      stream << log.background()<<  std::left << log.topName << log.background()<< " : ";
+      stream << log.colour() <<  std::left << log.name << log.background() << " : ";
       if ( log.timestamp ) {
 	StopWatch.Stop();
 	GridTime now = StopWatch.Elapsed();
+	if ( log.timing_mode==1 ) StopWatch.Reset();
 	StopWatch.Start();
 	stream << log.evidence()<< now << log.background() << " : " ;
       }
@@ -135,6 +140,8 @@ public:
 
 void GridLogConfigure(std::vector<std::string> &logstreams);
 
+extern GridLogger GridLogIRL;
+extern GridLogger GridLogSolver;
 extern GridLogger GridLogError;
 extern GridLogger GridLogWarning;
 extern GridLogger GridLogMessage;

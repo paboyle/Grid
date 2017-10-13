@@ -244,6 +244,7 @@ until convergence
       
       // Implicitly shifted QR transformations
       Qt = Eigen::MatrixXd::Identity(Nm,Nm);
+
       for(int ip=k2; ip<Nm; ++ip){ 
 	// Eigen replacement for qr_decomp ???
 	qr_decomp(eval,lme,Nm,Nm,Qt,eval2[ip],k1,Nm);
@@ -319,7 +320,7 @@ until convergence
     } // end of iter loop
     
     std::cout << GridLogMessage <<"**************************************************************************"<< std::endl;
-    std::cout<< GridLogError    <<" ImplicitlyRestartedLanczos::calc() NOT converged.";
+    std::cout << GridLogError   <<" ImplicitlyRestartedLanczos::calc() NOT converged.";
     std::cout << GridLogMessage <<"**************************************************************************"<< std::endl;
     abort();
 	

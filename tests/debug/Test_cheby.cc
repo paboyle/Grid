@@ -37,8 +37,15 @@ RealD InverseApproximation(RealD x){
 RealD SqrtApproximation(RealD x){
   return std::sqrt(x);
 }
+RealD Approximation32(RealD x){
+  return std::pow(x,-1.0/32.0);
+}
+RealD Approximation2(RealD x){
+  return std::pow(x,-1.0/2.0);
+}
+
 RealD StepFunction(RealD x){
-  if ( x<0.1 )  return 1.0;
+  if ( x<10.0 )  return 1.0;
   else return 0.0;
 }
 
@@ -55,7 +62,6 @@ int main (int argc, char ** argv)
   double     hi=64.0;
 
   Chebyshev<LatticeFermion> ChebyInv(lo,hi,2000,InverseApproximation);
-
 
   {
     std::ofstream of("chebyinv");
@@ -78,7 +84,6 @@ int main (int argc, char ** argv)
 
 
   ChebyStep.JacksonSmooth();
-
   {
     std::ofstream of("chebystepjack");
     ChebyStep.csv(of);
@@ -99,6 +104,31 @@ int main (int argc, char ** argv)
     std::ofstream of("chebyNE");
     ChebyNE.csv(of);
   }
+
+  lo=0.0;
+  hi=4.0;
+  Chebyshev<LatticeFermion> Cheby32(lo,hi,2000,Approximation32);
+  {
+    std::ofstream of("cheby32");
+    Cheby32.csv(of);
+  }
+  Cheby32.JacksonSmooth();
+  {
+    std::ofstream of("cheby32jack");
+    Cheby32.csv(of);
+  }
+
+  Chebyshev<LatticeFermion> ChebySqrt(lo,hi,2000,Approximation2);
+  {
+    std::ofstream of("chebysqrt");
+    ChebySqrt.csv(of);
+  }
+  ChebySqrt.JacksonSmooth();
+  {
+    std::ofstream of("chebysqrtjack");
+    ChebySqrt.csv(of);
+  }
+
 
   Grid_finalize();
 }

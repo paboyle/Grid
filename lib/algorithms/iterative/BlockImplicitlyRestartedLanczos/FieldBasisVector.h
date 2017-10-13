@@ -48,7 +48,7 @@ class BasisFieldVector {
     }
   }
 
-  void rotate(std::vector<RealD>& Qt,int j0, int j1, int k0,int k1,int Nm) {
+  void rotate(Eigen::MatrixXd& Qt,int j0, int j1, int k0,int k1,int Nm) {
     
     GridBase* grid = _v[0]._grid;
       
@@ -62,7 +62,7 @@ class BasisFieldVector {
 	
 	for(int j=j0; j<j1; ++j){
 	  for(int k=k0; k<k1; ++k){
-	    B[j] +=Qt[k+Nm*j] * _v[k]._odata[ss];
+	    B[j] +=Qt(j,k) * _v[k]._odata[ss];
 	  }
 	}
 	for(int j=j0; j<j1; ++j){
@@ -70,7 +70,6 @@ class BasisFieldVector {
 	}
       }
     }
-
   }
 
   size_t size() const {

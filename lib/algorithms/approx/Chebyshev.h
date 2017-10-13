@@ -83,8 +83,10 @@ namespace Grid {
 
   public:
     void csv(std::ostream &out){
-	RealD diff = hi-lo;
-      for (RealD x=lo-0.2*diff; x<hi+0.2*diff; x+=(hi-lo)/1000) {
+      RealD diff = hi-lo;
+      RealD delta = (hi-lo)*1.0e-9;
+      for (RealD x=lo; x<hi; x+=delta) {
+	delta*=1.1;
 	RealD f = approx(x);
 	out<< x<<" "<<f<<std::endl;
       }
