@@ -100,19 +100,6 @@ void write_history(char* fn, std::vector<RealD>& hist) {
   fclose(f);
 }
 
-template<typename Field>
-class FunctionHermOp : public LinearFunction<Field> {
-public:
-  OperatorFunction<Field>   & _poly;
-  LinearOperatorBase<Field> &_Linop;
-
-  FunctionHermOp(OperatorFunction<Field> & poly,LinearOperatorBase<Field>& linop) : _poly(poly), _Linop(linop) {
-  }
-
-  void operator()(const Field& in, Field& out) {
-    _poly(_Linop,in,out);
-  }
-};
 
 template<typename Field>
 class CheckpointedLinearFunction : public LinearFunction<Field> {
@@ -268,19 +255,6 @@ public:
   }
 };
 
-template<typename Field>
-class PlainHermOp : public LinearFunction<Field> {
-public:
-  LinearOperatorBase<Field> &_Linop;
-
-  PlainHermOp(LinearOperatorBase<Field>& linop) : _Linop(linop) {
-  }
-
-  void operator()(const Field& in, Field& out) {
-    _Linop.HermOp(in,out);
-  }
-};
-
 template<typename vtype, int N > using CoarseSiteFieldGeneral = iScalar< iVector<vtype, N> >;
 template<int N> using CoarseSiteFieldD = CoarseSiteFieldGeneral< vComplexD, N >;
 template<int N> using CoarseSiteFieldF = CoarseSiteFieldGeneral< vComplexF, N >;
@@ -326,7 +300,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
     Op2 = &Op2plain;
   }
   ProjectedHermOp<CoarseLatticeFermion<Nstop1>,LatticeFermion> Op2nopoly(pr,HermOp);
-  ImplicitlyRestartedLanczos<CoarseLatticeFermion<Nstop1> > IRL2(*Op2,*Op2,Nstop2,Nk2,Nm2,resid2,betastp2,MaxIt,MinRes2);
+  ImplicitlyRestartedLanczos<CoarseLatticeFermion<Nstop1> > IRL2(*Op2,*Op2,Nstop2,Nk2,Nm2,resid2,MaxIt,betastp2,MinRes2);
 
 
   src_coarse = 1.0;
@@ -648,7 +622,7 @@ int main (int argc, char ** argv) {
   }
 
   // First round of Lanczos to get low mode basis
-  ImplicitlyRestartedLanczos<LatticeFermion> IRL1(Op1,Op1test,Nstop1,Nk1,Nm1,resid1,betastp1,MaxIt,MinRes1);
+  ImplicitlyRestartedLanczos<LatticeFermion> IRL1(Op1,Op1test,Nstop1,Nk1,Nm1,resid1,MaxIt,betastp1,MinRes1);
   int Nconv;
 
   char tag[1024];

@@ -186,9 +186,9 @@ public:
 			    int _Nk, // sought vecs
 			    int _Nm, // spare vecs
 			    RealD _eresid, // resid in lmdue deficit 
-			    RealD _betastp, // if beta(k) < betastp: converged
 			    int _MaxIter, // Max iterations
-			    int _MinRestart, int _orth_period = 1,
+			    RealD _betastp=0.0, // if beta(k) < betastp: converged
+			    int _MinRestart=1, int _orth_period = 1,
 			    IRLdiagonalisation _diagonalisation= IRLdiagonaliseWithEigen) :
   _HermOp(HermOp),      _HermOpTest(HermOpTest),
     Nstop(_Nstop)  ,      Nk(_Nk),      Nm(_Nm),
@@ -232,7 +232,7 @@ repeat
   →AVK =VKHK +fKe†K † Extend to an M = K + P step factorization AVM = VMHM + fMeM
 until convergence
 */
-  void calc(std::vector<RealD>& eval, std::vector<Field>& evec,  const Field& src, int& Nconv, bool reverse, int SkipTest)
+  void calc(std::vector<RealD>& eval, std::vector<Field>& evec,  const Field& src, int& Nconv, bool reverse=true, int SkipTest=0)
   {
     GridBase *grid = src._grid;
     assert(grid == evec[0]._grid);

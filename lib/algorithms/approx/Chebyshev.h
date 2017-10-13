@@ -34,41 +34,6 @@ Author: Christoph Lehner <clehner@bnl.gov>
 
 namespace Grid {
 
-  ////////////////////////////////////////////////////////////////////////////////////////////
-  // Simple general polynomial with user supplied coefficients
-  ////////////////////////////////////////////////////////////////////////////////////////////
-  template<class Field>
-  class HermOpOperatorFunction : public OperatorFunction<Field> {
-    void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) {
-      Linop.HermOp(in,out);
-    };
-  };
-
-  template<class Field>
-  class Polynomial : public OperatorFunction<Field> {
-  private:
-    std::vector<RealD> Coeffs;
-  public:
-    Polynomial(std::vector<RealD> &_Coeffs) : Coeffs(_Coeffs) { };
-
-    // Implement the required interface
-    void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) {
-
-      Field AtoN(in._grid);
-      Field Mtmp(in._grid);
-      AtoN = in;
-      out = AtoN*Coeffs[0];
-//            std::cout <<"Poly in " <<norm2(in)<<" size "<< Coeffs.size()<<std::endl;
-//            std::cout <<"Coeffs[0]= "<<Coeffs[0]<< " 0 " <<norm2(out)<<std::endl;
-      for(int n=1;n<Coeffs.size();n++){
-	Mtmp = AtoN;
-	Linop.HermOp(Mtmp,AtoN);
-	out=out+AtoN*Coeffs[n];
-//            std::cout <<"Coeffs "<<n<<"= "<< Coeffs[n]<< " 0 " <<std::endl;
-//		std::cout << n<<" " <<norm2(out)<<std::endl;
-      }
-    };
-  };
 
   ////////////////////////////////////////////////////////////////////////////////////////////
   // Generic Chebyshev approximations
