@@ -91,7 +91,9 @@ protected:
   std::string COLOUR;
 
 public:
-  static GridStopWatch StopWatch;
+  static GridStopWatch GlobalStopWatch;
+  GridStopWatch         LocalStopWatch;
+  GridStopWatch *StopWatch;
   static std::ostream devnull;
 
   std::string background() {return Painter.colour["NORMAL"];}
@@ -103,13 +105,25 @@ public:
     topName(topNm),
     Painter(col_class),
     timing_mode(0),
-    COLOUR(col) {} ;
+    COLOUR(col) 
+    {
+      StopWatch = & GlobalStopWatch;
+    };
   
   void Active(int on) {active = on;};
   int  isActive(void) {return active;};
   static void Timestamp(int on) {timestamp = on;};
-  void Reset(void) { StopWatch.Reset(); }
-  void TimingMode(int on) { timing_mode = on; if(on) Reset(); }
+  void Reset(void) { 
+    StopWatch->Reset(); 
+    StopWatch->Start(); 
+  }
+  void TimingMode(int on) { 
+    timing_mode = on; 
+    if(on) { 
+      StopWatch = &LocalStopWatch;
+      Reset(); 
+    }
+  }
 
   friend std::ostream& operator<< (std::ostream& stream, Logger& log){
 
@@ -117,10 +131,10 @@ public:
       stream << log.background()<<  std::left << log.topName << log.background()<< " : ";
       stream << log.colour() <<  std::left << log.name << log.background() << " : ";
       if ( log.timestamp ) {
-	StopWatch.Stop();
-	GridTime now = StopWatch.Elapsed();
-	if ( log.timing_mode==1 ) StopWatch.Reset();
-	StopWatch.Start();
+	log.StopWatch->Stop();
+	GridTime now = log.StopWatch->Elapsed();
+	if ( log.timing_mode==1 ) log.StopWatch->Reset();
+	log.StopWatch->Start();
 	stream << log.evidence()<< now << log.background() << " : " ;
       }
       stream << log.colour();

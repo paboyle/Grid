@@ -50,7 +50,7 @@ namespace Grid {
     return (status==0) ? res.get() : name ;
   }
   
-GridStopWatch Logger::StopWatch;
+GridStopWatch Logger::GlobalStopWatch;
 int Logger::timestamp;
 std::ostream Logger::devnull(0);
 

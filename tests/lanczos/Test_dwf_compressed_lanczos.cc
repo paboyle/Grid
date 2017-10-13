@@ -21,7 +21,14 @@
     (ortho krylov low poly); and then fix up lowest say 200 eigenvalues by 1 run with high-degree poly (600 could be enough)
 */
 #include <Grid/Grid.h>
-#include <Grid/algorithms/iterative/BlockImplicitlyRestartedLanczos/BlockImplicitlyRestartedLanczos.h>
+#include <Grid/algorithms/iterative/ImplicitlyRestartedLanczos.h>
+/////////////////////////////////////////////////////////////////////////////
+// The following are now decoupled from the Lanczos and deal with grids.
+// Safe to replace functionality
+/////////////////////////////////////////////////////////////////////////////
+#include <Grid/algorithms/iterative/BlockImplicitlyRestartedLanczos/BlockedGrid.h>
+#include <Grid/algorithms/iterative/BlockImplicitlyRestartedLanczos/FieldBasisVector.h>
+#include <Grid/algorithms/iterative/BlockImplicitlyRestartedLanczos/BlockProjector.h>
 #include "FieldVectorIO.h"
 #include "Params.h"
 
@@ -319,7 +326,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
     Op2 = &Op2plain;
   }
   ProjectedHermOp<CoarseLatticeFermion<Nstop1>,LatticeFermion> Op2nopoly(pr,HermOp);
-  BlockImplicitlyRestartedLanczos<CoarseLatticeFermion<Nstop1> > IRL2(*Op2,*Op2,Nstop2,Nk2,Nm2,resid2,betastp2,MaxIt,MinRes2);
+  ImplicitlyRestartedLanczos<CoarseLatticeFermion<Nstop1> > IRL2(*Op2,*Op2,Nstop2,Nk2,Nm2,resid2,betastp2,MaxIt,MinRes2);
 
 
   src_coarse = 1.0;
@@ -350,7 +357,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
       ) {
     
 
-    IRL2.calc(eval2,coef,src_coarse,Nconv,true,SkipTest2);
+    IRL2.calc(eval2,coef._v,src_coarse,Nconv,true,SkipTest2);
 
     coef.resize(Nstop2);
     eval2.resize(Nstop2);
@@ -641,7 +648,7 @@ int main (int argc, char ** argv) {
   }
 
   // First round of Lanczos to get low mode basis
-  BlockImplicitlyRestartedLanczos<LatticeFermion> IRL1(Op1,Op1test,Nstop1,Nk1,Nm1,resid1,betastp1,MaxIt,MinRes1);
+  ImplicitlyRestartedLanczos<LatticeFermion> IRL1(Op1,Op1test,Nstop1,Nk1,Nm1,resid1,betastp1,MaxIt,MinRes1);
   int Nconv;
 
   char tag[1024];
@@ -650,7 +657,7 @@ int main (int argc, char ** argv) {
     if (simple_krylov_basis) {
       quick_krylov_basis(evec,src,Op1,Nstop1);
     } else {
-      IRL1.calc(eval1,evec,src,Nconv,false,1);
+      IRL1.calc(eval1,evec._v,src,Nconv,false,1);
     }
     evec.resize(Nstop1); // and throw away superfluous
     eval1.resize(Nstop1);

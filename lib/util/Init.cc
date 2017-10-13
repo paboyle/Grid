@@ -208,7 +208,7 @@ static int Grid_is_initialised = 0;
 
 void Grid_init(int *argc,char ***argv)
 {
-  GridLogger::StopWatch.Start();
+  GridLogger::GlobalStopWatch.Start();
 
   std::string arg;
 
