@@ -7,8 +7,9 @@
     Copyright (C) 2015
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: Chulwoo Jung
-Author: Guido Cossu
+Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Chulwoo Jung <chulwoo@bnl.gov>
+Author: Christoph Lehner <clehner@bnl.gov>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,125 +28,191 @@ Author: Guido Cossu
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
-#ifndef GRID_IRL_H
-#define GRID_IRL_H
+#ifndef GRID_BIRL_H
+#define GRID_BIRL_H
 
 #include <string.h> //memset
+//#include <zlib.h>
+#include <sys/stat.h>
 
-namespace Grid {
+namespace Grid { 
 
-  enum IRLdiagonalisation { 
-    IRLdiagonaliseWithDSTEGR,
-    IRLdiagonaliseWithQR,
-    IRLdiagonaliseWithEigen
-  };
-
-////////////////////////////////////////////////////////////////////////////////
-// Helper class for sorting the evalues AND evectors by Field
-// Use pointer swizzle on vectors
-////////////////////////////////////////////////////////////////////////////////
 template<class Field>
-class SortEigen {
- private:
-  static bool less_lmd(RealD left,RealD right){
-    return left > right;
-  }  
-  static bool less_pair(std::pair<RealD,Field const*>& left,
-                        std::pair<RealD,Field const*>& right){
-    return left.first > (right.first);
-  }  
-  
- public:
-  void push(std::vector<RealD>& lmd,std::vector<Field>& evec,int N) {
-    
-    ////////////////////////////////////////////////////////////////////////
-    // PAB: FIXME: VERY VERY VERY wasteful: takes a copy of the entire vector set.
-    //    : The vector reorder should be done by pointer swizzle somehow
-    ////////////////////////////////////////////////////////////////////////
-    std::vector<Field> cpy(lmd.size(),evec[0]._grid);
-    for(int i=0;i<lmd.size();i++) cpy[i] = evec[i];
-    
-    std::vector<std::pair<RealD, Field const*> > emod(lmd.size());    
+void basisOrthogonalize(std::vector<Field> &basis,Field &w,int k) 
+{
+  for(int j=0; j<k; ++j){
+    auto ip = innerProduct(basis[j],w);
+    w = w - ip*basis[j];
+  }
+}
 
-    for(int i=0;i<lmd.size();++i)  emod[i] = std::pair<RealD,Field const*>(lmd[i],&cpy[i]);
-
-    partial_sort(emod.begin(),emod.begin()+N,emod.end(),less_pair);
-
-    typename std::vector<std::pair<RealD, Field const*> >::iterator it = emod.begin();
-    for(int i=0;i<N;++i){
-      lmd[i]=it->first;
-      evec[i]=*(it->second);
-      ++it;
+template<class Field>
+void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, int k0,int k1,int Nm) 
+{
+  typedef typename Field::vector_object vobj;
+  GridBase* grid = basis[0]._grid;
+      
+  parallel_region
+  {
+    std::vector < vobj > B(Nm); // Thread private
+        
+    parallel_for_internal(int ss=0;ss < grid->oSites();ss++){
+      for(int j=j0; j<j1; ++j) B[j]=0.;
+      
+      for(int j=j0; j<j1; ++j){
+	for(int k=k0; k<k1; ++k){
+	  B[j] +=Qt(j,k) * basis[k]._odata[ss];
+	}
+      }
+      for(int j=j0; j<j1; ++j){
+	  basis[j]._odata[ss] = B[j];
+      }
     }
   }
-  void push(std::vector<RealD>& lmd,int N) {
-    std::partial_sort(lmd.begin(),lmd.begin()+N,lmd.end(),less_lmd);
+}
+
+template<class Field>
+void basisReorderInPlace(std::vector<Field> &_v,std::vector<RealD>& sort_vals, std::vector<int>& idx) 
+{
+  int vlen = idx.size();
+
+  assert(vlen>=1);
+  assert(vlen<=sort_vals.size());
+  assert(vlen<=_v.size());
+
+  for (size_t i=0;i<vlen;i++) {
+
+    if (idx[i] != i) {
+
+      assert(idx[i] > i);
+      //////////////////////////////////////
+      // idx[i] is a table of desired sources giving a permutation.
+      //
+      // Swap v[i] with v[idx[i]].
+      //
+      // Find  j>i for which _vnew[j] = _vold[i],
+      // track the move idx[j] => idx[i]
+      // track the move idx[i] => i
+      //////////////////////////////////////
+      size_t j;
+      for (j=i;j<idx.size();j++)
+	if (idx[j]==i)
+	  break;
+
+      assert(j!=idx.size());
+      assert(idx[j]==i);
+
+      std::swap(_v[i]._odata,_v[idx[i]]._odata); // should use vector move constructor, no data copy
+      std::swap(sort_vals[i],sort_vals[idx[i]]);
+
+      idx[j] = idx[i];
+      idx[i] = i;
+    }
   }
-  bool saturated(RealD lmd, RealD thrs) {
-    return fabs(lmd) > fabs(thrs);
+}
+
+inline std::vector<int> basisSortGetIndex(std::vector<RealD>& sort_vals) 
+{
+  std::vector<int> idx(sort_vals.size());
+  std::iota(idx.begin(), idx.end(), 0);
+
+  // sort indexes based on comparing values in v
+  std::sort(idx.begin(), idx.end(), [&sort_vals](int i1, int i2) {
+    return ::fabs(sort_vals[i1]) < ::fabs(sort_vals[i2]);
+  });
+  return idx;
+}
+
+template<class Field>
+void basisSortInPlace(std::vector<Field> & _v,std::vector<RealD>& sort_vals, bool reverse) 
+{
+  std::vector<int> idx = basisSortGetIndex(sort_vals);
+  if (reverse)
+    std::reverse(idx.begin(), idx.end());
+  
+  basisReorderInPlace(_v,sort_vals,idx);
+}
+
+// PAB: faster to compute the inner products first then fuse loops.
+// If performance critical can improve.
+template<class Field>
+void basisDeflate(const std::vector<Field> &_v,const std::vector<RealD>& eval,const Field& src_orig,Field& result) {
+  result = zero;
+  assert(_v.size()==eval.size());
+  int N = (int)_v.size();
+  for (int i=0;i<N;i++) {
+    Field& tmp = _v[i];
+    axpy(result,TensorRemove(innerProduct(tmp,src_orig)) / eval[i],tmp,result);
   }
+}
+
+enum IRLdiagonalisation { 
+  IRLdiagonaliseWithDSTEGR,
+  IRLdiagonaliseWithQR,
+  IRLdiagonaliseWithEigen
 };
 
 /////////////////////////////////////////////////////////////
 // Implicitly restarted lanczos
 /////////////////////////////////////////////////////////////
+
 template<class Field> 
 class ImplicitlyRestartedLanczos {
-
-private:       
-
-  int MaxIter;   // Max iterations
-  int Nstop;     // Number of evecs checked for convergence
-  int Nk;        // Number of converged sought
-  int Nm;        // Nm -- total number of vectors
-  RealD eresid;
+ private:
+  const RealD small = 1.0e-8;
+  int MaxIter;
+  int MinRestart; // Minimum number of restarts; only check for convergence after
+  int Nstop;   // Number of evecs checked for convergence
+  int Nk;      // Number of converged sought
+  //  int Np;      // Np -- Number of spare vecs in krylov space //  == Nm - Nk
+  int Nm;      // Nm -- total number of vectors
   IRLdiagonalisation diagonalisation;
-  ////////////////////////////////////
+  int orth_period;
+    
+  RealD OrthoTime;
+  RealD eresid, betastp;
+  ////////////////////////////////
   // Embedded objects
-  ////////////////////////////////////
-           SortEigen<Field> _sort;
-  LinearOperatorBase<Field> &_Linop;
-    OperatorFunction<Field> &_poly;
-
+  ////////////////////////////////
+  LinearFunction<Field> &_HermOp;
+  LinearFunction<Field> &_HermOpTest;
   /////////////////////////
   // Constructor
   /////////////////////////
 public:       
- ImplicitlyRestartedLanczos(LinearOperatorBase<Field> &Linop, // op
-			    OperatorFunction<Field> & poly,   // polynomial
-			    int _Nstop, // really sought vecs
-			    int _Nk,    // sought vecs
-			    int _Nm,    // total vecs
-			    RealD _eresid, // resid in lmd deficit 
-			    int _MaxIter,  // Max iterations
-			    IRLdiagonalisation _diagonalisation= IRLdiagonaliseWithEigen ) :
-    _Linop(Linop),    _poly(poly),
-      Nstop(_Nstop), Nk(_Nk), Nm(_Nm),
-      eresid(_eresid),  MaxIter(_MaxIter),
-      diagonalisation(_diagonalisation)
-      { };
+ ImplicitlyRestartedLanczos(LinearFunction<Field> & HermOp,
+			    LinearFunction<Field> & HermOpTest,
+			    int _Nstop, // sought vecs
+			    int _Nk, // sought vecs
+			    int _Nm, // spare vecs
+			    RealD _eresid, // resid in lmdue deficit 
+			    RealD _betastp, // if beta(k) < betastp: converged
+			    int _MaxIter, // Max iterations
+			    int _MinRestart, int _orth_period = 1,
+			    IRLdiagonalisation _diagonalisation= IRLdiagonaliseWithEigen) :
+  _HermOp(HermOp),      _HermOpTest(HermOpTest),
+    Nstop(_Nstop)  ,      Nk(_Nk),      Nm(_Nm),
+    eresid(_eresid),      betastp(_betastp),
+    MaxIter(_MaxIter)  ,      MinRestart(_MinRestart),
+    orth_period(_orth_period), diagonalisation(_diagonalisation)  { };
 
   ////////////////////////////////
   // Helpers
   ////////////////////////////////
-  static RealD normalise(Field& v) 
+  template<typename T>  static RealD normalise(T& v) 
   {
     RealD nn = norm2(v);
     nn = sqrt(nn);
     v = v * (1.0/nn);
     return nn;
   }
-  
-  void orthogonalize(Field& w, std::vector<Field>& evec, int k)
+
+  void orthogonalize(Field& w, std::vector<Field>& evec,int k)
   {
-    typedef typename Field::scalar_type MyComplex;
-    MyComplex ip;
-    
-    for(int j=0; j<k; ++j){
-      ip = innerProduct(evec[j],w); 
-      w = w - ip * evec[j];
-    }
+    OrthoTime-=usecond()/1e6;
+    basisOrthogonalize(evec,w,k);
     normalise(w);
+    OrthoTime+=usecond()/1e6;
   }
 
 /* Rudy Arthur's thesis pp.137
@@ -165,185 +232,265 @@ repeat
   →AVK =VKHK +fKe†K † Extend to an M = K + P step factorization AVM = VMHM + fMeM
 until convergence
 */
-  void calc(std::vector<RealD>& eval,  std::vector<Field>& evec, const Field& src, int& Nconv)
+  void calc(std::vector<RealD>& eval, std::vector<Field>& evec,  const Field& src, int& Nconv, bool reverse, int SkipTest)
   {
+    GridBase *grid = src._grid;
+    assert(grid == evec[0]._grid);
     
-    GridBase *grid = evec[0]._grid;
-    assert(grid == src._grid);
-    
-    std::cout << GridLogMessage <<"**************************************************************************"<< std::endl;
-    std::cout << GridLogMessage <<" ImplicitlyRestartedLanczos::calc() starting iteration 0 /  "<< MaxIter<< std::endl;
-    std::cout << GridLogMessage <<"**************************************************************************"<< std::endl;
-    std::cout << GridLogMessage <<" -- seek   Nk    = " << Nk    <<" vectors"<< std::endl;
-    std::cout << GridLogMessage <<" -- accept Nstop = " << Nstop <<" vectors"<< std::endl;
-    std::cout << GridLogMessage <<" -- total  Nm    = " << Nm    <<" vectors"<< std::endl;
-    std::cout << GridLogMessage <<" -- size of eval = " << eval.size() << std::endl;
-    std::cout << GridLogMessage <<" -- size of evec = " << evec.size() << std::endl;
+    GridLogIRL.TimingMode(1);
+    std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;
+    std::cout << GridLogIRL <<" ImplicitlyRestartedLanczos::calc() starting iteration 0 /  "<< MaxIter<< std::endl;
+    std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;
+    std::cout << GridLogIRL <<" -- seek   Nk    = " << Nk    <<" vectors"<< std::endl;
+    std::cout << GridLogIRL <<" -- accept Nstop = " << Nstop <<" vectors"<< std::endl;
+    std::cout << GridLogIRL <<" -- total  Nm    = " << Nm    <<" vectors"<< std::endl;
+    std::cout << GridLogIRL <<" -- size of eval = " << eval.size() << std::endl;
+    std::cout << GridLogIRL <<" -- size of evec = " << evec.size() << std::endl;
     if ( diagonalisation == IRLdiagonaliseWithDSTEGR ) {
-      std::cout << GridLogMessage << "Diagonalisation is DSTEGR "<<std::endl;
+      std::cout << GridLogIRL << "Diagonalisation is DSTEGR "<<std::endl;
     } else if ( diagonalisation == IRLdiagonaliseWithQR ) { 
-      std::cout << GridLogMessage << "Diagonalisation is QR "<<std::endl;
+      std::cout << GridLogIRL << "Diagonalisation is QR "<<std::endl;
     }  else if ( diagonalisation == IRLdiagonaliseWithEigen ) { 
-      std::cout << GridLogMessage << "Diagonalisation is Eigen "<<std::endl;
+      std::cout << GridLogIRL << "Diagonalisation is Eigen "<<std::endl;
     }
-    std::cout << GridLogMessage <<"**************************************************************************"<< std::endl;
+    std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;
+	
+    assert(Nm <= evec.size() && Nm <= eval.size());
     
-    assert(Nm == evec.size() && Nm == eval.size());
+    // quickly get an idea of the largest eigenvalue to more properly normalize the residuum
+    RealD evalMaxApprox = 0.0;
+    {
+      auto src_n = src;
+      auto tmp = src;
+      const int _MAX_ITER_IRL_MEVAPP_ = 50;
+      for (int i=0;i<_MAX_ITER_IRL_MEVAPP_;i++) {
+	_HermOpTest(src_n,tmp);
+	RealD vnum = real(innerProduct(src_n,tmp)); // HermOp.
+	RealD vden = norm2(src_n);
+	RealD na = vnum/vden;
+	if (fabs(evalMaxApprox/na - 1.0) < 0.05)
+	  i=_MAX_ITER_IRL_MEVAPP_;
+	evalMaxApprox = na;
+	std::cout << GridLogIRL << " Approximation of largest eigenvalue: " << evalMaxApprox << std::endl;
+	src_n = tmp;
+      }
+    }
 	
     std::vector<RealD> lme(Nm);  
     std::vector<RealD> lme2(Nm);
     std::vector<RealD> eval2(Nm);
+    std::vector<RealD> eval2_copy(Nm);
+    Eigen::MatrixXd Qt = Eigen::MatrixXd::Zero(Nm,Nm);
 
-    Eigen::MatrixXd    Qt = Eigen::MatrixXd::Zero(Nm,Nm);
-
-    std::vector<int>   Iconv(Nm);
-    std::vector<Field>  B(Nm,grid); // waste of space replicating
-    
     Field f(grid);
     Field v(grid);
-    
     int k1 = 1;
     int k2 = Nk;
-    
-    Nconv = 0;
-    
     RealD beta_k;
+
+    Nconv = 0;
   
     // Set initial vector
     evec[0] = src;
-    std::cout << GridLogMessage <<"norm2(src)= " << norm2(src)<<std::endl;
-    
     normalise(evec[0]);
-    std::cout << GridLogMessage <<"norm2(evec[0])= " << norm2(evec[0]) <<std::endl;
-    
+	
     // Initial Nk steps
+    OrthoTime=0.;
     for(int k=0; k<Nk; ++k) step(eval,lme,evec,f,Nm,k);
-    
+    std::cout<<GridLogIRL <<"Initial "<< Nk <<"steps done "<<std::endl;
+    std::cout<<GridLogIRL <<"Initial steps:OrthoTime "<<OrthoTime<< "seconds"<<std::endl;
+
+    //////////////////////////////////
     // Restarting loop begins
+    //////////////////////////////////
     int iter;
     for(iter = 0; iter<MaxIter; ++iter){
       
+      OrthoTime=0.;
+
       std::cout<< GridLogMessage <<" **********************"<< std::endl;
       std::cout<< GridLogMessage <<" Restart iteration = "<< iter << std::endl;
       std::cout<< GridLogMessage <<" **********************"<< std::endl;
-      
+
+      std::cout<<GridLogIRL <<" running "<<Nm-Nk <<" steps: "<<std::endl;
       for(int k=Nk; k<Nm; ++k) step(eval,lme,evec,f,Nm,k);
-      
       f *= lme[Nm-1];
-      
+
+      std::cout<<GridLogIRL <<" "<<Nm-Nk <<" steps done "<<std::endl;
+      std::cout<<GridLogIRL <<"Initial steps:OrthoTime "<<OrthoTime<< "seconds"<<std::endl;
+	  
+      //////////////////////////////////
       // getting eigenvalues
+      //////////////////////////////////
       for(int k=0; k<Nm; ++k){
 	eval2[k] = eval[k+k1-1];
 	lme2[k] = lme[k+k1-1];
       }
       Qt = Eigen::MatrixXd::Identity(Nm,Nm);
       diagonalize(eval2,lme2,Nm,Nm,Qt,grid);
+      std::cout<<GridLogIRL <<" diagonalized "<<std::endl;
 
+      //////////////////////////////////
       // sorting
-      _sort.push(eval2,Nm);
-      
-      // Implicitly shifted QR transformations
-      Qt = Eigen::MatrixXd::Identity(Nm,Nm);
+      //////////////////////////////////
+      eval2_copy = eval2;
 
+      //      _sort.push(eval2,Nm);
+      std::partial_sort(eval2.begin(),eval2.begin()+Nm,eval2.end());
+
+      std::cout<<GridLogIRL <<" evals sorted "<<std::endl;
+      for(int ip=0; ip<k2; ++ip) std::cout<<GridLogIRL << "eval "<< ip << " "<< eval2[ip] << std::endl;
+
+      //////////////////////////////////
+      // Implicitly shifted QR transformations
+      //////////////////////////////////
+      Qt = Eigen::MatrixXd::Identity(Nm,Nm);
+      std::cout<<GridLogIRL << "QR decompose " << std::endl;
       for(int ip=k2; ip<Nm; ++ip){ 
-	// Eigen replacement for qr_decomp ???
-	qr_decomp(eval,lme,Nm,Nm,Qt,eval2[ip],k1,Nm);
+	QR_decomp(eval,lme,Nm,Nm,Qt,eval2[ip],k1,Nm);
       }
-    
-      for(int i=0; i<(Nk+1); ++i) B[i] = 0.0;
-	  
-      for(int j=k1-1; j<k2+1; ++j){
-	for(int k=0; k<Nm; ++k){
-	  B[j].checkerboard = evec[k].checkerboard;
-	  B[j] += Qt(j,k) * evec[k];
-	}
-      }
-      for(int j=k1-1; j<k2+1; ++j) evec[j] = B[j];
+      std::cout<<GridLogIRL <<"QR decompose done "<<std::endl;
+
+      assert(k2<Nm);
+      assert(k2<Nm);
+      assert(k1>0);
+      basisRotate(evec,Qt,k1-1,k2+1,0,Nm,Nm); /// big constraint on the basis
+
+      std::cout<<GridLogIRL <<"QR rotation done "<<std::endl;
       
+      ////////////////////////////////////////////////////
       // Compressed vector f and beta(k2)
+      ////////////////////////////////////////////////////
       f *= Qt(k2-1,Nm-1);
       f += lme[k2-1] * evec[k2];
       beta_k = norm2(f);
       beta_k = sqrt(beta_k);
-      std::cout<< GridLogMessage<<" beta(k) = "<<beta_k<<std::endl;
-      
+      std::cout<<GridLogIRL<<" beta(k) = "<<beta_k<<std::endl;
+	  
       RealD betar = 1.0/beta_k;
       evec[k2] = betar * f;
       lme[k2-1] = beta_k;
-      
+	  
+      ////////////////////////////////////////////////////
       // Convergence test
+      ////////////////////////////////////////////////////
       for(int k=0; k<Nm; ++k){    
 	eval2[k] = eval[k];
 	lme2[k] = lme[k];
+	//	std::cout<<GridLogIRL << "eval2[" << k << "] = " << eval2[k] << std::endl;
       }
       Qt = Eigen::MatrixXd::Identity(Nm,Nm);
       diagonalize(eval2,lme2,Nk,Nm,Qt,grid);
-      
-      for(int k = 0; k<Nk; ++k) B[k]=0.0;
-      
-      for(int j = 0; j<Nk; ++j){
-	for(int k = 0; k<Nk; ++k){
-	  B[j].checkerboard = evec[k].checkerboard;
-	  B[j] += Qt(j,k) * evec[k];
-	}
-      }
-
+      std::cout<<GridLogIRL <<" Diagonalized "<<std::endl;
+	  
       Nconv = 0;
-      for(int i=0; i<Nk; ++i){
+      if (iter >= MinRestart) {
+	std::cout << GridLogIRL << "Rotation to test convergence " << std::endl;
 	
-	_Linop.HermOp(B[i],v);
+	Field ev0_orig(grid);
+	ev0_orig = evec[0];
 	    
-	RealD vnum = real(innerProduct(B[i],v)); // HermOp.
-	RealD vden = norm2(B[i]);
-	eval2[i] = vnum/vden;
-	v -= eval2[i]*B[i];
-	RealD vv = norm2(v);
-	
-	std::cout.precision(13);
-	std::cout << GridLogMessage << "[" << std::setw(3)<< std::setiosflags(std::ios_base::right) <<i<<"] ";
-	std::cout << "eval = "<<std::setw(25)<< std::setiosflags(std::ios_base::left)<< eval2[i];
-	std::cout << " |H B[i] - eval[i]B[i]|^2 "<< std::setw(25)<< std::setiosflags(std::ios_base::right)<< vv<< std::endl;
-	
-	// change the criteria as evals are supposed to be sorted, all evals smaller(larger) than Nstop should have converged
-	if((vv<eresid*eresid) && (i == Nconv) ){
-	  Iconv[Nconv] = i;
-	  ++Nconv;
-	}
-	
-      }  // i-loop end
-      
-      std::cout<< GridLogMessage <<" #modes converged: "<<Nconv<<std::endl;
+	basisRotate(evec,Qt,0,Nk,0,Nk,Nm);	    
 
-      if( Nconv>=Nstop ){
-	goto converged;
-      }
-    } // end of iter loop
-    
-    std::cout << GridLogMessage <<"**************************************************************************"<< std::endl;
-    std::cout << GridLogError   <<" ImplicitlyRestartedLanczos::calc() NOT converged.";
-    std::cout << GridLogMessage <<"**************************************************************************"<< std::endl;
+	{
+	  std::cout << GridLogIRL << "Test convergence" << std::endl;
+	  Field B(grid);
+	      
+	  for(int j = 0; j<Nk; j+=SkipTest){
+	    B=evec[j];
+
+	    //std::cout << "Checkerboard: " << evec[j].checkerboard << std::endl; 
+	    B.checkerboard = evec[0].checkerboard;
+
+	    _HermOpTest(B,v);
+		
+	    RealD vnum = real(innerProduct(B,v)); // HermOp.
+	    RealD vden = norm2(B);
+	    RealD vv0 = norm2(v);
+	    eval2[j] = vnum/vden;
+	    v -= eval2[j]*B;
+	    RealD vv = norm2(v) / ::pow(evalMaxApprox,2.0);
+	    std::cout.precision(13);
+	    std::cout<<GridLogIRL << "[" << std::setw(3)<< std::setiosflags(std::ios_base::right) <<j<<"] "
+		     <<"eval = "<<std::setw(25)<< std::setiosflags(std::ios_base::left)<< eval2[j] << " (" << eval2_copy[j] << ")"
+		     <<" |H B[i] - eval[i]B[i]|^2 / evalMaxApprox^2 " << std::setw(25)<< std::setiosflags(std::ios_base::right)<< vv
+		     <<" "<< vnum/(sqrt(vden)*sqrt(vv0))
+		     <<std::endl;
+		
+	    // change the criteria as evals are supposed to be sorted, all evals smaller(larger) than Nstop should have converged
+	    if((vv<eresid*eresid) && (j == Nconv) ){
+	      Nconv+=SkipTest;
+	    }
+	  }
+	      
+	  // test if we converged, if so, terminate
+	  std::cout<<GridLogIRL<<" #modes converged: "<<Nconv<<std::endl;
+	  if( Nconv>=Nstop || beta_k < betastp){
+	    goto converged;
+	  }
+	      
+	  //B[j] +=Qt[k+_Nm*j] * _v[k]._odata[ss];
+	  {
+	    Eigen::MatrixXd qm = Eigen::MatrixXd::Zero(Nk,Nk); // Restrict Qt to Nk x Nk
+	    for (int k=0;k<Nk;k++)
+	      for (int j=0;j<Nk;j++)
+		qm(j,k) = Qt(j,k);
+
+	    Eigen::MatrixXd qmI = qm.inverse();
+
+	    RealD res_check_rotate_inverse = (qm*qmI - Eigen::MatrixXd::Identity(Nk,Nk)).norm(); // sqrt( |X|^2 )
+
+	    std::cout << GridLogIRL << "\tInverted ("<<Nk<<"x"<<Nk<<") Qt matrix " <<  " error = " << res_check_rotate_inverse <<std::endl;
+
+	    assert(res_check_rotate_inverse < 1e-7);
+
+	    basisRotate(evec,qmI,0,Nk,0,Nk,Nm);
+	    std::cout << GridLogIRL << "\t Basis rotation done "<<std::endl;
+
+	    axpy(ev0_orig,-1.0,evec[0],ev0_orig);
+	    std::cout << GridLogIRL << " | evec[0] - evec[0]_orig | = "    << ::sqrt(norm2(ev0_orig)) << std::endl;
+	  }
+	}
+      } else {
+	std::cout << GridLogIRL << "iter < MinRestart: do not yet test for convergence\n";
+      } // end of iter loop
+    }
+
+    std::cout<<GridLogError<<"\n NOT converged.\n";
     abort();
 	
   converged:
-    // Sorting
-    eval.resize(Nconv);
-    evec.resize(Nconv,grid);
-    for(int i=0; i<Nconv; ++i){
-      eval[i] = eval2[Iconv[i]];
-      evec[i] = B[Iconv[i]];
+
+    if (SkipTest == 1) {
+      eval = eval2;
+    } else {
+      //////////////////////////////////////////////
+      // test quickly 
+      // PAB -- what precisely does this test? Don't like this eval2, eval2_copy etc...
+      //////////////////////////////////////////////
+      for (int j=0;j<Nstop;j+=SkipTest) {
+	std::cout<<GridLogIRL << "Eigenvalue[" << j << "] = " << eval2[j] << " (" << eval2_copy[j] << ")" << std::endl;
+      }
+      eval2_copy.resize(eval2.size());
+      eval = eval2_copy;
     }
-    _sort.push(eval,evec,Nconv);
-    
-    std::cout << GridLogMessage <<"**************************************************************************"<< std::endl;
-    std::cout << GridLogMessage << "ImplicitlyRestartedLanczos CONVERGED ; Summary :\n";
-    std::cout << GridLogMessage <<"**************************************************************************"<< std::endl;
-    std::cout << GridLogMessage << " -- Iterations  = "<< iter   << "\n";
-    std::cout << GridLogMessage << " -- beta(k)     = "<< beta_k << "\n";
-    std::cout << GridLogMessage << " -- Nconv       = "<< Nconv  << "\n";
-    std::cout << GridLogMessage <<"**************************************************************************"<< std::endl;
+
+    basisSortInPlace(evec,eval,reverse);
+
+    for (int j=0;j<Nstop;j++) {
+      std::cout<<GridLogIRL << " |e[" << j << "]|^2 = " << norm2(evec[j]) << std::endl;
+    }
+       
+    std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;
+    std::cout << GridLogIRL << "ImplicitlyRestartedLanczos CONVERGED ; Summary :\n";
+    std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;
+    std::cout << GridLogIRL << " -- Iterations  = "<< iter   << "\n";
+    std::cout << GridLogIRL << " -- beta(k)     = "<< beta_k << "\n";
+    std::cout << GridLogIRL << " -- Nconv       = "<< Nconv  << "\n";
+    std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;
   }
 
-private:
+ private:
 /* Saad PP. 195
 1. Choose an initial vector v1 of 2-norm unity. Set β1 ≡ 0, v0 ≡ 0
 2. For k = 1,2,...,m Do:
@@ -361,28 +508,41 @@ private:
   {
     const RealD tiny = 1.0e-20;
     assert( k< Nm );
-    
-    _poly(_Linop,evec[k],w);      // 3. wk:=Avk−βkv_{k−1}
-    
+
+    GridStopWatch gsw_op,gsw_o;
+
+    Field& evec_k = evec[k];
+
+    _HermOp(evec_k,w);
+    std::cout<<GridLogIRL << "_HermOp (poly)" <<std::endl;
+
     if(k>0) w -= lme[k-1] * evec[k-1];
-    
-    ComplexD zalph = innerProduct(evec[k],w); // 4. αk:=(wk,vk)
+
+    ComplexD zalph = innerProduct(evec_k,w); // 4. αk:=(wk,vk)
     RealD     alph = real(zalph);
-    
-    w = w - alph * evec[k];// 5. wk:=wk−αkvk
-    
+
+    w = w - alph * evec_k;// 5. wk:=wk−αkvk
+
     RealD beta = normalise(w); // 6. βk+1 := ∥wk∥2. If βk+1 = 0 then Stop
     // 7. vk+1 := wk/βk+1
-    
+
     lmd[k] = alph;
     lme[k] = beta;
-    
-    if ( k > 0 ) orthogonalize(w,evec,k); // orthonormalise
-    if ( k < Nm-1) evec[k+1] = w;
-    
-    if ( beta < tiny ) std::cout << GridLogMessage << " beta is tiny "<<beta<<std::endl;
+
+    std::cout<<GridLogIRL << "linalg " <<std::endl;
+
+    if (k>0 && k % orth_period == 0) {
+      orthogonalize(w,evec,k); // orthonormalise
+      std::cout<<GridLogIRL << "orthogonalised " <<std::endl;
+    }
+
+    if(k < Nm-1) evec[k+1] = w;
+
+    std::cout<<GridLogIRL << "alpha[" << k << "] = " << zalph << " beta[" << k << "] = "<<beta<<std::endl;
+    if ( beta < tiny ) 
+      std::cout<<GridLogIRL << " beta is tiny "<<beta<<std::endl;
   }
-      
+
   void diagonalize_Eigen(std::vector<RealD>& lmd, std::vector<RealD>& lme, 
 			 int Nk, int Nm,  
 			 Eigen::MatrixXd & Qt, // Nm x Nm
@@ -405,11 +565,12 @@ private:
       }
     }
   }
+
   ///////////////////////////////////////////////////////////////////////////
   // File could end here if settle on Eigen ???
   ///////////////////////////////////////////////////////////////////////////
 
-  void qr_decomp(std::vector<RealD>& lmd,   // Nm 
+  void QR_decomp(std::vector<RealD>& lmd,   // Nm 
 		 std::vector<RealD>& lme,   // Nm 
 		 int Nk, int Nm,            // Nk, Nm
 		 Eigen::MatrixXd& Qt,       // Nm x Nm matrix
@@ -576,51 +737,50 @@ void diagonalize_lapack(std::vector<RealD>& lmd,
 #endif
 }
 
-  void diagonalize_QR(std::vector<RealD>& lmd, std::vector<RealD>& lme, 
-		      int Nk, int Nm,   
-		      Eigen::MatrixXd & Qt,
-		      GridBase *grid)
-  {
-    int Niter = 100*Nm;
-    int kmin = 1;
-    int kmax = Nk;
-
-    // (this should be more sophisticated)
-    for(int iter=0; iter<Niter; ++iter){
-      
-      // determination of 2x2 leading submatrix
-      RealD dsub = lmd[kmax-1]-lmd[kmax-2];
-      RealD dd = sqrt(dsub*dsub + 4.0*lme[kmax-2]*lme[kmax-2]);
-      RealD Dsh = 0.5*(lmd[kmax-2]+lmd[kmax-1] +dd*(dsub/fabs(dsub)));
-      // (Dsh: shift)
-	
-      // transformation
-      qr_decomp(lmd,lme,Nk,Nm,Qt,Dsh,kmin,kmax); // Nk, Nm
-	
-      // Convergence criterion (redef of kmin and kamx)
-      for(int j=kmax-1; j>= kmin; --j){
-	RealD dds = fabs(lmd[j-1])+fabs(lmd[j]);
-	if(fabs(lme[j-1])+dds > dds){
-	  kmax = j+1;
-	  goto continued;
-	}
-      }
-      Niter = iter;
-      return;
-
-    continued:
-      for(int j=0; j<kmax-1; ++j){
-	RealD dds = fabs(lmd[j])+fabs(lmd[j+1]);
-	if(fabs(lme[j])+dds > dds){
-	  kmin = j+1;
-	  break;
-	}
+void diagonalize_QR(std::vector<RealD>& lmd, std::vector<RealD>& lme, 
+		    int Nk, int Nm,   
+		    Eigen::MatrixXd & Qt,
+		    GridBase *grid)
+{
+  int QRiter = 100*Nm;
+  int kmin = 1;
+  int kmax = Nk;
+  
+  // (this should be more sophisticated)
+  for(int iter=0; iter<QRiter; ++iter){
+    
+    // determination of 2x2 leading submatrix
+    RealD dsub = lmd[kmax-1]-lmd[kmax-2];
+    RealD dd = sqrt(dsub*dsub + 4.0*lme[kmax-2]*lme[kmax-2]);
+    RealD Dsh = 0.5*(lmd[kmax-2]+lmd[kmax-1] +dd*(dsub/fabs(dsub)));
+    // (Dsh: shift)
+    
+    // transformation
+    QR_decomp(lmd,lme,Nk,Nm,Qt,Dsh,kmin,kmax); // Nk, Nm
+    
+    // Convergence criterion (redef of kmin and kamx)
+    for(int j=kmax-1; j>= kmin; --j){
+      RealD dds = fabs(lmd[j-1])+fabs(lmd[j]);
+      if(fabs(lme[j-1])+dds > dds){
+	kmax = j+1;
+	goto continued;
       }
     }
-    std::cout << GridLogError << "[QL method] Error - Too many iteration: "<<Niter<<"\n";
-    abort();
+    QRiter = iter;
+    return;
+    
+  continued:
+    for(int j=0; j<kmax-1; ++j){
+      RealD dds = fabs(lmd[j])+fabs(lmd[j+1]);
+      if(fabs(lme[j])+dds > dds){
+	kmin = j+1;
+	break;
+      }
+    }
   }
-
- };
+  std::cout << GridLogError << "[QL method] Error - Too many iteration: "<<QRiter<<"\n";
+  abort();
+}
+};
 }
 #endif
