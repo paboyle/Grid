@@ -35,9 +35,6 @@ Author: Christoph Lehner <clehner@bnl.gov>
 //#include <zlib.h>
 #include <sys/stat.h>
 
-#include <Grid/algorithms/iterative/BlockImplicitlyRestartedLanczos/BlockedGrid.h>
-#include <Grid/algorithms/iterative/BlockImplicitlyRestartedLanczos/FieldBasisVector.h>
-#include <Grid/algorithms/iterative/BlockImplicitlyRestartedLanczos/BlockProjector.h>
 
 namespace Grid { 
 
@@ -178,7 +175,7 @@ class BlockImplicitlyRestartedLanczos {
   ////////////////////////////////
   // Embedded objects
   ////////////////////////////////
-  SortEigen<Field> _sort;
+  //  SortEigen<Field> _sort;
   LinearFunction<Field> &_HermOp;
   LinearFunction<Field> &_HermOpTest;
   /////////////////////////
@@ -212,11 +209,10 @@ public:
     return nn;
   }
 
-  void orthogonalize(Field& w, BasisFieldVector<Field>& evec,int k)
+  void orthogonalize(Field& w, std::vector<Field>& evec,int k)
   {
     OrthoTime-=usecond()/1e6;
-    //evec.orthogonalize(w,k);
-    basisOrthogonalize(evec._v,w,k);
+    basisOrthogonalize(evec,w,k);
     normalise(w);
     OrthoTime+=usecond()/1e6;
   }
@@ -238,7 +234,7 @@ repeat
   →AVK =VKHK +fKe†K † Extend to an M = K + P step factorization AVM = VMHM + fMeM
 until convergence
 */
-  void calc(std::vector<RealD>& eval, BasisFieldVector<Field>& evec,  const Field& src, int& Nconv, bool reverse, int SkipTest)
+  void calc(std::vector<RealD>& eval, std::vector<Field>& evec,  const Field& src, int& Nconv, bool reverse, int SkipTest)
   {
     GridBase *grid = src._grid;
     assert(grid == evec[0]._grid);
@@ -341,7 +337,8 @@ until convergence
       //////////////////////////////////
       eval2_copy = eval2;
 
-      _sort.push(eval2,Nm);
+      //      _sort.push(eval2,Nm);
+      std::partial_sort(eval2.begin(),eval2.begin()+Nm,eval2.end());
 
       std::cout<<GridLogIRL <<" evals sorted "<<std::endl;
       for(int ip=0; ip<k2; ++ip) std::cout<<GridLogIRL << "eval "<< ip << " "<< eval2[ip] << std::endl;
@@ -359,8 +356,7 @@ until convergence
       assert(k2<Nm);
       assert(k2<Nm);
       assert(k1>0);
-      //      evec.rotate(Qt,k1-1,k2+1,0,Nm,Nm); /// big constraint on the basis
-      basisRotate(evec._v,Qt,k1-1,k2+1,0,Nm,Nm); /// big constraint on the basis
+      basisRotate(evec,Qt,k1-1,k2+1,0,Nm,Nm); /// big constraint on the basis
 
       std::cout<<GridLogIRL <<"QR rotation done "<<std::endl;
       
@@ -396,8 +392,7 @@ until convergence
 	Field ev0_orig(grid);
 	ev0_orig = evec[0];
 	    
-	//	evec.rotate(Qt,0,Nk,0,Nk,Nm);
-	basisRotate(evec._v,Qt,0,Nk,0,Nk,Nm);	    
+	basisRotate(evec,Qt,0,Nk,0,Nk,Nm);	    
 
 	{
 	  std::cout << GridLogIRL << "Test convergence" << std::endl;
@@ -436,7 +431,6 @@ until convergence
 	    goto converged;
 	  }
 	      
-	  std::cout << GridLogIRL << "Convergence testing: Rotating back" << std::endl;
 	  //B[j] +=Qt[k+_Nm*j] * _v[k]._odata[ss];
 	  {
 	    Eigen::MatrixXd qm = Eigen::MatrixXd::Zero(Nk,Nk); // Restrict Qt to Nk x Nk
@@ -445,16 +439,17 @@ until convergence
 		qm(j,k) = Qt(j,k);
 
 	    Eigen::MatrixXd qmI = qm.inverse();
-	    std::cout << GridLogIRL << "Inverted ("<<Nk<<"x"<<Nk<<") matrix " << std::endl;
 
-	    
 	    RealD res_check_rotate_inverse = (qm*qmI - Eigen::MatrixXd::Identity(Nk,Nk)).norm(); // sqrt( |X|^2 )
+
+	    std::cout << GridLogIRL << "\tInverted ("<<Nk<<"x"<<Nk<<") Qt matrix " <<  " error = " << res_check_rotate_inverse <<std::endl;
+
 	    assert(res_check_rotate_inverse < 1e-7);
-	    //evec.rotate(qmI,0,Nk,0,Nk,Nm);
-	    basisRotate(evec._v,qmI,0,Nk,0,Nk,Nm);
-		
+
+	    basisRotate(evec,qmI,0,Nk,0,Nk,Nm);
+	    std::cout << GridLogIRL << "\t Basis rotation done "<<std::endl;
+
 	    axpy(ev0_orig,-1.0,evec[0],ev0_orig);
-	    std::cout << GridLogIRL << "Rotation done ; error = " << res_check_rotate_inverse << ");"<<std::endl;
 	    std::cout << GridLogIRL << " | evec[0] - evec[0]_orig | = "    << ::sqrt(norm2(ev0_orig)) << std::endl;
 	  }
 	}
@@ -471,15 +466,17 @@ until convergence
     if (SkipTest == 1) {
       eval = eval2;
     } else {
-      // test quickly
+      // test quickly 
+      // PAB -- what precisely does this test? 
       for (int j=0;j<Nstop;j+=SkipTest) {
 	std::cout<<GridLogIRL << "Eigenvalue[" << j << "] = " << eval2[j] << " (" << eval2_copy[j] << ")" << std::endl;
       }
       eval2_copy.resize(eval2.size());
       eval = eval2_copy;
     }
-    //    evec.sortInPlace(eval,reverse);
-    basisSortInPlace(evec._v,eval,reverse);
+
+    basisSortInPlace(evec,eval,reverse);
+
     // test // PAB -- what does this test ?
     for (int j=0;j<Nstop;j++) {
       std::cout<<GridLogIRL << " |e[" << j << "]|^2 = " << norm2(evec[j]) << std::endl;
@@ -507,7 +504,7 @@ until convergence
  */
   void step(std::vector<RealD>& lmd,
 	    std::vector<RealD>& lme, 
-	    BasisFieldVector<Field>& evec,
+	    std::vector<Field>& evec,
 	    Field& w,int Nm,int k)
   {
     const RealD tiny = 1.0e-20;
