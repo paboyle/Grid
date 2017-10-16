@@ -44,7 +44,7 @@ public:
   INHERIT_IMPL_TYPES(Impl);
   template <typename vtype> using iImplClover        = iScalar<iMatrix<iMatrix<vtype, Impl::Dimension>, Ns> >;
   typedef iImplClover<Simd>        SiteCloverType;
-  typedef Lattice<SiteCloverType>        CloverFieldType;
+  typedef Lattice<SiteCloverType>  CloverFieldType;
 public:
   typedef WilsonFermion<Impl> WilsonBase;
 
@@ -91,14 +91,12 @@ public:
 private:
   // here fixing the 4 dimensions, make it more general?
 
-  RealD csw;                                         // Clover coefficient
-  CloverFieldType CloverTerm, CloverTermInv; // Clover term
-  CloverFieldType CloverTermEven, CloverTermOdd;
-  CloverFieldType CloverTermInvEven, CloverTermInvOdd; // Clover term
-
-  CloverFieldType CloverTermInvDagEven, CloverTermInvDagOdd; //test
-  CloverFieldType CloverTermDagEven, CloverTermDagOdd; //test
-
+  RealD csw;                                                 // Clover coefficient
+  CloverFieldType CloverTerm=zero, CloverTermInv=zero;                 // Clover term
+  CloverFieldType CloverTermEven=zero, CloverTermOdd=zero;             // Clover term EO
+  CloverFieldType CloverTermInvEven=zero, CloverTermInvOdd=zero;       // Clover term Inv EO
+  CloverFieldType CloverTermDagEven=zero, CloverTermDagOdd=zero;       // Clover term Dag EO
+  CloverFieldType CloverTermInvDagEven=zero, CloverTermInvDagOdd=zero; // Clover term Inv Dag EO
 
   // eventually these two can be compressed into 6x6 blocks instead of the 12x12
   // using the DeGrand-Rossi basis for the gamma matrices

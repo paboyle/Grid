@@ -46,7 +46,6 @@ RealD WilsonCloverFermion<Impl>::M(const FermionField &in, FermionField &out)
   // apply the sigma and Fmunu
   FermionField temp(out._grid);
   Mooee(in, temp);
-  // overall factor
   out += temp;
   return axpy_norm(out, 4 + this->mass, in, out);
 }
@@ -89,6 +88,7 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
   CloverTerm += fillCloverZT(Ez);
   CloverTerm *= 0.5 * csw; // FieldStrength normalization? should be ( -i/8  ). Is it the anti-symmetric combination? 
 
+
   int lvol = _Umu._grid->lSites();
   int DimRep = Impl::Dimension;
 
@@ -98,20 +98,21 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
   std::vector<int> lcoor;
   typename SiteCloverType::scalar_object Qx = zero, Qxinv = zero;
 
+
   for (int site = 0; site < lvol; site++)
   {
     grid->LocalIndexToLocalCoor(site, lcoor);
     EigenCloverOp = Eigen::MatrixXcd::Zero(Ns * DimRep, Ns * DimRep);
     peekLocalSite(Qx, CloverTerm, lcoor);
     Qxinv = zero;
+//if (csw!=0){
     for (int j = 0; j < Ns; j++)
       for (int k = 0; k < Ns; k++)
         for (int a = 0; a < DimRep; a++)
           for (int b = 0; b < DimRep; b++)
             EigenCloverOp(a + j * DimRep, b + k * DimRep) = Qx()(j, k)(a, b);
-        //   if (site==0) std::cout << "site =" << site << "\n" << EigenCloverOp << std::endl;
-
-
+        //   if (site==0) std::cout << "site =" << site << "\n" << EigenCloverOp << std::endl;  
+  
     EigenInvCloverOp = EigenCloverOp.inverse();
     //std::cout << EigenInvCloverOp << std::endl;
     for (int j = 0; j < Ns; j++)
@@ -120,9 +121,11 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
           for (int b = 0; b < DimRep; b++)
             Qxinv()(j, k)(a, b) = EigenInvCloverOp(a + j * DimRep, b + k * DimRep);
         //    if (site==0) std::cout << "site =" << site << "\n" << EigenInvCloverOp << std::endl;
-
+//  }
     pokeLocalSite(Qxinv, CloverTermInv, lcoor);
-  }
+ }
+ 
+
 
   // Separate the even and odd parts.
   pickCheckerboard(Even, CloverTermEven, CloverTerm);
@@ -180,7 +183,7 @@ void WilsonCloverFermion<Impl>::MooeeInternal(const FermionField &in, FermionFie
  if (dag){ 
   if (in._grid->_isCheckerBoarded){
     if (in.checkerboard == Odd){
-      std::cout << "Calling clover term adj Odd" << std::endl;
+//      std::cout << "Calling clover term adj Odd" << std::endl;
       Clover = (inv) ? &CloverTermInvDagOdd : &CloverTermDagOdd;
 
 /* test 
@@ -203,7 +206,7 @@ void WilsonCloverFermion<Impl>::MooeeInternal(const FermionField &in, FermionFie
 
 
     } else {
-      std::cout << "Calling clover term adj Even" << std::endl;
+//      std::cout << "Calling clover term adj Even" << std::endl;
       Clover = (inv) ? &CloverTermInvDagEven : &CloverTermDagEven;
 
 /* test 
@@ -225,7 +228,7 @@ void WilsonCloverFermion<Impl>::MooeeInternal(const FermionField &in, FermionFie
 
 
     }
-    std::cout << GridLogMessage << "*Clover.checkerboard "  << (*Clover).checkerboard << std::endl;
+ //   std::cout << GridLogMessage << "*Clover.checkerboard "  << (*Clover).checkerboard << std::endl;
     out = *Clover * in;
   } else { 
   Clover = (inv) ? &CloverTermInv : &CloverTerm; 
@@ -239,14 +242,14 @@ void WilsonCloverFermion<Impl>::MooeeInternal(const FermionField &in, FermionFie
   if (in._grid->_isCheckerBoarded){
    
     if (in.checkerboard == Odd){
-      std::cout << "Calling clover term Odd" << std::endl;
+    //  std::cout << "Calling clover term Odd" << std::endl;
       Clover = (inv) ? &CloverTermInvOdd : &CloverTermOdd;
     } else {
-      std::cout << "Calling clover term Even" << std::endl;
+    //  std::cout << "Calling clover term Even" << std::endl;
       Clover = (inv) ? &CloverTermInvEven : &CloverTermEven;
     }    
     out = *Clover * in;
-    std::cout << GridLogMessage << "*Clover.checkerboard "  << (*Clover).checkerboard << std::endl; 
+  //  std::cout << GridLogMessage << "*Clover.checkerboard "  << (*Clover).checkerboard << std::endl; 
   } else { 
     Clover = (inv) ? &CloverTermInv : &CloverTerm; 
     out = *Clover * in;
@@ -281,8 +284,12 @@ void WilsonCloverFermion<Impl>::MooDeriv(GaugeField &mat, const FermionField &X,
   
 GridBase *grid = mat._grid;
 
+//GaugeLinkField Lambdaodd(grid), Lambdaeven(grid), tmp(grid);
+//Lambdaodd  = zero; //Yodd*dag(Xodd)+Xodd*dag(Yodd);                   // I have to peek spin and decide the color structure
+//Lambdaeven = zero; //Teven*dag(Xeven)+Xeven*dag(Yeven) + 2*(Dee^-1)
+
 GaugeLinkField Lambda(grid), tmp(grid);
-Lambda = zero; //Y*dag(X)+X*dag(Y);  // I have to peek spin and decide the color structure
+Lambda=zero;
 
 conformable(mat._grid, X._grid);
 conformable(Y._grid, X._grid);
@@ -297,37 +304,53 @@ for (int mu = 0; mu < Nd; mu++) {
  C1m[mu]=zero; C2m[mu]=zero; C3m[mu]=zero; C4m[mu]=zero;
 }
 
+/*
+  PARALLEL_FOR_LOOP
+    for (int i = 0; i < CloverTerm._grid->oSites(); i++)
+    {
+      T._odata[i]()(0, 1) = timesMinusI(F._odata[i]()());
+      T._odata[i]()(1, 0) = timesMinusI(F._odata[i]()());
+      T._odata[i]()(2, 3) = timesMinusI(F._odata[i]()());
+      T._odata[i]()(3, 2) = timesMinusI(F._odata[i]()());
+    }
+*/  
 
-for (int mu=0;mu<4;mu++){
-  for (int nu=0;nu<4;nu++){
+for (int i=0;i<4;i++){  //spin
+  for(int j=0;j<4;j++){  //spin
+
+for (int mu=0;mu<4;mu++){  //color
+  for (int nu=0;nu<4;nu++){  //color
+
 // insertion in upper staple
-    tmp = Impl::CovShiftIdentityBackward(Lambda, nu) * U[nu];
-    C1p[mu]+= Cshift(Impl::CovShiftForward(tmp, nu, Impl::CovShiftBackward(U[mu], mu, Cshift(U[nu], nu, -1))), mu, 1);
+    tmp = Lambda * U[nu];
+    C1p[mu]+=Impl::ShiftStaple(Impl::CovShiftForward(tmp, nu, Impl::CovShiftBackward(U[mu], mu, Impl::CovShiftIdentityBackward(U[nu], nu))), mu);
 
-    tmp = Impl::CovShiftIdentityForward(Lambda, mu) * U[mu];    
-    C2p[mu]+= Cshift(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(tmp, mu, Cshift(U[nu], nu, -1))), mu, 1);
+    tmp = Lambda * U[mu];    
+    C2p[mu]+= Impl::ShiftStaple(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(tmp, mu, Impl::CovShiftIdentityBackward(U[nu], nu))), mu);
 
     tmp = Impl::CovShiftIdentityForward(Lambda, nu) * U[nu];    
-    C3p[mu]+= Cshift(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, Cshift(tmp, nu, -1))), mu, 1);
+    C3p[mu]+= Impl::ShiftStaple(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, Impl::CovShiftIdentityBackward(tmp, nu))), mu);
    
     tmp = Lambda;    
-    C4p[mu]+= Cshift(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, Cshift(U[nu], nu, -1))),mu,1) * tmp;
+    C4p[mu]+= Impl::ShiftStaple(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, Impl::CovShiftIdentityBackward(U[nu], nu))),mu) * tmp;
 
 // insertion in lower staple               
-    tmp = Impl::CovShiftIdentityForward(Lambda, nu) * U[nu];
-    C1m[mu]+= Cshift(Impl::CovShiftBackward(tmp, nu, Impl::CovShiftBackward(U[mu], mu, U[nu])), mu, 1);
+    tmp = Lambda * U[nu];
+    C1m[mu]+= Impl::ShiftStaple(Impl::CovShiftBackward(tmp, nu, Impl::CovShiftBackward(U[mu], mu, U[nu])), mu);
 
-    tmp = Cshift(Cshift(Lambda, nu, 2),mu, 1) * U[mu];
-    C2m[mu]+= Cshift(Impl::CovShiftBackward(U[nu], nu, Impl::CovShiftBackward(tmp, mu, U[nu])), mu ,1);
+    tmp = Lambda * U[mu];
+    C2m[mu]+= Impl::ShiftStaple(Impl::CovShiftBackward(U[nu], nu, Impl::CovShiftBackward(tmp, mu, U[nu])), mu);
 
-    tmp = Cshift(Lambda, nu, 2) * U[nu];
-    C3m[mu]+= Cshift(Impl::CovShiftBackward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, tmp)), mu, 1);
+    tmp = Lambda * U[nu];
+    C3m[mu]+= Impl::ShiftStaple(Impl::CovShiftBackward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, tmp)), mu);
 
     tmp = Lambda;
-    C4m[mu]+= Cshift(Impl::CovShiftBackward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, U[nu])), mu, 1)* tmp;
+    C4m[mu]+= Impl::ShiftStaple(Impl::CovShiftBackward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, U[nu])), mu)* tmp;
   }
 }
 
+}
+}
 
 //Still implementing. Have to be tested, and understood how to project EO
 
