@@ -68,6 +68,7 @@ namespace QCD{
     void StochasticField(GaugeField &out, GridParallelRNG &rng);
     void StochasticField(GaugeField &out, GridParallelRNG &rng,
                          const GaugeLinkField &weight);
+    void UnitField(GaugeField &out);
   private:
     void invKHatSquared(GaugeLinkField &out);
     void zmSub(GaugeLinkField &out);
@@ -216,6 +217,23 @@ namespace QCD{
       pokeLorentz(aTilde, r, mu);
     }
     fft.FFT_all_dim(out, aTilde, FFT::backward);
+    
+    out = real(out);
+  }
+
+  template<class Gimpl>
+  void Photon<Gimpl>::UnitField(GaugeField &out)
+  {
+    auto               *grid = dynamic_cast<GridCartesian *>(out._grid);
+    const unsigned int nd = grid->_ndimension;
+    GaugeLinkField     r(grid);
+    
+    r = Complex(1.0,0.0);
+
+    for(int mu = 0; mu < nd; mu++)
+    {
+      pokeLorentz(out, r, mu);
+    }
     
     out = real(out);
   }

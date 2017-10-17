@@ -13,6 +13,7 @@
 #include <Grid/Hadrons/Modules/MGauge/Random.hpp>
 #include <Grid/Hadrons/Modules/MGauge/StochEm.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Unit.hpp>
+#include <Grid/Hadrons/Modules/MGauge/UnitEm.hpp>
 #include <Grid/Hadrons/Modules/MLoop/NoiseLoop.hpp>
 #include <Grid/Hadrons/Modules/MScalar/ChargedProp.hpp>
 #include <Grid/Hadrons/Modules/MScalar/FreeProp.hpp>

@@ -6,6 +6,7 @@ modules_cc =\
   Modules/MGauge/Random.cc \
   Modules/MGauge/StochEm.cc \
   Modules/MGauge/Unit.cc \
+  Modules/MGauge/UnitEm.cc \
   Modules/MScalar/ChargedProp.cc \
   Modules/MScalar/FreeProp.cc \
   Modules/MScalar/ScalarVP.cc
@@ -26,6 +27,7 @@ modules_hpp =\
   Modules/MGauge/Random.hpp \
   Modules/MGauge/StochEm.hpp \
   Modules/MGauge/Unit.hpp \
+  Modules/MGauge/UnitEm.hpp \
   Modules/MLoop/NoiseLoop.hpp \
   Modules/MScalar/ChargedProp.hpp \
   Modules/MScalar/FreeProp.hpp \
