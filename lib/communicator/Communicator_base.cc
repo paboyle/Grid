@@ -102,7 +102,6 @@ void CartesianCommunicator::GlobalSumVector(ComplexD *c,int N)
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent) 
 {
   _ndimension = processors.size();
-  assert(_ndimension = parent._ndimension);
   
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   // split the communicator
@@ -121,10 +120,22 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   std::vector<int> scoor(_ndimension); // coor of split within parent
   std::vector<int> ssize(_ndimension); // coor of split within parent
 
+  std::vector<int> pcoor(_ndimension,0); 
+  std::vector<int> pdims(_ndimension,1); 
+
+  if(parent._processors.size()==4 && _ndimension==5){
+      for(int i=0;i<4;i++) pcoor[i+1]=parent._processor_coor[i];
+      for(int i=0;i<4;i++) pdims[i+1]=parent._processors[i];
+  } else {
+      assert(_ndimension == parent._ndimension);
+      for(int i=0;i<_ndimension;i++) pcoor[i]=parent._processor_coor[i];
+      for(int i=0;i<_ndimension;i++) pdims[i]=parent._processors[i];
+  }
+
   for(int d=0;d<_ndimension;d++){
-    ccoor[d] = parent._processor_coor[d] % processors[d];
-    scoor[d] = parent._processor_coor[d] / processors[d];
-    ssize[d] = parent._processors[d]/ processors[d];
+    ccoor[d] = pcoor[d] % processors[d];
+    scoor[d] = pcoor[d] / processors[d];
+    ssize[d] = pdims[d] / processors[d];
   }
   int crank,srank;  // rank within subcomm ; rank of subcomm within blocks of subcomms
   Lexicographic::IndexFromCoor(ccoor,crank,processors);

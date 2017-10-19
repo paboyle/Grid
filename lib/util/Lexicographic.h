@@ -18,6 +18,10 @@ namespace Grid{
 
     static inline void IndexFromCoor (const std::vector<int>& coor,int &index,const std::vector<int> &dims){
       int nd=dims.size();
+      if(nd > coor.size())  {
+	std::cout<< "coor.size "<<coor.size()<<" >dims.size "<<dims.size()<<std::endl; 
+	assert(0);
+	}
       int stride=1;
       index=0;
       for(int d=0;d<nd;d++){

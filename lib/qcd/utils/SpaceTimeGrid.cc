@@ -50,6 +50,7 @@ GridCartesian *SpaceTimeGrid::makeFourDimDWFGrid(const std::vector<int> & latt,c
 GridCartesian         *SpaceTimeGrid::makeFiveDimGrid(int Ls,const GridCartesian *FourDimGrid)
 {
   int N4=FourDimGrid->_ndimension;
+  assert(N4==4);
 
   std::vector<int> latt5(1,Ls);
   std::vector<int> simd5(1,1);
