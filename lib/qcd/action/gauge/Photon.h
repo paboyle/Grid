@@ -58,7 +58,7 @@ namespace QCD{
   public:
     INHERIT_GIMPL_TYPES(Gimpl);
     GRID_SERIALIZABLE_ENUM(Gauge, undef, feynman, 1, coulomb, 2, landau, 3);
-    GRID_SERIALIZABLE_ENUM(ZmScheme, undef, qedL, 1, qedTL, 2, qedInf, 3);
+    GRID_SERIALIZABLE_ENUM(ZmScheme, undef, qedL, 1, qedTL, 2);
   public:
     Photon(Gauge gauge, ZmScheme zmScheme);
     virtual ~Photon(void) = default;
@@ -70,7 +70,6 @@ namespace QCD{
                          const GaugeLinkField &weight);
     void UnitField(GaugeField &out);
   private:
-    void infVolPropagator(GaugeLinkField &out);
     void invKHatSquared(GaugeLinkField &out);
     void zmSub(GaugeLinkField &out);
   private:
@@ -96,32 +95,6 @@ namespace QCD{
     theFFT.FFT_all_dim(in_k,in,FFT::forward);
     MomentumSpacePropagator(prop_k,in_k);
     theFFT.FFT_all_dim(out,prop_k,FFT::backward);
-  }
-
-  template<class Gimpl>
-  void Photon<Gimpl>::infVolPropagator(GaugeLinkField &out)
-  {
-    GridBase           *grid = out._grid;
-    GaugeLinkField     xmu(grid), one(grid);
-    const unsigned int nd    = grid->_ndimension;
-    std::vector<int>   &l    = grid->_fdimensions;
-    std::vector<int>   x0(nd,0);
-    TComplex           Tone  = Complex(1.0,0.0);
-    TComplex           Tzero = Complex(0.0,0.0);
-    FFT                fft(grid);
-    
-    one = Complex(1.0,0.0);
-    out = zero;
-    for(int mu = 0; mu < nd; mu++)
-    {
-      LatticeCoordinate(xmu,mu);
-      xmu = where(xmu < latt_size[mu]/2, xmu, xmu-latt_size[mu]/2);
-      out = out + 4*M_PI*M_PI*xmu*xmu;
-    }
-    pokeSite(Tone, out, x0);
-    out = one/out;
-    pokeSite(Tzero, out, x0);
-    fft.FFT_all_dim(out, out, FFT::forward);
   }
   
   template<class Gimpl>
@@ -191,28 +164,13 @@ namespace QCD{
   void Photon<Gimpl>::MomentumSpacePropagator(const GaugeField &in,
                                                GaugeField &out)
   {
-  GridBase           *grid = out._grid;
-    LatticeComplex     momProp(grid);
+    GridBase           *grid = out._grid;
+    LatticeComplex     k2Inv(grid);
     
-    switch (zmScheme_)
-    {
-      case ZmScheme::qedTL:
-      case ZmScheme::qedL:
-      {
-        invKHatSquared(momProp);
-        zmSub(momProp);
-        break;
-      }
-      case ZmScheme::qedInf:
-      {
-        infVolPropagator(momProp);
-        break;
-      }
-      default:
-        break;
-    }
+    invKHatSquared(k2Inv);
+    zmSub(k2Inv);
     
-    out = in*momProp;
+    out = in*k2Inv;
   }
   
   template<class Gimpl>
@@ -222,30 +180,14 @@ namespace QCD{
     const unsigned int nd        = grid->_ndimension;
     std::vector<int>   latt_size = grid->_fdimensions;
     
-    switch (zmScheme_)
+    Integer vol = 1;
+    for(int d = 0; d < nd; d++)
     {
-      case ZmScheme::qedTL:
-      case ZmScheme::qedL:
-      {
-        Integer vol = 1;
-        for(int d = 0; d < nd; d++)
-        {
-          vol = vol * latt_size[d];
-        }
-        invKHatSquared(weight);
-        weight = sqrt(vol*real(weight));
-        zmSub(weight);
-        break;
-      }
-      case ZmScheme::qedInf:
-      {
-        infVolPropagator(weight);
-        weight = sqrt(real(weight));
-        break;
-      }
-      default:
-        break;
+      vol = vol * latt_size[d];
     }
+    invKHatSquared(weight);
+    weight = sqrt(vol*real(weight));
+    zmSub(weight);
   }
   
   template<class Gimpl>
@@ -268,34 +210,12 @@ namespace QCD{
     GaugeField         aTilde(grid);
     FFT                fft(grid);
     
-    switch (zmScheme_)
+    for(int mu = 0; mu < nd; mu++)
     {
-      case ZmScheme::qedTL:
-      case ZmScheme::qedL:
-      {
-        for(int mu = 0; mu < nd; mu++)
-        {
-          gaussian(rng, r);
-          r = weight*r;
-          pokeLorentz(aTilde, r, mu);
-        }
-        break;
-      }
-      case ZmScheme::qedInf:
-      {
-        Complex                    shift(1., 1.); // This needs to be a GaugeLink element?
-        for(int mu = 0; mu < nd; mu++)
-        {
-          bernoulli(rng, r);
-          r = weight*(2.*r - shift);
-          pokeLorentz(aTilde, r, mu);
-        }
-        break;
-      }
-      default:
-        break;
+      gaussian(rng, r);
+      r = weight*r;
+      pokeLorentz(aTilde, r, mu);
     }
-
     fft.FFT_all_dim(out, aTilde, FFT::backward);
     
     out = real(out);
