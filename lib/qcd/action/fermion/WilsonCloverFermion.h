@@ -156,10 +156,10 @@ private:
     PARALLEL_FOR_LOOP
     for (int i = 0; i < CloverTerm._grid->oSites(); i++)
     {
-      T._odata[i]()(0, 1) = timesI(F._odata[i]()());           //fixed
-      T._odata[i]()(1, 0) = timesI(F._odata[i]()());           //fixed
-      T._odata[i]()(2, 3) = timesMinusI(F._odata[i]()());      //fixed
-      T._odata[i]()(3, 2) = timesMinusI(F._odata[i]()());      //fixed
+      T._odata[i]()(0, 1) = timesI(F._odata[i]()());           
+      T._odata[i]()(1, 0) = timesI(F._odata[i]()());           
+      T._odata[i]()(2, 3) = timesMinusI(F._odata[i]()());      
+      T._odata[i]()(3, 2) = timesMinusI(F._odata[i]()());      
     }
   
   return T;
@@ -172,10 +172,10 @@ private:
     PARALLEL_FOR_LOOP
     for (int i = 0; i < CloverTerm._grid->oSites(); i++)
     {
-      T._odata[i]()(0, 1) = -(F._odata[i]()());         //fixed
-      T._odata[i]()(1, 0) = (F._odata[i]()());          //fixed
-      T._odata[i]()(2, 3) = (F._odata[i]()());          //fixed
-      T._odata[i]()(3, 2) = -(F._odata[i]()());         //fixed
+      T._odata[i]()(0, 1) = -(F._odata[i]()());         
+      T._odata[i]()(1, 0) = (F._odata[i]()());          
+      T._odata[i]()(2, 3) = (F._odata[i]()());          
+      T._odata[i]()(3, 2) = -(F._odata[i]()());         
     }
   
   return T;
@@ -188,10 +188,10 @@ private:
     PARALLEL_FOR_LOOP
     for (int i = 0; i < CloverTerm._grid->oSites(); i++)
     {
-      T._odata[i]()(0, 0) = timesI(F._odata[i]()());           //fixed
-      T._odata[i]()(1, 1) = timesMinusI(F._odata[i]()());      //fixed
-      T._odata[i]()(2, 2) = timesMinusI(F._odata[i]()());      //fixed
-      T._odata[i]()(3, 3) = timesI(F._odata[i]()());           //fixed
+      T._odata[i]()(0, 0) = timesI(F._odata[i]()());           
+      T._odata[i]()(1, 1) = timesMinusI(F._odata[i]()());      
+      T._odata[i]()(2, 2) = timesMinusI(F._odata[i]()());      
+      T._odata[i]()(3, 3) = timesI(F._odata[i]()());           
     }
   
   return T;

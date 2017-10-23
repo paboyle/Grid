@@ -71,10 +71,10 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
   GridBase *grid = _Umu._grid;
   typename Impl::GaugeLinkField Bx(grid), By(grid), Bz(grid), Ex(grid), Ey(grid), Ez(grid);
 
-  // Compute the field strength terms
-  WilsonLoops<Impl>::FieldStrength(Bx, _Umu, Ydir, Zdir);
+  // Compute the field strength terms mu>nu
+  WilsonLoops<Impl>::FieldStrength(Bx, _Umu, Zdir, Ydir);
   WilsonLoops<Impl>::FieldStrength(By, _Umu, Zdir, Xdir);
-  WilsonLoops<Impl>::FieldStrength(Bz, _Umu, Xdir, Ydir);
+  WilsonLoops<Impl>::FieldStrength(Bz, _Umu, Ydir, Xdir);
   WilsonLoops<Impl>::FieldStrength(Ex, _Umu, Tdir, Xdir);
   WilsonLoops<Impl>::FieldStrength(Ey, _Umu, Tdir, Ydir);
   WilsonLoops<Impl>::FieldStrength(Ez, _Umu, Tdir, Zdir);
@@ -86,7 +86,7 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
   CloverTerm += fillCloverXT(Ex);
   CloverTerm += fillCloverYT(Ey);
   CloverTerm += fillCloverZT(Ez);
-  CloverTerm *= 0.5 * csw; // FieldStrength normalization? should be ( -i/8  ). Is it the anti-symmetric combination? 
+  CloverTerm *= (0.5) * csw; 
 
 
   int lvol = _Umu._grid->lSites();
@@ -232,7 +232,8 @@ void WilsonCloverFermion<Impl>::MooeeInternal(const FermionField &in, FermionFie
     out = *Clover * in;
   } else { 
   Clover = (inv) ? &CloverTermInv : &CloverTerm; 
-  out = adj(*Clover) * in;
+  //out = adj(*Clover) * in;
+  out = adj(CloverTerm) * in;
   }
 
   

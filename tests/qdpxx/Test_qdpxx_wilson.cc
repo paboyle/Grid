@@ -29,7 +29,7 @@
 #include <Grid/Grid.h>
 
 // Mass
-double mq = 0.1;
+double mq = 0.0;
 
 // Define Wilson Types
 typedef Grid::QCD::WilsonImplR::FermionField FermionField;
@@ -274,7 +274,7 @@ public:
       p.Mass = _mq;
       p.clovCoeffR = QDP::Real(1.0);
       p.clovCoeffT = QDP::Real(1.0);
-      Real u0 = QDP::Real(0.0);
+      Real u0 = QDP::Real(1.0);
 
 
       Chroma::Handle<Chroma::FermBC<T4, U, U>> fbc(new Chroma::SimpleFermBC<T4, U, U>(bcs));
@@ -316,6 +316,8 @@ int main(int argc, char **argv)
   FermionField src(UGrid);
   FermionField res_chroma(UGrid);
   FermionField res_grid(UGrid);
+  FermionField only_wilson(UGrid);
+  FermionField difference(UGrid);
 
   std::vector<ChromaAction> ActionList({Wilson, WilsonClover});
   std::vector<std::string> ActionName({"Wilson", "WilsonClover"});
@@ -346,8 +348,19 @@ int main(int argc, char **argv)
 
           std::cout << "Norm of Grid " << ActionName[i] << " multiply " << Grid::norm2(res_grid) << std::endl;
 
-          res_chroma = res_chroma - res_grid;
-          std::cout << "Norm of difference " << Grid::norm2(res_chroma) << std::endl;
+          difference = res_chroma - res_grid;
+          std::cout << "Norm of difference " << Grid::norm2(difference) << std::endl;
+          
+          // Isolate Clover term
+          calc_grid(Wilson, Ug, src, only_wilson, dag);// Wilson term
+          res_grid -= only_wilson;
+          res_chroma -= only_wilson;
+          
+          std::cout << "Chroma:" << res_chroma << std::endl;
+          std::cout << "Grid  :" << res_grid << std::endl;
+          
+
+
         }
       }
 
@@ -416,7 +429,36 @@ void make_gauge(GaugeField &Umu, FermionField &src)
   Grid::GridParallelRNG RNG4(UGrid);
   RNG4.SeedFixedIntegers(seeds4);
   Grid::QCD::SU3::HotConfiguration(RNG4, Umu);
-  Grid::gaussian(RNG4, src);
+  
+  // Fermion field
+  //Grid::gaussian(RNG4, src);
+  Grid::QCD::SpinColourVector F;
+  Grid::Complex c;
+
+  std::vector<int> x(4); // 4d fermions
+  std::vector<int> gd = src._grid->GlobalDimensions();
+
+  for (x[0] = 0; x[0] < gd[0]; x[0]++)
+  {
+    for (x[1] = 0; x[1] < gd[1]; x[1]++)
+    {
+      for (x[2] = 0; x[2] < gd[2]; x[2]++)
+      {
+        for (x[3] = 0; x[3] < gd[3]; x[3]++)
+        {
+          for (int sp = 0; sp < 1; sp++)
+          {
+            for (int j = 1; j < 2; j++)// colours
+            {
+              c = Grid::Complex(1.0, 0.0);
+              F()(sp)(j) = c;
+            }
+          }
+          Grid::pokeSite(F, src, x);
+        }
+      }
+    }
+  }
 }
 
 void calc_grid(ChromaAction action, Grid::QCD::LatticeGaugeField &Umu, Grid::QCD::LatticeFermion &src, Grid::QCD::LatticeFermion &res, int dag)
