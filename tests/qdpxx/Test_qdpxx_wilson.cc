@@ -276,7 +276,6 @@ public:
       p.clovCoeffT = QDP::Real(1.0);
       Real u0 = QDP::Real(1.0);
 
-
       Chroma::Handle<Chroma::FermBC<T4, U, U>> fbc(new Chroma::SimpleFermBC<T4, U, U>(bcs));
       Chroma::Handle<Chroma::CreateFermState<T4, U, U>> cfs(new Chroma::CreateSimpleFermState<T4, U, U>(fbc));
       Chroma::UnprecCloverFermAct S_f(cfs, p);
@@ -350,17 +349,16 @@ int main(int argc, char **argv)
 
           difference = res_chroma - res_grid;
           std::cout << "Norm of difference " << Grid::norm2(difference) << std::endl;
-          
+
           // Isolate Clover term
-          calc_grid(Wilson, Ug, src, only_wilson, dag);// Wilson term
+          calc_grid(Wilson, Ug, src, only_wilson, dag); // Wilson term
           res_grid -= only_wilson;
           res_chroma -= only_wilson;
-          
+
           std::cout << "Chroma:" << res_chroma << std::endl;
           std::cout << "Grid  :" << res_grid << std::endl;
-          
-
-
+          difference = (res_grid-res_chroma);
+          std::cout << "Difference  :" << difference << std::endl;
         }
       }
 
@@ -370,7 +368,6 @@ int main(int argc, char **argv)
     }
   }
 }
-
 
 void calc_chroma(ChromaAction action, GaugeField &lat, FermionField &src, FermionField &res, int dag)
 {
@@ -429,11 +426,13 @@ void make_gauge(GaugeField &Umu, FermionField &src)
   Grid::GridParallelRNG RNG4(UGrid);
   RNG4.SeedFixedIntegers(seeds4);
   Grid::QCD::SU3::HotConfiguration(RNG4, Umu);
-  
+
   // Fermion field
   //Grid::gaussian(RNG4, src);
   Grid::QCD::SpinColourVector F;
   Grid::Complex c;
+
+  
 
   std::vector<int> x(4); // 4d fermions
   std::vector<int> gd = src._grid->GlobalDimensions();
@@ -446,15 +445,20 @@ void make_gauge(GaugeField &Umu, FermionField &src)
       {
         for (x[3] = 0; x[3] < gd[3]; x[3]++)
         {
-          for (int sp = 0; sp < 1; sp++)
+          for (int sp = 0; sp < 4; sp++)
           {
-            for (int j = 1; j < 2; j++)// colours
+            for (int j = 0; j < 3; j++) // colours
             {
-              c = Grid::Complex(1.0, 0.0);
-              F()(sp)(j) = c;
+              F()(sp)(j) = Grid::Complex(0.0,0.0);
+              if (((sp == 0)|| (sp==3)) && (j==0))
+              {
+                c = Grid::Complex(1.0, 0.0);
+                F()(sp)(j) = c;
+              }
             }
           }
           Grid::pokeSite(F, src, x);
+          
         }
       }
     }
