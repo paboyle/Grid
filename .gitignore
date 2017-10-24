@@ -123,5 +123,6 @@ make-bin-BUCK.sh
 lib/qcd/spin/gamma-gen/*.h
 lib/qcd/spin/gamma-gen/*.cc
 
+.vscode/
 .vscode/settings.json
 settings.json
