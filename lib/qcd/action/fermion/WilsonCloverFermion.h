@@ -26,6 +26,7 @@
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
 /*  END LEGAL */
+
 #ifndef GRID_QCD_WILSON_CLOVER_FERMION_H
 #define GRID_QCD_WILSON_CLOVER_FERMION_H
 
@@ -42,9 +43,11 @@ class WilsonCloverFermion : public WilsonFermion<Impl>
 public:
   // Types definitions
   INHERIT_IMPL_TYPES(Impl);
-  template <typename vtype> using iImplClover        = iScalar<iMatrix<iMatrix<vtype, Impl::Dimension>, Ns> >;
-  typedef iImplClover<Simd>        SiteCloverType;
-  typedef Lattice<SiteCloverType>        CloverFieldType;
+  template <typename vtype>
+  using iImplClover = iScalar<iMatrix<iMatrix<vtype, Impl::Dimension>, Ns>>;
+  typedef iImplClover<Simd> SiteCloverType;
+  typedef Lattice<SiteCloverType> CloverFieldType;
+
 public:
   typedef WilsonFermion<Impl> WilsonBase;
 
@@ -58,15 +61,21 @@ public:
                                                                                 Fgrid,
                                                                                 Hgrid,
                                                                                 _mass, p),
-                                                                                CloverTerm(&Fgrid),
-                                                                                CloverTermInv(&Fgrid),
-                                                                                CloverTermEven(&Hgrid),
-                                                                                CloverTermOdd(&Hgrid),
-                                                                                CloverTermInvEven(&Hgrid),
-                                                                                CloverTermInvOdd(&Hgrid)                                                                                
+                                                            CloverTerm(&Fgrid),
+                                                            CloverTermInv(&Fgrid),
+                                                            CloverTermEven(&Hgrid),
+                                                            CloverTermOdd(&Hgrid),
+                                                            CloverTermInvEven(&Hgrid),
+                                                            CloverTermInvOdd(&Hgrid),
+                                                            CloverTermDagEven(&Hgrid),    
+                                                            CloverTermDagOdd(&Hgrid),     
+                                                            CloverTermInvDagEven(&Hgrid), 
+                                                            CloverTermInvDagOdd(&Hgrid)   
   {
     csw = _csw;
     assert(Nd == 4); // require 4 dimensions
+
+    if (csw == 0) std::cout << GridLogWarning << "Initializing WilsonCloverFermion with csw = 0" << std::endl; 
   }
 
   virtual RealD M(const FermionField &in, FermionField &out);
@@ -87,10 +96,13 @@ public:
 private:
   // here fixing the 4 dimensions, make it more general?
 
-  RealD csw;                                         // Clover coefficient
-  CloverFieldType CloverTerm, CloverTermInv; // Clover term
-  CloverFieldType CloverTermEven, CloverTermOdd;
-  CloverFieldType CloverTermInvEven, CloverTermInvOdd; // Clover term
+  RealD csw;                                                               // Clover coefficient
+  CloverFieldType CloverTerm, CloverTermInv;                 // Clover term
+  CloverFieldType CloverTermEven, CloverTermOdd;             // Clover term EO
+  CloverFieldType CloverTermInvEven, CloverTermInvOdd;       // Clover term Inv EO
+  CloverFieldType CloverTermDagEven, CloverTermDagOdd;       // Clover term Dag EO
+  CloverFieldType CloverTermInvDagEven, CloverTermInvDagOdd; // Clover term Inv Dag EO
+
   // eventually these two can be compressed into 6x6 blocks instead of the 12x12
   // using the DeGrand-Rossi basis for the gamma matrices
 
@@ -106,9 +118,9 @@ private:
       T._odata[i]()(2, 3) = timesMinusI(F._odata[i]()());
       T._odata[i]()(3, 2) = timesMinusI(F._odata[i]()());
     }
-  
-  return T;
-}
+
+    return T;
+  }
 
   CloverFieldType fillCloverXZ(const GaugeLinkField &F)
   {
@@ -122,9 +134,9 @@ private:
       T._odata[i]()(2, 3) = -F._odata[i]()();
       T._odata[i]()(3, 2) = F._odata[i]()();
     }
-  
-  return T;
-}
+
+    return T;
+  }
 
   CloverFieldType fillCloverXY(const GaugeLinkField &F)
   {
@@ -138,9 +150,9 @@ private:
       T._odata[i]()(2, 2) = timesMinusI(F._odata[i]()());
       T._odata[i]()(3, 3) = timesI(F._odata[i]()());
     }
-  
-  return T;
-}
+
+    return T;
+  }
 
   CloverFieldType fillCloverXT(const GaugeLinkField &F)
   {
@@ -149,14 +161,14 @@ private:
     PARALLEL_FOR_LOOP
     for (int i = 0; i < CloverTerm._grid->oSites(); i++)
     {
-      T._odata[i]()(0, 1) = timesMinusI(F._odata[i]()());
-      T._odata[i]()(1, 0) = timesMinusI(F._odata[i]()());
-      T._odata[i]()(2, 3) = timesI(F._odata[i]()());
-      T._odata[i]()(3, 2) = timesI(F._odata[i]()());
+      T._odata[i]()(0, 1) = timesI(F._odata[i]()());
+      T._odata[i]()(1, 0) = timesI(F._odata[i]()());
+      T._odata[i]()(2, 3) = timesMinusI(F._odata[i]()());
+      T._odata[i]()(3, 2) = timesMinusI(F._odata[i]()());
     }
-  
-  return T;
-}
+
+    return T;
+  }
 
   CloverFieldType fillCloverYT(const GaugeLinkField &F)
   {
@@ -165,14 +177,14 @@ private:
     PARALLEL_FOR_LOOP
     for (int i = 0; i < CloverTerm._grid->oSites(); i++)
     {
-      T._odata[i]()(0, 1) = (F._odata[i]()());
-      T._odata[i]()(1, 0) = -(F._odata[i]()());
-      T._odata[i]()(2, 3) = -(F._odata[i]()());
-      T._odata[i]()(3, 2) = (F._odata[i]()());
+      T._odata[i]()(0, 1) = -(F._odata[i]()());
+      T._odata[i]()(1, 0) = (F._odata[i]()());
+      T._odata[i]()(2, 3) = (F._odata[i]()());
+      T._odata[i]()(3, 2) = -(F._odata[i]()());
     }
-  
-  return T;
-}
+
+    return T;
+  }
 
   CloverFieldType fillCloverZT(const GaugeLinkField &F)
   {
@@ -181,17 +193,16 @@ private:
     PARALLEL_FOR_LOOP
     for (int i = 0; i < CloverTerm._grid->oSites(); i++)
     {
-      T._odata[i]()(0, 0) = timesMinusI(F._odata[i]()());
-      T._odata[i]()(1, 1) = timesI(F._odata[i]()());
-      T._odata[i]()(2, 2) = timesI(F._odata[i]()());
-      T._odata[i]()(3, 3) = timesMinusI(F._odata[i]()());
+      T._odata[i]()(0, 0) = timesI(F._odata[i]()());
+      T._odata[i]()(1, 1) = timesMinusI(F._odata[i]()());
+      T._odata[i]()(2, 2) = timesMinusI(F._odata[i]()());
+      T._odata[i]()(3, 3) = timesI(F._odata[i]()());
     }
-  
-  return T;
-}
 
+    return T;
+  }
 };
 }
 }
 
-#endif  // GRID_QCD_WILSON_CLOVER_FERMION_H
+#endif // GRID_QCD_WILSON_CLOVER_FERMION_H
