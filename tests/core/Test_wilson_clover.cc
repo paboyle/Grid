@@ -237,7 +237,7 @@ int main (int argc, char ** argv)
   setCheckerboard(src,src_o);
 
   
-  //Gauge Transformation
+  ////////////////////// Gauge Transformation
   std::vector<int> seeds2({5,6,7,8});      
   GridParallelRNG pRNG2(&Grid);  pRNG2.SeedFixedIntegers(seeds2);
   LatticeColourMatrix Omega(&Grid);
@@ -251,7 +251,7 @@ int main (int argc, char ** argv)
     U_prime_mu=Omega*U[mu]*adj(ShiftedOmega); 
     pokeLorentz(U_prime,U_prime_mu,mu);
   }
-      
+  /////////////////    
  
   WilsonCloverFermionR Dwc_prime(U_prime,Grid,RBGrid,mass,csw,params);
   Dwc_prime.ImportGauge(U_prime); 
@@ -298,7 +298,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"=========================================================="<<std::endl;
 
   chi=zero; phi=zero; err=zero;
-  WilsonCloverFermionR Dwc_csw0(Umu,Grid,RBGrid,mass,0.0,params); //  <--  csw=0
+  WilsonCloverFermionR Dwc_csw0(Umu,Grid,RBGrid,mass,0.0,params); //  <-- Notice: csw=0
   Dwc_csw0.ImportGauge(Umu); 
   
   pickCheckerboard(Even,phi_e,phi);
@@ -318,9 +318,7 @@ int main (int argc, char ** argv)
   setCheckerboard(src,src_e);
   setCheckerboard(src,src_o);
   
-  FermionField::scalar_type scal(4.0 + mass);
-
-  err = chi - (phi + scal*src) ; // subtraction of the mass term (not present in Mooee Clover!)
+  err = chi - phi; 
   std::cout<<GridLogMessage << "norm diff  "<< norm2(err)<< std::endl;
   
 Grid_finalize();

@@ -27,27 +27,22 @@
 /*  END LEGAL */
 
 #include <Grid/Grid.h>
+#include <chroma.h>
+#include <actions/ferm/invert/syssolver_linop_cg_array.h>
+#include <actions/ferm/invert/syssolver_linop_aggregate.h>
 
 // Mass
-double mq = 0.0;
+double mq = 0.01;
 
 // Define Wilson Types
 typedef Grid::QCD::WilsonImplR::FermionField FermionField;
 typedef Grid::QCD::LatticeGaugeField GaugeField;
-
-#include <chroma.h>
-#include <actions/ferm/invert/syssolver_linop_cg_array.h>
-#include <actions/ferm/invert/syssolver_linop_aggregate.h>
 
 enum ChromaAction
 {
   Wilson,      // Wilson
   WilsonClover // CloverFermions
 };
-
-void make_gauge(GaugeField &lat, FermionField &src);
-void calc_grid(ChromaAction CA, GaugeField &lat, FermionField &src, FermionField &res, int dag);
-void calc_chroma(ChromaAction CA, GaugeField &lat, FermionField &src, FermionField &res, int dag);
 
 namespace Chroma
 {
@@ -286,91 +281,6 @@ public:
 };
 } // namespace Chroma
 
-int main(int argc, char **argv)
-{
-
-  /********************************************************
-   * Setup QDP
-   *********************************************************/
-  Chroma::initialize(&argc, &argv);
-  Chroma::WilsonTypeFermActs4DEnv::registerAll();
-
-  /********************************************************
-   * Setup Grid
-   *********************************************************/
-  Grid::Grid_init(&argc, &argv);
-  Grid::GridCartesian *UGrid = Grid::QCD::SpaceTimeGrid::makeFourDimGrid(Grid::GridDefaultLatt(),
-                                                                         Grid::GridDefaultSimd(Grid::QCD::Nd, Grid::vComplex::Nsimd()),
-                                                                         Grid::GridDefaultMpi());
-
-  std::vector<int> gd = UGrid->GlobalDimensions();
-  QDP::multi1d<int> nrow(QDP::Nd);
-  for (int mu = 0; mu < 4; mu++)
-    nrow[mu] = gd[mu];
-
-  QDP::Layout::setLattSize(nrow);
-  QDP::Layout::create();
-
-  GaugeField Ug(UGrid);
-  FermionField src(UGrid);
-  FermionField res_chroma(UGrid);
-  FermionField res_grid(UGrid);
-  FermionField only_wilson(UGrid);
-  FermionField difference(UGrid);
-
-  std::vector<ChromaAction> ActionList({Wilson, WilsonClover});
-  std::vector<std::string> ActionName({"Wilson", "WilsonClover"});
-
-  {
-
-    for (int i = 0; i < ActionList.size(); i++)
-    {
-      std::cout << "*****************************" << std::endl;
-      std::cout << "Action " << ActionName[i] << std::endl;
-      std::cout << "*****************************" << std::endl;
-      make_gauge(Ug, src); // fills the gauge field and the fermion field with random numbers
-
-      for (int dag = 0; dag < 2; dag++)
-      {
-
-        {
-
-          std::cout << "Dag =  " << dag << std::endl;
-
-          calc_chroma(ActionList[i], Ug, src, res_chroma, dag);
-
-          // Remove the normalisation of Chroma Gauge links ????????
-          std::cout << "Norm of Chroma " << ActionName[i] << " multiply " << Grid::norm2(res_chroma) << std::endl;
-          calc_grid(ActionList[i], Ug, src, res_grid, dag);
-
-          std::cout << "Norm of gauge " << Grid::norm2(Ug) << std::endl;
-
-          std::cout << "Norm of Grid " << ActionName[i] << " multiply " << Grid::norm2(res_grid) << std::endl;
-
-          difference = res_chroma - res_grid;
-          std::cout << "Norm of difference " << Grid::norm2(difference) << std::endl;
-
-          // Isolate Clover term
-          /*
-          calc_grid(Wilson, Ug, src, only_wilson, dag); // Wilson term
-          res_grid -= only_wilson;
-          res_chroma -= only_wilson;
-
-          std::cout << "Chroma:" << res_chroma << std::endl;
-          std::cout << "Grid  :" << res_grid << std::endl;
-          difference = (res_grid-res_chroma);
-          std::cout << "Difference  :" << difference << std::endl;
-          */
-        }
-      }
-
-      std::cout << "Finished test " << std::endl;
-
-      Chroma::finalize();
-    }
-  }
-}
-
 void calc_chroma(ChromaAction action, GaugeField &lat, FermionField &src, FermionField &res, int dag)
 {
   QDP::multi1d<QDP::LatticeColorMatrix> u(4);
@@ -467,7 +377,6 @@ void make_gauge(GaugeField &Umu, FermionField &src)
     }
   }
   */
-
 }
 
 void calc_grid(ChromaAction action, Grid::QCD::LatticeGaugeField &Umu, Grid::QCD::LatticeFermion &src, Grid::QCD::LatticeFermion &res, int dag)
@@ -511,4 +420,77 @@ void calc_grid(ChromaAction action, Grid::QCD::LatticeGaugeField &Umu, Grid::QCD
   }
 
   assert(0);
+}
+
+int main(int argc, char **argv)
+{
+
+  /********************************************************
+   * Setup QDP
+   *********************************************************/
+  Chroma::initialize(&argc, &argv);
+  Chroma::WilsonTypeFermActs4DEnv::registerAll();
+
+  /********************************************************
+   * Setup Grid
+   *********************************************************/
+  Grid::Grid_init(&argc, &argv);
+  Grid::GridCartesian *UGrid = Grid::QCD::SpaceTimeGrid::makeFourDimGrid(Grid::GridDefaultLatt(),
+                                                                         Grid::GridDefaultSimd(Grid::QCD::Nd, Grid::vComplex::Nsimd()),
+                                                                         Grid::GridDefaultMpi());
+
+  std::vector<int> gd = UGrid->GlobalDimensions();
+  QDP::multi1d<int> nrow(QDP::Nd);
+  for (int mu = 0; mu < 4; mu++)
+    nrow[mu] = gd[mu];
+
+  QDP::Layout::setLattSize(nrow);
+  QDP::Layout::create();
+
+  GaugeField Ug(UGrid);
+  FermionField src(UGrid);
+  FermionField res_chroma(UGrid);
+  FermionField res_grid(UGrid);
+  FermionField only_wilson(UGrid);
+  FermionField difference(UGrid);
+
+  std::vector<ChromaAction> ActionList({Wilson, WilsonClover});
+  std::vector<std::string> ActionName({"Wilson", "WilsonClover"});
+
+  {
+
+    for (int i = 0; i < ActionList.size(); i++)
+    {
+      std::cout << "*****************************" << std::endl;
+      std::cout << "Action " << ActionName[i] << std::endl;
+      std::cout << "*****************************" << std::endl;
+      make_gauge(Ug, src); // fills the gauge field and the fermion field with random numbers
+
+      for (int dag = 0; dag < 2; dag++)
+      {
+
+        {
+
+          std::cout << "Dag =  " << dag << std::endl;
+
+          calc_chroma(ActionList[i], Ug, src, res_chroma, dag);
+
+          // Remove the normalisation of Chroma Gauge links ????????
+          std::cout << "Norm of Chroma " << ActionName[i] << " multiply " << Grid::norm2(res_chroma) << std::endl;
+          calc_grid(ActionList[i], Ug, src, res_grid, dag);
+
+          std::cout << "Norm of gauge " << Grid::norm2(Ug) << std::endl;
+
+          std::cout << "Norm of Grid " << ActionName[i] << " multiply " << Grid::norm2(res_grid) << std::endl;
+
+          difference = res_chroma - res_grid;
+          std::cout << "Norm of difference " << Grid::norm2(difference) << std::endl;
+        }
+      }
+
+      std::cout << "Finished test " << std::endl;
+
+      Chroma::finalize();
+    }
+  }
 }
