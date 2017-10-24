@@ -351,6 +351,7 @@ int main(int argc, char **argv)
           std::cout << "Norm of difference " << Grid::norm2(difference) << std::endl;
 
           // Isolate Clover term
+          /*
           calc_grid(Wilson, Ug, src, only_wilson, dag); // Wilson term
           res_grid -= only_wilson;
           res_chroma -= only_wilson;
@@ -359,6 +360,7 @@ int main(int argc, char **argv)
           std::cout << "Grid  :" << res_grid << std::endl;
           difference = (res_grid-res_chroma);
           std::cout << "Difference  :" << difference << std::endl;
+          */
         }
       }
 
@@ -428,7 +430,8 @@ void make_gauge(GaugeField &Umu, FermionField &src)
   Grid::QCD::SU3::HotConfiguration(RNG4, Umu);
 
   // Fermion field
-  //Grid::gaussian(RNG4, src);
+  Grid::gaussian(RNG4, src);
+  /*
   Grid::QCD::SpinColourVector F;
   Grid::Complex c;
 
@@ -450,7 +453,7 @@ void make_gauge(GaugeField &Umu, FermionField &src)
             for (int j = 0; j < 3; j++) // colours
             {
               F()(sp)(j) = Grid::Complex(0.0,0.0);
-              if (((sp == 0)|| (sp==3)) && (j==0))
+              if (((sp == 0)|| (sp==3)) && (j==2))
               {
                 c = Grid::Complex(1.0, 0.0);
                 F()(sp)(j) = c;
@@ -463,6 +466,8 @@ void make_gauge(GaugeField &Umu, FermionField &src)
       }
     }
   }
+  */
+
 }
 
 void calc_grid(ChromaAction action, Grid::QCD::LatticeGaugeField &Umu, Grid::QCD::LatticeFermion &src, Grid::QCD::LatticeFermion &res, int dag)
