@@ -1,6 +1,6 @@
 /*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
 
     Source file: ./lib/qcd/action/fermion/Fermion_base_aggregate.h
 
@@ -38,6 +38,8 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 // - ContinuedFractionFermion5D.cc
 // - WilsonFermion.cc
 // - WilsonKernels.cc
+// - DomainWallEOFAFermion.cc
+// - MobiusEOFAFermion.cc
 //
 // The explicit instantiation is only avoidable if we move this source to headers and end up with include/parse/recompile
 // for EVERY .cc file. This define centralises the list and restores global push of impl cases
@@ -57,8 +59,9 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 
 #include <Grid/qcd/action/fermion/CayleyFermion5D.h>     // Cayley types
 #include <Grid/qcd/action/fermion/DomainWallFermion.h>
-#include <Grid/qcd/action/fermion/DomainWallFermion.h>
+#include <Grid/qcd/action/fermion/DomainWallEOFAFermion.h>
 #include <Grid/qcd/action/fermion/MobiusFermion.h>
+#include <Grid/qcd/action/fermion/MobiusEOFAFermion.h>
 #include <Grid/qcd/action/fermion/ZMobiusFermion.h>
 #include <Grid/qcd/action/fermion/SchurDiagTwoKappa.h>
 #include <Grid/qcd/action/fermion/ScaledShamirFermion.h>
@@ -121,6 +124,14 @@ typedef DomainWallFermion<WilsonImplRL> DomainWallFermionRL;
 typedef DomainWallFermion<WilsonImplFH> DomainWallFermionFH;
 typedef DomainWallFermion<WilsonImplDF> DomainWallFermionDF;
 
+typedef DomainWallEOFAFermion<WilsonImplR> DomainWallEOFAFermionR;
+typedef DomainWallEOFAFermion<WilsonImplF> DomainWallEOFAFermionF;
+typedef DomainWallEOFAFermion<WilsonImplD> DomainWallEOFAFermionD;
+
+typedef DomainWallEOFAFermion<WilsonImplRL> DomainWallEOFAFermionRL;
+typedef DomainWallEOFAFermion<WilsonImplFH> DomainWallEOFAFermionFH;
+typedef DomainWallEOFAFermion<WilsonImplDF> DomainWallEOFAFermionDF;
+
 typedef MobiusFermion<WilsonImplR> MobiusFermionR;
 typedef MobiusFermion<WilsonImplF> MobiusFermionF;
 typedef MobiusFermion<WilsonImplD> MobiusFermionD;
@@ -128,6 +139,14 @@ typedef MobiusFermion<WilsonImplD> MobiusFermionD;
 typedef MobiusFermion<WilsonImplRL> MobiusFermionRL;
 typedef MobiusFermion<WilsonImplFH> MobiusFermionFH;
 typedef MobiusFermion<WilsonImplDF> MobiusFermionDF;
+
+typedef MobiusEOFAFermion<WilsonImplR> MobiusEOFAFermionR;
+typedef MobiusEOFAFermion<WilsonImplF> MobiusEOFAFermionF;
+typedef MobiusEOFAFermion<WilsonImplD> MobiusEOFAFermionD;
+
+typedef MobiusEOFAFermion<WilsonImplRL> MobiusEOFAFermionRL;
+typedef MobiusEOFAFermion<WilsonImplFH> MobiusEOFAFermionFH;
+typedef MobiusEOFAFermion<WilsonImplDF> MobiusEOFAFermionDF;
 
 typedef ZMobiusFermion<ZWilsonImplR> ZMobiusFermionR;
 typedef ZMobiusFermion<ZWilsonImplF> ZMobiusFermionF;
@@ -137,7 +156,7 @@ typedef ZMobiusFermion<ZWilsonImplRL> ZMobiusFermionRL;
 typedef ZMobiusFermion<ZWilsonImplFH> ZMobiusFermionFH;
 typedef ZMobiusFermion<ZWilsonImplDF> ZMobiusFermionDF;
 
-// Ls vectorised 
+// Ls vectorised
 typedef DomainWallFermion<DomainWallVec5dImplR> DomainWallFermionVec5dR;
 typedef DomainWallFermion<DomainWallVec5dImplF> DomainWallFermionVec5dF;
 typedef DomainWallFermion<DomainWallVec5dImplD> DomainWallFermionVec5dD;
@@ -146,6 +165,14 @@ typedef DomainWallFermion<DomainWallVec5dImplRL> DomainWallFermionVec5dRL;
 typedef DomainWallFermion<DomainWallVec5dImplFH> DomainWallFermionVec5dFH;
 typedef DomainWallFermion<DomainWallVec5dImplDF> DomainWallFermionVec5dDF;
 
+typedef DomainWallEOFAFermion<DomainWallVec5dImplR> DomainWallEOFAFermionVec5dR;
+typedef DomainWallEOFAFermion<DomainWallVec5dImplF> DomainWallEOFAFermionVec5dF;
+typedef DomainWallEOFAFermion<DomainWallVec5dImplD> DomainWallEOFAFermionVec5dD;
+
+typedef DomainWallEOFAFermion<DomainWallVec5dImplRL> DomainWallEOFAFermionVec5dRL;
+typedef DomainWallEOFAFermion<DomainWallVec5dImplFH> DomainWallEOFAFermionVec5dFH;
+typedef DomainWallEOFAFermion<DomainWallVec5dImplDF> DomainWallEOFAFermionVec5dDF;
+
 typedef MobiusFermion<DomainWallVec5dImplR> MobiusFermionVec5dR;
 typedef MobiusFermion<DomainWallVec5dImplF> MobiusFermionVec5dF;
 typedef MobiusFermion<DomainWallVec5dImplD> MobiusFermionVec5dD;
@@ -153,6 +180,14 @@ typedef MobiusFermion<DomainWallVec5dImplD> MobiusFermionVec5dD;
 typedef MobiusFermion<DomainWallVec5dImplRL> MobiusFermionVec5dRL;
 typedef MobiusFermion<DomainWallVec5dImplFH> MobiusFermionVec5dFH;
 typedef MobiusFermion<DomainWallVec5dImplDF> MobiusFermionVec5dDF;
+
+typedef MobiusEOFAFermion<DomainWallVec5dImplR> MobiusEOFAFermionVec5dR;
+typedef MobiusEOFAFermion<DomainWallVec5dImplF> MobiusEOFAFermionVec5dF;
+typedef MobiusEOFAFermion<DomainWallVec5dImplD> MobiusEOFAFermionVec5dD;
+
+typedef MobiusEOFAFermion<DomainWallVec5dImplRL> MobiusEOFAFermionVec5dRL;
+typedef MobiusEOFAFermion<DomainWallVec5dImplFH> MobiusEOFAFermionVec5dFH;
+typedef MobiusEOFAFermion<DomainWallVec5dImplDF> MobiusEOFAFermionVec5dDF;
 
 typedef ZMobiusFermion<ZDomainWallVec5dImplR> ZMobiusFermionVec5dR;
 typedef ZMobiusFermion<ZDomainWallVec5dImplF> ZMobiusFermionVec5dF;
@@ -214,6 +249,14 @@ typedef DomainWallFermion<GparityWilsonImplRL> GparityDomainWallFermionRL;
 typedef DomainWallFermion<GparityWilsonImplFH> GparityDomainWallFermionFH;
 typedef DomainWallFermion<GparityWilsonImplDF> GparityDomainWallFermionDF;
 
+typedef DomainWallEOFAFermion<GparityWilsonImplR> GparityDomainWallEOFAFermionR;
+typedef DomainWallEOFAFermion<GparityWilsonImplF> GparityDomainWallEOFAFermionF;
+typedef DomainWallEOFAFermion<GparityWilsonImplD> GparityDomainWallEOFAFermionD;
+
+typedef DomainWallEOFAFermion<GparityWilsonImplRL> GparityDomainWallEOFAFermionRL;
+typedef DomainWallEOFAFermion<GparityWilsonImplFH> GparityDomainWallEOFAFermionFH;
+typedef DomainWallEOFAFermion<GparityWilsonImplDF> GparityDomainWallEOFAFermionDF;
+
 typedef WilsonTMFermion<GparityWilsonImplR> GparityWilsonTMFermionR;
 typedef WilsonTMFermion<GparityWilsonImplF> GparityWilsonTMFermionF;
 typedef WilsonTMFermion<GparityWilsonImplD> GparityWilsonTMFermionD;
@@ -229,6 +272,14 @@ typedef MobiusFermion<GparityWilsonImplD> GparityMobiusFermionD;
 typedef MobiusFermion<GparityWilsonImplRL> GparityMobiusFermionRL;
 typedef MobiusFermion<GparityWilsonImplFH> GparityMobiusFermionFH;
 typedef MobiusFermion<GparityWilsonImplDF> GparityMobiusFermionDF;
+
+typedef MobiusEOFAFermion<GparityWilsonImplR> GparityMobiusEOFAFermionR;
+typedef MobiusEOFAFermion<GparityWilsonImplF> GparityMobiusEOFAFermionF;
+typedef MobiusEOFAFermion<GparityWilsonImplD> GparityMobiusEOFAFermionD;
+
+typedef MobiusEOFAFermion<GparityWilsonImplRL> GparityMobiusEOFAFermionRL;
+typedef MobiusEOFAFermion<GparityWilsonImplFH> GparityMobiusEOFAFermionFH;
+typedef MobiusEOFAFermion<GparityWilsonImplDF> GparityMobiusEOFAFermionDF;
 
 typedef ImprovedStaggeredFermion<StaggeredImplR> ImprovedStaggeredFermionR;
 typedef ImprovedStaggeredFermion<StaggeredImplF> ImprovedStaggeredFermionF;

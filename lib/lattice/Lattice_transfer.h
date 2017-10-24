@@ -684,6 +684,307 @@ void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
     merge(out._odata[out_oidx], ptrs, 0);
   }
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Communicate between grids
+////////////////////////////////////////////////////////////////////////////////
+//
+// All to all plan
+//
+// Subvolume on fine grid is v.    Vectors a,b,c,d 
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+// SIMPLEST CASE:
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Mesh of nodes (2) ; subdivide to  1 subdivisions
+//
+// Lex ord:   
+//          N0 va0 vb0  N1 va1 vb1 
+//
+// For each dimension do an all to all
+//
+// full AllToAll(0)
+//          N0 va0 va1    N1 vb0 vb1
+//
+// REARRANGE
+//          N0 va01       N1 vb01
+//
+// Must also rearrange data to get into the NEW lex order of grid at each stage. Some kind of "insert/extract".
+// NB: Easiest to programme if keep in lex order.
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+// SIMPLE CASE:
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Mesh of nodes (2x2) ; subdivide to  1x1 subdivisions
+//
+// Lex ord:   
+//          N0 va0 vb0 vc0 vd0       N1 va1 vb1 vc1 vd1  
+//          N2 va2 vb2 vc2 vd2       N3 va3 vb3 vc3 vd3 
+//
+// Ratio = full[dim] / split[dim]
+//
+// For each dimension do an all to all; get Nvec -> Nvec / ratio
+//                                          Ldim -> Ldim * ratio
+//                                          LocalVol -> LocalVol * ratio
+// full AllToAll(0)
+//          N0 va0 vb0 va1 vb1       N1 vc0 vd0 vc1 vd1   
+//          N2 va2 vb2 va3 vb3       N3 vc2 vd2 vc3 vd3 
+//
+// REARRANGE
+//          N0 va01 vb01      N1 vc01 vd01
+//          N2 va23 vb23      N3 vc23 vd23
+//
+// full AllToAll(1)           // Not what is wanted. FIXME
+//          N0 va01 va23      N1 vc01 vc23 
+//          N2 vb01 vb23      N3 vd01 vd23
+// 
+// REARRANGE
+//          N0 va0123      N1 vc0123
+//          N2 vb0123      N3 vd0123
+//
+// Must also rearrange data to get into the NEW lex order of grid at each stage. Some kind of "insert/extract".
+// NB: Easiest to programme if keep in lex order.
+//
+/////////////////////////////////////////////////////////
+template<class Vobj>
+void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
+{
+  typedef typename Vobj::scalar_object Sobj;
+
+  int full_vecs   = full.size();
+
+  assert(full_vecs>=1);
+
+  GridBase * full_grid = full[0]._grid;
+  GridBase *split_grid = split._grid;
+
+  int       ndim  = full_grid->_ndimension;
+  int  full_nproc = full_grid->_Nprocessors;
+  int split_nproc =split_grid->_Nprocessors;
+
+  ////////////////////////////////
+  // Checkerboard management
+  ////////////////////////////////
+  int cb = full[0].checkerboard;
+  split.checkerboard = cb;
+
+  //////////////////////////////
+  // Checks
+  //////////////////////////////
+  assert(full_grid->_ndimension==split_grid->_ndimension);
+  for(int n=0;n<full_vecs;n++){
+    assert(full[n].checkerboard == cb);
+    for(int d=0;d<ndim;d++){
+      assert(full[n]._grid->_gdimensions[d]==split._grid->_gdimensions[d]);
+      assert(full[n]._grid->_fdimensions[d]==split._grid->_fdimensions[d]);
+    }
+  }
+
+  int   nvector   =full_nproc/split_nproc; 
+  assert(nvector*split_nproc==full_nproc);
+  assert(nvector == full_vecs);
+
+  std::vector<int> ratio(ndim);
+  for(int d=0;d<ndim;d++){
+    ratio[d] = full_grid->_processors[d]/ split_grid->_processors[d];
+  }
+
+  int lsites = full_grid->lSites();
+  Integer sz = lsites * nvector;
+  std::vector<Sobj> tmpdata(sz);
+  std::vector<Sobj> alldata(sz);
+  std::vector<Sobj> scalardata(lsites); 
+  for(int v=0;v<nvector;v++){
+    unvectorizeToLexOrdArray(scalardata,full[v]);    
+    parallel_for(int site=0;site<lsites;site++){
+      alldata[v*lsites+site] = scalardata[site];
+    }
+  }
+
+  int nvec = nvector; // Counts down to 1 as we collapse dims
+  std::vector<int> ldims = full_grid->_ldimensions;
+  std::vector<int> lcoor(ndim);
+
+  for(int d=0;d<ndim;d++){
+
+    if ( ratio[d] != 1 ) {
+
+      full_grid ->AllToAll(d,alldata,tmpdata);
+
+      //////////////////////////////////////////
+      //Local volume for this dimension is expanded by ratio of processor extents
+      // Number of vectors is decreased by same factor
+      // Rearrange to lexico for bigger volume
+      //////////////////////////////////////////
+      nvec    /= ratio[d];
+      auto rdims = ldims; rdims[d]  *=   ratio[d];
+      auto rsites= lsites*ratio[d];
+      for(int v=0;v<nvec;v++){
+
+	// For loop over each site within old subvol
+	for(int lsite=0;lsite<lsites;lsite++){
+
+	  Lexicographic::CoorFromIndex(lcoor, lsite, ldims);	  
+
+	  for(int r=0;r<ratio[d];r++){ // ratio*nvec terms
+
+	    auto rcoor = lcoor;	    rcoor[d]  += r*ldims[d];
+
+	    int rsite; Lexicographic::IndexFromCoor(rcoor, rsite, rdims);	  
+	    rsite += v * rsites;
+
+	    int rmul=nvec*lsites;
+	    int vmul=     lsites;
+	    alldata[rsite] = tmpdata[lsite+r*rmul+v*vmul];
+
+	  }
+	}
+      }
+      ldims[d]*= ratio[d];
+      lsites  *= ratio[d];
+
+      if ( split_grid->_processors[d] > 1 ) {
+	tmpdata = alldata;
+	split_grid->AllToAll(d,tmpdata,alldata);
+      }
+    }
+  }
+
+  vectorizeFromLexOrdArray(alldata,split);    
+}
+
+template<class Vobj>
+void Grid_split(Lattice<Vobj> &full,Lattice<Vobj>   & split)
+{
+  int nvector = full._grid->_Nprocessors / split._grid->_Nprocessors;
+  std::vector<Lattice<Vobj> > full_v(nvector,full._grid);
+  for(int n=0;n<nvector;n++){
+    full_v[n] = full;
+  }
+  Grid_split(full_v,split);
+}
+
+template<class Vobj>
+void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
+{
+  typedef typename Vobj::scalar_object Sobj;
+
+  int full_vecs   = full.size();
+
+  assert(full_vecs>=1);
+
+  GridBase * full_grid = full[0]._grid;
+  GridBase *split_grid = split._grid;
+
+  int       ndim  = full_grid->_ndimension;
+  int  full_nproc = full_grid->_Nprocessors;
+  int split_nproc =split_grid->_Nprocessors;
+
+  ////////////////////////////////
+  // Checkerboard management
+  ////////////////////////////////
+  int cb = full[0].checkerboard;
+  split.checkerboard = cb;
+
+  //////////////////////////////
+  // Checks
+  //////////////////////////////
+  assert(full_grid->_ndimension==split_grid->_ndimension);
+  for(int n=0;n<full_vecs;n++){
+    assert(full[n].checkerboard == cb);
+    for(int d=0;d<ndim;d++){
+      assert(full[n]._grid->_gdimensions[d]==split._grid->_gdimensions[d]);
+      assert(full[n]._grid->_fdimensions[d]==split._grid->_fdimensions[d]);
+    }
+  }
+
+  int   nvector   =full_nproc/split_nproc; 
+  assert(nvector*split_nproc==full_nproc);
+  assert(nvector == full_vecs);
+
+  std::vector<int> ratio(ndim);
+  for(int d=0;d<ndim;d++){
+    ratio[d] = full_grid->_processors[d]/ split_grid->_processors[d];
+  }
+
+  int lsites = full_grid->lSites();
+  Integer sz = lsites * nvector;
+  std::vector<Sobj> tmpdata(sz);
+  std::vector<Sobj> alldata(sz);
+  std::vector<Sobj> scalardata(lsites); 
+
+  unvectorizeToLexOrdArray(alldata,split);    
+
+  /////////////////////////////////////////////////////////////////
+  // Start from split grid and work towards full grid
+  /////////////////////////////////////////////////////////////////
+  std::vector<int> lcoor(ndim);
+  std::vector<int> rcoor(ndim);
+
+  int nvec = 1;
+  lsites = split_grid->lSites();
+  std::vector<int> ldims = split_grid->_ldimensions;
+
+  for(int d=ndim-1;d>=0;d--){
+
+    if ( ratio[d] != 1 ) {
+
+      if ( split_grid->_processors[d] > 1 ) {
+	tmpdata = alldata;
+	split_grid->AllToAll(d,tmpdata,alldata);
+      }
+
+      //////////////////////////////////////////
+      //Local volume for this dimension is expanded by ratio of processor extents
+      // Number of vectors is decreased by same factor
+      // Rearrange to lexico for bigger volume
+      //////////////////////////////////////////
+      auto rsites= lsites/ratio[d];
+      auto rdims = ldims; rdims[d]/=ratio[d];
+
+      for(int v=0;v<nvec;v++){
+
+	// rsite, rcoor --> smaller local volume
+	// lsite, lcoor --> bigger original (single node?) volume
+	// For loop over each site within smaller subvol
+	for(int rsite=0;rsite<rsites;rsite++){
+
+	  Lexicographic::CoorFromIndex(rcoor, rsite, rdims);	  
+	  int lsite;
+
+	  for(int r=0;r<ratio[d];r++){ 
+
+	    lcoor = rcoor; lcoor[d] += r*rdims[d];
+	    Lexicographic::IndexFromCoor(lcoor, lsite, ldims); lsite += v * lsites;
+
+	    int rmul=nvec*rsites;
+	    int vmul=     rsites;
+	    tmpdata[rsite+r*rmul+v*vmul]=alldata[lsite];
+
+	  }
+	}
+      }
+      nvec   *= ratio[d];
+      ldims[d]=rdims[d];
+      lsites  =rsites;
+
+      full_grid ->AllToAll(d,tmpdata,alldata);
+    }
+  }
+
+  lsites = full_grid->lSites();
+  for(int v=0;v<nvector;v++){
+    parallel_for(int site=0;site<lsites;site++){
+      scalardata[site] = alldata[v*lsites+site];
+    }
+    assert(v<full.size());
+
+    vectorizeFromLexOrdArray(scalardata,full[v]);    
+
+  }
+}
+
  
 }
 #endif

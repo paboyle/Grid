@@ -75,6 +75,11 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
   ShmInitGeneric();
 }
 
+CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent) 
+  : CartesianCommunicator(processors) 
+{
+  std::cout << "Attempts to split SHMEM communicators will fail " <<std::endl;
+}
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {
   _ndimension = processors.size();

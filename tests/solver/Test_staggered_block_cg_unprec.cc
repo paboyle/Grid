@@ -27,7 +27,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
-#include <Grid/algorithms/iterative/BlockConjugateGradient.h>
 
 using namespace std;
 using namespace Grid;
@@ -75,7 +74,7 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
 
   RealD mass=0.003;
-  ImprovedStaggeredFermion5DR Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass);
+  ImprovedStaggeredFermion5DR Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass); 
   MdagMLinearOperator<ImprovedStaggeredFermion5DR,FermionField> HermOp(Ds);
 
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
@@ -99,21 +98,27 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Calling 5d CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   result=zero;
+  Ds.ZeroCounters();
   CG(HermOp,src,result);
+  Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   std::cout << GridLogMessage << " Calling multiRHS CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   result=zero;
+  Ds.ZeroCounters();
   mCG(HermOp,src,result);
+  Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   std::cout << GridLogMessage << " Calling Block CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   result=zero;
+  Ds.ZeroCounters();
   BCGrQ(HermOp,src,result);
+  Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
 

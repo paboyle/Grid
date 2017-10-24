@@ -80,31 +80,47 @@ int main (int argc, char ** argv)
 
 
   LatticeFermionD    src_o(FrbGrid);
-  LatticeFermionD result_o(FrbGrid);
-  LatticeFermionD result_o_2(FrbGrid);
+  LatticeFermionD result_cg(FrbGrid);
   pickCheckerboard(Odd,src_o,src);
-  result_o.checkerboard = Odd;
-  result_o = zero;
-  result_o_2.checkerboard = Odd;
-  result_o_2 = zero;
+  result_cg.checkerboard = Odd;
+  result_cg = zero;
+  LatticeFermionD result_mcg(result_cg);
+  LatticeFermionD result_rlcg(result_cg);
 
   SchurDiagMooeeOperator<DomainWallFermionD,LatticeFermionD> HermOpEO(Ddwf);
   SchurDiagMooeeOperator<DomainWallFermionFH,LatticeFermionF> HermOpEO_f(Ddwf_f);
 
+  //#define DO_MIXED_CG
+#define DO_RLUP_CG
+
+#ifdef DO_MIXED_CG
   std::cout << "Starting mixed CG" << std::endl;
   MixedPrecisionConjugateGradient<LatticeFermionD,LatticeFermionF> mCG(1.0e-8, 10000, 50, FrbGrid_f, HermOpEO_f, HermOpEO);
   mCG.InnerTolerance = 3.0e-5;
-  mCG(src_o,result_o);
+  mCG(src_o,result_mcg);
+#endif
 
+#ifdef DO_RLUP_CG
+  std::cout << "Starting reliable update CG" << std::endl;
+  ConjugateGradientReliableUpdate<LatticeFermionD,LatticeFermionF> rlCG(1.e-8, 10000, 0.1, FrbGrid_f, HermOpEO_f, HermOpEO);
+  rlCG(src_o,result_rlcg);
+#endif
+  
   std::cout << "Starting regular CG" << std::endl;
   ConjugateGradient<LatticeFermionD> CG(1.0e-8,10000);
-  CG(HermOpEO,src_o,result_o_2);
+  CG(HermOpEO,src_o,result_cg);
 
-  LatticeFermionD diff_o(FrbGrid);
-  RealD diff = axpy_norm(diff_o, -1.0, result_o, result_o_2);
+#ifdef DO_MIXED_CG
+  LatticeFermionD diff_mcg(FrbGrid);
+  RealD vdiff_mcg = axpy_norm(diff_mcg, -1.0, result_cg, result_mcg);
+  std::cout << "Diff between mixed and regular CG: " << vdiff_mcg << std::endl;
+#endif
 
-  std::cout << "Diff between mixed and regular CG: " << diff << std::endl;
-
+#ifdef DO_RLUP_CG
+  LatticeFermionD diff_rlcg(FrbGrid);
+  RealD vdiff_rlcg = axpy_norm(diff_rlcg, -1.0, result_cg, result_rlcg);
+  std::cout << "Diff between reliable update and regular CG: " << vdiff_rlcg << std::endl;
+#endif
   
   Grid_finalize();
 }

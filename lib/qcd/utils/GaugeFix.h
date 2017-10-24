@@ -26,6 +26,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 //#include <Grid/Grid.h>
 
+#ifndef GRID_QCD_GAUGE_FIX_H
+#define GRID_QCD_GAUGE_FIX_H
 namespace Grid {
 namespace QCD {
 
@@ -188,3 +190,4 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
 
 }
 }
+#endif

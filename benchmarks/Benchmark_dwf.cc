@@ -51,7 +51,13 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
 
   std::vector<int> latt4 = GridDefaultLatt();
-  const int Ls=16;
+  int Ls=16;
+  for(int i=0;i<argc;i++)
+    if(std::string(argv[i]) == "-Ls"){
+      std::stringstream ss(argv[i+1]); ss >> Ls;
+    }
+
+
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
@@ -503,9 +509,9 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "norm diff even  "<< norm2(src_e)<<std::endl;
   std::cout<<GridLogMessage << "norm diff odd   "<< norm2(src_o)<<std::endl;
 
-  //assert(norm2(src_e)<1.0e-4);
-  //assert(norm2(src_o)<1.0e-4);
-
+  assert(norm2(src_e)<1.0e-4);
+  assert(norm2(src_o)<1.0e-4);
   Grid_finalize();
+  exit(0);
 }
 

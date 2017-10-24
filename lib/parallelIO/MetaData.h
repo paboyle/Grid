@@ -85,6 +85,9 @@ namespace Grid {
 	nd=4;
 	dimension.resize(4);
 	boundary.resize(4);
+	scidac_checksuma=0;
+	scidac_checksumb=0;
+	checksum=0;
       }
     };
 
@@ -104,6 +107,7 @@ namespace Grid {
       header.nd = nd;
       header.dimension.resize(nd);
       header.boundary.resize(nd);
+      header.data_start = 0;
       for(int d=0;d<nd;d++) {
 	header.dimension[d] = grid->_fdimensions[d];
       }
