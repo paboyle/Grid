@@ -337,7 +337,9 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
       GaugeMat v = Vup - Vdn;
       GaugeMat u = PeekIndex<LorentzIndex>(Umu, mu);  // some redundant copies
       GaugeMat vu = v*u;
-      FS = 0.25*Ta(u*v + Cshift(vu, mu, -1));
+      //FS = 0.25*Ta(u*v + Cshift(vu, mu, -1));
+      FS = (u*v + Cshift(vu, mu, -1));
+      FS = 0.125*(FS - adj(FS));
   }
 
   static Real TopologicalCharge(GaugeLorentz &U){
