@@ -57,37 +57,35 @@ void PmuStat::start(void)
   pmu_start();
   ++count;
   xmemctrs(&mrstart, &mwstart);
-  //tstart = __rdtsc();
-tstart=0;
+  tstart = __rdtsc();
 #endif
 }
 void PmuStat::enter(int t)
 {
 #ifdef __x86_64__
-  counters[0][t] = 0;//__rdpmc(0);
-  counters[1][t] = 0;//__rdpmc(1);
-  counters[2][t] = 0;//__rdpmc((1<<30)|0);
-  counters[3][t] = 0;//__rdpmc((1<<30)|1);
-  counters[4][t] = 0;//__rdpmc((1<<30)|2);
-  counters[5][t] = 0;//__rdtsc();
+  counters[0][t] = __rdpmc(0);
+  counters[1][t] = __rdpmc(1);
+  counters[2][t] = __rdpmc((1<<30)|0);
+  counters[3][t] = __rdpmc((1<<30)|1);
+  counters[4][t] = __rdpmc((1<<30)|2);
+  counters[5][t] = __rdtsc();
 #endif
 }
 void PmuStat::exit(int t)
 {
 #ifdef __x86_64__
-  counters[0][t] = 0;//__rdpmc(0) - counters[0][t];
-  counters[1][t] = 0;// __rdpmc(1) - counters[1][t];
-  counters[2][t] = 0;// __rdpmc((1<<30)|0) - counters[2][t];
-  counters[3][t] = 0;// __rdpmc((1<<30)|1) - counters[3][t];
-  counters[4][t] = 0;// __rdpmc((1<<30)|2) - counters[4][t];
-  counters[5][t] = 0;// __rdtsc() - counters[5][t];
+  counters[0][t] = __rdpmc(0) - counters[0][t];
+  counters[1][t] = __rdpmc(1) - counters[1][t];
+  counters[2][t] = __rdpmc((1<<30)|0) - counters[2][t];
+  counters[3][t] = __rdpmc((1<<30)|1) - counters[3][t];
+  counters[4][t] = __rdpmc((1<<30)|2) - counters[4][t];
+  counters[5][t] = __rdtsc() - counters[5][t];
 #endif
 }
 void PmuStat::accum(int nthreads)
 {
 #ifdef __x86_64__
- // tend = __rdtsc();
- tend =0 ;
+  tend = __rdtsc();
   xmemctrs(&mrend, &mwend);
   pmu_stop();
   for (int t = 0; t < nthreads; ++t) {
