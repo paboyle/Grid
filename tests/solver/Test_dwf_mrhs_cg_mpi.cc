@@ -113,7 +113,7 @@ int main (int argc, char ** argv)
 
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOp(Ddwf);
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOpCk(Dchk);
-  ConjugateGradient<FermionField> CG((1.0e-8/(me+1)),10000);
+  ConjugateGradient<FermionField> CG((1.0e-5/(me+1)),10000);
   s_res = zero;
   CG(HermOp,s_src,s_res);
 
