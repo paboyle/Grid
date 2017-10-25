@@ -34,6 +34,12 @@ Author: Christoph Lehner <clehner@bnl.gov>
 
 namespace Grid {
 
+struct ChebyParams : Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(ChebyParams,
+				  RealD, alpha,  
+				  RealD, beta,   
+				  int, Npoly);
+};
 
   ////////////////////////////////////////////////////////////////////////////////////////////
   // Generic Chebyshev approximations
@@ -67,6 +73,7 @@ namespace Grid {
     };
 
     Chebyshev(){};
+    Chebyshev(ChebyParams p){ Init(p.alpha,p.beta,p.Npoly);};
     Chebyshev(RealD _lo,RealD _hi,int _order, RealD (* func)(RealD) ) {Init(_lo,_hi,_order,func);};
     Chebyshev(RealD _lo,RealD _hi,int _order) {Init(_lo,_hi,_order);};
 
