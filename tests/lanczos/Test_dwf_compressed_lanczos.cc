@@ -26,9 +26,9 @@
 // The following are now decoupled from the Lanczos and deal with grids.
 // Safe to replace functionality
 /////////////////////////////////////////////////////////////////////////////
-#include <Grid/algorithms/iterative/BlockImplicitlyRestartedLanczos/BlockedGrid.h>
-#include <Grid/algorithms/iterative/BlockImplicitlyRestartedLanczos/FieldBasisVector.h>
-#include <Grid/algorithms/iterative/BlockImplicitlyRestartedLanczos/BlockProjector.h>
+#include "BlockedGrid.h"
+#include "FieldBasisVector.h"
+#include "BlockProjector.h"
 #include "FieldVectorIO.h"
 #include "Params.h"
 
@@ -431,6 +431,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
     auto result = src_orig; 
 
     // undeflated solve
+    std::cout << GridLogMessage << " Undeflated solve "<<std::endl;
     result = zero;
     CG(HermOp, src_orig, result);
     //    if (UCoarseGrid->IsBoss())
@@ -438,6 +439,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
     //    CG.ResHistory.clear();
 
     // deflated solve with all eigenvectors
+    std::cout << GridLogMessage << " Deflated solve with all evectors"<<std::endl;
     result = zero;
     pr.deflate(coef,eval2,Nstop2,src_orig,result);
     CG(HermOp, src_orig, result);
@@ -446,6 +448,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
     //    CG.ResHistory.clear();
 
     // deflated solve with non-blocked eigenvectors
+    std::cout << GridLogMessage << " Deflated solve with non-blocked evectors"<<std::endl;
     result = zero;
     pr.deflate(coef,eval1,Nstop1,src_orig,result);
     CG(HermOp, src_orig, result);
@@ -454,6 +457,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
     //    CG.ResHistory.clear();
 
     // deflated solve with all eigenvectors and original eigenvalues from proj
+    std::cout << GridLogMessage << " Deflated solve with all eigenvectors and original eigenvalues from proj"<<std::endl;
     result = zero;
     pr.deflate(coef,eval3,Nstop2,src_orig,result);
     CG(HermOp, src_orig, result);
