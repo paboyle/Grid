@@ -346,6 +346,13 @@ namespace Grid {
       virtual void operator() (const Field &in, Field &out) = 0;
     };
 
+    template<class Field> class IdentityLinearFunction : public LinearFunction<Field> {
+    public:
+      void operator() (const Field &in, Field &out){
+	out = in;
+      };
+    };
+
 
     /////////////////////////////////////////////////////////////
     // Base classes for Multishift solvers for operators
