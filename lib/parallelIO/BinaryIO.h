@@ -261,7 +261,7 @@ class BinaryIO {
 			      GridBase *grid,
 			      std::vector<fobj> &iodata,
 			      std::string file,
-			      int offset,
+			      Integer offset,
 			      const std::string &format, int control,
 			      uint32_t &nersc_csum,
 			      uint32_t &scidac_csuma,
@@ -367,7 +367,7 @@ class BinaryIO {
 	assert(0);
 #endif
       } else {
-        std::cout << GridLogMessage << "C++ read I/O " << file << " : "
+	std::cout << GridLogMessage << "C++ read I/O " << file << " : "
                   << iodata.size() * sizeof(fobj) << " bytes" << std::endl;
         std::ifstream fin;
         fin.open(file, std::ios::binary | std::ios::in);
@@ -444,48 +444,56 @@ class BinaryIO {
 	assert(0);
 #endif
       } else { 
+
+        std::cout << GridLogMessage << "C++ write I/O " << file << " : "
+                  << iodata.size() * sizeof(fobj) << " bytes" << std::endl;
         
 	std::ofstream fout; 
-  fout.exceptions ( std::fstream::failbit | std::fstream::badbit );
-  try {
-    fout.open(file,std::ios::binary|std::ios::out|std::ios::in);
-  } catch (const std::fstream::failure& exc) {
-    std::cout << GridLogError << "Error in opening the file " << file << " for output" <<std::endl;
-    std::cout << GridLogError << "Exception description: " << exc.what() << std::endl;
-    std::cout << GridLogError << "Probable cause: wrong path, inaccessible location "<< std::endl;
-    #ifdef USE_MPI_IO
-    MPI_Abort(MPI_COMM_WORLD,1);
-    #else
-    exit(1);
-    #endif
-  }
-	std::cout << GridLogMessage<< "C++ write I/O "<< file<<" : "
-		        << iodata.size()*sizeof(fobj)<<" bytes"<<std::endl;
-	
-  if ( control & BINARYIO_MASTER_APPEND )  {
-	  fout.seekp(0,fout.end);
-	} else {
-	  fout.seekp(offset+myrank*lsites*sizeof(fobj));
+	fout.exceptions ( std::fstream::failbit | std::fstream::badbit );
+	try {
+	  fout.open(file,std::ios::binary|std::ios::out|std::ios::in);
+	} catch (const std::fstream::failure& exc) {
+	  std::cout << GridLogError << "Error in opening the file " << file << " for output" <<std::endl;
+	  std::cout << GridLogError << "Exception description: " << exc.what() << std::endl;
+	  std::cout << GridLogError << "Probable cause: wrong path, inaccessible location "<< std::endl;
+#ifdef USE_MPI_IO
+	  MPI_Abort(MPI_COMM_WORLD,1);
+#else
+	  exit(1);
+#endif
 	}
-  
-  try {
-  	fout.write((char *)&iodata[0],iodata.size()*sizeof(fobj));//assert( fout.fail()==0);
-  }
-  catch (const std::fstream::failure& exc) {
-    std::cout << "Exception in writing file " << file << std::endl;
-    std::cout << GridLogError << "Exception description: "<< exc.what() << std::endl;
-    #ifdef USE_MPI_IO
-    MPI_Abort(MPI_COMM_WORLD,1);
-    #else
-    exit(1);
-    #endif
-  }
+	
+	if ( control & BINARYIO_MASTER_APPEND )  {
+	  try {
+	    fout.seekp(0,fout.end);
+	  } catch (const std::fstream::failure& exc) {
+	    std::cout << "Exception in seeking file end " << file << std::endl;
+	  }
+	} else {
+	  try { 
+	    fout.seekp(offset+myrank*lsites*sizeof(fobj));
+	  } catch (const std::fstream::failure& exc) {
+	    std::cout << "Exception in seeking file " << file <<" offset "<< offset << std::endl;
+	  }
+	}
 
+	try {
+	  fout.write((char *)&iodata[0],iodata.size()*sizeof(fobj));//assert( fout.fail()==0);
+	}
+	catch (const std::fstream::failure& exc) {
+	  std::cout << "Exception in writing file " << file << std::endl;
+	  std::cout << GridLogError << "Exception description: "<< exc.what() << std::endl;
+#ifdef USE_MPI_IO
+	  MPI_Abort(MPI_COMM_WORLD,1);
+#else
+	  exit(1);
+#endif
+	}
 	fout.close();
-  }
-  timer.Stop();
-  }
-
+      }
+      timer.Stop();
+    }
+    
     std::cout<<GridLogMessage<<"IOobject: ";
     if ( control & BINARYIO_READ) std::cout << " read  ";
     else                          std::cout << " write ";
@@ -515,7 +523,7 @@ class BinaryIO {
   static inline void readLatticeObject(Lattice<vobj> &Umu,
 				       std::string file,
 				       munger munge,
-				       int offset,
+				       Integer offset,
 				       const std::string &format,
 				       uint32_t &nersc_csum,
 				       uint32_t &scidac_csuma,
@@ -552,7 +560,7 @@ class BinaryIO {
     static inline void writeLatticeObject(Lattice<vobj> &Umu,
 					  std::string file,
 					  munger munge,
-					  int offset,
+					  Integer offset,
 					  const std::string &format,
 					  uint32_t &nersc_csum,
 					  uint32_t &scidac_csuma,
@@ -589,7 +597,7 @@ class BinaryIO {
   static inline void readRNG(GridSerialRNG &serial,
 			     GridParallelRNG &parallel,
 			     std::string file,
-			     int offset,
+			     Integer offset,
 			     uint32_t &nersc_csum,
 			     uint32_t &scidac_csuma,
 			     uint32_t &scidac_csumb)
@@ -651,7 +659,7 @@ class BinaryIO {
   static inline void writeRNG(GridSerialRNG &serial,
 			      GridParallelRNG &parallel,
 			      std::string file,
-			      int offset,
+			      Integer offset,
 			      uint32_t &nersc_csum,
 			      uint32_t &scidac_csuma,
 			      uint32_t &scidac_csumb)
