@@ -56,6 +56,8 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
   }
 }
 
+CartesianCommunicator::~CartesianCommunicator(){}
+
 void CartesianCommunicator::GlobalSum(float &){}
 void CartesianCommunicator::GlobalSumVector(float *,int N){}
 void CartesianCommunicator::GlobalSum(double &){}
