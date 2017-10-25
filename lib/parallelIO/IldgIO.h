@@ -147,7 +147,7 @@ namespace QCD {
 
    _scidacRecord = sr;
 
-   std::cout << GridLogMessage << "Build SciDAC datatype " <<sr.datatype<<std::endl;
+   //   std::cout << GridLogMessage << "Build SciDAC datatype " <<sr.datatype<<std::endl;
  }
  
  ///////////////////////////////////////////////////////
@@ -349,7 +349,6 @@ class GridLimeWriter : public BinaryIO {
     uint64_t PayloadSize = sizeof(sobj) * field._grid->_gsites;
     createLimeRecordHeader(record_name, 0, 0, PayloadSize);
 
-
     //    std::cout << "W sizeof(sobj)"      <<sizeof(sobj)<<std::endl;
     //    std::cout << "W Gsites "           <<field._grid->_gsites<<std::endl;
     //    std::cout << "W Payload expected " <<PayloadSize<<std::endl;
@@ -382,7 +381,7 @@ class GridLimeWriter : public BinaryIO {
     std::stringstream streamb; streamb << std::hex << scidac_csumb;
     checksum.suma= streama.str();
     checksum.sumb= streamb.str();
-    std::cout << GridLogMessage<<" writing scidac checksums "<<std::hex<<scidac_csuma<<"/"<<scidac_csumb<<std::dec<<std::endl;
+    //    std::cout << GridLogMessage<<" writing scidac checksums "<<std::hex<<scidac_csuma<<"/"<<scidac_csumb<<std::dec<<std::endl;
     writeLimeObject(0,1,checksum,std::string("scidacChecksum"),std::string(SCIDAC_CHECKSUM));
   }
 };
@@ -642,7 +641,7 @@ class IldgReader : public GridLimeReader {
 	// Copy out the string
 	std::vector<char> xmlc(nbytes+1,'\0');
 	limeReaderReadData((void *)&xmlc[0], &nbytes, LimeR);    
-	std::cout << GridLogMessage<< "Non binary record :" <<limeReaderType(LimeR) <<std::endl; //<<"\n"<<(&xmlc[0])<<std::endl;
+	//	std::cout << GridLogMessage<< "Non binary record :" <<limeReaderType(LimeR) <<std::endl; //<<"\n"<<(&xmlc[0])<<std::endl;
 
 	//////////////////////////////////
 	// ILDG format record
@@ -686,7 +685,7 @@ class IldgReader : public GridLimeReader {
 	  std::string xmls(&xmlc[0]);
 	  // is it a USQCD info field
 	  if ( xmls.find(std::string("usqcdInfo")) != std::string::npos ) { 
-	    std::cout << GridLogMessage<<"...found a usqcdInfo field"<<std::endl;
+	    //	    std::cout << GridLogMessage<<"...found a usqcdInfo field"<<std::endl;
 	    XmlReader RD(&xmlc[0],"");
 	    read(RD,"usqcdInfo",usqcdInfo_);
 	    found_usqcdInfo = 1;
