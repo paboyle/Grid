@@ -31,7 +31,8 @@ class ScalarActionParameters : Serializable {
  public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(ScalarActionParameters,
     double, mass_squared,
-    double, lambda);
+    double, lambda,
+    double, g);
 
     template <class ReaderClass >
   ScalarActionParameters(Reader<ReaderClass>& Reader){
@@ -140,7 +141,7 @@ int main(int argc, char **argv) {
 
   // Scalar action in adjoint representation
   ScalarActionParameters SPar(Reader);
-  ScalarAction Saction(SPar.mass_squared, SPar.lambda);
+  ScalarAction Saction(SPar.mass_squared, SPar.lambda, SPar.g);
 
   // Collect actions
   ActionLevel<ScalarAction::Field, ScalarNxNMatrixFields<Ncolours>> Level1(1);
