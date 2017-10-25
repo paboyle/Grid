@@ -53,9 +53,10 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
   ShmInitGeneric();
 }
 
-CartesianCommunicator::~CartesianCommunicator(){
-  ￼ if (communicator && !MPI::Is_finalized())
-      ￼ MPI_Comm_free(&communicator);
+CartesianCommunicator::~CartesianCommunicator()
+{
+  if (communicator && !MPI::Is_finalized())
+    MPI_Comm_free(&communicator);
 }
 
 void CartesianCommunicator::GlobalSum(uint32_t &u){
