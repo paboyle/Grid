@@ -68,10 +68,10 @@ std::string XmlWriter::XmlString(void)
 XmlReader::XmlReader(const char *xmlstring,string toplev) : fileName_("")
 {
   pugi::xml_parse_result result;
-  result = doc_.load_file(xmlstring);
+  result = doc_.load_string(xmlstring);
   if ( !result ) {
-    cerr << "XML error description: char * " << result.description() << " "<< xmlstring << "\n";
-    cerr << "XML error offset     : char * " << result.offset        << " "<<xmlstring <<"\n";
+    cerr << "XML error description (from char *): " << result.description() << "\nXML\n"<< xmlstring << "\n";
+    cerr << "XML error offset      (from char *) " << result.offset         << "\nXML\n"<< xmlstring <<"\n";
     abort();
   }
   if ( toplev == std::string("") ) {
