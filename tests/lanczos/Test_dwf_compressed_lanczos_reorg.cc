@@ -56,6 +56,7 @@ struct CompressedLanczosParams : Serializable {
 				  LanczosParams, FineParams,
 				  LanczosParams, CoarseParams,
 				  ChebyParams,   Smoother,
+				  RealD        , coarse_relax_tol,
 				  std::vector<int>, blockSize,
 				  std::string, config,
 				  std::vector < std::complex<double>  >, omega,
@@ -137,12 +138,13 @@ class ImplicitlyRestartedLanczosSmoothedTester  : public ImplicitlyRestartedLanc
   OperatorFunction<FineField>   & _smoother;
   LinearOperatorBase<FineField> &_Linop;
   Aggregation<Fobj,CComplex,nbasis> &_Aggregate;
-
+  RealD                             _coarse_relax_tol;
   ImplicitlyRestartedLanczosSmoothedTester(LinearFunction<CoarseField>   &Poly,
 					   OperatorFunction<FineField>   &smoother,
 					   LinearOperatorBase<FineField> &Linop,
-					   Aggregation<Fobj,CComplex,nbasis> &Aggregate) 
-    : _smoother(smoother), _Linop(Linop),_Aggregate(Aggregate), _Poly(Poly)  {    };
+					   Aggregation<Fobj,CComplex,nbasis> &Aggregate,
+					   RealD coarse_relax_tol=5.0e3) 
+    : _smoother(smoother), _Linop(Linop),_Aggregate(Aggregate), _Poly(Poly), _coarse_relax_tol(coarse_relax_tol)  {    };
 
   int TestConvergence(int j,RealD eresid,CoarseField &B, RealD &eval,RealD evalMaxApprox)
   {
@@ -196,7 +198,7 @@ class ImplicitlyRestartedLanczosSmoothedTester  : public ImplicitlyRestartedLanc
 	     <<"eval = "<<std::setw(25)<< eval << " (" << eval_poly << ")"
 	     <<" |H B[i] - eval[i]B[i]|^2 / evalMaxApprox^2 " << std::setw(25) << vv
 	     <<std::endl;
-
+    if ( j > nbasis ) eresid = eresid*_coarse_relax_tol;
     if( (vv<eresid*eresid) ) return 1;
     return 0;
   }
@@ -337,7 +339,7 @@ public:
     FineField src(_FineGrid); src=1.0; src.checkerboard = _checkerboard;
 
     int Nconv;
-    IRL.calc(evals_fine,_Aggregate.subspace,src,Nconv,false,0);
+    IRL.calc(evals_fine,_Aggregate.subspace,src,Nconv,false);
     
     // Shrink down to number saved
     assert(Nstop>=nbasis);
@@ -345,7 +347,7 @@ public:
     evals_fine.resize(nbasis);
     _Aggregate.subspace.resize(nbasis,_FineGrid);
   }
-  void calcCoarse(ChebyParams cheby_op,ChebyParams cheby_smooth,
+  void calcCoarse(ChebyParams cheby_op,ChebyParams cheby_smooth,RealD relax,
 		  int Nstop, int Nk, int Nm,RealD resid, 
 		  RealD MaxIt, RealD betastp, int MinRes)
   {
@@ -357,8 +359,7 @@ public:
     //////////////////////////////////////////////////////////////////////////////////////////////////
 
     Chebyshev<FineField>                                           ChebySmooth(cheby_smooth);
-    ImplicitlyRestartedLanczosSmoothedTester<Fobj,CComplex,nbasis> ChebySmoothTester(ChebyOp,ChebySmooth,_FineOp,_Aggregate);
-
+    ImplicitlyRestartedLanczosSmoothedTester<Fobj,CComplex,nbasis> ChebySmoothTester(ChebyOp,ChebySmooth,_FineOp,_Aggregate,relax);
 
     evals_coarse.resize(Nm);
     evec_coarse.resize(Nm,_CoarseGrid);
@@ -367,7 +368,7 @@ public:
 
     ImplicitlyRestartedLanczos<CoarseField> IRL(ChebyOp,ChebyOp,ChebySmoothTester,Nstop,Nk,Nm,resid,MaxIt,betastp,MinRes);
     int Nconv=0;
-    IRL.calc(evals_coarse,evec_coarse,src,Nconv,false,1);
+    IRL.calc(evals_coarse,evec_coarse,src,Nconv,false);
     assert(Nconv>=Nstop);
 
     for (int i=0;i<Nstop;i++){
@@ -492,7 +493,7 @@ int main (int argc, char ** argv) {
   IRL.Orthogonalise();
 
   std::cout << GridLogMessage << "Performing coarse grid IRL Nstop "<< Ns2<< " Nk "<<Nk2<<" Nm "<<Nm2<< std::endl;
-  IRL.calcCoarse(coarse.Cheby,Params.Smoother,
+  IRL.calcCoarse(coarse.Cheby,Params.Smoother,Params.coarse_relax_tol,
 		 coarse.Nstop, coarse.Nk,coarse.Nm,
 		 coarse.resid, coarse.MaxIt, 
 		 coarse.betastp,coarse.MinRes);

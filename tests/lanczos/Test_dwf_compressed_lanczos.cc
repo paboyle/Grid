@@ -331,7 +331,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
       ) {
     
 
-    IRL2.calc(eval2,coef._v,src_coarse,Nconv,true,SkipTest2);
+    IRL2.calc(eval2,coef._v,src_coarse,Nconv,true);
 
     coef.resize(Nstop2);
     eval2.resize(Nstop2);
@@ -635,7 +635,7 @@ int main (int argc, char ** argv) {
     if (simple_krylov_basis) {
       quick_krylov_basis(evec,src,Op1,Nstop1);
     } else {
-      IRL1.calc(eval1,evec._v,src,Nconv,false,1);
+      IRL1.calc(eval1,evec._v,src,Nconv,false);
     }
     evec.resize(Nstop1); // and throw away superfluous
     eval1.resize(Nstop1);
