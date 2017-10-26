@@ -37,6 +37,9 @@ Author: Christoph Lehner <clehner@bnl.gov>
 
 namespace Grid { 
 
+  ////////////////////////////////////////////////////////
+  // Move following 100 LOC to lattice/Lattice_basis.h
+  ////////////////////////////////////////////////////////
 template<class Field>
 void basisOrthogonalize(std::vector<Field> &basis,Field &w,int k) 
 {
@@ -101,7 +104,6 @@ void basisReorderInPlace(std::vector<Field> &_v,std::vector<RealD>& sort_vals, s
 
     if (idx[i] != i) {
 
-      assert(idx[i] > i);
       //////////////////////////////////////
       // idx[i] is a table of desired sources giving a permutation.
       // Swap v[i] with v[idx[i]].
@@ -114,8 +116,7 @@ void basisReorderInPlace(std::vector<Field> &_v,std::vector<RealD>& sort_vals, s
 	if (idx[j]==i)
 	  break;
 
-      assert(j!=idx.size());
-      assert(idx[j]==i);
+      assert(idx[i] > i);     assert(j!=idx.size());      assert(idx[j]==i);
 
       std::swap(_v[i]._odata,_v[idx[i]]._odata); // should use vector move constructor, no data copy
       std::swap(sort_vals[i],sort_vals[idx[i]]);
@@ -161,12 +162,6 @@ void basisDeflate(const std::vector<Field> &_v,const std::vector<RealD>& eval,co
   }
 }
 
-enum IRLdiagonalisation { 
-  IRLdiagonaliseWithDSTEGR,
-  IRLdiagonaliseWithQR,
-  IRLdiagonaliseWithEigen
-};
-
 /////////////////////////////////////////////////////////////
 // Implicitly restarted lanczos
 /////////////////////////////////////////////////////////////
@@ -175,6 +170,12 @@ template<class Field> class ImplicitlyRestartedLanczosTester
  public:
   virtual int TestConvergence(int j,RealD resid,Field &evec, RealD &eval,RealD evalMaxApprox);
   virtual int ReconstructEval(int j,RealD resid,Field &evec, RealD &eval,RealD evalMaxApprox);
+};
+
+enum IRLdiagonalisation { 
+  IRLdiagonaliseWithDSTEGR,
+  IRLdiagonaliseWithQR,
+  IRLdiagonaliseWithEigen
 };
 
 template<class Field> class ImplicitlyRestartedLanczosHermOpTester  : public ImplicitlyRestartedLanczosTester<Field>
@@ -242,6 +243,17 @@ class ImplicitlyRestartedLanczos {
   /////////////////////////
   
 public:       
+  //////////////////////////////////////////////////////////////////
+  // PAB:
+  //////////////////////////////////////////////////////////////////
+  // Too many options  & knobs. Do we really need orth_period
+  // What is the theoretical basis & guarantees of betastp ?
+  // Nstop=Nk viable?
+  // MinRestart avoidable with new convergence test?
+  // Could cut to HermOp, HermOpTest, Tester, Nk, Nm, resid, maxiter (+diagonalisation)
+  // HermOpTest could be eliminated if we dropped the Power method for max eval.
+  // -- also: The eval, eval2, eval2_copy stuff is still unnecessarily unclear
+  //////////////////////////////////////////////////////////////////
  ImplicitlyRestartedLanczos(LinearFunction<Field> & HermOp,
 			    LinearFunction<Field> & HermOpTest,
 			    ImplicitlyRestartedLanczosTester<Field> & Tester,
@@ -413,16 +425,14 @@ until convergence
       // sorting
       //////////////////////////////////
       eval2_copy = eval2;
-
       std::partial_sort(eval2.begin(),eval2.begin()+Nm,eval2.end(),std::greater<RealD>());
-
       std::cout<<GridLogIRL <<" evals sorted "<<std::endl;
       const int chunk=8;
       for(int io=0; io<k2;io+=chunk){
-	std::cout<<GridLogIRL << "eval "<< io ;
+	std::cout<<GridLogIRL << "eval "<< std::setw(3) << io ;
 	for(int ii=0;ii<chunk;ii++){
 	  if ( (io+ii)<k2 )
-	    std::cout<< " "<< std::setw(10)<< eval2[io+ii];
+	    std::cout<< " "<< std::setw(12)<< eval2[io+ii];
 	}
 	std::cout << std::endl;
       }
@@ -431,16 +441,15 @@ until convergence
       // Implicitly shifted QR transformations
       //////////////////////////////////
       Qt = Eigen::MatrixXd::Identity(Nm,Nm);
-      std::cout<<GridLogIRL << "QR decompose " << std::endl;
       for(int ip=k2; ip<Nm; ++ip){ 
 	QR_decomp(eval,lme,Nm,Nm,Qt,eval2[ip],k1,Nm);
       }
-      std::cout<<GridLogIRL <<"QR decompose done "<<std::endl;
+      std::cout<<GridLogIRL <<"QR decomposed "<<std::endl;
 
       assert(k2<Nm);      assert(k2<Nm);      assert(k1>0);
 
       basisRotate(evec,Qt,k1-1,k2+1,0,Nm,Nm); /// big constraint on the basis
-      std::cout<<GridLogIRL <<"QR rotation done "<<std::endl;
+      std::cout<<GridLogIRL <<"basisRotated  by Qt"<<std::endl;
       
       ////////////////////////////////////////////////////
       // Compressed vector f and beta(k2)
@@ -461,7 +470,6 @@ until convergence
       for(int k=0; k<Nm; ++k){    
 	eval2[k] = eval[k];
 	lme2[k] = lme[k];
-	//	std::cout<<GridLogIRL << "eval2[" << k << "] = " << eval2[k] << std::endl;
       }
       Qt = Eigen::MatrixXd::Identity(Nm,Nm);
       diagonalize(eval2,lme2,Nk,Nm,Qt,grid);
@@ -509,7 +517,6 @@ until convergence
     abort();
 	
   converged:
-
     {
       Field B(grid); B.checkerboard = evec[0].checkerboard;
       basisRotate(evec,Qt,0,Nk,0,Nk,Nm);	    
@@ -583,7 +590,7 @@ until convergence
 
     if (k>0 && k % orth_period == 0) {
       orthogonalize(w,evec,k); // orthonormalise
-      std::cout<<GridLogIRL << "orthogonalised " <<std::endl;
+      std::cout<<GridLogIRL << "Orthogonalised " <<std::endl;
     }
 
     if(k < Nm-1) evec[k+1] = w;
@@ -617,9 +624,8 @@ until convergence
   }
 
   ///////////////////////////////////////////////////////////////////////////
-  // File could end here if settle on Eigen ???
+  // File could end here if settle on Eigen ??? !!!
   ///////////////////////////////////////////////////////////////////////////
-
   void QR_decomp(std::vector<RealD>& lmd,   // Nm 
 		 std::vector<RealD>& lme,   // Nm 
 		 int Nk, int Nm,            // Nk, Nm
