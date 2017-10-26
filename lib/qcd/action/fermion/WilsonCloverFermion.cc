@@ -43,10 +43,14 @@ RealD WilsonCloverFermion<Impl>::M(const FermionField &in, FermionField &out)
 
   // Wilson term
   out.checkerboard = in.checkerboard;
-  this->Dhop(in, out, DaggerNo);
+  //this->Dhop(in, out, DaggerNo);
 
   // Clover term
   Mooee(in, temp);
+
+  //hack
+  out = zero;
+
 
   out += temp;
   return norm2(out);
@@ -59,10 +63,13 @@ RealD WilsonCloverFermion<Impl>::Mdag(const FermionField &in, FermionField &out)
 
   // Wilson term
   out.checkerboard = in.checkerboard;
-  this->Dhop(in, out, DaggerYes);
+  //this->Dhop(in, out, DaggerYes);
 
   // Clover term
   MooeeDag(in, temp);
+
+   //hack
+  out = zero;
 
   out += temp;
   return norm2(out);
@@ -84,7 +91,7 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
   WilsonLoops<Impl>::FieldStrength(Ez, _Umu, Tdir, Zdir);
 
   // Compute the Clover Operator acting on Colour and Spin
-  CloverTerm = fillCloverYZ(Bx);
+  CloverTerm  = fillCloverYZ(Bx);
   CloverTerm += fillCloverXZ(By);
   CloverTerm += fillCloverXY(Bz);
   CloverTerm += fillCloverXT(Ex);
@@ -223,23 +230,6 @@ void WilsonCloverFermion<Impl>::MooeeInternal(const FermionField &in, FermionFie
 
 } // MooeeInternal
 
-// Derivative parts
-template <class Impl>
-void WilsonCloverFermion<Impl>::MDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag)
-{
-
-  GaugeField tmp(mat._grid);
-
-  conformable(U._grid, V._grid);
-  conformable(U._grid, mat._grid);
-
-  mat.checkerboard = U.checkerboard;
-  tmp.checkerboard = U.checkerboard;
-
-  this->DhopDeriv(mat, U, V, dag);
-  MooDeriv(tmp, U, V, dag);
-  mat += tmp;
-}
 
 // Derivative parts
 template <class Impl>

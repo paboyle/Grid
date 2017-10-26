@@ -67,15 +67,18 @@ public:
                                                             CloverTermOdd(&Hgrid),
                                                             CloverTermInvEven(&Hgrid),
                                                             CloverTermInvOdd(&Hgrid),
-                                                            CloverTermDagEven(&Hgrid),    
-                                                            CloverTermDagOdd(&Hgrid),     
-                                                            CloverTermInvDagEven(&Hgrid), 
-                                                            CloverTermInvDagOdd(&Hgrid)   
+                                                            CloverTermDagEven(&Hgrid),
+                                                            CloverTermDagOdd(&Hgrid),
+                                                            CloverTermInvDagEven(&Hgrid),
+                                                            CloverTermInvDagOdd(&Hgrid)
   {
     csw = _csw;
     assert(Nd == 4); // require 4 dimensions
 
-    if (csw == 0) std::cout << GridLogWarning << "Initializing WilsonCloverFermion with csw = 0" << std::endl; 
+    if (csw == 0)
+      std::cout << GridLogWarning << "Initializing WilsonCloverFermion with csw = 0" << std::endl;
+
+    ImportGauge(_Umu);
   }
 
   virtual RealD M(const FermionField &in, FermionField &out);
@@ -87,16 +90,127 @@ public:
   virtual void MooeeInvDag(const FermionField &in, FermionField &out);
   virtual void MooeeInternal(const FermionField &in, FermionField &out, int dag, int inv);
 
-  virtual void MDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag);
+  //virtual void MDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag);
   virtual void MooDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag);
   virtual void MeeDeriv(GaugeField &mat, const FermionField &U, const FermionField &V, int dag);
 
   void ImportGauge(const GaugeField &_Umu);
 
+  // Derivative parts unpreconditioned pseudofermions
+  void MDeriv(GaugeField &force, const FermionField &X, const FermionField &Y, int dag)
+  {
+    conformable(X._grid, Y._grid);
+    conformable(X._grid, force._grid);
+    GaugeLinkField force_mu(force._grid), lambda(force._grid);
+    GaugeField clover_force(force._grid);
+    PropagatorField Lambda(force._grid);
+
+    // Here we are hitting some performance issues:
+    // need to extract the components of the DoubledGaugeField
+    // for each call
+    // Possible solution
+    // Create a vector object to store them? (cons: wasting space)
+    std::vector<GaugeLinkField> U(Nd, this->Umu._grid);
+    
+    Impl::extractLinkField(U, this->Umu);
+    
+    force = zero;
+    // Derivative of the Wilson hopping term
+    //this->DhopDeriv(force, X, Y, dag);
+
+    ///////////////////////////////////////////////////////////
+    // Clover term derivative
+    ///////////////////////////////////////////////////////////
+    Impl::outerProductImpl(Lambda, X, Y); 
+
+    Gamma::Algebra sigma[] = {
+        Gamma::Algebra::SigmaXY,
+        Gamma::Algebra::SigmaXZ,
+        Gamma::Algebra::SigmaXT,
+        Gamma::Algebra::MinusSigmaXY,
+        Gamma::Algebra::SigmaYZ,
+        Gamma::Algebra::SigmaYT,
+        Gamma::Algebra::MinusSigmaXZ,
+        Gamma::Algebra::MinusSigmaYZ,
+        Gamma::Algebra::SigmaZT,
+        Gamma::Algebra::MinusSigmaXT,
+        Gamma::Algebra::MinusSigmaYT,
+        Gamma::Algebra::MinusSigmaZT};
+
+    /*
+      sigma_{\mu \nu}=
+      | 0         sigma[0]  sigma[1]  sigma[2] |
+      | sigma[3]    0       sigma[4]  sigma[5] |
+      | sigma[6]  sigma[7]     0      sigma[8] |
+      | sigma[9]  sigma[10] sigma[11]   0      |
+    */
+
+    int count = 0;
+    clover_force  = zero;
+    for (int mu = 0; mu < 4; mu++)
+    {
+      force_mu = zero;
+      for (int nu = 0; nu < 4; nu++)
+      {
+        if (mu == nu) continue;
+        PropagatorField Slambda = Gamma(sigma[count]) * Lambda;
+        Impl::TraceSpinImpl(lambda, Slambda); //traceSpin
+        force_mu += Cmunu(U, lambda, mu, nu);
+        count++;
+      }
+
+      pokeLorentz(clover_force, U[mu] * force_mu, mu);
+    }
+    clover_force *= csw / 8.;
+    force += clover_force;
+  }
+
+  // Computing C_{\mu \nu}(x) as in Eq.(B.39) in Zbigniew Sroczynski's PhD thesis
+  GaugeLinkField Cmunu(std::vector<GaugeLinkField> &U, GaugeLinkField &lambda, int mu, int nu)
+  {
+    conformable(lambda._grid, U[0]._grid);
+    GaugeLinkField out(lambda._grid), tmp(lambda._grid);
+
+    // insertion in upper staple
+    // please check redundancy of shift operations
+
+    // C1+
+    tmp = lambda * U[nu];
+    out = Impl::ShiftStaple(Impl::CovShiftForward(tmp, nu, Impl::CovShiftBackward(U[mu], mu, Impl::CovShiftIdentityBackward(U[nu], nu))), mu);
+
+    // C2+
+    tmp = U[mu] * Impl::CovShiftIdentityForward(adj(lambda), mu);
+    out += Impl::ShiftStaple(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(tmp, mu, Impl::CovShiftIdentityBackward(U[nu], nu))), mu);
+
+    // C3+
+    tmp = U[nu] * Impl::CovShiftIdentityForward(adj(lambda), nu);
+    out += Impl::ShiftStaple(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, Impl::CovShiftIdentityBackward(tmp, nu))), mu);
+
+    // C4+
+    out += Impl::ShiftStaple(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, Impl::CovShiftIdentityBackward(U[nu], nu))), mu) * lambda;
+
+    // insertion in lower staple
+    // C1-
+    out -= Impl::ShiftStaple(lambda, mu) * Impl::ShiftStaple(Impl::CovShiftBackward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, U[nu])), mu);
+
+    // C2-
+    tmp = adj(lambda) * U[nu];
+    out -= Impl::ShiftStaple(Impl::CovShiftBackward(tmp, nu, Impl::CovShiftBackward(U[mu], mu, U[nu])), mu);
+
+    // C3-
+    tmp = lambda * U[nu];
+    out -= Impl::ShiftStaple(Impl::CovShiftBackward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, tmp)), mu);
+
+    // C4-
+    out -= Impl::ShiftStaple(Impl::CovShiftBackward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, U[nu])), mu) * lambda;
+
+    return out;
+  }
+
 private:
   // here fixing the 4 dimensions, make it more general?
 
-  RealD csw;                                                               // Clover coefficient
+  RealD csw;                                                 // Clover coefficient
   CloverFieldType CloverTerm, CloverTermInv;                 // Clover term
   CloverFieldType CloverTermEven, CloverTermOdd;             // Clover term EO
   CloverFieldType CloverTermInvEven, CloverTermInvOdd;       // Clover term Inv EO
