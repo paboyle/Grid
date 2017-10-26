@@ -374,20 +374,6 @@ public:
     for (int i=0;i<Nstop;i++){
       std::cout << i << " Coarse eval = " << evals_coarse[i]  << std::endl;
     }
-    // We got the evalues of the Cheby operator;
-    // Reconstruct eigenvalues of original operator via Chebyshev inverse
-    for (int i=0;i<Nstop;i++){
-
-      RealD eval_guess;
-      if (i==0) eval_guess = 0;
-      else      eval_guess = evals_coarse[i-1];
-
-      RealD eval_poly  = evals_coarse[i];
-      RealD eval_op    = Cheby.approxInv(eval_poly,eval_guess,100,1e-10);
-      std::cout << i << " Reconstructed eval = " << eval_op << " from guess " <<eval_guess<< " Cheby poly " << eval_poly << std::endl;
-      evals_coarse[i] = eval_op;
-    }
-
   }
 };
 
@@ -481,9 +467,8 @@ int main (int argc, char ** argv) {
 		 fine.resid,fine.MaxIt, 
 		 fine.betastp,fine.MinRes);
 
-    std::cout << GridLogIRL<<"checkpointing"<<std::endl;
+    std::cout << GridLogIRL<<"Checkpointing Fine evecs"<<std::endl;
     IRL.checkpointFine(std::string("evecs.scidac"),std::string("evals.xml"));
-    std::cout << GridLogIRL<<"checkpoint written"<<std::endl;
   } else { 
     //    IRL.testFine();
     IRL.checkpointFineRestore(std::string("evecs.scidac"),std::string("evals.xml"));
@@ -498,22 +483,10 @@ int main (int argc, char ** argv) {
 		 coarse.resid, coarse.MaxIt, 
 		 coarse.betastp,coarse.MinRes);
 
+
+  std::cout << GridLogIRL<<"Checkpointing coarse evecs"<<std::endl;
   IRL.checkpointCoarse(std::string("evecs.coarse.scidac"),std::string("evals.coarse.xml"));
 
-  //  IRL.smoothedCoarseEigenvalues();
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Questions pending
-  // -- i)   Mixed Precision sensitivity discussion.
-  // -- ii)  Stopping condition and checks on the convergence of all evecs; ordering
-  // -- iii) Total matmul count compared to no compression.
-  // -- iv)  Log tree walk back from maximal mode
-  // -- v)   betastp?
-  // -- vi)  eval2, eval2_copy annoying
-  // -- vii) Smoothing and checking.
-  // -- viii) Different poly in convergence check vs. IRL restart+ logging of which have converged; locking, assume no deconverge?
-  // -- xi)   CG 10 iters inverse iteration 1 pass. vs. Chebyshev. vs. Result *after* convergence declaration for each, apply H.
-  //          i.e. coarse2fine
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   Grid_finalize();
 }
 
