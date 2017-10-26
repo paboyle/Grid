@@ -55,7 +55,15 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
    *Odd
    * i)                 D_oo psi_o =  L^{-1}  eta_o
    *                        eta_o' = (D_oo)^dag (eta_o - Moe Mee^{-1} eta_e)
+   *
+   * Wilson:
    *      (D_oo)^{\dag} D_oo psi_o = (D_oo)^dag L^{-1}  eta_o
+   * Stag:
+   *      D_oo psi_o = L^{-1}  eta =    (eta_o - Moe Mee^{-1} eta_e)
+   *
+   * L^-1 eta_o= (1              0 ) (e
+   *             (-MoeMee^{-1}   1 )   
+   *
    *Even
    * ii)  Mee psi_e + Meo psi_o = src_e
    *
@@ -122,18 +130,19 @@ namespace Grid {
       pickCheckerboard(Odd ,sol_o,out);
     
       /////////////////////////////////////////////////////
-      // src_o = Mdag * (source_o - Moe MeeInv source_e)
+      // src_o = (source_o - Moe MeeInv source_e)
       /////////////////////////////////////////////////////
       _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.checkerboard ==Even);
       _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.checkerboard ==Odd);     
       tmp=src_o-Mtmp;                  assert(  tmp.checkerboard ==Odd);     
 
-      _Matrix.Mooee(tmp,src_o);     assert(src_o.checkerboard ==Odd);
+      src_o = tmp;     assert(src_o.checkerboard ==Odd);
+      //  _Matrix.Mooee(tmp,src_o); // Extra factor of "m" in source
 
       //////////////////////////////////////////////////////////////
       // Call the red-black solver
       //////////////////////////////////////////////////////////////
-      std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
+      std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver calling the Mpc solver" <<std::endl;
       _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
 
       ///////////////////////////////////////////////////

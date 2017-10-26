@@ -712,7 +712,8 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 							 int from,
 							 int bytes,int dir)
 {
-  assert(dir < communicator_halo.size());
+  int ncomm  =communicator_halo.size(); 
+  int commdir=dir%ncomm;
 
   MPI_Request xrq;
   MPI_Request rrq;
@@ -732,14 +733,14 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
   gfrom = MPI_UNDEFINED;
 #endif
   if ( gfrom ==MPI_UNDEFINED) {
-    ierr=MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator_halo[dir],&rrq);
+    ierr=MPI_Irecv(recv, bytes, MPI_CHAR,from,from,communicator_halo[commdir],&rrq);
     assert(ierr==0);
     list.push_back(rrq);
     off_node_bytes+=bytes;
   }
 
   if ( gdest == MPI_UNDEFINED ) {
-    ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator_halo[dir],&xrq);
+    ierr =MPI_Isend(xmit, bytes, MPI_CHAR,dest,_processor,communicator_halo[commdir],&xrq);
     assert(ierr==0);
     list.push_back(xrq);
     off_node_bytes+=bytes;
