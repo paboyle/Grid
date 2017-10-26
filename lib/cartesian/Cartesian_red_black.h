@@ -205,6 +205,7 @@ public:
         {
           assert((_gdimensions[d] & 0x1) == 0);
           _gdimensions[d] = _gdimensions[d] / 2; // Remove a checkerboard
+	  _gsites /= 2;
         }
         _ldimensions[d] = _gdimensions[d] / _processors[d];
         assert(_ldimensions[d] * _processors[d] == _gdimensions[d]);
