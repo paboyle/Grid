@@ -71,6 +71,23 @@ void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, i
   }
 }
 
+// Extract a single rotated vector
+template<class Field>
+void basisRotateJ(Field &result,std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j, int k0,int k1,int Nm) 
+{
+  typedef typename Field::vector_object vobj;
+  GridBase* grid = basis[0]._grid;
+
+  result.checkerboard = basis[0].checkerboard;
+  parallel_for(int ss=0;ss < grid->oSites();ss++){
+    vobj B = zero;
+    for(int k=k0; k<k1; ++k){
+      B +=Qt(j,k) * basis[k]._odata[ss];
+    }
+    result._odata[ss] = B;
+  }
+}
+
 template<class Field>
 void basisReorderInPlace(std::vector<Field> &_v,std::vector<RealD>& sort_vals, std::vector<int>& idx) 
 {
@@ -87,9 +104,7 @@ void basisReorderInPlace(std::vector<Field> &_v,std::vector<RealD>& sort_vals, s
       assert(idx[i] > i);
       //////////////////////////////////////
       // idx[i] is a table of desired sources giving a permutation.
-      //
       // Swap v[i] with v[idx[i]].
-      //
       // Find  j>i for which _vnew[j] = _vold[i],
       // track the move idx[j] => idx[i]
       // track the move idx[i] => i
@@ -155,6 +170,49 @@ enum IRLdiagonalisation {
 /////////////////////////////////////////////////////////////
 // Implicitly restarted lanczos
 /////////////////////////////////////////////////////////////
+template<class Field> class ImplicitlyRestartedLanczosTester 
+{
+ public:
+  virtual int TestConvergence(int j,RealD resid,Field &evec, RealD &eval,RealD evalMaxApprox);
+  virtual int ReconstructEval(int j,RealD resid,Field &evec, RealD &eval,RealD evalMaxApprox);
+};
+
+template<class Field> class ImplicitlyRestartedLanczosHermOpTester  : public ImplicitlyRestartedLanczosTester<Field>
+{
+ public:
+  LinearFunction<Field>       &_HermOpTest;
+  ImplicitlyRestartedLanczosHermOpTester(LinearFunction<Field> &HermOpTest) : _HermOpTest(HermOpTest)  {  };
+  int ReconstructEval(int j,RealD resid,Field &B, RealD &eval,RealD evalMaxApprox)
+  {
+    return TestConvergence(j,resid,B,eval,evalMaxApprox);
+  }
+  int TestConvergence(int j,RealD eresid,Field &B, RealD &eval,RealD evalMaxApprox)
+  {
+    Field v(B);
+    RealD eval_poly = eval;
+    // Apply operator
+    _HermOpTest(B,v);
+
+    RealD vnum = real(innerProduct(B,v)); // HermOp.
+    RealD vden = norm2(B);
+    RealD vv0  = norm2(v);
+    eval   = vnum/vden;
+    v -= eval*B;
+
+    RealD vv = norm2(v) / ::pow(evalMaxApprox,2.0);
+
+    std::cout.precision(13);
+    std::cout<<GridLogIRL  << "[" << std::setw(3)<<j<<"] "
+	     <<"eval = "<<std::setw(25)<< eval << " (" << eval_poly << ")"
+	     <<" |H B[i] - eval[i]B[i]|^2 / evalMaxApprox^2 " << std::setw(25) << vv
+	     <<std::endl;
+
+    int conv=0;
+    if( (vv<eresid*eresid) ) conv = 1;
+
+    return conv;
+  }
+};
 
 template<class Field> 
 class ImplicitlyRestartedLanczos {
@@ -174,14 +232,19 @@ class ImplicitlyRestartedLanczos {
   ////////////////////////////////
   // Embedded objects
   ////////////////////////////////
-  LinearFunction<Field> &_HermOp;
-  LinearFunction<Field> &_HermOpTest;
+  LinearFunction<Field>       &_HermOp;
+  LinearFunction<Field>       &_HermOpTest;
+  ImplicitlyRestartedLanczosTester<Field> &_Tester;
+  // Default tester provided (we need a ref to something in default case)
+  ImplicitlyRestartedLanczosHermOpTester<Field> SimpleTester;
   /////////////////////////
   // Constructor
   /////////////////////////
+  
 public:       
  ImplicitlyRestartedLanczos(LinearFunction<Field> & HermOp,
 			    LinearFunction<Field> & HermOpTest,
+			    ImplicitlyRestartedLanczosTester<Field> & Tester,
 			    int _Nstop, // sought vecs
 			    int _Nk, // sought vecs
 			    int _Nm, // spare vecs
@@ -190,7 +253,23 @@ public:
 			    RealD _betastp=0.0, // if beta(k) < betastp: converged
 			    int _MinRestart=1, int _orth_period = 1,
 			    IRLdiagonalisation _diagonalisation= IRLdiagonaliseWithEigen) :
-  _HermOp(HermOp),      _HermOpTest(HermOpTest),
+    SimpleTester(HermOpTest), _HermOp(HermOp),      _HermOpTest(HermOpTest), _Tester(Tester),
+    Nstop(_Nstop)  ,      Nk(_Nk),      Nm(_Nm),
+    eresid(_eresid),      betastp(_betastp),
+    MaxIter(_MaxIter)  ,      MinRestart(_MinRestart),
+    orth_period(_orth_period), diagonalisation(_diagonalisation)  { };
+
+    ImplicitlyRestartedLanczos(LinearFunction<Field> & HermOp,
+			       LinearFunction<Field> & HermOpTest,
+			       int _Nstop, // sought vecs
+			       int _Nk, // sought vecs
+			       int _Nm, // spare vecs
+			       RealD _eresid, // resid in lmdue deficit 
+			       int _MaxIter, // Max iterations
+			       RealD _betastp=0.0, // if beta(k) < betastp: converged
+			       int _MinRestart=1, int _orth_period = 1,
+			       IRLdiagonalisation _diagonalisation= IRLdiagonaliseWithEigen) :
+    SimpleTester(HermOpTest),  _HermOp(HermOp),      _HermOpTest(HermOpTest), _Tester(SimpleTester),
     Nstop(_Nstop)  ,      Nk(_Nk),      Nm(_Nm),
     eresid(_eresid),      betastp(_betastp),
     MaxIter(_MaxIter)  ,      MinRestart(_MinRestart),
@@ -232,7 +311,7 @@ repeat
   →AVK =VKHK +fKe†K † Extend to an M = K + P step factorization AVM = VMHM + fMeM
 until convergence
 */
-  void calc(std::vector<RealD>& eval, std::vector<Field>& evec,  const Field& src, int& Nconv, bool reverse=true, int SkipTest=0)
+  void calc(std::vector<RealD>& eval, std::vector<Field>& evec,  const Field& src, int& Nconv, bool reverse=true)
   {
     GridBase *grid = src._grid;
     assert(grid == evec[0]._grid);
@@ -335,11 +414,18 @@ until convergence
       //////////////////////////////////
       eval2_copy = eval2;
 
-      //      _sort.push(eval2,Nm);
-      std::partial_sort(eval2.begin(),eval2.begin()+Nm,eval2.end());
+      std::partial_sort(eval2.begin(),eval2.begin()+Nm,eval2.end(),std::greater<RealD>());
 
       std::cout<<GridLogIRL <<" evals sorted "<<std::endl;
-      for(int ip=0; ip<k2; ++ip) std::cout<<GridLogIRL << "eval "<< ip << " "<< eval2[ip] << std::endl;
+      const int chunk=8;
+      for(int io=0; io<k2;io+=chunk){
+	std::cout<<GridLogIRL << "eval "<< io ;
+	for(int ii=0;ii<chunk;ii++){
+	  if ( (io+ii)<k2 )
+	    std::cout<< " "<< std::setw(10)<< eval2[io+ii];
+	}
+	std::cout << std::endl;
+      }
 
       //////////////////////////////////
       // Implicitly shifted QR transformations
@@ -351,11 +437,9 @@ until convergence
       }
       std::cout<<GridLogIRL <<"QR decompose done "<<std::endl;
 
-      assert(k2<Nm);
-      assert(k2<Nm);
-      assert(k1>0);
-      basisRotate(evec,Qt,k1-1,k2+1,0,Nm,Nm); /// big constraint on the basis
+      assert(k2<Nm);      assert(k2<Nm);      assert(k1>0);
 
+      basisRotate(evec,Qt,k1-1,k2+1,0,Nm,Nm); /// big constraint on the basis
       std::cout<<GridLogIRL <<"QR rotation done "<<std::endl;
       
       ////////////////////////////////////////////////////
@@ -385,72 +469,37 @@ until convergence
 	  
       Nconv = 0;
       if (iter >= MinRestart) {
-	std::cout << GridLogIRL << "Rotation to test convergence " << std::endl;
-	
-	Field ev0_orig(grid);
-	ev0_orig = evec[0];
-	    
-	basisRotate(evec,Qt,0,Nk,0,Nk,Nm);	    
 
-	{
-	  std::cout << GridLogIRL << "Test convergence" << std::endl;
-	  Field B(grid);
-	      
-	  for(int j = 0; j<Nk; j+=SkipTest){
-	    B=evec[j];
+	std::cout << GridLogIRL << "Test convergence: rotate subset of vectors to test convergence " << std::endl;
 
-	    //std::cout << "Checkerboard: " << evec[j].checkerboard << std::endl; 
-	    B.checkerboard = evec[0].checkerboard;
+	Field B(grid); B.checkerboard = evec[0].checkerboard;
 
-	    _HermOpTest(B,v);
-		
-	    RealD vnum = real(innerProduct(B,v)); // HermOp.
-	    RealD vden = norm2(B);
-	    RealD vv0 = norm2(v);
-	    eval2[j] = vnum/vden;
-	    v -= eval2[j]*B;
-	    RealD vv = norm2(v) / ::pow(evalMaxApprox,2.0);
-	    std::cout.precision(13);
-	    std::cout<<GridLogIRL << "[" << std::setw(3)<< std::setiosflags(std::ios_base::right) <<j<<"] "
-		     <<"eval = "<<std::setw(25)<< std::setiosflags(std::ios_base::left)<< eval2[j] << " (" << eval2_copy[j] << ")"
-		     <<" |H B[i] - eval[i]B[i]|^2 / evalMaxApprox^2 " << std::setw(25)<< std::setiosflags(std::ios_base::right)<< vv
-		     <<" "<< vnum/(sqrt(vden)*sqrt(vv0))
-		     <<std::endl;
-		
-	    // change the criteria as evals are supposed to be sorted, all evals smaller(larger) than Nstop should have converged
-	    if((vv<eresid*eresid) && (j == Nconv) ){
-	      Nconv+=SkipTest;
+	//  power of two search pattern;  not every evalue in eval2 is assessed.
+	for(int jj = 1; jj<=Nstop; jj*=2){
+	  int j = Nstop-jj;
+	  RealD e = eval2_copy[j]; // Discard the evalue
+	  basisRotateJ(B,evec,Qt,j,0,Nk,Nm);	    
+	  if( _Tester.TestConvergence(j,eresid,B,e,evalMaxApprox) ) {
+	    if ( j > Nconv ) {
+	      Nconv=j+1;
+	      jj=Nstop; // Terminate the scan
 	    }
 	  }
-	      
-	  // test if we converged, if so, terminate
-	  std::cout<<GridLogIRL<<" #modes converged: "<<Nconv<<std::endl;
-	  if( Nconv>=Nstop || beta_k < betastp){
-	    goto converged;
-	  }
-	      
-	  //B[j] +=Qt[k+_Nm*j] * _v[k]._odata[ss];
-	  {
-	    Eigen::MatrixXd qm = Eigen::MatrixXd::Zero(Nk,Nk); // Restrict Qt to Nk x Nk
-	    for (int k=0;k<Nk;k++)
-	      for (int j=0;j<Nk;j++)
-		qm(j,k) = Qt(j,k);
-
-	    Eigen::MatrixXd qmI = qm.inverse();
-
-	    RealD res_check_rotate_inverse = (qm*qmI - Eigen::MatrixXd::Identity(Nk,Nk)).norm(); // sqrt( |X|^2 )
-
-	    std::cout << GridLogIRL << "\tInverted ("<<Nk<<"x"<<Nk<<") Qt matrix " <<  " error = " << res_check_rotate_inverse <<std::endl;
-
-	    assert(res_check_rotate_inverse < 1e-7);
-
-	    basisRotate(evec,qmI,0,Nk,0,Nk,Nm);
-	    std::cout << GridLogIRL << "\t Basis rotation done "<<std::endl;
-
-	    axpy(ev0_orig,-1.0,evec[0],ev0_orig);
-	    std::cout << GridLogIRL << " | evec[0] - evec[0]_orig | = "    << ::sqrt(norm2(ev0_orig)) << std::endl;
-	  }
 	}
+	// Do evec[0] for good measure
+	{ 
+	  int j=0;
+	  RealD e = eval2_copy[0]; 
+	  basisRotateJ(B,evec,Qt,j,0,Nk,Nm);	    
+	  _Tester.TestConvergence(j,eresid,B,e,evalMaxApprox);
+	}
+	// test if we converged, if so, terminate
+	std::cout<<GridLogIRL<<" #modes converged: >= "<<Nconv<<"/"<<Nstop<<std::endl;
+	//	if( Nconv>=Nstop || beta_k < betastp){
+	if( Nconv>=Nstop){
+	  goto converged;
+	}
+	  
       } else {
 	std::cout << GridLogIRL << "iter < MinRestart: do not yet test for convergence\n";
       } // end of iter loop
@@ -461,24 +510,28 @@ until convergence
 	
   converged:
 
-    if (SkipTest == 1) {
-      eval = eval2;
-    } else {
-      //////////////////////////////////////////////
-      // test quickly 
-      // PAB -- what precisely does this test? Don't like this eval2, eval2_copy etc...
-      //////////////////////////////////////////////
-      for (int j=0;j<Nstop;j+=SkipTest) {
-	std::cout<<GridLogIRL << "Eigenvalue[" << j << "] = " << eval2[j] << " (" << eval2_copy[j] << ")" << std::endl;
+    {
+      Field B(grid); B.checkerboard = evec[0].checkerboard;
+      basisRotate(evec,Qt,0,Nk,0,Nk,Nm);	    
+      std::cout << GridLogIRL << " Rotated basis"<<std::endl;
+      Nconv=0;
+      //////////////////////////////////////////////////////////////////////
+      // Full final convergence test; unconditionally applied
+      //////////////////////////////////////////////////////////////////////
+      for(int j = 0; j<=Nk; j++){
+	B=evec[j];
+	if( _Tester.ReconstructEval(j,eresid,B,eval2[j],evalMaxApprox) ) {
+	  Nconv++;
+	}
       }
-      eval2_copy.resize(eval2.size());
-      eval = eval2_copy;
-    }
 
-    basisSortInPlace(evec,eval,reverse);
+      if ( Nconv < Nstop )
+	std::cout << GridLogIRL << "Nconv ("<<Nconv<<") < Nstop ("<<Nstop<<")"<<std::endl;
 
-    for (int j=0;j<Nstop;j++) {
-      std::cout<<GridLogIRL << " |e[" << j << "]|^2 = " << norm2(evec[j]) << std::endl;
+      eval=eval2;
+
+      basisSortInPlace(evec,eval,reverse);
+      
     }
        
     std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;
@@ -513,8 +566,7 @@ until convergence
 
     Field& evec_k = evec[k];
 
-    _HermOp(evec_k,w);
-    std::cout<<GridLogIRL << "_HermOp (poly)" <<std::endl;
+    _HermOp(evec_k,w);    std::cout<<GridLogIRL << "Poly(HermOp)" <<std::endl;
 
     if(k>0) w -= lme[k-1] * evec[k-1];
 
@@ -528,8 +580,6 @@ until convergence
 
     lmd[k] = alph;
     lme[k] = beta;
-
-    std::cout<<GridLogIRL << "linalg " <<std::endl;
 
     if (k>0 && k % orth_period == 0) {
       orthogonalize(w,evec,k); // orthonormalise
