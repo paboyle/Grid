@@ -2,11 +2,10 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./tests/Test_wilson_cg_unprec.cc
+    Source file: ./tests/Test_wilson_cg_schur.cc
 
     Copyright (C) 2015
 
-Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
@@ -27,7 +26,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
-#include <Grid/algorithms/iterative/BlockConjugateGradient.h>
 
 using namespace std;
 using namespace Grid;
@@ -49,7 +47,6 @@ int main (int argc, char ** argv)
 {
   typedef typename ImprovedStaggeredFermionR::FermionField FermionField; 
   typename ImprovedStaggeredFermionR::ImplParams params; 
-
   Grid_init(&argc,&argv);
 
   std::vector<int> latt_size   = GridDefaultLatt();
@@ -61,31 +58,19 @@ int main (int argc, char ** argv)
   std::vector<int> seeds({1,2,3,4});
   GridParallelRNG          pRNG(&Grid);  pRNG.SeedFixedIntegers(seeds);
 
-  FermionField src(&Grid); random(pRNG,src);
-  RealD nrm = norm2(src);
   LatticeGaugeField Umu(&Grid); SU3::HotConfiguration(pRNG,Umu);
 
-  double volume=1;
-  for(int mu=0;mu<Nd;mu++){
-    volume=volume*latt_size[mu];
-  }  
-  
-  RealD mass=0.003;
+  FermionField    src(&Grid); random(pRNG,src);
+  FermionField result(&Grid); result=zero;
+  FermionField  resid(&Grid); 
+
+  RealD mass=0.1;
   ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass);
 
-  FermionField res_o(&RBGrid); 
-  FermionField src_o(&RBGrid); 
-  pickCheckerboard(Odd,src_o,src);
-  res_o=zero;
-
-  SchurStaggeredOperator<ImprovedStaggeredFermionR,FermionField> HermOpEO(Ds);
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
-  CG(HermOpEO,src_o,res_o);
+  SchurRedBlackStaggeredSolve<FermionField> SchurSolver(CG);
 
-  FermionField tmp(&RBGrid);
-
-  HermOpEO.Mpc(res_o,tmp);
-  std::cout << "check Mpc resid " << axpy_norm(tmp,-1.0,src_o,tmp)/norm2(src_o) << "\n";
-
+  SchurSolver(Ds,src,result);
+  
   Grid_finalize();
 }

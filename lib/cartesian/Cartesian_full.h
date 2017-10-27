@@ -81,6 +81,8 @@ public:
       Init(dimensions,simd_layout,processor_grid);
     }
 
+    virtual ~GridCartesian() = default;
+
     void Init(const std::vector<int> &dimensions,
 	      const std::vector<int> &simd_layout,
 	      const std::vector<int> &processor_grid)
