@@ -155,6 +155,7 @@ class CartesianCommunicator {
   ////////////////////////////////////////////////
   CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent);
   CartesianCommunicator(const std::vector<int> &pdimensions_in);
+  virtual ~CartesianCommunicator();
 
  private:
 #if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPIT) 

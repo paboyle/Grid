@@ -39,7 +39,6 @@ Author: Christoph Lehner <clehner@bnl.gov>
 #include <Grid/algorithms/iterative/BlockImplicitlyRestartedLanczos/BlockedGrid.h>
 #include <Grid/algorithms/iterative/BlockImplicitlyRestartedLanczos/FieldBasisVector.h>
 #include <Grid/algorithms/iterative/BlockImplicitlyRestartedLanczos/BlockProjector.h>
-#include <Grid/algorithms/iterative/BlockImplicitlyRestartedLanczos/FieldVectorIO.h>
 
 namespace Grid { 
 
