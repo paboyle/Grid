@@ -6,9 +6,7 @@ Source file: ./lib/algorithms/iterative/MinimalResidual.h
 
 Copyright (C) 2015
 
-Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Daniel Richtmann <daniel.richtmann@ur.de>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
