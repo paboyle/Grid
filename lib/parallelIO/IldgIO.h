@@ -159,7 +159,7 @@ namespace QCD {
    uint32_t scidac_checksumb = stoull(scidacChecksum_.sumb,0,16);
    if ( scidac_csuma !=scidac_checksuma) return 0;
    if ( scidac_csumb !=scidac_checksumb) return 0;
-    return 1;
+   return 1;
  }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -237,7 +237,7 @@ class GridLimeReader : public BinaryIO {
 	/////////////////////////////////////////////
 	// Verify checksums
 	/////////////////////////////////////////////
-	scidacChecksumVerify(scidacChecksum_,scidac_csuma,scidac_csumb);
+	assert(scidacChecksumVerify(scidacChecksum_,scidac_csuma,scidac_csumb)==1);
 	return;
       }
     }
