@@ -139,7 +139,7 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
         std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() << std::endl;
         std::cout << GridLogMessage << "\tLinalg     " << LinalgTimer.Elapsed() << std::endl;
 
-        if(ErrorOnNoConverge)
+        if (ErrorOnNoConverge)
           assert(true_residual / Tolerance < 10000.0);
 
         IterationsToComplete = k;
