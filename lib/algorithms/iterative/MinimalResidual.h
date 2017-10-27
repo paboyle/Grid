@@ -42,64 +42,11 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
                           // Defaults true.
   RealD   Tolerance;
   Integer MaxIterations;
-  Integer IterationsToComplete; // Number of iterations the MR took to finish. Filled in upon completion
+  Integer IterationsToComplete; // Number of iterations the MR took to finish.
+                                // Filled in upon completion
 
   MinimalResidual(RealD tol, Integer maxit, bool err_on_no_conv = true)
-    : Tolerance(tol),
-      MaxIterations(maxit),
-      ErrorOnNoConverge(err_on_no_conv){};
-
-  //! Minimal-residual (MR) algorithm for a generic Linear Operator
-  /*! \ingroup invert
-   * This subroutine uses the Minimal Residual (MR) algorithm to determine
-   * the solution of the set of linear equations. Here we allow M to be
-   nonhermitian.
-   *
-   *    M . Psi  =  src
-   *
-   * Algorithm:
-   *
-   *  Psi[0]                                      Argument
-   *  r[0]    :=  src  -  M . Psi[0] ;            Initial residual
-   *  IF |r[0]| <= RsdCG |src| THEN RETURN;       Converged?
-   *  FOR k FROM 1 TO MaxCG DO                    MR iterations
-   *      a[k-1]  := <M.r[k-1],r[k-1]> / <M.r[k-1],M.r[k-1]> ;
-   *      ap[k-1] := MRovpar * a[k] ;             Overrelaxtion step
-   *      Psi[k]  += ap[k-1] r[k-1] ;                   New solution vector
-   *      r[k]    -= ap[k-1] A . r[k-1] ;         New residual
-   *      IF |r[k]| <= RsdCG |src| THEN RETURN;   Converged?
-
-   * Arguments:
-
-   *  \param M       Linear Operator             (Read)
-   *  \param src     Source                      (Read)
-   *  \param psi     Solution                    (Modify)
-   *  \param RsdCG   MR residual accuracy        (Read)
-   *  \param MRovpar Overrelaxation parameter    (Read)
-   *  \param MaxIterations   Maximum MR iterations       (Read)
-
-   * Local Variables:
-
-   *  r         Residual vector
-   *  cp        | r[k] |**2
-   *  c         | r[k-1] |**2
-   *  k         MR iteration counter
-   *  a         a[k]
-   *  d         < M.r[k], M.r[k] >
-   *  R_Aux     Temporary for  M.Psi
-   *  Mr        Temporary for  M.r
-
-   * Global Variables:
-
-   *  MaxIterations       Maximum number of MR iterations allowed
-   *  RsdCG       Maximum acceptable MR residual (relative to source)
-   *
-   * Subroutines:
-   *
-   *  M           Apply matrix to vector
-   *
-   * @{
-   */
+    : Tolerance(tol), MaxIterations(maxit), ErrorOnNoConverge(err_on_no_conv){};
 
   void operator()(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi) {
 
@@ -117,22 +64,15 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
     assert(std::isnan(guess) == 0);
 
     RealD ssq = norm2(src); // flopcount.addSiteFlops(4*Nc*Ns,s); // stands for "source squared"
-    RealD rsd_sq = Tolerance * Tolerance * ssq; // flopcount.addSiteFlops(4*Nc*Ns,s); //
-                                     // stands for "residual squared"
+    RealD rsd_sq = Tolerance * Tolerance * ssq; // flopcount.addSiteFlops(4*Nc*Ns,s); // stands for "residual squared"
 
-    /*  r[0]  :=  src - M . Psi[0] */
-    /*  r  :=  M . Psi  */
-    // M(Mr, psi, isign); // flopcount.addFlops(M.nFlops());
     Linop.Op(psi, Mr); // flopcount.addFlops(M.nFlops());
 
     r = src - Mr; // flopcount.addSiteFlops(2*Nc*Ns,s);
 
-    RealD cp = norm2(r);   /*  Cp = |r[0]|^2 */
-      /* 2 Nc Ns  flops */ // flopcount.addSiteFlops(4*Nc*Ns, s);
-    // auto cp = norm2(r); /*  Cp = |r[0]|^2 */ /* 2 Nc Ns  flops */ //
-    // flopcount.addSiteFlops(4*Nc*Ns, s);
+    RealD cp = norm2(r); //  Cp = |r[0]|^2 // 2 Nc Ns  flops // flopcount.addSiteFlops(4*Nc*Ns, s);
 
-    if(cp <= rsd_sq) { /*  IF |r[0]| <= Tolerance|src| THEN RETURN; */
+    if(cp <= rsd_sq) {
       return;
     }
 
@@ -144,70 +84,72 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
     GridStopWatch SolverTimer;
 
     SolverTimer.Start();
-    auto k = 0;
-    while((k < MaxIterations) && (cp > rsd_sq)) {
-      ++k;
-
-      /*  a[k-1] := < M.r[k-1], r[k-1] >/ < M.r[k-1], M.r[k-1] > ; */
+    int k;
+    for(k = 1; k <= MaxIterations; k++) { //  a[k-1] := < M.r[k-1], r[k-1] >/ < M.r[k-1], M.r[k-1] >
 
       MatrixTimer.Start();
-      // M(Mr, r, isign); /*  Mr = M * r  */  // flopcount.addFlops(M.nFlops());
-      Linop.Op(r, Mr); /*  Mr = M * r  */ // flopcount.addFlops(M.nFlops());
+      Linop.Op(r, Mr); //  Mr = M * r // flopcount.addFlops(M.nFlops());
       MatrixTimer.Stop();
 
       LinalgTimer.Start();
 
-      c = innerProduct(Mr, r); /*  c = < M.r, r > */ // flopcount.addSiteFlops(4*Nc*Ns,s);
+      c = innerProduct(Mr, r); //  c = < M.r, r > // // flopcount.addSiteFlops(4*Nc*Ns,s);
 
-      d = norm2(Mr); /*  d = | M.r | ** 2  */ // flopcount.addSiteFlops(4*Nc*Ns,s);
+      d = norm2(Mr); //  d = | M.r | ** 2  // // flopcount.addSiteFlops(4*Nc*Ns,s);
 
       a = c / d;
 
-      // a = a * MRovpar; /*  a[k-1] *= MRovpar ; */
+      // a = a * MRovpar; //  a[k-1] *= MRovpar // from chroma code. TODO: check what to do with this
 
-      psi = psi + r * a; /*  Psi[k] += a[k-1] r[k-1] ; */ // flopcount.addSiteFlops(4*Nc*Ns,s);
+      psi = psi + r * a; //  Psi[k] += a[k-1] r[k-1] ; // flopcount.addSiteFlops(4*Nc*Ns,s);
 
-      r = r - Mr * a; /*  r[k] -= a[k-1] M . r[k-1] ; */ // flopcount.addSiteFlops(4*Nc*Ns,s);
+      r = r - Mr * a; //  r[k] -= a[k-1] M . r[k-1] ; // flopcount.addSiteFlops(4*Nc*Ns,s);
 
-      cp = norm2(r); /*  cp  =  | r[k] |**2 */ // flopcount.addSiteFlops(4*Nc*Ns,s);
+      cp = norm2(r); //  cp  =  | r[k] |**2 // flopcount.addSiteFlops(4*Nc*Ns,s);
 
       LinalgTimer.Stop();
 
       std::cout << GridLogIterative << "MinimalResidual: Iteration " << k
                 << " residual " << cp << " target " << rsd_sq << std::endl;
+      std::cout << GridLogDebug << "a = " << a << " c = " << c << " d = " << d << std::endl;
+
+      // Stopping condition
+      if(cp <= rsd_sq) {
+        SolverTimer.Stop();
+
+        Linop.Op(psi, Mr);
+        r = src - Mr;
+
+        RealD srcnorm       = sqrt(ssq);
+        RealD resnorm       = sqrt(norm2(r));
+        RealD true_residual = resnorm / srcnorm;
+
+        std::cout << GridLogMessage << "MinimalResidual Converged on iteration " << k << std::endl;
+        std::cout << GridLogMessage << "\tComputed residual " << sqrt(cp / ssq) << std::endl;
+        std::cout << GridLogMessage << "\tTrue residual " << true_residual << std::endl;
+        std::cout << GridLogMessage << "\tTarget " << Tolerance << std::endl;
+
+        std::cout << GridLogMessage << "Time breakdown " << std::endl;
+        std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed() << std::endl;
+        std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() << std::endl;
+        std::cout << GridLogMessage << "\tLinalg     " << LinalgTimer.Elapsed() << std::endl;
+
+        if(ErrorOnNoConverge)
+          assert(true_residual / Tolerance < 10000.0);
+
+        IterationsToComplete = k;
+
+        return;
+      }
     }
-    SolverTimer.Stop();
+
+    std::cout << GridLogMessage << "MinimalResidual did NOT converge"
+              << std::endl;
+
+    if(ErrorOnNoConverge)
+      assert(0);
 
     IterationsToComplete = k;
-
-    // res.resid   = sqrt(cp);
-    std::cout << "InvMR: k = " << k << "  cp = " << cp << std::endl;
-    // flopcount.report("invmr", swatch.getTimeInSeconds());
-
-    std::cout << GridLogMessage << "MinimalResidual Converged on iteration " << k << std::endl;
-    std::cout << GridLogMessage << "\tComputed residual " << sqrt(cp / ssq)<<std::endl;
-    // std::cout << GridLogMessage << "\tTrue residual " << true_residual<<std::endl;
-    // std::cout << GridLogMessage << "\tTarget " << Tolerance << std::endl;
-
-    std::cout << GridLogMessage << "Time breakdown "<<std::endl;
-    std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed() <<std::endl;
-    std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() <<std::endl;
-    std::cout << GridLogMessage << "\tLinalg     " << LinalgTimer.Elapsed() <<std::endl;
-
-    // Compute the actual residual
-    {
-      // M(Mr, psi, isign);
-      Linop.Op(psi, Mr);
-      Field tmp = src - Mr;
-      // RealD actual_res = norm2(src-Mr);
-      RealD actual_res = norm2(tmp);
-      // res.resid = sqrt(actual_res);
-    }
-
-    if(IterationsToComplete == MaxIterations)
-      std::cerr << "Nonconvergence Warning" << std::endl;
-
-    // return res;
   }
 };
 } // namespace Grid
