@@ -274,12 +274,16 @@ class CartesianCommunicator {
     //    std::cerr << " AllToAll in.size()  "<<in.size()<<std::endl;
     //    std::cerr << " AllToAll out.size() "<<out.size()<<std::endl;
     assert(in.size()==out.size());
-    size_t bytes=(in.size()*sizeof(T))/numnode;
-    assert((bytes*numnode) == in.size()*sizeof(T));
-    AllToAll(dim,(void *)&in[0],(void *)&out[0],bytes);
+    uint64_t bytes=sizeof(T);
+    uint64_t words=in.size()/numnode;
+
+    assert(numnode * words == in.size());
+    assert(words < (1ULL<<32));
+
+    AllToAll(dim,(void *)&in[0],(void *)&out[0],words,bytes);
   }
-  void AllToAll(int dim  ,void *in,void *out,int bytes);
-  void AllToAll(void  *in,void *out,int bytes);
+  void AllToAll(int dim  ,void *in,void *out,uint64_t words,uint64_t bytes);
+  void AllToAll(void  *in,void *out,uint64_t words         ,uint64_t bytes);
   
   template<class obj> void Broadcast(int root,obj &data)
     {
