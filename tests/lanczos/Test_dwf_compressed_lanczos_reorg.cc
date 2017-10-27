@@ -109,7 +109,7 @@ public:
 
   void checkpointCoarseRestore(std::string evecs_file,std::string evals_file,int nvec)
   {
-    std::cout << " resizing to " << nvec<< std::endl;
+    std::cout << "resizing coarse vecs to " << nvec<< std::endl;
     this->evals_coarse.resize(nvec);
     this->evec_coarse.resize(nvec,this->_CoarseGrid);
     std::cout << GridLogIRL<< "checkpointCoarseRestore:  Reading evals from "<<evals_file<<std::endl;
@@ -121,7 +121,7 @@ public:
     std::cout << GridLogIRL<< "checkpointCoarseRestore:  Reading evecs from "<<evecs_file<<std::endl;
     Grid::QCD::ScidacReader RD ;
     RD.open(evecs_file);
-    for(int k=0;k<nbasis;k++) {
+    for(int k=0;k<nvec;k++) {
       RD.readScidacFieldRecord(this->evec_coarse[k],record);
     }
     RD.close();
