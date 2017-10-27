@@ -285,7 +285,11 @@ public:
     ImplicitlyRestartedLanczosSmoothedTester<Fobj,CComplex,nbasis> ChebySmoothTester(ChebyOp,ChebySmooth,_FineOp,_Aggregate,relax);
 
     for(int k=0;k<evec_coarse.size();k++){
-      assert(ChebySmoothTester.ReconstructEval(k,resid,evec_coarse[k],evals_coarse[k],1.0)==1);
+      if ( k < nbasis ) { 
+	assert(ChebySmoothTester.ReconstructEval(k,resid,evec_coarse[k],evals_coarse[k],1.0)==1);
+      } else { 
+	assert(ChebySmoothTester.ReconstructEval(k,resid*relax,evec_coarse[k],evals_coarse[k],1.0)==1);
+      }
     }
   }
 

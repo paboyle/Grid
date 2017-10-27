@@ -221,16 +221,17 @@ int main (int argc, char ** argv) {
     std::cout << GridLogIRL<<"Checkpointing Fine evecs"<<std::endl;
     _LocalCoherenceLanczos.checkpointFine(std::string("evecs.scidac"),std::string("evals.xml"));
     _LocalCoherenceLanczos.testFine(fine.resid*100.0); // Coarse check
+    _LocalCoherenceLanczos.Orthogonalise();
   }
 
   if ( Params.doFineRead ) { 
     _LocalCoherenceLanczos.checkpointFineRestore(std::string("evecs.scidac"),std::string("evals.xml"));
     _LocalCoherenceLanczos.testFine(fine.resid*100.0); // Coarse check
+    _LocalCoherenceLanczos.Orthogonalise();
   }
 
   if ( Params.doCoarse ) {
     std::cout << GridLogMessage << "Orthogonalising " << nbasis<<" Nm "<<Nm2<< std::endl;
-    _LocalCoherenceLanczos.Orthogonalise();
     
     std::cout << GridLogMessage << "Performing coarse grid IRL Nstop "<< Ns2<< " Nk "<<Nk2<<" Nm "<<Nm2<< std::endl;
     _LocalCoherenceLanczos.calcCoarse(coarse.Cheby,Params.Smoother,Params.coarse_relax_tol,
