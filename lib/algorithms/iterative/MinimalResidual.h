@@ -72,7 +72,7 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
 
     RealD cp = norm2(r); //  Cp = |r[0]|^2 // 2 Nc Ns  flops // flopcount.addSiteFlops(4*Nc*Ns, s);
 
-    if(cp <= rsd_sq) {
+    if (cp <= rsd_sq) {
       return;
     }
 
@@ -85,7 +85,7 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
 
     SolverTimer.Start();
     int k;
-    for(k = 1; k <= MaxIterations; k++) { //  a[k-1] := < M.r[k-1], r[k-1] >/ < M.r[k-1], M.r[k-1] >
+    for (k = 1; k <= MaxIterations; k++) { //  a[k-1] := < M.r[k-1], r[k-1] >/ < M.r[k-1], M.r[k-1] >
 
       MatrixTimer.Start();
       Linop.Op(r, Mr); //  Mr = M * r // flopcount.addFlops(M.nFlops());
@@ -114,7 +114,7 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
       std::cout << GridLogDebug << "a = " << a << " c = " << c << " d = " << d << std::endl;
 
       // Stopping condition
-      if(cp <= rsd_sq) {
+      if (cp <= rsd_sq) {
         SolverTimer.Stop();
 
         Linop.Op(psi, Mr);
@@ -146,7 +146,7 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
     std::cout << GridLogMessage << "MinimalResidual did NOT converge"
               << std::endl;
 
-    if(ErrorOnNoConverge)
+    if (ErrorOnNoConverge)
       assert(0);
 
     IterationsToComplete = k;
