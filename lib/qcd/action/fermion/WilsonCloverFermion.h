@@ -122,6 +122,8 @@ public:
     // Clover term derivative
     ///////////////////////////////////////////////////////////
     Impl::outerProductImpl(Lambda, X, Y); 
+    //std::cout << "Lambda:" << Lambda << std::endl;
+
 
     Gamma::Algebra sigma[] = {
         Gamma::Algebra::SigmaXY,
@@ -153,16 +155,18 @@ public:
       for (int nu = 0; nu < 4; nu++)
       {
         if (mu == nu) continue;
-        PropagatorField Slambda = Gamma(sigma[count]) * Lambda;
-        Impl::TraceSpinImpl(lambda, Slambda); //traceSpin
-        force_mu += Cmunu(U, lambda, mu, nu);
+        PropagatorField Slambda = Gamma(sigma[count]) * Lambda; // sigma checked
+        Impl::TraceSpinImpl(lambda, Slambda); // traceSpin ok
+        force_mu -= Cmunu(U, lambda, mu, nu); // checked
         count++;
       }
 
       pokeLorentz(clover_force, U[mu] * force_mu, mu);
     }
-    clover_force *= csw / 8.;
+    clover_force *= csw;
     force += clover_force;
+
+
   }
 
   // Computing C_{\mu \nu}(x) as in Eq.(B.39) in Zbigniew Sroczynski's PhD thesis
@@ -170,20 +174,19 @@ public:
   {
     conformable(lambda._grid, U[0]._grid);
     GaugeLinkField out(lambda._grid), tmp(lambda._grid);
-
     // insertion in upper staple
     // please check redundancy of shift operations
-
+    
     // C1+
     tmp = lambda * U[nu];
     out = Impl::ShiftStaple(Impl::CovShiftForward(tmp, nu, Impl::CovShiftBackward(U[mu], mu, Impl::CovShiftIdentityBackward(U[nu], nu))), mu);
-
+    
     // C2+
-    tmp = U[mu] * Impl::CovShiftIdentityForward(adj(lambda), mu);
+    tmp = U[mu] * Impl::ShiftStaple(adj(lambda), mu);
     out += Impl::ShiftStaple(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(tmp, mu, Impl::CovShiftIdentityBackward(U[nu], nu))), mu);
-
+    
     // C3+
-    tmp = U[nu] * Impl::CovShiftIdentityForward(adj(lambda), nu);
+    tmp = U[nu] * Impl::ShiftStaple(adj(lambda), nu);
     out += Impl::ShiftStaple(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, Impl::CovShiftIdentityBackward(tmp, nu))), mu);
 
     // C4+
@@ -259,6 +262,7 @@ private:
     PARALLEL_FOR_LOOP
     for (int i = 0; i < CloverTerm._grid->oSites(); i++)
     {
+
       T._odata[i]()(0, 0) = timesMinusI(F._odata[i]()());
       T._odata[i]()(1, 1) = timesI(F._odata[i]()());
       T._odata[i]()(2, 2) = timesMinusI(F._odata[i]()());

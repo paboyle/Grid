@@ -327,7 +327,7 @@ static void StapleMult(GaugeMat &staple, const GaugeLorentz &Umu, int mu) {
   static void FieldStrength(GaugeMat &FS, const GaugeLorentz &Umu, int mu, int nu){
       // Fmn +--<--+  Ut +--<--+
       //     |     |     |     |
-      //  (x)+-->--+     +-->--+(x)
+      //  (x)+-->--+     +-->--+(x)  - h.c.
       //     |     |     |     |
       //     +--<--+     +--<--+
 

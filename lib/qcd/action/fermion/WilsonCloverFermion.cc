@@ -48,10 +48,7 @@ RealD WilsonCloverFermion<Impl>::M(const FermionField &in, FermionField &out)
   // Clover term
   Mooee(in, temp);
 
-  //hack
-  out = zero;
-
-
+  out= zero;
   out += temp;
   return norm2(out);
 }
@@ -68,9 +65,7 @@ RealD WilsonCloverFermion<Impl>::Mdag(const FermionField &in, FermionField &out)
   // Clover term
   MooeeDag(in, temp);
 
-   //hack
-  out = zero;
-
+  out=zero;
   out += temp;
   return norm2(out);
 }
