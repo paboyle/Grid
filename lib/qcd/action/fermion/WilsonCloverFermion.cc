@@ -43,12 +43,11 @@ RealD WilsonCloverFermion<Impl>::M(const FermionField &in, FermionField &out)
 
   // Wilson term
   out.checkerboard = in.checkerboard;
-  //this->Dhop(in, out, DaggerNo);
+  this->Dhop(in, out, DaggerNo);
 
   // Clover term
   Mooee(in, temp);
 
-  out= zero;
   out += temp;
   return norm2(out);
 }
@@ -60,12 +59,11 @@ RealD WilsonCloverFermion<Impl>::Mdag(const FermionField &in, FermionField &out)
 
   // Wilson term
   out.checkerboard = in.checkerboard;
-  //this->Dhop(in, out, DaggerYes);
+  this->Dhop(in, out, DaggerYes);
 
   // Clover term
   MooeeDag(in, temp);
 
-  out=zero;
   out += temp;
   return norm2(out);
 }

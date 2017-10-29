@@ -116,7 +116,7 @@ public:
     
     force = zero;
     // Derivative of the Wilson hopping term
-    //this->DhopDeriv(force, X, Y, dag);
+    this->DhopDeriv(force, X, Y, dag);
 
     ///////////////////////////////////////////////////////////
     // Clover term derivative
