@@ -757,6 +757,7 @@ void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
 // NB: Easiest to programme if keep in lex order.
 //
 /////////////////////////////////////////////////////////
+
 template<class Vobj>
 void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 {
@@ -805,6 +806,7 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
   std::vector<Sobj> tmpdata(sz);
   std::vector<Sobj> alldata(sz);
   std::vector<Sobj> scalardata(lsites); 
+
   for(int v=0;v<nvector;v++){
     unvectorizeToLexOrdArray(scalardata,full[v]);    
     parallel_for(int site=0;site<lsites;site++){
@@ -816,18 +818,23 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
   std::vector<int> ldims = full_grid->_ldimensions;
   std::vector<int> lcoor(ndim);
 
-  for(int d=0;d<ndim;d++){
+  for(int d=ndim-1;d>=0;d--){
 
     if ( ratio[d] != 1 ) {
 
       full_grid ->AllToAll(d,alldata,tmpdata);
-
+      //      std::cout << GridLogMessage << "Grid_split: dim " <<d<<" ratio "<<ratio[d]<<" nvec "<<nvec<<" procs "<<split_grid->_processors[d]<<std::endl;
+      //      for(int v=0;v<nvec;v++){
+      //	std::cout << "Grid_split: alldata["<<v<<"] " << alldata[v] <<std::endl;
+      //	std::cout << "Grid_split: tmpdata["<<v<<"] " << tmpdata[v] <<std::endl;
+      //      }
       //////////////////////////////////////////
       //Local volume for this dimension is expanded by ratio of processor extents
       // Number of vectors is decreased by same factor
       // Rearrange to lexico for bigger volume
       //////////////////////////////////////////
       nvec    /= ratio[d];
+
       auto rdims = ldims; rdims[d]  *=   ratio[d];
       auto rsites= lsites*ratio[d];
       for(int v=0;v<nvec;v++){
@@ -847,7 +854,9 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 	    int rmul=nvec*lsites;
 	    int vmul=     lsites;
 	    alldata[rsite] = tmpdata[lsite+r*rmul+v*vmul];
-
+	    //	    if ( lsite==0 ) {
+	    //	      std::cout << "Grid_split: grow alldata["<<rsite<<"] " << alldata[rsite] << " <- tmpdata["<< lsite+r*rmul+v*vmul<<"] "<<tmpdata[lsite+r*rmul+v*vmul]  <<std::endl;
+	    //	    }	      
 	  }
 	}
       }
@@ -860,7 +869,6 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
       }
     }
   }
-
   vectorizeFromLexOrdArray(alldata,split);    
 }
 
@@ -936,9 +944,11 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
   lsites = split_grid->lSites();
   std::vector<int> ldims = split_grid->_ldimensions;
 
-  for(int d=ndim-1;d>=0;d--){
+  //  for(int d=ndim-1;d>=0;d--){
+  for(int d=0;d<ndim;d++){
 
     if ( ratio[d] != 1 ) {
+
 
       if ( split_grid->_processors[d] > 1 ) {
 	tmpdata = alldata;
@@ -985,13 +995,11 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 
   lsites = full_grid->lSites();
   for(int v=0;v<nvector;v++){
+    assert(v<full.size());
     parallel_for(int site=0;site<lsites;site++){
       scalardata[site] = alldata[v*lsites+site];
     }
-    assert(v<full.size());
-
     vectorizeFromLexOrdArray(scalardata,full[v]);    
-
   }
 }
 
