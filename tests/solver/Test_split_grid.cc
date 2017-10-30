@@ -52,11 +52,24 @@ int main (int argc, char ** argv)
   GridRedBlackCartesian * rbGrid  = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
-  int nrhs = UGrid->RankCount() ;
-
   /////////////////////////////////////////////
   // Split into 1^4 mpi communicators
   /////////////////////////////////////////////
+
+  for(int i=0;i<argc;i++){
+    if(std::string(argv[i]) == "--split"){
+      for(int k=0;k<mpi_layout.size();k++){
+	std::stringstream ss; 
+	ss << argv[i+1+k]; 
+	ss >> mpi_split[k];
+      }
+      break;
+    }
+  }
+
+  int nrhs = 1;
+  for(int i=0;i<mpi_layout.size();i++) nrhs *= (mpi_layout[i]/mpi_split[i]);
+
   GridCartesian         * SGrid = new GridCartesian(GridDefaultLatt(),
 						    GridDefaultSimd(Nd,vComplex::Nsimd()),
 						    mpi_split,
