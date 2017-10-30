@@ -53,33 +53,13 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
   ShmInitGeneric();
 }
 
-CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
+CartesianCommunicator::~CartesianCommunicator()
 {
-  _ndimension = processors.size();
-  std::vector<int> periodic(_ndimension,1);
-
-  _Nprocessors=1;
-  _processors = processors;
-  _processor_coor.resize(_ndimension);
-  
-  MPI_Cart_create(communicator_world, _ndimension,&_processors[0],&periodic[0],1,&communicator);
-  MPI_Comm_rank(communicator,&_processor);
-  MPI_Cart_coords(communicator,_processor,_ndimension,&_processor_coor[0]);
-
-  for(int i=0;i<_ndimension;i++){
-    _Nprocessors*=_processors[i];
-  }
-
-  communicator_halo.resize (2*_ndimension);
-  for(int i=0;i<_ndimension*2;i++){
-    MPI_Comm_dup(communicator,&communicator_halo[i]);
-  }
-  
-  int Size; 
-  MPI_Comm_size(communicator,&Size);
-  
-  assert(Size==_Nprocessors);
+  if (communicator && !MPI::Is_finalized())
+    MPI_Comm_free(&communicator);
 }
+
+
 void CartesianCommunicator::GlobalSum(uint32_t &u){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_SUM,communicator);
   assert(ierr==0);
@@ -244,13 +224,14 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 {
   int myrank = _processor;
   int ierr;
-  assert(dir < communicator_halo.size());
+  int ncomm  =communicator_halo.size(); 
+  int commdir=dir%ncomm;
   
   //  std::cout << " sending on communicator "<<dir<<" " <<communicator_halo[dir]<<std::endl;
   // Give the CPU to MPI immediately; can use threads to overlap optionally
   MPI_Request req[2];
-  MPI_Irecv(recv,bytes,MPI_CHAR,recv_from_rank,recv_from_rank, communicator_halo[dir],&req[1]);
-  MPI_Isend(xmit,bytes,MPI_CHAR,xmit_to_rank  ,myrank        , communicator_halo[dir],&req[0]);
+  MPI_Irecv(recv,bytes,MPI_CHAR,recv_from_rank,recv_from_rank, communicator_halo[commdir],&req[1]);
+  MPI_Isend(xmit,bytes,MPI_CHAR,xmit_to_rank  ,myrank        , communicator_halo[commdir],&req[0]);
 
   list.push_back(req[0]);
   list.push_back(req[1]);
@@ -269,13 +250,14 @@ double CartesianCommunicator::StencilSendToRecvFrom(void *xmit,
 {
   int myrank = _processor;
   int ierr;
-  assert(dir < communicator_halo.size());
-  
-  //  std::cout << " sending on communicator "<<dir<<" " <<communicator_halo[dir]<<std::endl;
+  //  std::cout << " sending on communicator "<<dir<<" " <<communicator_halo.size()<< <std::endl;
+
+  int ncomm  =communicator_halo.size(); 
+  int commdir=dir%ncomm;
   // Give the CPU to MPI immediately; can use threads to overlap optionally
   MPI_Request req[2];
-  MPI_Irecv(recv,bytes,MPI_CHAR,recv_from_rank,recv_from_rank, communicator_halo[dir],&req[1]);
-  MPI_Isend(xmit,bytes,MPI_CHAR,xmit_to_rank  ,myrank        , communicator_halo[dir],&req[0]);
+  MPI_Irecv(recv,bytes,MPI_CHAR,recv_from_rank,recv_from_rank, communicator_halo[commdir],&req[1]);
+  MPI_Isend(xmit,bytes,MPI_CHAR,xmit_to_rank  ,myrank        , communicator_halo[commdir],&req[0]);
   MPI_Waitall(2, req, MPI_STATUSES_IGNORE);
   return 2.0*bytes;
 }

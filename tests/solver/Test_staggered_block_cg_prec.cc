@@ -68,14 +68,15 @@ int main (int argc, char ** argv)
   GridParallelRNG pRNG5(FGrid);  pRNG5.SeedFixedIntegers(seeds);
 
   FermionField src(FGrid); random(pRNG5,src);
-  FermionField result(FGrid); result=zero;
+  FermionField src_o(FrbGrid);   pickCheckerboard(Odd,src_o,src);
+  FermionField result_o(FrbGrid); result_o=zero; 
   RealD nrm = norm2(src);
 
   LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
 
   RealD mass=0.003;
   ImprovedStaggeredFermion5DR Ds(Umu,Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass); 
-  MdagMLinearOperator<ImprovedStaggeredFermion5DR,FermionField> HermOp(Ds);
+  SchurStaggeredOperator<ImprovedStaggeredFermion5DR,FermionField> HermOp(Ds);
 
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
   int blockDim = 0;
@@ -87,37 +88,40 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Calling 4d CG "<<std::endl;
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
   ImprovedStaggeredFermionR Ds4d(Umu,Umu,*UGrid,*UrbGrid,mass);
-  MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> HermOp4d(Ds4d);
+  SchurStaggeredOperator<ImprovedStaggeredFermionR,FermionField> HermOp4d(Ds4d);
   FermionField src4d(UGrid); random(pRNG,src4d);
-  FermionField result4d(UGrid); result4d=zero;
-  CG(HermOp4d,src4d,result4d);
+  FermionField src4d_o(UrbGrid);   pickCheckerboard(Odd,src4d_o,src4d);
+  FermionField result4d_o(UrbGrid); 
+
+  result4d_o=zero;
+  CG(HermOp4d,src4d_o,result4d_o);
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
 
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   std::cout << GridLogMessage << " Calling 5d CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
-  result=zero;
   Ds.ZeroCounters();
-  CG(HermOp,src,result);
+  result_o=zero;
+  CG(HermOp,src_o,result_o);
   Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   std::cout << GridLogMessage << " Calling multiRHS CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
-  result=zero;
   Ds.ZeroCounters();
-  mCG(HermOp,src,result);
+  result_o=zero;
+  mCG(HermOp,src_o,result_o);
   Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   std::cout << GridLogMessage << " Calling Block CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
-  result=zero;
   Ds.ZeroCounters();
-  BCGrQ(HermOp,src,result);
+  result_o=zero;
+  BCGrQ(HermOp,src_o,result_o);
   Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 

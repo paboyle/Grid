@@ -93,7 +93,7 @@ int main (int argc, char ** argv)
 	  std::cout << latt_size.back() << "\t\t";
 
 	  GridCartesian           Grid(latt_size,simd_layout,mpi_layout);
-	  GridRedBlackCartesian RBGrid(latt_size,simd_layout,mpi_layout);
+	  GridRedBlackCartesian RBGrid(&Grid);
 
 	  GridParallelRNG  pRNG(&Grid); pRNG.SeedFixedIntegers(seeds);
 	  LatticeGaugeField Umu(&Grid); random(pRNG,Umu);

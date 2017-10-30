@@ -45,8 +45,9 @@ struct scal {
 
 int main (int argc, char ** argv)
 {
+  typedef typename ImprovedStaggeredFermionR::FermionField FermionField; 
+  typename ImprovedStaggeredFermionR::ImplParams params; 
   Grid_init(&argc,&argv);
-
 
   std::vector<int> latt_size   = GridDefaultLatt();
   std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
@@ -59,17 +60,17 @@ int main (int argc, char ** argv)
 
   LatticeGaugeField Umu(&Grid); SU3::HotConfiguration(pRNG,Umu);
 
-  LatticeFermion    src(&Grid); random(pRNG,src);
-  LatticeFermion result(&Grid); result=zero;
-  LatticeFermion resid(&Grid); 
+  FermionField    src(&Grid); random(pRNG,src);
+  FermionField result(&Grid); result=zero;
+  FermionField  resid(&Grid); 
 
-  RealD mass=0.5;
-  WilsonFermionR Dw(Umu,Grid,RBGrid,mass);
+  RealD mass=0.1;
+  ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass);
 
-  ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);
-  SchurRedBlackDiagMooeeSolve<LatticeFermion> SchurSolver(CG);
+  ConjugateGradient<FermionField> CG(1.0e-8,10000);
+  SchurRedBlackStaggeredSolve<FermionField> SchurSolver(CG);
 
-  SchurSolver(Dw,src,result);
+  SchurSolver(Ds,src,result);
   
   Grid_finalize();
 }

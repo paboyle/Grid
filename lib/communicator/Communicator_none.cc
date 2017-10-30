@@ -38,6 +38,9 @@ void CartesianCommunicator::Init(int *argc, char *** arv)
   ShmInitGeneric();
 }
 
+CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent) 
+  : CartesianCommunicator(processors) {}
+
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {
   _processors = processors;
@@ -52,6 +55,8 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
     _processor_coor[d] = 0;
   }
 }
+
+CartesianCommunicator::~CartesianCommunicator(){}
 
 void CartesianCommunicator::GlobalSum(float &){}
 void CartesianCommunicator::GlobalSumVector(float *,int N){}
@@ -94,6 +99,14 @@ void CartesianCommunicator::SendToRecvFromBegin(std::vector<CommsRequest_t> &lis
 void CartesianCommunicator::SendToRecvFromComplete(std::vector<CommsRequest_t> &list)
 {
   assert(0);
+}
+void CartesianCommunicator::AllToAll(int dim,void  *in,void *out,uint64_t words,uint64_t bytes)
+{
+  bcopy(in,out,bytes*words);
+}
+void CartesianCommunicator::AllToAll(void  *in,void *out,uint64_t words,uint64_t bytes)
+{
+  bcopy(in,out,bytes*words);
 }
 
 int  CartesianCommunicator::RankWorld(void){return 0;}

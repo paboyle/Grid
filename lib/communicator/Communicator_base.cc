@@ -67,7 +67,7 @@ void CartesianCommunicator::ShmBufferFreeAll(void) {
 /////////////////////////////////
 // Grid information queries
 /////////////////////////////////
-int                      CartesianCommunicator::Dimensions(void)         { return _ndimension; };
+int                      CartesianCommunicator::Dimensions(void)        { return _ndimension; };
 int                      CartesianCommunicator::IsBoss(void)            { return _processor==0; };
 int                      CartesianCommunicator::BossRank(void)          { return 0; };
 int                      CartesianCommunicator::ThisRank(void)          { return _processor; };
@@ -95,6 +95,113 @@ void CartesianCommunicator::GlobalSumVector(ComplexD *c,int N)
 {
   GlobalSumVector((double *)c,2*N);
 }
+
+
+#if defined( GRID_COMMS_MPI) || defined (GRID_COMMS_MPIT)
+
+CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent) 
+{
+  _ndimension = processors.size();
+  assert(_ndimension = parent._ndimension);
+  
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  // split the communicator
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  int Nparent;
+  MPI_Comm_size(parent.communicator,&Nparent);
+
+  int childsize=1;
+  for(int d=0;d<processors.size();d++) {
+    childsize *= processors[d];
+  }
+  int Nchild = Nparent/childsize;
+  assert (childsize * Nchild == Nparent);
+
+  std::vector<int> ccoor(_ndimension); // coor within subcommunicator
+  std::vector<int> scoor(_ndimension); // coor of split within parent
+  std::vector<int> ssize(_ndimension); // coor of split within parent
+
+  for(int d=0;d<_ndimension;d++){
+    ccoor[d] = parent._processor_coor[d] % processors[d];
+    scoor[d] = parent._processor_coor[d] / processors[d];
+    ssize[d] = parent._processors[d]/ processors[d];
+  }
+  int crank,srank;  // rank within subcomm ; rank of subcomm within blocks of subcomms
+  Lexicographic::IndexFromCoor(ccoor,crank,processors);
+  Lexicographic::IndexFromCoor(scoor,srank,ssize);
+
+  MPI_Comm comm_split;
+  if ( Nchild > 1 ) { 
+
+    //    std::cout << GridLogMessage<<"Child communicator of "<< std::hex << parent.communicator << std::dec<<std::endl;
+    //    std::cout << GridLogMessage<<" parent grid["<< parent._ndimension<<"]    ";
+    //    for(int d=0;d<parent._processors.size();d++)  std::cout << parent._processors[d] << " ";
+    //    std::cout<<std::endl;
+
+    //    std::cout << GridLogMessage<<" child grid["<< _ndimension <<"]    ";
+    //    for(int d=0;d<processors.size();d++)  std::cout << processors[d] << " ";
+    //    std::cout<<std::endl;
+
+    int ierr= MPI_Comm_split(parent.communicator,srank,crank,&comm_split);
+    assert(ierr==0);
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Declare victory
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    //    std::cout << GridLogMessage<<"Divided communicator "<< parent._Nprocessors<<" into "
+    // 	      << Nchild <<" communicators with " << childsize << " ranks"<<std::endl;
+  } else {
+    comm_split=parent.communicator;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Set up from the new split communicator
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  InitFromMPICommunicator(processors,comm_split);
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// Take an MPI_Comm and self assemble
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+void CartesianCommunicator::InitFromMPICommunicator(const std::vector<int> &processors, MPI_Comm communicator_base)
+{
+  //  if ( communicator_base != communicator_world ) {
+  //    std::cout << "Cartesian communicator created with a non-world communicator"<<std::endl;
+  //  }
+  _ndimension = processors.size();
+  _processor_coor.resize(_ndimension);
+
+  /////////////////////////////////
+  // Count the requested nodes
+  /////////////////////////////////
+  _Nprocessors=1;
+  _processors = processors;
+  for(int i=0;i<_ndimension;i++){
+    _Nprocessors*=_processors[i];
+  }
+
+  std::vector<int> periodic(_ndimension,1);
+  MPI_Cart_create(communicator_base, _ndimension,&_processors[0],&periodic[0],1,&communicator);
+  MPI_Comm_rank(communicator,&_processor);
+  MPI_Cart_coords(communicator,_processor,_ndimension,&_processor_coor[0]);
+
+  int Size;
+  MPI_Comm_size(communicator,&Size);
+
+#ifdef GRID_COMMS_MPIT
+  communicator_halo.resize (2*_ndimension);
+  for(int i=0;i<_ndimension*2;i++){
+    MPI_Comm_dup(communicator,&communicator_halo[i]);
+  }
+#endif
+  
+  assert(Size==_Nprocessors);
+}
+
+CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors) 
+{
+  InitFromMPICommunicator(processors,communicator_world);
+}
+
+#endif
 
 #if !defined( GRID_COMMS_MPI3) 
 
@@ -147,13 +254,13 @@ void *CartesianCommunicator::ShmBufferTranslate(int rank,void * local_p) {
 }
 void CartesianCommunicator::ShmInitGeneric(void){
 #if 1
-
-#if !defined(MAP_ANONYMOUS)
-  #define NO_MAP_ANONYMOUS
-  #define MAP_ANONYMOUS MAP_ANON
+  int mmap_flag =0;
+#ifdef MAP_ANONYMOUS
+  mmap_flag = mmap_flag| MAP_SHARED | MAP_ANONYMOUS;
 #endif
-
-  int mmap_flag = MAP_SHARED | MAP_ANONYMOUS;
+#ifdef MAP_ANON
+  mmap_flag = mmap_flag| MAP_SHARED | MAP_ANON;
+#endif
 #ifdef MAP_HUGETLB
   if ( Hugepages ) mmap_flag |= MAP_HUGETLB;
 #endif
@@ -170,11 +277,6 @@ void CartesianCommunicator::ShmInitGeneric(void){
   ShmCommBuf=(void *)&ShmBufStorageVector[0];
 #endif
   bzero(ShmCommBuf,MAX_MPI_SHM_BYTES);
-
-#if defined(NO_MAP_ANONYMOUS)
-  #undef MAP_ANONYMOUS
-  #undef NO_MAP_ANONYMOUS
-#endif
 }
 
 #endif
