@@ -790,8 +790,8 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
     ratio[d] = full_grid->_processors[d]/ split_grid->_processors[d];
   }
 
-  int lsites = full_grid->lSites();
-  Integer sz = lsites * nvector;
+  uint64_t lsites = full_grid->lSites();
+  uint64_t     sz = lsites * nvector;
   std::vector<Sobj> tmpdata(sz);
   std::vector<Sobj> alldata(sz);
   std::vector<Sobj> scalardata(lsites); 
@@ -908,8 +908,8 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
     ratio[d] = full_grid->_processors[d]/ split_grid->_processors[d];
   }
 
-  int lsites = full_grid->lSites();
-  Integer sz = lsites * nvector;
+  uint64_t lsites = full_grid->lSites();
+  uint64_t     sz = lsites * nvector;
   std::vector<Sobj> tmpdata(sz);
   std::vector<Sobj> alldata(sz);
   std::vector<Sobj> scalardata(lsites); 
