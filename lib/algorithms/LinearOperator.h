@@ -319,7 +319,7 @@ namespace Grid {
 	Field tmp(in._grid);
 	_Mat.Meooe(in,tmp);
 	_Mat.MooeeInv(tmp,out);
-	_Mat.MeooeDag(out,tmp);
+	_Mat.Meooe(out,tmp);
 	_Mat.Mooee(in,out);
         return axpy_norm(out,-1.0,tmp,out);
       }

@@ -52,6 +52,15 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
   MPI_Comm_dup (MPI_COMM_WORLD,&communicator_world);
   ShmInitGeneric();
 }
+
+CartesianCommunicator::~CartesianCommunicator()
+{
+  int MPI_is_finalised;
+  MPI_Finalized(&MPI_is_finalised);
+  if (communicator && MPI_is_finalised)
+    MPI_Comm_free(&communicator);
+}
+
 void CartesianCommunicator::GlobalSum(uint32_t &u){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_SUM,communicator);
   assert(ierr==0);
@@ -188,7 +197,7 @@ void CartesianCommunicator::Broadcast(int root,void* data, int bytes)
 		     communicator);
   assert(ierr==0);
 }
-void CartesianCommunicator::AllToAll(int dim,void  *in,void *out,int bytes)
+void CartesianCommunicator::AllToAll(int dim,void  *in,void *out,uint64_t words,uint64_t bytes)
 {
   std::vector<int> row(_ndimension,1);
   assert(dim>=0 && dim<_ndimension);
@@ -197,11 +206,25 @@ void CartesianCommunicator::AllToAll(int dim,void  *in,void *out,int bytes)
   row[dim] = _processors[dim];
 
   CartesianCommunicator Comm(row,*this);
-  Comm.AllToAll(in,out,bytes);
+  Comm.AllToAll(in,out,words,bytes);
 }
-void CartesianCommunicator::AllToAll(void  *in,void *out,int bytes)
+void CartesianCommunicator::AllToAll(void  *in,void *out,uint64_t words,uint64_t bytes)
 {
-  MPI_Alltoall(in ,bytes,MPI_BYTE,out,bytes,MPI_BYTE,communicator);
+  // MPI is a pain and uses "int" arguments
+  // 64*64*64*128*16 == 500Million elements of data.
+  // When 24*4 bytes multiples get 50x 10^9 >>> 2x10^9 Y2K bug.
+  // (Turns up on 32^3 x 64 Gparity too)
+  MPI_Datatype object;
+  int iwords; 
+  int ibytes;
+  iwords = words;
+  ibytes = bytes;
+  assert(words == iwords); // safe to cast to int ?
+  assert(bytes == ibytes); // safe to cast to int ?
+  MPI_Type_contiguous(ibytes,MPI_BYTE,&object);
+  MPI_Type_commit(&object);
+  MPI_Alltoall(in,iwords,object,out,iwords,object,communicator);
+  MPI_Type_free(&object);
 }
   ///////////////////////////////////////////////////////
   // Should only be used prior to Grid Init finished.

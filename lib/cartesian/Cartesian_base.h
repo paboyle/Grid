@@ -52,6 +52,8 @@ public:
     GridBase(const std::vector<int> & processor_grid,
 	     const CartesianCommunicator &parent) : CartesianCommunicator(processor_grid,parent) {};
 
+    virtual ~GridBase() = default;
+
     // Physics Grid information.
     std::vector<int> _simd_layout;// Which dimensions get relayed out over simd lanes.
     std::vector<int> _fdimensions;// (full) Global dimensions of array prior to cb removal

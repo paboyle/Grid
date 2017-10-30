@@ -133,6 +133,8 @@ public:
     {
       Init(base->_fdimensions,base->_simd_layout,base->_processors,checker_dim_mask,checker_dim)  ;
     }
+
+    virtual ~GridRedBlackCartesian() = default;
 #if 0
     ////////////////////////////////////////////////////////////
     // Create redblack grid ;; deprecate these. Should not
