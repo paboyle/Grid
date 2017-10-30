@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./tests/Test_wilson_mr_unprec.cc
+Source file: ./tests/solver/Test_wilson_mr_unprec.cc
 
 Copyright (C) 2015
 
