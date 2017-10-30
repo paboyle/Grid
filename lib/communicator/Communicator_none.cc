@@ -38,8 +38,8 @@ void CartesianCommunicator::Init(int *argc, char *** arv)
   ShmInitGeneric();
 }
 
-CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent) 
-  : CartesianCommunicator(processors) {}
+CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent,int &srank) 
+  : CartesianCommunicator(processors) { srank=0;}
 
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 {
