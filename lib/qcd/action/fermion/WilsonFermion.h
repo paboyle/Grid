@@ -44,6 +44,19 @@ class WilsonFermionStatic {
   static const int npoint = 8;
 };
 
+struct WilsonAnisotropyCoefficients{
+  bool isAnisotropic;
+  int t_direction;
+  double xi_0;
+  double nu;
+
+  WilsonAnisotropyCoefficients():
+    isAnisotropic(false), 
+    t_direction(Nd-1), 
+    xi_0(1.0), 
+    nu(1.0){}
+};
+
 template <class Impl>
 class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
  public:
@@ -117,8 +130,9 @@ class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
 
   // Constructor
   WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
-                GridRedBlackCartesian &Hgrid, RealD _mass,
-                const ImplParams &p = ImplParams());
+                GridRedBlackCartesian &Hgrid, RealD _mass, 
+                const ImplParams &p = ImplParams(), 
+                const WilsonAnisotropyCoefficients &anis = WilsonAnisotropyCoefficients() );
 
   // DoubleStore impl dependent
   void ImportGauge(const GaugeField &_Umu);
@@ -130,6 +144,7 @@ class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
   //    protected:
  public:
   RealD mass;
+  RealD diag_mass;
 
   GridBase *_grid;
   GridBase *_cbgrid;
@@ -146,6 +161,8 @@ class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
 
   LebesgueOrder Lebesgue;
   LebesgueOrder LebesgueEvenOdd;
+
+  WilsonAnisotropyCoefficients anisotropyCoeff;
 };
 
 typedef WilsonFermion<WilsonImplF> WilsonFermionF;

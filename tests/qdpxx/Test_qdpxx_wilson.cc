@@ -32,7 +32,7 @@
 #include <actions/ferm/invert/syssolver_linop_aggregate.h>
 
 // Mass
-double mq = 0.02;
+double mq = 0.1;
 
 // Define Wilson Types
 typedef Grid::QCD::WilsonImplR::FermionField FermionField;
@@ -255,6 +255,12 @@ public:
 
       Chroma::WilsonFermActParams p;
       p.Mass = _mq;
+      AnisoParam_t _apar;
+      _apar.anisoP = true;
+      _apar.t_dir = 3; // in 4d
+      _apar.xi_0 = 2.0;
+      _apar.nu = 1.0;
+      p.anisoParam = _apar;
 
       Chroma::Handle<Chroma::FermBC<T4, U, U>> fbc(new Chroma::SimpleFermBC<T4, U, U>(bcs));
       Chroma::Handle<Chroma::CreateFermState<T4, U, U>> cfs(new Chroma::CreateSimpleFermState<T4, U, U>(fbc));
@@ -269,7 +275,13 @@ public:
       p.Mass = _mq;
       p.clovCoeffR = QDP::Real(1.0);
       p.clovCoeffT = QDP::Real(1.0);
-      Real u0 = QDP::Real(1.0);
+      p.u0 = QDP::Real(1.0);
+      AnisoParam_t _apar;
+      _apar.anisoP = false;
+      _apar.t_dir = 3; // in 4d
+      _apar.xi_0 = 2.0;
+      _apar.nu = 1.0;
+      p.anisoParam = _apar;
 
       Chroma::Handle<Chroma::FermBC<T4, U, U>> fbc(new Chroma::SimpleFermBC<T4, U, U>(bcs));
       Chroma::Handle<Chroma::CreateFermState<T4, U, U>> cfs(new Chroma::CreateSimpleFermState<T4, U, U>(fbc));
@@ -391,8 +403,13 @@ void calc_grid(ChromaAction action, Grid::QCD::LatticeGaugeField &Umu, Grid::QCD
 
   if (action == Wilson)
   {
-
-    Grid::QCD::WilsonFermionR Wf(Umu, *UGrid, *UrbGrid, _mass);
+    WilsonAnisotropyCoefficients anis;
+    anis.isAnisotropic = true;
+    anis.t_direction = 3;
+    anis.xi_0 = 2.0;
+    anis.nu = 1.0;
+    WilsonImplParams iParam;
+    Grid::QCD::WilsonFermionR Wf(Umu, *UGrid, *UrbGrid, _mass, iParam, anis);
 
     std::cout << Grid::GridLogMessage << " Calling Grid Wilson Fermion multiply " << std::endl;
 
@@ -406,7 +423,8 @@ void calc_grid(ChromaAction action, Grid::QCD::LatticeGaugeField &Umu, Grid::QCD
   if (action == WilsonClover)
   {
     Grid::RealD _csw = 1.0;
-
+    WilsonAnisotropyCoefficients anis;
+    WilsonImplParams implParam;
     Grid::QCD::WilsonCloverFermionR Wf(Umu, *UGrid, *UrbGrid, _mass, _csw);
     Wf.ImportGauge(Umu);
 
