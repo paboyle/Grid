@@ -38,5 +38,6 @@ directory
 #include <Grid/qcd/action/pseudofermion/OneFlavourRationalRatio.h>
 #include <Grid/qcd/action/pseudofermion/OneFlavourEvenOddRational.h>
 #include <Grid/qcd/action/pseudofermion/OneFlavourEvenOddRationalRatio.h>
+#include <Grid/qcd/action/pseudofermion/ExactOneFlavourRatio.h>
 
 #endif

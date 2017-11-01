@@ -1,6 +1,6 @@
     /*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
 
     Source file: ./tests/Test_serialisation.cc
 
@@ -29,12 +29,11 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid/Grid.h>
 
-
 using namespace Grid;
 using namespace Grid::QCD;
 
 GRID_SERIALIZABLE_ENUM(myenum, undef, red, 1, blue, 2, green, 3);
-  
+
 class myclass: Serializable {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(myclass,
@@ -79,14 +78,14 @@ void ioTest(const std::string &filename, const O &object, const std::string &nam
   // writer needs to be destroyed so that writing physically happens
   {
     W writer(filename);
-    
+
     write(writer, "testobject", object);
   }
-  
+
   R    reader(filename);
   O    buf;
   bool good;
-  
+
   read(reader, "testobject", buf);
   good = (object == buf);
   std::cout << name << " IO test: " << (good ? "success" : "failure");
@@ -98,7 +97,7 @@ int main(int argc,char **argv)
 {
   std::cout << "==== basic IO" << std::endl;
   XmlWriter WR("bother.xml");
-  
+
   // test basic type writing
   std::cout << "-- basic writing to 'bother.xml'..." << std::endl;
   push(WR,"BasicTypes");
@@ -112,12 +111,12 @@ int main(int argc,char **argv)
   write(WR,"d",d);
   write(WR,"b",b);
   pop(WR);
-  
+
   // test serializable class writing
   myclass              obj(1234); // non-trivial constructor
   std::vector<myclass> vec;
   std::pair<myenum, myenum> pair;
-  
+
   std::cout << "-- serialisable class writing to 'bother.xml'..." << std::endl;
   write(WR,"obj",obj);
   WR.write("obj2", obj);
@@ -132,11 +131,11 @@ int main(int argc,char **argv)
   std::cout << "-- serialisable class comparison:" << std::endl;
   std::cout << "vec[0] == obj: " << ((vec[0] == obj) ? "true" : "false") << std::endl;
   std::cout << "vec[1] == obj: " << ((vec[1] == obj) ? "true" : "false") << std::endl;
-  
+
   write(WR, "objpair", pair);
   std::cout << "-- pair writing to std::cout:" << std::endl;
   std::cout << pair << std::endl;
-  
+
   // read tests
   std::cout << "\n==== IO self-consistency tests" << std::endl;
   //// XML
@@ -151,6 +150,11 @@ int main(int argc,char **argv)
   ioTest<TextWriter, TextReader>("iotest.dat", obj, "text   (object)           ");
   ioTest<TextWriter, TextReader>("iotest.dat", vec, "text   (vector of objects)");
   ioTest<TextWriter, TextReader>("iotest.dat", pair, "text   (pair of objects)");
+  //// text
+  ioTest<JSONWriter, JSONReader>("iotest.json", obj,  "JSON   (object)           ");
+  ioTest<JSONWriter, JSONReader>("iotest.json", vec,  "JSON   (vector of objects)");
+  ioTest<JSONWriter, JSONReader>("iotest.json", pair, "JSON   (pair of objects)");
+
   //// HDF5
 #undef HAVE_HDF5
 #ifdef HAVE_HDF5
@@ -158,13 +162,13 @@ int main(int argc,char **argv)
   ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", vec, "HDF5   (vector of objects)");
   ioTest<Hdf5Writer, Hdf5Reader>("iotest.h5", pair, "HDF5   (pair of objects)");
 #endif
-  
+
   std::cout << "\n==== vector flattening/reconstruction" << std::endl;
   typedef std::vector<std::vector<std::vector<double>>> vec3d;
-  
+
   vec3d dv, buf;
   double d = 0.;
-  
+
   dv.resize(4);
   for (auto &v1: dv)
   {
@@ -180,14 +184,14 @@ int main(int argc,char **argv)
   }
   std::cout << "original 3D vector:" << std::endl;
   std::cout << dv << std::endl;
-  
+
   Flatten<vec3d> flatdv(dv);
-  
+
   std::cout << "\ndimensions:" << std::endl;
   std::cout << flatdv.getDim() << std::endl;
   std::cout << "\nflattened vector:" << std::endl;
   std::cout << flatdv.getFlatVector() << std::endl;
-  
+
   Reconstruct<vec3d> rec(flatdv.getFlatVector(), flatdv.getDim());
   std::cout << "\nreconstructed vector:" << std::endl;
   std::cout << flatdv.getVector() << std::endl;
@@ -199,10 +203,12 @@ int main(int argc,char **argv)
 
   {
     JSONWriter JW("bother.json");
-    
+
     // test basic type writing
+    myenum a = myenum::red;
     push(JW,"BasicTypes");
     write(JW,std::string("i16"),i16);
+    write(JW,"myenum",a);
     write(JW,"u16",u16);
     write(JW,"i32",i32);
     write(JW,"u32",u32);
@@ -212,22 +218,24 @@ int main(int argc,char **argv)
     write(JW,"d",d);
     write(JW,"b",b);
     pop(JW);
-    
+
+
     // test serializable class writing
     myclass obj(1234); // non-trivial constructor
+    std::cout << obj << std::endl;
     std::cout << "-- serialisable class writing to 'bother.json'..." << std::endl;
     write(JW,"obj",obj);
     JW.write("obj2", obj);
-    
-    std::cout << obj << std::endl;
-    
+
+
     std::vector<myclass> vec;
     vec.push_back(myclass(1234));
     vec.push_back(myclass(5678));
     vec.push_back(myclass(3838));
     write(JW, "objvec", vec);
-    
+
   }
+
 
   {
     JSONReader RD("bother.json");
@@ -238,8 +246,9 @@ int main(int argc,char **argv)
     std::cout << "Loaded (JSON) -----------------" << std::endl;
     std::cout << jcopy1 << std::endl << jveccopy1 << std::endl;
   }
-  
-/* 
+ 
+
+/*
   // This is still work in progress
   {
     // Testing the next element function

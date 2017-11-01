@@ -3,19 +3,19 @@ TODO:
 
 Large item work list:
 
-1)- BG/Q port and check
+1)- BG/Q port and check ; Andrew says ok.
 2)- Christoph's local basis expansion Lanczos
-3)- Precision conversion and sort out localConvert      <-- partial
-
-  - Consistent linear solver flop count/rate -- PARTIAL, time but no flop/s yet
+--
+3a)- RNG I/O in ILDG/SciDAC (minor)
+3b)- Precision conversion and sort out localConvert      <-- partial/easy
+3c)- Consistent linear solver flop count/rate -- PARTIAL, time but no flop/s yet
 4)- Physical propagator interface
 5)- Conserved currents
 6)- Multigrid Wilson and DWF, compare to other Multigrid implementations
 7)- HDCR resume
 
 Recent DONE 
-
--- MultiRHS with spread out extra dim -- Go through filesystem with SciDAC I/O.  <--- DONE
+-- MultiRHS with spread out extra dim -- Go through filesystem with SciDAC I/O ; <-- DONE ; bmark cori
 -- Lanczos Remove DenseVector, DenseMatrix; Use Eigen instead. <-- DONE
 -- GaugeFix into central location                      <-- DONE
 -- Scidac and Ildg metadata handling                   <-- DONE

@@ -86,7 +86,7 @@ namespace Grid {
                                       or element<T>::is_number;
   };
   
-  // Vector flatening utility class ////////////////////////////////////////////
+  // Vector flattening utility class ////////////////////////////////////////////
   // Class to flatten a multidimensional std::vector
   template <typename V>
   class Flatten

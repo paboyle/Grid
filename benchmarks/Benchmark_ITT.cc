@@ -232,9 +232,13 @@ public:
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     std::cout<<GridLogMessage << "= Benchmarking a*x + y bandwidth"<<std::endl;
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<"\t\t seconds"<<std::endl;
+    std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<"\t\t seconds"<< "\t\tGB/s / node"<<std::endl;
     std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
   
+    uint64_t NP;
+    uint64_t NN;
+
+
   uint64_t lmax=48;
 #define NLOOP (100*lmax*lmax*lmax*lmax/lat/lat/lat/lat)
 
@@ -244,6 +248,9 @@ public:
       std::vector<int> latt_size  ({lat*mpi_layout[0],lat*mpi_layout[1],lat*mpi_layout[2],lat*mpi_layout[3]});
       int64_t vol= latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
+
+      NP= Grid.RankCount();
+      NN =Grid.NodeCount();
 
       Vec rn ; random(sRNG,rn);
 
@@ -266,7 +273,8 @@ public:
       double flops=vol*Nvec*2;// mul,add
       double bytes=3.0*vol*Nvec*sizeof(Real);
       std::cout<<GridLogMessage<<std::setprecision(3) 
-	       << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<"\t\t"<<(stop-start)/1000./1000.<<std::endl;
+	       << lat<<"\t\t"<<bytes<<"   \t\t"<<bytes/time<<"\t\t"<<flops/time<<"\t\t"<<(stop-start)/1000./1000.
+	       << "\t\t"<< bytes/time/NN <<std::endl;
 
     }
   };
@@ -387,6 +395,8 @@ public:
 	std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 
 	int nwarm = 100;
+	uint64_t ncall = 1000;
+
 	double t0=usecond();
 	sFGrid->Barrier();
 	for(int i=0;i<nwarm;i++){
@@ -394,15 +404,8 @@ public:
 	}
 	sFGrid->Barrier();
 	double t1=usecond();
-	//	uint64_t ncall = (uint64_t) 2.5*1000.0*1000.0*nwarm/(t1-t0);
-	//	if (ncall < 500) ncall = 500;
-	uint64_t ncall = 500;
 
-	sFGrid->Broadcast(0,&ncall,sizeof(ncall));
-
-	//	std::cout << GridLogMessage << " Estimate " << ncall << " calls per second"<<std::endl;
 	sDw.ZeroCounters();
-
 	time_statistics timestat;
 	std::vector<double> t_time(ncall);
 	for(uint64_t i=0;i<ncall;i++){
@@ -436,12 +439,14 @@ public:
 	sDw.Report();
 
       }
+      double robust = mflops_worst/mflops_best;;
       std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
       std::cout<<GridLogMessage << L<<"^4 x "<<Ls<< " sDeo Best  mflop/s        =   "<< mflops_best << " ; " << mflops_best/NN<<" per node " <<std::endl;
       std::cout<<GridLogMessage << L<<"^4 x "<<Ls<< " sDeo Worst mflop/s        =   "<< mflops_worst<< " ; " << mflops_worst/NN<<" per node " <<std::endl;
-      std::cout<<GridLogMessage << L<<"^4 x "<<Ls<< " Performance Robustness   =   "<< mflops_worst/mflops_best <<std::endl;
+
+      std::cout<<GridLogMessage <<std::setprecision(3)<< L<<"^4 x "<<Ls<< " Performance Robustness   =   "<< robust <<std::endl;
       std::cout<<GridLogMessage <<fmt << std::endl;
-      std::cout<<GridLogMessage ;
+      std::cout<<GridLogMessage;
 
       for(int i=0;i<mflops_all.size();i++){
 	std::cout<<mflops_all[i]/NN<<" ; " ;
@@ -453,7 +458,7 @@ public:
     return mflops_best;
   }
 
-  static double DWF(int Ls,int L)
+  static double DWF(int Ls,int L, double & robust)
   {
     RealD mass=0.1;
     RealD M5  =1.8;
@@ -655,10 +660,11 @@ public:
 	assert((norm2(err)<1.0e-4));
 
       }
+      robust = mflops_worst/mflops_best;
       std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
       std::cout<<GridLogMessage << L<<"^4 x "<<Ls<< " Deo Best  mflop/s        =   "<< mflops_best << " ; " << mflops_best/NN<<" per node " <<std::endl;
       std::cout<<GridLogMessage << L<<"^4 x "<<Ls<< " Deo Worst mflop/s        =   "<< mflops_worst<< " ; " << mflops_worst/NN<<" per node " <<std::endl;
-      std::cout<<GridLogMessage << L<<"^4 x "<<Ls<< " Performance Robustness   =   "<< mflops_worst/mflops_best <<std::endl;
+      std::cout<<GridLogMessage << std::fixed<<std::setprecision(3)<< L<<"^4 x "<<Ls<< " Performance Robustness   =   "<< robust  <<std::endl;
       std::cout<<GridLogMessage <<fmt << std::endl;
       std::cout<<GridLogMessage ;
 
@@ -692,26 +698,19 @@ int main (int argc, char ** argv)
   int do_wilson=1;
   int do_dwf   =1;
 
-  if ( do_memory ) {
-    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    std::cout<<GridLogMessage << " Memory benchmark " <<std::endl;
-    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    Benchmark::Memory();
-  }
-
-  if ( do_comms ) {
-    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    std::cout<<GridLogMessage << " Communications benchmark " <<std::endl;
-    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-    Benchmark::Comms();
-  }
-
   if ( do_su3 ) {
     // empty for now
   }
-
+#if 1
   int sel=2;
   std::vector<int> L_list({8,12,16,24});
+#else
+  int sel=1;
+  std::vector<int> L_list({8,12});
+#endif
+  int selm1=sel-1;
+  std::vector<double> robust_list;
+
   std::vector<double> wilson;
   std::vector<double> dwf4;
   std::vector<double> dwf5;
@@ -722,7 +721,8 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << " Wilson dslash 4D vectorised" <<std::endl;
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     for(int l=0;l<L_list.size();l++){
-      wilson.push_back(Benchmark::DWF(1,L_list[l]));
+      double robust;
+      wilson.push_back(Benchmark::DWF(1,L_list[l],robust));
     }
   }
 
@@ -732,7 +732,10 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << " Domain wall dslash 4D vectorised" <<std::endl;
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     for(int l=0;l<L_list.size();l++){
-      dwf4.push_back(Benchmark::DWF(Ls,L_list[l]));
+      double robust;
+      double result = Benchmark::DWF(Ls,L_list[l],robust) ;
+      dwf4.push_back(result);
+      robust_list.push_back(robust);
     }
   }
 
@@ -744,6 +747,10 @@ int main (int argc, char ** argv)
       dwf5.push_back(Benchmark::DWF5(Ls,L_list[l]));
     }
 
+  }
+
+  if ( do_dwf ) {
+
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   std::cout<<GridLogMessage << " Summary table Ls="<<Ls <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
@@ -752,11 +759,27 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]<<" \t "<<dwf4[l]<<" \t "<<dwf5[l] <<std::endl;
   }
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+  }
 
+  int NN=NN_global;
+  if ( do_memory ) {
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    std::cout<<GridLogMessage << " Memory benchmark " <<std::endl;
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    Benchmark::Memory();
+  }
+
+  if ( do_comms && (NN>1) ) {
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    std::cout<<GridLogMessage << " Communications benchmark " <<std::endl;
+    std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
+    Benchmark::Comms();
+  }
+
+  if ( do_dwf ) {
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
   std::cout<<GridLogMessage << " Per Node Summary table Ls="<<Ls <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-  int NN=NN_global;
   std::cout<<GridLogMessage << " L \t\t Wilson\t\t DWF4  \t\t DWF5 " <<std::endl;
   for(int l=0;l<L_list.size();l++){
     std::cout<<GridLogMessage << L_list[l] <<" \t\t "<< wilson[l]/NN<<" \t "<<dwf4[l]/NN<<" \t "<<dwf5[l] /NN<<std::endl;
@@ -764,9 +787,11 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
 
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-  std::cout<<GridLogMessage << " Comparison point result: "  << dwf4[sel]/NN <<std::endl;
+  std::cout<<GridLogMessage << " Comparison point     result: "  << 0.5*(dwf4[sel]+dwf4[selm1])/NN << " Mflop/s per node"<<std::endl;
+  std::cout<<GridLogMessage << " Comparison point is 0.5*("<<dwf4[sel]/NN<<"+"<<dwf4[selm1]/NN << ") "<<std::endl;
+  std::cout<<std::setprecision(3);
+  std::cout<<GridLogMessage << " Comparison point robustness: "  << robust_list[sel] <<std::endl;
   std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
-
 
   }
 

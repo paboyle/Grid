@@ -1,6 +1,6 @@
     /*************************************************************************************
 
-    Grid physics library, www.github.com/paboyle/Grid 
+    Grid physics library, www.github.com/paboyle/Grid
 
     Source file: ./lib/qcd/action/fermion/CayleyFermion5D.h
 
@@ -35,24 +35,24 @@ namespace Grid {
 
   namespace QCD {
 
-     template<typename T> struct switcheroo   {  
-       static inline int iscomplex()  { return 0; } 
+     template<typename T> struct switcheroo   {
+       static inline int iscomplex()  { return 0; }
 
        template<class vec>
        static inline vec mult(vec a, vec b) {
 	 return real_mult(a,b);
        }
      };
-     template<> struct switcheroo<ComplexD> {  
-       static inline int iscomplex()  { return 1; } 
+     template<> struct switcheroo<ComplexD> {
+       static inline int iscomplex()  { return 1; }
 
        template<class vec>
        static inline vec mult(vec a, vec b) {
 	 return a*b;
        }
      };
-     template<> struct switcheroo<ComplexF> {  
-       static inline int iscomplex()  { return 1; } 
+     template<> struct switcheroo<ComplexF> {
+       static inline int iscomplex()  { return 1; }
        template<class vec>
        static inline vec mult(vec a, vec b) {
 	 return a*b;
@@ -90,14 +90,14 @@ namespace Grid {
       // Instantiate different versions depending on Impl
       /////////////////////////////////////////////////////
       void M5D(const FermionField &psi,
-	       const FermionField &phi, 
+	       const FermionField &phi,
 	       FermionField &chi,
 	       std::vector<Coeff_t> &lower,
 	       std::vector<Coeff_t> &diag,
 	       std::vector<Coeff_t> &upper);
 
       void M5Ddag(const FermionField &psi,
-		  const FermionField &phi, 
+		  const FermionField &phi,
 		  FermionField &chi,
 		  std::vector<Coeff_t> &lower,
 		  std::vector<Coeff_t> &diag,
@@ -125,7 +125,7 @@ namespace Grid {
 
       // Efficient support for multigrid coarsening
       virtual void  Mdir (const FermionField &in, FermionField &out,int dir,int disp);
-      
+
       void   Meooe5D       (const FermionField &in, FermionField &out);
       void   MeooeDag5D    (const FermionField &in, FermionField &out);
 
@@ -133,23 +133,23 @@ namespace Grid {
       RealD mass;
 
       // Cayley form Moebius (tanh and zolotarev)
-      std::vector<Coeff_t> omega; 
+      std::vector<Coeff_t> omega;
       std::vector<Coeff_t> bs;    // S dependent coeffs
-      std::vector<Coeff_t> cs;    
-      std::vector<Coeff_t> as;    
+      std::vector<Coeff_t> cs;
+      std::vector<Coeff_t> as;
       // For preconditioning Cayley form
-      std::vector<Coeff_t> bee;    
-      std::vector<Coeff_t> cee;    
-      std::vector<Coeff_t> aee;    
-      std::vector<Coeff_t> beo;    
-      std::vector<Coeff_t> ceo;    
-      std::vector<Coeff_t> aeo;    
+      std::vector<Coeff_t> bee;
+      std::vector<Coeff_t> cee;
+      std::vector<Coeff_t> aee;
+      std::vector<Coeff_t> beo;
+      std::vector<Coeff_t> ceo;
+      std::vector<Coeff_t> aeo;
       // LDU factorisation of the eeoo matrix
-      std::vector<Coeff_t> lee;    
-      std::vector<Coeff_t> leem;    
-      std::vector<Coeff_t> uee;    
-      std::vector<Coeff_t> ueem;    
-      std::vector<Coeff_t> dee;    
+      std::vector<Coeff_t> lee;
+      std::vector<Coeff_t> leem;
+      std::vector<Coeff_t> uee;
+      std::vector<Coeff_t> ueem;
+      std::vector<Coeff_t> dee;
 
       // Matrices of 5d ee inverse params
       Vector<iSinglet<Simd> >  MatpInv;
@@ -165,7 +165,7 @@ namespace Grid {
 		      GridRedBlackCartesian &FourDimRedBlackGrid,
 		      RealD _mass,RealD _M5,const ImplParams &p= ImplParams());
 
-      
+
 
      void CayleyReport(void);
      void CayleyZeroCounters(void);
@@ -179,9 +179,9 @@ namespace Grid {
      double MooeeInvTime;
 
     protected:
-      void SetCoefficientsZolotarev(RealD zolohi,Approx::zolotarev_data *zdata,RealD b,RealD c);
-      void SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD b,RealD c);
-      void SetCoefficientsInternal(RealD zolo_hi,std::vector<Coeff_t> & gamma,RealD b,RealD c);
+      virtual void SetCoefficientsZolotarev(RealD zolohi,Approx::zolotarev_data *zdata,RealD b,RealD c);
+      virtual void SetCoefficientsTanh(Approx::zolotarev_data *zdata,RealD b,RealD c);
+      virtual void SetCoefficientsInternal(RealD zolo_hi,std::vector<Coeff_t> & gamma,RealD b,RealD c);
     };
 
   }

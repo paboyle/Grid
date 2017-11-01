@@ -7,7 +7,7 @@ namespace Grid{
   class Lexicographic {
   public:
 
-    static inline void CoorFromIndex (std::vector<int>& coor,int index,std::vector<int> &dims){
+    static inline void CoorFromIndex (std::vector<int>& coor,int index,const std::vector<int> &dims){
       int nd= dims.size();
       coor.resize(nd);
       for(int d=0;d<nd;d++){
@@ -16,7 +16,7 @@ namespace Grid{
       }
     }
 
-    static inline void IndexFromCoor (std::vector<int>& coor,int &index,std::vector<int> &dims){
+    static inline void IndexFromCoor (const std::vector<int>& coor,int &index,const std::vector<int> &dims){
       int nd=dims.size();
       int stride=1;
       index=0;

@@ -331,7 +331,40 @@ case ${ac_PRECISION} in
      double)
        AC_DEFINE([GRID_DEFAULT_PRECISION_DOUBLE],[1],[GRID_DEFAULT_PRECISION is DOUBLE] )
      ;;
+     *)
+     AC_MSG_ERROR([${ac_PRECISION} unsupported --enable-precision option]);
+     ;;
 esac
+
+######################  Shared memory allocation technique under MPI3
+AC_ARG_ENABLE([shm],[AC_HELP_STRING([--enable-shm=shmget|shmopen|hugetlbfs],
+              [Select SHM allocation technique])],[ac_SHM=${enable_shm}],[ac_SHM=shmopen])
+
+case ${ac_SHM} in
+
+     shmget)
+     AC_DEFINE([GRID_MPI3_SHMGET],[1],[GRID_MPI3_SHMGET] )
+     ;;
+
+     shmopen)
+     AC_DEFINE([GRID_MPI3_SHMOPEN],[1],[GRID_MPI3_SHMOPEN] )
+     ;;
+
+     hugetlbfs)
+     AC_DEFINE([GRID_MPI3_SHMMMAP],[1],[GRID_MPI3_SHMMMAP] )
+     ;;
+
+     *)
+     AC_MSG_ERROR([${ac_SHM} unsupported --enable-shm option]);
+     ;;
+esac
+
+######################  Shared base path for SHMMMAP
+AC_ARG_ENABLE([shmpath],[AC_HELP_STRING([--enable-shmpath=path],
+              [Select SHM mmap base path for hugetlbfs])],
+	      [ac_SHMPATH=${enable_shmpath}],
+	      [ac_SHMPATH=/var/lib/hugetlbfs/pagesize-2MB/])
+AC_DEFINE_UNQUOTED([GRID_SHM_PATH],["$ac_SHMPATH"],[Path to a hugetlbfs filesystem for MMAPing])
 
 ############### communication type selection
 AC_ARG_ENABLE([comms],[AC_HELP_STRING([--enable-comms=none|mpi|mpi-auto|mpi3|mpi3-auto|shmem],
@@ -482,6 +515,8 @@ compiler version            : ${ax_cv_gxx_version}
 SIMD                        : ${ac_SIMD}${SIMD_GEN_WIDTH_MSG}
 Threading                   : ${ac_openmp}
 Communications type         : ${comms_type}
+Shared memory allocator     : ${ac_SHM}
+Shared memory mmap path     : ${ac_SHMPATH}
 Default precision           : ${ac_PRECISION}
 Software FP16 conversion    : ${ac_SFW_FP16}
 RNG choice                  : ${ac_RNG}
@@ -515,6 +550,7 @@ AC_CONFIG_FILES(tests/forces/Makefile)
 AC_CONFIG_FILES(tests/hadrons/Makefile)
 AC_CONFIG_FILES(tests/hmc/Makefile)
 AC_CONFIG_FILES(tests/solver/Makefile)
+AC_CONFIG_FILES(tests/lanczos/Makefile)
 AC_CONFIG_FILES(tests/smearing/Makefile)
 AC_CONFIG_FILES(tests/qdpxx/Makefile)
 AC_CONFIG_FILES(tests/testu01/Makefile)

@@ -84,10 +84,6 @@ namespace QCD {
    stream << "GRID_";
    stream << ScidacWordMnemonic<stype>();
 
-   //   std::cout << " Lorentz N/S/V/M : " << _LorentzN<<" "<<_LorentzScalar<<"/"<<_LorentzVector<<"/"<<_LorentzMatrix<<std::endl;
-   //   std::cout << " Spin    N/S/V/M : " << _SpinN   <<" "<<_SpinScalar   <<"/"<<_SpinVector   <<"/"<<_SpinMatrix<<std::endl;
-   //   std::cout << " Colour  N/S/V/M : " << _ColourN <<" "<<_ColourScalar <<"/"<<_ColourVector <<"/"<<_ColourMatrix<<std::endl;
-
    if ( _LorentzVector )   stream << "_LorentzVector"<<_LorentzN;
    if ( _LorentzMatrix )   stream << "_LorentzMatrix"<<_LorentzN;
 
@@ -182,7 +178,7 @@ class GridLimeReader : public BinaryIO {
    /////////////////////////////////////////////
    // Open the file
    /////////////////////////////////////////////
-   void open(std::string &_filename) 
+   void open(const std::string &_filename) 
    {
      filename= _filename;
      File = fopen(filename.c_str(), "r");
@@ -210,19 +206,33 @@ class GridLimeReader : public BinaryIO {
 
     while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
 
-      std::cout << GridLogMessage << limeReaderType(LimeR) <<std::endl;
-	
-      if ( strncmp(limeReaderType(LimeR), record_name.c_str(),strlen(record_name.c_str()) )  ) {
+      uint64_t file_bytes =limeReaderBytes(LimeR);
 
+      //      std::cout << GridLogMessage << limeReaderType(LimeR) << " "<< file_bytes <<" bytes "<<std::endl;
+      //      std::cout << GridLogMessage<< " readLimeObject seeking "<<  record_name <<" found record :" <<limeReaderType(LimeR) <<std::endl;
+
+      if ( !strncmp(limeReaderType(LimeR), record_name.c_str(),strlen(record_name.c_str()) )  ) {
+
+	//	std::cout << GridLogMessage<< " readLimeLatticeBinaryObject matches ! " <<std::endl;
+
+	uint64_t PayloadSize = sizeof(sobj) * field._grid->_gsites;
+
+	//	std::cout << "R sizeof(sobj)= " <<sizeof(sobj)<<std::endl;
+	//	std::cout << "R Gsites " <<field._grid->_gsites<<std::endl;
+	//	std::cout << "R Payload expected " <<PayloadSize<<std::endl;
+	//	std::cout << "R file size " <<file_bytes <<std::endl;
+
+	assert(PayloadSize == file_bytes);// Must match or user error
 
 	off_t offset= ftell(File);
+	//	std::cout << " ReadLatticeObject from offset "<<offset << std::endl;
 	BinarySimpleMunger<sobj,sobj> munge;
-	BinaryIO::readLatticeObject< sobj, sobj >(field, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
+	BinaryIO::readLatticeObject< vobj, sobj >(field, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
 
 	/////////////////////////////////////////////
 	// Insist checksum is next record
 	/////////////////////////////////////////////
-	readLimeObject(scidacChecksum_,std::string("scidacChecksum"),record_name);
+	readLimeObject(scidacChecksum_,std::string("scidacChecksum"),std::string(SCIDAC_CHECKSUM));
 
 	/////////////////////////////////////////////
 	// Verify checksums
@@ -242,11 +252,19 @@ class GridLimeReader : public BinaryIO {
     // should this be a do while; can we miss a first record??
     while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
 
+      //      std::cout << GridLogMessage<< " readLimeObject seeking "<< record_name <<" found record :" <<limeReaderType(LimeR) <<std::endl;
+
       uint64_t nbytes = limeReaderBytes(LimeR);//size of this record (configuration)
 
-      if ( strncmp(limeReaderType(LimeR), record_name.c_str(),strlen(record_name.c_str()) )  ) {
+      if ( !strncmp(limeReaderType(LimeR), record_name.c_str(),strlen(record_name.c_str()) )  ) {
+
+	//	std::cout << GridLogMessage<< " readLimeObject matches ! " << record_name <<std::endl;
+
 	std::vector<char> xmlc(nbytes+1,'\0');
 	limeReaderReadData((void *)&xmlc[0], &nbytes, LimeR);    
+
+	//	std::cout << GridLogMessage<< " readLimeObject matches XML " << &xmlc[0] <<std::endl;
+
 	XmlReader RD(&xmlc[0],"");
 	read(RD,object_name,object);
 	return;
@@ -261,13 +279,14 @@ class GridLimeWriter : public BinaryIO {
  public:
    ///////////////////////////////////////////////////
    // FIXME: format for RNG? Now just binary out instead
+   // FIXME: collective calls or not ?
+   //      : must know if I am the I/O boss
    ///////////////////////////////////////////////////
-
    FILE       *File;
    LimeWriter *LimeW;
    std::string filename;
 
-   void open(std::string &_filename) { 
+   void open(const std::string &_filename) { 
      filename= _filename;
      File = fopen(filename.c_str(), "w");
      LimeW = limeCreateWriter(File); assert(LimeW != NULL );
@@ -302,14 +321,18 @@ class GridLimeWriter : public BinaryIO {
       write(WR,object_name,object);
       xmlstring = WR.XmlString();
     }
+    //    std::cout << "WriteLimeObject" << record_name <<std::endl;
     uint64_t nbytes = xmlstring.size();
+    //    std::cout << " xmlstring "<< nbytes<< " " << xmlstring <<std::endl;
     int err;
-    LimeRecordHeader *h = limeCreateHeader(MB, ME,(char *)record_name.c_str(), nbytes); assert(h!= NULL);
+    LimeRecordHeader *h = limeCreateHeader(MB, ME,const_cast<char *>(record_name.c_str()), nbytes); 
+    assert(h!= NULL);
 
     err=limeWriteRecordHeader(h, LimeW);                    assert(err>=0);
     err=limeWriteRecordData(&xmlstring[0], &nbytes, LimeW); assert(err>=0);
     err=limeWriterCloseRecord(LimeW);                       assert(err>=0);
     limeDestroyHeader(h);
+    //    std::cout << " File offset is now"<<ftell(File) << std::endl;
   }
   ////////////////////////////////////////////
   // Write a generic lattice field and csum
@@ -326,6 +349,11 @@ class GridLimeWriter : public BinaryIO {
     uint64_t PayloadSize = sizeof(sobj) * field._grid->_gsites;
     createLimeRecordHeader(record_name, 0, 0, PayloadSize);
 
+
+    //    std::cout << "W sizeof(sobj)"      <<sizeof(sobj)<<std::endl;
+    //    std::cout << "W Gsites "           <<field._grid->_gsites<<std::endl;
+    //    std::cout << "W Payload expected " <<PayloadSize<<std::endl;
+
     ////////////////////////////////////////////////////////////////////
     // NB: FILE and iostream are jointly writing disjoint sequences in the
     // the same file through different file handles (integer units).
@@ -340,6 +368,7 @@ class GridLimeWriter : public BinaryIO {
     //  v) Continue writing scidac record.
     ////////////////////////////////////////////////////////////////////
     off_t offset = ftell(File);
+    //    std::cout << " Writing to offset "<<offset << std::endl;
     std::string format = getFormatString<vobj>();
     BinarySimpleMunger<sobj,sobj> munge;
     BinaryIO::writeLatticeObject<vobj,sobj>(field, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
@@ -354,7 +383,7 @@ class GridLimeWriter : public BinaryIO {
     checksum.suma= streama.str();
     checksum.sumb= streamb.str();
     std::cout << GridLogMessage<<" writing scidac checksums "<<std::hex<<scidac_csuma<<"/"<<scidac_csumb<<std::dec<<std::endl;
-    writeLimeObject(0,1,checksum,std::string("scidacChecksum"    ),std::string(SCIDAC_CHECKSUM));
+    writeLimeObject(0,1,checksum,std::string("scidacChecksum"),std::string(SCIDAC_CHECKSUM));
   }
 };
 
@@ -371,11 +400,9 @@ class ScidacWriter : public GridLimeWriter {
   ////////////////////////////////////////////////
   // Write generic lattice field in scidac format
   ////////////////////////////////////////////////
-   template <class vobj, class userRecord>
+  template <class vobj, class userRecord>
   void writeScidacFieldRecord(Lattice<vobj> &field,userRecord _userRecord) 
   {
-    typedef typename vobj::scalar_object sobj;
-    uint64_t nbytes;
     GridBase * grid = field._grid;
 
     ////////////////////////////////////////
@@ -396,6 +423,66 @@ class ScidacWriter : public GridLimeWriter {
     writeLimeLatticeBinaryObject(field,std::string(ILDG_BINARY_DATA));      // Closes message with checksum
   }
 };
+
+
+class ScidacReader : public GridLimeReader {
+ public:
+
+   template<class SerialisableUserFile>
+   void readScidacFileRecord(GridBase *grid,SerialisableUserFile &_userFile)
+   {
+     scidacFile    _scidacFile(grid);
+     readLimeObject(_scidacFile,_scidacFile.SerialisableClassName(),std::string(SCIDAC_PRIVATE_FILE_XML));
+     readLimeObject(_userFile,_userFile.SerialisableClassName(),std::string(SCIDAC_FILE_XML));
+   }
+  ////////////////////////////////////////////////
+  // Write generic lattice field in scidac format
+  ////////////////////////////////////////////////
+  template <class vobj, class userRecord>
+  void readScidacFieldRecord(Lattice<vobj> &field,userRecord &_userRecord) 
+  {
+    typedef typename vobj::scalar_object sobj;
+    GridBase * grid = field._grid;
+
+    ////////////////////////////////////////
+    // fill the Grid header
+    ////////////////////////////////////////
+    FieldMetaData header;
+    scidacRecord  _scidacRecord;
+    scidacFile    _scidacFile;
+
+    //////////////////////////////////////////////
+    // Fill the Lime file record by record
+    //////////////////////////////////////////////
+    readLimeObject(header ,std::string("FieldMetaData"),std::string(GRID_FORMAT)); // Open message 
+    readLimeObject(_userRecord,_userRecord.SerialisableClassName(),std::string(SCIDAC_RECORD_XML));
+    readLimeObject(_scidacRecord,_scidacRecord.SerialisableClassName(),std::string(SCIDAC_PRIVATE_RECORD_XML));
+    readLimeLatticeBinaryObject(field,std::string(ILDG_BINARY_DATA));
+  }
+  void skipPastBinaryRecord(void) {
+    std::string rec_name(ILDG_BINARY_DATA);
+    while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
+      if ( !strncmp(limeReaderType(LimeR), rec_name.c_str(),strlen(rec_name.c_str()) )  ) {
+	skipPastObjectRecord(std::string(SCIDAC_CHECKSUM));
+	return;
+      }
+    }    
+  }
+  void skipPastObjectRecord(std::string rec_name) {
+    while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
+      if ( !strncmp(limeReaderType(LimeR), rec_name.c_str(),strlen(rec_name.c_str()) )  ) {
+	return;
+      }
+    }
+  }
+  void skipScidacFieldRecord() {
+    skipPastObjectRecord(std::string(GRID_FORMAT));
+    skipPastObjectRecord(std::string(SCIDAC_RECORD_XML));
+    skipPastObjectRecord(std::string(SCIDAC_PRIVATE_RECORD_XML));
+    skipPastBinaryRecord();
+  }
+};
+
 
 class IldgWriter : public ScidacWriter {
  public:
@@ -424,8 +511,6 @@ class IldgWriter : public ScidacWriter {
     typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
     typedef iLorentzColourMatrix<vsimd> vobj;
     typedef typename vobj::scalar_object sobj;
-
-    uint64_t nbytes;
 
     ////////////////////////////////////////
     // fill the Grid header

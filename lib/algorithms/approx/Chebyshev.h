@@ -8,6 +8,7 @@
 
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Christoph Lehner <clehner@bnl.gov>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -193,6 +194,47 @@ namespace Grid {
       return sum;
     };
 
+    RealD approxD(RealD x)
+    {
+      RealD Un;
+      RealD Unm;
+      RealD Unp;
+      
+      RealD y=( x-0.5*(hi+lo))/(0.5*(hi-lo));
+      
+      RealD U0=1;
+      RealD U1=2*y;
+      
+      RealD sum;
+      sum = Coeffs[1]*U0;
+      sum+= Coeffs[2]*U1*2.0;
+      
+      Un =U1;
+      Unm=U0;
+      for(int i=2;i<order-1;i++){
+	Unp=2*y*Un-Unm;
+	Unm=Un;
+	Un =Unp;
+	sum+= Un*Coeffs[i+1]*(i+1.0);
+      }
+      return sum/(0.5*(hi-lo));
+    };
+    
+    RealD approxInv(RealD z, RealD x0, int maxiter, RealD resid) {
+      RealD x = x0;
+      RealD eps;
+      
+      int i;
+      for (i=0;i<maxiter;i++) {
+	eps = approx(x) - z;
+	if (fabs(eps / z) < resid)
+	  return x;
+	x = x - eps / approxD(x);
+      }
+      
+      return std::numeric_limits<double>::quiet_NaN();
+    }
+    
     // Implement the required interface
     void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) {
 
