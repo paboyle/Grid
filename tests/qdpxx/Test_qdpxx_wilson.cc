@@ -274,10 +274,10 @@ public:
       Chroma::CloverFermActParams p;
       p.Mass = _mq;
       p.clovCoeffR = QDP::Real(1.0);
-      p.clovCoeffT = QDP::Real(1.0);
+      p.clovCoeffT = QDP::Real(2.0);
       p.u0 = QDP::Real(1.0);
       AnisoParam_t _apar;
-      _apar.anisoP = false;
+      _apar.anisoP = true;
       _apar.t_dir = 3; // in 4d
       _apar.xi_0 = 2.0;
       _apar.nu = 1.0;
@@ -422,10 +422,15 @@ void calc_grid(ChromaAction action, Grid::QCD::LatticeGaugeField &Umu, Grid::QCD
 
   if (action == WilsonClover)
   {
-    Grid::RealD _csw = 1.0;
+    Grid::RealD _csw_r = 1.0;
+    Grid::RealD _csw_t = 2.0;
     WilsonAnisotropyCoefficients anis;
-    WilsonImplParams implParam;
-    Grid::QCD::WilsonCloverFermionR Wf(Umu, *UGrid, *UrbGrid, _mass, _csw);
+    anis.isAnisotropic = true;
+    anis.t_direction = 3;
+    anis.xi_0 = 2.0;
+    anis.nu = 1.0;
+    WilsonImplParams CloverImplParam;
+    Grid::QCD::WilsonCloverFermionR Wf(Umu, *UGrid, *UrbGrid, _mass, _csw_r, _csw_t, anis, CloverImplParam);
     Wf.ImportGauge(Umu);
 
     std::cout << Grid::GridLogMessage << " Calling Grid Wilson Clover Fermion multiply " << std::endl;

@@ -45,10 +45,11 @@ class WilsonFermionStatic {
 };
 
 struct WilsonAnisotropyCoefficients{
-  bool isAnisotropic;
-  int t_direction;
-  double xi_0;
-  double nu;
+  GRID_SERIALIZABLE_CLASS_MEMBERS(WilsonAnisotropyCoefficients,
+  bool, isAnisotropic,
+  int, t_direction,
+  double, xi_0,
+  double, nu);
 
   WilsonAnisotropyCoefficients():
     isAnisotropic(false), 

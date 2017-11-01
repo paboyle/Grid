@@ -6,8 +6,8 @@
 
     Copyright (C) 2017
 
-    Author: paboyle <paboyle@ph.ed.ac.uk>
     Author: Guido Cossu <guido.cossu@ed.ac.uk>
+    Author: David Preti <>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,6 +37,22 @@ namespace Grid
 namespace QCD
 {
 
+///////////////////////////////////////////////////////////////////
+// Wilson Clover
+//
+// Operator ( with anisotropy coefficients):
+//
+// Q =   1 + (Nd-1)/xi_0 + m
+//     + W_t + (nu/xi_0) * W_s
+//     - 1/2*[ csw_t * sum_s (sigma_ts F_ts) + (csw_s/xi_0) * sum_ss (sigma_ss F_ss)  ]
+//
+// s spatial, t temporal directions.
+// where W_t and W_s are the temporal and spatial components of the
+// Wilson Dirac operator
+//
+// csw_r = csw_t to recover the isotropic version
+//////////////////////////////////////////////////////////////////
+
 template <class Impl>
 class WilsonCloverFermion : public WilsonFermion<Impl>
 {
@@ -55,28 +71,43 @@ public:
   // Constructors
   WilsonCloverFermion(GaugeField &_Umu, GridCartesian &Fgrid,
                       GridRedBlackCartesian &Hgrid,
-                      RealD _mass,
-                      RealD _csw,
-                      const ImplParams &p = ImplParams()) : WilsonFermion<Impl>(_Umu,
-                                                                                Fgrid,
-                                                                                Hgrid,
-                                                                                _mass, p),
-                                                            CloverTerm(&Fgrid),
-                                                            CloverTermInv(&Fgrid),
-                                                            CloverTermEven(&Hgrid),
-                                                            CloverTermOdd(&Hgrid),
-                                                            CloverTermInvEven(&Hgrid),
-                                                            CloverTermInvOdd(&Hgrid),
-                                                            CloverTermDagEven(&Hgrid),
-                                                            CloverTermDagOdd(&Hgrid),
-                                                            CloverTermInvDagEven(&Hgrid),
-                                                            CloverTermInvDagOdd(&Hgrid)
+                      const RealD _mass,
+                      const RealD _csw_r = 0.0,
+                      const RealD _csw_t = 0.0,
+                      const WilsonAnisotropyCoefficients &clover_anisotropy = WilsonAnisotropyCoefficients(),
+                      const ImplParams &impl_p = ImplParams()) : WilsonFermion<Impl>(_Umu,
+                                                                                     Fgrid,
+                                                                                     Hgrid,
+                                                                                     _mass, impl_p, clover_anisotropy),
+                                                                 CloverTerm(&Fgrid),
+                                                                 CloverTermInv(&Fgrid),
+                                                                 CloverTermEven(&Hgrid),
+                                                                 CloverTermOdd(&Hgrid),
+                                                                 CloverTermInvEven(&Hgrid),
+                                                                 CloverTermInvOdd(&Hgrid),
+                                                                 CloverTermDagEven(&Hgrid),
+                                                                 CloverTermDagOdd(&Hgrid),
+                                                                 CloverTermInvDagEven(&Hgrid),
+                                                                 CloverTermInvDagOdd(&Hgrid)
   {
-    csw = _csw;
     assert(Nd == 4); // require 4 dimensions
 
-    if (csw == 0)
-      std::cout << GridLogWarning << "Initializing WilsonCloverFermion with csw = 0" << std::endl;
+    if (clover_anisotropy.isAnisotropic)
+    {
+      csw_r = _csw_r * 0.5 / clover_anisotropy.xi_0;
+      diag_mass = _mass + 1.0 + (Nd - 1) * (clover_anisotropy.nu / clover_anisotropy.xi_0);
+    }
+    else
+    {
+      csw_r = _csw_r * 0.5;
+      diag_mass = 4.0 + _mass;
+    }
+    csw_t = _csw_t * 0.5;
+
+    if (csw_r == 0)
+      std::cout << GridLogWarning << "Initializing WilsonCloverFermion with csw_r = 0" << std::endl;
+    if (csw_t == 0)
+      std::cout << GridLogWarning << "Initializing WilsonCloverFermion with csw_t = 0" << std::endl;
 
     ImportGauge(_Umu);
   }
@@ -105,15 +136,15 @@ public:
     GaugeField clover_force(force._grid);
     PropagatorField Lambda(force._grid);
 
-    // Here we are hitting some performance issues:
+    // Guido: Here we are hitting some performance issues:
     // need to extract the components of the DoubledGaugeField
     // for each call
     // Possible solution
     // Create a vector object to store them? (cons: wasting space)
     std::vector<GaugeLinkField> U(Nd, this->Umu._grid);
-    
+
     Impl::extractLinkField(U, this->Umu);
-    
+
     force = zero;
     // Derivative of the Wilson hopping term
     this->DhopDeriv(force, X, Y, dag);
@@ -121,9 +152,8 @@ public:
     ///////////////////////////////////////////////////////////
     // Clover term derivative
     ///////////////////////////////////////////////////////////
-    Impl::outerProductImpl(Lambda, X, Y); 
+    Impl::outerProductImpl(Lambda, X, Y);
     //std::cout << "Lambda:" << Lambda << std::endl;
-
 
     Gamma::Algebra sigma[] = {
         Gamma::Algebra::SigmaXY,
@@ -148,25 +178,34 @@ public:
     */
 
     int count = 0;
-    clover_force  = zero;
+    clover_force = zero;
     for (int mu = 0; mu < 4; mu++)
     {
       force_mu = zero;
       for (int nu = 0; nu < 4; nu++)
       {
-        if (mu == nu) continue;
+        if (mu == nu)
+        continue;
+        
+        RealD factor;
+        if (nu == 4 || mu == 4)
+        {
+          factor = 2.0 * csw_t;
+        }
+        else
+        {
+          factor = 2.0 * csw_r;
+        }
         PropagatorField Slambda = Gamma(sigma[count]) * Lambda; // sigma checked
-        Impl::TraceSpinImpl(lambda, Slambda); // traceSpin ok
-        force_mu -= Cmunu(U, lambda, mu, nu); // checked
+        Impl::TraceSpinImpl(lambda, Slambda);                   // traceSpin ok
+        force_mu -= factor*Cmunu(U, lambda, mu, nu);                   // checked
         count++;
       }
 
       pokeLorentz(clover_force, U[mu] * force_mu, mu);
     }
-    clover_force *= csw;
+    //clover_force *= csw;
     force += clover_force;
-
-
   }
 
   // Computing C_{\mu \nu}(x) as in Eq.(B.39) in Zbigniew Sroczynski's PhD thesis
@@ -176,15 +215,15 @@ public:
     GaugeLinkField out(lambda._grid), tmp(lambda._grid);
     // insertion in upper staple
     // please check redundancy of shift operations
-    
+
     // C1+
     tmp = lambda * U[nu];
     out = Impl::ShiftStaple(Impl::CovShiftForward(tmp, nu, Impl::CovShiftBackward(U[mu], mu, Impl::CovShiftIdentityBackward(U[nu], nu))), mu);
-    
+
     // C2+
     tmp = U[mu] * Impl::ShiftStaple(adj(lambda), mu);
     out += Impl::ShiftStaple(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(tmp, mu, Impl::CovShiftIdentityBackward(U[nu], nu))), mu);
-    
+
     // C3+
     tmp = U[nu] * Impl::ShiftStaple(adj(lambda), nu);
     out += Impl::ShiftStaple(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, Impl::CovShiftIdentityBackward(tmp, nu))), mu);
@@ -213,16 +252,17 @@ public:
 private:
   // here fixing the 4 dimensions, make it more general?
 
-  RealD csw;                                                 // Clover coefficient
+  RealD csw_r;                                               // Clover coefficient - spatial
+  RealD csw_t;                                               // Clover coefficient - temporal
+  RealD diag_mass;                                           // Mass term
   CloverFieldType CloverTerm, CloverTermInv;                 // Clover term
   CloverFieldType CloverTermEven, CloverTermOdd;             // Clover term EO
   CloverFieldType CloverTermInvEven, CloverTermInvOdd;       // Clover term Inv EO
   CloverFieldType CloverTermDagEven, CloverTermDagOdd;       // Clover term Dag EO
   CloverFieldType CloverTermInvDagEven, CloverTermInvDagOdd; // Clover term Inv Dag EO
 
-  // eventually these two can be compressed into 6x6 blocks instead of the 12x12
+  // eventually these can be compressed into 6x6 blocks instead of the 12x12
   // using the DeGrand-Rossi basis for the gamma matrices
-
   CloverFieldType fillCloverYZ(const GaugeLinkField &F)
   {
     CloverFieldType T(F._grid);

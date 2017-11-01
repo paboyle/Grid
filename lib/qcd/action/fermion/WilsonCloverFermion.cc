@@ -84,14 +84,14 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
   WilsonLoops<Impl>::FieldStrength(Ez, _Umu, Tdir, Zdir);
 
   // Compute the Clover Operator acting on Colour and Spin
-  CloverTerm  = fillCloverYZ(Bx);
-  CloverTerm += fillCloverXZ(By);
-  CloverTerm += fillCloverXY(Bz);
-  CloverTerm += fillCloverXT(Ex);
-  CloverTerm += fillCloverYT(Ey);
-  CloverTerm += fillCloverZT(Ez);
-  CloverTerm *= (0.5) * csw;
-  CloverTerm += (4.0 + this->mass);
+  // multiply here by the clover coefficients for the anisotropy
+  CloverTerm  = fillCloverYZ(Bx) * csw_r;
+  CloverTerm += fillCloverXZ(By) * csw_r;
+  CloverTerm += fillCloverXY(Bz) * csw_r;
+  CloverTerm += fillCloverXT(Ex) * csw_t;
+  CloverTerm += fillCloverYT(Ey) * csw_t;
+  CloverTerm += fillCloverZT(Ez) * csw_t;
+  CloverTerm += diag_mass;
 
   int lvol = _Umu._grid->lSites();
   int DimRep = Impl::Dimension;
@@ -145,7 +145,6 @@ void WilsonCloverFermion<Impl>::ImportGauge(const GaugeField &_Umu)
 template <class Impl>
 void WilsonCloverFermion<Impl>::Mooee(const FermionField &in, FermionField &out)
 {
-  conformable(in, out);
   this->MooeeInternal(in, out, DaggerNo, InverseNo);
 }
 
@@ -158,14 +157,12 @@ void WilsonCloverFermion<Impl>::MooeeDag(const FermionField &in, FermionField &o
 template <class Impl>
 void WilsonCloverFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out)
 {
-  conformable(in,out);
   this->MooeeInternal(in, out, DaggerNo, InverseYes);
 }
 
 template <class Impl>
 void WilsonCloverFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out)
 {
-  conformable(in,out);
   this->MooeeInternal(in, out, DaggerYes, InverseYes);
 }
 
@@ -228,88 +225,7 @@ void WilsonCloverFermion<Impl>::MooeeInternal(const FermionField &in, FermionFie
 template <class Impl>
 void WilsonCloverFermion<Impl>::MooDeriv(GaugeField &mat, const FermionField &X, const FermionField &Y, int dag)
 {
-
-  GridBase *grid = mat._grid;
-
-  //GaugeLinkField Lambdaodd(grid), Lambdaeven(grid), tmp(grid);
-  //Lambdaodd  = zero; //Yodd*dag(Xodd)+Xodd*dag(Yodd);                   // I have to peek spin and decide the color structure
-  //Lambdaeven = zero; //Teven*dag(Xeven)+Xeven*dag(Yeven) + 2*(Dee^-1)
-
-  GaugeLinkField Lambda(grid), tmp(grid);
-  Lambda = zero;
-
-  conformable(mat._grid, X._grid);
-  conformable(Y._grid, X._grid);
-
-  std::vector<GaugeLinkField> C1p(Nd, grid), C2p(Nd, grid), C3p(Nd, grid), C4p(Nd, grid);
-  std::vector<GaugeLinkField> C1m(Nd, grid), C2m(Nd, grid), C3m(Nd, grid), C4m(Nd, grid);
-  std::vector<GaugeLinkField> U(Nd, mat._grid);
-
-  for (int mu = 0; mu < Nd; mu++)
-  {
-    U[mu] = PeekIndex<LorentzIndex>(mat, mu);
-    C1p[mu] = zero;
-    C2p[mu] = zero;
-    C3p[mu] = zero;
-    C4p[mu] = zero;
-    C1m[mu] = zero;
-    C2m[mu] = zero;
-    C3m[mu] = zero;
-    C4m[mu] = zero;
-  }
-
-  /*
-  PARALLEL_FOR_LOOP
-    for (int i = 0; i < CloverTerm._grid->oSites(); i++)
-    {
-      T._odata[i]()(0, 1) = timesMinusI(F._odata[i]()());
-      T._odata[i]()(1, 0) = timesMinusI(F._odata[i]()());
-      T._odata[i]()(2, 3) = timesMinusI(F._odata[i]()());
-      T._odata[i]()(3, 2) = timesMinusI(F._odata[i]()());
-    }
-*/
-
-  for (int i = 0; i < 4; i++)
-  { //spin
-    for (int j = 0; j < 4; j++)
-    { //spin
-
-      for (int mu = 0; mu < 4; mu++)
-      { //color
-        for (int nu = 0; nu < 4; nu++)
-        { //color
-
-          // insertion in upper staple
-          tmp = Lambda * U[nu];
-          C1p[mu] += Impl::ShiftStaple(Impl::CovShiftForward(tmp, nu, Impl::CovShiftBackward(U[mu], mu, Impl::CovShiftIdentityBackward(U[nu], nu))), mu);
-
-          tmp = Lambda * U[mu];
-          C2p[mu] += Impl::ShiftStaple(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(tmp, mu, Impl::CovShiftIdentityBackward(U[nu], nu))), mu);
-
-          tmp = Impl::CovShiftIdentityForward(Lambda, nu) * U[nu];
-          C3p[mu] += Impl::ShiftStaple(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, Impl::CovShiftIdentityBackward(tmp, nu))), mu);
-
-          tmp = Lambda;
-          C4p[mu] += Impl::ShiftStaple(Impl::CovShiftForward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, Impl::CovShiftIdentityBackward(U[nu], nu))), mu) * tmp;
-
-          // insertion in lower staple
-          tmp = Lambda * U[nu];
-          C1m[mu] += Impl::ShiftStaple(Impl::CovShiftBackward(tmp, nu, Impl::CovShiftBackward(U[mu], mu, U[nu])), mu);
-
-          tmp = Lambda * U[mu];
-          C2m[mu] += Impl::ShiftStaple(Impl::CovShiftBackward(U[nu], nu, Impl::CovShiftBackward(tmp, mu, U[nu])), mu);
-
-          tmp = Lambda * U[nu];
-          C3m[mu] += Impl::ShiftStaple(Impl::CovShiftBackward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, tmp)), mu);
-
-          tmp = Lambda;
-          C4m[mu] += Impl::ShiftStaple(Impl::CovShiftBackward(U[nu], nu, Impl::CovShiftBackward(U[mu], mu, U[nu])), mu) * tmp;
-        }
-      }
-    }
-  }
-
-  //Still implementing. Have to be tested, and understood how to project EO
+  assert(0);
 }
 
 // Derivative parts
