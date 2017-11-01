@@ -117,32 +117,40 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   int Nchild = Nparent/childsize;
   assert (childsize * Nchild == Nparent);
 
-  int prank;  MPI_Comm_rank(parent.communicator,&prank);
-  int crank = prank % childsize;
-  int ccomm = prank / childsize;
+  std::vector<int> ccoor(_ndimension); // coor within subcommunicator
+  std::vector<int> scoor(_ndimension); // coor of split within parent
+  std::vector<int> ssize(_ndimension); // coor of split within parent
+
+  for(int d=0;d<_ndimension;d++){
+    ccoor[d] = parent._processor_coor[d] % processors[d];
+    scoor[d] = parent._processor_coor[d] / processors[d];
+    ssize[d] = parent._processors[d]/ processors[d];
+  }
+  int crank,srank;  // rank within subcomm ; rank of subcomm within blocks of subcomms
+  Lexicographic::IndexFromCoor(ccoor,crank,processors);
+  Lexicographic::IndexFromCoor(scoor,srank,ssize);
 
   MPI_Comm comm_split;
   if ( Nchild > 1 ) { 
 
-    std::cout << GridLogMessage<<"Child communicator of "<< std::hex << parent.communicator << std::dec<<std::endl;
-    std::cout << GridLogMessage<<" parent grid["<< parent._ndimension<<"]    ";
-    for(int d=0;d<parent._processors.size();d++)  std::cout << parent._processors[d] << " ";
-    std::cout<<std::endl;
+    //    std::cout << GridLogMessage<<"Child communicator of "<< std::hex << parent.communicator << std::dec<<std::endl;
+    //    std::cout << GridLogMessage<<" parent grid["<< parent._ndimension<<"]    ";
+    //    for(int d=0;d<parent._processors.size();d++)  std::cout << parent._processors[d] << " ";
+    //    std::cout<<std::endl;
 
-    std::cout << GridLogMessage<<" child grid["<< _ndimension <<"]    ";
-    for(int d=0;d<processors.size();d++)  std::cout << processors[d] << " ";
-    std::cout<<std::endl;
+    //    std::cout << GridLogMessage<<" child grid["<< _ndimension <<"]    ";
+    //    for(int d=0;d<processors.size();d++)  std::cout << processors[d] << " ";
+    //    std::cout<<std::endl;
 
-    int ierr= MPI_Comm_split(parent.communicator, ccomm,crank,&comm_split);
+    int ierr= MPI_Comm_split(parent.communicator,srank,crank,&comm_split);
     assert(ierr==0);
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // Declare victory
     //////////////////////////////////////////////////////////////////////////////////////////////////////
-    std::cout << GridLogMessage<<"Divided communicator "<< parent._Nprocessors<<" into "
-	      <<Nchild <<" communicators with " << childsize << " ranks"<<std::endl;
+    //    std::cout << GridLogMessage<<"Divided communicator "<< parent._Nprocessors<<" into "
+    // 	      << Nchild <<" communicators with " << childsize << " ranks"<<std::endl;
   } else {
     comm_split=parent.communicator;
-    //    std::cout << "Passed parental communicator to a new communicator" <<std::endl;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////
