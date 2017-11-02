@@ -67,6 +67,9 @@ int main(int argc, char **argv)
   // Construct observables
   typedef PlaquetteMod<HMCWrapper::ImplPolicy> PlaqObs;
   TheHMC.Resources.AddObservable<PlaqObs>();
+
+  typedef PolyakovMod<HMCWrapper::ImplPolicy> PolyakovObs;
+  TheHMC.Resources.AddObservable<PolyakovObs>();
   //////////////////////////////////////////////
 
   /////////////////////////////////////////////////////////////
