@@ -181,8 +181,8 @@ enum IRLdiagonalisation {
 template<class Field> class ImplicitlyRestartedLanczosHermOpTester  : public ImplicitlyRestartedLanczosTester<Field>
 {
  public:
-  LinearFunction<Field>       &_HermOpTest;
-  ImplicitlyRestartedLanczosHermOpTester(LinearFunction<Field> &HermOpTest) : _HermOpTest(HermOpTest)  {  };
+  LinearFunction<Field>       &_HermOp;
+  ImplicitlyRestartedLanczosHermOpTester(LinearFunction<Field> &HermOp) : _HermOp(HermOp)  {  };
   int ReconstructEval(int j,RealD resid,Field &B, RealD &eval,RealD evalMaxApprox)
   {
     return TestConvergence(j,resid,B,eval,evalMaxApprox);
@@ -192,7 +192,7 @@ template<class Field> class ImplicitlyRestartedLanczosHermOpTester  : public Imp
     Field v(B);
     RealD eval_poly = eval;
     // Apply operator
-    _HermOpTest(B,v);
+    _HermOp(B,v);
 
     RealD vnum = real(innerProduct(B,v)); // HermOp.
     RealD vden = norm2(B);
@@ -233,8 +233,8 @@ class ImplicitlyRestartedLanczos {
   ////////////////////////////////
   // Embedded objects
   ////////////////////////////////
+  LinearFunction<Field>       &_PolyOp;
   LinearFunction<Field>       &_HermOp;
-  LinearFunction<Field>       &_HermOpTest;
   ImplicitlyRestartedLanczosTester<Field> &_Tester;
   // Default tester provided (we need a ref to something in default case)
   ImplicitlyRestartedLanczosHermOpTester<Field> SimpleTester;
@@ -246,16 +246,22 @@ public:
   //////////////////////////////////////////////////////////////////
   // PAB:
   //////////////////////////////////////////////////////////////////
-  // Too many options  & knobs. Do we really need orth_period
+  // Too many options  & knobs. 
+  // Eliminate:
+  //   orth_period
+  //   betastp
+  //   MinRestart
+  //
+  // Do we really need orth_period
   // What is the theoretical basis & guarantees of betastp ?
   // Nstop=Nk viable?
   // MinRestart avoidable with new convergence test?
-  // Could cut to HermOp, HermOpTest, Tester, Nk, Nm, resid, maxiter (+diagonalisation)
-  // HermOpTest could be eliminated if we dropped the Power method for max eval.
+  // Could cut to PolyOp, HermOp, Tester, Nk, Nm, resid, maxiter (+diagonalisation)
+  // HermOp could be eliminated if we dropped the Power method for max eval.
   // -- also: The eval, eval2, eval2_copy stuff is still unnecessarily unclear
   //////////////////////////////////////////////////////////////////
- ImplicitlyRestartedLanczos(LinearFunction<Field> & HermOp,
-			    LinearFunction<Field> & HermOpTest,
+ ImplicitlyRestartedLanczos(LinearFunction<Field> & PolyOp,
+			    LinearFunction<Field> & HermOp,
 			    ImplicitlyRestartedLanczosTester<Field> & Tester,
 			    int _Nstop, // sought vecs
 			    int _Nk, // sought vecs
@@ -265,14 +271,14 @@ public:
 			    RealD _betastp=0.0, // if beta(k) < betastp: converged
 			    int _MinRestart=1, int _orth_period = 1,
 			    IRLdiagonalisation _diagonalisation= IRLdiagonaliseWithEigen) :
-    SimpleTester(HermOpTest), _HermOp(HermOp),      _HermOpTest(HermOpTest), _Tester(Tester),
+    SimpleTester(HermOp), _PolyOp(PolyOp),      _HermOp(HermOp), _Tester(Tester),
     Nstop(_Nstop)  ,      Nk(_Nk),      Nm(_Nm),
     eresid(_eresid),      betastp(_betastp),
     MaxIter(_MaxIter)  ,      MinRestart(_MinRestart),
     orth_period(_orth_period), diagonalisation(_diagonalisation)  { };
 
-    ImplicitlyRestartedLanczos(LinearFunction<Field> & HermOp,
-			       LinearFunction<Field> & HermOpTest,
+    ImplicitlyRestartedLanczos(LinearFunction<Field> & PolyOp,
+			       LinearFunction<Field> & HermOp,
 			       int _Nstop, // sought vecs
 			       int _Nk, // sought vecs
 			       int _Nm, // spare vecs
@@ -281,7 +287,7 @@ public:
 			       RealD _betastp=0.0, // if beta(k) < betastp: converged
 			       int _MinRestart=1, int _orth_period = 1,
 			       IRLdiagonalisation _diagonalisation= IRLdiagonaliseWithEigen) :
-    SimpleTester(HermOpTest),  _HermOp(HermOp),      _HermOpTest(HermOpTest), _Tester(SimpleTester),
+    SimpleTester(HermOp),  _PolyOp(PolyOp),      _HermOp(HermOp), _Tester(SimpleTester),
     Nstop(_Nstop)  ,      Nk(_Nk),      Nm(_Nm),
     eresid(_eresid),      betastp(_betastp),
     MaxIter(_MaxIter)  ,      MinRestart(_MinRestart),
@@ -323,7 +329,7 @@ repeat
   →AVK =VKHK +fKe†K † Extend to an M = K + P step factorization AVM = VMHM + fMeM
 until convergence
 */
-  void calc(std::vector<RealD>& eval, std::vector<Field>& evec,  const Field& src, int& Nconv, bool reverse=true)
+  void calc(std::vector<RealD>& eval, std::vector<Field>& evec,  const Field& src, int& Nconv, bool reverse=false)
   {
     GridBase *grid = src._grid;
     assert(grid == evec[0]._grid);
@@ -355,7 +361,8 @@ until convergence
       auto tmp = src;
       const int _MAX_ITER_IRL_MEVAPP_ = 50;
       for (int i=0;i<_MAX_ITER_IRL_MEVAPP_;i++) {
-	_HermOpTest(src_n,tmp);
+	normalise(src_n);
+	_HermOp(src_n,tmp);
 	RealD vnum = real(innerProduct(src_n,tmp)); // HermOp.
 	RealD vden = norm2(src_n);
 	RealD na = vnum/vden;
@@ -536,7 +543,10 @@ until convergence
 	std::cout << GridLogIRL << "Nconv ("<<Nconv<<") < Nstop ("<<Nstop<<")"<<std::endl;
 
       eval=eval2;
-
+      
+      //Keep only converged
+      eval.resize(Nconv);// Nstop?
+      evec.resize(Nconv,grid);// Nstop?
       basisSortInPlace(evec,eval,reverse);
       
     }
@@ -573,7 +583,7 @@ until convergence
 
     Field& evec_k = evec[k];
 
-    _HermOp(evec_k,w);    std::cout<<GridLogIRL << "Poly(HermOp)" <<std::endl;
+    _PolyOp(evec_k,w);    std::cout<<GridLogIRL << "PolyOp" <<std::endl;
 
     if(k>0) w -= lme[k-1] * evec[k-1];
 
