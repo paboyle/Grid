@@ -103,29 +103,32 @@ namespace Grid {
     GridBase *CoarseGrid;
     GridBase *FineGrid;
     std::vector<Lattice<Fobj> > subspace;
+    int checkerboard;
 
-    Aggregation(GridBase *_CoarseGrid,GridBase *_FineGrid) : 
-      CoarseGrid(_CoarseGrid),
+  Aggregation(GridBase *_CoarseGrid,GridBase *_FineGrid,int _checkerboard) : 
+    CoarseGrid(_CoarseGrid),
       FineGrid(_FineGrid),
-      subspace(nbasis,_FineGrid)
+      subspace(nbasis,_FineGrid),
+      checkerboard(_checkerboard)
 	{
 	};
   
     void Orthogonalise(void){
       CoarseScalar InnerProd(CoarseGrid); 
+      std::cout << GridLogMessage <<" Gramm-Schmidt pass 1"<<std::endl;
       blockOrthogonalise(InnerProd,subspace);
+      std::cout << GridLogMessage <<" Gramm-Schmidt pass 2"<<std::endl;
+      blockOrthogonalise(InnerProd,subspace);
+      //      std::cout << GridLogMessage <<" Gramm-Schmidt checking orthogonality"<<std::endl;
+      //      CheckOrthogonal();
     } 
     void CheckOrthogonal(void){
       CoarseVector iProj(CoarseGrid); 
       CoarseVector eProj(CoarseGrid); 
-      Lattice<CComplex> pokey(CoarseGrid);
-
-      
       for(int i=0;i<nbasis;i++){
 	blockProject(iProj,subspace[i],subspace);
-
 	eProj=zero; 
-	for(int ss=0;ss<CoarseGrid->oSites();ss++){
+	parallel_for(int ss=0;ss<CoarseGrid->oSites();ss++){
 	  eProj._odata[ss](i)=CComplex(1.0);
 	}
 	eProj=eProj - iProj;
@@ -137,6 +140,7 @@ namespace Grid {
       blockProject(CoarseVec,FineVec,subspace);
     }
     void PromoteFromSubspace(const CoarseVector &CoarseVec,FineField &FineVec){
+      FineVec.checkerboard = subspace[0].checkerboard;
       blockPromote(CoarseVec,FineVec,subspace);
     }
     void CreateSubspaceRandom(GridParallelRNG &RNG){
@@ -147,6 +151,7 @@ namespace Grid {
       Orthogonalise();
     }
 
+    /*
     virtual void CreateSubspaceLanczos(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,int nn=nbasis) 
     {
       // Run a Lanczos with sloppy convergence
@@ -195,7 +200,7 @@ namespace Grid {
 	  std::cout << GridLogMessage <<"subspace["<<b<<"] = "<<norm2(subspace[b])<<std::endl;
 	}
     }
-
+    */
     virtual void CreateSubspace(GridParallelRNG  &RNG,LinearOperatorBase<FineField> &hermop,int nn=nbasis) {
 
       RealD scale;

@@ -205,7 +205,8 @@ void CartesianCommunicator::AllToAll(int dim,void  *in,void *out,uint64_t words,
   //  Split the communicator
   row[dim] = _processors[dim];
 
-  CartesianCommunicator Comm(row,*this);
+  int me;
+  CartesianCommunicator Comm(row,*this,me);
   Comm.AllToAll(in,out,words,bytes);
 }
 void CartesianCommunicator::AllToAll(void  *in,void *out,uint64_t words,uint64_t bytes)

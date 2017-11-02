@@ -346,6 +346,14 @@ namespace Grid {
       virtual void operator() (const Field &in, Field &out) = 0;
     };
 
+    template<class Field> class IdentityLinearFunction : public LinearFunction<Field> {
+    public:
+      void operator() (const Field &in, Field &out){
+	out = in;
+      };
+    };
+
+
     /////////////////////////////////////////////////////////////
     // Base classes for Multishift solvers for operators
     /////////////////////////////////////////////////////////////
@@ -368,6 +376,64 @@ namespace Grid {
      };
     */
 
+  ////////////////////////////////////////////////////////////////////////////////////////////
+  // Hermitian operator Linear function and operator function
+  ////////////////////////////////////////////////////////////////////////////////////////////
+    template<class Field>
+      class HermOpOperatorFunction : public OperatorFunction<Field> {
+      void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) {
+	Linop.HermOp(in,out);
+      };
+    };
+
+    template<typename Field>
+      class PlainHermOp : public LinearFunction<Field> {
+    public:
+      LinearOperatorBase<Field> &_Linop;
+      
+      PlainHermOp(LinearOperatorBase<Field>& linop) : _Linop(linop) 
+      {}
+      
+      void operator()(const Field& in, Field& out) {
+	_Linop.HermOp(in,out);
+      }
+    };
+
+    template<typename Field>
+    class FunctionHermOp : public LinearFunction<Field> {
+    public:
+      OperatorFunction<Field>   & _poly;
+      LinearOperatorBase<Field> &_Linop;
+      
+      FunctionHermOp(OperatorFunction<Field> & poly,LinearOperatorBase<Field>& linop) 
+	: _poly(poly), _Linop(linop) {};
+      
+      void operator()(const Field& in, Field& out) {
+	_poly(_Linop,in,out);
+      }
+    };
+
+  template<class Field>
+  class Polynomial : public OperatorFunction<Field> {
+  private:
+    std::vector<RealD> Coeffs;
+  public:
+    Polynomial(std::vector<RealD> &_Coeffs) : Coeffs(_Coeffs) { };
+
+    // Implement the required interface
+    void operator() (LinearOperatorBase<Field> &Linop, const Field &in, Field &out) {
+
+      Field AtoN(in._grid);
+      Field Mtmp(in._grid);
+      AtoN = in;
+      out = AtoN*Coeffs[0];
+      for(int n=1;n<Coeffs.size();n++){
+	Mtmp = AtoN;
+	Linop.HermOp(Mtmp,AtoN);
+	out=out+AtoN*Coeffs[n];
+      }
+    };
+  };
 
 }
 

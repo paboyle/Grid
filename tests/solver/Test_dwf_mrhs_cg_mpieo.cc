@@ -47,7 +47,9 @@ int main (int argc, char ** argv)
   std::vector<int> mpi_layout  = GridDefaultMpi();
   std::vector<int> mpi_split (mpi_layout.size(),1);
 
-  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
+  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), 
+								   GridDefaultSimd(Nd,vComplex::Nsimd()),
+								   GridDefaultMpi());
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
   GridRedBlackCartesian * rbGrid  = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
   GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
@@ -57,10 +59,11 @@ int main (int argc, char ** argv)
   /////////////////////////////////////////////
   // Split into 1^4 mpi communicators
   /////////////////////////////////////////////
+  int me;
   GridCartesian         * SGrid = new GridCartesian(GridDefaultLatt(),
 						    GridDefaultSimd(Nd,vComplex::Nsimd()),
 						    mpi_split,
-						    *UGrid); 
+						    *UGrid,me); 
 
   GridCartesian         * SFGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,SGrid);
   GridRedBlackCartesian * SrbGrid  = SpaceTimeGrid::makeFourDimRedBlackGrid(SGrid);
@@ -89,8 +92,6 @@ int main (int argc, char ** argv)
   /////////////////
   // MPI only sends
   /////////////////
-  int me = UGrid->ThisRank();
-
   LatticeGaugeField s_Umu(SGrid);
   FermionField s_src(SFGrid);
   FermionField s_src_e(SFrbGrid);
