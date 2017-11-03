@@ -151,25 +151,23 @@ void TChargedProp::execute(void)
     buf = GFSrc;
     momD1(buf, fft);
     buf = -G*buf;
-    fft.FFT_dim(propQ, buf, env().getNd()-1, FFT::backward);
+    fft.FFT_all_dim(propQ, buf, FFT::backward);
 
     // G*momD1*G*momD1*G*F*Src (here buf = G*momD1*G*F*Src)
     buf = -buf;
     momD1(buf, fft);
     propSun = G*buf;
-    fft.FFT_dim(propSun, propSun, env().getNd()-1, FFT::backward);
+    fft.FFT_all_dim(propSun, propSun, FFT::backward);
 
     // -G*momD2*G*F*Src (momD2 = F*D2*Finv)
     buf = GFSrc;
     momD2(buf, fft);
     buf = -G*buf;
-    fft.FFT_dim(propTad, buf, env().getNd()-1, FFT::backward);
-    
-    // full charged scalar propagator
-    buf = GFSrc;
-    fft.FFT_dim(buf, buf, env().getNd()-1, FFT::backward);
-    prop = buf + q*propQ + q*q*propSun + q*q*propTad;
+    fft.FFT_all_dim(propTad, buf, FFT::backward);
 
+    // full charged scalar propagator
+    prop = (*prop0_) + q*propQ + q*q*propSun + q*q*propTad;
+    
     // OUTPUT IF NECESSARY
     if (!par().output.empty())
     {
@@ -186,59 +184,94 @@ void TChargedProp::execute(void)
                      << filename << "'..." << std::endl;
 
             CorrWriter            writer(filename);
-            // std::vector<TComplex> vecBuf;
-            std::vector<Complex>  result, result0, resultQ, resultSun, resultTad;
-            result.resize(env().getGrid()->_fdimensions[env().getNd()-1]);
-            result0.resize(env().getGrid()->_fdimensions[env().getNd()-1]);
-            resultQ.resize(env().getGrid()->_fdimensions[env().getNd()-1]);
-            resultSun.resize(env().getGrid()->_fdimensions[env().getNd()-1]);
-            resultTad.resize(env().getGrid()->_fdimensions[env().getNd()-1]);
+            std::vector<TComplex> vecBuf;
+            std::vector<Complex>  result;
 
             write(writer, "charge", q);
             write(writer, "mass", par().mass);
 
-            TComplex site;
-            std::vector<int>   whichmom;
-            whichmom.resize(env().getNd());
-
+            // Write full propagator
+            buf = prop;
             for (unsigned int j = 0; j < env().getNd()-1; ++j)
             {
-                whichmom[j] = mom[j];
+                for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                {
+                    buf = buf*adj(*phase_[j]);
+                }
             }
-
-            for (unsigned int t = 0; t < env().getGrid()->_fdimensions[env().getNd()-1]; ++t)
+            sliceSum(buf, vecBuf, Tp);
+            result.resize(vecBuf.size());
+            for (unsigned int t = 0; t < vecBuf.size(); ++t)
             {
-                whichmom[env().getNd()-1] = t;
-                // Write full propagator
-                peekSite(site, prop, whichmom);
-                result[t]=TensorRemove(site);
-                // Write free propagator
-                peekSite(site, buf, whichmom);
-                result0[t]=TensorRemove(site);
-                // Write propagator O(q) term
-                peekSite(site, propQ, whichmom);
-                resultQ[t]=TensorRemove(site);
-                // Write propagator sunset term
-                peekSite(site, propSun, whichmom);
-                resultSun[t]=TensorRemove(site);
-                // Write propagator tadpole term
-                peekSite(site, propTad, whichmom);
-                resultTad[t]=TensorRemove(site);
+                result[t] = TensorRemove(vecBuf[t]);
             }
             write(writer, "prop", result);
-            write(writer, "prop_0", result0);
-            write(writer, "prop_Q", resultQ);
-            write(writer, "prop_Sun", resultSun);
-            write(writer, "prop_Tad", resultTad);
+
+            // Write free propagator
+            buf = *prop0_;
+            for (unsigned int j = 0; j < env().getNd()-1; ++j)
+            {
+                for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                {
+                    buf = buf*adj(*phase_[j]);
+                }
+            }
+            sliceSum(buf, vecBuf, Tp);
+            for (unsigned int t = 0; t < vecBuf.size(); ++t)
+            {
+                result[t] = TensorRemove(vecBuf[t]);
+            }
+            write(writer, "prop_0", result);
+
+            // Write propagator O(q) term
+            buf = propQ;
+            for (unsigned int j = 0; j < env().getNd()-1; ++j)
+            {
+                for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                {
+                    buf = buf*adj(*phase_[j]);
+                }
+            }
+            sliceSum(buf, vecBuf, Tp);
+            for (unsigned int t = 0; t < vecBuf.size(); ++t)
+            {
+                result[t] = TensorRemove(vecBuf[t]);
+            }
+            write(writer, "prop_Q", result);
+
+            // Write propagator sunset term
+            buf = propSun;
+            for (unsigned int j = 0; j < env().getNd()-1; ++j)
+            {
+                for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                {
+                    buf = buf*adj(*phase_[j]);
+                }
+            }
+            sliceSum(buf, vecBuf, Tp);
+            for (unsigned int t = 0; t < vecBuf.size(); ++t)
+            {
+                result[t] = TensorRemove(vecBuf[t]);
+            }
+            write(writer, "prop_Sun", result);
+
+            // Write propagator tadpole term
+            buf = propTad;
+            for (unsigned int j = 0; j < env().getNd()-1; ++j)
+            {
+                for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
+                {
+                    buf = buf*adj(*phase_[j]);
+                }
+            }
+            sliceSum(buf, vecBuf, Tp);
+            for (unsigned int t = 0; t < vecBuf.size(); ++t)
+            {
+                result[t] = TensorRemove(vecBuf[t]);
+            }
+            write(writer, "prop_Tad", result);
         }
     }
-
-    std::vector<int> mask(env().getNd(),1);
-    mask[env().getNd()-1] = 0;
-    fft.FFT_dim_mask(prop, prop, mask, FFT::backward);
-    fft.FFT_dim_mask(propQ, propQ, mask, FFT::backward);
-    fft.FFT_dim_mask(propSun, propSun, mask, FFT::backward);
-    fft.FFT_dim_mask(propTad, propTad, mask, FFT::backward);
 }
 
 void TChargedProp::momD1(ScalarField &s, FFT &fft)
