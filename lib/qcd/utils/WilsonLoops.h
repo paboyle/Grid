@@ -135,7 +135,6 @@ public:
     int Y = Umu._grid->GlobalDimensions()[1];
     int Z = Umu._grid->GlobalDimensions()[2];
 
-    std::cout << X << Y << Z << T << std::endl;
     Ut = peekLorentz(Umu,3); //Select temporal direction
     P = Ut;
     for (int t=1;t<T;t++){ 
