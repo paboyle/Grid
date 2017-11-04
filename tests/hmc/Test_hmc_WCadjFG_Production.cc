@@ -71,7 +71,7 @@ int main(int argc, char **argv)
   using namespace Grid;
   using namespace Grid::QCD;
 
-  typedef Representations< FundamentalRepresentation, TwoIndexAntiSymmetricRepresentation > TheRepresentations;  
+  typedef Representations< FundamentalRepresentation, AdjointRepresentation > TheRepresentations;  
 
   Grid_init(&argc, &argv);
   int threads = GridThread::GetThreads();
@@ -80,8 +80,8 @@ int main(int argc, char **argv)
 
   // Typedefs to simplify notation
   typedef GenericHMCRunnerHirep<TheRepresentations, MinimumNorm2> HMCWrapper; // Uses the default minimum norm
-  typedef WilsonTwoIndexAntiSymmetricImplR FermionImplPolicy; // gauge field implemetation for the pseudofermions
-  typedef WilsonCloverTwoIndexAntiSymmetricFermionR FermionAction; // type of lattice fermions (Wilson, DW, ...)
+  typedef WilsonAdjImplR FermionImplPolicy; // gauge field implemetation for the pseudofermions
+  typedef WilsonCloverAdjFermionR FermionAction; // type of lattice fermions (Wilson, DW, ...)
   typedef typename FermionAction::FermionField FermionField;
   typedef Grid::JSONReader Serialiser;
 
@@ -149,7 +149,7 @@ int main(int argc, char **argv)
   auto GridRBPtr = TheHMC.Resources.GetRBCartesian();
 
   // temporarily need a gauge field
-  TwoIndexAntiSymmetricRepresentation::LatticeField U(GridPtr);
+  AdjointRepresentation::LatticeField U(GridPtr);
 
   //Real mass = 0.01;
   //Real csw = 1.0;
