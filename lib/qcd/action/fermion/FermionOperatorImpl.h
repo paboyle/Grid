@@ -1004,6 +1004,10 @@ typedef WilsonImpl<vComplex,  TwoIndexSymmetricRepresentation, CoeffReal > Wilso
 typedef WilsonImpl<vComplexF, TwoIndexSymmetricRepresentation, CoeffReal > WilsonTwoIndexSymmetricImplF;  // Float
 typedef WilsonImpl<vComplexD, TwoIndexSymmetricRepresentation, CoeffReal > WilsonTwoIndexSymmetricImplD;  // Double
  
+typedef WilsonImpl<vComplex,  TwoIndexAntiSymmetricRepresentation, CoeffReal > WilsonTwoIndexAntiSymmetricImplR;   // Real.. whichever prec
+typedef WilsonImpl<vComplexF, TwoIndexAntiSymmetricRepresentation, CoeffReal > WilsonTwoIndexAntiSymmetricImplF;  // Float
+typedef WilsonImpl<vComplexD, TwoIndexAntiSymmetricRepresentation, CoeffReal > WilsonTwoIndexAntiSymmetricImplD;  // Double
+
 typedef DomainWallVec5dImpl<vComplex ,Nc, CoeffReal> DomainWallVec5dImplR; // Real.. whichever prec
 typedef DomainWallVec5dImpl<vComplexF,Nc, CoeffReal> DomainWallVec5dImplF; // Float
 typedef DomainWallVec5dImpl<vComplexD,Nc, CoeffReal> DomainWallVec5dImplD; // Double

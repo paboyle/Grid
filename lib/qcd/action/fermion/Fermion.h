@@ -106,6 +106,10 @@ typedef WilsonFermion<WilsonTwoIndexSymmetricImplR> WilsonTwoIndexSymmetricFermi
 typedef WilsonFermion<WilsonTwoIndexSymmetricImplF> WilsonTwoIndexSymmetricFermionF;
 typedef WilsonFermion<WilsonTwoIndexSymmetricImplD> WilsonTwoIndexSymmetricFermionD;
 
+typedef WilsonFermion<WilsonTwoIndexAntiSymmetricImplR> WilsonTwoIndexAntiSymmetricFermionR;
+typedef WilsonFermion<WilsonTwoIndexAntiSymmetricImplF> WilsonTwoIndexAntiSymmetricFermionF;
+typedef WilsonFermion<WilsonTwoIndexAntiSymmetricImplD> WilsonTwoIndexAntiSymmetricFermionD;
+
 // Twisted mass fermion
 typedef WilsonTMFermion<WilsonImplR> WilsonTMFermionR;
 typedef WilsonTMFermion<WilsonImplF> WilsonTMFermionF;
@@ -116,6 +120,19 @@ typedef WilsonCloverFermion<WilsonImplR> WilsonCloverFermionR;
 typedef WilsonCloverFermion<WilsonImplF> WilsonCloverFermionF;
 typedef WilsonCloverFermion<WilsonImplD> WilsonCloverFermionD;
 
+typedef WilsonCloverFermion<WilsonAdjImplR> WilsonCloverAdjFermionR;
+typedef WilsonCloverFermion<WilsonAdjImplF> WilsonCloverAdjFermionF;
+typedef WilsonCloverFermion<WilsonAdjImplD> WilsonCloverAdjFermionD;
+
+typedef WilsonCloverFermion<WilsonTwoIndexSymmetricImplR> WilsonCloverTwoIndexSymmetricFermionR;
+typedef WilsonCloverFermion<WilsonTwoIndexSymmetricImplF> WilsonCloverTwoIndexSymmetricFermionF;
+typedef WilsonCloverFermion<WilsonTwoIndexSymmetricImplD> WilsonCloverTwoIndexSymmetricFermionD;
+
+typedef WilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplR> WilsonCloverTwoIndexAntiSymmetricFermionR;
+typedef WilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplF> WilsonCloverTwoIndexAntiSymmetricFermionF;
+typedef WilsonCloverFermion<WilsonTwoIndexAntiSymmetricImplD> WilsonCloverTwoIndexAntiSymmetricFermionD;
+
+// Domain Wall fermions
 typedef DomainWallFermion<WilsonImplR> DomainWallFermionR;
 typedef DomainWallFermion<WilsonImplF> DomainWallFermionF;
 typedef DomainWallFermion<WilsonImplD> DomainWallFermionD;
