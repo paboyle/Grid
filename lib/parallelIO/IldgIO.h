@@ -147,7 +147,7 @@ namespace QCD {
 
    _scidacRecord = sr;
 
-   std::cout << GridLogMessage << "Build SciDAC datatype " <<sr.datatype<<std::endl;
+   //   std::cout << GridLogMessage << "Build SciDAC datatype " <<sr.datatype<<std::endl;
  }
  
  ///////////////////////////////////////////////////////
@@ -159,7 +159,7 @@ namespace QCD {
    uint32_t scidac_checksumb = stoull(scidacChecksum_.sumb,0,16);
    if ( scidac_csuma !=scidac_checksuma) return 0;
    if ( scidac_csumb !=scidac_checksumb) return 0;
-    return 1;
+   return 1;
  }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -224,7 +224,7 @@ class GridLimeReader : public BinaryIO {
 
 	assert(PayloadSize == file_bytes);// Must match or user error
 
-	off_t offset= ftell(File);
+	uint64_t offset= ftello(File);
 	//	std::cout << " ReadLatticeObject from offset "<<offset << std::endl;
 	BinarySimpleMunger<sobj,sobj> munge;
 	BinaryIO::readLatticeObject< vobj, sobj >(field, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
@@ -237,7 +237,7 @@ class GridLimeReader : public BinaryIO {
 	/////////////////////////////////////////////
 	// Verify checksums
 	/////////////////////////////////////////////
-	scidacChecksumVerify(scidacChecksum_,scidac_csuma,scidac_csumb);
+	assert(scidacChecksumVerify(scidacChecksum_,scidac_csuma,scidac_csumb)==1);
 	return;
       }
     }
@@ -253,16 +253,13 @@ class GridLimeReader : public BinaryIO {
     while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
 
       //      std::cout << GridLogMessage<< " readLimeObject seeking "<< record_name <<" found record :" <<limeReaderType(LimeR) <<std::endl;
-
       uint64_t nbytes = limeReaderBytes(LimeR);//size of this record (configuration)
 
       if ( !strncmp(limeReaderType(LimeR), record_name.c_str(),strlen(record_name.c_str()) )  ) {
 
 	//	std::cout << GridLogMessage<< " readLimeObject matches ! " << record_name <<std::endl;
-
 	std::vector<char> xmlc(nbytes+1,'\0');
 	limeReaderReadData((void *)&xmlc[0], &nbytes, LimeR);    
-
 	//	std::cout << GridLogMessage<< " readLimeObject matches XML " << &xmlc[0] <<std::endl;
 
 	XmlReader RD(&xmlc[0],"");
@@ -332,7 +329,7 @@ class GridLimeWriter : public BinaryIO {
     err=limeWriteRecordData(&xmlstring[0], &nbytes, LimeW); assert(err>=0);
     err=limeWriterCloseRecord(LimeW);                       assert(err>=0);
     limeDestroyHeader(h);
-    //    std::cout << " File offset is now"<<ftell(File) << std::endl;
+    //    std::cout << " File offset is now"<<ftello(File) << std::endl;
   }
   ////////////////////////////////////////////
   // Write a generic lattice field and csum
@@ -349,7 +346,6 @@ class GridLimeWriter : public BinaryIO {
     uint64_t PayloadSize = sizeof(sobj) * field._grid->_gsites;
     createLimeRecordHeader(record_name, 0, 0, PayloadSize);
 
-
     //    std::cout << "W sizeof(sobj)"      <<sizeof(sobj)<<std::endl;
     //    std::cout << "W Gsites "           <<field._grid->_gsites<<std::endl;
     //    std::cout << "W Payload expected " <<PayloadSize<<std::endl;
@@ -361,18 +357,20 @@ class GridLimeWriter : public BinaryIO {
     // These are both buffered, so why I think this code is right is as follows.
     //
     // i)  write record header to FILE *File, telegraphing the size. 
-    // ii) ftell reads the offset from FILE *File .
+    // ii) ftello reads the offset from FILE *File .
     // iii) iostream / MPI Open independently seek this offset. Write sequence direct to disk.
     //      Closes iostream and flushes.
     // iv) fseek on FILE * to end of this disjoint section.
     //  v) Continue writing scidac record.
     ////////////////////////////////////////////////////////////////////
-    off_t offset = ftell(File);
+    uint64_t offset = ftello(File);
     //    std::cout << " Writing to offset "<<offset << std::endl;
     std::string format = getFormatString<vobj>();
     BinarySimpleMunger<sobj,sobj> munge;
     BinaryIO::writeLatticeObject<vobj,sobj>(field, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
+    //    fseek(File,0,SEEK_END);    offset = ftello(File);std::cout << " offset now "<<offset << std::endl;
     err=limeWriterCloseRecord(LimeW);  assert(err>=0);
+
     ////////////////////////////////////////
     // Write checksum element, propagaing forward from the BinaryIO
     // Always pair a checksum with a binary object, and close message
@@ -382,7 +380,7 @@ class GridLimeWriter : public BinaryIO {
     std::stringstream streamb; streamb << std::hex << scidac_csumb;
     checksum.suma= streama.str();
     checksum.sumb= streamb.str();
-    std::cout << GridLogMessage<<" writing scidac checksums "<<std::hex<<scidac_csuma<<"/"<<scidac_csumb<<std::dec<<std::endl;
+    //    std::cout << GridLogMessage<<" writing scidac checksums "<<std::hex<<scidac_csuma<<"/"<<scidac_csumb<<std::dec<<std::endl;
     writeLimeObject(0,1,checksum,std::string("scidacChecksum"),std::string(SCIDAC_CHECKSUM));
   }
 };
@@ -642,7 +640,7 @@ class IldgReader : public GridLimeReader {
 	// Copy out the string
 	std::vector<char> xmlc(nbytes+1,'\0');
 	limeReaderReadData((void *)&xmlc[0], &nbytes, LimeR);    
-	std::cout << GridLogMessage<< "Non binary record :" <<limeReaderType(LimeR) <<std::endl; //<<"\n"<<(&xmlc[0])<<std::endl;
+	//	std::cout << GridLogMessage<< "Non binary record :" <<limeReaderType(LimeR) <<std::endl; //<<"\n"<<(&xmlc[0])<<std::endl;
 
 	//////////////////////////////////
 	// ILDG format record
@@ -686,7 +684,7 @@ class IldgReader : public GridLimeReader {
 	  std::string xmls(&xmlc[0]);
 	  // is it a USQCD info field
 	  if ( xmls.find(std::string("usqcdInfo")) != std::string::npos ) { 
-	    std::cout << GridLogMessage<<"...found a usqcdInfo field"<<std::endl;
+	    //	    std::cout << GridLogMessage<<"...found a usqcdInfo field"<<std::endl;
 	    XmlReader RD(&xmlc[0],"");
 	    read(RD,"usqcdInfo",usqcdInfo_);
 	    found_usqcdInfo = 1;
@@ -704,8 +702,7 @@ class IldgReader : public GridLimeReader {
 	// Binary data
 	/////////////////////////////////
 	std::cout << GridLogMessage << "ILDG Binary record found : "  ILDG_BINARY_DATA << std::endl;
-	off_t offset= ftell(File);
-
+	uint64_t offset= ftello(File);
 	if ( format == std::string("IEEE64BIG") ) {
 	  GaugeSimpleMunger<dobj, sobj> munge;
 	  BinaryIO::readLatticeObject< vobj, dobj >(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);

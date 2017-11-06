@@ -153,7 +153,7 @@ class CartesianCommunicator {
   // Constructors to sub-divide a parent communicator
   // and default to comm world
   ////////////////////////////////////////////////
-  CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent);
+  CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent,int &srank);
   CartesianCommunicator(const std::vector<int> &pdimensions_in);
   virtual ~CartesianCommunicator();
 
