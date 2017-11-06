@@ -323,7 +323,7 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
     int iterations = 0;
     for (int k=0; k<MaxIterations; k++) {
 
-      cp = outerLoopBody();
+      cp = outerLoopBody(Linop, src, psi, rsd_sq);
 
       // Stopping condition
       if (cp <= rsd_sq) {
@@ -357,7 +357,7 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
       assert(0);
   }
 
-  RealD outerLoopBody() {
+  RealD outerLoopBody(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi, RealD rsd_sq) {
   }
 
   void Step() {
