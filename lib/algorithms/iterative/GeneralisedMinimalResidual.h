@@ -312,7 +312,6 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
     RealD rsd_sq = Tolerance * Tolerance * ssq;
 
     Field r(src._grid);
-    Field Dpsi(src._grid);
 
     PrecTimer.Reset();
     MatTimer.Reset();
@@ -331,8 +330,8 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
 
         SolverTimer.Stop();
 
-        Linop.Op(psi, Dpsi); // maybe can improve these two lines
-        r = src - Dpsi;      // by technique used in VPGCR
+        Linop.Op(psi,r);
+        axpy(r,-1.0,src,r);
 
         RealD srcnorm       = sqrt(ssq);
         RealD resnorm       = sqrt(norm2(r));
