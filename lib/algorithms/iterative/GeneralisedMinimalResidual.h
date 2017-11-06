@@ -203,7 +203,7 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
     LinOp.Op(psi, Dpsi);
     r = src - Dpsi;
 
-    RealD cp = norm2(r); // cp = beta in DD-αAMG nomenclature
+    RealD cp = norm2(r); // cp = beta in WMG nomenclature, in WMG there is no norm2 but a sqrt(norm2) here
     gamma[0]  = cp;
 
     std::cout << GridLogIterative << "cp " << cp << std::endl;
@@ -223,13 +223,17 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
               << "GeneralizedMinimalResidual: k=0 residual " << cp << " target " << rsd_sq << std::endl;
 
     GridStopWatch SolverTimer;
+    GridStopWatch MatrixTimer;
 
     SolverTimer.Start();
     for(auto j = 0; j < m; ++j) {
 
       // std::cout << GridLogIterative << "GeneralizedMinimalResidual: Start of outer loop with index j = " << j << std::endl;
 
+      MatrixTimer.Start();
       LinOp.Op(v[j], Dv);
+      MatrixTimer.Stop();
+
       w = Dv;
 
       for(auto i = 0; i <= j; ++i) {
@@ -280,7 +284,192 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
 
         std::cout << GridLogMessage << "Time breakdown " << std::endl;
         std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed() << std::endl;
-        // std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() << std::endl;
+        std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() << std::endl;
+        // std::cout << GridLogMessage << "\tLinalg     " << LinalgTimer.Elapsed() << std::endl;
+
+        IterationsToComplete = j;
+
+        break;
+      }
+    }
+
+    // backward substitution
+    computeSolution(y, gamma, H, v, psi, IterationsToComplete);
+
+    std::cout << GridLogIterative << "GeneralizedMinimalResidual: End of operator()" << std::endl;
+  }
+
+  void alternativeOperatorImplementation()(LinearOperatorBase<Field> &LinOp, const Field &src, Field &psi) {
+
+    psi.checkerboard = src.checkerboard;
+    psi(conformable, src);
+
+    RealD guess = norm2(psi);
+    assert(std::isnan(guess) == 0);
+
+    RealD cp;
+    RealD ssq    = norm2(src);
+    RealD rsd_sq = Tolerance * Tolerance * ssq;
+
+    Field r(src._grid);
+    Field Dpsi(src._grid);
+
+    PrecTimer.Reset();
+    MatTimer.Reset();
+    LinalgTimer.Reset();
+
+    GridStopWatch SolverTimer;
+    SolverTimer.Start();
+
+    int iterations = 0;
+    for (int k=0; k<MaxIterations; k++) {
+
+      cp = outerLoopBody();
+
+      // Stopping condition
+      if (cp <= rsd_sq) {
+
+        SolverTimer.Stop();
+
+        Linop.Op(psi, Dpsi); // maybe can improve these two lines
+        r = src - Dpsi;      // by technique used in VPGCR
+
+        RealD srcnorm       = sqrt(ssq);
+        RealD resnorm       = sqrt(norm2(r));
+        RealD true_residual = resnorm / srcnorm;
+
+        std::cout << GridLogMessage << "GeneralizedMinimalResidual: Converged on iteration " << k              << std::endl;
+        std::cout << GridLogMessage << "\tComputed residual "                                << sqrt(cp / ssq) << std::endl;
+        std::cout << GridLogMessage << "\tTrue residual "                                    << true_residual  << std::endl;
+        std::cout << GridLogMessage << "\tTarget "                                           << Tolerance      << std::endl;
+
+        std::cout << GridLogMessage << "GeneralizedMinimalResidual Time breakdown" << std::endl;
+        std::cout << GridLogMessage << "\tElapsed " << SolverTimer.Elapsed()       << std::endl;
+        std::cout << GridLogMessage << "\tPrecon "  << PrecTimer.Elapsed()         << std::endl;
+        std::cout << GridLogMessage << "\tMatrix "  << MatTimer.Elapsed()          << std::endl;
+        std::cout << GridLogMessage << "\tLinalg "  << LinalgTimer.Elapsed()       << std::endl;
+        return;
+      }
+    }
+
+    std::cout << GridLogMessage << "GeneralizedMinimalResidual did NOT converge" << std::endl;
+
+    if (ErrorOnNoConverge)
+      assert(0);
+  }
+
+  RealD outerLoopBody() {
+  }
+
+  void Step() {
+
+    int m = MaxIterations;
+
+    Field r(src);
+    Field w(src);
+    Field Dpsi(src);
+    Field Dv(src);
+    std::vector<Field> v(m + 1, src);
+
+    Eigen::MatrixXcd H = Eigen::MatrixXcd::Zero(m + 1, m);
+
+    std::vector<std::complex<double>> y(m + 1, 0.);
+    std::vector<std::complex<double>> gamma(m + 1, 0.);
+    std::vector<std::complex<double>> c(m + 1, 0.);
+    std::vector<std::complex<double>> s(m + 1, 0.);
+
+    // Initial residual computation & set up
+    RealD guess = norm2(psi);
+    assert(std::isnan(guess) == 0);
+
+    RealD ssq = norm2(src); // flopcount.addSiteFlops(4*Nc*Ns,s); // stands for "source squared"
+    RealD rsd_sq = Tolerance * Tolerance * ssq; // flopcount.addSiteFlops(4*Nc*Ns,s); // stands for "residual squared"
+
+    LinOp.Op(psi, Dpsi);
+    r = src - Dpsi;
+
+    RealD cp = norm2(r); // cp = beta in WMG nomenclature, in WMG there is no norm2 but a sqrt(norm2) here
+    gamma[0]  = cp;
+
+    std::cout << GridLogIterative << "cp " << cp << std::endl;
+
+    v[0] = (1. / cp) * r;
+
+    std::cout << GridLogIterative << std::setprecision(4) << "GeneralizedMinimalResidual: guess " << guess << std::endl;
+    std::cout << GridLogIterative << std::setprecision(4) << "GeneralizedMinimalResidual:   src " << ssq << std::endl;
+    // std::cout << GridLogIterative << std::setprecision(4) << "GeneralizedMinimalResidual:    mp " << d << std::endl;
+    std::cout << GridLogIterative << std::setprecision(4) << "GeneralizedMinimalResidual:  cp,r " << cp << std::endl;
+
+    if (cp <= rsd_sq) {
+      return;
+    }
+
+    std::cout << GridLogIterative << std::setprecision(4)
+              << "GeneralizedMinimalResidual: k=0 residual " << cp << " target " << rsd_sq << std::endl;
+
+    GridStopWatch SolverTimer;
+    GridStopWatch MatrixTimer;
+
+    SolverTimer.Start();
+    for(auto j = 0; j < m; ++j) {
+
+      // std::cout << GridLogIterative << "GeneralizedMinimalResidual: Start of outer loop with index j = " << j << std::endl;
+
+      MatrixTimer.Start();
+      LinOp.Op(v[j], Dv);
+      MatrixTimer.Stop();
+
+      w = Dv;
+
+      for(auto i = 0; i <= j; ++i) {
+        H(i, j) = innerProduct(v[i], w);
+        w = w - H(i, j) * v[i];
+      }
+
+      H(j + 1, j) = norm2(w);
+      v[j + 1] = (1. / H(j + 1, j)) * w;
+
+      // end of arnoldi process, begin of givens rotations
+      // apply old Givens rotation
+      for(auto i = 0; i < j ; ++i) {
+        auto tmp = -s[i] * H(i, j) + c[i] * H(i + 1, j);
+        H(i, j)     = std::conj(c[i]) * H(i, j) + std::conj(s[i]) * H(i + 1, j);
+        H(i + 1, j) = tmp;
+      }
+
+      // compute new Givens Rotation
+      ComplexD nu = sqrt(std::norm(H(j, j)) + std::norm(H(j + 1, j)));
+      c[j]        = H(j, j) / nu;
+      s[j]        = H(j + 1, j) / nu;
+      std::cout << GridLogIterative << "GeneralizedMinimalResidual: nu" << nu << std::endl;
+      std::cout << GridLogIterative << "GeneralizedMinimalResidual: H("<<j<<","<<j<<")" << H(j,j) << std::endl;
+      std::cout << GridLogIterative << "GeneralizedMinimalResidual: H("<<j+1<<","<<j<<")" << H(j+1,j) << std::endl;
+
+      // apply new Givens rotation
+      H(j, j)     = nu;
+      H(j + 1, j) = 0.;
+
+      /* ORDERING??? */
+      gamma[j + 1] = -s[j] * gamma[j];
+      gamma[j]     = std::conj(c[j]) * gamma[j];
+
+      /* for(auto k = 0; k <= j+1 ; ++k) */
+      /*   std::cout << GridLogIterative << "k " << k << "nu " << nu << " c["<<k<<"]" << c[k]<< " s["<<k<<"]" << s[k] << " gamma["<<k<<"]" << gamma[k] << std::endl; */
+
+      std::cout << GridLogIterative << "GeneralisedMinimalResidual: Iteration "
+                << j << " residual " << std::abs(gamma[j + 1]) << std::endl; //" target "
+                /* << TargetResSq << std::endl; */
+      if(std::abs(gamma[j + 1]) / sqrt(cp) < Tolerance) {
+        SolverTimer.Stop();
+
+        std::cout << GridLogMessage << "GeneralizedMinimalResidual Converged on iteration " << j << std::endl;
+        // std::cout << GridLogMessage << "\tComputed residual " << sqrt(cp / ssq) << std::endl;
+        // std::cout << GridLogMessage << "\tTrue residual " << true_residual << std::endl;
+        std::cout << GridLogMessage << "\tTarget " << Tolerance << std::endl;
+
+        std::cout << GridLogMessage << "Time breakdown " << std::endl;
+        std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed() << std::endl;
+        std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() << std::endl;
         // std::cout << GridLogMessage << "\tLinalg     " << LinalgTimer.Elapsed() << std::endl;
 
         IterationsToComplete = j;
