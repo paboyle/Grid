@@ -55,13 +55,15 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
                           // defaults to True.
   RealD   Tolerance;
   Integer MaxIterations;
+  Integer RestartLength;
   Integer IterationsToComplete; // Number of iterations the GMRES took to
                                 // finish. Filled in upon completion
 
   GeneralisedMinimalResidual(RealD   tol,
                              Integer maxit,
+                             Integer restart_length,
                              bool    err_on_no_conv = true)
-    : Tolerance(tol), MaxIterations(maxit), ErrorOnNoConverge(err_on_no_conv){};
+    : Tolerance(tol), MaxIterations(maxit), RestartLength(restart_length), ErrorOnNoConverge(err_on_no_conv){};
 
   // want to solve Ax = b -> A = LinOp, psi = x, b = src
 
@@ -168,9 +170,12 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
   /*   std::cout << norm2(tmp) << " " << norm2(tmp) / gamma0 << std::endl; */
   /* } */
 
-  void
-  operator()(LinearOperatorBase<Field> &LinOp, const Field &src, Field &psi) {
-    std::cout << "GMRES: Start of operator()" << std::endl;
+  void operator()(LinearOperatorBase<Field> &LinOp, const Field &src, Field &psi) {
+
+    std::cout << GridLogIterative << "GMRES: Start of operator()" << std::endl;
+
+    psi.checkerboard = src.checkerboard;
+    conformable(psi, src);
 
     int m = MaxIterations;
 
@@ -180,25 +185,50 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
     Field Dv(src);
 
     std::vector<Field> v(m + 1, src);
-    Eigen::MatrixXcd   H = Eigen::MatrixXcd::Zero(m + 1, m);
+
+    Eigen::MatrixXcd H = Eigen::MatrixXcd::Zero(m + 1, m);
 
     std::vector<std::complex<double>> y(m + 1, 0.);
     std::vector<std::complex<double>> gamma(m + 1, 0.);
     std::vector<std::complex<double>> c(m + 1, 0.);
     std::vector<std::complex<double>> s(m + 1, 0.);
 
+    // Initial residual computation & set up
+    RealD guess = norm2(psi);
+    assert(std::isnan(guess) == 0);
+
+    RealD ssq = norm2(src); // flopcount.addSiteFlops(4*Nc*Ns,s); // stands for "source squared"
+    RealD rsd_sq = Tolerance * Tolerance * ssq; // flopcount.addSiteFlops(4*Nc*Ns,s); // stands for "residual squared"
+
     LinOp.Op(psi, Dpsi);
     r = src - Dpsi;
 
-    RealD beta = norm2(r);
-    gamma[0]  = beta;
+    RealD cp = norm2(r); // cp = beta in DD-αAMG nomenclature
+    gamma[0]  = cp;
 
-    std::cout << "beta " << beta << std::endl;
+    std::cout << GridLogIterative << "cp " << cp << std::endl;
 
-    v[0] = (1. / beta) * r;
+    v[0] = (1. / cp) * r;
 
-    // Begin iterating
+    std::cout << GridLogIterative << std::setprecision(4) << "GeneralizedMinimalResidual: guess " << guess << std::endl;
+    std::cout << GridLogIterative << std::setprecision(4) << "GeneralizedMinimalResidual:   src " << ssq << std::endl;
+    // std::cout << GridLogIterative << std::setprecision(4) << "GeneralizedMinimalResidual:    mp " << d << std::endl;
+    std::cout << GridLogIterative << std::setprecision(4) << "GeneralizedMinimalResidual:  cp,r " << cp << std::endl;
+
+    if (cp <= rsd_sq) {
+      return;
+    }
+
+    std::cout << GridLogIterative << std::setprecision(4)
+              << "GeneralizedMinimalResidual: k=0 residual " << cp << " target " << rsd_sq << std::endl;
+
+    GridStopWatch SolverTimer;
+
+    SolverTimer.Start();
     for(auto j = 0; j < m; ++j) {
+
+      // std::cout << GridLogIterative << "GeneralizedMinimalResidual: Start of outer loop with index j = " << j << std::endl;
+
       LinOp.Op(v[j], Dv);
       w = Dv;
 
@@ -222,9 +252,9 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
       ComplexD nu = sqrt(std::norm(H(j, j)) + std::norm(H(j + 1, j)));
       c[j]        = H(j, j) / nu;
       s[j]        = H(j + 1, j) / nu;
-      std::cout << "nu" << nu << std::endl;
-      std::cout << "H("<<j<<","<<j<<")" << H(j,j) << std::endl;
-      std::cout << "H("<<j+1<<","<<j<<")" << H(j+1,j) << std::endl;
+      std::cout << GridLogIterative << "GeneralizedMinimalResidual: nu" << nu << std::endl;
+      std::cout << GridLogIterative << "GeneralizedMinimalResidual: H("<<j<<","<<j<<")" << H(j,j) << std::endl;
+      std::cout << GridLogIterative << "GeneralizedMinimalResidual: H("<<j+1<<","<<j<<")" << H(j+1,j) << std::endl;
 
       // apply new Givens rotation
       H(j, j)     = nu;
@@ -235,13 +265,26 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
       gamma[j]     = std::conj(c[j]) * gamma[j];
 
       /* for(auto k = 0; k <= j+1 ; ++k) */
-      /*   std::cout << "k " << k << "nu " << nu << " c["<<k<<"]" << c[k]<< " s["<<k<<"]" << s[k] << " gamma["<<k<<"]" << gamma[k] << std::endl; */
+      /*   std::cout << GridLogIterative << "k " << k << "nu " << nu << " c["<<k<<"]" << c[k]<< " s["<<k<<"]" << s[k] << " gamma["<<k<<"]" << gamma[k] << std::endl; */
 
       std::cout << GridLogIterative << "GeneralisedMinimalResidual: Iteration "
                 << j << " residual " << std::abs(gamma[j + 1]) << std::endl; //" target "
                 /* << TargetResSq << std::endl; */
-      if(std::abs(gamma[j + 1]) / sqrt(beta) < Tolerance) {
+      if(std::abs(gamma[j + 1]) / sqrt(cp) < Tolerance) {
+        SolverTimer.Stop();
+
+        std::cout << GridLogMessage << "GeneralizedMinimalResidual Converged on iteration " << j << std::endl;
+        // std::cout << GridLogMessage << "\tComputed residual " << sqrt(cp / ssq) << std::endl;
+        // std::cout << GridLogMessage << "\tTrue residual " << true_residual << std::endl;
+        std::cout << GridLogMessage << "\tTarget " << Tolerance << std::endl;
+
+        std::cout << GridLogMessage << "Time breakdown " << std::endl;
+        std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed() << std::endl;
+        // std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() << std::endl;
+        // std::cout << GridLogMessage << "\tLinalg     " << LinalgTimer.Elapsed() << std::endl;
+
         IterationsToComplete = j;
+
         break;
       }
     }
@@ -249,7 +292,7 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
     // backward substitution
     computeSolution(y, gamma, H, v, psi, IterationsToComplete);
 
-    std::cout << "GMRES: End of operator()" << std::endl;
+    std::cout << GridLogIterative << "GeneralizedMinimalResidual: End of operator()" << std::endl;
   }
 
   private:
@@ -258,37 +301,37 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
   /*                std::vector<std::complex<double>> &s, */
   /*                Eigen::MatrixXcd &                 H, */
   /*                int                                j) { */
-  /*    ComplexD beta{}; */
+  /*    ComplexD cp{}; */
   /*    // update QR factorization */
   /*    // apply previous Givens rotation */
   /*    for(auto i = 0; i < j; i++) { */
-  /*      beta = -s[i] * H(i, j) + c[i] * H(i + 1, j); */
+  /*      cp = -s[i] * H(i, j) + c[i] * H(i + 1, j); */
   /*      H(i, j)     = std::conj(c[i]) * H(i, j) + std::conj(s[i]) * H(i + 1,
    * j); */
-  /*      H(i + 1, j) = beta; */
+  /*      H(i + 1, j) = cp; */
   /*    } */
 
   /*    // compute current Givens rotation */
-  /*    beta = sqrt(std::norm(H(j, j)) + std::norm(H(j + 1, j))); */
-  /*    s[j] = H(j + 1, j) / beta; */
-  /*    c[j] = H(j, j) / beta; */
-  /*    /\* std::cout << "beta= " << beta << std::endl; *\/ */
-  /*    /\* std::cout << "s[j]= " << s[ j ] << std::endl; *\/ */
-  /*    /\* std::cout << "c[j]= " << c[ j ] << std::endl; *\/ */
+  /*    cp = sqrt(std::norm(H(j, j)) + std::norm(H(j + 1, j))); */
+  /*    s[j] = H(j + 1, j) / cp; */
+  /*    c[j] = H(j, j) / cp; */
+  /*    /\* std::cout << GridLogIterative << "cp= " << cp << std::endl; *\/ */
+  /*    /\* std::cout << GridLogIterative << "s[j]= " << s[ j ] << std::endl; *\/ */
+  /*    /\* std::cout << GridLogIterative << "c[j]= " << c[ j ] << std::endl; *\/ */
 
-  /*    /\* std::cout << "gamma[j+1]= " << gamma[ j + 1 ] << std::endl; *\/ */
-  /*    /\* std::cout << "gamma[j]= " << gamma[ j ] << std::endl; *\/ */
+  /*    /\* std::cout << GridLogIterative << "gamma[j+1]= " << gamma[ j + 1 ] << std::endl; *\/ */
+  /*    /\* std::cout << GridLogIterative << "gamma[j]= " << gamma[ j ] << std::endl; *\/ */
   /*    // update right column */
   /*    gamma[j + 1] = -s[j] * gamma[j]; */
   /*    gamma[j]     = std::conj(c[j]) * gamma[j]; */
-  /*    /\* std::cout << "gamma[j+1]= " << gamma[ j + 1 ] << std::endl; *\/ */
-  /*    /\* std::cout << "gamma[j]= " << gamma[ j ] << std::endl; *\/ */
+  /*    /\* std::cout << GridLogIterative << "gamma[j+1]= " << gamma[ j + 1 ] << std::endl; *\/ */
+  /*    /\* std::cout << GridLogIterative << "gamma[j]= " << gamma[ j ] << std::endl; *\/ */
 
   /*    // apply current Givens rotation */
-  /*    H(j, j)     = beta; */
+  /*    H(j, j)     = cp; */
   /*    H(j + 1, j) = 0.; */
-  /*    /\* std::cout << "H(j,j)= " << H( j, j ) << std::endl; *\/ */
-  /*    /\* std::cout << "H(j+1,j)= " << H( j + 1, j ) << std::endl; *\/ */
+  /*    /\* std::cout << GridLogIterative << "H(j,j)= " << H( j, j ) << std::endl; *\/ */
+  /*    /\* std::cout << GridLogIterative << "H(j+1,j)= " << H( j + 1, j ) << std::endl; *\/ */
   /*  } */
 
   void computeSolution(std::vector<std::complex<double>> &      y,
