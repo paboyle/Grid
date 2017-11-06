@@ -55,9 +55,9 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
 
 CartesianCommunicator::~CartesianCommunicator()
 {
-  int MPI_is_finalised;
-  MPI_Finalized(&MPI_is_finalised);
-  if (communicator && MPI_is_finalised)
+  // int MPI_is_finalised;
+  // MPI_Finalized(&MPI_is_finalised);
+  if (communicator && !MPI::Is_finalized())
     MPI_Comm_free(&communicator);
 }
 
