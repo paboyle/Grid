@@ -358,6 +358,86 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
   }
 
   RealD outerLoopBody(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi, RealD rsd_sq) {
+
+    Field w(src._grid);
+    Field r(src._grid);
+
+    std::vector<Field> v(whatDoWePutHere, src._grid); // in MG code: m + 1
+
+    std::vector<std::complex<double>> gamma(whatDoWePutHere, 0.); // in MG code: m + 1
+
+    MatrixTimer.Start();
+    Linop.Op(psi, w); // w = D * psi
+    MatrixTimer.Stop();
+
+    LinalgTimer.Start();
+    r = src - w;
+
+    gamma[0] = norm2(r); // do we need an explicit cast? // in MG code: sqrt around/within the norm
+
+    v[0] = (1. / gamma[0]) * r;
+    LinalgTimer.Stop();
+
+    for (int i=0; i<whatDoWePutHere; i++) { // in MG code: p->restart_length
+
+      arnoldiStep(Linop, v, w, whatDoWePutHere); // in MG code: j
+
+      ///////////////////////////////////////////////////////////////////////
+      // Begin of QR Update /////////////////////////////////////////////////
+      ///////////////////////////////////////////////////////////////////////
+
+      qrUpdate(whatDoWePutHere); // in MG code: j
+
+      ///////////////////////////////////////////////////////////////////////
+      // End of QR Update ///////////////////////////////////////////////////
+      ///////////////////////////////////////////////////////////////////////
+
+      if ((whatDoWePutHere) || (cp < rsd_sq)) { // in VPGCR code: (k == nstep-1)
+
+        // compute solution
+
+        return cp;
+      }
+    }
+  }
+
+  void arnoldiStep(LinearOperatorBase<Field> &Linop, std::vector<Field> &v, Field &w, int iter) {
+
+    MatrixTimer.Start();
+    Linop.Op(v[iter], w);
+    MatrixTimer.Stop();
+
+    LinalgTimer.Start();
+    for(int i = 0; i <= iter; ++i) {
+      H(i, j) = innerProduct(v[i], w);
+      w = w - H(i, iter) * v[i];
+    }
+
+    H(iter + 1, iter) = norm2(w); // in MG code: sqrt around/within the norm
+    v[iter + 1] = (1. / H(iter + 1, iter)) * w;
+    LinalgTimer.Stop();
+  }
+
+  void qrUpdate(int iter) {
+
+    for(int i = 0; i < iter ; ++i) {
+      auto tmp = -s[i] * H(i, iter) + c[i] * H(i + 1, iter);
+      H(i, iter)     = std::conj(c[i]) * H(i, iter) + std::conj(s[i]) * H(i + 1, iter);
+      H(i + 1, iter) = tmp;
+    }
+
+    // compute new Givens Rotation
+    ComplexD nu = sqrt(std::norm(H(iter, iter)) + std::norm(H(iter + 1, iter)));
+    c[iter]        = H(iter, iter) / nu;
+    s[iter]        = H(iter + 1, iter) / nu;
+
+    // apply new Givens rotation
+    H(iter, iter)     = nu;
+    H(iter + 1, iter) = 0.;
+
+    /* ORDERING??? */
+    gamma[iter + 1] = -s[iter] * gamma[iter];
+    gamma[iter]     = std::conj(c[iter]) * gamma[iter];
   }
 
   void Step() {
