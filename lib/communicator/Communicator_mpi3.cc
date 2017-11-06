@@ -454,11 +454,15 @@ void  CartesianCommunicator::ProcessorCoorFromRank(int rank, std::vector<int> &c
 //////////////////////////////////
 // Try to subdivide communicator
 //////////////////////////////////
-CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent) 
+/*
+ * Use default in MPI compile
+ */
+CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent,int &srank) 
   : CartesianCommunicator(processors) 
 {
   std::cout << "Attempts to split MPI3 communicators will fail until implemented" <<std::endl;
 }
+
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 { 
   int ierr;
@@ -596,6 +600,17 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
     }
   }
 };
+CartesianCommunicator::~CartesianCommunicator()
+{
+  int MPI_is_finalised;
+  MPI_Finalized(&MPI_is_finalised);
+  if (communicator && MPI_is_finalised) {
+    MPI_Comm_free(&communicator);
+    for(int i=0;i<  communicator_halo.size();i++){
+      MPI_Comm_free(&communicator_halo[i]);
+    }
+  }  
+}
 void CartesianCommunicator::GlobalSum(uint32_t &u){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_SUM,communicator);
   assert(ierr==0);
