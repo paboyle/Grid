@@ -90,7 +90,7 @@ namespace Grid {
   // Take a matrix and form a Red Black solver calling a Herm solver
   // Use of RB info prevents making SchurRedBlackSolve conform to standard interface
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
-
+  // Now make the norm reflect extra factor of Mee
   template<class Field> class SchurRedBlackStaggeredSolve {
   private:
     OperatorFunction<Field> & _HermitianRBSolver;
@@ -136,8 +136,8 @@ namespace Grid {
       _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.checkerboard ==Odd);     
       tmp=src_o-Mtmp;                  assert(  tmp.checkerboard ==Odd);     
 
-      src_o = tmp;     assert(src_o.checkerboard ==Odd);
-      //  _Matrix.Mooee(tmp,src_o); // Extra factor of "m" in source
+      //src_o = tmp;     assert(src_o.checkerboard ==Odd);
+      _Matrix.Mooee(tmp,src_o); // Extra factor of "m" in source from dumb choice of matrix norm.
 
       //////////////////////////////////////////////////////////////
       // Call the red-black solver
