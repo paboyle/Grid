@@ -71,7 +71,7 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
   void operator()(LinearOperatorBase<Field> &LinOp, const Field &src, Field &psi) {
 
     psi.checkerboard = src.checkerboard;
-    psi(conformable, src);
+    conformable(psi, src);
 
     RealD guess = norm2(psi);
     assert(std::isnan(guess) == 0);
