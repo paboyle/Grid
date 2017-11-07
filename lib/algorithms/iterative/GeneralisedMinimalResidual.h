@@ -2,11 +2,11 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: lib/algorithms/iterative/GeneralisedMinimalResidual.h
+Source file: ./lib/algorithms/iterative/GeneralisedMinimalResidual.h
 
 Copyright (C) 2015
-Copyright (C) 2016
 
+Author: Daniel Richtmann <daniel.richtmann@ur.de>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -58,6 +58,9 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
   Integer RestartLength;
   Integer IterationsToComplete; // Number of iterations the GMRES took to
                                 // finish. Filled in upon completion
+  GridStopWatch MatrixTimer;
+  GridStopWatch PrecTimer;
+  GridStopWatch LinalgTimer;
 
   GeneralisedMinimalResidual(RealD   tol,
                              Integer maxit,
@@ -299,7 +302,7 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
     std::cout << GridLogIterative << "GeneralizedMinimalResidual: End of operator()" << std::endl;
   }
 
-  void alternativeOperatorImplementation()(LinearOperatorBase<Field> &LinOp, const Field &src, Field &psi) {
+  void alternativeOperatorImplementation(LinearOperatorBase<Field> &LinOp, const Field &src, Field &psi) {
 
     psi.checkerboard = src.checkerboard;
     psi(conformable, src);
@@ -314,7 +317,7 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
     Field r(src._grid);
 
     PrecTimer.Reset();
-    MatTimer.Reset();
+    MatrixTimer.Reset();
     LinalgTimer.Reset();
 
     GridStopWatch SolverTimer;
@@ -323,14 +326,14 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
     int iterations = 0;
     for (int k=0; k<MaxIterations; k++) {
 
-      cp = outerLoopBody(Linop, src, psi, rsd_sq);
+      cp = outerLoopBody(LinOp, src, psi, rsd_sq);
 
       // Stopping condition
       if (cp <= rsd_sq) {
 
         SolverTimer.Stop();
 
-        Linop.Op(psi,r);
+        LinOp.Op(psi,r);
         axpy(r,-1.0,src,r);
 
         RealD srcnorm       = sqrt(ssq);
@@ -345,7 +348,7 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
         std::cout << GridLogMessage << "GeneralizedMinimalResidual Time breakdown" << std::endl;
         std::cout << GridLogMessage << "\tElapsed " << SolverTimer.Elapsed()       << std::endl;
         std::cout << GridLogMessage << "\tPrecon "  << PrecTimer.Elapsed()         << std::endl;
-        std::cout << GridLogMessage << "\tMatrix "  << MatTimer.Elapsed()          << std::endl;
+        std::cout << GridLogMessage << "\tMatrix "  << MatrixTimer.Elapsed()       << std::endl;
         std::cout << GridLogMessage << "\tLinalg "  << LinalgTimer.Elapsed()       << std::endl;
         return;
       }
@@ -357,17 +360,21 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
       assert(0);
   }
 
-  RealD outerLoopBody(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi, RealD rsd_sq) {
+  RealD outerLoopBody(LinearOperatorBase<Field> &LinOp, const Field &src, Field &psi, RealD rsd_sq) {
+
+    RealD cp = 0;
 
     Field w(src._grid);
     Field r(src._grid);
+
+    auto whatDoWePutHere = 1;
 
     std::vector<Field> v(whatDoWePutHere, src._grid); // in MG code: m + 1
 
     std::vector<std::complex<double>> gamma(whatDoWePutHere, 0.); // in MG code: m + 1
 
     MatrixTimer.Start();
-    Linop.Op(psi, w); // w = D * psi
+    LinOp.Op(psi, w); // w = D * psi
     MatrixTimer.Stop();
 
     LinalgTimer.Start();
@@ -380,7 +387,7 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
 
     for (int i=0; i<whatDoWePutHere; i++) { // in MG code: p->restart_length
 
-      arnoldiStep(Linop, v, w, whatDoWePutHere); // in MG code: j
+      arnoldiStep(LinOp, v, w, whatDoWePutHere); // in MG code: j
 
       ///////////////////////////////////////////////////////////////////////
       // Begin of QR Update /////////////////////////////////////////////////
@@ -401,15 +408,15 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
     }
   }
 
-  void arnoldiStep(LinearOperatorBase<Field> &Linop, std::vector<Field> &v, Field &w, int iter) {
+  void arnoldiStep(LinearOperatorBase<Field> &LinOp, std::vector<Field> &v, Field &w, int iter) {
 
     MatrixTimer.Start();
-    Linop.Op(v[iter], w);
+    LinOp.Op(v[iter], w);
     MatrixTimer.Stop();
 
     LinalgTimer.Start();
     for(int i = 0; i <= iter; ++i) {
-      H(i, j) = innerProduct(v[i], w);
+      H(i, iter) = innerProduct(v[i], w);
       w = w - H(i, iter) * v[i];
     }
 
@@ -608,16 +615,16 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
                        std::vector<Field> const &               v,
                        Field &                                  x,
                        int                                      j) {
-    for(auto i = j; i >= 0; i--) {
+    for(auto i = iter; i >= 0; i--) {
       y[i] = gamma[i];
-      for(auto k = i + 1; k <= j; k++)
+      for(auto k = i + 1; k <= iter; k++)
         y[i] -= H(i, k) * y[k];
       y[i] /= H(i, i);
     }
 
     /* if(true) // TODO ??? */
     /* { */
-    /*   for(auto i = 0; i <= j; i++) */
+    /*   for(auto i = 0; i <= iter; i++) */
     /*     x = x + v[i] * y[i]; */
     /* } else { */
       x = y[0] * v[0];
