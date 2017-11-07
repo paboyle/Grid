@@ -98,7 +98,39 @@ void CartesianCommunicator::GlobalSumVector(ComplexD *c,int N)
 
 
 #if defined( GRID_COMMS_MPI) || defined (GRID_COMMS_MPIT) || defined (GRID_COMMS_MPI3)
+void CartesianCommunicator::AllToAll(int dim,void  *in,void *out,uint64_t words,uint64_t bytes)
+{
+  std::vector<int> row(_ndimension,1);
+  assert(dim>=0 && dim<_ndimension);
 
+  //  Split the communicator
+  row[dim] = _processors[dim];
+
+  int me;
+  CartesianCommunicator Comm(row,*this,me);
+  Comm.AllToAll(in,out,words,bytes);
+}
+void CartesianCommunicator::AllToAll(void  *in,void *out,uint64_t words,uint64_t bytes)
+{
+  // MPI is a pain and uses "int" arguments
+  // 64*64*64*128*16 == 500Million elements of data.
+  // When 24*4 bytes multiples get 50x 10^9 >>> 2x10^9 Y2K bug.
+  // (Turns up on 32^3 x 64 Gparity too)
+  MPI_Datatype object;
+  int iwords; 
+  int ibytes;
+  iwords = words;
+  ibytes = bytes;
+  assert(words == iwords); // safe to cast to int ?
+  assert(bytes == ibytes); // safe to cast to int ?
+  MPI_Type_contiguous(ibytes,MPI_BYTE,&object);
+  MPI_Type_commit(&object);
+  MPI_Alltoall(in,iwords,object,out,iwords,object,communicator);
+  MPI_Type_free(&object);
+}
+#endif
+
+#if defined( GRID_COMMS_MPI) || defined (GRID_COMMS_MPIT) 
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent,int &srank) 
 {
   _ndimension = processors.size();
@@ -176,6 +208,7 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   InitFromMPICommunicator(processors,comm_split);
 }
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // Take an MPI_Comm and self assemble
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -199,7 +232,7 @@ void CartesianCommunicator::InitFromMPICommunicator(const std::vector<int> &proc
   MPI_Cart_coords(communicator,_processor,_ndimension,&_processor_coor[0]);
 
   if ( communicator_base != communicator_world ) {
-    std::cout << "Cartesian communicator created with a non-world communicator"<<std::endl;
+    std::cout << "InitFromMPICommunicator Cartesian communicator created with a non-world communicator"<<std::endl;
     
     std::cout << " new communicator rank "<<_processor<< " coor ["<<_ndimension<<"] ";
     for(int d=0;d<_processors.size();d++){
@@ -211,7 +244,7 @@ void CartesianCommunicator::InitFromMPICommunicator(const std::vector<int> &proc
   int Size;
   MPI_Comm_size(communicator,&Size);
 
-#ifdef GRID_COMMS_MPIT
+#if defined(GRID_COMMS_MPIT) || defined (GRID_COMMS_MPI3)
   communicator_halo.resize (2*_ndimension);
   for(int i=0;i<_ndimension*2;i++){
     MPI_Comm_dup(communicator,&communicator_halo[i]);
@@ -220,7 +253,9 @@ void CartesianCommunicator::InitFromMPICommunicator(const std::vector<int> &proc
   
   assert(Size==_Nprocessors);
 }
+#endif
 
+#if defined( GRID_COMMS_MPI) || defined (GRID_COMMS_MPIT) 
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors) 
 {
   InitFromMPICommunicator(processors,communicator_world);
@@ -229,10 +264,10 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
 #endif
 
 #if !defined( GRID_COMMS_MPI3) 
-
 int                      CartesianCommunicator::NodeCount(void)    { return ProcessorCount();};
 int                      CartesianCommunicator::RankCount(void)    { return ProcessorCount();};
 #endif
+
 #if !defined( GRID_COMMS_MPI3) && !defined (GRID_COMMS_MPIT)
 double CartesianCommunicator::StencilSendToRecvFrom( void *xmit,
 						     int xmit_to_rank,
