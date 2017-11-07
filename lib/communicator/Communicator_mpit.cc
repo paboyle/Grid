@@ -55,10 +55,11 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
 
 CartesianCommunicator::~CartesianCommunicator()
 {
-  if (communicator && !MPI::Is_finalized())
+  int MPI_is_finalised;
+  MPI_Finalized(&MPI_is_finalised);
+  if (communicator && !MPI_is_finalised)
     MPI_Comm_free(&communicator);
 }
-
 
 void CartesianCommunicator::GlobalSum(uint32_t &u){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_SUM,communicator);
