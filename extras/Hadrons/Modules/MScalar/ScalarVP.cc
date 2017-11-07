@@ -173,19 +173,22 @@ void TScalarVP::execute(void)
                                                            + "_diagrams." +
                                               std::to_string(env().getTrajectory());
 
-            CorrWriter *writer_i = new CorrWriter(filename);
-            writer.push_back(writer_i);
-            CorrWriter *writer0_i = new CorrWriter(filename0);
-            writer0.push_back(writer0_i);
-            CorrWriter *writerD_i = new CorrWriter(filenameD);
-            writerD.push_back(writerD_i);
+            if (env().getGrid()->IsBoss())
+            {
+                CorrWriter *writer_i = new CorrWriter(filename);
+                writer.push_back(writer_i);
+                CorrWriter *writer0_i = new CorrWriter(filename0);
+                writer0.push_back(writer0_i);
+                CorrWriter *writerD_i = new CorrWriter(filenameD);
+                writerD.push_back(writerD_i);
 
-            write(*writer[i_p], "charge", q);
-            write(*writer[i_p], "mass", static_cast<TChargedProp *>(env().getModule(par().scalarProp))->par().mass);
-            write(*writer0[i_p], "charge", 0.0);
-            write(*writer0[i_p], "mass", static_cast<TChargedProp *>(env().getModule(par().scalarProp))->par().mass);
-            write(*writerD[i_p], "charge", q);
-            write(*writerD[i_p], "mass", static_cast<TChargedProp *>(env().getModule(par().scalarProp))->par().mass);
+                write(*writer[i_p], "charge", q);
+                write(*writer[i_p], "mass", static_cast<TChargedProp *>(env().getModule(par().scalarProp))->par().mass);
+                write(*writer0[i_p], "charge", 0.0);
+                write(*writer0[i_p], "mass", static_cast<TChargedProp *>(env().getModule(par().scalarProp))->par().mass);
+                write(*writerD[i_p], "charge", q);
+                write(*writerD[i_p], "mass", static_cast<TChargedProp *>(env().getModule(par().scalarProp))->par().mass);
+            }
 
             // Calculate phase factors
             vpPhase = Complex(1.0,0.0);
@@ -231,9 +234,12 @@ void TScalarVP::execute(void)
                     {
                         result[t] = TensorRemove(vecBuf[t]);
                     }
-                    write(*writer0[i_p],
-                          "Pi_"+std::to_string(mu)+"_"+std::to_string(nu),
-                          result);
+                    if (env().getGrid()->IsBoss())
+                    {
+                        write(*writer0[i_p],
+                              "Pi_"+std::to_string(mu)+"_"+std::to_string(nu),
+                              result);
+                    }
                 }
             }
 
@@ -259,9 +265,12 @@ void TScalarVP::execute(void)
                     {
                         result[t] = TensorRemove(vecBuf[t]);
                     }
-                    write(*writerD[i_p],
-                          "Pi_exchange_"+std::to_string(mu)+"_"+std::to_string(nu),
-                          result);
+                    if (env().getGrid()->IsBoss())
+                    {
+                        write(*writerD[i_p],
+                              "Pi_exchange_"+std::to_string(mu)+"_"+std::to_string(nu),
+                              result);
+                    }
                 }
             }
 
@@ -287,9 +296,12 @@ void TScalarVP::execute(void)
                     {
                         result[t] = TensorRemove(vecBuf[t]);
                     }
-                    write(*writerD[i_p],
-                          "Pi_alpha2_"+std::to_string(mu)+"_"+std::to_string(nu),
-                          result);
+                    if (env().getGrid()->IsBoss())
+                    {
+                        write(*writerD[i_p],
+                              "Pi_alpha2_"+std::to_string(mu)+"_"+std::to_string(nu),
+                              result);
+                    }
                 }
             }
 
@@ -313,9 +325,12 @@ void TScalarVP::execute(void)
                     {
                         result[t] = TensorRemove(vecBuf[t]);
                     }
-                    write(*writerD[i_p],
-                          "Pi_sunset_unshifted_"+std::to_string(mu)+"_"+std::to_string(nu),
-                          result);
+                    if (env().getGrid()->IsBoss())
+                    {
+                        write(*writerD[i_p],
+                              "Pi_sunset_unshifted_"+std::to_string(mu)+"_"+std::to_string(nu),
+                              result);
+                    }
                 }
             }
 
@@ -338,9 +353,12 @@ void TScalarVP::execute(void)
                     {
                         result[t] = TensorRemove(vecBuf[t]);
                     }
-                    write(*writerD[i_p],
-                          "Pi_sunset_shifted_"+std::to_string(mu)+"_"+std::to_string(nu),
-                          result);
+                    if (env().getGrid()->IsBoss())
+                    {
+                        write(*writerD[i_p],
+                              "Pi_sunset_shifted_"+std::to_string(mu)+"_"+std::to_string(nu),
+                              result);
+                    }
                 }
             }
 
@@ -364,9 +382,12 @@ void TScalarVP::execute(void)
                     {
                         result[t] = TensorRemove(vecBuf[t]);
                     }
-                    write(*writerD[i_p],
-                          "Pi_tadpole_unshifted_"+std::to_string(mu)+"_"+std::to_string(nu),
-                          result);
+                    if (env().getGrid()->IsBoss())
+                    {
+                        write(*writerD[i_p],
+                              "Pi_tadpole_unshifted_"+std::to_string(mu)+"_"+std::to_string(nu),
+                              result);
+                    }
                 }
             }
 
@@ -389,9 +410,12 @@ void TScalarVP::execute(void)
                     {
                         result[t] = TensorRemove(vecBuf[t]);
                     }
-                    write(*writerD[i_p],
-                          "Pi_tadpole_shifted_"+std::to_string(mu)+"_"+std::to_string(nu),
-                          result);
+                    if (env().getGrid()->IsBoss())
+                    {
+                        write(*writerD[i_p],
+                              "Pi_tadpole_shifted_"+std::to_string(mu)+"_"+std::to_string(nu),
+                              result);
+                    }
                 }
             }
 
@@ -418,9 +442,12 @@ void TScalarVP::execute(void)
                     {
                         result[t] = TensorRemove(vecBuf[t]);
                     }
-                    write(*writerD[i_p],
-                          "Pi_sourcetadpole_"+std::to_string(mu)+"_"+std::to_string(nu),
-                          result);
+                    if (env().getGrid()->IsBoss())
+                    {
+                        write(*writerD[i_p],
+                              "Pi_sourcetadpole_"+std::to_string(mu)+"_"+std::to_string(nu),
+                              result);
+                    }
                 }
             }
 
@@ -446,9 +473,12 @@ void TScalarVP::execute(void)
                     {
                         result[t] = TensorRemove(vecBuf[t]);
                     }
-                    write(*writerD[i_p],
-                          "Pi_sinktadpole_"+std::to_string(mu)+"_"+std::to_string(nu),
-                          result);
+                    if (env().getGrid()->IsBoss())
+                    {
+                        write(*writerD[i_p],
+                              "Pi_sinktadpole_"+std::to_string(mu)+"_"+std::to_string(nu),
+                              result);
+                    }
                 }
             }
 
@@ -464,9 +494,12 @@ void TScalarVP::execute(void)
                     {
                         result[t] = TensorRemove(vecBuf[t]);
                     }
-                    write(*writer[i_p],
-                          "Pi_"+std::to_string(mu)+"_"+std::to_string(nu),
-                          result);
+                    if (env().getGrid()->IsBoss())
+                    {
+                        write(*writer[i_p],
+                              "Pi_"+std::to_string(mu)+"_"+std::to_string(nu),
+                              result);
+                    }
                 }
             }
         }
@@ -475,9 +508,12 @@ void TScalarVP::execute(void)
     {
         for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
         {
-            delete writer[i_p];
-            delete writer0[i_p];
-            delete writerD[i_p];
+            if (env().getGrid()->IsBoss())
+            {
+                delete writer[i_p];
+                delete writer0[i_p];
+                delete writerD[i_p];
+            }
         }
     }
 }
