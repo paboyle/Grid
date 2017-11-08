@@ -946,6 +946,4 @@ INSTANTIATE_THEM(DomainWallVec5dImplFH);
 INSTANTIATE_THEM(DomainWallVec5dImplDF);
 INSTANTIATE_THEM(ZDomainWallVec5dImplFH);
 INSTANTIATE_THEM(ZDomainWallVec5dImplDF);
-INSTANTIATE_THEM(WilsonTwoIndexAntiSymmetricImplF);
-INSTANTIATE_THEM(WilsonTwoIndexAntiSymmetricImplD);
 }}

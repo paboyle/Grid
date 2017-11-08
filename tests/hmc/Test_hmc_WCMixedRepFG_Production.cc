@@ -140,9 +140,9 @@ int main(int argc, char **argv) {
     typedef PolyakovMod<HMCWrapper::ImplPolicy> PolyakovObs;
     TheHMC.Resources.AddObservable<PolyakovObs>();
   
-    //typedef TopologicalChargeMod<HMCWrapper::ImplPolicy> QObs;
-    //TopologyObsParameters TopParams(Reader);
-    //TheHMC.Resources.AddObservable<QObs>(TopParams);
+    typedef TopologicalChargeMod<HMCWrapper::ImplPolicy> QObs;
+    TopologyObsParameters TopParams(Reader);
+    TheHMC.Resources.AddObservable<QObs>(TopParams);
     //////////////////////////////////////////////
   
     /////////////////////////////////////////////////////////////
