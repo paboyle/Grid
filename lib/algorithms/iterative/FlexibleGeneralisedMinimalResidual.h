@@ -165,16 +165,16 @@ class FlexibleGeneralisedMinimalResidual : public OperatorFunction<Field> {
 
     Field w(src._grid);
     Field r(src._grid);
+    Field z(src._grid);
 
     std::vector<Field> v(RestartLength + 1, src._grid);
-    std::vector<Field> z(RestartLength + 1, src._grid);
 
     MatrixTimer.Start();
-    LinOp.Op(psi, z[0]);
+    LinOp.Op(psi, z);
     MatrixTimer.Stop();
 
     PrecTimer.Start();
-    Preconditioner(z[0], r);
+    Preconditioner(z, r);
     PrecTimer.Stop();
 
     LinalgTimer.Start();
@@ -210,14 +210,14 @@ class FlexibleGeneralisedMinimalResidual : public OperatorFunction<Field> {
     return cp;
   }
 
-  void arnoldiStep(LinearOperatorBase<Field> &LinOp, std::vector<Field> &v, std::vector<Field> &z, Field &w, int iter) {
+  void arnoldiStep(LinearOperatorBase<Field> &LinOp, std::vector<Field> &v, Field &z, Field &w, int iter) {
 
     MatrixTimer.Start();
-    LinOp.Op(v[iter], z[0]);
+    LinOp.Op(v[iter], z);
     MatrixTimer.Stop();
 
     PrecTimer.Start();
-    Preconditioner(z[0], w);
+    Preconditioner(z, w);
     PrecTimer.Stop();
 
     LinalgTimer.Start();
