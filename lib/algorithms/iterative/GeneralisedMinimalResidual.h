@@ -29,23 +29,6 @@ directory
 #ifndef GRID_GENERALISED_MINIMAL_RESIDUAL_H
 #define GRID_GENERALISED_MINIMAL_RESIDUAL_H
 
-// from Y. Saad - Iterative Methods for Sparse Linear Systems, PP 172
-// Compute r0 = b − Ax0 , β := ||r0||2 , and v1 := r0 /β
-// For j = 1, 2, ..., m Do:
-//   Compute wj := Avj
-//   For i = 1, ..., j Do:
-//     hij := (wj , vi)
-//     wj := wj − hij vi
-//   EndDo
-//   hj+1,j = ||wj||2 . If hj+1,j = 0 set m := j and go to HERE
-//   vj+1 = wj /hj+1,j
-// EndDo
-// Define the (m + 1) × m Hessenberg matrix H̄m = {hij}1≤i≤m+1,1≤j≤m. [HERE]
-// Compute ym the minimizer of ||βe1 − H̄m y||2 and xm = x0 + Vm ym.
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// want to solve Ax = b -> A = LinOp, psi = x, b = src
-
 namespace Grid {
 
 template<class Field>
