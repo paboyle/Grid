@@ -267,6 +267,3 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
 };
 }
 #endif
-
-// Possible problems/TODOs for this implementation
-// * correct the stopping criterion
