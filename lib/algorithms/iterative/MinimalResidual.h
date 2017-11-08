@@ -63,8 +63,8 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
     RealD guess = norm2(psi);
     assert(std::isnan(guess) == 0);
 
-    RealD ssq = norm2(src); // flopcount.addSiteFlops(4*Nc*Ns,s); // stands for "source squared"
-    RealD rsd_sq = Tolerance * Tolerance * ssq; // flopcount.addSiteFlops(4*Nc*Ns,s); // stands for "residual squared"
+    RealD ssq = norm2(src); // flopcount.addSiteFlops(4*Nc*Ns,s);
+    RealD rsq = Tolerance * Tolerance * ssq; // flopcount.addSiteFlops(4*Nc*Ns,s);
 
     Linop.Op(psi, Mr); // flopcount.addFlops(M.nFlops());
 
@@ -77,12 +77,12 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
     std::cout << GridLogIterative << std::setprecision(4) << "MinimalResidual:    mp " << d << std::endl;
     std::cout << GridLogIterative << std::setprecision(4) << "MinimalResidual:  cp,r " << cp << std::endl;
 
-    if (cp <= rsd_sq) {
+    if (cp <= rsq) {
       return;
     }
 
     std::cout << GridLogIterative << std::setprecision(4)
-              << "MinimalResidual: k=0 residual " << cp << " target " << rsd_sq << std::endl;
+              << "MinimalResidual: k=0 residual " << cp << " target " << rsq << std::endl;
 
     GridStopWatch LinalgTimer;
     GridStopWatch MatrixTimer;
@@ -115,11 +115,11 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
       LinalgTimer.Stop();
 
       std::cout << GridLogIterative << "MinimalResidual: Iteration " << k
-                << " residual " << cp << " target " << rsd_sq << std::endl;
+                << " residual " << cp << " target " << rsq << std::endl;
       std::cout << GridLogDebug << "a = " << a << " c = " << c << " d = " << d << std::endl;
 
       // Stopping condition
-      if (cp <= rsd_sq) {
+      if (cp <= rsq) {
         SolverTimer.Stop();
 
         Linop.Op(psi, Mr);
