@@ -174,7 +174,7 @@ class FlexibleGeneralisedMinimalResidual : public OperatorFunction<Field> {
     MatrixTimer.Stop();
 
     PrecTimer.Start();
-    Preconditioner(z, r);
+    Preconditioner(z, w);
     PrecTimer.Stop();
 
     LinalgTimer.Start();
