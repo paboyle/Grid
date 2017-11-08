@@ -241,7 +241,7 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
     QrTimer.Stop();
   }
 
-  void computeSolution(std::vector< Field > const &v, Field &psi, int iter) {
+  void computeSolution(std::vector<Field> const &v, Field &psi, int iter) {
 
     CompSolutionTimer.Start();
     for (int i = iter; i >= 0; i--) {
