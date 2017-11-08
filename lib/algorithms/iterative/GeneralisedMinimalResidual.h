@@ -98,7 +98,7 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
 
     RealD cp;
     RealD ssq    = norm2(src);
-    RealD rsd_sq = Tolerance * Tolerance * ssq;
+    RealD rsq = Tolerance * Tolerance * ssq;
 
     Field r(src._grid);
 
@@ -119,10 +119,10 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
     IterationCount = 0;
     for (int k=0; k<MaxIterations; k++) {
 
-      cp = outerLoopBody(LinOp, src, psi, rsd_sq);
+      cp = outerLoopBody(LinOp, src, psi, rsq);
 
       // Stopping condition
-      if (cp <= rsd_sq) {
+      if (cp <= rsq) {
 
         SolverTimer.Stop();
 
@@ -155,7 +155,7 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
       assert(0);
   }
 
-  RealD outerLoopBody(LinearOperatorBase<Field> &LinOp, const Field &src, Field &psi, RealD rsd_sq) {
+  RealD outerLoopBody(LinearOperatorBase<Field> &LinOp, const Field &src, Field &psi, RealD rsq) {
 
     RealD cp = 0;
 
@@ -187,9 +187,9 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
       cp = std::norm(gamma[i+1]);
 
       std::cout << GridLogIterative << "GeneralisedMinimalResidual: Iteration " << IterationCount
-                << " residual " << cp << " target " << rsd_sq << std::endl;
+                << " residual " << cp << " target " << rsq << std::endl;
 
-      if ((i == RestartLength - 1) || (cp <= rsd_sq)) {
+      if ((i == RestartLength - 1) || (cp <= rsq)) {
 
         computeSolution(v, psi, i);
 
