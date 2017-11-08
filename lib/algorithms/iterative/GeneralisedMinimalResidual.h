@@ -247,8 +247,8 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
     for (int i = iter; i >= 0; i--) {
       y[i] = gamma[i];
       for (int k = i + 1; k <= iter; k++)
-        y[i] -= H(k, i) * y[k];
-      y[i] /= H(i, i);
+        y[i] = y[i] - H(k, i) * y[k];
+      y[i] = y[i] / H(i, i);
     }
 
     // TODO: Use axpys or similar for these
