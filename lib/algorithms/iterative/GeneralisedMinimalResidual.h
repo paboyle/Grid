@@ -62,7 +62,6 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
                           // filled in upon completion
 
   GridStopWatch MatrixTimer;
-  GridStopWatch PrecTimer;
   GridStopWatch LinalgTimer;
   GridStopWatch QrTimer;
   GridStopWatch CompSolutionTimer;
@@ -107,7 +106,6 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
     std::cout << GridLogIterative << "GeneralisedMinimalResidual:   src " << ssq   << std::endl;
 
 
-    PrecTimer.Reset();
     MatrixTimer.Reset();
     LinalgTimer.Reset();
     QrTimer.Reset();
@@ -140,7 +138,6 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
 
         std::cout << GridLogMessage << "GeneralisedMinimalResidual Time breakdown" << std::endl;
         std::cout << GridLogMessage << "\tElapsed " << SolverTimer.Elapsed()       << std::endl;
-        std::cout << GridLogMessage << "\tPrecon "  << PrecTimer.Elapsed()         << std::endl;
         std::cout << GridLogMessage << "\tMatrix "  << MatrixTimer.Elapsed()       << std::endl;
         std::cout << GridLogMessage << "\tLinalg "  << LinalgTimer.Elapsed()       << std::endl;
         std::cout << GridLogMessage << "\tQR "      << QrTimer.Elapsed()           << std::endl;
