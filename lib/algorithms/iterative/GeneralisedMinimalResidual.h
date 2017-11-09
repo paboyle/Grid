@@ -115,9 +115,9 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
         RealD true_residual = resnorm / srcnorm;
 
         std::cout << GridLogMessage << "GeneralisedMinimalResidual: Converged on iteration " << IterationCount << std::endl;
-        std::cout << GridLogMessage << "\tComputed residual "                                << sqrt(cp / ssq)       << std::endl;
-        std::cout << GridLogMessage << "\tTrue residual "                                    << true_residual        << std::endl;
-        std::cout << GridLogMessage << "\tTarget "                                           << Tolerance            << std::endl;
+        std::cout << GridLogMessage << "\tComputed residual "                                << sqrt(cp / ssq) << std::endl;
+        std::cout << GridLogMessage << "\tTrue residual "                                    << true_residual  << std::endl;
+        std::cout << GridLogMessage << "\tTarget "                                           << Tolerance      << std::endl;
 
         std::cout << GridLogMessage << "GeneralisedMinimalResidual Time breakdown" << std::endl;
         std::cout << GridLogMessage << "\tElapsed " << SolverTimer.Elapsed()       << std::endl;

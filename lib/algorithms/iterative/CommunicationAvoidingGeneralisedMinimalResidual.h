@@ -56,10 +56,10 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
   std::vector<std::complex<double>> c;
   std::vector<std::complex<double>> s;
 
- CommunicationAvoidingGeneralisedMinimalResidual(RealD   tol,
-                                                 Integer maxit,
-                                                 Integer restart_length,
-                                                 bool    err_on_no_conv = true)
+  CommunicationAvoidingGeneralisedMinimalResidual(RealD   tol,
+                                                  Integer maxit,
+                                                  Integer restart_length,
+                                                  bool    err_on_no_conv = true)
       : Tolerance(tol)
       , MaxIterations(maxit)
       , RestartLength(restart_length)
@@ -115,16 +115,16 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
         RealD true_residual = resnorm / srcnorm;
 
         std::cout << GridLogMessage << "CommunicationAvoidingGeneralisedMinimalResidual: Converged on iteration " << IterationCount << std::endl;
-        std::cout << GridLogMessage << "\tComputed residual "                                << sqrt(cp / ssq)       << std::endl;
-        std::cout << GridLogMessage << "\tTrue residual "                                    << true_residual        << std::endl;
-        std::cout << GridLogMessage << "\tTarget "                                           << Tolerance            << std::endl;
+        std::cout << GridLogMessage << "\tComputed residual "                                                     << sqrt(cp / ssq) << std::endl;
+        std::cout << GridLogMessage << "\tTrue residual "                                                         << true_residual  << std::endl;
+        std::cout << GridLogMessage << "\tTarget "                                                                << Tolerance      << std::endl;
 
         std::cout << GridLogMessage << "CommunicationAvoidingGeneralisedMinimalResidual Time breakdown" << std::endl;
-        std::cout << GridLogMessage << "\tElapsed " << SolverTimer.Elapsed()       << std::endl;
-        std::cout << GridLogMessage << "\tMatrix "  << MatrixTimer.Elapsed()       << std::endl;
-        std::cout << GridLogMessage << "\tLinalg "  << LinalgTimer.Elapsed()       << std::endl;
-        std::cout << GridLogMessage << "\tQR "      << QrTimer.Elapsed()           << std::endl;
-        std::cout << GridLogMessage << "\tCompSol " << CompSolutionTimer.Elapsed() << std::endl;
+        std::cout << GridLogMessage << "\tElapsed " << SolverTimer.Elapsed()                            << std::endl;
+        std::cout << GridLogMessage << "\tMatrix "  << MatrixTimer.Elapsed()                            << std::endl;
+        std::cout << GridLogMessage << "\tLinalg "  << LinalgTimer.Elapsed()                            << std::endl;
+        std::cout << GridLogMessage << "\tQR "      << QrTimer.Elapsed()                                << std::endl;
+        std::cout << GridLogMessage << "\tCompSol " << CompSolutionTimer.Elapsed()                      << std::endl;
         return;
       }
     }
