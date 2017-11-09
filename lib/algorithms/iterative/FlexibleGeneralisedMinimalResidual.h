@@ -29,30 +29,13 @@ directory
 #ifndef GRID_FLEXIBLE_GENERALISED_MINIMAL_RESIDUAL_H
 #define GRID_FLEXIBLE_GENERALISED_MINIMAL_RESIDUAL_H
 
-// from Y. Saad - Iterative Methods for Sparse Linear Systems, PP 172
-// Compute r0 = b − Ax0 , β := ||r0||2 , and v1 := r0 /β
-// For j = 1, 2, ..., m Do:
-//   Compute wj := Avj
-//   For i = 1, ..., j Do:
-//     hij := (wj , vi)
-//     wj := wj − hij vi
-//   EndDo
-//   hj+1,j = ||wj||2 . If hj+1,j = 0 set m := j and go to HERE
-//   vj+1 = wj /hj+1,j
-// EndDo
-// Define the (m + 1) × m Hessenberg matrix H̄m = {hij}1≤i≤m+1,1≤j≤m. [HERE]
-// Compute ym the minimizer of ||βe1 − H̄m y||2 and xm = x0 + Vm ym.
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// want to solve Ax = b -> A = LinOp, psi = x, b = src
-
 namespace Grid {
 
 template<class Field>
 class FlexibleGeneralisedMinimalResidual : public OperatorFunction<Field> {
  public:
   bool ErrorOnNoConverge; // Throw an assert when FGMRES fails to converge,
-                          // defaults to True.
+                          // defaults to true
 
   RealD   Tolerance;
 
@@ -264,8 +247,6 @@ class FlexibleGeneralisedMinimalResidual : public OperatorFunction<Field> {
       y[i] = y[i] / H(i, i);
     }
 
-    // TODO: Use axpys or similar for these
-    // TODO: Fix the condition
     if (true) {
       for (int i = 0; i <= iter; i++)
         psi = psi + v[i] * y[i];
@@ -280,5 +261,3 @@ class FlexibleGeneralisedMinimalResidual : public OperatorFunction<Field> {
 };
 }
 #endif
-
-// I took the version with p->kind == left from the WMG code base here. TODO: recheck if we need left or right

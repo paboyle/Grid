@@ -35,7 +35,7 @@ template<class Field>
 class GeneralisedMinimalResidual : public OperatorFunction<Field> {
  public:
   bool ErrorOnNoConverge; // Throw an assert when GMRES fails to converge,
-                          // defaults to True.
+                          // defaults to true
 
   RealD   Tolerance;
 
@@ -231,8 +231,6 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
       y[i] = y[i] / H(i, i);
     }
 
-    // TODO: Use axpys or similar for these
-    // TODO: Fix the condition
     if (true) {
       for (int i = 0; i <= iter; i++)
         psi = psi + v[i] * y[i];
