@@ -59,11 +59,11 @@ class FlexibleGeneralisedMinimalResidual : public OperatorFunction<Field> {
 
   LinearFunction<Field> &Preconditioner;
 
- FlexibleGeneralisedMinimalResidual(RealD   tol,
-                                    Integer maxit,
-                                    LinearFunction<Field> &Prec,
-                                    Integer restart_length,
-                                    bool    err_on_no_conv = true)
+  FlexibleGeneralisedMinimalResidual(RealD   tol,
+                                     Integer maxit,
+                                     LinearFunction<Field> &Prec,
+                                     Integer restart_length,
+                                     bool    err_on_no_conv = true)
       : Tolerance(tol)
       , MaxIterations(maxit)
       , RestartLength(restart_length)

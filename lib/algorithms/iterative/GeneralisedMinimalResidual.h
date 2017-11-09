@@ -79,7 +79,7 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
     assert(std::isnan(guess) == 0);
 
     RealD cp;
-    RealD ssq    = norm2(src);
+    RealD ssq = norm2(src);
     RealD rsq = Tolerance * Tolerance * ssq;
 
     Field r(src._grid);
