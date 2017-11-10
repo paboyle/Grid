@@ -88,7 +88,6 @@ class GeneralisedMinimalResidual : public OperatorFunction<Field> {
     std::cout << GridLogIterative << "GeneralisedMinimalResidual: guess " << guess << std::endl;
     std::cout << GridLogIterative << "GeneralisedMinimalResidual:   src " << ssq   << std::endl;
 
-
     MatrixTimer.Reset();
     LinalgTimer.Reset();
     QrTimer.Reset();

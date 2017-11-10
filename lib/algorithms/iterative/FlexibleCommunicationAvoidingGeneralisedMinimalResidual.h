@@ -93,7 +93,6 @@ class FlexibleCommunicationAvoidingGeneralisedMinimalResidual : public OperatorF
     std::cout << GridLogIterative << "FlexibleCommunicationAvoidingGeneralisedMinimalResidual: guess " << guess << std::endl;
     std::cout << GridLogIterative << "FlexibleCommunicationAvoidingGeneralisedMinimalResidual:   src " << ssq   << std::endl;
 
-
     PrecTimer.Reset();
     MatrixTimer.Reset();
     LinalgTimer.Reset();

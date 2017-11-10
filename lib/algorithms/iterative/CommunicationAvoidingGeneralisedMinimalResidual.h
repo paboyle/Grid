@@ -88,7 +88,6 @@ class CommunicationAvoidingGeneralisedMinimalResidual : public OperatorFunction<
     std::cout << GridLogIterative << "CommunicationAvoidingGeneralisedMinimalResidual: guess " << guess << std::endl;
     std::cout << GridLogIterative << "CommunicationAvoidingGeneralisedMinimalResidual:   src " << ssq   << std::endl;
 
-
     MatrixTimer.Reset();
     LinalgTimer.Reset();
     QrTimer.Reset();

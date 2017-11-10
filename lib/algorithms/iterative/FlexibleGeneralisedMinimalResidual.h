@@ -93,7 +93,6 @@ class FlexibleGeneralisedMinimalResidual : public OperatorFunction<Field> {
     std::cout << GridLogIterative << "FlexibleGeneralisedMinimalResidual: guess " << guess << std::endl;
     std::cout << GridLogIterative << "FlexibleGeneralisedMinimalResidual:   src " << ssq   << std::endl;
 
-
     PrecTimer.Reset();
     MatrixTimer.Reset();
     LinalgTimer.Reset();
