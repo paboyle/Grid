@@ -38,11 +38,11 @@ int main (int argc, char ** argv)
 
   std::cout<<GridLogMessage << "Testing Remez"<<std::endl;
 
-  double     lo=0.01;
-  double     hi=1.0;
+  double     lo=1.0e-3;
+  double     hi=5.0;
   int precision=64;
-  int    degree=10;
-  AlgRemez remez(0.001,1.0,precision);
+  int    degree=16;
+  AlgRemez remez(lo,hi,precision);
 
   ////////////////////////////////////////
   // sqrt and inverse sqrt
@@ -50,21 +50,50 @@ int main (int argc, char ** argv)
 
   std::cout<<GridLogMessage << "Generating degree "<<degree<<" for x^(1/2)"<<std::endl;
   remez.generateApprox(degree,1,2);
-  MultiShiftFunction Sqrt(remez,1.0,false);
-  MultiShiftFunction InvSqrt(remez,1.0,true);
+  MultiShiftFunction Root2(remez,1.0,false);
+  MultiShiftFunction InvRoot2(remez,1.0,true);
 
 
   std::cout<<GridLogMessage << "Generating degree "<<degree<<" for x^(1/4)"<<std::endl;
   remez.generateApprox(degree,1,4);
-  MultiShiftFunction SqrtSqrt(remez,1.0,false);
-  MultiShiftFunction InvSqrtSqrt(remez,1.0,true);
+  MultiShiftFunction Root4(remez,1.0,false);
+  MultiShiftFunction InvRoot4(remez,1.0,true);
 
+  std::cout<<GridLogMessage << "Generating degree "<<degree<<" for x^(1/8)"<<std::endl;
+  remez.generateApprox(degree,1,8);
+  MultiShiftFunction Root8(remez,1.0,false);
+  MultiShiftFunction InvRoot8(remez,1.0,true);
+
+  std::cout<<GridLogMessage << "Generating degree "<<degree<<" for x^(1/16)"<<std::endl;
+  remez.generateApprox(degree,1,16);
+  MultiShiftFunction Root16(remez,1.0,false);
+  MultiShiftFunction InvRoot16(remez,1.0,true);
+
+  std::cout<<GridLogMessage << "Generating degree "<<degree<<" for x^(1/32)"<<std::endl;
+  remez.generateApprox(degree,1,32);
+  MultiShiftFunction Root32(remez,1.0,false);
+  MultiShiftFunction InvRoot32(remez,1.0,true);
   
-  ofstream gnuplot(std::string("Sqrt.gnu"),std::ios::out|std::ios::trunc);
-  Sqrt.gnuplot(gnuplot);
+  ofstream gnuplot(std::string("Root2.gnu"),std::ios::out|std::ios::trunc);
+  Root2.gnuplot(gnuplot);
 
-  ofstream gnuplot_inv(std::string("InvSqrt.gnu"),std::ios::out|std::ios::trunc);
-  InvSqrt.gnuplot(gnuplot);
+  ofstream gnuplot_i2(std::string("InvRoot2.gnu"),std::ios::out|std::ios::trunc);
+  InvRoot2.gnuplot(gnuplot_i2);
+
+  ofstream gnuplot_i4(std::string("InvRoot4.gnu"),std::ios::out|std::ios::trunc);
+  InvRoot4.gnuplot(gnuplot_i4);
+
+  ofstream gnuplot_i8(std::string("InvRoot8.gnu"),std::ios::out|std::ios::trunc);
+  InvRoot8.gnuplot(gnuplot_i8);
+
+  ofstream gnuplot_i16(std::string("InvRoot16.gnu"),std::ios::out|std::ios::trunc);
+  InvRoot16.gnuplot(gnuplot_i16);
+
+  ofstream gnuplot_i32(std::string("InvRoot32.gnu"),std::ios::out|std::ios::trunc);
+  InvRoot32.gnuplot(gnuplot_i32);
+
+
+
 
   double x=0.6789;
   double sx=std::sqrt(x);
@@ -72,10 +101,10 @@ int main (int argc, char ** argv)
   double isx=1.0/sx;
   double issx=1.0/ssx;
 
-  double asx  =Sqrt.approx(x);
-  double assx =SqrtSqrt.approx(x);
-  double aisx =InvSqrt.approx(x);
-  double aissx=InvSqrtSqrt.approx(x);
+  double asx  =Root2.approx(x);
+  double assx =Root4.approx(x);
+  double aisx =InvRoot2.approx(x);
+  double aissx=InvRoot4.approx(x);
 
   std::cout<<GridLogMessage << "x^(1/2) : "<<sx<<" "<<asx<<std::endl;
   std::cout<<GridLogMessage << "x^(1/4) : "<<ssx<<" "<<assx<<std::endl;

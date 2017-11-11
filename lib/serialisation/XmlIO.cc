@@ -70,8 +70,8 @@ XmlReader::XmlReader(const char *xmlstring,string toplev) : fileName_("")
   pugi::xml_parse_result result;
   result = doc_.load_string(xmlstring);
   if ( !result ) {
-    cerr << "XML error description: " << result.description() << "\n";
-    cerr << "XML error offset     : " << result.offset        << "\n";
+    cerr << "XML error description (from char *): " << result.description() << "\nXML\n"<< xmlstring << "\n";
+    cerr << "XML error offset      (from char *) " << result.offset         << "\nXML\n"<< xmlstring <<"\n";
     abort();
   }
   if ( toplev == std::string("") ) {
@@ -87,8 +87,8 @@ XmlReader::XmlReader(const string &fileName,string toplev) : fileName_(fileName)
   pugi::xml_parse_result result;
   result = doc_.load_file(fileName_.c_str());
   if ( !result ) {
-    cerr << "XML error description: " << result.description() << "\n";
-    cerr << "XML error offset     : " << result.offset        << "\n";
+    cerr << "XML error description: " << result.description() <<" "<< fileName_ <<"\n";
+    cerr << "XML error offset     : " << result.offset        <<" "<< fileName_ <<"\n";
     abort();
   }
   if ( toplev == std::string("") ) {
