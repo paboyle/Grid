@@ -44,18 +44,18 @@ public:
   INHERIT_FIELD_TYPES(Impl);
 
 private:
-  RealD              mass_square;
-  RealD              lambda;
-  RealD              g;
-  const unsigned int N = Impl::Group::Dimension; 
+  RealD mass_square;
+  RealD lambda;
+  RealD g;
+  const unsigned int N = Impl::Group::Dimension;
 
   typedef typename Field::vector_object vobj;
   typedef CartesianStencil<vobj, vobj> Stencil;
 
   SimpleCompressor<vobj> compressor;
   int npoint = 2 * Ndim;
-  std::vector<int> directions;    //    = {0,1,2,3,0,1,2,3};  // forcing 4 dimensions
-  std::vector<int> displacements; //  = {1,1,1,1, -1,-1,-1,-1};
+  std::vector<int> directions;    //
+  std::vector<int> displacements; //
 
 public:
   ScalarInteractionAction(RealD ms, RealD l, RealD gval) : mass_square(ms), lambda(l), g(gval), displacements(2 * Ndim, 0), directions(2 * Ndim, 0)
@@ -124,39 +124,55 @@ public:
     }
     // NB the trace in the algebra is normalised to 1/2
     // minus sign coming from the antihermitian fields
-    return -(TensorRemove(sum(trace(action)))).real()*N/g;
+    return -(TensorRemove(sum(trace(action)))).real() * N / g;
   };
 
   virtual void deriv(const Field &p, Field &force)
   {
+    double t0 = usecond();
     assert(p._grid->Nd() == Ndim);
     force = (2. * Ndim + mass_square) * p - 2. * lambda * p * p * p;
+    double interm_t = usecond();
+
     // move this outside
     static Stencil phiStencil(p._grid, npoint, 0, directions, displacements);
-    phiStencil.HaloExchange(p, compressor);
 
+    phiStencil.HaloExchange(p, compressor);
+    double halo_t = usecond();
+    int chunk = 128;
     //for (int mu = 0; mu < QCD::Nd; mu++) force -= Cshift(p, mu, -1) + Cshift(p, mu, 1);
+
+    // inverting the order of the loops slows down the code(! g++ 7)
+    // cannot try to reduce the number of  force writes by factor npoint...
+    // use cache blocking
     for (int point = 0; point < npoint; point++)
     {
-      parallel_for(int i = 0; i < p._grid->oSites(); i++)
-      {
-        const vobj *temp;
-        vobj temp2;
+
+#pragma omp parallel 
+{
         int permute_type;
         StencilEntry *SE;
+        const vobj *temp;
+
+#pragma omp for schedule(static, chunk)
+      for (int i = 0; i < p._grid->oSites(); i++)
+      {
         SE = phiStencil.GetEntry(permute_type, point, i);
+        // prefetch next p?
 
         if (SE->_is_local)
         {
           temp = &p._odata[SE->_offset];
+      
           if (SE->_permute)
           {
+            vobj temp2;
             permute(temp2, *temp, permute_type);
             force._odata[i] -= temp2;
           }
           else
           {
-            force._odata[i] -= *temp;
+            force._odata[i] -= *temp; // slow part. Dominated by this read/write (BW)
           }
         }
         else
@@ -164,9 +180,27 @@ public:
           force._odata[i] -= phiStencil.CommBuf()[SE->_offset];
         }
       }
+
     }
-    force *= N/g;
   }
+  force *= N / g;
+
+  double t1 = usecond();
+  double total_time = (t1 - t0) / 1e6;
+  double interm_time = (interm_t - t0) / 1e6;
+  double halo_time = (halo_t - interm_t) / 1e6;
+  double stencil_time = (t1 - halo_t) / 1e6;
+  std::cout << GridLogIntegrator << "Total time for force computation (s)       : " << total_time << std::endl;
+  std::cout << GridLogIntegrator << "Intermediate time for force computation (s): " << interm_time << std::endl;
+  std::cout << GridLogIntegrator << "Halo time in force computation (s)         : " << halo_time << std::endl;
+  std::cout << GridLogIntegrator << "Stencil time in force computation (s)      : " << stencil_time << std::endl;
+  double flops = p._grid->gSites() * (14 * N * N * N + 18 * N * N + 2);
+  double flops_no_stencil = p._grid->gSites() * (14 * N * N * N + 6 * N * N + 2);
+  double Gflops = flops / (total_time * 1e9);
+  double Gflops_no_stencil = flops_no_stencil / (interm_time * 1e9);
+  std::cout << GridLogIntegrator << "Flops: " << flops << "  - Gflop/s : " << Gflops << std::endl;
+  std::cout << GridLogIntegrator << "Flops NS: " << flops_no_stencil << "  - Gflop/s NS: " << Gflops_no_stencil << std::endl;
+}
 };
 
 } // namespace Grid

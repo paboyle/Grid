@@ -168,7 +168,11 @@ class ScalarImplTypes {
     static inline void update_field(Field &P, Field &U, double ep)
     {
 #ifndef USE_FFT_ACCELERATION
+      double t0=usecond(); 
       U += P * ep;
+      double t1=usecond();
+      double total_time = (t1-t0)/1e6;
+      std::cout << GridLogIntegrator << "Total time for updating field (s)       : " << total_time << std::endl; 
 #else
       // FFT transform P(x) -> P(p)
       // divide by (M^2+p^2)  M external parameter (how to pass?)
