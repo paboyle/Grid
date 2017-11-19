@@ -95,7 +95,7 @@ int main (int argc, char ** argv)
   FermionField tmp(FGrid);
 
   for(int s=0;s<nrhs;s++) result[s]=zero;
-#undef LEXICO_TEST
+#define LEXICO_TEST
 #ifdef LEXICO_TEST
   {
     LatticeFermion lex(FGrid);  lex = zero;
@@ -121,7 +121,7 @@ int main (int argc, char ** argv)
     random(pRNG5,src[s]);
     tmp = 100.0*s;
     src[s] = (src[s] * 0.1) + tmp;
-    std::cout << " src ]"<<s<<"] "<<norm2(src[s])<<std::endl;
+    std::cout << " src ["<<s<<"] "<<norm2(src[s])<<std::endl;
   }
 #endif
 
@@ -189,7 +189,7 @@ int main (int argc, char ** argv)
 
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOp(Ddwf);
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOpCk(Dchk);
-  ConjugateGradient<FermionField> CG((1.0e-5),10000);
+  ConjugateGradient<FermionField> CG((1.0e-2),10000);
   s_res = zero;
   CG(HermOp,s_src,s_res);
 
