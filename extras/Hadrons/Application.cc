@@ -316,3 +316,17 @@ void Application::configLoop(void)
     LOG(Message) << BIG_SEP << " End of measurement " << BIG_SEP << std::endl;
     env().freeAll();
 }
+
+// memory profile //////////////////////////////////////////////////////////////
+void Application::memoryProfile(void)
+{
+    auto graph   = env().makeModuleGraph();
+    auto program = graph.topoSort();
+    bool msg;
+    
+    msg = HadronsLogMessage.isActive();
+    HadronsLogMessage.Active(false);
+    
+    HadronsLogMessage.Active(msg);
+}
+

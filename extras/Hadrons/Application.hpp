@@ -101,6 +101,8 @@ public:
 private:
     // environment shortcut
     Environment & env(void) const;
+    // memory profile
+    void memoryProfile(void);
 private:
     long unsigned int         locVol_;
     std::string               parameterFileName_{""};

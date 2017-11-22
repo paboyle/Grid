@@ -83,12 +83,12 @@ private:
         std::string               name;
         ModPt                     data{nullptr};
         std::vector<unsigned int> input;
+        size_t                    maxAllocated;
     };
     struct ObjInfo
     {
         Size                    size{0};
         unsigned int            Ls{0};
-        bool                    isRegistered{false};
         const std::type_info    *type{nullptr};
         std::string             name;
         int                     module{-1};
@@ -99,6 +99,8 @@ public:
     // dry run
     void                    dryRun(const bool isDry);
     bool                    isDryRun(void) const;
+    void                    memoryProfile(const bool doMemoryProfile);
+    bool                    doMemoryProfile(void) const;
     // trajectory number
     void                    setTrajectory(const unsigned int traj);
     unsigned int            getTrajectory(void) const;
@@ -143,32 +145,17 @@ public:
     // general memory management
     void                    addObject(const std::string name,
                                       const int moduleAddress = -1);
-    void                    registerObject(const unsigned int address,
-                                           const unsigned int size,
-                                           const unsigned int Ls = 1);
-    void                    registerObject(const std::string name,
-                                           const unsigned int size,
-                                           const unsigned int Ls = 1);
+    template <typename T, typename ... Ts>
+    void                    createObject(const std::string name,
+                                         const unsigned int Ls,
+                                         Ts ... args);
     template <typename T>
-    unsigned int            lattice4dSize(void) const;
-    template <typename T>
-    void                    registerLattice(const unsigned int address,
-                                            const unsigned int Ls = 1);
-    template <typename T>
-    void                    registerLattice(const std::string name,
-                                            const unsigned int Ls = 1);
-    template <typename T>
-    void                    setObject(const unsigned int address, T *object);
-    template <typename T>
-    void                    setObject(const std::string name, T *object);
+    void                    createLattice(const std::string name,
+                                          const unsigned int Ls = 1);
     template <typename T>
     T *                     getObject(const unsigned int address) const;
     template <typename T>
     T *                     getObject(const std::string name) const;
-    template <typename T>
-    T *                     createLattice(const unsigned int address);
-    template <typename T>
-    T *                     createLattice(const std::string name);
     unsigned int            getObjectAddress(const std::string name) const;
     std::string             getObjectName(const unsigned int address) const;
     std::string             getObjectType(const unsigned int address) const;
@@ -181,8 +168,6 @@ public:
     unsigned int            getObjectLs(const std::string name) const;
     bool                    hasObject(const unsigned int address) const;
     bool                    hasObject(const std::string name) const;
-    bool                    hasRegisteredObject(const unsigned int address) const;
-    bool                    hasRegisteredObject(const std::string name) const;
     bool                    hasCreatedObject(const unsigned int address) const;
     bool                    hasCreatedObject(const std::string name) const;
     bool                    isObject5d(const unsigned int address) const;
@@ -204,7 +189,7 @@ public:
     void                    printContent(void);
 private:
     // general
-    bool                                   dryRun_{false};
+    bool                                   dryRun_{false}, memoryProfile_{false};
     unsigned int                           traj_, locVol_;
     // grids
     std::vector<int>                       dim_;
@@ -296,56 +281,45 @@ M * Environment::getModule(const std::string name) const
     return getModule<M>(getModuleAddress(name));
 }
 
-template <typename T>
-unsigned int Environment::lattice4dSize(void) const
+template <typename T, typename ... Ts>
+void Environment::createObject(const std::string name, const unsigned int Ls,
+                               Ts ... args)
 {
-    return sizeof(typename T::vector_object)/getGrid()->Nsimd();
-}
-
-template <typename T>
-void Environment::registerLattice(const unsigned int address,
-                                  const unsigned int Ls)
-{
-    createGrid(Ls);
-    registerObject(address, Ls*lattice4dSize<T>(), Ls);
-}
-
-template <typename T>
-void Environment::registerLattice(const std::string name, const unsigned int Ls)
-{
-    createGrid(Ls);
-    registerObject(name, Ls*lattice4dSize<T>(), Ls);
-}
-
-template <typename T>
-void Environment::setObject(const unsigned int address, T *object)
-{
-    if (hasRegisteredObject(address))
+    if (!hasObject(name))
     {
-        object_[address].data.reset(new Holder<T>(object));
-        object_[address].type = &typeid(T);
+        addObject(name);
     }
-    else if (hasObject(address))
+    
+    unsigned int address = getObjectAddress(name);
+    
+    if (!object_[address].data)
     {
-        HADRON_ERROR("object with address " + std::to_string(address) +
-                     " exists but is not registered");
+        MemoryStats  memStats;
+
+        MemoryProfiler::stats = &memStats;
+        object_[address].Ls   = Ls;
+        object_[address].data.reset(new Holder<T>(new T(args...)));
+        object_[address].size = memStats.totalAllocated;
+        object_[address].type = &typeid(T);
     }
     else
     {
-        HADRON_ERROR("no object with address " + std::to_string(address));
+        HADRON_ERROR("object '" + name + "' already allocated");
     }
 }
 
 template <typename T>
-void Environment::setObject(const std::string name, T *object)
+void Environment::createLattice(const std::string name, const unsigned int Ls)
 {
-    setObject(getObjectAddress(name), object);
+    GridCartesian *g = getGrid(Ls);
+    
+    createObject<T>(name, Ls, g);
 }
 
 template <typename T>
 T * Environment::getObject(const unsigned int address) const
 {
-    if (hasRegisteredObject(address))
+    if (hasObject(address))
     {
         if (auto h = dynamic_cast<Holder<T> *>(object_[address].data.get()))
         {
@@ -357,11 +331,6 @@ T * Environment::getObject(const unsigned int address) const
                          " does not have type '" + typeName(&typeid(T)) +
                          "' (has type '" + getObjectType(address) + "')");
         }
-    }
-    else if (hasObject(address))
-    {
-        HADRON_ERROR("object with address " + std::to_string(address) +
-                     " exists but is not registered");
     }
     else
     {
@@ -376,25 +345,9 @@ T * Environment::getObject(const std::string name) const
 }
 
 template <typename T>
-T * Environment::createLattice(const unsigned int address)
-{
-    GridCartesian *g = getGrid(getObjectLs(address));
-    
-    setObject(address, new T(g));
-    
-    return getObject<T>(address);
-}
-
-template <typename T>
-T * Environment::createLattice(const std::string name)
-{
-    return createLattice<T>(getObjectAddress(name));
-}
-
-template <typename T>
 bool Environment::isObjectOfType(const unsigned int address) const
 {
-    if (hasRegisteredObject(address))
+    if (hasObject(address))
     {
         if (auto h = dynamic_cast<Holder<T> *>(object_[address].data.get()))
         {
@@ -404,11 +357,6 @@ bool Environment::isObjectOfType(const unsigned int address) const
         {
             return false;
         }
-    }
-    else if (hasObject(address))
-    {
-        HADRON_ERROR("object with address " + std::to_string(address) +
-                     " exists but is not registered");
     }
     else
     {

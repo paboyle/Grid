@@ -88,6 +88,12 @@ static ns##mod##ModuleRegistrar ns##mod##ModuleRegistrarInstance;
 
 #define ARG(...) __VA_ARGS__
 
+#define mCreateObj(type, name, Ls, ...)\
+env().template createObject<type>(name, Ls, __VA_ARGS__)
+
+#define mGetObj(type, name)\
+*env().template getObject<type>(name)
+
 /******************************************************************************
  *                            Module class                                    *
  ******************************************************************************/

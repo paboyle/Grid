@@ -67,6 +67,16 @@ bool Environment::isDryRun(void) const
     return dryRun_;
 }
 
+void Environment::memoryProfile(const bool doMemoryProfile)
+{
+    memoryProfile_ = doMemoryProfile;
+}
+
+bool Environment::doMemoryProfile(void) const
+{
+    return memoryProfile_;
+}
+
 // trajectory number ///////////////////////////////////////////////////////////
 void Environment::setTrajectory(const unsigned int traj)
 {
@@ -349,10 +359,10 @@ Environment::executeProgram(const std::vector<unsigned int> &p)
         auto it = std::find_if(p.rbegin(), p.rend(), pred);
         if (it != p.rend())
         {
-            freeProg[p.rend() - it - 1].insert(i);
+            freeProg[std::distance(p.rend(), it) - 1].insert(i);
         }
     }
-    
+
     // program execution
     for (unsigned int i = 0; i < p.size(); ++i)
     {
@@ -448,6 +458,7 @@ void Environment::addObject(const std::string name, const int moduleAddress)
         
         info.name   = name;
         info.module = moduleAddress;
+        info.data   = nullptr;
         object_.push_back(std::move(info));
         objectAddress_[name] = static_cast<unsigned int>(object_.size() - 1);
     }
@@ -455,39 +466,6 @@ void Environment::addObject(const std::string name, const int moduleAddress)
     {
         HADRON_ERROR("object '" + name + "' already exists");
     }
-}
-
-void Environment::registerObject(const unsigned int address,
-                                 const unsigned int size, const unsigned int Ls)
-{
-    if (!hasRegisteredObject(address))
-    {
-        if (hasObject(address))
-        {
-            object_[address].size         = size;
-            object_[address].Ls           = Ls;
-            object_[address].isRegistered = true;
-        }
-        else
-        {
-            HADRON_ERROR("no object with address " + std::to_string(address));
-        }
-    }
-    else
-    {
-        HADRON_ERROR("object with address " + std::to_string(address)
-                     + " already registered");
-    }
-}
-
-void Environment::registerObject(const std::string name,
-                                 const unsigned int size, const unsigned int Ls)
-{
-    if (!hasObject(name))
-    {
-        addObject(name);
-    }
-    registerObject(getObjectAddress(name), size, Ls);
 }
 
 unsigned int Environment::getObjectAddress(const std::string name) const
@@ -516,7 +494,7 @@ std::string Environment::getObjectName(const unsigned int address) const
 
 std::string Environment::getObjectType(const unsigned int address) const
 {
-    if (hasRegisteredObject(address))
+    if (hasObject(address))
     {
         if (object_[address].type)
         {
@@ -526,11 +504,6 @@ std::string Environment::getObjectType(const unsigned int address) const
         {
             return "<no type>";
         }
-    }
-    else if (hasObject(address))
-    {
-        HADRON_ERROR("object with address " + std::to_string(address)
-                     + " exists but is not registered");
     }
     else
     {
@@ -545,14 +518,9 @@ std::string Environment::getObjectType(const std::string name) const
 
 Environment::Size Environment::getObjectSize(const unsigned int address) const
 {
-    if (hasRegisteredObject(address))
+    if (hasObject(address))
     {
         return object_[address].size;
-    }
-    else if (hasObject(address))
-    {
-        HADRON_ERROR("object with address " + std::to_string(address)
-                     + " exists but is not registered");
     }
     else
     {
@@ -584,14 +552,9 @@ unsigned int Environment::getObjectModule(const std::string name) const
 
 unsigned int Environment::getObjectLs(const unsigned int address) const
 {
-    if (hasRegisteredObject(address))
+    if (hasObject(address))
     {
         return object_[address].Ls;
-    }
-    else if (hasObject(address))
-    {
-        HADRON_ERROR("object with address " + std::to_string(address)
-                     + " exists but is not registered");
     }
     else
     {
@@ -614,30 +577,6 @@ bool Environment::hasObject(const std::string name) const
     auto it = objectAddress_.find(name);
     
     return ((it != objectAddress_.end()) and hasObject(it->second));
-}
-
-bool Environment::hasRegisteredObject(const unsigned int address) const
-{
-    if (hasObject(address))
-    {
-        return object_[address].isRegistered;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-bool Environment::hasRegisteredObject(const std::string name) const
-{
-    if (hasObject(name))
-    {
-        return hasRegisteredObject(getObjectAddress(name));
-    }
-    else
-    {
-        return false;
-    }
 }
 
 bool Environment::hasCreatedObject(const unsigned int address) const
@@ -680,10 +619,7 @@ Environment::Size Environment::getTotalSize(void) const
     
     for (auto &o: object_)
     {
-        if (o.isRegistered)
-        {
-            size += o.size;
-        }
+        size += o.size;
     }
     
     return size;
@@ -738,7 +674,7 @@ bool Environment::freeObject(const unsigned int address)
 {
     if (!hasOwners(address))
     {
-        if (!isDryRun() and object_[address].isRegistered)
+        if (!isDryRun())
         {
             LOG(Message) << "Destroying object '" << object_[address].name
                          << "'" << std::endl;
@@ -747,10 +683,8 @@ bool Environment::freeObject(const unsigned int address)
         {
             object_[p].owners.erase(address);
         }
-        object_[address].size         = 0;
-        object_[address].Ls           = 0;
-        object_[address].isRegistered = false;
-        object_[address].type         = nullptr;
+        object_[address].size = 0;
+        object_[address].type = nullptr;
         object_[address].owners.clear();
         object_[address].properties.clear();
         object_[address].data.reset(nullptr);

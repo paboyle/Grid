@@ -103,35 +103,28 @@ std::vector<std::string> TDWF<FImpl>::getOutput(void)
 template <typename FImpl>
 void TDWF<FImpl>::setup(void)
 {
-    unsigned int size;
-    
-    size = 2*env().template lattice4dSize<typename FImpl::DoubledGaugeField>();
-    env().registerObject(getName(), size, par().Ls);
-}
-
-// execution ///////////////////////////////////////////////////////////////////
-template <typename FImpl>
-void TDWF<FImpl>::execute(void)
-{
     LOG(Message) << "Setting up domain wall fermion matrix with m= "
                  << par().mass << ", M5= " << par().M5 << " and Ls= "
                  << par().Ls << " using gauge field '" << par().gauge << "'"
                  << std::endl;
-    LOG(Message) << "Fermion boundary conditions: " << par().boundary 
+    LOG(Message) << "Fermion boundary conditions: " << par().boundary
                  << std::endl;
     env().createGrid(par().Ls);
-    auto &U      = *env().template getObject<LatticeGaugeField>(par().gauge);
+    auto &U      = mGetObj(LatticeGaugeField, par().gauge);
     auto &g4     = *env().getGrid();
     auto &grb4   = *env().getRbGrid();
     auto &g5     = *env().getGrid(par().Ls);
     auto &grb5   = *env().getRbGrid(par().Ls);
     std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
     typename DomainWallFermion<FImpl>::ImplParams implParams(boundary);
-    FMat *fMatPt = new DomainWallFermion<FImpl>(U, g5, grb5, g4, grb4,
-                                                par().mass, par().M5,
-                                                implParams);
-    env().setObject(getName(), fMatPt);
+    mCreateObj(DomainWallFermion<FImpl>, getName(), par().Ls,
+               U, g5, grb5, g4, grb4, par().mass, par().M5, implParams);
 }
+
+// execution ///////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TDWF<FImpl>::execute(void)
+{}
 
 END_MODULE_NAMESPACE
 

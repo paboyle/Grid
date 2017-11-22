@@ -100,17 +100,12 @@ std::vector<std::string> TRBPrecCG<FImpl>::getOutput(void)
 template <typename FImpl>
 void TRBPrecCG<FImpl>::setup(void)
 {
-    auto Ls = env().getObjectLs(par().action);
-    
-    env().registerObject(getName(), 0, Ls);
-    env().addOwnership(getName(), par().action);
-}
+    LOG(Message) << "setting up Schur red-black preconditioned CG for"
+                 << " action '" << par().action << "' with residual "
+                 << par().residual << std::endl;
 
-// execution ///////////////////////////////////////////////////////////////////
-template <typename FImpl>
-void TRBPrecCG<FImpl>::execute(void)
-{
-    auto &mat   = *(env().template getObject<FMat>(par().action));
+    auto Ls     = env().getObjectLs(par().action);
+    auto &mat   = mGetObj(FMat, par().action);
     auto solver = [&mat, this](FermionField &sol, const FermionField &source)
     {
         ConjugateGradient<FermionField>           cg(par().residual, 10000);
@@ -118,12 +113,14 @@ void TRBPrecCG<FImpl>::execute(void)
         
         schurSolver(mat, source, sol);
     };
-    
-    LOG(Message) << "setting up Schur red-black preconditioned CG for"
-                 << " action '" << par().action << "' with residual "
-                 << par().residual << std::endl;
-    env().setObject(getName(), new SolverFn(solver));
+    mCreateObj(SolverFn, getName(), Ls, solver);
+    env().addOwnership(getName(), par().action);
 }
+
+// execution ///////////////////////////////////////////////////////////////////
+template <typename FImpl>
+void TRBPrecCG<FImpl>::execute(void)
+{}
 
 END_MODULE_NAMESPACE
 
