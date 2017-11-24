@@ -699,42 +699,43 @@ int main (int argc, char ** argv)
   params.steps = 1;
 
   const int Ls=params.Ls;
+  const int ds=params.domainsize;
 
-  GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
-  GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
+  GridCartesian         * FGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
+  GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(FGrid);
 
   ///////////////////////////////////////////////////
   // Construct a coarsened grid; utility for this?
   ///////////////////////////////////////////////////
-  std::vector<int> block ({4,4,4,4});
-  const int nbasis= 32;
+  std::vector<int> blockSize({2,2,2,2});
+  const int nbasis= 16;
 
-  std::vector<int> clatt = GridDefaultLatt();
-  for(int d=0;d<clatt.size();d++){
-    clatt[d] = clatt[d]/block[d];
+  std::vector<int> cLattSize = GridDefaultLatt();
+  for(int d=0;d<cLattSize.size();d++){
+    cLattSize[d] = cLattSize[d]/blockSize[d];
   }
-  GridCartesian *Coarse4d =  SpaceTimeGrid::makeFourDimGrid(clatt, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());;
+  GridCartesian *CGrid =  SpaceTimeGrid::makeFourDimGrid(cLattSize, GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());;
 
   std::vector<int> seedsFine({1,2,3,4});
   std::vector<int> seedsCoarse({5,6,7,8});
 
-  GridParallelRNG          pRNGFine(UGrid);      pRNGFine.SeedFixedIntegers(seedsFine);
-  GridParallelRNG          pRNGCoarse(Coarse4d); pRNGCoarse.SeedFixedIntegers(seedsCoarse);
+  GridParallelRNG pRNGFine(FGrid);   pRNGFine.SeedFixedIntegers(seedsFine);
+  GridParallelRNG pRNGCoarse(CGrid); pRNGCoarse.SeedFixedIntegers(seedsCoarse);
 
   Gamma g5(Gamma::Algebra::Gamma5);
 
-  LatticeFermion    src(UGrid); gaussian(pRNGFine,src);// src=src+g5*src;
-  LatticeFermion result(UGrid); result=zero;
-  LatticeFermion    ref(UGrid); ref=zero;
-  LatticeFermion    tmp(UGrid);
-  LatticeFermion    err(UGrid);
-  LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNGFine,Umu);
-  LatticeGaugeField UmuDD(UGrid); 
-  LatticeColourMatrix U(UGrid);
-  LatticeColourMatrix zz(UGrid);
+  LatticeFermion    src(FGrid); gaussian(pRNGFine,src);// src=src+g5*src;
+  LatticeFermion result(FGrid); result=zero;
+  LatticeFermion    ref(FGrid); ref=zero;
+  LatticeFermion    tmp(FGrid);
+  LatticeFermion    err(FGrid);
+  LatticeGaugeField Umu(FGrid); SU3::HotConfiguration(pRNGFine,Umu);
+  LatticeGaugeField UmuDD(FGrid);
+  LatticeColourMatrix U(FGrid);
+  LatticeColourMatrix zz(FGrid);
 
-  if ( params.domaindecompose ) { 
-    Lattice<iScalar<vInteger> > coor(UGrid);
+  if ( params.domaindecompose ) {
+    Lattice<iScalar<vInteger> > coor(FGrid);
     zz=zero;
     for(int mu=0;mu<Nd;mu++){
       LatticeCoordinate(coor,mu);
@@ -747,10 +748,9 @@ int main (int argc, char ** argv)
   }
 
   RealD mass=params.mq;
-  RealD M5=1.8;
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
-  std::cout<<GridLogMessage << "Hello "<< std::endl;
+  std::cout<<GridLogMessage << "Params: "<< std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
 
   std::cout << params << std::endl;
@@ -759,8 +759,8 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Building the wilson operator" <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   
-  WilsonFermionR Dw(Umu,*UGrid,*UrbGrid,mass);
-  WilsonFermionR DwDD(UmuDD,*UGrid,*UrbGrid,mass);
+  WilsonFermionR Dw(Umu,*FGrid,*FrbGrid,mass);
+  WilsonFermionR DwDD(UmuDD,*FGrid,*FrbGrid,mass);
 
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis>              Subspace;
   typedef CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis>          CoarseOperator;
@@ -770,36 +770,72 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Calling Aggregation class to build subspace" <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
 
-  Subspace Aggregates(Coarse4d,UGrid);
+  MdagMLinearOperator<WilsonFermionR,LatticeFermion> HermOp(Dw);
+  Subspace Aggregates(CGrid,FGrid,0);
   assert ( (nbasis & 0x1)==0);
   int nb=nbasis/2;
   std::cout<<GridLogMessage << " nbasis/2 = "<<nb<<std::endl;
 
-  Aggregates.CreateSubspaceRandom(pRNGFine);
+  Aggregates.CreateSubspaceRandom(pRNGFine); // creates subspace randomly and orthogonalizes it
 
   for(int n=0;n<nb;n++){
-    G5R5(Aggregates.subspace[n+nb],Aggregates.subspace[n]);
+    Aggregates.subspace[n+nb] = g5 * Aggregates.subspace[n]; // multiply with g5 normally instead of G5R5
     std::cout<<GridLogMessage<<n<<" subspace "<<norm2(Aggregates.subspace[n+nb])<<" "<<norm2(Aggregates.subspace[n]) <<std::endl;
   }
   for(int n=0;n<nbasis;n++){
     std::cout<<GridLogMessage << "vec["<<n<<"] = "<<norm2(Aggregates.subspace[n])  <<std::endl;
   }
 
+  result=zero;
+
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Building coarse representation of Dirac operator" <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
 
-  CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LDOp(*Coarse4d);
-  // LDOp.CoarsenOperator(UGrid,Dw,Aggregates); // problem with this line
+  Gamma5HermitianLinearOperator<WilsonFermionR,LatticeFermion> Blah(Dw);
+  Gamma5HermitianLinearOperator<WilsonFermionR,LatticeFermion> BlahDD(DwDD);
+  CoarsenedMatrix<vSpinColourVector,vTComplex,nbasis> LDOp(*CGrid);
+  LDOp.CoarsenOperator(FGrid,Blah,Aggregates); // problem with this line since it enforces hermiticity
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Testing some coarse space solvers  " <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
 
-  CoarseVector c_src (Coarse4d);
-  CoarseVector c_res (Coarse4d);
+  CoarseVector c_src (CGrid);
+  CoarseVector c_res (CGrid);
   gaussian(pRNGCoarse,c_src);
   c_res=zero;
+
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Solving posdef-CG on coarse space "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+
+  // MdagMLinearOperator<CoarseOperator,CoarseVector> PosdefLdop(LDOp);
+  // ConjugateGradient<CoarseVector> CG(1.0e-6,100000);
+  // //  CG(PosdefLdop,c_src,c_res);
+
+  // //  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  // //  std::cout<<GridLogMessage << "Solving indef-MCR on coarse space "<< std::endl;
+  // //  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  // //  HermitianLinearOperator<CoarseOperator,CoarseVector> HermIndefLdop(LDOp);
+  // //  ConjugateResidual<CoarseVector> MCR(1.0e-6,100000);
+  // //MCR(HermIndefLdop,c_src,c_res);
+
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+  std::cout<<GridLogMessage << "Building deflation preconditioner "<< std::endl;
+  std::cout<<GridLogMessage << "**************************************************"<< std::endl;
+
+  MultiGridPreconditioner <vSpinColourVector,vTComplex,nbasis,WilsonFermionR> Precon  (Aggregates, LDOp,
+                                                                                           Blah,Dw,
+                                                                                           BlahDD,DwDD);
+
+  MultiGridPreconditioner <vSpinColourVector,vTComplex,nbasis,WilsonFermionR> PreconDD(Aggregates, LDOp,
+                                                                                           Blah,Dw,
+                                                                                           BlahDD,DwDD);
+  // MultiGridPreconditioner(Aggregates &Agg, CoarseOperator &Coarse,
+  //                         FineOperator &Fine,Matrix &FineMatrix,
+  //                         FineOperator &Smooth,Matrix &SmootherMatrix)
+  TrivialPrecon<LatticeFermion> simple;
 
   Grid_finalize();
 }
