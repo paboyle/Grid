@@ -317,11 +317,23 @@ namespace Grid {
       }
       virtual  RealD Mpc      (const Field &in, Field &out) {
 	Field tmp(in._grid);
+	Field tmp2(in._grid);
+
+	_Mat.Mooee(in,out);
+	_Mat.Mooee(out,tmp);
+
+	_Mat.Meooe(in,out);
+	_Mat.Meooe(out,tmp2);
+
+	return axpy_norm(out,-1.0,tmp2,tmp);
+#if 0
+	//... much prefer conventional Schur norm
 	_Mat.Meooe(in,tmp);
 	_Mat.MooeeInv(tmp,out);
 	_Mat.Meooe(out,tmp);
 	_Mat.Mooee(in,out);
         return axpy_norm(out,-1.0,tmp,out);
+#endif
       }
       virtual  RealD MpcDag   (const Field &in, Field &out){
 	return Mpc(in,out);

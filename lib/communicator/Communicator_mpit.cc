@@ -55,10 +55,15 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
 
 CartesianCommunicator::~CartesianCommunicator()
 {
-  if (communicator && !MPI::Is_finalized())
+  int MPI_is_finalised;
+  MPI_Finalized(&MPI_is_finalised);
+  if (communicator && !MPI_is_finalised){
     MPI_Comm_free(&communicator);
+    for(int i=0;i<  communicator_halo.size();i++){
+      MPI_Comm_free(&communicator_halo[i]);
+    }
+  }  
 }
-
 
 void CartesianCommunicator::GlobalSum(uint32_t &u){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_SUM,communicator);
@@ -241,7 +246,7 @@ void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsReque
 { 
   int nreq=waitall.size();
   MPI_Waitall(nreq, &waitall[0], MPI_STATUSES_IGNORE);
-};
+}
 double CartesianCommunicator::StencilSendToRecvFrom(void *xmit,
 						    int xmit_to_rank,
 						    void *recv,

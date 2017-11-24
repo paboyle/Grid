@@ -158,7 +158,7 @@ class CartesianCommunicator {
   virtual ~CartesianCommunicator();
 
  private:
-#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPIT) 
+#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPIT)  || defined (GRID_COMMS_MPI3) 
   ////////////////////////////////////////////////
   // Private initialise from an MPI communicator
   // Can use after an MPI_Comm_split, but hidden from user so private

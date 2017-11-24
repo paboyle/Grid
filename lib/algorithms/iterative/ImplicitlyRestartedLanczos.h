@@ -168,8 +168,8 @@ void basisDeflate(const std::vector<Field> &_v,const std::vector<RealD>& eval,co
 template<class Field> class ImplicitlyRestartedLanczosTester 
 {
  public:
-  virtual int TestConvergence(int j,RealD resid,Field &evec, RealD &eval,RealD evalMaxApprox);
-  virtual int ReconstructEval(int j,RealD resid,Field &evec, RealD &eval,RealD evalMaxApprox);
+  virtual int TestConvergence(int j,RealD resid,Field &evec, RealD &eval,RealD evalMaxApprox)=0;
+  virtual int ReconstructEval(int j,RealD resid,Field &evec, RealD &eval,RealD evalMaxApprox)=0;
 };
 
 enum IRLdiagonalisation { 
