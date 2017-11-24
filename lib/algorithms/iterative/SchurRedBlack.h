@@ -123,11 +123,14 @@ namespace Grid {
       Field   tmp(grid);
       Field  Mtmp(grid);
       Field resid(fgrid);
-
+      
+      std::cout << GridLogMessage << " SchurRedBlackStaggeredSolve " <<std::endl;
       pickCheckerboard(Even,src_e,in);
       pickCheckerboard(Odd ,src_o,in);
       pickCheckerboard(Even,sol_e,out);
       pickCheckerboard(Odd ,sol_o,out);
+
+      std::cout << GridLogMessage << " SchurRedBlackStaggeredSolve checkerboards picked" <<std::endl;
     
       /////////////////////////////////////////////////////
       // src_o = (source_o - Moe MeeInv source_e)
@@ -144,6 +147,7 @@ namespace Grid {
       //////////////////////////////////////////////////////////////
       std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver calling the Mpc solver" <<std::endl;
       _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
+      std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver called  the Mpc solver" <<std::endl;
 
       ///////////////////////////////////////////////////
       // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
@@ -152,15 +156,16 @@ namespace Grid {
       src_e = src_e-tmp;               assert(  src_e.checkerboard ==Even);
       _Matrix.MooeeInv(src_e,sol_e);   assert(  sol_e.checkerboard ==Even);
      
+      std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver reconstructed other CB" <<std::endl;
       setCheckerboard(out,sol_e); assert(  sol_e.checkerboard ==Even);
       setCheckerboard(out,sol_o); assert(  sol_o.checkerboard ==Odd );
+      std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver inserted solution" <<std::endl;
 
       // Verify the unprec residual
       _Matrix.M(out,resid); 
       resid = resid-in;
       RealD ns = norm2(in);
       RealD nr = norm2(resid);
-
       std::cout<<GridLogMessage << "SchurRedBlackStaggered solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
     }     
   };
