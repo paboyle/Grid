@@ -694,30 +694,6 @@ void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
 ////////////////////////////////////////////////////////////////////////////////
 // Communicate between grids
 ////////////////////////////////////////////////////////////////////////////////
-//
-// All to all plan
-//
-// Subvolume on fine grid is v.    Vectors a,b,c,d 
-//
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-// SIMPLEST CASE:
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Mesh of nodes (2) ; subdivide to  1 subdivisions
-//
-// Lex ord:   
-//          N0 va0 vb0  N1 va1 vb1 
-//
-// For each dimension do an all to all
-//
-// full AllToAll(0)
-//          N0 va0 va1    N1 vb0 vb1
-//
-// REARRANGE
-//          N0 va01       N1 vb01
-//
-// Must also rearrange data to get into the NEW lex order of grid at each stage. Some kind of "insert/extract".
-// NB: Easiest to programme if keep in lex order.
-//
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 // SIMPLE CASE:
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -751,75 +727,16 @@ void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
 //
 // Must also rearrange data to get into the NEW lex order of grid at each stage. Some kind of "insert/extract".
 // NB: Easiest to programme if keep in lex order.
-//
-/////////////////////////////////////////////////////////
 /*
-
-[0,0,0,0,0]	S {V<4>{V<3>{(0,0),(0,0),(0,0)},V<3>{(0,0),(0,0),(0,0)},V<3>{(0,0),(0,0),(0,0)},V<3>{(0,0),(0,0),(0,0)}}}
-[0,0,0,0,1]	S {V<4>{V<3>{(1,0),(1,0),(1,0)},V<3>{(1,0),(1,0),(1,0)},V<3>{(1,0),(1,0),(1,0)},V<3>{(1,0),(1,0),(1,0)}}}
-[0,0,0,0,2]	S {V<4>{V<3>{(4,0),(4,0),(4,0)},V<3>{(4,0),(4,0),(4,0)},V<3>{(4,0),(4,0),(4,0)},V<3>{(4,0),(4,0),(4,0)}}}
-[0,0,0,0,3]	S {V<4>{V<3>{(5,0),(5,0),(5,0)},V<3>{(5,0),(5,0),(5,0)},V<3>{(5,0),(5,0),(5,0)},V<3>{(5,0),(5,0),(5,0)}}}
-[0,0,0,0,4]	S {V<4>{V<3>{(2,0),(2,0),(2,0)},V<3>{(2,0),(2,0),(2,0)},V<3>{(2,0),(2,0),(2,0)},V<3>{(2,0),(2,0),(2,0)}}}
-[0,0,0,0,5]	S {V<4>{V<3>{(3,0),(3,0),(3,0)},V<3>{(3,0),(3,0),(3,0)},V<3>{(3,0),(3,0),(3,0)},V<3>{(3,0),(3,0),(3,0)}}}
-[0,0,0,0,6]	S {V<4>{V<3>{(6,0),(6,0),(6,0)},V<3>{(6,0),(6,0),(6,0)},V<3>{(6,0),(6,0),(6,0)},V<3>{(6,0),(6,0),(6,0)}}}
-[0,0,0,0,7]	S {V<4>{V<3>{(7,0),(7,0),(7,0)},V<3>{(7,0),(7,0),(7,0)},V<3>{(7,0),(7,0),(7,0)},V<3>{(7,0),(7,0),(7,0)}}}
-[0,0,0,0,8]	S {V<4>{V<3>{(8,0),(8,0),(8,0)},V<3>{(8,0),(8,0),(8,0)},V<3>{(8,0),(8,0),(8,0)},V<3>{(8,0),(8,0),(8,0)}}}
-[0,0,0,0,9]	S {V<4>{V<3>{(9,0),(9,0),(9,0)},V<3>{(9,0),(9,0),(9,0)},V<3>{(9,0),(9,0),(9,0)},V<3>{(9,0),(9,0),(9,0)}}}
-[0,0,0,0,10]	S {V<4>{V<3>{(12,0),(12,0),(12,0)},V<3>{(12,0),(12,0),(12,0)},V<3>{(12,0),(12,0),(12,0)},V<3>{(12,0),(12,0),(12,0)}}}
-[0,0,0,0,11]	S {V<4>{V<3>{(13,0),(13,0),(13,0)},V<3>{(13,0),(13,0),(13,0)},V<3>{(13,0),(13,0),(13,0)},V<3>{(13,0),(13,0),(13,0)}}}
-[0,0,0,0,12]	S {V<4>{V<3>{(10,0),(10,0),(10,0)},V<3>{(10,0),(10,0),(10,0)},V<3>{(10,0),(10,0),(10,0)},V<3>{(10,0),(10,0),(10,0)}}}
-[0,0,0,0,13]	S {V<4>{V<3>{(11,0),(11,0),(11,0)},V<3>{(11,0),(11,0),(11,0)},V<3>{(11,0),(11,0),(11,0)},V<3>{(11,0),(11,0),(11,0)}}}
-[0,0,0,0,14]	S {V<4>{V<3>{(14,0),(14,0),(14,0)},V<3>{(14,0),(14,0),(14,0)},V<3>{(14,0),(14,0),(14,0)},V<3>{(14,0),(14,0),(14,0)}}}
-[0,0,0,0,15]	S {V<4>{V<3>{(15,0),(15,0),(15,0)},V<3>{(15,0),(15,0),(15,0)},V<3>{(15,0),(15,0),(15,0)},V<3>{(15,0),(15,0),(15,0)}}}
-
-
-Process decomp
-[A(0 1) A(2 3) B(0 1) B(2 3)] [ A(4 5) A(6 7) B(4 5) B(6 7)] [ A(8 9) A(10 11) B(8 9) B(10 11)] [A(12 13) A(14 15) B(12 13) B(14 15)]
-
-A2A(Full)
- -- divides M*fL into fP segments of size M*fL/fP = fL/sP
- -- total is fP * fL/sP = M * fL
- A(0 1) A(4 5)  A(8 9)   A(12 13)   
- A(2 3) A(6 7)  A(10 11) A(14 15) 
- B(0 1) B(4 5)  B(8 9)   B(12 13) 
- B(2 3) B(6 7)  B(10 11) B(14 15)
-
-
-A2A(Split)    
- A(0 1)   A(4 5)   A(2 3)   A(6 7) 
- A(8 9)   A(12 13) A(10 11) A(14 15) 
- B(0 1)   B(2 3)   B(4 5)   B(6 7) 
- B(8 9)   B(10 11) B(12 13) B(14 15) 
-
---------------------
---  General case 
---------------------
-G global lattice
-fP - procs 
-sP - Procs in split grid
-M  - subdivisions/vectors   - M*sP = fP      ** constraint 1
-fL = G/fP  per node (full)
-sL = G/sP  per node split
-
-[ G * M ] total = G*fP/sP.
-[ Subdivide fL*M by fP => fL *M / fP = fL/fP *fP/sP = fL/sP ]
---------------------
---  1st A2A chunk is fL*M/fP = G/fP *fP/sP /fP = fL/sP
---  Let cL = fL/sP chunk.         ( Divide into fP/sP = M chunks )
-
---    node 0     1st cL of node 0,1,... fP-1  ; vector 0
---    node 1     2nd cL of node 0,1,... fP-1   
---    node 2     3nd cL of node 0,1,... fP-1
---    node 3     4th cL of node 0,1,... fP-1
-... when node > sP get vector 1 etc... 
-
--- 2nd A2A (over sP nodes; subdivide the fP into sP chunks of M)
---    node 0     1st cL of node 0M..(1M-1); 2nd cL of node 0M..(1M-1))..
---    node 1     1st cL of node 1M..(2M-1); 2nd cL of node 1M..(2M-1)..
---    node 2     1st cL of node 2M..(3M-1); 2nd cL of node 2M..(3M-1)..
---    node 3     1st cL of node 3M..(3M-1); 2nd cL of node 2M..(3M-1)..
---
--- Insert correctly
+ *  Let chunk = (fvol*nvec)/sP be size of a chunk.         ( Divide lexico vol * nvec into fP/sP = M chunks )
+ *  
+ *  2nd A2A (over sP nodes; subdivide the fP into sP chunks of M)
+ * 
+ *     node 0     1st chunk of node 0M..(1M-1); 2nd chunk of node 0M..(1M-1)..   data chunk x M x sP = fL / sP * M * sP = fL * M growth
+ *     node 1     1st chunk of node 1M..(2M-1); 2nd chunk of node 1M..(2M-1)..
+ *     node 2     1st chunk of node 2M..(3M-1); 2nd chunk of node 2M..(3M-1)..
+ *     node 3     1st chunk of node 3M..(3M-1); 2nd chunk of node 2M..(3M-1)..
+ *  etc...
  */
 template<class Vobj>
 void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
@@ -879,7 +796,6 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 
   int nvec = nvector; // Counts down to 1 as we collapse dims
   std::vector<int> ldims = full_grid->_ldimensions;
-  std::vector<int> lcoor(ndim);
 
   for(int d=ndim-1;d>=0;d--){
 
@@ -891,73 +807,40 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 	split_grid->AllToAll(d,alldata,tmpdata);
       }
 
-      /*
---  Let chunk = (fL*nvec)/sP chunk.         ( Divide into fP/sP = M chunks )
--- 
--- 2nd A2A (over sP nodes; subdivide the fP into sP chunks of M)
---
---    node 0     1st chunk of node 0M..(1M-1); 2nd chunk of node 0M..(1M-1)..   data chunk x M x sP = fL / sP * M * sP = fL * M growth
---    node 1     1st chunk of node 1M..(2M-1); 2nd chunk of node 1M..(2M-1)..
---    node 2     1st chunk of node 2M..(3M-1); 2nd chunk of node 2M..(3M-1)..
---    node 3     1st chunk of node 3M..(3M-1); 2nd chunk of node 2M..(3M-1)..
---
---    Loop over c = 0..chunk-1
---    Loop over n = 0..M
---    Loop over j = 0..sP    
---                                 total chunk*M*sP = fL/sP*fP/sP*sP = G/sP = sL
---    csite = (c+m*chunk)%
---    split into m*chunk+o = lsite*nvec/fP
--- Must turn to vec, rsite,
-      */
-
       auto rdims = ldims; 
-      int      M = ratio[d];
-      nvec      /= M;       // Reduce nvec by subdivision factor
-      rdims[d]  *= M;       // increase local dims by same factor
+      auto     M = ratio[d];
       auto rsites= lsites*M;// increases rsites by M
+      nvec      /= M;       // Reduce nvec by subdivision factor
+      rdims[d]  *= M;       // increase local dim by same factor
 
       int sP =   split_grid->_processors[d];
       int fP =    full_grid->_processors[d];
 
       int fvol   = lsites;
-      int svol   = rsites;
-      int chunk  = (nvec*fvol)/sP;   
-      int cL     = (nvec*ldims[d])/sP;   
+      
+      int chunk  = (nvec*fvol)/sP;          assert(chunk*sP == nvec*fvol);
 
-      for(int c=0;c<chunk;c++){
-
-	int cs = c % fvol;
-	int cv = c / fvol;
-
-	Lexicographic::CoorFromIndex(lcoor, cs, ldims);	  
-
+      // Loop over reordered data post A2A
+      parallel_for(int c=0;c<chunk;c++){
 	for(int m=0;m<M;m++){
 	  for(int s=0;s<sP;s++){
+	    
+	    // addressing; use lexico
+	    int lex_r;
+	    uint64_t lex_c        = c+chunk*m+chunk*M*s;
+	    uint64_t lex_fvol_vec = c+chunk*s;
+	    uint64_t lex_fvol     = lex_fvol_vec%fvol;
+	    uint64_t lex_vec      = lex_fvol_vec/fvol;
 
-	    auto rcoor = lcoor;	 
-	    rcoor[d] = lcoor[d]+m*sP*cL+s*cL;
-	    int rsite; 
-	    Lexicographic::IndexFromCoor(rcoor, rsite, rdims);	  
-	    rsite += cv * rsites;
+	    // which node sets an adder to the coordinate
+	    std::vector<int> coor(ndim);
+	    Lexicographic::CoorFromIndex(coor, lex_fvol, ldims);	  
+	    coor[d] += m*ldims[d];
+	    Lexicographic::IndexFromCoor(coor, lex_r, rdims);	  
+	    lex_r += lex_vec * rsites;
 
-	    alldata[rsite] = tmpdata[c+chunk*m+chunk*M*s];
-
-	    if ( 0 
-                 &&(lcoor[0]==0)
-		 &&(lcoor[1]==0)
-		 &&(lcoor[2]==0)
-		 &&(lcoor[3]==0) ) {
-
-	      std::cout << GridLogMessage << " SPLIT rcoor[d] = "<<rcoor[d]<<std::endl;
-	      std::cout << GridLogMessage << " SPLIT lcoor[d] = "<<lcoor[d]<<std::endl;
-	      std::cout << GridLogMessage << " SPLIT ldims[d] = "<<ldims[d]<<std::endl;
-	      std::cout << GridLogMessage << " SPLIT cL    = "<<cL<<std::endl;
-	      std::cout << GridLogMessage << " SPLIT m     = "<<m<<std::endl;
-	      std::cout << GridLogMessage << " SPLIT s     = "<<s<<std::endl;
-	      std::cout << GridLogMessage << " SPLIT s*M*cL= "<<s*M*cL<<std::endl;
-	      std::cout << GridLogMessage << " SPLIT m*ldims[d]= "<<m*cL<<std::endl;
-	      std::cout << GridLogMessage << " SPLIT (0,0,0,0," <<rcoor[d]<<") s "<<s<<" m "<<m<<" "<<tmpdata[c+chunk*m+chunk*M*s]<<" rsite "<<rsite<<std::endl;
-	    }
+	    // LexicoFind coordinate & vector number within split lattice
+	    alldata[lex_r] = tmpdata[lex_c];
 
 	  }
 	}
@@ -1035,8 +918,6 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
   /////////////////////////////////////////////////////////////////
   // Start from split grid and work towards full grid
   /////////////////////////////////////////////////////////////////
-  std::vector<int> lcoor(ndim);
-  std::vector<int> rcoor(ndim);
 
   int nvec = 1;
   uint64_t rsites        = split_grid->lSites();
@@ -1046,77 +927,52 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 
     if ( ratio[d] != 1 ) {
 
-      {
-	int sP =   split_grid->_processors[d];
-	int fP =    full_grid->_processors[d];
+      auto     M = ratio[d];
 
-	int      M = ratio[d];
-	auto ldims = rdims;  ldims[d]  /= M;  // Decrease local dims by same factor
-	auto lsites= rsites/M;                // Decreases rsites by M
-
-	int fvol   = lsites;
-	int svol   = rsites;
-	int chunk  = (nvec*fvol)/sP;   
-	int cL     = (nvec*ldims[d])/sP;   
+      int sP =   split_grid->_processors[d];
+      int fP =    full_grid->_processors[d];
+      
+      auto ldims = rdims;  ldims[d]  /= M;  // Decrease local dims by same factor
+      auto lsites= rsites/M;                // Decreases rsites by M
+      
+      int fvol   = lsites;
+      int chunk  = (nvec*fvol)/sP;          assert(chunk*sP == nvec*fvol);
 	
+      {
+	// Loop over reordered data post A2A
 	for(int c=0;c<chunk;c++){
-	  
-	  int cs = c % fvol;
-	  int cv = c / fvol;
-	  
-	  Lexicographic::CoorFromIndex(lcoor, cs, ldims);	  
-	  
 	  for(int m=0;m<M;m++){
 	    for(int s=0;s<sP;s++){
 	      
-	      assert(d<rcoor.size());
-	      rcoor = lcoor;	 
-	      rcoor[d] = lcoor[d]+m*sP*cL+s*cL;
-	      int rsite; 
-	      Lexicographic::IndexFromCoor(rcoor, rsite, rdims);	  
-	      rsite += cv * rsites;
-
-	      if ( c+chunk*m+chunk*M*s >= tmpdata.size() ) {
-
-		std::cout << "c "<<c<<" m "<<m<<" s "<<s <<" chunk "<<chunk <<" M " <<M <<std::endl;
-		std::cout << "sum "<< c+chunk*m+chunk*M*s<<" tmpdata.size() " <<tmpdata.size()<<std::endl;
-
-	      }
-	      assert(c+chunk*m+chunk*M*s < tmpdata.size());
-	      assert(rsite < alldata.size());
-	      tmpdata[c+chunk*m+chunk*M*s] = alldata[rsite];
+	      // addressing; use lexico
+	      int lex_r;
+	      uint64_t lex_c = c+chunk*m+chunk*M*s;
+	      uint64_t lex_fvol_vec = c+chunk*s;
+	      uint64_t lex_fvol     = lex_fvol_vec%fvol;
+	      uint64_t lex_vec      = lex_fvol_vec/fvol;
 	      
-	      if ( 0
-		   &&(lcoor[0]==0)
-		   &&(lcoor[1]==0)
-		   &&(lcoor[2]==0)
-		   &&(lcoor[3]==0) ) {
-		
-		std::cout << GridLogMessage << " UNSPLIT rcoor[d] = "<<rcoor[d]<<std::endl;
-		std::cout << GridLogMessage << " UNSPLIT lcoor[d] = "<<lcoor[d]<<std::endl;
-		std::cout << GridLogMessage << " UNSPLIT ldims[d] = "<<ldims[d]<<std::endl;
-		std::cout << GridLogMessage << " UNSPLIT cL    = "<<cL<<std::endl;
-		std::cout << GridLogMessage << " UNSPLIT m     = "<<m<<std::endl;
-		std::cout << GridLogMessage << " UNSPLIT s     = "<<s<<std::endl;
-		std::cout << GridLogMessage << " UNSPLIT s*M*cL= "<<s*M*cL<<std::endl;
-		std::cout << GridLogMessage << " UNSPLIT m*ldims[d]= "<<m*cL<<std::endl;
-		std::cout << GridLogMessage << " UNSPLIT (0,0,0,0," <<rcoor[d]<<") s "<<s<<" m "<<m<<" "<<tmpdata[c+chunk*m+chunk*M*s]<<" rsite "<<rsite<<std::endl;
-	      }
+	      // which node sets an adder to the coordinate
+	      std::vector<int> coor(ndim);
+	      Lexicographic::CoorFromIndex(coor, lex_fvol, ldims);	  
+	      coor[d] += m*ldims[d];
+	      Lexicographic::IndexFromCoor(coor, lex_r, rdims);	  
+	      lex_r += lex_vec * rsites;
 	      
+	      // LexicoFind coordinate & vector number within split lattice
+	      tmpdata[lex_c] = alldata[lex_r];
 	    }
 	  }
 	}
-
-	if ( split_grid->_processors[d] > 1 ) {
-	  split_grid->AllToAll(d,tmpdata,alldata);
-	  tmpdata=alldata;
-	}
-	full_grid ->AllToAll(d,tmpdata,alldata);
-	
-	rdims[d]/= M;
-	rsites  /= M;
-	nvec    *= M;       // Increase nvec by subdivision factor
       }
+
+      if ( split_grid->_processors[d] > 1 ) {
+	split_grid->AllToAll(d,tmpdata,alldata);
+	tmpdata=alldata;
+      }
+      full_grid ->AllToAll(d,tmpdata,alldata);
+      rdims[d]/= M;
+      rsites  /= M;
+      nvec    *= M;       // Increase nvec by subdivision factor
     }
   }
 
@@ -1129,7 +985,6 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
     }
     vectorizeFromLexOrdArray(scalardata,full[v]);    
   }
-
 }
 
 }
