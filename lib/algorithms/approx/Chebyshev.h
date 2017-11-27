@@ -84,7 +84,8 @@ namespace Grid {
   public:
     void csv(std::ostream &out){
 	RealD diff = hi-lo;
-      for (RealD x=lo-0.2*diff; x<hi+0.2*diff; x+=(hi-lo)/1000) {
+      //for (RealD x=lo-0.2*diff; x<hi+0.2*diff; x+=(hi-lo)/1000) {
+      for (RealD x=lo-0.2*diff; x<hi+0.2*diff; x+=diff/1000.0) { // ypj [note] divide by float
 	RealD f = approx(x);
 	out<< x<<" "<<f<<std::endl;
       }
@@ -115,7 +116,10 @@ namespace Grid {
       
       if(order < 2) exit(-1);
       Coeffs.resize(order);
-      Coeffs.assign(0.,order);
+      //Coeffs.assign(0.,order);  
+      // ypj [note] Does it mean 0 initiallization? 
+      // Then, arguments of the assign() have to be swapped:
+      Coeffs.assign(order,0.);  
       Coeffs[order-1] = 1.;
     };
 

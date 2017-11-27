@@ -51,7 +51,9 @@ int main (int argc, char ** argv)
   std::vector<int> seeds5({5,6,7,8});
   GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
-  GridParallelRNG          RNG5rb(FrbGrid);  RNG5.SeedFixedIntegers(seeds5);
+  //GridParallelRNG          RNG5rb(FrbGrid);  RNG5.SeedFixedIntegers(seeds5); 
+  // ypj [note] why seed RNG5 again? bug? In this case, run with a default seed().
+  GridParallelRNG          RNG5rb(FrbGrid);  //RNG5rb.SeedFixedIntegers(seeds5);
 
   LatticeGaugeField Umu(UGrid); 
   SU3::HotConfiguration(RNG4, Umu);
@@ -76,13 +78,15 @@ int main (int argc, char ** argv)
 //  SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
 
   const int Nstop = 30;
-  const int Nk = 40;
-  const int Np = 40;
+  const int Nk = 60;
+  const int Np = 60;
   const int Nm = Nk+Np;
   const int MaxIt= 10000;
   RealD resid = 1.0e-8;
 
-  std::vector<double> Coeffs { 0.,-1.};
+  //std::vector<double> Coeffs { 0.,-1.}; 
+  // ypj [note] this may not be supported by some compilers
+  std::vector<double> Coeffs({ 0.,1.}); 
   Polynomial<FermionField> PolyX(Coeffs);
   Chebyshev<FermionField> Cheb(0.2,5.,11);
 //  ChebyshevLanczos<LatticeFermion> Cheb(9.,1.,0.,20);
@@ -100,7 +104,7 @@ int main (int argc, char ** argv)
   };
 
   int Nconv;
-  //IRL.calc(eval,evec,src,Nconv);
+  IRL.calc(eval,evec,src,Nconv);
 
 
   Grid_finalize();
