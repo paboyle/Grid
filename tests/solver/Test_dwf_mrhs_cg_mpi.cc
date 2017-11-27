@@ -121,12 +121,12 @@ int main (int argc, char ** argv)
     random(pRNG5,src[s]);
     tmp = 100.0*s;
     src[s] = (src[s] * 0.1) + tmp;
-    std::cout << " src ["<<s<<"] "<<norm2(src[s])<<std::endl;
+    std::cout << GridLogMessage << " src ["<<s<<"] "<<norm2(src[s])<<std::endl;
   }
 #endif
 
   for(int n =0 ; n< nrhs ; n++) { 
-    std::cout << " src"<<n<<"\n"<< src[n] <<std::endl;
+    //    std::cout << " src"<<n<<"\n"<< src[n] <<std::endl;
   }
 
   LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
@@ -144,8 +144,8 @@ int main (int argc, char ** argv)
   ///////////////////////////////////////////////////////////////
   Grid_split  (Umu,s_Umu);
   Grid_split  (src,s_src);
-  std::cout << " split rank  " <<me << " s_src "<<norm2(s_src)<<std::endl;
-  std::cout << " s_src\n "<< s_src <<std::endl;
+  std::cout << GridLogMessage << " split rank  " <<me << " s_src "<<norm2(s_src)<<std::endl;
+  //  std::cout << " s_src\n "<< s_src <<std::endl;
 
 #ifdef LEXICO_TEST
   FermionField s_src_tmp(SFGrid);
@@ -168,11 +168,11 @@ int main (int argc, char ** argv)
     s_src_tmp = s_src_tmp + ftmp;
   }
   s_src_diff = s_src_tmp - s_src;
-  std::cout << " s_src_diff " << norm2(s_src_diff)<<std::endl;
+  std::cout << GridLogMessage <<" LEXICO test:  s_src_diff " << norm2(s_src_diff)<<std::endl;
 
-  std::cout << " s_src \n" << s_src << std::endl;
-  std::cout << " s_src_tmp \n" << s_src_tmp << std::endl;
-  std::cout << " s_src_diff \n" << s_src_diff << std::endl;
+  //  std::cout << " s_src \n" << s_src << std::endl;
+  //  std::cout << " s_src_tmp \n" << s_src_tmp << std::endl;
+  //  std::cout << " s_src_diff \n" << s_src_diff << std::endl;
 #endif
 
   ///////////////////////////////////////////////////////////////
@@ -193,7 +193,7 @@ int main (int argc, char ** argv)
   s_res = zero;
   CG(HermOp,s_src,s_res);
 
-  std::cout << " s_res norm "<<norm2(s_res)<<std::endl;
+  std::cout << GridLogMessage << " split residual norm "<<norm2(s_res)<<std::endl;
   /////////////////////////////////////////////////////////////
   // Report how long they all took
   /////////////////////////////////////////////////////////////
@@ -214,7 +214,7 @@ int main (int argc, char ** argv)
 
   std::cout << GridLogMessage<< "Checking the residuals"<<std::endl;
   for(int n=0;n<nrhs;n++){
-    std::cout << " res["<<n<<"] norm "<<norm2(result[n])<<std::endl;
+    std::cout << GridLogMessage<< " res["<<n<<"] norm "<<norm2(result[n])<<std::endl;
     HermOpCk.HermOp(result[n],tmp); tmp = tmp - src[n];
     std::cout << GridLogMessage<<" resid["<<n<<"]  "<< norm2(tmp)/norm2(src[n])<<std::endl;
   }
