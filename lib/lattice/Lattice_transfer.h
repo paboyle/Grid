@@ -50,26 +50,22 @@ inline void subdivides(GridBase *coarse,GridBase *fine)
   ////////////////////////////////////////////////////////////////////////////////////////////
   template<class vobj> inline void pickCheckerboard(int cb,Lattice<vobj> &half,const Lattice<vobj> &full){
     half.checkerboard = cb;
-    int ssh=0;
-    //parallel_for
-    for(int ss=0;ss<full._grid->oSites();ss++){
-      std::vector<int> coor;
+
+    parallel_for(int ss=0;ss<full._grid->oSites();ss++){
       int cbos;
-      
+      std::vector<int> coor;
       full._grid->oCoorFromOindex(coor,ss);
       cbos=half._grid->CheckerBoard(coor);
       
       if (cbos==cb) {
+	int ssh=half._grid->oIndex(coor);
 	half._odata[ssh] = full._odata[ss];
-	ssh++;
       }
     }
   }
   template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Lattice<vobj> &half){
     int cb = half.checkerboard;
-    int ssh=0;
-    //parallel_for
-    for(int ss=0;ss<full._grid->oSites();ss++){
+    parallel_for(int ss=0;ss<full._grid->oSites();ss++){
       std::vector<int> coor;
       int cbos;
 
@@ -77,8 +73,8 @@ inline void subdivides(GridBase *coarse,GridBase *fine)
       cbos=half._grid->CheckerBoard(coor);
       
       if (cbos==cb) {
+	int ssh=half._grid->oIndex(coor);
 	full._odata[ss]=half._odata[ssh];
-	ssh++;
       }
     }
   }

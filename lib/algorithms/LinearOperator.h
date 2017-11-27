@@ -308,20 +308,34 @@ namespace Grid {
     public:
       SchurStaggeredOperator (Matrix &Mat): _Mat(Mat){};
       virtual void HermOpAndNorm(const Field &in, Field &out,RealD &n1,RealD &n2){
+	GridLogIterative.TimingMode(1);
+	std::cout << GridLogIterative << " HermOpAndNorm "<<std::endl;
 	n2 = Mpc(in,out);
+	std::cout << GridLogIterative << " HermOpAndNorm.Mpc "<<std::endl;
 	ComplexD dot= innerProduct(in,out);
+	std::cout << GridLogIterative << " HermOpAndNorm.innerProduct "<<std::endl;
 	n1 = real(dot);
       }
       virtual void HermOp(const Field &in, Field &out){
+	std::cout << GridLogIterative << " HermOp "<<std::endl;
 	Mpc(in,out);
       }
       virtual  RealD Mpc      (const Field &in, Field &out) {
 	Field tmp(in._grid);
-	_Mat.Meooe(in,tmp);
-	_Mat.MooeeInv(tmp,out);
-	_Mat.Meooe(out,tmp);
+	Field tmp2(in._grid);
+
+	std::cout << GridLogIterative << " HermOp.Mpc "<<std::endl;
 	_Mat.Mooee(in,out);
-        return axpy_norm(out,-1.0,tmp,out);
+	_Mat.Mooee(out,tmp);
+	std::cout << GridLogIterative << " HermOp.MooeeMooee "<<std::endl;
+
+	_Mat.Meooe(in,out);
+	_Mat.Meooe(out,tmp2);
+	std::cout << GridLogIterative << " HermOp.MeooeMeooe "<<std::endl;
+
+	RealD nn=axpy_norm(out,-1.0,tmp2,tmp);
+	std::cout << GridLogIterative << " HermOp.axpy_norm "<<std::endl;
+	return nn;
       }
       virtual  RealD MpcDag   (const Field &in, Field &out){
 	return Mpc(in,out);
