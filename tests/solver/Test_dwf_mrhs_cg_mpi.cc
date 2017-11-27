@@ -173,6 +173,7 @@ int main (int argc, char ** argv)
   //  std::cout << " s_src \n" << s_src << std::endl;
   //  std::cout << " s_src_tmp \n" << s_src_tmp << std::endl;
   //  std::cout << " s_src_diff \n" << s_src_diff << std::endl;
+  //  exit(0);
 #endif
 
   ///////////////////////////////////////////////////////////////
