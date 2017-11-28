@@ -26,12 +26,53 @@ Author: Daniel Richtmann <daniel.richtmann@ur.de>
     *************************************************************************************/
     /*  END LEGAL */
 #include <Grid/Grid.h>
-#include <Grid/algorithms/iterative/PrecGeneralisedConjugateResidual.h>
+// #include <Grid/algorithms/iterative/PrecGeneralisedConjugateResidual.h>
 //#include <algorithms/iterative/PrecConjugateResidual.h>
 
 using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
+
+template<class Field>
+class TestVectorAnalyzer {
+public:
+  void operator()(LinearOperatorBase<Field> &Linop, std::vector<Field> const & vectors)
+  {
+    std::vector<Field> tmp(4, vectors[0]._grid); // bit hacky?
+    Gamma g5(Gamma::Algebra::Gamma5);
+
+    std::cout << GridLogMessage << "Test vector analysis:" << std::endl;
+
+    for (auto i = 0; i < vectors.size(); ++i) {
+
+      Linop.Op(vectors[i], tmp[3]); // apply_operator_PRECISION( l->vbuf_PRECISION[3], test_vectors[i], &(l->p_PRECISION), l, no_threading ); // output, input
+
+      tmp[0] = g5 * tmp[3]; // is this the same as coarse_gamma5_PRECISION(tmp[0], tmp[3]) in WMG codebase???
+
+      // // use either these two
+      // auto lambda = innerProduct(vectors[i], l->vbuf_PRECISION[0]);
+      // lambda = lambda / innerProduct( vectors[i], vectors[i]);
+
+      // or this
+      auto lambda = innerProduct(vectors[i], tmp[0]) / innerProduct(vectors[i], vectors[i]);
+
+      tmp[1] = tmp[0] - lambda * vectors[i]; // vector_PRECISION_saxpy(tmp[1], tmp[0], vectors[i], -lambda);
+
+      // auto mu = sqrt(norm2(tmp[1]) / norm2(vectors[i])); // mu = global_norm_PRECISION( l->vbuf_PRECISION[1], 0, l->inner_vector_size, l, no_threading )/global_norm_PRECISION( test_vectors[i], 0, l->inner_vector_size, l, no_threading );
+
+      // RealD mu = sqrt(norm2(tmp[1]));
+      // mu = mu / sqrt(norm2(vectors[i])); // mu = global_norm_PRECISION( l->vbuf_PRECISION[1], 0, l->inner_vector_size, l, no_threading )/global_norm_PRECISION( test_vectors[i], 0, l->inner_vector_size, l, no_threading );
+
+      RealD mu = norm2(tmp[1]);
+      mu = mu / norm2(vectors[i]); // mu = global_norm_PRECISION( l->vbuf_PRECISION[1], 0, l->inner_vector_size, l, no_threading )/global_norm_PRECISION( test_vectors[i], 0, l->inner_vector_size, l, no_threading );
+      mu = std::sqrt(mu);
+
+      std::cout << GridLogMessage << std::setprecision(2) << "vector " << i << ": "
+                << "singular value: " << lambda << " singular vector precision: " << mu << std::endl; // printf0("singular value: %+lf%+lfi, singular vector precision: %le\n", (double)creal(lambda), (double)cimag(lambda), (double)mu );
+    }
+
+  }
+};
 
 class myclass: Serializable {
 public:
@@ -770,13 +811,22 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Calling Aggregation class to build subspace" <<std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
 
+  // • TODO: need some way to run the smoother on the "test vectors" for a few
+  //   times before constructing the subspace from them
+  // • Maybe an application for an mrhs (true mrhs, no block) smoother?
+  // • In WMG, the vectors are normalized but not orthogonalized, but here they
+  //   are constructed randomly and then orthogonalized (rather orthonormalized) against each other
   MdagMLinearOperator<WilsonFermionR,LatticeFermion> HermOp(Dw);
   Subspace Aggregates(CGrid,FGrid,0);
-  assert ( (nbasis & 0x1)==0);
+  assert ((nbasis & 0x1)==0);
   int nb=nbasis/2;
   std::cout<<GridLogMessage << " nbasis/2 = "<<nb<<std::endl;
 
   Aggregates.CreateSubspaceRandom(pRNGFine); // creates subspace randomly and orthogonalizes it
+  auto testVectorAnalyzer = TestVectorAnalyzer<LatticeFermion>{};
+
+  // tva(HermOp, Aggregates.subspace);
+  testVectorAnalyzer(HermOp, Aggregates.subspace);
 
   for(int n=0;n<nb;n++){
     Aggregates.subspace[n+nb] = g5 * Aggregates.subspace[n]; // multiply with g5 normally instead of G5R5
@@ -785,6 +835,9 @@ int main (int argc, char ** argv)
   for(int n=0;n<nbasis;n++){
     std::cout<<GridLogMessage << "vec["<<n<<"] = "<<norm2(Aggregates.subspace[n])  <<std::endl;
   }
+
+  // tva(HermOp, Aggregates.subspace);
+  testVectorAnalyzer(HermOp, Aggregates.subspace);
 
   result=zero;
 
