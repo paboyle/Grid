@@ -38,6 +38,9 @@ class TestVectorAnalyzer {
 public:
   void operator()(LinearOperatorBase<Field> &Linop, std::vector<Field> const & vectors)
   {
+    // this function corresponds to testvector_analysis_PRECISION from the
+    // DD-αAMG codebase
+
     std::vector<Field> tmp(4, vectors[0]._grid); // bit hacky?
     Gamma g5(Gamma::Algebra::Gamma5);
 
@@ -45,32 +48,20 @@ public:
 
     for (auto i = 0; i < vectors.size(); ++i) {
 
-      Linop.Op(vectors[i], tmp[3]); // apply_operator_PRECISION( l->vbuf_PRECISION[3], test_vectors[i], &(l->p_PRECISION), l, no_threading ); // output, input
+      Linop.Op(vectors[i], tmp[3]);
 
-      tmp[0] = g5 * tmp[3]; // is this the same as coarse_gamma5_PRECISION(tmp[0], tmp[3]) in WMG codebase???
+      tmp[0] = g5 * tmp[3]; // is this the same as coarse_gamma5_PRECISION?
 
-      // // use either these two
-      // auto lambda = innerProduct(vectors[i], l->vbuf_PRECISION[0]);
-      // lambda = lambda / innerProduct( vectors[i], vectors[i]);
-
-      // or this
       auto lambda = innerProduct(vectors[i], tmp[0]) / innerProduct(vectors[i], vectors[i]);
 
-      tmp[1] = tmp[0] - lambda * vectors[i]; // vector_PRECISION_saxpy(tmp[1], tmp[0], vectors[i], -lambda);
+      tmp[1] = tmp[0] - lambda * vectors[i];
 
-      // auto mu = sqrt(norm2(tmp[1]) / norm2(vectors[i])); // mu = global_norm_PRECISION( l->vbuf_PRECISION[1], 0, l->inner_vector_size, l, no_threading )/global_norm_PRECISION( test_vectors[i], 0, l->inner_vector_size, l, no_threading );
-
-      // RealD mu = sqrt(norm2(tmp[1]));
-      // mu = mu / sqrt(norm2(vectors[i])); // mu = global_norm_PRECISION( l->vbuf_PRECISION[1], 0, l->inner_vector_size, l, no_threading )/global_norm_PRECISION( test_vectors[i], 0, l->inner_vector_size, l, no_threading );
-
-      RealD mu = norm2(tmp[1]);
-      mu = mu / norm2(vectors[i]); // mu = global_norm_PRECISION( l->vbuf_PRECISION[1], 0, l->inner_vector_size, l, no_threading )/global_norm_PRECISION( test_vectors[i], 0, l->inner_vector_size, l, no_threading );
-      mu = std::sqrt(mu);
+      auto mu = ::sqrt(norm2(tmp[1]) / norm2(vectors[i]));
 
       std::cout << GridLogMessage << std::setprecision(2) << "vector " << i << ": "
-                << "singular value: " << lambda << " singular vector precision: " << mu << std::endl; // printf0("singular value: %+lf%+lfi, singular vector precision: %le\n", (double)creal(lambda), (double)cimag(lambda), (double)mu );
+                << "singular value: " << lambda
+                << " singular vector precision: " << mu << std::endl;
     }
-
   }
 };
 
