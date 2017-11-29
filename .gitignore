@@ -96,7 +96,7 @@ build.sh
 
 # Eigen source #
 ################
-lib/Eigen/*
+# lib/Eigen/*
 
 # FFTW source #
 ################
