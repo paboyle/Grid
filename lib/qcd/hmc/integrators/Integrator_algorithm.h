@@ -231,7 +231,7 @@ class ForceGradient : public Integrator<FieldImplementation, SmearingPolicy,
     Field Pfg(U._grid);
     Ufg = U;
     Pfg = zero;
-    std::cout << GridLogMessage << "FG update " << fg_dt << " " << ep
+    std::cout << GridLogIntegrator << "FG update " << fg_dt << " " << ep
               << std::endl;
     // prepare_fg; no prediction/result cache for now
     // could relax CG stopping conditions for the

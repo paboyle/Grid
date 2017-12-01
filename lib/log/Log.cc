@@ -50,7 +50,7 @@ namespace Grid {
     return (status==0) ? res.get() : name ;
   }
   
-GridStopWatch Logger::StopWatch;
+GridStopWatch Logger::GlobalStopWatch;
 int Logger::timestamp;
 std::ostream Logger::devnull(0);
 
@@ -59,13 +59,15 @@ void GridLogTimestamp(int on){
 }
 
 Colours GridLogColours(0);
-GridLogger GridLogError(1, "Error", GridLogColours, "RED");
+GridLogger GridLogIRL    (1, "IRL"   , GridLogColours, "NORMAL");
+GridLogger GridLogSolver (1, "Solver", GridLogColours, "NORMAL");
+GridLogger GridLogError  (1, "Error" , GridLogColours, "RED");
 GridLogger GridLogWarning(1, "Warning", GridLogColours, "YELLOW");
 GridLogger GridLogMessage(1, "Message", GridLogColours, "NORMAL");
-GridLogger GridLogDebug(1, "Debug", GridLogColours, "PURPLE");
+GridLogger GridLogDebug  (1, "Debug", GridLogColours, "PURPLE");
 GridLogger GridLogPerformance(1, "Performance", GridLogColours, "GREEN");
-GridLogger GridLogIterative(1, "Iterative", GridLogColours, "BLUE");
-GridLogger GridLogIntegrator(1, "Integrator", GridLogColours, "BLUE");
+GridLogger GridLogIterative  (1, "Iterative", GridLogColours, "BLUE");
+GridLogger GridLogIntegrator (1, "Integrator", GridLogColours, "BLUE");
 
 void GridLogConfigure(std::vector<std::string> &logstreams) {
   GridLogError.Active(0);
