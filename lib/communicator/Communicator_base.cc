@@ -134,8 +134,18 @@ void CartesianCommunicator::AllToAll(void  *in,void *out,uint64_t words,uint64_t
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent,int &srank) 
 {
   _ndimension = processors.size();
-  assert(_ndimension = parent._ndimension);
-  
+
+  int parent_ndimension = parent._ndimension; assert(_ndimension >= parent._ndimension);
+  std::vector<int> parent_processor_coor(_ndimension,0);
+  std::vector<int> parent_processors    (_ndimension,1);
+
+  // Can make 5d grid from 4d etc...
+  int pad = _ndimension-parent_ndimension;
+  for(int d=0;d<parent_ndimension;d++){
+    parent_processor_coor[pad+d]=parent._processor_coor[d];
+    parent_processors    [pad+d]=parent._processors[d];
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   // split the communicator
   //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -154,9 +164,9 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   std::vector<int> ssize(_ndimension); // coor of split within parent
 
   for(int d=0;d<_ndimension;d++){
-    ccoor[d] = parent._processor_coor[d] % processors[d];
-    scoor[d] = parent._processor_coor[d] / processors[d];
-    ssize[d] = parent._processors[d]     / processors[d];
+    ccoor[d] = parent_processor_coor[d] % processors[d];
+    scoor[d] = parent_processor_coor[d] / processors[d];
+    ssize[d] = parent_processors[d]     / processors[d];
   }
   int crank;  // rank within subcomm ; srank is rank of subcomm within blocks of subcomms
   // Mpi uses the reverse Lexico convention to us
@@ -166,38 +176,36 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   MPI_Comm comm_split;
   if ( Nchild > 1 ) { 
 
-    /*
-    std::cout << GridLogMessage<<"Child communicator of "<< std::hex << parent.communicator << std::dec<<std::endl;
-    std::cout << GridLogMessage<<" parent grid["<< parent._ndimension<<"]    ";
-    for(int d=0;d<parent._processors.size();d++)  std::cout << parent._processors[d] << " ";
-    std::cout<<std::endl;
-
-    std::cout << GridLogMessage<<" child grid["<< _ndimension <<"]    ";
-    for(int d=0;d<processors.size();d++)  std::cout << processors[d] << " ";
-    std::cout<<std::endl;
-
-    std::cout << GridLogMessage<<" old rank "<< parent._processor<<" coor ["<< _ndimension <<"]    ";
-    for(int d=0;d<processors.size();d++)  std::cout << parent._processor_coor[d] << " ";
-    std::cout<<std::endl;
-
-    std::cout << GridLogMessage<<" new rank "<< crank<<" coor ["<< _ndimension <<"]    ";
-    for(int d=0;d<processors.size();d++)  std::cout << ccoor[d] << " ";
-    std::cout<<std::endl;
-
-    std::cout << GridLogMessage<<" new coor ["<< _ndimension <<"]    ";
-    for(int d=0;d<processors.size();d++)  std::cout << parent._processor_coor[d] << " ";
-    std::cout<<std::endl;
-    */
+    if(0){
+      std::cout << GridLogMessage<<"Child communicator of "<< std::hex << parent.communicator << std::dec<<std::endl;
+      std::cout << GridLogMessage<<" parent grid["<< parent._ndimension<<"]    ";
+      for(int d=0;d<parent._ndimension;d++)  std::cout << parent._processors[d] << " ";
+      std::cout<<std::endl;
+      
+      std::cout << GridLogMessage<<" child grid["<< _ndimension <<"]    ";
+      for(int d=0;d<processors.size();d++)  std::cout << processors[d] << " ";
+      std::cout<<std::endl;
+      
+      std::cout << GridLogMessage<<" old rank "<< parent._processor<<" coor ["<< parent._ndimension <<"]    ";
+      for(int d=0;d<parent._ndimension;d++)  std::cout << parent._processor_coor[d] << " ";
+      std::cout<<std::endl;
+      
+      std::cout << GridLogMessage<<" new split "<< srank<<" scoor ["<< _ndimension <<"]    ";
+      for(int d=0;d<processors.size();d++)  std::cout << scoor[d] << " ";
+      std::cout<<std::endl;
+      
+      std::cout << GridLogMessage<<" new rank "<< crank<<" coor ["<< _ndimension <<"]    ";
+      for(int d=0;d<processors.size();d++)  std::cout << ccoor[d] << " ";
+      std::cout<<std::endl;
+    }
 
     int ierr= MPI_Comm_split(parent.communicator,srank,crank,&comm_split);
     assert(ierr==0);
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // Declare victory
     //////////////////////////////////////////////////////////////////////////////////////////////////////
-    /*
-    std::cout << GridLogMessage<<"Divided communicator "<< parent._Nprocessors<<" into "
-	      << Nchild <<" communicators with " << childsize << " ranks"<<std::endl;
-    */
+    //    std::cout << GridLogMessage<<"Divided communicator "<< parent._Nprocessors<<" into "
+    //	      << Nchild <<" communicators with " << childsize << " ranks"<<std::endl;
   } else {
     comm_split=parent.communicator;
     srank = 0;
@@ -207,6 +215,17 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   // Set up from the new split communicator
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   InitFromMPICommunicator(processors,comm_split);
+
+  if(0){ 
+    std::cout << " ndim " <<_ndimension<<" " << parent._ndimension << std::endl;
+    for(int d=0;d<processors.size();d++){
+      std::cout << d<< " " << _processor_coor[d] <<" " <<  ccoor[d]<<std::endl;
+    }
+  }
+  for(int d=0;d<processors.size();d++){
+    assert(_processor_coor[d] == ccoor[d] );
+  }
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -231,7 +250,7 @@ void CartesianCommunicator::InitFromMPICommunicator(const std::vector<int> &proc
   MPI_Comm_rank(communicator,&_processor);
   MPI_Cart_coords(communicator,_processor,_ndimension,&_processor_coor[0]);
 
-  if ( communicator_base != communicator_world ) {
+  if ( 0 && (communicator_base != communicator_world) ) {
     std::cout << "InitFromMPICommunicator Cartesian communicator created with a non-world communicator"<<std::endl;
     
     std::cout << " new communicator rank "<<_processor<< " coor ["<<_ndimension<<"] ";
