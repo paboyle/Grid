@@ -87,12 +87,53 @@ public:\
 static ns##mod##ModuleRegistrar ns##mod##ModuleRegistrarInstance;
 
 #define ARG(...) __VA_ARGS__
+#define MACRO_REDIRECT(arg1, arg2, arg3, macro, ...) macro
 
-#define mCreateObj(type, name, Ls, ...)\
-env().template createObject<type>(name, Ls, __VA_ARGS__)
-
-#define mGetObj(type, name)\
+#define envGet(type, name)\
 *env().template getObject<type>(name)
+
+#define envGetTmp(type, name)\
+*env().template getObject<type>(getName() + "_tmp_" + name)
+
+#define envIsType(type, name)\
+env().template getObject<type>(name)
+
+#define envCreate(type, name, Ls, pt)\
+env().template createObject<type>(name, Environment::Storage::object, Ls, pt)
+
+#define envCreateLat4(type, name)\
+envCreate(type, name, 1, new type(env().getGrid()))
+
+#define envCreateLat5(type, name, Ls)\
+envCreate(type, name, Ls, new type(env().getGrid(Ls)))
+
+#define envCreateLat(...)\
+MACRO_REDIRECT(__VA_ARGS__, envCreateLat5, envCreateLat4)(__VA_ARGS__)
+
+#define envCache(type, name, Ls, pt)\
+env().template createObject<type>(name, Environment::Storage::cache, Ls, pt)
+
+#define envCacheLat4(type, name)\
+envCache(type, name, 1, new type(env().getGrid()))
+
+#define envCacheLat5(type, name, Ls)\
+envCache(type, name, Ls, new type(env().getGrid(Ls)))
+
+#define envCacheLat(...)\
+MACRO_REDIRECT(__VA_ARGS__, envCacheLat5, envCacheLat4)(__VA_ARGS__)
+
+#define envTmp(type, name, Ls, pt)\
+env().template createObject<type>(getName() + "_tmp_" + name,         \
+                                  Environment::Storage::temporary, Ls, pt)
+
+#define envTmpLat4(type, name)\
+envTmp(type, name, 1, new type(env().getGrid()))
+
+#define envTmpLat5(type, name, Ls)\
+envTmp(type, name, Ls, new type(env().getGrid(Ls)))
+
+#define envTmpLat(...)\
+MACRO_REDIRECT(__VA_ARGS__, envTmpLat5, envTmpLat4)(__VA_ARGS__)
 
 /******************************************************************************
  *                            Module class                                    *

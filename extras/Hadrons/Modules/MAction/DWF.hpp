@@ -110,15 +110,16 @@ void TDWF<FImpl>::setup(void)
     LOG(Message) << "Fermion boundary conditions: " << par().boundary
                  << std::endl;
     env().createGrid(par().Ls);
-    auto &U      = mGetObj(LatticeGaugeField, par().gauge);
+    auto &U      = envGet(LatticeGaugeField, par().gauge);
     auto &g4     = *env().getGrid();
     auto &grb4   = *env().getRbGrid();
     auto &g5     = *env().getGrid(par().Ls);
     auto &grb5   = *env().getRbGrid(par().Ls);
     std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
     typename DomainWallFermion<FImpl>::ImplParams implParams(boundary);
-    mCreateObj(DomainWallFermion<FImpl>, getName(), par().Ls,
-               U, g5, grb5, g4, grb4, par().mass, par().M5, implParams);
+    envCreate(FMat, getName(), par().Ls,
+              new DomainWallFermion<FImpl>(U, g5, grb5, g4, grb4, par().mass, 
+                                           par().M5, implParams));
 }
 
 // execution ///////////////////////////////////////////////////////////////////

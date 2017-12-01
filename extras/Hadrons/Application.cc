@@ -98,6 +98,8 @@ void Application::run(void)
     {
         parseParameterFile(parameterFileName_);
     }
+    env().checkGraph();
+    env().printContent();
     if (!scheduled_)
     {
         schedule();
@@ -124,8 +126,14 @@ void Application::parseParameterFile(const std::string parameterFileName)
     LOG(Message) << "Building application from '" << parameterFileName << "'..." << std::endl;
     read(reader, "parameters", par);
     setPar(par);
-    push(reader, "modules");
-    push(reader, "module");
+    if (!push(reader, "modules"))
+    {
+        HADRON_ERROR("Cannot open node 'modules' in parameter file '" + parameterFileName + "'");
+    }
+    if (!push(reader, "module"))
+    {
+        HADRON_ERROR("Cannot open node 'modules/module' in parameter file '" + parameterFileName + "'");
+    }
     do
     {
         read(reader, "id", id);
@@ -186,6 +194,8 @@ void Application::schedule(void)
     // build module dependency graph
     LOG(Message) << "Building module graph..." << std::endl;
     auto graph = env().makeModuleGraph();
+    LOG(Debug) << "Module graph:" << std::endl;
+    LOG(Debug) << graph << std::endl;
     auto con = graph.getConnectedComponents();
     
     // constrained topological sort using a genetic algorithm
@@ -329,4 +339,3 @@ void Application::memoryProfile(void)
     
     HadronsLogMessage.Active(msg);
 }
-

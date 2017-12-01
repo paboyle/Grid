@@ -153,7 +153,6 @@ void TMeson<FImpl1, FImpl2>::parseGammaString(std::vector<GammaPair> &gammaList)
     }
 }
 
-
 // execution ///////////////////////////////////////////////////////////////////
 #define mesonConnected(q1, q2, gSnk, gSrc) \
 (g5*(gSnk))*(q1)*(adj(gSrc)*g5)*adj(q2)
@@ -180,11 +179,11 @@ void TMeson<FImpl1, FImpl2>::execute(void)
         result[i].gamma_src = gammaList[i].second;
         result[i].corr.resize(nt);
     }
-    if (env().template isObjectOfType<SlicedPropagator1>(par().q1) and
-        env().template isObjectOfType<SlicedPropagator2>(par().q2))
+    if (envIsType(SlicedPropagator1, par().q1) and
+        envIsType(SlicedPropagator2, par().q2))
     {
-        SlicedPropagator1 &q1 = *env().template getObject<SlicedPropagator1>(par().q1);
-        SlicedPropagator2 &q2 = *env().template getObject<SlicedPropagator2>(par().q2);
+        SlicedPropagator1 &q1 = envGet(SlicedPropagator1, par().q1);
+        SlicedPropagator2 &q2 = envGet(SlicedPropagator2, par().q2);
         
         LOG(Message) << "(propagator already sinked)" << std::endl;
         for (unsigned int i = 0; i < result.size(); ++i)
@@ -200,8 +199,8 @@ void TMeson<FImpl1, FImpl2>::execute(void)
     }
     else
     {
-        PropagatorField1 &q1   = *env().template getObject<PropagatorField1>(par().q1);
-        PropagatorField2 &q2   = *env().template getObject<PropagatorField2>(par().q2);
+        PropagatorField1 &q1 = envGet(PropagatorField1, par().q1);
+        PropagatorField2 &q2 = envGet(PropagatorField2, par().q2);
         LatticeComplex   c(env().getGrid());
         
         LOG(Message) << "(using sink '" << par().sink << "')" << std::endl;
@@ -214,15 +213,14 @@ void TMeson<FImpl1, FImpl2>::execute(void)
             ns = env().getModuleNamespace(env().getObjectModule(par().sink));
             if (ns == "MSource")
             {
-                PropagatorField1 &sink =
-                    *env().template getObject<PropagatorField1>(par().sink);
+                PropagatorField1 &sink = envGet(PropagatorField1, par().sink);
                 
                 c = trace(mesonConnected(q1, q2, gSnk, gSrc)*sink);
                 sliceSum(c, buf, Tp);
             }
             else if (ns == "MSink")
             {
-                SinkFnScalar &sink = *env().template getObject<SinkFnScalar>(par().sink);
+                SinkFnScalar &sink = envGet(SinkFnScalar, par().sink);
                 
                 c   = trace(mesonConnected(q1, q2, gSnk, gSrc));
                 buf = sink(c);

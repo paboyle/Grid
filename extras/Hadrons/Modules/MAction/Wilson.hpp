@@ -105,13 +105,14 @@ void TWilson<FImpl>::setup(void)
                  << " using gauge field '" << par().gauge << "'" << std::endl;
     LOG(Message) << "Fermion boundary conditions: " << par().boundary
                  << std::endl;
-    auto &U      = mGetObj(LatticeGaugeField, par().gauge);
+    auto &U      = envGet(LatticeGaugeField, par().gauge);
     auto &grid   = *env().getGrid();
     auto &gridRb = *env().getRbGrid();
     std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
     typename WilsonFermion<FImpl>::ImplParams implParams(boundary);
-    mCreateObj(WilsonFermion<FImpl>, getName(), 1, U, grid, gridRb, par().mass,
-               implParams);
+    envCreate(FMat, getName(), 1, new WilsonFermion<FImpl>(U, grid, gridRb, 
+                                                           par().mass,
+                                                           implParams));
 }
 
 // execution ///////////////////////////////////////////////////////////////////

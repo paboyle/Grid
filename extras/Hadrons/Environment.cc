@@ -333,6 +333,17 @@ Graph<unsigned int> Environment::makeModuleGraph(void) const
     return moduleGraph;
 }
 
+void Environment::checkGraph(void) const
+{
+    for (auto &o: object_)
+    {
+        if (o.module < 0)
+        {
+            HADRON_ERROR("object '" + o.name + "' does not have a creator");
+        }
+    }
+}
+
 #define BIG_SEP "==============="
 #define SEP     "---------------"
 #define MEM_MSG(size)\
@@ -346,6 +357,7 @@ Environment::executeProgram(const std::vector<unsigned int> &p)
     bool                                continueCollect, nothingFreed;
     
     // build garbage collection schedule
+    LOG(Debug) << "Building garbage collection schedule..." << std::endl;
     freeProg.resize(p.size());
     for (unsigned int i = 0; i < object_.size(); ++i)
     {
@@ -359,11 +371,12 @@ Environment::executeProgram(const std::vector<unsigned int> &p)
         auto it = std::find_if(p.rbegin(), p.rend(), pred);
         if (it != p.rend())
         {
-            freeProg[std::distance(p.rend(), it) - 1].insert(i);
+            freeProg[std::distance(it, p.rend()) - 1].insert(i);
         }
     }
 
     // program execution
+    LOG(Debug) << "Executing program..." << std::endl;
     for (unsigned int i = 0; i < p.size(); ++i)
     {
         // execute module
@@ -712,16 +725,16 @@ void Environment::freeAll(void)
 
 void Environment::printContent(void)
 {
-    LOG(Message) << "Modules: " << std::endl;
+    LOG(Debug) << "Modules: " << std::endl;
     for (unsigned int i = 0; i < module_.size(); ++i)
     {
-        LOG(Message) << std::setw(4) << i << ": "
-                     << getModuleName(i) << std::endl;
+        LOG(Debug) << std::setw(4) << i << ": "
+                   << getModuleName(i) << std::endl;
     }
-    LOG(Message) << "Objects: " << std::endl;
+    LOG(Debug) << "Objects: " << std::endl;
     for (unsigned int i = 0; i < object_.size(); ++i)
     {
-        LOG(Message) << std::setw(4) << i << ": "
-                     << getObjectName(i) << std::endl;
+        LOG(Debug) << std::setw(4) << i << ": "
+                   << getObjectName(i) << std::endl;
     }
 }

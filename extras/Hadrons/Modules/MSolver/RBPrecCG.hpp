@@ -105,7 +105,7 @@ void TRBPrecCG<FImpl>::setup(void)
                  << par().residual << std::endl;
 
     auto Ls     = env().getObjectLs(par().action);
-    auto &mat   = mGetObj(FMat, par().action);
+    auto &mat   = envGet(FMat, par().action);
     auto solver = [&mat, this](FermionField &sol, const FermionField &source)
     {
         ConjugateGradient<FermionField>           cg(par().residual, 10000);
@@ -113,7 +113,7 @@ void TRBPrecCG<FImpl>::setup(void)
         
         schurSolver(mat, source, sol);
     };
-    mCreateObj(SolverFn, getName(), Ls, solver);
+    envCreate(SolverFn, getName(), Ls, new SolverFn(solver));
     env().addOwnership(getName(), par().action);
 }
 

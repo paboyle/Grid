@@ -127,10 +127,13 @@ template <typename FImpl>
 void TGaugeProp<FImpl>::setup(void)
 {
     Ls_ = env().getObjectLs(par().solver);
-    env().template registerLattice<PropagatorField>(getName());
+    envCreateLat(PropagatorField, getName());
+    envTmpLat(FermionField, "source", Ls_);
+    envTmpLat(FermionField, "sol", Ls_);
+    envTmpLat(FermionField, "tmp");
     if (Ls_ > 1)
     {
-        env().template registerLattice<PropagatorField>(getName() + "_5d", Ls_);
+        envCreateLat(PropagatorField, getName() + "_5d", Ls_);
     }
 }
 
@@ -139,21 +142,18 @@ template <typename FImpl>
 void TGaugeProp<FImpl>::execute(void)
 {
     LOG(Message) << "Computing quark propagator '" << getName() << "'"
-    << std::endl;
+                 << std::endl;
     
-    FermionField    source(env().getGrid(Ls_)), sol(env().getGrid(Ls_)),
-    tmp(env().getGrid());
+    FermionField    &source  = envGetTmp(FermionField, "source");
+    FermionField    &sol     = envGetTmp(FermionField, "sol");
+    FermionField    &tmp     = envGetTmp(FermionField, "tmp");
     std::string     propName = (Ls_ == 1) ? getName() : (getName() + "_5d");
-    PropagatorField &prop    = *env().template createLattice<PropagatorField>(propName);
-    PropagatorField &fullSrc = *env().template getObject<PropagatorField>(par().source);
-    SolverFn        &solver  = *env().template getObject<SolverFn>(par().solver);
-    if (Ls_ > 1)
-    {
-        env().template createLattice<PropagatorField>(getName());
-    }
+    PropagatorField &prop    = envGet(PropagatorField, propName);
+    PropagatorField &fullSrc = envGet(PropagatorField, par().source);
+    SolverFn        &solver  = envGet(SolverFn, par().solver);
     
     LOG(Message) << "Inverting using solver '" << par().solver
-    << "' on source '" << par().source << "'" << std::endl;
+                 << "' on source '" << par().source << "'" << std::endl;
     for (unsigned int s = 0; s < Ns; ++s)
     for (unsigned int c = 0; c < Nc; ++c)
     {
@@ -190,8 +190,7 @@ void TGaugeProp<FImpl>::execute(void)
         // create 4D propagators from 5D one if necessary
         if (Ls_ > 1)
         {
-            PropagatorField &p4d =
-                *env().template getObject<PropagatorField>(getName());
+            PropagatorField &p4d = envGet(PropagatorField, getName());
             make_4D(sol, tmp, Ls_);
             FermToProp(p4d, tmp, s, c);
         }

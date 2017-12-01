@@ -57,13 +57,13 @@ std::vector<std::string> TUnit::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void TUnit::setup(void)
 {
-    mCreateObj(LatticeGaugeField, getName(), 1, env().getGrid());
+    envCreateLat(LatticeGaugeField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 void TUnit::execute(void)
 {
     LOG(Message) << "Creating unit gauge configuration" << std::endl;
-    auto &U = mGetObj(LatticeGaugeField, getName());
+    auto &U = envGet(LatticeGaugeField, getName());
     SU3::ColdConfiguration(*env().get4dRng(), U);
 }

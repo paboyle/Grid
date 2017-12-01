@@ -111,7 +111,7 @@ std::vector<std::string> TPoint<FImpl>::getOutput(void)
 template <typename FImpl>
 void TPoint<FImpl>::setup(void)
 {
-    env().template registerLattice<PropagatorField>(getName());
+    envCreateLat(PropagatorField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -123,7 +123,7 @@ void TPoint<FImpl>::execute(void)
     
     LOG(Message) << "Creating point source at position [" << par().position
                  << "]" << std::endl;
-    PropagatorField &src = *env().template createLattice<PropagatorField>(getName());
+    PropagatorField &src = envGet(PropagatorField, getName());
     id  = 1.;
     src = zero;
     pokeSite(id, src, position);

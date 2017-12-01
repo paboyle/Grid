@@ -76,6 +76,7 @@ public:
     typedef std::unique_ptr<GridRedBlackCartesian> GridRbPt;
     typedef std::unique_ptr<GridParallelRNG>       RngPt;
     typedef std::unique_ptr<LatticeBase>           LatticePt;
+    enum class Storage {object, cache, temporary};
 private:
     struct ModuleInfo
     {
@@ -88,6 +89,7 @@ private:
     struct ObjInfo
     {
         Size                    size{0};
+        Storage                 storage{Storage::object};
         unsigned int            Ls{0};
         const std::type_info    *type{nullptr};
         std::string             name;
@@ -140,18 +142,17 @@ public:
     bool                    hasModule(const unsigned int address) const;
     bool                    hasModule(const std::string name) const;
     Graph<unsigned int>     makeModuleGraph(void) const;
+    void                    checkGraph(void) const;
     Size                    executeProgram(const std::vector<unsigned int> &p);
     Size                    executeProgram(const std::vector<std::string> &p);
     // general memory management
     void                    addObject(const std::string name,
                                       const int moduleAddress = -1);
-    template <typename T, typename ... Ts>
+    template <typename T, typename P>
     void                    createObject(const std::string name,
+                                         const Storage storage,
                                          const unsigned int Ls,
-                                         Ts ... args);
-    template <typename T>
-    void                    createLattice(const std::string name,
-                                          const unsigned int Ls = 1);
+                                         P &&pt);
     template <typename T>
     T *                     getObject(const unsigned int address) const;
     template <typename T>
@@ -203,6 +204,7 @@ private:
     // module and related maps
     std::vector<ModuleInfo>                module_;
     std::map<std::string, unsigned int>    moduleAddress_;
+    std::string                            currentModule_{""};
     // lattice store
     std::map<unsigned int, LatticePt>      lattice_;
     // object store
@@ -281,9 +283,11 @@ M * Environment::getModule(const std::string name) const
     return getModule<M>(getModuleAddress(name));
 }
 
-template <typename T, typename ... Ts>
-void Environment::createObject(const std::string name, const unsigned int Ls,
-                               Ts ... args)
+template <typename T, typename P>
+void Environment::createObject(const std::string name, 
+                               const Environment::Storage storage,
+                               const unsigned int Ls,
+                               P &&pt)
 {
     if (!hasObject(name))
     {
@@ -296,24 +300,18 @@ void Environment::createObject(const std::string name, const unsigned int Ls,
     {
         MemoryStats  memStats;
 
-        MemoryProfiler::stats = &memStats;
-        object_[address].Ls   = Ls;
-        object_[address].data.reset(new Holder<T>(new T(args...)));
-        object_[address].size = memStats.totalAllocated;
-        object_[address].type = &typeid(T);
+        MemoryProfiler::stats    = &memStats;
+        object_[address].storage = storage;
+        object_[address].Ls      = Ls;
+        object_[address].data.reset(new Holder<T>(pt));
+        object_[address].size    = memStats.totalAllocated;
+        object_[address].type    = &typeid(T);
+        MemoryProfiler::stats    = nullptr;
     }
     else
     {
         HADRON_ERROR("object '" + name + "' already allocated");
     }
-}
-
-template <typename T>
-void Environment::createLattice(const std::string name, const unsigned int Ls)
-{
-    GridCartesian *g = getGrid(Ls);
-    
-    createObject<T>(name, Ls, g);
 }
 
 template <typename T>
