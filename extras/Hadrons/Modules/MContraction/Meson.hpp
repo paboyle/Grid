@@ -179,8 +179,8 @@ void TMeson<FImpl1, FImpl2>::execute(void)
         result[i].gamma_src = gammaList[i].second;
         result[i].corr.resize(nt);
     }
-    if (envIsType(SlicedPropagator1, par().q1) and
-        envIsType(SlicedPropagator2, par().q2))
+    if (envHasType(SlicedPropagator1, par().q1) and
+        envHasType(SlicedPropagator2, par().q2))
     {
         SlicedPropagator1 &q1 = envGet(SlicedPropagator1, par().q1);
         SlicedPropagator2 &q2 = envGet(SlicedPropagator2, par().q2);

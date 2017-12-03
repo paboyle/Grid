@@ -95,8 +95,8 @@ static ns##mod##ModuleRegistrar ns##mod##ModuleRegistrarInstance;
 #define envGetTmp(type, name)\
 *env().template getObject<type>(getName() + "_tmp_" + name)
 
-#define envIsType(type, name)\
-env().template getObject<type>(name)
+#define envHasType(type, name)\
+env().template isObjectOfType<type>(name)
 
 #define envCreate(type, name, Ls, pt)\
 env().template createObject<type>(name, Environment::Storage::object, Ls, pt)

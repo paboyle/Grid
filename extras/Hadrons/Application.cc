@@ -182,7 +182,7 @@ GeneticScheduler<unsigned int>::ObjFunc memPeak = \
     memPeak = env().executeProgram(program);\
     env().dryRun(false);\
     env().freeAll();\
-    HadronsLogMessage.Active(true);\
+    HadronsLogMessage.Active(msg);\
     \
     return memPeak;\
 }
@@ -199,58 +199,59 @@ void Application::schedule(void)
     auto con = graph.getConnectedComponents();
     
     // constrained topological sort using a genetic algorithm
-    LOG(Message) << "Scheduling computation..." << std::endl;
-    LOG(Message) << "               #module= " << graph.size() << std::endl;
-    LOG(Message) << "       population size= " << par_.genetic.popSize << std::endl;
-    LOG(Message) << "       max. generation= " << par_.genetic.maxGen << std::endl;
-    LOG(Message) << "  max. cst. generation= " << par_.genetic.maxCstGen << std::endl;
-    LOG(Message) << "         mutation rate= " << par_.genetic.mutationRate << std::endl;
+    // LOG(Message) << "Scheduling computation..." << std::endl;
+    // LOG(Message) << "               #module= " << graph.size() << std::endl;
+    // LOG(Message) << "       population size= " << par_.genetic.popSize << std::endl;
+    // LOG(Message) << "       max. generation= " << par_.genetic.maxGen << std::endl;
+    // LOG(Message) << "  max. cst. generation= " << par_.genetic.maxCstGen << std::endl;
+    // LOG(Message) << "         mutation rate= " << par_.genetic.mutationRate << std::endl;
     
-    unsigned int                               k = 0, gen, prevPeak, nCstPeak = 0;
-    std::random_device                         rd;
-    GeneticScheduler<unsigned int>::Parameters par;
+    // unsigned int                               k = 0, gen, prevPeak, nCstPeak = 0;
+    // std::random_device                         rd;
+    // GeneticScheduler<unsigned int>::Parameters par;
     
-    par.popSize      = par_.genetic.popSize;
-    par.mutationRate = par_.genetic.mutationRate;
-    par.seed         = rd();
-    memPeak_         = 0;
-    CartesianCommunicator::BroadcastWorld(0, &(par.seed), sizeof(par.seed));
+    // par.popSize      = par_.genetic.popSize;
+    // par.mutationRate = par_.genetic.mutationRate;
+    // par.seed         = rd();
+    // memPeak_         = 0;
+    // CartesianCommunicator::BroadcastWorld(0, &(par.seed), sizeof(par.seed));
     for (unsigned int i = 0; i < con.size(); ++i)
     {
-        GeneticScheduler<unsigned int> scheduler(con[i], memPeak, par);
+        // GeneticScheduler<unsigned int> scheduler(con[i], memPeak, par);
         
-        gen = 0;
-        do
-        {
-            LOG(Debug) << "Generation " << gen << ":" << std::endl;
-            scheduler.nextGeneration();
-            if (gen != 0)
-            {
-                if (prevPeak == scheduler.getMinValue())
-                {
-                    nCstPeak++;
-                }
-                else
-                {
-                    nCstPeak = 0;
-                }
-            }
+        // gen = 0;
+        // do
+        // {
+        //     LOG(Debug) << "Generation " << gen << ":" << std::endl;
+        //     scheduler.nextGeneration();
+        //     if (gen != 0)
+        //     {
+        //         if (prevPeak == scheduler.getMinValue())
+        //         {
+        //             nCstPeak++;
+        //         }
+        //         else
+        //         {
+        //             nCstPeak = 0;
+        //         }
+        //     }
             
-            prevPeak = scheduler.getMinValue();
-            if (gen % 10 == 0)
-            {
-                LOG(Iterative) << "Generation " << gen << ": "
-                               << MEM_MSG(scheduler.getMinValue()) << std::endl;
-            }
+        //     prevPeak = scheduler.getMinValue();
+        //     if (gen % 10 == 0)
+        //     {
+        //         LOG(Iterative) << "Generation " << gen << ": "
+        //                        << MEM_MSG(scheduler.getMinValue()) << std::endl;
+        //     }
             
-            gen++;
-        } while ((gen < par_.genetic.maxGen)
-                 and (nCstPeak < par_.genetic.maxCstGen));
-        auto &t = scheduler.getMinSchedule();
-        if (scheduler.getMinValue() > memPeak_)
-        {
-            memPeak_ = scheduler.getMinValue();
-        }
+        //     gen++;
+        // } while ((gen < par_.genetic.maxGen)
+        //          and (nCstPeak < par_.genetic.maxCstGen));
+        // auto &t = scheduler.getMinSchedule();
+        // if (scheduler.getMinValue() > memPeak_)
+        // {
+        //     memPeak_ = scheduler.getMinValue();
+        // }
+        auto t = con[i].topoSort();
         for (unsigned int j = 0; j < t.size(); ++j)
         {
             program_.push_back(t[j]);
