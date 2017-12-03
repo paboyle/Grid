@@ -212,28 +212,23 @@ typename GeneticScheduler<T>::GenePair GeneticScheduler<T>::selectPair(void)
     std::vector<double> prob;
     unsigned int        ind;
     Gene                *p1, *p2;
+    const double        max = population_.rbegin()->first;
     
+
     for (auto &c: population_)
     {
-        prob.push_back(1./c.first);
-    }
-    do
-    {
-        double probCpy;
-        
-        std::discrete_distribution<unsigned int> dis1(prob.begin(), prob.end());
-        auto rIt = population_.begin();
-        ind = dis1(gen_);
-        std::advance(rIt, ind);
-        p1 = &(rIt->second);
-        probCpy   = prob[ind];
-        prob[ind] = 0.;
-        std::discrete_distribution<unsigned int> dis2(prob.begin(), prob.end());
-        rIt = population_.begin();
-        std::advance(rIt, dis2(gen_));
-        p2 = &(rIt->second);
-        prob[ind] = probCpy;
-    } while (p1 == p2);
+        prob.push_back(std::exp((c.first-1.)/max));
+    }        
+    std::discrete_distribution<unsigned int> dis1(prob.begin(), prob.end());
+    auto rIt = population_.begin();
+    ind = dis1(gen_);
+    std::advance(rIt, ind);
+    p1 = &(rIt->second);
+    prob[ind] = 0.;
+    std::discrete_distribution<unsigned int> dis2(prob.begin(), prob.end());
+    rIt = population_.begin();
+    std::advance(rIt, dis2(gen_));
+    p2 = &(rIt->second);
     
     return std::make_pair(p1, p2);
 }
