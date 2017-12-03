@@ -422,6 +422,15 @@ Environment::executeProgram(const std::vector<unsigned int> &p)
                 }
             }
         } while (continueCollect);
+        // free temporaries
+        for (unsigned int i = 0; i < object_.size(); ++i)
+        {
+            if ((object_[i].storage == Storage::temporary) 
+                and hasCreatedObject(i))
+            {
+                freeObject(i);
+            }
+        }
         // any remaining objects in step i garbage collection schedule
         // is scheduled for step i + 1
         if (i + 1 < p.size())
@@ -687,7 +696,7 @@ bool Environment::freeObject(const unsigned int address)
 {
     if (!hasOwners(address))
     {
-        if (!isDryRun())
+        if (!isDryRun() and hasCreatedObject(address))
         {
             LOG(Message) << "Destroying object '" << object_[address].name
                          << "'" << std::endl;
