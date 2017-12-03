@@ -100,11 +100,13 @@ public:\
     /* dependency relation */ \
     virtual std::vector<std::string> getInput(void);\
     virtual std::vector<std::string> getOutput(void);\
+public:\
+    std::vector<std::string> VA_label = {"V", "A"};\
+protected:\
     /* setup */ \
     virtual void setup(void);\
     /* execution */ \
     virtual void execute(void);\
-    std::vector<std::string> VA_label = {"V", "A"};\
 };\
 MODULE_REGISTER_NS(modname, T##modname, MContraction);
 

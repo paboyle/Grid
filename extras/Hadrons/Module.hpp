@@ -157,10 +157,11 @@ public:
     // parse parameters
     virtual void parseParameters(XmlReader &reader, const std::string name) = 0;
     virtual void saveParameters(XmlWriter &writer, const std::string name) = 0;
-    // setup
-    virtual void setup(void) {};
     // execution
     void operator()(void);
+protected:
+    // setup
+    virtual void setup(void) {};
     virtual void execute(void) = 0;
 private:
     std::string name_;

@@ -97,6 +97,7 @@ public:
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
     virtual void parseGammaString(std::vector<GammaPair> &gammaList);
+protected:
     // execution
     virtual void execute(void);
 };
