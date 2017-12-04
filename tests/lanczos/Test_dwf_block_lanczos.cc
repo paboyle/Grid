@@ -2,7 +2,7 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./tests/Test_dwf_lanczos.cc
+    Source file: ./tests/Test_dwf_block_lanczos.cc
 
     Copyright (C) 2015
 
@@ -78,6 +78,7 @@ int main (int argc, char ** argv)
 //  SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
 
   const int Nstop = 30;
+  const int Nu = 4;
   const int Nk = 60;
   const int Np = 60;
   const int Nm = Nk+Np;
@@ -92,19 +93,21 @@ int main (int argc, char ** argv)
 //  ChebyshevLanczos<LatticeFermion> Cheb(9.,1.,0.,20);
 //  Cheb.csv(std::cout);
 //  exit(-24);
-  ImplicitlyRestartedLanczos<FermionField> IRL(HermOp,Cheb,Nstop,Nk,Nm,resid,MaxIt);
+  ImplicitlyRestartedBlockLanczos<FermionField> IRBL(HermOp,Cheb,Nstop,Nu,Nk,Nm,resid,MaxIt);
 
   
   std::vector<RealD>          eval(Nm);
-  FermionField    src(FrbGrid); 
-  gaussian(RNG5rb,src);
+  
+  std::vector<FermionField> src(Nu,FrbGrid);
+  for ( int i=0; i<Nu; ++i ) gaussian(RNG5rb,src[i]);
+  
   std::vector<FermionField> evec(Nm,FrbGrid);
-  for(int i=0;i<1;i++){
-    std::cout << GridLogMessage <<i<<" / "<< Nm<< " grid pointer "<<evec[i]._grid<<std::endl;
+  for(int i=0;i<1;++i){
+    clog << i <<" / "<< Nm <<" grid pointer "<< evec[i]._grid << std::endl;
   };
 
   int Nconv;
-  IRL.calc(eval,evec,src,Nconv);
+  IRBL.calc(eval,evec,src,Nconv);
 
 
   Grid_finalize();
