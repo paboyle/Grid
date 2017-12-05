@@ -385,13 +385,14 @@ namespace Grid {
       // MT implementation does not implement fast discard even though
       // in principle this is possible
       ////////////////////////////////////////////////
-      std::vector<int> gcoor;
-      int rank,o_idx,i_idx;
 
       // Everybody loops over global volume.
       parallel_for(int gidx=0;gidx<_grid->_gsites;gidx++){
 
 	// Where is it?
+	int rank,o_idx,i_idx;
+	std::vector<int> gcoor;
+
 	_grid->GlobalIndexToGlobalCoor(gidx,gcoor);
 	_grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
 
