@@ -159,9 +159,11 @@ namespace Grid {
       // and margin of safety is orders of magnitude.
       // We could hack Sitmo to skip in the higher order words of state if necessary
       /////////////////////////////////////////////////////////////////////////////////////
+      //      uint64_t skip = site+1;  //   Old init Skipped then drew.  Checked compat with faster init
       uint64_t skip = site;
       skip = skip<<40;
       eng.discard(skip);
+      //      std::cout << " Engine  " <<site << " state " <<eng<<std::endl;
     } 
 #endif
     static RngEngine Reseed(RngEngine &eng)
