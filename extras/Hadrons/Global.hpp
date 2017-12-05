@@ -35,6 +35,10 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Grid.h>
 #include <cxxabi.h>
 
+#ifndef SITE_SIZE_TYPE
+#define SITE_SIZE_TYPE unsigned int
+#endif
+
 #define BEGIN_HADRONS_NAMESPACE \
 namespace Grid {\
 using namespace QCD;\

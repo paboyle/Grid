@@ -211,7 +211,7 @@ void TMeson<FImpl1, FImpl2>::execute(void)
             Gamma       gSrc(gammaList[i].second);
             std::string ns;
                 
-            ns = env().getModuleNamespace(env().getObjectModule(par().sink));
+            ns = vm().getModuleNamespace(env().getObjectModule(par().sink));
             if (ns == "MSource")
             {
                 PropagatorField1 &sink = envGet(PropagatorField1, par().sink);

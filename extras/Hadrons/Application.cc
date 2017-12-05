@@ -73,12 +73,6 @@ Application::Application(const std::string parameterFileName)
     parameterFileName_ = parameterFileName;
 }
 
-// environment shortcut ////////////////////////////////////////////////////////
-Environment & Application::env(void) const
-{
-    return Environment::getInstance();
-}
-
 // access //////////////////////////////////////////////////////////////////////
 void Application::setPar(const Application::GlobalPar &par)
 {
@@ -94,12 +88,13 @@ const Application::GlobalPar & Application::getPar(void)
 // execute /////////////////////////////////////////////////////////////////////
 void Application::run(void)
 {
-    if (!parameterFileName_.empty() and (env().getNModule() == 0))
+    if (!parameterFileName_.empty() and (vm().getNModule() == 0))
     {
         parseParameterFile(parameterFileName_);
     }
-    env().checkGraph();
+    //vm().checkGraph();
     env().printContent();
+    vm().printContent();
     if (!scheduled_)
     {
         schedule();
@@ -137,7 +132,7 @@ void Application::parseParameterFile(const std::string parameterFileName)
     do
     {
         read(reader, "id", id);
-        env().createModule(id.name, id.type, reader);
+        vm().createModule(id.name, id.type, reader);
     } while (reader.nextElement("module"));
     pop(reader);
     pop(reader);
@@ -147,7 +142,7 @@ void Application::saveParameterFile(const std::string parameterFileName)
 {
     XmlWriter          writer(parameterFileName);
     ObjectId           id;
-    const unsigned int nMod = env().getNModule();
+    const unsigned int nMod = vm().getNModule();
     
     LOG(Message) << "Saving application to '" << parameterFileName << "'..." << std::endl;
     write(writer, "parameters", getPar());
@@ -155,10 +150,10 @@ void Application::saveParameterFile(const std::string parameterFileName)
     for (unsigned int i = 0; i < nMod; ++i)
     {
         push(writer, "module");
-        id.name = env().getModuleName(i);
-        id.type = env().getModule(i)->getRegisteredName();
+        id.name = vm().getModuleName(i);
+        id.type = vm().getModule(i)->getRegisteredName();
         write(writer, "id", id);
-        env().getModule(i)->saveParameters(writer, "options");
+        vm().getModule(i)->saveParameters(writer, "options");
         pop(writer);
     }
     pop(writer);
@@ -178,9 +173,9 @@ GeneticScheduler<unsigned int>::ObjFunc memPeak = \
     \
     msg = HadronsLogMessage.isActive();\
     HadronsLogMessage.Active(false);\
-    env().dryRun(true);\
-    memPeak = env().executeProgram(program);\
-    env().dryRun(false);\
+    vm().dryRun(true);\
+    memPeak = vm().executeProgram(program);\
+    vm().dryRun(false);\
     env().freeAll();\
     HadronsLogMessage.Active(msg);\
     \
@@ -193,7 +188,7 @@ void Application::schedule(void)
     
     // build module dependency graph
     LOG(Message) << "Building module graph..." << std::endl;
-    auto graph = env().makeModuleGraph();
+    auto graph = vm().makeModuleGraph();
     LOG(Debug) << "Module graph:" << std::endl;
     LOG(Debug) << graph << std::endl;
     auto con = graph.getConnectedComponents();
@@ -273,7 +268,7 @@ void Application::saveSchedule(const std::string filename)
                  << std::endl;
     for (auto address: program_)
     {
-        program.push_back(env().getModuleName(address));
+        program.push_back(vm().getModuleName(address));
     }
     write(writer, "schedule", program);
 }
@@ -291,7 +286,7 @@ void Application::loadSchedule(const std::string filename)
     program_.clear();
     for (auto &name: program)
     {
-        program_.push_back(env().getModuleAddress(name));
+        program_.push_back(vm().getModuleAddress(name));
     }
     scheduled_ = true;
     memPeak_   = memPeak(program_);
@@ -308,7 +303,7 @@ void Application::printSchedule(void)
     for (unsigned int i = 0; i < program_.size(); ++i)
     {
         LOG(Message) << std::setw(4) << i + 1 << ": "
-                     << env().getModuleName(program_[i]) << std::endl;
+                     << vm().getModuleName(program_[i]) << std::endl;
     }
 }
 
@@ -321,8 +316,8 @@ void Application::configLoop(void)
     {
         LOG(Message) << BIG_SEP << " Starting measurement for trajectory " << t
                      << " " << BIG_SEP << std::endl;
-        env().setTrajectory(t);
-        env().executeProgram(program_);
+        vm().setTrajectory(t);
+        vm().executeProgram(program_);
     }
     LOG(Message) << BIG_SEP << " End of measurement " << BIG_SEP << std::endl;
     env().freeAll();
@@ -331,7 +326,7 @@ void Application::configLoop(void)
 // memory profile //////////////////////////////////////////////////////////////
 void Application::memoryProfile(void)
 {
-    auto graph   = env().makeModuleGraph();
+    auto graph   = vm().makeModuleGraph();
     auto program = graph.topoSort();
     bool msg;
     

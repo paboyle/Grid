@@ -39,18 +39,12 @@ using namespace Hadrons;
 // constructor /////////////////////////////////////////////////////////////////
 ModuleBase::ModuleBase(const std::string name)
 : name_(name)
-, env_(Environment::getInstance())
 {}
 
 // access //////////////////////////////////////////////////////////////////////
 std::string ModuleBase::getName(void) const
 {
     return name_;
-}
-
-Environment & ModuleBase::env(void) const
-{
-    return env_;
 }
 
 // get factory registration name if available
@@ -64,7 +58,7 @@ std::string ModuleBase::getRegisteredName(void)
 void ModuleBase::operator()(void)
 {
     setup();
-    if (!env().isDryRun())
+    if (!vm().isDryRun())
     {
         execute();
     }

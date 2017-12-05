@@ -31,8 +31,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define Hadrons_Application_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
-#include <Grid/Hadrons/Environment.hpp>
-#include <Grid/Hadrons/ModuleFactory.hpp>
+#include <Grid/Hadrons/VirtualMachine.hpp>
 #include <Grid/Hadrons/Modules.hpp>
 
 BEGIN_HADRONS_NAMESPACE
@@ -100,7 +99,9 @@ public:
     void configLoop(void);
 private:
     // environment shortcut
-    Environment & env(void) const;
+    DEFINE_ENV_ALIAS;
+    // virtual machine shortcut
+    DEFINE_VM_ALIAS;
     // memory profile
     void memoryProfile(void);
 private:
@@ -119,14 +120,14 @@ private:
 template <typename M>
 void Application::createModule(const std::string name)
 {
-    env().createModule<M>(name);
+    vm().createModule<M>(name);
 }
 
 template <typename M>
 void Application::createModule(const std::string name,
                                const typename M::Par &par)
 {
-    env().createModule<M>(name, par);
+    vm().createModule<M>(name, par);
 }
 
 END_HADRONS_NAMESPACE

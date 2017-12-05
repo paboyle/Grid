@@ -31,20 +31,12 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define Hadrons_Environment_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
-#include <Grid/Hadrons/Graph.hpp>
-
-#ifndef SITE_SIZE_TYPE
-#define SITE_SIZE_TYPE unsigned int
-#endif
 
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
  *                         Global environment                                 *
  ******************************************************************************/
-// forward declaration of Module
-class ModuleBase;
-
 class Object
 {
 public:
@@ -66,26 +58,22 @@ private:
     std::unique_ptr<T> objPt_{nullptr};
 };
 
+#define DEFINE_ENV_ALIAS \
+inline Environment & env(void) const\
+{\
+    return Environment::getInstance();\
+}
+
 class Environment
 {
     SINGLETON(Environment);
 public:
     typedef SITE_SIZE_TYPE                         Size;
-    typedef std::unique_ptr<ModuleBase>            ModPt;
     typedef std::unique_ptr<GridCartesian>         GridPt;
     typedef std::unique_ptr<GridRedBlackCartesian> GridRbPt;
     typedef std::unique_ptr<GridParallelRNG>       RngPt;
-    typedef std::unique_ptr<LatticeBase>           LatticePt;
     enum class Storage {object, cache, temporary};
 private:
-    struct ModuleInfo
-    {
-        const std::type_info      *type{nullptr};
-        std::string               name;
-        ModPt                     data{nullptr};
-        std::vector<unsigned int> input;
-        size_t                    maxAllocated;
-    };
     struct ObjInfo
     {
         Size                    size{0};
@@ -98,53 +86,17 @@ private:
         std::unique_ptr<Object> data{nullptr};
     };
 public:
-    // dry run
-    void                    dryRun(const bool isDry);
-    bool                    isDryRun(void) const;
-    void                    memoryProfile(const bool doMemoryProfile);
-    bool                    doMemoryProfile(void) const;
-    // trajectory number
-    void                    setTrajectory(const unsigned int traj);
-    unsigned int            getTrajectory(void) const;
     // grids
     void                    createGrid(const unsigned int Ls);
     GridCartesian *         getGrid(const unsigned int Ls = 1) const;
     GridRedBlackCartesian * getRbGrid(const unsigned int Ls = 1) const;
     std::vector<int>        getDim(void) const;
     int                     getDim(const unsigned int mu) const;
+    unsigned long int       getLocalVolume(void) const;
     unsigned int            getNd(void) const;
     // random number generator
     void                    setSeed(const std::vector<int> &seed);
     GridParallelRNG *       get4dRng(void) const;
-    // module management
-    void                    pushModule(ModPt &pt);
-    template <typename M>
-    void                    createModule(const std::string name);
-    template <typename M>
-    void                    createModule(const std::string name,
-                                         const typename M::Par &par);
-    void                    createModule(const std::string name,
-                                         const std::string type,
-                                         XmlReader &reader);
-    unsigned int            getNModule(void) const;
-    ModuleBase *            getModule(const unsigned int address) const;
-    ModuleBase *            getModule(const std::string name) const;
-    template <typename M>
-    M *                     getModule(const unsigned int address) const;
-    template <typename M>
-    M *                     getModule(const std::string name) const;
-    unsigned int            getModuleAddress(const std::string name) const;
-    std::string             getModuleName(const unsigned int address) const;
-    std::string             getModuleType(const unsigned int address) const;
-    std::string             getModuleType(const std::string name) const;
-    std::string             getModuleNamespace(const unsigned int address) const;
-    std::string             getModuleNamespace(const std::string name) const;
-    bool                    hasModule(const unsigned int address) const;
-    bool                    hasModule(const std::string name) const;
-    Graph<unsigned int>     makeModuleGraph(void) const;
-    void                    checkGraph(void) const;
-    Size                    executeProgram(const std::vector<unsigned int> &p);
-    Size                    executeProgram(const std::vector<std::string> &p);
     // general memory management
     void                    addObject(const std::string name,
                                       const int moduleAddress = -1);
@@ -153,18 +105,23 @@ public:
                                          const Storage storage,
                                          const unsigned int Ls,
                                          P &&pt);
+    void                    setObjectModule(const unsigned int objAddress,
+                                            const int modAddress);
     template <typename T>
     T *                     getObject(const unsigned int address) const;
     template <typename T>
     T *                     getObject(const std::string name) const;
+    unsigned int            getMaxAddress(void) const;
     unsigned int            getObjectAddress(const std::string name) const;
     std::string             getObjectName(const unsigned int address) const;
     std::string             getObjectType(const unsigned int address) const;
     std::string             getObjectType(const std::string name) const;
     Size                    getObjectSize(const unsigned int address) const;
     Size                    getObjectSize(const std::string name) const;
-    unsigned int            getObjectModule(const unsigned int address) const;
-    unsigned int            getObjectModule(const std::string name) const;
+    Storage                 getObjectStorage(const unsigned int address) const;
+    Storage                 getObjectStorage(const std::string name) const;
+    int                     getObjectModule(const unsigned int address) const;
+    int                     getObjectModule(const std::string name) const;
     unsigned int            getObjectLs(const unsigned int address) const;
     unsigned int            getObjectLs(const std::string name) const;
     bool                    hasObject(const unsigned int address) const;
@@ -187,11 +144,11 @@ public:
     bool                    freeObject(const unsigned int address);
     bool                    freeObject(const std::string name);
     void                    freeAll(void);
-    void                    printContent(void);
+    // print environment content
+    void                    printContent(void) const;
 private:
     // general
-    bool                                   dryRun_{false}, memoryProfile_{false};
-    unsigned int                           traj_, locVol_;
+    unsigned long int                      locVol_;
     // grids
     std::vector<int>                       dim_;
     GridPt                                 grid4d_;
@@ -201,12 +158,6 @@ private:
     unsigned int                           nd_;
     // random number generator
     RngPt                                  rng4d_;
-    // module and related maps
-    std::vector<ModuleInfo>                module_;
-    std::map<std::string, unsigned int>    moduleAddress_;
-    std::string                            currentModule_{""};
-    // lattice store
-    std::map<unsigned int, LatticePt>      lattice_;
     // object store
     std::vector<ObjInfo>                   object_;
     std::map<std::string, unsigned int>    objectAddress_;
@@ -243,46 +194,7 @@ void Holder<T>::reset(T *pt)
 /******************************************************************************
  *                     Environment template implementation                    *
  ******************************************************************************/
-// module management ///////////////////////////////////////////////////////////
-template <typename M>
-void Environment::createModule(const std::string name)
-{
-    ModPt pt(new M(name));
-    
-    pushModule(pt);
-}
-
-template <typename M>
-void Environment::createModule(const std::string name,
-                               const typename M::Par &par)
-{
-    ModPt pt(new M(name));
-    
-    static_cast<M *>(pt.get())->setPar(par);
-    pushModule(pt);
-}
-
-template <typename M>
-M * Environment::getModule(const unsigned int address) const
-{
-    if (auto *pt = dynamic_cast<M *>(getModule(address)))
-    {
-        return pt;
-    }
-    else
-    {
-        HADRON_ERROR("module '" + module_[address].name
-                     + "' does not have type " + typeid(M).name()
-                     + "(object type: " + getModuleType(address) + ")");
-    }
-}
-
-template <typename M>
-M * Environment::getModule(const std::string name) const
-{
-    return getModule<M>(getModuleAddress(name));
-}
-
+// general memory management ///////////////////////////////////////////////////
 template <typename T, typename P>
 void Environment::createObject(const std::string name, 
                                const Environment::Storage storage,

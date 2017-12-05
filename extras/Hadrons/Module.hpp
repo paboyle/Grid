@@ -31,7 +31,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define Hadrons_Module_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
-#include <Grid/Hadrons/Environment.hpp>
+#include <Grid/Hadrons/VirtualMachine.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -148,7 +148,6 @@ public:
     virtual ~ModuleBase(void) = default;
     // access
     std::string getName(void) const;
-    Environment &env(void) const;
     // get factory registration name if available
     virtual std::string getRegisteredName(void);
     // dependencies/products
@@ -163,9 +162,12 @@ protected:
     // setup
     virtual void setup(void) {};
     virtual void execute(void) = 0;
+    // environment shortcut
+    DEFINE_ENV_ALIAS;
+    // virtual machine shortcut
+    DEFINE_VM_ALIAS;
 private:
     std::string name_;
-    Environment &env_;
 };
 
 // derived class, templating the parameter class

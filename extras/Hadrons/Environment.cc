@@ -56,38 +56,6 @@ Environment::Environment(void)
     rng4d_.reset(new GridParallelRNG(grid4d_.get()));
 }
 
-// dry run /////////////////////////////////////////////////////////////////////
-void Environment::dryRun(const bool isDry)
-{
-    dryRun_ = isDry;
-}
-
-bool Environment::isDryRun(void) const
-{
-    return dryRun_;
-}
-
-void Environment::memoryProfile(const bool doMemoryProfile)
-{
-    memoryProfile_ = doMemoryProfile;
-}
-
-bool Environment::doMemoryProfile(void) const
-{
-    return memoryProfile_;
-}
-
-// trajectory number ///////////////////////////////////////////////////////////
-void Environment::setTrajectory(const unsigned int traj)
-{
-    traj_ = traj;
-}
-
-unsigned int Environment::getTrajectory(void) const
-{
-    return traj_;
-}
-
 // grids ///////////////////////////////////////////////////////////////////////
 void Environment::createGrid(const unsigned int Ls)
 {
@@ -153,6 +121,11 @@ int Environment::getDim(const unsigned int mu) const
     return dim_[mu];
 }
 
+unsigned long int Environment::getLocalVolume(void) const
+{
+    return locVol_;
+}
+
 // random number generator /////////////////////////////////////////////////////
 void Environment::setSeed(const std::vector<int> &seed)
 {
@@ -162,313 +135,6 @@ void Environment::setSeed(const std::vector<int> &seed)
 GridParallelRNG * Environment::get4dRng(void) const
 {
     return rng4d_.get();
-}
-
-// module management ///////////////////////////////////////////////////////////
-void Environment::pushModule(Environment::ModPt &pt)
-{
-    std::string name = pt->getName();
-    
-    if (!hasModule(name))
-    {
-        std::vector<unsigned int> inputAddress;
-        unsigned int              address;
-        ModuleInfo                m;
-        
-        m.data = std::move(pt);
-        m.type = typeIdPt(*m.data.get());
-        m.name = name;
-        auto input  = m.data->getInput();
-        for (auto &in: input)
-        {
-            if (!hasObject(in))
-            {
-                addObject(in , -1);
-            }
-            m.input.push_back(objectAddress_[in]);
-        }
-        auto output = m.data->getOutput();
-        module_.push_back(std::move(m));
-        address              = static_cast<unsigned int>(module_.size() - 1);
-        moduleAddress_[name] = address;
-        for (auto &out: output)
-        {
-            if (!hasObject(out))
-            {
-                addObject(out, address);
-            }
-            else
-            {
-                if (object_[objectAddress_[out]].module < 0)
-                {
-                    object_[objectAddress_[out]].module = address;
-                }
-                else
-                {
-                    HADRON_ERROR("object '" + out
-                                 + "' is already produced by module '"
-                                 + module_[object_[getObjectAddress(out)].module].name
-                                 + "' (while pushing module '" + name + "')");
-                }
-            }
-        }
-    }
-    else
-    {
-        HADRON_ERROR("module '" + name + "' already exists");
-    }
-}
-
-unsigned int Environment::getNModule(void) const
-{
-    return module_.size();
-}
-
-void Environment::createModule(const std::string name, const std::string type,
-                               XmlReader &reader)
-{
-    auto &factory = ModuleFactory::getInstance();
-    auto pt       = factory.create(type, name);
-    
-    pt->parseParameters(reader, "options");
-    pushModule(pt);
-}
-
-ModuleBase * Environment::getModule(const unsigned int address) const
-{
-    if (hasModule(address))
-    {
-        return module_[address].data.get();
-    }
-    else
-    {
-        HADRON_ERROR("no module with address " + std::to_string(address));
-    }
-}
-
-ModuleBase * Environment::getModule(const std::string name) const
-{
-    return getModule(getModuleAddress(name));
-}
-
-unsigned int Environment::getModuleAddress(const std::string name) const
-{
-    if (hasModule(name))
-    {
-        return moduleAddress_.at(name);
-    }
-    else
-    {
-        HADRON_ERROR("no module with name '" + name + "'");
-    }
-}
-
-std::string Environment::getModuleName(const unsigned int address) const
-{
-    if (hasModule(address))
-    {
-        return module_[address].name;
-    }
-    else
-    {
-        HADRON_ERROR("no module with address " + std::to_string(address));
-    }
-}
-
-std::string Environment::getModuleType(const unsigned int address) const
-{
-    if (hasModule(address))
-    {
-        return typeName(module_[address].type);
-    }
-    else
-    {
-        HADRON_ERROR("no module with address " + std::to_string(address));
-    }
-}
-
-std::string Environment::getModuleType(const std::string name) const
-{
-    return getModuleType(getModuleAddress(name));
-}
-
-std::string Environment::getModuleNamespace(const unsigned int address) const
-{
-    std::string type = getModuleType(address), ns;
-    
-    auto pos2 = type.rfind("::");
-    auto pos1 = type.rfind("::", pos2 - 2);
-    
-    return type.substr(pos1 + 2, pos2 - pos1 - 2);
-}
-
-std::string Environment::getModuleNamespace(const std::string name) const
-{
-    return getModuleNamespace(getModuleAddress(name));
-}
-
-bool Environment::hasModule(const unsigned int address) const
-{
-    return (address < module_.size());
-}
-
-bool Environment::hasModule(const std::string name) const
-{
-    return (moduleAddress_.find(name) != moduleAddress_.end());
-}
-
-Graph<unsigned int> Environment::makeModuleGraph(void) const
-{
-    Graph<unsigned int> moduleGraph;
-    
-    for (unsigned int i = 0; i < module_.size(); ++i)
-    {
-        moduleGraph.addVertex(i);
-        for (auto &j: module_[i].input)
-        {
-            moduleGraph.addEdge(object_[j].module, i);
-        }
-    }
-    
-    return moduleGraph;
-}
-
-void Environment::checkGraph(void) const
-{
-    for (auto &o: object_)
-    {
-        if (o.module < 0)
-        {
-            HADRON_ERROR("object '" + o.name + "' does not have a creator");
-        }
-    }
-}
-
-#define BIG_SEP "==============="
-#define SEP     "---------------"
-#define MEM_MSG(size)\
-sizeString((size)*locVol_) << " (" << sizeString(size)  << "/site)"
-
-Environment::Size
-Environment::executeProgram(const std::vector<unsigned int> &p)
-{
-    Size                                memPeak = 0, sizeBefore, sizeAfter;
-    std::vector<std::set<unsigned int>> freeProg;
-    bool                                continueCollect, nothingFreed;
-    
-    // build garbage collection schedule
-    LOG(Debug) << "Building garbage collection schedule..." << std::endl;
-    freeProg.resize(p.size());
-    for (unsigned int i = 0; i < object_.size(); ++i)
-    {
-        auto pred = [i, this](const unsigned int j)
-        {
-            auto &in = module_[j].input;
-            auto it  = std::find(in.begin(), in.end(), i);
-            
-            return (it != in.end()) or (j == object_[i].module);
-        };
-        auto it = std::find_if(p.rbegin(), p.rend(), pred);
-        if (it != p.rend())
-        {
-            freeProg[std::distance(it, p.rend()) - 1].insert(i);
-        }
-    }
-
-    // program execution
-    LOG(Debug) << "Executing program..." << std::endl;
-    for (unsigned int i = 0; i < p.size(); ++i)
-    {
-        // execute module
-        if (!isDryRun())
-        {
-            LOG(Message) << SEP << " Measurement step " << i+1 << "/"
-                         << p.size() << " (module '" << module_[p[i]].name
-                         << "') " << SEP << std::endl;
-        }
-        (*module_[p[i]].data)();
-        sizeBefore = getTotalSize();
-        // print used memory after execution
-        if (!isDryRun())
-        {
-            LOG(Message) << "Allocated objects: " << MEM_MSG(sizeBefore)
-                         << std::endl;
-        }
-        if (sizeBefore > memPeak)
-        {
-            memPeak = sizeBefore;
-        }
-        // garbage collection for step i
-        if (!isDryRun())
-        {
-            LOG(Message) << "Garbage collection..." << std::endl;
-        }
-        nothingFreed = true;
-        do
-        {
-            continueCollect = false;
-            auto toFree = freeProg[i];
-            for (auto &j: toFree)
-            {
-                // continue garbage collection while there are still
-                // objects without owners
-                continueCollect = continueCollect or !hasOwners(j);
-                if(freeObject(j))
-                {
-                    // if an object has been freed, remove it from
-                    // the garbage collection schedule
-                    freeProg[i].erase(j);
-                    nothingFreed = false;
-                }
-            }
-        } while (continueCollect);
-        // free temporaries
-        for (unsigned int i = 0; i < object_.size(); ++i)
-        {
-            if ((object_[i].storage == Storage::temporary) 
-                and hasCreatedObject(i))
-            {
-                freeObject(i);
-            }
-        }
-        // any remaining objects in step i garbage collection schedule
-        // is scheduled for step i + 1
-        if (i + 1 < p.size())
-        {
-            for (auto &j: freeProg[i])
-            {
-                freeProg[i + 1].insert(j);
-            }
-        }
-        // print used memory after garbage collection if necessary
-        if (!isDryRun())
-        {
-            sizeAfter = getTotalSize();
-            if (sizeBefore != sizeAfter)
-            {
-                LOG(Message) << "Allocated objects: " << MEM_MSG(sizeAfter)
-                             << std::endl;
-            }
-            else
-            {
-                LOG(Message) << "Nothing to free" << std::endl;
-            }
-        }
-    }
-    
-    return memPeak;
-}
-
-Environment::Size Environment::executeProgram(const std::vector<std::string> &p)
-{
-    std::vector<unsigned int> pAddress;
-    
-    for (auto &n: p)
-    {
-        pAddress.push_back(getModuleAddress(n));
-    }
-    
-    return executeProgram(pAddress);
 }
 
 // general memory management ///////////////////////////////////////////////////
@@ -488,6 +154,17 @@ void Environment::addObject(const std::string name, const int moduleAddress)
     {
         HADRON_ERROR("object '" + name + "' already exists");
     }
+}
+
+void Environment::setObjectModule(const unsigned int objAddress,
+                                  const int modAddress)
+{
+    object_[objAddress].module = modAddress;
+}
+
+unsigned int Environment::getMaxAddress(void) const
+{
+    return object_.size();
 }
 
 unsigned int Environment::getObjectAddress(const std::string name) const
@@ -555,7 +232,24 @@ Environment::Size Environment::getObjectSize(const std::string name) const
     return getObjectSize(getObjectAddress(name));
 }
 
-unsigned int Environment::getObjectModule(const unsigned int address) const
+Environment::Storage Environment::getObjectStorage(const unsigned int address) const
+{
+    if (hasObject(address))
+    {
+        return object_[address].storage;
+    }
+    else
+    {
+        HADRON_ERROR("no object with address " + std::to_string(address));
+    }
+}
+
+Environment::Storage Environment::getObjectStorage(const std::string name) const
+{
+    return getObjectStorage(getObjectAddress(name));
+}
+
+int Environment::getObjectModule(const unsigned int address) const
 {
     if (hasObject(address))
     {
@@ -567,7 +261,7 @@ unsigned int Environment::getObjectModule(const unsigned int address) const
     }
 }
 
-unsigned int Environment::getObjectModule(const std::string name) const
+int Environment::getObjectModule(const std::string name) const
 {
     return getObjectModule(getObjectAddress(name));
 }
@@ -696,7 +390,7 @@ bool Environment::freeObject(const unsigned int address)
 {
     if (!hasOwners(address))
     {
-        if (!isDryRun() and hasCreatedObject(address))
+        if (hasCreatedObject(address))
         {
             LOG(Message) << "Destroying object '" << object_[address].name
                          << "'" << std::endl;
@@ -732,14 +426,9 @@ void Environment::freeAll(void)
     }
 }
 
-void Environment::printContent(void)
+// print environment content ///////////////////////////////////////////////////
+void Environment::printContent(void) const
 {
-    LOG(Debug) << "Modules: " << std::endl;
-    for (unsigned int i = 0; i < module_.size(); ++i)
-    {
-        LOG(Debug) << std::setw(4) << i << ": "
-                   << getModuleName(i) << std::endl;
-    }
     LOG(Debug) << "Objects: " << std::endl;
     for (unsigned int i = 0; i < object_.size(); ++i)
     {

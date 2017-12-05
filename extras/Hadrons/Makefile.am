@@ -8,7 +8,8 @@ libHadrons_a_SOURCES = \
     Application.cc     \
     Environment.cc     \
     Global.cc          \
-    Module.cc
+    Module.cc		   \
+	VirtualMachine.cc
 libHadrons_adir = $(pkgincludedir)/Hadrons
 nobase_libHadrons_a_HEADERS = \
 	$(modules_hpp)            \
@@ -20,7 +21,8 @@ nobase_libHadrons_a_HEADERS = \
 	Graph.hpp                 \
 	Module.hpp                \
 	Modules.hpp               \
-	ModuleFactory.hpp
+	ModuleFactory.hpp         \
+	VirtualMachine.hpp
 
 HadronsXmlRun_SOURCES = HadronsXmlRun.cc
 HadronsXmlRun_LDADD   = libHadrons.a -lGrid
