@@ -47,6 +47,7 @@ namespace Grid {
       INHERIT_IMPL_TYPES(Impl);
 
       FermionOperator(const ImplParams &p= ImplParams()) : Impl(p) {};
+      virtual ~FermionOperator(void) = default;
 
       virtual FermionField &tmp(void) = 0;
 
