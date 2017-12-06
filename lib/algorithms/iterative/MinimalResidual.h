@@ -54,7 +54,7 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
     conformable(psi, src);
 
     Complex a, c;
-    RealD   d;
+    Real    d;
 
     Field Mr(src);
     Field r(src);
