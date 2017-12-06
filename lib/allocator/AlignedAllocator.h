@@ -74,7 +74,46 @@ namespace Grid {
   {
   public:
     static MemoryStats *stats;
+    static bool        debug;
   };
+
+  #define profilerDebugPrint \
+  if (MemoryProfiler::stats)\
+  {\
+    auto s = MemoryProfiler::stats;\
+    std::cout << "[Memory debug] Stats " << MemoryProfiler::stats << std::endl;\
+    std::cout << "[Memory debug] Total  : " << s->totalAllocated << "B" << std::endl;\
+    std::cout << "[Memory debug] Max    : " << s->maxAllocated << "B" << std::endl;\
+    std::cout << "[Memory debug] Current: " << s->totalAllocated << "B" << std::endl;\
+    std::cout << "[Memory debug] Freed  : " << s->totalFreed << "B" << std::endl;\
+  }
+
+  #define profilerAllocate(bytes)\
+  if (MemoryProfiler::stats)\
+  {\
+    auto s = MemoryProfiler::stats;\
+    s->totalAllocated     += (bytes);\
+    s->currentlyAllocated += (bytes);\
+    s->maxAllocated        = std::max(s->maxAllocated, s->currentlyAllocated);\
+  }\
+  if (MemoryProfiler::debug)\
+  {\
+    std::cout << "[Memory debug] allocating " << bytes << "B" << std::endl;\
+    profilerDebugPrint;\
+  }
+
+  #define profilerFree(bytes)\
+  if (MemoryProfiler::stats)\
+  {\
+    auto s = MemoryProfiler::stats;\
+    s->totalFreed         += (bytes);\
+    s->currentlyAllocated -= (bytes);\
+  }\
+  if (MemoryProfiler::debug)\
+  {\
+    std::cout << "[Memory debug] freeing " << bytes << "B" << std::endl;\
+    profilerDebugPrint;\
+  }
 
   void check_huge_pages(void *Buf,uint64_t BYTES);
 
@@ -104,13 +143,7 @@ public:
   pointer allocate(size_type __n, const void* _p= 0)
   { 
     size_type bytes = __n*sizeof(_Tp);
-
-    if (auto s = MemoryProfiler::stats)
-    {
-      s->totalAllocated     += bytes;
-      s->currentlyAllocated += bytes;
-      s->maxAllocated        = std::max(s->maxAllocated, s->currentlyAllocated);
-    }
+    profilerAllocate(bytes);
 
     _Tp *ptr = (_Tp *) PointerCache::Lookup(bytes);
     //    if ( ptr != NULL ) 
@@ -141,11 +174,7 @@ public:
   void deallocate(pointer __p, size_type __n) { 
     size_type bytes = __n * sizeof(_Tp);
 
-    if (auto s = MemoryProfiler::stats)
-    {
-      s->totalFreed         += bytes;
-      s->currentlyAllocated -= bytes;
-    }
+    profilerFree(bytes);
 
     pointer __freeme = (pointer)PointerCache::Insert((void *)__p,bytes);
 
@@ -199,12 +228,7 @@ public:
   {
     size_type bytes = __n*sizeof(_Tp);
 
-    if (auto s = MemoryProfiler::stats)
-    {
-      s->totalAllocated     += bytes;
-      s->currentlyAllocated += bytes;
-      s->maxAllocated        = std::max(s->maxAllocated, s->currentlyAllocated);
-    }
+    profilerAllocate(bytes);
 #ifdef CRAY
     _Tp *ptr = (_Tp *) shmem_align(bytes,64);
 #else
@@ -229,11 +253,7 @@ public:
   void deallocate(pointer __p, size_type __n) { 
     size_type bytes = __n*sizeof(_Tp);
 
-    if (auto s = MemoryProfiler::stats)
-    {
-      s->totalFreed         += bytes;
-      s->currentlyAllocated -= bytes;
-    }
+    profilerFree(bytes);
     shmem_free((void *)__p);
   }
 #else
@@ -241,12 +261,7 @@ public:
   {
     size_type bytes = __n*sizeof(_Tp);
     
-    if (auto s = MemoryProfiler::stats)
-    {
-      s->totalAllocated     += bytes;
-      s->currentlyAllocated += bytes;
-      s->maxAllocated        = std::max(s->maxAllocated, s->currentlyAllocated);
-    }
+    profilerAllocate(bytes);
 #ifdef HAVE_MM_MALLOC_H
     _Tp * ptr = (_Tp *) _mm_malloc(bytes, GRID_ALLOC_ALIGN);
 #else
@@ -265,11 +280,7 @@ public:
   void deallocate(pointer __p, size_type __n) {
     size_type bytes = __n*sizeof(_Tp);
 
-    if (auto s = MemoryProfiler::stats)
-    {
-      s->totalFreed         += bytes;
-      s->currentlyAllocated -= bytes;
-    }
+    profilerFree(bytes);
 #ifdef HAVE_MM_MALLOC_H
     _mm_free((void *)__p); 
 #else

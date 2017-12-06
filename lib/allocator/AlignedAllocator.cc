@@ -3,7 +3,8 @@
 
 namespace Grid {
 
-MemoryStats *MemoryProfiler::stats         = nullptr;
+MemoryStats *MemoryProfiler::stats = nullptr;
+bool         MemoryProfiler::debug = false;
 
 int PointerCache::victim;
 
