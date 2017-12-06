@@ -822,6 +822,7 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 
       // Loop over reordered data post A2A
       parallel_for(int c=0;c<chunk;c++){
+	std::vector<int> coor(ndim);
 	for(int m=0;m<M;m++){
 	  for(int s=0;s<sP;s++){
 	    
@@ -833,7 +834,6 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 	    uint64_t lex_vec      = lex_fvol_vec/fvol;
 
 	    // which node sets an adder to the coordinate
-	    std::vector<int> coor(ndim);
 	    Lexicographic::CoorFromIndex(coor, lex_fvol, ldims);	  
 	    coor[d] += m*ldims[d];
 	    Lexicographic::IndexFromCoor(coor, lex_r, rdims);	  
@@ -940,10 +940,11 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 	
       {
 	// Loop over reordered data post A2A
-	for(int c=0;c<chunk;c++){
+	parallel_for(int c=0;c<chunk;c++){
+	  std::vector<int> coor(ndim);
 	  for(int m=0;m<M;m++){
 	    for(int s=0;s<sP;s++){
-	      
+
 	      // addressing; use lexico
 	      int lex_r;
 	      uint64_t lex_c = c+chunk*m+chunk*M*s;
@@ -952,7 +953,6 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 	      uint64_t lex_vec      = lex_fvol_vec/fvol;
 	      
 	      // which node sets an adder to the coordinate
-	      std::vector<int> coor(ndim);
 	      Lexicographic::CoorFromIndex(coor, lex_fvol, ldims);	  
 	      coor[d] += m*ldims[d];
 	      Lexicographic::IndexFromCoor(coor, lex_r, rdims);	  
@@ -978,9 +978,9 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
 
   lsites = full_grid->lSites();
   for(int v=0;v<nvector;v++){
-    assert(v<full.size());
+    //    assert(v<full.size());
     parallel_for(int site=0;site<lsites;site++){
-      assert(v*lsites+site < alldata.size());
+      //      assert(v*lsites+site < alldata.size());
       scalardata[site] = alldata[v*lsites+site];
     }
     vectorizeFromLexOrdArray(scalardata,full[v]);    
