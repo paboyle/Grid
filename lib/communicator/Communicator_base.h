@@ -276,10 +276,11 @@ class CartesianCommunicator {
     assert(in.size()==out.size());
     uint64_t bytes=sizeof(T);
     uint64_t words=in.size()/numnode;
-
+    //    std:: cout << "AllToAll buffer size "<< in.size()*sizeof(T)<<std::endl;
+    //    std:: cout << "AllToAll datum bytes "<< bytes<<std::endl;
+    //    std:: cout << "AllToAll datum count "<< words<<std::endl;
     assert(numnode * words == in.size());
-    assert(words < (1ULL<<32));
-
+    assert(words < (1ULL<<31));
     AllToAll(dim,(void *)&in[0],(void *)&out[0],words,bytes);
   }
   void AllToAll(int dim  ,void *in,void *out,uint64_t words,uint64_t bytes);

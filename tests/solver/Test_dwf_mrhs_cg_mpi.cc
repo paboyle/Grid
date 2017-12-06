@@ -81,21 +81,20 @@ int main (int argc, char ** argv)
   GridCartesian         * SFGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,SGrid);
   GridRedBlackCartesian * SrbGrid  = SpaceTimeGrid::makeFourDimRedBlackGrid(SGrid);
   GridRedBlackCartesian * SFrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,SGrid);
-
+  std::cout << GridLogMessage << "Made the grids"<<std::endl;
   ///////////////////////////////////////////////
   // Set up the problem as a 4d spreadout job
   ///////////////////////////////////////////////
   std::vector<int> seeds({1,2,3,4});
 
-  GridParallelRNG pRNG(UGrid );  pRNG.SeedFixedIntegers(seeds);
-  GridParallelRNG pRNG5(FGrid);  pRNG5.SeedFixedIntegers(seeds);
   std::vector<FermionField>    src(nrhs,FGrid);
   std::vector<FermionField> src_chk(nrhs,FGrid);
   std::vector<FermionField> result(nrhs,FGrid);
   FermionField tmp(FGrid);
+  std::cout << GridLogMessage << "Made the Fermion Fields"<<std::endl;
 
   for(int s=0;s<nrhs;s++) result[s]=zero;
-#define LEXICO_TEST
+#undef LEXICO_TEST
 #ifdef LEXICO_TEST
   {
     LatticeFermion lex(FGrid);  lex = zero;
@@ -117,6 +116,7 @@ int main (int argc, char ** argv)
     }    
   }
 #else
+  GridParallelRNG pRNG5(FGrid);  pRNG5.SeedFixedIntegers(seeds);
   for(int s=0;s<nrhs;s++) {
     random(pRNG5,src[s]);
     tmp = 100.0*s;
@@ -124,13 +124,21 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage << " src ["<<s<<"] "<<norm2(src[s])<<std::endl;
   }
 #endif
+  std::cout << GridLogMessage << "Intialised the Fermion Fields"<<std::endl;
 
-  for(int n =0 ; n< nrhs ; n++) { 
-    //    std::cout << " src"<<n<<"\n"<< src[n] <<std::endl;
+  LatticeGaugeField Umu(UGrid); 
+  if(1) { 
+    GridParallelRNG pRNG(UGrid );  
+    std::cout << GridLogMessage << "Intialising 4D RNG "<<std::endl;
+    pRNG.SeedFixedIntegers(seeds);
+    std::cout << GridLogMessage << "Intialised 4D RNG "<<std::endl;
+    SU3::HotConfiguration(pRNG,Umu);
+    std::cout << "Intialised the HOT Gauge Field"<<std::endl;
+    //    std::cout << " Site zero "<< Umu._odata[0]   <<std::endl;
+  } else { 
+    SU3::ColdConfiguration(Umu);
+    std::cout << GridLogMessage << "Intialised the COLD Gauge Field"<<std::endl;
   }
-
-  LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
-
   /////////////////
   // MPI only sends
   /////////////////
@@ -139,13 +147,13 @@ int main (int argc, char ** argv)
   FermionField s_tmp(SFGrid);
   FermionField s_res(SFGrid);
 
+  std::cout << GridLogMessage << "Made the split grid fields"<<std::endl;
   ///////////////////////////////////////////////////////////////
   // split the source out using MPI instead of I/O
   ///////////////////////////////////////////////////////////////
   Grid_split  (Umu,s_Umu);
   Grid_split  (src,s_src);
   std::cout << GridLogMessage << " split rank  " <<me << " s_src "<<norm2(s_src)<<std::endl;
-  //  std::cout << " s_src\n "<< s_src <<std::endl;
 
 #ifdef LEXICO_TEST
   FermionField s_src_tmp(SFGrid);
@@ -169,16 +177,12 @@ int main (int argc, char ** argv)
   }
   s_src_diff = s_src_tmp - s_src;
   std::cout << GridLogMessage <<" LEXICO test:  s_src_diff " << norm2(s_src_diff)<<std::endl;
-
-  //  std::cout << " s_src \n" << s_src << std::endl;
-  //  std::cout << " s_src_tmp \n" << s_src_tmp << std::endl;
-  //  std::cout << " s_src_diff \n" << s_src_diff << std::endl;
-  //  exit(0);
 #endif
 
   ///////////////////////////////////////////////////////////////
   // Set up N-solvers as trivially parallel
   ///////////////////////////////////////////////////////////////
+  std::cout << GridLogMessage << " Building the solvers"<<std::endl;
   RealD mass=0.01;
   RealD M5=1.8;
   DomainWallFermionR Dchk(Umu,*FGrid,*FrbGrid,*UGrid,*rbGrid,mass,M5);
