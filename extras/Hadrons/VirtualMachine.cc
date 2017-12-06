@@ -251,8 +251,7 @@ Graph<unsigned int> VirtualMachine::makeModuleGraph(void) const
 // general execution ///////////////////////////////////////////////////////////
 #define BIG_SEP "==============="
 #define SEP     "---------------"
-#define MEM_MSG(size)\
-sizeString((size)*env().getLocalVolume()) << " (" << sizeString(size)  << "/site)"
+#define MEM_MSG(size) sizeString(size)
 
 VirtualMachine::Size
 VirtualMachine::executeProgram(const std::vector<unsigned int> &p)

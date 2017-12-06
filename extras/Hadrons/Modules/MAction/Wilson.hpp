@@ -111,9 +111,8 @@ void TWilson<FImpl>::setup(void)
     auto &gridRb = *env().getRbGrid();
     std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
     typename WilsonFermion<FImpl>::ImplParams implParams(boundary);
-    envCreate(FMat, getName(), 1, new WilsonFermion<FImpl>(U, grid, gridRb, 
-                                                           par().mass,
-                                                           implParams));
+    envCreateDerived(FMat, WilsonFermion<FImpl>, getName(), 1, U, grid, gridRb,
+                     par().mass, implParams);
 }
 
 // execution ///////////////////////////////////////////////////////////////////

@@ -114,7 +114,7 @@ void TRBPrecCG<FImpl>::setup(void)
         
         schurSolver(mat, source, sol);
     };
-    envCreate(SolverFn, getName(), Ls, new SolverFn(solver));
+    envCreate(SolverFn, getName(), Ls, solver);
     env().addOwnership(getName(), par().action);
 }
 

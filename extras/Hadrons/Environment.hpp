@@ -100,11 +100,16 @@ public:
     // general memory management
     void                    addObject(const std::string name,
                                       const int moduleAddress = -1);
-    template <typename T, typename P>
+    template <typename B, typename T, typename ... Ts>
+    void                    createDerivedObject(const std::string name,
+                                                const Environment::Storage storage,
+                                                const unsigned int Ls,
+                                                Ts && ... args);
+    template <typename T, typename ... Ts>
     void                    createObject(const std::string name,
-                                         const Storage storage,
+                                         const Environment::Storage storage,
                                          const unsigned int Ls,
-                                         P &&pt);
+                                         Ts && ... args);
     void                    setObjectModule(const unsigned int objAddress,
                                             const int modAddress);
     template <typename T>
@@ -195,11 +200,11 @@ void Holder<T>::reset(T *pt)
  *                     Environment template implementation                    *
  ******************************************************************************/
 // general memory management ///////////////////////////////////////////////////
-template <typename T, typename P>
-void Environment::createObject(const std::string name, 
+template <typename B, typename T, typename ... Ts>
+void Environment::createDerivedObject(const std::string name,
                                const Environment::Storage storage,
                                const unsigned int Ls,
-                               P &&pt)
+                                      Ts && ... args)
 {
     if (!hasObject(name))
     {
@@ -210,13 +215,13 @@ void Environment::createObject(const std::string name,
     
     if (!object_[address].data)
     {
-        MemoryStats  memStats;
+        MemoryStats memStats;
 
         MemoryProfiler::stats    = &memStats;
         object_[address].storage = storage;
         object_[address].Ls      = Ls;
-        object_[address].data.reset(new Holder<T>(pt));
-        object_[address].size    = memStats.totalAllocated;
+        object_[address].data.reset(new Holder<B>(new T(std::forward<Ts>(args)...)));
+        object_[address].size    = memStats.maxAllocated;
         object_[address].type    = &typeid(T);
         MemoryProfiler::stats    = nullptr;
     }
@@ -224,6 +229,15 @@ void Environment::createObject(const std::string name,
     {
         HADRON_ERROR("object '" + name + "' already allocated");
     }
+}
+
+template <typename T, typename ... Ts>
+void Environment::createObject(const std::string name, 
+                               const Environment::Storage storage,
+                               const unsigned int Ls,
+                               Ts && ... args)
+{
+    createDerivedObject<T, T>(name, storage, Ls, std::forward<Ts>(args)...);
 }
 
 template <typename T>
