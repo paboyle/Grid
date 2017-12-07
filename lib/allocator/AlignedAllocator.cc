@@ -97,4 +97,29 @@ void check_huge_pages(void *Buf,uint64_t BYTES)
 #endif
 }
 
+std::string sizeString(const size_t bytes)
+{
+  constexpr unsigned int bufSize = 256;
+  const char             *suffixes[7] = {"", "K", "M", "G", "T", "P", "E"};
+  char                   buf[256];
+  size_t                 s     = 0;
+  double                 count = bytes;
+  
+  while (count >= 1024 && s < 7)
+  {
+      s++;
+      count /= 1024;
+  }
+  if (count - floor(count) == 0.0)
+  {
+      snprintf(buf, bufSize, "%d %sB", (int)count, suffixes[s]);
+  }
+  else
+  {
+      snprintf(buf, bufSize, "%.1f %sB", count, suffixes[s]);
+  }
+  
+  return std::string(buf);
+}
+
 }

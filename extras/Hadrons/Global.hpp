@@ -138,9 +138,6 @@ public:\
 private:\
     name(void) = default;
 
-// pretty size formating
-std::string sizeString(long unsigned int bytes);
-
 // type utilities
 template <typename T>
 const std::type_info * typeIdPt(const T &x)

@@ -216,14 +216,21 @@ void Environment::createDerivedObject(const std::string name,
     if (!object_[address].data)
     {
         MemoryStats memStats;
-
-        MemoryProfiler::stats    = &memStats;
+    
+        if (!MemoryProfiler::stats)
+        {
+            MemoryProfiler::stats = &memStats;
+        }
+        size_t initMem           = MemoryProfiler::stats->currentlyAllocated;
         object_[address].storage = storage;
         object_[address].Ls      = Ls;
         object_[address].data.reset(new Holder<B>(new T(std::forward<Ts>(args)...)));
-        object_[address].size    = memStats.maxAllocated;
+        object_[address].size    = MemoryProfiler::stats->maxAllocated - initMem;
         object_[address].type    = &typeid(T);
-        MemoryProfiler::stats    = nullptr;
+        if (MemoryProfiler::stats == &memStats)
+        {
+            MemoryProfiler::stats = nullptr;
+        }
     }
     else
     {

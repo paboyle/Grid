@@ -64,6 +64,8 @@ namespace Grid {
 
   };
   
+  std::string sizeString(size_t bytes);
+
   struct MemoryStats
   {
     size_t totalAllocated{0}, maxAllocated{0}, 
@@ -77,15 +79,20 @@ namespace Grid {
     static bool        debug;
   };
 
+  #define memString(bytes) std::to_string(bytes) + " (" + sizeString(bytes) + ")"
   #define profilerDebugPrint \
   if (MemoryProfiler::stats)\
   {\
     auto s = MemoryProfiler::stats;\
-    std::cout << "[Memory debug] Stats " << MemoryProfiler::stats << std::endl;\
-    std::cout << "[Memory debug] Total  : " << s->totalAllocated << "B" << std::endl;\
-    std::cout << "[Memory debug] Max    : " << s->maxAllocated << "B" << std::endl;\
-    std::cout << "[Memory debug] Current: " << s->totalAllocated << "B" << std::endl;\
-    std::cout << "[Memory debug] Freed  : " << s->totalFreed << "B" << std::endl;\
+    std::cout << GridLogDebug << "[Memory debug] Stats " << MemoryProfiler::stats << std::endl;\
+    std::cout << GridLogDebug << "[Memory debug] total  : " << memString(s->totalAllocated) \
+              << std::endl;\
+    std::cout << GridLogDebug << "[Memory debug] max    : " << memString(s->maxAllocated) \
+              << std::endl;\
+    std::cout << GridLogDebug << "[Memory debug] current: " << memString(s->currentlyAllocated) \
+              << std::endl;\
+    std::cout << GridLogDebug << "[Memory debug] freed  : " << memString(s->totalFreed) \
+              << std::endl;\
   }
 
   #define profilerAllocate(bytes)\
@@ -98,7 +105,7 @@ namespace Grid {
   }\
   if (MemoryProfiler::debug)\
   {\
-    std::cout << "[Memory debug] allocating " << bytes << "B" << std::endl;\
+    std::cout << GridLogDebug << "[Memory debug] allocating " << memString(bytes) << std::endl;\
     profilerDebugPrint;\
   }
 
@@ -111,7 +118,7 @@ namespace Grid {
   }\
   if (MemoryProfiler::debug)\
   {\
-    std::cout << "[Memory debug] freeing " << bytes << "B" << std::endl;\
+    std::cout << GridLogDebug << "[Memory debug] freeing " << memString(bytes) << std::endl;\
     profilerDebugPrint;\
   }
 
