@@ -395,7 +395,8 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
     Lattice<iSinglet<Simd>> ph(_grid), coor(_grid);
     Complex i(0.0,1.0);
     PropagatorField tmpFwd(_grid), tmpBwd(_grid), tmp(_grid);
-    int tshift = (mu == Tp) ? 1 : 0;
+    unsigned int tshift = (mu == Tp) ? 1 : 0;
+    unsigned int LLt    = GridDefaultLatt()[Tp];
 
     // Momentum projection
     ph = zero;
@@ -434,6 +435,11 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
         // Repeat for backward direction.
         t_mask     = ((coords._odata[sU] >= (tmin + tshift)) && 
                       (coords._odata[sU] <= (tmax + tshift)));
+
+	//if tmax = LLt-1 (last timeslice) include timeslice 0 if the time is shifted (mu=3)	
+	unsigned int t0 = 0;
+	if((tmax==LLt-1) && (tshift==1)) t_mask = (t_mask || (coords._odata[sU] == t0 ));
+
         timeSlices = Reduce(t_mask);
 
         if (timeSlices > 0)
