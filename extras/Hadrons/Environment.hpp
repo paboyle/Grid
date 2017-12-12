@@ -227,7 +227,7 @@ void Environment::createDerivedObject(const std::string name,
     }
     else
     {
-        HADRON_ERROR("object '" + name + "' already allocated");
+        HADRON_ERROR(Definition, "object '" + name + "' already allocated");
     }
 }
 
@@ -253,20 +253,20 @@ T * Environment::getObject(const unsigned int address) const
             }
             else
             {
-                HADRON_ERROR("object with address " + std::to_string(address) +
+                HADRON_ERROR(Definition, "object with address " + std::to_string(address) +
                             " does not have type '" + typeName(&typeid(T)) +
                             "' (has type '" + getObjectType(address) + "')");
             }
         }
         else
         {
-            HADRON_ERROR("object with address " + std::to_string(address) +
+            HADRON_ERROR(Definition, "object with address " + std::to_string(address) +
                          " is empty");
         }
     }
     else
     {
-        HADRON_ERROR("no object with address " + std::to_string(address));
+        HADRON_ERROR(Definition, "no object with address " + std::to_string(address));
     }
 }
 
@@ -292,7 +292,7 @@ bool Environment::isObjectOfType(const unsigned int address) const
     }
     else
     {
-        HADRON_ERROR("no object with address " + std::to_string(address));
+        HADRON_ERROR(Definition, "no object with address " + std::to_string(address));
     }
 }
 

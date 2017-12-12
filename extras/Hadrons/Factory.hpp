@@ -95,7 +95,7 @@ std::unique_ptr<T> Factory<T>::create(const std::string type,
     }
     catch (std::out_of_range &)
     {
-        HADRON_ERROR("object of type '" + type + "' unknown");
+        HADRON_ERROR(Argument, "object of type '" + type + "' unknown");
     }
     
     return func(name);

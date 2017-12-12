@@ -115,7 +115,7 @@ void VirtualMachine::pushModule(VirtualMachine::ModPt &pt)
                 }
                 else
                 {
-                    HADRON_ERROR("object '" + out
+                    HADRON_ERROR(Definition, "object '" + out
                                  + "' is already produced by module '"
                                  + module_[env().getObjectModule(out)].name
                                  + "' (while pushing module '" + name + "')");
@@ -144,7 +144,7 @@ void VirtualMachine::pushModule(VirtualMachine::ModPt &pt)
     }
     else
     {
-        HADRON_ERROR("module '" + name + "' already exists");
+        HADRON_ERROR(Definition, "module '" + name + "' already exists");
     }
 }
 
@@ -171,7 +171,7 @@ ModuleBase * VirtualMachine::getModule(const unsigned int address) const
     }
     else
     {
-        HADRON_ERROR("no module with address " + std::to_string(address));
+        HADRON_ERROR(Definition, "no module with address " + std::to_string(address));
     }
 }
 
@@ -188,7 +188,7 @@ unsigned int VirtualMachine::getModuleAddress(const std::string name) const
     }
     else
     {
-        HADRON_ERROR("no module with name '" + name + "'");
+        HADRON_ERROR(Definition, "no module with name '" + name + "'");
     }
 }
 
@@ -200,7 +200,7 @@ std::string VirtualMachine::getModuleName(const unsigned int address) const
     }
     else
     {
-        HADRON_ERROR("no module with address " + std::to_string(address));
+        HADRON_ERROR(Definition, "no module with address " + std::to_string(address));
     }
 }
 
@@ -212,7 +212,7 @@ std::string VirtualMachine::getModuleType(const unsigned int address) const
     }
     else
     {
-        HADRON_ERROR("no module with address " + std::to_string(address));
+        HADRON_ERROR(Definition, "no module with address " + std::to_string(address));
     }
 }
 
@@ -273,7 +273,7 @@ Graph<unsigned int> VirtualMachine::makeModuleGraph(void) const
 //     {
 //         if (o.module < 0)
 //         {
-//             HADRON_ERROR("object '" + o.name + "' does not have a creator");
+//             HADRON_ERROR(Runtime, "object '" + o.name + "' does not have a creator");
 //         }
 //     }
 // }

@@ -35,6 +35,9 @@ using namespace Grid;
 using namespace QCD;
 using namespace Hadrons;
 
+#define ERROR_NO_ADDRESS(address)\
+HADRON_ERROR(Definition, "no object with address " + std::to_string(address));
+
 /******************************************************************************
  *                       Environment implementation                           *
  ******************************************************************************/
@@ -83,7 +86,7 @@ GridCartesian * Environment::getGrid(const unsigned int Ls) const
     }
     catch(std::out_of_range &)
     {
-        HADRON_ERROR("no grid with Ls= " << Ls);
+        HADRON_ERROR(Definition, "no grid with Ls= " + std::to_string(Ls));
     }
 }
 
@@ -102,7 +105,7 @@ GridRedBlackCartesian * Environment::getRbGrid(const unsigned int Ls) const
     }
     catch(std::out_of_range &)
     {
-        HADRON_ERROR("no red-black 5D grid with Ls= " << Ls);
+        HADRON_ERROR(Definition, "no red-black 5D grid with Ls= " + std::to_string(Ls));
     }
 }
 
@@ -152,7 +155,7 @@ void Environment::addObject(const std::string name, const int moduleAddress)
     }
     else
     {
-        HADRON_ERROR("object '" + name + "' already exists");
+        HADRON_ERROR(Definition, "object '" + name + "' already exists");
     }
 }
 
@@ -175,7 +178,7 @@ unsigned int Environment::getObjectAddress(const std::string name) const
     }
     else
     {
-        HADRON_ERROR("no object with name '" + name + "'");
+        HADRON_ERROR(Definition, "no object with name '" + name + "'");
     }
 }
 
@@ -187,7 +190,7 @@ std::string Environment::getObjectName(const unsigned int address) const
     }
     else
     {
-        HADRON_ERROR("no object with address " + std::to_string(address));
+        ERROR_NO_ADDRESS(address);
     }
 }
 
@@ -206,7 +209,7 @@ std::string Environment::getObjectType(const unsigned int address) const
     }
     else
     {
-        HADRON_ERROR("no object with address " + std::to_string(address));
+        ERROR_NO_ADDRESS(address);
     }
 }
 
@@ -223,7 +226,7 @@ Environment::Size Environment::getObjectSize(const unsigned int address) const
     }
     else
     {
-        HADRON_ERROR("no object with address " + std::to_string(address));
+        ERROR_NO_ADDRESS(address);
     }
 }
 
@@ -240,7 +243,7 @@ Environment::Storage Environment::getObjectStorage(const unsigned int address) c
     }
     else
     {
-        HADRON_ERROR("no object with address " + std::to_string(address));
+        ERROR_NO_ADDRESS(address);
     }
 }
 
@@ -257,7 +260,7 @@ int Environment::getObjectModule(const unsigned int address) const
     }
     else
     {
-        HADRON_ERROR("no object with address " + std::to_string(address));
+        ERROR_NO_ADDRESS(address);
     }
 }
 
@@ -274,7 +277,7 @@ unsigned int Environment::getObjectLs(const unsigned int address) const
     }
     else
     {
-        HADRON_ERROR("no object with address " + std::to_string(address));
+        ERROR_NO_ADDRESS(address);
     }
 }
 

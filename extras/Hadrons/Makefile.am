@@ -7,6 +7,7 @@ libHadrons_a_SOURCES = \
     $(modules_cc)      \
     Application.cc     \
     Environment.cc     \
+	Exceptions.cc      \
     Global.cc          \
     Module.cc		   \
 	VirtualMachine.cc
@@ -15,6 +16,7 @@ nobase_libHadrons_a_HEADERS = \
 	$(modules_hpp)            \
 	Application.hpp           \
 	Environment.hpp           \
+	Exceptions.hpp            \
 	Factory.hpp               \
 	GeneticScheduler.hpp      \
 	Global.hpp                \

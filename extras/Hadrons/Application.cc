@@ -123,11 +123,11 @@ void Application::parseParameterFile(const std::string parameterFileName)
     setPar(par);
     if (!push(reader, "modules"))
     {
-        HADRON_ERROR("Cannot open node 'modules' in parameter file '" + parameterFileName + "'");
+        HADRON_ERROR(Parsing, "Cannot open node 'modules' in parameter file '" + parameterFileName + "'");
     }
     if (!push(reader, "module"))
     {
-        HADRON_ERROR("Cannot open node 'modules/module' in parameter file '" + parameterFileName + "'");
+        HADRON_ERROR(Parsing, "Cannot open node 'modules/module' in parameter file '" + parameterFileName + "'");
     }
     do
     {
@@ -262,7 +262,7 @@ void Application::saveSchedule(const std::string filename)
     
     if (!scheduled_)
     {
-        HADRON_ERROR("Computation not scheduled");
+        HADRON_ERROR(Definition, "Computation not scheduled");
     }
     LOG(Message) << "Saving current schedule to '" << filename << "'..."
                  << std::endl;
@@ -296,7 +296,7 @@ void Application::printSchedule(void)
 {
     if (!scheduled_)
     {
-        HADRON_ERROR("Computation not scheduled");
+        HADRON_ERROR(Definition, "Computation not scheduled");
     }
     LOG(Message) << "Schedule (memory peak: " << MEM_MSG(memPeak_) << "):"
                  << std::endl;

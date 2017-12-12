@@ -50,7 +50,7 @@ std::string ModuleBase::getName(void) const
 // get factory registration name if available
 std::string ModuleBase::getRegisteredName(void)
 {
-    HADRON_ERROR("module '" + getName() + "' has a type not registered"
+    HADRON_ERROR(Definition, "module '" + getName() + "' has no registered type"
                  + " in the factory");
 }
 

@@ -100,11 +100,6 @@ public:
 };
 
 #define LOG(channel) std::cout << HadronsLog##channel
-#define HADRON_ERROR(msg)\
-LOG(Error) << msg << " (" << __FUNCTION__ << " at " << __FILE__ << ":"\
-           << __LINE__ << ")" << std::endl;\
-abort();
-
 #define DEBUG_VAR(var) LOG(Debug) << #var << "= " << (var) << std::endl;
 
 extern HadronsLogger HadronsLogError;
@@ -175,5 +170,7 @@ typedef XmlWriter CorrWriter;
 #endif
 
 END_HADRONS_NAMESPACE
+
+#include <Grid/Hadrons/Exceptions.hpp>
 
 #endif // Hadrons_Global_hpp_

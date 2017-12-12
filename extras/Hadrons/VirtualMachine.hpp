@@ -147,7 +147,7 @@ M * VirtualMachine::getModule(const unsigned int address) const
     }
     else
     {
-        HADRON_ERROR("module '" + module_[address].name
+        HADRON_ERROR(Definition, "module '" + module_[address].name
                      + "' does not have type " + typeid(M).name()
                      + "(has type: " + getModuleType(address) + ")");
     }

@@ -187,7 +187,7 @@ void TGaugeProp<FImpl>::execute(void)
         {
             if (Ls_ != env().getObjectLs(par().source))
             {
-                HADRON_ERROR("Ls mismatch between quark action and source");
+                HADRON_ERROR(Size, "Ls mismatch between quark action and source");
             }
             else
             {
