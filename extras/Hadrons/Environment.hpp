@@ -82,7 +82,6 @@ private:
         const std::type_info    *type{nullptr};
         std::string             name;
         int                     module{-1};
-        std::set<unsigned int>  owners, properties;
         std::unique_ptr<Object> data{nullptr};
     };
 public:
@@ -140,14 +139,8 @@ public:
     template <typename T>
     bool                    isObjectOfType(const std::string name) const;
     Environment::Size       getTotalSize(void) const;
-    void                    addOwnership(const unsigned int owner,
-                                         const unsigned int property);
-    void                    addOwnership(const std::string owner,
-                                         const std::string property);
-    bool                    hasOwners(const unsigned int address) const;
-    bool                    hasOwners(const std::string name) const;
-    bool                    freeObject(const unsigned int address);
-    bool                    freeObject(const std::string name);
+    void                    freeObject(const unsigned int address);
+    void                    freeObject(const std::string name);
     void                    freeAll(void);
     // print environment content
     void                    printContent(void) const;
@@ -252,15 +245,23 @@ T * Environment::getObject(const unsigned int address) const
 {
     if (hasObject(address))
     {
-        if (auto h = dynamic_cast<Holder<T> *>(object_[address].data.get()))
+        if (hasCreatedObject(address))
         {
-            return h->getPt();
+            if (auto h = dynamic_cast<Holder<T> *>(object_[address].data.get()))
+            {
+                return h->getPt();
+            }
+            else
+            {
+                HADRON_ERROR("object with address " + std::to_string(address) +
+                            " does not have type '" + typeName(&typeid(T)) +
+                            "' (has type '" + getObjectType(address) + "')");
+            }
         }
         else
         {
             HADRON_ERROR("object with address " + std::to_string(address) +
-                         " does not have type '" + typeName(&typeid(T)) +
-                         "' (has type '" + getObjectType(address) + "')");
+                         " is empty");
         }
     }
     else

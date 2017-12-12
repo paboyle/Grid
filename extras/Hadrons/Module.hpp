@@ -155,6 +155,7 @@ public:
     virtual std::string getRegisteredName(void);
     // dependencies/products
     virtual std::vector<std::string> getInput(void) = 0;
+    virtual std::vector<std::string> getReference(void) = 0;
     virtual std::vector<std::string> getOutput(void) = 0;
     // parse parameters
     virtual void parseParameters(XmlReader &reader, const std::string name) = 0;

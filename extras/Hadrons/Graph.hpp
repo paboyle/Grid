@@ -430,7 +430,7 @@ std::vector<T> Graph<T>::getAdjacentVertices(const T &value) const
     {
         return ((e.first == value) or (e.second == value));
     };
-    auto eIt = find_if(edgeSet_.begin(), edgeSet_.end(), pred);
+    auto eIt = std::find_if(edgeSet_.begin(), edgeSet_.end(), pred);
     
     while (eIt != edgeSet_.end())
     {
@@ -442,7 +442,7 @@ std::vector<T> Graph<T>::getAdjacentVertices(const T &value) const
         {
             adjacentVertex.push_back((*eIt).first);
         }
-        eIt = find_if(++eIt, edgeSet_.end(), pred);
+        eIt = std::find_if(++eIt, edgeSet_.end(), pred);
     }
     
     return adjacentVertex;
@@ -458,12 +458,12 @@ std::vector<T> Graph<T>::getChildren(const T &value) const
     {
         return (e.first == value);
     };
-    auto eIt = find_if(edgeSet_.begin(), edgeSet_.end(), pred);
+    auto eIt = std::find_if(edgeSet_.begin(), edgeSet_.end(), pred);
     
     while (eIt != edgeSet_.end())
     {
         child.push_back((*eIt).second);
-        eIt = find_if(++eIt, edgeSet_.end(), pred);
+        eIt = std::find_if(++eIt, edgeSet_.end(), pred);
     }
     
     return child;
@@ -479,12 +479,12 @@ std::vector<T> Graph<T>::getParents(const T &value) const
     {
         return (e.second == value);
     };
-    auto eIt = find_if(edgeSet_.begin(), edgeSet_.end(), pred);
+    auto eIt = std::find_if(edgeSet_.begin(), edgeSet_.end(), pred);
     
     while (eIt != edgeSet_.end())
     {
         parent.push_back((*eIt).first);
-        eIt = find_if(++eIt, edgeSet_.end(), pred);
+        eIt = std::find_if(++eIt, edgeSet_.end(), pred);
     }
     
     return parent;

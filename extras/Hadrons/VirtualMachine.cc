@@ -82,8 +82,7 @@ void VirtualMachine::pushModule(VirtualMachine::ModPt &pt)
         m.data = std::move(pt);
         m.type = typeIdPt(*m.data.get());
         m.name = name;
-        auto input  = m.data->getInput();
-        for (auto &in: input)
+        for (auto &in: m.data->getInput())
         {
             if (!env().hasObject(in))
             {
@@ -91,11 +90,18 @@ void VirtualMachine::pushModule(VirtualMachine::ModPt &pt)
             }
             m.input.push_back(env().getObjectAddress(in));
         }
-        auto output = m.data->getOutput();
+        for (auto &ref: m.data->getReference())
+        {
+            if (!env().hasObject(ref))
+            {
+                env().addObject(ref , -1);
+            }
+            m.input.push_back(env().getObjectAddress(ref));
+        }
         module_.push_back(std::move(m));
         address              = static_cast<unsigned int>(module_.size() - 1);
         moduleAddress_[name] = address;
-        for (auto &out: output)
+        for (auto &out: getModule(address)->getOutput())
         {
             if (!env().hasObject(out))
             {
@@ -113,6 +119,25 @@ void VirtualMachine::pushModule(VirtualMachine::ModPt &pt)
                                  + "' is already produced by module '"
                                  + module_[env().getObjectModule(out)].name
                                  + "' (while pushing module '" + name + "')");
+                }
+                if (getModule(address)->getReference().size() > 0)
+                {
+                    auto pred = [this, out](const ModuleInfo &n)
+                    {
+                        auto &in = n.input;
+                        auto it  = std::find(in.begin(), in.end(), env().getObjectAddress(out));
+                        
+                        return (it != in.end());
+                    };
+                    auto it = std::find_if(module_.begin(), module_.end(), pred);
+                    while (it != module_.end())
+                    {
+                        for (auto &ref: getModule(address)->getReference())
+                        {
+                            it->input.push_back(env().getObjectAddress(ref));
+                        }
+                        it = std::find_if(++it, module_.end(), pred);
+                    }   
                 }
             }
         }
@@ -225,12 +250,17 @@ Graph<unsigned int> VirtualMachine::makeModuleGraph(void) const
 {
     Graph<unsigned int> moduleGraph;
     
-    for (unsigned int i = 0; i < module_.size(); ++i)
+    // create vertices
+    for (unsigned int m = 0; m < module_.size(); ++m)
     {
-        moduleGraph.addVertex(i);
-        for (auto &j: module_[i].input)
+        moduleGraph.addVertex(m);
+    }
+    // create edges
+    for (unsigned int m = 0; m < module_.size(); ++m)
+    {
+        for (auto &in: module_[m].input)
         {
-            moduleGraph.addEdge(env().getObjectModule(j), i);
+            moduleGraph.addEdge(env().getObjectModule(in), m);
         }
     }
     
@@ -258,7 +288,6 @@ VirtualMachine::executeProgram(const std::vector<unsigned int> &p)
 {
     Size                                memPeak = 0, sizeBefore, sizeAfter;
     std::vector<std::set<unsigned int>> freeProg;
-    bool                                continueCollect, nothingFreed;
     
     // build garbage collection schedule
     LOG(Debug) << "Building garbage collection schedule..." << std::endl;
@@ -307,25 +336,10 @@ VirtualMachine::executeProgram(const std::vector<unsigned int> &p)
         {
             LOG(Message) << "Garbage collection..." << std::endl;
         }
-        nothingFreed = true;
-        do
+        for (auto &j: freeProg[i])
         {
-            continueCollect = false;
-            auto toFree = freeProg[i];
-            for (auto &j: toFree)
-            {
-                // continue garbage collection while there are still
-                // objects without owners
-                continueCollect = continueCollect or !env().hasOwners(j);
-                if(env().freeObject(j))
-                {
-                    // if an object has been freed, remove it from
-                    // the garbage collection schedule
-                    freeProg[i].erase(j);
-                    nothingFreed = false;
-                }
-            }
-        } while (continueCollect);
+            env().freeObject(j);
+        }
         // free temporaries
         for (unsigned int i = 0; i < env().getMaxAddress(); ++i)
         {
@@ -333,15 +347,6 @@ VirtualMachine::executeProgram(const std::vector<unsigned int> &p)
                 and env().hasCreatedObject(i))
             {
                 env().freeObject(i);
-            }
-        }
-        // any remaining objects in step i garbage collection schedule
-        // is scheduled for step i + 1
-        if (i + 1 < p.size())
-        {
-            for (auto &j: freeProg[i])
-            {
-                freeProg[i + 1].insert(j);
             }
         }
         // print used memory after garbage collection if necessary

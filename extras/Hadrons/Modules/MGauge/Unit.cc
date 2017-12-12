@@ -47,6 +47,13 @@ std::vector<std::string> TUnit::getInput(void)
     return std::vector<std::string>();
 }
 
+std::vector<std::string> TUnit::getReference(void)
+{
+    std::vector<std::string> ref = {};
+    
+    return ref;
+}
+
 std::vector<std::string> TUnit::getOutput(void)
 {
     std::vector<std::string> out = {getName()};

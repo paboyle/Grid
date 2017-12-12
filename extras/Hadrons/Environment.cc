@@ -341,81 +341,21 @@ Environment::Size Environment::getTotalSize(void) const
     return size;
 }
 
-void Environment::addOwnership(const unsigned int owner,
-                               const unsigned int property)
+void Environment::freeObject(const unsigned int address)
 {
-    if (hasObject(property))
+    if (hasCreatedObject(address))
     {
-        object_[property].owners.insert(owner);
+        LOG(Message) << "Destroying object '" << object_[address].name
+                     << "'" << std::endl;
     }
-    else
-    {
-        HADRON_ERROR("no object with address " + std::to_string(property));
-    }
-    if (hasObject(owner))
-    {
-        object_[owner].properties.insert(property);
-    }
-    else
-    {
-        HADRON_ERROR("no object with address " + std::to_string(owner));
-    }
+    object_[address].size = 0;
+    object_[address].type = nullptr;
+    object_[address].data.reset(nullptr);
 }
 
-void Environment::addOwnership(const std::string owner,
-                               const std::string property)
+void Environment::freeObject(const std::string name)
 {
-    addOwnership(getObjectAddress(owner), getObjectAddress(property));
-}
-
-bool Environment::hasOwners(const unsigned int address) const
-{
-    
-    if (hasObject(address))
-    {
-        return (!object_[address].owners.empty());
-    }
-    else
-    {
-        HADRON_ERROR("no object with address " + std::to_string(address));
-    }
-}
-
-bool Environment::hasOwners(const std::string name) const
-{
-    return hasOwners(getObjectAddress(name));
-}
-
-bool Environment::freeObject(const unsigned int address)
-{
-    if (!hasOwners(address))
-    {
-        if (hasCreatedObject(address))
-        {
-            LOG(Message) << "Destroying object '" << object_[address].name
-                         << "'" << std::endl;
-        }
-        for (auto &p: object_[address].properties)
-        {
-            object_[p].owners.erase(address);
-        }
-        object_[address].size = 0;
-        object_[address].type = nullptr;
-        object_[address].owners.clear();
-        object_[address].properties.clear();
-        object_[address].data.reset(nullptr);
-        
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-bool Environment::freeObject(const std::string name)
-{
-    return freeObject(getObjectAddress(name));
+    freeObject(getObjectAddress(name));
 }
 
 void Environment::freeAll(void)

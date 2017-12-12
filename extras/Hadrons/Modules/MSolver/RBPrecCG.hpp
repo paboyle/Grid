@@ -61,6 +61,7 @@ public:
     virtual ~TRBPrecCG(void) = default;
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getReference(void);
     virtual std::vector<std::string> getOutput(void);
 protected:
     // setup
@@ -84,9 +85,17 @@ TRBPrecCG<FImpl>::TRBPrecCG(const std::string name)
 template <typename FImpl>
 std::vector<std::string> TRBPrecCG<FImpl>::getInput(void)
 {
-    std::vector<std::string> in = {par().action};
+    std::vector<std::string> in = {};
     
     return in;
+}
+
+template <typename FImpl>
+std::vector<std::string> TRBPrecCG<FImpl>::getReference(void)
+{
+    std::vector<std::string> ref = {par().action};
+    
+    return ref;
 }
 
 template <typename FImpl>
@@ -115,7 +124,6 @@ void TRBPrecCG<FImpl>::setup(void)
         schurSolver(mat, source, sol);
     };
     envCreate(SolverFn, getName(), Ls, solver);
-    env().addOwnership(getName(), par().action);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
