@@ -92,9 +92,10 @@ void Application::run(void)
     {
         parseParameterFile(parameterFileName_);
     }
-    //vm().checkGraph();
-    env().printContent();
     vm().printContent();
+    env().printContent();
+    //vm().checkGraph();
+    vm().memoryProfile();
     if (!scheduled_)
     {
         schedule();

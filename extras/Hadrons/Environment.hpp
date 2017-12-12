@@ -142,11 +142,14 @@ public:
     void                    freeObject(const unsigned int address);
     void                    freeObject(const std::string name);
     void                    freeAll(void);
+    void                    protectObjects(const bool protect);
+    bool                    objectsProtected(void) const;
     // print environment content
     void                    printContent(void) const;
 private:
     // general
     unsigned long int                      locVol_;
+    bool                                   protect_{true};
     // grids
     std::vector<int>                       dim_;
     GridPt                                 grid4d_;
@@ -195,8 +198,8 @@ void Holder<T>::reset(T *pt)
 // general memory management ///////////////////////////////////////////////////
 template <typename B, typename T, typename ... Ts>
 void Environment::createDerivedObject(const std::string name,
-                               const Environment::Storage storage,
-                               const unsigned int Ls,
+                                      const Environment::Storage storage,
+                                      const unsigned int Ls,
                                       Ts && ... args)
 {
     if (!hasObject(name))
@@ -206,7 +209,7 @@ void Environment::createDerivedObject(const std::string name,
     
     unsigned int address = getObjectAddress(name);
     
-    if (!object_[address].data)
+    if (!object_[address].data or !objectsProtected())
     {
         MemoryStats memStats;
     

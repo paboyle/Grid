@@ -369,6 +369,16 @@ void Environment::freeAll(void)
     }
 }
 
+void Environment::protectObjects(const bool protect)
+{
+    protect_ = protect;
+}
+
+bool Environment::objectsProtected(void) const
+{
+    return protect_;
+}
+
 // print environment content ///////////////////////////////////////////////////
 void Environment::printContent(void) const
 {
@@ -376,6 +386,7 @@ void Environment::printContent(void) const
     for (unsigned int i = 0; i < object_.size(); ++i)
     {
         LOG(Debug) << std::setw(4) << i << ": "
-                   << getObjectName(i) << std::endl;
+                   << getObjectName(i) << " ("
+                   << sizeString(getObjectSize(i)) << ")" << std::endl;
     }
 }

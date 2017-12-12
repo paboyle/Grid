@@ -51,8 +51,18 @@ class VirtualMachine
 {
     SINGLETON_DEFCTOR(VirtualMachine);
 public:
-    typedef SITE_SIZE_TYPE              Size;
-    typedef std::unique_ptr<ModuleBase> ModPt;
+    typedef SITE_SIZE_TYPE                             Size;
+    typedef std::unique_ptr<ModuleBase>                ModPt;
+    struct MemoryPrint
+    {
+        Size         size;
+        unsigned int module;
+    };
+    struct MemoryProfile
+    {
+        std::vector<std::map<unsigned int, Size>> module;
+        std::vector<MemoryPrint>                  object;
+    };
 private:
     struct ModuleInfo
     {
@@ -100,12 +110,20 @@ public:
     void                checkGraph(void) const;
     // print VM content
     void                printContent(void) const;
+    // memory profile
+    MemoryProfile       memoryProfile(void) const;
     // general execution
     Size                executeProgram(const std::vector<unsigned int> &p);
     Size                executeProgram(const std::vector<std::string> &p);
 private:
     // environment shortcut
     DEFINE_ENV_ALIAS;
+    // memory profile
+    void resizeProfile(MemoryProfile &profile) const;
+    void updateProfile(MemoryProfile &profile, const unsigned int address) const;
+    void cleanEnvironment(MemoryProfile &profile) const;
+    void memoryProfile(MemoryProfile &profile, const std::string name) const;
+    void memoryProfile(MemoryProfile &profile, const unsigned int address) const;
 private:
     // general
     bool                                dryRun_{false}, memoryProfile_{false};

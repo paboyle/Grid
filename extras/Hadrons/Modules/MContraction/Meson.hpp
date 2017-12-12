@@ -134,7 +134,7 @@ std::vector<std::string> TMeson<FImpl1, FImpl2>::getReference(void)
 template <typename FImpl1, typename FImpl2>
 std::vector<std::string> TMeson<FImpl1, FImpl2>::getOutput(void)
 {
-    std::vector<std::string> output = {getName()};
+    std::vector<std::string> output = {};
     
     return output;
 }

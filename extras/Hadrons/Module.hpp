@@ -160,12 +160,12 @@ public:
     // parse parameters
     virtual void parseParameters(XmlReader &reader, const std::string name) = 0;
     virtual void saveParameters(XmlWriter &writer, const std::string name) = 0;
-    // execution
-    void operator()(void);
-protected:
     // setup
     virtual void setup(void) {};
     virtual void execute(void) = 0;
+    // execution
+    void operator()(void);
+protected:
     // environment shortcut
     DEFINE_ENV_ALIAS;
     // virtual machine shortcut

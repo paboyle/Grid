@@ -36,7 +36,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <cxxabi.h>
 
 #ifndef SITE_SIZE_TYPE
-#define SITE_SIZE_TYPE unsigned int
+#define SITE_SIZE_TYPE size_t
 #endif
 
 #define BEGIN_HADRONS_NAMESPACE \
