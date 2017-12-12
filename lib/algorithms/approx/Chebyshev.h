@@ -115,7 +115,7 @@ namespace Grid {
       
       if(order < 2) exit(-1);
       Coeffs.resize(order);
-      Coeffs.assign(0.,order);
+      Coeffs.assign(order,0.);
       Coeffs[order-1] = 1.;
     };
 
