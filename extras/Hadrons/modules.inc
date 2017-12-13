@@ -9,7 +9,8 @@ modules_cc =\
   Modules/MGauge/UnitEm.cc \
   Modules/MScalar/ChargedProp.cc \
   Modules/MScalar/FreeProp.cc \
-  Modules/MScalar/ScalarVP.cc
+  Modules/MScalar/ScalarVP.cc \
+  Modules/MScalar/VPCounterTerms.cc
 
 modules_hpp =\
   Modules/MAction/DWF.hpp \
@@ -33,6 +34,7 @@ modules_hpp =\
   Modules/MScalar/FreeProp.hpp \
   Modules/MScalar/Scalar.hpp \
   Modules/MScalar/ScalarVP.hpp \
+  Modules/MScalar/VPCounterTerms.hpp \
   Modules/MSink/Point.hpp \
   Modules/MSolver/RBPrecCG.hpp \
   Modules/MSource/Point.hpp \
