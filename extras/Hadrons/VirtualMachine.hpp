@@ -51,8 +51,9 @@ class VirtualMachine
 {
     SINGLETON_DEFCTOR(VirtualMachine);
 public:
-    typedef SITE_SIZE_TYPE                             Size;
-    typedef std::unique_ptr<ModuleBase>                ModPt;
+    typedef SITE_SIZE_TYPE                       Size;
+    typedef std::unique_ptr<ModuleBase>          ModPt;
+    typedef  std::vector<std::set<unsigned int>> GarbageSchedule;
     struct MemoryPrint
     {
         Size         size;
@@ -73,11 +74,6 @@ private:
         size_t                    maxAllocated;
     };
 public:
-    // dry run
-    void                dryRun(const bool isDry);
-    bool                isDryRun(void) const;
-    void                memoryProfile(const bool doMemoryProfile);
-    bool                doMemoryProfile(void) const;
     // trajectory counter
     void                setTrajectory(const unsigned int traj);
     unsigned int        getTrajectory(void) const;
@@ -106,32 +102,47 @@ public:
     std::string         getModuleNamespace(const std::string name) const;
     bool                hasModule(const unsigned int address) const;
     bool                hasModule(const std::string name) const;
-    Graph<unsigned int> makeModuleGraph(void) const;
-    void                checkGraph(void) const;
     // print VM content
     void                printContent(void) const;
+    // module graph (could be a const reference if topoSort was const)
+    Graph<unsigned int> getModuleGraph(void);
     // memory profile
-    MemoryProfile       memoryProfile(void) const;
+    const MemoryProfile &getMemoryProfile(void);
+    // garbage collector
+    GarbageSchedule     makeGarbageSchedule(const std::vector<unsigned int> &p) const;
+    // high-water memory function
+    Size                memoryNeeded(const std::vector<unsigned int> &p,
+                                     const GarbageSchedule &g);
+    Size                memoryNeeded(const std::vector<unsigned int> &p);
     // general execution
-    Size                executeProgram(const std::vector<unsigned int> &p);
-    Size                executeProgram(const std::vector<std::string> &p);
+    void                executeProgram(const std::vector<unsigned int> &p) const;
+    void                executeProgram(const std::vector<std::string> &p) const;
 private:
     // environment shortcut
     DEFINE_ENV_ALIAS;
+    // module graph
+    void makeModuleGraph(void);
     // memory profile
-    void resizeProfile(MemoryProfile &profile) const;
-    void updateProfile(MemoryProfile &profile, const unsigned int address) const;
-    void cleanEnvironment(MemoryProfile &profile) const;
-    void memoryProfile(MemoryProfile &profile, const std::string name) const;
-    void memoryProfile(MemoryProfile &profile, const unsigned int address) const;
+    void makeMemoryProfile(void);
+    void resetProfile(void);
+    void resizeProfile(void);
+    void updateProfile(const unsigned int address);
+    void cleanEnvironment(void);
+    void memoryProfile(const std::string name);
+    void memoryProfile(const unsigned int address);
 private:
     // general
-    bool                                dryRun_{false}, memoryProfile_{false};
     unsigned int                        traj_;
     // module and related maps
     std::vector<ModuleInfo>             module_;
     std::map<std::string, unsigned int> moduleAddress_;
     std::string                         currentModule_{""};
+    // module graph
+    bool                                graphOutdated_{true};
+    Graph<unsigned int>                 graph_;
+    // memory profile
+    bool                                memoryProfileOutdated_{true};
+    MemoryProfile                       profile_;
 };
 
 /******************************************************************************

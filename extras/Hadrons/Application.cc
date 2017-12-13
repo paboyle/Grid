@@ -94,8 +94,6 @@ void Application::run(void)
     }
     vm().printContent();
     env().printContent();
-    //vm().checkGraph();
-    vm().memoryProfile();
     if (!scheduled_)
     {
         schedule();
@@ -185,11 +183,11 @@ GeneticScheduler<unsigned int>::ObjFunc memPeak = \
 
 void Application::schedule(void)
 {
-    DEFINE_MEMPEAK;
+    //DEFINE_MEMPEAK;
     
     // build module dependency graph
     LOG(Message) << "Building module graph..." << std::endl;
-    auto graph = vm().makeModuleGraph();
+    auto graph = vm().getModuleGraph();
     LOG(Debug) << "Module graph:" << std::endl;
     LOG(Debug) << graph << std::endl;
     auto con = graph.getConnectedComponents();
@@ -276,7 +274,7 @@ void Application::saveSchedule(const std::string filename)
 
 void Application::loadSchedule(const std::string filename)
 {
-    DEFINE_MEMPEAK;
+    //DEFINE_MEMPEAK;
     
     TextReader               reader(filename);
     std::vector<std::string> program;
@@ -290,7 +288,7 @@ void Application::loadSchedule(const std::string filename)
         program_.push_back(vm().getModuleAddress(name));
     }
     scheduled_ = true;
-    memPeak_   = memPeak(program_);
+    //memPeak_   = memPeak(program_);
 }
 
 void Application::printSchedule(void)
@@ -322,17 +320,4 @@ void Application::configLoop(void)
     }
     LOG(Message) << BIG_SEP << " End of measurement " << BIG_SEP << std::endl;
     env().freeAll();
-}
-
-// memory profile //////////////////////////////////////////////////////////////
-void Application::memoryProfile(void)
-{
-    auto graph   = vm().makeModuleGraph();
-    auto program = graph.topoSort();
-    bool msg;
-    
-    msg = HadronsLogMessage.isActive();
-    HadronsLogMessage.Active(false);
-    
-    HadronsLogMessage.Active(msg);
 }

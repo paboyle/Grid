@@ -36,27 +36,6 @@ using namespace Hadrons;
 /******************************************************************************
  *                      VirtualMachine implementation                         *
  ******************************************************************************/
-// dry run /////////////////////////////////////////////////////////////////////
-void VirtualMachine::dryRun(const bool isDry)
-{
-    dryRun_ = isDry;
-}
-
-bool VirtualMachine::isDryRun(void) const
-{
-    return dryRun_;
-}
-
-void VirtualMachine::memoryProfile(const bool doMemoryProfile)
-{
-    memoryProfile_ = doMemoryProfile;
-}
-
-bool VirtualMachine::doMemoryProfile(void) const
-{
-    return memoryProfile_;
-}
-
 // trajectory counter //////////////////////////////////////////////////////////
 void VirtualMachine::setTrajectory(const unsigned int traj)
 {
@@ -259,40 +238,192 @@ bool VirtualMachine::hasModule(const std::string name) const
     return (moduleAddress_.find(name) != moduleAddress_.end());
 }
 
-Graph<unsigned int> VirtualMachine::makeModuleGraph(void) const
+// print VM content ////////////////////////////////////////////////////////////
+void VirtualMachine::printContent(void) const
 {
-    Graph<unsigned int> moduleGraph;
+    LOG(Debug) << "Modules: " << std::endl;
+    for (unsigned int i = 0; i < module_.size(); ++i)
+    {
+        LOG(Debug) << std::setw(4) << i << ": "
+                   << getModuleName(i) << std::endl;
+    }
+}
+
+// module graph ////////////////////////////////////////////////////////////////
+Graph<unsigned int> VirtualMachine::getModuleGraph(void)
+{
+    if (graphOutdated_)
+    {
+        makeModuleGraph();
+        graphOutdated_ = false;
+    }
+
+    return graph_;
+}
+
+void VirtualMachine::makeModuleGraph(void)
+{
+    Graph<unsigned int> graph;
     
     // create vertices
     for (unsigned int m = 0; m < module_.size(); ++m)
     {
-        moduleGraph.addVertex(m);
+        graph.addVertex(m);
     }
     // create edges
     for (unsigned int m = 0; m < module_.size(); ++m)
     {
         for (auto &in: module_[m].input)
         {
-            moduleGraph.addEdge(env().getObjectModule(in), m);
+            graph.addEdge(env().getObjectModule(in), m);
         }
     }
-    
-    return moduleGraph;
+    graph_ = graph;
 }
 
-// general execution ///////////////////////////////////////////////////////////
-#define BIG_SEP "==============="
-#define SEP     "---------------"
-#define MEM_MSG(size) sizeString(size)
-
-VirtualMachine::Size
-VirtualMachine::executeProgram(const std::vector<unsigned int> &p)
+// memory profile //////////////////////////////////////////////////////////////
+const VirtualMachine::MemoryProfile & VirtualMachine::getMemoryProfile(void)
 {
-    Size                                memPeak = 0, sizeBefore, sizeAfter;
-    std::vector<std::set<unsigned int>> freeProg;
+    if (memoryProfileOutdated_)
+    {
+        makeMemoryProfile();
+        memoryProfileOutdated_ = false;
+    }
+
+    return profile_;
+}
+
+void VirtualMachine::makeMemoryProfile(void)
+{
+    bool protect = env().objectsProtected();
+    bool hmsg    = HadronsLogMessage.isActive();
+    bool gmsg    = GridLogMessage.isActive();
+    bool err     = HadronsLogError.isActive();
+    auto program = getModuleGraph().topoSort();
+
+    resetProfile();
+    profile_.module.resize(getNModule());
+    env().protectObjects(false);
+    GridLogMessage.Active(false);
+    HadronsLogMessage.Active(false);
+    HadronsLogError.Active(false);
+    for (auto it = program.rbegin(); it != program.rend(); ++it) 
+    {
+        auto a = *it;
+
+        if (profile_.module[a].empty())
+        {
+            LOG(Debug) << "Profiling memory for module '" << module_[a].name
+                       << "' (" << a << ")..." << std::endl;
+            memoryProfile(a);
+            env().freeAll();
+        }
+    }
+    env().protectObjects(protect);
+    GridLogMessage.Active(gmsg);
+    HadronsLogMessage.Active(hmsg);
+    HadronsLogError.Active(err);
+    LOG(Debug) << "Memory profile:" << std::endl;
+    LOG(Debug) << "----------------" << std::endl;
+    for (unsigned int a = 0; a < profile_.module.size(); ++a)
+    {
+        LOG(Debug) << getModuleName(a) << " (" << a << ")" << std::endl;
+        for (auto &o: profile_.module[a])
+        {
+            LOG(Debug) << "|__ " << env().getObjectName(o.first) << " ("
+                       << sizeString(o.second) << ")" << std::endl;
+        }
+        LOG(Debug) << std::endl;
+    }
+    LOG(Debug) << "----------------" << std::endl;
+}
+
+void VirtualMachine::resetProfile(void)
+{
+    profile_.module.clear();
+    profile_.object.clear();
+}
+
+void VirtualMachine::resizeProfile(void)
+{
+    if (env().getMaxAddress() > profile_.object.size())
+    {
+        MemoryPrint empty;
+
+        empty.size   = 0;
+        empty.module = -1;
+        profile_.object.resize(env().getMaxAddress(), empty);
+    }
+}
+
+void VirtualMachine::updateProfile(const unsigned int address)
+{
+    resizeProfile();
+    for (unsigned int a = 0; a < env().getMaxAddress(); ++a)
+    {
+        if (env().hasCreatedObject(a) and (profile_.object[a].module == -1))
+        {
+            profile_.object[a].size     = env().getObjectSize(a);
+            profile_.object[a].module   = address;
+            profile_.module[address][a] = profile_.object[a].size;
+            if (env().getObjectModule(a) < 0)
+            {
+                env().setObjectModule(a, address);
+            }
+        }
+    }
+}
+
+void VirtualMachine::cleanEnvironment(void)
+{
+    resizeProfile();
+    for (unsigned int a = 0; a < env().getMaxAddress(); ++a)
+    {
+        if (env().hasCreatedObject(a) and (profile_.object[a].module == -1))
+        {
+            env().freeObject(a);
+        }
+    }
+}
+
+void VirtualMachine::memoryProfile(const unsigned int address)
+{
+    auto m = getModule(address);
+
+    LOG(Debug) << "Setting up module '" << m->getName() 
+               << "' (" << address << ")..." << std::endl;
+    try
+    {
+        m->setup();
+        updateProfile(address);
+    }
+    catch (Exceptions::Definition &)
+    {
+        cleanEnvironment();
+        for (auto &in: m->getInput())
+        {
+            memoryProfile(env().getObjectModule(in));
+        }
+        for (auto &ref: m->getReference())
+        {
+            memoryProfile(env().getObjectModule(ref));
+        }
+        m->setup();
+        updateProfile(address);
+    }
+}
+
+void VirtualMachine::memoryProfile(const std::string name)
+{
+    memoryProfile(getModuleAddress(name));
+}
+
+// garbage collector ///////////////////////////////////////////////////////////
+VirtualMachine::GarbageSchedule  
+VirtualMachine::makeGarbageSchedule(const std::vector<unsigned int> &p) const
+{
+    GarbageSchedule freeProg;
     
-    // build garbage collection schedule
-    LOG(Debug) << "Building garbage collection schedule..." << std::endl;
     freeProg.resize(p.size());
     for (unsigned int i = 0; i < env().getMaxAddress(); ++i)
     {
@@ -310,34 +441,42 @@ VirtualMachine::executeProgram(const std::vector<unsigned int> &p)
         }
     }
 
+    return freeProg;
+}
+
+// general execution ///////////////////////////////////////////////////////////
+#define BIG_SEP "==============="
+#define SEP     "---------------"
+#define MEM_MSG(size) sizeString(size)
+
+void VirtualMachine::executeProgram(const std::vector<unsigned int> &p) const
+{
+    Size            memPeak = 0, sizeBefore, sizeAfter;
+    GarbageSchedule freeProg;
+    
+    // build garbage collection schedule
+    LOG(Debug) << "Building garbage collection schedule..." << std::endl;
+    freeProg = makeGarbageSchedule(p);
+
     // program execution
     LOG(Debug) << "Executing program..." << std::endl;
     for (unsigned int i = 0; i < p.size(); ++i)
     {
         // execute module
-        if (!isDryRun())
-        {
-            LOG(Message) << SEP << " Measurement step " << i+1 << "/"
-                         << p.size() << " (module '" << module_[p[i]].name
-                         << "') " << SEP << std::endl;
-        }
+        LOG(Message) << SEP << " Measurement step " << i + 1 << "/"
+                        << p.size() << " (module '" << module_[p[i]].name
+                        << "') " << SEP << std::endl;
         (*module_[p[i]].data)();
         sizeBefore = env().getTotalSize();
         // print used memory after execution
-        if (!isDryRun())
-        {
-            LOG(Message) << "Allocated objects: " << MEM_MSG(sizeBefore)
-                         << std::endl;
-        }
+        LOG(Message) << "Allocated objects: " << MEM_MSG(sizeBefore)
+                     << std::endl;
         if (sizeBefore > memPeak)
         {
             memPeak = sizeBefore;
         }
         // garbage collection for step i
-        if (!isDryRun())
-        {
-            LOG(Message) << "Garbage collection..." << std::endl;
-        }
+        LOG(Message) << "Garbage collection..." << std::endl;
         for (auto &j: freeProg[i])
         {
             env().freeObject(j);
@@ -352,25 +491,20 @@ VirtualMachine::executeProgram(const std::vector<unsigned int> &p)
             }
         }
         // print used memory after garbage collection if necessary
-        if (!isDryRun())
+        sizeAfter = env().getTotalSize();
+        if (sizeBefore != sizeAfter)
         {
-            sizeAfter = env().getTotalSize();
-            if (sizeBefore != sizeAfter)
-            {
-                LOG(Message) << "Allocated objects: " << MEM_MSG(sizeAfter)
-                             << std::endl;
-            }
-            else
-            {
-                LOG(Message) << "Nothing to free" << std::endl;
-            }
+            LOG(Message) << "Allocated objects: " << MEM_MSG(sizeAfter)
+                            << std::endl;
+        }
+        else
+        {
+            LOG(Message) << "Nothing to free" << std::endl;
         }
     }
-    
-    return memPeak;
 }
 
-VirtualMachine::Size VirtualMachine::executeProgram(const std::vector<std::string> &p)
+void VirtualMachine::executeProgram(const std::vector<std::string> &p) const
 {
     std::vector<unsigned int> pAddress;
     
@@ -378,138 +512,5 @@ VirtualMachine::Size VirtualMachine::executeProgram(const std::vector<std::strin
     {
         pAddress.push_back(getModuleAddress(n));
     }
-    
-    return executeProgram(pAddress);
-}
-
-// print VM content ////////////////////////////////////////////////////////////
-void VirtualMachine::printContent(void) const
-{
-    LOG(Debug) << "Modules: " << std::endl;
-    for (unsigned int i = 0; i < module_.size(); ++i)
-    {
-        LOG(Debug) << std::setw(4) << i << ": "
-                   << getModuleName(i) << std::endl;
-    }
-}
-
-// memory profile //////////////////////////////////////////////////////////////
-VirtualMachine::MemoryProfile VirtualMachine::memoryProfile(void) const
-{
-    bool          protect = env().objectsProtected();
-    bool          hmsg    = HadronsLogMessage.isActive();
-    bool          gmsg    = GridLogMessage.isActive();
-    bool          err     = HadronsLogError.isActive();
-    MemoryProfile profile;
-    auto          program = makeModuleGraph().topoSort();
-
-    profile.module.resize(getNModule());
-    env().protectObjects(false);
-    GridLogMessage.Active(false);
-    HadronsLogMessage.Active(false);
-    HadronsLogError.Active(false);
-    for (auto it = program.rbegin(); it != program.rend(); ++it) 
-    {
-        auto a = *it;
-
-        if (profile.module[a].empty())
-        {
-            LOG(Debug) << "Profiling memory for module '" << module_[a].name
-                       << "' (" << a << ")..." << std::endl;
-            memoryProfile(profile, a);
-            env().freeAll();
-        }
-    }
-    env().protectObjects(protect);
-    GridLogMessage.Active(gmsg);
-    HadronsLogMessage.Active(hmsg);
-    HadronsLogError.Active(err);
-    LOG(Debug) << "Memory profile:" << std::endl;
-    LOG(Debug) << "----------------" << std::endl;
-    for (unsigned int a = 0; a < profile.module.size(); ++a)
-    {
-        LOG(Debug) << getModuleName(a) << " (" << a << ")" << std::endl;
-        for (auto &o: profile.module[a])
-        {
-            LOG(Debug) << "|__ " << env().getObjectName(o.first) << " ("
-                       << sizeString(o.second) << ")" << std::endl;
-        }
-        LOG(Debug) << std::endl;
-    }
-    LOG(Debug) << "----------------" << std::endl;
-
-    return profile;
-}
-
-void VirtualMachine::resizeProfile(MemoryProfile &profile) const
-{
-    if (env().getMaxAddress() > profile.object.size())
-    {
-        MemoryPrint empty;
-
-        empty.size   = 0;
-        empty.module = -1;
-        profile.object.resize(env().getMaxAddress(), empty);
-    }
-}
-
-void VirtualMachine::updateProfile(MemoryProfile &profile, 
-                                   const unsigned int address) const
-{
-    resizeProfile(profile);
-    for (unsigned int a = 0; a < env().getMaxAddress(); ++a)
-    {
-        if (env().hasCreatedObject(a) and (profile.object[a].module == -1))
-        {
-            profile.object[a].size     = env().getObjectSize(a);
-            profile.object[a].module   = address;
-            profile.module[address][a] = profile.object[a].size;
-        }
-    }
-}
-
-void VirtualMachine::cleanEnvironment(MemoryProfile &profile) const
-{
-    resizeProfile(profile);
-    for (unsigned int a = 0; a < env().getMaxAddress(); ++a)
-    {
-        if (env().hasCreatedObject(a) and (profile.object[a].module == -1))
-        {
-            env().freeObject(a);
-        }
-    }
-}
-
-void VirtualMachine::memoryProfile(MemoryProfile &profile, 
-                                   const unsigned int address) const
-{
-    auto m = getModule(address);
-
-    LOG(Debug) << "Setting up module '" << m->getName() << "' (" << address << ")..." << std::endl;
-
-    try
-    {
-        m->setup();
-        updateProfile(profile, address);
-    }
-    catch (Exceptions::Definition &)
-    {
-        cleanEnvironment(profile);
-        for (auto &in: m->getInput())
-        {
-            memoryProfile(profile, env().getObjectModule(in));
-        }
-        for (auto &ref: m->getReference())
-        {
-            memoryProfile(profile, env().getObjectModule(ref));
-        }
-        m->setup();
-        updateProfile(profile, address);
-    }
-}
-
-void VirtualMachine::memoryProfile(MemoryProfile &profile,
-                                   const std::string name) const
-{
-    memoryProfile(profile, getModuleAddress(name));
+    executeProgram(pAddress);
 }

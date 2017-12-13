@@ -58,8 +58,5 @@ std::string ModuleBase::getRegisteredName(void)
 void ModuleBase::operator()(void)
 {
     setup();
-    if (!vm().isDryRun())
-    {
-        execute();
-    }
+    execute();
 }

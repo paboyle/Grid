@@ -102,8 +102,6 @@ private:
     DEFINE_ENV_ALIAS;
     // virtual machine shortcut
     DEFINE_VM_ALIAS;
-    // memory profile
-    void memoryProfile(void);
 private:
     long unsigned int         locVol_;
     std::string               parameterFileName_{""};
