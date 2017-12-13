@@ -70,8 +70,8 @@ XmlReader::XmlReader(const char *xmlstring,string toplev) : fileName_("")
   pugi::xml_parse_result result;
   result = doc_.load_string(xmlstring);
   if ( !result ) {
-    cerr << "XML error description: " << result.description() << "\n";
-    cerr << "XML error offset     : " << result.offset        << "\n";
+    cerr << "XML error description (from char *): " << result.description() << "\nXML\n"<< xmlstring << "\n";
+    cerr << "XML error offset      (from char *) " << result.offset         << "\nXML\n"<< xmlstring <<"\n";
     abort();
   }
   if ( toplev == std::string("") ) {
@@ -87,8 +87,8 @@ XmlReader::XmlReader(const string &fileName,string toplev) : fileName_(fileName)
   pugi::xml_parse_result result;
   result = doc_.load_file(fileName_.c_str());
   if ( !result ) {
-    cerr << "XML error description: " << result.description() << "\n";
-    cerr << "XML error offset     : " << result.offset        << "\n";
+    cerr << "XML error description: " << result.description() <<" "<< fileName_ <<"\n";
+    cerr << "XML error offset     : " << result.offset        <<" "<< fileName_ <<"\n";
     abort();
   }
   if ( toplev == std::string("") ) {
@@ -100,13 +100,16 @@ XmlReader::XmlReader(const string &fileName,string toplev) : fileName_(fileName)
 
 bool XmlReader::push(const string &s)
 {
+  if (node_.child(s.c_str()))
+  {
+    node_ = node_.child(s.c_str());
 
-  if (node_.child(s.c_str()) == NULL )
+    return true;
+  }
+  else
+  {
     return false;
-
-  node_ = node_.child(s.c_str());
-  return true;
-    
+  }
 }
 
 void XmlReader::pop(void)
@@ -117,20 +120,30 @@ void XmlReader::pop(void)
 bool XmlReader::nextElement(const std::string &s)
 {
   if (node_.next_sibling(s.c_str()))
-    {
-      node_ = node_.next_sibling(s.c_str());
-      
-      return true;
-    }
+  {
+    node_ = node_.next_sibling(s.c_str());
+    
+    return true;
+  }
   else
-    {
-      return false;
-    }
+  {
+    return false;
+  }
 
 }
 
 template <>
 void XmlReader::readDefault(const string &s, string &output)
 {
-  output = node_.child(s.c_str()).first_child().value();
+  if (node_.child(s.c_str()))
+  {
+    output = node_.child(s.c_str()).first_child().value();
+  }
+  else
+  {
+    std::cout << GridLogWarning << "XML: cannot open node '" << s << "'";
+    std::cout << std::endl;
+
+    output = ""; 
+  }
 }

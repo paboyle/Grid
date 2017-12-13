@@ -45,13 +45,55 @@ void LAPACK_dstegr(char *jobz, char *range, int *n, double *d, double *e,
 #endif
 #endif
 
-//#include <Grid/algorithms/densematrix/DenseMatrix.h>
-//#include <Grid/algorithms/iterative/EigenSort.h>
-
 // eliminate temorary vector in calc()
 #define MEM_SAVE
-
 namespace Grid {
+
+////////////////////////////////////////////////////////////////////////////////
+// Helper class for sorting the evalues AND evectors by Field
+// Use pointer swizzle on vectors
+////////////////////////////////////////////////////////////////////////////////
+template<class Field>
+class SortEigen {
+ private:
+  static bool less_lmd(RealD left,RealD right){
+    return left > right;
+  }  
+  static bool less_pair(std::pair<RealD,Field const*>& left,
+                        std::pair<RealD,Field const*>& right){
+    return left.first > (right.first);
+  }  
+  
+ public:
+  void push(std::vector<RealD>& lmd,std::vector<Field>& evec,int N) {
+    
+    ////////////////////////////////////////////////////////////////////////
+    // PAB: FIXME: VERY VERY VERY wasteful: takes a copy of the entire vector set.
+    //    : The vector reorder should be done by pointer swizzle somehow
+    ////////////////////////////////////////////////////////////////////////
+    std::vector<Field> cpy(lmd.size(),evec[0]._grid);
+    for(int i=0;i<lmd.size();i++) cpy[i] = evec[i];
+    
+    std::vector<std::pair<RealD, Field const*> > emod(lmd.size());    
+
+    for(int i=0;i<lmd.size();++i)  emod[i] = std::pair<RealD,Field const*>(lmd[i],&cpy[i]);
+
+    partial_sort(emod.begin(),emod.begin()+N,emod.end(),less_pair);
+
+    typename std::vector<std::pair<RealD, Field const*> >::iterator it = emod.begin();
+    for(int i=0;i<N;++i){
+      lmd[i]=it->first;
+      evec[i]=*(it->second);
+      ++it;
+    }
+  }
+  void push(std::vector<RealD>& lmd,int N) {
+    std::partial_sort(lmd.begin(),lmd.begin()+N,lmd.end(),less_lmd);
+  }
+  bool saturated(RealD lmd, RealD thrs) {
+    return fabs(lmd) > fabs(thrs);
+  }
+};
 
 /////////////////////////////////////////////////////////////
 // Implicitly restarted lanczos
@@ -1015,7 +1057,6 @@ until convergence
 #endif
 // Skip sorting, as it doubles the memory usage(!) and can be avoided by diagonalizing "right away"
 
-//      _sort.push(eval,evec,Nconv);
 
       std::cout<<GridLogMessage << "\n Converged\n Summary :\n";
       std::cout<<GridLogMessage << " -- Iterations  = "<< Nconv  << "\n";

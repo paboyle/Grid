@@ -6,8 +6,6 @@
 
     Copyright (C) 2015
 
-Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: paboyle <paboyle@ph.ed.ac.uk>
 Author: Chulwoo Jung <chulwoo@bnl.gov>
 
     This program is free software; you can redistribute it and/or modify
@@ -46,7 +44,6 @@ void LAPACK_dstegr (char *jobz, char *range, int *n, double *d, double *e,
 #endif
 
 #include <Grid/algorithms/densematrix/DenseMatrix.h>
-//#include <Grid/algorithms/iterative/EigenSort.h>
 
 // eliminate temorary vector in calc()
 #define MEM_SAVE

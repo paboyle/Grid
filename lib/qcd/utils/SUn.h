@@ -746,7 +746,7 @@ template<typename GaugeField,typename GaugeMat>
     }
   }
   template<typename GaugeField>
-  static void ColdConfiguration(GridParallelRNG &pRNG,GaugeField &out){
+  static void ColdConfiguration(GaugeField &out){
     typedef typename GaugeField::vector_type vector_type;
     typedef iSUnMatrix<vector_type> vMatrixType;
     typedef Lattice<vMatrixType> LatticeMatrixType;
@@ -756,6 +756,10 @@ template<typename GaugeField,typename GaugeMat>
     for(int mu=0;mu<Nd;mu++){
       PokeIndex<LorentzIndex>(out,Umu,mu);
     }
+  }
+  template<typename GaugeField>
+  static void ColdConfiguration(GridParallelRNG &pRNG,GaugeField &out){
+    ColdConfiguration(out);
   }
 
   template<typename LatticeMatrixType>
