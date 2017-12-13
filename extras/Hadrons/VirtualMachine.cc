@@ -27,6 +27,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 /*  END LEGAL */
 
 #include <Grid/Hadrons/VirtualMachine.hpp>
+#include <Grid/Hadrons/GeneticScheduler.hpp>
 #include <Grid/Hadrons/ModuleFactory.hpp>
 
 using namespace Grid;
@@ -133,6 +134,8 @@ void VirtualMachine::pushModule(VirtualMachine::ModPt &pt)
                 }
             }
         }
+        graphOutdated_         = true;
+        memoryProfileOutdated_ = true;
     }
     else
     {
@@ -364,6 +367,7 @@ void VirtualMachine::updateProfile(const unsigned int address)
         if (env().hasCreatedObject(a) and (profile_.object[a].module == -1))
         {
             profile_.object[a].size     = env().getObjectSize(a);
+            profile_.object[a].storage  = env().getObjectStorage(a);
             profile_.object[a].module   = address;
             profile_.module[address][a] = profile_.object[a].size;
             if (env().getObjectModule(a) < 0)
@@ -419,29 +423,122 @@ void VirtualMachine::memoryProfile(const std::string name)
 }
 
 // garbage collector ///////////////////////////////////////////////////////////
-VirtualMachine::GarbageSchedule  
-VirtualMachine::makeGarbageSchedule(const std::vector<unsigned int> &p) const
+VirtualMachine::GarbageSchedule 
+VirtualMachine::makeGarbageSchedule(const Program &p) const
 {
     GarbageSchedule freeProg;
     
     freeProg.resize(p.size());
-    for (unsigned int i = 0; i < env().getMaxAddress(); ++i)
+    for (unsigned int a = 0; a < env().getMaxAddress(); ++a)
     {
-        auto pred = [i, this](const unsigned int j)
+        if (env().getObjectStorage(a) == Environment::Storage::temporary)
         {
-            auto &in = module_[j].input;
-            auto it  = std::find(in.begin(), in.end(), i);
-            
-            return (it != in.end()) or (j == env().getObjectModule(i));
-        };
-        auto it = std::find_if(p.rbegin(), p.rend(), pred);
-        if (it != p.rend())
+            auto it = std::find(p.begin(), p.end(), env().getObjectModule(a));
+
+            if (it != p.end())
+            {
+                freeProg[std::distance(p.begin(), it)].insert(a);
+            }
+        }
+        else if (env().getObjectStorage(a) == Environment::Storage::object)
         {
-            freeProg[std::distance(it, p.rend()) - 1].insert(i);
+            auto pred = [a, this](const unsigned int b)
+            {
+                auto &in = module_[b].input;
+                auto it  = std::find(in.begin(), in.end(), a);
+                
+                return (it != in.end()) or (b == env().getObjectModule(a));
+            };
+            auto it = std::find_if(p.rbegin(), p.rend(), pred);
+            if (it != p.rend())
+            {
+                freeProg[std::distance(it, p.rend()) - 1].insert(a);
+            }
         }
     }
 
     return freeProg;
+}
+
+// high-water memory function //////////////////////////////////////////////////
+VirtualMachine::Size VirtualMachine::memoryNeeded(const Program &p)
+{
+    const MemoryProfile &profile = getMemoryProfile();
+    GarbageSchedule     freep    = makeGarbageSchedule(p);
+    Size                current = 0, max = 0;
+
+    for (unsigned int i = 0; i < p.size(); ++i)
+    {
+        for (auto &o: profile.module[p[i]])
+        {
+            current += o.second;
+        }
+        max = std::max(current, max);
+        for (auto &o: freep[i])
+        {
+            current -= profile.object[o].size;
+        }
+    }
+
+    return max;
+}
+
+// genetic scheduler ///////////////////////////////////////////////////////////
+VirtualMachine::Program VirtualMachine::schedule(const GeneticPar &par)
+{
+    typedef GeneticScheduler<Size, unsigned int> Scheduler;
+
+    auto graph = getModuleGraph();
+
+    //constrained topological sort using a genetic algorithm
+    LOG(Message) << "Scheduling computation..." << std::endl;
+    LOG(Message) << "               #module= " << graph.size() << std::endl;
+    LOG(Message) << "       population size= " << par.popSize << std::endl;
+    LOG(Message) << "       max. generation= " << par.maxGen << std::endl;
+    LOG(Message) << "  max. cst. generation= " << par.maxCstGen << std::endl;
+    LOG(Message) << "         mutation rate= " << par.mutationRate << std::endl;
+    
+    unsigned int          k = 0, gen, prevPeak, nCstPeak = 0;
+    std::random_device    rd;
+    Scheduler::Parameters gpar;
+    
+    gpar.popSize      = par.popSize;
+    gpar.mutationRate = par.mutationRate;
+    gpar.seed         = rd();
+    CartesianCommunicator::BroadcastWorld(0, &(gpar.seed), sizeof(gpar.seed));
+    Scheduler::ObjFunc memPeak = [this](const Program &p)->Size
+    {
+        return memoryNeeded(p);
+    };
+    Scheduler scheduler(graph, memPeak, gpar);
+    gen = 0;
+    do
+    {
+        LOG(Debug) << "Generation " << gen << ":" << std::endl;
+        scheduler.nextGeneration();
+        if (gen != 0)
+        {
+            if (prevPeak == scheduler.getMinValue())
+            {
+                nCstPeak++;
+            }
+            else
+            {
+                nCstPeak = 0;
+            }
+        }
+        
+        prevPeak = scheduler.getMinValue();
+        if (gen % 10 == 0)
+        {
+            LOG(Iterative) << "Generation " << gen << ": "
+                           << sizeString(scheduler.getMinValue()) << std::endl;
+        }
+        
+        gen++;
+    } while ((gen < par.maxGen) and (nCstPeak < par.maxCstGen));
+    
+    return scheduler.getMinSchedule();
 }
 
 // general execution ///////////////////////////////////////////////////////////
@@ -449,7 +546,7 @@ VirtualMachine::makeGarbageSchedule(const std::vector<unsigned int> &p) const
 #define SEP     "---------------"
 #define MEM_MSG(size) sizeString(size)
 
-void VirtualMachine::executeProgram(const std::vector<unsigned int> &p) const
+void VirtualMachine::executeProgram(const Program &p) const
 {
     Size            memPeak = 0, sizeBefore, sizeAfter;
     GarbageSchedule freeProg;
@@ -481,15 +578,6 @@ void VirtualMachine::executeProgram(const std::vector<unsigned int> &p) const
         {
             env().freeObject(j);
         }
-        // free temporaries
-        for (unsigned int i = 0; i < env().getMaxAddress(); ++i)
-        {
-            if ((env().getObjectStorage(i) == Environment::Storage::temporary) 
-                and env().hasCreatedObject(i))
-            {
-                env().freeObject(i);
-            }
-        }
         // print used memory after garbage collection if necessary
         sizeAfter = env().getTotalSize();
         if (sizeBefore != sizeAfter)
@@ -506,7 +594,7 @@ void VirtualMachine::executeProgram(const std::vector<unsigned int> &p) const
 
 void VirtualMachine::executeProgram(const std::vector<std::string> &p) const
 {
-    std::vector<unsigned int> pAddress;
+    Program pAddress;
     
     for (auto &n: p)
     {

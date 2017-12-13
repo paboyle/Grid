@@ -50,25 +50,13 @@ public:
                                         unsigned int, end,
                                         unsigned int, step);
     };
-    class GeneticPar: Serializable
-    {
-    public:
-        GeneticPar(void):
-            popSize{20}, maxGen{1000}, maxCstGen{100}, mutationRate{.1} {};
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(GeneticPar,
-                                        unsigned int, popSize,
-                                        unsigned int, maxGen,
-                                        unsigned int, maxCstGen,
-                                        double      , mutationRate);
-    };
     class GlobalPar: Serializable
     {
     public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(GlobalPar,
-                                        TrajRange,   trajCounter,
-                                        GeneticPar,  genetic,
-                                        std::string, seed);
+                                        TrajRange,                  trajCounter,
+                                        VirtualMachine::GeneticPar, genetic,
+                                        std::string,                seed);
     };
 public:
     // constructors
@@ -103,12 +91,11 @@ private:
     // virtual machine shortcut
     DEFINE_VM_ALIAS;
 private:
-    long unsigned int         locVol_;
-    std::string               parameterFileName_{""};
-    GlobalPar                 par_;
-    std::vector<unsigned int> program_;
-    Environment::Size         memPeak_;
-    bool                      scheduled_{false};
+    long unsigned int       locVol_;
+    std::string             parameterFileName_{""};
+    GlobalPar               par_;
+    VirtualMachine::Program program_;
+    bool                    scheduled_{false}, loadedSchedule_{false};
 };
 
 /******************************************************************************
@@ -119,6 +106,7 @@ template <typename M>
 void Application::createModule(const std::string name)
 {
     vm().createModule<M>(name);
+    scheduled_ = false;
 }
 
 template <typename M>
@@ -126,6 +114,7 @@ void Application::createModule(const std::string name,
                                const typename M::Par &par)
 {
     vm().createModule<M>(name, par);
+    scheduled_ = false;
 }
 
 END_HADRONS_NAMESPACE

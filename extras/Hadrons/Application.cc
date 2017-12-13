@@ -94,10 +94,7 @@ void Application::run(void)
     }
     vm().printContent();
     env().printContent();
-    if (!scheduled_)
-    {
-        schedule();
-    }
+    schedule();
     printSchedule();
     configLoop();
 }
@@ -122,11 +119,13 @@ void Application::parseParameterFile(const std::string parameterFileName)
     setPar(par);
     if (!push(reader, "modules"))
     {
-        HADRON_ERROR(Parsing, "Cannot open node 'modules' in parameter file '" + parameterFileName + "'");
+        HADRON_ERROR(Parsing, "Cannot open node 'modules' in parameter file '" 
+                              + parameterFileName + "'");
     }
     if (!push(reader, "module"))
     {
-        HADRON_ERROR(Parsing, "Cannot open node 'modules/module' in parameter file '" + parameterFileName + "'");
+        HADRON_ERROR(Parsing, "Cannot open node 'modules/module' in parameter file '" 
+                              + parameterFileName + "'");
     }
     do
     {
@@ -160,98 +159,13 @@ void Application::saveParameterFile(const std::string parameterFileName)
 }
 
 // schedule computation ////////////////////////////////////////////////////////
-#define MEM_MSG(size)\
-sizeString((size)*locVol_) << " (" << sizeString(size)  << "/site)"
-
-#define DEFINE_MEMPEAK \
-GeneticScheduler<unsigned int>::ObjFunc memPeak = \
-[this](const std::vector<unsigned int> &program)\
-{\
-    unsigned int memPeak;\
-    bool         msg;\
-    \
-    msg = HadronsLogMessage.isActive();\
-    HadronsLogMessage.Active(false);\
-    vm().dryRun(true);\
-    memPeak = vm().executeProgram(program);\
-    vm().dryRun(false);\
-    env().freeAll();\
-    HadronsLogMessage.Active(msg);\
-    \
-    return memPeak;\
-}
-
 void Application::schedule(void)
 {
-    //DEFINE_MEMPEAK;
-    
-    // build module dependency graph
-    LOG(Message) << "Building module graph..." << std::endl;
-    auto graph = vm().getModuleGraph();
-    LOG(Debug) << "Module graph:" << std::endl;
-    LOG(Debug) << graph << std::endl;
-    auto con = graph.getConnectedComponents();
-    
-    // constrained topological sort using a genetic algorithm
-    // LOG(Message) << "Scheduling computation..." << std::endl;
-    // LOG(Message) << "               #module= " << graph.size() << std::endl;
-    // LOG(Message) << "       population size= " << par_.genetic.popSize << std::endl;
-    // LOG(Message) << "       max. generation= " << par_.genetic.maxGen << std::endl;
-    // LOG(Message) << "  max. cst. generation= " << par_.genetic.maxCstGen << std::endl;
-    // LOG(Message) << "         mutation rate= " << par_.genetic.mutationRate << std::endl;
-    
-    // unsigned int                               k = 0, gen, prevPeak, nCstPeak = 0;
-    // std::random_device                         rd;
-    // GeneticScheduler<unsigned int>::Parameters par;
-    
-    // par.popSize      = par_.genetic.popSize;
-    // par.mutationRate = par_.genetic.mutationRate;
-    // par.seed         = rd();
-    // memPeak_         = 0;
-    // CartesianCommunicator::BroadcastWorld(0, &(par.seed), sizeof(par.seed));
-    for (unsigned int i = 0; i < con.size(); ++i)
+    if (!scheduled_ and !loadedSchedule_)
     {
-        // GeneticScheduler<unsigned int> scheduler(con[i], memPeak, par);
-        
-        // gen = 0;
-        // do
-        // {
-        //     LOG(Debug) << "Generation " << gen << ":" << std::endl;
-        //     scheduler.nextGeneration();
-        //     if (gen != 0)
-        //     {
-        //         if (prevPeak == scheduler.getMinValue())
-        //         {
-        //             nCstPeak++;
-        //         }
-        //         else
-        //         {
-        //             nCstPeak = 0;
-        //         }
-        //     }
-            
-        //     prevPeak = scheduler.getMinValue();
-        //     if (gen % 10 == 0)
-        //     {
-        //         LOG(Iterative) << "Generation " << gen << ": "
-        //                        << MEM_MSG(scheduler.getMinValue()) << std::endl;
-        //     }
-            
-        //     gen++;
-        // } while ((gen < par_.genetic.maxGen)
-        //          and (nCstPeak < par_.genetic.maxCstGen));
-        // auto &t = scheduler.getMinSchedule();
-        // if (scheduler.getMinValue() > memPeak_)
-        // {
-        //     memPeak_ = scheduler.getMinValue();
-        // }
-        auto t = con[i].topoSort();
-        for (unsigned int j = 0; j < t.size(); ++j)
-        {
-            program_.push_back(t[j]);
-        }
+        program_   = vm().schedule(par_.genetic);
+        scheduled_ = true;
     }
-    scheduled_ = true;
 }
 
 void Application::saveSchedule(const std::string filename)
@@ -274,8 +188,6 @@ void Application::saveSchedule(const std::string filename)
 
 void Application::loadSchedule(const std::string filename)
 {
-    //DEFINE_MEMPEAK;
-    
     TextReader               reader(filename);
     std::vector<std::string> program;
     
@@ -287,8 +199,7 @@ void Application::loadSchedule(const std::string filename)
     {
         program_.push_back(vm().getModuleAddress(name));
     }
-    scheduled_ = true;
-    //memPeak_   = memPeak(program_);
+    loadedSchedule_ = true;
 }
 
 void Application::printSchedule(void)
@@ -297,7 +208,8 @@ void Application::printSchedule(void)
     {
         HADRON_ERROR(Definition, "Computation not scheduled");
     }
-    LOG(Message) << "Schedule (memory peak: " << MEM_MSG(memPeak_) << "):"
+    auto peak = vm().memoryNeeded(program_);
+    LOG(Message) << "Schedule (memory needed: " << sizeString(peak) << "):"
                  << std::endl;
     for (unsigned int i = 0; i < program_.size(); ++i)
     {

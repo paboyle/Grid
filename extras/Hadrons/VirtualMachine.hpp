@@ -51,18 +51,32 @@ class VirtualMachine
 {
     SINGLETON_DEFCTOR(VirtualMachine);
 public:
-    typedef SITE_SIZE_TYPE                       Size;
-    typedef std::unique_ptr<ModuleBase>          ModPt;
-    typedef  std::vector<std::set<unsigned int>> GarbageSchedule;
+    typedef SITE_SIZE_TYPE                      Size;
+    typedef std::unique_ptr<ModuleBase>         ModPt;
+    typedef std::vector<std::set<unsigned int>> GarbageSchedule;
+    typedef std::vector<unsigned int>           Program;
     struct MemoryPrint
     {
-        Size         size;
-        unsigned int module;
+        Size                 size;
+        Environment::Storage storage;
+        unsigned int         module;
     };
     struct MemoryProfile
     {
         std::vector<std::map<unsigned int, Size>> module;
         std::vector<MemoryPrint>                  object;
+    };
+    class GeneticPar: Serializable
+    {
+    public:
+        GeneticPar(void):
+            popSize{20}, maxGen{1000}, maxCstGen{100}, mutationRate{.1} {};
+    public:
+        GRID_SERIALIZABLE_CLASS_MEMBERS(GeneticPar,
+                                        unsigned int, popSize,
+                                        unsigned int, maxGen,
+                                        unsigned int, maxCstGen,
+                                        double      , mutationRate);
     };
 private:
     struct ModuleInfo
@@ -109,13 +123,13 @@ public:
     // memory profile
     const MemoryProfile &getMemoryProfile(void);
     // garbage collector
-    GarbageSchedule     makeGarbageSchedule(const std::vector<unsigned int> &p) const;
+    GarbageSchedule     makeGarbageSchedule(const Program &p) const;
     // high-water memory function
-    Size                memoryNeeded(const std::vector<unsigned int> &p,
-                                     const GarbageSchedule &g);
-    Size                memoryNeeded(const std::vector<unsigned int> &p);
+    Size                memoryNeeded(const Program &p);
+    // genetic scheduler
+    Program             schedule(const GeneticPar &par);
     // general execution
-    void                executeProgram(const std::vector<unsigned int> &p) const;
+    void                executeProgram(const Program &p) const;
     void                executeProgram(const std::vector<std::string> &p) const;
 private:
     // environment shortcut
