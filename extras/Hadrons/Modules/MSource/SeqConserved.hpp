@@ -82,6 +82,7 @@ public:
     virtual ~TSeqConserved(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getReference(void);
     virtual std::vector<std::string> getOutput(void);
 protected:
     // setup
@@ -111,6 +112,14 @@ std::vector<std::string> TSeqConserved<FImpl>::getInput(void)
 }
 
 template <typename FImpl>
+std::vector<std::string> TSeqConserved<FImpl>::getReference(void)
+{
+    std::vector<std::string> ref = {};
+    
+    return ref;
+}
+
+template <typename FImpl>
 std::vector<std::string> TSeqConserved<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
@@ -123,7 +132,7 @@ template <typename FImpl>
 void TSeqConserved<FImpl>::setup(void)
 {
     auto Ls_ = env().getObjectLs(par().action);
-    env().template registerLattice<PropagatorField>(getName(), Ls_);
+    envCreateLat(PropagatorField, getName(), Ls_);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -143,9 +152,9 @@ void TSeqConserved<FImpl>::execute(void)
                      << par().mu << ") for " << par().tA << " <= t <= " 
                      << par().tB << std::endl;
     }
-    PropagatorField &src = *env().template createLattice<PropagatorField>(getName());
-    PropagatorField &q   = *env().template getObject<PropagatorField>(par().q);
-    FMat            &mat = *(env().template getObject<FMat>(par().action));
+    auto &src = envGet(PropagatorField, getName());
+    auto &q   = envGet(PropagatorField, par().q);
+    auto &mat = envGet(FMat, par().action);
 
     std::vector<Real> mom = strToVec<Real>(par().mom);
     mat.SeqConservedCurrent(q, src, par().curr_type, par().mu, 

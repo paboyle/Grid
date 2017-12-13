@@ -44,7 +44,16 @@ TRandom::TRandom(const std::string name)
 // dependencies/products ///////////////////////////////////////////////////////
 std::vector<std::string> TRandom::getInput(void)
 {
-    return std::vector<std::string>();
+    std::vector<std::string> in;
+    
+    return in;
+}
+
+std::vector<std::string> TRandom::getReference(void)
+{
+    std::vector<std::string> ref;
+    
+    return ref;
 }
 
 std::vector<std::string> TRandom::getOutput(void)
@@ -57,13 +66,14 @@ std::vector<std::string> TRandom::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void TRandom::setup(void)
 {
-    env().registerLattice<LatticeGaugeField>(getName());
+    envCreateLat(LatticeGaugeField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 void TRandom::execute(void)
 {
     LOG(Message) << "Generating random gauge configuration" << std::endl;
-    LatticeGaugeField &U = *env().createLattice<LatticeGaugeField>(getName());
+    
+    auto &U = envGet(LatticeGaugeField, getName());
     SU3::HotConfiguration(*env().get4dRng(), U);
 }

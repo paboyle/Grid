@@ -161,6 +161,7 @@ void TMeson<FImpl1, FImpl2>::parseGammaString(std::vector<GammaPair> &gammaList)
         // Parse individual contractions from input string.
         gammaList = strToVec<GammaPair>(par().gammas);
     }
+    envTmpLat(LatticeComplex, "c");    
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -192,8 +193,8 @@ void TMeson<FImpl1, FImpl2>::execute(void)
     if (envHasType(SlicedPropagator1, par().q1) and
         envHasType(SlicedPropagator2, par().q2))
     {
-        SlicedPropagator1 &q1 = envGet(SlicedPropagator1, par().q1);
-        SlicedPropagator2 &q2 = envGet(SlicedPropagator2, par().q2);
+        auto &q1 = envGet(SlicedPropagator1, par().q1);
+        auto &q2 = envGet(SlicedPropagator2, par().q2);
         
         LOG(Message) << "(propagator already sinked)" << std::endl;
         for (unsigned int i = 0; i < result.size(); ++i)
@@ -209,10 +210,10 @@ void TMeson<FImpl1, FImpl2>::execute(void)
     }
     else
     {
-        PropagatorField1 &q1 = envGet(PropagatorField1, par().q1);
-        PropagatorField2 &q2 = envGet(PropagatorField2, par().q2);
-        LatticeComplex   c(env().getGrid());
+        auto &q1 = envGet(PropagatorField1, par().q1);
+        auto &q2 = envGet(PropagatorField2, par().q2);
         
+        envGetTmp(LatticeComplex, c);
         LOG(Message) << "(using sink '" << par().sink << "')" << std::endl;
         for (unsigned int i = 0; i < result.size(); ++i)
         {

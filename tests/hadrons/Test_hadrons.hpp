@@ -118,7 +118,7 @@ inline void makeWilsonAction(Application &application, std::string actionName,
                              std::string &gaugeField, double mass,
                              std::string boundary = "1 1 1 -1")
 {
-    if (!(Environment::getInstance().hasModule(actionName)))
+    if (!(VirtualMachine::getInstance().hasModule(actionName)))
     {
         MAction::Wilson::Par actionPar;
         actionPar.gauge = gaugeField;
@@ -144,7 +144,7 @@ inline void makeDWFAction(Application &application, std::string actionName,
                           std::string &gaugeField, double mass, double M5,
                           unsigned int Ls, std::string boundary = "1 1 1 -1")
 {
-    if (!(Environment::getInstance().hasModule(actionName)))
+    if (!(VirtualMachine::getInstance().hasModule(actionName)))
     {
         MAction::DWF::Par actionPar;
         actionPar.gauge = gaugeField;
@@ -173,7 +173,7 @@ inline void makeDWFAction(Application &application, std::string actionName,
 inline void makeRBPrecCGSolver(Application &application, std::string &solverName,
                                std::string &actionName, double residual = 1e-8)
 {
-    if (!(Environment::getInstance().hasModule(solverName)))
+    if (!(VirtualMachine::getInstance().hasModule(solverName)))
     {
         MSolver::RBPrecCG::Par solverPar;
         solverPar.action   = actionName;
@@ -195,7 +195,7 @@ inline void makePointSource(Application &application, std::string srcName,
                             std::string pos)
 {
     // If the source already exists, don't make the module again.
-    if (!(Environment::getInstance().hasModule(srcName)))
+    if (!(VirtualMachine::getInstance().hasModule(srcName)))
     {
         MSource::Point::Par pointPar;
         pointPar.position = pos;
@@ -219,7 +219,7 @@ inline void makeSequentialSource(Application &application, std::string srcName,
                                  std::string mom = ZERO_MOM)
 {
     // If the source already exists, don't make the module again.
-    if (!(Environment::getInstance().hasModule(srcName)))
+    if (!(VirtualMachine::getInstance().hasModule(srcName)))
     {
         MSource::SeqGamma::Par seqPar;
         seqPar.q   = qSrc;
@@ -255,7 +255,7 @@ inline void makeConservedSequentialSource(Application &application,
                                           std::string mom = ZERO_MOM)
 {
     // If the source already exists, don't make the module again.
-    if (!(Environment::getInstance().hasModule(srcName)))
+    if (!(VirtualMachine::getInstance().hasModule(srcName)))
     {
         MSource::SeqConserved::Par seqPar;
         seqPar.q         = qSrc;
@@ -280,7 +280,7 @@ inline void makeConservedSequentialSource(Application &application,
 inline void makeNoiseSource(Application &application, std::string &srcName,
                             unsigned int tA, unsigned int tB)
 {
-    if (!(Environment::getInstance().hasModule(srcName)))
+    if (!(VirtualMachine::getInstance().hasModule(srcName)))
     {
         MSource::Z2::Par noisePar;
         noisePar.tA = tA;
@@ -302,7 +302,7 @@ inline void makeWallSource(Application &application, std::string &srcName,
                            unsigned int tW, std::string mom = ZERO_MOM)
 {
     // If the source already exists, don't make the module again.
-    if (!(Environment::getInstance().hasModule(srcName)))
+    if (!(VirtualMachine::getInstance().hasModule(srcName)))
     {
         MSource::Wall::Par wallPar;
         wallPar.tW  = tW;
@@ -324,7 +324,7 @@ inline void makePointSink(Application &application, std::string &sinkFnct,
                           std::string mom = ZERO_MOM)
 {
     // If the sink function already exists, don't make it again.
-    if (!(Environment::getInstance().hasModule(sinkFnct)))
+    if (!(VirtualMachine::getInstance().hasModule(sinkFnct)))
     {
         MSink::Point::Par pointPar;
         pointPar.mom = mom;
@@ -345,7 +345,7 @@ inline void sinkSmear(Application &application, std::string &sinkFnct,
                       std::string &propName, std::string &smearedProp)
 {
     // If the propagator has already been smeared, don't smear it again.
-    if (!(Environment::getInstance().hasModule(smearedProp)))
+    if (!(VirtualMachine::getInstance().hasModule(smearedProp)))
     {
         MSink::Smear::Par smearPar;
         smearPar.q    = propName;
@@ -367,7 +367,7 @@ inline void makePropagator(Application &application, std::string &propName,
                            std::string &srcName, std::string &solver)
 {
     // If the propagator already exists, don't make the module again.
-    if (!(Environment::getInstance().hasModule(propName)))
+    if (!(VirtualMachine::getInstance().hasModule(propName)))
     {
         MFermion::GaugeProp::Par quarkPar;
         quarkPar.source = srcName;
@@ -390,7 +390,7 @@ inline void makeLoop(Application &application, std::string &propName,
                      std::string &srcName, std::string &resName)
 {
     // If the loop propagator already exists, don't make the module again.
-    if (!(Environment::getInstance().hasModule(propName)))
+    if (!(VirtualMachine::getInstance().hasModule(propName)))
     {
         MLoop::NoiseLoop::Par loopPar;
         loopPar.q   = resName;
@@ -421,7 +421,7 @@ inline void mesonContraction(Application &application,
                              std::string &sink,
                              std::string gammas = "<Gamma5 Gamma5>")
 {
-    if (!(Environment::getInstance().hasModule(modName)))
+    if (!(VirtualMachine::getInstance().hasModule(modName)))
     {
         MContraction::Meson::Par mesPar;
         mesPar.output = output;
@@ -453,7 +453,7 @@ inline void gamma3ptContraction(Application &application, unsigned int npt,
                                 Gamma::Algebra gamma = Gamma::Algebra::Identity)
 {
     std::string modName = std::to_string(npt) + "pt_" + label;
-    if (!(Environment::getInstance().hasModule(modName)))
+    if (!(VirtualMachine::getInstance().hasModule(modName)))
     {
         MContraction::Gamma3pt::Par gamma3ptPar;
         gamma3ptPar.output = std::to_string(npt) + "pt/" + label;
@@ -487,7 +487,7 @@ inline void weakContraction##top(Application &application, unsigned int npt,\
                                  std::string &label, unsigned int tSnk = 0)\
 {\
     std::string modName = std::to_string(npt) + "pt_" + label;\
-    if (!(Environment::getInstance().hasModule(modName)))\
+    if (!(VirtualMachine::getInstance().hasModule(modName)))\
     {\
         MContraction::WeakHamiltonian##top::Par weakPar;\
         weakPar.output = std::to_string(npt) + "pt/" + label;\
@@ -521,7 +521,7 @@ inline void disc0Contraction(Application &application,
                              std::string &label)
 {
     std::string modName = "4pt_" + label;
-    if (!(Environment::getInstance().hasModule(modName)))
+    if (!(VirtualMachine::getInstance().hasModule(modName)))
     {
         MContraction::WeakNeutral4ptDisc::Par disc0Par;
         disc0Par.output = "4pt/" + label;
@@ -547,7 +547,7 @@ inline void discLoopContraction(Application &application,
                                 std::string &q_loop, std::string &modName,
                                 Gamma::Algebra gamma = Gamma::Algebra::Identity)
 {
-    if (!(Environment::getInstance().hasModule(modName)))
+    if (!(VirtualMachine::getInstance().hasModule(modName)))
     {
         MContraction::DiscLoop::Par discPar;
         discPar.output = "disc/" + modName;
@@ -574,7 +574,7 @@ inline void makeWITest(Application &application, std::string &modName,
                        std::string &propName, std::string &actionName, 
                        double mass, unsigned int Ls = 1, bool test_axial = false)
 {
-    if (!(Environment::getInstance().hasModule(modName)))
+    if (!(VirtualMachine::getInstance().hasModule(modName)))
     {
         MContraction::WardIdentity::Par wiPar;
         if (Ls > 1)
@@ -613,7 +613,7 @@ inline void makeSeqCurrComparison(Application &application, std::string &modName
                                  std::string &actionName, std::string &origin,
                                  unsigned int t_J, unsigned int mu, Current curr)
 {
-    if (!(Environment::getInstance().hasModule(modName)))
+    if (!(VirtualMachine::getInstance().hasModule(modName)))
     {
         MUtilities::TestSeqConserved::Par seqPar;
         seqPar.q      = propName;
@@ -646,7 +646,7 @@ inline void makeSeqGamComparison(Application &application, std::string &modName,
                                  std::string &origin, Gamma::Algebra gamma, 
                                  unsigned int t_g)
 {
-    if (!(Environment::getInstance().hasModule(modName)))
+    if (!(VirtualMachine::getInstance().hasModule(modName)))
     {
         MUtilities::TestSeqGamma::Par seqPar;
         seqPar.q      = propName;

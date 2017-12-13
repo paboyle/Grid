@@ -92,8 +92,8 @@ static ns##mod##ModuleRegistrar ns##mod##ModuleRegistrarInstance;
 #define envGet(type, name)\
 *env().template getObject<type>(name)
 
-#define envGetTmp(type, name)\
-*env().template getObject<type>(getName() + "_tmp_" + name)
+#define envGetTmp(type, var)\
+type &var = *env().template getObject<type>(getName() + "_tmp_" + #var)
 
 #define envHasType(type, name)\
 env().template isObjectOfType<type>(name)

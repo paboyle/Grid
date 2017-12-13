@@ -63,6 +63,7 @@ public:
     virtual ~TTestSeqGamma(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getReference(void);
     virtual std::vector<std::string> getOutput(void);
 protected:
     // setup
@@ -92,6 +93,14 @@ std::vector<std::string> TTestSeqGamma<FImpl>::getInput(void)
 }
 
 template <typename FImpl>
+std::vector<std::string> TTestSeqGamma<FImpl>::getReference(void)
+{
+    std::vector<std::string> ref = {};
+    
+    return ref;
+}
+
+template <typename FImpl>
 std::vector<std::string> TTestSeqGamma<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
@@ -103,26 +112,27 @@ std::vector<std::string> TTestSeqGamma<FImpl>::getOutput(void)
 template <typename FImpl>
 void TTestSeqGamma<FImpl>::setup(void)
 {
-    
+    envTmpLat(LatticeComplex, "c");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TTestSeqGamma<FImpl>::execute(void)
 {
-    PropagatorField &q    = *env().template getObject<PropagatorField>(par().q);
-    PropagatorField &qSeq = *env().template getObject<PropagatorField>(par().qSeq);
-    LatticeComplex  c(env().getGrid());
-    Gamma           g5(Gamma::Algebra::Gamma5);
-    Gamma           g(par().gamma);
-    SitePropagator  qSite;
-    Complex         test, check;
+    auto                  &q    = envGet(PropagatorField, par().q);
+    auto                  &qSeq = envGet(PropagatorField, par().qSeq);
+    Gamma                 g5(Gamma::Algebra::Gamma5);
+    Gamma                 g(par().gamma);
+    SitePropagator        qSite;
+    Complex               test, check;
     std::vector<TComplex> check_buf;
+    std::vector<int>      siteCoord;
 
     // Check sequential insertion of gamma matrix gives same result as 
     // insertion of gamma at sink upon contraction. Assume q uses a point 
     // source.
-    std::vector<int> siteCoord;
+    
+    envGetTmp(LatticeComplex, c);
     siteCoord = strToVec<int>(par().origin);
     peekSite(qSite, qSeq, siteCoord);
     test = trace(g*qSite);

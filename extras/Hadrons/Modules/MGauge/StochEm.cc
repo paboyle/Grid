@@ -47,6 +47,13 @@ std::vector<std::string> TStochEm::getInput(void)
     return in;
 }
 
+std::vector<std::string> TStochEm::getReference(void)
+{
+    std::vector<std::string> ref = {};
+    
+    return ref;
+}
+
 std::vector<std::string> TStochEm::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
@@ -57,32 +64,28 @@ std::vector<std::string> TStochEm::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void TStochEm::setup(void)
 {
-    if (!env().hasRegisteredObject("_" + getName() + "_weight"))
+    if (!env().hasCreatedObject("_" + getName() + "_weight"))
     {
-        env().registerLattice<EmComp>("_" + getName() + "_weight");
+        envCacheLat(EmComp, "_" + getName() + "_weight");
     }
-    env().registerLattice<EmField>(getName());
+    envCreateLat(EmField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 void TStochEm::execute(void)
 {
+    LOG(Message) << "Generating stochatic EM potential..." << std::endl;
+
     PhotonR photon(par().gauge, par().zmScheme);
-    EmField &a = *env().createLattice<EmField>(getName());
-    EmComp  *w;
+    auto    &a = envGet(EmField, getName());
+    auto    &w = envGet(EmComp, "_" + getName() + "_weight");
     
     if (!env().hasCreatedObject("_" + getName() + "_weight"))
     {
         LOG(Message) << "Caching stochatic EM potential weight (gauge: "
                      << par().gauge << ", zero-mode scheme: "
                      << par().zmScheme << ")..." << std::endl;
-        w = env().createLattice<EmComp>("_" + getName() + "_weight");
-        photon.StochasticWeight(*w);
+        photon.StochasticWeight(w);
     }
-    else
-    {
-        w = env().getObject<EmComp>("_" + getName() + "_weight");
-    }
-    LOG(Message) << "Generating stochatic EM potential..." << std::endl;
-    photon.StochasticField(a, *env().get4dRng(), *w);
+    photon.StochasticField(a, *env().get4dRng(), w);
 }

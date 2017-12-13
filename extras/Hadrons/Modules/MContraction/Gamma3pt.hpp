@@ -98,6 +98,7 @@ public:
     virtual ~TGamma3pt(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getReference(void);
     virtual std::vector<std::string> getOutput(void);
 protected:
     // setup
@@ -127,9 +128,17 @@ std::vector<std::string> TGamma3pt<FImpl1, FImpl2, FImpl3>::getInput(void)
 }
 
 template <typename FImpl1, typename FImpl2, typename FImpl3>
+std::vector<std::string> TGamma3pt<FImpl1, FImpl2, FImpl3>::getReference(void)
+{
+    std::vector<std::string> ref = {};
+    
+    return ref;
+}
+
+template <typename FImpl1, typename FImpl2, typename FImpl3>
 std::vector<std::string> TGamma3pt<FImpl1, FImpl2, FImpl3>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {};
     
     return out;
 }
@@ -138,7 +147,7 @@ std::vector<std::string> TGamma3pt<FImpl1, FImpl2, FImpl3>::getOutput(void)
 template <typename FImpl1, typename FImpl2, typename FImpl3>
 void TGamma3pt<FImpl1, FImpl2, FImpl3>::setup(void)
 {
-    
+    envTmpLat(LatticeComplex, "c");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -153,10 +162,9 @@ void TGamma3pt<FImpl1, FImpl2, FImpl3>::execute(void)
     // Initialise variables. q2 and q3 are normal propagators, q1 may be 
     // sink smeared.
     CorrWriter            writer(par().output);
-    SlicedPropagator1     &q1 = *env().template getObject<SlicedPropagator1>(par().q1);
-    PropagatorField2      &q2 = *env().template getObject<PropagatorField2>(par().q2);
-    PropagatorField3      &q3 = *env().template getObject<PropagatorField2>(par().q3);
-    LatticeComplex        c(env().getGrid());
+    auto                  &q1 = envGet(SlicedPropagator1, par().q1);
+    auto                  &q2 = envGet(PropagatorField2, par().q2);
+    auto                  &q3 = envGet(PropagatorField2, par().q3);
     Gamma                 g5(Gamma::Algebra::Gamma5);
     Gamma                 gamma(par().gamma);
     std::vector<TComplex> buf;
@@ -165,6 +173,7 @@ void TGamma3pt<FImpl1, FImpl2, FImpl3>::execute(void)
     // Extract relevant timeslice of sinked propagator q1, then contract &
     // sum over all spacial positions of gamma insertion.
     SitePropagator1 q1Snk = q1[par().tSnk];
+    envGetTmp(LatticeComplex, c);
     c = trace(g5*q1Snk*adj(q2)*(g5*gamma)*q3);
     sliceSum(c, buf, Tp);
 

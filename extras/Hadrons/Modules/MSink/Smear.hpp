@@ -61,6 +61,7 @@ public:
     virtual ~TSmear(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getReference(void);
     virtual std::vector<std::string> getOutput(void);
 protected:
     // setup
@@ -90,6 +91,14 @@ std::vector<std::string> TSmear<FImpl>::getInput(void)
 }
 
 template <typename FImpl>
+std::vector<std::string> TSmear<FImpl>::getReference(void)
+{
+    std::vector<std::string> ref = {};
+    
+    return ref;
+}
+
+template <typename FImpl>
 std::vector<std::string> TSmear<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
@@ -101,9 +110,7 @@ std::vector<std::string> TSmear<FImpl>::getOutput(void)
 template <typename FImpl>
 void TSmear<FImpl>::setup(void)
 {
-    unsigned int nt = env().getDim(Tp);
-    unsigned int size = nt * sizeof(SitePropagator);
-    env().registerObject(getName(), size);
+    envCreate(SlicedPropagator, getName(), 1, env().getDim(Tp));
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -114,11 +121,11 @@ void TSmear<FImpl>::execute(void)
                  << "' using sink function '" << par().sink << "'."
                  << std::endl;
 
-    SinkFn          &sink = *env().template getObject<SinkFn>(par().sink);
-    PropagatorField &q    = *env().template getObject<PropagatorField>(par().q);
-    SlicedPropagator *out = new SlicedPropagator(env().getDim(Tp));
-    *out  = sink(q);
-    env().setObject(getName(), out);
+    auto &sink = envGet(SinkFn, par().sink);
+    auto &q    = envGet(PropagatorField, par().q);
+    auto &out  = envGet(SlicedPropagator, getName());
+    
+    out = sink(q);
 }
 
 END_MODULE_NAMESPACE

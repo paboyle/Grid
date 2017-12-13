@@ -76,9 +76,16 @@ std::vector<std::string> TWeakNeutral4ptDisc::getInput(void)
     return in;
 }
 
+std::vector<std::string> TWeakNeutral4ptDisc::getReference(void)
+{
+    std::vector<std::string> ref = {};
+    
+    return ref;
+}
+
 std::vector<std::string> TWeakNeutral4ptDisc::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {};
     
     return out;
 }
@@ -86,7 +93,13 @@ std::vector<std::string> TWeakNeutral4ptDisc::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void TWeakNeutral4ptDisc::setup(void)
 {
+    unsigned int ndim = env().getNd();
 
+    envTmpLat(LatticeComplex,  "expbuf");
+    envTmpLat(PropagatorField, "tmp");
+    envTmpLat(LatticeComplex,  "curr");
+    envTmp(std::vector<PropagatorField>, "meson", 1, ndim, PropagatorField(env().getGrid()));
+    envTmp(std::vector<PropagatorField>, "loop", 1, ndim,  PropagatorField(env().getGrid()));
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -97,21 +110,21 @@ void TWeakNeutral4ptDisc::execute(void)
                  << par().q2 << ", '" << par().q3 << "' and '" << par().q4 
                  << "'." << std::endl;
 
-    CorrWriter             writer(par().output);
-    PropagatorField &q1 = *env().template getObject<PropagatorField>(par().q1);
-    PropagatorField &q2 = *env().template getObject<PropagatorField>(par().q2);
-    PropagatorField &q3 = *env().template getObject<PropagatorField>(par().q3);
-    PropagatorField &q4 = *env().template getObject<PropagatorField>(par().q4);
-    Gamma g5            = Gamma(Gamma::Algebra::Gamma5);
-    LatticeComplex        expbuf(env().getGrid());
+    CorrWriter            writer(par().output);
+    auto                  &q1 = envGet(PropagatorField, par().q1);
+    auto                  &q2 = envGet(PropagatorField, par().q2);
+    auto                  &q3 = envGet(PropagatorField, par().q3);
+    auto                  &q4 = envGet(PropagatorField, par().q4);
+    Gamma                 g5  = Gamma(Gamma::Algebra::Gamma5);
     std::vector<TComplex> corrbuf;
     std::vector<Result>   result(n_neut_disc_diag);
-    unsigned int ndim   = env().getNd();
+    unsigned int          ndim = env().getNd();
 
-    PropagatorField              tmp(env().getGrid());
-    std::vector<PropagatorField> meson(ndim, tmp);
-    std::vector<PropagatorField> loop(ndim, tmp);
-    LatticeComplex               curr(env().getGrid());
+    envGetTmp(LatticeComplex,               expbuf); 
+    envGetTmp(PropagatorField,              tmp);
+    envGetTmp(LatticeComplex,               curr);
+    envGetTmp(std::vector<PropagatorField>, meson);
+    envGetTmp(std::vector<PropagatorField>, loop);
 
     // Setup for type 1 contractions.
     for (int mu = 0; mu < ndim; ++mu)

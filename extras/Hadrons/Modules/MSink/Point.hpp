@@ -122,18 +122,19 @@ void TPoint<FImpl>::setup(void)
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TPoint<FImpl>::execute(void)
-{
-    std::vector<Real> p   = strToVec<Real>(par().mom);
-    LatticeComplex    &ph = envGet(LatticeComplex, momphName_);
-    Complex           i(0.0,1.0);
-    
+{   
     LOG(Message) << "Setting up point sink function for momentum ["
                  << par().mom << "]" << std::endl;
 
+    auto &ph = envGet(LatticeComplex, momphName_);
+    
     if (!hasPhase_)
     {
-        LatticeComplex &coor = envGetTmp(LatticeComplex, "coor");
+        Complex           i(0.0,1.0);
+        std::vector<Real> p;
 
+        envGetTmp(LatticeComplex, coor);
+        p  = strToVec<Real>(par().mom);
         ph = zero;
         for(unsigned int mu = 0; mu < env().getNd(); mu++)
         {

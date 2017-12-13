@@ -71,6 +71,7 @@ void TUnit::setup(void)
 void TUnit::execute(void)
 {
     LOG(Message) << "Creating unit gauge configuration" << std::endl;
+    
     auto &U = envGet(LatticeGaugeField, getName());
     SU3::ColdConfiguration(*env().get4dRng(), U);
 }

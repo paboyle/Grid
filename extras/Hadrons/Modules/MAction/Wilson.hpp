@@ -115,6 +115,7 @@ void TWilson<FImpl>::setup(void)
                  << " using gauge field '" << par().gauge << "'" << std::endl;
     LOG(Message) << "Fermion boundary conditions: " << par().boundary
                  << std::endl;
+                 
     auto &U      = envGet(LatticeGaugeField, par().gauge);
     auto &grid   = *env().getGrid();
     auto &gridRb = *env().getRbGrid();

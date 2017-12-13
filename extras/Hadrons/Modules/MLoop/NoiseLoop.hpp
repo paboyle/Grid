@@ -73,6 +73,7 @@ public:
     virtual ~TNoiseLoop(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getReference(void);
     virtual std::vector<std::string> getOutput(void);
 protected:
     // setup
@@ -101,6 +102,15 @@ std::vector<std::string> TNoiseLoop<FImpl>::getInput(void)
     return in;
 }
 
+
+template <typename FImpl>
+std::vector<std::string> TNoiseLoop<FImpl>::getReference(void)
+{
+    std::vector<std::string> out = {};
+    
+    return out;
+}
+
 template <typename FImpl>
 std::vector<std::string> TNoiseLoop<FImpl>::getOutput(void)
 {
@@ -113,16 +123,16 @@ std::vector<std::string> TNoiseLoop<FImpl>::getOutput(void)
 template <typename FImpl>
 void TNoiseLoop<FImpl>::setup(void)
 {
-    env().template registerLattice<PropagatorField>(getName());
+    envCreateLat(PropagatorField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TNoiseLoop<FImpl>::execute(void)
 {
-    PropagatorField &loop = *env().template createLattice<PropagatorField>(getName());
-    PropagatorField &q    = *env().template getObject<PropagatorField>(par().q);
-    PropagatorField &eta  = *env().template getObject<PropagatorField>(par().eta);
+    auto &loop = envGet(PropagatorField, getName());
+    auto &q    = envGet(PropagatorField, par().q);
+    auto &eta  = envGet(PropagatorField, par().eta);
     loop = q*adj(eta);
 }
 

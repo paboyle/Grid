@@ -128,12 +128,13 @@ void TPoint<FImpl>::setup(void)
 template <typename FImpl>
 void TPoint<FImpl>::execute(void)
 {
-    std::vector<int> position = strToVec<int>(par().position);
-    SitePropagator id;
-    
     LOG(Message) << "Creating point source at position [" << par().position
-                 << "]" << std::endl;
-    PropagatorField &src = envGet(PropagatorField, getName());
+                << "]" << std::endl;
+
+    std::vector<int> position = strToVec<int>(par().position);
+    auto             &src     = envGet(PropagatorField, getName());
+    SitePropagator   id;
+    
     id  = 1.;
     src = zero;
     pokeSite(id, src, position);

@@ -154,21 +154,21 @@ void TGaugeProp<FImpl>::execute(void)
     LOG(Message) << "Computing quark propagator '" << getName() << "'"
                  << std::endl;
     
-    FermionField    &source  = envGetTmp(FermionField, "source");
-    FermionField    &sol     = envGetTmp(FermionField, "sol");
-    FermionField    &tmp     = envGetTmp(FermionField, "tmp");
-    std::string     propName = (Ls_ == 1) ? getName() : (getName() + "_5d");
-    PropagatorField &prop    = envGet(PropagatorField, propName);
-    PropagatorField &fullSrc = envGet(PropagatorField, par().source);
-    SolverFn        &solver  = envGet(SolverFn, par().solver);
+    std::string propName = (Ls_ == 1) ? getName() : (getName() + "_5d");
+    auto        &prop    = envGet(PropagatorField, propName);
+    auto        &fullSrc = envGet(PropagatorField, par().source);
+    auto        &solver  = envGet(SolverFn, par().solver);
     
+    envGetTmp(FermionField, source);
+    envGetTmp(FermionField, sol);
+    envGetTmp(FermionField, tmp);
     LOG(Message) << "Inverting using solver '" << par().solver
                  << "' on source '" << par().source << "'" << std::endl;
     for (unsigned int s = 0; s < Ns; ++s)
     for (unsigned int c = 0; c < Nc; ++c)
     {
         LOG(Message) << "Inversion for spin= " << s << ", color= " << c
-        << std::endl;
+                     << std::endl;
         // source conversion for 4D sources
         if (!env().isObject5d(par().source))
         {

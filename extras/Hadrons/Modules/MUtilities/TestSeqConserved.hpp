@@ -79,6 +79,7 @@ public:
     virtual ~TTestSeqConserved(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
+    virtual std::vector<std::string> getReference(void);
     virtual std::vector<std::string> getOutput(void);
 protected:
     // setup
@@ -108,6 +109,14 @@ std::vector<std::string> TTestSeqConserved<FImpl>::getInput(void)
 }
 
 template <typename FImpl>
+std::vector<std::string> TTestSeqConserved<FImpl>::getReference(void)
+{
+    std::vector<std::string> ref = {};
+    
+    return ref;
+}
+
+template <typename FImpl>
 std::vector<std::string> TTestSeqConserved<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
@@ -124,36 +133,37 @@ void TTestSeqConserved<FImpl>::setup(void)
     {
         HADRON_ERROR(Size, "Ls mismatch between quark action and propagator");
     }
+    envTmpLat(PropagatorField, "tmp");
+    envTmpLat(LatticeComplex, "c");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TTestSeqConserved<FImpl>::execute(void)
 {
-    PropagatorField tmp(env().getGrid());
-    PropagatorField &q    = *env().template getObject<PropagatorField>(par().q);
-    PropagatorField &qSeq = *env().template getObject<PropagatorField>(par().qSeq);
-    FMat            &act  = *(env().template getObject<FMat>(par().action));
-    Gamma           g5(Gamma::Algebra::Gamma5);
-    Gamma::Algebra  gA = (par().curr == Current::Axial) ?
-                         Gamma::Algebra::Gamma5 :
-                         Gamma::Algebra::Identity;
-    Gamma           g(gA);
-    SitePropagator  qSite;
-    Complex         test_S, test_V, check_S, check_V;
-    std::vector<TComplex> check_buf;
-    LatticeComplex  c(env().getGrid());
-
     // Check sequential insertion of current gives same result as conserved 
     // current sink upon contraction. Assume q uses a point source.
-    std::vector<int> siteCoord;
+
+    auto                  &q    = envGet(PropagatorField, par().q);
+    auto                  &qSeq = envGet(PropagatorField, par().qSeq);
+    auto                  &act  = envGet(FMat, par().action);
+    Gamma                 g5(Gamma::Algebra::Gamma5);
+    Gamma::Algebra        gA = (par().curr == Current::Axial) ?
+                                  Gamma::Algebra::Gamma5 :
+                                  Gamma::Algebra::Identity;
+    Gamma                 g(gA);
+    SitePropagator        qSite;
+    Complex               test_S, test_V, check_S, check_V;
+    std::vector<TComplex> check_buf;
+    std::vector<int>      siteCoord;
+
+    envGetTmp(PropagatorField, tmp);
+    envGetTmp(LatticeComplex, c);
     siteCoord = strToVec<int>(par().origin);
     peekSite(qSite, qSeq, siteCoord);
     test_S = trace(qSite*g);
     test_V = trace(qSite*g*Gamma::gmu[par().mu]);
-
     act.ContractConservedCurrent(q, q, tmp, par().curr, par().mu);
-
     c = trace(tmp*g);
     sliceSum(c, check_buf, Tp);
     check_S = TensorRemove(check_buf[par().t_J]);
