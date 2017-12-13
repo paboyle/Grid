@@ -79,21 +79,26 @@ void VirtualMachine::pushModule(VirtualMachine::ModPt &pt)
         unsigned int              address;
         ModuleInfo                m;
         
+        // module registration -------------------------------------------------
         m.data = std::move(pt);
         m.type = typeIdPt(*m.data.get());
         m.name = name;
+        // input dependencies
         for (auto &in: m.data->getInput())
         {
             if (!env().hasObject(in))
             {
+                // if object does not exist, add it with no creator module
                 env().addObject(in , -1);
             }
             m.input.push_back(env().getObjectAddress(in));
         }
+        // reference dependencies
         for (auto &ref: m.data->getReference())
         {
             if (!env().hasObject(ref))
             {
+                // if object does not exist, add it with no creator module
                 env().addObject(ref , -1);
             }
             m.input.push_back(env().getObjectAddress(ref));
@@ -101,20 +106,24 @@ void VirtualMachine::pushModule(VirtualMachine::ModPt &pt)
         module_.push_back(std::move(m));
         address              = static_cast<unsigned int>(module_.size() - 1);
         moduleAddress_[name] = address;
+        // connecting outputs to potential inputs ------------------------------
         for (auto &out: getModule(address)->getOutput())
         {
             if (!env().hasObject(out))
             {
+                // output does not exists, add it
                 env().addObject(out, address);
             }
             else
             {
                 if (env().getObjectModule(env().getObjectAddress(out)) < 0)
                 {
+                    // output exists but without creator, correct it
                     env().setObjectModule(env().getObjectAddress(out), address);
                 }
                 else
                 {
+                    // output already fully registered, error
                     HADRON_ERROR(Definition, "object '" + out
                                  + "' is already produced by module '"
                                  + module_[env().getObjectModule(out)].name
@@ -122,10 +131,14 @@ void VirtualMachine::pushModule(VirtualMachine::ModPt &pt)
                 }
                 if (getModule(address)->getReference().size() > 0)
                 {
+                    // module has references, dependency should be propagated
+                    // to children modules; find module with `out` as an input
+                    // and add references to their input
                     auto pred = [this, out](const ModuleInfo &n)
                     {
                         auto &in = n.input;
-                        auto it  = std::find(in.begin(), in.end(), env().getObjectAddress(out));
+                        auto it  = std::find(in.begin(), in.end(), 
+                                             env().getObjectAddress(out));
                         
                         return (it != in.end());
                     };
@@ -154,7 +167,7 @@ unsigned int VirtualMachine::getNModule(void) const
 }
 
 void VirtualMachine::createModule(const std::string name, const std::string type,
-                               XmlReader &reader)
+                                  XmlReader &reader)
 {
     auto &factory = ModuleFactory::getInstance();
     auto pt       = factory.create(type, name);
@@ -266,17 +279,6 @@ Graph<unsigned int> VirtualMachine::makeModuleGraph(void) const
     
     return moduleGraph;
 }
-
-// void VirtualMachine::checkGraph(void) const
-// {
-//     for (auto &o: object_)
-//     {
-//         if (o.module < 0)
-//         {
-//             HADRON_ERROR(Runtime, "object '" + o.name + "' does not have a creator");
-//         }
-//     }
-// }
 
 // general execution ///////////////////////////////////////////////////////////
 #define BIG_SEP "==============="
@@ -412,7 +414,8 @@ VirtualMachine::MemoryProfile VirtualMachine::memoryProfile(void) const
 
         if (profile.module[a].empty())
         {
-            LOG(Debug) << "Profiling memory for module '" << module_[a].name << "' (" << a << ")..." << std::endl;
+            LOG(Debug) << "Profiling memory for module '" << module_[a].name
+                       << "' (" << a << ")..." << std::endl;
             memoryProfile(profile, a);
             env().freeAll();
         }
