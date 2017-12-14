@@ -67,7 +67,7 @@ void TStochEm::setup(void)
 // execution ///////////////////////////////////////////////////////////////////
 void TStochEm::execute(void)
 {
-    PhotonR photon(par().gauge, par().zmScheme);
+    PhotonR photon(par().gauge, par().zmScheme, par().improvement);
     EmField &a = *env().createLattice<EmField>(getName());
     EmComp  *w;
     

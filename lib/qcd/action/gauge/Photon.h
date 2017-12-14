@@ -60,7 +60,7 @@ namespace QCD{
     GRID_SERIALIZABLE_ENUM(Gauge, undef, feynman, 1, coulomb, 2, landau, 3);
     GRID_SERIALIZABLE_ENUM(ZmScheme, undef, qedL, 1, qedTL, 2);
   public:
-    Photon(Gauge gauge, ZmScheme zmScheme);
+    Photon(Gauge gauge, ZmScheme zmScheme, Integer improvement);
     virtual ~Photon(void) = default;
     void FreePropagator(const GaugeField &in, GaugeField &out);
     void MomentumSpacePropagator(const GaugeField &in, GaugeField &out);
@@ -75,13 +75,14 @@ namespace QCD{
   private:
     Gauge    gauge_;
     ZmScheme zmScheme_;
+    Integer  improvement_;
   };
 
   typedef Photon<QedGimplR>  PhotonR;
   
   template<class Gimpl>
-  Photon<Gimpl>::Photon(Gauge gauge, ZmScheme zmScheme)
-  : gauge_(gauge), zmScheme_(zmScheme)
+  Photon<Gimpl>::Photon(Gauge gauge, ZmScheme zmScheme, Integer improvement)
+  : gauge_(gauge), zmScheme_(zmScheme), improvement_(improvement)
   {}
   
   template<class Gimpl>
@@ -128,6 +129,7 @@ namespace QCD{
   {
     GridBase           *grid = out._grid;
     const unsigned int nd    = grid->_ndimension;
+    std::vector<int>   &l    = grid->_fdimensions;
     
     switch (zmScheme_)
     {
@@ -149,9 +151,33 @@ namespace QCD{
         for(int d = 0; d < grid->_ndimension - 1; d++)
         {
           LatticeCoordinate(coor,d);
+          coor = where(coor < Integer(l[d]/2), coor, coor-Integer(l[d]));
           spNrm = spNrm + coor*coor;
         }
         out = where(spNrm == Integer(0), 0.*out, out);
+
+        // IR improvement
+        switch (improvement_)
+        {
+          case 0:
+            break;
+          case 1:
+          {
+            Real f1 = sqrt(2.48560548);
+            out = where(spNrm == Integer(1), f1*out, out);
+            break;
+          }
+          case 2:
+          {
+            Real f1 = sqrt(4.93053406);
+            Real f2 = sqrt(-1.44492857);
+            out = where(spNrm == Integer(1), f1*out, out);
+            out = where(spNrm == Integer(2), f2*out, out);
+            break;
+          }
+          default:
+            break;
+        }
         
         break;
       }
@@ -159,7 +185,7 @@ namespace QCD{
         break;
     }
   }
-  
+
   template<class Gimpl>
   void Photon<Gimpl>::MomentumSpacePropagator(const GaugeField &in,
                                                GaugeField &out)
