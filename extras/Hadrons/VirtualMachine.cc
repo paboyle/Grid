@@ -579,8 +579,8 @@ void VirtualMachine::executeProgram(const Program &p) const
     {
         // execute module
         LOG(Message) << SEP << " Measurement step " << i + 1 << "/"
-                        << p.size() << " (module '" << module_[p[i]].name
-                        << "') " << SEP << std::endl;
+                     << p.size() << " (module '" << module_[p[i]].name
+                     << "') " << SEP << std::endl;
         (*module_[p[i]].data)();
         sizeBefore = env().getTotalSize();
         // print used memory after execution

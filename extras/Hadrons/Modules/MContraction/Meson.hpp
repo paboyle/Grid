@@ -100,6 +100,8 @@ public:
     virtual void parseGammaString(std::vector<GammaPair> &gammaList);
 protected:
     // execution
+    virtual void setup(void);
+    // execution
     virtual void execute(void);
 };
 
@@ -160,8 +162,14 @@ void TMeson<FImpl1, FImpl2>::parseGammaString(std::vector<GammaPair> &gammaList)
     {
         // Parse individual contractions from input string.
         gammaList = strToVec<GammaPair>(par().gammas);
-    }
-    envTmpLat(LatticeComplex, "c");    
+    } 
+}
+
+// execution ///////////////////////////////////////////////////////////////////
+template <typename FImpl1, typename FImpl2>
+void TMeson<FImpl1, FImpl2>::setup(void)
+{
+    envTmpLat(LatticeComplex, "c");
 }
 
 // execution ///////////////////////////////////////////////////////////////////

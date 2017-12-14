@@ -59,7 +59,7 @@ public:
     {
         Size                 size;
         Environment::Storage storage;
-        unsigned int         module;
+        int                  module;
     };
     struct MemoryProfile
     {
