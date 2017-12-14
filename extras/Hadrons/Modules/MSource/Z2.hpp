@@ -150,7 +150,7 @@ void TZ2<FImpl>::execute(void)
     }
     
     auto    &src = envGet(PropagatorField, getName());
-    auto    &t   = envGet(Lattice<iScalar<vInteger>>, getName());
+    auto    &t   = envGet(Lattice<iScalar<vInteger>>, tName_);
     Complex shift(1., 1.);
 
     if (!hasT_)

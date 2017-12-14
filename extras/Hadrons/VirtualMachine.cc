@@ -83,6 +83,24 @@ void VirtualMachine::pushModule(VirtualMachine::ModPt &pt)
             }
             m.input.push_back(env().getObjectAddress(ref));
         }
+        auto inCopy = m.input;
+        // if module has inputs with references, they need to be added as
+        // an input
+        for (auto &in: inCopy)
+        {
+            int inm = env().getObjectModule(in);
+
+            if (inm > 0)
+            {
+                if (getModule(inm)->getReference().size() > 0)
+                {
+                    for (auto &rin: getModule(inm)->getReference())
+                    {
+                        m.input.push_back(env().getObjectAddress(rin));
+                    }
+                }
+            }
+        }
         module_.push_back(std::move(m));
         address              = static_cast<unsigned int>(module_.size() - 1);
         moduleAddress_[name] = address;
