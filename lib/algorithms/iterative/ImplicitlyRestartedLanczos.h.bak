@@ -32,8 +32,6 @@ Author: Guido Cossu
 
 #include <string.h> //memset
 
-#define clog std::cout << GridLogMessage 
-
 namespace Grid {
 
   enum IRLdiagonalisation { 
@@ -231,16 +229,7 @@ until convergence
       
       for(int k=Nk; k<Nm; ++k) step(eval,lme,evec,f,Nm,k);
       
-      for(int k=0; k<Nm; ++k) {
-        clog << "ckpt A1: lme[" << k << "] = " << lme[k] << '\n';
-      }
-      for(int k=0; k<Nm; ++k) {
-        clog << "ckpt A2: lmd[" << k << "] = " << eval[k] << '\n';
-      }
-      
       f *= lme[Nm-1];
-      //clog << "ckpt C " << '\n';
-      //clog << "norm2(f) = " << norm2(f) << std::endl;
       
       // getting eigenvalues
       for(int k=0; k<Nm; ++k){
@@ -249,38 +238,15 @@ until convergence
       }
       Qt = Eigen::MatrixXd::Identity(Nm,Nm);
       diagonalize(eval2,lme2,Nm,Nm,Qt,grid);
-      
-      //for(int k=0; k<Nm; ++k){
-      //  clog << "ckpt D " << '\n';
-      //  clog << "eval2 [" << k << "] = " << eval2[k] << std::endl;
-      //}
 
       // sorting
       _sort.push(eval2,Nm);
-      
-      //for(int k=0; k<Nm; ++k){
-      //  clog << "ckpt E " << '\n';
-      //  clog << "eval2 [" << k << "] = " << eval2[k] << std::endl;
-      //}
       
       // Implicitly shifted QR transformations
       Qt = Eigen::MatrixXd::Identity(Nm,Nm);
       for(int ip=k2; ip<Nm; ++ip){ 
 	// Eigen replacement for qr_decomp ???
-        clog << "ckpt B1: shift[" << ip << "] = " << eval2[ip] << endl;
 	qr_decomp(eval,lme,Nm,Nm,Qt,eval2[ip],k1,Nm);
-      }
-      
-      //for (int i=0; i<Nm; ++i) {
-      //  for (int j=0; j<Nm; ++j) {
-      //    clog << "ckpt G2: Q[" << i << "," << j << "] = " << Qt(j,i) << '\n';
-      //  }
-      //}
-      for (int i=0; i<Nm; ++i) {
-        clog << "ckpt C1: lme[" << i << "] = " << lme[i] << '\n';
-      }
-      for (int i=0; i<Nm; ++i) {
-        clog << "ckpt C2: lmd[" << i << "] = " << eval[i] << '\n';
       }
     
       for(int i=0; i<(Nk+1); ++i) B[i] = 0.0;
@@ -291,18 +257,14 @@ until convergence
 	  B[j] += Qt(j,k) * evec[k];
 	}
       }
-      for(int j=k1-1; j<k2+1; ++j) {
-        evec[j] = B[j];
-        //clog << "ckpt F: norm2_evec[ " << j << "]" << norm2(evec[j]) << std::endl;
-      }
+      for(int j=k1-1; j<k2+1; ++j) evec[j] = B[j];
       
       // Compressed vector f and beta(k2)
       f *= Qt(k2-1,Nm-1);
-      f += lme[k2-1] * evec[k2]; // was commented out
-      std::cout<< GridLogMessage<<"ckpt D1: Q[Nm-1,Nk-1] = "<<Qt(Nk-1,Nm-1)<<std::endl;
+      f += lme[k2-1] * evec[k2];
       beta_k = norm2(f);
       beta_k = sqrt(beta_k);
-      std::cout<< GridLogMessage<<"ckpt D2: beta(k) = "<<beta_k<<std::endl;
+      std::cout<< GridLogMessage<<" beta(k) = "<<beta_k<<std::endl;
       
       RealD betar = 1.0/beta_k;
       evec[k2] = betar * f;
@@ -324,19 +286,6 @@ until convergence
 	  B[j] += Qt(j,k) * evec[k];
 	}
       }
-      
-      //for (int i=0; i<Nk; ++i) {
-      //  for (int j=0; j<Nk; ++j) {
-      //    clog << "ckpt H1: R[" << i << "," << j << "] = " << Qt(j,i) << '\n';
-      //  }
-      //}
-      //for (int i=0; i<Nk; ++i) {
-      //  clog << "ckpt H2: eval2[" << i << "] = " << eval2[i] << '\n';
-      //}
-      
-      //for(int j=0; j<Nk; ++j) {
-      //  clog << "ckpt I: norm2_B[ " << j << "]" << norm2(B[j]) << std::endl;
-      //}
 
       Nconv = 0;
       for(int i=0; i<Nk; ++i){
@@ -414,17 +363,10 @@ private:
     
     _poly(_Linop,evec[k],w);      // 3. wk:=Avk−βkv_{k−1}
     
-    if(k>0) { 
-      w -= lme[k-1] * evec[k-1];
-      //clog << "ckpt A (k= " << k << ")" << '\n';
-      //clog << "lme = " << lme[k-1] << '\n';
-      //clog << "norm(w) = " << norm2(w) << std::endl;
-    }
+    if(k>0) w -= lme[k-1] * evec[k-1];
     
     ComplexD zalph = innerProduct(evec[k],w); // 4. αk:=(wk,vk)
     RealD     alph = real(zalph);
-    //clog << "ckpt B (k= " << k << ")" << '\n';
-    //clog << "lmd = " << alph << std::endl;
     
     w = w - alph * evec[k];// 5. wk:=wk−αkvk
     
@@ -680,5 +622,4 @@ void diagonalize_lapack(std::vector<RealD>& lmd,
 
  };
 }
-#undef clog
 #endif

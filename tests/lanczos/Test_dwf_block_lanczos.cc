@@ -51,9 +51,9 @@ int main (int argc, char ** argv)
   std::vector<int> seeds5({5,6,7,8});
   GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
-  //GridParallelRNG          RNG5rb(FrbGrid);  RNG5.SeedFixedIntegers(seeds5); 
+  GridParallelRNG          RNG5rb(FrbGrid);  RNG5.SeedFixedIntegers(seeds5); 
   // ypj [note] why seed RNG5 again? bug? In this case, run with a default seed().
-  GridParallelRNG          RNG5rb(FrbGrid);  //RNG5rb.SeedFixedIntegers(seeds5);
+  //GridParallelRNG          RNG5rb(FrbGrid);  //RNG5rb.SeedFixedIntegers(seeds5);
 
   LatticeGaugeField Umu(UGrid); 
   SU3::HotConfiguration(RNG4, Umu);
@@ -77,19 +77,19 @@ int main (int argc, char ** argv)
   SchurDiagTwoOperator<GparityMobiusFermionR,FermionField> HermOp(Ddwf);
 //  SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
 
-  const int Nstop = 30;
-  const int Nu = 4;
-  const int Nk = 60;
-  const int Np = 60;
+  const int Nstop = 50;
+  const int Nu = 1;
+  const int Nk = 200;
+  const int Np = 200;
   const int Nm = Nk+Np;
-  const int MaxIt= 10000;
+  const int MaxIt= 10;
   RealD resid = 1.0e-8;
 
   //std::vector<double> Coeffs { 0.,-1.}; 
   // ypj [note] this may not be supported by some compilers
-  std::vector<double> Coeffs({ 0.,1.}); 
+  std::vector<double> Coeffs({ 0.,-1.}); 
   Polynomial<FermionField> PolyX(Coeffs);
-  Chebyshev<FermionField> Cheb(0.2,5.,11);
+  Chebyshev<FermionField> Cheb(0.2,5.5,11);
 //  ChebyshevLanczos<LatticeFermion> Cheb(9.,1.,0.,20);
 //  Cheb.csv(std::cout);
 //  exit(-24);

@@ -75,16 +75,16 @@ int main (int argc, char ** argv)
   SchurDiagTwoOperator<GparityMobiusFermionR,FermionField> HermOp(Ddwf);
 //  SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
 
-  const int Nstop = 30;
-  const int Nk = 40;
-  const int Np = 40;
+  const int Nstop = 50;
+  const int Nk = 200;
+  const int Np = 200;
   const int Nm = Nk+Np;
-  const int MaxIt= 10000;
+  const int MaxIt= 100;
   RealD resid = 1.0e-8;
 
   std::vector<double> Coeffs { 0.,-1.};
   Polynomial<FermionField> PolyX(Coeffs);
-  Chebyshev<FermionField> Cheb(0.2,5.,11);
+  Chebyshev<FermionField> Cheb(0.2,5.5,11);
 //  ChebyshevLanczos<LatticeFermion> Cheb(9.,1.,0.,20);
 //  Cheb.csv(std::cout);
 //  exit(-24);

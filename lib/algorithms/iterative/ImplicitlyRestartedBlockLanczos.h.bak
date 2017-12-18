@@ -191,12 +191,12 @@ until convergence
       // additional (Nblock_m - Nblock_k) steps
       for(int b=Nblock_k; b<Nblock_m; ++b) blockwiseStep(lmd,lme,evec,f,f_copy,b);
       
-      //for(int k=0; k<Nm; ++k) {
-      //  clog << "ckpt A1: lme[" << k << "] = " << lme[0][k] << '\n';
-      //}
-      //for(int k=0; k<Nm; ++k) {
-      //  clog << "ckpt A2: lmd[" << k << "] = " << lmd[0][k] << '\n';
-      //}
+      for(int k=0; k<Nm; ++k) {
+        clog << "ckpt A1: lme[" << k << "] = " << lme[0][k] << '\n';
+      }
+      for(int k=0; k<Nm; ++k) {
+        clog << "ckpt A2: lmd[" << k << "] = " << lmd[0][k] << '\n';
+      }
       
       // residual vector
 #if 1 // ypj[fixme] temporary to check a case when block has one vector
@@ -241,45 +241,35 @@ until convergence
       unpackHermitBlockTriDiagMatToEigen(lmd,lme,Nu,Nblock_m,Nm,Nm,BTDM);
 
       for(int ip=Nk; ip<Nm; ++ip){ 
-        //clog << "ckpt B1: shift[" << ip << "] = " << eval2[ip] << endl;
-        //for (int i=0; i<Nm; ++i) {
-        //  for (int j=0; j<Nm; ++j) {
-        //    clog << "ckpt B2: M(" << ip << ")[" << i << "," << j << "] = " << BTDM(i,j) << '\n';
-        //  }
-        //}
-        //for (int i=0; i<Nm; ++i) {
-        //  for (int j=0; j<Nm; ++j) {
-        //    clog << "ckpt B3: Q(" << ip << ")[" << i << "," << j << "] = " << Q(i,j) << '\n';
-        //  }
-        //}
-        shiftedQRDecompEigen(BTDM,Nu,Nm,eval2[ip],Q);
+        clog << "ckpt B1: shift[" << ip << "] = " << eval2[ip] << endl;
+        shiftedQRDecompEigen(BTDM,Nm,eval2[ip],Q);
       }
-      //BTDM = Q.adjoint()*(BTDM*Q);
-      //for (int i=0; i<Nm; ++i ) {
-      //  for (int j=i+1; j<Nm; ++j ) {
-      //    BTDM(i,j) = conj(BTDM(j,i));
-      //  }
-      //  //BTDM(i,i) = real(BTDM(i,i));
-      //}
-      //for (int i=0; i<Nm; ++i) {
-      //  for (int j=0; j<Nm; ++j) {
-      //    clog << "ckpt B2: M(" << Nm-Nk << ")[" << i << "," << j << "] = " << BTDM(i,j) << '\n';
-      //  }
-      //}
-      //for (int i=0; i<Nm; ++i) {
-      //  for (int j=0; j<Nm; ++j) {
-      //    clog << "ckpt B3: Q(" << Nm-Nk << ")[" << i << "," << j << "] = " << Q(i,j) << '\n';
-      //  }
-      //}
+      BTDM = Q.adjoint()*(BTDM*Q);
+      for (int i=0; i<Nm; ++i ) {
+        for (int j=i+1; j<Nm; ++j ) {
+          BTDM(i,j) = BTDM(j,i);
+        }
+        //BTDM(i,i) = real(BTDM(i,i));
+      }
       
       packHermitBlockTriDiagMatfromEigen(lmd,lme,Nu,Nblock_m,Nm,Nm,BTDM);
 
       //for (int i=0; i<Nm; ++i) {
-      //  clog << "ckpt C1: lme[" << i << "] = " << lme[0][i] << '\n';
+      //  for (int j=0; j<Nm; ++j) {
+      //    clog << "ckpt G1: M[" << i << "," << j << "] = " << BTDM(i,j) << '\n';
+      //  }
       //}
       //for (int i=0; i<Nm; ++i) {
-      //  clog << "ckpt C2: lmd[" << i << "] = " << lmd[0][i] << '\n';
+      //  for (int j=0; j<Nm; ++j) {
+      //    clog << "ckpt G2: Q[" << i << "," << j << "] = " << Q(i,j) << '\n';
+      //  }
       //}
+      for (int i=0; i<Nm; ++i) {
+        clog << "ckpt C1: lme[" << i << "] = " << lme[0][i] << '\n';
+      }
+      for (int i=0; i<Nm; ++i) {
+        clog << "ckpt C2: lmd[" << i << "] = " << lmd[0][i] << '\n';
+      }
 
       for(int i=0; i<Nk+Nu; ++i) B[i] = 0.0;
       for(int j=0; j<Nk+Nu; ++j){
@@ -324,9 +314,6 @@ until convergence
 	  B[j] += evec[k]*Qt(k,j);
 	}
       }
-      //for (int k=0; k<Nk; ++k) {
-      //  orthogonalize(B[k],B,k);
-      //}
       
       //for (int i=0; i<Nk; ++i) {
       //  for (int j=0; j<Nk; ++j) {
@@ -632,174 +619,37 @@ private:
     //clog << "packHermitBlockTriDiagMatfromEigen() end" << endl; 
   }
 
-#if 0
-  void shiftedQRDecompEigen(Eigen::MatrixXcd& M, int Nu, int Nm,
-		            RealD Dsh,
-		            Eigen::MatrixXcd& Qprod)
-  {
-    //clog << "shiftedQRDecompEigen() begin" << '\n'; 
-    Eigen::MatrixXcd Mtmp = Eigen::MatrixXcd::Zero(Nm,Nm);
-    Eigen::MatrixXcd Q = Eigen::MatrixXcd::Zero(Nm,Nm);
-     
-    Mtmp = M;
-    for (int i=0; i<Nm; ++i ) {
-      Mtmp(i,i) = M(i,i) - Dsh;
-    }
-    
-    Eigen::HouseholderQR<Eigen::MatrixXcd> QRD(Mtmp);
-    Q = QRD.householderQ();
-    for (int j=0; j<Nm-2*Nu; ++j ) {
-      for (int i=2*Nu+j; i<Nm; ++i ) {
-        Q(i,j) = 0.;
-      }
-    }
 
-    M = Q.adjoint()*(M*Q);
-    for (int i=0; i<Nm; ++i ) {
-      for (int j=i+Nu; j<Nm; ++j ) {
-        M(i,j) = conj(M(j,i));
-      }
-    }
-    for (int i=0; i<Nm; ++i ) {
-      M(i,i) = real(M(i,i));
-    }
-
-    Qprod *= Q;
-    //clog << "shiftedQRDecompEigen() end" << endl; 
-  }
-#endif
-#if 1
-  // assume the input matrix M is a band matrix
-  void shiftedQRDecompEigen(Eigen::MatrixXcd& M, int Nu, int Nm,
-		            RealD Dsh,
-		            Eigen::MatrixXcd& Qprod)
-  {
-    //clog << "shiftedQRDecompEigen() begin" << '\n'; 
-    Eigen::MatrixXcd Q = Eigen::MatrixXcd::Zero(Nm,Nm);
-    Eigen::MatrixXcd R = Eigen::MatrixXcd::Zero(Nm,Nm);
-    Eigen::MatrixXcd Mtmp = Eigen::MatrixXcd::Zero(Nm,Nm);
-    
-    Mtmp = M;
-    for (int i=0; i<Nm; ++i ) {
-      Mtmp(i,i) = M(i,i) - Dsh;
-    }
-    
-    Eigen::HouseholderQR<Eigen::MatrixXcd> QRD(Mtmp);
-    Q = QRD.householderQ();
-    R = QRD.matrixQR(); // upper triangular part is the R matrix.
-                        // lower triangular part used to represent series
-                        // of Q sequence.
-
-    // equivalent operation of Qprod *= Q
-    //M = Eigen::MatrixXcd::Zero(Nm,Nm);
-    
-    //for (int i=0; i<Nm; ++i) {
-    //  for (int j=0; j<Nm-2*(Nu+1); ++j) {
-    //    for (int k=0; k<2*(Nu+1)+j; ++k) {
-    //      M(i,j) += Qprod(i,k)*Q(k,j);
-    //    }
-    //  }
-    //}
-    //for (int i=0; i<Nm; ++i) {
-    //  for (int j=Nm-2*(Nu+1); j<Nm; ++j) {
-    //    for (int k=0; k<Nm; ++k) {
-    //      M(i,j) += Qprod(i,k)*Q(k,j);
-    //    }
-    //  }
-    //}
-    
-    Mtmp = Eigen::MatrixXcd::Zero(Nm,Nm);
-
-    for (int i=0; i<Nm; ++i) {
-      for (int j=0; j<Nm-(Nu+1); ++j) {
-        for (int k=0; k<Nu+1+j; ++k) {
-          Mtmp(i,j) += Qprod(i,k)*Q(k,j);
-        }
-      }
-    }
-    for (int i=0; i<Nm; ++i) {
-      for (int j=Nm-(Nu+1); j<Nm; ++j) {
-        for (int k=0; k<Nm; ++k) {
-          Mtmp(i,j) += Qprod(i,k)*Q(k,j);
-        }
-      }
-    }
-
-    Qprod = Mtmp;
-     
-    // equivalent operation of M = Q.adjoint()*(M*Q)
-    //M = Eigen::MatrixXcd::Zero(Nm,Nm);
-    //
-    //for (int a=0, i=0, kmax=0; a<Nu+1; ++a) {
-    //  for (int j=0; j<Nm-a; ++j) {
-    //    i = j+a;
-    //    kmax = (Nu+1)+j;
-    //    if (kmax > Nm) kmax = Nm;
-    //    for (int k=i; k<kmax; ++k) { 
-    //      M(i,j) += R(i,k)*Q(k,j);
-    //    }
-    //    M(j,i) = conj(M(i,j));
-    //  }
-    //}
-
-    //for (int i=0; i<Nm; ++i) {
-    //  M(i,i) = real(M(i,i));
-    //}
-    
-    M = Q.adjoint()*(M*Q);
-    for (int i=0; i<Nm; ++i) {
-      for (int j=0; j<Nm; ++j) {
-        if (i==j) M(i,i) = real(M(i,i));
-        if (j>i)  M(i,j) = conj(M(j,i));
-        if (i-j > Nu || j-i > Nu) M(i,j) = 0.;
-      }
-    }
-    
-    //clog << "shiftedQRDecompEigen() end" << endl; 
-  }
-#endif
-#if 0
-  void shiftedQRDecompEigen(Eigen::MatrixXcd& M, int Nu, int Nm,
-		            RealD Dsh,
-		            Eigen::MatrixXcd& Qprod)
-  {
-    //clog << "shiftedQRDecompEigen() begin" << '\n'; 
-    Eigen::MatrixXcd Mtmp = Eigen::MatrixXcd::Zero(Nm,Nm);
-    Eigen::MatrixXcd Q = Eigen::MatrixXcd::Zero(Nm,Nm);
-     
-    Mtmp = M;
-    for (int i=0; i<Nm; ++i ) {
-      Mtmp(i,i) = M(i,i) - Dsh;
-    }
-    
-    Eigen::HouseholderQR<Eigen::MatrixXcd> QRD(Mtmp);
-    Q = QRD.householderQ();
-
-    M = Q.adjoint()*(M*Q);
-    for (int i=0; i<Nm; ++i ) {
-      for (int j=i+1; j<Nm; ++j ) {
-        M(i,j) = conj(M(j,i));
-      }
-    }
-    for (int i=0; i<Nm; ++i ) {
-      M(i,i) = real(M(i,i));
-    }
-
-#if 1
-    Qprod *= Q;
-#else
-    Mtmp = Qprod*Q;
-    
-    Eigen::HouseholderQR<Eigen::MatrixXcd> QRD2(Mtmp);
-    Qprod = QRD2.householderQ();
-
-    Mtmp -= Qprod;
-    clog << "Frobenius norm ||Qprod(after) - Qprod|| = " << Mtmp.norm() << std::endl;
-#endif
-    //clog << "shiftedQRDecompEigen() end" << endl; 
-  }
-#endif
-#if 0
+//  void shiftedQRDecompEigen(Eigen::MatrixXcd& M, int Nm,
+//		            RealD Dsh,
+//		            Eigen::MatrixXcd& Qprod, int Nk)
+//  {
+//    //clog << "shiftedQRDecompEigen() begin" << '\n'; 
+//    Eigen::MatrixXcd Mtmp = Eigen::MatrixXcd::Zero(Nm,Nm);
+//    Eigen::MatrixXcd Q = Eigen::MatrixXcd::Zero(Nm,Nm);
+//     
+//    Mtmp = M;
+//    for (int i=0; i<Nm; ++i ) {
+//      Mtmp(i,i) = M(i,i) - Dsh;
+//    }
+//    
+//    Eigen::HouseholderQR<Eigen::MatrixXcd> QRD(Mtmp);
+//    Q = QRD.householderQ();
+//
+//    M = Q.adjoint()*(M*Q);
+//#if 0
+//    Qprod *= Q;
+//#else
+//    Mtmp = Qprod*Q;
+//    
+//    Eigen::HouseholderQR<Eigen::MatrixXcd> QRD2(Mtmp);
+//    Qprod = QRD2.householderQ();
+//
+//    Mtmp -= Qprod;
+//    clog << "Frobenius norm ||Qprod(after) - Qprod|| = " << Mtmp.norm() << std::endl;
+//#endif
+//    //clog << "shiftedQRDecompEigen() end" << endl; 
+//  }
   void shiftedQRDecompEigen(Eigen::MatrixXcd& M, int Nm,
 		            RealD Dsh,
 		            Eigen::MatrixXcd& Qprod)
@@ -853,7 +703,7 @@ private:
 
     //clog << "shiftedQRDecompEigen() end" << endl; 
   }
-#endif 
+  
 
   void exampleQRDecompEigen(void)
   {
