@@ -228,7 +228,11 @@ void Environment::createDerivedObject(const std::string name,
             MemoryProfiler::stats = nullptr;
         }
     }
-    else
+    // object already exists, no error if it is a cache, error otherwise
+    else if ((object_[address].storage != Storage::cache) or 
+             (object_[address].storage != storage)        or
+             (object_[address].name    != name)           or
+             (object_[address].type    != &typeid(T)))
     {
         HADRON_ERROR(Definition, "object '" + name + "' already allocated");
     }
