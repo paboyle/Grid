@@ -21,7 +21,14 @@
     (ortho krylov low poly); and then fix up lowest say 200 eigenvalues by 1 run with high-degree poly (600 could be enough)
 */
 #include <Grid/Grid.h>
-#include <Grid/algorithms/iterative/BlockImplicitlyRestartedLanczos/BlockImplicitlyRestartedLanczos.h>
+#include <Grid/algorithms/iterative/ImplicitlyRestartedLanczos.h>
+/////////////////////////////////////////////////////////////////////////////
+// The following are now decoupled from the Lanczos and deal with grids.
+// Safe to replace functionality
+/////////////////////////////////////////////////////////////////////////////
+#include "BlockedGrid.h"
+#include "FieldBasisVector.h"
+#include "BlockProjector.h"
 #include "FieldVectorIO.h"
 #include "Params.h"
 
@@ -93,19 +100,6 @@ void write_history(char* fn, std::vector<RealD>& hist) {
   fclose(f);
 }
 
-template<typename Field>
-class FunctionHermOp : public LinearFunction<Field> {
-public:
-  OperatorFunction<Field>   & _poly;
-  LinearOperatorBase<Field> &_Linop;
-
-  FunctionHermOp(OperatorFunction<Field> & poly,LinearOperatorBase<Field>& linop) : _poly(poly), _Linop(linop) {
-  }
-
-  void operator()(const Field& in, Field& out) {
-    _poly(_Linop,in,out);
-  }
-};
 
 template<typename Field>
 class CheckpointedLinearFunction : public LinearFunction<Field> {
@@ -261,19 +255,6 @@ public:
   }
 };
 
-template<typename Field>
-class PlainHermOp : public LinearFunction<Field> {
-public:
-  LinearOperatorBase<Field> &_Linop;
-
-  PlainHermOp(LinearOperatorBase<Field>& linop) : _Linop(linop) {
-  }
-
-  void operator()(const Field& in, Field& out) {
-    _Linop.HermOp(in,out);
-  }
-};
-
 template<typename vtype, int N > using CoarseSiteFieldGeneral = iScalar< iVector<vtype, N> >;
 template<int N> using CoarseSiteFieldD = CoarseSiteFieldGeneral< vComplexD, N >;
 template<int N> using CoarseSiteFieldF = CoarseSiteFieldGeneral< vComplexF, N >;
@@ -319,7 +300,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
     Op2 = &Op2plain;
   }
   ProjectedHermOp<CoarseLatticeFermion<Nstop1>,LatticeFermion> Op2nopoly(pr,HermOp);
-  BlockImplicitlyRestartedLanczos<CoarseLatticeFermion<Nstop1> > IRL2(*Op2,*Op2,Nstop2,Nk2,Nm2,resid2,betastp2,MaxIt,MinRes2);
+  ImplicitlyRestartedLanczos<CoarseLatticeFermion<Nstop1> > IRL2(*Op2,*Op2,Nstop2,Nk2,Nm2,resid2,MaxIt,betastp2,MinRes2);
 
 
   src_coarse = 1.0;
@@ -350,7 +331,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
       ) {
     
 
-    IRL2.calc(eval2,coef,src_coarse,Nconv,true,SkipTest2);
+    IRL2.calc(eval2,coef._v,src_coarse,Nconv,true);
 
     coef.resize(Nstop2);
     eval2.resize(Nstop2);
@@ -450,6 +431,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
     auto result = src_orig; 
 
     // undeflated solve
+    std::cout << GridLogMessage << " Undeflated solve "<<std::endl;
     result = zero;
     CG(HermOp, src_orig, result);
     //    if (UCoarseGrid->IsBoss())
@@ -457,6 +439,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
     //    CG.ResHistory.clear();
 
     // deflated solve with all eigenvectors
+    std::cout << GridLogMessage << " Deflated solve with all evectors"<<std::endl;
     result = zero;
     pr.deflate(coef,eval2,Nstop2,src_orig,result);
     CG(HermOp, src_orig, result);
@@ -465,6 +448,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
     //    CG.ResHistory.clear();
 
     // deflated solve with non-blocked eigenvectors
+    std::cout << GridLogMessage << " Deflated solve with non-blocked evectors"<<std::endl;
     result = zero;
     pr.deflate(coef,eval1,Nstop1,src_orig,result);
     CG(HermOp, src_orig, result);
@@ -473,6 +457,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
     //    CG.ResHistory.clear();
 
     // deflated solve with all eigenvectors and original eigenvalues from proj
+    std::cout << GridLogMessage << " Deflated solve with all eigenvectors and original eigenvalues from proj"<<std::endl;
     result = zero;
     pr.deflate(coef,eval3,Nstop2,src_orig,result);
     CG(HermOp, src_orig, result);
@@ -641,7 +626,7 @@ int main (int argc, char ** argv) {
   }
 
   // First round of Lanczos to get low mode basis
-  BlockImplicitlyRestartedLanczos<LatticeFermion> IRL1(Op1,Op1test,Nstop1,Nk1,Nm1,resid1,betastp1,MaxIt,MinRes1);
+  ImplicitlyRestartedLanczos<LatticeFermion> IRL1(Op1,Op1test,Nstop1,Nk1,Nm1,resid1,MaxIt,betastp1,MinRes1);
   int Nconv;
 
   char tag[1024];
@@ -650,7 +635,7 @@ int main (int argc, char ** argv) {
     if (simple_krylov_basis) {
       quick_krylov_basis(evec,src,Op1,Nstop1);
     } else {
-      IRL1.calc(eval1,evec,src,Nconv,false,1);
+      IRL1.calc(eval1,evec._v,src,Nconv,false);
     }
     evec.resize(Nstop1); // and throw away superfluous
     eval1.resize(Nstop1);

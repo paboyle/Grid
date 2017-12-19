@@ -55,7 +55,9 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
 
 CartesianCommunicator::~CartesianCommunicator()
 {
-  if (communicator && !MPI::Is_finalized())
+  int MPI_is_finalised;
+  MPI_Finalized(&MPI_is_finalised);
+  if (communicator && !MPI_is_finalised)
     MPI_Comm_free(&communicator);
 }
 
@@ -194,21 +196,6 @@ void CartesianCommunicator::Broadcast(int root,void* data, int bytes)
 		     root,
 		     communicator);
   assert(ierr==0);
-}
-void CartesianCommunicator::AllToAll(int dim,void  *in,void *out,int bytes)
-{
-  std::vector<int> row(_ndimension,1);
-  assert(dim>=0 && dim<_ndimension);
-
-  //  Split the communicator
-  row[dim] = _processors[dim];
-
-  CartesianCommunicator Comm(row,*this);
-  Comm.AllToAll(in,out,bytes);
-}
-void CartesianCommunicator::AllToAll(void  *in,void *out,int bytes)
-{
-  MPI_Alltoall(in ,bytes,MPI_BYTE,out,bytes,MPI_BYTE,communicator);
 }
   ///////////////////////////////////////////////////////
   // Should only be used prior to Grid Init finished.

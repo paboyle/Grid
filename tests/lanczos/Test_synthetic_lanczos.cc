@@ -119,12 +119,13 @@ int main (int argc, char ** argv)
   RealD beta  = 0.1;
   RealD mu    = 0.0;
   int order = 11;
-  ChebyshevLanczos<LatticeComplex> Cheby(alpha,beta,mu,order);
+  Chebyshev<LatticeComplex> Cheby(alpha,beta,order);
   std::ofstream file("cheby.dat");
   Cheby.csv(file);
 
-  HermOpOperatorFunction<LatticeComplex> X;
   DumbOperator<LatticeComplex> HermOp(grid);
+  FunctionHermOp<LatticeComplex> OpCheby(Cheby,HermOp);
+     PlainHermOp<LatticeComplex> Op(HermOp);
 
   const int Nk = 40;
   const int Nm = 80;
@@ -133,8 +134,9 @@ int main (int argc, char ** argv)
   int Nconv;
   RealD eresid = 1.0e-6;
 
-  ImplicitlyRestartedLanczos<LatticeComplex> IRL(HermOp,X,Nk,Nk,Nm,eresid,Nit);
-  ImplicitlyRestartedLanczos<LatticeComplex> ChebyIRL(HermOp,Cheby,Nk,Nk,Nm,eresid,Nit);
+
+  ImplicitlyRestartedLanczos<LatticeComplex> IRL(Op,Op,Nk,Nk,Nm,eresid,Nit);
+  ImplicitlyRestartedLanczos<LatticeComplex> ChebyIRL(OpCheby,Op,Nk,Nk,Nm,eresid,Nit);
 
   LatticeComplex src(grid); gaussian(RNG,src);
   {

@@ -86,9 +86,12 @@ int main(int argc, char** argv) {
 
   std::vector<double> Coeffs{0, 1.};
   Polynomial<FermionField> PolyX(Coeffs);
-  Chebyshev<FermionField> Cheb(0.0, 10., 12);
-  ImplicitlyRestartedLanczos<FermionField> IRL(HermOp, PolyX, Nstop, Nk, Nm,
-                                               resid, MaxIt);
+  Chebyshev<FermionField> Cheby(0.0, 10., 12);
+
+  FunctionHermOp<FermionField> OpCheby(Cheby,HermOp);
+     PlainHermOp<FermionField> Op     (HermOp);
+
+  ImplicitlyRestartedLanczos<FermionField> IRL(OpCheby, Op, Nstop, Nk, Nm, resid, MaxIt);
 
   std::vector<RealD> eval(Nm);
   FermionField src(FGrid);
