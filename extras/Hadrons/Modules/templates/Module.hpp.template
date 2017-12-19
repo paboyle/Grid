@@ -26,7 +26,6 @@ public:
     virtual ~T___FILEBASENAME___(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getReference(void);
     virtual std::vector<std::string> getOutput(void);
     // setup
     virtual void setup(void);

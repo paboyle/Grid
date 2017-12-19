@@ -95,7 +95,6 @@ public:
     virtual ~TMeson(void) = default;
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getReference(void);
     virtual std::vector<std::string> getOutput(void);
     virtual void parseGammaString(std::vector<GammaPair> &gammaList);
 protected:
@@ -123,14 +122,6 @@ std::vector<std::string> TMeson<FImpl1, FImpl2>::getInput(void)
     std::vector<std::string> input = {par().q1, par().q2, par().sink};
     
     return input;
-}
-
-template <typename FImpl1, typename FImpl2>
-std::vector<std::string> TMeson<FImpl1, FImpl2>::getReference(void)
-{
-    std::vector<std::string> ref = {};
-    
-    return ref;
 }
 
 template <typename FImpl1, typename FImpl2>

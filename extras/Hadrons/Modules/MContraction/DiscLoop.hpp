@@ -67,7 +67,6 @@ public:
     virtual ~TDiscLoop(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getReference(void);
     virtual std::vector<std::string> getOutput(void);
 protected:
     // setup
@@ -94,14 +93,6 @@ std::vector<std::string> TDiscLoop<FImpl>::getInput(void)
     std::vector<std::string> in = {par().q_loop};
     
     return in;
-}
-
-template <typename FImpl>
-std::vector<std::string> TDiscLoop<FImpl>::getReference(void)
-{
-    std::vector<std::string> out = {};
-    
-    return out;
 }
 
 template <typename FImpl>

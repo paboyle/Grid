@@ -62,7 +62,6 @@ public:
     virtual ~TWilson(void) = default;
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getReference(void);
     virtual std::vector<std::string> getOutput(void);
 protected:
     // setup
@@ -89,14 +88,6 @@ std::vector<std::string> TWilson<FImpl>::getInput(void)
     std::vector<std::string> in = {par().gauge};
     
     return in;
-}
-
-template <typename FImpl>
-std::vector<std::string> TWilson<FImpl>::getReference(void)
-{
-    std::vector<std::string> ref = {};
-    
-    return ref;
 }
 
 template <typename FImpl>

@@ -50,7 +50,6 @@ public:
     virtual ~TRandom(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getReference(void);
     virtual std::vector<std::string> getOutput(void);
 protected:
     // setup

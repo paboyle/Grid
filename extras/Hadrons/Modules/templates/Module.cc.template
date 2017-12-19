@@ -19,14 +19,6 @@ std::vector<std::string> T___FILEBASENAME___::getInput(void)
     return in;
 }
 
-template <typename FImpl>
-std::vector<std::string> T___FILEBASENAME___::getReference(void)
-{
-    std::vector<std::string> in = {};
-    
-    return in;
-}
-
 std::vector<std::string> T___FILEBASENAME___::getOutput(void)
 {
     std::vector<std::string> out = {getName()};

@@ -49,13 +49,6 @@ std::vector<std::string> TRandom::getInput(void)
     return in;
 }
 
-std::vector<std::string> TRandom::getReference(void)
-{
-    std::vector<std::string> ref;
-    
-    return ref;
-}
-
 std::vector<std::string> TRandom::getOutput(void)
 {
     std::vector<std::string> out = {getName()};

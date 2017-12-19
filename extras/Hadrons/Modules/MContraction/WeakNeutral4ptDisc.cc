@@ -76,13 +76,6 @@ std::vector<std::string> TWeakNeutral4ptDisc::getInput(void)
     return in;
 }
 
-std::vector<std::string> TWeakNeutral4ptDisc::getReference(void)
-{
-    std::vector<std::string> ref = {};
-    
-    return ref;
-}
-
 std::vector<std::string> TWeakNeutral4ptDisc::getOutput(void)
 {
     std::vector<std::string> out = {};

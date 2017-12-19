@@ -99,7 +99,6 @@ public:\
     virtual ~T##modname(void) = default;\
     /* dependency relation */ \
     virtual std::vector<std::string> getInput(void);\
-    virtual std::vector<std::string> getReference(void);\
     virtual std::vector<std::string> getOutput(void);\
 public:\
     std::vector<std::string> VA_label = {"V", "A"};\

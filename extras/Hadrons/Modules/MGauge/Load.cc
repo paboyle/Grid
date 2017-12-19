@@ -49,13 +49,6 @@ std::vector<std::string> TLoad::getInput(void)
     return in;
 }
 
-std::vector<std::string> TLoad::getReference(void)
-{
-    std::vector<std::string> ref;
-    
-    return ref;
-}
-
 std::vector<std::string> TLoad::getOutput(void)
 {
     std::vector<std::string> out = {getName()};

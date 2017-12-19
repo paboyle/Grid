@@ -47,13 +47,6 @@ std::vector<std::string> TStochEm::getInput(void)
     return in;
 }
 
-std::vector<std::string> TStochEm::getReference(void)
-{
-    std::vector<std::string> ref = {};
-    
-    return ref;
-}
-
 std::vector<std::string> TStochEm::getOutput(void)
 {
     std::vector<std::string> out = {getName()};

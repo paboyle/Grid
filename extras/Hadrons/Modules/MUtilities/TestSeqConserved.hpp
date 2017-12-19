@@ -79,7 +79,6 @@ public:
     virtual ~TTestSeqConserved(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getReference(void);
     virtual std::vector<std::string> getOutput(void);
 protected:
     // setup
@@ -106,14 +105,6 @@ std::vector<std::string> TTestSeqConserved<FImpl>::getInput(void)
     std::vector<std::string> in = {par().q, par().qSeq, par().action};
     
     return in;
-}
-
-template <typename FImpl>
-std::vector<std::string> TTestSeqConserved<FImpl>::getReference(void)
-{
-    std::vector<std::string> ref = {};
-    
-    return ref;
 }
 
 template <typename FImpl>

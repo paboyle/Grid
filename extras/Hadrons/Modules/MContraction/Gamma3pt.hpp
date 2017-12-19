@@ -98,7 +98,6 @@ public:
     virtual ~TGamma3pt(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getReference(void);
     virtual std::vector<std::string> getOutput(void);
 protected:
     // setup
@@ -125,14 +124,6 @@ std::vector<std::string> TGamma3pt<FImpl1, FImpl2, FImpl3>::getInput(void)
     std::vector<std::string> in = {par().q1, par().q2, par().q3};
     
     return in;
-}
-
-template <typename FImpl1, typename FImpl2, typename FImpl3>
-std::vector<std::string> TGamma3pt<FImpl1, FImpl2, FImpl3>::getReference(void)
-{
-    std::vector<std::string> ref = {};
-    
-    return ref;
 }
 
 template <typename FImpl1, typename FImpl2, typename FImpl3>

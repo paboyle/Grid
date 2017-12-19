@@ -74,12 +74,6 @@ std::vector<std::string> TWeakHamiltonianNonEye::getInput(void)
     return in;
 }
 
-std::vector<std::string> TWeakHamiltonianNonEye::getReference(void)
-{
-    std::vector<std::string> out = {};
-    
-    return out;
-}
 std::vector<std::string> TWeakHamiltonianNonEye::getOutput(void)
 {
     std::vector<std::string> out = {};
