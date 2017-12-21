@@ -40,6 +40,7 @@ protected:
     virtual void execute(void);
 private:
     std::string freeMomPropName_;
+    bool        freePropDone_;
 };
 
 MODULE_REGISTER_NS(FreeProp, TFreeProp, MScalar);
