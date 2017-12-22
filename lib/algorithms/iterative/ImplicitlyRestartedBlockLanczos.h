@@ -198,18 +198,7 @@ until convergence
       //  clog << "ckpt A2: lmd[" << k << "] = " << lmd[0][k] << '\n';
       //}
       
-      // residual vector
-#if 1 // ypj[fixme] temporary to check a case when block has one vector
-      for ( int i=0; i<Nu; ++i) f_copy[i] = f[i];
-      for ( int i=0; i<Nu; ++i) {
-        f[i] = f_copy[0]*lme[0][Nm-Nu+i]; 
-        for ( int j=1; j<Nu; ++j) { 
-          f[i] += f_copy[j]*lme[j][Nm-Nu+i]; 
-        }
-        //clog << "ckpt C (i= " << i << ")" << '\n';
-        //clog << "norm2(f) = " << norm2(f[i]) << std::endl;
-      }
-#endif
+
       
       // getting eigenvalues
       for(int u=0; u<Nu; ++u){
@@ -293,7 +282,19 @@ until convergence
         //clog << "ckpt F: norm2_evec[= " << i << "]" << norm2(evec[i]) << std::endl;
       }
 
-#if 1 // ypj[fixme] temporary to check a case when block has one vector
+      // residual vector
+#if 0 // ypj[fixme] temporary to check a case when block has one vector
+      for ( int i=0; i<Nu; ++i) f_copy[i] = f[i];
+      for ( int i=0; i<Nu; ++i) {
+        f[i] = f_copy[0]*lme[0][Nm-Nu+i]; 
+        for ( int j=1; j<Nu; ++j) { 
+          f[i] += f_copy[j]*lme[j][Nm-Nu+i]; 
+        }
+        //clog << "ckpt C (i= " << i << ")" << '\n';
+        //clog << "norm2(f) = " << norm2(f[i]) << std::endl;
+      }
+      
+      // ypj[fixme] temporary to check a case when block has one vector
       // Compressed vector f and beta(k2)
       f[0] *= Q(Nm-1,Nk-1);
       f[0] += lme[0][Nk-1] * evec[Nk]; // was commented out
@@ -305,6 +306,8 @@ until convergence
       RealD betar = 1.0/beta_k;
       evec[Nk] = betar * f[0];
       lme[0][Nk-1] = beta_k;
+#else
+      blockwiseStep(lmd,lme,evec,f,f_copy,Nblock_k-1);
 #endif
 
       // Convergence test
@@ -393,7 +396,7 @@ until convergence
     clog << fname + " CONVERGED ; Summary :\n";
     clog <<"**************************************************************************"<< std::endl;
     clog << " -- Iterations  = "<< iter   << "\n";
-    clog << " -- beta(k)     = "<< beta_k << "\n";
+    //clog << " -- beta(k)     = "<< beta_k << "\n";
     clog << " -- Nconv       = "<< Nconv  << "\n";
     clog <<"**************************************************************************"<< std::endl;
   }

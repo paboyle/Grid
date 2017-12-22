@@ -75,11 +75,11 @@ int main (int argc, char ** argv)
   SchurDiagTwoOperator<GparityMobiusFermionR,FermionField> HermOp(Ddwf);
 //  SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
 
-  const int Nstop = 50;
-  const int Nk = 200;
-  const int Np = 200;
+  const int Nstop = 120;
+  const int Nk = 240;
+  const int Np = 240;
   const int Nm = Nk+Np;
-  const int MaxIt= 100;
+  const int MaxIt= 10;
   RealD resid = 1.0e-8;
 
   std::vector<double> Coeffs { 0.,-1.};
