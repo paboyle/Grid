@@ -820,7 +820,7 @@ int main (int argc, char ** argv)
   testVectorAnalyzer(HermOp, Aggregates.subspace);
 
   for(int n=0;n<nb;n++){
-    Aggregates.subspace[n+nb] = g5 * Aggregates.subspace[n]; // multiply with g5 normally instead of G5R5
+    Aggregates.subspace[n+nb] = g5 * Aggregates.subspace[n]; // multiply with g5 normally instead of G5R5 since this specific to DWF
     std::cout<<GridLogMessage<<n<<" subspace "<<norm2(Aggregates.subspace[n+nb])<<" "<<norm2(Aggregates.subspace[n]) <<std::endl;
   }
   for(int n=0;n<nbasis;n++){
