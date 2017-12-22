@@ -833,9 +833,12 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
             for (unsigned int s = 0; s < LLs; ++s)
             {
                 bool axial_sign = ((curr_type == Current::Axial) && (s < (LLs / 2)));
+		bool tadpole_sign = (curr_type == Current::Tadpole);
+		bool switch_sgn = tadpole_sign || axial_sign;
+
                 Kernels::SeqConservedCurrentSiteFwd(tmpFwd._odata[sF], 
                                                     q_out._odata[sF], Umu, sU,
-                                                    mu, t_mask, axial_sign);
+                                                    mu, t_mask, switch_sgn);
                 ++sF;
             }
         }
