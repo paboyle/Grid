@@ -49,7 +49,7 @@ namespace QCD {
     static const int Zm = 6;
     static const int Tm = 7;
 
-    static const int Nc=3;
+    static const int Nc=4;
     static const int Ns=4;
     static const int Nd=4;
     static const int Nhs=2; // half spinor
@@ -421,15 +421,16 @@ namespace QCD {
     //////////////////////////////////////////////
     // Fermion <-> propagator assignements
     //////////////////////////////////////////////
-    template <class Prop, class Ferm>
-    void FermToProp(Prop &p, const Ferm &f, const int s, const int c)
+    //template <class Prop, class Ferm>
+    template <class Fimpl>
+      void FermToProp(typename Fimpl::PropagatorField &p, const typename Fimpl::FermionField &f, const int s, const int c)
     {
-        for(int j = 0; j < Ns; ++j)
+      for(int j = 0; j < Ns; ++j)
         {
             auto pjs = peekSpin(p, j, s);
             auto fj  = peekSpin(f, j);
             
-            for(int i = 0; i < Nc; ++i)
+            for(int i = 0; i < Fimpl::Dimension; ++i)
             {
                 pokeColour(pjs, peekColour(fj, i), i, c);
             }
@@ -437,15 +438,16 @@ namespace QCD {
         }
     }
     
-    template <class Prop, class Ferm>
-    void PropToFerm(Ferm &f, const Prop &p, const int s, const int c)
+    //template <class Prop, class Ferm>
+    template <class Fimpl>
+      void PropToFerm(typename Fimpl::FermionField &f, const typename Fimpl::PropagatorField &p, const int s, const int c)
     {
         for(int j = 0; j < Ns; ++j)
         {
             auto pjs = peekSpin(p, j, s);
             auto fj  = peekSpin(f, j);
             
-            for(int i = 0; i < Nc; ++i)
+            for(int i = 0; i < Fimpl::Dimension; ++i)
             {
                 pokeColour(fj, peekColour(pjs, i, c), i);
             }
