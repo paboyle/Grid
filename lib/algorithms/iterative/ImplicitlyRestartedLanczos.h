@@ -267,7 +267,7 @@ until convergence
       Qt = Eigen::MatrixXd::Identity(Nm,Nm);
       for(int ip=k2; ip<Nm; ++ip){ 
 	// Eigen replacement for qr_decomp ???
-        clog << "ckpt B1: shift[" << ip << "] = " << eval2[ip] << endl;
+        clog << "ckpt B1: shift[" << ip << "] = " << eval2[ip] << std::endl;
 	qr_decomp(eval,lme,Nm,Nm,Qt,eval2[ip],k1,Nm);
       }
       
