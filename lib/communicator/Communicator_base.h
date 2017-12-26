@@ -166,6 +166,7 @@ class CartesianCommunicator {
   void InitFromMPICommunicator(const std::vector<int> &processors, MPI_Comm communicator_base);
 #endif
  public:
+
   
   ////////////////////////////////////////////////////////////////////////////////////////
   // Wraps MPI_Cart routines, or implements equivalent on other impls
