@@ -2,12 +2,12 @@ modules_cc =\
   Modules/MContraction/WeakHamiltonianEye.cc \
   Modules/MContraction/WeakNeutral4ptDisc.cc \
   Modules/MContraction/WeakHamiltonianNonEye.cc \
-  Modules/MGauge/Load.cc \
   Modules/MGauge/Unit.cc \
   Modules/MGauge/StochEm.cc \
   Modules/MGauge/Random.cc \
   Modules/MScalar/FreeProp.cc \
-  Modules/MScalar/ChargedProp.cc
+  Modules/MScalar/ChargedProp.cc \
+  Modules/MIO/LoadNersc.cc
 
 modules_hpp =\
   Modules/MContraction/Baryon.hpp \
@@ -28,7 +28,6 @@ modules_hpp =\
   Modules/MSink/Smear.hpp \
   Modules/MSink/Point.hpp \
   Modules/MSolver/RBPrecCG.hpp \
-  Modules/MGauge/Load.hpp \
   Modules/MGauge/Unit.hpp \
   Modules/MGauge/Random.hpp \
   Modules/MGauge/StochEm.hpp \
@@ -39,5 +38,6 @@ modules_hpp =\
   Modules/MScalar/Scalar.hpp \
   Modules/MScalar/ChargedProp.hpp \
   Modules/MAction/DWF.hpp \
-  Modules/MAction/Wilson.hpp
+  Modules/MAction/Wilson.hpp \
+  Modules/MIO/LoadNersc.hpp
 

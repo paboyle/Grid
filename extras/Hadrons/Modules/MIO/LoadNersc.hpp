@@ -2,12 +2,10 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MGauge/Load.hpp
+Source file: LoadNersc.hpp
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
-Author: Antonin Portelli <antonin.portelli@me.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,9 +24,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-
-#ifndef Hadrons_MGauge_Load_hpp_
-#define Hadrons_MGauge_Load_hpp_
+#ifndef Hadrons_MIO_LoadNersc_hpp_
+#define Hadrons_MIO_LoadNersc_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -37,38 +34,37 @@ See the full license in the file "LICENSE" in the top level distribution directo
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         Load a NERSC configuration                         *
+ *                       Load a NERSC configuration                           *
  ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MGauge)
+BEGIN_MODULE_NAMESPACE(MIO)
 
-class LoadPar: Serializable
+class LoadNerscPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(LoadPar,
+    GRID_SERIALIZABLE_CLASS_MEMBERS(LoadNerscPar,
                                     std::string, file);
 };
 
-class TLoad: public Module<LoadPar>
+class TLoadNersc: public Module<LoadNerscPar>
 {
 public:
     // constructor
-    TLoad(const std::string name);
+    TLoadNersc(const std::string name);
     // destructor
-    virtual ~TLoad(void) = default;
+    virtual ~TLoadNersc(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
-protected:
     // setup
     virtual void setup(void);
     // execution
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(Load, TLoad, MGauge);
+MODULE_REGISTER_NS(LoadNersc, TLoadNersc, MIO);
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MGauge_Load_hpp_
+#endif // Hadrons_MIO_LoadNersc_hpp_

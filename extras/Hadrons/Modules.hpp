@@ -2,13 +2,12 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules.hpp
+Source file: Modules.hpp
 
-Copyright (C) 2015
-Copyright (C) 2016
-Copyright (C) 2017
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -46,7 +45,6 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MSink/Smear.hpp>
 #include <Grid/Hadrons/Modules/MSink/Point.hpp>
 #include <Grid/Hadrons/Modules/MSolver/RBPrecCG.hpp>
-#include <Grid/Hadrons/Modules/MGauge/Load.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Unit.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Random.hpp>
 #include <Grid/Hadrons/Modules/MGauge/StochEm.hpp>
@@ -58,3 +56,4 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MScalar/ChargedProp.hpp>
 #include <Grid/Hadrons/Modules/MAction/DWF.hpp>
 #include <Grid/Hadrons/Modules/MAction/Wilson.hpp>
+#include <Grid/Hadrons/Modules/MIO/LoadNersc.hpp>
