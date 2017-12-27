@@ -40,6 +40,7 @@ int main (int argc, char ** argv)
   Grid_init(&argc,&argv);
 
   const int Ls=8;
+  //const int Ls=16;
 
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
   GridRedBlackCartesian * UrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
@@ -55,6 +56,7 @@ int main (int argc, char ** argv)
   // ypj [note] why seed RNG5 again? bug? In this case, run with a default seed().
   //GridParallelRNG          RNG5rb(FrbGrid);  //RNG5rb.SeedFixedIntegers(seeds5);
 
+#if 0 // ypj [note] generate a random configuration
   LatticeGaugeField Umu(UGrid); 
   SU3::HotConfiguration(RNG4, Umu);
 
@@ -62,8 +64,21 @@ int main (int argc, char ** argv)
   for(int mu=0;mu<Nd;mu++){
     U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
   }
+#else // read configuration from a file
+  LatticeGaugeField Umu(UGrid); 
+  std::vector<LatticeColourMatrix> U(4,UGrid);
   
-  RealD mass=0.01;
+  FieldMetaData header;
+  std::string file("./ckpoint_lat");
+  NerscIO::readConfiguration(Umu,header,file);
+
+  for(int mu=0;mu<Nd;mu++){
+    U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
+  }
+#endif
+  
+  //RealD mass=0.01;
+  RealD mass=0.00107;
   RealD M5=1.8;
   RealD mob_b=1.5;
 //  DomainWallFermionR Ddwf(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
@@ -77,10 +92,10 @@ int main (int argc, char ** argv)
   SchurDiagTwoOperator<GparityMobiusFermionR,FermionField> HermOp(Ddwf);
 //  SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
 
-  const int Nstop = 120;
-  const int Nu = 1;
-  const int Nk = 240;
-  const int Np = 240;
+  const int Nstop = 100;
+  const int Nu = 10;
+  const int Nk = 200;
+  const int Np = 200;
   const int Nm = Nk+Np;
   const int MaxIt= 10;
   RealD resid = 1.0e-8;
@@ -89,7 +104,8 @@ int main (int argc, char ** argv)
   // ypj [note] this may not be supported by some compilers
   std::vector<double> Coeffs({ 0.,-1.}); 
   Polynomial<FermionField> PolyX(Coeffs);
-  Chebyshev<FermionField> Cheb(0.2,5.5,11);
+  //Chebyshev<FermionField> Cheb(0.2,5.5,11);
+  Chebyshev<FermionField> Cheb(0.03,5.5,21);
 //  ChebyshevLanczos<LatticeFermion> Cheb(9.,1.,0.,20);
 //  Cheb.csv(std::cout);
 //  exit(-24);
