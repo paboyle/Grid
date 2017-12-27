@@ -57,3 +57,4 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MAction/DWF.hpp>
 #include <Grid/Hadrons/Modules/MAction/Wilson.hpp>
 #include <Grid/Hadrons/Modules/MIO/LoadNersc.hpp>
+#include <Grid/Hadrons/Modules/MIO/LoadBinary.hpp>

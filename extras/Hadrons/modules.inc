@@ -39,5 +39,6 @@ modules_hpp =\
   Modules/MScalar/ChargedProp.hpp \
   Modules/MAction/DWF.hpp \
   Modules/MAction/Wilson.hpp \
-  Modules/MIO/LoadNersc.hpp
+  Modules/MIO/LoadNersc.hpp \
+  Modules/MIO/LoadBinary.hpp
 

@@ -61,6 +61,9 @@ using Grid::operator<<;
 #ifndef SIMPL
 #define SIMPL ScalarImplCR
 #endif
+#ifndef GIMPL
+#define GIMPL GimplTypesR
+#endif
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -84,7 +87,8 @@ typedef std::function<void(FermionField##suffix &,\
                       const FermionField##suffix &)> SolverFn##suffix;
 
 #define SINK_TYPE_ALIASES(suffix)\
-typedef std::function<SlicedPropagator##suffix(const PropagatorField##suffix &)> SinkFn##suffix;
+typedef std::function<SlicedPropagator##suffix\
+                      (const PropagatorField##suffix &)> SinkFn##suffix;
 
 #define FGS_TYPE_ALIASES(FImpl, suffix)\
 FERM_TYPE_ALIASES(FImpl, suffix)\
