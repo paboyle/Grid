@@ -54,6 +54,9 @@ namespace Grid {
   std::string GridCmdVectorIntToString(const std::vector<int> & vec);
   void GridCmdOptionCSL(std::string str,std::vector<std::string> & vec);
   void GridCmdOptionIntVector(std::string &str,std::vector<int> & vec);
+  // ypj [add]
+  void GridCmdOptionInt(std::string &str,int & val);
+  void GridCmdOptionFloat(std::string &str,double & val);
 
 
   void GridParseLayout(char **argv,int argc,
