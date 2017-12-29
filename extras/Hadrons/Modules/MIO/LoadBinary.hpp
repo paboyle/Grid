@@ -122,7 +122,7 @@ void TLoadBinary<Impl>::execute(void)
                            + std::to_string(vm().getTrajectory());
 
     LOG(Message) << "Loading " << par().format 
-                 << "binary configuration from file '" << filename
+                 << " binary configuration from file '" << filename
                  << "'" << std::endl;
     BinaryIO::readLatticeObject<vobj, sobj_double>(U, filename, munge, 0, 
                                                    par().format, nersc_csum,
