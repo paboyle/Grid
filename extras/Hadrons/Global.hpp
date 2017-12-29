@@ -112,6 +112,8 @@ extern HadronsLogger HadronsLogMessage;
 extern HadronsLogger HadronsLogIterative;
 extern HadronsLogger HadronsLogDebug;
 
+void initLogger(void);
+
 // singleton pattern
 #define SINGLETON(name)\
 public:\

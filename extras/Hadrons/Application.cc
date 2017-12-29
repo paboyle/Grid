@@ -42,6 +42,7 @@ using namespace Hadrons;
 // constructors ////////////////////////////////////////////////////////////////
 Application::Application(void)
 {
+    initLogger();
     LOG(Message) << "Modules available:" << std::endl;
     auto list = ModuleFactory::getInstance().getBuilderList();
     for (auto &m: list)
