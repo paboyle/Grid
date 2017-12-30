@@ -105,6 +105,18 @@ public:
     }
     normalize(w);
   }
+  
+  void orthogonalize_blockhead(Field& w, std::vector<Field>& evec, int k, int Nu)
+  {
+    typedef typename Field::scalar_type MyComplex;
+    MyComplex ip;
+    
+    for(int j=0; j<k; ++j){
+      ip = innerProduct(evec[j*Nu],w); 
+      w = w - ip * evec[j*Nu];
+    }
+    normalize(w);
+  }
 
 /* Rudy Arthur's thesis pp.137
 ------------------------
@@ -438,7 +450,8 @@ private:
     
     if (b>0) {
       for (int u=0; u<Nu; ++u) {
-        for (int k=L-Nu; k<L; ++k) {
+        //for (int k=L-Nu; k<L; ++k) {
+        for (int k=L-Nu+u; k<L; ++k) {
           w[u] = w[u] - evec[k] * conjugate(lme[u][k]);
           //clog << "ckpt A (k= " << k+1 << ")" << '\n';
           //clog << "lme = " << lme[u][k] << '\n';
@@ -449,14 +462,25 @@ private:
     }
     
     // 4. αk:=(vk,wk)
+    //for (int u=0; u<Nu; ++u) {
+    //  for (int k=L; k<R; ++k) {
+    //    lmd[u][k] = innerProduct(evec[k],w[u]);  // lmd = transpose of alpha
+    //  }
+    //  lmd[u][L+u] = real(lmd[u][L+u]);  // force diagonal to be real
+    //}
     for (int u=0; u<Nu; ++u) {
-      for (int k=L; k<R; ++k) {
+      for (int k=L+u; k<R; ++k) {
         lmd[u][k] = innerProduct(evec[k],w[u]);  // lmd = transpose of alpha
+        lmd[k-L][u+L] = conjugate(lmd[u][k]);     // force hermicity
       }
       lmd[u][L+u] = real(lmd[u][L+u]);  // force diagonal to be real
-      //clog << "ckpt B (k= " << L+u << ")" << '\n';
-      //clog << "lmd = " << lmd[u][L+u] << std::endl;
     }
+    //for (int u=0; u<Nu; ++u) {
+    //  for (int k=L; k<L+u+1; ++k) {
+    //    clog << "ckpt B: alphaT[" << u+L << "," << k << "] = " << lmd[u][k] 
+    //         << ", alphaT - conj(alphaT) = " << lmd[u][k] - conjugate(lmd[k-L][u+L]) << std::endl;
+    //  }
+    //}
     
     // 5. wk:=wk−αkvk
     for (int u=0; u<Nu; ++u) {
@@ -469,7 +493,7 @@ private:
     // In block version, the steps 6 and 7 in Lanczos construction is
     // replaced by the QR decomposition of new basis block.
     // It results block version beta and orthonormal block basis. 
-    // Here, QR decomposition is done by using Gram-Schmidt
+    // Here, QR decomposition is done by using Gram-Schmidt.
     for (int u=0; u<Nu; ++u) {
       for (int k=L; k<R; ++k) {
         lme[u][k] = 0.0;
@@ -483,23 +507,14 @@ private:
     }
     
     for (int u=0; u<Nu; ++u) {
-      for (int v=0; v<Nu; ++v) {
+      //for (int v=0; v<Nu; ++v) {
+      for (int v=u; v<Nu; ++v) {
         lme[u][L+v] = innerProduct(w[u],w_copy[v]);
       }
+      lme[u][L+u] = real(lme[u][L+u]);  // force diagonal to be real
     }
-    lme[0][L] = beta;
+    //lme[0][L] = beta;
     
-#if 0
-    for (int u=0; u<Nu; ++u) {
-      for (int k=L+u; k<R; ++k) {
-        if (lme[u][k] < tiny) {
-          clog <<" In block "<< b << ","; 
-          std::cout <<" beta[" << u << "," << k-L << "] = ";
-          std::cout << lme[u][k] << std::endl;
-        }
-      }
-    }
-#else
     for (int u=0; u<Nu; ++u) {
       clog << "norm2(w[" << u << "])= "<< norm2(w[u]) << std::endl;
       for (int k=L+u; k<R; ++k) {
@@ -508,14 +523,22 @@ private:
         std::cout << lme[u][k] << std::endl;
       }
     }
-#endif
     
     // re-orthogonalization for numerical stability
     if (b>0) {
       for (int u=0; u<Nu; ++u) {
         orthogonalize(w[u],evec,R);
       }
+      for (int u=1; u<Nu; ++u) {
+        orthogonalize(w[u],w,u);
+      }
     }
+    //if (b>0) {
+    //  orthogonalize_blockhead(w[0],evec,b,Nu);
+    //  for (int u=1; u<Nu; ++u) {
+    //    orthogonalize(w[u],w,u);
+    //  }
+    //}
 
     if (b < Nm/Nu-1) {
       for (int u=0; u<Nu; ++u) {
