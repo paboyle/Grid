@@ -66,7 +66,8 @@ void TLoad::setup(void)
 void TLoad::execute(void)
 {
     FieldMetaData  header;
-    std::string fileName = par().file + "."
+
+    std::string fileName = par().file + "ckpoint_lat."
                            + std::to_string(env().getTrajectory());
     
     LOG(Message) << "Loading NERSC configuration from file '" << fileName
