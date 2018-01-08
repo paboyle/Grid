@@ -220,11 +220,11 @@ void Grid_init(int *argc,char ***argv)
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--shm");
     GridCmdOptionInt(arg,MB);
     uint64_t MB64 = MB;
-    CartesianCommunicator::MAX_MPI_SHM_BYTES = MB64*1024LL*1024LL;
+    GlobalSharedMemory::MAX_MPI_SHM_BYTES = MB64*1024LL*1024LL;
   }
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--shm-hugepages") ){
-    CartesianCommunicator::Hugepages = 1;
+    GlobalSharedMemory::Hugepages = 1;
   }
 
 
@@ -392,8 +392,8 @@ void Grid_init(int *argc,char ***argv)
 		  Grid_default_latt,
 		  Grid_default_mpi);
 
-  std::cout << GridLogMessage << "Requesting "<< CartesianCommunicator::MAX_MPI_SHM_BYTES <<" byte stencil comms buffers "<<std::endl;
-  if ( CartesianCommunicator::Hugepages) {
+  std::cout << GridLogMessage << "Requesting "<< GlobalSharedMemory::MAX_MPI_SHM_BYTES <<" byte stencil comms buffers "<<std::endl;
+  if ( GlobalSharedMemory::Hugepages) {
     std::cout << GridLogMessage << "Mapped stencil comms buffers as MAP_HUGETLB "<<std::endl;
   }
 
