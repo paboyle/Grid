@@ -72,14 +72,17 @@ int main (int argc, char ** argv)
   int nrhs = 1;
   int me;
   for(int i=0;i<mpi_layout.size();i++) nrhs *= (mpi_layout[i]/mpi_split[i]);
-
+  std::cout << GridLogMessage << "Creating split grids " <<std::endl;
   GridCartesian         * SGrid = new GridCartesian(GridDefaultLatt(),
 						    GridDefaultSimd(Nd,vComplex::Nsimd()),
 						    mpi_split,
 						    *UGrid,me); 
+  std::cout << GridLogMessage <<"Creating split ferm grids " <<std::endl;
 
   GridCartesian         * SFGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,SGrid);
+  std::cout << GridLogMessage <<"Creating split rb grids " <<std::endl;
   GridRedBlackCartesian * SrbGrid  = SpaceTimeGrid::makeFourDimRedBlackGrid(SGrid);
+  std::cout << GridLogMessage <<"Creating split ferm rb grids " <<std::endl;
   GridRedBlackCartesian * SFrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,SGrid);
   std::cout << GridLogMessage << "Made the grids"<<std::endl;
   ///////////////////////////////////////////////
@@ -119,7 +122,7 @@ int main (int argc, char ** argv)
   GridParallelRNG pRNG5(FGrid);  pRNG5.SeedFixedIntegers(seeds);
   for(int s=0;s<nrhs;s++) {
     random(pRNG5,src[s]);
-    tmp = 100.0*s;
+    tmp = 10.0*s;
     src[s] = (src[s] * 0.1) + tmp;
     std::cout << GridLogMessage << " src ["<<s<<"] "<<norm2(src[s])<<std::endl;
   }
@@ -133,7 +136,7 @@ int main (int argc, char ** argv)
     pRNG.SeedFixedIntegers(seeds);
     std::cout << GridLogMessage << "Intialised 4D RNG "<<std::endl;
     SU3::HotConfiguration(pRNG,Umu);
-    std::cout << "Intialised the HOT Gauge Field"<<std::endl;
+    std::cout << GridLogMessage << "Intialised the HOT Gauge Field"<<std::endl;
     //    std::cout << " Site zero "<< Umu._odata[0]   <<std::endl;
   } else { 
     SU3::ColdConfiguration(Umu);
