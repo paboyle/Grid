@@ -106,7 +106,7 @@ int main (int argc, char ** argv)
       for(int i=0;i<Nloop;i++){
       double start=usecond();
 
-	std::vector<CartesianCommunicator::CommsRequest_t> requests;
+	std::vector<CommsRequest_t> requests;
 
 	ncomm=0;
 	for(int mu=0;mu<4;mu++){
@@ -202,7 +202,7 @@ int main (int argc, char ** argv)
 	    int recv_from_rank;
 	    
 	    {
-	      std::vector<CartesianCommunicator::CommsRequest_t> requests;
+	      std::vector<CommsRequest_t> requests;
 	      Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
 	      Grid.SendToRecvFromBegin(requests,
 				       (void *)&xbuf[mu][0],
@@ -215,7 +215,7 @@ int main (int argc, char ** argv)
 
 	    comm_proc = mpi_layout[mu]-1;
 	    {
-	      std::vector<CartesianCommunicator::CommsRequest_t> requests;
+	      std::vector<CommsRequest_t> requests;
 	      Grid.ShiftedRanks(mu,comm_proc,xmit_to_rank,recv_from_rank);
 	      Grid.SendToRecvFromBegin(requests,
 				       (void *)&xbuf[mu+4][0],
@@ -290,7 +290,7 @@ int main (int argc, char ** argv)
 	dbytes=0;
 	ncomm=0;
 
-	std::vector<CartesianCommunicator::CommsRequest_t> requests;
+	std::vector<CommsRequest_t> requests;
 
 	for(int mu=0;mu<4;mu++){
 	
@@ -383,7 +383,7 @@ int main (int argc, char ** argv)
       for(int i=0;i<Nloop;i++){
 	double start=usecond();
 
-	std::vector<CartesianCommunicator::CommsRequest_t> requests;
+	std::vector<CommsRequest_t> requests;
 	dbytes=0;
 	ncomm=0;
 	for(int mu=0;mu<4;mu++){
@@ -481,7 +481,7 @@ int main (int argc, char ** argv)
       for(int i=0;i<Nloop;i++){
 	double start=usecond();
 
-	std::vector<CartesianCommunicator::CommsRequest_t> requests;
+	std::vector<CommsRequest_t> requests;
 	dbytes=0;
 	ncomm=0;
 
