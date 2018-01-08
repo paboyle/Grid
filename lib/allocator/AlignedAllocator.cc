@@ -3,9 +3,12 @@
 
 namespace Grid {
 
+MemoryStats *MemoryProfiler::stats = nullptr;
+bool         MemoryProfiler::debug = false;
+
 int PointerCache::victim;
 
-  PointerCache::PointerCacheEntry PointerCache::Entries[PointerCache::Ncache];
+PointerCache::PointerCacheEntry PointerCache::Entries[PointerCache::Ncache];
 
 void *PointerCache::Insert(void *ptr,size_t bytes) {
 
@@ -92,6 +95,31 @@ void check_huge_pages(void *Buf,uint64_t BYTES)
   int rank = CartesianCommunicator::RankWorld();
   printf("rank %d Allocated %d 4k pages, %d not in huge pages\n", rank, n4ktotal, nnothuge);
 #endif
+}
+
+std::string sizeString(const size_t bytes)
+{
+  constexpr unsigned int bufSize = 256;
+  const char             *suffixes[7] = {"", "K", "M", "G", "T", "P", "E"};
+  char                   buf[256];
+  size_t                 s     = 0;
+  double                 count = bytes;
+  
+  while (count >= 1024 && s < 7)
+  {
+      s++;
+      count /= 1024;
+  }
+  if (count - floor(count) == 0.0)
+  {
+      snprintf(buf, bufSize, "%d %sB", (int)count, suffixes[s]);
+  }
+  else
+  {
+      snprintf(buf, bufSize, "%.1f %sB", count, suffixes[s]);
+  }
+  
+  return std::string(buf);
 }
 
 }

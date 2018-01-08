@@ -31,7 +31,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #define Hadrons_Module_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
-#include <Grid/Hadrons/Environment.hpp>
+#include <Grid/Hadrons/VirtualMachine.hpp>
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -87,6 +87,56 @@ public:\
 static ns##mod##ModuleRegistrar ns##mod##ModuleRegistrarInstance;
 
 #define ARG(...) __VA_ARGS__
+#define MACRO_REDIRECT(arg1, arg2, arg3, macro, ...) macro
+
+#define envGet(type, name)\
+*env().template getObject<type>(name)
+
+#define envGetTmp(type, var)\
+type &var = *env().template getObject<type>(getName() + "_tmp_" + #var)
+
+#define envHasType(type, name)\
+env().template isObjectOfType<type>(name)
+
+#define envCreate(type, name, Ls, ...)\
+env().template createObject<type>(name, Environment::Storage::object, Ls, __VA_ARGS__)
+
+#define envCreateDerived(base, type, name, Ls, ...)\
+env().template createDerivedObject<base, type>(name, Environment::Storage::object, Ls, __VA_ARGS__)
+
+#define envCreateLat4(type, name)\
+envCreate(type, name, 1, env().getGrid())
+
+#define envCreateLat5(type, name, Ls)\
+envCreate(type, name, Ls, env().getGrid(Ls))
+
+#define envCreateLat(...)\
+MACRO_REDIRECT(__VA_ARGS__, envCreateLat5, envCreateLat4)(__VA_ARGS__)
+
+#define envCache(type, name, Ls, ...)\
+env().template createObject<type>(name, Environment::Storage::cache, Ls, __VA_ARGS__)
+
+#define envCacheLat4(type, name)\
+envCache(type, name, 1, env().getGrid())
+
+#define envCacheLat5(type, name, Ls)\
+envCache(type, name, Ls, env().getGrid(Ls))
+
+#define envCacheLat(...)\
+MACRO_REDIRECT(__VA_ARGS__, envCacheLat5, envCacheLat4)(__VA_ARGS__)
+
+#define envTmp(type, name, Ls, ...)\
+env().template createObject<type>(getName() + "_tmp_" + name,         \
+                                  Environment::Storage::temporary, Ls, __VA_ARGS__)
+
+#define envTmpLat4(type, name)\
+envTmp(type, name, 1, env().getGrid())
+
+#define envTmpLat5(type, name, Ls)\
+envTmp(type, name, Ls, env().getGrid(Ls))
+
+#define envTmpLat(...)\
+MACRO_REDIRECT(__VA_ARGS__, envTmpLat5, envTmpLat4)(__VA_ARGS__)
 
 /******************************************************************************
  *                            Module class                                    *
@@ -101,23 +151,30 @@ public:
     virtual ~ModuleBase(void) = default;
     // access
     std::string getName(void) const;
-    Environment &env(void) const;
     // get factory registration name if available
     virtual std::string getRegisteredName(void);
     // dependencies/products
     virtual std::vector<std::string> getInput(void) = 0;
+    virtual std::vector<std::string> getReference(void)
+    {
+        return std::vector<std::string>(0);
+    };
     virtual std::vector<std::string> getOutput(void) = 0;
     // parse parameters
     virtual void parseParameters(XmlReader &reader, const std::string name) = 0;
     virtual void saveParameters(XmlWriter &writer, const std::string name) = 0;
     // setup
     virtual void setup(void) {};
+    virtual void execute(void) = 0;
     // execution
     void operator()(void);
-    virtual void execute(void) = 0;
+protected:
+    // environment shortcut
+    DEFINE_ENV_ALIAS;
+    // virtual machine shortcut
+    DEFINE_VM_ALIAS;
 private:
     std::string name_;
-    Environment &env_;
 };
 
 // derived class, templating the parameter class

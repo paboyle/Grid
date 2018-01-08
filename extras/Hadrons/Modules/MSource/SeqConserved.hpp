@@ -2,12 +2,11 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MSource/Z2.hpp
+Source file: extras/Hadrons/Modules/MContraction/SeqConserved.hpp
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2017
 
-Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Andrew Lawson    <andrew.lawson1991@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -27,8 +26,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_MSource_Z2_hpp_
-#define Hadrons_MSource_Z2_hpp_
+#ifndef Hadrons_MSource_SeqConserved_hpp_
+#define Hadrons_MSource_SeqConserved_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -38,41 +37,49 @@ BEGIN_HADRONS_NAMESPACE
 
 /*
  
- Z_2 stochastic source
+ Sequential source
  -----------------------------
- * src_x = eta_x * theta(x_3 - tA) * theta(tB - x_3)
- 
- the eta_x are independent uniform random numbers in {+/- 1 +/- i}
+ * src_x = q_x * theta(x_3 - tA) * theta(tB - x_3) * J_mu * exp(i x.mom)
  
  * options:
+ - q: input propagator (string)
+ - action: fermion action used for propagator q (string)
  - tA: begin timeslice (integer)
  - tB: end timesilce (integer)
+ - curr_type: type of conserved current to insert (Current)
+ - mu: Lorentz index of current to insert (integer)
+ - mom: momentum insertion, space-separated float sequence (e.g ".1 .2 1. 0.")
  
  */
- 
+
 /******************************************************************************
- *                          Z2 stochastic source                              *
+ *                              SeqConserved                                  *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MSource)
 
-class Z2Par: Serializable
+class SeqConservedPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(Z2Par,
+    GRID_SERIALIZABLE_CLASS_MEMBERS(SeqConservedPar,
+                                    std::string,  q,
+                                    std::string,  action,
                                     unsigned int, tA,
-                                    unsigned int, tB);
+                                    unsigned int, tB,
+                                    Current,      curr_type,
+                                    unsigned int, mu,
+                                    std::string,  mom);
 };
 
 template <typename FImpl>
-class TZ2: public Module<Z2Par>
+class TSeqConserved: public Module<SeqConservedPar>
 {
 public:
     FERM_TYPE_ALIASES(FImpl,);
 public:
     // constructor
-    TZ2(const std::string name);
+    TSeqConserved(const std::string name);
     // destructor
-    virtual ~TZ2(void) = default;
+    virtual ~TSeqConserved(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -81,35 +88,30 @@ protected:
     virtual void setup(void);
     // execution
     virtual void execute(void);
-private:
-    bool        hasT_{false};
-    std::string tName_;
 };
 
-MODULE_REGISTER_NS(Z2,       TZ2<FIMPL>,        MSource);
-MODULE_REGISTER_NS(ScalarZ2, TZ2<ScalarImplCR>, MSource);
+MODULE_REGISTER_NS(SeqConserved, TSeqConserved<FIMPL>, MSource);
 
 /******************************************************************************
- *                       TZ2 template implementation                          *
+ *                      TSeqConserved implementation                          *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TZ2<FImpl>::TZ2(const std::string name)
-: Module<Z2Par>(name)
-, tName_ (name + "_t")
+TSeqConserved<FImpl>::TSeqConserved(const std::string name)
+: Module<SeqConservedPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
-std::vector<std::string> TZ2<FImpl>::getInput(void)
+std::vector<std::string> TSeqConserved<FImpl>::getInput(void)
 {
-    std::vector<std::string> in;
+    std::vector<std::string> in = {par().q, par().action};
     
     return in;
 }
 
 template <typename FImpl>
-std::vector<std::string> TZ2<FImpl>::getOutput(void)
+std::vector<std::string> TSeqConserved<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -118,47 +120,40 @@ std::vector<std::string> TZ2<FImpl>::getOutput(void)
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TZ2<FImpl>::setup(void)
+void TSeqConserved<FImpl>::setup(void)
 {
-    envCreateLat(PropagatorField, getName());
-    envCacheLat(Lattice<iScalar<vInteger>>, tName_);
-    envTmpLat(LatticeComplex, "eta");
+    auto Ls_ = env().getObjectLs(par().action);
+    envCreateLat(PropagatorField, getName(), Ls_);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TZ2<FImpl>::execute(void)
+void TSeqConserved<FImpl>::execute(void)
 {
     if (par().tA == par().tB)
     {
-        LOG(Message) << "Generating Z_2 wall source at t= " << par().tA
-                     << std::endl;
+        LOG(Message) << "Generating sequential source with conserved "
+                     << par().curr_type << " current insertion (mu = " 
+                     << par().mu << ") at " << "t = " << par().tA << std::endl;
     }
     else
     {
-        LOG(Message) << "Generating Z_2 band for " << par().tA << " <= t <= "
+        LOG(Message) << "Generating sequential source with conserved "
+                     << par().curr_type << " current insertion (mu = " 
+                     << par().mu << ") for " << par().tA << " <= t <= " 
                      << par().tB << std::endl;
     }
-    
-    auto    &src = envGet(PropagatorField, getName());
-    auto    &t   = envGet(Lattice<iScalar<vInteger>>, tName_);
-    Complex shift(1., 1.);
+    auto &src = envGet(PropagatorField, getName());
+    auto &q   = envGet(PropagatorField, par().q);
+    auto &mat = envGet(FMat, par().action);
 
-    if (!hasT_)
-    {
-        LatticeCoordinate(t, Tp);
-        hasT_ = true;
-    }
-    envGetTmp(LatticeComplex, eta);
-    bernoulli(*env().get4dRng(), eta);
-    eta = (2.*eta - shift)*(1./::sqrt(2.));
-    eta = where((t >= par().tA) and (t <= par().tB), eta, 0.*eta);
-    src = 1.;
-    src = src*eta;
+    std::vector<Real> mom = strToVec<Real>(par().mom);
+    mat.SeqConservedCurrent(q, src, par().curr_type, par().mu, 
+                            mom, par().tA, par().tB);
 }
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MSource_Z2_hpp_
+#endif // Hadrons_SeqConserved_hpp_

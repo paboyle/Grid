@@ -204,7 +204,7 @@ std::string GridCmdVectorIntToString(const std::vector<int> & vec){
 // Reinit guard
 /////////////////////////////////////////////////////////
 static int Grid_is_initialised = 0;
-
+static MemoryStats dbgMemStats;
 
 void Grid_init(int *argc,char ***argv)
 {
@@ -249,6 +249,11 @@ void Grid_init(int *argc,char ***argv)
     ename<<CartesianCommunicator::RankWorld();
     fp=freopen(ename.str().c_str(),"w",stderr);
     assert(fp!=(FILE *)NULL);
+  }
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-mem") ){
+    MemoryProfiler::debug = true;
+    MemoryProfiler::stats = &dbgMemStats;
   }
 
   ////////////////////////////////////
@@ -324,6 +329,7 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"  --decomposition : report on default omp,mpi and simd decomposition"<<std::endl;    
     std::cout<<GridLogMessage<<"  --debug-signals : catch sigsegv and print a blame report"<<std::endl;
     std::cout<<GridLogMessage<<"  --debug-stdout  : print stdout from EVERY node"<<std::endl;
+    std::cout<<GridLogMessage<<"  --debug-mem     : print Grid allocator activity"<<std::endl;
     std::cout<<GridLogMessage<<"  --notimestamp   : suppress millisecond resolution stamps"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Performance:"<<std::endl;

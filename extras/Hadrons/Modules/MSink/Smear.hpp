@@ -2,12 +2,11 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MSource/Point.hpp
+Source file: extras/Hadrons/Modules/MSink/Smear.hpp
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2017
 
-Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Andrew Lawson <andrew.lawson1991@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -27,8 +26,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_MSource_Point_hpp_
-#define Hadrons_MSource_Point_hpp_
+#ifndef Hadrons_MSink_Smear_hpp_
+#define Hadrons_MSink_Smear_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -36,39 +35,30 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 BEGIN_HADRONS_NAMESPACE
 
-/*
- 
- Point source
- ------------
- * src_x = delta_x,position
- 
- * options:
- - position: space-separated integer sequence (e.g. "0 1 1 0")
- 
- */
-
 /******************************************************************************
- *                                  TPoint                                     *
+ *                                 Smear                                      *
  ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MSource)
+BEGIN_MODULE_NAMESPACE(MSink)
 
-class PointPar: Serializable
+class SmearPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(PointPar,
-                                    std::string, position);
+    GRID_SERIALIZABLE_CLASS_MEMBERS(SmearPar,
+                                    std::string, q,
+                                    std::string, sink);
 };
 
 template <typename FImpl>
-class TPoint: public Module<PointPar>
+class TSmear: public Module<SmearPar>
 {
 public:
     FERM_TYPE_ALIASES(FImpl,);
+    SINK_TYPE_ALIASES();
 public:
     // constructor
-    TPoint(const std::string name);
+    TSmear(const std::string name);
     // destructor
-    virtual ~TPoint(void) = default;
+    virtual ~TSmear(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -79,29 +69,28 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(Point,       TPoint<FIMPL>,        MSource);
-MODULE_REGISTER_NS(ScalarPoint, TPoint<ScalarImplCR>, MSource);
+MODULE_REGISTER_NS(Smear, TSmear<FIMPL>, MSink);
 
 /******************************************************************************
- *                       TPoint template implementation                       *
+ *                          TSmear implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TPoint<FImpl>::TPoint(const std::string name)
-: Module<PointPar>(name)
+TSmear<FImpl>::TSmear(const std::string name)
+: Module<SmearPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
-std::vector<std::string> TPoint<FImpl>::getInput(void)
+std::vector<std::string> TSmear<FImpl>::getInput(void)
 {
-    std::vector<std::string> in;
+    std::vector<std::string> in = {par().q, par().sink};
     
     return in;
 }
 
 template <typename FImpl>
-std::vector<std::string> TPoint<FImpl>::getOutput(void)
+std::vector<std::string> TSmear<FImpl>::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -110,29 +99,28 @@ std::vector<std::string> TPoint<FImpl>::getOutput(void)
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TPoint<FImpl>::setup(void)
+void TSmear<FImpl>::setup(void)
 {
-    envCreateLat(PropagatorField, getName());
+    envCreate(SlicedPropagator, getName(), 1, env().getDim(Tp));
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TPoint<FImpl>::execute(void)
+void TSmear<FImpl>::execute(void)
 {
-    LOG(Message) << "Creating point source at position [" << par().position
-                << "]" << std::endl;
+    LOG(Message) << "Sink smearing propagator '" << par().q
+                 << "' using sink function '" << par().sink << "'."
+                 << std::endl;
 
-    std::vector<int> position = strToVec<int>(par().position);
-    auto             &src     = envGet(PropagatorField, getName());
-    SitePropagator   id;
+    auto &sink = envGet(SinkFn, par().sink);
+    auto &q    = envGet(PropagatorField, par().q);
+    auto &out  = envGet(SlicedPropagator, getName());
     
-    id  = 1.;
-    src = zero;
-    pokeSite(id, src, position);
+    out = sink(q);
 }
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MSource_Point_hpp_
+#endif // Hadrons_MSink_Smear_hpp_

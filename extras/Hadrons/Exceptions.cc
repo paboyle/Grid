@@ -2,10 +2,9 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Global.cc
+Source file: extras/Hadrons/Exceptions.cc
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2017
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -27,29 +26,32 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#include <Grid/Hadrons/Global.hpp>
+#include <Grid/Hadrons/Exceptions.hpp>
+
+#ifndef ERR_SUFF
+#define ERR_SUFF " (" + loc + ")"
+#endif
+
+#define CONST_EXC(name, init) \
+name::name(std::string msg, std::string loc)\
+:init\
+{}
 
 using namespace Grid;
-using namespace QCD;
 using namespace Hadrons;
+using namespace Exceptions;
 
-HadronsLogger Hadrons::HadronsLogError(1,"Error");
-HadronsLogger Hadrons::HadronsLogWarning(1,"Warning");
-HadronsLogger Hadrons::HadronsLogMessage(1,"Message");
-HadronsLogger Hadrons::HadronsLogIterative(1,"Iterative");
-HadronsLogger Hadrons::HadronsLogDebug(1,"Debug");
-
-// type utilities //////////////////////////////////////////////////////////////
-constexpr unsigned int maxNameSize = 1024u;
-
-std::string Hadrons::typeName(const std::type_info *info)
-{
-    char        *buf;
-    std::string name;
-    
-    buf  = abi::__cxa_demangle(info->name(), nullptr, nullptr, nullptr);
-    name = buf;
-    free(buf);
-    
-    return name;
-}
+// logic errors
+CONST_EXC(Logic, logic_error(msg + ERR_SUFF))
+CONST_EXC(Definition, Logic("definition error: " + msg, loc))
+CONST_EXC(Implementation, Logic("implementation error: " + msg, loc))
+CONST_EXC(Range, Logic("range error: " + msg, loc))
+CONST_EXC(Size, Logic("size error: " + msg, loc))
+// runtime errors
+CONST_EXC(Runtime, runtime_error(msg + ERR_SUFF))
+CONST_EXC(Argument, Runtime("argument error: " + msg, loc))
+CONST_EXC(Io, Runtime("IO error: " + msg, loc))
+CONST_EXC(Memory, Runtime("memory error: " + msg, loc))
+CONST_EXC(Parsing, Runtime("parsing error: " + msg, loc))
+CONST_EXC(Program, Runtime("program error: " + msg, loc))
+CONST_EXC(System, Runtime("system error: " + msg, loc))

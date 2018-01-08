@@ -38,13 +38,13 @@ BEGIN_HADRONS_NAMESPACE
 /******************************************************************************
  *                   Scheduler based on a genetic algorithm                   *
  ******************************************************************************/
-template <typename T>
+template <typename V, typename T>
 class GeneticScheduler
 {
 public:
-    typedef std::vector<T>                   Gene;
-    typedef std::pair<Gene *, Gene *>        GenePair;
-    typedef std::function<int(const Gene &)> ObjFunc;
+    typedef std::vector<T>                 Gene;
+    typedef std::pair<Gene *, Gene *>      GenePair;
+    typedef std::function<V(const Gene &)> ObjFunc;
     struct Parameters
     {
         double       mutationRate;
@@ -65,7 +65,7 @@ public:
     void benchmarkCrossover(const unsigned int nIt);
     // print population
     friend std::ostream & operator<<(std::ostream &out,
-                                     const GeneticScheduler<T> &s)
+                                     const GeneticScheduler<V, T> &s)
     {
         out << "[";
         for (auto &p: s.population_)
@@ -87,19 +87,19 @@ private:
     void     mutation(Gene &m, const Gene &c);
     
 private:
-    Graph<T>                 &graph_;
-    const ObjFunc            &func_;
-    const Parameters         par_;
-    std::multimap<int, Gene> population_;
-    std::mt19937             gen_;
+    Graph<T>               &graph_;
+    const ObjFunc          &func_;
+    const Parameters       par_;
+    std::multimap<V, Gene> population_;
+    std::mt19937           gen_;
 };
 
 /******************************************************************************
  *                       template implementation                              *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-template <typename T>
-GeneticScheduler<T>::GeneticScheduler(Graph<T> &graph, const ObjFunc &func,
+template <typename V, typename T>
+GeneticScheduler<V, T>::GeneticScheduler(Graph<T> &graph, const ObjFunc &func,
                                       const Parameters &par)
 : graph_(graph)
 , func_(func)
@@ -109,22 +109,22 @@ GeneticScheduler<T>::GeneticScheduler(Graph<T> &graph, const ObjFunc &func,
 }
 
 // access //////////////////////////////////////////////////////////////////////
-template <typename T>
-const typename GeneticScheduler<T>::Gene &
-GeneticScheduler<T>::getMinSchedule(void)
+template <typename V, typename T>
+const typename GeneticScheduler<V, T>::Gene &
+GeneticScheduler<V, T>::getMinSchedule(void)
 {
     return population_.begin()->second;
 }
 
-template <typename T>
-int GeneticScheduler<T>::getMinValue(void)
+template <typename V, typename T>
+int GeneticScheduler<V, T>::getMinValue(void)
 {
     return population_.begin()->first;
 }
 
 // breed a new generation //////////////////////////////////////////////////////
-template <typename T>
-void GeneticScheduler<T>::nextGeneration(void)
+template <typename V, typename T>
+void GeneticScheduler<V, T>::nextGeneration(void)
 {
     // random initialization of the population if necessary
     if (population_.size() != par_.popSize)
@@ -158,8 +158,8 @@ void GeneticScheduler<T>::nextGeneration(void)
 }
 
 // evolution steps /////////////////////////////////////////////////////////////
-template <typename T>
-void GeneticScheduler<T>::initPopulation(void)
+template <typename V, typename T>
+void GeneticScheduler<V, T>::initPopulation(void)
 {
     population_.clear();
     for (unsigned int i = 0; i < par_.popSize; ++i)
@@ -170,8 +170,8 @@ void GeneticScheduler<T>::initPopulation(void)
     }
 }
 
-template <typename T>
-void GeneticScheduler<T>::doCrossover(void)
+template <typename V, typename T>
+void GeneticScheduler<V, T>::doCrossover(void)
 {
     auto p = selectPair();
     Gene &p1 = *(p.first), &p2 = *(p.second);
@@ -185,8 +185,8 @@ void GeneticScheduler<T>::doCrossover(void)
     }
 }
 
-template <typename T>
-void GeneticScheduler<T>::doMutation(void)
+template <typename V, typename T>
+void GeneticScheduler<V, T>::doMutation(void)
 {
     std::uniform_real_distribution<double>      mdis(0., 1.);
     std::uniform_int_distribution<unsigned int> pdis(0, population_.size() - 1);
@@ -206,40 +206,35 @@ void GeneticScheduler<T>::doMutation(void)
 }
 
 // genetic operators ///////////////////////////////////////////////////////////
-template <typename T>
-typename GeneticScheduler<T>::GenePair GeneticScheduler<T>::selectPair(void)
+template <typename V, typename T>
+typename GeneticScheduler<V, T>::GenePair GeneticScheduler<V, T>::selectPair(void)
 {
     std::vector<double> prob;
     unsigned int        ind;
     Gene                *p1, *p2;
+    const double        max = population_.rbegin()->first;
     
+
     for (auto &c: population_)
     {
-        prob.push_back(1./c.first);
-    }
-    do
-    {
-        double probCpy;
-        
-        std::discrete_distribution<unsigned int> dis1(prob.begin(), prob.end());
-        auto rIt = population_.begin();
-        ind = dis1(gen_);
-        std::advance(rIt, ind);
-        p1 = &(rIt->second);
-        probCpy   = prob[ind];
-        prob[ind] = 0.;
-        std::discrete_distribution<unsigned int> dis2(prob.begin(), prob.end());
-        rIt = population_.begin();
-        std::advance(rIt, dis2(gen_));
-        p2 = &(rIt->second);
-        prob[ind] = probCpy;
-    } while (p1 == p2);
+        prob.push_back(std::exp((c.first-1.)/max));
+    }        
+    std::discrete_distribution<unsigned int> dis1(prob.begin(), prob.end());
+    auto rIt = population_.begin();
+    ind = dis1(gen_);
+    std::advance(rIt, ind);
+    p1 = &(rIt->second);
+    prob[ind] = 0.;
+    std::discrete_distribution<unsigned int> dis2(prob.begin(), prob.end());
+    rIt = population_.begin();
+    std::advance(rIt, dis2(gen_));
+    p2 = &(rIt->second);
     
     return std::make_pair(p1, p2);
 }
 
-template <typename T>
-void GeneticScheduler<T>::crossover(Gene &c1, Gene &c2, const Gene &p1,
+template <typename V, typename T>
+void GeneticScheduler<V, T>::crossover(Gene &c1, Gene &c2, const Gene &p1,
                                     const Gene &p2)
 {
     Gene                                        buf;
@@ -273,8 +268,8 @@ void GeneticScheduler<T>::crossover(Gene &c1, Gene &c2, const Gene &p1,
     }
 }
 
-template <typename T>
-void GeneticScheduler<T>::mutation(Gene &m, const Gene &c)
+template <typename V, typename T>
+void GeneticScheduler<V, T>::mutation(Gene &m, const Gene &c)
 {
     Gene                                        buf;
     std::uniform_int_distribution<unsigned int> dis(0, c.size() - 1);
@@ -303,8 +298,8 @@ void GeneticScheduler<T>::mutation(Gene &m, const Gene &c)
     }
 }
 
-template <typename T>
-void GeneticScheduler<T>::benchmarkCrossover(const unsigned int nIt)
+template <typename V, typename T>
+void GeneticScheduler<V, T>::benchmarkCrossover(const unsigned int nIt)
 {
     Gene   p1, p2, c1, c2;
     double neg = 0., eq = 0., pos = 0., total;

@@ -33,38 +33,31 @@ void TFreeProp::setup(void)
 {
     freeMomPropName_ = FREEMOMPROP(par().mass);
     
-    if (!env().hasRegisteredObject(freeMomPropName_))
-    {
-        env().registerLattice<ScalarField>(freeMomPropName_);
-    }
-    env().registerLattice<ScalarField>(getName());
+    freePropDone_ = env().hasCreatedObject(freeMomPropName_);
+    envCacheLat(ScalarField, freeMomPropName_);
+    envCreateLat(ScalarField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 void TFreeProp::execute(void)
 {
-    ScalarField &prop   = *env().createLattice<ScalarField>(getName());
-    ScalarField &source = *env().getObject<ScalarField>(par().source);
-    ScalarField *freeMomProp;
+    auto &freeMomProp = envGet(ScalarField, freeMomPropName_);
+    auto &prop        = envGet(ScalarField, getName());
+    auto &source      = envGet(ScalarField, par().source);
 
-    if (!env().hasCreatedObject(freeMomPropName_))
+    if (!freePropDone_)
     {
         LOG(Message) << "Caching momentum space free scalar propagator"
                      << " (mass= " << par().mass << ")..." << std::endl;
-        freeMomProp = env().createLattice<ScalarField>(freeMomPropName_);
-        SIMPL::MomentumSpacePropagator(*freeMomProp, par().mass);
-    }
-    else
-    {
-        freeMomProp = env().getObject<ScalarField>(freeMomPropName_);
+        SIMPL::MomentumSpacePropagator(freeMomProp, par().mass);
     }
     LOG(Message) << "Computing free scalar propagator..." << std::endl;
-    SIMPL::FreePropagator(source, prop, *freeMomProp);
+    SIMPL::FreePropagator(source, prop, freeMomProp);
     
     if (!par().output.empty())
     {
         TextWriter            writer(par().output + "." +
-                                     std::to_string(env().getTrajectory()));
+                                     std::to_string(vm().getTrajectory()));
         std::vector<TComplex> buf;
         std::vector<Complex>  result;
         

@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MContraction/DiscLoop.hpp
+Source file: extras/Hadrons/Modules/MUtilities/TestSeqGamma.hpp
 
 Copyright (C) 2017
 
@@ -26,8 +26,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_MContraction_DiscLoop_hpp_
-#define Hadrons_MContraction_DiscLoop_hpp_
+#ifndef Hadrons_MUtilities_TestSeqGamma_hpp_
+#define Hadrons_MUtilities_TestSeqGamma_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -36,35 +36,31 @@ See the full license in the file "LICENSE" in the top level distribution directo
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                                DiscLoop                                    *
+ *                              TestSeqGamma                                  *
  ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MContraction)
+BEGIN_MODULE_NAMESPACE(MUtilities)
 
-class DiscLoopPar: Serializable
+class TestSeqGammaPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(DiscLoopPar,
-                                    std::string,    q_loop,
+    GRID_SERIALIZABLE_CLASS_MEMBERS(TestSeqGammaPar,
+                                    std::string,    q,
+                                    std::string,    qSeq,
+                                    std::string,    origin,
                                     Gamma::Algebra, gamma,
-                                    std::string,    output);
+                                    unsigned int,   t_g);
 };
 
 template <typename FImpl>
-class TDiscLoop: public Module<DiscLoopPar>
+class TTestSeqGamma: public Module<TestSeqGammaPar>
 {
+public:
     FERM_TYPE_ALIASES(FImpl,);
-    class Result: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
-                                        Gamma::Algebra, gamma,
-                                        std::vector<Complex>, corr);
-    };
 public:
     // constructor
-    TDiscLoop(const std::string name);
+    TTestSeqGamma(const std::string name);
     // destructor
-    virtual ~TDiscLoop(void) = default;
+    virtual ~TTestSeqGamma(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
@@ -75,71 +71,79 @@ protected:
     virtual void execute(void);
 };
 
-MODULE_REGISTER_NS(DiscLoop, TDiscLoop<FIMPL>, MContraction);
+MODULE_REGISTER_NS(TestSeqGamma, TTestSeqGamma<FIMPL>, MUtilities);
 
 /******************************************************************************
- *                       TDiscLoop implementation                             *
+ *                      TTestSeqGamma implementation                          *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename FImpl>
-TDiscLoop<FImpl>::TDiscLoop(const std::string name)
-: Module<DiscLoopPar>(name)
+TTestSeqGamma<FImpl>::TTestSeqGamma(const std::string name)
+: Module<TestSeqGammaPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
-std::vector<std::string> TDiscLoop<FImpl>::getInput(void)
+std::vector<std::string> TTestSeqGamma<FImpl>::getInput(void)
 {
-    std::vector<std::string> in = {par().q_loop};
+    std::vector<std::string> in = {par().q, par().qSeq};
     
     return in;
 }
 
 template <typename FImpl>
-std::vector<std::string> TDiscLoop<FImpl>::getOutput(void)
+std::vector<std::string> TTestSeqGamma<FImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {};
+    std::vector<std::string> out = {getName()};
     
     return out;
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TDiscLoop<FImpl>::setup(void)
+void TTestSeqGamma<FImpl>::setup(void)
 {
     envTmpLat(LatticeComplex, "c");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
-void TDiscLoop<FImpl>::execute(void)
+void TTestSeqGamma<FImpl>::execute(void)
 {
-    LOG(Message) << "Computing disconnected loop contraction '" << getName() 
-                 << "' using '" << par().q_loop << "' with " << par().gamma 
-                 << " insertion." << std::endl;
+    auto                  &q    = envGet(PropagatorField, par().q);
+    auto                  &qSeq = envGet(PropagatorField, par().qSeq);
+    Gamma                 g5(Gamma::Algebra::Gamma5);
+    Gamma                 g(par().gamma);
+    SitePropagator        qSite;
+    Complex               test, check;
+    std::vector<TComplex> check_buf;
+    std::vector<int>      siteCoord;
 
-    CorrWriter            writer(par().output);
-    auto                  &q_loop = envGet(PropagatorField, par().q_loop);
-    Gamma                 gamma(par().gamma);
-    std::vector<TComplex> buf;
-    Result                result;
-
+    // Check sequential insertion of gamma matrix gives same result as 
+    // insertion of gamma at sink upon contraction. Assume q uses a point 
+    // source.
+    
     envGetTmp(LatticeComplex, c);
-    c = trace(gamma*q_loop);
-    sliceSum(c, buf, Tp);
+    siteCoord = strToVec<int>(par().origin);
+    peekSite(qSite, qSeq, siteCoord);
+    test = trace(g*qSite);
 
-    result.gamma = par().gamma;
-    result.corr.resize(buf.size());
-    for (unsigned int t = 0; t < buf.size(); ++t)
-    {
-        result.corr[t] = TensorRemove(buf[t]);
-    }
+    c = trace(adj(g)*g5*adj(q)*g5*g*q);
+    sliceSum(c, check_buf, Tp);
+    check = TensorRemove(check_buf[par().t_g]);
 
-    write(writer, "disc", result);
+    LOG(Message) << "Seq Result = " << abs(test)  << std::endl;
+    LOG(Message) << "Reference  = " << abs(check) << std::endl;
+
+    // Check difference = 0
+    check -= test;
+
+    LOG(Message) << "Consistency check for sequential " << par().gamma  
+                 << " insertion = " << abs(check) << std::endl;
 }
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MContraction_DiscLoop_hpp_
+#endif // Hadrons_TestSeqGamma_hpp_

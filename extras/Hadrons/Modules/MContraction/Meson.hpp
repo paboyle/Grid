@@ -51,8 +51,7 @@ BEGIN_HADRONS_NAMESPACE
            in a sequence (e.g. "<Gamma5 Gamma5><Gamma5 GammaT>").
 
            Special values: "all" - perform all possible contractions.
- - mom: momentum insertion, space-separated float sequence (e.g ".1 .2 1. 0."),
-        given as multiples of (2*pi) / L.
+ - sink: module to compute the sink to use in contraction (string).
 */
 
 /******************************************************************************
@@ -98,6 +97,9 @@ public:
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
     virtual void parseGammaString(std::vector<GammaPair> &gammaList);
+protected:
+    // execution
+    virtual void setup(void);
     // execution
     virtual void execute(void);
 };
@@ -125,7 +127,7 @@ std::vector<std::string> TMeson<FImpl1, FImpl2>::getInput(void)
 template <typename FImpl1, typename FImpl2>
 std::vector<std::string> TMeson<FImpl1, FImpl2>::getOutput(void)
 {
-    std::vector<std::string> output = {getName()};
+    std::vector<std::string> output = {};
     
     return output;
 }
@@ -151,9 +153,15 @@ void TMeson<FImpl1, FImpl2>::parseGammaString(std::vector<GammaPair> &gammaList)
     {
         // Parse individual contractions from input string.
         gammaList = strToVec<GammaPair>(par().gammas);
-    }
+    } 
 }
 
+// execution ///////////////////////////////////////////////////////////////////
+template <typename FImpl1, typename FImpl2>
+void TMeson<FImpl1, FImpl2>::setup(void)
+{
+    envTmpLat(LatticeComplex, "c");
+}
 
 // execution ///////////////////////////////////////////////////////////////////
 #define mesonConnected(q1, q2, gSnk, gSrc) \
@@ -181,11 +189,11 @@ void TMeson<FImpl1, FImpl2>::execute(void)
         result[i].gamma_src = gammaList[i].second;
         result[i].corr.resize(nt);
     }
-    if (env().template isObjectOfType<SlicedPropagator1>(par().q1) and
-        env().template isObjectOfType<SlicedPropagator2>(par().q2))
+    if (envHasType(SlicedPropagator1, par().q1) and
+        envHasType(SlicedPropagator2, par().q2))
     {
-        SlicedPropagator1 &q1 = *env().template getObject<SlicedPropagator1>(par().q1);
-        SlicedPropagator2 &q2 = *env().template getObject<SlicedPropagator2>(par().q2);
+        auto &q1 = envGet(SlicedPropagator1, par().q1);
+        auto &q2 = envGet(SlicedPropagator2, par().q2);
         
         LOG(Message) << "(propagator already sinked)" << std::endl;
         for (unsigned int i = 0; i < result.size(); ++i)
@@ -201,10 +209,10 @@ void TMeson<FImpl1, FImpl2>::execute(void)
     }
     else
     {
-        PropagatorField1 &q1   = *env().template getObject<PropagatorField1>(par().q1);
-        PropagatorField2 &q2   = *env().template getObject<PropagatorField2>(par().q2);
-        LatticeComplex   c(env().getGrid());
+        auto &q1 = envGet(PropagatorField1, par().q1);
+        auto &q2 = envGet(PropagatorField2, par().q2);
         
+        envGetTmp(LatticeComplex, c);
         LOG(Message) << "(using sink '" << par().sink << "')" << std::endl;
         for (unsigned int i = 0; i < result.size(); ++i)
         {
@@ -212,18 +220,17 @@ void TMeson<FImpl1, FImpl2>::execute(void)
             Gamma       gSrc(gammaList[i].second);
             std::string ns;
                 
-            ns = env().getModuleNamespace(env().getObjectModule(par().sink));
+            ns = vm().getModuleNamespace(env().getObjectModule(par().sink));
             if (ns == "MSource")
             {
-                PropagatorField1 &sink =
-                    *env().template getObject<PropagatorField1>(par().sink);
+                PropagatorField1 &sink = envGet(PropagatorField1, par().sink);
                 
                 c = trace(mesonConnected(q1, q2, gSnk, gSrc)*sink);
                 sliceSum(c, buf, Tp);
             }
             else if (ns == "MSink")
             {
-                SinkFnScalar &sink = *env().template getObject<SinkFnScalar>(par().sink);
+                SinkFnScalar &sink = envGet(SinkFnScalar, par().sink);
                 
                 c   = trace(mesonConnected(q1, q2, gSnk, gSrc));
                 buf = sink(c);

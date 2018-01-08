@@ -59,19 +59,19 @@ std::vector<std::string> TLoad::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void TLoad::setup(void)
 {
-    env().registerLattice<LatticeGaugeField>(getName());
+    envCreateLat(LatticeGaugeField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 void TLoad::execute(void)
 {
-    FieldMetaData  header;
-    std::string fileName = par().file + "."
-                           + std::to_string(env().getTrajectory());
-    
+    FieldMetaData header;
+    std::string   fileName = par().file + "."
+                             + std::to_string(vm().getTrajectory());
     LOG(Message) << "Loading NERSC configuration from file '" << fileName
                  << "'" << std::endl;
-    LatticeGaugeField &U = *env().createLattice<LatticeGaugeField>(getName());
+
+    auto &U = envGet(LatticeGaugeField, getName());
     NerscIO::readConfiguration(U, header, fileName);
     LOG(Message) << "NERSC header:" << std::endl;
     dump_meta_data(header, LOG(Message));

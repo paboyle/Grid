@@ -54,6 +54,8 @@ using namespace MContraction;
  * 
  * S: trace(q3*g5*q1*adj(q2)*g5*gL[mu][p_1]*q4*gL[mu][p_2])
  * E: trace(q3*g5*q1*adj(q2)*g5*gL[mu][p_1])*trace(q4*gL[mu][p_2])
+ * 
+ * Note q1 must be sink smeared.
  */
 
 /******************************************************************************
@@ -74,7 +76,7 @@ std::vector<std::string> TWeakHamiltonianEye::getInput(void)
 
 std::vector<std::string> TWeakHamiltonianEye::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {};
     
     return out;
 }
@@ -82,7 +84,15 @@ std::vector<std::string> TWeakHamiltonianEye::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void TWeakHamiltonianEye::setup(void)
 {
+    unsigned int ndim = env().getNd();
 
+    envTmpLat(LatticeComplex,  "expbuf");
+    envTmpLat(PropagatorField, "tmp1");
+    envTmpLat(LatticeComplex,  "tmp2");
+    envTmp(std::vector<PropagatorField>, "S_body", 1, ndim, PropagatorField(env().getGrid()));
+    envTmp(std::vector<PropagatorField>, "S_loop", 1, ndim, PropagatorField(env().getGrid()));
+    envTmp(std::vector<LatticeComplex>,  "E_body", 1, ndim, LatticeComplex(env().getGrid()));
+    envTmp(std::vector<LatticeComplex>,  "E_loop", 1, ndim, LatticeComplex(env().getGrid()));
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -94,27 +104,30 @@ void TWeakHamiltonianEye::execute(void)
                  << "'." << std::endl;
 
     CorrWriter             writer(par().output);
-    PropagatorField &q1 = *env().template getObject<PropagatorField>(par().q1);
-    PropagatorField &q2 = *env().template getObject<PropagatorField>(par().q2);
-    PropagatorField &q3 = *env().template getObject<PropagatorField>(par().q3);
-    PropagatorField &q4 = *env().template getObject<PropagatorField>(par().q4);
-    Gamma g5            = Gamma(Gamma::Algebra::Gamma5);
-    LatticeComplex        expbuf(env().getGrid());
-    std::vector<TComplex> corrbuf;
-    std::vector<Result>   result(n_eye_diag);
-    unsigned int ndim   = env().getNd();
+    auto                   &q1 = envGet(SlicedPropagator, par().q1);
+    auto                   &q2 = envGet(PropagatorField, par().q2);
+    auto                   &q3 = envGet(PropagatorField, par().q3);
+    auto                   &q4 = envGet(PropagatorField, par().q4);
+    Gamma                  g5  = Gamma(Gamma::Algebra::Gamma5);
+    std::vector<TComplex>  corrbuf;
+    std::vector<Result>    result(n_eye_diag);
+    unsigned int ndim    = env().getNd();
 
-    PropagatorField              tmp1(env().getGrid());
-    LatticeComplex               tmp2(env().getGrid());
-    std::vector<PropagatorField> S_body(ndim, tmp1);
-    std::vector<PropagatorField> S_loop(ndim, tmp1);
-    std::vector<LatticeComplex>  E_body(ndim, tmp2);
-    std::vector<LatticeComplex>  E_loop(ndim, tmp2);
+    envGetTmp(LatticeComplex,               expbuf); 
+    envGetTmp(PropagatorField,              tmp1);
+    envGetTmp(LatticeComplex,               tmp2);
+    envGetTmp(std::vector<PropagatorField>, S_body);
+    envGetTmp(std::vector<PropagatorField>, S_loop);
+    envGetTmp(std::vector<LatticeComplex>,  E_body);
+    envGetTmp(std::vector<LatticeComplex>,  E_loop);
+
+    // Get sink timeslice of q1.
+    SitePropagator q1Snk = q1[par().tSnk];
 
     // Setup for S-type contractions.
     for (int mu = 0; mu < ndim; ++mu)
     {
-        S_body[mu] = MAKE_SE_BODY(q1, q2, q3, GammaL(Gamma::gmu[mu]));
+        S_body[mu] = MAKE_SE_BODY(q1Snk, q2, q3, GammaL(Gamma::gmu[mu]));
         S_loop[mu] = MAKE_SE_LOOP(q4, GammaL(Gamma::gmu[mu]));
     }
 
