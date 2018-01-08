@@ -69,11 +69,17 @@ namespace Grid {
 
 class GlobalSharedMemory {
  private:
-  // Init once lock on the buffer allocation
-  static int ShmSetup;
   static const int     MAXLOG2RANKSPERNODE = 16;            
 
+  // Init once lock on the buffer allocation
+  static int      _ShmSetup;
+  static int      _ShmAlloc;
+  static uint64_t _ShmAllocBytes;
+
  public:
+  static int      ShmSetup(void)      { return _ShmSetup; }
+  static int      ShmAlloc(void)      { return _ShmAlloc; }
+  static uint64_t ShmAllocBytes(void) { return _ShmAllocBytes; }
   static uint64_t      MAX_MPI_SHM_BYTES;
   static int           Hugepages;
 

@@ -34,7 +34,9 @@ namespace Grid {
 
 uint64_t            GlobalSharedMemory::MAX_MPI_SHM_BYTES   = 1024LL*1024LL*1024LL; 
 int                 GlobalSharedMemory::Hugepages = 0;
-int                 GlobalSharedMemory::ShmSetup;
+int                 GlobalSharedMemory::_ShmSetup;
+int                 GlobalSharedMemory::_ShmAlloc;
+uint64_t            GlobalSharedMemory::_ShmAllocBytes;
 
 std::vector<void *> GlobalSharedMemory::WorldShmCommBufs;
 
@@ -49,6 +51,42 @@ int                 GlobalSharedMemory::WorldRank;
 
 int                 GlobalSharedMemory::WorldNodes;
 int                 GlobalSharedMemory::WorldNode;
+
+void GlobalSharedMemory::SharedMemoryFree(void)
+{
+  assert(_ShmAlloc);
+  assert(_ShmAllocBytes>0);
+  for(int r=0;r<WorldShmSize;r++){
+    munmap(WorldShmCommBufs[r],_ShmAllocBytes);
+  }
+  _ShmAlloc = 0;
+  _ShmAllocBytes = 0;
+}
+/////////////////////////////////
+// Alloc, free shmem region
+/////////////////////////////////
+void *SharedMemory::ShmBufferMalloc(size_t bytes){
+  //  bytes = (bytes+sizeof(vRealD))&(~(sizeof(vRealD)-1));// align up bytes
+  void *ptr = (void *)heap_top;
+  heap_top  += bytes;
+  heap_bytes+= bytes;
+  if (heap_bytes >= heap_size) {
+    std::cout<< " ShmBufferMalloc exceeded shared heap size -- try increasing with --shm <MB> flag" <<std::endl;
+    std::cout<< " Parameter specified in units of MB (megabytes) " <<std::endl;
+    std::cout<< " Current value is " << (heap_size/(1024*1024)) <<std::endl;
+    assert(heap_bytes<heap_size);
+  }
+  return ptr;
+}
+void SharedMemory::ShmBufferFreeAll(void) { 
+  heap_top  =(size_t)ShmBufferSelf();
+  heap_bytes=0;
+}
+void *SharedMemory::ShmBufferSelf(void)
+{
+  return ShmCommBufs[ShmRank];
+}
+
 
 
 }

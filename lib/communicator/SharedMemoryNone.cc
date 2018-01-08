@@ -33,6 +33,7 @@ namespace Grid {
 /*Construct from an MPI communicator*/
 void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
 {
+  assert(_ShmSetup==0);
   WorldComm = 0;
   WorldRank = 0;
   WorldSize = 1;
@@ -43,6 +44,7 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
   WorldNode    = 0 ;
   WorldShmRanks.resize(WorldSize); WorldShmRanks[0] = 0;
   WorldShmCommBufs.resize(1);
+  _ShmSetup=1;
 }
 
 void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,Grid_MPI_Comm & optimal_comm)
@@ -56,7 +58,8 @@ void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
   void * ShmCommBuf ; 
-  MAX_MPI_SHM_BYTES=bytes;
+  assert(_ShmSetup==1);
+  assert(_ShmAlloc==0);
   int mmap_flag =0;
 #ifdef MAP_ANONYMOUS
   mmap_flag = mmap_flag| MAP_SHARED | MAP_ANONYMOUS;
@@ -77,13 +80,9 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 #endif
   bzero(ShmCommBuf,bytes);
   WorldShmCommBufs[0] = ShmCommBuf;
+  _ShmAllocBytes=bytes;
+  _ShmAlloc=1;
 };
-
-void GlobalSharedMemory::SharedMemoryFree(void)
-{
-  assert(ShmSetup);
-  assert(0); // unimplemented
-}
 
   ////////////////////////////////////////////////////////
   // Global shared functionality finished
@@ -91,6 +90,7 @@ void GlobalSharedMemory::SharedMemoryFree(void)
   ////////////////////////////////////////////////////////
 void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
 {
+  assert(GlobalSharedMemory::ShmAlloc()==1);
   ShmRanks.resize(1);
   ShmCommBufs.resize(1);
   ShmRanks[0] = 0;
@@ -100,7 +100,7 @@ void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
   // Map ShmRank to WorldShmRank and use the right buffer
   //////////////////////////////////////////////////////////////////////
   ShmCommBufs[0] = GlobalSharedMemory::WorldShmCommBufs[0];
-  heap_size      = GlobalSharedMemory::MAX_MPI_SHM_BYTES;
+  heap_size      = GlobalSharedMemory::ShmAllocBytes();
   ShmBufferFreeAll();
   return;
 }
@@ -114,10 +114,6 @@ void SharedMemory::ShmBarrier(void){ return ; }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 void SharedMemory::SharedMemoryTest(void) { return; }
 
-void *SharedMemory::ShmBufferSelf(void)
-{
-  return ShmCommBufs[ShmRank];
-}
 void *SharedMemory::ShmBuffer(int rank)
 {
   return NULL;
@@ -125,26 +121,6 @@ void *SharedMemory::ShmBuffer(int rank)
 void *SharedMemory::ShmBufferTranslate(int rank,void * local_p)
 {
   return NULL;
-}
-
-/////////////////////////////////
-// Alloc, free shmem region ; common to MPI and none?
-/////////////////////////////////
-void *SharedMemory::ShmBufferMalloc(size_t bytes){
-  void *ptr = (void *)heap_top;
-  heap_top  += bytes;
-  heap_bytes+= bytes;
-  if (heap_bytes >= heap_size) {
-    std::cout<< " ShmBufferMalloc exceeded shared heap size -- try increasing with --shm <MB> flag" <<std::endl;
-    std::cout<< " Parameter specified in units of MB (megabytes) " <<std::endl;
-    std::cout<< " Current value is " << (heap_size/(1024*1024)) <<std::endl;
-    assert(heap_bytes<heap_size);
-  }
-  return ptr;
-}
-void SharedMemory::ShmBufferFreeAll(void) { 
-  heap_top  =(size_t)ShmBufferSelf();
-  heap_bytes=0;
 }
 
 }

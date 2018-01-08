@@ -33,6 +33,7 @@ namespace Grid {
 /*Construct from an MPI communicator*/
 void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
 {
+  assert(_ShmSetup==0);
   WorldComm = comm;
   MPI_Comm_rank(WorldComm,&WorldRank);
   MPI_Comm_size(WorldComm,&WorldSize);
@@ -110,6 +111,7 @@ void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
     }
   }
   assert(WorldNode!=-1);
+  _ShmSetup=1;
 }
 
 void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,Grid_MPI_Comm & optimal_comm)
@@ -180,8 +182,8 @@ void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,
 #ifdef GRID_MPI3_SHMMMAP
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 {
-  GlobalSharedMemory::MAX_MPI_SHM_BYTES  = bytes;
-  assert(ShmSetup==0); ShmSetup=1;
+  assert(_ShmSetup==1);
+  assert(_ShmAlloc==0);
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
   // allocate the shared windows for our group
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -214,8 +216,11 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
       perror("failed mmap");      assert(0);    
     }
     assert(((uint64_t)ptr&0x3F)==0);
+    close(fd);
     WorldShmCommBufs[r] =ptr;
   }
+  _ShmAlloc=1;
+  _ShmAllocBytes  = bytes;
 };
 #endif // MMAP
 
@@ -227,8 +232,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 ////////////////////////////////////////////////////////////////////////////////////////////
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 { 
-  GlobalSharedMemory::MAX_MPI_SHM_BYTES  = bytes;
-  assert(ShmSetup==0); ShmSetup=1;
+  assert(_ShmSetup==1);
+  assert(_ShmAlloc==0); 
   MPI_Barrier(WorldShmComm);
   WorldShmCommBufs.resize(WorldShmSize);
 
@@ -258,6 +263,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
       assert(((uint64_t)ptr&0x3F)==0);
       
       WorldShmCommBufs[r] =ptr;
+      close(fd);
     }
   }
 
@@ -277,16 +283,14 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
       if ( ptr == MAP_FAILED ) {       perror("failed mmap");      assert(0);    }
       assert(((uint64_t)ptr&0x3F)==0);
       WorldShmCommBufs[r] =ptr;
+
+      close(fd);
     }
   }
+  _ShmAlloc=1;
+  _ShmAllocBytes = bytes;
 }
 #endif
-
-void GlobalSharedMemory::SharedMemoryFree(void)
-{
-  assert(ShmSetup);
-  assert(0); // unimplemented
-}
 
   ////////////////////////////////////////////////////////
   // Global shared functionality finished
@@ -310,7 +314,8 @@ void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
   //////////////////////////////////////////////////////////////////////
   // Map ShmRank to WorldShmRank and use the right buffer
   //////////////////////////////////////////////////////////////////////
-  heap_size = GlobalSharedMemory::MAX_MPI_SHM_BYTES;
+  assert (GlobalSharedMemory::ShmAlloc()==1);
+  heap_size = GlobalSharedMemory::ShmAllocBytes();
   for(int r=0;r<ShmSize;r++){
 
     uint32_t sr = (r==ShmRank) ? GlobalSharedMemory::WorldRank : 0 ;
@@ -364,10 +369,6 @@ void SharedMemory::SharedMemoryTest(void)
   ShmBarrier();
 }
 
-void *SharedMemory::ShmBufferSelf(void)
-{
-  return ShmCommBufs[ShmRank];
-}
 void *SharedMemory::ShmBuffer(int rank)
 {
   int gpeer = ShmRanks[rank];
@@ -389,27 +390,6 @@ void *SharedMemory::ShmBufferTranslate(int rank,void * local_p)
     uint64_t remote = (uint64_t)ShmCommBufs[gpeer]+offset;
     return (void *) remote;
   }
-}
-
-/////////////////////////////////
-// Alloc, free shmem region
-/////////////////////////////////
-void *SharedMemory::ShmBufferMalloc(size_t bytes){
-  //  bytes = (bytes+sizeof(vRealD))&(~(sizeof(vRealD)-1));// align up bytes
-  void *ptr = (void *)heap_top;
-  heap_top  += bytes;
-  heap_bytes+= bytes;
-  if (heap_bytes >= heap_size) {
-    std::cout<< " ShmBufferMalloc exceeded shared heap size -- try increasing with --shm <MB> flag" <<std::endl;
-    std::cout<< " Parameter specified in units of MB (megabytes) " <<std::endl;
-    std::cout<< " Current value is " << (heap_size/(1024*1024)) <<std::endl;
-    assert(heap_bytes<heap_size);
-  }
-  return ptr;
-}
-void SharedMemory::ShmBufferFreeAll(void) { 
-  heap_top  =(size_t)ShmBufferSelf();
-  heap_bytes=0;
 }
 
 }
