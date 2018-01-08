@@ -184,15 +184,10 @@ public:
   template<class T> void AllToAll(int dim,std::vector<T> &in, std::vector<T> &out){
     assert(dim>=0);
     assert(dim<_ndimension);
-    int numnode = _processors[dim];
-    //    std::cerr << " AllToAll in.size()  "<<in.size()<<std::endl;
-    //    std::cerr << " AllToAll out.size() "<<out.size()<<std::endl;
     assert(in.size()==out.size());
+    int numnode = _processors[dim];
     uint64_t bytes=sizeof(T);
     uint64_t words=in.size()/numnode;
-    //    std:: cout << "AllToAll buffer size "<< in.size()*sizeof(T)<<std::endl;
-    //    std:: cout << "AllToAll datum bytes "<< bytes<<std::endl;
-    //    std:: cout << "AllToAll datum count "<< words<<std::endl;
     assert(numnode * words == in.size());
     assert(words < (1ULL<<31));
     AllToAll(dim,(void *)&in[0],(void *)&out[0],words,bytes);
