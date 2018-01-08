@@ -37,19 +37,20 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+protected:
     // setup
     virtual void setup(void);
     // execution
     virtual void execute(void);
 private:
+    void makeCaches(void);
     void momD1(ScalarField &s, FFT &fft);
     void momD2(ScalarField &s, FFT &fft);
 private:
-    std::string                freeMomPropName_, GFSrcName_;
+    bool                       freeMomPropDone_, GFSrcDone_, phasesDone_;
+    std::string                freeMomPropName_, GFSrcName_, fftName_;
     std::vector<std::string>   phaseName_;
-    ScalarField                *freeMomProp_, *GFSrc_;
     std::vector<ScalarField *> phase_;
-    EmField                    *A;
 };
 
 MODULE_REGISTER_NS(ChargedProp, TChargedProp, MScalar);

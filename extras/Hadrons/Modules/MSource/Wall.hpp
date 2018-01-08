@@ -73,10 +73,14 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+protected:
     // setup
     virtual void setup(void);
     // execution
     virtual void execute(void);
+private:
+    bool        hasPhase_{false};
+    std::string momphName_, tName_;
 };
 
 MODULE_REGISTER_NS(Wall, TWall<FIMPL>, MSource);
@@ -88,13 +92,15 @@ MODULE_REGISTER_NS(Wall, TWall<FIMPL>, MSource);
 template <typename FImpl>
 TWall<FImpl>::TWall(const std::string name)
 : Module<WallPar>(name)
+, momphName_ (name + "_momph")
+, tName_ (name + "_t")
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
 template <typename FImpl>
 std::vector<std::string> TWall<FImpl>::getInput(void)
 {
-    std::vector<std::string> in;
+    std::vector<std::string> in = {};
     
     return in;
 }
@@ -111,7 +117,7 @@ std::vector<std::string> TWall<FImpl>::getOutput(void)
 template <typename FImpl>
 void TWall<FImpl>::setup(void)
 {
-    env().template registerLattice<PropagatorField>(getName());
+    envCreateLat(PropagatorField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -121,21 +127,28 @@ void TWall<FImpl>::execute(void)
     LOG(Message) << "Generating wall source at t = " << par().tW 
                  << " with momentum " << par().mom << std::endl;
     
-    PropagatorField &src = *env().template createLattice<PropagatorField>(getName());
-    Lattice<iScalar<vInteger>> t(env().getGrid());
-    LatticeComplex             ph(env().getGrid()), coor(env().getGrid());
-    std::vector<Real>          p;
-    Complex                    i(0.0,1.0);
+    auto  &src = envGet(PropagatorField, getName());
+    auto  &ph  = envGet(LatticeComplex, momphName_);
+    auto  &t   = envGet(Lattice<iScalar<vInteger>>, tName_);
     
-    p  = strToVec<Real>(par().mom);
-    ph = zero;
-    for(unsigned int mu = 0; mu < Nd; mu++)
+    if (!hasPhase_)
     {
-        LatticeCoordinate(coor, mu);
-        ph = ph + p[mu]*coor*((1./(env().getGrid()->_fdimensions[mu])));
+        Complex           i(0.0,1.0);
+        std::vector<Real> p;
+
+        envGetTmp(LatticeComplex, coor);
+        p  = strToVec<Real>(par().mom);
+        ph = zero;
+        for(unsigned int mu = 0; mu < env().getNd(); mu++)
+        {
+            LatticeCoordinate(coor, mu);
+            ph = ph + (p[mu]/env().getGrid()->_fdimensions[mu])*coor;
+        }
+        ph = exp((Real)(2*M_PI)*i*ph);
+        LatticeCoordinate(t, Tp);
+        hasPhase_ = true;
     }
-    ph = exp((Real)(2*M_PI)*i*ph);
-    LatticeCoordinate(t, Tp);
+
     src = 1.;
     src = where((t == par().tW), src*ph, 0.*src);
 }

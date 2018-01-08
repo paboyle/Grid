@@ -68,6 +68,7 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+protected:
     // setup
     virtual void setup(void);
     // execution
@@ -97,7 +98,7 @@ std::vector<std::string> TDiscLoop<FImpl>::getInput(void)
 template <typename FImpl>
 std::vector<std::string> TDiscLoop<FImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {};
     
     return out;
 }
@@ -106,7 +107,7 @@ std::vector<std::string> TDiscLoop<FImpl>::getOutput(void)
 template <typename FImpl>
 void TDiscLoop<FImpl>::setup(void)
 {
-    
+    envTmpLat(LatticeComplex, "c");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -118,12 +119,12 @@ void TDiscLoop<FImpl>::execute(void)
                  << " insertion." << std::endl;
 
     CorrWriter            writer(par().output);
-    PropagatorField       &q_loop = *env().template getObject<PropagatorField>(par().q_loop);
-    LatticeComplex        c(env().getGrid());
+    auto                  &q_loop = envGet(PropagatorField, par().q_loop);
     Gamma                 gamma(par().gamma);
     std::vector<TComplex> buf;
     Result                result;
 
+    envGetTmp(LatticeComplex, c);
     c = trace(gamma*q_loop);
     sliceSum(c, buf, Tp);
 

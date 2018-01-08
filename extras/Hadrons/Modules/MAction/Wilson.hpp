@@ -63,6 +63,7 @@ public:
     // dependencies/products
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+protected:
     // setup
     virtual void setup(void);
     // execution
@@ -101,29 +102,24 @@ std::vector<std::string> TWilson<FImpl>::getOutput(void)
 template <typename FImpl>
 void TWilson<FImpl>::setup(void)
 {
-    unsigned int size;
-    
-    size = 2*env().template lattice4dSize<typename FImpl::DoubledGaugeField>();
-    env().registerObject(getName(), size);
+    LOG(Message) << "Setting up TWilson fermion matrix with m= " << par().mass
+                 << " using gauge field '" << par().gauge << "'" << std::endl;
+    LOG(Message) << "Fermion boundary conditions: " << par().boundary
+                 << std::endl;
+                 
+    auto &U      = envGet(LatticeGaugeField, par().gauge);
+    auto &grid   = *env().getGrid();
+    auto &gridRb = *env().getRbGrid();
+    std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
+    typename WilsonFermion<FImpl>::ImplParams implParams(boundary);
+    envCreateDerived(FMat, WilsonFermion<FImpl>, getName(), 1, U, grid, gridRb,
+                     par().mass, implParams);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TWilson<FImpl>::execute()
-{
-    LOG(Message) << "Setting up TWilson fermion matrix with m= " << par().mass
-                 << " using gauge field '" << par().gauge << "'" << std::endl;
-    LOG(Message) << "Fermion boundary conditions: " << par().boundary 
-                 << std::endl;
-    auto &U      = *env().template getObject<LatticeGaugeField>(par().gauge);
-    auto &grid   = *env().getGrid();
-    auto &gridRb = *env().getRbGrid();
-    std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
-    typename WilsonFermion<FImpl>::ImplParams implParams(boundary);
-    FMat *fMatPt = new WilsonFermion<FImpl>(U, grid, gridRb, par().mass,
-                                            implParams);
-    env().setObject(getName(), fMatPt);
-}
+{}
 
 END_MODULE_NAMESPACE
 

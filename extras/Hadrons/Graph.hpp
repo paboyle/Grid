@@ -185,7 +185,7 @@ void Graph<T>::removeVertex(const T &value)
     }
     else
     {
-        HADRON_ERROR("vertex " << value << " does not exists");
+        HADRON_ERROR(Range, "vertex does not exists");
     }
 
     // remove all edges containing the vertex
@@ -214,7 +214,7 @@ void Graph<T>::removeEdge(const Edge &e)
     }
     else
     {
-        HADRON_ERROR("edge "  << e << " does not exists");
+        HADRON_ERROR(Range, "edge does not exists");
     }
 }
 
@@ -260,7 +260,7 @@ void Graph<T>::mark(const T &value, const bool doMark)
     }
     else
     {
-        HADRON_ERROR("vertex " << value << " does not exists");
+        HADRON_ERROR(Range, "vertex does not exists");
     }
 }
 
@@ -298,7 +298,7 @@ bool Graph<T>::isMarked(const T &value) const
     }
     else
     {
-        HADRON_ERROR("vertex " << value << " does not exists");
+        HADRON_ERROR(Range, "vertex does not exists");
         
         return false;
     }
@@ -430,7 +430,7 @@ std::vector<T> Graph<T>::getAdjacentVertices(const T &value) const
     {
         return ((e.first == value) or (e.second == value));
     };
-    auto eIt = find_if(edgeSet_.begin(), edgeSet_.end(), pred);
+    auto eIt = std::find_if(edgeSet_.begin(), edgeSet_.end(), pred);
     
     while (eIt != edgeSet_.end())
     {
@@ -442,7 +442,7 @@ std::vector<T> Graph<T>::getAdjacentVertices(const T &value) const
         {
             adjacentVertex.push_back((*eIt).first);
         }
-        eIt = find_if(++eIt, edgeSet_.end(), pred);
+        eIt = std::find_if(++eIt, edgeSet_.end(), pred);
     }
     
     return adjacentVertex;
@@ -458,12 +458,12 @@ std::vector<T> Graph<T>::getChildren(const T &value) const
     {
         return (e.first == value);
     };
-    auto eIt = find_if(edgeSet_.begin(), edgeSet_.end(), pred);
+    auto eIt = std::find_if(edgeSet_.begin(), edgeSet_.end(), pred);
     
     while (eIt != edgeSet_.end())
     {
         child.push_back((*eIt).second);
-        eIt = find_if(++eIt, edgeSet_.end(), pred);
+        eIt = std::find_if(++eIt, edgeSet_.end(), pred);
     }
     
     return child;
@@ -479,12 +479,12 @@ std::vector<T> Graph<T>::getParents(const T &value) const
     {
         return (e.second == value);
     };
-    auto eIt = find_if(edgeSet_.begin(), edgeSet_.end(), pred);
+    auto eIt = std::find_if(edgeSet_.begin(), edgeSet_.end(), pred);
     
     while (eIt != edgeSet_.end())
     {
         parent.push_back((*eIt).first);
-        eIt = find_if(++eIt, edgeSet_.end(), pred);
+        eIt = std::find_if(++eIt, edgeSet_.end(), pred);
     }
     
     return parent;
@@ -544,7 +544,7 @@ std::vector<T> Graph<T>::topoSort(void)
     {
         if (tmpMarked.at(v))
         {
-            HADRON_ERROR("cannot topologically sort a cyclic graph");
+            HADRON_ERROR(Range, "cannot topologically sort a cyclic graph");
         }
         if (!isMarked(v))
         {
@@ -603,7 +603,7 @@ std::vector<T> Graph<T>::topoSort(Gen &gen)
     {
         if (tmpMarked.at(v))
         {
-            HADRON_ERROR("cannot topologically sort a cyclic graph");
+            HADRON_ERROR(Range, "cannot topologically sort a cyclic graph");
         }
         if (!isMarked(v))
         {

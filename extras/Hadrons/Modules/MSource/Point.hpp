@@ -72,6 +72,7 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+protected:
     // setup
     virtual void setup(void);
     // execution
@@ -111,19 +112,20 @@ std::vector<std::string> TPoint<FImpl>::getOutput(void)
 template <typename FImpl>
 void TPoint<FImpl>::setup(void)
 {
-    env().template registerLattice<PropagatorField>(getName());
+    envCreateLat(PropagatorField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TPoint<FImpl>::execute(void)
 {
-    std::vector<int> position = strToVec<int>(par().position);
-    typename SitePropagator::scalar_object id;
-    
     LOG(Message) << "Creating point source at position [" << par().position
-                 << "]" << std::endl;
-    PropagatorField &src = *env().template createLattice<PropagatorField>(getName());
+                << "]" << std::endl;
+
+    std::vector<int> position = strToVec<int>(par().position);
+    auto             &src     = envGet(PropagatorField, getName());
+    SitePropagator   id;
+    
     id  = 1.;
     src = zero;
     pokeSite(id, src, position);

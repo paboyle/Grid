@@ -180,6 +180,38 @@ public:
   void DhopDir(StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor * buf,
 		       int sF, int sU, const FermionField &in, FermionField &out, int dirdisp, int gamma);
       
+  //////////////////////////////////////////////////////////////////////////////
+  // Utilities for inserting Wilson conserved current.
+  //////////////////////////////////////////////////////////////////////////////
+  void ContractConservedCurrentSiteFwd(const SitePropagator &q_in_1,
+                                       const SitePropagator &q_in_2,
+                                       SitePropagator &q_out,
+                                       DoubledGaugeField &U,
+                                       unsigned int sU,
+                                       unsigned int mu,
+                                       bool switch_sign = false);
+  void ContractConservedCurrentSiteBwd(const SitePropagator &q_in_1,
+                                       const SitePropagator &q_in_2,
+                                       SitePropagator &q_out,
+                                       DoubledGaugeField &U,
+                                       unsigned int sU,
+                                       unsigned int mu,
+                                       bool switch_sign = false);
+  void SeqConservedCurrentSiteFwd(const SitePropagator &q_in, 
+                                  SitePropagator &q_out,
+                                  DoubledGaugeField &U,
+                                  unsigned int sU,
+                                  unsigned int mu,
+                                  vInteger t_mask,
+                                  bool switch_sign = false);
+  void SeqConservedCurrentSiteBwd(const SitePropagator &q_in,
+                                  SitePropagator &q_out,
+                                  DoubledGaugeField &U,
+                                  unsigned int sU,
+                                  unsigned int mu,
+                                  vInteger t_mask,
+                                  bool switch_sign = false);
+
 private:
      // Specialised variants
   void GenericDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,

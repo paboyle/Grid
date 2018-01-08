@@ -35,6 +35,10 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Grid.h>
 #include <cxxabi.h>
 
+#ifndef SITE_SIZE_TYPE
+#define SITE_SIZE_TYPE size_t
+#endif
+
 #define BEGIN_HADRONS_NAMESPACE \
 namespace Grid {\
 using namespace QCD;\
@@ -62,12 +66,11 @@ BEGIN_HADRONS_NAMESPACE
 
 // type aliases
 #define FERM_TYPE_ALIASES(FImpl, suffix)\
-typedef FermionOperator<FImpl>                       FMat##suffix;             \
-typedef typename FImpl::FermionField                 FermionField##suffix;     \
-typedef typename FImpl::PropagatorField              PropagatorField##suffix;  \
-typedef typename FImpl::SitePropagator               SitePropagator##suffix;   \
-typedef std::vector<typename FImpl::SitePropagator::scalar_object>             \
-                                                     SlicedPropagator##suffix;
+typedef FermionOperator<FImpl>                        FMat##suffix;            \
+typedef typename FImpl::FermionField                  FermionField##suffix;    \
+typedef typename FImpl::PropagatorField               PropagatorField##suffix; \
+typedef typename FImpl::SitePropagator::scalar_object SitePropagator##suffix;  \
+typedef std::vector<SitePropagator##suffix>           SlicedPropagator##suffix;
 
 #define GAUGE_TYPE_ALIASES(FImpl, suffix)\
 typedef typename FImpl::DoubledGaugeField DoubledGaugeField##suffix;
@@ -97,11 +100,6 @@ public:
 };
 
 #define LOG(channel) std::cout << HadronsLog##channel
-#define HADRON_ERROR(msg)\
-LOG(Error) << msg << " (" << __FUNCTION__ << " at " << __FILE__ << ":"\
-           << __LINE__ << ")" << std::endl;\
-abort();
-
 #define DEBUG_VAR(var) LOG(Debug) << #var << "= " << (var) << std::endl;
 
 extern HadronsLogger HadronsLogError;
@@ -134,9 +132,6 @@ public:\
     }\
 private:\
     name(void) = default;
-
-// pretty size formating
-std::string sizeString(long unsigned int bytes);
 
 // type utilities
 template <typename T>
@@ -175,5 +170,7 @@ typedef XmlWriter CorrWriter;
 #endif
 
 END_HADRONS_NAMESPACE
+
+#include <Grid/Hadrons/Exceptions.hpp>
 
 #endif // Hadrons_Global_hpp_

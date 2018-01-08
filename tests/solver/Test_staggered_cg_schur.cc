@@ -70,7 +70,21 @@ int main (int argc, char ** argv)
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
   SchurRedBlackStaggeredSolve<FermionField> SchurSolver(CG);
 
+  double volume=1.0;
+  for(int mu=0;mu<Nd;mu++){
+    volume=volume*latt_size[mu];
+  }  
+  double t1=usecond();
   SchurSolver(Ds,src,result);
+  double t2=usecond();
+
+  // Schur solver: uses DeoDoe => volume * 1146
+  double ncall=CG.IterationsToComplete;
+  double flops=(16*(3*(6+8+8)) + 15*3*2)*volume*ncall; // == 66*16 +  == 1146
+
+  std::cout<<GridLogMessage << "usec    =   "<< (t2-t1)<<std::endl;
+  std::cout<<GridLogMessage << "flop/s  =   "<< flops<<std::endl;
+  std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t2-t1)<<std::endl;
   
   Grid_finalize();
 }
