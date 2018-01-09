@@ -267,41 +267,16 @@ public:
   }
   typedef CartesianCommunicator::CommsRequest_t CommsRequest_t;
 
-  std::vector<int> same_node;
-  std::vector<int> surface_list;
-
   WilsonStencil(GridBase *grid,
 		int npoints,
 		int checkerboard,
 		const std::vector<int> &directions,
 		const std::vector<int> &distances)  
-    : CartesianStencil<vobj,cobj> (grid,npoints,checkerboard,directions,distances) ,
-    same_node(npoints)
+    : CartesianStencil<vobj,cobj> (grid,npoints,checkerboard,directions,distances) 
   { 
     ZeroCountersi();
-    surface_list.resize(0);
   };
 
-  void BuildSurfaceList(int Ls,int vol4){
-
-    // find same node for SHM
-    // Here we know the distance is 1 for WilsonStencil
-    for(int point=0;point<this->_npoints;point++){
-      same_node[point] = this->SameNode(point);
-    }
-    
-    for(int site = 0 ;site< vol4;site++){
-      int local = 1;
-      for(int point=0;point<this->_npoints;point++){
-	if( (!this->GetNodeLocal(site*Ls,point)) && (!same_node[point]) ){ 
-	  local = 0;
-	}
-      }
-      if(local == 0) { 
-	surface_list.push_back(site);
-      }
-    }
-  }
 
   template < class compressor>
   void HaloExchangeOpt(const Lattice<vobj> &source,compressor &compress) 
@@ -362,23 +337,23 @@ public:
     int dag = compress.dag;
     int face_idx=0;
     if ( dag ) { 
-      assert(same_node[Xp]==this->HaloGatherDir(source,XpCompress,Xp,face_idx));
-      assert(same_node[Yp]==this->HaloGatherDir(source,YpCompress,Yp,face_idx));
-      assert(same_node[Zp]==this->HaloGatherDir(source,ZpCompress,Zp,face_idx));
-      assert(same_node[Tp]==this->HaloGatherDir(source,TpCompress,Tp,face_idx));
-      assert(same_node[Xm]==this->HaloGatherDir(source,XmCompress,Xm,face_idx));
-      assert(same_node[Ym]==this->HaloGatherDir(source,YmCompress,Ym,face_idx));
-      assert(same_node[Zm]==this->HaloGatherDir(source,ZmCompress,Zm,face_idx));
-      assert(same_node[Tm]==this->HaloGatherDir(source,TmCompress,Tm,face_idx));
+      assert(this->same_node[Xp]==this->HaloGatherDir(source,XpCompress,Xp,face_idx));
+      assert(this->same_node[Yp]==this->HaloGatherDir(source,YpCompress,Yp,face_idx));
+      assert(this->same_node[Zp]==this->HaloGatherDir(source,ZpCompress,Zp,face_idx));
+      assert(this->same_node[Tp]==this->HaloGatherDir(source,TpCompress,Tp,face_idx));
+      assert(this->same_node[Xm]==this->HaloGatherDir(source,XmCompress,Xm,face_idx));
+      assert(this->same_node[Ym]==this->HaloGatherDir(source,YmCompress,Ym,face_idx));
+      assert(this->same_node[Zm]==this->HaloGatherDir(source,ZmCompress,Zm,face_idx));
+      assert(this->same_node[Tm]==this->HaloGatherDir(source,TmCompress,Tm,face_idx));
     } else {
-      assert(same_node[Xp]==this->HaloGatherDir(source,XmCompress,Xp,face_idx));
-      assert(same_node[Yp]==this->HaloGatherDir(source,YmCompress,Yp,face_idx));
-      assert(same_node[Zp]==this->HaloGatherDir(source,ZmCompress,Zp,face_idx));
-      assert(same_node[Tp]==this->HaloGatherDir(source,TmCompress,Tp,face_idx));
-      assert(same_node[Xm]==this->HaloGatherDir(source,XpCompress,Xm,face_idx));
-      assert(same_node[Ym]==this->HaloGatherDir(source,YpCompress,Ym,face_idx));
-      assert(same_node[Zm]==this->HaloGatherDir(source,ZpCompress,Zm,face_idx));
-      assert(same_node[Tm]==this->HaloGatherDir(source,TpCompress,Tm,face_idx));
+      assert(this->same_node[Xp]==this->HaloGatherDir(source,XmCompress,Xp,face_idx));
+      assert(this->same_node[Yp]==this->HaloGatherDir(source,YmCompress,Yp,face_idx));
+      assert(this->same_node[Zp]==this->HaloGatherDir(source,ZmCompress,Zp,face_idx));
+      assert(this->same_node[Tp]==this->HaloGatherDir(source,TmCompress,Tp,face_idx));
+      assert(this->same_node[Xm]==this->HaloGatherDir(source,XpCompress,Xm,face_idx));
+      assert(this->same_node[Ym]==this->HaloGatherDir(source,YpCompress,Ym,face_idx));
+      assert(this->same_node[Zm]==this->HaloGatherDir(source,ZpCompress,Zm,face_idx));
+      assert(this->same_node[Tm]==this->HaloGatherDir(source,TpCompress,Tm,face_idx));
     }
     this->face_table_computed=1;
     assert(this->u_comm_offset==this->_unified_buffer_size);

@@ -149,7 +149,9 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
   std::vector<int>                  _distances;
   std::vector<int>                  _comm_buf_size;
   std::vector<int>                  _permute_type;
-  
+  std::vector<int> same_node;
+  std::vector<int> surface_list;
+
   Vector<StencilEntry>  _entries;
   std::vector<Packet> Packets;
   std::vector<Merge> Mergers;
@@ -200,7 +202,7 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
 
     int dimension    = _directions[point];
     int displacement = _distances[point];
-    assert( (displacement==1) || (displacement==-1));
+
 
     int pd              = _grid->_processors[dimension];
     int fd              = _grid->_fdimensions[dimension];
@@ -215,9 +217,12 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
     if ( ! comm_dim ) return 1;
 
     int nbr_proc;
-    if (displacement==1) nbr_proc = 1;
-    else                 nbr_proc = pd-1;
+    if (displacement>0) nbr_proc = 1;
+    else                nbr_proc = pd-1;
 
+    // FIXME  this logic needs to be sorted for three link term
+    //    assert( (displacement==1) || (displacement==-1));
+    // Present hack only works for >= 4^4 subvol per node
     _grid->ShiftedRanks(dimension,nbr_proc,xmit_to_rank,recv_from_rank); 
 
     void *shm = (void *) _grid->ShmBufferTranslate(recv_from_rank,u_recv_buf_p);
@@ -539,6 +544,29 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
     }
   };
 
+  // Move interior/exterior split into the generic stencil
+  // FIXME Explicit Ls in interface is a pain. Should just use a vol
+  void BuildSurfaceList(int Ls,int vol4){
+
+    // find same node for SHM
+    // Here we know the distance is 1 for WilsonStencil
+    for(int point=0;point<this->_npoints;point++){
+      same_node[point] = this->SameNode(point);
+    }
+    
+    for(int site = 0 ;site< vol4;site++){
+      int local = 1;
+      for(int point=0;point<this->_npoints;point++){
+	if( (!this->GetNodeLocal(site*Ls,point)) && (!same_node[point]) ){ 
+	  local = 0;
+	}
+      }
+      if(local == 0) { 
+	surface_list.push_back(site);
+      }
+    }
+  }
+
  CartesianStencil(GridBase *grid,
 		  int npoints,
 		  int checkerboard,
@@ -549,7 +577,8 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
     comm_bytes_thr(npoints), 
     comm_enter_thr(npoints),
     comm_leave_thr(npoints), 
-       comm_time_thr(npoints)
+    comm_time_thr(npoints),
+    same_node(npoints)
   {
     face_table_computed=0;
     _npoints = npoints;
@@ -557,6 +586,7 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
     _directions = directions;
     _distances  = distances;
     _unified_buffer_size=0;
+    surface_list.resize(0);
 
     int osites  = _grid->oSites();
     

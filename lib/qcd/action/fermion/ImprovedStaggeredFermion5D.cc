@@ -124,6 +124,15 @@ ImprovedStaggeredFermion5D<Impl>::ImprovedStaggeredFermion5D(GaugeField &_Uthin,
 
   // Allocate the required comms buffer
   ImportGauge(_Uthin,_Ufat);
+
+  int LLs = FiveDimGrid._rdimensions[0];
+  int vol4= FourDimGrid.oSites();
+  Stencil.BuildSurfaceList(LLs,vol4);
+
+  vol4=FourDimRedBlackGrid.oSites();
+  StencilEven.BuildSurfaceList(LLs,vol4);
+   StencilOdd.BuildSurfaceList(LLs,vol4);
+
 }
 
 template <class Impl>
@@ -223,6 +232,157 @@ void ImprovedStaggeredFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
   assert(0);
 }
 
+/*CHANGE */
+template<class Impl>
+void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
+						    DoubledGaugeField & U,DoubledGaugeField & UUU,
+						    const FermionField &in, FermionField &out,int dag)
+{
+  DhopTotalTime-=usecond();
+#ifdef GRID_OMP
+  if ( StaggeredKernelsStatic::Comms == StaggeredKernelsStatic::CommsAndCompute )
+    DhopInternalOverlappedComms(st,lo,U,UUU,in,out,dag);
+  else
+#endif
+    DhopInternalSerialComms(st,lo,U,UUU,in,out,dag);
+  DhopTotalTime+=usecond();
+}
+
+template<class Impl>
+void ImprovedStaggeredFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, LebesgueOrder &lo,
+								   DoubledGaugeField & U,DoubledGaugeField & UUU,
+								   const FermionField &in, FermionField &out,int dag)
+{
+#ifdef GRID_OMP
+  //  assert((dag==DaggerNo) ||(dag==DaggerYes));
+
+  Compressor compressor; 
+
+  int LLs = in._grid->_rdimensions[0];
+  int len =  U._grid->oSites();
+
+  DhopFaceTime-=usecond();
+  st.Prepare();
+  st.HaloGather(in,compressor);
+  //  st.HaloExchangeOptGather(in,compressor); // Wilson compressor
+  st.CommsMergeSHM(compressor);// Could do this inside parallel region overlapped with comms
+  DhopFaceTime+=usecond();
+
+  double ctime=0;
+  double ptime=0;
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Ugly explicit thread mapping introduced for OPA reasons.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+#pragma omp parallel reduction(max:ctime) reduction(max:ptime)
+  {
+    int tid = omp_get_thread_num();
+    int nthreads = omp_get_num_threads();
+    int ncomms = CartesianCommunicator::nCommThreads;
+    if (ncomms == -1) ncomms = 1;
+    assert(nthreads > ncomms);
+    if (tid >= ncomms) {
+      double start = usecond();
+      nthreads -= ncomms;
+      int ttid  = tid - ncomms;
+      int n     = U._grid->oSites(); // 4d vol
+      int chunk = n / nthreads;
+      int rem   = n % nthreads;
+      int myblock, myn;
+      if (ttid < rem) {
+        myblock = ttid * chunk + ttid;
+        myn = chunk+1;
+      } else {
+        myblock = ttid*chunk + rem;
+        myn = chunk;
+      }
+
+      // do the compute
+      if (dag == DaggerYes) {
+        for (int ss = myblock; ss < myblock+myn; ++ss) {
+          int sU = ss;
+	  // Interior = 1; Exterior = 0; must implement for staggered
+          Kernels::DhopSiteDag(st,lo,U,UUU,st.CommBuf(),LLs,sU,in,out,1,0); //<---------
+        }
+      } else {
+        for (int ss = myblock; ss < myblock+myn; ++ss) {
+	  // Interior = 1; Exterior = 0;
+          int sU = ss;
+          Kernels::DhopSite(st,lo,U,UUU,st.CommBuf(),LLs,sU,in,out,1,0); //<------------
+        }
+      }
+        ptime = usecond() - start;
+    } else {
+      double start = usecond();
+      st.CommunicateThreaded();
+      ctime = usecond() - start;
+    }
+  }
+  DhopCommTime += ctime;
+  DhopComputeTime+=ptime;
+
+  // First to enter, last to leave timing
+  st.CollateThreads();
+
+  DhopFaceTime-=usecond();
+  st.CommsMerge(compressor);
+  DhopFaceTime+=usecond();
+
+  DhopComputeTime2-=usecond();
+  if (dag == DaggerYes) {
+    int sz=st.surface_list.size();
+    parallel_for (int ss = 0; ss < sz; ss++) {
+      int sU = st.surface_list[ss];
+      Kernels::DhopSiteDag(st,lo,U,UUU,st.CommBuf(),LLs,sU,in,out,0,1); //<----------
+    }
+  } else {
+    int sz=st.surface_list.size();
+    parallel_for (int ss = 0; ss < sz; ss++) {
+      int sU = st.surface_list[ss];
+      Kernels::DhopSite(st,lo,U,UUU,st.CommBuf(),LLs,sU,in,out,0,1);//<----------
+    }
+  }
+  DhopComputeTime2+=usecond();
+#else
+  assert(0);
+#endif
+
+}
+
+template<class Impl>
+void ImprovedStaggeredFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOrder &lo,
+						    DoubledGaugeField & U,DoubledGaugeField & UUU,
+						    const FermionField &in, FermionField &out,int dag)
+{
+  Compressor compressor;
+  int LLs = in._grid->_rdimensions[0];
+
+
+
+  DhopTotalTime -= usecond();
+  DhopCommTime -= usecond();
+  st.HaloExchange(in,compressor);
+  DhopCommTime += usecond();
+  
+  DhopComputeTime -= usecond();
+  // Dhop takes the 4d grid from U, and makes a 5d index for fermion
+  if (dag == DaggerYes) {
+    parallel_for (int ss = 0; ss < U._grid->oSites(); ss++) {
+      int sU=ss;
+      Kernels::DhopSiteDag(st, lo, U, UUU, st.CommBuf(), LLs, sU,in, out);
+    }
+  } else {
+    parallel_for (int ss = 0; ss < U._grid->oSites(); ss++) {
+      int sU=ss;
+      Kernels::DhopSite(st,lo,U,UUU,st.CommBuf(),LLs,sU,in,out);
+    }
+  }
+  DhopComputeTime += usecond();
+  DhopTotalTime   += usecond();
+}
+/*CHANGE END*/
+
+/* ORG
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOrder &lo,
 						    DoubledGaugeField & U,DoubledGaugeField & UUU,
@@ -254,6 +414,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOr
   DhopComputeTime += usecond();
   DhopTotalTime   += usecond();
 }
+*/
 
 
 template<class Impl>
@@ -336,6 +497,9 @@ void ImprovedStaggeredFermion5D<Impl>::ZeroCounters(void)
   DhopTotalTime    = 0;
   DhopCommTime    = 0;
   DhopComputeTime = 0;
+  DhopFaceTime    = 0;
+
+
   Stencil.ZeroCounters();
   StencilEven.ZeroCounters();
   StencilOdd.ZeroCounters();

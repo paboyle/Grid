@@ -64,6 +64,8 @@ namespace QCD {
       double DhopCalls;
       double DhopCommTime;
       double DhopComputeTime;
+      double DhopComputeTime2;
+      double DhopFaceTime;
 
       ///////////////////////////////////////////////////////////////
       // Implement the abstract base
@@ -118,6 +120,23 @@ namespace QCD {
 		      const FermionField &in, 
 		      FermionField &out,
 		      int dag);
+    
+    void DhopInternalOverlappedComms(StencilImpl & st,
+		      LebesgueOrder &lo,
+		      DoubledGaugeField &U,
+		      DoubledGaugeField &UUU,
+		      const FermionField &in, 
+		      FermionField &out,
+		      int dag);
+
+    void DhopInternalSerialComms(StencilImpl & st,
+		      LebesgueOrder &lo,
+		      DoubledGaugeField &U,
+		      DoubledGaugeField &UUU,
+		      const FermionField &in, 
+		      FermionField &out,
+		      int dag);
+    
     
     // Constructors
     ImprovedStaggeredFermion5D(GaugeField &_Uthin,
