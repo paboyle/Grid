@@ -40,6 +40,7 @@ modules_hpp =\
   Modules/MAction/DWF.hpp \
   Modules/MAction/Wilson.hpp \
   Modules/MScalarSUN/TrMag.hpp \
+  Modules/MScalarSUN/TwoPoint.hpp \
   Modules/MScalarSUN/TrPhi.hpp \
   Modules/MIO/LoadNersc.hpp \
   Modules/MIO/LoadBinary.hpp
