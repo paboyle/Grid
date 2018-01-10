@@ -67,3 +67,10 @@ std::string Hadrons::typeName(const std::type_info *info)
     
     return name;
 }
+
+// default writers/readers /////////////////////////////////////////////////////
+#ifdef HAVE_HDF5
+const std::string Hadrons::resultFileExt = "h5";
+#else
+const std::string Hadrons::resultFileExt = "xml";
+#endif

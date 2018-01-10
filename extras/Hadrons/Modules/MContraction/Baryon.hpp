@@ -122,7 +122,7 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
                  << " quarks '" << par().q1 << "', '" << par().q2 << "', and '"
                  << par().q3 << "'" << std::endl;
     
-    CorrWriter writer(par().output);
+    ResultWriter writer(RESULT_FILE_NAME(par().output));
     auto       &q1 = envGet(PropagatorField1, par().q1);
     auto       &q2 = envGet(PropagatorField2, par().q2);
     auto       &q3 = envGet(PropagatorField3, par().q2);

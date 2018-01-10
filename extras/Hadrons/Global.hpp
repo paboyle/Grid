@@ -167,13 +167,18 @@ std::string typeName(void)
 }
 
 // default writers/readers
+extern const std::string resultFileExt;
+
 #ifdef HAVE_HDF5
-typedef Hdf5Reader CorrReader;
-typedef Hdf5Writer CorrWriter;
+typedef Hdf5Reader ResultReader;
+typedef Hdf5Writer ResultWriter;
 #else
-typedef XmlReader CorrReader;
-typedef XmlWriter CorrWriter;
+typedef XmlReader ResultReader;
+typedef XmlWriter ResultWriter;
 #endif
+
+#define RESULT_FILE_NAME(name) \
+name + "." + std::to_string(vm().getTrajectory()) + "." + resultFileExt
 
 END_HADRONS_NAMESPACE
 

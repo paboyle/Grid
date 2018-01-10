@@ -119,7 +119,7 @@ void TDiscLoop<FImpl>::execute(void)
                  << "' using '" << par().q_loop << "' with " << par().gamma 
                  << " insertion." << std::endl;
 
-    CorrWriter            writer(par().output);
+    ResultWriter          writer(RESULT_FILE_NAME(par().output));
     auto                  &q_loop = envGet(PropagatorField, par().q_loop);
     Gamma                 gamma(par().gamma);
     std::vector<TComplex> buf;

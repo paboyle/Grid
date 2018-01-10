@@ -172,7 +172,7 @@ void TMeson<FImpl1, FImpl2>::execute(void)
                  << " quarks '" << par().q1 << "' and '" << par().q2 << "'"
                  << std::endl;
     
-    CorrWriter             writer(par().output);
+    ResultWriter           writer(RESULT_FILE_NAME(par().output));
     std::vector<TComplex>  buf;
     std::vector<Result>    result;
     Gamma                  g5(Gamma::Algebra::Gamma5);

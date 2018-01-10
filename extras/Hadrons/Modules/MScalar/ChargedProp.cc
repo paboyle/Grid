@@ -133,7 +133,7 @@ void TChargedProp::execute(void)
         LOG(Message) << "Saving zero-momentum projection to '"
                      << filename << "'..." << std::endl;
         
-        CorrWriter            writer(filename);
+        ResultWriter          writer(RESULT_FILE_NAME(par().output));
         std::vector<TComplex> vecBuf;
         std::vector<Complex>  result;
         
