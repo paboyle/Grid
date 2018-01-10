@@ -1,3 +1,30 @@
+/*************************************************************************************
+
+Grid physics library, www.github.com/paboyle/Grid 
+
+Source file: extras/Hadrons/Modules/MScalarSUN/TrMag.hpp
+
+Copyright (C) 2015-2018
+
+Author: Antonin Portelli <antonin.portelli@me.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+See the full license in the file "LICENSE" in the top level distribution directory
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef Hadrons_MScalarSUN_TrMag_hpp_
 #define Hadrons_MScalarSUN_TrMag_hpp_
 
@@ -8,7 +35,7 @@
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         TrMag                                 *
+ *                       Module to compute tr(mag^n)                          *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MScalarSUN)
 
@@ -55,7 +82,7 @@ MODULE_REGISTER_NS(TrMagSU5, TTrMag<ScalarNxNAdjImplR<5>>, MScalarSUN);
 MODULE_REGISTER_NS(TrMagSU6, TTrMag<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
- *                 TTrMag implementation                             *
+ *                         TTrMag implementation                              *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename SImpl>

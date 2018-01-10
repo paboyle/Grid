@@ -1,3 +1,30 @@
+/*************************************************************************************
+
+Grid physics library, www.github.com/paboyle/Grid 
+
+Source file: extras/Hadrons/Modules/MScalarSUN/TrPhi.hpp
+
+Copyright (C) 2015-2018
+
+Author: Antonin Portelli <antonin.portelli@me.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+See the full license in the file "LICENSE" in the top level distribution directory
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef Hadrons_MScalarSUN_TrPhi_hpp_
 #define Hadrons_MScalarSUN_TrPhi_hpp_
 
@@ -8,7 +35,7 @@
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         TrPhi                                 *
+ *                         Module to compute tr(phi^n)                        *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MScalarSUN)
 
@@ -32,7 +59,7 @@ public:
     public:
         GRID_SERIALIZABLE_CLASS_MEMBERS(Result,
                                         std::string, op,
-                                        Complex,     value);
+                                        Real,        value);
     };
 public:
     // constructor
@@ -58,7 +85,7 @@ MODULE_REGISTER_NS(TrPhiSU5, TTrPhi<ScalarNxNAdjImplR<5>>, MScalarSUN);
 MODULE_REGISTER_NS(TrPhiSU6, TTrPhi<ScalarNxNAdjImplR<6>>, MScalarSUN);
 
 /******************************************************************************
- *                 TTrPhi implementation                             *
+ *                          TTrPhi implementation                             *
  ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
 template <typename SImpl>
@@ -128,8 +155,8 @@ void TTrPhi<SImpl>::execute(void)
         {
             Result r;
 
-            r.op    = "phi" + std::to_string(n);
-            r.value = TensorRemove(sum(phin));
+            r.op    = "tr(phi^" + std::to_string(n) + ")";
+            r.value = TensorRemove(sum(phin)).real();
             result.push_back(r);
         }
     }
