@@ -112,7 +112,9 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
                  << " quarks '" << par().q1 << "', '" << par().q2 << "', and '"
                  << par().q3 << "'" << std::endl;
     
-    CorrWriter             writer(par().output);
+    std::string output_name = par().output + "." + std::to_string(env().getTrajectory());
+    
+    CorrWriter             writer(output_name);
     PropagatorField1      &q1 = *env().template getObject<PropagatorField1>(par().q1);
     PropagatorField2      &q2 = *env().template getObject<PropagatorField2>(par().q2);
     PropagatorField3      &q3 = *env().template getObject<PropagatorField3>(par().q2);

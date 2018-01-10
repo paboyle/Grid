@@ -165,8 +165,10 @@ void TMeson<FImpl1, FImpl2>::execute(void)
     LOG(Message) << "Computing meson contractions '" << getName() << "' using"
                  << " quarks '" << par().q1 << "' and '" << par().q2 << "'"
                  << std::endl;
+
+    std::string output_name = par().output + "." + std::to_string(env().getTrajectory());
     
-    CorrWriter             writer(par().output);
+    CorrWriter             writer(output_name);
     std::vector<TComplex>  buf;
     std::vector<Result>    result;
     Gamma                  g5(Gamma::Algebra::Gamma5);
