@@ -27,6 +27,7 @@
 #include <Grid/Hadrons/Modules/MScalar/ChargedProp.hpp>
 #include <Grid/Hadrons/Modules/MAction/DWF.hpp>
 #include <Grid/Hadrons/Modules/MAction/Wilson.hpp>
+#include <Grid/Hadrons/Modules/MScalarSUN/TrMag.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TrPhi.hpp>
 #include <Grid/Hadrons/Modules/MIO/LoadNersc.hpp>
 #include <Grid/Hadrons/Modules/MIO/LoadBinary.hpp>
