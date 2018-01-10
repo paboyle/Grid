@@ -32,8 +32,17 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-typedef WilsonFermionR FermionOp;
-typedef typename WilsonFermionR::FermionField FermionField;
+
+//typedef WilsonCloverFermionR FermionOp;
+//typedef typename WilsonFermionR::FermionField FermionField;
+
+typedef WilsonImplR FundImplPolicy;
+typedef WilsonCloverFermionR FundFermionAction; 
+typedef typename FundFermionAction::FermionField FundFermionField;
+
+typedef WilsonTwoIndexAntiSymmetricImplR ASymmImplPolicy; 
+typedef WilsonCloverTwoIndexAntiSymmetricFermionR ASymmFermionAction; 
+typedef typename ASymmFermionAction::FermionField ASymmFermionField;
 
 
 RealD AllZero(RealD x) { return 0.; }
@@ -60,49 +69,102 @@ int main(int argc, char** argv) {
   GridParallelRNG RNG5rb(FrbGrid);
   RNG5.SeedFixedIntegers(seeds5);
 
-  LatticeGaugeField Umu(UGrid);
-  SU3::HotConfiguration(RNG4, Umu);
+  GridParallelRNG          pRNG(UGrid); 
+  GridSerialRNG            sRNG; 
 
-/*
-  std::vector<LatticeColourMatrix> U(4, UGrid);
-  for (int mu = 0; mu < Nd; mu++) {
-    U[mu] = PeekIndex<LorentzIndex>(Umu, mu);
-  }
-*/
+  FundamentalRepresentation::LatticeField Umu(UGrid);
+  
+  TwoIndexAntiSymmetricRepresentation HiRep(UGrid);
+  TwoIndexAntiSymmetricRepresentation::LatticeField UmuAS(UGrid);
 
-  RealD mass = -0.1;
-  RealD M5 = 1.8;
-  RealD mob_b = 1.5;
-  FermionOp WilsonOperator(Umu,*FGrid,*FrbGrid,mass);
-  MdagMLinearOperator<FermionOp,LatticeFermion> HermOp(WilsonOperator); /// <-----
-  //SchurDiagTwoOperator<FermionOp,FermionField> HermOp(WilsonOperator);
+  
+  CheckpointerParameters CPparams;
+  
+  CPparams.config_prefix = "ckpoint_lat";
+  CPparams.rng_prefix = "ckpoint_rng";
+  CPparams.format = "IEEE64BIG";
 
-  const int Nstop = 20;
-  const int Nk = 60;
-  const int Np = 60;
+//NerscHmcCheckpointer<PeriodicGimplR> Checkpoint(std::string("ckpoint_lat"),
+ //                                                 std::string("ckpoint_rng"), 1);
+ 
+NerscHmcCheckpointer<PeriodicGimplR> Checkpoint(CPparams);
+
+  int CNFGSTART=1;
+  int CNFGEND=2;
+  int CNFGSTEP=1;
+
+  Real Fundmass = -0.1;
+  Real Fundcsw  =  1.0;
+  Real ASmass   = -0.1;
+  Real AScsw    =  1.0;
+    
+  std::cout << "Fund: mass and csw" << Fundmass << " and " << Fundcsw << std::endl; 
+  std::cout << "AS  : mass and csw" << ASmass << " and " << AScsw << std::endl; 
+
+  const int Nstop = 30;
+  const int Nk = 40;
+  const int Np = 40;
   const int Nm = Nk + Np;
   const int MaxIt = 10000;
-  RealD resid = 1.0e-6;
+  RealD resid = 1.0e-8;
 
-  std::vector<double> Coeffs{0, 1.};
-  Polynomial<FermionField> PolyX(Coeffs);
-  Chebyshev<FermionField> Cheb(0.0, 10., 12);
-  ImplicitlyRestartedLanczos<FermionField> IRL(HermOp, PolyX, Nstop, Nk, Nm,
+    for (int cnfg=CNFGSTART;cnfg<=CNFGEND;cnfg+=CNFGSTEP){
+      Checkpoint.CheckpointRestore(cnfg,Umu, sRNG, pRNG);
+
+  //SU4::HotConfiguration(RNG4, Umu); // temporary, then read.
+  
+  HiRep.update_representation(Umu);
+  UmuAS = HiRep.U;
+
+  FundFermionAction FundFermOp(Umu,*FGrid,*FrbGrid, Fundmass, Fundcsw, Fundcsw);
+  MdagMLinearOperator<FundFermionAction,FundFermionField> HermOpFund(FundFermOp); /// <-----
+  
+  ASymmFermionAction ASFermOp(UmuAS,*FGrid,*FrbGrid, ASmass, AScsw, AScsw);
+  MdagMLinearOperator<ASymmFermionAction,ASymmFermionField> HermOpAS(ASFermOp); /// <-----
+  
+  std::vector<double> Coeffs{0, -1.};
+  Polynomial<FundFermionField> FundPolyX(Coeffs);
+  Chebyshev<FundFermionField> FundCheb(0.0, 10., 12);
+  ImplicitlyRestartedLanczos<FundFermionField> IRL_Fund(HermOpFund, FundPolyX, Nstop, Nk, Nm,
                                                resid, MaxIt);
+  
+  Polynomial<ASymmFermionField> ASPolyX(Coeffs);
+  Chebyshev<ASymmFermionField> ASCheb(0.0, 10., 12);
+  ImplicitlyRestartedLanczos<ASymmFermionField> IRL_AS(HermOpAS, ASPolyX, Nstop, Nk, Nm,
+                                               resid, MaxIt);
+                                               
+  std::vector<RealD> Fundeval(Nm);
+  std::vector<RealD> ASeval(Nm);
 
-  std::vector<RealD> eval(Nm);
-  FermionField src(FGrid);
-  gaussian(RNG5, src);
-  std::vector<FermionField> evec(Nm, FGrid);
+  FundFermionField Fundsrc(FGrid);
+  ASymmFermionField   ASsrc(FGrid);
+  
+  gaussian(RNG5, Fundsrc);
+  gaussian(RNG5, ASsrc);
+
+  std::vector<FundFermionField> Fundevec(Nm, FGrid);
+  std::vector<ASymmFermionField>   ASevec(Nm, FGrid);
+  
   for (int i = 0; i < 1; i++) {
-    std::cout << i << " / " << Nm << " grid pointer " << evec[i]._grid
+    std::cout << i << " / " << Nm << "Fund: grid pointer " << Fundevec[i]._grid
               << std::endl;
   };
+  for (int i = 0; i < 1; i++) {
+    std::cout << i << " / " << Nm << "AS: grid pointer " << ASevec[i]._grid
+              << std::endl;
+  };
+  
+  int FundNconv, ASNconv;
+  IRL_Fund.calc(Fundeval, Fundevec, Fundsrc, FundNconv);
+  IRL_AS.calc(ASeval, ASevec, ASsrc, ASNconv);
 
-  int Nconv;
-  IRL.calc(eval, evec, src, Nconv);
-
-  std::cout << eval << std::endl;
+      for (int i=0;i<FundNconv;i++){
+      std::cout << "Fund: eval[" << i << "] = " << Fundeval[i] << std::endl;
+    }  
+    for (int i=0;i<ASNconv;i++){
+      std::cout << "2Index: eval[" << i << "] = " << ASeval[i] << std::endl;
+    }  
+    }
 
   Grid_finalize();
 }
