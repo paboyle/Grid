@@ -119,18 +119,17 @@ class FlexibleCommunicationAvoidingGeneralisedMinimalResidual : public OperatorF
         RealD resnorm       = sqrt(norm2(r));
         RealD true_residual = resnorm / srcnorm;
 
-        std::cout << GridLogMessage << "FlexibleCommunicationAvoidingGeneralisedMinimalResidual: Converged on iteration " << IterationCount << std::endl;
-        std::cout << GridLogMessage << "\tComputed residual "                                                             << sqrt(cp / ssq) << std::endl;
-        std::cout << GridLogMessage << "\tTrue residual "                                                                 << true_residual  << std::endl;
-        std::cout << GridLogMessage << "\tTarget "                                                                        << Tolerance      << std::endl;
+        std::cout << GridLogMessage        << "FlexibleCommunicationAvoidingGeneralisedMinimalResidual: Converged on iteration " << IterationCount
+                  << " computed residual " << sqrt(cp / ssq)
+                  << " true residual "     << true_residual
+                  << " target "            << Tolerance << std::endl;
 
-        std::cout << GridLogMessage << "FlexibleCommunicationAvoidingGeneralisedMinimalResidual Time breakdown" << std::endl;
-        std::cout << GridLogMessage << "\tElapsed " << SolverTimer.Elapsed()                                    << std::endl;
-        std::cout << GridLogMessage << "\tPrecon "  << PrecTimer.Elapsed()                                      << std::endl;
-        std::cout << GridLogMessage << "\tMatrix "  << MatrixTimer.Elapsed()                                    << std::endl;
-        std::cout << GridLogMessage << "\tLinalg "  << LinalgTimer.Elapsed()                                    << std::endl;
-        std::cout << GridLogMessage << "\tQR "      << QrTimer.Elapsed()                                        << std::endl;
-        std::cout << GridLogMessage << "\tCompSol " << CompSolutionTimer.Elapsed()                              << std::endl;
+        std::cout << GridLogMessage << "FCAGMRES Time elapsed: Total   " <<       SolverTimer.Elapsed() << std::endl;
+        std::cout << GridLogMessage << "FCAGMRES Time elapsed: Precon  " <<         PrecTimer.Elapsed() << std::endl;
+        std::cout << GridLogMessage << "FCAGMRES Time elapsed: Matrix  " <<       MatrixTimer.Elapsed() << std::endl;
+        std::cout << GridLogMessage << "FCAGMRES Time elapsed: Linalg  " <<       LinalgTimer.Elapsed() << std::endl;
+        std::cout << GridLogMessage << "FCAGMRES Time elapsed: QR      " <<           QrTimer.Elapsed() << std::endl;
+        std::cout << GridLogMessage << "FCAGMRES Time elapsed: CompSol " << CompSolutionTimer.Elapsed() << std::endl;
         return;
       }
     }

@@ -129,15 +129,14 @@ template<class Field> class MinimalResidual : public OperatorFunction<Field> {
         RealD resnorm       = sqrt(norm2(r));
         RealD true_residual = resnorm / srcnorm;
 
-        std::cout << GridLogMessage << "MinimalResidual Converged on iteration " << k << std::endl;
-        std::cout << GridLogMessage << "\tComputed residual " << sqrt(cp / ssq) << std::endl;
-        std::cout << GridLogMessage << "\tTrue residual " << true_residual << std::endl;
-        std::cout << GridLogMessage << "\tTarget " << Tolerance << std::endl;
+        std::cout << GridLogMessage        << "MinimalResidual Converged on iteration " << k
+                  << " computed residual " << sqrt(cp / ssq)
+                  << " true residual "     << true_residual
+                  << " target "            << Tolerance << std::endl;
 
-        std::cout << GridLogMessage << "Time breakdown " << std::endl;
-        std::cout << GridLogMessage << "\tElapsed    " << SolverTimer.Elapsed() << std::endl;
-        std::cout << GridLogMessage << "\tMatrix     " << MatrixTimer.Elapsed() << std::endl;
-        std::cout << GridLogMessage << "\tLinalg     " << LinalgTimer.Elapsed() << std::endl;
+        std::cout << GridLogMessage << "MR Time elapsed: Total   " << SolverTimer.Elapsed() << std::endl;
+        std::cout << GridLogMessage << "MR Time elapsed: Matrix  " << MatrixTimer.Elapsed() << std::endl;
+        std::cout << GridLogMessage << "MR Time elapsed: Linalg  " << LinalgTimer.Elapsed() << std::endl;
 
         if (ErrorOnNoConverge)
           assert(true_residual / Tolerance < 10000.0);
