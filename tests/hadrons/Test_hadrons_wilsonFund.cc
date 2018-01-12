@@ -50,18 +50,15 @@ int main(int argc, char *argv[])
     // global parameters
     Application::GlobalPar globalPar;
   
-    globalPar.trajCounter.start = 1;
-    globalPar.trajCounter.end   = 2;
-    globalPar.trajCounter.step  = 1;
-
     globalPar.trajCounter.start = 309;
     globalPar.trajCounter.end   = 310;
     globalPar.trajCounter.step  = 1;
+
     globalPar.seed              = "1 2 3 4";
+
     application.setPar(globalPar);
     // gauge field
-    application.createModule<MGauge::Load>("gauge");
-   //application.createModule<MGauge::Unit>("gauge");
+    application.createModule<MIO::LoadNersc>("gauge");
    
     // sources
     //MSource::Z2::Par z2Par;

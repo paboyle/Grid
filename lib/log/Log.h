@@ -85,12 +85,16 @@ class Logger {
 protected:
   Colours &Painter;
   int active;
+  int timing_mode;
+  int topWidth{-1};
   static int timestamp;
   std::string name, topName;
   std::string COLOUR;
 
 public:
-  static GridStopWatch StopWatch;
+  static GridStopWatch GlobalStopWatch;
+  GridStopWatch         LocalStopWatch;
+  GridStopWatch *StopWatch;
   static std::ostream devnull;
 
   std::string background() {return Painter.colour["NORMAL"];}
@@ -101,22 +105,44 @@ public:
     name(nm),
     topName(topNm),
     Painter(col_class),
-    COLOUR(col) {} ;
+    timing_mode(0),
+    COLOUR(col) 
+    {
+      StopWatch = & GlobalStopWatch;
+    };
   
   void Active(int on) {active = on;};
   int  isActive(void) {return active;};
   static void Timestamp(int on) {timestamp = on;};
-  
+  void Reset(void) { 
+    StopWatch->Reset(); 
+    StopWatch->Start(); 
+  }
+  void TimingMode(int on) { 
+    timing_mode = on; 
+    if(on) { 
+      StopWatch = &LocalStopWatch;
+      Reset(); 
+    }
+  }
+  void setTopWidth(const int w) {topWidth = w;}
+
   friend std::ostream& operator<< (std::ostream& stream, Logger& log){
 
     if ( log.active ) {
-      stream << log.background()<< std::setw(8) << std::left << log.topName << log.background()<< " : ";
-      stream << log.colour() << std::setw(10) << std::left << log.name << log.background() << " : ";
+      stream << log.background()<<  std::left;
+      if (log.topWidth > 0)
+      {
+        stream << std::setw(log.topWidth);
+      }
+      stream << log.topName << log.background()<< " : ";
+      stream << log.colour() <<  std::left << log.name << log.background() << " : ";
       if ( log.timestamp ) {
-	StopWatch.Stop();
-	GridTime now = StopWatch.Elapsed();
-	StopWatch.Start();
-	stream << log.evidence()<< now << log.background() << " : " ;
+	log.StopWatch->Stop();
+	GridTime now = log.StopWatch->Elapsed();
+	if ( log.timing_mode==1 ) log.StopWatch->Reset();
+	log.StopWatch->Start();
+	stream << log.evidence()<< std::setw(6)<<now << log.background() << " : " ;
       }
       stream << log.colour();
       return stream;
@@ -135,6 +161,8 @@ public:
 
 void GridLogConfigure(std::vector<std::string> &logstreams);
 
+extern GridLogger GridLogIRL;
+extern GridLogger GridLogSolver;
 extern GridLogger GridLogError;
 extern GridLogger GridLogWarning;
 extern GridLogger GridLogMessage;

@@ -84,11 +84,12 @@ int main (int argc, char ** argv)
 
   std::vector<double> Coeffs { 0.,-1.};
   Polynomial<FermionField> PolyX(Coeffs);
-  Chebyshev<FermionField> Cheb(0.2,5.,11);
-//  ChebyshevLanczos<LatticeFermion> Cheb(9.,1.,0.,20);
-//  Cheb.csv(std::cout);
-//  exit(-24);
-  ImplicitlyRestartedLanczos<FermionField> IRL(HermOp,Cheb,Nstop,Nk,Nm,resid,MaxIt);
+  Chebyshev<FermionField> Cheby(0.2,5.,11);
+
+  FunctionHermOp<FermionField> OpCheby(Cheby,HermOp);
+     PlainHermOp<FermionField> Op     (HermOp);
+
+  ImplicitlyRestartedLanczos<FermionField> IRL(OpCheby,Op,Nstop,Nk,Nm,resid,MaxIt);
 
   
   std::vector<RealD>          eval(Nm);

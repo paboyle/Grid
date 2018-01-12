@@ -48,7 +48,6 @@ struct scal {
 int main (int argc, char ** argv)
 {
   typedef typename ImprovedStaggeredFermionR::FermionField FermionField; 
-  typedef typename ImprovedStaggeredFermionR::ComplexField ComplexField; 
   typename ImprovedStaggeredFermionR::ImplParams params; 
 
   Grid_init(&argc,&argv);

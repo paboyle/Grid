@@ -265,7 +265,6 @@ public:
     if ( timer3 ) std::cout << GridLogMessage << " timer3 (commsMergeShm) " <<timer3/calls <<std::endl;
     if ( timer4 ) std::cout << GridLogMessage << " timer4 " <<timer4 <<std::endl;
   }
-  typedef CartesianCommunicator::CommsRequest_t CommsRequest_t;
 
   std::vector<int> same_node;
   std::vector<int> surface_list;

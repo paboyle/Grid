@@ -2,10 +2,9 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MGauge/Load.cc
+Source file: extras/Hadrons/Modules/MIO/LoadNersc.cc
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -26,30 +25,29 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-
-#include <Grid/Hadrons/Modules/MGauge/Load.hpp>
+#include <Grid/Hadrons/Modules/MIO/LoadNersc.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
-using namespace MGauge;
+using namespace MIO;
 
 /******************************************************************************
-*                           TLoad implementation                               *
+*                       TLoadNersc implementation                             *
 ******************************************************************************/
 // constructor /////////////////////////////////////////////////////////////////
-TLoad::TLoad(const std::string name)
-: Module<LoadPar>(name)
+TLoadNersc::TLoadNersc(const std::string name)
+: Module<LoadNerscPar>(name)
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
-std::vector<std::string> TLoad::getInput(void)
+std::vector<std::string> TLoadNersc::getInput(void)
 {
     std::vector<std::string> in;
     
     return in;
 }
 
-std::vector<std::string> TLoad::getOutput(void)
+std::vector<std::string> TLoadNersc::getOutput(void)
 {
     std::vector<std::string> out = {getName()};
     
@@ -57,22 +55,21 @@ std::vector<std::string> TLoad::getOutput(void)
 }
 
 // setup ///////////////////////////////////////////////////////////////////////
-void TLoad::setup(void)
+void TLoadNersc::setup(void)
 {
-    env().registerLattice<LatticeGaugeField>(getName());
+    envCreateLat(LatticeGaugeField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
-void TLoad::execute(void)
+void TLoadNersc::execute(void)
 {
-    FieldMetaData  header;
-
-    std::string fileName = par().file + "ckpoint_lat."
-                           + std::to_string(env().getTrajectory());
-    
+    FieldMetaData header;
+    std::string   fileName = par().file + "."
+                             + std::to_string(vm().getTrajectory());
     LOG(Message) << "Loading NERSC configuration from file '" << fileName
                  << "'" << std::endl;
-    LatticeGaugeField &U = *env().createLattice<LatticeGaugeField>(getName());
+
+    auto &U = envGet(LatticeGaugeField, getName());
     NerscIO::readConfiguration(U, header, fileName);
     LOG(Message) << "NERSC header:" << std::endl;
     dump_meta_data(header, LOG(Message));

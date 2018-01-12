@@ -38,7 +38,7 @@ namespace Grid{
 class GridCartesian: public GridBase {
 
 public:
-
+    int dummy;
     virtual int  CheckerBoardFromOindexTable (int Oindex) {
       return 0;
     }
@@ -67,7 +67,14 @@ public:
     GridCartesian(const std::vector<int> &dimensions,
 		  const std::vector<int> &simd_layout,
 		  const std::vector<int> &processor_grid,
-		  const GridCartesian &parent) : GridBase(processor_grid,parent)
+		  const GridCartesian &parent) : GridBase(processor_grid,parent,dummy)
+    {
+      Init(dimensions,simd_layout,processor_grid);
+    }
+    GridCartesian(const std::vector<int> &dimensions,
+		  const std::vector<int> &simd_layout,
+		  const std::vector<int> &processor_grid,
+		  const GridCartesian &parent,int &split_rank) : GridBase(processor_grid,parent,split_rank)
     {
       Init(dimensions,simd_layout,processor_grid);
     }
@@ -80,6 +87,8 @@ public:
     {
       Init(dimensions,simd_layout,processor_grid);
     }
+
+    virtual ~GridCartesian() = default;
 
     void Init(const std::vector<int> &dimensions,
 	      const std::vector<int> &simd_layout,
@@ -114,6 +123,7 @@ public:
 
         // Use a reduced simd grid
         _ldimensions[d] = _gdimensions[d] / _processors[d]; //local dimensions
+        //std::cout << _ldimensions[d] << "  " << _gdimensions[d] << "  " << _processors[d] << std::endl;
         assert(_ldimensions[d] * _processors[d] == _gdimensions[d]);
 
         _rdimensions[d] = _ldimensions[d] / _simd_layout[d]; //overdecomposition
@@ -158,6 +168,7 @@ public:
         block = block * _rdimensions[d];
       }
     };
+
 };
 }
 #endif

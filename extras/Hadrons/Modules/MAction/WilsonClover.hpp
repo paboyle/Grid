@@ -105,34 +105,45 @@ std::vector<std::string> TWilsonClover<FImpl>::getOutput(void)
 template <typename FImpl>
 void TWilsonClover<FImpl>::setup(void)
 {
-    unsigned int size;
+    //unsigned int size;
 
-    size = 2*env().template lattice4dSize<typename FImpl::DoubledGaugeField>();
-    env().registerObject(getName(), size);
+    // size = 2*env().template lattice4dSize<typename FImpl::DoubledGaugeField>();
+    // env().registerObject(getName(), size);
+
+
+    LOG(Message) << "Setting up TWilsonClover fermion matrix with m= " << par().mass
+                 << " using gauge field '" << par().gauge << "'" << std::endl;
+    LOG(Message) << "Fermion boundary conditions: " << par().boundary 
+                 << std::endl;
+    LOG(Message) << "Clover term csw_r: " << par().csw_r
+                 << " csw_t: " << par().csw_t
+                 << std::endl;
+    auto &U      = envGet(LatticeGaugeField, par().gauge);
+    auto &grid   = *env().getGrid();
+    auto &gridRb = *env().getRbGrid();
+    std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
+    typename WilsonCloverFermion<FImpl>::ImplParams implParams(boundary);
+    envCreateDerived(FMat, WilsonCloverFermion<FImpl>, getName(), 1, U, grid, gridRb, par().mass,
+						  par().csw_r,
+						  par().csw_t,
+					      par().clover_anisotropy,
+						  implParams); 
+
+
+    //FMat *fMatPt = new WilsonCloverFermion<FImpl>(U, grid, gridRb, par().mass,
+	//					  par().csw_r,
+	//					  par().csw_t,
+	//				      par().clover_anisotropy,
+	//					  implParams);
+    //env().setObject(getName(), fMatPt);
+
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TWilsonClover<FImpl>::execute()
 {
-    LOG(Message) << "Setting up TWilsonClover fermion matrix with m= " << par().mass
-                 << " using gauge field '" << par().gauge << "'" << std::endl;
-    LOG(Message) << "Fermion boundary conditions: " << par().boundary 
-                 << std::endl;
-    LOG(Message) << "clover term csw_r= " << par().csw_r
-                 << " csw_t= " << par().csw_t
-                 << std::endl;
-    auto &U      = *env().template getObject<LatticeGaugeField>(par().gauge);
-    auto &grid   = *env().getGrid();
-    auto &gridRb = *env().getRbGrid();
-    std::vector<Complex> boundary = strToVec<Complex>(par().boundary);
-    typename WilsonCloverFermion<FImpl>::ImplParams implParams(boundary);
-    FMat *fMatPt = new WilsonCloverFermion<FImpl>(U, grid, gridRb, par().mass,
-						  par().csw_r,
-						  par().csw_t,
-					      par().clover_anisotropy,
-						  implParams);
-    env().setObject(getName(), fMatPt);
+
 }
 
 END_MODULE_NAMESPACE

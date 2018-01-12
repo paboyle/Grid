@@ -393,6 +393,31 @@ void ImprovedStaggeredFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder
   }
 };
 
+//////////////////////////////////////////////////////// 
+// Conserved current - not yet implemented.
+////////////////////////////////////////////////////////
+template <class Impl>
+void ImprovedStaggeredFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
+                                                        PropagatorField &q_in_2,
+                                                        PropagatorField &q_out,
+                                                        Current curr_type,
+                                                        unsigned int mu)
+{
+    assert(0);
+}
+
+template <class Impl>
+void ImprovedStaggeredFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
+                                                         PropagatorField &q_out,
+                                                         Current curr_type,
+                                                         unsigned int mu, 
+                                                         std::vector<Real> mom,
+                                                         unsigned int tmin,
+                                                         unsigned int tmax)
+{
+    assert(0);
+}
+
 FermOpStaggeredTemplateInstantiate(ImprovedStaggeredFermion);
 
   //AdjointFermOpTemplateInstantiate(ImprovedStaggeredFermion);

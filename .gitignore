@@ -93,6 +93,7 @@ build*/*
 *.xcodeproj/*
 build.sh
 .vscode
+*.code-workspace
 
 # Eigen source #
 ################
@@ -123,6 +124,8 @@ make-bin-BUCK.sh
 lib/qcd/spin/gamma-gen/*.h
 lib/qcd/spin/gamma-gen/*.cc
 
+# vs code editor files #
+########################
 .vscode/
 .vscode/settings.json
 settings.json
