@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,8 +24,8 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_BINARY_IO_H
 #define GRID_BINARY_IO_H
 
@@ -42,15 +42,14 @@
 #include <arpa/inet.h>
 #include <algorithm>
 
-namespace Grid { 
-
+NAMESPACE_BEGIN(Grid); 
 
 /////////////////////////////////////////////////////////////////////////////////
 // Byte reversal garbage
 /////////////////////////////////////////////////////////////////////////////////
 inline uint32_t byte_reverse32(uint32_t f) { 
-      f = ((f&0xFF)<<24) | ((f&0xFF00)<<8) | ((f&0xFF0000)>>8) | ((f&0xFF000000UL)>>24) ; 
-      return f;
+  f = ((f&0xFF)<<24) | ((f&0xFF00)<<8) | ((f&0xFF0000)>>8) | ((f&0xFF000000UL)>>24) ; 
+  return f;
 }
 inline uint64_t byte_reverse64(uint64_t f) { 
   uint64_t g;
@@ -80,7 +79,7 @@ inline void removeWhitespace(std::string &key)
 // Could just use a namespace
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 class BinaryIO {
- public:
+public:
 
   /////////////////////////////////////////////////////////////////////////////
   // more byte manipulation helpers
@@ -106,25 +105,25 @@ class BinaryIO {
 
     uint64_t lsites = grid->lSites();
     if (fbuf.size() == 1)
-    {
-      lsites = 1;
-    }
+      {
+	lsites = 1;
+      }
 
-    #pragma omp parallel
+#pragma omp parallel
     {
       uint32_t nersc_csum_thr = 0;
 
-      #pragma omp for
+#pragma omp for
       for (uint64_t local_site = 0; local_site < lsites; local_site++)
-      {
-        uint32_t *site_buf = (uint32_t *)&fbuf[local_site];
-        for (uint64_t j = 0; j < size32; j++)
-        {
-          nersc_csum_thr = nersc_csum_thr + site_buf[j];
-        }
-      }
+	{
+	  uint32_t *site_buf = (uint32_t *)&fbuf[local_site];
+	  for (uint64_t j = 0; j < size32; j++)
+	    {
+	      nersc_csum_thr = nersc_csum_thr + site_buf[j];
+	    }
+	}
 
-      #pragma omp critical
+#pragma omp critical
       {
         nersc_csum += nersc_csum_thr;
       }
@@ -372,13 +371,13 @@ class BinaryIO {
         std::ifstream fin;
         fin.open(file, std::ios::binary | std::ios::in);
         if (control & BINARYIO_MASTER_APPEND)
-        {
-          fin.seekg(-sizeof(fobj), fin.end);
-        }
+	  {
+	    fin.seekg(-sizeof(fobj), fin.end);
+	  }
         else
-        {
-          fin.seekg(offset + myrank * lsites * sizeof(fobj));
-        }
+	  {
+	    fin.seekg(offset + myrank * lsites * sizeof(fobj));
+	  }
         fin.read((char *)&iodata[0], iodata.size() * sizeof(fobj));
         assert(fin.fail() == 0);
         fin.close();
@@ -417,17 +416,17 @@ class BinaryIO {
         ierr = MPI_File_open(grid->communicator, (char *)file.c_str(), MPI_MODE_RDWR | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
 	//        std::cout << GridLogMessage << "Checking for errors" << std::endl;
         if (ierr != MPI_SUCCESS)
-        {
-          char error_string[BUFSIZ];
-          int length_of_error_string, error_class;
+	  {
+	    char error_string[BUFSIZ];
+	    int length_of_error_string, error_class;
 
-          MPI_Error_class(ierr, &error_class);
-          MPI_Error_string(error_class, error_string, &length_of_error_string);
-          fprintf(stderr, "%3d: %s\n", myrank, error_string);
-          MPI_Error_string(ierr, error_string, &length_of_error_string);
-          fprintf(stderr, "%3d: %s\n", myrank, error_string);
-          MPI_Abort(MPI_COMM_WORLD, 1); //assert(ierr == 0);
-        }
+	    MPI_Error_class(ierr, &error_class);
+	    MPI_Error_string(error_class, error_string, &length_of_error_string);
+	    fprintf(stderr, "%3d: %s\n", myrank, error_string);
+	    MPI_Error_string(ierr, error_string, &length_of_error_string);
+	    fprintf(stderr, "%3d: %s\n", myrank, error_string);
+	    MPI_Abort(MPI_COMM_WORLD, 1); //assert(ierr == 0);
+	  }
 
         std::cout << GridLogDebug << "MPI read I/O set view " << file << std::endl;
         ierr = MPI_File_set_view(fh, disp, mpiObject, fileArray, "native", MPI_INFO_NULL);
@@ -557,14 +556,14 @@ class BinaryIO {
   // Write a Lattice of object
   //////////////////////////////////////////////////////////////////////////////////////
   template<class vobj,class fobj,class munger>
-    static inline void writeLatticeObject(Lattice<vobj> &Umu,
-					  std::string file,
-					  munger munge,
-					  Integer offset,
-					  const std::string &format,
-					  uint32_t &nersc_csum,
-					  uint32_t &scidac_csuma,
-					  uint32_t &scidac_csumb)
+  static inline void writeLatticeObject(Lattice<vobj> &Umu,
+					std::string file,
+					munger munge,
+					Integer offset,
+					const std::string &format,
+					uint32_t &nersc_csum,
+					uint32_t &scidac_csuma,
+					uint32_t &scidac_csumb)
   {
     typedef typename vobj::scalar_object sobj;
     typedef typename vobj::Realified::scalar_type word;    word w=0;
@@ -713,5 +712,5 @@ class BinaryIO {
     std::cout << GridLogMessage << "RNG state overhead " << timer.Elapsed() << std::endl;
   }
 };
-}
+NAMESPACE_END(Grid);
 #endif
