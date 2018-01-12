@@ -1,4 +1,4 @@
-   /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,8 +23,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_ASM_BGQ_QPX_H
 #define GRID_ASM_BGQ_QPX_H
 
@@ -153,32 +153,32 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 /*********************************************************
  * Macro sequences encoding QCD
  *********************************************************/
-#define LOCK_GAUGE(dir)							\
-  {									\
-    uint64_t byte_addr = (uint64_t)&U._odata[sU];			\
-    int count = (sizeof(U._odata[0])+63)/64;				\
-    asm (" mtctr %0 \n"							\
-	 " mr " HASH(REP) ", %1\n"					\
-	 " li " HASH(IMM) ", 64\n"					\
+#define LOCK_GAUGE(dir)						\
+  {								\
+    uint64_t byte_addr = (uint64_t)&U._odata[sU];		\
+    int count = (sizeof(U._odata[0])+63)/64;			\
+    asm (" mtctr %0 \n"						\
+	 " mr " HASH(REP) ", %1\n"				\
+	 " li " HASH(IMM) ", 64\n"				\
 	 "0:\n"							\
-	 LOCK_SET							\
-	 "  add " HASH(REP) "," HASH(IMM) "," HASH(REP) "\n"		\
+	 LOCK_SET						\
+	 "  add " HASH(REP) "," HASH(IMM) "," HASH(REP) "\n"	\
 	 "  bdnz 0b\n"						\
-	 : : "b" (count), "b" (byte_addr) );					\
+	 : : "b" (count), "b" (byte_addr) );			\
   }
 
-#define UNLOCK_GAUGE(dir)						\
-  {									\
-    uint64_t byte_addr = (uint64_t)&U._odata[sU];			\
-    int count = (sizeof(U._odata[0])+63)/64;				\
-    asm (" mtctr %0 \n"							\
-	 " mr " HASH(REP) ", %1\n"					\
-	 " li " HASH(IMM) ", 64\n"					\
-	 "0:\n"								\
-	 LOCK_CLEAR							\
-	 "  add " HASH(REP) "," HASH(IMM) "," HASH(REP) "\n"		\
+#define UNLOCK_GAUGE(dir)					\
+  {								\
+    uint64_t byte_addr = (uint64_t)&U._odata[sU];		\
+    int count = (sizeof(U._odata[0])+63)/64;			\
+    asm (" mtctr %0 \n"						\
+	 " mr " HASH(REP) ", %1\n"				\
+	 " li " HASH(IMM) ", 64\n"				\
+	 "0:\n"							\
+	 LOCK_CLEAR						\
+	 "  add " HASH(REP) "," HASH(IMM) "," HASH(REP) "\n"	\
 	 "  bdnz 0b\n"						\
-	 : : "b" (count), "b" (byte_addr) );					\
+	 : : "b" (count), "b" (byte_addr) );			\
   }
 
 #define ZERO_PSI				\
@@ -201,11 +201,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define MULT_2SPIN_QPXf(ptr,p)    MULT_2SPIN_QPX_INTERNAL(ptr,p,VLOAD,16) 
 
 #define MULT_2SPIN_QPX_INTERNAL(ptr,p,ULOAD,USKIP) {			\
-    uint64_t ub = ((uint64_t)ptr);				\
-    asm (							\
-         ULOAD(%0,%3,U0)					\
-         ULOAD(%1,%3,U1)					\
-         ULOAD(%2,%3,U2)					\
+    uint64_t ub = ((uint64_t)ptr);					\
+    asm (								\
+         ULOAD(%0,%3,U0)						\
+         ULOAD(%1,%3,U1)						\
+         ULOAD(%2,%3,U2)						\
 	 VMUL_RR_RI(UChi_00,U0,Chi_00)					\
 	 VMUL_RR_RI(UChi_01,U1,Chi_00)					\
 	 VMUL_RR_RI(UChi_02,U2,Chi_00)					\
@@ -235,7 +235,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	 VMADD_MII_IR(UChi_10,U0,Chi_11,UChi_10)			\
 	 VMADD_MII_IR(UChi_11,U1,Chi_11,UChi_11)			\
 	 VMADD_MII_IR(UChi_12,U2,Chi_11,UChi_12)			\
-	 : : "b" (USKIP*1), "b" (USKIP*4), "b" (USKIP*7), "b" (ub ));		\
+	 : : "b" (USKIP*1), "b" (USKIP*4), "b" (USKIP*7), "b" (ub ));	\
     asm (								\
          ULOAD(%0,%3,U0)						\
          ULOAD(%1,%3,U1)						\
@@ -252,30 +252,30 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	 VMADD_MII_IR(UChi_10,U0,Chi_12,UChi_10)			\
 	 VMADD_MII_IR(UChi_11,U1,Chi_12,UChi_11)			\
 	 VMADD_MII_IR(UChi_12,U2,Chi_12,UChi_12)			\
-	 : : "b" (USKIP*2), "b" (USKIP*5), "b" (USKIP*8), "b" (ub ));		\
+	 : : "b" (USKIP*2), "b" (USKIP*5), "b" (USKIP*8), "b" (ub ));	\
   }
 
 
 #define MULT_2SPIN_DIR_PF(A,p) MULT_2SPIN_PF(&U._odata[sU](A),p)
 #define MULT_2SPIN_PF(ptr,pf) MULT_2SPIN(ptr,pf)
 
-#define SAVE_RESULT(base,basep) {\
-    uint64_t ub = ((uint64_t)base)  - (VSIZE);			\
-    asm("mr " HASH(REP)  ", %0;\n"					\
-	"li " HASH(IMM)      "," HASH(VSIZE)" ;\n"				\
-	VSTOREu(IMM,REP,psi_00)						\
-	VSTOREu(IMM,REP,psi_01)						\
-	VSTOREu(IMM,REP,psi_02)						\
-	VSTOREu(IMM,REP,psi_10)						\
-	VSTOREu(IMM,REP,psi_11)						\
-	VSTOREu(IMM,REP,psi_12)						\
-	VSTOREu(IMM,REP,psi_20)						\
-	VSTOREu(IMM,REP,psi_21)						\
-	VSTOREu(IMM,REP,psi_22)						\
-	VSTOREu(IMM,REP,psi_30)						\
-	VSTOREu(IMM,REP,psi_31)						\
-	VSTOREu(IMM,REP,psi_32)						\
-	: : "b" (ub) : HASH(pIMM), HASH(pREP) );				\
+#define SAVE_RESULT(base,basep) {			\
+    uint64_t ub = ((uint64_t)base)  - (VSIZE);		\
+    asm("mr " HASH(REP)  ", %0;\n"			\
+	"li " HASH(IMM)      "," HASH(VSIZE)" ;\n"	\
+	VSTOREu(IMM,REP,psi_00)				\
+	VSTOREu(IMM,REP,psi_01)				\
+	VSTOREu(IMM,REP,psi_02)				\
+	VSTOREu(IMM,REP,psi_10)				\
+	VSTOREu(IMM,REP,psi_11)				\
+	VSTOREu(IMM,REP,psi_12)				\
+	VSTOREu(IMM,REP,psi_20)				\
+	VSTOREu(IMM,REP,psi_21)				\
+	VSTOREu(IMM,REP,psi_22)				\
+	VSTOREu(IMM,REP,psi_30)				\
+	VSTOREu(IMM,REP,psi_31)				\
+	VSTOREu(IMM,REP,psi_32)				\
+	: : "b" (ub) : HASH(pIMM), HASH(pREP) );	\
   }
 
 
@@ -295,7 +295,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	"li  " HASH(IMM) ",(2*" HASH(VSIZE) ");\n"			\
 	VLOADu(IMM,REP,Chi_01)						\
 	VLOADu(IMM,REP,Chi_10)						\
-	VLOADu(IMM,REP,Chi_12)	: : "b" (ub)  : HASH(pIMM), HASH(pREP) );	\
+	VLOADu(IMM,REP,Chi_12)	: : "b" (ub)  : HASH(pIMM), HASH(pREP) ); \
   }
 
 #define LOAD_CHIMU(base) {						\
@@ -316,27 +316,27 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	VLOADu(IMM,REP,Chi_12)						\
 	VLOADu(IMM,REP,Chi_21)						\
 	VLOADu(IMM,REP,Chi_30)						\
-	VLOADu(IMM,REP,Chi_32)	: : "b" (ub)  : HASH(pIMM), HASH(pREP) );	\
+	VLOADu(IMM,REP,Chi_32)	: : "b" (ub)  : HASH(pIMM), HASH(pREP) ); \
   }
 
 //      hspin(0)=fspin(0)+timesI(fspin(3));
 //      hspin(1)=fspin(1)+timesI(fspin(2));
-#define XP_PROJMEM(base) {					\
-    LOAD_CHIMU(base);						\
-    asm (							\
-         VONE(one)						\
-	 VMADD_MII_IR(Chi_00,one,Chi_30,Chi_00)			\
-	 VMADD_MII_IR(Chi_01,one,Chi_31,Chi_01)			\
-	 VMADD_MII_IR(Chi_02,one,Chi_32,Chi_02)			\
-	 VMADD_MII_IR(Chi_10,one,Chi_20,Chi_10)			\
-	 VMADD_MII_IR(Chi_11,one,Chi_21,Chi_11)			\
-	 VMADD_MII_IR(Chi_12,one,Chi_22,Chi_12)			\
-							);	\
+#define XP_PROJMEM(base) {						\
+    LOAD_CHIMU(base);							\
+    asm (								\
+         VONE(one)							\
+	 VMADD_MII_IR(Chi_00,one,Chi_30,Chi_00)				\
+	 VMADD_MII_IR(Chi_01,one,Chi_31,Chi_01)				\
+	 VMADD_MII_IR(Chi_02,one,Chi_32,Chi_02)				\
+	 VMADD_MII_IR(Chi_10,one,Chi_20,Chi_10)				\
+	 VMADD_MII_IR(Chi_11,one,Chi_21,Chi_11)				\
+	 VMADD_MII_IR(Chi_12,one,Chi_22,Chi_12)				\
+								);	\
   }
 
-#define XM_PROJMEM(base) {				\
-    LOAD_CHIMU(base);					\
-    asm (						\
+#define XM_PROJMEM(base) {					\
+    LOAD_CHIMU(base);						\
+    asm (							\
          VONE(one)						\
 	 VMADD_II_MIR(Chi_00,one,Chi_30,Chi_00)			\
 	 VMADD_II_MIR(Chi_01,one,Chi_31,Chi_01)			\
@@ -349,19 +349,19 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 //      hspin(0)=fspin(0)-fspin(3);
 //      hspin(1)=fspin(1)+fspin(2);
-#define YP_PROJMEM(base) {  \
-    LOAD_CHIMU(base);						\
-    asm (							\
-	 VSUB(Chi_00,Chi_00,Chi_30)				\
-	 VSUB(Chi_01,Chi_01,Chi_31)				\
-	 VSUB(Chi_02,Chi_02,Chi_32)				\
-	 VADD(Chi_10,Chi_10,Chi_20)				\
-	 VADD(Chi_11,Chi_11,Chi_21)				\
-	 VADD(Chi_12,Chi_12,Chi_22)				\
-							);	\
+#define YP_PROJMEM(base) {						\
+    LOAD_CHIMU(base);							\
+    asm (								\
+	 VSUB(Chi_00,Chi_00,Chi_30)					\
+	 VSUB(Chi_01,Chi_01,Chi_31)					\
+	 VSUB(Chi_02,Chi_02,Chi_32)					\
+	 VADD(Chi_10,Chi_10,Chi_20)					\
+	 VADD(Chi_11,Chi_11,Chi_21)					\
+	 VADD(Chi_12,Chi_12,Chi_22)					\
+								);	\
   }
 
-#define YM_PROJMEM(base) {			\
+#define YM_PROJMEM(base) {					\
     LOAD_CHIMU(base);						\
     asm (							\
 	 VADD(Chi_00,Chi_00,Chi_30)				\
@@ -372,162 +372,162 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	 VSUB(Chi_12,Chi_12,Chi_22)			);	\
   }
 
-	    /*Gz
-	     *  0 0  i  0   [0]+-i[2]
-	     *  0 0  0 -i   [1]-+i[3]
-	     * -i 0  0  0
-	     *  0 i  0  0
-	     */
-#define ZP_PROJMEM(base) {  \
-    LOAD_CHIMU(base);						\
-    asm (							\
-         VONE(one)						\
-	 VMADD_MII_IR(Chi_00,one,Chi_20,Chi_00)			\
-	 VMADD_MII_IR(Chi_01,one,Chi_21,Chi_01)			\
-	 VMADD_MII_IR(Chi_02,one,Chi_22,Chi_02)			\
-	 VMADD_II_MIR(Chi_10,one,Chi_30,Chi_10)			\
-	 VMADD_II_MIR(Chi_11,one,Chi_31,Chi_11)			\
-	 VMADD_II_MIR(Chi_12,one,Chi_32,Chi_12)			\
-							);	\
+/*Gz
+ *  0 0  i  0   [0]+-i[2]
+ *  0 0  0 -i   [1]-+i[3]
+ * -i 0  0  0
+ *  0 i  0  0
+ */
+#define ZP_PROJMEM(base) {						\
+    LOAD_CHIMU(base);							\
+    asm (								\
+         VONE(one)							\
+	 VMADD_MII_IR(Chi_00,one,Chi_20,Chi_00)				\
+	 VMADD_MII_IR(Chi_01,one,Chi_21,Chi_01)				\
+	 VMADD_MII_IR(Chi_02,one,Chi_22,Chi_02)				\
+	 VMADD_II_MIR(Chi_10,one,Chi_30,Chi_10)				\
+	 VMADD_II_MIR(Chi_11,one,Chi_31,Chi_11)				\
+	 VMADD_II_MIR(Chi_12,one,Chi_32,Chi_12)				\
+								);	\
   }
 
-#define ZM_PROJMEM(base) {  \
-    LOAD_CHIMU(base);						\
-    asm (							\
-         VONE(one)						\
-	 VMADD_II_MIR(Chi_00,one,Chi_20,Chi_00)			\
-	 VMADD_II_MIR(Chi_01,one,Chi_21,Chi_01)			\
-	 VMADD_II_MIR(Chi_02,one,Chi_22,Chi_02)			\
-	 VMADD_MII_IR(Chi_10,one,Chi_30,Chi_10)			\
-	 VMADD_MII_IR(Chi_11,one,Chi_31,Chi_11)			\
-	 VMADD_MII_IR(Chi_12,one,Chi_32,Chi_12)			\
-							);	\
+#define ZM_PROJMEM(base) {						\
+    LOAD_CHIMU(base);							\
+    asm (								\
+         VONE(one)							\
+	 VMADD_II_MIR(Chi_00,one,Chi_20,Chi_00)				\
+	 VMADD_II_MIR(Chi_01,one,Chi_21,Chi_01)				\
+	 VMADD_II_MIR(Chi_02,one,Chi_22,Chi_02)				\
+	 VMADD_MII_IR(Chi_10,one,Chi_30,Chi_10)				\
+	 VMADD_MII_IR(Chi_11,one,Chi_31,Chi_11)				\
+	 VMADD_MII_IR(Chi_12,one,Chi_32,Chi_12)				\
+								);	\
   }
-	    /*Gt
-	     *  0 0  1  0 [0]+-[2]
-	     *  0 0  0  1 [1]+-[3]
-	     *  1 0  0  0
-	     *  0 1  0  0
-	     */
-#define TP_PROJMEM(base) {  \
-    LOAD_CHIMU(base);						\
-    asm (							\
-	 VADD(Chi_00,Chi_00,Chi_20)				\
-	 VADD(Chi_01,Chi_01,Chi_21)				\
-	 VADD(Chi_02,Chi_02,Chi_22)				\
-	 VADD(Chi_10,Chi_10,Chi_30)				\
-	 VADD(Chi_11,Chi_11,Chi_31)				\
-	 VADD(Chi_12,Chi_12,Chi_32)				\
-							);	\
+/*Gt
+ *  0 0  1  0 [0]+-[2]
+ *  0 0  0  1 [1]+-[3]
+ *  1 0  0  0
+ *  0 1  0  0
+ */
+#define TP_PROJMEM(base) {						\
+    LOAD_CHIMU(base);							\
+    asm (								\
+	 VADD(Chi_00,Chi_00,Chi_20)					\
+	 VADD(Chi_01,Chi_01,Chi_21)					\
+	 VADD(Chi_02,Chi_02,Chi_22)					\
+	 VADD(Chi_10,Chi_10,Chi_30)					\
+	 VADD(Chi_11,Chi_11,Chi_31)					\
+	 VADD(Chi_12,Chi_12,Chi_32)					\
+								);	\
   }
 
-#define TM_PROJMEM(base) {  \
-    LOAD_CHIMU(base);						\
-    asm (							\
-	 VSUB(Chi_00,Chi_00,Chi_20)				\
-	 VSUB(Chi_01,Chi_01,Chi_21)				\
-	 VSUB(Chi_02,Chi_02,Chi_22)				\
-	 VSUB(Chi_10,Chi_10,Chi_30)				\
-	 VSUB(Chi_11,Chi_11,Chi_31)				\
-	 VSUB(Chi_12,Chi_12,Chi_32)				\
-							);	\
+#define TM_PROJMEM(base) {						\
+    LOAD_CHIMU(base);							\
+    asm (								\
+	 VSUB(Chi_00,Chi_00,Chi_20)					\
+	 VSUB(Chi_01,Chi_01,Chi_21)					\
+	 VSUB(Chi_02,Chi_02,Chi_22)					\
+	 VSUB(Chi_10,Chi_10,Chi_30)					\
+	 VSUB(Chi_11,Chi_11,Chi_31)					\
+	 VSUB(Chi_12,Chi_12,Chi_32)					\
+								);	\
   }
 
 /*
-      fspin(0)=hspin(0);
-      fspin(1)=hspin(1);
-      fspin(2)=timesMinusI(hspin(1));
-      fspin(3)=timesMinusI(hspin(0));
+  fspin(0)=hspin(0);
+  fspin(1)=hspin(1);
+  fspin(2)=timesMinusI(hspin(1));
+  fspin(3)=timesMinusI(hspin(0));
 
-      fspin(0)+=hspin(0);
-      fspin(1)+=hspin(1);
-      fspin(2)-=timesI(hspin(1));
-      fspin(3)-=timesI(hspin(0));
- */
-#define XP_RECON {				\
-    asm(\
-	VONE(one)\
-	VMOV(psi_00,UChi_00) 	VMOV(psi_01,UChi_01)	VMOV(psi_02,UChi_02)\
-	VMOV(psi_10,UChi_10) 	VMOV(psi_11,UChi_11)	VMOV(psi_12,UChi_12)\
-	VZERO(psi_20)	VZERO(psi_21)	VZERO(psi_22) \
-	VZERO(psi_30) 	VZERO(psi_31)   VZERO(psi_32) \
-	VMADD_II_MIR(psi_20,one,UChi_10,psi_20)	      \
-	VMADD_II_MIR(psi_21,one,UChi_11,psi_21)	      \
-	VMADD_II_MIR(psi_22,one,UChi_12,psi_22)	      \
-	VMADD_II_MIR(psi_30,one,UChi_00,psi_30)	      \
-	VMADD_II_MIR(psi_31,one,UChi_01,psi_31)	      \
-	VMADD_II_MIR(psi_32,one,UChi_02,psi_32)	      \
-	);		     \
+  fspin(0)+=hspin(0);
+  fspin(1)+=hspin(1);
+  fspin(2)-=timesI(hspin(1));
+  fspin(3)-=timesI(hspin(0));
+*/
+#define XP_RECON {							\
+    asm(								\
+	VONE(one)							\
+	VMOV(psi_00,UChi_00) 	VMOV(psi_01,UChi_01)	VMOV(psi_02,UChi_02) \
+	VMOV(psi_10,UChi_10) 	VMOV(psi_11,UChi_11)	VMOV(psi_12,UChi_12) \
+	VZERO(psi_20)	VZERO(psi_21)	VZERO(psi_22)			\
+	VZERO(psi_30) 	VZERO(psi_31)   VZERO(psi_32)			\
+	VMADD_II_MIR(psi_20,one,UChi_10,psi_20)				\
+	VMADD_II_MIR(psi_21,one,UChi_11,psi_21)				\
+	VMADD_II_MIR(psi_22,one,UChi_12,psi_22)				\
+	VMADD_II_MIR(psi_30,one,UChi_00,psi_30)				\
+	VMADD_II_MIR(psi_31,one,UChi_01,psi_31)				\
+	VMADD_II_MIR(psi_32,one,UChi_02,psi_32)				\
+	);								\
   }
 
-#define XM_RECON {				\
-    asm(\
-	VONE(one)\
-	VMOV(psi_00,UChi_00) 	VMOV(psi_01,UChi_01)	VMOV(psi_02,UChi_02)\
-	VMOV(psi_10,UChi_10) 	VMOV(psi_11,UChi_11)	VMOV(psi_12,UChi_12)\
-	VZERO(psi_20)	VZERO(psi_21)	VZERO(psi_22) \
-	VZERO(psi_30) 	VZERO(psi_31)   VZERO(psi_32) \
-	VMADD_MII_IR(psi_20,one,UChi_10,psi_20)	      \
-	VMADD_MII_IR(psi_21,one,UChi_11,psi_21)	      \
-	VMADD_MII_IR(psi_22,one,UChi_12,psi_22)	      \
-	VMADD_MII_IR(psi_30,one,UChi_00,psi_30)	      \
-	VMADD_MII_IR(psi_31,one,UChi_01,psi_31)	      \
-	VMADD_MII_IR(psi_32,one,UChi_02,psi_32)	      \
-	);		     \
+#define XM_RECON {							\
+    asm(								\
+	VONE(one)							\
+	VMOV(psi_00,UChi_00) 	VMOV(psi_01,UChi_01)	VMOV(psi_02,UChi_02) \
+	VMOV(psi_10,UChi_10) 	VMOV(psi_11,UChi_11)	VMOV(psi_12,UChi_12) \
+	VZERO(psi_20)	VZERO(psi_21)	VZERO(psi_22)			\
+	VZERO(psi_30) 	VZERO(psi_31)   VZERO(psi_32)			\
+	VMADD_MII_IR(psi_20,one,UChi_10,psi_20)				\
+	VMADD_MII_IR(psi_21,one,UChi_11,psi_21)				\
+	VMADD_MII_IR(psi_22,one,UChi_12,psi_22)				\
+	VMADD_MII_IR(psi_30,one,UChi_00,psi_30)				\
+	VMADD_MII_IR(psi_31,one,UChi_01,psi_31)				\
+	VMADD_MII_IR(psi_32,one,UChi_02,psi_32)				\
+	);								\
   }
 
-#define XP_RECON_ACCUM {				\
-    asm(\
-	VONE(one)\
+#define XP_RECON_ACCUM {						\
+    asm(								\
+	VONE(one)							\
 	VADD(psi_00,psi_00,UChi_00) 	VADD(psi_01,psi_01,UChi_01)	VADD(psi_02,psi_02,UChi_02) \
 	VADD(psi_10,psi_10,UChi_10) 	VADD(psi_11,psi_11,UChi_11)	VADD(psi_12,psi_12,UChi_12) \
-	VMADD_II_MIR(psi_20,one,UChi_10,psi_20)	      \
-	VMADD_II_MIR(psi_21,one,UChi_11,psi_21)	      \
-	VMADD_II_MIR(psi_22,one,UChi_12,psi_22)	      \
-	VMADD_II_MIR(psi_30,one,UChi_00,psi_30)	      \
-	VMADD_II_MIR(psi_31,one,UChi_01,psi_31)	      \
-	VMADD_II_MIR(psi_32,one,UChi_02,psi_32)	      \
-	);		     \
+	VMADD_II_MIR(psi_20,one,UChi_10,psi_20)				\
+	VMADD_II_MIR(psi_21,one,UChi_11,psi_21)				\
+	VMADD_II_MIR(psi_22,one,UChi_12,psi_22)				\
+	VMADD_II_MIR(psi_30,one,UChi_00,psi_30)				\
+	VMADD_II_MIR(psi_31,one,UChi_01,psi_31)				\
+	VMADD_II_MIR(psi_32,one,UChi_02,psi_32)				\
+	);								\
   }
 
-#define XM_RECON_ACCUM {				\
-    asm(\
-	VONE(one)\
+#define XM_RECON_ACCUM {						\
+    asm(								\
+	VONE(one)							\
 	VADD(psi_00,psi_00,UChi_00) 	VADD(psi_01,psi_01,UChi_01)	VADD(psi_02,psi_02,UChi_02) \
 	VADD(psi_10,psi_10,UChi_10) 	VADD(psi_11,psi_11,UChi_11)	VADD(psi_12,psi_12,UChi_12) \
-	VMADD_MII_IR(psi_20,one,UChi_10,psi_20)	      \
-	VMADD_MII_IR(psi_21,one,UChi_11,psi_21)	      \
-	VMADD_MII_IR(psi_22,one,UChi_12,psi_22)	      \
-	VMADD_MII_IR(psi_30,one,UChi_00,psi_30)	      \
-	VMADD_MII_IR(psi_31,one,UChi_01,psi_31)	      \
-	VMADD_MII_IR(psi_32,one,UChi_02,psi_32)	      \
-	);		     \
+	VMADD_MII_IR(psi_20,one,UChi_10,psi_20)				\
+	VMADD_MII_IR(psi_21,one,UChi_11,psi_21)				\
+	VMADD_MII_IR(psi_22,one,UChi_12,psi_22)				\
+	VMADD_MII_IR(psi_30,one,UChi_00,psi_30)				\
+	VMADD_MII_IR(psi_31,one,UChi_01,psi_31)				\
+	VMADD_MII_IR(psi_32,one,UChi_02,psi_32)				\
+	);								\
   }
 
 //      fspin(2)+=hspin(1);
 //      fspin(3)-=hspin(0);
-#define YP_RECON_ACCUM {\
-    asm(\
+#define YP_RECON_ACCUM {						\
+    asm(								\
 	VADD(psi_00,psi_00,UChi_00) 	VADD(psi_01,psi_01,UChi_01)	VADD(psi_02,psi_02,UChi_02) \
 	VADD(psi_10,psi_10,UChi_10) 	VADD(psi_11,psi_11,UChi_11)	VADD(psi_12,psi_12,UChi_12) \
 	VADD(psi_20,psi_20,UChi_10) 	VADD(psi_21,psi_21,UChi_11)	VADD(psi_22,psi_22,UChi_12) \
 	VSUB(psi_30,psi_30,UChi_00) 	VSUB(psi_31,psi_31,UChi_01)	VSUB(psi_32,psi_32,UChi_02) \
-	);\
- }
-#define YM_RECON_ACCUM {\
-    asm(\
+	);								\
+  }
+#define YM_RECON_ACCUM {						\
+    asm(								\
 	VADD(psi_00,psi_00,UChi_00) 	VADD(psi_01,psi_01,UChi_01)	VADD(psi_02,psi_02,UChi_02) \
 	VADD(psi_10,psi_10,UChi_10) 	VADD(psi_11,psi_11,UChi_11)	VADD(psi_12,psi_12,UChi_12) \
 	VSUB(psi_20,psi_20,UChi_10) 	VSUB(psi_21,psi_21,UChi_11)	VSUB(psi_22,psi_22,UChi_12) \
 	VADD(psi_30,psi_30,UChi_00) 	VADD(psi_31,psi_31,UChi_01)	VADD(psi_32,psi_32,UChi_02) \
-	);\
- }
+	);								\
+  }
 
 //      fspin(2)-=timesI(hspin(0));
 //      fspin(3)+=timesI(hspin(1));
-#define ZP_RECON_ACCUM {\
-    asm(\
-	VONE(one)\
+#define ZP_RECON_ACCUM {						\
+    asm(								\
+	VONE(one)							\
 	VADD(psi_00,psi_00,UChi_00) 	VADD(psi_01,psi_01,UChi_01)	VADD(psi_02,psi_02,UChi_02) \
 	VADD(psi_10,psi_10,UChi_10) 	VADD(psi_11,psi_11,UChi_11)	VADD(psi_12,psi_12,UChi_12) \
 	VMADD_II_MIR(psi_20,one,UChi_00,psi_20)				\
@@ -536,12 +536,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	VMADD_MII_IR(psi_30,one,UChi_10,psi_30)				\
 	VMADD_MII_IR(psi_31,one,UChi_11,psi_31)				\
 	VMADD_MII_IR(psi_32,one,UChi_12,psi_32)				\
-	);\
- }
+	);								\
+  }
 
-#define ZM_RECON_ACCUM {\
-    asm(\
-	VONE(one)\
+#define ZM_RECON_ACCUM {						\
+    asm(								\
+	VONE(one)							\
 	VADD(psi_00,psi_00,UChi_00) 	VADD(psi_01,psi_01,UChi_01)	VADD(psi_02,psi_02,UChi_02) \
 	VADD(psi_10,psi_10,UChi_10) 	VADD(psi_11,psi_11,UChi_11)	VADD(psi_12,psi_12,UChi_12) \
 	VMADD_MII_IR(psi_20,one,UChi_00,psi_20)				\
@@ -550,37 +550,37 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	VMADD_II_MIR(psi_30,one,UChi_10,psi_30)				\
 	VMADD_II_MIR(psi_31,one,UChi_11,psi_31)				\
 	VMADD_II_MIR(psi_32,one,UChi_12,psi_32)				\
-	);\
- }
+	);								\
+  }
 
 //      fspin(2)+=hspin(0);
 //      fspin(3)+=hspin(1);
-#define TP_RECON_ACCUM {\
-    asm(\
+#define TP_RECON_ACCUM {						\
+    asm(								\
 	VADD(psi_00,psi_00,UChi_00) 	VADD(psi_01,psi_01,UChi_01)	VADD(psi_02,psi_02,UChi_02) \
 	VADD(psi_10,psi_10,UChi_10) 	VADD(psi_11,psi_11,UChi_11)	VADD(psi_12,psi_12,UChi_12) \
 	VADD(psi_20,psi_20,UChi_00) 	VADD(psi_21,psi_21,UChi_01)	VADD(psi_22,psi_22,UChi_02) \
 	VADD(psi_30,psi_30,UChi_10) 	VADD(psi_31,psi_31,UChi_11)	VADD(psi_32,psi_32,UChi_12) \
-	);\
- }
+	);								\
+  }
 
-#define TM_RECON_ACCUM {\
-    asm(\
+#define TM_RECON_ACCUM {						\
+    asm(								\
 	VADD(psi_00,psi_00,UChi_00) 	VADD(psi_01,psi_01,UChi_01)	VADD(psi_02,psi_02,UChi_02) \
 	VADD(psi_10,psi_10,UChi_10) 	VADD(psi_11,psi_11,UChi_11)	VADD(psi_12,psi_12,UChi_12) \
 	VSUB(psi_20,psi_20,UChi_00) 	VSUB(psi_21,psi_21,UChi_01)	VSUB(psi_22,psi_22,UChi_02) \
 	VSUB(psi_30,psi_30,UChi_10) 	VSUB(psi_31,psi_31,UChi_11)	VSUB(psi_32,psi_32,UChi_12) \
-	);\
- }
+	);								\
+  }
 
 
 #define ADD_RESULTi(PTR,pf)						\
   LOAD_CHIMU(PTR)							\
   asm(									\
-  VADD(psi_00,chi_00,psi_00)  VADD(psi_01,chi_01,psi_01)  VADD(psi_02,chi_02,psi_02) \
-  VADD(psi_10,chi_10,psi_10)  VADD(psi_11,chi_11,psi_11)  VADD(psi_12,chi_12,psi_12) \
-  VADD(psi_20,chi_20,psi_20)  VADD(psi_21,chi_21,psi_21)  VADD(psi_22,chi_22,psi_22) \
-  VADD(psi_30,chi_30,psi_30)  VADD(psi_31,chi_31,psi_31)  VADD(psi_32,chi_32,psi_32) ); \
+      VADD(psi_00,chi_00,psi_00)  VADD(psi_01,chi_01,psi_01)  VADD(psi_02,chi_02,psi_02) \
+      VADD(psi_10,chi_10,psi_10)  VADD(psi_11,chi_11,psi_11)  VADD(psi_12,chi_12,psi_12) \
+      VADD(psi_20,chi_20,psi_20)  VADD(psi_21,chi_21,psi_21)  VADD(psi_22,chi_22,psi_22) \
+      VADD(psi_30,chi_30,psi_30)  VADD(psi_31,chi_31,psi_31)  VADD(psi_32,chi_32,psi_32) ); \
   SAVE_RESULT(PTR,pf);
 
 
@@ -590,9 +590,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #define PERMUTE_DIR0 {							\
     asm(								\
-	VPERMI(perm_reg)							\
-	VPERM(Chi_00,perm_reg)   VPERM(Chi_01,perm_reg)   VPERM(Chi_02,perm_reg)	\
-	VPERM(Chi_10,perm_reg)   VPERM(Chi_11,perm_reg)   VPERM(Chi_12,perm_reg) );	\
+	VPERMI(perm_reg)						\
+	VPERM(Chi_00,perm_reg)   VPERM(Chi_01,perm_reg)   VPERM(Chi_02,perm_reg) \
+	VPERM(Chi_10,perm_reg)   VPERM(Chi_11,perm_reg)   VPERM(Chi_12,perm_reg) ); \
   }
 
 #endif
