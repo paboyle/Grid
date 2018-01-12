@@ -342,7 +342,7 @@ struct PrecisionChange {
 struct Exchange{
 
   template <typename T,int n>
-    static inline void ExchangeN(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+  static inline void ExchangeN(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
     const int w = W<T>::r;
     unsigned int mask = w >> (n + 1);
     //      std::cout << " Exchange "<<n<<" nsimd "<<w<<" mask 0x" <<std::hex<<mask<<std::dec<<std::endl;
@@ -432,15 +432,15 @@ struct Rotate{
     }
   
 template <typename Out_type, typename In_type>
-  struct Reduce{
-    //Need templated class to overload output type
-    //General form must generate error if compiled
-    inline Out_type operator()(In_type in){
-      printf("Error, using wrong Reduce function\n");
-      exit(1);
-      return 0;
-    }
-  };
+struct Reduce{
+  //Need templated class to overload output type
+  //General form must generate error if compiled
+  inline Out_type operator()(In_type in){
+    printf("Error, using wrong Reduce function\n");
+    exit(1);
+    return 0;
+  }
+};
   
 //Complex float Reduce
 template <>
