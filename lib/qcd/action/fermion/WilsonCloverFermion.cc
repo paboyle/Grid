@@ -235,9 +235,9 @@ void WilsonCloverFermion<Impl>::MeeDeriv(GaugeField &mat, const FermionField &U,
   assert(0); // not implemented yet
 }
 
-FermOpTemplateInstantiate(WilsonCloverFermion); // now only for the fundamental representation
-//AdjointFermOpTemplateInstantiate(WilsonCloverFermion);
-//TwoIndexFermOpTemplateInstantiate(WilsonCloverFermion);
+FermOpTemplateInstantiate(WilsonCloverFermion);
+AdjointFermOpTemplateInstantiate(WilsonCloverFermion);
+TwoIndexFermOpTemplateInstantiate(WilsonCloverFermion);
 //GparityFermOpTemplateInstantiate(WilsonCloverFermion);
 }
 }

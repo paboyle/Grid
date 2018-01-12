@@ -123,6 +123,28 @@ public:
     return sumplaq / vol / faces / Nc; // Nd , Nc dependent... FIXME
   }
 
+
+  //////////////////////////////////////////////////
+  // average over all x,y,z the temporal loop
+  //////////////////////////////////////////////////
+  static ComplexD avgPolyakovLoop(const GaugeField &Umu) {  //assume Nd=4
+    GaugeMat Ut(Umu._grid), P(Umu._grid);
+    ComplexD out;
+    int T = Umu._grid->GlobalDimensions()[3];
+    int X = Umu._grid->GlobalDimensions()[0];
+    int Y = Umu._grid->GlobalDimensions()[1];
+    int Z = Umu._grid->GlobalDimensions()[2];
+
+    Ut = peekLorentz(Umu,3); //Select temporal direction
+    P = Ut;
+    for (int t=1;t<T;t++){ 
+      P = Gimpl::CovShiftForward(Ut,3,P);
+    }
+   RealD norm = 1.0/(Nc*X*Y*Z*T);
+   out = sum(trace(P))*norm;
+   return out;   
+}
+
   //////////////////////////////////////////////////
   // average over traced single links
   //////////////////////////////////////////////////

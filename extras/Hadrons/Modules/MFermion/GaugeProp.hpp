@@ -43,7 +43,6 @@ private:
 };
 
 MODULE_REGISTER_NS(GaugeProp, TGaugeProp<FIMPL>, MFermion);
-
 /******************************************************************************
  *                      TGaugeProp implementation                             *
  ******************************************************************************/
@@ -103,7 +102,7 @@ void TGaugeProp<FImpl>::execute(void)
     LOG(Message) << "Inverting using solver '" << par().solver
     << "' on source '" << par().source << "'" << std::endl;
     for (unsigned int s = 0; s < Ns; ++s)
-    for (unsigned int c = 0; c < Nc; ++c)
+      for (unsigned int c = 0; c < FImpl::Dimension; ++c)
     {
         LOG(Message) << "Inversion for spin= " << s << ", color= " << c
         << std::endl;
@@ -112,12 +111,12 @@ void TGaugeProp<FImpl>::execute(void)
         {
             if (Ls_ == 1)
             {
-                PropToFerm(source, fullSrc, s, c);
+               PropToFerm<FImpl>(source, fullSrc, s, c);
             }
             else
             {
                 source = zero;
-                PropToFerm(tmp, fullSrc, s, c);
+                PropToFerm<FImpl>(tmp, fullSrc, s, c);
                 InsertSlice(tmp, source, 0, 0);
                 InsertSlice(tmp, source, Ls_-1, 0);
                 axpby_ssp_pplus(source, 0., source, 1., source, 0, 0);
@@ -133,12 +132,12 @@ void TGaugeProp<FImpl>::execute(void)
             }
             else
             {
-                PropToFerm(source, fullSrc, s, c);
+                PropToFerm<FImpl>(source, fullSrc, s, c);
             }
         }
         sol = zero;
         solver(sol, source);
-        FermToProp(prop, sol, s, c);
+        FermToProp<FImpl>(prop, sol, s, c);
         // create 4D propagators from 5D one if necessary
         if (Ls_ > 1)
         {
@@ -148,7 +147,7 @@ void TGaugeProp<FImpl>::execute(void)
             axpby_ssp_pminus(sol, 0., sol, 1., sol, 0, 0);
             axpby_ssp_pplus(sol, 1., sol, 1., sol, 0, Ls_-1);
             ExtractSlice(tmp, sol, 0, 0);
-            FermToProp(p4d, tmp, s, c);
+            FermToProp<FImpl>(p4d, tmp, s, c);
         }
     }
 }

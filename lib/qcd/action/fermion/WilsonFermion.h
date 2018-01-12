@@ -44,7 +44,8 @@ class WilsonFermionStatic {
   static const int npoint = 8;
 };
 
-struct WilsonAnisotropyCoefficients{
+ struct WilsonAnisotropyCoefficients: Serializable
+ {
   GRID_SERIALIZABLE_CLASS_MEMBERS(WilsonAnisotropyCoefficients,
   bool, isAnisotropic,
   int, t_direction,
