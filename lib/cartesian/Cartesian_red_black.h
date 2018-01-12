@@ -29,7 +29,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_CARTESIAN_RED_BLACK_H
 #define GRID_CARTESIAN_RED_BLACK_H
 
-
 NAMESPACE_BEGIN(Grid);
 
 static const int CbRed  =0;
@@ -58,7 +57,6 @@ public:
     }
     return (linear&0x1);
   }
-
 
   // Depending on the cb of site, we toggle source cb.
   // for block #b, element #e = (b, e)
@@ -135,35 +133,6 @@ public:
   }
 
   virtual ~GridRedBlackCartesian() = default;
-#if 0
-  ////////////////////////////////////////////////////////////
-  // Create redblack grid ;; deprecate these. Should not
-  // need direct creation of redblack without a full grid to base on
-  ////////////////////////////////////////////////////////////
-  GridRedBlackCartesian(const GridBase *base,
-			const std::vector<int> &dimensions,
-			const std::vector<int> &simd_layout,
-			const std::vector<int> &processor_grid,
-			const std::vector<int> &checker_dim_mask,
-			int checker_dim
-			) :  GridBase(processor_grid,*base) 
-  {
-    Init(dimensions,simd_layout,processor_grid,checker_dim_mask,checker_dim);
-  }
-
-  ////////////////////////////////////////////////////////////
-  // Create redblack grid
-  ////////////////////////////////////////////////////////////
-  GridRedBlackCartesian(const GridBase *base,
-			const std::vector<int> &dimensions,
-			const std::vector<int> &simd_layout,
-			const std::vector<int> &processor_grid) : GridBase(processor_grid,*base) 
-  {
-    std::vector<int> checker_dim_mask(dimensions.size(),1);
-    int checker_dim = 0;
-    Init(dimensions,simd_layout,processor_grid,checker_dim_mask,checker_dim);
-  }
-#endif
 
   void Init(const std::vector<int> &dimensions,
 	    const std::vector<int> &simd_layout,

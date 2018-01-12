@@ -30,7 +30,6 @@
 #ifndef GRID_CARTESIAN_BASE_H
 #define GRID_CARTESIAN_BASE_H
 
-
 NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////////////////////////////////////
