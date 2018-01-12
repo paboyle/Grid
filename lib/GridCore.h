@@ -38,6 +38,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_BASE_H
 #define GRID_BASE_H
 
+#include <Grid/Namespace.h>
 #include <Grid/GridStd.h>
 
 #include <Grid/perfmon/Timer.h>
