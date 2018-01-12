@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,8 +24,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_TIME_H
 #define GRID_TIME_H
 
@@ -33,11 +33,9 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <ctime>
 #include <chrono>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid)
 
-
-  // Dress the output; use std::chrono
-
+// Dress the output; use std::chrono
 // C++11 time facilities better?
 inline double usecond(void) {
   struct timeval tv;
@@ -98,5 +96,6 @@ public:
   }
 };
 
-}
+NAMESPACE_END(Grid)
+
 #endif
