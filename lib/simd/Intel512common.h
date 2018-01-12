@@ -1,4 +1,4 @@
-   /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,8 +23,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_ASM_INTEL_COMMON_512_H
 #define GRID_ASM_INTEL_COMMON_512_H
 
@@ -36,10 +36,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Opcodes common 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-#define MASK_REGS \
-  __asm__ ("mov     $0xAAAA, %%eax \n"\
-           "kmovw    %%eax, %%k6 \n"\
-           "mov     $0x5555, %%eax \n"\
+#define MASK_REGS					\
+  __asm__ ("mov     $0xAAAA, %%eax \n"			\
+           "kmovw    %%eax, %%k6 \n"			\
+           "mov     $0x5555, %%eax \n"			\
            "kmovw    %%eax, %%k7 \n" : : : "%eax");
 
 //#define label(B) __asm__ ( __func__ _LINE__ #B ":\n" );
@@ -47,44 +47,44 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define VZEROf(A)       "vpxorq " #A ","  #A "," #A ";\n"
 #define VZEROd(A)       "vpxorq " #A ","  #A "," #A ";\n"
 
-#define VTIMESIf(A,DEST, Z) \
-  VTIMESI0f(A,DEST, Z) \
-  VTIMESI1f(A,DEST, Z) \
+#define VTIMESIf(A,DEST, Z)			\
+  VTIMESI0f(A,DEST, Z)				\
+  VTIMESI1f(A,DEST, Z)				\
   VTIMESI2f(A,DEST, Z) 
 
-#define VTIMESId(A,DEST, Z) \
-  VTIMESI0d(A,DEST, Z) \
-  VTIMESI1d(A,DEST, Z) \
+#define VTIMESId(A,DEST, Z)			\
+  VTIMESI0d(A,DEST, Z)				\
+  VTIMESI1d(A,DEST, Z)				\
   VTIMESI2d(A,DEST, Z) 
 
-#define VTIMESMINUSIf(A,DEST, Z) \
-        VTIMESMINUSI0f(A,DEST, Z) \
-        VTIMESMINUSI1f(A,DEST, Z) \
-        VTIMESMINUSI2f(A,DEST, Z) 
+#define VTIMESMINUSIf(A,DEST, Z)		\
+  VTIMESMINUSI0f(A,DEST, Z)			\
+  VTIMESMINUSI1f(A,DEST, Z)			\
+  VTIMESMINUSI2f(A,DEST, Z) 
 
-#define VTIMESMINUSId(A,DEST, Z) \
-        VTIMESMINUSI0d(A,DEST, Z) \
-        VTIMESMINUSI1d(A,DEST, Z) \
-        VTIMESMINUSI2d(A,DEST, Z) 
+#define VTIMESMINUSId(A,DEST, Z)		\
+  VTIMESMINUSI0d(A,DEST, Z)			\
+  VTIMESMINUSI1d(A,DEST, Z)			\
+  VTIMESMINUSI2d(A,DEST, Z) 
 
 #define VACCTIMESIf(A,ACC,tmp)			\
- VACCTIMESI0f(A,ACC,tmp)			\
- VACCTIMESI1f(A,ACC,tmp)			\
- VACCTIMESI2f(A,ACC,tmp)			
+  VACCTIMESI0f(A,ACC,tmp)			\
+  VACCTIMESI1f(A,ACC,tmp)			\
+  VACCTIMESI2f(A,ACC,tmp)			
 
 #define VACCTIMESId(A,ACC,tmp)			\
- VACCTIMESI0d(A,ACC,tmp)			\
- VACCTIMESI1d(A,ACC,tmp)			\
- VACCTIMESI2d(A,ACC,tmp)			
+  VACCTIMESI0d(A,ACC,tmp)			\
+  VACCTIMESI1d(A,ACC,tmp)			\
+  VACCTIMESI2d(A,ACC,tmp)			
 
-#define VACCTIMESMINUSIf(A,ACC,tmp)			\
-  VACCTIMESMINUSI0f(A,ACC,tmp)				\
-  VACCTIMESMINUSI1f(A,ACC,tmp)				\
+#define VACCTIMESMINUSIf(A,ACC,tmp)		\
+  VACCTIMESMINUSI0f(A,ACC,tmp)			\
+  VACCTIMESMINUSI1f(A,ACC,tmp)			\
   VACCTIMESMINUSI2f(A,ACC,tmp)			
 
-#define VACCTIMESMINUSId(A,ACC,tmp)			\
-  VACCTIMESMINUSI0d(A,ACC,tmp)				\
-  VACCTIMESMINUSI1d(A,ACC,tmp)				\
+#define VACCTIMESMINUSId(A,ACC,tmp)		\
+  VACCTIMESMINUSI0d(A,ACC,tmp)			\
+  VACCTIMESMINUSI1d(A,ACC,tmp)			\
   VACCTIMESMINUSI2d(A,ACC,tmp)			
 
 #define LOAD64a(A,ptr)  "movq %0, %" #A :  : "r"(ptr)  : #A  

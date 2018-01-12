@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,8 +23,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_ASM_AV512_H
 #define GRID_ASM_AV512_H
 
@@ -44,32 +44,32 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define ZENDf(Criir,Ciirr, tmp) ZEND1f(Criir,Ciirr, tmp) ZEND2f(Criir,Ciirr, tmp)
 #define ZENDd(Criir,Ciirr, tmp) ZEND1d(Criir,Ciirr, tmp) ZEND2d(Criir,Ciirr, tmp)
 
-#define ZMULMEM2SPf(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)\
-  VSHUFMEMf(O,P,tmp) \
-  VMULMEMf(O,P,B,Biirr) \
-  VMULMEMf(O,P,C,Ciirr) \
-  VMULf(tmp,B,Briir) \
+#define ZMULMEM2SPf(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)	\
+  VSHUFMEMf(O,P,tmp)						\
+  VMULMEMf(O,P,B,Biirr)						\
+  VMULMEMf(O,P,C,Ciirr)						\
+  VMULf(tmp,B,Briir)						\
   VMULf(tmp,C,Criir)
 
-#define ZMULMEM2SPd(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)\
-  VSHUFMEMd(O,P,tmp)  \
+#define ZMULMEM2SPd(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)	\
+  VSHUFMEMd(O,P,tmp)						\
   VMULMEMd(O,P,B,Biirr)  \ 
-  VMULMEMd(O,P,C,Ciirr)  \
-  VMULd(tmp,B,Briir)  \
-  VMULd(tmp,C,Criir) 
+VMULMEMd(O,P,C,Ciirr)  \
+VMULd(tmp,B,Briir)  \
+VMULd(tmp,C,Criir) 
 
-#define ZMADDMEM2SPf(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)\
-  VSHUFMEMf(O,P,tmp) \
-  VMADDMEMf(O,P,B,Biirr) \
-  VMADDMEMf(O,P,C,Ciirr) \
-  VMADDf(tmp,B,Briir) \
+#define ZMADDMEM2SPf(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)	\
+  VSHUFMEMf(O,P,tmp)						\
+  VMADDMEMf(O,P,B,Biirr)					\
+  VMADDMEMf(O,P,C,Ciirr)					\
+  VMADDf(tmp,B,Briir)						\
   VMADDf(tmp,C,Criir)
 
 #define ZMADDMEM2SPd(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)	\
-  VSHUFMEMd(O,P,tmp) \
-  VMADDMEMd(O,P,B,Biirr) \
-  VMADDMEMd(O,P,C,Ciirr) \
-  VMADDd(tmp,B,Briir) \
+  VSHUFMEMd(O,P,tmp)						\
+  VMADDMEMd(O,P,B,Biirr)					\
+  VMADDMEMd(O,P,C,Ciirr)					\
+  VMADDd(tmp,B,Briir)						\
   VMADDd(tmp,C,Criir)
 
 #define ZEND1d(Criir,Ciirr, tmp) "vaddpd  " #Criir "{cdab} ," #Criir "," #Criir"{%k6}"  ";\n"
@@ -106,7 +106,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define VACCTIMESMINUSI1f(A,ACC,tmp)  "vsubps  " #A "{cdab}," #ACC "," #ACC"{%k7}" ";\n"
 #define VACCTIMESMINUSI2f(A,ACC,tmp)  "vaddps  " #A "{cdab}," #ACC "," #ACC"{%k6}" ";\n"
 
-	   // Acc = Acc - i A
+// Acc = Acc - i A
 #define VACCTIMESMINUSI0d(A,ACC,tmp)  
 #define VACCTIMESMINUSI1d(A,ACC,tmp)  "vsubpd  " #A "{cdab}," #ACC "," #ACC"{%k7}" ";\n"
 #define VACCTIMESMINUSI2d(A,ACC,tmp)  "vaddpd  " #A "{cdab}," #ACC "," #ACC"{%k6}" ";\n"

@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,8 +23,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_ASM_AV512_H
 #define GRID_ASM_AV512_H
 
@@ -44,46 +44,46 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define ZENDf(Criir,Ciirr, tmp) ZEND1f(Criir,Ciirr, tmp) ZEND2f(Criir,Ciirr, tmp)
 #define ZENDd(Criir,Ciirr, tmp) ZEND1d(Criir,Ciirr, tmp) ZEND2d(Criir,Ciirr, tmp)
 
-#define ZMULMEM2SPf(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)\
-  VSHUFMEMf(O,P,tmp) \
-  VMULMEMf(O,P,B,Biirr) \
-  VMULMEMf(O,P,C,Ciirr) \
-  VMULf(tmp,B,Briir) \
+#define ZMULMEM2SPf(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)	\
+  VSHUFMEMf(O,P,tmp)						\
+  VMULMEMf(O,P,B,Biirr)						\
+  VMULMEMf(O,P,C,Ciirr)						\
+  VMULf(tmp,B,Briir)						\
   VMULf(tmp,C,Criir)
 
-#define ZMULMEM2SPd(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)\
-  VSHUFMEMd(O,P,tmp)  \
-  VMULMEMd(O,P,B,Biirr)  \
-  VMULMEMd(O,P,C,Ciirr)  \
-  VMULd(tmp,B,Briir)  \
+#define ZMULMEM2SPd(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)	\
+  VSHUFMEMd(O,P,tmp)						\
+  VMULMEMd(O,P,B,Biirr)						\
+  VMULMEMd(O,P,C,Ciirr)						\
+  VMULd(tmp,B,Briir)						\
   VMULd(tmp,C,Criir) 
 
-#define ZMADDMEM2SPf(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)\
-  VSHUFMEMf(O,P,tmp) \
-  VMADDMEMf(O,P,B,Biirr) \
-  VMADDMEMf(O,P,C,Ciirr) \
-  VMADDf(tmp,B,Briir) \
+#define ZMADDMEM2SPf(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)	\
+  VSHUFMEMf(O,P,tmp)						\
+  VMADDMEMf(O,P,B,Biirr)					\
+  VMADDMEMf(O,P,C,Ciirr)					\
+  VMADDf(tmp,B,Briir)						\
   VMADDf(tmp,C,Criir)
 
 #define ZMADDMEM2SPd(O,P,tmp,B,C,Briir,Biirr,Criir,Ciirr)	\
-  VSHUFMEMd(O,P,tmp) \
-  VMADDMEMd(O,P,B,Biirr) \
-  VMADDMEMd(O,P,C,Ciirr) \
-  VMADDd(tmp,B,Briir) \
+  VSHUFMEMd(O,P,tmp)						\
+  VMADDMEMd(O,P,B,Biirr)					\
+  VMADDMEMd(O,P,C,Ciirr)					\
+  VMADDd(tmp,B,Briir)						\
   VMADDd(tmp,C,Criir)
 
 // Merges accumulation for complex dot chain; less efficient under avx512
-#define ZEND1f(Criir,Ciirr, tmp)  "vshufps $0xb1," #Criir "," #Criir "," #tmp   ";\n"\
-                                  "vaddps  " #tmp "," #Criir "," #Criir"{%k6}"  ";\n"
+#define ZEND1f(Criir,Ciirr, tmp)  "vshufps $0xb1," #Criir "," #Criir "," #tmp   ";\n" \
+  "vaddps  " #tmp "," #Criir "," #Criir"{%k6}"  ";\n"
 
-#define ZEND2f(Criir,Ciirr, tmp)  "vshufps $0xb1," #Ciirr "," #Ciirr "," #tmp   ";\n"\
-                                  "vsubps  " #tmp "," #Ciirr "," #Criir"{%k7}"  ";\n"
+#define ZEND2f(Criir,Ciirr, tmp)  "vshufps $0xb1," #Ciirr "," #Ciirr "," #tmp   ";\n" \
+  "vsubps  " #tmp "," #Ciirr "," #Criir"{%k7}"  ";\n"
 
 #define ZEND1d(Criir,Ciirr, tmp)  "vshufpd $0x55," #Criir "," #Criir "," #tmp  ";\n"\ 
-                                  "vaddps  " #tmp "," #Criir "," #Criir"{%k6}"  ";\n"
+"vaddps  " #tmp "," #Criir "," #Criir"{%k6}"  ";\n"
 
-#define ZEND2d(Criir,Ciirr, tmp)  "vshufpd $0x55," #Ciirr "," #Ciirr "," #tmp   ";\n"\
-                         	  "vsubpd  " #tmp "," #Ciirr "," #Criir"{%k7};\n" // ri+ir ; ri+ir,rr-ii
+#define ZEND2d(Criir,Ciirr, tmp)  "vshufpd $0x55," #Ciirr "," #Ciirr "," #tmp   ";\n" \
+  "vsubpd  " #tmp "," #Ciirr "," #Criir"{%k7};\n" // ri+ir ; ri+ir,rr-ii
 
 #define VMOVRDUPd(OFF,A,DEST)       "vpshufd  $0x44," #OFF "*64(" #A ")," #DEST  ";\n" // 32 bit level: 1,0,3,2
 #define VMOVIDUPd(OFF,A,DEST)       "vpshufd  $0xee," #OFF "*64(" #A ")," #DEST  ";\n" // 32 bit level: 3,2,3,2
@@ -123,10 +123,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define VMADDSUBIDUPd(O,P,B,accum) "vfmaddsub231pd   (" #O"*16+8)("#P "){1to8},"#B "," #accum  ";\n"
 #define VMULRDUPd(O,P,B,accum) "vmulpd   (" #O"*16+0)("#P "){1to8},"#B "," #accum  ";\n"
 #define VMULIDUPd(O,P,B,accum) "vmulpd   (" #O"*16+8)("#P "){1to8},"#B "," #accum  ";\n"
-  /*
-   * TimesI is used only in the XP recon
-   * Could zero the regs and use RECON_ACCUM
-   */
+/*
+ * TimesI is used only in the XP recon
+ * Could zero the regs and use RECON_ACCUM
+ */
 
 #define VTIMESI0f(A,DEST, Z)   VSHUFf(A,DEST)	  
 #define VTIMESI1f(A,DEST, Z)   "vaddps  " #DEST "," #Z "," #DEST"{%k6}"  ";\n"
