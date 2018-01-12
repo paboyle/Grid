@@ -26,8 +26,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 /****************************************************************************/
 /* pab: Signal magic. Processor state dump is x86-64 specific               */
 /****************************************************************************/
@@ -71,8 +71,7 @@ feenableexcept (unsigned int excepts)
 }
 #endif
 
-namespace Grid {
-
+NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////////////////////
 // Convenience functions to access stadard command line arg
@@ -89,18 +88,18 @@ const std::vector<int> &GridDefaultLatt(void)     {return Grid_default_latt;};
 const std::vector<int> &GridDefaultMpi(void)      {return Grid_default_mpi;};
 const std::vector<int> GridDefaultSimd(int dims,int nsimd)
 {
-    std::vector<int> layout(dims);
-    int nn=nsimd;
-    for(int d=dims-1;d>=0;d--){
-      if ( nn>=2) {
-	layout[d]=2;
-	nn/=2;
-      } else {
-	layout[d]=1;
-      }
+  std::vector<int> layout(dims);
+  int nn=nsimd;
+  for(int d=dims-1;d>=0;d--){
+    if ( nn>=2) {
+      layout[d]=2;
+      nn/=2;
+    } else {
+      layout[d]=1;
     }
-    assert(nn==1);
-    return layout;
+  }
+  assert(nn==1);
+  return layout;
 }
 
 ////////////////////////////////////////////////////////////
@@ -119,7 +118,7 @@ bool GridCmdOptionExists(char** begin, char** end, const std::string& option)
 {
   return std::find(begin, end, option) != end;
 }
-  // Comma separated list
+// Comma separated list
 void GridCmdOptionCSL(std::string str,std::vector<std::string> & vec)
 {
   size_t pos = 0;
@@ -430,10 +429,10 @@ void Grid_finalize(void)
 }
 
 void GridLogLayout() {
-    std::cout << GridLogMessage << "Grid Layout\n";
-    std::cout << GridLogMessage << "\tGlobal lattice size  : "<< GridCmdVectorIntToString(GridDefaultLatt()) << std::endl;
-    std::cout << GridLogMessage << "\tOpenMP threads       : "<< GridThread::GetThreads() <<std::endl;
-    std::cout << GridLogMessage << "\tMPI tasks            : "<< GridCmdVectorIntToString(GridDefaultMpi()) << std::endl;
+  std::cout << GridLogMessage << "Grid Layout\n";
+  std::cout << GridLogMessage << "\tGlobal lattice size  : "<< GridCmdVectorIntToString(GridDefaultLatt()) << std::endl;
+  std::cout << GridLogMessage << "\tOpenMP threads       : "<< GridThread::GetThreads() <<std::endl;
+  std::cout << GridLogMessage << "\tMPI tasks            : "<< GridCmdVectorIntToString(GridDefaultMpi()) << std::endl;
 }
 
 void * Grid_backtrace_buffer[_NBACKTRACE];
@@ -497,4 +496,5 @@ void Grid_debug_handler_init(void)
   sigaction(SIGKILL,&sa,NULL);
   sigaction(SIGILL,&sa,NULL);
 }
-}
+
+NAMESPACE_END(Grid);
