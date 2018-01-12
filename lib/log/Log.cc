@@ -28,27 +28,27 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #include <Grid/GridCore.h>
 #include <Grid/util/CompilerCompatible.h>
 
 #include <cxxabi.h>
 #include <memory>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
-  std::string demangle(const char* name) {
+std::string demangle(const char* name) {
     
-    int status = -4; // some arbitrary value to eliminate the compiler warning
+  int status = -4; // some arbitrary value to eliminate the compiler warning
     
-    // enable c++11 by passing the flag -std=c++11 to g++
-    std::unique_ptr<char, void(*)(void*)> res {
-      abi::__cxa_demangle(name, NULL, NULL, &status),
-	std::free
-	};
+  // enable c++11 by passing the flag -std=c++11 to g++
+  std::unique_ptr<char, void(*)(void*)> res {
+    abi::__cxa_demangle(name, NULL, NULL, &status),
+      std::free
+      };
     
-    return (status==0) ? res.get() : name ;
-  }
+  return (status==0) ? res.get() : name ;
+}
   
 GridStopWatch Logger::GlobalStopWatch;
 int Logger::timestamp;
@@ -113,4 +113,5 @@ void Grid_unquiesce_nodes(void) {
   std::cout.clear();
 #endif
 }
-}
+NAMESPACE_END(Grid);
+
