@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,8 +24,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_THREADS_H
 #define GRID_THREADS_H
 
@@ -56,13 +56,13 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define parallel_for_internal PARALLEL_FOR_LOOP_INTERN for
 #define parallel_for_nest2 PARALLEL_NESTED_LOOP2 for
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
-  // Introduce a class to gain deterministic bit reproducible reduction.
-  // make static; perhaps just a namespace is required.
+// Introduce a class to gain deterministic bit reproducible reduction.
+// make static; perhaps just a namespace is required.
 
 class GridThread {
- public:
+public:
   static int _threads;
   static int _hyperthreads;
   static int _cores;
@@ -153,5 +153,5 @@ class GridThread {
 
 };
 
-}
+NAMESPACE_END(Grid);
 #endif
