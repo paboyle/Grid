@@ -31,7 +31,7 @@ directory
 /*  END LEGAL */
 //---------------------------------------------------------------------------
 /*! @file Grid_vector_types.h
-  @brief Defines templated class Grid_simd to deal with inner vector types
+    @brief Defines templated class Grid_simd to deal with inner vector types
 */
 // Time-stamp: <2015-07-10 17:45:33 neo>
 //---------------------------------------------------------------------------
@@ -62,7 +62,7 @@ directory
 
 #include "l1p.h"
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////
 // To take the floating point type of real/complex type
@@ -125,10 +125,10 @@ Out unary(Input src, Operation op) {
 
 /*
   @brief Grid_simd class for the SIMD vector type operations
- */
+*/
 template <class Scalar_type, class Vector_type>
 class Grid_simd {
- public:
+public:
   typedef typename RealPart<Scalar_type>::type Real;
   typedef Vector_type vector_type;
   typedef Scalar_type scalar_type;
@@ -427,9 +427,6 @@ class Grid_simd {
   inline void putlane(const Scalar_type &S, int lane){
     ((Scalar_type*)&v)[lane] = S;
   }
-
-
-  
 };  // end of Grid_simd class definition
 
 inline void permute(ComplexD &y,ComplexD b, int perm) {  y=b; }
@@ -863,6 +860,7 @@ template <> struct is_simd<vInteger>   : public std::true_type {};
 
 template <typename T> using IfSimd    = Invoke<std::enable_if<is_simd<T>::value, int> >;
 template <typename T> using IfNotSimd = Invoke<std::enable_if<!is_simd<T>::value, unsigned> >;
-}
+
+NAMESPACE_END(Grid);
 
 #endif

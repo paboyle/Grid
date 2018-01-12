@@ -28,13 +28,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef GRID_VECTOR_UNOPS
 #define GRID_VECTOR_UNOPS
 
 #include <cmath>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 template <class scalar>
 struct SqrtRealFunctor {
@@ -201,23 +201,23 @@ struct OrOrFunctor {
 ////////////////////////////////
 template <class S, class V>
 inline Grid_simd<S, V> operator&(const Grid_simd<S, V> &x,
-                                 const Grid_simd<S, V> &y) {
+				 const Grid_simd<S, V> &y) {
   return SimdApplyBinop(AndFunctor<S>(), x, y);
 }
 template <class S, class V>
 inline Grid_simd<S, V> operator&&(const Grid_simd<S, V> &x,
-                                  const Grid_simd<S, V> &y) {
+				  const Grid_simd<S, V> &y) {
   return SimdApplyBinop(AndAndFunctor<S>(), x, y);
 }
 template <class S, class V>
 inline Grid_simd<S, V> operator|(const Grid_simd<S, V> &x,
-                                 const Grid_simd<S, V> &y) {
+				 const Grid_simd<S, V> &y) {
   return SimdApplyBinop(OrFunctor<S>(), x, y);
 }
 template <class S, class V>
 inline Grid_simd<S, V> operator||(const Grid_simd<S, V> &x,
-                                  const Grid_simd<S, V> &y) {
+				  const Grid_simd<S, V> &y) {
   return SimdApplyBinop(OrOrFunctor<S>(), x, y);
 }
-}
+NAMESPACE_END(Grid);
 #endif
