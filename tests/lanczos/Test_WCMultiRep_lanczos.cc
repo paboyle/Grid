@@ -124,13 +124,21 @@ NerscHmcCheckpointer<PeriodicGimplR> Checkpoint(CPparams);
   
   std::vector<double> Coeffs{0, -1.};
   Polynomial<FundFermionField> FundPolyX(Coeffs);
-  Chebyshev<FundFermionField> FundCheb(0.0, 10., 12);
-  ImplicitlyRestartedLanczos<FundFermionField> IRL_Fund(HermOpFund, FundPolyX, Nstop, Nk, Nm,
+  //Chebyshev<FundFermionField> FundCheb(0.0, 10., 12);
+  
+  FunctionHermOp<FundFermionField> FundPolyXOp(FundPolyX,HermOpFund);
+  PlainHermOp<FundFermionField>    FundOp     (HermOpFund);
+
+  ImplicitlyRestartedLanczos<FundFermionField> IRL_Fund(FundOp, FundPolyXOp, Nstop, Nk, Nm,
                                                resid, MaxIt);
   
   Polynomial<ASymmFermionField> ASPolyX(Coeffs);
-  Chebyshev<ASymmFermionField> ASCheb(0.0, 10., 12);
-  ImplicitlyRestartedLanczos<ASymmFermionField> IRL_AS(HermOpAS, ASPolyX, Nstop, Nk, Nm,
+  //Chebyshev<ASymmFermionField> ASCheb(0.0, 10., 12);
+
+  FunctionHermOp<ASymmFermionField> ASPolyXOp(ASPolyX,HermOpAS);
+  PlainHermOp<ASymmFermionField>    ASOp     (HermOpAS);
+
+  ImplicitlyRestartedLanczos<ASymmFermionField> IRL_AS(ASOp, ASPolyXOp, Nstop, Nk, Nm,
                                                resid, MaxIt);
                                                
   std::vector<RealD> Fundeval(Nm);
