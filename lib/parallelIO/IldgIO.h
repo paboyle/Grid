@@ -23,7 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef GRID_ILDG_IO_H
 #define GRID_ILDG_IO_H
 
@@ -38,159 +38,158 @@ directory
 #include <sys/utsname.h>
 #include <unistd.h>
 
-//C-Lime is a must have for this functionality
+			   //C-Lime is a must have for this functionality
 extern "C" {  
 #include "lime.h"
 }
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
-  /////////////////////////////////
-  // Encode word types as strings
-  /////////////////////////////////
- template<class word> inline std::string ScidacWordMnemonic(void){ return std::string("unknown"); }
- template<> inline std::string ScidacWordMnemonic<double>  (void){ return std::string("D"); }
- template<> inline std::string ScidacWordMnemonic<float>   (void){ return std::string("F"); }
- template<> inline std::string ScidacWordMnemonic< int32_t>(void){ return std::string("I32_t"); }
- template<> inline std::string ScidacWordMnemonic<uint32_t>(void){ return std::string("U32_t"); }
- template<> inline std::string ScidacWordMnemonic< int64_t>(void){ return std::string("I64_t"); }
- template<> inline std::string ScidacWordMnemonic<uint64_t>(void){ return std::string("U64_t"); }
+/////////////////////////////////
+// Encode word types as strings
+/////////////////////////////////
+template<class word> inline std::string ScidacWordMnemonic(void){ return std::string("unknown"); }
+template<> inline std::string ScidacWordMnemonic<double>  (void){ return std::string("D"); }
+template<> inline std::string ScidacWordMnemonic<float>   (void){ return std::string("F"); }
+template<> inline std::string ScidacWordMnemonic< int32_t>(void){ return std::string("I32_t"); }
+template<> inline std::string ScidacWordMnemonic<uint32_t>(void){ return std::string("U32_t"); }
+template<> inline std::string ScidacWordMnemonic< int64_t>(void){ return std::string("I64_t"); }
+template<> inline std::string ScidacWordMnemonic<uint64_t>(void){ return std::string("U64_t"); }
 
-  /////////////////////////////////////////
-  // Encode a generic tensor as a string
-  /////////////////////////////////////////
- template<class vobj> std::string ScidacRecordTypeString(int &colors, int &spins, int & typesize,int &datacount) { 
+/////////////////////////////////////////
+// Encode a generic tensor as a string
+/////////////////////////////////////////
+template<class vobj> std::string ScidacRecordTypeString(int &colors, int &spins, int & typesize,int &datacount) { 
 
-   typedef typename getPrecision<vobj>::real_scalar_type stype;
+  typedef typename getPrecision<vobj>::real_scalar_type stype;
 
-   int _ColourN       = indexRank<ColourIndex,vobj>();
-   int _ColourScalar  =  isScalar<ColourIndex,vobj>();
-   int _ColourVector  =  isVector<ColourIndex,vobj>();
-   int _ColourMatrix  =  isMatrix<ColourIndex,vobj>();
+  int _ColourN       = indexRank<ColourIndex,vobj>();
+  int _ColourScalar  =  isScalar<ColourIndex,vobj>();
+  int _ColourVector  =  isVector<ColourIndex,vobj>();
+  int _ColourMatrix  =  isMatrix<ColourIndex,vobj>();
 
-   int _SpinN       = indexRank<SpinIndex,vobj>();
-   int _SpinScalar  =  isScalar<SpinIndex,vobj>();
-   int _SpinVector  =  isVector<SpinIndex,vobj>();
-   int _SpinMatrix  =  isMatrix<SpinIndex,vobj>();
+  int _SpinN       = indexRank<SpinIndex,vobj>();
+  int _SpinScalar  =  isScalar<SpinIndex,vobj>();
+  int _SpinVector  =  isVector<SpinIndex,vobj>();
+  int _SpinMatrix  =  isMatrix<SpinIndex,vobj>();
 
-   int _LorentzN       = indexRank<LorentzIndex,vobj>();
-   int _LorentzScalar  =  isScalar<LorentzIndex,vobj>();
-   int _LorentzVector  =  isVector<LorentzIndex,vobj>();
-   int _LorentzMatrix  =  isMatrix<LorentzIndex,vobj>();
+  int _LorentzN       = indexRank<LorentzIndex,vobj>();
+  int _LorentzScalar  =  isScalar<LorentzIndex,vobj>();
+  int _LorentzVector  =  isVector<LorentzIndex,vobj>();
+  int _LorentzMatrix  =  isMatrix<LorentzIndex,vobj>();
 
-   std::stringstream stream;
+  std::stringstream stream;
 
-   stream << "GRID_";
-   stream << ScidacWordMnemonic<stype>();
+  stream << "GRID_";
+  stream << ScidacWordMnemonic<stype>();
 
-   if ( _LorentzVector )   stream << "_LorentzVector"<<_LorentzN;
-   if ( _LorentzMatrix )   stream << "_LorentzMatrix"<<_LorentzN;
+  if ( _LorentzVector )   stream << "_LorentzVector"<<_LorentzN;
+  if ( _LorentzMatrix )   stream << "_LorentzMatrix"<<_LorentzN;
 
-   if ( _SpinVector )   stream << "_SpinVector"<<_SpinN;
-   if ( _SpinMatrix )   stream << "_SpinMatrix"<<_SpinN;
+  if ( _SpinVector )   stream << "_SpinVector"<<_SpinN;
+  if ( _SpinMatrix )   stream << "_SpinMatrix"<<_SpinN;
 
-   if ( _ColourVector )   stream << "_ColourVector"<<_ColourN;
-   if ( _ColourMatrix )   stream << "_ColourMatrix"<<_ColourN;
+  if ( _ColourVector )   stream << "_ColourVector"<<_ColourN;
+  if ( _ColourMatrix )   stream << "_ColourMatrix"<<_ColourN;
 
-   if ( _ColourScalar && _LorentzScalar && _SpinScalar )   stream << "_Complex";
+  if ( _ColourScalar && _LorentzScalar && _SpinScalar )   stream << "_Complex";
 
 
-   typesize = sizeof(typename vobj::scalar_type);
+  typesize = sizeof(typename vobj::scalar_type);
 
-   if ( _ColourMatrix ) typesize*= _ColourN*_ColourN;
-   else                 typesize*= _ColourN;
+  if ( _ColourMatrix ) typesize*= _ColourN*_ColourN;
+  else                 typesize*= _ColourN;
 
-   if ( _SpinMatrix )   typesize*= _SpinN*_SpinN;
-   else                 typesize*= _SpinN;
+  if ( _SpinMatrix )   typesize*= _SpinN*_SpinN;
+  else                 typesize*= _SpinN;
 
-   colors    = _ColourN;
-   spins     = _SpinN;
-   datacount = _LorentzN;
+  colors    = _ColourN;
+  spins     = _SpinN;
+  datacount = _LorentzN;
 
-   return stream.str();
- }
+  return stream.str();
+}
  
- template<class vobj> std::string ScidacRecordTypeString(Lattice<vobj> & lat,int &colors, int &spins, int & typesize,int &datacount) { 
-   return ScidacRecordTypeString<vobj>(colors,spins,typesize,datacount);
- };
+template<class vobj> std::string ScidacRecordTypeString(Lattice<vobj> & lat,int &colors, int &spins, int & typesize,int &datacount) { 
+  return ScidacRecordTypeString<vobj>(colors,spins,typesize,datacount);
+};
 
 
- ////////////////////////////////////////////////////////////
- // Helper to fill out metadata
- ////////////////////////////////////////////////////////////
- template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
-					  FieldMetaData &header,
-					  scidacRecord & _scidacRecord,
-					  scidacFile   & _scidacFile) 
- {
-   typedef typename getPrecision<vobj>::real_scalar_type stype;
+////////////////////////////////////////////////////////////
+// Helper to fill out metadata
+////////////////////////////////////////////////////////////
+template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
+					 FieldMetaData &header,
+					 scidacRecord & _scidacRecord,
+					 scidacFile   & _scidacFile) 
+{
+  typedef typename getPrecision<vobj>::real_scalar_type stype;
 
-   /////////////////////////////////////
-   // Pull Grid's metadata
-   /////////////////////////////////////
-   PrepareMetaData(field,header);
+  /////////////////////////////////////
+  // Pull Grid's metadata
+  /////////////////////////////////////
+  PrepareMetaData(field,header);
 
-   /////////////////////////////////////
-   // Scidac Private File structure
-   /////////////////////////////////////
-   _scidacFile              = scidacFile(field._grid);
+  /////////////////////////////////////
+  // Scidac Private File structure
+  /////////////////////////////////////
+  _scidacFile              = scidacFile(field._grid);
 
-   /////////////////////////////////////
-   // Scidac Private Record structure
-   /////////////////////////////////////
-   scidacRecord sr;
-   sr.datatype   = ScidacRecordTypeString(field,sr.colors,sr.spins,sr.typesize,sr.datacount);
-   sr.date       = header.creation_date;
-   sr.precision  = ScidacWordMnemonic<stype>();
-   sr.recordtype = GRID_IO_FIELD;
+  /////////////////////////////////////
+  // Scidac Private Record structure
+  /////////////////////////////////////
+  scidacRecord sr;
+  sr.datatype   = ScidacRecordTypeString(field,sr.colors,sr.spins,sr.typesize,sr.datacount);
+  sr.date       = header.creation_date;
+  sr.precision  = ScidacWordMnemonic<stype>();
+  sr.recordtype = GRID_IO_FIELD;
 
-   _scidacRecord = sr;
+  _scidacRecord = sr;
 
-   //   std::cout << GridLogMessage << "Build SciDAC datatype " <<sr.datatype<<std::endl;
- }
+  //   std::cout << GridLogMessage << "Build SciDAC datatype " <<sr.datatype<<std::endl;
+}
  
- ///////////////////////////////////////////////////////
- // Scidac checksum
- ///////////////////////////////////////////////////////
- static int scidacChecksumVerify(scidacChecksum &scidacChecksum_,uint32_t scidac_csuma,uint32_t scidac_csumb)
- {
-   uint32_t scidac_checksuma = stoull(scidacChecksum_.suma,0,16);
-   uint32_t scidac_checksumb = stoull(scidacChecksum_.sumb,0,16);
-   if ( scidac_csuma !=scidac_checksuma) return 0;
-   if ( scidac_csumb !=scidac_checksumb) return 0;
-   return 1;
- }
+///////////////////////////////////////////////////////
+// Scidac checksum
+///////////////////////////////////////////////////////
+static int scidacChecksumVerify(scidacChecksum &scidacChecksum_,uint32_t scidac_csuma,uint32_t scidac_csumb)
+{
+  uint32_t scidac_checksuma = stoull(scidacChecksum_.suma,0,16);
+  uint32_t scidac_checksumb = stoull(scidacChecksum_.sumb,0,16);
+  if ( scidac_csuma !=scidac_checksuma) return 0;
+  if ( scidac_csumb !=scidac_checksumb) return 0;
+  return 1;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Lime, ILDG and Scidac I/O classes
 ////////////////////////////////////////////////////////////////////////////////////
 class GridLimeReader : public BinaryIO {
- public:
-   ///////////////////////////////////////////////////
-   // FIXME: format for RNG? Now just binary out instead
-   ///////////////////////////////////////////////////
+public:
+  ///////////////////////////////////////////////////
+  // FIXME: format for RNG? Now just binary out instead
+  ///////////////////////////////////////////////////
 
-   FILE       *File;
-   LimeReader *LimeR;
-   std::string filename;
+  FILE       *File;
+  LimeReader *LimeR;
+  std::string filename;
 
-   /////////////////////////////////////////////
-   // Open the file
-   /////////////////////////////////////////////
-   void open(const std::string &_filename) 
-   {
-     filename= _filename;
-     File = fopen(filename.c_str(), "r");
-     LimeR = limeCreateReader(File);
-   }
-   /////////////////////////////////////////////
-   // Close the file
-   /////////////////////////////////////////////
-   void close(void){
-     fclose(File);
-     //     limeDestroyReader(LimeR);
-   }
+  /////////////////////////////////////////////
+  // Open the file
+  /////////////////////////////////////////////
+  void open(const std::string &_filename) 
+  {
+    filename= _filename;
+    File = fopen(filename.c_str(), "r");
+    LimeR = limeCreateReader(File);
+  }
+  /////////////////////////////////////////////
+  // Close the file
+  /////////////////////////////////////////////
+  void close(void){
+    fclose(File);
+    //     limeDestroyReader(LimeR);
+  }
 
   ////////////////////////////////////////////
   // Read a generic lattice field and verify checksum
@@ -273,28 +272,28 @@ class GridLimeReader : public BinaryIO {
 };
 
 class GridLimeWriter : public BinaryIO {
- public:
-   ///////////////////////////////////////////////////
-   // FIXME: format for RNG? Now just binary out instead
-   // FIXME: collective calls or not ?
-   //      : must know if I am the I/O boss
-   ///////////////////////////////////////////////////
-   FILE       *File;
-   LimeWriter *LimeW;
-   std::string filename;
+public:
+  ///////////////////////////////////////////////////
+  // FIXME: format for RNG? Now just binary out instead
+  // FIXME: collective calls or not ?
+  //      : must know if I am the I/O boss
+  ///////////////////////////////////////////////////
+  FILE       *File;
+  LimeWriter *LimeW;
+  std::string filename;
 
-   void open(const std::string &_filename) { 
-     filename= _filename;
-     File = fopen(filename.c_str(), "w");
-     LimeW = limeCreateWriter(File); assert(LimeW != NULL );
-   }
-   /////////////////////////////////////////////
-   // Close the file
-   /////////////////////////////////////////////
-   void close(void) {
-     fclose(File);
-     //  limeDestroyWriter(LimeW);
-   }
+  void open(const std::string &_filename) { 
+    filename= _filename;
+    File = fopen(filename.c_str(), "w");
+    LimeW = limeCreateWriter(File); assert(LimeW != NULL );
+  }
+  /////////////////////////////////////////////
+  // Close the file
+  /////////////////////////////////////////////
+  void close(void) {
+    fclose(File);
+    //  limeDestroyWriter(LimeW);
+  }
   ///////////////////////////////////////////////////////
   // Lime utility functions
   ///////////////////////////////////////////////////////
@@ -386,15 +385,15 @@ class GridLimeWriter : public BinaryIO {
 };
 
 class ScidacWriter : public GridLimeWriter {
- public:
+public:
 
-   template<class SerialisableUserFile>
-   void writeScidacFileRecord(GridBase *grid,SerialisableUserFile &_userFile)
-   {
-     scidacFile    _scidacFile(grid);
-     writeLimeObject(1,0,_scidacFile,_scidacFile.SerialisableClassName(),std::string(SCIDAC_PRIVATE_FILE_XML));
-     writeLimeObject(0,1,_userFile,_userFile.SerialisableClassName(),std::string(SCIDAC_FILE_XML));
-   }
+  template<class SerialisableUserFile>
+  void writeScidacFileRecord(GridBase *grid,SerialisableUserFile &_userFile)
+  {
+    scidacFile    _scidacFile(grid);
+    writeLimeObject(1,0,_scidacFile,_scidacFile.SerialisableClassName(),std::string(SCIDAC_PRIVATE_FILE_XML));
+    writeLimeObject(0,1,_userFile,_userFile.SerialisableClassName(),std::string(SCIDAC_FILE_XML));
+  }
   ////////////////////////////////////////////////
   // Write generic lattice field in scidac format
   ////////////////////////////////////////////////
@@ -424,15 +423,15 @@ class ScidacWriter : public GridLimeWriter {
 
 
 class ScidacReader : public GridLimeReader {
- public:
+public:
 
-   template<class SerialisableUserFile>
-   void readScidacFileRecord(GridBase *grid,SerialisableUserFile &_userFile)
-   {
-     scidacFile    _scidacFile(grid);
-     readLimeObject(_scidacFile,_scidacFile.SerialisableClassName(),std::string(SCIDAC_PRIVATE_FILE_XML));
-     readLimeObject(_userFile,_userFile.SerialisableClassName(),std::string(SCIDAC_FILE_XML));
-   }
+  template<class SerialisableUserFile>
+  void readScidacFileRecord(GridBase *grid,SerialisableUserFile &_userFile)
+  {
+    scidacFile    _scidacFile(grid);
+    readLimeObject(_scidacFile,_scidacFile.SerialisableClassName(),std::string(SCIDAC_PRIVATE_FILE_XML));
+    readLimeObject(_userFile,_userFile.SerialisableClassName(),std::string(SCIDAC_FILE_XML));
+  }
   ////////////////////////////////////////////////
   // Write generic lattice field in scidac format
   ////////////////////////////////////////////////
@@ -483,7 +482,7 @@ class ScidacReader : public GridLimeReader {
 
 
 class IldgWriter : public ScidacWriter {
- public:
+public:
 
   ///////////////////////////////////
   // A little helper
@@ -526,7 +525,7 @@ class IldgWriter : public ScidacWriter {
     header.ildg_lfn = LFN;
 
     assert ( (format == std::string("IEEE32BIG"))  
-           ||(format == std::string("IEEE64BIG")) );
+	     ||(format == std::string("IEEE64BIG")) );
 
     //////////////////////////////////////////////////////
     // Fill ILDG header data struct
@@ -573,7 +572,7 @@ class IldgWriter : public ScidacWriter {
 };
 
 class IldgReader : public GridLimeReader {
- public:
+public:
 
   ////////////////////////////////////////////////////////////////
   // Read either Grid/SciDAC/ILDG configuration
@@ -788,9 +787,9 @@ class IldgReader : public GridLimeReader {
       std::cout << GridLogMessage<<"Plaquette and link trace match " << std::endl;
     }
   }
- };
+};
 
-}}
+NAMESPACE_END(Grid);
 
 //HAVE_LIME
 #endif
