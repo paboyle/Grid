@@ -34,7 +34,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 ///////////////////////////////////
 #include <Grid/communicator/SharedMemory.h>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 class CartesianCommunicator : public SharedMemory {
 
@@ -201,6 +201,7 @@ public:
     };
 
 }; 
-}
+
+NAMESPACE_END(Grid);
 
 #endif

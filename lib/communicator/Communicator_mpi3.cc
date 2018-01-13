@@ -28,7 +28,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/GridCore.h>
 #include <Grid/communicator/SharedMemory.h>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 Grid_MPI_Comm       CartesianCommunicator::communicator_world;
 
@@ -488,7 +488,6 @@ void CartesianCommunicator::AllToAll(void  *in,void *out,uint64_t words,uint64_t
   MPI_Type_free(&object);
 }
 
+NAMESPACE_END(Grid);
 
-
-}
 

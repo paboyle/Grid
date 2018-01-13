@@ -25,18 +25,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
-
-
-// TODO
-// 1) move includes into SharedMemory.cc
-//
-// 2) split shared memory into a) optimal communicator creation from comm world
-// 
-//                             b) shared memory buffers container
-//                                -- static globally shared; init once
-//                                -- per instance set of buffers.
-//                                   
-
 #pragma once 
 
 #include <Grid/GridCore.h>
@@ -57,7 +45,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <numaif.h>
 #endif
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 #if defined (GRID_COMMS_MPI3) 
   typedef MPI_Comm    Grid_MPI_Comm;
@@ -161,4 +149,5 @@ class SharedMemory
 
 };
 
-}
+NAMESPACE_END(Grid);
+

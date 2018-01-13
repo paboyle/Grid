@@ -28,7 +28,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 #include <Grid/GridCore.h>
 
-namespace Grid { 
+NAMESPACE_BEGIN(Grid); 
 
 /*Construct from an MPI communicator*/
 void GlobalSharedMemory::Init(Grid_MPI_Comm comm)
@@ -123,4 +123,5 @@ void *SharedMemory::ShmBufferTranslate(int rank,void * local_p)
   return NULL;
 }
 
-}
+NAMESPACE_END(Grid); 
+

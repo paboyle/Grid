@@ -27,7 +27,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid/GridCore.h>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Info that is setup once and indept of cartesian layout
@@ -160,6 +160,6 @@ void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsReque
 
 void CartesianCommunicator::StencilBarrier(void){};
 
+NAMESPACE_END(Grid);
 
-}
 

@@ -31,7 +31,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <limits.h>
 #include <sys/mman.h>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 ///////////////////////////////////////////////////////////////
 // Info that is setup once and indept of cartesian layout
@@ -72,5 +72,6 @@ void CartesianCommunicator::GlobalSumVector(ComplexD *c,int N)
   GlobalSumVector((double *)c,2*N);
 }
   
-}
+NAMESPACE_END(Grid);
+
 

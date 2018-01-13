@@ -28,7 +28,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 #include <Grid/GridCore.h>
 
-namespace Grid { 
+NAMESPACE_BEGIN(Grid); 
 
 // static data
 
@@ -87,6 +87,5 @@ void *SharedMemory::ShmBufferSelf(void)
   return ShmCommBufs[ShmRank];
 }
 
+NAMESPACE_END(Grid); 
 
-
-}
