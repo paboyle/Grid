@@ -29,7 +29,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/GridCore.h>
 #include <algorithm>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 int LebesgueOrder::UseLebesgueOrder;
 #ifdef KNL
@@ -239,4 +239,5 @@ void LebesgueOrder::ZGraph(void)
   }
   */
 }
-}
+NAMESPACE_END(Grid);
+

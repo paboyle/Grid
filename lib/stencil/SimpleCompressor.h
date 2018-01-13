@@ -1,7 +1,7 @@
 #ifndef _STENCIL_SIMPLE_COMPRESSOR_H_
 #define _STENCIL_SIMPLE_COMPRESSOR_H_
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 template<class vobj>
 class SimpleCompressor {
@@ -25,5 +25,6 @@ public:
   }
 };
 
-}
+NAMESPACE_END(Grid);
+
 #endif

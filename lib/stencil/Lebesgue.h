@@ -32,7 +32,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include<vector>
 
 // Lebesgue, Morton, Z-graph ordering assistance
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
   
   class LebesgueOrder { 
   public:
@@ -76,5 +76,7 @@ namespace Grid {
     std::vector<IndexInteger> _LebesgueReorder;
 
   };    
-}
+
+NAMESPACE_END(Grid);
+
 #endif

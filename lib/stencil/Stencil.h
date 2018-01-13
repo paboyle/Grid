@@ -48,7 +48,7 @@
  // 
  //////////////////////////////////////////////////////////////////////////////////////////
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 ///////////////////////////////////////////////////////////////////
 // Gather for when there *is* need to SIMD split with compression
@@ -1164,5 +1164,6 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
   };
   
 };
-}
+NAMESPACE_END(Grid);
+
 #endif

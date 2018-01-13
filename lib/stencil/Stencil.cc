@@ -27,7 +27,7 @@
      /*  END LEGAL */
 #include <Grid/GridCore.h>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 void Gather_plane_table_compute (GridBase *grid,int dimension,int plane,int cbmask,
 					int off,std::vector<std::pair<int,int> > & table)
@@ -66,4 +66,5 @@ void Gather_plane_table_compute (GridBase *grid,int dimension,int plane,int cbma
   }
 }
 
-}
+NAMESPACE_END(Grid);
+
