@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,11 +24,12 @@ Author: neo <cossu@post.kek.jp>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_MATH_TRACE_H
 #define GRID_MATH_TRACE_H
-namespace Grid {
+
+NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////////////////////////////////
 // Traces: both all indices and a specific index. Indices must be
@@ -43,24 +44,24 @@ inline RealD trace( const RealD &arg){    return arg;}
 template<class vtype,int N>
 inline auto trace(const iMatrix<vtype,N> &arg) -> iScalar<decltype(trace(arg._internal[0][0]))>
 {
-    iScalar<decltype( trace(arg._internal[0][0] )) > ret;
-    zeroit(ret._internal);
-    for(int i=0;i<N;i++){
-        ret._internal=ret._internal+trace(arg._internal[i][i]);
-    }
-    return ret;
+  iScalar<decltype( trace(arg._internal[0][0] )) > ret;
+  zeroit(ret._internal);
+  for(int i=0;i<N;i++){
+    ret._internal=ret._internal+trace(arg._internal[i][i]);
+  }
+  return ret;
 }
 
 template<class vtype>
 inline auto trace(const iScalar<vtype> &arg) -> iScalar<decltype(trace(arg._internal))>
 {
-    iScalar<decltype(trace(arg._internal))> ret;
-    ret._internal=trace(arg._internal);
-    return ret;
+  iScalar<decltype(trace(arg._internal))> ret;
+  ret._internal=trace(arg._internal);
+  return ret;
 }
 
 template<class vtype,int N>
-  inline auto trace(const iVector<vtype,N> &arg) -> iVector<decltype(trace(arg._internal[0])),N>
+inline auto trace(const iVector<vtype,N> &arg) -> iVector<decltype(trace(arg._internal[0])),N>
 {
   iVector<decltype(trace(arg._internal[0])),N> ret;
   for(int i=0;i<N;i++){
@@ -69,6 +70,6 @@ template<class vtype,int N>
   return ret;
 }
 
+NAMESPACE_END(Grid);
 
-}
 #endif

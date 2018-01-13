@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,13 +23,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_MATH_TRANSPOSE_H
 #define GRID_MATH_TRANSPOSE_H
-namespace Grid {
 
-
+NAMESPACE_BEGIN(Grid);
 
 /////////////////////////////////////////////////////////////////
 // Transpose all indices
@@ -41,45 +40,45 @@ inline RealD transpose(RealD &rhs){  return rhs;}
 inline RealF transpose(RealF &rhs){  return rhs;}
 
 template<class vtype,int N>
-  inline typename std::enable_if<isGridTensor<vtype>::value, iMatrix<vtype,N> >::type 
-  transpose(iMatrix<vtype,N> arg)
-  {
-    iMatrix<vtype,N> ret;
-    for(int i=0;i<N;i++){
-      for(int j=0;j<N;j++){
-	ret._internal[i][j] = transpose(arg._internal[j][i]); // NB recurses
-      }}
-    return ret;
-  }
+inline typename std::enable_if<isGridTensor<vtype>::value, iMatrix<vtype,N> >::type 
+transpose(iMatrix<vtype,N> arg)
+{
+  iMatrix<vtype,N> ret;
+  for(int i=0;i<N;i++){
+    for(int j=0;j<N;j++){
+      ret._internal[i][j] = transpose(arg._internal[j][i]); // NB recurses
+    }}
+  return ret;
+}
 template<class vtype,int N>
-  inline typename std::enable_if<isGridTensor<vtype>::notvalue, iMatrix<vtype,N> >::type 
-  transpose(iMatrix<vtype,N> arg)
-  {
-    iMatrix<vtype,N> ret;
-    for(int i=0;i<N;i++){
-      for(int j=0;j<N;j++){
-	ret._internal[i][j] = arg._internal[j][i]; // Stop recursion if not a tensor type
-      }}
-    return ret;
-  }
+inline typename std::enable_if<isGridTensor<vtype>::notvalue, iMatrix<vtype,N> >::type 
+transpose(iMatrix<vtype,N> arg)
+{
+  iMatrix<vtype,N> ret;
+  for(int i=0;i<N;i++){
+    for(int j=0;j<N;j++){
+      ret._internal[i][j] = arg._internal[j][i]; // Stop recursion if not a tensor type
+    }}
+  return ret;
+}
 
 template<class vtype>
-  inline typename std::enable_if<isGridTensor<vtype>::value, iScalar<vtype> >::type 
-  transpose(iScalar<vtype> arg)
-  {
-    iScalar<vtype> ret;
-    ret._internal = transpose(arg._internal); // NB recurses
-    return ret;
-  }
+inline typename std::enable_if<isGridTensor<vtype>::value, iScalar<vtype> >::type 
+transpose(iScalar<vtype> arg)
+{
+  iScalar<vtype> ret;
+  ret._internal = transpose(arg._internal); // NB recurses
+  return ret;
+}
 
 template<class vtype>
-  inline typename std::enable_if<isGridTensor<vtype>::notvalue, iScalar<vtype> >::type 
-  transpose(iScalar<vtype> arg)
-  {
-    iScalar<vtype> ret;
-    ret._internal = arg._internal; // NB recursion stops
-    return ret;
-  }
+inline typename std::enable_if<isGridTensor<vtype>::notvalue, iScalar<vtype> >::type 
+transpose(iScalar<vtype> arg)
+{
+  iScalar<vtype> ret;
+  ret._internal = arg._internal; // NB recursion stops
+  return ret;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -88,14 +87,14 @@ template<class vtype>
 ////////////////////////////////////////////////////////////////////////////////////////////
 #if 0
 template<int Level,class vtype,int N> inline 
-  typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,Level>::value, iMatrix<vtype,N> >::type 
+typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,Level>::value, iMatrix<vtype,N> >::type 
 transposeIndex (const iMatrix<vtype,N> &arg)
 {
   iMatrix<vtype,N> ret;
   for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       ret._internal[i][j] = arg._internal[j][i]; 
-  }}
+    }}
   return ret;
 }
 // or not
@@ -107,7 +106,7 @@ transposeIndex (const iMatrix<vtype,N> &arg)
   for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       ret._internal[i][j] = transposeIndex<Level>(arg._internal[i][j]); 
-  }}
+    }}
   return ret;
 }
 template<int Level,class vtype> inline 
@@ -126,5 +125,6 @@ transposeIndex (const iScalar<vtype> &arg)
 }
 #endif
 
-}
+NAMESPACE_END(Grid);
+
 #endif

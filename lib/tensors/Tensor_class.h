@@ -20,11 +20,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef GRID_MATH_TENSORS_H
 #define GRID_MATH_TENSORS_H
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 ///////////////////////////////////////////////////
 // Scalar, Vector, Matrix objects.
@@ -44,7 +44,7 @@ class GridTensorBase {};
 
 template <class vtype>
 class iScalar {
- public:
+public:
   vtype _internal;
 
   typedef vtype element;
@@ -69,10 +69,10 @@ class iScalar {
   //  iScalar<GridTypeMapper<vtype>::tensor_reduce_level<Level> >;
   iScalar() = default;
   /*
-  iScalar(const iScalar<vtype> &copyme)=default;
-  iScalar(iScalar<vtype> &&copyme)=default;
-  iScalar<vtype> & operator= (const iScalar<vtype> &copyme) = default;
-  iScalar<vtype> & operator= (iScalar<vtype> &&copyme) = default;
+    iScalar(const iScalar<vtype> &copyme)=default;
+    iScalar(iScalar<vtype> &&copyme)=default;
+    iScalar<vtype> & operator= (const iScalar<vtype> &copyme) = default;
+    iScalar<vtype> & operator= (iScalar<vtype> &&copyme) = default;
   */
 
   //  template<int N=0>
@@ -109,7 +109,7 @@ class iScalar {
   friend strong_inline void exchange(iScalar<vtype> &out1,iScalar<vtype> &out2,
 				     const iScalar<vtype> &in1,const iScalar<vtype> &in2,int type){
     exchange(out1._internal,out2._internal,
-	      in1._internal, in2._internal,type);
+	     in1._internal, in2._internal,type);
   }
 
   // Unary negation
@@ -185,13 +185,13 @@ TensorRemove(T arg) {
 }
 template <class vtype>
 strong_inline auto TensorRemove(iScalar<vtype> arg)
-    -> decltype(TensorRemove(arg._internal)) {
+  -> decltype(TensorRemove(arg._internal)) {
   return TensorRemove(arg._internal);
 }
 
 template <class vtype, int N>
 class iVector {
- public:
+public:
   vtype _internal[N];
 
   typedef vtype element;
@@ -211,7 +211,7 @@ class iVector {
   typedef iVector<typename GridTypeMapper<vtype>::DoublePrecision, N> DoublePrecision;
   
   template <class T, typename std::enable_if<!isGridTensor<T>::value, T>::type
-                         * = nullptr>
+	    * = nullptr>
   strong_inline auto operator=(T arg) -> iVector<vtype, N> {
     zeroit(*this);
     for (int i = 0; i < N; i++) _internal[i] = arg;
@@ -222,10 +222,10 @@ class iVector {
   iVector(const Zero &z) { *this = zero; };
   iVector() = default;
   /*
-  iVector(const iVector<vtype,N> &copyme)=default;
-  iVector(iVector<vtype,N> &&copyme)=default;
-  iVector<vtype,N> & operator= (const iVector<vtype,N> &copyme) = default;
-  iVector<vtype,N> & operator= (iVector<vtype,N> &&copyme) = default;
+    iVector(const iVector<vtype,N> &copyme)=default;
+    iVector(iVector<vtype,N> &&copyme)=default;
+    iVector<vtype,N> & operator= (const iVector<vtype,N> &copyme) = default;
+    iVector<vtype,N> & operator= (iVector<vtype,N> &&copyme) = default;
   */
 
   iVector<vtype, N> &operator=(const Zero &hero) {
@@ -265,7 +265,7 @@ class iVector {
 				     const iVector<vtype,N> &in1,const iVector<vtype,N> &in2,int type){
     for(int i=0;i<N;i++){
       exchange(out1._internal[i],out2._internal[i],
-	        in1._internal[i], in2._internal[i],type);
+	       in1._internal[i], in2._internal[i],type);
     }
   }
 
@@ -307,7 +307,7 @@ class iVector {
 
 template <class vtype, int N>
 class iMatrix {
- public:
+public:
   vtype _internal[N][N];
 
   typedef vtype element;
@@ -344,10 +344,10 @@ class iMatrix {
   };  // recurse down and hit the constructor for vector_type
 
   /*
-  iMatrix(const iMatrix<vtype,N> &copyme)=default;
-  iMatrix(iMatrix<vtype,N> &&copyme)=default;
-  iMatrix<vtype,N> & operator= (const iMatrix<vtype,N> &copyme) = default;
-  iMatrix<vtype,N> & operator= (iMatrix<vtype,N> &&copyme) = default;
+    iMatrix(const iMatrix<vtype,N> &copyme)=default;
+    iMatrix(iMatrix<vtype,N> &&copyme)=default;
+    iMatrix<vtype,N> & operator= (const iMatrix<vtype,N> &copyme) = default;
+    iMatrix<vtype,N> & operator= (iMatrix<vtype,N> &&copyme) = default;
   */
 
   iMatrix<vtype, N> &operator=(const Zero &hero) {
@@ -355,109 +355,109 @@ class iMatrix {
     return *this;
   }
   template <class T, typename std::enable_if<!isGridTensor<T>::value, T>::type
-                         * = nullptr>
+	    * = nullptr>
   strong_inline auto operator=(T arg) -> iMatrix<vtype, N> {
     zeroit(*this);
     for (int i = 0; i < N; i++) _internal[i][i] = arg;
     return *this;
   }
 
-  friend strong_inline void zeroit(iMatrix<vtype,N> &that){
-    for(int i=0;i<N;i++){
-      for(int j=0;j<N;j++){
-	zeroit(that._internal[i][j]);
+friend strong_inline void zeroit(iMatrix<vtype,N> &that){
+  for(int i=0;i<N;i++){
+    for(int j=0;j<N;j++){
+      zeroit(that._internal[i][j]);
     }}
-  }
-  friend strong_inline void prefetch(iMatrix<vtype,N> &that){
-    for(int i=0;i<N;i++) 
+}
+friend strong_inline void prefetch(iMatrix<vtype,N> &that){
+  for(int i=0;i<N;i++) 
     for(int j=0;j<N;j++) 
       prefetch(that._internal[i][j]);
-  }
-  friend strong_inline void vstream(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in){
-      for(int i=0;i<N;i++){
-      for(int j=0;j<N;j++){
-	vstream(out._internal[i][j],in._internal[i][j]);
-      }}
-  }
-  friend strong_inline void vbroadcast(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in,int lane){
-      for(int i=0;i<N;i++){
-      for(int j=0;j<N;j++){
-	vbroadcast(out._internal[i][j],in._internal[i][j],lane);
-      }}
-  }
+}
+friend strong_inline void vstream(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in){
+  for(int i=0;i<N;i++){
+    for(int j=0;j<N;j++){
+      vstream(out._internal[i][j],in._internal[i][j]);
+    }}
+}
+friend strong_inline void vbroadcast(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in,int lane){
+  for(int i=0;i<N;i++){
+    for(int j=0;j<N;j++){
+      vbroadcast(out._internal[i][j],in._internal[i][j],lane);
+    }}
+}
 
-  friend strong_inline void permute(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in,int permutetype){
-    for(int i=0;i<N;i++){
-      for(int j=0;j<N;j++){
-	permute(out._internal[i][j],in._internal[i][j],permutetype);
+friend strong_inline void permute(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in,int permutetype){
+  for(int i=0;i<N;i++){
+    for(int j=0;j<N;j++){
+      permute(out._internal[i][j],in._internal[i][j],permutetype);
     }}
-  }
-  friend strong_inline void rotate(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in,int rot){
-    for(int i=0;i<N;i++){
-      for(int j=0;j<N;j++){
-	rotate(out._internal[i][j],in._internal[i][j],rot);
+}
+friend strong_inline void rotate(iMatrix<vtype,N> &out,const iMatrix<vtype,N> &in,int rot){
+  for(int i=0;i<N;i++){
+    for(int j=0;j<N;j++){
+      rotate(out._internal[i][j],in._internal[i][j],rot);
     }}
-  }
-  friend strong_inline void exchange(iMatrix<vtype,N> &out1,iMatrix<vtype,N> &out2,
-				     const iMatrix<vtype,N> &in1,const iMatrix<vtype,N> &in2,int type){
-    for(int i=0;i<N;i++){
-      for(int j=0;j<N;j++){
-	exchange(out1._internal[i][j],out2._internal[i][j],
-		  in1._internal[i][j], in2._internal[i][j],type);
+}
+friend strong_inline void exchange(iMatrix<vtype,N> &out1,iMatrix<vtype,N> &out2,
+				   const iMatrix<vtype,N> &in1,const iMatrix<vtype,N> &in2,int type){
+  for(int i=0;i<N;i++){
+    for(int j=0;j<N;j++){
+      exchange(out1._internal[i][j],out2._internal[i][j],
+	       in1._internal[i][j], in2._internal[i][j],type);
     }}
-  }
+}
 
-  // Unary negation
-  friend strong_inline iMatrix<vtype, N> operator-(const iMatrix<vtype, N> &r) {
-    iMatrix<vtype, N> ret;
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j < N; j++) {
-        ret._internal[i][j] = -r._internal[i][j];
-      }
+// Unary negation
+friend strong_inline iMatrix<vtype, N> operator-(const iMatrix<vtype, N> &r) {
+  iMatrix<vtype, N> ret;
+  for (int i = 0; i < N; i++) {
+    for (int j = 0; j < N; j++) {
+      ret._internal[i][j] = -r._internal[i][j];
     }
-    return ret;
   }
-  // *=,+=,-= operators inherit from corresponding "*,-,+" behaviour
-  template <class T>
-  strong_inline iMatrix<vtype, N> &operator*=(const T &r) {
-    *this = (*this) * r;
-    return *this;
-  }
-  template <class T>
-  strong_inline iMatrix<vtype, N> &operator-=(const T &r) {
-    *this = (*this) - r;
-    return *this;
-  }
-  template <class T>
-  strong_inline iMatrix<vtype, N> &operator+=(const T &r) {
-    *this = (*this) + r;
-    return *this;
-  }
+  return ret;
+}
+// *=,+=,-= operators inherit from corresponding "*,-,+" behaviour
+template <class T>
+strong_inline iMatrix<vtype, N> &operator*=(const T &r) {
+  *this = (*this) * r;
+  return *this;
+}
+template <class T>
+strong_inline iMatrix<vtype, N> &operator-=(const T &r) {
+  *this = (*this) - r;
+  return *this;
+}
+template <class T>
+strong_inline iMatrix<vtype, N> &operator+=(const T &r) {
+  *this = (*this) + r;
+  return *this;
+}
 
-  // returns an lvalue reference
-  strong_inline vtype &operator()(int i, int j) { return _internal[i][j]; }
-  strong_inline const vtype &operator()(int i, int j) const {
-    return _internal[i][j];
-  }
-  friend std::ostream &operator<<(std::ostream &stream,
-                                  const iMatrix<vtype, N> &o) {
-    stream << "M<" << N << ">{";
-    for (int i = 0; i < N; i++) {
-      stream << "{";
-      for (int j = 0; j < N; j++) {
-        stream << o._internal[i][j];
-        if (i < N - 1) stream << ",";
-      }
-      stream << "}";
-      if (i != N - 1) stream << "\n\t\t";
+// returns an lvalue reference
+strong_inline vtype &operator()(int i, int j) { return _internal[i][j]; }
+strong_inline const vtype &operator()(int i, int j) const {
+  return _internal[i][j];
+}
+friend std::ostream &operator<<(std::ostream &stream,
+				const iMatrix<vtype, N> &o) {
+  stream << "M<" << N << ">{";
+  for (int i = 0; i < N; i++) {
+    stream << "{";
+    for (int j = 0; j < N; j++) {
+      stream << o._internal[i][j];
+      if (i < N - 1) stream << ",";
     }
     stream << "}";
-    return stream;
-  };
+    if (i != N - 1) stream << "\n\t\t";
+  }
+  stream << "}";
+  return stream;
+};
 
-  //  strong_inline vtype && operator ()(int i,int j) {
-  //    return _internal[i][j];
-  //  }
+//  strong_inline vtype && operator ()(int i,int j) {
+//    return _internal[i][j];
+//  }
 };
 
 template <class v>
@@ -478,7 +478,9 @@ void vprefetch(const iMatrix<v, N> &vv) {
     }
   }
 }
-}
+
+NAMESPACE_END(Grid);
+
 #endif
 
 

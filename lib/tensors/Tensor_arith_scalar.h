@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,13 +24,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_MATH_ARITH_SCALAR_H
 #define GRID_MATH_ARITH_SCALAR_H
 
-namespace Grid {
-
+NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Must support native C++ types Integer, Complex, Real
@@ -283,6 +282,6 @@ template<class l,int N> strong_inline iMatrix<l,N> operator - (Integer lhs,const
   return slhs-rhs;
 }
 
+NAMESPACE_END(Grid);
 
-}
 #endif
