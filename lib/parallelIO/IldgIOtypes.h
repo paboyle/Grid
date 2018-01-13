@@ -23,7 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef GRID_ILDGTYPES_IO_H
 #define GRID_ILDGTYPES_IO_H
 
@@ -51,12 +51,12 @@ NAMESPACE_BEGIN(Grid);
 // Unused SCIDAC records names; could move to support this functionality
 #define SCIDAC_SITELIST           "scidac-sitelist"
 
-  ////////////////////////////////////////////////////////////
-  const int GRID_IO_SINGLEFILE = 0; // hardcode lift from QIO compat
-  const int GRID_IO_MULTIFILE  = 1; // hardcode lift from QIO compat
-  const int GRID_IO_FIELD      = 0; // hardcode lift from QIO compat
-  const int GRID_IO_GLOBAL     = 1; // hardcode lift from QIO compat
-  ////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+const int GRID_IO_SINGLEFILE = 0; // hardcode lift from QIO compat
+const int GRID_IO_MULTIFILE  = 1; // hardcode lift from QIO compat
+const int GRID_IO_FIELD      = 0; // hardcode lift from QIO compat
+const int GRID_IO_GLOBAL     = 1; // hardcode lift from QIO compat
+////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////////////////
 // QIO uses mandatory "private" records fixed format
@@ -74,7 +74,7 @@ struct emptyUserRecord : Serializable {
 // <?xml version="1.0" encoding="UTF-8"?><scidacFile><version>1.1</version><spacetime>4</spacetime><dims>16 16 16 32 </dims><volfmt>0</volfmt></scidacFile>
 ////////////////////////
 struct scidacFile : Serializable {
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(scidacFile,
                                   double, version,
                                   int, spacetime,
@@ -124,7 +124,7 @@ struct scidacFile : Serializable {
 ///////////////////////////////////////////////////////////////////////
 
 struct scidacRecord : Serializable {
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(scidacRecord,
                                   double, version,
                                   std::string, date,
@@ -159,7 +159,7 @@ public:
 // USQCD info
 ////////////////////////
 struct usqcdInfo : Serializable { 
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(usqcdInfo,
 				  double, version,
 				  double, plaq,
@@ -173,7 +173,7 @@ struct usqcdInfo : Serializable {
 // Scidac Checksum
 ////////////////////////
 struct scidacChecksum : Serializable { 
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(scidacChecksum,
 				  double, version,
 				  std::string, suma,
@@ -200,7 +200,7 @@ struct scidacChecksum : Serializable {
 // From http://www.physics.utah.edu/~detar/scidac/qio_2p3.pdf
 ////////////////////////////////////////////////////////////////////////////////////////
 struct usqcdPropFile : Serializable { 
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(usqcdPropFile,
 				  double, version,
 				  std::string, type,
@@ -210,7 +210,7 @@ struct usqcdPropFile : Serializable {
   };
 };
 struct usqcdSourceInfo : Serializable { 
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(usqcdSourceInfo,
 				  double, version,
 				  std::string, info);
@@ -219,7 +219,7 @@ struct usqcdSourceInfo : Serializable {
   };
 };
 struct usqcdPropInfo : Serializable { 
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(usqcdPropInfo,
 				  double, version,
 				  int, spin,
