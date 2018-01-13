@@ -24,8 +24,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_ALIGNED_ALLOCATOR_H
 #define GRID_ALIGNED_ALLOCATOR_H
 
@@ -40,89 +40,89 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <mm_malloc.h>
 #endif
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
-  class PointerCache {
-  private:
+class PointerCache {
+private:
 
-    static const int Ncache=8;
-    static int victim;
+  static const int Ncache=8;
+  static int victim;
 
-    typedef struct { 
-      void *address;
-      size_t bytes;
-      int valid;
-    } PointerCacheEntry;
+  typedef struct { 
+    void *address;
+    size_t bytes;
+    int valid;
+  } PointerCacheEntry;
     
-    static PointerCacheEntry Entries[Ncache];
+  static PointerCacheEntry Entries[Ncache];
 
-  public:
+public:
 
 
-    static void *Insert(void *ptr,size_t bytes) ;
-    static void *Lookup(size_t bytes) ;
+  static void *Insert(void *ptr,size_t bytes) ;
+  static void *Lookup(size_t bytes) ;
 
-  };
+};
   
-  std::string sizeString(size_t bytes);
+std::string sizeString(size_t bytes);
 
-  struct MemoryStats
-  {
-    size_t totalAllocated{0}, maxAllocated{0}, 
-           currentlyAllocated{0}, totalFreed{0};
-  };
+struct MemoryStats
+{
+  size_t totalAllocated{0}, maxAllocated{0}, 
+    currentlyAllocated{0}, totalFreed{0};
+};
     
-  class MemoryProfiler
-  {
-  public:
-    static MemoryStats *stats;
-    static bool        debug;
-  };
+class MemoryProfiler
+{
+public:
+  static MemoryStats *stats;
+  static bool        debug;
+};
 
-  #define memString(bytes) std::to_string(bytes) + " (" + sizeString(bytes) + ")"
-  #define profilerDebugPrint \
-  if (MemoryProfiler::stats)\
-  {\
-    auto s = MemoryProfiler::stats;\
-    std::cout << GridLogDebug << "[Memory debug] Stats " << MemoryProfiler::stats << std::endl;\
-    std::cout << GridLogDebug << "[Memory debug] total  : " << memString(s->totalAllocated) \
-              << std::endl;\
-    std::cout << GridLogDebug << "[Memory debug] max    : " << memString(s->maxAllocated) \
-              << std::endl;\
-    std::cout << GridLogDebug << "[Memory debug] current: " << memString(s->currentlyAllocated) \
-              << std::endl;\
-    std::cout << GridLogDebug << "[Memory debug] freed  : " << memString(s->totalFreed) \
-              << std::endl;\
-  }
+#define memString(bytes) std::to_string(bytes) + " (" + sizeString(bytes) + ")"
+#define profilerDebugPrint						\
+  if (MemoryProfiler::stats)						\
+    {									\
+      auto s = MemoryProfiler::stats;					\
+      std::cout << GridLogDebug << "[Memory debug] Stats " << MemoryProfiler::stats << std::endl; \
+      std::cout << GridLogDebug << "[Memory debug] total  : " << memString(s->totalAllocated) \
+		<< std::endl;						\
+      std::cout << GridLogDebug << "[Memory debug] max    : " << memString(s->maxAllocated) \
+		<< std::endl;						\
+      std::cout << GridLogDebug << "[Memory debug] current: " << memString(s->currentlyAllocated) \
+		<< std::endl;						\
+      std::cout << GridLogDebug << "[Memory debug] freed  : " << memString(s->totalFreed) \
+		<< std::endl;						\
+    }
 
-  #define profilerAllocate(bytes)\
-  if (MemoryProfiler::stats)\
-  {\
-    auto s = MemoryProfiler::stats;\
-    s->totalAllocated     += (bytes);\
-    s->currentlyAllocated += (bytes);\
-    s->maxAllocated        = std::max(s->maxAllocated, s->currentlyAllocated);\
-  }\
-  if (MemoryProfiler::debug)\
-  {\
-    std::cout << GridLogDebug << "[Memory debug] allocating " << memString(bytes) << std::endl;\
-    profilerDebugPrint;\
-  }
+#define profilerAllocate(bytes)						\
+  if (MemoryProfiler::stats)						\
+    {									\
+      auto s = MemoryProfiler::stats;					\
+      s->totalAllocated     += (bytes);					\
+      s->currentlyAllocated += (bytes);					\
+      s->maxAllocated        = std::max(s->maxAllocated, s->currentlyAllocated); \
+    }									\
+  if (MemoryProfiler::debug)						\
+    {									\
+      std::cout << GridLogDebug << "[Memory debug] allocating " << memString(bytes) << std::endl; \
+      profilerDebugPrint;						\
+    }
 
-  #define profilerFree(bytes)\
-  if (MemoryProfiler::stats)\
-  {\
-    auto s = MemoryProfiler::stats;\
-    s->totalFreed         += (bytes);\
-    s->currentlyAllocated -= (bytes);\
-  }\
-  if (MemoryProfiler::debug)\
-  {\
-    std::cout << GridLogDebug << "[Memory debug] freeing " << memString(bytes) << std::endl;\
-    profilerDebugPrint;\
-  }
+#define profilerFree(bytes)						\
+  if (MemoryProfiler::stats)						\
+    {									\
+      auto s = MemoryProfiler::stats;					\
+      s->totalFreed         += (bytes);					\
+      s->currentlyAllocated -= (bytes);					\
+    }									\
+  if (MemoryProfiler::debug)						\
+    {									\
+      std::cout << GridLogDebug << "[Memory debug] freeing " << memString(bytes) << std::endl; \
+      profilerDebugPrint;						\
+    }
 
-  void check_huge_pages(void *Buf,uint64_t BYTES);
+void check_huge_pages(void *Buf,uint64_t BYTES);
 
 ////////////////////////////////////////////////////////////////////
 // A lattice of something, but assume the something is SIMDized.
@@ -159,7 +159,7 @@ public:
     //////////////////
     // Hack 2MB align; could make option probably doesn't need configurability
     //////////////////
-//define GRID_ALLOC_ALIGN (128)
+    //define GRID_ALLOC_ALIGN (128)
 #define GRID_ALLOC_ALIGN (2*1024*1024)
 #ifdef HAVE_MM_MALLOC_H
     if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) _mm_malloc(bytes,GRID_ALLOC_ALIGN);
@@ -205,8 +205,8 @@ template<typename _Tp>  inline bool operator!=(const alignedAllocator<_Tp>&, con
 #ifdef GRID_COMMS_SHMEM
 extern "C" { 
 #include <mpp/shmem.h>
-extern void * shmem_align(size_t, size_t);
-extern void  shmem_free(void *);
+  extern void * shmem_align(size_t, size_t);
+  extern void  shmem_free(void *);
 }
 #define PARANOID_SYMMETRIC_HEAP
 #endif
@@ -276,7 +276,7 @@ public:
 #endif
     uint8_t *cp = (uint8_t *)ptr;
     if ( ptr ) { 
-    // One touch per 4k page, static OMP loop to catch same loop order
+      // One touch per 4k page, static OMP loop to catch same loop order
 #pragma omp parallel for schedule(static)
       for(size_type n=0;n<bytes;n+=4096){
 	cp[n]=0;
@@ -309,5 +309,6 @@ template<class T> using Vector     = std::vector<T,alignedAllocator<T> >;
 template<class T> using commVector = std::vector<T,commAllocator<T> >;              
 template<class T> using Matrix     = std::vector<std::vector<T,alignedAllocator<T> > >;
     
-}; // namespace Grid
+NAMESPACE_END(Grid);
+
 #endif

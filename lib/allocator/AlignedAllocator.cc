@@ -1,7 +1,7 @@
 #include <Grid/GridCore.h>
 #include <fcntl.h>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 MemoryStats *MemoryProfiler::stats = nullptr;
 bool         MemoryProfiler::debug = false;
@@ -49,7 +49,7 @@ void *PointerCache::Insert(void *ptr,size_t bytes) {
 
 void *PointerCache::Lookup(size_t bytes) {
 
- if (bytes < 4096 ) return NULL;
+  if (bytes < 4096 ) return NULL;
 
 #ifdef _OPENMP
   assert(omp_in_parallel()==0);
@@ -90,7 +90,7 @@ void check_huge_pages(void *Buf,uint64_t BYTES)
       ++n4ktotal;
       if (pageaddr != baseaddr + j * page_size)
 	++nnothuge;
-      }
+    }
   }
   int rank = CartesianCommunicator::RankWorld();
   printf("rank %d Allocated %d 4k pages, %d not in huge pages\n", rank, n4ktotal, nnothuge);
@@ -106,20 +106,21 @@ std::string sizeString(const size_t bytes)
   double                 count = bytes;
   
   while (count >= 1024 && s < 7)
-  {
+    {
       s++;
       count /= 1024;
-  }
+    }
   if (count - floor(count) == 0.0)
-  {
+    {
       snprintf(buf, bufSize, "%d %sB", (int)count, suffixes[s]);
-  }
+    }
   else
-  {
+    {
       snprintf(buf, bufSize, "%.1f %sB", count, suffixes[s]);
-  }
+    }
   
   return std::string(buf);
 }
 
-}
+NAMESPACE_END(Grid);
+
