@@ -32,7 +32,7 @@ extern "C" { // for linkage
 #include "lime.h"
 }
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 /////////////////////////////////////////////////////////////////////////////////
 // Data representation of records that enter ILDG and SciDac formats
@@ -231,6 +231,6 @@ struct usqcdPropInfo : Serializable {
 };
 #endif
 
-}
+NAMESPACE_END(Grid);
 #endif
 #endif
