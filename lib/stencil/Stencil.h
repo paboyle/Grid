@@ -23,30 +23,30 @@
      51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
      See the full license in the file "LICENSE" in the top level distribution directory
-     *************************************************************************************/
-     /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_STENCIL_H
 #define GRID_STENCIL_H
 
 #include <Grid/stencil/SimpleCompressor.h>   // subdir aggregate
 #include <Grid/stencil/Lebesgue.h>   // subdir aggregate
 
- //////////////////////////////////////////////////////////////////////////////////////////
- // Must not lose sight that goal is to be able to construct really efficient
- // gather to a point stencil code. CSHIFT is not the best way, so need
- // additional stencil support.
- //
- // Stencil based code will exchange haloes and use a table lookup for neighbours.
- // This will be done with generality to allow easier efficient implementations.
- // Overlap of comms and compute is enabled by tabulating off-node connected,
- // 
- // Generic services
- // 0) Prebuild neighbour tables
- // 1) Compute sizes of all haloes/comms buffers; allocate them.
- // 2) Gather all faces, and communicate.
- // 3) Loop over result sites, giving nbr index/offnode info for each
- // 
- //////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+// Must not lose sight that goal is to be able to construct really efficient
+// gather to a point stencil code. CSHIFT is not the best way, so need
+// additional stencil support.
+//
+// Stencil based code will exchange haloes and use a table lookup for neighbours.
+// This will be done with generality to allow easier efficient implementations.
+// Overlap of comms and compute is enabled by tabulating off-node connected,
+// 
+// Generic services
+// 0) Prebuild neighbour tables
+// 1) Compute sizes of all haloes/comms buffers; allocate them.
+// 2) Gather all faces, and communicate.
+// 3) Loop over result sites, giving nbr index/offnode info for each
+// 
+//////////////////////////////////////////////////////////////////////////////////////////
 
 NAMESPACE_BEGIN(Grid);
 
@@ -54,7 +54,7 @@ NAMESPACE_BEGIN(Grid);
 // Gather for when there *is* need to SIMD split with compression
 ///////////////////////////////////////////////////////////////////
 void Gather_plane_table_compute (GridBase *grid,int dimension,int plane,int cbmask,
-					int off,std::vector<std::pair<int,int> > & table);
+				 int off,std::vector<std::pair<int,int> > & table);
 
 template<class vobj,class cobj,class compressor> 
 void Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const Lattice<vobj> &rhs,cobj *buffer,compressor &compress, int off,int so)   __attribute__((noinline));
@@ -89,21 +89,21 @@ void Gather_plane_exchange_table(std::vector<std::pair<int,int> >& table,const L
   }
 }
 
- struct StencilEntry { 
-   uint64_t _offset;
-   uint64_t _byte_offset;
-   uint16_t _is_local;
-   uint16_t _permute;
-   uint16_t _around_the_world; //256 bits, 32 bytes, 1/2 cacheline
-   uint16_t _pad;
- };
+struct StencilEntry { 
+  uint64_t _offset;
+  uint64_t _byte_offset;
+  uint16_t _is_local;
+  uint16_t _permute;
+  uint16_t _around_the_world; //256 bits, 32 bytes, 1/2 cacheline
+  uint16_t _pad;
+};
 
 ////////////////////////////////////////
 // The Stencil Class itself
 ////////////////////////////////////////
 template<class vobj,class cobj>
 class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal fill in.
- public:
+public:
 
   typedef typename cobj::vector_type vector_type;
   typedef typename cobj::scalar_type scalar_type;
@@ -538,17 +538,17 @@ class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal
     }
   };
 
- CartesianStencil(GridBase *grid,
-		  int npoints,
-		  int checkerboard,
-		  const std::vector<int> &directions,
-		  const std::vector<int> &distances) 
-   : _permute_type(npoints), 
-    _comm_buf_size(npoints),
-    comm_bytes_thr(npoints), 
-    comm_enter_thr(npoints),
-    comm_leave_thr(npoints), 
-       comm_time_thr(npoints)
+  CartesianStencil(GridBase *grid,
+		   int npoints,
+		   int checkerboard,
+		   const std::vector<int> &directions,
+		   const std::vector<int> &distances) 
+    : _permute_type(npoints), 
+      _comm_buf_size(npoints),
+      comm_bytes_thr(npoints), 
+      comm_enter_thr(npoints),
+      comm_leave_thr(npoints), 
+      comm_time_thr(npoints)
   {
     face_table_computed=0;
     _npoints = npoints;

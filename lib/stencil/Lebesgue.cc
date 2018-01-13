@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,8 +24,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #include <Grid/GridCore.h>
 #include <algorithm>
 
@@ -72,9 +72,9 @@ void LebesgueOrder::ThreadInterleave(void)
 
   for(int t=0;t<threads;t++){
     for(int ss=0;ss<vol;ss++){
-       if ( ( ss >> blockbits) % threads == t ) { 
-         throrder.push_back(reorder[ss]);
-       }
+      if ( ( ss >> blockbits) % threads == t ) { 
+	throrder.push_back(reorder[ss]);
+      }
     }
   }
   _LebesgueReorder = throrder;
@@ -112,9 +112,9 @@ void LebesgueOrder::CartesianBlocking(void)
 };
 
 void LebesgueOrder::IterateO(int ND,int dim,
-	      std::vector<IndexInteger> & xo,
-	      std::vector<IndexInteger> & xi,
-	      std::vector<IndexInteger> &dims)
+			     std::vector<IndexInteger> & xo,
+			     std::vector<IndexInteger> & xi,
+			     std::vector<IndexInteger> &dims)
 {
   for(xo[dim]=0;xo[dim]<dims[dim];xo[dim]+=Block[dim]){
     if ( dim > 0 ) {
@@ -126,10 +126,10 @@ void LebesgueOrder::IterateO(int ND,int dim,
 };
 
 void LebesgueOrder::IterateI(int ND,
-	      int dim,
-	      std::vector<IndexInteger> & xo,
-	      std::vector<IndexInteger> & xi,
-	      std::vector<IndexInteger> &dims)
+			     int dim,
+			     std::vector<IndexInteger> & xo,
+			     std::vector<IndexInteger> & xi,
+			     std::vector<IndexInteger> &dims)
 {
   std::vector<IndexInteger> x(ND);
   for(xi[dim]=0;xi[dim]<std::min(dims[dim]-xo[dim],Block[dim]);xi[dim]++){
@@ -138,9 +138,9 @@ void LebesgueOrder::IterateI(int ND,
     } else {
       for(int d=0;d<ND;d++){
 	x[d]=xi[d]+xo[d];
-//	std::cout << x[d]<<" ";
+	//	std::cout << x[d]<<" ";
       }
-//      std::cout << "\n";
+      //      std::cout << "\n";
       IndexInteger index;
       Lexicographic::IndexFromCoor(x,index,grid->_rdimensions);
       _LebesgueReorder.push_back(index);
@@ -227,16 +227,16 @@ void LebesgueOrder::ZGraph(void)
   assert( _LebesgueReorder.size() == vol );
 
   /*
-  std::vector<int> coor(4);
-  for(IndexInteger asite=0;asite<vol;asite++){
+    std::vector<int> coor(4);
+    for(IndexInteger asite=0;asite<vol;asite++){
     grid->oCoorFromOindex (coor,_LebesgueReorder[asite]);
-      std::cout << " site "<<asite << "->" << _LebesgueReorder[asite]<< " = ["
-		<< coor[0]<<","
-		<< coor[1]<<","
-		<< coor[2]<<","
-		<< coor[3]<<"]"
-		<<std::endl;
-  }
+    std::cout << " site "<<asite << "->" << _LebesgueReorder[asite]<< " = ["
+    << coor[0]<<","
+    << coor[1]<<","
+    << coor[2]<<","
+    << coor[3]<<"]"
+    <<std::endl;
+    }
   */
 }
 NAMESPACE_END(Grid);

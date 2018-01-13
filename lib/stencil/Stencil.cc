@@ -1,4 +1,4 @@
-   /*************************************************************************************
+/*************************************************************************************
 
      Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,14 +23,14 @@
      51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
      See the full license in the file "LICENSE" in the top level distribution directory
-     *************************************************************************************/
-     /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #include <Grid/GridCore.h>
 
 NAMESPACE_BEGIN(Grid);
 
 void Gather_plane_table_compute (GridBase *grid,int dimension,int plane,int cbmask,
-					int off,std::vector<std::pair<int,int> > & table)
+				 int off,std::vector<std::pair<int,int> > & table)
 {
   table.resize(0);
 
@@ -52,17 +52,17 @@ void Gather_plane_table_compute (GridBase *grid,int dimension,int plane,int cbma
       }
     }
   } else { 
-     int bo=0;
-     table.resize(e1*e2/2);
-     for(int n=0;n<e1;n++){
-       for(int b=0;b<e2;b++){
-	 int o  = n*stride;
-	 int ocb=1<<grid->CheckerBoardFromOindexTable(o+b);
-	 if ( ocb &cbmask ) {
-	   table[bo]=std::pair<int,int>(bo,o+b); bo++;
-	 }
-       }
-     }
+    int bo=0;
+    table.resize(e1*e2/2);
+    for(int n=0;n<e1;n++){
+      for(int b=0;b<e2;b++){
+	int o  = n*stride;
+	int ocb=1<<grid->CheckerBoardFromOindexTable(o+b);
+	if ( ocb &cbmask ) {
+	  table[bo]=std::pair<int,int>(bo,o+b); bo++;
+	}
+      }
+    }
   }
 }
 
