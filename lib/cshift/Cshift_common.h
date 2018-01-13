@@ -23,12 +23,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef _GRID_CSHIFT_COMMON_H_
 #define _GRID_CSHIFT_COMMON_H_
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 ///////////////////////////////////////////////////////////////////
 // Gather for when there is no need to SIMD split 
@@ -56,20 +56,20 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer,int dimen
       }
     }
   } else { 
-     int bo=0;
-     std::vector<std::pair<int,int> > table;
-     for(int n=0;n<e1;n++){
-       for(int b=0;b<e2;b++){
-	 int o  = n*stride;
-	 int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
-	 if ( ocb &cbmask ) {
-	   table.push_back(std::pair<int,int> (bo++,o+b));
-	 }
-       }
-     }
-     parallel_for(int i=0;i<table.size();i++){
-       buffer[off+table[i].first]=rhs._odata[so+table[i].second];
-     }
+    int bo=0;
+    std::vector<std::pair<int,int> > table;
+    for(int n=0;n<e1;n++){
+      for(int b=0;b<e2;b++){
+	int o  = n*stride;
+	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
+	if ( ocb &cbmask ) {
+	  table.push_back(std::pair<int,int> (bo++,o+b));
+	}
+      }
+    }
+    parallel_for(int i=0;i<table.size();i++){
+      buffer[off+table[i].first]=rhs._odata[so+table[i].second];
+    }
   }
 }
 
@@ -162,9 +162,9 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
       }
     }
     parallel_for(int i=0;i<table.size();i++){
-       //       std::cout << "Rcv"<< table[i].first << " " << table[i].second << " " <<buffer[table[i].second]<<std::endl;
-       rhs._odata[table[i].first]=buffer[table[i].second];
-     }
+      //       std::cout << "Rcv"<< table[i].first << " " << table[i].second << " " <<buffer[table[i].second]<<std::endl;
+      rhs._odata[table[i].first]=buffer[table[i].second];
+    }
   }
 }
 
@@ -244,7 +244,7 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
         int o =n*stride+b;
         int ocb=1<<lhs._grid->CheckerBoardFromOindex(o);
         if ( ocb&cbmask ) {
-  	//lhs._odata[lo+o]=rhs._odata[ro+o];
+	  //lhs._odata[lo+o]=rhs._odata[ro+o];
 	  vstream(lhs._odata[lo+o],rhs._odata[ro+o]);
 	}
       }
@@ -270,7 +270,7 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
   int stride = rhs._grid->_slice_stride[dimension];
 
   parallel_for_nest2(int n=0;n<e1;n++){
-  for(int b=0;b<e2;b++){
+    for(int b=0;b<e2;b++){
 
       int o  =n*stride;
       int ocb=1<<lhs._grid->CheckerBoardFromOindex(o+b);
@@ -278,7 +278,7 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
 	permute(lhs._odata[lo+o+b],rhs._odata[ro+o+b],permute_type);
       }
 
-  }}
+    }}
 }
 
 //////////////////////////////////////////////////////
@@ -370,5 +370,7 @@ template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice
   }
   return ret;
 }
-}
+
+NAMESPACE_END(Grid);
+
 #endif

@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,11 +23,11 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef _GRID_CSHIFT_NONE_H_
 #define _GRID_CSHIFT_NONE_H_
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 template<class vobj> Lattice<vobj> Cshift(const Lattice<vobj> &rhs,int dimension,int shift)
 {
   Lattice<vobj> ret(rhs._grid);
@@ -35,5 +35,6 @@ template<class vobj> Lattice<vobj> Cshift(const Lattice<vobj> &rhs,int dimension
   Cshift_local(ret,rhs,dimension,shift);
   return ret;
 }
-}
+NAMESPACE_END(Grid);
+
 #endif
