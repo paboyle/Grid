@@ -292,10 +292,10 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
 }
 #endif
 
-  ////////////////////////////////////////////////////////
-  // Global shared functionality finished
-  // Now move to per communicator functionality
-  ////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////
+// Global shared functionality finished
+// Now move to per communicator functionality
+////////////////////////////////////////////////////////
 void SharedMemory::SetCommunicator(Grid_MPI_Comm comm)
 {
   int rank, size;

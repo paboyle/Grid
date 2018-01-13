@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,8 +23,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #include <Grid/GridCore.h>
 
 NAMESPACE_BEGIN(Grid);
@@ -38,8 +38,8 @@ void CartesianCommunicator::Init(int *argc, char *** arv)
 {
   GlobalSharedMemory::Init(communicator_world);
   GlobalSharedMemory::SharedMemoryAllocate(
-		   GlobalSharedMemory::MAX_MPI_SHM_BYTES,
-		   GlobalSharedMemory::Hugepages);
+					   GlobalSharedMemory::MAX_MPI_SHM_BYTES,
+					   GlobalSharedMemory::Hugepages);
 }
 
 CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent,int &srank) 

@@ -1,5 +1,5 @@
 
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,8 +24,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_COMMUNICATOR_BASE_H
 #define GRID_COMMUNICATOR_BASE_H
 
@@ -73,7 +73,7 @@ public:
   CartesianCommunicator(const std::vector<int> &pdimensions_in);
   virtual ~CartesianCommunicator();
 
- private:
+private:
 
   ////////////////////////////////////////////////
   // Private initialise from an MPI communicator
@@ -81,7 +81,7 @@ public:
   ////////////////////////////////////////////////
   void InitFromMPICommunicator(const std::vector<int> &processors, Grid_MPI_Comm communicator_base);
 
- public:
+public:
   
   ////////////////////////////////////////////////////////////////////////////////////////
   // Wraps MPI_Cart routines, or implements equivalent on other impls
@@ -196,9 +196,9 @@ public:
   void AllToAll(void  *in,void *out,uint64_t words         ,uint64_t bytes);
   
   template<class obj> void Broadcast(int root,obj &data)
-    {
-      Broadcast(root,(void *)&data,sizeof(data));
-    };
+  {
+    Broadcast(root,(void *)&data,sizeof(data));
+  };
 
 }; 
 

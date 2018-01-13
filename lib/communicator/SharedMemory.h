@@ -48,15 +48,15 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 
 #if defined (GRID_COMMS_MPI3) 
-  typedef MPI_Comm    Grid_MPI_Comm;
-  typedef MPI_Request CommsRequest_t;
+typedef MPI_Comm    Grid_MPI_Comm;
+typedef MPI_Request CommsRequest_t;
 #else 
-  typedef int CommsRequest_t;
-  typedef int Grid_MPI_Comm;
+typedef int CommsRequest_t;
+typedef int Grid_MPI_Comm;
 #endif
 
 class GlobalSharedMemory {
- private:
+private:
   static const int     MAXLOG2RANKSPERNODE = 16;            
 
   // Init once lock on the buffer allocation
@@ -64,7 +64,7 @@ class GlobalSharedMemory {
   static int      _ShmAlloc;
   static uint64_t _ShmAllocBytes;
 
- public:
+public:
   static int      ShmSetup(void)      { return _ShmSetup; }
   static int      ShmAlloc(void)      { return _ShmAlloc; }
   static uint64_t ShmAllocBytes(void) { return _ShmAllocBytes; }
@@ -104,14 +104,14 @@ class GlobalSharedMemory {
 //////////////////////////////
 class SharedMemory 
 {
- private:
+private:
   static const int     MAXLOG2RANKSPERNODE = 16;            
 
   size_t heap_top;
   size_t heap_bytes;
   size_t heap_size;
 
- protected:
+protected:
 
   Grid_MPI_Comm    ShmComm; // for barriers
   int    ShmRank; 
@@ -119,7 +119,7 @@ class SharedMemory
   std::vector<void *> ShmCommBufs;
   std::vector<int>    ShmRanks;// Mapping comm ranks to Shm ranks
 
- public:
+public:
   SharedMemory() {};
   ///////////////////////////////////////////////////////////////////////////////////////
   // set the buffers & sizes
