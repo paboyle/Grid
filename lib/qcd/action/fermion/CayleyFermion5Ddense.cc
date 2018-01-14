@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -26,19 +26,19 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 
 #include <Grid/Grid_Eigen_Dense.h>
 #include <Grid/qcd/action/fermion/FermionCore.h>
 #include <Grid/qcd/action/fermion/CayleyFermion5D.h>
 
 
-namespace Grid {
-namespace QCD {
-  /*
-   * Dense matrix versions of routines
-   */
+NAMESPACE_BEGIN(Grid);
+
+/*
+ * Dense matrix versions of routines
+ */
 template<class Impl>
 void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &chi)
 {
@@ -153,4 +153,4 @@ template void CayleyFermion5D<ZWilsonImplFH>::MooeeInternal(const FermionField &
 template void CayleyFermion5D<ZWilsonImplDF>::MooeeInternal(const FermionField &psi, FermionField &chi,int dag, int inv);
 #endif
 
-}}
+NAMESPACE_END(Grid);
