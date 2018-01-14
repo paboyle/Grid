@@ -25,51 +25,50 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef GRID_QCD_STAGGERED_KERNELS_H
 #define GRID_QCD_STAGGERED_KERNELS_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Helper routines that implement Staggered stencil for a single site.
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Helper routines that implement Staggered stencil for a single site.
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class StaggeredKernelsStatic { 
- public:
+public:
   enum { OptGeneric, OptHandUnroll, OptInlineAsm };
   // S-direction is INNERMOST and takes no part in the parity.
   static int Opt;  // these are a temporary hack
 };
  
 template<class Impl> class StaggeredKernels : public FermionOperator<Impl> , public StaggeredKernelsStatic { 
- public:
+public:
    
   INHERIT_IMPL_TYPES(Impl);
   typedef FermionOperator<Impl> Base;
    
 public:
     
-   void DhopDir(StencilImpl &st, DoubledGaugeField &U, DoubledGaugeField &UUU, SiteSpinor * buf,
-		      int sF, int sU, const FermionField &in, FermionField &out, int dir,int disp);
+  void DhopDir(StencilImpl &st, DoubledGaugeField &U, DoubledGaugeField &UUU, SiteSpinor * buf,
+	       int sF, int sU, const FermionField &in, FermionField &out, int dir,int disp);
 
-   void DhopSiteDepth(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteSpinor * buf,
+  void DhopSiteDepth(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteSpinor * buf,
 		     int sF, int sU, const FermionField &in, SiteSpinor &out,int threeLink);
 
 
-   void DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteSpinor * buf,
-		     int sF, int sU, const FermionField &in, SiteSpinor&out,int threeLink);
+  void DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteSpinor * buf,
+			 int sF, int sU, const FermionField &in, SiteSpinor&out,int threeLink);
 
-   void DhopSiteHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU,SiteSpinor * buf,
-		     int LLs, int sU, const FermionField &in, FermionField &out, int dag);
+  void DhopSiteHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU,SiteSpinor * buf,
+		    int LLs, int sU, const FermionField &in, FermionField &out, int dag);
 
-   void DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,DoubledGaugeField &UUU, SiteSpinor * buf,
-			 int LLs, int sU, const FermionField &in, FermionField &out);
+  void DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,DoubledGaugeField &UUU, SiteSpinor * buf,
+		   int LLs, int sU, const FermionField &in, FermionField &out);
       
-   void DhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU, SiteSpinor * buf,
+  void DhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU, SiteSpinor * buf,
 		int sF, int sU, const FermionField &in, FermionField &out);
 
-   void DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU, SiteSpinor *buf, 
+  void DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU, SiteSpinor *buf, 
                    int LLs, int sU, const FermionField &in, FermionField &out);
   
 public:
@@ -78,6 +77,6 @@ public:
 
 };
     
-}}
+NAMESPACE_END(Grid);
 
 #endif
