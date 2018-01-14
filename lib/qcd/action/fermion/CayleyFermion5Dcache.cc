@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -26,20 +26,17 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 
 #include <Grid/qcd/action/fermion/FermionCore.h>
 #include <Grid/qcd/action/fermion/CayleyFermion5D.h>
 
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
-  // FIXME -- make a version of these routines with site loop outermost for cache reuse.
-
-  // Pminus fowards
-  // Pplus  backwards..
+// Pminus fowards
+// Pplus  backwards..
 template<class Impl>  
 void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
 				const FermionField &phi, 
@@ -60,22 +57,22 @@ void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
     for(int s=0;s<Ls;s++){
       auto tmp = psi._odata[0];
       if ( s==0 ) {
- 	                            spProj5m(tmp,psi._odata[ss+s+1]);
+	spProj5m(tmp,psi._odata[ss+s+1]);
 	chi[ss+s]=diag[s]*phi[ss+s]+upper[s]*tmp;
 
-	                    spProj5p(tmp,psi._odata[ss+Ls-1]);
+	spProj5p(tmp,psi._odata[ss+Ls-1]);
 	chi[ss+s]=chi[ss+s]+lower[s]*tmp;
       } else if ( s==(Ls-1)) {
-	                            spProj5m(tmp,psi._odata[ss+0]);
+	spProj5m(tmp,psi._odata[ss+0]);
 	chi[ss+s]=diag[s]*phi[ss+s]+upper[s]*tmp;
 
- 	                    spProj5p(tmp,psi._odata[ss+s-1]);
+	spProj5p(tmp,psi._odata[ss+s-1]);
 	chi[ss+s]=chi[ss+s]+lower[s]*tmp;
       } else { 
-	                            spProj5m(tmp,psi._odata[ss+s+1]);
+	spProj5m(tmp,psi._odata[ss+s+1]);
 	chi[ss+s]=diag[s]*phi[ss+s]+upper[s]*tmp;
 
-	                    spProj5p(tmp,psi._odata[ss+s-1]);
+	spProj5p(tmp,psi._odata[ss+s-1]);
 	chi[ss+s]=chi[ss+s]+lower[s]*tmp;
       }
     }
@@ -145,25 +142,25 @@ void CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi, FermionField &
     // Apply (L^{\prime})^{-1}
     chi[ss]=psi[ss]; // chi[0]=psi[0]
     for(int s=1;s<Ls;s++){
-                            spProj5p(tmp,chi[ss+s-1]);  
+      spProj5p(tmp,chi[ss+s-1]);  
       chi[ss+s] = psi[ss+s]-lee[s-1]*tmp;
     }
     // L_m^{-1} 
     for (int s=0;s<Ls-1;s++){ // Chi[ee] = 1 - sum[s<Ls-1] -leem[s]P_- chi
-                                   spProj5m(tmp,chi[ss+s]);    
+      spProj5m(tmp,chi[ss+s]);    
       chi[ss+Ls-1] = chi[ss+Ls-1] - leem[s]*tmp;
     }
     // U_m^{-1} D^{-1}
     for (int s=0;s<Ls-1;s++){
       // Chi[s] + 1/d chi[s] 
-                                                spProj5p(tmp,chi[ss+Ls-1]); 
+      spProj5p(tmp,chi[ss+Ls-1]); 
       chi[ss+s] = (1.0/dee[s])*chi[ss+s]-(ueem[s]/dee[Ls-1])*tmp;
     }	
     chi[ss+Ls-1]= (1.0/dee[Ls-1])*chi[ss+Ls-1];
       
     // Apply U^{-1}
     for (int s=Ls-2;s>=0;s--){
-                            spProj5m(tmp,chi[ss+s+1]);  
+      spProj5m(tmp,chi[ss+s+1]);  
       chi[ss+s] = chi[ss+s] - uee[s]*tmp;
     }
   }
@@ -203,12 +200,12 @@ void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &
     // Apply (U^{\prime})^{-dagger}
     chi[ss]=psi[ss];
     for (int s=1;s<Ls;s++){
-                            spProj5m(tmp,chi[ss+s-1]);
+      spProj5m(tmp,chi[ss+s-1]);
       chi[ss+s] = psi[ss+s]-ueec[s-1]*tmp;
     }
     // U_m^{-\dagger} 
     for (int s=0;s<Ls-1;s++){
-                                   spProj5p(tmp,chi[ss+s]);
+      spProj5p(tmp,chi[ss+s]);
       chi[ss+Ls-1] = chi[ss+Ls-1] - ueemc[s]*tmp;
     }
 
@@ -231,19 +228,19 @@ void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &
 }
 
 #ifdef CAYLEY_DPERP_CACHE
-  INSTANTIATE_DPERP(WilsonImplF);
-  INSTANTIATE_DPERP(WilsonImplD);
-  INSTANTIATE_DPERP(GparityWilsonImplF);
-  INSTANTIATE_DPERP(GparityWilsonImplD);
-  INSTANTIATE_DPERP(ZWilsonImplF);
-  INSTANTIATE_DPERP(ZWilsonImplD);
+INSTANTIATE_DPERP(WilsonImplF);
+INSTANTIATE_DPERP(WilsonImplD);
+INSTANTIATE_DPERP(GparityWilsonImplF);
+INSTANTIATE_DPERP(GparityWilsonImplD);
+INSTANTIATE_DPERP(ZWilsonImplF);
+INSTANTIATE_DPERP(ZWilsonImplD);
 
-  INSTANTIATE_DPERP(WilsonImplFH);
-  INSTANTIATE_DPERP(WilsonImplDF);
-  INSTANTIATE_DPERP(GparityWilsonImplFH);
-  INSTANTIATE_DPERP(GparityWilsonImplDF);
-  INSTANTIATE_DPERP(ZWilsonImplFH);
-  INSTANTIATE_DPERP(ZWilsonImplDF);
+INSTANTIATE_DPERP(WilsonImplFH);
+INSTANTIATE_DPERP(WilsonImplDF);
+INSTANTIATE_DPERP(GparityWilsonImplFH);
+INSTANTIATE_DPERP(GparityWilsonImplDF);
+INSTANTIATE_DPERP(ZWilsonImplFH);
+INSTANTIATE_DPERP(ZWilsonImplDF);
 #endif
 
-}}
+NAMESPACE_END(Grid);
