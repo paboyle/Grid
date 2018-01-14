@@ -24,8 +24,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #include <Grid/qcd/action/fermion/FermionCore.h>
 #include <Grid/qcd/action/fermion/ImprovedStaggeredFermion5D.h>
 #include <Grid/perfmon/PerfCount.h>
@@ -38,7 +38,7 @@ ImprovedStaggeredFermion5DStatic::directions({1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4});
 const std::vector<int> 
 ImprovedStaggeredFermion5DStatic::displacements({1, 1, 1, 1, -1, -1, -1, -1, 3, 3, 3, 3, -3, -3, -3, -3});
 
-  // 5d lattice for DWF.
+// 5d lattice for DWF.
 template<class Impl>
 ImprovedStaggeredFermion5D<Impl>::ImprovedStaggeredFermion5D(GaugeField &_Uthin,GaugeField &_Ufat,
 							     GridCartesian         &FiveDimGrid,
@@ -183,12 +183,12 @@ void ImprovedStaggeredFermion5D<Impl>::DhopDir(const FermionField &in, FermionFi
 
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::DerivInternal(StencilImpl & st,
-            DoubledGaugeField & U,
-            DoubledGaugeField & UUU,
-            GaugeField &mat,
-            const FermionField &A,
-            const FermionField &B,
-            int dag)
+						     DoubledGaugeField & U,
+						     DoubledGaugeField & UUU,
+						     GaugeField &mat,
+						     const FermionField &A,
+						     const FermionField &B,
+						     int dag)
 {
   // No force terms in multi-rhs solver staggered
   assert(0);
@@ -196,18 +196,18 @@ void ImprovedStaggeredFermion5D<Impl>::DerivInternal(StencilImpl & st,
 
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::DhopDeriv(GaugeField &mat,
-				      const FermionField &A,
-				      const FermionField &B,
-				      int dag)
+						 const FermionField &A,
+						 const FermionField &B,
+						 int dag)
 {
   assert(0);
 }
 
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
-					const FermionField &A,
-					const FermionField &B,
-					int dag)
+						   const FermionField &A,
+						   const FermionField &B,
+						   int dag)
 {
   assert(0);
 }
@@ -215,9 +215,9 @@ void ImprovedStaggeredFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
 
 template<class Impl>
 void ImprovedStaggeredFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
-					const FermionField &A,
-					const FermionField &B,
-					int dag)
+						   const FermionField &A,
+						   const FermionField &B,
+						   int dag)
 {
   assert(0);
 }
@@ -247,7 +247,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopInternal(StencilImpl & st, LebesgueOr
   } else {
     parallel_for (int ss = 0; ss < U._grid->oSites(); ss++) {
       int sU=ss;
-	Kernels::DhopSite(st,lo,U,UUU,st.CommBuf(),LLs,sU,in,out);
+      Kernels::DhopSite(st,lo,U,UUU,st.CommBuf(),LLs,sU,in,out);
     }
   }
   DhopComputeTime += usecond();
@@ -399,7 +399,7 @@ void ImprovedStaggeredFermion5D<Impl>::MooeeInv(const FermionField &in, FermionF
 
 template <class Impl>
 void ImprovedStaggeredFermion5D<Impl>::MooeeInvDag(const FermionField &in,
-                                      FermionField &out) {
+						   FermionField &out) {
   out.checkerboard = in.checkerboard;
   MooeeInv(in, out);
 }
@@ -409,24 +409,24 @@ void ImprovedStaggeredFermion5D<Impl>::MooeeInvDag(const FermionField &in,
 ////////////////////////////////////////////////////////
 template <class Impl>
 void ImprovedStaggeredFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
-                                                         PropagatorField &q_in_2,
-                                                         PropagatorField &q_out,
-                                                         Current curr_type,
-                                                         unsigned int mu)
+								PropagatorField &q_in_2,
+								PropagatorField &q_out,
+								Current curr_type,
+								unsigned int mu)
 {
-    assert(0);
+  assert(0);
 }
 
 template <class Impl>
 void ImprovedStaggeredFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
-                                                          PropagatorField &q_out,
-                                                          Current curr_type,
-                                                          unsigned int mu, 
-                                                          std::vector<Real> mom,
-                                                          unsigned int tmin,
-                                                          unsigned int tmax)
+							   PropagatorField &q_out,
+							   Current curr_type,
+							   unsigned int mu, 
+							   std::vector<Real> mom,
+							   unsigned int tmin,
+							   unsigned int tmax)
 {
-    assert(0);
+  assert(0);
 }
 
 FermOpStaggeredTemplateInstantiate(ImprovedStaggeredFermion5D);
