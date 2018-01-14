@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -25,13 +25,12 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef  GRID_QCD_WILSON_COMPRESSOR_H
 #define  GRID_QCD_WILSON_COMPRESSOR_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 // optimised versions supporting half precision too
@@ -43,9 +42,9 @@ class WilsonCompressorTemplate;
 
 template<class _HCspinor,class _Hspinor,class _Spinor, class projector>
 class WilsonCompressorTemplate< _HCspinor, _Hspinor, _Spinor, projector,
-  typename std::enable_if<std::is_same<_HCspinor,_Hspinor>::value>::type >
+				typename std::enable_if<std::is_same<_HCspinor,_Hspinor>::value>::type >
 {
- public:
+public:
   
   int mu,dag;  
 
@@ -113,9 +112,9 @@ class WilsonCompressorTemplate< _HCspinor, _Hspinor, _Spinor, projector,
 
 template<class _HCspinor,class _Hspinor,class _Spinor, class projector>
 class WilsonCompressorTemplate< _HCspinor, _Hspinor, _Spinor, projector,
-  typename std::enable_if<!std::is_same<_HCspinor,_Hspinor>::value>::type >
+				typename std::enable_if<!std::is_same<_HCspinor,_Hspinor>::value>::type >
 {
- public:
+public:
   
   int mu,dag;  
 
@@ -197,12 +196,12 @@ class WilsonCompressorTemplate< _HCspinor, _Hspinor, _Spinor, projector,
 #define DECLARE_PROJ(Projector,Compressor,spProj)			\
   class Projector {							\
   public:								\
-    template<class hsp,class fsp>					\
-    static void Proj(hsp &result,const fsp &in,int mu,int dag){			\
-      spProj(result,in);						\
-    }									\
+  template<class hsp,class fsp>						\
+  static void Proj(hsp &result,const fsp &in,int mu,int dag){		\
+    spProj(result,in);							\
+  }									\
   };									\
-template<typename HCS,typename HS,typename S> using Compressor = WilsonCompressorTemplate<HCS,HS,S,Projector>;
+  template<typename HCS,typename HS,typename S> using Compressor = WilsonCompressorTemplate<HCS,HS,S,Projector>;
 
 DECLARE_PROJ(WilsonXpProjector,WilsonXpCompressor,spProjXp);
 DECLARE_PROJ(WilsonYpProjector,WilsonYpCompressor,spProjYp);
@@ -214,7 +213,7 @@ DECLARE_PROJ(WilsonZmProjector,WilsonZmCompressor,spProjZm);
 DECLARE_PROJ(WilsonTmProjector,WilsonTmCompressor,spProjTm);
 
 class WilsonProjector {
- public:
+public:
   template<class hsp,class fsp>
   static void Proj(hsp &result,const fsp &in,int mu,int dag){
     int mudag=dag? mu : (mu+Nd)%(2*Nd);
@@ -275,7 +274,7 @@ public:
 		const std::vector<int> &directions,
 		const std::vector<int> &distances)  
     : CartesianStencil<vobj,cobj> (grid,npoints,checkerboard,directions,distances) ,
-    same_node(npoints)
+      same_node(npoints)
   { 
     ZeroCountersi();
     surface_list.resize(0);
@@ -384,7 +383,7 @@ public:
     this->halogtime+=usecond();
   }
 
- };
+};
 
-}} // namespace close
+NAMESPACE_END(Grid);
 #endif
