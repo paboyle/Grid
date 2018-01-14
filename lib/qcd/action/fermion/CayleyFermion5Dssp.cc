@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -26,19 +26,17 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 
 #include <Grid/qcd/action/fermion/FermionCore.h>
 #include <Grid/qcd/action/fermion/CayleyFermion5D.h>
 
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
-  // FIXME -- make a version of these routines with site loop outermost for cache reuse.
-  // Pminus fowards
-  // Pplus  backwards
+// Pminus fowards
+// Pplus  backwards
 template<class Impl>  
 void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
 				const FermionField &phi, 
@@ -145,20 +143,19 @@ void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &
 
 
 #ifdef CAYLEY_DPERP_LINALG
-  INSTANTIATE_DPERP(WilsonImplF);
-  INSTANTIATE_DPERP(WilsonImplD);
-  INSTANTIATE_DPERP(GparityWilsonImplF);
-  INSTANTIATE_DPERP(GparityWilsonImplD);
-  INSTANTIATE_DPERP(ZWilsonImplF);
-  INSTANTIATE_DPERP(ZWilsonImplD);
+INSTANTIATE_DPERP(WilsonImplF);
+INSTANTIATE_DPERP(WilsonImplD);
+INSTANTIATE_DPERP(GparityWilsonImplF);
+INSTANTIATE_DPERP(GparityWilsonImplD);
+INSTANTIATE_DPERP(ZWilsonImplF);
+INSTANTIATE_DPERP(ZWilsonImplD);
 
-  INSTANTIATE_DPERP(WilsonImplFH);
-  INSTANTIATE_DPERP(WilsonImplDF);
-  INSTANTIATE_DPERP(GparityWilsonImplFH);
-  INSTANTIATE_DPERP(GparityWilsonImplDF);
-  INSTANTIATE_DPERP(ZWilsonImplFH);
-  INSTANTIATE_DPERP(ZWilsonImplDF);
+INSTANTIATE_DPERP(WilsonImplFH);
+INSTANTIATE_DPERP(WilsonImplDF);
+INSTANTIATE_DPERP(GparityWilsonImplFH);
+INSTANTIATE_DPERP(GparityWilsonImplDF);
+INSTANTIATE_DPERP(ZWilsonImplFH);
+INSTANTIATE_DPERP(ZWilsonImplDF);
 #endif
 
-}
-}
+NAMESPACE_END(Grid);
