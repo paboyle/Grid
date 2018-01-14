@@ -27,66 +27,60 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 
 #ifndef GRID_QCD_ACTION_PARAMS_H
 #define GRID_QCD_ACTION_PARAMS_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
-  // These can move into a params header and be given MacroMagic serialisation
-  struct GparityWilsonImplParams {
-    bool overlapCommsCompute;
-    std::vector<int> twists;
-    GparityWilsonImplParams() : twists(Nd, 0), overlapCommsCompute(false){};
-  };
+// These can move into a params header and be given MacroMagic serialisation
+struct GparityWilsonImplParams {
+  bool overlapCommsCompute;
+  std::vector<int> twists;
+  GparityWilsonImplParams() : twists(Nd, 0), overlapCommsCompute(false){};
+};
   
-  struct WilsonImplParams {
-    bool overlapCommsCompute;
-    std::vector<Complex> boundary_phases;
-    WilsonImplParams() : overlapCommsCompute(false) {
-      boundary_phases.resize(Nd, 1.0);
-    };
-    WilsonImplParams(const std::vector<Complex> phi)
-      : boundary_phases(phi), overlapCommsCompute(false) {}
+struct WilsonImplParams {
+  bool overlapCommsCompute;
+  std::vector<Complex> boundary_phases;
+  WilsonImplParams() : overlapCommsCompute(false) {
+    boundary_phases.resize(Nd, 1.0);
   };
+  WilsonImplParams(const std::vector<Complex> phi)
+    : boundary_phases(phi), overlapCommsCompute(false) {}
+};
 
-  struct StaggeredImplParams {
-    StaggeredImplParams()  {};
-  };
+struct StaggeredImplParams {
+  StaggeredImplParams()  {};
+};
   
-  struct OneFlavourRationalParams : Serializable {
-    GRID_SERIALIZABLE_CLASS_MEMBERS(OneFlavourRationalParams, 
-				    RealD, lo, 
-				    RealD, hi, 
-				    int,   MaxIter, 
-				    RealD, tolerance, 
-				    int,   degree, 
-				    int,   precision);
+struct OneFlavourRationalParams : Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(OneFlavourRationalParams, 
+				  RealD, lo, 
+				  RealD, hi, 
+				  int,   MaxIter, 
+				  RealD, tolerance, 
+				  int,   degree, 
+				  int,   precision);
     
-    // MaxIter and tolerance, vectors??
+  // MaxIter and tolerance, vectors??
     
-    // constructor 
-    OneFlavourRationalParams(	RealD _lo      = 0.0, 
+  // constructor 
+  OneFlavourRationalParams(	RealD _lo      = 0.0, 
 				RealD _hi      = 1.0, 
 				int _maxit     = 1000,
 				RealD tol      = 1.0e-8, 
                            	int _degree    = 10,
 				int _precision = 64)
-      : lo(_lo),
-	hi(_hi),
-	MaxIter(_maxit),
-	tolerance(tol),
-	degree(_degree),
-	precision(_precision){};
-  };
-  
-  
-}
-}
+    : lo(_lo),
+      hi(_hi),
+      MaxIter(_maxit),
+      tolerance(tol),
+      degree(_degree),
+      precision(_precision){};
+};
 
-
-
+NAMESPACE_END(Grid);
 
 #endif
