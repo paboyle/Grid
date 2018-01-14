@@ -5,16 +5,15 @@
 #ifndef STOUT_SMEAR_
 #define STOUT_SMEAR_
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 /*!  @brief Stout smearing of link variable. */
 template <class Gimpl>
 class Smear_Stout : public Smear<Gimpl> {
- private:
+private:
   const Smear<Gimpl>* SmearBase;
 
- public:
+public:
   INHERIT_GIMPL_TYPES(Gimpl)
 
   Smear_Stout(Smear<Gimpl>* base) : SmearBase(base) {
@@ -41,8 +40,8 @@ class Smear_Stout : public Smear<Gimpl> {
       tmp = peekLorentz(C, mu);
       Umu = peekLorentz(U, mu);
       iq_mu = Ta(
-          tmp *
-          adj(Umu));  // iq_mu = Ta(Omega_mu) to match the signs with the paper
+		 tmp *
+		 adj(Umu));  // iq_mu = Ta(Omega_mu) to match the signs with the paper
       exponentiate_iQ(tmp, iq_mu);
       pokeLorentz(u_smr, tmp * Umu, mu);  // u_smr = exp(iQ_mu)*U_mu
     }
@@ -105,7 +104,7 @@ class Smear_Stout : public Smear<Gimpl> {
     c0max = 2.0 * pow(tmp, 1.5);
 
     theta = acos(c0 / c0max) *
-            one_over_three;  // divide by three here, now leave as it is
+      one_over_three;  // divide by three here, now leave as it is
     u = sqrt(tmp) * cos(theta);
     w = sqrt(c1) * sin(theta);
   }
@@ -130,7 +129,7 @@ class Smear_Stout : public Smear<Gimpl> {
     e2iu = cos(2.0 * u) + timesI(sin(2.0 * u));
 
     h0 = e2iu * (u2 - w2) +
-         emiu * ((8.0 * u2 * cosw) + (2.0 * u * (3.0 * u2 + w2) * ixi0));
+      emiu * ((8.0 * u2 * cosw) + (2.0 * u * (3.0 * u2 + w2) * ixi0));
     h1 = e2iu * (2.0 * u) - emiu * ((2.0 * u * cosw) - (3.0 * u2 - w2) * ixi0);
     h2 = e2iu - emiu * (cosw + (3.0 * u) * ixi0);
 
@@ -154,7 +153,7 @@ class Smear_Stout : public Smear<Gimpl> {
     return cos(w) / (w * w) - sin(w) / (w * w * w);
   }
 };
-}
-}
+
+NAMESPACE_END(Grid);
 
 #endif
