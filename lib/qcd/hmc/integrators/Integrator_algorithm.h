@@ -26,21 +26,20 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
-//--------------------------------------------------------------------
+			   /*  END LEGAL */
+			   //--------------------------------------------------------------------
 
 
-/*! @file Integrator_algorithm.h
- * @brief Declaration of classes for the Molecular Dynamics algorithms
- *
- */
-//--------------------------------------------------------------------
+			   /*! @file Integrator_algorithm.h
+			    * @brief Declaration of classes for the Molecular Dynamics algorithms
+			    *
+			    */
+			   //--------------------------------------------------------------------
 
 #ifndef INTEGRATOR_ALG_INCLUDED
 #define INTEGRATOR_ALG_INCLUDED
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 /* PAB:
  *
@@ -95,20 +94,20 @@ namespace QCD {
 
 template <class FieldImplementation, class SmearingPolicy,
           class RepresentationPolicy =
-              Representations<FundamentalRepresentation> >
+	  Representations<FundamentalRepresentation> >
 class LeapFrog : public Integrator<FieldImplementation, SmearingPolicy,
                                    RepresentationPolicy> {
- public:
+public:
   typedef LeapFrog<FieldImplementation, SmearingPolicy, RepresentationPolicy>
-      Algorithm;
+  Algorithm;
   INHERIT_FIELD_TYPES(FieldImplementation);
 
   std::string integrator_name(){return "LeapFrog";}
 
   LeapFrog(GridBase* grid, IntegratorParameters Par,
            ActionSet<Field, RepresentationPolicy>& Aset, SmearingPolicy& Sm)
-      : Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy>(
-            grid, Par, Aset, Sm){};
+    : Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy>(
+									    grid, Par, Aset, Sm){};
 
   void step(Field& U, int level, int _first, int _last) {
     int fl = this->as.size() - 1;
@@ -143,19 +142,19 @@ class LeapFrog : public Integrator<FieldImplementation, SmearingPolicy,
 
 template <class FieldImplementation, class SmearingPolicy,
           class RepresentationPolicy =
-              Representations<FundamentalRepresentation> >
+	  Representations<FundamentalRepresentation> >
 class MinimumNorm2 : public Integrator<FieldImplementation, SmearingPolicy,
                                        RepresentationPolicy> {
- private:
+private:
   const RealD lambda = 0.1931833275037836;
 
- public:
+public:
   INHERIT_FIELD_TYPES(FieldImplementation);
 
   MinimumNorm2(GridBase* grid, IntegratorParameters Par,
                ActionSet<Field, RepresentationPolicy>& Aset, SmearingPolicy& Sm)
-      : Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy>(
-            grid, Par, Aset, Sm){};
+    : Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy>(
+									    grid, Par, Aset, Sm){};
 
   std::string integrator_name(){return "MininumNorm2";}
 
@@ -204,25 +203,25 @@ class MinimumNorm2 : public Integrator<FieldImplementation, SmearingPolicy,
 
 template <class FieldImplementation, class SmearingPolicy,
           class RepresentationPolicy =
-              Representations<FundamentalRepresentation> >
+	  Representations<FundamentalRepresentation> >
 class ForceGradient : public Integrator<FieldImplementation, SmearingPolicy,
                                         RepresentationPolicy> {
- private:
+private:
   const RealD lambda = 1.0 / 6.0;
   ;
   const RealD chi = 1.0 / 72.0;
   const RealD xi = 0.0;
   const RealD theta = 0.0;
 
- public:
+public:
   INHERIT_FIELD_TYPES(FieldImplementation);
 
   // Looks like dH scales as dt^4. tested wilson/wilson 2 level.
   ForceGradient(GridBase* grid, IntegratorParameters Par,
                 ActionSet<Field, RepresentationPolicy>& Aset,
                 SmearingPolicy& Sm)
-      : Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy>(
-            grid, Par, Aset, Sm){};
+    : Integrator<FieldImplementation, SmearingPolicy, RepresentationPolicy>(
+									    grid, Par, Aset, Sm){};
 
   std::string integrator_name(){return "ForceGradient";}
   
@@ -286,10 +285,6 @@ class ForceGradient : public Integrator<FieldImplementation, SmearingPolicy,
   }
 };
 
-
-
-
-}
-}
+NAMESPACE_END(Grid);
 
 #endif  // INTEGRATOR_INCLUDED
