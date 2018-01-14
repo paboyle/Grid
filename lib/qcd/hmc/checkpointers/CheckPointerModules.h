@@ -25,27 +25,23 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 
 #ifndef CP_MODULES_H
 #define CP_MODULES_H
 
-
-// FIXME  Reorganize QCD namespace 
-
-
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 ////////////////////////////////////////////////////////////////////////
 // Checkpoint module, owns the Checkpointer
 ////////////////////////////////////////////////////////////////////////
 
 template <class ImplementationPolicy>
-class CheckPointerModule: public Parametrized<QCD::CheckpointerParameters>, public HMCModuleBase< QCD::BaseHmcCheckpointer<ImplementationPolicy> >  {
- public:
- 	std::unique_ptr<QCD::BaseHmcCheckpointer<ImplementationPolicy> > CheckPointPtr;
- 	typedef QCD::CheckpointerParameters APar;
-  typedef HMCModuleBase< QCD::BaseHmcCheckpointer<ImplementationPolicy> > Base;
+class CheckPointerModule: public Parametrized<CheckpointerParameters>, public HMCModuleBase< BaseHmcCheckpointer<ImplementationPolicy> >  {
+public:
+  std::unique_ptr<BaseHmcCheckpointer<ImplementationPolicy> > CheckPointPtr;
+  typedef CheckpointerParameters APar;
+  typedef HMCModuleBase< BaseHmcCheckpointer<ImplementationPolicy> > Base;
   typedef typename Base::Product Product;
 
   CheckPointerModule(APar Par): Parametrized<APar>(Par) {}
@@ -53,7 +49,7 @@ class CheckPointerModule: public Parametrized<QCD::CheckpointerParameters>, publ
   CheckPointerModule(Reader<ReaderClass>& Reader) : Parametrized<APar>(Reader){};
 
   virtual void print_parameters(){
-  	std::cout << this->Par_ << std::endl;
+    std::cout << this->Par_ << std::endl;
   }
 
   Product* getPtr() {
@@ -62,19 +58,17 @@ class CheckPointerModule: public Parametrized<QCD::CheckpointerParameters>, publ
     return CheckPointPtr.get();
   }
 
- private:
+private:
   virtual void initialize() = 0;
 
 };
 
-
-
 template <char const *str, class ImplementationPolicy, class ReaderClass >
 class HMC_CPModuleFactory
-    : public Factory < HMCModuleBase< QCD::BaseHmcCheckpointer<ImplementationPolicy> > ,	Reader<ReaderClass> > {
- public:
- 	typedef Reader<ReaderClass> TheReader; 
- 	// use SINGLETON FUNCTOR MACRO HERE
+  : public Factory < HMCModuleBase< BaseHmcCheckpointer<ImplementationPolicy> > ,	Reader<ReaderClass> > {
+public:
+  typedef Reader<ReaderClass> TheReader; 
+  // use SINGLETON FUNCTOR MACRO HERE
   HMC_CPModuleFactory(const HMC_CPModuleFactory& e) = delete;
   void operator=(const HMC_CPModuleFactory& e) = delete;
   static HMC_CPModuleFactory& getInstance(void) {
@@ -82,19 +76,16 @@ class HMC_CPModuleFactory
     return e;
   }
 
- private:
+private:
   HMC_CPModuleFactory(void) = default;
   std::string obj_type() const {
-  	return std::string(str);
+    return std::string(str);
   }
 };
-
-
 
 /////////////////////////////////////////////////////////////////////
 // Concrete classes
 /////////////////////////////////////////////////////////////////////
-namespace QCD{
 
 template<class ImplementationPolicy>
 class BinaryCPModule: public CheckPointerModule< ImplementationPolicy> {
@@ -116,7 +107,7 @@ class NerscCPModule: public CheckPointerModule< ImplementationPolicy> {
 
   // acquire resource
   virtual void initialize(){
-     this->CheckPointPtr.reset(new NerscHmcCheckpointer<ImplementationPolicy>(this->Par_));
+    this->CheckPointPtr.reset(new NerscHmcCheckpointer<ImplementationPolicy>(this->Par_));
   }
 
 };
@@ -131,28 +122,25 @@ class ILDGCPModule: public CheckPointerModule< ImplementationPolicy> {
 
   // acquire resource
   virtual void initialize(){
-     this->CheckPointPtr.reset(new ILDGHmcCheckpointer<ImplementationPolicy>(this->Par_));
+    this->CheckPointPtr.reset(new ILDGHmcCheckpointer<ImplementationPolicy>(this->Par_));
   }
 
 };
 
 #endif
 
-
-}// QCD temporarily here
-
-
 extern char cp_string[];
 
 /*
 // use macros?
-static Registrar<QCD::BinaryCPModule<QCD::PeriodicGimplR>, HMC_CPModuleFactory<cp_string, QCD::PeriodicGimplR, XmlReader> > __CPBinarymodXMLInit("Binary");
-static Registrar<QCD::NerscCPModule<QCD::PeriodicGimplR> , HMC_CPModuleFactory<cp_string, QCD::PeriodicGimplR, XmlReader> > __CPNerscmodXMLInit("Nersc");
+static Registrar<BinaryCPModule<PeriodicGimplR>, HMC_CPModuleFactory<cp_string, PeriodicGimplR, XmlReader> > __CPBinarymodXMLInit("Binary");
+static Registrar<NerscCPModule<PeriodicGimplR> , HMC_CPModuleFactory<cp_string, PeriodicGimplR, XmlReader> > __CPNerscmodXMLInit("Nersc");
 
 #ifdef HAVE_LIME
-static Registrar<QCD::ILDGCPModule<QCD::PeriodicGimplR>  , HMC_CPModuleFactory<cp_string, QCD::PeriodicGimplR, XmlReader> > __CPILDGmodXMLInit("ILDG");
+static Registrar<ILDGCPModule<PeriodicGimplR>  , HMC_CPModuleFactory<cp_string, PeriodicGimplR, XmlReader> > __CPILDGmodXMLInit("ILDG");
 #endif
 */
 
-}// Grid
+NAMESPACE_END(Grid);
+
 #endif //CP_MODULES_H
