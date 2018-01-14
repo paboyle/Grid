@@ -25,7 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef ILDG_CHECKPOINTER
 #define ILDG_CHECKPOINTER
 
@@ -35,16 +35,15 @@ directory
 #include <sstream>
 #include <string>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 // Only for Gauge fields
 template <class Implementation>
 class ILDGHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
- private:
+private:
   CheckpointerParameters Params;
 
- public:
+public:
   INHERIT_GIMPL_TYPES(Implementation);
 
   ILDGHmcCheckpointer(const CheckpointerParameters &Params_) { initialize(Params_); }
@@ -113,8 +112,8 @@ class ILDGHmcCheckpointer : public BaseHmcCheckpointer<Implementation> {
 	      << std::dec << std::endl;
   };
 };
-}
-}
+
+NAMESPACE_END(Grid);
 
 #endif  // HAVE_LIME
 #endif  // ILDG_CHECKPOINTER
