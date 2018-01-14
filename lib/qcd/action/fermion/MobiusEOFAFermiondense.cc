@@ -28,157 +28,156 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 
 #include <Grid/Grid_Eigen_Dense.h>
 #include <Grid/qcd/action/fermion/FermionCore.h>
 #include <Grid/qcd/action/fermion/MobiusEOFAFermion.h>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
-  /*
-  * Dense matrix versions of routines
-  */
-  template<class Impl>
-  void MobiusEOFAFermion<Impl>::MooeeInv(const FermionField& psi, FermionField& chi)
-  {
-    this->MooeeInternal(psi, chi, DaggerNo, InverseYes);
+/*
+ * Dense matrix versions of routines
+ */
+template<class Impl>
+void MobiusEOFAFermion<Impl>::MooeeInv(const FermionField& psi, FermionField& chi)
+{
+  this->MooeeInternal(psi, chi, DaggerNo, InverseYes);
+}
+
+template<class Impl>
+void MobiusEOFAFermion<Impl>::MooeeInv_shift(const FermionField& psi, FermionField& chi)
+{
+  this->MooeeInternal(psi, chi, DaggerNo, InverseYes);
+}
+
+template<class Impl>
+void MobiusEOFAFermion<Impl>::MooeeInvDag(const FermionField& psi, FermionField& chi)
+{
+  this->MooeeInternal(psi, chi, DaggerYes, InverseYes);
+}
+
+template<class Impl>
+void MobiusEOFAFermion<Impl>::MooeeInvDag_shift(const FermionField& psi, FermionField& chi)
+{
+  this->MooeeInternal(psi, chi, DaggerYes, InverseYes);
+}
+
+template<class Impl>
+void MobiusEOFAFermion<Impl>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv)
+{
+  int Ls = this->Ls;
+  int LLs = psi._grid->_rdimensions[0];
+  int vol = psi._grid->oSites()/LLs;
+
+  int pm      = this->pm;
+  RealD shift = this->shift;
+  RealD alpha = this->alpha;
+  RealD k     = this->k;
+  RealD mq1   = this->mq1;
+
+  chi.checkerboard = psi.checkerboard;
+
+  assert(Ls==LLs);
+
+  Eigen::MatrixXd Pplus  = Eigen::MatrixXd::Zero(Ls,Ls);
+  Eigen::MatrixXd Pminus = Eigen::MatrixXd::Zero(Ls,Ls);
+
+  for(int s=0;s<Ls;s++){
+    Pplus(s,s)  = this->bee[s];
+    Pminus(s,s) = this->bee[s];
   }
 
-  template<class Impl>
-  void MobiusEOFAFermion<Impl>::MooeeInv_shift(const FermionField& psi, FermionField& chi)
-  {
-    this->MooeeInternal(psi, chi, DaggerNo, InverseYes);
+  for(int s=0; s<Ls-1; s++){
+    Pminus(s,s+1) = -this->cee[s];
   }
 
-  template<class Impl>
-  void MobiusEOFAFermion<Impl>::MooeeInvDag(const FermionField& psi, FermionField& chi)
-  {
-    this->MooeeInternal(psi, chi, DaggerYes, InverseYes);
+  for(int s=0; s<Ls-1; s++){
+    Pplus(s+1,s) = -this->cee[s+1];
   }
+  Pplus (0,Ls-1) = mq1*this->cee[0];
+  Pminus(Ls-1,0) = mq1*this->cee[Ls-1];
 
-  template<class Impl>
-  void MobiusEOFAFermion<Impl>::MooeeInvDag_shift(const FermionField& psi, FermionField& chi)
-  {
-    this->MooeeInternal(psi, chi, DaggerYes, InverseYes);
-  }
-
-  template<class Impl>
-  void MobiusEOFAFermion<Impl>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv)
-  {
-    int Ls = this->Ls;
-    int LLs = psi._grid->_rdimensions[0];
-    int vol = psi._grid->oSites()/LLs;
-
-    int pm      = this->pm;
-    RealD shift = this->shift;
-    RealD alpha = this->alpha;
-    RealD k     = this->k;
-    RealD mq1   = this->mq1;
-
-    chi.checkerboard = psi.checkerboard;
-
-    assert(Ls==LLs);
-
-    Eigen::MatrixXd Pplus  = Eigen::MatrixXd::Zero(Ls,Ls);
-    Eigen::MatrixXd Pminus = Eigen::MatrixXd::Zero(Ls,Ls);
-
-    for(int s=0;s<Ls;s++){
-        Pplus(s,s)  = this->bee[s];
-        Pminus(s,s) = this->bee[s];
+  if(shift != 0.0){
+    Coeff_t N = 2.0 * ( std::pow(alpha+1.0,Ls) + mq1*std::pow(alpha-1.0,Ls) );
+    for(int s=0; s<Ls; ++s){
+      if(pm == 1){ Pplus(s,Ls-1) += shift * k * N * std::pow(-1.0,s) * std::pow(alpha-1.0,s) / std::pow(alpha+1.0,Ls+s+1); }
+      else{ Pminus(Ls-1-s,Ls-1) -= shift * k * N * std::pow(-1.0,s) * std::pow(alpha-1.0,s) / std::pow(alpha+1.0,Ls+s+1); }
     }
+  }
 
-    for(int s=0; s<Ls-1; s++){
-        Pminus(s,s+1) = -this->cee[s];
-    }
+  Eigen::MatrixXd PplusMat ;
+  Eigen::MatrixXd PminusMat;
 
-    for(int s=0; s<Ls-1; s++){
-        Pplus(s+1,s) = -this->cee[s+1];
-    }
-    Pplus (0,Ls-1) = mq1*this->cee[0];
-    Pminus(Ls-1,0) = mq1*this->cee[Ls-1];
+  if(inv){
+    PplusMat  = Pplus.inverse();
+    PminusMat = Pminus.inverse();
+  } else {
+    PplusMat  = Pplus;
+    PminusMat = Pminus;
+  }
 
-    if(shift != 0.0){
-      Coeff_t N = 2.0 * ( std::pow(alpha+1.0,Ls) + mq1*std::pow(alpha-1.0,Ls) );
-      for(int s=0; s<Ls; ++s){
-        if(pm == 1){ Pplus(s,Ls-1) += shift * k * N * std::pow(-1.0,s) * std::pow(alpha-1.0,s) / std::pow(alpha+1.0,Ls+s+1); }
-        else{ Pminus(Ls-1-s,Ls-1) -= shift * k * N * std::pow(-1.0,s) * std::pow(alpha-1.0,s) / std::pow(alpha+1.0,Ls+s+1); }
+  if(dag){
+    PplusMat.adjointInPlace();
+    PminusMat.adjointInPlace();
+  }
+
+  // For the non-vectorised s-direction this is simple
+
+  for(auto site=0; site<vol; site++){
+
+    SiteSpinor     SiteChi;
+    SiteHalfSpinor SitePplus;
+    SiteHalfSpinor SitePminus;
+
+    for(int s1=0; s1<Ls; s1++){
+      SiteChi = zero;
+      for(int s2=0; s2<Ls; s2++){
+	int lex2 = s2 + Ls*site;
+	if(PplusMat(s1,s2) != 0.0){
+	  spProj5p(SitePplus,psi[lex2]);
+	  accumRecon5p(SiteChi, PplusMat(s1,s2)*SitePplus);
+	}
+	if(PminusMat(s1,s2) != 0.0){
+	  spProj5m(SitePminus, psi[lex2]);
+	  accumRecon5m(SiteChi, PminusMat(s1,s2)*SitePminus);
+	}
       }
-    }
-
-    Eigen::MatrixXd PplusMat ;
-    Eigen::MatrixXd PminusMat;
-
-    if(inv){
-      PplusMat  = Pplus.inverse();
-      PminusMat = Pminus.inverse();
-    } else {
-      PplusMat  = Pplus;
-      PminusMat = Pminus;
-    }
-
-    if(dag){
-      PplusMat.adjointInPlace();
-      PminusMat.adjointInPlace();
-    }
-
-    // For the non-vectorised s-direction this is simple
-
-    for(auto site=0; site<vol; site++){
-
-        SiteSpinor     SiteChi;
-        SiteHalfSpinor SitePplus;
-        SiteHalfSpinor SitePminus;
-
-        for(int s1=0; s1<Ls; s1++){
-            SiteChi = zero;
-            for(int s2=0; s2<Ls; s2++){
-                int lex2 = s2 + Ls*site;
-                if(PplusMat(s1,s2) != 0.0){
-                    spProj5p(SitePplus,psi[lex2]);
-                    accumRecon5p(SiteChi, PplusMat(s1,s2)*SitePplus);
-                }
-                if(PminusMat(s1,s2) != 0.0){
-                    spProj5m(SitePminus, psi[lex2]);
-                    accumRecon5m(SiteChi, PminusMat(s1,s2)*SitePminus);
-                }
-            }
-            chi[s1+Ls*site] = SiteChi*0.5;
-        }
+      chi[s1+Ls*site] = SiteChi*0.5;
     }
   }
+}
 
-  #ifdef MOBIUS_EOFA_DPERP_DENSE
+#ifdef MOBIUS_EOFA_DPERP_DENSE
 
-    INSTANTIATE_DPERP_MOBIUS_EOFA(GparityWilsonImplF);
-    INSTANTIATE_DPERP_MOBIUS_EOFA(GparityWilsonImplD);
-    INSTANTIATE_DPERP_MOBIUS_EOFA(WilsonImplF);
-    INSTANTIATE_DPERP_MOBIUS_EOFA(WilsonImplD);
-    INSTANTIATE_DPERP_MOBIUS_EOFA(ZWilsonImplF);
-    INSTANTIATE_DPERP_MOBIUS_EOFA(ZWilsonImplD);
+INSTANTIATE_DPERP_MOBIUS_EOFA(GparityWilsonImplF);
+INSTANTIATE_DPERP_MOBIUS_EOFA(GparityWilsonImplD);
+INSTANTIATE_DPERP_MOBIUS_EOFA(WilsonImplF);
+INSTANTIATE_DPERP_MOBIUS_EOFA(WilsonImplD);
+INSTANTIATE_DPERP_MOBIUS_EOFA(ZWilsonImplF);
+INSTANTIATE_DPERP_MOBIUS_EOFA(ZWilsonImplD);
 
-    template void MobiusEOFAFermion<GparityWilsonImplF>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
-    template void MobiusEOFAFermion<GparityWilsonImplD>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
-    template void MobiusEOFAFermion<WilsonImplF>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
-    template void MobiusEOFAFermion<WilsonImplD>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
-    template void MobiusEOFAFermion<ZWilsonImplF>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
-    template void MobiusEOFAFermion<ZWilsonImplD>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
+template void MobiusEOFAFermion<GparityWilsonImplF>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
+template void MobiusEOFAFermion<GparityWilsonImplD>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
+template void MobiusEOFAFermion<WilsonImplF>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
+template void MobiusEOFAFermion<WilsonImplD>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
+template void MobiusEOFAFermion<ZWilsonImplF>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
+template void MobiusEOFAFermion<ZWilsonImplD>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
 
-    INSTANTIATE_DPERP_MOBIUS_EOFA(GparityWilsonImplFH);
-    INSTANTIATE_DPERP_MOBIUS_EOFA(GparityWilsonImplDF);
-    INSTANTIATE_DPERP_MOBIUS_EOFA(WilsonImplFH);
-    INSTANTIATE_DPERP_MOBIUS_EOFA(WilsonImplDF);
-    INSTANTIATE_DPERP_MOBIUS_EOFA(ZWilsonImplFH);
-    INSTANTIATE_DPERP_MOBIUS_EOFA(ZWilsonImplDF);
+INSTANTIATE_DPERP_MOBIUS_EOFA(GparityWilsonImplFH);
+INSTANTIATE_DPERP_MOBIUS_EOFA(GparityWilsonImplDF);
+INSTANTIATE_DPERP_MOBIUS_EOFA(WilsonImplFH);
+INSTANTIATE_DPERP_MOBIUS_EOFA(WilsonImplDF);
+INSTANTIATE_DPERP_MOBIUS_EOFA(ZWilsonImplFH);
+INSTANTIATE_DPERP_MOBIUS_EOFA(ZWilsonImplDF);
 
-    template void MobiusEOFAFermion<GparityWilsonImplFH>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
-    template void MobiusEOFAFermion<GparityWilsonImplDF>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
-    template void MobiusEOFAFermion<WilsonImplFH>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
-    template void MobiusEOFAFermion<WilsonImplDF>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
-    template void MobiusEOFAFermion<ZWilsonImplFH>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
-    template void MobiusEOFAFermion<ZWilsonImplDF>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
+template void MobiusEOFAFermion<GparityWilsonImplFH>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
+template void MobiusEOFAFermion<GparityWilsonImplDF>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
+template void MobiusEOFAFermion<WilsonImplFH>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
+template void MobiusEOFAFermion<WilsonImplDF>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
+template void MobiusEOFAFermion<ZWilsonImplFH>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
+template void MobiusEOFAFermion<ZWilsonImplDF>::MooeeInternal(const FermionField& psi, FermionField& chi, int dag, int inv);
 
-  #endif
+#endif
 
-}}
+NAMESPACE_END(Grid);
