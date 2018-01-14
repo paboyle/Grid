@@ -25,18 +25,17 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 
 #ifndef HMC_PLAQUETTE_H
 #define HMC_PLAQUETTE_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 // this is only defined for a gauge theory
 template <class Impl>
 class PlaquetteLogger : public HmcObservable<typename Impl::Field> {
- public:
+public:
   // here forces the Impl to be of gauge fields
   // if not the compiler will complain
   INHERIT_GIMPL_TYPES(Impl);
@@ -54,15 +53,14 @@ class PlaquetteLogger : public HmcObservable<typename Impl::Field> {
     int def_prec = std::cout.precision();
 
     std::cout << GridLogMessage
-        << std::setprecision(std::numeric_limits<Real>::digits10 + 1)
-        << "Plaquette: [ " << traj << " ] "<< plaq << std::endl;
+	      << std::setprecision(std::numeric_limits<Real>::digits10 + 1)
+	      << "Plaquette: [ " << traj << " ] "<< plaq << std::endl;
 
     std::cout.precision(def_prec);
 
   }
 };
 
-}  // namespace QCD
-}  // namespace Grid
+NAMESPACE_END(Grid);
 
 #endif  // HMC_PLAQUETTE_H
