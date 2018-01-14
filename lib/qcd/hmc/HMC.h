@@ -28,30 +28,27 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
-//--------------------------------------------------------------------
-/*! @file HMC.h
- * @brief Classes for Hybrid Monte Carlo update
- *
- * @author Guido Cossu
- */
-//--------------------------------------------------------------------
+			   /*  END LEGAL */
+			   //--------------------------------------------------------------------
+			   /*! @file HMC.h
+			    * @brief Classes for Hybrid Monte Carlo update
+			    *
+			    * @author Guido Cossu
+			    */
+			   //--------------------------------------------------------------------
 #ifndef HMC_INCLUDED
 #define HMC_INCLUDED
 
 #include <string>
 #include <list>
 
-
-
 #include <Grid/qcd/hmc/integrators/Integrator.h>
 #include <Grid/qcd/hmc/integrators/Integrator_algorithm.h>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 struct HMCparameters: Serializable {
-	GRID_SERIALIZABLE_CLASS_MEMBERS(HMCparameters,
+  GRID_SERIALIZABLE_CLASS_MEMBERS(HMCparameters,
                                   Integer, StartTrajectory,
                                   Integer, Trajectories, /* @brief Number of sweeps in this run */
                                   bool, MetropolisTest,
@@ -71,13 +68,13 @@ struct HMCparameters: Serializable {
 
   template <class ReaderClass >
   HMCparameters(Reader<ReaderClass> & TheReader){
-  	initialize(TheReader);
+    initialize(TheReader);
   }
 
   template < class ReaderClass > 
   void initialize(Reader<ReaderClass> &TheReader){
-  	std::cout << GridLogMessage << "Reading HMC\n";
-  	read(TheReader, "HMC", *this);
+    std::cout << GridLogMessage << "Reading HMC\n";
+    read(TheReader, "HMC", *this);
   }
 
 
@@ -94,20 +91,20 @@ struct HMCparameters: Serializable {
 	
 template <class IntegratorType>
 class HybridMonteCarlo {
- private:
+private:
   const HMCparameters Params;
 
   typedef typename IntegratorType::Field Field;
   typedef std::vector< HmcObservable<Field> * > ObsListType;
   
-  	//pass these from the resource manager
+  //pass these from the resource manager
   GridSerialRNG &sRNG;   
   GridParallelRNG &pRNG; 
 
   Field &Ucur;
   
   IntegratorType &TheIntegrator;
-	ObsListType Observables;
+  ObsListType Observables;
 
   /////////////////////////////////////////////////////////
   // Metropolis step
@@ -179,7 +176,7 @@ class HybridMonteCarlo {
 
   
 
- public:
+public:
   /////////////////////////////////////////
   // Constructor
   /////////////////////////////////////////
@@ -238,10 +235,7 @@ class HybridMonteCarlo {
 
 };
 
-
-}  // QCD
-}  // Grid
-
+NAMESPACE_END(Grid);
 
 // april 11 2017 merge, Guido, commenting out
 //#include <Grid/parallelIO/NerscIO.h>
