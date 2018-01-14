@@ -26,86 +26,86 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef  GRID_QCD_DOMAIN_WALL_EOFA_FERMION_H
 #define  GRID_QCD_DOMAIN_WALL_EOFA_FERMION_H
 
 #include <Grid/qcd/action/fermion/AbstractEOFAFermion.h>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
-  template<class Impl>
-  class DomainWallEOFAFermion : public AbstractEOFAFermion<Impl>
-  {
-    public:
-      INHERIT_IMPL_TYPES(Impl);
+template<class Impl>
+class DomainWallEOFAFermion : public AbstractEOFAFermion<Impl>
+{
+public:
+  INHERIT_IMPL_TYPES(Impl);
 
-    public:
-      // Modified (0,Ls-1) and (Ls-1,0) elements of Mooee
-      // for red-black preconditioned Shamir EOFA
-      Coeff_t dm;
-      Coeff_t dp;
+public:
+  // Modified (0,Ls-1) and (Ls-1,0) elements of Mooee
+  // for red-black preconditioned Shamir EOFA
+  Coeff_t dm;
+  Coeff_t dp;
 
-      virtual void Instantiatable(void) {};
+  virtual void Instantiatable(void) {};
 
-      // EOFA-specific operations
-      virtual void  Omega      (const FermionField& in, FermionField& out, int sign, int dag);
-      virtual void  Dtilde     (const FermionField& in, FermionField& out);
-      virtual void  DtildeInv  (const FermionField& in, FermionField& out);
+  // EOFA-specific operations
+  virtual void  Omega      (const FermionField& in, FermionField& out, int sign, int dag);
+  virtual void  Dtilde     (const FermionField& in, FermionField& out);
+  virtual void  DtildeInv  (const FermionField& in, FermionField& out);
 
-      // override multiply
-      virtual RealD M          (const FermionField& in, FermionField& out);
-      virtual RealD Mdag       (const FermionField& in, FermionField& out);
+  // override multiply
+  virtual RealD M          (const FermionField& in, FermionField& out);
+  virtual RealD Mdag       (const FermionField& in, FermionField& out);
 
-      // half checkerboard operations
-      virtual void  Mooee      (const FermionField& in, FermionField& out);
-      virtual void  MooeeDag   (const FermionField& in, FermionField& out);
-      virtual void  MooeeInv   (const FermionField& in, FermionField& out);
-      virtual void  MooeeInvDag(const FermionField& in, FermionField& out);
+  // half checkerboard operations
+  virtual void  Mooee      (const FermionField& in, FermionField& out);
+  virtual void  MooeeDag   (const FermionField& in, FermionField& out);
+  virtual void  MooeeInv   (const FermionField& in, FermionField& out);
+  virtual void  MooeeInvDag(const FermionField& in, FermionField& out);
 
-      virtual void   M5D       (const FermionField& psi, FermionField& chi);
-      virtual void   M5Ddag    (const FermionField& psi, FermionField& chi);
+  virtual void   M5D       (const FermionField& psi, FermionField& chi);
+  virtual void   M5Ddag    (const FermionField& psi, FermionField& chi);
 
-      /////////////////////////////////////////////////////
-      // Instantiate different versions depending on Impl
-      /////////////////////////////////////////////////////
-      void M5D(const FermionField& psi, const FermionField& phi, FermionField& chi,
-        std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper);
+  /////////////////////////////////////////////////////
+  // Instantiate different versions depending on Impl
+  /////////////////////////////////////////////////////
+  void M5D(const FermionField& psi, const FermionField& phi, FermionField& chi,
+	   std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper);
 
-      void M5Ddag(const FermionField& psi, const FermionField& phi, FermionField& chi,
-        std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper);
+  void M5Ddag(const FermionField& psi, const FermionField& phi, FermionField& chi,
+	      std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper);
 
-      void MooeeInternal(const FermionField& in, FermionField& out, int dag, int inv);
+  void MooeeInternal(const FermionField& in, FermionField& out, int dag, int inv);
 
-      void MooeeInternalCompute(int dag, int inv, Vector<iSinglet<Simd>>& Matp, Vector<iSinglet<Simd>>& Matm);
+  void MooeeInternalCompute(int dag, int inv, Vector<iSinglet<Simd>>& Matp, Vector<iSinglet<Simd>>& Matm);
 
-      void MooeeInternalAsm(const FermionField& in, FermionField& out, int LLs, int site,
-        Vector<iSinglet<Simd>>& Matp, Vector<iSinglet<Simd>>& Matm);
+  void MooeeInternalAsm(const FermionField& in, FermionField& out, int LLs, int site,
+			Vector<iSinglet<Simd>>& Matp, Vector<iSinglet<Simd>>& Matm);
 
-      void MooeeInternalZAsm(const FermionField& in, FermionField& out, int LLs, int site,
-        Vector<iSinglet<Simd>>& Matp, Vector<iSinglet<Simd>>& Matm);
+  void MooeeInternalZAsm(const FermionField& in, FermionField& out, int LLs, int site,
+			 Vector<iSinglet<Simd>>& Matp, Vector<iSinglet<Simd>>& Matm);
 
-      virtual void RefreshShiftCoefficients(RealD new_shift);
+  virtual void RefreshShiftCoefficients(RealD new_shift);
 
-      // Constructors
-      DomainWallEOFAFermion(GaugeField& _Umu, GridCartesian& FiveDimGrid, GridRedBlackCartesian& FiveDimRedBlackGrid,
-        GridCartesian& FourDimGrid, GridRedBlackCartesian& FourDimRedBlackGrid,
-        RealD _mq1, RealD _mq2, RealD _mq3, RealD _shift, int pm,
-        RealD _M5, const ImplParams& p=ImplParams());
+  // Constructors
+  DomainWallEOFAFermion(GaugeField& _Umu, GridCartesian& FiveDimGrid, GridRedBlackCartesian& FiveDimRedBlackGrid,
+			GridCartesian& FourDimGrid, GridRedBlackCartesian& FourDimRedBlackGrid,
+			RealD _mq1, RealD _mq2, RealD _mq3, RealD _shift, int pm,
+			RealD _M5, const ImplParams& p=ImplParams());
 
-    protected:
-      void SetCoefficientsInternal(RealD zolo_hi, std::vector<Coeff_t>& gamma, RealD b, RealD c);
-  };
-}}
+protected:
+  void SetCoefficientsInternal(RealD zolo_hi, std::vector<Coeff_t>& gamma, RealD b, RealD c);
+};
 
-#define INSTANTIATE_DPERP_DWF_EOFA(A)\
-template void DomainWallEOFAFermion<A>::M5D(const FermionField& psi, const FermionField& phi, FermionField& chi, \
-  std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper); \
-template void DomainWallEOFAFermion<A>::M5Ddag(const FermionField& psi, const FermionField& phi, FermionField& chi, \
-  std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper); \
-template void DomainWallEOFAFermion<A>::MooeeInv(const FermionField& psi, FermionField& chi); \
-template void DomainWallEOFAFermion<A>::MooeeInvDag(const FermionField& psi, FermionField& chi);
+NAMESPACE_END(Grid);
+
+#define INSTANTIATE_DPERP_DWF_EOFA(A)					\
+  template void DomainWallEOFAFermion<A>::M5D(const FermionField& psi, const FermionField& phi, FermionField& chi, \
+					      std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper); \
+  template void DomainWallEOFAFermion<A>::M5Ddag(const FermionField& psi, const FermionField& phi, FermionField& chi, \
+						 std::vector<Coeff_t>& lower, std::vector<Coeff_t>& diag, std::vector<Coeff_t>& upper); \
+  template void DomainWallEOFAFermion<A>::MooeeInv(const FermionField& psi, FermionField& chi); \
+  template void DomainWallEOFAFermion<A>::MooeeInvDag(const FermionField& psi, FermionField& chi);
 
 #undef  DOMAIN_WALL_EOFA_DPERP_DENSE
 #define DOMAIN_WALL_EOFA_DPERP_CACHE
