@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -25,13 +25,13 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_QCD_LINALG_UTILS_H
 #define GRID_QCD_LINALG_UTILS_H
 
-namespace Grid{
-namespace QCD{
+NAMESPACE_BEGIN(Grid);
+
 ////////////////////////////////////////////////////////////////////////
 //This file brings additional linear combination assist that is helpful
 //to QCD such as chiral projectors and spin matrices applied to one of the inputs.
@@ -174,5 +174,5 @@ void G5R5(Lattice<vobj> &z,const Lattice<vobj> &x)
   }
 }
 
-}}
+NAMESPACE_END(Grid);
 #endif 
