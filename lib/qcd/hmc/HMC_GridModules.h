@@ -26,11 +26,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef HMC_GRID_MODULES
 #define HMC_GRID_MODULES
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 // Resources
 // Modules for grids
@@ -40,8 +40,8 @@ namespace Grid {
 class GridModuleParameters: Serializable{
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(GridModuleParameters,
-  std::string, lattice,
-  std::string, mpi);
+				  std::string, lattice,
+				  std::string, mpi);
 
   std::vector<int> getLattice() const {return strToVec<int>(lattice);}
   std::vector<int> getMpi()     const {return strToVec<int>(mpi);}
@@ -51,7 +51,7 @@ public:
     if (getLattice().size() != getMpi().size() ) {
       std::cout << GridLogError
                 << "Error in GridModuleParameters: lattice and mpi dimensions "
-                   "do not match"
+	"do not match"
                 << std::endl;
       exit(1);
     }
@@ -70,12 +70,12 @@ public:
     write(Writer, name, *this);
   }
 private:
-    std::string name;
+  std::string name;
 };
 
 // Lower level class
 class GridModule {
- public:
+public:
   GridCartesian* get_full() {
     std::cout << GridLogDebug << "Getting cartesian in module"<< std::endl;
     return grid_.get(); }
@@ -88,7 +88,7 @@ class GridModule {
   void show_full_decomposition(){ grid_->show_decomposition(); }
   void show_rb_decomposition(){ rbgrid_->show_decomposition(); }
 
- protected:
+protected:
   std::unique_ptr<GridCartesian> grid_;
   std::unique_ptr<GridRedBlackCartesian> rbgrid_;
 
@@ -106,9 +106,9 @@ public:
   {
     using namespace QCD;
     set_full(SpaceTimeGrid::makeFourDimGrid(
-        GridDefaultLatt(), 
-        GridDefaultSimd(4, vector_type::Nsimd()),
-        GridDefaultMpi()));
+					    GridDefaultLatt(), 
+					    GridDefaultSimd(4, vector_type::Nsimd()),
+					    GridDefaultMpi()));
     set_rb(SpaceTimeGrid::makeFourDimRedBlackGrid(grid_.get()));
   }
 
@@ -116,12 +116,12 @@ public:
   {
     using namespace QCD;
     if (tweak_simd.size() != 4)
-    {
-      std::cout << GridLogError
-                << "Error in GridFourDimModule: SIMD size different from 4" 
-                << std::endl;
-      exit(1);
-    }
+      {
+	std::cout << GridLogError
+		  << "Error in GridFourDimModule: SIMD size different from 4" 
+		  << std::endl;
+	exit(1);
+      }
 
     // Checks that the product agrees with the expectation
     int simd_sum = 1;
@@ -130,20 +130,20 @@ public:
     std::cout << GridLogDebug << "TweakSIMD: " << tweak_simd << "  Sum: " << simd_sum << std::endl;
 
     if (simd_sum == vector_type::Nsimd())
-    {
-      set_full(SpaceTimeGrid::makeFourDimGrid(
-          GridDefaultLatt(), 
-          tweak_simd, 
-          GridDefaultMpi()));
-      set_rb(SpaceTimeGrid::makeFourDimRedBlackGrid(grid_.get()));
-    }
+      {
+	set_full(SpaceTimeGrid::makeFourDimGrid(
+						GridDefaultLatt(), 
+						tweak_simd, 
+						GridDefaultMpi()));
+	set_rb(SpaceTimeGrid::makeFourDimRedBlackGrid(grid_.get()));
+      }
     else
-    {
-      std::cout << GridLogError 
-                << "Error in GridFourDimModule: SIMD lanes must sum to " 
-                << vector_type::Nsimd() 
-                << std::endl;
-    }
+      {
+	std::cout << GridLogError 
+		  << "Error in GridFourDimModule: SIMD lanes must sum to " 
+		  << vector_type::Nsimd() 
+		  << std::endl;
+      }
   }
 
   GridFourDimModule(const GridModuleParameters Params)
@@ -152,26 +152,26 @@ public:
     std::vector<int> lattice_v = Params.getLattice();
     std::vector<int> mpi_v = Params.getMpi();
     if (lattice_v.size() == 4)
-    {
-      set_full(SpaceTimeGrid::makeFourDimGrid(
-          lattice_v, 
-          GridDefaultSimd(4, vector_type::Nsimd()),
-          mpi_v));
-      set_rb(SpaceTimeGrid::makeFourDimRedBlackGrid(grid_.get()));
-    }
+      {
+	set_full(SpaceTimeGrid::makeFourDimGrid(
+						lattice_v, 
+						GridDefaultSimd(4, vector_type::Nsimd()),
+						mpi_v));
+	set_rb(SpaceTimeGrid::makeFourDimRedBlackGrid(grid_.get()));
+      }
     else
-    {
-      std::cout << GridLogError
-                << "Error in GridFourDimModule: lattice dimension different from 4"
-                << std::endl;
-      exit(1);
-    }
+      {
+	std::cout << GridLogError
+		  << "Error in GridFourDimModule: lattice dimension different from 4"
+		  << std::endl;
+	exit(1);
+      }
   }
 };
 
 typedef GridFourDimModule<vComplex> GridDefaultFourDimModule;
 
 
-}  // namespace Grid
+NAMESPACE_END(Grid);
 
 #endif  // HMC_GRID_MODULES
