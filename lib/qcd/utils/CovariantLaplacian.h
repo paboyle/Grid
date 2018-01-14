@@ -25,13 +25,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 
 #ifndef COVARIANT_LAPLACIAN_H
 #define COVARIANT_LAPLACIAN_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 struct LaplacianParams : Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(LaplacianParams, 
@@ -80,19 +79,19 @@ class LaplacianAdjointField: public Metric<typename Impl::Field> {
   MultiShiftFunction PowerHalf;    
   MultiShiftFunction PowerInvHalf;    
 
- public:
+public:
   INHERIT_GIMPL_TYPES(Impl);
 
   LaplacianAdjointField(GridBase* grid, OperatorFunction<GaugeField>& S, LaplacianParams& p, const RealD k = 1.0)
-      : U(Nd, grid), Solver(S), param(p), kappa(k){
-        AlgRemez remez(param.lo,param.hi,param.precision);
-        std::cout<<GridLogMessage << "Generating degree "<<param.degree<<" for x^(1/2)"<<std::endl;
-        remez.generateApprox(param.degree,1,2);
-        PowerHalf.Init(remez,param.tolerance,false);
-        PowerInvHalf.Init(remez,param.tolerance,true);
+    : U(Nd, grid), Solver(S), param(p), kappa(k){
+    AlgRemez remez(param.lo,param.hi,param.precision);
+    std::cout<<GridLogMessage << "Generating degree "<<param.degree<<" for x^(1/2)"<<std::endl;
+    remez.generateApprox(param.degree,1,2);
+    PowerHalf.Init(remez,param.tolerance,false);
+    PowerInvHalf.Init(remez,param.tolerance,true);
         
 
-      };
+  };
 
   void Mdir(const GaugeField&, GaugeField&, int, int){ assert(0);}
   void Mdiag(const GaugeField&, GaugeField&){ assert(0);}
@@ -186,12 +185,11 @@ class LaplacianAdjointField: public Metric<typename Impl::Field> {
 
 
 
- private:
+private:
   RealD kappa;
   std::vector<GaugeLinkField> U;
 };
 
-}
-}
+NAMESPACE_END(Grid);
 
 #endif
