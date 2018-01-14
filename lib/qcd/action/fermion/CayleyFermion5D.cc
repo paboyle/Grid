@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -26,31 +26,30 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 
 #include <Grid/Grid_Eigen_Dense.h>
 #include <Grid/qcd/action/fermion/FermionCore.h>
 #include <Grid/qcd/action/fermion/CayleyFermion5D.h>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
- template<class Impl>
- CayleyFermion5D<Impl>::CayleyFermion5D(GaugeField &_Umu,
-					GridCartesian         &FiveDimGrid,
-					GridRedBlackCartesian &FiveDimRedBlackGrid,
-					GridCartesian         &FourDimGrid,
-					GridRedBlackCartesian &FourDimRedBlackGrid,
-					RealD _mass,RealD _M5,const ImplParams &p) :
-   WilsonFermion5D<Impl>(_Umu,
-		   FiveDimGrid,
-		   FiveDimRedBlackGrid,
-		   FourDimGrid,
- 	 	   FourDimRedBlackGrid,_M5,p),
-   mass(_mass)
- { 
- }
+template<class Impl>
+CayleyFermion5D<Impl>::CayleyFermion5D(GaugeField &_Umu,
+				       GridCartesian         &FiveDimGrid,
+				       GridRedBlackCartesian &FiveDimRedBlackGrid,
+				       GridCartesian         &FourDimGrid,
+				       GridRedBlackCartesian &FourDimRedBlackGrid,
+				       RealD _mass,RealD _M5,const ImplParams &p) :
+  WilsonFermion5D<Impl>(_Umu,
+			FiveDimGrid,
+			FiveDimRedBlackGrid,
+			FourDimGrid,
+			FourDimRedBlackGrid,_M5,p),
+  mass(_mass)
+{ 
+}
 
 template<class Impl>  
 void CayleyFermion5D<Impl>::Dminus(const FermionField &psi, FermionField &chi)
@@ -548,35 +547,35 @@ void CayleyFermion5D<Impl>::MooeeInternalCompute(int dag, int inv,
   Matm.resize(Ls*LLs);
 
   for(int s2=0;s2<Ls;s2++){
-  for(int s1=0;s1<LLs;s1++){
-    int istride = LLs;
-    int ostride = 1;
-    Simd Vp;
-    Simd Vm;
-    scalar_type *sp = (scalar_type *)&Vp;
-    scalar_type *sm = (scalar_type *)&Vm;
-    for(int l=0;l<Nsimd;l++){
-      if ( switcheroo<Coeff_t>::iscomplex() ) {
-	sp[l] = PplusMat (l*istride+s1*ostride,s2);
-	sm[l] = PminusMat(l*istride+s1*ostride,s2);
-      } else { 
-      // if real
-	scalar_type tmp;
-	tmp = PplusMat (l*istride+s1*ostride,s2);
-	sp[l] = scalar_type(tmp.real(),tmp.real());
-	tmp = PminusMat(l*istride+s1*ostride,s2);
-	sm[l] = scalar_type(tmp.real(),tmp.real());
+    for(int s1=0;s1<LLs;s1++){
+      int istride = LLs;
+      int ostride = 1;
+      Simd Vp;
+      Simd Vm;
+      scalar_type *sp = (scalar_type *)&Vp;
+      scalar_type *sm = (scalar_type *)&Vm;
+      for(int l=0;l<Nsimd;l++){
+	if ( switcheroo<Coeff_t>::iscomplex() ) {
+	  sp[l] = PplusMat (l*istride+s1*ostride,s2);
+	  sm[l] = PminusMat(l*istride+s1*ostride,s2);
+	} else { 
+	  // if real
+	  scalar_type tmp;
+	  tmp = PplusMat (l*istride+s1*ostride,s2);
+	  sp[l] = scalar_type(tmp.real(),tmp.real());
+	  tmp = PminusMat(l*istride+s1*ostride,s2);
+	  sm[l] = scalar_type(tmp.real(),tmp.real());
+	}
       }
-    }
-    Matp[LLs*s2+s1] = Vp;
-    Matm[LLs*s2+s1] = Vm;
-  }}
+      Matp[LLs*s2+s1] = Vp;
+      Matm[LLs*s2+s1] = Vm;
+    }}
 }
 
 
-  FermOpTemplateInstantiate(CayleyFermion5D);
-  GparityFermOpTemplateInstantiate(CayleyFermion5D);
+FermOpTemplateInstantiate(CayleyFermion5D);
+GparityFermOpTemplateInstantiate(CayleyFermion5D);
 
-}}
+NAMESPACE_END(Grid);
 
 
