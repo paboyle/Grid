@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,60 +24,57 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef  GRID_QCD_DOMAIN_WALL_FERMION_H
 #define  GRID_QCD_DOMAIN_WALL_FERMION_H
 
 #include <Grid/qcd/action/fermion/FermionCore.h>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
-  namespace QCD {
+template<class Impl>
+class DomainWallFermion : public CayleyFermion5D<Impl>
+{
+public:
+  INHERIT_IMPL_TYPES(Impl);
+public:
 
-    template<class Impl>
-    class DomainWallFermion : public CayleyFermion5D<Impl>
-    {
-    public:
-     INHERIT_IMPL_TYPES(Impl);
-    public:
+  void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m) { 
+    this->MomentumSpacePropagatorHt(out,in,_m);
+  };
 
-      void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m) { 
-	this->MomentumSpacePropagatorHt(out,in,_m);
-      };
-
-      virtual void   Instantiatable(void) {};
-      // Constructors
-      DomainWallFermion(GaugeField &_Umu,
-			GridCartesian         &FiveDimGrid,
-			GridRedBlackCartesian &FiveDimRedBlackGrid,
-			GridCartesian         &FourDimGrid,
-			GridRedBlackCartesian &FourDimRedBlackGrid,
-			RealD _mass,RealD _M5,const ImplParams &p= ImplParams()) : 
+  virtual void   Instantiatable(void) {};
+  // Constructors
+  DomainWallFermion(GaugeField &_Umu,
+		    GridCartesian         &FiveDimGrid,
+		    GridRedBlackCartesian &FiveDimRedBlackGrid,
+		    GridCartesian         &FourDimGrid,
+		    GridRedBlackCartesian &FourDimRedBlackGrid,
+		    RealD _mass,RealD _M5,const ImplParams &p= ImplParams()) : 
 
 
-      CayleyFermion5D<Impl>(_Umu,
-			    FiveDimGrid,
-			    FiveDimRedBlackGrid,
-			    FourDimGrid,
-			    FourDimRedBlackGrid,_mass,_M5,p)
+    CayleyFermion5D<Impl>(_Umu,
+			  FiveDimGrid,
+			  FiveDimRedBlackGrid,
+			  FourDimGrid,
+			  FourDimRedBlackGrid,_mass,_M5,p)
 
-      {
-	RealD eps = 1.0;
+  {
+    RealD eps = 1.0;
 
-	Approx::zolotarev_data *zdata = Approx::higham(eps,this->Ls);// eps is ignored for higham
-	assert(zdata->n==this->Ls);
+    Approx::zolotarev_data *zdata = Approx::higham(eps,this->Ls);// eps is ignored for higham
+    assert(zdata->n==this->Ls);
 	
-	std::cout<<GridLogMessage << "DomainWallFermion with Ls="<<this->Ls<<std::endl;
-	// Call base setter
-	this->SetCoefficientsTanh(zdata,1.0,0.0);
+    std::cout<<GridLogMessage << "DomainWallFermion with Ls="<<this->Ls<<std::endl;
+    // Call base setter
+    this->SetCoefficientsTanh(zdata,1.0,0.0);
 
-	Approx::zolotarev_free(zdata);
-      }
-
-    };
-
+    Approx::zolotarev_free(zdata);
   }
-}
+
+};
+
+NAMESPACE_END(Grid);
 
 #endif
