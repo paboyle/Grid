@@ -9,17 +9,15 @@
 #include <tuple>
 #include <utility>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 // Supported types
 // enum {Fundamental, Adjoint} repr_type;
-
 // Utility to add support to the HMC for representations other than the
 // fundamental
 template <class... Reptypes>
 class Representations {
- public:
+public:
   typedef std::tuple<Reptypes...> Representation_type;
 
   // Size of the tuple, known at compile time
@@ -47,11 +45,11 @@ class Representations {
   
   template <std::size_t I = 0>
   inline typename std::enable_if<(I == tuple_size), void>::type update(
-      LatticeSourceField& U) {}
+								       LatticeSourceField& U) {}
 
   template <std::size_t I = 0>
   inline typename std::enable_if<(I < tuple_size), void>::type update(
-      LatticeSourceField& U) {
+								      LatticeSourceField& U) {
     std::get<I>(rep).update_representation(U);
     update<I + 1>(U);
   }
@@ -77,7 +75,7 @@ struct AccessTypes : AccessTypes<A, TupleClass, N - 1, N - 1, S...> {};
 
 template <template <typename> class A, class TupleClass, size_t... S>
 struct AccessTypes<A, TupleClass, 0, S...> {
- public:
+public:
   typedef typename TupleClass::Representation_Fields Rfields;
 
   template <std::size_t N>
@@ -96,7 +94,7 @@ struct AccessTypes<A, TupleClass, 0, S...> {
               << "\n";
   }
 };
-}
-}
+
+NAMESPACE_END(Grid);
 
 #endif
