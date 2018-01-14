@@ -30,8 +30,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/qcd/action/fermion/ImprovedStaggeredFermion5D.h>
 #include <Grid/perfmon/PerfCount.h>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
   
 // S-direction is INNERMOST and takes no part in the parity.
 const std::vector<int> 
@@ -433,7 +432,7 @@ void ImprovedStaggeredFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in
 FermOpStaggeredTemplateInstantiate(ImprovedStaggeredFermion5D);
 FermOpStaggeredVec5dTemplateInstantiate(ImprovedStaggeredFermion5D);
   
-}}
+NAMESPACE_END(Grid);
 
 
 
