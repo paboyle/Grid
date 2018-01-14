@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     grid` physics library, www.github.com/paboyle/Grid 
 
@@ -22,18 +22,18 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 //#include <Grid/Grid.h>
 
 #ifndef GRID_QCD_GAUGE_FIX_H
 #define GRID_QCD_GAUGE_FIX_H
-namespace Grid {
-namespace QCD {
+
+NAMESPACE_BEGIN(Grid);
 
 template <class Gimpl> 
 class FourierAcceleratedGaugeFixer  : public Gimpl {
- public:
+public:
   INHERIT_GIMPL_TYPES(Gimpl);
 
   typedef typename Gimpl::GaugeLinkField GaugeMat;
@@ -60,7 +60,7 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
     Real trG;
 
     std::vector<GaugeMat> U(Nd,grid);
-                 GaugeMat dmuAmu(grid);
+    GaugeMat dmuAmu(grid);
 
     for(int i=0;i<maxiter;i++){
       for(int mu=0;mu<Nd;mu++) U[mu]= PeekIndex<LorentzIndex>(Umu,mu);
@@ -154,8 +154,8 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
     Fp =  psqMax*one/psq;
 
     /*
-    static int once;
-    if ( once == 0 ) { 
+      static int once;
+      if ( once == 0 ) { 
       std::cout << " Fp " << Fp <<std::endl;
       once ++;
       }*/
@@ -188,6 +188,6 @@ class FourierAcceleratedGaugeFixer  : public Gimpl {
   }  
 };
 
-}
-}
+NAMESPACE_END(Grid);
+
 #endif
