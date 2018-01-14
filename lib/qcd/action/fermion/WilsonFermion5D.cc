@@ -29,27 +29,26 @@ Author: Andrew Lawson <andrew.lawson1991@gmail.com>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #include <Grid/qcd/action/fermion/FermionCore.h>
 #include <Grid/qcd/action/fermion/WilsonFermion5D.h>
 #include <Grid/perfmon/PerfCount.h>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
   
 // S-direction is INNERMOST and takes no part in the parity.
 const std::vector<int> WilsonFermion5DStatic::directions   ({1,2,3,4, 1, 2, 3, 4});
 const std::vector<int> WilsonFermion5DStatic::displacements({1,1,1,1,-1,-1,-1,-1});
 
-  // 5d lattice for DWF.
+// 5d lattice for DWF.
 template<class Impl>
 WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
-               GridCartesian         &FiveDimGrid,
-               GridRedBlackCartesian &FiveDimRedBlackGrid,
-               GridCartesian         &FourDimGrid,
-               GridRedBlackCartesian &FourDimRedBlackGrid,
-               RealD _M5,const ImplParams &p) :
+				       GridCartesian         &FiveDimGrid,
+				       GridRedBlackCartesian &FiveDimRedBlackGrid,
+				       GridCartesian         &FourDimGrid,
+				       GridRedBlackCartesian &FourDimRedBlackGrid,
+				       RealD _M5,const ImplParams &p) :
   Kernels(p),
   _FiveDimGrid        (&FiveDimGrid),
   _FiveDimRedBlackGrid(&FiveDimRedBlackGrid),
@@ -127,10 +126,10 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
 
   vol4=FourDimRedBlackGrid.oSites();
   StencilEven.BuildSurfaceList(LLs,vol4);
-   StencilOdd.BuildSurfaceList(LLs,vol4);
+  StencilOdd.BuildSurfaceList(LLs,vol4);
 
-   //  std::cout << GridLogMessage << " SurfaceLists "<< Stencil.surface_list.size()
-   //                       <<" " << StencilEven.surface_list.size()<<std::endl;
+  //  std::cout << GridLogMessage << " SurfaceLists "<< Stencil.surface_list.size()
+  //                       <<" " << StencilEven.surface_list.size()<<std::endl;
 
 }
      
@@ -165,7 +164,7 @@ void WilsonFermion5D<Impl>::Report(void)
     std::cout << GridLogMessage << "Average mflops/s per call per rank (full): " << Fullmflops/NP << std::endl;
     std::cout << GridLogMessage << "Average mflops/s per call per node (full): " << Fullmflops/NN << std::endl;
 
-   }
+  }
 
   if ( DerivCalls > 0 ) {
     std::cout << GridLogMessage << "#### Deriv calls report "<< std::endl;
@@ -256,11 +255,11 @@ void WilsonFermion5D<Impl>::DhopDir(const FermionField &in, FermionField &out,in
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
-            DoubledGaugeField & U,
-            GaugeField &mat,
-            const FermionField &A,
-            const FermionField &B,
-            int dag)
+					  DoubledGaugeField & U,
+					  GaugeField &mat,
+					  const FermionField &A,
+					  const FermionField &B,
+					  int dag)
 {
   DerivCalls++;
   assert((dag==DaggerNo) ||(dag==DaggerYes));
@@ -444,7 +443,7 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
 	  Kernels::DhopSite(st,lo,U,st.CommBuf(),sF,sU,LLs,1,in,out,1,0);
 	}
       }
-	ptime = usecond() - start;
+      ptime = usecond() - start;
     }
     {
       double start = usecond();
@@ -487,8 +486,8 @@ void WilsonFermion5D<Impl>::DhopInternalOverlappedComms(StencilImpl & st, Lebesg
 
 template<class Impl>
 void WilsonFermion5D<Impl>::DhopInternalSerialComms(StencilImpl & st, LebesgueOrder &lo,
-					 DoubledGaugeField & U,
-					 const FermionField &in, FermionField &out,int dag)
+						    DoubledGaugeField & U,
+						    const FermionField &in, FermionField &out,int dag)
 {
   //  assert((dag==DaggerNo) ||(dag==DaggerYes));
   Compressor compressor(dag);
@@ -645,61 +644,61 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const Fe
 template<class Impl>
 void WilsonFermion5D<Impl>::MomentumSpacePropagatorHw(FermionField &out,const FermionField &in,RealD mass) 
 {
-    Gamma::Algebra Gmu [] = {
-      Gamma::Algebra::GammaX,
-      Gamma::Algebra::GammaY,
-      Gamma::Algebra::GammaZ,
-      Gamma::Algebra::GammaT
-    };
+  Gamma::Algebra Gmu [] = {
+    Gamma::Algebra::GammaX,
+    Gamma::Algebra::GammaY,
+    Gamma::Algebra::GammaZ,
+    Gamma::Algebra::GammaT
+  };
 
-    GridBase *_grid = _FourDimGrid;
-    conformable(_grid,out._grid);
+  GridBase *_grid = _FourDimGrid;
+  conformable(_grid,out._grid);
 
-    typedef typename FermionField::vector_type vector_type;
-    typedef typename FermionField::scalar_type ScalComplex;
+  typedef typename FermionField::vector_type vector_type;
+  typedef typename FermionField::scalar_type ScalComplex;
 
-    typedef Lattice<iSinglet<vector_type> > LatComplex;
+  typedef Lattice<iSinglet<vector_type> > LatComplex;
 
 
-    std::vector<int> latt_size   = _grid->_fdimensions;
+  std::vector<int> latt_size   = _grid->_fdimensions;
 
-    LatComplex    sk(_grid);  sk = zero;
-    LatComplex    sk2(_grid); sk2= zero;
+  LatComplex    sk(_grid);  sk = zero;
+  LatComplex    sk2(_grid); sk2= zero;
 
-    LatComplex    w_k(_grid); w_k= zero;
-    LatComplex    b_k(_grid); b_k= zero;
+  LatComplex    w_k(_grid); w_k= zero;
+  LatComplex    b_k(_grid); b_k= zero;
 
-    LatComplex     one  (_grid); one = ScalComplex(1.0,0.0);
+  LatComplex     one  (_grid); one = ScalComplex(1.0,0.0);
 
-    FermionField   num  (_grid); num  = zero;
-    LatComplex denom(_grid); denom= zero;
-    LatComplex kmu(_grid); 
-    ScalComplex ci(0.0,1.0);
+  FermionField   num  (_grid); num  = zero;
+  LatComplex denom(_grid); denom= zero;
+  LatComplex kmu(_grid); 
+  ScalComplex ci(0.0,1.0);
 
-    for(int mu=0;mu<Nd;mu++) {
+  for(int mu=0;mu<Nd;mu++) {
 
-      LatticeCoordinate(kmu,mu);
+    LatticeCoordinate(kmu,mu);
 
-      RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
+    RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
 
-      kmu = TwoPiL * kmu;
+    kmu = TwoPiL * kmu;
 
-      sk2 = sk2 + 2.0*sin(kmu*0.5)*sin(kmu*0.5);
-      sk  = sk  + sin(kmu)*sin(kmu); 
+    sk2 = sk2 + 2.0*sin(kmu*0.5)*sin(kmu*0.5);
+    sk  = sk  + sin(kmu)*sin(kmu); 
 
-      num = num - sin(kmu)*ci*(Gamma(Gmu[mu])*in);
+    num = num - sin(kmu)*ci*(Gamma(Gmu[mu])*in);
 
-    }
-    num = num + mass * in ;
+  }
+  num = num + mass * in ;
 
-    b_k = sk2 - M5;
+  b_k = sk2 - M5;
      
-    w_k = sqrt(sk + b_k*b_k);
+  w_k = sqrt(sk + b_k*b_k);
 
-    denom= ( w_k + b_k + mass*mass) ;
+  denom= ( w_k + b_k + mass*mass) ;
 
-    denom= one/denom;
-    out = num*denom;
+  denom= one/denom;
+  out = num*denom;
 
 }
 
@@ -710,18 +709,18 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHw(FermionField &out,const Fe
  ******************************************************************************/
 
 // Helper macro to reverse Simd vector. Fixme: slow, generic implementation.
-#define REVERSE_LS(qSite, qSiteRev, Nsimd) \
-{ \
+#define REVERSE_LS(qSite, qSiteRev, Nsimd)				\
+  {									\
     std::vector<typename SitePropagator::scalar_object> qSiteVec(Nsimd); \
-    extract(qSite, qSiteVec); \
-    for (int i = 0; i < Nsimd / 2; ++i) \
-    { \
-        typename SitePropagator::scalar_object tmp = qSiteVec[i]; \
-        qSiteVec[i] = qSiteVec[Nsimd - i - 1]; \
-        qSiteVec[Nsimd - i - 1] = tmp; \
-    } \
-    merge(qSiteRev, qSiteVec); \
-}
+    extract(qSite, qSiteVec);						\
+    for (int i = 0; i < Nsimd / 2; ++i)					\
+      {									\
+        typename SitePropagator::scalar_object tmp = qSiteVec[i];	\
+        qSiteVec[i] = qSiteVec[Nsimd - i - 1];				\
+        qSiteVec[Nsimd - i - 1] = tmp;					\
+      }									\
+    merge(qSiteRev, qSiteVec);						\
+  }
 
 template <class Impl>
 void WilsonFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
@@ -730,50 +729,50 @@ void WilsonFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
                                                      Current curr_type,
                                                      unsigned int mu)
 {
-    conformable(q_in_1._grid, FermionGrid());
-    conformable(q_in_1._grid, q_in_2._grid);
-    conformable(_FourDimGrid, q_out._grid);
-    PropagatorField tmp1(FermionGrid()), tmp2(FermionGrid());
-    unsigned int LLs = q_in_1._grid->_rdimensions[0];
-    q_out = zero;
+  conformable(q_in_1._grid, FermionGrid());
+  conformable(q_in_1._grid, q_in_2._grid);
+  conformable(_FourDimGrid, q_out._grid);
+  PropagatorField tmp1(FermionGrid()), tmp2(FermionGrid());
+  unsigned int LLs = q_in_1._grid->_rdimensions[0];
+  q_out = zero;
 
-    // Forward, need q1(x + mu, s), q2(x, Ls - 1 - s). Backward, need q1(x, s), 
-    // q2(x + mu, Ls - 1 - s). 5D lattice so shift 4D coordinate mu by one.
-    tmp1 = Cshift(q_in_1, mu + 1, 1);
-    tmp2 = Cshift(q_in_2, mu + 1, 1);
-    parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
+  // Forward, need q1(x + mu, s), q2(x, Ls - 1 - s). Backward, need q1(x, s), 
+  // q2(x + mu, Ls - 1 - s). 5D lattice so shift 4D coordinate mu by one.
+  tmp1 = Cshift(q_in_1, mu + 1, 1);
+  tmp2 = Cshift(q_in_2, mu + 1, 1);
+  parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
     {
-        unsigned int sF1 = sU * LLs;
-        unsigned int sF2 = (sU + 1) * LLs - 1;
+      unsigned int sF1 = sU * LLs;
+      unsigned int sF2 = (sU + 1) * LLs - 1;
 
-        for (unsigned int s = 0; s < LLs; ++s)
+      for (unsigned int s = 0; s < LLs; ++s)
         {
-            bool axial_sign = ((curr_type == Current::Axial) && \
-                               (s < (LLs / 2)));
-            SitePropagator qSite2, qmuSite2;
+	  bool axial_sign = ((curr_type == Current::Axial) && \
+			     (s < (LLs / 2)));
+	  SitePropagator qSite2, qmuSite2;
 
-            // If vectorised in 5th dimension, reverse q2 vector to match up
-            // sites correctly.
-            if (Impl::LsVectorised)
+	  // If vectorised in 5th dimension, reverse q2 vector to match up
+	  // sites correctly.
+	  if (Impl::LsVectorised)
             {
-                REVERSE_LS(q_in_2._odata[sF2], qSite2, Ls / LLs);
-                REVERSE_LS(tmp2._odata[sF2], qmuSite2, Ls / LLs);
+	      REVERSE_LS(q_in_2._odata[sF2], qSite2, Ls / LLs);
+	      REVERSE_LS(tmp2._odata[sF2], qmuSite2, Ls / LLs);
             }
-            else
+	  else
             {
-                qSite2   = q_in_2._odata[sF2];
-                qmuSite2 = tmp2._odata[sF2];
+	      qSite2   = q_in_2._odata[sF2];
+	      qmuSite2 = tmp2._odata[sF2];
             }
-            Kernels::ContractConservedCurrentSiteFwd(tmp1._odata[sF1], 
-                                                     qSite2, 
-                                                     q_out._odata[sU],
-                                                     Umu, sU, mu, axial_sign);
-            Kernels::ContractConservedCurrentSiteBwd(q_in_1._odata[sF1],
-                                                     qmuSite2,
-                                                     q_out._odata[sU],
-                                                     Umu, sU, mu, axial_sign);
-            sF1++;
-            sF2--;
+	  Kernels::ContractConservedCurrentSiteFwd(tmp1._odata[sF1], 
+						   qSite2, 
+						   q_out._odata[sU],
+						   Umu, sU, mu, axial_sign);
+	  Kernels::ContractConservedCurrentSiteBwd(q_in_1._odata[sF1],
+						   qmuSite2,
+						   q_out._odata[sU],
+						   Umu, sU, mu, axial_sign);
+	  sF1++;
+	  sF2--;
         }
     }
 }
@@ -788,78 +787,78 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
                                                 unsigned int tmin, 
                                                 unsigned int tmax)
 {
-    conformable(q_in._grid, FermionGrid());
-    conformable(q_in._grid, q_out._grid);
-    Lattice<iSinglet<Simd>> ph(FermionGrid()), coor(FermionGrid());
-    PropagatorField tmpFwd(FermionGrid()), tmpBwd(FermionGrid()),
-                    tmp(FermionGrid());
-    Complex i(0.0, 1.0);
-    unsigned int tshift = (mu == Tp) ? 1 : 0;
-    unsigned int LLs = q_in._grid->_rdimensions[0];
-    unsigned int LLt    = GridDefaultLatt()[Tp];
+  conformable(q_in._grid, FermionGrid());
+  conformable(q_in._grid, q_out._grid);
+  Lattice<iSinglet<Simd>> ph(FermionGrid()), coor(FermionGrid());
+  PropagatorField tmpFwd(FermionGrid()), tmpBwd(FermionGrid()),
+    tmp(FermionGrid());
+  Complex i(0.0, 1.0);
+  unsigned int tshift = (mu == Tp) ? 1 : 0;
+  unsigned int LLs = q_in._grid->_rdimensions[0];
+  unsigned int LLt    = GridDefaultLatt()[Tp];
 
-    // Momentum projection.
-    ph = zero;
-    for(unsigned int nu = 0; nu < Nd - 1; nu++)
+  // Momentum projection.
+  ph = zero;
+  for(unsigned int nu = 0; nu < Nd - 1; nu++)
     {
-        // Shift coordinate lattice index by 1 to account for 5th dimension.
-        LatticeCoordinate(coor, nu + 1);
-        ph = ph + mom[nu]*coor*((1./(_FourDimGrid->_fdimensions[nu])));
+      // Shift coordinate lattice index by 1 to account for 5th dimension.
+      LatticeCoordinate(coor, nu + 1);
+      ph = ph + mom[nu]*coor*((1./(_FourDimGrid->_fdimensions[nu])));
     }
-    ph = exp((Real)(2*M_PI)*i*ph);
+  ph = exp((Real)(2*M_PI)*i*ph);
 
-    q_out = zero;
-    LatticeInteger coords(_FourDimGrid);
-    LatticeCoordinate(coords, Tp);
+  q_out = zero;
+  LatticeInteger coords(_FourDimGrid);
+  LatticeCoordinate(coords, Tp);
 
-    // Need q(x + mu, s) and q(x - mu, s). 5D lattice so shift 4D coordinate mu
-    // by one.
-    tmp = Cshift(q_in, mu + 1, 1);
-    tmpFwd = tmp*ph;
-    tmp = ph*q_in;
-    tmpBwd = Cshift(tmp, mu + 1, -1);
+  // Need q(x + mu, s) and q(x - mu, s). 5D lattice so shift 4D coordinate mu
+  // by one.
+  tmp = Cshift(q_in, mu + 1, 1);
+  tmpFwd = tmp*ph;
+  tmp = ph*q_in;
+  tmpBwd = Cshift(tmp, mu + 1, -1);
 
-    parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
+  parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
     {
-        // Compute the sequential conserved current insertion only if our simd
-        // object contains a timeslice we need.
-        vInteger t_mask   = ((coords._odata[sU] >= tmin) &&
-                             (coords._odata[sU] <= tmax));
-        Integer timeSlices = Reduce(t_mask);
+      // Compute the sequential conserved current insertion only if our simd
+      // object contains a timeslice we need.
+      vInteger t_mask   = ((coords._odata[sU] >= tmin) &&
+			   (coords._odata[sU] <= tmax));
+      Integer timeSlices = Reduce(t_mask);
 
-        if (timeSlices > 0)
+      if (timeSlices > 0)
         {
-            unsigned int sF = sU * LLs;
-            for (unsigned int s = 0; s < LLs; ++s)
+	  unsigned int sF = sU * LLs;
+	  for (unsigned int s = 0; s < LLs; ++s)
             {
-                bool axial_sign = ((curr_type == Current::Axial) && (s < (LLs / 2)));
-                Kernels::SeqConservedCurrentSiteFwd(tmpFwd._odata[sF], 
-                                                    q_out._odata[sF], Umu, sU,
-                                                    mu, t_mask, axial_sign);
-                ++sF;
+	      bool axial_sign = ((curr_type == Current::Axial) && (s < (LLs / 2)));
+	      Kernels::SeqConservedCurrentSiteFwd(tmpFwd._odata[sF], 
+						  q_out._odata[sF], Umu, sU,
+						  mu, t_mask, axial_sign);
+	      ++sF;
             }
         }
 
-        // Repeat for backward direction.
-        t_mask     = ((coords._odata[sU] >= (tmin + tshift)) && 
-                      (coords._odata[sU] <= (tmax + tshift)));
+      // Repeat for backward direction.
+      t_mask     = ((coords._odata[sU] >= (tmin + tshift)) && 
+		    (coords._odata[sU] <= (tmax + tshift)));
 
-	//if tmax = LLt-1 (last timeslice) include timeslice 0 if the time is shifted (mu=3)	
-	unsigned int t0 = 0;
-	if((tmax==LLt-1) && (tshift==1)) t_mask = (t_mask || (coords._odata[sU] == t0 ));
+      //if tmax = LLt-1 (last timeslice) include timeslice 0 if the time is shifted (mu=3)	
+      unsigned int t0 = 0;
+      if((tmax==LLt-1) && (tshift==1)) t_mask = (t_mask || (coords._odata[sU] == t0 ));
 
-        timeSlices = Reduce(t_mask);
+      timeSlices = Reduce(t_mask);
 
-        if (timeSlices > 0)
+      if (timeSlices > 0)
         {
-            unsigned int sF = sU * LLs;
-            for (unsigned int s = 0; s < LLs; ++s)
+	  unsigned int sF = sU * LLs;
+	  for (unsigned int s = 0; s < LLs; ++s)
             {
-                bool axial_sign = ((curr_type == Current::Axial) && (s < (LLs / 2)));
-                Kernels::SeqConservedCurrentSiteBwd(tmpBwd._odata[sF], 
-                                                    q_out._odata[sF], Umu, sU,
-                                                    mu, t_mask, axial_sign);
-                ++sF;
+	      bool axial_sign = ((curr_type == Current::Axial) && (s < (LLs / 2)));
+	      Kernels::SeqConservedCurrentSiteBwd(tmpBwd._odata[sF], 
+						  q_out._odata[sF], Umu, sU,
+						  mu, t_mask, axial_sign);
+	      ++sF;
             }
         }
     }
@@ -868,7 +867,7 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 FermOpTemplateInstantiate(WilsonFermion5D);
 GparityFermOpTemplateInstantiate(WilsonFermion5D);
   
-}}
+NAMESPACE_END(Grid);
 
 
 
