@@ -25,13 +25,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
-//--------------------------------------------------------------------
+			   /*  END LEGAL */
+			   //--------------------------------------------------------------------
 #ifndef METRIC_H
 #define METRIC_H
 
-namespace Grid{
-namespace QCD{
+NAMESPACE_BEGIN(Grid);
 
 template <typename Field> 
 class Metric{
@@ -168,20 +167,20 @@ public:
   void AuxiliaryFieldsDerivative(MomentaField& der){
     der = zero;
     if (1){
-    // Auxiliary fields
-    MomentaField der_temp(der._grid);
-    MomentaField X(der._grid);
-    X=zero;
-    //M.M(AuxMom, X); // X = M Aux
-    // Two derivative terms
-    // the Mderiv need separation of left and right terms
-    M.MDeriv(AuxMom, der); 
+      // Auxiliary fields
+      MomentaField der_temp(der._grid);
+      MomentaField X(der._grid);
+      X=zero;
+      //M.M(AuxMom, X); // X = M Aux
+      // Two derivative terms
+      // the Mderiv need separation of left and right terms
+      M.MDeriv(AuxMom, der); 
 
 
-    // this one should not be necessary (identical to the previous one)
-    //M.MDeriv(X, AuxMom, der_temp); der += der_temp;
+      // this one should not be necessary (identical to the previous one)
+      //M.MDeriv(X, AuxMom, der_temp); der += der_temp;
 
-    der = -1.0*Implementation::projectForce(der);
+      der = -1.0*Implementation::projectForce(der);
     }
   }
 
@@ -212,15 +211,6 @@ public:
 
 };
 
-
-
-
-
-
-
-
-}
-}
-
+NAMESPACE_END(Grid);
 
 #endif //METRIC_H
