@@ -1,23 +1,21 @@
 /*
  *	Policy classes for the HMC
  *	Author: Guido Cossu
-*/	
+ */	
 
 #ifndef FUNDAMENTAL_H
 #define FUNDAMENTAL_H
 
-
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 /*
-* This is an helper class for the HMC
-* Empty since HMC updates already the fundamental representation 
-*/
+ * This is an helper class for the HMC
+ * Empty since HMC updates already the fundamental representation 
+ */
 
 template <int ncolour>
 class FundamentalRep {
- public:
+public:
   static const int Dimension = ncolour;
 
   // typdef to be used by the Representations class in HMC to get the
@@ -34,25 +32,20 @@ class FundamentalRep {
 
 };
 
-  template<class Field> 
-  class EmptyRep {
-  public:
-    typedef Field LatticeField;
+template<class Field> 
+class EmptyRep {
+public:
+  typedef Field LatticeField;
 
-    explicit EmptyRep(GridBase* grid) {} //do nothing
-    void update_representation(const LatticeField& Uin) {} // do nothing
-    LatticeField RtoFundamentalProject(const LatticeField& in, Real scale = 1.0) const{}// do nothing
-  };
+  explicit EmptyRep(GridBase* grid) {} //do nothing
+  void update_representation(const LatticeField& Uin) {} // do nothing
+  LatticeField RtoFundamentalProject(const LatticeField& in, Real scale = 1.0) const{}// do nothing
+};
     
 
   
 typedef	 FundamentalRep<Nc> FundamentalRepresentation;
 
-  
-}
-}
-
-
-
+NAMESPACE_END(Grid);  
 
 #endif
