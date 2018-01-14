@@ -25,11 +25,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #include <Grid/qcd/action/fermion/FermionCore.h>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 int StaggeredKernelsStatic::Opt= StaggeredKernelsStatic::OptGeneric;
 
@@ -185,8 +184,8 @@ void StaggeredKernels<Impl>::DhopSiteDepth(StencilImpl &st, LebesgueOrder &lo, D
 
 template <class Impl>
 void StaggeredKernels<Impl>::DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, DoubledGaugeField &UUU,
-						  SiteSpinor *buf, int LLs, int sU,
-						  const FermionField &in, FermionField &out) {
+					 SiteSpinor *buf, int LLs, int sU,
+					 const FermionField &in, FermionField &out) {
   SiteSpinor naik;
   SiteSpinor naive;
   int oneLink  =0;
@@ -194,7 +193,7 @@ void StaggeredKernels<Impl>::DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, Dou
   int dag=1;
   switch(Opt) {
 #ifdef AVX512
-  //FIXME; move the sign into the Asm routine
+    //FIXME; move the sign into the Asm routine
   case OptInlineAsm:
     DhopSiteAsm(st,lo,U,UUU,buf,LLs,sU,in,out);
     for(int s=0;s<LLs;s++) {
@@ -208,11 +207,11 @@ void StaggeredKernels<Impl>::DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, Dou
     break;
   case OptGeneric:
     for(int s=0;s<LLs;s++){
-       int sF=s+LLs*sU;
-       DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
-       DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
-       out._odata[sF] =-naive-naik; 
-     }
+      int sF=s+LLs*sU;
+      DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
+      DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
+      out._odata[sF] =-naive-naik; 
+    }
     break;
   default:
     std::cout<<"Oops Opt = "<<Opt<<std::endl;
@@ -272,5 +271,5 @@ void StaggeredKernels<Impl>::DhopDir( StencilImpl &st, DoubledGaugeField &U,  Do
 FermOpStaggeredTemplateInstantiate(StaggeredKernels);
 FermOpStaggeredVec5dTemplateInstantiate(StaggeredKernels);
 
-}}
+NAMESPACE_END(Grid);
 
