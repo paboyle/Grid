@@ -6,12 +6,10 @@
 #ifndef GAUGE_CONFIG_
 #define GAUGE_CONFIG_
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
-namespace QCD {
-
-  //trivial class for no smearing
-  template< class Impl >
+//trivial class for no smearing
+template< class Impl >
 class NoSmearing {
 public:
   INHERIT_FIELD_TYPES(Impl);
@@ -45,10 +43,10 @@ public:
 */
 template <class Gimpl>
 class SmearedConfiguration {
- public:
+public:
   INHERIT_GIMPL_TYPES(Gimpl);
 
- private:
+private:
   const unsigned int smearingLevels;
   Smear_Stout<Gimpl> StoutSmearing;
   std::vector<GaugeField> SmearedSet;
@@ -130,7 +128,7 @@ class SmearedConfiguration {
     LatticeComplex r01(grid), r11(grid), r21(grid), r02(grid), r12(grid);
     LatticeComplex r22(grid), tr1(grid), tr2(grid);
     LatticeComplex b10(grid), b11(grid), b12(grid), b20(grid), b21(grid),
-        b22(grid);
+      b22(grid);
     LatticeComplex LatticeUnitComplex(grid);
 
     LatticeUnitComplex = 1.0;
@@ -154,19 +152,19 @@ class SmearedConfiguration {
     e2iu = cos(2.0 * u) + timesI(sin(2.0 * u));
 
     r01 = (2.0 * u + timesI(2.0 * (u2 - w2))) * e2iu +
-          emiu * ((16.0 * u * cosw + 2.0 * u * (3.0 * u2 + w2) * xi0) +
-                  timesI(-8.0 * u2 * cosw + 2.0 * (9.0 * u2 + w2) * xi0));
+      emiu * ((16.0 * u * cosw + 2.0 * u * (3.0 * u2 + w2) * xi0) +
+	      timesI(-8.0 * u2 * cosw + 2.0 * (9.0 * u2 + w2) * xi0));
 
     r11 = (2.0 * LatticeUnitComplex + timesI(4.0 * u)) * e2iu +
-          emiu * ((-2.0 * cosw + (3.0 * u2 - w2) * xi0) +
-                  timesI((2.0 * u * cosw + 6.0 * u * xi0)));
+      emiu * ((-2.0 * cosw + (3.0 * u2 - w2) * xi0) +
+	      timesI((2.0 * u * cosw + 6.0 * u * xi0)));
 
     r21 =
-        2.0 * timesI(e2iu) + emiu * (-3.0 * u * xi0 + timesI(cosw - 3.0 * xi0));
+      2.0 * timesI(e2iu) + emiu * (-3.0 * u * xi0 + timesI(cosw - 3.0 * xi0));
 
     r02 = -2.0 * e2iu +
-          emiu * (-8.0 * u2 * xi0 +
-                  timesI(2.0 * u * (cosw + xi0 + 3.0 * u2 * xi1)));
+      emiu * (-8.0 * u2 * xi0 +
+	      timesI(2.0 * u * (cosw + xi0 + 3.0 * u2 * xi1)));
 
     r12 = emiu * (2.0 * u * xi0 + timesI(-cosw - xi0 + 3.0 * u2 * xi1));
 
@@ -200,28 +198,28 @@ class SmearedConfiguration {
     GaugeLinkField USQ = USigmap * iQ;
 
     GaugeLinkField iGamma = tr1 * iQ - timesI(tr2) * iQ2 +
-                            timesI(f1) * USigmap + f2 * QUS + f2 * USQ;
+      timesI(f1) * USigmap + f2 * QUS + f2 * USQ;
 
     iLambda = Ta(iGamma);
   }
 
   //====================================================================
- public:
+public:
   GaugeField*
-      ThinLinks; /*!< @brief Pointer to the thin
-                                                         links configuration */
+  ThinLinks; /*!< @brief Pointer to the thin
+	       links configuration */
 
   /*! @brief Standard constructor */
   SmearedConfiguration(GridCartesian* UGrid, unsigned int Nsmear,
                        Smear_Stout<Gimpl>& Stout)
-      : smearingLevels(Nsmear), StoutSmearing(Stout), ThinLinks(NULL) {
+    : smearingLevels(Nsmear), StoutSmearing(Stout), ThinLinks(NULL) {
     for (unsigned int i = 0; i < smearingLevels; ++i)
       SmearedSet.push_back(*(new GaugeField(UGrid)));
   }
 
   /*! For just thin links */
   SmearedConfiguration()
-      : smearingLevels(0), StoutSmearing(), SmearedSet(), ThinLinks(NULL) {}
+    : smearingLevels(0), StoutSmearing(), SmearedSet(), ThinLinks(NULL) {}
 
 
   
@@ -237,7 +235,7 @@ class SmearedConfiguration {
       for (int mu = 0; mu < Nd; mu++) {
         // to get just SigmaTilde
         tmp_mu = adj(peekLorentz(SmearedSet[smearingLevels - 1], mu)) *
-                 peekLorentz(force, mu);
+	  peekLorentz(force, mu);
         pokeLorentz(force, tmp_mu, mu);
       }
 
@@ -261,7 +259,7 @@ class SmearedConfiguration {
     if (smeared) {
       if (smearingLevels) {
         RealD impl_plaq =
-            WilsonLoops<Gimpl>::avgPlaquette(SmearedSet[smearingLevels - 1]);
+	  WilsonLoops<Gimpl>::avgPlaquette(SmearedSet[smearingLevels - 1]);
         std::cout << GridLogDebug << "getting Usmr Plaq: " << impl_plaq
                   << std::endl;
         return get_SmearedU();
@@ -280,7 +278,7 @@ class SmearedConfiguration {
     }
   }
 };
-}
-}
+
+NAMESPACE_END(Grid);
 
 #endif
