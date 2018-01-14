@@ -25,7 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef NERSC_CHECKPOINTER
 #define NERSC_CHECKPOINTER
 
@@ -33,16 +33,15 @@ directory
 #include <sstream>
 #include <string>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 // Only for Gauge fields
 template <class Gimpl>
 class NerscHmcCheckpointer : public BaseHmcCheckpointer<Gimpl> {
- private:
+private:
   CheckpointerParameters Params;
 
- public:
+public:
   INHERIT_GIMPL_TYPES(Gimpl);  // only for gauge configurations
 
   NerscHmcCheckpointer(const CheckpointerParameters &Params_) { initialize(Params_); }
@@ -75,6 +74,6 @@ class NerscHmcCheckpointer : public BaseHmcCheckpointer<Gimpl> {
     NerscIO::readConfiguration(U, header, config);
   };
 };
-}
-}
+
+NAMESPACE_END(Grid);
 #endif
