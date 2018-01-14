@@ -26,22 +26,21 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef QCD_PSEUDOFERMION_TWO_FLAVOUR_H
 #define QCD_PSEUDOFERMION_TWO_FLAVOUR_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 ////////////////////////////////////////////////////////////////////////
 // Two flavour pseudofermion action for any dop
 ////////////////////////////////////////////////////////////////////////
 template <class Impl>
 class TwoFlavourPseudoFermionAction : public Action<typename Impl::GaugeField> {
- public:
+public:
   INHERIT_IMPL_TYPES(Impl);
 
- private:
+private:
   FermionOperator<Impl> &FermOp;  // the basic operator
 
   OperatorFunction<FermionField> &DerivativeSolver;
@@ -50,17 +49,17 @@ class TwoFlavourPseudoFermionAction : public Action<typename Impl::GaugeField> {
 
   FermionField Phi;  // the pseudo fermion field for this trajectory
 
- public:
+public:
   /////////////////////////////////////////////////
   // Pass in required objects.
   /////////////////////////////////////////////////
   TwoFlavourPseudoFermionAction(FermionOperator<Impl> &Op,
                                 OperatorFunction<FermionField> &DS,
                                 OperatorFunction<FermionField> &AS)
-      : FermOp(Op),
-        DerivativeSolver(DS),
-        ActionSolver(AS),
-        Phi(Op.FermionGrid()){};
+    : FermOp(Op),
+      DerivativeSolver(DS),
+      ActionSolver(AS),
+      Phi(Op.FermionGrid()){};
 
 
   virtual std::string action_name(){return "TwoFlavourPseudoFermionAction";}
@@ -154,7 +153,7 @@ class TwoFlavourPseudoFermionAction : public Action<typename Impl::GaugeField> {
     // not taking here the traceless antihermitian component
   };
 };
-}
-}
+
+NAMESPACE_END(Grid);
 
 #endif
