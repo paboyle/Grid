@@ -29,19 +29,18 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef QCD_WILSON_GAUGE_ACTION_H
 #define QCD_WILSON_GAUGE_ACTION_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 ////////////////////////////////////////////////////////////////////////
 // Wilson Gauge Action .. should I template the Nc etc..
 ////////////////////////////////////////////////////////////////////////
 template <class Gimpl>
 class WilsonGaugeAction : public Action<typename Gimpl::GaugeField> {
- public:  
+public:  
   INHERIT_GIMPL_TYPES(Gimpl);
 
   /////////////////////////// constructors
@@ -91,9 +90,5 @@ private:
   RealD beta;  
 };
 
-
-
-}
-}
-
+NAMESPACE_END(Grid);
 #endif
