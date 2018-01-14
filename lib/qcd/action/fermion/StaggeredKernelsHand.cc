@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,71 +24,69 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #include <Grid.h>
 
 #define REGISTER
 
-#define LOAD_CHI(b)		\
-  const SiteSpinor & ref (b[offset]);	\
-    Chi_0=ref()()(0);\
-    Chi_1=ref()()(1);\
-    Chi_2=ref()()(2);
+#define LOAD_CHI(b)				\
+  const SiteSpinor & ref (b[offset]);		\
+  Chi_0=ref()()(0);				\
+  Chi_1=ref()()(1);				\
+  Chi_2=ref()()(2);
 
 
 // To splat or not to splat depends on the implementation
 #define MULT(A,UChi)				\
   auto & ref(U._odata[sU](A));			\
-   Impl::loadLinkElement(U_00,ref()(0,0));      \
-   Impl::loadLinkElement(U_10,ref()(1,0));      \
-   Impl::loadLinkElement(U_20,ref()(2,0));      \
-   Impl::loadLinkElement(U_01,ref()(0,1));      \
-   Impl::loadLinkElement(U_11,ref()(1,1));      \
-   Impl::loadLinkElement(U_21,ref()(2,1));      \
-   Impl::loadLinkElement(U_02,ref()(0,2));     \
-   Impl::loadLinkElement(U_12,ref()(1,2));     \
-   Impl::loadLinkElement(U_22,ref()(2,2));     \
-    UChi ## _0  = U_00*Chi_0;	       \
-    UChi ## _1  = U_10*Chi_0;\
-    UChi ## _2  = U_20*Chi_0;\
-    UChi ## _0 += U_01*Chi_1;\
-    UChi ## _1 += U_11*Chi_1;\
-    UChi ## _2 += U_21*Chi_1;\
-    UChi ## _0 += U_02*Chi_2;\
-    UChi ## _1 += U_12*Chi_2;\
-    UChi ## _2 += U_22*Chi_2;
+  Impl::loadLinkElement(U_00,ref()(0,0));	\
+  Impl::loadLinkElement(U_10,ref()(1,0));	\
+  Impl::loadLinkElement(U_20,ref()(2,0));	\
+  Impl::loadLinkElement(U_01,ref()(0,1));	\
+  Impl::loadLinkElement(U_11,ref()(1,1));	\
+  Impl::loadLinkElement(U_21,ref()(2,1));	\
+  Impl::loadLinkElement(U_02,ref()(0,2));	\
+  Impl::loadLinkElement(U_12,ref()(1,2));	\
+  Impl::loadLinkElement(U_22,ref()(2,2));	\
+  UChi ## _0  = U_00*Chi_0;			\
+  UChi ## _1  = U_10*Chi_0;			\
+  UChi ## _2  = U_20*Chi_0;			\
+  UChi ## _0 += U_01*Chi_1;			\
+  UChi ## _1 += U_11*Chi_1;			\
+  UChi ## _2 += U_21*Chi_1;			\
+  UChi ## _0 += U_02*Chi_2;			\
+  UChi ## _1 += U_12*Chi_2;			\
+  UChi ## _2 += U_22*Chi_2;
 
-#define MULT_ADD(A,UChi)				\
+#define MULT_ADD(A,UChi)			\
   auto & ref(U._odata[sU](A));			\
-   Impl::loadLinkElement(U_00,ref()(0,0));      \
-   Impl::loadLinkElement(U_10,ref()(1,0));      \
-   Impl::loadLinkElement(U_20,ref()(2,0));      \
-   Impl::loadLinkElement(U_01,ref()(0,1));      \
-   Impl::loadLinkElement(U_11,ref()(1,1));      \
-   Impl::loadLinkElement(U_21,ref()(2,1));      \
-   Impl::loadLinkElement(U_02,ref()(0,2));     \
-   Impl::loadLinkElement(U_12,ref()(1,2));     \
-   Impl::loadLinkElement(U_22,ref()(2,2));     \
-    UChi ## _0 += U_00*Chi_0;	       \
-    UChi ## _1 += U_10*Chi_0;\
-    UChi ## _2 += U_20*Chi_0;\
-    UChi ## _0 += U_01*Chi_1;\
-    UChi ## _1 += U_11*Chi_1;\
-    UChi ## _2 += U_21*Chi_1;\
-    UChi ## _0 += U_02*Chi_2;\
-    UChi ## _1 += U_12*Chi_2;\
-    UChi ## _2 += U_22*Chi_2;
+  Impl::loadLinkElement(U_00,ref()(0,0));	\
+  Impl::loadLinkElement(U_10,ref()(1,0));	\
+  Impl::loadLinkElement(U_20,ref()(2,0));	\
+  Impl::loadLinkElement(U_01,ref()(0,1));	\
+  Impl::loadLinkElement(U_11,ref()(1,1));	\
+  Impl::loadLinkElement(U_21,ref()(2,1));	\
+  Impl::loadLinkElement(U_02,ref()(0,2));	\
+  Impl::loadLinkElement(U_12,ref()(1,2));	\
+  Impl::loadLinkElement(U_22,ref()(2,2));	\
+  UChi ## _0 += U_00*Chi_0;			\
+  UChi ## _1 += U_10*Chi_0;			\
+  UChi ## _2 += U_20*Chi_0;			\
+  UChi ## _0 += U_01*Chi_1;			\
+  UChi ## _1 += U_11*Chi_1;			\
+  UChi ## _2 += U_21*Chi_1;			\
+  UChi ## _0 += U_02*Chi_2;			\
+  UChi ## _1 += U_12*Chi_2;			\
+  UChi ## _2 += U_22*Chi_2;
 
 
 #define PERMUTE_DIR(dir)			\
-      permute##dir(Chi_0,Chi_0);\
-      permute##dir(Chi_1,Chi_1);\
-      permute##dir(Chi_2,Chi_2);
+  permute##dir(Chi_0,Chi_0);			\
+  permute##dir(Chi_1,Chi_1);			\
+  permute##dir(Chi_2,Chi_2);
 
-namespace Grid {
-namespace QCD {
-
+NAMESPACE_BEGIN(Grid);
 
 template <class Impl>
 void StaggeredKernels<Impl>::DhopSiteHand(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,DoubledGaugeField &UUU,
@@ -319,4 +317,4 @@ DHOP_SITE_DEPTH_HAND_INSTANTIATE(StaggeredImplF);
 DHOP_SITE_DEPTH_HAND_INSTANTIATE(StaggeredVec5dImplD);
 DHOP_SITE_DEPTH_HAND_INSTANTIATE(StaggeredVec5dImplF);
 
-}}
+NAMESPACE_END(Grid);
