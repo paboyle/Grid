@@ -26,14 +26,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef ACTION_SET_H
 #define ACTION_SET_H
 
-namespace Grid {
-
-// Should drop this namespace here
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////
 // Indexing of tuple types
@@ -62,7 +59,7 @@ struct Index<T, std::tuple<U, Types...>> {
 
 template <class Field, class Repr = NoHirep >
 struct ActionLevel {
- public:
+public:
   unsigned int multiplier;
 
   // Fundamental repr actions separated because of the smearing
@@ -77,7 +74,7 @@ struct ActionLevel {
   std::vector<ActPtr>& actions;
 
   explicit ActionLevel(unsigned int mul = 1) : 
-  actions(std::get<0>(actions_hirep)), multiplier(mul) {
+    actions(std::get<0>(actions_hirep)), multiplier(mul) {
     // initialize the hirep vectors to zero.
     // apply(this->resize, actions_hirep, 0); //need a working resize
     assert(mul >= 1);
@@ -110,7 +107,6 @@ struct ActionLevel {
 template <class GaugeField, class R>
 using ActionSet = std::vector<ActionLevel<GaugeField, R> >;
 
-} // QCD
-} // Grid
+NAMESPACE_END(Grid);
 
 #endif  // ACTION_SET_H
