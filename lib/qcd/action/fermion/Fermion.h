@@ -23,8 +23,8 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef  GRID_QCD_FERMION_H
 #define  GRID_QCD_FERMION_H
 
@@ -85,8 +85,7 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 
 
 // Cayley 5d
-namespace Grid {
-  namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 typedef WilsonFermion<WilsonImplR> WilsonFermionR;
 typedef WilsonFermion<WilsonImplF> WilsonFermionF;
@@ -286,7 +285,7 @@ typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplF> ImprovedStaggeredFermion
 typedef ImprovedStaggeredFermion5D<StaggeredVec5dImplD> ImprovedStaggeredFermionVec5dD;
 
 
-  }}
+NAMESPACE_END(Grid);
 
 ////////////////////
 // Scalar QED actions
