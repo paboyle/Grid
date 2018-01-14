@@ -26,12 +26,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef QCD_PSEUDOFERMION_ONE_FLAVOUR_EVEN_ODD_RATIONAL_H
 #define QCD_PSEUDOFERMION_ONE_FLAVOUR_EVEN_ODD_RATIONAL_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 ///////////////////////////////////////
 // One flavour rational
@@ -45,8 +44,8 @@ namespace QCD {
 
 template <class Impl>
 class OneFlavourEvenOddRationalPseudoFermionAction
-    : public Action<typename Impl::GaugeField> {
- public:
+  : public Action<typename Impl::GaugeField> {
+public:
   INHERIT_IMPL_TYPES(Impl);
 
   typedef OneFlavourRationalParams Params;
@@ -57,7 +56,7 @@ class OneFlavourEvenOddRationalPseudoFermionAction
   MultiShiftFunction PowerQuarter;
   MultiShiftFunction PowerNegQuarter;
 
- private:
+private:
   FermionOperator<Impl> &FermOp;  // the basic operator
 
   // NOT using "Nroots"; IroIro is -- perhaps later, but this wasn't good for us
@@ -67,13 +66,13 @@ class OneFlavourEvenOddRationalPseudoFermionAction
   FermionField PhiEven;  // the pseudo fermion field for this trajectory
   FermionField PhiOdd;   // the pseudo fermion field for this trajectory
 
- public:
+public:
   OneFlavourEvenOddRationalPseudoFermionAction(FermionOperator<Impl> &Op,
                                                Params &p)
-      : FermOp(Op),
-        PhiEven(Op.FermionRedBlackGrid()),
-        PhiOdd(Op.FermionRedBlackGrid()),
-        param(p) {
+    : FermOp(Op),
+      PhiEven(Op.FermionRedBlackGrid()),
+      PhiOdd(Op.FermionRedBlackGrid()),
+      param(p) {
     AlgRemez remez(param.lo, param.hi, param.precision);
 
     // MdagM^(+- 1/2)
@@ -159,7 +158,7 @@ class OneFlavourEvenOddRationalPseudoFermionAction
 
     RealD action = norm2(Y);
     std::cout << GridLogMessage << "Pseudofermion action FIXME -- is -1/4 "
-                                   "solve or -1/2 solve faster??? "
+      "solve or -1/2 solve faster??? "
               << action << std::endl;
 
     return action;
@@ -222,7 +221,7 @@ class OneFlavourEvenOddRationalPseudoFermionAction
     // dSdU = Ta(dSdU);
   };
 };
-}
-}
+
+NAMESPACE_END(Grid);
 
 #endif
