@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,13 +23,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #include <Grid/GridCore.h>
 #include <Grid/GridQCDcore.h>
 
-namespace Grid { 
-  namespace QCD {
+NAMESPACE_BEGIN(Grid); 
 
 /////////////////////////////////////////////////////////////////
 // Public interface
@@ -58,7 +57,7 @@ GridCartesian         *SpaceTimeGrid::makeFiveDimGrid(int Ls,const GridCartesian
   for(int d=0;d<N4;d++){
     latt5.push_back(FourDimGrid->_fdimensions[d]);
     simd5.push_back(FourDimGrid->_simd_layout[d]);
-     mpi5.push_back(FourDimGrid->_processors[d]);
+    mpi5.push_back(FourDimGrid->_processors[d]);
   }
   return new GridCartesian(latt5,simd5,mpi5,*FourDimGrid); 
 }
@@ -70,7 +69,7 @@ GridRedBlackCartesian *SpaceTimeGrid::makeFiveDimRedBlackGrid(int Ls,const GridC
   int cbd=1;
   std::vector<int>   cb5(1,0);
   for(int d=0;d<N4;d++){
-      cb5.push_back(  1);
+    cb5.push_back(  1);
   }
   GridCartesian *tmp = makeFiveDimGrid(Ls,FourDimGrid);
   GridRedBlackCartesian *ret = new GridRedBlackCartesian(tmp,cb5,cbd); 
@@ -91,7 +90,7 @@ GridCartesian         *SpaceTimeGrid::makeFiveDimDWFGrid(int Ls,const GridCartes
   for(int d=0;d<N4;d++){
     latt5.push_back(FourDimGrid->_fdimensions[d]);
     simd5.push_back(1);
-     mpi5.push_back(FourDimGrid->_processors[d]);
+    mpi5.push_back(FourDimGrid->_processors[d]);
   }
   return new GridCartesian(latt5,simd5,mpi5,*FourDimGrid); 
 }
@@ -105,7 +104,7 @@ GridRedBlackCartesian *SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(int Ls,const Gr
   int cbd=1;
   std::vector<int>   cb5(1,0);
   for(int d=0;d<N4;d++){
-      cb5.push_back(1);
+    cb5.push_back(1);
   }
   GridCartesian *tmp         = makeFiveDimDWFGrid(Ls,FourDimGrid);
   GridRedBlackCartesian *ret = new GridRedBlackCartesian(tmp,cb5,cbd); 
@@ -113,5 +112,4 @@ GridRedBlackCartesian *SpaceTimeGrid::makeFiveDimDWFRedBlackGrid(int Ls,const Gr
   return ret;
 }
 
-
-}}
+NAMESPACE_END(Grid);
