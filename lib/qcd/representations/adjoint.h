@@ -1,23 +1,22 @@
 /*
  *  Policy classes for the HMC
  *  Author: Guido Cossu
-*/
+ */
 
 #ifndef ADJOINT_H
 #define ADJOINT_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 /*
-* This is an helper class for the HMC
-* Should contain only the data for the adjoint representation
-* and the facility to convert from the fundamental -> adjoint
-*/
+ * This is an helper class for the HMC
+ * Should contain only the data for the adjoint representation
+ * and the facility to convert from the fundamental -> adjoint
+ */
 
 template <int ncolour>
 class AdjointRep {
- public:
+public:
   // typdef to be used by the Representations class in HMC to get the
   // types for the higher representation fields
   typedef typename SU_Adjoint<ncolour>::LatticeAdjMatrix LatticeMatrix;
@@ -63,13 +62,13 @@ class AdjointRep {
       // Check matrix U_mu, must be real orthogonal
       // reality
       /*
-      LatticeMatrix Ucheck = U_mu - conjugate(U_mu);
-      std::cout << GridLogMessage << "Reality check: " << norm2(Ucheck) <<
-      std::endl;
+	LatticeMatrix Ucheck = U_mu - conjugate(U_mu);
+	std::cout << GridLogMessage << "Reality check: " << norm2(Ucheck) <<
+	std::endl;
 
-      Ucheck = U_mu * adj(U_mu) - uno;
-      std::cout << GridLogMessage << "orthogonality check: " << norm2(Ucheck) <<
-      std::endl;
+	Ucheck = U_mu * adj(U_mu) - uno;
+	std::cout << GridLogMessage << "orthogonality check: " << norm2(Ucheck) <<
+	std::endl;
       */
     }
   }
@@ -95,21 +94,21 @@ class AdjointRep {
     return out;
   }
 
- private:
+private:
   void projectOnAlgebra(typename SU<ncolour>::LatticeAlgebraVector &h_out,
                         const LatticeMatrix &in, Real scale = 1.0) const {
     SU_Adjoint<ncolour>::projectOnAlgebra(h_out, in, scale);
   }
 
   void FundamentalLieAlgebraMatrix(
-      typename SU<ncolour>::LatticeAlgebraVector &h,
-      typename SU<ncolour>::LatticeMatrix &out, Real scale = 1.0) const {
+				   typename SU<ncolour>::LatticeAlgebraVector &h,
+				   typename SU<ncolour>::LatticeMatrix &out, Real scale = 1.0) const {
     SU<ncolour>::FundamentalLieAlgebraMatrix(h, out, scale);
   }
 };
 
 typedef AdjointRep<Nc> AdjointRepresentation;
-}
-}
+
+NAMESPACE_END(Grid);
 
 #endif
