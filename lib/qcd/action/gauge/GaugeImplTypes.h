@@ -29,8 +29,7 @@ directory
 #ifndef GRID_GAUGE_IMPL_TYPES_H
 #define GRID_GAUGE_IMPL_TYPES_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 ////////////////////////////////////////////////////////////////////////
 // Implementation dependent gauge types
@@ -146,8 +145,6 @@ typedef GaugeImplTypes<vComplex, SU<Nc>::AdjointDimension> GimplAdjointTypesR;
 typedef GaugeImplTypes<vComplexF, SU<Nc>::AdjointDimension> GimplAdjointTypesF;
 typedef GaugeImplTypes<vComplexD, SU<Nc>::AdjointDimension> GimplAdjointTypesD;
 
-
-} // QCD
-} // Grid
+NAMESPACE_END(Grid);
 
 #endif // GRID_GAUGE_IMPL_TYPES_H
