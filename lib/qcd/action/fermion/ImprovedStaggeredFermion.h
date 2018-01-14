@@ -25,16 +25,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef GRID_QCD_IMPR_STAG_FERMION_H
 #define GRID_QCD_IMPR_STAG_FERMION_H
 
-namespace Grid {
-
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 class ImprovedStaggeredFermionStatic {
- public:
+public:
   static const std::vector<int> directions;
   static const std::vector<int> displacements;
   static const int npoint = 16;
@@ -42,7 +40,7 @@ class ImprovedStaggeredFermionStatic {
 
 template <class Impl>
 class ImprovedStaggeredFermion : public StaggeredKernels<Impl>, public ImprovedStaggeredFermionStatic {
- public:
+public:
   INHERIT_IMPL_TYPES(Impl);
   typedef StaggeredKernels<Impl> Kernels;
 
@@ -130,7 +128,7 @@ class ImprovedStaggeredFermion : public StaggeredKernels<Impl>, public ImprovedS
   ///////////////////////////////////////////////////////////////
 
   //    protected:
- public:
+public:
   // any other parameters of action ???
 
   RealD mass;
@@ -178,6 +176,6 @@ class ImprovedStaggeredFermion : public StaggeredKernels<Impl>, public ImprovedS
 typedef ImprovedStaggeredFermion<StaggeredImplF> ImprovedStaggeredFermionF;
 typedef ImprovedStaggeredFermion<StaggeredImplD> ImprovedStaggeredFermionD;
 
-}
-}
+NAMESPACE_END(Grid);
+
 #endif
