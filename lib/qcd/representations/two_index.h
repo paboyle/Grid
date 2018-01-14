@@ -1,13 +1,12 @@
 /*
  *  Policy classes for the HMC
  *  Authors: Guido Cossu, David Preti
-*/
+ */
 
 #ifndef SUN2INDEX_H_H
 #define SUN2INDEX_H_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 /*
  * This is an helper class for the HMC
@@ -23,7 +22,7 @@ namespace QCD {
 
 template <int ncolour, TwoIndexSymmetry S>
 class TwoIndexRep {
- public:
+public:
   // typdef to be used by the Representations class in HMC to get the
   // types for the higher representation fields
   typedef typename SU_TwoIndex<ncolour, S>::LatticeTwoIndexMatrix LatticeMatrix;
@@ -79,21 +78,22 @@ class TwoIndexRep {
     return out;
   }
 
- private:
+private:
   void projectOnAlgebra(typename SU<ncolour>::LatticeAlgebraVector &h_out,
                         const LatticeMatrix &in, Real scale = 1.0) const {
     SU_TwoIndex<ncolour, S>::projectOnAlgebra(h_out, in, scale);
   }
 
   void FundamentalLieAlgebraMatrix(
-      typename SU<ncolour>::LatticeAlgebraVector &h,
-      typename SU<ncolour>::LatticeMatrix &out, Real scale = 1.0) const {
+				   typename SU<ncolour>::LatticeAlgebraVector &h,
+				   typename SU<ncolour>::LatticeMatrix &out, Real scale = 1.0) const {
     SU<ncolour>::FundamentalLieAlgebraMatrix(h, out, scale);
   }
 };
 
 typedef TwoIndexRep<Nc, Symmetric> TwoIndexSymmetricRepresentation;
 typedef TwoIndexRep<Nc, AntiSymmetric> TwoIndexAntiSymmetricRepresentation;
-}
-}
+
+NAMESPACE_END(Grid);
+
 #endif
