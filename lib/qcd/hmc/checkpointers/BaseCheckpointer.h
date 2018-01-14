@@ -25,27 +25,26 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef BASE_CHECKPOINTER
 #define BASE_CHECKPOINTER
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 class CheckpointerParameters : Serializable {
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(CheckpointerParameters, 
-  	std::string, config_prefix, 
-  	std::string, rng_prefix, 
-  	int, saveInterval, 
-  	std::string, format, );
+				  std::string, config_prefix, 
+				  std::string, rng_prefix, 
+				  int, saveInterval, 
+				  std::string, format, );
 
   CheckpointerParameters(std::string cf = "cfg", std::string rn = "rng",
-   		      int savemodulo = 1, const std::string &f = "IEEE64BIG")
-      : config_prefix(cf),
-        rng_prefix(rn),
-        saveInterval(savemodulo),
-        format(f){};
+			 int savemodulo = 1, const std::string &f = "IEEE64BIG")
+    : config_prefix(cf),
+      rng_prefix(rn),
+      saveInterval(savemodulo),
+      format(f){};
 
 
   template <class ReaderClass >
@@ -60,7 +59,7 @@ class CheckpointerParameters : Serializable {
 // Base class for checkpointers
 template <class Impl>
 class BaseHmcCheckpointer : public HmcObservable<typename Impl::Field> {
- public:
+public:
   void build_filenames(int traj, CheckpointerParameters &Params,
                        std::string &conf_file, std::string &rng_file) {
     {
@@ -74,7 +73,7 @@ class BaseHmcCheckpointer : public HmcObservable<typename Impl::Field> {
       os << Params.config_prefix << "." << traj;
       conf_file = os.str();
     }
- 	} 
+  } 
 
   virtual void initialize(const CheckpointerParameters &Params) = 0;
 
@@ -84,6 +83,7 @@ class BaseHmcCheckpointer : public HmcObservable<typename Impl::Field> {
 
 };  // class BaseHmcCheckpointer
 ///////////////////////////////////////////////////////////////////////////////
-}
-}
+
+NAMESPACE_END(Grid);
+
 #endif
