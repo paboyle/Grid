@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,46 +24,44 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef OVERLAP_WILSON_CAYLEY_TANH_FERMION_H
 #define OVERLAP_WILSON_CAYLEY_TANH_FERMION_H
 
 #include <Grid/qcd/action/fermion/FermionCore.h>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
-  namespace QCD {
+template<class Impl>
+class OverlapWilsonCayleyTanhFermion : public MobiusFermion<Impl>
+{
+public:
+  INHERIT_IMPL_TYPES(Impl);
+public:
 
-    template<class Impl>
-    class OverlapWilsonCayleyTanhFermion : public MobiusFermion<Impl>
-    {
-    public:
-     INHERIT_IMPL_TYPES(Impl);
-    public:
+  void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m) { 
+    this->MomentumSpacePropagatorHw(out,in,_m);
+  };
 
-     void  MomentumSpacePropagator(FermionField &out,const FermionField &in,RealD _m) { 
-       this->MomentumSpacePropagatorHw(out,in,_m);
-     };
-
-     // Constructors
-    OverlapWilsonCayleyTanhFermion(GaugeField &_Umu,
-				   GridCartesian         &FiveDimGrid,
-				   GridRedBlackCartesian &FiveDimRedBlackGrid,
-				   GridCartesian         &FourDimGrid,
-				   GridRedBlackCartesian &FourDimRedBlackGrid,
-				   RealD _mass,RealD _M5,
-				   RealD scale,const ImplParams &p= ImplParams()) :
+  // Constructors
+  OverlapWilsonCayleyTanhFermion(GaugeField &_Umu,
+				 GridCartesian         &FiveDimGrid,
+				 GridRedBlackCartesian &FiveDimRedBlackGrid,
+				 GridCartesian         &FourDimGrid,
+				 GridRedBlackCartesian &FourDimRedBlackGrid,
+				 RealD _mass,RealD _M5,
+				 RealD scale,const ImplParams &p= ImplParams()) :
       
-      // b+c=scale, b-c = 0 <=> b =c = scale/2
-      MobiusFermion<Impl>(_Umu,
-			  FiveDimGrid,
-			  FiveDimRedBlackGrid,
-			  FourDimGrid,
-			  FourDimRedBlackGrid,_mass,_M5,0.5*scale,0.5*scale,p)
-	{
-	}
-    };
+    // b+c=scale, b-c = 0 <=> b =c = scale/2
+    MobiusFermion<Impl>(_Umu,
+			FiveDimGrid,
+			FiveDimRedBlackGrid,
+			FourDimGrid,
+			FourDimRedBlackGrid,_mass,_M5,0.5*scale,0.5*scale,p)
+  {
   }
-}
+};
+
+NAMESPACE_END(Grid);
 #endif
