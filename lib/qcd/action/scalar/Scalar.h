@@ -25,7 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef GRID_QCD_SCALAR_H
 #define GRID_QCD_SCALAR_H
 
@@ -33,18 +33,16 @@ directory
 #include <Grid/qcd/action/scalar/ScalarAction.h>
 #include <Grid/qcd/action/scalar/ScalarInteractionAction.h>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
-  typedef ScalarAction<ScalarImplR>                 ScalarActionR;
-  typedef ScalarAction<ScalarImplF>                 ScalarActionF;
-  typedef ScalarAction<ScalarImplD>                 ScalarActionD;
+typedef ScalarAction<ScalarImplR>                 ScalarActionR;
+typedef ScalarAction<ScalarImplF>                 ScalarActionF;
+typedef ScalarAction<ScalarImplD>                 ScalarActionD;
 
-  template <int Colours, int Dimensions> using ScalarAdjActionR = ScalarInteractionAction<ScalarNxNAdjImplR<Colours>, Dimensions>;
-  template <int Colours, int Dimensions> using ScalarAdjActionF = ScalarInteractionAction<ScalarNxNAdjImplF<Colours>, Dimensions>;
-  template <int Colours, int Dimensions> using ScalarAdjActionD = ScalarInteractionAction<ScalarNxNAdjImplD<Colours>, Dimensions>;
+template <int Colours, int Dimensions> using ScalarAdjActionR = ScalarInteractionAction<ScalarNxNAdjImplR<Colours>, Dimensions>;
+template <int Colours, int Dimensions> using ScalarAdjActionF = ScalarInteractionAction<ScalarNxNAdjImplF<Colours>, Dimensions>;
+template <int Colours, int Dimensions> using ScalarAdjActionD = ScalarInteractionAction<ScalarNxNAdjImplD<Colours>, Dimensions>;
   
-}
-}
+NAMESPACE_END(Grid);
 
 #endif  // GRID_QCD_SCALAR_H
