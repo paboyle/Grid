@@ -22,17 +22,16 @@
 //
 ////////////////////////////////////////////////////////////////////////
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 template <int ncolour>
 class SU_Adjoint : public SU<ncolour> {
- public:
+public:
   static const int Dimension = ncolour * ncolour - 1;
 
   template <typename vtype>
   using iSUnAdjointMatrix =
-      iScalar<iScalar<iMatrix<vtype, Dimension > > >;
+    iScalar<iScalar<iMatrix<vtype, Dimension > > >;
 
   // Actually the adjoint matrices are real...
   // Consider this overhead... FIXME
@@ -49,11 +48,11 @@ class SU_Adjoint : public SU<ncolour> {
   typedef Lattice<vAMatrixD> LatticeAdjMatrixD;
 
   typedef Lattice<iVector<iScalar<iMatrix<vComplex, Dimension> >, Nd> >
-      LatticeAdjField;
+  LatticeAdjField;
   typedef Lattice<iVector<iScalar<iMatrix<vComplexF, Dimension> >, Nd> >
-      LatticeAdjFieldF;
+  LatticeAdjFieldF;
   typedef Lattice<iVector<iScalar<iMatrix<vComplexD, Dimension> >, Nd> >
-      LatticeAdjFieldD;
+  LatticeAdjFieldD;
 
 
 
@@ -73,7 +72,7 @@ class SU_Adjoint : public SU<ncolour> {
       tmp = ta[a] * ta[Index] - ta[Index] * ta[a];
       for (int b = 0; b < (ncolour * ncolour - 1); b++) {
         typename SU<ncolour>::template iSUnMatrix<cplx> tmp1 =
-            2.0 * tmp * ta[b];  // 2.0 from the normalization
+	  2.0 * tmp * ta[b];  // 2.0 from the normalization
         Complex iTr = TensorRemove(timesI(trace(tmp1)));
         //iAdjTa()()(b, a) = iTr;
         iAdjTa()()(a, b) = iTr;
@@ -112,8 +111,8 @@ class SU_Adjoint : public SU<ncolour> {
   }
 
   static void AdjointLieAlgebraMatrix(
-      const typename SU<ncolour>::LatticeAlgebraVector &h,
-      LatticeAdjMatrix &out, Real scale = 1.0) {
+				      const typename SU<ncolour>::LatticeAlgebraVector &h,
+				      LatticeAdjMatrix &out, Real scale = 1.0) {
     conformable(h, out);
     GridBase *grid = out._grid;
     LatticeAdjMatrix la(grid);
@@ -150,11 +149,11 @@ class SU_Adjoint : public SU<ncolour> {
     static bool precalculated = false; 
     if (!precalculated){
       precalculated = true;
-        for (int a = 0; a < Dimension; a++) generator(a, iTa[a]);
+      for (int a = 0; a < Dimension; a++) generator(a, iTa[a]);
     }
 
     Real coefficient = -1.0 / (ncolour) * scale;  // 1/Nc for the normalization of
-                                                // the trace in the adj rep
+    // the trace in the adj rep
 
     for (int a = 0; a < Dimension; a++) {
       auto tmp = real(trace(iTa[a] * in)) * coefficient; 
@@ -176,7 +175,7 @@ typedef SU_Adjoint<4> SU4Adjoint;
 typedef SU_Adjoint<5> SU5Adjoint;
 
 typedef SU_Adjoint<Nc> AdjointMatrices;
-}
-}
+
+NAMESPACE_END(Grid);
 
 #endif
