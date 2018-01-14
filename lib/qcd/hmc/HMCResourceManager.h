@@ -25,28 +25,28 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
   See the full license in the file "LICENSE" in the top level distribution
   directory
-  *************************************************************************************/
-/*  END LEGAL */
+*************************************************************************************/
+			   /*  END LEGAL */
 #ifndef HMC_RESOURCE_MANAGER_H
 #define HMC_RESOURCE_MANAGER_H
 
 #include <unordered_map>
 
-// One function per Checkpointer, use a macro to simplify
-#define RegisterLoadCheckPointerFunction(NAME)                           \
-  void Load##NAME##Checkpointer(const CheckpointerParameters& Params_) { \
-    if (!have_CheckPointer) {                                            \
-      std::cout << GridLogDebug << "Loading Checkpointer " << #NAME      \
-                << std::endl;                                            \
-      CP = std::unique_ptr<CheckpointerBaseModule>(                      \
-        new NAME##CPModule<ImplementationPolicy>(Params_));              \
-      have_CheckPointer = true;                                          \
-    } else {                                                             \
-      std::cout << GridLogError << "Checkpointer already loaded "        \
-                << std::endl;                                            \
-      exit(1);                                                           \
-    }                                                                    \
-  }
+			   // One function per Checkpointer, use a macro to simplify
+#define RegisterLoadCheckPointerFunction(NAME)				\
+   void Load##NAME##Checkpointer(const CheckpointerParameters& Params_) { \
+     if (!have_CheckPointer) {						\
+       std::cout << GridLogDebug << "Loading Checkpointer " << #NAME	\
+		 << std::endl;						\
+       CP = std::unique_ptr<CheckpointerBaseModule>(			\
+						    new NAME##CPModule<ImplementationPolicy>(Params_));	\
+       have_CheckPointer = true;					\
+     } else {								\
+       std::cout << GridLogError << "Checkpointer already loaded "	\
+		 << std::endl;						\
+       exit(1);								\
+     }									\
+   }
 
 NAMESPACE_BEGIN(Grid);
 
@@ -84,7 +84,7 @@ class HMCResourceManager {
   }
 
 
- public:
+public:
   HMCResourceManager() : have_RNG(false), have_CheckPointer(false) {}
 
   template <class ReaderClass, class vector_type = vComplex >
@@ -134,13 +134,13 @@ class HMCResourceManager {
     }
 
     if(!Read.push("Level")){// push must check if the node exist
-         std::cout << "Level not found" << std::endl; 
+      std::cout << "Level not found" << std::endl; 
       exit(1);
     }
     do
-    {
-      fill_ActionsLevel(Read); 
-    }
+      {
+	fill_ActionsLevel(Read); 
+      }
     while(Read.push("Level"));
 
     Read.pop();
@@ -251,9 +251,9 @@ class HMCResourceManager {
 
   RegisterLoadCheckPointerFunction(Binary);
   RegisterLoadCheckPointerFunction(Nersc);
-  #ifdef HAVE_LIME
+#ifdef HAVE_LIME
   RegisterLoadCheckPointerFunction(ILDG);
-  #endif
+#endif
 
   ////////////////////////////////////////////////////////
   // Observables
@@ -279,7 +279,7 @@ class HMCResourceManager {
 
 
 private:
-   // this private
+  // this private
   template <class ReaderClass >
   void fill_ActionsLevel(ReaderClass &Read){
     // Actions set
