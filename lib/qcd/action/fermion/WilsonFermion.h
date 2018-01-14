@@ -27,16 +27,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef GRID_QCD_WILSON_FERMION_H
 #define GRID_QCD_WILSON_FERMION_H
 
-namespace Grid {
-
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 class WilsonFermionStatic {
- public:
+public:
   static int HandOptDslash;  // these are a temporary hack
   static int MortonOrder;
   static const std::vector<int> directions;
@@ -46,7 +44,7 @@ class WilsonFermionStatic {
 
 template <class Impl>
 class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
- public:
+public:
   INHERIT_IMPL_TYPES(Impl);
   typedef WilsonKernels<Impl> Kernels;
 
@@ -128,7 +126,7 @@ class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
   ///////////////////////////////////////////////////////////////
 
   //    protected:
- public:
+public:
   RealD mass;
 
   GridBase *_grid;
@@ -167,7 +165,6 @@ class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic {
 typedef WilsonFermion<WilsonImplF> WilsonFermionF;
 typedef WilsonFermion<WilsonImplD> WilsonFermionD;
 
+NAMESPACE_END(Grid);
 
-}
-}
 #endif
