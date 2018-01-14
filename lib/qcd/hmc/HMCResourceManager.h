@@ -48,8 +48,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
     }                                                                    \
   }
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 // HMC Resource manager
 template <class ImplementationPolicy>
@@ -305,7 +304,7 @@ private:
 
 
 };
-}
-}
+
+NAMESPACE_END(Grid);
 
 #endif  // HMC_RESOURCE_MANAGER_H
