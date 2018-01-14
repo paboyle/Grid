@@ -17,21 +17,22 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_LATTICE_REDUCTION_H
 #define GRID_LATTICE_REDUCTION_H
 
 #include <Grid/Grid_Eigen_Dense.h>
 
-namespace Grid {
 #ifdef GRID_WARN_SUBOPTIMAL
 #warning "Optimisation alert all these reduction loops are NOT threaded "
 #endif     
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Deterministic Reduction operations
-  ////////////////////////////////////////////////////////////////////////////////////////////////////
+NAMESPACE_BEGIN(Grid);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Deterministic Reduction operations
+////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class vobj> inline RealD norm2(const Lattice<vobj> &arg){
   ComplexD nrm = innerProduct(arg,arg);
   return std::real(nrm); 
@@ -78,7 +79,7 @@ inline auto sum(const LatticeUnaryExpression<Op,T1> & expr)
 
 template<class Op,class T1,class T2>
 inline auto sum(const LatticeBinaryExpression<Op,T1,T2> & expr)
-      ->typename decltype(expr.first.func(eval(0,std::get<0>(expr.second)),eval(0,std::get<1>(expr.second))))::scalar_object
+  ->typename decltype(expr.first.func(eval(0,std::get<0>(expr.second)),eval(0,std::get<1>(expr.second))))::scalar_object
 {
   return sum(closure(expr));
 }
@@ -370,8 +371,8 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
 };
 
 /*
-inline GridBase         *makeSubSliceGrid(const GridBase *BlockSolverGrid,int Orthog)
-{
+  inline GridBase         *makeSubSliceGrid(const GridBase *BlockSolverGrid,int Orthog)
+  {
   int NN    = BlockSolverGrid->_ndimension;
   int nsimd = BlockSolverGrid->Nsimd();
   
@@ -380,14 +381,14 @@ inline GridBase         *makeSubSliceGrid(const GridBase *BlockSolverGrid,int Or
   std::vector<int>  mpi_phys(0);
   
   for(int d=0;d<NN;d++){
-    if( d!=Orthog ) { 
-      latt_phys.push_back(BlockSolverGrid->_fdimensions[d]);
-      simd_phys.push_back(BlockSolverGrid->_simd_layout[d]);
-      mpi_phys.push_back(BlockSolverGrid->_processors[d]);
-    }
+  if( d!=Orthog ) { 
+  latt_phys.push_back(BlockSolverGrid->_fdimensions[d]);
+  simd_phys.push_back(BlockSolverGrid->_simd_layout[d]);
+  mpi_phys.push_back(BlockSolverGrid->_processors[d]);
+  }
   }
   return (GridBase *)new GridCartesian(latt_phys,simd_phys,mpi_phys); 
-}
+  }
 */
 
 template<class vobj>
@@ -422,22 +423,22 @@ static void sliceMaddMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice
 
 #pragma omp for collapse(2)
     for(int n=0;n<nblock;n++){
-    for(int b=0;b<block;b++){
-      int o  = n*stride + b;
+      for(int b=0;b<block;b++){
+	int o  = n*stride + b;
 
-      for(int i=0;i<Nblock;i++){
-	s_x[i] = X[o+i*ostride];
-      }
-
-      vobj dot;
-      for(int i=0;i<Nblock;i++){
-	dot = Y[o+i*ostride];
-	for(int j=0;j<Nblock;j++){
-	  dot = dot + s_x[j]*(scale*aa(j,i));
+	for(int i=0;i<Nblock;i++){
+	  s_x[i] = X[o+i*ostride];
 	}
-	R[o+i*ostride]=dot;
-      }
-    }}
+
+	vobj dot;
+	for(int i=0;i<Nblock;i++){
+	  dot = Y[o+i*ostride];
+	  for(int j=0;j<Nblock;j++){
+	    dot = dot + s_x[j]*(scale*aa(j,i));
+	  }
+	  R[o+i*ostride]=dot;
+	}
+      }}
   }
 };
 
@@ -472,22 +473,22 @@ static void sliceMulMatrix (Lattice<vobj> &R,Eigen::MatrixXcd &aa,const Lattice<
 
 #pragma omp for collapse(2)
     for(int n=0;n<nblock;n++){
-    for(int b=0;b<block;b++){
-      int o  = n*stride + b;
+      for(int b=0;b<block;b++){
+	int o  = n*stride + b;
 
-      for(int i=0;i<Nblock;i++){
-	s_x[i] = X[o+i*ostride];
-      }
-
-      vobj dot;
-      for(int i=0;i<Nblock;i++){
-	dot = s_x[0]*(scale*aa(0,i));
-	for(int j=1;j<Nblock;j++){
-	  dot = dot + s_x[j]*(scale*aa(j,i));
+	for(int i=0;i<Nblock;i++){
+	  s_x[i] = X[o+i*ostride];
 	}
-	R[o+i*ostride]=dot;
-      }
-    }}
+
+	vobj dot;
+	for(int i=0;i<Nblock;i++){
+	  dot = s_x[0]*(scale*aa(0,i));
+	  for(int j=1;j<Nblock;j++){
+	    dot = dot + s_x[j]*(scale*aa(j,i));
+	  }
+	  R[o+i*ostride]=dot;
+	}
+      }}
   }
 
 };
@@ -532,22 +533,22 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
 
 #pragma omp for collapse(2)
     for(int n=0;n<nblock;n++){
-    for(int b=0;b<block;b++){
+      for(int b=0;b<block;b++){
 
-      int o  = n*stride + b;
+	int o  = n*stride + b;
 
-      for(int i=0;i<Nblock;i++){
-	Left [i] = lhs[o+i*ostride];
-	Right[i] = rhs[o+i*ostride];
-      }
+	for(int i=0;i<Nblock;i++){
+	  Left [i] = lhs[o+i*ostride];
+	  Right[i] = rhs[o+i*ostride];
+	}
 
-      for(int i=0;i<Nblock;i++){
-      for(int j=0;j<Nblock;j++){
-	auto tmp = innerProduct(Left[i],Right[j]);
-	auto rtmp = TensorRemove(tmp);
-	mat_thread(i,j) += Reduce(rtmp);
+	for(int i=0;i<Nblock;i++){
+	  for(int j=0;j<Nblock;j++){
+	    auto tmp = innerProduct(Left[i],Right[j]);
+	    auto rtmp = TensorRemove(tmp);
+	    mat_thread(i,j) += Reduce(rtmp);
+	  }}
       }}
-    }}
 #pragma omp critical
     {
       mat += mat_thread;
@@ -555,16 +556,16 @@ static void sliceInnerProductMatrix(  Eigen::MatrixXcd &mat, const Lattice<vobj>
   }
 
   for(int i=0;i<Nblock;i++){
-  for(int j=0;j<Nblock;j++){
-    ComplexD sum = mat(i,j);
-    FullGrid->GlobalSum(sum);
-    mat(i,j)=sum;
-  }}
+    for(int j=0;j<Nblock;j++){
+      ComplexD sum = mat(i,j);
+      FullGrid->GlobalSum(sum);
+      mat(i,j)=sum;
+    }}
 
   return;
 }
 
-} /*END NAMESPACE GRID*/
+NAMESPACE_END(Grid);
 #endif
 
 
