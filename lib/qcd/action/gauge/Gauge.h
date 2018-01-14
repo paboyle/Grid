@@ -25,7 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef GRID_QCD_GAUGE_H
 #define GRID_QCD_GAUGE_H
 
@@ -34,8 +34,7 @@ directory
 #include <Grid/qcd/action/gauge/WilsonGaugeAction.h>
 #include <Grid/qcd/action/gauge/PlaqPlusRectangleAction.h>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 typedef WilsonGaugeAction<PeriodicGimplR>          WilsonGaugeActionR;
 typedef WilsonGaugeAction<PeriodicGimplF>          WilsonGaugeActionF;
@@ -64,7 +63,6 @@ typedef SymanzikGaugeAction<ConjugateGimplR>        ConjugateSymanzikGaugeAction
 typedef SymanzikGaugeAction<ConjugateGimplF>        ConjugateSymanzikGaugeActionF;
 typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeActionD;
 
-}}
-
+NAMESPACE_END(Grid);
 
 #endif
