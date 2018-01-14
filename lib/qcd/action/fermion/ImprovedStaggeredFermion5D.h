@@ -1,5 +1,5 @@
 
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -25,168 +25,167 @@ Author: AzusaYamaguchi <ayamaguc@staffmail.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef  GRID_QCD_IMPROVED_STAGGERED_FERMION_5D_H
 #define  GRID_QCD_IMPROVED_STAGGERED_FERMION_5D_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
-  ////////////////////////////////////////////////////////////////////////////////
-  // This is the 4d red black case appropriate to support
-  ////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// This is the 4d red black case appropriate to support
+////////////////////////////////////////////////////////////////////////////////
 
-    class ImprovedStaggeredFermion5DStatic { 
-    public:
-      // S-direction is INNERMOST and takes no part in the parity.
-      static const std::vector<int> directions;
-      static const std::vector<int> displacements;
-      const int npoint = 16;
-    };
+class ImprovedStaggeredFermion5DStatic { 
+public:
+  // S-direction is INNERMOST and takes no part in the parity.
+  static const std::vector<int> directions;
+  static const std::vector<int> displacements;
+  const int npoint = 16;
+};
 
-    template<class Impl>
-    class ImprovedStaggeredFermion5D :  public StaggeredKernels<Impl>, public ImprovedStaggeredFermion5DStatic 
-    {
-    public:
-      INHERIT_IMPL_TYPES(Impl);
-      typedef StaggeredKernels<Impl> Kernels;
+template<class Impl>
+class ImprovedStaggeredFermion5D :  public StaggeredKernels<Impl>, public ImprovedStaggeredFermion5DStatic 
+{
+public:
+  INHERIT_IMPL_TYPES(Impl);
+  typedef StaggeredKernels<Impl> Kernels;
 
-      FermionField _tmp;
-      FermionField &tmp(void) { return _tmp; }
+  FermionField _tmp;
+  FermionField &tmp(void) { return _tmp; }
 
-      ////////////////////////////////////////
-      // Performance monitoring
-      ////////////////////////////////////////
-      void Report(void);
-      void ZeroCounters(void);
-      double DhopTotalTime;
-      double DhopCalls;
-      double DhopCommTime;
-      double DhopComputeTime;
+  ////////////////////////////////////////
+  // Performance monitoring
+  ////////////////////////////////////////
+  void Report(void);
+  void ZeroCounters(void);
+  double DhopTotalTime;
+  double DhopCalls;
+  double DhopCommTime;
+  double DhopComputeTime;
 
-      ///////////////////////////////////////////////////////////////
-      // Implement the abstract base
-      ///////////////////////////////////////////////////////////////
-      GridBase *GaugeGrid(void)              { return _FourDimGrid ;}
-      GridBase *GaugeRedBlackGrid(void)      { return _FourDimRedBlackGrid ;}
-      GridBase *FermionGrid(void)            { return _FiveDimGrid;}
-      GridBase *FermionRedBlackGrid(void)    { return _FiveDimRedBlackGrid;}
+  ///////////////////////////////////////////////////////////////
+  // Implement the abstract base
+  ///////////////////////////////////////////////////////////////
+  GridBase *GaugeGrid(void)              { return _FourDimGrid ;}
+  GridBase *GaugeRedBlackGrid(void)      { return _FourDimRedBlackGrid ;}
+  GridBase *FermionGrid(void)            { return _FiveDimGrid;}
+  GridBase *FermionRedBlackGrid(void)    { return _FiveDimRedBlackGrid;}
 
-      // full checkerboard operations; leave unimplemented as abstract for now
-      RealD  M    (const FermionField &in, FermionField &out);
-      RealD  Mdag (const FermionField &in, FermionField &out);
+  // full checkerboard operations; leave unimplemented as abstract for now
+  RealD  M    (const FermionField &in, FermionField &out);
+  RealD  Mdag (const FermionField &in, FermionField &out);
 
-      // half checkerboard operations
-      void   Meooe       (const FermionField &in, FermionField &out);
-      void   Mooee       (const FermionField &in, FermionField &out);
-      void   MooeeInv    (const FermionField &in, FermionField &out);
+  // half checkerboard operations
+  void   Meooe       (const FermionField &in, FermionField &out);
+  void   Mooee       (const FermionField &in, FermionField &out);
+  void   MooeeInv    (const FermionField &in, FermionField &out);
 
-      void   MeooeDag    (const FermionField &in, FermionField &out);
-      void   MooeeDag    (const FermionField &in, FermionField &out);
-      void   MooeeInvDag (const FermionField &in, FermionField &out);
+  void   MeooeDag    (const FermionField &in, FermionField &out);
+  void   MooeeDag    (const FermionField &in, FermionField &out);
+  void   MooeeInvDag (const FermionField &in, FermionField &out);
 
-      void   Mdir   (const FermionField &in, FermionField &out,int dir,int disp);
-      void DhopDir(const FermionField &in, FermionField &out,int dir,int disp);
+  void   Mdir   (const FermionField &in, FermionField &out,int dir,int disp);
+  void DhopDir(const FermionField &in, FermionField &out,int dir,int disp);
 
-      // These can be overridden by fancy 5d chiral action
-      void DhopDeriv  (GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
-      void DhopDerivEO(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
-      void DhopDerivOE(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
+  // These can be overridden by fancy 5d chiral action
+  void DhopDeriv  (GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
+  void DhopDerivEO(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
+  void DhopDerivOE(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
 
-      // Implement hopping term non-hermitian hopping term; half cb or both
-      void Dhop  (const FermionField &in, FermionField &out,int dag);
-      void DhopOE(const FermionField &in, FermionField &out,int dag);
-      void DhopEO(const FermionField &in, FermionField &out,int dag);
+  // Implement hopping term non-hermitian hopping term; half cb or both
+  void Dhop  (const FermionField &in, FermionField &out,int dag);
+  void DhopOE(const FermionField &in, FermionField &out,int dag);
+  void DhopEO(const FermionField &in, FermionField &out,int dag);
 
     
-    ///////////////////////////////////////////////////////////////
-    // New methods added 
-    ///////////////////////////////////////////////////////////////
-    void DerivInternal(StencilImpl & st,
-		       DoubledGaugeField & U,
-		       DoubledGaugeField & UUU,
-		       GaugeField &mat,
-		       const FermionField &A,
-		       const FermionField &B,
-		       int dag);
+  ///////////////////////////////////////////////////////////////
+  // New methods added 
+  ///////////////////////////////////////////////////////////////
+  void DerivInternal(StencilImpl & st,
+		     DoubledGaugeField & U,
+		     DoubledGaugeField & UUU,
+		     GaugeField &mat,
+		     const FermionField &A,
+		     const FermionField &B,
+		     int dag);
     
-    void DhopInternal(StencilImpl & st,
-		      LebesgueOrder &lo,
-		      DoubledGaugeField &U,
-		      DoubledGaugeField &UUU,
-		      const FermionField &in, 
-		      FermionField &out,
-		      int dag);
+  void DhopInternal(StencilImpl & st,
+		    LebesgueOrder &lo,
+		    DoubledGaugeField &U,
+		    DoubledGaugeField &UUU,
+		    const FermionField &in, 
+		    FermionField &out,
+		    int dag);
     
-    // Constructors
-    ImprovedStaggeredFermion5D(GaugeField &_Uthin,
-			       GaugeField &_Ufat,
-			       GridCartesian         &FiveDimGrid,
-			       GridRedBlackCartesian &FiveDimRedBlackGrid,
-			       GridCartesian         &FourDimGrid,
-			       GridRedBlackCartesian &FourDimRedBlackGrid,
-			       double _mass,
-			       RealD _c1=9.0/8.0, RealD _c2=-1.0/24.0,RealD _u0=1.0,
-			       const ImplParams &p= ImplParams());
+  // Constructors
+  ImprovedStaggeredFermion5D(GaugeField &_Uthin,
+			     GaugeField &_Ufat,
+			     GridCartesian         &FiveDimGrid,
+			     GridRedBlackCartesian &FiveDimRedBlackGrid,
+			     GridCartesian         &FourDimGrid,
+			     GridRedBlackCartesian &FourDimRedBlackGrid,
+			     double _mass,
+			     RealD _c1=9.0/8.0, RealD _c2=-1.0/24.0,RealD _u0=1.0,
+			     const ImplParams &p= ImplParams());
     
-    // DoubleStore
-    void ImportGauge(const GaugeField &_U);
-    void ImportGauge(const GaugeField &_Uthin,const GaugeField &_Ufat);
+  // DoubleStore
+  void ImportGauge(const GaugeField &_U);
+  void ImportGauge(const GaugeField &_Uthin,const GaugeField &_Ufat);
     
-    ///////////////////////////////////////////////////////////////
-    // Data members require to support the functionality
-    ///////////////////////////////////////////////////////////////
-  public:
+  ///////////////////////////////////////////////////////////////
+  // Data members require to support the functionality
+  ///////////////////////////////////////////////////////////////
+public:
     
-    GridBase *_FourDimGrid;
-    GridBase *_FourDimRedBlackGrid;
-    GridBase *_FiveDimGrid;
-    GridBase *_FiveDimRedBlackGrid;
+  GridBase *_FourDimGrid;
+  GridBase *_FourDimRedBlackGrid;
+  GridBase *_FiveDimGrid;
+  GridBase *_FiveDimRedBlackGrid;
     
-    RealD mass;
-    RealD c1;
-    RealD c2;
-    RealD u0;
-    int Ls;
+  RealD mass;
+  RealD c1;
+  RealD c2;
+  RealD u0;
+  int Ls;
     
-    //Defines the stencils for even and odd
-    StencilImpl Stencil; 
-    StencilImpl StencilEven; 
-    StencilImpl StencilOdd; 
+  //Defines the stencils for even and odd
+  StencilImpl Stencil; 
+  StencilImpl StencilEven; 
+  StencilImpl StencilOdd; 
     
-    // Copy of the gauge field , with even and odd subsets
-    DoubledGaugeField Umu;
-    DoubledGaugeField UmuEven;
-    DoubledGaugeField UmuOdd;
+  // Copy of the gauge field , with even and odd subsets
+  DoubledGaugeField Umu;
+  DoubledGaugeField UmuEven;
+  DoubledGaugeField UmuOdd;
 
-    DoubledGaugeField UUUmu;
-    DoubledGaugeField UUUmuEven;
-    DoubledGaugeField UUUmuOdd;
+  DoubledGaugeField UUUmu;
+  DoubledGaugeField UUUmuEven;
+  DoubledGaugeField UUUmuOdd;
     
-    LebesgueOrder Lebesgue;
-    LebesgueOrder LebesgueEvenOdd;
+  LebesgueOrder Lebesgue;
+  LebesgueOrder LebesgueEvenOdd;
     
-    // Comms buffer
-    std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  comm_buf;
+  // Comms buffer
+  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  comm_buf;
     
-    ///////////////////////////////////////////////////////////////
-    // Conserved current utilities
-    ///////////////////////////////////////////////////////////////
-    void ContractConservedCurrent(PropagatorField &q_in_1,
-                                  PropagatorField &q_in_2,
-                                  PropagatorField &q_out,
-                                  Current curr_type,
-                                  unsigned int mu);
-    void SeqConservedCurrent(PropagatorField &q_in,
-                             PropagatorField &q_out,
-                             Current curr_type,
-                             unsigned int mu, 
-                             std::vector<Real> mom,
-                             unsigned int tmin,
-                             unsigned int tmax);
-  };
+  ///////////////////////////////////////////////////////////////
+  // Conserved current utilities
+  ///////////////////////////////////////////////////////////////
+  void ContractConservedCurrent(PropagatorField &q_in_1,
+				PropagatorField &q_in_2,
+				PropagatorField &q_out,
+				Current curr_type,
+				unsigned int mu);
+  void SeqConservedCurrent(PropagatorField &q_in,
+			   PropagatorField &q_out,
+			   Current curr_type,
+			   unsigned int mu, 
+			   std::vector<Real> mom,
+			   unsigned int tmin,
+			   unsigned int tmax);
+};
 
-}}
+NAMESPACE_END(Grid);
 
 #endif
