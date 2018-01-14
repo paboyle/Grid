@@ -899,15 +899,6 @@ HAND_SPECIALISE_GPARITY(GparityWilsonImplD);
 HAND_SPECIALISE_GPARITY(GparityWilsonImplFH);
 HAND_SPECIALISE_GPARITY(GparityWilsonImplDF);
 
-
-
-
-
-
-
-
-
-
   
 ////////////// Wilson ; uses this implementation /////////////////////
 
