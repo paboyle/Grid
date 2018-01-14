@@ -25,23 +25,23 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef HMC_MODULES_H
 #define HMC_MODULES_H
 
-/*
-Define loadable, serializable modules
-for the HMC execution
-*/
+			   /*
+			     Define loadable, serializable modules
+			     for the HMC execution
+			   */
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 // Empty class for no parameters
 class NoParameters{};
 
 
 /*
-Base class for modules with parameters
+  Base class for modules with parameters
 */
 template < class P >
 class Parametrized{
@@ -56,7 +56,7 @@ public:
   }
 
   void set_parameters(Parameters Par){
-        Par_ = Par;
+    Par_ = Par;
   }
 
   void print_parameters(){
@@ -72,7 +72,7 @@ private:
 
 template <>
 class Parametrized<NoParameters>{
-        public:
+public:
   typedef NoParameters Parameters;
 
   Parametrized(Parameters Par){};
@@ -93,7 +93,7 @@ class Parametrized<NoParameters>{
 ////////////////////////////////////////
 template <class Prod>
 class HMCModuleBase {
- public:
+public:
   typedef Prod Product;
 
   virtual Prod* getPtr() = 0;
@@ -110,21 +110,18 @@ class HMCModuleBase {
 
 template <class T, class TheFactory>
 class Registrar {
- public:
+public:
   Registrar(std::string className) {
     // register the class factory function
     TheFactory::getInstance().registerBuilder(className, 
-        [&](typename TheFactory::TheReader Reader)
-        { 
-          return std::unique_ptr<T>(new T(Reader));
-        }
-        );
+					      [&](typename TheFactory::TheReader Reader)
+					      { 
+						return std::unique_ptr<T>(new T(Reader));
+					      }
+					      );
   }
 };
 
-
-
-}
-
+NAMESPACE_END(Grid);
 
 #endif //HMC_MODULES_H
