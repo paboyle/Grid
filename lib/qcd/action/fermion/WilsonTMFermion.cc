@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,77 +23,75 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #include <Grid/qcd/action/fermion/FermionCore.h>
 #include <Grid/qcd/action/fermion/WilsonTMFermion.h>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
-    /*
-     * BF sequence
-     *
-      void bfmbase<Float>::MooeeInv(Fermion_t psi, 
-			       Fermion_t chi, 
-			      int dag, int cb)
+/*
+ * BF sequence
+ *
+ void bfmbase<Float>::MooeeInv(Fermion_t psi, 
+ Fermion_t chi, 
+ int dag, int cb)
 
-    double m    = this->mass;
-    double tm   = this->twistedmass;
-    double mtil = 4.0+this->mass;
+ double m    = this->mass;
+ double tm   = this->twistedmass;
+ double mtil = 4.0+this->mass;
 
-    double sq = mtil*mtil + tm*tm;
+ double sq = mtil*mtil + tm*tm;
 
-    double a = mtil/sq;
-    double b = -tm /sq;
-    if(dag) b=-b;
-    axpibg5x(chi,psi,a,b);
+ double a = mtil/sq;
+ double b = -tm /sq;
+ if(dag) b=-b;
+ axpibg5x(chi,psi,a,b);
 
-      void bfmbase<Float>::Mooee(Fermion_t psi, 
-			   Fermion_t chi, 
-			   int dag,int cb)
-    double a = 4.0+this->mass;
-    double b = this->twistedmass;
-    if(dag) b=-b;
-    axpibg5x(chi,psi,a,b);
-    */
+ void bfmbase<Float>::Mooee(Fermion_t psi, 
+ Fermion_t chi, 
+ int dag,int cb)
+ double a = 4.0+this->mass;
+ double b = this->twistedmass;
+ if(dag) b=-b;
+ axpibg5x(chi,psi,a,b);
+*/
 
-  template<class Impl>
-  void WilsonTMFermion<Impl>::Mooee(const FermionField &in, FermionField &out) {
-    RealD a = 4.0+this->mass;
-    RealD b = this->mu;
-    out.checkerboard = in.checkerboard;
-    axpibg5x(out,in,a,b);
-  }
-  template<class Impl>
-  void WilsonTMFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out) {
-    RealD a = 4.0+this->mass;
-    RealD b = -this->mu;
-    out.checkerboard = in.checkerboard;
-    axpibg5x(out,in,a,b);
-  }
-  template<class Impl>
-  void WilsonTMFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out) {
-    RealD m    = this->mass;
-    RealD tm   = this->mu;
-    RealD mtil = 4.0+this->mass;
-    RealD sq   = mtil*mtil+tm*tm;
-    RealD a    = mtil/sq;
-    RealD b    = -tm /sq;
-    axpibg5x(out,in,a,b);
-  }
-  template<class Impl>
-  void WilsonTMFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out) {
-    RealD m    = this->mass;
-    RealD tm   = this->mu;
-    RealD mtil = 4.0+this->mass;
-    RealD sq   = mtil*mtil+tm*tm;
-    RealD a    = mtil/sq;
-    RealD b    = tm /sq;
-    axpibg5x(out,in,a,b);
-  }
-
-  FermOpTemplateInstantiate(WilsonTMFermion);
-
+template<class Impl>
+void WilsonTMFermion<Impl>::Mooee(const FermionField &in, FermionField &out) {
+  RealD a = 4.0+this->mass;
+  RealD b = this->mu;
+  out.checkerboard = in.checkerboard;
+  axpibg5x(out,in,a,b);
 }
+template<class Impl>
+void WilsonTMFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out) {
+  RealD a = 4.0+this->mass;
+  RealD b = -this->mu;
+  out.checkerboard = in.checkerboard;
+  axpibg5x(out,in,a,b);
 }
+template<class Impl>
+void WilsonTMFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out) {
+  RealD m    = this->mass;
+  RealD tm   = this->mu;
+  RealD mtil = 4.0+this->mass;
+  RealD sq   = mtil*mtil+tm*tm;
+  RealD a    = mtil/sq;
+  RealD b    = -tm /sq;
+  axpibg5x(out,in,a,b);
+}
+template<class Impl>
+void WilsonTMFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out) {
+  RealD m    = this->mass;
+  RealD tm   = this->mu;
+  RealD mtil = 4.0+this->mass;
+  RealD sq   = mtil*mtil+tm*tm;
+  RealD a    = mtil/sq;
+  RealD b    = tm /sq;
+  axpibg5x(out,in,a,b);
+}
+
+FermOpTemplateInstantiate(WilsonTMFermion);
+
+NAMESPACE_END(Grid);
