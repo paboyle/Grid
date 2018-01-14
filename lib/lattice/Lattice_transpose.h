@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,8 +24,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_LATTICE_TRANSPOSE_H
 #define GRID_LATTICE_TRANSPOSE_H
 
@@ -33,31 +33,32 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 // Transpose
 ///////////////////////////////////////////////
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Transpose
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-  template<class vobj>
-    inline Lattice<vobj> transpose(const Lattice<vobj> &lhs){
-    Lattice<vobj> ret(lhs._grid);
-    parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
-      ret._odata[ss] = transpose(lhs._odata[ss]);
-    }
-    return ret;
-  };
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Transpose
+////////////////////////////////////////////////////////////////////////////////////////////////////
+template<class vobj>
+inline Lattice<vobj> transpose(const Lattice<vobj> &lhs){
+  Lattice<vobj> ret(lhs._grid);
+  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+    ret._odata[ss] = transpose(lhs._odata[ss]);
+  }
+  return ret;
+};
     
-  ////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Index level dependent transpose
-  ////////////////////////////////////////////////////////////////////////////////////////////////////
-  template<int Index,class vobj>
-    inline auto TransposeIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(transposeIndex<Index>(lhs._odata[0]))>
-  {
-    Lattice<decltype(transposeIndex<Index>(lhs._odata[0]))> ret(lhs._grid);
-    parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
-      ret._odata[ss] = transposeIndex<Index>(lhs._odata[ss]);
-    }
-    return ret;
-  };
-}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Index level dependent transpose
+////////////////////////////////////////////////////////////////////////////////////////////////////
+template<int Index,class vobj>
+inline auto TransposeIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(transposeIndex<Index>(lhs._odata[0]))>
+{
+  Lattice<decltype(transposeIndex<Index>(lhs._odata[0]))> ret(lhs._grid);
+  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+    ret._odata[ss] = transposeIndex<Index>(lhs._odata[ss]);
+  }
+  return ret;
+};
+
+NAMESPACE_END(Grid);
 #endif
