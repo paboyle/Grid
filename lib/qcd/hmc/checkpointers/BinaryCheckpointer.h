@@ -25,7 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef BINARY_CHECKPOINTER
 #define BINARY_CHECKPOINTER
 
@@ -33,16 +33,15 @@ directory
 #include <sstream>
 #include <string>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 // Simple checkpointer, only binary file
 template <class Impl>
 class BinaryHmcCheckpointer : public BaseHmcCheckpointer<Impl> {
- private:
+private:
   CheckpointerParameters Params;
 
- public:
+public:
   INHERIT_FIELD_TYPES(Impl);  // Gets the Field type, a Lattice object
 
   // Extract types from the Field
@@ -108,6 +107,6 @@ class BinaryHmcCheckpointer : public BaseHmcCheckpointer<Impl> {
 	      << std::dec << std::endl;
   };
 };
-}
-}
+
+NAMESPACE_END(Grid);
 #endif
