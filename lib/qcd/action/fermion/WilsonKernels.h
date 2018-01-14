@@ -27,19 +27,18 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef GRID_QCD_DHOP_H
 #define GRID_QCD_DHOP_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Helper routines that implement Wilson stencil for a single site.
-  // Common to both the WilsonFermion and WilsonFermion5D
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Helper routines that implement Wilson stencil for a single site.
+// Common to both the WilsonFermion and WilsonFermion5D
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class WilsonKernelsStatic { 
- public:
+public:
   enum { OptGeneric, OptHandUnroll, OptInlineAsm };
   enum { CommsAndCompute, CommsThenCompute };
   static int Opt;  
@@ -47,7 +46,7 @@ class WilsonKernelsStatic {
 };
  
 template<class Impl> class WilsonKernels : public FermionOperator<Impl> , public WilsonKernelsStatic { 
- public:
+public:
    
   INHERIT_IMPL_TYPES(Impl);
   typedef FermionOperator<Impl> Base;
@@ -57,7 +56,7 @@ public:
   template <bool EnableBool = true>
   typename std::enable_if<Impl::Dimension == 3 && Nc == 3 &&EnableBool, void>::type
   DhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
-		   int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out,int interior=1,int exterior=1) 
+	   int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out,int interior=1,int exterior=1) 
   {
     bgq_l1p_optimisation(1);
     switch(Opt) {
@@ -119,7 +118,7 @@ public:
   typename std::enable_if<Impl::Dimension == 3 && Nc == 3 && EnableBool,void>::type
   DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
 	      int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out,int interior=1,int exterior=1) 
-{
+  {
     bgq_l1p_optimisation(1);
     switch(Opt) {
 #if defined(AVX512) || defined (QPX)
@@ -163,7 +162,7 @@ public:
   template <bool EnableBool = true>
   typename std::enable_if<(Impl::Dimension != 3 || (Impl::Dimension == 3 && Nc != 3)) && EnableBool,void>::type
   DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U,SiteHalfSpinor * buf,
-		      int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out,int interior=1,int exterior=1) {
+	      int sF, int sU, int Ls, int Ns, const FermionField &in, FermionField &out,int interior=1,int exterior=1) {
 
     for (int site = 0; site < Ns; site++) {
       for (int s = 0; s < Ls; s++) {
@@ -178,7 +177,7 @@ public:
   }
 
   void DhopDir(StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor * buf,
-		       int sF, int sU, const FermionField &in, FermionField &out, int dirdisp, int gamma);
+	       int sF, int sU, const FermionField &in, FermionField &out, int dirdisp, int gamma);
       
   //////////////////////////////////////////////////////////////////////////////
   // Utilities for inserting Wilson conserved current.
@@ -213,7 +212,7 @@ public:
                                   bool switch_sign = false);
 
 private:
-     // Specialised variants
+  // Specialised variants
   void GenericDhopSite(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteHalfSpinor * buf,
 		       int sF, int sU, const FermionField &in, FermionField &out);
       
@@ -275,6 +274,6 @@ public:
 
 };
     
-}}
+NAMESPACE_END(Grid);
 
 #endif
