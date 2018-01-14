@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -25,11 +25,13 @@ Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_LATTICE_WHERE_H
 #define GRID_LATTICE_WHERE_H
-namespace Grid {
+
+NAMESPACE_BEGIN(Grid);
+
 // Must implement the predicate gating the 
 // Must be able to reduce the predicate down to a single vInteger per site.
 // Must be able to require the type be iScalar x iScalar x ....
@@ -82,5 +84,6 @@ inline Lattice<vobj> whereWolf(const Lattice<iobj> &predicate,Lattice<vobj> &ift
 
   return ret;
 }
-}
+
+NAMESPACE_END(Grid);
 #endif
