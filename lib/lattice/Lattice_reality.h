@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -25,8 +25,8 @@ Author: neo <cossu@post.kek.jp>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_LATTICE_REALITY_H
 #define GRID_LATTICE_REALITY_H
 
@@ -36,22 +36,24 @@ Author: neo <cossu@post.kek.jp>
 // The choice of burying complex in the SIMD
 // is making the use of "real" and "imag" very cumbersome
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
-    template<class vobj> inline Lattice<vobj> adj(const Lattice<vobj> &lhs){
-        Lattice<vobj> ret(lhs._grid);
-	parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
-            ret._odata[ss] = adj(lhs._odata[ss]);
-        }
-        return ret;
-    };
+template<class vobj> inline Lattice<vobj> adj(const Lattice<vobj> &lhs){
+  Lattice<vobj> ret(lhs._grid);
+  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+    ret._odata[ss] = adj(lhs._odata[ss]);
+  }
+  return ret;
+};
 
-    template<class vobj> inline Lattice<vobj> conjugate(const Lattice<vobj> &lhs){
-        Lattice<vobj> ret(lhs._grid);
-	parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
-	  ret._odata[ss] = conjugate(lhs._odata[ss]);
-        }
-        return ret;
-    };
-}
+template<class vobj> inline Lattice<vobj> conjugate(const Lattice<vobj> &lhs){
+  Lattice<vobj> ret(lhs._grid);
+  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+    ret._odata[ss] = conjugate(lhs._odata[ss]);
+  }
+  return ret;
+};
+
+NAMESPACE_END(Grid);
+
 #endif
