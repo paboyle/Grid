@@ -25,16 +25,16 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef ACTION_MODULES_H
 #define ACTION_MODULES_H
 
-/*
-Define loadable, serializable modules
-for the HMC execution
-*/
+			   /*
+			     Define loadable, serializable modules
+			     for the HMC execution
+			   */
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 //////////////////////////////////////////////
 //              Actions
@@ -51,9 +51,9 @@ public:
 
 template <class ActionType, class APar>
 class ActionModule
-    : public Parametrized<APar>,
-      public ActionModuleBase< QCD::Action<typename ActionType::GaugeField> , QCD::GridModule > {
- public:
+  : public Parametrized<APar>,
+    public ActionModuleBase< QCD::Action<typename ActionType::GaugeField> , QCD::GridModule > {
+public:
   typedef ActionModuleBase< QCD::Action<typename ActionType::GaugeField>, QCD::GridModule > Base;
   typedef typename Base::Product Product;
   typedef APar Parameters;
@@ -76,7 +76,7 @@ class ActionModule
     return ActionPtr.get();
   }
 
- private:
+private:
   virtual void initialize() = 0;
 
 };
@@ -85,28 +85,28 @@ class ActionModule
 // Modules
 //////////////////////////
 
-namespace QCD{
+
 
 class PlaqPlusRectangleGaugeActionParameters : Serializable {
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(PlaqPlusRectangleGaugeActionParameters, 
-    RealD, c_plaq,
-    RealD, c_rect);
+				  RealD, c_plaq,
+				  RealD, c_rect);
 
 };
 
 class RBCGaugeActionParameters : Serializable {
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(RBCGaugeActionParameters, 
-    RealD, beta,
-    RealD, c1);
+				  RealD, beta,
+				  RealD, c1);
 
 };
 
 class BetaGaugeActionParameters : Serializable {
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(BetaGaugeActionParameters, 
-    RealD, beta);
+				  RealD, beta);
 };
 
 
@@ -232,17 +232,17 @@ class TwoFlavourFModule: public PseudoFermionModuleBase<Impl, TwoFlavourPseudoFe
   typename Base::operator_type fop_mod;
   typename Base::solver_type   solver_mod;
 
- public:
+public:
   virtual void acquireResource(typename Base::Resource& GridMod){
     fop_mod->AddGridPair(GridMod);
   }
 
-   // constructor
-   template <class ReaderClass>
-   TwoFlavourFModule(Reader<ReaderClass>& R): Base(R) {
+  // constructor
+  template <class ReaderClass>
+  TwoFlavourFModule(Reader<ReaderClass>& R): Base(R) {
     this->getSolverOperator(R, solver_mod, "Solver");
     this->getFermionOperator(R, fop_mod, "Operator");
-   } 
+  } 
 
   // acquire resource
   virtual void initialize() {
@@ -261,17 +261,17 @@ class TwoFlavourEOFModule: public PseudoFermionModuleBase<Impl, TwoFlavourEvenOd
   typename Base::operator_type fop_mod;
   typename Base::solver_type   solver_mod;
 
- public:
+public:
   virtual void acquireResource(typename Base::Resource& GridMod){
     fop_mod->AddGridPair(GridMod);
   }
 
-   // constructor
-   template <class ReaderClass>
-   TwoFlavourEOFModule(Reader<ReaderClass>& R): PseudoFermionModuleBase<Impl, TwoFlavourEvenOddPseudoFermionAction>(R) {
+  // constructor
+  template <class ReaderClass>
+  TwoFlavourEOFModule(Reader<ReaderClass>& R): PseudoFermionModuleBase<Impl, TwoFlavourEvenOddPseudoFermionAction>(R) {
     this->getSolverOperator(R, solver_mod, "Solver");
     this->getFermionOperator(R, fop_mod, "Operator");
-   } 
+  } 
 
   // acquire resource
   virtual void initialize() {
@@ -291,25 +291,25 @@ class TwoFlavourRatioFModule: public PseudoFermionModuleBase<Impl, TwoFlavourRat
   typename Base::operator_type fop_denominator_mod;
   typename Base::solver_type   solver_mod;
 
- public:
+public:
   virtual void acquireResource(typename Base::Resource& GridMod){
     fop_numerator_mod->AddGridPair(GridMod);
     fop_denominator_mod->AddGridPair(GridMod);
   }
 
-   // constructor
-   template <class ReaderClass>
-   TwoFlavourRatioFModule(Reader<ReaderClass>& R): PseudoFermionModuleBase<Impl, TwoFlavourRatioPseudoFermionAction>(R) {
+  // constructor
+  template <class ReaderClass>
+  TwoFlavourRatioFModule(Reader<ReaderClass>& R): PseudoFermionModuleBase<Impl, TwoFlavourRatioPseudoFermionAction>(R) {
     this->getSolverOperator(R, solver_mod, "Solver");
     this->getFermionOperator(R, fop_numerator_mod, "Numerator");
     this->getFermionOperator(R, fop_denominator_mod, "Denominator");
-   } 
+  } 
 
   // acquire resource
   virtual void initialize() {
     // here temporarily assuming that the force and action solver are the same
     this->ActionPtr.reset(new TwoFlavourRatioPseudoFermionAction<Impl>(*(this->fop_numerator_mod->getPtr()), 
-      *(this->fop_denominator_mod->getPtr()), *(this->solver_mod->getPtr()), *(this->solver_mod->getPtr())));
+								       *(this->fop_denominator_mod->getPtr()), *(this->solver_mod->getPtr()), *(this->solver_mod->getPtr())));
   }
 
 };
@@ -323,25 +323,25 @@ class TwoFlavourRatioEOFModule: public PseudoFermionModuleBase<Impl, TwoFlavourE
   typename Base::operator_type fop_denominator_mod;
   typename Base::solver_type   solver_mod;
 
- public:
+public:
   virtual void acquireResource(typename Base::Resource& GridMod){
     fop_numerator_mod->AddGridPair(GridMod);
     fop_denominator_mod->AddGridPair(GridMod);
   }
 
-   // constructor
-   template <class ReaderClass>
-   TwoFlavourRatioEOFModule(Reader<ReaderClass>& R): Base(R) {
+  // constructor
+  template <class ReaderClass>
+  TwoFlavourRatioEOFModule(Reader<ReaderClass>& R): Base(R) {
     this->getSolverOperator(R, solver_mod, "Solver");
     this->getFermionOperator(R, fop_numerator_mod, "Numerator");
     this->getFermionOperator(R, fop_denominator_mod, "Denominator");
-   } 
+  } 
 
   // acquire resource
   virtual void initialize() {
     // here temporarily assuming that the force and action solver are the same
     this->ActionPtr.reset(new TwoFlavourEvenOddRatioPseudoFermionAction<Impl>(*(this->fop_numerator_mod->getPtr()), 
-      *(this->fop_denominator_mod->getPtr()), *(this->solver_mod->getPtr()), *(this->solver_mod->getPtr())));
+									      *(this->fop_denominator_mod->getPtr()), *(this->solver_mod->getPtr()), *(this->solver_mod->getPtr())));
   }
 
 };
@@ -354,16 +354,16 @@ class OneFlavourFModule: public PseudoFermionModuleBase<Impl, OneFlavourRational
 
   typename Base::operator_type fop_mod;
 
- public:
+public:
   virtual void acquireResource(typename Base::Resource& GridMod){
     fop_mod->AddGridPair(GridMod);
   }
 
-   // constructor
-   template <class ReaderClass>
-   OneFlavourFModule(Reader<ReaderClass>& R): Base(R) {
+  // constructor
+  template <class ReaderClass>
+  OneFlavourFModule(Reader<ReaderClass>& R): Base(R) {
     this->getFermionOperator(R, fop_mod, "Operator");
-   } 
+  } 
 
   // acquire resource
   virtual void initialize() {
@@ -375,22 +375,22 @@ class OneFlavourFModule: public PseudoFermionModuleBase<Impl, OneFlavourRational
 template <class Impl >
 class OneFlavourEOFModule: 
   public PseudoFermionModuleBase<Impl, OneFlavourEvenOddRationalPseudoFermionAction, OneFlavourRationalParams>
-  {
+{
   typedef PseudoFermionModuleBase<Impl, OneFlavourEvenOddRationalPseudoFermionAction, OneFlavourRationalParams> Base;
   using Base::Base;
 
   typename Base::operator_type fop_mod;
 
- public:
+public:
   virtual void acquireResource(typename Base::Resource& GridMod){
     fop_mod->AddGridPair(GridMod);
   }
 
-   // constructor
-   template <class ReaderClass>
-   OneFlavourEOFModule(Reader<ReaderClass>& R): Base(R) {
+  // constructor
+  template <class ReaderClass>
+  OneFlavourEOFModule(Reader<ReaderClass>& R): Base(R) {
     this->getFermionOperator(R, fop_mod, "Operator");
-   } 
+  } 
 
   // acquire resource
   virtual void initialize() {
@@ -403,7 +403,7 @@ class OneFlavourEOFModule:
 template <class Impl >
 class OneFlavourRatioFModule: 
   public PseudoFermionModuleBase<Impl, OneFlavourRatioRationalPseudoFermionAction, OneFlavourRationalParams>
-  {
+{
 
   typedef PseudoFermionModuleBase<Impl, OneFlavourRatioRationalPseudoFermionAction, OneFlavourRationalParams> Base;
   using Base::Base;
@@ -411,18 +411,18 @@ class OneFlavourRatioFModule:
   typename Base::operator_type fop_numerator_mod;
   typename Base::operator_type fop_denominator_mod;
 
- public:
+public:
   virtual void acquireResource(typename Base::Resource& GridMod){
     fop_numerator_mod->AddGridPair(GridMod);
     fop_denominator_mod->AddGridPair(GridMod);
   }
 
-   // constructor
-   template <class ReaderClass>
-   OneFlavourRatioFModule(Reader<ReaderClass>& R): Base(R) {
+  // constructor
+  template <class ReaderClass>
+  OneFlavourRatioFModule(Reader<ReaderClass>& R): Base(R) {
     this->getFermionOperator(R, fop_numerator_mod, "Numerator");
     this->getFermionOperator(R, fop_denominator_mod, "Denominator");
-   } 
+  } 
 
   // acquire resource
   virtual void initialize() {
@@ -437,7 +437,7 @@ class OneFlavourRatioFModule:
 template <class Impl >
 class OneFlavourRatioEOFModule: 
   public PseudoFermionModuleBase<Impl, OneFlavourEvenOddRatioRationalPseudoFermionAction, OneFlavourRationalParams>
-  {
+{
 
   typedef PseudoFermionModuleBase<Impl, OneFlavourEvenOddRatioRationalPseudoFermionAction, OneFlavourRationalParams> Base;
   using Base::Base;
@@ -445,18 +445,18 @@ class OneFlavourRatioEOFModule:
   typename Base::operator_type fop_numerator_mod;
   typename Base::operator_type fop_denominator_mod;
 
- public:
+public:
   virtual void acquireResource(typename Base::Resource& GridMod){
     fop_numerator_mod->AddGridPair(GridMod);
     fop_denominator_mod->AddGridPair(GridMod);
   }
 
-   // constructor
-   template <class ReaderClass>
-   OneFlavourRatioEOFModule(Reader<ReaderClass>& R): Base(R) {
+  // constructor
+  template <class ReaderClass>
+  OneFlavourRatioEOFModule(Reader<ReaderClass>& R): Base(R) {
     this->getFermionOperator(R, fop_numerator_mod, "Numerator");
     this->getFermionOperator(R, fop_denominator_mod, "Denominator");
-   } 
+  } 
 
   // acquire resource
   virtual void initialize() {
@@ -491,8 +491,8 @@ class OneFlavourRatioEOFModule:
 
 template <char const *str, class Field, class ReaderClass >
 class HMC_ActionModuleFactory
-    : public Factory < ActionModuleBase< QCD::Action< Field >, QCD::GridModule > , Reader<ReaderClass> > {
- public:
+  : public Factory < ActionModuleBase< QCD::Action< Field >, QCD::GridModule > , Reader<ReaderClass> > {
+public:
   typedef Reader<ReaderClass> TheReader; 
   // use SINGLETON FUNCTOR MACRO HERE
   HMC_ActionModuleFactory(const HMC_ActionModuleFactory& e) = delete;
@@ -502,16 +502,15 @@ class HMC_ActionModuleFactory
     return e;
   }
 
- private:
+private:
   HMC_ActionModuleFactory(void) = default;
-    std::string obj_type() const {
-        return std::string(str);
+  std::string obj_type() const {
+    return std::string(str);
   }
 };
 
-
 extern char gauge_string[];
-} // Grid
 
+NAMESPACE_END(Grid);
 
 #endif //HMC_MODULES_H
