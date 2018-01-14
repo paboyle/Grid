@@ -25,11 +25,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #include <Grid.h>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 const std::vector<int> 
 ImprovedStaggeredFermionStatic::directions({0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3});
@@ -45,22 +44,22 @@ template <class Impl>
 ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GridCartesian &Fgrid, GridRedBlackCartesian &Hgrid, 
 							 RealD _mass,
 							 const ImplParams &p)
-    : Kernels(p),
-      _grid(&Fgrid),
-      _cbgrid(&Hgrid),
-      Stencil(&Fgrid, npoint, Even, directions, displacements),
-      StencilEven(&Hgrid, npoint, Even, directions, displacements),  // source is Even
-      StencilOdd(&Hgrid, npoint, Odd, directions, displacements),  // source is Odd
-      mass(_mass),
-      Lebesgue(_grid),
-      LebesgueEvenOdd(_cbgrid),
-      Umu(&Fgrid),
-      UmuEven(&Hgrid),
-      UmuOdd(&Hgrid),
-      UUUmu(&Fgrid),
-      UUUmuEven(&Hgrid),
-      UUUmuOdd(&Hgrid) ,
-      _tmp(&Hgrid)
+  : Kernels(p),
+    _grid(&Fgrid),
+    _cbgrid(&Hgrid),
+    Stencil(&Fgrid, npoint, Even, directions, displacements),
+    StencilEven(&Hgrid, npoint, Even, directions, displacements),  // source is Even
+    StencilOdd(&Hgrid, npoint, Odd, directions, displacements),  // source is Odd
+    mass(_mass),
+    Lebesgue(_grid),
+    LebesgueEvenOdd(_cbgrid),
+    Umu(&Fgrid),
+    UmuEven(&Hgrid),
+    UmuOdd(&Hgrid),
+    UUUmu(&Fgrid),
+    UUUmuEven(&Hgrid),
+    UUUmuOdd(&Hgrid) ,
+    _tmp(&Hgrid)
 {
 }
 
@@ -86,17 +85,17 @@ ImprovedStaggeredFermion<Impl>::ImprovedStaggeredFermion(GaugeField &_Uthin,Gaug
 }
 
 
-  ////////////////////////////////////////////////////////////
-  // Momentum space propagator should be 
-  // https://arxiv.org/pdf/hep-lat/9712010.pdf
-  //
-  // mom space action.
-  //   gamma_mu i ( c1 sin pmu + c2 sin 3 pmu ) + m
-  //
-  // must track through staggered flavour/spin reduction in literature to 
-  // turn to free propagator for the one component chi field, a la page 4/5
-  // of above link to implmement fourier based solver.
-  ////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+// Momentum space propagator should be 
+// https://arxiv.org/pdf/hep-lat/9712010.pdf
+//
+// mom space action.
+//   gamma_mu i ( c1 sin pmu + c2 sin 3 pmu ) + m
+//
+// must track through staggered flavour/spin reduction in literature to 
+// turn to free propagator for the one component chi field, a la page 4/5
+// of above link to implmement fourier based solver.
+////////////////////////////////////////////////////////////
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::ImportGauge(const GaugeField &_Uthin) 
 {
@@ -222,7 +221,7 @@ void ImprovedStaggeredFermion<Impl>::MooeeInv(const FermionField &in, FermionFie
 
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::MooeeInvDag(const FermionField &in,
-                                      FermionField &out) {
+						 FermionField &out) {
   out.checkerboard = in.checkerboard;
   MooeeInv(in, out);
 }
@@ -251,9 +250,9 @@ void ImprovedStaggeredFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGauge
     // Call the single hop
     ////////////////////////
     PARALLEL_FOR_LOOP
-    for (int sss = 0; sss < B._grid->oSites(); sss++) {
-      Kernels::DhopDir(st, U, UUU, st.CommBuf(), sss, sss, B, Btilde, mu,1);
-    }
+      for (int sss = 0; sss < B._grid->oSites(); sss++) {
+	Kernels::DhopDir(st, U, UUU, st.CommBuf(), sss, sss, B, Btilde, mu,1);
+      }
 
     // Force in three link terms
     //
@@ -364,9 +363,9 @@ void ImprovedStaggeredFermion<Impl>::DhopDir(const FermionField &in, FermionFiel
   Stencil.HaloExchange(in, compressor);
 
   PARALLEL_FOR_LOOP
-  for (int sss = 0; sss < in._grid->oSites(); sss++) {
-    Kernels::DhopDir(Stencil, Umu, UUUmu, Stencil.CommBuf(), sss, sss, in, out, dir, disp);
-  }
+    for (int sss = 0; sss < in._grid->oSites(); sss++) {
+      Kernels::DhopDir(Stencil, Umu, UUUmu, Stencil.CommBuf(), sss, sss, in, out, dir, disp);
+    }
 };
 
 template <class Impl>
@@ -382,14 +381,14 @@ void ImprovedStaggeredFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder
 
   if (dag == DaggerYes) {
     PARALLEL_FOR_LOOP
-    for (int sss = 0; sss < in._grid->oSites(); sss++) {
-      Kernels::DhopSiteDag(st, lo, U, UUU, st.CommBuf(), 1, sss, in, out);
-    }
+      for (int sss = 0; sss < in._grid->oSites(); sss++) {
+	Kernels::DhopSiteDag(st, lo, U, UUU, st.CommBuf(), 1, sss, in, out);
+      }
   } else {
     PARALLEL_FOR_LOOP
-    for (int sss = 0; sss < in._grid->oSites(); sss++) {
-      Kernels::DhopSite(st, lo, U, UUU, st.CommBuf(), 1, sss, in, out);
-    }
+      for (int sss = 0; sss < in._grid->oSites(); sss++) {
+	Kernels::DhopSite(st, lo, U, UUU, st.CommBuf(), 1, sss, in, out);
+      }
   }
 };
 
@@ -398,12 +397,12 @@ void ImprovedStaggeredFermion<Impl>::DhopInternal(StencilImpl &st, LebesgueOrder
 ////////////////////////////////////////////////////////
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
-                                                        PropagatorField &q_in_2,
-                                                        PropagatorField &q_out,
-                                                        Current curr_type,
-                                                        unsigned int mu)
+							      PropagatorField &q_in_2,
+							      PropagatorField &q_out,
+							      Current curr_type,
+							      unsigned int mu)
 {
-    assert(0);
+  assert(0);
 }
 
 template <class Impl>
@@ -415,12 +414,12 @@ void ImprovedStaggeredFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
                                                          unsigned int tmin,
                                                          unsigned int tmax)
 {
-    assert(0);
+  assert(0);
 }
 
 FermOpStaggeredTemplateInstantiate(ImprovedStaggeredFermion);
 
-  //AdjointFermOpTemplateInstantiate(ImprovedStaggeredFermion);
-  //TwoIndexFermOpTemplateInstantiate(ImprovedStaggeredFermion);
+//AdjointFermOpTemplateInstantiate(ImprovedStaggeredFermion);
+//TwoIndexFermOpTemplateInstantiate(ImprovedStaggeredFermion);
 
-}}
+NAMESPACE_END(Grid);
