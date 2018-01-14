@@ -26,19 +26,19 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef HMC_RUNNER_MODULE
 #define HMC_RUNNER_MODULE
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 // the reader class is necessary here for the automatic initialization of the resources
 // if we had a virtual reader would have been unecessary
 template <class HMCType, class ReaderClass >
 class HMCModule
-    : public Parametrized< QCD::HMCparameters >,
-      public HMCModuleBase< QCD::HMCRunnerBase<ReaderClass> > {
- public:
+  : public Parametrized< QCD::HMCparameters >,
+    public HMCModuleBase< QCD::HMCRunnerBase<ReaderClass> > {
+public:
   typedef HMCModuleBase< QCD::HMCRunnerBase<ReaderClass> > Base;
   typedef typename Base::Product Product;
 
@@ -55,17 +55,17 @@ class HMCModule
     return HMCPtr.get();
   }
 
- private:
+private:
   virtual void initialize() = 0;
 };
 
 // Factory
 template <char const *str, class ReaderClass >
 class HMCRunnerModuleFactory
-    : public Factory < HMCModuleBase< QCD::HMCRunnerBase<ReaderClass> > ,	Reader<ReaderClass> > {
- public:
- 	typedef Reader<ReaderClass> TheReader; 
- 	// use SINGLETON FUNCTOR MACRO HERE
+  : public Factory < HMCModuleBase< QCD::HMCRunnerBase<ReaderClass> > ,	Reader<ReaderClass> > {
+public:
+  typedef Reader<ReaderClass> TheReader; 
+  // use SINGLETON FUNCTOR MACRO HERE
   HMCRunnerModuleFactory(const HMCRunnerModuleFactory& e) = delete;
   void operator=(const HMCRunnerModuleFactory& e) = delete;
   static HMCRunnerModuleFactory& getInstance(void) {
@@ -73,10 +73,10 @@ class HMCRunnerModuleFactory
     return e;
   }
 
- private:
+private:
   HMCRunnerModuleFactory(void) = default;
   std::string obj_type() const {
-  	return std::string(str);
+    return std::string(str);
   }
 };
 
@@ -123,15 +123,8 @@ class HMCForceGradient: public HMCModule< QCD::GenericHMCRunnerTemplate<Implemen
 
 extern char hmc_string[];
 
-
-
-
-
-
 //////////////////////////////////////////////////////////////
 
-
-
-}
+NAMESPACE_END(Grid);
 
 #endif
