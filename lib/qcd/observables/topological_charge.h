@@ -25,44 +25,43 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 
 #ifndef HMC_TOP_CHARGE_H
 #define HMC_TOP_CHARGE_H
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 struct TopologySmearingParameters : Serializable {
-    GRID_SERIALIZABLE_CLASS_MEMBERS(TopologySmearingParameters,
-    int, steps,
-    float, step_size,
-    int, meas_interval,
-    float, maxTau);
+  GRID_SERIALIZABLE_CLASS_MEMBERS(TopologySmearingParameters,
+				  int, steps,
+				  float, step_size,
+				  int, meas_interval,
+				  float, maxTau);
 
-    TopologySmearingParameters(int s = 0, float ss = 0.0f, int mi = 0, float mT = 0.0f):
-        steps(s), step_size(ss), meas_interval(mi), maxTau(mT){}
+  TopologySmearingParameters(int s = 0, float ss = 0.0f, int mi = 0, float mT = 0.0f):
+    steps(s), step_size(ss), meas_interval(mi), maxTau(mT){}
 
-    template < class ReaderClass >
-    TopologySmearingParameters(Reader<ReaderClass>& Reader){
-        read(Reader, "Smearing", *this);  
-    }  
+  template < class ReaderClass >
+  TopologySmearingParameters(Reader<ReaderClass>& Reader){
+    read(Reader, "Smearing", *this);  
+  }  
 };
 
 
 
 struct TopologyObsParameters : Serializable {
-    GRID_SERIALIZABLE_CLASS_MEMBERS(TopologyObsParameters,
-      int, interval,
-      bool, do_smearing,
-      TopologySmearingParameters, Smearing);  
+  GRID_SERIALIZABLE_CLASS_MEMBERS(TopologyObsParameters,
+				  int, interval,
+				  bool, do_smearing,
+				  TopologySmearingParameters, Smearing);  
 
-    TopologyObsParameters(int interval = 1, bool smearing = false):
-        interval(interval), Smearing(smearing){}
+  TopologyObsParameters(int interval = 1, bool smearing = false):
+    interval(interval), Smearing(smearing){}
 
-    template <class ReaderClass >
-      TopologyObsParameters(Reader<ReaderClass>& Reader){
-        read(Reader, "TopologyMeasurement", *this);
+  template <class ReaderClass >
+  TopologyObsParameters(Reader<ReaderClass>& Reader){
+    read(Reader, "TopologyMeasurement", *this);
   }
 };
 
@@ -70,53 +69,53 @@ struct TopologyObsParameters : Serializable {
 // this is only defined for a gauge theory
 template <class Impl>
 class TopologicalCharge : public HmcObservable<typename Impl::Field> {
-    TopologyObsParameters Pars;
+  TopologyObsParameters Pars;
 
- public:
-    // here forces the Impl to be of gauge fields
-    // if not the compiler will complain
-    INHERIT_GIMPL_TYPES(Impl);
+public:
+  // here forces the Impl to be of gauge fields
+  // if not the compiler will complain
+  INHERIT_GIMPL_TYPES(Impl);
 
-    // necessary for HmcObservable compatibility
-    typedef typename Impl::Field Field;
+  // necessary for HmcObservable compatibility
+  typedef typename Impl::Field Field;
 
-    TopologicalCharge(int interval = 1, bool do_smearing = false):
-        Pars(interval, do_smearing){}
+  TopologicalCharge(int interval = 1, bool do_smearing = false):
+    Pars(interval, do_smearing){}
     
-    TopologicalCharge(TopologyObsParameters P):Pars(P){
-        std::cout << GridLogDebug << "Creating TopologicalCharge " << std::endl;
-    }
+  TopologicalCharge(TopologyObsParameters P):Pars(P){
+    std::cout << GridLogDebug << "Creating TopologicalCharge " << std::endl;
+  }
 
-    void TrajectoryComplete(int traj,
-                            Field &U,
-                            GridSerialRNG &sRNG,
-                            GridParallelRNG &pRNG) {
+  void TrajectoryComplete(int traj,
+			  Field &U,
+			  GridSerialRNG &sRNG,
+			  GridParallelRNG &pRNG) {
 
     if (traj%Pars.interval == 0){
-        // Smearing
-        Field Usmear = U;
-        int def_prec = std::cout.precision();
+      // Smearing
+      Field Usmear = U;
+      int def_prec = std::cout.precision();
         
-        if (Pars.do_smearing){
-            // using wilson flow by default here
-            WilsonFlow<PeriodicGimplR> WF(Pars.Smearing.steps, Pars.Smearing.step_size, Pars.Smearing.meas_interval);
-            WF.smear_adaptive(Usmear, U, Pars.Smearing.maxTau);
-            Real T0   = WF.energyDensityPlaquette(Usmear);
-            std::cout << GridLogMessage << std::setprecision(std::numeric_limits<Real>::digits10 + 1)
-                      << "T0                : [ " << traj << " ] "<< T0 << std::endl;
-        }
+      if (Pars.do_smearing){
+	// using wilson flow by default here
+	WilsonFlow<PeriodicGimplR> WF(Pars.Smearing.steps, Pars.Smearing.step_size, Pars.Smearing.meas_interval);
+	WF.smear_adaptive(Usmear, U, Pars.Smearing.maxTau);
+	Real T0   = WF.energyDensityPlaquette(Usmear);
+	std::cout << GridLogMessage << std::setprecision(std::numeric_limits<Real>::digits10 + 1)
+		  << "T0                : [ " << traj << " ] "<< T0 << std::endl;
+      }
 
-        Real q    = WilsonLoops<Impl>::TopologicalCharge(Usmear);
-        std::cout << GridLogMessage
-            << std::setprecision(std::numeric_limits<Real>::digits10 + 1)
-            << "Topological Charge: [ " << traj << " ] "<< q << std::endl;
+      Real q    = WilsonLoops<Impl>::TopologicalCharge(Usmear);
+      std::cout << GridLogMessage
+		<< std::setprecision(std::numeric_limits<Real>::digits10 + 1)
+		<< "Topological Charge: [ " << traj << " ] "<< q << std::endl;
 
-        std::cout.precision(def_prec);
-        }
+      std::cout.precision(def_prec);
     }
+  }
 
 };
-}
-}
+
+NAMESPACE_END(Grid);
 
 #endif  //  HMC_TOP_CHARGE_H
