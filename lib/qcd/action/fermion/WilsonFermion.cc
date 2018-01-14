@@ -1,4 +1,3 @@
-
 /*************************************************************************************
 
 Grid physics library, www.github.com/paboyle/Grid
@@ -29,12 +28,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #include <Grid/qcd/action/fermion/FermionCore.h>
 #include <Grid/qcd/action/fermion/WilsonFermion.h>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 const std::vector<int> WilsonFermionStatic::directions({0, 1, 2, 3, 0, 1, 2, 3});
 const std::vector<int> WilsonFermionStatic::displacements({1, 1, 1, 1, -1, -1, -1, -1});
@@ -48,19 +46,19 @@ template <class Impl>
 WilsonFermion<Impl>::WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
                                    GridRedBlackCartesian &Hgrid, RealD _mass,
                                    const ImplParams &p)
-    : Kernels(p),
-      _grid(&Fgrid),
-      _cbgrid(&Hgrid),
-      Stencil(&Fgrid, npoint, Even, directions, displacements),
-      StencilEven(&Hgrid, npoint, Even, directions,displacements),  // source is Even
-      StencilOdd(&Hgrid, npoint, Odd, directions,displacements),  // source is Odd
-      mass(_mass),
-      Lebesgue(_grid),
-      LebesgueEvenOdd(_cbgrid),
-      Umu(&Fgrid),
-      UmuEven(&Hgrid),
-      UmuOdd(&Hgrid),
-      _tmp(&Hgrid)
+  : Kernels(p),
+    _grid(&Fgrid),
+    _cbgrid(&Hgrid),
+    Stencil(&Fgrid, npoint, Even, directions, displacements),
+    StencilEven(&Hgrid, npoint, Even, directions,displacements),  // source is Even
+    StencilOdd(&Hgrid, npoint, Odd, directions,displacements),  // source is Odd
+    mass(_mass),
+    Lebesgue(_grid),
+    LebesgueEvenOdd(_cbgrid),
+    Umu(&Fgrid),
+    UmuEven(&Hgrid),
+    UmuOdd(&Hgrid),
+    _tmp(&Hgrid)
 {
   // Allocate the required comms buffer
   ImportGauge(_Umu);
@@ -357,27 +355,27 @@ void WilsonFermion<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
                                                    Current curr_type,
                                                    unsigned int mu)
 {
-    Gamma g5(Gamma::Algebra::Gamma5);
-    conformable(_grid, q_in_1._grid);
-    conformable(_grid, q_in_2._grid);
-    conformable(_grid, q_out._grid);
-    PropagatorField tmp1(_grid), tmp2(_grid);
-    q_out = zero;
+  Gamma g5(Gamma::Algebra::Gamma5);
+  conformable(_grid, q_in_1._grid);
+  conformable(_grid, q_in_2._grid);
+  conformable(_grid, q_out._grid);
+  PropagatorField tmp1(_grid), tmp2(_grid);
+  q_out = zero;
 
-    // Forward, need q1(x + mu), q2(x). Backward, need q1(x), q2(x + mu).
-    // Inefficient comms method but not performance critical.
-    tmp1 = Cshift(q_in_1, mu, 1);
-    tmp2 = Cshift(q_in_2, mu, 1);
-    parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
+  // Forward, need q1(x + mu), q2(x). Backward, need q1(x), q2(x + mu).
+  // Inefficient comms method but not performance critical.
+  tmp1 = Cshift(q_in_1, mu, 1);
+  tmp2 = Cshift(q_in_2, mu, 1);
+  parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
     {
-        Kernels::ContractConservedCurrentSiteFwd(tmp1._odata[sU],
-                                                 q_in_2._odata[sU],
-                                                 q_out._odata[sU],
-                                                 Umu, sU, mu);
-        Kernels::ContractConservedCurrentSiteBwd(q_in_1._odata[sU],
-                                                 tmp2._odata[sU],
-                                                 q_out._odata[sU],
-                                                 Umu, sU, mu);
+      Kernels::ContractConservedCurrentSiteFwd(tmp1._odata[sU],
+					       q_in_2._odata[sU],
+					       q_out._odata[sU],
+					       Umu, sU, mu);
+      Kernels::ContractConservedCurrentSiteBwd(q_in_1._odata[sU],
+					       tmp2._odata[sU],
+					       q_out._odata[sU],
+					       Umu, sU, mu);
     }
 }
 
@@ -390,63 +388,63 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
                                               unsigned int tmin, 
                                               unsigned int tmax)
 {
-    conformable(_grid, q_in._grid);
-    conformable(_grid, q_out._grid);
-    Lattice<iSinglet<Simd>> ph(_grid), coor(_grid);
-    Complex i(0.0,1.0);
-    PropagatorField tmpFwd(_grid), tmpBwd(_grid), tmp(_grid);
-    unsigned int tshift = (mu == Tp) ? 1 : 0;
-    unsigned int LLt    = GridDefaultLatt()[Tp];
+  conformable(_grid, q_in._grid);
+  conformable(_grid, q_out._grid);
+  Lattice<iSinglet<Simd>> ph(_grid), coor(_grid);
+  Complex i(0.0,1.0);
+  PropagatorField tmpFwd(_grid), tmpBwd(_grid), tmp(_grid);
+  unsigned int tshift = (mu == Tp) ? 1 : 0;
+  unsigned int LLt    = GridDefaultLatt()[Tp];
 
-    // Momentum projection
-    ph = zero;
-    for(unsigned int mu = 0; mu < Nd - 1; mu++)
+  // Momentum projection
+  ph = zero;
+  for(unsigned int mu = 0; mu < Nd - 1; mu++)
     {
-        LatticeCoordinate(coor, mu);
-        ph = ph + mom[mu]*coor*((1./(_grid->_fdimensions[mu])));
+      LatticeCoordinate(coor, mu);
+      ph = ph + mom[mu]*coor*((1./(_grid->_fdimensions[mu])));
     }
-    ph = exp((Real)(2*M_PI)*i*ph);
+  ph = exp((Real)(2*M_PI)*i*ph);
 
-    q_out = zero;
-    LatticeInteger coords(_grid);
-    LatticeCoordinate(coords, Tp);
+  q_out = zero;
+  LatticeInteger coords(_grid);
+  LatticeCoordinate(coords, Tp);
 
-    // Need q(x + mu) and q(x - mu).
-    tmp = Cshift(q_in, mu, 1);
-    tmpFwd = tmp*ph;
-    tmp = ph*q_in;
-    tmpBwd = Cshift(tmp, mu, -1);
+  // Need q(x + mu) and q(x - mu).
+  tmp = Cshift(q_in, mu, 1);
+  tmpFwd = tmp*ph;
+  tmp = ph*q_in;
+  tmpBwd = Cshift(tmp, mu, -1);
 
-    parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
+  parallel_for (unsigned int sU = 0; sU < Umu._grid->oSites(); ++sU)
     {
-        // Compute the sequential conserved current insertion only if our simd
-        // object contains a timeslice we need.
-        vInteger t_mask   = ((coords._odata[sU] >= tmin) &&
-                             (coords._odata[sU] <= tmax));
-        Integer timeSlices = Reduce(t_mask);
+      // Compute the sequential conserved current insertion only if our simd
+      // object contains a timeslice we need.
+      vInteger t_mask   = ((coords._odata[sU] >= tmin) &&
+			   (coords._odata[sU] <= tmax));
+      Integer timeSlices = Reduce(t_mask);
 
-        if (timeSlices > 0)
+      if (timeSlices > 0)
         {
-            Kernels::SeqConservedCurrentSiteFwd(tmpFwd._odata[sU], 
-                                                q_out._odata[sU], 
-                                                Umu, sU, mu, t_mask);
+	  Kernels::SeqConservedCurrentSiteFwd(tmpFwd._odata[sU], 
+					      q_out._odata[sU], 
+					      Umu, sU, mu, t_mask);
         }
 
-        // Repeat for backward direction.
-        t_mask     = ((coords._odata[sU] >= (tmin + tshift)) && 
-                      (coords._odata[sU] <= (tmax + tshift)));
+      // Repeat for backward direction.
+      t_mask     = ((coords._odata[sU] >= (tmin + tshift)) && 
+		    (coords._odata[sU] <= (tmax + tshift)));
 
-	//if tmax = LLt-1 (last timeslice) include timeslice 0 if the time is shifted (mu=3)	
-	unsigned int t0 = 0;
-	if((tmax==LLt-1) && (tshift==1)) t_mask = (t_mask || (coords._odata[sU] == t0 ));
+      //if tmax = LLt-1 (last timeslice) include timeslice 0 if the time is shifted (mu=3)	
+      unsigned int t0 = 0;
+      if((tmax==LLt-1) && (tshift==1)) t_mask = (t_mask || (coords._odata[sU] == t0 ));
 
-        timeSlices = Reduce(t_mask);
+      timeSlices = Reduce(t_mask);
 
-        if (timeSlices > 0)
+      if (timeSlices > 0)
         {
-            Kernels::SeqConservedCurrentSiteBwd(tmpBwd._odata[sU], 
-                                                q_out._odata[sU], 
-                                                Umu, sU, mu, t_mask);
+	  Kernels::SeqConservedCurrentSiteBwd(tmpBwd._odata[sU], 
+					      q_out._odata[sU], 
+					      Umu, sU, mu, t_mask);
         }
     }
 }
@@ -455,5 +453,5 @@ FermOpTemplateInstantiate(WilsonFermion);
 AdjointFermOpTemplateInstantiate(WilsonFermion);
 TwoIndexFermOpTemplateInstantiate(WilsonFermion);
 GparityFermOpTemplateInstantiate(WilsonFermion);
-}
-}
+
+NAMESPACE_END(Grid);
