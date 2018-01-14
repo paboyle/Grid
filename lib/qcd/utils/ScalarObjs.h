@@ -28,15 +28,13 @@ directory
 /*  END LEGAL */
 #ifndef SCALAR_OBJS_H
 #define SCALAR_OBJS_H
-namespace Grid {
 
-  // FIXME drop the QCD namespace in Nd
-  
+NAMESPACE_BEGIN(Grid);
 
 // Scalar field obs
 template <class Impl>
 class ScalarObs {
- public:
+public:
   //////////////////////////////////////////////////
   // squared field
   //////////////////////////////////////////////////
@@ -61,7 +59,7 @@ class ScalarObs {
   static void phider(typename Impl::Field &fsq,
                      const typename Impl::Field &f) {
     fsq = Cshift(f, 0, -1) * f;
-    for (int mu = 1; mu < QCD::Nd; mu++) fsq += Cshift(f, mu, -1) * f;
+    for (int mu = 1; mu < Nd; mu++) fsq += Cshift(f, mu, -1) * f;
   }
 
   //////////////////////////////////////////////////
@@ -71,7 +69,7 @@ class ScalarObs {
   static RealD sumphider(const typename Impl::Field &f) {
     typename Impl::Field tmp(f._grid);
     tmp = Cshift(f, 0, -1) * f;
-    for (int mu = 1; mu < QCD::Nd; mu++) {
+    for (int mu = 1; mu < Nd; mu++) {
       tmp += Cshift(f, mu, -1) * f;
     }
     return -sum(trace(tmp));
@@ -90,7 +88,6 @@ class ScalarObs {
   }
 };
 
-
-}
+NAMESPACE_END(Grid);
 
 #endif
