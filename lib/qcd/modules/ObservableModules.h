@@ -25,20 +25,20 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef HMC_OBSERVABLE_MODULES_H
 #define HMC_OBSERVABLE_MODULES_H
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 /////////////////////////////
 // Observables
 /////////////////////////////
 template <class ObservableType, class OPar>
 class ObservableModule
-    : public Parametrized<OPar>,
-      public HMCModuleBase< QCD::HmcObservable<typename ObservableType::Field> > {
- public:
+  : public Parametrized<OPar>,
+    public HMCModuleBase< QCD::HmcObservable<typename ObservableType::Field> > {
+public:
   typedef HMCModuleBase< QCD::HmcObservable< typename ObservableType::Field> > Base;
   typedef typename Base::Product Product;
   typedef OPar Parameters;
@@ -60,7 +60,7 @@ class ObservableModule
     return ObservablePtr.get();
   }
 
- private:
+private:
   virtual void initialize() = 0;
 };
 
@@ -70,13 +70,11 @@ class ObservableModule
 // Modules
 ////////////////
 
-namespace QCD{
-
 //// Observables module
 class PlaquetteObsParameters : Serializable {
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(PlaquetteObsParameters, 
-    std::string, output_prefix);
+				  std::string, output_prefix);
 };
 
 template < class Impl >
@@ -88,7 +86,7 @@ class PlaquetteMod: public ObservableModule<PlaquetteLogger<Impl>, NoParameters>
   virtual void initialize(){
     this->ObservablePtr.reset(new PlaquetteLogger<Impl>());
   }
-  public:
+public:
   PlaquetteMod(): ObsBase(NoParameters()){}
 };
 
@@ -102,7 +100,7 @@ class TopologicalChargeMod: public ObservableModule<TopologicalCharge<Impl>, Top
   virtual void initialize(){
     this->ObservablePtr.reset(new TopologicalCharge<Impl>(this->Par_));
   }
-  public:
+public:
   TopologicalChargeMod(TopologyObsParameters Par): ObsBase(Par){}
   TopologicalChargeMod(): ObsBase(){}
 };
@@ -119,8 +117,8 @@ class TopologicalChargeMod: public ObservableModule<TopologicalCharge<Impl>, Top
 
 template <char const *str, class Field, class ReaderClass >
 class HMC_ObservablesModuleFactory
-    : public Factory < HMCModuleBase< QCD::HmcObservable<Field> >, Reader<ReaderClass> > {
- public:
+  : public Factory < HMCModuleBase< QCD::HmcObservable<Field> >, Reader<ReaderClass> > {
+public:
   typedef Reader<ReaderClass> TheReader; 
   // use SINGLETON FUNCTOR MACRO HERE
   HMC_ObservablesModuleFactory(const HMC_ObservablesModuleFactory& e) = delete;
@@ -130,16 +128,15 @@ class HMC_ObservablesModuleFactory
     return e;
   }
 
- private:
+private:
   HMC_ObservablesModuleFactory(void) = default;
-    std::string obj_type() const {
+  std::string obj_type() const {
     return std::string(str);
   }
 };
 
 extern char observable_string[];
 
-}
-
+NAMESPACE_END(Grid);
 
 #endif //HMC_OBSERVABLE_MODULES_H
