@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -25,8 +25,8 @@ Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_LATTICE_PEEK_H
 #define GRID_LATTICE_PEEK_H
 
@@ -34,172 +34,172 @@ Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
 // Peeking and poking around
 ///////////////////////////////////////////////
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Peek internal indices of a Lattice object
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    template<int Index,class vobj>
-       auto PeekIndex(const Lattice<vobj> &lhs,int i) -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i))>
-    {
-      Lattice<decltype(peekIndex<Index>(lhs._odata[0],i))> ret(lhs._grid);
-      ret.checkerboard=lhs.checkerboard;
-      parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
-	ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i);
-      }
-      return ret;
-    };
-    template<int Index,class vobj>
-      auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))>
-    {
-      Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))> ret(lhs._grid);
-      ret.checkerboard=lhs.checkerboard;
-      parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
-	ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i,j);
-      }
-      return ret;
-    };
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Peek internal indices of a Lattice object
+////////////////////////////////////////////////////////////////////////////////////////////////////
+template<int Index,class vobj>
+auto PeekIndex(const Lattice<vobj> &lhs,int i) -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i))>
+{
+  Lattice<decltype(peekIndex<Index>(lhs._odata[0],i))> ret(lhs._grid);
+  ret.checkerboard=lhs.checkerboard;
+  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+    ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i);
+  }
+  return ret;
+};
+template<int Index,class vobj>
+auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))>
+{
+  Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))> ret(lhs._grid);
+  ret.checkerboard=lhs.checkerboard;
+  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+    ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i,j);
+  }
+  return ret;
+};
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Poke internal indices of a Lattice object
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    template<int Index,class vobj> 
-    void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0],0))> & rhs,int i)
-    {
-      parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
-	pokeIndex<Index>(lhs._odata[ss],rhs._odata[ss],i);
-      }      
-    }
-    template<int Index,class vobj>
-      void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0],0,0))> & rhs,int i,int j)
-    {
-      parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
-	pokeIndex<Index>(lhs._odata[ss],rhs._odata[ss],i,j);
-      }      
-    }
-
-    //////////////////////////////////////////////////////
-    // Poke a scalar object into the SIMD array
-    //////////////////////////////////////////////////////
-    template<class vobj,class sobj>
-    void pokeSite(const sobj &s,Lattice<vobj> &l,const std::vector<int> &site){
-
-      GridBase *grid=l._grid;
-
-      typedef typename vobj::scalar_type scalar_type;
-      typedef typename vobj::vector_type vector_type;
-
-      int Nsimd = grid->Nsimd();
-
-      assert( l.checkerboard== l._grid->CheckerBoard(site));
-      assert( sizeof(sobj)*Nsimd == sizeof(vobj));
-
-      int rank,odx,idx;
-      // Optional to broadcast from node 0.
-      grid->GlobalCoorToRankIndex(rank,odx,idx,site);
-      grid->Broadcast(grid->BossRank(),s);
-
-      std::vector<sobj> buf(Nsimd);
-
-      // extract-modify-merge cycle is easiest way and this is not perf critical
-      if ( rank == grid->ThisRank() ) {
-	extract(l._odata[odx],buf);
-	buf[idx] = s;
-	merge(l._odata[odx],buf);
-      }
-
-      return;
-    };
-
-
-    //////////////////////////////////////////////////////////
-    // Peek a scalar object from the SIMD array
-    //////////////////////////////////////////////////////////
-    template<class vobj,class sobj>
-      void peekSite(sobj &s,const Lattice<vobj> &l,const std::vector<int> &site){
-        
-      GridBase *grid=l._grid;
-
-      typedef typename vobj::scalar_type scalar_type;
-      typedef typename vobj::vector_type vector_type;
-
-      int Nsimd = grid->Nsimd();
-
-      assert( l.checkerboard == l._grid->CheckerBoard(site));
-
-      int rank,odx,idx;
-      grid->GlobalCoorToRankIndex(rank,odx,idx,site);
-
-      std::vector<sobj> buf(Nsimd);
-      extract(l._odata[odx],buf);
-
-      s = buf[idx];
-
-      grid->Broadcast(rank,s);
-
-      return;
-    };
-
-
-    //////////////////////////////////////////////////////////
-    // Peek a scalar object from the SIMD array
-    //////////////////////////////////////////////////////////
-    template<class vobj,class sobj>
-    void peekLocalSite(sobj &s,const Lattice<vobj> &l,std::vector<int> &site){
-        
-      GridBase *grid = l._grid;
-
-      typedef typename vobj::scalar_type scalar_type;
-      typedef typename vobj::vector_type vector_type;
-
-      int Nsimd = grid->Nsimd();
-
-      assert( l.checkerboard== l._grid->CheckerBoard(site));
-      assert( sizeof(sobj)*Nsimd == sizeof(vobj));
-
-      static const int words=sizeof(vobj)/sizeof(vector_type);
-      int odx,idx;
-      idx= grid->iIndex(site);
-      odx= grid->oIndex(site);
-
-      scalar_type * vp = (scalar_type *)&l._odata[odx];
-      scalar_type * pt = (scalar_type *)&s;
-      
-      for(int w=0;w<words;w++){
-        pt[w] = vp[idx+w*Nsimd];
-      }
-      
-      return;
-    };
-
-    template<class vobj,class sobj>
-    void pokeLocalSite(const sobj &s,Lattice<vobj> &l,std::vector<int> &site){
-
-      GridBase *grid=l._grid;
-
-      typedef typename vobj::scalar_type scalar_type;
-      typedef typename vobj::vector_type vector_type;
-
-      int Nsimd = grid->Nsimd();
-
-      assert( l.checkerboard== l._grid->CheckerBoard(site));
-      assert( sizeof(sobj)*Nsimd == sizeof(vobj));
-
-      static const int words=sizeof(vobj)/sizeof(vector_type);
-      int odx,idx;
-      idx= grid->iIndex(site);
-      odx= grid->oIndex(site);
-
-      scalar_type * vp = (scalar_type *)&l._odata[odx];
-      scalar_type * pt = (scalar_type *)&s;
-      
-      for(int w=0;w<words;w++){
-        vp[idx+w*Nsimd] = pt[w];
-      }
-
-      return;
-    };
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Poke internal indices of a Lattice object
+////////////////////////////////////////////////////////////////////////////////////////////////////
+template<int Index,class vobj> 
+void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0],0))> & rhs,int i)
+{
+  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+    pokeIndex<Index>(lhs._odata[ss],rhs._odata[ss],i);
+  }      
 }
+template<int Index,class vobj>
+void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0],0,0))> & rhs,int i,int j)
+{
+  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+    pokeIndex<Index>(lhs._odata[ss],rhs._odata[ss],i,j);
+  }      
+}
+
+//////////////////////////////////////////////////////
+// Poke a scalar object into the SIMD array
+//////////////////////////////////////////////////////
+template<class vobj,class sobj>
+void pokeSite(const sobj &s,Lattice<vobj> &l,const std::vector<int> &site){
+
+  GridBase *grid=l._grid;
+
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+
+  int Nsimd = grid->Nsimd();
+
+  assert( l.checkerboard== l._grid->CheckerBoard(site));
+  assert( sizeof(sobj)*Nsimd == sizeof(vobj));
+
+  int rank,odx,idx;
+  // Optional to broadcast from node 0.
+  grid->GlobalCoorToRankIndex(rank,odx,idx,site);
+  grid->Broadcast(grid->BossRank(),s);
+
+  std::vector<sobj> buf(Nsimd);
+
+  // extract-modify-merge cycle is easiest way and this is not perf critical
+  if ( rank == grid->ThisRank() ) {
+    extract(l._odata[odx],buf);
+    buf[idx] = s;
+    merge(l._odata[odx],buf);
+  }
+
+  return;
+};
+
+
+//////////////////////////////////////////////////////////
+// Peek a scalar object from the SIMD array
+//////////////////////////////////////////////////////////
+template<class vobj,class sobj>
+void peekSite(sobj &s,const Lattice<vobj> &l,const std::vector<int> &site){
+        
+  GridBase *grid=l._grid;
+
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+
+  int Nsimd = grid->Nsimd();
+
+  assert( l.checkerboard == l._grid->CheckerBoard(site));
+
+  int rank,odx,idx;
+  grid->GlobalCoorToRankIndex(rank,odx,idx,site);
+
+  std::vector<sobj> buf(Nsimd);
+  extract(l._odata[odx],buf);
+
+  s = buf[idx];
+
+  grid->Broadcast(rank,s);
+
+  return;
+};
+
+
+//////////////////////////////////////////////////////////
+// Peek a scalar object from the SIMD array
+//////////////////////////////////////////////////////////
+template<class vobj,class sobj>
+void peekLocalSite(sobj &s,const Lattice<vobj> &l,std::vector<int> &site){
+        
+  GridBase *grid = l._grid;
+
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+
+  int Nsimd = grid->Nsimd();
+
+  assert( l.checkerboard== l._grid->CheckerBoard(site));
+  assert( sizeof(sobj)*Nsimd == sizeof(vobj));
+
+  static const int words=sizeof(vobj)/sizeof(vector_type);
+  int odx,idx;
+  idx= grid->iIndex(site);
+  odx= grid->oIndex(site);
+
+  scalar_type * vp = (scalar_type *)&l._odata[odx];
+  scalar_type * pt = (scalar_type *)&s;
+      
+  for(int w=0;w<words;w++){
+    pt[w] = vp[idx+w*Nsimd];
+  }
+      
+  return;
+};
+
+template<class vobj,class sobj>
+void pokeLocalSite(const sobj &s,Lattice<vobj> &l,std::vector<int> &site){
+
+  GridBase *grid=l._grid;
+
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+
+  int Nsimd = grid->Nsimd();
+
+  assert( l.checkerboard== l._grid->CheckerBoard(site));
+  assert( sizeof(sobj)*Nsimd == sizeof(vobj));
+
+  static const int words=sizeof(vobj)/sizeof(vector_type);
+  int odx,idx;
+  idx= grid->iIndex(site);
+  odx= grid->oIndex(site);
+
+  scalar_type * vp = (scalar_type *)&l._odata[odx];
+  scalar_type * pt = (scalar_type *)&s;
+      
+  for(int w=0;w<words;w++){
+    vp[idx+w*Nsimd] = pt[w];
+  }
+
+  return;
+};
+
+NAMESPACE_END(Grid);
 #endif
 
