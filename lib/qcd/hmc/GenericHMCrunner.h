@@ -25,16 +25,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
   See the full license in the file "LICENSE" in the top level distribution
   directory
-  *************************************************************************************/
-/*  END LEGAL */
+*************************************************************************************/
+			   /*  END LEGAL */
 #ifndef GRID_GENERIC_HMC_RUNNER
 #define GRID_GENERIC_HMC_RUNNER
 
 #include <unordered_map>
 
-namespace Grid {
-namespace QCD {
-
+NAMESPACE_BEGIN(Grid);
 
 // very ugly here but possibly resolved if we had a base Reader class
 template < class ReaderClass >
@@ -44,12 +42,11 @@ public:
   virtual void initialize(ReaderClass& ) = 0;
 };
 
-
 template <class Implementation,
           template <typename, typename, typename> class Integrator,
           class RepresentationsPolicy = NoHirep, class ReaderClass = XmlReader>
 class HMCWrapperTemplate: public HMCRunnerBase<ReaderClass> {
- public:
+public:
   INHERIT_FIELD_TYPES(Implementation);
   typedef Implementation ImplPolicy;  // visible from outside
   template <typename S = NoSmearing<Implementation> >
@@ -88,8 +85,8 @@ class HMCWrapperTemplate: public HMCRunnerBase<ReaderClass> {
           arg != "CheckpointStart") {
         std::cout << GridLogError << "Unrecognized option in --StartingType\n";
         std::cout
-            << GridLogError
-            << "Valid [HotStart, ColdStart, TepidStart, CheckpointStart]\n";
+	  << GridLogError
+	  << "Valid [HotStart, ColdStart, TepidStart, CheckpointStart]\n";
         exit(1);
       }
       Parameters.StartingType = arg;
@@ -134,7 +131,7 @@ class HMCWrapperTemplate: public HMCRunnerBase<ReaderClass> {
 
   //////////////////////////////////////////////////////////////////
 
- private:
+private:
   template <class SmearingPolicy>
   void Runner(SmearingPolicy &Smearing) {
     auto UGrid = Resources.GetCartesian();
@@ -160,8 +157,8 @@ class HMCWrapperTemplate: public HMCRunnerBase<ReaderClass> {
     } else if (Parameters.StartingType == "CheckpointStart") {
       // CheckpointRestart
       Resources.GetCheckPointer()->CheckpointRestore(Parameters.StartTrajectory, U,
-                                   Resources.GetSerialRNG(),
-                                   Resources.GetParallelRNG());
+						     Resources.GetSerialRNG(),
+						     Resources.GetParallelRNG());
     }
 
     Smearing.set_Field(U);
@@ -198,22 +195,21 @@ using ConjugateHMCRunnerD = HMCWrapperTemplate<ConjugateGimplD, Integrator>;
 template <class RepresentationsPolicy,
           template <typename, typename, typename> class Integrator>
 using GenericHMCRunnerHirep =
-    HMCWrapperTemplate<PeriodicGimplR, Integrator, RepresentationsPolicy>;
+				     HMCWrapperTemplate<PeriodicGimplR, Integrator, RepresentationsPolicy>;
 
 template <class Implementation, class RepresentationsPolicy, 
           template <typename, typename, typename> class Integrator>
 using GenericHMCRunnerTemplate = HMCWrapperTemplate<Implementation, Integrator, RepresentationsPolicy>;
 
 typedef HMCWrapperTemplate<ScalarImplR, MinimumNorm2, ScalarFields>
-    ScalarGenericHMCRunner;
+ScalarGenericHMCRunner;
 
 typedef HMCWrapperTemplate<ScalarAdjImplR, MinimumNorm2, ScalarMatrixFields>
-    ScalarAdjGenericHMCRunner;
+ScalarAdjGenericHMCRunner;
 
 template <int Colours> 
 using ScalarNxNAdjGenericHMCRunner = HMCWrapperTemplate < ScalarNxNAdjImplR<Colours>, MinimumNorm2, ScalarNxNMatrixFields<Colours> >;
 
-}  // namespace QCD
-}  // namespace Grid
+NAMESPACE_END(Grid);
 
 #endif  // GRID_GENERIC_HMC_RUNNER
