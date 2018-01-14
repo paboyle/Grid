@@ -5,8 +5,7 @@
 
 #include <array>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 class Gamma {
   public:
@@ -1343,6 +1342,6 @@ inline auto operator*(const iMatrix<vtype, Ns> &arg, const Gamma &G)
   return ret;
 }
 
-}}
+NAMESPACE_END(Grid);
 
 #endif // GRID_QCD_GAMMA_H
