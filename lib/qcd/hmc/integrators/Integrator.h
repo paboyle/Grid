@@ -27,35 +27,34 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
-//--------------------------------------------------------------------
+			   /*  END LEGAL */
+			   //--------------------------------------------------------------------
 #ifndef INTEGRATOR_INCLUDED
 #define INTEGRATOR_INCLUDED
 
 #include <memory>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 class IntegratorParameters: Serializable {
 public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(IntegratorParameters,
-                std::string, name,      // name of the integrator
-    unsigned int, MDsteps,  // number of outer steps
-    RealD, trajL,           // trajectory length
-  )
+  GRID_SERIALIZABLE_CLASS_MEMBERS(IntegratorParameters,
+				  std::string, name,      // name of the integrator
+				  unsigned int, MDsteps,  // number of outer steps
+				  RealD, trajL,           // trajectory length
+				  )
 
   IntegratorParameters(int MDsteps_ = 10, RealD trajL_ = 1.0)
-      : MDsteps(MDsteps_),
-        trajL(trajL_){
-        // empty body constructor
+  : MDsteps(MDsteps_),
+    trajL(trajL_){
+    // empty body constructor
   };
 
 
   template <class ReaderClass, typename std::enable_if<isReader<ReaderClass>::value, int >::type = 0 >
   IntegratorParameters(ReaderClass & Reader){
     std::cout << "Reading integrator\n";
-        read(Reader, "Integrator", *this);
+    read(Reader, "Integrator", *this);
   }
 
   void print_parameters() const {
@@ -69,7 +68,7 @@ public:
 /*! @brief Class for Molecular Dynamics management */
 template <class FieldImplementation, class SmearingPolicy, class RepresentationPolicy>
 class Integrator {
- protected:
+protected:
   typedef typename FieldImplementation::Field MomentaField;  //for readability
   typedef typename FieldImplementation::Field Field;
 
@@ -114,7 +113,7 @@ class Integrator {
     // input U actually not used in the fundamental case
     // Fundamental updates, include smearing
 
-   for (int a = 0; a < as[level].actions.size(); ++a) {
+    for (int a = 0; a < as[level].actions.size(); ++a) {
       Field force(U._grid);
       conformable(U._grid, Mom._grid);
       Field& Us = Smearer.get_U(as[level].actions.at(a)->is_smeared);
@@ -153,16 +152,16 @@ class Integrator {
 
   virtual void step(Field& U, int level, int first, int last) = 0;
 
- public:
+public:
   Integrator(GridBase* grid, IntegratorParameters Par,
              ActionSet<Field, RepresentationPolicy>& Aset,
              SmearingPolicy& Sm)
-      : Params(Par),
-        as(Aset),
-        P(grid),
-        levels(Aset.size()),
-        Smearer(Sm),
-        Representations(grid) {
+    : Params(Par),
+      as(Aset),
+      P(grid),
+      levels(Aset.size()),
+      Smearer(Sm),
+      Representations(grid) {
     t_P.resize(levels, 0.0);
     t_U = 0.0;
     // initialization of smearer delegated outside of Integrator
@@ -178,16 +177,16 @@ class Integrator {
   }
 
   void print_actions(){
-        std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::" << std::endl;
-        std::cout << GridLogMessage << "[Integrator] Action summary: "<<std::endl;
-        for (int level = 0; level < as.size(); ++level) {
-                std::cout << GridLogMessage << "[Integrator] ---- Level: "<< level << std::endl;
-                for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
-                        std::cout << GridLogMessage << "["<< as[level].actions.at(actionID)->action_name() << "] ID: " << actionID << std::endl;
-                        std::cout << as[level].actions.at(actionID)->LogParameters();
-                }
-        }
-        std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::"<< std::endl;
+    std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::" << std::endl;
+    std::cout << GridLogMessage << "[Integrator] Action summary: "<<std::endl;
+    for (int level = 0; level < as.size(); ++level) {
+      std::cout << GridLogMessage << "[Integrator] ---- Level: "<< level << std::endl;
+      for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
+	std::cout << GridLogMessage << "["<< as[level].actions.at(actionID)->action_name() << "] ID: " << actionID << std::endl;
+	std::cout << as[level].actions.at(actionID)->LogParameters();
+      }
+    }
+    std::cout << GridLogMessage << ":::::::::::::::::::::::::::::::::::::::::"<< std::endl;
 
   }
 
@@ -204,8 +203,8 @@ class Integrator {
       for (int a = 0; a < repr_set.size(); ++a){
         repr_set.at(a)->refresh(Rep.U, pRNG);
       
-      std::cout << GridLogDebug << "Hirep refreshing pseudofermions" << std::endl;
-    }
+	std::cout << GridLogDebug << "Hirep refreshing pseudofermions" << std::endl;
+      }
     }
   } refresh_hireps{};
 
@@ -231,7 +230,7 @@ class Integrator {
         // get gauge field from the SmearingPolicy and
         // based on the boolean is_smeared in actionID
         Field& Us =
-            Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
+	  Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
         as[level].actions.at(actionID)->refresh(Us, pRNG);
       }
 
@@ -270,7 +269,7 @@ class Integrator {
         // get gauge field from the SmearingPolicy and
         // based on the boolean is_smeared in actionID
         Field& Us =
-            Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
+	  Smearer.get_U(as[level].actions.at(actionID)->is_smeared);
         Hterm = as[level].actions.at(actionID)->S(Us);
         std::cout << GridLogMessage << "S Level " << level << " term "
                   << actionID << " H = " << Hterm << std::endl;
@@ -307,11 +306,9 @@ class Integrator {
 
   }
 
-
-  
-
 };
-}
-}
+
+NAMESPACE_END(Grid);
+
 #endif  // INTEGRATOR_INCLUDED
 
