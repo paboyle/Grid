@@ -576,8 +576,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
       permute##dir(Chi_1,Chi_1);\
       permute##dir(Chi_2,Chi_2);
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 template <class Impl>
 void StaggeredKernels<Impl>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo, 
@@ -916,5 +915,5 @@ KERNEL_INSTANTIATE(StaggeredKernels,DhopSiteAsm,StaggeredImplF);
 KERNEL_INSTANTIATE(StaggeredKernels,DhopSiteAsm,StaggeredVec5dImplD);
 KERNEL_INSTANTIATE(StaggeredKernels,DhopSiteAsm,StaggeredVec5dImplF);
 
-}}
+NAMESPACE_END(Grid);
 
