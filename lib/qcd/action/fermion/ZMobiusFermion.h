@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,56 +24,53 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef  GRID_QCD_ZMOBIUS_FERMION_H
 #define  GRID_QCD_ZMOBIUS_FERMION_H
 
 #include <Grid/qcd/action/fermion/FermionCore.h>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
-  namespace QCD {
+template<class Impl>
+class ZMobiusFermion : public CayleyFermion5D<Impl>
+{
+public:
+  INHERIT_IMPL_TYPES(Impl);
+public:
 
-    template<class Impl>
-    class ZMobiusFermion : public CayleyFermion5D<Impl>
-    {
-    public:
-     INHERIT_IMPL_TYPES(Impl);
-    public:
-
-      virtual void   Instantiatable(void) {};
-      // Constructors
-      ZMobiusFermion(GaugeField &_Umu,
-		     GridCartesian         &FiveDimGrid,
-		     GridRedBlackCartesian &FiveDimRedBlackGrid,
-		     GridCartesian         &FourDimGrid,
-		     GridRedBlackCartesian &FourDimRedBlackGrid,
-		     RealD _mass,RealD _M5,
-		     std::vector<ComplexD> &gamma, RealD b,RealD c,const ImplParams &p= ImplParams()) : 
+  virtual void   Instantiatable(void) {};
+  // Constructors
+  ZMobiusFermion(GaugeField &_Umu,
+		 GridCartesian         &FiveDimGrid,
+		 GridRedBlackCartesian &FiveDimRedBlackGrid,
+		 GridCartesian         &FourDimGrid,
+		 GridRedBlackCartesian &FourDimRedBlackGrid,
+		 RealD _mass,RealD _M5,
+		 std::vector<ComplexD> &gamma, RealD b,RealD c,const ImplParams &p= ImplParams()) : 
       
-      CayleyFermion5D<Impl>(_Umu,
-			    FiveDimGrid,
-			    FiveDimRedBlackGrid,
-			    FourDimGrid,
-			    FourDimRedBlackGrid,_mass,_M5,p)
+    CayleyFermion5D<Impl>(_Umu,
+			  FiveDimGrid,
+			  FiveDimRedBlackGrid,
+			  FourDimGrid,
+			  FourDimRedBlackGrid,_mass,_M5,p)
 
-      {
-	RealD eps = 1.0;
+  {
+    RealD eps = 1.0;
 	
-	std::cout<<GridLogMessage << "ZMobiusFermion (b="<<b<<",c="<<c<<") with Ls= "<<this->Ls<<" gamma passed in"<<std::endl;
-	std::vector<Coeff_t> zgamma(this->Ls);
-	for(int s=0;s<this->Ls;s++){
-	  zgamma[s] = gamma[s];
-	}
+    std::cout<<GridLogMessage << "ZMobiusFermion (b="<<b<<",c="<<c<<") with Ls= "<<this->Ls<<" gamma passed in"<<std::endl;
+    std::vector<Coeff_t> zgamma(this->Ls);
+    for(int s=0;s<this->Ls;s++){
+      zgamma[s] = gamma[s];
+    }
 
-	// Call base setter
-	this->SetCoefficientsInternal(1.0,zgamma,b,c);
-      }
-
-    };
-
+    // Call base setter
+    this->SetCoefficientsInternal(1.0,zgamma,b,c);
   }
-}
+
+};
+
+NAMESPACE_END(Grid);
 
 #endif
