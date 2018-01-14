@@ -23,12 +23,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_LATTICE_TRANSFER_H
 #define GRID_LATTICE_TRANSFER_H
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 inline void subdivides(GridBase *coarse,GridBase *fine)
 {
@@ -45,39 +45,39 @@ inline void subdivides(GridBase *coarse,GridBase *fine)
 }
 
  
-  ////////////////////////////////////////////////////////////////////////////////////////////
-  // remove and insert a half checkerboard
-  ////////////////////////////////////////////////////////////////////////////////////////////
-  template<class vobj> inline void pickCheckerboard(int cb,Lattice<vobj> &half,const Lattice<vobj> &full){
-    half.checkerboard = cb;
+////////////////////////////////////////////////////////////////////////////////////////////
+// remove and insert a half checkerboard
+////////////////////////////////////////////////////////////////////////////////////////////
+template<class vobj> inline void pickCheckerboard(int cb,Lattice<vobj> &half,const Lattice<vobj> &full){
+  half.checkerboard = cb;
 
-    parallel_for(int ss=0;ss<full._grid->oSites();ss++){
-      int cbos;
-      std::vector<int> coor;
-      full._grid->oCoorFromOindex(coor,ss);
-      cbos=half._grid->CheckerBoard(coor);
+  parallel_for(int ss=0;ss<full._grid->oSites();ss++){
+    int cbos;
+    std::vector<int> coor;
+    full._grid->oCoorFromOindex(coor,ss);
+    cbos=half._grid->CheckerBoard(coor);
       
-      if (cbos==cb) {
-	int ssh=half._grid->oIndex(coor);
-	half._odata[ssh] = full._odata[ss];
-      }
+    if (cbos==cb) {
+      int ssh=half._grid->oIndex(coor);
+      half._odata[ssh] = full._odata[ss];
     }
   }
-  template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Lattice<vobj> &half){
-    int cb = half.checkerboard;
-    parallel_for(int ss=0;ss<full._grid->oSites();ss++){
-      std::vector<int> coor;
-      int cbos;
+}
+template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Lattice<vobj> &half){
+  int cb = half.checkerboard;
+  parallel_for(int ss=0;ss<full._grid->oSites();ss++){
+    std::vector<int> coor;
+    int cbos;
 
-      full._grid->oCoorFromOindex(coor,ss);
-      cbos=half._grid->CheckerBoard(coor);
+    full._grid->oCoorFromOindex(coor,ss);
+    cbos=half._grid->CheckerBoard(coor);
       
-      if (cbos==cb) {
-	int ssh=half._grid->oIndex(coor);
-	full._odata[ss]=half._odata[ssh];
-      }
+    if (cbos==cb) {
+      int ssh=half._grid->oIndex(coor);
+      full._odata[ss]=half._odata[ssh];
     }
   }
+}
   
 
 template<class vobj,class CComplex,int nbasis>
@@ -115,13 +115,13 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
     for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
     Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
 
-PARALLEL_CRITICAL
-    for(int i=0;i<nbasis;i++) {
+    PARALLEL_CRITICAL
+      for(int i=0;i<nbasis;i++) {
 
-      coarseData._odata[sc](i)=coarseData._odata[sc](i)
-	+ innerProduct(Basis[i]._odata[sf],fineData._odata[sf]);
+	coarseData._odata[sc](i)=coarseData._odata[sc](i)
+	  + innerProduct(Basis[i]._odata[sf],fineData._odata[sf]);
 
-    }
+      }
   }
   return;
 }
@@ -169,9 +169,9 @@ inline void blockZAXPY(Lattice<vobj> &fineZ,
   return;
 }
 template<class vobj,class CComplex>
-  inline void blockInnerProduct(Lattice<CComplex> &CoarseInner,
-				const Lattice<vobj> &fineX,
-				const Lattice<vobj> &fineY)
+inline void blockInnerProduct(Lattice<CComplex> &CoarseInner,
+			      const Lattice<vobj> &fineX,
+			      const Lattice<vobj> &fineY)
 {
   typedef decltype(innerProduct(fineX._odata[0],fineY._odata[0])) dotp;
 
@@ -230,8 +230,8 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
       for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
       Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
       
-PARALLEL_CRITICAL
-      coarseData._odata[sc]=coarseData._odata[sc]+fineData._odata[sf];
+      PARALLEL_CRITICAL
+	coarseData._odata[sc]=coarseData._odata[sc]+fineData._odata[sf];
 
     }
   }
@@ -422,11 +422,11 @@ void ExtractSlice(Lattice<vobj> &lowDim,const Lattice<vobj> & higherDim,int slic
   assert(hg->_processors[orthog]==1);
 
   int dl; dl = 0;
-    for(int d=0;d<nh;d++){
-      if ( d != orthog) {
-	assert(lg->_processors[dl]  == hg->_processors[d]);
-	assert(lg->_ldimensions[dl] == hg->_ldimensions[d]);
-	dl++;
+  for(int d=0;d<nh;d++){
+    if ( d != orthog) {
+      assert(lg->_processors[dl]  == hg->_processors[d]);
+      assert(lg->_ldimensions[dl] == hg->_ldimensions[d]);
+      dl++;
     }
   }
   // the above should guarantee that the operations are local
@@ -602,7 +602,7 @@ unvectorizeToLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in)
 //Copy SIMD-vectorized lattice to array of scalar objects in lexicographic order
 template<typename vobj, typename sobj>
 typename std::enable_if<isSIMDvectorized<vobj>::value 
-                    && !isSIMDvectorized<sobj>::value, void>::type 
+			&& !isSIMDvectorized<sobj>::value, void>::type 
 vectorizeFromLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
 {
 
@@ -987,5 +987,5 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
   }
 }
 
-}
+NAMESPACE_END(Grid);
 #endif
