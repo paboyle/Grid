@@ -30,8 +30,7 @@ directory
 /*  END LEGAL */
 #include <Grid/qcd/action/fermion/FermionCore.h>
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 int WilsonKernelsStatic::Opt   = WilsonKernelsStatic::OptGeneric;
 int WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsAndCompute;
@@ -451,5 +450,5 @@ FermOpTemplateInstantiate(WilsonKernels);
 AdjointFermOpTemplateInstantiate(WilsonKernels);
 TwoIndexFermOpTemplateInstantiate(WilsonKernels);
 
-}}
+NAMESPACE_END(Grid);
 

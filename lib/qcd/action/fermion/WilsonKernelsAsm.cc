@@ -32,9 +32,7 @@ Author: Guido Cossu <guido.cossu@ed.ac.uk>
 
 #include <Grid/qcd/action/fermion/FermionCore.h>
 
-namespace Grid {
-namespace QCD {
-
+NAMESPACE_BEGIN(Grid);
 
 ///////////////////////////////////////////////////////////
 // Default to no assembler implementation
@@ -123,5 +121,5 @@ INSTANTIATE_ASM(DomainWallVec5dImplDF);
 INSTANTIATE_ASM(ZDomainWallVec5dImplFH);
 INSTANTIATE_ASM(ZDomainWallVec5dImplDF);
 
-}}
+NAMESPACE_END(Grid);
 

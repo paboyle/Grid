@@ -571,8 +571,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define Chimu_31 UChi_11
 #define Chimu_32 UChi_12
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 template<class Impl> void 
 WilsonKernels<Impl>::HandDhopSite(StencilImpl &st,LebesgueOrder &lo,DoubledGaugeField &U,SiteHalfSpinor  *buf,
@@ -947,4 +946,4 @@ INSTANTIATE_THEM(DomainWallVec5dImplDF);
 INSTANTIATE_THEM(ZDomainWallVec5dImplFH);
 INSTANTIATE_THEM(ZDomainWallVec5dImplDF);
 
-}}
+NAMESPACE_END(Grid);
