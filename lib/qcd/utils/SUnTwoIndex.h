@@ -26,8 +26,7 @@
 #define QCD_UTIL_SUN2INDEX_H
 
 
-namespace Grid {
-namespace QCD {
+NAMESPACE_BEGIN(Grid);
 
 enum TwoIndexSymmetry { Symmetric = 1, AntiSymmetric = -1 };
 
@@ -35,7 +34,7 @@ inline Real delta(int a, int b) { return (a == b) ? 1.0 : 0.0; }
 
 template <int ncolour, TwoIndexSymmetry S>
 class SU_TwoIndex : public SU<ncolour> {
- public:
+public:
   static const int Dimension = ncolour * (ncolour + S) / 2;
   static const int NumGenerators = SU<ncolour>::AdjointDimension;
 
@@ -55,11 +54,11 @@ class SU_TwoIndex : public SU<ncolour> {
   typedef Lattice<vTIMatrixD> LatticeTwoIndexMatrixD;
 
   typedef Lattice<iVector<iScalar<iMatrix<vComplex, Dimension> >, Nd> >
-      LatticeTwoIndexField;
+  LatticeTwoIndexField;
   typedef Lattice<iVector<iScalar<iMatrix<vComplexF, Dimension> >, Nd> >
-      LatticeTwoIndexFieldF;
+  LatticeTwoIndexFieldF;
   typedef Lattice<iVector<iScalar<iMatrix<vComplexD, Dimension> >, Nd> >
-      LatticeTwoIndexFieldD;
+  LatticeTwoIndexFieldD;
 
   template <typename vtype>
   using iSUnMatrix = iScalar<iScalar<iMatrix<vtype, ncolour> > >;
@@ -109,7 +108,7 @@ class SU_TwoIndex : public SU<ncolour> {
     for (int k = 0; k < ncolour; k++)
       for (int l = 0; l < ncolour; l++)
         eij()()(l, k) = delta(i, k) * delta(j, l) +
-                        S * delta(j, k) * delta(i, l);
+	  S * delta(j, k) * delta(i, l);
 
     RealD nrm = 1. / std::sqrt(2.0);
     eij = eij * nrm;
@@ -128,7 +127,7 @@ class SU_TwoIndex : public SU<ncolour> {
   template <class cplx>
   static void generator(int Index, iSUnTwoIndexMatrix<cplx> &i2indTa) {
     Vector<typename SU<ncolour>::template iSUnMatrix<cplx> > ta(
-        ncolour * ncolour - 1);
+								ncolour * ncolour - 1);
     Vector<typename SU<ncolour>::template iSUnMatrix<cplx> > eij(Dimension);
     typename SU<ncolour>::template iSUnMatrix<cplx> tmp;
     i2indTa = zero;
@@ -142,7 +141,7 @@ class SU_TwoIndex : public SU<ncolour> {
       tmp = transpose(ta[Index]) * adj(eij[a]) + adj(eij[a]) * ta[Index];
       for (int b = 0; b < Dimension; b++) {
         typename SU<ncolour>::template iSUnMatrix<cplx> tmp1 =
-            tmp * eij[b]; 
+	  tmp * eij[b]; 
         Complex iTr = TensorRemove(timesI(trace(tmp1)));
         i2indTa()()(a, b) = iTr;
       }
@@ -197,8 +196,8 @@ class SU_TwoIndex : public SU<ncolour> {
   }
 
   static void TwoIndexLieAlgebraMatrix(
-      const typename SU<ncolour>::LatticeAlgebraVector &h,
-      LatticeTwoIndexMatrix &out, Real scale = 1.0) {
+				       const typename SU<ncolour>::LatticeAlgebraVector &h,
+				       LatticeTwoIndexMatrix &out, Real scale = 1.0) {
     conformable(h, out);
     GridBase *grid = out._grid;
     LatticeTwoIndexMatrix la(grid);
@@ -216,8 +215,8 @@ class SU_TwoIndex : public SU<ncolour> {
   // Projects the algebra components 
   // of a lattice matrix ( of dimension ncol*ncol -1 )
   static void projectOnAlgebra(
-      typename SU<ncolour>::LatticeAlgebraVector &h_out,
-      const LatticeTwoIndexMatrix &in, Real scale = 1.0) {
+			       typename SU<ncolour>::LatticeAlgebraVector &h_out,
+			       const LatticeTwoIndexMatrix &in, Real scale = 1.0) {
     conformable(h_out, in);
     h_out = zero;
     TIMatrix i2indTa;
@@ -245,8 +244,8 @@ class SU_TwoIndex : public SU<ncolour> {
     }
 
     Real coefficient =
-        -2.0 / (ncolour + 2 * S) * scale;  // 2/(Nc +/- 2) for the normalization
-                                           // of the trace in the two index rep
+      -2.0 / (ncolour + 2 * S) * scale;  // 2/(Nc +/- 2) for the normalization
+    // of the trace in the two index rep
 
     for (int a = 0; a < ncolour * ncolour - 1; a++) {
       auto tmp = real(trace(i2indTa[a] * in)) * coefficient;
@@ -269,8 +268,6 @@ typedef SU_TwoIndex<3, AntiSymmetric> SU3TwoIndexAntiSymm;
 typedef SU_TwoIndex<4, AntiSymmetric> SU4TwoIndexAntiSymm;
 typedef SU_TwoIndex<5, AntiSymmetric> SU5TwoIndexAntiSymm;
 
-
-}
-}
+NAMESPACE_END(Grid);
 
 #endif
