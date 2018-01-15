@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,24 +23,24 @@ Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_PRECONDITIONER_H
 #define GRID_PRECONDITIONER_H
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
-  template<class Field> class Preconditioner :  public LinearFunction<Field> { 
-    virtual void operator()(const Field &src, Field & psi)=0;
-  };
+template<class Field> class Preconditioner :  public LinearFunction<Field> { 
+  virtual void operator()(const Field &src, Field & psi)=0;
+};
 
-  template<class Field> class TrivialPrecon :  public Preconditioner<Field> { 
-  public:
-    void operator()(const Field &src, Field & psi){
-      psi = src;
-    }
-    TrivialPrecon(void){};
-  };
+template<class Field> class TrivialPrecon :  public Preconditioner<Field> { 
+public:
+  void operator()(const Field &src, Field & psi){
+    psi = src;
+  }
+  TrivialPrecon(void){};
+};
 
-}
+NAMESPACE_END(Grid);
 #endif
