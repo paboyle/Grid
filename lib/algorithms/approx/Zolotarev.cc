@@ -58,8 +58,8 @@
 
 /* Compute the partial fraction expansion coefficients (alpha) from the
  * factored form */
-namespace Grid {
-namespace Approx {
+NAMESPACE_BEGIN(Grid);
+NAMESPACE_BEGIN(Approx);
 
 static void construct_partfrac(izd *z) {
   int dn = z -> dn, dd = z -> dd, type = z -> type;
@@ -723,5 +723,6 @@ int main(int argc, char** argv) {
   return EXIT_SUCCESS;
 }
 
-
 #endif /* TEST */
+NAMESPACE_END(Approx);
+NAMESPACE_END(Grid);

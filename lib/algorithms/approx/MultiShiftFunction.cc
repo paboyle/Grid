@@ -27,7 +27,8 @@ Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid/GridCore.h>
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
+
 double MultiShiftFunction::approx(double x)
 {
   double a = norm;
@@ -53,4 +54,4 @@ void MultiShiftFunction::csv(std::ostream &out)
   }
   return;
 }
-}
+NAMESPACE_END(Grid);
