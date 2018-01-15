@@ -27,11 +27,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef GRID_CONJUGATE_GRADIENT_H
 #define GRID_CONJUGATE_GRADIENT_H
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 /////////////////////////////////////////////////////////////
 // Base classes for iterative processes based on operators
@@ -40,7 +40,7 @@ namespace Grid {
 
 template <class Field>
 class ConjugateGradient : public OperatorFunction<Field> {
- public:
+public:
   bool ErrorOnNoConverge;  // throw an assert when the CG fails to converge.
                            // Defaults true.
   RealD Tolerance;
@@ -48,9 +48,9 @@ class ConjugateGradient : public OperatorFunction<Field> {
   Integer IterationsToComplete; //Number of iterations the CG took to finish. Filled in upon completion
   
   ConjugateGradient(RealD tol, Integer maxit, bool err_on_no_conv = true)
-      : Tolerance(tol),
-        MaxIterations(maxit),
-        ErrorOnNoConverge(err_on_no_conv){};
+    : Tolerance(tol),
+      MaxIterations(maxit),
+      ErrorOnNoConverge(err_on_no_conv){};
 
   void operator()(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi) {
 
@@ -164,5 +164,5 @@ class ConjugateGradient : public OperatorFunction<Field> {
 
   }
 };
-}
+NAMESPACE_END(Grid);
 #endif
