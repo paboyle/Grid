@@ -27,13 +27,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-/*  END LEGAL */
+			   /*  END LEGAL */
 #ifndef GRID_LATTICE_BASE_H
 #define GRID_LATTICE_BASE_H
 
 #define STREAMING_STORES
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
 // TODO: 
 //       mac,real,imag
@@ -59,28 +59,28 @@ extern int GridCshiftPermuteMap[4][16];
 class LatticeBase
 {
 public:
-    virtual ~LatticeBase(void) = default;
-    GridBase *_grid;
+  virtual ~LatticeBase(void) = default;
+  GridBase *_grid;
 };
     
 class LatticeExpressionBase {};
 
 template <typename Op, typename T1>                           
 class LatticeUnaryExpression  : public std::pair<Op,std::tuple<T1> > , public LatticeExpressionBase {
- public:
- LatticeUnaryExpression(const std::pair<Op,std::tuple<T1> > &arg): std::pair<Op,std::tuple<T1> >(arg) {};
+public:
+  LatticeUnaryExpression(const std::pair<Op,std::tuple<T1> > &arg): std::pair<Op,std::tuple<T1> >(arg) {};
 };
 
 template <typename Op, typename T1, typename T2>              
 class LatticeBinaryExpression : public std::pair<Op,std::tuple<T1,T2> > , public LatticeExpressionBase {
- public:
- LatticeBinaryExpression(const std::pair<Op,std::tuple<T1,T2> > &arg): std::pair<Op,std::tuple<T1,T2> >(arg) {};
+public:
+  LatticeBinaryExpression(const std::pair<Op,std::tuple<T1,T2> > &arg): std::pair<Op,std::tuple<T1,T2> >(arg) {};
 };
 
 template <typename Op, typename T1, typename T2, typename T3> 
 class LatticeTrinaryExpression :public std::pair<Op,std::tuple<T1,T2,T3> >, public LatticeExpressionBase {
- public:
- LatticeTrinaryExpression(const std::pair<Op,std::tuple<T1,T2,T3> > &arg): std::pair<Op,std::tuple<T1,T2,T3> >(arg) {};
+public:
+  LatticeTrinaryExpression(const std::pair<Op,std::tuple<T1,T2,T3> > &arg): std::pair<Op,std::tuple<T1,T2,T3> >(arg) {};
 };
 
 void inline conformable(GridBase *lhs,GridBase *rhs)
@@ -92,19 +92,19 @@ template<class vobj>
 class Lattice : public LatticeBase
 {
 public:
-    int checkerboard;
-    Vector<vobj> _odata;
+  int checkerboard;
+  Vector<vobj> _odata;
     
-    // to pthread need a computable loop where loop induction is not required
-    int begin(void) { return 0;};
-    int end(void)   { return _odata.size(); }
-    vobj & operator[](int i) { return _odata[i]; };
-    const vobj & operator[](int i) const { return _odata[i]; };
+  // to pthread need a computable loop where loop induction is not required
+  int begin(void) { return 0;};
+  int end(void)   { return _odata.size(); }
+  vobj & operator[](int i) { return _odata[i]; };
+  const vobj & operator[](int i) const { return _odata[i]; };
 
 public:
-    typedef typename vobj::scalar_type scalar_type;
-    typedef typename vobj::vector_type vector_type;
-    typedef vobj vector_object;
+  typedef typename vobj::scalar_type scalar_type;
+  typedef typename vobj::vector_type vector_type;
+  typedef vobj vector_object;
    
   ////////////////////////////////////////////////////////////////////////////////
   // Expression Template closure support
@@ -177,7 +177,7 @@ public:
   }
   //GridFromExpression is tricky to do
   template<class Op,class T1>
-    Lattice(const LatticeUnaryExpression<Op,T1> & expr) {
+  Lattice(const LatticeUnaryExpression<Op,T1> & expr) {
     _grid = nullptr;
     GridFromExpression(_grid,expr);
     assert(_grid!=nullptr);
@@ -303,25 +303,25 @@ public:
   }
 }; // class Lattice
   
-  template<class vobj> std::ostream& operator<< (std::ostream& stream, const Lattice<vobj> &o){
-    std::vector<int> gcoor;
-    typedef typename vobj::scalar_object sobj;
-    sobj ss;
-    for(int g=0;g<o._grid->_gsites;g++){
-      o._grid->GlobalIndexToGlobalCoor(g,gcoor);
-      peekSite(ss,o,gcoor);
-      stream<<"[";
-      for(int d=0;d<gcoor.size();d++){
-	stream<<gcoor[d];
-	if(d!=gcoor.size()-1) stream<<",";
-      }
-      stream<<"]\t";
-      stream<<ss<<std::endl;
+template<class vobj> std::ostream& operator<< (std::ostream& stream, const Lattice<vobj> &o){
+  std::vector<int> gcoor;
+  typedef typename vobj::scalar_object sobj;
+  sobj ss;
+  for(int g=0;g<o._grid->_gsites;g++){
+    o._grid->GlobalIndexToGlobalCoor(g,gcoor);
+    peekSite(ss,o,gcoor);
+    stream<<"[";
+    for(int d=0;d<gcoor.size();d++){
+      stream<<gcoor[d];
+      if(d!=gcoor.size()-1) stream<<",";
     }
-    return stream;
+    stream<<"]\t";
+    stream<<ss<<std::endl;
   }
-  
+  return stream;
 }
+  
+NAMESPACE_END(Grid);
 
 
 
