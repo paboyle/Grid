@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -24,13 +24,15 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_LOCAL_COHERENCE_IRL_H
 #define GRID_LOCAL_COHERENCE_IRL_H
-namespace Grid { 
+
+NAMESPACE_BEGIN(Grid); 
+
 struct LanczosParams : Serializable {
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(LanczosParams,
 				  ChebyParams, Cheby,/*Chebyshev*/
 				  int, Nstop,    /*Vecs in Lanczos must converge Nstop < Nk < Nm*/
@@ -43,7 +45,7 @@ struct LanczosParams : Serializable {
 };
 
 struct LocalCoherenceLanczosParams : Serializable {
- public:
+public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(LocalCoherenceLanczosParams,
 				  bool, doFine,
 				  bool, doFineRead,
@@ -123,7 +125,7 @@ public:
 template<class Fobj,class CComplex,int nbasis>
 class ImplicitlyRestartedLanczosSmoothedTester  : public ImplicitlyRestartedLanczosTester<Lattice<iVector<CComplex,nbasis > > >
 {
- public:
+public:
   typedef iVector<CComplex,nbasis >           CoarseSiteVector;
   typedef Lattice<CoarseSiteVector>           CoarseField;
   typedef Lattice<CComplex>   CoarseScalar; // used for inner products on fine field
@@ -225,9 +227,9 @@ protected:
   std::vector<CoarseField>                        evec_coarse;
 public:
   LocalCoherenceLanczos(GridBase *FineGrid,
-		GridBase *CoarseGrid,
-		LinearOperatorBase<FineField> &FineOp,
-		int checkerboard) :
+			GridBase *CoarseGrid,
+			LinearOperatorBase<FineField> &FineOp,
+			int checkerboard) :
     _CoarseGrid(CoarseGrid),
     _FineGrid(FineGrid),
     _Aggregate(CoarseGrid,FineGrid,checkerboard),
@@ -348,5 +350,5 @@ public:
   }
 };
 
-}
+NAMESPACE_END(Grid);
 #endif
