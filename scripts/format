@@ -2,5 +2,5 @@
 for f in $@ 
 do
     cp $f $f.bak
-    emacs -batch -l $HOME/.emacs $f --eval '(progn (indent-region (point-min) (point-max) nil ) (save-buffer) ) ' 
+    emacs -batch -l $HOME/.emacs $f --eval "(progn (c-set-offset 'innamespace 0) ( c++-mode ) ( indent-region (point-min) (point-max) nil ) (save-buffer) ) " 
 done
