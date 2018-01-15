@@ -35,7 +35,7 @@ Author: Christoph Lehner <clehner@bnl.gov>
 //#include <zlib.h>
 #include <sys/stat.h>
 
-namespace Grid { 
+NAMESPACE_BEGIN(Grid); 
 
   ////////////////////////////////////////////////////////
   // Move following 100 LOC to lattice/Lattice_basis.h
@@ -848,5 +848,6 @@ void diagonalize_QR(std::vector<RealD>& lmd, std::vector<RealD>& lme,
   abort();
 }
 };
-}
+
+NAMESPACE_END(Grid);
 #endif
