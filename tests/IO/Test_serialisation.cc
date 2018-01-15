@@ -30,7 +30,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Grid.h>
 
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 GRID_SERIALIZABLE_ENUM(myenum, undef, red, 1, blue, 2, green, 3);
 

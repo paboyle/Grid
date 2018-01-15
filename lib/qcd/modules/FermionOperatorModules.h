@@ -37,19 +37,19 @@ NAMESPACE_BEGIN(Grid);
 template < class Product>
 class FermionOperatorModuleBase : public HMCModuleBase<Product>{
 public:
-  virtual void AddGridPair(QCD::GridModule&) = 0;
+  virtual void AddGridPair(GridModule&) = 0;
 };
 
 template <template <typename> class FOType, class FermionImpl, class FOPar>
 class FermionOperatorModule
   : public Parametrized<FOPar>,
-    public FermionOperatorModuleBase<QCD::FermionOperator<FermionImpl> > {
+    public FermionOperatorModuleBase<FermionOperator<FermionImpl> > {
 
 protected:
   std::unique_ptr< FOType<FermionImpl> > FOPtr;
-  std::vector< QCD::GridModule* >    GridRefs;
+  std::vector< GridModule* >    GridRefs;
 public:
-  typedef HMCModuleBase< QCD::FermionOperator<FermionImpl> > Base;
+  typedef HMCModuleBase< FermionOperator<FermionImpl> > Base;
   typedef typename Base::Product Product;
 
   FermionOperatorModule(FOPar Par) : Parametrized<FOPar>(Par) {}
@@ -57,7 +57,7 @@ public:
   template <class ReaderClass>
   FermionOperatorModule(Reader<ReaderClass>& Reader) : Parametrized<FOPar>(Reader){};
 
-  void AddGridPair(QCD::GridModule &Mod){
+  void AddGridPair(GridModule &Mod){
     if (GridRefs.size()>1){
       std::cout << GridLogError << "Adding too many Grids to the FermionOperatorModule" << std::endl;
       exit(1);
@@ -65,9 +65,9 @@ public:
     GridRefs.push_back(&Mod);
 
     if (Ls()){
-      GridRefs.push_back(new QCD::GridModule());
-      GridRefs[1]->set_full(QCD::SpaceTimeGrid::makeFiveDimGrid(Ls(),GridRefs[0]->get_full()));
-      GridRefs[1]->set_rb(QCD::SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls(),GridRefs[0]->get_full()));
+      GridRefs.push_back(new GridModule());
+      GridRefs[1]->set_full(SpaceTimeGrid::makeFiveDimGrid(Ls(),GridRefs[0]->get_full()));
+      GridRefs[1]->set_rb(SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls(),GridRefs[0]->get_full()));
     }
   }
 
@@ -94,7 +94,7 @@ private:
 // Factory
 template <char const *str, class FermionImpl, class ReaderClass >
 class HMC_FermionOperatorModuleFactory
-  : public Factory < FermionOperatorModuleBase<QCD::FermionOperator<FermionImpl> > ,  Reader<ReaderClass> > {
+  : public Factory < FermionOperatorModuleBase<FermionOperator<FermionImpl> > ,  Reader<ReaderClass> > {
 public:
   // use SINGLETON FUNCTOR MACRO HERE
   typedef Reader<ReaderClass> TheReader;

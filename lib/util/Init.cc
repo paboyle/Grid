@@ -352,21 +352,21 @@ void Grid_init(int *argc,char ***argv)
   ////////////////////////////////////
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-unroll") ){
-    QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptHandUnroll;
-    QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptHandUnroll;
+    WilsonKernelsStatic::Opt=WilsonKernelsStatic::OptHandUnroll;
+    StaggeredKernelsStatic::Opt=StaggeredKernelsStatic::OptHandUnroll;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-asm") ){
-    QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptInlineAsm;
-    QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptInlineAsm;
+    WilsonKernelsStatic::Opt=WilsonKernelsStatic::OptInlineAsm;
+    StaggeredKernelsStatic::Opt=StaggeredKernelsStatic::OptInlineAsm;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--dslash-generic") ){
-    QCD::WilsonKernelsStatic::Opt=QCD::WilsonKernelsStatic::OptGeneric;
-    QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptGeneric;
+    WilsonKernelsStatic::Opt=WilsonKernelsStatic::OptGeneric;
+    StaggeredKernelsStatic::Opt=StaggeredKernelsStatic::OptGeneric;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-overlap") ){
-    QCD::WilsonKernelsStatic::Comms = QCD::WilsonKernelsStatic::CommsAndCompute;
+    WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsAndCompute;
   } else {
-    QCD::WilsonKernelsStatic::Comms = QCD::WilsonKernelsStatic::CommsThenCompute;
+    WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsThenCompute;
   }
   if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-concurrent") ){
     CartesianCommunicator::SetCommunicatorPolicy(CartesianCommunicator::CommunicatorPolicyConcurrent);

@@ -168,6 +168,6 @@ public:
   };
 };
 
-NAMESPACE_END(Grid):
+NAMESPACE_END(Grid);
 
 #endif

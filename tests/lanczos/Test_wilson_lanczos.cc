@@ -30,7 +30,7 @@ directory
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 typedef WilsonFermionR FermionOp;
 typedef typename WilsonFermionR::FermionField FermionField;

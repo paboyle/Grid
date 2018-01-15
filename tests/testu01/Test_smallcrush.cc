@@ -29,7 +29,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 // Wrap Grid's parallel RNG for testU01
 #undef BIG_CRUSH             // Big crush enable (long running)

@@ -32,7 +32,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/ModuleFactory.hpp>
 
 using namespace Grid;
-using namespace QCD;
+ 
 using namespace Hadrons;
 
 #define ERROR_NO_ADDRESS(address)\

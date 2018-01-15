@@ -30,7 +30,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Grid.h>
 
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 #define POWER10
 

@@ -29,7 +29,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 
 void su3_test_mult_routine(LatticeColourMatrix &z, LatticeColourMatrix &x,LatticeColourMatrix &y)

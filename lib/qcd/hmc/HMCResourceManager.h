@@ -53,9 +53,9 @@ NAMESPACE_BEGIN(Grid);
 // HMC Resource manager
 template <class ImplementationPolicy>
 class HMCResourceManager {
-  typedef HMCModuleBase< QCD::BaseHmcCheckpointer<ImplementationPolicy> > CheckpointerBaseModule;
-  typedef HMCModuleBase< QCD::HmcObservable<typename ImplementationPolicy::Field> > ObservableBaseModule;
-  typedef ActionModuleBase< QCD::Action<typename ImplementationPolicy::Field>, GridModule > ActionBaseModule;
+  typedef HMCModuleBase< BaseHmcCheckpointer<ImplementationPolicy> > CheckpointerBaseModule;
+  typedef HMCModuleBase< HmcObservable<typename ImplementationPolicy::Field> > ObservableBaseModule;
+  typedef ActionModuleBase< Action<typename ImplementationPolicy::Field>, GridModule > ActionBaseModule;
 
   // Named storage for grid pairs (std + red-black)
   std::unordered_map<std::string, GridModule> Grids;

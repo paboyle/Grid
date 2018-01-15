@@ -91,7 +91,7 @@ template <class S, unsigned int N>
 class ScalarAdjMatrixImplTypes {
 public:
   typedef S Simd;
-  typedef QCD::SU<N> Group;
+  typedef SU<N> Group;
     
   template <typename vtype>
   using iImplField   = iScalar<iScalar<iMatrix<vtype, N>>>;
@@ -146,9 +146,9 @@ typedef ScalarImplTypes<vComplexF> ScalarImplCF;
 typedef ScalarImplTypes<vComplexD> ScalarImplCD;
     
 // Hardcoding here the size of the matrices
-typedef ScalarAdjMatrixImplTypes<vComplex,  QCD::Nc> ScalarAdjImplR;
-typedef ScalarAdjMatrixImplTypes<vComplexF, QCD::Nc> ScalarAdjImplF;
-typedef ScalarAdjMatrixImplTypes<vComplexD, QCD::Nc> ScalarAdjImplD;
+typedef ScalarAdjMatrixImplTypes<vComplex,  Nc> ScalarAdjImplR;
+typedef ScalarAdjMatrixImplTypes<vComplexF, Nc> ScalarAdjImplF;
+typedef ScalarAdjMatrixImplTypes<vComplexD, Nc> ScalarAdjImplD;
 
 template <int Colours > using ScalarNxNAdjImplR = ScalarAdjMatrixImplTypes<vComplex,   Colours >;
 template <int Colours > using ScalarNxNAdjImplF = ScalarAdjMatrixImplTypes<vComplexF,  Colours >;

@@ -31,7 +31,7 @@ directory
 
 int main(int argc, char **argv) {
   using namespace Grid;
-  using namespace Grid::QCD;
+   ;
 
   // Here change the allowed (higher) representations
   typedef Representations< FundamentalRepresentation, TwoIndexSymmetricRepresentation > TheRepresentations;

@@ -37,7 +37,7 @@ int main(int argc,char **argv)
 #if 0
 #include <simd/Intel512wilson.h>
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 void ZmulF(void *ptr1,void *ptr2,void *ptr3);
 void Zmul(void *ptr1,void *ptr2,void *ptr3);

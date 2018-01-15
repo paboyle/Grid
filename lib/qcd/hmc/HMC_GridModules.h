@@ -104,7 +104,6 @@ class GridFourDimModule : public GridModule
 public:
   GridFourDimModule()
   {
-    using namespace QCD;
     set_full(SpaceTimeGrid::makeFourDimGrid(
 					    GridDefaultLatt(), 
 					    GridDefaultSimd(4, vector_type::Nsimd()),
@@ -114,7 +113,6 @@ public:
 
   GridFourDimModule(const std::vector<int> tweak_simd)
   {
-    using namespace QCD;
     if (tweak_simd.size() != 4)
       {
 	std::cout << GridLogError
@@ -148,7 +146,6 @@ public:
 
   GridFourDimModule(const GridModuleParameters Params)
   {
-    using namespace QCD;
     std::vector<int> lattice_v = Params.getLattice();
     std::vector<int> mpi_v = Params.getMpi();
     if (lattice_v.size() == 4)

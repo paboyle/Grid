@@ -35,7 +35,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 template<class Fobj,class CComplex,int nbasis>
 class ProjectedHermOp : public LinearFunction<Lattice<iVector<CComplex,nbasis > > > {

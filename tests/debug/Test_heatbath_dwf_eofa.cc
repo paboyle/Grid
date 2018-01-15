@@ -38,7 +38,7 @@ Author: David Murphy <dmurphy@phys.columbia.edu>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 // Parameters for test
 const std::vector<int> grid_dim = { 8, 8, 8, 8 };

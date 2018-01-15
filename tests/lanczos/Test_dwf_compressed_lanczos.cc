@@ -34,7 +34,7 @@
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 bool read_evals(GridBase* _grid, char* fn, std::vector<RealD>& evals) {
 

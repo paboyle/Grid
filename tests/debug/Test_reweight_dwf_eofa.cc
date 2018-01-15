@@ -31,7 +31,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 // parameters for test
 const std::vector<int> grid_dim = { 8, 8, 8, 8 };

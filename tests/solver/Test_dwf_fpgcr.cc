@@ -30,7 +30,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/algorithms/iterative/PrecGeneralisedConjugateResidual.h>
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 
 template<class d>

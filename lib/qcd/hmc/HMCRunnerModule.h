@@ -36,18 +36,18 @@ NAMESPACE_BEGIN(Grid);
 // if we had a virtual reader would have been unecessary
 template <class HMCType, class ReaderClass >
 class HMCModule
-  : public Parametrized< QCD::HMCparameters >,
-    public HMCModuleBase< QCD::HMCRunnerBase<ReaderClass> > {
+  : public Parametrized< HMCparameters >,
+    public HMCModuleBase< HMCRunnerBase<ReaderClass> > {
 public:
-  typedef HMCModuleBase< QCD::HMCRunnerBase<ReaderClass> > Base;
+  typedef HMCModuleBase< HMCRunnerBase<ReaderClass> > Base;
   typedef typename Base::Product Product;
 
   std::unique_ptr<HMCType> HMCPtr;
 
-  HMCModule(QCD::HMCparameters Par) : Parametrized<QCD::HMCparameters>(Par) {}
+  HMCModule(HMCparameters Par) : Parametrized<HMCparameters>(Par) {}
 
   template <class ReaderCl>
-  HMCModule(Reader<ReaderCl>& R) : Parametrized<QCD::HMCparameters>(R, "HMC"){};
+  HMCModule(Reader<ReaderCl>& R) : Parametrized<HMCparameters>(R, "HMC"){};
 
   Product* getPtr() {
     if (!HMCPtr) initialize();
@@ -62,7 +62,7 @@ private:
 // Factory
 template <char const *str, class ReaderClass >
 class HMCRunnerModuleFactory
-  : public Factory < HMCModuleBase< QCD::HMCRunnerBase<ReaderClass> > ,	Reader<ReaderClass> > {
+  : public Factory < HMCModuleBase< HMCRunnerBase<ReaderClass> > ,	Reader<ReaderClass> > {
 public:
   typedef Reader<ReaderClass> TheReader; 
   // use SINGLETON FUNCTOR MACRO HERE
@@ -88,36 +88,36 @@ private:
 // macro for these
 
 template < class ImplementationPolicy, class RepresentationPolicy, class ReaderClass >
-class HMCLeapFrog: public HMCModule< QCD::GenericHMCRunnerTemplate<ImplementationPolicy, RepresentationPolicy, QCD::LeapFrog>, ReaderClass >{
-  typedef HMCModule< QCD::GenericHMCRunnerTemplate<ImplementationPolicy, RepresentationPolicy, QCD::LeapFrog>, ReaderClass  > HMCBaseMod;
+class HMCLeapFrog: public HMCModule< GenericHMCRunnerTemplate<ImplementationPolicy, RepresentationPolicy, LeapFrog>, ReaderClass >{
+  typedef HMCModule< GenericHMCRunnerTemplate<ImplementationPolicy, RepresentationPolicy, LeapFrog>, ReaderClass  > HMCBaseMod;
   using HMCBaseMod::HMCBaseMod;
 
   // aquire resource
   virtual void initialize(){
-    this->HMCPtr.reset(new QCD::GenericHMCRunnerTemplate<ImplementationPolicy, RepresentationPolicy, QCD::LeapFrog>(this->Par_) );
+    this->HMCPtr.reset(new GenericHMCRunnerTemplate<ImplementationPolicy, RepresentationPolicy, LeapFrog>(this->Par_) );
   }
 };
 
 template < class ImplementationPolicy, class RepresentationPolicy, class ReaderClass >
-class HMCMinimumNorm2: public HMCModule< QCD::GenericHMCRunnerTemplate<ImplementationPolicy, RepresentationPolicy, QCD::MinimumNorm2>, ReaderClass  >{
-  typedef HMCModule< QCD::GenericHMCRunnerTemplate<ImplementationPolicy, RepresentationPolicy, QCD::MinimumNorm2>, ReaderClass  > HMCBaseMod;
+class HMCMinimumNorm2: public HMCModule< GenericHMCRunnerTemplate<ImplementationPolicy, RepresentationPolicy, MinimumNorm2>, ReaderClass  >{
+  typedef HMCModule< GenericHMCRunnerTemplate<ImplementationPolicy, RepresentationPolicy, MinimumNorm2>, ReaderClass  > HMCBaseMod;
   using HMCBaseMod::HMCBaseMod;
 
   // aquire resource
   virtual void initialize(){
-    this->HMCPtr.reset(new QCD::GenericHMCRunnerTemplate<ImplementationPolicy, RepresentationPolicy, QCD::MinimumNorm2>(this->Par_));
+    this->HMCPtr.reset(new GenericHMCRunnerTemplate<ImplementationPolicy, RepresentationPolicy, MinimumNorm2>(this->Par_));
   }
 };
 
 
 template < class ImplementationPolicy, class RepresentationPolicy, class ReaderClass >
-class HMCForceGradient: public HMCModule< QCD::GenericHMCRunnerTemplate<ImplementationPolicy, RepresentationPolicy, QCD::ForceGradient>, ReaderClass  >{
-  typedef HMCModule< QCD::GenericHMCRunnerTemplate<ImplementationPolicy, RepresentationPolicy, QCD::ForceGradient>, ReaderClass   > HMCBaseMod;
+class HMCForceGradient: public HMCModule< GenericHMCRunnerTemplate<ImplementationPolicy, RepresentationPolicy, ForceGradient>, ReaderClass  >{
+  typedef HMCModule< GenericHMCRunnerTemplate<ImplementationPolicy, RepresentationPolicy, ForceGradient>, ReaderClass   > HMCBaseMod;
   using HMCBaseMod::HMCBaseMod;
 
   // aquire resource
   virtual void initialize(){
-    this->HMCPtr.reset(new QCD::GenericHMCRunnerTemplate<ImplementationPolicy, RepresentationPolicy, QCD::ForceGradient>(this->Par_) );
+    this->HMCPtr.reset(new GenericHMCRunnerTemplate<ImplementationPolicy, RepresentationPolicy, ForceGradient>(this->Par_) );
   }
 };
 

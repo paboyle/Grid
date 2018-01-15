@@ -52,9 +52,9 @@ public:
 template <class ActionType, class APar>
 class ActionModule
   : public Parametrized<APar>,
-    public ActionModuleBase< QCD::Action<typename ActionType::GaugeField> , QCD::GridModule > {
+    public ActionModuleBase< Action<typename ActionType::GaugeField> , GridModule > {
 public:
-  typedef ActionModuleBase< QCD::Action<typename ActionType::GaugeField>, QCD::GridModule > Base;
+  typedef ActionModuleBase< Action<typename ActionType::GaugeField>, GridModule > Base;
   typedef typename Base::Product Product;
   typedef APar Parameters;
 
@@ -467,31 +467,19 @@ public:
 
 };
 
-}// QCD temporarily here
-
-
-
-
-
-
-
 ////////////////////////////////////////
 // Factories specialisations
 ////////////////////////////////////////
-
-
-
 // use the same classed defined by Antonin, does not make sense to rewrite
 // Factory is perfectly fine
 // Registar must be changed because I do not want to use the ModuleFactory
-
 // explicit ref to LatticeGaugeField must be changed or put in the factory
-//typedef ActionModuleBase< QCD::Action< QCD::LatticeGaugeField >, QCD::GridModule > HMC_LGTActionModBase;
-//typedef ActionModuleBase< QCD::Action< QCD::LatticeReal >, QCD::GridModule > HMC_ScalarActionModBase;
+//typedef ActionModuleBase< Action< LatticeGaugeField >, GridModule > HMC_LGTActionModBase;
+//typedef ActionModuleBase< Action< LatticeReal >, GridModule > HMC_ScalarActionModBase;
 
 template <char const *str, class Field, class ReaderClass >
 class HMC_ActionModuleFactory
-  : public Factory < ActionModuleBase< QCD::Action< Field >, QCD::GridModule > , Reader<ReaderClass> > {
+  : public Factory < ActionModuleBase< Action< Field >, GridModule > , Reader<ReaderClass> > {
 public:
   typedef Reader<ReaderClass> TheReader; 
   // use SINGLETON FUNCTOR MACRO HERE

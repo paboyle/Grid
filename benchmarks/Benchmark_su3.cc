@@ -30,7 +30,7 @@ Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 int main (int argc, char ** argv)
 {

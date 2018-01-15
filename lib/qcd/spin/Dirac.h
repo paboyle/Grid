@@ -39,10 +39,10 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 NAMESPACE_BEGIN(Grid);
 
-// Dirac algebra adjoint operator (not in QCD:: to overload other adj)
-inline QCD::Gamma adj(const QCD::Gamma &g)
+// Dirac algebra adjoint operator (not in  to overload other adj)
+inline Gamma adj(const Gamma &g)
 {
-  return QCD::Gamma (QCD::Gamma::adj[g.g]);
+  return Gamma (Gamma::adj[g.g]);
 }
 
 

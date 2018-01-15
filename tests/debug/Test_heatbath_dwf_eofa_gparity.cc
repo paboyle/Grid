@@ -38,7 +38,7 @@ Author: David Murphy <dmurphy@phys.columbia.edu>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 typedef GparityWilsonImplR FermionImplPolicy;
 typedef GparityDomainWallEOFAFermionR FermionAction;

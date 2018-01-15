@@ -29,7 +29,7 @@ Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
  
 

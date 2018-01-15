@@ -30,7 +30,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 typedef WilsonFermion5D<DomainWallVec5dImplR> WilsonFermion5DR;
 typedef WilsonFermion5D<DomainWallVec5dImplF> WilsonFermion5DF;
@@ -369,19 +369,19 @@ public:
 #endif
       controls Cases [] = {
 #ifdef AVX512
-	{ QCD::WilsonKernelsStatic::OptInlineAsm , QCD::WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
-	{ QCD::WilsonKernelsStatic::OptInlineAsm , QCD::WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptInlineAsm ,  WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptInlineAsm ,  WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  },
 #endif
-	{ QCD::WilsonKernelsStatic::OptHandUnroll, QCD::WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
-	{ QCD::WilsonKernelsStatic::OptHandUnroll, QCD::WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  },
-	{ QCD::WilsonKernelsStatic::OptGeneric   , QCD::WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
-	{ QCD::WilsonKernelsStatic::OptGeneric   , QCD::WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  }
+	{  WilsonKernelsStatic::OptHandUnroll,  WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptHandUnroll,  WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptGeneric   ,  WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptGeneric   ,  WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  }
       }; 
 
       for(int c=0;c<num_cases;c++) {
 
-	QCD::WilsonKernelsStatic::Comms = Cases[c].CommsOverlap;
-	QCD::WilsonKernelsStatic::Opt   = Cases[c].Opt;
+	 WilsonKernelsStatic::Comms = Cases[c].CommsOverlap;
+	 WilsonKernelsStatic::Opt   = Cases[c].Opt;
 	CartesianCommunicator::SetCommunicatorPolicy(Cases[c].CommsAsynch);
 
 	std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
@@ -577,19 +577,19 @@ public:
 #endif
       controls Cases [] = {
 #ifdef AVX512
-	{ QCD::WilsonKernelsStatic::OptInlineAsm , QCD::WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
-	{ QCD::WilsonKernelsStatic::OptInlineAsm , QCD::WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptInlineAsm ,  WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptInlineAsm ,  WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  },
 #endif
-	{ QCD::WilsonKernelsStatic::OptHandUnroll, QCD::WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
-	{ QCD::WilsonKernelsStatic::OptHandUnroll, QCD::WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  },
-	{ QCD::WilsonKernelsStatic::OptGeneric   , QCD::WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
-	{ QCD::WilsonKernelsStatic::OptGeneric   , QCD::WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  }
+	{  WilsonKernelsStatic::OptHandUnroll,  WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptHandUnroll,  WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptGeneric   ,  WilsonKernelsStatic::CommsThenCompute ,CartesianCommunicator::CommunicatorPolicySequential  },
+	{  WilsonKernelsStatic::OptGeneric   ,  WilsonKernelsStatic::CommsAndCompute  ,CartesianCommunicator::CommunicatorPolicySequential  }
       }; 
 
       for(int c=0;c<num_cases;c++) {
 
-	QCD::WilsonKernelsStatic::Comms = Cases[c].CommsOverlap;
-	QCD::WilsonKernelsStatic::Opt   = Cases[c].Opt;
+	 WilsonKernelsStatic::Comms = Cases[c].CommsOverlap;
+	 WilsonKernelsStatic::Opt   = Cases[c].Opt;
 	CartesianCommunicator::SetCommunicatorPolicy(Cases[c].CommsAsynch);
 
 	std::cout<<GridLogMessage << "=================================================================================="<<std::endl;

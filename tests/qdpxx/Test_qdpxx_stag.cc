@@ -327,7 +327,7 @@ void calc_chroma(GaugeField & lat, GaugeField &uthin, GaugeField &ufat, FermionF
 void make_gauge(GaugeField & Umu,FermionField &src)
 {
   using namespace Grid;
-  using namespace Grid::QCD;
+   ;
 
   std::vector<int> seeds4({1,2,3,4});
 
@@ -340,7 +340,7 @@ void make_gauge(GaugeField & Umu,FermionField &src)
 void calc_grid(GaugeField & Uthin, GaugeField & Utriple, GaugeField & Ufat, FermionField &src, FermionField &res,int dag)
 {
   using namespace Grid;
-  using namespace Grid::QCD;
+   ;
 
   Grid::GridCartesian         * UGrid   = (Grid::GridCartesian *) Uthin._grid;
   Grid::GridRedBlackCartesian * UrbGrid = Grid::QCD::SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);

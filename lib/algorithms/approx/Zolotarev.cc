@@ -516,7 +516,9 @@ zolotarev_data* higham(PRECISION epsilon, int n) {
   free(d);
   return zd;
 }
-}}
+
+NAMESPACE_END(Approx);
+NAMESPACE_END(Grid);
 
 #ifdef TEST
 
@@ -584,6 +586,7 @@ static PRECISION zolotarev_cayley_eval(PRECISION x, zolotarev_data* rdata) {
     T *= (rdata -> gamma[m] - x) / (rdata -> gamma[m] + x);
   return (ONE - T) / (ONE + T);
 }
+
 
 /* Test program. Apart from printing out the parameters for R(x) it produces
  * the following data files for plotting (unless NPLOT is defined):
@@ -724,5 +727,4 @@ int main(int argc, char** argv) {
 }
 
 #endif /* TEST */
-NAMESPACE_END(Approx);
-NAMESPACE_END(Grid);
+

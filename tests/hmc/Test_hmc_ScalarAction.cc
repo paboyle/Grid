@@ -29,7 +29,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 
 int main(int argc, char **argv) {
   using namespace Grid;
-  using namespace Grid::QCD;
+   ;
 
   Grid_init(&argc, &argv);
   int threads = GridThread::GetThreads();

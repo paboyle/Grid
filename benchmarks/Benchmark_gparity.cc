@@ -2,7 +2,7 @@
 #include <sstream>
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 template<class d>
 struct scal {

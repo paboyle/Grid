@@ -36,7 +36,7 @@ directory
 NAMESPACE_BEGIN(Grid);
 
 template <class Impl>
-class ScalarAction : public QCD::Action<typename Impl::Field> {
+class ScalarAction : public Action<typename Impl::Field> {
 public:
   INHERIT_FIELD_TYPES(Impl);
 
@@ -58,7 +58,7 @@ public:
   virtual void refresh(const Field &U, GridParallelRNG &pRNG) {}  // noop as no pseudoferms
 
   virtual RealD S(const Field &p) {
-    return (mass_square * 0.5 + QCD::Nd) * ScalarObs<Impl>::sumphisquared(p) +
+    return (mass_square * 0.5 + Nd) * ScalarObs<Impl>::sumphisquared(p) +
       (lambda / 24.) * ScalarObs<Impl>::sumphifourth(p) +
       ScalarObs<Impl>::sumphider(p);
   };
@@ -69,9 +69,9 @@ public:
     Field p2(p._grid);
     ScalarObs<Impl>::phisquared(p2, p);
     tmp = -(Cshift(p, 0, -1) + Cshift(p, 0, 1));
-    for (int mu = 1; mu < QCD::Nd; mu++) tmp -= Cshift(p, mu, -1) + Cshift(p, mu, 1);
+    for (int mu = 1; mu < Nd; mu++) tmp -= Cshift(p, mu, -1) + Cshift(p, mu, 1);
 
-    force =+(mass_square + 2. * QCD::Nd) * p + (lambda / 6.) * p2 * p + tmp;
+    force =+(mass_square + 2. * Nd) * p + (lambda / 6.) * p2 * p + tmp;
   }
 };
 

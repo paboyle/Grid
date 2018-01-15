@@ -29,7 +29,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <Grid/Grid.h>
 
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 int main (int argc, char ** argv)
 {

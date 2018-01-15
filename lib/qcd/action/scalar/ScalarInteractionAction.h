@@ -36,7 +36,7 @@ directory
 NAMESPACE_BEGIN(Grid);
 
 template <class Impl, int Ndim >
-class ScalarInteractionAction : public QCD::Action<typename Impl::Field> {
+class ScalarInteractionAction : public Action<typename Impl::Field> {
 public:
   INHERIT_FIELD_TYPES(Impl);
 private:
@@ -116,7 +116,7 @@ public:
     static Stencil phiStencil(p._grid, npoint, 0, directions, displacements);
     phiStencil.HaloExchange(p, compressor);
       
-    //for (int mu = 0; mu < QCD::Nd; mu++) force -= Cshift(p, mu, -1) + Cshift(p, mu, 1);
+    //for (int mu = 0; mu < Nd; mu++) force -= Cshift(p, mu, -1) + Cshift(p, mu, 1);
     for (int point = 0; point < npoint; point++) {
       parallel_for (int i = 0; i < p._grid->oSites(); i++) {
 	const vobj *temp;

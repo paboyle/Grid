@@ -37,9 +37,9 @@ NAMESPACE_BEGIN(Grid);
 template <class ObservableType, class OPar>
 class ObservableModule
   : public Parametrized<OPar>,
-    public HMCModuleBase< QCD::HmcObservable<typename ObservableType::Field> > {
+    public HMCModuleBase< HmcObservable<typename ObservableType::Field> > {
 public:
-  typedef HMCModuleBase< QCD::HmcObservable< typename ObservableType::Field> > Base;
+  typedef HMCModuleBase< HmcObservable< typename ObservableType::Field> > Base;
   typedef typename Base::Product Product;
   typedef OPar Parameters;
 
@@ -105,19 +105,15 @@ public:
   TopologicalChargeMod(): ObsBase(){}
 };
 
-
-}// QCD temporarily here
-
-
 ////////////////////////////////////////
 // Factories specialisations
 ////////////////////////////////////////
 // explicit ref to LatticeGaugeField must be changed or put in the factory
-//typedef HMCModuleBase< QCD::HmcObservable<QCD::LatticeGaugeField> > HMC_ObsModBase;
+//typedef HMCModuleBase< HmcObservable<LatticeGaugeField> > HMC_ObsModBase;
 
 template <char const *str, class Field, class ReaderClass >
 class HMC_ObservablesModuleFactory
-  : public Factory < HMCModuleBase< QCD::HmcObservable<Field> >, Reader<ReaderClass> > {
+  : public Factory < HMCModuleBase< HmcObservable<Field> >, Reader<ReaderClass> > {
 public:
   typedef Reader<ReaderClass> TheReader; 
   // use SINGLETON FUNCTOR MACRO HERE

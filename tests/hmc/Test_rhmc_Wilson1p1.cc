@@ -32,7 +32,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 int main(int argc, char **argv) {
   using namespace Grid;
-  using namespace Grid::QCD;
+   ;
 
   Grid_init(&argc, &argv);
   int threads = GridThread::GetThreads();

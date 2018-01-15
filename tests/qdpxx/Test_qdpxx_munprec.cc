@@ -486,7 +486,7 @@ void calc_chroma(ChromaAction action,Grid::QCD::LatticeGaugeField & lat, Grid::Q
 void calc_grid(ChromaAction action,Grid::QCD::LatticeGaugeField & Umu, Grid::QCD::LatticeFermion &src, Grid::QCD::LatticeFermion &res,int dag)
 {
   using namespace Grid;
-  using namespace Grid::QCD;
+   ;
 
   std::vector<int> seeds4({1,2,3,4});
   std::vector<int> seeds5({5,6,7,8});

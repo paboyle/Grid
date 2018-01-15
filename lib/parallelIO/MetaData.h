@@ -177,14 +177,14 @@ template<class vobj> inline void PrepareMetaData(Lattice<vobj> & field, FieldMet
 inline void GaugeStatistics(Lattice<vLorentzColourMatrixF> & data,FieldMetaData &header)
 {
   // How to convert data precision etc...
-  header.link_trace=Grid::QCD::WilsonLoops<PeriodicGimplF>::linkTrace(data);
-  header.plaquette =Grid::QCD::WilsonLoops<PeriodicGimplF>::avgPlaquette(data);
+  header.link_trace=WilsonLoops<PeriodicGimplF>::linkTrace(data);
+  header.plaquette =WilsonLoops<PeriodicGimplF>::avgPlaquette(data);
 }
 inline void GaugeStatistics(Lattice<vLorentzColourMatrixD> & data,FieldMetaData &header)
 {
   // How to convert data precision etc...
-  header.link_trace=Grid::QCD::WilsonLoops<PeriodicGimplD>::linkTrace(data);
-  header.plaquette =Grid::QCD::WilsonLoops<PeriodicGimplD>::avgPlaquette(data);
+  header.link_trace=WilsonLoops<PeriodicGimplD>::linkTrace(data);
+  header.plaquette =WilsonLoops<PeriodicGimplD>::avgPlaquette(data);
 }
 template<> inline void PrepareMetaData<vLorentzColourMatrixF>(Lattice<vLorentzColourMatrixF> & field, FieldMetaData &header)
 {

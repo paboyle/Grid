@@ -30,7 +30,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 using namespace std;
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 class funcPlus {
 public:

@@ -42,7 +42,7 @@ class ScalarActionParameters : Serializable {
 }
 
 using namespace Grid;
-using namespace Grid::QCD;
+ ;
 
 template <class Impl>
 class MagMeas : public HmcObservable<typename Impl::Field> {
