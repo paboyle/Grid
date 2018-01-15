@@ -1,4 +1,4 @@
-    /*************************************************************************************
+/*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -23,38 +23,38 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     See the full license in the file "LICENSE" in the top level distribution directory
-    *************************************************************************************/
-    /*  END LEGAL */
+*************************************************************************************/
+/*  END LEGAL */
 #ifndef GRID_NORMAL_EQUATIONS_H
 #define GRID_NORMAL_EQUATIONS_H
 
-namespace Grid {
+NAMESPACE_BEGIN(Grid);
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Take a matrix and form an NE solver calling a Herm solver
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////
-  template<class Field> class NormalEquations : public OperatorFunction<Field>{
-  private:
-    SparseMatrixBase<Field> & _Matrix;
-    OperatorFunction<Field> & _HermitianSolver;
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+// Take a matrix and form an NE solver calling a Herm solver
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+template<class Field> class NormalEquations : public OperatorFunction<Field>{
+private:
+  SparseMatrixBase<Field> & _Matrix;
+  OperatorFunction<Field> & _HermitianSolver;
 
-  public:
+public:
 
-    /////////////////////////////////////////////////////
-    // Wrap the usual normal equations trick
-    /////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////
+  // Wrap the usual normal equations trick
+  /////////////////////////////////////////////////////
   NormalEquations(SparseMatrixBase<Field> &Matrix, OperatorFunction<Field> &HermitianSolver) 
     :  _Matrix(Matrix), _HermitianSolver(HermitianSolver) {}; 
 
-    void operator() (const Field &in, Field &out){
+  void operator() (const Field &in, Field &out){
  
-      Field src(in._grid);
+    Field src(in._grid);
 
-      _Matrix.Mdag(in,src);
-      _HermitianSolver(src,out);  // Mdag M out = Mdag in
+    _Matrix.Mdag(in,src);
+    _HermitianSolver(src,out);  // Mdag M out = Mdag in
  
-    }     
-  };
+  }     
+};
 
-}
+NAMESPACE_END(Grid);
 #endif
