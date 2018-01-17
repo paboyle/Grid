@@ -4,10 +4,10 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Global.hpp
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -61,6 +61,9 @@ using Grid::operator<<;
 #ifndef SIMPL
 #define SIMPL ScalarImplCR
 #endif
+#ifndef GIMPL
+#define GIMPL GimplTypesR
+#endif
 
 BEGIN_HADRONS_NAMESPACE
 
@@ -84,7 +87,8 @@ typedef std::function<void(FermionField##suffix &,\
                       const FermionField##suffix &)> SolverFn##suffix;
 
 #define SINK_TYPE_ALIASES(suffix)\
-typedef std::function<SlicedPropagator##suffix(const PropagatorField##suffix &)> SinkFn##suffix;
+typedef std::function<SlicedPropagator##suffix\
+                      (const PropagatorField##suffix &)> SinkFn##suffix;
 
 #define FGS_TYPE_ALIASES(FImpl, suffix)\
 FERM_TYPE_ALIASES(FImpl, suffix)\
@@ -107,6 +111,8 @@ extern HadronsLogger HadronsLogWarning;
 extern HadronsLogger HadronsLogMessage;
 extern HadronsLogger HadronsLogIterative;
 extern HadronsLogger HadronsLogDebug;
+
+void initLogger(void);
 
 // singleton pattern
 #define SINGLETON(name)\
@@ -161,13 +167,18 @@ std::string typeName(void)
 }
 
 // default writers/readers
+extern const std::string resultFileExt;
+
 #ifdef HAVE_HDF5
-typedef Hdf5Reader CorrReader;
-typedef Hdf5Writer CorrWriter;
+typedef Hdf5Reader ResultReader;
+typedef Hdf5Writer ResultWriter;
 #else
-typedef XmlReader CorrReader;
-typedef XmlWriter CorrWriter;
+typedef XmlReader ResultReader;
+typedef XmlWriter ResultWriter;
 #endif
+
+#define RESULT_FILE_NAME(name) \
+name + "." + std::to_string(vm().getTrajectory()) + "." + resultFileExt
 
 END_HADRONS_NAMESPACE
 

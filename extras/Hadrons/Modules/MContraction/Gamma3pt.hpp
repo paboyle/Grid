@@ -4,9 +4,10 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MContraction/Gamma3pt.hpp
 
-Copyright (C) 2017
+Copyright (C) 2015-2018
 
-Author: Andrew Lawson    <andrew.lawson1991@gmail.com>
+Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -152,7 +153,7 @@ void TGamma3pt<FImpl1, FImpl2, FImpl3>::execute(void)
 
     // Initialise variables. q2 and q3 are normal propagators, q1 may be 
     // sink smeared.
-    CorrWriter            writer(par().output);
+    ResultWriter          writer(RESULT_FILE_NAME(par().output));
     auto                  &q1 = envGet(SlicedPropagator1, par().q1);
     auto                  &q2 = envGet(PropagatorField2, par().q2);
     auto                  &q3 = envGet(PropagatorField2, par().q3);

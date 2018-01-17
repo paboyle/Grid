@@ -4,10 +4,10 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MContraction/Baryon.hpp
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -122,7 +122,7 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
                  << " quarks '" << par().q1 << "', '" << par().q2 << "', and '"
                  << par().q3 << "'" << std::endl;
     
-    CorrWriter writer(par().output);
+    ResultWriter writer(RESULT_FILE_NAME(par().output));
     auto       &q1 = envGet(PropagatorField1, par().q1);
     auto       &q2 = envGet(PropagatorField2, par().q2);
     auto       &q3 = envGet(PropagatorField3, par().q2);

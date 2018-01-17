@@ -59,6 +59,7 @@ public:
 
     virtual ~GridBase() = default;
 
+
     // Physics Grid information.
     std::vector<int> _simd_layout;// Which dimensions get relayed out over simd lanes.
     std::vector<int> _fdimensions;// (full) Global dimensions of array prior to cb removal
@@ -77,6 +78,8 @@ public:
 
     std::vector<int> _lstart;     // local start of array in gcoors _processor_coor[d]*_ldimensions[d]
     std::vector<int> _lend  ;     // local end of array in gcoors   _processor_coor[d]*_ldimensions[d]+_ldimensions_[d]-1
+
+    bool _isCheckerBoarded; 
 
 public:
 

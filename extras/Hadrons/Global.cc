@@ -4,8 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Global.cc
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -39,6 +38,21 @@ HadronsLogger Hadrons::HadronsLogMessage(1,"Message");
 HadronsLogger Hadrons::HadronsLogIterative(1,"Iterative");
 HadronsLogger Hadrons::HadronsLogDebug(1,"Debug");
 
+void Hadrons::initLogger(void)
+{
+    auto w = std::string("Hadrons").length();
+    GridLogError.setTopWidth(w);
+    GridLogWarning.setTopWidth(w);
+    GridLogMessage.setTopWidth(w);
+    GridLogIterative.setTopWidth(w);
+    GridLogDebug.setTopWidth(w);
+    HadronsLogError.Active(GridLogError.isActive());
+    HadronsLogWarning.Active(GridLogWarning.isActive());
+    HadronsLogMessage.Active(GridLogMessage.isActive());
+    HadronsLogIterative.Active(GridLogIterative.isActive());
+    HadronsLogDebug.Active(GridLogDebug.isActive());
+}
+
 // type utilities //////////////////////////////////////////////////////////////
 constexpr unsigned int maxNameSize = 1024u;
 
@@ -53,3 +67,10 @@ std::string Hadrons::typeName(const std::type_info *info)
     
     return name;
 }
+
+// default writers/readers /////////////////////////////////////////////////////
+#ifdef HAVE_HDF5
+const std::string Hadrons::resultFileExt = "h5";
+#else
+const std::string Hadrons::resultFileExt = "xml";
+#endif

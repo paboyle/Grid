@@ -130,8 +130,8 @@ int main(int argc, char **argv)
     for (int c = 0; c < Nc; ++c)
     {
         ref = prop;
-        PropToFerm(ferm, prop, s, c);
-        FermToProp(prop, ferm, s, c);
+        PropToFerm<WilsonImplR>(ferm, prop, s, c);
+        FermToProp<WilsonImplR>(prop, ferm, s, c);
 
         std::cout << "Spin = " << s << ", Colour = " << c << std::endl;
         ref -= prop;

@@ -92,6 +92,19 @@ class PlaquetteMod: public ObservableModule<PlaquetteLogger<Impl>, NoParameters>
   PlaquetteMod(): ObsBase(NoParameters()){}
 };
 
+template < class Impl >
+class PolyakovMod: public ObservableModule<PolyakovLogger<Impl>, NoParameters>{
+  typedef ObservableModule<PolyakovLogger<Impl>, NoParameters> ObsBase;
+  using ObsBase::ObsBase; // for constructors
+
+  // acquire resource
+  virtual void initialize(){
+    this->ObservablePtr.reset(new PolyakovLogger<Impl>());
+  }
+  public:
+  PolyakovMod(): ObsBase(NoParameters()){}
+};
+
 
 template < class Impl >
 class TopologicalChargeMod: public ObservableModule<TopologicalCharge<Impl>, TopologyObsParameters>{

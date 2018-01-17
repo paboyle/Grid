@@ -4,12 +4,10 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MFermion/GaugeProp.hpp
 
-Copyright (C) 2015
-Copyright (C) 2016
-Copyright (C) 2017
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
-        Andrew Lawson    <andrew.lawson1991@gmail.com>
+Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -96,7 +94,6 @@ private:
 };
 
 MODULE_REGISTER_NS(GaugeProp, TGaugeProp<FIMPL>, MFermion);
-
 /******************************************************************************
  *                      TGaugeProp implementation                             *
  ******************************************************************************/
@@ -156,7 +153,7 @@ void TGaugeProp<FImpl>::execute(void)
     LOG(Message) << "Inverting using solver '" << par().solver
                  << "' on source '" << par().source << "'" << std::endl;
     for (unsigned int s = 0; s < Ns; ++s)
-    for (unsigned int c = 0; c < Nc; ++c)
+      for (unsigned int c = 0; c < FImpl::Dimension; ++c)
     {
         LOG(Message) << "Inversion for spin= " << s << ", color= " << c
                      << std::endl;
@@ -165,11 +162,11 @@ void TGaugeProp<FImpl>::execute(void)
         {
             if (Ls_ == 1)
             {
-                PropToFerm(source, fullSrc, s, c);
+               PropToFerm<FImpl>(source, fullSrc, s, c);
             }
             else
             {
-                PropToFerm(tmp, fullSrc, s, c);
+                PropToFerm<FImpl>(tmp, fullSrc, s, c);
                 make_5D(tmp, source, Ls_);
             }
         }
@@ -182,18 +179,18 @@ void TGaugeProp<FImpl>::execute(void)
             }
             else
             {
-                PropToFerm(source, fullSrc, s, c);
+                PropToFerm<FImpl>(source, fullSrc, s, c);
             }
         }
         sol = zero;
         solver(sol, source);
-        FermToProp(prop, sol, s, c);
+        FermToProp<FImpl>(prop, sol, s, c);
         // create 4D propagators from 5D one if necessary
         if (Ls_ > 1)
         {
             PropagatorField &p4d = envGet(PropagatorField, getName());
             make_4D(sol, tmp, Ls_);
-            FermToProp(p4d, tmp, s, c);
+            FermToProp<FImpl>(p4d, tmp, s, c);
         }
     }
 }

@@ -82,6 +82,7 @@ public:
   void InitFromMPICommunicator(const std::vector<int> &processors, Grid_MPI_Comm communicator_base);
 
  public:
+
   
   ////////////////////////////////////////////////////////////////////////////////////////
   // Wraps MPI_Cart routines, or implements equivalent on other impls

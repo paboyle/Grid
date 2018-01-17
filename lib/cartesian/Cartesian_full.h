@@ -97,6 +97,7 @@ public:
       ///////////////////////
       // Grid information
       ///////////////////////
+      _isCheckerBoarded = false;
       _ndimension = dimensions.size();
 
       _fdimensions.resize(_ndimension);
@@ -122,6 +123,7 @@ public:
 
         // Use a reduced simd grid
         _ldimensions[d] = _gdimensions[d] / _processors[d]; //local dimensions
+        //std::cout << _ldimensions[d] << "  " << _gdimensions[d] << "  " << _processors[d] << std::endl;
         assert(_ldimensions[d] * _processors[d] == _gdimensions[d]);
 
         _rdimensions[d] = _ldimensions[d] / _simd_layout[d]; //overdecomposition
@@ -166,6 +168,7 @@ public:
         block = block * _rdimensions[d];
       }
     };
+
 };
 }
 #endif

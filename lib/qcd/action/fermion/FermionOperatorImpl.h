@@ -261,8 +261,22 @@ namespace QCD {
       GaugeLinkField link(mat._grid);
       link = TraceIndex<SpinIndex>(outerProduct(Btilde,A)); 
       PokeIndex<LorentzIndex>(mat,link,mu);
-    }   
+    }  
+    
+    inline void outerProductImpl(PropagatorField &mat, const FermionField &B, const FermionField &A){
+      mat = outerProduct(B,A); 
+    }  
+
+    inline void TraceSpinImpl(GaugeLinkField &mat, PropagatorField&P) {
+      mat = TraceIndex<SpinIndex>(P); 
+    }
       
+    inline void extractLinkField(std::vector<GaugeLinkField> &mat, DoubledGaugeField &Uds){
+      for (int mu = 0; mu < Nd; mu++)
+      mat[mu] = PeekIndex<LorentzIndex>(Uds, mu);
+    }
+
+
     inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde,int mu){
       
       int Ls=Btilde._grid->_fdimensions[0];
@@ -392,6 +406,19 @@ class DomainWallVec5dImpl :  public PeriodicGaugeImpl< GaugeImplTypes< S,Nrepres
   {
     assert(0);
   }
+
+  inline void outerProductImpl(PropagatorField &mat, const FermionField &Btilde, const FermionField &A){
+    assert(0);
+  } 
+
+  inline void TraceSpinImpl(GaugeLinkField &mat, PropagatorField&P) {
+    assert(0);
+  }
+
+  inline void extractLinkField(std::vector<GaugeLinkField> &mat, DoubledGaugeField &Uds){
+    assert(0);
+  }
+
 
   inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde, int mu) {
 
@@ -636,6 +663,25 @@ class GparityWilsonImpl : public ConjugateGaugeImpl<GaugeImplTypes<S, Nrepresent
    return;
  }
       
+ inline void outerProductImpl(PropagatorField &mat, const FermionField &Btilde, const FermionField &A){
+   //mat = outerProduct(Btilde, A);
+   assert(0);
+  }
+
+  inline void TraceSpinImpl(GaugeLinkField &mat, PropagatorField&P) {
+    assert(0);
+    /*
+    auto tmp = TraceIndex<SpinIndex>(P);
+    parallel_for(auto ss = tmp.begin(); ss < tmp.end(); ss++) {
+      mat[ss]() = tmp[ss](0, 0) + conjugate(tmp[ss](1, 1));
+    }
+    */
+  }
+
+  inline void extractLinkField(std::vector<GaugeLinkField> &mat, DoubledGaugeField &Uds){
+    assert(0);
+  }
+  
  inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde, int mu) {
 
    int Ls = Btilde._grid->_fdimensions[0];
@@ -776,8 +822,8 @@ class StaggeredImpl : public PeriodicGaugeImpl<GaugeImplTypes<S, Representation:
       GaugeLinkField link(mat._grid);
       link = TraceIndex<SpinIndex>(outerProduct(Btilde,A)); 
       PokeIndex<LorentzIndex>(mat,link,mu);
-    }   
-      
+    } 
+          
     inline void InsertForce5D(GaugeField &mat, FermionField &Btilde, FermionField &Atilde,int mu){
       assert (0); 
       // Must never hit
@@ -983,6 +1029,10 @@ typedef WilsonImpl<vComplex,  TwoIndexSymmetricRepresentation, CoeffReal > Wilso
 typedef WilsonImpl<vComplexF, TwoIndexSymmetricRepresentation, CoeffReal > WilsonTwoIndexSymmetricImplF;  // Float
 typedef WilsonImpl<vComplexD, TwoIndexSymmetricRepresentation, CoeffReal > WilsonTwoIndexSymmetricImplD;  // Double
  
+typedef WilsonImpl<vComplex,  TwoIndexAntiSymmetricRepresentation, CoeffReal > WilsonTwoIndexAntiSymmetricImplR;   // Real.. whichever prec
+typedef WilsonImpl<vComplexF, TwoIndexAntiSymmetricRepresentation, CoeffReal > WilsonTwoIndexAntiSymmetricImplF;  // Float
+typedef WilsonImpl<vComplexD, TwoIndexAntiSymmetricRepresentation, CoeffReal > WilsonTwoIndexAntiSymmetricImplD;  // Double
+
 typedef DomainWallVec5dImpl<vComplex ,Nc, CoeffReal> DomainWallVec5dImplR; // Real.. whichever prec
 typedef DomainWallVec5dImpl<vComplexF,Nc, CoeffReal> DomainWallVec5dImplF; // Float
 typedef DomainWallVec5dImpl<vComplexD,Nc, CoeffReal> DomainWallVec5dImplD; // Double
