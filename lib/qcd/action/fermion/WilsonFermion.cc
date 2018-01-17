@@ -419,7 +419,7 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
     conformable(_grid, q_in._grid);
     conformable(_grid, q_out._grid);
     Lattice<iSinglet<Simd>> ph(_grid), coor(_grid);
-    Complex i(0.0,1.0);
+    ComplexD i(0.0,1.0);
     PropagatorField tmpFwd(_grid), tmpBwd(_grid), tmp(_grid);
     unsigned int tshift = (mu == Tp) ? 1 : 0;
     unsigned int LLt    = GridDefaultLatt()[Tp];
@@ -431,7 +431,7 @@ void WilsonFermion<Impl>::SeqConservedCurrent(PropagatorField &q_in,
         LatticeCoordinate(coor, mu);
         ph = ph + mom[mu]*coor*((1./(_grid->_fdimensions[mu])));
     }
-    ph = exp((Real)(2*M_PI)*i*ph);
+    ph = exp((RealD)(2*M_PI)*i*ph);
 
     q_out = zero;
     LatticeInteger coords(_grid);
