@@ -32,6 +32,7 @@ directory
 #include <Grid/qcd/action/scalar/ScalarImpl.h>
 #include <Grid/qcd/action/scalar/ScalarAction.h>
 #include <Grid/qcd/action/scalar/ScalarInteractionAction.h>
+#include <Grid/qcd/action/scalar/shGordonAction.h>
 
 namespace Grid {
 namespace QCD {
@@ -44,6 +45,9 @@ namespace QCD {
   template <int Colours, int Dimensions> using ScalarAdjActionF = ScalarInteractionAction<ScalarNxNAdjImplF<Colours>, Dimensions>;
   template <int Colours, int Dimensions> using ScalarAdjActionD = ScalarInteractionAction<ScalarNxNAdjImplD<Colours>, Dimensions>;
   
+  typedef shGordonAction<ScalarImplR>                 shGordonActionR;
+  typedef shGordonAction<ScalarImplF>                 shGordonActionF;
+  typedef shGordonAction<ScalarImplD>                 shGordonActionD;
 }
 }
 
