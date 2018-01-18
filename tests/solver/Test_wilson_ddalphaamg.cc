@@ -537,6 +537,111 @@ public:
     Ni = norm2(in);
     std::cout << GridLogMessage << "SAP resid(post) " << std::sqrt(r / Ni) << " " << r << " " << Ni << std::endl;
   }
+
+  void runChecks(CoarseGrids<nbasis> &cGrids) {
+
+    /////////////////////////////////////////////
+    // Some stuff we need for the checks below //
+    /////////////////////////////////////////////
+    auto tolerance = 1e-13; // TODO: this obviously depends on the precision we use, current value is for double
+
+    std::vector<CoarseVector> cTmps(4, _CoarseOperator.Grid());
+    std::vector<FineField>    fTmps(2, _Aggregates.subspace[0]._grid); // atm only for one coarser grid
+
+    // need to construct an operator, since _CoarseOperator is not a LinearOperator but only a matrix (the name is a bit misleading)
+    MdagMLinearOperator<CoarseOperator, CoarseVector> MdagMOp(_CoarseOperator);
+
+    std::cout << GridLogMessage << "**************************************************" << std::endl;
+    std::cout << GridLogMessage << "MG correctness check: 0 == (1 - P R) v" << std::endl;
+    std::cout << GridLogMessage << "**************************************************" << std::endl;
+
+    for(auto i = 0; i < _Aggregates.subspace.size(); ++i) {
+      _Aggregates.ProjectToSubspace(cTmps[0], _Aggregates.subspace[i]); //   R v_i
+      _Aggregates.PromoteFromSubspace(cTmps[0], fTmps[0]);              // P R v_i
+
+      fTmps[1]       = _Aggregates.subspace[i] - fTmps[0]; // v_i - P R v_i
+      auto deviation = std::sqrt(norm2(fTmps[1]) / norm2(_Aggregates.subspace[i]));
+
+      std::cout << GridLogMessage << "Vector " << i << ": norm2(v_i) = " << norm2(_Aggregates.subspace[i])
+                << " | norm2(R v_i) = " << norm2(cTmps[0]) << " | norm2(P R v_i) = " << norm2(fTmps[0])
+                << " | relative deviation = " << deviation << std::endl;
+
+      if(deviation > tolerance) {
+        std::cout << GridLogError << "Vector " << i << ": relative deviation check failed " << deviation << " > " << tolerance << std::endl;
+        abort();
+      }
+    }
+    std::cout << GridLogMessage << "Check passed!" << std::endl;
+
+    std::cout << GridLogMessage << "**************************************************" << std::endl;
+    std::cout << GridLogMessage << "MG correctness check: 0 == (1 - R P) v_c" << std::endl;
+    std::cout << GridLogMessage << "**************************************************" << std::endl;
+
+    random(cGrids.PRNGs[0], cTmps[0]);
+
+    _Aggregates.PromoteFromSubspace(cTmps[0], fTmps[0]); //   P v_c
+    _Aggregates.ProjectToSubspace(cTmps[1], fTmps[0]);   // R P v_c
+
+    cTmps[2]       = cTmps[0] - cTmps[1]; // v_c - R P v_c
+    auto deviation = std::sqrt(norm2(cTmps[2]) / norm2(cTmps[0]));
+
+    std::cout << GridLogMessage << "norm2(v_c) = " << norm2(cTmps[0]) << " | norm2(R P v_c) = " << norm2(cTmps[1])
+              << " | norm2(P v_c) = " << norm2(fTmps[0]) << " | relative deviation = " << deviation << std::endl;
+
+    if(deviation > tolerance) {
+      std::cout << GridLogError << "relative deviation check failed " << deviation << " > " << tolerance << std::endl;
+      abort();
+    }
+    std::cout << GridLogMessage << "Check passed!" << std::endl;
+
+    std::cout << GridLogMessage << "**************************************************" << std::endl;
+    std::cout << GridLogMessage << "MG correctness check: 0 == (R D P - D_c) v_c" << std::endl;
+    std::cout << GridLogMessage << "**************************************************" << std::endl;
+
+    random(cGrids.PRNGs[0], cTmps[0]);
+
+    _Aggregates.PromoteFromSubspace(cTmps[0], fTmps[0]); //     P v_c
+    _FineOperator.Op(fTmps[0], fTmps[1]);                //   D P v_c
+    _Aggregates.ProjectToSubspace(cTmps[1], fTmps[1]);   // R D P v_c
+
+    MdagMOp.Op(cTmps[0], cTmps[2]); // D_c v_c
+
+    cTmps[3]  = cTmps[1] - cTmps[2]; // R D P v_c - D_c v_c
+    deviation = std::sqrt(norm2(cTmps[3]) / norm2(cTmps[1]));
+
+    std::cout << GridLogMessage << "norm2(R D P v_c) = " << norm2(cTmps[1]) << " | norm2(D_c v_c) = " << norm2(cTmps[2])
+              << " | relative deviation = " << deviation << std::endl;
+
+    if(deviation > tolerance) {
+      std::cout << GridLogError << "relative deviation check failed " << deviation << " > " << tolerance << std::endl;
+      abort();
+    }
+    std::cout << GridLogMessage << "Check passed!" << std::endl;
+
+    std::cout << GridLogMessage << "**************************************************" << std::endl;
+    std::cout << GridLogMessage << "MG correctness check: 0 == |(Im(v_c^dag D_c^dag D_c v_c)|" << std::endl;
+    std::cout << GridLogMessage << "**************************************************" << std::endl;
+
+    random(cGrids.PRNGs[0], cTmps[0]);
+
+    MdagMOp.Op(cTmps[0], cTmps[1]);    //         D_c v_c
+    MdagMOp.AdjOp(cTmps[1], cTmps[2]); // D_c^dag D_c v_c
+
+    // // alternative impl, which is better?
+    // MdagMOp.HermOp(cTmps[0], cTmps[2]); // D_c^dag D_c v_c
+
+    auto dot  = innerProduct(cTmps[0], cTmps[2]); //v_c^dag D_c^dag D_c v_c
+    deviation = abs(imag(dot)) / abs(real(dot));
+
+    std::cout << GridLogMessage << "Re(v_c^dag D_c^dag D_c v_c) = " << real(dot) << " | Im(v_c^dag D_c^dag D_c v_c) = " << imag(dot)
+              << " | relative deviation = " << deviation << std::endl;
+
+    if(deviation > tolerance) {
+      std::cout << GridLogError << "relative deviation check failed " << deviation << " > " << tolerance << std::endl;
+      abort();
+    }
+    std::cout << GridLogMessage << "Check passed!" << std::endl;
+  }
 };
 
 struct MGParams {
@@ -818,6 +923,8 @@ int main(int argc, char **argv) {
   //                         FineOperator &Fine,Matrix &FineMatrix,
   //                         FineOperator &Smooth,Matrix &SmootherMatrix)
   TrivialPrecon<LatticeFermion> Simple;
+
+  Precon.runChecks(cGrids);
 
   std::cout << GridLogMessage << "**************************************************" << std::endl;
   std::cout << GridLogMessage << "Building two level VPGCR and FGMRES solvers" << std::endl;
