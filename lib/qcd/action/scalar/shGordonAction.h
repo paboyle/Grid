@@ -55,16 +55,16 @@ class shGordonAction : public QCD::Action<typename Impl::Field> {
     virtual void refresh(const Field &U, GridParallelRNG &pRNG) {}  // noop as no pseudoferms
 
     virtual RealD S(const Field &phi) {
-      return 0.5*ScalarObs<Impl>::sumphider(phi) - 0.5*mass_square/(g*g)*sum(trace(exp(g*phi) + exp(-g*phi)))   ;
+      return QCD::Nd * ScalarObs<Impl>::sumphisquared(phi) + ScalarObs<Impl>::sumphider(phi) - 0.5*mass_square/(g*g)*sum(trace(exp(g*phi) + exp(-g*phi)))   ;
     };
 
     virtual void deriv(const Field &phi,
                        Field &force) {
         Field tmp(phi._grid);
-        tmp = zero;
-        for (int mu = 0; mu < QCD::Nd; mu++) tmp += Cshift(phi, mu, 1) - Cshift(phi, mu, -1);
+        tmp = 2.0*QCD::Nd*phi;
+        for (int mu = 0; mu < QCD::Nd; mu++) tmp -= Cshift(phi, mu, 1) + Cshift(phi, mu, -1);
 
-        force+= 0.5*tmp - 0.5*mass_square/g*(exp(g*phi) - exp(-g*phi));
+        force+= tmp - 0.5*mass_square/g*(exp(g*phi) - exp(-g*phi));
     }
 };
 

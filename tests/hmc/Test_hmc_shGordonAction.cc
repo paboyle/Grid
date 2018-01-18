@@ -44,12 +44,29 @@ int main(int argc, char **argv) {
   HMCWrapper TheHMC;
 
   // Grid from the command line
+  constexpr int Ndimensions = 2;
+  GridModule ScalarGrid;
+  if (GridDefaultLatt().size() != Ndimensions){
+    std::cout << "Incorrect dimension of the grid\n. Expected dim="<< Ndimensions << std::endl;
+    exit(1);
+  }
+  if (GridDefaultMpi().size() != Ndimensions){
+    std::cout << "Incorrect dimension of the mpi grid\n. Expected dim="<< Ndimensions << std::endl;
+    exit(1);
+  }
+  ScalarGrid.set_full(new GridCartesian(GridDefaultLatt(),GridDefaultSimd(Ndimensions, vComplex::Nsimd()),GridDefaultMpi()));
+  ScalarGrid.set_rb(new GridRedBlackCartesian(ScalarGrid.get_full()));
+  TheHMC.Resources.AddGrid("scalar", ScalarGrid);
+  std::cout << "Lattice size : " << GridDefaultLatt() << std::endl;
+
+  /*
   GridModule ScalarGrid;
   ScalarGrid.set_full( SpaceTimeGrid::makeFourDimGrid(
         GridDefaultLatt(), GridDefaultSimd(Nd, vReal::Nsimd()),
         GridDefaultMpi()));
   ScalarGrid.set_rb(SpaceTimeGrid::makeFourDimRedBlackGrid(ScalarGrid.get_full()));
   TheHMC.Resources.AddGrid("scalar", ScalarGrid);
+  */
   // Possibile to create the module by hand 
   // hardcoding parameters or using a Reader
 
@@ -76,7 +93,7 @@ int main(int argc, char **argv) {
   // standard
 
   // Real Scalar action
-  shGordonActionR Saction(1.0,1.0);
+  shGordonActionR Saction(0.1,0.1);
 
   // Collect actions
   ActionLevel<shGordonActionR::Field, ScalarFields> Level1(1);
@@ -87,7 +104,7 @@ int main(int argc, char **argv) {
 
 
   // HMC parameters are serialisable 
-  TheHMC.Parameters.MD.MDsteps = 60;
+  TheHMC.Parameters.MD.MDsteps = 100;
   TheHMC.Parameters.MD.trajL   = 1.0;
 
   TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
