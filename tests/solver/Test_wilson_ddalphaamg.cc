@@ -113,7 +113,8 @@ public:
     std::cout << GridLogMessage << "Constructing " << coarsegrids << " CoarseGrids" << std::endl;
 
     for(int cl = 0; cl < coarsegrids; ++cl) { // may be a bit ugly and slow but not perf critical
-      LattSizes.push_back({GridDefaultLatt()});
+      // need to differentiate between first and other coarse levels in size calculation
+      LattSizes.push_back({cl == 0 ? GridDefaultLatt() : LattSizes[cl - 1]});
       Seeds.push_back(std::vector<int>(LattSizes[cl].size()));
 
       for(int d = 0; d < LattSizes[cl].size(); ++d) {
