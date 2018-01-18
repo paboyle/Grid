@@ -27,9 +27,29 @@ See the full license in the file "LICENSE" in the top level distribution directo
 /*  END LEGAL */
 #include <Grid/Grid.h>
 
+namespace Grid {
+class ScalarActionParameters : Serializable {
+ public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(ScalarActionParameters,
+    double, mass_squared,
+    double, g);
+
+    template <class ReaderClass >
+  ScalarActionParameters(Reader<ReaderClass>& Reader){
+    read(Reader, "ScalarAction", *this);
+  }
+
+};
+}
+
+
+
+
 int main(int argc, char **argv) {
   using namespace Grid;
   using namespace Grid::QCD;
+
+  typedef Grid::JSONReader       Serialiser;
 
   Grid_init(&argc, &argv);
   int threads = GridThread::GetThreads();
@@ -38,11 +58,17 @@ int main(int argc, char **argv) {
 
    // Typedefs to simplify notation
   typedef ScalarGenericHMCRunner HMCWrapper;  // Uses the default minimum norm, real scalar fields
-  //typedef Representations<EmptyRep<typename ScalarMatrixImplTypes<vComplex, 3>::Field> > ScalarMatrixFields;
-  //typedef HMCWrapperTemplate<ScalarMatrixImplTypes<vComplex, 3>, MinimumNorm2, ScalarMatrixFields> HMCWrapper;
   //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   HMCWrapper TheHMC;
+  TheHMC.ReadCommandLine(argc, argv);
 
+  if (TheHMC.ParameterFile.empty()){
+    std::cout << "Input file not specified."
+              << "Use --ParameterFile option in the command line.\nAborting" 
+              << std::endl;
+    exit(1);
+  }
+  Serialiser Reader(TheHMC.ParameterFile);
   // Grid from the command line
   constexpr int Ndimensions = 2;
   GridModule ScalarGrid;
@@ -59,41 +85,15 @@ int main(int argc, char **argv) {
   TheHMC.Resources.AddGrid("scalar", ScalarGrid);
   std::cout << "Lattice size : " << GridDefaultLatt() << std::endl;
 
-  /*
-  GridModule ScalarGrid;
-  ScalarGrid.set_full( SpaceTimeGrid::makeFourDimGrid(
-        GridDefaultLatt(), GridDefaultSimd(Nd, vReal::Nsimd()),
-        GridDefaultMpi()));
-  ScalarGrid.set_rb(SpaceTimeGrid::makeFourDimRedBlackGrid(ScalarGrid.get_full()));
-  TheHMC.Resources.AddGrid("scalar", ScalarGrid);
-  */
-  // Possibile to create the module by hand 
-  // hardcoding parameters or using a Reader
-
-  // Checkpointer definition
-  CheckpointerParameters CPparams;  
-  CPparams.config_prefix = "ckpoint_scalar_lat";
-  CPparams.rng_prefix = "ckpoint_scalar_rng";
-  CPparams.saveInterval = 50;
-  CPparams.format = "IEEE64BIG";
-  
+  CheckpointerParameters CPparams(Reader);
   TheHMC.Resources.LoadBinaryCheckpointer(CPparams);
 
-  RNGModuleParameters RNGpar;
-  RNGpar.serial_seeds = "1 2 3 4 5";
-  RNGpar.parallel_seeds = "6 7 8 9 10";
+  RNGModuleParameters RNGpar(Reader);
   TheHMC.Resources.SetRNGSeeds(RNGpar);
 
-  //////////////////////////////////////////////
-
-  /////////////////////////////////////////////////////////////
-  // Collect actions, here use more encapsulation
-  // need wrappers of the fermionic classes 
-  // that have a complex construction
-  // standard
-
-  // Real Scalar action
-  shGordonActionR Saction(0.1,0.1);
+  // Real Scalar sh-Gordon action
+  ScalarActionParameters SPar(Reader);
+  shGordonActionR Saction(SPar.mass_squared, SPar.g);
 
   // Collect actions
   ActionLevel<shGordonActionR::Field, ScalarFields> Level1(1);
@@ -102,12 +102,7 @@ int main(int argc, char **argv) {
   TheHMC.TheAction.push_back(Level1);
   /////////////////////////////////////////////////////////////
 
-
-  // HMC parameters are serialisable 
-  TheHMC.Parameters.MD.MDsteps = 100;
-  TheHMC.Parameters.MD.trajL   = 1.0;
-
-  TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
+  TheHMC.Parameters.initialize(Reader);
   TheHMC.Run(); 
 
   Grid_finalize();

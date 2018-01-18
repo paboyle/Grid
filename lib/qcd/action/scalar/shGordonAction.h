@@ -64,6 +64,7 @@ class shGordonAction : public QCD::Action<typename Impl::Field> {
         tmp = 2.0*QCD::Nd*phi;
         for (int mu = 0; mu < QCD::Nd; mu++) tmp -= Cshift(phi, mu, 1) + Cshift(phi, mu, -1);
 
+        std::cout << GridLogDebug << "Phi norm : " << norm2(phi) << std::endl;
         force+= tmp - 0.5*mass_square/g*(exp(g*phi) - exp(-g*phi));
     }
 };
