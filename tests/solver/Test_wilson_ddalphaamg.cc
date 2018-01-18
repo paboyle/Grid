@@ -781,7 +781,7 @@ int main(int argc, char **argv) {
   // CoarseG5PVector; // P = preserving typedef
   // CoarseOperator::CoarseG5PMatrix CoarseG5PMatrix;
 
-#if 1
+#if 0
   // clang-format off
   std::cout << std::endl;
   std::cout << "type_name<decltype(vTComplex{})>()                      = " << type_name<decltype(vTComplex{})>()                      << std::endl;
@@ -843,8 +843,6 @@ int main(int argc, char **argv) {
   // tva(HermOp, Aggregates.subspace);
   Aggregates.CheckOrthogonal();
   testVectorAnalyzer(HermOp, Aggregates.subspace);
-
-  result = zero;
 
   std::cout << GridLogMessage << "**************************************************" << std::endl;
   std::cout << GridLogMessage << "Building coarse representation of Dirac operator" << std::endl;
