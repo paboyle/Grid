@@ -38,7 +38,6 @@ std::vector<std::string> TScalarVP::getOutput(void)
         for (unsigned int nu = 0; nu < env().getNd(); ++nu)
         {
             out.push_back(getName() + "_" + std::to_string(mu) + "_" + std::to_string(nu));
-            out.push_back(getName() + "_free_" + std::to_string(mu) + "_" + std::to_string(nu));
         }
     }
 
@@ -55,7 +54,6 @@ void TScalarVP::setup(void)
 	phaseName_.clear();
 	muPropQName_.clear();
     vpTensorName_.clear();
-    freeVpTensorName_.clear();
     
 	for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
@@ -63,16 +61,12 @@ void TScalarVP::setup(void)
         muPropQName_.push_back(getName() + "_propQ_" + std::to_string(mu));
 
         std::vector<std::string> vpTensorName_mu;
-        std::vector<std::string> freeVpTensorName_mu;
         for (unsigned int nu = 0; nu < env().getNd(); ++nu)
         {
             vpTensorName_mu.push_back(getName() + "_" + std::to_string(mu)
                                       + "_" + std::to_string(nu));
-            freeVpTensorName_mu.push_back(getName() + "_free_" + std::to_string(mu)
-                                       + "_" + std::to_string(nu));
         }
         vpTensorName_.push_back(vpTensorName_mu);
-        freeVpTensorName_.push_back(freeVpTensorName_mu);
     }
 
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
@@ -82,7 +76,6 @@ void TScalarVP::setup(void)
         for (unsigned int nu = 0; nu < env().getNd(); ++nu)
         {
             env().registerLattice<ScalarField>(vpTensorName_[mu][nu]);
-            env().registerLattice<ScalarField>(freeVpTensorName_[mu][nu]);
         }
 	}
 }
@@ -129,18 +122,15 @@ void TScalarVP::execute(void)
     ScalarField Amu(env().getGrid()), tmp_vp(env().getGrid());
     TComplex    Anu0;
     std::vector<int> coor0 = {0, 0, 0, 0};
-    std::vector<std::vector<ScalarField> > vpTensor, freeVpTensor;
+    std::vector<std::vector<ScalarField> > vpTensor;
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
         std::vector<ScalarField> vpTensor_mu;
-        std::vector<ScalarField> freeVpTensor_mu;
         for (unsigned int nu = 0; nu < env().getNd(); ++nu)
         {
             vpTensor_mu.push_back(*env().createLattice<ScalarField>(vpTensorName_[mu][nu]));
-            freeVpTensor_mu.push_back(*env().createLattice<ScalarField>(freeVpTensorName_[mu][nu]));
         }
         vpTensor.push_back(vpTensor_mu);
-        freeVpTensor.push_back(freeVpTensor_mu);
     }
 
     // Open output files if necessary
@@ -218,16 +208,17 @@ void TScalarVP::execute(void)
             // Free VP
             prop1 = *prop0_;
             prop2 = Cshift(*prop0_, nu, -1);
-            freeVpTensor[mu][nu] = adj(prop2) * Cshift(prop1, mu, 1);
-            freeVpTensor[mu][nu] -= Cshift(adj(prop2), mu, 1) * prop1;
-            freeVpTensor[mu][nu] = 2.0*real(freeVpTensor[mu][nu]);
+            tmp_vp = adj(prop2) * Cshift(prop1, mu, 1);
+            tmp_vp -= Cshift(adj(prop2), mu, 1) * prop1;
+            tmp_vp = 2.0*real(tmp_vp);
+            vpTensor[mu][nu] = tmp_vp;
 
             // Output if necessary
             if (!par().output.empty())
             {
                 for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
                 {
-                    vpPhase = freeVpTensor[mu][nu]*momphases[i_p];
+                    vpPhase = tmp_vp*momphases[i_p];
                     sliceSum(vpPhase, vecBuf, Tp);
                     result.resize(vecBuf.size());
                     for (unsigned int t = 0; t < vecBuf.size(); ++t)
@@ -242,6 +233,10 @@ void TScalarVP::execute(void)
                     }
                 }
             }
+
+            // S
+            // X
+            // 4C
 
             // "Exchange" terms
             prop1 += q*propQ;
