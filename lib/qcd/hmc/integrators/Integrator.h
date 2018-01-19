@@ -116,6 +116,7 @@ class Integrator {
 
    for (int a = 0; a < as[level].actions.size(); ++a) {
       Field force(U._grid);
+      force = zero;
       conformable(U._grid, Mom._grid);
       Field& Us = Smearer.get_U(as[level].actions.at(a)->is_smeared);
       as[level].actions.at(a)->deriv(Us, force);  // deriv should NOT include Ta

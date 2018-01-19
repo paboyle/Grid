@@ -29,9 +29,9 @@ class ScalarImplTypes {
     static inline Field projectForce(Field& P){return P;}
 
     static inline void update_field(Field& P, Field& U, double ep) {
-      std::cout << GridLogDebug << "P:\n" << P << std::endl;
+      //std::cout << GridLogDebug << "P:\n" << P << std::endl;
       U += P*ep;
-      std::cout << GridLogDebug << "U:\n" << U << std::endl;
+      //std::cout << GridLogDebug << "U:\n" << U << std::endl;
     }
 
     static inline RealD FieldSquareNorm(Field& U) {
@@ -39,15 +39,17 @@ class ScalarImplTypes {
     }
 
     static inline void HotConfiguration(GridParallelRNG &pRNG, Field &U) {
-      gaussian(pRNG, U);
+     random(pRNG, U);
     }
 
     static inline void TepidConfiguration(GridParallelRNG &pRNG, Field &U) {
-      gaussian(pRNG, U);
+      random(pRNG, U);
+      U *= 0.01;
     }
 
     static inline void ColdConfiguration(GridParallelRNG &pRNG, Field &U) {
-      U = 1.0;
+      U = 0.0;
+      //std::cout << GridLogDebug << "Initial U:\n" << U << std::endl;
     }
 
     static void MomentumSpacePropagator(Field &out, RealD m)

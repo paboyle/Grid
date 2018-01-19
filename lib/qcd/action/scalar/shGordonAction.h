@@ -60,12 +60,16 @@ class shGordonAction : public QCD::Action<typename Impl::Field> {
 
     virtual void deriv(const Field &phi,
                        Field &force) {
+        //std::cout << GridLogDebug << "Force total before :\n" << force << std::endl;
         Field tmp(phi._grid);
         tmp = 2.0*QCD::Nd*phi;
         for (int mu = 0; mu < QCD::Nd; mu++) tmp -= Cshift(phi, mu, 1) + Cshift(phi, mu, -1);
 
-        std::cout << GridLogDebug << "Phi norm : " << norm2(phi) << std::endl;
-        force+= tmp + 0.5*mass_square/g*(exp(g*phi) - exp(-g*phi));
+
+        //std::cout << GridLogDebug << "Phi norm : " << norm2(phi) << std::endl;
+        force += tmp + 0.5*mass_square/g*(exp(g*phi) - exp(-g*phi));
+        //std::cout << GridLogDebug << "Force tmp :\n" << tmp << std::endl;
+        //std::cout << GridLogDebug << "Force total after :\n" << force << std::endl;
     }
 };
 
