@@ -103,7 +103,7 @@ class Integrator {
         // Implement smearing only for the fundamental representation now
         repr_set.at(a)->deriv(Rep.U, forceR);
         GF force = Rep.RtoFundamentalProject(forceR);  // Ta for the fundamental rep
-        Real force_abs = std::sqrt(norm2(force)/(U._grid->gSites()));
+        Real force_abs = std::sqrt(norm2(force))/(U._grid->gSites());
         std::cout << GridLogIntegrator << "Hirep Force average: " << force_abs << std::endl;
         Mom -= force * ep ;
       }
@@ -123,7 +123,7 @@ class Integrator {
       std::cout << GridLogIntegrator << "Smearing (on/off): " << as[level].actions.at(a)->is_smeared << std::endl;
       if (as[level].actions.at(a)->is_smeared) Smearer.smeared_force(force);
       force = FieldImplementation::projectForce(force); // Ta for gauge fields
-      Real force_abs = std::sqrt(norm2(force)/U._grid->gSites());
+      Real force_abs = std::sqrt(norm2(force))/U._grid->gSites();
       std::cout << GridLogIntegrator << "Force average: " << force_abs << std::endl;
       Mom -= force * ep; 
     }

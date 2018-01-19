@@ -29,7 +29,9 @@ class ScalarImplTypes {
     static inline Field projectForce(Field& P){return P;}
 
     static inline void update_field(Field& P, Field& U, double ep) {
+      std::cout << GridLogDebug << "P:\n" << P << std::endl;
       U += P*ep;
+      std::cout << GridLogDebug << "U:\n" << U << std::endl;
     }
 
     static inline RealD FieldSquareNorm(Field& U) {
