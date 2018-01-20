@@ -93,12 +93,16 @@ namespace Grid {
   template<class Fobj,class CComplex,int nbasis>
   class Aggregation   {
   public:
-    typedef iVector<CComplex,nbasis >             siteVector;
-    typedef Lattice<siteVector>                 CoarseVector;
-    typedef Lattice<iMatrix<CComplex,nbasis > > CoarseMatrix;
 
-    typedef Lattice< CComplex >   CoarseScalar; // used for inner products on fine field
-    typedef Lattice<Fobj >        FineField;
+    typedef typename GridTypeMapper<CComplex>::vector_type     innerType;
+    typedef iScalar<iScalar<iScalar<innerType         >    > > siteScalar; // used for inner products on fine field
+    typedef iScalar<iVector<iVector<innerType, nbasis >, 1 > > siteVector;
+    typedef iScalar<iMatrix<iMatrix<innerType, nbasis >, 1 > > siteMatrix;
+    typedef Lattice<siteScalar> CoarseScalar; // used for inner products on fine field
+    typedef Lattice<siteVector> CoarseVector;
+    typedef Lattice<siteMatrix> CoarseMatrix;
+
+    typedef Lattice<Fobj>       FineField;
 
     GridBase *CoarseGrid;
     GridBase *FineGrid;
@@ -129,7 +133,7 @@ namespace Grid {
 	blockProject(iProj,subspace[i],subspace);
 	eProj=zero; 
 	parallel_for(int ss=0;ss<CoarseGrid->oSites();ss++){
-	  eProj._odata[ss](i)=CComplex(1.0);
+	  eProj._odata[ss]()(0)(i)=innerType(1.0);
 	}
 	eProj=eProj - iProj;
 	std::cout<<GridLogMessage<<"Orthog check error "<<i<<" " << norm2(eProj)<<std::endl;
@@ -239,15 +243,18 @@ namespace Grid {
   // Fine Object == (per site) type of fine field
   // nbasis      == number of deflation vectors
   template<class Fobj,class CComplex,int nbasis>
-  class CoarsenedMatrix : public SparseMatrixBase<Lattice<iVector<CComplex,nbasis > > >  {
+  class CoarsenedMatrix : public SparseMatrixBase<Lattice<iScalar<iVector<iVector<typename GridTypeMapper<CComplex>::vector_type, nbasis >, 1 > > > >  {
   public:
     
-    typedef iVector<CComplex,nbasis >             siteVector;
-    typedef Lattice<siteVector>                 CoarseVector;
-    typedef Lattice<iMatrix<CComplex,nbasis > > CoarseMatrix;
+    typedef typename GridTypeMapper<CComplex>::vector_type     innerType;
+    typedef iScalar<iScalar<iScalar<innerType         >    > > siteScalar;
+    typedef iScalar<iVector<iVector<innerType, nbasis >, 1 > > siteVector;
+    typedef iScalar<iMatrix<iMatrix<innerType, nbasis >, 1 > > siteMatrix;
+    typedef Lattice<siteScalar> CoarseScalar; // used for inner products on fine field
+    typedef Lattice<siteVector> CoarseVector;
+    typedef Lattice<siteMatrix> CoarseMatrix;
 
-    typedef Lattice< CComplex >   CoarseScalar; // used for inner products on fine field
-    typedef Lattice<Fobj >        FineField;
+    typedef Lattice<Fobj>       FineField;
 
     ////////////////////
     // Data members
@@ -387,9 +394,9 @@ namespace Grid {
 	  parallel_for(int ss=0;ss<Grid()->oSites();ss++){
 	    for(int j=0;j<nbasis;j++){
 	      if( disp!= 0 ) {
-		A[p]._odata[ss](j,i) = oProj._odata[ss](j);
+		A[p]._odata[ss]()(0,0)(j,i) = oProj._odata[ss]()(0)(j);
 	      }
-	      A[self_stencil]._odata[ss](j,i) =	A[self_stencil]._odata[ss](j,i) + iProj._odata[ss](j);
+	      A[self_stencil]._odata[ss]()(0,0)(j,i) =	A[self_stencil]._odata[ss]()(0,0)(j,i) + iProj._odata[ss]()(0)(j);
 	    }
 	  }
 	}
