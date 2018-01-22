@@ -245,10 +245,9 @@ void StaggeredKernels<Impl>::DhopSite(StencilImpl &st, LebesgueOrder &lo, Double
   case OptInlineAsm:
     if ( interior && exterior ) {
       DhopSiteAsm(st,lo,U,UUU,buf,LLs,sU,in,out,dag);
-    } else if ( interior ) {
-      DhopSiteAsmInt(st,lo,U,UUU,buf,LLs,sU,in,out,dag);
-    } else if ( exterior ) {
-      DhopSiteAsmExt(st,lo,U,UUU,buf,LLs,sU,in,out,dag);
+    } else { 
+      std::cout << GridLogError << "Cannot overlap comms and compute with Staggered assembly"<<std::endl;
+      assert(0);
     }
     break;
 #endif
