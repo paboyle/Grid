@@ -93,14 +93,6 @@ public:
 		    DoubledGaugeField &U,DoubledGaugeField &UUU, 
 		    SiteSpinor * buf, int LLs, int sU, 
 		    const FermionField &in, FermionField &out,int dag);
-   void DhopSiteAsmInt(StencilImpl &st, LebesgueOrder &lo, 
-		       DoubledGaugeField &U,DoubledGaugeField &UUU, 
-		       SiteSpinor * buf, int LLs, int sU, 
-		       const FermionField &in, FermionField &out,int dag);
-   void DhopSiteAsmExt(StencilImpl &st, LebesgueOrder &lo, 
-		       DoubledGaugeField &U, DoubledGaugeField &UUU, 
-		       SiteSpinor * buf, int LLs, int sU, 
-		       const FermionField &in, FermionField &out,int dag);
    ///////////////////////////////////////////////////////////////////////////////////////////////////
    // Generic interface; fan out to right routine
    ///////////////////////////////////////////////////////////////////////////////////////////////////
