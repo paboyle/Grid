@@ -4,9 +4,10 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MContraction/WeakHamiltonianEye.cc
 
-Copyright (C) 2017
+Copyright (C) 2015-2018
 
-Author: Andrew Lawson    <andrew.lawson1991@gmail.com>
+Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -76,7 +77,7 @@ std::vector<std::string> TWeakHamiltonianEye::getInput(void)
 
 std::vector<std::string> TWeakHamiltonianEye::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {};
     
     return out;
 }
@@ -84,7 +85,15 @@ std::vector<std::string> TWeakHamiltonianEye::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void TWeakHamiltonianEye::setup(void)
 {
+    unsigned int ndim = env().getNd();
 
+    envTmpLat(LatticeComplex,  "expbuf");
+    envTmpLat(PropagatorField, "tmp1");
+    envTmpLat(LatticeComplex,  "tmp2");
+    envTmp(std::vector<PropagatorField>, "S_body", 1, ndim, PropagatorField(env().getGrid()));
+    envTmp(std::vector<PropagatorField>, "S_loop", 1, ndim, PropagatorField(env().getGrid()));
+    envTmp(std::vector<LatticeComplex>,  "E_body", 1, ndim, LatticeComplex(env().getGrid()));
+    envTmp(std::vector<LatticeComplex>,  "E_loop", 1, ndim, LatticeComplex(env().getGrid()));
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -95,23 +104,23 @@ void TWeakHamiltonianEye::execute(void)
                  << par().q2 << ", '" << par().q3 << "' and '" << par().q4 
                  << "'." << std::endl;
 
-    CorrWriter             writer(par().output);
-    SlicedPropagator &q1 = *env().template getObject<SlicedPropagator>(par().q1);
-    PropagatorField  &q2 = *env().template getObject<PropagatorField>(par().q2);
-    PropagatorField  &q3 = *env().template getObject<PropagatorField>(par().q3);
-    PropagatorField  &q4 = *env().template getObject<PropagatorField>(par().q4);
-    Gamma g5             = Gamma(Gamma::Algebra::Gamma5);
-    LatticeComplex         expbuf(env().getGrid());
+    ResultWriter           writer(RESULT_FILE_NAME(par().output));
+    auto                   &q1 = envGet(SlicedPropagator, par().q1);
+    auto                   &q2 = envGet(PropagatorField, par().q2);
+    auto                   &q3 = envGet(PropagatorField, par().q3);
+    auto                   &q4 = envGet(PropagatorField, par().q4);
+    Gamma                  g5  = Gamma(Gamma::Algebra::Gamma5);
     std::vector<TComplex>  corrbuf;
     std::vector<Result>    result(n_eye_diag);
     unsigned int ndim    = env().getNd();
 
-    PropagatorField              tmp1(env().getGrid());
-    LatticeComplex               tmp2(env().getGrid());
-    std::vector<PropagatorField> S_body(ndim, tmp1);
-    std::vector<PropagatorField> S_loop(ndim, tmp1);
-    std::vector<LatticeComplex>  E_body(ndim, tmp2);
-    std::vector<LatticeComplex>  E_loop(ndim, tmp2);
+    envGetTmp(LatticeComplex,               expbuf); 
+    envGetTmp(PropagatorField,              tmp1);
+    envGetTmp(LatticeComplex,               tmp2);
+    envGetTmp(std::vector<PropagatorField>, S_body);
+    envGetTmp(std::vector<PropagatorField>, S_loop);
+    envGetTmp(std::vector<LatticeComplex>,  E_body);
+    envGetTmp(std::vector<LatticeComplex>,  E_loop);
 
     // Get sink timeslice of q1.
     SitePropagator q1Snk = q1[par().tSnk];

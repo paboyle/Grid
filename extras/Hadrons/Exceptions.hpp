@@ -2,10 +2,9 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MGauge/Load.hpp
+Source file: extras/Hadrons/Exceptions.hpp
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -27,47 +26,47 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_MGauge_Load_hpp_
-#define Hadrons_MGauge_Load_hpp_
+#ifndef Hadrons_Exceptions_hpp_
+#define Hadrons_Exceptions_hpp_
 
+#include <stdexcept>
+#ifndef Hadrons_Global_hpp_
 #include <Grid/Hadrons/Global.hpp>
-#include <Grid/Hadrons/Module.hpp>
-#include <Grid/Hadrons/ModuleFactory.hpp>
+#endif
+
+#define SRC_LOC std::string(__FUNCTION__) + " at " + std::string(__FILE__) + ":"\
+                + std::to_string(__LINE__)
+#define HADRON_ERROR(exc, msg)\
+LOG(Error) << msg << std::endl;\
+throw(Exceptions::exc(msg, SRC_LOC));
+
+#define DECL_EXC(name, base) \
+class name: public base\
+{\
+public:\
+    name(std::string msg, std::string loc);\
+}
 
 BEGIN_HADRONS_NAMESPACE
 
-/******************************************************************************
- *                         Load a NERSC configuration                         *
- ******************************************************************************/
-BEGIN_MODULE_NAMESPACE(MGauge)
-
-class LoadPar: Serializable
+namespace Exceptions
 {
-public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(LoadPar,
-                                    std::string, file);
-};
-
-class TLoad: public Module<LoadPar>
-{
-public:
-    // constructor
-    TLoad(const std::string name);
-    // destructor
-    virtual ~TLoad(void) = default;
-    // dependency relation
-    virtual std::vector<std::string> getInput(void);
-    virtual std::vector<std::string> getOutput(void);
-    // setup
-    virtual void setup(void);
-    // execution
-    virtual void execute(void);
-};
-
-MODULE_REGISTER_NS(Load, TLoad, MGauge);
-
-END_MODULE_NAMESPACE
+    // logic errors
+    DECL_EXC(Logic, std::logic_error);
+    DECL_EXC(Definition, Logic);
+    DECL_EXC(Implementation, Logic);
+    DECL_EXC(Range, Logic);
+    DECL_EXC(Size, Logic);
+    // runtime errors
+    DECL_EXC(Runtime, std::runtime_error);
+    DECL_EXC(Argument, Runtime);
+    DECL_EXC(Io, Runtime);
+    DECL_EXC(Memory, Runtime);
+    DECL_EXC(Parsing, Runtime);
+    DECL_EXC(Program, Runtime);
+    DECL_EXC(System, Runtime);
+}
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MGauge_Load_hpp_
+#endif // Hadrons_Exceptions_hpp_

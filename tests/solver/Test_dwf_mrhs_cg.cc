@@ -38,7 +38,7 @@ int main (int argc, char ** argv)
   typedef typename DomainWallFermionR::ComplexField ComplexField; 
   typename DomainWallFermionR::ImplParams params; 
 
-  const int Ls=8;
+  const int Ls=4;
 
   Grid_init(&argc,&argv);
 
@@ -47,42 +47,51 @@ int main (int argc, char ** argv)
   std::vector<int> mpi_layout  = GridDefaultMpi();
   std::vector<int> mpi_split (mpi_layout.size(),1);
 
-  std::cout << "UGrid (world root)"<<std::endl;
   GridCartesian         * UGrid   = SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(), GridDefaultSimd(Nd,vComplex::Nsimd()),GridDefaultMpi());
-
-  std::cout << "FGrid (child of UGrid)"<<std::endl;
   GridCartesian         * FGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,UGrid);
-
-  int nrhs = UGrid->RankCount() ;
+  GridRedBlackCartesian * rbGrid  = SpaceTimeGrid::makeFourDimRedBlackGrid(UGrid);
+  GridRedBlackCartesian * FrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,UGrid);
 
   /////////////////////////////////////////////
   // Split into 1^4 mpi communicators
   /////////////////////////////////////////////
-  std::cout << "SGrid (world root)"<<std::endl;
+  for(int i=0;i<argc;i++){
+    if(std::string(argv[i]) == "--split"){
+      for(int k=0;k<mpi_layout.size();k++){
+	std::stringstream ss; 
+	ss << argv[i+1+k]; 
+	ss >> mpi_split[k];
+      }
+      break;
+    }
+  }
+
+  int nrhs = 1;
+  int me;
+  for(int i=0;i<mpi_layout.size();i++) nrhs *= (mpi_layout[i]/mpi_split[i]);
+
   GridCartesian         * SGrid = new GridCartesian(GridDefaultLatt(),
 						    GridDefaultSimd(Nd,vComplex::Nsimd()),
 						    mpi_split,
-						    *UGrid); 
+						    *UGrid,me); 
 
   GridCartesian         * SFGrid   = SpaceTimeGrid::makeFiveDimGrid(Ls,SGrid);
-  std::cout << "SFGrid"<<std::endl;
   GridRedBlackCartesian * SrbGrid  = SpaceTimeGrid::makeFourDimRedBlackGrid(SGrid);
-  std::cout << "SrbGrid"<<std::endl;
   GridRedBlackCartesian * SFrbGrid = SpaceTimeGrid::makeFiveDimRedBlackGrid(Ls,SGrid);
-  std::cout << "SFrbGrid"<<std::endl;
 
   ///////////////////////////////////////////////
   // Set up the problem as a 4d spreadout job
   ///////////////////////////////////////////////
   std::vector<int> seeds({1,2,3,4});
-
   GridParallelRNG pRNG(UGrid );  pRNG.SeedFixedIntegers(seeds);
   GridParallelRNG pRNG5(FGrid);  pRNG5.SeedFixedIntegers(seeds);
   std::vector<FermionField>    src(nrhs,FGrid);
+  std::vector<FermionField> src_chk(nrhs,FGrid);
   std::vector<FermionField> result(nrhs,FGrid);
+  FermionField tmp(FGrid);
 
   for(int s=0;s<nrhs;s++) random(pRNG5,src[s]);
-  for(int s=0;s<nrhs;s++) result[s] = zero;
+  for(int s=0;s<nrhs;s++) result[s]=zero;
 
   LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
 
@@ -96,9 +105,11 @@ int main (int argc, char ** argv)
   emptyUserRecord record;
   std::string file("./scratch.scidac");
   std::string filef("./scratch.scidac.ferm");
-  int me = UGrid->ThisRank();
+
   LatticeGaugeField s_Umu(SGrid);
   FermionField s_src(SFGrid);
+  FermionField s_src_split(SFGrid);
+  FermionField s_tmp(SFGrid);
   FermionField s_res(SFGrid);
 
   {
@@ -157,6 +168,24 @@ int main (int argc, char ** argv)
     FGrid->Barrier();
   }
 
+  ///////////////////////////////////////////////////////////////
+  // split the source out using MPI instead of I/O
+  ///////////////////////////////////////////////////////////////
+  std::cout << GridLogMessage << " Splitting the grid data "<<std::endl;
+  Grid_split  (src,s_src_split);
+  std::cout << GridLogMessage << " Finished splitting the grid data "<<std::endl;
+  for(int n=0;n<nrhs;n++){
+    std::cout <<GridLogMessage<<"Full "<< n <<" "<< norm2(src[n])<<std::endl;
+  }
+  s_tmp = s_src_split - s_src;
+  for(int n=0;n<nrhs;n++){
+    FGrid->Barrier();
+    if ( n==me ) {
+      std::cout << GridLogMessage<<"Split "<< me << " " << norm2(s_src_split) << " " << norm2(s_src)<< " diff " << norm2(s_tmp)<<std::endl;
+    }
+    FGrid->Barrier();
+  }
+
 
   ///////////////////////////////////////////////////////////////
   // Set up N-solvers as trivially parallel
@@ -164,6 +193,7 @@ int main (int argc, char ** argv)
 
   RealD mass=0.01;
   RealD M5=1.8;
+  DomainWallFermionR Dchk(Umu,*FGrid,*FrbGrid,*UGrid,*rbGrid,mass,M5);
   DomainWallFermionR Ddwf(s_Umu,*SFGrid,*SFrbGrid,*SGrid,*SrbGrid,mass,M5);
 
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
@@ -171,25 +201,40 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "****************************************************************** "<<std::endl;
 
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOp(Ddwf);
-  ConjugateGradient<FermionField> CG((1.0e-8/(me+1)),10000);
+  MdagMLinearOperator<DomainWallFermionR,FermionField> HermOpCk(Dchk);
+  ConjugateGradient<FermionField> CG((1.0e-5/(me+1)),10000);
   s_res = zero;
   CG(HermOp,s_src,s_res);
 
-  ///////////////////////////////////////
-  // Share the information
-  ///////////////////////////////////////
+  /////////////////////////////////////////////////////////////
+  // Report how long they all took
+  /////////////////////////////////////////////////////////////
   std::vector<uint32_t> iterations(nrhs,0);
   iterations[me] = CG.IterationsToComplete;
 
   for(int n=0;n<nrhs;n++){
     UGrid->GlobalSum(iterations[n]);
+    std::cout << GridLogMessage<<" Rank "<<n<<" "<< iterations[n]<<" CG iterations"<<std::endl;
   }
 
   /////////////////////////////////////////////////////////////
-  // Report how long they all took
+  // Gather and residual check on the results
   /////////////////////////////////////////////////////////////
-  for(int r=0;r<nrhs;r++){
-    std::cout << GridLogMessage<<" Rank "<<r<<" "<< iterations[r]<<" CG iterations"<<std::endl;
+  std::cout << GridLogMessage<< "Unsplitting the result"<<std::endl;
+  Grid_unsplit(result,s_res);
+  /*
+  Grid_unsplit(src_chk,s_src);
+  for(int n=0;n<nrhs;n++){
+    tmp = src[n]-src_chk[n];
+    std::cout << " src_chk "<<n<<" "<<norm2(src_chk[n])<<" " <<norm2(src[n])<<" " <<norm2(tmp)<< std::endl;
+    std::cout << " diff " <<tmp<<std::endl;
   }
+  */
+  std::cout << GridLogMessage<< "Checking the residuals"<<std::endl;
+  for(int n=0;n<nrhs;n++){
+    HermOpCk.HermOp(result[n],tmp); tmp = tmp - src[n];
+    std::cout << GridLogMessage<<" resid["<<n<<"]  "<< norm2(tmp)<<std::endl;
+  }
+
   Grid_finalize();
 }

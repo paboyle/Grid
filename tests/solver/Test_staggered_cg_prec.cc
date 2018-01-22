@@ -48,7 +48,6 @@ struct scal {
 int main (int argc, char ** argv)
 {
   typedef typename ImprovedStaggeredFermionR::FermionField FermionField; 
-  typedef typename ImprovedStaggeredFermionR::ComplexField ComplexField; 
   typename ImprovedStaggeredFermionR::ImplParams params; 
 
   Grid_init(&argc,&argv);
@@ -71,7 +70,7 @@ int main (int argc, char ** argv)
     volume=volume*latt_size[mu];
   }  
   
-  RealD mass=0.1;
+  RealD mass=0.003;
   ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass);
 
   FermionField res_o(&RBGrid); 
@@ -79,9 +78,14 @@ int main (int argc, char ** argv)
   pickCheckerboard(Odd,src_o,src);
   res_o=zero;
 
-  SchurDiagMooeeOperator<ImprovedStaggeredFermionR,FermionField> HermOpEO(Ds);
+  SchurStaggeredOperator<ImprovedStaggeredFermionR,FermionField> HermOpEO(Ds);
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
   CG(HermOpEO,src_o,res_o);
+
+  FermionField tmp(&RBGrid);
+
+  HermOpEO.Mpc(res_o,tmp);
+  std::cout << "check Mpc resid " << axpy_norm(tmp,-1.0,src_o,tmp)/norm2(src_o) << "\n";
 
   Grid_finalize();
 }

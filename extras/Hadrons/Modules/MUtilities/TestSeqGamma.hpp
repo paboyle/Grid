@@ -4,9 +4,10 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MUtilities/TestSeqGamma.hpp
 
-Copyright (C) 2017
+Copyright (C) 2015-2018
 
-Author: Andrew Lawson    <andrew.lawson1991@gmail.com>
+Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -64,6 +65,7 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+protected:
     // setup
     virtual void setup(void);
     // execution
@@ -102,26 +104,27 @@ std::vector<std::string> TTestSeqGamma<FImpl>::getOutput(void)
 template <typename FImpl>
 void TTestSeqGamma<FImpl>::setup(void)
 {
-    
+    envTmpLat(LatticeComplex, "c");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TTestSeqGamma<FImpl>::execute(void)
 {
-    PropagatorField &q    = *env().template getObject<PropagatorField>(par().q);
-    PropagatorField &qSeq = *env().template getObject<PropagatorField>(par().qSeq);
-    LatticeComplex  c(env().getGrid());
-    Gamma           g5(Gamma::Algebra::Gamma5);
-    Gamma           g(par().gamma);
-    SitePropagator  qSite;
-    Complex         test, check;
+    auto                  &q    = envGet(PropagatorField, par().q);
+    auto                  &qSeq = envGet(PropagatorField, par().qSeq);
+    Gamma                 g5(Gamma::Algebra::Gamma5);
+    Gamma                 g(par().gamma);
+    SitePropagator        qSite;
+    Complex               test, check;
     std::vector<TComplex> check_buf;
+    std::vector<int>      siteCoord;
 
     // Check sequential insertion of gamma matrix gives same result as 
     // insertion of gamma at sink upon contraction. Assume q uses a point 
     // source.
-    std::vector<int> siteCoord;
+    
+    envGetTmp(LatticeComplex, c);
     siteCoord = strToVec<int>(par().origin);
     peekSite(qSite, qSeq, siteCoord);
     test = trace(g*qSite);

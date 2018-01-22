@@ -4,9 +4,10 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MLoop/NoiseLoop.hpp
 
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
-Author: Andrew Lawson <andrew.lawson1991@gmail.com>
+Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -74,6 +75,7 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+protected:
     // setup
     virtual void setup(void);
     // execution
@@ -112,16 +114,16 @@ std::vector<std::string> TNoiseLoop<FImpl>::getOutput(void)
 template <typename FImpl>
 void TNoiseLoop<FImpl>::setup(void)
 {
-    env().template registerLattice<PropagatorField>(getName());
+    envCreateLat(PropagatorField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TNoiseLoop<FImpl>::execute(void)
 {
-    PropagatorField &loop = *env().template createLattice<PropagatorField>(getName());
-    PropagatorField &q    = *env().template getObject<PropagatorField>(par().q);
-    PropagatorField &eta  = *env().template getObject<PropagatorField>(par().eta);
+    auto &loop = envGet(PropagatorField, getName());
+    auto &q    = envGet(PropagatorField, par().q);
+    auto &eta  = envGet(PropagatorField, par().eta);
     loop = q*adj(eta);
 }
 

@@ -4,9 +4,10 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MSink/Smear.hpp
 
-Copyright (C) 2017
+Copyright (C) 2015-2018
 
-Author: Andrew Lawson <andrew.lawson1991@gmail.com>
+Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -62,6 +63,7 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+protected:
     // setup
     virtual void setup(void);
     // execution
@@ -100,9 +102,7 @@ std::vector<std::string> TSmear<FImpl>::getOutput(void)
 template <typename FImpl>
 void TSmear<FImpl>::setup(void)
 {
-    unsigned int nt = env().getDim(Tp);
-    unsigned int size = nt * sizeof(SitePropagator);
-    env().registerObject(getName(), size);
+    envCreate(SlicedPropagator, getName(), 1, env().getDim(Tp));
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -113,11 +113,11 @@ void TSmear<FImpl>::execute(void)
                  << "' using sink function '" << par().sink << "'."
                  << std::endl;
 
-    SinkFn          &sink = *env().template getObject<SinkFn>(par().sink);
-    PropagatorField &q    = *env().template getObject<PropagatorField>(par().q);
-    SlicedPropagator *out = new SlicedPropagator(env().getDim(Tp));
-    *out  = sink(q);
-    env().setObject(getName(), out);
+    auto &sink = envGet(SinkFn, par().sink);
+    auto &q    = envGet(PropagatorField, par().q);
+    auto &out  = envGet(SlicedPropagator, getName());
+    
+    out = sink(q);
 }
 
 END_MODULE_NAMESPACE

@@ -28,6 +28,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_COMMUNICATOR_H
 #define GRID_COMMUNICATOR_H
 
+#include <Grid/communicator/SharedMemory.h>
 #include <Grid/communicator/Communicator_base.h>
 
 #endif

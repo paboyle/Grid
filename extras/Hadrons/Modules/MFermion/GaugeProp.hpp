@@ -4,12 +4,10 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MFermion/GaugeProp.hpp
 
-Copyright (C) 2015
-Copyright (C) 2016
-Copyright (C) 2017
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
-        Andrew Lawson    <andrew.lawson1991@gmail.com>
+Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -85,6 +83,7 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+protected:
     // setup
     virtual void setup(void);
     // execution
@@ -127,10 +126,13 @@ template <typename FImpl>
 void TGaugeProp<FImpl>::setup(void)
 {
     Ls_ = env().getObjectLs(par().solver);
-    env().template registerLattice<PropagatorField>(getName());
+    envCreateLat(PropagatorField, getName());
+    envTmpLat(FermionField, "source", Ls_);
+    envTmpLat(FermionField, "sol", Ls_);
+    envTmpLat(FermionField, "tmp");
     if (Ls_ > 1)
     {
-        env().template registerLattice<PropagatorField>(getName() + "_5d", Ls_);
+        envCreateLat(PropagatorField, getName() + "_5d", Ls_);
     }
 }
 
@@ -139,26 +141,23 @@ template <typename FImpl>
 void TGaugeProp<FImpl>::execute(void)
 {
     LOG(Message) << "Computing quark propagator '" << getName() << "'"
-    << std::endl;
+                 << std::endl;
     
-    FermionField    source(env().getGrid(Ls_)), sol(env().getGrid(Ls_)),
-    tmp(env().getGrid());
-    std::string     propName = (Ls_ == 1) ? getName() : (getName() + "_5d");
-    PropagatorField &prop    = *env().template createLattice<PropagatorField>(propName);
-    PropagatorField &fullSrc = *env().template getObject<PropagatorField>(par().source);
-    SolverFn        &solver  = *env().template getObject<SolverFn>(par().solver);
-    if (Ls_ > 1)
-    {
-        env().template createLattice<PropagatorField>(getName());
-    }
+    std::string propName = (Ls_ == 1) ? getName() : (getName() + "_5d");
+    auto        &prop    = envGet(PropagatorField, propName);
+    auto        &fullSrc = envGet(PropagatorField, par().source);
+    auto        &solver  = envGet(SolverFn, par().solver);
     
+    envGetTmp(FermionField, source);
+    envGetTmp(FermionField, sol);
+    envGetTmp(FermionField, tmp);
     LOG(Message) << "Inverting using solver '" << par().solver
-    << "' on source '" << par().source << "'" << std::endl;
+                 << "' on source '" << par().source << "'" << std::endl;
     for (unsigned int s = 0; s < Ns; ++s)
     for (unsigned int c = 0; c < Nc; ++c)
     {
         LOG(Message) << "Inversion for spin= " << s << ", color= " << c
-        << std::endl;
+                     << std::endl;
         // source conversion for 4D sources
         if (!env().isObject5d(par().source))
         {
@@ -177,7 +176,7 @@ void TGaugeProp<FImpl>::execute(void)
         {
             if (Ls_ != env().getObjectLs(par().source))
             {
-                HADRON_ERROR("Ls mismatch between quark action and source");
+                HADRON_ERROR(Size, "Ls mismatch between quark action and source");
             }
             else
             {
@@ -190,8 +189,7 @@ void TGaugeProp<FImpl>::execute(void)
         // create 4D propagators from 5D one if necessary
         if (Ls_ > 1)
         {
-            PropagatorField &p4d =
-                *env().template getObject<PropagatorField>(getName());
+            PropagatorField &p4d = envGet(PropagatorField, getName());
             make_4D(sol, tmp, Ls_);
             FermToProp(p4d, tmp, s, c);
         }

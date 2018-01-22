@@ -4,9 +4,10 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MSink/Point.hpp
 
-Copyright (C) 2017
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -61,10 +62,14 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+protected:
     // setup
     virtual void setup(void);
     // execution
     virtual void execute(void);
+private:
+    bool        hasPhase_{false}; 
+    std::string momphName_;
 };
 
 MODULE_REGISTER_NS(Point,       TPoint<FIMPL>,        MSink);
@@ -77,6 +82,7 @@ MODULE_REGISTER_NS(ScalarPoint, TPoint<ScalarImplCR>, MSink);
 template <typename FImpl>
 TPoint<FImpl>::TPoint(const std::string name)
 : Module<PointPar>(name)
+, momphName_ (name + "_momph")
 {}
 
 // dependencies/products ///////////////////////////////////////////////////////
@@ -100,30 +106,37 @@ std::vector<std::string> TPoint<FImpl>::getOutput(void)
 template <typename FImpl>
 void TPoint<FImpl>::setup(void)
 {
-    unsigned int size;
-    
-    size = env().template lattice4dSize<LatticeComplex>();
-    env().registerObject(getName(), size);
+    envTmpLat(LatticeComplex, "coor");
+    envCacheLat(LatticeComplex, momphName_);
+    envCreate(SinkFn, getName(), 1, nullptr);
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 template <typename FImpl>
 void TPoint<FImpl>::execute(void)
-{
-    std::vector<Real> p = strToVec<Real>(par().mom);
-    LatticeComplex    ph(env().getGrid()), coor(env().getGrid());
-    Complex           i(0.0,1.0);
-    
+{   
     LOG(Message) << "Setting up point sink function for momentum ["
                  << par().mom << "]" << std::endl;
-    ph = zero;
-    for(unsigned int mu = 0; mu < env().getNd(); mu++)
+
+    auto &ph = envGet(LatticeComplex, momphName_);
+    
+    if (!hasPhase_)
     {
-        LatticeCoordinate(coor, mu);
-        ph = ph + (p[mu]/env().getGrid()->_fdimensions[mu])*coor;
+        Complex           i(0.0,1.0);
+        std::vector<Real> p;
+
+        envGetTmp(LatticeComplex, coor);
+        p  = strToVec<Real>(par().mom);
+        ph = zero;
+        for(unsigned int mu = 0; mu < env().getNd(); mu++)
+        {
+            LatticeCoordinate(coor, mu);
+            ph = ph + (p[mu]/env().getGrid()->_fdimensions[mu])*coor;
+        }
+        ph = exp((Real)(2*M_PI)*i*ph);
+        hasPhase_ = true;
     }
-    ph = exp((Real)(2*M_PI)*i*ph);
-    auto sink = [ph](const PropagatorField &field)
+    auto sink = [&ph](const PropagatorField &field)
     {
         SlicedPropagator res;
         PropagatorField  tmp = ph*field;
@@ -132,7 +145,7 @@ void TPoint<FImpl>::execute(void)
         
         return res;
     };
-    env().setObject(getName(), new SinkFn(sink));
+    envGet(SinkFn, getName()) = sink;
 }
 
 END_MODULE_NAMESPACE

@@ -6,7 +6,7 @@ home=`pwd`
 cd $home/lib
 HFILES=`find . -type f -name '*.h' -not -name '*Hdf5*' -not -path '*/gamma-gen/*' -not -path '*/Old/*' -not -path '*/Eigen/*'`
 HFILES="$HFILES"
-CCFILES=`find . -type f -name '*.cc' -not -path '*/gamma-gen/*' -not -name '*Communicator*.cc' -not -name '*Hdf5*'`
+CCFILES=`find . -type f -name '*.cc' -not -path '*/gamma-gen/*' -not -name '*Communicator*.cc' -not -name '*SharedMemory*.cc' -not -name '*Hdf5*'`
 HPPFILES=`find . -type f -name '*.hpp'`
 echo HFILES=$HFILES $HPPFILES > Make.inc
 echo >> Make.inc

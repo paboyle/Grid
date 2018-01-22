@@ -4,9 +4,10 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MContraction/WardIdentity.hpp
 
-Copyright (C) 2017
+Copyright (C) 2015-2018
 
-Author: Andrew Lawson    <andrew.lawson1991@gmail.com>
+Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -74,6 +75,7 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+protected:
     // setup
     virtual void setup(void);
     // execution
@@ -105,7 +107,7 @@ std::vector<std::string> TWardIdentity<FImpl>::getInput(void)
 template <typename FImpl>
 std::vector<std::string> TWardIdentity<FImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {};
     
     return out;
 }
@@ -117,7 +119,16 @@ void TWardIdentity<FImpl>::setup(void)
     Ls_ = env().getObjectLs(par().q);
     if (Ls_ != env().getObjectLs(par().action))
     {
-        HADRON_ERROR("Ls mismatch between quark action and propagator");
+        HADRON_ERROR(Size, "Ls mismatch between quark action and propagator");
+    }
+    envTmpLat(PropagatorField, "tmp");
+    envTmpLat(PropagatorField, "vector_WI");
+    if (par().test_axial)
+    {
+        envTmpLat(PropagatorField, "psi");
+        envTmpLat(LatticeComplex,  "PP");
+        envTmpLat(LatticeComplex,  "axial_defect");
+        envTmpLat(LatticeComplex,  "PJ5q");
     }
 }
 
@@ -128,12 +139,13 @@ void TWardIdentity<FImpl>::execute(void)
     LOG(Message) << "Performing Ward Identity checks for quark '" << par().q
                  << "'." << std::endl;
 
-    PropagatorField tmp(env().getGrid()), vector_WI(env().getGrid());
-    PropagatorField &q    = *env().template getObject<PropagatorField>(par().q);
-    FMat            &act = *(env().template getObject<FMat>(par().action));
-    Gamma           g5(Gamma::Algebra::Gamma5);
+    auto  &q   = envGet(PropagatorField, par().q);
+    auto  &act = envGet(FMat, par().action);
+    Gamma g5(Gamma::Algebra::Gamma5);
 
     // Compute D_mu V_mu, D here is backward derivative.
+    envGetTmp(PropagatorField, tmp);
+    envGetTmp(PropagatorField, vector_WI);
     vector_WI    = zero;
     for (unsigned int mu = 0; mu < Nd; ++mu)
     {
@@ -148,9 +160,10 @@ void TWardIdentity<FImpl>::execute(void)
 
     if (par().test_axial)
     {
-        PropagatorField psi(env().getGrid());
-        LatticeComplex PP(env().getGrid()), axial_defect(env().getGrid()),
-                       PJ5q(env().getGrid());
+        envGetTmp(PropagatorField, psi);
+        envGetTmp(LatticeComplex, PP);
+        envGetTmp(LatticeComplex, axial_defect);
+        envGetTmp(LatticeComplex, PJ5q);
         std::vector<TComplex> axial_buf;
 
         // Compute <P|D_mu A_mu>, D is backwards derivative.

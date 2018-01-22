@@ -4,8 +4,7 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/HadronsXmlSchedule.cc
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
 
@@ -49,12 +48,6 @@ int main(int argc, char *argv[])
     
     // initialization
     Grid_init(&argc, &argv);
-    HadronsLogError.Active(GridLogError.isActive());
-    HadronsLogWarning.Active(GridLogWarning.isActive());
-    HadronsLogMessage.Active(GridLogMessage.isActive());
-    HadronsLogIterative.Active(GridLogIterative.isActive());
-    HadronsLogDebug.Active(GridLogDebug.isActive());
-    LOG(Message) << "Grid initialized" << std::endl;
     
     // execution
     Application application;
