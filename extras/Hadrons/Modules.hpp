@@ -47,6 +47,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MGauge/Unit.hpp>
 #include <Grid/Hadrons/Modules/MGauge/Random.hpp>
 #include <Grid/Hadrons/Modules/MGauge/StochEm.hpp>
+#include <Grid/Hadrons/Modules/MGauge/FundtoHirep.hpp>
 #include <Grid/Hadrons/Modules/MUtilities/TestSeqGamma.hpp>
 #include <Grid/Hadrons/Modules/MUtilities/TestSeqConserved.hpp>
 #include <Grid/Hadrons/Modules/MLoop/NoiseLoop.hpp>
@@ -55,6 +56,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Hadrons/Modules/MScalar/ChargedProp.hpp>
 #include <Grid/Hadrons/Modules/MAction/DWF.hpp>
 #include <Grid/Hadrons/Modules/MAction/Wilson.hpp>
+#include <Grid/Hadrons/Modules/MAction/WilsonClover.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/Div.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TrMag.hpp>
 #include <Grid/Hadrons/Modules/MScalarSUN/TwoPoint.hpp>
