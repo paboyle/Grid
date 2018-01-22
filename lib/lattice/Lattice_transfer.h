@@ -322,10 +322,13 @@ inline void blockPromote(const Lattice<vobjC>              &coarseData,
       for(int d=0;d<_ndimension;d++) coor_c[d]=coor_f[d]/block_r[d];
       Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
       
-      // TODO: These lines here prevent this commit from working
+      // The temporary is necessary, since a pure instance of Grid::simd<...> is
+      // not a valid argument to operator+ with an iVector, we need an an iScalar
+      typename vobjC::tensor_reduced tmp; // iScalar<iVector<iVector<...>>> -> iScalar<iScalar<iScalar<...>>>
       for(int i=0;i<nbasis;i++) {
-	if(i==0) fineData._odata[sf]=coarseData._odata[sc]()(0)(i) * Basis[i]._odata[sf];
-	else     fineData._odata[sf]=fineData._odata[sf]+coarseData._odata[sc]()(0)(i)*Basis[i]._odata[sf];
+        tmp = coarseData._odata[sc]()(0)(i);
+        if(i==0) fineData._odata[sf] = tmp * Basis[i]._odata[sf];
+        else     fineData._odata[sf]=fineData._odata[sf]+tmp*Basis[i]._odata[sf];
       }
     }
   }
