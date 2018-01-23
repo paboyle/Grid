@@ -132,24 +132,27 @@ void Application::parseParameterFile(const std::string parameterFileName)
 
 void Application::saveParameterFile(const std::string parameterFileName)
 {
-    XmlWriter          writer(parameterFileName);
-    ObjectId           id;
-    const unsigned int nMod = vm().getNModule();
-    
     LOG(Message) << "Saving application to '" << parameterFileName << "'..." << std::endl;
-    write(writer, "parameters", getPar());
-    push(writer, "modules");
-    for (unsigned int i = 0; i < nMod; ++i)
+    if (env().getGrid()->IsBoss())
     {
-        push(writer, "module");
-        id.name = vm().getModuleName(i);
-        id.type = vm().getModule(i)->getRegisteredName();
-        write(writer, "id", id);
-        vm().getModule(i)->saveParameters(writer, "options");
+        XmlWriter          writer(parameterFileName);
+        ObjectId           id;
+        const unsigned int nMod = vm().getNModule();
+
+        write(writer, "parameters", getPar());
+        push(writer, "modules");
+        for (unsigned int i = 0; i < nMod; ++i)
+        {
+            push(writer, "module");
+            id.name = vm().getModuleName(i);
+            id.type = vm().getModule(i)->getRegisteredName();
+            write(writer, "id", id);
+            vm().getModule(i)->saveParameters(writer, "options");
+            pop(writer);
+        }
+        pop(writer);
         pop(writer);
     }
-    pop(writer);
-    pop(writer);
 }
 
 // schedule computation ////////////////////////////////////////////////////////
@@ -164,20 +167,24 @@ void Application::schedule(void)
 
 void Application::saveSchedule(const std::string filename)
 {
-    TextWriter               writer(filename);
-    std::vector<std::string> program;
-    
-    if (!scheduled_)
-    {
-        HADRON_ERROR(Definition, "Computation not scheduled");
-    }
     LOG(Message) << "Saving current schedule to '" << filename << "'..."
                  << std::endl;
-    for (auto address: program_)
+    if (env().getGrid()->IsBoss())
     {
-        program.push_back(vm().getModuleName(address));
+        TextWriter               writer(filename);
+        std::vector<std::string> program;
+        
+        if (!scheduled_)
+        {
+            HADRON_ERROR(Definition, "Computation not scheduled");
+        }
+
+        for (auto address: program_)
+        {
+            program.push_back(vm().getModuleName(address));
+        }
+        write(writer, "schedule", program);
     }
-    write(writer, "schedule", program);
 }
 
 void Application::loadSchedule(const std::string filename)

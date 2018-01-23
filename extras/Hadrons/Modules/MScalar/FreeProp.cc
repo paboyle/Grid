@@ -83,8 +83,6 @@ void TFreeProp::execute(void)
     
     if (!par().output.empty())
     {
-        TextWriter            writer(par().output + "." +
-                                     std::to_string(vm().getTrajectory()));
         std::vector<TComplex> buf;
         std::vector<Complex>  result;
         
@@ -94,6 +92,6 @@ void TFreeProp::execute(void)
         {
             result[t] = TensorRemove(buf[t]);
         }
-        write(writer, "prop", result);
+        saveResult(par().output, "freeprop", result);
     }
 }

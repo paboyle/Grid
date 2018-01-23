@@ -151,11 +151,10 @@ void TDiv<SImpl>::execute(void)
     if (!par().output.empty())
     {
         Result       r;
-        ResultWriter writer(RESULT_FILE_NAME(par().output));
 
         r.type  = par().type;
         r.value = TensorRemove(sum(div));
-        write(writer, "div", r);
+        saveResult(par().output, "div", r);
     }
 }
 

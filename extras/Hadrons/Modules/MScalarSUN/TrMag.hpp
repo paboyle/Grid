@@ -120,7 +120,6 @@ void TTrMag<SImpl>::execute(void)
                  << "..." << std::endl;
 
     std::vector<Result> result;
-    ResultWriter        writer(RESULT_FILE_NAME(par().output));
     auto                &phi = envGet(Field, par().field);
 
     auto m2 = sum(phi), mn = m2;
@@ -136,7 +135,7 @@ void TTrMag<SImpl>::execute(void)
         r.value = TensorRemove(trace(mn)).real();
         result.push_back(r);
     }
-    write(writer, "trmag", result);
+    saveResult(par().output, "trmag", result);
 }
 
 END_MODULE_NAMESPACE

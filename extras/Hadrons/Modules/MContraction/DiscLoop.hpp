@@ -119,7 +119,6 @@ void TDiscLoop<FImpl>::execute(void)
                  << "' using '" << par().q_loop << "' with " << par().gamma 
                  << " insertion." << std::endl;
 
-    ResultWriter          writer(RESULT_FILE_NAME(par().output));
     auto                  &q_loop = envGet(PropagatorField, par().q_loop);
     Gamma                 gamma(par().gamma);
     std::vector<TComplex> buf;
@@ -128,15 +127,13 @@ void TDiscLoop<FImpl>::execute(void)
     envGetTmp(LatticeComplex, c);
     c = trace(gamma*q_loop);
     sliceSum(c, buf, Tp);
-
     result.gamma = par().gamma;
     result.corr.resize(buf.size());
     for (unsigned int t = 0; t < buf.size(); ++t)
     {
         result.corr[t] = TensorRemove(buf[t]);
     }
-
-    write(writer, "disc", result);
+    saveResult(par().output, "disc", result);
 }
 
 END_MODULE_NAMESPACE

@@ -162,9 +162,7 @@ void TTrPhi<SImpl>::execute(void)
     }
     if (result.size() > 0)
     {
-        ResultWriter writer(RESULT_FILE_NAME(par().output));
-
-        write(writer, "trphi", result);
+        saveResult(par().output, "trphi", result);
     }
 }
 
