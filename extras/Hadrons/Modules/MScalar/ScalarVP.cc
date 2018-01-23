@@ -6,6 +6,78 @@ using namespace Grid;
 using namespace Hadrons;
 using namespace MScalar;
 
+/*
+ * Scalar QED vacuum polarisation up to O(alpha)
+ *
+ *
+ *                          _______
+ *                         /       \              (   adj(S(a\hat{nu}|x)) U_mu(x) S(0|x+a\hat{mu}) U_nu(0)    )
+ * Diagram notation: U_nu *         * U_mu  = 2 Re(                             -                             )
+ *                         \_______/              ( adj(S(a\hat{nu}|x+a\hat{mu})) adj(U_mu(x)) S(0|x) U_nu(0) )
+ *                          
+ *  
+ *
+ *            _______
+ *           /       \
+ * free = 1 *         * 1
+ *           \_______/
+ *
+ *
+ *
+ *             _______
+ *            /       \
+ * S = iA_nu *         * iA_mu
+ *            \_______/
+ *
+ *
+ *         Delta_1
+ *         ___*___
+ *        /       \
+ * X = 1 *         * 1
+ *        \___*___/
+ *         Delta_1
+ *
+ *          Delta_1                     Delta_1
+ *          ___*___                     ___*___
+ *         /       \                   /       \
+ *      1 *         * iA_mu  +  iA_nu *         * 1
+ *         \_______/                   \_______/
+ * 4C =        _______                     _______
+ *            /       \                   /       \
+ *      +  1 *         * iA_mu  +  iA_nu *         * 1
+ *            \___*___/                   \___*___/
+ *             Delta_1                     Delta_1
+ *
+ *     Delta_1   Delta_1
+ *          _*___*_             _______
+ *         /       \           /       \
+ * 2E = 1 *         * 1  +  1 *         * 1
+ *         \_______/           \_*___*_/
+ *                         Delta_1   Delta_1
+ *
+ *          Delta_2
+ *          ___*___             _______
+ *         /       \           /       \
+ * 2T = 1 *         * 1  +  1 *         * 1
+ *         \_______/           \___*___/
+ *                              Delta_2
+ *
+ *
+ *                    _______
+ *                   /       \
+ * srcT = -A_nu^2/2 *         * 1
+ *                   \_______/
+ *
+ *
+ *
+ *            _______
+ *           /       \
+ * snkT = 1 *         * -A_mu^2/2
+ *           \_______/
+ *
+ * Full VP to O(alpha) = free + q^2*(S+X+4C+2E+2T+srcT+snkT)
+ */
+
 /******************************************************************************
 *                  TScalarVP implementation                             *
 ******************************************************************************/
@@ -37,7 +109,8 @@ std::vector<std::string> TScalarVP::getOutput(void)
 
         for (unsigned int nu = 0; nu < env().getNd(); ++nu)
         {
-            out.push_back(getName() + "_" + std::to_string(mu) + "_" + std::to_string(nu));
+            out.push_back(getName() + "_" + std::to_string(mu)
+                          + "_" + std::to_string(nu));
         }
     }
 
@@ -119,8 +192,9 @@ void TScalarVP::execute(void)
     // CONTRACTIONS
     ScalarField prop1(env().getGrid()), prop2(env().getGrid());
     EmField     &A = *env().getObject<EmField>(par().emField);
-    ScalarField Amu(env().getGrid()), tmp_vp(env().getGrid());
-    TComplex    Anu0;
+    ScalarField Amu(env().getGrid()), U_snk(env().getGrid());
+    ScalarField tmp_vp1(env().getGrid()), tmp_vp2(env().getGrid());
+    TComplex    Anu0, U_src;
     std::vector<int> coor0 = {0, 0, 0, 0};
     std::vector<std::vector<ScalarField> > vpTensor;
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
@@ -134,10 +208,7 @@ void TScalarVP::execute(void)
     }
 
     // Open output files if necessary
-    std::vector<TComplex>   vecBuf;
-    std::vector<Complex>    result;
-    ScalarField vpPhase(env().getGrid());
-    std::vector<CorrWriter *> writer, writer0, writerD;
+    std::vector<CorrWriter *> writer;
     std::vector<ScalarField> momphases;
     if (!par().output.empty())
     {
@@ -147,50 +218,32 @@ void TScalarVP::execute(void)
             std::vector<int> mom = strToVec<int>(par().outputMom[i_p]);
 
             // Open output files
-            std::string           filename = par().output + "_" + std::to_string(mom[0])
-                                                          + std::to_string(mom[1])
-                                                          + std::to_string(mom[2])
-                                                          + "." +
-                                             std::to_string(env().getTrajectory());
-            std::string           filename0 = par().output + "_" + std::to_string(mom[0])
-                                                           + std::to_string(mom[1])
-                                                           + std::to_string(mom[2])
-                                                           + "_free." +
-                                              std::to_string(env().getTrajectory());
-            std::string           filenameD = par().output + "_" + std::to_string(mom[0])
-                                                           + std::to_string(mom[1])
-                                                           + std::to_string(mom[2])
-                                                           + "_diagrams." +
-                                              std::to_string(env().getTrajectory());
+            std::string filename = par().output + "_"
+                                   + std::to_string(mom[0])
+                                   + std::to_string(mom[1])
+                                   + std::to_string(mom[2]) + "."
+                                   + std::to_string(env().getTrajectory());
 
             if (env().getGrid()->IsBoss())
             {
                 CorrWriter *writer_i = new CorrWriter(filename);
                 writer.push_back(writer_i);
-                CorrWriter *writer0_i = new CorrWriter(filename0);
-                writer0.push_back(writer0_i);
-                CorrWriter *writerD_i = new CorrWriter(filenameD);
-                writerD.push_back(writerD_i);
 
                 write(*writer[i_p], "charge", q);
                 write(*writer[i_p], "mass", static_cast<TChargedProp *>(env().getModule(par().scalarProp))->par().mass);
-                write(*writer0[i_p], "charge", 0.0);
-                write(*writer0[i_p], "mass", static_cast<TChargedProp *>(env().getModule(par().scalarProp))->par().mass);
-                write(*writerD[i_p], "charge", q);
-                write(*writerD[i_p], "mass", static_cast<TChargedProp *>(env().getModule(par().scalarProp))->par().mass);
             }
 
             // Calculate phase factors
-            vpPhase = Complex(1.0,0.0);
+            tmp_vp1 = Complex(1.0,0.0);
             for (unsigned int j = 0; j < env().getNd()-1; ++j)
             {
                 for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
                 {
-                    vpPhase = vpPhase*(*phase_[j]);
+                    tmp_vp1 = tmp_vp1*(*phase_[j]);
                 }
             }
-            vpPhase = adj(vpPhase);
-            momphases.push_back(vpPhase);
+            tmp_vp1 = adj(tmp_vp1);
+            momphases.push_back(tmp_vp1);
         }
     }
 
@@ -205,297 +258,132 @@ void TScalarVP::execute(void)
                          << std::endl;
             Amu = peekLorentz(A, mu);
 
-            // Free VP
-            prop1 = *prop0_;
-            prop2 = Cshift(*prop0_, nu, -1);
-            tmp_vp = adj(prop2) * Cshift(prop1, mu, 1);
-            tmp_vp -= Cshift(adj(prop2), mu, 1) * prop1;
-            tmp_vp = 2.0*real(tmp_vp);
-            vpTensor[mu][nu] = tmp_vp;
-
+            // free
+            prop1 = *prop0_;                     // S_0(0|x)
+            prop2 = Cshift(*prop0_, nu, -1);     // S_0(0|x-a\hat{\nu})
+                                                 // = S_0(a\hat{\nu}|x)
+            U_src = Complex(1.0,0.0);
+            vpContraction(tmp_vp1, prop1, prop2, U_src, mu);
+            vpTensor[mu][nu] = tmp_vp1;
             // Output if necessary
             if (!par().output.empty())
             {
-                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
-                {
-                    vpPhase = tmp_vp*momphases[i_p];
-                    sliceSum(vpPhase, vecBuf, Tp);
-                    result.resize(vecBuf.size());
-                    for (unsigned int t = 0; t < vecBuf.size(); ++t)
-                    {
-                        result[t] = TensorRemove(vecBuf[t]);
-                    }
-                    if (env().getGrid()->IsBoss())
-                    {
-                        write(*writer0[i_p],
-                              "Pi_"+std::to_string(mu)+"_"+std::to_string(nu),
-                              result);
-                    }
-                }
+                writeVP(writer, tmp_vp1, momphases,
+                        "Pi_free_"+std::to_string(mu)+"_"+std::to_string(nu));
+            }
+
+            // srcT
+            tmp_vp2 = tmp_vp1 * (-0.5)*q*q*Anu0*Anu0;
+            vpTensor[mu][nu] += tmp_vp2;
+            // Output if necessary
+            if (!par().output.empty())
+            {
+                writeVP(writer, tmp_vp2, momphases,
+                        "Pi_srcT_"+std::to_string(mu)+"_"+std::to_string(nu));
+            }
+
+            // snkT
+            tmp_vp2 = tmp_vp1 * (-0.5)*q*q*Amu*Amu;
+            vpTensor[mu][nu] += tmp_vp2;
+            // Output if necessary
+            if (!par().output.empty())
+            {
+                writeVP(writer, tmp_vp2, momphases,
+                        "Pi_snkT_"+std::to_string(mu)+"_"+std::to_string(nu));
             }
 
             // S
-            // X
+            prop1 = *prop0_;                     // S_0(0|x)
+            prop2 = Cshift(*prop0_, nu, -1);     // S_0(a\hat{\nu}|x)
+            U_src = ci*q*Anu0;
+            U_snk = ci*q*Amu;
+            vpContraction(tmp_vp1, prop1, prop2, U_src, U_snk, mu);
+            vpTensor[mu][nu] += tmp_vp1;
+            // Output if necessary
+            if (!par().output.empty())
+            {
+                writeVP(writer, tmp_vp1, momphases,
+                        "Pi_S_"+std::to_string(mu)+"_"+std::to_string(nu));
+            }
+
             // 4C
-
-            // "Exchange" terms
-            prop1 += q*propQ;
-            prop2 += q*muPropQ[nu];
-            tmp_vp = adj(prop2) * (1.0 + ci*q*Amu)
-                     * Cshift(prop1, mu, 1) * (1.0 + ci*q*Anu0);
-            tmp_vp -= Cshift(adj(prop2), mu, 1) * (1.0 - ci*q*Amu)
-                      * prop1 * (1.0 + ci*q*Anu0);
-            tmp_vp = 2.0*real(tmp_vp);
-            vpTensor[mu][nu] = tmp_vp;
-
+            prop1 = q*propQ;                     // q*S_1(0|x)
+            prop2 = Cshift(*prop0_, nu, -1);     // S_0(a\hat{\nu}|x)
+            U_src = Complex(1.0,0.0);
+            U_snk = ci*q*Amu;
+            vpContraction(tmp_vp1, prop1, prop2, U_src, U_snk, mu);
+            U_src = ci*q*Anu0;
+            vpContraction(tmp_vp2, prop1, prop2, U_src, mu);
+            tmp_vp1 += tmp_vp2;
+            prop1 = *prop0_;                     // S_0(0|x)
+            prop2 = q*muPropQ[nu];               // q*S_1(a\hat{\nu}|x)
+            vpContraction(tmp_vp2, prop1, prop2, U_src, mu);
+            tmp_vp1 += tmp_vp2;
+            U_src = Complex(1.0,0.0);
+            U_snk = ci*q*Amu;
+            vpContraction(tmp_vp2, prop1, prop2, U_src, U_snk, mu);
+            tmp_vp1 += tmp_vp2;
+            vpTensor[mu][nu] += tmp_vp1;
             // Output if necessary
             if (!par().output.empty())
             {
-                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
-                {
-                    vpPhase = tmp_vp*momphases[i_p];
-                    sliceSum(vpPhase, vecBuf, Tp);
-                    result.resize(vecBuf.size());
-                    for (unsigned int t = 0; t < vecBuf.size(); ++t)
-                    {
-                        result[t] = TensorRemove(vecBuf[t]);
-                    }
-                    if (env().getGrid()->IsBoss())
-                    {
-                        write(*writerD[i_p],
-                              "Pi_exchange_"+std::to_string(mu)+"_"+std::to_string(nu),
-                              result);
-                    }
-                }
+                writeVP(writer, tmp_vp1, momphases,
+                        "Pi_4C_"+std::to_string(mu)+"_"+std::to_string(nu));
             }
 
-            // Subtract O(alpha^2) term
-            prop1 = q*propQ;
-            prop2 = q*muPropQ[nu];
-            tmp_vp = Cshift(adj(prop2), mu, 1) * (-ci)*q*Amu
-                     * prop1 * ci*q*Anu0;
-            tmp_vp -= adj(prop2) * ci*q*Amu
-                      * Cshift(prop1, mu, 1) * ci*q*Anu0;
-            tmp_vp = 2.0*real(tmp_vp);
-            vpTensor[mu][nu] += tmp_vp;
-
+            // X
+            prop1 = q*propQ;                     // q*S_1(0|x)
+            prop2 = q*muPropQ[nu];               // q*S_1(a\hat{\nu}|x)
+            U_src = Complex(1.0,0.0);
+            vpContraction(tmp_vp1, prop1, prop2, U_src, mu);
+            vpTensor[mu][nu] += tmp_vp1;
             // Output if necessary
             if (!par().output.empty())
             {
-                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
-                {
-                    vpPhase = tmp_vp*momphases[i_p];
-                    sliceSum(vpPhase, vecBuf, Tp);
-                    result.resize(vecBuf.size());
-                    for (unsigned int t = 0; t < vecBuf.size(); ++t)
-                    {
-                        result[t] = TensorRemove(vecBuf[t]);
-                    }
-                    if (env().getGrid()->IsBoss())
-                    {
-                        write(*writerD[i_p],
-                              "Pi_alpha2_"+std::to_string(mu)+"_"+std::to_string(nu),
-                              result);
-                    }
-                }
+                writeVP(writer, tmp_vp1, momphases,
+                        "Pi_X_"+std::to_string(mu)+"_"+std::to_string(nu));
             }
 
-            // Sunset from unshifted source
-            prop1 = q*q*propSun;
-            prop2 = Cshift(*prop0_, nu, -1);
-            tmp_vp = adj(prop2) * Cshift(prop1, mu, 1);
-            tmp_vp -= Cshift(adj(prop2), mu, 1) * prop1;
-            tmp_vp = 2.0*real(tmp_vp);
-            vpTensor[mu][nu] += tmp_vp;
-
+            // 2E
+            prop1 = q*q*propSun;                 // q^2*S_\Sigma(0|x)
+            prop2 = Cshift(*prop0_, nu, -1);     // S_0(a\hat{\nu}|x)
+            U_src = Complex(1.0,0.0);
+            vpContraction(tmp_vp1, prop1, prop2, U_src, mu);
+            prop1 = *prop0_;                     // S_0(0|x)
+            prop2 = q*q*Cshift(propSun, nu, -1); // q^2*S_\Sigma(0|x-a\hat{\nu})
+                               //(Note: <S(0|x-a\hat{\nu})> = <S(a\hat{\nu}|x)>)
+            vpContraction(tmp_vp2, prop1, prop2, U_src, mu);
+            tmp_vp1 += tmp_vp2;
+            vpTensor[mu][nu] += tmp_vp1;
             // Output if necessary
             if (!par().output.empty())
             {
-                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
-                {
-                    vpPhase = tmp_vp*momphases[i_p];
-                    sliceSum(vpPhase, vecBuf, Tp);
-                    result.resize(vecBuf.size());
-                    for (unsigned int t = 0; t < vecBuf.size(); ++t)
-                    {
-                        result[t] = TensorRemove(vecBuf[t]);
-                    }
-                    if (env().getGrid()->IsBoss())
-                    {
-                        write(*writerD[i_p],
-                              "Pi_sunset_unshifted_"+std::to_string(mu)+"_"+std::to_string(nu),
-                              result);
-                    }
-                }
+                writeVP(writer, tmp_vp1, momphases,
+                        "Pi_2E_"+std::to_string(mu)+"_"+std::to_string(nu));
             }
 
-            // Sunset from shifted source
-            prop1 = Cshift(prop1, nu, -1);
-            tmp_vp = Cshift(adj(*prop0_), mu, 1) * prop1;
-            tmp_vp -= adj(*prop0_) * Cshift(prop1, mu, 1);
-            tmp_vp = 2.0*real(tmp_vp);
-            vpTensor[mu][nu] += tmp_vp;
-
+            // 2T
+            prop1 = q*q*propTad;                 // q^2*S_T(0|x)
+            prop2 = Cshift(*prop0_, nu, -1);     // S_0(a\hat{\nu}|x)
+            U_src = Complex(1.0,0.0);
+            vpContraction(tmp_vp1, prop1, prop2, U_src, mu);
+            prop1 = *prop0_;                     // S_0(0|x)
+            prop2 = q*q*Cshift(propTad, nu, -1); // q^2*S_T(0|x-a\hat{\nu})
+            vpContraction(tmp_vp2, prop1, prop2, U_src, mu);
+            tmp_vp1 += tmp_vp2;
+            vpTensor[mu][nu] += tmp_vp1;
             // Output if necessary
             if (!par().output.empty())
             {
-                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
-                {
-                    vpPhase = tmp_vp*momphases[i_p];
-                    sliceSum(vpPhase, vecBuf, Tp);
-                    result.resize(vecBuf.size());
-                    for (unsigned int t = 0; t < vecBuf.size(); ++t)
-                    {
-                        result[t] = TensorRemove(vecBuf[t]);
-                    }
-                    if (env().getGrid()->IsBoss())
-                    {
-                        write(*writerD[i_p],
-                              "Pi_sunset_shifted_"+std::to_string(mu)+"_"+std::to_string(nu),
-                              result);
-                    }
-                }
+                writeVP(writer, tmp_vp1, momphases,
+                        "Pi_2T_"+std::to_string(mu)+"_"+std::to_string(nu));
             }
 
-            // Tadpole from unshifted source
-            prop1 = q*q*propTad;
-            prop2 = Cshift(*prop0_, nu, -1);
-            tmp_vp = adj(prop2) * Cshift(prop1, mu, 1);
-            tmp_vp -= Cshift(adj(prop2), mu, 1) * prop1;
-            tmp_vp = 2.0*real(tmp_vp);
-            vpTensor[mu][nu] += tmp_vp;
-
-            // Output if necessary
+            // Output full VP if necessary
             if (!par().output.empty())
             {
-                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
-                {
-                    vpPhase = tmp_vp*momphases[i_p];
-                    sliceSum(vpPhase, vecBuf, Tp);
-                    result.resize(vecBuf.size());
-                    for (unsigned int t = 0; t < vecBuf.size(); ++t)
-                    {
-                        result[t] = TensorRemove(vecBuf[t]);
-                    }
-                    if (env().getGrid()->IsBoss())
-                    {
-                        write(*writerD[i_p],
-                              "Pi_tadpole_unshifted_"+std::to_string(mu)+"_"+std::to_string(nu),
-                              result);
-                    }
-                }
-            }
-
-            // Tadpole from shifted source
-            prop1 = Cshift(prop1, nu, -1);
-            tmp_vp = Cshift(adj(*prop0_), mu, 1) * prop1;
-            tmp_vp -= adj(*prop0_) * Cshift(prop1, mu, 1);
-            tmp_vp = 2.0*real(tmp_vp);
-            vpTensor[mu][nu] += tmp_vp;
-
-            // Output if necessary
-            if (!par().output.empty())
-            {
-                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
-                {
-                    vpPhase = tmp_vp*momphases[i_p];
-                    sliceSum(vpPhase, vecBuf, Tp);
-                    result.resize(vecBuf.size());
-                    for (unsigned int t = 0; t < vecBuf.size(); ++t)
-                    {
-                        result[t] = TensorRemove(vecBuf[t]);
-                    }
-                    if (env().getGrid()->IsBoss())
-                    {
-                        write(*writerD[i_p],
-                              "Pi_tadpole_shifted_"+std::to_string(mu)+"_"+std::to_string(nu),
-                              result);
-                    }
-                }
-            }
-
-            // Source tadpole
-            prop1 = *prop0_;
-            tmp_vp = adj(prop2)
-                     * Cshift(prop1, mu, 1)
-                     * (-0.5)*q*q*Anu0*Anu0;
-            tmp_vp -= Cshift(adj(prop2), mu, 1)
-                      * prop1
-                      * (-0.5)*q*q*Anu0*Anu0;
-            tmp_vp = 2.0*real(tmp_vp);
-            vpTensor[mu][nu] += tmp_vp;
-
-            // Output if necessary
-            if (!par().output.empty())
-            {
-                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
-                {
-                    vpPhase = tmp_vp*momphases[i_p];
-                    sliceSum(vpPhase, vecBuf, Tp);
-                    result.resize(vecBuf.size());
-                    for (unsigned int t = 0; t < vecBuf.size(); ++t)
-                    {
-                        result[t] = TensorRemove(vecBuf[t]);
-                    }
-                    if (env().getGrid()->IsBoss())
-                    {
-                        write(*writerD[i_p],
-                              "Pi_sourcetadpole_"+std::to_string(mu)+"_"+std::to_string(nu),
-                              result);
-                    }
-                }
-            }
-
-            // Sink tadpole
-            tmp_vp = adj(prop2)
-                     * (-0.5)*q*q*Amu*Amu
-                     * Cshift(prop1, mu, 1);
-            tmp_vp -= Cshift(adj(prop2), mu, 1)
-                      * (-0.5)*q*q*Amu*Amu
-                      * prop1;
-            tmp_vp = 2.0*real(tmp_vp);
-            vpTensor[mu][nu] += tmp_vp;
-
-            // Output if necessary
-            if (!par().output.empty())
-            {
-                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
-                {
-                    vpPhase = tmp_vp*momphases[i_p];
-                    sliceSum(vpPhase, vecBuf, Tp);
-                    result.resize(vecBuf.size());
-                    for (unsigned int t = 0; t < vecBuf.size(); ++t)
-                    {
-                        result[t] = TensorRemove(vecBuf[t]);
-                    }
-                    if (env().getGrid()->IsBoss())
-                    {
-                        write(*writerD[i_p],
-                              "Pi_sinktadpole_"+std::to_string(mu)+"_"+std::to_string(nu),
-                              result);
-                    }
-                }
-            }
-
-            // Output if necessary
-            if (!par().output.empty())
-            {
-                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
-                {
-                    vpPhase = vpTensor[mu][nu]*momphases[i_p];
-                    sliceSum(vpPhase, vecBuf, Tp);
-                    result.resize(vecBuf.size());
-                    for (unsigned int t = 0; t < vecBuf.size(); ++t)
-                    {
-                        result[t] = TensorRemove(vecBuf[t]);
-                    }
-                    if (env().getGrid()->IsBoss())
-                    {
-                        write(*writer[i_p],
-                              "Pi_"+std::to_string(mu)+"_"+std::to_string(nu),
-                              result);
-                    }
-                }
+                writeVP(writer, vpTensor[mu][nu], momphases,
+                        "Pi_"+std::to_string(mu)+"_"+std::to_string(nu));
             }
         }
     }
@@ -506,9 +394,50 @@ void TScalarVP::execute(void)
             if (env().getGrid()->IsBoss())
             {
                 delete writer[i_p];
-                delete writer0[i_p];
-                delete writerD[i_p];
             }
+        }
+    }
+}
+
+void TScalarVP::vpContraction(ScalarField &vp,
+                   ScalarField &prop_0_x, ScalarField &prop_nu_x,
+                   TComplex u_src, ScalarField &u_snk, int mu)
+{
+    // Note: this function assumes a point source is used.
+    vp = adj(prop_nu_x) * u_snk * Cshift(prop_0_x, mu, 1) * u_src;
+    vp -= Cshift(adj(prop_nu_x), mu, 1) * adj(u_snk) * prop_0_x * u_src;
+    vp = 2.0*real(vp);
+}
+
+void TScalarVP::vpContraction(ScalarField &vp,
+                   ScalarField &prop_0_x, ScalarField &prop_nu_x,
+                   TComplex u_src, int mu)
+{
+    // Note: this function assumes a point source is used.
+    vp = adj(prop_nu_x) * Cshift(prop_0_x, mu, 1) * u_src;
+    vp -= Cshift(adj(prop_nu_x), mu, 1) * prop_0_x * u_src;
+    vp = 2.0*real(vp);
+}
+
+void TScalarVP::writeVP(const std::vector<CorrWriter *> &writers, const ScalarField &vp,
+             const std::vector<ScalarField> &momphases, std::string dsetName)
+{
+    std::vector<TComplex>   vecBuf;
+    std::vector<Complex>    result;
+    ScalarField vpPhase(env().getGrid());
+
+    for (unsigned int i_p = 0; i_p < momphases.size(); ++i_p)
+    {
+        vpPhase = vp*momphases[i_p];
+        sliceSum(vpPhase, vecBuf, Tp);
+        result.resize(vecBuf.size());
+        for (unsigned int t = 0; t < vecBuf.size(); ++t)
+        {
+            result[t] = TensorRemove(vecBuf[t]);
+        }
+        if (env().getGrid()->IsBoss())
+        {
+            write(*writers[i_p], dsetName, result);
         }
     }
 }

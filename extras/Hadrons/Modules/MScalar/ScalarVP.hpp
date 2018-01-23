@@ -41,6 +41,20 @@ public:
     // execution
     virtual void execute(void);
 private:
+    // conserved vector two-point contraction
+    void vpContraction(ScalarField &vp,
+                       ScalarField &prop_0_x, ScalarField &prop_nu_x,
+                       TComplex u_src, ScalarField &u_snk, int mu);
+    // conserved vector two-point contraction with unit gauge link at sink
+    void vpContraction(ScalarField &vp,
+                       ScalarField &prop_0_x, ScalarField &prop_nu_x,
+                       TComplex u_src, int mu);
+    // write momentum-projected vacuum polarisation to file(s)
+    void writeVP(const std::vector<CorrWriter *> &writers,
+                 const ScalarField &vp,
+                 const std::vector<ScalarField> &momphases,
+                 std::string dsetName);
+    // momentum-space Delta_1 insertion
     void momD1(ScalarField &s, FFT &fft);
 private:
     std::string                                 freeMomPropName_, GFSrcName_,
