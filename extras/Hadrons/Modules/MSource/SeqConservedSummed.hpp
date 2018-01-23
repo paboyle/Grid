@@ -4,8 +4,9 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MContraction/SeqConservedSummed.hpp
 
-Copyright (C) 2017
+Copyright (C) 2015-2018
 
+Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Andrew Lawson    <andrew.lawson1991@gmail.com>
 Author: Vera Guelpers    <v.m.guelpers@soton.ac.uk>
 
@@ -82,6 +83,7 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+protected:
     // setup
     virtual void setup(void);
     // execution
@@ -121,7 +123,8 @@ template <typename FImpl>
 void TSeqConservedSummed<FImpl>::setup(void)
 {
     auto Ls_ = env().getObjectLs(par().action);
-    env().template registerLattice<PropagatorField>(getName(), Ls_);
+    envCreateLat(PropagatorField, getName(), Ls_);
+    envTmpLat(PropagatorField, "src_tmp");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -141,18 +144,19 @@ void TSeqConservedSummed<FImpl>::execute(void)
                      << par().tA << " <= t <= " 
                      << par().tB << std::endl;
     }
-    PropagatorField &src = *env().template createLattice<PropagatorField>(getName());
-    auto src_buf = src;
-    PropagatorField &q   = *env().template getObject<PropagatorField>(par().q);
-    FMat            &mat = *(env().template getObject<FMat>(par().action));
+    auto &src = envGet(PropagatorField, getName());
+    envGetTmp(PropagatorField, src_tmp);
+    src_tmp = src;
+    auto &q   = envGet(PropagatorField, par().q);
+    auto &mat = envGet(FMat, par().action);
 
     std::vector<Real> mom = strToVec<Real>(par().mom);
     src = zero;
     for(int mu=0;mu<=3;mu++)
     {
-    	mat.SeqConservedCurrent(q, src_buf, par().curr_type, mu, 
+    	mat.SeqConservedCurrent(q, src_tmp, par().curr_type, mu, 
                             mom, par().tA, par().tB);
-	src += src_buf;
+	src += src_tmp;
 
     }	
 
