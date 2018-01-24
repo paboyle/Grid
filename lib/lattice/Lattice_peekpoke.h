@@ -36,52 +36,54 @@ Author: Peter Boyle <peterboyle@Peters-MacBook-Pro-2.local>
 
 NAMESPACE_BEGIN(Grid);
 
+
+// FIXME accelerator_loop and accelerator_inline these
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Peek internal indices of a Lattice object
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-template<int Index,class vobj>
+template<int Index,class vobj> 
 auto PeekIndex(const Lattice<vobj> &lhs,int i) -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i))>
 {
   Lattice<decltype(peekIndex<Index>(lhs._odata[0],i))> ret(lhs._grid);
   ret.checkerboard=lhs.checkerboard;
-  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+  cpu_loop( ss, lhs, {
     ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i);
-  }
+  });
   return ret;
 };
-template<int Index,class vobj>
+template<int Index,class vobj> 
 auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))>
 {
   Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))> ret(lhs._grid);
   ret.checkerboard=lhs.checkerboard;
-  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+  cpu_loop( ss, lhs, {
     ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i,j);
-  }
+  });
   return ret;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Poke internal indices of a Lattice object
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-template<int Index,class vobj> 
+template<int Index,class vobj>  
 void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0],0))> & rhs,int i)
 {
-  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+  cpu_loop( ss, lhs, {
     pokeIndex<Index>(lhs._odata[ss],rhs._odata[ss],i);
-  }      
+  });
 }
-template<int Index,class vobj>
+template<int Index,class vobj> 
 void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0],0,0))> & rhs,int i,int j)
 {
-  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+  cpu_loop( ss, lhs, {
     pokeIndex<Index>(lhs._odata[ss],rhs._odata[ss],i,j);
-  }      
+  });
 }
 
 //////////////////////////////////////////////////////
 // Poke a scalar object into the SIMD array
 //////////////////////////////////////////////////////
-template<class vobj,class sobj>
+template<class vobj,class sobj> 
 void pokeSite(const sobj &s,Lattice<vobj> &l,const std::vector<int> &site){
 
   GridBase *grid=l._grid;
