@@ -652,7 +652,7 @@ public:
     
     for(int x=0;x<rd;x++){       
       
-      int o   = 0;
+      //      int o   = 0;
       int bo  = x * _grid->_ostride[dimension];
       
       int cb= (cbmask==0x2)? Odd : Even;
@@ -752,9 +752,9 @@ public:
 	int words = buffer_size;
 	if (cbmask != 0x3) words=words>>1;
 	
-	int rank           = grid->_processor;
-	int recv_from_rank;
-	int xmit_to_rank;
+	//	int rank           = grid->_processor;
+	//	int recv_from_rank;
+	//	int xmit_to_rank;
 	
 	int unified_buffer_offset = _unified_buffer_size;
 	_unified_buffer_size    += words;
@@ -864,7 +864,6 @@ public:
     typedef typename cobj::vector_type vector_type;
     typedef typename cobj::scalar_type scalar_type;
     
-    GridBase *grid=_grid;
     assert(rhs._grid==_grid);
     //	  conformable(_grid,rhs._grid);
     
@@ -902,7 +901,7 @@ public:
 	  Gather_plane_table_compute ((GridBase *)_grid,dimension,sx,cbmask,u_comm_offset,face_table[face_idx]);
 	}
 	
-      	int rank           = _grid->_processor;
+	//      	int rank           = _grid->_processor;
 	int recv_from_rank;
 	int xmit_to_rank;
 	_grid->ShiftedRanks(dimension,comm_proc,xmit_to_rank,recv_from_rank);
@@ -994,7 +993,7 @@ public:
     // Simd direction uses an extract/merge pair
     ///////////////////////////////////////////////
     int buffer_size = _grid->_slice_nblock[dimension]*_grid->_slice_block[dimension];
-    int words = sizeof(cobj)/sizeof(vector_type);
+    //    int words = sizeof(cobj)/sizeof(vector_type);
     
     assert(cbmask==0x3); // Fixme think there is a latent bug if not true
     

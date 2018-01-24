@@ -67,8 +67,8 @@ void LebesgueOrder::ThreadInterleave(void)
   int vol = _LebesgueReorder.size();
   int threads = GridThread::GetThreads();
   int blockbits=3;
-  int blocklen = 8;
-  int msk      = 0x7;
+  //  int blocklen = 8;
+  //  int msk      = 0x7;
 
   for(int t=0;t<threads;t++){
     for(int ss=0;ss<vol;ss++){
