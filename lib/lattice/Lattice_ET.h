@@ -51,7 +51,6 @@ inline vobj predicatedWhere(const iobj &predicate, const vobj &iftrue,
   typedef typename vobj::vector_type vector_type;
 
   const int Nsimd = vobj::vector_type::Nsimd();
-  const int words = sizeof(vobj) / sizeof(vector_type);
 
   std::vector<Integer> mask(Nsimd);
   std::vector<scalar_object> truevals(Nsimd);
