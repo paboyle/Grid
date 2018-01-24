@@ -28,14 +28,11 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid/Grid.h>
 
-using namespace std;
 using namespace Grid;
- ;
 
 typedef WilsonFermion5D<DomainWallVec5dImplR> WilsonFermion5DR;
 typedef WilsonFermion5D<DomainWallVec5dImplF> WilsonFermion5DF;
 typedef WilsonFermion5D<DomainWallVec5dImplD> WilsonFermion5DD;
-
 
 std::vector<int> L_list;
 std::vector<int> Ls_list;
@@ -202,7 +199,7 @@ public:
 
 	dbytes=dbytes*ppn;
 	double xbytes    = dbytes*0.5;
-	double rbytes    = dbytes*0.5;
+	//	double rbytes    = dbytes*0.5;
 	double bidibytes = dbytes;
 
 	std::cout<<GridLogMessage << std::setw(4) << lat<<"\t"<<Ls<<"\t"
@@ -235,7 +232,7 @@ public:
     std::cout<<GridLogMessage << "  L  "<<"\t\t"<<"bytes"<<"\t\t\t"<<"GB/s"<<"\t\t"<<"Gflop/s"<<"\t\t seconds"<< "\t\tGB/s / node"<<std::endl;
     std::cout<<GridLogMessage << "----------------------------------------------------------"<<std::endl;
   
-    uint64_t NP;
+    //    uint64_t NP;
     uint64_t NN;
 
 
@@ -249,7 +246,7 @@ public:
       int64_t vol= latt_size[0]*latt_size[1]*latt_size[2]*latt_size[3];
       GridCartesian     Grid(latt_size,simd_layout,mpi_layout);
 
-      NP= Grid.RankCount();
+      //      NP= Grid.RankCount();
       NN =Grid.NodeCount();
 
       Vec rn ; random(sRNG,rn);
@@ -281,7 +278,7 @@ public:
 
   static double DWF5(int Ls,int L)
   {
-    RealD mass=0.1;
+    //    RealD mass=0.1;
     RealD M5  =1.8;
 
     double mflops;
@@ -340,8 +337,11 @@ public:
     std::cout << GridLogMessage << "Initialised RNGs" << std::endl;
 
     ///////// Source preparation ////////////
-    LatticeFermion src   (sFGrid); random(RNG5,src);
+    LatticeFermion src   (sFGrid); 
     LatticeFermion tmp   (sFGrid);
+    std::cout << GridLogMessage << "allocated src and tmp" << std::endl;
+    random(RNG5,src);
+    std::cout << GridLogMessage << "intialised random source" << std::endl;
 
     RealD N2 = 1.0/::sqrt(norm2(src));
     src = src*N2;
@@ -524,9 +524,11 @@ public:
     LatticeFermion tmp   (FGrid);
 
     RealD N2 = 1.0/::sqrt(norm2(src));
+    std::cout<<GridLogMessage << "Normalising src  "<< N2 <<std::endl;
     src = src*N2;
     
     LatticeGaugeField Umu(UGrid);  SU3::HotConfiguration(RNG4,Umu); 
+    
 
     DomainWallFermionR Dw(Umu,*FGrid,*FrbGrid,*UGrid,*UrbGrid,mass,M5);
 
@@ -656,8 +658,10 @@ public:
 	setCheckerboard(r_eo,r_o);
 	setCheckerboard(r_eo,r_e);
 	err = r_eo-ref; 
-	std::cout<<GridLogMessage << "norm diff   "<< norm2(err)<<std::endl;
-	assert((norm2(err)<1.0e-4));
+	RealD absref = norm2(ref);
+	RealD abserr = norm2(err);
+	std::cout<<GridLogMessage << "norm diff   "<< abserr << " / " << absref<<std::endl;
+	assert(abserr<1.0e-4);
 
       }
       robust = mflops_worst/mflops_best;
@@ -722,7 +726,7 @@ int main (int argc, char ** argv)
     std::cout<<GridLogMessage << "=================================================================================="<<std::endl;
     for(int l=0;l<L_list.size();l++){
       double robust;
-      wilson.push_back(Benchmark::DWF(1,L_list[l],robust));
+      wilson.push_back(Benchmark::DWF(Ls,L_list[l],robust));
     }
   }
 
