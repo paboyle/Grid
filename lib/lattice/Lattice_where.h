@@ -58,7 +58,7 @@ inline void whereWolf(Lattice<vobj> &ret,const Lattice<iobj> &predicate,Lattice<
   std::vector<scalar_object> truevals (Nsimd);
   std::vector<scalar_object> falsevals(Nsimd);
 
-  parallel_for(int ss=0;ss<iftrue._grid->oSites(); ss++){
+  thread_loop( (int ss=iftrue.begin(); ss<iftrue.end();ss++) , COMMA_SAFE({
 
     extract(iftrue._odata[ss]   ,truevals);
     extract(iffalse._odata[ss]  ,falsevals);
@@ -69,7 +69,8 @@ inline void whereWolf(Lattice<vobj> &ret,const Lattice<iobj> &predicate,Lattice<
     }
 
     merge(ret._odata[ss],falsevals);
-  }
+  }) 
+  );
 }
 
 template<class vobj,class iobj>
