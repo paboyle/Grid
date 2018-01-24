@@ -29,33 +29,6 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_THREADS_H
 #define GRID_THREADS_H
 
-#ifdef _OPENMP
-#define GRID_OMP
-#endif
-
-#define UNROLL  _Pragma("unroll")
-
-#ifdef GRID_OMP
-#include <omp.h>
-
-#define PARALLEL_FOR_LOOP        _Pragma("omp parallel for schedule(static)")
-#define PARALLEL_FOR_LOOP_INTERN _Pragma("omp for schedule(static)")
-#define PARALLEL_NESTED_LOOP2 _Pragma("omp parallel for collapse(2)")
-#define PARALLEL_REGION       _Pragma("omp parallel")
-#define PARALLEL_CRITICAL     _Pragma("omp critical")
-#else
-#define PARALLEL_FOR_LOOP
-#define PARALLEL_FOR_LOOP_INTERN
-#define PARALLEL_NESTED_LOOP2
-#define PARALLEL_REGION
-#define PARALLEL_CRITICAL
-#endif
-
-#define parallel_region    PARALLEL_REGION
-#define parallel_for       PARALLEL_FOR_LOOP for
-#define parallel_for_internal PARALLEL_FOR_LOOP_INTERN for
-#define parallel_for_nest2 PARALLEL_NESTED_LOOP2 for
-
 NAMESPACE_BEGIN(Grid);
 
 // Introduce a class to gain deterministic bit reproducible reduction.
@@ -133,7 +106,7 @@ public:
     ThreadBarrier();
     for(int i=0;i<_threads;i++) val+= sum_array[i];
     ThreadBarrier();
-  };
+  }
 
   static void bcopy(const void *src, void *dst, size_t len) {
 #ifdef GRID_OMP
