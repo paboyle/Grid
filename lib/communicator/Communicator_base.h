@@ -198,7 +198,7 @@ public:
   template<class obj> void Broadcast(int root,obj &data)
   {
     Broadcast(root,(void *)&data,sizeof(data));
-  };
+  }
 
 }; 
 
