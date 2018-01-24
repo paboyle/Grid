@@ -169,10 +169,7 @@ public:
     //    std::cout << "alignedAllocator " << std::hex << ptr <<std::dec <<std::endl;
     // First touch optimise in threaded loop
     uint8_t *cp = (uint8_t *)ptr;
-#ifdef GRID_OMP
-#pragma omp parallel for
-#endif
-    for(size_type n=0;n<bytes;n+=4096){
+    thread_loop(size_type n=0;n<bytes;n+=4096){
       cp[n]=0;
     }
     return ptr;
@@ -277,8 +274,7 @@ public:
     uint8_t *cp = (uint8_t *)ptr;
     if ( ptr ) { 
       // One touch per 4k page, static OMP loop to catch same loop order
-#pragma omp parallel for schedule(static)
-      for(size_type n=0;n<bytes;n+=4096){
+      thread_loop(size_type n=0;n<bytes;n+=4096){
 	cp[n]=0;
       }
     }
