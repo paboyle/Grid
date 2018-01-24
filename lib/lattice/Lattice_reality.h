@@ -40,17 +40,17 @@ NAMESPACE_BEGIN(Grid);
 
 template<class vobj> inline Lattice<vobj> adj(const Lattice<vobj> &lhs){
   Lattice<vobj> ret(lhs._grid);
-  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
-    ret._odata[ss] = adj(lhs._odata[ss]);
-  }
+  accelerator_loop( ss, lhs, {
+    ret[ss] = adj(lhs[ss]);
+  });
   return ret;
 };
 
 template<class vobj> inline Lattice<vobj> conjugate(const Lattice<vobj> &lhs){
   Lattice<vobj> ret(lhs._grid);
-  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+  accelerator_loop( ss, lhs, {
     ret._odata[ss] = conjugate(lhs._odata[ss]);
-  }
+  });
   return ret;
 };
 
