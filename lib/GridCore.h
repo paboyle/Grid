@@ -38,16 +38,17 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_BASE_H
 #define GRID_BASE_H
 
+#include <Grid/DisableWarnings.h>
 #include <Grid/Namespace.h>
 #include <Grid/GridStd.h>
-
+#include <Grid/threads/Pragmas.h>
 #include <Grid/perfmon/Timer.h>
 #include <Grid/perfmon/PerfCount.h>
 #include <Grid/log/Log.h>
 #include <Grid/allocator/AlignedAllocator.h>
 #include <Grid/simd/Simd.h>
-#include <Grid/serialisation/Serialisation.h>
 #include <Grid/threads/Threads.h>
+#include <Grid/serialisation/Serialisation.h>
 #include <Grid/util/Util.h>
 #include <Grid/communicator/Communicator.h> 
 #include <Grid/cartesian/Cartesian.h>    
