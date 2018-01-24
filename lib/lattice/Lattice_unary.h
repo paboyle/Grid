@@ -37,18 +37,18 @@ template<class obj> Lattice<obj> pow(const Lattice<obj> &rhs,RealD y){
   Lattice<obj> ret(rhs._grid);
   ret.checkerboard = rhs.checkerboard;
   conformable(ret,rhs);
-  parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
+  accelerator_loop(ss,rhs,{
     ret._odata[ss]=pow(rhs._odata[ss],y);
-  }
+  });
   return ret;
 }
 template<class obj> Lattice<obj> mod(const Lattice<obj> &rhs,Integer y){
   Lattice<obj> ret(rhs._grid);
   ret.checkerboard = rhs.checkerboard;
   conformable(ret,rhs);
-  parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
+  accelerator_loop(ss,rhs,{
     ret._odata[ss]=mod(rhs._odata[ss],y);
-  }
+  });
   return ret;
 }
 
@@ -56,9 +56,9 @@ template<class obj> Lattice<obj> div(const Lattice<obj> &rhs,Integer y){
   Lattice<obj> ret(rhs._grid);
   ret.checkerboard = rhs.checkerboard;
   conformable(ret,rhs);
-  parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
+  accelerator_loop(ss,rhs,{
     ret._odata[ss]=div(rhs._odata[ss],y);
-  }
+  });
   return ret;
 }
 
@@ -66,10 +66,9 @@ template<class obj> Lattice<obj> expMat(const Lattice<obj> &rhs, RealD alpha, In
   Lattice<obj> ret(rhs._grid);
   ret.checkerboard = rhs.checkerboard;
   conformable(ret,rhs);
-  parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
+  accelerator_loop(ss,rhs,{
     ret._odata[ss]=Exponentiate(rhs._odata[ss],alpha, Nexp);
-  }
-
+  });
   return ret;
 }
 
