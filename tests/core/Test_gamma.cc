@@ -29,9 +29,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
     /*  END LEGAL */
 #include <Grid/Grid.h>
 
-using namespace std;
 using namespace Grid;
-using namespace QCD;
 
 static constexpr double                      tolerance = 1.0e-6;
 static std::array<SpinMatrix, Gamma::nGamma> testAlgebra;

@@ -28,9 +28,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
     /*  END LEGAL */
 #include <Grid/Grid.h>
 
-using namespace std;
 using namespace Grid;
- ;
 
 class funcPlus {
 public:
