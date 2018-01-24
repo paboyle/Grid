@@ -48,13 +48,13 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer,int dimen
 
   int stride=rhs._grid->_slice_stride[dimension];
   if ( cbmask == 0x3 ) { 
-    parallel_for_nest2(int n=0;n<e1;n++){
+    thread_loop_collapse( (int n=0;n<e1;n++) , 
       for(int b=0;b<e2;b++){
 	int o  = n*stride;
 	int bo = n*e2;
 	buffer[off+bo+b]=rhs._odata[so+o+b];
       }
-    }
+    );
   } else { 
     int bo=0;
     std::vector<std::pair<int,int> > table;
@@ -67,9 +67,9 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer,int dimen
 	}
       }
     }
-    parallel_for(int i=0;i<table.size();i++){
+    thread_loop( (int i=0;i<table.size();i++),{
       buffer[off+table[i].first]=rhs._odata[so+table[i].second];
-    }
+    });
   }
 }
 
@@ -92,7 +92,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename vobj::scalar_
   int n1=rhs._grid->_slice_stride[dimension];
 
   if ( cbmask ==0x3){
-    parallel_for_nest2(int n=0;n<e1;n++){
+    thread_loop_collapse( (int n=0;n<e1;n++), {
       for(int b=0;b<e2;b++){
 
 	int o      =   n*n1;
@@ -102,13 +102,13 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename vobj::scalar_
 	extract<vobj>(temp,pointers,offset);
 
       }
-    }
+    });
   } else { 
 
     // Case of SIMD split AND checker dim cannot currently be hit, except in 
     // Test_cshift_red_black code.
     std::cout << " Dense packed buffer WARNING " <<std::endl;
-    parallel_for_nest2(int n=0;n<e1;n++){
+    thread_loop_collapse( (int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
 
 	int o=n*n1;
@@ -120,7 +120,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename vobj::scalar_
 	  extract<vobj>(temp,pointers,offset);
 	}
       }
-    }
+    });
   }
 }
 
@@ -142,13 +142,13 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
   int stride=rhs._grid->_slice_stride[dimension];
   
   if ( cbmask ==0x3 ) {
-    parallel_for_nest2(int n=0;n<e1;n++){
+    thread_loop_collapse( (int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
 	int o   =n*rhs._grid->_slice_stride[dimension];
 	int bo  =n*rhs._grid->_slice_block[dimension];
 	rhs._odata[so+o+b]=buffer[bo+b];
       }
-    }
+    });
   } else { 
     std::vector<std::pair<int,int> > table;
     int bo=0;
@@ -161,10 +161,9 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
 	}
       }
     }
-    parallel_for(int i=0;i<table.size();i++){
-      //       std::cout << "Rcv"<< table[i].first << " " << table[i].second << " " <<buffer[table[i].second]<<std::endl;
+    thread_loop( (int i=0;i<table.size();i++),{
       rhs._odata[table[i].first]=buffer[table[i].second];
-    }
+    });
   }
 }
 
@@ -185,13 +184,13 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,std::vector<typ
   int e2=rhs._grid->_slice_block[dimension];
 
   if(cbmask ==0x3 ) {
-    parallel_for_nest2(int n=0;n<e1;n++){
+    thread_loop_collapse( (int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
 	int o      = n*rhs._grid->_slice_stride[dimension];
 	int offset = b+n*rhs._grid->_slice_block[dimension];
 	merge(rhs._odata[so+o+b],pointers,offset);
       }
-    }
+    });
   } else { 
 
     // Case of SIMD split AND checker dim cannot currently be hit, except in 
@@ -229,18 +228,16 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
   int e2=rhs._grid->_slice_block[dimension];
   int stride = rhs._grid->_slice_stride[dimension];
   if(cbmask == 0x3 ){
-    parallel_for_nest2(int n=0;n<e1;n++){
+    thread_loop_collapse( (int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
- 
         int o =n*stride+b;
   	//lhs._odata[lo+o]=rhs._odata[ro+o];
 	vstream(lhs._odata[lo+o],rhs._odata[ro+o]);
       }
-    }
+    });
   } else { 
-    parallel_for_nest2(int n=0;n<e1;n++){
+    thread_loop_collapse( (int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
- 
         int o =n*stride+b;
         int ocb=1<<lhs._grid->CheckerBoardFromOindex(o);
         if ( ocb&cbmask ) {
@@ -248,7 +245,7 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
 	  vstream(lhs._odata[lo+o],rhs._odata[ro+o]);
 	}
       }
-    }
+    });
   }
   
 }
@@ -269,7 +266,7 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
   int e2=rhs._grid->_slice_block [dimension];
   int stride = rhs._grid->_slice_stride[dimension];
 
-  parallel_for_nest2(int n=0;n<e1;n++){
+  thread_loop_collapse( (int n=0;n<e1;n++),{
     for(int b=0;b<e2;b++){
 
       int o  =n*stride;
@@ -277,8 +274,8 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
       if ( ocb&cbmask ) {
 	permute(lhs._odata[lo+o+b],rhs._odata[ro+o+b],permute_type);
       }
-
-    }}
+    }
+  });
 }
 
 //////////////////////////////////////////////////////
@@ -319,7 +316,7 @@ template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice
 
   for(int x=0;x<rd;x++){       
 
-    int o   = 0;
+    //    int o   = 0;
     int bo  = x * grid->_ostride[dimension];
     int cb= (cbmask==0x2)? Odd : Even;
 
