@@ -3640,12 +3640,13 @@ This class implements a both iterators (iterator and const_iterator) for the
 
 @since version 1.0.0, simplified in version 2.0.9
 */
+
 template<typename BasicJsonType>
 class iter_impl : public std::iterator<std::random_access_iterator_tag, BasicJsonType>
 {
     /// allow basic_json to access private members
     friend iter_impl<typename std::conditional<std::is_const<BasicJsonType>::value, typename std::remove_const<BasicJsonType>::type, const BasicJsonType>::type>;
-    friend BasicJsonType;
+  //    friend class BasicJsonType;
     friend iteration_proxy<iter_impl>;
 
     using object_t = typename BasicJsonType::object_t;
