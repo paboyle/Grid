@@ -36,7 +36,7 @@ NAMESPACE_BEGIN(Optimization);
 struct Vsplat{
   // Complex
   template <typename T>
-  inline vec<T> operator()(T a, T b){
+  accelerator_inline vec<T> operator()(T a, T b){
     vec<T> out;
       
     VECTOR_FOR(i, W<T>::r, 2)
@@ -50,7 +50,7 @@ struct Vsplat{
     
   // Real
   template <typename T>
-  inline vec<T> operator()(T a){
+  accelerator_inline vec<T> operator()(T a){
     vec<T> out;
       
     VECTOR_FOR(i, W<T>::r, 1)
@@ -65,7 +65,7 @@ struct Vsplat{
 struct Vstore{
   // Real
   template <typename T>
-  inline void operator()(vec<T> a, T *D){
+  accelerator_inline void operator()(vec<T> a, T *D){
     *((vec<T> *)D) = a;
   }
 };
@@ -73,7 +73,7 @@ struct Vstore{
 struct Vstream{
   // Real
   template <typename T>
-  inline void operator()(T * a, vec<T> b){
+  accelerator_inline void operator()(T * a, vec<T> b){
     *((vec<T> *)a) = b;
   }
 };
@@ -81,7 +81,7 @@ struct Vstream{
 struct Vset{
   // Complex
   template <typename T>
-  inline vec<T> operator()(std::complex<T> *a){
+  accelerator_inline vec<T> operator()(std::complex<T> *a){
     vec<T> out;
       
     VECTOR_FOR(i, W<T>::c, 1)
@@ -95,7 +95,7 @@ struct Vset{
     
   // Real
   template <typename T>
-  inline vec<T> operator()(T *a){
+  accelerator_inline vec<T> operator()(T *a){
     vec<T> out;
       
     out = *((vec<T> *)a);
@@ -110,7 +110,7 @@ struct Vset{
 struct Sum{
   // Complex/Real
   template <typename T>
-  inline vec<T> operator()(vec<T> a, vec<T> b){
+  accelerator_inline vec<T> operator()(vec<T> a, vec<T> b){
     vec<T> out;
       
     VECTOR_FOR(i, W<T>::r, 1)
@@ -125,7 +125,7 @@ struct Sum{
 struct Sub{
   // Complex/Real
   template <typename T>
-  inline vec<T> operator()(vec<T> a, vec<T> b){
+  accelerator_inline vec<T> operator()(vec<T> a, vec<T> b){
     vec<T> out;
       
     VECTOR_FOR(i, W<T>::r, 1)
@@ -140,7 +140,7 @@ struct Sub{
 struct Mult{
   // Real
   template <typename T>
-  inline vec<T> operator()(vec<T> a, vec<T> b){
+  accelerator_inline vec<T> operator()(vec<T> a, vec<T> b){
     vec<T> out;
       
     VECTOR_FOR(i, W<T>::r, 1)
@@ -158,7 +158,7 @@ struct Mult{
 
 struct MultRealPart{
   template <typename T>
-  inline vec<T> operator()(vec<T> a, vec<T> b){
+  accelerator_inline vec<T> operator()(vec<T> a, vec<T> b){
     vec<T> out;
       
     VECTOR_FOR(i, W<T>::c, 1)
@@ -172,7 +172,7 @@ struct MultRealPart{
 
 struct MaddRealPart{
   template <typename T>
-  inline vec<T> operator()(vec<T> a, vec<T> b, vec<T> c){
+  accelerator_inline vec<T> operator()(vec<T> a, vec<T> b, vec<T> c){
     vec<T> out;
       
     VECTOR_FOR(i, W<T>::c, 1)
@@ -187,7 +187,7 @@ struct MaddRealPart{
 struct MultComplex{
   // Complex
   template <typename T>
-  inline vec<T> operator()(vec<T> a, vec<T> b){
+  accelerator_inline vec<T> operator()(vec<T> a, vec<T> b){
     vec<T> out;
       
     VECTOR_FOR(i, W<T>::c, 1)
@@ -204,7 +204,7 @@ struct MultComplex{
 struct Div{
   // Real
   template <typename T>
-  inline vec<T> operator()(vec<T> a, vec<T> b){
+  accelerator_inline vec<T> operator()(vec<T> a, vec<T> b){
     vec<T> out;
       
     VECTOR_FOR(i, W<T>::r, 1)
@@ -223,7 +223,7 @@ struct Div{
 struct Conj{
   // Complex
   template <typename T>
-  inline vec<T> operator()(vec<T> a){
+  accelerator_inline vec<T> operator()(vec<T> a){
     vec<T> out;
       
     VECTOR_FOR(i, W<T>::c, 1)
@@ -244,7 +244,7 @@ struct Conj{
 struct TimesMinusI{
   // Complex
   template <typename T>
-  inline vec<T> operator()(vec<T> a, vec<T> b){
+  accelerator_inline vec<T> operator()(vec<T> a, vec<T> b){
     vec<T> out;
       
     VECTOR_FOR(i, W<T>::c, 1)
@@ -265,7 +265,7 @@ struct TimesMinusI{
 struct TimesI{
   // Complex
   template <typename T>
-  inline vec<T> operator()(vec<T> a, vec<T> b){
+  accelerator_inline vec<T> operator()(vec<T> a, vec<T> b){
     vec<T> out;
       
     VECTOR_FOR(i, W<T>::c, 1)
@@ -280,22 +280,23 @@ struct TimesI{
 #undef timesi
 
 struct PrecisionChange {
-  static inline vech StoH (const vecf &a,const vecf &b) {
-    vech ret;
+  static accelerator_inline vech StoH (const vecf &a,const vecf &b) {
+    vech ret; 
+    const int nf = W<float>::r;
 #ifdef USE_FP16
     vech *ha = (vech *)&a;
     vech *hb = (vech *)&b;
-    const int nf = W<float>::r;
     //      VECTOR_FOR(i, nf,1){ ret.v[i]    = ( (uint16_t *) &a.v[i])[1] ; }
     //      VECTOR_FOR(i, nf,1){ ret.v[i+nf] = ( (uint16_t *) &b.v[i])[1] ; }
     VECTOR_FOR(i, nf,1){ ret.v[i]    = ha->v[2*i+1]; }
     VECTOR_FOR(i, nf,1){ ret.v[i+nf] = hb->v[2*i+1]; }
 #else
+    VECTOR_FOR(i, nf,1){ ret.v[i]=0; }
     assert(0);
 #endif
     return ret;
   }
-  static inline void  HtoS (vech h,vecf &sa,vecf &sb) {
+  static accelerator_inline void  HtoS (vech h,vecf &sa,vecf &sb) {
 #ifdef USE_FP16
     const int nf = W<float>::r;
     const int nh = W<uint16_t>::r;
@@ -310,26 +311,25 @@ struct PrecisionChange {
     assert(0);
 #endif
   }
-  static inline vecf DtoS (vecd a,vecd b) {
+  static accelerator_inline vecf DtoS (vecd a,vecd b) {
     const int nd = W<double>::r;
-    const int nf = W<float>::r;
     vecf ret;
     VECTOR_FOR(i, nd,1){ ret.v[i]    = a.v[i] ; }
     VECTOR_FOR(i, nd,1){ ret.v[i+nd] = b.v[i] ; }
     return ret;
   }
-  static inline void StoD (vecf s,vecd &a,vecd &b) {
+  static accelerator_inline void StoD (vecf s,vecd &a,vecd &b) {
     const int nd = W<double>::r;
     VECTOR_FOR(i, nd,1){ a.v[i] = s.v[i] ; }
     VECTOR_FOR(i, nd,1){ b.v[i] = s.v[i+nd] ; }
   }
-  static inline vech DtoH (vecd a,vecd b,vecd c,vecd d) {
+  static accelerator_inline vech DtoH (vecd a,vecd b,vecd c,vecd d) {
     vecf sa,sb;
     sa = DtoS(a,b);
     sb = DtoS(c,d);
     return StoH(sa,sb);
   }
-  static inline void HtoD (vech h,vecd &a,vecd &b,vecd &c,vecd &d) {
+  static accelerator_inline void HtoD (vech h,vecd &a,vecd &b,vecd &c,vecd &d) {
     vecf sa,sb;
     HtoS(h,sa,sb);
     StoD(sa,a,b);
@@ -342,7 +342,7 @@ struct PrecisionChange {
 struct Exchange{
 
   template <typename T,int n>
-  static inline void ExchangeN(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+  static accelerator_inline void ExchangeN(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
     const int w = W<T>::r;
     unsigned int mask = w >> (n + 1);
     //      std::cout << " Exchange "<<n<<" nsimd "<<w<<" mask 0x" <<std::hex<<mask<<std::dec<<std::endl;
@@ -356,19 +356,19 @@ struct Exchange{
     }      
   }
   template <typename T>
-  static inline void Exchange0(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+  static accelerator_inline void Exchange0(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
     ExchangeN<T,0>(out1,out2,in1,in2);
   };
   template <typename T>
-  static inline void Exchange1(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+  static accelerator_inline void Exchange1(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
     ExchangeN<T,1>(out1,out2,in1,in2);
   };
   template <typename T>
-  static inline void Exchange2(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+  static accelerator_inline void Exchange2(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
     ExchangeN<T,2>(out1,out2,in1,in2);
   };
   template <typename T>
-  static inline void Exchange3(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
+  static accelerator_inline void Exchange3(vec<T> &out1,vec<T> &out2,vec<T> &in1,vec<T> &in2){
     ExchangeN<T,3>(out1,out2,in1,in2);
   };
 };
@@ -385,7 +385,7 @@ struct Exchange{
   
 #define DECL_PERMUTE_N(n)			\
   template <typename T>				\
-  static inline vec<T> Permute##n(vec<T> in) {	\
+  static accelerator_inline vec<T> Permute##n(vec<T> in) {	\
     vec<T> out;					\
     perm(in.v, out.v, n, W<T>::r);		\
     return out;					\
@@ -409,12 +409,12 @@ struct Permute{
   
 struct Rotate{
       
-  template <int n, typename T> static inline vec<T> tRotate(vec<T> in){
+  template <int n, typename T> static accelerator_inline vec<T> tRotate(vec<T> in){
     return rotate(in, n);
   }
     
   template <typename T>
-  static inline vec<T> rotate(vec<T> in, int n){
+  static accelerator_inline vec<T> rotate(vec<T> in, int n){
     vec<T> out;
       
     rot(in.v, out.v, n, W<T>::r);
@@ -435,7 +435,7 @@ template <typename Out_type, typename In_type>
 struct Reduce{
   //Need templated class to overload output type
   //General form must generate error if compiled
-  inline Out_type operator()(In_type in){
+  accelerator_inline Out_type operator()(In_type in){
     printf("Error, using wrong Reduce function\n");
     exit(1);
     return 0;
@@ -444,7 +444,7 @@ struct Reduce{
   
 //Complex float Reduce
 template <>
-inline Grid::ComplexF Reduce<Grid::ComplexF, vecf>::operator()(vecf in){
+accelerator_inline Grid::ComplexF Reduce<Grid::ComplexF, vecf>::operator()(vecf in){
   float a = 0.f, b = 0.f;
     
   acc(in.v, a, 0, 2, W<float>::r);
@@ -455,7 +455,7 @@ inline Grid::ComplexF Reduce<Grid::ComplexF, vecf>::operator()(vecf in){
   
 //Real float Reduce
 template<>
-inline Grid::RealF Reduce<Grid::RealF, vecf>::operator()(vecf in){
+accelerator_inline Grid::RealF Reduce<Grid::RealF, vecf>::operator()(vecf in){
   float a = 0.;
     
   acc(in.v, a, 0, 1, W<float>::r);
@@ -465,7 +465,7 @@ inline Grid::RealF Reduce<Grid::RealF, vecf>::operator()(vecf in){
   
 //Complex double Reduce
 template<>
-inline Grid::ComplexD Reduce<Grid::ComplexD, vecd>::operator()(vecd in){
+accelerator_inline Grid::ComplexD Reduce<Grid::ComplexD, vecd>::operator()(vecd in){
   double a = 0., b = 0.;
     
   acc(in.v, a, 0, 2, W<double>::r);
@@ -476,7 +476,7 @@ inline Grid::ComplexD Reduce<Grid::ComplexD, vecd>::operator()(vecd in){
   
 //Real double Reduce
 template<>
-inline Grid::RealD Reduce<Grid::RealD, vecd>::operator()(vecd in){
+accelerator_inline Grid::RealD Reduce<Grid::RealD, vecd>::operator()(vecd in){
   double a = 0.f;
     
   acc(in.v, a, 0, 1, W<double>::r);
@@ -486,7 +486,7 @@ inline Grid::RealD Reduce<Grid::RealD, vecd>::operator()(vecd in){
 
 //Integer Reduce
 template<>
-inline Integer Reduce<Integer, veci>::operator()(veci in){
+accelerator_inline Integer Reduce<Integer, veci>::operator()(veci in){
   Integer a = 0;
     
   acc(in.v, a, 0, 1, W<Integer>::r);
@@ -506,8 +506,8 @@ typedef Optimization::vecd SIMD_Dtype; // Double precision type
 typedef Optimization::veci SIMD_Itype; // Integer type
 
 // prefetch utilities
-inline void v_prefetch0(int size, const char *ptr){};
-inline void prefetch_HINT_T0(const char *ptr){};
+accelerator_inline void v_prefetch0(int size, const char *ptr){};
+accelerator_inline void prefetch_HINT_T0(const char *ptr){};
 
 // Function name aliases
 typedef Optimization::Vsplat   VsplatSIMD;
