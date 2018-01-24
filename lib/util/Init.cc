@@ -57,8 +57,9 @@ static int
 feenableexcept (unsigned int excepts)
 {
   static fenv_t fenv;
-  unsigned int new_excepts = excepts & FE_ALL_EXCEPT,
-    old_excepts;  // previous masks
+  unsigned int new_excepts = excepts & FE_ALL_EXCEPT;
+  unsigned int old_excepts;  // previous masks
+  int iold_excepts;  // previous masks
 
   if ( fegetenv (&fenv) ) return -1;
   old_excepts = fenv.__control & FE_ALL_EXCEPT;
@@ -67,7 +68,8 @@ feenableexcept (unsigned int excepts)
   fenv.__control &= ~new_excepts;
   fenv.__mxcsr   &= ~(new_excepts << 7);
 
-  return ( fesetenv (&fenv) ? -1 : old_excepts );
+  iold_excepts  = (int) old_excepts;
+  return ( fesetenv (&fenv) ? -1 : iold_excepts );
 }
 #endif
 
@@ -202,11 +204,13 @@ std::string GridCmdVectorIntToString(const std::vector<int> & vec){
 /////////////////////////////////////////////////////////
 // Reinit guard
 /////////////////////////////////////////////////////////
-static int Grid_is_initialised = 0;
 static MemoryStats dbgMemStats;
+static int Grid_is_initialised;
 
 void Grid_init(int *argc,char ***argv)
 {
+  assert(Grid_is_initialised == 0);
+
   GridLogger::GlobalStopWatch.Start();
 
   std::string arg;
@@ -411,8 +415,6 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"\tvComplexF      : "<<sizeof(vComplexF)*8 <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vComplexF::Nsimd()))<<std::endl;
     std::cout<<GridLogMessage<<"\tvComplexD      : "<<sizeof(vComplexD)*8 <<"bits ; " <<GridCmdVectorIntToString(GridDefaultSimd(4,vComplexD::Nsimd()))<<std::endl;
   }
-
-
   Grid_is_initialised = 1;
 }
 
@@ -426,6 +428,7 @@ void Grid_finalize(void)
 #if defined (GRID_COMMS_SHMEM)
   shmem_finalize();
 #endif
+  Grid_is_initialised = 0;
 }
 
 void GridLogLayout() {
@@ -482,7 +485,7 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
 
 void Grid_debug_handler_init(void)
 {
-  struct sigaction sa,osa;
+  struct sigaction sa;
   sigemptyset (&sa.sa_mask);
   sa.sa_sigaction= Grid_sa_signal_handler;
   sa.sa_flags    = SA_SIGINFO;
