@@ -49,7 +49,7 @@ public:
    
 public:
     
-  void DhopDir(StencilImpl &st, DoubledGaugeField &U, DoubledGaugeField &UUU, SiteSpinor * buf,
+  void DhopDirK(StencilImpl &st, DoubledGaugeField &U, DoubledGaugeField &UUU, SiteSpinor * buf,
 	       int sF, int sU, const FermionField &in, FermionField &out, int dir,int disp);
 
   void DhopSiteDepth(StencilImpl &st, LebesgueOrder &lo, DoubledGaugeField &U, SiteSpinor * buf,

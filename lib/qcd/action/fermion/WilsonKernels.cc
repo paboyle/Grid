@@ -208,8 +208,8 @@ void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilImpl &st, LebesgueOrder &
 						SiteHalfSpinor *buf, int sF,
 						int sU, const FermionField &in, FermionField &out)
 {
-  SiteHalfSpinor tmp;
-  SiteHalfSpinor chi;
+  //  SiteHalfSpinor tmp;
+  //  SiteHalfSpinor chi;
   SiteHalfSpinor *chi_p;
   SiteHalfSpinor Uchi;
   SiteSpinor result;
@@ -235,8 +235,8 @@ void WilsonKernels<Impl>::GenericDhopSiteExt(StencilImpl &st, LebesgueOrder &lo,
 					     SiteHalfSpinor *buf, int sF,
 					     int sU, const FermionField &in, FermionField &out) 
 {
-  SiteHalfSpinor tmp;
-  SiteHalfSpinor chi;
+  //  SiteHalfSpinor tmp;
+  //  SiteHalfSpinor chi;
   SiteHalfSpinor *chi_p;
   SiteHalfSpinor Uchi;
   SiteSpinor result;
@@ -258,7 +258,7 @@ void WilsonKernels<Impl>::GenericDhopSiteExt(StencilImpl &st, LebesgueOrder &lo,
 };
 
 template <class Impl>
-void WilsonKernels<Impl>::DhopDir( StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor *buf, int sF,
+void WilsonKernels<Impl>::DhopDirK( StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor *buf, int sF,
 					   int sU, const FermionField &in, FermionField &out, int dir, int gamma) {
 
   SiteHalfSpinor tmp;

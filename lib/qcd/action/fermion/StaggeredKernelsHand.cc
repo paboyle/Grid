@@ -97,7 +97,6 @@ void StaggeredKernels<Impl>::DhopSiteHand(StencilImpl &st, LebesgueOrder &lo, Do
   SiteSpinor naive;
   int oneLink  =0;
   int threeLink=1;
-  int skew(0);
   Real scale(1.0);
   
   if(dag) scale = -1.0;

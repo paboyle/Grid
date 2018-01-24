@@ -176,7 +176,7 @@ public:
     }
   }
 
-  void DhopDir(StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor * buf,
+  void DhopDirK(StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor * buf,
 	       int sF, int sU, const FermionField &in, FermionField &out, int dirdisp, int gamma);
       
   //////////////////////////////////////////////////////////////////////////////

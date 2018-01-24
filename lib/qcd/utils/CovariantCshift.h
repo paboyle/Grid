@@ -73,14 +73,14 @@ namespace ConjugateBC {
   //                      U  U^* U^* U^T U^adj =  U  (U U U^dag U^T )^*
   //                                           =  U  (U U U^dag)^* ( U^T )^*
   //
-  // So covariant shift rule: conjugate inward shifted plane when crossing boundary applies.
+  // So covariant shift rule: Conjugate inward shifted plane when crossing boundary applies.
   //
-  // This conjugate should be applied to BOTH the link and the covariant field on backward shift
+  // This Conjugate should be applied to BOTH the link and the covariant field on backward shift
   // boundary wrap.
   // 
   //      |  |              
   // xxxxxxxxxxxxxxxxx         
-  //      |  | <---- this link is conjugated, and the path leading into it. Segment crossing in and out is double conjugated.
+  //      |  | <---- this link is Conjugated, and the path leading into it. Segment crossing in and out is double Conjugated.
   //       -- 
   //    ------->
   template<class covariant,class gauge> Lattice<covariant> CovShiftForward(const Lattice<gauge> &Link, 

@@ -468,8 +468,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define HAND_STENCIL_LEG_EXT(PROJ,PERM,DIR,RECON,F,LOAD_CHI_IMPL,LOAD_CHIMU_IMPL,MULT_2SPIN_IMPL)	\
   SE=st.GetEntry(ptype,DIR,ss);			\
   offset = SE->_offset;				\
-  local  = SE->_is_local;			\
-  perm   = SE->_permute;			\
+  perm   = SE->_permute;				\
   if((!SE->_is_local)&&(!st.same_node[DIR]) ) {	\
     LOAD_CHI_IMPL(DIR,F,PERM);			\
     MULT_2SPIN_IMPL(DIR,F);			\
@@ -691,7 +690,7 @@ WilsonKernels<Impl>::HandDhopSiteExt(StencilImpl &st,LebesgueOrder &lo,DoubledGa
 
   HAND_DECLARATIONS(ignore);
 
-  int offset,local,perm, ptype;
+  int offset, perm, ptype;
   StencilEntry *SE;
   int nmu=0;
 
@@ -708,6 +707,7 @@ WilsonKernels<Impl>::HandDhopSiteExt(StencilImpl &st,LebesgueOrder &lo,DoubledGa
   HAND_RESULT_EXT(ss,F)
 
   HAND_DOP_SITE_EXT(, LOAD_CHI,LOAD_CHIMU,MULT_2SPIN);
+  perm++;
 }
 
 template<class Impl>
@@ -720,7 +720,7 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,D
   HAND_DECLARATIONS(ignore);
 
   StencilEntry *SE;
-  int offset,local,perm, ptype;
+  int offset, perm, ptype;
   int nmu=0;
 
 #define HAND_DOP_SITE_DAG_EXT(F,LOAD_CHI_IMPL,LOAD_CHIMU_IMPL,MULT_2SPIN_IMPL) \
@@ -736,6 +736,7 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,D
   HAND_RESULT_EXT(ss,F)
 
   HAND_DOP_SITE_DAG_EXT(, LOAD_CHI,LOAD_CHIMU,MULT_2SPIN);
+  perm++;
 }
 
   ////////////////////////////////////////////////
@@ -868,7 +869,7 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,D
 									\
     HAND_DECLARATIONS(ignore);						\
 									\
-    int offset,local,perm, ptype, g, direction, distance, sl, inplace_twist; \
+    int offset,perm, ptype, g, direction, distance, sl, inplace_twist; \
     StencilEntry *SE;							\
     int nmu=0;								\
     HAND_DOP_SITE_EXT(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
@@ -886,7 +887,7 @@ void WilsonKernels<Impl>::HandDhopSiteDagExt(StencilImpl &st,LebesgueOrder &lo,D
     HAND_DECLARATIONS(ignore);						\
 									\
     StencilEntry *SE;							\
-    int offset,local,perm, ptype, g, direction, distance, sl, inplace_twist; \
+    int offset,perm, ptype, g, direction, distance, sl, inplace_twist; \
     int nmu=0;								\
     HAND_DOP_SITE_DAG_EXT(0, LOAD_CHI_GPARITY,LOAD_CHIMU_GPARITY,MULT_2SPIN_GPARITY); \
     nmu = 0;								\

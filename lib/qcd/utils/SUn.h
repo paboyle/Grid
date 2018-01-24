@@ -279,8 +279,6 @@ public:
 			       int su2_subgroup, int nheatbath, LatticeInteger &wheremask) {
     GridBase *grid = link._grid;
 
-    int ntrials = 0;
-    int nfails = 0;
     const RealD twopi = 2.0 * M_PI;
 
     LatticeMatrix staple(grid);

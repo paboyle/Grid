@@ -258,7 +258,7 @@ void StaggeredKernels<Impl>::DhopSite(StencilImpl &st, LebesgueOrder &lo, Double
 };
 
 template <class Impl>
-void StaggeredKernels<Impl>::DhopDir( StencilImpl &st, DoubledGaugeField &U,  DoubledGaugeField &UUU, SiteSpinor *buf, int sF,
+void StaggeredKernels<Impl>::DhopDirK( StencilImpl &st, DoubledGaugeField &U,  DoubledGaugeField &UUU, SiteSpinor *buf, int sF,
 				      int sU, const FermionField &in, FermionField &out, int dir, int disp) 
 {
   // Disp should be either +1,-1,+3,-3

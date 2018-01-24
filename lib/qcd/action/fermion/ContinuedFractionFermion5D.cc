@@ -58,14 +58,14 @@ void ContinuedFractionFermion5D<Impl>::SetCoefficientsZolotarev(RealD zolo_hi,Ap
   for(int i=0; i < Ls ; i++){
     Beta[i] = zdata -> beta[i];
     cc[i] = 1.0/Beta[i];
-    cc_d[i]=sqrt(cc[i]);
+    cc_d[i]=std::sqrt(cc[i]);
   }
     
   cc_d[Ls-1]=1.0;
   for(int i=0; i < Ls-1 ; i++){
-    sqrt_cc[i]= sqrt(cc[i]*cc[i+1]);
+    sqrt_cc[i]= std::sqrt(cc[i]*cc[i+1]);
   }    
-  sqrt_cc[Ls-2]=sqrt(cc[Ls-2]);
+  sqrt_cc[Ls-2]=std::sqrt(cc[Ls-2]);
 
 
   ZoloHiInv =1.0/zolo_hi;

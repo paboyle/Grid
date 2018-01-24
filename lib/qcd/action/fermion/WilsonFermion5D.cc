@@ -103,8 +103,8 @@ WilsonFermion5D<Impl>::WilsonFermion5D(GaugeField &_Umu,
     assert(FiveDimRedBlackGrid._simd_layout[0]==nsimd);
 
     for(int d=0;d<4;d++){
-      assert(FourDimGrid._simd_layout[d]=1);
-      assert(FourDimRedBlackGrid._simd_layout[d]=1);
+      assert(FourDimGrid._simd_layout[d]==1);
+      assert(FourDimRedBlackGrid._simd_layout[d]==1);
       assert(FiveDimRedBlackGrid._simd_layout[d+1]==1);
     }
 
@@ -248,7 +248,7 @@ void WilsonFermion5D<Impl>::DhopDir(const FermionField &in, FermionField &out,in
     for(int s=0;s<Ls;s++){
       int sU=ss;
       int sF = s+Ls*sU; 
-      Kernels::DhopDir(Stencil,Umu,Stencil.CommBuf(),sF,sU,in,out,dirdisp,gamma);
+      Kernels::DhopDirK(Stencil,Umu,Stencil.CommBuf(),sF,sU,in,out,dirdisp,gamma);
     }
   }
 };
@@ -301,7 +301,7 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
         assert(sF < B._grid->oSites());
         assert(sU < U._grid->oSites());
 
-        Kernels::DhopDir(st, U, st.CommBuf(), sF, sU, B, Btilde, mu, gamma);
+        Kernels::DhopDirK(st, U, st.CommBuf(), sF, sU, B, Btilde, mu, gamma);
 
         ////////////////////////////
         // spin trace outer product
@@ -312,7 +312,7 @@ void WilsonFermion5D<Impl>::DerivInternal(StencilImpl & st,
     // spin trace outer product
     ////////////////////////////
     DerivDhopComputeTime += usecond();
-    Impl::InsertForce5D(mat, Btilde, Atilde, mu);
+    this->Impl::InsertForce5D(mat, Btilde, Atilde, mu);
   }
   DerivComputeTime += usecond();
 }
@@ -624,7 +624,6 @@ void WilsonFermion5D<Impl>::MomentumSpacePropagatorHt(FermionField &out,const Fe
   for(int idx=0;idx<_grid->lSites();idx++){
     std::vector<int> lcoor(Nd);
     Tcomplex cc;
-    RealD sgn;
     _grid->LocalIndexToLocalCoor(idx,lcoor);
     peekLocalSite(cc,cosha,lcoor);
     assert((double)real(cc)>=1.0);

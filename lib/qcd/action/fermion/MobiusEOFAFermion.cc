@@ -167,8 +167,6 @@ void MobiusEOFAFermion<Impl>::DtildeInv(const FermionField& psi, FermionField& c
 template<class Impl>
 RealD MobiusEOFAFermion<Impl>::M(const FermionField& psi, FermionField& chi)
 {
-  int Ls = this->Ls;
-
   FermionField Din(psi._grid);
 
   this->Meooe5D(psi, Din);
@@ -181,8 +179,6 @@ RealD MobiusEOFAFermion<Impl>::M(const FermionField& psi, FermionField& chi)
 template<class Impl>
 RealD MobiusEOFAFermion<Impl>::Mdag(const FermionField& psi, FermionField& chi)
 {
-  int Ls = this->Ls;
-
   FermionField Din(psi._grid);
 
   this->DW(psi, Din, DaggerYes);
@@ -373,18 +369,18 @@ void MobiusEOFAFermion<Impl>::SetCoefficientsPrecondShiftOps()
     for(int s=0; s<Ls; ++s){
 
       // MooeeInv_shift_lc
-      if(pm == 1){ MooeeInv_shift_lc[s] = std::pow(this->bee[s],s) * std::pow(this->cee[s],Ls-1-s); }
-      else{ MooeeInv_shift_lc[s] = std::pow(this->bee[s],Ls-1-s) * std::pow(this->cee[s],s); }
+      if(pm == 1){ MooeeInv_shift_lc[s] = pow(this->bee[s],s)      * pow(this->cee[s],Ls-1-s); }
+      else       { MooeeInv_shift_lc[s] = pow(this->bee[s],Ls-1-s) * pow(this->cee[s],s); }
 
       // MooeeInv_shift_norm
       MooeeInv_shift_norm[s] = -MooeeInvDag_shift_lc[s] /
-	( std::pow(this->bee[s],Ls) + mq1*std::pow(this->cee[s],Ls) ) / N;
+	( pow(this->bee[s],Ls) + mq1*pow(this->cee[s],Ls) ) / N;
 
       // MooeeInvDag_shift_norm
-      if(pm == 1){ MooeeInvDag_shift_norm[s] = -std::pow(this->bee[s],s) * std::pow(this->cee[s],Ls-1-s) /
-	  ( std::pow(this->bee[s],Ls) + mq1*std::pow(this->cee[s],Ls) ) / N; }
-      else{ MooeeInvDag_shift_norm[s] = -std::pow(this->bee[s],Ls-1-s) * std::pow(this->cee[s],s) /
-	  ( std::pow(this->bee[s],Ls) + mq1*std::pow(this->cee[s],Ls) ) / N; }
+      if(pm == 1){ MooeeInvDag_shift_norm[s] = -pow(this->bee[s],s) * pow(this->cee[s],(Ls-1-s)) /
+     	  ( pow(this->bee[s],Ls) + mq1*pow(this->cee[s],Ls) ) / N; }
+      else{ MooeeInvDag_shift_norm[s] = -pow(this->bee[s],(Ls-1-s)) * pow(this->cee[s],s) /
+	  ( pow(this->bee[s],Ls) + mq1*pow(this->cee[s],Ls) ) / N; }
     }
   }
 }

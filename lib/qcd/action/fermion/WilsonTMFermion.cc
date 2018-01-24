@@ -75,7 +75,7 @@ template<class Impl>
 void WilsonTMFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out) {
   RealD m    = this->mass;
   RealD tm   = this->mu;
-  RealD mtil = 4.0+this->mass;
+  RealD mtil = 4.0+m;
   RealD sq   = mtil*mtil+tm*tm;
   RealD a    = mtil/sq;
   RealD b    = -tm /sq;
@@ -85,7 +85,7 @@ template<class Impl>
 void WilsonTMFermion<Impl>::MooeeInvDag(const FermionField &in, FermionField &out) {
   RealD m    = this->mass;
   RealD tm   = this->mu;
-  RealD mtil = 4.0+this->mass;
+  RealD mtil = 4.0+m;
   RealD sq   = mtil*mtil+tm*tm;
   RealD a    = mtil/sq;
   RealD b    = tm /sq;

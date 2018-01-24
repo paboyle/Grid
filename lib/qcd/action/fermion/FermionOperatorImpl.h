@@ -413,7 +413,6 @@ public:
       // Passing through the local coordinate for grid transformation
       // the force grid is in general very different from the Ls vectorized grid
 
-      PARALLEL_FOR_LOOP
       for (int so = 0; so < grid->oSites(); so++) {
       std::vector<typename result_type::scalar_object> vres(Bgrid->Nsimd());
       std::vector<int> ocoor;  grid->oCoorFromOindex(ocoor,so); 

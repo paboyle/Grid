@@ -97,7 +97,7 @@ public:
 			       SiteHalfSpinor *out1,
 			       const SiteSpinor *in,
 			       Integer j,Integer k, Integer m,Integer type){
-    SiteHalfSpinor temp1, temp2,temp3,temp4;
+    SiteHalfSpinor temp1, temp2;
     projector::Proj(temp1,in[k],mu,dag);
     projector::Proj(temp2,in[m],mu,dag);
     exchange(out0[j],out1[j],temp1,temp2,type);

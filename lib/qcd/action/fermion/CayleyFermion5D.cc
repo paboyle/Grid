@@ -238,8 +238,6 @@ void CayleyFermion5D<Impl>::MeooeDag5D    (const FermionField &psi, FermionField
 template<class Impl>
 RealD CayleyFermion5D<Impl>::M    (const FermionField &psi, FermionField &chi)
 {
-  int Ls=this->Ls;
-  
   FermionField Din(psi._grid);
   
   // Assemble Din
@@ -276,8 +274,6 @@ RealD CayleyFermion5D<Impl>::Mdag (const FermionField &psi, FermionField &chi)
 template<class Impl>
 void CayleyFermion5D<Impl>::Meooe       (const FermionField &psi, FermionField &chi)
 {
-  int Ls=this->Ls;
-
   Meooe5D(psi,this->tmp()); 
 
   if ( psi.checkerboard == Odd ) {

@@ -108,8 +108,8 @@ ImprovedStaggeredFermion5D<Impl>::ImprovedStaggeredFermion5D(GaugeField &_Uthin,
     assert(FiveDimRedBlackGrid._simd_layout[0]==nsimd);
 
     for(int d=0;d<4;d++){
-      assert(FourDimGrid._simd_layout[d]=1);
-      assert(FourDimRedBlackGrid._simd_layout[d]=1);
+      assert(FourDimGrid._simd_layout[d]==1);
+      assert(FourDimRedBlackGrid._simd_layout[d]==1);
       assert(FiveDimRedBlackGrid._simd_layout[d+1]==1);
     }
 
@@ -176,7 +176,7 @@ void ImprovedStaggeredFermion5D<Impl>::DhopDir(const FermionField &in, FermionFi
     for(int s=0;s<Ls;s++){
       int sU=ss;
       int sF = s+Ls*sU; 
-      Kernels::DhopDir(Stencil, Umu, UUUmu, Stencil.CommBuf(), sF, sU, in, out, dir, disp);
+      Kernels::DhopDirK(Stencil, Umu, UUUmu, Stencil.CommBuf(), sF, sU, in, out, dir, disp);
     }
   }
 };

@@ -217,7 +217,7 @@ void WilsonFermion<Impl>::DerivInternal(StencilImpl &st, DoubledGaugeField &U,
     // Call the single hop
     ////////////////////////
     parallel_for (int sss = 0; sss < B._grid->oSites(); sss++) {
-      Kernels::DhopDir(st, U, st.CommBuf(), sss, sss, B, Btilde, mu, gamma);
+      Kernels::DhopDirK(st, U, st.CommBuf(), sss, sss, B, Btilde, mu, gamma);
     }
 
     //////////////////////////////////////////////////
@@ -318,7 +318,7 @@ void WilsonFermion<Impl>::DhopDirDisp(const FermionField &in, FermionField &out,
   Stencil.HaloExchange(in, compressor);
 
   parallel_for (int sss = 0; sss < in._grid->oSites(); sss++) {
-    Kernels::DhopDir(Stencil, Umu, Stencil.CommBuf(), sss, sss, in, out, dirdisp, gamma);
+    Kernels::DhopDirK(Stencil, Umu, Stencil.CommBuf(), sss, sss, in, out, dirdisp, gamma);
   }
 };
 

@@ -84,7 +84,7 @@ public:
   void push_back(Action<GenField>* ptr) {
     // insert only in the correct vector
     std::get< Index < GenField, action_hirep_types>::value >(actions_hirep).push_back(ptr);
-  };
+  }
 
   template <class ActPtr>
   static void resize(ActPtr ap, unsigned int n) {

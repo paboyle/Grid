@@ -34,8 +34,6 @@ NAMESPACE_BEGIN(Grid);
 template<class Impl>
 void  PartialFractionFermion5D<Impl>::Mdir (const FermionField &psi, FermionField &chi,int dir,int disp){
   // this does both dag and undag but is trivial; make a common helper routing
-
-  int sign = 1;
   int Ls = this->Ls;
 
   this->DhopDir(psi,chi,dir,disp);
@@ -53,8 +51,6 @@ template<class Impl>
 void   PartialFractionFermion5D<Impl>::Meooe_internal(const FermionField &psi, FermionField &chi,int dag)
 {
   int Ls = this->Ls;
-  int sign = dag ? (-1) : 1;
-
   if ( psi.checkerboard == Odd ) {
     this->DhopEO(psi,chi,DaggerNo);
   } else {
