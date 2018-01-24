@@ -34,13 +34,13 @@ NAMESPACE_BEGIN(Grid);
 /////////////////////////////////////////////// 
 // multiply by I; make recursive.
 /////////////////////////////////////////////// 
-template<class vtype> inline iScalar<vtype> timesI(const iScalar<vtype>&r) 
+template<class vtype> accelerator_inline iScalar<vtype> timesI(const iScalar<vtype>&r) 
 {
   iScalar<vtype> ret;
   timesI(ret._internal,r._internal);
   return ret;
 }
-template<class vtype,int N> inline iVector<vtype,N> timesI(const iVector<vtype,N>&r) 
+template<class vtype,int N> accelerator_inline iVector<vtype,N> timesI(const iVector<vtype,N>&r) 
 {
   iVector<vtype,N> ret;
   for(int i=0;i<N;i++){
@@ -48,7 +48,7 @@ template<class vtype,int N> inline iVector<vtype,N> timesI(const iVector<vtype,N
   }
   return ret;
 }
-template<class vtype,int N> inline iMatrix<vtype,N> timesI(const iMatrix<vtype,N>&r)
+template<class vtype,int N> accelerator_inline iMatrix<vtype,N> timesI(const iMatrix<vtype,N>&r)
 {
   iMatrix<vtype,N> ret;
   for(int i=0;i<N;i++){
@@ -58,17 +58,17 @@ template<class vtype,int N> inline iMatrix<vtype,N> timesI(const iMatrix<vtype,N
   return ret;
 }
 
-template<class vtype> inline void timesI(iScalar<vtype> &ret,const iScalar<vtype>&r) 
+template<class vtype> accelerator_inline void timesI(iScalar<vtype> &ret,const iScalar<vtype>&r) 
 {
   timesI(ret._internal,r._internal);
 }
-template<class vtype,int N> inline void timesI(iVector<vtype,N> &ret,const iVector<vtype,N>&r) 
+template<class vtype,int N> accelerator_inline void timesI(iVector<vtype,N> &ret,const iVector<vtype,N>&r) 
 {
   for(int i=0;i<N;i++){
     timesI(ret._internal[i],r._internal[i]);
   }
 }
-template<class vtype,int N> inline void  timesI(iMatrix<vtype,N> &ret,const iMatrix<vtype,N>&r)
+template<class vtype,int N> accelerator_inline void  timesI(iMatrix<vtype,N> &ret,const iMatrix<vtype,N>&r)
 {
   for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
@@ -77,13 +77,13 @@ template<class vtype,int N> inline void  timesI(iMatrix<vtype,N> &ret,const iMat
 }
 
 
-template<class vtype> inline iScalar<vtype> timesMinusI(const iScalar<vtype>&r) 
+template<class vtype> accelerator_inline iScalar<vtype> timesMinusI(const iScalar<vtype>&r) 
 {
   iScalar<vtype> ret;
   timesMinusI(ret._internal,r._internal);
   return ret;
 }
-template<class vtype,int N> inline iVector<vtype,N> timesMinusI(const iVector<vtype,N>&r) 
+template<class vtype,int N> accelerator_inline iVector<vtype,N> timesMinusI(const iVector<vtype,N>&r) 
 {
   iVector<vtype,N> ret;
   for(int i=0;i<N;i++){
@@ -91,7 +91,7 @@ template<class vtype,int N> inline iVector<vtype,N> timesMinusI(const iVector<vt
   }
   return ret;
 }
-template<class vtype,int N> inline iMatrix<vtype,N> timesMinusI(const iMatrix<vtype,N>&r)
+template<class vtype,int N> accelerator_inline iMatrix<vtype,N> timesMinusI(const iMatrix<vtype,N>&r)
 {
   iMatrix<vtype,N> ret;
   for(int i=0;i<N;i++){
@@ -101,17 +101,17 @@ template<class vtype,int N> inline iMatrix<vtype,N> timesMinusI(const iMatrix<vt
   return ret;
 }
 
-template<class vtype>  inline void timesMinusI(iScalar<vtype> &ret,const iScalar<vtype>&r) 
+template<class vtype>  accelerator_inline void timesMinusI(iScalar<vtype> &ret,const iScalar<vtype>&r) 
 {
   timesMinusI(ret._internal,r._internal);
 }
-template<class vtype,int N> inline void timesMinusI(iVector<vtype,N> &ret,const iVector<vtype,N>&r) 
+template<class vtype,int N> accelerator_inline void timesMinusI(iVector<vtype,N> &ret,const iVector<vtype,N>&r) 
 {
   for(int i=0;i<N;i++){
     timesMinusI(ret._internal[i],r._internal[i]);
   }
 }
-template<class vtype,int N> inline void  timesMinusI(iMatrix<vtype,N> &ret,const iMatrix<vtype,N>&r)
+template<class vtype,int N> accelerator_inline void  timesMinusI(iMatrix<vtype,N> &ret,const iMatrix<vtype,N>&r)
 {
   for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
@@ -123,13 +123,13 @@ template<class vtype,int N> inline void  timesMinusI(iMatrix<vtype,N> &ret,const
 /////////////////////////////////////////////// 
 // Conj function for scalar, vector, matrix
 /////////////////////////////////////////////// 
-template<class vtype> inline iScalar<vtype> conjugate(const iScalar<vtype>&r)
+template<class vtype> accelerator_inline iScalar<vtype> conjugate(const iScalar<vtype>&r)
 {
   iScalar<vtype> ret;
   ret._internal = conjugate(r._internal);
   return ret;
 }
-template<class vtype,int N> inline iVector<vtype,N> conjugate(const iVector<vtype,N>&r)
+template<class vtype,int N> accelerator_inline iVector<vtype,N> conjugate(const iVector<vtype,N>&r)
 {
   iVector<vtype,N> ret;
   for(int i=0;i<N;i++){
@@ -137,7 +137,7 @@ template<class vtype,int N> inline iVector<vtype,N> conjugate(const iVector<vtyp
   }
   return ret;
 }
-template<class vtype,int N> inline iMatrix<vtype,N> conjugate(const iMatrix<vtype,N>&r)
+template<class vtype,int N> accelerator_inline iMatrix<vtype,N> conjugate(const iMatrix<vtype,N>&r)
 {
   iMatrix<vtype,N> ret;
   for(int i=0;i<N;i++){
@@ -150,13 +150,13 @@ template<class vtype,int N> inline iMatrix<vtype,N> conjugate(const iMatrix<vtyp
 /////////////////////////////////////////////// 
 // Adj function for scalar, vector, matrix
 /////////////////////////////////////////////// 
-template<class vtype> inline iScalar<vtype> adj(const iScalar<vtype>&r)
+template<class vtype> accelerator_inline iScalar<vtype> adj(const iScalar<vtype>&r)
 {
   iScalar<vtype> ret;
   ret._internal = adj(r._internal);
   return ret;
 }
-template<class vtype,int N> inline iVector<vtype,N> adj(const iVector<vtype,N>&r)
+template<class vtype,int N> accelerator_inline iVector<vtype,N> adj(const iVector<vtype,N>&r)
 {
   iVector<vtype,N> ret;
   for(int i=0;i<N;i++){
@@ -164,7 +164,7 @@ template<class vtype,int N> inline iVector<vtype,N> adj(const iVector<vtype,N>&r
   }
   return ret;
 }
-template<class vtype,int N> inline iMatrix<vtype,N> adj(const iMatrix<vtype,N> &arg)
+template<class vtype,int N> accelerator_inline iMatrix<vtype,N> adj(const iMatrix<vtype,N> &arg)
 {
   iMatrix<vtype,N> ret;
   for(int c1=0;c1<N;c1++){
@@ -183,13 +183,13 @@ template<class vtype,int N> inline iMatrix<vtype,N> adj(const iMatrix<vtype,N> &
 // Can only take the real/imag part of scalar objects, since
 // lattice objects of different complex nature are non-conformable.
 /////////////////////////////////////////////////////////////////
-template<class itype> inline auto real(const iScalar<itype> &z) -> iScalar<decltype(real(z._internal))>
+template<class itype> accelerator_inline auto real(const iScalar<itype> &z) -> iScalar<decltype(real(z._internal))>
 {
   iScalar<decltype(real(z._internal))> ret;
   ret._internal = real(z._internal);
   return ret;
 }
-template<class itype,int N> inline auto real(const iMatrix<itype,N> &z) -> iMatrix<decltype(real(z._internal[0][0])),N>
+template<class itype,int N> accelerator_inline auto real(const iMatrix<itype,N> &z) -> iMatrix<decltype(real(z._internal[0][0])),N>
 {
   iMatrix<decltype(real(z._internal[0][0])),N> ret;
   for(int c1=0;c1<N;c1++){
@@ -198,7 +198,7 @@ template<class itype,int N> inline auto real(const iMatrix<itype,N> &z) -> iMatr
     }}
   return ret;
 }
-template<class itype,int N> inline auto real(const iVector<itype,N> &z) -> iVector<decltype(real(z._internal[0])),N>
+template<class itype,int N> accelerator_inline auto real(const iVector<itype,N> &z) -> iVector<decltype(real(z._internal[0])),N>
 {
   iVector<decltype(real(z._internal[0])),N> ret;
   for(int c1=0;c1<N;c1++){
@@ -207,13 +207,13 @@ template<class itype,int N> inline auto real(const iVector<itype,N> &z) -> iVect
   return ret;
 }
     
-template<class itype> inline auto imag(const iScalar<itype> &z) -> iScalar<decltype(imag(z._internal))>
+template<class itype> accelerator_inline auto imag(const iScalar<itype> &z) -> iScalar<decltype(imag(z._internal))>
 {
   iScalar<decltype(imag(z._internal))> ret;
   ret._internal = imag(z._internal);
   return ret;
 }
-template<class itype,int N> inline auto imag(const iMatrix<itype,N> &z) -> iMatrix<decltype(imag(z._internal[0][0])),N>
+template<class itype,int N> accelerator_inline auto imag(const iMatrix<itype,N> &z) -> iMatrix<decltype(imag(z._internal[0][0])),N>
 {
   iMatrix<decltype(imag(z._internal[0][0])),N> ret;
   for(int c1=0;c1<N;c1++){
@@ -222,7 +222,7 @@ template<class itype,int N> inline auto imag(const iMatrix<itype,N> &z) -> iMatr
     }}
   return ret;
 }
-template<class itype,int N> inline auto imag(const iVector<itype,N> &z) -> iVector<decltype(imag(z._internal[0])),N>
+template<class itype,int N> accelerator_inline auto imag(const iVector<itype,N> &z) -> iVector<decltype(imag(z._internal[0])),N>
 {
   iVector<decltype(imag(z._internal[0])),N> ret;
   for(int c1=0;c1<N;c1++){

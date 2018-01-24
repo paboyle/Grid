@@ -33,12 +33,12 @@ NAMESPACE_BEGIN(Grid);
 /////////////////////////////////////////////// 
 // Determinant function for scalar, vector, matrix
 /////////////////////////////////////////////// 
-inline ComplexF Determinant( const ComplexF &arg){    return arg;}
-inline ComplexD Determinant( const ComplexD &arg){    return arg;}
-inline RealF Determinant( const RealF &arg){    return arg;}
-inline RealD Determinant( const RealD &arg){    return arg;}
+accelerator_inline ComplexF Determinant( const ComplexF &arg){    return arg;}
+accelerator_inline ComplexD Determinant( const ComplexD &arg){    return arg;}
+accelerator_inline RealF Determinant( const RealF &arg){    return arg;}
+accelerator_inline RealD Determinant( const RealD &arg){    return arg;}
 
-template<class vtype> inline auto Determinant(const iScalar<vtype>&r) -> iScalar<decltype(Determinant(r._internal))>
+template<class vtype> accelerator_inline auto Determinant(const iScalar<vtype>&r) -> iScalar<decltype(Determinant(r._internal))>
 {
   iScalar<decltype(Determinant(r._internal))> ret;
   ret._internal = Determinant(r._internal);
@@ -46,7 +46,7 @@ template<class vtype> inline auto Determinant(const iScalar<vtype>&r) -> iScalar
 }
 
 template<class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr> 
-inline iScalar<vtype> Determinant(const iMatrix<vtype,N> &arg)
+accelerator_inline iScalar<vtype> Determinant(const iMatrix<vtype,N> &arg)
 {
   iMatrix<vtype,N> ret(arg);
   iScalar<vtype> det = vtype(1.0);

@@ -36,7 +36,7 @@ NAMESPACE_BEGIN(Grid);
 // innerProduct Vector x Vector -> Scalar
 // innerProduct Matrix x Matrix -> Scalar
 ///////////////////////////////////////////////////////////////////////////////////////
-template<class sobj> inline RealD norm2(const sobj &arg){
+template<class sobj> accelerator_inline RealD norm2(const sobj &arg){
   auto nrm = innerProductD(arg,arg);
   RealD ret = real(nrm);
   return ret;
@@ -45,21 +45,21 @@ template<class sobj> inline RealD norm2(const sobj &arg){
 // If single promote to double and sum 2x
 //////////////////////////////////////
 
-inline ComplexD innerProductD(const ComplexF &l,const ComplexF &r){  return innerProduct(l,r); }
-inline ComplexD innerProductD(const ComplexD &l,const ComplexD &r){  return innerProduct(l,r); }
-inline RealD    innerProductD(const RealD    &l,const RealD    &r){  return innerProduct(l,r); }
-inline RealD    innerProductD(const RealF    &l,const RealF    &r){  return innerProduct(l,r); }
+accelerator_inline ComplexD innerProductD(const ComplexF &l,const ComplexF &r){  return innerProduct(l,r); }
+accelerator_inline ComplexD innerProductD(const ComplexD &l,const ComplexD &r){  return innerProduct(l,r); }
+accelerator_inline RealD    innerProductD(const RealD    &l,const RealD    &r){  return innerProduct(l,r); }
+accelerator_inline RealD    innerProductD(const RealF    &l,const RealF    &r){  return innerProduct(l,r); }
 
-inline vComplexD innerProductD(const vComplexD &l,const vComplexD &r){  return innerProduct(l,r); }
-inline vRealD    innerProductD(const vRealD    &l,const vRealD    &r){  return innerProduct(l,r); }
-inline vComplexD innerProductD(const vComplexF &l,const vComplexF &r){  
+accelerator_inline vComplexD innerProductD(const vComplexD &l,const vComplexD &r){  return innerProduct(l,r); }
+accelerator_inline vRealD    innerProductD(const vRealD    &l,const vRealD    &r){  return innerProduct(l,r); }
+accelerator_inline vComplexD innerProductD(const vComplexF &l,const vComplexF &r){  
   vComplexD la,lb;
   vComplexD ra,rb;
   Optimization::PrecisionChange::StoD(l.v,la.v,lb.v);
   Optimization::PrecisionChange::StoD(r.v,ra.v,rb.v);
   return innerProduct(la,ra) + innerProduct(lb,rb); 
 }
-inline vRealD innerProductD(const vRealF &l,const vRealF &r){  
+accelerator_inline vRealD innerProductD(const vRealF &l,const vRealF &r){  
   vRealD la,lb;
   vRealD ra,rb;
   Optimization::PrecisionChange::StoD(l.v,la.v,lb.v);
@@ -67,18 +67,18 @@ inline vRealD innerProductD(const vRealF &l,const vRealF &r){
   return innerProduct(la,ra) + innerProduct(lb,rb); 
 }
 
-template<class l,class r,int N> inline
+template<class l,class r,int N> accelerator_inline
 auto innerProductD (const iVector<l,N>& lhs,const iVector<r,N>& rhs) -> iScalar<decltype(innerProductD(lhs._internal[0],rhs._internal[0]))>
 {
   typedef decltype(innerProductD(lhs._internal[0],rhs._internal[0])) ret_t;
   iScalar<ret_t> ret;
-  ret=zero;
+  zeroit(ret);
   for(int c1=0;c1<N;c1++){
     ret._internal += innerProductD(lhs._internal[c1],rhs._internal[c1]);
   }
   return ret;
 }
-template<class l,class r,int N> inline
+template<class l,class r,int N> accelerator_inline
 auto innerProductD (const iMatrix<l,N>& lhs,const iMatrix<r,N>& rhs) -> iScalar<decltype(innerProductD(lhs._internal[0][0],rhs._internal[0][0]))>
 {
   typedef decltype(innerProductD(lhs._internal[0][0],rhs._internal[0][0])) ret_t;
@@ -91,7 +91,7 @@ auto innerProductD (const iMatrix<l,N>& lhs,const iMatrix<r,N>& rhs) -> iScalar<
     }}
   return ret;
 }
-template<class l,class r> inline
+template<class l,class r> accelerator_inline
 auto innerProductD (const iScalar<l>& lhs,const iScalar<r>& rhs) -> iScalar<decltype(innerProductD(lhs._internal,rhs._internal))>
 {
   typedef decltype(innerProductD(lhs._internal,rhs._internal)) ret_t;
@@ -102,7 +102,7 @@ auto innerProductD (const iScalar<l>& lhs,const iScalar<r>& rhs) -> iScalar<decl
 //////////////////////
 // Keep same precison
 //////////////////////
-template<class l,class r,int N> inline
+template<class l,class r,int N> accelerator_inline
 auto innerProduct (const iVector<l,N>& lhs,const iVector<r,N>& rhs) -> iScalar<decltype(innerProduct(lhs._internal[0],rhs._internal[0]))>
 {
   typedef decltype(innerProduct(lhs._internal[0],rhs._internal[0])) ret_t;
@@ -113,7 +113,7 @@ auto innerProduct (const iVector<l,N>& lhs,const iVector<r,N>& rhs) -> iScalar<d
   }
   return ret;
 }
-template<class l,class r,int N> inline
+template<class l,class r,int N> accelerator_inline
 auto innerProduct (const iMatrix<l,N>& lhs,const iMatrix<r,N>& rhs) -> iScalar<decltype(innerProduct(lhs._internal[0][0],rhs._internal[0][0]))>
 {
   typedef decltype(innerProduct(lhs._internal[0][0],rhs._internal[0][0])) ret_t;
@@ -126,7 +126,7 @@ auto innerProduct (const iMatrix<l,N>& lhs,const iMatrix<r,N>& rhs) -> iScalar<d
     }}
   return ret;
 }
-template<class l,class r> inline
+template<class l,class r> accelerator_inline
 auto innerProduct (const iScalar<l>& lhs,const iScalar<r>& rhs) -> iScalar<decltype(innerProduct(lhs._internal,rhs._internal))>
 {
   typedef decltype(innerProduct(lhs._internal,rhs._internal)) ret_t;

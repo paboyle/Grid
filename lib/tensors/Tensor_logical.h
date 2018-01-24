@@ -31,19 +31,19 @@ Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 
 #define LOGICAL_BINOP(Op)						\
-  template<class v> strong_inline iScalar<v> operator Op (const iScalar<v>& lhs,const iScalar<v>& rhs) \
+  template<class v> accelerator_inline iScalar<v> operator Op (const iScalar<v>& lhs,const iScalar<v>& rhs) \
   {									\
     iScalar<v> ret;							\
     ret._internal = lhs._internal Op rhs._internal ;			\
     return ret;								\
   }									\
-  template<class l> strong_inline iScalar<l> operator Op (const iScalar<l>& lhs,Integer rhs) \
+  template<class l> accelerator_inline iScalar<l> operator Op (const iScalar<l>& lhs,Integer rhs) \
   {									\
     typename iScalar<l>::scalar_type t; t=rhs;				\
     typename iScalar<l>::tensor_reduced srhs; srhs=t;			\
     return lhs Op srhs;							\
   }									\
-  template<class l> strong_inline iScalar<l> operator Op (Integer lhs,const iScalar<l>& rhs) \
+  template<class l> accelerator_inline iScalar<l> operator Op (Integer lhs,const iScalar<l>& rhs) \
   {									\
     typename iScalar<l>::scalar_type t;t=lhs;				\
     typename iScalar<l>::tensor_reduced slhs;slhs=t;			\

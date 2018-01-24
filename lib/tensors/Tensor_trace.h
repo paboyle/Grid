@@ -36,13 +36,13 @@ NAMESPACE_BEGIN(Grid);
 // either scalar or matrix
 /////////////////////////////////////////////////////////////////
 
-inline ComplexF trace( const ComplexF &arg){    return arg;}
-inline ComplexD trace( const ComplexD &arg){    return arg;}
-inline RealF trace( const RealF &arg){    return arg;}
-inline RealD trace( const RealD &arg){    return arg;}
+accelerator_inline ComplexF trace( const ComplexF &arg){    return arg;}
+accelerator_inline ComplexD trace( const ComplexD &arg){    return arg;}
+accelerator_inline RealF trace( const RealF &arg){    return arg;}
+accelerator_inline RealD trace( const RealD &arg){    return arg;}
 
 template<class vtype,int N>
-inline auto trace(const iMatrix<vtype,N> &arg) -> iScalar<decltype(trace(arg._internal[0][0]))>
+accelerator_inline auto trace(const iMatrix<vtype,N> &arg) -> iScalar<decltype(trace(arg._internal[0][0]))>
 {
   iScalar<decltype( trace(arg._internal[0][0] )) > ret;
   zeroit(ret._internal);
@@ -53,7 +53,7 @@ inline auto trace(const iMatrix<vtype,N> &arg) -> iScalar<decltype(trace(arg._in
 }
 
 template<class vtype>
-inline auto trace(const iScalar<vtype> &arg) -> iScalar<decltype(trace(arg._internal))>
+accelerator_inline auto trace(const iScalar<vtype> &arg) -> iScalar<decltype(trace(arg._internal))>
 {
   iScalar<decltype(trace(arg._internal))> ret;
   ret._internal=trace(arg._internal);
@@ -61,7 +61,7 @@ inline auto trace(const iScalar<vtype> &arg) -> iScalar<decltype(trace(arg._inte
 }
 
 template<class vtype,int N>
-inline auto trace(const iVector<vtype,N> &arg) -> iVector<decltype(trace(arg._internal[0])),N>
+accelerator_inline auto trace(const iVector<vtype,N> &arg) -> iVector<decltype(trace(arg._internal[0])),N>
 {
   iVector<decltype(trace(arg._internal[0])),N> ret;
   for(int i=0;i<N;i++){

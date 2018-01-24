@@ -33,13 +33,13 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 NAMESPACE_BEGIN(Grid);
 
 #define UNARY(func)							\
-  template<class obj> inline auto func(const iScalar<obj> &z) -> iScalar<obj> \
+  template<class obj> accelerator_inline auto func(const iScalar<obj> &z) -> iScalar<obj> \
   {									\
     iScalar<obj> ret;							\
     ret._internal = func( (z._internal));				\
     return ret;								\
   }									\
-  template<class obj,int N> inline auto func(const iVector<obj,N> &z) -> iVector<obj,N>	\
+  template<class obj,int N> accelerator_inline auto func(const iVector<obj,N> &z) -> iVector<obj,N>	\
   {									\
     iVector<obj,N> ret;							\
     for(int c1=0;c1<N;c1++){						\
@@ -47,7 +47,7 @@ NAMESPACE_BEGIN(Grid);
     }									\
     return ret;								\
   }									\
-  template<class obj,int N> inline auto func(const iMatrix<obj,N> &z) -> iMatrix<obj,N>	\
+  template<class obj,int N> accelerator_inline auto func(const iMatrix<obj,N> &z) -> iMatrix<obj,N>	\
   {									\
     iMatrix<obj,N> ret;							\
     for(int c1=0;c1<N;c1++){						\
@@ -59,13 +59,13 @@ NAMESPACE_BEGIN(Grid);
 
 
 #define BINARY_RSCALAR(func,scal)					\
-  template<class obj> inline iScalar<obj> func(const iScalar<obj> &z,scal y) \
+  template<class obj> accelerator_inline iScalar<obj> func(const iScalar<obj> &z,scal y) \
   {									\
     iScalar<obj> ret;							\
     ret._internal = func(z._internal,y);				\
     return ret;								\
   }									\
-  template<class obj,int N> inline iVector<obj,N> func(const iVector<obj,N> &z,scal y) \
+  template<class obj,int N> accelerator_inline iVector<obj,N> func(const iVector<obj,N> &z,scal y) \
   {									\
     iVector<obj,N> ret;							\
     for(int c1=0;c1<N;c1++){						\
@@ -73,7 +73,7 @@ NAMESPACE_BEGIN(Grid);
     }									\
     return ret;								\
   }									\
-  template<class obj,int N> inline  iMatrix<obj,N> func(const iMatrix<obj,N> &z, scal y) \
+  template<class obj,int N> accelerator_inline  iMatrix<obj,N> func(const iMatrix<obj,N> &z, scal y) \
   {									\
     iMatrix<obj,N> ret;							\
     for(int c1=0;c1<N;c1++){						\
@@ -95,13 +95,13 @@ UNARY(abs);
 UNARY(Not);
 
 
-template<class obj> inline auto toReal(const iScalar<obj> &z) -> typename iScalar<obj>::Realified
+template<class obj> accelerator_inline auto toReal(const iScalar<obj> &z) -> typename iScalar<obj>::Realified
 {
   typename iScalar<obj>::Realified ret;
   ret._internal = toReal(z._internal);
   return ret;
 }
-template<class obj,int N> inline auto toReal(const iVector<obj,N> &z) -> typename iVector<obj,N>::Realified
+template<class obj,int N> accelerator_inline auto toReal(const iVector<obj,N> &z) -> typename iVector<obj,N>::Realified
 {
   typename iVector<obj,N>::Realified ret;
   for(int c1=0;c1<N;c1++){  
@@ -109,7 +109,7 @@ template<class obj,int N> inline auto toReal(const iVector<obj,N> &z) -> typenam
   }
   return ret;
 }
-template<class obj,int N> inline auto toReal(const iMatrix<obj,N> &z) -> typename iMatrix<obj,N>::Realified
+template<class obj,int N> accelerator_inline auto toReal(const iMatrix<obj,N> &z) -> typename iMatrix<obj,N>::Realified
 {
   typename iMatrix<obj,N>::Realified ret;
   for(int c1=0;c1<N;c1++){
@@ -119,13 +119,13 @@ template<class obj,int N> inline auto toReal(const iMatrix<obj,N> &z) -> typenam
   return ret;
 }
 
-template<class obj> inline auto toComplex(const iScalar<obj> &z) -> typename iScalar<obj>::Complexified
+template<class obj> accelerator_inline auto toComplex(const iScalar<obj> &z) -> typename iScalar<obj>::Complexified
 {
   typename iScalar<obj>::Complexified ret;
   ret._internal = toComplex(z._internal);
   return ret;
 }
-template<class obj,int N> inline auto toComplex(const iVector<obj,N> &z) -> typename iVector<obj,N>::Complexified
+template<class obj,int N> accelerator_inline auto toComplex(const iVector<obj,N> &z) -> typename iVector<obj,N>::Complexified
 {
   typename iVector<obj,N>::Complexified ret;
   for(int c1=0;c1<N;c1++){  
@@ -133,7 +133,7 @@ template<class obj,int N> inline auto toComplex(const iVector<obj,N> &z) -> type
   }
   return ret;
 }
-template<class obj,int N> inline auto toComplex(const iMatrix<obj,N> &z) -> typename iMatrix<obj,N>::Complexified
+template<class obj,int N> accelerator_inline auto toComplex(const iMatrix<obj,N> &z) -> typename iMatrix<obj,N>::Complexified
 {
   typename iMatrix<obj,N>::Complexified ret;
   for(int c1=0;c1<N;c1++){

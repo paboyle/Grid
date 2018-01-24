@@ -35,7 +35,7 @@ NAMESPACE_BEGIN(Grid);
 //              Vector x Vector -> Matrix
 ///////////////////////////////////////////////////////////////////////////////////////
 
-template<class l,class r,int N> inline
+template<class l,class r,int N> accelerator_inline
 auto outerProduct (const iVector<l,N>& lhs,const iVector<r,N>& rhs) -> iMatrix<decltype(outerProduct(lhs._internal[0],rhs._internal[0])),N>
 {
   typedef decltype(outerProduct(lhs._internal[0],rhs._internal[0])) ret_t;
@@ -48,7 +48,7 @@ auto outerProduct (const iVector<l,N>& lhs,const iVector<r,N>& rhs) -> iMatrix<d
 }
 
 
-template<class l,class r> inline
+template<class l,class r> accelerator_inline
 auto outerProduct (const iScalar<l>& lhs,const iScalar<r>& rhs) -> iScalar<decltype(outerProduct(lhs._internal,rhs._internal))>
 {
   typedef decltype(outerProduct(lhs._internal,rhs._internal)) ret_t;
@@ -58,21 +58,19 @@ auto outerProduct (const iScalar<l>& lhs,const iScalar<r>& rhs) -> iScalar<declt
 }
 
   
-inline ComplexF outerProduct(const ComplexF &l, const ComplexF& r)
+accelerator_inline ComplexF outerProduct(const ComplexF &l, const ComplexF& r)
 {
-  std::cout << "outer product taking conj "<<r<<" "<<conj(r)<<std::endl;
   return l*conj(r);
 }
-inline ComplexD outerProduct(const ComplexD &l, const ComplexD& r)
+accelerator_inline ComplexD outerProduct(const ComplexD &l, const ComplexD& r)
 {
-  std::cout << "outer product taking conj "<<r<<" "<<conj(r)<<std::endl;
   return l*conj(r);
 }
-inline RealF outerProduct(const RealF &l, const RealF& r)
+accelerator_inline RealF outerProduct(const RealF &l, const RealF& r)
 {
   return l*r;
 }
-inline RealD outerProduct(const RealD &l, const RealD& r)
+accelerator_inline RealD outerProduct(const RealD &l, const RealD& r)
 {
   return l*r;
 }

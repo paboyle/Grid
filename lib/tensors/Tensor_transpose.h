@@ -34,13 +34,13 @@ NAMESPACE_BEGIN(Grid);
 // Transpose all indices
 /////////////////////////////////////////////////////////////////
 
-inline ComplexD transpose(ComplexD &rhs){  return rhs;}
-inline ComplexF transpose(ComplexF &rhs){  return rhs;}
-inline RealD transpose(RealD &rhs){  return rhs;}
-inline RealF transpose(RealF &rhs){  return rhs;}
+accelerator_inline ComplexD transpose(ComplexD &rhs){  return rhs;}
+accelerator_inline ComplexF transpose(ComplexF &rhs){  return rhs;}
+accelerator_inline RealD transpose(RealD &rhs){  return rhs;}
+accelerator_inline RealF transpose(RealF &rhs){  return rhs;}
 
 template<class vtype,int N>
-inline typename std::enable_if<isGridTensor<vtype>::value, iMatrix<vtype,N> >::type 
+accelerator_inline typename std::enable_if<isGridTensor<vtype>::value, iMatrix<vtype,N> >::type 
 transpose(iMatrix<vtype,N> arg)
 {
   iMatrix<vtype,N> ret;
@@ -51,7 +51,7 @@ transpose(iMatrix<vtype,N> arg)
   return ret;
 }
 template<class vtype,int N>
-inline typename std::enable_if<isGridTensor<vtype>::notvalue, iMatrix<vtype,N> >::type 
+accelerator_inline typename std::enable_if<isGridTensor<vtype>::notvalue, iMatrix<vtype,N> >::type 
 transpose(iMatrix<vtype,N> arg)
 {
   iMatrix<vtype,N> ret;
@@ -63,7 +63,7 @@ transpose(iMatrix<vtype,N> arg)
 }
 
 template<class vtype>
-inline typename std::enable_if<isGridTensor<vtype>::value, iScalar<vtype> >::type 
+accelerator_inline typename std::enable_if<isGridTensor<vtype>::value, iScalar<vtype> >::type 
 transpose(iScalar<vtype> arg)
 {
   iScalar<vtype> ret;
@@ -72,7 +72,7 @@ transpose(iScalar<vtype> arg)
 }
 
 template<class vtype>
-inline typename std::enable_if<isGridTensor<vtype>::notvalue, iScalar<vtype> >::type 
+accelerator_inline typename std::enable_if<isGridTensor<vtype>::notvalue, iScalar<vtype> >::type 
 transpose(iScalar<vtype> arg)
 {
   iScalar<vtype> ret;
@@ -86,7 +86,7 @@ transpose(iScalar<vtype> arg)
 // to that of adj; which is easiers?
 ////////////////////////////////////////////////////////////////////////////////////////////
 #if 0
-template<int Level,class vtype,int N> inline 
+template<int Level,class vtype,int N> accelerator_inline 
 typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,Level>::value, iMatrix<vtype,N> >::type 
 transposeIndex (const iMatrix<vtype,N> &arg)
 {
@@ -98,7 +98,7 @@ transposeIndex (const iMatrix<vtype,N> &arg)
   return ret;
 }
 // or not
-template<int Level,class vtype,int N> inline 
+template<int Level,class vtype,int N> accelerator_inline 
 typename std::enable_if<matchGridTensorIndex<iMatrix<vtype,N>,Level>::notvalue, iMatrix<vtype,N> >::type 
 transposeIndex (const iMatrix<vtype,N> &arg)
 {
@@ -109,7 +109,7 @@ transposeIndex (const iMatrix<vtype,N> &arg)
     }}
   return ret;
 }
-template<int Level,class vtype> inline 
+template<int Level,class vtype> accelerator_inline 
 typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::notvalue, iScalar<vtype> >::type 
 transposeIndex (const iScalar<vtype> &arg)
 {
@@ -117,7 +117,7 @@ transposeIndex (const iScalar<vtype> &arg)
   ret._internal=transposeIndex<Level>(arg._internal);
   return ret;
 }
-template<int Level,class vtype> inline 
+template<int Level,class vtype> accelerator_inline 
 typename std::enable_if<matchGridTensorIndex<iScalar<vtype>,Level>::value, iScalar<vtype> >::type 
 transposeIndex (const iScalar<vtype> &arg)
 {

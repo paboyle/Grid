@@ -47,12 +47,12 @@ NAMESPACE_BEGIN(Grid);
 // scal x vec  = vec
 ///////////////////////////
 template<class rtype,class vtype,class mtype>
-strong_inline  void mac(iScalar<rtype> * __restrict__ ret,const iScalar<vtype> * __restrict__ lhs,const iScalar<mtype> * __restrict__ rhs)
+accelerator_inline  void mac(iScalar<rtype> * __restrict__ ret,const iScalar<vtype> * __restrict__ lhs,const iScalar<mtype> * __restrict__ rhs)
 {
   mac(&ret->_internal,&lhs->_internal,&rhs->_internal);
 }
 template<class rrtype,class ltype,class rtype,int N>
-strong_inline void mac(iMatrix<rrtype,N> * __restrict__ ret,const iMatrix<ltype,N> * __restrict__ lhs,const iMatrix<rtype,N> * __restrict__ rhs){
+accelerator_inline void mac(iMatrix<rrtype,N> * __restrict__ ret,const iMatrix<ltype,N> * __restrict__ lhs,const iMatrix<rtype,N> * __restrict__ rhs){
   for(int c3=0;c3<N;c3++){
     for(int c1=0;c1<N;c1++){
       for(int c2=0;c2<N;c2++){
@@ -62,7 +62,7 @@ strong_inline void mac(iMatrix<rrtype,N> * __restrict__ ret,const iMatrix<ltype,
 }
 
 template<class rrtype,class ltype,class rtype,int N>
-strong_inline void mac(iMatrix<rrtype,N> * __restrict__ ret,const iMatrix<ltype,N> * __restrict__ lhs,const iScalar<rtype> * __restrict__ rhs){
+accelerator_inline void mac(iMatrix<rrtype,N> * __restrict__ ret,const iMatrix<ltype,N> * __restrict__ lhs,const iScalar<rtype> * __restrict__ rhs){
   for(int c1=0;c1<N;c1++){
     for(int c2=0;c2<N;c2++){
       mac(&ret->_internal[c1][c2],&lhs->_internal[c1][c2],&rhs->_internal);
@@ -70,7 +70,7 @@ strong_inline void mac(iMatrix<rrtype,N> * __restrict__ ret,const iMatrix<ltype,
   return;
 }
 template<class rrtype,class ltype,class rtype,int N>
-strong_inline void mac(iMatrix<rrtype,N> * __restrict__ ret,const iScalar<ltype> * __restrict__ lhs,const iMatrix<rtype,N> * __restrict__ rhs){
+accelerator_inline void mac(iMatrix<rrtype,N> * __restrict__ ret,const iScalar<ltype> * __restrict__ lhs,const iMatrix<rtype,N> * __restrict__ rhs){
   for(int c1=0;c1<N;c1++){
     for(int c2=0;c2<N;c2++){
       mac(&ret->_internal[c1][c2],&lhs->_internal,&rhs->_internal[c1][c2]);
@@ -78,7 +78,7 @@ strong_inline void mac(iMatrix<rrtype,N> * __restrict__ ret,const iScalar<ltype>
   return;
 }
 template<class rrtype,class ltype,class rtype,int N>
-strong_inline void mac(iVector<rrtype,N> * __restrict__ ret,const iMatrix<ltype,N> * __restrict__ lhs,const iVector<rtype,N> * __restrict__ rhs)
+accelerator_inline void mac(iVector<rrtype,N> * __restrict__ ret,const iMatrix<ltype,N> * __restrict__ lhs,const iVector<rtype,N> * __restrict__ rhs)
 {
   for(int c1=0;c1<N;c1++){
     for(int c2=0;c2<N;c2++){
@@ -87,7 +87,7 @@ strong_inline void mac(iVector<rrtype,N> * __restrict__ ret,const iMatrix<ltype,
   return;
 }
 template<class rrtype,class ltype,class rtype,int N>
-strong_inline void mac(iVector<rrtype,N> * __restrict__ ret,const iScalar<ltype> * __restrict__ lhs,const iVector<rtype,N> * __restrict__ rhs)
+accelerator_inline void mac(iVector<rrtype,N> * __restrict__ ret,const iScalar<ltype> * __restrict__ lhs,const iVector<rtype,N> * __restrict__ rhs)
 {
   for(int c1=0;c1<N;c1++){
     mac(&ret->_internal[c1],&lhs->_internal,&rhs->_internal[c1]);
@@ -95,7 +95,7 @@ strong_inline void mac(iVector<rrtype,N> * __restrict__ ret,const iScalar<ltype>
   return;
 }
 template<class rrtype,class ltype,class rtype,int N>
-strong_inline void mac(iVector<rrtype,N> * __restrict__ ret,const iVector<ltype,N> * __restrict__ lhs,const iScalar<rtype> * __restrict__ rhs)
+accelerator_inline void mac(iVector<rrtype,N> * __restrict__ ret,const iVector<ltype,N> * __restrict__ lhs,const iScalar<rtype> * __restrict__ rhs)
 {
   for(int c1=0;c1<N;c1++){
     mac(&ret->_internal[c1],&lhs->_internal[c1],&rhs->_internal);

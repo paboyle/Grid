@@ -36,19 +36,19 @@ NAMESPACE_BEGIN(Grid);
 // Ta function for scalar, vector, matrix
 /////////////////////////////////////////////// 
 /*
-  inline ComplexF Ta( const ComplexF &arg){    return arg;}
-  inline ComplexD Ta( const ComplexD &arg){    return arg;}
-  inline RealF Ta( const RealF &arg){    return arg;}
-  inline RealD Ta( const RealD &arg){    return arg;}
+  accelerator_inline ComplexF Ta( const ComplexF &arg){    return arg;}
+  accelerator_inline ComplexD Ta( const ComplexD &arg){    return arg;}
+  accelerator_inline RealF Ta( const RealF &arg){    return arg;}
+  accelerator_inline RealD Ta( const RealD &arg){    return arg;}
 */
 
-template<class vtype> inline iScalar<vtype> Ta(const iScalar<vtype>&r)
+template<class vtype> accelerator_inline iScalar<vtype> Ta(const iScalar<vtype>&r)
 {
   iScalar<vtype> ret;
   ret._internal = Ta(r._internal);
   return ret;
 }
-template<class vtype,int N> inline iVector<vtype,N> Ta(const iVector<vtype,N>&r)
+template<class vtype,int N> accelerator_inline iVector<vtype,N> Ta(const iVector<vtype,N>&r)
 {
   iVector<vtype,N> ret;
   for(int i=0;i<N;i++){
@@ -56,7 +56,7 @@ template<class vtype,int N> inline iVector<vtype,N> Ta(const iVector<vtype,N>&r)
   }
   return ret;
 }
-template<class vtype,int N> inline iMatrix<vtype,N> Ta(const iMatrix<vtype,N> &arg)
+template<class vtype,int N> accelerator_inline iMatrix<vtype,N> Ta(const iMatrix<vtype,N> &arg)
 {
   iMatrix<vtype,N> ret;
 
@@ -73,13 +73,13 @@ template<class vtype,int N> inline iMatrix<vtype,N> Ta(const iMatrix<vtype,N> &a
 /////////////////////////////////////////////// 
 
 
-template<class vtype> inline iScalar<vtype> ProjectOnGroup(const iScalar<vtype>&r)
+template<class vtype> accelerator_inline iScalar<vtype> ProjectOnGroup(const iScalar<vtype>&r)
 {
   iScalar<vtype> ret;
   ret._internal = ProjectOnGroup(r._internal);
   return ret;
 }
-template<class vtype,int N> inline iVector<vtype,N> ProjectOnGroup(const iVector<vtype,N>&r)
+template<class vtype,int N> accelerator_inline iVector<vtype,N> ProjectOnGroup(const iVector<vtype,N>&r)
 {
   iVector<vtype,N> ret;
   for(int i=0;i<N;i++){
@@ -88,7 +88,7 @@ template<class vtype,int N> inline iVector<vtype,N> ProjectOnGroup(const iVector
   return ret;
 }
 template<class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr> 
-inline iMatrix<vtype,N> ProjectOnGroup(const iMatrix<vtype,N> &arg)
+accelerator_inline iMatrix<vtype,N> ProjectOnGroup(const iMatrix<vtype,N> &arg)
 {
   // need a check for the group type?
   iMatrix<vtype,N> ret(arg);

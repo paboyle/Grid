@@ -40,10 +40,9 @@ namespace Grid{
   ////////////////////////////////////////////////////////////////////////////////////////////////
   // Extract/merge a fundamental vector type, to pointer array with offset
   ////////////////////////////////////////////////////////////////////////////////////////////////
-
   template<class vsimd,class scalar>
-  inline void extract(typename std::enable_if<!isGridTensor<vsimd>::value, const vsimd >::type * y, 
-		      std::vector<scalar *> &extracted,int offset){
+  strong_inline void extract(typename std::enable_if<!isGridTensor<vsimd>::value, const vsimd >::type * y, 
+				  std::vector<scalar *> &extracted,int offset){
     // FIXME: bounce off memory is painful
     static const int Nsimd=sizeof(vsimd)/sizeof(scalar);
     int Nextr=extracted.size();
@@ -58,8 +57,8 @@ namespace Grid{
   // Merge simd vector from array of scalars to pointer array with offset
   ////////////////////////////////////////////////////////////////////////
   template<class vsimd,class scalar>
-  inline void merge(typename std::enable_if<!isGridTensor<vsimd>::value, vsimd >::type * y, 
-		    std::vector<scalar *> &extracted,int offset){
+  strong_inline void merge(typename std::enable_if<!isGridTensor<vsimd>::value, vsimd >::type * y, 
+				std::vector<scalar *> &extracted,int offset){
 
     static const int Nsimd=sizeof(vsimd)/sizeof(scalar);
 
@@ -79,7 +78,7 @@ namespace Grid{
   // Extract a fundamental vector type to scalar array 
   ////////////////////////////////////////////////////////////////////////////////////////////////
   template<class vsimd,class scalar>
-  inline void extract(typename std::enable_if<!isGridTensor<vsimd>::value, const vsimd >::type  &y,std::vector<scalar> &extracted){
+  strong_inline void extract(typename std::enable_if<!isGridTensor<vsimd>::value, const vsimd >::type  &y,std::vector<scalar> &extracted){
 
     int Nextr=extracted.size();
     int Nsimd=vsimd::Nsimd();
@@ -109,7 +108,7 @@ namespace Grid{
   // Merge simd vector from array of scalars
   ////////////////////////////////////////////////////////////////////////
   template<class vsimd,class scalar>
-  inline void merge(typename std::enable_if<!isGridTensor<vsimd>::value, vsimd >::type  &y,std::vector<scalar> &extracted){
+  strong_inline void merge(typename std::enable_if<!isGridTensor<vsimd>::value, vsimd >::type  &y,std::vector<scalar> &extracted){
     int Nextr=extracted.size();
     static const int Nsimd=vsimd::Nsimd();
     int s=Nsimd/Nextr;
@@ -125,15 +124,13 @@ namespace Grid{
   ////////////////////////////////////////////////////////////////////////
   // Extract to contiguous array scalar object
   ////////////////////////////////////////////////////////////////////////
-  template<class vobj> inline void extract(const vobj &vec,std::vector<typename vobj::scalar_object> &extracted)
+  template<class vobj> strong_inline void extract(const vobj &vec,std::vector<typename vobj::scalar_object> &extracted)
   {
     typedef typename vobj::scalar_type scalar_type ;
     typedef typename vobj::vector_type vector_type ;
 
-    static const int Nsimd=sizeof(vector_type)/sizeof(scalar_type);
     static const int words=sizeof(vobj)/sizeof(vector_type);
     int Nextr=extracted.size();
-    int s=Nsimd/Nextr;
 
     std::vector<scalar_type *> pointers(Nextr);
     for(int i=0;i<Nextr;i++) 
@@ -147,7 +144,7 @@ namespace Grid{
   ////////////////////////////////////////////////////////////////////////
   // Extract to a bunch of scalar object pointers, with offset
   ////////////////////////////////////////////////////////////////////////
-  template<class vobj> inline 
+  template<class vobj> strong_inline 
   void extract(const vobj &vec,std::vector<typename vobj::scalar_object *> &extracted, int offset)
   {
     typedef typename vobj::scalar_type scalar_type ;
@@ -171,7 +168,7 @@ namespace Grid{
   ////////////////////////////////////////////////////////////////////////
   // Extract to a bunch of scalar object pointers of different scalar type, with offset. Useful for precision change
   ////////////////////////////////////////////////////////////////////////
-  template<class vobj, class sobj> inline 
+  template<class vobj, class sobj> strong_inline 
   void extract1(const vobj &vec,std::vector<sobj*> &extracted, int offset)
   {
     typedef typename vobj::scalar_type vobj_scalar_type ;
@@ -198,17 +195,15 @@ namespace Grid{
   ////////////////////////////////////////////////////////////////////////
   // Merge a contiguous array of scalar objects
   ////////////////////////////////////////////////////////////////////////
-  template<class vobj> inline 
+  template<class vobj> strong_inline 
   void merge(vobj &vec,std::vector<typename vobj::scalar_object> &extracted)
   {
     typedef typename vobj::scalar_type scalar_type ;
     typedef typename vobj::vector_type vector_type ;
   
-    static const int Nsimd=sizeof(vector_type)/sizeof(scalar_type);
     static const int words=sizeof(vobj)/sizeof(vector_type);
 
     int Nextr = extracted.size();
-    int splat=Nsimd/Nextr;
 
     std::vector<scalar_type *> pointers(Nextr);
     for(int i=0;i<Nextr;i++) 
@@ -223,7 +218,7 @@ namespace Grid{
   ////////////////////////////////////////////////////////////////////////
   // Merge a bunch of different scalar object pointers, with offset
   ////////////////////////////////////////////////////////////////////////
-  template<class vobj> inline 
+  template<class vobj> strong_inline 
   void merge(vobj &vec,std::vector<typename vobj::scalar_object *> &extracted,int offset)
   {
     typedef typename vobj::scalar_type scalar_type ;
@@ -250,7 +245,7 @@ namespace Grid{
     }
   }
 
-  template<class vobj> inline void merge1(vobj &vec,std::vector<typename vobj::scalar_object *> &extracted,int offset)
+  template<class vobj> strong_inline void merge1(vobj &vec,std::vector<typename vobj::scalar_object *> &extracted,int offset)
   {
     typedef typename vobj::scalar_type scalar_type ;
     typedef typename vobj::vector_type vector_type ;
@@ -268,7 +263,7 @@ namespace Grid{
       }}
   }
 
-  template<class vobj> inline void merge2(vobj &vec,std::vector<typename vobj::scalar_object *> &extracted,int offset)
+  template<class vobj> strong_inline void merge2(vobj &vec,std::vector<typename vobj::scalar_object *> &extracted,int offset)
   {
     typedef typename vobj::scalar_type scalar_type ;
     typedef typename vobj::vector_type vector_type ;

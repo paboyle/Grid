@@ -37,14 +37,14 @@ NAMESPACE_BEGIN(Grid);
 /////////////////////////////////////////////// 
 
 
-template<class vtype> inline iScalar<vtype> Exponentiate(const iScalar<vtype>&r, RealD alpha ,  Integer Nexp = DEFAULT_MAT_EXP)
+template<class vtype> accelerator_inline iScalar<vtype> Exponentiate(const iScalar<vtype>&r, RealD alpha ,  Integer Nexp = DEFAULT_MAT_EXP)
 {
   iScalar<vtype> ret;
   ret._internal = Exponentiate(r._internal, alpha, Nexp);
   return ret;
 }
 
-template<class vtype, int N> inline iVector<vtype, N> Exponentiate(const iVector<vtype,N>&r, RealD alpha ,  Integer Nexp = DEFAULT_MAT_EXP)
+template<class vtype, int N> accelerator_inline iVector<vtype, N> Exponentiate(const iVector<vtype,N>&r, RealD alpha ,  Integer Nexp = DEFAULT_MAT_EXP)
 {
   iVector<vtype, N> ret;
   for (int i = 0; i < N; i++)
@@ -56,7 +56,7 @@ template<class vtype, int N> inline iVector<vtype, N> Exponentiate(const iVector
 
 // Specialisation: Cayley-Hamilton exponential for SU(3)
 template<class vtype, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0>::type * =nullptr> 
-inline iMatrix<vtype,3> Exponentiate(const iMatrix<vtype,3> &arg, RealD alpha  , Integer Nexp = DEFAULT_MAT_EXP )
+accelerator_inline iMatrix<vtype,3> Exponentiate(const iMatrix<vtype,3> &arg, RealD alpha  , Integer Nexp = DEFAULT_MAT_EXP )
 {
   // for SU(3) 2x faster than the std implementation using Nexp=12
   // notice that it actually computes
@@ -120,7 +120,7 @@ inline iMatrix<vtype,3> Exponentiate(const iMatrix<vtype,3> &arg, RealD alpha  ,
 
 // General exponential
 template<class vtype,int N, typename std::enable_if< GridTypeMapper<vtype>::TensorLevel == 0 >::type * =nullptr> 
-inline iMatrix<vtype,N> Exponentiate(const iMatrix<vtype,N> &arg, RealD alpha  , Integer Nexp = DEFAULT_MAT_EXP )
+accelerator_inline iMatrix<vtype,N> Exponentiate(const iMatrix<vtype,N> &arg, RealD alpha  , Integer Nexp = DEFAULT_MAT_EXP )
 {
   // notice that it actually computes
   // exp ( input matrix )
