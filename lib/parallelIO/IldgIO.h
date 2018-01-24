@@ -722,6 +722,7 @@ public:
     assert(found_ildgBinary);
     assert(found_ildgFormat);
     assert(found_scidacChecksum);
+    assert(found_ildgLFN==0);
 
     // Must find something with the lattice dimensions
     assert(found_FieldMetaData||found_ildgFormat);

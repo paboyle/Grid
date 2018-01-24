@@ -104,27 +104,22 @@ public:
     const uint64_t size32 = sizeof(fobj) / sizeof(uint32_t);
 
     uint64_t lsites = grid->lSites();
-    if (fbuf.size() == 1)
-      {
-	lsites = 1;
-      }
+    if (fbuf.size() == 1) {
+      lsites = 1;
+    }
 
-#pragma omp parallel
-    {
+    thread_region {
+
       uint32_t nersc_csum_thr = 0;
 
-#pragma omp for
-      for (uint64_t local_site = 0; local_site < lsites; local_site++)
-	{
+      thread_loop( (uint64_t local_site = 0; local_site < lsites; local_site++), {
 	  uint32_t *site_buf = (uint32_t *)&fbuf[local_site];
-	  for (uint64_t j = 0; j < size32; j++)
-	    {
-	      nersc_csum_thr = nersc_csum_thr + site_buf[j];
-	    }
-	}
+	  for (uint64_t j = 0; j < size32; j++) {
+	    nersc_csum_thr = nersc_csum_thr + site_buf[j];
+	  }
+      });
 
-#pragma omp critical
-      {
+      thread_critical {
         nersc_csum += nersc_csum_thr;
       }
     }
@@ -132,9 +127,6 @@ public:
 
   template<class fobj> static inline void ScidacChecksum(GridBase *grid,std::vector<fobj> &fbuf,uint32_t &scidac_csuma,uint32_t &scidac_csumb)
   {
-    const uint64_t size32 = sizeof(fobj)/sizeof(uint32_t);
-
-
     int nd = grid->_ndimension;
 
     uint64_t lsites              =grid->lSites();
@@ -145,15 +137,14 @@ public:
     std::vector<int> local_start =grid->LocalStarts();
     std::vector<int> global_vol  =grid->FullDimensions();
 
-#pragma omp parallel
-    { 
+    thread_region { 
+
       std::vector<int> coor(nd);
       uint32_t scidac_csuma_thr=0;
       uint32_t scidac_csumb_thr=0;
       uint32_t site_crc=0;
 
-#pragma omp for
-      for(uint64_t local_site=0;local_site<lsites;local_site++){
+      thread_loop( (uint64_t local_site=0;local_site<lsites;local_site++),{
 
 	uint32_t * site_buf = (uint32_t *)&fbuf[local_site];
 
@@ -177,11 +168,11 @@ public:
 	//	std::cout << "Site "<<local_site << " crc "<<std::hex<<site_crc<<std::dec<<std::endl;
 	//	std::cout << "Site "<<local_site << std::hex<<site_buf[0] <<site_buf[1]<<std::dec <<std::endl;
 	scidac_csuma_thr ^= site_crc<<gsite29 | site_crc>>(32-gsite29);
-	scidac_csumb_thr ^= site_crc<<gsite31 | site_crc>>(32-gsite31);
-      }
+        scidac_csumb_thr ^= site_crc<<gsite31 | site_crc>>(32-gsite31);
 
-#pragma omp critical
-      {
+      });
+
+      thread_critical {
 	scidac_csuma^= scidac_csuma_thr;
 	scidac_csumb^= scidac_csumb_thr;
       }
@@ -198,9 +189,9 @@ public:
   {
     uint32_t * f = (uint32_t *)file_object;
     uint64_t count = bytes/sizeof(uint32_t);
-    parallel_for(uint64_t i=0;i<count;i++){  
+    thread_loop( (uint64_t i=0;i<count;i++), {  
       f[i] = ntohl(f[i]);
-    }
+    });
   }
   // LE must Swap and switch to host
   static inline void le32toh_v(void *file_object,uint64_t bytes)
@@ -209,12 +200,12 @@ public:
     uint32_t f;
 
     uint64_t count = bytes/sizeof(uint32_t);
-    parallel_for(uint64_t i=0;i<count;i++){  
+    thread_loop( (uint64_t i=0;i<count;i++), {  
       f = fp[i];
       // got network order and the network to host
       f = ((f&0xFF)<<24) | ((f&0xFF00)<<8) | ((f&0xFF0000)>>8) | ((f&0xFF000000UL)>>24) ; 
       fp[i] = ntohl(f);
-    }
+    });
   }
 
   // BE is same as network
@@ -222,9 +213,9 @@ public:
   {
     uint64_t * f = (uint64_t *)file_object;
     uint64_t count = bytes/sizeof(uint64_t);
-    parallel_for(uint64_t i=0;i<count;i++){  
+    thread_loop( (uint64_t i=0;i<count;i++),{  
       f[i] = Grid_ntohll(f[i]);
-    }
+    });
   }
   
   // LE must swap and switch;
@@ -234,7 +225,7 @@ public:
     uint64_t f,g;
     
     uint64_t count = bytes/sizeof(uint64_t);
-    parallel_for(uint64_t i=0;i<count;i++){  
+    thread_loop( (uint64_t i=0;i<count;i++), {  
       f = fp[i];
       // got network order and the network to host
       g = ((f&0xFF)<<24) | ((f&0xFF00)<<8) | ((f&0xFF0000)>>8) | ((f&0xFF000000UL)>>24) ; 
@@ -242,7 +233,7 @@ public:
       f = f >> 32;
       g|= ((f&0xFF)<<24) | ((f&0xFF00)<<8) | ((f&0xFF0000)>>8) | ((f&0xFF000000UL)>>24) ; 
       fp[i] = Grid_ntohll(g);
-    }
+    });
   }
   /////////////////////////////////////////////////////////////////////////////
   // Real action:
@@ -543,7 +534,7 @@ public:
     GridStopWatch timer; 
     timer.Start();
 
-    parallel_for(int x=0;x<lsites;x++) munge(iodata[x], scalardata[x]);
+    thread_loop( (int x=0;x<lsites;x++), { munge(iodata[x], scalardata[x]); });
 
     vectorizeFromLexOrdArray(scalardata,Umu);    
     grid->Barrier();
@@ -579,7 +570,7 @@ public:
     GridStopWatch timer; timer.Start();
     unvectorizeToLexOrdArray(scalardata,Umu);    
 
-    parallel_for(int x=0;x<lsites;x++) munge(scalardata[x],iodata[x]);
+    thread_loop( (int x=0;x<lsites;x++), { munge(scalardata[x],iodata[x]);});
 
     grid->Barrier();
     timer.Stop();
@@ -625,11 +616,11 @@ public:
 	     nersc_csum,scidac_csuma,scidac_csumb);
 
     timer.Start();
-    parallel_for(int lidx=0;lidx<lsites;lidx++){
+    thread_loop( (int lidx=0;lidx<lsites;lidx++),{
       std::vector<RngStateType> tmp(RngStateCount);
       std::copy(iodata[lidx].begin(),iodata[lidx].end(),tmp.begin());
       parallel.SetState(tmp,lidx);
-    }
+    });
     timer.Stop();
 
     iodata.resize(1);
@@ -683,11 +674,11 @@ public:
 
     timer.Start();
     std::vector<RNGstate> iodata(lsites);
-    parallel_for(int lidx=0;lidx<lsites;lidx++){
+    thread_loop( (int lidx=0;lidx<lsites;lidx++),COMMA_SAFE({
       std::vector<RngStateType> tmp(RngStateCount);
       parallel.GetState(tmp,lidx);
       std::copy(tmp.begin(),tmp.end(),iodata[lidx].begin());
-    }
+    }));
     timer.Stop();
 
     IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_LEXICOGRAPHIC,

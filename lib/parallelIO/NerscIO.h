@@ -56,7 +56,6 @@ public:
   // for the header-reader
   static inline int readHeader(std::string file,GridBase *grid,  FieldMetaData &field)
   {
-    int offset=0;
     std::map<std::string,std::string> header;
     std::string line;
 
