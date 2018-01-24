@@ -33,215 +33,239 @@ NAMESPACE_BEGIN(Grid);
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //  avoid copy back routines for mult, mac, sub, add
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-template<class obj1,class obj2,class obj3> strong_inline
+template<class obj1,class obj2,class obj3> inline
 void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
   ret.checkerboard = lhs.checkerboard;
   conformable(ret,rhs);
   conformable(lhs,rhs);
-  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
 #ifdef STREAMING_STORES
+  accelerator_loop(ss,lhs,{
     obj1 tmp;
     mult(&tmp,&lhs._odata[ss],&rhs._odata[ss]);
     vstream(ret._odata[ss],tmp);
+  });
 #else
+  accelerator_loop(ss,lhs,{
     mult(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
+  });
 #endif
-  }
 }
   
-template<class obj1,class obj2,class obj3> strong_inline
+template<class obj1,class obj2,class obj3> inline
 void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
   ret.checkerboard = lhs.checkerboard;
   conformable(ret,rhs);
   conformable(lhs,rhs);
-  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
 #ifdef STREAMING_STORES
+  accelerator_loop(ss,lhs,{
     obj1 tmp;
     mac(&tmp,&lhs._odata[ss],&rhs._odata[ss]);
     vstream(ret._odata[ss],tmp);
+  });
 #else
+  accelerator_loop(ss,lhs,{
     mac(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
+  });
 #endif
-  }
 }
   
-template<class obj1,class obj2,class obj3> strong_inline
+template<class obj1,class obj2,class obj3> inline
 void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
   ret.checkerboard = lhs.checkerboard;
   conformable(ret,rhs);
   conformable(lhs,rhs);
-  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
 #ifdef STREAMING_STORES
+  accelerator_loop(ss,lhs,{
     obj1 tmp;
     sub(&tmp,&lhs._odata[ss],&rhs._odata[ss]);
     vstream(ret._odata[ss],tmp);
+  });
 #else
+  accelerator_loop(ss,lhs,{
     sub(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
+  });
 #endif
-  }
 }
-template<class obj1,class obj2,class obj3> strong_inline
+template<class obj1,class obj2,class obj3> inline
 void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
   ret.checkerboard = lhs.checkerboard;
   conformable(ret,rhs);
   conformable(lhs,rhs);
-  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
 #ifdef STREAMING_STORES
+  accelerator_loop(ss,lhs,{
     obj1 tmp;
     add(&tmp,&lhs._odata[ss],&rhs._odata[ss]);
     vstream(ret._odata[ss],tmp);
+  });
 #else
+  accelerator_loop(ss,lhs,{
     add(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
+  });
 #endif
-  }
 }
   
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //  avoid copy back routines for mult, mac, sub, add
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-template<class obj1,class obj2,class obj3> strong_inline
+template<class obj1,class obj2,class obj3> inline
 void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
   ret.checkerboard = lhs.checkerboard;
   conformable(lhs,ret);
-  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+  accelerator_loop(ss,lhs,{
     obj1 tmp;
     mult(&tmp,&lhs._odata[ss],&rhs);
     vstream(ret._odata[ss],tmp);
-  }
+  });
 }
   
-template<class obj1,class obj2,class obj3> strong_inline
+template<class obj1,class obj2,class obj3> inline
 void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
   ret.checkerboard = lhs.checkerboard;
   conformable(ret,lhs);
-  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
+  accelerator_loop(ss,lhs,{
     obj1 tmp;
     mac(&tmp,&lhs._odata[ss],&rhs);
     vstream(ret._odata[ss],tmp);
-  }
+  });
 }
   
-template<class obj1,class obj2,class obj3> strong_inline
+template<class obj1,class obj2,class obj3> inline
 void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
   ret.checkerboard = lhs.checkerboard;
   conformable(ret,lhs);
-  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
 #ifdef STREAMING_STORES
+  accelerator_loop(ss,lhs,{
     obj1 tmp;
     sub(&tmp,&lhs._odata[ss],&rhs);
     vstream(ret._odata[ss],tmp);
+  });
 #else 
+  accelerator_loop(ss,lhs,{
     sub(&ret._odata[ss],&lhs._odata[ss],&rhs);
+  });
 #endif
-  }
 }
-template<class obj1,class obj2,class obj3> strong_inline
+template<class obj1,class obj2,class obj3> inline
 void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
   ret.checkerboard = lhs.checkerboard;
   conformable(lhs,ret);
-  parallel_for(int ss=0;ss<lhs._grid->oSites();ss++){
 #ifdef STREAMING_STORES
+  accelerator_loop(ss,lhs,{
     obj1 tmp;
     add(&tmp,&lhs._odata[ss],&rhs);
     vstream(ret._odata[ss],tmp);
+  });
 #else 
+  accelerator_loop(ss,lhs,{
     add(&ret._odata[ss],&lhs._odata[ss],&rhs);
+  });
 #endif
-  }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //  avoid copy back routines for mult, mac, sub, add
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-template<class obj1,class obj2,class obj3> strong_inline
+template<class obj1,class obj2,class obj3> inline
 void mult(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   ret.checkerboard = rhs.checkerboard;
   conformable(ret,rhs);
-  parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
 #ifdef STREAMING_STORES
+  accelerator_loop(ss,rhs,{
     obj1 tmp;
     mult(&tmp,&lhs,&rhs._odata[ss]);
     vstream(ret._odata[ss],tmp);
+  });
 #else 
+  accelerator_loop(ss,rhs,{
     mult(&ret._odata[ss],&lhs,&rhs._odata[ss]);
+  });
 #endif
-  }
 }
   
-template<class obj1,class obj2,class obj3> strong_inline
+template<class obj1,class obj2,class obj3> inline
 void mac(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   ret.checkerboard = rhs.checkerboard;
   conformable(ret,rhs);
-  parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
 #ifdef STREAMING_STORES
+  accelerator_loop(ss,rhs,{
     obj1 tmp;
     mac(&tmp,&lhs,&rhs._odata[ss]);
     vstream(ret._odata[ss],tmp);
+  });
 #else 
+  accelerator_loop(ss,rhs,{
     mac(&ret._odata[ss],&lhs,&rhs._odata[ss]);
+  });
 #endif
-  }
 }
   
-template<class obj1,class obj2,class obj3> strong_inline
+template<class obj1,class obj2,class obj3> inline
 void sub(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   ret.checkerboard = rhs.checkerboard;
   conformable(ret,rhs);
-  parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
 #ifdef STREAMING_STORES
+  accelerator_loop(ss,rhs,{
     obj1 tmp;
     sub(&tmp,&lhs,&rhs._odata[ss]);
     vstream(ret._odata[ss],tmp);
+  });
 #else 
+  accelerator_loop(ss,rhs,{
     sub(&ret._odata[ss],&lhs,&rhs._odata[ss]);
+  });
 #endif
-  }
 }
-template<class obj1,class obj2,class obj3> strong_inline
+template<class obj1,class obj2,class obj3> inline
 void add(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
   ret.checkerboard = rhs.checkerboard;
   conformable(ret,rhs);
-  parallel_for(int ss=0;ss<rhs._grid->oSites();ss++){
 #ifdef STREAMING_STORES
+  accelerator_loop(ss,rhs,{
     obj1 tmp;
     add(&tmp,&lhs,&rhs._odata[ss]);
     vstream(ret._odata[ss],tmp);
+  });
 #else 
+  accelerator_loop(ss,rhs,{
     add(&ret._odata[ss],&lhs,&rhs._odata[ss]);
+  });
 #endif
-  }
 }
   
-template<class sobj,class vobj> strong_inline
+template<class sobj,class vobj> inline
 void axpy(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &y){
   ret.checkerboard = x.checkerboard;
   conformable(ret,x);
   conformable(x,y);
-  parallel_for(int ss=0;ss<x._grid->oSites();ss++){
 #ifdef STREAMING_STORES
+  accelerator_loop(ss,x,{
     vobj tmp = a*x._odata[ss]+y._odata[ss];
     vstream(ret._odata[ss],tmp);
+  });
 #else
+  accelerator_loop(ss,x,{
     ret._odata[ss]=a*x._odata[ss]+y._odata[ss];
+  });
 #endif
-  }
 }
-template<class sobj,class vobj> strong_inline
+template<class sobj,class vobj> inline
 void axpby(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y){
   ret.checkerboard = x.checkerboard;
   conformable(ret,x);
   conformable(x,y);
-  parallel_for(int ss=0;ss<x._grid->oSites();ss++){
 #ifdef STREAMING_STORES
+  accelerator_loop(ss,x,{
     vobj tmp = a*x._odata[ss]+b*y._odata[ss];
     vstream(ret._odata[ss],tmp);
+  });
 #else
+  accelerator_loop(ss,x,{
     ret._odata[ss]=a*x._odata[ss]+b*y._odata[ss];
+  });
 #endif
-  }
 }
 
-template<class sobj,class vobj> strong_inline
+template<class sobj,class vobj> inline
 RealD axpy_norm(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &y){
   ret.checkerboard = x.checkerboard;
   conformable(ret,x);
@@ -249,7 +273,7 @@ RealD axpy_norm(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<v
   axpy(ret,a,x,y);
   return norm2(ret);
 }
-template<class sobj,class vobj> strong_inline
+template<class sobj,class vobj> inline
 RealD axpby_norm(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y){
   ret.checkerboard = x.checkerboard;
   conformable(ret,x);
