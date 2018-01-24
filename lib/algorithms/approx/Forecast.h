@@ -60,7 +60,7 @@ public:
     if(degree == 0){ chi = zero; return chi; }
     else if(degree == 1){ return prev_solns[0]; }
 
-    RealD dot;
+    //    RealD dot;
     ComplexD xp;
     Field r(phi); // residual
     Field Mv(phi);
@@ -92,7 +92,7 @@ public:
     for(int j=0; j<degree; j++){
       for(int k=j+1; k<degree; k++){
 	G[j][k] = innerProduct(v[j],MdagMv[k]);
-	G[k][j] = std::conj(G[j][k]);
+	G[k][j] = conjugate(G[j][k]);
       }}
 
     // Gauss-Jordan elimination with partial pivoting
@@ -100,7 +100,7 @@ public:
 
       // Perform partial pivoting
       int k = i;
-      for(int j=i+1; j<degree; j++){ if(std::abs(G[j][j]) > std::abs(G[k][k])){ k = j; } }
+      for(int j=i+1; j<degree; j++){ if(abs(G[j][j]) > abs(G[k][k])){ k = j; } }
       if(k != i){
 	xp = b[k];
 	b[k] = b[i];
@@ -136,7 +136,7 @@ public:
     for(int i=0; i<degree; i++){
       tmp = -b[i];
       for(int j=0; j<degree; j++){ tmp += G[i][j]*a[j]; }
-      tmp = std::conj(tmp)*tmp;
+      tmp = conjugate(tmp)*tmp;
       true_r += std::sqrt(tmp.real());
     }
 

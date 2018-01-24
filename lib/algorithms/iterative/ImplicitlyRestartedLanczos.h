@@ -299,7 +299,7 @@ public:
   template<typename T>  static RealD normalise(T& v) 
   {
     RealD nn = norm2(v);
-    nn = sqrt(nn);
+    nn = std::sqrt(nn);
     v = v * (1.0/nn);
     return nn;
   }
@@ -464,7 +464,7 @@ until convergence
       f *= Qt(k2-1,Nm-1);
       f += lme[k2-1] * evec[k2];
       beta_k = norm2(f);
-      beta_k = sqrt(beta_k);
+      beta_k = std::sqrt(beta_k);
       std::cout<<GridLogIRL<<" beta(k) = "<<beta_k<<std::endl;
 	  
       RealD betar = 1.0/beta_k;
@@ -817,7 +817,7 @@ void diagonalize_QR(std::vector<RealD>& lmd, std::vector<RealD>& lme,
     
     // determination of 2x2 leading submatrix
     RealD dsub = lmd[kmax-1]-lmd[kmax-2];
-    RealD dd = sqrt(dsub*dsub + 4.0*lme[kmax-2]*lme[kmax-2]);
+    RealD dd = std::sqrt(dsub*dsub + 4.0*lme[kmax-2]*lme[kmax-2]);
     RealD Dsh = 0.5*(lmd[kmax-2]+lmd[kmax-1] +dd*(dsub/fabs(dsub)));
     // (Dsh: shift)
     

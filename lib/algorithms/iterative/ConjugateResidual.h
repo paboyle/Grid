@@ -49,7 +49,7 @@ public:
 
   void operator() (LinearOperatorBase<Field> &Linop,const Field &src, Field &psi){
 
-    RealD a, b, c, d;
+    RealD a, b; // c, d;
     RealD cp, ssq,rsq;
       
     RealD rAr, rAAr, rArp;
@@ -95,8 +95,8 @@ public:
 	axpy(r,-1.0,src,Ap);
 	RealD true_resid = norm2(r)/ssq;
 	std::cout<<GridLogMessage<<"ConjugateResidual: Converged on iteration " <<k
-		 << " computed residual "<<sqrt(cp/ssq)
-		 << " true residual "<<sqrt(true_resid)
+		 << " computed residual "<<std::sqrt(cp/ssq)
+		 << " true residual "<<std::sqrt(true_resid)
 		 << " target "       <<Tolerance <<std::endl;
 	return;
       }

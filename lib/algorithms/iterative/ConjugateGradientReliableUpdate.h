@@ -110,7 +110,7 @@ public:
     // Check if guess is really REALLY good :)
     if (cp <= rsq) {
       std::cout << GridLogMessage << "ConjugateGradientReliableUpdate guess was REALLY good\n";
-      std::cout << GridLogMessage << "\tComputed residual " << sqrt(cp / ssq)<<std::endl;
+      std::cout << GridLogMessage << "\tComputed residual " << std::sqrt(cp / ssq)<<std::endl;
       return;
     }
 
@@ -180,12 +180,12 @@ public:
 	Linop_d.HermOpAndNorm(psi, mmp, d, qq);
 	p = mmp - src;
 
-	RealD srcnorm = sqrt(norm2(src));
-	RealD resnorm = sqrt(norm2(p));
+	RealD srcnorm = std::sqrt(norm2(src));
+	RealD resnorm = std::sqrt(norm2(p));
 	RealD true_residual = resnorm / srcnorm;
 
 	std::cout << GridLogMessage << "ConjugateGradientReliableUpdate Converged on iteration " << k << " after " << l << " reliable updates" << std::endl;
-	std::cout << GridLogMessage << "\tComputed residual " << sqrt(cp / ssq)<<std::endl;
+	std::cout << GridLogMessage << "\tComputed residual " << std::sqrt(cp / ssq)<<std::endl;
 	std::cout << GridLogMessage << "\tTrue residual " << true_residual<<std::endl;
 	std::cout << GridLogMessage << "\tTarget " << Tolerance << std::endl;
 

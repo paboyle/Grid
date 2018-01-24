@@ -135,12 +135,12 @@ public:
         Linop.HermOpAndNorm(psi, mmp, d, qq);
         p = mmp - src;
 
-        RealD srcnorm = sqrt(norm2(src));
-        RealD resnorm = sqrt(norm2(p));
+        RealD srcnorm = std::sqrt(norm2(src));
+        RealD resnorm = std::sqrt(norm2(p));
         RealD true_residual = resnorm / srcnorm;
 
         std::cout << GridLogMessage << "ConjugateGradient Converged on iteration " << k << std::endl;
-        std::cout << GridLogMessage << "\tComputed residual " << sqrt(cp / ssq)<<std::endl;
+        std::cout << GridLogMessage << "\tComputed residual " << std::sqrt(cp / ssq)<<std::endl;
 	std::cout << GridLogMessage << "\tTrue residual " << true_residual<<std::endl;
 	std::cout << GridLogMessage << "\tTarget " << Tolerance << std::endl;
 

@@ -35,7 +35,7 @@ NAMESPACE_BEGIN(Grid);
 // LinearOperators Take a something and return a something.
 /////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Hopefully linearity is satisfied and the AdjOp is indeed the Hermitian conjugateugate (transpose if real):
+// Hopefully linearity is satisfied and the AdjOp is indeed the Hermitian Conjugateugate (transpose if real):
 //SBase
 //   i)  F(a x + b y) = aF(x) + b F(y).
 //  ii)  <x|Op|y> = <y|AdjOp|x>^\ast

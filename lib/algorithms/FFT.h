@@ -232,19 +232,17 @@ public:
     result = source;
     int pc = processor_coor[dim];
     for(int p=0;p<processors[dim];p++) {
-      PARALLEL_REGION
-        {
+      thread_region {
           std::vector<int> cbuf(Nd);
           sobj s;
           
-          PARALLEL_FOR_LOOP_INTERN
-	    for(int idx=0;idx<sgrid->lSites();idx++) {
+          thread_loop_in_region( (int idx=0;idx<sgrid->lSites();idx++), {
 	      sgrid->LocalIndexToLocalCoor(idx,cbuf);
 	      peekLocalSite(s,result,cbuf);
 	      cbuf[dim]+=((pc+p) % processors[dim])*L;
 	      //            cbuf[dim]+=p*L;
 	      pokeLocalSite(s,pgbuf,cbuf);
-	    }
+	    } );
         }
       if (p != processors[dim] - 1)
         {
@@ -256,19 +254,18 @@ public:
     int NN=pencil_g.lSites();
     GridStopWatch timer;
     timer.Start();
-    PARALLEL_REGION
-      {
+    thread_region {
+
         std::vector<int> cbuf(Nd);
         
-        PARALLEL_FOR_LOOP_INTERN
-	  for(int idx=0;idx<NN;idx++) {
+        thread_loop_in_region( (int idx=0;idx<NN;idx++), {
 	    pencil_g.LocalIndexToLocalCoor(idx, cbuf);
 	    if ( cbuf[dim] == 0 ) {  // restricts loop to plane at lcoor[dim]==0
 	      FFTW_scalar *in = (FFTW_scalar *)&pgbuf._odata[idx];
 	      FFTW_scalar *out= (FFTW_scalar *)&pgbuf._odata[idx];
 	      FFTW<scalar>::fftw_execute_dft(p,in,out);
 	    }
-	  }
+	  });
       }
     timer.Stop();
       
@@ -280,19 +277,18 @@ public:
     flops+= flops_call*NN;
       
     // writing out result
-    PARALLEL_REGION
-      {
+    thread_region {
+
         std::vector<int> clbuf(Nd), cgbuf(Nd);
         sobj s;
         
-        PARALLEL_FOR_LOOP_INTERN
-	  for(int idx=0;idx<sgrid->lSites();idx++) {
+        thread_loop_in_region( (int idx=0;idx<sgrid->lSites();idx++), {
 	    sgrid->LocalIndexToLocalCoor(idx,clbuf);
 	    cgbuf = clbuf;
 	    cgbuf[dim] = clbuf[dim]+L*pc;
 	    peekLocalSite(s,pgbuf,cgbuf);
 	    pokeLocalSite(s,result,clbuf);
-	  }
+	});
       }
     result = result*div;
       

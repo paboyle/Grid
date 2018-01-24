@@ -30,13 +30,14 @@ directory
 #ifndef GRID_BLOCK_CONJUGATE_GRADIENT_H
 #define GRID_BLOCK_CONJUGATE_GRADIENT_H
 
+#include <Grid/lattice/Lattice_matrix_reduction.h>
 
 NAMESPACE_BEGIN(Grid);
 
 enum BlockCGtype { BlockCG, BlockCGrQ, CGmultiRHS };
 
 //////////////////////////////////////////////////////////////////////////
-// Block conjugate gradient. Dimension zero should be the block direction
+// Block Conjugate gradient. Dimension zero should be the block direction
 //////////////////////////////////////////////////////////////////////////
 template <class Field>
 class BlockConjugateGradient : public OperatorFunction<Field> {
@@ -178,7 +179,7 @@ public:
     for(int b=0;b<Nblock;b++){ assert(std::isnan(residuals[b])==0); }
 
     /************************************************************************
-     * Block conjugate gradient rQ (Sebastien Birk Thesis, after Dubrulle 2001)
+     * Block Conjugate gradient rQ (Sebastien Birk Thesis, after Dubrulle 2001)
      ************************************************************************
      * Dimensions:
      *
@@ -276,7 +277,7 @@ public:
 
       for(int b=0;b<Nblock;b++) {
 	rrsum+=real(m_rr(b,b));
-	rr = real(m_rr(b,b))/ssq[b];
+	rr    =real(m_rr(b,b))/ssq[b];
 	if ( rr > max_resid ) max_resid = rr;
       }
 
@@ -317,7 +318,7 @@ public:
     IterationsToComplete = k;
   }
   //////////////////////////////////////////////////////////////////////////
-  // Block conjugate gradient; Original O'Leary Dimension zero should be the block direction
+  // Block Conjugate gradient; Original O'Leary Dimension zero should be the block direction
   //////////////////////////////////////////////////////////////////////////
   void BlockCGsolve(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi) 
   {
@@ -360,7 +361,7 @@ public:
   
 
     /************************************************************************
-     * Block conjugate gradient (Stephen Pickles, thesis 1995, pp 71, O Leary 1980)
+     * Block Conjugate gradient (Stephen Pickles, thesis 1995, pp 71, O Leary 1980)
      ************************************************************************
      * O'Leary : R = B - A X
      * O'Leary : P = M R ; preconditioner M = 1
@@ -463,7 +464,7 @@ public:
     IterationsToComplete = k;
   }
   //////////////////////////////////////////////////////////////////////////
-  // multiRHS conjugate gradient. Dimension zero should be the block direction
+  // multiRHS Conjugate gradient. Dimension zero should be the block direction
   // Use this for spread out across nodes
   //////////////////////////////////////////////////////////////////////////
   void CGmultiRHSsolve(LinearOperatorBase<Field> &Linop, const Field &Src, Field &Psi) 

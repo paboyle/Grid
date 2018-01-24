@@ -55,7 +55,7 @@ private:
 public:
   void csv(std::ostream &out){
     RealD diff = hi-lo;
-    RealD delta = (hi-lo)*1.0e-9;
+    RealD delta = diff*1.0e-9;
     for (RealD x=lo; x<hi; x+=delta) {
       delta*=1.1;
       RealD f = approx(x);
