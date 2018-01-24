@@ -32,7 +32,6 @@ AC_DEFINE_UNQUOTED([GXX_VERSION],["$GXX_VERSION"],
       [version of g++ that will compile the code])
 
 
-
 ############### Checks for typedefs, structures, and compiler characteristics
 AC_TYPE_SIZE_T
 AC_TYPE_UINT32_T
@@ -221,6 +220,17 @@ AC_ARG_ENABLE([gen-simd-width],
             [size (in bytes) of the generic SIMD vectors (default: 32)])],
             [ac_gen_simd_width=$enable_gen_simd_width],
             [ac_gen_simd_width=32])
+
+##################### Compiler dependent choices
+case ${CXX} in 
+  nvcc) 
+    CXX="nvcc -x cu"
+    CXXLD="nvcc -link"
+    ;;
+  *)
+    CXXLD=${CXX}
+    ;;
+esac
 
 case ${ax_cv_cxx_compiler_vendor} in
   clang|gnu)
@@ -473,6 +483,7 @@ GRID_BRANCH=`git rev-parse --abbrev-ref HEAD`
 AM_CXXFLAGS="-I${abs_srcdir}/include $AM_CXXFLAGS"
 AM_CFLAGS="-I${abs_srcdir}/include $AM_CFLAGS"
 AM_LDFLAGS="-L${cwd}/lib $AM_LDFLAGS"
+AC_SUBST([CXXLD])
 AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_CXXFLAGS])
 AC_SUBST([AM_LDFLAGS])
