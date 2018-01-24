@@ -93,14 +93,13 @@ void BinaryWriter::writeDefault(const std::string &s, const std::vector<U> &x)
 }
   
 // Reader template implementation ////////////////////////////////////////////
+template <> void BinaryReader::readDefault(const std::string &s, std::string &output);
+  
 template <typename U>
 void BinaryReader::readDefault(const std::string &s, U &output)
 {
   file_.read((char *)&output, sizeof(U));
 }
-  
-template <>
-void BinaryReader::readDefault(const std::string &s, std::string &output);
   
 template <typename U>
 void BinaryReader::readDefault(const std::string &s, std::vector<U> &output)

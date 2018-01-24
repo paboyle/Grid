@@ -29,18 +29,16 @@
     /*  END LEGAL */
 #include <Grid/GridCore.h>
 
-using namespace Grid;
-using namespace std;
+//using namespace Grid;
+//using namespace std;
 
 #define GRID_TEXT_INDENT 2      //number of spaces for indentation of levels
 
+NAMESPACE_BEGIN(Grid);
 
 // Writer implementation ///////////////////////////////////////////////////////
-TextWriter::TextWriter(const string &fileName)
-: file_(fileName, ios::out)
-{}
 
-void TextWriter::push(const string &s)
+void TextWriter::push(const std::string &s)
 {
   level_++;
 };
@@ -58,16 +56,16 @@ void TextWriter::indent(void)
 };
 
 // Reader implementation ///////////////////////////////////////////////////////
-TextReader::TextReader(const string &fileName) 
+TextReader::TextReader(const std::string &fileName) 
 {
-    file_.open(fileName, ios::in);
+  file_.open(fileName, std::ios::in);
     if (!file_.is_open()) {
         std::cout << GridLogMessage << "TextReader: Error opening file " << fileName << std::endl;
         exit(1);// write better error handling
     } 
 }
 
-bool TextReader::push(const string &s)
+bool TextReader::push(const std::string &s)
 {
   level_++;
   return true;
@@ -91,7 +89,7 @@ void TextReader::checkIndent(void)
   }
     if (!check)
     {
-      cerr << "TextReader: mismatch on level " << level_ << std::endl;
+      std::cerr << "TextReader: mismatch on level " << level_ << std::endl;
       exit(1);
     }
   }
@@ -100,7 +98,9 @@ void TextReader::checkIndent(void)
 template <>
 void TextReader::readDefault(const std::string &s, std::string &output)
 {
-    checkIndent();
-    output.clear();
-    getline(file_, output);
+  checkIndent();
+  output.clear();
+  getline(file_, output);
 }
+
+NAMESPACE_END(Grid);

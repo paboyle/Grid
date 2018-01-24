@@ -73,8 +73,7 @@ namespace Grid
     bool nextElement(const std::string &s);
     template <typename U>
     void readDefault(const std::string &s, U &output);
-    template <typename U>
-    void readDefault(const std::string &s, std::vector<U> &output);
+    template <typename U>    void readDefault(const std::string &s, std::vector<U> &output);
   private:
     pugi::xml_document doc_;
     pugi::xml_node     node_;
@@ -114,6 +113,7 @@ namespace Grid
   }
   
   // Reader template implementation ////////////////////////////////////////////
+  template <> void XmlReader::readDefault(const std::string &s, std::string &output);
   template <typename U>
   void XmlReader::readDefault(const std::string &s, U &output)
   {
@@ -122,9 +122,6 @@ namespace Grid
     readDefault(s, buf);
     fromString(output, buf);
   }
-  
-  template <>
-  void XmlReader::readDefault(const std::string &s, std::string &output);
   
   template <typename U>
   void XmlReader::readDefault(const std::string &s, std::vector<U> &output)

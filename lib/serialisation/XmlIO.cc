@@ -28,11 +28,13 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     /*  END LEGAL */
 #include <Grid/GridCore.h>
 
-using namespace Grid;
-using namespace std;
+//using namespace Grid;
+//using namespace std;
+
+NAMESPACE_BEGIN(Grid);
 
 // Writer implementation ///////////////////////////////////////////////////////
-XmlWriter::XmlWriter(const string &fileName, string toplev) : fileName_(fileName)
+XmlWriter::XmlWriter(const std::string &fileName, std::string toplev) : fileName_(fileName)
 {
   if ( toplev == std::string("") ) {
     node_=doc_;
@@ -49,7 +51,7 @@ XmlWriter::~XmlWriter(void)
   }
 }
 
-void XmlWriter::push(const string &s)
+void XmlWriter::push(const std::string &s)
 {
   node_ = node_.append_child(s.c_str());
 }
@@ -65,14 +67,14 @@ std::string XmlWriter::XmlString(void)
   return oss.str();
 }
 
-XmlReader::XmlReader(const char *xmlstring,string toplev) : fileName_("")
+XmlReader::XmlReader(const char *xmlstring,std::string toplev) : fileName_("")
 {
   pugi::xml_parse_result result;
   result = doc_.load_string(xmlstring);
   if ( !result ) {
-    cerr << "XML error description (from char *): " << result.description() << "\nXML\n"<< xmlstring << "\n";
-    cerr << "XML error offset      (from char *) " << result.offset         << "\nXML\n"<< xmlstring <<"\n";
-    abort();
+    std::cerr << "XML error description (from char *): " << result.description() << "\nXML\n"<< xmlstring << "\n";
+    std::cerr << "XML error offset      (from char *) " << result.offset         << "\nXML\n"<< xmlstring <<"\n";
+    std::abort();
   }
   if ( toplev == std::string("") ) {
     node_ = doc_;
@@ -82,14 +84,14 @@ XmlReader::XmlReader(const char *xmlstring,string toplev) : fileName_("")
 }
 
 // Reader implementation ///////////////////////////////////////////////////////
-XmlReader::XmlReader(const string &fileName,string toplev) : fileName_(fileName)
+XmlReader::XmlReader(const std::string &fileName,std::string toplev) : fileName_(fileName)
 {
   pugi::xml_parse_result result;
   result = doc_.load_file(fileName_.c_str());
   if ( !result ) {
-    cerr << "XML error description: " << result.description() <<" "<< fileName_ <<"\n";
-    cerr << "XML error offset     : " << result.offset        <<" "<< fileName_ <<"\n";
-    abort();
+    std::cerr << "XML error description: " << result.description() <<" "<< fileName_ <<"\n";
+    std::cerr << "XML error offset     : " << result.offset        <<" "<< fileName_ <<"\n";
+    std::abort();
   }
   if ( toplev == std::string("") ) {
     node_ = doc_;
@@ -98,7 +100,7 @@ XmlReader::XmlReader(const string &fileName,string toplev) : fileName_(fileName)
   }
 }
 
-bool XmlReader::push(const string &s)
+bool XmlReader::push(const std::string &s)
 {
   if (node_.child(s.c_str()))
   {
@@ -133,7 +135,7 @@ bool XmlReader::nextElement(const std::string &s)
 }
 
 template <>
-void XmlReader::readDefault(const string &s, string &output)
+void XmlReader::readDefault(const std::string &s, std::string &output)
 {
   if (node_.child(s.c_str()))
   {
@@ -147,3 +149,4 @@ void XmlReader::readDefault(const string &s, string &output)
     output = ""; 
   }
 }
+NAMESPACE_END(Grid);

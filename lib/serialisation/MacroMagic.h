@@ -42,8 +42,6 @@ THE SOFTWARE.
 */
 ///////////////////////////////////////////
 
-#define strong_inline __attribute__((always_inline)) inline
-
 #ifndef MAX
 #define MAX(x,y) ((x)>(y)?(x):(y))
 #define MIN(x,y) ((x)>(y)?(y):(x))

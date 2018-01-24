@@ -43,7 +43,7 @@ namespace Grid
   class TextWriter: public Writer<TextWriter>
   {
   public:
-    TextWriter(const std::string &fileName);
+    TextWriter(const std::string &fileName) : file_(fileName, std::ios::out) {};
     virtual ~TextWriter(void) = default;
     void push(const std::string &s);
     void pop(void);
@@ -65,10 +65,8 @@ namespace Grid
     virtual ~TextReader(void) = default;
     bool push(const std::string &s);
     void pop(void);
-    template <typename U>
-    void readDefault(const std::string &s, U &output);
-    template <typename U>
-    void readDefault(const std::string &s, std::vector<U> &output);
+    template <typename U>  void readDefault(const std::string &s, U &output);
+    template <typename U>  void readDefault(const std::string &s, std::vector<U> &output);
   private:
     void checkIndent(void);
   private:
@@ -97,6 +95,8 @@ namespace Grid
   }
   
   // Reader template implementation ////////////////////////////////////////////
+  template <>  void TextReader::readDefault(const std::string &s, std::string &output);
+
   template <typename U>
   void TextReader::readDefault(const std::string &s, U &output)
   {
@@ -106,8 +106,6 @@ namespace Grid
     fromString(output, buf);
   }
   
-  template <>
-  void TextReader::readDefault(const std::string &s, std::string &output);
   
   template <typename U>
   void TextReader::readDefault(const std::string &s, std::vector<U> &output)

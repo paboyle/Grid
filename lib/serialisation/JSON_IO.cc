@@ -27,12 +27,11 @@
     /*  END LEGAL */
 #include <Grid/Grid.h>
 
-using namespace Grid;
-using namespace std;
+NAMESPACE_BEGIN(Grid);
 
 // Writer implementation ///////////////////////////////////////////////////////
-JSONWriter::JSONWriter(const string &fileName)
-: fileName_(fileName), ss_("{ ", ostringstream::ate){}
+JSONWriter::JSONWriter(const std::string &fileName)
+: fileName_(fileName), ss_("{ ", std::ostringstream::ate){}
 
 JSONWriter::~JSONWriter(void)
 {
@@ -46,7 +45,7 @@ JSONWriter::~JSONWriter(void)
   os << std::setw(2) << json::parse(ss_.str()) << std::endl;
 }
 
-void JSONWriter::push(const string &s)
+void JSONWriter::push(const std::string &s)
 {
   // adding a nested object
   if (s.size())
@@ -74,23 +73,19 @@ void JSONWriter::delete_comma()
 // compiles fine with clang
 // have to wrap in the Grid namespace
 // annoying, but necessary for TravisCI
-namespace Grid
+void JSONWriter::writeDefault(const std::string &s,	const std::string &x)
 {
-  void JSONWriter::writeDefault(const std::string &s,	const std::string &x)
-  {
     //std::cout << "JSONWriter::writeDefault(string) : " << s <<  std::endl;
-    std::ostringstream os;
-    os << std::boolalpha << x;
-    if (s.size())
-      ss_ << "\""<< s << "\" : \"" << os.str() << "\" ," ;
-    else
-     ss_ << os.str() << " ," ;
-  }
-}// namespace Grid 
-
+  std::ostringstream os;
+  os << std::boolalpha << x;
+  if (s.size())
+    ss_ << "\""<< s << "\" : \"" << os.str() << "\" ," ;
+  else
+    ss_ << os.str() << " ," ;
+}
 
 // Reader implementation ///////////////////////////////////////////////////////
-JSONReader::JSONReader(const string &fileName)
+JSONReader::JSONReader(const std::string &fileName)
 : fileName_(fileName)
 {
   std::ifstream file(fileName_);
@@ -102,7 +97,7 @@ JSONReader::JSONReader(const string &fileName)
   jcur_ = jobject_;
 }
 
-bool JSONReader::push(const string &s)
+bool JSONReader::push(const std::string &s)
 {
   if (s.size()){
     jold_.push_back(jcur_);
@@ -152,14 +147,14 @@ bool JSONReader::nextElement(const std::string &s)
   //}
 
   jcur_ = *it_; 
-  //cout << "JSONReader::nextElement(string) : " << s << " : "<< jcur_ << endl;
+  //cout << "JSONReader::nextElement(std::string) : " << s << " : "<< jcur_ << endl;
   //return true;
 
     return false;
 }
 
 template <>
-void JSONReader::readDefault(const string &s, string &output)
+void JSONReader::readDefault(const std::string &s, std::string &output)
 {
   //cout << "JSONReader::readDefault(string) : " << s<< " " << jcur_ << endl;
   if (s.size()){
@@ -172,3 +167,4 @@ void JSONReader::readDefault(const string &s, string &output)
     output = jcur_;    
   }
 }
+NAMESPACE_END(Grid);
