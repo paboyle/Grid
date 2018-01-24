@@ -47,9 +47,9 @@ template<class vfunctor,class lobj,class robj>
 inline Lattice<vInteger> LLComparison(vfunctor op,const Lattice<lobj> &lhs,const Lattice<robj> &rhs)
 {
   Lattice<vInteger> ret(rhs._grid);
-  parallel_for(int ss=0;ss<rhs._grid->oSites(); ss++){
+  accelerator_loop( ss, rhs, {
     ret._odata[ss]=op(lhs._odata[ss],rhs._odata[ss]);
-  }
+  });
   return ret;
 }
 //////////////////////////////////////////////////////////////////////////
@@ -59,9 +59,9 @@ template<class vfunctor,class lobj,class robj>
 inline Lattice<vInteger> LSComparison(vfunctor op,const Lattice<lobj> &lhs,const robj &rhs)
 {
   Lattice<vInteger> ret(lhs._grid);
-  parallel_for(int ss=0;ss<lhs._grid->oSites(); ss++){
+  accelerator_loop( ss, lhs, {
     ret._odata[ss]=op(lhs._odata[ss],rhs);
-  }
+  });
   return ret;
 }
 //////////////////////////////////////////////////////////////////////////
@@ -71,9 +71,9 @@ template<class vfunctor,class lobj,class robj>
 inline Lattice<vInteger> SLComparison(vfunctor op,const lobj &lhs,const Lattice<robj> &rhs)
 {
   Lattice<vInteger> ret(rhs._grid);
-  parallel_for(int ss=0;ss<rhs._grid->oSites(); ss++){
+  accelerator_loop( ss, rhs, {
     ret._odata[ss]=op(lhs._odata[ss],rhs);
-  }
+  });
   return ret;
 }
   
