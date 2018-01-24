@@ -31,6 +31,10 @@ directory
 #ifndef GRID_SIMD_H
 #define GRID_SIMD_H
 
+#ifdef GRID_NVCC
+#include <thrust/complex.h>
+#endif
+
 ////////////////////////////////////////////////////////////////////////
 // Define scalar and vector floating point types
 //
@@ -61,99 +65,126 @@ typedef RealD   Real;
 typedef RealF  Real;
 #endif
 
+#ifdef GRID_NVCC
+typedef thrust::complex<RealF> ComplexF;
+typedef thrust::complex<RealD> ComplexD;
+typedef thrust::complex<Real>  Complex;
+template<class T> using complex = thrust::complex<T>;
+
+accelerator_inline ComplexD pow(const ComplexD& r,RealD y){ return(thrust::pow(r,y)); }
+accelerator_inline ComplexF pow(const ComplexF& r,RealF y){ return(thrust::pow(r,y)); }
+#else 
 typedef std::complex<RealF> ComplexF;
 typedef std::complex<RealD> ComplexD;
 typedef std::complex<Real>  Complex;
+template<class T> using complex = std::complex<T>;
 
-inline RealF adj(const RealF  & r){ return r; }
-inline RealF conjugate(const RealF  & r){ return r; }
-inline RealF real(const RealF  & r){ return r; }
+accelerator_inline ComplexD pow(const ComplexD& r,RealD y){ return(std::pow(r,y)); }
+accelerator_inline ComplexF pow(const ComplexF& r,RealF y){ return(std::pow(r,y)); }
+#endif
 
-inline RealD adj(const RealD  & r){ return r; }
-inline RealD conjugate(const RealD  & r){ return r; }
-inline RealD real(const RealD  & r){ return r; }
+//accelerator_inline RealD pow(const RealD& r,RealD y){ return(std::pow(r,y)); }
+//accelerator_inline RealD sqrt(const RealD  & r){ return std::sqrt(r); }
 
-inline RealD sqrt(const RealD  & r){ return std::sqrt(r); }
+// This comes from ::pow already from math.h and CUDA
+// Calls either Grid::pow for complex, or std::pow for real
+// Problem is CUDA math_functions is exposing ::pow, and I can't define
 
-inline ComplexD conjugate(const ComplexD& r){ return(conj(r)); }
-inline ComplexD adj(const ComplexD& r){ return(conjugate(r)); }
-inline ComplexF conjugate(const ComplexF& r ){ return(conj(r)); }
-inline ComplexF adj(const ComplexF& r ){ return(conjugate(r)); }
+using std::pow;
+using std::sqrt;
 
-inline ComplexD innerProduct(const ComplexD & l, const ComplexD & r) { return conjugate(l)*r; }
-inline ComplexF innerProduct(const ComplexF & l, const ComplexF & r) { return conjugate(l)*r; }
-inline RealD innerProduct(const RealD & l, const RealD & r) { return l*r; }
-inline RealF innerProduct(const RealF & l, const RealF & r) { return l*r; }
+accelerator_inline RealF    conjugate(const RealF  & r){ return r; }
+accelerator_inline RealD    conjugate(const RealD  & r){ return r; }
+accelerator_inline ComplexD conjugate(const ComplexD& r){ return(conj(r)); }
+accelerator_inline ComplexF conjugate(const ComplexF& r ){ return(conj(r)); }
 
-inline ComplexD Reduce(const ComplexD& r){ return r; }
-inline ComplexF Reduce(const ComplexF& r){ return r; }
-inline RealD Reduce(const RealD& r){ return r; }
-inline RealF Reduce(const RealF& r){ return r; }
+accelerator_inline RealF    adj(const RealF  & r){ return r; }
+accelerator_inline RealD    adj(const RealD  & r){ return r; }
+accelerator_inline ComplexD adj(const ComplexD& r){ return(conjugate(r)); }
+accelerator_inline ComplexF adj(const ComplexF& r ){ return(conjugate(r)); }
 
-inline RealD toReal(const ComplexD& r){ return real(r); }
-inline RealF toReal(const ComplexF& r){ return real(r); }
-inline RealD toReal(const RealD& r){ return r; }
-inline RealF toReal(const RealF& r){ return r; }
 
-  
+accelerator_inline RealF real(const RealF  & r){ return r; }
+accelerator_inline RealD real(const RealD  & r){ return r; }
+accelerator_inline RealF real(const ComplexF  & r){ return r.real(); }
+accelerator_inline RealD real(const ComplexD  & r){ return r.real(); }
+
+accelerator_inline RealF imag(const ComplexF  & r){ return r.imag(); }
+accelerator_inline RealD imag(const ComplexD  & r){ return r.imag(); }
+
+
+
+accelerator_inline ComplexD innerProduct(const ComplexD & l, const ComplexD & r) { return conjugate(l)*r; }
+accelerator_inline ComplexF innerProduct(const ComplexF & l, const ComplexF & r) { return conjugate(l)*r; }
+accelerator_inline RealD innerProduct(const RealD & l, const RealD & r) { return l*r; }
+accelerator_inline RealF innerProduct(const RealF & l, const RealF & r) { return l*r; }
+
+accelerator_inline ComplexD Reduce(const ComplexD& r){ return r; }
+accelerator_inline ComplexF Reduce(const ComplexF& r){ return r; }
+accelerator_inline RealD Reduce(const RealD& r){ return r; }
+accelerator_inline RealF Reduce(const RealF& r){ return r; }
+
+accelerator_inline RealD toReal(const ComplexD& r){ return r.real(); }
+accelerator_inline RealF toReal(const ComplexF& r){ return r.real(); }
+accelerator_inline RealD toReal(const RealD& r){ return r; }
+accelerator_inline RealF toReal(const RealF& r){ return r; }
   
 ////////////////////////////////////////////////////////////////////////////////
 //Provide support functions for basic real and complex data types required by Grid
 //Single and double precision versions. Should be able to template this once only.
 ////////////////////////////////////////////////////////////////////////////////
-inline void mac (ComplexD * __restrict__ y,const ComplexD * __restrict__ a,const ComplexD *__restrict__ x){ *y = (*a) * (*x)+(*y); };
-inline void mult(ComplexD * __restrict__ y,const ComplexD * __restrict__ l,const ComplexD *__restrict__ r){ *y = (*l) * (*r);}
-inline void sub (ComplexD * __restrict__ y,const ComplexD * __restrict__ l,const ComplexD *__restrict__ r){ *y = (*l) - (*r);}
-inline void add (ComplexD * __restrict__ y,const ComplexD * __restrict__ l,const ComplexD *__restrict__ r){ *y = (*l) + (*r);}
+accelerator_inline void mac (ComplexD * __restrict__ y,const ComplexD * __restrict__ a,const ComplexD *__restrict__ x){ *y = (*a) * (*x)+(*y); };
+accelerator_inline void mult(ComplexD * __restrict__ y,const ComplexD * __restrict__ l,const ComplexD *__restrict__ r){ *y = (*l) * (*r);}
+accelerator_inline void sub (ComplexD * __restrict__ y,const ComplexD * __restrict__ l,const ComplexD *__restrict__ r){ *y = (*l) - (*r);}
+accelerator_inline void add (ComplexD * __restrict__ y,const ComplexD * __restrict__ l,const ComplexD *__restrict__ r){ *y = (*l) + (*r);}
 // conjugate already supported for complex
   
-inline void mac (ComplexF * __restrict__ y,const ComplexF * __restrict__ a,const ComplexF *__restrict__ x){ *y = (*a) * (*x)+(*y); }
-inline void mult(ComplexF * __restrict__ y,const ComplexF * __restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) * (*r); }
-inline void sub (ComplexF * __restrict__ y,const ComplexF * __restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) - (*r); }
-inline void add (ComplexF * __restrict__ y,const ComplexF * __restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) + (*r); }
+accelerator_inline void mac (ComplexF * __restrict__ y,const ComplexF * __restrict__ a,const ComplexF *__restrict__ x){ *y = (*a) * (*x)+(*y); }
+accelerator_inline void mult(ComplexF * __restrict__ y,const ComplexF * __restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) * (*r); }
+accelerator_inline void sub (ComplexF * __restrict__ y,const ComplexF * __restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) - (*r); }
+accelerator_inline void add (ComplexF * __restrict__ y,const ComplexF * __restrict__ l,const ComplexF *__restrict__ r){ *y = (*l) + (*r); }
   
 //conjugate already supported for complex
-  
-inline ComplexF timesI(const ComplexF &r)     { return(r*ComplexF(0.0,1.0));}
-inline ComplexD timesI(const ComplexD &r)     { return(r*ComplexD(0.0,1.0));}
-inline ComplexF timesMinusI(const ComplexF &r){ return(r*ComplexF(0.0,-1.0));}
-inline ComplexD timesMinusI(const ComplexD &r){ return(r*ComplexD(0.0,-1.0));}
+accelerator_inline ComplexF timesI(const ComplexF &r)     { return(r*ComplexF(0.0,1.0));}
+accelerator_inline ComplexD timesI(const ComplexD &r)     { return(r*ComplexD(0.0,1.0));}
+accelerator_inline ComplexF timesMinusI(const ComplexF &r){ return(r*ComplexF(0.0,-1.0));}
+accelerator_inline ComplexD timesMinusI(const ComplexD &r){ return(r*ComplexD(0.0,-1.0));}
 
 // define projections to real and imaginay parts
-inline ComplexF projReal(const ComplexF &r){return( ComplexF(std::real(r), 0.0));}
-inline ComplexD projReal(const ComplexD &r){return( ComplexD(std::real(r), 0.0));}
-inline ComplexF projImag(const ComplexF &r){return (ComplexF(std::imag(r), 0.0 ));}
-inline ComplexD projImag(const ComplexD &r){return (ComplexD(std::imag(r), 0.0));}
+accelerator_inline ComplexF projReal(const ComplexF &r){return( ComplexF(r.real(), 0.0));}
+accelerator_inline ComplexD projReal(const ComplexD &r){return( ComplexD(r.real(), 0.0));}
+accelerator_inline ComplexF projImag(const ComplexF &r){return (ComplexF(r.imag(), 0.0 ));}
+accelerator_inline ComplexD projImag(const ComplexD &r){return (ComplexD(r.imag(), 0.0));}
 
 // define auxiliary functions for complex computations
-inline void timesI(ComplexF &ret,const ComplexF &r)     { ret = timesI(r);}
-inline void timesI(ComplexD &ret,const ComplexD &r)     { ret = timesI(r);}
-inline void timesMinusI(ComplexF &ret,const ComplexF &r){ ret = timesMinusI(r);}
-inline void timesMinusI(ComplexD &ret,const ComplexD &r){ ret = timesMinusI(r);}
+accelerator_inline void timesI(ComplexF &ret,const ComplexF &r)     { ret = timesI(r);}
+accelerator_inline void timesI(ComplexD &ret,const ComplexD &r)     { ret = timesI(r);}
+accelerator_inline void timesMinusI(ComplexF &ret,const ComplexF &r){ ret = timesMinusI(r);}
+accelerator_inline void timesMinusI(ComplexD &ret,const ComplexD &r){ ret = timesMinusI(r);}
   
-inline void mac (RealD * __restrict__ y,const RealD * __restrict__ a,const RealD *__restrict__ x){  *y = (*a) * (*x)+(*y);}
-inline void mult(RealD * __restrict__ y,const RealD * __restrict__ l,const RealD *__restrict__ r){ *y = (*l) * (*r);}
-inline void sub (RealD * __restrict__ y,const RealD * __restrict__ l,const RealD *__restrict__ r){ *y = (*l) - (*r);}
-inline void add (RealD * __restrict__ y,const RealD * __restrict__ l,const RealD *__restrict__ r){ *y = (*l) + (*r);}
+accelerator_inline void mac (RealD * __restrict__ y,const RealD * __restrict__ a,const RealD *__restrict__ x){ *y = (*a) * (*x)+(*y);}
+accelerator_inline void mult(RealD * __restrict__ y,const RealD * __restrict__ l,const RealD *__restrict__ r){ *y = (*l) * (*r);}
+accelerator_inline void sub (RealD * __restrict__ y,const RealD * __restrict__ l,const RealD *__restrict__ r){ *y = (*l) - (*r);}
+accelerator_inline void add (RealD * __restrict__ y,const RealD * __restrict__ l,const RealD *__restrict__ r){ *y = (*l) + (*r);}
   
-inline void mac (RealF * __restrict__ y,const RealF * __restrict__ a,const RealF *__restrict__ x){  *y = (*a) * (*x)+(*y); }
-inline void mult(RealF * __restrict__ y,const RealF * __restrict__ l,const RealF *__restrict__ r){ *y = (*l) * (*r); }
-inline void sub (RealF * __restrict__ y,const RealF * __restrict__ l,const RealF *__restrict__ r){ *y = (*l) - (*r); }
-inline void add (RealF * __restrict__ y,const RealF * __restrict__ l,const RealF *__restrict__ r){ *y = (*l) + (*r); }
+accelerator_inline void mac (RealF * __restrict__ y,const RealF * __restrict__ a,const RealF *__restrict__ x){  *y = (*a) * (*x)+(*y); }
+accelerator_inline void mult(RealF * __restrict__ y,const RealF * __restrict__ l,const RealF *__restrict__ r){ *y = (*l) * (*r); }
+accelerator_inline void sub (RealF * __restrict__ y,const RealF * __restrict__ l,const RealF *__restrict__ r){ *y = (*l) - (*r); }
+accelerator_inline void add (RealF * __restrict__ y,const RealF * __restrict__ l,const RealF *__restrict__ r){ *y = (*l) + (*r); }
   
-inline void vstream(ComplexF &l, const ComplexF &r){ l=r;}
-inline void vstream(ComplexD &l, const ComplexD &r){ l=r;}
-inline void vstream(RealF &l, const RealF &r){ l=r;}
-inline void vstream(RealD &l, const RealD &r){ l=r;}
+accelerator_inline void vstream(ComplexF &l, const ComplexF &r){ l=r;}
+accelerator_inline void vstream(ComplexD &l, const ComplexD &r){ l=r;}
+accelerator_inline void vstream(RealF &l, const RealF &r){ l=r;}
+accelerator_inline void vstream(RealD &l, const RealD &r){ l=r;}
   
   
 class Zero{};
 static Zero zero;
-template<class itype> inline void zeroit(itype &arg){ arg=zero;};
-template<>            inline void zeroit(ComplexF &arg){ arg=0; };
-template<>            inline void zeroit(ComplexD &arg){ arg=0; };
-template<>            inline void zeroit(RealF &arg){ arg=0; };
-template<>            inline void zeroit(RealD &arg){ arg=0; };
+template<class itype> accelerator_inline void zeroit(itype &arg){ arg=zero;};
+template<>            accelerator_inline void zeroit(ComplexF &arg){ arg=0; };
+template<>            accelerator_inline void zeroit(ComplexD &arg){ arg=0; };
+template<>            accelerator_inline void zeroit(RealF &arg){ arg=0; };
+template<>            accelerator_inline void zeroit(RealD &arg){ arg=0; };
   
 
 //////////////////////////////////////////////////////////
@@ -167,7 +198,7 @@ template<>            inline void zeroit(RealD &arg){ arg=0; };
 // Defined inside SIMD specialization files
 //////////////////////////////////////////////////////////
 template<class VectorSIMD>
-inline void Gpermute(VectorSIMD &y,const VectorSIMD &b,int perm);
+accelerator_inline void Gpermute(VectorSIMD &y,const VectorSIMD &b,int perm);
 
 NAMESPACE_END(Grid);
 
