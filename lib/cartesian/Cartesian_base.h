@@ -44,15 +44,21 @@ namespace Grid{
   class GridBase : public CartesianCommunicator , public GridThread {
 
 public:
-
+    int dummy;
     // Give Lattice access
     template<class object> friend class Lattice;
 
     GridBase(const std::vector<int> & processor_grid) : CartesianCommunicator(processor_grid) {};
     GridBase(const std::vector<int> & processor_grid,
-	     const CartesianCommunicator &parent) : CartesianCommunicator(processor_grid,parent) {};
+	     const CartesianCommunicator &parent,
+	     int &split_rank) 
+      : CartesianCommunicator(processor_grid,parent,split_rank) {};
+    GridBase(const std::vector<int> & processor_grid,
+	     const CartesianCommunicator &parent) 
+      : CartesianCommunicator(processor_grid,parent,dummy) {};
 
     virtual ~GridBase() = default;
+
 
     // Physics Grid information.
     std::vector<int> _simd_layout;// Which dimensions get relayed out over simd lanes.
@@ -72,6 +78,8 @@ public:
 
     std::vector<int> _lstart;     // local start of array in gcoors _processor_coor[d]*_ldimensions[d]
     std::vector<int> _lend  ;     // local end of array in gcoors   _processor_coor[d]*_ldimensions[d]+_ldimensions_[d]-1
+
+    bool _isCheckerBoarded; 
 
 public:
 

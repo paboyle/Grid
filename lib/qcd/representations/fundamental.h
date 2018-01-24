@@ -19,6 +19,7 @@ template <int ncolour>
 class FundamentalRep {
  public:
   static const int Dimension = ncolour;
+  static const bool isFundamental = true;
 
   // typdef to be used by the Representations class in HMC to get the
   // types for the higher representation fields

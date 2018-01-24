@@ -39,6 +39,7 @@ namespace QCD {
     static const int Zdir = 2;
     static const int Tdir = 3;
 
+  
     static const int Xp = 0;
     static const int Yp = 1;
     static const int Zp = 2;
@@ -420,15 +421,16 @@ namespace QCD {
     //////////////////////////////////////////////
     // Fermion <-> propagator assignements
     //////////////////////////////////////////////
-    template <class Prop, class Ferm>
-    void FermToProp(Prop &p, const Ferm &f, const int s, const int c)
+    //template <class Prop, class Ferm>
+    template <class Fimpl>
+      void FermToProp(typename Fimpl::PropagatorField &p, const typename Fimpl::FermionField &f, const int s, const int c)
     {
-        for(int j = 0; j < Ns; ++j)
+      for(int j = 0; j < Ns; ++j)
         {
             auto pjs = peekSpin(p, j, s);
             auto fj  = peekSpin(f, j);
             
-            for(int i = 0; i < Nc; ++i)
+            for(int i = 0; i < Fimpl::Dimension; ++i)
             {
                 pokeColour(pjs, peekColour(fj, i), i, c);
             }
@@ -436,15 +438,16 @@ namespace QCD {
         }
     }
     
-    template <class Prop, class Ferm>
-    void PropToFerm(Ferm &f, const Prop &p, const int s, const int c)
+    //template <class Prop, class Ferm>
+    template <class Fimpl>
+      void PropToFerm(typename Fimpl::FermionField &f, const typename Fimpl::PropagatorField &p, const int s, const int c)
     {
         for(int j = 0; j < Ns; ++j)
         {
             auto pjs = peekSpin(p, j, s);
             auto fj  = peekSpin(f, j);
             
-            for(int i = 0; i < Nc; ++i)
+            for(int i = 0; i < Fimpl::Dimension; ++i)
             {
                 pokeColour(fj, peekColour(pjs, i, c), i);
             }
@@ -492,41 +495,17 @@ namespace QCD {
       return traceIndex<ColourIndex>(lhs);
     }
 
+    //////////////////////////////////////////
+    // Current types
+    //////////////////////////////////////////
+    GRID_SERIALIZABLE_ENUM(Current, undef,
+                           Vector,  0,
+                           Axial,   1,
+                           Tadpole, 2);
+
 }   //namespace QCD
 } // Grid
 
-/*
-<<<<<<< HEAD
-#include <Grid/qcd/utils/SpaceTimeGrid.h>
-#include <Grid/qcd/spin/Dirac.h>
-#include <Grid/qcd/spin/TwoSpinor.h>
-#include <Grid/qcd/utils/LinalgUtils.h>
-#include <Grid/qcd/utils/CovariantCshift.h>
-
-// Include representations  
-#include <Grid/qcd/utils/SUn.h>
-#include <Grid/qcd/utils/SUnAdjoint.h>
-#include <Grid/qcd/utils/SUnTwoIndex.h>
-#include <Grid/qcd/representations/hmc_types.h>
-
-// Scalar field
-#include <Grid/qcd/utils/ScalarObjs.h>
-
-#include <Grid/qcd/action/Actions.h>
-
-#include <Grid/qcd/smearing/Smearing.h>
-
-#include <Grid/qcd/hmc/integrators/Integrator.h>
-#include <Grid/qcd/hmc/integrators/Integrator_algorithm.h>
-#include <Grid/qcd/observables/hmc_observable.h>
-#include <Grid/qcd/hmc/HMC.h>
-
-
-//#include <Grid/qcd/modules/mods.h>
-=======
-
->>>>>>> develop
-*/
 
 
 #endif

@@ -2,12 +2,13 @@
 
 Grid physics library, www.github.com/paboyle/Grid 
 
-Source file: extras/Hadrons/Modules/MGauge/Load.hpp
+Source file: extras/Hadrons/Modules/MGauge/FundtoHirep.hpp
 
 Copyright (C) 2015
 Copyright (C) 2016
 
-Author: Antonin Portelli <antonin.portelli@me.com>
+Author: David Preti <david.preti@to.infn.it>
+	Guido Cossu <guido.cossu@ed.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -27,8 +28,8 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Hadrons_MGauge_Load_hpp_
-#define Hadrons_MGauge_Load_hpp_
+#ifndef Hadrons_MGauge_FundtoHirep_hpp_
+#define Hadrons_MGauge_FundtoHirep_hpp_
 
 #include <Grid/Hadrons/Global.hpp>
 #include <Grid/Hadrons/Module.hpp>
@@ -41,33 +42,36 @@ BEGIN_HADRONS_NAMESPACE
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MGauge)
 
-class LoadPar: Serializable
+class FundtoHirepPar: Serializable
 {
 public:
-    GRID_SERIALIZABLE_CLASS_MEMBERS(LoadPar,
-                                    std::string, file);
+    GRID_SERIALIZABLE_CLASS_MEMBERS(FundtoHirepPar,
+                                    std::string, gaugeconf);
 };
 
-class TLoad: public Module<LoadPar>
+template <class Rep>
+class TFundtoHirep: public Module<FundtoHirepPar>
 {
 public:
     // constructor
-    TLoad(const std::string name);
+    TFundtoHirep(const std::string name);
     // destructor
-    virtual ~TLoad(void) = default;
+    virtual ~TFundtoHirep(void) = default;
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
     // setup
-    virtual void setup(void);
+    void setup(void);
     // execution
-    virtual void execute(void);
+    void execute(void);
 };
 
-MODULE_REGISTER_NS(Load, TLoad, MGauge);
+//MODULE_REGISTER_NS(FundtoAdjoint,   TFundtoHirep<AdjointRepresentation>, MGauge);
+//MODULE_REGISTER_NS(FundtoTwoIndexSym, TFundtoHirep<TwoIndexSymmetricRepresentation>, MGauge);
+//MODULE_REGISTER_NS(FundtoTwoIndexAsym, TFundtoHirep<TwoIndexAntiSymmetricRepresentation>, MGauge);
 
 END_MODULE_NAMESPACE
 
 END_HADRONS_NAMESPACE
 
-#endif // Hadrons_MGauge_Load_hpp_
+#endif // Hadrons_MGauge_FundtoHirep_hpp_

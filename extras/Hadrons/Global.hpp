@@ -4,10 +4,10 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Global.hpp
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -35,6 +35,10 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Grid/Grid.h>
 #include <cxxabi.h>
 
+#ifndef SITE_SIZE_TYPE
+#define SITE_SIZE_TYPE size_t
+#endif
+
 #define BEGIN_HADRONS_NAMESPACE \
 namespace Grid {\
 using namespace QCD;\
@@ -57,17 +61,19 @@ using Grid::operator<<;
 #ifndef SIMPL
 #define SIMPL ScalarImplCR
 #endif
+#ifndef GIMPL
+#define GIMPL GimplTypesR
+#endif
 
 BEGIN_HADRONS_NAMESPACE
 
 // type aliases
 #define FERM_TYPE_ALIASES(FImpl, suffix)\
-typedef FermionOperator<FImpl>                       FMat##suffix;             \
-typedef typename FImpl::FermionField                 FermionField##suffix;     \
-typedef typename FImpl::PropagatorField              PropagatorField##suffix;  \
-typedef typename FImpl::SitePropagator               SitePropagator##suffix;   \
-typedef std::vector<typename FImpl::SitePropagator::scalar_object>             \
-                                                     SlicedPropagator##suffix;
+typedef FermionOperator<FImpl>                        FMat##suffix;            \
+typedef typename FImpl::FermionField                  FermionField##suffix;    \
+typedef typename FImpl::PropagatorField               PropagatorField##suffix; \
+typedef typename FImpl::SitePropagator::scalar_object SitePropagator##suffix;  \
+typedef std::vector<SitePropagator##suffix>           SlicedPropagator##suffix;
 
 #define GAUGE_TYPE_ALIASES(FImpl, suffix)\
 typedef typename FImpl::DoubledGaugeField DoubledGaugeField##suffix;
@@ -81,7 +87,8 @@ typedef std::function<void(FermionField##suffix &,\
                       const FermionField##suffix &)> SolverFn##suffix;
 
 #define SINK_TYPE_ALIASES(suffix)\
-typedef std::function<SlicedPropagator##suffix(const PropagatorField##suffix &)> SinkFn##suffix;
+typedef std::function<SlicedPropagator##suffix\
+                      (const PropagatorField##suffix &)> SinkFn##suffix;
 
 #define FGS_TYPE_ALIASES(FImpl, suffix)\
 FERM_TYPE_ALIASES(FImpl, suffix)\
@@ -97,11 +104,6 @@ public:
 };
 
 #define LOG(channel) std::cout << HadronsLog##channel
-#define HADRON_ERROR(msg)\
-LOG(Error) << msg << " (" << __FUNCTION__ << " at " << __FILE__ << ":"\
-           << __LINE__ << ")" << std::endl;\
-abort();
-
 #define DEBUG_VAR(var) LOG(Debug) << #var << "= " << (var) << std::endl;
 
 extern HadronsLogger HadronsLogError;
@@ -109,6 +111,8 @@ extern HadronsLogger HadronsLogWarning;
 extern HadronsLogger HadronsLogMessage;
 extern HadronsLogger HadronsLogIterative;
 extern HadronsLogger HadronsLogDebug;
+
+void initLogger(void);
 
 // singleton pattern
 #define SINGLETON(name)\
@@ -134,9 +138,6 @@ public:\
     }\
 private:\
     name(void) = default;
-
-// pretty size formating
-std::string sizeString(long unsigned int bytes);
 
 // type utilities
 template <typename T>
@@ -166,14 +167,21 @@ std::string typeName(void)
 }
 
 // default writers/readers
+extern const std::string resultFileExt;
+
 #ifdef HAVE_HDF5
-typedef Hdf5Reader CorrReader;
-typedef Hdf5Writer CorrWriter;
+typedef Hdf5Reader ResultReader;
+typedef Hdf5Writer ResultWriter;
 #else
-typedef XmlReader CorrReader;
-typedef XmlWriter CorrWriter;
+typedef XmlReader ResultReader;
+typedef XmlWriter ResultWriter;
 #endif
 
+#define RESULT_FILE_NAME(name) \
+name + "." + std::to_string(vm().getTrajectory()) + "." + resultFileExt
+
 END_HADRONS_NAMESPACE
+
+#include <Grid/Hadrons/Exceptions.hpp>
 
 #endif // Hadrons_Global_hpp_

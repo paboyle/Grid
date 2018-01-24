@@ -171,9 +171,8 @@ public:
               const std::vector<int> &checker_dim_mask,
               int checker_dim)
     {
-      ///////////////////////
-      // Grid information
-      ///////////////////////
+
+      _isCheckerBoarded = true;
       _checker_dim = checker_dim;
       assert(checker_dim_mask[checker_dim] == 1);
       _ndimension = dimensions.size();
@@ -207,6 +206,7 @@ public:
         {
           assert((_gdimensions[d] & 0x1) == 0);
           _gdimensions[d] = _gdimensions[d] / 2; // Remove a checkerboard
+	  _gsites /= 2;
         }
         _ldimensions[d] = _gdimensions[d] / _processors[d];
         assert(_ldimensions[d] * _processors[d] == _gdimensions[d]);

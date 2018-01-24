@@ -4,10 +4,10 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MContraction/Baryon.hpp
 
-Copyright (C) 2015
-Copyright (C) 2016
+Copyright (C) 2015-2018
 
 Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -72,6 +72,9 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+protected:
+    // setup
+    virtual void setup(void);
     // execution
     virtual void execute(void);
 };
@@ -99,9 +102,16 @@ std::vector<std::string> TBaryon<FImpl1, FImpl2, FImpl3>::getInput(void)
 template <typename FImpl1, typename FImpl2, typename FImpl3>
 std::vector<std::string> TBaryon<FImpl1, FImpl2, FImpl3>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {};
     
     return out;
+}
+
+// setup ///////////////////////////////////////////////////////////////////////
+template <typename FImpl1, typename FImpl2, typename FImpl3>
+void TBaryon<FImpl1, FImpl2, FImpl3>::setup(void)
+{
+    envTmpLat(LatticeComplex, "c");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -112,16 +122,15 @@ void TBaryon<FImpl1, FImpl2, FImpl3>::execute(void)
                  << " quarks '" << par().q1 << "', '" << par().q2 << "', and '"
                  << par().q3 << "'" << std::endl;
     
-    CorrWriter             writer(par().output);
-    PropagatorField1      &q1 = *env().template getObject<PropagatorField1>(par().q1);
-    PropagatorField2      &q2 = *env().template getObject<PropagatorField2>(par().q2);
-    PropagatorField3      &q3 = *env().template getObject<PropagatorField3>(par().q2);
-    LatticeComplex        c(env().getGrid());
-    Result                result;
+    auto       &q1 = envGet(PropagatorField1, par().q1);
+    auto       &q2 = envGet(PropagatorField2, par().q2);
+    auto       &q3 = envGet(PropagatorField3, par().q2);
+    envGetTmp(LatticeComplex, c);
+    Result     result;
     
     // FIXME: do contractions
     
-    // write(writer, "meson", result);
+    // saveResult(par().output, "meson", result);
 }
 
 END_MODULE_NAMESPACE

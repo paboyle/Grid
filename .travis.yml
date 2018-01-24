@@ -44,3 +44,4 @@ script:
     - make -j4
     - ./benchmarks/Benchmark_dwf --threads 1 --debug-signals
     - make check
+

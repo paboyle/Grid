@@ -70,7 +70,9 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 
 #define TwoIndexFermOpTemplateInstantiate(A) \
   template class A<WilsonTwoIndexSymmetricImplF>; \
-  template class A<WilsonTwoIndexSymmetricImplD>; 
+  template class A<WilsonTwoIndexSymmetricImplD>; \
+  template class A<WilsonTwoIndexAntiSymmetricImplF>; \
+  template class A<WilsonTwoIndexAntiSymmetricImplD>;
 
 #define FermOp5dVecTemplateInstantiate(A) \
   template class A<DomainWallVec5dImplF>;	\

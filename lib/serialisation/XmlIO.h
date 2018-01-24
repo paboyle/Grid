@@ -39,6 +39,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #include <cassert>
 
 #include <Grid/pugixml/pugixml.h>
+#include <Grid/GridCore.h>
 
 namespace Grid
 {
@@ -119,7 +120,6 @@ namespace Grid
     std::string buf;
     
     readDefault(s, buf);
-    //    std::cout << s << "   " << buf << std::endl;
     fromString(output, buf);
   }
   
@@ -132,7 +132,13 @@ namespace Grid
     std::string    buf;
     unsigned int   i = 0;
     
-    push(s);
+    if (!push(s))
+    {
+      std::cout << GridLogWarning << "XML: cannot open node '" << s << "'";
+      std::cout << std::endl;
+
+      return; 
+    }
     while (node_.child("elem"))
     {
       output.resize(i + 1);

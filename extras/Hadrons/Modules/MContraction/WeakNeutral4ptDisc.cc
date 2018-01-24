@@ -4,9 +4,10 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MContraction/WeakNeutral4ptDisc.cc
 
-Copyright (C) 2017
+Copyright (C) 2015-2018
 
-Author: Andrew Lawson    <andrew.lawson1991@gmail.com>
+Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -78,7 +79,7 @@ std::vector<std::string> TWeakNeutral4ptDisc::getInput(void)
 
 std::vector<std::string> TWeakNeutral4ptDisc::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {};
     
     return out;
 }
@@ -86,7 +87,13 @@ std::vector<std::string> TWeakNeutral4ptDisc::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void TWeakNeutral4ptDisc::setup(void)
 {
+    unsigned int ndim = env().getNd();
 
+    envTmpLat(LatticeComplex,  "expbuf");
+    envTmpLat(PropagatorField, "tmp");
+    envTmpLat(LatticeComplex,  "curr");
+    envTmp(std::vector<PropagatorField>, "meson", 1, ndim, PropagatorField(env().getGrid()));
+    envTmp(std::vector<PropagatorField>, "loop", 1, ndim,  PropagatorField(env().getGrid()));
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -97,21 +104,20 @@ void TWeakNeutral4ptDisc::execute(void)
                  << par().q2 << ", '" << par().q3 << "' and '" << par().q4 
                  << "'." << std::endl;
 
-    CorrWriter             writer(par().output);
-    PropagatorField &q1 = *env().template getObject<PropagatorField>(par().q1);
-    PropagatorField &q2 = *env().template getObject<PropagatorField>(par().q2);
-    PropagatorField &q3 = *env().template getObject<PropagatorField>(par().q3);
-    PropagatorField &q4 = *env().template getObject<PropagatorField>(par().q4);
-    Gamma g5            = Gamma(Gamma::Algebra::Gamma5);
-    LatticeComplex        expbuf(env().getGrid());
+    auto                  &q1 = envGet(PropagatorField, par().q1);
+    auto                  &q2 = envGet(PropagatorField, par().q2);
+    auto                  &q3 = envGet(PropagatorField, par().q3);
+    auto                  &q4 = envGet(PropagatorField, par().q4);
+    Gamma                 g5  = Gamma(Gamma::Algebra::Gamma5);
     std::vector<TComplex> corrbuf;
     std::vector<Result>   result(n_neut_disc_diag);
-    unsigned int ndim   = env().getNd();
+    unsigned int          ndim = env().getNd();
 
-    PropagatorField              tmp(env().getGrid());
-    std::vector<PropagatorField> meson(ndim, tmp);
-    std::vector<PropagatorField> loop(ndim, tmp);
-    LatticeComplex               curr(env().getGrid());
+    envGetTmp(LatticeComplex,               expbuf); 
+    envGetTmp(PropagatorField,              tmp);
+    envGetTmp(LatticeComplex,               curr);
+    envGetTmp(std::vector<PropagatorField>, meson);
+    envGetTmp(std::vector<PropagatorField>, loop);
 
     // Setup for type 1 contractions.
     for (int mu = 0; mu < ndim; ++mu)
@@ -131,5 +137,6 @@ void TWeakNeutral4ptDisc::execute(void)
     expbuf *= curr;
     MAKE_DIAG(expbuf, corrbuf, result[neut_disc_2_diag], "HW_disc0_2")
 
-    write(writer, "HW_disc0", result);
+    // IO
+    saveResult(par().output, "HW_disc0", result);
 }

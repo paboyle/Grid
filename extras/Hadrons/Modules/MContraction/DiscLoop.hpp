@@ -4,9 +4,10 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MContraction/DiscLoop.hpp
 
-Copyright (C) 2017
+Copyright (C) 2015-2018
 
-Author: Andrew Lawson    <andrew.lawson1991@gmail.com>
+Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -68,6 +69,7 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+protected:
     // setup
     virtual void setup(void);
     // execution
@@ -97,7 +99,7 @@ std::vector<std::string> TDiscLoop<FImpl>::getInput(void)
 template <typename FImpl>
 std::vector<std::string> TDiscLoop<FImpl>::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {};
     
     return out;
 }
@@ -106,7 +108,7 @@ std::vector<std::string> TDiscLoop<FImpl>::getOutput(void)
 template <typename FImpl>
 void TDiscLoop<FImpl>::setup(void)
 {
-    
+    envTmpLat(LatticeComplex, "c");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -117,24 +119,21 @@ void TDiscLoop<FImpl>::execute(void)
                  << "' using '" << par().q_loop << "' with " << par().gamma 
                  << " insertion." << std::endl;
 
-    CorrWriter            writer(par().output);
-    PropagatorField       &q_loop = *env().template getObject<PropagatorField>(par().q_loop);
-    LatticeComplex        c(env().getGrid());
+    auto                  &q_loop = envGet(PropagatorField, par().q_loop);
     Gamma                 gamma(par().gamma);
     std::vector<TComplex> buf;
     Result                result;
 
+    envGetTmp(LatticeComplex, c);
     c = trace(gamma*q_loop);
     sliceSum(c, buf, Tp);
-
     result.gamma = par().gamma;
     result.corr.resize(buf.size());
     for (unsigned int t = 0; t < buf.size(); ++t)
     {
         result.corr[t] = TensorRemove(buf[t]);
     }
-
-    write(writer, "disc", result);
+    saveResult(par().output, "disc", result);
 }
 
 END_MODULE_NAMESPACE

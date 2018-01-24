@@ -77,9 +77,6 @@ namespace Grid {
 
   
 // merge of April 11 2017
-//<<<<<<< HEAD
-
-
   // this function is necessary for the LS vectorised field
   inline int RNGfillable_general(GridBase *coarse,GridBase *fine)
   {
@@ -91,7 +88,6 @@ namespace Grid {
     // all further divisions are local
     for(int d=0;d<lowerdims;d++) assert(fine->_processors[d]==1);
     for(int d=0;d<rngdims;d++) assert(coarse->_processors[d] == fine->_processors[d+lowerdims]);
-    
 
     // then divide the number of local sites
     // check that the total number of sims agree, meanse the iSites are the same
@@ -102,27 +98,6 @@ namespace Grid {
 
     return fine->lSites() / coarse->lSites();
   }
-
-  /*
-  // Wrap seed_seq to give common interface with random_device
-  class fixedSeed {
-  public:
-    typedef std::seed_seq::result_type result_type;
-    std::seed_seq src;
-    
-    fixedSeed(const std::vector<int> &seeds) : src(seeds.begin(),seeds.end()) {};
-
-    result_type operator () (void){
-      std::vector<result_type> list(1);
-      src.generate(list.begin(),list.end());
-      return list[0];
-    }
-
-  };
-
-=======
->>>>>>> develop
-  */
   
   // real scalars are one component
   template<class scalar,class distribution,class generator> 
@@ -171,7 +146,7 @@ namespace Grid {
     // support for parallel init
     ///////////////////////
 #ifdef RNG_FAST_DISCARD
-    static void Skip(RngEngine &eng)
+    static void Skip(RngEngine &eng,uint64_t site)
     {
       /////////////////////////////////////////////////////////////////////////////////////
       // Skip by 2^40 elements between successive lattice sites
@@ -184,8 +159,11 @@ namespace Grid {
       // and margin of safety is orders of magnitude.
       // We could hack Sitmo to skip in the higher order words of state if necessary
       /////////////////////////////////////////////////////////////////////////////////////
-      uint64_t skip = 0x1; skip = skip<<40;
+      //      uint64_t skip = site+1;  //   Old init Skipped then drew.  Checked compat with faster init
+      uint64_t skip = site;
+      skip = skip<<40;
       eng.discard(skip);
+      //      std::cout << " Engine  " <<site << " state " <<eng<<std::endl;
     } 
 #endif
     static RngEngine Reseed(RngEngine &eng)
@@ -407,15 +385,14 @@ namespace Grid {
       // MT implementation does not implement fast discard even though
       // in principle this is possible
       ////////////////////////////////////////////////
-      std::vector<int> gcoor;
-      int rank,o_idx,i_idx;
 
       // Everybody loops over global volume.
-      for(int gidx=0;gidx<_grid->_gsites;gidx++){
-
-	Skip(master_engine); // Skip to next RNG sequence
+      parallel_for(int gidx=0;gidx<_grid->_gsites;gidx++){
 
 	// Where is it?
+	int rank,o_idx,i_idx;
+	std::vector<int> gcoor;
+
 	_grid->GlobalIndexToGlobalCoor(gidx,gcoor);
 	_grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
 
@@ -423,6 +400,7 @@ namespace Grid {
 	if( rank == _grid->ThisRank() ){
 	  int l_idx=generator_idx(o_idx,i_idx);
 	  _generators[l_idx] = master_engine;
+	  Skip(_generators[l_idx],gidx); // Skip to next RNG sequence
 	}
 
       }

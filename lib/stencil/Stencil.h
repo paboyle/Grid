@@ -105,7 +105,6 @@ template<class vobj,class cobj>
 class CartesianStencil { // Stencil runs along coordinate axes only; NO diagonal fill in.
  public:
 
-  typedef CartesianCommunicator::CommsRequest_t CommsRequest_t;
   typedef typename cobj::vector_type vector_type;
   typedef typename cobj::scalar_type scalar_type;
   typedef typename cobj::scalar_object scalar_object;

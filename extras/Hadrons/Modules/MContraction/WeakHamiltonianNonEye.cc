@@ -4,9 +4,10 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: extras/Hadrons/Modules/MContraction/WeakHamiltonianNonEye.cc
 
-Copyright (C) 2017
+Copyright (C) 2015-2018
 
-Author: Andrew Lawson    <andrew.lawson1991@gmail.com>
+Author: Antonin Portelli <antonin.portelli@me.com>
+Author: Lanny91 <andrew.lawson@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -76,7 +77,7 @@ std::vector<std::string> TWeakHamiltonianNonEye::getInput(void)
 
 std::vector<std::string> TWeakHamiltonianNonEye::getOutput(void)
 {
-    std::vector<std::string> out = {getName()};
+    std::vector<std::string> out = {};
     
     return out;
 }
@@ -84,7 +85,15 @@ std::vector<std::string> TWeakHamiltonianNonEye::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void TWeakHamiltonianNonEye::setup(void)
 {
+    unsigned int ndim = env().getNd();
 
+    envTmpLat(LatticeComplex,  "expbuf");
+    envTmpLat(PropagatorField, "tmp1");
+    envTmpLat(LatticeComplex,  "tmp2");
+    envTmp(std::vector<PropagatorField>, "C_i_side_loop", 1, ndim, PropagatorField(env().getGrid()));
+    envTmp(std::vector<PropagatorField>, "C_f_side_loop", 1, ndim, PropagatorField(env().getGrid()));
+    envTmp(std::vector<LatticeComplex>,  "W_i_side_loop", 1, ndim, LatticeComplex(env().getGrid()));
+    envTmp(std::vector<LatticeComplex>,  "W_f_side_loop", 1, ndim, LatticeComplex(env().getGrid()));
 }
 
 // execution ///////////////////////////////////////////////////////////////////
@@ -95,23 +104,22 @@ void TWeakHamiltonianNonEye::execute(void)
                  << par().q2 << ", '" << par().q3 << "' and '" << par().q4 
                  << "'." << std::endl;
     
-    CorrWriter             writer(par().output);
-    PropagatorField &q1 = *env().template getObject<PropagatorField>(par().q1);
-    PropagatorField &q2 = *env().template getObject<PropagatorField>(par().q2);
-    PropagatorField &q3 = *env().template getObject<PropagatorField>(par().q3);
-    PropagatorField &q4 = *env().template getObject<PropagatorField>(par().q4);
-    Gamma g5            = Gamma(Gamma::Algebra::Gamma5);
-    LatticeComplex        expbuf(env().getGrid());
+    auto                  &q1 = envGet(PropagatorField, par().q1);
+    auto                  &q2 = envGet(PropagatorField, par().q2);
+    auto                  &q3 = envGet(PropagatorField, par().q3);
+    auto                  &q4 = envGet(PropagatorField, par().q4);
+    Gamma                 g5  = Gamma(Gamma::Algebra::Gamma5);
     std::vector<TComplex> corrbuf;
     std::vector<Result>   result(n_noneye_diag); 
-    unsigned int ndim   = env().getNd();
+    unsigned int          ndim = env().getNd();
 
-    PropagatorField              tmp1(env().getGrid());
-    LatticeComplex               tmp2(env().getGrid());
-    std::vector<PropagatorField> C_i_side_loop(ndim, tmp1);
-    std::vector<PropagatorField> C_f_side_loop(ndim, tmp1);
-    std::vector<LatticeComplex>  W_i_side_loop(ndim, tmp2);
-    std::vector<LatticeComplex>  W_f_side_loop(ndim, tmp2);
+    envGetTmp(LatticeComplex,               expbuf); 
+    envGetTmp(PropagatorField,              tmp1);
+    envGetTmp(LatticeComplex,               tmp2);
+    envGetTmp(std::vector<PropagatorField>, C_i_side_loop);
+    envGetTmp(std::vector<PropagatorField>, C_f_side_loop);
+    envGetTmp(std::vector<LatticeComplex>,  W_i_side_loop);
+    envGetTmp(std::vector<LatticeComplex>,  W_f_side_loop);
 
     // Setup for C-type contractions.
     for (int mu = 0; mu < ndim; ++mu)
@@ -135,5 +143,6 @@ void TWeakHamiltonianNonEye::execute(void)
     SUM_MU(expbuf, W_i_side_loop[mu]*W_f_side_loop[mu])
     MAKE_DIAG(expbuf, corrbuf, result[W_diag], "HW_W")
 
-    write(writer, "HW_NonEye", result);
+    // IO
+    saveResult(par().output, "HW_NonEye", result);
 }

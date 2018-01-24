@@ -204,11 +204,11 @@ std::string GridCmdVectorIntToString(const std::vector<int> & vec){
 // Reinit guard
 /////////////////////////////////////////////////////////
 static int Grid_is_initialised = 0;
-
+static MemoryStats dbgMemStats;
 
 void Grid_init(int *argc,char ***argv)
 {
-  GridLogger::StopWatch.Start();
+  GridLogger::GlobalStopWatch.Start();
 
   std::string arg;
 
@@ -220,11 +220,11 @@ void Grid_init(int *argc,char ***argv)
     arg= GridCmdOptionPayload(*argv,*argv+*argc,"--shm");
     GridCmdOptionInt(arg,MB);
     uint64_t MB64 = MB;
-    CartesianCommunicator::MAX_MPI_SHM_BYTES = MB64*1024LL*1024LL;
+    GlobalSharedMemory::MAX_MPI_SHM_BYTES = MB64*1024LL*1024LL;
   }
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--shm-hugepages") ){
-    CartesianCommunicator::Hugepages = 1;
+    GlobalSharedMemory::Hugepages = 1;
   }
 
 
@@ -249,6 +249,11 @@ void Grid_init(int *argc,char ***argv)
     ename<<CartesianCommunicator::RankWorld();
     fp=freopen(ename.str().c_str(),"w",stderr);
     assert(fp!=(FILE *)NULL);
+  }
+
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-mem") ){
+    MemoryProfiler::debug = true;
+    MemoryProfiler::stats = &dbgMemStats;
   }
 
   ////////////////////////////////////
@@ -324,6 +329,7 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"  --decomposition : report on default omp,mpi and simd decomposition"<<std::endl;    
     std::cout<<GridLogMessage<<"  --debug-signals : catch sigsegv and print a blame report"<<std::endl;
     std::cout<<GridLogMessage<<"  --debug-stdout  : print stdout from EVERY node"<<std::endl;
+    std::cout<<GridLogMessage<<"  --debug-mem     : print Grid allocator activity"<<std::endl;
     std::cout<<GridLogMessage<<"  --notimestamp   : suppress millisecond resolution stamps"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Performance:"<<std::endl;
@@ -392,8 +398,8 @@ void Grid_init(int *argc,char ***argv)
 		  Grid_default_latt,
 		  Grid_default_mpi);
 
-  std::cout << GridLogMessage << "Requesting "<< CartesianCommunicator::MAX_MPI_SHM_BYTES <<" byte stencil comms buffers "<<std::endl;
-  if ( CartesianCommunicator::Hugepages) {
+  std::cout << GridLogMessage << "Requesting "<< GlobalSharedMemory::MAX_MPI_SHM_BYTES <<" byte stencil comms buffers "<<std::endl;
+  if ( GlobalSharedMemory::Hugepages) {
     std::cout << GridLogMessage << "Mapped stencil comms buffers as MAP_HUGETLB "<<std::endl;
   }
 

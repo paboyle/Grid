@@ -1,3 +1,30 @@
+/*************************************************************************************
+
+Grid physics library, www.github.com/paboyle/Grid 
+
+Source file: extras/Hadrons/Modules/MScalar/FreeProp.cc
+
+Copyright (C) 2015-2018
+
+Author: Antonin Portelli <antonin.portelli@me.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+See the full license in the file "LICENSE" in the top level distribution directory
+*************************************************************************************/
+/*  END LEGAL */
 #include <Grid/Hadrons/Modules/MScalar/FreeProp.hpp>
 #include <Grid/Hadrons/Modules/MScalar/Scalar.hpp>
 
@@ -33,38 +60,29 @@ void TFreeProp::setup(void)
 {
     freeMomPropName_ = FREEMOMPROP(par().mass);
     
-    if (!env().hasRegisteredObject(freeMomPropName_))
-    {
-        env().registerLattice<ScalarField>(freeMomPropName_);
-    }
-    env().registerLattice<ScalarField>(getName());
+    freePropDone_ = env().hasCreatedObject(freeMomPropName_);
+    envCacheLat(ScalarField, freeMomPropName_);
+    envCreateLat(ScalarField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 void TFreeProp::execute(void)
 {
-    ScalarField &prop   = *env().createLattice<ScalarField>(getName());
-    ScalarField &source = *env().getObject<ScalarField>(par().source);
-    ScalarField *freeMomProp;
+    auto &freeMomProp = envGet(ScalarField, freeMomPropName_);
+    auto &prop        = envGet(ScalarField, getName());
+    auto &source      = envGet(ScalarField, par().source);
 
-    if (!env().hasCreatedObject(freeMomPropName_))
+    if (!freePropDone_)
     {
         LOG(Message) << "Caching momentum space free scalar propagator"
                      << " (mass= " << par().mass << ")..." << std::endl;
-        freeMomProp = env().createLattice<ScalarField>(freeMomPropName_);
-        SIMPL::MomentumSpacePropagator(*freeMomProp, par().mass);
-    }
-    else
-    {
-        freeMomProp = env().getObject<ScalarField>(freeMomPropName_);
+        SIMPL::MomentumSpacePropagator(freeMomProp, par().mass);
     }
     LOG(Message) << "Computing free scalar propagator..." << std::endl;
-    SIMPL::FreePropagator(source, prop, *freeMomProp);
+    SIMPL::FreePropagator(source, prop, freeMomProp);
     
     if (!par().output.empty())
     {
-        TextWriter            writer(par().output + "." +
-                                     std::to_string(env().getTrajectory()));
         std::vector<TComplex> buf;
         std::vector<Complex>  result;
         
@@ -74,6 +92,6 @@ void TFreeProp::execute(void)
         {
             result[t] = TensorRemove(buf[t]);
         }
-        write(writer, "prop", result);
+        saveResult(par().output, "freeprop", result);
     }
 }
