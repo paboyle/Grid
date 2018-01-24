@@ -247,7 +247,7 @@ public:
 
     CartesianCommunicator::BroadcastWorld(0,(void *)&l,sizeof(l));
 
-  };
+  }
 
   template <class distribution>  inline void fill(ComplexF &l,std::vector<distribution> &dist){
     dist[0].reset();
@@ -346,7 +346,7 @@ public:
     int osites = _grid->oSites();  // guaranteed to be <= l._grid->oSites() by a factor multiplicity
     int words  = sizeof(scalar_object) / sizeof(scalar_type);
 
-    parallel_for(int ss=0;ss<osites;ss++){
+    thread_loop( (int ss=0;ss<osites;ss++), {
       std::vector<scalar_object> buf(Nsimd);
       for (int m = 0; m < multiplicity; m++) {  // Draw from same generator multiplicity times
 
@@ -363,10 +363,10 @@ public:
 	// merge into SIMD lanes, FIXME suboptimal implementation
 	merge(l._odata[sm], buf);
       }
-    }
+    });
 
     _time_counter += usecond()- inner_time_counter;
-  };
+  }
 
   void SeedFixedIntegers(const std::vector<int> &seeds){
 
@@ -387,23 +387,23 @@ public:
     ////////////////////////////////////////////////
 
     // Everybody loops over global volume.
-    parallel_for(int gidx=0;gidx<_grid->_gsites;gidx++){
+    thread_loop( (int gidx=0;gidx<_grid->_gsites;gidx++) , {
+	// Where is it?
+	int rank;
+	int o_idx;
+	int i_idx;
+	std::vector<int> gcoor;
 
-      // Where is it?
-      int rank,o_idx,i_idx;
-      std::vector<int> gcoor;
-
-      _grid->GlobalIndexToGlobalCoor(gidx,gcoor);
-      _grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
-
-      // If this is one of mine we take it
-      if( rank == _grid->ThisRank() ){
-	int l_idx=generator_idx(o_idx,i_idx);
-	_generators[l_idx] = master_engine;
-	Skip(_generators[l_idx],gidx); // Skip to next RNG sequence
-      }
-
-    }
+	_grid->GlobalIndexToGlobalCoor(gidx,gcoor);
+	_grid->GlobalCoorToRankIndex(rank,o_idx,i_idx,gcoor);
+	
+	// If this is one of mine we take it
+	if( rank == _grid->ThisRank() ){
+	  int l_idx=generator_idx(o_idx,i_idx);
+	  _generators[l_idx] = master_engine;
+	  Skip(_generators[l_idx],gidx); // Skip to next RNG sequence
+	}
+    });
 #else 
     ////////////////////////////////////////////////////////////////
     // Machine and thread decomposition dependent seeding is efficient
@@ -429,7 +429,7 @@ public:
 	seeders[t] = Reseed(master_engine);
       }
 
-      parallel_for(int t=0;t<Nthread;t++) {
+      thread_loop( (int t=0;t<Nthread;t++), {
 	// set up one per local site in threaded fashion
 	std::vector<uint32_t> newseeds;
 	std::uniform_int_distribution<uint32_t> uid;	
@@ -438,7 +438,7 @@ public:
 	    _generators[l] = Reseed(seeders[t],newseeds,uid);
 	  }
 	}
-      }
+      });
     }
 #endif
   }
