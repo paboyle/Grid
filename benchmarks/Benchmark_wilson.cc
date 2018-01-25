@@ -54,6 +54,9 @@ int main (int argc, char ** argv)
     overlapComms = true;
   }
 
+  long unsigned int single_site_flops = 8*QCD::Nc*(7+16*QCD::Nc);
+
+
   std::vector<int> latt_size   = GridDefaultLatt();
   std::vector<int> simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
   std::vector<int> mpi_layout  = GridDefaultMpi();
@@ -61,10 +64,15 @@ int main (int argc, char ** argv)
   GridRedBlackCartesian     RBGrid(&Grid);
 
   int threads = GridThread::GetThreads();
-  std::cout<<GridLogMessage << "Grid is setup to use "<<threads<<" threads"<<std::endl;
+
+  GridLogLayout();
+
   std::cout<<GridLogMessage << "Grid floating point word size is REALF"<< sizeof(RealF)<<std::endl;
   std::cout<<GridLogMessage << "Grid floating point word size is REALD"<< sizeof(RealD)<<std::endl;
   std::cout<<GridLogMessage << "Grid floating point word size is REAL"<< sizeof(Real)<<std::endl;
+  std::cout<<GridLogMessage << "Grid number of colours : "<< QCD::Nc <<std::endl;
+  std::cout<<GridLogMessage << "Benchmarking Wilson operator in the fundamental representation" << std::endl;
+
 
   std::vector<int> seeds({1,2,3,4});
   GridParallelRNG          pRNG(&Grid);
@@ -134,9 +142,10 @@ int main (int argc, char ** argv)
     Dw.Dhop(src,result,0);
   }
   double t1=usecond();
-  double flops=1344*volume*ncall;
+  double flops=single_site_flops*volume*ncall;
   
   std::cout<<GridLogMessage << "Called Dw"<<std::endl;
+  std::cout<<GridLogMessage << "flops per site " << single_site_flops << std::endl;
   std::cout<<GridLogMessage << "norm result "<< norm2(result)<<std::endl;
   std::cout<<GridLogMessage << "norm ref    "<< norm2(ref)<<std::endl;
   std::cout<<GridLogMessage << "mflop/s =   "<< flops/(t1-t0)<<std::endl;
