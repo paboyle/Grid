@@ -129,9 +129,9 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Calling vectorised staggered operator"<<std::endl;
 
 #ifdef AVX512
-  QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptInlineAsm;
+  StaggeredKernelsStatic::Opt=StaggeredKernelsStatic::OptInlineAsm;
 #else
-  QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptGeneric;
+  StaggeredKernelsStatic::Opt=StaggeredKernelsStatic::OptGeneric;
 #endif
 
   t0=usecond();
@@ -151,7 +151,7 @@ int main (int argc, char ** argv)
   FermionField ssrc  (sFGrid);  localConvert(src,ssrc);
   FermionField sresult(sFGrid); sresult=zero;
 
-  QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptHandUnroll;
+  StaggeredKernelsStatic::Opt=StaggeredKernelsStatic::OptHandUnroll;
   t0=usecond();
   for(int i=0;i<ncall1;i++){
     sDs.Dhop(ssrc,sresult,0);
@@ -165,9 +165,9 @@ int main (int argc, char ** argv)
 
 
 #ifdef AVX512
-  QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptInlineAsm;
+  StaggeredKernelsStatic::Opt=StaggeredKernelsStatic::OptInlineAsm;
 #else
-  QCD::StaggeredKernelsStatic::Opt=QCD::StaggeredKernelsStatic::OptGeneric;
+  StaggeredKernelsStatic::Opt=StaggeredKernelsStatic::OptGeneric;
 #endif
 
   err = tmp-result; 

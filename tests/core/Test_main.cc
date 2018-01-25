@@ -450,7 +450,7 @@ int main(int argc, char **argv) {
       double t0, t1, flops;
       double bytes;
       int ncall = 5000;
-      int Nc = Grid::QCD::Nc;
+      int Nc = Grid::Nc;
 
       LatticeGaugeField U(&Fine);
       //    LatticeColourMatrix Uy = peekLorentz(U,1);

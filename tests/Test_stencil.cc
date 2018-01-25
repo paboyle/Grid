@@ -70,7 +70,6 @@ int main(int argc, char ** argv) {
   }
   Integer stride =1000;
   {
-    double nrm;
     LatticeComplex coor(&Fine);
 
     for(int d=0;d<Nd;d++){
@@ -150,7 +149,7 @@ int main(int argc, char ** argv) {
 	}}}}
 
 	if (nrm > 1.0e-4) {
-	  for(int i=0;i<Check._odata.size();i++){
+	  for(int i=0;i<Check._odata_size;i++){
 	    std::cout << i<<" Check.odata "<<Check._odata[i]<< "\n"<<i<<" Bar.odata "<<Bar._odata[i]<<std::endl;
 	  }
 	}

@@ -511,6 +511,7 @@ void ExchangeTester(const functor &func)
       }
     }
     //    assert(found==1);
+    assert(found==1||found==0);
   }
   for(int i=0;i<Nsimd;i++){
     int found=0;
@@ -521,6 +522,7 @@ void ExchangeTester(const functor &func)
       }
     }
     //    assert(found==1);
+    assert(found==1||found==0);
   }
 
   /*
