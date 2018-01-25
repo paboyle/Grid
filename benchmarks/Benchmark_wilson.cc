@@ -108,13 +108,13 @@ int main (int argc, char ** argv)
     for(int mu=0;mu<Nd;mu++){
       //    ref =  src + Gamma(Gamma::Algebra::GammaX)* src ; // 1-gamma_x
       tmp = U[mu]*Cshift(src,mu,1);
-      for(int i=0;i<ref._odata.size();i++){
+      for(int i=0;i<ref._odata_size;i++){
 	ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
       }
 
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu,-1);
-      for(int i=0;i<ref._odata.size();i++){
+      for(int i=0;i<ref._odata_size;i++){
 	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
       }
     }
@@ -161,13 +161,13 @@ int main (int argc, char ** argv)
 
       //    ref =  src - Gamma(Gamma::Algebra::GammaX)* src ; // 1+gamma_x
       tmp = U[mu]*Cshift(src,mu,1);
-      for(int i=0;i<ref._odata.size();i++){
+      for(int i=0;i<ref._odata_size;i++){
 	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
       }
 
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu,-1);
-      for(int i=0;i<ref._odata.size();i++){
+      for(int i=0;i<ref._odata_size;i++){
 	ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
       }
     }
