@@ -158,7 +158,7 @@ public:
   /////////////////////////////
   // Constructors
   /////////////////////////////
-  accelerator_inline Grid_simd &  operator=(Zero &z) {
+  accelerator_inline Grid_simd &  operator=(const Zero &z) {
     vzero(*this);
     return (*this);
   }
