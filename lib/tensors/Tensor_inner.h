@@ -83,7 +83,6 @@ auto innerProductD (const iMatrix<l,N>& lhs,const iMatrix<r,N>& rhs) -> iScalar<
 {
   typedef decltype(innerProductD(lhs._internal[0][0],rhs._internal[0][0])) ret_t;
   iScalar<ret_t> ret;
-  iScalar<ret_t> tmp;
   ret=Zero();
   for(int c1=0;c1<N;c1++){
     for(int c2=0;c2<N;c2++){

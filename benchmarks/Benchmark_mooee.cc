@@ -65,7 +65,7 @@ int main (int argc, char ** argv)
 
   RealD mass=0.1;
   RealD M5  =1.8;
-  RealD NP = UGrid->_Nprocessors;
+  //  RealD NP = UGrid->_Nprocessors;
 
 
   if (1)

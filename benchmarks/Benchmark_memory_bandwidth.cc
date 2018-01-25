@@ -177,7 +177,7 @@ int main (int argc, char ** argv)
       LatticeVec z(&Grid);// random(pRNG,z);
       LatticeVec x(&Grid);// random(pRNG,x);
       LatticeVec y(&Grid);// random(pRNG,y);
-      RealD a=2.0;
+      //      RealD a=2.0;
       Real nn;      
       double start=usecond();
       for(int i=0;i<Nloop;i++){

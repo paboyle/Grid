@@ -137,7 +137,7 @@ public:
     typedef Lattice<iLorentzColourMatrix<vsimd> > GaugeField;
 
     GridBase *grid = Umu._grid;
-    int offset = readHeader(file,Umu._grid,header);
+    int offset = readHeader(file,grid,header);
 
     FieldMetaData clone(header);
 

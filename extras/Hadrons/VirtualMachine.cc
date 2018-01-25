@@ -516,7 +516,7 @@ VirtualMachine::Program VirtualMachine::schedule(const GeneticPar &par)
     LOG(Message) << "  max. cst. generation= " << par.maxCstGen << std::endl;
     LOG(Message) << "         mutation rate= " << par.mutationRate << std::endl;
     
-    unsigned int          k = 0, gen, prevPeak, nCstPeak = 0;
+    unsigned int          gen, prevPeak, nCstPeak = 0;
     std::random_device    rd;
     Scheduler::Parameters gpar;
     

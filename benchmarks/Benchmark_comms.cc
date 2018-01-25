@@ -334,7 +334,7 @@ int main (int argc, char ** argv)
 
       dbytes=dbytes*ppn;
       double xbytes    = dbytes*0.5;
-      double rbytes    = dbytes*0.5;
+      //      double rbytes    = dbytes*0.5;
       double bidibytes = dbytes;
 
       std::cout<<GridLogMessage << std::setw(4) << lat<<"\t"<<Ls<<"\t"
@@ -431,7 +431,7 @@ int main (int argc, char ** argv)
 
       dbytes=dbytes*ppn;
       double xbytes    = dbytes*0.5;
-      double rbytes    = dbytes*0.5;
+      //      double rbytes    = dbytes*0.5;
       double bidibytes = dbytes;
 
 
@@ -519,7 +519,7 @@ int main (int argc, char ** argv)
 
       dbytes=dbytes*ppn;
       double xbytes    = dbytes*0.5;
-      double rbytes    = dbytes*0.5;
+      //      double rbytes    = dbytes*0.5;
       double bidibytes = dbytes;
 
 

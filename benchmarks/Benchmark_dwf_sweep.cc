@@ -278,7 +278,7 @@ void benchsDw(std::vector<int> & latt4, int Ls, int threads, int report )
     }
   }
 
-  RealD mass=0.1;
+  //  RealD mass=0.1;
   RealD M5  =1.8;
 
   typedef WilsonFermion5D<DomainWallVec5dImplR> WilsonFermion5DR;
