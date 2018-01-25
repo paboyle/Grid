@@ -40,8 +40,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <mm_malloc.h>
 #endif
 
+
 NAMESPACE_BEGIN(Grid);
 
+// Move control to configure.ac and Config.h?
+#undef POINTER_CACHE
+#ifdef POINTER_CACHE
 class PointerCache {
 private:
 
@@ -63,7 +67,8 @@ public:
   static void *Lookup(size_t bytes) ;
 
 };
-  
+#endif  
+
 std::string sizeString(size_t bytes);
 
 struct MemoryStats
@@ -152,7 +157,12 @@ public:
     size_type bytes = __n*sizeof(_Tp);
     profilerAllocate(bytes);
 
+
+#ifdef POINTER_CACHE
     _Tp *ptr = (_Tp *) PointerCache::Lookup(bytes);
+#else
+    pointer ptr = nullptr;
+#endif
     //    if ( ptr != NULL ) 
     //      std::cout << "alignedAllocator "<<__n << " cache hit "<< std::hex << ptr <<std::dec <<std::endl;
 
@@ -166,7 +176,8 @@ public:
 #else
     if ( ptr == (_Tp *) NULL ) ptr = (_Tp *) memalign(GRID_ALLOC_ALIGN,bytes);
 #endif
-    //    std::cout << "alignedAllocator " << std::hex << ptr <<std::dec <<std::endl;
+    //    std::cout << "alignedAllocator allocate " << std::hex << ptr <<std::dec <<std::endl;
+
     // First touch optimise in threaded loop
     uint8_t *cp = (uint8_t *)ptr;
     thread_loop( (size_type n=0;n<bytes;n+=4096) , {
@@ -180,8 +191,14 @@ public:
 
     profilerFree(bytes);
 
+#ifdef POINTER_CACHE
     pointer __freeme = (pointer)PointerCache::Insert((void *)__p,bytes);
-
+#else 
+    pointer __freeme = __p;
+#endif
+    //    if ( __freeme ) {
+    //      std::cout << "alignedAllocator free:" << std::hex << __p <<std::dec <<std::endl;
+    //    }
 #ifdef HAVE_MM_MALLOC_H
     if ( __freeme ) _mm_free((void *)__freeme); 
 #else
@@ -194,6 +211,8 @@ public:
 };
 template<typename _Tp>  inline bool operator==(const alignedAllocator<_Tp>&, const alignedAllocator<_Tp>&){ return true; }
 template<typename _Tp>  inline bool operator!=(const alignedAllocator<_Tp>&, const alignedAllocator<_Tp>&){ return false; }
+
+// Deprecate shmem and comm allocator
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // MPI3 : comms must use shm region
@@ -208,6 +227,7 @@ extern "C" {
 #define PARANOID_SYMMETRIC_HEAP
 #endif
 
+#if 0
 template<typename _Tp>
 class commAllocator {
 public: 
@@ -297,14 +317,16 @@ public:
 };
 template<typename _Tp>  inline bool operator==(const commAllocator<_Tp>&, const commAllocator<_Tp>&){ return true; }
 template<typename _Tp>  inline bool operator!=(const commAllocator<_Tp>&, const commAllocator<_Tp>&){ return false; }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // Template typedefs
 ////////////////////////////////////////////////////////////////////////////////
+template<class T> using commAllocator = alignedAllocator<T>;
 template<class T> using Vector     = std::vector<T,alignedAllocator<T> >;           
-template<class T> using commVector = std::vector<T,commAllocator<T> >;              
+template<class T> using commVector = std::vector<T,alignedAllocator<T> >;
 template<class T> using Matrix     = std::vector<std::vector<T,alignedAllocator<T> > >;
-    
+
 NAMESPACE_END(Grid);
 
 #endif

@@ -6,6 +6,7 @@ NAMESPACE_BEGIN(Grid);
 MemoryStats *MemoryProfiler::stats = nullptr;
 bool         MemoryProfiler::debug = false;
 
+#ifdef POINTER_CACHE
 int PointerCache::victim;
 
 PointerCache::PointerCacheEntry PointerCache::Entries[PointerCache::Ncache];
@@ -63,7 +64,7 @@ void *PointerCache::Lookup(size_t bytes) {
   }
   return NULL;
 }
-
+#endif
 
 void check_huge_pages(void *Buf,uint64_t BYTES)
 {
