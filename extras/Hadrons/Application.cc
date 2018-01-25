@@ -43,12 +43,6 @@ using namespace Hadrons;
 Application::Application(void)
 {
     initLogger();
-    LOG(Message) << "Modules available:" << std::endl;
-    auto list = ModuleFactory::getInstance().getBuilderList();
-    for (auto &m: list)
-    {
-        LOG(Message) << "  " << m << std::endl;
-    }
     auto dim = GridDefaultLatt(), mpi = GridDefaultMpi(), loc(dim);
     locVol_ = 1;
     for (unsigned int d = 0; d < dim.size(); ++d)

@@ -171,7 +171,7 @@ void TMeson<FImpl1, FImpl2>::execute(void)
     LOG(Message) << "Computing meson contractions '" << getName() << "' using"
                  << " quarks '" << par().q1 << "' and '" << par().q2 << "'"
                  << std::endl;
-
+    
     ResultWriter           writer(RESULT_FILE_NAME(par().output));
     std::vector<TComplex>  buf;
     std::vector<Result>    result;
