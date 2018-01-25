@@ -84,7 +84,7 @@ auto innerProductD (const iMatrix<l,N>& lhs,const iMatrix<r,N>& rhs) -> iScalar<
   typedef decltype(innerProductD(lhs._internal[0][0],rhs._internal[0][0])) ret_t;
   iScalar<ret_t> ret;
   iScalar<ret_t> tmp;
-  ret=zero;
+  ret=Zero();
   for(int c1=0;c1<N;c1++){
     for(int c2=0;c2<N;c2++){
       ret._internal+=innerProductD(lhs._internal[c1][c2],rhs._internal[c1][c2]);
@@ -107,7 +107,7 @@ auto innerProduct (const iVector<l,N>& lhs,const iVector<r,N>& rhs) -> iScalar<d
 {
   typedef decltype(innerProduct(lhs._internal[0],rhs._internal[0])) ret_t;
   iScalar<ret_t> ret;
-  ret=zero;
+  ret=Zero();
   for(int c1=0;c1<N;c1++){
     ret._internal += innerProduct(lhs._internal[c1],rhs._internal[c1]);
   }
@@ -119,7 +119,7 @@ auto innerProduct (const iMatrix<l,N>& lhs,const iMatrix<r,N>& rhs) -> iScalar<d
   typedef decltype(innerProduct(lhs._internal[0][0],rhs._internal[0][0])) ret_t;
   iScalar<ret_t> ret;
   iScalar<ret_t> tmp;
-  ret=zero;
+  ret=Zero();
   for(int c1=0;c1<N;c1++){
     for(int c2=0;c2<N;c2++){
       ret._internal+=innerProduct(lhs._internal[c1][c2],rhs._internal[c1][c2]);
