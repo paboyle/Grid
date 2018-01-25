@@ -117,7 +117,7 @@ public:
       precisionChange(src_f, src_d);
       PrecChangeTimer.Stop();
       
-      zeroit(sol_f);
+      sol_f = zero;
 
       //Optionally improve inner solver guess (eg using known eigenvectors)
       if(guesser != NULL)
