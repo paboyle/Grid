@@ -180,11 +180,11 @@ accelerator_inline void vstream(RealD &l, const RealD &r){ l=r;}
   
 class Zero{};
 static Zero zero;
-template<class itype> accelerator_inline void zeroit(itype &arg){ arg=zero;};
+template<class itype> accelerator_inline void zeroit(itype &arg)   { arg=Zero();};
 template<>            accelerator_inline void zeroit(ComplexF &arg){ arg=0; };
 template<>            accelerator_inline void zeroit(ComplexD &arg){ arg=0; };
-template<>            accelerator_inline void zeroit(RealF &arg){ arg=0; };
-template<>            accelerator_inline void zeroit(RealD &arg){ arg=0; };
+template<>            accelerator_inline void zeroit(RealF &arg)   { arg=0; };
+template<>            accelerator_inline void zeroit(RealD &arg)   { arg=0; };
   
 
 //////////////////////////////////////////////////////////
