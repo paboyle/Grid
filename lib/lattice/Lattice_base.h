@@ -60,11 +60,12 @@ class LatticeBase {};
 
 template<class vobj> class LatticeAccelerator : public LatticeBase
 {
-public:
+protected:
   int checkerboard;
   vobj     *_odata;    // A managed pointer
   uint64_t _odata_size;    
   //  virtual ~LatticeBase(void) = default;
+public:
   accelerator_inline LatticeAccelerator() : checkerboard(0), _odata(nullptr), _odata_size(0) {
     //    std::cout << " Lattice accelerator object "<<this->_odata<<" size "<<this->_odata_size<<std::endl;
   }; 
