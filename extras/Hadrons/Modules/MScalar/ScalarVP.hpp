@@ -52,7 +52,8 @@ private:
                        ScalarField &prop_0_x, ScalarField &prop_nu_x,
                        TComplex u_src, int mu);
     // write momentum-projected vacuum polarisation to file(s)
-    void writeVP(const ScalarField &vp, std::string dsetName);
+    void writeVP(std::vector<ResultWriter *> &writer, const ScalarField &vp,
+                 std::string dsetName);
     // momentum-space Delta_1 insertion
     void momD1(ScalarField &s, FFT &fft);
 private:

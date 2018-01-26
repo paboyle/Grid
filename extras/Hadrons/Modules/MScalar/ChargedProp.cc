@@ -117,26 +117,25 @@ void TChargedProp::execute(void)
     envGetTmp(ScalarField, buf); 
 
     // -G*momD1*G*F*Src (momD1 = F*D1*Finv)
-    buf = GFSrc;
-    momD1(buf, fft);
-    buf = -G*buf;
-    fft.FFT_dim(propQ, buf, env().getNd()-1, FFT::backward);
+    propQ = GFSrc;
+    momD1(propQ, fft);
+    propQ = -G*propQ;
+    propSun = -propQ;
+    fft.FFT_dim(propQ, propQ, env().getNd()-1, FFT::backward);
 
     // G*momD1*G*momD1*G*F*Src (here buf = G*momD1*G*F*Src)
-    buf = -buf;
-    momD1(buf, fft);
-    propSun = G*buf;
+    momD1(propSun, fft);
+    propSun = G*propSun;
     fft.FFT_dim(propSun, propSun, env().getNd()-1, FFT::backward);
 
     // -G*momD2*G*F*Src (momD2 = F*D2*Finv)
-    buf = GFSrc;
-    momD2(buf, fft);
-    buf = -G*buf;
-    fft.FFT_dim(propTad, buf, env().getNd()-1, FFT::backward);
+    propTad = GFSrc;
+    momD2(propTad, fft);
+    propTad = -G*propTad;
+    fft.FFT_dim(propTad, propTad, env().getNd()-1, FFT::backward);
     
     // full charged scalar propagator
-    buf = GFSrc;
-    fft.FFT_dim(buf, buf, env().getNd()-1, FFT::backward);
+    fft.FFT_dim(buf, GFSrc, env().getNd()-1, FFT::backward);
     prop = buf + q*propQ + q*q*propSun + q*q*propTad;
 
     // OUTPUT IF NECESSARY
@@ -189,13 +188,14 @@ void TChargedProp::execute(void)
                 peekSite(site, propTad, whichmom);
                 resultTad[t]=TensorRemove(site);
             }
-			saveResult(filename, "charge", q);
-			saveResult(filename, "mass", par().mass);
-        	saveResult(filename, "prop", result);
-        	saveResult(filename, "prop_0", result0);
-        	saveResult(filename, "prop_Q", resultQ);
-        	saveResult(filename, "prop_Sun", resultSun);
-        	saveResult(filename, "prop_Tad", resultTad);
+            ResultWriter writer(RESULT_FILE_NAME(filename));
+			write(writer, "charge", q);
+			write(writer, "mass", par().mass);
+        	write(writer, "prop", result);
+        	write(writer, "prop_0", result0);
+        	write(writer, "prop_Q", resultQ);
+        	write(writer, "prop_Sun", resultSun);
+        	write(writer, "prop_Tad", resultTad);
         }
     }
 

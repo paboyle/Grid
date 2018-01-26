@@ -236,7 +236,8 @@ void TScalarVP::execute(void)
         vpTensor.push_back(vpTensor_mu);
     }
 
-    // Prepare output files if necessary
+    // Open output files if necessary
+    std::vector<ResultWriter *> writer;
     if (!par().output.empty())
     {
         LOG(Message) << "Preparing output files..." << std::endl;
@@ -247,8 +248,10 @@ void TScalarVP::execute(void)
                                    + std::to_string(mom[0])
                                    + std::to_string(mom[1])
                                    + std::to_string(mom[2]);
-            saveResult(filename, "charge", q);
-            saveResult(filename, "mass", static_cast<TChargedProp *>(vm().getModule(par().scalarProp))->par().mass);
+            ResultWriter *writer_i = new ResultWriter(RESULT_FILE_NAME(filename));
+            writer.push_back(writer_i);
+            write(*writer_i, "charge", q);
+            write(*writer_i, "mass", static_cast<TChargedProp *>(vm().getModule(par().scalarProp))->par().mass);
         }
     }
 
@@ -272,7 +275,7 @@ void TScalarVP::execute(void)
             // Output if necessary
             if (!par().output.empty())
             {
-                writeVP(buf,
+                writeVP(writer, buf,
                         "Pi_free_"+std::to_string(mu)+"_"+std::to_string(nu));
             }
 
@@ -282,7 +285,7 @@ void TScalarVP::execute(void)
             // Output if necessary
             if (!par().output.empty())
             {
-                writeVP(result,
+                writeVP(writer, result,
                         "Pi_srcT_"+std::to_string(mu)+"_"+std::to_string(nu));
             }
 
@@ -292,7 +295,7 @@ void TScalarVP::execute(void)
             // Output if necessary
             if (!par().output.empty())
             {
-                writeVP(result,
+                writeVP(writer, result,
                         "Pi_snkT_"+std::to_string(mu)+"_"+std::to_string(nu));
             }
 
@@ -306,7 +309,7 @@ void TScalarVP::execute(void)
             // Output if necessary
             if (!par().output.empty())
             {
-                writeVP(result,
+                writeVP(writer, result,
                         "Pi_S_"+std::to_string(mu)+"_"+std::to_string(nu));
             }
 
@@ -329,7 +332,7 @@ void TScalarVP::execute(void)
             // Output if necessary
             if (!par().output.empty())
             {
-                writeVP(result,
+                writeVP(writer, result,
                         "Pi_4C_"+std::to_string(mu)+"_"+std::to_string(nu));
             }
 
@@ -341,7 +344,7 @@ void TScalarVP::execute(void)
             // Output if necessary
             if (!par().output.empty())
             {
-                writeVP(result,
+                writeVP(writer, result,
                         "Pi_X_"+std::to_string(mu)+"_"+std::to_string(nu));
             }
 
@@ -358,7 +361,7 @@ void TScalarVP::execute(void)
             // Output if necessary
             if (!par().output.empty())
             {
-                writeVP(result,
+                writeVP(writer, result,
                         "Pi_2E_"+std::to_string(mu)+"_"+std::to_string(nu));
             }
 
@@ -374,16 +377,23 @@ void TScalarVP::execute(void)
             // Output if necessary
             if (!par().output.empty())
             {
-                writeVP(result,
+                writeVP(writer, result,
                         "Pi_2T_"+std::to_string(mu)+"_"+std::to_string(nu));
             }
 
             // Output full VP if necessary
             if (!par().output.empty())
             {
-                writeVP(*vpTensor[mu][nu],
+                writeVP(writer, *vpTensor[mu][nu],
                         "Pi_"+std::to_string(mu)+"_"+std::to_string(nu));
             }
+        }
+    }
+    if (!par().output.empty())
+    {
+        for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
+        {
+            delete writer[i_p];
         }
     }
 }
@@ -438,7 +448,7 @@ void TScalarVP::vpContraction(ScalarField &vp,
     vp = 2.0*real(vp);
 }
 
-void TScalarVP::writeVP(const ScalarField &vp, std::string dsetName)
+void TScalarVP::writeVP(std::vector<ResultWriter *> &writer, const ScalarField &vp, std::string dsetName)
 {
     std::vector<TComplex>   vecBuf;
     std::vector<Complex>    result;
@@ -446,11 +456,6 @@ void TScalarVP::writeVP(const ScalarField &vp, std::string dsetName)
 
     for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
     {
-        std::vector<int> mom = strToVec<int>(par().outputMom[i_p]);
-        std::string filename = par().output + "_"
-                               + std::to_string(mom[0])
-                               + std::to_string(mom[1])
-                               + std::to_string(mom[2]);
         buf = vp*(*momPhase_[i_p]);
         sliceSum(buf, vecBuf, Tp);
         result.resize(vecBuf.size());
@@ -458,7 +463,7 @@ void TScalarVP::writeVP(const ScalarField &vp, std::string dsetName)
         {
             result[t] = TensorRemove(vecBuf[t]);
         }
-        saveResult(filename, dsetName, result);
+        write(*writer[i_p], dsetName, result);
     }
 }
 

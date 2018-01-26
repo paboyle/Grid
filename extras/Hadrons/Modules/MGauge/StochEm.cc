@@ -57,10 +57,8 @@ std::vector<std::string> TStochEm::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void TStochEm::setup(void)
 {
-    if (!env().hasCreatedObject("_" + getName() + "_weight"))
-    {
-        envCacheLat(EmComp, "_" + getName() + "_weight");
-    }
+    weightDone_ = env().hasCreatedObject("_" + getName() + "_weight");
+    envCacheLat(EmComp, "_" + getName() + "_weight");
     envCreateLat(EmField, getName());
 }
 
@@ -73,7 +71,7 @@ void TStochEm::execute(void)
     auto    &a = envGet(EmField, getName());
     auto    &w = envGet(EmComp, "_" + getName() + "_weight");
     
-    if (!env().hasCreatedObject("_" + getName() + "_weight"))
+    if (!weightDone_)
     {
         LOG(Message) << "Caching stochastic EM potential weight (gauge: "
                      << par().gauge << ", zero-mode scheme: "
