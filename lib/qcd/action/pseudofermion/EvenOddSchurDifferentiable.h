@@ -61,8 +61,8 @@ public:
     conformable(fcbgrid,V._grid);
 
     // Assert the checkerboard?? or code for either
-    assert(U.checkerboard==Odd);
-    assert(V.checkerboard==U.checkerboard);
+    assert(U.Checkerboard()==Odd);
+    assert(V.Checkerboard()==U.Checkerboard());
 
     // NOTE Guido: WE DO NOT WANT TO USE THE ucbgrid GRID FOR THE FORCE
     // it is not conformable with the HMC force field
@@ -83,8 +83,8 @@ public:
     this->_Mat.MooeeInvDag(tmp1,tmp2); // even->even 
     this->_Mat.MeoDeriv(ForceE,tmp2,V,DaggerNo);
           
-    assert(ForceE.checkerboard==Even);
-    assert(ForceO.checkerboard==Odd);
+    assert(ForceE.Checkerboard()==Even);
+    assert(ForceO.Checkerboard()==Odd);
 
     setCheckerboard(Force,ForceE); 
     setCheckerboard(Force,ForceO);
@@ -106,8 +106,8 @@ public:
     conformable(fcbgrid,V._grid);
 
     // Assert the checkerboard?? or code for either
-    assert(V.checkerboard==Odd);
-    assert(V.checkerboard==V.checkerboard);
+    assert(V.Checkerboard()==Odd);
+    assert(V.Checkerboard()==V.Checkerboard());
 
     // NOTE Guido: WE DO NOT WANT TO USE THE ucbgrid GRID FOR THE FORCE
     // it is not conformable with the HMC force field
@@ -127,8 +127,8 @@ public:
     this->_Mat.MooeeInv(tmp1,tmp2); // even->even 
     this->_Mat.MeoDeriv(ForceE,tmp2,V,DaggerYes);
 
-    assert(ForceE.checkerboard==Even);
-    assert(ForceO.checkerboard==Odd);
+    assert(ForceE.Checkerboard()==Even);
+    assert(ForceO.Checkerboard()==Odd);
 
     setCheckerboard(Force,ForceE); 
     setCheckerboard(Force,ForceO);

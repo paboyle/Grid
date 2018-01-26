@@ -42,7 +42,7 @@ NAMESPACE_BEGIN(Grid);
 template<class vobj,class Coeff>
 void axpibg5x(Lattice<vobj> &z,const Lattice<vobj> &x,Coeff a,Coeff b)
 {
-  z.checkerboard = x.checkerboard;
+  z.Checkerboard() = x.Checkerboard();
   conformable(x,z);
 
   GridBase *grid=x._grid;
@@ -50,30 +50,30 @@ void axpibg5x(Lattice<vobj> &z,const Lattice<vobj> &x,Coeff a,Coeff b)
   Gamma G5(Gamma::Algebra::Gamma5);
   parallel_for(int ss=0;ss<grid->oSites();ss++){
     vobj tmp;
-    tmp = a*x._odata[ss];
-    tmp = tmp + G5*(b*timesI(x._odata[ss]));
-    vstream(z._odata[ss],tmp);
+    tmp = a*x[ss];
+    tmp = tmp + G5*(b*timesI(x[ss]));
+    vstream(z[ss],tmp);
   }
 }
 
 template<class vobj,class Coeff> 
 void axpby_ssp(Lattice<vobj> &z, Coeff a,const Lattice<vobj> &x,Coeff b,const Lattice<vobj> &y,int s,int sp)
 {
-  z.checkerboard = x.checkerboard;
+  z.Checkerboard() = x.Checkerboard();
   conformable(x,y);
   conformable(x,z);
   GridBase *grid=x._grid;
   int Ls = grid->_rdimensions[0];
   parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
-    vobj tmp = a*x._odata[ss+s]+b*y._odata[ss+sp];
-    vstream(z._odata[ss+s],tmp);
+    vobj tmp = a*x[ss+s]+b*y[ss+sp];
+    vstream(z[ss+s],tmp);
   }
 }
 
 template<class vobj,class Coeff> 
 void ag5xpby_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const Lattice<vobj> &y,int s,int sp)
 {
-  z.checkerboard = x.checkerboard;
+  z.Checkerboard() = x.Checkerboard();
   conformable(x,y);
   conformable(x,z);
   GridBase *grid=x._grid;
@@ -82,16 +82,16 @@ void ag5xpby_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const L
   Gamma G5(Gamma::Algebra::Gamma5);
   parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     vobj tmp;
-    tmp = G5*x._odata[ss+s]*a;
-    tmp = tmp + b*y._odata[ss+sp];
-    vstream(z._odata[ss+s],tmp);
+    tmp = G5*x[ss+s]*a;
+    tmp = tmp + b*y[ss+sp];
+    vstream(z[ss+s],tmp);
   }
 }
 
 template<class vobj,class Coeff> 
 void axpbg5y_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const Lattice<vobj> &y,int s,int sp)
 {
-  z.checkerboard = x.checkerboard;
+  z.Checkerboard() = x.Checkerboard();
   conformable(x,y);
   conformable(x,z);
   GridBase *grid=x._grid;
@@ -99,16 +99,16 @@ void axpbg5y_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const L
   Gamma G5(Gamma::Algebra::Gamma5);
   parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     vobj tmp;
-    tmp = G5*y._odata[ss+sp]*b;
-    tmp = tmp + a*x._odata[ss+s];
-    vstream(z._odata[ss+s],tmp);
+    tmp = G5*y[ss+sp]*b;
+    tmp = tmp + a*x[ss+s];
+    vstream(z[ss+s],tmp);
   }
 }
 
 template<class vobj,class Coeff> 
 void ag5xpbg5y_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const Lattice<vobj> &y,int s,int sp)
 {
-  z.checkerboard = x.checkerboard;
+  z.Checkerboard() = x.Checkerboard();
   conformable(x,y);
   conformable(x,z);
   GridBase *grid=x._grid;
@@ -118,41 +118,41 @@ void ag5xpbg5y_ssp(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const
   parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     vobj tmp1;
     vobj tmp2;
-    tmp1 = a*x._odata[ss+s]+b*y._odata[ss+sp];
+    tmp1 = a*x[ss+s]+b*y[ss+sp];
     tmp2 = G5*tmp1;
-    vstream(z._odata[ss+s],tmp2);
+    vstream(z[ss+s],tmp2);
   }
 }
 
 template<class vobj,class Coeff> 
 void axpby_ssp_pminus(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const Lattice<vobj> &y,int s,int sp)
 {
-  z.checkerboard = x.checkerboard;
+  z.Checkerboard() = x.Checkerboard();
   conformable(x,y);
   conformable(x,z);
   GridBase *grid=x._grid;
   int Ls = grid->_rdimensions[0];
   parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     vobj tmp;
-    spProj5m(tmp,y._odata[ss+sp]);
-    tmp = a*x._odata[ss+s]+b*tmp;
-    vstream(z._odata[ss+s],tmp);
+    spProj5m(tmp,y[ss+sp]);
+    tmp = a*x[ss+s]+b*tmp;
+    vstream(z[ss+s],tmp);
   }
 }
 
 template<class vobj,class Coeff> 
 void axpby_ssp_pplus(Lattice<vobj> &z,Coeff a,const Lattice<vobj> &x,Coeff b,const Lattice<vobj> &y,int s,int sp)
 {
-  z.checkerboard = x.checkerboard;
+  z.Checkerboard() = x.Checkerboard();
   conformable(x,y);
   conformable(x,z);
   GridBase *grid=x._grid;
   int Ls = grid->_rdimensions[0];
   parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     vobj tmp;
-    spProj5p(tmp,y._odata[ss+sp]);
-    tmp = a*x._odata[ss+s]+b*tmp;
-    vstream(z._odata[ss+s],tmp);
+    spProj5p(tmp,y[ss+sp]);
+    tmp = a*x[ss+s]+b*tmp;
+    vstream(z[ss+s],tmp);
   }
 }
 
@@ -160,7 +160,7 @@ template<class vobj>
 void G5R5(Lattice<vobj> &z,const Lattice<vobj> &x)
 {
   GridBase *grid=x._grid;
-  z.checkerboard = x.checkerboard;
+  z.Checkerboard() = x.Checkerboard();
   conformable(x,z);
   int Ls = grid->_rdimensions[0];
   Gamma G5(Gamma::Algebra::Gamma5);
@@ -168,8 +168,8 @@ void G5R5(Lattice<vobj> &z,const Lattice<vobj> &x)
     vobj tmp;
     for(int s=0;s<Ls;s++){
       int sp = Ls-1-s;
-      tmp = G5*x._odata[ss+s];
-      vstream(z._odata[ss+sp],tmp);
+      tmp = G5*x[ss+s];
+      vstream(z[ss+sp],tmp);
     }
   }
 }

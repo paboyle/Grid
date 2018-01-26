@@ -77,8 +77,8 @@ public:
   static inline void AddLink(Field &U, LinkField &W,
                                   int mu) { // U[mu] += W
     thread_loop ( (auto ss = 0; ss < U._grid->oSites(); ss++),{
-      U._odata[ss]._internal[mu] =
-          U._odata[ss]._internal[mu] + W._odata[ss]._internal;
+      U[ss]._internal[mu] =
+          U[ss]._internal[mu] + W[ss]._internal;
     });
   }
 

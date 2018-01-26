@@ -224,19 +224,19 @@ public:
     su2SubGroupIndex(i0, i1, su2_index);
 
     parallel_for (int ss = 0; ss < grid->oSites(); ss++) {
-      subgroup._odata[ss]()()(0, 0) = source._odata[ss]()()(i0, i0);
-      subgroup._odata[ss]()()(0, 1) = source._odata[ss]()()(i0, i1);
-      subgroup._odata[ss]()()(1, 0) = source._odata[ss]()()(i1, i0);
-      subgroup._odata[ss]()()(1, 1) = source._odata[ss]()()(i1, i1);
+      subgroup[ss]()()(0, 0) = source[ss]()()(i0, i0);
+      subgroup[ss]()()(0, 1) = source[ss]()()(i0, i1);
+      subgroup[ss]()()(1, 0) = source[ss]()()(i1, i0);
+      subgroup[ss]()()(1, 1) = source[ss]()()(i1, i1);
 
-      iSU2Matrix<vcplx> Sigma = subgroup._odata[ss];
+      iSU2Matrix<vcplx> Sigma = subgroup[ss];
 
       Sigma = Sigma - adj(Sigma) + trace(adj(Sigma));
 
-      subgroup._odata[ss] = Sigma;
+      subgroup[ss] = Sigma;
 
       // this should be purely real
-      Determinant._odata[ss] =
+      Determinant[ss] =
 	Sigma()()(0, 0) * Sigma()()(1, 1) - Sigma()()(0, 1) * Sigma()()(1, 0);
     }
   }
@@ -254,10 +254,10 @@ public:
 
     dest = 1.0;  // start out with identity
     parallel_for (int ss = 0; ss < grid->oSites(); ss++) {
-      dest._odata[ss]()()(i0, i0) = subgroup._odata[ss]()()(0, 0);
-      dest._odata[ss]()()(i0, i1) = subgroup._odata[ss]()()(0, 1);
-      dest._odata[ss]()()(i1, i0) = subgroup._odata[ss]()()(1, 0);
-      dest._odata[ss]()()(i1, i1) = subgroup._odata[ss]()()(1, 1);
+      dest[ss]()()(i0, i0) = subgroup[ss]()()(0, 0);
+      dest[ss]()()(i0, i1) = subgroup[ss]()()(0, 1);
+      dest[ss]()()(i1, i0) = subgroup[ss]()()(1, 0);
+      dest[ss]()()(i1, i1) = subgroup[ss]()()(1, 1);
     }
   }
 

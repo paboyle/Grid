@@ -89,17 +89,17 @@ public:
 	const vobj *temp, *t_p;
 	    
 	SE = phiStencil.GetEntry(permute_type, mu, i);
-	t_p  = &p._odata[i];
+	t_p  = &p[i];
 	if ( SE->_is_local ) {
-	  temp = &p._odata[SE->_offset];
+	  temp = &p[SE->_offset];
 	  if ( SE->_permute ) {
 	    permute(temp2, *temp, permute_type);
-	    action._odata[i] -= temp2*(*t_p) + (*t_p)*temp2;
+	    action[i] -= temp2*(*t_p) + (*t_p)*temp2;
 	  } else {
-	    action._odata[i] -= (*temp)*(*t_p) + (*t_p)*(*temp);
+	    action[i] -= (*temp)*(*t_p) + (*t_p)*(*temp);
 	  }
 	} else {
-	  action._odata[i] -= phiStencil.CommBuf()[SE->_offset]*(*t_p) + (*t_p)*phiStencil.CommBuf()[SE->_offset];
+	  action[i] -= phiStencil.CommBuf()[SE->_offset]*(*t_p) + (*t_p)*phiStencil.CommBuf()[SE->_offset];
 	}
       }
       //  action -= pshift*p + p*pshift;
@@ -126,15 +126,15 @@ public:
 	SE = phiStencil.GetEntry(permute_type, point, i);
 	  
 	if ( SE->_is_local ) {
-	  temp = &p._odata[SE->_offset];
+	  temp = &p[SE->_offset];
 	  if ( SE->_permute ) {
 	    permute(temp2, *temp, permute_type);
-	    force._odata[i] -= temp2;
+	    force[i] -= temp2;
 	  } else {
-	    force._odata[i] -= *temp;
+	    force[i] -= *temp;
 	  }
 	} else {
-	  force._odata[i] -= phiStencil.CommBuf()[SE->_offset];
+	  force[i] -= phiStencil.CommBuf()[SE->_offset];
 	}
       }
     }
