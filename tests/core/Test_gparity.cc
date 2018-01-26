@@ -268,8 +268,8 @@ int main (int argc, char ** argv)
   SchurDiagMooeeOperator<GparityDiracOp,GparityFermionField> HermOpEO2f(GPDdwf);
   CG2f(HermOpEO2f,src_o_2f,result_o_2f);
 
-  std::cout << "2f cb "<<result_o_2f.checkerboard<<std::endl;
-  std::cout << "1f cb "<<result_o_1f.checkerboard<<std::endl;
+  std::cout << "2f cb "<<result_o_2f.Checkerboard()<<std::endl;
+  std::cout << "1f cb "<<result_o_1f.Checkerboard()<<std::endl;
 
   std::cout << " result norms " <<norm2(result_o_2f)<<" " <<norm2(result_o_1f)<<std::endl;
 
@@ -284,8 +284,8 @@ int main (int argc, char ** argv)
   res0o = PeekIndex<0>(result_o_2f,0);
   res1o = PeekIndex<0>(result_o_2f,1);
 
-  std::cout << "res cb "<<res0o.checkerboard<<std::endl;
-  std::cout << "res cb "<<res1o.checkerboard<<std::endl;
+  std::cout << "res cb "<<res0o.Checkerboard()<<std::endl;
+  std::cout << "res cb "<<res1o.Checkerboard()<<std::endl;
 
   setCheckerboard(res0,res0o);
   setCheckerboard(res1,res1o);

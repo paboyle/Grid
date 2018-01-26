@@ -181,8 +181,8 @@ int main (int argc, char ** argv)
 
 	  //	  std::cout << " coor "<<" ["<<coor[0]<<","<<coor[1]<<","<<coor[2]<<","<<coor[3]<<"] \n ";
 	  //	  std::cout << "shift "<< shift <<" dir "<<dir<< " checker board "<< checkerboard << " ";
-	  //	  std::cout << "Uo "   << ShiftUo.checkerboard << " Ue "<<ShiftUe.checkerboard<<std::endl;
-	  if ( checkerboard == ShiftUo.checkerboard ) {
+	  //	  std::cout << "Uo "   << ShiftUo.Checkerboard() << " Ue "<<ShiftUe.Checkerboard()<<std::endl;
+	  if ( checkerboard == ShiftUo.Checkerboard() ) {
 	    peekSite(cmeo,ShiftUo,coor);
 	  } else { 
 	    peekSite(cmeo,ShiftUe,coor);

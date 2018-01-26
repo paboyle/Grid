@@ -91,7 +91,7 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu5d(FGrid); 
   for(int ss=0;ss<Umu._grid->oSites();ss++){
     for(int s=0;s<Ls;s++){
-      Umu5d._odata[Ls*ss+s] = Umu._odata[ss];
+      Umu5d[Ls*ss+s] = Umu[ss];
     }
   }
 

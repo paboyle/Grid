@@ -176,7 +176,7 @@ int main (int argc, char ** argv)
 
 	  Integer checkerboard = RBFine.CheckerBoard(coor);
 
-	  if ( checkerboard == ShiftUo.checkerboard ) {
+	  if ( checkerboard == ShiftUo.Checkerboard() ) {
 	    peekSite(cmeo,ShiftUo,coor);
 	  } else { 
 	    peekSite(cmeo,ShiftUe,coor);
@@ -210,7 +210,7 @@ int main (int argc, char ** argv)
 
 	    std::cout << " coor "<<" ["<<coor[0]<<","<<coor[1]<<","<<coor[2]<<","<<coor[3]<<"] \n ";
 	    std::cout << "shift "<< shift <<" dir "<<dir<< " checker board "<< checkerboard << " ";
-	    std::cout << "Uo cb = "   << ShiftUo.checkerboard << " Ue cb= "<<ShiftUe.checkerboard<<std::endl;
+	    std::cout << "Uo cb = "   << ShiftUo.Checkerboard() << " Ue cb= "<<ShiftUe.Checkerboard()<<std::endl;
 
 	    std::cout<<"EOFAIL shift "<< shift<<" in dir "<< dir
 		     <<" ["<<coor[0]<<","<<coor[1]<<","<<coor[2]<<","<<coor[3]<<"] = "

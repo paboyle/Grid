@@ -75,7 +75,7 @@ int main (int argc, char ** argv)
 
     for( int cb=0;cb<2;cb++ ) {
 
-      one.checkerboard=subsets[cb];
+      one.Checkerboard()=subsets[cb];
       mask= zero;
       setCheckerboard(mask,one);
 

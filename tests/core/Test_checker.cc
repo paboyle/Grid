@@ -98,7 +98,7 @@ int main (int argc, char ** argv)
       for(site[3]=0;site[3]<latt[2];site[3]++){
 	for(site[2]=0;site[2]<latt[1];site[2]++){
 	  for(site[1]=0;site[1]<latt[0];site[1]++){
-	    if(src_o._grid->CheckerBoard(site) != src_o.checkerboard)
+	    if(src_o._grid->CheckerBoard(site) != src_o.Checkerboard())
 	      continue;
 
 	    std::cout << "Site (" << site[0] << "," << site[1] << "," << site[2] << "," << site[3] << "," << site[4] << ")" << std::endl;
