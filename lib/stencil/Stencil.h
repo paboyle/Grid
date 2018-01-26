@@ -64,7 +64,7 @@ void Gather_plane_simple_table (std::vector<std::pair<int,int> >& table,const La
 {
   int num=table.size();
   parallel_for(int i=0;i<num;i++){
-    compress.Compress(&buffer[off],table[i].first,rhs._odata[so+table[i].second]);
+    compress.Compress(&buffer[off],table[i].first,rhs[so+table[i].second]);
   }
 }
 
@@ -84,7 +84,7 @@ void Gather_plane_exchange_table(std::vector<std::pair<int,int> >& table,const L
   int num=table.size()/2;
   int so  = plane*rhs._grid->_ostride[dimension]; // base offset for start of plane 
   parallel_for(int j=0;j<num;j++){
-    compress.CompressExchange(&pointers[0][0],&pointers[1][0],&rhs._odata[0],
+    compress.CompressExchange(&pointers[0][0],&pointers[1][0],&rhs[0],
 			      j,so+table[2*j].second,so+table[2*j+1].second,type);
   }
 }
@@ -383,7 +383,7 @@ public:
     // Map to always positive shift modulo global full dimension.
     int shift = (displacement+fd)%fd;
 
-    assert (source.checkerboard== _checkerboard);
+    assert (source.Checkerboard()== _checkerboard);
     
     // the permute type
     int simd_layout     = _grid->_simd_layout[dimension];
@@ -880,7 +880,7 @@ public:
     int buffer_size = _grid->_slice_nblock[dimension]*_grid->_slice_block[dimension];
     
     int cb= (cbmask==0x2)? Odd : Even;
-    int sshift= _grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,cb);
+    int sshift= _grid->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,cb);
     
     int shm_receive_only = 1;
     for(int x=0;x<rd;x++){       
@@ -1012,7 +1012,7 @@ public:
     ///////////////////////////////////////////
     
     int cb    = (cbmask==0x2)? Odd : Even;
-    int sshift= _grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,cb);
+    int sshift= _grid->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,cb);
     
     // loop over outer coord planes orthog to dim
     int shm_receive_only = 1;
