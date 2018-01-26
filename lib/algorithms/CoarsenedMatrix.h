@@ -129,7 +129,7 @@ public:
       blockProject(iProj,subspace[i],subspace);
       eProj=zero; 
       parallel_for(int ss=0;ss<CoarseGrid->oSites();ss++){
-	eProj._odata[ss](i)=CComplex(1.0);
+	eProj[ss](i)=CComplex(1.0);
       }
       eProj=eProj - iProj;
       std::cout<<GridLogMessage<<"Orthog check error "<<i<<" " << norm2(eProj)<<std::endl;
@@ -140,7 +140,7 @@ public:
     blockProject(CoarseVec,FineVec,subspace);
   }
   void PromoteFromSubspace(const CoarseVector &CoarseVec,FineField &FineVec){
-    FineVec.checkerboard = subspace[0].checkerboard;
+    FineVec.Checkerboard() = subspace[0].Checkerboard();
     blockPromote(CoarseVec,FineVec,subspace);
   }
   void CreateSubspaceRandom(GridParallelRNG &RNG){
@@ -282,15 +282,15 @@ public:
 	SE=Stencil.GetEntry(ptype,point,ss);
 	  
 	if(SE->_is_local&&SE->_permute) { 
-	  permute(nbr,in._odata[SE->_offset],ptype);
+	  permute(nbr,in[SE->_offset],ptype);
 	} else if(SE->_is_local) { 
-	  nbr = in._odata[SE->_offset];
+	  nbr = in[SE->_offset];
 	} else {
 	  nbr = Stencil.CommBuf()[SE->_offset];
 	}
-	res = res + A[point]._odata[ss]*nbr;
+	res = res + A[point][ss]*nbr;
       }
-      vstream(out._odata[ss],res);
+      vstream(out[ss],res);
     }
     return norm2(out);
   };
@@ -387,9 +387,9 @@ public:
 	parallel_for(int ss=0;ss<Grid()->oSites();ss++){
 	  for(int j=0;j<nbasis;j++){
 	    if( disp!= 0 ) {
-	      A[p]._odata[ss](j,i) = oProj._odata[ss](j);
+	      A[p][ss](j,i) = oProj[ss](j);
 	    }
-	    A[self_stencil]._odata[ss](j,i) =	A[self_stencil]._odata[ss](j,i) + iProj._odata[ss](j);
+	    A[self_stencil][ss](j,i) =	A[self_stencil][ss](j,i) + iProj[ss](j);
 	  }
 	}
       }
@@ -443,7 +443,7 @@ public:
     A[8] = val*ident;
 
     //      for(int s=0;s<Grid()->oSites();s++) {
-    //	A[8]._odata[s]=val._odata[s];
+    //	A[8][s]=val[s];
     //      }
   }
   void ForceHermitian(void) {

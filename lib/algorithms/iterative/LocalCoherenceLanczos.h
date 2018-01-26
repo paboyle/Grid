@@ -113,8 +113,8 @@ public:
 
     GridBase *FineGrid = _Aggregate.FineGrid;
 
-    FineField fin(FineGrid) ;fin.checkerboard  =_Aggregate.checkerboard;
-    FineField fout(FineGrid);fout.checkerboard =_Aggregate.checkerboard;
+    FineField fin(FineGrid) ;fin.Checkerboard()  =_Aggregate.Checkerboard();
+    FineField fout(FineGrid);fout.Checkerboard() =_Aggregate.Checkerboard();
     
     _Aggregate.PromoteFromSubspace(in,fin);    std::cout<<GridLogIRL<<"ProjectedFunctionHermop : Promote to fine"<<std::endl;
     _poly(_Linop,fin,fout);                    std::cout<<GridLogIRL<<"ProjectedFunctionHermop : Poly "<<std::endl;
@@ -172,10 +172,10 @@ public:
   {
     GridBase *FineGrid = _Aggregate.FineGrid;
 
-    int checkerboard   = _Aggregate.checkerboard;
+    int checkerboard   = _Aggregate.Checkerboard();
 
-    FineField fB(FineGrid);fB.checkerboard =checkerboard;
-    FineField fv(FineGrid);fv.checkerboard =checkerboard;
+    FineField fB(FineGrid);fB.Checkerboard() =checkerboard;
+    FineField fv(FineGrid);fv.Checkerboard() =checkerboard;
 
     _Aggregate.PromoteFromSubspace(B,fv);
     _smoother(_Linop,fv,fB); 
@@ -254,11 +254,11 @@ public:
     int Nk = nbasis;
     _Aggregate.subspace.resize(Nk,_FineGrid);
     _Aggregate.subspace[0]=1.0;
-    _Aggregate.subspace[0].checkerboard=_checkerboard;
+    _Aggregate.subspace[0].Checkerboard()=_checkerboard;
     normalise(_Aggregate.subspace[0]);
     PlainHermOp<FineField>    Op(_FineOp);
     for(int k=1;k<Nk;k++){
-      _Aggregate.subspace[k].checkerboard=_checkerboard;
+      _Aggregate.subspace[k].Checkerboard()=_checkerboard;
       Op(_Aggregate.subspace[k-1],_Aggregate.subspace[k]);
       normalise(_Aggregate.subspace[k]);
     }
@@ -308,7 +308,7 @@ public:
 
     ImplicitlyRestartedLanczos<FineField> IRL(ChebyOp,Op,Nstop,Nk,Nm,resid,MaxIt,betastp,MinRes);
 
-    FineField src(_FineGrid); src=1.0; src.checkerboard = _checkerboard;
+    FineField src(_FineGrid); src=1.0; src.Checkerboard() = _checkerboard;
 
     int Nconv;
     IRL.calc(evals_fine,_Aggregate.subspace,src,Nconv,false);

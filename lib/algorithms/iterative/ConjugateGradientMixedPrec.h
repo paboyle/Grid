@@ -67,18 +67,18 @@ public:
     GridStopWatch TotalTimer;
     TotalTimer.Start();
     
-    int cb = src_d_in.checkerboard;
-    sol_d.checkerboard = cb;
+    int cb = src_d_in.Checkerboard();
+    sol_d.Checkerboard() = cb;
     
     RealD src_norm = norm2(src_d_in);
     RealD stop = src_norm * Tolerance*Tolerance;
 
     GridBase* DoublePrecGrid = src_d_in._grid;
     FieldD tmp_d(DoublePrecGrid);
-    tmp_d.checkerboard = cb;
+    tmp_d.Checkerboard() = cb;
     
     FieldD tmp2_d(DoublePrecGrid);
-    tmp2_d.checkerboard = cb;
+    tmp2_d.Checkerboard() = cb;
     
     FieldD src_d(DoublePrecGrid);
     src_d = src_d_in; //source for next inner iteration, computed from residual during operation
@@ -86,10 +86,10 @@ public:
     RealD inner_tol = InnerTolerance;
     
     FieldF src_f(SinglePrecGrid);
-    src_f.checkerboard = cb;
+    src_f.Checkerboard() = cb;
     
     FieldF sol_f(SinglePrecGrid);
-    sol_f.checkerboard = cb;
+    sol_f.Checkerboard() = cb;
     
     ConjugateGradient<FieldF> CG_f(inner_tol, MaxInnerIterations);
     CG_f.ErrorOnNoConverge = false;

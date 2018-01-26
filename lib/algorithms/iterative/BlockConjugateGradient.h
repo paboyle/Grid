@@ -143,7 +143,7 @@ public:
 
     std::cout<<GridLogMessage<<" Block Conjugate Gradient : Orthog "<<Orthog<<" Nblock "<<Nblock<<std::endl;
 
-    X.checkerboard = B.checkerboard;
+    X.Checkerboard() = B.Checkerboard();
     conformable(X, B);
 
     Field tmp(B);
@@ -327,7 +327,7 @@ public:
 
     std::cout<<GridLogMessage<<" Block Conjugate Gradient : Orthog "<<Orthog<<" Nblock "<<Nblock<<std::endl;
 
-    Psi.checkerboard = Src.checkerboard;
+    Psi.Checkerboard() = Src.Checkerboard();
     conformable(Psi, Src);
 
     Field P(Src);
@@ -474,7 +474,7 @@ public:
 
     std::cout<<GridLogMessage<<"MultiRHS Conjugate Gradient : Orthog "<<Orthog<<" Nblock "<<Nblock<<std::endl;
 
-    Psi.checkerboard = Src.checkerboard;
+    Psi.Checkerboard() = Src.Checkerboard();
     conformable(Psi, Src);
 
     Field P(Src);

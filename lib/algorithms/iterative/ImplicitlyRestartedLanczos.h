@@ -64,11 +64,11 @@ void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, i
       
       for(int j=j0; j<j1; ++j){
 	for(int k=k0; k<k1; ++k){
-	  B[j] +=Qt(j,k) * basis[k]._odata[ss];
+	  B[j] +=Qt(j,k) * basis[k][ss];
 	}
       }
       for(int j=j0; j<j1; ++j){
-	  basis[j]._odata[ss] = B[j];
+	  basis[j][ss] = B[j];
       }
     }
   }
@@ -81,13 +81,13 @@ void basisRotateJ(Field &result,std::vector<Field> &basis,Eigen::MatrixXd& Qt,in
   typedef typename Field::vector_object vobj;
   GridBase* grid = basis[0]._grid;
 
-  result.checkerboard = basis[0].checkerboard;
+  result.Checkerboard() = basis[0].Checkerboard();
   parallel_for(int ss=0;ss < grid->oSites();ss++){
     vobj B = zero;
     for(int k=k0; k<k1; ++k){
-      B +=Qt(j,k) * basis[k]._odata[ss];
+      B +=Qt(j,k) * basis[k][ss];
     }
-    result._odata[ss] = B;
+    result[ss] = B;
   }
 }
 
@@ -487,7 +487,7 @@ until convergence
 
 	std::cout << GridLogIRL << "Test convergence: rotate subset of vectors to test convergence " << std::endl;
 
-	Field B(grid); B.checkerboard = evec[0].checkerboard;
+	Field B(grid); B.Checkerboard() = evec[0].Checkerboard();
 
 	//  power of two search pattern;  not every evalue in eval2 is assessed.
 	for(int jj = 1; jj<=Nstop; jj*=2){
@@ -525,7 +525,7 @@ until convergence
 	
   converged:
     {
-      Field B(grid); B.checkerboard = evec[0].checkerboard;
+      Field B(grid); B.Checkerboard() = evec[0].Checkerboard();
       basisRotate(evec,Qt,0,Nk,0,Nk,Nm);	    
       std::cout << GridLogIRL << " Rotated basis"<<std::endl;
       Nconv=0;

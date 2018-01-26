@@ -76,7 +76,7 @@ public:
     LinearOperatorBase<FieldF> *Linop_f_use = &Linop_f;
     bool using_fallback = false;
       
-    psi.checkerboard = src.checkerboard;
+    psi.Checkerboard() = src.Checkerboard();
     conformable(psi, src);
 
     RealD cp, c, a, d, b, ssq, qq, b_pred;
@@ -116,7 +116,7 @@ public:
 
     //Single prec initialization
     FieldF r_f(SinglePrecGrid);
-    r_f.checkerboard = r.checkerboard;
+    r_f.Checkerboard() = r.Checkerboard();
     precisionChange(r_f, r);
 
     FieldF psi_f(r_f);

@@ -54,7 +54,7 @@ public:
 
   void operator()(LinearOperatorBase<Field> &Linop, const Field &src, Field &psi) {
 
-    psi.checkerboard = src.checkerboard;
+    psi.Checkerboard() = src.Checkerboard();
     conformable(psi, src);
 
     RealD cp, c, a, d, b, ssq, qq, b_pred;

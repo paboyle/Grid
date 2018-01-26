@@ -135,30 +135,30 @@ public:
     /////////////////////////////////////////////////////
     // src_o = (source_o - Moe MeeInv source_e)
     /////////////////////////////////////////////////////
-    _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.checkerboard ==Even);
-    _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.checkerboard ==Odd);     
-    tmp=src_o-Mtmp;                  assert(  tmp.checkerboard ==Odd);     
+    _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.Checkerboard() ==Even);
+    _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.Checkerboard() ==Odd);     
+    tmp=src_o-Mtmp;                  assert(  tmp.Checkerboard() ==Odd);     
 
-    //src_o = tmp;     assert(src_o.checkerboard ==Odd);
+    //src_o = tmp;     assert(src_o.Checkerboard() ==Odd);
     _Matrix.Mooee(tmp,src_o); // Extra factor of "m" in source from dumb choice of matrix norm.
 
     //////////////////////////////////////////////////////////////
     // Call the red-black solver
     //////////////////////////////////////////////////////////////
     std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver calling the Mpc solver" <<std::endl;
-    _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
+    _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.Checkerboard()==Odd);
     std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver called  the Mpc solver" <<std::endl;
 
     ///////////////////////////////////////////////////
     // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
     ///////////////////////////////////////////////////
-    _Matrix.Meooe(sol_o,tmp);        assert(  tmp.checkerboard   ==Even);
-    src_e = src_e-tmp;               assert(  src_e.checkerboard ==Even);
-    _Matrix.MooeeInv(src_e,sol_e);   assert(  sol_e.checkerboard ==Even);
+    _Matrix.Meooe(sol_o,tmp);        assert(  tmp.Checkerboard()   ==Even);
+    src_e = src_e-tmp;               assert(  src_e.Checkerboard() ==Even);
+    _Matrix.MooeeInv(src_e,sol_e);   assert(  sol_e.Checkerboard() ==Even);
      
     std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver reconstructed other CB" <<std::endl;
-    setCheckerboard(out,sol_e); assert(  sol_e.checkerboard ==Even);
-    setCheckerboard(out,sol_o); assert(  sol_o.checkerboard ==Odd );
+    setCheckerboard(out,sol_e); assert(  sol_e.Checkerboard() ==Even);
+    setCheckerboard(out,sol_o); assert(  sol_o.Checkerboard() ==Odd );
     std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver inserted solution" <<std::endl;
 
     // Verify the unprec residual
@@ -214,28 +214,28 @@ public:
     /////////////////////////////////////////////////////
     // src_o = Mdag * (source_o - Moe MeeInv source_e)
     /////////////////////////////////////////////////////
-    _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.checkerboard ==Even);
-    _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.checkerboard ==Odd);     
-    tmp=src_o-Mtmp;                  assert(  tmp.checkerboard ==Odd);     
+    _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.Checkerboard() ==Even);
+    _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.Checkerboard() ==Odd);     
+    tmp=src_o-Mtmp;                  assert(  tmp.Checkerboard() ==Odd);     
 
     // get the right MpcDag
-    _HermOpEO.MpcDag(tmp,src_o);     assert(src_o.checkerboard ==Odd);       
+    _HermOpEO.MpcDag(tmp,src_o);     assert(src_o.Checkerboard() ==Odd);       
 
     //////////////////////////////////////////////////////////////
     // Call the red-black solver
     //////////////////////////////////////////////////////////////
     std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
-    _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
+    _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.Checkerboard()==Odd);
 
     ///////////////////////////////////////////////////
     // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
     ///////////////////////////////////////////////////
-    _Matrix.Meooe(sol_o,tmp);        assert(  tmp.checkerboard   ==Even);
-    src_e = src_e-tmp;               assert(  src_e.checkerboard ==Even);
-    _Matrix.MooeeInv(src_e,sol_e);   assert(  sol_e.checkerboard ==Even);
+    _Matrix.Meooe(sol_o,tmp);        assert(  tmp.Checkerboard()   ==Even);
+    src_e = src_e-tmp;               assert(  src_e.Checkerboard() ==Even);
+    _Matrix.MooeeInv(src_e,sol_e);   assert(  sol_e.Checkerboard() ==Even);
      
-    setCheckerboard(out,sol_e); assert(  sol_e.checkerboard ==Even);
-    setCheckerboard(out,sol_o); assert(  sol_o.checkerboard ==Odd );
+    setCheckerboard(out,sol_e); assert(  sol_e.Checkerboard() ==Even);
+    setCheckerboard(out,sol_o); assert(  sol_o.Checkerboard() ==Odd );
 
     // Verify the unprec residual
     _Matrix.M(out,resid); 
@@ -293,30 +293,30 @@ public:
     /////////////////////////////////////////////////////
     // src_o = Mdag * (source_o - Moe MeeInv source_e)
     /////////////////////////////////////////////////////
-    _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.checkerboard ==Even);
-    _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.checkerboard ==Odd);     
-    tmp=src_o-Mtmp;                  assert(  tmp.checkerboard ==Odd);     
+    _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.Checkerboard() ==Even);
+    _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.Checkerboard() ==Odd);     
+    tmp=src_o-Mtmp;                  assert(  tmp.Checkerboard() ==Odd);     
 
     // get the right MpcDag
-    _HermOpEO.MpcDag(tmp,src_o);     assert(src_o.checkerboard ==Odd);       
+    _HermOpEO.MpcDag(tmp,src_o);     assert(src_o.Checkerboard() ==Odd);       
 
     //////////////////////////////////////////////////////////////
     // Call the red-black solver
     //////////////////////////////////////////////////////////////
     std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
-    //      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
-    _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
-    _Matrix.MooeeInv(tmp,sol_o);        assert(  sol_o.checkerboard   ==Odd);
+    //      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.Checkerboard()==Odd);
+    _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.Checkerboard()==Odd);
+    _Matrix.MooeeInv(tmp,sol_o);        assert(  sol_o.Checkerboard()   ==Odd);
 
     ///////////////////////////////////////////////////
     // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
     ///////////////////////////////////////////////////
-    _Matrix.Meooe(sol_o,tmp);        assert(  tmp.checkerboard   ==Even);
-    src_e = src_e-tmp;               assert(  src_e.checkerboard ==Even);
-    _Matrix.MooeeInv(src_e,sol_e);   assert(  sol_e.checkerboard ==Even);
+    _Matrix.Meooe(sol_o,tmp);        assert(  tmp.Checkerboard()   ==Even);
+    src_e = src_e-tmp;               assert(  src_e.Checkerboard() ==Even);
+    _Matrix.MooeeInv(src_e,sol_e);   assert(  sol_e.Checkerboard() ==Even);
      
-    setCheckerboard(out,sol_e); assert(  sol_e.checkerboard ==Even);
-    setCheckerboard(out,sol_o); assert(  sol_o.checkerboard ==Odd );
+    setCheckerboard(out,sol_e); assert(  sol_e.Checkerboard() ==Even);
+    setCheckerboard(out,sol_o); assert(  sol_o.Checkerboard() ==Odd );
 
     // Verify the unprec residual
     _Matrix.M(out,resid); 
@@ -372,31 +372,31 @@ public:
     /////////////////////////////////////////////////////
     // src_o = Mdag * (source_o - Moe MeeInv source_e)
     /////////////////////////////////////////////////////
-    _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.checkerboard ==Even);
-    _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.checkerboard ==Odd);     
-    tmp=src_o-Mtmp;                  assert(  tmp.checkerboard ==Odd);     
+    _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.Checkerboard() ==Even);
+    _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.Checkerboard() ==Odd);     
+    tmp=src_o-Mtmp;                  assert(  tmp.Checkerboard() ==Odd);     
 
     // get the right MpcDag
-    _HermOpEO.MpcDag(tmp,src_o);     assert(src_o.checkerboard ==Odd);       
+    _HermOpEO.MpcDag(tmp,src_o);     assert(src_o.Checkerboard() ==Odd);       
 
     //////////////////////////////////////////////////////////////
     // Call the red-black solver
     //////////////////////////////////////////////////////////////
     std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
-    //      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
-    //      _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
-    _HermitianRBSolver(src_o,tmp);  assert(tmp.checkerboard==Odd);
-    _Matrix.MooeeInv(tmp,sol_o);        assert(  sol_o.checkerboard   ==Odd);
+    //      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.Checkerboard()==Odd);
+    //      _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.Checkerboard()==Odd);
+    _HermitianRBSolver(src_o,tmp);  assert(tmp.Checkerboard()==Odd);
+    _Matrix.MooeeInv(tmp,sol_o);        assert(  sol_o.Checkerboard()   ==Odd);
 
     ///////////////////////////////////////////////////
     // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
     ///////////////////////////////////////////////////
-    _Matrix.Meooe(sol_o,tmp);        assert(  tmp.checkerboard   ==Even);
-    src_e = src_e-tmp;               assert(  src_e.checkerboard ==Even);
-    _Matrix.MooeeInv(src_e,sol_e);   assert(  sol_e.checkerboard ==Even);
+    _Matrix.Meooe(sol_o,tmp);        assert(  tmp.Checkerboard()   ==Even);
+    src_e = src_e-tmp;               assert(  src_e.Checkerboard() ==Even);
+    _Matrix.MooeeInv(src_e,sol_e);   assert(  sol_e.Checkerboard() ==Even);
      
-    setCheckerboard(out,sol_e); assert(  sol_e.checkerboard ==Even);
-    setCheckerboard(out,sol_o); assert(  sol_o.checkerboard ==Odd );
+    setCheckerboard(out,sol_e); assert(  sol_e.Checkerboard() ==Even);
+    setCheckerboard(out,sol_o); assert(  sol_o.Checkerboard() ==Odd );
 
     // Verify the unprec residual
     _Matrix.M(out,resid); 

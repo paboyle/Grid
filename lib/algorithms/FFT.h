@@ -217,8 +217,8 @@ public:
       
     FFTW_plan p;
     {
-      FFTW_scalar *in = (FFTW_scalar *)&pgbuf._odata[0];
-      FFTW_scalar *out= (FFTW_scalar *)&pgbuf._odata[0];
+      FFTW_scalar *in = (FFTW_scalar *)&pgbuf[0];
+      FFTW_scalar *out= (FFTW_scalar *)&pgbuf[0];
       p = FFTW<scalar>::fftw_plan_many_dft(rank,n,howmany,
 					   in,inembed,
 					   istride,idist,
@@ -261,8 +261,8 @@ public:
         thread_loop_in_region( (int idx=0;idx<NN;idx++), {
 	    pencil_g.LocalIndexToLocalCoor(idx, cbuf);
 	    if ( cbuf[dim] == 0 ) {  // restricts loop to plane at lcoor[dim]==0
-	      FFTW_scalar *in = (FFTW_scalar *)&pgbuf._odata[idx];
-	      FFTW_scalar *out= (FFTW_scalar *)&pgbuf._odata[idx];
+	      FFTW_scalar *in = (FFTW_scalar *)&pgbuf[idx];
+	      FFTW_scalar *out= (FFTW_scalar *)&pgbuf[idx];
 	      FFTW<scalar>::fftw_execute_dft(p,in,out);
 	    }
 	  });
