@@ -87,8 +87,8 @@ public:
 
     GridBase *FineGrid = _Aggregate.FineGrid;
 
-    FineField fin(FineGrid) ;fin.checkerboard  =_Aggregate.checkerboard;
-    FineField fout(FineGrid);fout.checkerboard =_Aggregate.checkerboard;
+    FineField fin(FineGrid) ;fin.Checkerboard()  =_Aggregate.Checkerboard();
+    FineField fout(FineGrid);fout.Checkerboard() =_Aggregate.Checkerboard();
 
     _Aggregate.PromoteFromSubspace(in,fin);
     _poly(_Linop,fin,fout);
@@ -139,7 +139,7 @@ public:
     int Nk = nbasis;
     _Aggregate.subspace.resize(Nk,_FineGrid);
     _Aggregate.subspace[0]=1.0;
-    _Aggregate.subspace[0].checkerboard=_checkerboard;
+    _Aggregate.subspace[0].Checkerboard()=_checkerboard;
     normalise(_Aggregate.subspace[0]);
     PlainHermOp<FineField>    Op(_FineOp);
     for(int k=1;k<Nk;k++){
@@ -148,7 +148,7 @@ public:
       std::cout << GridLogMessage << "testFine subspace "<<k<<" " <<norm2(_Aggregate.subspace[k])<<std::endl;
     }
     for(int k=0;k<Nk;k++){
-      std::cout << GridLogMessage << "testFine subspace "<<k<<"  cb " <<_Aggregate.subspace[k].checkerboard<<std::endl;
+      std::cout << GridLogMessage << "testFine subspace "<<k<<"  cb " <<_Aggregate.subspace[k].Checkerboard()<<std::endl;
     }
     _Aggregate.Orthogonalise();
   }
@@ -165,14 +165,14 @@ public:
 
     std::vector<RealD>          eval(Nm);
 
-    FineField src(_FineGrid); src=1.0; src.checkerboard = _checkerboard;
+    FineField src(_FineGrid); src=1.0; src.Checkerboard() = _checkerboard;
 
     ImplicitlyRestartedLanczos<FineField> IRL(ChebyOp,Op,Nk,Nk,Nm,resid,MaxIt,betastp,MinRes);
     _Aggregate.subspace.resize(Nm,_FineGrid);
     IRL.calc(eval,_Aggregate.subspace,src,Nk,false);
     _Aggregate.subspace.resize(Nk,_FineGrid);
     for(int k=0;k<Nk;k++){
-      std::cout << GridLogMessage << "testFine subspace "<<k<<"  cb " <<_Aggregate.subspace[k].checkerboard<<std::endl;
+      std::cout << GridLogMessage << "testFine subspace "<<k<<"  cb " <<_Aggregate.subspace[k].Checkerboard()<<std::endl;
     }
     _Aggregate.Orthogonalise();
   }

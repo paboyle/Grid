@@ -142,14 +142,14 @@ public:
       return false;
     fseeko(_f,cur,SEEK_SET);
 
-    size_t sz = sizeof(out._odata[0]) * out._odata.size();
+    size_t sz = sizeof(out[0]) * out._odata.size();
 
     GridStopWatch gsw;
     gsw.Start();
     uint32_t crc_exp;
     assert(fread(&crc_exp,4,1,_f)==1);
-    assert(fread(&out._odata[0],sz,1,_f)==1);
-    assert(FieldVectorIO::crc32_threaded((unsigned char*)&out._odata[0],sz,0x0)==crc_exp);
+    assert(fread(&out[0],sz,1,_f)==1);
+    assert(FieldVectorIO::crc32_threaded((unsigned char*)&out[0],sz,0x0)==crc_exp);
     gsw.Stop();
 
     printf("CheckpointLinearFunction:: reading %lld\n",(long long)sz);
@@ -161,13 +161,13 @@ public:
 
     fseek(_f,0,SEEK_CUR); // switch to write
 
-    size_t sz = sizeof(out._odata[0]) * out._odata.size();
+    size_t sz = sizeof(out[0]) * out._odata.size();
 
     GridStopWatch gsw;
     gsw.Start();
-    uint32_t crc = FieldVectorIO::crc32_threaded((unsigned char*)&out._odata[0],sz,0x0);
+    uint32_t crc = FieldVectorIO::crc32_threaded((unsigned char*)&out[0],sz,0x0);
     assert(fwrite(&crc,4,1,_f)==1);
-    assert(fwrite(&out._odata[0],sz,1,_f)==1);
+    assert(fwrite(&out[0],sz,1,_f)==1);
     fflush(_f); // try this on the GPFS to suppress OPA usage for disk during dslash; this is not needed at Lustre/JLAB
     gsw.Stop();
 
@@ -390,7 +390,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
       gsw.Start();
 
       pr.coarseToFine(coef[i],v_i);
-      v_i.checkerboard = Odd;
+      v_i.Checkerboard() = Odd;
       
       for (int j=0;j<smoothed_eval_outer;j++) {
 	tmp=zero;
@@ -425,7 +425,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
   if (cg_test_enabled) {
     ConjugateGradient<LatticeFermion> CG(1.0e-8, cg_test_maxiter, false);
     LatticeFermion src_orig(bgrid._grid);
-    src_orig.checkerboard = Odd;
+    src_orig.Checkerboard() = Odd;
     src_orig = 1.0;
     src_orig = src_orig * (1.0 / ::sqrt(norm2(src_orig)) );
     auto result = src_orig; 
@@ -594,7 +594,7 @@ int main (int argc, char ** argv) {
   LatticeFermion    src(FrbGrid);
   {
     src=1.0;
-    src.checkerboard = Odd;
+    src.Checkerboard() = Odd;
 
     // normalize
     RealD nn = norm2(src);

@@ -85,7 +85,7 @@ public:
     Grid::QCD::ScidacReader RD ;
     RD.open(evecs_file);
     for(int k=0;k<nbasis;k++) {
-      this->_Aggregate.subspace[k].checkerboard=this->_checkerboard;
+      this->_Aggregate.subspace[k].Checkerboard()=this->_checkerboard;
       RD.readScidacFieldRecord(this->_Aggregate.subspace[k],record);
       
     }

@@ -113,7 +113,7 @@ public:
       vCoeff_t ret = 0.0;
       for (int i=0;i<_block_sites;i++) { // only odd sites
 	int ss = block_site_to_o_site(x0,i);
-	ret += TensorRemove(innerProduct(x._odata[ss],y._odata[ss]));
+	ret += TensorRemove(innerProduct(x[ss],y[ss]));
       }
 
       return ret;
@@ -140,7 +140,7 @@ public:
 	  for (int j=0;j<nsimd;j++) {
 	    int t = lsize * i + l*nsimd + j;
 
-	    ret[j] += conjugate(((Coeff_t*)&x._odata[ss]._internal)[l*nsimd + j]) * y[t];
+	    ret[j] += conjugate(((Coeff_t*)&x[ss]._internal)[l*nsimd + j]) * y[t];
 	  }
 	}
       }
@@ -175,7 +175,7 @@ public:
 
       for (int i=0;i<_block_sites;i++) { // only odd sites
 	int ss = block_site_to_o_site(x0,i);
-	vcaxpy(ret._odata[ss],a,x._odata[ss],y._odata[ss]);
+	vcaxpy(ret[ss],a,x[ss],y[ss]);
       }
 
     }
@@ -192,7 +192,7 @@ public:
 
 	int n = lsize / nsimd;
 	for (int l=0;l<n;l++) {
-	  vCoeff_t r = a* ((vCoeff_t*)&x._odata[ss]._internal)[l];
+	  vCoeff_t r = a* ((vCoeff_t*)&x[ss]._internal)[l];
 
 	  for (int j=0;j<nsimd;j++) {
 	    int t = lsize * i + l*nsimd + j;
@@ -213,7 +213,7 @@ public:
 	int ss = block_site_to_o_site(x0,i);
 
 	for (int l=0;l<lsize;l++)
-	  ((Coeff_t*)&ret._odata[ss]._internal)[l] = (Coeff_t)x[lsize * i + l]; // convert precision
+	  ((Coeff_t*)&ret[ss]._internal)[l] = (Coeff_t)x[lsize * i + l]; // convert precision
       }
 
     }
@@ -228,7 +228,7 @@ public:
 	int ss = block_site_to_o_site(x0,i);
 
 	for (int l=0;l<lsize;l++)
-	  x[lsize * i + l] = (ComplexD)((Coeff_t*)&ret._odata[ss]._internal)[l];
+	  x[lsize * i + l] = (ComplexD)((Coeff_t*)&ret[ss]._internal)[l];
       }
 
     }
@@ -255,7 +255,7 @@ public:
       
       for (int i=0;i<_block_sites;i++) { // only odd sites
 	int ss = block_site_to_o_site(x0,i);
-	vcscale(ret._odata[ss],a,ret._odata[ss]);
+	vcscale(ret[ss],a,ret[ss]);
       }
     }
 
@@ -310,7 +310,7 @@ public:
 	  
 	  for (int s=0;s<4;s++)
 	    for (int c=0;c<3;c++) {
-	      Coeff_t& ld = ((Coeff_t*)&v._odata[oi]._internal._internal[s]._internal[c])[ii];
+	      Coeff_t& ld = ((Coeff_t*)&v[oi]._internal._internal[s]._internal[c])[ii];
 	      int ti = 12*lti + 3*s + c;
 	      ld = Coeff_t(buf[2*ti+0], buf[2*ti+1]);
 	    }
@@ -350,7 +350,7 @@ public:
 
 	  for (int s=0;s<4;s++)
 	    for (int c=0;c<3;c++) {
-	      Coeff_t& ld = ((Coeff_t*)&v._odata[oi]._internal._internal[s]._internal[c])[ii];
+	      Coeff_t& ld = ((Coeff_t*)&v[oi]._internal._internal[s]._internal[c])[ii];
 	      int ti = 12*lti + 3*s + c;
 	      buf[2*ti+0] = ld.real();
 	      buf[2*ti+1] = ld.imag();

@@ -174,7 +174,7 @@ namespace Grid {
 	 }
 	 
 	 // loop
-	 ret._v[nev].checkerboard = Odd;
+	 ret._v[nev].Checkerboard() = Odd;
 #pragma omp parallel 
 	 {
 	   
@@ -706,13 +706,13 @@ namespace Grid {
 		 read_floats(lptr, &buf1[0], buf1.size() );
 		 if (mnb != -1) {
 		   for (l=0;l<nkeep_single;l++) {
-		     ((CoeffCoarse_t*)&coef._v[j]._odata[oi]._internal._internal[l])[ii] = CoeffCoarse_t(buf1[2*l+0],buf1[2*l+1]);
+		     ((CoeffCoarse_t*)&coef._v[j][oi]._internal._internal[l])[ii] = CoeffCoarse_t(buf1[2*l+0],buf1[2*l+1]);
 		   }
 		 }
 		 read_floats_fp16(lptr, &buf2[0], buf2.size(), _FP16_COEF_EXP_SHARE_FLOATS);
 		 if (mnb != -1) {
 		   for (l=nkeep_single;l<nkeep;l++) {
-		     ((CoeffCoarse_t*)&coef._v[j]._odata[oi]._internal._internal[l])[ii] = CoeffCoarse_t(buf2[2*(l-nkeep_single)+0],buf2[2*(l-nkeep_single)+1]);
+		     ((CoeffCoarse_t*)&coef._v[j][oi]._internal._internal[l])[ii] = CoeffCoarse_t(buf2[2*(l-nkeep_single)+0],buf2[2*(l-nkeep_single)+1]);
 		   }
 		 }
 		 
@@ -721,7 +721,7 @@ namespace Grid {
 	   
 	   // set checkerboard
 	   for (int i=0;i<(int)pr._evec.size();i++)
-	     pr._evec._v[i].checkerboard = Odd;
+	     pr._evec._v[i].Checkerboard() = Odd;
 	 
 	   gsw2.Stop();
 	   seconds=gsw2.useconds()/1e6;
@@ -875,7 +875,7 @@ namespace Grid {
 	     gsw4.Start();
 	     gsw5.Start();
 	     for (int l=0;l<nsingleCap;l++) {
-	       auto res = ((CoeffCoarse_t*)&coef._v[j]._odata[oi]._internal._internal[l])[ii];
+	       auto res = ((CoeffCoarse_t*)&coef._v[j][oi]._internal._internal[l])[ii];
 	       buf[2*l+0] = res.real();
 	       buf[2*l+1] = res.imag();
 	       //nrmTest += res.real() * res.real() + res.imag() * res.imag();
@@ -884,7 +884,7 @@ namespace Grid {
 	     write_floats(f,fbuf,crc, &buf[0], size1 );
 	     gsw4.Stop();
 	     for (int l=nsingleCap;l<(int)pr._evec.size();l++) {
-	       auto res = ((CoeffCoarse_t*)&coef._v[j]._odata[oi]._internal._internal[l])[ii];
+	       auto res = ((CoeffCoarse_t*)&coef._v[j][oi]._internal._internal[l])[ii];
 	       buf[2*(l-nsingleCap)+0] = res.real();
 	       buf[2*(l-nsingleCap)+1] = res.imag();
 	       //nrmTest += res.real() * res.real() + res.imag() * res.imag();
@@ -990,7 +990,7 @@ namespace Grid {
      
      for (int i=0;i<N;i++) {
 
-       if (ret._v[i].checkerboard != Odd)
+       if (ret._v[i].Checkerboard() != Odd)
 	 continue;
 
        // create buffer and put data in argonne format in there

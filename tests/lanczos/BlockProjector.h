@@ -73,15 +73,15 @@ public:
   void coarseToFine(const CoarseField& in, Field& out) {
 
     out = zero;
-    out.checkerboard = _evec._v[0].checkerboard;
+    out.Checkerboard() = _evec._v[0].Checkerboard();
 
-    int Nbasis = sizeof(in._odata[0]._internal._internal) / sizeof(in._odata[0]._internal._internal[0]);
+    int Nbasis = sizeof(in[0]._internal._internal) / sizeof(in[0]._internal._internal[0]);
     assert(Nbasis == _evec._Nm);
     
 #pragma omp parallel for
     for (int b=0;b<_bgrid._o_blocks;b++) {
       for (int j=0;j<_evec._Nm;j++) {
-	_bgrid.block_caxpy(b,out,in._odata[b]._internal._internal[j],_evec._v[j],out);
+	_bgrid.block_caxpy(b,out,in[b]._internal._internal[j],_evec._v[j],out);
       }
     }
 
@@ -92,7 +92,7 @@ public:
 
     out = zero;
 
-    int Nbasis = sizeof(out._odata[0]._internal._internal) / sizeof(out._odata[0]._internal._internal[0]);
+    int Nbasis = sizeof(out[0]._internal._internal) / sizeof(out[0]._internal._internal[0]);
     assert(Nbasis == _evec._Nm);
 
 
@@ -105,7 +105,7 @@ public:
 	// |rhs> -= <j|rhs> |j>
 	auto c = _bgrid.block_sp(b,_evec._v[j],tmp);
 	_bgrid.block_caxpy(b,tmp,-c,_evec._v[j],tmp); // may make this more numerically stable
-	out._odata[b]._internal._internal[j] = c;
+	out[b]._internal._internal[j] = c;
       }
     }
 
