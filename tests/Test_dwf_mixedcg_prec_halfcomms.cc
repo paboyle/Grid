@@ -82,7 +82,7 @@ int main (int argc, char ** argv)
   LatticeFermionD    src_o(FrbGrid);
   LatticeFermionD result_cg(FrbGrid);
   pickCheckerboard(Odd,src_o,src);
-  result_cg.checkerboard = Odd;
+  result_cg.Checkerboard() = Odd;
   result_cg = zero;
   LatticeFermionD result_mcg(result_cg);
   LatticeFermionD result_rlcg(result_cg);

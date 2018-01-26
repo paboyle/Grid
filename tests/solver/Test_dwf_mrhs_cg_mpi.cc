@@ -137,7 +137,7 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage << "Intialised 4D RNG "<<std::endl;
     SU3::HotConfiguration(pRNG,Umu);
     std::cout << GridLogMessage << "Intialised the HOT Gauge Field"<<std::endl;
-    //    std::cout << " Site zero "<< Umu._odata[0]   <<std::endl;
+    //    std::cout << " Site zero "<< Umu[0]   <<std::endl;
   } else { 
     SU3::ColdConfiguration(Umu);
     std::cout << GridLogMessage << "Intialised the COLD Gauge Field"<<std::endl;

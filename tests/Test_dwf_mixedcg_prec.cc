@@ -82,9 +82,9 @@ int main (int argc, char ** argv)
   LatticeFermionD result_o(FrbGrid);
   LatticeFermionD result_o_2(FrbGrid);
   pickCheckerboard(Odd,src_o,src);
-  result_o.checkerboard = Odd;
+  result_o.Checkerboard() = Odd;
   result_o = zero;
-  result_o_2.checkerboard = Odd;
+  result_o_2.Checkerboard() = Odd;
   result_o_2 = zero;
 
   SchurDiagMooeeOperator<DomainWallFermionD,LatticeFermionD> HermOpEO(Ddwf);

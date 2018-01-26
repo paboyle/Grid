@@ -110,13 +110,13 @@ int main(int argc, char ** argv) {
 	  SE = myStencil.GetEntry(permute_type,0,i);
 	  
 	  if ( SE->_is_local && SE->_permute )
-	    permute(Check._odata[i],Foo._odata[SE->_offset],permute_type);
+	    permute(Check[i],Foo[SE->_offset],permute_type);
 	  else if (SE->_is_local)
-	    Check._odata[i] = Foo._odata[SE->_offset];
+	    Check[i] = Foo[SE->_offset];
 	  else { 
-	    Check._odata[i] = myStencil.CommBuf()[SE->_offset];
-	    //	    std::cout << " receive "<<i<<" " << Check._odata[i]<<std::endl;
-	    //	    std::cout << " Foo     "<<i<<" " <<   Foo._odata[i]<<std::endl;
+	    Check[i] = myStencil.CommBuf()[SE->_offset];
+	    //	    std::cout << " receive "<<i<<" " << Check[i]<<std::endl;
+	    //	    std::cout << " Foo     "<<i<<" " <<   Foo[i]<<std::endl;
 	  }
 	}
 
@@ -149,8 +149,8 @@ int main(int argc, char ** argv) {
 	}}}}
 
 	if (nrm > 1.0e-4) {
-	  for(int i=0;i<Check._odata_size;i++){
-	    std::cout << i<<" Check.odata "<<Check._odata[i]<< "\n"<<i<<" Bar.odata "<<Bar._odata[i]<<std::endl;
+	  for(int i=0;i<Check.size();i++){
+	    std::cout << i<<" Check.odata "<<Check[i]<< "\n"<<i<<" Bar.odata "<<Bar[i]<<std::endl;
 	  }
 	}
 	if (nrm > 1.0e-4) exit(-1);
@@ -191,11 +191,11 @@ int main(int argc, char ** argv) {
 	Bar = Cshift(Foo,dir,disp);
 
 	if ( disp & 0x1 ) {
-	  ECheck.checkerboard = Even;
-	  OCheck.checkerboard = Odd;
+	  ECheck.Checkerboard() = Even;
+	  OCheck.Checkerboard() = Odd;
 	} else {
-	  ECheck.checkerboard = Odd;
-	  OCheck.checkerboard = Even;
+	  ECheck.Checkerboard() = Odd;
+	  OCheck.Checkerboard() = Even;
 	}
 
 	// Implement a stencil code that should agree with that darn cshift!
@@ -207,11 +207,11 @@ int main(int argc, char ** argv) {
 	  //	  std::cout << "Even source "<< i<<" -> " <<SE->_offset << " "<< SE->_is_local<<std::endl;
 
 	  if ( SE->_is_local && SE->_permute )
-	    permute(OCheck._odata[i],EFoo._odata[SE->_offset],permute_type);
+	    permute(OCheck[i],EFoo[SE->_offset],permute_type);
 	  else if (SE->_is_local)
-	    OCheck._odata[i] = EFoo._odata[SE->_offset];
+	    OCheck[i] = EFoo[SE->_offset];
 	  else
-	    OCheck._odata[i] = EStencil.CommBuf()[SE->_offset];
+	    OCheck[i] = EStencil.CommBuf()[SE->_offset];
 	}
 	OStencil.HaloExchange(OFoo,compress);
 	for(int i=0;i<ECheck._grid->oSites();i++){
@@ -221,11 +221,11 @@ int main(int argc, char ** argv) {
 	  //	  std::cout << "ODD source "<< i<<" -> " <<SE->_offset << " "<< SE->_is_local<<std::endl;
 
 	  if ( SE->_is_local && SE->_permute )
-	    permute(ECheck._odata[i],OFoo._odata[SE->_offset],permute_type);
+	    permute(ECheck[i],OFoo[SE->_offset],permute_type);
 	  else if (SE->_is_local)
-	    ECheck._odata[i] = OFoo._odata[SE->_offset];
+	    ECheck[i] = OFoo[SE->_offset];
 	  else
-	    ECheck._odata[i] = OStencil.CommBuf()[SE->_offset];
+	    ECheck[i] = OStencil.CommBuf()[SE->_offset];
 	}
 
 	setCheckerboard(Check,ECheck);

@@ -81,10 +81,10 @@ class LinearOperatorJacobi : public LinearOperator<vobj>
 	
 	vobj *nbr;
 	if ( local && perm ){
-	  permute(tmp,src._odata[offset],ptype);
+	  permute(tmp,src[offset],ptype);
 	  nbr = &tmp;
 	} else if (local) {
-	  nbr = &src._odata[offset];
+	  nbr = &src[offset];
 	} else  {
 	  nbr = &comm_buf[offset];
 	}
@@ -189,11 +189,11 @@ int main (int argc, char ** argv)
 	  int permute_type = myStencil._permute_type[0];
 	  int perm =myStencil._permute[0][i];
 	  if ( local && perm )
-	    permute(Check._odata[i],Foo._odata[offset],permute_type);
+	    permute(Check[i],Foo[offset],permute_type);
 	  else if (local)
-	    Check._odata[i] = Foo._odata[offset];
+	    Check[i] = Foo[offset];
 	  else 
-	    Check._odata[i] = comm_buf[offset];
+	    Check[i] = comm_buf[offset];
 	  
 
 	}

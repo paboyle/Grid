@@ -265,12 +265,12 @@ int main (int argc,char **argv )
       std::cout << "Norm of Grid Asqtad multiply "<<Grid::norm2(res_grid)<<std::endl;
       
       /*
-      std::cout << " site 0 of Uthin  "<<uthin._odata[0] <<std::endl;
-      std::cout << " site 0 of Utriple"<<utriple._odata[0] <<std::endl;
-      std::cout << " site 0 of Ufat   "<<ufat._odata[0] <<std::endl;
+      std::cout << " site 0 of Uthin  "<<uthin[0] <<std::endl;
+      std::cout << " site 0 of Utriple"<<utriple[0] <<std::endl;
+      std::cout << " site 0 of Ufat   "<<ufat[0] <<std::endl;
 
-      std::cout << " site 0 of Grid   "<<res_grid._odata[0] <<std::endl;
-      std::cout << " site 0 of Chroma "<<res_chroma._odata[0] <<std::endl;
+      std::cout << " site 0 of Grid   "<<res_grid[0] <<std::endl;
+      std::cout << " site 0 of Chroma "<<res_chroma[0] <<std::endl;
       */
 
       res_chroma=res_chroma - res_grid;
