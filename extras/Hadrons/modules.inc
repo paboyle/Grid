@@ -10,7 +10,7 @@ modules_cc =\
   Modules/MScalar/ChargedProp.cc \
   Modules/MScalar/FreeProp.cc \
   Modules/MScalar/ScalarVP.cc \
-  Modules/MScalar/VPCounterTerms.cc
+  Modules/MScalar/VPCounterTerms.cc \
   Modules/MIO/LoadNersc.cc
 
 modules_hpp =\

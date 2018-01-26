@@ -145,16 +145,16 @@ void TChargedProp::execute(void)
         for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
         {
             std::vector<int> mom = strToVec<int>(par().outputMom[i_p]);
-            std::string           filename = par().output + "_" + std::to_string(mom[0])
-                                                          + std::to_string(mom[1])
-                                                          + std::to_string(mom[2])
-                                                          + "." +
-                                         std::to_string(vm().getTrajectory());
+            std::string           filename = par().output + "_"
+                                             + std::to_string(mom[0])
+                                             + std::to_string(mom[1])
+                                             + std::to_string(mom[2]);
 
-            LOG(Message) << "Saving (" << par().outputMom[i_p] << ") momentum projection to '"
-                     	 << filename << "'..." << std::endl;
+            LOG(Message) << "Saving (" << par().outputMom[i_p]
+                         << ") momentum projection to '" << filename << "'..."
+                         << std::endl;
 
-            std::vector<Complex>  result, result0, resultQ, resultSun, resultTad;
+            std::vector<Complex> result, result0, resultQ, resultSun, resultTad;
             result.resize(env().getGrid()->_fdimensions[env().getNd()-1]);
             result0.resize(result.size());
             resultQ.resize(result.size());
@@ -189,13 +189,13 @@ void TChargedProp::execute(void)
                 peekSite(site, propTad, whichmom);
                 resultTad[t]=TensorRemove(site);
             }
-			saveResult(par().output, "charge", q);
-			saveResult(par().output, "mass", par().mass);
-        	saveResult(par().output, "prop", result);
-        	saveResult(par().output, "prop_0", result0);
-        	saveResult(par().output, "prop_Q", resultQ);
-        	saveResult(par().output, "prop_Sun", resultSun);
-        	saveResult(par().output, "prop_Tad", resultTad);
+			saveResult(filename, "charge", q);
+			saveResult(filename, "mass", par().mass);
+        	saveResult(filename, "prop", result);
+        	saveResult(filename, "prop_0", result0);
+        	saveResult(filename, "prop_Q", resultQ);
+        	saveResult(filename, "prop_Sun", resultSun);
+        	saveResult(filename, "prop_Tad", resultTad);
         }
     }
 
@@ -231,7 +231,8 @@ void TChargedProp::makeCaches(void)
     }
 	if (!prop0Done_)
 	{
-		LOG(Message) << "Caching position-space free scalar propagator..." << std::endl;
+		LOG(Message) << "Caching position-space free scalar propagator..."
+                     << std::endl;
 		fft.FFT_all_dim(prop0, GFSrc, FFT::backward);
 	}
     if (!phasesDone_)

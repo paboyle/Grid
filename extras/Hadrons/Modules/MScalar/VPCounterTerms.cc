@@ -37,39 +37,58 @@ void TVPCounterTerms::setup(void)
     {
         phaseName_.push_back("_shiftphase_" + std::to_string(mu));
     }
-    GFSrcName_ = "_" + getName() + "_DinvSrc";
-    phatsqName_ = "_" + getName() + "_pHatSquared";
+    GFSrcName_ = getName() + "_DinvSrc";
+    phatsqName_ = getName() + "_pHatSquared";
     prop0Name_ = getName() + "_freeProp";
     twoscalarName_ = getName() + "_2scalarProp";
     twoscalarVertexName_ = getName() + "_2scalarProp_withvertex";
     psquaredName_ = getName() + "_psquaredProp";
-    env().registerLattice<ScalarField>(freeMomPropName_);
+    if (!par().output.empty())
+    {
+        for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
+        {
+            momPhaseName_.push_back("_momentumphase_" + std::to_string(i_p));
+        }
+    }
+
+    envCreateLat(ScalarField, freeMomPropName_);
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
-        env().registerLattice<ScalarField>(phaseName_[mu]);
+        envCreateLat(ScalarField, phaseName_[mu]);
     }
-    env().registerLattice<ScalarField>(phatsqName_);
-    env().registerLattice<ScalarField>(GFSrcName_);
-    env().registerLattice<ScalarField>(prop0Name_);
-    env().registerLattice<ScalarField>(twoscalarName_);
-    env().registerLattice<ScalarField>(twoscalarVertexName_);
-    env().registerLattice<ScalarField>(psquaredName_);
+    envCreateLat(ScalarField, phatsqName_);
+    envCreateLat(ScalarField, GFSrcName_);
+    envCreateLat(ScalarField, prop0Name_);
+    envCreateLat(ScalarField, twoscalarName_);
+    envCreateLat(ScalarField, twoscalarVertexName_);
+    envCreateLat(ScalarField, psquaredName_);
+    if (!par().output.empty())
+    {
+        for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
+        {
+            envCacheLat(ScalarField, momPhaseName_[i_p]);
+        }
+    }
+    envTmpLat(ScalarField, "buf");
+    envTmpLat(ScalarField, "tmp_vp");
+    envTmpLat(ScalarField, "vpPhase");
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 void TVPCounterTerms::execute(void)
 {
-	ScalarField &source = *env().getObject<ScalarField>(par().source);
+	auto &source = envGet(ScalarField, par().source);
     Complex     ci(0.0,1.0);
     FFT         fft(env().getGrid());
-    ScalarField     buf(env().getGrid()), tmp_vp(env().getGrid());
+    envGetTmp(ScalarField, buf);
+    envGetTmp(ScalarField, tmp_vp);
     
     // Momentum-space free scalar propagator
-    ScalarField &G = *env().createLattice<ScalarField>(freeMomPropName_);
+    auto &G = envGet(ScalarField, freeMomPropName_);
     SIMPL::MomentumSpacePropagator(G, par().mass);
 
     // Phases and hat{p}^2
-    ScalarField &phatsq = *env().createLattice<ScalarField>(phatsqName_);
+    auto &phatsq = envGet(ScalarField, phatsqName_);
     std::vector<int> &l = env().getGrid()->_fdimensions;
     
     LOG(Message) << "Calculating shift phases..." << std::endl;
@@ -77,28 +96,29 @@ void TVPCounterTerms::execute(void)
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
         Real    twoPiL = M_PI*2./l[mu];
-        
-        phase_.push_back(env().createLattice<ScalarField>(phaseName_[mu]));
+        auto &phmu  = envGet(ScalarField, phaseName_[mu]);
+
         LatticeCoordinate(buf, mu);
-        *(phase_[mu]) = exp(ci*twoPiL*buf);
+        phmu = exp(ci*twoPiL*buf);
+        phase_.push_back(&phmu);
         buf = 2.*sin(.5*twoPiL*buf);
 		phatsq = phatsq + buf*buf;
     }
 
     // G*F*src
-    ScalarField &GFSrc = *env().createLattice<ScalarField>(GFSrcName_);
+    auto &GFSrc       = envGet(ScalarField, GFSrcName_);
     fft.FFT_all_dim(GFSrc, source, FFT::forward);
     GFSrc = G*GFSrc;
 
     // Position-space free scalar propagator
-    ScalarField &prop0 = *env().createLattice<ScalarField>(prop0Name_);
+    auto &prop0       = envGet(ScalarField, prop0Name_);
     prop0 = GFSrc;
     fft.FFT_all_dim(prop0, prop0, FFT::backward);
 
     // Propagators for counter-terms
-    ScalarField &twoscalarProp   = *env().createLattice<ScalarField>(twoscalarName_);
-    ScalarField &twoscalarVertexProp  = *env().createLattice<ScalarField>(twoscalarVertexName_);
-    ScalarField &psquaredProp   = *env().createLattice<ScalarField>(psquaredName_);
+    auto &twoscalarProp        = envGet(ScalarField, twoscalarName_);
+    auto &twoscalarVertexProp  = envGet(ScalarField, twoscalarVertexName_);
+    auto &psquaredProp         = envGet(ScalarField, psquaredName_);
 
     twoscalarProp = G*GFSrc;
     fft.FFT_all_dim(twoscalarProp, twoscalarProp, FFT::backward);
@@ -115,12 +135,7 @@ void TVPCounterTerms::execute(void)
     psquaredProp = G*phatsq*GFSrc;
     fft.FFT_all_dim(psquaredProp, psquaredProp, FFT::backward);
 
-    // Open output files if necessary
-    std::vector<TComplex>   vecBuf;
-    std::vector<Complex>    result;
-    ScalarField vpPhase(env().getGrid());
-    std::vector<CorrWriter *> writer;
-    std::vector<ScalarField> momphases;
+    // Prepare output files if necessary
     if (!par().output.empty())
     {
         LOG(Message) << "Preparing output files..." << std::endl;
@@ -131,29 +146,21 @@ void TVPCounterTerms::execute(void)
             // Open output files
             std::string           filename = par().output + "_" + std::to_string(mom[0])
                                                           + std::to_string(mom[1])
-                                                          + std::to_string(mom[2])
-                                                          + "." +
-                                             std::to_string(env().getTrajectory());
-
-            if (env().getGrid()->IsBoss())
-            {
-                CorrWriter *writer_i = new CorrWriter(filename);
-                writer.push_back(writer_i);
-
-                write(*writer[i_p], "mass", par().mass);
-            }
+                                                          + std::to_string(mom[2]);
+            saveResult(filename, "mass", par().mass);
 
             // Calculate phase factors
-            vpPhase = Complex(1.0,0.0);
+            auto &momph_ip = envGet(ScalarField, momPhaseName_[i_p]);
+            momph_ip = Complex(1.0,0.0);
             for (unsigned int j = 0; j < env().getNd()-1; ++j)
             {
                 for (unsigned int momcount = 0; momcount < mom[j]; ++momcount)
                 {
-                    vpPhase = vpPhase*(*phase_[j]);
+                    momph_ip = momph_ip*(*phase_[j]);
                 }
             }
-            vpPhase = adj(vpPhase);
-            momphases.push_back(vpPhase);
+            momph_ip = adj(momph_ip);
+            momPhase_.push_back(&momph_ip);
         }
     }
 
@@ -171,22 +178,7 @@ void TVPCounterTerms::execute(void)
             // Output if necessary
             if (!par().output.empty())
             {
-                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
-                {
-                    vpPhase = tmp_vp*momphases[i_p];
-                    sliceSum(vpPhase, vecBuf, Tp);
-                    result.resize(vecBuf.size());
-                    for (unsigned int t = 0; t < vecBuf.size(); ++t)
-                    {
-                        result[t] = TensorRemove(vecBuf[t]);
-                    }
-                    if (env().getGrid()->IsBoss())
-                    {
-                        write(*writer[i_p],
-                              "NoVertex_"+std::to_string(mu)+"_"+std::to_string(nu),
-                              result);
-                    }
-                }
+                writeVP(tmp_vp, "NoVertex_"+std::to_string(mu)+"_"+std::to_string(nu));
             }
 
             // Three-scalar loop (tadpole vertex)
@@ -197,22 +189,7 @@ void TVPCounterTerms::execute(void)
             // Output if necessary
             if (!par().output.empty())
             {
-                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
-                {
-                    vpPhase = tmp_vp*momphases[i_p];
-                    sliceSum(vpPhase, vecBuf, Tp);
-                    result.resize(vecBuf.size());
-                    for (unsigned int t = 0; t < vecBuf.size(); ++t)
-                    {
-                        result[t] = TensorRemove(vecBuf[t]);
-                    }
-                    if (env().getGrid()->IsBoss())
-                    {
-                        write(*writer[i_p],
-                              "TadVertex_"+std::to_string(mu)+"_"+std::to_string(nu),
-                              result);
-                    }
-                }
+                writeVP(tmp_vp, "TadVertex_"+std::to_string(mu)+"_"+std::to_string(nu));
             }
 
             // Three-scalar loop (hat{p}^2 insertion)
@@ -223,35 +200,32 @@ void TVPCounterTerms::execute(void)
             // Output if necessary
             if (!par().output.empty())
             {
-                for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
-                {
-                    vpPhase = tmp_vp*momphases[i_p];
-                    sliceSum(vpPhase, vecBuf, Tp);
-                    result.resize(vecBuf.size());
-                    for (unsigned int t = 0; t < vecBuf.size(); ++t)
-                    {
-                        result[t] = TensorRemove(vecBuf[t]);
-                    }
-                    if (env().getGrid()->IsBoss())
-                    {
-                        write(*writer[i_p],
-                              "pSquaredInsertion_"+std::to_string(mu)+"_"+std::to_string(nu),
-                              result);
-                    }
-                }
+                writeVP(tmp_vp, "pSquaredInsertion_"+std::to_string(mu)+"_"+std::to_string(nu));
             }
         }
     }
+}
 
-    // Close output files if necessary
-    if (!par().output.empty())
+void TVPCounterTerms::writeVP(const ScalarField &vp, std::string dsetName)
+{
+    std::vector<TComplex>   vecBuf;
+    std::vector<Complex>    result;
+    envGetTmp(ScalarField, vpPhase);
+
+    for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
     {
-        for (unsigned int i_p = 0; i_p < par().outputMom.size(); ++i_p)
+        std::vector<int> mom = strToVec<int>(par().outputMom[i_p]);
+        std::string filename = par().output + "_"
+                               + std::to_string(mom[0])
+                               + std::to_string(mom[1])
+                               + std::to_string(mom[2]);
+        vpPhase = vp*(*momPhase_[i_p]);
+        sliceSum(vpPhase, vecBuf, Tp);
+        result.resize(vecBuf.size());
+        for (unsigned int t = 0; t < vecBuf.size(); ++t)
         {
-            if (env().getGrid()->IsBoss())
-            {
-                delete writer[i_p];
-            }
+            result[t] = TensorRemove(vecBuf[t]);
         }
+        saveResult(filename, dsetName, result);
     }
 }

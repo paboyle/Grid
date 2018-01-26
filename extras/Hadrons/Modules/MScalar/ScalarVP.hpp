@@ -8,7 +8,7 @@
 BEGIN_HADRONS_NAMESPACE
 
 /******************************************************************************
- *                         ScalarVP                                 *
+ *                         Scalar vacuum polarisation                         *
  ******************************************************************************/
 BEGIN_MODULE_NAMESPACE(MScalar)
 
@@ -36,11 +36,13 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+protected:
     // setup
     virtual void setup(void);
     // execution
     virtual void execute(void);
 private:
+    void makeCaches(void);
     // conserved vector two-point contraction
     void vpContraction(ScalarField &vp,
                        ScalarField &prop_0_x, ScalarField &prop_nu_x,
@@ -50,22 +52,22 @@ private:
                        ScalarField &prop_0_x, ScalarField &prop_nu_x,
                        TComplex u_src, int mu);
     // write momentum-projected vacuum polarisation to file(s)
-    void writeVP(const std::vector<CorrWriter *> &writers,
-                 const ScalarField &vp,
-                 const std::vector<ScalarField> &momphases,
-                 std::string dsetName);
+    void writeVP(const ScalarField &vp, std::string dsetName);
     // momentum-space Delta_1 insertion
     void momD1(ScalarField &s, FFT &fft);
 private:
+    bool                                        momPhasesDone_;
     std::string                                 freeMomPropName_, GFSrcName_,
                                                 prop0Name_, propQName_,
-                                                propSunName_, propTadName_;
-    std::vector<std::string>                    phaseName_, muPropQName_;
+                                                propSunName_, propTadName_,
+                                                fftName_;
+    std::vector<std::string>                    phaseName_, muPropQName_,
+                                                momPhaseName_;
     std::vector<std::vector<std::string> >      vpTensorName_;
-    ScalarField                                 *freeMomProp_, *GFSrc_,
-                                                *prop0_;
-    std::vector<ScalarField *>                  phase_;
-    EmField                                     *A;
+    // ScalarField                                 *freeMomProp_, *GFSrc_,
+    //                                             *prop0_;
+    std::vector<ScalarField *>                  phase_, momPhase_;
+    // EmField                                     *A;
 };
 
 MODULE_REGISTER_NS(ScalarVP, TScalarVP, MScalar);

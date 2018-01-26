@@ -75,7 +75,8 @@ private:
     void momD1(ScalarField &s, FFT &fft);
     void momD2(ScalarField &s, FFT &fft);
 private:
-    bool                       freeMomPropDone_, GFSrcDone_, prop0Done_, phasesDone_;
+    bool                       freeMomPropDone_, GFSrcDone_, prop0Done_,
+                               phasesDone_;
     std::string                freeMomPropName_, GFSrcName_, prop0Name_,
                                propQName_, propSunName_, propTadName_, fftName_;
     std::vector<std::string>   phaseName_;

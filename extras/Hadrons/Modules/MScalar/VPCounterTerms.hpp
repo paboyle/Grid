@@ -34,16 +34,19 @@ public:
     // dependency relation
     virtual std::vector<std::string> getInput(void);
     virtual std::vector<std::string> getOutput(void);
+protected:
     // setup
     virtual void setup(void);
     // execution
     virtual void execute(void);
 private:
+    void writeVP(const ScalarField &vp, std::string dsetName);
+private:
     std::string                freeMomPropName_, GFSrcName_, phatsqName_, prop0Name_,
                                twoscalarName_, twoscalarVertexName_,
                                psquaredName_, psquaredVertexName_;
-    std::vector<std::string>   phaseName_;
-    std::vector<ScalarField *> phase_;
+    std::vector<std::string>   phaseName_, momPhaseName_;
+    std::vector<ScalarField *> phase_, momPhase_;
 };
 
 MODULE_REGISTER_NS(VPCounterTerms, TVPCounterTerms, MScalar);

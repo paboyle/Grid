@@ -55,14 +55,14 @@ std::vector<std::string> TUnitEm::getOutput(void)
 // setup ///////////////////////////////////////////////////////////////////////
 void TUnitEm::setup(void)
 {
-    env().registerLattice<EmField>(getName());
+    envCreateLat(EmField, getName());
 }
 
 // execution ///////////////////////////////////////////////////////////////////
 void TUnitEm::execute(void)
 {
     PhotonR photon(0, 0, 0); // Just chose arbitrary input values here
-    EmField &a = *env().createLattice<EmField>(getName());
+    auto    &a = envGet(EmField, getName());
     LOG(Message) << "Generating unit EM potential..." << std::endl;
     photon.UnitField(a);
 }
