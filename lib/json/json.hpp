@@ -3640,7 +3640,6 @@ This class implements a both iterators (iterator and const_iterator) for the
 
 @since version 1.0.0, simplified in version 2.0.9
 */
-
 template<typename BasicJsonType>
 class iter_impl : public std::iterator<std::random_access_iterator_tag, BasicJsonType>
 {
@@ -3737,7 +3736,7 @@ class iter_impl : public std::iterator<std::random_access_iterator_tag, BasicJso
         return *this;
     }
 
-  private:
+  public:
     /*!
     @brief set the iterator to the first value
     @pre The iterator is initialized; i.e. `m_object != nullptr`.
