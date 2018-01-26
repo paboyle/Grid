@@ -101,7 +101,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define LOCK_GAUGE(dir) 
 #define UNLOCK_GAUGE(dir) 
 
-//  const SiteSpinor * ptr = & in._odata[offset];	
+//  const SiteSpinor * ptr = & in[offset];	
 #define LOAD_CHIMU(PTR)	 LOAD64(%r8,PTR) __asm__ ( LOAD_CHIMUi );
 #define LOAD_CHI(PTR)	 LOAD64(%r8,PTR) __asm__ ( LOAD_CHIi );
 #define SAVE_UCHI(PTR)	 SAVE_UCHIi(PTR)
@@ -179,7 +179,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 	   VSTORE(4,%r8,Chi_11)					\
 	   VSTORE(5,%r8,Chi_12)				);
 
-#define MULT_2SPIN_DIR_PF(A,p) MULT_2SPIN_PF(&U._odata[sU](A),p)
+#define MULT_2SPIN_DIR_PF(A,p) MULT_2SPIN_PF(&U[sU](A),p)
 #define MULT_2SPIN_PF(ptr,pf) MULT_2SPIN(ptr,pf)
 
 //////////////////////////////////////////////////////////////////
@@ -561,7 +561,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #endif
 
 #define PF_GAUGE(A)							\
-  LOAD64(%r8,&U._odata[sU](A))						\
+  LOAD64(%r8,&U[sU](A))						\
   __asm__ (								\
 	   VPREFETCH_G1(0,%r8) VPREFETCH_G1(1,%r8)			\
 	   VPREFETCH_G1(2,%r8) VPREFETCH_G1(3,%r8)			\

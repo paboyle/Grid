@@ -129,7 +129,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
  *********************************************************/
 #define LOCK_GAUGE(dir)					\
   {							\
-    uint8_t *byte_addr = (uint8_t *)&U._odata[sU](dir);	\
+    uint8_t *byte_addr = (uint8_t *)&U[sU](dir);	\
     for(int i=0;i< 18*2*BYTES_PER_WORD*8;i+=32){	\
       CACHE_LOCK(&byte_addr[i]);			\
     }							\
@@ -137,7 +137,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #define UNLOCK_GAUGE(dir)				\
   {							\
-    uint8_t *byte_addr = (uint8_t *)&U._odata[sU](dir);	\
+    uint8_t *byte_addr = (uint8_t *)&U[sU](dir);	\
     for(int i=0;i< 18*2*BYTES_PER_WORD*8;i+=32){	\
       CACHE_UNLOCK(&byte_addr[i]);			\
     }							\
@@ -150,14 +150,14 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define PERMUTE_DIR1 
 #define PERMUTE_DIR0 
 
-#define MULT_2SPIN_DIR_PFXP(A,p) MULT_2SPIN(&U._odata[sU](A),p)
-#define MULT_2SPIN_DIR_PFYP(A,p) MULT_2SPIN(&U._odata[sU](A),p)
-#define MULT_2SPIN_DIR_PFZP(A,p) MULT_2SPIN(&U._odata[sU](A),p)
-#define MULT_2SPIN_DIR_PFTP(A,p) MULT_2SPIN(&U._odata[sU](A),p)
-#define MULT_2SPIN_DIR_PFXM(A,p) MULT_2SPIN(&U._odata[sU](A),p)
-#define MULT_2SPIN_DIR_PFYM(A,p) MULT_2SPIN(&U._odata[sU](A),p)
-#define MULT_2SPIN_DIR_PFZM(A,p) MULT_2SPIN(&U._odata[sU](A),p)
-#define MULT_2SPIN_DIR_PFTM(A,p) MULT_2SPIN(&U._odata[sU](A),p)
+#define MULT_2SPIN_DIR_PFXP(A,p) MULT_2SPIN(&U[sU](A),p)
+#define MULT_2SPIN_DIR_PFYP(A,p) MULT_2SPIN(&U[sU](A),p)
+#define MULT_2SPIN_DIR_PFZP(A,p) MULT_2SPIN(&U[sU](A),p)
+#define MULT_2SPIN_DIR_PFTP(A,p) MULT_2SPIN(&U[sU](A),p)
+#define MULT_2SPIN_DIR_PFXM(A,p) MULT_2SPIN(&U[sU](A),p)
+#define MULT_2SPIN_DIR_PFYM(A,p) MULT_2SPIN(&U[sU](A),p)
+#define MULT_2SPIN_DIR_PFZM(A,p) MULT_2SPIN(&U[sU](A),p)
+#define MULT_2SPIN_DIR_PFTM(A,p) MULT_2SPIN(&U[sU](A),p)
 
 #define MULT_SPIN(ptr,p) {					\
     uint64_t ub = ((uint64_t)base);				\
@@ -540,7 +540,7 @@ void testme(int osites,int ssU)
   int local,perm, ptype;
   uint64_t base;
   uint64_t basep;
-  const uint64_t plocal =(uint64_t) & in._odata[0];
+  const uint64_t plocal =(uint64_t) & in[0];
 
   //  vComplexF isigns[2] = { signs[0], signs[1] };
   //COMPLEX_TYPE is vComplexF of vComplexD depending 
@@ -675,7 +675,7 @@ void testme(int osites,int ssU)
       // Xm
       ////////////////////////////////
 #ifndef STREAM_STORE
-      basep= (uint64_t) &out._odata[ss];
+      basep= (uint64_t) &out[ss];
 #endif
       //  basep= GetPFInfo(nent,plocal); nent++;
       if ( local ) {
@@ -770,7 +770,7 @@ void testme(int osites,int ssU)
       } else { 
 	LOAD_CHI(base);
       }
-      base= (uint64_t) &out._odata[ss];
+      base= (uint64_t) &out[ss];
 #ifndef STREAM_STORE
       PREFETCH_CHIMU(base);
 #endif

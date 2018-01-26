@@ -155,8 +155,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
  *********************************************************/
 #define LOCK_GAUGE(dir)						\
   {								\
-    uint64_t byte_addr = (uint64_t)&U._odata[sU];		\
-    int count = (sizeof(U._odata[0])+63)/64;			\
+    uint64_t byte_addr = (uint64_t)&U[sU];		\
+    int count = (sizeof(U[0])+63)/64;			\
     asm (" mtctr %0 \n"						\
 	 " mr " HASH(REP) ", %1\n"				\
 	 " li " HASH(IMM) ", 64\n"				\
@@ -169,8 +169,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #define UNLOCK_GAUGE(dir)					\
   {								\
-    uint64_t byte_addr = (uint64_t)&U._odata[sU];		\
-    int count = (sizeof(U._odata[0])+63)/64;			\
+    uint64_t byte_addr = (uint64_t)&U[sU];		\
+    int count = (sizeof(U[0])+63)/64;			\
     asm (" mtctr %0 \n"						\
 	 " mr " HASH(REP) ", %1\n"				\
 	 " li " HASH(IMM) ", 64\n"				\
@@ -256,7 +256,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   }
 
 
-#define MULT_2SPIN_DIR_PF(A,p) MULT_2SPIN_PF(&U._odata[sU](A),p)
+#define MULT_2SPIN_DIR_PF(A,p) MULT_2SPIN_PF(&U[sU](A),p)
 #define MULT_2SPIN_PF(ptr,pf) MULT_2SPIN(ptr,pf)
 
 #define SAVE_RESULT(base,basep) {			\
