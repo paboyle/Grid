@@ -76,9 +76,9 @@ void MobiusEOFAFermion<Impl>::M5D(const FermionField& psi, const FermionField& p
   Vector<iSinglet<Simd>> d(LLs);
 
   assert(Ls/LLs == nsimd);
-  assert(phi.checkerboard == psi.checkerboard);
+  assert(phi.Checkerboard() == psi.Checkerboard());
 
-  chi.checkerboard = psi.checkerboard;
+  chi.Checkerboard() = psi.Checkerboard();
 
   // just directly address via type pun
   typedef typename Simd::scalar_type scalar_type;
@@ -237,9 +237,9 @@ void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField& psi, const FermionFi
   Vector<iSinglet<Simd>> s(LLs);
 
   assert(Ls/LLs == nsimd);
-  assert(phi.checkerboard == psi.checkerboard);
+  assert(phi.Checkerboard() == psi.Checkerboard());
 
-  chi.checkerboard = psi.checkerboard;
+  chi.Checkerboard() = psi.Checkerboard();
 
   // just directly address via type pun
   typedef typename Simd::scalar_type scalar_type;
@@ -402,9 +402,9 @@ void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField& psi, const FermionField
   Vector<iSinglet<Simd>> d(LLs);
 
   assert(Ls/LLs == nsimd);
-  assert(phi.checkerboard == psi.checkerboard);
+  assert(phi.Checkerboard() == psi.Checkerboard());
 
-  chi.checkerboard = psi.checkerboard;
+  chi.Checkerboard() = psi.Checkerboard();
 
   // just directly address via type pun
   typedef typename Simd::scalar_type scalar_type;
@@ -560,9 +560,9 @@ void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField& psi, const Fermio
   Vector<iSinglet<Simd>> s(LLs);
 
   assert(Ls/LLs == nsimd);
-  assert(phi.checkerboard == psi.checkerboard);
+  assert(phi.Checkerboard() == psi.Checkerboard());
 
-  chi.checkerboard = psi.checkerboard;
+  chi.Checkerboard() = psi.Checkerboard();
 
   // just directly address via type pun
   typedef typename Simd::scalar_type scalar_type;
@@ -913,7 +913,7 @@ void MobiusEOFAFermion<Impl>::MooeeInternal(const FermionField& psi, FermionFiel
   int LLs = psi._grid->_rdimensions[0];
   int vol = psi._grid->oSites()/LLs;
 
-  chi.checkerboard = psi.checkerboard;
+  chi.Checkerboard() = psi.Checkerboard();
 
   Vector<iSinglet<Simd>>   Matp;
   Vector<iSinglet<Simd>>   Matm;

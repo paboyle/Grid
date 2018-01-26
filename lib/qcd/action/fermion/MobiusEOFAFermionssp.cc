@@ -131,7 +131,7 @@ void MobiusEOFAFermion<Impl>::MooeeInv(const FermionField& psi, FermionField& ch
 
   Coeff_t one(1.0);
   Coeff_t czero(0.0);
-  chi.checkerboard = psi.checkerboard;
+  chi.Checkerboard() = psi.Checkerboard();
   int Ls = this->Ls;
 
   // Apply (L^{\prime})^{-1}
@@ -162,7 +162,7 @@ void MobiusEOFAFermion<Impl>::MooeeInv_shift(const FermionField& psi, FermionFie
 {
   Coeff_t one(1.0);
   Coeff_t czero(0.0);
-  chi.checkerboard = psi.checkerboard;
+  chi.Checkerboard() = psi.Checkerboard();
   int Ls = this->Ls;
 
   FermionField tmp(psi._grid);
@@ -203,7 +203,7 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag(const FermionField& psi, FermionField&
 
   Coeff_t one(1.0);
   Coeff_t czero(0.0);
-  chi.checkerboard = psi.checkerboard;
+  chi.Checkerboard() = psi.Checkerboard();
   int Ls = this->Ls;
 
   // Apply (U^{\prime})^{-dagger}
@@ -234,7 +234,7 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag_shift(const FermionField& psi, Fermion
 {
   Coeff_t one(1.0);
   Coeff_t czero(0.0);
-  chi.checkerboard = psi.checkerboard;
+  chi.Checkerboard() = psi.Checkerboard();
   int Ls = this->Ls;
 
   FermionField tmp(psi._grid);

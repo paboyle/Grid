@@ -171,21 +171,21 @@ void ImprovedStaggeredFermion<Impl>::ImportGauge(const GaugeField &_Uthin,const 
 
 template <class Impl>
 RealD ImprovedStaggeredFermion<Impl>::M(const FermionField &in, FermionField &out) {
-  out.checkerboard = in.checkerboard;
+  out.Checkerboard() = in.Checkerboard();
   Dhop(in, out, DaggerNo);
   return axpy_norm(out, mass, in, out);
 }
 
 template <class Impl>
 RealD ImprovedStaggeredFermion<Impl>::Mdag(const FermionField &in, FermionField &out) {
-  out.checkerboard = in.checkerboard;
+  out.Checkerboard() = in.Checkerboard();
   Dhop(in, out, DaggerYes);
   return axpy_norm(out, mass, in, out);
 }
 
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::Meooe(const FermionField &in, FermionField &out) {
-  if (in.checkerboard == Odd) {
+  if (in.Checkerboard() == Odd) {
     DhopEO(in, out, DaggerNo);
   } else {
     DhopOE(in, out, DaggerNo);
@@ -193,7 +193,7 @@ void ImprovedStaggeredFermion<Impl>::Meooe(const FermionField &in, FermionField 
 }
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::MeooeDag(const FermionField &in, FermionField &out) {
-  if (in.checkerboard == Odd) {
+  if (in.Checkerboard() == Odd) {
     DhopEO(in, out, DaggerYes);
   } else {
     DhopOE(in, out, DaggerYes);
@@ -202,27 +202,27 @@ void ImprovedStaggeredFermion<Impl>::MeooeDag(const FermionField &in, FermionFie
 
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::Mooee(const FermionField &in, FermionField &out) {
-  out.checkerboard = in.checkerboard;
+  out.Checkerboard() = in.Checkerboard();
   typename FermionField::scalar_type scal(mass);
   out = scal * in;
 }
 
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out) {
-  out.checkerboard = in.checkerboard;
+  out.Checkerboard() = in.Checkerboard();
   Mooee(in, out);
 }
 
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::MooeeInv(const FermionField &in, FermionField &out) {
-  out.checkerboard = in.checkerboard;
+  out.Checkerboard() = in.Checkerboard();
   out = (1.0 / (mass)) * in;
 }
 
 template <class Impl>
 void ImprovedStaggeredFermion<Impl>::MooeeInvDag(const FermionField &in,
 						 FermionField &out) {
-  out.checkerboard = in.checkerboard;
+  out.Checkerboard() = in.Checkerboard();
   MooeeInv(in, out);
 }
 
@@ -285,7 +285,7 @@ void ImprovedStaggeredFermion<Impl>::DhopDeriv(GaugeField &mat, const FermionFie
   conformable(U._grid, V._grid);
   conformable(U._grid, mat._grid);
 
-  mat.checkerboard = U.checkerboard;
+  mat.Checkerboard() = U.Checkerboard();
 
   DerivInternal(Stencil, Umu, UUUmu, mat, U, V, dag);
 }
@@ -297,9 +297,9 @@ void ImprovedStaggeredFermion<Impl>::DhopDerivOE(GaugeField &mat, const FermionF
   conformable(U._grid, V._grid);
   conformable(U._grid, mat._grid);
 
-  assert(V.checkerboard == Even);
-  assert(U.checkerboard == Odd);
-  mat.checkerboard = Odd;
+  assert(V.Checkerboard() == Even);
+  assert(U.Checkerboard() == Odd);
+  mat.Checkerboard() = Odd;
 
   DerivInternal(StencilEven, UmuOdd, UUUmuOdd, mat, U, V, dag);
 }
@@ -311,9 +311,9 @@ void ImprovedStaggeredFermion<Impl>::DhopDerivEO(GaugeField &mat, const FermionF
   conformable(U._grid, V._grid);
   conformable(U._grid, mat._grid);
 
-  assert(V.checkerboard == Odd);
-  assert(U.checkerboard == Even);
-  mat.checkerboard = Even;
+  assert(V.Checkerboard() == Odd);
+  assert(U.Checkerboard() == Even);
+  mat.Checkerboard() = Even;
 
   DerivInternal(StencilOdd, UmuEven, UUUmuEven, mat, U, V, dag);
 }
@@ -323,7 +323,7 @@ void ImprovedStaggeredFermion<Impl>::Dhop(const FermionField &in, FermionField &
   conformable(in._grid, _grid);  // verifies full grid
   conformable(in._grid, out._grid);
 
-  out.checkerboard = in.checkerboard;
+  out.Checkerboard() = in.Checkerboard();
 
   DhopInternal(Stencil, Lebesgue, Umu, UUUmu, in, out, dag);
 }
@@ -333,8 +333,8 @@ void ImprovedStaggeredFermion<Impl>::DhopOE(const FermionField &in, FermionField
   conformable(in._grid, _cbgrid);    // verifies half grid
   conformable(in._grid, out._grid);  // drops the cb check
 
-  assert(in.checkerboard == Even);
-  out.checkerboard = Odd;
+  assert(in.Checkerboard() == Even);
+  out.Checkerboard() = Odd;
 
   DhopInternal(StencilEven, LebesgueEvenOdd, UmuOdd, UUUmuOdd, in, out, dag);
 }
@@ -344,8 +344,8 @@ void ImprovedStaggeredFermion<Impl>::DhopEO(const FermionField &in, FermionField
   conformable(in._grid, _cbgrid);    // verifies half grid
   conformable(in._grid, out._grid);  // drops the cb check
 
-  assert(in.checkerboard == Odd);
-  out.checkerboard = Even;
+  assert(in.Checkerboard() == Odd);
+  out.Checkerboard() = Even;
 
   DhopInternal(StencilOdd, LebesgueEvenOdd, UmuEven, UUUmuEven, in, out, dag);
 }

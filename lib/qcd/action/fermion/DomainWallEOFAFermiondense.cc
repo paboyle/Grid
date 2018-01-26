@@ -58,7 +58,7 @@ void DomainWallEOFAFermion<Impl>::MooeeInternal(const FermionField& psi, Fermion
   int LLs = psi._grid->_rdimensions[0];
   int vol = psi._grid->oSites()/LLs;
 
-  chi.checkerboard = psi.checkerboard;
+  chi.Checkerboard() = psi.Checkerboard();
 
   assert(Ls==LLs);
 

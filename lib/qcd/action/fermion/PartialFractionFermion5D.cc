@@ -51,7 +51,7 @@ template<class Impl>
 void   PartialFractionFermion5D<Impl>::Meooe_internal(const FermionField &psi, FermionField &chi,int dag)
 {
   int Ls = this->Ls;
-  if ( psi.checkerboard == Odd ) {
+  if ( psi.Checkerboard() == Odd ) {
     this->DhopEO(psi,chi,DaggerNo);
   } else {
     this->DhopOE(psi,chi,DaggerNo);

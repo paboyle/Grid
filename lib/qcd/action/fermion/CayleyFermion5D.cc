@@ -276,7 +276,7 @@ void CayleyFermion5D<Impl>::Meooe       (const FermionField &psi, FermionField &
 {
   Meooe5D(psi,this->tmp()); 
 
-  if ( psi.checkerboard == Odd ) {
+  if ( psi.Checkerboard() == Odd ) {
     this->DhopEO(this->tmp(),chi,DaggerNo);
   } else {
     this->DhopOE(this->tmp(),chi,DaggerNo);
@@ -287,7 +287,7 @@ template<class Impl>
 void CayleyFermion5D<Impl>::MeooeDag    (const FermionField &psi, FermionField &chi)
 {
   // Apply 4d dslash
-  if ( psi.checkerboard == Odd ) {
+  if ( psi.Checkerboard() == Odd ) {
     this->DhopEO(psi,this->tmp(),DaggerYes);
   } else {
     this->DhopOE(psi,this->tmp(),DaggerYes);

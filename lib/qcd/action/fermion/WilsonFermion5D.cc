@@ -328,7 +328,7 @@ void WilsonFermion5D<Impl>::DhopDeriv(GaugeField &mat,
 
   //conformable(GaugeGrid(),mat._grid);// this is not general! leaving as a comment
 
-  mat.checkerboard = A.checkerboard;
+  mat.Checkerboard() = A.Checkerboard();
 
   DerivInternal(Stencil,Umu,mat,A,B,dag);
 }
@@ -342,9 +342,9 @@ void WilsonFermion5D<Impl>::DhopDerivEO(GaugeField &mat,
   conformable(A._grid,FermionRedBlackGrid());
   conformable(A._grid,B._grid);
 
-  assert(B.checkerboard==Odd);
-  assert(A.checkerboard==Even);
-  mat.checkerboard = Even;
+  assert(B.Checkerboard()==Odd);
+  assert(A.Checkerboard()==Even);
+  mat.Checkerboard() = Even;
 
   DerivInternal(StencilOdd,UmuEven,mat,A,B,dag);
 }
@@ -359,9 +359,9 @@ void WilsonFermion5D<Impl>::DhopDerivOE(GaugeField &mat,
   conformable(A._grid,FermionRedBlackGrid());
   conformable(A._grid,B._grid);
 
-  assert(B.checkerboard==Even);
-  assert(A.checkerboard==Odd);
-  mat.checkerboard = Odd;
+  assert(B.Checkerboard()==Even);
+  assert(A.Checkerboard()==Odd);
+  mat.Checkerboard() = Odd;
 
   DerivInternal(StencilEven,UmuOdd,mat,A,B,dag);
 }
@@ -525,8 +525,8 @@ void WilsonFermion5D<Impl>::DhopOE(const FermionField &in, FermionField &out,int
   conformable(in._grid,FermionRedBlackGrid());    // verifies half grid
   conformable(in._grid,out._grid); // drops the cb check
 
-  assert(in.checkerboard==Even);
-  out.checkerboard = Odd;
+  assert(in.Checkerboard()==Even);
+  out.Checkerboard() = Odd;
 
   DhopInternal(StencilEven,LebesgueEvenOdd,UmuOdd,in,out,dag);
 }
@@ -537,8 +537,8 @@ void WilsonFermion5D<Impl>::DhopEO(const FermionField &in, FermionField &out,int
   conformable(in._grid,FermionRedBlackGrid());    // verifies half grid
   conformable(in._grid,out._grid); // drops the cb check
 
-  assert(in.checkerboard==Odd);
-  out.checkerboard = Even;
+  assert(in.Checkerboard()==Odd);
+  out.Checkerboard() = Even;
 
   DhopInternal(StencilOdd,LebesgueEvenOdd,UmuEven,in,out,dag);
 }
@@ -549,14 +549,14 @@ void WilsonFermion5D<Impl>::Dhop(const FermionField &in, FermionField &out,int d
   conformable(in._grid,FermionGrid()); // verifies full grid
   conformable(in._grid,out._grid);
 
-  out.checkerboard = in.checkerboard;
+  out.Checkerboard() = in.Checkerboard();
 
   DhopInternal(Stencil,Lebesgue,Umu,in,out,dag);
 }
 template<class Impl>
 void WilsonFermion5D<Impl>::DW(const FermionField &in, FermionField &out,int dag)
 {
-  out.checkerboard=in.checkerboard;
+  out.Checkerboard()=in.Checkerboard();
   Dhop(in,out,dag); // -0.5 is included
   axpy(out,4.0-M5,in,out);
 }
@@ -754,21 +754,21 @@ void WilsonFermion5D<Impl>::ContractConservedCurrent(PropagatorField &q_in_1,
 	  // sites correctly.
 	  if (Impl::LsVectorised)
             {
-	      REVERSE_LS(q_in_2._odata[sF2], qSite2, Ls / LLs);
-	      REVERSE_LS(tmp2._odata[sF2], qmuSite2, Ls / LLs);
+	      REVERSE_LS(q_in_2[sF2], qSite2, Ls / LLs);
+	      REVERSE_LS(tmp2[sF2], qmuSite2, Ls / LLs);
             }
 	  else
             {
-	      qSite2   = q_in_2._odata[sF2];
-	      qmuSite2 = tmp2._odata[sF2];
+	      qSite2   = q_in_2[sF2];
+	      qmuSite2 = tmp2[sF2];
             }
-	  Kernels::ContractConservedCurrentSiteFwd(tmp1._odata[sF1], 
+	  Kernels::ContractConservedCurrentSiteFwd(tmp1[sF1], 
 						   qSite2, 
-						   q_out._odata[sU],
+						   q_out[sU],
 						   Umu, sU, mu, axial_sign);
-	  Kernels::ContractConservedCurrentSiteBwd(q_in_1._odata[sF1],
+	  Kernels::ContractConservedCurrentSiteBwd(q_in_1[sF1],
 						   qmuSite2,
-						   q_out._odata[sU],
+						   q_out[sU],
 						   Umu, sU, mu, axial_sign);
 	  sF1++;
 	  sF2--;
@@ -821,8 +821,8 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
     {
       // Compute the sequential conserved current insertion only if our simd
       // object contains a timeslice we need.
-      vInteger t_mask   = ((coords._odata[sU] >= tmin) &&
-			   (coords._odata[sU] <= tmax));
+      vInteger t_mask   = ((coords[sU] >= tmin) &&
+			   (coords[sU] <= tmax));
       Integer timeSlices = Reduce(t_mask);
 
       if (timeSlices > 0)
@@ -831,20 +831,20 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 	  for (unsigned int s = 0; s < LLs; ++s)
             {
 	      bool axial_sign = ((curr_type == Current::Axial) && (s < (LLs / 2)));
-	      Kernels::SeqConservedCurrentSiteFwd(tmpFwd._odata[sF], 
-						  q_out._odata[sF], Umu, sU,
+	      Kernels::SeqConservedCurrentSiteFwd(tmpFwd[sF], 
+						  q_out[sF], Umu, sU,
 						  mu, t_mask, axial_sign);
 	      ++sF;
             }
         }
 
       // Repeat for backward direction.
-      t_mask     = ((coords._odata[sU] >= (tmin + tshift)) && 
-		    (coords._odata[sU] <= (tmax + tshift)));
+      t_mask     = ((coords[sU] >= (tmin + tshift)) && 
+		    (coords[sU] <= (tmax + tshift)));
 
       //if tmax = LLt-1 (last timeslice) include timeslice 0 if the time is shifted (mu=3)	
       unsigned int t0 = 0;
-      if((tmax==LLt-1) && (tshift==1)) t_mask = (t_mask || (coords._odata[sU] == t0 ));
+      if((tmax==LLt-1) && (tshift==1)) t_mask = (t_mask || (coords[sU] == t0 ));
 
       timeSlices = Reduce(t_mask);
 
@@ -854,8 +854,8 @@ void WilsonFermion5D<Impl>::SeqConservedCurrent(PropagatorField &q_in,
 	  for (unsigned int s = 0; s < LLs; ++s)
             {
 	      bool axial_sign = ((curr_type == Current::Axial) && (s < (LLs / 2)));
-	      Kernels::SeqConservedCurrentSiteBwd(tmpBwd._odata[sF], 
-						  q_out._odata[sF], Umu, sU,
+	      Kernels::SeqConservedCurrentSiteBwd(tmpBwd[sF], 
+						  q_out[sF], Umu, sU,
 						  mu, t_mask, axial_sign);
 	      ++sF;
             }

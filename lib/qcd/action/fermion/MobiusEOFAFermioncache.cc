@@ -43,8 +43,8 @@ void MobiusEOFAFermion<Impl>::M5D(const FermionField &psi, const FermionField &p
   int Ls = this->Ls;
   GridBase *grid = psi._grid;
 
-  assert(phi.checkerboard == psi.checkerboard);
-  chi.checkerboard = psi.checkerboard;
+  assert(phi.Checkerboard() == psi.Checkerboard());
+  chi.Checkerboard() = psi.Checkerboard();
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   this->M5Dcalls++;
@@ -52,21 +52,21 @@ void MobiusEOFAFermion<Impl>::M5D(const FermionField &psi, const FermionField &p
 
   parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){
     for(int s=0; s<Ls; s++){
-      auto tmp = psi._odata[0];
+      auto tmp = psi[0];
       if(s==0){
-	spProj5m(tmp, psi._odata[ss+s+1]);
+	spProj5m(tmp, psi[ss+s+1]);
 	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5p(tmp, psi._odata[ss+Ls-1]);
+	spProj5p(tmp, psi[ss+Ls-1]);
 	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
       } else if(s==(Ls-1)) {
-	spProj5m(tmp, psi._odata[ss+0]);
+	spProj5m(tmp, psi[ss+0]);
 	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5p(tmp, psi._odata[ss+s-1]);
+	spProj5p(tmp, psi[ss+s-1]);
 	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
       } else {
-	spProj5m(tmp, psi._odata[ss+s+1]);
+	spProj5m(tmp, psi[ss+s+1]);
 	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5p(tmp, psi._odata[ss+s-1]);
+	spProj5p(tmp, psi[ss+s-1]);
 	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
       }
     }
@@ -84,8 +84,8 @@ void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField &psi, const FermionFi
   int shift_s = (this->pm == 1) ? (Ls-1) : 0; // s-component modified by shift operator
   GridBase *grid = psi._grid;
 
-  assert(phi.checkerboard == psi.checkerboard);
-  chi.checkerboard = psi.checkerboard;
+  assert(phi.Checkerboard() == psi.Checkerboard());
+  chi.Checkerboard() = psi.Checkerboard();
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   this->M5Dcalls++;
@@ -93,25 +93,25 @@ void MobiusEOFAFermion<Impl>::M5D_shift(const FermionField &psi, const FermionFi
 
   parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){
     for(int s=0; s<Ls; s++){
-      auto tmp = psi._odata[0];
+      auto tmp = psi[0];
       if(s==0){
-	spProj5m(tmp, psi._odata[ss+s+1]);
+	spProj5m(tmp, psi[ss+s+1]);
 	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5p(tmp, psi._odata[ss+Ls-1]);
+	spProj5p(tmp, psi[ss+Ls-1]);
 	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
       } else if(s==(Ls-1)) {
-	spProj5m(tmp, psi._odata[ss+0]);
+	spProj5m(tmp, psi[ss+0]);
 	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5p(tmp, psi._odata[ss+s-1]);
+	spProj5p(tmp, psi[ss+s-1]);
 	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
       } else {
-	spProj5m(tmp, psi._odata[ss+s+1]);
+	spProj5m(tmp, psi[ss+s+1]);
 	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5p(tmp, psi._odata[ss+s-1]);
+	spProj5p(tmp, psi[ss+s-1]);
 	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
       }
-      if(this->pm == 1){ spProj5p(tmp, psi._odata[ss+shift_s]); }
-      else{ spProj5m(tmp, psi._odata[ss+shift_s]); }
+      if(this->pm == 1){ spProj5p(tmp, psi[ss+shift_s]); }
+      else{ spProj5m(tmp, psi[ss+shift_s]); }
       chi[ss+s] = chi[ss+s] + shift_coeffs[s]*tmp;
     }
   }
@@ -126,30 +126,30 @@ void MobiusEOFAFermion<Impl>::M5Ddag(const FermionField &psi, const FermionField
   int Ls = this->Ls;
   GridBase *grid = psi._grid;
 
-  assert(phi.checkerboard == psi.checkerboard);
-  chi.checkerboard = psi.checkerboard;
+  assert(phi.Checkerboard() == psi.Checkerboard());
+  chi.Checkerboard() = psi.Checkerboard();
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   this->M5Dcalls++;
   this->M5Dtime -= usecond();
 
   parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){
-    auto tmp = psi._odata[0];
+    auto tmp = psi[0];
     for(int s=0; s<Ls; s++){
       if(s==0) {
-	spProj5p(tmp, psi._odata[ss+s+1]);
+	spProj5p(tmp, psi[ss+s+1]);
 	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5m(tmp, psi._odata[ss+Ls-1]);
+	spProj5m(tmp, psi[ss+Ls-1]);
 	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
       } else if(s==(Ls-1)) {
-	spProj5p(tmp, psi._odata[ss+0]);
+	spProj5p(tmp, psi[ss+0]);
 	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5m(tmp, psi._odata[ss+s-1]);
+	spProj5m(tmp, psi[ss+s-1]);
 	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
       } else {
-	spProj5p(tmp, psi._odata[ss+s+1]);
+	spProj5p(tmp, psi[ss+s+1]);
 	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5m(tmp, psi._odata[ss+s-1]);
+	spProj5m(tmp, psi[ss+s-1]);
 	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
       }
     }
@@ -167,8 +167,8 @@ void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField &psi, const Fermio
   int shift_s = (this->pm == 1) ? (Ls-1) : 0; // s-component modified by shift operator
   GridBase *grid = psi._grid;
 
-  assert(phi.checkerboard == psi.checkerboard);
-  chi.checkerboard = psi.checkerboard;
+  assert(phi.Checkerboard() == psi.Checkerboard());
+  chi.Checkerboard() = psi.Checkerboard();
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   this->M5Dcalls++;
@@ -176,26 +176,26 @@ void MobiusEOFAFermion<Impl>::M5Ddag_shift(const FermionField &psi, const Fermio
 
   parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){
     chi[ss+Ls-1] = zero;
-    auto tmp = psi._odata[0];
+    auto tmp = psi[0];
     for(int s=0; s<Ls; s++){
       if(s==0) {
-	spProj5p(tmp, psi._odata[ss+s+1]);
+	spProj5p(tmp, psi[ss+s+1]);
 	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5m(tmp, psi._odata[ss+Ls-1]);
+	spProj5m(tmp, psi[ss+Ls-1]);
 	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
       } else if(s==(Ls-1)) {
-	spProj5p(tmp, psi._odata[ss+0]);
+	spProj5p(tmp, psi[ss+0]);
 	chi[ss+s] = chi[ss+s] + diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5m(tmp, psi._odata[ss+s-1]);
+	spProj5m(tmp, psi[ss+s-1]);
 	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
       } else {
-	spProj5p(tmp, psi._odata[ss+s+1]);
+	spProj5p(tmp, psi[ss+s+1]);
 	chi[ss+s] = diag[s]*phi[ss+s] + upper[s]*tmp;
-	spProj5m(tmp, psi._odata[ss+s-1]);
+	spProj5m(tmp, psi[ss+s-1]);
 	chi[ss+s] = chi[ss+s] + lower[s]*tmp;
       }
-      if(this->pm == 1){ spProj5p(tmp, psi._odata[ss+s]); }
-      else{ spProj5m(tmp, psi._odata[ss+s]); }
+      if(this->pm == 1){ spProj5p(tmp, psi[ss+s]); }
+      else{ spProj5m(tmp, psi[ss+s]); }
       chi[ss+shift_s] = chi[ss+shift_s] + shift_coeffs[s]*tmp;
     }
   }
@@ -211,14 +211,14 @@ void MobiusEOFAFermion<Impl>::MooeeInv(const FermionField &psi, FermionField &ch
   GridBase *grid = psi._grid;
   int Ls = this->Ls;
 
-  chi.checkerboard = psi.checkerboard;
+  chi.Checkerboard() = psi.Checkerboard();
 
   this->MooeeInvCalls++;
   this->MooeeInvTime -= usecond();
 
   parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){
 
-    auto tmp = psi._odata[0];
+    auto tmp = psi[0];
 
     // Apply (L^{\prime})^{-1}
     chi[ss] = psi[ss]; // chi[0]=psi[0]
@@ -256,16 +256,16 @@ void MobiusEOFAFermion<Impl>::MooeeInv_shift(const FermionField &psi, FermionFie
   GridBase *grid = psi._grid;
   int Ls = this->Ls;
 
-  chi.checkerboard = psi.checkerboard;
+  chi.Checkerboard() = psi.Checkerboard();
 
   this->MooeeInvCalls++;
   this->MooeeInvTime -= usecond();
 
   parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){
 
-    auto tmp1        = psi._odata[0];
-    auto tmp2        = psi._odata[0];
-    auto tmp2_spProj = psi._odata[0];
+    auto tmp1        = psi[0];
+    auto tmp2        = psi[0];
+    auto tmp2_spProj = psi[0];
 
     // Apply (L^{\prime})^{-1} and accumulate MooeeInv_shift_lc[j]*psi[j] in tmp2
     chi[ss] = psi[ss]; // chi[0]=psi[0]
@@ -313,14 +313,14 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag(const FermionField &psi, FermionField 
   GridBase *grid = psi._grid;
   int Ls = this->Ls;
 
-  chi.checkerboard = psi.checkerboard;
+  chi.Checkerboard() = psi.Checkerboard();
 
   this->MooeeInvCalls++;
   this->MooeeInvTime -= usecond();
 
   parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){
 
-    auto tmp = psi._odata[0];
+    auto tmp = psi[0];
 
     // Apply (U^{\prime})^{-dag}
     chi[ss] = psi[ss];
@@ -358,16 +358,16 @@ void MobiusEOFAFermion<Impl>::MooeeInvDag_shift(const FermionField &psi, Fermion
   GridBase *grid = psi._grid;
   int Ls = this->Ls;
 
-  chi.checkerboard = psi.checkerboard;
+  chi.Checkerboard() = psi.Checkerboard();
 
   this->MooeeInvCalls++;
   this->MooeeInvTime -= usecond();
 
   parallel_for(int ss=0; ss<grid->oSites(); ss+=Ls){
 
-    auto tmp1        = psi._odata[0];
-    auto tmp2        = psi._odata[0];
-    auto tmp2_spProj = psi._odata[0];
+    auto tmp1        = psi[0];
+    auto tmp2        = psi[0];
+    auto tmp2_spProj = psi[0];
 
     // Apply (U^{\prime})^{-dag} and accumulate MooeeInvDag_shift_lc[j]*psi[j] in tmp2
     chi[ss] = psi[ss];

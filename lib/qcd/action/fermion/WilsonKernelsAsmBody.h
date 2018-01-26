@@ -130,7 +130,7 @@
   int local,perm, ptype;
   uint64_t base;
   uint64_t basep;
-  const uint64_t plocal =(uint64_t) & in._odata[0];
+  const uint64_t plocal =(uint64_t) & in[0];
 
   COMPLEX_SIGNS(isigns);
   MASK_REGS;
@@ -166,7 +166,7 @@
       if (nmu==0) break;
       //      if (nmu!=0) std::cout << "EXT "<<sU<<std::endl;
 #endif
-      base = (uint64_t) &out._odata[ss];
+      base = (uint64_t) &out[ss];
       basep= st.GetPFInfo(nent,plocal); nent++;
       RESULT(base,basep);
     }

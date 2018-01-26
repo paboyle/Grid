@@ -83,7 +83,7 @@ void DomainWallEOFAFermion<Impl>::MooeeInv(const FermionField& psi, FermionField
 {
   Coeff_t one(1.0);
   Coeff_t czero(0.0);
-  chi.checkerboard = psi.checkerboard;
+  chi.Checkerboard() = psi.Checkerboard();
   int Ls = this->Ls;
 
   FermionField tmp(psi._grid);
@@ -117,7 +117,7 @@ void DomainWallEOFAFermion<Impl>::MooeeInvDag(const FermionField& psi, FermionFi
 {
   Coeff_t one(1.0);
   Coeff_t czero(0.0);
-  chi.checkerboard = psi.checkerboard;
+  chi.Checkerboard() = psi.Checkerboard();
   int Ls = this->Ls;
 
   FermionField tmp(psi._grid);

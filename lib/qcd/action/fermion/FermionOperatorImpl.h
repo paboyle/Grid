@@ -432,7 +432,7 @@ public:
       // sum across the 5d dimension
       for (auto v : vres) scalar_object += v;  
       }
-      tmp._odata[so].putlane(scalar_object, si);
+      tmp[so].putlane(scalar_object, si);
       }
       }
       PokeIndex<LorentzIndex>(mat, tmp, mu);

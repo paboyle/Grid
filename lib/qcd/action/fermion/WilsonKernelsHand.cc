@@ -45,7 +45,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   Chimu_32=ref(F)(3)(2)
 
 #define LOAD_CHIMU(DIR,F,PERM)						\
-  { const SiteSpinor & ref (in._odata[offset]); LOAD_CHIMU_BODY(F); }
+  { const SiteSpinor & ref (in[offset]); LOAD_CHIMU_BODY(F); }
 
 #define LOAD_CHI_BODY(F)				\
     Chi_00 = ref(F)(0)(0);\
@@ -103,7 +103,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   }  
 
 #define LOAD_CHIMU_GPARITY_INPLACE_TWIST(DIR,F,PERM)			\
-  { const SiteSpinor &ref(in._odata[offset]);				\
+  { const SiteSpinor &ref(in[offset]);				\
     LOAD_CHI_SETUP(DIR,F);						\
     if(!inplace_twist){							\
       LOAD_CHIMU_BODY(g);						\
@@ -201,10 +201,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 
 #define MULT_2SPIN(A,F)					\
-  {auto & ref(U._odata[sU](A)); MULT_2SPIN_BODY; }
+  {auto & ref(U[sU](A)); MULT_2SPIN_BODY; }
 
 #define MULT_2SPIN_GPARITY(A,F)				\
-  {auto & ref(U._odata[sU](F)(A)); MULT_2SPIN_BODY; }
+  {auto & ref(U[sU](F)(A)); MULT_2SPIN_BODY; }
 
 
 #define PERMUTE_DIR(dir)			\
@@ -478,7 +478,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #define HAND_RESULT(ss,F)			\
   {						\
-    SiteSpinor & ref (out._odata[ss]);		\
+    SiteSpinor & ref (out[ss]);		\
     vstream(ref(F)(0)(0),result_00);		\
     vstream(ref(F)(0)(1),result_01);		\
     vstream(ref(F)(0)(2),result_02);		\
@@ -495,7 +495,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 #define HAND_RESULT_EXT(ss,F)			\
   if (nmu){					\
-    SiteSpinor & ref (out._odata[ss]);		\
+    SiteSpinor & ref (out[ss]);		\
     ref(F)(0)(0)+=result_00;		\
     ref(F)(0)(1)+=result_01;		\
     ref(F)(0)(2)+=result_02;		\

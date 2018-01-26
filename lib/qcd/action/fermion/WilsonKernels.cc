@@ -47,15 +47,15 @@ WilsonKernels<Impl>::WilsonKernels(const ImplParams &p) : Base(p){};
   if (SE->_is_local) {						\
     chi_p = &chi;						\
     if (SE->_permute) {						\
-      spProj(tmp, in._odata[SE->_offset]);			\
+      spProj(tmp, in[SE->_offset]);			\
       permute(chi, tmp, ptype);					\
     } else {							\
-      spProj(chi, in._odata[SE->_offset]);			\
+      spProj(chi, in[SE->_offset]);			\
     }								\
   } else {							\
     chi_p = &buf[SE->_offset];					\
   }								\
-  Impl::multLink(Uchi, U._odata[sU], *chi_p, Dir, SE, st);	\
+  Impl::multLink(Uchi, U[sU], *chi_p, Dir, SE, st);	\
   Recon(result, Uchi);
   
 #define GENERIC_STENCIL_LEG_INT(Dir,spProj,Recon)		\
@@ -63,16 +63,16 @@ WilsonKernels<Impl>::WilsonKernels(const ImplParams &p) : Base(p){};
   if (SE->_is_local) {						\
     chi_p = &chi;						\
     if (SE->_permute) {						\
-      spProj(tmp, in._odata[SE->_offset]);			\
+      spProj(tmp, in[SE->_offset]);			\
       permute(chi, tmp, ptype);					\
     } else {							\
-      spProj(chi, in._odata[SE->_offset]);			\
+      spProj(chi, in[SE->_offset]);			\
     }								\
   } else if ( st.same_node[Dir] ) {				\
       chi_p = &buf[SE->_offset];				\
   }								\
   if (SE->_is_local || st.same_node[Dir] ) {			\
-    Impl::multLink(Uchi, U._odata[sU], *chi_p, Dir, SE, st);	\
+    Impl::multLink(Uchi, U[sU], *chi_p, Dir, SE, st);	\
     Recon(result, Uchi);					\
   }
 
@@ -80,7 +80,7 @@ WilsonKernels<Impl>::WilsonKernels(const ImplParams &p) : Base(p){};
   SE = st.GetEntry(ptype, Dir, sF);				\
   if ((!SE->_is_local) && (!st.same_node[Dir]) ) {		\
     chi_p = &buf[SE->_offset];					\
-    Impl::multLink(Uchi, U._odata[sU], *chi_p, Dir, SE, st);	\
+    Impl::multLink(Uchi, U[sU], *chi_p, Dir, SE, st);	\
     Recon(result, Uchi);					\
     nmu++;							\
   }
@@ -88,14 +88,14 @@ WilsonKernels<Impl>::WilsonKernels(const ImplParams &p) : Base(p){};
 #define GENERIC_DHOPDIR_LEG(Dir,spProj,Recon)			\
   if (gamma == Dir) {						\
     if (SE->_is_local && SE->_permute) {			\
-      spProj(tmp, in._odata[SE->_offset]);			\
+      spProj(tmp, in[SE->_offset]);			\
       permute(chi, tmp, ptype);					\
     } else if (SE->_is_local) {					\
-      spProj(chi, in._odata[SE->_offset]);			\
+      spProj(chi, in[SE->_offset]);			\
     } else {							\
       chi = buf[SE->_offset];					\
     }								\
-    Impl::multLink(Uchi, U._odata[sU], chi, dir, SE, st);	\
+    Impl::multLink(Uchi, U[sU], chi, dir, SE, st);	\
     Recon(result, Uchi);					\
   }
 
@@ -123,7 +123,7 @@ void WilsonKernels<Impl>::GenericDhopSiteDag(StencilImpl &st, LebesgueOrder &lo,
   GENERIC_STENCIL_LEG(Ym,spProjYm,accumReconYm);
   GENERIC_STENCIL_LEG(Zm,spProjZm,accumReconZm);
   GENERIC_STENCIL_LEG(Tm,spProjTm,accumReconTm);
-  vstream(out._odata[sF], result);
+  vstream(out[sF], result);
 };
 
 template <class Impl>
@@ -147,7 +147,7 @@ void WilsonKernels<Impl>::GenericDhopSite(StencilImpl &st, LebesgueOrder &lo, Do
   GENERIC_STENCIL_LEG(Yp,spProjYm,accumReconYm);
   GENERIC_STENCIL_LEG(Zp,spProjZm,accumReconZm);
   GENERIC_STENCIL_LEG(Tp,spProjTm,accumReconTm);
-  vstream(out._odata[sF], result);
+  vstream(out[sF], result);
 };
   ////////////////////////////////////////////////////////////////////
   // Interior kernels
@@ -174,7 +174,7 @@ void WilsonKernels<Impl>::GenericDhopSiteDagInt(StencilImpl &st, LebesgueOrder &
   GENERIC_STENCIL_LEG_INT(Ym,spProjYm,accumReconYm);
   GENERIC_STENCIL_LEG_INT(Zm,spProjZm,accumReconZm);
   GENERIC_STENCIL_LEG_INT(Tm,spProjTm,accumReconTm);
-  vstream(out._odata[sF], result);
+  vstream(out[sF], result);
 };
 
 template <class Impl>
@@ -198,7 +198,7 @@ void WilsonKernels<Impl>::GenericDhopSiteInt(StencilImpl &st, LebesgueOrder &lo,
   GENERIC_STENCIL_LEG_INT(Yp,spProjYm,accumReconYm);
   GENERIC_STENCIL_LEG_INT(Zp,spProjZm,accumReconZm);
   GENERIC_STENCIL_LEG_INT(Tp,spProjTm,accumReconTm);
-  vstream(out._odata[sF], result);
+  vstream(out[sF], result);
 };
 ////////////////////////////////////////////////////////////////////
 // Exterior kernels
@@ -226,7 +226,7 @@ void WilsonKernels<Impl>::GenericDhopSiteDagExt(StencilImpl &st, LebesgueOrder &
   GENERIC_STENCIL_LEG_EXT(Zm,spProjZm,accumReconZm);
   GENERIC_STENCIL_LEG_EXT(Tm,spProjTm,accumReconTm);
   if ( nmu ) { 
-    out._odata[sF] = out._odata[sF] + result; 
+    out[sF] = out[sF] + result; 
   }
 };
 
@@ -253,7 +253,7 @@ void WilsonKernels<Impl>::GenericDhopSiteExt(StencilImpl &st, LebesgueOrder &lo,
   GENERIC_STENCIL_LEG_EXT(Zp,spProjZm,accumReconZm);
   GENERIC_STENCIL_LEG_EXT(Tp,spProjTm,accumReconTm);
   if ( nmu ) { 
-    out._odata[sF] = out._odata[sF] + result; 
+    out[sF] = out[sF] + result; 
   }
 };
 
@@ -277,7 +277,7 @@ void WilsonKernels<Impl>::DhopDirK( StencilImpl &st, DoubledGaugeField &U,SiteHa
   GENERIC_DHOPDIR_LEG(Ym,spProjYm,spReconYm);
   GENERIC_DHOPDIR_LEG(Zm,spProjZm,spReconZm);
   GENERIC_DHOPDIR_LEG(Tm,spProjTm,spReconTm);
-  vstream(out._odata[sF], result);
+  vstream(out[sF], result);
 }
 
 /*******************************************************************************
@@ -307,7 +307,7 @@ void WilsonKernels<Impl>::ContractConservedCurrentSiteFwd(
 {
     SitePropagator result, tmp;
     Gamma g5(Gamma::Algebra::Gamma5);
-    Impl::multLinkProp(tmp, U._odata[sU], q_in_1, mu);
+    Impl::multLinkProp(tmp, U[sU], q_in_1, mu);
     result = g5 * adj(q_in_2) * g5 * WilsonCurrentFwd(tmp, mu);
     if (switch_sign)
     {
@@ -337,7 +337,7 @@ void WilsonKernels<Impl>::ContractConservedCurrentSiteBwd(
 {
     SitePropagator result, tmp;
     Gamma g5(Gamma::Algebra::Gamma5);
-    Impl::multLinkProp(tmp, U._odata[sU], q_in_1, mu + Nd);
+    Impl::multLinkProp(tmp, U[sU], q_in_1, mu + Nd);
     result = g5 * adj(q_in_2) * g5 * WilsonCurrentBwd(tmp, mu);
     if (switch_sign)
     {
@@ -398,7 +398,7 @@ void WilsonKernels<Impl>::SeqConservedCurrentSiteFwd(const SitePropagator &q_in,
                                                      bool switch_sign)
 {
     SitePropagator result;
-    Impl::multLinkProp(result, U._odata[sU], q_in, mu);
+    Impl::multLinkProp(result, U[sU], q_in, mu);
     result = WilsonCurrentFwd(result, mu);
 
     // Zero any unwanted timeslice entries.
@@ -430,7 +430,7 @@ void WilsonKernels<Impl>::SeqConservedCurrentSiteBwd(const SitePropagator &q_in,
                                                      bool switch_sign)
 {
     SitePropagator result;
-    Impl::multLinkProp(result, U._odata[sU], q_in, mu + Nd);
+    Impl::multLinkProp(result, U[sU], q_in, mu + Nd);
     result = WilsonCurrentBwd(result, mu);
 
     // Zero any unwanted timeslice entries.

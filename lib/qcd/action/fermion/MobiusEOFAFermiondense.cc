@@ -76,7 +76,7 @@ void MobiusEOFAFermion<Impl>::MooeeInternal(const FermionField& psi, FermionFiel
   RealD k     = this->k;
   RealD mq1   = this->mq1;
 
-  chi.checkerboard = psi.checkerboard;
+  chi.Checkerboard() = psi.Checkerboard();
 
   assert(Ls==LLs);
 

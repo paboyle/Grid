@@ -68,9 +68,9 @@ void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
   Vector<iSinglet<Simd> > d(LLs);
 
   assert(Ls/LLs==nsimd);
-  assert(phi.checkerboard == psi.checkerboard);
+  assert(phi.Checkerboard() == psi.Checkerboard());
 
-  chi.checkerboard=psi.checkerboard;
+  chi.Checkerboard()=psi.Checkerboard();
 
   // just directly address via type pun
   typedef typename Simd::scalar_type scalar_type;
@@ -212,9 +212,9 @@ void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
   Vector<iSinglet<Simd> > d(LLs);
 
   assert(Ls/LLs==nsimd);
-  assert(phi.checkerboard == psi.checkerboard);
+  assert(phi.Checkerboard() == psi.Checkerboard());
 
-  chi.checkerboard=psi.checkerboard;
+  chi.Checkerboard()=psi.Checkerboard();
 
   // just directly address via type pun
   typedef typename Simd::scalar_type scalar_type;
@@ -765,7 +765,7 @@ void CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField 
   int LLs = psi._grid->_rdimensions[0];
   int vol = psi._grid->oSites()/LLs;
 
-  chi.checkerboard=psi.checkerboard;
+  chi.Checkerboard()=psi.Checkerboard();
   
   Vector<iSinglet<Simd> >  Matp;
   Vector<iSinglet<Simd> >  Matm;

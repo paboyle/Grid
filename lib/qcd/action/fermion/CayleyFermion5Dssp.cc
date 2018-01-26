@@ -89,7 +89,7 @@ void CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi, FermionField &
 {
   Coeff_t one(1.0);
   Coeff_t czero(0.0);
-  chi.checkerboard=psi.checkerboard;
+  chi.Checkerboard()=psi.Checkerboard();
   int Ls=this->Ls;
   // Apply (L^{\prime})^{-1}
   axpby_ssp (chi,one,psi,     czero,psi,0,0);      // chi[0]=psi[0]
@@ -118,7 +118,7 @@ void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &
 {
   Coeff_t one(1.0);
   Coeff_t czero(0.0);
-  chi.checkerboard=psi.checkerboard;
+  chi.Checkerboard()=psi.Checkerboard();
   int Ls=this->Ls;
   // Apply (U^{\prime})^{-dagger}
   axpby_ssp (chi,one,psi,     czero,psi,0,0);      // chi[0]=psi[0]

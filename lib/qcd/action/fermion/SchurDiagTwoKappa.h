@@ -51,12 +51,12 @@ public:
   template<typename vobj>
   void sscale(const Lattice<vobj>& in, Lattice<vobj>& out, Coeff_t* s) {
     GridBase *grid=out._grid;
-    out.checkerboard = in.checkerboard;
+    out.Checkerboard() = in.Checkerboard();
     assert(grid->_simd_layout[0] == 1); // should be fine for ZMobius for now
     int Ls = grid->_rdimensions[0];
     parallel_for(int ss=0;ss<grid->oSites();ss++){
-      vobj tmp = s[ss % Ls]*in._odata[ss];
-      vstream(out._odata[ss],tmp);
+      vobj tmp = s[ss % Ls]*in[ss];
+      vstream(out[ss],tmp);
     }
   }
 

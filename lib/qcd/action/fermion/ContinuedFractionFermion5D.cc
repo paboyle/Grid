@@ -146,7 +146,7 @@ void   ContinuedFractionFermion5D<Impl>::Meooe       (const FermionField &psi, F
   int Ls = this->Ls;
 
   // Apply 4d dslash
-  if ( psi.checkerboard == Odd ) {
+  if ( psi.Checkerboard() == Odd ) {
     this->DhopEO(psi,chi,DaggerNo); // Dslash on diagonal. g5 Dslash is hermitian
   } else {
     this->DhopOE(psi,chi,DaggerNo); // Dslash on diagonal. g5 Dslash is hermitian

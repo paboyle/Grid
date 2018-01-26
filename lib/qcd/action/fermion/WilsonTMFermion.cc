@@ -61,14 +61,14 @@ template<class Impl>
 void WilsonTMFermion<Impl>::Mooee(const FermionField &in, FermionField &out) {
   RealD a = 4.0+this->mass;
   RealD b = this->mu;
-  out.checkerboard = in.checkerboard;
+  out.Checkerboard() = in.Checkerboard();
   axpibg5x(out,in,a,b);
 }
 template<class Impl>
 void WilsonTMFermion<Impl>::MooeeDag(const FermionField &in, FermionField &out) {
   RealD a = 4.0+this->mass;
   RealD b = -this->mu;
-  out.checkerboard = in.checkerboard;
+  out.Checkerboard() = in.Checkerboard();
   axpibg5x(out,in,a,b);
 }
 template<class Impl>

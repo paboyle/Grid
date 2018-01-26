@@ -57,7 +57,7 @@ void CayleyFermion5D<Impl>::MooeeInternal(const FermionField &psi, FermionField 
   int LLs = psi._grid->_rdimensions[0];
   int vol = psi._grid->oSites()/LLs;
   
-  chi.checkerboard=psi.checkerboard;
+  chi.Checkerboard()=psi.Checkerboard();
   
   assert(Ls==LLs);
   

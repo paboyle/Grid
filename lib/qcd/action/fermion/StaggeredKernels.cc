@@ -58,14 +58,14 @@ void StaggeredKernels<Impl>::DhopSiteDepth(StencilImpl &st, LebesgueOrder &lo, D
   if (SE->_is_local) {
     if (SE->_permute) {
       chi_p = &chi;
-      permute(chi,  in._odata[SE->_offset], ptype);
+      permute(chi,  in[SE->_offset], ptype);
     } else {
-      chi_p = &in._odata[SE->_offset];
+      chi_p = &in[SE->_offset];
     }
   } else {
     chi_p = &buf[SE->_offset];
   }
-  Impl::multLink(Uchi, U._odata[sU], *chi_p, Xp);
+  Impl::multLink(Uchi, U[sU], *chi_p, Xp);
 
   ///////////////////////////
   // Yp
@@ -74,14 +74,14 @@ void StaggeredKernels<Impl>::DhopSiteDepth(StencilImpl &st, LebesgueOrder &lo, D
   if (SE->_is_local) {
     if (SE->_permute) {
       chi_p = &chi;
-      permute(chi,  in._odata[SE->_offset], ptype);
+      permute(chi,  in[SE->_offset], ptype);
     } else {
-      chi_p = &in._odata[SE->_offset];
+      chi_p = &in[SE->_offset];
     }
   } else {
     chi_p = &buf[SE->_offset];
   }
-  Impl::multLinkAdd(Uchi, U._odata[sU], *chi_p, Yp);
+  Impl::multLinkAdd(Uchi, U[sU], *chi_p, Yp);
 
   ///////////////////////////
   // Zp
@@ -90,14 +90,14 @@ void StaggeredKernels<Impl>::DhopSiteDepth(StencilImpl &st, LebesgueOrder &lo, D
   if (SE->_is_local) {
     if (SE->_permute) {
       chi_p = &chi;
-      permute(chi,  in._odata[SE->_offset], ptype);
+      permute(chi,  in[SE->_offset], ptype);
     } else {
-      chi_p = &in._odata[SE->_offset];
+      chi_p = &in[SE->_offset];
     }
   } else {
     chi_p = &buf[SE->_offset];
   }
-  Impl::multLinkAdd(Uchi, U._odata[sU], *chi_p, Zp);
+  Impl::multLinkAdd(Uchi, U[sU], *chi_p, Zp);
 
   ///////////////////////////
   // Tp
@@ -106,14 +106,14 @@ void StaggeredKernels<Impl>::DhopSiteDepth(StencilImpl &st, LebesgueOrder &lo, D
   if (SE->_is_local) {
     if (SE->_permute) {
       chi_p = &chi;
-      permute(chi,  in._odata[SE->_offset], ptype);
+      permute(chi,  in[SE->_offset], ptype);
     } else {
-      chi_p = &in._odata[SE->_offset];
+      chi_p = &in[SE->_offset];
     }
   } else {
     chi_p = &buf[SE->_offset];
   }
-  Impl::multLinkAdd(Uchi, U._odata[sU], *chi_p, Tp);
+  Impl::multLinkAdd(Uchi, U[sU], *chi_p, Tp);
 
   ///////////////////////////
   // Xm
@@ -122,14 +122,14 @@ void StaggeredKernels<Impl>::DhopSiteDepth(StencilImpl &st, LebesgueOrder &lo, D
   if (SE->_is_local) {
     if (SE->_permute) {
       chi_p = &chi;
-      permute(chi,  in._odata[SE->_offset], ptype);
+      permute(chi,  in[SE->_offset], ptype);
     } else {
-      chi_p = &in._odata[SE->_offset];
+      chi_p = &in[SE->_offset];
     }
   } else {
     chi_p = &buf[SE->_offset];
   }
-  Impl::multLinkAdd(Uchi, U._odata[sU], *chi_p, Xm);
+  Impl::multLinkAdd(Uchi, U[sU], *chi_p, Xm);
 
   ///////////////////////////
   // Ym
@@ -138,14 +138,14 @@ void StaggeredKernels<Impl>::DhopSiteDepth(StencilImpl &st, LebesgueOrder &lo, D
   if (SE->_is_local) {
     if (SE->_permute) {
       chi_p = &chi;
-      permute(chi,  in._odata[SE->_offset], ptype);
+      permute(chi,  in[SE->_offset], ptype);
     } else {
-      chi_p = &in._odata[SE->_offset];
+      chi_p = &in[SE->_offset];
     }
   } else {
     chi_p = &buf[SE->_offset];
   }
-  Impl::multLinkAdd(Uchi, U._odata[sU], *chi_p, Ym);
+  Impl::multLinkAdd(Uchi, U[sU], *chi_p, Ym);
 
   ///////////////////////////
   // Zm
@@ -154,14 +154,14 @@ void StaggeredKernels<Impl>::DhopSiteDepth(StencilImpl &st, LebesgueOrder &lo, D
   if (SE->_is_local) {
     if (SE->_permute) {
       chi_p = &chi;
-      permute(chi,  in._odata[SE->_offset], ptype);
+      permute(chi,  in[SE->_offset], ptype);
     } else {
-      chi_p = &in._odata[SE->_offset];
+      chi_p = &in[SE->_offset];
     }
   } else {
     chi_p = &buf[SE->_offset];
   }
-  Impl::multLinkAdd(Uchi, U._odata[sU], *chi_p, Zm);
+  Impl::multLinkAdd(Uchi, U[sU], *chi_p, Zm);
 
   ///////////////////////////
   // Tm
@@ -170,14 +170,14 @@ void StaggeredKernels<Impl>::DhopSiteDepth(StencilImpl &st, LebesgueOrder &lo, D
   if (SE->_is_local) {
     if (SE->_permute) {
       chi_p = &chi;
-      permute(chi,  in._odata[SE->_offset], ptype);
+      permute(chi,  in[SE->_offset], ptype);
     } else {
-      chi_p = &in._odata[SE->_offset];
+      chi_p = &in[SE->_offset];
     }
   } else {
     chi_p = &buf[SE->_offset];
   }
-  Impl::multLinkAdd(Uchi, U._odata[sU], *chi_p, Tm);
+  Impl::multLinkAdd(Uchi, U[sU], *chi_p, Tm);
 
   vstream(out, Uchi);
 };
@@ -198,7 +198,7 @@ void StaggeredKernels<Impl>::DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, Dou
     DhopSiteAsm(st,lo,U,UUU,buf,LLs,sU,in,out);
     for(int s=0;s<LLs;s++) {
       int sF=s+LLs*sU;
-      out._odata[sF]=-out._odata[sF];
+      out[sF]=-out[sF];
     }
     break;
 #endif
@@ -210,7 +210,7 @@ void StaggeredKernels<Impl>::DhopSiteDag(StencilImpl &st, LebesgueOrder &lo, Dou
       int sF=s+LLs*sU;
       DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
       DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
-      out._odata[sF] =-naive-naik; 
+      out[sF] =-naive-naik; 
     }
     break;
   default:
@@ -247,7 +247,7 @@ void StaggeredKernels<Impl>::DhopSite(StencilImpl &st, LebesgueOrder &lo, Double
       //      assert(sF>=0);      assert(sU>=0);
       DhopSiteDepth(st,lo,U,buf,sF,sU,in,naive,oneLink);
       DhopSiteDepth(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
-      out._odata[sF] =naive+naik;
+      out[sF] =naive+naik;
     }
     break;
   default:

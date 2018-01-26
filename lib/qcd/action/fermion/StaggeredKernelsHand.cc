@@ -39,7 +39,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 // To splat or not to splat depends on the implementation
 #define MULT(A,UChi)				\
-  auto & ref(U._odata[sU](A));			\
+  auto & ref(U[sU](A));			\
   Impl::loadLinkElement(U_00,ref()(0,0));	\
   Impl::loadLinkElement(U_10,ref()(1,0));	\
   Impl::loadLinkElement(U_20,ref()(2,0));	\
@@ -60,7 +60,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
   UChi ## _2 += U_22*Chi_2;
 
 #define MULT_ADD(A,UChi)			\
-  auto & ref(U._odata[sU](A));			\
+  auto & ref(U[sU](A));			\
   Impl::loadLinkElement(U_00,ref()(0,0));	\
   Impl::loadLinkElement(U_10,ref()(1,0));	\
   Impl::loadLinkElement(U_20,ref()(2,0));	\
@@ -105,7 +105,7 @@ void StaggeredKernels<Impl>::DhopSiteHand(StencilImpl &st, LebesgueOrder &lo, Do
     int sF=s+LLs*sU;
     DhopSiteDepthHand(st,lo,U,buf,sF,sU,in,naive,oneLink);
     DhopSiteDepthHand(st,lo,UUU,buf,sF,sU,in,naik,threeLink);
-    out._odata[sF] =scale*(naive+naik);
+    out[sF] =scale*(naive+naik);
   }
 }
 
@@ -151,7 +151,7 @@ void StaggeredKernels<Impl>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &l
   perm   = SE->_permute;
   
   if ( local ) {
-    LOAD_CHI(in._odata);
+    LOAD_CHI((&in[0]));
     if ( perm) {
       PERMUTE_DIR(3); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
@@ -169,7 +169,7 @@ void StaggeredKernels<Impl>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &l
   perm   = SE->_permute;
   
   if ( local ) {
-    LOAD_CHI(in._odata);
+    LOAD_CHI((&in[0]));
     if ( perm) {
       PERMUTE_DIR(2); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
@@ -188,7 +188,7 @@ void StaggeredKernels<Impl>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &l
   perm   = SE->_permute;
   
   if ( local ) {
-    LOAD_CHI(in._odata);
+    LOAD_CHI((&in[0]));
     if ( perm) {
       PERMUTE_DIR(1); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
@@ -206,7 +206,7 @@ void StaggeredKernels<Impl>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &l
   perm   = SE->_permute;
   
   if ( local ) {
-    LOAD_CHI(in._odata);
+    LOAD_CHI((&in[0]));
     if ( perm) {
       PERMUTE_DIR(0); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
@@ -224,7 +224,7 @@ void StaggeredKernels<Impl>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &l
   perm   = SE->_permute;
   
   if ( local ) {
-    LOAD_CHI(in._odata);
+    LOAD_CHI((&in[0]));
     if ( perm) {
       PERMUTE_DIR(3); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
@@ -243,7 +243,7 @@ void StaggeredKernels<Impl>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &l
   perm   = SE->_permute;
   
   if ( local ) {
-    LOAD_CHI(in._odata);
+    LOAD_CHI((&in[0]));
     if ( perm) {
       PERMUTE_DIR(2); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
@@ -261,7 +261,7 @@ void StaggeredKernels<Impl>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &l
   perm   = SE->_permute;
   
   if ( local ) {
-    LOAD_CHI(in._odata);
+    LOAD_CHI((&in[0]));
     if ( perm) {
       PERMUTE_DIR(1); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }
@@ -279,7 +279,7 @@ void StaggeredKernels<Impl>::DhopSiteDepthHand(StencilImpl &st, LebesgueOrder &l
   perm   = SE->_permute;
   
   if ( local ) {
-    LOAD_CHI(in._odata);
+    LOAD_CHI((&in[0]));
     if ( perm) {
       PERMUTE_DIR(0); // T==0, Z==1, Y==2, Z==3 expect 1,2,2,2 simd layout etc...
     }

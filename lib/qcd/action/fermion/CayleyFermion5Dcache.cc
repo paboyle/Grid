@@ -47,32 +47,32 @@ void CayleyFermion5D<Impl>::M5D(const FermionField &psi,
 {
   int Ls =this->Ls;
   GridBase *grid=psi._grid;
-  assert(phi.checkerboard == psi.checkerboard);
-  chi.checkerboard=psi.checkerboard;
+  assert(phi.Checkerboard() == psi.Checkerboard());
+  chi.Checkerboard()=psi.Checkerboard();
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   M5Dcalls++;
   M5Dtime-=usecond();
 
   parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
     for(int s=0;s<Ls;s++){
-      auto tmp = psi._odata[0];
+      auto tmp = psi[0];
       if ( s==0 ) {
-	spProj5m(tmp,psi._odata[ss+s+1]);
+	spProj5m(tmp,psi[ss+s+1]);
 	chi[ss+s]=diag[s]*phi[ss+s]+upper[s]*tmp;
 
-	spProj5p(tmp,psi._odata[ss+Ls-1]);
+	spProj5p(tmp,psi[ss+Ls-1]);
 	chi[ss+s]=chi[ss+s]+lower[s]*tmp;
       } else if ( s==(Ls-1)) {
-	spProj5m(tmp,psi._odata[ss+0]);
+	spProj5m(tmp,psi[ss+0]);
 	chi[ss+s]=diag[s]*phi[ss+s]+upper[s]*tmp;
 
-	spProj5p(tmp,psi._odata[ss+s-1]);
+	spProj5p(tmp,psi[ss+s-1]);
 	chi[ss+s]=chi[ss+s]+lower[s]*tmp;
       } else { 
-	spProj5m(tmp,psi._odata[ss+s+1]);
+	spProj5m(tmp,psi[ss+s+1]);
 	chi[ss+s]=diag[s]*phi[ss+s]+upper[s]*tmp;
 
-	spProj5p(tmp,psi._odata[ss+s-1]);
+	spProj5p(tmp,psi[ss+s-1]);
 	chi[ss+s]=chi[ss+s]+lower[s]*tmp;
       }
     }
@@ -90,33 +90,33 @@ void CayleyFermion5D<Impl>::M5Ddag(const FermionField &psi,
 {
   int Ls =this->Ls;
   GridBase *grid=psi._grid;
-  assert(phi.checkerboard == psi.checkerboard);
-  chi.checkerboard=psi.checkerboard;
+  assert(phi.Checkerboard() == psi.Checkerboard());
+  chi.Checkerboard()=psi.Checkerboard();
 
   // Flops = 6.0*(Nc*Ns) *Ls*vol
   M5Dcalls++;
   M5Dtime-=usecond();
 
   parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
-    auto tmp = psi._odata[0];
+    auto tmp = psi[0];
     for(int s=0;s<Ls;s++){
       if ( s==0 ) {
-	spProj5p(tmp,psi._odata[ss+s+1]);
+	spProj5p(tmp,psi[ss+s+1]);
 	chi[ss+s]=diag[s]*phi[ss+s]+upper[s]*tmp;
 
-	spProj5m(tmp,psi._odata[ss+Ls-1]);
+	spProj5m(tmp,psi[ss+Ls-1]);
 	chi[ss+s]=chi[ss+s]+lower[s]*tmp;
       } else if ( s==(Ls-1)) {
-	spProj5p(tmp,psi._odata[ss+0]);
+	spProj5p(tmp,psi[ss+0]);
 	chi[ss+s]=diag[s]*phi[ss+s]+upper[s]*tmp;
 
-	spProj5m(tmp,psi._odata[ss+s-1]);
+	spProj5m(tmp,psi[ss+s-1]);
 	chi[ss+s]=chi[ss+s]+lower[s]*tmp;
       } else { 
-	spProj5p(tmp,psi._odata[ss+s+1]);
+	spProj5p(tmp,psi[ss+s+1]);
 	chi[ss+s]=diag[s]*phi[ss+s]+upper[s]*tmp;
 
-	spProj5m(tmp,psi._odata[ss+s-1]);
+	spProj5m(tmp,psi[ss+s-1]);
 	chi[ss+s]=chi[ss+s]+lower[s]*tmp;
       }
     }
@@ -130,13 +130,13 @@ void CayleyFermion5D<Impl>::MooeeInv    (const FermionField &psi, FermionField &
   GridBase *grid=psi._grid;
   int Ls=this->Ls;
 
-  chi.checkerboard=psi.checkerboard;
+  chi.Checkerboard()=psi.Checkerboard();
 
   MooeeInvCalls++;
   MooeeInvTime-=usecond();
 
   parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
-    auto tmp = psi._odata[0];
+    auto tmp = psi[0];
 
     // flops = 12*2*Ls + 12*2*Ls + 3*12*Ls + 12*2*Ls  = 12*Ls * (9) = 108*Ls flops
     // Apply (L^{\prime})^{-1}
@@ -175,8 +175,8 @@ void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &
   GridBase *grid=psi._grid;
   int Ls=this->Ls;
 
-  assert(psi.checkerboard == psi.checkerboard);
-  chi.checkerboard=psi.checkerboard;
+  assert(psi.Checkerboard() == psi.Checkerboard());
+  chi.Checkerboard()=psi.Checkerboard();
 
   std::vector<Coeff_t> ueec(Ls);
   std::vector<Coeff_t> deec(Ls);
@@ -195,7 +195,7 @@ void CayleyFermion5D<Impl>::MooeeInvDag (const FermionField &psi, FermionField &
 
   parallel_for(int ss=0;ss<grid->oSites();ss+=Ls){ // adds Ls
 
-    auto tmp = psi._odata[0];
+    auto tmp = psi[0];
 
     // Apply (U^{\prime})^{-dagger}
     chi[ss]=psi[ss];

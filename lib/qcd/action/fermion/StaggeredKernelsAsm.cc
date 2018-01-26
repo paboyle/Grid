@@ -589,7 +589,7 @@ void StaggeredKernels<Impl>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo,
 };
 
 
-//#define CONDITIONAL_MOVE(l,o,out) if ( l ) { out = (uint64_t) &in._odata[o] ; } else { out =(uint64_t) &buf[o]; }
+//#define CONDITIONAL_MOVE(l,o,out) if ( l ) { out = (uint64_t) &in[o] ; } else { out =(uint64_t) &buf[o]; }
 
 #define CONDITIONAL_MOVE(l,o,out) { const SiteSpinor *ptr = l? in_p : buf; out = (uint64_t) &ptr[o]; }
 
@@ -636,10 +636,10 @@ void StaggeredKernels<Impl>::DhopSiteAsm(StencilImpl &st, LebesgueOrder &lo,
   CONDITIONAL_MOVE(l3,o3,addr3);					\
   PF_CHI(addr3);							\
   									\
-  gauge0 =(uint64_t)&UU._odata[sU]( X );				\
-  gauge1 =(uint64_t)&UU._odata[sU]( Y );				\
-  gauge2 =(uint64_t)&UU._odata[sU]( Z );				\
-  gauge3 =(uint64_t)&UU._odata[sU]( T ); 
+  gauge0 =(uint64_t)&UU[sU]( X );				\
+  gauge1 =(uint64_t)&UU[sU]( Y );				\
+  gauge2 =(uint64_t)&UU[sU]( Z );				\
+  gauge3 =(uint64_t)&UU[sU]( T ); 
   
   // This is the single precision 5th direction vectorised kernel
 #include <simd/Intel512single.h>
@@ -652,7 +652,7 @@ template <> void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(StencilImpl 
 #ifdef AVX512
   uint64_t gauge0,gauge1,gauge2,gauge3;
   uint64_t addr0,addr1,addr2,addr3;
-  const SiteSpinor *in_p; in_p = &in._odata[0];
+  const SiteSpinor *in_p; in_p = &in[0];
 
   int o0,o1,o2,o3; // offsets
   int l0,l1,l2,l3; // local 
@@ -683,7 +683,7 @@ template <> void StaggeredKernels<StaggeredVec5dImplF>::DhopSiteAsm(StencilImpl 
     LOAD_CHI(addr0,addr1,addr2,addr3);
     MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);
 
-    addr0 = (uint64_t) &out._odata[sF];
+    addr0 = (uint64_t) &out[sF];
     REDUCE(addr0);
    }
 #else 
@@ -702,7 +702,7 @@ template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilImpl 
 #ifdef AVX512
   uint64_t gauge0,gauge1,gauge2,gauge3;
   uint64_t addr0,addr1,addr2,addr3;
-  const SiteSpinor *in_p; in_p = &in._odata[0];
+  const SiteSpinor *in_p; in_p = &in[0];
 
   int o0,o1,o2,o3; // offsets
   int l0,l1,l2,l3; // local 
@@ -732,7 +732,7 @@ template <> void StaggeredKernels<StaggeredVec5dImplD>::DhopSiteAsm(StencilImpl 
     LOAD_CHI(addr0,addr1,addr2,addr3);
     MULT_ADD_LS(gauge0,gauge1,gauge2,gauge3);
 
-    addr0 = (uint64_t) &out._odata[sF];
+    addr0 = (uint64_t) &out[sF];
     REDUCE(addr0);
   }
 #else 
@@ -783,7 +783,7 @@ template <> void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(StencilImpl &st, 
 #ifdef AVX512
   uint64_t gauge0,gauge1,gauge2,gauge3;
   uint64_t addr0,addr1,addr2,addr3;
-  const SiteSpinor *in_p; in_p = &in._odata[0];
+  const SiteSpinor *in_p; in_p = &in[0];
 
   int o0,o1,o2,o3; // offsets
   int l0,l1,l2,l3; // local 
@@ -830,7 +830,7 @@ template <> void StaggeredKernels<StaggeredImplF>::DhopSiteAsm(StencilImpl &st, 
     PERMUTE23;
     MULT_ADD_XYZT(gauge2,gauge3);  
 
-    addr0 = (uint64_t) &out._odata[sF];
+    addr0 = (uint64_t) &out[sF];
     REDUCEa(addr0);
   }
 #else 
@@ -848,7 +848,7 @@ template <> void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(StencilImpl &st, 
 #ifdef AVX512
   uint64_t gauge0,gauge1,gauge2,gauge3;
   uint64_t addr0,addr1,addr2,addr3;
-  const SiteSpinor *in_p; in_p = &in._odata[0];
+  const SiteSpinor *in_p; in_p = &in[0];
 
   int o0,o1,o2,o3; // offsets
   int l0,l1,l2,l3; // local 
@@ -895,7 +895,7 @@ template <> void StaggeredKernels<StaggeredImplD>::DhopSiteAsm(StencilImpl &st, 
     PERMUTE23;
     MULT_ADD_XYZT(gauge2,gauge3);  
     
-    addr0 = (uint64_t) &out._odata[sF];
+    addr0 = (uint64_t) &out[sF];
     REDUCEa(addr0);
   }
 #else 
