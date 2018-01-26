@@ -52,7 +52,7 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer,int dimen
       for(int b=0;b<e2;b++){
 	int o  = n*stride;
 	int bo = n*e2;
-	buffer[off+bo+b]=rhs._odata[so+o+b];
+	buffer[off+bo+b]=rhs[so+o+b];
       }
     );
   } else { 
@@ -68,7 +68,7 @@ Gather_plane_simple (const Lattice<vobj> &rhs,commVector<vobj> &buffer,int dimen
       }
     }
     thread_loop( (int i=0;i<table.size();i++),{
-      buffer[off+table[i].first]=rhs._odata[so+table[i].second];
+      buffer[off+table[i].first]=rhs[so+table[i].second];
     });
   }
 }
@@ -98,7 +98,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename vobj::scalar_
 	int o      =   n*n1;
 	int offset = b+n*e2;
 	
-	vobj temp =rhs._odata[so+o+b];
+	vobj temp =rhs[so+o+b];
 	extract<vobj>(temp,pointers,offset);
 
       }
@@ -116,7 +116,7 @@ Gather_plane_extract(const Lattice<vobj> &rhs,std::vector<typename vobj::scalar_
 	int offset = b+n*e2;
 
 	if ( ocb & cbmask ) {
-	  vobj temp =rhs._odata[so+o+b];
+	  vobj temp =rhs[so+o+b];
 	  extract<vobj>(temp,pointers,offset);
 	}
       }
@@ -146,7 +146,7 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
       for(int b=0;b<e2;b++){
 	int o   =n*rhs._grid->_slice_stride[dimension];
 	int bo  =n*rhs._grid->_slice_block[dimension];
-	rhs._odata[so+o+b]=buffer[bo+b];
+	rhs[so+o+b]=buffer[bo+b];
       }
     });
   } else { 
@@ -162,7 +162,7 @@ template<class vobj> void Scatter_plane_simple (Lattice<vobj> &rhs,commVector<vo
       }
     }
     thread_loop( (int i=0;i<table.size();i++),{
-      rhs._odata[table[i].first]=buffer[table[i].second];
+      rhs[table[i].first]=buffer[table[i].second];
     });
   }
 }
@@ -188,7 +188,7 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,std::vector<typ
       for(int b=0;b<e2;b++){
 	int o      = n*rhs._grid->_slice_stride[dimension];
 	int offset = b+n*rhs._grid->_slice_block[dimension];
-	merge(rhs._odata[so+o+b],pointers,offset);
+	merge(rhs[so+o+b],pointers,offset);
       }
     });
   } else { 
@@ -203,7 +203,7 @@ template<class vobj> void Scatter_plane_merge(Lattice<vobj> &rhs,std::vector<typ
 	int offset = b+n*rhs._grid->_slice_block[dimension];
 	int ocb=1<<rhs._grid->CheckerBoardFromOindex(o+b);
 	if ( ocb&cbmask ) {
-	  merge(rhs._odata[so+o+b],pointers,offset);
+	  merge(rhs[so+o+b],pointers,offset);
 	}
       }
     }
@@ -231,8 +231,8 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
     thread_loop_collapse( (int n=0;n<e1;n++),{
       for(int b=0;b<e2;b++){
         int o =n*stride+b;
-  	//lhs._odata[lo+o]=rhs._odata[ro+o];
-	vstream(lhs._odata[lo+o],rhs._odata[ro+o]);
+  	//lhs[lo+o]=rhs[ro+o];
+	vstream(lhs[lo+o],rhs[ro+o]);
       }
     });
   } else { 
@@ -241,8 +241,8 @@ template<class vobj> void Copy_plane(Lattice<vobj>& lhs,const Lattice<vobj> &rhs
         int o =n*stride+b;
         int ocb=1<<lhs._grid->CheckerBoardFromOindex(o);
         if ( ocb&cbmask ) {
-	  //lhs._odata[lo+o]=rhs._odata[ro+o];
-	  vstream(lhs._odata[lo+o],rhs._odata[ro+o]);
+	  //lhs[lo+o]=rhs[ro+o];
+	  vstream(lhs[lo+o],rhs[ro+o]);
 	}
       }
     });
@@ -272,7 +272,7 @@ template<class vobj> void Copy_plane_permute(Lattice<vobj>& lhs,const Lattice<vo
       int o  =n*stride;
       int ocb=1<<lhs._grid->CheckerBoardFromOindex(o+b);
       if ( ocb&cbmask ) {
-	permute(lhs._odata[lo+o+b],rhs._odata[ro+o+b],permute_type);
+	permute(lhs[lo+o+b],rhs[ro+o+b],permute_type);
       }
     }
   });
@@ -285,8 +285,8 @@ template<class vobj> void Cshift_local(Lattice<vobj>& ret,const Lattice<vobj> &r
 {
   int sshift[2];
 
-  sshift[0] = rhs._grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,Even);
-  sshift[1] = rhs._grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,Odd);
+  sshift[0] = rhs._grid->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,Even);
+  sshift[1] = rhs._grid->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,Odd);
 
   if ( sshift[0] == sshift[1] ) {
     Cshift_local(ret,rhs,dimension,shift,0x3);
@@ -309,7 +309,7 @@ template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice
   shift = (shift+fd)%fd;
 
   // the permute type
-  ret.checkerboard = grid->CheckerBoardDestination(rhs.checkerboard,shift,dimension);
+  ret.Checkerboard() = grid->CheckerBoardDestination(rhs.Checkerboard(),shift,dimension);
   int permute_dim =grid->PermuteDim(dimension);
   int permute_type=grid->PermuteType(dimension);
   int permute_type_dist;
@@ -320,7 +320,7 @@ template<class vobj> Lattice<vobj> Cshift_local(Lattice<vobj> &ret,const Lattice
     int bo  = x * grid->_ostride[dimension];
     int cb= (cbmask==0x2)? Odd : Even;
 
-    int sshift = grid->CheckerBoardShiftForCB(rhs.checkerboard,dimension,shift,cb);
+    int sshift = grid->CheckerBoardShiftForCB(rhs.Checkerboard(),dimension,shift,cb);
     int sx     = (x+sshift)%rd;
 
     // FIXME : This must change where we have a 
