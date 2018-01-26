@@ -261,8 +261,8 @@ public:
       double start=usecond();
       for(int i=0;i<Nloop;i++){
 	z=a*x-y;
-        x._odata[0]=z._odata[0]; // force serial dependency to prevent optimise away
-        y._odata[4]=z._odata[4];
+        x[0]=z[0]; // force serial dependency to prevent optimise away
+        y[4]=z[4];
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
@@ -540,7 +540,7 @@ public:
       std::vector<LatticeColourMatrix> U(4,FGrid);
       for(int ss=0;ss<Umu._grid->oSites();ss++){
 	for(int s=0;s<Ls;s++){
-	  Umu5d._odata[Ls*ss+s] = Umu._odata[ss];
+	  Umu5d[Ls*ss+s] = Umu[ss];
 	}
       }
       ref = zero;

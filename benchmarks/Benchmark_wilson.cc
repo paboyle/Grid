@@ -108,14 +108,14 @@ int main (int argc, char ** argv)
     for(int mu=0;mu<Nd;mu++){
       //    ref =  src + Gamma(Gamma::Algebra::GammaX)* src ; // 1-gamma_x
       tmp = U[mu]*Cshift(src,mu,1);
-      for(int i=0;i<ref._odata_size;i++){
-	ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
+      for(int i=0;i<ref.size();i++){
+	ref[i]+= tmp[i] - Gamma(Gmu[mu])*tmp[i]; ;
       }
 
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu,-1);
-      for(int i=0;i<ref._odata_size;i++){
-	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
+      for(int i=0;i<ref.size();i++){
+	ref[i]+= tmp[i] + Gamma(Gmu[mu])*tmp[i]; ;
       }
     }
   }
@@ -148,8 +148,8 @@ int main (int argc, char ** argv)
   for(int ss=0;ss<0;ss++ ){
     for(int i=0;i<Ns;i++){
       for(int j=0;j<Nc;j++){
-	ComplexF * ref_p = (ComplexF *)&ref._odata[ss]()(i)(j);
-	ComplexF * res_p = (ComplexF *)&result._odata[ss]()(i)(j);
+	ComplexF * ref_p = (ComplexF *)&ref[ss]()(i)(j);
+	ComplexF * res_p = (ComplexF *)&result[ss]()(i)(j);
 	std::cout<<GridLogMessage << ss<< " "<<i<<" "<<j<<" "<< (*ref_p)<<" " <<(*res_p)<<std::endl;
       }
     }
@@ -161,14 +161,14 @@ int main (int argc, char ** argv)
 
       //    ref =  src - Gamma(Gamma::Algebra::GammaX)* src ; // 1+gamma_x
       tmp = U[mu]*Cshift(src,mu,1);
-      for(int i=0;i<ref._odata_size;i++){
-	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
+      for(int i=0;i<ref.size();i++){
+	ref[i]+= tmp[i] + Gamma(Gmu[mu])*tmp[i]; ;
       }
 
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu,-1);
-      for(int i=0;i<ref._odata_size;i++){
-	ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
+      for(int i=0;i<ref.size();i++){
+	ref[i]+= tmp[i] - Gamma(Gmu[mu])*tmp[i]; ;
       }
     }
   }

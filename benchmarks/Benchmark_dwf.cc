@@ -124,7 +124,7 @@ int main (int argc, char ** argv)
   std::vector<LatticeColourMatrix> U(4,FGrid);
   for(int ss=0;ss<Umu._grid->oSites();ss++){
     for(int s=0;s<Ls;s++){
-      Umu5d._odata[Ls*ss+s] = Umu._odata[ss];
+      Umu5d[Ls*ss+s] = Umu[ss];
     }
   }
   for(int mu=0;mu<Nd;mu++){
@@ -412,14 +412,14 @@ int main (int argc, char ** argv)
 
       //    ref =  src - Gamma(Gamma::Algebra::GammaX)* src ; // 1+gamma_x
       tmp = U[mu]*Cshift(src,mu+1,1);
-      for(int i=0;i<ref._odata_size;i++){
-	ref._odata[i]+= tmp._odata[i] + Gamma(Gmu[mu])*tmp._odata[i]; ;
+      for(int i=0;i<ref.size();i++){
+	ref[i]+= tmp[i] + Gamma(Gmu[mu])*tmp[i]; ;
       }
 
       tmp =adj(U[mu])*src;
       tmp =Cshift(tmp,mu+1,-1);
-      for(int i=0;i<ref._odata_size;i++){
-	ref._odata[i]+= tmp._odata[i] - Gamma(Gmu[mu])*tmp._odata[i]; ;
+      for(int i=0;i<ref.size();i++){
+	ref[i]+= tmp[i] - Gamma(Gmu[mu])*tmp[i]; ;
       }
     }
     ref = -0.5*ref;

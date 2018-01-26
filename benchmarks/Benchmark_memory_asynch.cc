@@ -80,10 +80,10 @@ int main (int argc, char ** argv)
     double start=usecond();
     parallel_for(int t=0;t<threads;t++){
 
-      sum[t] = x[t]._odata[0];
+      sum[t] = x[t][0];
       for(int i=0;i<Nloop;i++){
 	for(auto ss=x[t].begin();ss<x[t].end();ss++){
-	  sum[t] = sum[t]+x[t]._odata[ss];
+	  sum[t] = sum[t]+x[t][ss];
 	}
       }
       stop[t]=usecond();

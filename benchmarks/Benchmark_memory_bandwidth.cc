@@ -76,8 +76,8 @@ int main (int argc, char ** argv)
       double start=usecond();
       for(int i=0;i<Nloop;i++){
 	axpy(z,a,x,y);
-        x._odata[0]=z._odata[0]; // serial loop dependence to prevent optimise
-        y._odata[4]=z._odata[4];
+        x[0]=z[0]; // serial loop dependence to prevent optimise
+        y[4]=z[4];
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
@@ -112,8 +112,8 @@ int main (int argc, char ** argv)
       double start=usecond();
       for(int i=0;i<Nloop;i++){
 	z=a*x-y;
-        x._odata[0]=z._odata[0]; // force serial dependency to prevent optimise away
-        y._odata[4]=z._odata[4];
+        x[0]=z[0]; // force serial dependency to prevent optimise away
+        y[4]=z[4];
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
@@ -149,7 +149,7 @@ int main (int argc, char ** argv)
       double start=usecond();
       for(int i=0;i<Nloop;i++){
 	z=a*x;
-        x._odata[0]=z._odata[0]*2.0;
+        x[0]=z[0]*2.0;
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
@@ -182,7 +182,7 @@ int main (int argc, char ** argv)
       double start=usecond();
       for(int i=0;i<Nloop;i++){
 	nn=norm2(x);
-	vsplat(x._odata[0]._internal[0],nn);
+	vsplat(x[0]._internal[0],nn);
       }
       double stop=usecond();
       double time = (stop-start)/Nloop*1000;
