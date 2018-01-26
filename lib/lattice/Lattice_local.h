@@ -44,7 +44,7 @@ inline auto localNorm2 (const Lattice<vobj> &rhs)-> Lattice<typename vobj::tenso
 {
   Lattice<typename vobj::tensor_reduced> ret(rhs._grid);
   accelerator_loop(ss,rhs,{
-    ret._odata[ss]=innerProduct(rhs._odata[ss],rhs._odata[ss]);
+    ret[ss]=innerProduct(rhs[ss],rhs[ss]);
   });
   return ret;
 }
@@ -55,7 +55,7 @@ inline auto localInnerProduct (const Lattice<vobj> &lhs,const Lattice<vobj> &rhs
 {
   Lattice<typename vobj::tensor_reduced> ret(rhs._grid);
   accelerator_loop(ss,rhs,{
-    ret._odata[ss]=innerProduct(lhs._odata[ss],rhs._odata[ss]);
+    ret[ss]=innerProduct(lhs[ss],rhs[ss]);
   });
   return ret;
 }
@@ -63,11 +63,11 @@ inline auto localInnerProduct (const Lattice<vobj> &lhs,const Lattice<vobj> &rhs
 // outerProduct Scalar x Scalar -> Scalar
 //              Vector x Vector -> Matrix
 template<class ll,class rr>
-inline auto outerProduct (const Lattice<ll> &lhs,const Lattice<rr> &rhs) -> Lattice<decltype(outerProduct(lhs._odata[0],rhs._odata[0]))>
+inline auto outerProduct (const Lattice<ll> &lhs,const Lattice<rr> &rhs) -> Lattice<decltype(outerProduct(lhs[0],rhs[0]))>
 {
-  Lattice<decltype(outerProduct(lhs._odata[0],rhs._odata[0]))> ret(rhs._grid);
+  Lattice<decltype(outerProduct(lhs[0],rhs[0]))> ret(rhs._grid);
   accelerator_loop(ss,rhs,{
-    ret._odata[ss]=outerProduct(lhs._odata[ss],rhs._odata[ss]);
+    ret[ss]=outerProduct(lhs[ss],rhs[ss]);
   });
   return ret;
 }

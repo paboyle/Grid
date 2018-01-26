@@ -49,7 +49,7 @@ template<class vobj> inline Lattice<vobj> adj(const Lattice<vobj> &lhs){
 template<class vobj> inline Lattice<vobj> conjugate(const Lattice<vobj> &lhs){
   Lattice<vobj> ret(lhs._grid);
   accelerator_loop( ss, lhs, {
-    ret._odata[ss] = conjugate(lhs._odata[ss]);
+    ret[ss] = conjugate(lhs[ss]);
   });
   return ret;
 };

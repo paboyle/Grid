@@ -42,7 +42,7 @@ template<class vobj>
 inline Lattice<vobj> transpose(const Lattice<vobj> &lhs){
   Lattice<vobj> ret(lhs._grid);
   accelerator_loop(ss,lhs,{
-    ret._odata[ss] = transpose(lhs._odata[ss]);
+    ret[ss] = transpose(lhs[ss]);
   });
   return ret;
 };
@@ -51,11 +51,11 @@ inline Lattice<vobj> transpose(const Lattice<vobj> &lhs){
 // Index level dependent transpose
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 template<int Index,class vobj>
-inline auto TransposeIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(transposeIndex<Index>(lhs._odata[0]))>
+inline auto TransposeIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(transposeIndex<Index>(lhs[0]))>
 {
-  Lattice<decltype(transposeIndex<Index>(lhs._odata[0]))> ret(lhs._grid);
+  Lattice<decltype(transposeIndex<Index>(lhs[0]))> ret(lhs._grid);
   accelerator_loop(ss,lhs,{
-    ret._odata[ss] = transposeIndex<Index>(lhs._odata[ss]);
+    ret[ss] = transposeIndex<Index>(lhs[ss]);
   });
   return ret;
 };

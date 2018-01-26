@@ -52,9 +52,9 @@ inline ComplexD innerProduct(const Lattice<vobj> &left,const Lattice<vobj> &righ
     int mywork, myoff;
     GridThread::GetWork(left._grid->oSites(),thr,mywork,myoff);
     
-    decltype(innerProductD(left._odata[0],right._odata[0])) vnrm=zero; // private to thread; sub summation
+    decltype(innerProductD(left[0],right[0])) vnrm=zero; // private to thread; sub summation
     for(int ss=myoff;ss<mywork+myoff; ss++){
-      vnrm = vnrm + innerProductD(left._odata[ss],right._odata[ss]);
+      vnrm = vnrm + innerProductD(left[ss],right[ss]);
     }
     sumarray[thr]=TensorRemove(vnrm) ;
   }
@@ -110,7 +110,7 @@ inline typename vobj::scalar_object sum(const Lattice<vobj> &arg)
     
     vobj vvsum=zero;
     for(int ss=myoff;ss<mywork+myoff; ss++){
-      vvsum = vvsum + arg._odata[ss];
+      vvsum = vvsum + arg[ss];
     }
     sumarray[thr]=vvsum;
   }
@@ -180,7 +180,7 @@ template<class vobj> inline void sliceSum(const Lattice<vobj> &Data,std::vector<
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int ss= so+n*stride+b;
-	lvSum[r]=lvSum[r]+Data._odata[ss];
+	lvSum[r]=lvSum[r]+Data[ss];
       }
     }
   }
@@ -259,7 +259,7 @@ static void sliceInnerProductVector( std::vector<ComplexD> & result, const Latti
     for(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int ss= so+n*stride+b;
-	vector_type vv = TensorRemove(innerProduct(lhs._odata[ss],rhs._odata[ss]));
+	vector_type vv = TensorRemove(innerProduct(lhs[ss],rhs[ss]));
 	lvSum[r]=lvSum[r]+vv;
       }
     }
@@ -362,7 +362,7 @@ static void sliceMaddVector(Lattice<vobj> &R,std::vector<RealD> &a,const Lattice
     parallel_for_nest2(int n=0;n<e1;n++){
       for(int b=0;b<e2;b++){
 	int ss= so+n*stride+b;
-	R._odata[ss] = at*X._odata[ss]+Y._odata[ss];
+	R[ss] = at*X[ss]+Y[ss];
       }
     }
   }

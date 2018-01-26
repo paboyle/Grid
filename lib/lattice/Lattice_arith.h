@@ -35,71 +35,71 @@ NAMESPACE_BEGIN(Grid);
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class obj1,class obj2,class obj3> inline
 void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
-  ret.checkerboard = lhs.checkerboard;
+  ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,rhs);
   conformable(lhs,rhs);
 #ifdef STREAMING_STORES
   accelerator_loop(ss,lhs,{
     obj1 tmp;
-    mult(&tmp,&lhs._odata[ss],&rhs._odata[ss]);
-    vstream(ret._odata[ss],tmp);
+    mult(&tmp,&lhs[ss],&rhs[ss]);
+    vstream(ret[ss],tmp);
   });
 #else
   accelerator_loop(ss,lhs,{
-    mult(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
+    mult(&ret[ss],&lhs[ss],&rhs[ss]);
   });
 #endif
 }
   
 template<class obj1,class obj2,class obj3> inline
 void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
-  ret.checkerboard = lhs.checkerboard;
+  ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,rhs);
   conformable(lhs,rhs);
 #ifdef STREAMING_STORES
   accelerator_loop(ss,lhs,{
     obj1 tmp;
-    mac(&tmp,&lhs._odata[ss],&rhs._odata[ss]);
-    vstream(ret._odata[ss],tmp);
+    mac(&tmp,&lhs[ss],&rhs[ss]);
+    vstream(ret[ss],tmp);
   });
 #else
   accelerator_loop(ss,lhs,{
-    mac(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
+    mac(&ret[ss],&lhs[ss],&rhs[ss]);
   });
 #endif
 }
   
 template<class obj1,class obj2,class obj3> inline
 void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
-  ret.checkerboard = lhs.checkerboard;
+  ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,rhs);
   conformable(lhs,rhs);
 #ifdef STREAMING_STORES
   accelerator_loop(ss,lhs,{
     obj1 tmp;
-    sub(&tmp,&lhs._odata[ss],&rhs._odata[ss]);
-    vstream(ret._odata[ss],tmp);
+    sub(&tmp,&lhs[ss],&rhs[ss]);
+    vstream(ret[ss],tmp);
   });
 #else
   accelerator_loop(ss,lhs,{
-    sub(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
+    sub(&ret[ss],&lhs[ss],&rhs[ss]);
   });
 #endif
 }
 template<class obj1,class obj2,class obj3> inline
 void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
-  ret.checkerboard = lhs.checkerboard;
+  ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,rhs);
   conformable(lhs,rhs);
 #ifdef STREAMING_STORES
   accelerator_loop(ss,lhs,{
     obj1 tmp;
-    add(&tmp,&lhs._odata[ss],&rhs._odata[ss]);
-    vstream(ret._odata[ss],tmp);
+    add(&tmp,&lhs[ss],&rhs[ss]);
+    vstream(ret[ss],tmp);
   });
 #else
   accelerator_loop(ss,lhs,{
-    add(&ret._odata[ss],&lhs._odata[ss],&rhs._odata[ss]);
+    add(&ret[ss],&lhs[ss],&rhs[ss]);
   });
 #endif
 }
@@ -109,55 +109,55 @@ void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const Lattice<obj3> &rhs){
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class obj1,class obj2,class obj3> inline
 void mult(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
-  ret.checkerboard = lhs.checkerboard;
+  ret.Checkerboard() = lhs.Checkerboard();
   conformable(lhs,ret);
   accelerator_loop(ss,lhs,{
     obj1 tmp;
-    mult(&tmp,&lhs._odata[ss],&rhs);
-    vstream(ret._odata[ss],tmp);
+    mult(&tmp,&lhs[ss],&rhs);
+    vstream(ret[ss],tmp);
   });
 }
   
 template<class obj1,class obj2,class obj3> inline
 void mac(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
-  ret.checkerboard = lhs.checkerboard;
+  ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,lhs);
   accelerator_loop(ss,lhs,{
     obj1 tmp;
-    mac(&tmp,&lhs._odata[ss],&rhs);
-    vstream(ret._odata[ss],tmp);
+    mac(&tmp,&lhs[ss],&rhs);
+    vstream(ret[ss],tmp);
   });
 }
   
 template<class obj1,class obj2,class obj3> inline
 void sub(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
-  ret.checkerboard = lhs.checkerboard;
+  ret.Checkerboard() = lhs.Checkerboard();
   conformable(ret,lhs);
 #ifdef STREAMING_STORES
   accelerator_loop(ss,lhs,{
     obj1 tmp;
-    sub(&tmp,&lhs._odata[ss],&rhs);
-    vstream(ret._odata[ss],tmp);
+    sub(&tmp,&lhs[ss],&rhs);
+    vstream(ret[ss],tmp);
   });
 #else 
   accelerator_loop(ss,lhs,{
-    sub(&ret._odata[ss],&lhs._odata[ss],&rhs);
+    sub(&ret[ss],&lhs[ss],&rhs);
   });
 #endif
 }
 template<class obj1,class obj2,class obj3> inline
 void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
-  ret.checkerboard = lhs.checkerboard;
+  ret.Checkerboard() = lhs.Checkerboard();
   conformable(lhs,ret);
 #ifdef STREAMING_STORES
   accelerator_loop(ss,lhs,{
     obj1 tmp;
-    add(&tmp,&lhs._odata[ss],&rhs);
-    vstream(ret._odata[ss],tmp);
+    add(&tmp,&lhs[ss],&rhs);
+    vstream(ret[ss],tmp);
   });
 #else 
   accelerator_loop(ss,lhs,{
-    add(&ret._odata[ss],&lhs._odata[ss],&rhs);
+    add(&ret[ss],&lhs[ss],&rhs);
   });
 #endif
 }
@@ -167,107 +167,107 @@ void add(Lattice<obj1> &ret,const Lattice<obj2> &lhs,const obj3 &rhs){
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class obj1,class obj2,class obj3> inline
 void mult(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
-  ret.checkerboard = rhs.checkerboard;
+  ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
 #ifdef STREAMING_STORES
   accelerator_loop(ss,rhs,{
     obj1 tmp;
-    mult(&tmp,&lhs,&rhs._odata[ss]);
-    vstream(ret._odata[ss],tmp);
+    mult(&tmp,&lhs,&rhs[ss]);
+    vstream(ret[ss],tmp);
   });
 #else 
   accelerator_loop(ss,rhs,{
-    mult(&ret._odata[ss],&lhs,&rhs._odata[ss]);
+    mult(&ret[ss],&lhs,&rhs[ss]);
   });
 #endif
 }
   
 template<class obj1,class obj2,class obj3> inline
 void mac(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
-  ret.checkerboard = rhs.checkerboard;
+  ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
 #ifdef STREAMING_STORES
   accelerator_loop(ss,rhs,{
     obj1 tmp;
-    mac(&tmp,&lhs,&rhs._odata[ss]);
-    vstream(ret._odata[ss],tmp);
+    mac(&tmp,&lhs,&rhs[ss]);
+    vstream(ret[ss],tmp);
   });
 #else 
   accelerator_loop(ss,rhs,{
-    mac(&ret._odata[ss],&lhs,&rhs._odata[ss]);
+    mac(&ret[ss],&lhs,&rhs[ss]);
   });
 #endif
 }
   
 template<class obj1,class obj2,class obj3> inline
 void sub(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
-  ret.checkerboard = rhs.checkerboard;
+  ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
 #ifdef STREAMING_STORES
   accelerator_loop(ss,rhs,{
     obj1 tmp;
-    sub(&tmp,&lhs,&rhs._odata[ss]);
-    vstream(ret._odata[ss],tmp);
+    sub(&tmp,&lhs,&rhs[ss]);
+    vstream(ret[ss],tmp);
   });
 #else 
   accelerator_loop(ss,rhs,{
-    sub(&ret._odata[ss],&lhs,&rhs._odata[ss]);
+    sub(&ret[ss],&lhs,&rhs[ss]);
   });
 #endif
 }
 template<class obj1,class obj2,class obj3> inline
 void add(Lattice<obj1> &ret,const obj2 &lhs,const Lattice<obj3> &rhs){
-  ret.checkerboard = rhs.checkerboard;
+  ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
 #ifdef STREAMING_STORES
   accelerator_loop(ss,rhs,{
     obj1 tmp;
-    add(&tmp,&lhs,&rhs._odata[ss]);
-    vstream(ret._odata[ss],tmp);
+    add(&tmp,&lhs,&rhs[ss]);
+    vstream(ret[ss],tmp);
   });
 #else 
   accelerator_loop(ss,rhs,{
-    add(&ret._odata[ss],&lhs,&rhs._odata[ss]);
+    add(&ret[ss],&lhs,&rhs[ss]);
   });
 #endif
 }
   
 template<class sobj,class vobj> inline
 void axpy(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &y){
-  ret.checkerboard = x.checkerboard;
+  ret.Checkerboard() = x.Checkerboard();
   conformable(ret,x);
   conformable(x,y);
 #ifdef STREAMING_STORES
   accelerator_loop(ss,x,{
-    vobj tmp = a*x._odata[ss]+y._odata[ss];
-    vstream(ret._odata[ss],tmp);
+    vobj tmp = a*x[ss]+y[ss];
+    vstream(ret[ss],tmp);
   });
 #else
   accelerator_loop(ss,x,{
-    ret._odata[ss]=a*x._odata[ss]+y._odata[ss];
+    ret[ss]=a*x[ss]+y[ss];
   });
 #endif
 }
 template<class sobj,class vobj> inline
 void axpby(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y){
-  ret.checkerboard = x.checkerboard;
+  ret.Checkerboard() = x.Checkerboard();
   conformable(ret,x);
   conformable(x,y);
 #ifdef STREAMING_STORES
   accelerator_loop(ss,x,{
-    vobj tmp = a*x._odata[ss]+b*y._odata[ss];
-    vstream(ret._odata[ss],tmp);
+    vobj tmp = a*x[ss]+b*y[ss];
+    vstream(ret[ss],tmp);
   });
 #else
   accelerator_loop(ss,x,{
-    ret._odata[ss]=a*x._odata[ss]+b*y._odata[ss];
+    ret[ss]=a*x[ss]+b*y[ss];
   });
 #endif
 }
 
 template<class sobj,class vobj> inline
 RealD axpy_norm(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<vobj> &y){
-  ret.checkerboard = x.checkerboard;
+  ret.Checkerboard() = x.Checkerboard();
   conformable(ret,x);
   conformable(x,y);
   axpy(ret,a,x,y);
@@ -275,7 +275,7 @@ RealD axpy_norm(Lattice<vobj> &ret,sobj a,const Lattice<vobj> &x,const Lattice<v
 }
 template<class sobj,class vobj> inline
 RealD axpby_norm(Lattice<vobj> &ret,sobj a,sobj b,const Lattice<vobj> &x,const Lattice<vobj> &y){
-  ret.checkerboard = x.checkerboard;
+  ret.Checkerboard() = x.Checkerboard();
   conformable(ret,x);
   conformable(x,y);
   axpby(ret,a,b,x,y);

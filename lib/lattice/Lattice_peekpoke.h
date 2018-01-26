@@ -42,22 +42,22 @@ NAMESPACE_BEGIN(Grid);
 // Peek internal indices of a Lattice object
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 template<int Index,class vobj> 
-auto PeekIndex(const Lattice<vobj> &lhs,int i) -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i))>
+auto PeekIndex(const Lattice<vobj> &lhs,int i) -> Lattice<decltype(peekIndex<Index>(lhs[0],i))>
 {
-  Lattice<decltype(peekIndex<Index>(lhs._odata[0],i))> ret(lhs._grid);
-  ret.checkerboard=lhs.checkerboard;
+  Lattice<decltype(peekIndex<Index>(lhs[0],i))> ret(lhs._grid);
+  ret.Checkerboard()=lhs.Checkerboard();
   cpu_loop( ss, lhs, {
-    ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i);
+    ret[ss] = peekIndex<Index>(lhs[ss],i);
   });
   return ret;
 };
 template<int Index,class vobj> 
-auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))>
+auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekIndex<Index>(lhs[0],i,j))>
 {
-  Lattice<decltype(peekIndex<Index>(lhs._odata[0],i,j))> ret(lhs._grid);
-  ret.checkerboard=lhs.checkerboard;
+  Lattice<decltype(peekIndex<Index>(lhs[0],i,j))> ret(lhs._grid);
+  ret.Checkerboard()=lhs.Checkerboard();
   cpu_loop( ss, lhs, {
-    ret._odata[ss] = peekIndex<Index>(lhs._odata[ss],i,j);
+    ret[ss] = peekIndex<Index>(lhs[ss],i,j);
   });
   return ret;
 };
@@ -66,17 +66,17 @@ auto PeekIndex(const Lattice<vobj> &lhs,int i,int j) -> Lattice<decltype(peekInd
 // Poke internal indices of a Lattice object
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 template<int Index,class vobj>  
-void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0],0))> & rhs,int i)
+void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs[0],0))> & rhs,int i)
 {
   cpu_loop( ss, lhs, {
-    pokeIndex<Index>(lhs._odata[ss],rhs._odata[ss],i);
+    pokeIndex<Index>(lhs[ss],rhs[ss],i);
   });
 }
 template<int Index,class vobj> 
-void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs._odata[0],0,0))> & rhs,int i,int j)
+void PokeIndex(Lattice<vobj> &lhs,const Lattice<decltype(peekIndex<Index>(lhs[0],0,0))> & rhs,int i,int j)
 {
   cpu_loop( ss, lhs, {
-    pokeIndex<Index>(lhs._odata[ss],rhs._odata[ss],i,j);
+    pokeIndex<Index>(lhs[ss],rhs[ss],i,j);
   });
 }
 
@@ -93,7 +93,7 @@ void pokeSite(const sobj &s,Lattice<vobj> &l,const std::vector<int> &site){
 
   int Nsimd = grid->Nsimd();
 
-  assert( l.checkerboard== l._grid->CheckerBoard(site));
+  assert( l.Checkerboard()== l._grid->CheckerBoard(site));
   assert( sizeof(sobj)*Nsimd == sizeof(vobj));
 
   int rank,odx,idx;
@@ -105,9 +105,9 @@ void pokeSite(const sobj &s,Lattice<vobj> &l,const std::vector<int> &site){
 
   // extract-modify-merge cycle is easiest way and this is not perf critical
   if ( rank == grid->ThisRank() ) {
-    extract(l._odata[odx],buf);
+    extract(l[odx],buf);
     buf[idx] = s;
-    merge(l._odata[odx],buf);
+    merge(l[odx],buf);
   }
 
   return;
@@ -127,13 +127,13 @@ void peekSite(sobj &s,const Lattice<vobj> &l,const std::vector<int> &site){
 
   int Nsimd = grid->Nsimd();
 
-  assert( l.checkerboard == l._grid->CheckerBoard(site));
+  assert( l.Checkerboard() == l._grid->CheckerBoard(site));
 
   int rank,odx,idx;
   grid->GlobalCoorToRankIndex(rank,odx,idx,site);
 
   std::vector<sobj> buf(Nsimd);
-  extract(l._odata[odx],buf);
+  extract(l[odx],buf);
 
   s = buf[idx];
 
@@ -156,7 +156,7 @@ void peekLocalSite(sobj &s,const Lattice<vobj> &l,std::vector<int> &site){
 
   int Nsimd = grid->Nsimd();
 
-  assert( l.checkerboard== l._grid->CheckerBoard(site));
+  assert( l.Checkerboard()== l._grid->CheckerBoard(site));
   assert( sizeof(sobj)*Nsimd == sizeof(vobj));
 
   static const int words=sizeof(vobj)/sizeof(vector_type);
@@ -164,7 +164,7 @@ void peekLocalSite(sobj &s,const Lattice<vobj> &l,std::vector<int> &site){
   idx= grid->iIndex(site);
   odx= grid->oIndex(site);
 
-  scalar_type * vp = (scalar_type *)&l._odata[odx];
+  scalar_type * vp = (scalar_type *)&l[odx];
   scalar_type * pt = (scalar_type *)&s;
       
   for(int w=0;w<words;w++){
@@ -184,7 +184,7 @@ void pokeLocalSite(const sobj &s,Lattice<vobj> &l,std::vector<int> &site){
 
   int Nsimd = grid->Nsimd();
 
-  assert( l.checkerboard== l._grid->CheckerBoard(site));
+  assert( l.Checkerboard()== l._grid->CheckerBoard(site));
   assert( sizeof(sobj)*Nsimd == sizeof(vobj));
 
   static const int words=sizeof(vobj)/sizeof(vector_type);
@@ -192,7 +192,7 @@ void pokeLocalSite(const sobj &s,Lattice<vobj> &l,std::vector<int> &site){
   idx= grid->iIndex(site);
   odx= grid->oIndex(site);
 
-  scalar_type * vp = (scalar_type *)&l._odata[odx];
+  scalar_type * vp = (scalar_type *)&l[odx];
   scalar_type * pt = (scalar_type *)&s;
       
   for(int w=0;w<words;w++){

@@ -39,11 +39,11 @@ NAMESPACE_BEGIN(Grid);
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class vobj>
 inline auto trace(const Lattice<vobj> &lhs)
-  -> Lattice<decltype(trace(lhs._odata[0]))>
+  -> Lattice<decltype(trace(lhs[0]))>
 {
-  Lattice<decltype(trace(lhs._odata[0]))> ret(lhs._grid);
+  Lattice<decltype(trace(lhs[0]))> ret(lhs._grid);
   accelerator_loop( ss, lhs, {
-    ret._odata[ss] = trace(lhs._odata[ss]);
+    ret[ss] = trace(lhs[ss]);
   });
   return ret;
 };
@@ -52,11 +52,11 @@ inline auto trace(const Lattice<vobj> &lhs)
 // Trace Index level dependent operation
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 template<int Index,class vobj>
-inline auto TraceIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(traceIndex<Index>(lhs._odata[0]))>
+inline auto TraceIndex(const Lattice<vobj> &lhs) -> Lattice<decltype(traceIndex<Index>(lhs[0]))>
 {
-  Lattice<decltype(traceIndex<Index>(lhs._odata[0]))> ret(lhs._grid);
+  Lattice<decltype(traceIndex<Index>(lhs[0]))> ret(lhs._grid);
   accelerator_loop( ss, lhs, {
-    ret._odata[ss] = traceIndex<Index>(lhs._odata[ss]);
+    ret[ss] = traceIndex<Index>(lhs[ss]);
   });
   return ret;
 };

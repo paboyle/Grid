@@ -49,7 +49,7 @@ inline void subdivides(GridBase *coarse,GridBase *fine)
 // remove and insert a half checkerboard
 ////////////////////////////////////////////////////////////////////////////////////////////
 template<class vobj> inline void pickCheckerboard(int cb,Lattice<vobj> &half,const Lattice<vobj> &full){
-  half.checkerboard = cb;
+  half.Checkerboard() = cb;
 
   thread_loop( (int ss=0;ss<full._grid->oSites();ss++),{
     int cbos;
@@ -59,12 +59,12 @@ template<class vobj> inline void pickCheckerboard(int cb,Lattice<vobj> &half,con
       
     if (cbos==cb) {
       int ssh=half._grid->oIndex(coor);
-      half._odata[ssh] = full._odata[ss];
+      half[ssh] = full[ss];
     }
   });
 }
 template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Lattice<vobj> &half){
-  int cb = half.checkerboard;
+  int cb = half.Checkerboard();
   thread_loop( (int ss=0;ss<full._grid->oSites();ss++), {
     std::vector<int> coor;
     int cbos;
@@ -74,7 +74,7 @@ template<class vobj> inline void setCheckerboard(Lattice<vobj> &full,const Latti
       
     if (cbos==cb) {
       int ssh=half._grid->oIndex(coor);
-      full._odata[ss]=half._odata[ssh];
+      full[ss]=half[ssh];
     }
   });
 }
@@ -117,8 +117,8 @@ inline void blockProject(Lattice<iVector<CComplex,nbasis > > &coarseData,
 
     thread_critical {
       for(int i=0;i<nbasis;i++) {
-	coarseData._odata[sc](i)=coarseData._odata[sc](i)
-	  + innerProduct(Basis[i]._odata[sf],fineData._odata[sf]);
+	coarseData[sc](i)=coarseData[sc](i)
+	  + innerProduct(Basis[i][sf],fineData[sf]);
 
       }
     }
@@ -135,8 +135,8 @@ inline void blockZAXPY(Lattice<vobj> &fineZ,
   GridBase * fine  = fineZ._grid;
   GridBase * coarse= coarseA._grid;
 
-  fineZ.checkerboard=fineX.checkerboard;
-  assert(fineX.checkerboard==fineY.checkerboard);
+  fineZ.Checkerboard()=fineX.Checkerboard();
+  assert(fineX.Checkerboard()==fineY.Checkerboard());
   subdivides(coarse,fine); // require they map
   conformable(fineX,fineY);
   conformable(fineX,fineZ);
@@ -162,7 +162,7 @@ inline void blockZAXPY(Lattice<vobj> &fineZ,
     Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
 
     // z = A x + y
-    fineZ._odata[sf]=coarseA._odata[sc]*fineX._odata[sf]+fineY._odata[sf];
+    fineZ[sf]=coarseA[sc]*fineX[sf]+fineY[sf];
 
   });
 
@@ -173,26 +173,26 @@ inline void blockInnerProduct(Lattice<CComplex> &CoarseInner,
 			      const Lattice<vobj> &fineX,
 			      const Lattice<vobj> &fineY)
 {
-  typedef decltype(innerProduct(fineX._odata[0],fineY._odata[0])) dotp;
+  typedef decltype(innerProduct(fineX[0],fineY[0])) dotp;
 
   GridBase *coarse(CoarseInner._grid);
   GridBase *fine  (fineX._grid);
 
-  Lattice<dotp> fine_inner(fine); fine_inner.checkerboard = fineX.checkerboard;
+  Lattice<dotp> fine_inner(fine); fine_inner.Checkerboard() = fineX.Checkerboard();
   Lattice<dotp> coarse_inner(coarse);
 
   // Precision promotion?
   fine_inner = localInnerProduct(fineX,fineY);
   blockSum(coarse_inner,fine_inner);
   thread_loop( (int ss=0;ss<coarse->oSites();ss++),{
-    CoarseInner._odata[ss] = coarse_inner._odata[ss];
+    CoarseInner[ss] = coarse_inner[ss];
   });
 }
 template<class vobj,class CComplex>
 inline void blockNormalise(Lattice<CComplex> &ip,Lattice<vobj> &fineX)
 {
   GridBase *coarse = ip._grid;
-  Lattice<vobj> zz(fineX._grid); zz=zero; zz.checkerboard=fineX.checkerboard;
+  Lattice<vobj> zz(fineX._grid); zz=zero; zz.Checkerboard()=fineX.Checkerboard();
   blockInnerProduct(ip,fineX,fineX);
   ip = pow(ip,-0.5);
   blockZAXPY(fineX,ip,fineX,zz);
@@ -231,7 +231,7 @@ inline void blockSum(Lattice<vobj> &coarseData,const Lattice<vobj> &fineData)
       Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
       
       thread_critical { 
-	coarseData._odata[sc]=coarseData._odata[sc]+fineData._odata[sf];
+	coarseData[sc]=coarseData[sc]+fineData[sf];
       }
 
     });
@@ -244,7 +244,7 @@ inline void blockPick(GridBase *coarse,const Lattice<vobj> &unpicked,Lattice<vob
 {
   GridBase * fine = unpicked._grid;
 
-  Lattice<vobj> zz(fine); zz.checkerboard = unpicked.checkerboard;
+  Lattice<vobj> zz(fine); zz.Checkerboard() = unpicked.Checkerboard();
   Lattice<iScalar<vInteger> > fcoor(fine);
 
   zz = zero;
@@ -320,8 +320,8 @@ inline void blockPromote(const Lattice<iVector<CComplex,nbasis > > &coarseData,
       Lexicographic::IndexFromCoor(coor_c,sc,coarse->_rdimensions);
       
       for(int i=0;i<nbasis;i++) {
-	if(i==0) fineData._odata[sf]=coarseData._odata[sc](i) * Basis[i]._odata[sf];
-	else     fineData._odata[sf]=fineData._odata[sf]+coarseData._odata[sc](i)*Basis[i]._odata[sf];
+	if(i==0) fineData[sf]=coarseData[sc](i) * Basis[i][sf];
+	else     fineData[sf]=fineData[sf]+coarseData[sc](i)*Basis[i][sf];
       }
     });
   }
@@ -596,7 +596,7 @@ unvectorizeToLexOrdArray(std::vector<sobj> &out, const Lattice<vobj> &in)
     }
     
     //Unpack into those ptrs
-    const vobj & in_vobj = in._odata[in_oidx];
+    const vobj & in_vobj = in[in_oidx];
     extract1(in_vobj, out_ptrs, 0);
   });
 }
@@ -645,7 +645,7 @@ vectorizeFromLexOrdArray( std::vector<sobj> &in, Lattice<vobj> &out)
     //pack from those ptrs
     vobj vecobj;
     merge1(vecobj, ptrs, 0);
-    out._odata[oidx] = vecobj; 
+    out[oidx] = vecobj; 
   });
 }
 
@@ -654,7 +654,7 @@ template<class VobjOut, class VobjIn>
 void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
 
   assert(out._grid->Nd() == in._grid->Nd());
-  out.checkerboard = in.checkerboard;
+  out.Checkerboard() = in.Checkerboard();
   GridBase *in_grid=in._grid;
   GridBase *out_grid = out._grid;
 
@@ -689,7 +689,7 @@ void precisionChange(Lattice<VobjOut> &out, const Lattice<VobjIn> &in){
       int llex; Lexicographic::IndexFromCoor(lcoor, llex, out_grid->_ldimensions);
       ptrs[lane] = &in_slex_conv[llex];
     }
-    merge(out._odata[out_oidx], ptrs, 0);
+    merge(out[out_oidx], ptrs, 0);
   });
 }
 
@@ -759,15 +759,15 @@ void Grid_split(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
   ////////////////////////////////
   // Checkerboard management
   ////////////////////////////////
-  int cb = full[0].checkerboard;
-  split.checkerboard = cb;
+  int cb = full[0].Checkerboard();
+  split.Checkerboard() = cb;
 
   //////////////////////////////
   // Checks
   //////////////////////////////
   assert(full_grid->_ndimension==split_grid->_ndimension);
   for(int n=0;n<full_vecs;n++){
-    assert(full[n].checkerboard == cb);
+    assert(full[n].Checkerboard() == cb);
     for(int d=0;d<ndim;d++){
       assert(full[n]._grid->_gdimensions[d]==split._grid->_gdimensions[d]);
       assert(full[n]._grid->_fdimensions[d]==split._grid->_fdimensions[d]);
@@ -885,15 +885,15 @@ void Grid_unsplit(std::vector<Lattice<Vobj> > & full,Lattice<Vobj>   & split)
   ////////////////////////////////
   // Checkerboard management
   ////////////////////////////////
-  int cb = full[0].checkerboard;
-  split.checkerboard = cb;
+  int cb = full[0].Checkerboard();
+  split.Checkerboard() = cb;
 
   //////////////////////////////
   // Checks
   //////////////////////////////
   assert(full_grid->_ndimension==split_grid->_ndimension);
   for(int n=0;n<full_vecs;n++){
-    assert(full[n].checkerboard == cb);
+    assert(full[n].Checkerboard() == cb);
     for(int d=0;d<ndim;d++){
       assert(full[n]._grid->_gdimensions[d]==split._grid->_gdimensions[d]);
       assert(full[n]._grid->_fdimensions[d]==split._grid->_fdimensions[d]);

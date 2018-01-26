@@ -98,7 +98,7 @@ inline sobj eval(const unsigned int ss, const sobj &arg)
 }
 template <class lobj>
 inline const lobj &eval(const unsigned int ss, const Lattice<lobj> &arg) {
-  return arg._odata[ss];
+  return arg[ss];
 }
 
 // handle nodes in syntax tree
@@ -179,9 +179,9 @@ template <class T1,
 inline void CBFromExpression(int &cb, const T1 &lat)  // Lattice leaf
 {
   if ((cb == Odd) || (cb == Even)) {
-    assert(cb == lat.checkerboard);
+    assert(cb == lat.Checkerboard());
   }
-  cb = lat.checkerboard;
+  cb = lat.Checkerboard();
   //  std::cout<<GridLogMessage<<"Lattice leaf cb "<<cb<<std::endl;
 }
 template <class T1,

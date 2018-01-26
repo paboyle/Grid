@@ -60,15 +60,15 @@ inline void whereWolf(Lattice<vobj> &ret,const Lattice<iobj> &predicate,Lattice<
 
   thread_loop( (int ss=iftrue.begin(); ss<iftrue.end();ss++) , COMMA_SAFE({
 
-    extract(iftrue._odata[ss]   ,truevals);
-    extract(iffalse._odata[ss]  ,falsevals);
-    extract<vInteger,Integer>(TensorRemove(predicate._odata[ss]),mask);
+    extract(iftrue[ss]   ,truevals);
+    extract(iffalse[ss]  ,falsevals);
+    extract<vInteger,Integer>(TensorRemove(predicate[ss]),mask);
 
     for(int s=0;s<Nsimd;s++){
       if (mask[s]) falsevals[s]=truevals[s];
     }
 
-    merge(ret._odata[ss],falsevals);
+    merge(ret[ss],falsevals);
   }) 
   );
 }

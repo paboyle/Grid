@@ -69,9 +69,11 @@ public:
   accelerator_inline LatticeAccelerator() : checkerboard(0), _odata(nullptr), _odata_size(0) {
     //    std::cout << " Lattice accelerator object "<<this->_odata<<" size "<<this->_odata_size<<std::endl;
   }; 
-  accelerator_inline int      Checkerboard(void){ return checkerboard; };
+  accelerator_inline int      Checkerboard(void) const { return checkerboard; };
+  accelerator_inline int     &Checkerboard(void) { return checkerboard; };
   accelerator_inline uint64_t begin(void) const { return 0;};
   accelerator_inline uint64_t end(void)   const { return _odata_size; };
+  accelerator_inline uint64_t size(void)   const { return _odata_size; };
   accelerator_inline vobj & operator[](size_t i)             { return _odata[i]; };
   accelerator_inline const vobj & operator[](size_t i) const { return _odata[i]; };
 };
@@ -328,9 +330,9 @@ public:
     //    std::cout << "Lattice constructor(const Lattice &) "<<this<<std::endl; 
     _grid = r._grid;
     resize(r._odata_size);
-    this->checkerboard = r.checkerboard;
+    this->checkerboard = r.Checkerboard();
     accelerator_loop(ss,(*this),{
-      this->_odata[ss]=r._odata[ss];
+      this->_odata[ss]=r[ss];
     });
   }
   Lattice(Lattice && r){ // move constructor
@@ -338,7 +340,7 @@ public:
     _grid = r._grid;
     this->_odata      = r._odata;
     this->_odata_size = r._odata_size;
-    this->checkerboard= r.checkerboard;
+    this->checkerboard= r.Checkerboard();
     r._odata      = nullptr;
     r._odata_size = 0;
   }
@@ -346,20 +348,20 @@ public:
   template<class robj> inline Lattice<vobj> & operator = (const Lattice<robj> & r){
     //    std::cout << "Lattice = (Lattice &)"<<std::endl; 
     typename std::enable_if<!std::is_same<robj,vobj>::value,int>::type i=0;
-    this->checkerboard = r.checkerboard;
+    this->checkerboard = r.Checkerboard();
     conformable(*this,r);
     accelerator_loop(ss,(*this),{
-      this->_odata[ss]=r._odata[ss];
+      this->_odata[ss]=r[ss];
     });
     return *this;
   }
   // Copy assignment 
   inline Lattice<vobj> & operator = (const Lattice<vobj> & r){
     //    std::cout << "Lattice = (Lattice &)"<<std::endl; 
-    this->checkerboard = r.checkerboard;
+    this->checkerboard = r.Checkerboard();
     conformable(*this,r);
     accelerator_loop(ss,(*this),{
-      this->_odata[ss]=r._odata[ss];
+      this->_odata[ss]=r[ss];
     });
     return *this;
   }
@@ -369,11 +371,11 @@ public:
     resize(0); // delete if appropriate
 
     this->_grid        = r._grid;
-    this->checkerboard = r.checkerboard;
+    this->checkerboard = r.Checkerboard();
 
     this->_odata      = r._odata;
     this->_odata_size = r._odata_size;
-    this->checkerboard= r.checkerboard;
+    this->checkerboard= r.Checkerboard();
 
     r._odata      = nullptr;
     r._odata_size = 0;

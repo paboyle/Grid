@@ -48,14 +48,14 @@ template<class iobj> inline void LatticeCoordinate(Lattice<iobj> &l,int mu)
       mergebuf[i]=(Integer)gcoor[mu];
     }
     merge<vector_type,scalar_type>(vI,mergebuf);
-    l._odata[o]=vI;
+    l[o]=vI;
   }
 };
 
 // LatticeCoordinate();
 // FIXME for debug; deprecate this; made obscelete by 
 template<class vobj> void lex_sites(Lattice<vobj> &l){
-  Real *v_ptr = (Real *)&l._odata[0];
+  Real *v_ptr = (Real *)&l[0];
   size_t o_len = l._grid->oSites();
   size_t v_len = sizeof(vobj)/sizeof(vRealF);
   size_t vec_len = vRealF::Nsimd();

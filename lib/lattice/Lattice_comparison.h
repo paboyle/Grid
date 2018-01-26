@@ -48,7 +48,7 @@ inline Lattice<vInteger> LLComparison(vfunctor op,const Lattice<lobj> &lhs,const
 {
   Lattice<vInteger> ret(rhs._grid);
   accelerator_loop( ss, rhs, {
-    ret._odata[ss]=op(lhs._odata[ss],rhs._odata[ss]);
+    ret[ss]=op(lhs[ss],rhs[ss]);
   });
   return ret;
 }
@@ -60,7 +60,7 @@ inline Lattice<vInteger> LSComparison(vfunctor op,const Lattice<lobj> &lhs,const
 {
   Lattice<vInteger> ret(lhs._grid);
   accelerator_loop( ss, lhs, {
-    ret._odata[ss]=op(lhs._odata[ss],rhs);
+    ret[ss]=op(lhs[ss],rhs);
   });
   return ret;
 }
@@ -72,7 +72,7 @@ inline Lattice<vInteger> SLComparison(vfunctor op,const lobj &lhs,const Lattice<
 {
   Lattice<vInteger> ret(rhs._grid);
   accelerator_loop( ss, rhs, {
-    ret._odata[ss]=op(lhs._odata[ss],rhs);
+    ret[ss]=op(lhs[ss],rhs);
   });
   return ret;
 }

@@ -35,39 +35,39 @@ NAMESPACE_BEGIN(Grid);
 
 template<class obj> Lattice<obj> pow(const Lattice<obj> &rhs,RealD y){
   Lattice<obj> ret(rhs._grid);
-  ret.checkerboard = rhs.checkerboard;
+  ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
   accelerator_loop(ss,rhs,{
-    ret._odata[ss]=pow(rhs._odata[ss],y);
+    ret[ss]=pow(rhs[ss],y);
   });
   return ret;
 }
 template<class obj> Lattice<obj> mod(const Lattice<obj> &rhs,Integer y){
   Lattice<obj> ret(rhs._grid);
-  ret.checkerboard = rhs.checkerboard;
+  ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
   accelerator_loop(ss,rhs,{
-    ret._odata[ss]=mod(rhs._odata[ss],y);
+    ret[ss]=mod(rhs[ss],y);
   });
   return ret;
 }
 
 template<class obj> Lattice<obj> div(const Lattice<obj> &rhs,Integer y){
   Lattice<obj> ret(rhs._grid);
-  ret.checkerboard = rhs.checkerboard;
+  ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
   accelerator_loop(ss,rhs,{
-    ret._odata[ss]=div(rhs._odata[ss],y);
+    ret[ss]=div(rhs[ss],y);
   });
   return ret;
 }
 
 template<class obj> Lattice<obj> expMat(const Lattice<obj> &rhs, RealD alpha, Integer Nexp = DEFAULT_MAT_EXP){
   Lattice<obj> ret(rhs._grid);
-  ret.checkerboard = rhs.checkerboard;
+  ret.Checkerboard() = rhs.Checkerboard();
   conformable(ret,rhs);
   accelerator_loop(ss,rhs,{
-    ret._odata[ss]=Exponentiate(rhs._odata[ss],alpha, Nexp);
+    ret[ss]=Exponentiate(rhs[ss],alpha, Nexp);
   });
   return ret;
 }

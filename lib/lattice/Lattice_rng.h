@@ -361,7 +361,7 @@ public:
 	    fillScalar(pointer[idx], dist[gdx], _generators[gdx]);
 	}
 	// merge into SIMD lanes, FIXME suboptimal implementation
-	merge(l._odata[sm], buf);
+	merge(l[sm], buf);
       }
     });
 
