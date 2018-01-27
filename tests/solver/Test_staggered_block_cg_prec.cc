@@ -69,7 +69,7 @@ int main (int argc, char ** argv)
 
   FermionField src(FGrid); random(pRNG5,src);
   FermionField src_o(FrbGrid);   pickCheckerboard(Odd,src_o,src);
-  FermionField result_o(FrbGrid); result_o=zero; 
+  FermionField result_o(FrbGrid); result_o=Zero(); 
   RealD nrm = norm2(src);
 
   LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
@@ -93,7 +93,7 @@ int main (int argc, char ** argv)
   FermionField src4d_o(UrbGrid);   pickCheckerboard(Odd,src4d_o,src4d);
   FermionField result4d_o(UrbGrid); 
 
-  result4d_o=zero;
+  result4d_o=Zero();
   CG(HermOp4d,src4d_o,result4d_o);
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
@@ -102,7 +102,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Calling 5d CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   Ds.ZeroCounters();
-  result_o=zero;
+  result_o=Zero();
   CG(HermOp,src_o,result_o);
   Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
@@ -111,7 +111,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Calling multiRHS CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   Ds.ZeroCounters();
-  result_o=zero;
+  result_o=Zero();
   mCG(HermOp,src_o,result_o);
   Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
@@ -120,7 +120,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << " Calling Block CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   Ds.ZeroCounters();
-  result_o=zero;
+  result_o=Zero();
   BCGrQ(HermOp,src_o,result_o);
   Ds.Report();
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;

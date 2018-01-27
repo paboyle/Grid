@@ -60,8 +60,8 @@ int main (int argc, char ** argv)
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
 
   LatticeFermion    src(FGrid); random(RNG5,src);
-  LatticeFermion result(FGrid); result=zero;
-  LatticeFermion    ref(FGrid); ref=zero;
+  LatticeFermion result(FGrid); result=Zero();
+  LatticeFermion    ref(FGrid); ref=Zero();
   LatticeFermion    tmp(FGrid);
   LatticeFermion    err(FGrid);
   LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(RNG4,Umu);

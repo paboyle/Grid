@@ -96,11 +96,11 @@ int main (int argc, char ** argv)
   FermionField tmp(FGrid);
   std::cout << GridLogMessage << "Made the Fermion Fields"<<std::endl;
 
-  for(int s=0;s<nrhs;s++) result[s]=zero;
+  for(int s=0;s<nrhs;s++) result[s]=Zero();
 #undef LEXICO_TEST
 #ifdef LEXICO_TEST
   {
-    LatticeFermion lex(FGrid);  lex = zero;
+    LatticeFermion lex(FGrid);  lex = Zero();
     LatticeFermion ftmp(FGrid);
     Integer stride =10000;
     double nrm;
@@ -162,7 +162,7 @@ int main (int argc, char ** argv)
   FermionField s_src_tmp(SFGrid);
   FermionField s_src_diff(SFGrid);
   {
-    LatticeFermion lex(SFGrid);  lex = zero;
+    LatticeFermion lex(SFGrid);  lex = Zero();
     LatticeFermion ftmp(SFGrid);
     Integer stride =10000;
     double nrm;
@@ -198,7 +198,7 @@ int main (int argc, char ** argv)
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOp(Ddwf);
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOpCk(Dchk);
   ConjugateGradient<FermionField> CG((1.0e-2),10000);
-  s_res = zero;
+  s_res = Zero();
   CG(HermOp,s_src,s_res);
 
   std::cout << GridLogMessage << " split residual norm "<<norm2(s_res)<<std::endl;

@@ -127,7 +127,7 @@ int main (int argc, char ** argv)
   tmpsrc=src*2.0;
   PokeIndex<0>(src_2f,tmpsrc,1);
 
-  StandardFermionField result_1f(FGrid_1f); result_1f=zero;
+  StandardFermionField result_1f(FGrid_1f); result_1f=Zero();
   StandardGaugeField Umu_1f(UGrid_1f); 
   Replicate(Umu_2f,Umu_1f);
 
@@ -166,7 +166,7 @@ int main (int argc, char ** argv)
   StandardFermionField    src_o_1f(FrbGrid_1f);
   StandardFermionField result_o_1f(FrbGrid_1f);
   pickCheckerboard(Odd,src_o_1f,src_1f);
-  result_o_1f=zero;
+  result_o_1f=Zero();
 
   SchurDiagMooeeOperator<StandardDiracOp,StandardFermionField> HermOpEO(Ddwf);
   ConjugateGradient<StandardFermionField> CG(1.0e-8,10000);
@@ -258,11 +258,11 @@ int main (int argc, char ** argv)
 
   }
 
-  GparityFermionField result_2f(FGrid_2f); result_2f=zero;
+  GparityFermionField result_2f(FGrid_2f); result_2f=Zero();
   GparityFermionField    src_o_2f(FrbGrid_2f);
   GparityFermionField result_o_2f(FrbGrid_2f);
   pickCheckerboard(Odd,src_o_2f,src_2f);
-  result_o_2f=zero;
+  result_o_2f=Zero();
 
   ConjugateGradient<GparityFermionField> CG2f(1.0e-8,10000);
   SchurDiagMooeeOperator<GparityDiracOp,GparityFermionField> HermOpEO2f(GPDdwf);
@@ -278,8 +278,8 @@ int main (int argc, char ** argv)
   StandardFermionField    res0  (FGrid_2f); 
   StandardFermionField    res1  (FGrid_2f); 
 
-  res0=zero;
-  res1=zero;
+  res0=Zero();
+  res1=Zero();
 
   res0o = PeekIndex<0>(result_o_2f,0);
   res1o = PeekIndex<0>(result_o_2f,1);
@@ -298,7 +298,7 @@ int main (int argc, char ** argv)
 
   replica = where( xcoor_1f5 >= Integer(L), replica1,replica0 );
 
-  replica0 = zero;
+  replica0 = Zero();
   setCheckerboard(replica0,result_o_1f);
 
   std::cout << "Norm2 solutions is " <<norm2(replica)<<" "<< norm2(replica0)<<std::endl;

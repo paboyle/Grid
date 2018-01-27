@@ -201,10 +201,10 @@ void  TestWhat(What & Ddwf,
   LatticeFermion src   (FGrid); random(*RNG5,src);
   LatticeFermion phi   (FGrid); random(*RNG5,phi);
   LatticeFermion chi   (FGrid); random(*RNG5,chi);
-  LatticeFermion result(FGrid); result=zero;
-  LatticeFermion    ref(FGrid);    ref=zero;
-  LatticeFermion    tmp(FGrid);    tmp=zero;
-  LatticeFermion    err(FGrid);    tmp=zero;
+  LatticeFermion result(FGrid); result=Zero();
+  LatticeFermion    ref(FGrid);    ref=Zero();
+  LatticeFermion    tmp(FGrid);    tmp=Zero();
+  LatticeFermion    err(FGrid);    tmp=Zero();
 
   LatticeFermion src_e (FrbGrid);
   LatticeFermion src_o (FrbGrid);
@@ -334,7 +334,7 @@ void  TestMoo(This & Dw, That &sDw)
 
   LatticeFermion ssrc(sgrid);
   LatticeFermion nsrc(ngrid);
-  LatticeFermion zz(ngrid); zz=zero;
+  LatticeFermion zz(ngrid); zz=Zero();
   LatticeFermion sres(sgrid);
   LatticeFermion nres(ngrid);
   LatticeFermion ndiff(ngrid);

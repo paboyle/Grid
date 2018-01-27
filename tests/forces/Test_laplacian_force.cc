@@ -29,9 +29,6 @@ Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
-
-#define parallel_for PARALLEL_FOR_LOOP for
 
 int main (int argc, char ** argv)
 {
@@ -114,7 +111,7 @@ int main (int argc, char ** argv)
   // Use derivative to estimate dS
   //////////////////////////////////////////////
 
-  LatticeComplex dS(&Grid); dS = zero;
+  LatticeComplex dS(&Grid); dS = Zero();
 
   for(int mu=0;mu<Nd;mu++){
     auto UdSdUmu = PeekIndex<LorentzIndex>(UdSdU,mu);
@@ -150,7 +147,7 @@ int main (int argc, char ** argv)
 
   // Prediciton
 
-  dS = zero;
+  dS = Zero();
    for(int mu=0;mu<Nd;mu++){
     auto dSdPmu = PeekIndex<LorentzIndex>(UdSdP,mu);
     auto Pmu = PeekIndex<LorentzIndex>(P,mu);

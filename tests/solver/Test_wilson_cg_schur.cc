@@ -60,7 +60,7 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu(&Grid); SU3::HotConfiguration(pRNG,Umu);
 
   LatticeFermion    src(&Grid); random(pRNG,src);
-  LatticeFermion result(&Grid); result=zero;
+  LatticeFermion result(&Grid); result=Zero();
   LatticeFermion resid(&Grid); 
 
   RealD mass=0.5;

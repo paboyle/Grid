@@ -69,18 +69,18 @@ int main (int argc, char ** argv)
     LatticeFermion    src   (FGrid); random(RNG5, src);
     LatticeFermion    phi   (FGrid); random(RNG5, phi);
     LatticeFermion    chi   (FGrid); random(RNG5, chi);
-    LatticeFermion    result(FGrid); result = zero;
-    LatticeFermion    ref   (FGrid); ref = zero;
-    LatticeFermion    tmp   (FGrid); tmp = zero;
-    LatticeFermion    err   (FGrid); err = zero;
+    LatticeFermion    result(FGrid); result = Zero();
+    LatticeFermion    ref   (FGrid); ref = Zero();
+    LatticeFermion    tmp   (FGrid); tmp = Zero();
+    LatticeFermion    err   (FGrid); err = Zero();
     LatticeGaugeField Umu   (UGrid); SU3::HotConfiguration(RNG4, Umu);
     std::vector<LatticeColourMatrix> U(4,UGrid);
 
     // Only one non-zero (y)
-    Umu = zero;
+    Umu = Zero();
     for(int nn=0; nn<Nd; nn++){
         random(RNG4, U[nn]);
-        if(nn>0){ U[nn] = zero; }
+        if(nn>0){ U[nn] = Zero(); }
         PokeIndex<LorentzIndex>(Umu, U[nn], nn);
     }
 

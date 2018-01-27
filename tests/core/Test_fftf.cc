@@ -64,7 +64,7 @@ int main (int argc, char ** argv)
 
   ComplexF ci(0.0,1.0);
 
-  C=zero;
+  C=Zero();
   for(int mu=0;mu<4;mu++){
     RealD TwoPiL =  M_PI * 2.0/ latt_size[mu];
     LatticeCoordinate(coor,mu);
@@ -73,7 +73,7 @@ int main (int argc, char ** argv)
 
   C = exp(C*ci);
 
-  S=zero;
+  S=Zero();
   S = S+C;
 
   FFT theFFT(&Fine);
@@ -84,12 +84,12 @@ int main (int argc, char ** argv)
   theFFT.FFT_dim(Ctilde,Ctilde,2,FFT::forward); std::cout << theFFT.MFlops()<<std::endl;
   theFFT.FFT_dim(Ctilde,Ctilde,3,FFT::forward); std::cout << theFFT.MFlops()<<std::endl;
 
-  //  C=zero;
+  //  C=Zero();
   //  Ctilde = where(abs(Ctilde)<1.0e-10,C,Ctilde);
   TComplexF cVol;
   cVol()()() = vol;
 
-  C=zero;
+  C=Zero();
   pokeSite(cVol,C,p);
   C=C-Ctilde;
   std::cout << "diff scalar "<<norm2(C) << std::endl;
@@ -101,9 +101,9 @@ int main (int argc, char ** argv)
   theFFT.FFT_dim(Stilde,Stilde,3,FFT::forward); std::cout << theFFT.MFlops()<<" "<<theFFT.USec() <<std::endl;
 
   SpinMatrixF Sp; 
-  Sp = zero; Sp = Sp+cVol;
+  Sp = Zero(); Sp = Sp+cVol;
 
-  S=zero;
+  S=Zero();
   pokeSite(Sp,S,p);
 
   S= S-Stilde;

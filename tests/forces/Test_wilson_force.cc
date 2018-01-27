@@ -139,9 +139,9 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage<< " dsdumu + dag  " << norm2(mommu)<<std::endl;
   }
 
-  LatticeComplex dS(&Grid); dS = zero;
-  LatticeComplex dSmom(&Grid); dSmom = zero;
-  LatticeComplex dSmom2(&Grid); dSmom2 = zero;
+  LatticeComplex dS(&Grid); dS = Zero();
+  LatticeComplex dSmom(&Grid); dSmom = Zero();
+  LatticeComplex dSmom2(&Grid); dSmom2 = Zero();
   
   for(int mu=0;mu<Nd;mu++){
     mommu   = PeekIndex<LorentzIndex>(UdSdU,mu);

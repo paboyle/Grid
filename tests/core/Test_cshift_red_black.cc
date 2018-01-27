@@ -60,7 +60,7 @@ int main (int argc, char ** argv)
   LatticeComplex ShiftUe(&RBFine);
   LatticeComplex ShiftUo(&RBFine);
   LatticeComplex lex(&Fine);
-  lex=zero;
+  lex=Zero();
   Integer stride =1;
   {
     double nrm;

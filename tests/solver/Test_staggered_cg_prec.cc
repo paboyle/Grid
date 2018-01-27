@@ -76,7 +76,7 @@ int main (int argc, char ** argv)
   FermionField res_o(&RBGrid); 
   FermionField src_o(&RBGrid); 
   pickCheckerboard(Odd,src_o,src);
-  res_o=zero;
+  res_o=Zero();
 
   SchurStaggeredOperator<ImprovedStaggeredFermionR,FermionField> HermOpEO(Ds);
   ConjugateGradient<FermionField> CG(1.0e-8,10000);

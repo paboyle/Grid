@@ -127,10 +127,10 @@ void  TestWhat(What & Ddwf,
   LatticeFermion src   (FGrid); random(*RNG5,src);
   LatticeFermion phi   (FGrid); random(*RNG5,phi);
   LatticeFermion chi   (FGrid); random(*RNG5,chi);
-  LatticeFermion result(FGrid); result=zero;
-  LatticeFermion    ref(FGrid);    ref=zero;
-  LatticeFermion    tmp(FGrid);    tmp=zero;
-  LatticeFermion    err(FGrid);    tmp=zero;
+  LatticeFermion result(FGrid); result=Zero();
+  LatticeFermion    ref(FGrid);    ref=Zero();
+  LatticeFermion    tmp(FGrid);    tmp=Zero();
+  LatticeFermion    err(FGrid);    tmp=Zero();
 
   LatticeFermion src_e (FrbGrid);
   LatticeFermion src_o (FrbGrid);

@@ -66,10 +66,10 @@ int main (int argc, char ** argv)
   LatticeFermion src   (&Grid); random(pRNG,src);
   LatticeFermion phi   (&Grid); random(pRNG,phi);
   LatticeFermion chi   (&Grid); random(pRNG,chi);
-  LatticeFermion result(&Grid); result=zero;
-  LatticeFermion    ref(&Grid);    ref=zero;
-  LatticeFermion    tmp(&Grid);    tmp=zero;
-  LatticeFermion    err(&Grid);    tmp=zero;
+  LatticeFermion result(&Grid); result=Zero();
+  LatticeFermion    ref(&Grid);    ref=Zero();
+  LatticeFermion    tmp(&Grid);    tmp=Zero();
+  LatticeFermion    err(&Grid);    tmp=Zero();
   LatticeGaugeField Umu(&Grid); 
   SU3::HotConfiguration(pRNG,Umu);
   std::vector<LatticeColourMatrix> U(4,&Grid);
@@ -80,7 +80,7 @@ int main (int argc, char ** argv)
   }  
 
   // Only one non-zero (y)
-  Umu=zero;
+  Umu=Zero();
   for(int nn=0;nn<Nd;nn++){
     random(pRNG,U[nn]);
     std::cout<<GridLogMessage<<"U[nn]"<<norm2(U[nn])<<std::endl;

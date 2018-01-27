@@ -128,7 +128,7 @@ int main (int argc, char ** argv)
   // Use derivative to estimate dS
   //////////////////////////////////////////////
 
-  LatticeComplex dS(UGrid); dS = zero;
+  LatticeComplex dS(UGrid); dS = Zero();
   for(int mu=0;mu<Nd;mu++){
     mommu   = PeekIndex<LorentzIndex>(UdSdU,mu);
     mommu=Ta(mommu)*2.0;
@@ -165,7 +165,7 @@ int main (int argc, char ** argv)
   //
   // Gparity --- deriv is pc Uc dSdUc + p U dSdU 
   //
-  //	Pmu = zero;
+  //	Pmu = Zero();
   //	for(int mu=0;mu<Nd;mu++){
   //	  SU<Ncol>::GaussianFundamentalLieAlgebraMatrix(pRNG, Pmu);
   //	  PokeIndex<LorentzIndex>(P, Pmu, mu);
@@ -177,7 +177,7 @@ int main (int argc, char ** argv)
   //    LatticeMatrix  la (grid);
   //    Complex ci(0.0,scale);
   //    Matrix ta;
-  //    out=zero;
+  //    out=Zero();
   //    for(int a=0;a<generators();a++){
   //      gaussian(pRNG,ca); 
   //      generator(a,ta);

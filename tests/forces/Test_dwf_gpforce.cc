@@ -157,9 +157,9 @@ int main (int argc, char ** argv)
     std::cout << GridLogMessage<< " dsdumu + dag  " << norm2(mommu)<<std::endl;
   }
 
-  LatticeComplex dS(UGrid); dS = zero;
-  LatticeComplex dSmom(UGrid); dSmom = zero;
-  LatticeComplex dSmom2(UGrid); dSmom2 = zero;
+  LatticeComplex dS(UGrid); dS = Zero();
+  LatticeComplex dSmom(UGrid); dSmom = Zero();
+  LatticeComplex dSmom2(UGrid); dSmom2 = Zero();
   for(int mu=0;mu<Nd;mu++){
     mommu   = PeekIndex<LorentzIndex>(UdSdU,mu);
     mommu=Ta(mommu)*2.0;

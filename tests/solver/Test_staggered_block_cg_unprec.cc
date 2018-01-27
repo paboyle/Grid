@@ -68,7 +68,7 @@ int main (int argc, char ** argv)
   GridParallelRNG pRNG5(FGrid);  pRNG5.SeedFixedIntegers(seeds);
 
   FermionField src(FGrid); random(pRNG5,src);
-  FermionField result(FGrid); result=zero;
+  FermionField result(FGrid); result=Zero();
   RealD nrm = norm2(src);
 
   LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
@@ -89,7 +89,7 @@ int main (int argc, char ** argv)
   ImprovedStaggeredFermionR Ds4d(Umu,Umu,*UGrid,*UrbGrid,mass);
   MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> HermOp4d(Ds4d);
   FermionField src4d(UGrid); random(pRNG,src4d);
-  FermionField result4d(UGrid); result4d=zero;
+  FermionField result4d(UGrid); result4d=Zero();
   CG(HermOp4d,src4d,result4d);
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
 
@@ -97,7 +97,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   std::cout << GridLogMessage << " Calling 5d CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
-  result=zero;
+  result=Zero();
   Ds.ZeroCounters();
   CG(HermOp,src,result);
   Ds.Report();
@@ -106,7 +106,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   std::cout << GridLogMessage << " Calling multiRHS CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
-  result=zero;
+  result=Zero();
   Ds.ZeroCounters();
   mCG(HermOp,src,result);
   Ds.Report();
@@ -115,7 +115,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
   std::cout << GridLogMessage << " Calling Block CG for "<<Ls <<" right hand sides" <<std::endl;
   std::cout << GridLogMessage << "************************************************************************ "<<std::endl;
-  result=zero;
+  result=Zero();
   Ds.ZeroCounters();
   BCGrQ(HermOp,src,result);
   Ds.Report();

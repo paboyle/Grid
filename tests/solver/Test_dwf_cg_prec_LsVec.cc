@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
   LatticeFermion src(FGrid);
   random(RNG5, src);
   LatticeFermion result(FGrid);
-  result = zero;
+  result = Zero();
   LatticeGaugeField Umu(UGrid);
 
   std::cout << GridLogMessage << "Generating random gauge field" << std::endl;
@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
   LatticeFermion src_o(FrbGrid);
   LatticeFermion result_o(FrbGrid);
   pickCheckerboard(Odd, src_o, src);
-  result_o = zero;
+  result_o = Zero();
 
   GridStopWatch CGTimer;
 

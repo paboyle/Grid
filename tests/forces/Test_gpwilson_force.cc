@@ -134,7 +134,7 @@ int main (int argc, char ** argv)
     PokeIndex<LorentzIndex>(UdSdU,mommu,mu);
   }
 
-  LatticeComplex dS(UGrid); dS = zero;
+  LatticeComplex dS(UGrid); dS = Zero();
   for(int mu=0;mu<Nd;mu++){
     forcemu = PeekIndex<LorentzIndex>(UdSdU,mu);
     mommu   = PeekIndex<LorentzIndex>(mom,mu);

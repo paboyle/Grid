@@ -46,7 +46,7 @@ int main (int argc, char ** argv)
   LatticeComplex U(&Fine);
   LatticeComplex ShiftU(&Fine);
   LatticeComplex lex(&Fine);
-  lex=zero;
+  lex=Zero();
   Integer stride =1;
   {
     double nrm;

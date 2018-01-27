@@ -60,7 +60,7 @@ int main (int argc, char ** argv)
 
   // Painful ; fix syntactical niceness
   LatticeComplex LinkTrace(&Fine);
-  LinkTrace=zero;
+  LinkTrace=Zero();
   for(int mu=0;mu<Nd;mu++){
     LinkTrace = LinkTrace + trace(U[mu]);
   }
@@ -68,7 +68,7 @@ int main (int argc, char ** argv)
   // (1+2+3)=6 = N(N-1)/2 terms
   LatticeComplex Plaq(&Fine);
 
-  Plaq = zero;
+  Plaq = Zero();
 #if 1
   for(int mu=1;mu<Nd;mu++){
     for(int nu=0;nu<mu;nu++){
@@ -85,7 +85,7 @@ int main (int argc, char ** argv)
   int Nt = Plaq_T.size();
 
   TComplex Plaq_T_sum; 
-  Plaq_T_sum=zero;
+  Plaq_T_sum=Zero();
   for(int t=0;t<Nt;t++){
     Plaq_T_sum = Plaq_T_sum+Plaq_T[t];
     Complex Pt=TensorRemove(Plaq_T[t]);

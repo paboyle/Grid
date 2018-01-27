@@ -148,7 +148,7 @@ int main (int argc, char ** argv)
   //////////////////////////////////////////////
 
 
-  LatticeComplex dS(UGrid); dS = zero;
+  LatticeComplex dS(UGrid); dS = Zero();
   for(int mu=0;mu<Nd;mu++){
     mommu   = PeekIndex<LorentzIndex>(UdSdU,mu);
     mommu=Ta(mommu)*2.0;

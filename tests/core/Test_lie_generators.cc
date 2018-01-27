@@ -121,7 +121,7 @@ int main(int argc, char** argv) {
   // Test group structure
   // (U_f * V_f)_r = U_r * V_r
   LatticeGaugeField UV(grid);
-  UV = zero;
+  UV = Zero();
   for (int mu = 0; mu < Nd; mu++) {
     SU<Nc>::LatticeMatrix Umu = peekLorentz(U,mu);
     SU<Nc>::LatticeMatrix Vmu = peekLorentz(V,mu);
@@ -139,7 +139,7 @@ int main(int argc, char** argv) {
   typename AdjointRep<Nc>::LatticeField Vr = AdjRep.U;  // V_r
 
   typename AdjointRep<Nc>::LatticeField UrVr(grid);
-  UrVr = zero;
+  UrVr = Zero();
   for (int mu = 0; mu < Nd; mu++) {
     typename AdjointRep<Nc>::LatticeMatrix Urmu = peekLorentz(Ur,mu);
     typename AdjointRep<Nc>::LatticeMatrix Vrmu = peekLorentz(Vr,mu);
@@ -200,7 +200,7 @@ int main(int argc, char** argv) {
 
 
   // Tranform to the adjoint representation
-  U = zero; // fill this with only one direction
+  U = Zero(); // fill this with only one direction
   pokeLorentz(U,Ufund,0); // the representation transf acts on full gauge fields
 
   AdjRep.update_representation(U);
@@ -315,7 +315,7 @@ int main(int argc, char** argv) {
   SU<Nc>::HotConfiguration<LatticeGaugeField>(gridRNG, V2);
   
   LatticeGaugeField UV2(grid);
-  UV2 = zero;
+  UV2 = Zero();
   for (int mu = 0; mu < Nd; mu++) {
     SU<Nc>::LatticeMatrix Umu2 = peekLorentz(U2,mu);
     SU<Nc>::LatticeMatrix Vmu2 = peekLorentz(V2,mu);
@@ -332,7 +332,7 @@ int main(int argc, char** argv) {
   typename TwoIndexRep< Nc, Symmetric >::LatticeField Vr2 = TIndexRep.U;  // V_r
   
   typename TwoIndexRep< Nc, Symmetric >::LatticeField Ur2Vr2(grid);
-  Ur2Vr2 = zero;
+  Ur2Vr2 = Zero();
   for (int mu = 0; mu < Nd; mu++) {
     typename TwoIndexRep< Nc, Symmetric >::LatticeMatrix Urmu2 = peekLorentz(Ur2,mu);
     typename TwoIndexRep< Nc, Symmetric >::LatticeMatrix Vrmu2 = peekLorentz(Vr2,mu);
@@ -393,7 +393,7 @@ int main(int argc, char** argv) {
   
 
   // Tranform to the 2Index Sym representation
-  U = zero; // fill this with only one direction
+  U = Zero(); // fill this with only one direction
   pokeLorentz(U,Ufund2,0); // the representation transf acts on full gauge fields
   
   TIndexRep.update_representation(U);
@@ -425,7 +425,7 @@ int main(int argc, char** argv) {
   SU<Nc>::HotConfiguration<LatticeGaugeField>(gridRNG, V2A);
   
   LatticeGaugeField UV2A(grid);
-  UV2A = zero;
+  UV2A = Zero();
   for (int mu = 0; mu < Nd; mu++) {
     SU<Nc>::LatticeMatrix Umu2A = peekLorentz(U2,mu);
     SU<Nc>::LatticeMatrix Vmu2A = peekLorentz(V2,mu);
@@ -442,7 +442,7 @@ int main(int argc, char** argv) {
   typename TwoIndexRep< Nc, AntiSymmetric >::LatticeField Vr2A = TIndexRepA.U;  // V_r
   
   typename TwoIndexRep< Nc, AntiSymmetric >::LatticeField Ur2Vr2A(grid);
-  Ur2Vr2A = zero;
+  Ur2Vr2A = Zero();
   for (int mu = 0; mu < Nd; mu++) {
     typename TwoIndexRep< Nc, AntiSymmetric >::LatticeMatrix Urmu2A = peekLorentz(Ur2A,mu);
     typename TwoIndexRep< Nc, AntiSymmetric >::LatticeMatrix Vrmu2A = peekLorentz(Vr2A,mu);
@@ -503,7 +503,7 @@ int main(int argc, char** argv) {
   
 
   // Tranform to the 2Index Sym representation
-  U = zero; // fill this with only one direction
+  U = Zero(); // fill this with only one direction
   pokeLorentz(U,Ufund2A,0); // the representation transf acts on full gauge fields
   
   TIndexRepA.update_representation(U);

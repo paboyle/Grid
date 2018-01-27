@@ -388,7 +388,7 @@ int main(int argc, char **argv) {
         std::vector<int> coor(4);
         for(int d=0;d<4;d++) coor[d] = 0;
         peekSite(cmat,Foo,coor);
-        Foo = zero;
+        Foo = Zero();
         pokeSite(cmat,Foo,coor);
       }
       random(Foo);
@@ -403,14 +403,14 @@ int main(int argc, char **argv) {
           Fine._ldimensions[0] * Fine._ldimensions[1] * Fine._ldimensions[2];
 
       LatticeInteger lex(&Fine);
-      lex = zero;
+      lex = Zero();
       for (int d = 0; d < 4; d++) {
         LatticeInteger coor(&Fine);
         LatticeCoordinate(coor, d);
         lex = lex + coor * mm[d];
       }
 
-      //    Bar = zero;
+      //    Bar = Zero();
       //    Bar = where(lex<Integer(10),Foo,Bar);
 
       cout << "peeking sites..\n";
@@ -534,7 +534,7 @@ int main(int argc, char **argv) {
           bShifted = Cshift(rFoo, dir, shift);  // Shift red->black
           rShifted = Cshift(bFoo, dir, shift);  // Shift black->red
 
-          ShiftedCheck = zero;
+          ShiftedCheck = Zero();
           setCheckerboard(ShiftedCheck, bShifted);  // Put them all together
           setCheckerboard(ShiftedCheck,
                           rShifted);  // and check the results (later)

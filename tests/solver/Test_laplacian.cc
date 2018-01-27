@@ -56,11 +56,11 @@ int main (int argc, char ** argv)
   // Source and result in the algebra
   // needed for the second test
   AVector src_vec(&Grid); random(pRNG, src_vec);
-  AVector result_vec(&Grid); result_vec = zero;
+  AVector result_vec(&Grid); result_vec = Zero();
   
   LatticeColourMatrix src(&Grid); 
   SU<Nc>::FundamentalLieAlgebraMatrix(src_vec, src);
-  LatticeColourMatrix result(&Grid); result=zero;
+  LatticeColourMatrix result(&Grid); result=Zero();
 
 
   // Generate a field of adjoint matrices

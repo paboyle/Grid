@@ -142,7 +142,7 @@ public:
       return false;
     fseeko(_f,cur,SEEK_SET);
 
-    size_t sz = sizeof(out[0]) * out._odata.size();
+    size_t sz = sizeof(out[0]) * out.size();
 
     GridStopWatch gsw;
     gsw.Start();
@@ -161,7 +161,7 @@ public:
 
     fseek(_f,0,SEEK_CUR); // switch to write
 
-    size_t sz = sizeof(out[0]) * out._odata.size();
+    size_t sz = sizeof(out[0]) * out.size();
 
     GridStopWatch gsw;
     gsw.Start();
@@ -393,7 +393,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
       v_i.Checkerboard() = Odd;
       
       for (int j=0;j<smoothed_eval_outer;j++) {
-	tmp=zero;
+	tmp=Zero();
 	//pr.deflate(coef,eval3,Nstop2,v_i,tmp);
 	CG(HermOp, v_i, tmp);
 
@@ -432,7 +432,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
 
     // undeflated solve
     std::cout << GridLogMessage << " Undeflated solve "<<std::endl;
-    result = zero;
+    result = Zero();
     CG(HermOp, src_orig, result);
     //    if (UCoarseGrid->IsBoss())
     //      write_history("cg_test.undefl",CG.ResHistory);
@@ -440,7 +440,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
 
     // deflated solve with all eigenvectors
     std::cout << GridLogMessage << " Deflated solve with all evectors"<<std::endl;
-    result = zero;
+    result = Zero();
     pr.deflate(coef,eval2,Nstop2,src_orig,result);
     CG(HermOp, src_orig, result);
     //    if (UCoarseGrid->IsBoss())
@@ -449,7 +449,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
 
     // deflated solve with non-blocked eigenvectors
     std::cout << GridLogMessage << " Deflated solve with non-blocked evectors"<<std::endl;
-    result = zero;
+    result = Zero();
     pr.deflate(coef,eval1,Nstop1,src_orig,result);
     CG(HermOp, src_orig, result);
     //    if (UCoarseGrid->IsBoss())
@@ -458,7 +458,7 @@ void CoarseGridLanczos(BlockProjector<Field>& pr,RealD alpha2,RealD beta,int Npo
 
     // deflated solve with all eigenvectors and original eigenvalues from proj
     std::cout << GridLogMessage << " Deflated solve with all eigenvectors and original eigenvalues from proj"<<std::endl;
-    result = zero;
+    result = Zero();
     pr.deflate(coef,eval3,Nstop2,src_orig,result);
     CG(HermOp, src_orig, result);
     //    if (UCoarseGrid->IsBoss())

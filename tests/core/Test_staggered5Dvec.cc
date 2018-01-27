@@ -71,14 +71,14 @@ int main (int argc, char ** argv)
   random(pRNG5,src);
   /*
   std::vector<int> site({0,1,2,0,0});
-  ColourVector cv = zero;
+  ColourVector cv = Zero();
   cv()()(0)=1.0;
-  src = zero;
+  src = Zero();
   pokeSite(cv,src,site);
   */
-  FermionField result(FGrid); result=zero;
-  FermionField    tmp(FGrid);    tmp=zero;
-  FermionField    err(FGrid);    tmp=zero;
+  FermionField result(FGrid); result=Zero();
+  FermionField    tmp(FGrid);    tmp=Zero();
+  FermionField    err(FGrid);    tmp=Zero();
   FermionField phi   (FGrid); random(pRNG5,phi);
   FermionField chi   (FGrid); random(pRNG5,chi);
 
@@ -88,7 +88,7 @@ int main (int argc, char ** argv)
   /*
   for(int mu=1;mu<4;mu++){
     auto tmp = PeekIndex<LorentzIndex>(Umu,mu);
-        tmp = zero;
+        tmp = Zero();
     PokeIndex<LorentzIndex>(Umu,tmp,mu);
   }
   */
@@ -149,7 +149,7 @@ int main (int argc, char ** argv)
 
   
   FermionField ssrc  (sFGrid);  localConvert(src,ssrc);
-  FermionField sresult(sFGrid); sresult=zero;
+  FermionField sresult(sFGrid); sresult=Zero();
 
   StaggeredKernelsStatic::Opt=StaggeredKernelsStatic::OptHandUnroll;
   t0=usecond();

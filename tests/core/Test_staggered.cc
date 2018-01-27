@@ -58,10 +58,10 @@ int main (int argc, char ** argv)
   typename ImprovedStaggeredFermionR::ImplParams params; 
 
   FermionField src   (&Grid); random(pRNG,src);
-  FermionField result(&Grid); result=zero;
-  FermionField    ref(&Grid);    ref=zero;
-  FermionField    tmp(&Grid);    tmp=zero;
-  FermionField    err(&Grid);    tmp=zero;
+  FermionField result(&Grid); result=Zero();
+  FermionField    ref(&Grid);    ref=Zero();
+  FermionField    tmp(&Grid);    tmp=Zero();
+  FermionField    err(&Grid);    tmp=Zero();
   FermionField phi   (&Grid); random(pRNG,phi);
   FermionField chi   (&Grid); random(pRNG,chi);
   LatticeGaugeField Umu(&Grid); SU3::HotConfiguration(pRNG,Umu);
@@ -82,7 +82,7 @@ int main (int argc, char ** argv)
   */
   }
 
-  ref = zero;
+  ref = Zero();
 
   RealD mass=0.1;
   RealD c1=9.0/8.0;
@@ -90,7 +90,7 @@ int main (int argc, char ** argv)
   RealD u0=1.0;
 
   { // Simple improved staggered implementation
-    ref = zero;
+    ref = Zero();
     RealD c1tad = 0.5*c1/u0;
     RealD c2tad = 0.5*c2/u0/u0/u0;
 

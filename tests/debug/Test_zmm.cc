@@ -104,7 +104,7 @@ int main(int argc,char **argv)
   std::cout <<"Zmul diff   "<< Reduce(err)<<std::endl;
 
   random(sRNG,mat);
-  mat = zero;
+  mat = Zero();
   mat()()(0,0) = 1.0;
   random(sRNG,vec);
 
@@ -127,7 +127,7 @@ int main(int argc,char **argv)
   vComplexF errF;
 
   random(sRNG,matF);
-  matF = zero;
+  matF = Zero();
   matF()()(0,0)=1.0;
   random(sRNG,vecF);
 
@@ -176,8 +176,8 @@ int main(int argc,char **argv)
   LatticeFermion tmp (FGrid);
   LatticeFermion srce(FrbGrid);
 
-  LatticeFermion resulto(FrbGrid); resulto=zero;
-  LatticeFermion resulta(FrbGrid); resulta=zero;
+  LatticeFermion resulto(FrbGrid); resulto=Zero();
+  LatticeFermion resulta(FrbGrid); resulta=Zero();
   LatticeFermion diff(FrbGrid); 
   LatticeGaugeField Umu(UGrid);
 
@@ -192,7 +192,7 @@ int main(int argc,char **argv)
   std::vector<LatticeColourMatrix> U(4,UGrid);
   for(int mu=0;mu<Nd;mu++){
     U[mu] = PeekIndex<LorentzIndex>(Umu,mu);
-    if ( mu!=mmu ) U[mu] = zero;
+    if ( mu!=mmu ) U[mu] = Zero();
     if ( mu==mmu ) U[mu] = 1.0;
     PokeIndex<LorentzIndex>(Umu,U[mu],mu);
   }
@@ -246,13 +246,13 @@ int main(int argc,char **argv)
 #if 0
   std::cout<<"=========== result Grid ============="<<std::endl;
   std::cout<<std::endl;
-  tmp = zero;
+  tmp = Zero();
   setCheckerboard(tmp,resulto);
   std::cout<<tmp<<std::endl;
   std::cout<<std::endl;
   std::cout<<"=========== result ASM ============="<<std::endl;
   std::cout<<std::endl;
-  tmp = zero;
+  tmp = Zero();
   setCheckerboard(tmp,resulta);
   std::cout<<tmp<<std::endl;
 #endif

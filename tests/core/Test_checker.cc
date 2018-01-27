@@ -128,7 +128,7 @@ int main (int argc, char ** argv)
 
 
   
-  // LatticeFermion result(FGrid); result=zero;
+  // LatticeFermion result(FGrid); result=Zero();
   // LatticeGaugeField Umu(UGrid); 
 
   // SU3::HotConfiguration(RNG4,Umu);
@@ -145,7 +145,7 @@ int main (int argc, char ** argv)
   // LatticeFermion    src_o(FrbGrid);
   // LatticeFermion result_o(FrbGrid);
   // pickCheckerboard(Odd,src_o,src);
-  // result_o=zero;
+  // result_o=Zero();
 
   // SchurDiagMooeeOperator<DomainWallFermionR,LatticeFermion> HermOpEO(Ddwf);
   // ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);

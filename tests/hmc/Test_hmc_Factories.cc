@@ -32,9 +32,9 @@ namespace Grid{
 
 // Put this section in a separate header
 // ifdefs ?? Local makefile suggestion , policy as make parameter
-typedef QCD::PeriodicGimplR   ImplementationPolicy;
-typedef QCD::WilsonImplR      FermionImplementationPolicy;
-typedef QCD::NoHirep          RepresentationPolicy;
+typedef PeriodicGimplR   ImplementationPolicy;
+typedef WilsonImplR      FermionImplementationPolicy;
+typedef NoHirep          RepresentationPolicy;
 typedef Grid::XmlReader       Serialiser;
 
 // Register all object names

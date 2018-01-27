@@ -59,7 +59,7 @@ int main (int argc, char ** argv)
 
   LatticeFermion src(&Grid); random(pRNG,src);
   RealD nrm = norm2(src);
-  LatticeFermion result(&Grid); result=zero;
+  LatticeFermion result(&Grid); result=Zero();
   LatticeGaugeField Umu(&Grid); SU3::HotConfiguration(pRNG,Umu);
 
   std::vector<LatticeColourMatrix> U(4,&Grid);
@@ -78,7 +78,7 @@ int main (int argc, char ** argv)
   LatticeFermion    src_o(&RBGrid);
   LatticeFermion result_o(&RBGrid);
   pickCheckerboard(Odd,src_o,src);
-  result_o=zero;
+  result_o=Zero();
 
   SchurDiagMooeeOperator<WilsonFermionR,LatticeFermion> HermOpEO(Dw);
   ConjugateGradient<LatticeFermion> CG(1.0e-8,10000);

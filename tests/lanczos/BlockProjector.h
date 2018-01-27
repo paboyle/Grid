@@ -72,7 +72,7 @@ public:
   template<typename CoarseField>
   void coarseToFine(const CoarseField& in, Field& out) {
 
-    out = zero;
+    out = Zero();
     out.Checkerboard() = _evec._v[0].Checkerboard();
 
     int Nbasis = sizeof(in[0]._internal._internal) / sizeof(in[0]._internal._internal[0]);
@@ -90,7 +90,7 @@ public:
   template<typename CoarseField>
   void fineToCoarse(const Field& in, CoarseField& out) {
 
-    out = zero;
+    out = Zero();
 
     int Nbasis = sizeof(out[0]._internal._internal) / sizeof(out[0]._internal._internal[0]);
     assert(Nbasis == _evec._Nm);
@@ -113,7 +113,7 @@ public:
 
   template<typename CoarseField>
     void deflateFine(BasisFieldVector<CoarseField>& _coef,const std::vector<RealD>& eval,int N,const Field& src_orig,Field& result) {
-    result = zero;
+    result = Zero();
     for (int i=0;i<N;i++) {
       Field tmp(result.Grid());
       coarseToFine(_coef._v[i],tmp);
@@ -125,7 +125,7 @@ public:
     void deflateCoarse(BasisFieldVector<CoarseField>& _coef,const std::vector<RealD>& eval,int N,const Field& src_orig,Field& result) {
     CoarseField src_coarse(_coef._v[0].Grid());
     CoarseField result_coarse = src_coarse;
-    result_coarse = zero;
+    result_coarse = Zero();
     fineToCoarse(src_orig,src_coarse);
     for (int i=0;i<N;i++) {
       axpy(result_coarse,TensorRemove(innerProduct(_coef._v[i],src_coarse)) / eval[i],_coef._v[i],result_coarse);

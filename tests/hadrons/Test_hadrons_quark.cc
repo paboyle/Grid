@@ -53,7 +53,7 @@ inline void make_4D_with_gammas(Lattice<vobj> &in_5d, Lattice<vobj> &out_4d, int
 template<class vobj>
 inline void make_5D_with_gammas(Lattice<vobj> &in_4d, Lattice<vobj> &out_5d, int Ls)
 {
-    out_5d = zero;
+    out_5d = Zero();
     Gamma G5(Gamma::Algebra::Gamma5);
     GridBase *_grid(in_4d.Grid());
     Lattice<vobj> tmp(_grid);

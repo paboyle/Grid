@@ -65,7 +65,7 @@ int main (int argc, char ** argv)
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
 
   LatticeFermion    src(FGrid); random(RNG5,src);
-  LatticeFermion result(FGrid); result=zero;
+  LatticeFermion result(FGrid); result=Zero();
   LatticeGaugeField Umu(UGrid); 
 
   SU3::HotConfiguration(RNG4,Umu);
@@ -86,32 +86,32 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage<<"* Solving with MdagM VPGCR "<<std::endl;
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
   MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermOp(Ddwf);
-  result=zero;
+  result=Zero();
   PGCR(HermOp,src,result);
 
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
   std::cout<<GridLogMessage<<"* Solving with g5-VPGCR "<<std::endl;
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
   Gamma5R5HermitianLinearOperator<DomainWallFermionR,LatticeFermion> g5HermOp(Ddwf);
-  result=zero;
+  result=Zero();
   PGCR(g5HermOp,src,result);
 
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
   std::cout<<GridLogMessage<<"* Solving with MdagM-CR "<<std::endl;
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
-  result=zero;
+  result=Zero();
   CR(HermOp,src,result);
 
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
   std::cout<<GridLogMessage<<"* Solving with g5-CR "<<std::endl;
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
-  result=zero;
+  result=Zero();
   CR(g5HermOp,src,result);
 
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
   std::cout<<GridLogMessage<<"* Solving with MdagM-CG "<<std::endl;
   std::cout<<GridLogMessage<<"*********************************************************"<<std::endl;
-  result=zero;
+  result=Zero();
   CG(HermOp,src,result);
 
   Grid_finalize();

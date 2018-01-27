@@ -104,7 +104,7 @@ public:
 //  norm2, 
 //  Reduce,
 //
-//  mac,mult,sub,add, vone,vzero,vcomplex_i, =zero,
+//  mac,mult,sub,add, vone,vzero,vcomplex_i, =Zero(),
 //  vset,vsplat,vstore,vstream,vload, scalar*vec, vec*scalar
 //  unary -,
 //  *= , -=, +=

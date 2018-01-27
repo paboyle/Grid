@@ -65,7 +65,7 @@ int main (int argc, char ** argv)
   GridParallelRNG          RNG4(UGrid);  RNG4.SeedFixedIntegers(seeds4);
 
   LatticeFermionD    src(FGrid); random(RNG5,src);
-  LatticeFermionD result(FGrid); result=zero;
+  LatticeFermionD result(FGrid); result=Zero();
   LatticeGaugeFieldD Umu(UGrid);
   LatticeGaugeFieldF Umu_f(UGrid_f); 
   
@@ -83,7 +83,7 @@ int main (int argc, char ** argv)
   LatticeFermionD result_cg(FrbGrid);
   pickCheckerboard(Odd,src_o,src);
   result_cg.Checkerboard() = Odd;
-  result_cg = zero;
+  result_cg = Zero();
   LatticeFermionD result_mcg(result_cg);
   LatticeFermionD result_rlcg(result_cg);
 

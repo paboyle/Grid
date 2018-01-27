@@ -76,7 +76,7 @@ int main (int argc, char ** argv)
     for( int cb=0;cb<2;cb++ ) {
 
       one.Checkerboard()=subsets[cb];
-      mask= zero;
+      mask= Zero();
       setCheckerboard(mask,one);
 
       //      std::cout<<GridLogMessage<<mask<<std::endl;

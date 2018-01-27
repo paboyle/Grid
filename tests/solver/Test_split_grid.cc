@@ -92,7 +92,7 @@ int main (int argc, char ** argv)
   FermionField tmp(FGrid);
 
   for(int s=0;s<nrhs;s++) random(pRNG5,src[s]);
-  for(int s=0;s<nrhs;s++) result[s]=zero;
+  for(int s=0;s<nrhs;s++) result[s]=Zero();
 
   LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(pRNG,Umu);
 
@@ -127,7 +127,7 @@ int main (int argc, char ** argv)
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOp(Ddwf);
   MdagMLinearOperator<DomainWallFermionR,FermionField> HermOpCk(Dchk);
   ConjugateGradient<FermionField> CG((1.0e-8/(me+1)),10000);
-  s_res = zero;
+  s_res = Zero();
   CG(HermOp,s_src,s_res);
 
   /////////////////////////////////////////////////////////////

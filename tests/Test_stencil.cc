@@ -61,7 +61,7 @@ int main(int argc, char ** argv) {
   Field Diff(&Fine);
   LatticeComplex lex(&Fine);
 
-  lex = zero;
+  lex = Zero();
   random(fRNG,Foo);
   gaussian(fRNG,Bar);
 

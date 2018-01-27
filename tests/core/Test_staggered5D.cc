@@ -69,10 +69,10 @@ int main (int argc, char ** argv)
 
   random(pRNG5,src);
 
-  FermionField result(FGrid); result=zero;
-  FermionField    ref(FGrid);    ref=zero;
-  FermionField    tmp(FGrid);    tmp=zero;
-  FermionField    err(FGrid);    tmp=zero;
+  FermionField result(FGrid); result=Zero();
+  FermionField    ref(FGrid);    ref=Zero();
+  FermionField    tmp(FGrid);    tmp=Zero();
+  FermionField    err(FGrid);    tmp=Zero();
   FermionField phi   (FGrid); random(pRNG5,phi);
   FermionField chi   (FGrid); random(pRNG5,chi);
 
@@ -107,7 +107,7 @@ int main (int argc, char ** argv)
   RealD u0=1.0;
 
   { // Simple improved staggered implementation
-    ref = zero;
+    ref = Zero();
     RealD c1tad = 0.5*c1/u0;
     RealD c2tad = 0.5*c2/u0/u0/u0;
 

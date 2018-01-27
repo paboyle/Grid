@@ -181,7 +181,7 @@ int main(int argc, char **argv)
     for(int s=0; s<Ls; ++s){ axpby_ssp_pminus(spProj_Phi, 0.0, Phi, 1.0, Phi, s, s); }
     Deofa_L.Omega(spProj_Phi, tmp[0], -1, 0);
     G5R5(tmp[1], tmp[0]);
-    tmp[0] = zero;
+    tmp[0] = Zero();
     SchurSolver(Deofa_L, tmp[1], tmp[0]);
     Deofa_L.Omega(tmp[0], tmp[1], -1, 1);
     rw_eofa[hit] = -k*innerProduct(spProj_Phi,tmp[1]).real();
@@ -190,7 +190,7 @@ int main(int argc, char **argv)
     for(int s=0; s<Ls; ++s){ axpby_ssp_pplus(spProj_Phi, 0.0, Phi, 1.0, Phi, s, s); }
     Deofa_R.Omega(spProj_Phi, tmp[0], 1, 0);
     G5R5(tmp[1], tmp[0]);
-    tmp[0] = zero;
+    tmp[0] = Zero();
     SchurSolver(Deofa_R, tmp[1], tmp[0]);
     Deofa_R.Omega(tmp[0], tmp[1], 1, 1);
     rw_eofa[hit] += k*innerProduct(spProj_Phi,tmp[1]).real();

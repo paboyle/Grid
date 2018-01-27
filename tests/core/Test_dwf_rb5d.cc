@@ -76,8 +76,8 @@ int main (int argc, char ** argv)
   GridParallelRNG          RNG5(FGrid);  RNG5.SeedFixedIntegers(seeds5);
 
   LatticeFermion src   (FGrid); random(RNG5,src);
-  LatticeFermion result(FGrid); result=zero;
-  LatticeFermion    ref(FGrid);    ref=zero;
+  LatticeFermion result(FGrid); result=Zero();
+  LatticeFermion    ref(FGrid);    ref=Zero();
   LatticeFermion    tmp(FGrid);
   LatticeFermion    err(FGrid);
 
@@ -86,7 +86,7 @@ int main (int argc, char ** argv)
 
   // Only one non-zero (y)
   /*
-  Umu=zero;
+  Umu=Zero();
   for(int nn=0;nn<Nd;nn++){
     random(RNG4,U[nn]);
     PokeIndex<LorentzIndex>(Umu,U[nn],nn);

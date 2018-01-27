@@ -58,7 +58,7 @@ public:
   {
     assert(this->_Aggregate.subspace.size()==nbasis);
     emptyUserRecord record;
-    Grid::QCD::ScidacWriter WR;
+    Grid::ScidacWriter WR;
     WR.open(evecs_file);
     for(int k=0;k<nbasis;k++) {
       WR.writeScidacFieldRecord(this->_Aggregate.subspace[k],record);
@@ -82,7 +82,7 @@ public:
     
     std::cout << GridLogIRL<< "checkpointFineRestore:  Reading evecs from "<<evecs_file<<std::endl;
     emptyUserRecord record;
-    Grid::QCD::ScidacReader RD ;
+    Grid::ScidacReader RD ;
     RD.open(evecs_file);
     for(int k=0;k<nbasis;k++) {
       this->_Aggregate.subspace[k].Checkerboard()=this->_checkerboard;
@@ -96,7 +96,7 @@ public:
   {
     int n = this->evec_coarse.size();
     emptyUserRecord record;
-    Grid::QCD::ScidacWriter WR;
+    Grid::ScidacWriter WR;
     WR.open(evecs_file);
     for(int k=0;k<n;k++) {
       WR.writeScidacFieldRecord(this->evec_coarse[k],record);
@@ -119,7 +119,7 @@ public:
     assert(this->evals_coarse.size()==nvec);
     emptyUserRecord record;
     std::cout << GridLogIRL<< "checkpointCoarseRestore:  Reading evecs from "<<evecs_file<<std::endl;
-    Grid::QCD::ScidacReader RD ;
+    Grid::ScidacReader RD ;
     RD.open(evecs_file);
     for(int k=0;k<nvec;k++) {
       RD.readScidacFieldRecord(this->evec_coarse[k],record);

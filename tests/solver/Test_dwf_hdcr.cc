@@ -158,7 +158,7 @@ public:
     _FineOperator.Op(Min,tmp);
     tmp = in - tmp;   // in - A Min
 
-    Csol=zero;
+    Csol=Zero();
     _Aggregates.ProjectToSubspace  (Csrc,tmp);
     HermOp.AdjOp(Csrc,Ctmp);// Normal equations
     CG(MdagMOp,Ctmp,Csol);
@@ -193,7 +193,7 @@ public:
 
     CoarseVector Csrc(_CoarseOperator.Grid());
     CoarseVector Ctmp(_CoarseOperator.Grid());
-    CoarseVector Csol(_CoarseOperator.Grid()); Csol=zero;
+    CoarseVector Csol(_CoarseOperator.Grid()); Csol=Zero();
 
     ConjugateGradient<CoarseVector>  CG(1.0e-10,100000);
     ConjugateGradient<FineField>    fCG(3.0e-2,1000);
@@ -239,13 +239,13 @@ public:
     Lattice<iScalar<vInteger> > subset(src.Grid());
     
     FineField r(src.Grid());
-    FineField zz(src.Grid()); zz=zero;
+    FineField zz(src.Grid()); zz=Zero();
     FineField vec1(src.Grid());
     FineField vec2(src.Grid());
 
     const Integer block=params.domainsize;
 
-    subset=zero;
+    subset=Zero();
     for(int mu=0;mu<Nd;mu++){
       LatticeCoordinate(coor,mu+1);
       coor = div(coor,block);
@@ -327,7 +327,7 @@ public:
 
     CoarseVector Csrc(_CoarseOperator.Grid());
     CoarseVector Ctmp(_CoarseOperator.Grid());
-    CoarseVector Csol(_CoarseOperator.Grid()); Csol=zero;
+    CoarseVector Csol(_CoarseOperator.Grid()); Csol=Zero();
 
     ConjugateGradient<CoarseVector>  CG(3.0e-3,100000);
     //    ConjugateGradient<FineField>    fCG(3.0e-2,1000);
@@ -407,7 +407,7 @@ public:
 
     CoarseVector Csrc(_CoarseOperator.Grid());
     CoarseVector Ctmp(_CoarseOperator.Grid());
-    CoarseVector Csol(_CoarseOperator.Grid()); Csol=zero;
+    CoarseVector Csol(_CoarseOperator.Grid()); Csol=Zero();
 
     ConjugateGradient<CoarseVector>  CG(1.0e-3,100000);
 
@@ -507,8 +507,8 @@ int main (int argc, char ** argv)
   Gamma g5(Gamma::Algebra::Gamma5);
 
   LatticeFermion    src(FGrid); gaussian(RNG5,src);// src=src+g5*src;
-  LatticeFermion result(FGrid); result=zero;
-  LatticeFermion    ref(FGrid); ref=zero;
+  LatticeFermion result(FGrid); result=Zero();
+  LatticeFermion    ref(FGrid); ref=Zero();
   LatticeFermion    tmp(FGrid);
   LatticeFermion    err(FGrid);
   LatticeGaugeField Umu(UGrid); 
@@ -523,7 +523,7 @@ int main (int argc, char ** argv)
 
   if ( params.domaindecompose ) { 
     Lattice<iScalar<vInteger> > coor(UGrid);
-    zz=zero;
+    zz=Zero();
     for(int mu=0;mu<Nd;mu++){
       LatticeCoordinate(coor,mu);
       U = PeekIndex<LorentzIndex>(Umu,mu);
@@ -536,7 +536,7 @@ int main (int argc, char ** argv)
   //  SU3::ColdConfiguration(RNG4,Umu);
   //  SU3::TepidConfiguration(RNG4,Umu);
   //  SU3::HotConfiguration(RNG4,Umu);
-  //  Umu=zero;
+  //  Umu=Zero();
 
   RealD mass=params.mq;
   RealD M5=1.8;
@@ -574,7 +574,7 @@ int main (int argc, char ** argv)
 //    result =     Aggregates.subspace[i];
 //    Aggregates.subspace[i]=result+g5*result;
 //  }
-  result=zero;
+  result=Zero();
   
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Building coarse representation of Indef operator" <<std::endl;
@@ -590,7 +590,7 @@ int main (int argc, char ** argv)
   CoarseVector c_src (Coarse5d);
   CoarseVector c_res (Coarse5d);
   gaussian(CRNG,c_src);
-  c_res=zero;
+  c_res=Zero();
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   std::cout<<GridLogMessage << "Solving posdef-CG on coarse space "<< std::endl;
@@ -661,7 +661,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "Building a two level DDPGCR "<< std::endl;
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   //  PrecGeneralisedConjugateResidual<LatticeFermion> PGCRDD(1.0e-8,100000,PreconDD,8,128);
-  //  result=zero;
+  //  result=Zero();
   //  std::cout<<GridLogMessage<<"checking norm src "<<norm2(src)<<std::endl;
   //  PGCRDD(HermIndefOp,src,result);
 
@@ -670,7 +670,7 @@ int main (int argc, char ** argv)
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
   PrecGeneralisedConjugateResidual<LatticeFermion> PGCR(1.0e-8,100000,Precon,8,8);
   std::cout<<GridLogMessage<<"checking norm src "<<norm2(src)<<std::endl;
-  result=zero;
+  result=Zero();
   PGCR(HermIndefOp,src,result);
 
   std::cout<<GridLogMessage << "**************************************************"<< std::endl;
@@ -682,7 +682,7 @@ int main (int argc, char ** argv)
   LatticeFermion    src_o(FrbGrid);
   LatticeFermion result_o(FrbGrid);
   pickCheckerboard(Odd,src_o,src);
-  result_o=zero;
+  result_o=Zero();
 
   pCG(HermOpEO,src_o,result_o);
 

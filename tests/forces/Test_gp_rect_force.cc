@@ -98,7 +98,7 @@ int main (int argc, char ** argv)
   // Use derivative to estimate dS
   //////////////////////////////////////////////
 
-  LatticeComplex dS(&Grid); dS = zero;
+  LatticeComplex dS(&Grid); dS = Zero();
 
   for(int mu=0;mu<Nd;mu++){
 

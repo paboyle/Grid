@@ -4,6 +4,7 @@ template<typename Field>
 class BlockedGrid {
 public:
   GridBase* _grid;
+  GridBase* Grid(void) { return _grid; };
   typedef typename Field::scalar_type  Coeff_t;
   typedef typename Field::vector_type vCoeff_t;
   

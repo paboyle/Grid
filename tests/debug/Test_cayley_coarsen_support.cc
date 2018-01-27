@@ -73,19 +73,19 @@ int main (int argc, char ** argv)
   GridParallelRNG          CRNG(Coarse5d);CRNG.SeedFixedIntegers(cseeds);
 
   LatticeFermion    src(FGrid); random(RNG5,src);
-  LatticeFermion result(FGrid); result=zero;
-  LatticeFermion    ref(FGrid); ref=zero;
+  LatticeFermion result(FGrid); result=Zero();
+  LatticeFermion    ref(FGrid); ref=Zero();
   LatticeFermion    tmp(FGrid);
   LatticeFermion    err(FGrid);
   LatticeGaugeField Umu(UGrid); SU3::HotConfiguration(RNG4,Umu);
 
 #if 0
   std::vector<LatticeColourMatrix> U(4,UGrid);
-  Umu=zero;
+  Umu=Zero();
   Complex cone(1.0,0.0);
   for(int nn=0;nn<Nd;nn++){
     if(1) {
-      if (nn>2) { U[nn]=zero; std::cout<<GridLogMessage << "zeroing gauge field in dir "<<nn<<std::endl; }
+      if (nn>2) { U[nn]=Zero(); std::cout<<GridLogMessage << "zeroing gauge field in dir "<<nn<<std::endl; }
       else      { U[nn]=cone; std::cout<<GridLogMessage << "unit gauge field in dir "<<nn<<std::endl; }
     }
     pokeIndex<LorentzIndex>(Umu,U[nn],nn);
@@ -119,7 +119,8 @@ int main (int argc, char ** argv)
 
   MdagMLinearOperator<DomainWallFermionR,LatticeFermion> HermDefOp(Ddwf);
   typedef Aggregation<vSpinColourVector,vTComplex,nbasis> Subspace;
-  Subspace Aggregates(Coarse5d,FGrid);
+  int cb = 0;
+  Subspace Aggregates(Coarse5d,FGrid,cb);
   Aggregates.CreateSubspaceRandom(RNG5);
 
   subspace=Aggregates.subspace;
@@ -142,7 +143,7 @@ int main (int argc, char ** argv)
   
   blockPromote(c_src,err,subspace);
 
-  prom=zero;
+  prom=Zero();
   for(int b=0;b<nbasis;b++){
     prom=prom+subspace[b];
   }
