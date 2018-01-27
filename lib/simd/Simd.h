@@ -179,7 +179,7 @@ accelerator_inline void vstream(RealD &l, const RealD &r){ l=r;}
   
   
 class Zero{};
-static Zero zero;
+//static Zero Zero();
 template<class itype> accelerator_inline void zeroit(itype &arg)   { arg=Zero();};
 template<>            accelerator_inline void zeroit(ComplexF &arg){ arg=0; };
 template<>            accelerator_inline void zeroit(ComplexD &arg){ arg=0; };
