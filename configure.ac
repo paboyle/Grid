@@ -45,7 +45,7 @@ if test "${OPENMP_CXXFLAGS}X" != "X"; then
   AM_CXXFLAGS="$OPENMP_CXXFLAGS $AM_CXXFLAGS"
   AM_LDFLAGS="$OPENMP_CXXFLAGS $AM_LDFLAGS"
 fi
-ac_openmp=no
+
 
 ############### Checks for header files
 AC_CHECK_HEADERS(stdint.h)
