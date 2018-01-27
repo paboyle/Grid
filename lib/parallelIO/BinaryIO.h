@@ -674,11 +674,11 @@ public:
 
     timer.Start();
     std::vector<RNGstate> iodata(lsites);
-    thread_loop( (int lidx=0;lidx<lsites;lidx++),COMMA_SAFE({
+    thread_loop( (int lidx=0;lidx<lsites;lidx++),{
       std::vector<RngStateType> tmp(RngStateCount);
       parallel.GetState(tmp,lidx);
       std::copy(tmp.begin(),tmp.end(),iodata[lidx].begin());
-    }));
+    });
     timer.Stop();
 
     IOobject(w,grid,iodata,file,offset,format,BINARYIO_WRITE|BINARYIO_LEXICOGRAPHIC,
