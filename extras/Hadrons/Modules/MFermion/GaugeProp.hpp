@@ -52,7 +52,7 @@ inline void make_4D(Lattice<vobj> &in_5d, Lattice<vobj> &out_4d, int Ls)
 template<class vobj>
 inline void make_5D(Lattice<vobj> &in_4d, Lattice<vobj> &out_5d, int Ls)
 {
-    out_5d = zero;
+    out_5d = Zero();
     InsertSlice(in_4d, out_5d, 0, 0);
     InsertSlice(in_4d, out_5d, Ls-1, 0);
     axpby_ssp_pplus(out_5d, 0., out_5d, 1., out_5d, 0, 0);
@@ -185,7 +185,7 @@ void TGaugeProp<FImpl>::execute(void)
                 PropToFerm(source, fullSrc, s, c);
             }
         }
-        sol = zero;
+        sol = Zero();
         solver(sol, source);
         FermToProp(prop, sol, s, c);
         // create 4D propagators from 5D one if necessary

@@ -145,7 +145,7 @@ void TWardIdentity<FImpl>::execute(void)
     // Compute D_mu V_mu, D here is backward derivative.
     envGetTmp(PropagatorField, tmp);
     envGetTmp(PropagatorField, vector_WI);
-    vector_WI    = zero;
+    vector_WI    = Zero();
     for (unsigned int mu = 0; mu < Nd; ++mu)
     {
         act.ContractConservedCurrent(q, q, tmp, Current::Vector, mu);
@@ -166,7 +166,7 @@ void TWardIdentity<FImpl>::execute(void)
         std::vector<TComplex> axial_buf;
 
         // Compute <P|D_mu A_mu>, D is backwards derivative.
-        axial_defect = zero;
+        axial_defect = Zero();
         for (unsigned int mu = 0; mu < Nd; ++mu)
         {
             act.ContractConservedCurrent(q, q, tmp, Current::Axial, mu);
@@ -174,8 +174,8 @@ void TWardIdentity<FImpl>::execute(void)
             axial_defect += trace(g5*tmp);
         }
 
-        // Get <P|J5q> for 5D (zero for 4D) and <P|P>.
-        PJ5q = zero;
+        // Get <P|J5q> for 5D (Zero() for 4D) and <P|P>.
+        PJ5q = Zero();
         if (Ls_ > 1)
         {
             // <P|P>

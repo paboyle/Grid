@@ -159,7 +159,7 @@ void TSeqGamma<FImpl>::execute(void)
 
         envGetTmp(LatticeComplex, coor);
         p  = strToVec<Real>(par().mom);
-        ph = zero;
+        ph = Zero();
         for(unsigned int mu = 0; mu < env().getNd(); mu++)
         {
             LatticeCoordinate(coor, mu);

@@ -44,7 +44,7 @@ public:
   static void sitePlaquette(LatticeComplex &Plaq,
                             const std::vector<GaugeMat> &U) {
     LatticeComplex sitePlaq(U[0].Grid());
-    Plaq = zero;
+    Plaq = Zero();
     for (int mu = 1; mu < U[0].Grid()->_ndimension; mu++) {
       for (int nu = 0; nu < mu; nu++) {
         traceDirPlaquette(sitePlaq, U, mu, nu);
@@ -123,7 +123,7 @@ public:
                             const std::vector<GaugeMat> &U,
                             const int R1, const int R2) {
     LatticeComplex siteWl(U[0].Grid());
-    Wl = zero;
+    Wl = Zero();
     for (int mu = 1; mu < U[0].Grid()->_ndimension; mu++) {
       for (int nu = 0; nu < mu; nu++) {
         traceWilsonLoop(siteWl, U, R1, R2, mu, nu);
@@ -144,7 +144,7 @@ public:
 
     int ndim = U[0].Grid()->_ndimension;
 
-    Wl = zero;
+    Wl = Zero();
     for (int nu = 0; nu < ndim - 1; nu++) {
       traceWilsonLoop(siteWl, U, R1, R2, ndim-1, nu);
       Wl = Wl + siteWl;
@@ -158,7 +158,7 @@ public:
                             const int R1, const int R2) {
     LatticeComplex siteWl(U[0].Grid());
 
-    Wl = zero;
+    Wl = Zero();
     for (int mu = 1; mu < U[0].Grid()->_ndimension - 1; mu++) {
       for (int nu = 0; nu < mu; nu++) {
         traceWilsonLoop(siteWl, U, R1, R2, mu, nu);

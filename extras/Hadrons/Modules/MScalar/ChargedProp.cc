@@ -168,7 +168,7 @@ void TChargedProp::momD1(ScalarField &s, FFT &fft)
     envGetTmp(ScalarField, result);
     envGetTmp(ScalarField, Amu);
 
-    result = zero;
+    result = Zero();
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
         Amu = peekLorentz(A, mu);
@@ -198,7 +198,7 @@ void TChargedProp::momD2(ScalarField &s, FFT &fft)
     envGetTmp(ScalarField, result);
     envGetTmp(ScalarField, Amu);
 
-    result = zero;
+    result = Zero();
     for (unsigned int mu = 0; mu < env().getNd(); ++mu)
     {
         Amu = peekLorentz(A, mu);

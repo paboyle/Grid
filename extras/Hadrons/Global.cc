@@ -40,7 +40,7 @@ HadronsLogger Hadrons::HadronsLogIterative(1,"Iterative");
 HadronsLogger Hadrons::HadronsLogDebug(1,"Debug");
 
 // type utilities //////////////////////////////////////////////////////////////
-constexpr unsigned int maxNameSize = 1024u;
+//constexpr unsigned int maxNameSize = 1024u;
 
 std::string Hadrons::typeName(const std::type_info *info)
 {

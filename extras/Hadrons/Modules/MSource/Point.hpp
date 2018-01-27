@@ -127,7 +127,7 @@ void TPoint<FImpl>::execute(void)
     SitePropagator   id;
     
     id  = 1.;
-    src = zero;
+    src = Zero();
     pokeSite(id, src, position);
 }
 
